@@ -2938,3 +2938,152 @@ func TestShortcutLabelsReadNaturally(t *testing.T) {
 		}
 	}
 }
+
+// ---- configurable shortcuts ---------------------------------------------------
+
+func combo(k ebiten.Key, ctrl, shift, alt bool) widget.Input {
+	return widget.Input{Keys: []ebiten.Key{k}, Ctrl: ctrl, Shift: shift, Alt: alt}
+}
+
+func TestRecordingANewBindingRebindsTheAction(t *testing.T) {
+	a, path := newTestApp(t)
+	a.newRequest() // two tabs
+	a.startRecording("close-tab")
+	if a.recording != "close-tab" {
+		t.Fatal("recording must start")
+	}
+	a.step(combo(ebiten.KeyQ, true, false, false))
+	if a.recording != "" || a.settings.Shortcuts["close-tab"] != "Ctrl+Q" {
+		t.Fatalf("recording %q shortcuts %v", a.recording, a.settings.Shortcuts)
+	}
+	if saved, _ := settings.Load(path); saved.Shortcuts["close-tab"] != "Ctrl+Q" {
+		t.Fatalf("saved %+v", saved.Shortcuts)
+	}
+	a.step(key(ebiten.KeyW, true, false)) // the old key does nothing now
+	if len(a.tabs) != 2 {
+		t.Fatal("Ctrl+W must no longer close a tab")
+	}
+	a.step(key(ebiten.KeyQ, true, false))
+	if len(a.tabs) != 1 {
+		t.Fatal("Ctrl+Q closes a tab")
+	}
+	if a.shortcutText("close-tab") != "Ctrl+Q" {
+		t.Fatalf("text = %q", a.shortcutText("close-tab"))
+	}
+}
+
+func TestEscapeCancelsRecordingAndBackspaceUnbinds(t *testing.T) {
+	a, _ := newTestApp(t)
+	a.startRecording("close-tab")
+	a.step(widget.Input{Escape: true})
+	if a.recording != "" || len(a.settings.Shortcuts) != 0 || a.menu {
+		t.Fatalf("recording %q shortcuts %v", a.recording, a.settings.Shortcuts)
+	}
+
+	a.newRequest()
+	a.startRecording("close-tab")
+	a.step(combo(ebiten.KeyBackspace, false, false, false))
+	if v, ok := a.settings.Shortcuts["close-tab"]; !ok || v != "" {
+		t.Fatalf("shortcuts = %v: Backspace stores an empty (unbound) binding", a.settings.Shortcuts)
+	}
+	a.step(key(ebiten.KeyW, true, false))
+	if len(a.tabs) != 2 {
+		t.Fatal("an unbound action fires nothing")
+	}
+	if a.shortcutText("close-tab") != "Unbound" {
+		t.Fatalf("text = %q", a.shortcutText("close-tab"))
+	}
+}
+
+func TestRecordingRefusesTakenAndReservedCombinationsAndKeepsListening(t *testing.T) {
+	a, _ := newTestApp(t)
+	a.startRecording("close-tab")
+	a.step(combo(ebiten.KeyT, true, false, false))
+	if !strings.Contains(a.recordNotes["close-tab"], "New request") || a.recording != "close-tab" {
+		t.Fatalf("note %q recording %q", a.recordNotes["close-tab"], a.recording)
+	}
+	if len(a.tabs) != 1 {
+		t.Fatal("while recording, the key must not trigger its action")
+	}
+	a.step(combo(ebiten.KeyC, true, false, false))
+	if !strings.Contains(a.recordNotes["close-tab"], "text") {
+		t.Fatalf("note %q", a.recordNotes["close-tab"])
+	}
+	a.step(combo(ebiten.KeyQ, false, false, false))
+	if !strings.Contains(a.recordNotes["close-tab"], "Ctrl or Alt") {
+		t.Fatalf("note %q", a.recordNotes["close-tab"])
+	}
+	if len(a.settings.Shortcuts) != 0 {
+		t.Fatal("refused combinations must change nothing")
+	}
+	a.step(combo(ebiten.KeyQ, true, false, false)) // a good one ends it and clears the note
+	if a.recording != "" || a.recordNotes["close-tab"] != "" || a.settings.Shortcuts["close-tab"] != "Ctrl+Q" {
+		t.Fatalf("recording %q note %q shortcuts %v", a.recording, a.recordNotes["close-tab"], a.settings.Shortcuts)
+	}
+}
+
+func TestAModifierKeyAloneDoesNotEndRecording(t *testing.T) {
+	a, _ := newTestApp(t)
+	a.startRecording("close-tab")
+	a.step(widget.Input{Keys: []ebiten.Key{ebiten.KeyControlLeft}, Ctrl: true})
+	if a.recording != "close-tab" || len(a.settings.Shortcuts) != 0 {
+		t.Fatalf("recording %q shortcuts %v", a.recording, a.settings.Shortcuts)
+	}
+}
+
+func TestRebindingToTheDefaultStoresNothingAndResetRestoresIt(t *testing.T) {
+	a, _ := newTestApp(t)
+	a.startRecording("close-tab")
+	a.step(combo(ebiten.KeyQ, true, false, false))
+	a.resetBinding("close-tab")
+	if _, ok := a.settings.Shortcuts["close-tab"]; ok || a.shortcutText("close-tab") != "Ctrl+W" {
+		t.Fatalf("shortcuts %v text %q", a.settings.Shortcuts, a.shortcutText("close-tab"))
+	}
+	a.startRecording("close-tab")
+	a.step(combo(ebiten.KeyW, true, false, false)) // its own default
+	if _, ok := a.settings.Shortcuts["close-tab"]; ok {
+		t.Fatalf("a binding equal to the default must not be stored: %v", a.settings.Shortcuts)
+	}
+}
+
+func TestSavedBindingsApplyFromTheStart(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "settings.json")
+	s := settings.Default()
+	s.Shortcuts = map[string]string{"new-request": "Ctrl+N", "teleport": "Ctrl+J"}
+	if err := s.Save(path); err != nil {
+		t.Fatal(err)
+	}
+	a, err := NewApp(Options{SettingsPath: path})
+	if err != nil {
+		t.Fatal(err)
+	}
+	a.w, a.h = winW, winH
+	a.step(key(ebiten.KeyN, true, false))
+	if len(a.tabs) != 2 {
+		t.Fatal("the saved binding must work")
+	}
+	a.step(key(ebiten.KeyT, true, false))
+	if len(a.tabs) != 2 {
+		t.Fatal("the replaced default must not")
+	}
+}
+
+func TestMenusShowTheConfiguredKey(t *testing.T) {
+	a := jsonResponse(t, `{"ok":true}`)
+	a.startRecording("find")
+	a.step(combo(ebiten.KeyG, true, false, false))
+	rightClick(a, 1000, 400)
+	if got := itemByLabel(a, "Find").shortcut; got != "Ctrl+G" {
+		t.Fatalf("the Find item shows %q", got)
+	}
+}
+
+func TestShortcutSettingsRenderWhileRecording(t *testing.T) {
+	a, _ := openSettingsMenu(t)
+	a.startRecording("close-tab")
+	a.recordNotes = map[string]string{"close-tab": "Already used by New request"}
+	a.step(widget.Input{}) // the menu with a recording row and a note must lay out
+	if !a.menu || a.recording != "close-tab" {
+		t.Fatal("the menu stays open while recording")
+	}
+}

@@ -57,7 +57,7 @@ Task numbers refer to `tasks/`; "-" means no task yet.
 
 ### Deferred from finished tasks
 - Tab strip overflow: horizontal scrolling with the active tab kept in view (needs a horizontal `vml.Scroll`).
-- Settings menu: scrolling when the window is too short for all its sections.
+- Shortcuts: the text widgets' own keys (Ctrl+A/C/V/X/Z/Y) are fixed and not listed in the settings yet; plain-key bindings are refused rather than allowed with a warning.
 - Table columns: resizing from the keyboard (Alt+Left/Right on a header cell needs a header focus concept), saving the widths (task 020).
 - Table rows: a drag handle to reorder rows with the mouse (keyboard and menu moves exist), bulk edit for form fields.
 - Tree: match highlighting in the filter, expanding a folder while a drag hovers over it.

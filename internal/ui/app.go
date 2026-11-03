@@ -107,6 +107,9 @@ type App struct {
 	dragTab       int                                // index of the tab being dragged, -1 when none
 	ctxMenu       *contextMenu                       // the open context menu, if any
 	bulk          *bulkEdit                          // the table in bulk-edit mode, if any
+	menuScroll    vml.ScrollState                    // scroll of the settings menu
+	recording     string                             // the action whose key is being recorded, "" when none
+	recordNotes   map[string]string                  // why a recorded key was refused, by action id
 	colorInputs   map[widget.Token]*widget.TextField // hex fields of the settings menu
 	colorNotes    map[widget.Token]string            // why a typed color was refused
 	colWidths     map[string]*vml.ColumnWidths       // the column sizes of each table, by name
@@ -313,14 +316,17 @@ func (a *App) step(in widget.Input) {
 		a.finishDrag()
 	}
 	hadOverlay := a.overlayOpen()
+	wasRecording := a.recording != ""
 	a.overlayKeys(in)
-	if !hadOverlay && !a.overlayOpen() {
+	if !hadOverlay && !a.overlayOpen() && !wasRecording {
 		a.treeKeys(in)
 	}
-	if !a.overlayOpen() {
+	if wasRecording {
+		a.recordKey(in)
+	} else if !a.overlayOpen() {
 		a.runShortcuts(in)
 	}
-	if in.Escape { // one step per press: overlays, the settings menu, a cell edit, find, a running request
+	if in.Escape && !wasRecording { // one step per press: overlays, the settings menu, a cell edit, find, a running request
 		switch {
 		case a.ctxMenu != nil:
 			a.closeMenu()

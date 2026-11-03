@@ -96,7 +96,7 @@ func (a *App) colorRow(c customColor) Node {
 	}
 	return Col(
 		Row(H(w.RowH), Gap(6),
-			Text(c.label, Small(), W(84)),
+			Text(c.label, Small(), W(76)),
 			Row(W(20), H(18), Bg(c.token), Border(w.Border)), // shows the color in effect
 			Field(in, W(70), H(24), Bg(w.Sunken), Border(border),
 				OnChange(func() { a.colorEdited(c) }),

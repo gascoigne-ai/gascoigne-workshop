@@ -141,6 +141,6 @@ func (a *App) responseMenuItems(t *reqTab) []menuItem {
 		{label: "Copy as cURL", run: func() { a.copyCurl(t) }},
 		menuSeparator,
 		{label: "Select all", shortcut: "Ctrl+A", run: func() { t.view.SelectLines(0, len(t.view.Lines)-1) }},
-		{label: "Find", shortcut: "Ctrl+F", run: a.openFind},
+		{label: "Find", shortcut: a.shortcutHint("find"), run: a.openFind},
 	}
 }

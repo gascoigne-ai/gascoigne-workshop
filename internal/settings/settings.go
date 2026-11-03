@@ -28,6 +28,10 @@ type Settings struct {
 	// then "#rrggbb".
 	Colors map[string]map[string]string `json:"colors,omitempty"`
 
+	// Shortcuts are the user's key bindings: action id to a key string such
+	// as "Ctrl+Shift+Tab"; "" means unbound. Missing actions keep their default.
+	Shortcuts map[string]string `json:"shortcuts,omitempty"`
+
 	// TimeoutSec is the default request timeout in seconds.
 	TimeoutSec int `json:"timeoutSec"`
 }
