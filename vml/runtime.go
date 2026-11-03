@@ -13,7 +13,80 @@ func Layout(c *widget.Ctx, root Node, w, h int) {
 
 // Update delivers this frame's input (c.In) to the tree, top-most
 // element first. It must follow Layout on the same tree.
-func Update(c *widget.Ctx, root Node) { root.update(c) }
+func Update(c *widget.Ctx, root Node) {
+	root.update(c)
+	cycleFocus(c, root)
+}
+
+// focusable reports whether e takes keyboard focus: text fields and code views.
+func (e *El) focusable() bool { return e.field != nil || e.view != nil }
+
+func (e *El) focused() bool {
+	if e.field != nil {
+		return e.field.Focused
+	}
+	return e.view != nil && e.view.Focused
+}
+
+func (e *El) setFocused(on bool) {
+	switch {
+	case e.field != nil:
+		e.field.Focused = on
+		if on {
+			e.field.SelectAll()
+		}
+	case e.view != nil:
+		e.view.Focused = on
+	}
+}
+
+func collectFocusables(e *El, out []*El) []*El {
+	if e.hidden {
+		return out
+	}
+	if e.focusable() {
+		out = append(out, e)
+	}
+	for _, k := range e.kids {
+		out = collectFocusables(k, out)
+	}
+	return out
+}
+
+// cycleFocus moves focus to the next focusable element in tree order on
+// Tab, or the previous one on Shift+Tab, wrapping at the ends. A focused
+// field that handles Tab itself (a table cell editor) keeps it.
+func cycleFocus(c *widget.Ctx, root Node) {
+	if !c.In.Tab || c.In.Ctrl {
+		return
+	}
+	list := collectFocusables(root, nil)
+	if len(list) == 0 {
+		return
+	}
+	cur := -1
+	for i, e := range list {
+		if e.focused() {
+			cur = i
+			if e.onTab != nil {
+				return
+			}
+		}
+	}
+	next := 0
+	switch {
+	case cur >= 0 && c.In.Shift:
+		next = (cur - 1 + len(list)) % len(list)
+	case cur >= 0:
+		next = (cur + 1) % len(list)
+	case c.In.Shift:
+		next = len(list) - 1
+	}
+	for _, e := range list {
+		e.setFocused(false)
+	}
+	list[next].setFocused(true)
+}
 
 // Draw paints the tree. It must follow Layout on the same tree.
 func Draw(c *widget.Ctx, root Node, dst *ebiten.Image) { root.draw(c, dst) }

@@ -35,6 +35,16 @@ func (a *App) menuView() Node {
 				return a.choice(c.label, c.id == a.settings.TextSize, func(s *settings.Settings) { s.TextSize = c.id })
 			}),
 		),
+		Spacer(H(w.Pad)),
+
+		Caption("Shortcuts", H(22)),
+		For(shortcuts, func(_ int, s shortcut) Node {
+			return Row(H(20),
+				Text(s.name, Small()),
+				Spacer(),
+				Text(s.label(), Small(), Muted()),
+			)
+		}),
 	)
 }
 

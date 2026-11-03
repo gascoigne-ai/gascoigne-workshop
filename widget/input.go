@@ -24,6 +24,9 @@ type Input struct {
 	SelectAll, Copy, Cut, Paste bool
 	Undo, Redo                  bool
 	Clicks                      int // 1, 2 or 3 for single, double, triple click (with Click)
+
+	// Keys went down this frame, for application shortcuts.
+	Keys []ebiten.Key
 }
 
 // Scaled converts the pointer position from device to logical pixels.
@@ -75,6 +78,7 @@ func ReadInput() Input {
 		Escape: inpututil.IsKeyJustPressed(ebiten.KeyEscape),
 		Tab:    inpututil.IsKeyJustPressed(ebiten.KeyTab),
 		Held:   ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft),
+		Keys:   inpututil.AppendJustPressedKeys(nil),
 		Shift:  ebiten.IsKeyPressed(ebiten.KeyShift),
 		Ctrl:   ebiten.IsKeyPressed(ebiten.KeyControl),
 	}

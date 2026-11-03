@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"github.com/hajimehoshi/ebiten/v2"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -587,5 +588,93 @@ func TestResponseHeadersAreNotEditable(t *testing.T) {
 	click(a, 1000, paramsRow0Y)
 	if a.edit != nil {
 		t.Fatalf("response headers must stay read-only, edit %+v", a.edit)
+	}
+}
+
+func key(k ebiten.Key, ctrl, shift bool) widget.Input {
+	return widget.Input{Keys: []ebiten.Key{k}, Ctrl: ctrl, Shift: shift}
+}
+
+func TestCtrlEnterSendsTheRequest(t *testing.T) {
+	srv := jsonServer(t)
+	a, _ := newTestApp(t)
+	tab := a.cur()
+	pointTabAt(tab, srv.URL)
+	a.step(key(ebiten.KeyEnter, true, false))
+	waitForResponse(t, a, tab)
+	if tab.resp.Status != 200 {
+		t.Fatalf("resp = %+v", tab.resp)
+	}
+}
+
+func TestCtrlLFocusesAndSelectsTheURL(t *testing.T) {
+	a, _ := newTestApp(t)
+	click(a, 1100, 600) // click on empty space so nothing is focused
+	a.step(key(ebiten.KeyL, true, false))
+	url := &a.cur().url
+	if !url.Focused || url.SelectedText() != url.Text {
+		t.Fatalf("focused %v selection %q", url.Focused, url.SelectedText())
+	}
+}
+
+func TestCtrlTOpensAndCtrlWClosesTabs(t *testing.T) {
+	a, _ := newTestApp(t)
+	a.step(key(ebiten.KeyT, true, false))
+	if len(a.tabs) != 2 || a.active != 1 {
+		t.Fatalf("Ctrl+T: %d tabs, active %d", len(a.tabs), a.active)
+	}
+	a.step(key(ebiten.KeyW, true, false))
+	if len(a.tabs) != 1 || a.active != 0 || a.cur().req.Name != "Search Repos" {
+		t.Fatalf("Ctrl+W: %d tabs, active %d (%s)", len(a.tabs), a.active, a.cur().req.Name)
+	}
+	a.step(key(ebiten.KeyW, true, false))
+	if len(a.tabs) != 1 || a.cur().req.Name != "New Request" {
+		t.Fatalf("closing the last tab must leave a blank request, got %d tabs (%s)", len(a.tabs), a.cur().req.Name)
+	}
+}
+
+func TestCtrlTabSwitchesTabsAndWraps(t *testing.T) {
+	a, _ := newTestApp(t)
+	a.newRequest()
+	a.newRequest() // three tabs, the last active
+	a.step(key(ebiten.KeyTab, true, false))
+	if a.active != 0 {
+		t.Fatalf("Ctrl+Tab from the last tab must wrap to the first, active %d", a.active)
+	}
+	a.step(key(ebiten.KeyTab, true, true))
+	if a.active != 2 {
+		t.Fatalf("Ctrl+Shift+Tab must go back and wrap, active %d", a.active)
+	}
+}
+
+func TestCtrlCommaOpensTheSettingsMenu(t *testing.T) {
+	a, _ := newTestApp(t)
+	a.step(key(ebiten.KeyComma, true, false))
+	if !a.menu {
+		t.Fatal("Ctrl+, must open the settings menu")
+	}
+}
+
+func TestShortcutsNeedTheirModifiers(t *testing.T) {
+	a, _ := newTestApp(t)
+	for _, k := range []ebiten.Key{ebiten.KeyT, ebiten.KeyW, ebiten.KeyL, ebiten.KeyEnter, ebiten.KeyComma, ebiten.KeyTab} {
+		a.step(key(k, false, false)) // plain letters must never trigger anything
+	}
+	if len(a.tabs) != 1 || a.menu || a.cur().sending {
+		t.Fatalf("plain keys changed state: %d tabs, menu %v", len(a.tabs), a.menu)
+	}
+}
+
+func TestShortcutTableHasUniqueBindingsAndLabels(t *testing.T) {
+	seen := map[string]bool{}
+	for _, s := range shortcuts {
+		id := s.label()
+		if s.name == "" || s.run == nil || seen[id] {
+			t.Errorf("bad or duplicate shortcut %q (%q)", s.name, id)
+		}
+		seen[id] = true
+	}
+	if !seen["Ctrl+Enter"] || !seen["Ctrl+Shift+Tab"] {
+		t.Fatalf("labels = %v", seen)
 	}
 }

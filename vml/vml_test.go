@@ -530,3 +530,76 @@ func TestLongTextScrollsToTheCursorAndClicksAccountForIt(t *testing.T) {
 		t.Fatalf("Home must scroll back to the start, ScrollX = %d", f.ScrollX)
 	}
 }
+
+func focusFlags(f1, f2 *widget.TextField, v *widget.CodeView) [3]bool {
+	return [3]bool{f1.Focused, f2.Focused, v.Focused}
+}
+
+func TestTabCyclesFocusThroughFieldsAndCodeViews(t *testing.T) {
+	a, b := widget.NewTextField("a"), widget.NewTextField("b")
+	v := &widget.CodeView{}
+	v.SetLines([]widget.Line{{Spans: []widget.Span{{Text: "x"}}}})
+	root := Col(Field(&a, H(30)), Field(&b, H(30)), Code(v, H(30)))
+	c := testCtx(t)
+	Layout(c, root, 200, 100)
+
+	tab := func(shift bool) {
+		c.In = widget.Input{Tab: true, Shift: shift}
+		Update(c, root)
+	}
+	steps := []struct {
+		shift bool
+		want  [3]bool
+	}{
+		{false, [3]bool{true, false, false}}, // nothing focused: Tab starts at the first
+		{false, [3]bool{false, true, false}},
+		{false, [3]bool{false, false, true}},
+		{false, [3]bool{true, false, false}}, // wraps
+		{true, [3]bool{false, false, true}},  // Shift+Tab goes back, wrapping
+		{true, [3]bool{false, true, false}},
+	}
+	for i, st := range steps {
+		tab(st.shift)
+		if got := focusFlags(&a, &b, v); got != st.want {
+			t.Fatalf("step %d: focus %v, want %v", i, got, st.want)
+		}
+	}
+}
+
+func TestTabSelectsTheTextOfTheFieldItFocuses(t *testing.T) {
+	a := widget.NewTextField("hello")
+	root := Col(Field(&a, H(30)))
+	c := testCtx(t)
+	Layout(c, root, 200, 30)
+	c.In = widget.Input{Tab: true}
+	Update(c, root)
+	if a.SelectedText() != "hello" {
+		t.Fatalf("selection %q", a.SelectedText())
+	}
+}
+
+func TestTabIsLeftToAFieldThatHandlesIt(t *testing.T) {
+	a, b := widget.NewTextField("a"), widget.NewTextField("b")
+	a.Focused = true
+	var tabs int
+	root := Col(Field(&a, H(30), OnTab(func(bool) { tabs++ })), Field(&b, H(30)))
+	c := testCtx(t)
+	Layout(c, root, 200, 60)
+	c.In = widget.Input{Tab: true}
+	Update(c, root)
+	if tabs != 1 || !a.Focused || b.Focused {
+		t.Fatalf("handler calls %d, focus a=%v b=%v: a field with OnTab keeps focus", tabs, a.Focused, b.Focused)
+	}
+}
+
+func TestCtrlTabIsNotFocusCycling(t *testing.T) {
+	a := widget.NewTextField("a")
+	root := Col(Field(&a, H(30)))
+	c := testCtx(t)
+	Layout(c, root, 200, 30)
+	c.In = widget.Input{Tab: true, Ctrl: true}
+	Update(c, root)
+	if a.Focused {
+		t.Fatal("Ctrl+Tab switches tabs in the app, it must not move focus")
+	}
+}

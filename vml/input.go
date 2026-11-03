@@ -111,6 +111,9 @@ func (fieldB) draw(e *El, c *widget.Ctx, dst *ebiten.Image) {
 	if f.Text == "" {
 		c.TextMid(dst, c.F.UI, e.placeholder, r.X+fieldPad, r, c.Col(widget.Muted))
 	}
+	if f.Focused {
+		c.Outline(dst, r, c.Col(widget.Accent))
+	}
 	if f.Focused && (c.Tick/30)%2 == 0 {
 		cx := r.X + fieldPad - f.ScrollX + c.Width(c.F.UI, string([]rune(f.Text)[:f.Cursor]))
 		c.VLine(dst, cx, r.Y+8, r.H-16, c.Col(widget.Text))
@@ -147,6 +150,9 @@ func (codeB) measure(*El, *widget.Ctx, int) (int, int) { return 0, 0 }
 func (codeB) update(e *El, c *widget.Ctx)              { e.view.Update(c, e.rect) }
 func (codeB) draw(e *El, c *widget.Ctx, dst *ebiten.Image) {
 	e.view.Draw(c, dst, e.rect)
+	if e.view.Focused {
+		c.Outline(dst, e.rect, c.Col(widget.Accent))
+	}
 }
 
 // Code is a scrollable, foldable code viewer; give it a Bg.

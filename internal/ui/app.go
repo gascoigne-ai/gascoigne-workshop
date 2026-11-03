@@ -205,6 +205,7 @@ func (a *App) step(in widget.Input) {
 	a.ctx.Tick++
 	a.ctx.In = in
 	a.drain()
+	a.runShortcuts(in)
 	if in.Escape {
 		a.menu = false
 		a.cancelEdit()
