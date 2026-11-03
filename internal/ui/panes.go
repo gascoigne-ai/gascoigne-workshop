@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/vml"
-	"github.com/gascoigne-ai/gascoigne-workshop/widget"
+	. "github.com/gascoigne-ai/gascoigne-workshop/vml"
+	w "github.com/gascoigne-ai/gascoigne-workshop/widget"
 )
 
 type paneKind int
@@ -25,21 +25,21 @@ type pane struct {
 	rows     func(a *App, t *reqTab) *[]model.KV      // paneTable
 	editable bool                                     // table rows can be toggled and deleted
 	changed  func(t *reqTab)                          // runs after an edit
-	code     func(t *reqTab) *widget.CodeView         // paneCode
+	code     func(t *reqTab) *w.CodeView              // paneCode
 	note     func(t *reqTab) string                   // paneNote
 	empty    func(t *reqTab) (msg string, isErr bool) // shown instead of the content
 }
 
 func paramsChanged(t *reqTab) {
 	t.req.URL = model.WithParams(t.req.URL, t.req.Params)
-	t.url = widget.NewTextField(t.req.URL)
+	t.url = w.NewTextField(t.req.URL)
 }
 
 var requestPanes = []pane{
 	{label: "Params", kind: paneTable, title: "Query", editable: true, changed: paramsChanged,
 		rows: func(_ *App, t *reqTab) *[]model.KV { return &t.req.Params }},
 	{label: "Body", kind: paneCode,
-		code: func(t *reqTab) *widget.CodeView { return &t.bodyView },
+		code: func(t *reqTab) *w.CodeView { return &t.bodyView },
 		empty: func(t *reqTab) (string, bool) {
 			if t.req.Body == "" {
 				return "This request has no body", false
@@ -68,7 +68,7 @@ func noResponse(t *reqTab) (string, bool) {
 
 var responsePanes = []pane{
 	{label: "Response", kind: paneCode, empty: noResponse,
-		code: func(t *reqTab) *widget.CodeView { return &t.view }},
+		code: func(t *reqTab) *w.CodeView { return &t.view }},
 	{label: "Headers", kind: paneTable, empty: noResponse,
 		rows: func(_ *App, t *reqTab) *[]model.KV {
 			if t.resp == nil {
@@ -102,10 +102,10 @@ func (p pane) badge(a *App, t *reqTab) int {
 	return n
 }
 
-func (a *App) tabItems(panes []pane, t *reqTab) []vml.TabItem {
-	items := make([]vml.TabItem, len(panes))
+func (a *App) tabItems(panes []pane, t *reqTab) []TabItem {
+	items := make([]TabItem, len(panes))
 	for i, p := range panes {
-		items[i] = vml.TabItem{Label: p.label, Badge: p.badge(a, t)}
+		items[i] = TabItem{Label: p.label, Badge: p.badge(a, t)}
 	}
 	return items
 }
@@ -118,45 +118,54 @@ func paneEmpty(p pane, t *reqTab) (string, bool) {
 }
 
 // paneBuilders turns a pane into its view, by kind.
-var paneBuilders = map[paneKind]func(a *App, p pane, t *reqTab) vml.Node{
+var paneBuilders = map[paneKind]func(a *App, p pane, t *reqTab) Node{
 	paneCode:  (*App).codePane,
 	paneNote:  (*App).notePane,
 	paneTable: (*App).tablePane,
 }
 
 // paneBody is what fills the area under a pane's tab strip.
-func (a *App) paneBody(p pane, t *reqTab) vml.Node {
+func (a *App) paneBody(p pane, t *reqTab) Node {
 	if msg, isErr := paneEmpty(p, t); msg != "" {
-		clr := widget.Muted
-		if isErr {
-			clr = widget.Error
-		}
-		bg := widget.Bg
-		if p.kind == paneCode {
-			bg = widget.Sunken
-		}
-		return vml.Col(vml.Lines(msg, clr)).Pad(widget.Pad).Grow(1).Bg(bg)
+		return a.messagePane(p, msg, isErr)
 	}
 	return paneBuilders[p.kind](a, p, t)
 }
 
-func (a *App) codePane(p pane, t *reqTab) vml.Node {
-	return vml.Code(p.code(t)).Grow(1).Bg(widget.Sunken)
+// messagePane shows a status line ("Sending...", an error) in place of
+// the pane's content.
+func (a *App) messagePane(p pane, msg string, isErr bool) Node {
+	color, bg := w.Muted, w.Bg
+	if isErr {
+		color = w.Error
+	}
+	if p.kind == paneCode {
+		bg = w.Sunken
+	}
+	return Col(Grow(1), Pad(w.Pad), Bg(bg),
+		Lines(msg, color),
+	)
 }
 
-func (a *App) notePane(p pane, t *reqTab) vml.Node {
-	return vml.Col(vml.Lines(p.note(t), widget.Text)).Pad(widget.Pad).Grow(1)
+func (a *App) codePane(p pane, t *reqTab) Node {
+	return Code(p.code(t), Grow(1), Bg(w.Sunken))
 }
 
-func (a *App) tablePane(p pane, t *reqTab) vml.Node {
+func (a *App) notePane(p pane, t *reqTab) Node {
+	return Col(Grow(1), Pad(w.Pad),
+		Lines(p.note(t), w.Text),
+	)
+}
+
+func (a *App) tablePane(p pane, t *reqTab) Node {
 	rows := p.rows(a, t)
-	spec := vml.TableSpec{
-		Columns:  []string{"Name", "Value"},
-		Weights:  []float64{35, 65},
-		Rows:     kvRows(*rows, false),
-		Editable: p.editable,
+	spec := TableSpec{
+		Columns: []string{"Name", "Value"},
+		Weights: []float64{35, 65},
+		Rows:    kvRows(*rows, false),
 	}
 	if p.editable {
+		spec.Editable = true
 		spec.Columns = []string{"Name", "Value", "Description"}
 		spec.Weights = []float64{28, 40, 32}
 		spec.Rows = kvRows(*rows, true)
@@ -170,10 +179,10 @@ func (a *App) tablePane(p pane, t *reqTab) vml.Node {
 			a.rowsChanged(p, t)
 		}
 	}
-	return vml.Col(
-		vml.If(p.title != "", vml.Row(vml.Caption(p.title)).H(widget.RowH)),
-		vml.Table(spec),
-	).Pad(widget.Pad).Grow(1)
+	return Col(Grow(1), Pad(w.Pad),
+		If(p.title != "", Row(H(w.RowH), Caption(p.title))),
+		Table(spec),
+	)
 }
 
 func (a *App) rowsChanged(p pane, t *reqTab) {

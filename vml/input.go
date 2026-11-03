@@ -62,23 +62,23 @@ func (fieldB) draw(e *El, c *widget.Ctx, dst *ebiten.Image) {
 
 // Field is a single-line text input bound to f (Vue's v-model: the
 // widget edits f in place).
-func Field(f *widget.TextField) *El {
-	e := newEl(fieldB{}, nil)
+func Field(f *widget.TextField, opts ...Option) *El {
+	e := newEl(fieldB{}, with(nil, opts))
 	e.field = f
 	return e
 }
 
 // Placeholder is the hint shown while the field is empty.
-func (e *El) Placeholder(s string) *El { e.placeholder = s; return e }
+func Placeholder(s string) Option { return func(e *El) { e.placeholder = s } }
 
 // Segments colors parts of the field's text.
-func (e *El) Segments(f func(text string) []Seg) *El { e.segments = f; return e }
+func Segments(f func(text string) []Seg) Option { return func(e *El) { e.segments = f } }
 
 // OnChange runs after the field's text was edited.
-func (e *El) OnChange(f func()) *El { e.onChange = f; return e }
+func OnChange(f func()) Option { return func(e *El) { e.onChange = f } }
 
 // OnEnter runs when Enter is pressed in the focused field.
-func (e *El) OnEnter(f func()) *El { e.onEnter = f; return e }
+func OnEnter(f func()) Option { return func(e *El) { e.onEnter = f } }
 
 // code shows a widget.CodeView.
 type codeB struct{ plain }
@@ -90,8 +90,8 @@ func (codeB) draw(e *El, c *widget.Ctx, dst *ebiten.Image) {
 }
 
 // Code is a scrollable, foldable code viewer; give it a Bg.
-func Code(v *widget.CodeView) *El {
-	e := newEl(codeB{}, nil)
+func Code(v *widget.CodeView, opts ...Option) *El {
+	e := newEl(codeB{}, with(nil, opts))
 	e.view = v
 	return e
 }

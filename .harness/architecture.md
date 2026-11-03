@@ -53,16 +53,22 @@ Plain values; everything except the drawing calls is tested without a GPU.
 
 A view is a Go function from state to a tree of nodes, rebuilt every frame, so the tree is always a pure function of the state: no diffing and no reactive system.
 
+Every constructor takes **attributes first, children after**, so what an element is reads before what it contains. App view files dot-import `vml` (and alias `widget` as `w`) so views read like markup:
+
 ```go
-vml.Row(
-	vml.Text("Hello").Muted(),
-	vml.Spacer(),
-	vml.PrimaryButton("Send").W(80).OnClick(send),
-).Gap(8).PadXY(12, 8).H(56).Bg(widget.Bg)
+Row(H(urlH), PadXY(w.Pad, 8), Gap(8), Bg(w.Bg),
+	Row(Grow(1), Bg(w.Sunken), Border(w.Border),
+		chip(protocolLabel, w.Muted, 64, cycleProtocol),
+		VRuleInset(8),
+		Field(&t.url, Grow(1), Placeholder("Enter URL"), OnEnter(send)),
+	),
+	PrimaryButton("Send", W(80), OnClick(send)),
+)
 ```
 
+- **Items**: a constructor's arguments are `Item`s: a child `Node`, or an `Option` that sets an attribute. A nil node (a false `If`) adds nothing; options given later override earlier ones, which is how components such as `Button` let callers override their defaults.
 - **Elements** (`*El`, aliased `Node`): `Row`, `Col`, `Stack`, `Spacer`, `Text`, `Caption`, `Lines`, `Field`, `Code`, icons (`Checkbox`, `Cross`, `Triangle`, `Dots`) and the components `Button`, `PrimaryButton`, `Tabs`, `Table`, which are ordinary compositions of the primitives. Behaviors are values of one small interface (measure, layout, draw, update), not switch cases.
-- **Attributes** chain: size (`W`, `H`, `Grow`, `Optional`), spacing (`Pad`, `PadXY`, `Gap`), look (`Bg`, `Border`, `BorderBottom`, `HoverBg`, `Lighten`, `Underline`, `Shadow`, `Clip`), text (`Color`, `Small`, `Mono`, `Ellipsis`, `Center`), events (`OnClick`, `OnChange`, `OnEnter`).
+- **Options**: size (`W`, `H`, `Grow`, `Optional`), spacing (`Pad`, `PadXY`, `PadL`, `PadR`, `Gap`), look (`Bg`, `Border`, `BorderTop`, `BorderBottom`, `HoverBg`, `Lighten`, `Underline`, `Shadow`, `Clip`), text (`Color`, `Muted`, `Small`, `Mono`, `Ellipsis`, `Center`), events (`OnClick`, `OnChange`, `OnEnter`), overlays (`Float`, `Modal`).
 - **Vue-like control flow**: `If`/`Either` (v-if), `For` (v-for), `Frag` (fragment). `Field(&textField)` edits state in place like v-model.
 - **Layout** is a flexbox subset. Along its axis a child has a fixed size, a `Grow` share of the free space, or its content size; across it, it stretches unless it has a fixed size. `Optional` children are dropped when the row is too narrow. `Stack` layers children; a `Float(top, right)` child is pinned top-right and `Modal` makes it swallow clicks and report an outside click, which is how the settings menu works.
 - **Frame cycle**: `vml.Layout`, then `vml.Update` (input goes to the top-most element first and runs handlers) or `vml.Draw`. `App.Update` and `App.Draw` each build the view, so what is drawn already reflects what the handlers just changed.

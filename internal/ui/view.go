@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/vml"
-	"github.com/gascoigne-ai/gascoigne-workshop/widget"
+	// The view DSL is dot-imported so views read like markup: Row(...), Text(...).
+	. "github.com/gascoigne-ai/gascoigne-workshop/vml"
+	w "github.com/gascoigne-ai/gascoigne-workshop/widget"
 )
 
 // Sizes of the window chrome, in logical pixels.
@@ -20,46 +21,64 @@ const (
 	badgeW     = 40
 )
 
-// view is the whole window as a function of the app state: a frame
-// with the sidebar, the main column and the status bar, and the
-// settings menu floating above when open.
-func (a *App) view() vml.Node {
-	return vml.Stack(
-		vml.Col(
-			vml.Row(a.sidebar(), vml.VRule(), a.mainColumn()).Grow(1),
+// view is the whole window as a function of the app state. Its shape:
+//
+//	Stack
+//	├─ Col                  the frame
+//	│  ├─ Row
+//	│  │  ├─ sidebar        collections tree
+//	│  │  └─ mainColumn     header, request tabs, URL bar, request | response
+//	│  └─ statusBar
+//	└─ menuView             settings, floating above, only while open
+func (a *App) view() Node {
+	return Stack(
+		Col(Bg(w.Frame),
+			Row(Grow(1),
+				a.sidebar(),
+				VRule(),
+				a.mainColumn(),
+			),
 			a.statusBar(),
-		).Bg(widget.Frame),
+		),
 		a.menuView(),
 	)
 }
 
-func (a *App) sidebar() vml.Node {
-	cur := a.cur().req
-	return vml.Col(
-		vml.Row(vml.Caption("Collections")).PadXY(widget.Pad, 0).H(headerH).Bg(widget.Bg).BorderBottom(widget.Rule),
-		vml.Col(vml.For(treeRows(a.col.Folder, a.expanded), func(_ int, row treeRow) vml.Node {
-			return a.treeRow(row, row.Req != nil && row.Req == cur)
-		})).Grow(1).Bg(widget.Sunken).Clip(),
-	).W(min(sidebarW, a.w/3) - 1)
+// ── Sidebar ────────────────────────────────────────────────────────────
+
+func (a *App) sidebar() Node {
+	current := a.cur().req
+	return Col(W(min(sidebarW, a.w/3)-1),
+		Row(H(headerH), PadXY(w.Pad, 0), Bg(w.Bg), BorderBottom(w.Rule),
+			Caption("Collections"),
+		),
+		Col(Grow(1), Bg(w.Sunken), Clip(),
+			For(treeRows(a.col.Folder, a.expanded), func(_ int, row treeRow) Node {
+				return a.treeRow(row, row.Req != nil && row.Req == current)
+			}),
+		),
+	)
 }
 
-func (a *App) treeRow(row treeRow, selected bool) vml.Node {
-	pad := widget.Pad + row.Depth*treeIndent
-	var line *vml.El
-	if row.Folder {
-		line = vml.Row(vml.Triangle(row.Open).W(12), vml.Text(row.Name)).Gap(6).PadL(pad)
-	} else {
-		req := row.Req
-		line = vml.Row(
-			vml.Text(requestBadge(req.Protocol, req.Method)).Small().Color(methodToken(req.Method)).W(badgeW),
-			vml.Text(row.Name).Ellipsis().Grow(1),
-		).PadL(pad + 6).PadR(widget.Pad)
-	}
-	line.H(widget.RowH).OnClick(func() { a.clickTree(row) })
+func (a *App) treeRow(row treeRow, selected bool) Node {
+	look := HoverBg(w.Hover)
 	if selected {
-		return line.Bg(widget.Selected)
+		look = Bg(w.Selected)
 	}
-	return line.HoverBg(widget.Hover)
+	indent := w.Pad + row.Depth*treeIndent
+	onClick := OnClick(func() { a.clickTree(row) })
+
+	if row.Folder {
+		return Row(H(w.RowH), PadL(indent), Gap(6), look, onClick,
+			Triangle(row.Open, W(12)),
+			Text(row.Name),
+		)
+	}
+	req := row.Req
+	return Row(H(w.RowH), PadL(indent+6), PadR(w.Pad), look, onClick,
+		Text(requestBadge(req.Protocol, req.Method), Small(), Color(methodToken(req.Method)), W(badgeW)),
+		Text(row.Name, Ellipsis(), Grow(1)),
+	)
 }
 
 // requestBadge is the short label shown before a request name.
@@ -73,81 +92,92 @@ func requestBadge(protocol, method string) string {
 	return method
 }
 
-func (a *App) mainColumn() vml.Node {
+// ── Main column ────────────────────────────────────────────────────────
+
+func (a *App) mainColumn() Node {
 	t := a.cur()
-	return vml.Col(
+	return Col(Grow(1),
 		a.header(),
-		a.tabStrip(),
+		a.requestTabs(),
 		a.urlBar(t),
-		vml.Row(
+		Row(Grow(1),
 			a.pane(t, requestPanes, &t.paneTab, nil),
-			vml.VRule(),
+			VRule(),
 			a.pane(t, responsePanes, &t.respTab, a.responseStatus(t)),
-		).Grow(1),
-	).Grow(1)
+		),
+	)
 }
 
-func (a *App) header() vml.Node {
-	return vml.Row(
-		vml.Text(a.col.Name),
-		vml.Spacer(),
-		vml.Row(vml.Dots().Grow(1)).W(headerH).OnClick(func() { a.menu = !a.menu }),
-	).PadXY(widget.Pad, 0).H(headerH).Bg(widget.Bg)
+func (a *App) header() Node {
+	toggleMenu := OnClick(func() { a.menu = !a.menu })
+	return Row(H(headerH), PadXY(w.Pad, 0), Bg(w.Bg),
+		Text(a.col.Name),
+		Spacer(),
+		Row(W(headerH), toggleMenu,
+			Dots(Grow(1)),
+		),
+	)
 }
 
-func (a *App) tabStrip() vml.Node {
-	return vml.Row(
-		vml.For(a.tabs, func(i int, t *reqTab) vml.Node {
-			tab := vml.Row(
-				vml.Text(requestBadge(t.req.Protocol, t.req.Method)).Small().Color(methodToken(t.req.Method)),
-				vml.Text(t.req.Name),
-			).Gap(8).PadXY(14, 0).OnClick(func() { a.active = i })
+// requestTabs is the strip of open requests, with a "+" for a new one.
+func (a *App) requestTabs() Node {
+	return Row(H(tabsH), Bg(w.Frame), BorderBottom(w.Border),
+		For(a.tabs, func(i int, t *reqTab) Node {
+			look := Bg(w.Frame) // inactive tabs blend into the strip; the active one joins the pane
 			if i == a.active {
-				tab.Bg(widget.Bg)
+				look = Bg(w.Bg)
 			}
-			return tab
+			return Row(PadXY(14, 0), Gap(8), look, OnClick(func() { a.active = i }),
+				Text(requestBadge(t.req.Protocol, t.req.Method), Small(), Color(methodToken(t.req.Method))),
+				Text(t.req.Name),
+			)
 		}),
-		vml.Row(vml.Text("+").Muted().Center().Grow(1)).W(40).OnClick(a.newRequest),
-	).H(tabsH).Bg(widget.Frame).BorderBottom(widget.Border)
+		Row(W(40), OnClick(a.newRequest),
+			Text("+", Muted(), Center(), Grow(1)),
+		),
+	)
 }
 
-func (a *App) urlBar(t *reqTab) vml.Node {
-	rest := t.req.Protocol == "rest"
-	send := "Send"
+// urlBar is [protocol | method | URL field ........] [Send].
+func (a *App) urlBar(t *reqTab) Node {
+	isREST := t.req.Protocol == "rest"
+	sendLabel := "Send"
 	if t.sending {
-		send = "..."
+		sendLabel = "..."
 	}
-	return vml.Row(
-		vml.Row(
-			chip(protocolLabel[t.req.Protocol], widget.Muted, 64, func() { a.cycleProtocol(t) }),
-			vml.VRuleInset(8),
-			vml.If(rest, chip(t.req.Method, methodToken(t.req.Method), 84, func() { a.cycleMethod(t) })),
-			vml.If(rest, vml.VRuleInset(8)),
-			vml.Field(&t.url).
-				Placeholder("Enter URL").
-				Segments(varSegments).
-				OnChange(func() { a.urlEdited(t) }).
-				OnEnter(func() { a.send(t) }).
-				Grow(1),
-		).Grow(1).Bg(widget.Sunken).Border(widget.Border),
-		vml.PrimaryButton(send).W(80).OnClick(func() { a.send(t) }),
-	).Gap(8).PadXY(widget.Pad, 8).H(urlH).Bg(widget.Bg)
+	return Row(H(urlH), PadXY(w.Pad, 8), Gap(8), Bg(w.Bg),
+		Row(Grow(1), Bg(w.Sunken), Border(w.Border),
+			chip(protocolLabel[t.req.Protocol], w.Muted, 64, func() { a.cycleProtocol(t) }),
+			VRuleInset(8),
+			If(isREST, chip(t.req.Method, methodToken(t.req.Method), 84, func() { a.cycleMethod(t) })),
+			If(isREST, VRuleInset(8)),
+			Field(&t.url, Grow(1),
+				Placeholder("Enter URL"),
+				Segments(varSegments),
+				OnChange(func() { a.urlEdited(t) }),
+				OnEnter(func() { a.send(t) }),
+			),
+		),
+		PrimaryButton(sendLabel, W(80), OnClick(func() { a.send(t) })),
+	)
 }
 
 // chip is a clickable label of fixed width, used for protocol and method.
-func chip(label string, clr widget.Token, w int, onClick func()) vml.Node {
-	return vml.Row(vml.Text(label).Center().Grow(1).Color(clr)).W(w).OnClick(onClick)
+func chip(label string, color w.Token, width int, onClick func()) Node {
+	return Row(W(width), OnClick(onClick),
+		Text(label, Center(), Grow(1), Color(color)),
+	)
 }
 
 // varSegments colors {{variables}} so they stand out from the literal URL.
-func varSegments(s string) []vml.Seg {
-	var segs []vml.Seg
+func varSegments(s string) []Seg {
+	var segs []Seg
 	for _, seg := range splitVars(s) {
-		style := widget.Text
+		style := w.Text
 		if seg.isVar {
-			style = widget.OK
+			style = w.OK
 		}
-		segs = append(segs, vml.Seg{Text: seg.text, Style: style})
+		segs = append(segs, Seg{Text: seg.text, Style: style})
 	}
 	return segs
 }
@@ -177,36 +207,38 @@ func splitVars(s string) []urlSeg {
 
 // pane is one tabbed area: a tab strip, with extra at its right end,
 // above the body of the active tab.
-func (a *App) pane(t *reqTab, panes []pane, active *int, extra vml.Node) vml.Node {
-	p := panes[*active]
-	return vml.Col(
-		vml.Row(
-			vml.Tabs(a.tabItems(panes, t), *active, func(i int) { *active = i }),
-			vml.Spacer(),
+func (a *App) pane(t *reqTab, panes []pane, active *int, extra Node) Node {
+	selectTab := func(i int) { *active = i }
+	return Col(Grow(1), Bg(w.Bg),
+		Row(H(paneTabsH), BorderBottom(w.Border),
+			Tabs(a.tabItems(panes, t), *active, selectTab),
+			Spacer(),
 			extra,
-		).H(paneTabsH).BorderBottom(widget.Border),
-		a.paneBody(p, t),
-	).Grow(1).Bg(widget.Bg)
+		),
+		a.paneBody(panes[*active], t),
+	)
 }
 
 // responseStatus is "200 OK  1.4s  156.67KB", dropped when the tabs need the room.
-func (a *App) responseStatus(t *reqTab) vml.Node {
+func (a *App) responseStatus(t *reqTab) Node {
 	if t.resp == nil || t.resp.Err != "" {
 		return nil
 	}
-	clr := widget.OK
+	statusColor := w.OK
 	if t.resp.Status >= 400 {
-		clr = widget.Error
+		statusColor = w.Error
 	}
-	return vml.Row(
-		vml.Text(fmt.Sprintf("%d %s", t.resp.Status, t.resp.StatusText)).Color(clr),
-		vml.Text(fmt.Sprintf("%s  %s", formatDuration(t.resp.Duration), formatSize(t.resp.Size))),
-	).Gap(12).PadR(widget.Pad).Optional()
+	return Row(Gap(12), PadR(w.Pad), Optional(),
+		Text(fmt.Sprintf("%d %s", t.resp.Status, t.resp.StatusText), Color(statusColor)),
+		Text(fmt.Sprintf("%s  %s", formatDuration(t.resp.Duration), formatSize(t.resp.Size))),
+	)
 }
 
-func (a *App) statusBar() vml.Node {
-	return vml.Row(
-		vml.Text(a.status).Small().Muted().Ellipsis().Grow(1),
-		vml.Text(version).Small().Muted(),
-	).Gap(widget.Pad).PadXY(widget.Pad, 0).H(statusH).Bg(widget.Frame).BorderTop(widget.Border)
+// ── Status bar ─────────────────────────────────────────────────────────
+
+func (a *App) statusBar() Node {
+	return Row(H(statusH), PadXY(w.Pad, 0), Gap(w.Pad), Bg(w.Frame), BorderTop(w.Border),
+		Text(a.status, Small(), Muted(), Ellipsis(), Grow(1)),
+		Text(version, Small(), Muted()),
+	)
 }

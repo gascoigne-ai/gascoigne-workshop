@@ -15,11 +15,11 @@ func testCtx(t *testing.T) *widget.Ctx {
 	return c
 }
 
-func box() *El { return newEl(plain{}, nil) }
+func box(items ...Item) *El { return newEl(plain{}, items) }
 
 func TestRowFixedGrowGapPad(t *testing.T) {
-	a, b, c3 := box().W(50), box().Grow(1), box().W(30)
-	root := Row(a, b, c3).Pad(10).Gap(5)
+	a, b, c3 := box(W(50)), box(Grow(1)), box(W(30))
+	root := Row(Pad(10), Gap(5), a, b, c3)
 	Layout(testCtx(t), root, 300, 100)
 
 	want := []widget.Rect{
@@ -35,7 +35,7 @@ func TestRowFixedGrowGapPad(t *testing.T) {
 }
 
 func TestGrowSharesFreeSpaceByWeightWithoutLosingPixels(t *testing.T) {
-	a, b := box().Grow(1), box().Grow(2)
+	a, b := box(Grow(1)), box(Grow(2))
 	root := Row(a, b)
 	Layout(testCtx(t), root, 100, 10)
 	if a.rect.W+b.rect.W != 100 {
@@ -47,7 +47,7 @@ func TestGrowSharesFreeSpaceByWeightWithoutLosingPixels(t *testing.T) {
 }
 
 func TestColFixedHeightAndFixedWidthChild(t *testing.T) {
-	top, rest, narrow := box().H(40), box().Grow(1), box().W(20).H(10)
+	top, rest, narrow := box(H(40)), box(Grow(1)), box(W(20), H(10))
 	root := Col(top, rest, narrow)
 	Layout(testCtx(t), root, 200, 100)
 
@@ -67,8 +67,8 @@ func TestOptionalChildIsDroppedOnlyWhenTooNarrow(t *testing.T) {
 		w          int
 		wantHidden bool
 	}{{200, false}, {100, true}} {
-		extra := box().W(80).Optional()
-		root := Row(box().W(60), extra)
+		extra := box(W(80), Optional())
+		root := Row(box(W(60)), extra)
 		Layout(testCtx(t), root, tt.w, 10)
 		if extra.hidden != tt.wantHidden {
 			t.Errorf("width %d: hidden = %v, want %v", tt.w, extra.hidden, tt.wantHidden)
@@ -77,7 +77,7 @@ func TestOptionalChildIsDroppedOnlyWhenTooNarrow(t *testing.T) {
 }
 
 func TestStackFloatPinsTopRight(t *testing.T) {
-	under, menu := box(), box().W(60).H(40).Float(30, 10)
+	under, menu := box(), box(W(60), H(40), Float(30, 10))
 	root := Stack(under, menu)
 	Layout(testCtx(t), root, 400, 300)
 
@@ -101,7 +101,7 @@ func TestIfForAndFragmentsFlatten(t *testing.T) {
 	if got := len(root.kids); got != 1+3+2 {
 		t.Fatalf("children = %d, want 6", got)
 	}
-	if got := Either(false, box().W(1), box().W(2)).w; got != 2 {
+	if got := Either(false, box(W(1)), box(W(2))).w; got != 2 {
 		t.Fatalf("Either picked the wrong branch")
 	}
 }
@@ -110,8 +110,8 @@ func click(c *widget.Ctx, x, y int) { c.In = widget.Input{X: x, Y: y, Click: tru
 
 func TestClickReachesOnlyTheElementUnderThePointer(t *testing.T) {
 	var hits []string
-	left := box().W(50).OnClick(func() { hits = append(hits, "left") })
-	right := box().W(50).OnClick(func() { hits = append(hits, "right") })
+	left := box(W(50), OnClick(func() { hits = append(hits, "left") }))
+	right := box(W(50), OnClick(func() { hits = append(hits, "right") }))
 	root := Row(left, right)
 	c := testCtx(t)
 	Layout(c, root, 100, 20)
@@ -130,10 +130,8 @@ func TestClickReachesOnlyTheElementUnderThePointer(t *testing.T) {
 
 func TestModalSwallowsClicksAndDismissesOnOutsideClick(t *testing.T) {
 	var under, inside, dismissed int
-	menu := box().W(40).H(40).Float(0, 0).
-		OnClick(func() { inside++ }).
-		Modal(func() { dismissed++ })
-	root := Stack(box().OnClick(func() { under++ }), menu)
+	menu := box(W(40), H(40), Float(0, 0), OnClick(func() { inside++ }), Modal(func() { dismissed++ }))
+	root := Stack(box(OnClick(func() { under++ })), menu)
 	c := testCtx(t)
 	Layout(c, root, 200, 100)
 
@@ -181,8 +179,8 @@ func TestTableHeightAndEditHandlers(t *testing.T) {
 
 func TestTabsSelect(t *testing.T) {
 	sel := -1
-	tabs := Tabs([]TabItem{{Label: "Params", Badge: 3}, {Label: "Body"}}, 0, func(i int) { sel = i })
-	root := Row(tabs.H(40))
+	tabs := Tabs([]TabItem{{Label: "Params", Badge: 3}, {Label: "Body"}}, 0, func(i int) { sel = i }, H(40))
+	root := Row(tabs)
 	c := testCtx(t)
 	Layout(c, root, 400, 40)
 

@@ -49,38 +49,43 @@ func (textB) draw(e *El, c *widget.Ctx, dst *ebiten.Image) {
 }
 
 // Text is one line of text, vertically centered in its box.
-func Text(s string) *El {
-	e := newEl(textB{}, nil)
+func Text(s string, opts ...Option) *El {
+	e := newEl(textB{}, with(nil, opts))
 	e.text = s
 	return e
 }
 
 // Caption is a small uppercase muted label.
-func Caption(s string) *El { return Text(strings.ToUpper(s)).Small().Color(widget.Muted) }
+func Caption(s string, opts ...Option) *El {
+	return Text(strings.ToUpper(s), append([]Option{Small(), Muted()}, opts...)...)
+}
 
 // Color sets the text (or icon) color.
-func (e *El) Color(t widget.Token) *El { e.fg = t; return e }
+func Color(t widget.Token) Option { return func(e *El) { e.fg = t } }
 
 // Muted is Color(widget.Muted).
-func (e *El) Muted() *El { return e.Color(widget.Muted) }
+func Muted() Option { return Color(widget.Muted) }
 
 // Small uses the small font.
-func (e *El) Small() *El { e.small = true; return e }
+func Small() Option { return func(e *El) { e.small = true } }
 
 // Mono uses the monospace font.
-func (e *El) Mono() *El { e.mono = true; return e }
+func Mono() Option { return func(e *El) { e.mono = true } }
 
 // Ellipsis shortens text that does not fit with "...".
-func (e *El) Ellipsis() *El { e.ellipsis = true; return e }
+func Ellipsis() Option { return func(e *El) { e.ellipsis = true } }
 
 // Center centers text horizontally in its box.
-func (e *El) Center() *El { e.ctr = true; return e }
+func Center() Option { return func(e *El) { e.ctr = true } }
 
 // Lines stacks the lines of s, one Text each, in the given color.
-func Lines(s string, clr widget.Token) *El {
-	var rows []Node
+func Lines(s string, clr widget.Token, opts ...Option) *El {
+	rows := []Item{}
 	for _, l := range strings.Split(s, "\n") {
-		rows = append(rows, Text(l).Color(clr).H(22))
+		rows = append(rows, Text(l, Color(clr), H(22)))
+	}
+	for _, o := range opts {
+		rows = append(rows, o)
 	}
 	return Col(rows...)
 }
@@ -132,20 +137,20 @@ func (iconB) draw(e *El, c *widget.Ctx, dst *ebiten.Image) {
 	}
 }
 
-func icon(kind iconKind, on bool) *El {
-	e := newEl(iconB{}, nil)
+func icon(kind iconKind, on bool, opts []Option) *El {
+	e := newEl(iconB{}, with(nil, opts))
 	e.icon, e.on = kind, on
 	return e
 }
 
 // Checkbox is a gold square, filled when on.
-func Checkbox(on bool) *El { return icon(iconCheck, on) }
+func Checkbox(on bool, opts ...Option) *El { return icon(iconCheck, on, opts) }
 
 // Cross is a small x, for delete buttons.
-func Cross() *El { return icon(iconCross, false) }
+func Cross(opts ...Option) *El { return icon(iconCross, false, opts) }
 
 // Triangle is a disclosure arrow: down when open, right when closed.
-func Triangle(open bool) *El { return icon(iconTriangle, open) }
+func Triangle(open bool, opts ...Option) *El { return icon(iconTriangle, open, opts) }
 
 // Dots is the three-dot "more" glyph.
-func Dots() *El { return icon(iconDots, false) }
+func Dots(opts ...Option) *El { return icon(iconDots, false, opts) }

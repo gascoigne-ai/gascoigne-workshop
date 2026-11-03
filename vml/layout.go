@@ -211,27 +211,34 @@ func (stack) layout(e *El, c *widget.Ctx) {
 }
 
 // Row lays its children out left to right.
-func Row(kids ...Node) *El { return newEl(flow{horiz: true}, kids) }
+func Row(items ...Item) *El { return newEl(flow{horiz: true}, items) }
 
 // Col lays its children out top to bottom.
-func Col(kids ...Node) *El { return newEl(flow{}, kids) }
+func Col(items ...Item) *El { return newEl(flow{}, items) }
 
 // Stack layers its children; use Float on the ones that should hover
 // over the rest, such as a menu.
-func Stack(kids ...Node) *El { return newEl(stack{}, kids) }
+func Stack(items ...Item) *El { return newEl(stack{}, items) }
 
 // Spacer is an empty element that takes all the free space, pushing its
 // neighbours apart.
-func Spacer() *El { return newEl(plain{}, nil).Grow(1) }
+func Spacer(opts ...Option) *El { return newEl(plain{}, with([]Item{Grow(1)}, opts)) }
 
 // HRule is a one-pixel horizontal line in the border color.
-func HRule() *El { return newEl(plain{}, nil).H(1).Bg(widget.Border) }
+func HRule() *El { return newEl(plain{}, []Item{H(1), Bg(widget.Border)}) }
 
 // VRule is a one-pixel vertical line in the border color.
-func VRule() *El { return newEl(plain{}, nil).W(1).Bg(widget.Border) }
+func VRule() *El { return newEl(plain{}, []Item{W(1), Bg(widget.Border)}) }
 
 // VRuleInset is a vertical line shortened by inset pixels at both ends,
 // for dividing the chips of a bar.
-func VRuleInset(inset int) *El {
-	return Row(VRule().Bg(widget.Border)).W(1).PadXY(0, inset)
+func VRuleInset(inset int) *El { return Row(W(1), PadXY(0, inset), VRule()) }
+
+// with appends opts to base, so a component's defaults come first and
+// the caller's options override them.
+func with(base []Item, opts []Option) []Item {
+	for _, o := range opts {
+		base = append(base, o)
+	}
+	return base
 }

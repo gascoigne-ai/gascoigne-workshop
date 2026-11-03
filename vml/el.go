@@ -72,102 +72,144 @@ type El struct {
 	onDismiss            func()
 }
 
-func newEl(b behavior, kids []*El) *El { return &El{b: b, kids: flatten(kids)} }
+// Item is anything that can go between the parentheses of a
+// constructor: a child Node, or an Option that sets an attribute on the
+// element being built. Attributes come first, children after, so what an
+// element is reads before what it contains.
+type Item interface{ apply(parent *El) }
 
-// flatten drops nil children (a false If) and splices fragments (For).
+// apply makes e a child of parent; a nil node (a false If) adds nothing.
+func (e *El) apply(parent *El) {
+	if e != nil {
+		parent.kids = append(parent.kids, e)
+	}
+}
+
+// Option sets one attribute of the element it is passed to.
+type Option func(*El)
+
+func (o Option) apply(e *El) { o(e) }
+
+func newEl(b behavior, items []Item) *El {
+	e := &El{b: b}
+	for _, it := range items {
+		if it != nil { // a bare nil, as opposed to a nil node from If
+			it.apply(e)
+		}
+	}
+	e.kids = flatten(e.kids)
+	return e
+}
+
+// flatten splices fragments (For) into their parent's children.
 func flatten(kids []*El) []*El {
 	var out []*El
 	for _, k := range kids {
-		switch {
-		case k == nil:
-		case isFragment(k):
+		if isFragment(k) {
 			out = append(out, k.kids...)
-		default:
-			out = append(out, k)
+			continue
 		}
+		out = append(out, k)
 	}
 	return out
 }
 
-// Size attributes.
+// Size options.
 
 // W fixes the width in pixels.
-func (e *El) W(n int) *El { e.w = n; return e }
+func W(n int) Option { return func(e *El) { e.w = n } }
 
 // H fixes the height in pixels.
-func (e *El) H(n int) *El { e.h = n; return e }
+func H(n int) Option { return func(e *El) { e.h = n } }
 
 // Grow makes the element take a share of the free space in its row or
 // column, proportional to weight.
-func (e *El) Grow(weight float64) *El { e.grow = weight; return e }
+func Grow(weight float64) Option { return func(e *El) { e.grow = weight } }
 
 // Optional lets a row or column drop the element when there is not
 // enough room for everything.
-func (e *El) Optional() *El { e.optional = true; return e }
+func Optional() Option { return func(e *El) { e.optional = true } }
 
 // Pad sets the same padding on all sides.
-func (e *El) Pad(n int) *El { e.padL, e.padT, e.padR, e.padB = n, n, n, n; return e }
+func Pad(n int) Option {
+	return func(e *El) { e.padL, e.padT, e.padR, e.padB = n, n, n, n }
+}
 
 // PadXY sets horizontal and vertical padding.
-func (e *El) PadXY(x, y int) *El { e.padL, e.padR, e.padT, e.padB = x, x, y, y; return e }
+func PadXY(x, y int) Option {
+	return func(e *El) { e.padL, e.padR, e.padT, e.padB = x, x, y, y }
+}
 
 // PadL sets the left padding.
-func (e *El) PadL(n int) *El { e.padL = n; return e }
+func PadL(n int) Option { return func(e *El) { e.padL = n } }
 
 // PadR sets the right padding.
-func (e *El) PadR(n int) *El { e.padR = n; return e }
+func PadR(n int) Option { return func(e *El) { e.padR = n } }
 
 // Gap sets the space between children.
-func (e *El) Gap(n int) *El { e.gap = n; return e }
+func Gap(n int) Option { return func(e *El) { e.gap = n } }
 
-// Appearance attributes.
+// Appearance options.
 
 // Bg fills the element with a theme color.
-func (e *El) Bg(t widget.Token) *El { e.bg = t; return e }
+func Bg(t widget.Token) Option { return func(e *El) { e.bg = t } }
 
 // Border outlines the element.
-func (e *El) Border(t widget.Token) *El { e.border = t; return e }
+func Border(t widget.Token) Option { return func(e *El) { e.border = t } }
 
 // BorderTop draws a hairline along the top edge.
-func (e *El) BorderTop(t widget.Token) *El { e.borderTop = t; return e }
+func BorderTop(t widget.Token) Option { return func(e *El) { e.borderTop = t } }
 
 // BorderBottom draws a hairline along the bottom edge, under the
 // background and below the children.
-func (e *El) BorderBottom(t widget.Token) *El { e.borderBottom = t; return e }
+func BorderBottom(t widget.Token) Option { return func(e *El) { e.borderBottom = t } }
 
 // HoverBg fills the element while the pointer is over it.
-func (e *El) HoverBg(t widget.Token) *El { e.hoverBg = t; return e }
+func HoverBg(t widget.Token) Option { return func(e *El) { e.hoverBg = t } }
 
 // Lighten brightens the background while the pointer is over it.
-func (e *El) Lighten() *El { e.lighten = true; return e }
+func Lighten() Option { return func(e *El) { e.lighten = true } }
 
 // Underline draws a two-pixel bar along the bottom, inset on both sides.
-func (e *El) Underline(t widget.Token, inset int) *El {
-	e.underline, e.underInset = t, inset
-	return e
+func Underline(t widget.Token, inset int) Option {
+	return func(e *El) { e.underline, e.underInset = t, inset }
 }
 
 // Shadow draws a soft offset shadow behind the element.
-func (e *El) Shadow() *El { e.shadow = true; return e }
+func Shadow() Option { return func(e *El) { e.shadow = true } }
 
 // Clip cuts the children off at the element's edge.
-func (e *El) Clip() *El { e.clip = true; return e }
+func Clip() Option { return func(e *El) { e.clip = true } }
 
-// Events.
+// Events and overlays.
 
 // OnClick runs f when the element is clicked.
-func (e *El) OnClick(f func()) *El { e.onClick = f; return e }
+func OnClick(f func()) Option { return func(e *El) { e.onClick = f } }
 
 // Float takes the element out of the layout of its Stack and pins it
 // top and right, this many pixels from those edges.
-func (e *El) Float(top, right int) *El {
-	e.float, e.floatTop, e.floatRight = true, top, right
-	return e
+func Float(top, right int) Option {
+	return func(e *El) { e.float, e.floatTop, e.floatRight = true, top, right }
 }
 
 // Modal makes a floating element swallow every click; a click outside
 // it runs onDismiss.
-func (e *El) Modal(onDismiss func()) *El {
-	e.modal, e.onDismiss = true, onDismiss
-	return e
+func Modal(onDismiss func()) Option {
+	return func(e *El) { e.modal, e.onDismiss = true, onDismiss }
+}
+
+// If is Vue's v-if: the node when cond holds, else nothing.
+func If(cond bool, n Node) Node {
+	if cond {
+		return n
+	}
+	return nil
+}
+
+// Either is v-if with v-else.
+func Either(cond bool, yes, no Node) Node {
+	if cond {
+		return yes
+	}
+	return no
 }
