@@ -19,6 +19,11 @@ const (
 	paneTabsH  = 40
 	treeIndent = 16
 	badgeW     = 40
+
+	// A request tab has fixed slots for the method badge and the unsaved
+	// dot, so editing a request never changes the tab's width.
+	tabBadgeW = 48
+	tabDirtyW = 12
 )
 
 // view is the whole window as a function of the app state. Its shape:
@@ -130,9 +135,9 @@ func (a *App) requestTabs() Node {
 			grab := OnClick(func() { a.active, a.dragTab = i, i })
 			return Row(look, OnMiddleClick(func() { a.closeTab(i) }),
 				Row(PadL(14), Gap(8), grab, OnHeldOver(func() { a.dragOver(i) }),
-					Text(requestBadge(t.req.Protocol, t.req.Method), Small(), Color(methodToken(t.req.Method))),
+					Text(requestBadge(t.req.Protocol, t.req.Method), Small(), Color(methodToken(t.req.Method)), W(tabBadgeW)),
 					Text(t.req.Name),
-					If(dirty(t), Text(dirtyMark, Color(w.Accent))),
+					Row(W(tabDirtyW), If(dirty(t), Text(dirtyMark, Color(w.Accent), Grow(1)))),
 				),
 				Row(W(24), OnClick(func() { a.closeTab(i) }),
 					Cross(Grow(1)),

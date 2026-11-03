@@ -858,16 +858,14 @@ func TestEachTabKeepsItsOwnBodyEditor(t *testing.T) {
 	}
 }
 
-// tabX is the left edge of tab i in the request-tab strip, from the
-// layout the view uses: 14px padding, badge, 8px gap, name, 24px close
-// button (plus the unsaved dot when the tab is dirty).
+// tabX is the left edge and width of tab i in the request-tab strip,
+// from the layout the view uses: 14px padding, a fixed badge slot, 8px
+// gaps, the name, a fixed slot for the unsaved dot and a 24px close
+// button. Nothing but the name changes a tab's width.
 func (a *App) tabX(i int) (left, width int) {
 	x := 260
 	for j, t := range a.tabs {
-		wd := 14 + a.ctx.Width(a.ctx.F.Small, requestBadge(t.req.Protocol, t.req.Method)) + 8 + a.ctx.Width(a.ctx.F.UI, t.req.Name) + 24
-		if dirty(t) {
-			wd += 8 + a.ctx.Width(a.ctx.F.UI, dirtyMark)
-		}
+		wd := 14 + tabBadgeW + 8 + a.ctx.Width(a.ctx.F.UI, t.req.Name) + 8 + tabDirtyW + 24
 		if j == i {
 			return x, wd
 		}
@@ -943,20 +941,39 @@ func TestDirtyFollowsEditsAndUndoingThemByHand(t *testing.T) {
 	}
 }
 
-func TestDirtyTabShowsAMarkerThatMovesTheCloseButton(t *testing.T) {
-	a, _ := newTestApp(t)
-	_, clean := a.tabX(0)
-	a.cur().req.Name = a.cur().req.Name // no change
-	a.cur().req.Headers = append(a.cur().req.Headers, model.KV{Name: "X", Enabled: true})
-	_, withDot := a.tabX(0)
-	if withDot <= clean {
-		t.Fatalf("a dirty tab is wider by the marker: %d vs %d", withDot, clean)
-	}
+func TestTabWidthDoesNotChangeWhenTheRequestChanges(t *testing.T) {
+	a := twoTabs(t)
 	left, width := a.tabX(0)
-	a.step(widget.Input{}) // lay out with the marker
+	req := a.tabs[0].req
+	req.Method = "DELETE"                                                 // a longer badge
+	req.Headers = append(req.Headers, model.KV{Name: "X", Enabled: true}) // and an unsaved dot
+	a.step(widget.Input{})
+	if !dirty(a.tabs[0]) {
+		t.Fatal("test setup: the tab must be dirty")
+	}
+
+	// The × sits where it did before the edits; if the tab had grown it
+	// would be somewhere else and the click would only select the tab.
 	click(a, left+width-12, tabStripY)
-	if a.cur().req.Name != "New Request" {
-		t.Fatalf("the × of a dirty tab must still close it (the last tab leaves a blank request), current %q", a.cur().req.Name)
+	if len(a.tabs) != 1 || a.cur().req.Name != "Repository Info" {
+		t.Fatalf("%d tabs: the tab changed size when its request changed", len(a.tabs))
+	}
+}
+
+func TestTheTabSlotsFitTheirContentAtEveryTextSize(t *testing.T) {
+	for _, size := range textSizeChoices {
+		ctx, err := widget.NewCtx(ThemeFor("dark", size.id))
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, badge := range []string{"GET", "POST", "PUT", "PATCH", "DEL", "WS", "MCP"} {
+			if got := ctx.Width(ctx.F.Small, badge); got > tabBadgeW {
+				t.Errorf("%s: %q is %dpx wide, the badge slot is %dpx", size.id, badge, got, tabBadgeW)
+			}
+		}
+		if got := ctx.Width(ctx.F.UI, dirtyMark); got > tabDirtyW {
+			t.Errorf("%s: the dirty mark is %dpx wide, the slot is %dpx", size.id, got, tabDirtyW)
+		}
 	}
 }
 
