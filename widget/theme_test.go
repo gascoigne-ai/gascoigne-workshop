@@ -66,3 +66,37 @@ func TestThemeWithDoesNotMutateTheOriginal(t *testing.T) {
 		t.Fatal("unknown token must fall back to the text color")
 	}
 }
+
+// Separators, outlines and highlights are not text, but they still have
+// to be seen against the surfaces they sit on (WCAG asks 3:1 for
+// controls; plain dividers get a lower bar, since the change of surface
+// beside them also shows the edge).
+func TestNonTextElementsAreVisible(t *testing.T) {
+	for name, th := range map[string]Theme{"dark": Dark(), "light": Light()} {
+		pairs := []struct {
+			what string
+			a, b Token
+			min  float64
+		}{
+			{"divider on a pane", Border, Bg, 2.0},
+			{"divider on a list", Border, Sunken, 2.0},
+			{"rule on a pane", Rule, Bg, 2.5},
+			{"rule on a list", Rule, Sunken, 2.5},
+			{"rule on the frame", Rule, Frame, 2.0},
+			{"accent line on a pane", AccentLine, Bg, 3},
+			{"accent line on a list", AccentLine, Sunken, 3},
+			{"accent line on a selected row", AccentLine, Selected, 3},
+			{"icon on a pane", Muted, Bg, 3},
+			{"scrollbar thumb on a list", Muted, Sunken, 3},
+			{"selected row on a list", Selected, Sunken, 1.3},
+			{"hovered row on a list", Hover, Sunken, 1.15},
+			{"zebra row on a list", Alt, Sunken, 1.05},
+			{"chip on a pane", Chip, Bg, 1.5},
+		}
+		for _, p := range pairs {
+			if got := ContrastRatio(th.Color(p.a), th.Color(p.b)); got < p.min {
+				t.Errorf("%s: %s: %s on %s is %.2f:1, want at least %.2f:1", name, p.what, p.a, p.b, got, p.min)
+			}
+		}
+	}
+}

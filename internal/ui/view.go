@@ -85,7 +85,7 @@ func (a *App) treeRow(row treeRow, selected bool) Node {
 		OnHeldOver(func() { a.dropTarget = node }),
 	}
 	if a.dragNode != nil && a.dropTarget == node && node != a.dragNode {
-		events = append(events, Border(w.Accent)) // where the drop would land
+		events = append(events, Border(w.AccentLine)) // where the drop would land
 	}
 
 	if row.Folder {
@@ -181,7 +181,7 @@ func (a *App) requestTabs() Node {
 				Row(PadL(14), Gap(8), grab, OnHeldOver(func() { a.dragOver(i) }),
 					Text(requestBadge(t.req.Protocol, t.req.Method), Small(), Color(methodToken(t.req.Method)), W(tabBadgeW)),
 					Text(t.req.Name),
-					Row(W(tabDirtyW), If(dirty(t), Text(dirtyMark, Color(w.Accent), Grow(1)))),
+					Row(W(tabDirtyW), If(dirty(t), Text(dirtyMark, Color(w.AccentLine), Grow(1)))),
 				),
 				Row(W(24), OnClick(func() { a.closeTab(i) }),
 					Cross(Grow(1)),

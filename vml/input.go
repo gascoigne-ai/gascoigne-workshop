@@ -80,7 +80,7 @@ func (fieldB) draw(e *El, c *widget.Ctx, dst *ebiten.Image) {
 		c.TextMid(dst, c.F.UI, e.placeholder, r.X+fieldPad, r, c.Col(widget.Muted))
 	}
 	if f.Focused {
-		c.Outline(dst, r, c.Col(widget.Accent))
+		c.Outline(dst, r, c.Col(widget.AccentLine))
 	}
 	if f.Focused && (c.Tick/30)%2 == 0 {
 		cx := r.X + fieldPad - f.ScrollX + c.Width(c.F.UI, string([]rune(f.Display())[:f.Cursor]))
@@ -119,7 +119,7 @@ func (codeB) update(e *El, c *widget.Ctx)              { e.view.Update(c, e.rect
 func (codeB) draw(e *El, c *widget.Ctx, dst *ebiten.Image) {
 	e.view.Draw(c, dst, e.rect)
 	if e.view.Focused {
-		c.Outline(dst, e.rect, c.Col(widget.Accent))
+		c.Outline(dst, e.rect, c.Col(widget.AccentLine))
 	}
 }
 

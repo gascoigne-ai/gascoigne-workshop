@@ -118,10 +118,10 @@ func (iconB) draw(e *El, c *widget.Ctx, dst *ebiten.Image) {
 	switch e.icon {
 	case iconCheck:
 		box := widget.Rect{X: r.X + (r.W-14)/2, Y: r.Y + (r.H-14)/2, W: 14, H: 14}
-		c.Outline(dst, box, c.Col(widget.Accent))
-		c.Outline(dst, box.Inset(1), c.Col(widget.Accent))
+		c.Outline(dst, box, c.Col(widget.AccentLine))
+		c.Outline(dst, box.Inset(1), c.Col(widget.AccentLine))
 		if e.on {
-			c.Fill(dst, box.Inset(4), c.Col(widget.Accent))
+			c.Fill(dst, box.Inset(4), c.Col(widget.AccentLine))
 		}
 	case iconCross:
 		c.Cross(dst, cx, cy, 4, clr)

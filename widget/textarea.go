@@ -200,7 +200,7 @@ func (a *TextArea) Draw(c *Ctx, dst *ebiten.Image, r Rect) {
 	}
 	c.drawBars(dst, b, a.drag, g.contentW(Rect{W: b.viewW}), g.contentH(), a.ScrollX, a.ScrollY)
 	if a.Focused {
-		c.Outline(dst, r, c.Col(Accent))
+		c.Outline(dst, r, c.Col(AccentLine))
 	}
 }
 

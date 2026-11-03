@@ -25,6 +25,7 @@ const (
 	Text       Token = "text"
 	Muted      Token = "muted"
 	Accent     Token = "accent"
+	AccentLine Token = "accent-line" // the accent as a line: outlines, underlines, marks
 	AccentText Token = "accent-text"
 	OK         Token = "ok"
 	Error      Token = "error"
@@ -87,11 +88,11 @@ func Dark() Theme {
 		FontSize: 15, SmallSize: 12, MonoSize: 14,
 		Colors: map[Token]color.RGBA{
 			Bg: RGB(0x535353), Frame: RGB(0x2b2b2b), Panel: RGB(0x484848),
-			Sunken: RGB(0x3b3b3b), Alt: RGB(0x363636), Border: RGB(0x3a3a3a),
+			Sunken: RGB(0x3b3b3b), Alt: RGB(0x363636), Border: RGB(0x858585),
 			Hover: RGB(0x4a4a4a), Selected: RGB(0x1f1f1f),
-			Chip: RGB(0x2e2e2e), ChipText: RGB(0xdcdcdc), Rule: RGB(0x8c8c8c),
+			Chip: RGB(0x2e2e2e), ChipText: RGB(0xdcdcdc), Rule: RGB(0x9a9a9a),
 			Text: RGB(0xdadada), Muted: RGB(0xb0b0b0),
-			Accent: RGB(accentGold), AccentText: RGB(0x1a1a1a),
+			Accent: RGB(accentGold), AccentLine: RGB(accentGold), AccentText: RGB(0x1a1a1a),
 			OK: RGB(0x7fd18b), Error: RGB(0xff7b7b),
 			Shadow: {A: 0x66}, Selection: RGB(0x6b5a1e),
 			FindMatch: RGB(0x4a5f3a), FindActive: RGB(0x6e5a10),
@@ -105,11 +106,11 @@ func Light() Theme {
 		FontSize: 15, SmallSize: 12, MonoSize: 14,
 		Colors: map[Token]color.RGBA{
 			Bg: RGB(0xe9e9e9), Frame: RGB(0xcfcfcf), Panel: RGB(0xdedede),
-			Sunken: RGB(0xf6f6f6), Alt: RGB(0xeeeeee), Border: RGB(0xbcbcbc),
+			Sunken: RGB(0xf6f6f6), Alt: RGB(0xeeeeee), Border: RGB(0x8f8f8f),
 			Hover: RGB(0xdcdcdc), Selected: RGB(0xc4c4c4),
-			Chip: RGB(0xd2d2d2), ChipText: RGB(0x262626), Rule: RGB(0x8f8f8f),
+			Chip: RGB(0xbcbcbc), ChipText: RGB(0x262626), Rule: RGB(0x707070),
 			Text: RGB(0x262626), Muted: RGB(0x5f5f5f),
-			Accent: RGB(accentGold), AccentText: RGB(0x1a1a1a),
+			Accent: RGB(accentGold), AccentLine: RGB(0x8a5a00), AccentText: RGB(0x1a1a1a),
 			OK: RGB(0x1b7f45), Error: RGB(0xc02626),
 			Shadow: {A: 0x33}, Selection: RGB(0xf3d97a),
 			FindMatch: RGB(0xcfe8b0), FindActive: RGB(0xffd36b),

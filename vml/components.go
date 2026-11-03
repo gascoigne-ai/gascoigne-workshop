@@ -40,7 +40,7 @@ func Tabs(items []TabItem, active int, onSelect func(i int), opts ...Option) *El
 				If(it.Badge > 0, Text(strconv.Itoa(it.Badge), Small(), Muted())),
 			}
 			if i == active {
-				tab = append(tab, Underline(widget.Accent, 10))
+				tab = append(tab, Underline(widget.AccentLine, 10))
 			}
 			return Row(tab...)
 		}),
@@ -209,7 +209,7 @@ func tableRow(t TableSpec, i int, r TableRow, placeholder bool) Node {
 // edited. In an editable table a click on it asks to edit it.
 func tableCell(t TableSpec, row, col int, text string, clr widget.Token) Node {
 	if e := t.Editing; e != nil && e.Row == row && e.Col == col {
-		return Row(Grow(t.weight(col)), Border(widget.Accent), Bg(widget.Panel),
+		return Row(Grow(t.weight(col)), Border(widget.AccentLine), Bg(widget.Panel),
 			Field(e.Field, Grow(1), OnEnter(e.OnEnter), OnTab(e.OnTab), menuOption(e.OnMenu)),
 		)
 	}
