@@ -95,7 +95,7 @@ func (a *App) treeRow(row treeRow, selected bool) Node {
 		}, events...)...)
 	}
 	req := row.Req
-	return Row(append([]Item{H(w.RowH), PadL(indent + 6), PadR(w.Pad), look,
+	return Row(append([]Item{H(w.RowH), PadL(indent + 6), PadR(w.Pad), AlignItems(AlignBaseline), look,
 		Text(requestBadge(req.Protocol, req.Method), Small(), Color(methodToken(req.Method)), W(badgeW)),
 		Text(row.Name, Ellipsis(), Grow(1)),
 	}, events...)...)
@@ -178,10 +178,10 @@ func (a *App) requestTabs() Node {
 			grab := OnClick(func() { a.active, a.dragTab = i, i })
 			return Row(look, OnMiddleClick(func() { a.closeTab(i) }),
 				OnRightClick(func(x, y int) { a.openMenu(x, y, a.tabMenuItems(i)) }),
-				Row(PadL(14), Gap(8), grab, OnHeldOver(func() { a.dragOver(i) }),
+				Row(PadL(14), Gap(8), AlignItems(AlignBaseline), grab, OnHeldOver(func() { a.dragOver(i) }),
 					Text(requestBadge(t.req.Protocol, t.req.Method), Small(), Color(methodToken(t.req.Method)), W(tabBadgeW)),
 					Text(t.req.Name),
-					Row(W(tabDirtyW), If(dirty(t), Text(dirtyMark, Color(w.AccentLine), Grow(1)))),
+					Row(W(tabDirtyW), AlignSelf(AlignStretch), If(dirty(t), Text(dirtyMark, Color(w.AccentLine), Grow(1)))),
 				),
 				Row(W(24), OnClick(func() { a.closeTab(i) }),
 					Cross(Grow(1)),

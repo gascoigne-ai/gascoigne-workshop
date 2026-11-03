@@ -34,7 +34,7 @@ func Tabs(items []TabItem, active int, onSelect func(i int), opts ...Option) *El
 		PadL(2),
 		For(items, func(i int, it TabItem) Node {
 			tab := []Item{
-				Gap(4), PadXY(10, 0),
+				Gap(4), PadXY(10, 0), AlignItems(AlignBaseline),
 				OnClick(func() { onSelect(i) }),
 				Text(it.Label, Color(tabColor(i == active))),
 				If(it.Badge > 0, Text(strconv.Itoa(it.Badge), Small(), Muted())),

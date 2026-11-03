@@ -70,7 +70,12 @@ type El struct {
 	onTab                      func(back bool)
 	onMiddle, onHeldOver       func()
 
-	scrollMaxH                    int // MaxHeight of a Scroll, 0 for none
+	scrollMaxH int // MaxHeight of a Scroll, 0 for none
+
+	alignItems, alignSelf         Align
+	justify                       Justify
+	minW, maxW, minH, maxH        int
+	mL, mT, mR, mB                int // margins
 	splitVertical, splitRatio     bool
 	splitMinFirst, splitMinSecond int
 

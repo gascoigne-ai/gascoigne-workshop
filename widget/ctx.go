@@ -150,6 +150,9 @@ func (c *Ctx) LineH(face *text.GoTextFace) int {
 	return int((m.HAscent+m.HDescent)/c.Scale + 0.5)
 }
 
+// Ascent is the logical distance from the top of a line of face to its baseline.
+func (c *Ctx) Ascent(face *text.GoTextFace) int { return int(face.Metrics().HAscent/c.Scale + 0.5) }
+
 // Text draws s with its top-left at x, y.
 func (c *Ctx) Text(dst *ebiten.Image, face *text.GoTextFace, s string, x, y int, clr color.RGBA) {
 	op := &text.DrawOptions{}

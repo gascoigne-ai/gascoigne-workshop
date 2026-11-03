@@ -128,7 +128,7 @@ func (a *App) menuRow(m *contextMenu, i int, it menuItem) Node {
 	case i == m.hot:
 		look = Bg(w.Selected)
 	}
-	return Row(H(menuRowH), PadXY(10, 0), Gap(8), look, OnClick(func() { a.runMenuItem(i) }),
+	return Row(H(menuRowH), PadXY(10, 0), Gap(8), AlignItems(AlignBaseline), look, OnClick(func() { a.runMenuItem(i) }),
 		Text(it.label, Color(color)),
 		Spacer(),
 		Text(it.shortcut, Small(), Muted()),
