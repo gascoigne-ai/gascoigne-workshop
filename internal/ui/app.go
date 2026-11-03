@@ -80,12 +80,12 @@ type Options struct {
 // NewApp builds the window state around the sample collection.
 func NewApp(opts Options) (*App, error) {
 	th := DarkTheme()
-	fonts, err := NewFonts(th)
+	fonts, err := NewFonts(th, 1)
 	if err != nil {
 		return nil, err
 	}
 	a := &App{
-		ctx:      Ctx{Th: th, F: fonts},
+		ctx:      Ctx{Th: th, F: fonts, Scale: 1},
 		reg:      proto.NewRegistry(),
 		col:      SampleCollection(),
 		expanded: map[string]bool{},
@@ -157,16 +157,22 @@ func (a *App) apply(r sendResult) {
 	a.status = fmt.Sprintf("%s %s: %d %s in %s", t.req.Method, t.req.URL, r.resp.Status, r.resp.StatusText, formatDuration(r.resp.Duration))
 }
 
-// Layout implements ebiten.Game; the screen always matches the window.
+// Layout implements ebiten.Game. The UI is laid out in logical pixels
+// (w by h); the screen is that size times the monitor's scale factor so
+// text and lines stay sharp on HiDPI displays.
 func (a *App) Layout(w, h int) (int, int) {
 	a.w, a.h = w, h
-	return w, h
+	scale := ebiten.Monitor().DeviceScaleFactor()
+	if err := a.ctx.SetScale(scale); err != nil {
+		a.shot.err = err
+	}
+	return int(float64(w)*a.ctx.Scale + 0.5), int(float64(h)*a.ctx.Scale + 0.5)
 }
 
 // Update implements ebiten.Game.
 func (a *App) Update() error {
 	a.ctx.Tick++
-	a.ctx.In = ReadInput()
+	a.ctx.In = ReadInput().scaled(a.ctx.Scale)
 	a.drain()
 	l := Compute(a.w, a.h)
 	a.updateTree(l.Tree)

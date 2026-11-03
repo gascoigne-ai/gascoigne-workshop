@@ -95,3 +95,43 @@ func TestRequestBadge(t *testing.T) {
 		}
 	}
 }
+
+func TestInputScaled(t *testing.T) {
+	tests := []struct {
+		name         string
+		x, y         int
+		scale        float64
+		wantX, wantY int
+	}{
+		{"identity", 100, 40, 1, 100, 40},
+		{"double", 200, 80, 2, 100, 40},
+		{"fractional", 300, 150, 1.5, 200, 100},
+	}
+	for _, tt := range tests {
+		got := Input{X: tt.x, Y: tt.y}.scaled(tt.scale)
+		if got.X != tt.wantX || got.Y != tt.wantY {
+			t.Errorf("%s: got %d,%d want %d,%d", tt.name, got.X, got.Y, tt.wantX, tt.wantY)
+		}
+	}
+}
+
+// Text measures in logical pixels, so layouts do not shift with the scale.
+func TestMeasureIsScaleStable(t *testing.T) {
+	th := DarkTheme()
+	fonts, err := NewFonts(th, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c := &Ctx{Th: th, F: fonts, Scale: 1}
+	w1, h1 := c.width(c.F.UI, "Repository Info"), c.lineH(c.F.UI)
+	if err := c.SetScale(2); err != nil {
+		t.Fatal(err)
+	}
+	w2, h2 := c.width(c.F.UI, "Repository Info"), c.lineH(c.F.UI)
+	if abs(w1-w2) > 1 || abs(h1-h2) > 1 {
+		t.Fatalf("scale 1: %dx%d, scale 2: %dx%d", w1, h1, w2, h2)
+	}
+	if err := c.SetScale(2); err != nil || c.Scale != 2 {
+		t.Fatalf("same scale must be a no-op, err=%v scale=%v", err, c.Scale)
+	}
+}

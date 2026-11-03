@@ -174,7 +174,7 @@ func (c *Ctx) checkbox(dst *ebiten.Image, cell Rect, on bool) {
 	c.fill(dst, box, c.Th.Accent)
 	x, y := float32(box.X), float32(box.Y)
 	for _, seg := range [][4]float32{{4, 8, 7, 11}, {7, 11, 12, 5}} {
-		vectorLine(dst, x+seg[0], y+seg[1], x+seg[2], y+seg[3], c.Th.AccentText)
+		c.line(dst, x+seg[0], y+seg[1], x+seg[2], y+seg[3], 1.8, c.Th.AccentText)
 	}
 }
 

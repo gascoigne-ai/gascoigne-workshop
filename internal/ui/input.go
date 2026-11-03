@@ -15,6 +15,13 @@ type Input struct {
 	Enter bool
 }
 
+// scaled converts the pointer position from device to logical pixels.
+func (in Input) scaled(scale float64) Input {
+	in.X = int(float64(in.X) / scale)
+	in.Y = int(float64(in.Y) / scale)
+	return in
+}
+
 // Hit reports whether a click landed inside r.
 func (in Input) Hit(r Rect) bool { return in.Click && r.Contains(in.X, in.Y) }
 

@@ -65,7 +65,7 @@ func (c *Ctx) drawCodeView(dst *ebiten.Image, r Rect, v *CodeView) {
 		x := g.textX
 		for _, sp := range line.Spans {
 			c.textMid(dst, c.F.Mono, sp.Text, x, cell, th.Syntax[sp.Kind])
-			x += len([]rune(sp.Text)) * g.charW
+			x += c.width(c.F.Mono, sp.Text)
 		}
 		if v.Folded[idx] {
 			c.textMid(dst, c.F.Mono, " ... }", x, cell, th.Muted)

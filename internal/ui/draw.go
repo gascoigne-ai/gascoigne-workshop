@@ -3,6 +3,7 @@ package ui
 import (
 	"bytes"
 	"fmt"
+	"image"
 	"image/color"
 	"strings"
 
@@ -16,8 +17,9 @@ import (
 // Fonts are the three faces the UI draws with.
 type Fonts struct{ UI, Small, Mono *text.GoTextFace }
 
-// NewFonts builds the faces from the embedded Go fonts.
-func NewFonts(th Theme) (Fonts, error) {
+// NewFonts builds the faces from the embedded Go fonts, sized for a
+// display with the given device scale factor.
+func NewFonts(th Theme, scale float64) (Fonts, error) {
 	regular, err := text.NewGoTextFaceSource(bytes.NewReader(goregular.TTF))
 	if err != nil {
 		return Fonts{}, fmt.Errorf("load regular font: %w", err)
@@ -27,27 +29,47 @@ func NewFonts(th Theme) (Fonts, error) {
 		return Fonts{}, fmt.Errorf("load mono font: %w", err)
 	}
 	return Fonts{
-		UI:    &text.GoTextFace{Source: regular, Size: th.FontSize},
-		Small: &text.GoTextFace{Source: regular, Size: th.SmallSize},
-		Mono:  &text.GoTextFace{Source: mono, Size: th.MonoSize},
+		UI:    &text.GoTextFace{Source: regular, Size: th.FontSize * scale},
+		Small: &text.GoTextFace{Source: regular, Size: th.SmallSize * scale},
+		Mono:  &text.GoTextFace{Source: mono, Size: th.MonoSize * scale},
 	}, nil
 }
 
 // Ctx is what widgets draw and hit-test with: theme, fonts and this
-// frame's input.
+// frame's input. Widgets work in logical pixels; Scale is the number of
+// device pixels per logical pixel, applied only when drawing.
 type Ctx struct {
-	Th   Theme
-	F    Fonts
-	In   Input
-	Tick int
+	Th    Theme
+	F     Fonts
+	In    Input
+	Tick  int
+	Scale float64
 }
 
+// SetScale rebuilds the fonts when the device scale factor changes, for
+// example when the window moves to another monitor.
+func (c *Ctx) SetScale(scale float64) error {
+	if scale <= 0 || scale == c.Scale {
+		return nil
+	}
+	fonts, err := NewFonts(c.Th, scale)
+	if err != nil {
+		return err
+	}
+	c.F, c.Scale = fonts, scale
+	return nil
+}
+
+// dev converts logical pixels to device pixels.
+func (c *Ctx) dev(n float32) float32 { return n * float32(c.Scale) }
+
 func (c *Ctx) fill(dst *ebiten.Image, r Rect, clr color.RGBA) {
-	vector.FillRect(dst, float32(r.X), float32(r.Y), float32(r.W), float32(r.H), clr, false)
+	vector.FillRect(dst, c.dev(float32(r.X)), c.dev(float32(r.Y)), c.dev(float32(r.W)), c.dev(float32(r.H)), clr, false)
 }
 
 func (c *Ctx) outline(dst *ebiten.Image, r Rect, clr color.RGBA) {
-	vector.StrokeRect(dst, float32(r.X)+0.5, float32(r.Y)+0.5, float32(r.W)-1, float32(r.H)-1, 1, clr, false)
+	w := c.dev(1)
+	vector.StrokeRect(dst, c.dev(float32(r.X))+w/2, c.dev(float32(r.Y))+w/2, c.dev(float32(r.W))-w, c.dev(float32(r.H))-w, w, clr, false)
 }
 
 func (c *Ctx) hline(dst *ebiten.Image, x, y, w int, clr color.RGBA) {
@@ -57,26 +79,27 @@ func (c *Ctx) hline(dst *ebiten.Image, x, y, w int, clr color.RGBA) {
 // clip returns dst limited to r, so drawing outside r is discarded.
 func (c *Ctx) clip(dst *ebiten.Image, r Rect) *ebiten.Image {
 	b := dst.Bounds()
-	r2 := Rect{max(r.X, b.Min.X), max(r.Y, b.Min.Y), 0, 0}
-	r2.W = max(min(r.X+r.W, b.Max.X)-r2.X, 0)
-	r2.H = max(min(r.Y+r.H, b.Max.Y)-r2.Y, 0)
-	return dst.SubImage(imageRect(r2)).(*ebiten.Image)
+	x0 := max(int(c.dev(float32(r.X))), b.Min.X)
+	y0 := max(int(c.dev(float32(r.Y))), b.Min.Y)
+	x1 := min(int(c.dev(float32(r.X+r.W))+0.5), b.Max.X)
+	y1 := min(int(c.dev(float32(r.Y+r.H))+0.5), b.Max.Y)
+	return dst.SubImage(image.Rect(x0, y0, max(x1, x0), max(y1, y0))).(*ebiten.Image)
 }
 
 func (c *Ctx) width(face *text.GoTextFace, s string) int {
 	w, _ := text.Measure(s, face, 0)
-	return int(w + 0.5)
+	return int(w/c.Scale + 0.5)
 }
 
 func (c *Ctx) lineH(face *text.GoTextFace) int {
 	m := face.Metrics()
-	return int(m.HAscent + m.HDescent + 0.5)
+	return int((m.HAscent+m.HDescent)/c.Scale + 0.5)
 }
 
 // text draws s with its top-left at x, y.
 func (c *Ctx) text(dst *ebiten.Image, face *text.GoTextFace, s string, x, y int, clr color.RGBA) {
 	op := &text.DrawOptions{}
-	op.GeoM.Translate(float64(x), float64(y))
+	op.GeoM.Translate(float64(x)*c.Scale, float64(y)*c.Scale)
 	op.ColorScale.ScaleWithColor(clr)
 	text.Draw(dst, s, face, op)
 }
@@ -108,6 +131,7 @@ func (c *Ctx) ellipsize(face *text.GoTextFace, s string, maxW int) string {
 
 // triangle draws a filled arrowhead centered on cx, cy.
 func (c *Ctx) triangle(dst *ebiten.Image, cx, cy, size float32, down bool, clr color.RGBA) {
+	cx, cy, size = c.dev(cx), c.dev(cy), c.dev(size)
 	var p vector.Path
 	if down {
 		p.MoveTo(cx-size, cy-size/2)
@@ -126,6 +150,11 @@ func (c *Ctx) triangle(dst *ebiten.Image, cx, cy, size float32, down bool, clr c
 
 // cross draws an x centered on cx, cy.
 func (c *Ctx) cross(dst *ebiten.Image, cx, cy, size float32, clr color.RGBA) {
-	vector.StrokeLine(dst, cx-size, cy-size, cx+size, cy+size, 1.5, clr, true)
-	vector.StrokeLine(dst, cx-size, cy+size, cx+size, cy-size, 1.5, clr, true)
+	c.line(dst, cx-size, cy-size, cx+size, cy+size, 1.5, clr)
+	c.line(dst, cx-size, cy+size, cx+size, cy-size, 1.5, clr)
+}
+
+// line draws an antialiased segment between logical points.
+func (c *Ctx) line(dst *ebiten.Image, x0, y0, x1, y1, width float32, clr color.RGBA) {
+	vector.StrokeLine(dst, c.dev(x0), c.dev(y0), c.dev(x1), c.dev(y1), c.dev(width), clr, true)
 }

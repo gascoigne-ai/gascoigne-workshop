@@ -41,7 +41,7 @@ Everything here is a plain value, tested without a GPU.
 
 ## Window shell
 
-`ui.App` implements `ebiten.Game`. `Layout` returns the window size (no scaling). `Update` reads one `Input` snapshot, applies finished sends, then lets each region handle clicks and keys; `Draw` paints the same `Compute` layout. Hit-testing and drawing share geometry helpers (`tabRects`, `tableCols`, `urlBar`) so they cannot drift apart.
+`ui.App` implements `ebiten.Game`. `Layout` receives the window size in logical pixels and returns it times the monitor's `DeviceScaleFactor`, so the screen is sharp on HiDPI. All layout, hit-testing and widget code works in logical pixels; only `Ctx` drawing primitives (`fill`, `text`, `clip`, `line`, ...) multiply by `Ctx.Scale`, text measures divide by it, and `Input.scaled` converts the pointer back. `Ctx.SetScale` rebuilds the fonts when the scale changes, e.g. when the window moves to another monitor. `Update` reads one `Input` snapshot, applies finished sends, then lets each region handle clicks and keys; `Draw` paints the same `Compute` layout. Hit-testing and drawing share geometry helpers (`tabRects`, `tableCols`, `urlBar`) so they cannot drift apart.
 
 - **Open requests** are `reqTab`s pointing at the tree's `model.Request`, plus per-tab UI state (URL `TextField`, active pane tabs, last `Response`, two `CodeView`s). `+` opens an unsaved blank request.
 - **URL bar**: protocol chip (REST / WS / MCP, click cycles through the registry names), method chip (REST only, click cycles), the URL field and Send. `{{vars}}` are colored. Editing the URL re-derives the Params table with `MergeParams`; toggling or deleting a param rewrites the URL with `WithParams`.
@@ -53,5 +53,5 @@ Everything here is a plain value, tested without a GPU.
 
 - Only the URL is editable; table cells, body and headers are display-only (checkbox and delete work). No clipboard, selection or IME.
 - No saving or loading of collections; the sample collection is built in (`ui.SampleCollection`).
-- No HiDPI scaling and no text wrapping in the code view.
+- No text wrapping in the code view. Fractional scales round logical text metrics to whole pixels.
 - WebSocket and MCP are registry stubs.
