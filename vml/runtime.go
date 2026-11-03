@@ -97,7 +97,27 @@ func cycleFocus(c *widget.Ctx, root Node) {
 }
 
 // Draw paints the tree. It must follow Layout on the same tree.
-func Draw(c *widget.Ctx, root Node, dst *ebiten.Image) { root.draw(c, dst) }
+func Draw(c *widget.Ctx, root Node, dst *ebiten.Image) {
+	c.HoverOff = hasModal(root) // only the overlay's own elements react to the pointer
+	root.draw(c, dst)
+	c.HoverOff = false
+}
+
+// hasModal reports whether any visible element is a modal overlay.
+func hasModal(e *El) bool {
+	if e.hidden {
+		return false
+	}
+	if e.modal {
+		return true
+	}
+	for _, k := range e.kids {
+		if hasModal(k) {
+			return true
+		}
+	}
+	return false
+}
 
 // update reports whether a modal element swallowed the input.
 func (e *El) update(c *widget.Ctx) bool {
@@ -141,8 +161,10 @@ func (e *El) update(c *widget.Ctx) bool {
 	if e.onRight != nil && c.In.RightClick && c.In.Over(e.rect) {
 		e.onRight(c.In.X, c.In.Y)
 	}
-	if e.modal && (c.In.Click || c.In.RightClick) {
-		if !e.rect.Contains(c.In.X, c.In.Y) && e.onDismiss != nil {
+	if e.modal {
+		// A modal overlay owns the pointer: nothing under it gets clicks,
+		// wheel or hover, and a click outside it dismisses it.
+		if (c.In.Click || c.In.RightClick) && !e.rect.Contains(c.In.X, c.In.Y) && e.onDismiss != nil {
 			e.onDismiss()
 		}
 		return true
@@ -161,10 +183,15 @@ func (e *El) draw(c *widget.Ctx, dst *ebiten.Image) {
 		return
 	}
 	r := e.rect
+	if e.modal {
+		defer func(was bool) { c.HoverOff = was }(c.HoverOff)
+		c.HoverOff = false // hover works inside the overlay
+	}
 	if e.shadow {
 		c.Fill(dst, widget.Rect{X: r.X + 4, Y: r.Y + 4, W: r.W, H: r.H}, c.Col(widget.Shadow))
 	}
-	over := c.In.Over(r)
+	over := c.Hovered(r)
+	e.hover = over
 	if e.bg != "" {
 		clr := c.Col(e.bg)
 		if e.lighten && over {

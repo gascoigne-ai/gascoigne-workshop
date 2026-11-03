@@ -84,7 +84,7 @@ func (s *scrollB) press(track widget.Rect, view, at int) {
 
 func (s *scrollB) drawOver(e *El, c *widget.Ctx, dst *ebiten.Image) {
 	track := s.track(e)
-	c.Scrollbar(dst, track, s.content, e.rect.H, s.state.Y, s.state.dragging || c.In.Over(track))
+	c.Scrollbar(dst, track, s.content, e.rect.H, s.state.Y, s.state.dragging || c.Hovered(track))
 }
 
 // Scroll is a vertically scrolling column: its children may be taller

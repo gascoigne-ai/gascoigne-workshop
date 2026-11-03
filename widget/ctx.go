@@ -48,6 +48,10 @@ type Ctx struct {
 	// Clipboard is used by text widgets for copy, cut and paste.
 	Clipboard Clipboard
 
+	// HoverOff turns hover feedback off for everything drawn while it is
+	// set: elements under a modal overlay must not light up.
+	HoverOff bool
+
 	// Cursor is the mouse cursor shape widgets ask for this frame; the
 	// application applies it. It is reset to CursorDefault every frame.
 	Cursor Cursor
@@ -94,6 +98,9 @@ func (c *Ctx) SetTheme(th Theme) error {
 	c.Th, c.F = th, fonts
 	return nil
 }
+
+// Hovered reports whether the pointer is over r and hover feedback is on.
+func (c *Ctx) Hovered(r Rect) bool { return !c.HoverOff && c.In.Over(r) }
 
 // Col resolves a color token in the current theme.
 func (c *Ctx) Col(tok Token) color.RGBA { return c.Th.Color(tok) }

@@ -38,9 +38,10 @@ type behavior interface {
 
 // El is one element: a behavior plus the attributes shared by all.
 type El struct {
-	b    behavior
-	kids []*El
-	rect widget.Rect // set by layout
+	b     behavior
+	kids  []*El
+	rect  widget.Rect // set by layout
+	hover bool        // the pointer was over this element at the last draw, and hover was not blocked
 
 	w, h             int // fixed size; 0 = content size
 	grow             float64

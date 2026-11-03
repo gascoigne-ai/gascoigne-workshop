@@ -154,9 +154,9 @@ func (d *barDrag) press(track, content, view, pos, at, bar int, scroll *int) {
 // drawBars draws the scrollbars of b for content scrolled to sx, sy.
 func (c *Ctx) drawBars(dst *ebiten.Image, b bars, d barDrag, contentW, contentH, sx, sy int) {
 	if b.vOK {
-		c.Scrollbar(dst, b.vTrack, contentH, b.viewH, sy, d.bar == barV || c.In.Over(b.vTrack))
+		c.Scrollbar(dst, b.vTrack, contentH, b.viewH, sy, d.bar == barV || c.Hovered(b.vTrack))
 	}
 	if b.hOK {
-		c.Scrollbar(dst, b.hTrack, contentW, b.viewW, sx, d.bar == barH || c.In.Over(b.hTrack))
+		c.Scrollbar(dst, b.hTrack, contentW, b.viewW, sx, d.bar == barH || c.Hovered(b.hTrack))
 	}
 }

@@ -128,7 +128,7 @@ func (iconB) draw(e *El, c *widget.Ctx, dst *ebiten.Image) {
 	case iconTriangle:
 		c.Triangle(dst, cx, cy, 4, e.on, clr)
 	case iconDots:
-		if c.In.Over(r) {
+		if c.Hovered(r) {
 			clr = c.Col(widget.Text)
 		}
 		for i := -1; i <= 1; i++ {
