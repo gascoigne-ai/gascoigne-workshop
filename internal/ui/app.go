@@ -9,6 +9,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 )
 
 const (
@@ -69,17 +70,27 @@ type App struct {
 	status   string
 	w, h     int
 	shot     screenshot
+
+	settings     settings.Settings
+	settingsPath string // "" keeps settings in memory only
+	menu         bool   // settings menu is open
 }
 
 // Options are the startup switches of the command line.
 type Options struct {
 	ScreenshotPath string // save a PNG of the first settled frame and exit
 	SendOnStart    bool   // send the first request at startup
+	SettingsPath   string // settings file; "" keeps settings in memory
+	OpenMenu       bool   // start with the settings menu open
 }
 
 // NewApp builds the window state around the sample collection.
 func NewApp(opts Options) (*App, error) {
-	th := DarkTheme()
+	st, loadErr := settings.Default(), error(nil)
+	if opts.SettingsPath != "" {
+		st, loadErr = settings.Load(opts.SettingsPath)
+	}
+	th := ThemeFor(st.Theme, st.TextSize)
 	fonts, err := NewFonts(th, 1)
 	if err != nil {
 		return nil, err
@@ -92,6 +103,13 @@ func NewApp(opts Options) (*App, error) {
 		results:  make(chan sendResult, 8),
 		status:   "Ready",
 		shot:     screenshot{path: opts.ScreenshotPath, sendOnStart: opts.SendOnStart},
+
+		settings:     st,
+		settingsPath: opts.SettingsPath,
+		menu:         opts.OpenMenu,
+	}
+	if loadErr != nil {
+		a.status = loadErr.Error()
 	}
 	a.expanded[a.col.Name] = true
 	a.expanded[a.col.Name+"/Repository"] = true
@@ -175,6 +193,9 @@ func (a *App) Update() error {
 	a.ctx.In = ReadInput().scaled(a.ctx.Scale)
 	a.drain()
 	l := Compute(a.w, a.h)
+	if a.updateMenu(l.Header) {
+		return a.shotUpdate()
+	}
 	a.updateTree(l.Tree)
 	a.updateTabStrip(l.Tabs)
 	t := a.cur()

@@ -7,12 +7,13 @@ import (
 
 // Input is one frame of user input.
 type Input struct {
-	X, Y  int
-	Click bool    // left button went down this frame
-	Wheel float64 // vertical wheel movement, positive = up
-	Typed []rune
-	Edits []Edit
-	Enter bool
+	X, Y   int
+	Click  bool    // left button went down this frame
+	Wheel  float64 // vertical wheel movement, positive = up
+	Typed  []rune
+	Edits  []Edit
+	Enter  bool
+	Escape bool
 }
 
 // scaled converts the pointer position from device to logical pixels.
@@ -57,10 +58,11 @@ func ReadInput() Input {
 	_, wheel := ebiten.Wheel()
 	in := Input{
 		X: x, Y: y,
-		Click: inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft),
-		Wheel: wheel,
-		Typed: ebiten.AppendInputChars(nil),
-		Enter: inpututil.IsKeyJustPressed(ebiten.KeyEnter),
+		Click:  inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft),
+		Wheel:  wheel,
+		Typed:  ebiten.AppendInputChars(nil),
+		Enter:  inpututil.IsKeyJustPressed(ebiten.KeyEnter),
+		Escape: inpututil.IsKeyJustPressed(ebiten.KeyEscape),
 	}
 	for _, k := range editKeys {
 		if pressed(k.key) {

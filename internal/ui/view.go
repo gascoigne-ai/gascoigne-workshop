@@ -17,7 +17,10 @@ func (a *App) drawWindow(dst *ebiten.Image) {
 	c := &a.ctx
 	th := c.Th
 	l := Compute(a.w, a.h)
-	dst.Fill(th.Bg)
+	dst.Fill(th.Sidebar)
+	for _, r := range []Rect{l.Header, l.URL, l.Request, l.Response} {
+		c.fill(dst, r, th.Bg)
+	}
 
 	a.drawSidebar(dst, l)
 	a.drawHeader(dst, l.Header)
@@ -32,16 +35,17 @@ func (a *App) drawWindow(dst *ebiten.Image) {
 	c.fill(dst, l.Split, th.Border)
 	a.drawResponseStatus(dst, t, l.Response)
 	a.drawStatusBar(dst, l.Status)
+	a.drawMenu(dst, l.Header)
 }
 
 func (a *App) drawSidebar(dst *ebiten.Image, l Layout) {
 	c := &a.ctx
 	th := c.Th
-	side := Rect{0, 0, l.SidebarDivider.X + 1, l.Tree.Y + l.Tree.H}
-	c.fill(dst, side, th.Sidebar)
+	c.fill(dst, l.SidebarHead, th.Bg)
+	c.fill(dst, l.Tree, th.Sunken)
 	c.fill(dst, l.SidebarDivider, th.Border)
-	c.textMid(dst, c.F.UI, "Collections", th.Pad, l.SidebarHead, th.Text)
-	c.hline(dst, l.SidebarHead.X, l.SidebarHead.Y+l.SidebarHead.H-1, l.SidebarHead.W-1, th.Border)
+	c.caption(dst, Rect{th.Pad, l.SidebarHead.Y, l.SidebarHead.W, l.SidebarHead.H}, "Collections")
+	c.hline(dst, l.SidebarHead.X, l.SidebarHead.Y+l.SidebarHead.H-1, l.SidebarHead.W-1, th.Rule)
 
 	tree := c.clip(dst, l.Tree)
 	cur := a.cur().req
@@ -78,6 +82,15 @@ func requestBadge(protocol, method string) string {
 func (a *App) drawHeader(dst *ebiten.Image, r Rect) {
 	c := &a.ctx
 	c.textMid(dst, c.F.UI, a.col.Name, r.X+c.Th.Pad, r, c.Th.Text)
+
+	btn := menuButton(r, c.Th.Pad)
+	clr := c.Th.Muted
+	if a.menu || c.In.Over(btn) {
+		clr = c.Th.Text
+	}
+	for i := -1; i <= 1; i++ { // the three dots of a "more" button
+		c.fill(dst, Rect{btn.X + btn.W/2 - 1, btn.Y + btn.H/2 + i*6 - 1, 3, 3}, clr)
+	}
 }
 
 // tabStripRects places the open-request tabs and the new-tab button.
@@ -101,8 +114,6 @@ func (a *App) drawTabStrip(dst *ebiten.Image, r Rect, rects []Rect) {
 		t := a.tabs[i]
 		if i == a.active {
 			c.fill(dst, tr, th.Bg)
-			c.outline(dst, tr, th.Border)
-			c.fill(dst, Rect{tr.X + 1, tr.Y + tr.H - 1, tr.W - 2, 1}, th.Bg)
 		}
 		badge := requestBadge(t.req.Protocol, t.req.Method)
 		c.textMid(dst, c.F.Small, badge, tr.X+14, tr, th.MethodColor(t.req.Method))
@@ -117,7 +128,7 @@ func (a *App) drawURLBar(dst *ebiten.Image, t *reqTab, r Rect) {
 	th := c.Th
 	protoR, methodR, field, send := urlBar(r, t.req.Protocol == "rest")
 	box := Rect{protoR.X, protoR.Y, field.X + field.W - protoR.X, protoR.H}
-	c.fill(dst, box, th.Panel)
+	c.fill(dst, box, th.Sunken)
 	c.outline(dst, box, th.Border)
 
 	c.textCenter(dst, c.F.UI, protocolLabel[t.req.Protocol], protoR, th.Muted)
@@ -191,6 +202,9 @@ func (a *App) drawPanes(dst *ebiten.Image, t *reqTab, r Rect, panes []pane, acti
 
 	p := panes[active]
 	content := a.contentRect(r)
+	if p.kind == paneCode {
+		c.fill(dst, a.codeRect(r), c.Th.Sunken)
+	}
 	if msg, isErr := paneEmpty(p, t); msg != "" {
 		clr := c.Th.Muted
 		if isErr {
@@ -206,7 +220,7 @@ func (a *App) drawPanes(dst *ebiten.Image, t *reqTab, r Rect, panes []pane, acti
 		a.drawLines(dst, content, p.note(t), c.Th.Text)
 	case paneTable:
 		if p.title != "" {
-			c.textMid(dst, c.F.UI, p.title, content.X, Rect{content.X, content.Y, content.W, c.Th.RowH}, c.Th.Muted)
+			c.caption(dst, Rect{content.X, content.Y, content.W, c.Th.RowH}, p.title)
 		}
 		c.drawTable(c.clip(dst, content), a.tableRect(content, p), *p.rows(a, t), true, p.editable)
 	}

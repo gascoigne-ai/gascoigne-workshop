@@ -60,6 +60,21 @@ func (c *Ctx) SetScale(scale float64) error {
 	return nil
 }
 
+// SetTheme switches theme and rebuilds the fonts, whose sizes the theme sets.
+func (c *Ctx) SetTheme(th Theme) error {
+	fonts, err := NewFonts(th, c.Scale)
+	if err != nil {
+		return err
+	}
+	c.Th, c.F = th, fonts
+	return nil
+}
+
+// caption draws s as a small uppercase muted label, vertically centered in r.
+func (c *Ctx) caption(dst *ebiten.Image, r Rect, s string) {
+	c.textMid(dst, c.F.Small, strings.ToUpper(s), r.X, r, c.Th.Muted)
+}
+
 // dev converts logical pixels to device pixels.
 func (c *Ctx) dev(n float32) float32 { return n * float32(c.Scale) }
 

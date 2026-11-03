@@ -111,32 +111,34 @@ func (c *Ctx) hitTable(r Rect, n int, desc bool) (int, tableAction) {
 	return -1, tableNone
 }
 
-// drawTable draws rows as an editable-looking grid. editable adds the
-// checkbox and delete columns and the empty placeholder row.
+// drawTable draws rows as zebra stripes under an uppercase header with
+// a rule. editable adds the checkbox and delete columns and the empty
+// placeholder row.
 func (c *Ctx) drawTable(dst *ebiten.Image, r Rect, rows []model.KV, desc, editable bool) {
 	th := c.Th
 	n := len(rows)
 	if editable {
 		n++
 	}
-	grid := Rect{r.X, r.Y, r.W, (n + 1) * th.RowH}
-	c.outline(dst, grid, th.Border)
+	c.fill(dst, Rect{r.X, r.Y, r.W, (n + 1) * th.RowH}, th.Sunken)
 
 	header := Rect{r.X, r.Y, r.W, th.RowH}
-	c.fill(dst, header, th.Panel)
 	_, name, value, descr, _ := tableCols(header, desc)
-	c.textMid(dst, c.F.UI, "Name", name.X+8, header, th.Text)
-	c.textMid(dst, c.F.UI, "Value", value.X+8, header, th.Text)
+	c.textMid(dst, c.F.Small, "NAME", name.X+8, header, th.Muted)
+	c.textMid(dst, c.F.Small, "VALUE", value.X+8, header, th.Muted)
 	if desc {
-		c.textMid(dst, c.F.UI, "Description", descr.X+8, header, th.Text)
+		c.textMid(dst, c.F.Small, "DESCRIPTION", descr.X+8, header, th.Muted)
 	}
+	c.hline(dst, r.X, r.Y+th.RowH-1, r.W, th.Rule)
 
 	for i := range n {
 		row := c.tableRow(r, i)
-		c.hline(dst, row.X, row.Y, row.W, th.Border)
+		if i%2 == 1 {
+			c.fill(dst, row, th.Alt)
+		}
 		check, name, value, descr, trash := tableCols(row, desc)
 		if i == len(rows) {
-			c.cells(dst, "Name", "Value", "Description", name, value, descr, desc, row, th.Border)
+			c.cells(dst, "Name", "Value", "Description", name, value, descr, desc, row, th.Muted)
 			continue
 		}
 		kv := rows[i]
@@ -164,17 +166,14 @@ func (c *Ctx) cell(dst *ebiten.Image, s string, col, row Rect, clr color.RGBA) {
 	c.textMid(dst, c.F.UI, c.ellipsize(c.F.UI, s, col.W-16), col.X+8, row, clr)
 }
 
+// checkbox is a square gold outline, with a filled core when on.
 func (c *Ctx) checkbox(dst *ebiten.Image, cell Rect, on bool) {
-	const size = 16
+	const size = 14
 	box := Rect{cell.X + (cell.W-size)/2, cell.Y + (cell.H-size)/2, size, size}
-	if !on {
-		c.outline(dst, box, c.Th.Muted)
-		return
-	}
-	c.fill(dst, box, c.Th.Accent)
-	x, y := float32(box.X), float32(box.Y)
-	for _, seg := range [][4]float32{{4, 8, 7, 11}, {7, 11, 12, 5}} {
-		c.line(dst, x+seg[0], y+seg[1], x+seg[2], y+seg[3], 1.8, c.Th.AccentText)
+	c.outline(dst, box, c.Th.Accent)
+	c.outline(dst, box.Inset(1), c.Th.Accent)
+	if on {
+		c.fill(dst, box.Inset(4), c.Th.Accent)
 	}
 }
 

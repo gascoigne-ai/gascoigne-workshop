@@ -16,6 +16,7 @@ flowchart LR
 | `internal/ui` | theme tokens, layout, widgets, screens |
 | `internal/model` | collections, folders, requests, responses |
 | `internal/proto` | `Protocol` interface and name registry; REST, WebSocket and MCP implementations |
+| `internal/settings` | user preferences (theme, text size) as JSON in the user config dir |
 | `internal/jsonview` | JSON pretty-print and token spans for the response pane |
 
 ## Model and protocols
@@ -32,7 +33,7 @@ flowchart LR
 
 Everything here is a plain value, tested without a GPU.
 
-- `Theme` (`DarkTheme()`): colors, method colors, JSON syntax colors, font sizes, row height. Widgets read tokens from it, never literals.
+- `Theme` (`DarkTheme()`, `LightTheme()`, picked by `ThemeFor(themeID, textSizeID)`): flat gray surfaces from back to front (`Sidebar` frame, `Bg` panes, `Sunken` lists and code, `Alt` zebra rows, `Selected`), a gold `Accent`, `Chip` buttons, `Rule` hairlines, method and JSON syntax colors, font sizes, row height. Widgets read tokens from it, never literals. A test checks text/surface contrast for every theme.
 - `Rect` and `Compute(w, h) Layout`: pure rect arithmetic. The window is a sidebar, a header, a request-tab strip, a URL bar, a request pane and a response pane side by side, and a status bar. Regions tile the window exactly (tested).
 - `TextField`: single-line text with a rune cursor. `Apply(typed, edits)` inserts runes, then runs backspace/delete/arrows/home/end.
 - `treeRows`: flattens a `model.Folder` into the visible rows given the expanded folder paths. Request rows alias the tree's request, so an open tab edits the collection's own value.
@@ -55,3 +56,7 @@ Everything here is a plain value, tested without a GPU.
 - No saving or loading of collections; the sample collection is built in (`ui.SampleCollection`).
 - No text wrapping in the code view. Fractional scales round logical text metrics to whole pixels.
 - WebSocket and MCP are registry stubs.
+
+## Settings menu
+
+The three-dot button in the header opens a menu with a Theme choice (Dark / Light) and a Text size choice (Small / Medium / Large). Choices are tables (`themeChoices`, `textSizeChoices`), so a new theme is one row. While the menu is open it consumes every click, and a click outside or Escape closes it. A change rebuilds the fonts (`Ctx.SetTheme`) and saves `internal/settings` to `<user config dir>/gascoigne-workshop/settings.json`; `-settings PATH` overrides the file and an empty path keeps settings in memory. Unknown ids in the file fall back to dark / medium.

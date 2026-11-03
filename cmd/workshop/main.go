@@ -9,6 +9,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui"
 )
 
@@ -21,6 +22,8 @@ func main() {
 	var opts ui.Options
 	flag.StringVar(&opts.ScreenshotPath, "screenshot", "", "save a PNG of the window to this path and exit")
 	flag.BoolVar(&opts.SendOnStart, "send", false, "send the first request at startup (for screenshots)")
+	flag.StringVar(&opts.SettingsPath, "settings", settings.DefaultPath(), "settings file; empty keeps settings in memory")
+	flag.BoolVar(&opts.OpenMenu, "menu", false, "start with the settings menu open (for screenshots)")
 	flag.Parse()
 
 	app, err := ui.NewApp(opts)
