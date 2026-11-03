@@ -82,7 +82,7 @@ const accentGold = 0xffc90e
 // Dark is flat mid-gray panes over a darker frame, with a gold accent.
 func Dark() Theme {
 	return Theme{
-		FontSize: 14, SmallSize: 11, MonoSize: 13,
+		FontSize: 15, SmallSize: 12, MonoSize: 14,
 		Colors: map[Token]color.RGBA{
 			Bg: RGB(0x535353), Frame: RGB(0x2b2b2b), Panel: RGB(0x484848),
 			Sunken: RGB(0x3b3b3b), Alt: RGB(0x363636), Border: RGB(0x3a3a3a),
@@ -99,7 +99,7 @@ func Dark() Theme {
 // Light is the same structure on light grays.
 func Light() Theme {
 	return Theme{
-		FontSize: 14, SmallSize: 11, MonoSize: 13,
+		FontSize: 15, SmallSize: 12, MonoSize: 14,
 		Colors: map[Token]color.RGBA{
 			Bg: RGB(0xe9e9e9), Frame: RGB(0xcfcfcf), Panel: RGB(0xdedede),
 			Sunken: RGB(0xf6f6f6), Alt: RGB(0xeeeeee), Border: RGB(0xbcbcbc),

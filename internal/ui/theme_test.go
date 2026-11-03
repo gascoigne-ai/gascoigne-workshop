@@ -59,10 +59,10 @@ func TestThemeFor(t *testing.T) {
 		wantBg            color.RGBA
 		wantFont          float64
 	}{
-		{"dark medium", "dark", "medium", widget.Dark().Color(widget.Bg), 14},
-		{"light large", "light", "large", widget.Light().Color(widget.Bg), 16},
-		{"unknown theme falls back to dark", "neon", "small", widget.Dark().Color(widget.Bg), 12},
-		{"unknown size falls back to medium", "light", "huge", widget.Light().Color(widget.Bg), 14},
+		{"dark medium", "dark", "medium", widget.Dark().Color(widget.Bg), 15},
+		{"light large", "light", "large", widget.Light().Color(widget.Bg), 17},
+		{"unknown theme falls back to dark", "neon", "small", widget.Dark().Color(widget.Bg), 13},
+		{"unknown size falls back to medium", "light", "huge", widget.Light().Color(widget.Bg), 15},
 	}
 	for _, tt := range tests {
 		th := ThemeFor(tt.theme, tt.size)

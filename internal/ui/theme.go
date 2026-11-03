@@ -81,9 +81,9 @@ var themeChoices = []themeChoice{
 }
 
 var textSizeChoices = []sizeChoice{
-	{"small", "Small", 12, 10, 12},
-	{"medium", "Medium", 14, 11, 13},
-	{"large", "Large", 16, 12, 15},
+	{"small", "Small", 13, 11, 12},
+	{"medium", "Medium", 15, 12, 14},
+	{"large", "Large", 17, 13, 16},
 }
 
 // ThemeFor builds the theme for a settings pair. Unknown ids fall back
