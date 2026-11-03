@@ -59,14 +59,14 @@ func (a *App) view() Node {
 // ── Sidebar ────────────────────────────────────────────────────────────
 
 func (a *App) sidebar() Node {
-	current := a.cur().req
 	return Col(
-		Row(H(headerH), PadXY(w.Pad, 0), Bg(w.Bg), BorderBottom(w.Rule),
-			Caption("Collections"),
+		Row(H(headerH), PadXY(w.Pad, 0), Gap(6), Bg(w.Bg), BorderBottom(w.Rule),
+			Caption("Collections", W(96)),
+			Field(&a.filter, H(28), Grow(1), Bg(w.Sunken), Placeholder("Filter")),
 		),
 		Scroll(&a.treeScroll, Bg(w.Sunken),
-			For(treeRows(&a.col.Folder, a.expanded), func(_ int, row treeRow) Node {
-				return a.treeRow(row, row.Req != nil && row.Req == current)
+			For(a.visibleRows(), func(_ int, row treeRow) Node {
+				return a.treeRow(row, row.node() == a.selected)
 			}),
 		),
 	)
@@ -77,20 +77,46 @@ func (a *App) treeRow(row treeRow, selected bool) Node {
 	if selected {
 		look = Bg(w.Selected)
 	}
+	node := row.node()
 	indent := w.Pad + row.Depth*treeIndent
-	onClick := OnClick(func() { a.clickTree(row) })
+	events := []Item{
+		OnClick(func() { a.pressTreeRow(row) }),
+		OnRightClick(func(x, y int) { a.openMenu(x, y, a.treeMenuItems(row)) }),
+		OnHeldOver(func() { a.dropTarget = node }),
+	}
+	if a.dragNode != nil && a.dropTarget == node && node != a.dragNode {
+		events = append(events, Border(w.Accent)) // where the drop would land
+	}
 
 	if row.Folder {
-		return Row(H(w.RowH), PadL(indent), Gap(6), look, onClick,
+		return Row(append([]Item{H(w.RowH), PadL(indent), Gap(6), look,
 			Triangle(row.Open, W(12)),
 			Text(row.Name),
-		)
+		}, events...)...)
 	}
 	req := row.Req
-	return Row(H(w.RowH), PadL(indent+6), PadR(w.Pad), look, onClick,
+	return Row(append([]Item{H(w.RowH), PadL(indent + 6), PadR(w.Pad), look,
 		Text(requestBadge(req.Protocol, req.Method), Small(), Color(methodToken(req.Method)), W(badgeW)),
 		Text(row.Name, Ellipsis(), Grow(1)),
-	)
+	}, events...)...)
+}
+
+// pressTreeRow is a press on a row: it selects it, gives the tree the
+// keyboard and starts a drag. A request opens at once; a folder toggles
+// when the button is released on the same row (see finishDrag), so an
+// open folder can still be dragged.
+func (a *App) pressTreeRow(row treeRow) {
+	a.treeFocus = true
+	a.dragNode = row.node()
+	if row.Dir == &a.col.Folder {
+		a.dragNode = nil // the collection itself cannot be moved
+	}
+	if row.Folder {
+		a.selectNode(row.node())
+		a.pressedFolder = row.Dir
+		return
+	}
+	a.clickTree(row)
 }
 
 // requestBadge is the short label shown before a request name.

@@ -99,19 +99,25 @@ type App struct {
 	w, h     int
 	shot     screenshot
 
-	settings     settings.Settings
-	settingsPath string       // "" keeps settings in memory only
-	menu         bool         // settings menu is open
-	edit         *cellEdit    // the table cell being edited, if any
-	dragTab      int          // index of the tab being dragged, -1 when none
-	ctxMenu      *contextMenu // the open context menu, if any
-	dialog       *dialog      // the open dialog, if any
-	toasts       []toast
-	now          func() time.Time // the clock, replaced in tests
-	sampler      widget.Sampler
-	treeScroll   vml.ScrollState
-	sidebarSplit vml.SplitState // width of the collections sidebar
-	paneSplit    vml.SplitState // request pane share of the request/response area
+	settings      settings.Settings
+	settingsPath  string           // "" keeps settings in memory only
+	menu          bool             // settings menu is open
+	edit          *cellEdit        // the table cell being edited, if any
+	dragTab       int              // index of the tab being dragged, -1 when none
+	ctxMenu       *contextMenu     // the open context menu, if any
+	selected      any              // the tree node last clicked or moved to: a *Folder or *Request
+	treeFocus     bool             // the tree has the keyboard
+	filter        widget.TextField // the sidebar filter
+	dragNode      any              // the tree node being dragged, nil when none
+	pressedFolder *model.Folder    // the folder row the button went down on, toggled on release there
+	dropTarget    any              // the node the pointer is over while dragging
+	dialog        *dialog          // the open dialog, if any
+	toasts        []toast
+	now           func() time.Time // the clock, replaced in tests
+	sampler       widget.Sampler
+	treeScroll    vml.ScrollState
+	sidebarSplit  vml.SplitState // width of the collections sidebar
+	paneSplit     vml.SplitState // request pane share of the request/response area
 }
 
 // Options are the startup switches of the command line.
@@ -162,6 +168,7 @@ func (a *App) cur() *reqTab { return a.tabs[a.active] }
 
 // openRequest focuses the tab of req, opening one if needed.
 func (a *App) openRequest(req *model.Request) {
+	a.selected = req
 	for i, t := range a.tabs {
 		if t.req == req {
 			a.active = i
@@ -294,7 +301,16 @@ func (a *App) step(in widget.Input) {
 	}
 	a.drain()
 	a.pruneToasts()
+	if in.Held {
+		a.dropTarget = nil // set again by the row under the pointer
+	} else {
+		a.finishDrag()
+	}
+	hadOverlay := a.overlayOpen()
 	a.overlayKeys(in)
+	if !hadOverlay && !a.overlayOpen() {
+		a.treeKeys(in)
+	}
 	if !a.overlayOpen() {
 		a.runShortcuts(in)
 	}
@@ -332,6 +348,7 @@ func (a *App) Draw(screen *ebiten.Image) {
 }
 
 func (a *App) clickTree(row treeRow) {
+	a.selectNode(row.node())
 	if row.Folder {
 		a.expanded[row.Dir] = !a.expanded[row.Dir]
 		return
@@ -339,10 +356,7 @@ func (a *App) clickTree(row treeRow) {
 	a.openRequest(row.Req)
 }
 
-func (a *App) newRequest() {
-	a.tabs = append(a.tabs, newTab(&model.Request{Name: "New Request", Protocol: "rest", Method: "GET"}))
-	a.active = len(a.tabs) - 1
-}
+func (a *App) newRequest() { a.newRequestIn(a.selectedFolder()) }
 
 func (a *App) cycleProtocol(t *reqTab) {
 	t.req.Protocol = next(protocolOrder, t.req.Protocol)

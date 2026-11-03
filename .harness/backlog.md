@@ -57,7 +57,7 @@ Task numbers refer to `tasks/`; "-" means no task yet.
 
 ### Deferred from finished tasks
 - Tab strip overflow: horizontal scrolling with the active tab kept in view (needs a horizontal `vml.Scroll`).
-- `+` creating the request inside the selected folder: needs stable request pointers in the model (`Folder.Requests` as pointers), done with task 013.
+- Tree: match highlighting in the filter, expanding a folder while a drag hovers over it.
 - Scroll-into-view of a focused child inside a `vml.Scroll`.
 - Response: line wrap, image and HTML preview, save body to a file (needs the dialogs of task 012), Shift+arrow selection in the code view.
 
