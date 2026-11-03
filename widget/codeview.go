@@ -3,6 +3,7 @@ package widget
 import (
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -29,13 +30,16 @@ type CodeView struct {
 	ScrollX  int          // pixels
 	maxRunes int          // runes in the widest line, for the horizontal extent
 
-	// Whole-line selection, by original line index. Focused views
-	// answer Ctrl+C and Ctrl+A.
-	Focused            bool
-	HasSel             bool
-	selAnchor, selLine int
-	dragging           bool
-	drag               barDrag
+	// Text selection. Focused views answer Ctrl+C, Ctrl+A and paging keys.
+	Focused    bool
+	HasSel     bool
+	selA, selB textPos // selection from selA to selB; either may come first
+	dragging   bool
+	drag       barDrag
+
+	matches []Match // search hits to highlight
+	current int     // index of the active hit, -1 for none
+	reveal  int     // original line to scroll to on the next update, -1 for none
 }
 
 // SetLines replaces the content and resets folds and scroll.
@@ -45,6 +49,7 @@ func (v *CodeView) SetLines(lines []Line) {
 	v.ScrollY = 0
 	v.HasSel, v.dragging, v.drag = false, false, barDrag{}
 	v.ScrollX, v.maxRunes = 0, 0
+	v.matches, v.current, v.reveal = nil, -1, -1
 	for i := range lines {
 		n := 0
 		for _, sp := range lines[i].Spans {
@@ -74,27 +79,61 @@ func (v *CodeView) textOf(lo, hi int) string {
 	return strings.Join(parts, "\n")
 }
 
-// selected returns the selected line range, low to high.
-func (v *CodeView) selected() (lo, hi int, ok bool) {
-	if !v.HasSel || len(v.Lines) == 0 {
-		return 0, 0, false
-	}
-	return min(v.selAnchor, v.selLine), max(v.selAnchor, v.selLine), true
+// textPos is a position in the text: an original line and a rune column.
+type textPos struct{ line, col int }
+
+func (p textPos) before(q textPos) bool {
+	return p.line < q.line || (p.line == q.line && p.col < q.col)
 }
 
-// SelectedText is the selected lines joined by newlines, or "".
+// lineLen is the number of runes in line i.
+func (v *CodeView) lineLen(i int) int { return len([]rune(v.lineText(i))) }
+
+// selRange returns the selection low to high; ok is false when it is empty.
+func (v *CodeView) selRange() (lo, hi textPos, ok bool) {
+	if !v.HasSel || len(v.Lines) == 0 || v.selA == v.selB {
+		return textPos{}, textPos{}, false
+	}
+	lo, hi = v.selA, v.selB
+	if hi.before(lo) {
+		lo, hi = hi, lo
+	}
+	return lo, hi, true
+}
+
+// SelectedText is the selected text (lines joined by newlines), or "".
 func (v *CodeView) SelectedText() string {
-	lo, hi, ok := v.selected()
+	lo, hi, ok := v.selRange()
 	if !ok {
 		return ""
 	}
-	return v.textOf(lo, hi)
+	parts := make([]string, 0, hi.line-lo.line+1)
+	for i := lo.line; i <= hi.line; i++ {
+		runes := []rune(v.lineText(i))
+		from, to := 0, len(runes)
+		if i == lo.line {
+			from = min(lo.col, len(runes))
+		}
+		if i == hi.line {
+			to = min(hi.col, len(runes))
+		}
+		parts = append(parts, string(runes[from:to]))
+	}
+	return strings.Join(parts, "\n")
 }
 
-// SelectLines selects original lines a through b (either order).
+// SelectLines selects original lines a through b (either order), whole.
 func (v *CodeView) SelectLines(a, b int) {
 	last := len(v.Lines) - 1
-	v.selAnchor, v.selLine, v.HasSel = min(max(a, 0), last), min(max(b, 0), last), last >= 0
+	if last < 0 {
+		v.HasSel = false
+		return
+	}
+	lo, hi := min(max(a, 0), last), min(max(b, 0), last)
+	if hi < lo {
+		lo, hi = hi, lo
+	}
+	v.selA, v.selB, v.HasSel = textPos{lo, 0}, textPos{hi, v.lineLen(hi)}, true
 }
 
 // ToggleFold folds or unfolds the foldable line at original index i.
@@ -170,6 +209,11 @@ func (v *CodeView) Update(c *Ctx, r Rect) {
 	vis := v.Visible()
 	b := v.bars(c, r, g, len(vis))
 	v.updateBars(c, g, b, len(vis))
+	if v.reveal >= 0 {
+		v.applyReveal(g, b)
+		vis = v.Visible()
+		b = v.bars(c, r, g, len(vis))
+	}
 	if len(vis) > 0 && !v.drag.active() {
 		v.updatePointer(c, r, g, b, vis, over)
 	}
@@ -196,11 +240,47 @@ func (v *CodeView) lineAt(y int, r Rect, g codeGeometry, vis []int) int {
 	return vis[row]
 }
 
+// posAt is the text position under a pixel, clamped to the line.
+func (v *CodeView) posAt(x, y int, r Rect, g codeGeometry, vis []int) textPos {
+	line := v.lineAt(y, r, g, vis)
+	col := (x - g.textX + v.ScrollX + g.charW/2) / g.charW
+	return textPos{line, min(max(col, 0), v.lineLen(line))}
+}
+
+// pressText starts a selection at p: a double click selects the word,
+// a triple click the line, a single click starts a drag.
+func (v *CodeView) pressText(p textPos, clicks int) {
+	runes := []rune(v.lineText(p.line))
+	switch {
+	case clicks == 2 && len(runes) > 0:
+		lo, hi := wordRange(runes, p.col)
+		v.selA, v.selB, v.HasSel, v.dragging = textPos{p.line, lo}, textPos{p.line, hi}, true, false
+	case clicks >= 3:
+		v.selA, v.selB, v.HasSel, v.dragging = textPos{p.line, 0}, textPos{p.line, len(runes)}, true, false
+	default:
+		v.selA, v.selB, v.HasSel, v.dragging = p, p, true, true
+	}
+}
+
+// wordRange is the run of word characters, or of other characters, at col.
+func wordRange(r []rune, col int) (lo, hi int) {
+	at := min(col, len(r)-1)
+	word := isWordRune(r[at])
+	lo, hi = at, at+1
+	for lo > 0 && isWordRune(r[lo-1]) == word {
+		lo--
+	}
+	for hi < len(r) && isWordRune(r[hi]) == word {
+		hi++
+	}
+	return lo, hi
+}
+
 func (v *CodeView) updatePointer(c *Ctx, r Rect, g codeGeometry, b bars, vis []int, over bool) {
 	in := c.In
 	if v.dragging {
 		if in.Held {
-			v.selLine = v.lineAt(in.Y, r, g, vis)
+			v.selB = v.posAt(in.X, in.Y, r, g, vis)
 		} else {
 			v.dragging = false
 		}
@@ -225,7 +305,7 @@ func (v *CodeView) updatePointer(c *Ctx, r Rect, g codeGeometry, b bars, vis []i
 	case foldCol.Contains(in.X, in.Y):
 		v.ToggleFold(line)
 	case in.X >= foldCol.X+foldColW:
-		v.selAnchor, v.selLine, v.HasSel, v.dragging = line, line, true, true
+		v.pressText(v.posAt(in.X, in.Y, r, g, vis), in.Clicks)
 	}
 }
 
@@ -278,8 +358,9 @@ func (v *CodeView) Draw(c *Ctx, dst *ebiten.Image, r Rect) {
 		idx := vis[row]
 		line := v.Lines[idx]
 		cell := Rect{r.X, y, b.viewW, g.lineH}
-		if lo, hi, ok := v.selected(); ok && idx >= lo && idx <= hi {
-			c.Fill(area, cell, c.Col(Selection))
+		v.drawMatches(c, text, g, cell, idx)
+		if lo, hi, ok := v.selRange(); ok && idx >= lo.line && idx <= hi.line {
+			v.drawSelection(c, text, g, cell, idx, lo, hi)
 		}
 
 		x := g.textX - v.ScrollX
@@ -311,5 +392,115 @@ func (v *CodeView) bars(c *Ctx, r Rect, g codeGeometry, visible int) bars {
 	return layoutBars(r, v.contentWidth(c, r), visible*g.lineH)
 }
 
-// Selected reports whether any line is selected.
-func (v *CodeView) Selected() bool { return v.HasSel }
+// Selected reports whether any text is selected.
+func (v *CodeView) Selected() bool { _, _, ok := v.selRange(); return ok }
+
+// drawSelection fills the selected part of line idx; lines that continue
+// into the next selected line also fill one character for the newline.
+func (v *CodeView) drawSelection(c *Ctx, dst *ebiten.Image, g codeGeometry, cell Rect, idx int, lo, hi textPos) {
+	from, to := 0, v.lineLen(idx)
+	if idx == lo.line {
+		from = lo.col
+	}
+	if idx == hi.line {
+		to = hi.col
+	} else {
+		to++ // the line break
+	}
+	x0 := g.textX - v.ScrollX + from*g.charW
+	x1 := g.textX - v.ScrollX + to*g.charW
+	c.Fill(dst, Rect{X: x0, Y: cell.Y, W: max(x1-x0, 0), H: cell.H}, c.Col(Selection))
+}
+
+// Match is one search hit: an original line, a rune column and a length.
+type Match struct{ Line, Col, Len int }
+
+// Find returns the case-insensitive, non-overlapping matches of query in
+// every line (folded ones included), in text order. An empty query has none.
+func (v *CodeView) Find(query string) []Match {
+	needle := []rune(strings.ToLower(query))
+	if len(needle) == 0 {
+		return nil
+	}
+	var found []Match
+	for i := range v.Lines {
+		hay := []rune(v.lineText(i))
+		for col := 0; col+len(needle) <= len(hay); {
+			if equalFold(hay[col:col+len(needle)], needle) {
+				found = append(found, Match{Line: i, Col: col, Len: len(needle)})
+				col += len(needle)
+				continue
+			}
+			col++
+		}
+	}
+	return found
+}
+
+// equalFold compares rune by rune, so columns stay aligned for text
+// whose lower-casing changes its byte length.
+func equalFold(a, b []rune) bool {
+	for i := range a {
+		if unicode.ToLower(a[i]) != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+// SetMatches highlights matches, with the one at index current (or none
+// when current is out of range) marked as the active one.
+func (v *CodeView) SetMatches(matches []Match, current int) {
+	v.matches = matches
+	if current < 0 || current >= len(matches) {
+		current = -1
+	}
+	v.current = current
+}
+
+// RevealLine scrolls so the original line is in view on the next
+// update, unfolding whatever hides it.
+func (v *CodeView) RevealLine(line int) { v.reveal = line }
+
+// applyReveal carries out a pending RevealLine.
+func (v *CodeView) applyReveal(g codeGeometry, b bars) {
+	line := v.reveal
+	v.reveal = -1
+	if line < 0 || line >= len(v.Lines) {
+		return
+	}
+	row := v.rowOf(line)
+	if row < 0 { // hidden by a fold: open the folds, then it is visible
+		v.Folded = map[int]bool{}
+		row = v.rowOf(line)
+	}
+	top, bottom := row*g.lineH, (row+1)*g.lineH
+	if top < v.ScrollY || bottom > v.ScrollY+b.viewH {
+		v.ScrollY = max(top-(b.viewH-g.lineH)/2, 0) // centered
+	}
+}
+
+// rowOf is the visible row of an original line, -1 when it is folded away.
+func (v *CodeView) rowOf(line int) int {
+	for row, idx := range v.Visible() {
+		if idx == line {
+			return row
+		}
+	}
+	return -1
+}
+
+// drawMatches fills the search hits on line idx.
+func (v *CodeView) drawMatches(c *Ctx, dst *ebiten.Image, g codeGeometry, cell Rect, idx int) {
+	for i, m := range v.matches {
+		if m.Line != idx {
+			continue
+		}
+		tok := FindMatch
+		if i == v.current {
+			tok = FindActive
+		}
+		x := g.textX - v.ScrollX + m.Col*g.charW
+		c.Fill(dst, Rect{X: x, Y: cell.Y, W: m.Len * g.charW, H: cell.H}, c.Col(tok))
+	}
+}

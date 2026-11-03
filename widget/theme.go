@@ -30,6 +30,8 @@ const (
 	Error      Token = "error"
 	Shadow     Token = "shadow"
 	Selection  Token = "selection"
+	FindMatch  Token = "find-match"
+	FindActive Token = "find-active"
 )
 
 // Fixed sizes shared by all widgets, in logical pixels.
@@ -92,6 +94,7 @@ func Dark() Theme {
 			Accent: RGB(accentGold), AccentText: RGB(0x1a1a1a),
 			OK: RGB(0x7fd18b), Error: RGB(0xff7b7b),
 			Shadow: {A: 0x66}, Selection: RGB(0x6b5a1e),
+			FindMatch: RGB(0x4a5f3a), FindActive: RGB(0x6e5a10),
 		},
 	}
 }
@@ -109,6 +112,7 @@ func Light() Theme {
 			Accent: RGB(accentGold), AccentText: RGB(0x1a1a1a),
 			OK: RGB(0x1b7f45), Error: RGB(0xc02626),
 			Shadow: {A: 0x33}, Selection: RGB(0xf3d97a),
+			FindMatch: RGB(0xcfe8b0), FindActive: RGB(0xffd36b),
 		},
 	}
 }

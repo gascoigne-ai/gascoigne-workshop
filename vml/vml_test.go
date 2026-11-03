@@ -360,7 +360,7 @@ func TestCodeNodeForwardsInputToTheView(t *testing.T) {
 	c := testCtx(t)
 	Layout(c, root, 400, 100)
 
-	click(c, 300, 15) // in the text area of the first line
+	c.In = widget.Input{X: 300, Y: 15, Click: true, Held: true, Clicks: 3} // triple click in the text area of the first line
 	Update(c, root)
 	if v.SelectedText() != "one" || !v.Focused {
 		t.Fatalf("selection %q focused %v", v.SelectedText(), v.Focused)

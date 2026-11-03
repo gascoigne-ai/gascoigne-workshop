@@ -151,30 +151,98 @@ func rowY(c *Ctx, v *CodeView, r Rect, i int) int {
 	return r.Y + i*g.lineH + g.lineH/2
 }
 
-func TestCodeViewClickSelectsALineDragExtendsAndCtrlCCopies(t *testing.T) {
-	v, c, clip, r := viewport(t)
-	textX := 300 // well right of the gutter
+// colX is the pixel x of the boundary before column col of the text.
+func colX(c *Ctx, v *CodeView, r Rect, col int) int {
+	g := v.geometry(c, r)
+	return g.textX - v.ScrollX + col*g.charW
+}
 
-	c.In = Input{X: textX, Y: rowY(c, v, r, 2), Click: true, Held: true}
+func press(v *CodeView, c *Ctx, r Rect, x, y, clicks int) {
+	c.In = Input{X: x, Y: y, Click: true, Held: true, Clicks: clicks}
 	v.Update(c, r)
-	if !v.Focused || v.SelectedText() != "  \"items\": [" {
-		t.Fatalf("click: focused %v selection %q", v.Focused, v.SelectedText())
+}
+
+func dragTo(v *CodeView, c *Ctx, r Rect, x, y int) {
+	c.In = Input{X: x, Y: y, Held: true}
+	v.Update(c, r)
+}
+
+func release(v *CodeView, c *Ctx, r Rect, x, y int) {
+	c.In = Input{X: x, Y: y}
+	v.Update(c, r)
+}
+
+func TestCodeViewDragSelectsCharactersWithinALine(t *testing.T) {
+	v, c, _, r := viewport(t)
+	y := rowY(c, v, r, 1) // `  "a": 1,`
+	press(v, c, r, colX(c, v, r, 2), y, 1)
+	dragTo(v, c, r, colX(c, v, r, 6), y)
+	release(v, c, r, colX(c, v, r, 6), y)
+	if got := v.SelectedText(); got != `"a":` {
+		t.Fatalf("selection %q, want %q", got, `"a":`)
 	}
-
-	c.In = Input{X: textX, Y: rowY(c, v, r, 4), Held: true}
-	v.Update(c, r)
-	c.In = Input{X: textX, Y: rowY(c, v, r, 4)} // released
-	v.Update(c, r)
 	if v.dragging {
-		t.Fatal("releasing the button must end the drag")
+		t.Fatal("releasing ends the drag")
 	}
-	if got, want := v.SelectedText(), v.textOf(2, 4); got != want {
-		t.Fatalf("drag selection = %q, want %q", got, want)
+}
+
+func TestCodeViewDragAcrossLinesTakesPartialFirstAndLastLines(t *testing.T) {
+	v, c, _, r := viewport(t)
+	press(v, c, r, colX(c, v, r, 5), rowY(c, v, r, 1), 1)
+	dragTo(v, c, r, colX(c, v, r, 6), rowY(c, v, r, 3))
+	release(v, c, r, 0, 0)
+	want := ": 1,\n  \"items\": [\n    {" // rest of line 1, all of line 2, the start of line 3
+	if got := v.SelectedText(); got != want {
+		t.Fatalf("selection %q, want %q", got, want)
 	}
 
-	c.In = Input{Ctrl: true, Copy: true}
+	// the same drag made backwards selects the same text
+	w, c2, _, r2 := viewport(t)
+	press(w, c2, r2, colX(c2, w, r2, 6), rowY(c2, w, r2, 3), 1)
+	dragTo(w, c2, r2, colX(c2, w, r2, 5), rowY(c2, w, r2, 1))
+	if got := w.SelectedText(); got != want {
+		t.Fatalf("backwards selection %q", got)
+	}
+}
+
+func TestCodeViewDoubleClickSelectsAWordAndTripleClickALine(t *testing.T) {
+	v, c, _, r := viewport(t)
+	y := rowY(c, v, r, 2) // `  "items": [`
+	press(v, c, r, colX(c, v, r, 5), y, 2)
+	release(v, c, r, 0, 0)
+	if got := v.SelectedText(); got != "items" {
+		t.Fatalf("double click: %q", got)
+	}
+	press(v, c, r, colX(c, v, r, 5), y, 3)
+	release(v, c, r, 0, 0)
+	if got := v.SelectedText(); got != `  "items": [` {
+		t.Fatalf("triple click: %q", got)
+	}
+}
+
+func TestCodeViewPlainClickSelectsNothingAndCopyTakesEverything(t *testing.T) {
+	v, c, clip, r := viewport(t)
+	press(v, c, r, colX(c, v, r, 4), rowY(c, v, r, 2), 1)
+	release(v, c, r, 0, 0)
+	if v.SelectedText() != "" || !v.Focused {
+		t.Fatalf("selection %q focused %v", v.SelectedText(), v.Focused)
+	}
+	c.In = Input{Ctrl: true, Copy: true, X: 5000, Y: 5000}
 	v.Update(c, r)
-	if clip.text != v.textOf(2, 4) {
+	if clip.text != v.AllText() {
+		t.Fatalf("with nothing selected Ctrl+C copies the whole body, got %q", clip.text)
+	}
+}
+
+func TestCodeViewCopiesTheSelectedCharacters(t *testing.T) {
+	v, c, clip, r := viewport(t)
+	y := rowY(c, v, r, 1)
+	press(v, c, r, colX(c, v, r, 2), y, 1)
+	dragTo(v, c, r, colX(c, v, r, 5), y)
+	release(v, c, r, 0, 0)
+	c.In = Input{Ctrl: true, Copy: true, X: 5000, Y: 5000}
+	v.Update(c, r)
+	if clip.text != `"a"` {
 		t.Fatalf("clipboard = %q", clip.text)
 	}
 }
@@ -386,5 +454,105 @@ func TestCodeViewScrollbarThumbDragScrollsTheContent(t *testing.T) {
 	v.Update(c, r)
 	if v.ScrollY != pos {
 		t.Fatal("after release, moving the pointer must not scroll")
+	}
+}
+
+func linesOf(texts ...string) []Line {
+	lines := make([]Line, len(texts))
+	for i, t := range texts {
+		lines[i] = Line{Spans: []Span{{Text: t}}}
+	}
+	return lines
+}
+
+func TestCodeViewFind(t *testing.T) {
+	tests := []struct {
+		name  string
+		lines []string
+		query string
+		want  []Match
+	}{
+		{"case-insensitive", []string{"Hello hello HELLO"}, "hello", []Match{{0, 0, 5}, {0, 6, 5}, {0, 12, 5}}},
+		{"several lines", []string{"a-b", "none", "b-a-b"}, "b", []Match{{0, 2, 1}, {2, 0, 1}, {2, 4, 1}}},
+		{"matches do not overlap", []string{"aaaa"}, "aa", []Match{{0, 0, 2}, {0, 2, 2}}},
+		{"empty query finds nothing", []string{"abc"}, "", nil},
+		{"no match", []string{"abc"}, "z", nil},
+		{"columns count runes, not bytes", []string{"żółw żółć"}, "żółć", []Match{{0, 5, 4}}},
+		{"folds do not hide matches", []string{"{", "  needle", "}"}, "needle", []Match{{1, 2, 6}}},
+	}
+	for _, tt := range tests {
+		var v CodeView
+		v.SetLines(linesOf(tt.lines...))
+		if got := v.Find(tt.query); !reflect.DeepEqual(got, tt.want) {
+			t.Errorf("%s: got %+v, want %+v", tt.name, got, tt.want)
+		}
+	}
+}
+
+func TestCodeViewRevealLineScrollsToTheLine(t *testing.T) {
+	v, c, _, _ := viewport(t)
+	v.SetLines(manyLines(100))
+	r := Rect{W: 600, H: 100}
+	g := v.geometry(c, r)
+
+	v.RevealLine(80)
+	c.In = Input{X: 5000, Y: 5000}
+	v.Update(c, r)
+	top, bottom := 80*g.lineH, 81*g.lineH
+	if v.ScrollY > top || v.ScrollY+r.H < bottom {
+		t.Fatalf("ScrollY %d: line 80 (%d..%d) is not inside a %dpx view", v.ScrollY, top, bottom, r.H)
+	}
+	before := v.ScrollY
+	c.In = Input{X: 5000, Y: 5000}
+	v.Update(c, r)
+	if v.ScrollY != before {
+		t.Fatal("a reveal happens once; later updates must not keep scrolling")
+	}
+
+	v.RevealLine(0)
+	v.Update(c, r)
+	if v.ScrollY != 0 {
+		t.Fatalf("revealing line 0 scrolls to the top, got %d", v.ScrollY)
+	}
+}
+
+func TestCodeViewRevealUnfoldsWhatHidesTheLine(t *testing.T) {
+	v, c, _, r := viewport(t)
+	v.ToggleFold(2) // hides lines 3..12 of the sample
+	if len(v.Visible()) != 5 {
+		t.Fatal("test setup: the block must be folded")
+	}
+	v.RevealLine(4)
+	c.In = Input{X: 5000, Y: 5000}
+	v.Update(c, r)
+	if v.Folded[2] {
+		t.Fatal("the fold hiding line 4 must open")
+	}
+	found := false
+	for _, i := range v.Visible() {
+		found = found || i == 4
+	}
+	if !found {
+		t.Fatalf("line 4 must be visible, got %v", v.Visible())
+	}
+	v.ToggleFold(0) // an unrelated fold that does not hide line 4's block... root hides everything
+}
+
+func TestCodeViewMatchesSurviveUpdatesAndClearOnNewContent(t *testing.T) {
+	v, c, _, r := viewport(t)
+	m := v.Find("items")
+	v.SetMatches(m, 0)
+	c.In = Input{X: 5000, Y: 5000}
+	v.Update(c, r) // must not panic with highlights set
+	if len(v.matches) != 1 || v.current != 0 {
+		t.Fatalf("matches %v current %d", v.matches, v.current)
+	}
+	v.SetMatches(m, 9) // out of range: no active match
+	if v.current != -1 {
+		t.Fatalf("current = %d, want -1", v.current)
+	}
+	v.SetLines(sampleLines())
+	if len(v.matches) != 0 {
+		t.Fatal("new content clears the highlights")
 	}
 }
