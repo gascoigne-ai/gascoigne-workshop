@@ -121,3 +121,5 @@ Row(H(urlH), PadXY(w.Pad, 8), Gap(8), Bg(w.Bg),
 - No text wrapping in the code view. Fractional scales round logical text metrics to whole pixels.
 - VML is Go-native only; there is no template syntax or parser. One could be added later as a front end that emits the same nodes.
 - WebSocket and MCP are registry stubs.
+
+- **Spacing rhythm**: one `Pad` (12 px) is the inset between panes and content; bars (sidebar header, tabs, toolbars, status) are separated with one token, `Border` (never `Rule`, which is for outlines and table headers). The request and response panes both start their first row `Pad` below the pane tabs, so rows line up across the divider (`TestRequestAndResponsePanesShareTheirFirstRowBand`).

@@ -432,6 +432,7 @@ func responseEmpty(t *reqTab) (string, bool) {
 // responsePane is the response body with its toolbar and find bar.
 func (a *App) responsePane(_ pane, t *reqTab, _ *ScrollState) Node {
 	return Col(Grow(1),
+		Spacer(H(w.Pad)), // same top inset as the request pane, so first rows line up
 		Row(H(w.RowH), PadXY(w.Pad, 0), Gap(6), BorderBottom(w.Border),
 			a.viewChip("Pretty", !t.raw, 56, func() { a.setRaw(t, false) }),
 			a.viewChip("Raw", t.raw, 44, func() { a.setRaw(t, true) }),

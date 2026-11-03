@@ -60,7 +60,7 @@ func (a *App) view() Node {
 
 func (a *App) sidebar() Node {
 	return Col(
-		Row(H(headerH), PadXY(w.Pad, 0), Gap(6), Bg(w.Bg), BorderBottom(w.Rule),
+		Row(H(headerH), PadXY(w.Pad, 0), Gap(6), Bg(w.Bg), BorderBottom(w.Border),
 			Caption("Collections", W(96)),
 			Field(&a.filter, H(28), Grow(1), Bg(w.Sunken), Placeholder("Filter"), a.textMenuOpt(&a.filter, nil)),
 		),

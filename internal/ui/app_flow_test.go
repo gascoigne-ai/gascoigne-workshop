@@ -1378,13 +1378,13 @@ func TestSwitchingAuthTypesKeepsEachTypesValues(t *testing.T) {
 // Response pane toolbar at 1280x800 (y=194): Pretty, Raw on the left;
 // Find, Copy, cURL on the right. The find bar is the row below it.
 const (
-	toolbarY   = 194
+	toolbarY   = chipsY // the response toolbar shares a band with the request pane's first row
 	prettyX    = 810
 	rawX       = 866
 	findBtnX   = 1128
 	copyBtnX   = 1184
 	curlBtnX   = 1242
-	findBarY   = 222
+	findBarY   = chipsY + widget.RowH // the find bar is the row below the toolbar
 	findFieldX = 900
 	findPrevX  = 1186
 	findNextX  = 1220
@@ -1633,8 +1633,8 @@ func TestLayoutSettingStacksThePanesAndIsSaved(t *testing.T) {
 	srv := jsonServer(t)
 	sendAndWait(t, a, srv.URL)
 
-	// stacked: the response pane is the lower half, so its toolbar is at y=510
-	click(a, copyBtnX, 510)
+	// stacked: the response pane is the lower half, so its toolbar is at y=522
+	click(a, copyBtnX, 510+12)
 	if clip.text != `{"ok":true}` {
 		t.Fatalf("the Copy button was not where a stacked layout puts it, clipboard %q", clip.text)
 	}
@@ -3085,5 +3085,21 @@ func TestShortcutSettingsRenderWhileRecording(t *testing.T) {
 	a.step(widget.Input{}) // the menu with a recording row and a note must lay out
 	if !a.menu || a.recording != "close-tab" {
 		t.Fatal("the menu stays open while recording")
+	}
+}
+
+// Both panes start their first row at the same height, so the two halves
+// of the window line up across the divider.
+func TestRequestAndResponsePanesShareTheirFirstRowBand(t *testing.T) {
+	a := jsonResponse(t, `{"ok":true}`)
+	clip := &fakeClip{}
+	a.ctx.Clipboard = clip
+	click(a, bulkBtnX, chipsY) // the request pane's first row
+	if a.bulk == nil {
+		t.Fatal("the Bulk edit link is in the first row of the request pane")
+	}
+	click(a, copyBtnX, chipsY+10) // the lower edge of the shared band, below the old toolbar
+	if clip.text != `{"ok":true}` {
+		t.Fatalf("the Copy button is not in the same band as Bulk edit, clipboard %q", clip.text)
 	}
 }
