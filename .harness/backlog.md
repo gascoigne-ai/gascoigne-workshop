@@ -64,6 +64,8 @@ Task numbers refer to `tasks/`; "-" means no task yet.
 ### Added later
 - Right-click menus everywhere (018), table row operations and change handling (019), remembering window and UI state (020). Task 018 depends on 012 (menu primitive) and uses 013 and 019; 020 depends on 011.
 
+- Added after review: resizable table columns (021), configurable colors and selection contrast (022), configurable shortcuts (023). 021 follows 019; 022 and 023 extend the settings menu and are independent of the other tasks. Layout resizing is part of 011.
+
 ## Suggested order
 Editing foundation first, because everything else needs it: 001, 002, 003, 004, 005. Then the
 request side (006, 008, 009, 007), then response tools (010), layout (011), overlays and CRUD

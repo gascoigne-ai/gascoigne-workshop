@@ -12,6 +12,8 @@ Tables only support editing a cell, toggling and deleting a row. Everything arou
 - One place applies a table change (`changed` hook): it rewrites the URL for Params, marks the tab dirty, drops a cell edit that points at a row that no longer exists, and keeps the selection sensible.
 - Duplicate names are allowed (many APIs repeat query keys) but a duplicate header is flagged; empty names are kept in the table but never sent.
 
+- Column widths are task 021; this task must not hard-code the 28/40/32 proportions any further than they already are.
+
 ## Acceptance
 - Table-driven tests for each operation, including the edit state after a delete or move, undo across a URL rewrite, and bulk edit round trips (values with `:` and leading spaces).
 - `make check` passes.
