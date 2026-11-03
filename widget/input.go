@@ -20,7 +20,7 @@ type Input struct {
 	Escape      bool
 	Tab         bool
 
-	Held        bool // left button is down
+	Held             bool // left button is down
 	Shift, Ctrl, Alt bool
 	// Ctrl+key shortcuts that went down this frame.
 	SelectAll, Copy, Cut, Paste bool
