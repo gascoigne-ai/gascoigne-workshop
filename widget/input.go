@@ -1,4 +1,4 @@
-package ui
+package widget
 
 import (
 	"github.com/hajimehoshi/ebiten/v2"
@@ -16,8 +16,8 @@ type Input struct {
 	Escape bool
 }
 
-// scaled converts the pointer position from device to logical pixels.
-func (in Input) scaled(scale float64) Input {
+// Scaled converts the pointer position from device to logical pixels.
+func (in Input) Scaled(scale float64) Input {
 	in.X = int(float64(in.X) / scale)
 	in.Y = int(float64(in.Y) / scale)
 	return in

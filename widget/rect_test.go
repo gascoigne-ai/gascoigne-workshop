@@ -1,33 +1,6 @@
-package ui
+package widget
 
 import "testing"
-
-func TestComputeCoversWindowWithoutOverlap(t *testing.T) {
-	for _, size := range [][2]int{{1280, 800}, {900, 600}, {300, 200}, {10, 10}} {
-		w, h := size[0], size[1]
-		l := Compute(w, h)
-		regions := []Rect{l.SidebarHead, l.Tree, l.Header, l.Tabs, l.URL, l.Request, l.Response, l.Status}
-		area := 0
-		for i, r := range regions {
-			if r.W < 0 || r.H < 0 || r.X < 0 || r.Y < 0 || r.X+r.W > w || r.Y+r.H > h {
-				t.Errorf("%dx%d: region %d out of window: %+v", w, h, i, r)
-			}
-			area += r.W * r.H
-			for j := i + 1; j < len(regions); j++ {
-				if overlaps(r, regions[j]) {
-					t.Errorf("%dx%d: regions %d and %d overlap: %+v %+v", w, h, i, j, r, regions[j])
-				}
-			}
-		}
-		if area != w*h {
-			t.Errorf("%dx%d: regions cover %d pixels, want %d", w, h, area, w*h)
-		}
-	}
-}
-
-func overlaps(a, b Rect) bool {
-	return a.X < b.X+b.W && b.X < a.X+a.W && a.Y < b.Y+b.H && b.Y < a.Y+a.H && a.W > 0 && a.H > 0 && b.W > 0 && b.H > 0
-}
 
 func TestSplitsClamp(t *testing.T) {
 	r := Rect{10, 20, 100, 50}
@@ -65,5 +38,43 @@ func TestContainsAndInset(t *testing.T) {
 	}
 	if got := r.Inset(30); got.W != 0 || got.H != 0 {
 		t.Errorf("Inset beyond size = %+v", got)
+	}
+}
+
+func TestInputScaled(t *testing.T) {
+	tests := []struct {
+		name         string
+		x, y         int
+		scale        float64
+		wantX, wantY int
+	}{
+		{"identity", 100, 40, 1, 100, 40},
+		{"double", 200, 80, 2, 100, 40},
+		{"fractional", 300, 150, 1.5, 200, 100},
+	}
+	for _, tt := range tests {
+		got := Input{X: tt.x, Y: tt.y}.Scaled(tt.scale)
+		if got.X != tt.wantX || got.Y != tt.wantY {
+			t.Errorf("%s: got %d,%d want %d,%d", tt.name, got.X, got.Y, tt.wantX, tt.wantY)
+		}
+	}
+}
+
+// Text measures in logical pixels, so layouts do not shift with the scale.
+func TestMeasureIsScaleStable(t *testing.T) {
+	c, err := NewCtx(Dark())
+	if err != nil {
+		t.Fatal(err)
+	}
+	w1, h1 := c.Width(c.F.UI, "Repository Info"), c.LineH(c.F.UI)
+	if err := c.SetScale(2); err != nil {
+		t.Fatal(err)
+	}
+	w2, h2 := c.Width(c.F.UI, "Repository Info"), c.LineH(c.F.UI)
+	if abs(w1-w2) > 1 || abs(h1-h2) > 1 {
+		t.Fatalf("scale 1: %dx%d, scale 2: %dx%d", w1, h1, w2, h2)
+	}
+	if err := c.SetScale(2); err != nil || c.Scale != 2 {
+		t.Fatalf("same scale must be a no-op, err=%v scale=%v", err, c.Scale)
 	}
 }

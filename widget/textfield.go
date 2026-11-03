@@ -1,4 +1,4 @@
-package ui
+package widget
 
 // Edit is a cursor or deletion key applied to a TextField.
 type Edit int

@@ -10,6 +10,8 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/vml"
+	"github.com/gascoigne-ai/gascoigne-workshop/widget"
 )
 
 const (
@@ -38,18 +40,18 @@ func next(order []string, cur string) string {
 // reqTab is one open request with its editor and response state.
 type reqTab struct {
 	req      *model.Request
-	url      TextField
+	url      widget.TextField
 	paneTab  int
 	respTab  int
 	resp     *model.Response
-	view     CodeView // response body
-	bodyView CodeView // request body, read-only
+	view     widget.CodeView // response body
+	bodyView widget.CodeView // request body, read-only
 	sending  bool
 }
 
 func newTab(req *model.Request) *reqTab {
-	t := &reqTab{req: req, url: NewTextField(req.URL)}
-	t.bodyView.SetBody([]byte(req.Body))
+	t := &reqTab{req: req, url: widget.NewTextField(req.URL)}
+	t.bodyView.SetLines(codeLines([]byte(req.Body)))
 	return t
 }
 
@@ -60,7 +62,7 @@ type sendResult struct {
 
 // App is the whole window. It implements ebiten.Game.
 type App struct {
-	ctx      Ctx
+	ctx      *widget.Ctx
 	reg      proto.Registry
 	col      model.Collection
 	expanded map[string]bool
@@ -91,12 +93,12 @@ func NewApp(opts Options) (*App, error) {
 		st, loadErr = settings.Load(opts.SettingsPath)
 	}
 	th := ThemeFor(st.Theme, st.TextSize)
-	fonts, err := NewFonts(th, 1)
+	ctx, err := widget.NewCtx(th)
 	if err != nil {
 		return nil, err
 	}
 	a := &App{
-		ctx:      Ctx{Th: th, F: fonts, Scale: 1},
+		ctx:      ctx,
 		reg:      proto.NewRegistry(),
 		col:      SampleCollection(),
 		expanded: map[string]bool{},
@@ -167,7 +169,7 @@ func (a *App) apply(r sendResult) {
 	t := r.tab
 	t.sending = false
 	t.resp = &r.resp
-	t.view.SetBody(r.resp.Body)
+	t.view.SetLines(codeLines(r.resp.Body))
 	if r.resp.Err != "" {
 		a.status = "Request failed"
 		return
@@ -187,117 +189,54 @@ func (a *App) Layout(w, h int) (int, int) {
 	return int(float64(w)*a.ctx.Scale + 0.5), int(float64(h)*a.ctx.Scale + 0.5)
 }
 
-// Update implements ebiten.Game.
+// Update implements ebiten.Game: it builds this frame's view, lays it
+// out and lets it react to input. Handlers in the view change App state.
 func (a *App) Update() error {
 	a.ctx.Tick++
-	a.ctx.In = ReadInput().scaled(a.ctx.Scale)
+	a.ctx.In = widget.ReadInput().Scaled(a.ctx.Scale)
 	a.drain()
-	l := Compute(a.w, a.h)
-	if a.updateMenu(l.Header) {
-		return a.shotUpdate()
+	if a.ctx.In.Escape {
+		a.menu = false
 	}
-	a.updateTree(l.Tree)
-	a.updateTabStrip(l.Tabs)
-	t := a.cur()
-	a.updateURLBar(t, l.URL)
-	a.updatePanes(t, l.Request, requestPanes, &t.paneTab)
-	a.updatePanes(t, l.Response, responsePanes, &t.respTab)
+	root := a.view()
+	vml.Layout(a.ctx, root, a.w, a.h)
+	vml.Update(a.ctx, root)
 	return a.shotUpdate()
 }
 
-func (a *App) updateTree(r Rect) {
-	in := a.ctx.In
-	if !in.Hit(r) {
-		return
-	}
-	rows := treeRows(a.col.Folder, a.expanded)
-	i := (in.Y - r.Y) / a.ctx.Th.RowH
-	if i < 0 || i >= len(rows) {
-		return
-	}
-	if row := rows[i]; row.Folder {
-		a.expanded[row.Path] = !a.expanded[row.Path]
-	} else {
-		a.openRequest(row.Req)
-	}
-}
-
-func (a *App) updateTabStrip(r Rect) {
-	in := a.ctx.In
-	rects, plus := a.tabStripRects(r)
-	for i, tr := range rects {
-		if in.Hit(tr) {
-			a.active = i
-		}
-	}
-	if in.Hit(plus) {
-		a.tabs = append(a.tabs, newTab(&model.Request{Name: "New Request", Protocol: "rest", Method: "GET"}))
-		a.active = len(a.tabs) - 1
-	}
-}
-
-func (a *App) updateURLBar(t *reqTab, r Rect) {
-	in := a.ctx.In
-	protoR, methodR, field, send := urlBar(r, t.req.Protocol == "rest")
-	if in.Hit(protoR) {
-		t.req.Protocol = next(protocolOrder, t.req.Protocol)
-		if t.req.Protocol == "rest" && t.req.Method == "" {
-			t.req.Method = "GET"
-		}
-	}
-	if in.Hit(methodR) {
-		t.req.Method = next(methodOrder, t.req.Method)
-	}
-	if in.Click {
-		t.url.Focused = field.Contains(in.X, in.Y)
-		if t.url.Focused {
-			t.url.Cursor = a.ctx.cursorAt(t.url.Text, in.X-(field.X+10))
-		}
-	}
-	if t.url.Focused && t.url.Apply(in.Typed, in.Edits) {
-		t.req.URL = t.url.Text
-		t.req.Params = model.MergeParams(t.req.Params, t.req.URL)
-	}
-	if in.Hit(send) || (t.url.Focused && in.Enter) {
-		a.send(t)
-	}
-}
-
-// cursorAt maps a pixel offset into s to the nearest rune boundary.
-func (c *Ctx) cursorAt(s string, x int) int {
-	runes := []rune(s)
-	best, bestDist := 0, abs(x)
-	for i := 1; i <= len(runes); i++ {
-		if d := abs(x - c.width(c.F.UI, string(runes[:i]))); d < bestDist {
-			best, bestDist = i, d
-		}
-	}
-	return best
-}
-
-func abs(n int) int {
-	if n < 0 {
-		return -n
-	}
-	return n
-}
-
-// urlBar places the protocol chip, method chip (REST only), the URL
-// field and the Send button inside r.
-func urlBar(r Rect, rest bool) (protoR, methodR, field, send Rect) {
-	inner := Rect{r.X + 12, r.Y + 8, r.W - 24, r.H - 16}
-	box, send := inner.SplitRight(88)
-	send.X += 8
-	send.W -= 8
-	protoR, field = box.SplitLeft(64)
-	if rest {
-		methodR, field = field.SplitLeft(84)
-	}
-	return protoR, methodR, field, send
-}
-
-// Draw implements ebiten.Game.
+// Draw implements ebiten.Game. The view is rebuilt so it shows the
+// state the handlers just changed.
 func (a *App) Draw(screen *ebiten.Image) {
-	a.drawWindow(screen)
+	root := a.view()
+	vml.Layout(a.ctx, root, a.w, a.h)
+	vml.Draw(a.ctx, root, screen)
 	a.shotDraw(screen)
+}
+
+func (a *App) clickTree(row treeRow) {
+	if row.Folder {
+		a.expanded[row.Path] = !a.expanded[row.Path]
+		return
+	}
+	a.openRequest(row.Req)
+}
+
+func (a *App) newRequest() {
+	a.tabs = append(a.tabs, newTab(&model.Request{Name: "New Request", Protocol: "rest", Method: "GET"}))
+	a.active = len(a.tabs) - 1
+}
+
+func (a *App) cycleProtocol(t *reqTab) {
+	t.req.Protocol = next(protocolOrder, t.req.Protocol)
+	if t.req.Protocol == "rest" && t.req.Method == "" {
+		t.req.Method = "GET"
+	}
+}
+
+func (a *App) cycleMethod(t *reqTab) { t.req.Method = next(methodOrder, t.req.Method) }
+
+// urlEdited keeps the request and its Params table in step with the URL field.
+func (a *App) urlEdited(t *reqTab) {
+	t.req.URL = t.url.Text
+	t.req.Params = model.MergeParams(t.req.Params, t.req.URL)
 }

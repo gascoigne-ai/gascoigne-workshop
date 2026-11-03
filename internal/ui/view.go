@@ -2,70 +2,64 @@ package ui
 
 import (
 	"fmt"
-	"image/color"
 	"strings"
 
-	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/gascoigne-ai/gascoigne-workshop/vml"
+	"github.com/gascoigne-ai/gascoigne-workshop/widget"
 )
 
+// Sizes of the window chrome, in logical pixels.
 const (
+	sidebarW   = 260
+	headerH    = 44
+	tabsH      = 40
+	urlH       = 56
+	statusH    = 28
+	paneTabsH  = 40
 	treeIndent = 16
 	badgeW     = 40
 )
 
-func (a *App) drawWindow(dst *ebiten.Image) {
-	c := &a.ctx
-	th := c.Th
-	l := Compute(a.w, a.h)
-	dst.Fill(th.Sidebar)
-	for _, r := range []Rect{l.Header, l.URL, l.Request, l.Response} {
-		c.fill(dst, r, th.Bg)
-	}
-
-	a.drawSidebar(dst, l)
-	a.drawHeader(dst, l.Header)
-
-	rects, _ := a.tabStripRects(l.Tabs)
-	a.drawTabStrip(dst, l.Tabs, rects)
-
-	t := a.cur()
-	a.drawURLBar(dst, t, l.URL)
-	a.drawPanes(dst, t, l.Request, requestPanes, t.paneTab)
-	a.drawPanes(dst, t, l.Response, responsePanes, t.respTab)
-	c.fill(dst, l.Split, th.Border)
-	a.drawResponseStatus(dst, t, l.Response)
-	a.drawStatusBar(dst, l.Status)
-	a.drawMenu(dst, l.Header)
+// view is the whole window as a function of the app state: a frame
+// with the sidebar, the main column and the status bar, and the
+// settings menu floating above when open.
+func (a *App) view() vml.Node {
+	return vml.Stack(
+		vml.Col(
+			vml.Row(a.sidebar(), vml.VRule(), a.mainColumn()).Grow(1),
+			a.statusBar(),
+		).Bg(widget.Frame),
+		a.menuView(),
+	)
 }
 
-func (a *App) drawSidebar(dst *ebiten.Image, l Layout) {
-	c := &a.ctx
-	th := c.Th
-	c.fill(dst, l.SidebarHead, th.Bg)
-	c.fill(dst, l.Tree, th.Sunken)
-	c.fill(dst, l.SidebarDivider, th.Border)
-	c.caption(dst, Rect{th.Pad, l.SidebarHead.Y, l.SidebarHead.W, l.SidebarHead.H}, "Collections")
-	c.hline(dst, l.SidebarHead.X, l.SidebarHead.Y+l.SidebarHead.H-1, l.SidebarHead.W-1, th.Rule)
-
-	tree := c.clip(dst, l.Tree)
+func (a *App) sidebar() vml.Node {
 	cur := a.cur().req
-	for i, row := range treeRows(a.col.Folder, a.expanded) {
-		rr := Rect{l.Tree.X, l.Tree.Y + i*th.RowH, l.Tree.W - 1, th.RowH}
-		switch {
-		case row.Req != nil && row.Req == cur:
-			c.fill(tree, rr, th.Selected)
-		case c.In.Over(rr) && c.In.Over(l.Tree):
-			c.fill(tree, rr, th.Hover)
-		}
-		x := rr.X + th.Pad + row.Depth*treeIndent
-		if row.Folder {
-			c.triangle(tree, float32(x+6), float32(rr.Y+rr.H/2), 4, row.Open, th.Muted)
-			c.textMid(tree, c.F.UI, row.Name, x+18, rr, th.Text)
-			continue
-		}
-		c.textMid(tree, c.F.Small, requestBadge(row.Req.Protocol, row.Req.Method), x+6, rr, th.MethodColor(row.Req.Method))
-		c.textMid(tree, c.F.UI, c.ellipsize(c.F.UI, row.Name, rr.W-(x+6+badgeW-rr.X)-th.Pad), x+6+badgeW, rr, th.Text)
+	return vml.Col(
+		vml.Row(vml.Caption("Collections")).PadXY(widget.Pad, 0).H(headerH).Bg(widget.Bg).BorderBottom(widget.Rule),
+		vml.Col(vml.For(treeRows(a.col.Folder, a.expanded), func(_ int, row treeRow) vml.Node {
+			return a.treeRow(row, row.Req != nil && row.Req == cur)
+		})).Grow(1).Bg(widget.Sunken).Clip(),
+	).W(min(sidebarW, a.w/3) - 1)
+}
+
+func (a *App) treeRow(row treeRow, selected bool) vml.Node {
+	pad := widget.Pad + row.Depth*treeIndent
+	var line *vml.El
+	if row.Folder {
+		line = vml.Row(vml.Triangle(row.Open).W(12), vml.Text(row.Name)).Gap(6).PadL(pad)
+	} else {
+		req := row.Req
+		line = vml.Row(
+			vml.Text(requestBadge(req.Protocol, req.Method)).Small().Color(methodToken(req.Method)).W(badgeW),
+			vml.Text(row.Name).Ellipsis().Grow(1),
+		).PadL(pad + 6).PadR(widget.Pad)
 	}
+	line.H(widget.RowH).OnClick(func() { a.clickTree(row) })
+	if selected {
+		return line.Bg(widget.Selected)
+	}
+	return line.HoverBg(widget.Hover)
 }
 
 // requestBadge is the short label shown before a request name.
@@ -79,97 +73,83 @@ func requestBadge(protocol, method string) string {
 	return method
 }
 
-func (a *App) drawHeader(dst *ebiten.Image, r Rect) {
-	c := &a.ctx
-	c.textMid(dst, c.F.UI, a.col.Name, r.X+c.Th.Pad, r, c.Th.Text)
-
-	btn := menuButton(r, c.Th.Pad)
-	clr := c.Th.Muted
-	if a.menu || c.In.Over(btn) {
-		clr = c.Th.Text
-	}
-	for i := -1; i <= 1; i++ { // the three dots of a "more" button
-		c.fill(dst, Rect{btn.X + btn.W/2 - 1, btn.Y + btn.H/2 + i*6 - 1, 3, 3}, clr)
-	}
+func (a *App) mainColumn() vml.Node {
+	t := a.cur()
+	return vml.Col(
+		a.header(),
+		a.tabStrip(),
+		a.urlBar(t),
+		vml.Row(
+			a.pane(t, requestPanes, &t.paneTab, nil),
+			vml.VRule(),
+			a.pane(t, responsePanes, &t.respTab, a.responseStatus(t)),
+		).Grow(1),
+	).Grow(1)
 }
 
-// tabStripRects places the open-request tabs and the new-tab button.
-func (a *App) tabStripRects(r Rect) (tabs []Rect, plus Rect) {
-	c := &a.ctx
-	x := r.X
-	for _, t := range a.tabs {
-		w := 14 + c.width(c.F.Small, requestBadge(t.req.Protocol, t.req.Method)) + 8 + c.width(c.F.UI, t.req.Name) + 14
-		tabs = append(tabs, Rect{x, r.Y, w, r.H})
-		x += w
-	}
-	return tabs, Rect{x, r.Y, 40, r.H}
+func (a *App) header() vml.Node {
+	return vml.Row(
+		vml.Text(a.col.Name),
+		vml.Spacer(),
+		vml.Row(vml.Dots().Grow(1)).W(headerH).OnClick(func() { a.menu = !a.menu }),
+	).PadXY(widget.Pad, 0).H(headerH).Bg(widget.Bg)
 }
 
-func (a *App) drawTabStrip(dst *ebiten.Image, r Rect, rects []Rect) {
-	c := &a.ctx
-	th := c.Th
-	c.fill(dst, r, th.Sidebar)
-	c.hline(dst, r.X, r.Y+r.H-1, r.W, th.Border)
-	for i, tr := range rects {
-		t := a.tabs[i]
-		if i == a.active {
-			c.fill(dst, tr, th.Bg)
-		}
-		badge := requestBadge(t.req.Protocol, t.req.Method)
-		c.textMid(dst, c.F.Small, badge, tr.X+14, tr, th.MethodColor(t.req.Method))
-		c.textMid(dst, c.F.UI, t.req.Name, tr.X+14+c.width(c.F.Small, badge)+8, tr, th.Text)
-	}
-	_, plus := a.tabStripRects(r)
-	c.textCenter(dst, c.F.UI, "+", plus, th.Muted)
+func (a *App) tabStrip() vml.Node {
+	return vml.Row(
+		vml.For(a.tabs, func(i int, t *reqTab) vml.Node {
+			tab := vml.Row(
+				vml.Text(requestBadge(t.req.Protocol, t.req.Method)).Small().Color(methodToken(t.req.Method)),
+				vml.Text(t.req.Name),
+			).Gap(8).PadXY(14, 0).OnClick(func() { a.active = i })
+			if i == a.active {
+				tab.Bg(widget.Bg)
+			}
+			return tab
+		}),
+		vml.Row(vml.Text("+").Muted().Center().Grow(1)).W(40).OnClick(a.newRequest),
+	).H(tabsH).Bg(widget.Frame).BorderBottom(widget.Border)
 }
 
-func (a *App) drawURLBar(dst *ebiten.Image, t *reqTab, r Rect) {
-	c := &a.ctx
-	th := c.Th
-	protoR, methodR, field, send := urlBar(r, t.req.Protocol == "rest")
-	box := Rect{protoR.X, protoR.Y, field.X + field.W - protoR.X, protoR.H}
-	c.fill(dst, box, th.Sunken)
-	c.outline(dst, box, th.Border)
-
-	c.textCenter(dst, c.F.UI, protocolLabel[t.req.Protocol], protoR, th.Muted)
-	if methodR.W > 0 {
-		c.textCenter(dst, c.F.UI, t.req.Method, methodR, th.MethodColor(t.req.Method))
-	}
-	for _, chip := range []Rect{protoR, methodR} {
-		if chip.W > 0 {
-			c.fill(dst, Rect{chip.X + chip.W - 1, chip.Y + 8, 1, chip.H - 16}, th.Border)
-		}
-	}
-
-	a.drawURLText(dst, t, field)
-	label := "Send"
+func (a *App) urlBar(t *reqTab) vml.Node {
+	rest := t.req.Protocol == "rest"
+	send := "Send"
 	if t.sending {
-		label = "..."
+		send = "..."
 	}
-	c.button(dst, send, label, th.Accent, th.AccentText)
+	return vml.Row(
+		vml.Row(
+			chip(protocolLabel[t.req.Protocol], widget.Muted, 64, func() { a.cycleProtocol(t) }),
+			vml.VRuleInset(8),
+			vml.If(rest, chip(t.req.Method, methodToken(t.req.Method), 84, func() { a.cycleMethod(t) })),
+			vml.If(rest, vml.VRuleInset(8)),
+			vml.Field(&t.url).
+				Placeholder("Enter URL").
+				Segments(varSegments).
+				OnChange(func() { a.urlEdited(t) }).
+				OnEnter(func() { a.send(t) }).
+				Grow(1),
+		).Grow(1).Bg(widget.Sunken).Border(widget.Border),
+		vml.PrimaryButton(send).W(80).OnClick(func() { a.send(t) }),
+	).Gap(8).PadXY(widget.Pad, 8).H(urlH).Bg(widget.Bg)
 }
 
-func (a *App) drawURLText(dst *ebiten.Image, t *reqTab, field Rect) {
-	c := &a.ctx
-	clipped := c.clip(dst, field)
-	x := field.X + 10
-	// {{variables}} get their own color so they stand out from the
-	// literal URL text.
-	for _, seg := range splitVars(t.url.Text) {
-		clr := c.Th.Text
+// chip is a clickable label of fixed width, used for protocol and method.
+func chip(label string, clr widget.Token, w int, onClick func()) vml.Node {
+	return vml.Row(vml.Text(label).Center().Grow(1).Color(clr)).W(w).OnClick(onClick)
+}
+
+// varSegments colors {{variables}} so they stand out from the literal URL.
+func varSegments(s string) []vml.Seg {
+	var segs []vml.Seg
+	for _, seg := range splitVars(s) {
+		style := widget.Text
 		if seg.isVar {
-			clr = c.Th.OK
+			style = widget.OK
 		}
-		c.textMid(clipped, c.F.UI, seg.text, x, field, clr)
-		x += c.width(c.F.UI, seg.text)
+		segs = append(segs, vml.Seg{Text: seg.text, Style: style})
 	}
-	if t.url.Text == "" {
-		c.textMid(clipped, c.F.UI, "Enter URL", x, field, c.Th.Muted)
-	}
-	if t.url.Focused && (c.Tick/30)%2 == 0 {
-		cx := field.X + 10 + c.width(c.F.UI, string([]rune(t.url.Text)[:t.url.Cursor]))
-		c.fill(clipped, Rect{cx, field.Y + 8, 1, field.H - 16}, c.Th.Text)
-	}
+	return segs
 }
 
 type urlSeg struct {
@@ -195,72 +175,38 @@ func splitVars(s string) []urlSeg {
 	return segs
 }
 
-func (a *App) drawPanes(dst *ebiten.Image, t *reqTab, r Rect, panes []pane, active int) {
-	c := &a.ctx
-	tabsR, _ := r.SplitTop(paneTabsH)
-	c.drawTabs(dst, tabsR, a.tabItems(panes, t), active)
-
-	p := panes[active]
-	content := a.contentRect(r)
-	if p.kind == paneCode {
-		c.fill(dst, a.codeRect(r), c.Th.Sunken)
-	}
-	if msg, isErr := paneEmpty(p, t); msg != "" {
-		clr := c.Th.Muted
-		if isErr {
-			clr = c.Th.Error
-		}
-		a.drawLines(dst, content, msg, clr)
-		return
-	}
-	switch p.kind {
-	case paneCode:
-		c.drawCodeView(dst, a.codeRect(r), p.code(t))
-	case paneNote:
-		a.drawLines(dst, content, p.note(t), c.Th.Text)
-	case paneTable:
-		if p.title != "" {
-			c.caption(dst, Rect{content.X, content.Y, content.W, c.Th.RowH}, p.title)
-		}
-		c.drawTable(c.clip(dst, content), a.tableRect(content, p), *p.rows(a, t), true, p.editable)
-	}
+// pane is one tabbed area: a tab strip, with extra at its right end,
+// above the body of the active tab.
+func (a *App) pane(t *reqTab, panes []pane, active *int, extra vml.Node) vml.Node {
+	p := panes[*active]
+	return vml.Col(
+		vml.Row(
+			vml.Tabs(a.tabItems(panes, t), *active, func(i int) { *active = i }),
+			vml.Spacer(),
+			extra,
+		).H(paneTabsH).BorderBottom(widget.Border),
+		a.paneBody(p, t),
+	).Grow(1).Bg(widget.Bg)
 }
 
-// drawLines draws multi-line text from the top-left of r.
-func (a *App) drawLines(dst *ebiten.Image, r Rect, s string, clr color.RGBA) {
-	c := &a.ctx
-	for i, line := range strings.Split(s, "\n") {
-		c.text(dst, c.F.UI, line, r.X, r.Y+i*(c.lineH(c.F.UI)+6), clr)
-	}
-}
-
-// drawResponseStatus shows "200 OK  1.4s  156.67KB" at the right end of
-// the response tab strip.
-func (a *App) drawResponseStatus(dst *ebiten.Image, t *reqTab, r Rect) {
+// responseStatus is "200 OK  1.4s  156.67KB", dropped when the tabs need the room.
+func (a *App) responseStatus(t *reqTab) vml.Node {
 	if t.resp == nil || t.resp.Err != "" {
-		return
+		return nil
 	}
-	c := &a.ctx
-	tabsR, _ := r.SplitTop(paneTabsH)
-	clr := c.Th.OK
+	clr := widget.OK
 	if t.resp.Status >= 400 {
-		clr = c.Th.Error
+		clr = widget.Error
 	}
-	status := fmt.Sprintf("%d %s", t.resp.Status, t.resp.StatusText)
-	rest := fmt.Sprintf("%s  %s", formatDuration(t.resp.Duration), formatSize(t.resp.Size))
-	x := tabsR.X + tabsR.W - c.Th.Pad - c.width(c.F.UI, rest)
-	if tabs := c.tabRects(tabsR, a.tabItems(responsePanes, t)); x-12-c.width(c.F.UI, status) < tabs[len(tabs)-1].X+tabs[len(tabs)-1].W {
-		return // no room beside the tabs
-	}
-	c.textMid(dst, c.F.UI, rest, x, tabsR, c.Th.Text)
-	x -= 12 + c.width(c.F.UI, status)
-	c.textMid(dst, c.F.UI, status, x, tabsR, clr)
+	return vml.Row(
+		vml.Text(fmt.Sprintf("%d %s", t.resp.Status, t.resp.StatusText)).Color(clr),
+		vml.Text(fmt.Sprintf("%s  %s", formatDuration(t.resp.Duration), formatSize(t.resp.Size))),
+	).Gap(12).PadR(widget.Pad).Optional()
 }
 
-func (a *App) drawStatusBar(dst *ebiten.Image, r Rect) {
-	c := &a.ctx
-	c.fill(dst, r, c.Th.Sidebar)
-	c.hline(dst, r.X, r.Y, r.W, c.Th.Border)
-	c.textMid(dst, c.F.Small, a.status, r.X+c.Th.Pad, r, c.Th.Muted)
-	c.textMid(dst, c.F.Small, version, r.X+r.W-c.Th.Pad-c.width(c.F.Small, version), r, c.Th.Muted)
+func (a *App) statusBar() vml.Node {
+	return vml.Row(
+		vml.Text(a.status).Small().Muted().Ellipsis().Grow(1),
+		vml.Text(version).Small().Muted(),
+	).Gap(widget.Pad).PadXY(widget.Pad, 0).H(statusH).Bg(widget.Frame).BorderTop(widget.Border)
 }

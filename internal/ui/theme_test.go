@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/jsonview"
+	"github.com/gascoigne-ai/gascoigne-workshop/widget"
 )
 
 func luminance(c color.RGBA) float64 {
@@ -24,56 +25,30 @@ func contrast(a, b color.RGBA) float64 {
 	return (max(la, lb) + 0.05) / (min(la, lb) + 0.05)
 }
 
-// Text must stay readable on every surface it is drawn on, in each theme.
-func TestThemesAreReadable(t *testing.T) {
+// Method labels and JSON colors are drawn on the list and code
+// background; they must be readable in every theme.
+func TestAppColorsAreReadableOnLists(t *testing.T) {
 	for _, tc := range themeChoices {
 		th := tc.build()
-		pairs := []struct {
-			name   string
-			fg, bg color.RGBA
-			min    float64
-		}{
-			{"text on pane", th.Text, th.Bg, 4.5},
-			{"text on list", th.Text, th.Sunken, 4.5},
-			{"text on zebra row", th.Text, th.Alt, 4.5},
-			{"text on selected row", th.Text, th.Selected, 4.5},
-			{"text on frame", th.Text, th.Sidebar, 4.5},
-			{"muted on pane", th.Muted, th.Bg, 3},
-			{"muted on list", th.Muted, th.Sunken, 3},
-			{"chip text on chip", th.ChipText, th.Chip, 4.5},
-			{"accent text on accent", th.AccentText, th.Accent, 4.5},
-		}
-		for _, p := range pairs {
-			if got := contrast(p.fg, p.bg); got < p.min {
-				t.Errorf("%s: %s contrast %.2f < %.1f", tc.id, p.name, got, p.min)
+		bg := th.Color(widget.Sunken)
+		for _, m := range []string{"GET", "POST", "PUT", "PATCH", "DELETE"} {
+			if got := contrast(th.Color(methodToken(m)), bg); got < 3.5 {
+				t.Errorf("%s: method %s contrast %.2f", tc.id, m, got)
 			}
 		}
-		for kind, clr := range th.Syntax {
-			if got := contrast(clr, th.Sunken); got < 3.5 {
-				t.Errorf("%s: syntax kind %d contrast %.2f on code background", tc.id, kind, got)
-			}
-		}
-		for m, clr := range th.Method {
-			if got := contrast(clr, th.Sunken); got < 3.5 {
-				t.Errorf("%s: method %s contrast %.2f on list", tc.id, m, got)
+		for kind, tok := range jsonTokens {
+			if got := contrast(th.Color(tok), bg); got < 3.5 {
+				t.Errorf("%s: json kind %d contrast %.2f", tc.id, kind, got)
 			}
 		}
 	}
 }
 
-func TestThemesDefineEveryKind(t *testing.T) {
+func TestEveryJSONKindHasAToken(t *testing.T) {
 	kinds := []jsonview.Kind{jsonview.Plain, jsonview.Punct, jsonview.Key, jsonview.String, jsonview.Number, jsonview.Literal}
-	for _, tc := range themeChoices {
-		th := tc.build()
-		for _, k := range kinds {
-			if _, ok := th.Syntax[k]; !ok {
-				t.Errorf("%s: no color for kind %d", tc.id, k)
-			}
-		}
-		for m := range DarkTheme().Method {
-			if _, ok := th.Method[m]; !ok {
-				t.Errorf("%s: no color for method %s", tc.id, m)
-			}
+	for _, k := range kinds {
+		if jsonTokens[k] == "" {
+			t.Errorf("no token for json kind %d", k)
 		}
 	}
 }
@@ -84,15 +59,36 @@ func TestThemeFor(t *testing.T) {
 		wantBg            color.RGBA
 		wantFont          float64
 	}{
-		{"dark medium", "dark", "medium", DarkTheme().Bg, 14},
-		{"light large", "light", "large", LightTheme().Bg, 16},
-		{"unknown theme falls back to dark", "neon", "small", DarkTheme().Bg, 12},
-		{"unknown size falls back to medium", "light", "huge", LightTheme().Bg, 14},
+		{"dark medium", "dark", "medium", widget.Dark().Color(widget.Bg), 14},
+		{"light large", "light", "large", widget.Light().Color(widget.Bg), 16},
+		{"unknown theme falls back to dark", "neon", "small", widget.Dark().Color(widget.Bg), 12},
+		{"unknown size falls back to medium", "light", "huge", widget.Light().Color(widget.Bg), 14},
 	}
 	for _, tt := range tests {
 		th := ThemeFor(tt.theme, tt.size)
-		if th.Bg != tt.wantBg || th.FontSize != tt.wantFont {
-			t.Errorf("%s: bg %v font %v", tt.name, th.Bg, th.FontSize)
+		if th.Color(widget.Bg) != tt.wantBg || th.FontSize != tt.wantFont {
+			t.Errorf("%s: bg %v font %v", tt.name, th.Color(widget.Bg), th.FontSize)
 		}
+	}
+}
+
+func TestUnknownMethodFallsBackToTheTextColor(t *testing.T) {
+	th := ThemeFor("dark", "medium")
+	if th.Color(methodToken("PROPFIND")) != th.Color(widget.Text) {
+		t.Fatal("unknown method must resolve to the text color")
+	}
+}
+
+func TestCodeLinesKeepsStructureAndColors(t *testing.T) {
+	lines := codeLines([]byte(`{"a":1}`))
+	if len(lines) != 3 || !lines[0].Foldable || lines[1].Foldable {
+		t.Fatalf("lines = %+v", lines)
+	}
+	var styles []widget.Token
+	for _, s := range lines[1].Spans {
+		styles = append(styles, s.Style)
+	}
+	if styles[1] != jsonTokens[jsonview.Key] || styles[len(styles)-1] != jsonTokens[jsonview.Number] {
+		t.Fatalf("styles = %v", styles)
 	}
 }

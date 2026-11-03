@@ -1,4 +1,4 @@
-package ui
+package widget
 
 import (
 	"bytes"
@@ -14,7 +14,7 @@ import (
 	"golang.org/x/image/font/gofont/goregular"
 )
 
-// Fonts are the three faces the UI draws with.
+// Fonts are the three faces the toolkit draws with.
 type Fonts struct{ UI, Small, Mono *text.GoTextFace }
 
 // NewFonts builds the faces from the embedded Go fonts, sized for a
@@ -46,6 +46,15 @@ type Ctx struct {
 	Scale float64
 }
 
+// NewCtx returns a context at scale 1.
+func NewCtx(th Theme) (*Ctx, error) {
+	fonts, err := NewFonts(th, 1)
+	if err != nil {
+		return nil, err
+	}
+	return &Ctx{Th: th, F: fonts, Scale: 1}, nil
+}
+
 // SetScale rebuilds the fonts when the device scale factor changes, for
 // example when the window moves to another monitor.
 func (c *Ctx) SetScale(scale float64) error {
@@ -70,29 +79,34 @@ func (c *Ctx) SetTheme(th Theme) error {
 	return nil
 }
 
-// caption draws s as a small uppercase muted label, vertically centered in r.
-func (c *Ctx) caption(dst *ebiten.Image, r Rect, s string) {
-	c.textMid(dst, c.F.Small, strings.ToUpper(s), r.X, r, c.Th.Muted)
-}
+// Col resolves a color token in the current theme.
+func (c *Ctx) Col(tok Token) color.RGBA { return c.Th.Color(tok) }
 
-// dev converts logical pixels to device pixels.
 func (c *Ctx) dev(n float32) float32 { return n * float32(c.Scale) }
 
-func (c *Ctx) fill(dst *ebiten.Image, r Rect, clr color.RGBA) {
+// Fill paints r.
+func (c *Ctx) Fill(dst *ebiten.Image, r Rect, clr color.RGBA) {
 	vector.FillRect(dst, c.dev(float32(r.X)), c.dev(float32(r.Y)), c.dev(float32(r.W)), c.dev(float32(r.H)), clr, false)
 }
 
-func (c *Ctx) outline(dst *ebiten.Image, r Rect, clr color.RGBA) {
+// Outline strokes a one-pixel border just inside r.
+func (c *Ctx) Outline(dst *ebiten.Image, r Rect, clr color.RGBA) {
 	w := c.dev(1)
 	vector.StrokeRect(dst, c.dev(float32(r.X))+w/2, c.dev(float32(r.Y))+w/2, c.dev(float32(r.W))-w, c.dev(float32(r.H))-w, w, clr, false)
 }
 
-func (c *Ctx) hline(dst *ebiten.Image, x, y, w int, clr color.RGBA) {
-	c.fill(dst, Rect{x, y, w, 1}, clr)
+// HLine draws a one-pixel horizontal line.
+func (c *Ctx) HLine(dst *ebiten.Image, x, y, w int, clr color.RGBA) {
+	c.Fill(dst, Rect{x, y, w, 1}, clr)
 }
 
-// clip returns dst limited to r, so drawing outside r is discarded.
-func (c *Ctx) clip(dst *ebiten.Image, r Rect) *ebiten.Image {
+// VLine draws a one-pixel vertical line.
+func (c *Ctx) VLine(dst *ebiten.Image, x, y, h int, clr color.RGBA) {
+	c.Fill(dst, Rect{x, y, 1, h}, clr)
+}
+
+// Clip returns dst limited to r, so drawing outside r is discarded.
+func (c *Ctx) Clip(dst *ebiten.Image, r Rect) *ebiten.Image {
 	b := dst.Bounds()
 	x0 := max(int(c.dev(float32(r.X))), b.Min.X)
 	y0 := max(int(c.dev(float32(r.Y))), b.Min.Y)
@@ -101,51 +115,72 @@ func (c *Ctx) clip(dst *ebiten.Image, r Rect) *ebiten.Image {
 	return dst.SubImage(image.Rect(x0, y0, max(x1, x0), max(y1, y0))).(*ebiten.Image)
 }
 
-func (c *Ctx) width(face *text.GoTextFace, s string) int {
+// Width is the logical width of s in face.
+func (c *Ctx) Width(face *text.GoTextFace, s string) int {
 	w, _ := text.Measure(s, face, 0)
 	return int(w/c.Scale + 0.5)
 }
 
-func (c *Ctx) lineH(face *text.GoTextFace) int {
+// LineH is the logical line height of face.
+func (c *Ctx) LineH(face *text.GoTextFace) int {
 	m := face.Metrics()
 	return int((m.HAscent+m.HDescent)/c.Scale + 0.5)
 }
 
-// text draws s with its top-left at x, y.
-func (c *Ctx) text(dst *ebiten.Image, face *text.GoTextFace, s string, x, y int, clr color.RGBA) {
+// Text draws s with its top-left at x, y.
+func (c *Ctx) Text(dst *ebiten.Image, face *text.GoTextFace, s string, x, y int, clr color.RGBA) {
 	op := &text.DrawOptions{}
 	op.GeoM.Translate(float64(x)*c.Scale, float64(y)*c.Scale)
 	op.ColorScale.ScaleWithColor(clr)
 	text.Draw(dst, s, face, op)
 }
 
-// textMid draws s starting at x, vertically centered in r.
-func (c *Ctx) textMid(dst *ebiten.Image, face *text.GoTextFace, s string, x int, r Rect, clr color.RGBA) {
-	c.text(dst, face, s, x, r.Y+(r.H-c.lineH(face))/2, clr)
+// TextMid draws s starting at x, vertically centered in r.
+func (c *Ctx) TextMid(dst *ebiten.Image, face *text.GoTextFace, s string, x int, r Rect, clr color.RGBA) {
+	c.Text(dst, face, s, x, r.Y+(r.H-c.LineH(face))/2, clr)
 }
 
-// textCenter draws s centered in r.
-func (c *Ctx) textCenter(dst *ebiten.Image, face *text.GoTextFace, s string, r Rect, clr color.RGBA) {
-	c.textMid(dst, face, s, r.X+(r.W-c.width(face, s))/2, r, clr)
+// TextCenter draws s centered in r.
+func (c *Ctx) TextCenter(dst *ebiten.Image, face *text.GoTextFace, s string, r Rect, clr color.RGBA) {
+	c.TextMid(dst, face, s, r.X+(r.W-c.Width(face, s))/2, r, clr)
 }
 
-// ellipsize shortens s with "..." until it fits maxW pixels.
-func (c *Ctx) ellipsize(face *text.GoTextFace, s string, maxW int) string {
-	if c.width(face, s) <= maxW {
+// Ellipsize shortens s with "..." until it fits maxW pixels.
+func (c *Ctx) Ellipsize(face *text.GoTextFace, s string, maxW int) string {
+	if c.Width(face, s) <= maxW {
 		return s
 	}
 	runes := []rune(s)
 	for len(runes) > 0 {
 		runes = runes[:len(runes)-1]
-		if cand := strings.TrimRight(string(runes), " ") + "..."; c.width(face, cand) <= maxW {
+		if cand := strings.TrimRight(string(runes), " ") + "..."; c.Width(face, cand) <= maxW {
 			return cand
 		}
 	}
 	return ""
 }
 
-// triangle draws a filled arrowhead centered on cx, cy.
-func (c *Ctx) triangle(dst *ebiten.Image, cx, cy, size float32, down bool, clr color.RGBA) {
+// CursorAt maps a pixel offset into s to the nearest rune boundary.
+func (c *Ctx) CursorAt(s string, x int) int {
+	runes := []rune(s)
+	best, bestDist := 0, abs(x)
+	for i := 1; i <= len(runes); i++ {
+		if d := abs(x - c.Width(c.F.UI, string(runes[:i]))); d < bestDist {
+			best, bestDist = i, d
+		}
+	}
+	return best
+}
+
+func abs(n int) int {
+	if n < 0 {
+		return -n
+	}
+	return n
+}
+
+// Triangle draws a filled arrowhead centered on cx, cy.
+func (c *Ctx) Triangle(dst *ebiten.Image, cx, cy, size float32, down bool, clr color.RGBA) {
 	cx, cy, size = c.dev(cx), c.dev(cy), c.dev(size)
 	var p vector.Path
 	if down {
@@ -163,13 +198,20 @@ func (c *Ctx) triangle(dst *ebiten.Image, cx, cy, size float32, down bool, clr c
 	vector.FillPath(dst, &p, &vector.FillOptions{}, op)
 }
 
-// cross draws an x centered on cx, cy.
-func (c *Ctx) cross(dst *ebiten.Image, cx, cy, size float32, clr color.RGBA) {
-	c.line(dst, cx-size, cy-size, cx+size, cy+size, 1.5, clr)
-	c.line(dst, cx-size, cy+size, cx+size, cy-size, 1.5, clr)
+// Cross draws an x centered on cx, cy.
+func (c *Ctx) Cross(dst *ebiten.Image, cx, cy, size float32, clr color.RGBA) {
+	c.Line(dst, cx-size, cy-size, cx+size, cy+size, 1.5, clr)
+	c.Line(dst, cx-size, cy+size, cx+size, cy-size, 1.5, clr)
 }
 
-// line draws an antialiased segment between logical points.
-func (c *Ctx) line(dst *ebiten.Image, x0, y0, x1, y1, width float32, clr color.RGBA) {
+// Line draws an antialiased segment between logical points.
+func (c *Ctx) Line(dst *ebiten.Image, x0, y0, x1, y1, width float32, clr color.RGBA) {
 	vector.StrokeLine(dst, c.dev(x0), c.dev(y0), c.dev(x1), c.dev(y1), c.dev(width), clr, true)
+}
+
+// Lighten nudges a color toward white, for hover states.
+func Lighten(c color.RGBA) color.RGBA {
+	const step = 16
+	up := func(v uint8) uint8 { return uint8(min(int(v)+step, 255)) }
+	return color.RGBA{R: up(c.R), G: up(c.G), B: up(c.B), A: c.A}
 }
