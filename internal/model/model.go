@@ -21,8 +21,19 @@ type Request struct {
 	URL      string
 	Params   []KV
 	Headers  []KV
-	Body     string
+	Body     string // raw text of the json, text and legacy bodies
+	BodyType string // BodyNone, BodyJSON, ...; "" sends Body as is, with no Content-Type
+	Form     []KV   // fields of the form and multipart bodies
 }
+
+// Body types a request can send.
+const (
+	BodyNone      = "none"
+	BodyJSON      = "json"
+	BodyText      = "text"
+	BodyForm      = "form"
+	BodyMultipart = "multipart"
+)
 
 // Folder groups requests and nested folders in a collection tree.
 type Folder struct {

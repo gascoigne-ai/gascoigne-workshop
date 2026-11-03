@@ -32,7 +32,7 @@ flowchart LR
 
 `model.Request` is protocol-neutral: `Protocol` picks the implementation, `Method` only matters for REST. `{{name}}` in a URL is expanded from the collection vars (`model.Expand`) and the params table is folded into the URL with `model.WithParams`; `model.ParamsFromURL` goes the other way (`model.MergeParams` rebuilds the table after a URL edit, keeping descriptions and disabled rows), so the URL bar and the Params table stay in sync. The caller does both before sending.
 
-`proto.Registry` is a name-to-`Protocol` table (`rest`, `websocket`, `mcp`). `Send` returns an error only for misuse (unknown protocol, malformed method or URL). Transport failures arrive in `Response.Err` so the UI always has a value to render. `rest` uses `net/http`, keeps at most 32 MiB of body, and skips disabled header rows. `websocket` and `mcp` are stubs answering "not implemented yet".
+`proto.Registry` is a name-to-`Protocol` table (`rest`, `websocket`, `mcp`). `Send` returns an error only for misuse (unknown protocol, malformed method or URL). Transport failures arrive in `Response.Err` so the UI always has a value to render. `rest` uses `net/http`, keeps at most 32 MiB of body, and skips disabled header rows. The request body is encoded by a table keyed by `Request.BodyType` (`none`, `json`, `text`, `form`, `multipart`; "" sends `Body` as is with no Content-Type) which also gives the automatic Content-Type; an enabled `Content-Type` header of the user replaces it. Form and multipart bodies use the enabled, named rows of `Request.Form`. `websocket` and `mcp` are stubs answering "not implemented yet".
 
 ## JSON view
 

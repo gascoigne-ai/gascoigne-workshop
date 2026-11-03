@@ -1,8 +1,11 @@
 package proto
 
 import (
+	"bytes"
 	"context"
 	"io"
+	"mime"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -117,4 +120,104 @@ func TestRESTSendFailures(t *testing.T) {
 			t.Fatalf("resp = %+v err = %v", resp, err)
 		}
 	})
+}
+
+// capture records what the server received.
+type capture struct {
+	method, contentType string
+	body                []byte
+}
+
+func captureServer(t *testing.T) (*httptest.Server, *capture) {
+	t.Helper()
+	got := &capture{}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		got.method, got.contentType = r.Method, r.Header.Get("Content-Type")
+		got.body, _ = io.ReadAll(r.Body)
+	}))
+	t.Cleanup(srv.Close)
+	return srv, got
+}
+
+func TestRESTBodyTypes(t *testing.T) {
+	form := []model.KV{
+		{Name: "q", Value: "a b&c", Enabled: true},
+		{Name: "off", Value: "x", Enabled: false},
+		{Name: "", Value: "unnamed", Enabled: true},
+		{Name: "page", Value: "2", Enabled: true},
+	}
+	tests := []struct {
+		name            string
+		req             model.Request
+		wantBody        string
+		wantContentType string
+	}{
+		{"none sends nothing", model.Request{BodyType: model.BodyNone, Body: "ignored"}, "", ""},
+		{"legacy raw body has no content type", model.Request{Body: `{"a":1}`}, `{"a":1}`, ""},
+		{"json", model.Request{BodyType: model.BodyJSON, Body: `{"a":1}`}, `{"a":1}`, "application/json"},
+		{"text", model.Request{BodyType: model.BodyText, Body: "hello"}, "hello", "text/plain; charset=utf-8"},
+		{"form skips disabled and unnamed rows and escapes", model.Request{BodyType: model.BodyForm, Form: form}, "q=a+b%26c&page=2", "application/x-www-form-urlencoded"},
+		{"form ignores the text body", model.Request{BodyType: model.BodyForm, Body: "text", Form: form[:1]}, "q=a+b%26c", "application/x-www-form-urlencoded"},
+		{"json body ignores form rows", model.Request{BodyType: model.BodyJSON, Body: "{}", Form: form}, "{}", "application/json"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			srv, got := captureServer(t)
+			tt.req.Method, tt.req.URL = "POST", srv.URL
+			if _, err := (REST{}).Send(context.Background(), tt.req); err != nil {
+				t.Fatal(err)
+			}
+			if string(got.body) != tt.wantBody || got.contentType != tt.wantContentType {
+				t.Fatalf("body %q type %q; want %q %q", got.body, got.contentType, tt.wantBody, tt.wantContentType)
+			}
+		})
+	}
+}
+
+func TestRESTMultipartBody(t *testing.T) {
+	srv, got := captureServer(t)
+	_, err := REST{}.Send(context.Background(), model.Request{
+		Method: "POST", URL: srv.URL, BodyType: model.BodyMultipart,
+		Form: []model.KV{{Name: "a", Value: "1", Enabled: true}, {Name: "skip", Value: "x"}, {Name: "b", Value: "héllo", Enabled: true}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	mediaType, params, err := mime.ParseMediaType(got.contentType)
+	if err != nil || mediaType != "multipart/form-data" || params["boundary"] == "" {
+		t.Fatalf("content type %q (%v)", got.contentType, err)
+	}
+	reader := multipart.NewReader(bytes.NewReader(got.body), params["boundary"])
+	fields := map[string]string{}
+	for {
+		part, err := reader.NextPart()
+		if err != nil {
+			break
+		}
+		data, _ := io.ReadAll(part)
+		fields[part.FormName()] = string(data)
+	}
+	if len(fields) != 2 || fields["a"] != "1" || fields["b"] != "héllo" {
+		t.Fatalf("fields = %v", fields)
+	}
+}
+
+func TestUserContentTypeHeaderWins(t *testing.T) {
+	tests := []struct {
+		name    string
+		headers []model.KV
+		want    string
+	}{
+		{"user header replaces the automatic one", []model.KV{{Name: "content-type", Value: "application/vnd.api+json", Enabled: true}}, "application/vnd.api+json"},
+		{"a disabled header does not", []model.KV{{Name: "Content-Type", Value: "x/y", Enabled: false}}, "application/json"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			srv, got := captureServer(t)
+			REST{}.Send(context.Background(), model.Request{Method: "POST", URL: srv.URL, BodyType: model.BodyJSON, Body: "{}", Headers: tt.headers})
+			if got.contentType != tt.want {
+				t.Fatalf("content type = %q, want %q", got.contentType, tt.want)
+			}
+		})
+	}
 }
