@@ -59,6 +59,7 @@ Task numbers refer to `tasks/`; "-" means no task yet.
 - Tab strip overflow: horizontal scrolling with the active tab kept in view (needs a horizontal `vml.Scroll`).
 - `+` creating the request inside the selected folder: needs stable request pointers in the model (`Folder.Requests` as pointers), done with task 013.
 - Scroll-into-view of a focused child inside a `vml.Scroll`.
+- Response: line wrap, image and HTML preview, save body to a file (needs the dialogs of task 012), Shift+arrow selection in the code view.
 
 ### Added later
 - Right-click menus everywhere (018), table row operations and change handling (019), remembering window and UI state (020). Task 018 depends on 012 (menu primitive) and uses 013 and 019; 020 depends on 011.

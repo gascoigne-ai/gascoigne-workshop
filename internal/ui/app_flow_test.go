@@ -224,6 +224,8 @@ func TestEnterInTheURLFieldSends(t *testing.T) {
 	}
 }
 
+// A second send while one is running (the shortcut, since a click on the
+// button now cancels) must not start another request.
 func TestSendingTwiceWhileRunningStartsOneRequest(t *testing.T) {
 	hits := make(chan struct{}, 4)
 	release := make(chan struct{})
@@ -237,7 +239,8 @@ func TestSendingTwiceWhileRunningStartsOneRequest(t *testing.T) {
 	pointTabAt(tab, srv.URL)
 
 	click(a, sendX, urlBarY)
-	click(a, sendX, urlBarY)
+	a.step(key(ebiten.KeyEnter, true, false))
+	a.step(key(ebiten.KeyEnter, true, false))
 	<-hits
 	close(release)
 	waitForResponse(t, a, tab)
@@ -1362,5 +1365,170 @@ func TestSwitchingAuthTypesKeepsEachTypesValues(t *testing.T) {
 	click(a, authBearerX, chipsY)
 	if a.cur().req.Auth.Token != "abc" || a.cur().authInput("token").Text != "abc" {
 		t.Fatalf("auth %+v field %q", a.cur().req.Auth, a.cur().authInput("token").Text)
+	}
+}
+
+// Response pane toolbar at 1280x800 (y=194): Pretty, Raw on the left;
+// Find, Copy, cURL on the right. The find bar is the row below it.
+const (
+	toolbarY   = 194
+	prettyX    = 810
+	rawX       = 866
+	findBtnX   = 1128
+	copyBtnX   = 1184
+	curlBtnX   = 1242
+	findBarY   = 222
+	findFieldX = 900
+	findPrevX  = 1186
+	findNextX  = 1220
+	findCloseX = 1254
+)
+
+// jsonResponse points the current tab at a server returning body and sends.
+func jsonResponse(t *testing.T, body string) *App {
+	t.Helper()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { io.WriteString(w, body) }))
+	t.Cleanup(srv.Close)
+	a, _ := newTestApp(t)
+	sendAndWait(t, a, srv.URL)
+	return a
+}
+
+func TestRawAndPrettyToggleTheResponseView(t *testing.T) {
+	a := jsonResponse(t, `{"a":1,"b":[2]}`)
+	tab := a.cur()
+	if len(tab.view.Lines) != 6 {
+		t.Fatalf("pretty view has %d lines", len(tab.view.Lines))
+	}
+	click(a, rawX, toolbarY)
+	if !tab.raw || len(tab.view.Lines) != 1 || tab.view.AllText() != `{"a":1,"b":[2]}` {
+		t.Fatalf("raw: %d lines %q", len(tab.view.Lines), tab.view.AllText())
+	}
+	click(a, prettyX, toolbarY)
+	if tab.raw || len(tab.view.Lines) != 6 {
+		t.Fatalf("back to pretty: raw %v, %d lines", tab.raw, len(tab.view.Lines))
+	}
+}
+
+func TestBinaryBodiesAreNotShownAsText(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte{0x89, 'P', 'N', 'G', 0, 1, 2, 0xff})
+	}))
+	defer srv.Close()
+	a, _ := newTestApp(t)
+	sendAndWait(t, a, srv.URL)
+	msg, isErr := paneEmpty(responsePanes[0], a.cur())
+	if !strings.Contains(msg, "Binary body") || !strings.Contains(msg, "8B") || isErr {
+		t.Fatalf("message %q error %v", msg, isErr)
+	}
+	if msg, _ := paneEmpty(responsePanes[1], a.cur()); msg != "" {
+		t.Fatalf("the Headers pane must still show headers, got %q", msg)
+	}
+}
+
+func TestCopyBodyAndCopyAsCurl(t *testing.T) {
+	a := jsonResponse(t, `{"ok":true}`)
+	clip := &fakeClip{}
+	a.ctx.Clipboard = clip
+
+	click(a, copyBtnX, toolbarY)
+	if clip.text != `{"ok":true}` {
+		t.Fatalf("copy body: %q (the body as received, not the pretty one)", clip.text)
+	}
+	click(a, curlBtnX, toolbarY)
+	if !strings.HasPrefix(clip.text, "curl -L 'http://127.0.0.1:") {
+		t.Fatalf("copy as cURL: %q", clip.text)
+	}
+}
+
+func TestCurlCopyExpandsVariables(t *testing.T) {
+	a, _ := newTestApp(t) // the sample request uses {{baseUrl}}
+	a.cur().resp = &model.Response{Status: 200, Body: []byte("{}")}
+	a.cur().view.SetLines(codeLines([]byte("{}")))
+	clip := &fakeClip{}
+	a.ctx.Clipboard = clip
+	a.step(widget.Input{})
+	click(a, curlBtnX, toolbarY)
+	if !strings.Contains(clip.text, "https://api.github.com/search/repositories?q=gioui") || strings.Contains(clip.text, "{{") {
+		t.Fatalf("cURL = %q", clip.text)
+	}
+}
+
+func TestCtrlFOpensFindAndTypingSearches(t *testing.T) {
+	a := jsonResponse(t, `{"id":1,"name":"x","ids":[1,2]}`)
+	tab := a.cur()
+	a.step(key(ebiten.KeyF, true, false))
+	if !tab.findOpen || !tab.find.Focused {
+		t.Fatalf("findOpen %v focused %v", tab.findOpen, tab.find.Focused)
+	}
+	a.typeText("id")
+	if tab.matchIdx != 0 || len(tab.view.Find("id")) != 2 {
+		t.Fatalf("matchIdx %d, matches %d", tab.matchIdx, len(tab.view.Find("id")))
+	}
+	a.step(widget.Input{Enter: true})
+	if tab.matchIdx != 1 {
+		t.Fatalf("Enter goes to the next match, idx %d", tab.matchIdx)
+	}
+	a.step(widget.Input{Enter: true}) // wraps
+	if tab.matchIdx != 0 {
+		t.Fatalf("wrap: idx %d", tab.matchIdx)
+	}
+	a.step(widget.Input{Enter: true, Shift: true})
+	if tab.matchIdx != 1 {
+		t.Fatalf("Shift+Enter goes back and wraps, idx %d", tab.matchIdx)
+	}
+}
+
+func TestFindButtonsAndClose(t *testing.T) {
+	a := jsonResponse(t, `{"id":1,"ids":[1]}`)
+	tab := a.cur()
+	click(a, findBtnX, toolbarY)
+	if !tab.findOpen {
+		t.Fatal("the Find button opens the bar")
+	}
+	click(a, findFieldX, findBarY)
+	a.typeText("id")
+	click(a, findNextX, findBarY)
+	if tab.matchIdx != 1 {
+		t.Fatalf("next: %d", tab.matchIdx)
+	}
+	click(a, findPrevX, findBarY)
+	if tab.matchIdx != 0 {
+		t.Fatalf("previous: %d", tab.matchIdx)
+	}
+	click(a, findCloseX, findBarY)
+	if tab.findOpen {
+		t.Fatal("× closes the bar")
+	}
+}
+
+func TestEscapeClosesFindBeforeAnythingElse(t *testing.T) {
+	a := jsonResponse(t, `{"id":1}`)
+	tab := a.cur()
+	a.step(key(ebiten.KeyF, true, false))
+	a.typeText("id")
+	a.step(widget.Input{Escape: true})
+	if tab.findOpen || len(tab.view.Find("")) != 0 {
+		t.Fatal("Escape closes the find bar")
+	}
+	if tab.resp == nil {
+		t.Fatal("and must not touch the response")
+	}
+}
+
+func TestANewResponseRerunsAnOpenSearch(t *testing.T) {
+	a := jsonResponse(t, `{"id":1}`)
+	tab := a.cur()
+	a.step(key(ebiten.KeyF, true, false))
+	a.typeText("id")
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { io.WriteString(w, `{"id":1,"idx":2,"idy":3}`) }))
+	defer srv.Close()
+	sendAndWait(t, a, srv.URL)
+	if got := len(tab.view.Find("id")); got != 3 {
+		t.Fatalf("matches after the new response: %d", got)
+	}
+	if tab.matchIdx != 0 {
+		t.Fatalf("matchIdx = %d", tab.matchIdx)
 	}
 }

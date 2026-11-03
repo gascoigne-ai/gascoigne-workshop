@@ -58,6 +58,10 @@ type reqTab struct {
 	cancel                context.CancelFunc           // stops the running request
 	auth                  map[string]*widget.TextField // Auth pane inputs by field id, created on first use
 	showSecrets           bool                         // show masked credential fields
+	raw                   bool                         // show the response body as received, not pretty-printed
+	findOpen              bool                         // the find bar is showing
+	find                  widget.TextField             // the search text
+	matchIdx              int                          // the active match, -1 for none
 	seq                   int                          // numbers the sends, so a late result of an old one is ignored
 }
 
@@ -70,6 +74,7 @@ func newTab(req *model.Request) *reqTab {
 		}
 	}
 	t.saved = req.Clone()
+	t.matchIdx = -1
 	t.timeout = widget.NewTextField(timeoutText(req.TimeoutSec))
 	t.body = widget.NewTextArea(req.Body)
 	return t
@@ -236,7 +241,7 @@ func (a *App) apply(r sendResult) {
 	}
 	t.sending = false
 	t.resp = &r.resp
-	t.view.SetLines(codeLines(r.resp.Body))
+	a.refreshView(t)
 	if r.resp.Err != "" {
 		a.status = "Request failed"
 		return
@@ -279,6 +284,8 @@ func (a *App) step(in widget.Input) {
 			a.menu = false
 		case a.edit != nil:
 			a.cancelEdit()
+		case a.cur().findOpen:
+			a.closeFind(a.cur())
 		default:
 			a.cancelSend(a.cur())
 		}

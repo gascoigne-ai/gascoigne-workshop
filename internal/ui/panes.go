@@ -7,9 +7,11 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/jsonview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
 	. "github.com/gascoigne-ai/gascoigne-workshop/vml"
 	w "github.com/gascoigne-ai/gascoigne-workshop/widget"
 )
@@ -23,6 +25,7 @@ const (
 	paneBody
 	paneSettings
 	paneAuth
+	paneResponse
 )
 
 // pane describes one tab of the request or response area. The tables
@@ -69,8 +72,7 @@ func noResponse(t *reqTab) (string, bool) {
 }
 
 var responsePanes = []pane{
-	{label: "Response", kind: paneCode, empty: noResponse,
-		code: func(t *reqTab) *w.CodeView { return &t.view }},
+	{label: "Response", kind: paneResponse, empty: responseEmpty},
 	{label: "Headers", kind: paneTable, empty: noResponse,
 		rows: func(_ *App, t *reqTab) *[]model.KV {
 			if t.resp == nil {
@@ -126,6 +128,7 @@ var paneBuilders = map[paneKind]func(a *App, p pane, t *reqTab, scroll *ScrollSt
 	paneBody:     (*App).bodyPane,
 	paneSettings: (*App).settingsPane,
 	paneAuth:     (*App).authPane,
+	paneResponse: (*App).responsePane,
 	paneTable:    (*App).tablePane,
 }
 
@@ -336,4 +339,174 @@ func (a *App) timeoutEdited(t *reqTab) {
 		return
 	}
 	t.req.TimeoutSec = n
+}
+
+// looksBinary reports whether a body is not text: it has a NUL byte or
+// is not valid UTF-8 (judged on the first 8 KiB).
+func looksBinary(body []byte) bool {
+	sample := body
+	if len(body) > binarySample {
+		sample = body[:binarySample]
+		for i := 0; i < utf8.UTFMax-1 && !utf8.Valid(sample); i++ {
+			sample = sample[:len(sample)-1] // the cut may split a character
+		}
+	}
+	return bytes.IndexByte(sample, 0) >= 0 || !utf8.Valid(sample)
+}
+
+const binarySample = 8 << 10
+
+// findCount is the counter shown in the find bar: "3/12", "No matches",
+// "3 matches" when none is active, or nothing for an empty query.
+func findCount(query string, matches, index int) string {
+	switch {
+	case query == "":
+		return ""
+	case matches == 0:
+		return "No matches"
+	case index < 0:
+		return fmt.Sprintf("%d matches", matches)
+	}
+	return fmt.Sprintf("%d/%d", index+1, matches)
+}
+
+// responseEmpty is noResponse plus the case of a body that is not text.
+func responseEmpty(t *reqTab) (string, bool) {
+	if msg, isErr := noResponse(t); msg != "" {
+		return msg, isErr
+	}
+	if looksBinary(t.resp.Body) {
+		return fmt.Sprintf("Binary body, %s (not shown)", formatSize(len(t.resp.Body))), false
+	}
+	return "", false
+}
+
+// responsePane is the response body with its toolbar and find bar.
+func (a *App) responsePane(_ pane, t *reqTab, _ *ScrollState) Node {
+	return Col(Grow(1),
+		Row(H(w.RowH), PadXY(w.Pad, 0), Gap(6), BorderBottom(w.Border),
+			a.viewChip("Pretty", !t.raw, 56, func() { a.setRaw(t, false) }),
+			a.viewChip("Raw", t.raw, 44, func() { a.setRaw(t, true) }),
+			Spacer(),
+			Button("Find", W(48), OnClick(a.openFind)),
+			Button("Copy", W(52), OnClick(func() { a.copyBody(t) })),
+			Button("cURL", W(52), OnClick(func() { a.copyCurl(t) })),
+		),
+		If(t.findOpen, a.findBar(t)),
+		Code(&t.view, Grow(1), Bg(w.Sunken)),
+	)
+}
+
+func (a *App) viewChip(label string, selected bool, width int, onClick func()) Node {
+	if selected {
+		return PrimaryButton(label, W(width), OnClick(onClick))
+	}
+	return Button(label, W(width), OnClick(onClick))
+}
+
+func (a *App) findBar(t *reqTab) Node {
+	return Row(H(w.RowH), PadXY(w.Pad, 0), Gap(6), BorderBottom(w.Border),
+		Field(&t.find, Grow(1), Placeholder("Find"),
+			OnChange(func() { a.runFind(t) }),
+			OnEnter(func() { a.findEnter(t) }),
+		),
+		Text(findCount(t.find.Text, len(t.view.Matches()), t.matchIdx), Small(), Muted(), W(64)),
+		Button("<", W(28), OnClick(func() { a.findStep(t, -1) })),
+		Button(">", W(28), OnClick(func() { a.findStep(t, 1) })),
+		Button("\u00d7", W(28), OnClick(func() { a.closeFind(t) })),
+	)
+}
+
+// setRaw switches between the pretty-printed and the raw response view.
+func (a *App) setRaw(t *reqTab, raw bool) {
+	t.raw = raw
+	a.refreshView(t)
+}
+
+// refreshView rebuilds the response view for the current mode and
+// redoes an open search. Bodies that are not text are not loaded.
+func (a *App) refreshView(t *reqTab) {
+	switch {
+	case t.resp == nil || looksBinary(t.resp.Body):
+		t.view.SetLines(nil)
+	case t.raw:
+		t.view.SetLines(rawLines(t.resp.Body))
+	default:
+		t.view.SetLines(codeLines(t.resp.Body))
+	}
+	if t.findOpen {
+		a.runFind(t)
+	}
+}
+
+// rawLines shows a body exactly as received, one plain line per line.
+func rawLines(body []byte) []w.Line {
+	texts := strings.Split(string(body), "\n")
+	lines := make([]w.Line, len(texts))
+	for i, text := range texts {
+		lines[i] = w.Line{Spans: []w.Span{{Text: strings.TrimRight(text, "\r"), Style: jsonTokens[jsonview.Plain]}}}
+	}
+	return lines
+}
+
+func (a *App) copyBody(t *reqTab) {
+	if t.resp != nil {
+		_ = a.ctx.Clipboard.Write(string(t.resp.Body)) // the clipboard reports its own failures
+	}
+}
+
+func (a *App) copyCurl(t *reqTab) {
+	_ = a.ctx.Clipboard.Write(proto.Curl(t.req.Expanded(a.col.Vars)))
+}
+
+// openFind shows the find bar for the current response and focuses it.
+func (a *App) openFind() {
+	a.commitEdit()
+	t := a.cur()
+	t.respTab = 0
+	t.findOpen = true
+	t.find.Focused = true
+	t.find.SelectAll()
+	a.runFind(t)
+}
+
+// runFind searches for the typed text and goes to the first match.
+func (a *App) runFind(t *reqTab) {
+	matches := t.view.Find(t.find.Text)
+	t.matchIdx = -1
+	if len(matches) > 0 {
+		t.matchIdx = 0
+		t.view.RevealLine(matches[0].Line)
+	}
+	t.view.SetMatches(matches, t.matchIdx)
+}
+
+// findStep moves to the next (dir 1) or previous (dir -1) match, wrapping.
+func (a *App) findStep(t *reqTab, dir int) {
+	matches := t.view.Matches()
+	if len(matches) == 0 {
+		return
+	}
+	next := (t.matchIdx + dir + len(matches)) % len(matches)
+	if t.matchIdx < 0 && dir < 0 {
+		next = len(matches) - 1
+	}
+	t.matchIdx = next
+	t.view.SetMatches(matches, next)
+	t.view.RevealLine(matches[next].Line)
+}
+
+// findEnter is Enter in the find field: next match, previous with Shift.
+func (a *App) findEnter(t *reqTab) {
+	dir := 1
+	if a.ctx.In.Shift {
+		dir = -1
+	}
+	a.findStep(t, dir)
+}
+
+func (a *App) closeFind(t *reqTab) {
+	t.findOpen = false
+	t.find.Focused = false
+	t.view.SetMatches(nil, -1)
 }

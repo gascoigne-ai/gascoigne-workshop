@@ -504,3 +504,6 @@ func (v *CodeView) drawMatches(c *Ctx, dst *ebiten.Image, g codeGeometry, cell R
 		c.Fill(dst, Rect{X: x, Y: cell.Y, W: m.Len * g.charW, H: cell.H}, c.Col(tok))
 	}
 }
+
+// Matches returns the search hits currently highlighted.
+func (v *CodeView) Matches() []Match { return v.matches }

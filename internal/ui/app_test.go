@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"bytes"
 	"reflect"
 	"strings"
 	"testing"
@@ -53,6 +54,7 @@ func TestPaneTablesAreComplete(t *testing.T) {
 				paneBody:     true, // the body pane is built from the request itself
 				paneSettings: true, // so is the settings pane
 				paneAuth:     true,
+				paneResponse: true,
 			}[p.kind]
 			if paneBuilders[p.kind] == nil {
 				t.Errorf("%s pane %q has a kind with no builder", name, p.label)
@@ -179,6 +181,46 @@ func TestJSONStatus(t *testing.T) {
 		msg, valid := jsonStatus(tt.in)
 		if valid != tt.wantValid || (tt.wantMsg == "") != (msg == "") || !strings.Contains(msg, tt.wantMsg) {
 			t.Errorf("%s: got %q %v; want %q %v", tt.name, msg, valid, tt.wantMsg, tt.wantValid)
+		}
+	}
+}
+
+func TestLooksBinary(t *testing.T) {
+	tests := []struct {
+		name string
+		in   []byte
+		want bool
+	}{
+		{"empty", nil, false},
+		{"json", []byte(`{"a":"żółw"}`), false},
+		{"nul byte", []byte("abc\x00def"), true},
+		{"invalid utf-8", []byte{0xff, 0xfe, 'a'}, true},
+		{"png header", []byte("\x89PNG\r\n\x1a\n\x00\x00"), true},
+		{"a multi-byte character cut by the 8 KiB sample is still text", append(bytes.Repeat([]byte("a"), 8191), []byte("ż")...), false},
+		{"binary after the sample is not seen", append(bytes.Repeat([]byte("a"), 9000), 0), false},
+	}
+	for _, tt := range tests {
+		if got := looksBinary(tt.in); got != tt.want {
+			t.Errorf("%s: looksBinary = %v, want %v", tt.name, got, tt.want)
+		}
+	}
+}
+
+func TestFindCount(t *testing.T) {
+	tests := []struct {
+		query          string
+		matches, index int
+		want           string
+	}{
+		{"", 0, -1, ""},
+		{"x", 0, -1, "No matches"},
+		{"x", 12, 0, "1/12"},
+		{"x", 12, 11, "12/12"},
+		{"x", 3, -1, "3 matches"},
+	}
+	for _, tt := range tests {
+		if got := findCount(tt.query, tt.matches, tt.index); got != tt.want {
+			t.Errorf("findCount(%q,%d,%d) = %q, want %q", tt.query, tt.matches, tt.index, got, tt.want)
 		}
 	}
 }

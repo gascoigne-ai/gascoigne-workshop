@@ -27,6 +27,7 @@ var shortcuts = []shortcut{
 	{"Close tab", ebiten.KeyW, true, false, func(a *App) { a.closeTab(a.active) }},
 	{"Next tab", ebiten.KeyTab, true, false, func(a *App) { a.switchTab(1) }},
 	{"Previous tab", ebiten.KeyTab, true, true, func(a *App) { a.switchTab(-1) }},
+	{"Find in response", ebiten.KeyF, true, false, (*App).openFind},
 	{"Settings", ebiten.KeyComma, true, false, func(a *App) { a.menu = true }},
 }
 
