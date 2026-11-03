@@ -3,6 +3,7 @@ package ui
 import (
 	"errors"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/vml"
 	"github.com/hajimehoshi/ebiten/v2"
 	"io"
 	"net/http"
@@ -2712,5 +2713,67 @@ func TestResponseMenu(t *testing.T) {
 	pickMenu(t, a, "Find")
 	if !a.cur().findOpen {
 		t.Fatal("Find opens the find bar")
+	}
+}
+
+// ---- resizable table columns ------------------------------------------------
+
+// The Params table: columns name|value|description at weights 28/40/32;
+// the name|value divider is at x=423, the header row at y=234.
+const (
+	nameValueDividerX = 423
+	headersPaneTabIdx = 2
+)
+
+func TestDraggingAParamsDividerResizesItsColumns(t *testing.T) {
+	a, _ := newTestApp(t)
+	drag(a, nameValueDividerX, 480, paramsHeaderY)
+	w := a.widthsFor(requestPanes[0])
+	if w == nil || len(w.Weights) != 3 || w.Weights[0] <= 28 || w.Weights[1] >= 40 {
+		t.Fatalf("weights = %+v", w)
+	}
+	if sum := w.Weights[0] + w.Weights[1] + w.Weights[2]; sum < 99.9 || sum > 100.1 {
+		t.Fatalf("the total must stay 100, got %v", sum)
+	}
+	click(a, 450, paramsRow0Y) // was in the value column; now it is the wider name column
+	if a.edit == nil || a.edit.col != 0 {
+		t.Fatalf("a click at x=450 edits %+v: the name column must have grown over it", a.edit)
+	}
+}
+
+func TestEachTableKeepsItsOwnColumnWidths(t *testing.T) {
+	a, _ := newTestApp(t)
+	drag(a, nameValueDividerX, 480, paramsHeaderY)
+	if a.widthsFor(requestPanes[0]).Weights == nil {
+		t.Fatal("test setup")
+	}
+	if a.widthsFor(requestPanes[headersPaneTabIdx]).Weights != nil {
+		t.Fatal("the Headers table must keep its default widths")
+	}
+	if a.widthsFor(responsePanes[1]) == a.widthsFor(requestPanes[headersPaneTabIdx]) {
+		t.Fatal("the response Headers table is not the request Headers table")
+	}
+	if a.widthsFor(requestPanes[0]) != a.widthsFor(requestPanes[0]) {
+		t.Fatal("asking twice must give the same state")
+	}
+}
+
+func TestDoubleClickOnAParamsDividerResetsIt(t *testing.T) {
+	a, _ := newTestApp(t)
+	drag(a, nameValueDividerX, 480, paramsHeaderY)
+	a.step(widget.Input{X: 480, Y: paramsHeaderY, Click: true, Held: true, Clicks: 2})
+	a.step(widget.Input{})
+	if a.widthsFor(requestPanes[0]).Weights != nil {
+		t.Fatal("double click resets the widths")
+	}
+}
+
+func TestNarrowColumnsKeepAMinimum(t *testing.T) {
+	a, _ := newTestApp(t)
+	drag(a, nameValueDividerX, 300, paramsHeaderY) // far left
+	w := a.widthsFor(requestPanes[0])
+	// the name column is at least MinColumnPx of the 413px of columns
+	if min := float64(vml.MinColumnPx) / 413 * 100; w.Weights[0] < min-0.5 {
+		t.Fatalf("name weight %v is below the minimum share %v", w.Weights[0], min)
 	}
 }

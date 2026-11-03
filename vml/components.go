@@ -87,6 +87,38 @@ type TableSpec struct {
 
 	// OnRowMenu runs when a data row is right-clicked, with the pointer position.
 	OnRowMenu func(row, x, y int)
+
+	// Widths, when set, makes the column dividers draggable. It is owned
+	// by the app, so the sizes and a drag in progress survive the view
+	// being rebuilt every frame.
+	Widths *ColumnWidths
+}
+
+// ColumnWidths is the state of a resizable table: the column weights
+// once the user has resized them (nil until then, so the spec's Weights
+// apply) and the divider being dragged.
+type ColumnWidths struct {
+	Weights []float64
+
+	dragging bool
+	divider  int // the divider being dragged: between columns divider and divider+1
+	grab     int // pointer offset inside the divider when the drag began
+}
+
+// weight is column i's relative width.
+func (t TableSpec) weight(i int) float64 {
+	if t.Widths != nil && len(t.Widths.Weights) == len(t.Columns) {
+		return t.Widths.Weights[i]
+	}
+	return t.Weights[i]
+}
+
+func (t TableSpec) weights() []float64 {
+	out := make([]float64, len(t.Columns))
+	for i := range out {
+		out[i] = t.weight(i)
+	}
+	return out
 }
 
 // TableEdit is the cell being edited: its position, the field holding
@@ -109,13 +141,7 @@ func Table(t TableSpec, opts ...Option) *El {
 	}
 	return Col(with([]Item{
 		Bg(widget.Sunken),
-		Row(H(widget.RowH), BorderBottom(widget.Rule),
-			If(t.Editable, headerCheck(t)),
-			For(t.Columns, func(i int, name string) Node {
-				return Row(Grow(t.Weights[i]), PadXY(8, 0), Caption(name, Grow(1)))
-			}),
-			If(t.Editable, Row(W(tableActionW))),
-		),
+		tableHeader(t),
 		For(rows, func(i int, r TableRow) Node {
 			return tableRow(t, i, r, t.Editable && i == len(t.Rows))
 		}),
@@ -123,6 +149,22 @@ func Table(t TableSpec, opts ...Option) *El {
 }
 
 // headerCheck is the checkbox that enables or disables every row.
+// tableHeader is the caption row; with a Widths state it carries the
+// draggable column dividers on top.
+func tableHeader(t TableSpec) Node {
+	header := Row(H(widget.RowH), BorderBottom(widget.Rule),
+		If(t.Editable, headerCheck(t)),
+		For(t.Columns, func(i int, name string) Node {
+			return Row(Grow(t.weight(i)), PadXY(8, 0), Caption(name, Grow(1)))
+		}),
+		If(t.Editable, Row(W(tableActionW))),
+	)
+	if t.Widths == nil {
+		return header
+	}
+	return Stack(H(widget.RowH), header, newEl(colHandlesB{header: header, spec: t}, nil))
+}
+
 func headerCheck(t TableSpec) Node {
 	items := []Item{W(tableActionW), Checkbox(t.AllChecked)}
 	if t.OnToggleAll != nil {
@@ -167,11 +209,11 @@ func tableRow(t TableSpec, i int, r TableRow, placeholder bool) Node {
 // edited. In an editable table a click on it asks to edit it.
 func tableCell(t TableSpec, row, col int, text string, clr widget.Token) Node {
 	if e := t.Editing; e != nil && e.Row == row && e.Col == col {
-		return Row(Grow(t.Weights[col]), Border(widget.Accent), Bg(widget.Panel),
+		return Row(Grow(t.weight(col)), Border(widget.Accent), Bg(widget.Panel),
 			Field(e.Field, Grow(1), OnEnter(e.OnEnter), OnTab(e.OnTab), menuOption(e.OnMenu)),
 		)
 	}
-	items := []Item{Grow(t.Weights[col]), PadXY(8, 0), Clip(), Text(text, Ellipsis(), Color(clr), Grow(1))}
+	items := []Item{Grow(t.weight(col)), PadXY(8, 0), Clip(), Text(text, Ellipsis(), Color(clr), Grow(1))}
 	if t.Editable && t.OnEditCell != nil {
 		items = append(items, OnClick(func() { t.OnEditCell(row, col) }))
 	}
@@ -184,4 +226,73 @@ func menuOption(f func(x, y int)) Option {
 		return func(*El) {}
 	}
 	return OnRightClick(f)
+}
+
+// MinColumnPx is the narrowest a table column can be dragged.
+const MinColumnPx = 56
+
+// ResizePair moves the divider between columns i and i+1: the two share
+// their combined weight so that column i is leftPx wide out of totalPx
+// for the pair, neither narrower than minPx. The other weights and the
+// total stay as they were. weights is not changed.
+func ResizePair(weights []float64, i, leftPx, totalPx, minPx int) []float64 {
+	out := append([]float64(nil), weights...)
+	if i < 0 || i+1 >= len(out) || totalPx <= 0 {
+		return out
+	}
+	pair := out[i] + out[i+1]
+	if lo, hi := minPx, totalPx-minPx; hi < lo {
+		leftPx = totalPx / 2 // no room for two minimums: split evenly
+	} else {
+		leftPx = min(max(leftPx, lo), hi)
+	}
+	out[i] = pair * float64(leftPx) / float64(totalPx)
+	out[i+1] = pair - out[i]
+	return out
+}
+
+// colHandlesB covers a table header and turns the boundaries between
+// its column cells into draggable dividers.
+type colHandlesB struct {
+	plain
+	header *El // the header row; its column cells are kids[offset : offset+columns]
+	spec   TableSpec
+}
+
+func (colHandlesB) measure(*El, *widget.Ctx, int) (int, int) { return 0, 0 }
+
+func (h colHandlesB) cells() []*El {
+	off := 0
+	if h.spec.Editable {
+		off = 1 // the "enable all" cell comes first
+	}
+	return h.header.kids[off : off+len(h.spec.Columns)]
+}
+
+func (h colHandlesB) update(e *El, c *widget.Ctx) {
+	st, in, cells := h.spec.Widths, c.In, h.cells()
+	if st.dragging {
+		if !in.Held {
+			st.dragging = false
+			return
+		}
+		c.Cursor = widget.CursorResizeH
+		left, right := cells[st.divider].rect, cells[st.divider+1].rect
+		st.Weights = ResizePair(h.spec.weights(), st.divider, in.X-left.X-st.grab, left.W+right.W, MinColumnPx)
+		return
+	}
+	for i := 0; i < len(cells)-1; i++ {
+		x := cells[i].rect.X + cells[i].rect.W
+		grab := widget.Rect{X: x - handleSlop, Y: h.header.rect.Y, W: 1 + 2*handleSlop, H: h.header.rect.H}
+		if !in.Over(grab) {
+			continue
+		}
+		c.Cursor = widget.CursorResizeH
+		if in.Click && in.Clicks >= 2 {
+			st.Weights = nil // back to the defaults
+		} else if in.Click {
+			st.dragging, st.divider, st.grab = true, i, in.X-x
+		}
+		return
+	}
 }
