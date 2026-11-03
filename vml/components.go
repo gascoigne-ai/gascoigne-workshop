@@ -72,6 +72,20 @@ type TableSpec struct {
 	Editable    bool
 	OnToggle    func(row int)
 	OnDelete    func(row int)
+
+	// OnEditCell runs when a cell is clicked; Editing, when set, shows a
+	// text field in that cell instead of its text.
+	OnEditCell func(row, col int)
+	Editing    *TableEdit
+}
+
+// TableEdit is the cell being edited: its position, the field holding
+// the text, and what Enter and Tab do.
+type TableEdit struct {
+	Row, Col int
+	Field    *widget.TextField
+	OnEnter  func()
+	OnTab    func(back bool)
 }
 
 const tableActionW = 36
@@ -107,9 +121,7 @@ func tableRow(t TableSpec, i int, r TableRow, placeholder bool) Node {
 		H(widget.RowH),
 		If(actions, Row(W(tableActionW), OnClick(func() { t.OnToggle(i) }), Checkbox(r.Checked))),
 		If(placeholder, Row(W(tableActionW))),
-		For(r.Cells, func(j int, s string) Node {
-			return Row(Grow(t.Weights[j]), PadXY(8, 0), Clip(), Text(s, Ellipsis(), Color(clr), Grow(1)))
-		}),
+		For(r.Cells, func(j int, s string) Node { return tableCell(t, i, j, s, clr) }),
 		If(actions, Row(W(tableActionW), OnClick(func() { t.OnDelete(i) }), Cross())),
 		If(placeholder, Row(W(tableActionW))),
 	}
@@ -117,4 +129,19 @@ func tableRow(t TableSpec, i int, r TableRow, placeholder bool) Node {
 		row = append(row, Bg(widget.Alt))
 	}
 	return Row(row...)
+}
+
+// tableCell is one cell: its text, or the edit field when it is being
+// edited. In an editable table a click on it asks to edit it.
+func tableCell(t TableSpec, row, col int, text string, clr widget.Token) Node {
+	if e := t.Editing; e != nil && e.Row == row && e.Col == col {
+		return Row(Grow(t.Weights[col]), Border(widget.Accent), Bg(widget.Panel),
+			Field(e.Field, Grow(1), OnEnter(e.OnEnter), OnTab(e.OnTab)),
+		)
+	}
+	items := []Item{Grow(t.Weights[col]), PadXY(8, 0), Clip(), Text(text, Ellipsis(), Color(clr), Grow(1))}
+	if t.Editable && t.OnEditCell != nil {
+		items = append(items, OnClick(func() { t.OnEditCell(row, col) }))
+	}
+	return Row(items...)
 }

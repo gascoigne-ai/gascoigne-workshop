@@ -52,6 +52,9 @@ func (fieldB) update(e *El, c *widget.Ctx) {
 	if in.Enter && e.onEnter != nil {
 		e.onEnter()
 	}
+	if in.Tab && e.onTab != nil {
+		e.onTab(in.Shift)
+	}
 }
 
 // shortcuts runs select-all, copy, cut and paste; it reports whether
@@ -123,6 +126,9 @@ func Segments(f func(text string) []Seg) Option { return func(e *El) { e.segment
 
 // OnChange runs after the field's text was edited.
 func OnChange(f func()) Option { return func(e *El) { e.onChange = f } }
+
+// OnTab runs when Tab is pressed in the focused field; back is true with Shift.
+func OnTab(f func(back bool)) Option { return func(e *El) { e.onTab = f } }
 
 // OnEnter runs when Enter is pressed in the focused field.
 func OnEnter(f func()) Option { return func(e *El) { e.onEnter = f } }

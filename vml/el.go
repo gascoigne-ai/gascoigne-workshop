@@ -65,6 +65,7 @@ type El struct {
 	on                         bool
 
 	onClick, onChange, onEnter func()
+	onTab                      func(back bool)
 
 	float                bool
 	floatTop, floatRight int

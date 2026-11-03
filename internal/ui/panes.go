@@ -178,6 +178,10 @@ func (a *App) tablePane(p pane, t *reqTab) Node {
 			*rows = append((*rows)[:i], (*rows)[i+1:]...)
 			a.rowsChanged(p, t)
 		}
+		spec.OnEditCell = func(row, col int) { a.beginEdit(p, t, row, col) }
+		if e := a.edit; e != nil && e.pane.label == p.label && e.tab == t {
+			spec.Editing = &TableEdit{Row: e.row, Col: e.col, Field: &e.field, OnEnter: a.commitEdit, OnTab: a.tabEdit}
+		}
 	}
 	return Col(Grow(1), Pad(w.Pad),
 		If(p.title != "", Row(H(w.RowH), Caption(p.title))),

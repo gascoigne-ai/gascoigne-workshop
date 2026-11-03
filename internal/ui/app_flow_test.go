@@ -432,3 +432,160 @@ func TestNoResponseStates(t *testing.T) {
 		}
 	}
 }
+
+// Cells of the Params table at 1280x800: request pane starts at x=260,
+// the table at x=272, columns: actions 36, name 115, value 165, description 132.
+const (
+	paramsRow0Y   = 262
+	paramsRow3Y   = 346 // the placeholder row below the three params
+	nameCellX     = 365
+	valueCellX    = 500
+	descCellX     = 650
+	farAwayX      = 900
+	farAwayY      = 600
+	headersTabIdx = 2
+)
+
+func (a *App) typeText(s string) { a.step(widget.Input{Typed: []rune(s)}) }
+
+func TestEditingAParamValueUpdatesTheURL(t *testing.T) {
+	a, _ := newTestApp(t)
+	click(a, valueCellX, paramsRow0Y)
+	if a.edit == nil || a.edit.row != 0 || a.edit.col != 1 {
+		t.Fatalf("edit = %+v", a.edit)
+	}
+	a.typeText("rust") // the old text is selected, so typing replaces it
+	a.step(widget.Input{Enter: true})
+
+	req := a.cur().req
+	if a.edit != nil || req.Params[0].Value != "rust" || !strings.Contains(req.URL, "q=rust") {
+		t.Fatalf("edit %+v params %+v url %q", a.edit, req.Params, req.URL)
+	}
+	if a.cur().url.Text != req.URL {
+		t.Fatal("the URL field must show the rewritten URL")
+	}
+}
+
+func TestEditingAParamNameAndDescription(t *testing.T) {
+	a, _ := newTestApp(t)
+	click(a, nameCellX, paramsRow0Y)
+	a.typeText("search")
+	a.step(widget.Input{Enter: true})
+	click(a, descCellX, paramsRow0Y)
+	a.typeText("what to find")
+	a.step(widget.Input{Enter: true})
+
+	p := a.cur().req.Params[0]
+	if p.Name != "search" || p.Description != "what to find" || !strings.Contains(a.cur().req.URL, "search=gioui") {
+		t.Fatalf("param %+v url %q", p, a.cur().req.URL)
+	}
+}
+
+func TestEscapeCancelsACellEdit(t *testing.T) {
+	a, _ := newTestApp(t)
+	click(a, valueCellX, paramsRow0Y)
+	a.typeText("zzz")
+	a.step(widget.Input{Escape: true})
+	if a.edit != nil || a.cur().req.Params[0].Value != "gioui" {
+		t.Fatalf("edit %+v value %q", a.edit, a.cur().req.Params[0].Value)
+	}
+}
+
+func TestClickingElsewhereCommitsACellEdit(t *testing.T) {
+	a, _ := newTestApp(t)
+	click(a, valueCellX, paramsRow0Y)
+	a.typeText("go")
+	click(a, farAwayX, farAwayY)
+	a.step(widget.Input{})
+	if a.edit != nil || a.cur().req.Params[0].Value != "go" {
+		t.Fatalf("edit %+v value %q", a.edit, a.cur().req.Params[0].Value)
+	}
+}
+
+func TestClickingAnotherCellCommitsAndMovesTheEdit(t *testing.T) {
+	a, _ := newTestApp(t)
+	click(a, valueCellX, paramsRow0Y)
+	a.typeText("go")
+	click(a, valueCellX, paramsRow0Y+widget.RowH) // the order row
+	if a.cur().req.Params[0].Value != "go" || a.edit == nil || a.edit.row != 1 {
+		t.Fatalf("value %q edit %+v", a.cur().req.Params[0].Value, a.edit)
+	}
+}
+
+func TestTabMovesToTheNextCellAndShiftTabBack(t *testing.T) {
+	a, _ := newTestApp(t)
+	click(a, nameCellX, paramsRow0Y)
+	a.typeText("k")
+	a.step(widget.Input{Tab: true})
+	if a.edit == nil || a.edit.row != 0 || a.edit.col != 1 || a.cur().req.Params[0].Name != "k" {
+		t.Fatalf("after Tab: edit %+v name %q", a.edit, a.cur().req.Params[0].Name)
+	}
+	a.step(widget.Input{Tab: true})
+	a.step(widget.Input{Tab: true}) // description, then the next row's name
+	if a.edit == nil || a.edit.row != 1 || a.edit.col != 0 {
+		t.Fatalf("Tab past the last column must wrap to the next row, edit %+v", a.edit)
+	}
+	a.step(widget.Input{Tab: true, Shift: true})
+	if a.edit == nil || a.edit.row != 0 || a.edit.col != 2 {
+		t.Fatalf("Shift+Tab goes back, edit %+v", a.edit)
+	}
+}
+
+func TestTypingInThePlaceholderRowAddsARow(t *testing.T) {
+	a, _ := newTestApp(t)
+	click(a, nameCellX, paramsRow3Y)
+	a.typeText("page")
+	a.step(widget.Input{Tab: true})
+	a.typeText("2")
+	a.step(widget.Input{Enter: true})
+
+	req := a.cur().req
+	if len(req.Params) != 4 {
+		t.Fatalf("params = %+v", req.Params)
+	}
+	if got := req.Params[3]; got.Name != "page" || got.Value != "2" || !got.Enabled {
+		t.Fatalf("new row = %+v", got)
+	}
+	if !strings.HasSuffix(req.URL, "&page=2") {
+		t.Fatalf("url = %q", req.URL)
+	}
+}
+
+func TestLeavingThePlaceholderRowEmptyAddsNothing(t *testing.T) {
+	a, _ := newTestApp(t)
+	click(a, nameCellX, paramsRow3Y)
+	a.step(widget.Input{Enter: true})
+	if len(a.cur().req.Params) != 3 || a.edit != nil {
+		t.Fatalf("params %+v edit %+v", a.cur().req.Params, a.edit)
+	}
+}
+
+func TestHeadersTableIsEditableToo(t *testing.T) {
+	a, _ := newTestApp(t)
+	a.cur().paneTab = headersTabIdx
+	a.step(widget.Input{})
+	click(a, nameCellX, paramsRow0Y) // headers have no rows: the placeholder is the first row
+	a.typeText("X-Test")
+	a.step(widget.Input{Tab: true})
+	a.typeText("1")
+	a.step(widget.Input{Enter: true})
+	h := a.cur().req.Headers
+	if len(h) != 1 || h[0].Name != "X-Test" || h[0].Value != "1" || !h[0].Enabled {
+		t.Fatalf("headers = %+v", h)
+	}
+}
+
+func TestResponseHeadersAreNotEditable(t *testing.T) {
+	srv := jsonServer(t)
+	a, _ := newTestApp(t)
+	tab := a.cur()
+	pointTabAt(tab, srv.URL)
+	a.send(tab)
+	waitForResponse(t, a, tab)
+	tab.respTab = 1 // Headers
+	a.step(widget.Input{})
+	click(a, 1000, paramsRow0Y)
+	if a.edit != nil {
+		t.Fatalf("response headers must stay read-only, edit %+v", a.edit)
+	}
+}

@@ -380,3 +380,79 @@ func TestEitherAndIconsMeasure(t *testing.T) {
 		t.Fatal("Either(true) picks the first")
 	}
 }
+
+func editableSpec() TableSpec {
+	return TableSpec{
+		Columns: []string{"Name", "Value"}, Weights: []float64{1, 1},
+		Rows:        []TableRow{{Cells: []string{"q", "x"}}, {Cells: []string{"o", "y"}}},
+		Placeholder: []string{"Name", "Value"},
+		Editable:    true,
+		OnToggle:    func(int) {}, OnDelete: func(int) {},
+	}
+}
+
+// Columns of a 400px editable table: 36px actions, then two 164px cells.
+const cellX0, cellX1 = 36 + 80, 36 + 164 + 80
+
+func cellY(row int) int { return (row+1)*widget.RowH + widget.RowH/2 }
+
+func TestClickingACellStartsEditingIt(t *testing.T) {
+	var got [][2]int
+	spec := editableSpec()
+	spec.OnEditCell = func(row, col int) { got = append(got, [2]int{row, col}) }
+	root := Col(Table(spec))
+	c := testCtx(t)
+	Layout(c, root, 400, 400)
+
+	click(c, cellX1, cellY(1))
+	Update(c, root)
+	click(c, cellX0, cellY(2)) // the placeholder row is editable too
+	Update(c, root)
+
+	if len(got) != 2 || got[0] != [2]int{1, 1} || got[1] != [2]int{2, 0} {
+		t.Fatalf("edit requests = %v, want [[1 1] [2 0]]", got)
+	}
+}
+
+func TestReadOnlyTableCellsIgnoreClicks(t *testing.T) {
+	called := false
+	spec := editableSpec()
+	spec.Editable = false
+	spec.OnEditCell = func(int, int) { called = true }
+	root := Col(Table(spec))
+	c := testCtx(t)
+	Layout(c, root, 400, 400)
+	click(c, cellX0-36, cellY(0)) // read-only tables have no action column: shift left
+	Update(c, root)
+	if called {
+		t.Fatal("a read-only table must not start edits")
+	}
+}
+
+func TestEditedCellShowsAFieldWithEnterAndTab(t *testing.T) {
+	var enters int
+	var tabs []bool
+	f := widget.NewTextField("x")
+	f.Focused = true
+	spec := editableSpec()
+	spec.Editing = &TableEdit{Row: 0, Col: 1, Field: &f,
+		OnEnter: func() { enters++ }, OnTab: func(back bool) { tabs = append(tabs, back) }}
+	root := Col(Table(spec))
+	c := testCtx(t)
+	Layout(c, root, 400, 400)
+
+	c.In = widget.Input{Typed: []rune("yz")}
+	Update(c, root)
+	if f.Text != "xyz" {
+		t.Fatalf("typing reached the field as %q, want xyz", f.Text)
+	}
+	c.In = widget.Input{Enter: true}
+	Update(c, root)
+	c.In = widget.Input{Tab: true}
+	Update(c, root)
+	c.In = widget.Input{Tab: true, Shift: true}
+	Update(c, root)
+	if enters != 1 || len(tabs) != 2 || tabs[0] || !tabs[1] {
+		t.Fatalf("enters %d tabs %v, want 1 and [false true]", enters, tabs)
+	}
+}

@@ -14,6 +14,7 @@ type Input struct {
 	Edits  []Edit
 	Enter  bool
 	Escape bool
+	Tab    bool
 
 	Held        bool // left button is down
 	Shift, Ctrl bool
@@ -68,6 +69,7 @@ func ReadInput() Input {
 		Typed:  ebiten.AppendInputChars(nil),
 		Enter:  inpututil.IsKeyJustPressed(ebiten.KeyEnter),
 		Escape: inpututil.IsKeyJustPressed(ebiten.KeyEscape),
+		Tab:    inpututil.IsKeyJustPressed(ebiten.KeyTab),
 		Held:   ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft),
 		Shift:  ebiten.IsKeyPressed(ebiten.KeyShift),
 		Ctrl:   ebiten.IsKeyPressed(ebiten.KeyControl),

@@ -74,8 +74,9 @@ type App struct {
 	shot     screenshot
 
 	settings     settings.Settings
-	settingsPath string // "" keeps settings in memory only
-	menu         bool   // settings menu is open
+	settingsPath string    // "" keeps settings in memory only
+	menu         bool      // settings menu is open
+	edit         *cellEdit // the table cell being edited, if any
 }
 
 // Options are the startup switches of the command line.
@@ -205,10 +206,14 @@ func (a *App) step(in widget.Input) {
 	a.drain()
 	if in.Escape {
 		a.menu = false
+		a.cancelEdit()
 	}
 	root := a.view()
 	vml.Layout(a.ctx, root, a.w, a.h)
 	vml.Update(a.ctx, root)
+	if a.edit != nil && !a.edit.field.Focused { // a click elsewhere ends the edit
+		a.commitEdit()
+	}
 }
 
 // Draw implements ebiten.Game. The view is rebuilt so it shows the

@@ -81,13 +81,14 @@ Row(H(urlH), PadXY(w.Pad, 8), Gap(8), Bg(w.Bg),
 - **Panes** are two tables, `requestPanes` and `responsePanes`: label, kind (table, code, note), row source, edit hook and an `empty` hook that supplies "Sending...", errors and "no response yet". A map from kind to builder turns a pane into nodes; adding a pane means adding a row.
 - **URL bar**: protocol chip (REST / WS / MCP, click cycles), method chip (REST only), the URL field with `{{vars}}` colored, and Send. Editing the URL re-derives the Params table with `model.MergeParams`; toggling or deleting a param rewrites the URL with `model.WithParams`.
 - **Clipboard status**: `ui` wraps the system clipboard so the status bar shows "Copied N characters" or why the clipboard failed.
+- **Cell editing**: clicking a cell of an editable table starts an edit (`App.beginEdit`): the table shows a `Field` in that cell with the old text selected. Enter or a click elsewhere commits (`commitEdit`), Escape cancels, Tab / Shift+Tab commit and move to the next / previous cell, wrapping across rows. Text typed into the placeholder row creates a row (enabled); an empty placeholder adds nothing. Params edits rewrite the URL through the pane's `changed` hook.
 - **Sending**: `App.send` expands `{{vars}}` from the collection and calls `proto.Registry.Send` in a goroutine with a 60 s timeout. The result returns over a channel and is applied in `Update`, so UI state is only touched from the game goroutine.
 - **Settings menu**: the three-dot button toggles a modal VML overlay with Theme (Dark / Light) and Text size (Small / Medium / Large). Choices are tables (`themeChoices`, `textSizeChoices`), so a new theme is one row. A change calls `Ctx.SetTheme` and saves `internal/settings` to `<user config dir>/gascoigne-workshop/settings.json`; `-settings PATH` overrides the file and an empty path keeps settings in memory. Unknown ids in the file fall back to dark / medium. Escape or an outside click closes the menu.
 - **Screenshot mode**: `workshop -screenshot out.png [-send] [-menu] [-settings FILE]` renders after a short settle, writes the PNG and exits (`make shot`). It is how UI changes are checked without a person at the window.
 
 ## Limits (milestone 1)
 
-- Only the URL is editable; table cells, body and headers are display-only (checkbox and delete work). Copy and paste work in the URL field and the code views; no IME, no word-wise movement, no double-click word selection, and the code view selects whole lines only.
+- The URL and the Params, Headers and Vars table cells are editable; the request body is display-only. Copy and paste work in the URL field and the code views; no IME, no word-wise movement, no double-click word selection, and the code view selects whole lines only.
 - No saving or loading of collections; the sample collection is built in (`ui.SampleCollection`).
 - No text wrapping in the code view. Fractional scales round logical text metrics to whole pixels.
 - VML is Go-native only; there is no template syntax or parser. One could be added later as a front end that emits the same nodes.
