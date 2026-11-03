@@ -21,7 +21,7 @@ type Input struct {
 	Tab         bool
 
 	Held        bool // left button is down
-	Shift, Ctrl bool
+	Shift, Ctrl, Alt bool
 	// Ctrl+key shortcuts that went down this frame.
 	SelectAll, Copy, Cut, Paste bool
 	Undo, Redo                  bool
@@ -88,6 +88,7 @@ func ReadInput() Input {
 		RightClick:  inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonRight),
 		Keys:        inpututil.AppendJustPressedKeys(nil),
 		Shift:       ebiten.IsKeyPressed(ebiten.KeyShift),
+		Alt:         ebiten.IsKeyPressed(ebiten.KeyAlt),
 		Ctrl:        ebiten.IsKeyPressed(ebiten.KeyControl),
 	}
 	if in.Ctrl {

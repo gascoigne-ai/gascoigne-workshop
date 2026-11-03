@@ -230,7 +230,8 @@ func (a *App) finishDrag() {
 // textFocused reports whether a text widget has the keyboard.
 func (a *App) textFocused() bool {
 	t := a.cur()
-	focused := a.filter.Focused || t.url.Focused || t.find.Focused || t.timeout.Focused || t.body.Focused || a.edit != nil
+	focused := a.filter.Focused || t.url.Focused || t.find.Focused || t.timeout.Focused || t.body.Focused || a.edit != nil ||
+		(a.bulk != nil && a.bulk.area.Focused)
 	for _, in := range t.auth {
 		focused = focused || in.Focused
 	}

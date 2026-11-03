@@ -31,15 +31,16 @@ const (
 // pane describes one tab of the request or response area. The tables
 // below are the whole definition; there is no per-tab switch.
 type pane struct {
-	label    string
-	kind     paneKind
-	title    string                                   // caption above a table
-	rows     func(a *App, t *reqTab) *[]model.KV      // paneTable
-	editable bool                                     // table rows can be toggled and deleted
-	changed  func(t *reqTab)                          // runs after an edit
-	code     func(t *reqTab) *w.CodeView              // paneCode
-	note     func(t *reqTab) string                   // paneNote
-	empty    func(t *reqTab) (msg string, isErr bool) // shown instead of the content
+	label          string
+	kind           paneKind
+	title          string                                   // caption above a table
+	rows           func(a *App, t *reqTab) *[]model.KV      // paneTable
+	editable       bool                                     // table rows can be toggled and deleted
+	changed        func(t *reqTab)                          // runs after an edit
+	flagDuplicates bool                                     // mark rows that repeat a name
+	code           func(t *reqTab) *w.CodeView              // paneCode
+	note           func(t *reqTab) string                   // paneNote
+	empty          func(t *reqTab) (msg string, isErr bool) // shown instead of the content
 }
 
 func paramsChanged(t *reqTab) {
@@ -51,7 +52,7 @@ var requestPanes = []pane{
 	{label: "Params", kind: paneTable, title: "Query", editable: true, changed: paramsChanged,
 		rows: func(_ *App, t *reqTab) *[]model.KV { return &t.req.Params }},
 	{label: "Body", kind: paneBody},
-	{label: "Headers", kind: paneTable, title: "Headers", editable: true,
+	{label: "Headers", kind: paneTable, title: "Headers", editable: true, flagDuplicates: true,
 		rows: func(_ *App, t *reqTab) *[]model.KV { return &t.req.Headers }},
 	{label: "Auth", kind: paneAuth},
 	{label: "Vars", kind: paneTable, title: "Collection variables", editable: true,
@@ -171,34 +172,76 @@ func (a *App) tablePane(p pane, t *reqTab, scroll *ScrollState) Node {
 
 // tableView is a pane's table with the given padding around it.
 func (a *App) tableView(p pane, t *reqTab, scroll *ScrollState, pad int) Node {
+	if b := a.bulk; b != nil && b.tab == t && b.pane.label == p.label {
+		return a.bulkView(p, t, pad)
+	}
 	rows := p.rows(a, t)
 	spec := TableSpec{
 		Columns: []string{"Name", "Value"},
 		Weights: []float64{35, 65},
-		Rows:    kvRows(*rows, false),
+		Rows:    kvRows(*rows, false, false),
 	}
 	if p.editable {
 		spec.Editable = true
 		spec.Columns = []string{"Name", "Value", "Description"}
 		spec.Weights = []float64{28, 40, 32}
-		spec.Rows = kvRows(*rows, true)
+		spec.Rows = kvRows(*rows, true, p.flagDuplicates)
 		spec.Placeholder = spec.Columns
+		spec.AllChecked = model.AllEnabled(*rows)
+		spec.OnToggleAll = func() {
+			a.commitEdit()
+			a.applyRows(p, t, func(r []model.KV) []model.KV { return model.SetAll(r, !model.AllEnabled(r)) })
+		}
 		spec.OnToggle = func(i int) {
-			(*rows)[i].Enabled = !(*rows)[i].Enabled
-			a.rowsChanged(p, t)
+			a.commitEdit()
+			a.applyRows(p, t, func(r []model.KV) []model.KV {
+				r[i].Enabled = !r[i].Enabled
+				return r
+			})
 		}
 		spec.OnDelete = func(i int) {
-			*rows = append((*rows)[:i], (*rows)[i+1:]...)
-			a.rowsChanged(p, t)
+			a.commitEdit()
+			a.applyRows(p, t, func(r []model.KV) []model.KV { return model.DeleteRow(r, i) })
 		}
 		spec.OnEditCell = func(row, col int) { a.beginEdit(p, t, row, col) }
 		if e := a.edit; e != nil && e.pane.label == p.label && e.tab == t {
 			spec.Editing = &TableEdit{Row: e.row, Col: e.col, Field: &e.field, OnEnter: a.commitEdit, OnTab: a.tabEdit}
 		}
+		if sel := a.rowSel; sel != nil && sel.tab == t && sel.pane.label == p.label && sel.row < len(*rows) {
+			spec.Selected = &sel.row
+		}
 	}
 	return Scroll(scroll, Pad(pad),
-		If(p.title != "", Row(H(w.RowH), Caption(p.title))),
+		a.tableCaption(p, t),
 		Table(spec),
+	)
+}
+
+// tableCaption is the row above a table: its title, and for editable
+// tables the switch to bulk editing.
+func (a *App) tableCaption(p pane, t *reqTab) Node {
+	if p.title == "" {
+		return nil
+	}
+	return Row(H(w.RowH),
+		Caption(p.title),
+		Spacer(),
+		If(p.editable, Button(bulkLabel(a.bulk != nil), W(84), OnClick(func() { a.toggleBulk(p, t) }))),
+	)
+}
+
+func bulkLabel(inBulk bool) string {
+	if inBulk {
+		return "Table"
+	}
+	return "Bulk edit"
+}
+
+// bulkView shows the rows as text under the same caption.
+func (a *App) bulkView(p pane, t *reqTab, pad int) Node {
+	return Col(Grow(1), Pad(pad),
+		a.tableCaption(p, t),
+		TextArea(a.bulk.area, Grow(1), Bg(w.Sunken)),
 	)
 }
 

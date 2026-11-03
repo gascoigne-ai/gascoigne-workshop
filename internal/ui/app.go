@@ -53,6 +53,7 @@ type reqTab struct {
 	body                  *widget.TextArea // request body editor
 	reqScroll, respScroll vml.ScrollState  // scroll of the table and note panes
 	sending               bool
+	hist                  map[string]*rowHistory       // undo history of each table
 	saved                 model.Request                // the request as it was when opened or last saved
 	timeout               widget.TextField             // the request's timeout seconds, as typed
 	cancel                context.CancelFunc           // stops the running request
@@ -105,6 +106,8 @@ type App struct {
 	edit          *cellEdit        // the table cell being edited, if any
 	dragTab       int              // index of the tab being dragged, -1 when none
 	ctxMenu       *contextMenu     // the open context menu, if any
+	bulk          *bulkEdit        // the table in bulk-edit mode, if any
+	rowSel        *rowSelection    // the table row the keyboard acts on
 	selected      any              // the tree node last clicked or moved to: a *Folder or *Request
 	treeFocus     bool             // the tree has the keyboard
 	filter        widget.TextField // the sidebar filter
@@ -330,12 +333,22 @@ func (a *App) step(in widget.Input) {
 			a.cancelSend(a.cur())
 		}
 	}
+	if (in.Undo || in.Redo) && !a.overlayOpen() && !a.textFocused() {
+		if p, t, ok := a.visibleTable(); ok {
+			if in.Undo {
+				a.undoRows(p, t)
+			} else {
+				a.redoRows(p, t)
+			}
+		}
+	}
 	root := a.view()
 	vml.Layout(a.ctx, root, a.w, a.h)
 	vml.Update(a.ctx, root)
 	if a.edit != nil && !a.edit.field.Focused { // a click elsewhere ends the edit
 		a.commitEdit()
 	}
+	a.settleBulk()
 }
 
 // Draw implements ebiten.Game. The view is rebuilt so it shows the

@@ -49,7 +49,7 @@ func (fieldB) update(e *El, c *widget.Ctx) {
 			e.onChange()
 		}
 	}
-	if in.Enter && e.onEnter != nil {
+	if in.Enter && !in.Ctrl && e.onEnter != nil { // Ctrl+Enter is a shortcut of the app
 		e.onEnter()
 	}
 	if in.Tab && e.onTab != nil {

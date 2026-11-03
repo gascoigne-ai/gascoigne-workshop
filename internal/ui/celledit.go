@@ -41,6 +41,9 @@ func (a *App) beginEdit(p pane, t *reqTab, row, col int) {
 	}
 	field.Focused = true
 	a.edit = &cellEdit{pane: p, tab: t, row: row, col: col, field: field}
+	if row < len(*p.rows(a, t)) {
+		a.rowSel = &rowSelection{pane: p, tab: t, row: row}
+	}
 }
 
 // commitEdit writes the edited text into its row. Text typed into the
@@ -51,15 +54,17 @@ func (a *App) commitEdit() {
 		return
 	}
 	a.edit = nil
-	rows := e.pane.rows(a, e.tab)
-	if e.row >= len(*rows) {
-		if e.field.Text == "" {
-			return
+	text := e.field.Text
+	a.applyRows(e.pane, e.tab, func(rows []model.KV) []model.KV {
+		if e.row >= len(rows) {
+			if text == "" {
+				return rows
+			}
+			rows = append(rows, model.KV{Enabled: true})
 		}
-		*rows = append(*rows, model.KV{Enabled: true})
-	}
-	*kvField(&(*rows)[e.row], e.col) = e.field.Text
-	a.rowsChanged(e.pane, e.tab)
+		*kvField(&rows[e.row], e.col) = text
+		return rows
+	})
 }
 
 // cancelEdit drops the edit without writing anything.

@@ -155,8 +155,8 @@ func TestKVRows(t *testing.T) {
 		{Name: "q", Value: "x", Description: "d", Enabled: true},
 		{Name: "off", Value: "y"},
 	}
-	two := kvRows(rows, false)
-	three := kvRows(rows, true)
+	two := kvRows(rows, false, false)
+	three := kvRows(rows, true, false)
 	if len(two[0].Cells) != 2 || len(three[0].Cells) != 3 || three[0].Cells[2] != "d" {
 		t.Fatalf("cells: %v / %v", two[0].Cells, three[0].Cells)
 	}

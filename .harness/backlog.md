@@ -57,6 +57,7 @@ Task numbers refer to `tasks/`; "-" means no task yet.
 
 ### Deferred from finished tasks
 - Tab strip overflow: horizontal scrolling with the active tab kept in view (needs a horizontal `vml.Scroll`).
+- Table rows: a drag handle to reorder rows with the mouse (keyboard and menu moves exist), bulk edit for form fields.
 - Tree: match highlighting in the filter, expanding a folder while a drag hovers over it.
 - Scroll-into-view of a focused child inside a `vml.Scroll`.
 - Response: line wrap, image and HTML preview, save body to a file (needs the dialogs of task 012), Shift+arrow selection in the code view.

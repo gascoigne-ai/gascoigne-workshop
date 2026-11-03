@@ -2244,3 +2244,226 @@ func TestTreeKeysDoNothingWhileTyping(t *testing.T) {
 		t.Fatal("Delete and F2 belong to the text field, not the tree")
 	}
 }
+
+// ---- table rows: keyboard operations, enable all, undo, bulk edit -------
+
+// Params table at 1280x800: header cells at y=234 (the action cell at
+// x=290), rows at y=262, 290, 318 and the placeholder at 346.
+const (
+	paramsHeaderY = 234
+	checkAllX     = 290
+	row1Y         = 290
+	row2Y         = 318
+	bulkBtnX      = 715
+)
+
+func altKey(k ebiten.Key) widget.Input { return widget.Input{Keys: []ebiten.Key{k}, Alt: true} }
+
+func paramNames(a *App) []string {
+	var out []string
+	for _, p := range a.cur().req.Params {
+		out = append(out, p.Name)
+	}
+	return out
+}
+
+func TestCtrlEnterWhileEditingInsertsARowBelowAndEditsIt(t *testing.T) {
+	a, _ := newTestApp(t)
+	click(a, valueCellX, paramsRow0Y)
+	a.step(key(ebiten.KeyEnter, true, false))
+	req := a.cur().req
+	if len(req.Params) != 4 || req.Params[1].Name != "" || !req.Params[1].Enabled || req.Params[0].Name != "q" {
+		t.Fatalf("params = %+v", req.Params)
+	}
+	if a.edit == nil || a.edit.row != 1 || a.edit.col != 1 {
+		t.Fatalf("edit = %+v: the new row is edited in the same column", a.edit)
+	}
+	if strings.Contains(req.URL, "&=") || strings.Contains(req.URL, "?=") {
+		t.Fatalf("an empty name must stay out of the URL: %q", req.URL)
+	}
+}
+
+func TestCtrlDDuplicatesTheEditedRow(t *testing.T) {
+	a, _ := newTestApp(t)
+	click(a, valueCellX, paramsRow0Y)
+	a.step(key(ebiten.KeyD, true, false))
+	p := a.cur().req.Params
+	if len(p) != 4 || p[1] != p[0] || p[1].Name != "q" {
+		t.Fatalf("params = %+v", p)
+	}
+	if a.edit == nil || a.edit.row != 1 {
+		t.Fatalf("the copy is the edited row, edit = %+v", a.edit)
+	}
+}
+
+func TestAltArrowsMoveTheRowAndTheEditFollows(t *testing.T) {
+	a, _ := newTestApp(t)
+	click(a, valueCellX, paramsRow0Y)
+	a.typeText("rust") // an uncommitted edit travels with the row
+	a.step(altKey(ebiten.KeyArrowDown))
+	if got := paramNames(a); !reflect.DeepEqual(got, []string{"order", "q", "sort"}) {
+		t.Fatalf("params = %v", got)
+	}
+	if a.edit == nil || a.edit.row != 1 || a.cur().req.Params[1].Value != "rust" {
+		t.Fatalf("edit %+v value %q", a.edit, a.cur().req.Params[1].Value)
+	}
+	if !strings.Contains(a.cur().req.URL, "order=desc&q=rust&sort=stars") {
+		t.Fatalf("the URL follows the order: %q", a.cur().req.URL)
+	}
+	a.step(altKey(ebiten.KeyArrowUp))
+	a.step(altKey(ebiten.KeyArrowUp)) // already at the top: stays
+	if got := paramNames(a); !reflect.DeepEqual(got, []string{"q", "order", "sort"}) {
+		t.Fatalf("params = %v", got)
+	}
+}
+
+func TestDeleteRemovesTheSelectedRowWhenNothingIsBeingTyped(t *testing.T) {
+	a, _ := newTestApp(t)
+	click(a, valueCellX, paramsRow0Y)
+	a.step(widget.Input{Enter: true}) // commit; the row stays selected
+	a.step(key(ebiten.KeyDelete, false, false))
+	if got := paramNames(a); !reflect.DeepEqual(got, []string{"order", "sort"}) || strings.Contains(a.cur().req.URL, "q=") {
+		t.Fatalf("params %v url %q", got, a.cur().req.URL)
+	}
+	a.step(key(ebiten.KeyDelete, false, false)) // the selection moved on: a second Delete removes the next row
+	if len(a.cur().req.Params) > 2 {
+		t.Fatal("unreachable")
+	}
+}
+
+func TestDeleteDoesNothingWithoutASelectedRowOrWhileTyping(t *testing.T) {
+	a, _ := newTestApp(t)
+	a.step(key(ebiten.KeyDelete, false, false))
+	if len(a.cur().req.Params) != 3 {
+		t.Fatal("no row is selected")
+	}
+	click(a, valueCellX, paramsRow0Y) // editing: Delete is a text key
+	a.step(key(ebiten.KeyDelete, false, false))
+	if len(a.cur().req.Params) != 3 {
+		t.Fatal("while a cell is edited Delete belongs to the text")
+	}
+}
+
+func TestHeaderCheckboxEnablesOrDisablesEveryRow(t *testing.T) {
+	a, _ := newTestApp(t)
+	req := a.cur().req
+	click(a, checkAllX, paramsHeaderY)
+	for _, p := range req.Params {
+		if p.Enabled {
+			t.Fatalf("all must be disabled: %+v", req.Params)
+		}
+	}
+	if strings.Contains(req.URL, "?") {
+		t.Fatalf("no enabled params, no query: %q", req.URL)
+	}
+	click(a, checkAllX, paramsHeaderY)
+	if !model.AllEnabled(req.Params) || !strings.Contains(req.URL, "q=gioui") {
+		t.Fatalf("all enabled again: %+v url %q", req.Params, req.URL)
+	}
+}
+
+func TestUndoAndRedoOfTableChanges(t *testing.T) {
+	a, _ := newTestApp(t)
+	req := a.cur().req
+	click(a, 739, paramsRow0Y) // delete the first row
+	if len(req.Params) != 2 {
+		t.Fatal("test setup")
+	}
+	a.step(widget.Input{Ctrl: true, Undo: true})
+	if len(req.Params) != 3 || req.Params[0].Name != "q" || !strings.Contains(req.URL, "q=gioui") {
+		t.Fatalf("undo: %+v url %q", req.Params, req.URL)
+	}
+	a.step(widget.Input{Ctrl: true, Redo: true})
+	if len(req.Params) != 2 || strings.Contains(req.URL, "q=") {
+		t.Fatalf("redo: %+v url %q", req.Params, req.URL)
+	}
+	a.step(widget.Input{Ctrl: true, Undo: true})
+	click(a, 290, row1Y) // a new change after an undo clears redo
+	a.step(widget.Input{Ctrl: true, Redo: true})
+	if req.Params[1].Enabled {
+		t.Fatalf("redo must be gone after a new change: %+v", req.Params)
+	}
+	a.step(widget.Input{Ctrl: true, Undo: true})
+	a.step(widget.Input{Ctrl: true, Undo: true})
+	a.step(widget.Input{Ctrl: true, Undo: true}) // more undos than changes: stops at the start
+	if len(req.Params) != 3 {
+		t.Fatalf("params = %+v", req.Params)
+	}
+}
+
+func TestUndoGoesToTheCellTextWhileACellIsEdited(t *testing.T) {
+	a, _ := newTestApp(t)
+	click(a, 739, paramsRow0Y) // a table change to undo
+	click(a, valueCellX, paramsRow0Y)
+	a.typeText("zz")
+	a.step(widget.Input{Ctrl: true, Undo: true})
+	if len(a.cur().req.Params) != 2 {
+		t.Fatal("Ctrl+Z inside a cell undoes the typing, not the table")
+	}
+}
+
+func TestEveryTableChangeGoesThroughOnePlace(t *testing.T) {
+	a, _ := newTestApp(t)
+	click(a, valueCellX, paramsRow0Y+2*widget.RowH) // edit row 2
+	if a.edit == nil || a.edit.row != 2 {
+		t.Fatal("test setup")
+	}
+	a.applyRows(requestPanes[0], a.cur(), func(rows []model.KV) []model.KV { return model.DeleteRow(model.DeleteRow(rows, 2), 1) })
+	if a.edit != nil {
+		t.Fatalf("an edit pointing at a row that is gone must be dropped: %+v", a.edit)
+	}
+	if got := paramNames(a); !reflect.DeepEqual(got, []string{"q"}) || strings.Contains(a.cur().req.URL, "order") {
+		t.Fatalf("params %v url %q", got, a.cur().req.URL)
+	}
+}
+
+func TestBulkEditShowsLinesAndAppliesThemBack(t *testing.T) {
+	a, _ := newTestApp(t)
+	req := a.cur().req
+	req.Params[1].Enabled = false
+	click(a, bulkBtnX, chipsY)
+	if a.bulk == nil || a.bulk.area.Text != "q: gioui\n# order: desc\nsort: stars" {
+		t.Fatalf("bulk = %+v", a.bulk)
+	}
+	a.bulk.area.SelectAll()
+	a.bulk.area.Insert("q: rust\npage: 2\n# off: 1")
+	click(a, bulkBtnX, chipsY) // back to the table
+	if a.bulk != nil {
+		t.Fatal("the button leaves bulk mode")
+	}
+	want := []model.KV{
+		{Name: "q", Value: "rust", Description: "repo name", Enabled: true},
+		{Name: "page", Value: "2", Enabled: true},
+		{Name: "off", Value: "1", Enabled: false},
+	}
+	if !reflect.DeepEqual(req.Params, want) || !strings.HasSuffix(req.URL, "?q=rust&page=2") {
+		t.Fatalf("params %+v url %q", req.Params, req.URL)
+	}
+	a.step(widget.Input{Ctrl: true, Undo: true})
+	if len(req.Params) != 3 || req.Params[0].Value != "gioui" {
+		t.Fatalf("a bulk edit is one undo step: %+v", req.Params)
+	}
+}
+
+func TestLeavingTheTabWhileBulkEditingAppliesTheText(t *testing.T) {
+	a, _ := newTestApp(t)
+	click(a, bulkBtnX, chipsY)
+	a.bulk.area.SelectAll()
+	a.bulk.area.Insert("only: one")
+	a.cur().paneTab = headersTabIdx // as clicking the Headers tab does
+	a.step(widget.Input{})
+	if a.bulk != nil || !reflect.DeepEqual(paramNames(a), []string{"only"}) {
+		t.Fatalf("bulk %v params %v: nothing typed may be lost", a.bulk != nil, paramNames(a))
+	}
+}
+
+func TestDuplicateHeaderNamesAreFlagged(t *testing.T) {
+	rows := []model.KV{{Name: "X-Id", Enabled: true}, {Name: "x-id", Enabled: true}, {Name: "Other", Enabled: true}}
+	flagged := kvRows(rows, true, true)
+	if !flagged[0].Flagged || !flagged[1].Flagged || flagged[2].Flagged {
+		t.Fatalf("flags = %v %v %v", flagged[0].Flagged, flagged[1].Flagged, flagged[2].Flagged)
+	}
+	if kvRows(rows, true, false)[0].Flagged {
+		t.Fatal("params may repeat a key: no flag there")
+	}
+}

@@ -59,6 +59,7 @@ type TableRow struct {
 	Cells   []string
 	Checked bool
 	Muted   bool
+	Flagged bool // draw the name in the error color, for a duplicate
 }
 
 // TableSpec describes a Table: header captions, relative column widths,
@@ -77,6 +78,12 @@ type TableSpec struct {
 	// text field in that cell instead of its text.
 	OnEditCell func(row, col int)
 	Editing    *TableEdit
+
+	// AllChecked and OnToggleAll drive the checkbox in the header's
+	// action cell; Selected is the row the keyboard acts on.
+	AllChecked  bool
+	OnToggleAll func()
+	Selected    *int
 }
 
 // TableEdit is the cell being edited: its position, the field holding
@@ -99,7 +106,7 @@ func Table(t TableSpec, opts ...Option) *El {
 	return Col(with([]Item{
 		Bg(widget.Sunken),
 		Row(H(widget.RowH), BorderBottom(widget.Rule),
-			If(t.Editable, Row(W(tableActionW))),
+			If(t.Editable, headerCheck(t)),
 			For(t.Columns, func(i int, name string) Node {
 				return Row(Grow(t.Weights[i]), PadXY(8, 0), Caption(name, Grow(1)))
 			}),
@@ -109,6 +116,15 @@ func Table(t TableSpec, opts ...Option) *El {
 			return tableRow(t, i, r, t.Editable && i == len(t.Rows))
 		}),
 	}, opts)...)
+}
+
+// headerCheck is the checkbox that enables or disables every row.
+func headerCheck(t TableSpec) Node {
+	items := []Item{W(tableActionW), Checkbox(t.AllChecked)}
+	if t.OnToggleAll != nil {
+		items = append(items, OnClick(t.OnToggleAll))
+	}
+	return Row(items...)
 }
 
 func tableRow(t TableSpec, i int, r TableRow, placeholder bool) Node {
@@ -121,11 +137,20 @@ func tableRow(t TableSpec, i int, r TableRow, placeholder bool) Node {
 		H(widget.RowH),
 		If(actions, Row(W(tableActionW), OnClick(func() { t.OnToggle(i) }), Checkbox(r.Checked))),
 		If(placeholder, Row(W(tableActionW))),
-		For(r.Cells, func(j int, s string) Node { return tableCell(t, i, j, s, clr) }),
+		For(r.Cells, func(j int, s string) Node {
+			cellClr := clr
+			if j == 0 && r.Flagged {
+				cellClr = widget.Error
+			}
+			return tableCell(t, i, j, s, cellClr)
+		}),
 		If(actions, Row(W(tableActionW), OnClick(func() { t.OnDelete(i) }), Cross())),
 		If(placeholder, Row(W(tableActionW))),
 	}
-	if i%2 == 1 {
+	switch {
+	case t.Selected != nil && *t.Selected == i && !placeholder:
+		row = append(row, Bg(widget.Selected))
+	case i%2 == 1:
 		row = append(row, Bg(widget.Alt))
 	}
 	return Row(row...)
