@@ -122,3 +122,152 @@ func TestCodeViewSetLinesClearsSelection(t *testing.T) {
 		t.Fatal("new content must clear the selection")
 	}
 }
+
+type memClip struct{ text string }
+
+func (m *memClip) Read() (string, error) { return m.text, nil }
+func (m *memClip) Write(s string) error  { m.text = s; return nil }
+
+// viewport is a 600x400 code view at the origin of a context with a memory clipboard.
+func viewport(t *testing.T) (*CodeView, *Ctx, *memClip, Rect) {
+	t.Helper()
+	c, err := NewCtx(Dark())
+	if err != nil {
+		t.Fatal(err)
+	}
+	clip := &memClip{}
+	c.Clipboard = clip
+	v := &CodeView{}
+	v.SetLines(sampleLines())
+	return v, c, clip, Rect{W: 600, H: 400}
+}
+
+// rowY is the pixel row of the middle of visible row i.
+func rowY(c *Ctx, v *CodeView, r Rect, i int) int {
+	g := v.geometry(c, r)
+	return r.Y + i*g.lineH + g.lineH/2
+}
+
+func TestCodeViewClickSelectsALineDragExtendsAndCtrlCCopies(t *testing.T) {
+	v, c, clip, r := viewport(t)
+	textX := 300 // well right of the gutter
+
+	c.In = Input{X: textX, Y: rowY(c, v, r, 2), Click: true, Held: true}
+	v.Update(c, r)
+	if !v.Focused || v.SelectedText() != "  \"items\": [" {
+		t.Fatalf("click: focused %v selection %q", v.Focused, v.SelectedText())
+	}
+
+	c.In = Input{X: textX, Y: rowY(c, v, r, 4), Held: true}
+	v.Update(c, r)
+	c.In = Input{X: textX, Y: rowY(c, v, r, 4)} // released
+	v.Update(c, r)
+	if v.dragging {
+		t.Fatal("releasing the button must end the drag")
+	}
+	if got, want := v.SelectedText(), v.textOf(2, 4); got != want {
+		t.Fatalf("drag selection = %q, want %q", got, want)
+	}
+
+	c.In = Input{Ctrl: true, Copy: true}
+	v.Update(c, r)
+	if clip.text != v.textOf(2, 4) {
+		t.Fatalf("clipboard = %q", clip.text)
+	}
+}
+
+func TestCodeViewCopyWithoutSelectionCopiesEverything(t *testing.T) {
+	v, c, clip, r := viewport(t)
+	v.Focused = true
+	c.In = Input{X: 5000, Y: 5000, Ctrl: true, Copy: true} // pointer elsewhere: only focus matters
+	v.Update(c, r)
+	if clip.text != v.AllText() {
+		t.Fatalf("clipboard = %q", clip.text)
+	}
+}
+
+func TestCodeViewSelectAllAndBlurOnOutsideClick(t *testing.T) {
+	v, c, _, r := viewport(t)
+	v.Focused = true
+	c.In = Input{X: 5000, Y: 5000, Ctrl: true, SelectAll: true}
+	v.Update(c, r)
+	if v.SelectedText() != v.AllText() {
+		t.Fatal("Ctrl+A must select every line")
+	}
+
+	c.In = Input{X: 5000, Y: 5000, Click: true}
+	v.Update(c, r)
+	if v.Focused {
+		t.Fatal("a click outside must blur the view")
+	}
+	c.In = Input{X: 5000, Y: 5000, Ctrl: true, Copy: true}
+	clipBefore := c.Clipboard.(*memClip).text
+	v.Update(c, r)
+	if c.Clipboard.(*memClip).text != clipBefore {
+		t.Fatal("an unfocused view must ignore Ctrl+C")
+	}
+}
+
+func TestCodeViewFoldArrowToggles(t *testing.T) {
+	v, c, _, r := viewport(t)
+	g := v.geometry(c, r)
+	arrowX := r.X + Pad + g.numW + 4 + foldColW/2
+
+	c.In = Input{X: arrowX, Y: rowY(c, v, r, 0), Click: true}
+	v.Update(c, r)
+	if len(v.Visible()) != 1 {
+		t.Fatalf("folding the root must hide the rest, visible = %v", v.Visible())
+	}
+	if v.HasSel {
+		t.Fatal("a click on the arrow must not select the line")
+	}
+}
+
+func TestCodeViewWheelScrollsOnlyWhenOver(t *testing.T) {
+	v, c, _, _ := viewport(t)
+	small := Rect{W: 600, H: 60} // content is taller than the viewport
+	c.In = Input{X: 10, Y: 10, Wheel: -1}
+	v.Update(c, small)
+	if v.ScrollY <= 0 {
+		t.Fatalf("wheel over the view must scroll, ScrollY = %d", v.ScrollY)
+	}
+	before := v.ScrollY
+	c.In = Input{X: 900, Y: 10, Wheel: -1}
+	v.Update(c, small)
+	if v.ScrollY != before {
+		t.Fatal("wheel elsewhere must not scroll")
+	}
+}
+
+func TestCodeViewEmptyContentIsHarmless(t *testing.T) {
+	var v CodeView
+	c, err := NewCtx(Dark())
+	if err != nil {
+		t.Fatal(err)
+	}
+	c.In = Input{X: 10, Y: 10, Click: true, Held: true, Ctrl: true, Copy: true, SelectAll: true}
+	v.Update(c, Rect{W: 100, H: 100}) // must not panic on zero lines
+	if v.HasSel {
+		t.Fatal("nothing to select")
+	}
+}
+
+func TestCtxSetThemeSwitchesColorsAndFontSizes(t *testing.T) {
+	c, err := NewCtx(Dark())
+	if err != nil {
+		t.Fatal(err)
+	}
+	small := Light().WithTextSize(10, 8, 10)
+	if err := c.SetTheme(small); err != nil {
+		t.Fatal(err)
+	}
+	if c.Col(Bg) != Light().Color(Bg) {
+		t.Fatal("colors did not switch")
+	}
+	if c.F.UI.Size != 10 {
+		t.Fatalf("font size = %v, want 10 (times scale 1)", c.F.UI.Size)
+	}
+	if err := c.SetScale(2); err != nil || c.F.UI.Size != 20 {
+		t.Fatalf("after SetScale(2) the face must be 20px, got %v err %v", c.F.UI.Size, err)
+	}
+}

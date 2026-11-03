@@ -190,19 +190,25 @@ func (a *App) Layout(w, h int) (int, int) {
 	return int(float64(w)*a.ctx.Scale + 0.5), int(float64(h)*a.ctx.Scale + 0.5)
 }
 
-// Update implements ebiten.Game: it builds this frame's view, lays it
-// out and lets it react to input. Handlers in the view change App state.
+// Update implements ebiten.Game: it samples input and runs one frame.
 func (a *App) Update() error {
+	a.step(widget.ReadInput().Scaled(a.ctx.Scale))
+	return a.shotUpdate()
+}
+
+// step runs one frame with the given input: it applies finished sends,
+// builds the view, lays it out and lets it react. Handlers in the view
+// change App state. Tests drive the app through step without a window.
+func (a *App) step(in widget.Input) {
 	a.ctx.Tick++
-	a.ctx.In = widget.ReadInput().Scaled(a.ctx.Scale)
+	a.ctx.In = in
 	a.drain()
-	if a.ctx.In.Escape {
+	if in.Escape {
 		a.menu = false
 	}
 	root := a.view()
 	vml.Layout(a.ctx, root, a.w, a.h)
 	vml.Update(a.ctx, root)
-	return a.shotUpdate()
 }
 
 // Draw implements ebiten.Game. The view is rebuilt so it shows the

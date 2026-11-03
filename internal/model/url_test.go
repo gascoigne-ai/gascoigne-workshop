@@ -81,3 +81,12 @@ func TestMergeParams(t *testing.T) {
 		t.Fatalf("got %+v\nwant %+v", got, want)
 	}
 }
+
+// A query with a broken escape must keep its text instead of dropping it.
+func TestParamsFromURLKeepsBrokenEscapes(t *testing.T) {
+	got := ParamsFromURL("http://x?q=%zz&%GG=1")
+	want := []KV{{Name: "q", Value: "%zz", Enabled: true}, {Name: "%GG", Value: "1", Enabled: true}}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("got %+v, want %+v", got, want)
+	}
+}

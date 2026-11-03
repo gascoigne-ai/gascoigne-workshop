@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
 )
 
 func TestNext(t *testing.T) {
@@ -95,3 +96,61 @@ func TestRequestBadge(t *testing.T) {
 		}
 	}
 }
+
+func TestSampleCollectionIsConsistent(t *testing.T) {
+	col := SampleCollection()
+	reg := proto.NewRegistry()
+	seen := map[string]bool{}
+	for _, row := range treeRows(col.Folder, allExpanded(col.Folder)) {
+		if seen[row.Path] {
+			t.Errorf("duplicate tree path %q", row.Path)
+		}
+		seen[row.Path] = true
+		if row.Req == nil {
+			continue
+		}
+		if _, ok := reg[row.Req.Protocol]; !ok {
+			t.Errorf("%s uses unknown protocol %q", row.Path, row.Req.Protocol)
+		}
+		if row.Req.Protocol == "rest" && row.Req.Method == "" {
+			t.Errorf("%s is REST without a method", row.Path)
+		}
+	}
+	if len(col.Vars) == 0 {
+		t.Error("the sample must define baseUrl")
+	}
+}
+
+func allExpanded(f model.Folder) map[string]bool {
+	open := map[string]bool{f.Name: true}
+	var walk func(model.Folder, string)
+	walk = func(f model.Folder, path string) {
+		for _, sub := range f.Folders {
+			p := path + "/" + sub.Name
+			open[p] = true
+			walk(sub, p)
+		}
+	}
+	walk(f, f.Name)
+	return open
+}
+
+func TestKVRows(t *testing.T) {
+	rows := []model.KV{
+		{Name: "q", Value: "x", Description: "d", Enabled: true},
+		{Name: "off", Value: "y"},
+	}
+	two := kvRows(rows, false)
+	three := kvRows(rows, true)
+	if len(two[0].Cells) != 2 || len(three[0].Cells) != 3 || three[0].Cells[2] != "d" {
+		t.Fatalf("cells: %v / %v", two[0].Cells, three[0].Cells)
+	}
+	if !two[0].Checked || two[0].Muted || two[1].Checked || !two[1].Muted {
+		t.Fatalf("enabled rows are checked and bright, disabled ones muted: %+v", two)
+	}
+}
+
+var (
+	respErr = model.Response{Err: "boom"}
+	respOK  = model.Response{Status: 200, StatusText: "OK"}
+)

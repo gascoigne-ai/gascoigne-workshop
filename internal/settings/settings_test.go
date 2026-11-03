@@ -53,3 +53,43 @@ func TestSaveRoundTripCreatesDirAndLeavesNoTemp(t *testing.T) {
 }
 
 func ptr(s string) *string { return &s }
+
+func TestDefaultPathFollowsTheUserConfigDir(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	t.Setenv("HOME", dir)
+	want := filepath.Join(dir, "gascoigne-workshop", "settings.json")
+	if got := DefaultPath(); got != want {
+		t.Fatalf("DefaultPath = %q, want %q", got, want)
+	}
+}
+
+func TestSaveFailuresAreReported(t *testing.T) {
+	t.Run("directory cannot be created", func(t *testing.T) {
+		blocker := filepath.Join(t.TempDir(), "file")
+		if err := os.WriteFile(blocker, nil, 0o644); err != nil {
+			t.Fatal(err)
+		}
+		if err := Default().Save(filepath.Join(blocker, "settings.json")); err == nil {
+			t.Fatal("want an error when a file sits where the directory must go")
+		}
+	})
+	t.Run("temp file cannot be written", func(t *testing.T) {
+		path := filepath.Join(t.TempDir(), "settings.json")
+		if err := os.Mkdir(path+".tmp", 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := Default().Save(path); err == nil {
+			t.Fatal("want an error when the temp path is a directory")
+		}
+	})
+	t.Run("target cannot be replaced", func(t *testing.T) {
+		path := filepath.Join(t.TempDir(), "settings.json")
+		if err := os.MkdirAll(filepath.Join(path, "inside"), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := Default().Save(path); err == nil {
+			t.Fatal("want an error when the target is a non-empty directory")
+		}
+	})
+}

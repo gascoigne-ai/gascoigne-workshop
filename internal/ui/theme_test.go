@@ -92,3 +92,12 @@ func TestCodeLinesKeepsStructureAndColors(t *testing.T) {
 		t.Fatalf("styles = %v", styles)
 	}
 }
+
+func TestMethodTokenForRequestsWithoutAMethod(t *testing.T) {
+	if methodToken("") != widget.Muted {
+		t.Fatal("a request without a method (WebSocket, MCP) uses the muted color")
+	}
+	if methodToken("GET") != "method.GET" {
+		t.Fatalf("methodToken(GET) = %q", methodToken("GET"))
+	}
+}

@@ -275,3 +275,108 @@ func TestFieldDragSelectsAndReleaseEndsTheDrag(t *testing.T) {
 }
 
 var errTest = errors.New("no clipboard")
+
+func TestButtonsClickAndOverrideDefaults(t *testing.T) {
+	var plain, primary int
+	b1 := Button("Cancel", W(80), OnClick(func() { plain++ }))
+	b2 := PrimaryButton("Send", W(80), Bg(widget.Error), OnClick(func() { primary++ }))
+	root := Row(b1, b2)
+	c := testCtx(t)
+	Layout(c, root, 200, 30)
+
+	click(c, 10, 10)
+	click(c, 10, 10)
+	Update(c, root)
+	click(c, 100, 10)
+	Update(c, root)
+	if plain != 1 || primary != 1 {
+		t.Fatalf("plain %d primary %d, want 1 and 1", plain, primary)
+	}
+	if b2.bg != widget.Error {
+		t.Fatalf("caller options must override the button's defaults, bg = %q", b2.bg)
+	}
+	if b1.bg != widget.Chip {
+		t.Fatalf("a plain button uses the chip color, bg = %q", b1.bg)
+	}
+}
+
+func TestEnterInAFocusedFieldFiresOnEnterOnly(t *testing.T) {
+	enters := 0
+	f := widget.NewTextField("x")
+	root := Row(Field(&f, Grow(1), Placeholder("p"), OnEnter(func() { enters++ })))
+	c := testCtx(t)
+	Layout(c, root, 200, 30)
+
+	c.In = widget.Input{Enter: true}
+	Update(c, root)
+	if enters != 0 {
+		t.Fatal("an unfocused field must ignore Enter")
+	}
+	f.Focused = true
+	Update(c, root)
+	if enters != 1 {
+		t.Fatalf("enters = %d, want 1", enters)
+	}
+}
+
+func TestSpacerAndRulesTakeTheirSizes(t *testing.T) {
+	h, v, gap := HRule(), VRule(), Spacer()
+	inset := VRuleInset(8)
+	root := Col(h, Row(H(40), v, gap, inset))
+	Layout(testCtx(t), root, 200, 100)
+
+	if h.rect.H != 1 || h.rect.W != 200 {
+		t.Errorf("HRule = %+v", h.rect)
+	}
+	if v.rect.W != 1 || v.rect.H != 40 {
+		t.Errorf("VRule = %+v", v.rect)
+	}
+	if inset.rect.W != 1 || inset.kids[0].rect.H != 40-16 {
+		t.Errorf("VRuleInset line = %+v inside %+v", inset.kids[0].rect, inset.rect)
+	}
+	if gap.rect.W != 200-1-1 {
+		t.Errorf("Spacer must take the free width, got %d", gap.rect.W)
+	}
+}
+
+func TestLinesMakesOneRowPerLine(t *testing.T) {
+	lines := Lines("a\nb\nc", widget.Muted)
+	Layout(testCtx(t), Col(lines), 100, 200)
+	if len(lines.kids) != 3 || lines.rect.H != 3*22 {
+		t.Fatalf("rows %d height %d, want 3 rows of 22px", len(lines.kids), lines.rect.H)
+	}
+	for _, k := range lines.kids {
+		if k.fg != widget.Muted {
+			t.Fatalf("line color = %q", k.fg)
+		}
+	}
+}
+
+func TestCodeNodeForwardsInputToTheView(t *testing.T) {
+	v := &widget.CodeView{}
+	v.SetLines([]widget.Line{{Spans: []widget.Span{{Text: "one"}}}, {Spans: []widget.Span{{Text: "two"}}}})
+	root := Row(Code(v, Grow(1)))
+	c := testCtx(t)
+	Layout(c, root, 400, 100)
+
+	click(c, 300, 15) // in the text area of the first line
+	Update(c, root)
+	if v.SelectedText() != "one" || !v.Focused {
+		t.Fatalf("selection %q focused %v", v.SelectedText(), v.Focused)
+	}
+}
+
+func TestEitherAndIconsMeasure(t *testing.T) {
+	c := testCtx(t)
+	icons := Row(Checkbox(true), Cross(), Triangle(false), Dots())
+	Layout(c, icons, 200, 30)
+	want := []int{14, 10, 10, 4}
+	for i, k := range icons.kids {
+		if k.rect.W != want[i] {
+			t.Errorf("icon %d width %d, want %d", i, k.rect.W, want[i])
+		}
+	}
+	if Either(true, box(W(1)), box(W(2))).w != 1 {
+		t.Fatal("Either(true) picks the first")
+	}
+}
