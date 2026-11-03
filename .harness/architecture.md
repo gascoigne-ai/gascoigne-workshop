@@ -44,9 +44,10 @@ Plain values; everything except the drawing calls is tested without a GPU.
 
 - **Theme and tokens.** A `Theme` maps color `Token`s (`Bg`, `Frame`, `Sunken`, `Alt`, `Selected`, `Chip`, `Rule`, `Text`, `Muted`, `Accent`, ...) to colors; `widget.Dark()` and `widget.Light()` are flat gray palettes with a gold accent. Applications add tokens with `Theme.With` (the app adds `method.GET`, `json.key`, ...). Unknown tokens fall back to the text color. A test checks text/surface contrast for both themes.
 - **`Ctx`** is what drawing and hit-testing use: theme, fonts, this frame's `Input`, tick and scale. Everything works in logical pixels; `Ctx` primitives (`Fill`, `Text`, `Clip`, `Line`, ...) multiply by `Scale` when drawing, text measures divide by it, and `Input.Scaled` converts the pointer back. `SetScale` and `SetTheme` rebuild the fonts. This is what makes the window sharp on HiDPI.
-- **Input**: `ReadInput` samples mouse, wheel, typed runes, edit keys with repeat, Enter and Escape.
-- **`TextField`**: single-line text with a rune cursor; `Apply(typed, edits)`.
-- **`CodeView`**: lines of colored spans (`Span{Text, Style Token}`), a fold set and a pixel scroll. `Visible()` hides everything from a folded line through its closing line, found by indentation. `Update` handles wheel and fold clicks; `Draw` paints with line numbers and fold arrows.
+- **Input**: `ReadInput` samples mouse (including held, for drags), wheel, typed runes, edit keys with repeat, Enter, Escape, Shift/Ctrl and the Ctrl+A/C/X/V shortcuts.
+- **`TextField`**: single-line text with a rune cursor and a selection (shift+arrows, drag, shift+click, select all). `Apply(typed, edits, extend)`, `Insert` (paste: line breaks become spaces, control characters are dropped), `DeleteSelection`, `SelectedText`.
+- **Clipboard**: `widget.Clipboard` (read/write text). Ebitengine has no clipboard API, so `SystemClipboard()` runs the first complete pair of platform tools (`wl-paste`/`wl-copy`, `xclip`, `xsel`, `pbpaste`/`pbcopy`) with a 2 s timeout; with none installed every call fails with a hint to install wl-clipboard or xclip. No dependency is added.
+- **`CodeView`**: lines of colored spans (`Span{Text, Style Token}`), a fold set, a pixel scroll and a whole-line selection (click or drag on the text; Ctrl+A selects all). Ctrl+C on the focused view copies the selected lines, or the whole body when nothing is selected. `Visible()` hides everything from a folded line through its closing line, found by indentation. `Update` handles wheel and fold clicks; `Draw` paints with line numbers and fold arrows.
 - **`Rect`** and its split helpers.
 
 ## vml: the view DSL
@@ -79,13 +80,14 @@ Row(H(urlH), PadXY(w.Pad, 8), Gap(8), Bg(w.Bg),
 
 - **Panes** are two tables, `requestPanes` and `responsePanes`: label, kind (table, code, note), row source, edit hook and an `empty` hook that supplies "Sending...", errors and "no response yet". A map from kind to builder turns a pane into nodes; adding a pane means adding a row.
 - **URL bar**: protocol chip (REST / WS / MCP, click cycles), method chip (REST only), the URL field with `{{vars}}` colored, and Send. Editing the URL re-derives the Params table with `model.MergeParams`; toggling or deleting a param rewrites the URL with `model.WithParams`.
+- **Clipboard status**: `ui` wraps the system clipboard so the status bar shows "Copied N characters" or why the clipboard failed.
 - **Sending**: `App.send` expands `{{vars}}` from the collection and calls `proto.Registry.Send` in a goroutine with a 60 s timeout. The result returns over a channel and is applied in `Update`, so UI state is only touched from the game goroutine.
 - **Settings menu**: the three-dot button toggles a modal VML overlay with Theme (Dark / Light) and Text size (Small / Medium / Large). Choices are tables (`themeChoices`, `textSizeChoices`), so a new theme is one row. A change calls `Ctx.SetTheme` and saves `internal/settings` to `<user config dir>/gascoigne-workshop/settings.json`; `-settings PATH` overrides the file and an empty path keeps settings in memory. Unknown ids in the file fall back to dark / medium. Escape or an outside click closes the menu.
 - **Screenshot mode**: `workshop -screenshot out.png [-send] [-menu] [-settings FILE]` renders after a short settle, writes the PNG and exits (`make shot`). It is how UI changes are checked without a person at the window.
 
 ## Limits (milestone 1)
 
-- Only the URL is editable; table cells, body and headers are display-only (checkbox and delete work). No clipboard, selection or IME.
+- Only the URL is editable; table cells, body and headers are display-only (checkbox and delete work). Copy and paste work in the URL field and the code views; no IME, no word-wise movement, no double-click word selection, and the code view selects whole lines only.
 - No saving or loading of collections; the sample collection is built in (`ui.SampleCollection`).
 - No text wrapping in the code view. Fractional scales round logical text metrics to whole pixels.
 - VML is Go-native only; there is no template syntax or parser. One could be added later as a front end that emits the same nodes.

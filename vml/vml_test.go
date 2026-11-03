@@ -1,6 +1,7 @@
 package vml
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/widget"
@@ -191,3 +192,86 @@ func TestTabsSelect(t *testing.T) {
 		t.Fatalf("selected %d, want 1", sel)
 	}
 }
+
+type fakeClipboard struct {
+	text    string
+	readErr error
+}
+
+func (f *fakeClipboard) Read() (string, error) { return f.text, f.readErr }
+func (f *fakeClipboard) Write(s string) error  { f.text = s; return nil }
+
+func TestFieldCopyCutPasteSelectAll(t *testing.T) {
+	changes := 0
+	f := widget.NewTextField("hello world")
+	f.Focused = true
+	field := Field(&f, OnChange(func() { changes++ }))
+	root := Row(field)
+	c := testCtx(t)
+	clip := &fakeClipboard{}
+	c.Clipboard = clip
+	Layout(c, root, 300, 30)
+
+	step := func(in widget.Input) {
+		c.In = in
+		Update(c, root)
+	}
+
+	step(widget.Input{Ctrl: true, SelectAll: true})
+	step(widget.Input{Ctrl: true, Copy: true})
+	if clip.text != "hello world" || f.Text != "hello world" || changes != 0 {
+		t.Fatalf("copy: clipboard %q text %q changes %d", clip.text, f.Text, changes)
+	}
+
+	step(widget.Input{Ctrl: true, Cut: true})
+	if f.Text != "" || clip.text != "hello world" || changes != 1 {
+		t.Fatalf("cut: clipboard %q text %q changes %d", clip.text, f.Text, changes)
+	}
+
+	clip.text = "new\r\nvalue"
+	step(widget.Input{Ctrl: true, Paste: true})
+	if f.Text != "new  value" || changes != 2 {
+		t.Fatalf("paste: text %q changes %d", f.Text, changes)
+	}
+
+	// Ctrl+V must not also type the letter the key reports.
+	step(widget.Input{Ctrl: true, Typed: []rune("v")})
+	if f.Text != "new  value" {
+		t.Fatalf("ctrl+letter typed text: %q", f.Text)
+	}
+}
+
+func TestFieldPasteFailureLeavesTextAlone(t *testing.T) {
+	f := widget.NewTextField("keep")
+	f.Focused = true
+	root := Row(Field(&f))
+	c := testCtx(t)
+	c.Clipboard = &fakeClipboard{text: "lost", readErr: errTest}
+	Layout(c, root, 300, 30)
+	c.In = widget.Input{Ctrl: true, Paste: true}
+	Update(c, root)
+	if f.Text != "keep" {
+		t.Fatalf("text = %q", f.Text)
+	}
+}
+
+func TestFieldDragSelectsAndReleaseEndsTheDrag(t *testing.T) {
+	f := widget.NewTextField("hello")
+	root := Row(Field(&f, Grow(1)))
+	c := testCtx(t)
+	Layout(c, root, 300, 30)
+
+	// press at the start of the text, drag far past its end, release
+	c.In = widget.Input{X: fieldPad, Y: 10, Click: true, Held: true}
+	Update(c, root)
+	c.In = widget.Input{X: fieldPad + 200, Y: 10, Held: true}
+	Update(c, root)
+	c.In = widget.Input{X: fieldPad + 200, Y: 10}
+	Update(c, root)
+
+	if f.SelectedText() != "hello" || f.Dragging {
+		t.Fatalf("selection %q dragging %v", f.SelectedText(), f.Dragging)
+	}
+}
+
+var errTest = errors.New("no clipboard")

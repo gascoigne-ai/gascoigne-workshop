@@ -44,6 +44,9 @@ type Ctx struct {
 	In    Input
 	Tick  int
 	Scale float64
+
+	// Clipboard is used by text widgets for copy, cut and paste.
+	Clipboard Clipboard
 }
 
 // NewCtx returns a context at scale 1.
@@ -52,7 +55,7 @@ func NewCtx(th Theme) (*Ctx, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Ctx{Th: th, F: fonts, Scale: 1}, nil
+	return &Ctx{Th: th, F: fonts, Scale: 1, Clipboard: SystemClipboard()}, nil
 }
 
 // SetScale rebuilds the fonts when the device scale factor changes, for

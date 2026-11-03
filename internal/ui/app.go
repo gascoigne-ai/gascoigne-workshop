@@ -113,6 +113,7 @@ func NewApp(opts Options) (*App, error) {
 	if loadErr != nil {
 		a.status = loadErr.Error()
 	}
+	ctx.Clipboard = statusClipboard{inner: ctx.Clipboard, report: func(msg string) { a.status = msg }}
 	a.expanded[a.col.Name] = true
 	a.expanded[a.col.Name+"/Repository"] = true
 	a.openRequest(&a.col.Folders[1].Requests[0])

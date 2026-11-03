@@ -14,6 +14,11 @@ type Input struct {
 	Edits  []Edit
 	Enter  bool
 	Escape bool
+
+	Held        bool // left button is down
+	Shift, Ctrl bool
+	// Ctrl+key shortcuts that went down this frame.
+	SelectAll, Copy, Cut, Paste bool
 }
 
 // Scaled converts the pointer position from device to logical pixels.
@@ -63,6 +68,15 @@ func ReadInput() Input {
 		Typed:  ebiten.AppendInputChars(nil),
 		Enter:  inpututil.IsKeyJustPressed(ebiten.KeyEnter),
 		Escape: inpututil.IsKeyJustPressed(ebiten.KeyEscape),
+		Held:   ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft),
+		Shift:  ebiten.IsKeyPressed(ebiten.KeyShift),
+		Ctrl:   ebiten.IsKeyPressed(ebiten.KeyControl),
+	}
+	if in.Ctrl {
+		in.SelectAll = inpututil.IsKeyJustPressed(ebiten.KeyA)
+		in.Copy = inpututil.IsKeyJustPressed(ebiten.KeyC)
+		in.Cut = inpututil.IsKeyJustPressed(ebiten.KeyX)
+		in.Paste = inpututil.IsKeyJustPressed(ebiten.KeyV)
 	}
 	for _, k := range editKeys {
 		if pressed(k.key) {

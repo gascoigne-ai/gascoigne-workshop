@@ -26,6 +26,13 @@ type CodeView struct {
 	Lines   []Line
 	Folded  map[int]bool // by original line index
 	ScrollY int          // pixels
+
+	// Whole-line selection, by original line index. Focused views
+	// answer Ctrl+C and Ctrl+A.
+	Focused            bool
+	HasSel             bool
+	selAnchor, selLine int
+	dragging           bool
 }
 
 // SetLines replaces the content and resets folds and scroll.
@@ -33,6 +40,50 @@ func (v *CodeView) SetLines(lines []Line) {
 	v.Lines = lines
 	v.Folded = map[int]bool{}
 	v.ScrollY = 0
+	v.HasSel, v.dragging = false, false
+}
+
+// lineText is the plain text of line i.
+func (v *CodeView) lineText(i int) string {
+	var b strings.Builder
+	for _, s := range v.Lines[i].Spans {
+		b.WriteString(s.Text)
+	}
+	return b.String()
+}
+
+// AllText is every line, folded or not, joined by newlines.
+func (v *CodeView) AllText() string { return v.textOf(0, len(v.Lines)-1) }
+
+func (v *CodeView) textOf(lo, hi int) string {
+	parts := make([]string, 0, hi-lo+1)
+	for i := lo; i <= hi && i < len(v.Lines); i++ {
+		parts = append(parts, v.lineText(i))
+	}
+	return strings.Join(parts, "\n")
+}
+
+// selected returns the selected line range, low to high.
+func (v *CodeView) selected() (lo, hi int, ok bool) {
+	if !v.HasSel || len(v.Lines) == 0 {
+		return 0, 0, false
+	}
+	return min(v.selAnchor, v.selLine), max(v.selAnchor, v.selLine), true
+}
+
+// SelectedText is the selected lines joined by newlines, or "".
+func (v *CodeView) SelectedText() string {
+	lo, hi, ok := v.selected()
+	if !ok {
+		return ""
+	}
+	return v.textOf(lo, hi)
+}
+
+// SelectLines selects original lines a through b (either order).
+func (v *CodeView) SelectLines(a, b int) {
+	last := len(v.Lines) - 1
+	v.selAnchor, v.selLine, v.HasSel = min(max(a, 0), last), min(max(b, 0), last), last >= 0
 }
 
 // ToggleFold folds or unfolds the foldable line at original index i.
@@ -95,22 +146,65 @@ func (v *CodeView) geometry(c *Ctx, r Rect) codeGeometry {
 	return g
 }
 
-// Update handles wheel scrolling and fold-arrow clicks inside r.
+// lineAt is the original line under pixel row y, clamped to the content.
+func (v *CodeView) lineAt(y int, r Rect, g codeGeometry, vis []int) int {
+	row := min(max((y-r.Y+v.ScrollY)/g.lineH, 0), len(vis)-1)
+	return vis[row]
+}
+
+// Update handles wheel scrolling, fold-arrow clicks, line selection by
+// click or drag, and Ctrl+A / Ctrl+C while focused.
 func (v *CodeView) Update(c *Ctx, r Rect) {
-	if !c.In.Over(r) {
-		return
+	in := c.In
+	over := c.In.Over(r)
+	if in.Click {
+		v.Focused = over
 	}
 	g := v.geometry(c, r)
 	vis := v.Visible()
-	if c.In.Wheel != 0 {
-		v.Scroll(int(-c.In.Wheel*float64(g.lineH)*3), len(vis)*g.lineH, r.H)
+	if len(vis) > 0 {
+		v.updatePointer(c, r, g, vis, over)
 	}
-	foldCol := Rect{r.X + Pad + g.numW + 4, r.Y, foldColW, r.H}
-	if !c.In.Hit(foldCol) {
+	if !v.Focused {
 		return
 	}
-	if row := (c.In.Y - r.Y + v.ScrollY) / g.lineH; row >= 0 && row < len(vis) {
-		v.ToggleFold(vis[row])
+	if in.SelectAll {
+		v.SelectLines(0, len(v.Lines)-1)
+	}
+	if in.Copy && c.Clipboard != nil {
+		text := v.SelectedText()
+		if text == "" {
+			text = v.AllText()
+		}
+		_ = c.Clipboard.Write(text) // the clipboard reports its own failures
+	}
+}
+
+func (v *CodeView) updatePointer(c *Ctx, r Rect, g codeGeometry, vis []int, over bool) {
+	in := c.In
+	if v.dragging {
+		if in.Held {
+			v.selLine = v.lineAt(in.Y, r, g, vis)
+		} else {
+			v.dragging = false
+		}
+	}
+	if !over {
+		return
+	}
+	if in.Wheel != 0 {
+		v.Scroll(int(-in.Wheel*float64(g.lineH)*3), len(vis)*g.lineH, r.H)
+	}
+	if !in.Click {
+		return
+	}
+	foldCol := Rect{r.X + Pad + g.numW + 4, r.Y, foldColW, r.H}
+	line := v.lineAt(in.Y, r, g, vis)
+	switch {
+	case foldCol.Contains(in.X, in.Y):
+		v.ToggleFold(line)
+	case in.X >= foldCol.X+foldColW:
+		v.selAnchor, v.selLine, v.HasSel, v.dragging = line, line, true, true
 	}
 }
 
@@ -130,6 +224,9 @@ func (v *CodeView) Draw(c *Ctx, dst *ebiten.Image, r Rect) {
 		idx := vis[row]
 		line := v.Lines[idx]
 		cell := Rect{r.X, y, r.W, g.lineH}
+		if lo, hi, ok := v.selected(); ok && idx >= lo && idx <= hi {
+			c.Fill(dst, cell, c.Col(Selection))
+		}
 
 		num := strconv.Itoa(idx + 1)
 		c.TextMid(dst, c.F.Mono, num, r.X+Pad+g.numW-len(num)*g.charW, cell, muted)

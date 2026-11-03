@@ -22,27 +22,74 @@ func (fieldB) measure(*El, *widget.Ctx, int) (int, int) { return 0, 0 }
 
 func (fieldB) update(e *El, c *widget.Ctx) {
 	f, in := e.field, c.In
+	at := func() int { return c.CursorAt(f.Text, in.X-(e.rect.X+fieldPad)) }
 	if in.Click {
 		f.Focused = e.rect.Contains(in.X, in.Y)
 		if f.Focused {
-			f.Cursor = c.CursorAt(f.Text, in.X-(e.rect.X+fieldPad))
+			f.Press(at(), in.Shift)
+		}
+	}
+	if f.Dragging {
+		if in.Held {
+			f.Drag(at())
+		} else {
+			f.Dragging = false
 		}
 	}
 	if !f.Focused {
 		return
 	}
-	if f.Apply(in.Typed, in.Edits) && e.onChange != nil {
-		e.onChange()
+	changed := e.shortcuts(c)
+	typed := in.Typed
+	if in.Ctrl {
+		typed = nil // Ctrl+letter is a shortcut, not text
+	}
+	if f.Apply(typed, in.Edits, in.Shift) || changed {
+		if e.onChange != nil {
+			e.onChange()
+		}
 	}
 	if in.Enter && e.onEnter != nil {
 		e.onEnter()
 	}
 }
 
+// shortcuts runs select-all, copy, cut and paste; it reports whether
+// the text changed.
+func (e *El) shortcuts(c *widget.Ctx) (changed bool) {
+	f, in := e.field, c.In
+	if in.SelectAll {
+		f.SelectAll()
+	}
+	if c.Clipboard == nil {
+		return false
+	}
+	if in.Copy || in.Cut {
+		if sel := f.SelectedText(); sel != "" {
+			_ = c.Clipboard.Write(sel) // the clipboard reports its own failures
+		}
+	}
+	if in.Cut {
+		changed = f.DeleteSelection()
+	}
+	if in.Paste {
+		if text, err := c.Clipboard.Read(); err == nil {
+			changed = f.Insert(text) || changed
+		}
+	}
+	return changed
+}
+
 func (fieldB) draw(e *El, c *widget.Ctx, dst *ebiten.Image) {
 	f, r := e.field, e.rect
 	dst = c.Clip(dst, r)
 	x := r.X + fieldPad
+	if lo, hi, ok := f.Selection(); ok {
+		runes := []rune(f.Text)
+		x0 := x + c.Width(c.F.UI, string(runes[:lo]))
+		x1 := x + c.Width(c.F.UI, string(runes[:hi]))
+		c.Fill(dst, widget.Rect{X: x0, Y: r.Y + 6, W: x1 - x0, H: r.H - 12}, c.Col(widget.Selection))
+	}
 	segs := []Seg{{Text: f.Text, Style: widget.Text}}
 	if e.segments != nil {
 		segs = e.segments(f.Text)

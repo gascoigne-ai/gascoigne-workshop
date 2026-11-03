@@ -36,6 +36,7 @@ func TestThemesAreReadable(t *testing.T) {
 			{"text on zebra row", Text, Alt, 4.5},
 			{"text on selected row", Text, Selected, 4.5},
 			{"text on frame", Text, Frame, 4.5},
+			{"text on selection", Text, Selection, 4.5},
 			{"muted on pane", Muted, Bg, 3},
 			{"muted on list", Muted, Sunken, 3},
 			{"muted on frame", Muted, Frame, 3},

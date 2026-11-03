@@ -87,3 +87,38 @@ func TestCodeViewScrollClamps(t *testing.T) {
 		})
 	}
 }
+
+func TestCodeViewSelectionText(t *testing.T) {
+	var v CodeView
+	v.SetLines(sampleLines())
+	if v.SelectedText() != "" {
+		t.Fatal("nothing selected yet")
+	}
+	v.SelectLines(1, 2)
+	if got, want := v.SelectedText(), "  \"a\": 1,\n  \"items\": ["; got != want {
+		t.Fatalf("got %q, want %q", got, want)
+	}
+	v.SelectLines(2, 1) // reversed range selects the same lines
+	if got := v.SelectedText(); got != "  \"a\": 1,\n  \"items\": [" {
+		t.Fatalf("reversed range: %q", got)
+	}
+	v.SelectLines(-5, 99) // clamped to the content
+	if got := v.SelectedText(); got != v.AllText() {
+		t.Fatalf("clamped selection should cover everything")
+	}
+	v.SetLines(nil)
+	v.SelectLines(0, 3)
+	if v.HasSel || v.SelectedText() != "" {
+		t.Fatal("an empty view cannot have a selection")
+	}
+}
+
+func TestCodeViewSetLinesClearsSelection(t *testing.T) {
+	var v CodeView
+	v.SetLines(sampleLines())
+	v.SelectLines(0, 3)
+	v.SetLines(sampleLines())
+	if v.HasSel {
+		t.Fatal("new content must clear the selection")
+	}
+}

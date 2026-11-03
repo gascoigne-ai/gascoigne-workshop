@@ -29,6 +29,7 @@ const (
 	OK         Token = "ok"
 	Error      Token = "error"
 	Shadow     Token = "shadow"
+	Selection  Token = "selection"
 )
 
 // Fixed sizes shared by all widgets, in logical pixels.
@@ -90,7 +91,7 @@ func Dark() Theme {
 			Text: RGB(0xdadada), Muted: RGB(0xb0b0b0),
 			Accent: RGB(accentGold), AccentText: RGB(0x1a1a1a),
 			OK: RGB(0x7fd18b), Error: RGB(0xff7b7b),
-			Shadow: {A: 0x66},
+			Shadow: {A: 0x66}, Selection: RGB(0x6b5a1e),
 		},
 	}
 }
@@ -107,7 +108,7 @@ func Light() Theme {
 			Text: RGB(0x262626), Muted: RGB(0x5f5f5f),
 			Accent: RGB(accentGold), AccentText: RGB(0x1a1a1a),
 			OK: RGB(0x1b7f45), Error: RGB(0xc02626),
-			Shadow: {A: 0x33},
+			Shadow: {A: 0x33}, Selection: RGB(0xf3d97a),
 		},
 	}
 }

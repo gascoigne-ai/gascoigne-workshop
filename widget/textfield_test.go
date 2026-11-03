@@ -28,11 +28,81 @@ func TestTextFieldApply(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			f := TextField{Text: tt.start, Cursor: tt.cursor}
-			changed := f.Apply([]rune(tt.typed), tt.edits)
+			changed := f.Apply([]rune(tt.typed), tt.edits, false)
 			if f.Text != tt.want || f.Cursor != tt.wantCursor || changed != tt.changed {
 				t.Fatalf("got %q cursor %d changed %v; want %q cursor %d changed %v",
 					f.Text, f.Cursor, changed, tt.want, tt.wantCursor, tt.changed)
 			}
 		})
+	}
+}
+
+func TestTextFieldSelection(t *testing.T) {
+	tests := []struct {
+		name     string
+		run      func(f *TextField)
+		wantText string
+		wantSel  string
+	}{
+		{"shift+right selects forward", func(f *TextField) {
+			f.Cursor = 1
+			f.Apply(nil, []Edit{EditRight, EditRight}, true)
+		}, "hello", "el"},
+		{"shift+home selects to start", func(f *TextField) {
+			f.Cursor = 3
+			f.Apply(nil, []Edit{EditHome}, true)
+		}, "hello", "hel"},
+		{"select all", func(f *TextField) { f.SelectAll() }, "hello", "hello"},
+		{"left collapses to the low edge", func(f *TextField) {
+			f.Cursor = 1
+			f.Apply(nil, []Edit{EditRight, EditRight}, true)
+			f.Apply(nil, []Edit{EditLeft}, false)
+		}, "hello", ""},
+		{"typing replaces the selection", func(f *TextField) {
+			f.SelectAll()
+			f.Apply([]rune("x"), nil, false)
+		}, "x", ""},
+		{"backspace deletes the selection only", func(f *TextField) {
+			f.Cursor = 1
+			f.Apply(nil, []Edit{EditRight, EditRight}, true)
+			f.Apply(nil, []Edit{EditBackspace}, false)
+		}, "hlo", ""},
+		{"paste replaces the selection and strips line breaks", func(f *TextField) {
+			f.Cursor = 1
+			f.Apply(nil, []Edit{EditRight}, true)
+			f.Insert("A\nB\x00")
+		}, "hA Bllo", ""},
+		{"drag selects between press and pointer", func(f *TextField) {
+			f.Press(1, false)
+			f.Drag(4)
+		}, "hello", "ell"},
+		{"shift+click extends the selection", func(f *TextField) {
+			f.Cursor = 1
+			f.Press(4, true)
+		}, "hello", "ell"},
+		{"press without drag selects nothing", func(f *TextField) { f.Press(2, false) }, "hello", ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			f := NewTextField("hello")
+			tt.run(&f)
+			if f.Text != tt.wantText || f.SelectedText() != tt.wantSel {
+				t.Fatalf("text %q selection %q; want %q and %q", f.Text, f.SelectedText(), tt.wantText, tt.wantSel)
+			}
+		})
+	}
+}
+
+func TestTextFieldCutAndCopyText(t *testing.T) {
+	f := NewTextField("hello world")
+	f.Anchor, f.Cursor, f.HasSel = 6, 11, true
+	if got := f.SelectedText(); got != "world" {
+		t.Fatalf("SelectedText = %q", got)
+	}
+	if !f.DeleteSelection() || f.Text != "hello " || f.Cursor != 6 {
+		t.Fatalf("after cut: %q cursor %d", f.Text, f.Cursor)
+	}
+	if f.DeleteSelection() {
+		t.Fatal("deleting with no selection must report false")
 	}
 }
