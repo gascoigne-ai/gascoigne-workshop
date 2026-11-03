@@ -60,3 +60,103 @@ func (c *Ctx) Scrollbar(dst *ebiten.Image, track Rect, contentLen, viewLen, pos 
 	}
 	c.Fill(dst, thumb, clr)
 }
+
+// bars is the scrollbar layout of a view in r: the area left for content
+// after the bars, and each bar's track (ok false when not needed).
+type bars struct {
+	viewW, viewH int
+	vTrack       Rect
+	hTrack       Rect
+	vOK, hOK     bool
+}
+
+func btoi(b bool) int {
+	if b {
+		return 1
+	}
+	return 0
+}
+
+// layoutBars decides which scrollbars a view in r needs for content of
+// contentW by contentH. A bar takes room from the other direction, so
+// the two decisions depend on each other.
+func layoutBars(r Rect, contentW, contentH int) bars {
+	var b bars
+	b.vOK = contentH > r.H
+	b.hOK = contentW > r.W-btoi(b.vOK)*ScrollbarW
+	b.vOK = contentH > r.H-btoi(b.hOK)*ScrollbarW
+	b.viewW, b.viewH = r.W-btoi(b.vOK)*ScrollbarW, r.H-btoi(b.hOK)*ScrollbarW
+	b.vTrack = Rect{X: r.X + r.W - ScrollbarW, Y: r.Y, W: ScrollbarW, H: b.viewH}
+	b.hTrack = Rect{X: r.X, Y: r.Y + r.H - ScrollbarW, W: b.viewW, H: ScrollbarW}
+	return b
+}
+
+const (
+	barNone = iota
+	barV
+	barH
+)
+
+// barDrag tracks a scrollbar thumb being dragged.
+type barDrag struct {
+	bar  int // barNone, barV or barH
+	grab int // pointer offset inside the thumb when the drag began
+}
+
+func (d *barDrag) active() bool { return d.bar != barNone }
+
+// update runs a thumb drag, or starts one (or pages) on a press in a
+// track, moving *sx and *sy.
+func (d *barDrag) update(c *Ctx, b bars, contentW, contentH int, sx, sy *int) {
+	in := c.In
+	switch d.bar {
+	case barV:
+		if !in.Held {
+			d.bar = barNone
+			return
+		}
+		*sy = PosFromOffset(b.vTrack.H, contentH, b.viewH, in.Y-b.vTrack.Y-d.grab)
+		return
+	case barH:
+		if !in.Held {
+			d.bar = barNone
+			return
+		}
+		*sx = PosFromOffset(b.hTrack.W, contentW, b.viewW, in.X-b.hTrack.X-d.grab)
+		return
+	}
+	if !in.Click {
+		return
+	}
+	if b.vOK && b.vTrack.Contains(in.X, in.Y) {
+		d.press(b.vTrack.H, contentH, b.viewH, *sy, in.Y-b.vTrack.Y, barV, sy)
+	}
+	if b.hOK && b.hTrack.Contains(in.X, in.Y) {
+		d.press(b.hTrack.W, contentW, b.viewW, *sx, in.X-b.hTrack.X, barH, sx)
+	}
+}
+
+// press starts dragging the thumb when the press is on it, else pages
+// toward the press.
+func (d *barDrag) press(track, content, view, pos, at, bar int, scroll *int) {
+	off, length, ok := Thumb(track, content, view, pos)
+	switch {
+	case !ok:
+	case at >= off && at < off+length:
+		d.bar, d.grab = bar, at-off
+	case at < off:
+		*scroll = ClampScroll(pos-view, content, view)
+	default:
+		*scroll = ClampScroll(pos+view, content, view)
+	}
+}
+
+// drawBars draws the scrollbars of b for content scrolled to sx, sy.
+func (c *Ctx) drawBars(dst *ebiten.Image, b bars, d barDrag, contentW, contentH, sx, sy int) {
+	if b.vOK {
+		c.Scrollbar(dst, b.vTrack, contentH, b.viewH, sy, d.bar == barV || c.In.Over(b.vTrack))
+	}
+	if b.hOK {
+		c.Scrollbar(dst, b.hTrack, contentW, b.viewW, sx, d.bar == barH || c.In.Over(b.hTrack))
+	}
+}

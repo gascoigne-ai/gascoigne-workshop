@@ -603,3 +603,153 @@ func TestCtrlTabIsNotFocusCycling(t *testing.T) {
 		t.Fatal("Ctrl+Tab switches tabs in the app, it must not move focus")
 	}
 }
+
+// areaBox is a 400x100 text area in a window of the same size.
+func areaBox(t *testing.T, text string) (*widget.TextArea, *widget.Ctx, *El, *int) {
+	t.Helper()
+	a := widget.NewTextArea(text)
+	changes := 0
+	root := Row(TextArea(a, Grow(1), OnChange(func() { changes++ })))
+	c := testCtx(t)
+	Layout(c, root, 400, 100)
+	return a, c, root, &changes
+}
+
+func focusArea(a *widget.TextArea, c *widget.Ctx, root *El) {
+	c.In = widget.Input{X: 380, Y: 5, Click: true, Held: true, Clicks: 1}
+	Update(c, root)
+	c.In = widget.Input{X: 380, Y: 5}
+	Update(c, root)
+	_ = a
+}
+
+func TestTextAreaTypingEnterAndUndo(t *testing.T) {
+	a, c, root, changes := areaBox(t, "")
+	focusArea(a, c, root)
+	if !a.Focused {
+		t.Fatal("a click must focus the area")
+	}
+	c.In = widget.Input{Typed: []rune("hi")}
+	Update(c, root)
+	c.In = widget.Input{Enter: true}
+	Update(c, root)
+	c.In = widget.Input{Typed: []rune("yo")}
+	Update(c, root)
+	if a.Text != "hi\nyo" || *changes != 3 {
+		t.Fatalf("text %q changes %d", a.Text, *changes)
+	}
+	c.In = widget.Input{Ctrl: true, Undo: true}
+	Update(c, root)
+	if a.Text != "hi\n" {
+		t.Fatalf("undo: %q", a.Text)
+	}
+}
+
+func TestTextAreaClickPlacesTheCursorByLineAndColumn(t *testing.T) {
+	a, c, root, _ := areaBox(t, "abc\ndef\nghi")
+	lineH := c.LineH(c.F.Mono) + 4
+
+	c.In = widget.Input{X: 390, Y: lineH + 3, Click: true, Held: true, Clicks: 1}
+	Update(c, root)
+	if l, col := a.LineCol(a.Cursor); l != 1 || col != 3 {
+		t.Fatalf("far right on line 1: %d,%d want 1,3", l, col)
+	}
+	c.In = widget.Input{X: 2, Y: 2*lineH + 3, Click: true, Held: true, Clicks: 1} // in the gutter
+	Update(c, root)
+	if l, col := a.LineCol(a.Cursor); l != 2 || col != 0 {
+		t.Fatalf("left edge on line 2: %d,%d want 2,0", l, col)
+	}
+}
+
+func TestTextAreaDragSelectsAcrossLines(t *testing.T) {
+	a, c, root, _ := areaBox(t, "abc\ndef\nghi")
+	lineH := c.LineH(c.F.Mono) + 4
+	c.In = widget.Input{X: 390, Y: 3, Click: true, Held: true, Clicks: 1}
+	Update(c, root)
+	c.In = widget.Input{X: 390, Y: lineH + 3, Held: true}
+	Update(c, root)
+	c.In = widget.Input{X: 390, Y: lineH + 3}
+	Update(c, root)
+	if a.SelectedText() != "\ndef" || a.Dragging {
+		t.Fatalf("selection %q dragging %v", a.SelectedText(), a.Dragging)
+	}
+}
+
+func TestTextAreaTabIndentsAndKeepsFocus(t *testing.T) {
+	a, c, _, _ := areaBox(t, "x")
+	b := widget.NewTextField("other")
+	root := Col(TextArea(a, H(50)), Field(&b, H(30)))
+	Layout(c, root, 400, 80)
+	a.Focused = true
+
+	c.In = widget.Input{Tab: true}
+	Update(c, root)
+	if a.Text != "x " || !a.Focused || b.Focused {
+		t.Fatalf("Tab: text %q area focused %v field focused %v; Tab belongs to the editor", a.Text, a.Focused, b.Focused)
+	}
+	a.Text, a.Cursor = "  x", 3
+	c.In = widget.Input{Tab: true, Shift: true}
+	Update(c, root)
+	if a.Text != "x" {
+		t.Fatalf("Shift+Tab: %q", a.Text)
+	}
+}
+
+func TestTextAreaEscapeBlurs(t *testing.T) {
+	a, c, root, _ := areaBox(t, "x")
+	a.Focused = true
+	c.In = widget.Input{Escape: true}
+	Update(c, root)
+	if a.Focused {
+		t.Fatal("Escape must leave the editor")
+	}
+}
+
+func TestTextAreaScrollsWithWheelAndFollowsTheCursor(t *testing.T) {
+	var text string
+	for i := 0; i < 100; i++ {
+		text += "line\n"
+	}
+	a, c, root, _ := areaBox(t, text)
+	c.In = widget.Input{X: 50, Y: 20, Wheel: -2}
+	Update(c, root)
+	if a.ScrollY <= 0 {
+		t.Fatalf("wheel must scroll, ScrollY = %d", a.ScrollY)
+	}
+
+	a.Focused = true
+	a.Cursor = 0
+	c.In = widget.Input{Edits: []widget.Edit{widget.EditDocEnd}}
+	Update(c, root)
+	lineH := c.LineH(c.F.Mono) + 4
+	if want := 101*lineH - 100; a.ScrollY < want-ScrollbarSlack || a.ScrollY > want+ScrollbarSlack {
+		t.Fatalf("ScrollY = %d after Ctrl+End, want about %d (the cursor line must be in view)", a.ScrollY, want)
+	}
+}
+
+// ScrollbarSlack allows for the horizontal scrollbar eating a few pixels.
+const ScrollbarSlack = widget.ScrollbarW
+
+func TestTextAreaPasteKeepsLines(t *testing.T) {
+	a, c, root, _ := areaBox(t, "")
+	a.Focused = true
+	c.Clipboard = &fakeClipboard{text: "{\r\n  \"a\": 1\r\n}"}
+	c.In = widget.Input{Ctrl: true, Paste: true}
+	Update(c, root)
+	if a.Text != "{\n  \"a\": 1\n}" || a.LineCount() != 3 {
+		t.Fatalf("text %q", a.Text)
+	}
+}
+
+func TestTextAreaShiftWheelScrollsSideways(t *testing.T) {
+	long := ""
+	for i := 0; i < 200; i++ {
+		long += "w"
+	}
+	a, c, root, _ := areaBox(t, long)
+	c.In = widget.Input{X: 50, Y: 20, Wheel: -2, Shift: true}
+	Update(c, root)
+	if a.ScrollX <= 0 || a.ScrollY != 0 {
+		t.Fatalf("ScrollX %d ScrollY %d", a.ScrollX, a.ScrollY)
+	}
+}

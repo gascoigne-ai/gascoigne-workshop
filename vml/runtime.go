@@ -19,11 +19,14 @@ func Update(c *widget.Ctx, root Node) {
 }
 
 // focusable reports whether e takes keyboard focus: text fields and code views.
-func (e *El) focusable() bool { return e.field != nil || e.view != nil }
+func (e *El) focusable() bool { return e.field != nil || e.view != nil || e.area != nil }
 
 func (e *El) focused() bool {
-	if e.field != nil {
+	switch {
+	case e.field != nil:
 		return e.field.Focused
+	case e.area != nil:
+		return e.area.Focused
 	}
 	return e.view != nil && e.view.Focused
 }
@@ -35,6 +38,8 @@ func (e *El) setFocused(on bool) {
 		if on {
 			e.field.SelectAll()
 		}
+	case e.area != nil:
+		e.area.Focused = on
 	case e.view != nil:
 		e.view.Focused = on
 	}
@@ -68,7 +73,7 @@ func cycleFocus(c *widget.Ctx, root Node) {
 	for i, e := range list {
 		if e.focused() {
 			cur = i
-			if e.onTab != nil {
+			if e.onTab != nil || e.area != nil { // these keep Tab for themselves
 				return
 			}
 		}

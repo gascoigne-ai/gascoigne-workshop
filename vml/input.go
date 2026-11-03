@@ -39,7 +39,7 @@ func (fieldB) update(e *El, c *widget.Ctx) {
 	if !f.Focused {
 		return
 	}
-	changed := e.shortcuts(c)
+	changed := f.RunShortcuts(c)
 	typed := in.Typed
 	if in.Ctrl {
 		typed = nil // Ctrl+letter is a shortcut, not text
@@ -56,38 +56,6 @@ func (fieldB) update(e *El, c *widget.Ctx) {
 		e.onTab(in.Shift)
 	}
 	f.Reveal(c.Width(c.F.UI, string([]rune(f.Text)[:f.Cursor])), e.rect.W-2*fieldPad)
-}
-
-// shortcuts runs undo, redo, select-all, copy, cut and paste; it
-// reports whether the text changed.
-func (e *El) shortcuts(c *widget.Ctx) (changed bool) {
-	f, in := e.field, c.In
-	if in.Undo {
-		changed = f.Undo() || changed
-	}
-	if in.Redo {
-		changed = f.Redo() || changed
-	}
-	if in.SelectAll {
-		f.SelectAll()
-	}
-	if c.Clipboard == nil {
-		return changed
-	}
-	if in.Copy || in.Cut {
-		if sel := f.SelectedText(); sel != "" {
-			_ = c.Clipboard.Write(sel) // the clipboard reports its own failures
-		}
-	}
-	if in.Cut {
-		changed = f.DeleteSelection() || changed
-	}
-	if in.Paste {
-		if text, err := c.Clipboard.Read(); err == nil {
-			changed = f.Insert(text) || changed
-		}
-	}
-	return changed
 }
 
 func (fieldB) draw(e *El, c *widget.Ctx, dst *ebiten.Image) {

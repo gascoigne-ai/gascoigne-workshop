@@ -52,6 +52,10 @@ var editKeys = []struct {
 	{ebiten.KeyArrowRight, EditRight},
 	{ebiten.KeyHome, EditHome},
 	{ebiten.KeyEnd, EditEnd},
+	{ebiten.KeyArrowUp, EditUp},
+	{ebiten.KeyArrowDown, EditDown},
+	{ebiten.KeyPageUp, EditPageUp},
+	{ebiten.KeyPageDown, EditPageDown},
 }
 
 // Key repeat: after repeatDelay frames held, fire every repeatEvery.
@@ -113,6 +117,8 @@ var ctrlEdits = map[Edit]Edit{
 	EditRight:     EditWordRight,
 	EditBackspace: EditDeleteWordLeft,
 	EditDelete:    EditDeleteWordRight,
+	EditHome:      EditDocStart,
+	EditEnd:       EditDocEnd,
 }
 
 func ctrlEdit(e Edit) (Edit, bool) {

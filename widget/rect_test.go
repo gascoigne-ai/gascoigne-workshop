@@ -92,8 +92,8 @@ func TestCtrlTurnsMovementIntoWordMovement(t *testing.T) {
 			t.Errorf("ctrlEdit(%v) = %v %v, want %v", tt.in, got, ok, tt.want)
 		}
 	}
-	if _, ok := ctrlEdit(EditHome); ok {
-		t.Error("Home has no word variant")
+	if _, ok := ctrlEdit(EditUp); ok {
+		t.Error("Up has no Ctrl variant")
 	}
 }
 

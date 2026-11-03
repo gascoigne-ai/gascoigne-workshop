@@ -61,6 +61,7 @@ type El struct {
 	segments                   func(string) []Seg
 	field                      *widget.TextField
 	view                       *widget.CodeView
+	area                       *widget.TextArea
 	icon                       iconKind
 	on                         bool
 
