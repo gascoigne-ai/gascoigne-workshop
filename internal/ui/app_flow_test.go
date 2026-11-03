@@ -857,3 +857,142 @@ func TestEachTabKeepsItsOwnBodyEditor(t *testing.T) {
 		t.Fatalf("bodies %q and %q", a.cur().req.Body, second.req.Body)
 	}
 }
+
+// tabX is the left edge of tab i in the request-tab strip, from the
+// layout the view uses: 14px padding, badge, 8px gap, name, 24px close
+// button (plus the unsaved dot when the tab is dirty).
+func (a *App) tabX(i int) (left, width int) {
+	x := 260
+	for j, t := range a.tabs {
+		wd := 14 + a.ctx.Width(a.ctx.F.Small, requestBadge(t.req.Protocol, t.req.Method)) + 8 + a.ctx.Width(a.ctx.F.UI, t.req.Name) + 24
+		if dirty(t) {
+			wd += 8 + a.ctx.Width(a.ctx.F.UI, dirtyMark)
+		}
+		if j == i {
+			return x, wd
+		}
+		x += wd
+	}
+	return x, 0
+}
+
+const tabStripY = headerH + tabsH/2
+
+func twoTabs(t *testing.T) *App {
+	a, _ := newTestApp(t)
+	click(a, 100, treeRowY(4)) // opens "Repository Info" as the second tab
+	if len(a.tabs) != 2 {
+		t.Fatal("test setup: want two tabs")
+	}
+	return a
+}
+
+func TestCloseButtonClosesOnlyThatTab(t *testing.T) {
+	a := twoTabs(t) // active: the second
+	left, width := a.tabX(0)
+	click(a, left+width-12, tabStripY) // the × of the first tab
+	if len(a.tabs) != 1 || a.cur().req.Name != "Repository Info" {
+		t.Fatalf("%d tabs, current %q", len(a.tabs), a.cur().req.Name)
+	}
+}
+
+func TestClickingTheLabelSelectsAndDoesNotClose(t *testing.T) {
+	a := twoTabs(t)
+	left, _ := a.tabX(0)
+	click(a, left+30, tabStripY)
+	if len(a.tabs) != 2 || a.active != 0 {
+		t.Fatalf("%d tabs, active %d", len(a.tabs), a.active)
+	}
+}
+
+func TestMiddleClickClosesATab(t *testing.T) {
+	a := twoTabs(t)
+	left, width := a.tabX(1)
+	a.step(widget.Input{X: left + width/2, Y: tabStripY, MiddleClick: true})
+	if len(a.tabs) != 1 || a.cur().req.Name != "Search Repos" {
+		t.Fatalf("%d tabs, current %q", len(a.tabs), a.cur().req.Name)
+	}
+}
+
+func TestClosingATabBeforeTheActiveOneKeepsTheSameTabActive(t *testing.T) {
+	a := twoTabs(t)
+	a.closeTab(0)
+	if a.active != 0 || a.cur().req.Name != "Repository Info" {
+		t.Fatalf("active %d current %q", a.active, a.cur().req.Name)
+	}
+}
+
+func TestDirtyFollowsEditsAndUndoingThemByHand(t *testing.T) {
+	a, _ := newTestApp(t)
+	tab := a.cur()
+	if dirty(tab) {
+		t.Fatal("a freshly opened request is clean")
+	}
+	click(a, 1100, urlBarY)
+	a.typeText("x")
+	if !dirty(tab) {
+		t.Fatal("editing the URL makes the tab dirty")
+	}
+	a.step(widget.Input{Edits: []widget.Edit{widget.EditBackspace}})
+	if dirty(tab) {
+		t.Fatal("restoring the original text makes it clean again")
+	}
+	click(a, 739, 262) // delete a param
+	if !dirty(tab) {
+		t.Fatal("deleting a param is a change")
+	}
+}
+
+func TestDirtyTabShowsAMarkerThatMovesTheCloseButton(t *testing.T) {
+	a, _ := newTestApp(t)
+	_, clean := a.tabX(0)
+	a.cur().req.Name = a.cur().req.Name // no change
+	a.cur().req.Headers = append(a.cur().req.Headers, model.KV{Name: "X", Enabled: true})
+	_, withDot := a.tabX(0)
+	if withDot <= clean {
+		t.Fatalf("a dirty tab is wider by the marker: %d vs %d", withDot, clean)
+	}
+	left, width := a.tabX(0)
+	a.step(widget.Input{}) // lay out with the marker
+	click(a, left+width-12, tabStripY)
+	if a.cur().req.Name != "New Request" {
+		t.Fatalf("the × of a dirty tab must still close it (the last tab leaves a blank request), current %q", a.cur().req.Name)
+	}
+}
+
+func TestDraggingATabReordersIt(t *testing.T) {
+	a := twoTabs(t)
+	first := a.tabs[0]
+	l0, w0 := a.tabX(0)
+	l1, w1 := a.tabX(1)
+
+	a.step(widget.Input{X: l0 + 20, Y: tabStripY, Click: true, Held: true}) // press the first tab
+	a.step(widget.Input{X: l1 + w1/2, Y: tabStripY, Held: true})            // drag over the second
+	if a.tabs[1] != first {
+		t.Fatalf("the dragged tab must move to the second place")
+	}
+	a.step(widget.Input{X: l1 + w1/2, Y: tabStripY}) // release
+	a.step(widget.Input{X: l0 + w0/2, Y: tabStripY, Held: true})
+	if a.tabs[1] != first {
+		t.Fatal("after release, moving over another tab must not drag")
+	}
+	if a.dragTab != -1 {
+		t.Fatalf("dragTab = %d after release", a.dragTab)
+	}
+}
+
+func TestDraggingKeepsTheActiveTabActive(t *testing.T) {
+	a := twoTabs(t) // second tab active
+	active := a.cur()
+	l0, _ := a.tabX(0)
+	_, w1 := a.tabX(1)
+	l1, _ := a.tabX(1)
+	a.step(widget.Input{X: l0 + 20, Y: tabStripY, Click: true, Held: true})
+	a.step(widget.Input{X: l1 + w1/2, Y: tabStripY, Held: true})
+	if a.cur() == active {
+		t.Fatal("pressing the first tab activates it, so it is the active one")
+	}
+	if a.cur() != a.tabs[1] {
+		t.Fatal("the active tab must travel with the drag")
+	}
+}

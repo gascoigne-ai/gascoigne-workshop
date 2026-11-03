@@ -67,6 +67,7 @@ type El struct {
 
 	onClick, onChange, onEnter func()
 	onTab                      func(back bool)
+	onMiddle, onHeldOver       func()
 
 	float                bool
 	floatTop, floatRight int
@@ -187,6 +188,14 @@ func Clip() Option { return func(e *El) { e.clip = true } }
 
 // OnClick runs f when the element is clicked.
 func OnClick(f func()) Option { return func(e *El) { e.onClick = f } }
+
+// OnMiddleClick runs f when the element is middle-clicked.
+func OnMiddleClick(f func()) Option { return func(e *El) { e.onMiddle = f } }
+
+// OnHeldOver runs f every frame the left button is held with the pointer
+// over the element, for drag and drop: the element under the dragged
+// item learns the item is over it.
+func OnHeldOver(f func()) Option { return func(e *El) { e.onHeldOver = f } }
 
 // Float takes the element out of the layout of its Stack and pins it
 // top and right, this many pixels from those edges.

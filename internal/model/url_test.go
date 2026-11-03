@@ -90,3 +90,21 @@ func TestParamsFromURLKeepsBrokenEscapes(t *testing.T) {
 		t.Fatalf("got %+v, want %+v", got, want)
 	}
 }
+
+func TestCloneIsIndependentAndNormalizesEmptySlices(t *testing.T) {
+	orig := Request{
+		Name: "r", Params: []KV{{Name: "a", Value: "1"}}, Headers: []KV{}, Form: nil,
+	}
+	c := orig.Clone()
+	c.Params[0].Value = "changed"
+	c.Params = append(c.Params, KV{Name: "b"})
+	if orig.Params[0].Value != "1" || len(orig.Params) != 1 {
+		t.Fatalf("editing the clone changed the original: %+v", orig.Params)
+	}
+	if c.Headers != nil || c.Form != nil {
+		t.Fatalf("empty slices must clone to nil: %#v %#v", c.Headers, c.Form)
+	}
+	if !reflect.DeepEqual(orig.Clone(), (&Request{Name: "r", Params: []KV{{Name: "a", Value: "1"}}}).Clone()) {
+		t.Fatal("equal requests must have equal clones, whatever their empty slices were")
+	}
+}

@@ -55,6 +55,11 @@ Task numbers refer to `tasks/`; "-" means no task yet.
 - Golden screenshot tests for both themes (`make shot` compare), CI workflow, release packaging and desktop entry (-).
 - Accessibility pass: contrast already tested; focus order and screen reader hints (-).
 
+### Deferred from finished tasks
+- Tab strip overflow: horizontal scrolling with the active tab kept in view (needs a horizontal `vml.Scroll`).
+- `+` creating the request inside the selected folder: needs stable request pointers in the model (`Folder.Requests` as pointers), done with task 013.
+- Scroll-into-view of a focused child inside a `vml.Scroll`.
+
 ## Suggested order
 Editing foundation first, because everything else needs it: 001, 002, 003, 004, 005. Then the
 request side (006, 008, 009, 007), then response tools (010), layout (011), overlays and CRUD

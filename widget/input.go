@@ -9,14 +9,15 @@ import (
 
 // Input is one frame of user input.
 type Input struct {
-	X, Y   int
-	Click  bool    // left button went down this frame
-	Wheel  float64 // vertical wheel movement, positive = up
-	Typed  []rune
-	Edits  []Edit
-	Enter  bool
-	Escape bool
-	Tab    bool
+	X, Y        int
+	Click       bool    // left button went down this frame
+	MiddleClick bool    // middle button went down this frame
+	Wheel       float64 // vertical wheel movement, positive = up
+	Typed       []rune
+	Edits       []Edit
+	Enter       bool
+	Escape      bool
+	Tab         bool
 
 	Held        bool // left button is down
 	Shift, Ctrl bool
@@ -75,16 +76,17 @@ func ReadInput() Input {
 	_, wheel := ebiten.Wheel()
 	in := Input{
 		X: x, Y: y,
-		Click:  inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft),
-		Wheel:  wheel,
-		Typed:  ebiten.AppendInputChars(nil),
-		Enter:  inpututil.IsKeyJustPressed(ebiten.KeyEnter),
-		Escape: inpututil.IsKeyJustPressed(ebiten.KeyEscape),
-		Tab:    inpututil.IsKeyJustPressed(ebiten.KeyTab),
-		Held:   ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft),
-		Keys:   inpututil.AppendJustPressedKeys(nil),
-		Shift:  ebiten.IsKeyPressed(ebiten.KeyShift),
-		Ctrl:   ebiten.IsKeyPressed(ebiten.KeyControl),
+		Click:       inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft),
+		Wheel:       wheel,
+		Typed:       ebiten.AppendInputChars(nil),
+		Enter:       inpututil.IsKeyJustPressed(ebiten.KeyEnter),
+		Escape:      inpututil.IsKeyJustPressed(ebiten.KeyEscape),
+		Tab:         inpututil.IsKeyJustPressed(ebiten.KeyTab),
+		Held:        ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft),
+		MiddleClick: inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonMiddle),
+		Keys:        inpututil.AppendJustPressedKeys(nil),
+		Shift:       ebiten.IsKeyPressed(ebiten.KeyShift),
+		Ctrl:        ebiten.IsKeyPressed(ebiten.KeyControl),
 	}
 	if in.Ctrl {
 		in.SelectAll = inpututil.IsKeyJustPressed(ebiten.KeyA)

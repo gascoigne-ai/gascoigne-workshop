@@ -3,6 +3,7 @@ package ui
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -49,6 +50,7 @@ type reqTab struct {
 	body                  *widget.TextArea // request body editor
 	reqScroll, respScroll vml.ScrollState  // scroll of the table and note panes
 	sending               bool
+	saved                 model.Request // the request as it was when opened or last saved
 }
 
 func newTab(req *model.Request) *reqTab {
@@ -59,6 +61,7 @@ func newTab(req *model.Request) *reqTab {
 			req.BodyType = model.BodyText
 		}
 	}
+	t.saved = req.Clone()
 	t.body = widget.NewTextArea(req.Body)
 	return t
 }
@@ -85,6 +88,7 @@ type App struct {
 	settingsPath string    // "" keeps settings in memory only
 	menu         bool      // settings menu is open
 	edit         *cellEdit // the table cell being edited, if any
+	dragTab      int       // index of the tab being dragged, -1 when none
 	sampler      widget.Sampler
 	treeScroll   vml.ScrollState
 }
@@ -125,6 +129,7 @@ func NewApp(opts Options) (*App, error) {
 		a.status = loadErr.Error()
 	}
 	ctx.Clipboard = statusClipboard{inner: ctx.Clipboard, report: func(msg string) { a.status = msg }}
+	a.dragTab = -1
 	a.expanded[a.col.Name] = true
 	a.expanded[a.col.Name+"/Repository"] = true
 	a.openRequest(&a.col.Folders[1].Requests[0])
@@ -213,6 +218,9 @@ func (a *App) Update() error {
 func (a *App) step(in widget.Input) {
 	a.ctx.Tick++
 	a.ctx.In = in
+	if !in.Held {
+		a.dragTab = -1
+	}
 	a.drain()
 	a.runShortcuts(in)
 	if in.Escape {
@@ -262,4 +270,31 @@ func (a *App) cycleMethod(t *reqTab) { t.req.Method = next(methodOrder, t.req.Me
 func (a *App) urlEdited(t *reqTab) {
 	t.req.URL = t.url.Text
 	t.req.Params = model.MergeParams(t.req.Params, t.req.URL)
+}
+
+// dirtyMark is shown on tabs whose request changed since it was opened.
+const dirtyMark = "\u2022"
+
+// dirty reports whether the request differs from its state when opened.
+func dirty(t *reqTab) bool { return !reflect.DeepEqual(t.saved, t.req.Clone()) }
+
+// dragOver moves the tab being dragged to where the pointer is over tab i.
+func (a *App) dragOver(i int) {
+	if a.dragTab >= 0 && a.dragTab != i {
+		a.moveTab(a.dragTab, i)
+	}
+}
+
+// moveTab moves a tab to a new place; the active tab stays the same tab.
+func (a *App) moveTab(from, to int) {
+	active := a.cur()
+	tab := a.tabs[from]
+	a.tabs = append(a.tabs[:from], a.tabs[from+1:]...)
+	a.tabs = append(a.tabs[:to], append([]*reqTab{tab}, a.tabs[to:]...)...)
+	for i, t := range a.tabs {
+		if t == active {
+			a.active = i
+		}
+	}
+	a.dragTab = to
 }

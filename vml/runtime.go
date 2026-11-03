@@ -129,6 +129,12 @@ func (e *El) update(c *widget.Ctx) bool {
 	if e.onClick != nil && c.In.Hit(e.rect) {
 		e.onClick()
 	}
+	if e.onMiddle != nil && c.In.MiddleClick && c.In.Over(e.rect) {
+		e.onMiddle()
+	}
+	if e.onHeldOver != nil && c.In.Held && c.In.Over(e.rect) {
+		e.onHeldOver()
+	}
 	if e.modal && c.In.Click {
 		if !e.rect.Contains(c.In.X, c.In.Y) && e.onDismiss != nil {
 			e.onDismiss()

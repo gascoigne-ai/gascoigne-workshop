@@ -60,3 +60,18 @@ type Response struct {
 	Body       []byte
 	Err        string
 }
+
+// Clone returns a deep copy of r: editing the copy's rows never changes
+// r. Empty slices become nil, so a copy compares equal to a request
+// whose rows were all deleted again.
+func (r Request) Clone() Request {
+	r.Params, r.Headers, r.Form = cloneKV(r.Params), cloneKV(r.Headers), cloneKV(r.Form)
+	return r
+}
+
+func cloneKV(rows []KV) []KV {
+	if len(rows) == 0 {
+		return nil
+	}
+	return append([]KV(nil), rows...)
+}

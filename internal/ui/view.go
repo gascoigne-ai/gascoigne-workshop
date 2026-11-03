@@ -127,9 +127,16 @@ func (a *App) requestTabs() Node {
 			if i == a.active {
 				look = Bg(w.Bg)
 			}
-			return Row(PadXY(14, 0), Gap(8), look, OnClick(func() { a.active = i }),
-				Text(requestBadge(t.req.Protocol, t.req.Method), Small(), Color(methodToken(t.req.Method))),
-				Text(t.req.Name),
+			grab := OnClick(func() { a.active, a.dragTab = i, i })
+			return Row(look, OnMiddleClick(func() { a.closeTab(i) }),
+				Row(PadL(14), Gap(8), grab, OnHeldOver(func() { a.dragOver(i) }),
+					Text(requestBadge(t.req.Protocol, t.req.Method), Small(), Color(methodToken(t.req.Method))),
+					Text(t.req.Name),
+					If(dirty(t), Text(dirtyMark, Color(w.Accent))),
+				),
+				Row(W(24), OnClick(func() { a.closeTab(i) }),
+					Cross(Grow(1)),
+				),
 			)
 		}),
 		Row(W(40), OnClick(a.newRequest),
