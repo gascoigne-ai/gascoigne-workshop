@@ -109,39 +109,45 @@ func TestRequestBadge(t *testing.T) {
 func TestSampleCollectionIsConsistent(t *testing.T) {
 	col := SampleCollection()
 	reg := proto.NewRegistry()
-	seen := map[string]bool{}
-	for _, row := range treeRows(col.Folder, allExpanded(col.Folder)) {
-		if seen[row.Path] {
-			t.Errorf("duplicate tree path %q", row.Path)
+	var check func(f *model.Folder, path string)
+	check = func(f *model.Folder, path string) {
+		seen := map[string]bool{}
+		for _, name := range append(folderNames(f), requestNames(f)...) {
+			if seen[name] {
+				t.Errorf("%s: duplicate name %q among siblings", path, name)
+			}
+			seen[name] = true
 		}
-		seen[row.Path] = true
-		if row.Req == nil {
-			continue
+		for _, r := range f.Requests {
+			if _, ok := reg[r.Protocol]; !ok {
+				t.Errorf("%s/%s uses unknown protocol %q", path, r.Name, r.Protocol)
+			}
+			if r.Protocol == "rest" && r.Method == "" {
+				t.Errorf("%s/%s is REST without a method", path, r.Name)
+			}
 		}
-		if _, ok := reg[row.Req.Protocol]; !ok {
-			t.Errorf("%s uses unknown protocol %q", row.Path, row.Req.Protocol)
-		}
-		if row.Req.Protocol == "rest" && row.Req.Method == "" {
-			t.Errorf("%s is REST without a method", row.Path)
+		for _, sub := range f.Folders {
+			check(sub, path+"/"+sub.Name)
 		}
 	}
+	check(&col.Folder, col.Name)
 	if len(col.Vars) == 0 {
 		t.Error("the sample must define baseUrl")
 	}
 }
 
-func allExpanded(f model.Folder) map[string]bool {
-	open := map[string]bool{f.Name: true}
-	var walk func(model.Folder, string)
-	walk = func(f model.Folder, path string) {
-		for _, sub := range f.Folders {
-			p := path + "/" + sub.Name
-			open[p] = true
-			walk(sub, p)
-		}
+func folderNames(f *model.Folder) (out []string) {
+	for _, s := range f.Folders {
+		out = append(out, s.Name)
 	}
-	walk(f, f.Name)
-	return open
+	return
+}
+
+func requestNames(f *model.Folder) (out []string) {
+	for _, r := range f.Requests {
+		out = append(out, r.Name)
+	}
+	return
 }
 
 func TestKVRows(t *testing.T) {

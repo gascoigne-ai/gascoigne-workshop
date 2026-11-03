@@ -8,24 +8,19 @@ import (
 )
 
 func TestTreeRows(t *testing.T) {
-	root := model.Folder{
-		Name: "API",
-		Folders: []model.Folder{
-			{Name: "User", Requests: []model.Request{{Name: "Me"}}},
-			{Name: "Repo", Requests: []model.Request{{Name: "Search"}, {Name: "Info"}}},
-		},
-		Requests: []model.Request{{Name: "Root call"}},
-	}
+	user := &model.Folder{Name: "User", Requests: []*model.Request{{Name: "Me"}}}
+	repo := &model.Folder{Name: "Repo", Requests: []*model.Request{{Name: "Search"}, {Name: "Info"}}}
+	root := &model.Folder{Name: "API", Folders: []*model.Folder{user, repo}, Requests: []*model.Request{{Name: "Root call"}}}
 	tests := []struct {
 		name     string
-		expanded map[string]bool
+		expanded map[*model.Folder]bool
 		want     []string
 	}{
 		{"collapsed root", nil, []string{"API"}},
-		{"root open", map[string]bool{"API": true}, []string{"API", " User", " Repo", " Root call"}},
-		{"one folder open", map[string]bool{"API": true, "API/Repo": true},
+		{"root open", map[*model.Folder]bool{root: true}, []string{"API", " User", " Repo", " Root call"}},
+		{"one folder open", map[*model.Folder]bool{root: true, repo: true},
 			[]string{"API", " User", " Repo", "  Search", "  Info", " Root call"}},
-		{"hidden child stays hidden", map[string]bool{"API/Repo": true}, []string{"API"}},
+		{"hidden child stays hidden", map[*model.Folder]bool{repo: true}, []string{"API"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -44,11 +39,26 @@ func TestTreeRows(t *testing.T) {
 	}
 }
 
-func TestTreeRowsRequestPointsIntoTree(t *testing.T) {
-	root := model.Folder{Name: "A", Requests: []model.Request{{Name: "r"}}}
-	rows := treeRows(root, map[string]bool{"A": true})
-	rows[1].Req.URL = "edited"
-	if root.Requests[0].URL != "edited" {
-		t.Fatal("request row must alias the tree's request so edits persist")
+func TestTreeRowsCarryTheNodes(t *testing.T) {
+	req := &model.Request{Name: "r"}
+	sub := &model.Folder{Name: "sub"}
+	root := &model.Folder{Name: "A", Folders: []*model.Folder{sub}, Requests: []*model.Request{req}}
+	rows := treeRows(root, map[*model.Folder]bool{root: true})
+	if rows[0].node() != any(root) || rows[1].node() != any(sub) || rows[2].node() != any(req) {
+		t.Fatal("each row must stand for its own folder or request, by pointer")
+	}
+	rows[2].Req.URL = "edited"
+	if req.URL != "edited" {
+		t.Fatal("a request row aliases the tree's request so edits persist")
+	}
+}
+
+func TestExpansionSurvivesRenamingAFolder(t *testing.T) {
+	sub := &model.Folder{Name: "old", Requests: []*model.Request{{Name: "r"}}}
+	root := &model.Folder{Name: "A", Folders: []*model.Folder{sub}}
+	open := map[*model.Folder]bool{root: true, sub: true}
+	sub.Name = "new"
+	if got := len(treeRows(root, open)); got != 3 {
+		t.Fatalf("rows = %d: a renamed folder must stay expanded", got)
 	}
 }

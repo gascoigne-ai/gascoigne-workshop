@@ -93,13 +93,13 @@ func TestClickingARequestInTheTreeOpensItsTab(t *testing.T) {
 
 func TestClickingAFolderTogglesIt(t *testing.T) {
 	a, _ := newTestApp(t)
-	before := len(treeRows(a.col.Folder, a.expanded))
+	before := len(treeRows(&a.col.Folder, a.expanded))
 	click(a, 100, treeRowY(1)) // User folder, collapsed at start
-	if got := len(treeRows(a.col.Folder, a.expanded)); got != before+1 {
+	if got := len(treeRows(&a.col.Folder, a.expanded)); got != before+1 {
 		t.Fatalf("rows %d -> %d, want one more (Get User)", before, got)
 	}
 	click(a, 100, treeRowY(1))
-	if got := len(treeRows(a.col.Folder, a.expanded)); got != before {
+	if got := len(treeRows(&a.col.Folder, a.expanded)); got != before {
 		t.Fatalf("second click must collapse again, rows = %d", got)
 	}
 }
@@ -687,12 +687,12 @@ func TestShortcutTableHasUniqueBindingsAndLabels(t *testing.T) {
 
 func TestTreeScrollsWhenItDoesNotFit(t *testing.T) {
 	a, _ := newTestApp(t)
-	a.h = 200 // the tree area is about 128px: five rows
-	for _, f := range []string{"User", "Realtime"} {
-		a.expanded[a.col.Name+"/"+f] = true
+	a.h = 200                       // the tree area is about 128px: five rows
+	for _, i := range []int{0, 2} { // User and Realtime
+		a.expanded[a.col.Folders[i]] = true
 	}
 	a.step(widget.Input{})
-	rowsN := len(treeRows(a.col.Folder, a.expanded))
+	rowsN := len(treeRows(&a.col.Folder, a.expanded))
 	if rowsN*widget.RowH <= a.h-headerH-statusH {
 		t.Fatalf("test setup: %d rows fit, nothing to scroll", rowsN)
 	}
@@ -704,7 +704,7 @@ func TestTreeScrollsWhenItDoesNotFit(t *testing.T) {
 
 	// scroll to the end, then click the last row: it must open that request
 	a.step(widget.Input{X: 100, Y: 100, Wheel: -50})
-	last := treeRows(a.col.Folder, a.expanded)[rowsN-1]
+	last := treeRows(&a.col.Folder, a.expanded)[rowsN-1]
 	click(a, 100, a.h-statusH-widget.RowH/2)
 	if a.cur().req != last.Req {
 		t.Fatalf("clicking the bottom row opened %q, want %q", a.cur().req.Name, last.Name)

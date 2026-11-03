@@ -65,7 +65,7 @@ func (a *App) sidebar() Node {
 			Caption("Collections"),
 		),
 		Scroll(&a.treeScroll, Bg(w.Sunken),
-			For(treeRows(a.col.Folder, a.expanded), func(_ int, row treeRow) Node {
+			For(treeRows(&a.col.Folder, a.expanded), func(_ int, row treeRow) Node {
 				return a.treeRow(row, row.Req != nil && row.Req == current)
 			}),
 		),

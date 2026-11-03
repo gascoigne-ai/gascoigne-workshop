@@ -34,6 +34,10 @@ flowchart LR
 
 `proto.Registry` is a name-to-`Protocol` table (`rest`, `websocket`, `mcp`). `Send` returns an error only for misuse (unknown protocol, malformed method or URL). Transport failures arrive in `Response.Err` so the UI always has a value to render. `rest` uses `net/http`, keeps at most 32 MiB of body, and skips disabled header rows. The request body is encoded by a table keyed by `Request.BodyType` (`none`, `json`, `text`, `form`, `multipart`; "" sends `Body` as is with no Content-Type) which also gives the automatic Content-Type; an enabled `Content-Type` header of the user replaces it. Form and multipart bodies use the enabled, named rows of `Request.Form`. `websocket` and `mcp` are stubs answering "not implemented yet".
 
+## Collection tree
+
+`model.Folder` holds `[]*Folder` and `[]*Request`, so a request keeps its identity (open tabs point at it) however siblings change. `internal/model/tree.go` has the operations, all pure and tested: `UniqueName` ("x", "x 2", ... across folders and requests), `AddRequest` / `AddFolder`, `Parent`, `Contains`, `Rename` (trimmed, non-empty, unique among siblings), `Duplicate` (deep copy placed after the original as "<name> copy"), `Delete` and `Move` (into another folder, before a sibling or at the end; refused into itself or its subtree, onto a name clash, or for the root, and then nothing changes). The tree view's `treeRows` works on pointers and the expanded set is keyed by folder pointer, so renaming or moving a folder does not collapse it.
+
 ## JSON view
 
 `jsonview.Lines(body)` pretty-prints valid JSON with two-space indent and returns one `Line` per display row, each a list of `Span{Text, Kind}` (punctuation, key, string, number, literal, plain). Lines that open an object or array are `Foldable`, which the response pane uses for its fold arrows. Invalid JSON and other text come back as plain lines, so the pane renders any body.

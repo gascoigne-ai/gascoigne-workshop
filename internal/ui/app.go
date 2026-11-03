@@ -91,7 +91,7 @@ type App struct {
 	ctx      *widget.Ctx
 	reg      proto.Registry
 	col      model.Collection
-	expanded map[string]bool
+	expanded map[*model.Folder]bool
 	tabs     []*reqTab
 	active   int
 	results  chan sendResult
@@ -137,7 +137,7 @@ func NewApp(opts Options) (*App, error) {
 		ctx:      ctx,
 		reg:      proto.NewRegistry(),
 		col:      SampleCollection(),
-		expanded: map[string]bool{},
+		expanded: map[*model.Folder]bool{},
 		results:  make(chan sendResult, 8),
 		status:   "Ready",
 		shot:     screenshot{path: opts.ScreenshotPath, sendOnStart: opts.SendOnStart},
@@ -152,9 +152,9 @@ func NewApp(opts Options) (*App, error) {
 	ctx.Clipboard = statusClipboard{inner: ctx.Clipboard, report: a.clipboardNote}
 	a.dragTab = -1
 	a.now = time.Now
-	a.expanded[a.col.Name] = true
-	a.expanded[a.col.Name+"/Repository"] = true
-	a.openRequest(&a.col.Folders[1].Requests[0])
+	a.expanded[&a.col.Folder] = true
+	a.expanded[a.col.Folders[1]] = true
+	a.openRequest(a.col.Folders[1].Requests[0])
 	return a, nil
 }
 
@@ -333,7 +333,7 @@ func (a *App) Draw(screen *ebiten.Image) {
 
 func (a *App) clickTree(row treeRow) {
 	if row.Folder {
-		a.expanded[row.Path] = !a.expanded[row.Path]
+		a.expanded[row.Dir] = !a.expanded[row.Dir]
 		return
 	}
 	a.openRequest(row.Req)

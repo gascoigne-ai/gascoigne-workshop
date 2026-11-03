@@ -41,10 +41,12 @@ const (
 )
 
 // Folder groups requests and nested folders in a collection tree.
+// Children are pointers, so a request or folder keeps its identity when
+// siblings are added, removed or moved (open tabs point at requests).
 type Folder struct {
 	Name     string
-	Folders  []Folder
-	Requests []Request
+	Folders  []*Folder
+	Requests []*Request
 }
 
 // Collection is the root of a tree of folders plus the variables
