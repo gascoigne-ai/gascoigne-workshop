@@ -44,15 +44,22 @@ type reqTab struct {
 	paneTab               int
 	respTab               int
 	resp                  *model.Response
-	view                  widget.CodeView // response body
-	bodyView              widget.CodeView // request body, read-only
-	reqScroll, respScroll vml.ScrollState // scroll of the table and note panes
+	view                  widget.CodeView  // response body
+	bodyView              widget.CodeView  // request body, read-only
+	body                  *widget.TextArea // request body editor
+	reqScroll, respScroll vml.ScrollState  // scroll of the table and note panes
 	sending               bool
 }
 
 func newTab(req *model.Request) *reqTab {
 	t := &reqTab{req: req, url: widget.NewTextField(req.URL)}
-	t.bodyView.SetLines(codeLines([]byte(req.Body)))
+	if req.BodyType == "" { // requests from before body types: infer one
+		req.BodyType = model.BodyNone
+		if req.Body != "" {
+			req.BodyType = model.BodyText
+		}
+	}
+	t.body = widget.NewTextArea(req.Body)
 	return t
 }
 

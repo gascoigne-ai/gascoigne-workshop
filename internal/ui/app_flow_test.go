@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
 	"github.com/hajimehoshi/ebiten/v2"
 	"io"
 	"net/http"
@@ -702,5 +703,157 @@ func TestTreeScrollsWhenItDoesNotFit(t *testing.T) {
 	click(a, 100, a.h-statusH-widget.RowH/2)
 	if a.cur().req != last.Req {
 		t.Fatalf("clicking the bottom row opened %q, want %q", a.cur().req.Name, last.Name)
+	}
+}
+
+// Body pane at 1280x800: type chips at y=206 (None, JSON, Text, Form,
+// Multipart from x=272), the Format button at the right end of that
+// row, the editor below y=228, a form table's placeholder row at y=270.
+const (
+	bodyTabIdx = 1
+	chipsY     = 206
+	noneChipX  = 300
+	jsonChipX  = 374
+	textChipX  = 444
+	formChipX  = 514
+	multiChipX = 600
+	formatX    = 722
+	editorX    = 500
+	editorY    = 320
+	formRow0Y  = 270
+)
+
+func openBodyPane(t *testing.T) *App {
+	a, _ := newTestApp(t)
+	a.cur().paneTab = bodyTabIdx
+	a.step(widget.Input{})
+	return a
+}
+
+func TestBodyTypeChipsSwitchTheTypeAndKeepTheText(t *testing.T) {
+	a := openBodyPane(t)
+	req := a.cur().req
+	if req.BodyType != model.BodyNone {
+		t.Fatalf("a request without a body starts as none, got %q", req.BodyType)
+	}
+	click(a, textChipX, chipsY)
+	if req.BodyType != model.BodyText {
+		t.Fatalf("type = %q", req.BodyType)
+	}
+	click(a, editorX, editorY)
+	a.typeText("hello")
+	click(a, jsonChipX, chipsY)
+	click(a, formChipX, chipsY)
+	click(a, textChipX, chipsY)
+	if req.Body != "hello" {
+		t.Fatalf("the text must survive switching types, Body = %q", req.Body)
+	}
+	for chip, want := range map[int]string{noneChipX: model.BodyNone, multiChipX: model.BodyMultipart, formChipX: model.BodyForm} {
+		click(a, chip, chipsY)
+		if req.BodyType != want {
+			t.Errorf("chip at %d gave %q, want %q", chip, req.BodyType, want)
+		}
+	}
+}
+
+func TestTypingInTheBodyEditor(t *testing.T) {
+	a := openBodyPane(t)
+	click(a, jsonChipX, chipsY)
+	click(a, editorX, editorY)
+	a.typeText(`{"a":1}`)
+	a.step(widget.Input{Enter: true})
+	a.typeText("x")
+	if got := a.cur().req.Body; got != "{\"a\":1}\nx" {
+		t.Fatalf("Body = %q", got)
+	}
+}
+
+func TestFormatButtonIndentsValidJSONOnly(t *testing.T) {
+	a := openBodyPane(t)
+	req := a.cur().req
+	click(a, jsonChipX, chipsY)
+	req.Body = `{"a":1,"b":[1,2]}`
+	a.cur().body.SelectAll()
+	a.cur().body.Insert(req.Body)
+	req.Body = a.cur().body.Text
+
+	click(a, formatX, chipsY)
+	if want := "{\n  \"a\": 1,\n  \"b\": [\n    1,\n    2\n  ]\n}"; req.Body != want {
+		t.Fatalf("Body = %q", req.Body)
+	}
+
+	req.Body = `{"a":`
+	a.cur().body.SelectAll()
+	a.cur().body.Insert(req.Body)
+	click(a, formatX, chipsY)
+	if req.Body != `{"a":` || !strings.Contains(a.status, "Cannot format") {
+		t.Fatalf("Body %q status %q: invalid JSON must be left alone and reported", req.Body, a.status)
+	}
+}
+
+func TestFormatButtonOnlyExistsForJSON(t *testing.T) {
+	a := openBodyPane(t)
+	req := a.cur().req
+	click(a, textChipX, chipsY)
+	req.Body = `{"a":1}`
+	a.cur().body.SelectAll()
+	a.cur().body.Insert(req.Body)
+	click(a, formatX, chipsY)
+	if req.Body != `{"a":1}` {
+		t.Fatalf("a text body must not be reformatted, Body = %q", req.Body)
+	}
+}
+
+func TestFormBodyFieldsAreEditable(t *testing.T) {
+	a := openBodyPane(t)
+	req := a.cur().req
+	click(a, formChipX, chipsY)
+	click(a, nameCellX, formRow0Y)
+	a.typeText("user")
+	a.step(widget.Input{Tab: true})
+	a.typeText("ann")
+	a.step(widget.Input{Enter: true})
+	if len(req.Form) != 1 || req.Form[0].Name != "user" || req.Form[0].Value != "ann" || !req.Form[0].Enabled {
+		t.Fatalf("Form = %+v", req.Form)
+	}
+	if req.Body != "" {
+		t.Fatalf("form fields must not touch the text body, Body = %q", req.Body)
+	}
+}
+
+func TestSendingAFormBodyUsesTheRows(t *testing.T) {
+	got := make(chan string, 1)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		b, _ := io.ReadAll(r.Body)
+		got <- r.Header.Get("Content-Type") + "|" + string(b)
+	}))
+	defer srv.Close()
+	a, _ := newTestApp(t)
+	tab := a.cur()
+	tab.req.Method, tab.req.BodyType = "POST", model.BodyForm
+	tab.req.Form = []model.KV{{Name: "q", Value: "go lang", Enabled: true}}
+	pointTabAt(tab, srv.URL)
+	a.send(tab)
+	waitForResponse(t, a, tab)
+	if want := "application/x-www-form-urlencoded|q=go+lang"; <-got != want {
+		t.Fatal("the sent request must carry the form body")
+	}
+}
+
+func TestEachTabKeepsItsOwnBodyEditor(t *testing.T) {
+	a := openBodyPane(t)
+	click(a, textChipX, chipsY)
+	click(a, editorX, editorY)
+	a.typeText("first")
+	a.newRequest()
+	second := a.cur()
+	second.paneTab = bodyTabIdx
+	a.step(widget.Input{})
+	click(a, textChipX, chipsY)
+	click(a, editorX, editorY)
+	a.typeText("second")
+	a.switchTab(-1)
+	if a.cur().req.Body != "first" || second.req.Body != "second" {
+		t.Fatalf("bodies %q and %q", a.cur().req.Body, second.req.Body)
 	}
 }

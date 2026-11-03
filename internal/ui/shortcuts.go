@@ -66,7 +66,7 @@ func (a *App) sendCurrent() { a.send(a.cur()) }
 func (a *App) focusURL() {
 	a.commitEdit()
 	for _, t := range a.tabs {
-		t.view.Focused, t.bodyView.Focused = false, false
+		t.view.Focused, t.body.Focused = false, false
 	}
 	a.cur().url.Focused = true
 	a.cur().url.SelectAll()

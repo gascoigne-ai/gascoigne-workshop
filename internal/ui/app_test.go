@@ -2,6 +2,7 @@ package ui
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
@@ -49,7 +50,11 @@ func TestPaneTablesAreComplete(t *testing.T) {
 				paneTable: p.rows != nil,
 				paneCode:  p.code != nil,
 				paneNote:  p.note != nil,
+				paneBody:  true, // the body pane is built from the request itself
 			}[p.kind]
+			if paneBuilders[p.kind] == nil {
+				t.Errorf("%s pane %q has a kind with no builder", name, p.label)
+			}
 			if !ok {
 				t.Errorf("%s pane %q is missing the field its kind needs", name, p.label)
 			}
@@ -154,3 +159,24 @@ var (
 	respErr = model.Response{Err: "boom"}
 	respOK  = model.Response{Status: 200, StatusText: "OK"}
 )
+
+func TestJSONStatus(t *testing.T) {
+	tests := []struct {
+		name, in  string
+		wantValid bool
+		wantMsg   string // substring; "" means no message at all
+	}{
+		{"empty body has nothing to report", "", false, ""},
+		{"whitespace only too", "  \n", false, ""},
+		{"valid object", `{"a": [1, 2]}`, true, "Valid JSON"},
+		{"valid scalar", `42`, true, "Valid JSON"},
+		{"invalid", `{"a": }`, false, "Invalid JSON"},
+		{"truncated", `{"a": 1`, false, "Invalid JSON"},
+	}
+	for _, tt := range tests {
+		msg, valid := jsonStatus(tt.in)
+		if valid != tt.wantValid || (tt.wantMsg == "") != (msg == "") || !strings.Contains(msg, tt.wantMsg) {
+			t.Errorf("%s: got %q %v; want %q %v", tt.name, msg, valid, tt.wantMsg, tt.wantValid)
+		}
+	}
+}

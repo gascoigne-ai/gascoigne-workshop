@@ -89,3 +89,28 @@ func TestLinesKeepsStringsWithPunctuation(t *testing.T) {
 		t.Fatalf("kinds = %v", got)
 	}
 }
+
+func TestTokenizeColorsASingleLine(t *testing.T) {
+	spans := Tokenize(`  "id": 42, "ok": true, "n": null, "s": "x:y"`)
+	var got []Kind
+	for _, s := range spans {
+		if s.Kind != Plain && s.Kind != Punct {
+			got = append(got, s.Kind)
+		}
+	}
+	want := []Kind{Key, Number, Key, Literal, Key, Literal, Key, String}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("kinds = %v, want %v", got, want)
+	}
+	if text(Line{Spans: spans}) != `  "id": 42, "ok": true, "n": null, "s": "x:y"` {
+		t.Fatal("the spans must add up to the line")
+	}
+}
+
+func TestTokenizeToleratesBrokenJSON(t *testing.T) {
+	for _, in := range []string{``, `{"a":`, `"unterminated`, `}}]]`, `tru`} {
+		if got := text(Line{Spans: Tokenize(in)}); got != in {
+			t.Errorf("Tokenize(%q) spans add up to %q", in, got)
+		}
+	}
+}

@@ -118,3 +118,7 @@ func stringEnd(l string, start int) int {
 	}
 	return len(l)
 }
+
+// Tokenize splits one line of JSON into colored spans, for editors that
+// color the text as it is typed. The line need not be valid JSON.
+func Tokenize(line string) []Span { return tokenizeLine(line) }

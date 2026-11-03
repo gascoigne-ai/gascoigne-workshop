@@ -1,8 +1,12 @@
 package ui
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"strings"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/jsonview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
 	. "github.com/gascoigne-ai/gascoigne-workshop/vml"
 	w "github.com/gascoigne-ai/gascoigne-workshop/widget"
@@ -14,6 +18,7 @@ const (
 	paneTable paneKind = iota
 	paneCode
 	paneNote
+	paneBody
 )
 
 // pane describes one tab of the request or response area. The tables
@@ -38,14 +43,7 @@ func paramsChanged(t *reqTab) {
 var requestPanes = []pane{
 	{label: "Params", kind: paneTable, title: "Query", editable: true, changed: paramsChanged,
 		rows: func(_ *App, t *reqTab) *[]model.KV { return &t.req.Params }},
-	{label: "Body", kind: paneCode,
-		code: func(t *reqTab) *w.CodeView { return &t.bodyView },
-		empty: func(t *reqTab) (string, bool) {
-			if t.req.Body == "" {
-				return "This request has no body", false
-			}
-			return "", false
-		}},
+	{label: "Body", kind: paneBody},
 	{label: "Headers", kind: paneTable, title: "Headers", editable: true,
 		rows: func(_ *App, t *reqTab) *[]model.KV { return &t.req.Headers }},
 	{label: "Auth", kind: paneNote,
@@ -121,6 +119,7 @@ func paneEmpty(p pane, t *reqTab) (string, bool) {
 var paneBuilders = map[paneKind]func(a *App, p pane, t *reqTab, scroll *ScrollState) Node{
 	paneCode:  (*App).codePane,
 	paneNote:  (*App).notePane,
+	paneBody:  (*App).bodyPane,
 	paneTable: (*App).tablePane,
 }
 
@@ -158,6 +157,11 @@ func (a *App) notePane(p pane, t *reqTab, scroll *ScrollState) Node {
 }
 
 func (a *App) tablePane(p pane, t *reqTab, scroll *ScrollState) Node {
+	return a.tableView(p, t, scroll, w.Pad)
+}
+
+// tableView is a pane's table with the given padding around it.
+func (a *App) tableView(p pane, t *reqTab, scroll *ScrollState, pad int) Node {
 	rows := p.rows(a, t)
 	spec := TableSpec{
 		Columns: []string{"Name", "Value"},
@@ -183,7 +187,7 @@ func (a *App) tablePane(p pane, t *reqTab, scroll *ScrollState) Node {
 			spec.Editing = &TableEdit{Row: e.row, Col: e.col, Field: &e.field, OnEnter: a.commitEdit, OnTab: a.tabEdit}
 		}
 	}
-	return Scroll(scroll, Pad(w.Pad),
+	return Scroll(scroll, Pad(pad),
 		If(p.title != "", Row(H(w.RowH), Caption(p.title))),
 		Table(spec),
 	)
@@ -193,4 +197,104 @@ func (a *App) rowsChanged(p pane, t *reqTab) {
 	if p.changed != nil {
 		p.changed(t)
 	}
+}
+
+// jsonStatus describes whether text is valid JSON, for the body pane.
+// An empty body has nothing to report.
+func jsonStatus(text string) (msg string, valid bool) {
+	if strings.TrimSpace(text) == "" {
+		return "", false
+	}
+	var v any
+	if err := json.Unmarshal([]byte(text), &v); err != nil {
+		return "Invalid JSON: " + err.Error(), false
+	}
+	return "Valid JSON", true
+}
+
+// bodyTypes are the choices of the body type row.
+var bodyTypes = []struct {
+	id, label string
+	width     int
+}{
+	{model.BodyNone, "None", 64},
+	{model.BodyJSON, "JSON", 64},
+	{model.BodyText, "Text", 64},
+	{model.BodyForm, "Form", 64},
+	{model.BodyMultipart, "Multipart", 84},
+}
+
+// formPane is the table of form and multipart fields.
+var formPane = pane{label: "Body", kind: paneTable, editable: true,
+	rows: func(_ *App, t *reqTab) *[]model.KV { return &t.req.Form }}
+
+// bodyPane is the body editor: a type chooser, then an editor that fits the type.
+func (a *App) bodyPane(p pane, t *reqTab, scroll *ScrollState) Node {
+	kind := t.req.BodyType
+	isJSON := kind == model.BodyJSON
+	status, valid := jsonStatus(t.body.Text)
+	statusColor := w.Error
+	if valid {
+		statusColor = w.OK
+	}
+	return Col(Grow(1), Pad(w.Pad), Gap(8),
+		Row(H(w.RowH), Gap(6),
+			For(bodyTypes, func(_ int, bt struct {
+				id, label string
+				width     int
+			}) Node {
+				choose := OnClick(func() { a.setBodyType(t, bt.id) })
+				if bt.id == kind {
+					return PrimaryButton(bt.label, W(bt.width), choose)
+				}
+				return Button(bt.label, W(bt.width), choose)
+			}),
+			Spacer(),
+			If(isJSON && status != "", Text(status, Small(), Color(statusColor), Ellipsis(), Optional())),
+			If(isJSON, Button("Format", W(70), OnClick(func() { a.formatBody(t) }))),
+		),
+		a.bodyEditor(t, scroll),
+	)
+}
+
+// bodyEditor is the part of the body pane under the type chooser.
+func (a *App) bodyEditor(t *reqTab, scroll *ScrollState) Node {
+	switch t.req.BodyType {
+	case model.BodyJSON, model.BodyText:
+		t.body.Styler = nil
+		if t.req.BodyType == model.BodyJSON {
+			t.body.Styler = jsonStyler
+		}
+		return TextArea(t.body, Grow(1), Bg(w.Sunken), OnChange(func() { t.req.Body = t.body.Text }))
+	case model.BodyForm, model.BodyMultipart:
+		return a.tableView(formPane, t, scroll, 0)
+	}
+	return Lines("This request has no body", w.Muted)
+}
+
+func (a *App) setBodyType(t *reqTab, id string) {
+	a.commitEdit()
+	t.req.BodyType = id
+}
+
+// formatBody re-indents a JSON body. Invalid JSON is left alone.
+func (a *App) formatBody(t *reqTab) {
+	var out bytes.Buffer
+	if err := json.Indent(&out, []byte(t.body.Text), "", "  "); err != nil {
+		a.status = "Cannot format body: " + err.Error()
+		return
+	}
+	t.body.SelectAll()
+	t.body.Insert(out.String()) // as an edit, so it can be undone
+	t.req.Body = t.body.Text
+}
+
+// jsonStyler colors one line of a JSON body.
+func jsonStyler(line string) []w.Span {
+	src := jsonview.Tokenize(line)
+	spans := make([]w.Span, len(src))
+	for i, s := range src {
+		spans[i] = w.Span{Text: s.Text, Style: jsonTokens[s.Kind]}
+	}
+	return spans
 }
