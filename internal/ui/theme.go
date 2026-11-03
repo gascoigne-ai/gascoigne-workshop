@@ -47,8 +47,8 @@ func appColors(methods map[string]uint32, key, str, num, lit uint32) map[widget.
 func darkTheme() widget.Theme {
 	th := widget.Dark()
 	extra := appColors(map[string]uint32{
-		"GET": 0x7fd18b, "POST": 0xe6c36a, "PUT": 0x7db4ea, "PATCH": 0xd4a0e0, "DELETE": 0xff7b7b,
-	}, 0xf0f0f0, 0xe8b070, 0xe0a0ea, 0xff8a8a)
+		"GET": 0x5ed39a, "POST": 0xf0b05a, "PUT": 0x7db4ea, "PATCH": 0xe88aa6, "DELETE": 0xff6b5e,
+	}, 0xffffff, 0xf0b05a, 0xe88aa6, 0xff6b5e)
 	extra[jsonTokens[jsonview.Plain]] = th.Color(widget.Text)
 	extra[jsonTokens[jsonview.Punct]] = th.Color(widget.Text)
 	return th.With(extra)
@@ -57,8 +57,8 @@ func darkTheme() widget.Theme {
 func lightTheme() widget.Theme {
 	th := widget.Light()
 	extra := appColors(map[string]uint32{
-		"GET": 0x1b7f45, "POST": 0x9a6a00, "PUT": 0x1f64b0, "PATCH": 0x8a3fa0, "DELETE": 0xc02626,
-	}, 0x111111, 0x9c4a00, 0x7a2e92, 0xb02020)
+		"GET": 0x17804a, "POST": 0xa8570c, "PUT": 0x1f64b0, "PATCH": 0x7a1f3d, "DELETE": 0xd1281b,
+	}, 0x120a0e, 0xa8570c, 0x7a1f3d, 0xd1281b)
 	extra[jsonTokens[jsonview.Plain]] = th.Color(widget.Text)
 	extra[jsonTokens[jsonview.Punct]] = th.Color(widget.Text)
 	return th.With(extra)

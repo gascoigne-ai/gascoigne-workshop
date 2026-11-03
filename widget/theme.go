@@ -80,40 +80,46 @@ func RGB(hex uint32) color.RGBA {
 	return color.RGBA{R: uint8(hex >> 16), G: uint8(hex >> 8), B: uint8(hex), A: 0xff}
 }
 
-const accentGold = 0xffc90e
+// Dark and Light follow the gascoigne CLI dashboard's palette
+// (cmd/gascoigne/pages.css in gascoigne-cli): burgundy accent, warm
+// near-black or cream surfaces. Its surface tokens map to Frame (the
+// window chrome), Bg (raised panes) and Sunken (lists and code). Border,
+// Rule, Chip, Hover and Selected keep the CLI's hues but are stronger
+// than its soft web borders, so a native window's edges can be seen
+// (see TestNonTextElementsAreVisible).
 
-// Dark is flat mid-gray panes over a darker frame, with a gold accent.
+// Dark is warm near-black surfaces with a rose accent.
 func Dark() Theme {
 	return Theme{
 		FontSize: 15, SmallSize: 12, MonoSize: 14,
 		Colors: map[Token]color.RGBA{
-			Bg: RGB(0x535353), Frame: RGB(0x2b2b2b), Panel: RGB(0x484848),
-			Sunken: RGB(0x3b3b3b), Alt: RGB(0x363636), Border: RGB(0x858585),
-			Hover: RGB(0x4a4a4a), Selected: RGB(0x1f1f1f),
-			Chip: RGB(0x2e2e2e), ChipText: RGB(0xdcdcdc), Rule: RGB(0x9a9a9a),
-			Text: RGB(0xdadada), Muted: RGB(0xb0b0b0),
-			Accent: RGB(accentGold), AccentLine: RGB(accentGold), AccentText: RGB(0x1a1a1a),
-			OK: RGB(0x7fd18b), Error: RGB(0xff7b7b),
-			Shadow: {A: 0x66}, Selection: RGB(0x6b5a1e),
-			FindMatch: RGB(0x4a5f3a), FindActive: RGB(0x6e5a10),
+			Bg: RGB(0x241b20), Frame: RGB(0x140f12), Panel: RGB(0x2d2228),
+			Sunken: RGB(0x1c1519), Alt: RGB(0x251c21), Border: RGB(0x5f4d57),
+			Hover: RGB(0x302429), Selected: RGB(0x4a2234),
+			Chip: RGB(0x4a3a42), ChipText: RGB(0xf1e8eb), Rule: RGB(0x76626c),
+			Text: RGB(0xf1e8eb), Muted: RGB(0xbfaab2),
+			Accent: RGB(0xe88aa6), AccentLine: RGB(0xe88aa6), AccentText: RGB(0x2a0d18),
+			OK: RGB(0x5ed39a), Error: RGB(0xff6b5e),
+			Shadow: {A: 0x66}, Selection: RGB(0x8a4a66),
+			FindMatch: RGB(0x4a3a1a), FindActive: RGB(0x8a5d12),
 		},
 	}
 }
 
-// Light is the same structure on light grays.
+// Light is cream surfaces, white lists and a burgundy accent.
 func Light() Theme {
 	return Theme{
 		FontSize: 15, SmallSize: 12, MonoSize: 14,
 		Colors: map[Token]color.RGBA{
-			Bg: RGB(0xe9e9e9), Frame: RGB(0xcfcfcf), Panel: RGB(0xdedede),
-			Sunken: RGB(0xf6f6f6), Alt: RGB(0xeeeeee), Border: RGB(0x8f8f8f),
-			Hover: RGB(0xdcdcdc), Selected: RGB(0xc4c4c4),
-			Chip: RGB(0xbcbcbc), ChipText: RGB(0x262626), Rule: RGB(0x707070),
-			Text: RGB(0x262626), Muted: RGB(0x5f5f5f),
-			Accent: RGB(accentGold), AccentLine: RGB(0x8a5a00), AccentText: RGB(0x1a1a1a),
-			OK: RGB(0x1b7f45), Error: RGB(0xc02626),
-			Shadow: {A: 0x33}, Selection: RGB(0xf3d97a),
-			FindMatch: RGB(0xcfe8b0), FindActive: RGB(0xffd36b),
+			Bg: RGB(0xf6f3f4), Frame: RGB(0xece5e8), Panel: RGB(0xf5f0f2),
+			Sunken: RGB(0xffffff), Alt: RGB(0xf5f0f2), Border: RGB(0xa89aa1),
+			Hover: RGB(0xece5e8), Selected: RGB(0xecd3dc),
+			Chip: RGB(0xcfc2c8), ChipText: RGB(0x22161b), Rule: RGB(0x8c7b83),
+			Text: RGB(0x22161b), Muted: RGB(0x66545b),
+			Accent: RGB(0x7a1f3d), AccentLine: RGB(0x7a1f3d), AccentText: RGB(0xffffff),
+			OK: RGB(0x17804a), Error: RGB(0xd1281b),
+			Shadow: {A: 0x33}, Selection: RGB(0xf0c9d6),
+			FindMatch: RGB(0xf6e3b5), FindActive: RGB(0xf0c26a),
 		},
 	}
 }

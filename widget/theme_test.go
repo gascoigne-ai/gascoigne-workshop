@@ -100,3 +100,29 @@ func TestNonTextElementsAreVisible(t *testing.T) {
 		}
 	}
 }
+
+// The palettes follow the gascoigne CLI dashboard's color tokens
+// (cmd/gascoigne/pages.css in gascoigne-cli): its --text, --muted,
+// --accent, --ok and --err are our Text, Muted, Accent, OK and Error,
+// and its surfaces map to our Frame, Bg and Sunken. The values below are
+// copied from there. Borders and rules are not pinned: they keep the
+// CLI's hues but must be strong enough to see natively.
+func TestPalettesFollowTheCLIDashboard(t *testing.T) {
+	want := map[string]map[Token]uint32{
+		"dark": {
+			Text: 0xf1e8eb, Muted: 0xbfaab2, Accent: 0xe88aa6, OK: 0x5ed39a, Error: 0xff6b5e,
+			Frame: 0x140f12, Sunken: 0x1c1519, Bg: 0x241b20,
+		},
+		"light": {
+			Text: 0x22161b, Muted: 0x66545b, Accent: 0x7a1f3d, OK: 0x17804a, Error: 0xd1281b,
+			Frame: 0xece5e8, Bg: 0xf6f3f4, Sunken: 0xffffff, Panel: 0xf5f0f2,
+		},
+	}
+	for name, th := range map[string]Theme{"dark": Dark(), "light": Light()} {
+		for tok, hex := range want[name] {
+			if got := th.Color(tok); got != RGB(hex) {
+				t.Errorf("%s %s = %s, want %s", name, tok, FormatHex(got), FormatHex(RGB(hex)))
+			}
+		}
+	}
+}

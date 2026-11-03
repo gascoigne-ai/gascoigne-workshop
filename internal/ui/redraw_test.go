@@ -62,7 +62,7 @@ func TestInputMakesTheNextFrameDirtyOnlyWhenItChangesSomething(t *testing.T) {
 	a.dirty = false
 
 	for name, in := range map[string]widget.Input{
-		"a moved pointer": {X: 50, Y: 60},
+		"a moved pointer": {X: 70, Y: 80},
 		"a click":         {X: 50, Y: 60, Click: true, Held: true},
 		"a held button":   {X: 50, Y: 60, Held: true},
 		"the wheel":       {X: 50, Y: 60, Wheel: -1},
@@ -73,7 +73,11 @@ func TestInputMakesTheNextFrameDirtyOnlyWhenItChangesSomething(t *testing.T) {
 		"Escape":          {X: 50, Y: 60, Escape: true},
 		"a clipboard key": {X: 50, Y: 60, Paste: true},
 	} {
+		// map order is random: put the pointer at a known place first, so only
+		// the case under test can be what makes the frame dirty
+		a.step(widget.Input{X: 50, Y: 60})
 		settle(a, 2)
+		a.dirty = false
 		a.step(in)
 		if !a.dirty {
 			t.Errorf("%s must request a redraw", name)
