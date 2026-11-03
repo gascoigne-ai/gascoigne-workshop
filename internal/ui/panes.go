@@ -229,7 +229,7 @@ func (a *App) tableCaption(p pane, t *reqTab) Node {
 	return Row(H(w.RowH),
 		Caption(p.title),
 		Spacer(),
-		If(p.editable, Button(bulkLabel(a.bulk != nil), W(84), OnClick(func() { a.toggleBulk(p, t) }))),
+		If(p.editable, LinkButton(bulkLabel(a.bulk != nil), OnClick(func() { a.toggleBulk(p, t) }))),
 	)
 }
 

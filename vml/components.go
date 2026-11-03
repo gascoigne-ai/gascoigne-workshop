@@ -14,7 +14,16 @@ func Button(label string, opts ...Option) *El {
 	}, opts)...)
 }
 
-// PrimaryButton is the gold call-to-action variant of Button.
+// LinkButton is a quiet text button: accent-colored text on no
+// background, lit softly under the pointer. It sizes to its label.
+func LinkButton(label string, opts ...Option) *El {
+	return Row(with([]Item{
+		PadXY(8, 0), HoverBg(widget.Hover),
+		Text(label, Center(), Color(widget.AccentLine)),
+	}, opts)...)
+}
+
+// PrimaryButton is the accent-colored call-to-action variant of Button.
 func PrimaryButton(label string, opts ...Option) *El {
 	return Row(with([]Item{
 		Bg(widget.Accent), Lighten(),
@@ -201,6 +210,9 @@ func tableRow(t TableSpec, i int, r TableRow, placeholder bool) Node {
 		row = append(row, Bg(widget.Selected))
 	case i%2 == 1:
 		row = append(row, Bg(widget.Alt))
+	}
+	if !placeholder {
+		row = append(row, HoverBg(widget.Hover)) // the row under the pointer
 	}
 	return Row(row...)
 }

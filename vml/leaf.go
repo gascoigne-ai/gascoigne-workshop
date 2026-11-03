@@ -117,13 +117,11 @@ func (iconB) draw(e *El, c *widget.Ctx, dst *ebiten.Image) {
 	clr := c.Col(e.color(c, widget.Muted))
 	switch e.icon {
 	case iconCheck:
-		box := widget.Rect{X: r.X + (r.W-14)/2, Y: r.Y + (r.H-14)/2, W: 14, H: 14}
-		c.Outline(dst, box, c.Col(widget.AccentLine))
-		c.Outline(dst, box.Inset(1), c.Col(widget.AccentLine))
-		if e.on {
-			c.Fill(dst, box.Inset(4), c.Col(widget.AccentLine))
-		}
+		drawCheckbox(c, dst, widget.Rect{X: r.X + (r.W-14)/2, Y: r.Y + (r.H-14)/2, W: 14, H: 14}, e.on, c.Hovered(r))
 	case iconCross:
+		if c.Hovered(r) {
+			clr = c.Col(widget.Error) // a delete button turns red under the pointer
+		}
 		c.Cross(dst, cx, cy, 4, clr)
 	case iconTriangle:
 		c.Triangle(dst, cx, cy, 4, e.on, clr)
@@ -137,13 +135,31 @@ func (iconB) draw(e *El, c *widget.Ctx, dst *ebiten.Image) {
 	}
 }
 
+// drawCheckbox draws a 14px box: an accent square with a white check
+// when on, a plain outline when off (darker under the pointer).
+func drawCheckbox(c *widget.Ctx, dst *ebiten.Image, box widget.Rect, on, hover bool) {
+	if !on {
+		edge := widget.Rule
+		if hover {
+			edge = widget.Muted
+		}
+		c.Outline(dst, box, c.Col(edge))
+		return
+	}
+	c.Fill(dst, box, c.Col(widget.Accent))
+	x, y := float32(box.X), float32(box.Y)
+	mark := c.Col(widget.AccentText)
+	c.Line(dst, x+3.5, y+7.5, x+6, y+10, 1.8, mark)
+	c.Line(dst, x+6, y+10, x+10.5, y+4.5, 1.8, mark)
+}
+
 func icon(kind iconKind, on bool, opts []Option) *El {
 	e := newEl(iconB{}, with(nil, opts))
 	e.icon, e.on = kind, on
 	return e
 }
 
-// Checkbox is a gold square, filled when on.
+// Checkbox is a square that shows an accent fill and a check when on.
 func Checkbox(on bool, opts ...Option) *El { return icon(iconCheck, on, opts) }
 
 // Cross is a small x, for delete buttons.
