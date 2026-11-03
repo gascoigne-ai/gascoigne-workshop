@@ -753,3 +753,93 @@ func TestTextAreaShiftWheelScrollsSideways(t *testing.T) {
 		t.Fatalf("ScrollX %d ScrollY %d", a.ScrollX, a.ScrollY)
 	}
 }
+
+func TestFloatAtKeepsTheElementInsideTheStack(t *testing.T) {
+	tests := []struct {
+		name  string
+		x, y  int
+		wantX int
+		wantY int
+	}{
+		{"fits where asked", 100, 50, 100, 50},
+		{"sticks out on the right: moved left", 380, 50, 400 - 60, 50},
+		{"sticks out at the bottom: opens above", 100, 90, 100, 90 - 40},
+		{"both", 390, 95, 400 - 60, 95 - 40},
+		{"never above the top", 100, 20, 100, 20},
+	}
+	for _, tt := range tests {
+		menu := box(W(60), H(40), FloatAt(tt.x, tt.y))
+		root := Stack(box(), menu)
+		Layout(testCtx(t), root, 400, 100)
+		if menu.rect.X != tt.wantX || menu.rect.Y != tt.wantY {
+			t.Errorf("%s: at %d,%d want %d,%d", tt.name, menu.rect.X, menu.rect.Y, tt.wantX, tt.wantY)
+		}
+	}
+}
+
+func TestFloatCenterCentersTheElement(t *testing.T) {
+	dialog := box(W(100), H(40), FloatCenter())
+	root := Stack(box(), dialog)
+	Layout(testCtx(t), root, 400, 200)
+	if dialog.rect != (widget.Rect{X: 150, Y: 80, W: 100, H: 40}) {
+		t.Fatalf("dialog = %+v", dialog.rect)
+	}
+}
+
+func TestFocusScopeTrapsTab(t *testing.T) {
+	outside, in1, in2 := widget.NewTextField("o"), widget.NewTextField("1"), widget.NewTextField("2")
+	root := Stack(
+		Col(Field(&outside, H(30))),
+		Col(FocusScope(), FloatAt(0, 40), Field(&in1, H(30)), Field(&in2, H(30))),
+	)
+	c := testCtx(t)
+	Layout(c, root, 200, 150)
+	tab := func(shift bool) {
+		c.In = widget.Input{Tab: true, Shift: shift}
+		Update(c, root)
+	}
+	flags := func() [3]bool { return [3]bool{outside.Focused, in1.Focused, in2.Focused} }
+
+	tab(false)
+	if flags() != [3]bool{false, true, false} {
+		t.Fatalf("Tab must start inside the scope, focus %v", flags())
+	}
+	tab(false)
+	tab(false) // wraps inside the scope, never to the field outside
+	if flags() != [3]bool{false, true, false} {
+		t.Fatalf("Tab must wrap inside the scope, focus %v", flags())
+	}
+	tab(true)
+	if flags() != [3]bool{false, false, true} {
+		t.Fatalf("Shift+Tab, focus %v", flags())
+	}
+}
+
+func TestOnRightClickGetsThePointer(t *testing.T) {
+	var gx, gy, n int
+	root := Row(box(W(100), OnRightClick(func(x, y int) { gx, gy, n = x, y, n+1 })))
+	c := testCtx(t)
+	Layout(c, root, 200, 50)
+	c.In = widget.Input{X: 30, Y: 20, RightClick: true}
+	Update(c, root)
+	c.In = widget.Input{X: 150, Y: 20, RightClick: true} // outside the element
+	Update(c, root)
+	c.In = widget.Input{X: 30, Y: 20, Click: true} // a left click is not a right click
+	Update(c, root)
+	if n != 1 || gx != 30 || gy != 20 {
+		t.Fatalf("calls %d at %d,%d", n, gx, gy)
+	}
+}
+
+func TestModalAlsoSwallowsAndDismissesOnRightClickOutside(t *testing.T) {
+	var under, dismissed int
+	menu := box(W(40), H(40), FloatAt(0, 0), Modal(func() { dismissed++ }))
+	root := Stack(box(OnRightClick(func(int, int) { under++ })), menu)
+	c := testCtx(t)
+	Layout(c, root, 200, 100)
+	c.In = widget.Input{X: 150, Y: 80, RightClick: true}
+	Update(c, root)
+	if dismissed != 1 || under != 0 {
+		t.Fatalf("dismissed %d, reached the element below %d", dismissed, under)
+	}
+}

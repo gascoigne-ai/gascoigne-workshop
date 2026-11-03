@@ -22,7 +22,7 @@ func (f *fakeClip) Write(s string) error {
 func TestStatusClipboardReportsOutcome(t *testing.T) {
 	var status string
 	inner := &fakeClip{}
-	c := statusClipboard{inner: inner, report: func(s string) { status = s }}
+	c := statusClipboard{inner: inner, report: func(s string, _ bool) { status = s }}
 
 	if err := c.Write("żółw"); err != nil || inner.text != "żółw" || status != "Copied 4 characters" {
 		t.Fatalf("write: err %v text %q status %q", err, inner.text, status)

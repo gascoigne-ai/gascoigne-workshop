@@ -77,5 +77,6 @@ func (a *App) changeSettings(edit func(*settings.Settings)) {
 	}
 	if err := a.settings.Save(a.settingsPath); err != nil {
 		a.status = "Could not save settings: " + err.Error()
+		a.toast(a.status, true)
 	}
 }

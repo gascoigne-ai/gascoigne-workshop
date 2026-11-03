@@ -206,7 +206,7 @@ func (stack) layout(e *El, c *widget.Ctx) {
 		}
 		w, h := k.size(c, in.W)
 		w, h = min(w, in.W), min(h, in.H)
-		k.place(c, widget.Rect{X: in.X + in.W - k.floatRight - w, Y: in.Y + k.floatTop, W: w, H: h})
+		k.place(c, floatRect(k, in, w, h))
 	}
 }
 
@@ -241,4 +241,22 @@ func with(base []Item, opts []Option) []Item {
 		base = append(base, o)
 	}
 	return base
+}
+
+// floatRect places a floating child in the stack's inner rect.
+func floatRect(k *El, in widget.Rect, w, h int) widget.Rect {
+	switch k.floatMode {
+	case floatPoint:
+		x, y := in.X+k.floatRight, in.Y+k.floatTop // floatRight holds x, floatTop holds y
+		if x+w > in.X+in.W {
+			x = in.X + in.W - w
+		}
+		if y+h > in.Y+in.H {
+			y -= h // no room below: open above
+		}
+		return widget.Rect{X: max(x, in.X), Y: max(y, in.Y), W: w, H: h}
+	case floatMiddle:
+		return widget.Rect{X: in.X + (in.W-w)/2, Y: in.Y + (in.H-h)/2, W: w, H: h}
+	}
+	return widget.Rect{X: in.X + in.W - k.floatRight - w, Y: in.Y + k.floatTop, W: w, H: h}
 }

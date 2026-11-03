@@ -100,10 +100,14 @@ type App struct {
 	shot     screenshot
 
 	settings     settings.Settings
-	settingsPath string    // "" keeps settings in memory only
-	menu         bool      // settings menu is open
-	edit         *cellEdit // the table cell being edited, if any
-	dragTab      int       // index of the tab being dragged, -1 when none
+	settingsPath string       // "" keeps settings in memory only
+	menu         bool         // settings menu is open
+	edit         *cellEdit    // the table cell being edited, if any
+	dragTab      int          // index of the tab being dragged, -1 when none
+	ctxMenu      *contextMenu // the open context menu, if any
+	dialog       *dialog      // the open dialog, if any
+	toasts       []toast
+	now          func() time.Time // the clock, replaced in tests
 	sampler      widget.Sampler
 	treeScroll   vml.ScrollState
 	sidebarSplit vml.SplitState // width of the collections sidebar
@@ -145,8 +149,9 @@ func NewApp(opts Options) (*App, error) {
 	if loadErr != nil {
 		a.status = loadErr.Error()
 	}
-	ctx.Clipboard = statusClipboard{inner: ctx.Clipboard, report: func(msg string) { a.status = msg }}
+	ctx.Clipboard = statusClipboard{inner: ctx.Clipboard, report: a.clipboardNote}
 	a.dragTab = -1
+	a.now = time.Now
 	a.expanded[a.col.Name] = true
 	a.expanded[a.col.Name+"/Repository"] = true
 	a.openRequest(&a.col.Folders[1].Requests[0])
@@ -288,9 +293,17 @@ func (a *App) step(in widget.Input) {
 		a.dragTab = -1
 	}
 	a.drain()
-	a.runShortcuts(in)
-	if in.Escape { // one step per press: the menu, then a cell edit, then a running request
+	a.pruneToasts()
+	a.overlayKeys(in)
+	if !a.overlayOpen() {
+		a.runShortcuts(in)
+	}
+	if in.Escape { // one step per press: overlays, the settings menu, a cell edit, find, a running request
 		switch {
+		case a.ctxMenu != nil:
+			a.closeMenu()
+		case a.dialog != nil:
+			a.closeDialog()
 		case a.menu:
 			a.menu = false
 		case a.edit != nil:

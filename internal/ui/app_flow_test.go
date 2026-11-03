@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"errors"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
 	"github.com/hajimehoshi/ebiten/v2"
 	"io"
@@ -1636,5 +1637,266 @@ func TestLayoutSettingStacksThePanesAndIsSaved(t *testing.T) {
 	click(a, layoutSideX, layoutRowY)
 	if a.settings.Layout != "side" {
 		t.Fatalf("Layout = %q", a.settings.Layout)
+	}
+}
+
+// ---- context menus, dialogs and toasts --------------------------------
+
+type ran struct{ log []string }
+
+func (r *ran) item(label string) menuItem {
+	return menuItem{label: label, run: func() { r.log = append(r.log, label) }}
+}
+
+// A menu opened at (500, 300): rows are 24px under 4px of padding, a
+// separator is 9px: Copy 304..328, separator, Paste 337..361, Delete 361..385.
+func openTestMenu(t *testing.T) (*App, *ran) {
+	t.Helper()
+	a, _ := newTestApp(t)
+	r := &ran{}
+	paste := r.item("Paste")
+	paste.disabled = true
+	a.openMenu(500, 300, []menuItem{r.item("Copy"), {separator: true}, paste, r.item("Delete")})
+	a.step(widget.Input{})
+	if a.ctxMenu == nil {
+		t.Fatal("test setup: the menu must be open")
+	}
+	return a, r
+}
+
+const (
+	menuItemX   = 600
+	menuCopyY   = 316
+	menuPasteY  = 349
+	menuDeleteY = 373
+)
+
+func TestClickingAMenuItemRunsItAndClosesTheMenu(t *testing.T) {
+	a, r := openTestMenu(t)
+	click(a, menuItemX, menuCopyY)
+	if len(r.log) != 1 || r.log[0] != "Copy" || a.ctxMenu != nil {
+		t.Fatalf("ran %v, menu open %v", r.log, a.ctxMenu != nil)
+	}
+}
+
+func TestDisabledItemsDoNothingAndKeepTheMenuOpen(t *testing.T) {
+	a, r := openTestMenu(t)
+	click(a, menuItemX, menuPasteY)
+	if len(r.log) != 0 || a.ctxMenu == nil {
+		t.Fatalf("ran %v, menu open %v", r.log, a.ctxMenu != nil)
+	}
+}
+
+func TestClickingOutsideClosesTheMenuWithoutReachingWhatIsBelow(t *testing.T) {
+	a, r := openTestMenu(t)
+	click(a, 100, treeRowY(4)) // a request row in the sidebar
+	if a.ctxMenu != nil || len(r.log) != 0 {
+		t.Fatalf("menu open %v ran %v", a.ctxMenu != nil, r.log)
+	}
+	if len(a.tabs) != 1 {
+		t.Fatal("the click that closes a menu must not also open the request under it")
+	}
+}
+
+func TestMenuKeyboardNavigationSkipsSeparatorsAndDisabledRows(t *testing.T) {
+	a, r := openTestMenu(t)
+	down := func() { a.step(key(ebiten.KeyArrowDown, false, false)) }
+	up := func() { a.step(key(ebiten.KeyArrowUp, false, false)) }
+	if a.ctxMenu.hot != 0 {
+		t.Fatalf("the first enabled row starts highlighted, hot = %d", a.ctxMenu.hot)
+	}
+	down()
+	if a.ctxMenu.hot != 3 {
+		t.Fatalf("Down skips the separator and the disabled row: hot = %d", a.ctxMenu.hot)
+	}
+	down()
+	if a.ctxMenu.hot != 0 {
+		t.Fatalf("Down wraps: hot = %d", a.ctxMenu.hot)
+	}
+	up()
+	if a.ctxMenu.hot != 3 {
+		t.Fatalf("Up wraps backwards: hot = %d", a.ctxMenu.hot)
+	}
+	a.step(key(ebiten.KeyEnter, false, false))
+	if len(r.log) != 1 || r.log[0] != "Delete" || a.ctxMenu != nil {
+		t.Fatalf("Enter runs the highlighted row: ran %v", r.log)
+	}
+}
+
+func TestEscapeClosesTheMenuFirst(t *testing.T) {
+	a, r := openTestMenu(t)
+	a.menu = true // the settings menu is open too
+	a.step(widget.Input{Escape: true})
+	if a.ctxMenu != nil || !a.menu || len(r.log) != 0 {
+		t.Fatalf("context menu open %v, settings menu open %v: Escape closes the top one only", a.ctxMenu != nil, a.menu)
+	}
+}
+
+func TestMenuNearTheWindowEdgeStaysOnScreen(t *testing.T) {
+	a, _ := newTestApp(t)
+	r := &ran{}
+	a.openMenu(1270, 790, []menuItem{r.item("Copy"), {separator: true}, r.item("Paste"), r.item("Delete")})
+	a.step(widget.Input{})
+	// 220x89 menu: moved left to x=1060 and up to y=701; Copy row is 705..729
+	click(a, 1100, 717)
+	if len(r.log) != 1 || r.log[0] != "Copy" {
+		t.Fatalf("ran %v: the menu must be flipped inside the window", r.log)
+	}
+}
+
+func TestShortcutsAreIgnoredWhileAMenuIsOpen(t *testing.T) {
+	a, _ := openTestMenu(t)
+	a.step(key(ebiten.KeyT, true, false))
+	if len(a.tabs) != 1 {
+		t.Fatal("Ctrl+T must not open a tab behind a menu")
+	}
+}
+
+// A confirm dialog is 380px wide, centered; with one line of body it is
+// 128px high, so its buttons sit at y=434: OK at x=774, Cancel at x=686.
+const (
+	dialogOKX     = 774
+	dialogCancelX = 686
+	dialogButtonY = 434
+)
+
+func TestConfirmRunsOnEnterAndOnTheButton(t *testing.T) {
+	for name, act := range map[string]func(a *App){
+		"Enter":  func(a *App) { a.step(widget.Input{Enter: true}) },
+		"button": func(a *App) { click(a, dialogOKX, dialogButtonY) },
+	} {
+		a, _ := newTestApp(t)
+		var ok int
+		a.confirm("Delete request?", "This cannot be undone.", "Delete", func() { ok++ })
+		a.step(widget.Input{})
+		if a.dialog == nil {
+			t.Fatalf("%s: no dialog", name)
+		}
+		act(a)
+		if ok != 1 || a.dialog != nil {
+			t.Fatalf("%s: onOK ran %d times, dialog open %v", name, ok, a.dialog != nil)
+		}
+	}
+}
+
+func TestConfirmCancelsOnEscapeCancelButtonAndOutsideClick(t *testing.T) {
+	for name, act := range map[string]func(a *App){
+		"Escape":  func(a *App) { a.step(widget.Input{Escape: true}) },
+		"Cancel":  func(a *App) { click(a, dialogCancelX, dialogButtonY) },
+		"outside": func(a *App) { click(a, 100, 700) },
+	} {
+		a, _ := newTestApp(t)
+		var ok int
+		a.confirm("Delete request?", "This cannot be undone.", "Delete", func() { ok++ })
+		a.step(widget.Input{})
+		act(a)
+		if ok != 0 || a.dialog != nil {
+			t.Fatalf("%s: onOK ran %d times, dialog open %v", name, ok, a.dialog != nil)
+		}
+	}
+}
+
+func TestPromptReturnsTheTypedText(t *testing.T) {
+	a, _ := newTestApp(t)
+	var got string
+	a.prompt("Rename", "Old name", "Rename", func(text string) { got = text })
+	a.step(widget.Input{})
+	if a.dialog == nil || !a.dialog.input.Focused || a.dialog.input.SelectedText() != "Old name" {
+		t.Fatalf("the field starts focused with its text selected: %+v", a.dialog)
+	}
+	a.typeText("New name")
+	a.step(widget.Input{Enter: true})
+	if got != "New name" || a.dialog != nil {
+		t.Fatalf("got %q, dialog open %v", got, a.dialog != nil)
+	}
+}
+
+func TestDialogTrapsFocusAndBlocksShortcuts(t *testing.T) {
+	a, _ := newTestApp(t)
+	a.prompt("Rename", "x", "Rename", func(string) {})
+	a.step(widget.Input{})
+	a.step(widget.Input{Tab: true})
+	if !a.dialog.input.Focused || a.cur().url.Focused {
+		t.Fatal("Tab must stay inside the dialog")
+	}
+	a.step(key(ebiten.KeyT, true, false))
+	if len(a.tabs) != 1 {
+		t.Fatal("global shortcuts are off while a dialog is open")
+	}
+}
+
+// Toasts stack up from above the status bar at the right: 320x36 each
+// with 6px between them; the newest is lowest.
+func toastRect(n, i int) (x, y, w, h int) {
+	total := n*36 + (n-1)*6
+	return 1280 - 12 - 320, 800 - statusH - 8 - total + i*42, 320, 36
+}
+
+func TestInfoToastsExpireAndErrorsStayUntilClicked(t *testing.T) {
+	a, _ := newTestApp(t)
+	clock := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
+	a.now = func() time.Time { return clock }
+	a.toast("Saved", false)
+	a.toast("Disk full", true)
+	a.step(widget.Input{})
+	if len(a.toasts) != 2 {
+		t.Fatalf("toasts = %d", len(a.toasts))
+	}
+
+	clock = clock.Add(2 * time.Second)
+	a.step(widget.Input{})
+	if len(a.toasts) != 2 {
+		t.Fatal("an info toast stays for a few seconds")
+	}
+	clock = clock.Add(2 * time.Second)
+	a.step(widget.Input{})
+	if len(a.toasts) != 1 || !a.toasts[0].isErr {
+		t.Fatalf("after 4s only the error is left: %+v", a.toasts)
+	}
+	clock = clock.Add(10 * time.Minute)
+	a.step(widget.Input{})
+	if len(a.toasts) != 1 {
+		t.Fatal("errors persist")
+	}
+	x, y, w, h := toastRect(1, 0)
+	click(a, x+w/2, y+h/2)
+	if len(a.toasts) != 0 {
+		t.Fatal("a click dismisses a toast")
+	}
+}
+
+func TestClickingOneToastDismissesOnlyThatOne(t *testing.T) {
+	a, _ := newTestApp(t)
+	a.toast("first", true)
+	a.toast("second", true)
+	a.step(widget.Input{})
+	x, y, w, h := toastRect(2, 0)
+	click(a, x+w/2, y+h/2)
+	if len(a.toasts) != 1 || a.toasts[0].text != "second" {
+		t.Fatalf("toasts = %+v", a.toasts)
+	}
+}
+
+func TestOnlyTheNewestToastsAreKept(t *testing.T) {
+	a, _ := newTestApp(t)
+	for i := 0; i < 8; i++ {
+		a.toast(strings.Repeat("x", i+1), true)
+	}
+	if len(a.toasts) != maxToasts || len(a.toasts[len(a.toasts)-1].text) != 8 {
+		t.Fatalf("%d toasts, newest %q", len(a.toasts), a.toasts[len(a.toasts)-1].text)
+	}
+}
+
+func TestClipboardFailureBecomesAnErrorToast(t *testing.T) {
+	a, _ := newTestApp(t)
+	a.ctx.Clipboard = statusClipboard{inner: &fakeClip{err: errors.New("no clipboard tool found")}, report: a.clipboardNote}
+	a.ctx.Clipboard.Write("x")
+	if len(a.toasts) != 1 || !a.toasts[0].isErr || !strings.Contains(a.toasts[0].text, "no clipboard tool") {
+		t.Fatalf("toasts = %+v", a.toasts)
+	}
+	a.ctx.Clipboard = statusClipboard{inner: &fakeClip{}, report: a.clipboardNote}
+	a.ctx.Clipboard.Write("hello")
+	if len(a.toasts) != 1 || a.status != "Copied 5 characters" {
+		t.Fatalf("a successful copy is a status line, not a toast: toasts %d status %q", len(a.toasts), a.status)
 	}
 }

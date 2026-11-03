@@ -65,6 +65,9 @@ func cycleFocus(c *widget.Ctx, root Node) {
 	if !c.In.Tab || c.In.Ctrl {
 		return
 	}
+	if scope := findScope(root); scope != nil {
+		root = scope
+	}
 	list := collectFocusables(root, nil)
 	if len(list) == 0 {
 		return
@@ -135,7 +138,10 @@ func (e *El) update(c *widget.Ctx) bool {
 	if e.onHeldOver != nil && c.In.Held && c.In.Over(e.rect) {
 		e.onHeldOver()
 	}
-	if e.modal && c.In.Click {
+	if e.onRight != nil && c.In.RightClick && c.In.Over(e.rect) {
+		e.onRight(c.In.X, c.In.Y)
+	}
+	if e.modal && (c.In.Click || c.In.RightClick) {
 		if !e.rect.Contains(c.In.X, c.In.Y) && e.onDismiss != nil {
 			e.onDismiss()
 		}
@@ -194,4 +200,21 @@ func (e *El) draw(c *widget.Ctx, dst *ebiten.Image) {
 	if e.underline != "" {
 		c.Fill(dst, widget.Rect{X: r.X + e.underInset, Y: r.Y + r.H - 2, W: r.W - 2*e.underInset, H: 2}, c.Col(e.underline))
 	}
+}
+
+// findScope is the last FocusScope element in tree order, the one on top.
+func findScope(e *El) *El {
+	if e.hidden {
+		return nil
+	}
+	var found *El
+	if e.focusScope {
+		found = e
+	}
+	for _, k := range e.kids {
+		if inner := findScope(k); inner != nil {
+			found = inner
+		}
+	}
+	return found
 }

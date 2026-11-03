@@ -11,22 +11,22 @@ import (
 // copied, or why the clipboard is not usable (no tool installed).
 type statusClipboard struct {
 	inner  widget.Clipboard
-	report func(string)
+	report func(msg string, isErr bool)
 }
 
 func (s statusClipboard) Read() (string, error) {
 	text, err := s.inner.Read()
 	if err != nil {
-		s.report(err.Error())
+		s.report(err.Error(), true)
 	}
 	return text, err
 }
 
 func (s statusClipboard) Write(text string) error {
 	if err := s.inner.Write(text); err != nil {
-		s.report(err.Error())
+		s.report(err.Error(), true)
 		return err
 	}
-	s.report(fmt.Sprintf("Copied %d characters", utf8.RuneCountInString(text)))
+	s.report(fmt.Sprintf("Copied %d characters", utf8.RuneCountInString(text)), false)
 	return nil
 }

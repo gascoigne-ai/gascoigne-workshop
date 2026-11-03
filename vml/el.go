@@ -74,6 +74,9 @@ type El struct {
 
 	float                bool
 	floatTop, floatRight int
+	floatMode            int // floatCorner, floatPoint or floatMiddle
+	focusScope           bool
+	onRight              func(x, y int)
 	modal                bool
 	onDismiss            func()
 }

@@ -50,6 +50,9 @@ func (a *App) view() Node {
 			a.statusBar(),
 		),
 		a.menuView(),
+		a.contextMenuView(),
+		a.dialogView(),
+		a.toastsView(),
 	)
 }
 
