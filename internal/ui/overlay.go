@@ -210,13 +210,14 @@ func (a *App) toast(text string, isErr bool) {
 		t.expires = a.now().Add(infoToastFor)
 	}
 	a.toasts = append(a.toasts, t)
+	a.dirty = true
 	if len(a.toasts) > maxToasts {
 		a.toasts = a.toasts[len(a.toasts)-maxToasts:]
 	}
 }
 
 // pruneToasts drops the info toasts whose time is up.
-func (a *App) pruneToasts() {
+func (a *App) pruneToasts() bool {
 	now := a.now()
 	kept := a.toasts[:0]
 	for _, t := range a.toasts {
@@ -224,7 +225,9 @@ func (a *App) pruneToasts() {
 			kept = append(kept, t)
 		}
 	}
+	removed := len(kept) != len(a.toasts)
 	a.toasts = kept
+	return removed
 }
 
 func (a *App) dismissToast(i int) { a.toasts = append(a.toasts[:i], a.toasts[i+1:]...) }

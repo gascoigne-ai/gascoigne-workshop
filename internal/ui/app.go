@@ -108,6 +108,10 @@ type App struct {
 	ctxMenu       *contextMenu                       // the open context menu, if any
 	bulk          *bulkEdit                          // the table in bulk-edit mode, if any
 	menuScroll    vml.ScrollState                    // scroll of the settings menu
+	dirty         bool                               // something changed since the last draw
+	tps           int                                // the update rate last set
+	lastIn        widget.Input                       // the previous frame's input
+	idleTicks     int                                // frames in a row with nothing to redraw
 	recording     string                             // the action whose key is being recorded, "" when none
 	recordNotes   map[string]string                  // why a recorded key was refused, by action id
 	colorInputs   map[widget.Token]*widget.TextField // hex fields of the settings menu
@@ -166,6 +170,7 @@ func NewApp(opts Options) (*App, error) {
 	}
 	ctx.Clipboard = statusClipboard{inner: ctx.Clipboard, report: a.clipboardNote}
 	a.dragTab = -1
+	a.dirty = true
 	a.now = time.Now
 	a.expanded[&a.col.Folder] = true
 	a.expanded[a.col.Folders[1]] = true
@@ -246,13 +251,15 @@ func timeoutText(sec int) string {
 	return strconv.Itoa(sec)
 }
 
-func (a *App) drain() {
+// drain applies the results of finished sends and reports whether there were any.
+func (a *App) drain() (any bool) {
 	for {
 		select {
 		case r := <-a.results:
 			a.apply(r)
+			any = true
 		default:
-			return
+			return any
 		}
 	}
 }
@@ -283,11 +290,7 @@ var cursorShapes = map[widget.Cursor]ebiten.CursorShapeType{
 // (w by h); the screen is that size times the monitor's scale factor so
 // text and lines stay sharp on HiDPI displays.
 func (a *App) Layout(w, h int) (int, int) {
-	a.w, a.h = w, h
-	scale := ebiten.Monitor().DeviceScaleFactor()
-	if err := a.ctx.SetScale(scale); err != nil {
-		a.shot.err = err
-	}
+	a.setSize(w, h, ebiten.Monitor().DeviceScaleFactor())
 	return int(float64(w)*a.ctx.Scale + 0.5), int(float64(h)*a.ctx.Scale + 0.5)
 }
 
@@ -295,6 +298,10 @@ func (a *App) Layout(w, h int) (int, int) {
 func (a *App) Update() error {
 	a.step(a.sampler.Read().Scaled(a.ctx.Scale))
 	ebiten.SetCursorShape(cursorShapes[a.ctx.Cursor])
+	if tps := a.tpsFor(); tps != a.tps {
+		ebiten.SetTPS(tps)
+		a.tps = tps
+	}
 	return a.shotUpdate()
 }
 
@@ -308,8 +315,10 @@ func (a *App) step(in widget.Input) {
 	if !in.Held {
 		a.dragTab = -1
 	}
-	a.drain()
-	a.pruneToasts()
+	drained := a.drain()
+	pruned := a.pruneToasts()
+	active := inputActive(a.lastIn, in)
+	a.lastIn = in
 	if in.Held {
 		a.dropTarget = nil // set again by the row under the pointer
 	} else {
@@ -358,14 +367,20 @@ func (a *App) step(in widget.Input) {
 		a.commitEdit()
 	}
 	a.settleBulk()
+	a.markFrame(active || drained || pruned)
+	a.noteIdle(active || drained || pruned)
 }
 
 // Draw implements ebiten.Game. The view is rebuilt so it shows the
 // state the handlers just changed.
 func (a *App) Draw(screen *ebiten.Image) {
+	if !a.dirty && !a.alwaysDraw() {
+		return // nothing changed: the screen keeps what it has and the GPU stays idle
+	}
 	root := a.view()
 	vml.Layout(a.ctx, root, a.w, a.h)
 	vml.Draw(a.ctx, root, screen)
+	a.dirty = false
 	a.shotDraw(screen)
 }
 
