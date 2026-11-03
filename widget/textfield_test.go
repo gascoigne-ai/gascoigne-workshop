@@ -317,3 +317,18 @@ func TestMaskedFieldHidesItsTextAndNeverCopiesIt(t *testing.T) {
 		t.Fatalf("pasting into a masked field works, got %q", f.Text)
 	}
 }
+
+func TestCanUndoAndCanRedoFollowTheHistory(t *testing.T) {
+	f := NewTextField("")
+	if f.CanUndo() || f.CanRedo() {
+		t.Fatal("a fresh field has no history")
+	}
+	f.Apply([]rune("a"), nil, false)
+	if !f.CanUndo() || f.CanRedo() {
+		t.Fatal("after typing: undo yes, redo no")
+	}
+	f.Undo()
+	if f.CanUndo() || !f.CanRedo() {
+		t.Fatal("after undo: redo yes, undo no")
+	}
+}

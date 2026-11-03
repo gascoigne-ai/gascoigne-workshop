@@ -140,10 +140,10 @@ func (e *El) update(c *widget.Ctx) bool {
 			break
 		}
 	}
-	wheel := c.In.Wheel // a child scroller may have used it
+	wheel, rightClick := c.In.Wheel, c.In.RightClick // a child may have used them
 	c.In = saved
 	if !masked {
-		c.In.Wheel = wheel
+		c.In.Wheel, c.In.RightClick = wheel, rightClick
 	}
 	if swallowed {
 		return true
@@ -160,6 +160,7 @@ func (e *El) update(c *widget.Ctx) bool {
 	}
 	if e.onRight != nil && c.In.RightClick && c.In.Over(e.rect) {
 		e.onRight(c.In.X, c.In.Y)
+		c.In.RightClick = false // one right click opens one menu: the innermost wins
 	}
 	if e.modal {
 		// A modal overlay owns the pointer: nothing under it gets clicks,

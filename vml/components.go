@@ -84,6 +84,9 @@ type TableSpec struct {
 	AllChecked  bool
 	OnToggleAll func()
 	Selected    *int
+
+	// OnRowMenu runs when a data row is right-clicked, with the pointer position.
+	OnRowMenu func(row, x, y int)
 }
 
 // TableEdit is the cell being edited: its position, the field holding
@@ -93,6 +96,7 @@ type TableEdit struct {
 	Field    *widget.TextField
 	OnEnter  func()
 	OnTab    func(back bool)
+	OnMenu   func(x, y int) // right click on the edit field
 }
 
 const tableActionW = 36
@@ -147,6 +151,9 @@ func tableRow(t TableSpec, i int, r TableRow, placeholder bool) Node {
 		If(actions, Row(W(tableActionW), OnClick(func() { t.OnDelete(i) }), Cross())),
 		If(placeholder, Row(W(tableActionW))),
 	}
+	if t.OnRowMenu != nil && !placeholder {
+		row = append(row, OnRightClick(func(x, y int) { t.OnRowMenu(i, x, y) }))
+	}
 	switch {
 	case t.Selected != nil && *t.Selected == i && !placeholder:
 		row = append(row, Bg(widget.Selected))
@@ -161,7 +168,7 @@ func tableRow(t TableSpec, i int, r TableRow, placeholder bool) Node {
 func tableCell(t TableSpec, row, col int, text string, clr widget.Token) Node {
 	if e := t.Editing; e != nil && e.Row == row && e.Col == col {
 		return Row(Grow(t.Weights[col]), Border(widget.Accent), Bg(widget.Panel),
-			Field(e.Field, Grow(1), OnEnter(e.OnEnter), OnTab(e.OnTab)),
+			Field(e.Field, Grow(1), OnEnter(e.OnEnter), OnTab(e.OnTab), menuOption(e.OnMenu)),
 		)
 	}
 	items := []Item{Grow(t.Weights[col]), PadXY(8, 0), Clip(), Text(text, Ellipsis(), Color(clr), Grow(1))}
@@ -169,4 +176,12 @@ func tableCell(t TableSpec, row, col int, text string, clr widget.Token) Node {
 		items = append(items, OnClick(func() { t.OnEditCell(row, col) }))
 	}
 	return Row(items...)
+}
+
+// menuOption is OnRightClick for an optional handler.
+func menuOption(f func(x, y int)) Option {
+	if f == nil {
+		return func(*El) {}
+	}
+	return OnRightClick(f)
 }

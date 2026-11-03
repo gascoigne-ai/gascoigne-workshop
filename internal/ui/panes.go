@@ -204,8 +204,10 @@ func (a *App) tableView(p pane, t *reqTab, scroll *ScrollState, pad int) Node {
 			a.applyRows(p, t, func(r []model.KV) []model.KV { return model.DeleteRow(r, i) })
 		}
 		spec.OnEditCell = func(row, col int) { a.beginEdit(p, t, row, col) }
+		spec.OnRowMenu = func(row, x, y int) { a.openMenu(x, y, a.rowMenuItems(p, t, row)) }
 		if e := a.edit; e != nil && e.pane.label == p.label && e.tab == t {
-			spec.Editing = &TableEdit{Row: e.row, Col: e.col, Field: &e.field, OnEnter: a.commitEdit, OnTab: a.tabEdit}
+			spec.Editing = &TableEdit{Row: e.row, Col: e.col, Field: &e.field, OnEnter: a.commitEdit, OnTab: a.tabEdit,
+				OnMenu: func(x, y int) { a.openMenu(x, y, a.textMenu(&e.field, nil)) }}
 		}
 		if sel := a.rowSel; sel != nil && sel.tab == t && sel.pane.label == p.label && sel.row < len(*rows) {
 			spec.Selected = &sel.row
@@ -241,7 +243,7 @@ func bulkLabel(inBulk bool) string {
 func (a *App) bulkView(p pane, t *reqTab, pad int) Node {
 	return Col(Grow(1), Pad(pad),
 		a.tableCaption(p, t),
-		TextArea(a.bulk.area, Grow(1), Bg(w.Sunken)),
+		TextArea(a.bulk.area, Grow(1), Bg(w.Sunken), a.textMenuOpt(&a.bulk.area.TextField, nil)),
 	)
 }
 
@@ -317,7 +319,8 @@ func (a *App) bodyEditor(t *reqTab, scroll *ScrollState) Node {
 		if t.req.BodyType == model.BodyJSON {
 			t.body.Styler = jsonStyler
 		}
-		return TextArea(t.body, Grow(1), Bg(w.Sunken), OnChange(func() { t.req.Body = t.body.Text }))
+		sync := func() { t.req.Body = t.body.Text }
+		return TextArea(t.body, Grow(1), Bg(w.Sunken), OnChange(sync), a.textMenuOpt(&t.body.TextField, sync))
 	case model.BodyForm, model.BodyMultipart:
 		return a.tableView(formPane, t, scroll, 0)
 	}
@@ -357,7 +360,8 @@ func (a *App) settingsPane(_ pane, t *reqTab, scroll *ScrollState) Node {
 		Row(H(w.RowH), Gap(12),
 			Text("Timeout (seconds)", W(160)),
 			Field(&t.timeout, W(80), Bg(w.Sunken), Border(w.Border),
-				OnChange(func() { a.timeoutEdited(t) })),
+				OnChange(func() { a.timeoutEdited(t) }),
+				a.textMenuOpt(&t.timeout, func() { a.timeoutEdited(t) })),
 			Text(fmt.Sprintf("blank = default (%d s)", a.timeoutFor(model.Request{})/time.Second), Small(), Muted()),
 		),
 		Row(H(w.RowH), Gap(8), OnClick(func() { t.req.NoRedirects = !t.req.NoRedirects }),
@@ -436,7 +440,7 @@ func (a *App) responsePane(_ pane, t *reqTab, _ *ScrollState) Node {
 			Button("cURL", W(52), OnClick(func() { a.copyCurl(t) })),
 		),
 		If(t.findOpen, a.findBar(t)),
-		Code(&t.view, Grow(1), Bg(w.Sunken)),
+		Code(&t.view, Grow(1), Bg(w.Sunken), OnRightClick(func(x, y int) { a.openMenu(x, y, a.responseMenuItems(t)) })),
 	)
 }
 
@@ -452,6 +456,7 @@ func (a *App) findBar(t *reqTab) Node {
 		Field(&t.find, Grow(1), Placeholder("Find"),
 			OnChange(func() { a.runFind(t) }),
 			OnEnter(func() { a.findEnter(t) }),
+			a.textMenuOpt(&t.find, func() { a.runFind(t) }),
 		),
 		Text(findCount(t.find.Text, len(t.view.Matches()), t.matchIdx), Small(), Muted(), W(64)),
 		Button("<", W(28), OnClick(func() { a.findStep(t, -1) })),

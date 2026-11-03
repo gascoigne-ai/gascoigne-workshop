@@ -62,7 +62,7 @@ func (a *App) sidebar() Node {
 	return Col(
 		Row(H(headerH), PadXY(w.Pad, 0), Gap(6), Bg(w.Bg), BorderBottom(w.Rule),
 			Caption("Collections", W(96)),
-			Field(&a.filter, H(28), Grow(1), Bg(w.Sunken), Placeholder("Filter")),
+			Field(&a.filter, H(28), Grow(1), Bg(w.Sunken), Placeholder("Filter"), a.textMenuOpt(&a.filter, nil)),
 		),
 		Scroll(&a.treeScroll, Bg(w.Sunken),
 			For(a.visibleRows(), func(_ int, row treeRow) Node {
@@ -177,6 +177,7 @@ func (a *App) requestTabs() Node {
 			}
 			grab := OnClick(func() { a.active, a.dragTab = i, i })
 			return Row(look, OnMiddleClick(func() { a.closeTab(i) }),
+				OnRightClick(func(x, y int) { a.openMenu(x, y, a.tabMenuItems(i)) }),
 				Row(PadL(14), Gap(8), grab, OnHeldOver(func() { a.dragOver(i) }),
 					Text(requestBadge(t.req.Protocol, t.req.Method), Small(), Color(methodToken(t.req.Method)), W(tabBadgeW)),
 					Text(t.req.Name),
@@ -211,6 +212,7 @@ func (a *App) urlBar(t *reqTab) Node {
 				Segments(varSegments),
 				OnChange(func() { a.urlEdited(t) }),
 				OnEnter(func() { a.send(t) }),
+				a.textMenuOpt(&t.url, func() { a.urlEdited(t) }),
 			),
 		),
 		send,

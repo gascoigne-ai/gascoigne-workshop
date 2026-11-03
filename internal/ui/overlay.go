@@ -186,7 +186,7 @@ func (a *App) dialogView() Node {
 			FloatCenter(), FocusScope(), Modal(a.closeDialog),
 			Text(d.title, H(22)),
 			If(d.body != "", Lines(d.body, w.Muted)),
-			If(d.input != nil, Field(d.input, H(w.RowH), Bg(w.Sunken), Border(w.Border), OnEnter(a.dialogDefault))),
+			If(d.input != nil, Field(d.input, H(w.RowH), Bg(w.Sunken), Border(w.Border), OnEnter(a.dialogDefault), a.textMenuOpt(d.input, nil))),
 			Row(H(w.RowH), Gap(8),
 				Spacer(),
 				For(d.buttons, func(_ int, b dialogButton) Node {

@@ -2,6 +2,7 @@ package vml
 
 import (
 	"errors"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -841,5 +842,39 @@ func TestModalAlsoSwallowsAndDismissesOnRightClickOutside(t *testing.T) {
 	Update(c, root)
 	if dismissed != 1 || under != 0 {
 		t.Fatalf("dismissed %d, reached the element below %d", dismissed, under)
+	}
+}
+
+func TestRightClickIsHandledByTheInnermostElementOnly(t *testing.T) {
+	var inner, outer int
+	root := Row(Row(W(100), OnRightClick(func(int, int) { outer++ }),
+		Row(W(50), OnRightClick(func(int, int) { inner++ }))))
+	c := testCtx(t)
+	Layout(c, root, 200, 50)
+	c.In = widget.Input{X: 20, Y: 10, RightClick: true} // over the inner element
+	Update(c, root)
+	if inner != 1 || outer != 0 {
+		t.Fatalf("inner %d outer %d: one right click opens one menu", inner, outer)
+	}
+	c.In = widget.Input{X: 80, Y: 10, RightClick: true} // over the outer only
+	Update(c, root)
+	if inner != 1 || outer != 1 {
+		t.Fatalf("inner %d outer %d", inner, outer)
+	}
+}
+
+func TestTableRowRightClickReportsTheRowButNotThePlaceholder(t *testing.T) {
+	var rows []int
+	spec := editableSpec()
+	spec.OnRowMenu = func(row, x, y int) { rows = append(rows, row) }
+	root := Col(Table(spec))
+	c := testCtx(t)
+	Layout(c, root, 400, 400)
+	for _, row := range []int{0, 1, 2} { // 2 is the placeholder row
+		c.In = widget.Input{X: 150, Y: cellY(row), RightClick: true}
+		Update(c, root)
+	}
+	if !reflect.DeepEqual(rows, []int{0, 1}) {
+		t.Fatalf("rows = %v", rows)
 	}
 }

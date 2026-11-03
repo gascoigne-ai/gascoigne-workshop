@@ -683,3 +683,7 @@ func (f *TextField) Display() string {
 	}
 	return f.Text
 }
+
+// CanUndo and CanRedo report whether there is anything to undo or redo.
+func (f *TextField) CanUndo() bool { return len(f.undo) > 0 }
+func (f *TextField) CanRedo() bool { return len(f.redo) > 0 }

@@ -2467,3 +2467,250 @@ func TestDuplicateHeaderNamesAreFlagged(t *testing.T) {
 		t.Fatal("params may repeat a key: no flag there")
 	}
 }
+
+// ---- right-click menus: tabs, table rows, text, response ----------------
+
+func itemByLabel(a *App, label string) *menuItem {
+	for i := range a.ctxMenu.items {
+		if a.ctxMenu.items[i].label == label {
+			return &a.ctxMenu.items[i]
+		}
+	}
+	return nil
+}
+
+func TestTabMenu(t *testing.T) {
+	a := twoTabs(t)
+	left, _ := a.tabX(0)
+	rightClick(a, left+20, tabStripY)
+	want := []string{"Close", "Close others", "Close tabs to the right", "", "Duplicate", "Copy URL"}
+	if got := menuLabels(a); !reflect.DeepEqual(got, want) {
+		t.Fatalf("tab menu = %q", got)
+	}
+	pickMenu(t, a, "Close tabs to the right")
+	if len(a.tabs) != 1 || a.cur().req.Name != "Search Repos" {
+		t.Fatalf("%d tabs, current %q", len(a.tabs), a.cur().req.Name)
+	}
+	rightClick(a, left+20, tabStripY)
+	if !itemByLabel(a, "Close others").disabled || !itemByLabel(a, "Close tabs to the right").disabled {
+		t.Fatal("with one tab there is nothing else to close")
+	}
+}
+
+func TestCloseOthersKeepsOnlyThatTab(t *testing.T) {
+	a := twoTabs(t)
+	a.newRequest() // three tabs
+	left, _ := a.tabX(1)
+	keep := a.tabs[1]
+	rightClick(a, left+20, tabStripY)
+	pickMenu(t, a, "Close others")
+	if len(a.tabs) != 1 || a.tabs[0] != keep || a.cur() != keep {
+		t.Fatalf("%d tabs, current %q", len(a.tabs), a.cur().req.Name)
+	}
+}
+
+func TestDuplicateTabAddsACopyToTheTreeAndOpensIt(t *testing.T) {
+	a, _ := newTestApp(t)
+	left, _ := a.tabX(0)
+	rightClick(a, left+20, tabStripY)
+	pickMenu(t, a, "Duplicate")
+	if got := requestNames(a.col.Folders[1]); !reflect.DeepEqual(got, []string{"Search Repos", "Search Repos copy", "Repository Info", "Repository Tags"}) {
+		t.Fatalf("Repository = %v", got)
+	}
+	if a.cur().req.Name != "Search Repos copy" || len(a.tabs) != 2 {
+		t.Fatalf("current %q, %d tabs", a.cur().req.Name, len(a.tabs))
+	}
+}
+
+func TestTabMenuCopyURL(t *testing.T) {
+	a, _ := newTestApp(t)
+	clip := &fakeClip{}
+	a.ctx.Clipboard = clip
+	left, _ := a.tabX(0)
+	rightClick(a, left+20, tabStripY)
+	pickMenu(t, a, "Copy URL")
+	if !strings.HasPrefix(clip.text, "https://api.github.com/search/repositories?q=gioui") {
+		t.Fatalf("clipboard = %q", clip.text)
+	}
+}
+
+func TestTableRowMenu(t *testing.T) {
+	a, _ := newTestApp(t)
+	rightClick(a, 400, paramsRow0Y)
+	want := []string{"Insert row above", "Insert row below", "Duplicate", "Move up", "Move down", "", "Enable all", "Disable all", "", "Delete"}
+	if got := menuLabels(a); !reflect.DeepEqual(got, want) {
+		t.Fatalf("row menu = %q", got)
+	}
+	if !itemByLabel(a, "Move up").disabled || itemByLabel(a, "Move down").disabled {
+		t.Fatal("the first row cannot move up, but can move down")
+	}
+	pickMenu(t, a, "Insert row above")
+	req := a.cur().req
+	if len(req.Params) != 4 || req.Params[0].Name != "" || req.Params[1].Name != "q" {
+		t.Fatalf("params = %+v", req.Params)
+	}
+}
+
+func TestTableRowMenuActionsUseTheSameUndoableChanges(t *testing.T) {
+	a, _ := newTestApp(t)
+	req := a.cur().req
+	rightClick(a, 400, row1Y) // the "order" row
+	pickMenu(t, a, "Duplicate")
+	if got := paramNames(a); !reflect.DeepEqual(got, []string{"q", "order", "order", "sort"}) {
+		t.Fatalf("duplicate: %v", got)
+	}
+	rightClick(a, 400, row1Y)
+	pickMenu(t, a, "Move down")
+	rightClick(a, 400, paramsRow0Y)
+	pickMenu(t, a, "Disable all")
+	if model.AllEnabled(req.Params) || strings.Contains(req.URL, "?") {
+		t.Fatalf("disable all: %+v url %q", req.Params, req.URL)
+	}
+	rightClick(a, 400, paramsRow0Y)
+	pickMenu(t, a, "Delete")
+	if len(req.Params) != 3 {
+		t.Fatalf("delete: %v", paramNames(a))
+	}
+	for range 4 {
+		a.step(widget.Input{Ctrl: true, Undo: true})
+	}
+	if got := paramNames(a); !reflect.DeepEqual(got, []string{"q", "order", "sort"}) || !strings.Contains(req.URL, "q=gioui") {
+		t.Fatalf("undoing every menu action restores the table: %v url %q", got, req.URL)
+	}
+}
+
+func TestPlaceholderRowHasNoMenu(t *testing.T) {
+	a, _ := newTestApp(t)
+	rightClick(a, 400, paramsRow3Y)
+	if a.ctxMenu != nil {
+		t.Fatal("the empty placeholder row has no row menu")
+	}
+}
+
+func TestTextFieldMenuStatesAndActions(t *testing.T) {
+	a, _ := newTestApp(t)
+	clip := &fakeClip{text: "PASTED"}
+	a.ctx.Clipboard = clip
+	rightClick(a, 1100, urlBarY)
+	want := []string{"Undo", "Redo", "", "Cut", "Copy", "Paste", "", "Select all"}
+	if got := menuLabels(a); !reflect.DeepEqual(got, want) {
+		t.Fatalf("text menu = %q", got)
+	}
+	for _, l := range []string{"Undo", "Redo", "Cut", "Copy"} {
+		if !itemByLabel(a, l).disabled {
+			t.Errorf("%s must be disabled with nothing to undo or selected", l)
+		}
+	}
+	if itemByLabel(a, "Paste").disabled || itemByLabel(a, "Select all").disabled {
+		t.Fatal("Paste and Select all are available")
+	}
+	if itemByLabel(a, "Copy").shortcut != "Ctrl+C" {
+		t.Fatalf("shortcut text = %q", itemByLabel(a, "Copy").shortcut)
+	}
+
+	pickMenu(t, a, "Select all")
+	url := &a.cur().url
+	if url.SelectedText() != url.Text {
+		t.Fatal("Select all")
+	}
+	rightClick(a, 1100, urlBarY)
+	if url.SelectedText() != url.Text {
+		t.Fatal("a right click must not clear the selection")
+	}
+	if itemByLabel(a, "Copy").disabled || itemByLabel(a, "Cut").disabled {
+		t.Fatal("Cut and Copy are available with a selection")
+	}
+	original := url.Text
+	pickMenu(t, a, "Copy")
+	if clip.text != original {
+		t.Fatalf("clipboard = %q", clip.text)
+	}
+	rightClick(a, 1100, urlBarY)
+	pickMenu(t, a, "Cut")
+	if url.Text != "" || a.cur().req.URL != "" {
+		t.Fatalf("cut: field %q request %q (the model must follow)", url.Text, a.cur().req.URL)
+	}
+	clip.text = "https://x.test"
+	rightClick(a, 1100, urlBarY)
+	pickMenu(t, a, "Paste")
+	if url.Text != "https://x.test" || a.cur().req.URL != "https://x.test" {
+		t.Fatalf("paste: field %q request %q", url.Text, a.cur().req.URL)
+	}
+	rightClick(a, 1100, urlBarY)
+	pickMenu(t, a, "Undo")
+	if url.Text != "" {
+		t.Fatalf("undo: %q", url.Text)
+	}
+}
+
+func TestSecretFieldsCannotBeCutOrCopiedFromTheMenu(t *testing.T) {
+	a := openAuthPane(t)
+	click(a, authBearerX, chipsY)
+	click(a, authFieldX, authRow1Y)
+	a.typeText("s3cret")
+	a.cur().authInput("token").SelectAll()
+	rightClick(a, authFieldX, authRow1Y)
+	if !itemByLabel(a, "Cut").disabled || !itemByLabel(a, "Copy").disabled {
+		t.Fatal("a masked field must not offer Cut or Copy")
+	}
+	if itemByLabel(a, "Paste").disabled {
+		t.Fatal("pasting a secret in is fine")
+	}
+}
+
+func TestCellEditFieldGetsTheTextMenuNotTheRowMenu(t *testing.T) {
+	a, _ := newTestApp(t)
+	click(a, valueCellX, paramsRow0Y) // editing
+	rightClick(a, valueCellX, paramsRow0Y)
+	if a.ctxMenu == nil || menuLabels(a)[0] != "Undo" {
+		t.Fatalf("menu = %v", a.ctxMenu)
+	}
+}
+
+func TestBodyEditorMenuPastesLinesAndKeepsTheModelInSync(t *testing.T) {
+	a := openBodyPane(t)
+	clip := &fakeClip{text: "{\n  \"a\": 1\n}"}
+	a.ctx.Clipboard = clip
+	click(a, jsonChipX, chipsY)
+	rightClick(a, editorX, editorY)
+	pickMenu(t, a, "Paste")
+	if a.cur().req.Body != "{\n  \"a\": 1\n}" || a.cur().body.LineCount() != 3 {
+		t.Fatalf("Body = %q", a.cur().req.Body)
+	}
+}
+
+func TestResponseMenu(t *testing.T) {
+	a := jsonResponse(t, `{"ok":true}`)
+	clip := &fakeClip{}
+	a.ctx.Clipboard = clip
+	rightClick(a, 1000, 400)
+	want := []string{"Copy", "Copy body", "Copy as cURL", "", "Select all", "Find"}
+	if got := menuLabels(a); !reflect.DeepEqual(got, want) {
+		t.Fatalf("response menu = %q", got)
+	}
+	if !itemByLabel(a, "Copy").disabled {
+		t.Fatal("Copy needs a selection")
+	}
+	pickMenu(t, a, "Copy body")
+	if clip.text != `{"ok":true}` {
+		t.Fatalf("clipboard = %q", clip.text)
+	}
+	rightClick(a, 1000, 400)
+	pickMenu(t, a, "Select all")
+	if a.cur().view.SelectedText() != a.cur().view.AllText() {
+		t.Fatal("Select all")
+	}
+	rightClick(a, 1000, 400)
+	if itemByLabel(a, "Copy").disabled {
+		t.Fatal("Copy works with a selection")
+	}
+	pickMenu(t, a, "Copy as cURL")
+	if !strings.HasPrefix(clip.text, "curl -L ") {
+		t.Fatalf("clipboard = %q", clip.text)
+	}
+	rightClick(a, 1000, 400)
+	pickMenu(t, a, "Find")
+	if !a.cur().findOpen {
+		t.Fatal("Find opens the find bar")
+	}
+}
