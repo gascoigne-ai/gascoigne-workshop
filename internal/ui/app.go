@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strconv"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -16,8 +17,10 @@ import (
 )
 
 const (
-	version        = "v0.1.0"
-	requestTimeout = 60 * time.Second
+	version = "v0.1.0"
+
+	// defaultTimeoutSec is used when neither the request nor the settings name one.
+	defaultTimeoutSec = 60
 )
 
 // Cycled by clicking the protocol and method chips of the URL bar.
@@ -50,7 +53,10 @@ type reqTab struct {
 	body                  *widget.TextArea // request body editor
 	reqScroll, respScroll vml.ScrollState  // scroll of the table and note panes
 	sending               bool
-	saved                 model.Request // the request as it was when opened or last saved
+	saved                 model.Request      // the request as it was when opened or last saved
+	timeout               widget.TextField   // the request's timeout seconds, as typed
+	cancel                context.CancelFunc // stops the running request
+	seq                   int                // numbers the sends, so a late result of an old one is ignored
 }
 
 func newTab(req *model.Request) *reqTab {
@@ -62,12 +68,14 @@ func newTab(req *model.Request) *reqTab {
 		}
 	}
 	t.saved = req.Clone()
+	t.timeout = widget.NewTextField(timeoutText(req.TimeoutSec))
 	t.body = widget.NewTextArea(req.Body)
 	return t
 }
 
 type sendResult struct {
 	tab  *reqTab
+	seq  int // which send of the tab this answers
 	resp model.Response
 }
 
@@ -157,18 +165,56 @@ func (a *App) send(t *reqTab) {
 		return
 	}
 	t.sending = true
+	t.seq++
+	seq := t.seq
 	a.status = "Sending " + t.req.URL
 	req := *t.req
 	req.URL = model.Expand(req.URL, a.col.Vars)
+	ctx, cancel := context.WithTimeout(context.Background(), a.timeoutFor(req))
+	t.cancel = cancel
 	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
 		defer cancel()
 		resp, err := a.reg.Send(ctx, req)
 		if err != nil {
 			resp = model.Response{Err: err.Error()}
 		}
-		a.results <- sendResult{tab: t, resp: resp}
+		a.results <- sendResult{tab: t, seq: seq, resp: resp}
 	}()
+}
+
+// cancelSend stops the running request of t. Its late result, which
+// arrives after this, belongs to an older send and is dropped.
+func (a *App) cancelSend(t *reqTab) {
+	if !t.sending {
+		return
+	}
+	t.cancel()
+	t.sending = false
+	t.seq++
+	t.resp = &model.Response{Err: proto.ErrCancelled}
+	t.view.SetLines(nil)
+	a.status = proto.ErrCancelled
+}
+
+// timeoutFor is how long a request may run: its own setting, else the
+// default from the settings, else a minute.
+func (a *App) timeoutFor(req model.Request) time.Duration {
+	sec := req.TimeoutSec
+	if sec <= 0 {
+		sec = a.settings.TimeoutSec
+	}
+	if sec <= 0 {
+		sec = defaultTimeoutSec
+	}
+	return time.Duration(sec) * time.Second
+}
+
+// timeoutText is a timeout as shown in its field; 0 (the default) is blank.
+func timeoutText(sec int) string {
+	if sec <= 0 {
+		return ""
+	}
+	return strconv.Itoa(sec)
 }
 
 func (a *App) drain() {
@@ -184,6 +230,9 @@ func (a *App) drain() {
 
 func (a *App) apply(r sendResult) {
 	t := r.tab
+	if r.seq != t.seq {
+		return // the answer to a send that was cancelled or replaced
+	}
 	t.sending = false
 	t.resp = &r.resp
 	t.view.SetLines(codeLines(r.resp.Body))
@@ -223,9 +272,15 @@ func (a *App) step(in widget.Input) {
 	}
 	a.drain()
 	a.runShortcuts(in)
-	if in.Escape {
-		a.menu = false
-		a.cancelEdit()
+	if in.Escape { // one step per press: the menu, then a cell edit, then a running request
+		switch {
+		case a.menu:
+			a.menu = false
+		case a.edit != nil:
+			a.cancelEdit()
+		default:
+			a.cancelSend(a.cur())
+		}
 	}
 	root := a.view()
 	vml.Layout(a.ctx, root, a.w, a.h)

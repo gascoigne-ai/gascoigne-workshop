@@ -3,6 +3,7 @@ package proto
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -54,16 +55,21 @@ func (r REST) Send(ctx context.Context, req model.Request) (model.Response, erro
 	if client == nil {
 		client = &http.Client{}
 	}
+	if req.NoRedirects {
+		stop := *client
+		stop.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+		client = &stop
+	}
 	start := time.Now()
 	resp, err := client.Do(httpReq)
 	if err != nil {
-		return model.Response{Err: err.Error(), Duration: time.Since(start)}, nil
+		return model.Response{Err: failureText(err), Duration: time.Since(start)}, nil
 	}
 	defer resp.Body.Close()
 
 	respBody, err := io.ReadAll(io.LimitReader(resp.Body, maxBody))
 	if err != nil {
-		return model.Response{Err: "read body: " + err.Error(), Duration: time.Since(start)}, nil
+		return model.Response{Err: failureText(err), Duration: time.Since(start)}, nil
 	}
 	return model.Response{
 		Status:     resp.StatusCode,
@@ -136,4 +142,16 @@ func encodeMultipart(req model.Request) ([]byte, string, error) {
 		return nil, "", err
 	}
 	return buf.Bytes(), w.FormDataContentType(), nil
+}
+
+// failureText is the message shown for a failed request: a stopped one
+// says so plainly, anything else keeps the transport's own words.
+func failureText(err error) string {
+	switch {
+	case errors.Is(err, context.Canceled):
+		return ErrCancelled
+	case errors.Is(err, context.DeadlineExceeded):
+		return ErrTimedOut
+	}
+	return err.Error()
 }

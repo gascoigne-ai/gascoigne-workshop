@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/jsonview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
@@ -19,6 +21,7 @@ const (
 	paneCode
 	paneNote
 	paneBody
+	paneSettings
 )
 
 // pane describes one tab of the request or response area. The tables
@@ -50,6 +53,7 @@ var requestPanes = []pane{
 		note: func(*reqTab) string { return "No authentication configured" }},
 	{label: "Vars", kind: paneTable, title: "Collection variables", editable: true,
 		rows: func(a *App, _ *reqTab) *[]model.KV { return &a.col.Vars }},
+	{label: "Settings", kind: paneSettings},
 }
 
 func noResponse(t *reqTab) (string, bool) {
@@ -117,10 +121,11 @@ func paneEmpty(p pane, t *reqTab) (string, bool) {
 
 // paneBuilders turns a pane into its view, by kind.
 var paneBuilders = map[paneKind]func(a *App, p pane, t *reqTab, scroll *ScrollState) Node{
-	paneCode:  (*App).codePane,
-	paneNote:  (*App).notePane,
-	paneBody:  (*App).bodyPane,
-	paneTable: (*App).tablePane,
+	paneCode:     (*App).codePane,
+	paneNote:     (*App).notePane,
+	paneBody:     (*App).bodyPane,
+	paneSettings: (*App).settingsPane,
+	paneTable:    (*App).tablePane,
 }
 
 // paneBody is what fills the area under a pane's tab strip.
@@ -297,4 +302,37 @@ func jsonStyler(line string) []w.Span {
 		spans[i] = w.Span{Text: s.Text, Style: jsonTokens[s.Kind]}
 	}
 	return spans
+}
+
+// settingsPane holds the per-request options: timeout and redirects.
+func (a *App) settingsPane(_ pane, t *reqTab, scroll *ScrollState) Node {
+	return Scroll(scroll, Pad(w.Pad), Gap(8),
+		Row(H(w.RowH), Gap(12),
+			Text("Timeout (seconds)", W(160)),
+			Field(&t.timeout, W(80), Bg(w.Sunken), Border(w.Border),
+				OnChange(func() { a.timeoutEdited(t) })),
+			Text(fmt.Sprintf("blank = default (%d s)", a.timeoutFor(model.Request{})/time.Second), Small(), Muted()),
+		),
+		Row(H(w.RowH), Gap(8), OnClick(func() { t.req.NoRedirects = !t.req.NoRedirects }),
+			Checkbox(!t.req.NoRedirects),
+			Text("Follow redirects"),
+		),
+	)
+}
+
+// timeoutEdited applies the typed timeout; text that is not a whole
+// number of seconds is undone.
+func (a *App) timeoutEdited(t *reqTab) {
+	text := strings.TrimSpace(t.timeout.Text)
+	if text == "" {
+		t.req.TimeoutSec = 0
+		return
+	}
+	n, err := strconv.Atoi(text)
+	if err != nil || n < 0 {
+		t.timeout = w.NewTextField(timeoutText(t.req.TimeoutSec))
+		t.timeout.Focused = true
+		return
+	}
+	t.req.TimeoutSec = n
 }

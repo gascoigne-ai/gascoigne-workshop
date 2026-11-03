@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -1011,5 +1012,194 @@ func TestDraggingKeepsTheActiveTabActive(t *testing.T) {
 	}
 	if a.cur() != a.tabs[1] {
 		t.Fatal("the active tab must travel with the drag")
+	}
+}
+
+// pathServer serves /fast at once and /slow only when released (or when
+// the client gives up), so tests control which request finishes when.
+func pathServer(t *testing.T) (srv *httptest.Server, release func()) {
+	t.Helper()
+	gate := make(chan struct{})
+	var once sync.Once
+	srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/slow":
+			select {
+			case <-gate:
+				io.WriteString(w, "slow")
+			case <-r.Context().Done():
+			}
+		case "/redirect":
+			http.Redirect(w, r, "/fast", http.StatusFound)
+		default:
+			io.WriteString(w, "fast")
+		}
+	}))
+	release = func() { once.Do(func() { close(gate) }) }
+	t.Cleanup(func() { release(); srv.Close() })
+	return srv, release
+}
+
+func TestSendingTurnsIntoCancelAndStopsTheRequest(t *testing.T) {
+	srv, _ := pathServer(t)
+	a, _ := newTestApp(t)
+	tab := a.cur()
+	pointTabAt(tab, srv.URL+"/slow")
+
+	click(a, sendX, urlBarY)
+	if !tab.sending {
+		t.Fatal("test setup: the request must be running")
+	}
+	click(a, sendX, urlBarY) // the same button now cancels
+	if tab.sending || tab.resp == nil || tab.resp.Err != "Cancelled" {
+		t.Fatalf("sending %v resp %+v", tab.sending, tab.resp)
+	}
+	if a.status != "Cancelled" {
+		t.Fatalf("status = %q", a.status)
+	}
+}
+
+func TestEscapeCancelsARunningRequestButClosesTheMenuFirst(t *testing.T) {
+	srv, _ := pathServer(t)
+	a, _ := newTestApp(t)
+	tab := a.cur()
+	pointTabAt(tab, srv.URL+"/slow")
+	click(a, sendX, urlBarY)
+
+	a.menu = true
+	a.step(widget.Input{Escape: true})
+	if a.menu || !tab.sending {
+		t.Fatalf("the first Escape closes the menu only: menu %v sending %v", a.menu, tab.sending)
+	}
+	a.step(widget.Input{Escape: true})
+	if tab.sending || tab.resp == nil || tab.resp.Err != "Cancelled" {
+		t.Fatalf("the second Escape cancels: sending %v resp %+v", tab.sending, tab.resp)
+	}
+}
+
+func TestEscapeWithNothingRunningDoesNothing(t *testing.T) {
+	a, _ := newTestApp(t)
+	a.step(widget.Input{Escape: true})
+	if a.cur().resp != nil {
+		t.Fatal("Escape must not invent a response")
+	}
+}
+
+func TestALateResultFromACancelledRequestIsIgnored(t *testing.T) {
+	srv, release := pathServer(t)
+	a, _ := newTestApp(t)
+	tab := a.cur()
+
+	pointTabAt(tab, srv.URL+"/slow")
+	click(a, sendX, urlBarY)
+	click(a, sendX, urlBarY) // cancel
+	pointTabAt(tab, srv.URL+"/fast")
+	click(a, sendX, urlBarY)
+	waitForResponse(t, a, tab)
+	for tab.resp.Err != "" || string(tab.resp.Body) != "fast" { // the cancelled one may still be in flight
+		a.step(widget.Input{})
+		time.Sleep(5 * time.Millisecond)
+	}
+
+	release()
+	for range 40 {
+		a.step(widget.Input{})
+		time.Sleep(5 * time.Millisecond)
+	}
+	if tab.resp.Err != "" || string(tab.resp.Body) != "fast" {
+		t.Fatalf("the cancelled request's late result replaced the new one: %+v", tab.resp)
+	}
+}
+
+func TestRequestTimeoutStopsASlowRequest(t *testing.T) {
+	srv, _ := pathServer(t)
+	a, _ := newTestApp(t)
+	tab := a.cur()
+	pointTabAt(tab, srv.URL+"/slow")
+	tab.req.TimeoutSec = 1
+
+	start := time.Now()
+	click(a, sendX, urlBarY)
+	waitForResponse(t, a, tab)
+	if tab.resp.Err != "Timed out" || time.Since(start) > 4*time.Second {
+		t.Fatalf("resp %+v after %v", tab.resp, time.Since(start))
+	}
+}
+
+func TestTimeoutFallsBackToTheSettingsDefault(t *testing.T) {
+	a, _ := newTestApp(t)
+	tests := []struct {
+		name         string
+		req, setting int
+		want         time.Duration
+	}{
+		{"the request's own value wins", 5, 60, 5 * time.Second},
+		{"zero uses the default", 0, 30, 30 * time.Second},
+		{"no default either uses a minute", 0, 0, 60 * time.Second},
+		{"a negative value is not a timeout", -3, 30, 30 * time.Second},
+	}
+	for _, tt := range tests {
+		a.settings.TimeoutSec = tt.setting
+		if got := a.timeoutFor(model.Request{TimeoutSec: tt.req}); got != tt.want {
+			t.Errorf("%s: got %v, want %v", tt.name, got, tt.want)
+		}
+	}
+}
+
+// Settings pane (the sixth request tab): the timeout field at y=206 and
+// the follow-redirects row below it.
+const (
+	settingsTabIdx = 5
+	timeoutFieldX  = 480
+	followRowY     = 242
+	followRowX     = 290
+)
+
+func openSettingsPane(t *testing.T) *App {
+	a, _ := newTestApp(t)
+	a.cur().paneTab = settingsTabIdx
+	a.step(widget.Input{})
+	return a
+}
+
+func TestTimeoutFieldAcceptsWholeSecondsOnly(t *testing.T) {
+	a := openSettingsPane(t)
+	req := a.cur().req
+	click(a, timeoutFieldX, chipsY)
+	a.typeText("7")
+	if req.TimeoutSec != 7 {
+		t.Fatalf("TimeoutSec = %d", req.TimeoutSec)
+	}
+	a.typeText("x")
+	if req.TimeoutSec != 7 {
+		t.Fatalf("a non-numeric edit must not change the timeout, got %d", req.TimeoutSec)
+	}
+	a.step(widget.Input{Edits: []widget.Edit{widget.EditBackspace, widget.EditBackspace}}) // clears the field
+	if req.TimeoutSec != 0 {
+		t.Fatalf("an empty field means the default, got %d", req.TimeoutSec)
+	}
+}
+
+func TestFollowRedirectsToggleControlsRedirects(t *testing.T) {
+	srv, _ := pathServer(t)
+	a := openSettingsPane(t)
+	tab := a.cur()
+	pointTabAt(tab, srv.URL+"/redirect")
+
+	a.send(tab)
+	waitForResponse(t, a, tab)
+	if tab.resp.Status != 200 {
+		t.Fatalf("redirects are followed by default, status %d", tab.resp.Status)
+	}
+
+	click(a, followRowX, followRowY)
+	if !tab.req.NoRedirects {
+		t.Fatal("the checkbox row must turn following off")
+	}
+	tab.resp = nil
+	a.send(tab)
+	waitForResponse(t, a, tab)
+	if tab.resp.Status != 302 {
+		t.Fatalf("redirects are not followed now, status %d", tab.resp.Status)
 	}
 }

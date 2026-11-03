@@ -16,10 +16,13 @@ import (
 type Settings struct {
 	Theme    string `json:"theme"`    // "dark" or "light"
 	TextSize string `json:"textSize"` // "small", "medium" or "large"
+
+	// TimeoutSec is the default request timeout in seconds.
+	TimeoutSec int `json:"timeoutSec"`
 }
 
 // Default is what a first run uses.
-func Default() Settings { return Settings{Theme: "dark", TextSize: "medium"} }
+func Default() Settings { return Settings{Theme: "dark", TextSize: "medium", TimeoutSec: 60} }
 
 // Load reads path. A missing file is not an error and yields Default;
 // fields missing from the file keep their defaults.

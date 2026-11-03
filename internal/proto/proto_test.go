@@ -11,6 +11,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
 )
@@ -219,5 +220,64 @@ func TestUserContentTypeHeaderWins(t *testing.T) {
 				t.Fatalf("content type = %q, want %q", got.contentType, tt.want)
 			}
 		})
+	}
+}
+
+func TestRESTRedirects(t *testing.T) {
+	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { io.WriteString(w, "landed") }))
+	defer target.Close()
+	redirector := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, target.URL, http.StatusFound)
+	}))
+	defer redirector.Close()
+
+	tests := []struct {
+		name        string
+		noRedirects bool
+		wantStatus  int
+		wantBody    string
+	}{
+		{"followed by default", false, 200, "landed"},
+		{"stopped at the first redirect", true, 302, ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resp, err := REST{}.Send(context.Background(), model.Request{URL: redirector.URL, NoRedirects: tt.noRedirects})
+			if err != nil || resp.Status != tt.wantStatus || !strings.Contains(string(resp.Body), tt.wantBody) {
+				t.Fatalf("resp %+v err %v", resp, err)
+			}
+			if tt.noRedirects {
+				var loc string
+				for _, h := range resp.Headers {
+					if h.Name == "Location" {
+						loc = h.Value
+					}
+				}
+				if loc != target.URL {
+					t.Fatalf("the redirect target must be visible in the headers, Location = %q", loc)
+				}
+			}
+		})
+	}
+}
+
+func TestRESTExplainsCancelAndTimeout(t *testing.T) {
+	block := make(chan struct{})
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { <-block }))
+	defer srv.Close()
+	defer close(block)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	resp, _ := REST{}.Send(ctx, model.Request{URL: srv.URL})
+	if resp.Err != ErrCancelled {
+		t.Errorf("cancelled: Err = %q, want %q", resp.Err, ErrCancelled)
+	}
+
+	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Millisecond)
+	defer cancel()
+	resp, _ = REST{}.Send(ctx, model.Request{URL: srv.URL})
+	if resp.Err != ErrTimedOut {
+		t.Errorf("timeout: Err = %q, want %q", resp.Err, ErrTimedOut)
 	}
 }

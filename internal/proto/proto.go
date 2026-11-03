@@ -66,3 +66,9 @@ func sortKV(rows []model.KV) {
 		return rows[i].Value < rows[j].Value
 	})
 }
+
+// Messages in Response.Err for the two ways a request can be stopped.
+const (
+	ErrCancelled = "Cancelled"
+	ErrTimedOut  = "Timed out"
+)

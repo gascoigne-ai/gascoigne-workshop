@@ -24,6 +24,9 @@ type Request struct {
 	Body     string // raw text of the json, text and legacy bodies
 	BodyType string // BodyNone, BodyJSON, ...; "" sends Body as is, with no Content-Type
 	Form     []KV   // fields of the form and multipart bodies
+
+	TimeoutSec  int  // seconds before the request is abandoned; 0 uses the default
+	NoRedirects bool // stop at the first redirect instead of following it
 }
 
 // Body types a request can send.

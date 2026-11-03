@@ -14,9 +14,10 @@ func TestLoad(t *testing.T) {
 		wantErr bool
 	}{
 		{"missing file gives defaults", nil, Default(), false},
-		{"full file", ptr(`{"theme":"light","textSize":"large"}`), Settings{Theme: "light", TextSize: "large"}, false},
-		{"missing field keeps default", ptr(`{"theme":"light"}`), Settings{Theme: "light", TextSize: "medium"}, false},
-		{"unknown values pass through", ptr(`{"theme":"neon"}`), Settings{Theme: "neon", TextSize: "medium"}, false},
+		{"full file", ptr(`{"theme":"light","textSize":"large"}`), Settings{Theme: "light", TextSize: "large", TimeoutSec: 60}, false},
+		{"saved timeout", ptr(`{"timeoutSec":15}`), Settings{Theme: "dark", TextSize: "medium", TimeoutSec: 15}, false},
+		{"missing field keeps default", ptr(`{"theme":"light"}`), Settings{Theme: "light", TextSize: "medium", TimeoutSec: 60}, false},
+		{"unknown values pass through", ptr(`{"theme":"neon"}`), Settings{Theme: "neon", TextSize: "medium", TimeoutSec: 60}, false},
 		{"broken json gives defaults and an error", ptr(`{"theme":`), Default(), true},
 	}
 	for _, tt := range tests {

@@ -153,9 +153,9 @@ func (a *App) requestTabs() Node {
 // urlBar is [protocol | method | URL field ........] [Send].
 func (a *App) urlBar(t *reqTab) Node {
 	isREST := t.req.Protocol == "rest"
-	sendLabel := "Send"
+	send := PrimaryButton("Send", W(80), OnClick(func() { a.send(t) }))
 	if t.sending {
-		sendLabel = "..."
+		send = PrimaryButton("Cancel", W(80), OnClick(func() { a.cancelSend(t) }))
 	}
 	return Row(H(urlH), PadXY(w.Pad, 8), Gap(8), Bg(w.Bg),
 		Row(Grow(1), Bg(w.Sunken), Border(w.Border),
@@ -170,7 +170,7 @@ func (a *App) urlBar(t *reqTab) Node {
 				OnEnter(func() { a.send(t) }),
 			),
 		),
-		PrimaryButton(sendLabel, W(80), OnClick(func() { a.send(t) })),
+		send,
 	)
 }
 
