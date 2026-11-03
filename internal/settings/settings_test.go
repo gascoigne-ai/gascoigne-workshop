@@ -3,6 +3,7 @@ package settings
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 )
 
@@ -14,11 +15,11 @@ func TestLoad(t *testing.T) {
 		wantErr bool
 	}{
 		{"missing file gives defaults", nil, Default(), false},
-		{"full file", ptr(`{"theme":"light","textSize":"large"}`), Settings{Theme: "light", TextSize: "large", Layout: "side", TimeoutSec: 60}, false},
-		{"saved layout", ptr(`{"layout":"stacked"}`), Settings{Theme: "dark", TextSize: "medium", Layout: "stacked", TimeoutSec: 60}, false},
-		{"saved timeout", ptr(`{"timeoutSec":15}`), Settings{Theme: "dark", TextSize: "medium", Layout: "side", TimeoutSec: 15}, false},
-		{"missing field keeps default", ptr(`{"theme":"light"}`), Settings{Theme: "light", TextSize: "medium", Layout: "side", TimeoutSec: 60}, false},
-		{"unknown values pass through", ptr(`{"theme":"neon"}`), Settings{Theme: "neon", TextSize: "medium", Layout: "side", TimeoutSec: 60}, false},
+		{"full file", ptr(`{"theme":"light","textSize":"large"}`), Settings{Theme: "light", TextSize: "large", Layout: "side", Contrast: "normal", TimeoutSec: 60}, false},
+		{"saved layout", ptr(`{"layout":"stacked"}`), Settings{Theme: "dark", TextSize: "medium", Layout: "stacked", Contrast: "normal", TimeoutSec: 60}, false},
+		{"saved timeout", ptr(`{"timeoutSec":15}`), Settings{Theme: "dark", TextSize: "medium", Layout: "side", Contrast: "normal", TimeoutSec: 15}, false},
+		{"missing field keeps default", ptr(`{"theme":"light"}`), Settings{Theme: "light", TextSize: "medium", Layout: "side", Contrast: "normal", TimeoutSec: 60}, false},
+		{"unknown values pass through", ptr(`{"theme":"neon"}`), Settings{Theme: "neon", TextSize: "medium", Layout: "side", Contrast: "normal", TimeoutSec: 60}, false},
 		{"broken json gives defaults and an error", ptr(`{"theme":`), Default(), true},
 	}
 	for _, tt := range tests {
@@ -30,7 +31,7 @@ func TestLoad(t *testing.T) {
 				}
 			}
 			got, err := Load(path)
-			if (err != nil) != tt.wantErr || got != tt.want {
+			if (err != nil) != tt.wantErr || !reflect.DeepEqual(got, tt.want) {
 				t.Fatalf("got %+v err %v; want %+v wantErr %v", got, err, tt.want, tt.wantErr)
 			}
 		})
@@ -45,7 +46,7 @@ func TestSaveRoundTripCreatesDirAndLeavesNoTemp(t *testing.T) {
 		t.Fatal(err)
 	}
 	got, err := Load(path)
-	if err != nil || got != want {
+	if err != nil || !reflect.DeepEqual(got, want) {
 		t.Fatalf("got %+v err %v, want %+v", got, err, want)
 	}
 	entries, _ := os.ReadDir(dir)
@@ -94,4 +95,21 @@ func TestSaveFailuresAreReported(t *testing.T) {
 			t.Fatal("want an error when the target is a non-empty directory")
 		}
 	})
+}
+
+func TestColorsAndContrastRoundTrip(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "settings.json")
+	want := Default()
+	want.Contrast = "high"
+	want.Colors = map[string]map[string]string{"dark": {"selection": "#336699"}, "light": {"accent": "#ffcc00"}}
+	if err := want.Save(path); err != nil {
+		t.Fatal(err)
+	}
+	got, err := Load(path)
+	if err != nil || !reflect.DeepEqual(got, want) {
+		t.Fatalf("got %+v err %v", got, err)
+	}
+	if def := Default(); def.Contrast != "normal" || def.Colors != nil {
+		t.Fatalf("defaults = %+v", def)
+	}
 }

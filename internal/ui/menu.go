@@ -45,6 +45,17 @@ func (a *App) menuView() Node {
 		),
 		Spacer(H(w.Pad)),
 
+		Caption("Contrast", H(22)),
+		Row(H(w.RowH), Gap(6),
+			For(contrastChoices, func(_ int, c contrastChoice) Node {
+				return a.choice(c.label, c.id == a.settings.Contrast, func(s *settings.Settings) { s.Contrast = c.id })
+			}),
+		),
+		Spacer(H(w.Pad)),
+
+		a.colorsView(),
+		Spacer(H(w.Pad)),
+
 		Caption("Shortcuts", H(22)),
 		For(shortcuts, func(_ int, s shortcut) Node {
 			return Row(H(20),
@@ -65,10 +76,17 @@ func (a *App) choice(label string, selected bool, edit func(*settings.Settings))
 	return Button(label, Grow(1), apply)
 }
 
-// changeSettings edits the settings, applies them and saves them.
+// changeSettings edits the settings, applies them and saves them. The
+// color fields are rebuilt, since the colors in effect may have changed.
 func (a *App) changeSettings(edit func(*settings.Settings)) {
+	a.saveSettings(edit)
+	a.colorInputs, a.colorNotes = nil, nil
+}
+
+// saveSettings edits, applies and saves the settings.
+func (a *App) saveSettings(edit func(*settings.Settings)) {
 	edit(&a.settings)
-	if err := a.ctx.SetTheme(ThemeFor(a.settings.Theme, a.settings.TextSize)); err != nil {
+	if err := a.ctx.SetTheme(ThemeWith(a.settings)); err != nil {
 		a.status = err.Error()
 		return
 	}

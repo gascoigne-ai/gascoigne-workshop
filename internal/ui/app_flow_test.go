@@ -362,7 +362,7 @@ func TestBrokenSettingsFileFallsBackAndSaysSo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if a.settings != settings.Default() || !strings.Contains(a.status, "parse settings") {
+	if !reflect.DeepEqual(a.settings, settings.Default()) || !strings.Contains(a.status, "parse settings") {
 		t.Fatalf("settings %+v status %q", a.settings, a.status)
 	}
 }
@@ -2775,5 +2775,166 @@ func TestNarrowColumnsKeepAMinimum(t *testing.T) {
 	// the name column is at least MinColumnPx of the 413px of columns
 	if min := float64(vml.MinColumnPx) / 413 * 100; w.Weights[0] < min-0.5 {
 		t.Fatalf("name weight %v is below the minimum share %v", w.Weights[0], min)
+	}
+}
+
+// ---- colors in the settings menu ------------------------------------------
+
+// Below the layout chooser: Contrast chips at y=312, then Colors rows from
+// y=374 (Selection), 402, 430, 458 (Accent); field at x=1170, Reset at
+// x=1234; the "Reset colors" button under the last row.
+const (
+	contrastNormalX = 1078
+	contrastHighX   = 1198
+	contrastRowY    = 312
+	colorRow0Y      = 374
+	colorFieldX     = 1170
+	colorResetX     = 1234
+	resetColorsX    = 1070
+	resetColorsY    = 486
+)
+
+func openSettingsMenu(t *testing.T) (*App, string) {
+	a, path := newTestApp(t)
+	click(a, menuBtnX, menuBtnY)
+	if !a.menu {
+		t.Fatal("test setup")
+	}
+	return a, path
+}
+
+func typeColor(a *App, tok widget.Token, row int, text string) {
+	in := a.colorInput(tok)
+	click(a, colorFieldX, colorRow0Y+row*widget.RowH)
+	in.SelectAll()
+	a.typeText(text)
+}
+
+func TestContrastChooserStrengthensTheColorsAndIsSaved(t *testing.T) {
+	a, path := openSettingsMenu(t)
+	before := widget.ContrastRatio(a.ctx.Th.Color(widget.Selection), a.ctx.Th.Color(widget.Text))
+	click(a, contrastHighX, contrastRowY)
+	if a.settings.Contrast != "high" {
+		t.Fatalf("Contrast = %q", a.settings.Contrast)
+	}
+	after := widget.ContrastRatio(a.ctx.Th.Color(widget.Selection), a.ctx.Th.Color(widget.Text))
+	if after < highRatio-0.01 || after <= before {
+		t.Fatalf("selection contrast %.2f -> %.2f", before, after)
+	}
+	if saved, _ := settings.Load(path); saved.Contrast != "high" {
+		t.Fatalf("saved %+v", saved)
+	}
+	click(a, contrastNormalX, contrastRowY)
+	if a.settings.Contrast != "normal" || widget.ContrastRatio(a.ctx.Th.Color(widget.Selection), a.ctx.Th.Color(widget.Text)) != before {
+		t.Fatal("back to normal restores the default colors")
+	}
+}
+
+func TestTypingAColorAppliesItLiveAndSavesIt(t *testing.T) {
+	a, path := openSettingsMenu(t)
+	typeColor(a, widget.Selection, 0, "#223344")
+	if got := a.ctx.Th.Color(widget.Selection); got != widget.RGB(0x223344) {
+		t.Fatalf("live color = %v", got)
+	}
+	saved, _ := settings.Load(path)
+	if saved.Colors["dark"]["selection"] != "#223344" {
+		t.Fatalf("saved %+v", saved.Colors)
+	}
+	if a.colorNotes[widget.Selection] != "" {
+		t.Fatalf("note = %q", a.colorNotes[widget.Selection])
+	}
+}
+
+func TestAnUnreadableColorIsRefusedWithItsRatio(t *testing.T) {
+	a, path := openSettingsMenu(t)
+	def := a.ctx.Th.Color(widget.FindMatch)
+	typeColor(a, widget.FindMatch, 1, "#ffffff") // white under light text
+	note := a.colorNotes[widget.FindMatch]
+	if !strings.Contains(note, "below 4.5:1") || !strings.Contains(note, "1.") {
+		t.Fatalf("note = %q: it must say how far off the contrast is", note)
+	}
+	if a.ctx.Th.Color(widget.FindMatch) != def {
+		t.Fatal("a refused color must not apply")
+	}
+	if saved, _ := settings.Load(path); len(saved.Colors["dark"]) != 0 {
+		t.Fatalf("a refused color must not be saved: %+v", saved.Colors)
+	}
+	typeColor(a, widget.FindMatch, 1, "zzz")
+	if !strings.Contains(a.colorNotes[widget.FindMatch], "#rrggbb") {
+		t.Fatalf("note = %q", a.colorNotes[widget.FindMatch])
+	}
+	typeColor(a, widget.FindMatch, 1, "#334455")
+	if a.colorNotes[widget.FindMatch] != "" || a.ctx.Th.Color(widget.FindMatch) != widget.RGB(0x334455) {
+		t.Fatalf("a readable color clears the note and applies: %q %v", a.colorNotes[widget.FindMatch], a.ctx.Th.Color(widget.FindMatch))
+	}
+}
+
+func TestResetButtonsRestoreTheDefaults(t *testing.T) {
+	a, path := openSettingsMenu(t)
+	def := a.ctx.Th.Color(widget.Selection)
+	typeColor(a, widget.Selection, 0, "#223344")
+	typeColor(a, widget.FindMatch, 1, "#334455")
+	click(a, colorResetX, colorRow0Y)
+	if a.ctx.Th.Color(widget.Selection) != def || a.colorInput(widget.Selection).Text != widget.FormatHex(def) {
+		t.Fatalf("selection %v, field %q", a.ctx.Th.Color(widget.Selection), a.colorInput(widget.Selection).Text)
+	}
+	if a.ctx.Th.Color(widget.FindMatch) != widget.RGB(0x334455) {
+		t.Fatal("resetting one color must leave the others")
+	}
+	click(a, resetColorsX, resetColorsY)
+	if a.ctx.Th.Color(widget.FindMatch) == widget.RGB(0x334455) {
+		t.Fatal("Reset colors drops every override")
+	}
+	if saved, _ := settings.Load(path); len(saved.Colors["dark"]) != 0 {
+		t.Fatalf("saved %+v", saved.Colors)
+	}
+}
+
+func TestSwitchingThemeShowsThatThemesColorsAndKeepsEachThemesOverrides(t *testing.T) {
+	a, _ := openSettingsMenu(t)
+	typeColor(a, widget.Selection, 0, "#223344")
+	click(a, 1200, 126) // the Light theme chip
+	if a.ctx.Th.Color(widget.Selection) != ThemeFor("light", "medium").Color(widget.Selection) {
+		t.Fatal("the dark override must not leak into the light theme")
+	}
+	if a.colorInput(widget.Selection).Text != widget.FormatHex(ThemeFor("light", "medium").Color(widget.Selection)) {
+		t.Fatalf("the field must show the light theme's color, got %q", a.colorInput(widget.Selection).Text)
+	}
+	click(a, 1078, 126) // back to Dark
+	if a.ctx.Th.Color(widget.Selection) != widget.RGB(0x223344) {
+		t.Fatal("the dark override is remembered")
+	}
+}
+
+func TestColorsAreRestoredAtStart(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "settings.json")
+	s := settings.Default()
+	s.Contrast = "high"
+	s.Colors = map[string]map[string]string{"dark": {"accent": "#aaccee"}}
+	if err := s.Save(path); err != nil {
+		t.Fatal(err)
+	}
+	a, err := NewApp(Options{SettingsPath: path})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if a.ctx.Th.Color(widget.Accent) != widget.RGB(0xaaccee) {
+		t.Fatalf("accent = %v", a.ctx.Th.Color(widget.Accent))
+	}
+	if widget.ContrastRatio(a.ctx.Th.Color(widget.Selection), a.ctx.Th.Color(widget.Text)) < highRatio-0.01 {
+		t.Fatal("high contrast is applied at start")
+	}
+}
+
+func TestShortcutLabelsReadNaturally(t *testing.T) {
+	labels := map[string]string{}
+	for _, s := range shortcuts {
+		labels[s.name] = s.label()
+	}
+	want := map[string]string{"Move row up": "Alt+Up", "Move row down": "Alt+Down", "Delete row": "Delete", "Settings": "Ctrl+,", "Next tab": "Ctrl+Tab"}
+	for name, label := range want {
+		if labels[name] != label {
+			t.Errorf("%s: %q, want %q", name, labels[name], label)
+		}
 	}
 }

@@ -36,7 +36,11 @@ var shortcuts = []shortcut{
 }
 
 // keyNames spells keys whose ebiten name is not what users read.
-var keyNames = map[ebiten.Key]string{ebiten.KeyComma: ","}
+var keyNames = map[ebiten.Key]string{
+	ebiten.KeyComma:     ",",
+	ebiten.KeyArrowUp:   "Up",
+	ebiten.KeyArrowDown: "Down",
+}
 
 // label is the binding as users read it, for example "Ctrl+Shift+Tab".
 func (s shortcut) label() string {

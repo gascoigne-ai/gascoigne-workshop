@@ -20,13 +20,21 @@ type Settings struct {
 	// Layout places the request and response panes: "side" by side or "stacked".
 	Layout string `json:"layout"`
 
+	// Contrast is "normal" or "high"; high strengthens the selection,
+	// find and accent colors.
+	Contrast string `json:"contrast"`
+
+	// Colors are the user's color overrides: theme id, then token name,
+	// then "#rrggbb".
+	Colors map[string]map[string]string `json:"colors,omitempty"`
+
 	// TimeoutSec is the default request timeout in seconds.
 	TimeoutSec int `json:"timeoutSec"`
 }
 
 // Default is what a first run uses.
 func Default() Settings {
-	return Settings{Theme: "dark", TextSize: "medium", Layout: "side", TimeoutSec: 60}
+	return Settings{Theme: "dark", TextSize: "medium", Layout: "side", Contrast: "normal", TimeoutSec: 60}
 }
 
 // Load reads path. A missing file is not an error and yields Default;
