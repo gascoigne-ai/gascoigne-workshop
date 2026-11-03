@@ -25,6 +25,8 @@ type Request struct {
 	BodyType string // BodyNone, BodyJSON, ...; "" sends Body as is, with no Content-Type
 	Form     []KV   // fields of the form and multipart bodies
 
+	Auth Auth // credentials added when the request is sent; never shown in Headers
+
 	TimeoutSec  int  // seconds before the request is abandoned; 0 uses the default
 	NoRedirects bool // stop at the first redirect instead of following it
 }
@@ -77,4 +79,47 @@ func cloneKV(rows []KV) []KV {
 		return nil
 	}
 	return append([]KV(nil), rows...)
+}
+
+// Auth types. The zero value, "", is no authentication.
+const (
+	AuthNone   = "none"
+	AuthBearer = "bearer"
+	AuthBasic  = "basic"
+	AuthAPIKey = "apikey"
+)
+
+// Where an API key goes.
+const (
+	KeyInHeader = "header"
+	KeyInQuery  = "query"
+)
+
+// Auth is a request's credentials. Every type has its own fields, so
+// switching type keeps what was typed for the others.
+type Auth struct {
+	Type     string
+	Token    string // bearer
+	User     string // basic
+	Password string // basic
+	KeyName  string // api key
+	KeyValue string // api key
+	KeyIn    string // KeyInHeader (default) or KeyInQuery
+}
+
+// Expanded returns a copy of r with {{name}} replaced from vars in the
+// URL, header names and values, bodies, form fields and credentials.
+func (r Request) Expanded(vars []KV) Request {
+	r = r.Clone()
+	r.URL, r.Body = Expand(r.URL, vars), Expand(r.Body, vars)
+	for _, rows := range [][]KV{r.Headers, r.Form} {
+		for i := range rows {
+			rows[i].Name, rows[i].Value = Expand(rows[i].Name, vars), Expand(rows[i].Value, vars)
+		}
+	}
+	a := &r.Auth
+	for _, field := range []*string{&a.Token, &a.User, &a.Password, &a.KeyName, &a.KeyValue} {
+		*field = Expand(*field, vars)
+	}
+	return r
 }

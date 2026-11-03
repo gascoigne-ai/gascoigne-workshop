@@ -52,6 +52,7 @@ func TestPaneTablesAreComplete(t *testing.T) {
 				paneNote:     p.note != nil,
 				paneBody:     true, // the body pane is built from the request itself
 				paneSettings: true, // so is the settings pane
+				paneAuth:     true,
 			}[p.kind]
 			if paneBuilders[p.kind] == nil {
 				t.Errorf("%s pane %q has a kind with no builder", name, p.label)

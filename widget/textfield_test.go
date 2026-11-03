@@ -279,3 +279,41 @@ func TestUndoHistoryIsBounded(t *testing.T) {
 		t.Fatalf("undo steps = %d, want %d", n, historyLimit)
 	}
 }
+
+func TestMaskedFieldHidesItsTextAndNeverCopiesIt(t *testing.T) {
+	f := NewTextField("s3cret")
+	f.Masked = true
+	if got := f.Display(); got != "••••••" {
+		t.Fatalf("Display = %q", got)
+	}
+	plain := NewTextField("abc")
+	if plain.Display() != "abc" {
+		t.Fatalf("an unmasked field displays its text, got %q", plain.Display())
+	}
+
+	c, err := NewCtx(Dark())
+	if err != nil {
+		t.Fatal(err)
+	}
+	clip := &memClip{text: "before"}
+	c.Clipboard = clip
+	f.SelectAll()
+	c.In = Input{Copy: true}
+	f.RunShortcuts(c)
+	c.In = Input{Cut: true}
+	f.RunShortcuts(c)
+	if clip.text != "before" {
+		t.Fatalf("a masked field must not put its text on the clipboard, got %q", clip.text)
+	}
+	if f.Text != "s3cret" {
+		t.Fatalf("Cut on a masked field must not delete either, text %q", f.Text)
+	}
+
+	clip.text = "pasted"
+	f.SelectAll()
+	c.In = Input{Paste: true}
+	f.RunShortcuts(c)
+	if f.Text != "pasted" {
+		t.Fatalf("pasting into a masked field works, got %q", f.Text)
+	}
+}

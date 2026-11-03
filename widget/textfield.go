@@ -70,7 +70,11 @@ type TextField struct {
 	// is how many lines PageUp/PageDown move.
 	Multiline bool
 	ViewLines int
-	goal      int // goal column + 1 for vertical movement, 0 when unset
+
+	// Masked shows bullets instead of the text and refuses to copy or
+	// cut it, for secrets.
+	Masked bool
+	goal   int // goal column + 1 for vertical movement, 0 when unset
 
 	undo, redo []snapshot
 	last       editKind
@@ -656,12 +660,12 @@ func (f *TextField) RunShortcuts(c *Ctx) (changed bool) {
 	if c.Clipboard == nil {
 		return changed
 	}
-	if in.Copy || in.Cut {
+	if (in.Copy || in.Cut) && !f.Masked { // secrets never reach the clipboard
 		if sel := f.SelectedText(); sel != "" {
 			_ = c.Clipboard.Write(sel) // the clipboard reports its own failures
 		}
 	}
-	if in.Cut {
+	if in.Cut && !f.Masked {
 		changed = f.DeleteSelection() || changed
 	}
 	if in.Paste {
@@ -670,4 +674,12 @@ func (f *TextField) RunShortcuts(c *Ctx) (changed bool) {
 		}
 	}
 	return changed
+}
+
+// Display is what the field shows: its text, or bullets when Masked.
+func (f *TextField) Display() string {
+	if f.Masked {
+		return strings.Repeat("\u2022", len([]rune(f.Text)))
+	}
+	return f.Text
 }

@@ -108,3 +108,40 @@ func TestCloneIsIndependentAndNormalizesEmptySlices(t *testing.T) {
 		t.Fatal("equal requests must have equal clones, whatever their empty slices were")
 	}
 }
+
+func TestRequestExpandedReplacesVariablesEverywhereWithoutTouchingTheOriginal(t *testing.T) {
+	vars := []KV{{Name: "host", Value: "api.test", Enabled: true}, {Name: "tok", Value: "s3cret", Enabled: true}}
+	orig := Request{
+		URL:     "https://{{host}}/x",
+		Headers: []KV{{Name: "X-{{host}}", Value: "{{tok}}", Enabled: true}},
+		Body:    `{"h":"{{host}}"}`,
+		Form:    []KV{{Name: "{{host}}", Value: "{{tok}}", Enabled: true}},
+		Auth: Auth{Type: AuthBasic, Token: "{{tok}}", User: "{{host}}", Password: "{{tok}}",
+			KeyName: "{{host}}", KeyValue: "{{tok}}"},
+	}
+	got := orig.Expanded(vars)
+
+	if got.URL != "https://api.test/x" || got.Body != `{"h":"api.test"}` {
+		t.Errorf("url %q body %q", got.URL, got.Body)
+	}
+	if got.Headers[0].Name != "X-api.test" || got.Headers[0].Value != "s3cret" {
+		t.Errorf("headers %+v", got.Headers)
+	}
+	if got.Form[0].Name != "api.test" || got.Form[0].Value != "s3cret" {
+		t.Errorf("form %+v", got.Form)
+	}
+	a := got.Auth
+	if a.Token != "s3cret" || a.User != "api.test" || a.Password != "s3cret" || a.KeyName != "api.test" || a.KeyValue != "s3cret" {
+		t.Errorf("auth %+v", a)
+	}
+	if orig.URL != "https://{{host}}/x" || orig.Headers[0].Value != "{{tok}}" || orig.Form[0].Value != "{{tok}}" || orig.Auth.Token != "{{tok}}" {
+		t.Fatal("Expanded must not change the original request")
+	}
+}
+
+func TestRequestExpandedLeavesUnknownVariablesVisible(t *testing.T) {
+	got := Request{URL: "{{nope}}/a", Auth: Auth{Token: "{{nope}}"}}.Expanded(nil)
+	if got.URL != "{{nope}}/a" || got.Auth.Token != "{{nope}}" {
+		t.Fatalf("%+v", got)
+	}
+}

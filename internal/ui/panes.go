@@ -22,6 +22,7 @@ const (
 	paneNote
 	paneBody
 	paneSettings
+	paneAuth
 )
 
 // pane describes one tab of the request or response area. The tables
@@ -49,8 +50,7 @@ var requestPanes = []pane{
 	{label: "Body", kind: paneBody},
 	{label: "Headers", kind: paneTable, title: "Headers", editable: true,
 		rows: func(_ *App, t *reqTab) *[]model.KV { return &t.req.Headers }},
-	{label: "Auth", kind: paneNote,
-		note: func(*reqTab) string { return "No authentication configured" }},
+	{label: "Auth", kind: paneAuth},
 	{label: "Vars", kind: paneTable, title: "Collection variables", editable: true,
 		rows: func(a *App, _ *reqTab) *[]model.KV { return &a.col.Vars }},
 	{label: "Settings", kind: paneSettings},
@@ -125,6 +125,7 @@ var paneBuilders = map[paneKind]func(a *App, p pane, t *reqTab, scroll *ScrollSt
 	paneNote:     (*App).notePane,
 	paneBody:     (*App).bodyPane,
 	paneSettings: (*App).settingsPane,
+	paneAuth:     (*App).authPane,
 	paneTable:    (*App).tablePane,
 }
 

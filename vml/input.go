@@ -22,7 +22,7 @@ func (fieldB) measure(*El, *widget.Ctx, int) (int, int) { return 0, 0 }
 
 func (fieldB) update(e *El, c *widget.Ctx) {
 	f, in := e.field, c.In
-	at := func() int { return c.CursorAt(f.Text, in.X-(e.rect.X+fieldPad)+f.ScrollX) }
+	at := func() int { return c.CursorAt(f.Display(), in.X-(e.rect.X+fieldPad)+f.ScrollX) }
 	if in.Click {
 		f.Focused = e.rect.Contains(in.X, in.Y)
 		if f.Focused {
@@ -55,7 +55,7 @@ func (fieldB) update(e *El, c *widget.Ctx) {
 	if in.Tab && e.onTab != nil {
 		e.onTab(in.Shift)
 	}
-	f.Reveal(c.Width(c.F.UI, string([]rune(f.Text)[:f.Cursor])), e.rect.W-2*fieldPad)
+	f.Reveal(c.Width(c.F.UI, string([]rune(f.Display())[:f.Cursor])), e.rect.W-2*fieldPad)
 }
 
 func (fieldB) draw(e *El, c *widget.Ctx, dst *ebiten.Image) {
@@ -63,13 +63,13 @@ func (fieldB) draw(e *El, c *widget.Ctx, dst *ebiten.Image) {
 	dst = c.Clip(dst, r)
 	x := r.X + fieldPad - f.ScrollX
 	if lo, hi, ok := f.Selection(); ok {
-		runes := []rune(f.Text)
+		runes := []rune(f.Display())
 		x0 := x + c.Width(c.F.UI, string(runes[:lo]))
 		x1 := x + c.Width(c.F.UI, string(runes[:hi]))
 		c.Fill(dst, widget.Rect{X: x0, Y: r.Y + 6, W: x1 - x0, H: r.H - 12}, c.Col(widget.Selection))
 	}
-	segs := []Seg{{Text: f.Text, Style: widget.Text}}
-	if e.segments != nil {
+	segs := []Seg{{Text: f.Display(), Style: widget.Text}}
+	if e.segments != nil && !f.Masked {
 		segs = e.segments(f.Text)
 	}
 	for _, s := range segs {
@@ -83,7 +83,7 @@ func (fieldB) draw(e *El, c *widget.Ctx, dst *ebiten.Image) {
 		c.Outline(dst, r, c.Col(widget.Accent))
 	}
 	if f.Focused && (c.Tick/30)%2 == 0 {
-		cx := r.X + fieldPad - f.ScrollX + c.Width(c.F.UI, string([]rune(f.Text)[:f.Cursor]))
+		cx := r.X + fieldPad - f.ScrollX + c.Width(c.F.UI, string([]rune(f.Display())[:f.Cursor]))
 		c.VLine(dst, cx, r.Y+8, r.H-16, c.Col(widget.Text))
 	}
 }

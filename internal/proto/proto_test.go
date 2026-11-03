@@ -3,6 +3,7 @@ package proto
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"io"
 	"mime"
 	"mime/multipart"
@@ -279,5 +280,68 @@ func TestRESTExplainsCancelAndTimeout(t *testing.T) {
 	resp, _ = REST{}.Send(ctx, model.Request{URL: srv.URL})
 	if resp.Err != ErrTimedOut {
 		t.Errorf("timeout: Err = %q, want %q", resp.Err, ErrTimedOut)
+	}
+}
+
+func TestRESTAuthTypes(t *testing.T) {
+	tests := []struct {
+		name       string
+		auth       model.Auth
+		path       string
+		wantHeader [2]string // name, value that must arrive ("" name: none)
+		wantQuery  string    // raw query that must arrive
+	}{
+		{"none", model.Auth{}, "/p", [2]string{}, ""},
+		{"explicit none", model.Auth{Type: model.AuthNone, Token: "ignored"}, "/p", [2]string{}, ""},
+		{"bearer", model.Auth{Type: model.AuthBearer, Token: "abc"}, "/p", [2]string{"Authorization", "Bearer abc"}, ""},
+		{"basic", model.Auth{Type: model.AuthBasic, User: "ann", Password: "pw:x"}, "/p", [2]string{"Authorization", "Basic " + base64.StdEncoding.EncodeToString([]byte("ann:pw:x"))}, ""},
+		{"api key header", model.Auth{Type: model.AuthAPIKey, KeyName: "X-Api-Key", KeyValue: "k1"}, "/p", [2]string{"X-Api-Key", "k1"}, ""},
+		{"api key header is the default place", model.Auth{Type: model.AuthAPIKey, KeyIn: model.KeyInHeader, KeyName: "X-Api-Key", KeyValue: "k1"}, "/p", [2]string{"X-Api-Key", "k1"}, ""},
+		{"api key in the query", model.Auth{Type: model.AuthAPIKey, KeyIn: model.KeyInQuery, KeyName: "key", KeyValue: "a b"}, "/p", [2]string{}, "key=a+b"},
+		{"api key keeps the existing query", model.Auth{Type: model.AuthAPIKey, KeyIn: model.KeyInQuery, KeyName: "key", KeyValue: "k"}, "/p?x=1", [2]string{}, "key=k&x=1"},
+		{"api key without a name adds nothing", model.Auth{Type: model.AuthAPIKey, KeyValue: "k"}, "/p", [2]string{}, ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var gotHeader http.Header
+			var gotQuery string
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				gotHeader, gotQuery = r.Header.Clone(), r.URL.RawQuery
+			}))
+			defer srv.Close()
+			_, err := REST{}.Send(context.Background(), model.Request{URL: srv.URL + tt.path, Auth: tt.auth})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if tt.wantHeader[0] != "" && gotHeader.Get(tt.wantHeader[0]) != tt.wantHeader[1] {
+				t.Errorf("%s = %q, want %q", tt.wantHeader[0], gotHeader.Get(tt.wantHeader[0]), tt.wantHeader[1])
+			}
+			if tt.wantHeader[0] == "" && (gotHeader.Get("Authorization") != "" || gotHeader.Get("X-Api-Key") != "") {
+				t.Errorf("no credentials expected, got %v", gotHeader)
+			}
+			if gotQuery != tt.wantQuery {
+				t.Errorf("query = %q, want %q", gotQuery, tt.wantQuery)
+			}
+		})
+	}
+}
+
+func TestAuthOverridesAManualAuthorizationHeader(t *testing.T) {
+	var got string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { got = r.Header.Get("Authorization") }))
+	defer srv.Close()
+	REST{}.Send(context.Background(), model.Request{
+		URL:     srv.URL,
+		Headers: []model.KV{{Name: "Authorization", Value: "manual", Enabled: true}},
+		Auth:    model.Auth{Type: model.AuthBearer, Token: "t"},
+	})
+	if got != "Bearer t" {
+		t.Fatalf("Authorization = %q: the Auth pane wins over a header typed by hand", got)
+	}
+}
+
+func TestUnknownAuthTypeIsAnError(t *testing.T) {
+	if _, err := (REST{}).Send(context.Background(), model.Request{URL: "http://x", Auth: model.Auth{Type: "kerberos"}}); err == nil {
+		t.Fatal("want an error for an unknown auth type")
 	}
 }

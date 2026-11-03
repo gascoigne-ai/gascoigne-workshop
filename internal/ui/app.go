@@ -53,10 +53,12 @@ type reqTab struct {
 	body                  *widget.TextArea // request body editor
 	reqScroll, respScroll vml.ScrollState  // scroll of the table and note panes
 	sending               bool
-	saved                 model.Request      // the request as it was when opened or last saved
-	timeout               widget.TextField   // the request's timeout seconds, as typed
-	cancel                context.CancelFunc // stops the running request
-	seq                   int                // numbers the sends, so a late result of an old one is ignored
+	saved                 model.Request                // the request as it was when opened or last saved
+	timeout               widget.TextField             // the request's timeout seconds, as typed
+	cancel                context.CancelFunc           // stops the running request
+	auth                  map[string]*widget.TextField // Auth pane inputs by field id, created on first use
+	showSecrets           bool                         // show masked credential fields
+	seq                   int                          // numbers the sends, so a late result of an old one is ignored
 }
 
 func newTab(req *model.Request) *reqTab {
@@ -168,8 +170,7 @@ func (a *App) send(t *reqTab) {
 	t.seq++
 	seq := t.seq
 	a.status = "Sending " + t.req.URL
-	req := *t.req
-	req.URL = model.Expand(req.URL, a.col.Vars)
+	req := t.req.Expanded(a.col.Vars)
 	ctx, cancel := context.WithTimeout(context.Background(), a.timeoutFor(req))
 	t.cancel = cancel
 	go func() {

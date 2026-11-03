@@ -51,6 +51,12 @@ func (r REST) Send(ctx context.Context, req model.Request) (model.Response, erro
 		}
 	}
 
+	apply, ok := authAppliers[req.Auth.Type]
+	if !ok {
+		return model.Response{}, fmt.Errorf("unknown auth type %q", req.Auth.Type)
+	}
+	apply(req.Auth, httpReq) // after the headers, so the Auth pane wins over one typed by hand
+
 	client := r.Client
 	if client == nil {
 		client = &http.Client{}
@@ -154,4 +160,29 @@ func failureText(err error) string {
 		return ErrTimedOut
 	}
 	return err.Error()
+}
+
+// authAppliers add credentials to a request, by auth type. The zero
+// value of the type is no authentication.
+var authAppliers = map[string]func(a model.Auth, r *http.Request){
+	"":             func(model.Auth, *http.Request) {},
+	model.AuthNone: func(model.Auth, *http.Request) {},
+	model.AuthBearer: func(a model.Auth, r *http.Request) {
+		r.Header.Set("Authorization", "Bearer "+a.Token)
+	},
+	model.AuthBasic: func(a model.Auth, r *http.Request) {
+		r.SetBasicAuth(a.User, a.Password)
+	},
+	model.AuthAPIKey: func(a model.Auth, r *http.Request) {
+		if a.KeyName == "" {
+			return
+		}
+		if a.KeyIn == model.KeyInQuery {
+			q := r.URL.Query()
+			q.Set(a.KeyName, a.KeyValue)
+			r.URL.RawQuery = q.Encode()
+			return
+		}
+		r.Header.Set(a.KeyName, a.KeyValue)
+	},
 }
