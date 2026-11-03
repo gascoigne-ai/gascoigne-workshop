@@ -1,6 +1,9 @@
 package widget
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
 
 func TestSplitsClamp(t *testing.T) {
 	r := Rect{10, 20, 100, 50}
@@ -76,5 +79,45 @@ func TestMeasureIsScaleStable(t *testing.T) {
 	}
 	if err := c.SetScale(2); err != nil || c.Scale != 2 {
 		t.Fatalf("same scale must be a no-op, err=%v scale=%v", err, c.Scale)
+	}
+}
+
+func TestCtrlTurnsMovementIntoWordMovement(t *testing.T) {
+	tests := []struct{ in, want Edit }{
+		{EditLeft, EditWordLeft}, {EditRight, EditWordRight},
+		{EditBackspace, EditDeleteWordLeft}, {EditDelete, EditDeleteWordRight},
+	}
+	for _, tt := range tests {
+		if got, ok := ctrlEdit(tt.in); !ok || got != tt.want {
+			t.Errorf("ctrlEdit(%v) = %v %v, want %v", tt.in, got, ok, tt.want)
+		}
+	}
+	if _, ok := ctrlEdit(EditHome); ok {
+		t.Error("Home has no word variant")
+	}
+}
+
+func TestClickCountingNeedsSpeedAndPlace(t *testing.T) {
+	t0 := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
+	steps := []struct {
+		after time.Duration
+		x, y  int
+		want  int
+	}{
+		{0, 10, 10, 1},
+		{200 * time.Millisecond, 11, 10, 2},  // quick, same place
+		{200 * time.Millisecond, 10, 11, 3},  // third
+		{200 * time.Millisecond, 10, 10, 1},  // a fourth click starts over
+		{900 * time.Millisecond, 10, 10, 1},  // too slow
+		{100 * time.Millisecond, 200, 10, 1}, // quick but elsewhere
+		{100 * time.Millisecond, 201, 10, 2},
+	}
+	var s Sampler
+	now := t0
+	for i, st := range steps {
+		now = now.Add(st.after)
+		if got := s.Click(now, st.x, st.y); got != st.want {
+			t.Errorf("click %d = %d, want %d", i, got, st.want)
+		}
 	}
 }

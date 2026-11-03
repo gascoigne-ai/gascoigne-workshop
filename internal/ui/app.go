@@ -77,6 +77,7 @@ type App struct {
 	settingsPath string    // "" keeps settings in memory only
 	menu         bool      // settings menu is open
 	edit         *cellEdit // the table cell being edited, if any
+	sampler      widget.Sampler
 }
 
 // Options are the startup switches of the command line.
@@ -193,7 +194,7 @@ func (a *App) Layout(w, h int) (int, int) {
 
 // Update implements ebiten.Game: it samples input and runs one frame.
 func (a *App) Update() error {
-	a.step(widget.ReadInput().Scaled(a.ctx.Scale))
+	a.step(a.sampler.Read().Scaled(a.ctx.Scale))
 	return a.shotUpdate()
 }
 

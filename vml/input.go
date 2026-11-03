@@ -22,11 +22,11 @@ func (fieldB) measure(*El, *widget.Ctx, int) (int, int) { return 0, 0 }
 
 func (fieldB) update(e *El, c *widget.Ctx) {
 	f, in := e.field, c.In
-	at := func() int { return c.CursorAt(f.Text, in.X-(e.rect.X+fieldPad)) }
+	at := func() int { return c.CursorAt(f.Text, in.X-(e.rect.X+fieldPad)+f.ScrollX) }
 	if in.Click {
 		f.Focused = e.rect.Contains(in.X, in.Y)
 		if f.Focused {
-			f.Press(at(), in.Shift)
+			f.PressN(at(), in.Shift, max(in.Clicks, 1))
 		}
 	}
 	if f.Dragging {
@@ -55,17 +55,24 @@ func (fieldB) update(e *El, c *widget.Ctx) {
 	if in.Tab && e.onTab != nil {
 		e.onTab(in.Shift)
 	}
+	f.Reveal(c.Width(c.F.UI, string([]rune(f.Text)[:f.Cursor])), e.rect.W-2*fieldPad)
 }
 
-// shortcuts runs select-all, copy, cut and paste; it reports whether
-// the text changed.
+// shortcuts runs undo, redo, select-all, copy, cut and paste; it
+// reports whether the text changed.
 func (e *El) shortcuts(c *widget.Ctx) (changed bool) {
 	f, in := e.field, c.In
+	if in.Undo {
+		changed = f.Undo() || changed
+	}
+	if in.Redo {
+		changed = f.Redo() || changed
+	}
 	if in.SelectAll {
 		f.SelectAll()
 	}
 	if c.Clipboard == nil {
-		return false
+		return changed
 	}
 	if in.Copy || in.Cut {
 		if sel := f.SelectedText(); sel != "" {
@@ -73,7 +80,7 @@ func (e *El) shortcuts(c *widget.Ctx) (changed bool) {
 		}
 	}
 	if in.Cut {
-		changed = f.DeleteSelection()
+		changed = f.DeleteSelection() || changed
 	}
 	if in.Paste {
 		if text, err := c.Clipboard.Read(); err == nil {
@@ -86,7 +93,7 @@ func (e *El) shortcuts(c *widget.Ctx) (changed bool) {
 func (fieldB) draw(e *El, c *widget.Ctx, dst *ebiten.Image) {
 	f, r := e.field, e.rect
 	dst = c.Clip(dst, r)
-	x := r.X + fieldPad
+	x := r.X + fieldPad - f.ScrollX
 	if lo, hi, ok := f.Selection(); ok {
 		runes := []rune(f.Text)
 		x0 := x + c.Width(c.F.UI, string(runes[:lo]))
@@ -102,10 +109,10 @@ func (fieldB) draw(e *El, c *widget.Ctx, dst *ebiten.Image) {
 		x += c.Width(c.F.UI, s.Text)
 	}
 	if f.Text == "" {
-		c.TextMid(dst, c.F.UI, e.placeholder, x, r, c.Col(widget.Muted))
+		c.TextMid(dst, c.F.UI, e.placeholder, r.X+fieldPad, r, c.Col(widget.Muted))
 	}
 	if f.Focused && (c.Tick/30)%2 == 0 {
-		cx := r.X + fieldPad + c.Width(c.F.UI, string([]rune(f.Text)[:f.Cursor]))
+		cx := r.X + fieldPad - f.ScrollX + c.Width(c.F.UI, string([]rune(f.Text)[:f.Cursor]))
 		c.VLine(dst, cx, r.Y+8, r.H-16, c.Col(widget.Text))
 	}
 }

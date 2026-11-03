@@ -2,6 +2,7 @@ package vml
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/widget"
@@ -454,5 +455,78 @@ func TestEditedCellShowsAFieldWithEnterAndTab(t *testing.T) {
 	Update(c, root)
 	if enters != 1 || len(tabs) != 2 || tabs[0] || !tabs[1] {
 		t.Fatalf("enters %d tabs %v, want 1 and [false true]", enters, tabs)
+	}
+}
+
+func focusedField(t *testing.T, text string, width int) (*widget.TextField, *widget.Ctx, *El, *int) {
+	t.Helper()
+	f := widget.NewTextField(text)
+	f.Focused = true
+	changes := 0
+	root := Row(Field(&f, Grow(1), OnChange(func() { changes++ })))
+	c := testCtx(t)
+	Layout(c, root, width, 30)
+	return &f, c, root, &changes
+}
+
+func TestFieldUndoRedoShortcuts(t *testing.T) {
+	f, c, root, changes := focusedField(t, "", 300)
+	c.In = widget.Input{Typed: []rune("abc")}
+	Update(c, root)
+	if f.Text != "abc" || *changes != 1 {
+		t.Fatalf("typed: %q changes %d", f.Text, *changes)
+	}
+
+	c.In = widget.Input{Ctrl: true, Undo: true}
+	Update(c, root)
+	if f.Text != "" || *changes != 2 {
+		t.Fatalf("undo: %q changes %d (undo must report a change)", f.Text, *changes)
+	}
+	c.In = widget.Input{Ctrl: true, Redo: true}
+	Update(c, root)
+	if f.Text != "abc" || *changes != 3 {
+		t.Fatalf("redo: %q changes %d", f.Text, *changes)
+	}
+}
+
+func TestDoubleAndTripleClickSelectWordAndAll(t *testing.T) {
+	f, c, root, _ := focusedField(t, "alpha beta", 300)
+	inWord := fieldPad + c.Width(c.F.UI, "alpha b") // inside "beta"
+
+	c.In = widget.Input{X: inWord, Y: 10, Click: true, Held: true, Clicks: 1}
+	Update(c, root)
+	c.In = widget.Input{X: inWord, Y: 10, Click: true, Held: true, Clicks: 2}
+	Update(c, root)
+	if f.SelectedText() != "beta" {
+		t.Fatalf("double click selected %q, want beta", f.SelectedText())
+	}
+	c.In = widget.Input{X: inWord, Y: 10, Click: true, Held: true, Clicks: 3}
+	Update(c, root)
+	if f.SelectedText() != "alpha beta" {
+		t.Fatalf("triple click selected %q", f.SelectedText())
+	}
+}
+
+func TestLongTextScrollsToTheCursorAndClicksAccountForIt(t *testing.T) {
+	long := strings.Repeat("w", 80)
+	f, c, root, _ := focusedField(t, long, 120)
+
+	c.In = widget.Input{Typed: []rune("z")}
+	Update(c, root)
+	if f.ScrollX <= 0 {
+		t.Fatalf("the cursor at the end of long text must scroll the view, ScrollX = %d", f.ScrollX)
+	}
+
+	c.In = widget.Input{X: fieldPad, Y: 10, Click: true, Held: true, Clicks: 1}
+	Update(c, root)
+	if f.Cursor < 40 {
+		t.Fatalf("a click at the left edge of the scrolled view hit position %d; the scroll offset must count", f.Cursor)
+	}
+
+	f.Cursor, f.HasSel = 0, false
+	c.In = widget.Input{Edits: []widget.Edit{widget.EditHome}}
+	Update(c, root)
+	if f.ScrollX != 0 {
+		t.Fatalf("Home must scroll back to the start, ScrollX = %d", f.ScrollX)
 	}
 }
