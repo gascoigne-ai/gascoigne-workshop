@@ -60,10 +60,13 @@ Task numbers refer to `tasks/`; "-" means no task yet.
 - `+` creating the request inside the selected folder: needs stable request pointers in the model (`Folder.Requests` as pointers), done with task 013.
 - Scroll-into-view of a focused child inside a `vml.Scroll`.
 
+### Added later
+- Right-click menus everywhere (018), table row operations and change handling (019), remembering window and UI state (020). Task 018 depends on 012 (menu primitive) and uses 013 and 019; 020 depends on 011.
+
 ## Suggested order
 Editing foundation first, because everything else needs it: 001, 002, 003, 004, 005. Then the
 request side (006, 008, 009, 007), then response tools (010), layout (011), overlays and CRUD
-(012, 013), persistence and environments (014, 015), then protocols (016, 017).
+(012, 013), table rows and right-click menus (019, 018), persistence, remembered state and environments (014, 020, 015), then protocols (016, 017).
 
 ## Open questions
 - File format for collections (task 014): single YAML per request, JSON, or a directory tree
