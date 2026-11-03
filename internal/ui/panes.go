@@ -118,18 +118,18 @@ func paneEmpty(p pane, t *reqTab) (string, bool) {
 }
 
 // paneBuilders turns a pane into its view, by kind.
-var paneBuilders = map[paneKind]func(a *App, p pane, t *reqTab) Node{
+var paneBuilders = map[paneKind]func(a *App, p pane, t *reqTab, scroll *ScrollState) Node{
 	paneCode:  (*App).codePane,
 	paneNote:  (*App).notePane,
 	paneTable: (*App).tablePane,
 }
 
 // paneBody is what fills the area under a pane's tab strip.
-func (a *App) paneBody(p pane, t *reqTab) Node {
+func (a *App) paneBody(p pane, t *reqTab, scroll *ScrollState) Node {
 	if msg, isErr := paneEmpty(p, t); msg != "" {
 		return a.messagePane(p, msg, isErr)
 	}
-	return paneBuilders[p.kind](a, p, t)
+	return paneBuilders[p.kind](a, p, t, scroll)
 }
 
 // messagePane shows a status line ("Sending...", an error) in place of
@@ -147,17 +147,17 @@ func (a *App) messagePane(p pane, msg string, isErr bool) Node {
 	)
 }
 
-func (a *App) codePane(p pane, t *reqTab) Node {
+func (a *App) codePane(p pane, t *reqTab, _ *ScrollState) Node {
 	return Code(p.code(t), Grow(1), Bg(w.Sunken))
 }
 
-func (a *App) notePane(p pane, t *reqTab) Node {
-	return Col(Grow(1), Pad(w.Pad),
+func (a *App) notePane(p pane, t *reqTab, scroll *ScrollState) Node {
+	return Scroll(scroll, Pad(w.Pad),
 		Lines(p.note(t), w.Text),
 	)
 }
 
-func (a *App) tablePane(p pane, t *reqTab) Node {
+func (a *App) tablePane(p pane, t *reqTab, scroll *ScrollState) Node {
 	rows := p.rows(a, t)
 	spec := TableSpec{
 		Columns: []string{"Name", "Value"},
@@ -183,7 +183,7 @@ func (a *App) tablePane(p pane, t *reqTab) Node {
 			spec.Editing = &TableEdit{Row: e.row, Col: e.col, Field: &e.field, OnEnter: a.commitEdit, OnTab: a.tabEdit}
 		}
 	}
-	return Col(Grow(1), Pad(w.Pad),
+	return Scroll(scroll, Pad(w.Pad),
 		If(p.title != "", Row(H(w.RowH), Caption(p.title))),
 		Table(spec),
 	)

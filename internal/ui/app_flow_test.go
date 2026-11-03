@@ -678,3 +678,29 @@ func TestShortcutTableHasUniqueBindingsAndLabels(t *testing.T) {
 		t.Fatalf("labels = %v", seen)
 	}
 }
+
+func TestTreeScrollsWhenItDoesNotFit(t *testing.T) {
+	a, _ := newTestApp(t)
+	a.h = 200 // the tree area is about 128px: five rows
+	for _, f := range []string{"User", "Realtime"} {
+		a.expanded[a.col.Name+"/"+f] = true
+	}
+	a.step(widget.Input{})
+	rowsN := len(treeRows(a.col.Folder, a.expanded))
+	if rowsN*widget.RowH <= a.h-headerH-statusH {
+		t.Fatalf("test setup: %d rows fit, nothing to scroll", rowsN)
+	}
+
+	a.step(widget.Input{X: 100, Y: 100, Wheel: -5})
+	if a.treeScroll.Y <= 0 {
+		t.Fatalf("tree scroll = %d after wheeling over it", a.treeScroll.Y)
+	}
+
+	// scroll to the end, then click the last row: it must open that request
+	a.step(widget.Input{X: 100, Y: 100, Wheel: -50})
+	last := treeRows(a.col.Folder, a.expanded)[rowsN-1]
+	click(a, 100, a.h-statusH-widget.RowH/2)
+	if a.cur().req != last.Req {
+		t.Fatalf("clicking the bottom row opened %q, want %q", a.cur().req.Name, last.Name)
+	}
+}

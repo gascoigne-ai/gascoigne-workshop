@@ -39,14 +39,15 @@ func next(order []string, cur string) string {
 
 // reqTab is one open request with its editor and response state.
 type reqTab struct {
-	req      *model.Request
-	url      widget.TextField
-	paneTab  int
-	respTab  int
-	resp     *model.Response
-	view     widget.CodeView // response body
-	bodyView widget.CodeView // request body, read-only
-	sending  bool
+	req                   *model.Request
+	url                   widget.TextField
+	paneTab               int
+	respTab               int
+	resp                  *model.Response
+	view                  widget.CodeView // response body
+	bodyView              widget.CodeView // request body, read-only
+	reqScroll, respScroll vml.ScrollState // scroll of the table and note panes
+	sending               bool
 }
 
 func newTab(req *model.Request) *reqTab {
@@ -78,6 +79,7 @@ type App struct {
 	menu         bool      // settings menu is open
 	edit         *cellEdit // the table cell being edited, if any
 	sampler      widget.Sampler
+	treeScroll   vml.ScrollState
 }
 
 // Options are the startup switches of the command line.

@@ -96,10 +96,29 @@ func (e *El) update(c *widget.Ctx) bool {
 	if e.hidden {
 		return false
 	}
+	saved := c.In
+	masked := e.clip && !c.In.Over(e.rect)
+	if masked {
+		// Children of a clipping element may extend past its edge (rows
+		// scrolled out of view): they must not be hit by a pointer that
+		// is outside it. The click itself still reaches them, so a text
+		// field there can see it was clicked away from and blur.
+		c.In.X, c.In.Y, c.In.Wheel = -1<<20, -1<<20, 0
+	}
+	swallowed := false
 	for i := len(e.kids) - 1; i >= 0; i-- {
 		if e.kids[i].update(c) {
-			return true
+			swallowed = true
+			break
 		}
+	}
+	wheel := c.In.Wheel // a child scroller may have used it
+	c.In = saved
+	if !masked {
+		c.In.Wheel = wheel
+	}
+	if swallowed {
+		return true
 	}
 	e.b.update(e, c)
 	if e.onClick != nil && c.In.Hit(e.rect) {
@@ -112,6 +131,12 @@ func (e *El) update(c *widget.Ctx) bool {
 		return true
 	}
 	return false
+}
+
+// overDrawer is implemented by behaviors that paint over their children,
+// such as a scrollbar.
+type overDrawer interface {
+	drawOver(e *El, c *widget.Ctx, dst *ebiten.Image)
 }
 
 func (e *El) draw(c *widget.Ctx, dst *ebiten.Image) {
@@ -150,6 +175,9 @@ func (e *El) draw(c *widget.Ctx, dst *ebiten.Image) {
 	}
 	for _, k := range e.kids {
 		k.draw(c, kidsDst)
+	}
+	if o, ok := e.b.(overDrawer); ok {
+		o.drawOver(e, c, dst)
 	}
 
 	if e.underline != "" {

@@ -2,7 +2,10 @@ package widget
 
 import (
 	"reflect"
+	"strings"
 	"testing"
+
+	"github.com/hajimehoshi/ebiten/v2"
 )
 
 // sampleLines is this JSON, pretty printed, as lines (index: text):
@@ -269,5 +272,119 @@ func TestCtxSetThemeSwitchesColorsAndFontSizes(t *testing.T) {
 	}
 	if err := c.SetScale(2); err != nil || c.F.UI.Size != 20 {
 		t.Fatalf("after SetScale(2) the face must be 20px, got %v err %v", c.F.UI.Size, err)
+	}
+}
+
+func longLines() []Line {
+	long := strings.Repeat("0123456789", 30) // 300 chars, far wider than the view
+	return []Line{{Spans: []Span{{Text: long}}}, {Spans: []Span{{Text: "short"}}}}
+}
+
+func TestCodeViewScrollsHorizontallyWithShiftWheelAndClamps(t *testing.T) {
+	v, c, _, _ := viewport(t)
+	v.SetLines(longLines())
+	r := Rect{W: 300, H: 100}
+
+	c.In = Input{X: 50, Y: 20, Wheel: -1, Shift: true}
+	v.Update(c, r)
+	if v.ScrollX <= 0 {
+		t.Fatalf("Shift+wheel must scroll sideways, ScrollX = %d", v.ScrollX)
+	}
+	if v.ScrollY != 0 {
+		t.Fatal("Shift+wheel must not scroll vertically")
+	}
+	for range 200 {
+		c.In = Input{X: 50, Y: 20, Wheel: -1, Shift: true}
+		v.Update(c, r)
+	}
+	if max := v.contentWidth(c, r) - r.W; v.ScrollX != max {
+		t.Fatalf("ScrollX = %d, want the clamp %d", v.ScrollX, max)
+	}
+	c.In = Input{X: 50, Y: 20, Wheel: 1, Shift: true}
+	v.Update(c, r)
+	if v.ScrollX >= v.contentWidth(c, r)-r.W {
+		t.Fatal("wheel up with Shift must scroll back")
+	}
+}
+
+func TestCodeViewShortLinesNeverScrollSideways(t *testing.T) {
+	v, c, _, _ := viewport(t)
+	r := Rect{W: 600, H: 400}
+	c.In = Input{X: 50, Y: 20, Wheel: -3, Shift: true}
+	v.Update(c, r)
+	if v.ScrollX != 0 {
+		t.Fatalf("ScrollX = %d, want 0", v.ScrollX)
+	}
+}
+
+func TestCodeViewPagingKeysWhenFocused(t *testing.T) {
+	v, c, _, _ := viewport(t)
+	v.SetLines(manyLines(100))
+	r := Rect{W: 600, H: 100}
+	v.Focused = true
+	g := v.geometry(c, r)
+	pressed := func(k ebiten.Key) {
+		c.In = Input{X: 5000, Y: 5000, Keys: []ebiten.Key{k}}
+		v.Update(c, r)
+	}
+
+	pressed(ebiten.KeyPageDown)
+	if v.ScrollY != r.H-g.lineH {
+		t.Fatalf("PageDown moves one page less a line, ScrollY = %d", v.ScrollY)
+	}
+	pressed(ebiten.KeyEnd)
+	if want := 100*g.lineH - r.H; v.ScrollY != want {
+		t.Fatalf("End = %d, want %d", v.ScrollY, want)
+	}
+	pressed(ebiten.KeyPageUp)
+	pressed(ebiten.KeyHome)
+	if v.ScrollY != 0 {
+		t.Fatalf("Home = %d", v.ScrollY)
+	}
+
+	v.Focused = false
+	pressed(ebiten.KeyPageDown)
+	if v.ScrollY != 0 {
+		t.Fatal("an unfocused view must ignore paging keys")
+	}
+}
+
+func manyLines(n int) []Line {
+	lines := make([]Line, n)
+	for i := range lines {
+		lines[i] = Line{Spans: []Span{{Text: "row"}}}
+	}
+	return lines
+}
+
+func TestCodeViewScrollbarThumbDragScrollsTheContent(t *testing.T) {
+	v, c, _, _ := viewport(t)
+	v.SetLines(manyLines(100))
+	r := Rect{W: 400, H: 200}
+	g := v.geometry(c, r)
+	track := Rect{X: r.W - ScrollbarW, Y: 0, W: ScrollbarW, H: r.H}
+	off, length, ok := Thumb(track.H, 100*g.lineH, r.H, v.ScrollY)
+	if !ok {
+		t.Fatal("100 rows in 200px must need a scrollbar")
+	}
+	grabY := off + length/2
+
+	c.In = Input{X: track.X + 2, Y: grabY, Click: true, Held: true}
+	v.Update(c, r)
+	if v.ScrollY != 0 || v.Selected() {
+		t.Fatalf("grabbing the thumb must not scroll or select, ScrollY %d", v.ScrollY)
+	}
+	c.In = Input{X: track.X + 2, Y: grabY + 50, Held: true}
+	v.Update(c, r)
+	if v.ScrollY <= 0 {
+		t.Fatalf("dragging the thumb down must scroll down, ScrollY = %d", v.ScrollY)
+	}
+	pos := v.ScrollY
+	c.In = Input{X: track.X + 2, Y: grabY + 50} // released
+	v.Update(c, r)
+	c.In = Input{X: track.X + 2, Y: grabY + 90, Held: true}
+	v.Update(c, r)
+	if v.ScrollY != pos {
+		t.Fatal("after release, moving the pointer must not scroll")
 	}
 }

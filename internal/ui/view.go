@@ -52,7 +52,7 @@ func (a *App) sidebar() Node {
 		Row(H(headerH), PadXY(w.Pad, 0), Bg(w.Bg), BorderBottom(w.Rule),
 			Caption("Collections"),
 		),
-		Col(Grow(1), Bg(w.Sunken), Clip(),
+		Scroll(&a.treeScroll, Bg(w.Sunken),
 			For(treeRows(a.col.Folder, a.expanded), func(_ int, row treeRow) Node {
 				return a.treeRow(row, row.Req != nil && row.Req == current)
 			}),
@@ -101,9 +101,9 @@ func (a *App) mainColumn() Node {
 		a.requestTabs(),
 		a.urlBar(t),
 		Row(Grow(1),
-			a.pane(t, requestPanes, &t.paneTab, nil),
+			a.pane(t, requestPanes, &t.paneTab, &t.reqScroll, nil),
 			VRule(),
-			a.pane(t, responsePanes, &t.respTab, a.responseStatus(t)),
+			a.pane(t, responsePanes, &t.respTab, &t.respScroll, a.responseStatus(t)),
 		),
 	)
 }
@@ -207,15 +207,15 @@ func splitVars(s string) []urlSeg {
 
 // pane is one tabbed area: a tab strip, with extra at its right end,
 // above the body of the active tab.
-func (a *App) pane(t *reqTab, panes []pane, active *int, extra Node) Node {
-	selectTab := func(i int) { *active = i }
+func (a *App) pane(t *reqTab, panes []pane, active *int, scroll *ScrollState, extra Node) Node {
+	selectTab := func(i int) { *active, scroll.Y = i, 0 }
 	return Col(Grow(1), Bg(w.Bg),
 		Row(H(paneTabsH), BorderBottom(w.Border),
 			Tabs(a.tabItems(panes, t), *active, selectTab),
 			Spacer(),
 			extra,
 		),
-		a.paneBody(panes[*active], t),
+		a.paneBody(panes[*active], t, scroll),
 	)
 }
 
