@@ -69,6 +69,9 @@ type El struct {
 	onTab                      func(back bool)
 	onMiddle, onHeldOver       func()
 
+	splitVertical, splitRatio     bool
+	splitMinFirst, splitMinSecond int
+
 	float                bool
 	floatTop, floatRight int
 	modal                bool

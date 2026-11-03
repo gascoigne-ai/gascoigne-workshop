@@ -106,6 +106,8 @@ type App struct {
 	dragTab      int       // index of the tab being dragged, -1 when none
 	sampler      widget.Sampler
 	treeScroll   vml.ScrollState
+	sidebarSplit vml.SplitState // width of the collections sidebar
+	paneSplit    vml.SplitState // request pane share of the request/response area
 }
 
 // Options are the startup switches of the command line.
@@ -249,6 +251,13 @@ func (a *App) apply(r sendResult) {
 	a.status = fmt.Sprintf("%s %s: %d %s in %s", t.req.Method, t.req.URL, r.resp.Status, r.resp.StatusText, formatDuration(r.resp.Duration))
 }
 
+// cursorShapes maps the cursor widgets ask for to the window system's.
+var cursorShapes = map[widget.Cursor]ebiten.CursorShapeType{
+	widget.CursorDefault: ebiten.CursorShapeDefault,
+	widget.CursorResizeH: ebiten.CursorShapeEWResize,
+	widget.CursorResizeV: ebiten.CursorShapeNSResize,
+}
+
 // Layout implements ebiten.Game. The UI is laid out in logical pixels
 // (w by h); the screen is that size times the monitor's scale factor so
 // text and lines stay sharp on HiDPI displays.
@@ -264,6 +273,7 @@ func (a *App) Layout(w, h int) (int, int) {
 // Update implements ebiten.Game: it samples input and runs one frame.
 func (a *App) Update() error {
 	a.step(a.sampler.Read().Scaled(a.ctx.Scale))
+	ebiten.SetCursorShape(cursorShapes[a.ctx.Cursor])
 	return a.shotUpdate()
 }
 
@@ -273,6 +283,7 @@ func (a *App) Update() error {
 func (a *App) step(in widget.Input) {
 	a.ctx.Tick++
 	a.ctx.In = in
+	a.ctx.Cursor = widget.CursorDefault
 	if !in.Held {
 		a.dragTab = -1
 	}

@@ -130,3 +130,11 @@ func kvRows(rows []model.KV, withDesc bool) []vml.TableRow {
 	}
 	return out
 }
+
+// layoutChoice is an entry of the layout chooser in the settings menu.
+type layoutChoice struct{ id, label string }
+
+var layoutChoices = []layoutChoice{
+	{"side", "Side by side"},
+	{"stacked", "Stacked"},
+}

@@ -37,6 +37,14 @@ func (a *App) menuView() Node {
 		),
 		Spacer(H(w.Pad)),
 
+		Caption("Request / response", H(22)),
+		Row(H(w.RowH), Gap(6),
+			For(layoutChoices, func(_ int, c layoutChoice) Node {
+				return a.choice(c.label, c.id == a.settings.Layout, func(s *settings.Settings) { s.Layout = c.id })
+			}),
+		),
+		Spacer(H(w.Pad)),
+
 		Caption("Shortcuts", H(22)),
 		For(shortcuts, func(_ int, s shortcut) Node {
 			return Row(H(20),

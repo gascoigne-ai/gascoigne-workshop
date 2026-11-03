@@ -1532,3 +1532,109 @@ func TestANewResponseRerunsAnOpenSearch(t *testing.T) {
 		t.Fatalf("matchIdx = %d", tab.matchIdx)
 	}
 }
+
+const dividerY = 400 // anywhere along the tall dividers
+
+func drag(a *App, fromX, toX, y int) {
+	a.step(widget.Input{X: fromX, Y: y, Click: true, Held: true})
+	a.step(widget.Input{X: toX, Y: y, Held: true})
+	a.step(widget.Input{X: toX, Y: y}) // release
+}
+
+func TestDraggingTheSidebarDividerResizesTheSidebar(t *testing.T) {
+	a, _ := newTestApp(t)
+	drag(a, 259, 400, dividerY)
+	if a.sidebarSplit.Size < 390 {
+		t.Fatalf("sidebar size = %v", a.sidebarSplit.Size)
+	}
+	click(a, 350, treeRowY(4)) // x=350 was the main column before; it is the tree now
+	if a.cur().req.Name != "Repository Info" {
+		t.Fatalf("a click at x=350 opened %q: the sidebar did not grow", a.cur().req.Name)
+	}
+}
+
+func TestSidebarKeepsAMinimumWidthAndDoubleClickResets(t *testing.T) {
+	a, _ := newTestApp(t)
+	drag(a, 259, 5, dividerY)
+	click(a, 150, treeRowY(4)) // the minimum is 160px wide
+	if a.cur().req.Name != "Repository Info" {
+		t.Fatal("the sidebar must not shrink below its minimum")
+	}
+	click(a, 200, treeRowY(5))
+	if a.cur().req.Name == "Repository Tags" {
+		t.Fatal("x=200 is outside a minimum-width sidebar")
+	}
+
+	a.step(widget.Input{X: 159, Y: dividerY, Click: true, Held: true, Clicks: 2})
+	a.step(widget.Input{})
+	if a.sidebarSplit.Size != 0 {
+		t.Fatalf("double click must reset the width, Size = %v", a.sidebarSplit.Size)
+	}
+	click(a, 250, treeRowY(5))
+	if a.cur().req.Name != "Repository Tags" {
+		t.Fatal("back at the default width x=250 is in the tree again")
+	}
+}
+
+func TestDraggingThePaneDividerChangesTheShare(t *testing.T) {
+	a, _ := newTestApp(t)
+	drag(a, 769, 600, dividerY)
+	if s := a.paneSplit.Size; s <= 0.25 || s >= 0.4 {
+		t.Fatalf("share = %v, want about 0.33 (the request pane is now narrower)", s)
+	}
+}
+
+func TestResizeCursorOverTheDividers(t *testing.T) {
+	a, _ := newTestApp(t)
+	for _, tt := range []struct {
+		name string
+		x, y int
+		want widget.Cursor
+	}{
+		{"sidebar divider", 259, dividerY, widget.CursorResizeH},
+		{"pane divider", 769, dividerY, widget.CursorResizeH},
+		{"elsewhere", 500, dividerY, widget.CursorDefault},
+	} {
+		a.step(widget.Input{X: tt.x, Y: tt.y})
+		if a.ctx.Cursor != tt.want {
+			t.Errorf("%s: cursor %v, want %v", tt.name, a.ctx.Cursor, tt.want)
+		}
+	}
+}
+
+// Layout chooser at the bottom of the settings menu (below the text size row).
+const (
+	layoutSideX    = 1078
+	layoutStackedX = 1198
+	layoutRowY     = 250
+)
+
+func TestLayoutSettingStacksThePanesAndIsSaved(t *testing.T) {
+	a, path := newTestApp(t)
+	click(a, menuBtnX, menuBtnY)
+	click(a, layoutStackedX, layoutRowY)
+	if a.settings.Layout != "stacked" {
+		t.Fatalf("Layout = %q", a.settings.Layout)
+	}
+	if saved, _ := settings.Load(path); saved.Layout != "stacked" {
+		t.Fatalf("saved %+v", saved)
+	}
+	click(a, 100, 700) // close the menu
+	clip := &fakeClip{}
+	a.ctx.Clipboard = clip
+	tab := a.cur()
+	srv := jsonServer(t)
+	sendAndWait(t, a, srv.URL)
+
+	// stacked: the response pane is the lower half, so its toolbar is at y=510
+	click(a, copyBtnX, 510)
+	if clip.text != `{"ok":true}` {
+		t.Fatalf("the Copy button was not where a stacked layout puts it, clipboard %q", clip.text)
+	}
+	_ = tab
+	click(a, menuBtnX, menuBtnY)
+	click(a, layoutSideX, layoutRowY)
+	if a.settings.Layout != "side" {
+		t.Fatalf("Layout = %q", a.settings.Layout)
+	}
+}

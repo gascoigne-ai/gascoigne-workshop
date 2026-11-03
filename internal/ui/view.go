@@ -11,14 +11,19 @@ import (
 
 // Sizes of the window chrome, in logical pixels.
 const (
-	sidebarW   = 260
-	headerH    = 44
-	tabsH      = 40
-	urlH       = 56
-	statusH    = 28
-	paneTabsH  = 40
-	treeIndent = 16
-	badgeW     = 40
+	sidebarW  = 260
+	headerH   = 44
+	tabsH     = 40
+	urlH      = 56
+	statusH   = 28
+	paneTabsH = 40
+
+	// Smallest sizes the dividers allow.
+	minSidebarW = 160
+	minMainW    = 420
+	minPaneSize = 220
+	treeIndent  = 16
+	badgeW      = 40
 
 	// A request tab has fixed slots for the method badge and the unsaved
 	// dot, so editing a request never changes the tab's width.
@@ -38,9 +43,8 @@ const (
 func (a *App) view() Node {
 	return Stack(
 		Col(Bg(w.Frame),
-			Row(Grow(1),
+			Split(&a.sidebarSplit, sidebarW-1, Grow(1), MinFirst(minSidebarW), MinSecond(minMainW),
 				a.sidebar(),
-				VRule(),
 				a.mainColumn(),
 			),
 			a.statusBar(),
@@ -53,7 +57,7 @@ func (a *App) view() Node {
 
 func (a *App) sidebar() Node {
 	current := a.cur().req
-	return Col(W(min(sidebarW, a.w/3)-1),
+	return Col(
 		Row(H(headerH), PadXY(w.Pad, 0), Bg(w.Bg), BorderBottom(w.Rule),
 			Caption("Collections"),
 		),
@@ -105,12 +109,22 @@ func (a *App) mainColumn() Node {
 		a.header(),
 		a.requestTabs(),
 		a.urlBar(t),
-		Row(Grow(1),
-			a.pane(t, requestPanes, &t.paneTab, &t.reqScroll, nil),
-			VRule(),
-			a.pane(t, responsePanes, &t.respTab, &t.respScroll, a.responseStatus(t)),
-		),
+		a.panes(t),
 	)
+}
+
+// panes is the request pane and the response pane with a draggable
+// divider, side by side or stacked, as the layout setting says.
+func (a *App) panes(t *reqTab) Node {
+	items := []Item{
+		AsRatio(), Grow(1), MinFirst(minPaneSize), MinSecond(minPaneSize),
+		a.pane(t, requestPanes, &t.paneTab, &t.reqScroll, nil),
+		a.pane(t, responsePanes, &t.respTab, &t.respScroll, a.responseStatus(t)),
+	}
+	if a.settings.Layout == "stacked" {
+		items = append(items, Vertical())
+	}
+	return Split(&a.paneSplit, 0.5, items...)
 }
 
 func (a *App) header() Node {

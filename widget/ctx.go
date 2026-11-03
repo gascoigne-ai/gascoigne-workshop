@@ -47,7 +47,20 @@ type Ctx struct {
 
 	// Clipboard is used by text widgets for copy, cut and paste.
 	Clipboard Clipboard
+
+	// Cursor is the mouse cursor shape widgets ask for this frame; the
+	// application applies it. It is reset to CursorDefault every frame.
+	Cursor Cursor
 }
+
+// Cursor is a mouse cursor shape.
+type Cursor int
+
+const (
+	CursorDefault Cursor = iota
+	CursorResizeH        // resize left/right, over a vertical divider
+	CursorResizeV        // resize up/down, over a horizontal divider
+)
 
 // NewCtx returns a context at scale 1.
 func NewCtx(th Theme) (*Ctx, error) {
