@@ -3,10 +3,13 @@
 package main
 
 import (
-	"image/color"
+	"errors"
+	"flag"
 	"log"
 
 	"github.com/hajimehoshi/ebiten/v2"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui"
 )
 
 const (
@@ -14,21 +17,23 @@ const (
 	windowHeight = 800
 )
 
-var background = color.RGBA{R: 0x1b, G: 0x1b, B: 0x1b, A: 0xff}
-
-type app struct{}
-
-func (app) Update() error { return nil }
-
-func (app) Draw(screen *ebiten.Image) { screen.Fill(background) }
-
-func (app) Layout(w, h int) (int, int) { return w, h }
-
 func main() {
+	var opts ui.Options
+	flag.StringVar(&opts.ScreenshotPath, "screenshot", "", "save a PNG of the window to this path and exit")
+	flag.BoolVar(&opts.SendOnStart, "send", false, "send the first request at startup (for screenshots)")
+	flag.Parse()
+
+	app, err := ui.NewApp(opts)
+	if err != nil {
+		log.Fatal(err)
+	}
 	ebiten.SetWindowSize(windowWidth, windowHeight)
 	ebiten.SetWindowTitle("Gascoigne Workshop")
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
-	if err := ebiten.RunGame(app{}); err != nil {
+	if err := ebiten.RunGame(app); err != nil && !errors.Is(err, ebiten.Termination) {
+		log.Fatal(err)
+	}
+	if err := app.Err(); err != nil {
 		log.Fatal(err)
 	}
 }

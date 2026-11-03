@@ -51,3 +51,25 @@ func unescape(s string) string {
 	}
 	return s
 }
+
+// MergeParams rebuilds the params table after the URL was edited. The
+// URL decides which enabled rows exist and their values; descriptions
+// carry over from rows of the same name, and disabled rows (which the
+// URL cannot hold) are kept at the end.
+func MergeParams(old []KV, rawURL string) []KV {
+	params := ParamsFromURL(rawURL)
+	for i := range params {
+		for _, o := range old {
+			if o.Name == params[i].Name && o.Description != "" {
+				params[i].Description = o.Description
+				break
+			}
+		}
+	}
+	for _, o := range old {
+		if !o.Enabled {
+			params = append(params, o)
+		}
+	}
+	return params
+}

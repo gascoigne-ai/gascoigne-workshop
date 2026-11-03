@@ -64,3 +64,20 @@ func TestWithParams(t *testing.T) {
 		})
 	}
 }
+
+func TestMergeParams(t *testing.T) {
+	old := []KV{
+		{Name: "q", Value: "old", Description: "repo name", Enabled: true},
+		{Name: "order", Value: "desc", Enabled: true},
+		{Name: "sort", Value: "stars", Description: "metric", Enabled: false},
+	}
+	got := MergeParams(old, "http://x/s?q=new&page=2")
+	want := []KV{
+		{Name: "q", Value: "new", Description: "repo name", Enabled: true},
+		{Name: "page", Value: "2", Enabled: true},
+		{Name: "sort", Value: "stars", Description: "metric", Enabled: false},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("got %+v\nwant %+v", got, want)
+	}
+}
