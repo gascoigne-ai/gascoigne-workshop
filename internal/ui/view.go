@@ -171,9 +171,9 @@ func (a *App) header() Node {
 func (a *App) requestTabs() Node {
 	return Row(H(tabsH), Bg(w.Frame), Control("tabstrip"), BorderBottom(w.Border),
 		HScroll(&a.tabsScroll, Grow(1), For(a.tabs, func(i int, t *reqTab) Node {
-			look := []Item{Bg(w.Frame), Control("tabstrip")} // inactive tabs blend into the strip; the active one joins the pane
+			look := []Item{} // inactive tabs blend into the strip; the active one joins the pane
 			if i == a.active {
-				look = []Item{Bg(w.Selected), Underline(w.AccentLine, 0), Reveal()} // selected-row tint and an accent line; the strip's line runs on under all tabs
+				look = []Item{Bg(w.Bg), Edges(w.AccentLine, true, true, true), Reveal()} // outlined top, left and right, open at the bottom
 			}
 			grab := OnClick(func() {
 				a.active = i

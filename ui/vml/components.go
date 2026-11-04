@@ -60,8 +60,8 @@ func tabItems(items []TabItem, active int, onSelect func(i int)) []Item {
 			Text(it.Label, Color(tabColor(i == active))),
 			If(it.Badge > 0, Text(strconv.Itoa(it.Badge), Small(), Muted())),
 		}
-		if i == active { // the selected-row tint, and an accent line over the strip's own line, which runs on under every tab
-			tab = append(tab, Bg(widget.Selected), Underline(widget.AccentLine, 0), Reveal())
+		if i == active { // outlined top, left and right in the accent and open at the bottom, where the strip's line runs under the others
+			tab = append(tab, Bg(widget.Bg), Edges(widget.AccentLine, true, true, true), Reveal())
 		}
 		out[i] = Row(tab...)
 	}

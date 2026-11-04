@@ -71,12 +71,14 @@ type El struct {
 	onTab                      func(back bool)
 	onMiddle, onHeldOver       func()
 
-	scrollMaxH int          // MaxHeight of a Scroll, 0 for none
-	overline   widget.Token // a bar across the top edge
-	fieldInset int          // Field padding when not the default
-	control    string       // the theme control style that shapes and shades this element
-	tip        string       // tooltip text, shown after the pointer rests on the element
-	reveal     bool         // an HScroll keeps this child in view when it becomes the flagged one
+	scrollMaxH                   int          // MaxHeight of a Scroll, 0 for none
+	overline                     widget.Token // a bar across the top edge
+	edgeTok                      widget.Token // Edges: the color of the outline
+	edgeTop, edgeLeft, edgeRight bool
+	fieldInset                   int    // Field padding when not the default
+	control                      string // the theme control style that shapes and shades this element
+	tip                          string // tooltip text, shown after the pointer rests on the element
+	reveal                       bool   // an HScroll keeps this child in view when it becomes the flagged one
 
 	alignItems, alignSelf         Align
 	justify                       Justify
@@ -213,6 +215,13 @@ func Control(name string) Option { return func(e *El) { e.control = name } }
 // Overline draws a two-pixel bar across the top of the element, marking
 // it as the current one (the open tab).
 func Overline(t widget.Token) Option { return func(e *El) { e.overline = t } }
+
+// Edges outlines the element on its top, left and right sides with a
+// two-pixel line, leaving the bottom open: the look of the open tab,
+// which runs into the pane below it.
+func Edges(t widget.Token, top, left, right bool) Option {
+	return func(e *El) { e.edgeTok, e.edgeTop, e.edgeLeft, e.edgeRight = t, top, left, right }
+}
 
 // Tooltip shows text near the pointer once it has rested on the element
 // for TipDelayTicks.

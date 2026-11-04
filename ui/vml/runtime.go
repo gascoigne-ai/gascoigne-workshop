@@ -228,9 +228,6 @@ func (e *El) draw(c *widget.Ctx, dst *ebiten.Image) {
 	if e.overline != "" {
 		c.Fill(dst, widget.Rect{X: r.X, Y: r.Y, W: r.W, H: 2}, c.Col(e.overline))
 	}
-	if e.overline != "" {
-		c.Fill(dst, widget.Rect{X: r.X, Y: r.Y, W: r.W, H: 2}, c.Col(e.overline))
-	}
 	if e.borderLeft != "" {
 		c.VLine(dst, r.X, r.Y+e.borderInset, r.H-2*e.borderInset, c.Col(e.borderLeft))
 	}
@@ -257,6 +254,18 @@ func (e *El) draw(c *widget.Ctx, dst *ebiten.Image) {
 		o.drawOver(e, c, dst)
 	}
 
+	if e.edgeTok != "" { // the open tab's outline: top, left and right, bottom left open
+		col := c.Col(e.edgeTok)
+		if e.edgeTop {
+			c.Fill(dst, widget.Rect{X: r.X, Y: r.Y, W: r.W, H: 2}, col)
+		}
+		if e.edgeLeft {
+			c.Fill(dst, widget.Rect{X: r.X, Y: r.Y, W: 2, H: r.H}, col)
+		}
+		if e.edgeRight {
+			c.Fill(dst, widget.Rect{X: r.X + r.W - 2, Y: r.Y, W: 2, H: r.H}, col)
+		}
+	}
 	if e.underline != "" {
 		c.Fill(dst, widget.Rect{X: r.X + e.underInset, Y: r.Y + r.H - 3, W: r.W - 2*e.underInset, H: 3}, c.Col(e.underline))
 	}
