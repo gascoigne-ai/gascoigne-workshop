@@ -16,3 +16,7 @@ Small gaps found while finishing earlier tasks.
 
 ## Acceptance
 - A test per item where behavior is testable headless; `make check` passes; architecture.md updated.
+
+## Progress
+- Done: the file dialog decision (decisions 12): zenity or kdialog when installed, a text prompt otherwise.
+- Left: the rest of the scope.

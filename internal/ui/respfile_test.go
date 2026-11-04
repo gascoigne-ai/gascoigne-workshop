@@ -73,6 +73,7 @@ func TestSuggestedFileNameFollowsTheContentType(t *testing.T) {
 }
 
 func TestSaveBodyWritesTheFileAndReportsFailures(t *testing.T) {
+	t.Setenv("PATH", t.TempDir()) // no dialog program: the path is asked as text
 	a, _ := newTestApp(t)
 	tab := a.cur()
 	a.saveBody(tab) // no response yet
@@ -153,5 +154,48 @@ func TestAnImageResponseIsShownAsAPicture(t *testing.T) {
 	a.apply(sendResult{tab: tab, seq: tab.seq, resp: model.Response{Status: 200, Body: []byte(`{"a":1}`)}})
 	if tab.picture != nil {
 		t.Fatal("the next, non-image response must clear the picture")
+	}
+}
+
+func TestPickFileUsesTheDesktopDialogWhenThereIsOne(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "zenity"), []byte("#!/bin/sh\necho /chosen/by/dialog.bin\n"), 0o755)
+	t.Setenv("PATH", dir)
+	a, _ := newTestApp(t)
+	var got string
+	a.pickFile("Pick", false, "", func(p string) { got = p })
+	if a.dialog != nil {
+		t.Fatal("with a dialog program there is no text prompt")
+	}
+	until(t, a, "the chosen path", func() bool { return got != "" })
+	if got != "/chosen/by/dialog.bin" {
+		t.Fatalf("got %q", got)
+	}
+
+	t.Setenv("PATH", t.TempDir())
+	got = ""
+	a.pickFile("Pick", false, "start.txt", func(p string) { got = p })
+	if a.dialog == nil || a.dialog.input == nil || a.dialog.input.Text != "start.txt" {
+		t.Fatal("without one the path is asked as text")
+	}
+}
+
+func TestFileBodyTypeKeepsItsPathSeparateFromTheTextBody(t *testing.T) {
+	a, _ := newTestApp(t)
+	tab := a.cur()
+	tab.body = vml.NewTextArea("typed text")
+	tab.req.Body = "typed text"
+	a.setBodyType(tab, model.BodyFile)
+	if tab.req.BodyType != model.BodyFile || tab.req.Body != "" {
+		t.Fatalf("type %q body %q", tab.req.BodyType, tab.req.Body)
+	}
+	tab.file = vml.NewTextField("/tmp/x.bin")
+	tab.req.Body = tab.file.Text
+	a.setBodyType(tab, model.BodyText)
+	if tab.req.Body != "typed text" {
+		t.Fatalf("the text body must come back: %q", tab.req.Body)
+	}
+	if d := vml.Dump(a.fileBody(tab)); !strings.Contains(d, "Choose...") {
+		t.Fatalf("file editor:\n%s", d)
 	}
 }

@@ -41,6 +41,7 @@ const (
 	BodyText      = "text"
 	BodyForm      = "form"
 	BodyMultipart = "multipart"
+	BodyFile      = "file" // Body holds the path of the file to send as it is
 )
 
 // Folder groups requests and nested folders in a collection tree.

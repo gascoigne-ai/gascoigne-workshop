@@ -315,6 +315,7 @@ var bodyTypes = []struct {
 	{model.BodyText, "Text", 64},
 	{model.BodyForm, "Form", 64},
 	{model.BodyMultipart, "Multipart", 84},
+	{model.BodyFile, "File", 64},
 }
 
 // formPane is the table of form and multipart fields.
@@ -362,12 +363,20 @@ func (a *App) bodyEditor(t *reqTab, scroll *ScrollState) Node {
 		return Area(&t.body, Grow(1), Bg(w.Sunken), OnChange(sync), a.textMenuOpt(&t.body.TextField, sync))
 	case model.BodyForm, model.BodyMultipart:
 		return a.tableView(formPane, t, scroll, 0)
+	case model.BodyFile:
+		return a.fileBody(t)
 	}
 	return Lines("This request has no body", w.Muted)
 }
 
 func (a *App) setBodyType(t *reqTab, id string) {
 	a.commitEdit()
+	if t.req.BodyType == model.BodyFile && id != model.BodyFile { // the path is not text to keep
+		t.req.Body = t.body.Text
+	}
+	if id == model.BodyFile {
+		t.req.Body = t.file.Text
+	}
 	t.req.BodyType = id
 }
 

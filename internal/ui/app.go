@@ -62,6 +62,7 @@ type reqTab struct {
 	pictureInfo           string          // "PNG 640x480, 12.5KB"
 	tests                 vml.TextArea    // the assertions editor
 	testResults           []assert.Result // what the assertions found in the shown response
+	file                  vml.TextField   // the path of a file body
 	body                  vml.TextArea    // request body editor
 	reqScroll, respScroll vml.ScrollState // scroll of the table and note panes
 	reqTabsX, respTabsX   vml.ScrollState // sideways scroll of the two pane tab strips
@@ -136,6 +137,7 @@ func newTab(req *model.Request) *reqTab {
 	t.timeout = vml.NewTextField(timeoutText(req.TimeoutSec))
 	t.body = vml.NewTextArea(req.Body)
 	t.tests = vml.NewTextArea(req.Tests)
+	t.file = vml.NewTextField(req.Body)
 	return t
 }
 
@@ -155,6 +157,7 @@ type App struct {
 	active   int
 	results  chan sendResult
 	wsEvents chan wsEvent
+	later    chan func() // things other goroutines want done on the UI goroutine, such as a chosen file
 	status   string
 	w, h     int
 	shot     screenshot
@@ -244,6 +247,7 @@ func NewApp(opts Options) (*App, error) {
 		expanded:         map[*model.Folder]bool{},
 		results:          make(chan sendResult, 8),
 		wsEvents:         make(chan wsEvent, 64),
+		later:            make(chan func(), 8),
 		status:           "Ready",
 		shot:             screenshot{path: opts.ScreenshotPath, sendOnStart: opts.SendOnStart},
 
@@ -360,6 +364,9 @@ func (a *App) drain() (any bool) {
 			any = true
 		case e := <-a.wsEvents:
 			a.applyWS(e)
+			any = true
+		case f := <-a.later:
+			f()
 			any = true
 		default:
 			return any

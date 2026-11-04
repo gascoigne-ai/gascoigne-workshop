@@ -7,10 +7,14 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptrace"
+	"net/textproto"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -128,6 +132,7 @@ var bodyEncoders = map[string]func(req model.Request) ([]byte, string, error){
 	model.BodyText:      func(r model.Request) ([]byte, string, error) { return []byte(r.Body), "text/plain; charset=utf-8", nil },
 	model.BodyForm:      encodeForm,
 	model.BodyMultipart: encodeMultipart,
+	model.BodyFile:      encodeFile,
 }
 
 func encodeBody(req model.Request) ([]byte, string, error) {
@@ -161,7 +166,17 @@ func encodeMultipart(req model.Request) ([]byte, string, error) {
 	var buf bytes.Buffer
 	w := multipart.NewWriter(&buf)
 	for _, f := range formFields(req) {
-		if err := w.WriteField(f.Name, f.Value); err != nil {
+		if path, ok := strings.CutPrefix(f.Value, "@"); ok && path != "" && !strings.HasPrefix(path, "@") {
+			if err := writeFilePart(w, f.Name, path); err != nil {
+				return nil, "", err
+			}
+			continue
+		}
+		value := strings.TrimPrefix(f.Value, "@") // "@@x" sends the text "@x"
+		if !strings.HasPrefix(f.Value, "@@") {
+			value = f.Value
+		}
+		if err := w.WriteField(f.Name, value); err != nil {
 			return nil, "", err
 		}
 	}
@@ -250,4 +265,42 @@ func (r REST) client(req model.Request) (*http.Client, error) {
 	}
 	c.Transport = base
 	return c, nil
+}
+
+// fileContentType is the Content-Type of a file by its extension.
+func fileContentType(path string) string {
+	if ct := mime.TypeByExtension(strings.ToLower(filepath.Ext(path))); ct != "" {
+		return ct
+	}
+	return "application/octet-stream"
+}
+
+// writeFilePart adds the file at path as a multipart part called name.
+func writeFilePart(w *multipart.Writer, name, path string) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("form field %q: %w", name, err)
+	}
+	h := make(textproto.MIMEHeader)
+	h.Set("Content-Disposition", fmt.Sprintf(`form-data; name=%q; filename=%q`, name, filepath.Base(path)))
+	h.Set("Content-Type", fileContentType(path))
+	part, err := w.CreatePart(h)
+	if err != nil {
+		return err
+	}
+	_, err = part.Write(data)
+	return err
+}
+
+// encodeFile sends the file named by the body as it is.
+func encodeFile(req model.Request) ([]byte, string, error) {
+	path := strings.TrimSpace(req.Body)
+	if path == "" {
+		return nil, "", fmt.Errorf("choose the file to send")
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, "", fmt.Errorf("body file: %w", err)
+	}
+	return data, fileContentType(path), nil
 }

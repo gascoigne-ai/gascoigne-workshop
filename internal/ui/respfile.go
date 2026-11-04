@@ -98,7 +98,7 @@ func (a *App) saveBody(t *reqTab) {
 		a.toast("There is no response to save", true)
 		return
 	}
-	a.prompt("Save response body", suggestedFileName(t.resp), "Save", func(path string) { a.writeBody(t, path) })
+	a.pickFile("Save response body", true, suggestedFileName(t.resp), func(path string) { a.writeBody(t, path) })
 }
 
 // writeBody saves the body to path (a leading ~ is the home folder); an
