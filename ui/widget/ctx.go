@@ -127,25 +127,39 @@ func (c *Ctx) Col(tok Token) color.RGBA { return c.Th.Color(tok) }
 
 func (c *Ctx) dev(n float32) float32 { return n * float32(c.Scale) }
 
-// Fill paints r.
+// snap is a logical coordinate as a device pixel position. Rounding the
+// edges (not the sizes) lets neighbouring rectangles share an edge at any
+// scale, with no gap or overlap.
+func (c *Ctx) snap(n int) float32 { return float32(math.Round(float64(n) * c.Scale)) }
+
+// LineWidth is the thickness in device pixels of the one-pixel lines and
+// outlines: the scale rounded, never less than one, so a line is a whole
+// number of device pixels and stays sharp at 125%, 150% and 175%.
+func (c *Ctx) LineWidth() float32 { return float32(max(1, math.Round(c.Scale))) }
+
+// Fill paints r with clr, its edges on device pixels.
 func (c *Ctx) Fill(dst *ebiten.Image, r Rect, clr color.RGBA) {
-	vector.FillRect(dst, c.dev(float32(r.X)), c.dev(float32(r.Y)), c.dev(float32(r.W)), c.dev(float32(r.H)), clr, false)
+	x0, y0 := c.snap(r.X), c.snap(r.Y)
+	vector.FillRect(dst, x0, y0, c.snap(r.X+r.W)-x0, c.snap(r.Y+r.H)-y0, clr, false)
 }
 
 // Outline strokes a one-pixel border just inside r.
 func (c *Ctx) Outline(dst *ebiten.Image, r Rect, clr color.RGBA) {
-	w := c.dev(1)
-	vector.StrokeRect(dst, c.dev(float32(r.X))+w/2, c.dev(float32(r.Y))+w/2, c.dev(float32(r.W))-w, c.dev(float32(r.H))-w, w, clr, false)
+	w := c.LineWidth()
+	x0, y0 := c.snap(r.X), c.snap(r.Y)
+	vector.StrokeRect(dst, x0+w/2, y0+w/2, c.snap(r.X+r.W)-x0-w, c.snap(r.Y+r.H)-y0-w, w, clr, false)
 }
 
 // HLine draws a one-pixel horizontal line.
 func (c *Ctx) HLine(dst *ebiten.Image, x, y, w int, clr color.RGBA) {
-	c.Fill(dst, Rect{x, y, w, 1}, clr)
+	x0 := c.snap(x)
+	vector.FillRect(dst, x0, c.snap(y), c.snap(x+w)-x0, c.LineWidth(), clr, false)
 }
 
 // VLine draws a one-pixel vertical line.
 func (c *Ctx) VLine(dst *ebiten.Image, x, y, h int, clr color.RGBA) {
-	c.Fill(dst, Rect{x, y, 1, h}, clr)
+	y0 := c.snap(y)
+	vector.FillRect(dst, c.snap(x), y0, c.LineWidth(), c.snap(y+h)-y0, clr, false)
 }
 
 // Clip returns dst limited to r, so drawing outside r is discarded.

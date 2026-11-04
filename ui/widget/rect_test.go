@@ -121,3 +121,27 @@ func TestClickCountingNeedsSpeedAndPlace(t *testing.T) {
 		}
 	}
 }
+
+// Edges land on device pixels and neighbours share them at every scale.
+func TestSnapSharesEdgesAndLinesAreWholePixels(t *testing.T) {
+	for _, scale := range []float64{1, 1.25, 1.5, 1.75, 2, 2.5, 3} {
+		c, err := NewCtx(Dark())
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := c.SetScale(scale); err != nil {
+			t.Fatal(err)
+		}
+		for x := 0; x < 200; x++ {
+			if v := c.snap(x); v != float32(int(v)) {
+				t.Fatalf("scale %v: snap(%d) = %v is not a device pixel", scale, x, v)
+			}
+			if c.snap(x+1) < c.snap(x) {
+				t.Fatalf("scale %v: edges go backwards at %d", scale, x)
+			}
+		}
+		if lw := c.LineWidth(); lw < 1 || lw != float32(int(lw)) {
+			t.Fatalf("scale %v: line width %v is not a whole number of pixels", scale, lw)
+		}
+	}
+}
