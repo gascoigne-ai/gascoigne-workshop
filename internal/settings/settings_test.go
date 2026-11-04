@@ -15,11 +15,11 @@ func TestLoad(t *testing.T) {
 		wantErr bool
 	}{
 		{"missing file gives defaults", nil, Default(), false},
-		{"full file", ptr(`{"theme":"light","textSize":"large"}`), Settings{Theme: "light", TextSize: "large", Layout: "side", Contrast: "normal", TimeoutSec: 60}, false},
-		{"saved layout", ptr(`{"layout":"stacked"}`), Settings{Theme: "dark", TextSize: "medium", Layout: "stacked", Contrast: "normal", TimeoutSec: 60}, false},
-		{"saved timeout", ptr(`{"timeoutSec":15}`), Settings{Theme: "dark", TextSize: "medium", Layout: "side", Contrast: "normal", TimeoutSec: 15}, false},
-		{"missing field keeps default", ptr(`{"theme":"light"}`), Settings{Theme: "light", TextSize: "medium", Layout: "side", Contrast: "normal", TimeoutSec: 60}, false},
-		{"unknown values pass through", ptr(`{"theme":"neon"}`), Settings{Theme: "neon", TextSize: "medium", Layout: "side", Contrast: "normal", TimeoutSec: 60}, false},
+		{"full file", ptr(`{"theme":"light","textSize":"large"}`), Settings{Theme: "light", TextSize: "large", Layout: "side", Contrast: "normal", TimeoutSec: 60, UIScalePct: 110}, false},
+		{"saved layout", ptr(`{"layout":"stacked"}`), Settings{Theme: "dark", TextSize: "medium", Layout: "stacked", Contrast: "normal", TimeoutSec: 60, UIScalePct: 110}, false},
+		{"saved timeout", ptr(`{"timeoutSec":15}`), Settings{Theme: "dark", TextSize: "medium", Layout: "side", Contrast: "normal", TimeoutSec: 15, UIScalePct: 110}, false},
+		{"missing field keeps default", ptr(`{"theme":"light"}`), Settings{Theme: "light", TextSize: "medium", Layout: "side", Contrast: "normal", TimeoutSec: 60, UIScalePct: 110}, false},
+		{"unknown values pass through", ptr(`{"theme":"neon"}`), Settings{Theme: "neon", TextSize: "medium", Layout: "side", Contrast: "normal", TimeoutSec: 60, UIScalePct: 110}, false},
 		{"broken json gives defaults and an error", ptr(`{"theme":`), Default(), true},
 	}
 	for _, tt := range tests {
@@ -111,5 +111,37 @@ func TestColorsAndContrastRoundTrip(t *testing.T) {
 	}
 	if def := Default(); def.Contrast != "normal" || def.Colors != nil {
 		t.Fatalf("defaults = %+v", def)
+	}
+}
+
+func TestUIScaleDefaultsToTenPercentBiggerAndIsBounded(t *testing.T) {
+	if got := Default().UIScale(); got != 1.1 {
+		t.Fatalf("default %v", got)
+	}
+	for _, tt := range []struct {
+		pct  int
+		want float64
+	}{{0, 1.1}, {100, 1}, {150, 1.5}, {5, 0.5}, {9000, 3}} {
+		if got := (Settings{UIScalePct: tt.pct}).UIScale(); got != tt.want {
+			t.Errorf("%d%% -> %v, want %v", tt.pct, got, tt.want)
+		}
+	}
+}
+
+func TestUIScaleRoundTripsAndOldFilesKeepTheDefault(t *testing.T) {
+	p := filepath.Join(t.TempDir(), "s.json")
+	if err := os.WriteFile(p, []byte(`{"theme":"light"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	s, err := Load(p)
+	if err != nil || s.UIScalePct != 110 {
+		t.Fatalf("old file: %+v, %v", s, err)
+	}
+	s.UIScalePct = 125
+	if err := s.Save(p); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := Load(p); got.UIScalePct != 125 {
+		t.Fatalf("round trip: %+v", got)
 	}
 }

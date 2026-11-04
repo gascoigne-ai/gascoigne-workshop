@@ -39,6 +39,14 @@ func (a *App) menuView() Node {
 			),
 			Spacer(H(w.Pad)),
 
+			Caption("Interface scale", H(22)),
+			Row(H(w.RowH), Gap(6),
+				For(scaleChoices, func(_ int, c settingChoice) Node {
+					return a.choice(c.label, c.pct == int(a.settings.UIScale()*100+0.5), func(s *settings.Settings) { s.UIScalePct = c.pct })
+				}),
+			),
+			Spacer(H(w.Pad)),
+
 			Caption("Request / response", H(22)),
 			Row(H(w.RowH), Gap(6),
 				For(layoutChoices, func(_ int, c layoutChoice) Node {

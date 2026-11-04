@@ -86,6 +86,17 @@ var textSizeChoices = []sizeChoice{
 	{"large", "Large", 17, 13, 16},
 }
 
+// settingChoice is one button of a percent setting.
+type settingChoice struct {
+	pct   int
+	label string
+}
+
+// scaleChoices are the interface scales offered in the settings menu.
+var scaleChoices = []settingChoice{
+	{90, "90%"}, {100, "100%"}, {110, "110%"}, {125, "125%"}, {150, "150%"}, {200, "200%"},
+}
+
 // ThemeFor builds the theme for a settings pair. Unknown ids fall back
 // to the first (dark) theme and the medium text size.
 func ThemeFor(themeID, textSizeID string) widget.Theme {

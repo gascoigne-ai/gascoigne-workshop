@@ -7,6 +7,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/ui/engine"
 	"github.com/gascoigne-ai/gascoigne-workshop/ui/widget"
 )
@@ -213,5 +214,54 @@ func TestDrawingClearsTheDirtyFlagAndAnIdleDrawDoesNothing(t *testing.T) {
 	a.Draw(img) // nothing changed: must return without drawing or panicking
 	if a.dirty {
 		t.Fatal("an idle Draw must not mark anything")
+	}
+}
+
+func TestFrameSizeAppliesTheInterfaceScaleOnTopOfTheDisplayScale(t *testing.T) {
+	cases := []struct {
+		name         string
+		w, h         int
+		dsf, ui      float64
+		lw, lh       int
+		scale        float64
+		screenW, scH int
+	}{
+		{"no scaling", 1000, 800, 1, 1, 1000, 800, 1, 1000, 800},
+		{"ten percent bigger", 1100, 880, 1, 1.1, 1000, 800, 1.1, 1100, 880},
+		{"hidpi and bigger", 1000, 600, 2, 1.25, 800, 480, 2.5, 2000, 1200},
+	}
+	for _, c := range cases {
+		lw, lh, scale, sw, sh := frameSize(c.w, c.h, c.dsf, c.ui)
+		if lw != c.lw || lh != c.lh || scale != c.scale || sw != c.screenW || sh != c.scH {
+			t.Errorf("%s: got %d %d %v %d %d", c.name, lw, lh, scale, sw, sh)
+		}
+	}
+}
+
+func TestInterfaceScaleChoiceIsSavedAndResizesTheUI(t *testing.T) {
+	a, path := newTestApp(t)
+	click(a, menuBtnX, menuBtnY)
+	var pick *settingChoice
+	for i := range scaleChoices {
+		if scaleChoices[i].pct == 150 {
+			pick = &scaleChoices[i]
+		}
+	}
+	if pick == nil {
+		t.Fatal("no 150% choice")
+	}
+	a.changeSettings(func(s *settings.Settings) { s.UIScalePct = pick.pct })
+	if a.settings.UIScale() != 1.5 {
+		t.Fatalf("scale %v", a.settings.UIScale())
+	}
+	if got, _ := settings.Load(path); got.UIScalePct != 150 {
+		t.Fatalf("not saved: %+v", got)
+	}
+}
+
+func TestNewAppsStartTenPercentBigger(t *testing.T) {
+	a, _ := newTestApp(t)
+	if a.settings.UIScale() != 1.1 {
+		t.Fatalf("default scale %v", a.settings.UIScale())
 	}
 }

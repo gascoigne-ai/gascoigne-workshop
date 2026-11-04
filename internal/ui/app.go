@@ -307,8 +307,9 @@ var cursorShapes = map[widget.Cursor]ebiten.CursorShapeType{
 // (w by h); the screen is that size times the monitor's scale factor so
 // text and lines stay sharp on HiDPI displays.
 func (a *App) Layout(w, h int) (int, int) {
-	a.setSize(w, h, ebiten.Monitor().DeviceScaleFactor())
-	return int(float64(w)*a.ctx.Scale + 0.5), int(float64(h)*a.ctx.Scale + 0.5)
+	lw, lh, scale, sw, sh := frameSize(w, h, ebiten.Monitor().DeviceScaleFactor(), a.settings.UIScale())
+	a.setSize(lw, lh, scale)
+	return sw, sh
 }
 
 // Update implements ebiten.Game: it samples input and runs one frame.

@@ -42,3 +42,11 @@ func (a *App) markFrame(active bool) {
 
 // alwaysDraw reports whether every frame must be drawn (screenshots).
 func (a *App) alwaysDraw() bool { return a.shot.path != "" }
+
+// frameSize turns the window size (device independent) into what the app
+// needs: the logical size it lays out in, the total scale (the display's
+// factor times the interface scale) and the screen size in device pixels.
+func frameSize(w, h int, dsf, ui float64) (lw, lh int, scale float64, sw, sh int) {
+	return int(float64(w)/ui + 0.5), int(float64(h)/ui + 0.5), dsf * ui,
+		int(float64(w)*dsf + 0.5), int(float64(h)*dsf + 0.5)
+}

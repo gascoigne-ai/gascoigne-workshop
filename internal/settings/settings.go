@@ -32,13 +32,34 @@ type Settings struct {
 	// as "Ctrl+Shift+Tab"; "" means unbound. Missing actions keep their default.
 	Shortcuts map[string]string `json:"shortcuts,omitempty"`
 
+	// UIScalePct is the interface scale in percent, on top of the
+	// display's own scale factor; 0 means the default.
+	UIScalePct int `json:"uiScale"`
+
 	// TimeoutSec is the default request timeout in seconds.
 	TimeoutSec int `json:"timeoutSec"`
 }
 
+// DefaultUIScalePct makes the interface 10% bigger than the display's
+// own scale; MinUIScalePct and MaxUIScalePct bound what is accepted.
+const (
+	DefaultUIScalePct = 110
+	MinUIScalePct     = 50
+	MaxUIScalePct     = 300
+)
+
+// UIScale is the interface scale as a factor, always within bounds.
+func (s Settings) UIScale() float64 {
+	pct := s.UIScalePct
+	if pct == 0 {
+		pct = DefaultUIScalePct
+	}
+	return float64(max(MinUIScalePct, min(pct, MaxUIScalePct))) / 100
+}
+
 // Default is what a first run uses.
 func Default() Settings {
-	return Settings{Theme: "dark", TextSize: "medium", Layout: "side", Contrast: "normal", TimeoutSec: 60}
+	return Settings{Theme: "dark", TextSize: "medium", Layout: "side", Contrast: "normal", TimeoutSec: 60, UIScalePct: DefaultUIScalePct}
 }
 
 // Load reads path. A missing file is not an error and yields Default;

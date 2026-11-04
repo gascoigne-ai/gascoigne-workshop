@@ -135,3 +135,5 @@ Row(H(urlH), PadXY(w.Pad, 8), Gap(8), Bg(w.Bg),
 - **Spacing fixes**: table checkbox, delete and header cells center their icon; a caption row and its table are `Gap(6)` apart; the URL field has a `Pad-4` spacer after the method divider.
 
 - **Copying from tables**: right-clicking a row of a read-only table (the response Headers) opens a menu with Copy value, Copy name, Copy as `Name: Value` and Copy all headers; the editable tables lead their row menu with the first three (`copyRowItems`).
+
+- **Interface scale**: `settings.UIScalePct` (default 110, bounded 50..300) multiplies the display's scale factor. `frameSize` turns the window size into the logical size the UI lays out in (window / scale), the total scale and the screen size; the settings menu offers 90..200%. Remembered window sizes are stored in window pixels (logical size times the interface scale) so they restore the same window.

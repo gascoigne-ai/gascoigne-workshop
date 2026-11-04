@@ -50,7 +50,7 @@ func (a *App) requestPath(req *model.Request) string {
 // snapshot is the state to remember.
 func (a *App) snapshot() state.State {
 	s := state.State{
-		Window:    state.Window{W: a.w, H: a.h, X: a.winX, Y: a.winY},
+		Window:    state.Window{W: a.windowPx(a.w), H: a.windowPx(a.h), X: a.winX, Y: a.winY},
 		SidebarW:  a.sidebarSplit.Size,
 		PaneSplit: a.paneSplit.Size,
 		Active:    a.active,
@@ -181,3 +181,7 @@ func stateNote(status string, err error) string {
 	}
 	return strings.TrimSpace(status + " " + err.Error())
 }
+
+// windowPx converts a logical size to window pixels (device independent),
+// which is what the window system and the remembered geometry use.
+func (a *App) windowPx(logical int) int { return int(float64(logical)*a.settings.UIScale() + 0.5) }

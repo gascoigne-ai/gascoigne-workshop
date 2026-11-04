@@ -45,7 +45,7 @@ func TestStateSnapshotCapturesTabsFoldersAndSizes(t *testing.T) {
 	if len(want) != 0 {
 		t.Fatalf("expanded folders %v", s.Expanded)
 	}
-	if s.Window.W != winW || s.Window.H != winH {
+	if s.Window.W != 1408 || s.Window.H != 880 { // window pixels: the logical size times the interface scale
 		t.Fatalf("window %+v", s.Window)
 	}
 }

@@ -1620,7 +1620,7 @@ func TestResizeCursorOverTheDividers(t *testing.T) {
 const (
 	layoutSideX    = 1078
 	layoutStackedX = 1198
-	layoutRowY     = 250
+	layoutRowY     = 312
 )
 
 func TestLayoutSettingStacksThePanesAndIsSaved(t *testing.T) {
@@ -2787,18 +2787,18 @@ func TestNarrowColumnsKeepAMinimum(t *testing.T) {
 
 // ---- colors in the settings menu ------------------------------------------
 
-// Below the layout chooser: Contrast chips at y=312, then Colors rows from
-// y=374 (Selection), 402, 430, 458 (Accent); field at x=1170, Reset at
+// Below the layout chooser: Contrast chips at y=374, then Colors rows from
+// y=436 (Selection), 464, 492, 520 (Accent); field at x=1170, Reset at
 // x=1234; the "Reset colors" button under the last row.
 const (
 	contrastNormalX = 1078
 	contrastHighX   = 1198
-	contrastRowY    = 312
-	colorRow0Y      = 374
+	contrastRowY    = 374
+	colorRow0Y      = 436
 	colorFieldX     = 1170
 	colorResetX     = 1234
 	resetColorsX    = 1070
-	resetColorsY    = 486
+	resetColorsY    = 548
 )
 
 func openSettingsMenu(t *testing.T) (*App, string) {
