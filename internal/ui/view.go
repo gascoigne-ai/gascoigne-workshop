@@ -175,7 +175,12 @@ func (a *App) requestTabs() Node {
 			if i == a.active {
 				look = []Item{Bg(w.Bg), Reveal()}
 			}
-			grab := OnClick(func() { a.active, a.dragTab = i, i })
+			grab := OnClick(func() {
+				a.active = i
+				if !a.tabsScroll.Overflowing { // an overflowing strip is panned by a left drag; the middle button reorders
+					a.dragTab = i
+				}
+			})
 			return Row(append(look, OnMiddleClick(func() { a.active, a.dragTab = i, i }), // a middle drag reorders, like a left one
 				OnRightClick(func(x, y int) { a.openMenu(x, y, a.tabMenuItems(i)) }),
 				Separator(i > 0, 12),

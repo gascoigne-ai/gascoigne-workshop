@@ -15,6 +15,13 @@ type ScrollState struct {
 	Y int
 	X int // horizontal position, for HScroll
 
+	// Overflowing is set by HScroll's layout: its content is wider than
+	// the box. The app uses it to tell panning from reordering.
+	Overflowing bool
+
+	pressed, panning bool // HScroll: the left button went down on the strip; it moved far enough to pan
+	panFrom, panX0   int  // pointer x and X at that press
+
 	holdDir, holdN int // HScroll: the arrow held down (-1 left, 1 right) and for how many frames
 
 	revealed int // HScroll: index+1 of the child last brought into view, 0 for none

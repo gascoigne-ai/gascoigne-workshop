@@ -213,3 +213,59 @@ func TestHoldingAnArrowKeepsScrolling(t *testing.T) {
 		t.Fatalf("a drag onto the arrow must not scroll: %d -> %d", x, st.X)
 	}
 }
+
+func TestHScrollPansWhenDraggedWithTheLeftButton(t *testing.T) {
+	var hits []int
+	st := &ScrollState{X: 50}
+	root := Col(strip(st, 5, &hits))
+	c := testCtx(t)
+	Layout(c, root, 300, 100)
+	at := func(x int, click bool) {
+		c.In = widget.Input{X: x, Y: 10, Click: click, Held: true}
+		Update(c, root)
+		Layout(c, root, 300, 100)
+	}
+	at(60, true)
+	at(58, false) // a twitch is not a drag
+	if st.X != 50 {
+		t.Fatalf("X = %d, a 2px twitch must not pan", st.X)
+	}
+	at(40, false) // 20px left: the content follows the pointer, so X grows
+	if st.X != 70 {
+		t.Fatalf("X = %d, want 70", st.X)
+	}
+	at(70, false) // 10px right of the start: X shrinks
+	if st.X != 40 {
+		t.Fatalf("X = %d, want 40", st.X)
+	}
+	at(-300, false) // the pointer leaves the strip; the pan keeps following it, clamped
+	if st.X != 136 {
+		t.Fatalf("X = %d, want the clamp 136", st.X)
+	}
+	c.In = widget.Input{X: -300, Y: 10}
+	Update(c, root)
+	if st.X != 136 || st.panning {
+		t.Fatalf("release ends the pan: X = %d panning %v", st.X, st.panning)
+	}
+}
+
+func TestHScrollThatFitsDoesNotPanAndReportsOverflow(t *testing.T) {
+	var hits []int
+	st := &ScrollState{}
+	root := Col(strip(st, 2, &hits))
+	c := testCtx(t)
+	Layout(c, root, 300, 100)
+	c.In = widget.Input{X: 50, Y: 10, Click: true, Held: true}
+	Update(c, root)
+	c.In = widget.Input{X: 10, Y: 10, Held: true}
+	Update(c, root)
+	if st.X != 0 || st.Overflowing {
+		t.Fatalf("X = %d overflowing %v", st.X, st.Overflowing)
+	}
+	st2 := &ScrollState{}
+	root2 := Col(strip(st2, 5, &hits))
+	Layout(c, root2, 300, 100)
+	if !st2.Overflowing {
+		t.Fatal("an overflowing strip says so, so the app can tell panning from reordering")
+	}
+}

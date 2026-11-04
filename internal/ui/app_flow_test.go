@@ -3303,3 +3303,28 @@ func TestManyTabsScrollTheStripAndKeepTheActiveTabInView(t *testing.T) {
 		t.Fatalf("an arrow click must not select or close a tab: %d tabs, active %d", len(a.tabs), a.active)
 	}
 }
+
+func TestLeftDragOnAnOverflowingTabStripPansItInsteadOfReorderingTabs(t *testing.T) {
+	a, _ := newTestApp(t)
+	for range 14 {
+		a.newRequest()
+	}
+	a.step(widget.Input{})
+	order := append([]*reqTab(nil), a.tabs...)
+	x0 := a.tabsScroll.X // the active (last) tab was revealed: the strip is at its right end
+	a.step(widget.Input{X: 600, Y: tabStripY, Click: true, Held: true})
+	a.step(widget.Input{X: 700, Y: tabStripY, Held: true}) // drag right: earlier tabs come into view
+	a.step(widget.Input{X: 800, Y: tabStripY, Held: true})
+	if want := x0 - 200; a.tabsScroll.X != want {
+		t.Fatalf("X = %d, want %d: the strip follows the pointer", a.tabsScroll.X, want)
+	}
+	for i := range order {
+		if a.tabs[i] != order[i] {
+			t.Fatalf("tab %d moved: a left drag on an overflowing strip must not reorder", i)
+		}
+	}
+	a.step(widget.Input{X: 800, Y: tabStripY}) // release
+	if a.dragTab != -1 {
+		t.Fatalf("dragTab = %d", a.dragTab)
+	}
+}

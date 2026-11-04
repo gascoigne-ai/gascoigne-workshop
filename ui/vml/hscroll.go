@@ -15,6 +15,7 @@ const hscrollArrowW = 18
 const (
 	hscrollHoldDelay = 20
 	hscrollHoldEvery = 3
+	hscrollPanSlop   = 4 // pixels the pointer must move before a press on the strip pans it
 )
 
 // hscrollB lays its children out in a row at their natural width, wider
@@ -55,6 +56,7 @@ func (s *hscrollB) layout(e *El, c *widget.Ctx) {
 	r := e.rect
 	s.content, _ = s.flow.measure(e, c, 1<<20)
 	st := s.state
+	st.Overflowing = s.overflow(e)
 
 	flagged, x := -1, e.padL
 	var start, end int
@@ -112,6 +114,9 @@ func (s *hscrollB) preUpdate(e *El, c *widget.Ctx) {
 	if !in.Held {
 		st.holdDir, st.holdN = 0, 0
 	}
+	if !in.Held {
+		st.pressed, st.panning = false, false
+	}
 	if in.Click {
 		switch {
 		case left.Contains(in.X, in.Y):
@@ -122,6 +127,18 @@ func (s *hscrollB) preUpdate(e *El, c *widget.Ctx) {
 			st.holdDir, st.holdN = 1, 0
 			step(1, r.W/2)
 			c.In.Click = false
+		default:
+			if in.Over(r) { // a press on the strip itself may become a pan; the tab under it still gets the click
+				st.pressed, st.panning, st.panFrom, st.panX0 = true, false, in.X, st.X
+			}
+		}
+		return
+	}
+	if st.pressed && in.Held { // dragging the strip: the content follows the pointer
+		dx := c.RawX - st.panFrom
+		if st.panning || dx >= hscrollPanSlop || dx <= -hscrollPanSlop {
+			st.panning = true
+			st.X = max(0, min(st.panX0-dx, s.maxX(e)))
 		}
 		return
 	}
