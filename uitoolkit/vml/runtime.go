@@ -14,7 +14,7 @@ func Layout(c *widget.Ctx, root Node, w, h int) {
 // Update delivers this frame's input (c.In) to the tree, top-most
 // element first. It must follow Layout on the same tree.
 func Update(c *widget.Ctx, root Node) {
-	c.RawX, c.RawY = c.In.X, c.In.Y
+	c.PointerX, c.PointerY = c.In.X, c.In.Y
 	root.update(c)
 	cycleFocus(c, root)
 }

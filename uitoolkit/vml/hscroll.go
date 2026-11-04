@@ -135,7 +135,7 @@ func (s *hscrollB) preUpdate(e *El, c *widget.Ctx) {
 		return
 	}
 	if st.pressed && in.Held { // dragging the strip: the content follows the pointer
-		dx := c.RawX - st.panFrom
+		dx := c.PointerX - st.panFrom
 		if st.panning || dx >= hscrollPanSlop || dx <= -hscrollPanSlop {
 			st.panning = true
 			st.X = max(0, min(st.panX0-dx, s.maxX(e)))

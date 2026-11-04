@@ -83,7 +83,7 @@ func (s *sliderB) update(e *El, c *widget.Ctx) {
 	switch {
 	case st.Dragging:
 		if in.Held {
-			f := st.startF + (float64(c.RawX)*c.Scale-st.startDev)/st.trackDev
+			f := st.startF + (float64(c.PointerX)*c.Scale-st.startDev)/st.trackDev
 			if v := s.valueAt(f); v != st.pending {
 				st.pending = v
 				if s.onChange != nil {
