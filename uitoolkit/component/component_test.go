@@ -224,3 +224,20 @@ func TestSideAttributesMatchTheGoOptions(t *testing.T) {
 		t.Fatalf("template:\n%s\nGo:\n%s", got, want)
 	}
 }
+
+func TestRemainingAttributesMatchTheGoOptions(t *testing.T) {
+	got := vml.Dump(build(t, `<stack hover-bg="hover" border-inset="3" float-top-right="4 5" edges="accent-line top left"/>`, nil))
+	want := vml.Dump(vml.Stack(vml.HoverBg("hover"), vml.BorderInset(3), vml.FloatTopRight(4, 5), vml.Edges("accent-line", true, true, false)))
+	if got != want {
+		t.Fatalf("template:\n%s\nGo:\n%s", got, want)
+	}
+	for _, bad := range []string{`<row edges="accent-line"/>`, `<row edges="x middle"/>`, `<row float-at="1"/>`} {
+		tp, err := Parse("t.vml", []byte(bad))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := tp.Build(nil); err == nil {
+			t.Errorf("%s built", bad)
+		}
+	}
+}

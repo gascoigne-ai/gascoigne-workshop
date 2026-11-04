@@ -223,7 +223,9 @@ func BorderL(t core.Token) Option { return func(e *El) { e.borderL = t } }
 
 // Separator draws the soft hairline between neighbours (tabs, table
 // columns) on the element's left edge; inset keeps it off the top and
-// bottom. The first of a row has none: When(i > 0, Separator(10)).
+// bottom. The first of a row has none: When(i > 0, Separator(10)). It has
+// no template attribute because the template language has no conditional
+// options; use border-l where the line is always there.
 func Separator(inset int) Option {
 	return func(e *El) { e.borderL, e.borderInset = core.BorderSoft, inset }
 }

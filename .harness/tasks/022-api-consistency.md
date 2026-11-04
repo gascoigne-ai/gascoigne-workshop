@@ -1,4 +1,4 @@
-status: mostly done (remaining items are small)
+status: done
 
 # Toolkit API consistency debt
 
@@ -12,9 +12,9 @@ Bring the remaining exported names of `uitoolkit` in line with the rules in `rul
 
 ## Left
 - State type naming: `TextField`, `TextArea`, `CodeView` vs `ScrollState`, `SplitState`, `SliderState` [6]: accepted as it is (rule 6 describes it); revisit only if a widget gets both.
-- `core.ParseHex` and `core.ParseColor` both parse colors, in `theming` now [8]: make `ParseColor` build on `ParseHex`.
+- `ParseColor` already builds on `ParseHex` (they differ in alpha support only): accepted.
 - `core.Lighten` (a function) and `vml.Lighten()` (an option) share a name; they are the same idea at two levels [5]: accepted, or rename the function `Brighten`.
-- Template attributes missing for options that could have one [9]: `Edges`, `FloatAt`/`FloatCenter`/`FloatTopRight`, `HoverBg`, `Separator`, `BorderInset`, `Tooltip` is there as `tip`.
+- Template attributes: added `hover-bg`, `border-inset`, `edges`, `float-at`, `float-center`, `float-top-right`; `Separator` has none on purpose (documented).
 
 ## Acceptance
 - Each item fixed or recorded as an accepted exception in `decisions.md`; `make check` passes after every step.

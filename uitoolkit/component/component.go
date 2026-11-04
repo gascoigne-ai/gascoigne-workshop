@@ -168,42 +168,48 @@ var directives = map[string]bool{"if": true, "for": true, "onclick": true}
 // option. A flag is written bare (`small`) or `small="true"`; "false" is
 // off. An option may be nil, meaning nothing to apply.
 var attributes = map[string]func(v string) (vml.Option, error){
-	"w":           intAttr(vml.W),
-	"h":           intAttr(vml.H),
-	"gap":         intAttr(vml.Gap),
-	"grow":        floatAttr(vml.Grow),
-	"pad":         padAttr,
-	"pad-x":       intAttr(vml.PadX),
-	"pad-y":       intAttr(vml.PadY),
-	"pad-l":       intAttr(vml.PadL),
-	"pad-t":       intAttr(vml.PadT),
-	"pad-r":       intAttr(vml.PadR),
-	"pad-b":       intAttr(vml.PadB),
-	"margin":      intAttr(vml.Margin),
-	"margin-x":    intAttr(vml.MarginX),
-	"margin-y":    intAttr(vml.MarginY),
-	"margin-l":    intAttr(vml.MarginL),
-	"margin-t":    intAttr(vml.MarginT),
-	"margin-r":    intAttr(vml.MarginR),
-	"margin-b":    intAttr(vml.MarginB),
-	"bg":          tokenAttr(vml.Bg),
-	"border":      tokenAttr(vml.Border),
-	"border-t":    tokenAttr(vml.BorderT),
-	"border-b":    tokenAttr(vml.BorderB),
-	"border-l":    tokenAttr(vml.BorderL),
-	"border-r":    tokenAttr(vml.BorderR),
-	"border-x":    tokenAttr(vml.BorderX),
-	"border-y":    tokenAttr(vml.BorderY),
-	"color":       tokenAttr(vml.Color),
-	"control":     func(v string) (vml.Option, error) { return vml.Control(v), nil },
-	"tip":         func(v string) (vml.Option, error) { return vml.Tooltip(v), nil },
-	"small":       flagAttr("small", vml.Small),
-	"muted":       flagAttr("muted", vml.Muted),
-	"bold":        flagAttr("bold", vml.Bold),
-	"mono":        flagAttr("mono", vml.Mono),
-	"ellipsis":    flagAttr("ellipsis", vml.Ellipsis),
-	"text-center": flagAttr("text-center", vml.TextCenter),
-	"optional":    flagAttr("optional", vml.Optional),
+	"w":               intAttr(vml.W),
+	"h":               intAttr(vml.H),
+	"gap":             intAttr(vml.Gap),
+	"grow":            floatAttr(vml.Grow),
+	"pad":             padAttr,
+	"pad-x":           intAttr(vml.PadX),
+	"pad-y":           intAttr(vml.PadY),
+	"pad-l":           intAttr(vml.PadL),
+	"pad-t":           intAttr(vml.PadT),
+	"pad-r":           intAttr(vml.PadR),
+	"pad-b":           intAttr(vml.PadB),
+	"margin":          intAttr(vml.Margin),
+	"margin-x":        intAttr(vml.MarginX),
+	"margin-y":        intAttr(vml.MarginY),
+	"margin-l":        intAttr(vml.MarginL),
+	"margin-t":        intAttr(vml.MarginT),
+	"margin-r":        intAttr(vml.MarginR),
+	"margin-b":        intAttr(vml.MarginB),
+	"bg":              tokenAttr(vml.Bg),
+	"border":          tokenAttr(vml.Border),
+	"border-t":        tokenAttr(vml.BorderT),
+	"border-b":        tokenAttr(vml.BorderB),
+	"border-l":        tokenAttr(vml.BorderL),
+	"border-inset":    intAttr(vml.BorderInset),
+	"hover-bg":        tokenAttr(vml.HoverBg),
+	"float-center":    flagAttr("float-center", vml.FloatCenter),
+	"float-at":        intsAttr("float-at", 2, func(n []int) vml.Option { return vml.FloatAt(n[0], n[1]) }),
+	"float-top-right": intsAttr("float-top-right", 2, func(n []int) vml.Option { return vml.FloatTopRight(n[0], n[1]) }),
+	"edges":           edgesAttr,
+	"border-r":        tokenAttr(vml.BorderR),
+	"border-x":        tokenAttr(vml.BorderX),
+	"border-y":        tokenAttr(vml.BorderY),
+	"color":           tokenAttr(vml.Color),
+	"control":         func(v string) (vml.Option, error) { return vml.Control(v), nil },
+	"tip":             func(v string) (vml.Option, error) { return vml.Tooltip(v), nil },
+	"small":           flagAttr("small", vml.Small),
+	"muted":           flagAttr("muted", vml.Muted),
+	"bold":            flagAttr("bold", vml.Bold),
+	"mono":            flagAttr("mono", vml.Mono),
+	"ellipsis":        flagAttr("ellipsis", vml.Ellipsis),
+	"text-center":     flagAttr("text-center", vml.TextCenter),
+	"optional":        flagAttr("optional", vml.Optional),
 }
 
 func intAttr(f func(int) vml.Option) func(string) (vml.Option, error) {
@@ -628,4 +634,46 @@ func Reference() string {
 	}
 	sb.WriteString("Text and attribute values may use {{path}}; if=\"name\" or \"!name\"; for=\"item in list\"; onclick=\"handler\".\n")
 	return sb.String()
+}
+
+// intsAttr reads exactly n whole numbers separated by spaces.
+func intsAttr(name string, n int, f func([]int) vml.Option) func(string) (vml.Option, error) {
+	return func(v string) (vml.Option, error) {
+		fields := strings.Fields(v)
+		if len(fields) != n {
+			return nil, fmt.Errorf("%s takes %d numbers, not %q", name, n, v)
+		}
+		nums := make([]int, n)
+		for i, s := range fields {
+			x, err := strconv.Atoi(s)
+			if err != nil {
+				return nil, fmt.Errorf("%q is not a whole number", s)
+			}
+			nums[i] = x
+		}
+		return f(nums), nil
+	}
+}
+
+// edgesAttr is `edges="accent-line top left right"`: a token, then the
+// sides that get the two-pixel line (any of top, left, right).
+func edgesAttr(v string) (vml.Option, error) {
+	f := strings.Fields(v)
+	if len(f) < 2 {
+		return nil, fmt.Errorf("edges is a token and the sides (top, left, right), not %q", v)
+	}
+	var top, left, right bool
+	for _, side := range f[1:] {
+		switch side {
+		case "top":
+			top = true
+		case "left":
+			left = true
+		case "right":
+			right = true
+		default:
+			return nil, fmt.Errorf("%q is not a side: top, left or right", side)
+		}
+	}
+	return vml.Edges(core.Token(f[0]), top, left, right), nil
 }

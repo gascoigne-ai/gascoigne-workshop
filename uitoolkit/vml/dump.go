@@ -29,7 +29,7 @@ func dump(sb *strings.Builder, e *El, depth int) {
 		name string
 		v    int
 	}{
-		{"w", e.w}, {"h", e.h}, {"padL", e.padL}, {"padT", e.padT}, {"padR", e.padR}, {"padB", e.padB}, {"mL", e.mL}, {"mT", e.mT}, {"mR", e.mR}, {"mB", e.mB}, {"gap", e.gap},
+		{"w", e.w}, {"h", e.h}, {"padL", e.padL}, {"padT", e.padT}, {"padR", e.padR}, {"padB", e.padB}, {"borderInset", e.borderInset}, {"floatTop", e.fl.top}, {"floatRight", e.fl.right}, {"floatMode", e.fl.mode}, {"mL", e.mL}, {"mT", e.mT}, {"mR", e.mR}, {"mB", e.mB}, {"gap", e.gap},
 	} {
 		if f.v != 0 {
 			add(f.name, f.v)
@@ -44,7 +44,7 @@ func dump(sb *strings.Builder, e *El, depth int) {
 	}{
 		{"bg", string(e.bg)}, {"border", string(e.border)}, {"borderT", string(e.borderT)},
 		{"borderB", string(e.borderB)}, {"borderL", string(e.borderL)}, {"borderR", string(e.borderR)}, {"fg", string(e.fg)},
-		{"control", e.control}, {"tip", e.tip},
+		{"control", e.control}, {"tip", e.tip}, {"hoverBg", string(e.hoverBg)}, {"edge", string(e.edgeTok)},
 	} {
 		if f.v != "" {
 			add(f.name, f.v)
@@ -55,7 +55,7 @@ func dump(sb *strings.Builder, e *El, depth int) {
 		v    bool
 	}{
 		{"small", e.small}, {"bold", e.bold}, {"mono", e.mono}, {"ellipsis", e.ellipsis}, {"center", e.ctr},
-		{"optional", e.optional}, {"lighten", e.lighten}, {"onClick", e.onClick != nil},
+		{"optional", e.optional}, {"float", e.fl.on}, {"edgeTop", e.edgeTop}, {"edgeLeft", e.edgeLeft}, {"edgeRight", e.edgeRight}, {"lighten", e.lighten}, {"onClick", e.onClick != nil},
 	} {
 		if f.v {
 			add(f.name, true)
