@@ -185,7 +185,7 @@ func tableHeader(t TableSpec) Node {
 }
 
 func headerCheck(t TableSpec) Node {
-	items := []Item{W(tableActionW), JustifyContent(JustifyCenter), Checkbox(t.AllChecked)}
+	items := []Item{W(tableActionW), JustifyContent(JustifyCenter), Tooltip("Enable or disable every row"), Checkbox(t.AllChecked)}
 	if t.OnToggleAll != nil {
 		items = append(items, OnClick(t.OnToggleAll))
 	}
@@ -200,7 +200,7 @@ func tableRow(t TableSpec, i int, r TableRow, placeholder bool) Node {
 	actions := t.Editable && !placeholder
 	row := []Item{
 		H(widget.RowH),
-		If(actions, Row(W(tableActionW), JustifyContent(JustifyCenter), OnClick(func() { t.OnToggle(i) }), Checkbox(r.Checked))),
+		If(actions, Row(W(tableActionW), JustifyContent(JustifyCenter), OnClick(func() { t.OnToggle(i) }), Tooltip("Enable or disable this row"), Checkbox(r.Checked))),
 		If(placeholder, Row(W(tableActionW))),
 		For(r.Cells, func(j int, s string) Node {
 			cellClr := clr
@@ -209,7 +209,7 @@ func tableRow(t TableSpec, i int, r TableRow, placeholder bool) Node {
 			}
 			return tableCell(t, i, j, s, cellClr)
 		}),
-		If(actions, Row(W(tableActionW), JustifyContent(JustifyCenter), OnClick(func() { t.OnDelete(i) }), Cross())),
+		If(actions, Row(W(tableActionW), JustifyContent(JustifyCenter), OnClick(func() { t.OnDelete(i) }), Tooltip("Delete row"), Trash())),
 		If(placeholder, Row(W(tableActionW))),
 	}
 	if t.OnRowMenu != nil && !placeholder {

@@ -52,6 +52,14 @@ type Ctx struct {
 	// Clipboard is used by text widgets for copy, cut and paste.
 	Clipboard Clipboard
 
+	// Tooltip state, kept by vml.Draw: the text of the element under the
+	// pointer, whether it has been hovered long enough to show, and
+	// whether it is still waiting to (the app keeps drawing meanwhile).
+	TipText              string
+	TipShown, TipWaiting bool
+	TipFor               string // the text the delay is counted for
+	TipSince             int    // tick at which the pointer came to rest on it
+
 	// HoverOff turns hover feedback off for everything drawn while it is
 	// set: elements under a modal overlay must not light up.
 	HoverOff bool

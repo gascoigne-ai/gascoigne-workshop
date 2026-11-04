@@ -232,7 +232,7 @@ func (a *App) tableCaption(p pane, t *reqTab) Node {
 	return Row(H(w.RowH),
 		Caption(p.title),
 		Spacer(),
-		If(p.editable, LinkButton(bulkLabel(a.bulk != nil), OnClick(func() { a.toggleBulk(p, t) }))),
+		If(p.editable, LinkButton(bulkLabel(a.bulk != nil), Tooltip("Edit all rows as text, one per line"), OnClick(func() { a.toggleBulk(p, t) }))),
 	)
 }
 
@@ -440,9 +440,9 @@ func (a *App) responsePane(_ pane, t *reqTab, _ *ScrollState) Node {
 			a.viewChip("Pretty", !t.raw, 56, func() { a.setRaw(t, false) }),
 			a.viewChip("Raw", t.raw, 44, func() { a.setRaw(t, true) }),
 			Spacer(),
-			Button("Find", W(48), OnClick(a.openFind)),
-			Button("Copy", W(52), OnClick(func() { a.copyBody(t) })),
-			Button("cURL", W(52), OnClick(func() { a.copyCurl(t) })),
+			IconButton(SearchIcon(Grow(1)), W(48), OnClick(a.openFind), Tooltip(a.hint("Find in response", "find"))),
+			IconButton(CopyIcon(Grow(1)), W(52), OnClick(func() { a.copyBody(t) }), Tooltip("Copy the response body")),
+			IconButton(PromptIcon(Grow(1)), W(52), OnClick(func() { a.copyCurl(t) }), Tooltip("Copy the request as a cURL command")),
 		),
 		If(t.findOpen, a.findBar(t)),
 		Code(&t.view, Grow(1), Bg(w.Sunken), OnRightClick(func(x, y int) { a.openMenu(x, y, a.responseMenuItems(t)) })),
@@ -464,9 +464,9 @@ func (a *App) findBar(t *reqTab) Node {
 			a.textMenuOpt(&t.find, func() { a.runFind(t) }),
 		),
 		Text(findCount(t.find.Text, len(t.view.Matches()), t.matchIdx), Small(), Muted(), W(64)),
-		Button("<", W(28), OnClick(func() { a.findStep(t, -1) })),
-		Button(">", W(28), OnClick(func() { a.findStep(t, 1) })),
-		Button("\u00d7", W(28), OnClick(func() { a.closeFind(t) })),
+		IconButton(ChevronUp(Grow(1)), W(28), OnClick(func() { a.findStep(t, -1) }), Tooltip("Previous match")),
+		IconButton(ChevronDown(Grow(1)), W(28), OnClick(func() { a.findStep(t, 1) }), Tooltip("Next match")),
+		IconButton(Cross(Grow(1)), W(28), OnClick(func() { a.closeFind(t) }), Tooltip("Close search (Esc)")),
 	)
 }
 

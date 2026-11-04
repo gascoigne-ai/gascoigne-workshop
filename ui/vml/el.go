@@ -70,8 +70,9 @@ type El struct {
 	onTab                      func(back bool)
 	onMiddle, onHeldOver       func()
 
-	scrollMaxH int  // MaxHeight of a Scroll, 0 for none
-	reveal     bool // an HScroll keeps this child in view when it becomes the flagged one
+	scrollMaxH int    // MaxHeight of a Scroll, 0 for none
+	tip        string // tooltip text, shown after the pointer rests on the element
+	reveal     bool   // an HScroll keeps this child in view when it becomes the flagged one
 
 	alignItems, alignSelf         Align
 	justify                       Justify
@@ -182,6 +183,10 @@ func BorderTop(t widget.Token) Option { return func(e *El) { e.borderTop = t } }
 func BorderBottom(t widget.Token) Option { return func(e *El) { e.borderBottom = t } }
 
 // HoverBg fills the element while the pointer is over it.
+// Tooltip shows text near the pointer once it has rested on the element
+// for TipDelayTicks.
+func Tooltip(text string) Option { return func(e *El) { e.tip = text } }
+
 func HoverBg(t widget.Token) Option { return func(e *El) { e.hoverBg = t } }
 
 // Lighten brightens the background while the pointer is over it.

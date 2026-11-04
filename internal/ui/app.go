@@ -388,8 +388,8 @@ func (a *App) step(in widget.Input) {
 	}
 	a.settleBulk()
 	a.stateTick()
-	a.markFrame(active || drained || pruned)
-	a.pacer.NoteIdle(active || drained || pruned)
+	a.markFrame(active || drained || pruned || a.ctx.TipWaiting)
+	a.pacer.NoteIdle(active || drained || pruned || a.ctx.TipWaiting)
 }
 
 // Draw implements ebiten.Game. The view is rebuilt so it shows the

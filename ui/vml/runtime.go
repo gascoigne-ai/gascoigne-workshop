@@ -100,8 +100,10 @@ func cycleFocus(c *widget.Ctx, root Node) {
 // Draw paints the tree. It must follow Layout on the same tree.
 func Draw(c *widget.Ctx, root Node, dst *ebiten.Image) {
 	c.HoverOff = hasModal(root) // only the overlay's own elements react to the pointer
+	c.TipText = ""
 	root.draw(c, dst)
 	c.HoverOff = false
+	drawTooltip(c, dst, root.rect)
 }
 
 // hasModal reports whether any visible element is a modal overlay.
@@ -203,6 +205,9 @@ func (e *El) draw(c *widget.Ctx, dst *ebiten.Image) {
 	}
 	over := c.Hovered(r)
 	e.hover = over
+	if over && e.tip != "" {
+		c.TipText = e.tip // children draw later, so the innermost tooltip wins
+	}
 	if e.bg != "" {
 		clr := c.Col(e.bg)
 		if e.lighten && over {

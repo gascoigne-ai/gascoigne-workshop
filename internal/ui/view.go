@@ -161,7 +161,7 @@ func (a *App) header() Node {
 	return Row(H(headerH), PadXY(w.Pad, 0), Bg(w.Bg),
 		Text(a.col.Name),
 		Spacer(),
-		Row(W(headerH), toggleMenu,
+		Row(W(headerH), toggleMenu, Tooltip(a.hint("Settings", "settings")),
 			Dots(Grow(1)),
 		),
 	)
@@ -183,13 +183,13 @@ func (a *App) requestTabs() Node {
 					Text(t.req.Name),
 					Row(W(tabDirtyW), AlignSelf(AlignStretch), If(dirty(t), Text(dirtyMark, Color(w.AccentLine), Grow(1)))),
 				),
-				Row(W(24), OnClick(func() { a.closeTab(i) }),
+				Row(W(24), OnClick(func() { a.closeTab(i) }), Tooltip(a.hint("Close tab", "close-tab")),
 					Cross(Grow(1)),
 				),
 			)
 		}),
-		Row(W(40), OnClick(a.newRequest),
-			Text("+", Muted(), Center(), Grow(1)),
+		Row(W(40), OnClick(a.newRequest), Tooltip(a.hint("New request", "new-request")),
+			Plus(Grow(1)),
 		),
 	)
 }
@@ -197,15 +197,15 @@ func (a *App) requestTabs() Node {
 // urlBar is [protocol | method | URL field ........] [Send].
 func (a *App) urlBar(t *reqTab) Node {
 	isREST := t.req.Protocol == "rest"
-	send := PrimaryButton("Send", W(80), OnClick(func() { a.send(t) }))
+	send := PrimaryButton("Send", W(80), OnClick(func() { a.send(t) }), Tooltip(a.hint("Send the request", "send")))
 	if t.sending {
-		send = PrimaryButton("Cancel", W(80), OnClick(func() { a.cancelSend(t) }))
+		send = PrimaryButton("Cancel", W(80), OnClick(func() { a.cancelSend(t) }), Tooltip("Cancel the running request"))
 	}
 	return Row(H(urlH), PadXY(w.Pad, 8), Gap(8), Bg(w.Bg),
 		Row(Grow(1), Bg(w.Sunken), Border(w.Border),
-			chip(protocolLabel[t.req.Protocol], w.Muted, 64, func() { a.cycleProtocol(t) }),
+			tip("Protocol: click to change", chip(protocolLabel[t.req.Protocol], w.Muted, 64, func() { a.cycleProtocol(t) })),
 			VRuleInset(8),
-			If(isREST, chip(t.req.Method, methodToken(t.req.Method), 84, func() { a.cycleMethod(t) })),
+			If(isREST, tip("Method: click to change", chip(t.req.Method, methodToken(t.req.Method), 84, func() { a.cycleMethod(t) }))),
 			If(isREST, VRuleInset(8)),
 			Spacer(W(w.Pad-4)), // breathing room between the divider and the URL text
 			Field(&t.url, Grow(1),
@@ -220,8 +220,22 @@ func (a *App) urlBar(t *reqTab) Node {
 	)
 }
 
+// tip gives n a tooltip.
+func tip(text string, n *El) *El {
+	Tooltip(text)(n)
+	return n
+}
+
+// hint is a tooltip with the action's shortcut, when it has one.
+func (a *App) hint(text, shortcutID string) string {
+	if key := a.shortcutHint(shortcutID); key != "" {
+		return text + " (" + key + ")"
+	}
+	return text
+}
+
 // chip is a clickable label of fixed width, used for protocol and method.
-func chip(label string, color w.Token, width int, onClick func()) Node {
+func chip(label string, color w.Token, width int, onClick func()) *El {
 	return Row(W(width), OnClick(onClick),
 		Text(label, Center(), Grow(1), Color(color)),
 	)

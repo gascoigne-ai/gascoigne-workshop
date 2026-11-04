@@ -1,6 +1,9 @@
 package vml
 
 import (
+	"image/color"
+	"math"
+
 	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -97,6 +100,13 @@ const (
 	iconCross
 	iconTriangle
 	iconDots
+	iconTrash
+	iconCopy
+	iconSearch
+	iconPlus
+	iconPrompt
+	iconUp
+	iconDown
 )
 
 // icon draws a small vector glyph centered in its box.
@@ -104,6 +114,7 @@ type iconB struct{ plain }
 
 var iconSizes = map[iconKind][2]int{
 	iconCheck: {14, 14}, iconCross: {10, 10}, iconTriangle: {10, 10}, iconDots: {4, 20},
+	iconTrash: {14, 16}, iconCopy: {14, 14}, iconSearch: {14, 14}, iconPlus: {12, 12}, iconPrompt: {16, 14}, iconUp: {12, 8}, iconDown: {12, 8},
 }
 
 func (iconB) measure(e *El, _ *widget.Ctx, _ int) (int, int) {
@@ -125,6 +136,11 @@ func (iconB) draw(e *El, c *widget.Ctx, dst *ebiten.Image) {
 		c.Cross(dst, cx, cy, 4, clr)
 	case iconTriangle:
 		c.Triangle(dst, cx, cy, 4, e.on, clr)
+	case iconTrash, iconCopy, iconSearch, iconPlus, iconPrompt, iconUp, iconDown:
+		if c.Hovered(r) {
+			clr = c.Col(glyphHover[e.icon])
+		}
+		glyphs[e.icon](c, dst, cx, cy, clr)
 	case iconDots:
 		if c.Hovered(r) {
 			clr = c.Col(widget.Text)
@@ -170,3 +186,87 @@ func Triangle(open bool, opts ...Option) *El { return icon(iconTriangle, open, o
 
 // Dots is the three-dot "more" glyph.
 func Dots(opts ...Option) *El { return icon(iconDots, false, opts) }
+
+// glyphHover is the color a glyph takes under the pointer: red for the
+// destructive one, the text color for the rest.
+var glyphHover = map[iconKind]widget.Token{
+	iconTrash: widget.Error, iconCopy: widget.Text, iconSearch: widget.Text, iconPlus: widget.Text, iconPrompt: widget.Text,
+	iconUp: widget.Text, iconDown: widget.Text,
+}
+
+// glyphs draw the line icons around a center point, in one stroke width.
+var glyphs = map[iconKind]func(c *widget.Ctx, dst *ebiten.Image, cx, cy float32, clr color.RGBA){
+	iconTrash: func(c *widget.Ctx, dst *ebiten.Image, cx, cy float32, clr color.RGBA) {
+		c.Line(dst, cx-6, cy-4.5, cx+6, cy-4.5, 1.4, clr) // lid
+		c.Line(dst, cx-2, cy-6.5, cx+2, cy-6.5, 1.4, clr) // handle
+		c.Line(dst, cx-2, cy-6.5, cx-2, cy-4.5, 1.4, clr)
+		c.Line(dst, cx+2, cy-6.5, cx+2, cy-4.5, 1.4, clr)
+		c.Line(dst, cx-4.5, cy-3, cx-3.7, cy+6.5, 1.4, clr) // body
+		c.Line(dst, cx+4.5, cy-3, cx+3.7, cy+6.5, 1.4, clr)
+		c.Line(dst, cx-3.7, cy+6.5, cx+3.7, cy+6.5, 1.4, clr)
+		c.Line(dst, cx-1.5, cy-1, cx-1.5, cy+4.5, 1.2, clr) // slats
+		c.Line(dst, cx+1.5, cy-1, cx+1.5, cy+4.5, 1.2, clr)
+	},
+	iconCopy: func(c *widget.Ctx, dst *ebiten.Image, cx, cy float32, clr color.RGBA) {
+		c.Line(dst, cx-6, cy-6, cx+2, cy-6, 1.4, clr) // back sheet: top and left edges
+		c.Line(dst, cx-6, cy-6, cx-6, cy+2, 1.4, clr)
+		x0, y0, x1, y1 := cx-3, cy-3, cx+6, cy+6 // front sheet
+		c.Line(dst, x0, y0, x1, y0, 1.4, clr)
+		c.Line(dst, x1, y0, x1, y1, 1.4, clr)
+		c.Line(dst, x1, y1, x0, y1, 1.4, clr)
+		c.Line(dst, x0, y1, x0, y0, 1.4, clr)
+	},
+	iconSearch: func(c *widget.Ctx, dst *ebiten.Image, cx, cy float32, clr color.RGBA) {
+		const n = 14
+		ox, oy, r := cx-1.5, cy-1.5, float32(4.5)
+		px, py := ox+r, oy
+		for i := 1; i <= n; i++ {
+			a := float64(i) * 2 * math.Pi / n
+			x, y := ox+r*float32(math.Cos(a)), oy+r*float32(math.Sin(a))
+			c.Line(dst, px, py, x, y, 1.4, clr)
+			px, py = x, y
+		}
+		c.Line(dst, cx+1.8, cy+1.8, cx+6, cy+6, 1.8, clr) // handle
+	},
+	iconPlus: func(c *widget.Ctx, dst *ebiten.Image, cx, cy float32, clr color.RGBA) {
+		c.Line(dst, cx-5, cy, cx+5, cy, 1.5, clr)
+		c.Line(dst, cx, cy-5, cx, cy+5, 1.5, clr)
+	},
+	iconUp: func(c *widget.Ctx, dst *ebiten.Image, cx, cy float32, clr color.RGBA) {
+		c.Line(dst, cx-5, cy+2.5, cx, cy-2.5, 1.5, clr)
+		c.Line(dst, cx, cy-2.5, cx+5, cy+2.5, 1.5, clr)
+	},
+	iconDown: func(c *widget.Ctx, dst *ebiten.Image, cx, cy float32, clr color.RGBA) {
+		c.Line(dst, cx-5, cy-2.5, cx, cy+2.5, 1.5, clr)
+		c.Line(dst, cx, cy+2.5, cx+5, cy-2.5, 1.5, clr)
+	},
+	iconPrompt: func(c *widget.Ctx, dst *ebiten.Image, cx, cy float32, clr color.RGBA) {
+		c.Line(dst, cx-7, cy-4, cx-2.5, cy, 1.5, clr) // the > chevron
+		c.Line(dst, cx-2.5, cy, cx-7, cy+4, 1.5, clr)
+		c.Line(dst, cx, cy+5, cx+7, cy+5, 1.5, clr) // the _ cursor
+	},
+}
+
+// Trash is a trash can, for delete buttons; it turns red under the pointer.
+func Trash(opts ...Option) *El { return icon(iconTrash, false, opts) }
+
+// CopyIcon is two overlapping sheets.
+func CopyIcon(opts ...Option) *El { return icon(iconCopy, false, opts) }
+
+// SearchIcon is a magnifying glass.
+func SearchIcon(opts ...Option) *El { return icon(iconSearch, false, opts) }
+
+// Plus is a plus sign.
+func Plus(opts ...Option) *El { return icon(iconPlus, false, opts) }
+
+// PromptIcon is a terminal prompt, ">_".
+func PromptIcon(opts ...Option) *El { return icon(iconPrompt, false, opts) }
+
+// ChevronUp and ChevronDown are small arrows for stepping through a list.
+func ChevronUp(opts ...Option) *El   { return icon(iconUp, false, opts) }
+func ChevronDown(opts ...Option) *El { return icon(iconDown, false, opts) }
+
+// IconButton is Button with an icon in place of the label.
+func IconButton(glyph *El, opts ...Option) *El {
+	return Row(with([]Item{Bg(widget.Chip), Border(widget.Border), Lighten(), glyph}, opts)...)
+}

@@ -3193,3 +3193,60 @@ func TestEditableTableMenuAlsoCopiesCells(t *testing.T) {
 		t.Fatalf("found %v clipboard %q", found, clip.text)
 	}
 }
+
+// tipAt hovers (x, y) long enough and draws; it returns the tooltip shown.
+func tipAt(a *App, x, y int) string {
+	a.step(widget.Input{X: x, Y: y})
+	img := ebiten.NewImage(winW, winH)
+	a.Draw(img) // the pointer comes to rest on the element
+	a.ctx.Tick += 100
+	a.dirty = true
+	a.Draw(img)
+	if a.ctx.TipShown {
+		return a.ctx.TipText
+	}
+	return ""
+}
+
+func TestToolbarAndTabButtonsHaveTooltipsWithTheirShortcuts(t *testing.T) {
+	a := jsonResponse(t, `{}`)
+	for _, tt := range []struct {
+		name string
+		x, y int
+		want string
+	}{
+		{"send", sendX, urlBarY, "Send the request (Ctrl+Enter)"},
+		{"copy", copyBtnX, toolbarY, "Copy the response body"},
+		{"curl", curlBtnX, toolbarY, "Copy the request as a cURL command"},
+		{"menu", menuBtnX, menuBtnY, "Settings (Ctrl+,)"},
+	} {
+		if got := tipAt(a, tt.x, tt.y); got != tt.want {
+			t.Errorf("%s: tooltip %q, want %q", tt.name, got, tt.want)
+		}
+	}
+}
+
+func TestDeleteButtonIsATrashCanWithATooltip(t *testing.T) {
+	a, _ := newTestApp(t)
+	found := false
+	for x := 300; x < 900 && !found; x += 2 {
+		found = tipAt(a, x, paramsRow0Y) == "Delete row"
+	}
+	if !found {
+		t.Fatal("no Delete row tooltip along the first params row")
+	}
+}
+
+func TestTooltipKeepsFramesComingWhileItWaits(t *testing.T) {
+	a, _ := newTestApp(t)
+	a.step(widget.Input{X: sendX, Y: urlBarY})
+	a.Draw(ebiten.NewImage(winW, winH))
+	if !a.ctx.TipWaiting {
+		t.Fatal("hovering a button with a tooltip must be waiting")
+	}
+	a.dirty = false
+	a.step(widget.Input{X: sendX, Y: urlBarY}) // nothing else changed
+	if !a.dirty {
+		t.Fatal("frames must keep being drawn until the tooltip shows")
+	}
+}
