@@ -179,6 +179,7 @@ type App struct {
 	sidebarSplit     vml.SplitState // width of the collections sidebar
 	paneSplit        vml.SplitState // request pane share of the request/response area
 	statePath        string         // where the UI state is remembered
+	env              int            // index of the active environment in col.Envs, -1 for none
 	workspace        string         // the folder the collection is saved to; "" for none yet
 	defaultWorkspace string         // where the first save goes when there is no workspace
 	colSaved         string         // the collection as last loaded or saved, as JSON
@@ -281,7 +282,7 @@ func (a *App) send(t *reqTab) {
 	t.seq++
 	seq := t.seq
 	a.status = "Sending " + t.req.URL
-	req := t.req.Expanded(a.col.Vars)
+	req := t.req.Expanded(a.vars())
 	ctx, cancel := context.WithTimeout(context.Background(), a.timeoutFor(req))
 	t.cancel = cancel
 	go func() {

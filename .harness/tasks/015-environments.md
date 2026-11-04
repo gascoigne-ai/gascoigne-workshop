@@ -1,4 +1,4 @@
-status: todo
+status: in progress (environments, switcher, secrets, unresolved highlight done; autocomplete, hover, folder-level variables pending)
 
 # Environments and variables
 
@@ -13,3 +13,7 @@ Variables live on the collection and there is no environment switcher.
 ## Acceptance
 - Tests for resolution order, secrets never written to collection files, unresolved detection.
 - `make check` passes.
+
+## Progress
+- Done: `model.Environment`, `MergeVars` (environment over collection), header switcher with new / rename / delete, remembered choice (`settings.environment`), Vars pane edits the active environment, secret variables (masked in the table, values in `.secrets.json`, `environments/*.env.json` on disk), unresolved `{{vars}}` in the URL shown as errors.
+- Left: `{{var}}` autocomplete popup, hover showing the resolved value, folder-level variables (order request, folder, environment, collection; today environment over collection), highlighting in header and body editors.

@@ -42,6 +42,7 @@ func (a *App) openWorkspace(dir string) {
 		}
 		a.openRequest(first)
 	}
+	a.pickEnv()
 	a.colSaved = collectionKey(a.col)
 	a.colSeen = a.colSaved
 }

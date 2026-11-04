@@ -4,7 +4,8 @@
 //	folder.json        {"name", "vars" (root only), "order": ["a.req.json", "sub/"]}
 //	a.req.json         one request
 //	sub/folder.json    a nested folder
-//	.secrets.json      credentials, by request path; listed in .gitignore
+//	environments/x.env.json   one environment (root folder only)
+//	.secrets.json      credentials and secret variable values, by file path; listed in .gitignore
 //
 // Files are written with a stable key order and indentation, so a
 // version-control diff shows only what changed. Files the store did not
@@ -28,6 +29,8 @@ import (
 )
 
 const (
+	envDir      = "environments"
+	envSuffix   = ".env.json"
 	folderFile  = "folder.json"
 	reqSuffix   = ".req.json"
 	secretsFile = ".secrets.json"
@@ -38,6 +41,12 @@ type kvFile struct {
 	Value       string `json:"value"`
 	Description string `json:"description,omitempty"`
 	Enabled     bool   `json:"enabled"`
+	Secret      bool   `json:"secret,omitempty"` // the value is in .secrets.json
+}
+
+type envFile struct {
+	Name string   `json:"name"`
+	Vars []kvFile `json:"vars,omitempty"`
 }
 
 type authFile struct {
@@ -73,9 +82,13 @@ type secret struct {
 	Token    string `json:"token,omitempty"`
 	Password string `json:"password,omitempty"`
 	KeyValue string `json:"keyValue,omitempty"`
+
+	Vars map[string]string `json:"vars,omitempty"` // secret variables of an environment, by name
 }
 
-func (s secret) empty() bool { return s == secret{} }
+func (s secret) empty() bool {
+	return s.Token == "" && s.Password == "" && s.KeyValue == "" && len(s.Vars) == 0
+}
 
 func toKV(rows []model.KV) []kvFile {
 	var out []kvFile
@@ -133,6 +146,9 @@ func Save(dir string, c model.Collection) error {
 	if err := saveFolder(dir, "", &c.Folder, meta, secrets); err != nil {
 		return err
 	}
+	if err := saveEnvs(dir, c.Envs, secrets); err != nil {
+		return err
+	}
 	if err := writeJSON(filepath.Join(dir, secretsFile), secrets, len(secrets) == 0); err != nil {
 		return err
 	}
@@ -168,13 +184,85 @@ func saveFolder(dir, rel string, f *model.Folder, meta folderMeta, secrets map[s
 	if err := writeJSON(filepath.Join(dir, folderFile), meta, false); err != nil {
 		return err
 	}
-	return prune(dir, keep)
+	return prune(dir, keep, reqSuffix)
+}
+
+// saveEnvs writes one file per environment under environments/, keeping
+// the values of secret variables out of them. The order of the
+// environments is the order of their file names, so they are numbered.
+func saveEnvs(dir string, envs []model.Environment, secrets map[string]secret) error {
+	ed := filepath.Join(dir, envDir)
+	if len(envs) == 0 {
+		return prune(ed, map[string]bool{}, envSuffix)
+	}
+	if err := os.MkdirAll(ed, 0o755); err != nil {
+		return err
+	}
+	taken := map[string]bool{}
+	keep := map[string]bool{}
+	for i, e := range envs {
+		file := fmt.Sprintf("%02d-%s%s", i+1, unique(slug(e.Name), taken), envSuffix)
+		keep[file] = true
+		ef := envFile{Name: e.Name}
+		sec := secret{Vars: map[string]string{}}
+		for _, v := range e.Vars {
+			kf := kvFile{Name: v.Name, Value: v.Value, Description: v.Description, Enabled: v.Enabled, Secret: v.Secret}
+			if v.Secret {
+				sec.Vars[v.Name] = v.Value
+				kf.Value = ""
+			}
+			ef.Vars = append(ef.Vars, kf)
+		}
+		if len(sec.Vars) > 0 {
+			secrets[path.Join(envDir, file)] = sec
+		}
+		if err := writeJSON(filepath.Join(ed, file), ef, false); err != nil {
+			return err
+		}
+	}
+	return prune(ed, keep, envSuffix)
+}
+
+// loadEnvs reads the environments in file name order.
+func loadEnvs(dir string, secrets map[string]secret) ([]model.Environment, error) {
+	ed := filepath.Join(dir, envDir)
+	entries, err := os.ReadDir(ed)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	var envs []model.Environment
+	for _, e := range entries {
+		if e.IsDir() || !strings.HasSuffix(e.Name(), envSuffix) {
+			continue
+		}
+		var ef envFile
+		if err := readJSON(filepath.Join(ed, e.Name()), &ef); err != nil {
+			return nil, err
+		}
+		env := model.Environment{Name: ef.Name}
+		sec := secrets[path.Join(envDir, e.Name())]
+		for _, kf := range ef.Vars {
+			v := model.KV{Name: kf.Name, Value: kf.Value, Description: kf.Description, Enabled: kf.Enabled, Secret: kf.Secret}
+			if kf.Secret {
+				v.Value = sec.Vars[kf.Name]
+			}
+			env.Vars = append(env.Vars, v)
+		}
+		envs = append(envs, env)
+	}
+	return envs, nil
 }
 
 // prune removes request files and folders (directories with a
 // folder.json) that are not in keep.
-func prune(dir string, keep map[string]bool) error {
+func prune(dir string, keep map[string]bool, suffix string) error {
 	entries, err := os.ReadDir(dir)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil
+	}
 	if err != nil {
 		return err
 	}
@@ -184,7 +272,7 @@ func prune(dir string, keep map[string]bool) error {
 		}
 		p := filepath.Join(dir, e.Name())
 		switch {
-		case !e.IsDir() && strings.HasSuffix(e.Name(), reqSuffix):
+		case !e.IsDir() && strings.HasSuffix(e.Name(), suffix):
 			if err := os.Remove(p); err != nil {
 				return err
 			}
@@ -296,6 +384,9 @@ func Load(dir string) (model.Collection, error) {
 		return model.Collection{}, err
 	}
 	c.Vars = fromKV(meta.Vars)
+	if c.Envs, err = loadEnvs(dir, secrets); err != nil {
+		return model.Collection{}, err
+	}
 	return c, nil
 }
 

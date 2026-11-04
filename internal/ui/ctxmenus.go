@@ -73,7 +73,7 @@ func (a *App) rowMenuItems(p pane, t *reqTab, row int) []menuItem {
 			a.applyRows(p, t, f)
 		}
 	}
-	return append(a.copyRowItems(*p.rows(a, t), row, false), append([]menuItem{menuSeparator}, []menuItem{
+	items := append(a.copyRowItems(*p.rows(a, t), row, false), append([]menuItem{menuSeparator}, []menuItem{
 		{label: "Insert row above", run: change(func(r []model.KV) []model.KV { return model.InsertRow(r, row, model.KV{Enabled: true}) })},
 		{label: "Insert row below", run: change(func(r []model.KV) []model.KV { return model.InsertRow(r, row+1, model.KV{Enabled: true}) })},
 		{label: "Duplicate", run: change(func(r []model.KV) []model.KV { return model.DuplicateRow(r, row) })},
@@ -85,6 +85,21 @@ func (a *App) rowMenuItems(p pane, t *reqTab, row int) []menuItem {
 		menuSeparator,
 		{label: "Delete", run: change(func(r []model.KV) []model.KV { return model.DeleteRow(r, row) })},
 	}...)...)
+	return append(items, a.secretItems(p, row)...)
+}
+
+// secretItems is the menu entry that marks a variable of the active
+// environment as a secret; other tables have none.
+func (a *App) secretItems(p pane, row int) []menuItem {
+	e := a.activeEnv()
+	if p.label != "Vars" || e == nil || row >= len(e.Vars) {
+		return nil
+	}
+	label := "Mark as secret"
+	if e.Vars[row].Secret {
+		label = "Not a secret"
+	}
+	return []menuItem{menuSeparator, {label: label, run: func() { a.toggleSecret(row) }}}
 }
 
 // copyRowItems copy parts of table row i to the clipboard. They are the

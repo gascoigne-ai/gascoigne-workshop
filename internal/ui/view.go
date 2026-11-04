@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
 	// The view DSL is dot-imported so views read like markup: Row(...), Text(...).
 	. "github.com/gascoigne-ai/gascoigne-workshop/ui/vml"
 	w "github.com/gascoigne-ai/gascoigne-workshop/ui/widget"
@@ -163,6 +164,8 @@ func (a *App) header() Node {
 	return Row(H(headerH), PadXY(w.Pad, 0), Bg(w.Hero), Control("hero"),
 		Text(a.col.Name, Bold(), Color(w.HeroText)),
 		Spacer(),
+		a.envChip(),
+		Spacer(W(w.Pad)),
 		Row(W(headerH), toggleMenu, Tooltip(a.hint("Settings", "settings")),
 			Dots(Grow(1), Color(w.HeroMuted)),
 		),
@@ -223,7 +226,7 @@ func (a *App) urlBar(t *reqTab) Node {
 			Spacer(W(w.Pad-4)), // breathing room between the divider and the URL text
 			Field(&t.url, Grow(1),
 				Placeholder("Enter URL"),
-				Segments(varSegments),
+				Segments(a.varSegments),
 				OnChange(func() { a.urlEdited(t) }),
 				OnEnter(func() { a.send(t) }),
 				a.textMenuOpt(&t.url, func() { a.urlEdited(t) }),
@@ -254,13 +257,18 @@ func chip(label string, color w.Token, width int, onClick func()) *El {
 	)
 }
 
-// varSegments colors {{variables}} so they stand out from the literal URL.
-func varSegments(s string) []Seg {
+// varSegments colors {{variables}} so they stand out from the literal
+// URL: defined ones in the success color, unresolved ones as errors.
+func (a *App) varSegments(s string) []Seg {
 	var segs []Seg
+	vars := a.vars()
 	for _, seg := range splitVars(s) {
 		style := w.Text
 		if seg.isVar {
 			style = w.OK
+			if !model.Defined(strings.TrimSuffix(strings.TrimPrefix(seg.text, "{{"), "}}"), vars) {
+				style = w.Error
+			}
 		}
 		segs = append(segs, Seg{Text: seg.text, Style: style})
 	}

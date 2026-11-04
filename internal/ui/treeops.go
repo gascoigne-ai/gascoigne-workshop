@@ -192,7 +192,7 @@ func (a *App) closeTabsIn(node any) {
 }
 
 func (a *App) copyRequestURL(req *model.Request) {
-	_ = a.ctx.Clipboard.Write(model.Expand(req.URL, a.col.Vars))
+	_ = a.ctx.Clipboard.Write(model.Expand(req.URL, a.vars()))
 }
 
 // ---- drag and drop ---------------------------------------------------------

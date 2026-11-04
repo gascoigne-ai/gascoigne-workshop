@@ -224,5 +224,9 @@ func removeAt[T any](items []T, i int) []T {
 // Clone returns a deep copy of c.
 func (c Collection) Clone() Collection {
 	cp := c.Folder.deepCopy()
-	return Collection{Folder: *cp, Vars: cloneKV(c.Vars)}
+	out := Collection{Folder: *cp, Vars: cloneKV(c.Vars)}
+	for _, e := range c.Envs {
+		out.Envs = append(out.Envs, Environment{Name: e.Name, Vars: cloneKV(e.Vars)})
+	}
+	return out
 }

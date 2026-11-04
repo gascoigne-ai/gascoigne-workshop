@@ -51,6 +51,9 @@ type Settings struct {
 	// "" keeps the built-in sample collection in memory.
 	Workspace string `json:"workspace,omitempty"`
 
+	// Environment is the name of the active environment, "" for none.
+	Environment string `json:"environment,omitempty"`
+
 	// TimeoutSec is the default request timeout in seconds.
 	TimeoutSec int `json:"timeoutSec"`
 }

@@ -61,7 +61,7 @@ func (a *App) connect(t *reqTab) {
 	gen := t.wsGen
 	t.connecting = true
 	a.status = "Connecting to " + t.req.URL
-	req := t.req.Expanded(a.col.Vars)
+	req := t.req.Expanded(a.vars())
 	ctx, cancel := context.WithTimeout(context.Background(), a.timeoutFor(req))
 	t.wsCancel = cancel
 	go func() {

@@ -2,6 +2,8 @@ package ui
 
 import (
 	"embed"
+	"strings"
+	"unicode/utf8"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/jsonview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
@@ -182,6 +184,9 @@ func kvRows(rows []model.KV, withDesc, flagDuplicates bool) []vml.TableRow {
 	}
 	for i, kv := range rows {
 		cells := []string{kv.Name, kv.Value}
+		if kv.Secret {
+			cells[1] = strings.Repeat("•", min(utf8.RuneCountInString(kv.Value), 12))
+		}
 		if withDesc {
 			cells = append(cells, kv.Description)
 		}

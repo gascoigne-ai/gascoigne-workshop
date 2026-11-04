@@ -30,6 +30,10 @@ func sample() model.Collection {
 			},
 		},
 		Vars: []model.KV{{Name: "base", Value: "https://x.test", Enabled: true}},
+		Envs: []model.Environment{
+			{Name: "Dev", Vars: []model.KV{{Name: "base", Value: "http://localhost", Enabled: true}, {Name: "token", Value: "env-s3cret", Enabled: true, Secret: true}}},
+			{Name: "Prod"},
+		},
 	}
 }
 
@@ -58,7 +62,7 @@ func TestSecretsStayOutOfRequestFiles(t *testing.T) {
 			return nil
 		}
 		b, _ := os.ReadFile(p)
-		if strings.Contains(string(b), "s3cret") {
+		if strings.Contains(string(b), "s3cret") { // also matches env-s3cret
 			t.Errorf("%s contains a secret", p)
 		}
 		return nil
@@ -150,4 +154,31 @@ func snapshot(t *testing.T, dir string) map[string]string {
 		return nil
 	})
 	return m
+}
+
+func TestDeletedEnvironmentsLeaveNoFiles(t *testing.T) {
+	dir := t.TempDir()
+	c := sample()
+	if err := Save(dir, c); err != nil {
+		t.Fatal(err)
+	}
+	c.Envs = c.Envs[1:] // drop Dev
+	if err := Save(dir, c); err != nil {
+		t.Fatal(err)
+	}
+	got, err := Load(dir)
+	if err != nil || !reflect.DeepEqual(got.Envs, c.Envs) {
+		t.Fatalf("%+v %v", got.Envs, err)
+	}
+	c.Envs = nil
+	if err := Save(dir, c); err != nil {
+		t.Fatal(err)
+	}
+	entries, _ := os.ReadDir(filepath.Join(dir, envDir))
+	if len(entries) != 0 {
+		t.Fatalf("%d environment files left", len(entries))
+	}
+	if b, _ := os.ReadFile(filepath.Join(dir, secretsFile)); strings.Contains(string(b), "env-s3cret") {
+		t.Fatal("secret of a deleted environment kept")
+	}
 }

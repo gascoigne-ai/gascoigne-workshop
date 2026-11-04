@@ -10,6 +10,7 @@ type KV struct {
 	Value       string
 	Description string
 	Enabled     bool
+	Secret      bool // a variable whose value is kept out of the collection files
 }
 
 // Request is one saved call. Protocol selects the proto implementation
@@ -53,6 +54,13 @@ type Folder struct {
 // ({{name}} in URLs) shared by its requests.
 type Collection struct {
 	Folder
+	Vars []KV
+	Envs []Environment // named sets of variables that override Vars when active
+}
+
+// Environment is a named set of variables, such as "Dev" or "Prod".
+type Environment struct {
+	Name string
 	Vars []KV
 }
 

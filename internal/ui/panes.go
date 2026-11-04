@@ -42,6 +42,15 @@ type pane struct {
 	code           func(t *reqTab) *w.CodeView              // paneCode
 	note           func(t *reqTab) string                   // paneNote
 	empty          func(t *reqTab) (msg string, isErr bool) // shown instead of the content
+	caption        func(a *App) string                      // the caption when it depends on the app state
+}
+
+// captionOf is the caption above the pane's table.
+func (p pane) captionOf(a *App) string {
+	if p.caption != nil {
+		return p.caption(a)
+	}
+	return p.title
 }
 
 func paramsChanged(t *reqTab) {
@@ -57,7 +66,8 @@ var requestPanes = []pane{
 		rows: func(_ *App, t *reqTab) *[]model.KV { return &t.req.Headers }},
 	{label: "Auth", kind: paneAuth},
 	{label: "Vars", kind: paneTable, title: "Collection variables", editable: true,
-		rows: func(a *App, _ *reqTab) *[]model.KV { return &a.col.Vars }},
+		caption: (*App).varsCaption,
+		rows:    func(a *App, _ *reqTab) *[]model.KV { return a.varsRows() }},
 	{label: "Settings", kind: paneSettings},
 }
 
@@ -228,11 +238,12 @@ func (a *App) tableView(p pane, t *reqTab, scroll *ScrollState, pad int) Node {
 // tableCaption is the row above a table: its title, and for editable
 // tables the switch to bulk editing.
 func (a *App) tableCaption(p pane, t *reqTab) Node {
-	if p.title == "" {
+	title := p.captionOf(a)
+	if title == "" {
 		return nil
 	}
 	return Row(H(w.RowH),
-		Caption(p.title),
+		Caption(title),
 		Spacer(),
 		If(p.editable, LinkButton(bulkLabel(a.bulk != nil), Tooltip("Edit all rows as text, one per line"), OnClick(func() { a.toggleBulk(p, t) }))),
 	)
@@ -516,7 +527,7 @@ func (a *App) copyBody(t *reqTab) {
 }
 
 func (a *App) copyCurl(t *reqTab) {
-	_ = a.ctx.Clipboard.Write(proto.Curl(t.req.Expanded(a.col.Vars)))
+	_ = a.ctx.Clipboard.Write(proto.Curl(t.req.Expanded(a.vars())))
 }
 
 // openFind shows the find bar for the current response and focuses it.
