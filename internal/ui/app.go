@@ -112,7 +112,8 @@ type App struct {
 	dragTab       int                                // index of the tab being dragged, -1 when none
 	ctxMenu       *contextMenu                       // the open context menu, if any
 	bulk          *bulkEdit                          // the table in bulk-edit mode, if any
-	menuScroll    vml.ScrollState                    // scroll of the settings menu
+	menuScroll    vml.ScrollState                    // scroll of the settings dialog's page
+	settingsCat   string                             // the settings page shown
 	tabsScroll    vml.ScrollState                    // sideways scroll of the request tab strip
 	scaleSlider   vml.SliderState                    // drag of the interface scale slider
 	dirty         bool                               // something changed since the last draw

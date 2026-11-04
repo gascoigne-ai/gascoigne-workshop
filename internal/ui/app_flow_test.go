@@ -296,7 +296,7 @@ func TestSettingsMenuOpensChangesThemeAndSaves(t *testing.T) {
 		t.Fatal("the three-dot button must open the menu")
 	}
 
-	click(a, 1200, 126) // the Light chip
+	click(a, lightChipX, themeRowY) // the Light chip
 	if a.settings.Theme != "light" || !a.menu {
 		t.Fatalf("theme %q, menu open %v (choosing must keep it open)", a.settings.Theme, a.menu)
 	}
@@ -308,7 +308,7 @@ func TestSettingsMenuOpensChangesThemeAndSaves(t *testing.T) {
 		t.Fatalf("saved %+v err %v", saved, err)
 	}
 
-	click(a, 1240, 188) // the Large text size chip
+	click(a, largeChipX, textSizeRowY) // the Large text size chip
 	if a.ctx.Th.FontSize != 16 {
 		t.Fatalf("font size = %v, want 16", a.ctx.Th.FontSize)
 	}
@@ -1642,9 +1642,9 @@ func TestResizeCursorOverTheDividers(t *testing.T) {
 
 // Layout chooser at the bottom of the settings menu (below the text size row).
 const (
-	layoutSideX    = 1078
-	layoutStackedX = 1198
-	layoutRowY     = 312
+	layoutSideX    = 584
+	layoutStackedX = 866
+	layoutRowY     = 526
 )
 
 func TestLayoutSettingStacksThePanesAndIsSaved(t *testing.T) {
@@ -2815,15 +2815,34 @@ func TestNarrowColumnsKeepAMinimum(t *testing.T) {
 // y=560 (Selection), 588, 616, 644 (Accent); field at x=1170, Reset at
 // x=1234; the "Reset colors" button under the last row.
 const (
-	contrastNormalX = 1078
-	contrastHighX   = 1198
-	contrastRowY    = 374
-	colorRow0Y      = 560
-	colorFieldX     = 1170
-	colorResetX     = 1234
-	resetColorsX    = 1070
-	resetColorsY    = 672
+	contrastNormalX = 584
+	contrastHighX   = 866
+	contrastRowY    = 588
+	colorRow0Y      = 216
+	colorFieldX     = 589
+	colorResetX     = 652
+	resetColorsX    = 496
+	resetColorsY    = 328
 )
+
+// The settings dialog at 1280x800: 760x560 at (260, 120), a 44px title
+// bar, a 170px list of pages on the left and the page's content from
+// x=446, y=180. Appearance sections are 62px apart: Theme, Text size,
+// Interface scale, Corners, Gradients, Request / response, Contrast.
+const (
+	themeRowY    = 216
+	textSizeRowY = 278
+	lightChipX   = 866
+	largeChipX   = 913
+)
+
+// openSettingsPage opens the settings dialog on the page with the given id.
+func openSettingsPage(t *testing.T, id string) (*App, string) {
+	a, path := openSettingsMenu(t)
+	a.settingsCat = id
+	a.step(widget.Input{})
+	return a, path
+}
 
 func openSettingsMenu(t *testing.T) (*App, string) {
 	a, path := newTestApp(t)
@@ -2862,7 +2881,7 @@ func TestContrastChooserStrengthensTheColorsAndIsSaved(t *testing.T) {
 }
 
 func TestTypingAColorAppliesItLiveAndSavesIt(t *testing.T) {
-	a, path := openSettingsMenu(t)
+	a, path := openSettingsPage(t, "colors")
 	typeColor(a, widget.Selection, 0, "#223344")
 	if got := a.ctx.Th.Color(widget.Selection); got != widget.RGB(0x223344) {
 		t.Fatalf("live color = %v", got)
@@ -2877,7 +2896,7 @@ func TestTypingAColorAppliesItLiveAndSavesIt(t *testing.T) {
 }
 
 func TestAnUnreadableColorIsRefusedWithItsRatio(t *testing.T) {
-	a, path := openSettingsMenu(t)
+	a, path := openSettingsPage(t, "colors")
 	def := a.ctx.Th.Color(widget.FindMatch)
 	typeColor(a, widget.FindMatch, 1, "#ffffff") // white under light text
 	note := a.colorNotes[widget.FindMatch]
@@ -2901,7 +2920,7 @@ func TestAnUnreadableColorIsRefusedWithItsRatio(t *testing.T) {
 }
 
 func TestResetButtonsRestoreTheDefaults(t *testing.T) {
-	a, path := openSettingsMenu(t)
+	a, path := openSettingsPage(t, "colors")
 	def := a.ctx.Th.Color(widget.Selection)
 	typeColor(a, widget.Selection, 0, "#223344")
 	typeColor(a, widget.FindMatch, 1, "#334455")
@@ -2922,16 +2941,18 @@ func TestResetButtonsRestoreTheDefaults(t *testing.T) {
 }
 
 func TestSwitchingThemeShowsThatThemesColorsAndKeepsEachThemesOverrides(t *testing.T) {
-	a, _ := openSettingsMenu(t)
+	a, _ := openSettingsPage(t, "colors")
 	typeColor(a, widget.Selection, 0, "#223344")
-	click(a, 1200, 126) // the Light theme chip
+	a.settingsCat = "appearance"
+	a.step(widget.Input{})
+	click(a, lightChipX, themeRowY) // the Light theme chip
 	if a.ctx.Th.Color(widget.Selection) != ThemeFor("light", "medium").Color(widget.Selection) {
 		t.Fatal("the dark override must not leak into the light theme")
 	}
 	if a.colorInput(widget.Selection).Text != widget.FormatHex(ThemeFor("light", "medium").Color(widget.Selection)) {
 		t.Fatalf("the field must show the light theme's color, got %q", a.colorInput(widget.Selection).Text)
 	}
-	click(a, 1078, 126) // back to Dark
+	click(a, 584, themeRowY) // back to Dark
 	if a.ctx.Th.Color(widget.Selection) != widget.RGB(0x223344) {
 		t.Fatal("the dark override is remembered")
 	}
@@ -3110,7 +3131,7 @@ func TestMenusShowTheConfiguredKey(t *testing.T) {
 }
 
 func TestShortcutSettingsRenderWhileRecording(t *testing.T) {
-	a, _ := openSettingsMenu(t)
+	a, _ := openSettingsPage(t, "shortcuts")
 	a.startRecording("close-tab")
 	a.recordNotes = map[string]string{"close-tab": "Already used by New request"}
 	a.step(widget.Input{}) // the menu with a recording row and a note must lay out
