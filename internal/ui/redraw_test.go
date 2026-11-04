@@ -238,30 +238,37 @@ func TestFrameSizeAppliesTheInterfaceScaleOnTopOfTheDisplayScale(t *testing.T) {
 	}
 }
 
-func TestInterfaceScaleChoiceIsSavedAndResizesTheUI(t *testing.T) {
+func TestInterfaceScaleSliderCommitsOnReleaseAndIsSaved(t *testing.T) {
 	a, path := newTestApp(t)
 	click(a, menuBtnX, menuBtnY)
-	var pick *settingChoice
-	for i := range scaleChoices {
-		if scaleChoices[i].pct == 150 {
-			pick = &scaleChoices[i]
-		}
+	a.step(widget.Input{})
+	// Drag from the thumb at 100% to the far right end: 200%.
+	y := scaleRowY
+	a.step(widget.Input{X: scaleTrackX0 + (scaleTrackX1-scaleTrackX0)/3, Y: y, Click: true, Held: true})
+	a.step(widget.Input{X: scaleTrackX1 + 40, Y: y, Held: true})
+	if a.settings.UIScalePct != 100 {
+		t.Fatalf("applied while dragging: %d", a.settings.UIScalePct)
 	}
-	if pick == nil {
-		t.Fatal("no 150% choice")
+	a.step(widget.Input{X: scaleTrackX1 + 40, Y: y})
+	if a.settings.UIScalePct != 200 {
+		t.Fatalf("scale %d after release", a.settings.UIScalePct)
 	}
-	a.changeSettings(func(s *settings.Settings) { s.UIScalePct = pick.pct })
-	if a.settings.UIScale() != 1.5 {
-		t.Fatalf("scale %v", a.settings.UIScale())
-	}
-	if got, _ := settings.Load(path); got.UIScalePct != 150 {
+	if got, _ := settings.Load(path); got.UIScalePct != 200 {
 		t.Fatalf("not saved: %+v", got)
 	}
 }
 
-func TestNewAppsStartTenPercentBigger(t *testing.T) {
+func TestNewAppsStartAtTheDisplayScale(t *testing.T) {
 	a, _ := newTestApp(t)
-	if a.settings.UIScale() != 1.1 {
+	if a.settings.UIScale() != 1 {
 		t.Fatalf("default scale %v", a.settings.UIScale())
 	}
 }
+
+// The interface scale slider sits where the scale chooser was: its row at
+// y=250, and its track within x=1030..1190 of the settings menu.
+const (
+	scaleRowY    = 250
+	scaleTrackX0 = 1030
+	scaleTrackX1 = 1190
+)

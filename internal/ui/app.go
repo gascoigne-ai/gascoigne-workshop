@@ -111,6 +111,7 @@ type App struct {
 	ctxMenu       *contextMenu                       // the open context menu, if any
 	bulk          *bulkEdit                          // the table in bulk-edit mode, if any
 	menuScroll    vml.ScrollState                    // scroll of the settings menu
+	scaleSlider   vml.SliderState                    // drag of the interface scale slider
 	dirty         bool                               // something changed since the last draw
 	tps           int                                // the update rate last set
 	lastIn        widget.Input                       // the previous frame's input

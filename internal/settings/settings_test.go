@@ -15,11 +15,11 @@ func TestLoad(t *testing.T) {
 		wantErr bool
 	}{
 		{"missing file gives defaults", nil, Default(), false},
-		{"full file", ptr(`{"theme":"light","textSize":"large"}`), Settings{Theme: "light", TextSize: "large", Layout: "side", Contrast: "normal", TimeoutSec: 60, UIScalePct: 110}, false},
-		{"saved layout", ptr(`{"layout":"stacked"}`), Settings{Theme: "dark", TextSize: "medium", Layout: "stacked", Contrast: "normal", TimeoutSec: 60, UIScalePct: 110}, false},
-		{"saved timeout", ptr(`{"timeoutSec":15}`), Settings{Theme: "dark", TextSize: "medium", Layout: "side", Contrast: "normal", TimeoutSec: 15, UIScalePct: 110}, false},
-		{"missing field keeps default", ptr(`{"theme":"light"}`), Settings{Theme: "light", TextSize: "medium", Layout: "side", Contrast: "normal", TimeoutSec: 60, UIScalePct: 110}, false},
-		{"unknown values pass through", ptr(`{"theme":"neon"}`), Settings{Theme: "neon", TextSize: "medium", Layout: "side", Contrast: "normal", TimeoutSec: 60, UIScalePct: 110}, false},
+		{"full file", ptr(`{"theme":"light","textSize":"large"}`), Settings{Theme: "light", TextSize: "large", Layout: "side", Contrast: "normal", TimeoutSec: 60, UIScalePct: 100}, false},
+		{"saved layout", ptr(`{"layout":"stacked"}`), Settings{Theme: "dark", TextSize: "medium", Layout: "stacked", Contrast: "normal", TimeoutSec: 60, UIScalePct: 100}, false},
+		{"saved timeout", ptr(`{"timeoutSec":15}`), Settings{Theme: "dark", TextSize: "medium", Layout: "side", Contrast: "normal", TimeoutSec: 15, UIScalePct: 100}, false},
+		{"missing field keeps default", ptr(`{"theme":"light"}`), Settings{Theme: "light", TextSize: "medium", Layout: "side", Contrast: "normal", TimeoutSec: 60, UIScalePct: 100}, false},
+		{"unknown values pass through", ptr(`{"theme":"neon"}`), Settings{Theme: "neon", TextSize: "medium", Layout: "side", Contrast: "normal", TimeoutSec: 60, UIScalePct: 100}, false},
 		{"broken json gives defaults and an error", ptr(`{"theme":`), Default(), true},
 	}
 	for _, tt := range tests {
@@ -114,14 +114,14 @@ func TestColorsAndContrastRoundTrip(t *testing.T) {
 	}
 }
 
-func TestUIScaleDefaultsToTenPercentBiggerAndIsBounded(t *testing.T) {
-	if got := Default().UIScale(); got != 1.1 {
+func TestUIScaleDefaultsToTheDisplayScaleAndIsBounded(t *testing.T) {
+	if got := Default().UIScale(); got != 1 {
 		t.Fatalf("default %v", got)
 	}
 	for _, tt := range []struct {
 		pct  int
 		want float64
-	}{{0, 1.1}, {100, 1}, {150, 1.5}, {5, 0.5}, {9000, 3}} {
+	}{{0, 1}, {100, 1}, {150, 1.5}, {5, 0.5}, {9000, 3}} {
 		if got := (Settings{UIScalePct: tt.pct}).UIScale(); got != tt.want {
 			t.Errorf("%d%% -> %v, want %v", tt.pct, got, tt.want)
 		}
@@ -134,7 +134,7 @@ func TestUIScaleRoundTripsAndOldFilesKeepTheDefault(t *testing.T) {
 		t.Fatal(err)
 	}
 	s, err := Load(p)
-	if err != nil || s.UIScalePct != 110 {
+	if err != nil || s.UIScalePct != 100 {
 		t.Fatalf("old file: %+v, %v", s, err)
 	}
 	s.UIScalePct = 125

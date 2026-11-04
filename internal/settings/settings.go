@@ -40,10 +40,10 @@ type Settings struct {
 	TimeoutSec int `json:"timeoutSec"`
 }
 
-// DefaultUIScalePct makes the interface 10% bigger than the display's
-// own scale; MinUIScalePct and MaxUIScalePct bound what is accepted.
+// DefaultUIScalePct is the display's own scale; MinUIScalePct and
+// MaxUIScalePct bound what is accepted.
 const (
-	DefaultUIScalePct = 110
+	DefaultUIScalePct = 100
 	MinUIScalePct     = 50
 	MaxUIScalePct     = 300
 )

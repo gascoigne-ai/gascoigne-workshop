@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	. "github.com/gascoigne-ai/gascoigne-workshop/ui/vml"
 	w "github.com/gascoigne-ai/gascoigne-workshop/ui/widget"
@@ -40,10 +41,11 @@ func (a *App) menuView() Node {
 			Spacer(H(w.Pad)),
 
 			Caption("Interface scale", H(22)),
-			Row(H(w.RowH), Gap(6),
-				For(scaleChoices, func(_ int, c settingChoice) Node {
-					return a.choice(c.label, c.pct == int(a.settings.UIScale()*100+0.5), func(s *settings.Settings) { s.UIScalePct = c.pct })
+			Row(H(w.RowH), Gap(8),
+				Slider(&a.scaleSlider, scaleMin, scaleMax, scaleStep, a.scalePct(), func(v int) {
+					a.changeSettings(func(s *settings.Settings) { s.UIScalePct = v })
 				}),
+				Text(fmt.Sprintf("%d%%", a.scaleSlider.Shown(a.scalePct())), W(40), Color(w.Muted)),
 			),
 			Spacer(H(w.Pad)),
 
@@ -129,3 +131,6 @@ func (a *App) saveSettings(edit func(*settings.Settings)) {
 		a.toast(a.status, true)
 	}
 }
+
+// scalePct is the interface scale in percent, as the slider shows it.
+func (a *App) scalePct() int { return int(a.settings.UIScale()*100 + 0.5) }
