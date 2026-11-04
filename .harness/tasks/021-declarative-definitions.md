@@ -1,4 +1,4 @@
-status: in progress (format, loader, hot reload and the status bar done; more views and handlers pending)
+status: done for the format and the first views (more views move as they are touched)
 
 # Non-code definitions (Vue-style)
 

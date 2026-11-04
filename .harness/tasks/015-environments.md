@@ -21,3 +21,4 @@ Variables live on the collection and there is no environment switcher.
 - Done later: folder-level variables (`Folder.Vars`, saved in the folder's `folder.json`) with the full resolution order (`Collection.VarsFor`: collection, environment, folders outermost first, so request-side folders win over the environment); the folder context menu entry `Variables` points the Vars pane at the folder (the root: the collection), selecting an environment resets it.
 - Left: the `{{var}}` autocomplete popup and highlighting inside the header and body editors.
 - Done later: `Ctrl+Space` in the URL field opens a menu of the variables that fit at the cursor (a partly typed `{{na` filters) and writes `{{name}}`; typing-time popups were not done because a popup would take the keyboard from the field.
+- Accepted: variable highlighting stays in the URL field (headers are table cells and the body editor styles JSON); the hover value is the URL tooltip.
