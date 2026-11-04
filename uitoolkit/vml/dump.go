@@ -20,7 +20,7 @@ func dump(sb *strings.Builder, e *El, depth int) {
 	if e == nil {
 		return
 	}
-	fmt.Fprintf(sb, "%s%T", strings.Repeat("  ", depth), e.b)
+	fmt.Fprintf(sb, "%s%s", strings.Repeat("  ", depth), strings.TrimPrefix(fmt.Sprintf("%T", e.b), "vml."))
 	add := func(name string, v any) { fmt.Fprintf(sb, " %s=%v", name, v) }
 	if e.text != "" {
 		add("text", fmt.Sprintf("%q", e.text))

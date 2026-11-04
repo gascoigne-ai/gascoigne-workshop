@@ -1,18 +1,46 @@
-// Package vml is a declarative, Vue-flavoured way to build widget UIs in
-// plain Go. A view is a function that returns a tree of nodes built from
-// small constructors (Row, Col, Text, Field, If, For, ...) and chained
-// attributes:
+// Package vml builds widget UIs as a tree of elements, declaratively, in
+// plain Go. A view is a function that returns a tree; it is called every
+// frame, so the tree is always a pure function of the application state:
+// no diffing, no reactive system.
 //
-//	vml.Row(
-//		vml.Text("Hello").Muted(),
-//		vml.Spacer(),
-//		vml.Button("Send").OnClick(send),
-//	).Gap(8).Pad(12).H(40).Bg(widget.Bg)
+//	func view(a *App) vml.Node {
+//		return vml.Col(vml.Grow(1), vml.Pad(12), vml.Gap(8), // options first, by convention
+//			vml.Text("Hello", vml.Muted()),
+//			vml.Field(&a.name, vml.Placeholder("Your name"), vml.OnEnter(a.save)),
+//			vml.If(a.name.Text != "", vml.Button("Save", vml.W(80), vml.OnClick(a.save))),
+//		)
+//	}
 //
-// State lives in the application. The view is called every frame, so a
-// tree is always a pure function of the state: no diffing, no reactive
-// system. Layout is a flexbox subset: fixed size (W, H), proportional
-// share of the free space (Grow), or the content's own size.
+// Constructors take options and children together: Row, Col and Stack
+// take both; Text, Button, Field and the other leaves take only options.
+// Options are the attributes of an element; they may stand anywhere in
+// the list and a later one overrides an earlier one, which is how Button
+// lets its caller override its defaults. Most views dot-import the
+// package (import . ".../vml") so they read like markup; import it as
+// `v` if you prefer completion on a prefix.
+//
+// # Finding your way
+//
+// The names follow a few rules, so a guess is usually right:
+//
+//	Size       W H MinW MaxW MinH MaxH Grow Optional
+//	Spacing    Pad PadX PadY PadL PadT PadR PadB   Margin MarginX MarginY   Gap
+//	Layout     Row Col Stack Split Scroll HScroll Spacer   AlignItems AlignSelf JustifyContent
+//	Look       Bg Border BorderTop BorderBottom BorderLeft HoverBg Shadow Control Edges
+//	Text       Text Caption Lines   Color Muted Bold Small Mono Ellipsis Center
+//	Input      Field TextArea Code Slider Checkbox   Placeholder OnChange OnEnter
+//	Events     OnClick OnRightClick OnMiddleClick   Tooltip
+//	Composite  Button PrimaryButton LinkButton IconButton Tabs ScrollTabs Table
+//	Flow       If For Frag
+//	Overlay    Float FloatAt FloatCenter Modal FocusScope
+//
+// A side is a letter suffix (PadL, PadT, PadR, PadB) and an axis is X or
+// Y (PadX is left and right). The same options are the attributes of a
+// template in the component package, in kebab-case (pad-x, border-top).
+//
+// Layout is a flexbox subset: a fixed size (W, H), a proportional share of
+// the free space (Grow), or the content's own size. Dump prints a laid-out
+// tree as text, which is how tests compare two views.
 package vml
 
 import (
