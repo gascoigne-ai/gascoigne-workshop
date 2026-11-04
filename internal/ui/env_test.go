@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
 	"strings"
 	"testing"
 
@@ -157,5 +158,46 @@ func TestFolderVariablesAreEditedInTheVarsPaneAndResolveForTheirRequests(t *test
 	a.addEnv("Dev") // choosing an environment goes back to the usual pane
 	if requestPanes[a.cur().paneTab].rows(a, a.cur()) != &a.col.Envs[0].Vars {
 		t.Fatal("selecting an environment resets the Vars pane")
+	}
+}
+
+func TestCtrlSpaceCompletesVariablesInTheURLField(t *testing.T) {
+	a, _ := newTestApp(t)
+	tab := a.cur()
+	a.col.Vars = []model.KV{
+		{Name: "host", Value: "h", Enabled: true}, {Name: "hostname", Value: "n", Enabled: true},
+		{Name: "token", Value: "t", Enabled: true}, {Name: "off", Value: "x"},
+	}
+	tab.url = vml.NewTextField("https://{{ho")
+	tab.url.Focused = true
+	names, from := a.variableCompletion(tab)
+	if from != len("https://") || len(names) != 2 || names[0] != "host" || names[1] != "hostname" {
+		t.Fatalf("names %v from %d", names, from)
+	}
+	a.completeVariable()
+	if a.ctxMenu == nil || len(a.ctxMenu.items) != 2 {
+		t.Fatal("no completion menu")
+	}
+	a.ctxMenu.items[1].run() // hostname
+	if tab.url.Text != "https://{{hostname}}" || tab.req.URL != "https://{{hostname}}" || tab.url.Cursor != len("https://{{hostname}}") {
+		t.Fatalf("url %q req %q cursor %d", tab.url.Text, tab.req.URL, tab.url.Cursor)
+	}
+
+	tab.url = vml.NewTextField("https://x/")
+	tab.url.Focused = true
+	names, from = a.variableCompletion(tab)
+	if from != -1 || len(names) != 3 { // outside braces every enabled variable fits, and only enabled ones
+		t.Fatalf("names %v from %d", names, from)
+	}
+	a.insertVariable(tab, "token", from)
+	if tab.url.Text != "https://x/{{token}}" {
+		t.Fatalf("url %q", tab.url.Text)
+	}
+	tab.url = vml.NewTextField("a")
+	tab.url.Focused = false
+	a.closeMenu()
+	a.completeVariable()
+	if a.ctxMenu != nil {
+		t.Fatal("completion outside the URL field must not open a menu")
 	}
 }

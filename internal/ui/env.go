@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"sort"
 	"strconv"
 	"strings"
 
@@ -215,4 +216,66 @@ func (a *App) editVars(dir *model.Folder) {
 			a.cur().paneTab = i
 		}
 	}
+}
+
+// variableCompletion is what Ctrl+Space in the URL field offers: the names
+// of the variables that fit what is typed after an open "{{", and where
+// that partial name starts (in runes), or -1 when the cursor is not in one.
+func (a *App) variableCompletion(t *reqTab) (names []string, from int) {
+	runes := []rune(t.url.Text)
+	cur := min(t.url.Cursor, len(runes))
+	before := string(runes[:cur])
+	open := strings.LastIndex(before, "{{")
+	from = -1
+	prefix := ""
+	if open >= 0 && !strings.Contains(before[open:], "}}") {
+		from = len([]rune(before[:open]))
+		prefix = before[open+2:]
+	}
+	seen := map[string]bool{}
+	for _, v := range a.varsFor(t.req) {
+		if v.Enabled && v.Name != "" && !seen[v.Name] && strings.HasPrefix(v.Name, prefix) {
+			seen[v.Name] = true
+			names = append(names, v.Name)
+		}
+	}
+	sort.Strings(names)
+	return names, from
+}
+
+// completeVariable opens a menu of the variables that fit at the cursor of
+// the URL field; picking one writes {{name}} there, replacing a partly
+// typed name.
+func (a *App) completeVariable() {
+	t := a.cur()
+	if !t.url.Focused {
+		a.toast("Ctrl+Space completes a {{variable}} in the URL field", false)
+		return
+	}
+	names, from := a.variableCompletion(t)
+	if len(names) == 0 {
+		a.toast("No variable fits here", false)
+		return
+	}
+	items := make([]menuItem, len(names))
+	for i, name := range names {
+		items[i] = menuItem{label: name, run: func() { a.insertVariable(t, name, from) }}
+	}
+	a.openMenu(sidebarW+120, headerH+tabsH+urlH-8, items)
+}
+
+// insertVariable writes {{name}} at the cursor of the URL field, replacing
+// the partly typed name that starts at rune from (-1 for none).
+func (a *App) insertVariable(t *reqTab, name string, from int) {
+	runes := []rune(t.url.Text)
+	cur := min(t.url.Cursor, len(runes))
+	if from < 0 || from > cur {
+		from = cur
+	}
+	text := string(runes[:from]) + "{{" + name + "}}" + string(runes[cur:])
+	t.url.Text = text
+	t.url.Cursor = from + len([]rune("{{"+name+"}}"))
+	t.url.HasSel = false
+	t.url.Focused = true
+	a.urlEdited(t)
 }

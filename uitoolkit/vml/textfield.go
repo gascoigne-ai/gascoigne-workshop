@@ -37,7 +37,7 @@ type TextField struct {
 	Text     string
 	Cursor   int
 	Anchor   int  // the fixed end of the selection; meaningful when HasSel
-	HasSel   bool // a selection exists between Anchor and core.Cursor
+	HasSel   bool // a selection exists between Anchor and Cursor
 	Focused  bool
 	Dragging bool // the pointer went down inside and is still held
 	ScrollX  int  // pixels the text is scrolled left inside its view
