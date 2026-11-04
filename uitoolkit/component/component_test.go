@@ -276,3 +276,38 @@ func TestSlotInsertsANodeFromTheScope(t *testing.T) {
 		}
 	}
 }
+
+func TestAlignmentAttributesAndButtonsMatchTheGoOptions(t *testing.T) {
+	got := vml.Dump(build(t, `<row align-items="center" justify="between"><primary-button w="70">Go</primary-button><link-button>More</link-button></row>`, nil))
+	want := vml.Dump(vml.Row(vml.AlignItems(vml.AlignCenter), vml.JustifyContent(vml.JustifyBetween), vml.PrimaryButton("Go", vml.W(70)), vml.LinkButton("More")))
+	if got != want {
+		t.Fatalf("template:\n%s\nGo:\n%s", got, want)
+	}
+	tp, err := Parse("t.vml", []byte(`<row align-items="middle"/>`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := tp.Build(nil); err == nil || !strings.Contains(err.Error(), "baseline, center") {
+		t.Fatalf("err = %v", err)
+	}
+}
+
+func TestIncludeBuildsAnotherDefinedTemplateWithTheSameScope(t *testing.T) {
+	Define("test-badge", `<text small>{{label}}!</text>`)
+	got := vml.Dump(build(t, `<row><include name="test-badge"/><text for="x in xs">{{x}}</text></row>`, Scope{"label": "hi", "xs": []string{"a"}}))
+	want := vml.Dump(vml.Row(vml.Text("hi!", vml.Small()), vml.Text("a")))
+	if got != want {
+		t.Fatalf("template:\n%s\nGo:\n%s", got, want)
+	}
+	tp, _ := Parse("t.vml", []byte(`<include name="nope"/>`))
+	if _, err := tp.Build(nil); err == nil || !strings.Contains(err.Error(), "test-badge") {
+		t.Fatalf("an unknown include lists the defined names: %v", err)
+	}
+	if _, err := Parse("t.vml", []byte(`<include/>`)); err != nil {
+		t.Fatal(err)
+	}
+	tp2, _ := Parse("t.vml", []byte(`<include/>`))
+	if _, err := tp2.Build(nil); err == nil {
+		t.Fatal("an include without a name must fail")
+	}
+}

@@ -142,17 +142,20 @@ var elements = map[string]struct {
 	build element
 	leaf  bool
 }{
-	"row":     {func(o []vml.Option, k []vml.Item, _ string) vml.Node { return vml.Row(items(o, k)...) }, false},
-	"col":     {func(o []vml.Option, k []vml.Item, _ string) vml.Node { return vml.Col(items(o, k)...) }, false},
-	"stack":   {func(o []vml.Option, k []vml.Item, _ string) vml.Node { return vml.Stack(items(o, k)...) }, false},
-	"spacer":  {func(o []vml.Option, _ []vml.Item, _ string) vml.Node { return vml.Spacer(o...) }, true},
-	"hr":      {func(o []vml.Option, _ []vml.Item, _ string) vml.Node { return withOpts(vml.HRule(), o) }, true},
-	"vr":      {func(o []vml.Option, _ []vml.Item, _ string) vml.Node { return withOpts(vml.VRule(), o) }, true},
-	"text":    {func(o []vml.Option, _ []vml.Item, t string) vml.Node { return vml.Text(t, o...) }, true},
-	"icon":    {func(o []vml.Option, _ []vml.Item, name string) vml.Node { return vml.Icon(name, o...) }, true},
-	"slot":    {func(o []vml.Option, _ []vml.Item, _ string) vml.Node { return nil }, true},
-	"caption": {func(o []vml.Option, _ []vml.Item, t string) vml.Node { return vml.Caption(t, o...) }, true},
-	"button":  {func(o []vml.Option, _ []vml.Item, t string) vml.Node { return vml.Button(t, o...) }, true},
+	"row":            {func(o []vml.Option, k []vml.Item, _ string) vml.Node { return vml.Row(items(o, k)...) }, false},
+	"col":            {func(o []vml.Option, k []vml.Item, _ string) vml.Node { return vml.Col(items(o, k)...) }, false},
+	"stack":          {func(o []vml.Option, k []vml.Item, _ string) vml.Node { return vml.Stack(items(o, k)...) }, false},
+	"spacer":         {func(o []vml.Option, _ []vml.Item, _ string) vml.Node { return vml.Spacer(o...) }, true},
+	"hr":             {func(o []vml.Option, _ []vml.Item, _ string) vml.Node { return withOpts(vml.HRule(), o) }, true},
+	"vr":             {func(o []vml.Option, _ []vml.Item, _ string) vml.Node { return withOpts(vml.VRule(), o) }, true},
+	"text":           {func(o []vml.Option, _ []vml.Item, t string) vml.Node { return vml.Text(t, o...) }, true},
+	"primary-button": {func(o []vml.Option, _ []vml.Item, t string) vml.Node { return vml.PrimaryButton(t, o...) }, true},
+	"link-button":    {func(o []vml.Option, _ []vml.Item, t string) vml.Node { return vml.LinkButton(t, o...) }, true},
+	"include":        {func([]vml.Option, []vml.Item, string) vml.Node { return nil }, true},
+	"icon":           {func(o []vml.Option, _ []vml.Item, name string) vml.Node { return vml.Icon(name, o...) }, true},
+	"slot":           {func(o []vml.Option, _ []vml.Item, _ string) vml.Node { return nil }, true},
+	"caption":        {func(o []vml.Option, _ []vml.Item, t string) vml.Node { return vml.Caption(t, o...) }, true},
+	"button":         {func(o []vml.Option, _ []vml.Item, t string) vml.Node { return vml.Button(t, o...) }, true},
 }
 
 // withOpts applies options to an element that was built without them.
@@ -174,6 +177,9 @@ var attributes = map[string]func(v string) (vml.Option, error){
 	"h":               intAttr(vml.H),
 	"gap":             intAttr(vml.Gap),
 	"grow":            floatAttr(vml.Grow),
+	"align-items":     enumAttr("align-items", alignments, vml.AlignItems),
+	"align-self":      enumAttr("align-self", alignments, vml.AlignSelf),
+	"justify":         enumAttr("justify", justifications, vml.JustifyContent),
 	"pad":             padAttr,
 	"pad-x":           intAttr(vml.PadX),
 	"pad-y":           intAttr(vml.PadY),
@@ -303,7 +309,7 @@ func Parse(name string, src []byte) (*Template, error) {
 			}
 			n := &node{tag: t.Name.Local, line: l}
 			for _, a := range t.Attr {
-				if _, ok := attributes[a.Name.Local]; !ok && !directives[a.Name.Local] && !(a.Name.Local == "name" && (n.tag == "icon" || n.tag == "slot")) {
+				if _, ok := attributes[a.Name.Local]; !ok && !directives[a.Name.Local] && !(a.Name.Local == "name" && (n.tag == "icon" || n.tag == "slot" || n.tag == "include")) {
 					return fail(l, "unknown attribute %q on <%s>%s", a.Name.Local, n.tag, hint(a.Name.Local, attributeNames(), "attributes"))
 				}
 				n.attrs = append(n.attrs, attr{a.Name.Local, a.Value, l})
@@ -458,6 +464,20 @@ func (t *Template) buildOne(n *node, sc Scope) (vml.Node, error) {
 	text, err := interpolate(n.text, sc)
 	if err != nil {
 		return nil, t.errf(n, "%v", err)
+	}
+	if n.tag == "include" { // another defined template, built with this scope
+		for _, a := range n.attrs {
+			if a.name == "name" {
+				defined.Lock()
+				other, ok := defined.m[a.value]
+				defined.Unlock()
+				if !ok {
+					return nil, t.errf(n, "no template defined as %q; defined: %s", a.value, strings.Join(definedNames(), " "))
+				}
+				return other.Build(sc)
+			}
+		}
+		return nil, t.errf(n, `<include> needs a name`)
 	}
 	if n.tag == "slot" { // a node the caller made, as a Vue slot
 		for _, a := range n.attrs {
@@ -664,6 +684,7 @@ func Reference() string {
 	for _, n := range attributeNames() {
 		fmt.Fprintf(&sb, "  %s\n", n)
 	}
+	sb.WriteString("<include name=\"x\"/> builds the template registered with component.Define(\"x\", ...) with this scope.\n")
 	sb.WriteString("<slot name=\"x\"/> puts the vml.Node the scope holds under x here.\n")
 	sb.WriteString("<icon name=\"trash\"/> draws a built-in or registered icon (vml.IconNames).\n")
 	sb.WriteString("Text and attribute values may use {{path}}; if=\"name\" or \"!name\"; for=\"item in list\"; onclick=\"handler\".\n")
@@ -710,4 +731,55 @@ func edgesAttr(v string) (vml.Option, error) {
 		}
 	}
 	return vml.Edges(core.Token(f[0]), top, left, right), nil
+}
+
+var alignments = map[string]vml.Align{
+	"default": vml.AlignDefault, "start": vml.AlignStart, "center": vml.AlignCenter,
+	"end": vml.AlignEnd, "stretch": vml.AlignStretch, "baseline": vml.AlignBaseline,
+}
+
+var justifications = map[string]vml.Justify{
+	"start": vml.JustifyStart, "center": vml.JustifyCenter, "end": vml.JustifyEnd,
+	"between": vml.JustifyBetween, "around": vml.JustifyAround,
+}
+
+// enumAttr reads one word out of a table of names.
+func enumAttr[T any](name string, table map[string]T, f func(T) vml.Option) func(string) (vml.Option, error) {
+	return func(v string) (vml.Option, error) {
+		val, ok := table[strings.TrimSpace(v)]
+		if !ok {
+			names := make([]string, 0, len(table))
+			for k := range table {
+				names = append(names, k)
+			}
+			sort.Strings(names)
+			return nil, fmt.Errorf("%s is one of %s, not %q", name, strings.Join(names, ", "), v)
+		}
+		return f(val), nil
+	}
+}
+
+var defined = struct {
+	sync.Mutex
+	m map[string]*Template
+}{m: map[string]*Template{}}
+
+// Define registers a template under a name, for <include name="..."/> in
+// other templates. A syntax error panics: it is a mistake in the program.
+func Define(name, src string) {
+	t := Must(name, src)
+	defined.Lock()
+	defined.m[name] = t
+	defined.Unlock()
+}
+
+func definedNames() []string {
+	defined.Lock()
+	defer defined.Unlock()
+	names := make([]string, 0, len(defined.m))
+	for n := range defined.m {
+		names = append(names, n)
+	}
+	sort.Strings(names)
+	return names
 }

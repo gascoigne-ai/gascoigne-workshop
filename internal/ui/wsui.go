@@ -254,16 +254,7 @@ func (a *App) messagesPane(_ pane, t *reqTab, _ *ScrollState) Node {
 	connected := t.sess != nil
 	return Col(Grow(1),
 		Spacer(H(w.Gutter)),
-		Row(H(w.RowH+8), PadX(w.Gutter), Gap(6), AlignItems(AlignCenter), BorderB(w.Border),
-			Text(connState(t), Small(), Muted()),
-			Spacer(),
-			a.viewChip("Auto-reconnect", t.reconnect, 116, func() { t.reconnect = !t.reconnect }),
-			If(len(t.tools) > 0, Button(fmt.Sprintf("Tools (%d)", len(t.tools)), W(84), H(w.CompactH), OnClick(func() { a.openMenu(a.ctx.In.X, a.ctx.In.Y, a.toolMenu(t)) }), Tooltip("Pick a tool: the composer gets a call with its arguments filled in"))),
-			If(len(t.resources) > 0, Button(fmt.Sprintf("Resources (%d)", len(t.resources)), W(104), H(w.CompactH), OnClick(func() { a.openMenu(a.ctx.In.X, a.ctx.In.Y, a.resourceMenu(t)) }), Tooltip("Pick a resource: the composer gets a read of it"))),
-			If(len(t.prompts) > 0, Button(fmt.Sprintf("Prompts (%d)", len(t.prompts)), W(94), H(w.CompactH), OnClick(func() { a.openMenu(a.ctx.In.X, a.ctx.In.Y, a.promptMenu(t)) }), Tooltip("Pick a prompt: the composer gets a request for it"))),
-			Button("Ping", W(56), H(w.CompactH), OnClick(func() { a.pingSocket(t) }), Tooltip("Send a ping frame")),
-			Button("Clear", W(56), H(w.CompactH), OnClick(func() { a.clearLog(t) }), Tooltip("Empty the message log")),
-		),
+		a.messagesToolbar(t),
 		Code(&t.wsView, Grow(1), Bg(w.Sunken)),
 		If(t.req.Protocol != "sse", // an event stream only receives, so it has no composer
 			Row(H(w.RowH+16), PadX(w.Gutter), PadY(8), Gap(6), BorderT(w.Border),
