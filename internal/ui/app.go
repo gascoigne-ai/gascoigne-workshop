@@ -71,6 +71,34 @@ type reqTab struct {
 	seq                   int                          // numbers the sends, so a late result of an old one is ignored
 }
 
+// responseViews are the values of the response view setting.
+var responseViews = []struct {
+	id, label    string
+	raw, compact bool
+}{
+	{"compact", "Compact", false, true},
+	{"pretty", "Pretty", false, false},
+	{"raw", "Raw", true, false},
+}
+
+// viewFlags are the raw and compact flags of a response view setting;
+// anything unknown is compact, the default.
+func viewFlags(id string) (raw, compact bool) {
+	for _, v := range responseViews {
+		if v.id == id {
+			return v.raw, v.compact
+		}
+	}
+	return false, true
+}
+
+// makeTab is newTab with the response view the settings ask for.
+func (a *App) makeTab(req *model.Request) *reqTab {
+	t := newTab(req)
+	t.raw, t.compact = viewFlags(a.settings.ResponseView)
+	return t
+}
+
 func newTab(req *model.Request) *reqTab {
 	t := &reqTab{req: req, url: widget.NewTextField(req.URL)}
 	if req.BodyType == "" { // requests from before body types: infer one
@@ -217,7 +245,7 @@ func (a *App) openRequest(req *model.Request) {
 			return
 		}
 	}
-	a.tabs = append(a.tabs, newTab(req))
+	a.tabs = append(a.tabs, a.makeTab(req))
 	a.active = len(a.tabs) - 1
 }
 

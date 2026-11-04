@@ -896,3 +896,12 @@ func TestOverlineAndBoldIfRecordTheirSettings(t *testing.T) {
 		t.Fatalf("bold: on %v off %v", on.bold, off.bold)
 	}
 }
+
+func TestFieldTextInsetDefaultsAndCanBeReduced(t *testing.T) {
+	f := widget.NewTextField("x")
+	plain := Field(&f)
+	tight := Field(&f, FieldPad(5))
+	if plain.textInset() != fieldPad || tight.textInset() != 5 {
+		t.Fatalf("insets %d %d", plain.textInset(), tight.textInset())
+	}
+}

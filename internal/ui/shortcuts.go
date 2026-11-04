@@ -99,7 +99,7 @@ func (a *App) closeTab(i int) {
 	a.tabs = append(a.tabs[:i], a.tabs[i+1:]...)
 	switch {
 	case len(a.tabs) == 0:
-		a.tabs = append(a.tabs, newTab(&model.Request{Name: "New Request", Protocol: "rest", Method: "GET"}))
+		a.tabs = append(a.tabs, a.makeTab(&model.Request{Name: "New Request", Protocol: "rest", Method: "GET"}))
 		a.active = 0
 	case i < a.active:
 		a.active--

@@ -36,6 +36,10 @@ type Settings struct {
 	// radii) or "round".
 	Corners string `json:"corners"`
 
+	// ResponseView is how a response body is shown: "compact" (the
+	// default), "pretty" or "raw".
+	ResponseView string `json:"responseView"`
+
 	// Flat turns every gradient into a flat fill.
 	Flat bool `json:"flat"`
 
@@ -66,7 +70,7 @@ func (s Settings) UIScale() float64 {
 
 // Default is what a first run uses.
 func Default() Settings {
-	return Settings{Theme: "dark", TextSize: "medium", Layout: "side", Contrast: "normal", TimeoutSec: 60, UIScalePct: DefaultUIScalePct, Corners: "soft"}
+	return Settings{Theme: "dark", TextSize: "medium", Layout: "side", Contrast: "normal", TimeoutSec: 60, UIScalePct: DefaultUIScalePct, Corners: "soft", ResponseView: "compact"}
 }
 
 // Load reads path. A missing file is not an error and yields Default;

@@ -437,9 +437,9 @@ func (a *App) responsePane(_ pane, t *reqTab, _ *ScrollState) Node {
 	return Col(Grow(1),
 		Spacer(H(w.Pad)), // same top inset as the request pane, so first rows line up
 		Row(H(w.RowH+8), PadXY(w.Pad, 0), Gap(6), AlignItems(AlignCenter), BorderBottom(w.Border),
+			a.viewChip("Compact", t.compact, 72, func() { a.setView(t, false, true) }),
 			a.viewChip("Pretty", !t.raw && !t.compact, 56, func() { a.setView(t, false, false) }),
 			a.viewChip("Raw", t.raw, 44, func() { a.setView(t, true, false) }),
-			a.viewChip("Compact", t.compact, 72, func() { a.setView(t, false, true) }),
 			Spacer(),
 			IconButton(SearchIcon(Grow(1)), W(48), H(chipH), OnClick(a.openFind), Tooltip(a.hint("Find in response", "find"))),
 			IconButton(CopyIcon(Grow(1)), W(52), H(chipH), OnClick(func() { a.copyBody(t) }), Tooltip("Copy the response body")),

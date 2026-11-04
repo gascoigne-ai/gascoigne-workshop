@@ -148,7 +148,7 @@ func compactLines(body []byte) []widget.Line {
 	src := jsonview.Compact(body, compactWidth)
 	lines := make([]widget.Line, len(src))
 	for i, l := range src {
-		lines[i] = widget.Line{Spans: toSpans(l.Spans), Foldable: l.Foldable, FoldedSpans: toSpans(l.Folded), Depth: l.Depth}
+		lines[i] = widget.Line{Spans: toSpans(l.Spans), Foldable: l.Foldable, FoldedSpans: toSpans(l.Folded), Depth: l.Depth, Num: i + 1}
 	}
 	return lines
 }

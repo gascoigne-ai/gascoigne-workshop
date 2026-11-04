@@ -556,3 +556,20 @@ func TestCodeViewMatchesSurviveUpdatesAndClearOnNewContent(t *testing.T) {
 		t.Fatal("new content clears the highlights")
 	}
 }
+
+func TestLineNumbersFollowNumWhenSetAndWidenTheGutter(t *testing.T) {
+	v := &CodeView{}
+	v.SetLines([]Line{{Num: 7}, {Num: 1204}, {}})
+	if got := v.LineNumber(0); got != 7 {
+		t.Fatalf("line 0 is %d", got)
+	}
+	if got := v.LineNumber(1); got != 1204 {
+		t.Fatalf("line 1 is %d", got)
+	}
+	if got := v.LineNumber(2); got != 3 {
+		t.Fatalf("a line without Num counts by position, got %d", got)
+	}
+	if got := v.numberDigits(); got != 4 {
+		t.Fatalf("the gutter must fit 1204, digits %d", got)
+	}
+}

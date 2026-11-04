@@ -37,6 +37,25 @@ func treeRowY(i int) int { return headerH + i*widget.RowH + widget.RowH/2 }
 func newTestApp(t *testing.T) (*App, string) {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "settings.json")
+	// Most tests were written against the pretty-printed response; the
+	// compact default has its own tests (newCompactTestApp).
+	s := settings.Default()
+	s.ResponseView = "pretty"
+	if err := s.Save(path); err != nil {
+		t.Fatal(err)
+	}
+	return startTestApp(t, path)
+}
+
+// newCompactTestApp is a test app with the settings defaults.
+func newCompactTestApp(t *testing.T) *App {
+	t.Helper()
+	a, _ := startTestApp(t, filepath.Join(t.TempDir(), "settings.json"))
+	return a
+}
+
+func startTestApp(t *testing.T, path string) (*App, string) {
+	t.Helper()
 	a, err := NewApp(Options{SettingsPath: path})
 	if err != nil {
 		t.Fatal(err)
@@ -1410,8 +1429,9 @@ func TestSwitchingAuthTypesKeepsEachTypesValues(t *testing.T) {
 // Find, Copy, cURL on the right. The find bar is the row below it.
 const (
 	toolbarY   = chipsY // the response toolbar shares a band with the request pane's first row
-	prettyX    = 810
-	rawX       = 866
+	compactX   = 818    // the response toolbar's chips: Compact, Pretty, Raw
+	prettyX    = 888
+	rawX       = 944
 	findBtnX   = 1128
 	copyBtnX   = 1184
 	curlBtnX   = 1242
@@ -2830,10 +2850,11 @@ const (
 // x=446, y=180. Appearance sections are 62px apart: Theme, Text size,
 // Interface scale, Corners, Gradients, Request / response, Contrast.
 const (
-	themeRowY    = 216
-	textSizeRowY = 278
-	lightChipX   = 866
-	largeChipX   = 913
+	themeRowY        = 216
+	responseViewRowY = 650 // below Contrast, once Response view is added to Appearance
+	textSizeRowY     = 278
+	lightChipX       = 866
+	largeChipX       = 913
 )
 
 // openSettingsPage opens the settings dialog on the page with the given id.
@@ -3357,8 +3378,6 @@ const compactBody = `{"total":3,"items":[` +
 	`{"id":2,"name":"beta","tags":["red","green","blue","yellow","orange","purple","brown","black"],"owner":{"login":"bob","site":"https://b.example.org/very/long/path/to/bob"}},` +
 	`{"id":3,"name":"gamma","tags":["cyan","magenta","teal","olive","navy","maroon","lime","aqua"],"owner":{"login":"cy","site":"https://c.example.org/very/long/path/to/cy"}}]}`
 
-const compactX = rawX + 64 // the Compact chip follows Raw
-
 func viewText(t *reqTab) string {
 	var sb strings.Builder
 	for _, i := range t.view.Visible() {
@@ -3447,4 +3466,74 @@ func (a *App) find(t *reqTab, text string) {
 	t.find = widget.NewTextField(text)
 	t.find.Focused = true
 	a.runFind(t)
+}
+
+func TestNewTabsShowResponsesCompactByDefault(t *testing.T) {
+	a := newCompactTestApp(t)
+	if !a.cur().compact || a.cur().raw {
+		t.Fatalf("compact %v raw %v", a.cur().compact, a.cur().raw)
+	}
+	a.newRequest()
+	if !a.cur().compact {
+		t.Fatal("a new tab starts compact too")
+	}
+}
+
+func TestResponseViewChipsAreCompactPrettyRawInThatOrder(t *testing.T) {
+	a := jsonResponse(t, `{"a":1}`)
+	tab := a.cur()
+	click(a, rawX, toolbarY)
+	if !tab.raw {
+		t.Fatal("the third chip is Raw")
+	}
+	click(a, prettyX, toolbarY)
+	if tab.raw || tab.compact {
+		t.Fatal("the second chip is Pretty")
+	}
+	click(a, compactX, toolbarY)
+	if !tab.compact {
+		t.Fatal("the first chip is Compact")
+	}
+	if !(compactX < prettyX && prettyX < rawX) {
+		t.Fatalf("order %d %d %d", compactX, prettyX, rawX)
+	}
+}
+
+func TestResponseViewSettingAppliesToOpenTabsAndIsSaved(t *testing.T) {
+	a, path := openSettingsPage(t, "appearance")
+	click(a, 537, responseViewRowY) // Compact
+	if !a.cur().compact || a.settings.ResponseView != "compact" {
+		t.Fatalf("compact %v setting %q", a.cur().compact, a.settings.ResponseView)
+	}
+	if saved, _ := settings.Load(path); saved.ResponseView != "compact" {
+		t.Fatalf("saved %+v", saved)
+	}
+	click(a, 725, responseViewRowY) // Pretty
+	if a.cur().compact || a.cur().raw || a.settings.ResponseView != "pretty" {
+		t.Fatalf("compact %v raw %v setting %q", a.cur().compact, a.cur().raw, a.settings.ResponseView)
+	}
+}
+
+func TestFindWorksInEveryResponseView(t *testing.T) {
+	for _, mode := range []struct {
+		name         string
+		raw, compact bool
+	}{{"pretty", false, false}, {"raw", true, false}, {"compact", false, true}} {
+		a := jsonResponse(t, compactBody)
+		tab := a.cur()
+		a.setView(tab, mode.raw, mode.compact)
+		a.openFind()
+		a.typeText("login")
+		if len(tab.view.Matches()) != 3 || tab.matchIdx != 0 {
+			t.Fatalf("%s: %d matches, current %d", mode.name, len(tab.view.Matches()), tab.matchIdx)
+		}
+		a.findStep(tab, 1)
+		if tab.matchIdx != 1 {
+			t.Fatalf("%s: stepping goes to the second match, got %d", mode.name, tab.matchIdx)
+		}
+		a.closeFind(tab)
+		if len(tab.view.Matches()) != 0 {
+			t.Fatalf("%s: closing the bar clears the highlights", mode.name)
+		}
+	}
 }

@@ -57,11 +57,11 @@ func tabItems(items []TabItem, active int, onSelect func(i int)) []Item {
 			Gap(4), PadXY(10, 0), AlignItems(AlignBaseline),
 			OnClick(func() { onSelect(i) }),
 			Separator(i > 0, 10),
-			Text(it.Label, Color(tabColor(i == active)), BoldIf(i == active)),
+			Text(it.Label, Color(tabColor(i == active))),
 			If(it.Badge > 0, Text(strconv.Itoa(it.Badge), Small(), Muted())),
 		}
-		if i == active {
-			tab = append(tab, Underline(widget.AccentLine, 10), Reveal())
+		if i == active { // the same tint as the selected table row
+			tab = append(tab, Bg(widget.Selected), Reveal())
 		}
 		out[i] = Row(tab...)
 	}
@@ -237,7 +237,7 @@ func tableCell(t TableSpec, row, col int, text string, clr widget.Token) Node {
 	if e := t.Editing; e != nil && e.Row == row && e.Col == col {
 		// The field is inset in its cell so its rounded outline and focus ring have room.
 		return Row(Grow(t.weight(col)), PadXY(3, 3), Separator(col > 0, 0),
-			Field(e.Field, Grow(1), Bg(widget.Sunken), OnEnter(e.OnEnter), OnTab(e.OnTab), menuOption(e.OnMenu)),
+			Field(e.Field, Grow(1), Bg(widget.Sunken), FieldPad(5) /* 3 + 5 = the 8 px of a shown cell, so the text does not move */, OnEnter(e.OnEnter), OnTab(e.OnTab), menuOption(e.OnMenu)),
 		)
 	}
 	items := []Item{Grow(t.weight(col)), PadXY(8, 0), Clip(), Text(text, Ellipsis(), Color(clr), Grow(1)), Separator(col > 0, 0)}

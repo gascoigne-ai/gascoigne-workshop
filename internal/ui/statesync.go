@@ -106,7 +106,7 @@ func (a *App) restore(s state.State) {
 		if req == nil {
 			continue
 		}
-		t := newTab(req)
+		t := a.makeTab(req)
 		if rt.Pane >= 0 && rt.Pane < len(requestPanes) {
 			t.paneTab = rt.Pane
 		}

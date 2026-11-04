@@ -73,6 +73,7 @@ type El struct {
 
 	scrollMaxH int          // MaxHeight of a Scroll, 0 for none
 	overline   widget.Token // a bar across the top edge
+	fieldInset int          // Field padding when not the default
 	control    string       // the theme control style that shapes and shades this element
 	tip        string       // tooltip text, shown after the pointer rests on the element
 	reveal     bool         // an HScroll keeps this child in view when it becomes the flagged one

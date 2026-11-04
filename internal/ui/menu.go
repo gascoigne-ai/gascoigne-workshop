@@ -145,7 +145,28 @@ func (a *App) appearanceView() Node {
 				return a.choice(c.label, c.id == a.settings.Contrast, func(s *settings.Settings) { s.Contrast = c.id })
 			}),
 		),
+		Spacer(H(w.Pad)),
+
+		Caption("Response view", H(22)),
+		Row(H(w.RowH), Gap(6),
+			For(responseViews, func(_ int, c struct {
+				id, label    string
+				raw, compact bool
+			}) Node {
+				return a.choice(c.label, c.id == viewIDOf(a.settings.ResponseView), func(s *settings.Settings) { s.ResponseView = c.id })
+			}),
+		),
 	)
+}
+
+// viewIDOf is the response view setting in effect: unknown ids are compact.
+func viewIDOf(id string) string {
+	for _, v := range responseViews {
+		if v.id == id {
+			return id
+		}
+	}
+	return "compact"
 }
 
 // shortcutsView is the Shortcuts section: every action with its key.
@@ -187,7 +208,14 @@ func (a *App) choice(label string, selected bool, edit func(*settings.Settings))
 // changeSettings edits the settings, applies them and saves them. The
 // color fields are rebuilt, since the colors in effect may have changed.
 func (a *App) changeSettings(edit func(*settings.Settings)) {
+	was := a.settings.ResponseView
 	a.saveSettings(edit)
+	if a.settings.ResponseView != was { // the choice applies to the tabs already open
+		for _, t := range a.tabs {
+			t.raw, t.compact = viewFlags(a.settings.ResponseView)
+			a.refreshView(t)
+		}
+	}
 	a.colorInputs, a.colorNotes = nil, nil
 }
 

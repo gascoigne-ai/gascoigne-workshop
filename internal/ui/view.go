@@ -173,7 +173,7 @@ func (a *App) requestTabs() Node {
 		HScroll(&a.tabsScroll, Grow(1), For(a.tabs, func(i int, t *reqTab) Node {
 			look := []Item{Bg(w.Frame), Control("tabstrip")} // inactive tabs blend into the strip; the active one joins the pane
 			if i == a.active {
-				look = []Item{Bg(w.Bg), Reveal(), Overline(w.AccentLine)} // the open tab: pane color, accent bar on top, bold name
+				look = []Item{Bg(w.Selected), Reveal()} // the open tab has the selected-row tint
 			}
 			grab := OnClick(func() {
 				a.active = i
@@ -186,7 +186,7 @@ func (a *App) requestTabs() Node {
 				Separator(i > 0, 12),
 				Row(PadL(14), Gap(8), AlignItems(AlignBaseline), grab, OnHeldOver(func() { a.dragOver(i) }),
 					Text(requestBadge(t.req.Protocol, t.req.Method), Small(), Color(methodToken(t.req.Method)), W(tabBadgeW)),
-					Text(t.req.Name, BoldIf(i == a.active), Color(tabNameColor(i == a.active))),
+					Text(t.req.Name),
 					Row(W(tabDirtyW), AlignSelf(AlignStretch), If(dirty(t), Text(dirtyMark, Color(w.AccentLine), Grow(1)))),
 				),
 				Row(W(24), OnClick(func() { a.closeTab(i) }), Tooltip(a.hint("Close tab", "close-tab")),
@@ -328,13 +328,4 @@ func (a *App) statusBar() Node {
 		Text(a.status, Small(), Muted(), Ellipsis(), Grow(1)),
 		Text(version, Small(), Muted()),
 	)
-}
-
-// tabNameColor is the open tab's name in the accent color, so it stands
-// out from the quiet others even where the bar above it blends into the banner.
-func tabNameColor(active bool) w.Token {
-	if active {
-		return w.AccentLine
-	}
-	return w.Text
 }

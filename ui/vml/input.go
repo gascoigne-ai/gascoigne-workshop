@@ -15,6 +15,19 @@ type Seg struct {
 
 const fieldPad = 10
 
+// textInset is the space between a field's edge and its text: fieldPad,
+// or what FieldPad set.
+func (e *El) textInset() int {
+	if e.fieldInset > 0 {
+		return e.fieldInset
+	}
+	return fieldPad
+}
+
+// FieldPad sets a field's inner padding, for fields inset in a box that
+// already has padding of its own, so text lines up with its neighbours.
+func FieldPad(n int) Option { return func(e *El) { e.fieldInset = n } }
+
 // field is a single-line text input editing a widget.TextField.
 type fieldB struct{ plain }
 
@@ -22,7 +35,7 @@ func (fieldB) measure(*El, *widget.Ctx, int) (int, int) { return 0, 0 }
 
 func (fieldB) update(e *El, c *widget.Ctx) {
 	f, in := e.field, c.In
-	at := func() int { return c.CursorAt(f.Display(), in.X-(e.rect.X+fieldPad)+f.ScrollX) }
+	at := func() int { return c.CursorAt(f.Display(), in.X-(e.rect.X+e.textInset())+f.ScrollX) }
 	if in.Click {
 		f.Focused = e.rect.Contains(in.X, in.Y)
 		if f.Focused {
@@ -55,13 +68,13 @@ func (fieldB) update(e *El, c *widget.Ctx) {
 	if in.Tab && e.onTab != nil {
 		e.onTab(in.Shift)
 	}
-	f.Reveal(c.Width(c.F.UI, string([]rune(f.Display())[:f.Cursor])), e.rect.W-2*fieldPad)
+	f.Reveal(c.Width(c.F.UI, string([]rune(f.Display())[:f.Cursor])), e.rect.W-2*e.textInset())
 }
 
 func (fieldB) draw(e *El, c *widget.Ctx, dst *ebiten.Image) {
 	f, r := e.field, e.rect
 	dst = c.Clip(dst, r)
-	x := r.X + fieldPad - f.ScrollX
+	x := r.X + e.textInset() - f.ScrollX
 	if lo, hi, ok := f.Selection(); ok {
 		runes := []rune(f.Display())
 		x0 := x + c.Width(c.F.UI, string(runes[:lo]))
@@ -77,10 +90,10 @@ func (fieldB) draw(e *El, c *widget.Ctx, dst *ebiten.Image) {
 		x += c.Width(c.F.UI, s.Text)
 	}
 	if f.Text == "" {
-		c.TextMid(dst, c.F.UI, e.placeholder, r.X+fieldPad, r, c.Col(widget.Muted))
+		c.TextMid(dst, c.F.UI, e.placeholder, r.X+e.textInset(), r, c.Col(widget.Muted))
 	}
 	if f.Focused && (c.Tick/30)%2 == 0 {
-		cx := r.X + fieldPad - f.ScrollX + c.Width(c.F.UI, string([]rune(f.Display())[:f.Cursor]))
+		cx := r.X + e.textInset() - f.ScrollX + c.Width(c.F.UI, string([]rune(f.Display())[:f.Cursor]))
 		c.VLine(dst, cx, r.Y+8, r.H-16, c.Col(widget.Text))
 	}
 }

@@ -23,6 +23,9 @@ type Line struct {
 	// show a one-line preview of the hidden block.
 	FoldedSpans []Span
 	Depth       int // nesting level of a block's opening line, for folding by depth
+	// Num is the line number shown in the gutter, for views that show only
+	// some of a text's lines; 0 numbers the line by its position.
+	Num int
 }
 
 // CodeView is a read-only, scrollable, foldable text viewer with line
@@ -140,6 +143,23 @@ func (v *CodeView) SelectLines(a, b int) {
 	v.selA, v.selB, v.HasSel = textPos{lo, 0}, textPos{hi, v.lineLen(hi)}, true
 }
 
+// LineNumber is the number shown for line i: its Num, else its position.
+func (v *CodeView) LineNumber(i int) int {
+	if i >= 0 && i < len(v.Lines) && v.Lines[i].Num > 0 {
+		return v.Lines[i].Num
+	}
+	return i + 1
+}
+
+// numberDigits is how many digits the widest line number has.
+func (v *CodeView) numberDigits() int {
+	widest := max(len(v.Lines), 1)
+	for i := range v.Lines {
+		widest = max(widest, v.LineNumber(i))
+	}
+	return len(strconv.Itoa(widest))
+}
+
 // ToggleFold folds or unfolds the foldable line at original index i.
 func (v *CodeView) ToggleFold(i int) {
 	if i < 0 || i >= len(v.Lines) || !v.Lines[i].Foldable {
@@ -195,7 +215,7 @@ type codeGeometry struct {
 
 func (v *CodeView) geometry(c *Ctx, r Rect) codeGeometry {
 	g := codeGeometry{lineH: c.LineH(c.F.Mono) + 4, charW: c.Width(c.F.Mono, "0")}
-	g.numW = g.charW * len(strconv.Itoa(max(len(v.Lines), 1)))
+	g.numW = g.charW * v.numberDigits()
 	g.textX = r.X + Pad + g.numW + foldColW + 8
 	return g
 }
@@ -380,7 +400,7 @@ func (v *CodeView) Draw(c *Ctx, dst *ebiten.Image, r Rect) {
 			c.TextMid(text, c.F.Mono, " ... }", x, cell, muted)
 		}
 
-		num := strconv.Itoa(idx + 1)
+		num := strconv.Itoa(v.LineNumber(idx))
 		c.TextMid(area, c.F.Mono, num, r.X+Pad+g.numW-len(num)*g.charW, cell, muted)
 		if line.Foldable {
 			cx := float32(r.X + Pad + g.numW + 4 + foldColW/2)
