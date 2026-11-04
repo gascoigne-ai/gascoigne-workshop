@@ -107,7 +107,7 @@ func TestBuiltinThemesListTheSameControlsAndTokens(t *testing.T) {
 			t.Errorf("light lacks color %q", tok)
 		}
 	}
-	for _, name := range []string{"button", "primary", "icon-button", "field", "table", "menu", "tooltip", "tabstrip", "statusbar", "hero"} {
+	for _, name := range []string{"button", "primary", "icon-button", "field", "table", "menu", "tooltip", "tabstrip", "statusbar", "hero", "checkbox", "slider", "scrollbar", "row", "swatch", "match"} {
 		if _, ok := d.Controls[name]; !ok {
 			t.Errorf("no style for %q", name)
 		}

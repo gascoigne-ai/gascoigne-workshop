@@ -84,6 +84,25 @@
     },
     "pill": {
       "radius": 999
+    },
+    "checkbox": {
+      "radius": 3
+    },
+    "slider": {
+      "radius": 4
+    },
+    "scrollbar": {
+      "radius": 5
+    },
+    "row": {
+      "radius": 4
+    },
+    "swatch": {
+      "radius": 3,
+      "border": "border-strong"
+    },
+    "match": {
+      "radius": 2
     }
   }
 }

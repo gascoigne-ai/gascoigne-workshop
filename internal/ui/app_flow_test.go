@@ -475,8 +475,8 @@ func TestNoResponseStates(t *testing.T) {
 // Cells of the Params table at 1280x800: request pane starts at x=260,
 // the table at x=272, columns: actions 36, name 115, value 165, description 132.
 const (
-	paramsRow0Y   = 272
-	paramsRow3Y   = 356 // the placeholder row below the three params
+	paramsRow0Y   = 264
+	paramsRow3Y   = 348 // the placeholder row below the three params
 	nameCellX     = 365
 	valueCellX    = 500
 	descCellX     = 650
@@ -748,7 +748,7 @@ func TestTreeScrollsWhenItDoesNotFit(t *testing.T) {
 // row, the editor below y=228, a form table's placeholder row at y=270.
 const (
 	bodyTabIdx = 1
-	chipsY     = 216
+	chipsY     = 208
 	noneChipX  = 300
 	jsonChipX  = 374
 	textChipX  = 444
@@ -1432,14 +1432,14 @@ const (
 	compactX   = 818    // the response toolbar's chips: Compact, Pretty, Raw
 	prettyX    = 888
 	rawX       = 944
-	findBtnX   = 1128
-	copyBtnX   = 1184
-	curlBtnX   = 1242
+	findBtnX   = 1176
+	copyBtnX   = 1214
+	curlBtnX   = 1252
 	findBarY   = chipsY + widget.RowH // the find bar is the row below the toolbar
 	findFieldX = 900
-	findPrevX  = 1186
-	findNextX  = 1220
-	findCloseX = 1254
+	findPrevX  = 1176
+	findNextX  = 1214
+	findCloseX = 1252
 )
 
 // jsonResponse points the current tab at a server returning body and sends.
@@ -2302,10 +2302,10 @@ func TestTreeKeysDoNothingWhileTyping(t *testing.T) {
 // Params table at 1280x800: header cells at y=244 (the action cell at
 // x=290), rows at y=272, 300, 328 and the placeholder at 356.
 const (
-	paramsHeaderY = 244
+	paramsHeaderY = 236
 	checkAllX     = 290
-	row1Y         = 300
-	row2Y         = 328
+	row1Y         = 292
+	row2Y         = 320
 	bulkBtnX      = 715
 )
 

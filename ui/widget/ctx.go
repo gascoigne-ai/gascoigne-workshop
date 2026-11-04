@@ -286,6 +286,10 @@ func roundedPath(x0, y0, x1, y1, rad float32) *vector.Path {
 	return &p
 }
 
+// Radius is the corner radius of the named control in this theme, after
+// the user's corner setting: what every component draws its corners with.
+func (c *Ctx) Radius(control string) float64 { return c.Th.Style(control).Radius }
+
 // GradientFor is the top and bottom colors a control's fill takes from
 // base: the style's explicit ends, else base shaded by the style's
 // strength, else base twice.

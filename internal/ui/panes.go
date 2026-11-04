@@ -441,23 +441,20 @@ func (a *App) responsePane(_ pane, t *reqTab, _ *ScrollState) Node {
 			a.viewChip("Pretty", !t.raw && !t.compact, 56, func() { a.setView(t, false, false) }),
 			a.viewChip("Raw", t.raw, 44, func() { a.setView(t, true, false) }),
 			Spacer(),
-			IconButton(SearchIcon(Grow(1)), W(48), H(chipH), OnClick(a.openFind), Tooltip(a.hint("Find in response", "find"))),
-			IconButton(CopyIcon(Grow(1)), W(52), H(chipH), OnClick(func() { a.copyBody(t) }), Tooltip("Copy the response body")),
-			IconButton(PromptIcon(Grow(1)), W(52), H(chipH), OnClick(func() { a.copyCurl(t) }), Tooltip("Copy the request as a cURL command")),
+			IconButton(SearchIcon(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(a.openFind), Tooltip(a.hint("Find in response", "find"))),
+			IconButton(CopyIcon(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(func() { a.copyBody(t) }), Tooltip("Copy the response body")),
+			IconButton(PromptIcon(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(func() { a.copyCurl(t) }), Tooltip("Copy the request as a cURL command")),
 		),
 		If(t.findOpen, a.findBar(t)),
 		Code(&t.view, Grow(1), Bg(w.Sunken), OnRightClick(func(x, y int) { a.openMenu(x, y, a.responseMenuItems(t)) })),
 	)
 }
 
-// chipH is the height of the toolbar's chips and icon buttons: all the same, centered in the row.
-const chipH = 24
-
 func (a *App) viewChip(label string, selected bool, width int, onClick func()) Node {
 	if selected {
-		return PrimaryButton(label, W(width), H(chipH), OnClick(onClick))
+		return PrimaryButton(label, W(width), H(w.CompactH), OnClick(onClick))
 	}
-	return Button(label, W(width), H(chipH), OnClick(onClick))
+	return Button(label, W(width), H(w.CompactH), OnClick(onClick))
 }
 
 func (a *App) findBar(t *reqTab) Node {
@@ -468,9 +465,9 @@ func (a *App) findBar(t *reqTab) Node {
 			a.textMenuOpt(&t.find, func() { a.runFind(t) }),
 		),
 		Text(findCount(t.find.Text, len(t.view.Matches()), t.matchIdx), Small(), Muted(), W(64)),
-		IconButton(ChevronUp(Grow(1)), W(28), OnClick(func() { a.findStep(t, -1) }), Tooltip("Previous match")),
-		IconButton(ChevronDown(Grow(1)), W(28), OnClick(func() { a.findStep(t, 1) }), Tooltip("Next match")),
-		IconButton(Cross(Grow(1)), W(28), OnClick(func() { a.closeFind(t) }), Tooltip("Close search (Esc)")),
+		IconButton(ChevronUp(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(func() { a.findStep(t, -1) }), Tooltip("Previous match")),
+		IconButton(ChevronDown(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(func() { a.findStep(t, 1) }), Tooltip("Next match")),
+		IconButton(Cross(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(func() { a.closeFind(t) }), Tooltip("Close search (Esc)")),
 	)
 }
 

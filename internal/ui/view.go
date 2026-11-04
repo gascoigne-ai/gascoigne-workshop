@@ -13,10 +13,10 @@ import (
 const (
 	sidebarW  = 260
 	headerH   = 44
-	tabsH     = 46
+	tabsH     = 42
 	urlH      = 56
 	statusH   = 28
-	paneTabsH = 44
+	paneTabsH = 40
 
 	// Smallest sizes the dividers allow.
 	minSidebarW = 160
@@ -83,6 +83,7 @@ func (a *App) treeRow(row treeRow, selected bool) Node {
 		OnClick(func() { a.pressTreeRow(row) }),
 		OnRightClick(func(x, y int) { a.openMenu(x, y, a.treeMenuItems(row)) }),
 		OnHeldOver(func() { a.dropTarget = node }),
+		Control("row"),
 	}
 	if a.dragNode != nil && a.dropTarget == node && node != a.dragNode {
 		events = append(events, Border(w.AccentLine)) // where the drop would land

@@ -59,7 +59,7 @@ func (a *App) menuView() Node {
 		Col(W(settingsW), H(h), Bg(w.Bg), Control("menu"), Shadow(), FloatCenter(), FocusScope(), Modal(func() { a.menu = false }),
 			Row(H(settingsTitleH), PadXY(16, 0), AlignItems(AlignCenter), BorderBottom(w.BorderSoft),
 				Text("Settings", Bold(), Grow(1)),
-				IconButton(Cross(Grow(1)), W(28), H(24), OnClick(func() { a.menu = false }), Tooltip("Close (Esc)")),
+				IconButton(Cross(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(func() { a.menu = false }), Tooltip("Close (Esc)")),
 			),
 			Row(Grow(1),
 				Col(W(settingsNavW), Pad(8), Gap(2), Bg(w.Frame),
@@ -74,7 +74,7 @@ func (a *App) menuView() Node {
 // navItem is one category in the dialog's list: the open one is tinted and bold.
 func (a *App) navItem(c settingsCategory, open bool) Node {
 	items := []Item{
-		H(32), PadXY(12, 0), AlignItems(AlignCenter), Control("button"),
+		H(w.RowH), PadXY(12, 0), AlignItems(AlignCenter), Control("button"),
 		OnClick(func() { a.settingsCat, a.menuScroll.Y = c.id, 0 }),
 	}
 	if open {
@@ -86,7 +86,7 @@ func (a *App) navItem(c settingsCategory, open bool) Node {
 // appearanceView is the first page: theme, sizes, corners and layout.
 func (a *App) appearanceView() Node {
 	return Col(
-		Caption("Theme", H(22)),
+		Caption("Theme", H(w.LabelH)),
 		Row(H(w.RowH), Gap(6),
 			For(allThemeChoices(), func(_ int, c themeChoice) Node {
 				return a.choice(c.label, c.id == a.settings.Theme, func(s *settings.Settings) { s.Theme = c.id })
@@ -94,7 +94,7 @@ func (a *App) appearanceView() Node {
 		),
 		Spacer(H(w.Pad)),
 
-		Caption("Text size", H(22)),
+		Caption("Text size", H(w.LabelH)),
 		Row(H(w.RowH), Gap(6),
 			For(textSizeChoices, func(_ int, c sizeChoice) Node {
 				return a.choice(c.label, c.id == a.settings.TextSize, func(s *settings.Settings) { s.TextSize = c.id })
@@ -102,7 +102,7 @@ func (a *App) appearanceView() Node {
 		),
 		Spacer(H(w.Pad)),
 
-		Caption("Interface scale", H(22)),
+		Caption("Interface scale", H(w.LabelH)),
 		Row(H(w.RowH), Gap(8),
 			Slider(&a.scaleSlider, scaleMin, scaleMax, scaleStep, a.scalePct(),
 				func(v int) { a.settings.UIScalePct, a.dirty = v, true }, // live: the UI resizes while dragging
@@ -113,7 +113,7 @@ func (a *App) appearanceView() Node {
 		),
 		Spacer(H(w.Pad)),
 
-		Caption("Corners", H(22)),
+		Caption("Corners", H(w.LabelH)),
 		Row(H(w.RowH), Gap(6),
 			For(cornerChoices, func(_ int, c struct {
 				id, label string
@@ -124,14 +124,14 @@ func (a *App) appearanceView() Node {
 		),
 		Spacer(H(w.Pad)),
 
-		Caption("Gradients", H(22)),
+		Caption("Gradients", H(w.LabelH)),
 		Row(H(w.RowH), Gap(6),
 			a.choice("On", !a.settings.Flat, func(s *settings.Settings) { s.Flat = false }),
 			a.choice("Off", a.settings.Flat, func(s *settings.Settings) { s.Flat = true }),
 		),
 		Spacer(H(w.Pad)),
 
-		Caption("Request / response", H(22)),
+		Caption("Request / response", H(w.LabelH)),
 		Row(H(w.RowH), Gap(6),
 			For(layoutChoices, func(_ int, c layoutChoice) Node {
 				return a.choice(c.label, c.id == a.settings.Layout, func(s *settings.Settings) { s.Layout = c.id })
@@ -139,7 +139,7 @@ func (a *App) appearanceView() Node {
 		),
 		Spacer(H(w.Pad)),
 
-		Caption("Contrast", H(22)),
+		Caption("Contrast", H(w.LabelH)),
 		Row(H(w.RowH), Gap(6),
 			For(contrastChoices, func(_ int, c contrastChoice) Node {
 				return a.choice(c.label, c.id == a.settings.Contrast, func(s *settings.Settings) { s.Contrast = c.id })
@@ -147,7 +147,7 @@ func (a *App) appearanceView() Node {
 		),
 		Spacer(H(w.Pad)),
 
-		Caption("Response view", H(22)),
+		Caption("Response view", H(w.LabelH)),
 		Row(H(w.RowH), Gap(6),
 			For(responseViews, func(_ int, c struct {
 				id, label    string
@@ -174,7 +174,7 @@ func viewIDOf(id string) string {
 // the default.
 func (a *App) shortcutsView() Node {
 	return Col(
-		Caption("Shortcuts", H(22)),
+		Caption("Shortcuts", H(w.LabelH)),
 		For(shortcuts, func(_ int, s shortcut) Node { return a.shortcutRow(s) }),
 	)
 }
@@ -187,12 +187,12 @@ func (a *App) shortcutRow(s shortcut) Node {
 	}
 	note := a.recordNotes[s.id]
 	return Col(
-		Row(H(24), Gap(6),
+		Row(H(w.CompactH), Gap(6),
 			Text(s.name, Small(), Grow(1), Ellipsis()),
-			button(label, W(96), OnClick(func() { a.startRecording(s.id) })),
-			If(overridden, Button("Reset", W(40), OnClick(func() { a.resetBinding(s.id) }))),
+			button(label, W(96), H(w.CompactH), OnClick(func() { a.startRecording(s.id) })),
+			If(overridden, Button("Reset", W(40), H(w.CompactH), OnClick(func() { a.resetBinding(s.id) }))),
 		),
-		If(note != "", Row(H(18), Text(note, Small(), Color(w.Error), Ellipsis(), Grow(1)))),
+		If(note != "", Row(H(w.NoteH), Text(note, Small(), Color(w.Error), Ellipsis(), Grow(1)))),
 	)
 }
 

@@ -58,7 +58,7 @@ func (c *Ctx) Scrollbar(dst *ebiten.Image, track Rect, contentLen, viewLen, pos 
 	if !vertical {
 		thumb = Rect{X: track.X + off, Y: track.Y + 1, W: length, H: track.H - 2}
 	}
-	c.Fill(dst, thumb, clr)
+	c.FillStyled(dst, thumb, clr, clr, c.Radius("scrollbar"))
 }
 
 // bars is the scrollbar layout of a view in r: the area left for content

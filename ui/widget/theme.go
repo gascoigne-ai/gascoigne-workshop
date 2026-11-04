@@ -49,10 +49,19 @@ const (
 	HeroMuted    Token = "hero-muted" // icons on the banner
 )
 
-// Fixed sizes shared by all widgets, in logical pixels.
+// Size rules shared by every component, in logical pixels. Heights come
+// in three steps so neighbours line up: RowH for list and table rows and
+// standard controls, CompactH for chips, icon buttons and inline fields
+// that sit in a row of that height, LabelH and NoteH for section captions
+// and one-line notes. Icon buttons are IconBtnW wide. Pad is the inset
+// between a container and its content.
 const (
-	RowH = 28
-	Pad  = 12
+	RowH     = 28
+	CompactH = 24
+	LabelH   = 22
+	NoteH    = 18
+	IconBtnW = 32
+	Pad      = 12
 )
 
 // Theme holds the colors and font sizes the widgets draw with.

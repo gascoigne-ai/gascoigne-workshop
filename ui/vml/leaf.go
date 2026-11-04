@@ -97,7 +97,7 @@ func Center() Option { return func(e *El) { e.ctr = true } }
 func Lines(s string, clr widget.Token, opts ...Option) *El {
 	rows := []Item{}
 	for _, l := range strings.Split(s, "\n") {
-		rows = append(rows, Text(l, Color(clr), H(22)))
+		rows = append(rows, Text(l, Color(clr), H(widget.LabelH)))
 	}
 	for _, o := range opts {
 		rows = append(rows, o)
@@ -171,10 +171,11 @@ func drawCheckbox(c *widget.Ctx, dst *ebiten.Image, box widget.Rect, on, hover b
 		if hover {
 			edge = widget.Muted
 		}
-		c.Outline(dst, box, c.Col(edge))
+		c.OutlineStyled(dst, box, c.Col(edge), c.Radius("checkbox"))
 		return
 	}
-	c.Fill(dst, box, c.Col(widget.Accent))
+	accent := c.Col(widget.Accent)
+	c.FillStyled(dst, box, accent, accent, c.Radius("checkbox"))
 	x, y := float32(box.X), float32(box.Y)
 	mark := c.Col(widget.AccentText)
 	c.Line(dst, x+3.5, y+7.5, x+6, y+10, 1.8, mark)

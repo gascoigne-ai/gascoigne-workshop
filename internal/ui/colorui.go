@@ -81,7 +81,7 @@ func (a *App) resetColors() {
 // customizable color with a swatch, its hex and a reset button.
 func (a *App) colorsView() Node {
 	return Col(
-		Caption("Colors", H(22)),
+		Caption("Colors", H(w.LabelH)),
 		For(customColors, func(_ int, c customColor) Node { return a.colorRow(c) }),
 		Row(H(w.RowH), Button("Reset colors", W(110), OnClick(a.resetColors))),
 	)
@@ -97,12 +97,12 @@ func (a *App) colorRow(c customColor) Node {
 	return Col(
 		Row(H(w.RowH), Gap(6),
 			Text(c.label, Small(), W(76)),
-			Row(W(20), H(18), Bg(c.token), Border(w.Border)), // shows the color in effect
-			Field(in, W(70), H(24), Bg(w.Sunken), Border(border),
+			Row(W(20), H(w.NoteH), Bg(c.token), Control("swatch")), // shows the color in effect
+			Field(in, W(70), H(w.CompactH), Bg(w.Sunken), Border(border),
 				OnChange(func() { a.colorEdited(c) }),
 				a.textMenuOpt(in, func() { a.colorEdited(c) })),
-			Button("Reset", W(44), OnClick(func() { a.resetColor(c.token) })),
+			Button("Reset", W(44), H(w.CompactH), OnClick(func() { a.resetColor(c.token) })),
 		),
-		If(note != "", Row(H(18), Text(note, Small(), Color(w.Error), Ellipsis(), Grow(1)))),
+		If(note != "", Row(H(w.NoteH), Text(note, Small(), Color(w.Error), Ellipsis(), Grow(1)))),
 	)
 }

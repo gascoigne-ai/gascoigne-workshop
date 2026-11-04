@@ -128,7 +128,7 @@ func (a *App) menuRow(m *contextMenu, i int, it menuItem) Node {
 	case i == m.hot:
 		look = Bg(w.Selected)
 	}
-	return Row(H(menuRowH), PadXY(10, 0), Gap(8), AlignItems(AlignBaseline), look, OnClick(func() { a.runMenuItem(i) }),
+	return Row(H(menuRowH), PadXY(10, 0), Gap(8), AlignItems(AlignBaseline), Control("row"), look, OnClick(func() { a.runMenuItem(i) }),
 		Text(it.label, Color(color)),
 		Spacer(),
 		Text(it.shortcut, Small(), Muted()),
@@ -184,7 +184,7 @@ func (a *App) dialogView() Node {
 		Row(Bg(w.Shadow)), // dims the window
 		Col(W(dialogW), Pad(16), Gap(12), Bg(w.Bg), Control("menu"), Shadow(),
 			FloatCenter(), FocusScope(), Modal(a.closeDialog),
-			Text(d.title, H(22)),
+			Text(d.title, H(w.LabelH)),
 			If(d.body != "", Lines(d.body, w.Muted)),
 			If(d.input != nil, Field(d.input, H(w.RowH), Bg(w.Sunken), OnEnter(a.dialogDefault), a.textMenuOpt(d.input, nil))),
 			Row(H(w.RowH), Gap(8),
