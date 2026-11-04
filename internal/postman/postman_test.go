@@ -87,3 +87,39 @@ func TestParseRejectsWhatIsNotAPostmanCollection(t *testing.T) {
 		}
 	}
 }
+
+func TestExportThenParseKeepsWhatPostmanCanHold(t *testing.T) {
+	first := load(t)
+	root := first.Folder
+	root.AddRequest(model.Request{Name: "Socket", Protocol: "websocket", URL: "wss://x"})
+	data, err := Export(root, first.Vars)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if Skipped(root) != 1 {
+		t.Fatalf("skipped %d", Skipped(root))
+	}
+	again, err := Parse(data)
+	if err != nil {
+		t.Fatalf("%v\n%s", err, data)
+	}
+	if again.Folder.Name != root.Name || len(again.Folder.Folders) != 1 || len(again.Folder.Requests) != 3 {
+		t.Fatalf("structure: %d folders, %d requests", len(again.Folder.Folders), len(again.Folder.Requests))
+	}
+	for _, name := range []string{"Form", "Upload", "Keyed"} {
+		a, b := find(root, name), find(again.Folder, name)
+		if b == nil || a.Method != b.Method || a.URL != b.URL || a.BodyType != b.BodyType || a.Auth != b.Auth || len(a.Form) != len(b.Form) {
+			t.Errorf("%s changed:\n before %+v\n after  %+v", name, a, b)
+		}
+	}
+	get := find(again.Folder.Folders[0], "GET with query")
+	if get.URL != "{{baseUrl}}/get?foo=bar&baz=1" || len(get.Params) != 3 || get.Auth.Token != "{{token}}" || len(get.Headers) != 2 || get.Headers[1].Enabled {
+		t.Fatalf("%+v", get)
+	}
+	if len(again.Vars) != 1 || again.Vars[0].Name != "baseUrl" {
+		t.Fatalf("vars %+v", again.Vars)
+	}
+	if find(again.Folder, "Socket") != nil {
+		t.Fatal("a WebSocket request has no Postman form")
+	}
+}

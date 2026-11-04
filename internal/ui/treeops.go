@@ -1,7 +1,10 @@
 package ui
 
 import (
+	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -59,6 +62,7 @@ func (a *App) treeMenuItems(row collection.Row) []menuItem {
 		{label: "Import cURL from clipboard", run: func() { a.importCurl(row.Dir) }},
 		{label: "Import OpenAPI from clipboard", run: func() { a.importOpenAPI(row.Dir) }},
 		{label: "Import Postman from clipboard", run: func() { a.importPostman(row.Dir) }},
+		{label: "Export as Postman...", run: func() { a.exportPostman(row.Dir) }},
 		{label: "Variables", run: func() { a.editVars(row.Dir) }},
 		sep,
 		rename,
@@ -351,4 +355,32 @@ func (a *App) importPostman(dir *model.Folder) {
 		a.openRequest(first)
 	}
 	a.status = "Imported " + res.Folder.Name
+}
+
+// exportPostman writes dir and everything below it as a Postman v2.1
+// collection to a file the user picks. Requests of kinds Postman has no
+// place for are left out and counted in the message.
+func (a *App) exportPostman(dir *model.Folder) {
+	a.commitEdit()
+	data, err := postman.Export(dir, a.col.Vars)
+	if err != nil {
+		a.toast("Export failed: "+err.Error(), true)
+		return
+	}
+	skipped := postman.Skipped(dir)
+	name := dir.Name
+	if name == "" {
+		name = "collection"
+	}
+	a.pickFile("Export as Postman collection", true, name+".postman_collection.json", func(path string) {
+		if err := os.WriteFile(path, data, 0o644); err != nil {
+			a.toast("Export failed: "+err.Error(), true)
+			return
+		}
+		msg := "Exported to " + filepath.Base(path)
+		if skipped > 0 {
+			msg += fmt.Sprintf(" (%d requests of other kinds left out)", skipped)
+		}
+		a.toast(msg, false)
+	})
 }

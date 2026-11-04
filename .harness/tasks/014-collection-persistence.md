@@ -1,4 +1,4 @@
-status: in progress (left: YAML OpenAPI, export)
+status: in progress (left: YAML OpenAPI)
 
 # Collections on disk
 
@@ -25,3 +25,5 @@ The sample collection is built in and nothing is saved.
 - Done later: OpenAPI 3 import (`internal/openapi`, JSON only): one folder per tag, one request per operation with query and header parameters (`$ref` followed), path parameters as `{{variables}}`, a JSON body from the example or a schema skeleton, URLs starting with `{{baseUrl}}`; folder menu `Import OpenAPI from clipboard`. Fixture: a trimmed Swagger Petstore.
 - Done later: Postman collection import (`internal/postman`, v2.x JSON: folders, headers with disabled flags, query, raw/urlencoded/formdata bodies with `@file` fields, bearer/basic/API key auth, collection variables); folder menu `Import Postman from clipboard`; existing variables are not overwritten.
 - Left: YAML OpenAPI (stdlib has no YAML), export.
+- Done later: export as a Postman v2.1 collection (`postman.Export`, folder menu `Export as Postman...`, file chosen with the file dialog); REST requests only, the others are counted in the message; export then import keeps structure, URLs, bodies, auth and variables (tested).
+- Left: YAML OpenAPI only.

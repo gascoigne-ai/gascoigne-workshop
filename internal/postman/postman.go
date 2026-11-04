@@ -214,3 +214,157 @@ func convertAuth(a *auth) model.Auth {
 	}
 	return model.Auth{}
 }
+
+// ---- export ------------------------------------------------------------
+
+type outKV struct {
+	Key      string `json:"key"`
+	Value    string `json:"value,omitempty"`
+	Disabled bool   `json:"disabled,omitempty"`
+	Type     string `json:"type,omitempty"`
+	Src      string `json:"src,omitempty"`
+}
+
+type outItem struct {
+	Name    string     `json:"name"`
+	Items   []*outItem `json:"item,omitempty"`
+	Request *outReq    `json:"request,omitempty"`
+}
+
+type outReq struct {
+	Method string   `json:"method"`
+	Header []outKV  `json:"header"`
+	URL    outURL   `json:"url"`
+	Body   *outBody `json:"body,omitempty"`
+	Auth   *outAuth `json:"auth,omitempty"`
+}
+
+type outURL struct {
+	Raw   string  `json:"raw"`
+	Query []outKV `json:"query,omitempty"`
+}
+
+type outBody struct {
+	Mode       string  `json:"mode"`
+	Raw        string  `json:"raw,omitempty"`
+	URLEncoded []outKV `json:"urlencoded,omitempty"`
+	FormData   []outKV `json:"formdata,omitempty"`
+	Options    *struct {
+		Raw struct {
+			Language string `json:"language"`
+		} `json:"raw"`
+	} `json:"options,omitempty"`
+}
+
+type outAuth struct {
+	Type   string  `json:"type"`
+	Bearer []outKV `json:"bearer,omitempty"`
+	Basic  []outKV `json:"basic,omitempty"`
+	APIKey []outKV `json:"apikey,omitempty"`
+}
+
+// Export writes the folder and the collection variables as a Postman v2.1
+// collection. Request kinds Postman has no place for (WebSocket, MCP, SSE)
+// are left out; the caller can count them with Skipped.
+func Export(root *model.Folder, vars []model.KV) ([]byte, error) {
+	out := struct {
+		Info struct {
+			Name   string `json:"name"`
+			Schema string `json:"schema"`
+		} `json:"info"`
+		Items    []*outItem `json:"item"`
+		Variable []outKV    `json:"variable,omitempty"`
+	}{}
+	out.Info.Name = root.Name
+	out.Info.Schema = "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	out.Items = exportFolder(root)
+	for _, v := range vars {
+		out.Variable = append(out.Variable, outKV{Key: v.Name, Value: v.Value, Disabled: !v.Enabled})
+	}
+	return json.MarshalIndent(out, "", "  ")
+}
+
+// Skipped counts the requests of root that Export leaves out.
+func Skipped(root *model.Folder) int {
+	n := 0
+	for _, r := range root.Requests {
+		if r.Protocol != "rest" {
+			n++
+		}
+	}
+	for _, f := range root.Folders {
+		n += Skipped(f)
+	}
+	return n
+}
+
+func exportFolder(f *model.Folder) []*outItem {
+	var items []*outItem
+	for _, sub := range f.Folders {
+		items = append(items, &outItem{Name: sub.Name, Items: exportFolder(sub)})
+	}
+	for _, r := range f.Requests {
+		if r.Protocol != "rest" {
+			continue
+		}
+		items = append(items, &outItem{Name: r.Name, Request: exportRequest(r)})
+	}
+	return items
+}
+
+func outRows(rows []model.KV, files bool) []outKV {
+	var out []outKV
+	for _, r := range rows {
+		e := outKV{Key: r.Name, Value: r.Value, Disabled: !r.Enabled}
+		if files {
+			e.Type = "text"
+			if path, ok := strings.CutPrefix(r.Value, "@"); ok && path != "" && !strings.HasPrefix(path, "@") {
+				e.Type, e.Value, e.Src = "file", "", path
+			}
+		}
+		out = append(out, e)
+	}
+	return out
+}
+
+func exportRequest(r *model.Request) *outReq {
+	o := &outReq{Method: r.Method, Header: outRows(r.Headers, false), URL: outURL{Raw: r.URL}}
+	if o.Header == nil {
+		o.Header = []outKV{}
+	}
+	for _, p := range r.Params {
+		if !model.IsPathParam(p.Name) {
+			o.URL.Query = append(o.URL.Query, outKV{Key: p.Name, Value: p.Value, Disabled: !p.Enabled})
+		}
+	}
+	switch r.BodyType {
+	case model.BodyJSON, model.BodyText:
+		b := &outBody{Mode: "raw", Raw: r.Body}
+		if r.BodyType == model.BodyJSON {
+			b.Options = &struct {
+				Raw struct {
+					Language string `json:"language"`
+				} `json:"raw"`
+			}{}
+			b.Options.Raw.Language = "json"
+		}
+		o.Body = b
+	case model.BodyForm:
+		o.Body = &outBody{Mode: "urlencoded", URLEncoded: outRows(r.Form, false)}
+	case model.BodyMultipart:
+		o.Body = &outBody{Mode: "formdata", FormData: outRows(r.Form, true)}
+	}
+	switch r.Auth.Type {
+	case model.AuthBearer:
+		o.Auth = &outAuth{Type: "bearer", Bearer: []outKV{{Key: "token", Value: r.Auth.Token}}}
+	case model.AuthBasic:
+		o.Auth = &outAuth{Type: "basic", Basic: []outKV{{Key: "username", Value: r.Auth.User}, {Key: "password", Value: r.Auth.Password}}}
+	case model.AuthAPIKey:
+		in := r.Auth.KeyIn
+		if in == "" {
+			in = model.KeyInHeader
+		}
+		o.Auth = &outAuth{Type: "apikey", APIKey: []outKV{{Key: "key", Value: r.Auth.KeyName}, {Key: "value", Value: r.Auth.KeyValue}, {Key: "in", Value: in}}}
+	}
+	return o
+}

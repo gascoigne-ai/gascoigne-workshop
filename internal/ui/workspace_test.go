@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/postman"
 	"os"
 	"path/filepath"
 	"strings"
@@ -262,5 +263,33 @@ func TestImportPostmanAddsAFolderAndItsVariables(t *testing.T) {
 	a.importPostman(&a.col.Folder)
 	if len(a.col.Folders) != n {
 		t.Fatal("a bad document changed the collection")
+	}
+}
+
+func TestExportPostmanWritesACollectionFileThatImportsBack(t *testing.T) {
+	t.Setenv("PATH", t.TempDir()) // no dialog program: the path is asked as text
+	a, _ := newTestApp(t)
+	a.exportPostman(&a.col.Folder)
+	if a.dialog == nil || a.dialog.input == nil || !strings.HasSuffix(a.dialog.input.Text, ".postman_collection.json") {
+		t.Fatalf("dialog %+v", a.dialog)
+	}
+	path := filepath.Join(t.TempDir(), "out.json")
+	a.dialog.input.SelectAll()
+	a.dialog.input.Insert(path)
+	a.dialog.buttons[len(a.dialog.buttons)-1].run()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	res, err := postman.Parse(data)
+	if err != nil || res.Folder.Name != a.col.Name || len(res.Folder.Folders) == 0 {
+		t.Fatalf("%v %+v", err, res.Folder)
+	}
+	found := false
+	for _, ts := range a.toasts {
+		found = found || strings.Contains(ts.text, "left out") // the sample has WebSocket and MCP requests
+	}
+	if !found {
+		t.Fatal("the message must say what was left out")
 	}
 }
