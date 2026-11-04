@@ -4,12 +4,14 @@
 package openapi
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
 	"strings"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/miniyaml"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
 )
@@ -62,11 +64,21 @@ type operation struct {
 
 var methods = []string{"get", "post", "put", "patch", "delete", "head", "options"}
 
-// Parse reads an OpenAPI 3 document in JSON.
+// Parse reads an OpenAPI 3 document in JSON or YAML (the subset of YAML
+// that internal/miniyaml reads, which covers the documents API tools write).
 func Parse(data []byte) (Result, error) {
 	var d doc
+	if trimmed := bytes.TrimSpace(data); len(trimmed) > 0 && trimmed[0] != '{' {
+		v, err := miniyaml.Parse(data)
+		if err != nil {
+			return Result{}, fmt.Errorf("not JSON, and not readable as YAML: %w", err)
+		}
+		if data, err = json.Marshal(v); err != nil {
+			return Result{}, err
+		}
+	}
 	if err := json.Unmarshal(data, &d); err != nil {
-		return Result{}, fmt.Errorf("not JSON (YAML documents must be converted first): %w", err)
+		return Result{}, fmt.Errorf("not JSON: %w", err)
 	}
 	if !strings.HasPrefix(d.OpenAPI, "3.") {
 		return Result{}, errors.New("not an OpenAPI 3 document: no \"openapi\": \"3.x\"")

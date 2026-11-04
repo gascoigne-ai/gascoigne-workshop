@@ -2,6 +2,7 @@ package openapi
 
 import (
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -84,7 +85,9 @@ func TestOperationsKeepMethodURLParametersAndBody(t *testing.T) {
 func TestParseRejectsWhatIsNotOpenAPI(t *testing.T) {
 	for in, want := range map[string]string{
 		"":                               "not JSON",
-		"openapi: 3.0.0":                 "not JSON",
+		"openapi: 3.0.0":                 "no operations",
+		"a: [1, 2\n":                     "not readable as YAML",
+		"{broken":                        "not JSON",
 		`{"swagger":"2.0","paths":{}}`:   "not an OpenAPI 3",
 		`{"openapi":"3.0.0","paths":{}}`: "no operations",
 		`{"openapi":"3.0.0","paths":{"/a":{"get":[]}}}`: "GET /a",
@@ -103,4 +106,35 @@ func TestEqualNamesInOneFolderStayDistinct(t *testing.T) {
 	if len(res.Folder.Requests) != 2 || res.Folder.Requests[0].Name == res.Folder.Requests[1].Name {
 		t.Fatalf("%+v", res.Folder.Requests)
 	}
+}
+
+func TestTheYAMLFormOfTheSameDescriptionGivesTheSameCollection(t *testing.T) {
+	fromJSON := petstore(t)
+	data, err := os.ReadFile("testdata/petstore.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	fromYAML, err := Parse(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if fromYAML.BaseURL != fromJSON.BaseURL || !reflect.DeepEqual(dump(fromYAML.Folder), dump(fromJSON.Folder)) {
+		t.Fatalf("YAML:\n%v\nJSON:\n%v", dump(fromYAML.Folder), dump(fromJSON.Folder))
+	}
+}
+
+// dump lists a folder as "path: METHOD URL body" lines, to compare two imports.
+func dump(f *model.Folder) []string {
+	var out []string
+	var walk func(f *model.Folder, prefix string)
+	walk = func(f *model.Folder, prefix string) {
+		for _, r := range f.Requests {
+			out = append(out, prefix+r.Name+": "+r.Method+" "+r.URL+" "+r.Body)
+		}
+		for _, s := range f.Folders {
+			walk(s, prefix+s.Name+"/")
+		}
+	}
+	walk(f, "")
+	return out
 }

@@ -1,0 +1,120 @@
+# The Swagger Petstore description, as YAML
+openapi: "3.0.2"
+info:
+  title: "Swagger Petstore - OpenAPI 3.0"
+  version: "1.0.19"
+servers:
+- url: "/api/v3"
+paths:
+  "/pet":
+    post:
+      tags:
+      - "pet"
+      summary: "Add a new pet to the store"
+      operationId: "addPet"
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              "$ref": "#/components/schemas/Pet"
+        required: true
+  "/pet/findByStatus":
+    get:
+      tags:
+      - "pet"
+      summary: "Finds Pets by status"
+      operationId: "findPetsByStatus"
+      parameters:
+      - name: "status"
+        in: "query"
+        required: false
+        schema:
+          type: "string"
+          default: "available"
+          enum:
+          - "available"
+          - "pending"
+          - "sold"
+  "/pet/{petId}":
+    parameters:
+    - name: "petId"
+      in: "path"
+      required: true
+      schema:
+        type: "integer"
+        format: "int64"
+    get:
+      tags:
+      - "pet"
+      summary: "Find pet by ID"
+      operationId: "getPetById"
+      parameters:
+      - "$ref": "#/components/parameters/trace"
+    delete:
+      tags:
+      - "pet"
+      operationId: "deletePet"
+      parameters:
+      - name: "api_key"
+        in: "header"
+        required: false
+        schema:
+          type: "string"
+  "/user/login":
+    get:
+      tags:
+      - "user"
+      summary: "Logs user into the system"
+      operationId: "loginUser"
+      parameters:
+      - name: "username"
+        in: "query"
+        schema:
+          type: "string"
+      - name: "password"
+        in: "query"
+        schema:
+          type: "string"
+  "/store/inventory":
+    get:
+      summary: "Returns pet inventories by status"
+components:
+  parameters:
+    trace:
+      name: "X-Trace"
+      in: "header"
+      required: true
+      schema:
+        type: "string"
+  schemas:
+    Pet:
+      required:
+      - "name"
+      - "photoUrls"
+      type: "object"
+      properties:
+        id:
+          type: "integer"
+          format: "int64"
+        name:
+          type: "string"
+          example: "doggie"
+        category:
+          "$ref": "#/components/schemas/Category"
+        photoUrls:
+          type: "array"
+          items:
+            type: "string"
+        status:
+          type: "string"
+          enum:
+          - "available"
+          - "pending"
+          - "sold"
+    Category:
+      type: "object"
+      properties:
+        id:
+          type: "integer"
+        name:
+          type: "string"
