@@ -1,5 +1,6 @@
-// Package tmpl builds vml views from HTML-style template files, so a
-// layout can change without recompiling Go code.
+// Package component builds vml views from HTML-style component
+// templates, so a layout can change without recompiling Go code, or be
+// written inline in Go as a string.
 //
 //	<row h="28" pad="12 0" gap="12" bg="frame" control="statusbar" border-top="border">
 //	  <text small muted ellipsis grow="1">{{status}}</text>
@@ -14,10 +15,19 @@
 // values may use {{path}} to read the Scope; `if` and `for="x in xs"` are
 // the two directives, and `onclick` names a func() of the scope.
 //
+// Where the template lives is a choice, as with a Vue single-file
+// component or an inline `template` option: a .vml file read by a Loader
+// (embedded, or from a folder with reload on edit), or a string in Go code:
+//
+//	var statusBar = component.Must("statusbar", `
+//	  <row h="28" bg="frame"><text small muted>{{status}}</text></row>`)
+//	...
+//	node := statusBar.MustBuild(component.Scope{"status": a.status})
+//
 // The result is the same *vml.El tree the Go DSL makes, so both styles
 // share one runtime and can be mixed: a template can be a part of a
 // hand-built view and the other way round.
-package tmpl
+package component
 
 import (
 	"bytes"
@@ -62,6 +72,27 @@ type node struct {
 type Template struct {
 	name string
 	root *node
+}
+
+// Must is Parse for templates written in Go source: it panics on a
+// syntax error, which is a programming mistake found the first time the
+// program starts, the way regexp.MustCompile is.
+func Must(name, src string) *Template {
+	t, err := Parse(name, []byte(src))
+	if err != nil {
+		panic(err)
+	}
+	return t
+}
+
+// MustBuild is Build for a scope the caller controls: an error (an unknown
+// name, a malformed value) is a programming mistake and panics.
+func (t *Template) MustBuild(sc Scope) vml.Node {
+	n, err := t.Build(sc)
+	if err != nil {
+		panic(err)
+	}
+	return n
 }
 
 // Name is the name the template was parsed with.

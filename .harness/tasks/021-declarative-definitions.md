@@ -19,5 +19,6 @@ Views are built with Go code (`vml` DSL). Allow describing components declarativ
 
 ## Progress
 - Decision: HTML-style XML templates, stdlib parser, same runtime (decisions 11).
-- Done: `uitoolkit/tmpl` (elements and attributes as tables, `{{path}}`, `if`, `for`, `onclick`, errors with file and line, `Loader` with reload on change), `vml.Dump`, `-views DIR`, the status bar as `views/statusbar.vml` with a test that it matches the Go view.
+- Done: `uitoolkit/component` (elements and attributes as tables, `{{path}}`, `if`, `for`, `onclick`, errors with file and line, `Loader` with reload on change), `vml.Dump`, `-views DIR`, the status bar as `views/statusbar.vml` with a test that it matches the Go view.
 - Left: tables, text fields, scroll and tabs as elements (they need state objects in the scope), event handlers other than click, move the header and the tab strips, a style block for control styles, an `include` for sub-templates.
+- Renamed `tmpl` to `component`; templates can also be inline in Go (`component.Must`, `MustBuild`).

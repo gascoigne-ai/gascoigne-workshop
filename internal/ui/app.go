@@ -6,7 +6,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/textfmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/tmpl"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/component"
 	"reflect"
 	"strconv"
 	"time"
@@ -183,7 +183,7 @@ type App struct {
 	sidebarSplit     vml.SplitState // width of the collections sidebar
 	paneSplit        vml.SplitState // request pane share of the request/response area
 	statePath        string         // where the UI state is remembered
-	views            *tmpl.Loader
+	views            *component.Loader
 	env              int    // index of the active environment in col.Envs, -1 for none
 	workspace        string // the folder the collection is saved to; "" for none yet
 	defaultWorkspace string // where the first save goes when there is no workspace

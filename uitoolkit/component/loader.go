@@ -1,4 +1,4 @@
-package tmpl
+package component
 
 import (
 	"io/fs"

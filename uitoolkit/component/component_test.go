@@ -1,4 +1,4 @@
-package tmpl
+package component
 
 import (
 	"os"
@@ -174,5 +174,31 @@ func TestLoaderReloadsAChangedFileOnly(t *testing.T) {
 	}
 	if _, err := l.Template("missing.vml"); err == nil {
 		t.Fatal("missing file found")
+	}
+}
+
+// An inline template, written in Go source, builds the same tree as a file.
+func TestInlineTemplateWithMust(t *testing.T) {
+	bar := Must("inline", `<row h="28"><text small>{{status}}</text></row>`)
+	got := vml.Dump(bar.MustBuild(Scope{"status": "Ready"}))
+	want := vml.Dump(vml.Row(vml.H(28), vml.Text("Ready", vml.Small())))
+	if got != want {
+		t.Fatalf("inline:\n%s\nGo:\n%s", got, want)
+	}
+	if bar.Name() != "inline" {
+		t.Fatalf("name %q", bar.Name())
+	}
+	for name, f := range map[string]func(){
+		"bad syntax": func() { Must("bad", `<row><blink/></row>`) },
+		"bad scope":  func() { bar.MustBuild(Scope{}) },
+	} {
+		func() {
+			defer func() {
+				if recover() == nil {
+					t.Errorf("%s: no panic", name)
+				}
+			}()
+			f()
+		}()
 	}
 }
