@@ -197,3 +197,39 @@ func TestTableCellStylerSplitsACellIntoColoredParts(t *testing.T) {
 		t.Errorf("a cell the styler declines stays plain:\n%s", d)
 	}
 }
+
+func TestIconMasksAreCachedPerSizeAndWeightAndTokenIconsAreDrawnDirectly(t *testing.T) {
+	ic, _ := lookupIcon("trash")
+	a := iconMask(ic, 2, 1)
+	if b := iconMask(ic, 2, 1); b != a {
+		t.Fatal("the same icon, scale and weight must reuse its mask")
+	}
+	if iconMask(ic, 3, 1) == a || iconMask(ic, 2, 1.5) == a {
+		t.Fatal("another scale or weight is another mask")
+	}
+	if b := a.Bounds(); b.Dx() != 28+2*iconMaskMargin || b.Dy() != 32+2*iconMaskMargin {
+		t.Fatalf("mask %v for a 14x16 icon at 2x", b)
+	}
+	if !ic.cacheable() {
+		t.Fatal("a currentColor icon is cacheable")
+	}
+	tok, err := parseSVG("t.svg", []byte(`<svg viewBox="0 0 4 4"><path d="M0 0L4 4" stroke="token(error)" fill="none"/></svg>`))
+	if err != nil || tok.cacheable() {
+		t.Fatalf("an icon with a token paint is drawn directly: %v %v", err, tok.cacheable())
+	}
+	masks.Lock()
+	for k := range masks.m {
+		delete(masks.m, k)
+	}
+	masks.Unlock()
+	c := testCtx(t)
+	for range 3 { // several frames, hovered and not: one mask per size
+		drawn(t, c, Row(W(30), H(30), Icon("trash")), 30, 30)
+	}
+	masks.Lock()
+	n := len(masks.m)
+	masks.Unlock()
+	if n != 1 {
+		t.Fatalf("%d masks after drawing one icon three times", n)
+	}
+}

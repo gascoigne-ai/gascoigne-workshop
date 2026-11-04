@@ -4,6 +4,7 @@ import (
 	"embed"
 	"errors"
 	"fmt"
+	"image/color"
 	"io/fs"
 	"math"
 	"sort"
@@ -145,7 +146,23 @@ func (iconB) draw(e *El, c *core.Ctx, dst *ebiten.Image) {
 	if c.Th.IconStroke > 0 {
 		weight = c.Th.IconStroke
 	}
-	dx, dy := ox*c.Scale, oy*c.Scale
+	if ic.cacheable() {
+		// one white mask per icon, size and weight; tinted when drawn, so
+		// every use of the icon after the first is a single image draw
+		mask := iconMask(ic, s, weight)
+		var op ebiten.DrawImageOptions
+		op.GeoM.Translate(math.Round(ox*c.Scale)-iconMaskMargin, math.Round(oy*c.Scale)-iconMaskMargin)
+		op.ColorScale.ScaleWithColor(c.Color(cur))
+		dst.DrawImage(mask, &op)
+		return
+	}
+	renderShapes(dst, ic, ox*c.Scale, oy*c.Scale, s, weight, func(p svgPaint) color.RGBA { return c.Color(paintToken(p, cur)) })
+}
+
+// renderShapes draws the icon's shapes with the icon's origin at dx, dy in
+// device pixels and s device pixels per icon unit; colorOf picks the color
+// of a paint.
+func renderShapes(dst *ebiten.Image, ic *svgIcon, dx, dy, s, weight float64, colorOf func(svgPaint) color.RGBA) {
 	for _, sh := range ic.shapes {
 		var p vector.Path
 		for _, cmd := range sh.cmds {
@@ -169,16 +186,65 @@ func (iconB) draw(e *El, c *core.Ctx, dst *ebiten.Image) {
 		if !sh.fill.none {
 			var dp vector.DrawPathOptions
 			dp.AntiAlias = true
-			dp.ColorScale.ScaleWithColor(c.Color(paintToken(sh.fill, cur)))
+			dp.ColorScale.ScaleWithColor(colorOf(sh.fill))
 			vector.FillPath(dst, &p, &vector.FillOptions{}, &dp)
 		}
 		if !sh.line.none && sh.width > 0 {
 			var dp vector.DrawPathOptions
 			dp.AntiAlias = true
-			dp.ColorScale.ScaleWithColor(c.Color(paintToken(sh.line, cur)))
+			dp.ColorScale.ScaleWithColor(colorOf(sh.line))
 			vector.StrokePath(dst, &p, &vector.StrokeOptions{Width: float32(sh.width * s * weight), LineCap: sh.cap, LineJoin: sh.join}, &dp)
 		}
 	}
+}
+
+// iconMaskMargin is the transparent border around a cached icon, so antialiased
+// edges and round caps are not cut off.
+const iconMaskMargin = 2
+
+type maskKey struct {
+	icon      *svgIcon
+	scale, wt float64
+}
+
+var masks = struct {
+	sync.Mutex
+	m map[maskKey]*ebiten.Image
+}{m: map[maskKey]*ebiten.Image{}}
+
+// maskLimit bounds the cache; when it is full the whole cache is dropped,
+// which only costs the next frame a redraw of each icon.
+const maskLimit = 512
+
+// iconMask is the icon drawn in white at s device pixels per unit, with a
+// margin, cached by icon, scale and stroke weight.
+func iconMask(ic *svgIcon, s, weight float64) *ebiten.Image {
+	key := maskKey{ic, s, weight}
+	masks.Lock()
+	defer masks.Unlock()
+	if img, ok := masks.m[key]; ok {
+		return img
+	}
+	if len(masks.m) >= maskLimit {
+		masks.m = map[maskKey]*ebiten.Image{}
+	}
+	w, h := int(math.Ceil(ic.w*s))+2*iconMaskMargin, int(math.Ceil(ic.h*s))+2*iconMaskMargin
+	img := ebiten.NewImage(w, h)
+	white := color.RGBA{255, 255, 255, 255}
+	renderShapes(img, ic, iconMaskMargin, iconMaskMargin, s, weight, func(svgPaint) color.RGBA { return white })
+	masks.m[key] = img
+	return img
+}
+
+// cacheable reports whether the icon is drawn in one color, the element's:
+// icons with token paints are drawn directly.
+func (ic *svgIcon) cacheable() bool {
+	for _, sh := range ic.shapes {
+		if sh.fill.token != "" || sh.line.token != "" {
+			return false
+		}
+	}
+	return true
 }
 
 func paintToken(p svgPaint, current core.Token) core.Token {
