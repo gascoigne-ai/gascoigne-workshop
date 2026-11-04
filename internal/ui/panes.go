@@ -320,7 +320,7 @@ var bodyTypes = []struct {
 }
 
 // formPane is the table of form and multipart fields.
-var formPane = pane{label: "Body", kind: paneTable, editable: true,
+var formPane = pane{label: "Body", kind: paneTable, title: "Fields", editable: true,
 	rows: func(_ *App, t *reqTab) *[]model.KV { return &t.req.Form }}
 
 // bodyPane is the body editor: a type chooser, then an editor that fits the type.

@@ -762,7 +762,7 @@ const (
 	formatX    = 722
 	editorX    = 500
 	editorY    = 320
-	formRow0Y  = 270
+	formRow0Y  = 304
 )
 
 func openBodyPane(t *testing.T) *App {

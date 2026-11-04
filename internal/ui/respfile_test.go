@@ -3,6 +3,7 @@ package ui
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
 	"image"
 	"image/png"
@@ -292,5 +293,31 @@ func TestADragRestingOverAClosedFolderOpensIt(t *testing.T) {
 	a.dragHover()
 	if a.hoverFolder != nil {
 		t.Fatal("without a drag nothing hovers")
+	}
+}
+
+func TestFormFieldsCanBeEditedAsText(t *testing.T) {
+	a, _ := newTestApp(t)
+	tab := a.cur()
+	tab.req.BodyType = model.BodyForm
+	tab.req.Form = []model.KV{{Name: "user", Value: "ann", Enabled: true}}
+	for i, p := range requestPanes {
+		if p.kind == paneBody {
+			tab.paneTab = i
+		}
+	}
+	a.step(core.Input{})
+	p, _, ok := a.visibleTable()
+	if !ok || p.label != formPane.label || p.captionOf(a) != "Fields" {
+		t.Fatalf("the form is a table with a caption: %v %q", ok, p.captionOf(a))
+	}
+	a.toggleBulk(p, tab)
+	if a.bulk == nil || a.bulk.area.Text != "user: ann" {
+		t.Fatalf("bulk text %q", a.bulk.area.Text)
+	}
+	a.bulk.area = vml.NewTextArea("user: bob\nrole: admin")
+	a.closeBulk()
+	if len(tab.req.Form) != 2 || tab.req.Form[0].Value != "bob" || tab.req.Form[1].Name != "role" {
+		t.Fatalf("form %+v", tab.req.Form)
 	}
 }
