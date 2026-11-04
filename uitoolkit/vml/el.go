@@ -24,9 +24,9 @@
 // The names follow a few rules, so a guess is usually right:
 //
 //	Size       W H MinW MaxW MinH MaxH Grow Optional
-//	Spacing    Pad PadX PadY PadL PadT PadR PadB   Margin MarginX MarginY   Gap
+//	Spacing    Pad PadX PadY PadL PadT PadR PadB   Margin MarginX MarginY MarginL MarginT MarginR MarginB   Gap
 //	Layout     Row Col Stack Split Scroll HScroll Spacer   AlignItems AlignSelf JustifyContent
-//	Look       Bg Border BorderTop BorderBottom BorderLeft HoverBg Shadow Control Edges
+//	Look       Bg Border BorderX BorderY BorderL BorderT BorderR BorderB HoverBg Shadow Control Edges
 //	Text       Text Caption Lines   Color Muted Bold Small Mono Ellipsis Center
 //	Input      Field Area Code Slider Checkbox   (state: TextField TextArea CodeView)   Placeholder OnChange OnEnter
 //	Events     OnClick OnRightClick OnMiddleClick   Tooltip
@@ -36,7 +36,7 @@
 //
 // A side is a letter suffix (PadL, PadT, PadR, PadB) and an axis is X or
 // Y (PadX is left and right). The same options are the attributes of a
-// template in the component package, in kebab-case (pad-x, border-top).
+// template in the component package, in kebab-case (pad-x, border-t).
 //
 // Layout is a flexbox subset: a fixed size (W, H), a proportional share of
 // the free space (Grow), or the content's own size. Dump prints a laid-out
@@ -78,10 +78,10 @@ type El struct {
 	padR, padB       int
 	gap              int
 
-	bg, border, borderTop, borderBottom, borderLeft core.Token
-	borderInset                                     int // BorderLeft stops this far from the top and bottom
-	hoverBg                                         core.Token
-	shadow, clip, lighten                           bool
+	bg, border, borderT, borderB, borderL, borderR core.Token
+	borderInset                                    int // BorderL and BorderR stop this far from the top and bottom
+	hoverBg                                        core.Token
+	shadow, clip, lighten                          bool
 
 	text                             string
 	fg                               core.Token
@@ -210,14 +210,14 @@ func Bg(t core.Token) Option { return func(e *El) { e.bg = t } }
 // Border outlines the element.
 func Border(t core.Token) Option { return func(e *El) { e.border = t } }
 
-// BorderTop draws a hairline along the top edge.
-func BorderTop(t core.Token) Option { return func(e *El) { e.borderTop = t } }
+// BorderT draws a hairline along the top edge.
+func BorderT(t core.Token) Option { return func(e *El) { e.borderT = t } }
 
-// BorderBottom draws a hairline along the bottom edge, under the
+// BorderB draws a hairline along the bottom edge, under the
 // background and below the children.
-// BorderLeft draws a one-pixel line down the element's left edge, to
+// BorderL draws a one-pixel line down the element's left edge, to
 // separate neighbours such as tabs or table columns; BorderInset shortens it.
-func BorderLeft(t core.Token) Option { return func(e *El) { e.borderLeft = t } }
+func BorderL(t core.Token) Option { return func(e *El) { e.borderL = t } }
 
 // Separator draws the soft hairline between neighbours (tabs, table
 // columns) on the element's left edge when show is set, so the first one
@@ -225,16 +225,25 @@ func BorderLeft(t core.Token) Option { return func(e *El) { e.borderLeft = t } }
 func Separator(show bool, inset int) Option {
 	return func(e *El) {
 		if show {
-			e.borderLeft, e.borderInset = core.BorderSoft, inset
+			e.borderL, e.borderInset = core.BorderSoft, inset
 		}
 	}
 }
 
-// BorderInset keeps the BorderLeft line this many pixels from the top and bottom.
+// BorderInset keeps the BorderL and BorderR lines this many pixels from the top and bottom.
 func BorderInset(n int) Option { return func(e *El) { e.borderInset = n } }
 
-// BorderBottom draws a hairline along the bottom edge.
-func BorderBottom(t core.Token) Option { return func(e *El) { e.borderBottom = t } }
+// BorderB draws a hairline along the bottom edge.
+func BorderB(t core.Token) Option { return func(e *El) { e.borderB = t } }
+
+// BorderR draws a hairline along the right edge.
+func BorderR(t core.Token) Option { return func(e *El) { e.borderR = t } }
+
+// BorderX draws hairlines along the left and right edges.
+func BorderX(t core.Token) Option { return func(e *El) { e.borderL, e.borderR = t, t } }
+
+// BorderY draws hairlines along the top and bottom edges.
+func BorderY(t core.Token) Option { return func(e *El) { e.borderT, e.borderB = t, t } }
 
 // Control names the theme style that draws this element: its corner
 // radius, gradient fill and outline come from Theme.Controls[name], so

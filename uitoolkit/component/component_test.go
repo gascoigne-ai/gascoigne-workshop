@@ -28,13 +28,13 @@ func TestTemplateMatchesTheGoDSL(t *testing.T) {
 		t.Fatal(err)
 	}
 	clicked := false
-	goView := vml.Row(vml.H(28), vml.PadX(12), vml.Gap(12), vml.Bg(core.Frame), vml.Control("statusbar"), vml.BorderTop(core.Border),
+	goView := vml.Row(vml.H(28), vml.PadX(12), vml.Gap(12), vml.Bg(core.Frame), vml.Control("statusbar"), vml.BorderT(core.Border),
 		vml.Text("Ready", vml.Small(), vml.Muted(), vml.Ellipsis(), vml.Grow(1)),
 		vml.Text("v0.1.0", vml.Small(), vml.Muted(), vml.OnClick(func() { clicked = true })),
 		vml.Button("Go", vml.W(60), vml.Tooltip("Go on")),
 	)
 	tplView := build(t, `
-		<row h="28" pad="12 0" gap="12" bg="frame" control="statusbar" border-top="border">
+		<row h="28" pad="12 0" gap="12" bg="frame" control="statusbar" border-t="border">
 		  <text small muted ellipsis grow="1">{{status}}</text>
 		  <text small muted onclick="bump">{{version}}</text>
 		  <button w="60" tip="Go on">Go</button>
@@ -187,7 +187,7 @@ func TestErrorsSuggestAndListTheValidNames(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 	_, err = Parse("t.vml", []byte(`<row border_top="border"/>`))
-	if err == nil || !strings.Contains(err.Error(), `did you mean "border-top"`) {
+	if err == nil || !strings.Contains(err.Error(), `did you mean "border-t"`) {
 		t.Fatalf("%v", err)
 	}
 	_, err = Parse("t.vml", []byte(`<row zzzzzzzz="1"/>`))
@@ -212,5 +212,14 @@ func TestReferenceListsEveryElementAndAttribute(t *testing.T) {
 		if !strings.Contains(ref, "  "+n+"\n") {
 			t.Errorf("reference misses directive %s", n)
 		}
+	}
+}
+
+// Template attributes are the Go options in kebab-case, for every side.
+func TestSideAttributesMatchTheGoOptions(t *testing.T) {
+	got := vml.Dump(build(t, `<row border-r="a" border-x="b" border-y="c" margin-l="1" margin-y="2" pad-b="3"/>`, nil))
+	want := vml.Dump(vml.Row(vml.BorderR("a"), vml.BorderX("b"), vml.BorderY("c"), vml.MarginL(1), vml.MarginY(2), vml.PadB(3)))
+	if got != want {
+		t.Fatalf("template:\n%s\nGo:\n%s", got, want)
 	}
 }

@@ -44,6 +44,12 @@ func MaxH(n int) Option { return func(e *El) { e.maxH = n } }
 // Margin is space around an element, inside its parent's layout.
 func Margin(n int) Option { return func(e *El) { e.mL, e.mT, e.mR, e.mB = n, n, n, n } }
 
+// MarginL, MarginT, MarginR and MarginB are margin on one side.
+func MarginL(n int) Option { return func(e *El) { e.mL = n } }
+func MarginT(n int) Option { return func(e *El) { e.mT = n } }
+func MarginR(n int) Option { return func(e *El) { e.mR = n } }
+func MarginB(n int) Option { return func(e *El) { e.mB = n } }
+
 // MarginX is left and right margin.
 func MarginX(n int) Option { return func(e *El) { e.mL, e.mR = n, n } }
 

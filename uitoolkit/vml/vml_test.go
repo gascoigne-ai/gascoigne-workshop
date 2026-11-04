@@ -874,9 +874,9 @@ func TestTableRowRightClickReportsTheRowButNotThePlaceholder(t *testing.T) {
 }
 
 func TestBorderLeftOptionRecordsTheTokenAndInset(t *testing.T) {
-	e := box(BorderLeft(core.BorderSoft), BorderInset(6))
-	if e.borderLeft != core.BorderSoft || e.borderInset != 6 {
-		t.Fatalf("%q %d", e.borderLeft, e.borderInset)
+	e := box(BorderL(core.BorderSoft), BorderInset(6))
+	if e.borderL != core.BorderSoft || e.borderInset != 6 {
+		t.Fatalf("%q %d", e.borderL, e.borderInset)
 	}
 }
 
@@ -886,5 +886,24 @@ func TestFieldTextInsetDefaultsAndCanBeReduced(t *testing.T) {
 	tight := Field(&f, FieldPad(5))
 	if plain.textInset() != fieldPad || tight.textInset() != 5 {
 		t.Fatalf("insets %d %d", plain.textInset(), tight.textInset())
+	}
+}
+
+// Every side of an element can be set the same way: border, padding and margin.
+func TestSideOptionsAreConsistent(t *testing.T) {
+	e := box(BorderL("a"), BorderR("b"), BorderT("c"), BorderB("d"))
+	if e.borderL != "a" || e.borderR != "b" || e.borderT != "c" || e.borderB != "d" {
+		t.Fatalf("border sides %q %q %q %q", e.borderL, e.borderR, e.borderT, e.borderB)
+	}
+	x, y := box(BorderX("x"), BorderY("y")), box(PadX(1), PadY(2), MarginX(3), MarginY(4))
+	if x.borderL != "x" || x.borderR != "x" || x.borderT != "y" || x.borderB != "y" {
+		t.Fatal("BorderX and BorderY")
+	}
+	if y.padL != 1 || y.padR != 1 || y.padT != 2 || y.padB != 2 || y.mL != 3 || y.mR != 3 || y.mT != 4 || y.mB != 4 {
+		t.Fatal("axes")
+	}
+	m := box(MarginL(1), MarginT(2), MarginR(3), MarginB(4), PadL(5), PadT(6), PadR(7), PadB(8))
+	if m.mL != 1 || m.mT != 2 || m.mR != 3 || m.mB != 4 || m.padL != 5 || m.padT != 6 || m.padR != 7 || m.padB != 8 {
+		t.Fatal("single sides")
 	}
 }

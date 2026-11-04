@@ -173,7 +173,7 @@ func Table(t TableSpec, opts ...Option) *El {
 // tableHeader is the caption row; with a Widths state it carries the
 // draggable column dividers on top.
 func tableHeader(t TableSpec) Node {
-	header := Row(H(core.RowH), Bg(core.Panel), BorderBottom(core.Border),
+	header := Row(H(core.RowH), Bg(core.Panel), BorderB(core.Border),
 		If(t.Editable, headerCheck(t)),
 		For(t.Columns, func(i int, name string) Node {
 			return Row(Grow(t.weight(i)), PadX(8), Separator(i > 0, 7),
@@ -223,7 +223,7 @@ func tableRow(t TableSpec, i int, r TableRow, placeholder, last bool) Node {
 		row = append(row, Bg(core.Selected))
 	}
 	if !last { // hairlines between rows, as the dashboard's tables draw them
-		row = append(row, BorderBottom(core.BorderSoft))
+		row = append(row, BorderB(core.BorderSoft))
 	}
 	if !placeholder {
 		row = append(row, HoverBg(core.Hover)) // the row under the pointer

@@ -58,7 +58,7 @@ func (a *App) menuView() Node {
 	return Frag(
 		Row(Bg(w.Shadow)), // dims the window
 		Col(W(settingsW), H(h), Bg(w.Bg), Control("menu"), Shadow(), FloatCenter(), FocusScope(), Modal(func() { a.menu = false }),
-			Row(H(settingsTitleH), PadX(16), AlignItems(AlignCenter), BorderBottom(w.BorderSoft),
+			Row(H(settingsTitleH), PadX(16), AlignItems(AlignCenter), BorderB(w.BorderSoft),
 				Text("Settings", Bold(), Grow(1)),
 				IconButton(Cross(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(func() { a.menu = false }), Tooltip("Close (Esc)")),
 			),
@@ -66,7 +66,7 @@ func (a *App) menuView() Node {
 				Col(W(settingsNavW), Pad(8), Gap(2), Bg(w.Frame),
 					For(settingsCategories, func(_ int, c settingsCategory) Node { return a.navItem(c, c.id == cur) }),
 				),
-				Scroll(&a.menuScroll, Grow(1), Pad(16), BorderLeft(w.BorderSoft), page),
+				Scroll(&a.menuScroll, Grow(1), Pad(16), BorderL(w.BorderSoft), page),
 			),
 		),
 	)

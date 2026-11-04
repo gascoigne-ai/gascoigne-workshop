@@ -66,7 +66,7 @@ func (a *App) view() Node {
 
 func (a *App) sidebar() Node {
 	return Col(
-		Row(H(headerH), PadX(w.Pad), Gap(6), Bg(w.Bg), BorderBottom(w.Border),
+		Row(H(headerH), PadX(w.Pad), Gap(6), Bg(w.Bg), BorderB(w.Border),
 			Caption("Collections", W(96)),
 			Field(&a.filter, H(28), Grow(1), Bg(w.Sunken), Placeholder("Filter"), a.textMenuOpt(&a.filter, nil)),
 		),
@@ -178,7 +178,7 @@ func (a *App) header() Node {
 
 // requestTabs is the strip of open requests, with a "+" for a new one.
 func (a *App) requestTabs() Node {
-	return Row(H(tabsH), PadT(tabGap), Bg(w.Frame), Control("tabstrip"), BorderBottom(w.Border),
+	return Row(H(tabsH), PadT(tabGap), Bg(w.Frame), Control("tabstrip"), BorderB(w.Border),
 		HScroll(&a.tabsScroll, Grow(1), For(a.tabs, func(i int, t *reqTab) Node {
 			look := []Item{} // inactive tabs blend into the strip; the active one joins the pane
 			if i == a.active {
@@ -308,7 +308,7 @@ func (a *App) pane(t *reqTab, panes []pane, active *int, scroll, tabsX *ScrollSt
 	selectTab := func(i int) { *active, scroll.Y = i, 0 }
 	*active = min(*active, len(panes)-1) // a socket has fewer response panes
 	return Col(Grow(1), Bg(w.Bg),
-		Row(H(paneTabsH), PadT(tabGap), BorderBottom(w.Border),
+		Row(H(paneTabsH), PadT(tabGap), BorderB(w.Border),
 			ScrollTabs(tabsX, a.tabItems(panes, t), *active, selectTab),
 			extra,
 		),
@@ -346,7 +346,7 @@ func statusPill(status int) (fg, bg w.Token) {
 
 func (a *App) statusBar() Node {
 	return component.View(`
-		<row h="28" pad="12 0" gap="12" bg="frame" control="statusbar" border-top="border">
+		<row h="28" pad="12 0" gap="12" bg="frame" control="statusbar" border-t="border">
 		  <text small muted ellipsis grow="1">{{status}}</text>
 		  <text small muted>{{version}}</text>
 		</row>`,

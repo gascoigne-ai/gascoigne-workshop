@@ -435,7 +435,7 @@ func responseEmpty(t *reqTab) (string, bool) {
 func (a *App) responsePane(_ pane, t *reqTab, _ *ScrollState) Node {
 	return Col(Grow(1),
 		Spacer(H(w.Pad)), // same top inset as the request pane, so first rows line up
-		Row(H(w.RowH+8), PadX(w.Pad), Gap(6), AlignItems(AlignCenter), BorderBottom(w.Border),
+		Row(H(w.RowH+8), PadX(w.Pad), Gap(6), AlignItems(AlignCenter), BorderB(w.Border),
 			a.viewChip("Compact", t.compact, 72, func() { a.setView(t, false, true) }),
 			a.viewChip("Pretty", !t.raw && !t.compact, 56, func() { a.setView(t, false, false) }),
 			a.viewChip("Raw", t.raw, 44, func() { a.setView(t, true, false) }),
@@ -457,7 +457,7 @@ func (a *App) viewChip(label string, selected bool, width int, onClick func()) N
 }
 
 func (a *App) findBar(t *reqTab) Node {
-	return Row(H(w.RowH), PadX(w.Pad), Gap(6), BorderBottom(w.Border),
+	return Row(H(w.RowH), PadX(w.Pad), Gap(6), BorderB(w.Border),
 		Field(&t.find, Grow(1), Placeholder("Find"),
 			OnChange(func() { a.runFind(t) }),
 			OnEnter(func() { a.findEnter(t) }),

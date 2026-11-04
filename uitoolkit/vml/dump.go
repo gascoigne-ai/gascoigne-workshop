@@ -29,7 +29,7 @@ func dump(sb *strings.Builder, e *El, depth int) {
 		name string
 		v    int
 	}{
-		{"w", e.w}, {"h", e.h}, {"padL", e.padL}, {"padT", e.padT}, {"padR", e.padR}, {"padB", e.padB}, {"gap", e.gap},
+		{"w", e.w}, {"h", e.h}, {"padL", e.padL}, {"padT", e.padT}, {"padR", e.padR}, {"padB", e.padB}, {"mL", e.mL}, {"mT", e.mT}, {"mR", e.mR}, {"mB", e.mB}, {"gap", e.gap},
 	} {
 		if f.v != 0 {
 			add(f.name, f.v)
@@ -42,8 +42,8 @@ func dump(sb *strings.Builder, e *El, depth int) {
 		name string
 		v    string
 	}{
-		{"bg", string(e.bg)}, {"border", string(e.border)}, {"borderTop", string(e.borderTop)},
-		{"borderBottom", string(e.borderBottom)}, {"borderLeft", string(e.borderLeft)}, {"fg", string(e.fg)},
+		{"bg", string(e.bg)}, {"border", string(e.border)}, {"borderT", string(e.borderT)},
+		{"borderB", string(e.borderB)}, {"borderL", string(e.borderL)}, {"borderR", string(e.borderR)}, {"fg", string(e.fg)},
 		{"control", e.control}, {"tip", e.tip},
 	} {
 		if f.v != "" {

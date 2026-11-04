@@ -222,14 +222,17 @@ func (e *El) draw(c *core.Ctx, dst *ebiten.Image) {
 		hv := c.Col(e.hoverBg)
 		c.FillStyled(dst, r, hv, hv, style.Radius)
 	}
-	if e.borderTop != "" {
-		c.HLine(dst, r.X, r.Y, r.W, c.Col(e.borderTop))
+	if e.borderT != "" {
+		c.HLine(dst, r.X, r.Y, r.W, c.Col(e.borderT))
 	}
-	if e.borderLeft != "" {
-		c.VLine(dst, r.X, r.Y+e.borderInset, r.H-2*e.borderInset, c.Col(e.borderLeft))
+	if e.borderL != "" {
+		c.VLine(dst, r.X, r.Y+e.borderInset, r.H-2*e.borderInset, c.Col(e.borderL))
 	}
-	if e.borderBottom != "" {
-		c.HLine(dst, r.X, r.Y+r.H-1, r.W, c.Col(e.borderBottom))
+	if e.borderR != "" {
+		c.VLine(dst, r.X+r.W-1, r.Y+e.borderInset, r.H-2*e.borderInset, c.Col(e.borderR))
+	}
+	if e.borderB != "" {
+		c.HLine(dst, r.X, r.Y+r.H-1, r.W, c.Col(e.borderB))
 	}
 
 	e.b.draw(e, c, dst)
