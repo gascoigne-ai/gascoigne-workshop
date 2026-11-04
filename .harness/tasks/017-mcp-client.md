@@ -1,4 +1,4 @@
-status: todo
+status: in progress (client and log UI done; tool form and viewers pending)
 
 # MCP client
 
