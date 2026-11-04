@@ -13,9 +13,9 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/state"
-	"github.com/gascoigne-ai/gascoigne-workshop/ui/engine"
-	"github.com/gascoigne-ai/gascoigne-workshop/ui/vml"
-	"github.com/gascoigne-ai/gascoigne-workshop/ui/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 const (

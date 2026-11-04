@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/ui/engine"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
 )
 
 func TestEveryDefaultBindingRoundTripsAndHasAnID(t *testing.T) {

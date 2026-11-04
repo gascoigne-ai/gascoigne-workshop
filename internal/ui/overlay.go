@@ -5,8 +5,8 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 
-	. "github.com/gascoigne-ai/gascoigne-workshop/ui/vml"
-	w "github.com/gascoigne-ai/gascoigne-workshop/ui/widget"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
+	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // Overlays (context menu, dialog, toasts) are state on the App and are

@@ -7,7 +7,7 @@ Packages are grouped by layer more than by feature, so related code is spread ou
 
 ## Scope
 - Group code by functionality (request editor, response viewer, settings, themes, collections, protocols) with one package per feature and a narrow API between them.
-- Keep dependency direction: `ui/widget` -> `ui/vml` -> `ui/engine`; features depend on them, never the reverse.
+- Keep dependency direction: `uitoolkit/widget` -> `uitoolkit/vml` -> `uitoolkit/engine`; features depend on them, never the reverse.
 - Move tests with the code; keep hard-coded screen coordinates helpers in one place.
 
 ## Acceptance

@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
-	. "github.com/gascoigne-ai/gascoigne-workshop/ui/vml"
-	w "github.com/gascoigne-ai/gascoigne-workshop/ui/widget"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
+	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // A WebSocket or MCP tab keeps a session open instead of making one request.

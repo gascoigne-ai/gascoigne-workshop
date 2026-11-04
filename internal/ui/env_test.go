@@ -5,7 +5,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
-	w "github.com/gascoigne-ai/gascoigne-workshop/ui/widget"
+	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 func TestActiveEnvironmentOverridesCollectionVariables(t *testing.T) {

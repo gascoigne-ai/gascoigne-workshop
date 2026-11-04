@@ -1,6 +1,6 @@
 package ui
 
-import "github.com/gascoigne-ai/gascoigne-workshop/ui/engine"
+import "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
 
 // The window is drawn only when something may have changed (Ebitengine
 // skips the GPU work of a frame whose Draw draws nothing), and updates

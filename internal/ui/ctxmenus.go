@@ -4,8 +4,8 @@ import (
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
-	. "github.com/gascoigne-ai/gascoigne-workshop/ui/vml"
-	w "github.com/gascoigne-ai/gascoigne-workshop/ui/widget"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
+	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // Right-click menus for tabs, table rows, text widgets and the response.

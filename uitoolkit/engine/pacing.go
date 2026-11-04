@@ -3,7 +3,7 @@
 // key-binding model. Nothing here knows about the workshop's screens.
 package engine
 
-import "github.com/gascoigne-ai/gascoigne-workshop/ui/widget"
+import "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 
 // HeartbeatTicks is the number of ticks after which a frame is drawn
 // even when nothing changed, in case the window system lost the content.

@@ -7,7 +7,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/state"
-	"github.com/gascoigne-ai/gascoigne-workshop/ui/vml"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
 )
 
 // stateDebounce is how long the remembered state must stay unchanged

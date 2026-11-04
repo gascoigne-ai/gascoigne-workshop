@@ -3,7 +3,7 @@ package ui
 import (
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/ui/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 func lineText(l widget.Line) string {

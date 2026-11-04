@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
-	. "github.com/gascoigne-ai/gascoigne-workshop/ui/vml"
-	w "github.com/gascoigne-ai/gascoigne-workshop/ui/widget"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
+	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // colorInput is the hex field of a custom color, created on first use

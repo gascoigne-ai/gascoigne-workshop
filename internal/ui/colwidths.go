@@ -1,6 +1,6 @@
 package ui
 
-import "github.com/gascoigne-ai/gascoigne-workshop/ui/vml"
+import "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
 
 // widthsFor is the column sizes of a pane's table, created on first use.
 // Each table keeps its own; request tables are named by their pane,

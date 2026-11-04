@@ -7,8 +7,8 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/jsonview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/ui/vml"
-	"github.com/gascoigne-ai/gascoigne-workshop/ui/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // App-specific color tokens, added to the widget theme.
@@ -38,7 +38,7 @@ var themeFiles embed.FS
 
 // appTheme is a toolkit theme with the app's own colors (HTTP methods,
 // JSON syntax) from themes/<id>.json laid over it. The toolkit's palettes
-// and control styles are in ui/widget/themes; both are plain theme files.
+// and control styles are in uitoolkit/widget/themes; both are plain theme files.
 func appTheme(id string, base widget.Theme) widget.Theme {
 	data, err := themeFiles.ReadFile("themes/" + id + ".json")
 	if err != nil {

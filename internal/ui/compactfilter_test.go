@@ -3,7 +3,7 @@ package ui
 import (
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/ui/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 func TestFilteredLinesKeepTheirRealLineNumbers(t *testing.T) {

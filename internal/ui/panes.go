@@ -12,8 +12,8 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/jsonview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
-	. "github.com/gascoigne-ai/gascoigne-workshop/ui/vml"
-	w "github.com/gascoigne-ai/gascoigne-workshop/ui/widget"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
+	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 type paneKind int
