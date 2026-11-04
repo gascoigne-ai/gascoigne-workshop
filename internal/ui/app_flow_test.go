@@ -1214,7 +1214,7 @@ func TestTimeoutFallsBackToTheSettingsDefault(t *testing.T) {
 // Settings pane (the sixth request tab): the timeout field at y=206 and
 // the follow-redirects row below it.
 const (
-	settingsTabIdx = 5
+	settingsTabIdx = 6
 	timeoutFieldX  = 480
 	followRowY     = 242
 	followRowX     = 290

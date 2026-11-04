@@ -22,7 +22,7 @@ func sample() model.Collection {
 			Folders: []*model.Folder{
 				{Name: "Users", Requests: []*model.Request{
 					{Name: "Create", Protocol: "rest", Method: "POST", URL: "{{base}}/users", BodyType: model.BodyJSON, Body: "{\n  \"a\": 1\n}",
-						Auth: model.Auth{Type: model.AuthBearer, Token: "s3cret"}, TimeoutSec: 5, NoRedirects: true},
+						Auth: model.Auth{Type: model.AuthBearer, Token: "s3cret"}, TimeoutSec: 5, NoRedirects: true, InsecureTLS: true, Tests: "status == 201\njson id exists"},
 					{Name: "Create", Protocol: "rest", Method: "PUT", URL: "{{base}}/users/1"}, // same name twice
 				}},
 				{Name: "Empty", Vars: []model.KV{{Name: "folder-var", Value: "fv", Enabled: true}}},

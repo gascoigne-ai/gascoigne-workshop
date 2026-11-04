@@ -28,9 +28,10 @@ type Request struct {
 
 	Auth Auth // credentials added when the request is sent; never shown in Headers
 
-	TimeoutSec  int  // seconds before the request is abandoned; 0 uses the default
-	NoRedirects bool // stop at the first redirect instead of following it
-	InsecureTLS bool // accept any server certificate (self-signed test servers)
+	TimeoutSec  int    // seconds before the request is abandoned; 0 uses the default
+	NoRedirects bool   // stop at the first redirect instead of following it
+	InsecureTLS bool   // accept any server certificate (self-signed test servers)
+	Tests       string // assertions about the response, one per line (package assert)
 }
 
 // Body types a request can send.

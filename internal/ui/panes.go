@@ -28,6 +28,8 @@ const (
 	paneAuth
 	paneResponse
 	paneMessages
+	paneAssertions // the request side: the assertions being written
+	paneResults    // the response side: what they found
 )
 
 // pane describes one tab of the request or response area. The tables
@@ -69,6 +71,7 @@ var requestPanes = []pane{
 	{label: "Vars", kind: paneTable, title: "Collection variables", editable: true,
 		caption: (*App).varsCaption,
 		rows:    func(a *App, _ *reqTab) *[]model.KV { return a.varsRows() }},
+	{label: "Tests", kind: paneAssertions},
 	{label: "Settings", kind: paneSettings},
 }
 
@@ -95,12 +98,29 @@ var responsePanes = []pane{
 		}},
 	{label: "Timeline", kind: paneNote, empty: noResponse,
 		note: func(t *reqTab) string { return timelineText(t.resp) }},
-	{label: "Tests", kind: paneNote,
-		note: func(*reqTab) string { return "No tests" }},
+	{label: "Tests", kind: paneResults},
 }
 
 // badge is the count shown on a pane's tab.
 func (p pane) badge(a *App, t *reqTab) int {
+	switch p.kind {
+	case paneAssertions: // how many assertions are written
+		n := 0
+		for _, l := range strings.Split(t.req.Tests, "\n") {
+			if l = strings.TrimSpace(l); l != "" && !strings.HasPrefix(l, "#") {
+				n++
+			}
+		}
+		return n
+	case paneResults: // how many failed
+		n := 0
+		for _, r := range t.testResults {
+			if !r.OK {
+				n++
+			}
+		}
+		return n
+	}
 	if p.kind != paneTable {
 		return 0
 	}
@@ -134,14 +154,16 @@ func paneEmpty(p pane, t *reqTab) (string, bool) {
 
 // paneBuilders turns a pane into its view, by kind.
 var paneBuilders = map[paneKind]func(a *App, p pane, t *reqTab, scroll *ScrollState) Node{
-	paneCode:     (*App).codePane,
-	paneNote:     (*App).notePane,
-	paneBody:     (*App).bodyPane,
-	paneSettings: (*App).settingsPane,
-	paneAuth:     (*App).authPane,
-	paneResponse: (*App).responsePane,
-	paneMessages: (*App).messagesPane,
-	paneTable:    (*App).tablePane,
+	paneCode:       (*App).codePane,
+	paneNote:       (*App).notePane,
+	paneBody:       (*App).bodyPane,
+	paneSettings:   (*App).settingsPane,
+	paneAuth:       (*App).authPane,
+	paneResponse:   (*App).responsePane,
+	paneMessages:   (*App).messagesPane,
+	paneAssertions: (*App).assertionsPane,
+	paneResults:    (*App).resultsPane,
+	paneTable:      (*App).tablePane,
 }
 
 // paneBody is what fills the area under a pane's tab strip.

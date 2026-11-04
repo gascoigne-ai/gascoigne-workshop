@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
 	"os"
 	"path/filepath"
 	"strings"
@@ -93,5 +94,34 @@ func TestSaveBodyWritesTheFileAndReportsFailures(t *testing.T) {
 	}
 	if !found {
 		t.Fatal("a failed save must be reported")
+	}
+}
+
+func TestAssertionsRunWhenAResponseArrivesAndAfterEdits(t *testing.T) {
+	a, _ := newTestApp(t)
+	tab := a.cur()
+	tab.req.Tests = "status == 200\njson ok == true\nstatus == 404"
+	tab.sending, tab.seq = true, tab.seq+1
+	a.apply(sendResult{tab: tab, seq: tab.seq, resp: model.Response{Status: 200, StatusText: "OK", Body: []byte(`{"ok":true}`)}})
+	if len(tab.testResults) != 3 || !tab.testResults[0].OK || !tab.testResults[1].OK || tab.testResults[2].OK {
+		t.Fatalf("%+v", tab.testResults)
+	}
+	if !strings.Contains(a.status, "Tests: 2/3 passed") {
+		t.Fatalf("status %q", a.status)
+	}
+	if got := responsePanes[len(responsePanes)-1].badge(a, tab); got != 1 {
+		t.Fatalf("the response Tests tab counts failures: %d", got)
+	}
+	var reqTests pane
+	for _, p := range requestPanes {
+		if p.kind == paneAssertions {
+			reqTests = p
+		}
+	}
+	if got := reqTests.badge(a, tab); got != 3 {
+		t.Fatalf("the request Tests tab counts assertions: %d", got)
+	}
+	if d := vml.Dump(a.resultsPane(responsePanes[3], tab, nil)); !strings.Contains(d, "2/3 passed") || !strings.Contains(d, "status == 404") {
+		t.Fatalf("results pane:\n%s", d)
 	}
 }

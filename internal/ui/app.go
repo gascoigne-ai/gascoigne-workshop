@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/appearance"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/assert"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/textfmt"
 	"net/http"
@@ -57,6 +58,8 @@ type reqTab struct {
 	resp                  *model.Response
 	view                  vml.CodeView    // response body
 	bodyView              vml.CodeView    // request body, read-only
+	tests                 vml.TextArea    // the assertions editor
+	testResults           []assert.Result // what the assertions found in the shown response
 	body                  vml.TextArea    // request body editor
 	reqScroll, respScroll vml.ScrollState // scroll of the table and note panes
 	reqTabsX, respTabsX   vml.ScrollState // sideways scroll of the two pane tab strips
@@ -130,6 +133,7 @@ func newTab(req *model.Request) *reqTab {
 	t.wsCancel = func() {}
 	t.timeout = vml.NewTextField(timeoutText(req.TimeoutSec))
 	t.body = vml.NewTextArea(req.Body)
+	t.tests = vml.NewTextArea(req.Tests)
 	return t
 }
 
@@ -372,9 +376,11 @@ func (a *App) apply(r sendResult) {
 	a.refreshView(t)
 	if r.resp.Err != "" {
 		a.status = "Request failed"
+		a.runTests(t)
 		return
 	}
 	a.status = fmt.Sprintf("%s %s: %d %s in %s", t.req.Method, t.req.URL, r.resp.Status, r.resp.StatusText, textfmt.Duration(r.resp.Duration))
+	a.runTests(t)
 }
 
 // cursorShapes maps the cursor widgets ask for to the window system's.

@@ -48,13 +48,16 @@ func TestPaneTablesAreComplete(t *testing.T) {
 	for name, panes := range map[string][]pane{"request": requestPanes, "response": responsePanes} {
 		for _, p := range panes {
 			ok := map[paneKind]bool{
-				paneTable:    p.rows != nil,
-				paneCode:     p.code != nil,
-				paneNote:     p.note != nil,
-				paneBody:     true, // the body pane is built from the request itself
-				paneSettings: true, // so is the settings pane
-				paneAuth:     true,
-				paneResponse: true,
+				paneTable:      p.rows != nil,
+				paneCode:       p.code != nil,
+				paneNote:       p.note != nil,
+				paneBody:       true, // the body pane is built from the request itself
+				paneSettings:   true, // so is the settings pane
+				paneAuth:       true,
+				paneResponse:   true,
+				paneAssertions: true,
+				paneResults:    true,
+				paneMessages:   true,
 			}[p.kind]
 			if paneBuilders[p.kind] == nil {
 				t.Errorf("%s pane %q has a kind with no builder", name, p.label)
