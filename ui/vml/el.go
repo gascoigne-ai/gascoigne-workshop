@@ -71,6 +71,7 @@ type El struct {
 	onMiddle, onHeldOver       func()
 
 	scrollMaxH int    // MaxHeight of a Scroll, 0 for none
+	gradient   bool   // the background is shaded top to bottom by the theme's gradient
 	tip        string // tooltip text, shown after the pointer rests on the element
 	reveal     bool   // an HScroll keeps this child in view when it becomes the flagged one
 
@@ -183,6 +184,10 @@ func BorderTop(t widget.Token) Option { return func(e *El) { e.borderTop = t } }
 func BorderBottom(t widget.Token) Option { return func(e *El) { e.borderBottom = t } }
 
 // HoverBg fills the element while the pointer is over it.
+// Gradient shades the element's background from light at the top to
+// dark at the bottom, as strongly as the theme says.
+func Gradient() Option { return func(e *El) { e.gradient = true } }
+
 // Tooltip shows text near the pointer once it has rested on the element
 // for TipDelayTicks.
 func Tooltip(text string) Option { return func(e *El) { e.tip = text } }

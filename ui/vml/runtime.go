@@ -213,7 +213,11 @@ func (e *El) draw(c *widget.Ctx, dst *ebiten.Image) {
 		if e.lighten && over {
 			clr = widget.Lighten(clr)
 		}
-		c.Fill(dst, r, clr)
+		if e.gradient {
+			c.FillShaded(dst, r, clr)
+		} else {
+			c.Fill(dst, r, clr)
+		}
 	}
 	if e.hoverBg != "" && over {
 		c.Fill(dst, r, c.Col(e.hoverBg))

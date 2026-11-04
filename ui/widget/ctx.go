@@ -253,3 +253,31 @@ func Lighten(c color.RGBA) color.RGBA {
 	up := func(v uint8) uint8 { return uint8(min(int(v)+step, 255)) }
 	return color.RGBA{R: up(c.R), G: up(c.G), B: up(c.B), A: c.A}
 }
+
+var gradientSrc = func() *ebiten.Image {
+	img := ebiten.NewImage(1, 1)
+	img.Fill(color.White)
+	return img
+}()
+
+// FillShaded paints r with base shaded vertically by the theme's gradient
+// strength: lighter at the top, darker at the bottom. With no gradient
+// in the theme it is a flat Fill.
+func (c *Ctx) FillShaded(dst *ebiten.Image, r Rect, base color.RGBA) {
+	if c.Th.Gradient <= 0 {
+		c.Fill(dst, r, base)
+		return
+	}
+	top, bottom := GradientEnds(base, c.Th.Gradient)
+	x0, y0 := c.dev(float32(r.X)), c.dev(float32(r.Y))
+	x1, y1 := c.dev(float32(r.X+r.W)), c.dev(float32(r.Y+r.H))
+	v := func(x, y float32, k color.RGBA) ebiten.Vertex {
+		return ebiten.Vertex{
+			DstX: x, DstY: y, SrcX: 0.5, SrcY: 0.5,
+			ColorR: float32(k.R) / 255, ColorG: float32(k.G) / 255, ColorB: float32(k.B) / 255, ColorA: float32(k.A) / 255,
+		}
+	}
+	dst.DrawTriangles(
+		[]ebiten.Vertex{v(x0, y0, top), v(x1, y0, top), v(x0, y1, bottom), v(x1, y1, bottom)},
+		[]uint16{0, 1, 2, 1, 2, 3}, gradientSrc, nil)
+}

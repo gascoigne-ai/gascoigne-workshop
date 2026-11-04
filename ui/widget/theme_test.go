@@ -126,3 +126,21 @@ func TestPalettesFollowTheCLIDashboard(t *testing.T) {
 		}
 	}
 }
+
+// Both palettes carry a gradient strength, and the text on every
+// gradient-filled surface keeps its contrast at both ends of the fill.
+func TestThemesHaveGradientsThatKeepTextReadable(t *testing.T) {
+	for name, th := range map[string]Theme{"dark": Dark(), "light": Light()} {
+		if th.Gradient <= 0 || th.Gradient > 0.2 {
+			t.Errorf("%s: gradient strength %v, want a subtle positive value", name, th.Gradient)
+		}
+		for _, pair := range [][2]Token{{Chip, ChipText}, {Accent, AccentText}, {Frame, Text}} {
+			top, bottom := GradientEnds(th.Color(pair[0]), th.Gradient)
+			for end, c := range map[string]color.RGBA{"top": top, "bottom": bottom} {
+				if r := ContrastRatio(c, th.Color(pair[1])); r < 4.5 {
+					t.Errorf("%s: %v text on the %s of the %v gradient: %.2f", name, pair[1], end, pair[0], r)
+				}
+			}
+		}
+	}
+}

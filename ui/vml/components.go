@@ -9,7 +9,7 @@ import (
 // Button is an outlined chip with a centered label; it brightens on hover.
 func Button(label string, opts ...Option) *El {
 	return Row(with([]Item{
-		Bg(widget.Chip), Border(widget.Border), Lighten(),
+		Bg(widget.Chip), Gradient(), Border(widget.Border), Lighten(),
 		Text(label, Center(), Grow(1), Color(widget.ChipText)),
 	}, opts)...)
 }
@@ -26,7 +26,7 @@ func LinkButton(label string, opts ...Option) *El {
 // PrimaryButton is the accent-colored call-to-action variant of Button.
 func PrimaryButton(label string, opts ...Option) *El {
 	return Row(with([]Item{
-		Bg(widget.Accent), Border(widget.AccentLine), Lighten(),
+		Bg(widget.Accent), Gradient(), Border(widget.AccentLine), Lighten(),
 		Text(label, Center(), Grow(1), Color(widget.AccentText)),
 	}, opts)...)
 }

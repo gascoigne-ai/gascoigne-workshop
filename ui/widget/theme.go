@@ -45,6 +45,11 @@ const (
 type Theme struct {
 	Colors                        map[Token]color.RGBA
 	FontSize, SmallSize, MonoSize float64
+
+	// Gradient is how strongly gradient-filled surfaces (buttons, bars)
+	// shade from light at the top to dark at the bottom, as a mix toward
+	// white and black; 0 turns gradients off.
+	Gradient float64
 }
 
 // Color returns the color of tok, or the text color for unknown tokens
@@ -91,7 +96,7 @@ func RGB(hex uint32) color.RGBA {
 // Dark is warm near-black surfaces with a rose accent.
 func Dark() Theme {
 	return Theme{
-		FontSize: 15, SmallSize: 12, MonoSize: 14,
+		FontSize: 15, SmallSize: 12, MonoSize: 14, Gradient: 0.10,
 		Colors: map[Token]color.RGBA{
 			Bg: RGB(0x241b20), Frame: RGB(0x140f12), Panel: RGB(0x2d2228),
 			Sunken: RGB(0x1c1519), Alt: RGB(0x251c21), Border: RGB(0x5f4d57),
@@ -109,7 +114,7 @@ func Dark() Theme {
 // Light is cream surfaces, white lists and a burgundy accent.
 func Light() Theme {
 	return Theme{
-		FontSize: 15, SmallSize: 12, MonoSize: 14,
+		FontSize: 15, SmallSize: 12, MonoSize: 14, Gradient: 0.06,
 		Colors: map[Token]color.RGBA{
 			Bg: RGB(0xf6f3f4), Frame: RGB(0xece5e8), Panel: RGB(0xf5f0f2),
 			Sunken: RGB(0xffffff), Alt: RGB(0xf5f0f2), Border: RGB(0xa89aa1),

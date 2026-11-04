@@ -169,14 +169,14 @@ func (a *App) header() Node {
 
 // requestTabs is the strip of open requests, with a "+" for a new one.
 func (a *App) requestTabs() Node {
-	return Row(H(tabsH), Bg(w.Frame), BorderBottom(w.Border),
+	return Row(H(tabsH), Bg(w.Frame), Gradient(), BorderBottom(w.Border),
 		For(a.tabs, func(i int, t *reqTab) Node {
-			look := Bg(w.Frame) // inactive tabs blend into the strip; the active one joins the pane
+			look := []Item{Bg(w.Frame), Gradient()} // inactive tabs blend into the strip; the active one joins the pane
 			if i == a.active {
-				look = Bg(w.Bg)
+				look = []Item{Bg(w.Bg)}
 			}
 			grab := OnClick(func() { a.active, a.dragTab = i, i })
-			return Row(look, OnMiddleClick(func() { a.closeTab(i) }),
+			return Row(append(look, OnMiddleClick(func() { a.closeTab(i) }),
 				OnRightClick(func(x, y int) { a.openMenu(x, y, a.tabMenuItems(i)) }),
 				Row(PadL(14), Gap(8), AlignItems(AlignBaseline), grab, OnHeldOver(func() { a.dragOver(i) }),
 					Text(requestBadge(t.req.Protocol, t.req.Method), Small(), Color(methodToken(t.req.Method)), W(tabBadgeW)),
@@ -186,7 +186,7 @@ func (a *App) requestTabs() Node {
 				Row(W(24), OnClick(func() { a.closeTab(i) }), Tooltip(a.hint("Close tab", "close-tab")),
 					Cross(Grow(1)),
 				),
-			)
+			)...)
 		}),
 		Row(W(40), OnClick(a.newRequest), Tooltip(a.hint("New request", "new-request")),
 			Plus(Grow(1)),
@@ -308,7 +308,7 @@ func (a *App) responseStatus(t *reqTab) Node {
 // ── Status bar ─────────────────────────────────────────────────────────
 
 func (a *App) statusBar() Node {
-	return Row(H(statusH), PadXY(w.Pad, 0), Gap(w.Pad), Bg(w.Frame), BorderTop(w.Border),
+	return Row(H(statusH), PadXY(w.Pad, 0), Gap(w.Pad), Bg(w.Frame), Gradient(), BorderTop(w.Border),
 		Text(a.status, Small(), Muted(), Ellipsis(), Grow(1)),
 		Text(version, Small(), Muted()),
 	)

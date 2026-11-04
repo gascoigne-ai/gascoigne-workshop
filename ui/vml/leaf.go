@@ -268,5 +268,5 @@ func ChevronDown(opts ...Option) *El { return icon(iconDown, false, opts) }
 
 // IconButton is Button with an icon in place of the label.
 func IconButton(glyph *El, opts ...Option) *El {
-	return Row(with([]Item{Bg(widget.Chip), Border(widget.Border), Lighten(), glyph}, opts)...)
+	return Row(with([]Item{Bg(widget.Chip), Gradient(), Border(widget.Border), Lighten(), glyph}, opts)...)
 }
