@@ -259,3 +259,20 @@ func TestIconElementMatchesTheGoIcon(t *testing.T) {
 		t.Fatal("name is only for icon")
 	}
 }
+
+func TestSlotInsertsANodeFromTheScope(t *testing.T) {
+	got := vml.Dump(build(t, `<row><slot name="x"/><text>b</text></row>`, Scope{"x": vml.Text("a")}))
+	want := vml.Dump(vml.Row(vml.Text("a"), vml.Text("b")))
+	if got != want {
+		t.Fatalf("template:\n%s\nGo:\n%s", got, want)
+	}
+	for _, sc := range []Scope{{}, {"x": "text"}} {
+		tp, err := Parse("t.vml", []byte(`<slot name="x"/>`))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := tp.Build(sc); err == nil {
+			t.Errorf("%v built", sc)
+		}
+	}
+}

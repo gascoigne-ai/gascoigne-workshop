@@ -22,3 +22,24 @@ func TestStatusBarTemplateMatchesTheGoView(t *testing.T) {
 		t.Fatalf("template:\n%s\nGo:\n%s", got, want)
 	}
 }
+
+// The header template renders exactly what the Go view it replaced did.
+func TestHeaderTemplateMatchesTheGoView(t *testing.T) {
+	a, _ := newTestApp(t)
+	toggle := OnClick(func() { a.menu = !a.menu })
+	goView := Row(H(headerH), PadX(w.Gutter), Bg(w.Hero), Control("hero"),
+		Text(a.col.Name, Bold(), Color(w.HeroText)),
+		Spacer(),
+		a.envChip(),
+		Spacer(W(w.Gutter)),
+		Row(W(headerH), toggle, Tooltip(a.hint("Settings", "settings")),
+			DotsIcon(Grow(1), Color(w.HeroMuted)),
+		),
+	)
+	tplView := a.header()
+	Layout(a.ctx, goView, 900, headerH)
+	Layout(a.ctx, tplView, 900, headerH)
+	if got, want := Dump(tplView), Dump(goView); got != want {
+		t.Fatalf("template:\n%s\nGo:\n%s", got, want)
+	}
+}

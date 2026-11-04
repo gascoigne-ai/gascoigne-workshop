@@ -150,6 +150,7 @@ var elements = map[string]struct {
 	"vr":      {func(o []vml.Option, _ []vml.Item, _ string) vml.Node { return withOpts(vml.VRule(), o) }, true},
 	"text":    {func(o []vml.Option, _ []vml.Item, t string) vml.Node { return vml.Text(t, o...) }, true},
 	"icon":    {func(o []vml.Option, _ []vml.Item, name string) vml.Node { return vml.Icon(name, o...) }, true},
+	"slot":    {func(o []vml.Option, _ []vml.Item, _ string) vml.Node { return nil }, true},
 	"caption": {func(o []vml.Option, _ []vml.Item, t string) vml.Node { return vml.Caption(t, o...) }, true},
 	"button":  {func(o []vml.Option, _ []vml.Item, t string) vml.Node { return vml.Button(t, o...) }, true},
 }
@@ -302,7 +303,7 @@ func Parse(name string, src []byte) (*Template, error) {
 			}
 			n := &node{tag: t.Name.Local, line: l}
 			for _, a := range t.Attr {
-				if _, ok := attributes[a.Name.Local]; !ok && !directives[a.Name.Local] && !(a.Name.Local == "name" && n.tag == "icon") {
+				if _, ok := attributes[a.Name.Local]; !ok && !directives[a.Name.Local] && !(a.Name.Local == "name" && (n.tag == "icon" || n.tag == "slot")) {
 					return fail(l, "unknown attribute %q on <%s>%s", a.Name.Local, n.tag, hint(a.Name.Local, attributeNames(), "attributes"))
 				}
 				n.attrs = append(n.attrs, attr{a.Name.Local, a.Value, l})
@@ -457,6 +458,22 @@ func (t *Template) buildOne(n *node, sc Scope) (vml.Node, error) {
 	text, err := interpolate(n.text, sc)
 	if err != nil {
 		return nil, t.errf(n, "%v", err)
+	}
+	if n.tag == "slot" { // a node the caller made, as a Vue slot
+		for _, a := range n.attrs {
+			if a.name == "name" {
+				v, ok := sc[a.value]
+				if !ok {
+					return nil, t.errf(n, "unknown slot %q", a.value)
+				}
+				node, ok := v.(vml.Node)
+				if !ok {
+					return nil, t.errf(n, "slot %q is not a vml.Node", a.value)
+				}
+				return node, nil
+			}
+		}
+		return nil, t.errf(n, `<slot> needs a name`)
 	}
 	if n.tag == "icon" {
 		for _, a := range n.attrs {
@@ -647,6 +664,7 @@ func Reference() string {
 	for _, n := range attributeNames() {
 		fmt.Fprintf(&sb, "  %s\n", n)
 	}
+	sb.WriteString("<slot name=\"x\"/> puts the vml.Node the scope holds under x here.\n")
 	sb.WriteString("<icon name=\"trash\"/> draws a built-in or registered icon (vml.IconNames).\n")
 	sb.WriteString("Text and attribute values may use {{path}}; if=\"name\" or \"!name\"; for=\"item in list\"; onclick=\"handler\".\n")
 	return sb.String()

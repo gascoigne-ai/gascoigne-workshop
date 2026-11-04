@@ -208,3 +208,5 @@ Row(H(urlH), PadX(w.Pad), PadY(8), Gap(8), Bg(w.Bg),
 - **Small follow-ups**: the window flushes pending collection edits on exit (`FlushWorkspace`); the URL field tooltip shows the resolved URL and undefined variables (`App.urlTip`); the WebSocket composer sends `hex: de ad be ef` as a binary message through `proto.BinarySender`, and subprotocols are offered by a `Sec-WebSocket-Protocol` header.
 
 - **MCP pickers** (`internal/proto/mcpschema.go`, `internal/ui/wsui.go`): `proto.ParseTools`, `ParseResources` and `ParsePrompts` read the list answers from the event log; `proto.Skeleton(schema)` builds a JSON value that fits a tool's input schema. A tab keeps what the server announced (`reqTab.tools`, `resources`, `prompts`, cleared when the session ends) and the toolbar buttons open menus whose entries compose a `call`, `read` or `prompt` line in the composer.
+
+- **Slots**: `<slot name="x"/>` in a template inserts the `vml.Node` the scope holds under `x`, which is how a template contains a hand-built element (the header's environment chip). `App.header` and `App.statusBar` are inline templates; both are tested against the Go views they replaced.

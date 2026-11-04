@@ -164,16 +164,22 @@ func (a *App) panes(t *reqTab) Node {
 }
 
 func (a *App) header() Node {
-	toggleMenu := OnClick(func() { a.menu = !a.menu })
-	return Row(H(headerH), PadX(w.Gutter), Bg(w.Hero), Control("hero"),
-		Text(a.col.Name, Bold(), Color(w.HeroText)),
-		Spacer(),
-		a.envChip(),
-		Spacer(W(w.Gutter)),
-		Row(W(headerH), toggleMenu, Tooltip(a.hint("Settings", "settings")),
-			DotsIcon(Grow(1), Color(w.HeroMuted)),
-		),
-	)
+	return component.View(`
+		<row h="44" pad-x="12" bg="hero" control="hero">
+		  <text bold color="hero-text">{{title}}</text>
+		  <spacer/>
+		  <slot name="env"/>
+		  <spacer w="12"/>
+		  <row w="44" onclick="toggleMenu" tip="{{settingsTip}}">
+		    <icon name="dots" grow="1" color="hero-muted"/>
+		  </row>
+		</row>`,
+		component.Scope{
+			"title":       a.col.Name,
+			"env":         a.envChip(),
+			"toggleMenu":  func() { a.menu = !a.menu },
+			"settingsTip": a.hint("Settings", "settings"),
+		})
 }
 
 // requestTabs is the strip of open requests, with a "+" for a new one.
