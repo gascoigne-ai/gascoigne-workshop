@@ -11,5 +11,5 @@
 //
 // Applications import the toolkit packages directly; nothing under this
 // directory may import the application's internal packages
-// (see TestToolkitDoesNotImportTheApplication).
+// (see widget/layers_test.go).
 package uitoolkit

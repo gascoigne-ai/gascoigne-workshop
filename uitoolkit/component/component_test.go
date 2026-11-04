@@ -1,11 +1,8 @@
 package component
 
 import (
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -139,41 +136,6 @@ func TestRootIfFalseBuildsNothing(t *testing.T) {
 	n, err := tp.Build(Scope{"on": false})
 	if err != nil || n != nil {
 		t.Fatalf("%v %v", n, err)
-	}
-}
-
-func TestLoaderReloadsAChangedFileOnly(t *testing.T) {
-	dir := t.TempDir()
-	path := filepath.Join(dir, "v.vml")
-	write := func(src string, mod time.Time) {
-		if err := os.WriteFile(path, []byte(src), 0o644); err != nil {
-			t.Fatal(err)
-		}
-		if err := os.Chtimes(path, mod, mod); err != nil {
-			t.Fatal(err)
-		}
-	}
-	t0 := time.Now().Add(-time.Hour)
-	write(`<text>one</text>`, t0)
-	l := NewLoader(os.DirFS(dir))
-	a, err := l.Template("v.vml")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if b, _ := l.Template("v.vml"); b != a {
-		t.Fatal("an unchanged file was parsed again")
-	}
-	write(`<text>two</text>`, t0.Add(time.Minute))
-	n, err := l.Build("v.vml", nil)
-	if err != nil || !strings.Contains(vml.Dump(n), `"two"`) {
-		t.Fatalf("%v %v", vml.Dump(n), err)
-	}
-	write(`<text>`, t0.Add(2*time.Minute)) // a broken edit is an error, not a crash
-	if _, err := l.Build("v.vml", nil); err == nil {
-		t.Fatal("a broken template built")
-	}
-	if _, err := l.Template("missing.vml"); err == nil {
-		t.Fatal("missing file found")
 	}
 }
 

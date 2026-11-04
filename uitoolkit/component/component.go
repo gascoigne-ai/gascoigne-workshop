@@ -15,9 +15,8 @@
 // values may use {{path}} to read the Scope; `if` and `for="x in xs"` are
 // the two directives, and `onclick` names a func() of the scope.
 //
-// Where the template lives is a choice, as with a Vue single-file
-// component or an inline `template` option: a .vml file read by a Loader
-// (embedded, or from a folder with reload on edit), or a string in Go code:
+// The usual form is an inline template in the method that feeds it, as
+// with a Vue component's `template` option:
 //
 //	func (a *App) statusBar() Node {
 //		return component.View(`
