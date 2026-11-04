@@ -159,7 +159,7 @@ func (a *App) panes(t *reqTab) Node {
 func (a *App) header() Node {
 	toggleMenu := OnClick(func() { a.menu = !a.menu })
 	return Row(H(headerH), PadXY(w.Pad, 0), Bg(w.Hero), Control("hero"),
-		Text(a.col.Name, Color(w.HeroText)),
+		Text(a.col.Name, Bold(), Color(w.HeroText)),
 		Spacer(),
 		Row(W(headerH), toggleMenu, Tooltip(a.hint("Settings", "settings")),
 			Dots(Grow(1), Color(w.HeroMuted)),
@@ -295,14 +295,25 @@ func (a *App) responseStatus(t *reqTab) Node {
 	if t.resp == nil || t.resp.Err != "" {
 		return nil
 	}
-	statusColor := w.OK
-	if t.resp.Status >= 400 {
-		statusColor = w.Error
-	}
-	return Row(Gap(12), PadR(w.Pad), Optional(),
-		Text(fmt.Sprintf("%d %s", t.resp.Status, t.resp.StatusText), Color(statusColor)),
+	fg, bg := statusPill(t.resp.Status)
+	return Row(Gap(12), PadR(w.Pad), Optional(), AlignItems(AlignCenter),
+		Row(PadXY(10, 0), H(20), Bg(bg), Control("pill"), AlignItems(AlignCenter),
+			Text(fmt.Sprintf("%d %s", t.resp.Status, t.resp.StatusText), Small(), Bold(), Color(fg)),
+		),
 		Text(fmt.Sprintf("%s  %s", formatDuration(t.resp.Duration), formatSize(t.resp.Size))),
 	)
+}
+
+// statusPill is the text and background colors of a response status:
+// success, redirect or failure, as the dashboard's badges.
+func statusPill(status int) (fg, bg w.Token) {
+	switch {
+	case status >= 400:
+		return w.Error, w.ErrorSoft
+	case status >= 300:
+		return w.Warn, w.WarnSoft
+	}
+	return w.OK, w.OKSoft
 }
 
 // ── Status bar ─────────────────────────────────────────────────────────

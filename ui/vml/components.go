@@ -162,7 +162,7 @@ func Table(t TableSpec, opts ...Option) *El {
 		Bg(widget.Sunken), Control("table"),
 		tableHeader(t),
 		For(rows, func(i int, r TableRow) Node {
-			return tableRow(t, i, r, t.Editable && i == len(t.Rows))
+			return tableRow(t, i, r, t.Editable && i == len(t.Rows), i == len(rows)-1)
 		}),
 	}, opts)...)
 }
@@ -171,10 +171,10 @@ func Table(t TableSpec, opts ...Option) *El {
 // tableHeader is the caption row; with a Widths state it carries the
 // draggable column dividers on top.
 func tableHeader(t TableSpec) Node {
-	header := Row(H(widget.RowH), BorderBottom(widget.Rule),
+	header := Row(H(widget.RowH), BorderBottom(widget.BorderSoft),
 		If(t.Editable, headerCheck(t)),
 		For(t.Columns, func(i int, name string) Node {
-			return Row(Grow(t.weight(i)), PadXY(8, 0), Caption(name, Grow(1)))
+			return Row(Grow(t.weight(i)), PadXY(8, 0), Text(name, Small(), Bold(), Muted(), Grow(1)))
 		}),
 		If(t.Editable, Row(W(tableActionW))),
 	)
@@ -192,7 +192,7 @@ func headerCheck(t TableSpec) Node {
 	return Row(items...)
 }
 
-func tableRow(t TableSpec, i int, r TableRow, placeholder bool) Node {
+func tableRow(t TableSpec, i int, r TableRow, placeholder, last bool) Node {
 	clr := widget.Text
 	if r.Muted {
 		clr = widget.Muted
@@ -218,8 +218,9 @@ func tableRow(t TableSpec, i int, r TableRow, placeholder bool) Node {
 	switch {
 	case t.Selected != nil && *t.Selected == i && !placeholder:
 		row = append(row, Bg(widget.Selected))
-	case i%2 == 1:
-		row = append(row, Bg(widget.Alt))
+	}
+	if !last { // hairlines between rows, as the dashboard's tables draw them
+		row = append(row, BorderBottom(widget.BorderSoft))
 	}
 	if !placeholder {
 		row = append(row, HoverBg(widget.Hover)) // the row under the pointer

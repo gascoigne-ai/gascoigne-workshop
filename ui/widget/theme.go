@@ -33,6 +33,14 @@ const (
 	Selection  Token = "selection"
 	FindMatch  Token = "find-match"
 	FindActive Token = "find-active"
+	BorderSoft Token = "border-soft" // hairlines between table rows, as the dashboard draws them
+	Warn       Token = "warn"
+	OKSoft     Token = "ok-soft" // pale backgrounds for status pills
+	WarnSoft   Token = "warn-soft"
+	ErrorSoft  Token = "error-soft"
+	AccentSoft Token = "accent-soft"
+	Track      Token = "track"      // the empty part of a bar
+	Faint      Token = "faint"      // the quietest text
 	Hero       Token = "hero"       // the banner behind the window title, as a flat fallback
 	HeroText   Token = "hero-text"  // text on the banner
 	HeroMuted  Token = "hero-muted" // icons on the banner

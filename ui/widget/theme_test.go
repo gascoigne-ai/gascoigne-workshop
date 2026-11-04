@@ -111,11 +111,11 @@ func TestPalettesFollowTheCLIDashboard(t *testing.T) {
 	want := map[string]map[Token]uint32{
 		"dark": {
 			Text: 0xf1e8eb, Muted: 0xbfaab2, Accent: 0xe88aa6, OK: 0x5ed39a, Error: 0xff6b5e,
-			Frame: 0x140f12, Sunken: 0x1c1519, Bg: 0x241b20,
+			Frame: 0x140f12, Sunken: 0x1c1519, Bg: 0x1c1519, Alt: 0x251c21,
 		},
 		"light": {
 			Text: 0x22161b, Muted: 0x66545b, Accent: 0x7a1f3d, OK: 0x17804a, Error: 0xd1281b,
-			Frame: 0xece5e8, Bg: 0xf6f3f4, Sunken: 0xffffff, Panel: 0xf5f0f2,
+			Frame: 0xf6f3f4, Bg: 0xffffff, Sunken: 0xffffff, Panel: 0xf5f0f2,
 		},
 	}
 	for name, th := range map[string]Theme{"dark": Dark(), "light": Light()} {

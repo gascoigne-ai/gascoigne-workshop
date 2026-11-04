@@ -309,8 +309,8 @@ func TestSettingsMenuOpensChangesThemeAndSaves(t *testing.T) {
 	}
 
 	click(a, 1240, 188) // the Large text size chip
-	if a.ctx.Th.FontSize != 17 {
-		t.Fatalf("font size = %v, want 17", a.ctx.Th.FontSize)
+	if a.ctx.Th.FontSize != 16 {
+		t.Fatalf("font size = %v, want 16", a.ctx.Th.FontSize)
 	}
 	if saved, _ := settings.Load(path); saved.TextSize != "large" || saved.Theme != "light" {
 		t.Fatalf("saved %+v", saved)

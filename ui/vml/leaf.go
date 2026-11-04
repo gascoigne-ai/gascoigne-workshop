@@ -19,6 +19,10 @@ func (e *El) face(c *widget.Ctx) *text.GoTextFace {
 	switch {
 	case e.mono:
 		return c.F.Mono
+	case e.small && e.bold:
+		return c.F.SmallBold
+	case e.bold:
+		return c.F.Bold
 	case e.small:
 		return c.F.Small
 	}
@@ -68,6 +72,9 @@ func Color(t widget.Token) Option { return func(e *El) { e.fg = t } }
 
 // Muted is Color(widget.Muted).
 func Muted() Option { return Color(widget.Muted) }
+
+// Bold uses the bold face, for headings and table headers.
+func Bold() Option { return func(e *El) { e.bold = true } }
 
 // Small uses the small font.
 func Small() Option { return func(e *El) { e.small = true } }

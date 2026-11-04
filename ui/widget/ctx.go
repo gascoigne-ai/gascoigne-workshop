@@ -11,12 +11,13 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
+	"golang.org/x/image/font/gofont/gobold"
 	"golang.org/x/image/font/gofont/gomono"
 	"golang.org/x/image/font/gofont/goregular"
 )
 
 // Fonts are the three faces the toolkit draws with.
-type Fonts struct{ UI, Small, Mono *text.GoTextFace }
+type Fonts struct{ UI, Small, Mono, Bold, SmallBold *text.GoTextFace }
 
 // NewFonts builds the faces from the embedded Go fonts, sized for a
 // display with the given device scale factor.
@@ -25,14 +26,20 @@ func NewFonts(th Theme, scale float64) (Fonts, error) {
 	if err != nil {
 		return Fonts{}, fmt.Errorf("load regular font: %w", err)
 	}
+	bold, err := text.NewGoTextFaceSource(bytes.NewReader(gobold.TTF))
+	if err != nil {
+		return Fonts{}, fmt.Errorf("load bold font: %w", err)
+	}
 	mono, err := text.NewGoTextFaceSource(bytes.NewReader(gomono.TTF))
 	if err != nil {
 		return Fonts{}, fmt.Errorf("load mono font: %w", err)
 	}
 	return Fonts{
-		UI:    &text.GoTextFace{Source: regular, Size: th.FontSize * scale},
-		Small: &text.GoTextFace{Source: regular, Size: th.SmallSize * scale},
-		Mono:  &text.GoTextFace{Source: mono, Size: th.MonoSize * scale},
+		UI:        &text.GoTextFace{Source: regular, Size: th.FontSize * scale},
+		Small:     &text.GoTextFace{Source: regular, Size: th.SmallSize * scale},
+		Mono:      &text.GoTextFace{Source: mono, Size: th.MonoSize * scale},
+		Bold:      &text.GoTextFace{Source: bold, Size: th.FontSize * scale},
+		SmallBold: &text.GoTextFace{Source: bold, Size: th.SmallSize * scale},
 	}, nil
 }
 

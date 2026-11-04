@@ -60,10 +60,10 @@ func TestThemeFor(t *testing.T) {
 		wantBg            color.RGBA
 		wantFont          float64
 	}{
-		{"dark medium", "dark", "medium", widget.Dark().Color(widget.Bg), 15},
-		{"light large", "light", "large", widget.Light().Color(widget.Bg), 17},
+		{"dark medium", "dark", "medium", widget.Dark().Color(widget.Bg), 14},
+		{"light large", "light", "large", widget.Light().Color(widget.Bg), 16},
 		{"unknown theme falls back to dark", "neon", "small", widget.Dark().Color(widget.Bg), 13},
-		{"unknown size falls back to medium", "light", "huge", widget.Light().Color(widget.Bg), 15},
+		{"unknown size falls back to medium", "light", "huge", widget.Light().Color(widget.Bg), 14},
 	}
 	for _, tt := range tests {
 		th := ThemeFor(tt.theme, tt.size)
@@ -131,6 +131,26 @@ func TestAppThemesCarryMethodAndJSONColorsOverTheToolkitStyles(t *testing.T) {
 		}
 		if th.Style("primary").Radius <= 0 {
 			t.Errorf("%s: toolkit control styles lost under the app overlay", id)
+		}
+	}
+}
+
+func TestStatusPillsFollowTheDashboardBadges(t *testing.T) {
+	for status, want := range map[int][2]widget.Token{
+		200: {widget.OK, widget.OKSoft}, 204: {widget.OK, widget.OKSoft},
+		301: {widget.Warn, widget.WarnSoft}, 404: {widget.Error, widget.ErrorSoft}, 500: {widget.Error, widget.ErrorSoft},
+	} {
+		if fg, bg := statusPill(status); fg != want[0] || bg != want[1] {
+			t.Errorf("%d: %v on %v, want %v on %v", status, fg, bg, want[0], want[1])
+		}
+	}
+	for _, id := range []string{"dark", "light"} {
+		th := ThemeFor(id, "medium")
+		for _, status := range []int{200, 301, 404} {
+			fg, bg := statusPill(status)
+			if r := widget.ContrastRatio(th.Color(fg), th.Color(bg)); r < 3.5 {
+				t.Errorf("%s: pill %d text %.2f:1 on its background", id, status, r)
+			}
 		}
 	}
 }

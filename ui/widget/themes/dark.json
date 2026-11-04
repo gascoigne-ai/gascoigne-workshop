@@ -1,14 +1,14 @@
 {
   "name": "dark",
-  "fontSize": 15,
+  "fontSize": 14,
   "smallSize": 12,
-  "monoSize": 14,
+  "monoSize": 13,
   "variables": {
     "hero-top": "#571a33",
     "hero-bottom": "#1f0a13"
   },
   "colors": {
-    "bg": "#241b20",
+    "bg": "#1c1519",
     "frame": "#140f12",
     "panel": "#2d2228",
     "sunken": "#1c1519",
@@ -32,7 +32,15 @@
     "find-active": "#8a5d12",
     "hero": "#3d0f22",
     "hero-text": "#f8eff2",
-    "hero-muted": "#e3cbd4"
+    "hero-muted": "#e3cbd4",
+    "border-soft": "#33262d",
+    "ok-soft": "#112a20",
+    "warn-soft": "#2c2214",
+    "error-soft": "#3a1714",
+    "accent-soft": "#3a1a27",
+    "track": "#2d2228",
+    "faint": "#85717a",
+    "warn": "#f0b05a"
   },
   "controls": {
     "button": {
@@ -77,6 +85,9 @@
         "$hero-top",
         "$hero-bottom"
       ]
+    },
+    "pill": {
+      "radius": 999
     }
   }
 }

@@ -55,16 +55,16 @@ type El struct {
 	underInset                          int
 	shadow, clip, lighten               bool
 
-	text                       string
-	fg                         widget.Token
-	small, mono, ellipsis, ctr bool
-	placeholder                string
-	segments                   func(string) []Seg
-	field                      *widget.TextField
-	view                       *widget.CodeView
-	area                       *widget.TextArea
-	icon                       iconKind
-	on                         bool
+	text                             string
+	fg                               widget.Token
+	small, mono, bold, ellipsis, ctr bool
+	placeholder                      string
+	segments                         func(string) []Seg
+	field                            *widget.TextField
+	view                             *widget.CodeView
+	area                             *widget.TextArea
+	icon                             iconKind
+	on                               bool
 
 	onClick, onChange, onEnter func()
 	onTab                      func(back bool)

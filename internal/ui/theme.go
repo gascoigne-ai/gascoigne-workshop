@@ -70,8 +70,8 @@ var themeChoices = []themeChoice{
 
 var textSizeChoices = []sizeChoice{
 	{"small", "Small", 13, 11, 12},
-	{"medium", "Medium", 15, 12, 14},
-	{"large", "Large", 17, 13, 16},
+	{"medium", "Medium", 14, 12, 13},
+	{"large", "Large", 16, 13, 15},
 }
 
 // The interface scale slider's range and step, in percent.
