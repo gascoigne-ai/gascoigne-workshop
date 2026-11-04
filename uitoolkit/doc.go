@@ -7,10 +7,12 @@
 //
 // The packages, each depending only on the ones listed before it:
 //
-//   - core: theme files, colors, the drawing context (Ctx), text
-//     fields, text areas, the code viewer and scrollbars.
+//   - core: the fundamentals: theme files and tokens, colors, the drawing
+//     context (Ctx), pointer and keyboard input, the clipboard.
 //   - vml: a Go-native view DSL (Row, Col, Stack, Scroll, Split, Table,
-//     Tabs...) that lays out, updates and draws a tree of elements.
+//     Tabs...) that lays out, updates and draws a tree of elements, with
+//     the inputs: TextField, TextArea and CodeView and their elements
+//     Field, Area and Code.
 //   - engine: frame pacing and input helpers for Ebitengine games.
 //   - component: HTML-style templates that build the same vml trees.
 //   - theming: turns appearance preferences into a core.Theme.

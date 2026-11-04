@@ -54,7 +54,7 @@ type dialogButton struct {
 // dialog is a modal message with buttons and, for a prompt, a text field.
 type dialog struct {
 	title, body string
-	input       *w.TextField
+	input       *TextField
 	buttons     []dialogButton
 }
 
@@ -147,7 +147,7 @@ func (a *App) confirm(title, body, okLabel string, onOK func()) {
 
 // prompt asks for a line of text, starting with initial selected.
 func (a *App) prompt(title, initial, okLabel string, onOK func(text string)) {
-	input := w.NewTextField(initial)
+	input := NewTextField(initial)
 	input.Focused = true
 	if initial != "" {
 		input.SelectAll()

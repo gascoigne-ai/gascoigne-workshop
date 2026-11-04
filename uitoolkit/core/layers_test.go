@@ -15,7 +15,7 @@ import (
 func TestToolkitImportsStayInTheirLayer(t *testing.T) {
 	const module = "github.com/gascoigne-ai/gascoigne-workshop"
 	allowed := map[string][]string{
-		"../core":    {},
+		"../core":      {},
 		"../vml":       {module + "/uitoolkit/core"},
 		"../engine":    {module + "/uitoolkit/core"},
 		"../component": {module + "/uitoolkit/core", module + "/uitoolkit/vml"},

@@ -37,3 +37,13 @@ func ExampleButton() {
 	// flow bg=accent control=button lighten=true
 	//   textB text="Save" grow=1 fg=chip-text center=true
 }
+
+// Widgets keep their state in plain structs the application owns; a
+// field edits its text in place.
+func ExampleTextField() {
+	f := vml.NewTextField("hello")
+	f.SelectAll()
+	f.Insert("world")
+	fmt.Println(f.Text)
+	// Output: world
+}

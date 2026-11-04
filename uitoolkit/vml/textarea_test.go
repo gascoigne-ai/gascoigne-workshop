@@ -1,4 +1,6 @@
-package core
+package vml
+
+import "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 
 import "testing"
 
@@ -48,19 +50,19 @@ func TestLineColAndPosAt(t *testing.T) {
 func TestVerticalMovementKeepsTheGoalColumn(t *testing.T) {
 	f := area(poem)
 	f.Cursor = 5 // line 0, col 5
-	f.Apply(nil, []Edit{EditDown}, false)
+	f.Apply(nil, []core.Edit{core.EditDown}, false)
 	if l, c := f.LineCol(f.Cursor); l != 1 || c != 2 {
 		t.Fatalf("down: %d,%d want 1,2 (clamped to the short line)", l, c)
 	}
-	f.Apply(nil, []Edit{EditDown}, false)
+	f.Apply(nil, []core.Edit{core.EditDown}, false)
 	if l, c := f.LineCol(f.Cursor); l != 2 || c != 5 {
 		t.Fatalf("down again: %d,%d want 2,5 (the goal column comes back)", l, c)
 	}
-	f.Apply(nil, []Edit{EditUp, EditUp}, false)
+	f.Apply(nil, []core.Edit{core.EditUp, core.EditUp}, false)
 	if l, c := f.LineCol(f.Cursor); l != 0 || c != 5 {
 		t.Fatalf("up twice: %d,%d", l, c)
 	}
-	f.Apply(nil, []Edit{EditLeft, EditDown}, false) // a horizontal move resets the goal
+	f.Apply(nil, []core.Edit{core.EditLeft, core.EditDown}, false) // a horizontal move resets the goal
 	if l, c := f.LineCol(f.Cursor); l != 1 || c != 2 {
 		t.Fatalf("after Left, Down: %d,%d want 1,2", l, c)
 	}
@@ -69,18 +71,18 @@ func TestVerticalMovementKeepsTheGoalColumn(t *testing.T) {
 func TestVerticalMovementAtTheEdges(t *testing.T) {
 	f := area(poem)
 	f.Cursor = 3
-	f.Apply(nil, []Edit{EditUp}, false)
+	f.Apply(nil, []core.Edit{core.EditUp}, false)
 	if f.Cursor != 0 {
 		t.Fatalf("Up on the first line goes to the start, got %d", f.Cursor)
 	}
 	f.Cursor = 12
-	f.Apply(nil, []Edit{EditDown}, false)
+	f.Apply(nil, []core.Edit{core.EditDown}, false)
 	if f.Cursor != len([]rune(poem)) {
 		t.Fatalf("Down on the last line goes to the end, got %d", f.Cursor)
 	}
 	one := NewTextField("single line")
 	one.Cursor = 3
-	one.Apply(nil, []Edit{EditUp, EditDown}, false)
+	one.Apply(nil, []core.Edit{core.EditUp, core.EditDown}, false)
 	if one.Cursor != 3 {
 		t.Fatalf("a single-line field ignores Up and Down, cursor %d", one.Cursor)
 	}
@@ -89,7 +91,7 @@ func TestVerticalMovementAtTheEdges(t *testing.T) {
 func TestShiftDownSelectsAcrossLines(t *testing.T) {
 	f := area(poem)
 	f.Cursor = 2
-	f.Apply(nil, []Edit{EditDown}, true)
+	f.Apply(nil, []core.Edit{core.EditDown}, true)
 	if f.SelectedText() != "cdef\nab" {
 		t.Fatalf("selection %q", f.SelectedText())
 	}
@@ -98,19 +100,19 @@ func TestShiftDownSelectsAcrossLines(t *testing.T) {
 func TestHomeEndAreLineWiseAndDocWiseWithCtrl(t *testing.T) {
 	f := area(poem)
 	f.Cursor = 8 // inside "ab"
-	f.Apply(nil, []Edit{EditHome}, false)
+	f.Apply(nil, []core.Edit{core.EditHome}, false)
 	if f.Cursor != 7 {
 		t.Fatalf("Home = %d, want 7", f.Cursor)
 	}
-	f.Apply(nil, []Edit{EditEnd}, false)
+	f.Apply(nil, []core.Edit{core.EditEnd}, false)
 	if f.Cursor != 9 {
 		t.Fatalf("End = %d, want 9", f.Cursor)
 	}
-	f.Apply(nil, []Edit{EditDocStart}, false)
+	f.Apply(nil, []core.Edit{core.EditDocStart}, false)
 	if f.Cursor != 0 {
 		t.Fatalf("DocStart = %d", f.Cursor)
 	}
-	f.Apply(nil, []Edit{EditDocEnd}, false)
+	f.Apply(nil, []core.Edit{core.EditDocEnd}, false)
 	if f.Cursor != 16 {
 		t.Fatalf("DocEnd = %d", f.Cursor)
 	}
@@ -119,11 +121,11 @@ func TestHomeEndAreLineWiseAndDocWiseWithCtrl(t *testing.T) {
 func TestPageMovesByViewLines(t *testing.T) {
 	f := area("1\n2\n3\n4\n5\n6")
 	f.Cursor = 0
-	f.Apply(nil, []Edit{EditPageDown}, false)
+	f.Apply(nil, []core.Edit{core.EditPageDown}, false)
 	if l, _ := f.LineCol(f.Cursor); l != 2 {
 		t.Fatalf("PageDown with a 2-line view: line %d, want 2", l)
 	}
-	f.Apply(nil, []Edit{EditPageUp}, false)
+	f.Apply(nil, []core.Edit{core.EditPageUp}, false)
 	if l, _ := f.LineCol(f.Cursor); l != 0 {
 		t.Fatalf("PageUp: line %d", l)
 	}
@@ -145,7 +147,7 @@ func TestEnterKeepsTheIndentation(t *testing.T) {
 	for _, tt := range tests {
 		f := area(tt.text)
 		f.Cursor = tt.cursor
-		f.Apply(nil, []Edit{EditNewline}, false)
+		f.Apply(nil, []core.Edit{core.EditNewline}, false)
 		if f.Text != tt.want || f.Cursor != tt.wantCursor {
 			t.Errorf("%s: %q cursor %d; want %q %d", tt.name, f.Text, f.Cursor, tt.want, tt.wantCursor)
 		}
@@ -155,7 +157,7 @@ func TestEnterKeepsTheIndentation(t *testing.T) {
 func TestEnterReplacesTheSelectionAndUndoes(t *testing.T) {
 	f := area("a-b")
 	f.Anchor, f.Cursor, f.HasSel = 1, 2, true
-	f.Apply(nil, []Edit{EditNewline}, false)
+	f.Apply(nil, []core.Edit{core.EditNewline}, false)
 	if f.Text != "a\nb" {
 		t.Fatalf("text = %q", f.Text)
 	}
@@ -167,12 +169,12 @@ func TestEnterReplacesTheSelectionAndUndoes(t *testing.T) {
 
 func TestTabInsertsSpacesToTheNextStop(t *testing.T) {
 	f := area("ab")
-	f.Apply(nil, []Edit{EditIndent}, false) // col 2 is on a stop: a full tab width
+	f.Apply(nil, []core.Edit{core.EditIndent}, false) // col 2 is on a stop: a full tab width
 	if f.Text != "ab  " {
 		t.Fatalf("text = %q", f.Text)
 	}
 	g := area("a")
-	g.Apply(nil, []Edit{EditIndent}, false) // col 1: one space reaches the stop
+	g.Apply(nil, []core.Edit{core.EditIndent}, false) // col 1: one space reaches the stop
 	if g.Text != "a " {
 		t.Fatalf("text = %q", g.Text)
 	}
@@ -181,14 +183,14 @@ func TestTabInsertsSpacesToTheNextStop(t *testing.T) {
 func TestTabOnASelectionIndentsEveryLineAndShiftTabDedents(t *testing.T) {
 	f := area("one\ntwo\nthree")
 	f.Anchor, f.Cursor, f.HasSel = 1, 9, true // from "one" into "two"... through the second line
-	f.Apply(nil, []Edit{EditIndent}, false)
+	f.Apply(nil, []core.Edit{core.EditIndent}, false)
 	if f.Text != "  one\n  two\n  three" {
 		t.Fatalf("indent: %q", f.Text)
 	}
 	if lo, hi, ok := f.Selection(); !ok || lo != 3 || hi != 15 {
 		t.Fatalf("the selection must follow the text, got %d..%d", lo, hi)
 	}
-	f.Apply(nil, []Edit{EditDedent}, false)
+	f.Apply(nil, []core.Edit{core.EditDedent}, false)
 	if f.Text != "one\ntwo\nthree" {
 		t.Fatalf("dedent: %q", f.Text)
 	}
@@ -197,21 +199,21 @@ func TestTabOnASelectionIndentsEveryLineAndShiftTabDedents(t *testing.T) {
 func TestShiftTabDedentsTheCurrentLineAndStopsAtZero(t *testing.T) {
 	f := area("    x\ny")
 	f.Cursor = 5 // end of the indented line
-	f.Apply(nil, []Edit{EditDedent}, false)
+	f.Apply(nil, []core.Edit{core.EditDedent}, false)
 	if f.Text != "  x\ny" || f.Cursor != 3 {
 		t.Fatalf("text %q cursor %d", f.Text, f.Cursor)
 	}
-	f.Apply(nil, []Edit{EditDedent, EditDedent}, false)
+	f.Apply(nil, []core.Edit{core.EditDedent, core.EditDedent}, false)
 	if f.Text != "x\ny" {
 		t.Fatalf("text %q", f.Text)
 	}
 	f.Cursor = 0
-	if f.Apply(nil, []Edit{EditDedent}, false); f.Text != "x\ny" {
+	if f.Apply(nil, []core.Edit{core.EditDedent}, false); f.Text != "x\ny" {
 		t.Fatal("dedenting an unindented line changes nothing")
 	}
 	g := area("\tx")
 	g.Cursor = 2
-	g.Apply(nil, []Edit{EditDedent}, false)
+	g.Apply(nil, []core.Edit{core.EditDedent}, false)
 	if g.Text != "x" {
 		t.Fatalf("a tab is removed whole: %q", g.Text)
 	}
@@ -227,13 +229,5 @@ func TestTripleClickSelectsTheLineInAnArea(t *testing.T) {
 	g.PressN(8, false, 2)
 	if g.SelectedText() != "ab" {
 		t.Fatalf("double click: %q", g.SelectedText())
-	}
-}
-
-func TestCtrlHomeEndMapToDocMovement(t *testing.T) {
-	for in, want := range map[Edit]Edit{EditHome: EditDocStart, EditEnd: EditDocEnd} {
-		if got, ok := ctrlEdit(in); !ok || got != want {
-			t.Errorf("ctrlEdit(%v) = %v %v, want %v", in, got, ok, want)
-		}
 	}
 }

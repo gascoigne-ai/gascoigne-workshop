@@ -28,7 +28,7 @@ func (e *El) textInset() int {
 // already has padding of its own, so text lines up with its neighbours.
 func FieldPad(n int) Option { return func(e *El) { e.fieldInset = n } }
 
-// field is a single-line text input editing a core.TextField.
+// field is a single-line text input editing a TextField.
 type fieldB struct{ plain }
 
 func (fieldB) measure(*El, *core.Ctx, int) (int, int) { return 0, 0 }
@@ -107,7 +107,7 @@ func (fieldB) drawOver(e *El, c *core.Ctx, dst *ebiten.Image) {
 
 // Field is a single-line text input bound to f (Vue's v-model: the
 // widget edits f in place).
-func Field(f *core.TextField, opts ...Option) *El {
+func Field(f *TextField, opts ...Option) *El {
 	e := newEl(fieldB{}, with([]Item{Control("field")}, opts))
 	e.field = f
 	return e
@@ -128,7 +128,7 @@ func OnTab(f func(back bool)) Option { return func(e *El) { e.onTab = f } }
 // OnEnter runs when Enter is pressed in the focused field.
 func OnEnter(f func()) Option { return func(e *El) { e.onEnter = f } }
 
-// code shows a core.CodeView.
+// code shows a CodeView.
 type codeB struct{ plain }
 
 func (codeB) measure(*El, *core.Ctx, int) (int, int) { return 0, 0 }
@@ -141,7 +141,7 @@ func (codeB) draw(e *El, c *core.Ctx, dst *ebiten.Image) {
 }
 
 // Code is a scrollable, foldable code viewer; give it a Bg.
-func Code(v *core.CodeView, opts ...Option) *El {
+func Code(v *CodeView, opts ...Option) *El {
 	e := newEl(codeB{}, with(nil, opts))
 	e.view = v
 	return e

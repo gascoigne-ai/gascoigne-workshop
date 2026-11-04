@@ -87,7 +87,7 @@ func jsonServer(t *testing.T) *httptest.Server {
 // pointTabAt makes the open request target url, as if typed into the field.
 func pointTabAt(t *reqTab, url string) {
 	t.req.URL = url
-	t.url = core.NewTextField(url)
+	t.url = vml.NewTextField(url)
 }
 
 func waitForResponse(t *testing.T, a *App, tab *reqTab) {
@@ -3466,7 +3466,7 @@ func TestFindInCompactViewKeepsOnlyMatchingLeavesTheirChildrenAndTheirPath(t *te
 
 // find replaces the search text, as typing would.
 func (a *App) find(t *reqTab, text string) {
-	t.find = core.NewTextField(text)
+	t.find = vml.NewTextField(text)
 	t.find.Focused = true
 	a.runFind(t)
 }

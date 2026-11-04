@@ -11,15 +11,15 @@ import (
 
 // colorInput is the hex field of a custom color, created on first use
 // from the color in effect.
-func (a *App) colorInput(tok w.Token) *w.TextField {
+func (a *App) colorInput(tok w.Token) *TextField {
 	if in, ok := a.colorInputs[tok]; ok {
 		return in
 	}
 	if a.colorInputs == nil {
-		a.colorInputs = map[w.Token]*w.TextField{}
+		a.colorInputs = map[w.Token]*TextField{}
 	}
-	in := new(w.TextField)
-	*in = w.NewTextField(w.FormatHex(a.ctx.Th.Color(tok)))
+	in := new(TextField)
+	*in = NewTextField(w.FormatHex(a.ctx.Th.Color(tok)))
 	a.colorInputs[tok] = in
 	return in
 }

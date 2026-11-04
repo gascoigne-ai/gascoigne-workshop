@@ -68,18 +68,18 @@ func authFieldByID(id string) (authField, bool) {
 
 // authInput is the text field of an Auth pane field, created on first
 // use from the request's stored value. Secret fields start masked.
-func (t *reqTab) authInput(id string) *w.TextField {
+func (t *reqTab) authInput(id string) *TextField {
 	if in, ok := t.auth[id]; ok {
 		return in
 	}
 	f, _ := authFieldByID(id)
-	in := new(w.TextField)
+	in := new(TextField)
 	if f.value != nil {
-		*in = w.NewTextField(*f.value(&t.req.Auth))
+		*in = NewTextField(*f.value(&t.req.Auth))
 	}
 	in.Masked = f.secret && !t.showSecrets
 	if t.auth == nil {
-		t.auth = map[string]*w.TextField{}
+		t.auth = map[string]*TextField{}
 	}
 	t.auth[id] = in
 	return in

@@ -28,7 +28,7 @@
 //	Layout     Row Col Stack Split Scroll HScroll Spacer   AlignItems AlignSelf JustifyContent
 //	Look       Bg Border BorderTop BorderBottom BorderLeft HoverBg Shadow Control Edges
 //	Text       Text Caption Lines   Color Muted Bold Small Mono Ellipsis Center
-//	Input      Field TextArea Code Slider Checkbox   Placeholder OnChange OnEnter
+//	Input      Field Area Code Slider Checkbox   (state: TextField TextArea CodeView)   Placeholder OnChange OnEnter
 //	Events     OnClick OnRightClick OnMiddleClick   Tooltip
 //	Composite  Button PrimaryButton LinkButton IconButton Tabs ScrollTabs Table
 //	Flow       If For Frag
@@ -88,9 +88,9 @@ type El struct {
 	small, mono, bold, ellipsis, ctr bool
 	placeholder                      string
 	segments                         func(string) []Seg
-	field                            *core.TextField
-	view                             *core.CodeView
-	area                             *core.TextArea
+	field                            *TextField
+	view                             *CodeView
+	area                             *TextArea
 	icon                             iconKind
 	on                               bool
 

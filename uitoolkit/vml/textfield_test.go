@@ -1,4 +1,6 @@
-package core
+package vml
+
+import "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 
 import "testing"
 
@@ -8,21 +10,21 @@ func TestTextFieldApply(t *testing.T) {
 		start      string
 		cursor     int
 		typed      string
-		edits      []Edit
+		edits      []core.Edit
 		want       string
 		wantCursor int
 		changed    bool
 	}{
 		{"type at end", "ab", 2, "c", nil, "abc", 3, true},
 		{"type in middle", "ac", 1, "b", nil, "abc", 2, true},
-		{"backspace", "abc", 3, "", []Edit{EditBackspace}, "ab", 2, true},
-		{"backspace at start does nothing", "abc", 0, "", []Edit{EditBackspace}, "abc", 0, false},
-		{"delete", "abc", 0, "", []Edit{EditDelete}, "bc", 0, true},
-		{"delete at end does nothing", "abc", 3, "", []Edit{EditDelete}, "abc", 3, false},
-		{"type then home", "bc", 2, "a", []Edit{EditHome}, "bca", 0, true},
-		{"left right end", "abc", 3, "", []Edit{EditLeft, EditLeft, EditRight, EditEnd}, "abc", 3, false},
+		{"backspace", "abc", 3, "", []core.Edit{core.EditBackspace}, "ab", 2, true},
+		{"backspace at start does nothing", "abc", 0, "", []core.Edit{core.EditBackspace}, "abc", 0, false},
+		{"delete", "abc", 0, "", []core.Edit{core.EditDelete}, "bc", 0, true},
+		{"delete at end does nothing", "abc", 3, "", []core.Edit{core.EditDelete}, "abc", 3, false},
+		{"type then home", "bc", 2, "a", []core.Edit{core.EditHome}, "bca", 0, true},
+		{"left right end", "abc", 3, "", []core.Edit{core.EditLeft, core.EditLeft, core.EditRight, core.EditEnd}, "abc", 3, false},
 		{"control runes ignored", "a", 1, "\n\t\x7f", nil, "a", 1, false},
-		{"multibyte runes", "żó", 2, "ł", []Edit{EditBackspace, EditBackspace}, "ż", 1, true},
+		{"multibyte runes", "żó", 2, "ł", []core.Edit{core.EditBackspace, core.EditBackspace}, "ż", 1, true},
 		{"stale cursor clamped", "ab", 99, "c", nil, "abc", 3, true},
 	}
 	for _, tt := range tests {
@@ -46,17 +48,17 @@ func TestTextFieldSelection(t *testing.T) {
 	}{
 		{"shift+right selects forward", func(f *TextField) {
 			f.Cursor = 1
-			f.Apply(nil, []Edit{EditRight, EditRight}, true)
+			f.Apply(nil, []core.Edit{core.EditRight, core.EditRight}, true)
 		}, "hello", "el"},
 		{"shift+home selects to start", func(f *TextField) {
 			f.Cursor = 3
-			f.Apply(nil, []Edit{EditHome}, true)
+			f.Apply(nil, []core.Edit{core.EditHome}, true)
 		}, "hello", "hel"},
 		{"select all", func(f *TextField) { f.SelectAll() }, "hello", "hello"},
 		{"left collapses to the low edge", func(f *TextField) {
 			f.Cursor = 1
-			f.Apply(nil, []Edit{EditRight, EditRight}, true)
-			f.Apply(nil, []Edit{EditLeft}, false)
+			f.Apply(nil, []core.Edit{core.EditRight, core.EditRight}, true)
+			f.Apply(nil, []core.Edit{core.EditLeft}, false)
 		}, "hello", ""},
 		{"typing replaces the selection", func(f *TextField) {
 			f.SelectAll()
@@ -64,12 +66,12 @@ func TestTextFieldSelection(t *testing.T) {
 		}, "x", ""},
 		{"backspace deletes the selection only", func(f *TextField) {
 			f.Cursor = 1
-			f.Apply(nil, []Edit{EditRight, EditRight}, true)
-			f.Apply(nil, []Edit{EditBackspace}, false)
+			f.Apply(nil, []core.Edit{core.EditRight, core.EditRight}, true)
+			f.Apply(nil, []core.Edit{core.EditBackspace}, false)
 		}, "hlo", ""},
 		{"paste replaces the selection and strips line breaks", func(f *TextField) {
 			f.Cursor = 1
-			f.Apply(nil, []Edit{EditRight}, true)
+			f.Apply(nil, []core.Edit{core.EditRight}, true)
 			f.Insert("A\nB\x00")
 		}, "hA Bllo", ""},
 		{"drag selects between press and pointer", func(f *TextField) {
@@ -128,19 +130,19 @@ func TestWordEdits(t *testing.T) {
 	tests := []struct {
 		name       string
 		cursor     int
-		edit       Edit
+		edit       core.Edit
 		extend     bool
 		wantText   string
 		wantCursor int
 		wantSel    string
 	}{
-		{"word left", 11, EditWordLeft, false, "one two three", 8, ""},
-		{"word right", 4, EditWordRight, false, "one two three", 7, ""},
-		{"shift+word left selects", 13, EditWordLeft, true, "one two three", 8, "three"},
-		{"delete word left", 7, EditDeleteWordLeft, false, "one  three", 4, ""},
-		{"delete word right", 4, EditDeleteWordRight, false, "one  three", 4, ""},
-		{"delete word at start does nothing", 0, EditDeleteWordLeft, false, "one two three", 0, ""},
-		{"delete word with a selection deletes the selection only", 0, EditDeleteWordRight, false, "one two three", 0, ""},
+		{"word left", 11, core.EditWordLeft, false, "one two three", 8, ""},
+		{"word right", 4, core.EditWordRight, false, "one two three", 7, ""},
+		{"shift+word left selects", 13, core.EditWordLeft, true, "one two three", 8, "three"},
+		{"delete word left", 7, core.EditDeleteWordLeft, false, "one  three", 4, ""},
+		{"delete word right", 4, core.EditDeleteWordRight, false, "one  three", 4, ""},
+		{"delete word at start does nothing", 0, core.EditDeleteWordLeft, false, "one two three", 0, ""},
+		{"delete word with a selection deletes the selection only", 0, core.EditDeleteWordRight, false, "one two three", 0, ""},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -150,7 +152,7 @@ func TestWordEdits(t *testing.T) {
 				f.Anchor, f.Cursor, f.HasSel = 0, 3, true
 				tt.wantText, tt.wantCursor = " two three", 0
 			}
-			f.Apply(nil, []Edit{tt.edit}, tt.extend)
+			f.Apply(nil, []core.Edit{tt.edit}, tt.extend)
 			if f.Text != tt.wantText || f.Cursor != tt.wantCursor || f.SelectedText() != tt.wantSel {
 				t.Fatalf("text %q cursor %d sel %q; want %q %d %q", f.Text, f.Cursor, f.SelectedText(), tt.wantText, tt.wantCursor, tt.wantSel)
 			}
@@ -207,7 +209,7 @@ func TestUndoRedoCoalescesTyping(t *testing.T) {
 	for _, r := range "abc" {
 		f.Apply([]rune{r}, nil, false)
 	}
-	f.Apply(nil, []Edit{EditLeft}, false) // moving starts a new group
+	f.Apply(nil, []core.Edit{core.EditLeft}, false) // moving starts a new group
 	f.Apply([]rune("X"), nil, false)
 	if f.Text != "abXc" {
 		t.Fatalf("text = %q", f.Text)
@@ -232,8 +234,8 @@ func TestUndoRedoCoalescesTyping(t *testing.T) {
 
 func TestUndoGroupsBackspacesPasteAndCutSeparately(t *testing.T) {
 	f := NewTextField("hello world")
-	f.Apply(nil, []Edit{EditBackspace, EditBackspace}, false) // "hello wor"
-	f.Insert("XYZ")                                           // paste: its own step
+	f.Apply(nil, []core.Edit{core.EditBackspace, core.EditBackspace}, false) // "hello wor"
+	f.Insert("XYZ")                                                          // paste: its own step
 	f.SelectAll()
 	f.DeleteSelection() // cut
 	if f.Text != "" {
@@ -291,16 +293,16 @@ func TestMaskedFieldHidesItsTextAndNeverCopiesIt(t *testing.T) {
 		t.Fatalf("an unmasked field displays its text, got %q", plain.Display())
 	}
 
-	c, err := NewCtx(Dark())
+	c, err := core.NewCtx(core.Dark())
 	if err != nil {
 		t.Fatal(err)
 	}
 	clip := &memClip{text: "before"}
 	c.Clipboard = clip
 	f.SelectAll()
-	c.In = Input{Copy: true}
+	c.In = core.Input{Copy: true}
 	f.RunShortcuts(c)
-	c.In = Input{Cut: true}
+	c.In = core.Input{Cut: true}
 	f.RunShortcuts(c)
 	if clip.text != "before" {
 		t.Fatalf("a masked field must not put its text on the clipboard, got %q", clip.text)
@@ -311,7 +313,7 @@ func TestMaskedFieldHidesItsTextAndNeverCopiesIt(t *testing.T) {
 
 	clip.text = "pasted"
 	f.SelectAll()
-	c.In = Input{Paste: true}
+	c.In = core.Input{Paste: true}
 	f.RunShortcuts(c)
 	if f.Text != "pasted" {
 		t.Fatalf("pasting into a masked field works, got %q", f.Text)

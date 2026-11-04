@@ -146,7 +146,7 @@ func (t TableSpec) weights() []float64 {
 // the text, and what Enter and Tab do.
 type TableEdit struct {
 	Row, Col int
-	Field    *core.TextField
+	Field    *TextField
 	OnEnter  func()
 	OnTab    func(back bool)
 	OnMenu   func(x, y int) // right click on the edit field

@@ -1,33 +1,9 @@
-package core
+package vml
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"strings"
 	"unicode"
-)
-
-// Edit is a cursor or deletion key applied to a TextField.
-type Edit int
-
-const (
-	EditBackspace Edit = iota
-	EditDelete
-	EditLeft
-	EditRight
-	EditHome
-	EditEnd
-	EditWordLeft
-	EditWordRight
-	EditDeleteWordLeft
-	EditDeleteWordRight
-	EditUp
-	EditDown
-	EditPageUp
-	EditPageDown
-	EditDocStart
-	EditDocEnd
-	EditNewline
-	EditIndent
-	EditDedent
 )
 
 // Pixels of context kept visible beyond the cursor when the text
@@ -61,7 +37,7 @@ type TextField struct {
 	Text     string
 	Cursor   int
 	Anchor   int  // the fixed end of the selection; meaningful when HasSel
-	HasSel   bool // a selection exists between Anchor and Cursor
+	HasSel   bool // a selection exists between Anchor and core.Cursor
 	Focused  bool
 	Dragging bool // the pointer went down inside and is still held
 	ScrollX  int  // pixels the text is scrolled left inside its view
@@ -351,7 +327,7 @@ func (f *TextField) Reveal(cursorX, viewW int) {
 // Apply inserts typed runes at the cursor, then runs edits in order.
 // With extend (shift held) the movement keys select instead of just
 // moving. It reports whether Text changed.
-func (f *TextField) Apply(typed []rune, edits []Edit, extend bool) (changed bool) {
+func (f *TextField) Apply(typed []rune, edits []core.Edit, extend bool) (changed bool) {
 	f.Cursor = f.clamp(f.Cursor)
 	if printable := keepPrintable(typed); len(printable) > 0 {
 		changed = f.insert(string(printable), kindType) || changed
@@ -362,52 +338,52 @@ func (f *TextField) Apply(typed []rune, edits []Edit, extend bool) (changed bool
 	return changed
 }
 
-func (f *TextField) edit(e Edit, extend bool) (changed bool) {
+func (f *TextField) edit(e core.Edit, extend bool) (changed bool) {
 	runes := []rune(f.Text)
 	switch e {
-	case EditBackspace:
+	case core.EditBackspace:
 		return f.deleteRange(f.Cursor-1, f.Cursor, kindDelete)
-	case EditDelete:
+	case core.EditDelete:
 		return f.deleteRange(f.Cursor, f.Cursor+1, kindDelete)
-	case EditDeleteWordLeft:
+	case core.EditDeleteWordLeft:
 		return f.deleteRange(wordLeft(runes, f.Cursor), f.Cursor, kindOther)
-	case EditDeleteWordRight:
+	case core.EditDeleteWordRight:
 		return f.deleteRange(f.Cursor, wordRight(runes, f.Cursor), kindOther)
-	case EditLeft:
+	case core.EditLeft:
 		f.step(-1, extend)
-	case EditRight:
+	case core.EditRight:
 		f.step(1, extend)
-	case EditWordLeft:
+	case core.EditWordLeft:
 		f.moveTo(wordLeft(runes, f.Cursor), extend)
-	case EditWordRight:
+	case core.EditWordRight:
 		f.moveTo(wordRight(runes, f.Cursor), extend)
-	case EditHome:
+	case core.EditHome:
 		f.moveTo(lineStart(runes, f.Cursor), extend)
-	case EditEnd:
+	case core.EditEnd:
 		f.moveTo(lineEnd(runes, f.Cursor), extend)
-	case EditDocStart:
+	case core.EditDocStart:
 		f.moveTo(0, extend)
-	case EditDocEnd:
+	case core.EditDocEnd:
 		f.moveTo(len(runes), extend)
-	case EditUp, EditDown, EditPageUp, EditPageDown:
+	case core.EditUp, core.EditDown, core.EditPageUp, core.EditPageDown:
 		f.vertical(e, extend)
-	case EditNewline:
+	case core.EditNewline:
 		return f.Multiline && f.newline()
-	case EditIndent:
+	case core.EditIndent:
 		return f.Multiline && f.indent()
-	case EditDedent:
+	case core.EditDedent:
 		return f.Multiline && f.dedent()
 	}
 	return false
 }
 
 // vertical moves by lines in a multi-line field; single-line fields ignore it.
-func (f *TextField) vertical(e Edit, extend bool) {
+func (f *TextField) vertical(e core.Edit, extend bool) {
 	if !f.Multiline {
 		return
 	}
 	page := max(f.ViewLines, 1)
-	dy := map[Edit]int{EditUp: -1, EditDown: 1, EditPageUp: -page, EditPageDown: page}[e]
+	dy := map[core.Edit]int{core.EditUp: -1, core.EditDown: 1, core.EditPageUp: -page, core.EditPageDown: page}[e]
 	f.moveLines(dy, extend)
 }
 
@@ -646,7 +622,7 @@ func (f *TextField) shiftLines(starts []int, change func(r []rune, start int) in
 // RunShortcuts runs the undo, redo, select-all, copy, cut and paste
 // shortcuts in c.In against the field and its clipboard. It reports
 // whether the text changed.
-func (f *TextField) RunShortcuts(c *Ctx) (changed bool) {
+func (f *TextField) RunShortcuts(c *core.Ctx) (changed bool) {
 	in := c.In
 	if in.Undo {
 		changed = f.Undo() || changed

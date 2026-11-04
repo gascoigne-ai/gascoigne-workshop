@@ -202,7 +202,7 @@ func (f *fakeClipboard) Write(s string) error  { f.text = s; return nil }
 
 func TestFieldCopyCutPasteSelectAll(t *testing.T) {
 	changes := 0
-	f := core.NewTextField("hello world")
+	f := NewTextField("hello world")
 	f.Focused = true
 	field := Field(&f, OnChange(func() { changes++ }))
 	root := Row(field)
@@ -241,7 +241,7 @@ func TestFieldCopyCutPasteSelectAll(t *testing.T) {
 }
 
 func TestFieldPasteFailureLeavesTextAlone(t *testing.T) {
-	f := core.NewTextField("keep")
+	f := NewTextField("keep")
 	f.Focused = true
 	root := Row(Field(&f))
 	c := testCtx(t)
@@ -255,7 +255,7 @@ func TestFieldPasteFailureLeavesTextAlone(t *testing.T) {
 }
 
 func TestFieldDragSelectsAndReleaseEndsTheDrag(t *testing.T) {
-	f := core.NewTextField("hello")
+	f := NewTextField("hello")
 	root := Row(Field(&f, Grow(1)))
 	c := testCtx(t)
 	Layout(c, root, 300, 30)
@@ -301,7 +301,7 @@ func TestButtonsClickAndOverrideDefaults(t *testing.T) {
 
 func TestEnterInAFocusedFieldFiresOnEnterOnly(t *testing.T) {
 	enters := 0
-	f := core.NewTextField("x")
+	f := NewTextField("x")
 	root := Row(Field(&f, Grow(1), Placeholder("p"), OnEnter(func() { enters++ })))
 	c := testCtx(t)
 	Layout(c, root, 200, 30)
@@ -352,8 +352,8 @@ func TestLinesMakesOneRowPerLine(t *testing.T) {
 }
 
 func TestCodeNodeForwardsInputToTheView(t *testing.T) {
-	v := &core.CodeView{}
-	v.SetLines([]core.Line{{Spans: []core.Span{{Text: "one"}}}, {Spans: []core.Span{{Text: "two"}}}})
+	v := &CodeView{}
+	v.SetLines([]Line{{Spans: []Span{{Text: "one"}}}, {Spans: []Span{{Text: "two"}}}})
 	root := Row(Code(v, Grow(1)))
 	c := testCtx(t)
 	Layout(c, root, 400, 100)
@@ -428,7 +428,7 @@ func TestReadOnlyTableCellsIgnoreClicks(t *testing.T) {
 func TestEditedCellShowsAFieldWithEnterAndTab(t *testing.T) {
 	var enters int
 	var tabs []bool
-	f := core.NewTextField("x")
+	f := NewTextField("x")
 	f.Focused = true
 	spec := editableSpec()
 	spec.Editing = &TableEdit{Row: 0, Col: 1, Field: &f,
@@ -453,9 +453,9 @@ func TestEditedCellShowsAFieldWithEnterAndTab(t *testing.T) {
 	}
 }
 
-func focusedField(t *testing.T, text string, width int) (*core.TextField, *core.Ctx, *El, *int) {
+func focusedField(t *testing.T, text string, width int) (*TextField, *core.Ctx, *El, *int) {
 	t.Helper()
-	f := core.NewTextField(text)
+	f := NewTextField(text)
 	f.Focused = true
 	changes := 0
 	root := Row(Field(&f, Grow(1), OnChange(func() { changes++ })))
@@ -526,14 +526,14 @@ func TestLongTextScrollsToTheCursorAndClicksAccountForIt(t *testing.T) {
 	}
 }
 
-func focusFlags(f1, f2 *core.TextField, v *core.CodeView) [3]bool {
+func focusFlags(f1, f2 *TextField, v *CodeView) [3]bool {
 	return [3]bool{f1.Focused, f2.Focused, v.Focused}
 }
 
 func TestTabCyclesFocusThroughFieldsAndCodeViews(t *testing.T) {
-	a, b := core.NewTextField("a"), core.NewTextField("b")
-	v := &core.CodeView{}
-	v.SetLines([]core.Line{{Spans: []core.Span{{Text: "x"}}}})
+	a, b := NewTextField("a"), NewTextField("b")
+	v := &CodeView{}
+	v.SetLines([]Line{{Spans: []Span{{Text: "x"}}}})
 	root := Col(Field(&a, H(30)), Field(&b, H(30)), Code(v, H(30)))
 	c := testCtx(t)
 	Layout(c, root, 200, 100)
@@ -562,7 +562,7 @@ func TestTabCyclesFocusThroughFieldsAndCodeViews(t *testing.T) {
 }
 
 func TestTabSelectsTheTextOfTheFieldItFocuses(t *testing.T) {
-	a := core.NewTextField("hello")
+	a := NewTextField("hello")
 	root := Col(Field(&a, H(30)))
 	c := testCtx(t)
 	Layout(c, root, 200, 30)
@@ -574,7 +574,7 @@ func TestTabSelectsTheTextOfTheFieldItFocuses(t *testing.T) {
 }
 
 func TestTabIsLeftToAFieldThatHandlesIt(t *testing.T) {
-	a, b := core.NewTextField("a"), core.NewTextField("b")
+	a, b := NewTextField("a"), NewTextField("b")
 	a.Focused = true
 	var tabs int
 	root := Col(Field(&a, H(30), OnTab(func(bool) { tabs++ })), Field(&b, H(30)))
@@ -588,7 +588,7 @@ func TestTabIsLeftToAFieldThatHandlesIt(t *testing.T) {
 }
 
 func TestCtrlTabIsNotFocusCycling(t *testing.T) {
-	a := core.NewTextField("a")
+	a := NewTextField("a")
 	root := Col(Field(&a, H(30)))
 	c := testCtx(t)
 	Layout(c, root, 200, 30)
@@ -600,17 +600,17 @@ func TestCtrlTabIsNotFocusCycling(t *testing.T) {
 }
 
 // areaBox is a 400x100 text area in a window of the same size.
-func areaBox(t *testing.T, text string) (*core.TextArea, *core.Ctx, *El, *int) {
+func areaBox(t *testing.T, text string) (*TextArea, *core.Ctx, *El, *int) {
 	t.Helper()
-	a := core.NewTextArea(text)
+	a := NewTextArea(text)
 	changes := 0
-	root := Row(TextArea(a, Grow(1), OnChange(func() { changes++ })))
+	root := Row(Area(a, Grow(1), OnChange(func() { changes++ })))
 	c := testCtx(t)
 	Layout(c, root, 400, 100)
 	return a, c, root, &changes
 }
 
-func focusArea(a *core.TextArea, c *core.Ctx, root *El) {
+func focusArea(a *TextArea, c *core.Ctx, root *El) {
 	c.In = core.Input{X: 380, Y: 5, Click: true, Held: true, Clicks: 1}
 	Update(c, root)
 	c.In = core.Input{X: 380, Y: 5}
@@ -672,8 +672,8 @@ func TestTextAreaDragSelectsAcrossLines(t *testing.T) {
 
 func TestTextAreaTabIndentsAndKeepsFocus(t *testing.T) {
 	a, c, _, _ := areaBox(t, "x")
-	b := core.NewTextField("other")
-	root := Col(TextArea(a, H(50)), Field(&b, H(30)))
+	b := NewTextField("other")
+	root := Col(Area(a, H(50)), Field(&b, H(30)))
 	Layout(c, root, 400, 80)
 	a.Focused = true
 
@@ -723,7 +723,7 @@ func TestTextAreaScrollsWithWheelAndFollowsTheCursor(t *testing.T) {
 }
 
 // ScrollbarSlack allows for the horizontal scrollbar eating a few pixels.
-const ScrollbarSlack = core.ScrollbarW
+const ScrollbarSlack = ScrollbarW
 
 func TestTextAreaPasteKeepsLines(t *testing.T) {
 	a, c, root, _ := areaBox(t, "")
@@ -782,7 +782,7 @@ func TestFloatCenterCentersTheElement(t *testing.T) {
 }
 
 func TestFocusScopeTrapsTab(t *testing.T) {
-	outside, in1, in2 := core.NewTextField("o"), core.NewTextField("1"), core.NewTextField("2")
+	outside, in1, in2 := NewTextField("o"), NewTextField("1"), NewTextField("2")
 	root := Stack(
 		Col(Field(&outside, H(30))),
 		Col(FocusScope(), FloatAt(0, 40), Field(&in1, H(30)), Field(&in2, H(30))),
@@ -881,7 +881,7 @@ func TestBorderLeftOptionRecordsTheTokenAndInset(t *testing.T) {
 }
 
 func TestFieldTextInsetDefaultsAndCanBeReduced(t *testing.T) {
-	f := core.NewTextField("x")
+	f := NewTextField("x")
 	plain := Field(&f)
 	tight := Field(&f, FieldPad(5))
 	if plain.textInset() != fieldPad || tight.textInset() != 5 {

@@ -1,6 +1,7 @@
-package core
+package vml
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"reflect"
 	"strings"
 	"testing"
@@ -132,9 +133,9 @@ func (m *memClip) Read() (string, error) { return m.text, nil }
 func (m *memClip) Write(s string) error  { m.text = s; return nil }
 
 // viewport is a 600x400 code view at the origin of a context with a memory clipboard.
-func viewport(t *testing.T) (*CodeView, *Ctx, *memClip, Rect) {
+func viewport(t *testing.T) (*CodeView, *core.Ctx, *memClip, core.Rect) {
 	t.Helper()
-	c, err := NewCtx(Dark())
+	c, err := core.NewCtx(core.Dark())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -142,33 +143,33 @@ func viewport(t *testing.T) (*CodeView, *Ctx, *memClip, Rect) {
 	c.Clipboard = clip
 	v := &CodeView{}
 	v.SetLines(sampleLines())
-	return v, c, clip, Rect{W: 600, H: 400}
+	return v, c, clip, core.Rect{W: 600, H: 400}
 }
 
 // rowY is the pixel row of the middle of visible row i.
-func rowY(c *Ctx, v *CodeView, r Rect, i int) int {
+func rowY(c *core.Ctx, v *CodeView, r core.Rect, i int) int {
 	g := v.geometry(c, r)
 	return r.Y + i*g.lineH + g.lineH/2
 }
 
 // colX is the pixel x of the boundary before column col of the text.
-func colX(c *Ctx, v *CodeView, r Rect, col int) int {
+func colX(c *core.Ctx, v *CodeView, r core.Rect, col int) int {
 	g := v.geometry(c, r)
 	return g.textX - v.ScrollX + col*g.charW
 }
 
-func press(v *CodeView, c *Ctx, r Rect, x, y, clicks int) {
-	c.In = Input{X: x, Y: y, Click: true, Held: true, Clicks: clicks}
+func press(v *CodeView, c *core.Ctx, r core.Rect, x, y, clicks int) {
+	c.In = core.Input{X: x, Y: y, Click: true, Held: true, Clicks: clicks}
 	v.Update(c, r)
 }
 
-func dragTo(v *CodeView, c *Ctx, r Rect, x, y int) {
-	c.In = Input{X: x, Y: y, Held: true}
+func dragTo(v *CodeView, c *core.Ctx, r core.Rect, x, y int) {
+	c.In = core.Input{X: x, Y: y, Held: true}
 	v.Update(c, r)
 }
 
-func release(v *CodeView, c *Ctx, r Rect, x, y int) {
-	c.In = Input{X: x, Y: y}
+func release(v *CodeView, c *core.Ctx, r core.Rect, x, y int) {
+	c.In = core.Input{X: x, Y: y}
 	v.Update(c, r)
 }
 
@@ -227,7 +228,7 @@ func TestCodeViewPlainClickSelectsNothingAndCopyTakesEverything(t *testing.T) {
 	if v.SelectedText() != "" || !v.Focused {
 		t.Fatalf("selection %q focused %v", v.SelectedText(), v.Focused)
 	}
-	c.In = Input{Ctrl: true, Copy: true, X: 5000, Y: 5000}
+	c.In = core.Input{Ctrl: true, Copy: true, X: 5000, Y: 5000}
 	v.Update(c, r)
 	if clip.text != v.AllText() {
 		t.Fatalf("with nothing selected Ctrl+C copies the whole body, got %q", clip.text)
@@ -240,7 +241,7 @@ func TestCodeViewCopiesTheSelectedCharacters(t *testing.T) {
 	press(v, c, r, colX(c, v, r, 2), y, 1)
 	dragTo(v, c, r, colX(c, v, r, 5), y)
 	release(v, c, r, 0, 0)
-	c.In = Input{Ctrl: true, Copy: true, X: 5000, Y: 5000}
+	c.In = core.Input{Ctrl: true, Copy: true, X: 5000, Y: 5000}
 	v.Update(c, r)
 	if clip.text != `"a"` {
 		t.Fatalf("clipboard = %q", clip.text)
@@ -250,7 +251,7 @@ func TestCodeViewCopiesTheSelectedCharacters(t *testing.T) {
 func TestCodeViewCopyWithoutSelectionCopiesEverything(t *testing.T) {
 	v, c, clip, r := viewport(t)
 	v.Focused = true
-	c.In = Input{X: 5000, Y: 5000, Ctrl: true, Copy: true} // pointer elsewhere: only focus matters
+	c.In = core.Input{X: 5000, Y: 5000, Ctrl: true, Copy: true} // pointer elsewhere: only focus matters
 	v.Update(c, r)
 	if clip.text != v.AllText() {
 		t.Fatalf("clipboard = %q", clip.text)
@@ -260,18 +261,18 @@ func TestCodeViewCopyWithoutSelectionCopiesEverything(t *testing.T) {
 func TestCodeViewSelectAllAndBlurOnOutsideClick(t *testing.T) {
 	v, c, _, r := viewport(t)
 	v.Focused = true
-	c.In = Input{X: 5000, Y: 5000, Ctrl: true, SelectAll: true}
+	c.In = core.Input{X: 5000, Y: 5000, Ctrl: true, SelectAll: true}
 	v.Update(c, r)
 	if v.SelectedText() != v.AllText() {
 		t.Fatal("Ctrl+A must select every line")
 	}
 
-	c.In = Input{X: 5000, Y: 5000, Click: true}
+	c.In = core.Input{X: 5000, Y: 5000, Click: true}
 	v.Update(c, r)
 	if v.Focused {
 		t.Fatal("a click outside must blur the view")
 	}
-	c.In = Input{X: 5000, Y: 5000, Ctrl: true, Copy: true}
+	c.In = core.Input{X: 5000, Y: 5000, Ctrl: true, Copy: true}
 	clipBefore := c.Clipboard.(*memClip).text
 	v.Update(c, r)
 	if c.Clipboard.(*memClip).text != clipBefore {
@@ -282,9 +283,9 @@ func TestCodeViewSelectAllAndBlurOnOutsideClick(t *testing.T) {
 func TestCodeViewFoldArrowToggles(t *testing.T) {
 	v, c, _, r := viewport(t)
 	g := v.geometry(c, r)
-	arrowX := r.X + Pad + g.numW + 4 + foldColW/2
+	arrowX := r.X + core.Pad + g.numW + 4 + foldColW/2
 
-	c.In = Input{X: arrowX, Y: rowY(c, v, r, 0), Click: true}
+	c.In = core.Input{X: arrowX, Y: rowY(c, v, r, 0), Click: true}
 	v.Update(c, r)
 	if len(v.Visible()) != 1 {
 		t.Fatalf("folding the root must hide the rest, visible = %v", v.Visible())
@@ -296,14 +297,14 @@ func TestCodeViewFoldArrowToggles(t *testing.T) {
 
 func TestCodeViewWheelScrollsOnlyWhenOver(t *testing.T) {
 	v, c, _, _ := viewport(t)
-	small := Rect{W: 600, H: 60} // content is taller than the viewport
-	c.In = Input{X: 10, Y: 10, Wheel: -1}
+	small := core.Rect{W: 600, H: 60} // content is taller than the viewport
+	c.In = core.Input{X: 10, Y: 10, Wheel: -1}
 	v.Update(c, small)
 	if v.ScrollY <= 0 {
 		t.Fatalf("wheel over the view must scroll, ScrollY = %d", v.ScrollY)
 	}
 	before := v.ScrollY
-	c.In = Input{X: 900, Y: 10, Wheel: -1}
+	c.In = core.Input{X: 900, Y: 10, Wheel: -1}
 	v.Update(c, small)
 	if v.ScrollY != before {
 		t.Fatal("wheel elsewhere must not scroll")
@@ -312,27 +313,27 @@ func TestCodeViewWheelScrollsOnlyWhenOver(t *testing.T) {
 
 func TestCodeViewEmptyContentIsHarmless(t *testing.T) {
 	var v CodeView
-	c, err := NewCtx(Dark())
+	c, err := core.NewCtx(core.Dark())
 	if err != nil {
 		t.Fatal(err)
 	}
-	c.In = Input{X: 10, Y: 10, Click: true, Held: true, Ctrl: true, Copy: true, SelectAll: true}
-	v.Update(c, Rect{W: 100, H: 100}) // must not panic on zero lines
+	c.In = core.Input{X: 10, Y: 10, Click: true, Held: true, Ctrl: true, Copy: true, SelectAll: true}
+	v.Update(c, core.Rect{W: 100, H: 100}) // must not panic on zero lines
 	if v.HasSel {
 		t.Fatal("nothing to select")
 	}
 }
 
 func TestCtxSetThemeSwitchesColorsAndFontSizes(t *testing.T) {
-	c, err := NewCtx(Dark())
+	c, err := core.NewCtx(core.Dark())
 	if err != nil {
 		t.Fatal(err)
 	}
-	small := Light().WithTextSize(10, 8, 10)
+	small := core.Light().WithTextSize(10, 8, 10)
 	if err := c.SetTheme(small); err != nil {
 		t.Fatal(err)
 	}
-	if c.Col(Bg) != Light().Color(Bg) {
+	if c.Col(core.Bg) != core.Light().Color(core.Bg) {
 		t.Fatal("colors did not switch")
 	}
 	if c.F.UI.Size != 10 {
@@ -351,9 +352,9 @@ func longLines() []Line {
 func TestCodeViewScrollsHorizontallyWithShiftWheelAndClamps(t *testing.T) {
 	v, c, _, _ := viewport(t)
 	v.SetLines(longLines())
-	r := Rect{W: 300, H: 100}
+	r := core.Rect{W: 300, H: 100}
 
-	c.In = Input{X: 50, Y: 20, Wheel: -1, Shift: true}
+	c.In = core.Input{X: 50, Y: 20, Wheel: -1, Shift: true}
 	v.Update(c, r)
 	if v.ScrollX <= 0 {
 		t.Fatalf("Shift+wheel must scroll sideways, ScrollX = %d", v.ScrollX)
@@ -362,13 +363,13 @@ func TestCodeViewScrollsHorizontallyWithShiftWheelAndClamps(t *testing.T) {
 		t.Fatal("Shift+wheel must not scroll vertically")
 	}
 	for range 200 {
-		c.In = Input{X: 50, Y: 20, Wheel: -1, Shift: true}
+		c.In = core.Input{X: 50, Y: 20, Wheel: -1, Shift: true}
 		v.Update(c, r)
 	}
 	if max := v.contentWidth(c, r) - r.W; v.ScrollX != max {
 		t.Fatalf("ScrollX = %d, want the clamp %d", v.ScrollX, max)
 	}
-	c.In = Input{X: 50, Y: 20, Wheel: 1, Shift: true}
+	c.In = core.Input{X: 50, Y: 20, Wheel: 1, Shift: true}
 	v.Update(c, r)
 	if v.ScrollX >= v.contentWidth(c, r)-r.W {
 		t.Fatal("wheel up with Shift must scroll back")
@@ -377,8 +378,8 @@ func TestCodeViewScrollsHorizontallyWithShiftWheelAndClamps(t *testing.T) {
 
 func TestCodeViewShortLinesNeverScrollSideways(t *testing.T) {
 	v, c, _, _ := viewport(t)
-	r := Rect{W: 600, H: 400}
-	c.In = Input{X: 50, Y: 20, Wheel: -3, Shift: true}
+	r := core.Rect{W: 600, H: 400}
+	c.In = core.Input{X: 50, Y: 20, Wheel: -3, Shift: true}
 	v.Update(c, r)
 	if v.ScrollX != 0 {
 		t.Fatalf("ScrollX = %d, want 0", v.ScrollX)
@@ -388,11 +389,11 @@ func TestCodeViewShortLinesNeverScrollSideways(t *testing.T) {
 func TestCodeViewPagingKeysWhenFocused(t *testing.T) {
 	v, c, _, _ := viewport(t)
 	v.SetLines(manyLines(100))
-	r := Rect{W: 600, H: 100}
+	r := core.Rect{W: 600, H: 100}
 	v.Focused = true
 	g := v.geometry(c, r)
 	pressed := func(k ebiten.Key) {
-		c.In = Input{X: 5000, Y: 5000, Keys: []ebiten.Key{k}}
+		c.In = core.Input{X: 5000, Y: 5000, Keys: []ebiten.Key{k}}
 		v.Update(c, r)
 	}
 
@@ -428,29 +429,29 @@ func manyLines(n int) []Line {
 func TestCodeViewScrollbarThumbDragScrollsTheContent(t *testing.T) {
 	v, c, _, _ := viewport(t)
 	v.SetLines(manyLines(100))
-	r := Rect{W: 400, H: 200}
+	r := core.Rect{W: 400, H: 200}
 	g := v.geometry(c, r)
-	track := Rect{X: r.W - ScrollbarW, Y: 0, W: ScrollbarW, H: r.H}
+	track := core.Rect{X: r.W - ScrollbarW, Y: 0, W: ScrollbarW, H: r.H}
 	off, length, ok := Thumb(track.H, 100*g.lineH, r.H, v.ScrollY)
 	if !ok {
 		t.Fatal("100 rows in 200px must need a scrollbar")
 	}
 	grabY := off + length/2
 
-	c.In = Input{X: track.X + 2, Y: grabY, Click: true, Held: true}
+	c.In = core.Input{X: track.X + 2, Y: grabY, Click: true, Held: true}
 	v.Update(c, r)
 	if v.ScrollY != 0 || v.Selected() {
 		t.Fatalf("grabbing the thumb must not scroll or select, ScrollY %d", v.ScrollY)
 	}
-	c.In = Input{X: track.X + 2, Y: grabY + 50, Held: true}
+	c.In = core.Input{X: track.X + 2, Y: grabY + 50, Held: true}
 	v.Update(c, r)
 	if v.ScrollY <= 0 {
 		t.Fatalf("dragging the thumb down must scroll down, ScrollY = %d", v.ScrollY)
 	}
 	pos := v.ScrollY
-	c.In = Input{X: track.X + 2, Y: grabY + 50} // released
+	c.In = core.Input{X: track.X + 2, Y: grabY + 50} // released
 	v.Update(c, r)
-	c.In = Input{X: track.X + 2, Y: grabY + 90, Held: true}
+	c.In = core.Input{X: track.X + 2, Y: grabY + 90, Held: true}
 	v.Update(c, r)
 	if v.ScrollY != pos {
 		t.Fatal("after release, moving the pointer must not scroll")
@@ -492,18 +493,18 @@ func TestCodeViewFind(t *testing.T) {
 func TestCodeViewRevealLineScrollsToTheLine(t *testing.T) {
 	v, c, _, _ := viewport(t)
 	v.SetLines(manyLines(100))
-	r := Rect{W: 600, H: 100}
+	r := core.Rect{W: 600, H: 100}
 	g := v.geometry(c, r)
 
 	v.RevealLine(80)
-	c.In = Input{X: 5000, Y: 5000}
+	c.In = core.Input{X: 5000, Y: 5000}
 	v.Update(c, r)
 	top, bottom := 80*g.lineH, 81*g.lineH
 	if v.ScrollY > top || v.ScrollY+r.H < bottom {
 		t.Fatalf("ScrollY %d: line 80 (%d..%d) is not inside a %dpx view", v.ScrollY, top, bottom, r.H)
 	}
 	before := v.ScrollY
-	c.In = Input{X: 5000, Y: 5000}
+	c.In = core.Input{X: 5000, Y: 5000}
 	v.Update(c, r)
 	if v.ScrollY != before {
 		t.Fatal("a reveal happens once; later updates must not keep scrolling")
@@ -523,7 +524,7 @@ func TestCodeViewRevealUnfoldsWhatHidesTheLine(t *testing.T) {
 		t.Fatal("test setup: the block must be folded")
 	}
 	v.RevealLine(4)
-	c.In = Input{X: 5000, Y: 5000}
+	c.In = core.Input{X: 5000, Y: 5000}
 	v.Update(c, r)
 	if v.Folded[2] {
 		t.Fatal("the fold hiding line 4 must open")
@@ -542,7 +543,7 @@ func TestCodeViewMatchesSurviveUpdatesAndClearOnNewContent(t *testing.T) {
 	v, c, _, r := viewport(t)
 	m := v.Find("items")
 	v.SetMatches(m, 0)
-	c.In = Input{X: 5000, Y: 5000}
+	c.In = core.Input{X: 5000, Y: 5000}
 	v.Update(c, r) // must not panic with highlights set
 	if len(v.matches) != 1 || v.current != 0 {
 		t.Fatalf("matches %v current %d", v.matches, v.current)
@@ -577,9 +578,9 @@ func TestLineNumbersFollowNumWhenSetAndWidenTheGutter(t *testing.T) {
 func TestCodeViewFollowStaysAtTheEndUntilTheUserScrollsUp(t *testing.T) {
 	v, c, _, _ := viewport(t)
 	v.Follow = true
-	r := Rect{W: 600, H: 100}
+	r := core.Rect{W: 600, H: 100}
 	v.SetLines(manyLines(100))
-	c.In = Input{X: 50, Y: 20}
+	c.In = core.Input{X: 50, Y: 20}
 	v.Update(c, r)
 	g := v.geometry(c, r)
 	end := 100*g.lineH - r.H
@@ -593,21 +594,21 @@ func TestCodeViewFollowStaysAtTheEndUntilTheUserScrollsUp(t *testing.T) {
 		t.Fatalf("after growing ScrollY = %d, want %d", v.ScrollY, want)
 	}
 
-	c.In = Input{X: 50, Y: 20, Wheel: 2} // scroll up
+	c.In = core.Input{X: 50, Y: 20, Wheel: 2} // scroll up
 	v.Update(c, r)
 	if v.Follow {
 		t.Fatal("scrolling up must stop following")
 	}
 	up := v.ScrollY
 	v.SetLines(manyLines(130))
-	c.In = Input{X: 50, Y: 20}
+	c.In = core.Input{X: 50, Y: 20}
 	v.Update(c, r)
 	if v.ScrollY == 130*g.lineH-r.H {
 		t.Fatalf("a view the user scrolled up jumped to the end (%d, was %d)", v.ScrollY, up)
 	}
 
 	v.Focused = true
-	c.In = Input{X: 5000, Y: 5000, Keys: []ebiten.Key{ebiten.KeyEnd}}
+	c.In = core.Input{X: 5000, Y: 5000, Keys: []ebiten.Key{ebiten.KeyEnd}}
 	v.Update(c, r)
 	if !v.Follow {
 		t.Fatal("scrolling back to the end must resume following")

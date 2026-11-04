@@ -112,7 +112,7 @@ func (a *App) sendMessage(t *reqTab) {
 		a.logInfo(t, err.Error(), w.Error)
 		return
 	}
-	t.msg = w.NewTextField("")
+	t.msg = NewTextField("")
 	t.msg.Focused = true
 }
 
@@ -199,7 +199,7 @@ func (a *App) logEvent(t *reqTab, e proto.Event) {
 		if i > 0 {
 			head = strings.Repeat(" ", len(stamp)) + "   "
 		}
-		lines = append(lines, w.Line{Spans: []w.Span{
+		lines = append(lines, Line{Spans: []Span{
 			{Text: head, Style: w.Muted},
 			{Text: strings.TrimRight(part, "\r"), Style: textToken(e.Dir, tok)},
 		}})

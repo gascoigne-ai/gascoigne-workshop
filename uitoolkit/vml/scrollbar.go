@@ -1,6 +1,10 @@
-package core
+package vml
 
-import "github.com/hajimehoshi/ebiten/v2"
+import (
+	"github.com/hajimehoshi/ebiten/v2"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+)
 
 const (
 	// ScrollbarW is the width of a scrollbar track in pixels.
@@ -40,7 +44,7 @@ func PosFromOffset(trackLen, contentLen, viewLen, off int) int {
 // Scrollbar draws the thumb in track for the given scroll state; the
 // track is vertical or horizontal by its shape. active brightens it
 // (hover or drag). It draws nothing when everything fits.
-func (c *Ctx) Scrollbar(dst *ebiten.Image, track Rect, contentLen, viewLen, pos int, active bool) {
+func drawScrollbar(c *core.Ctx, dst *ebiten.Image, track core.Rect, contentLen, viewLen, pos int, active bool) {
 	vertical := track.H >= track.W
 	trackLen := track.W
 	if vertical {
@@ -50,13 +54,13 @@ func (c *Ctx) Scrollbar(dst *ebiten.Image, track Rect, contentLen, viewLen, pos 
 	if !ok {
 		return
 	}
-	clr := c.Col(Muted)
+	clr := c.Col(core.Muted)
 	if active {
-		clr = c.Col(Text)
+		clr = c.Col(core.Text)
 	}
-	thumb := Rect{X: track.X + 1, Y: track.Y + off, W: track.W - 2, H: length}
+	thumb := core.Rect{X: track.X + 1, Y: track.Y + off, W: track.W - 2, H: length}
 	if !vertical {
-		thumb = Rect{X: track.X + off, Y: track.Y + 1, W: length, H: track.H - 2}
+		thumb = core.Rect{X: track.X + off, Y: track.Y + 1, W: length, H: track.H - 2}
 	}
 	c.FillStyled(dst, thumb, clr, clr, c.Radius("scrollbar"))
 }
@@ -65,8 +69,8 @@ func (c *Ctx) Scrollbar(dst *ebiten.Image, track Rect, contentLen, viewLen, pos 
 // after the bars, and each bar's track (ok false when not needed).
 type bars struct {
 	viewW, viewH int
-	vTrack       Rect
-	hTrack       Rect
+	vTrack       core.Rect
+	hTrack       core.Rect
 	vOK, hOK     bool
 }
 
@@ -80,14 +84,14 @@ func btoi(b bool) int {
 // layoutBars decides which scrollbars a view in r needs for content of
 // contentW by contentH. A bar takes room from the other direction, so
 // the two decisions depend on each other.
-func layoutBars(r Rect, contentW, contentH int) bars {
+func layoutBars(r core.Rect, contentW, contentH int) bars {
 	var b bars
 	b.vOK = contentH > r.H
 	b.hOK = contentW > r.W-btoi(b.vOK)*ScrollbarW
 	b.vOK = contentH > r.H-btoi(b.hOK)*ScrollbarW
 	b.viewW, b.viewH = r.W-btoi(b.vOK)*ScrollbarW, r.H-btoi(b.hOK)*ScrollbarW
-	b.vTrack = Rect{X: r.X + r.W - ScrollbarW, Y: r.Y, W: ScrollbarW, H: b.viewH}
-	b.hTrack = Rect{X: r.X, Y: r.Y + r.H - ScrollbarW, W: b.viewW, H: ScrollbarW}
+	b.vTrack = core.Rect{X: r.X + r.W - ScrollbarW, Y: r.Y, W: ScrollbarW, H: b.viewH}
+	b.hTrack = core.Rect{X: r.X, Y: r.Y + r.H - ScrollbarW, W: b.viewW, H: ScrollbarW}
 	return b
 }
 
@@ -107,7 +111,7 @@ func (d *barDrag) active() bool { return d.bar != barNone }
 
 // update runs a thumb drag, or starts one (or pages) on a press in a
 // track, moving *sx and *sy.
-func (d *barDrag) update(c *Ctx, b bars, contentW, contentH int, sx, sy *int) {
+func (d *barDrag) update(c *core.Ctx, b bars, contentW, contentH int, sx, sy *int) {
 	in := c.In
 	switch d.bar {
 	case barV:
@@ -152,11 +156,11 @@ func (d *barDrag) press(track, content, view, pos, at, bar int, scroll *int) {
 }
 
 // drawBars draws the scrollbars of b for content scrolled to sx, sy.
-func (c *Ctx) drawBars(dst *ebiten.Image, b bars, d barDrag, contentW, contentH, sx, sy int) {
+func drawBars(c *core.Ctx, dst *ebiten.Image, b bars, d barDrag, contentW, contentH, sx, sy int) {
 	if b.vOK {
-		c.Scrollbar(dst, b.vTrack, contentH, b.viewH, sy, d.bar == barV || c.Hovered(b.vTrack))
+		drawScrollbar(c, dst, b.vTrack, contentH, b.viewH, sy, d.bar == barV || c.Hovered(b.vTrack))
 	}
 	if b.hOK {
-		c.Scrollbar(dst, b.hTrack, contentW, b.viewW, sx, d.bar == barH || c.Hovered(b.hTrack))
+		drawScrollbar(c, dst, b.hTrack, contentW, b.viewW, sx, d.bar == barH || c.Hovered(b.hTrack))
 	}
 }

@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -64,7 +65,7 @@ func TestWebSocketTabConnectsSendsAndDisconnects(t *testing.T) {
 	tab := a.cur()
 	tab.req.Protocol = "websocket"
 	tab.req.URL = echoServer(t)
-	tab.url = core.NewTextField(tab.req.URL)
+	tab.url = vml.NewTextField(tab.req.URL)
 
 	a.send(tab) // the Send button of a socket connects
 	until(t, a, "connection", func() bool { return strings.Contains(logText(tab), "Connected") })
@@ -72,7 +73,7 @@ func TestWebSocketTabConnectsSendsAndDisconnects(t *testing.T) {
 		t.Fatal("no session after connecting")
 	}
 
-	tab.msg = core.NewTextField("hello")
+	tab.msg = vml.NewTextField("hello")
 	a.sendMessage(tab)
 	until(t, a, "echo", func() bool { return strings.Contains(logText(tab), "↓ hello") })
 	if !strings.Contains(logText(tab), "↑ hello") {

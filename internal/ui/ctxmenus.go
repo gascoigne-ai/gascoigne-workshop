@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
-	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
 )
 
@@ -131,7 +130,7 @@ func (a *App) copyRowItems(rows []model.KV, i int, withAll bool) []menuItem {
 
 // textMenu is the menu of a text field or area. changed, when given,
 // runs after the menu changed the text, so the model follows.
-func (a *App) textMenu(f *w.TextField, changed func()) []menuItem {
+func (a *App) textMenu(f *TextField, changed func()) []menuItem {
 	done := func() {
 		if changed != nil {
 			changed()
@@ -168,7 +167,7 @@ func (a *App) textMenu(f *w.TextField, changed func()) []menuItem {
 }
 
 // textMenuOpt makes an element open the text menu of f on right click.
-func (a *App) textMenuOpt(f *w.TextField, changed func()) Option {
+func (a *App) textMenuOpt(f *TextField, changed func()) Option {
 	return OnRightClick(func(x, y int) { a.openMenu(x, y, a.textMenu(f, changed)) })
 }
 

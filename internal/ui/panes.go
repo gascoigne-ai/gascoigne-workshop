@@ -40,7 +40,7 @@ type pane struct {
 	editable       bool                                     // table rows can be toggled and deleted
 	changed        func(t *reqTab)                          // runs after an edit
 	flagDuplicates bool                                     // mark rows that repeat a name
-	code           func(t *reqTab) *w.CodeView              // paneCode
+	code           func(t *reqTab) *CodeView                // paneCode
 	note           func(t *reqTab) string                   // paneNote
 	empty          func(t *reqTab) (msg string, isErr bool) // shown instead of the content
 	caption        func(a *App) string                      // the caption when it depends on the app state
@@ -56,7 +56,7 @@ func (p pane) captionOf(a *App) string {
 
 func paramsChanged(t *reqTab) {
 	t.req.URL = model.WithParams(t.req.URL, t.req.Params)
-	t.url = w.NewTextField(t.req.URL)
+	t.url = NewTextField(t.req.URL)
 }
 
 var requestPanes = []pane{
@@ -261,7 +261,7 @@ func bulkLabel(inBulk bool) string {
 func (a *App) bulkView(p pane, t *reqTab, pad int) Node {
 	return Col(Grow(1), Pad(pad), Gap(6),
 		a.tableCaption(p, t),
-		TextArea(a.bulk.area, Grow(1), Bg(w.Sunken), a.textMenuOpt(&a.bulk.area.TextField, nil)),
+		Area(a.bulk.area, Grow(1), Bg(w.Sunken), a.textMenuOpt(&a.bulk.area.TextField, nil)),
 	)
 }
 
@@ -338,7 +338,7 @@ func (a *App) bodyEditor(t *reqTab, scroll *ScrollState) Node {
 			t.body.Styler = jsonStyler
 		}
 		sync := func() { t.req.Body = t.body.Text }
-		return TextArea(t.body, Grow(1), Bg(w.Sunken), OnChange(sync), a.textMenuOpt(&t.body.TextField, sync))
+		return Area(t.body, Grow(1), Bg(w.Sunken), OnChange(sync), a.textMenuOpt(&t.body.TextField, sync))
 	case model.BodyForm, model.BodyMultipart:
 		return a.tableView(formPane, t, scroll, 0)
 	}
@@ -363,11 +363,11 @@ func (a *App) formatBody(t *reqTab) {
 }
 
 // jsonStyler colors one line of a JSON body.
-func jsonStyler(line string) []w.Span {
+func jsonStyler(line string) []Span {
 	src := jsonview.Tokenize(line)
-	spans := make([]w.Span, len(src))
+	spans := make([]Span, len(src))
 	for i, s := range src {
-		spans[i] = w.Span{Text: s.Text, Style: respview.Tokens[s.Kind]}
+		spans[i] = Span{Text: s.Text, Style: respview.Tokens[s.Kind]}
 	}
 	return spans
 }
@@ -399,7 +399,7 @@ func (a *App) timeoutEdited(t *reqTab) {
 	}
 	n, err := strconv.Atoi(text)
 	if err != nil || n < 0 {
-		t.timeout = w.NewTextField(timeoutText(t.req.TimeoutSec))
+		t.timeout = NewTextField(timeoutText(t.req.TimeoutSec))
 		t.timeout.Focused = true
 		return
 	}

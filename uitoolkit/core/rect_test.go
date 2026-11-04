@@ -118,3 +118,11 @@ func TestSnapSharesEdgesAndLinesAreWholePixels(t *testing.T) {
 		}
 	}
 }
+
+func TestCtrlHomeEndMapToDocMovement(t *testing.T) {
+	for in, want := range map[Edit]Edit{EditHome: EditDocStart, EditEnd: EditDocEnd} {
+		if got, ok := ctrlEdit(in); !ok || got != want {
+			t.Errorf("ctrlEdit(%v) = %v %v, want %v", in, got, ok, want)
+		}
+	}
+}

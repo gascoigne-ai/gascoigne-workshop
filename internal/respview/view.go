@@ -5,6 +5,7 @@ package respview
 
 import (
 	"bytes"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
 	"strings"
 	"unicode/utf8"
 
@@ -23,15 +24,15 @@ var Tokens = map[jsonview.Kind]core.Token{
 }
 
 // CodeLines turns a response body into colored code-view lines.
-func CodeLines(body []byte) []core.Line {
+func CodeLines(body []byte) []vml.Line {
 	src := jsonview.Lines(body)
-	lines := make([]core.Line, len(src))
+	lines := make([]vml.Line, len(src))
 	for i, l := range src {
-		spans := make([]core.Span, len(l.Spans))
+		spans := make([]vml.Span, len(l.Spans))
 		for j, s := range l.Spans {
-			spans[j] = core.Span{Text: s.Text, Style: Tokens[s.Kind]}
+			spans[j] = vml.Span{Text: s.Text, Style: Tokens[s.Kind]}
 		}
-		lines[i] = core.Line{Spans: spans, Foldable: l.Foldable}
+		lines[i] = vml.Line{Spans: spans, Foldable: l.Foldable}
 	}
 	return lines
 }
@@ -46,28 +47,28 @@ const CompactFoldDepth = 2
 
 // CompactLines is the response as compact JSON lines; the opening line of
 // every block carries its one-line preview for when it is folded.
-func CompactLines(body []byte) []core.Line {
+func CompactLines(body []byte) []vml.Line {
 	src := jsonview.Compact(body, CompactWidth)
-	lines := make([]core.Line, len(src))
+	lines := make([]vml.Line, len(src))
 	for i, l := range src {
-		lines[i] = core.Line{Spans: toSpans(l.Spans), Foldable: l.Foldable, FoldedSpans: toSpans(l.Folded), Depth: l.Depth, Num: i + 1}
+		lines[i] = vml.Line{Spans: toSpans(l.Spans), Foldable: l.Foldable, FoldedSpans: toSpans(l.Folded), Depth: l.Depth, Num: i + 1}
 	}
 	return lines
 }
 
-func toSpans(src []jsonview.Span) []core.Span {
+func toSpans(src []jsonview.Span) []vml.Span {
 	if src == nil {
 		return nil
 	}
-	spans := make([]core.Span, len(src))
+	spans := make([]vml.Span, len(src))
 	for j, s := range src {
-		spans[j] = core.Span{Text: s.Text, Style: Tokens[s.Kind]}
+		spans[j] = vml.Span{Text: s.Text, Style: Tokens[s.Kind]}
 	}
 	return spans
 }
 
 // FoldDeep folds every block that opens at nesting depth or deeper.
-func FoldDeep(v *core.CodeView, depth int) {
+func FoldDeep(v *vml.CodeView, depth int) {
 	for i, l := range v.Lines {
 		if l.Foldable && l.Depth >= depth {
 			v.Folded[i] = true
@@ -91,11 +92,11 @@ func LooksBinary(body []byte) bool {
 const binarySample = 8 << 10
 
 // RawLines shows a body exactly as received, one plain line per line.
-func RawLines(body []byte) []core.Line {
+func RawLines(body []byte) []vml.Line {
 	texts := strings.Split(string(body), "\n")
-	lines := make([]core.Line, len(texts))
+	lines := make([]vml.Line, len(texts))
 	for i, text := range texts {
-		lines[i] = core.Line{Spans: []core.Span{{Text: strings.TrimRight(text, "\r"), Style: Tokens[jsonview.Plain]}}}
+		lines[i] = vml.Line{Spans: []vml.Span{{Text: strings.TrimRight(text, "\r"), Style: Tokens[jsonview.Plain]}}}
 	}
 	return lines
 }

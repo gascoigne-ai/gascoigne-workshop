@@ -1,12 +1,11 @@
 package respview
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
 	"strings"
-
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
-func lineText(l core.Line) string {
+func lineText(l vml.Line) string {
 	var sb strings.Builder
 	for _, s := range l.Spans {
 		sb.WriteString(s.Text)
@@ -17,7 +16,7 @@ func lineText(l core.Line) string {
 // blockEnds is, for every foldable line, the index of the line that
 // closes its block: the next line that starts with } or ] after the
 // blocks opened inside it have been closed.
-func blockEnds(lines []core.Line) map[int]int {
+func blockEnds(lines []vml.Line) map[int]int {
 	ends := map[int]int{}
 	var stack []int
 	for i, l := range lines {
@@ -37,7 +36,7 @@ func blockEnds(lines []core.Line) map[int]int {
 // the lines that contain query (any case), all lines inside a matching
 // block (its children), and the opening and closing lines of the blocks
 // around them, so every match is shown in its place in the tree.
-func Filter(lines []core.Line, query string) []core.Line {
+func Filter(lines []vml.Line, query string) []vml.Line {
 	q := strings.ToLower(query)
 	n := len(lines)
 	ends := blockEnds(lines)
@@ -71,7 +70,7 @@ func Filter(lines []core.Line, query string) []core.Line {
 			stack = append(stack, open{i, end})
 		}
 	}
-	var out []core.Line
+	var out []vml.Line
 	for i := 0; i < n; i++ {
 		if keep[i] || enclosing[i] {
 			l := lines[i]

@@ -48,17 +48,17 @@ func (s *scrollB) measure(e *El, c *core.Ctx, maxW int) (int, int) {
 
 func (s *scrollB) track(e *El) core.Rect {
 	r := e.rect
-	return core.Rect{X: r.X + r.W - core.ScrollbarW, Y: r.Y, W: core.ScrollbarW, H: r.H}
+	return core.Rect{X: r.X + r.W - ScrollbarW, Y: r.Y, W: ScrollbarW, H: r.H}
 }
 
 func (s *scrollB) layout(e *El, c *core.Ctx) {
 	r := e.rect
 	_, s.content = s.flow.measure(e, c, e.inner().W)
-	s.state.Y = core.ClampScroll(s.state.Y, s.content, r.H)
+	s.state.Y = ClampScroll(s.state.Y, s.content, r.H)
 
 	width := r.W
 	if s.content > r.H {
-		width -= core.ScrollbarW
+		width -= ScrollbarW
 	}
 	e.rect = core.Rect{X: r.X, Y: r.Y - s.state.Y, W: width, H: max(s.content, r.H)}
 	s.flow.layout(e, c)
@@ -73,7 +73,7 @@ func (s *scrollB) update(e *El, c *core.Ctx) {
 			st.dragging = false
 			return
 		}
-		st.Y = core.PosFromOffset(track.H, s.content, r.H, in.Y-track.Y-st.grab)
+		st.Y = PosFromOffset(track.H, s.content, r.H, in.Y-track.Y-st.grab)
 		return
 	}
 	if in.Click && track.Contains(in.X, in.Y) {
@@ -81,7 +81,7 @@ func (s *scrollB) update(e *El, c *core.Ctx) {
 		return
 	}
 	if in.Wheel != 0 && in.Over(r) && s.content > r.H {
-		st.Y = core.ClampScroll(st.Y+int(-in.Wheel*wheelStep), s.content, r.H)
+		st.Y = ClampScroll(st.Y+int(-in.Wheel*wheelStep), s.content, r.H)
 		c.In.Wheel = 0 // consumed, so an enclosing scroller does not move too
 	}
 }
@@ -90,21 +90,21 @@ func (s *scrollB) update(e *El, c *core.Ctx) {
 // toward the press.
 func (s *scrollB) press(track core.Rect, view, at int) {
 	st := s.state
-	off, length, ok := core.Thumb(track.H, s.content, view, st.Y)
+	off, length, ok := Thumb(track.H, s.content, view, st.Y)
 	switch {
 	case !ok:
 	case at >= off && at < off+length:
 		st.dragging, st.grab = true, at-off
 	case at < off:
-		st.Y = core.ClampScroll(st.Y-view, s.content, view)
+		st.Y = ClampScroll(st.Y-view, s.content, view)
 	default:
-		st.Y = core.ClampScroll(st.Y+view, s.content, view)
+		st.Y = ClampScroll(st.Y+view, s.content, view)
 	}
 }
 
 func (s *scrollB) drawOver(e *El, c *core.Ctx, dst *ebiten.Image) {
 	track := s.track(e)
-	c.Scrollbar(dst, track, s.content, e.rect.H, s.state.Y, s.state.dragging || c.Hovered(track))
+	drawScrollbar(c, dst, track, s.content, e.rect.H, s.state.Y, s.state.dragging || c.Hovered(track))
 }
 
 // Scroll is a vertically scrolling column: its children may be taller
