@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/textfmt"
 	"strings"
 
@@ -100,7 +101,7 @@ func (a *App) treeRow(row treeRow, selected bool) Node {
 	}
 	req := row.Req
 	return Row(append([]Item{H(w.RowH), PadL(indent + 6), PadR(w.Pad), AlignItems(AlignBaseline), look,
-		Text(requestBadge(req.Protocol, req.Method), Small(), Color(methodToken(req.Method)), W(badgeW)),
+		Text(requestBadge(req.Protocol, req.Method), Small(), Color(appearance.MethodToken(req.Method)), W(badgeW)),
 		Text(row.Name, Ellipsis(), Grow(1)),
 	}, events...)...)
 }
@@ -191,7 +192,7 @@ func (a *App) requestTabs() Node {
 				OnRightClick(func(x, y int) { a.openMenu(x, y, a.tabMenuItems(i)) }),
 				Separator(i > 0, 12),
 				Row(PadL(14), Gap(8), AlignItems(AlignBaseline), grab, OnHeldOver(func() { a.dragOver(i) }),
-					Text(requestBadge(t.req.Protocol, t.req.Method), Small(), Color(methodToken(t.req.Method)), W(tabBadgeW)),
+					Text(requestBadge(t.req.Protocol, t.req.Method), Small(), Color(appearance.MethodToken(t.req.Method)), W(tabBadgeW)),
 					Text(t.req.Name),
 					Row(W(tabDirtyW), AlignSelf(AlignStretch), If(dirty(t), Text(dirtyMark, Color(w.AccentLine), Grow(1)))),
 				),
@@ -223,7 +224,7 @@ func (a *App) urlBar(t *reqTab) Node {
 		Row(Grow(1), Bg(w.Sunken), Control("field"),
 			tip("Protocol: click to change", chip(protocolLabel[t.req.Protocol], w.Muted, 64, func() { a.cycleProtocol(t) })),
 			If(isREST, VRuleInset(8)), // a divider between the chips, none after the last one
-			If(isREST, tip("Method: click to change", chip(t.req.Method, methodToken(t.req.Method), 84, func() { a.cycleMethod(t) }))),
+			If(isREST, tip("Method: click to change", chip(t.req.Method, appearance.MethodToken(t.req.Method), 84, func() { a.cycleMethod(t) }))),
 			Spacer(W(w.Pad-4)), // breathing room between the divider and the URL text
 			Field(&t.url, Grow(1),
 				Placeholder("Enter URL"),

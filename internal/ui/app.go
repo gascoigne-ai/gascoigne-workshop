@@ -3,6 +3,7 @@ package ui
 import (
 	"context"
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/textfmt"
 	"reflect"
 	"strconv"
@@ -211,9 +212,9 @@ func NewApp(opts Options) (*App, error) {
 	if opts.SettingsPath != "" {
 		st, loadErr = settings.Load(opts.SettingsPath)
 	}
-	themes, themeProblems := loadUserThemes(opts.ThemesDir)
-	userThemes = themes
-	th := ThemeWith(st)
+	themes, themeProblems := appearance.LoadUserThemes(opts.ThemesDir)
+	appearance.SetUserThemes(themes)
+	th := appearance.ThemeWith(st)
 	ctx, err := widget.NewCtx(th)
 	if err != nil {
 		return nil, err

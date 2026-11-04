@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/appearance"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
@@ -37,35 +38,35 @@ func (a *App) setColorNote(tok w.Token, note string) {
 // colorEdited applies the hex a user typed for c, or says why not: a
 // color that does not parse, or whose text would be unreadable on it
 // (with the ratio), is refused and nothing changes.
-func (a *App) colorEdited(c customColor) {
-	text := a.colorInput(c.token).Text
+func (a *App) colorEdited(c appearance.CustomColor) {
+	text := a.colorInput(c.Token).Text
 	col, err := w.ParseHex(text)
 	if err != nil {
-		a.setColorNote(c.token, "Use #rrggbb")
+		a.setColorNote(c.Token, "Use #rrggbb")
 		return
 	}
-	need := requiredRatio(a.settings.Contrast)
-	if ratio := w.ContrastRatio(col, a.ctx.Th.Color(c.text)); ratio < need {
-		a.setColorNote(c.token, fmt.Sprintf("Contrast %.1f:1 is below %.1f:1", ratio, need))
+	need := appearance.RequiredRatio(a.settings.Contrast)
+	if ratio := w.ContrastRatio(col, a.ctx.Th.Color(c.Text)); ratio < need {
+		a.setColorNote(c.Token, fmt.Sprintf("Contrast %.1f:1 is below %.1f:1", ratio, need))
 		return
 	}
-	a.setColorNote(c.token, "")
+	a.setColorNote(c.Token, "")
 	a.saveSettings(func(s *settings.Settings) {
-		id := themeIDOf(s.Theme)
+		id := appearance.ThemeIDOf(s.Theme)
 		if s.Colors == nil {
 			s.Colors = map[string]map[string]string{}
 		}
 		if s.Colors[id] == nil {
 			s.Colors[id] = map[string]string{}
 		}
-		s.Colors[id][string(c.token)] = w.FormatHex(col)
+		s.Colors[id][string(c.Token)] = w.FormatHex(col)
 	})
 }
 
 // resetColor drops the override of one color in the current theme.
 func (a *App) resetColor(tok w.Token) {
 	a.saveSettings(func(s *settings.Settings) {
-		delete(s.Colors[themeIDOf(s.Theme)], string(tok))
+		delete(s.Colors[appearance.ThemeIDOf(s.Theme)], string(tok))
 	})
 	delete(a.colorInputs, tok)
 	a.setColorNote(tok, "")
@@ -73,7 +74,7 @@ func (a *App) resetColor(tok w.Token) {
 
 // resetColors drops every color override of the current theme.
 func (a *App) resetColors() {
-	a.saveSettings(func(s *settings.Settings) { delete(s.Colors, themeIDOf(s.Theme)) })
+	a.saveSettings(func(s *settings.Settings) { delete(s.Colors, appearance.ThemeIDOf(s.Theme)) })
 	a.colorInputs, a.colorNotes = nil, nil
 }
 
@@ -82,26 +83,26 @@ func (a *App) resetColors() {
 func (a *App) colorsView() Node {
 	return Col(
 		Caption("Colors", H(w.LabelH)),
-		For(customColors, func(_ int, c customColor) Node { return a.colorRow(c) }),
+		For(appearance.CustomColors, func(_ int, c appearance.CustomColor) Node { return a.colorRow(c) }),
 		Row(H(w.RowH), Button("Reset colors", W(110), OnClick(a.resetColors))),
 	)
 }
 
-func (a *App) colorRow(c customColor) Node {
-	in := a.colorInput(c.token)
+func (a *App) colorRow(c appearance.CustomColor) Node {
+	in := a.colorInput(c.Token)
 	border := w.Border
-	note := a.colorNotes[c.token]
+	note := a.colorNotes[c.Token]
 	if note != "" {
 		border = w.Error
 	}
 	return Col(
 		Row(H(w.RowH), Gap(6),
-			Text(c.label, Small(), W(76)),
-			Row(W(20), H(w.NoteH), Bg(c.token), Control("swatch")), // shows the color in effect
+			Text(c.Label, Small(), W(76)),
+			Row(W(20), H(w.NoteH), Bg(c.Token), Control("swatch")), // shows the color in effect
 			Field(in, W(70), H(w.CompactH), Bg(w.Sunken), Border(border),
 				OnChange(func() { a.colorEdited(c) }),
 				a.textMenuOpt(in, func() { a.colorEdited(c) })),
-			Button("Reset", W(44), H(w.CompactH), OnClick(func() { a.resetColor(c.token) })),
+			Button("Reset", W(44), H(w.CompactH), OnClick(func() { a.resetColor(c.Token) })),
 		),
 		If(note != "", Row(H(w.NoteH), Text(note, Small(), Color(w.Error), Ellipsis(), Grow(1)))),
 	)

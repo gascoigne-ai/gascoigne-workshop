@@ -1,4 +1,4 @@
-package ui
+package appearance
 
 import (
 	"image/color"
@@ -16,17 +16,17 @@ func withColors(theme string, colors map[string]string) settings.Settings {
 }
 
 func TestThemeWithDefaultsEqualsThemeFor(t *testing.T) {
-	for _, tc := range themeChoices {
+	for _, tc := range ThemeChoices {
 		s := settings.Default()
-		s.Theme = tc.id
-		want, got := ThemeFor(tc.id, s.TextSize), ThemeWith(s)
-		for _, c := range customColors {
-			if want.Color(c.token) != got.Color(c.token) {
-				t.Errorf("%s: %s differs without overrides", tc.id, c.token)
+		s.Theme = tc.ID
+		want, got := ThemeFor(tc.ID, s.TextSize), ThemeWith(s)
+		for _, c := range CustomColors {
+			if want.Color(c.Token) != got.Color(c.Token) {
+				t.Errorf("%s: %s differs without overrides", tc.ID, c.Token)
 			}
 		}
 		if want.FontSize != got.FontSize {
-			t.Errorf("%s: font size", tc.id)
+			t.Errorf("%s: font size", tc.ID)
 		}
 	}
 }
@@ -64,18 +64,18 @@ func TestBadOverridesAreIgnored(t *testing.T) {
 }
 
 func TestHighContrastMakesTheListedColorsReadableInEveryTheme(t *testing.T) {
-	for _, tc := range themeChoices {
+	for _, tc := range ThemeChoices {
 		s := settings.Default()
-		s.Theme, s.Contrast = tc.id, "high"
+		s.Theme, s.Contrast = tc.ID, "high"
 		th := ThemeWith(s)
-		for _, c := range customColors {
-			if r := widget.ContrastRatio(th.Color(c.token), th.Color(c.text)); r < highRatio-0.01 {
-				t.Errorf("%s: %s has contrast %.2f, want at least %.1f", tc.id, c.token, r, highRatio)
+		for _, c := range CustomColors {
+			if r := widget.ContrastRatio(th.Color(c.Token), th.Color(c.Text)); r < HighRatio-0.01 {
+				t.Errorf("%s: %s has contrast %.2f, want at least %.1f", tc.ID, c.Token, r, HighRatio)
 			}
 		}
-		normal := ThemeFor(tc.id, s.TextSize)
+		normal := ThemeFor(tc.ID, s.TextSize)
 		if th.Color(widget.Bg) != normal.Color(widget.Bg) || th.Color(widget.Text) != normal.Color(widget.Text) {
-			t.Errorf("%s: high contrast must not touch the rest of the palette", tc.id)
+			t.Errorf("%s: high contrast must not touch the rest of the palette", tc.ID)
 		}
 	}
 }
@@ -85,7 +85,7 @@ func TestHighContrastRaisesTheBarForOverrides(t *testing.T) {
 	hex := "#5a5a2a"
 	c, _ := widget.ParseHex(hex)
 	r := widget.ContrastRatio(c, ThemeFor("dark", "medium").Color(widget.Text))
-	if r < normalRatio || r >= highRatio {
+	if r < NormalRatio || r >= HighRatio {
 		t.Fatalf("test setup: ratio %.2f", r)
 	}
 	s := withColors("dark", map[string]string{"selection": hex})
@@ -99,8 +99,8 @@ func TestHighContrastRaisesTheBarForOverrides(t *testing.T) {
 }
 
 func TestUnknownThemeIDFallsBackLikeThemeFor(t *testing.T) {
-	if themeIDOf("neon") != "dark" || themeIDOf("light") != "light" {
-		t.Fatalf("themeIDOf = %q %q", themeIDOf("neon"), themeIDOf("light"))
+	if ThemeIDOf("neon") != "dark" || ThemeIDOf("light") != "light" {
+		t.Fatalf("ThemeIDOf = %q %q", ThemeIDOf("neon"), ThemeIDOf("light"))
 	}
 	s := withColors("dark", map[string]string{"accent": "#aaccee"})
 	s.Theme = "neon" // resolves to dark, so dark's overrides apply
@@ -110,19 +110,19 @@ func TestUnknownThemeIDFallsBackLikeThemeFor(t *testing.T) {
 }
 
 func TestRequiredRatio(t *testing.T) {
-	if requiredRatio("normal") != normalRatio || requiredRatio("high") != highRatio || requiredRatio("") != normalRatio || requiredRatio("x") != normalRatio {
+	if RequiredRatio("normal") != NormalRatio || RequiredRatio("high") != HighRatio || RequiredRatio("") != NormalRatio || RequiredRatio("x") != NormalRatio {
 		t.Fatal("normal unless high")
 	}
 }
 
 func TestCustomColorLookup(t *testing.T) {
-	for _, c := range customColors {
-		got, ok := customColorOf(c.token)
-		if !ok || got.token != c.token {
-			t.Errorf("customColorOf(%s) = %v %v", c.token, got, ok)
+	for _, c := range CustomColors {
+		got, ok := CustomColorOf(c.Token)
+		if !ok || got.Token != c.Token {
+			t.Errorf("CustomColorOf(%s) = %v %v", c.Token, got, ok)
 		}
 	}
-	if _, ok := customColorOf(widget.Text); ok {
+	if _, ok := CustomColorOf(widget.Text); ok {
 		t.Fatal("text is not customizable")
 	}
 }

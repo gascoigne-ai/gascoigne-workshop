@@ -1,4 +1,4 @@
-package ui
+package appearance
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/respview"
@@ -30,17 +30,17 @@ func contrast(a, b color.RGBA) float64 {
 // Method labels and JSON colors are drawn on the list and code
 // background; they must be readable in every theme.
 func TestAppColorsAreReadableOnLists(t *testing.T) {
-	for _, tc := range themeChoices {
-		th := tc.build()
+	for _, tc := range ThemeChoices {
+		th := tc.Build()
 		bg := th.Color(widget.Sunken)
 		for _, m := range []string{"GET", "POST", "PUT", "PATCH", "DELETE"} {
-			if got := contrast(th.Color(methodToken(m)), bg); got < 3.5 {
-				t.Errorf("%s: method %s contrast %.2f", tc.id, m, got)
+			if got := contrast(th.Color(MethodToken(m)), bg); got < 3.5 {
+				t.Errorf("%s: method %s contrast %.2f", tc.ID, m, got)
 			}
 		}
 		for kind, tok := range respview.Tokens {
 			if got := contrast(th.Color(tok), bg); got < 3.5 {
-				t.Errorf("%s: json kind %d contrast %.2f", tc.id, kind, got)
+				t.Errorf("%s: json kind %d contrast %.2f", tc.ID, kind, got)
 			}
 		}
 	}
@@ -76,7 +76,7 @@ func TestThemeFor(t *testing.T) {
 
 func TestUnknownMethodFallsBackToTheTextColor(t *testing.T) {
 	th := ThemeFor("dark", "medium")
-	if th.Color(methodToken("PROPFIND")) != th.Color(widget.Text) {
+	if th.Color(MethodToken("PROPFIND")) != th.Color(widget.Text) {
 		t.Fatal("unknown method must resolve to the text color")
 	}
 }
@@ -96,11 +96,11 @@ func TestCodeLinesKeepsStructureAndColors(t *testing.T) {
 }
 
 func TestMethodTokenForRequestsWithoutAMethod(t *testing.T) {
-	if methodToken("") != widget.Muted {
+	if MethodToken("") != widget.Muted {
 		t.Fatal("a request without a method (WebSocket, MCP) uses the muted color")
 	}
-	if methodToken("GET") != "method.GET" {
-		t.Fatalf("methodToken(GET) = %q", methodToken("GET"))
+	if MethodToken("GET") != "method.GET" {
+		t.Fatalf("MethodToken(GET) = %q", MethodToken("GET"))
 	}
 }
 
@@ -116,10 +116,10 @@ func TestThemeWithAppliesCornersAndTheFlatSwitch(t *testing.T) {
 		t.Fatalf("square and flat: %+v", th.Style("button"))
 	}
 	s.Corners = "round"
-	if ThemeWith(s).Style("button").Radius <= th.Style("button").Radius+1 && cornerScale("round") <= 1 {
+	if ThemeWith(s).Style("button").Radius <= th.Style("button").Radius+1 && CornerScale("round") <= 1 {
 		t.Fatal("round must be rounder than soft")
 	}
-	if cornerScale("nonsense") != 1 {
+	if CornerScale("nonsense") != 1 {
 		t.Fatal("an unknown corner id is soft")
 	}
 }
@@ -127,31 +127,11 @@ func TestThemeWithAppliesCornersAndTheFlatSwitch(t *testing.T) {
 func TestAppThemesCarryMethodAndJSONColorsOverTheToolkitStyles(t *testing.T) {
 	for _, id := range []string{"dark", "light"} {
 		th := ThemeFor(id, "medium")
-		if th.Color(methodToken("GET")) == th.Color(widget.Text) || th.Color(respview.Tokens[jsonview.Key]) == (color.RGBA{}) {
+		if th.Color(MethodToken("GET")) == th.Color(widget.Text) || th.Color(respview.Tokens[jsonview.Key]) == (color.RGBA{}) {
 			t.Errorf("%s: app colors missing", id)
 		}
 		if th.Style("primary").Radius <= 0 {
 			t.Errorf("%s: toolkit control styles lost under the app overlay", id)
-		}
-	}
-}
-
-func TestStatusPillsFollowTheDashboardBadges(t *testing.T) {
-	for status, want := range map[int][2]widget.Token{
-		200: {widget.OK, widget.OKSoft}, 204: {widget.OK, widget.OKSoft},
-		301: {widget.Warn, widget.WarnSoft}, 404: {widget.Error, widget.ErrorSoft}, 500: {widget.Error, widget.ErrorSoft},
-	} {
-		if fg, bg := statusPill(status); fg != want[0] || bg != want[1] {
-			t.Errorf("%d: %v on %v, want %v on %v", status, fg, bg, want[0], want[1])
-		}
-	}
-	for _, id := range []string{"dark", "light"} {
-		th := ThemeFor(id, "medium")
-		for _, status := range []int{200, 301, 404} {
-			fg, bg := statusPill(status)
-			if r := widget.ContrastRatio(th.Color(fg), th.Color(bg)); r < 3.5 {
-				t.Errorf("%s: pill %d text %.2f:1 on its background", id, status, r)
-			}
 		}
 	}
 }

@@ -1,4 +1,4 @@
-package ui
+package appearance
 
 import (
 	"image/color"
@@ -7,15 +7,15 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
-// customColor is a color users can change, and the text that has to
+// CustomColor is a color users can change, and the text that has to
 // stay readable on it.
-type customColor struct {
-	token widget.Token
-	label string
-	text  widget.Token // the text color drawn on it
+type CustomColor struct {
+	Token widget.Token
+	Label string
+	Text  widget.Token // the text color drawn on it
 }
 
-var customColors = []customColor{
+var CustomColors = []CustomColor{
 	{widget.Selection, "Selection", widget.Text},
 	{widget.FindMatch, "Find match", widget.Text},
 	{widget.FindActive, "Active match", widget.Text},
@@ -24,41 +24,41 @@ var customColors = []customColor{
 
 // Contrast ratios the colors must reach against their text.
 const (
-	normalRatio = 4.5
-	highRatio   = 7.0
+	NormalRatio = 4.5
+	HighRatio   = 7.0
 )
 
-type contrastChoice struct{ id, label string }
+type ContrastChoice struct{ ID, Label string }
 
-var contrastChoices = []contrastChoice{{"normal", "Normal"}, {"high", "High"}}
+var ContrastChoices = []ContrastChoice{{"normal", "Normal"}, {"high", "High"}}
 
-func customColorOf(tok widget.Token) (customColor, bool) {
-	for _, c := range customColors {
-		if c.token == tok {
+func CustomColorOf(tok widget.Token) (CustomColor, bool) {
+	for _, c := range CustomColors {
+		if c.Token == tok {
 			return c, true
 		}
 	}
-	return customColor{}, false
+	return CustomColor{}, false
 }
 
-// requiredRatio is the contrast a custom color must reach: normal
+// RequiredRatio is the contrast a custom color must reach: normal
 // unless the contrast setting is high.
-func requiredRatio(contrast string) float64 {
+func RequiredRatio(contrast string) float64 {
 	if contrast == "high" {
-		return highRatio
+		return HighRatio
 	}
-	return normalRatio
+	return NormalRatio
 }
 
-// themeIDOf is the id of the theme a settings value resolves to:
+// ThemeIDOf is the id of the theme a settings value resolves to:
 // unknown ids fall back to the first (dark), as ThemeFor does.
-func themeIDOf(id string) string {
-	for _, c := range allThemeChoices() {
-		if c.id == id {
+func ThemeIDOf(id string) string {
+	for _, c := range AllThemeChoices() {
+		if c.ID == id {
 			return id
 		}
 	}
-	return themeChoices[0].id
+	return ThemeChoices[0].ID
 }
 
 // ThemeWith is the theme for the settings: the chosen theme and text
@@ -66,28 +66,28 @@ func themeIDOf(id string) string {
 // overrides for that theme. An override that does not parse, is not a
 // customizable color or would make its text unreadable is ignored.
 func ThemeWith(s settings.Settings) widget.Theme {
-	id := themeIDOf(s.Theme)
+	id := ThemeIDOf(s.Theme)
 	th := ThemeFor(id, s.TextSize)
-	th.RadiusScale, th.NoGradients = cornerScale(s.Corners), s.Flat
+	th.RadiusScale, th.NoGradients = CornerScale(s.Corners), s.Flat
 	if s.Contrast == "high" {
 		strong := map[widget.Token]color.RGBA{}
-		for _, c := range customColors {
-			strong[c.token] = widget.EnsureContrast(th.Color(c.token), th.Color(c.text), highRatio)
+		for _, c := range CustomColors {
+			strong[c.Token] = widget.EnsureContrast(th.Color(c.Token), th.Color(c.Text), HighRatio)
 		}
 		th = th.With(strong)
 	}
-	need := requiredRatio(s.Contrast)
+	need := RequiredRatio(s.Contrast)
 	overrides := map[widget.Token]color.RGBA{}
 	for name, hex := range s.Colors[id] {
-		c, ok := customColorOf(widget.Token(name))
+		c, ok := CustomColorOf(widget.Token(name))
 		if !ok {
 			continue
 		}
 		col, err := widget.ParseHex(hex)
-		if err != nil || widget.ContrastRatio(col, th.Color(c.text)) < need {
+		if err != nil || widget.ContrastRatio(col, th.Color(c.Text)) < need {
 			continue
 		}
-		overrides[c.token] = col
+		overrides[c.Token] = col
 	}
 	return th.With(overrides)
 }

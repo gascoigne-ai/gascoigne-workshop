@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -88,23 +89,23 @@ func (a *App) appearanceView() Node {
 	return Col(
 		Caption("Theme", H(w.LabelH)),
 		Row(H(w.RowH), Gap(6),
-			For(allThemeChoices(), func(_ int, c themeChoice) Node {
-				return a.choice(c.label, c.id == a.settings.Theme, func(s *settings.Settings) { s.Theme = c.id })
+			For(appearance.AllThemeChoices(), func(_ int, c appearance.ThemeChoice) Node {
+				return a.choice(c.Label, c.ID == a.settings.Theme, func(s *settings.Settings) { s.Theme = c.ID })
 			}),
 		),
 		Spacer(H(w.Pad)),
 
 		Caption("Text size", H(w.LabelH)),
 		Row(H(w.RowH), Gap(6),
-			For(textSizeChoices, func(_ int, c sizeChoice) Node {
-				return a.choice(c.label, c.id == a.settings.TextSize, func(s *settings.Settings) { s.TextSize = c.id })
+			For(appearance.TextSizeChoices, func(_ int, c appearance.SizeChoice) Node {
+				return a.choice(c.Label, c.ID == a.settings.TextSize, func(s *settings.Settings) { s.TextSize = c.ID })
 			}),
 		),
 		Spacer(H(w.Pad)),
 
 		Caption("Interface scale", H(w.LabelH)),
 		Row(H(w.RowH), Gap(8),
-			Slider(&a.scaleSlider, scaleMin, scaleMax, scaleStep, a.scalePct(),
+			Slider(&a.scaleSlider, appearance.ScaleMin, appearance.ScaleMax, appearance.ScaleStep, a.scalePct(),
 				func(v int) { a.settings.UIScalePct, a.dirty = v, true }, // live: the UI resizes while dragging
 				SliderMid(settings.DefaultUIScalePct),
 				OnSlideEnd(func(int) { a.saveSettings(func(*settings.Settings) {}) }),
@@ -115,11 +116,8 @@ func (a *App) appearanceView() Node {
 
 		Caption("Corners", H(w.LabelH)),
 		Row(H(w.RowH), Gap(6),
-			For(cornerChoices, func(_ int, c struct {
-				id, label string
-				scale     float64
-			}) Node {
-				return a.choice(c.label, c.id == cornerIDOf(a.settings.Corners), func(s *settings.Settings) { s.Corners = c.id })
+			For(appearance.CornerChoices, func(_ int, c appearance.CornerChoice) Node {
+				return a.choice(c.Label, c.ID == appearance.CornerIDOf(a.settings.Corners), func(s *settings.Settings) { s.Corners = c.ID })
 			}),
 		),
 		Spacer(H(w.Pad)),
@@ -133,16 +131,16 @@ func (a *App) appearanceView() Node {
 
 		Caption("Request / response", H(w.LabelH)),
 		Row(H(w.RowH), Gap(6),
-			For(layoutChoices, func(_ int, c layoutChoice) Node {
-				return a.choice(c.label, c.id == a.settings.Layout, func(s *settings.Settings) { s.Layout = c.id })
+			For(appearance.LayoutChoices, func(_ int, c appearance.LayoutChoice) Node {
+				return a.choice(c.Label, c.ID == a.settings.Layout, func(s *settings.Settings) { s.Layout = c.ID })
 			}),
 		),
 		Spacer(H(w.Pad)),
 
 		Caption("Contrast", H(w.LabelH)),
 		Row(H(w.RowH), Gap(6),
-			For(contrastChoices, func(_ int, c contrastChoice) Node {
-				return a.choice(c.label, c.id == a.settings.Contrast, func(s *settings.Settings) { s.Contrast = c.id })
+			For(appearance.ContrastChoices, func(_ int, c appearance.ContrastChoice) Node {
+				return a.choice(c.Label, c.ID == a.settings.Contrast, func(s *settings.Settings) { s.Contrast = c.ID })
 			}),
 		),
 		Spacer(H(w.Pad)),
@@ -222,7 +220,7 @@ func (a *App) changeSettings(edit func(*settings.Settings)) {
 // saveSettings edits, applies and saves the settings.
 func (a *App) saveSettings(edit func(*settings.Settings)) {
 	edit(&a.settings)
-	if err := a.ctx.SetTheme(ThemeWith(a.settings)); err != nil {
+	if err := a.ctx.SetTheme(appearance.ThemeWith(a.settings)); err != nil {
 		a.status = err.Error()
 		return
 	}

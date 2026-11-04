@@ -2,6 +2,7 @@ package ui
 
 import (
 	"errors"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
@@ -1023,18 +1024,18 @@ func TestTabWidthDoesNotChangeWhenTheRequestChanges(t *testing.T) {
 }
 
 func TestTheTabSlotsFitTheirContentAtEveryTextSize(t *testing.T) {
-	for _, size := range textSizeChoices {
-		ctx, err := widget.NewCtx(ThemeFor("dark", size.id))
+	for _, size := range appearance.TextSizeChoices {
+		ctx, err := widget.NewCtx(appearance.ThemeFor("dark", size.ID))
 		if err != nil {
 			t.Fatal(err)
 		}
 		for _, badge := range []string{"GET", "POST", "PUT", "PATCH", "DEL", "WS", "MCP"} {
 			if got := ctx.Width(ctx.F.Small, badge); got > tabBadgeW {
-				t.Errorf("%s: %q is %dpx wide, the badge slot is %dpx", size.id, badge, got, tabBadgeW)
+				t.Errorf("%s: %q is %dpx wide, the badge slot is %dpx", size.ID, badge, got, tabBadgeW)
 			}
 		}
 		if got := ctx.Width(ctx.F.UI, dirtyMark); got > tabDirtyW {
-			t.Errorf("%s: the dirty mark is %dpx wide, the slot is %dpx", size.id, got, tabDirtyW)
+			t.Errorf("%s: the dirty mark is %dpx wide, the slot is %dpx", size.ID, got, tabDirtyW)
 		}
 	}
 }
@@ -2890,7 +2891,7 @@ func TestContrastChooserStrengthensTheColorsAndIsSaved(t *testing.T) {
 		t.Fatalf("Contrast = %q", a.settings.Contrast)
 	}
 	after := widget.ContrastRatio(a.ctx.Th.Color(widget.Selection), a.ctx.Th.Color(widget.Text))
-	if after < highRatio-0.01 || after <= before {
+	if after < appearance.HighRatio-0.01 || after <= before {
 		t.Fatalf("selection contrast %.2f -> %.2f", before, after)
 	}
 	if saved, _ := settings.Load(path); saved.Contrast != "high" {
@@ -2968,10 +2969,10 @@ func TestSwitchingThemeShowsThatThemesColorsAndKeepsEachThemesOverrides(t *testi
 	a.settingsCat = "appearance"
 	a.step(widget.Input{})
 	click(a, lightChipX, themeRowY) // the Light theme chip
-	if a.ctx.Th.Color(widget.Selection) != ThemeFor("light", "medium").Color(widget.Selection) {
+	if a.ctx.Th.Color(widget.Selection) != appearance.ThemeFor("light", "medium").Color(widget.Selection) {
 		t.Fatal("the dark override must not leak into the light theme")
 	}
-	if a.colorInput(widget.Selection).Text != widget.FormatHex(ThemeFor("light", "medium").Color(widget.Selection)) {
+	if a.colorInput(widget.Selection).Text != widget.FormatHex(appearance.ThemeFor("light", "medium").Color(widget.Selection)) {
 		t.Fatalf("the field must show the light theme's color, got %q", a.colorInput(widget.Selection).Text)
 	}
 	click(a, 584, themeRowY) // back to Dark
@@ -2995,7 +2996,7 @@ func TestColorsAreRestoredAtStart(t *testing.T) {
 	if a.ctx.Th.Color(widget.Accent) != widget.RGB(0xaaccee) {
 		t.Fatalf("accent = %v", a.ctx.Th.Color(widget.Accent))
 	}
-	if widget.ContrastRatio(a.ctx.Th.Color(widget.Selection), a.ctx.Th.Color(widget.Text)) < highRatio-0.01 {
+	if widget.ContrastRatio(a.ctx.Th.Color(widget.Selection), a.ctx.Th.Color(widget.Text)) < appearance.HighRatio-0.01 {
 		t.Fatal("high contrast is applied at start")
 	}
 }
