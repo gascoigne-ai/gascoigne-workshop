@@ -39,7 +39,7 @@ func TestRegistrySend(t *testing.T) {
 	}{
 		{"rest", model.Request{Protocol: "rest", URL: srv.URL}, false, "", 200},
 		{"websocket", model.Request{Protocol: "websocket"}, false, "URL scheme", 0},
-		{"mcp stub", model.Request{Protocol: "mcp"}, false, "not implemented", 0},
+		{"mcp", model.Request{Protocol: "mcp"}, false, "not an http or https URL", 0},
 		{"unknown", model.Request{Protocol: "carrier-pigeon"}, true, "", 0},
 	}
 	for _, tt := range tests {

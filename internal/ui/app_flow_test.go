@@ -299,13 +299,13 @@ func TestOtherProtocolsAnswerThroughTheSameUI(t *testing.T) {
 	if tab.sess != nil {
 		t.Fatal("connected to an https URL")
 	}
-	tab.resp = nil
 	click(a, 300, urlBarY) // websocket -> mcp
-	click(a, sendX, urlBarY)
-	waitForResponse(t, a, tab)
-	if !strings.Contains(tab.resp.Err, "not implemented") {
-		t.Fatalf("resp = %+v", tab.resp)
+	if tab.req.Protocol != "mcp" {
+		t.Fatalf("protocol %q", tab.req.Protocol)
 	}
+	tab.req.URL = "ftp://nowhere.test" // no network in tests
+	click(a, sendX, urlBarY)
+	until(t, a, "failed connect", func() bool { return !tab.connecting && strings.Contains(logText(tab), "not an http or https URL") })
 }
 
 func TestSettingsMenuOpensChangesThemeAndSaves(t *testing.T) {

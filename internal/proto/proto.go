@@ -27,7 +27,7 @@ func NewRegistry() Registry {
 	return Registry{
 		"rest":      REST{},
 		"websocket": WebSocket{},
-		"mcp":       notImplemented{name: "mcp"},
+		"mcp":       MCP{},
 	}
 }
 
@@ -48,14 +48,6 @@ func (r Registry) Send(ctx context.Context, req model.Request) (model.Response, 
 		return model.Response{}, fmt.Errorf("unknown protocol %q", req.Protocol)
 	}
 	return p.Send(ctx, req)
-}
-
-// notImplemented is the placeholder for protocols whose client is not
-// written yet, so selecting one in the UI gives a clear answer.
-type notImplemented struct{ name string }
-
-func (n notImplemented) Send(context.Context, model.Request) (model.Response, error) {
-	return model.Response{Err: n.name + " is not implemented yet"}, nil
 }
 
 func sortKV(rows []model.KV) {

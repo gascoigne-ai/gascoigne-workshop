@@ -10,7 +10,7 @@ import (
 	w "github.com/gascoigne-ai/gascoigne-workshop/ui/widget"
 )
 
-// A WebSocket tab keeps a session open instead of making one request.
+// A WebSocket or MCP tab keeps a session open instead of making one request.
 // The Send button becomes Connect / Disconnect, the response side shows
 // the message log, and the composer under the log sends messages.
 
@@ -31,7 +31,7 @@ type wsEvent struct {
 var retryDelay = 2 * time.Second
 
 // isSocket reports whether the tab's protocol keeps a connection open.
-func isSocket(t *reqTab) bool { return t.req.Protocol == "websocket" }
+func isSocket(t *reqTab) bool { return t.req.Protocol == "websocket" || t.req.Protocol == "mcp" }
 
 // wsPanes are the panes of a socket's response side.
 var wsPanes = []pane{{label: "Messages", kind: paneMessages}}
@@ -239,7 +239,7 @@ func (a *App) messagesPane(_ pane, t *reqTab, _ *ScrollState) Node {
 		),
 		Code(&t.wsView, Grow(1), Bg(w.Sunken)),
 		Row(H(w.RowH+16), PadXY(w.Pad, 8), Gap(6), BorderTop(w.Border),
-			Field(&t.msg, Grow(1), Placeholder(composerHint(connected)),
+			Field(&t.msg, Grow(1), Placeholder(composerHint(t, connected)),
 				OnEnter(func() { a.sendMessage(t) }),
 				a.textMenuOpt(&t.msg, nil),
 			),
@@ -258,9 +258,12 @@ func connState(t *reqTab) string {
 	return "Not connected"
 }
 
-func composerHint(connected bool) string {
-	if connected {
-		return "Message"
+func composerHint(t *reqTab, connected bool) string {
+	switch {
+	case !connected:
+		return "Connect to send messages"
+	case t.req.Protocol == "mcp":
+		return "call TOOL {json}  ·  read URI  ·  prompt NAME {json}  ·  method {json}  ·  or raw JSON-RPC"
 	}
-	return "Connect to send messages"
+	return "Message"
 }
