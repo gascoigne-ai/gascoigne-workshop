@@ -5,10 +5,14 @@ package main
 import (
 	"errors"
 	"flag"
+	"image"
+	"image/png"
 	"log"
+	"os"
 
 	"github.com/hajimehoshi/ebiten/v2"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/appicon"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/state"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui"
@@ -28,8 +32,15 @@ func main() {
 	flag.StringVar(&opts.ThemesDir, "themes", settings.ThemesDir(), "folder of theme files (*.json) that extend the dark or light theme; empty for none")
 	flag.StringVar(&opts.WorkspaceDir, "workspace", "", "folder to load and save the collection; empty uses the last one, else the built-in sample")
 	opts.DefaultWorkspace = settings.DefaultWorkspace()
+	iconPNG := flag.String("icon-png", "", "write the program icon (256x256 PNG) to this path and exit, for packaging")
 	flag.BoolVar(&opts.OpenMenu, "menu", false, "start with the settings menu open (for screenshots)")
 	flag.Parse()
+	if *iconPNG != "" {
+		if err := writeIcon(*iconPNG); err != nil {
+			log.Fatal(err)
+		}
+		return
+	}
 	if opts.ScreenshotPath != "" && !flagSet("state") {
 		opts.StatePath = "" // screenshots must not read or write the real state
 	}
@@ -45,6 +56,7 @@ func main() {
 			ebiten.SetWindowPosition(w.X, w.Y)
 		}
 	}
+	ebiten.SetWindowIcon([]image.Image{appicon.Image(32), appicon.Image(64), appicon.Image(128)})
 	ebiten.SetWindowTitle("Gascoigne Workshop")
 	ebiten.SetWindowSizeLimits(720, 480, -1, -1) // below this the panes cannot show their controls
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
@@ -68,4 +80,17 @@ func flagSet(name string) bool {
 	set := false
 	flag.Visit(func(f *flag.Flag) { set = set || f.Name == name })
 	return set
+}
+
+// writeIcon saves the program icon as a PNG file.
+func writeIcon(path string) error {
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	if err := png.Encode(f, appicon.Image(256)); err != nil {
+		f.Close()
+		return err
+	}
+	return f.Close()
 }

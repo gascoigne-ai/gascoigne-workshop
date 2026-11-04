@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Gascoigne Workshop
+GenericName=API client
+Comment=Send REST, WebSocket, SSE, GraphQL and MCP requests
+Exec=gascoigne-workshop
+Icon=gascoigne-workshop
+Terminal=false
+Categories=Development;Network;
+Keywords=api;rest;http;websocket;graphql;mcp;
+StartupWMClass=workshop

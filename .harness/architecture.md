@@ -238,3 +238,5 @@ Row(H(urlH), PadX(w.Pad), PadY(8), Gap(8), Bg(w.Bg),
 - **GraphQL** (`internal/proto/graphql.go`, `internal/ui/graphql.go`): body type `graphql` encodes `{"query", "variables"}` as JSON (`encodeGraphQL`; bad variables and an empty query are errors); choosing it on a GET request makes it POST. `App.dispatch(tab, request)` is the one place a request is sent for a tab, so helper requests such as `loadSchema` reuse the tab's URL, headers and credentials.
 
 - **Focus scrolling and drag-expand**: after a Tab moves focus, `vml.revealFocused` scrolls every `Scroll` holding the focused field so the field is inside its box; `App.dragHover` opens a closed folder a tree drag has rested over for `dragExpandTicks` (30) frames.
+
+- **Icon and packaging**: `internal/appicon.Image(size)` draws the program icon (burgundy rounded square, the `>_` prompt); `main` sets it as the window icon and `-icon-png FILE` writes it for packaging. `packaging/gascoigne-workshop.desktop` and `make install` install the binary, the entry and the icon; `.github/workflows/check.yml` runs `make check` under xvfb.

@@ -18,4 +18,6 @@ Make the app dependable to ship.
 
 ## Progress
 - Done: the window title shows the collection and a dot while something is unsaved (`App.Title`); a minimum window size of 720x480.
-- Left: the rest.
+- Done later: a drawn program icon (`internal/appicon`, set as the window icon, `-icon-png FILE` writes a 256 px PNG), `packaging/gascoigne-workshop.desktop` and `make install PREFIX=...` (binary, desktop entry, icon); a GitHub Actions workflow running `make check` under xvfb.
+- Reviewed: ignored errors in `internal/ui` are the clipboard (it reports through `statusClipboard`), cookie jar creation (cannot fail without options) and closes on shutdown; no silent failure path was found.
+- Left: golden screenshot tests (pixels cannot be read without a running game loop; the `-screenshot` mode is the manual check), IME and dead keys (depends on Ebitengine's text input), an accessibility pass.
