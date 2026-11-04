@@ -6,6 +6,8 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/textfmt"
+	"net/http"
+	"net/http/cookiejar"
 	"reflect"
 	"strconv"
 	"time"
@@ -187,6 +189,7 @@ type App struct {
 	statePath        string         // where the UI state is remembered
 	varsFolder       *model.Folder  // the folder whose variables the Vars pane edits, nil for the environment's or the collection's
 	varsCollection   bool           // the Vars pane edits the collection's variables although an environment is active
+	jar              http.CookieJar // cookies the server set, kept until the app closes
 	env              int            // index of the active environment in col.Envs, -1 for none
 	workspace        string         // the folder the collection is saved to; "" for none yet
 	defaultWorkspace string         // where the first save goes when there is no workspace
@@ -244,6 +247,8 @@ func NewApp(opts Options) (*App, error) {
 	if loadErr != nil {
 		a.status = loadErr.Error()
 	}
+	a.jar, _ = cookiejar.New(nil)
+	a.reg["rest"] = proto.REST{Jar: a.jar, Proxy: st.Proxy}
 	ctx.Clipboard = statusClipboard{inner: ctx.Clipboard, report: a.clipboardNote}
 	a.dragTab = -1
 	a.dirty = true

@@ -30,6 +30,7 @@ type Request struct {
 
 	TimeoutSec  int  // seconds before the request is abandoned; 0 uses the default
 	NoRedirects bool // stop at the first redirect instead of following it
+	InsecureTLS bool // accept any server certificate (self-signed test servers)
 }
 
 // Body types a request can send.
@@ -68,6 +69,8 @@ type Environment struct {
 // Response is the outcome of sending a Request. Err is set instead of
 // Status when no response was received.
 type Response struct {
+	Timing     Timing // where the time went, from net/http/httptrace
+	Truncated  bool   // the body was cut at the size limit; Size is what was kept
 	Status     int
 	StatusText string
 	Duration   time.Duration
@@ -75,6 +78,14 @@ type Response struct {
 	Headers    []KV
 	Body       []byte
 	Err        string
+}
+
+// Timing splits a request into its phases. A phase the connection did not
+// go through (a reused connection has no DNS, connect or TLS) is zero.
+type Timing struct {
+	DNS, Connect, TLS time.Duration
+	FirstByte         time.Duration // from sending the request to the first byte of the answer
+	Transfer          time.Duration // reading the body
 }
 
 // Clone returns a deep copy of r: editing the copy's rows never changes

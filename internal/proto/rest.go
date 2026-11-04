@@ -3,11 +3,13 @@ package proto
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/http/httptrace"
 	"net/url"
 	"strings"
 	"time"
@@ -22,6 +24,17 @@ const maxBody = 32 << 20
 type REST struct {
 	// Client is used when set; the zero value uses a plain http.Client.
 	Client *http.Client
+
+	// Jar, when set, keeps cookies between requests (shared by all of them).
+	Jar http.CookieJar
+
+	// Proxy is the URL of an HTTP proxy for every request; "" uses the
+	// environment's (HTTP_PROXY and friends).
+	Proxy string
+
+	// MaxBody bounds how much of a response is kept; 0 means the default
+	// of 32 MiB. A longer body is cut and the response says so.
+	MaxBody int64
 }
 
 // Send implements Protocol. Request params are not applied here: the
@@ -57,27 +70,35 @@ func (r REST) Send(ctx context.Context, req model.Request) (model.Response, erro
 	}
 	apply(req.Auth, httpReq) // after the headers, so the Auth pane wins over one typed by hand
 
-	client := r.Client
-	if client == nil {
-		client = &http.Client{}
+	client, err := r.client(req)
+	if err != nil {
+		return model.Response{Err: err.Error()}, nil
 	}
-	if req.NoRedirects {
-		stop := *client
-		stop.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
-		client = &stop
-	}
+	tr := &tracer{}
+	httpReq = httpReq.WithContext(httptrace.WithClientTrace(httpReq.Context(), tr.trace()))
 	start := time.Now()
 	resp, err := client.Do(httpReq)
 	if err != nil {
 		return model.Response{Err: failureText(err), Duration: time.Since(start)}, nil
 	}
 	defer resp.Body.Close()
+	headersAt := time.Now()
 
-	respBody, err := io.ReadAll(io.LimitReader(resp.Body, maxBody))
+	limit := r.MaxBody
+	if limit <= 0 {
+		limit = maxBody
+	}
+	respBody, err := io.ReadAll(io.LimitReader(resp.Body, limit+1))
 	if err != nil {
 		return model.Response{Err: failureText(err), Duration: time.Since(start)}, nil
 	}
+	truncated := int64(len(respBody)) > limit
+	if truncated {
+		respBody = respBody[:limit]
+	}
 	return model.Response{
+		Timing:     tr.timing(start, headersAt, time.Now()),
+		Truncated:  truncated,
 		Status:     resp.StatusCode,
 		StatusText: http.StatusText(resp.StatusCode),
 		Duration:   time.Since(start),
@@ -185,4 +206,48 @@ var authAppliers = map[string]func(a model.Auth, r *http.Request){
 		}
 		r.Header.Set(a.KeyName, a.KeyValue)
 	},
+}
+
+// client is the http.Client for req: the configured one, with the cookie
+// jar, the proxy, the certificate check and the redirect rule of the
+// request applied to a copy.
+func (r REST) client(req model.Request) (*http.Client, error) {
+	c := &http.Client{}
+	if r.Client != nil {
+		cp := *r.Client
+		c = &cp
+	}
+	if c.Jar == nil {
+		c.Jar = r.Jar
+	}
+	if req.NoRedirects {
+		c.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+	}
+	if r.Proxy == "" && !req.InsecureTLS {
+		return c, nil
+	}
+	var base *http.Transport
+	switch t := c.Transport.(type) {
+	case nil:
+		base = http.DefaultTransport.(*http.Transport).Clone()
+	case *http.Transport:
+		base = t.Clone()
+	default:
+		return c, nil // a custom round tripper is left alone
+	}
+	if r.Proxy != "" {
+		u, err := url.Parse(r.Proxy)
+		if err != nil || u.Host == "" {
+			return nil, fmt.Errorf("the proxy %q is not a URL like http://host:port", r.Proxy)
+		}
+		base.Proxy = http.ProxyURL(u)
+	}
+	if req.InsecureTLS {
+		if base.TLSClientConfig == nil {
+			base.TLSClientConfig = &tls.Config{}
+		}
+		base.TLSClientConfig.InsecureSkipVerify = true //nolint: the request asked for it
+	}
+	c.Transport = base
+	return c, nil
 }

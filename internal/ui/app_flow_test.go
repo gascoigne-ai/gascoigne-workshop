@@ -2539,7 +2539,7 @@ func TestTabMenu(t *testing.T) {
 	a := twoTabs(t)
 	left, _ := a.tabX(0)
 	rightClick(a, left+20, tabStripY)
-	want := []string{"Close", "Close others", "Close tabs to the right", "", "Duplicate", "Copy URL"}
+	want := []string{"Close", "Close others", "Close tabs to the right", "", "Duplicate", "Copy URL", "Clear cookies"}
 	if got := menuLabels(a); !reflect.DeepEqual(got, want) {
 		t.Fatalf("tab menu = %q", got)
 	}

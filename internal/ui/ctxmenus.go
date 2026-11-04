@@ -1,6 +1,9 @@
 package ui
 
 import (
+	"net/http/cookiejar"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
@@ -24,6 +27,7 @@ func (a *App) tabMenuItems(i int) []menuItem {
 		menuSeparator,
 		{label: "Duplicate", run: func() { a.duplicateTab(i) }},
 		{label: "Copy URL", run: func() { a.copyRequestURL(t.req) }},
+		{label: "Clear cookies", run: a.clearCookies},
 	}
 }
 
@@ -184,4 +188,17 @@ func (a *App) responseMenuItems(t *reqTab) []menuItem {
 		{label: "Select all", shortcut: "Ctrl+A", run: func() { t.view.SelectLines(0, len(t.view.Lines)-1) }},
 		{label: "Find", shortcut: a.shortcutHint("find"), run: a.openFind},
 	}
+}
+
+// clearCookies forgets every cookie the servers set. The jar is replaced,
+// so connections made before keep nothing.
+func (a *App) clearCookies() {
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		a.toast(err.Error(), true)
+		return
+	}
+	a.jar = jar
+	a.reg["rest"] = proto.REST{Jar: jar, Proxy: a.settings.Proxy}
+	a.toast("Cookies cleared", false)
 }

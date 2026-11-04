@@ -94,9 +94,7 @@ var responsePanes = []pane{
 			return &t.resp.Headers
 		}},
 	{label: "Timeline", kind: paneNote, empty: noResponse,
-		note: func(t *reqTab) string {
-			return fmt.Sprintf("Duration  %s\nSize      %s", textfmt.Duration(t.resp.Duration), textfmt.Size(t.resp.Size))
-		}},
+		note: func(t *reqTab) string { return timelineText(t.resp) }},
 	{label: "Tests", kind: paneNote,
 		note: func(*reqTab) string { return "No tests" }},
 }
@@ -385,6 +383,11 @@ func (a *App) settingsPane(_ pane, t *reqTab, scroll *ScrollState) Node {
 		Row(H(w.RowH), Gap(8), OnClick(func() { t.req.NoRedirects = !t.req.NoRedirects }),
 			Checkbox(!t.req.NoRedirects),
 			Text("Follow redirects"),
+		),
+		Row(H(w.RowH), Gap(8), OnClick(func() { t.req.InsecureTLS = !t.req.InsecureTLS }),
+			Checkbox(!t.req.InsecureTLS),
+			Text("Verify the server certificate"),
+			Text("off accepts self-signed certificates", Small(), Muted()),
 		),
 	)
 }

@@ -16,3 +16,7 @@ The response viewer shows text bodies well. Missing: other body kinds, long bodi
 ## Acceptance
 - Tests for truncation, wrap geometry, history ring and persistence round trip.
 - `make check` passes; architecture.md updated.
+
+## Progress
+- Done: bodies longer than the limit are cut and `Response.Truncated` says so (`REST.MaxBody`, default 32 MiB; the Timeline pane shows the note).
+- Left: the rest.

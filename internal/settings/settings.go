@@ -54,6 +54,10 @@ type Settings struct {
 	// Environment is the name of the active environment, "" for none.
 	Environment string `json:"environment,omitempty"`
 
+	// Proxy is the URL of an HTTP proxy for every REST request, such as
+	// "http://localhost:8080"; "" uses the environment's.
+	Proxy string `json:"proxy,omitempty"`
+
 	// TimeoutSec is the default request timeout in seconds.
 	TimeoutSec int `json:"timeoutSec"`
 }

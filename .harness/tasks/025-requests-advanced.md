@@ -16,3 +16,7 @@ Sending works for plain calls. Missing for real APIs: path variables, cookies, p
 ## Acceptance
 - Tests against `httptest` servers (cookies set and sent, proxy used, TLS with a test CA, multipart with a file, assertions pass and fail).
 - `make check` passes; architecture.md updated.
+
+## Progress
+- Done: timeline from `httptrace` (`model.Timing`, the Timeline pane lists total, DNS, connect, TLS, first byte, transfer, size); a cookie jar shared by all REST requests until the app closes (tab menu `Clear cookies`); `Request.InsecureTLS` (Settings pane checkbox `Verify the server certificate`, saved with the request); an HTTP proxy from `settings.proxy` (no UI, file only), all tested against `httptest` servers.
+- Left: path variables `:id`, cookie viewer, SOCKS5 and custom CA and client certificates, file bodies (needs the file dialog), scripts and assertions.
