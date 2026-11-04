@@ -103,7 +103,7 @@ func (f flow) measure(e *El, c *widget.Ctx, maxW int) (int, int) {
 	inW := max(maxW-e.padL-e.padR, 0)
 	var main, cross, n, above, below int
 	for _, k := range e.kids {
-		if k.hidden || k.float {
+		if k.hidden || k.fl.on {
 			continue
 		}
 		w, h := k.size(c, inW)
@@ -142,7 +142,7 @@ func (f flow) layout(e *El, c *widget.Ctx) {
 
 	used, growSum, n := 0, 0.0, 0
 	for i, k := range e.kids {
-		if k.hidden || k.float {
+		if k.hidden || k.fl.on {
 			continue
 		}
 		n++
@@ -162,7 +162,7 @@ func (f flow) layout(e *El, c *widget.Ctx) {
 	baseMax, baseBelow := 0, 0 // the line of baseline-aligned children: above and below the baseline
 	if e.alignItems == AlignBaseline && f.horiz {
 		for i, k := range e.kids {
-			if !k.hidden && !k.float {
+			if !k.hidden && !k.fl.on {
 				base := f.baseline(k, c, hug[i])
 				baseMax, baseBelow = max(baseMax, base), max(baseBelow, hug[i]-base)
 			}
@@ -172,12 +172,12 @@ func (f flow) layout(e *El, c *widget.Ctx) {
 
 	lastGrow, given := -1, 0
 	for i, k := range e.kids {
-		if !k.hidden && !k.float && f.growing(k) {
+		if !k.hidden && !k.fl.on && f.growing(k) {
 			lastGrow = i
 		}
 	}
 	for i, k := range e.kids {
-		if k.hidden || k.float {
+		if k.hidden || k.fl.on {
 			k.rect = widget.Rect{}
 			continue
 		}
@@ -294,7 +294,7 @@ func (e *El) dropOptional(f flow, sizes []int, avail int) {
 	total, n := 0, 0
 	for i, k := range e.kids {
 		k.hidden = false
-		if k.float {
+		if k.fl.on {
 			continue
 		}
 		total += sizes[i]
@@ -318,7 +318,7 @@ type stack struct{ plain }
 func (stack) measure(e *El, c *widget.Ctx, maxW int) (int, int) {
 	var w, h int
 	for _, k := range e.kids {
-		if k.float {
+		if k.fl.on {
 			continue
 		}
 		kw, kh := k.size(c, maxW)
@@ -330,7 +330,7 @@ func (stack) measure(e *El, c *widget.Ctx, maxW int) (int, int) {
 func (stack) layout(e *El, c *widget.Ctx) {
 	in := e.inner()
 	for _, k := range e.kids {
-		if !k.float {
+		if !k.fl.on {
 			k.place(c, in)
 			continue
 		}
@@ -375,9 +375,9 @@ func with(base []Item, opts []Option) []Item {
 
 // floatRect places a floating child in the stack's inner rect.
 func floatRect(k *El, in widget.Rect, w, h int) widget.Rect {
-	switch k.floatMode {
+	switch k.fl.mode {
 	case floatPoint:
-		x, y := in.X+k.floatRight, in.Y+k.floatTop // floatRight holds x, floatTop holds y
+		x, y := in.X+k.fl.right, in.Y+k.fl.top // floatRight holds x, floatTop holds y
 		if x+w > in.X+in.W {
 			x = in.X + in.W - w
 		}
@@ -388,5 +388,5 @@ func floatRect(k *El, in widget.Rect, w, h int) widget.Rect {
 	case floatMiddle:
 		return widget.Rect{X: in.X + (in.W-w)/2, Y: in.Y + (in.H-h)/2, W: w, H: h}
 	}
-	return widget.Rect{X: in.X + in.W - k.floatRight - w, Y: in.Y + k.floatTop, W: w, H: h}
+	return widget.Rect{X: in.X + in.W - k.fl.right - w, Y: in.Y + k.fl.top, W: w, H: h}
 }

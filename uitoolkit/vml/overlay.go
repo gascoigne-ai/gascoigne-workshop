@@ -12,12 +12,12 @@ const (
 // left of the edge when it would stick out on the right, above y when it
 // would stick out at the bottom.
 func FloatAt(x, y int) Option {
-	return func(e *El) { e.float, e.floatMode, e.floatTop, e.floatRight = true, floatPoint, y, x }
+	return func(e *El) { e.fl.on, e.fl.mode, e.fl.top, e.fl.right = true, floatPoint, y, x }
 }
 
 // FloatCenter takes the element out of its Stack's layout and centers it.
 func FloatCenter() Option {
-	return func(e *El) { e.float, e.floatMode = true, floatMiddle }
+	return func(e *El) { e.fl.on, e.fl.mode = true, floatMiddle }
 }
 
 // FocusScope makes Tab cycle only through the focusable elements inside

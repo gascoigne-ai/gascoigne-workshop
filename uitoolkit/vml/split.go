@@ -27,7 +27,7 @@ type splitB struct {
 }
 
 func (s *splitB) axis(e *El) (origin, total int) {
-	if e.splitVertical {
+	if e.split.vertical {
 		return e.rect.Y, e.rect.H
 	}
 	return e.rect.X, e.rect.W
@@ -41,11 +41,11 @@ func (s *splitB) firstSize(e *El, avail int) int {
 		size = s.def
 	}
 	px := int(size)
-	if e.splitRatio {
+	if e.split.ratio {
 		px = int(size * float64(avail))
 	}
-	hi := max(avail-e.splitMinSecond, e.splitMinFirst)
-	return min(max(px, e.splitMinFirst), hi)
+	hi := max(avail-e.split.minSecond, e.split.minFirst)
+	return min(max(px, e.split.minFirst), hi)
 }
 
 func (s *splitB) layout(e *El, c *widget.Ctx) {
@@ -56,7 +56,7 @@ func (s *splitB) layout(e *El, c *widget.Ctx) {
 	_, total := s.axis(e)
 	avail := max(total-1, 0)
 	px := min(s.firstSize(e, avail), avail)
-	if e.splitVertical {
+	if e.split.vertical {
 		s.divider = widget.Rect{X: r.X, Y: r.Y + px, W: r.W, H: 1}
 		e.kids[0].place(c, widget.Rect{X: r.X, Y: r.Y, W: r.W, H: px})
 		e.kids[1].place(c, widget.Rect{X: r.X, Y: r.Y + px + 1, W: r.W, H: avail - px})
@@ -74,7 +74,7 @@ func (s *splitB) draw(e *El, c *widget.Ctx, dst *ebiten.Image) {
 // handle is the area that grabs the divider, a little wider than it.
 func (s *splitB) handle(e *El) widget.Rect {
 	d := s.divider
-	if e.splitVertical {
+	if e.split.vertical {
 		return widget.Rect{X: d.X, Y: d.Y - handleSlop, W: d.W, H: 1 + 2*handleSlop}
 	}
 	return widget.Rect{X: d.X - handleSlop, Y: d.Y, W: 1 + 2*handleSlop, H: d.H}
@@ -86,7 +86,7 @@ func (s *splitB) update(e *El, c *widget.Ctx) {
 	}
 	in, st := c.In, s.state
 	cursor, pointer, divPos := widget.CursorResizeH, in.X, s.divider.X
-	if e.splitVertical {
+	if e.split.vertical {
 		cursor, pointer, divPos = widget.CursorResizeV, in.Y, s.divider.Y
 	}
 	origin, total := s.axis(e)
@@ -99,7 +99,7 @@ func (s *splitB) update(e *El, c *widget.Ctx) {
 		}
 		c.Cursor = cursor
 		px := float64(pointer - origin - st.grab)
-		if e.splitRatio {
+		if e.split.ratio {
 			px /= float64(avail)
 		}
 		st.Size = max(px, 1e-6) // 0 would mean "the default"
@@ -128,13 +128,13 @@ func Split(state *SplitState, def float64, items ...Item) *El {
 }
 
 // Vertical makes a Split stack its children.
-func Vertical() Option { return func(e *El) { e.splitVertical = true } }
+func Vertical() Option { return func(e *El) { e.split.vertical = true } }
 
 // AsRatio makes a Split's size a fraction of the container instead of pixels.
-func AsRatio() Option { return func(e *El) { e.splitRatio = true } }
+func AsRatio() Option { return func(e *El) { e.split.ratio = true } }
 
 // MinFirst is the smallest size in pixels of a Split's first child.
-func MinFirst(n int) Option { return func(e *El) { e.splitMinFirst = n } }
+func MinFirst(n int) Option { return func(e *El) { e.split.minFirst = n } }
 
 // MinSecond is the smallest size in pixels of a Split's second child.
-func MinSecond(n int) Option { return func(e *El) { e.splitMinSecond = n } }
+func MinSecond(n int) Option { return func(e *El) { e.split.minSecond = n } }

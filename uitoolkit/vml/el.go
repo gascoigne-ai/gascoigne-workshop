@@ -77,20 +77,17 @@ type El struct {
 	tip                          string // tooltip text, shown after the pointer rests on the element
 	reveal                       bool   // an HScroll keeps this child in view when it becomes the flagged one
 
-	alignItems, alignSelf         Align
-	justify                       Justify
-	minW, maxW, minH, maxH        int
-	mL, mT, mR, mB                int // margins
-	splitVertical, splitRatio     bool
-	splitMinFirst, splitMinSecond int
+	alignItems, alignSelf  Align
+	justify                Justify
+	minW, maxW, minH, maxH int
+	mL, mT, mR, mB         int       // margins
+	split                  splitOpts // set by Split
 
-	float                bool
-	floatTop, floatRight int
-	floatMode            int // floatCorner, floatPoint or floatMiddle
-	focusScope           bool
-	onRight              func(x, y int)
-	modal                bool
-	onDismiss            func()
+	fl         floatOpts // set by Float, FloatAt and FloatCenter
+	focusScope bool
+	onRight    func(x, y int)
+	modal      bool
+	onDismiss  func()
 }
 
 // Item is anything that can go between the parentheses of a
@@ -255,7 +252,7 @@ func OnHeldOver(f func()) Option { return func(e *El) { e.onHeldOver = f } }
 // Float takes the element out of the layout of its Stack and pins it
 // top and right, this many pixels from those edges.
 func Float(top, right int) Option {
-	return func(e *El) { e.float, e.floatTop, e.floatRight = true, top, right }
+	return func(e *El) { e.fl.on, e.fl.top, e.fl.right = true, top, right }
 }
 
 // Modal makes a floating element swallow every click; a click outside
@@ -270,4 +267,17 @@ func If(cond bool, n Node) Node {
 		return n
 	}
 	return nil
+}
+
+// splitOpts are the settings of a Split element.
+type splitOpts struct {
+	vertical, ratio     bool
+	minFirst, minSecond int
+}
+
+// floatOpts are the settings of a floating element.
+type floatOpts struct {
+	on         bool
+	top, right int
+	mode       int // floatCorner, floatPoint or floatMiddle
 }

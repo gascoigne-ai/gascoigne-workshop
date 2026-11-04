@@ -61,7 +61,7 @@ func (s *hscrollB) layout(e *El, c *widget.Ctx) {
 	flagged, x := -1, e.padL
 	var start, end int
 	for i, k := range e.kids {
-		if k.hidden || k.float {
+		if k.hidden || k.fl.on {
 			continue
 		}
 		w, _ := k.size(c, 1<<20)
