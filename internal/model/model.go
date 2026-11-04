@@ -31,6 +31,7 @@ type Request struct {
 	TimeoutSec  int    // seconds before the request is abandoned; 0 uses the default
 	NoRedirects bool   // stop at the first redirect instead of following it
 	InsecureTLS bool   // accept any server certificate (self-signed test servers)
+	GraphQLVars string // variables of a GraphQL body, JSON text
 	Tests       string // assertions about the response, one per line (package assert)
 }
 
@@ -41,7 +42,8 @@ const (
 	BodyText      = "text"
 	BodyForm      = "form"
 	BodyMultipart = "multipart"
-	BodyFile      = "file" // Body holds the path of the file to send as it is
+	BodyGraphQL   = "graphql" // Body is the query, GraphQLVars the variables as JSON
+	BodyFile      = "file"    // Body holds the path of the file to send as it is
 )
 
 // Folder groups requests and nested folders in a collection tree.
@@ -140,6 +142,7 @@ func (r Request) Expanded(vars []KV) Request {
 			r.Params[i].Value = Expand(r.Params[i].Value, vars)
 		}
 	}
+	r.GraphQLVars = Expand(r.GraphQLVars, vars)
 	r.URL, r.Body = Expand(ApplyPathParams(r.URL, r.Params), vars), Expand(r.Body, vars)
 	for _, rows := range [][]KV{r.Headers, r.Form} {
 		for i := range rows {

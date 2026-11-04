@@ -315,6 +315,7 @@ var bodyTypes = []struct {
 	{model.BodyText, "Text", 64},
 	{model.BodyForm, "Form", 64},
 	{model.BodyMultipart, "Multipart", 84},
+	{model.BodyGraphQL, "GraphQL", 80},
 	{model.BodyFile, "File", 64},
 }
 
@@ -333,17 +334,17 @@ func (a *App) bodyPane(p pane, t *reqTab, scroll *ScrollState) Node {
 	}
 	return Col(Grow(1), Pad(w.Gutter), Gap(8),
 		Row(H(w.RowH), Gap(6),
-			For(bodyTypes, func(_ int, bt struct {
-				id, label string
-				width     int
-			}) Node {
-				choose := OnClick(func() { a.setBodyType(t, bt.id) })
-				if bt.id == kind {
-					return PrimaryButton(bt.label, W(bt.width), choose)
-				}
-				return Button(bt.label, W(bt.width), choose)
-			}),
-			Spacer(),
+			HScroll(&t.bodyTypesX, Grow(1), Gap(6), // the type chips scroll sideways when the pane is narrow
+				For(bodyTypes, func(_ int, bt struct {
+					id, label string
+					width     int
+				}) Node {
+					choose := OnClick(func() { a.setBodyType(t, bt.id) })
+					if bt.id == kind {
+						return PrimaryButton(bt.label, W(bt.width), choose, KeepInView())
+					}
+					return Button(bt.label, W(bt.width), choose)
+				})),
 			If(isJSON && status != "", Text(status, Small(), Color(statusColor), Ellipsis(), Optional())),
 			If(isJSON, Button("Format", W(70), OnClick(func() { a.formatBody(t) }))),
 		),
@@ -365,6 +366,8 @@ func (a *App) bodyEditor(t *reqTab, scroll *ScrollState) Node {
 		return a.tableView(formPane, t, scroll, 0)
 	case model.BodyFile:
 		return a.fileBody(t)
+	case model.BodyGraphQL:
+		return a.graphQLBody(t)
 	}
 	return Lines("This request has no body", w.Muted)
 }
@@ -376,6 +379,11 @@ func (a *App) setBodyType(t *reqTab, id string) {
 	}
 	if id == model.BodyFile {
 		t.req.Body = t.file.Text
+	} else if id == model.BodyGraphQL {
+		t.req.Body = t.body.Text
+		if t.req.Protocol == "rest" && (t.req.Method == "" || t.req.Method == "GET") {
+			t.req.Method = "POST" // a query goes in the body
+		}
 	}
 	t.req.BodyType = id
 }

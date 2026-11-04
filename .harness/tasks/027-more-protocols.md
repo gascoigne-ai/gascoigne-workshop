@@ -17,3 +17,5 @@ Protocols are a registry; REST, WebSocket and MCP exist.
 ## Progress
 - Done: SSE (`internal/proto/sse.go`, protocol `sse`, chip `SSE`): a receive-only streaming protocol on the Messages pane without a composer; event id shows as `[id] data`, the event name is the kind; one-shot send returns the first event; the Auto-reconnect chip applies. Tested against a streaming `httptest` server.
 - Left: GraphQL (query editor, variables, introspection), gRPC (ask before adding dependencies), `Last-Event-ID` on reconnect.
+- Done later: GraphQL as a body type of REST requests (`model.BodyGraphQL`, `Request.GraphQLVars`): the Body tab has a query editor, a JSON variables editor with validation, and `Load schema`, which sends the introspection query (`proto.IntrospectionQuery`) to the tab's URL with its headers and credentials and shows the answer as the response, without touching the tab's own query. The body type chips scroll sideways when the pane is narrow.
+- Left: gRPC (ask before adding dependencies), `Last-Event-ID` on reconnect, a schema outline view.

@@ -62,9 +62,11 @@ type reqTab struct {
 	pictureInfo           string          // "PNG 640x480, 12.5KB"
 	tests                 vml.TextArea    // the assertions editor
 	testResults           []assert.Result // what the assertions found in the shown response
+	gqlVars               vml.TextArea    // the variables of a GraphQL body
 	file                  vml.TextField   // the path of a file body
 	body                  vml.TextArea    // request body editor
 	reqScroll, respScroll vml.ScrollState // scroll of the table and note panes
+	bodyTypesX            vml.ScrollState // sideways scroll of the body type chips
 	reqTabsX, respTabsX   vml.ScrollState // sideways scroll of the two pane tab strips
 	sending               bool
 	hist                  map[string]*rowHistory    // undo history of each table
@@ -138,6 +140,7 @@ func newTab(req *model.Request) *reqTab {
 	t.body = vml.NewTextArea(req.Body)
 	t.tests = vml.NewTextArea(req.Tests)
 	t.file = vml.NewTextField(req.Body)
+	t.gqlVars = vml.NewTextArea(req.GraphQLVars)
 	return t
 }
 
@@ -300,14 +303,21 @@ func (a *App) send(t *reqTab) {
 		a.toggleConnection(t)
 		return
 	}
+	a.dispatch(t, t.req)
+}
+
+// dispatch sends req on behalf of tab t: the request of the tab, or a
+// helper one such as a GraphQL schema query that uses the tab's URL and
+// credentials.
+func (a *App) dispatch(t *reqTab, source *model.Request) {
 	if t.sending {
 		return
 	}
 	t.sending = true
 	t.seq++
 	seq := t.seq
-	a.status = "Sending " + t.req.URL
-	req := t.req.Expanded(a.varsFor(t.req))
+	a.status = "Sending " + source.URL
+	req := source.Expanded(a.varsFor(t.req))
 	ctx, cancel := context.WithTimeout(context.Background(), a.timeoutFor(req))
 	t.cancel = cancel
 	go func() {

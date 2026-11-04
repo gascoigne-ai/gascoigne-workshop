@@ -70,6 +70,7 @@ type requestFile struct {
 	TimeoutSec  int      `json:"timeoutSec,omitempty"`
 	NoRedirects bool     `json:"noRedirects,omitempty"`
 	InsecureTLS bool     `json:"insecureTls,omitempty"`
+	GraphQLVars string   `json:"graphqlVars,omitempty"`
 	Tests       string   `json:"tests,omitempty"`
 }
 
@@ -298,7 +299,7 @@ func requestToFile(r *model.Request) (requestFile, secret) {
 		Params: toKV(r.Params), Headers: toKV(r.Headers),
 		BodyType: r.BodyType, Body: r.Body, Form: toKV(r.Form),
 		Auth:       authFile{Type: r.Auth.Type, User: r.Auth.User, KeyName: r.Auth.KeyName, KeyIn: r.Auth.KeyIn},
-		TimeoutSec: r.TimeoutSec, NoRedirects: r.NoRedirects, InsecureTLS: r.InsecureTLS, Tests: r.Tests,
+		TimeoutSec: r.TimeoutSec, NoRedirects: r.NoRedirects, InsecureTLS: r.InsecureTLS, GraphQLVars: r.GraphQLVars, Tests: r.Tests,
 	}, secret{Token: r.Auth.Token, Password: r.Auth.Password, KeyValue: r.Auth.KeyValue}
 }
 
@@ -309,7 +310,7 @@ func fileToRequest(f requestFile, s secret) *model.Request {
 		BodyType: f.BodyType, Body: f.Body, Form: fromKV(f.Form),
 		Auth: model.Auth{Type: f.Auth.Type, User: f.Auth.User, KeyName: f.Auth.KeyName, KeyIn: f.Auth.KeyIn,
 			Token: s.Token, Password: s.Password, KeyValue: s.KeyValue},
-		TimeoutSec: f.TimeoutSec, NoRedirects: f.NoRedirects, InsecureTLS: f.InsecureTLS, Tests: f.Tests,
+		TimeoutSec: f.TimeoutSec, NoRedirects: f.NoRedirects, InsecureTLS: f.InsecureTLS, GraphQLVars: f.GraphQLVars, Tests: f.Tests,
 	}
 }
 

@@ -141,6 +141,7 @@ var bodyEncoders = map[string]func(req model.Request) ([]byte, string, error){
 	model.BodyForm:      encodeForm,
 	model.BodyMultipart: encodeMultipart,
 	model.BodyFile:      encodeFile,
+	model.BodyGraphQL:   encodeGraphQL,
 }
 
 func encodeBody(req model.Request) ([]byte, string, error) {

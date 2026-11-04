@@ -2,9 +2,13 @@ package ui
 
 import (
 	"bytes"
+	"encoding/json"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
 	"image"
 	"image/png"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -221,5 +225,39 @@ func TestCapturedValuesBecomeVariablesInTheActiveScope(t *testing.T) {
 	send(`{"access_token":"t3"}`)
 	if a.col.Vars[0].Value != "t2" || len(a.col.Envs[0].Vars) != 1 || a.col.Envs[0].Vars[0].Value != "t3" {
 		t.Fatalf("with an environment active the value goes there: %+v %+v", a.col.Vars, a.col.Envs[0].Vars)
+	}
+}
+
+func TestGraphQLBodyTypeSendsAQueryAndCanLoadTheSchema(t *testing.T) {
+	var queries []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var p struct{ Query string }
+		b, _ := io.ReadAll(r.Body)
+		json.Unmarshal(b, &p)
+		queries = append(queries, p.Query)
+		w.Write([]byte(`{"data":{"__schema":{"types":[]}}}`))
+	}))
+	defer srv.Close()
+	a, _ := newTestApp(t)
+	tab := a.cur()
+	tab.req.URL, tab.req.Method = srv.URL, "GET"
+	tab.body = vml.NewTextArea("{ repos { name } }")
+	a.setBodyType(tab, model.BodyGraphQL)
+	if tab.req.Method != "POST" || tab.req.Body != "{ repos { name } }" {
+		t.Fatalf("method %q body %q", tab.req.Method, tab.req.Body)
+	}
+	if d := vml.Dump(a.graphQLBody(tab)); !strings.Contains(d, "Load schema") || !strings.Contains(d, "VARIABLES") {
+		t.Fatalf("editor:\n%s", d)
+	}
+	a.send(tab)
+	waitForResponse(t, a, tab)
+	tab.resp = nil
+	a.loadSchema(tab)
+	waitForResponse(t, a, tab)
+	if len(queries) != 2 || queries[0] != "{ repos { name } }" || !strings.Contains(queries[1], "__schema") {
+		t.Fatalf("queries %q", queries)
+	}
+	if tab.req.Body != "{ repos { name } }" {
+		t.Fatal("loading the schema must not touch the tab's own query")
 	}
 }
