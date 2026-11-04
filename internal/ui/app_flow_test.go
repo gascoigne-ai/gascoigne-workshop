@@ -3,7 +3,7 @@ package ui
 import (
 	"errors"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/vml"
+	"github.com/gascoigne-ai/gascoigne-workshop/ui/vml"
 	"github.com/hajimehoshi/ebiten/v2"
 	"io"
 	"net/http"
@@ -17,7 +17,7 @@ import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/ui/widget"
 )
 
 // These tests drive the whole window without a GPU: step() builds the

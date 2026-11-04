@@ -4,50 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/gascoigne-ai/gascoigne-workshop/ui/engine"
 )
-
-func TestParseAndFormatBindings(t *testing.T) {
-	tests := []struct {
-		in   string
-		want binding
-		out  string // the canonical text; "" for the same as in
-	}{
-		{"Ctrl+Enter", binding{key: ebiten.KeyEnter, ctrl: true, bound: true}, ""},
-		{"Ctrl+Shift+Tab", binding{key: ebiten.KeyTab, ctrl: true, shift: true, bound: true}, ""},
-		{"shift+ctrl+tab", binding{key: ebiten.KeyTab, ctrl: true, shift: true, bound: true}, "Ctrl+Shift+Tab"},
-		{"Alt+Up", binding{key: ebiten.KeyArrowUp, alt: true, bound: true}, ""},
-		{"Alt+ArrowDown", binding{key: ebiten.KeyArrowDown, alt: true, bound: true}, "Alt+Down"},
-		{"Ctrl+,", binding{key: ebiten.KeyComma, ctrl: true, bound: true}, ""},
-		{"F5", binding{key: ebiten.KeyF5, bound: true}, ""},
-		{"Delete", binding{key: ebiten.KeyDelete, bound: true}, ""},
-		{"Ctrl+Alt+Shift+K", binding{key: ebiten.KeyK, ctrl: true, alt: true, shift: true, bound: true}, ""},
-		{"ctrl+q", binding{key: ebiten.KeyQ, ctrl: true, bound: true}, "Ctrl+Q"},
-		{"", binding{}, ""},
-	}
-	for _, tt := range tests {
-		got, err := parseBinding(tt.in)
-		if err != nil || got != tt.want {
-			t.Errorf("parseBinding(%q) = %+v, %v; want %+v", tt.in, got, err, tt.want)
-			continue
-		}
-		want := tt.out
-		if want == "" {
-			want = tt.in
-		}
-		if got.String() != want {
-			t.Errorf("%q formats as %q, want %q", tt.in, got.String(), want)
-		}
-	}
-}
-
-func TestParseBindingRejectsNonsense(t *testing.T) {
-	for _, in := range []string{"Ctrl+", "Ctrl", "Shift+Alt", "Banana", "Ctrl+Ctrl+T", "Ctrl+T+Y", "+", "Ctrl++"} {
-		if b, err := parseBinding(in); err == nil {
-			t.Errorf("parseBinding(%q) = %+v, want an error", in, b)
-		}
-	}
-}
 
 func TestEveryDefaultBindingRoundTripsAndHasAnID(t *testing.T) {
 	ids := map[string]bool{}
@@ -57,8 +15,8 @@ func TestEveryDefaultBindingRoundTripsAndHasAnID(t *testing.T) {
 			t.Errorf("shortcut %q has a missing or duplicate id %q", s.name, s.id)
 		}
 		ids[s.id] = true
-		def := binding{key: s.key, ctrl: s.ctrl, shift: s.shift, alt: s.alt, bound: true}
-		back, err := parseBinding(def.String())
+		def := engine.Binding{Key: s.key, Ctrl: s.ctrl, Shift: s.shift, Alt: s.alt, Bound: true}
+		back, err := engine.ParseBinding(def.String())
 		if err != nil || back != def {
 			t.Errorf("%s: %q does not round trip: %+v %v", s.id, def.String(), back, err)
 		}
@@ -102,15 +60,15 @@ func TestEffectiveBindingsLayerTheUsersOverToDefaults(t *testing.T) {
 		}
 	}
 	a.settings.Shortcuts = map[string]string{"close-tab": ""}
-	if a.bindingOf(closeTab).bound {
+	if a.bindingOf(closeTab).Bound {
 		t.Error("an unbound action is not bound")
 	}
 }
 
 func TestCheckBinding(t *testing.T) {
 	a, _ := newTestApp(t)
-	mk := func(s string) binding {
-		b, err := parseBinding(s)
+	mk := func(s string) engine.Binding {
+		b, err := engine.ParseBinding(s)
 		if err != nil {
 			t.Fatal(err)
 		}

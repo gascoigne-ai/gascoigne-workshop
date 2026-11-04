@@ -3,7 +3,7 @@ package vml
 import (
 	"github.com/hajimehoshi/ebiten/v2"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/ui/widget"
 )
 
 // handleSlop is how many pixels each side of the divider still grab it.

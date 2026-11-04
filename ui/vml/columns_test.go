@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/ui/widget"
 )
 
 func sum(w []float64) (s float64) {

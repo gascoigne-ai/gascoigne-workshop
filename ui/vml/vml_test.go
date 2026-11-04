@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/ui/widget"
 )
 
 func testCtx(t *testing.T) *widget.Ctx {

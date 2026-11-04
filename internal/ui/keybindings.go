@@ -3,108 +3,23 @@ package ui
 import (
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/ui/engine"
+	"github.com/gascoigne-ai/gascoigne-workshop/ui/widget"
 )
-
-// binding is a key with modifiers; an unbound action has none.
-type binding struct {
-	key              ebiten.Key
-	ctrl, shift, alt bool
-	bound            bool
-}
-
-// isModifierKey reports whether k is a modifier key itself.
-func isModifierKey(k ebiten.Key) bool {
-	switch k {
-	case ebiten.KeyAlt, ebiten.KeyAltLeft, ebiten.KeyAltRight,
-		ebiten.KeyControl, ebiten.KeyControlLeft, ebiten.KeyControlRight,
-		ebiten.KeyShift, ebiten.KeyShiftLeft, ebiten.KeyShiftRight,
-		ebiten.KeyMeta, ebiten.KeyMetaLeft, ebiten.KeyMetaRight:
-		return true
-	}
-	return false
-}
-
-// keyLabel is how a key is written in key strings: the friendly name
-// from keyNames, else Ebitengine's.
-func keyLabel(k ebiten.Key) string {
-	if name, ok := keyNames[k]; ok {
-		return name
-	}
-	return k.String()
-}
-
-// keyByName finds a bindable key by its lower-case name, friendly or
-// Ebitengine's.
-var keyByName = func() map[string]ebiten.Key {
-	m := map[string]ebiten.Key{}
-	for k := ebiten.Key(0); k <= ebiten.KeyMax; k++ {
-		if isModifierKey(k) || strings.HasPrefix(k.String(), "Key(") {
-			continue
-		}
-		m[strings.ToLower(k.String())] = k
-		m[strings.ToLower(keyLabel(k))] = k
-	}
-	return m
-}()
-
-// parseBinding reads "Ctrl+Shift+Tab" (modifiers in any order, names
-// case-insensitive). "" is a valid, unbound binding.
-func parseBinding(s string) (binding, error) {
-	s = strings.TrimSpace(s)
-	if s == "" {
-		return binding{}, nil
-	}
-	parts := strings.Split(s, "+")
-	var b binding
-	for _, mod := range parts[:len(parts)-1] {
-		flag := map[string]*bool{"ctrl": &b.ctrl, "control": &b.ctrl, "alt": &b.alt, "shift": &b.shift}[strings.ToLower(strings.TrimSpace(mod))]
-		if flag == nil || *flag {
-			return binding{}, fmt.Errorf("%q is not a modifier, or is repeated", mod)
-		}
-		*flag = true
-	}
-	key, ok := keyByName[strings.ToLower(strings.TrimSpace(parts[len(parts)-1]))]
-	if !ok {
-		return binding{}, fmt.Errorf("%q is not a key", parts[len(parts)-1])
-	}
-	b.key, b.bound = key, true
-	return b, nil
-}
-
-// String writes the binding as users read it: modifiers in the order
-// Ctrl, Alt, Shift, then the key; "" when unbound.
-func (b binding) String() string {
-	if !b.bound {
-		return ""
-	}
-	var parts []string
-	if b.ctrl {
-		parts = append(parts, "Ctrl")
-	}
-	if b.alt {
-		parts = append(parts, "Alt")
-	}
-	if b.shift {
-		parts = append(parts, "Shift")
-	}
-	return strings.Join(append(parts, keyLabel(b.key)), "+")
-}
 
 // bindingOf is the effective binding of a shortcut: the user's override
 // when it is valid, else the default.
-func (a *App) bindingOf(s shortcut) binding {
+func (a *App) bindingOf(s shortcut) engine.Binding {
 	if override, ok := a.settings.Shortcuts[s.id]; ok {
-		if b, err := parseBinding(override); err == nil {
+		if b, err := engine.ParseBinding(override); err == nil {
 			return b
 		}
 	}
-	return binding{key: s.key, ctrl: s.ctrl, shift: s.shift, alt: s.alt, bound: true}
+	return engine.Binding{Key: s.key, Ctrl: s.ctrl, Shift: s.shift, Alt: s.alt, Bound: true}
 }
 
 // reservedForText are the combinations the text widgets answer.
@@ -115,16 +30,16 @@ func isFunctionKey(k ebiten.Key) bool { return k >= ebiten.KeyF1 && k <= ebiten.
 // checkBinding says why a combination cannot be given to action id: it
 // belongs to text editing, it is a plain key that would fire while
 // typing, it closes overlays (plain Escape), or another action has it.
-func (a *App) checkBinding(id string, b binding) error {
+func (a *App) checkBinding(id string, b engine.Binding) error {
 	for _, r := range reservedForText {
-		if reserved, _ := parseBinding(r); reserved == b {
+		if reserved, _ := engine.ParseBinding(r); reserved == b {
 			return fmt.Errorf("%s belongs to text editing", b)
 		}
 	}
 	switch {
-	case b.key == ebiten.KeyEscape && !b.ctrl && !b.alt:
+	case b.Key == ebiten.KeyEscape && !b.Ctrl && !b.Alt:
 		return errors.New("Escape closes menus and dialogs")
-	case !b.ctrl && !b.alt && !isFunctionKey(b.key) && b.key != ebiten.KeyDelete:
+	case !b.Ctrl && !b.Alt && !isFunctionKey(b.Key) && b.Key != ebiten.KeyDelete:
 		return errors.New("Use Ctrl or Alt: plain keys are for typing")
 	}
 	for _, s := range shortcuts {
@@ -142,8 +57,8 @@ func (a *App) startRecording(id string) {
 }
 
 // defaultBinding is the built-in binding of a shortcut.
-func defaultBinding(s shortcut) binding {
-	return binding{key: s.key, ctrl: s.ctrl, shift: s.shift, alt: s.alt, bound: true}
+func defaultBinding(s shortcut) engine.Binding {
+	return engine.Binding{Key: s.key, Ctrl: s.ctrl, Shift: s.shift, Alt: s.alt, Bound: true}
 }
 
 // recordKey takes a recorded combination from this frame's input while
@@ -157,28 +72,28 @@ func (a *App) recordKey(in widget.Input) bool {
 		return false
 	}
 	if in.Escape && !in.Ctrl && !in.Alt {
-		a.recordCombo(id, binding{key: ebiten.KeyEscape, bound: true})
+		a.recordCombo(id, engine.Binding{Key: ebiten.KeyEscape, Bound: true})
 		return true
 	}
 	for _, k := range in.Keys {
-		if isModifierKey(k) {
+		if engine.IsModifierKey(k) {
 			continue
 		}
-		a.recordCombo(id, binding{key: k, ctrl: in.Ctrl, shift: in.Shift, alt: in.Alt, bound: true})
+		a.recordCombo(id, engine.Binding{Key: k, Ctrl: in.Ctrl, Shift: in.Shift, Alt: in.Alt, Bound: true})
 		break
 	}
 	return true
 }
 
-func (a *App) recordCombo(id string, b binding) {
-	plain := !b.ctrl && !b.alt && !b.shift
+func (a *App) recordCombo(id string, b engine.Binding) {
+	plain := !b.Ctrl && !b.Alt && !b.Shift
 	switch {
-	case plain && b.key == ebiten.KeyEscape:
+	case plain && b.Key == ebiten.KeyEscape:
 		a.recording = ""
 		delete(a.recordNotes, id)
 		return
-	case plain && b.key == ebiten.KeyBackspace:
-		a.setBinding(id, binding{})
+	case plain && b.Key == ebiten.KeyBackspace:
+		a.setBinding(id, engine.Binding{})
 	default:
 		if err := a.checkBinding(id, b); err != nil {
 			if a.recordNotes == nil {
@@ -194,7 +109,7 @@ func (a *App) recordCombo(id string, b binding) {
 }
 
 // setBinding stores a binding; one equal to the default is not stored.
-func (a *App) setBinding(id string, b binding) {
+func (a *App) setBinding(id string, b engine.Binding) {
 	a.saveSettings(func(s *settings.Settings) {
 		for _, sc := range shortcuts {
 			if sc.id == id && b == defaultBinding(sc) {
@@ -219,7 +134,7 @@ func (a *App) resetBinding(id string) {
 func (a *App) shortcutText(id string) string {
 	for _, s := range shortcuts {
 		if s.id == id {
-			if b := a.bindingOf(s); b.bound {
+			if b := a.bindingOf(s); b.Bound {
 				return b.String()
 			}
 			return "Unbound"

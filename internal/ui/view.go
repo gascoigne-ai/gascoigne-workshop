@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	// The view DSL is dot-imported so views read like markup: Row(...), Text(...).
-	. "github.com/gascoigne-ai/gascoigne-workshop/vml"
-	w "github.com/gascoigne-ai/gascoigne-workshop/widget"
+	. "github.com/gascoigne-ai/gascoigne-workshop/ui/vml"
+	w "github.com/gascoigne-ai/gascoigne-workshop/ui/widget"
 )
 
 // Sizes of the window chrome, in logical pixels.

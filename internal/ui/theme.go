@@ -5,8 +5,8 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/jsonview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/vml"
-	"github.com/gascoigne-ai/gascoigne-workshop/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/ui/vml"
+	"github.com/gascoigne-ai/gascoigne-workshop/ui/widget"
 )
 
 // App-specific color tokens, added to the widget theme.

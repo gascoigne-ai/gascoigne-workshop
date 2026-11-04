@@ -15,7 +15,8 @@ func TestToolkitImportsStayInTheirLayer(t *testing.T) {
 	const module = "github.com/gascoigne-ai/gascoigne-workshop"
 	allowed := map[string][]string{
 		"../widget": {},
-		"../vml":    {module + "/widget"},
+		"../vml":    {module + "/ui/widget"},
+		"../engine": {module + "/ui/widget"},
 	}
 	for dir, ok := range allowed {
 		files, err := filepath.Glob(filepath.Join(dir, "*.go"))

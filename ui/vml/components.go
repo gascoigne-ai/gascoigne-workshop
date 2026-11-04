@@ -3,13 +3,13 @@ package vml
 import (
 	"strconv"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/ui/widget"
 )
 
 // Button is an outlined chip with a centered label; it brightens on hover.
 func Button(label string, opts ...Option) *El {
 	return Row(with([]Item{
-		Bg(widget.Chip), Border(widget.Rule), Lighten(),
+		Bg(widget.Chip), Border(widget.Border), Lighten(),
 		Text(label, Center(), Grow(1), Color(widget.ChipText)),
 	}, opts)...)
 }

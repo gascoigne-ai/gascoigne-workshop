@@ -3,7 +3,7 @@ package vml
 import (
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/ui/widget"
 )
 
 func splitRoot(t *testing.T, st *SplitState, w, h int, items ...Item) (*El, *El, *El, *widget.Ctx) {

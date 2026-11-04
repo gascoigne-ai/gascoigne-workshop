@@ -6,7 +6,8 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/ui/engine"
+	"github.com/gascoigne-ai/gascoigne-workshop/ui/widget"
 )
 
 // shortcut is a global key binding. A binding fires only when its
@@ -35,13 +36,6 @@ var shortcuts = []shortcut{
 	{"settings", "Settings", ebiten.KeyComma, true, false, false, func(a *App) { a.menu = true }},
 }
 
-// keyNames spells keys whose ebiten name is not what users read.
-var keyNames = map[ebiten.Key]string{
-	ebiten.KeyComma:     ",",
-	ebiten.KeyArrowUp:   "Up",
-	ebiten.KeyArrowDown: "Down",
-}
-
 // label is the binding as users read it, for example "Ctrl+Shift+Tab".
 func (s shortcut) label() string {
 	var parts []string
@@ -54,7 +48,7 @@ func (s shortcut) label() string {
 	if s.shift {
 		parts = append(parts, "Shift")
 	}
-	name, ok := keyNames[s.key]
+	name, ok := engine.KeyNames[s.key]
 	if !ok {
 		name = s.key.String()
 	}
@@ -65,7 +59,7 @@ func (s shortcut) label() string {
 func (a *App) runShortcuts(in widget.Input) {
 	for _, k := range in.Keys {
 		for _, s := range shortcuts {
-			if b := a.bindingOf(s); b.bound && b.key == k && b.ctrl == in.Ctrl && b.shift == in.Shift && b.alt == in.Alt {
+			if b := a.bindingOf(s); b.Bound && b.Key == k && b.Ctrl == in.Ctrl && b.Shift == in.Shift && b.Alt == in.Alt {
 				s.run(a)
 			}
 		}

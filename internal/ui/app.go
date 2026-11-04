@@ -12,8 +12,9 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/vml"
-	"github.com/gascoigne-ai/gascoigne-workshop/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/ui/engine"
+	"github.com/gascoigne-ai/gascoigne-workshop/ui/vml"
+	"github.com/gascoigne-ai/gascoigne-workshop/ui/widget"
 )
 
 const (
@@ -111,7 +112,7 @@ type App struct {
 	dirty         bool                               // something changed since the last draw
 	tps           int                                // the update rate last set
 	lastIn        widget.Input                       // the previous frame's input
-	idleTicks     int                                // frames in a row with nothing to redraw
+	pacer         engine.Pacer                       // update rate from idle time
 	recording     string                             // the action whose key is being recorded, "" when none
 	recordNotes   map[string]string                  // why a recorded key was refused, by action id
 	colorInputs   map[widget.Token]*widget.TextField // hex fields of the settings menu
@@ -298,7 +299,7 @@ func (a *App) Layout(w, h int) (int, int) {
 func (a *App) Update() error {
 	a.step(a.sampler.Read().Scaled(a.ctx.Scale))
 	ebiten.SetCursorShape(cursorShapes[a.ctx.Cursor])
-	if tps := a.tpsFor(); tps != a.tps {
+	if tps := a.pacer.TPS(); tps != a.tps {
 		ebiten.SetTPS(tps)
 		a.tps = tps
 	}
@@ -317,7 +318,7 @@ func (a *App) step(in widget.Input) {
 	}
 	drained := a.drain()
 	pruned := a.pruneToasts()
-	active := inputActive(a.lastIn, in)
+	active := engine.InputActive(a.lastIn, in)
 	a.lastIn = in
 	if in.Held {
 		a.dropTarget = nil // set again by the row under the pointer
@@ -368,7 +369,7 @@ func (a *App) step(in widget.Input) {
 	}
 	a.settleBulk()
 	a.markFrame(active || drained || pruned)
-	a.noteIdle(active || drained || pruned)
+	a.pacer.NoteIdle(active || drained || pruned)
 }
 
 // Draw implements ebiten.Game. The view is rebuilt so it shows the

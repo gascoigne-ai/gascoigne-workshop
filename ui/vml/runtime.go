@@ -3,7 +3,7 @@ package vml
 import (
 	"github.com/hajimehoshi/ebiten/v2"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/ui/widget"
 )
 
 // Layout places the tree in a w by h window.
@@ -203,9 +203,6 @@ func (e *El) draw(c *widget.Ctx, dst *ebiten.Image) {
 	if e.hoverBg != "" && over {
 		c.Fill(dst, r, c.Col(e.hoverBg))
 	}
-	if e.border != "" {
-		c.Outline(dst, r, c.Col(e.border))
-	}
 	if e.borderTop != "" {
 		c.HLine(dst, r.X, r.Y, r.W, c.Col(e.borderTop))
 	}
@@ -223,6 +220,9 @@ func (e *El) draw(c *widget.Ctx, dst *ebiten.Image) {
 	}
 	if o, ok := e.b.(overDrawer); ok {
 		o.drawOver(e, c, dst)
+	}
+	if e.border != "" { // after the children, so striped rows do not paint over it
+		c.Outline(dst, r, c.Col(e.border))
 	}
 
 	if e.underline != "" {

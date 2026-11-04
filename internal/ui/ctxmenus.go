@@ -2,8 +2,8 @@ package ui
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
-	. "github.com/gascoigne-ai/gascoigne-workshop/vml"
-	w "github.com/gascoigne-ai/gascoigne-workshop/widget"
+	. "github.com/gascoigne-ai/gascoigne-workshop/ui/vml"
+	w "github.com/gascoigne-ai/gascoigne-workshop/ui/widget"
 )
 
 // Right-click menus for tabs, table rows, text widgets and the response.

@@ -7,7 +7,8 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/ui/engine"
+	"github.com/gascoigne-ai/gascoigne-workshop/ui/widget"
 )
 
 // settle runs idle frames and clears the dirty flag, as drawing does.
@@ -26,7 +27,7 @@ func TestAFreshAppNeedsADrawAndAnIdleOneDoesNot(t *testing.T) {
 	settle(a, 3)
 	for range 300 {
 		a.step(widget.Input{X: a.lastIn.X, Y: a.lastIn.Y})
-		if a.dirty && a.ctx.Tick%heartbeatTicks != 0 {
+		if a.dirty && a.ctx.Tick%engine.HeartbeatTicks != 0 {
 			t.Fatalf("an idle frame at tick %d asked for a redraw", a.ctx.Tick)
 		}
 		a.dirty = false
@@ -37,7 +38,7 @@ func TestIdleHeartbeatRedrawsOnceInAWhile(t *testing.T) {
 	a, _ := newTestApp(t)
 	settle(a, 3)
 	beats := 0
-	for range 3 * heartbeatTicks {
+	for range 3 * engine.HeartbeatTicks {
 		a.step(widget.Input{X: a.lastIn.X, Y: a.lastIn.Y})
 		if a.dirty {
 			beats++
@@ -45,7 +46,7 @@ func TestIdleHeartbeatRedrawsOnceInAWhile(t *testing.T) {
 		a.dirty = false
 	}
 	if beats < 2 || beats > 4 {
-		t.Fatalf("%d heartbeat draws in %d idle frames", beats, 3*heartbeatTicks)
+		t.Fatalf("%d heartbeat draws in %d idle frames", beats, 3*engine.HeartbeatTicks)
 	}
 }
 
@@ -56,7 +57,7 @@ func TestInputMakesTheNextFrameDirtyOnlyWhenItChangesSomething(t *testing.T) {
 	a.step(still)
 	a.dirty = false
 	a.step(still)
-	if a.dirty && a.ctx.Tick%heartbeatTicks != 0 {
+	if a.dirty && a.ctx.Tick%engine.HeartbeatTicks != 0 {
 		t.Fatal("a pointer that did not move is not activity")
 	}
 	a.dirty = false
@@ -139,7 +140,7 @@ func TestTheCaretBlinkRedrawsOnlyWhileATextWidgetHasFocus(t *testing.T) {
 	blinks := func(frames int) (n int) {
 		for range frames {
 			a.step(widget.Input{X: a.lastIn.X, Y: a.lastIn.Y})
-			if a.dirty && a.ctx.Tick%heartbeatTicks != 0 {
+			if a.dirty && a.ctx.Tick%engine.HeartbeatTicks != 0 {
 				n++
 			}
 			a.dirty = false
@@ -186,18 +187,18 @@ func TestScreenshotModeAlwaysDraws(t *testing.T) {
 
 func TestUpdateRateDropsAfterIdleAndReturnsWithActivity(t *testing.T) {
 	a, _ := newTestApp(t)
-	if a.tpsFor() != activeTPS {
-		t.Fatalf("start at %d", a.tpsFor())
+	if a.pacer.TPS() != engine.ActiveTPS {
+		t.Fatalf("start at %d", a.pacer.TPS())
 	}
-	for range idleAfterTicks + 5 {
-		a.noteIdle(false)
+	for range engine.IdleAfterTicks + 5 {
+		a.pacer.NoteIdle(false)
 	}
-	if a.tpsFor() != idleTPS {
-		t.Fatalf("after a quiet spell: %d", a.tpsFor())
+	if a.pacer.TPS() != engine.IdleTPS {
+		t.Fatalf("after a quiet spell: %d", a.pacer.TPS())
 	}
-	a.noteIdle(true)
-	if a.tpsFor() != activeTPS {
-		t.Fatalf("activity restores the rate: %d", a.tpsFor())
+	a.pacer.NoteIdle(true)
+	if a.pacer.TPS() != engine.ActiveTPS {
+		t.Fatalf("activity restores the rate: %d", a.pacer.TPS())
 	}
 }
 

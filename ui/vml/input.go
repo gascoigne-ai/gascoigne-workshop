@@ -3,7 +3,7 @@ package vml
 import (
 	"github.com/hajimehoshi/ebiten/v2"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/ui/widget"
 )
 
 // Seg is a run of field text with its own color, so a view can
