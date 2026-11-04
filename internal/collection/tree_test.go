@@ -1,4 +1,4 @@
-package ui
+package collection
 
 import (
 	"reflect"
@@ -25,7 +25,7 @@ func TestTreeRows(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var got []string
-			for _, r := range treeRows(root, tt.expanded) {
+			for _, r := range Rows(root, tt.expanded) {
 				pad := ""
 				for range r.Depth {
 					pad += " "
@@ -43,8 +43,8 @@ func TestTreeRowsCarryTheNodes(t *testing.T) {
 	req := &model.Request{Name: "r"}
 	sub := &model.Folder{Name: "sub"}
 	root := &model.Folder{Name: "A", Folders: []*model.Folder{sub}, Requests: []*model.Request{req}}
-	rows := treeRows(root, map[*model.Folder]bool{root: true})
-	if rows[0].node() != any(root) || rows[1].node() != any(sub) || rows[2].node() != any(req) {
+	rows := Rows(root, map[*model.Folder]bool{root: true})
+	if rows[0].Node() != any(root) || rows[1].Node() != any(sub) || rows[2].Node() != any(req) {
 		t.Fatal("each row must stand for its own folder or request, by pointer")
 	}
 	rows[2].Req.URL = "edited"
@@ -58,7 +58,7 @@ func TestExpansionSurvivesRenamingAFolder(t *testing.T) {
 	root := &model.Folder{Name: "A", Folders: []*model.Folder{sub}}
 	open := map[*model.Folder]bool{root: true, sub: true}
 	sub.Name = "new"
-	if got := len(treeRows(root, open)); got != 3 {
+	if got := len(Rows(root, open)); got != 3 {
 		t.Fatalf("rows = %d: a renamed folder must stay expanded", got)
 	}
 }

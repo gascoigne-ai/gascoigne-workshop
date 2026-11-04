@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
 	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -13,57 +14,8 @@ import (
 // ---- what the tree shows -------------------------------------------------
 
 // visibleRows are the tree rows shown, after the filter.
-func (a *App) visibleRows() []treeRow {
-	return treeRowsFiltered(&a.col.Folder, a.expanded, a.filter.Text)
-}
-
-// treeRowsFiltered is treeRows narrowed to what matches filter: requests
-// whose name or URL contains it (case-insensitive), the folders that
-// hold one, and whole folders whose own name matches. Matching folders
-// are shown open. The root is always there; an empty filter shows the
-// tree as usual.
-func treeRowsFiltered(root *model.Folder, expanded map[*model.Folder]bool, filter string) []treeRow {
-	if strings.TrimSpace(filter) == "" {
-		return treeRows(root, expanded)
-	}
-	needle := strings.ToLower(strings.TrimSpace(filter))
-	rows := []treeRow{{Name: root.Name, Folder: true, Open: true, Dir: root}}
-	return appendMatching(rows, root, 1, needle, strings.Contains(strings.ToLower(root.Name), needle))
-}
-
-func appendMatching(rows []treeRow, f *model.Folder, depth int, needle string, all bool) []treeRow {
-	for _, sub := range f.Folders {
-		subAll := all || strings.Contains(strings.ToLower(sub.Name), needle)
-		if !subAll && !folderHasMatch(sub, needle) {
-			continue
-		}
-		rows = append(rows, treeRow{Depth: depth, Name: sub.Name, Folder: true, Open: true, Dir: sub})
-		rows = appendMatching(rows, sub, depth+1, needle, subAll)
-	}
-	for _, req := range f.Requests {
-		if all || requestMatches(req, needle) {
-			rows = append(rows, treeRow{Depth: depth, Name: req.Name, Req: req})
-		}
-	}
-	return rows
-}
-
-func requestMatches(r *model.Request, needle string) bool {
-	return strings.Contains(strings.ToLower(r.Name), needle) || strings.Contains(strings.ToLower(r.URL), needle)
-}
-
-func folderHasMatch(f *model.Folder, needle string) bool {
-	for _, r := range f.Requests {
-		if requestMatches(r, needle) {
-			return true
-		}
-	}
-	for _, sub := range f.Folders {
-		if strings.Contains(strings.ToLower(sub.Name), needle) || folderHasMatch(sub, needle) {
-			return true
-		}
-	}
-	return false
+func (a *App) visibleRows() []collection.Row {
+	return collection.FilteredRows(&a.col.Folder, a.expanded, a.filter.Text)
 }
 
 // ---- selection and the rows' menus --------------------------------------
@@ -86,8 +38,8 @@ func (a *App) selectedFolder() *model.Folder {
 }
 
 // treeMenuItems are the right-click actions for a row.
-func (a *App) treeMenuItems(row treeRow) []menuItem {
-	node := row.node()
+func (a *App) treeMenuItems(row collection.Row) []menuItem {
+	node := row.Node()
 	rename := menuItem{label: "Rename", run: func() { a.renameNode(node) }}
 	sep := menuItem{separator: true}
 	if row.Req != nil {
@@ -260,7 +212,7 @@ func (a *App) treeKeys(in widget.Input) {
 	rows := a.visibleRows()
 	current := -1
 	for i, r := range rows {
-		if r.node() == a.selected {
+		if r.Node() == a.selected {
 			current = i
 		}
 	}
@@ -268,10 +220,10 @@ func (a *App) treeKeys(in widget.Input) {
 		switch k {
 		case ebiten.KeyArrowDown:
 			current = min(current+1, len(rows)-1)
-			a.selectNode(rows[current].node())
+			a.selectNode(rows[current].Node())
 		case ebiten.KeyArrowUp:
 			current = max(current-1, 0)
-			a.selectNode(rows[current].node())
+			a.selectNode(rows[current].Node())
 		case ebiten.KeyEnter:
 			if current >= 0 {
 				a.clickTree(rows[current])

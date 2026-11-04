@@ -1,11 +1,11 @@
-package ui
+package collection
 
 import "github.com/gascoigne-ai/gascoigne-workshop/internal/model"
 
-// SampleCollection is the collection shown until saving and loading
+// Sample is the collection shown until saving and loading
 // collections exists: a few REST calls against a public API, plus one
 // call per other protocol so the registry is visible in the UI.
-func SampleCollection() model.Collection {
+func Sample() model.Collection {
 	get := func(name, url string, params ...model.KV) *model.Request {
 		return &model.Request{Name: name, Protocol: "rest", Method: "GET", URL: url, Params: params}
 	}

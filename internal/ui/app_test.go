@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
 	"reflect"
 	"strings"
 	"testing"
@@ -105,35 +106,6 @@ func TestRequestBadge(t *testing.T) {
 	}
 }
 
-func TestSampleCollectionIsConsistent(t *testing.T) {
-	col := SampleCollection()
-	reg := proto.NewRegistry()
-	var check func(f *model.Folder, path string)
-	check = func(f *model.Folder, path string) {
-		seen := map[string]bool{}
-		for _, name := range append(folderNames(f), requestNames(f)...) {
-			if seen[name] {
-				t.Errorf("%s: duplicate name %q among siblings", path, name)
-			}
-			seen[name] = true
-		}
-		for _, r := range f.Requests {
-			if _, ok := reg[r.Protocol]; !ok {
-				t.Errorf("%s/%s uses unknown protocol %q", path, r.Name, r.Protocol)
-			}
-			if r.Protocol == "rest" && r.Method == "" {
-				t.Errorf("%s/%s is REST without a method", path, r.Name)
-			}
-		}
-		for _, sub := range f.Folders {
-			check(sub, path+"/"+sub.Name)
-		}
-	}
-	check(&col.Folder, col.Name)
-	if len(col.Vars) == 0 {
-		t.Error("the sample must define baseUrl")
-	}
-}
 
 func folderNames(f *model.Folder) (out []string) {
 	for _, s := range f.Folders {
@@ -206,5 +178,34 @@ func TestFindCount(t *testing.T) {
 		if got := findCount(tt.query, tt.matches, tt.index); got != tt.want {
 			t.Errorf("findCount(%q,%d,%d) = %q, want %q", tt.query, tt.matches, tt.index, got, tt.want)
 		}
+	}
+}
+func TestSampleCollectionIsConsistent(t *testing.T) {
+	col := collection.Sample()
+	reg := proto.NewRegistry()
+	var check func(f *model.Folder, path string)
+	check = func(f *model.Folder, path string) {
+		seen := map[string]bool{}
+		for _, name := range append(folderNames(f), requestNames(f)...) {
+			if seen[name] {
+				t.Errorf("%s: duplicate name %q among siblings", path, name)
+			}
+			seen[name] = true
+		}
+		for _, r := range f.Requests {
+			if _, ok := reg[r.Protocol]; !ok {
+				t.Errorf("%s/%s uses unknown protocol %q", path, r.Name, r.Protocol)
+			}
+			if r.Protocol == "rest" && r.Method == "" {
+				t.Errorf("%s/%s is REST without a method", path, r.Name)
+			}
+		}
+		for _, sub := range f.Folders {
+			check(sub, path+"/"+sub.Name)
+		}
+	}
+	check(&col.Folder, col.Name)
+	if len(col.Vars) == 0 {
+		t.Error("the sample must define baseUrl")
 	}
 }

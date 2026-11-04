@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/appearance"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/textfmt"
 	"reflect"
 	"strconv"
@@ -222,7 +223,7 @@ func NewApp(opts Options) (*App, error) {
 	a := &App{
 		ctx:              ctx,
 		reg:              proto.NewRegistry(),
-		col:              SampleCollection(),
+		col:              collection.Sample(),
 		defaultWorkspace: opts.DefaultWorkspace,
 		expanded:         map[*model.Folder]bool{},
 		results:          make(chan sendResult, 8),
@@ -472,8 +473,8 @@ func (a *App) Draw(screen *ebiten.Image) {
 	a.shotDraw(screen)
 }
 
-func (a *App) clickTree(row treeRow) {
-	a.selectNode(row.node())
+func (a *App) clickTree(row collection.Row) {
+	a.selectNode(row.Node())
 	if row.Folder {
 		a.expanded[row.Dir] = !a.expanded[row.Dir]
 		return

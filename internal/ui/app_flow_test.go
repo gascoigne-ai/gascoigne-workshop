@@ -3,6 +3,7 @@ package ui
 import (
 	"errors"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/appearance"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
@@ -120,13 +121,13 @@ func TestClickingARequestInTheTreeOpensItsTab(t *testing.T) {
 
 func TestClickingAFolderTogglesIt(t *testing.T) {
 	a, _ := newTestApp(t)
-	before := len(treeRows(&a.col.Folder, a.expanded))
+	before := len(collection.Rows(&a.col.Folder, a.expanded))
 	click(a, 100, treeRowY(1)) // User folder, collapsed at start
-	if got := len(treeRows(&a.col.Folder, a.expanded)); got != before+1 {
+	if got := len(collection.Rows(&a.col.Folder, a.expanded)); got != before+1 {
 		t.Fatalf("rows %d -> %d, want one more (Get User)", before, got)
 	}
 	click(a, 100, treeRowY(1))
-	if got := len(treeRows(&a.col.Folder, a.expanded)); got != before {
+	if got := len(collection.Rows(&a.col.Folder, a.expanded)); got != before {
 		t.Fatalf("second click must collapse again, rows = %d", got)
 	}
 }
@@ -726,7 +727,7 @@ func TestTreeScrollsWhenItDoesNotFit(t *testing.T) {
 		a.expanded[a.col.Folders[i]] = true
 	}
 	a.step(widget.Input{})
-	rowsN := len(treeRows(&a.col.Folder, a.expanded))
+	rowsN := len(collection.Rows(&a.col.Folder, a.expanded))
 	if rowsN*widget.RowH <= a.h-headerH-statusH {
 		t.Fatalf("test setup: %d rows fit, nothing to scroll", rowsN)
 	}
@@ -738,7 +739,7 @@ func TestTreeScrollsWhenItDoesNotFit(t *testing.T) {
 
 	// scroll to the end, then click the last row: it must open that request
 	a.step(widget.Input{X: 100, Y: 100, Wheel: -50})
-	last := treeRows(&a.col.Folder, a.expanded)[rowsN-1]
+	last := collection.Rows(&a.col.Folder, a.expanded)[rowsN-1]
 	click(a, 100, a.h-statusH-widget.RowH/2)
 	if a.cur().req != last.Req {
 		t.Fatalf("clicking the bottom row opened %q, want %q", a.cur().req.Name, last.Name)
@@ -2001,7 +2002,7 @@ func pickMenu(t *testing.T, a *App, label string) {
 }
 
 func findReq(a *App, name string) *model.Request {
-	for _, r := range treeRows(&a.col.Folder, allOpen(a)) {
+	for _, r := range collection.Rows(&a.col.Folder, allOpen(a)) {
 		if r.Req != nil && r.Req.Name == name {
 			return r.Req
 		}
@@ -2076,10 +2077,10 @@ func TestRenameToATakenNameIsRefusedWithAToast(t *testing.T) {
 
 func TestDuplicateAddsACopyRightAfter(t *testing.T) {
 	a, _ := newTestApp(t)
-	before := len(treeRows(&a.col.Folder, a.expanded))
+	before := len(collection.Rows(&a.col.Folder, a.expanded))
 	rightClick(a, 100, treeRowY(rowInfo))
 	pickMenu(t, a, "Duplicate")
-	rows := treeRows(&a.col.Folder, a.expanded)
+	rows := collection.Rows(&a.col.Folder, a.expanded)
 	if len(rows) != before+1 || rows[rowInfo+1].Name != "Repository Info copy" {
 		t.Fatalf("rows = %d, next row %q", len(rows), rows[rowInfo+1].Name)
 	}
@@ -2216,7 +2217,7 @@ func TestFilterShowsMatchesByNameAndURL(t *testing.T) {
 	a, _ := newTestApp(t)
 	click(a, 180, headerH/2) // the filter field in the sidebar header
 	a.typeText("tags")
-	rows := treeRows(&a.col.Folder, a.expanded)
+	rows := collection.Rows(&a.col.Folder, a.expanded)
 	_ = rows
 	got := a.visibleRows()
 	var names []string
@@ -2244,7 +2245,7 @@ func TestFilterShowsMatchesByNameAndURL(t *testing.T) {
 	}
 	a.filter.SelectAll()
 	a.step(widget.Input{Edits: []widget.Edit{widget.EditBackspace}})
-	if got := a.visibleRows(); len(got) != len(treeRows(&a.col.Folder, a.expanded)) {
+	if got := a.visibleRows(); len(got) != len(collection.Rows(&a.col.Folder, a.expanded)) {
 		t.Fatal("an empty filter shows the tree as usual")
 	}
 }

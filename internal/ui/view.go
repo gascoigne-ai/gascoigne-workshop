@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/appearance"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/textfmt"
 	"strings"
 
@@ -69,19 +70,19 @@ func (a *App) sidebar() Node {
 			Field(&a.filter, H(28), Grow(1), Bg(w.Sunken), Placeholder("Filter"), a.textMenuOpt(&a.filter, nil)),
 		),
 		Scroll(&a.treeScroll, Bg(w.Sunken),
-			For(a.visibleRows(), func(_ int, row treeRow) Node {
-				return a.treeRow(row, row.node() == a.selected)
+			For(a.visibleRows(), func(_ int, row collection.Row) Node {
+				return a.treeRow(row, row.Node() == a.selected)
 			}),
 		),
 	)
 }
 
-func (a *App) treeRow(row treeRow, selected bool) Node {
+func (a *App) treeRow(row collection.Row, selected bool) Node {
 	look := HoverBg(w.Hover)
 	if selected {
 		look = Bg(w.Selected)
 	}
-	node := row.node()
+	node := row.Node()
 	indent := w.Pad + row.Depth*treeIndent
 	events := []Item{
 		OnClick(func() { a.pressTreeRow(row) }),
@@ -110,14 +111,14 @@ func (a *App) treeRow(row treeRow, selected bool) Node {
 // keyboard and starts a drag. A request opens at once; a folder toggles
 // when the button is released on the same row (see finishDrag), so an
 // open folder can still be dragged.
-func (a *App) pressTreeRow(row treeRow) {
+func (a *App) pressTreeRow(row collection.Row) {
 	a.treeFocus = true
-	a.dragNode = row.node()
+	a.dragNode = row.Node()
 	if row.Dir == &a.col.Folder {
 		a.dragNode = nil // the collection itself cannot be moved
 	}
 	if row.Folder {
-		a.selectNode(row.node())
+		a.selectNode(row.Node())
 		a.pressedFolder = row.Dir
 		return
 	}

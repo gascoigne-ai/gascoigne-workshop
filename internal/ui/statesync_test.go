@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
 	"os"
 	"path/filepath"
 	"testing"
@@ -75,7 +76,7 @@ func TestStateRestoreRoundTripsThroughTheFile(t *testing.T) {
 func TestStateRestoreDropsMissingRequestsAndBadValues(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "state.json")
 	err := state.State{
-		Tabs:     []state.Tab{{Path: "Gone/Nothing"}, {Path: "User/" + SampleCollection().Folders[0].Requests[0].Name, Pane: 99, Resp: -4}},
+		Tabs:     []state.Tab{{Path: "Gone/Nothing"}, {Path: "User/" + collection.Sample().Folders[0].Requests[0].Name, Pane: 99, Resp: -4}},
 		Active:   7,
 		Expanded: []string{"Nowhere"},
 	}.Save(path)
