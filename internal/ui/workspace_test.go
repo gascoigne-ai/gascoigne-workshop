@@ -143,3 +143,23 @@ func readFile(t *testing.T, p string) string {
 	}
 	return string(b)
 }
+
+func TestImportCurlAddsARequestFromTheClipboard(t *testing.T) {
+	a, _ := newTestApp(t)
+	clip := &fakeClip{text: `curl -X POST 'https://api.test/v1/users?x=1' -H 'Content-Type: application/json' -d '{"a":1}'`}
+	a.ctx.Clipboard = clip
+	a.importCurl(&a.col.Folder)
+	r := a.cur().req
+	if r.Name != "POST /v1/users" || r.Method != "POST" || r.Body != `{"a":1}` {
+		t.Fatalf("%+v", r)
+	}
+	if _, ok := a.col.Folder.Parent(r); !ok {
+		t.Fatal("request not in the collection")
+	}
+	n := len(a.tabs)
+	clip.text = "not curl"
+	a.importCurl(&a.col.Folder)
+	if len(a.tabs) != n {
+		t.Fatal("a bad command opened a tab")
+	}
+}

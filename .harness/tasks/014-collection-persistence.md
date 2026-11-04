@@ -17,4 +17,5 @@ The sample collection is built in and nothing is saved.
 
 ## Progress
 - Done: `internal/store` (format in decisions 9, round-trip tests with unicode, duplicate names, empty folders, secrets kept out of request files), `-workspace` flag, remembered workspace, `Ctrl+S`, debounced autosave.
-- Left: unsaved-changes prompt on close (autosave makes it rare), cURL import (paste), an open/new workspace dialog (only the flag and the default folder exist), OpenAPI import.
+- Done: cURL import (`proto.ParseCurl`, folder menu `Import cURL from clipboard`).
+- Left: unsaved-changes prompt on close (autosave makes it rare), an open/new workspace dialog (only the flag and the default folder exist), OpenAPI import.

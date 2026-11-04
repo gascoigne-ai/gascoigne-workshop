@@ -6,6 +6,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/ui/widget"
 )
 
@@ -101,6 +102,7 @@ func (a *App) treeMenuItems(row treeRow) []menuItem {
 	create := []menuItem{
 		{label: "New request", run: func() { a.newRequestIn(row.Dir) }},
 		{label: "New folder", run: func() { a.newFolderIn(row.Dir) }},
+		{label: "Import cURL from clipboard", run: func() { a.importCurl(row.Dir) }},
 		sep,
 		rename,
 	}
@@ -282,4 +284,39 @@ func (a *App) treeKeys(in widget.Input) {
 			a.deleteNode(a.selected)
 		}
 	}
+}
+
+// importCurl adds the cURL command on the clipboard to dir as a new
+// request and opens it.
+func (a *App) importCurl(dir *model.Folder) {
+	text, err := a.ctx.Clipboard.Read()
+	if err != nil {
+		a.toast("Cannot read the clipboard: "+err.Error(), true)
+		return
+	}
+	req, err := proto.ParseCurl(text)
+	if err != nil {
+		a.toast("Not a cURL command: "+err.Error(), true)
+		return
+	}
+	req.Name = dir.UniqueName(curlName(req))
+	added := dir.AddRequest(req)
+	a.expanded[dir] = true
+	a.openRequest(added)
+	a.status = "Imported " + added.Name
+}
+
+// curlName names an imported request after its method and path.
+func curlName(r model.Request) string {
+	path := r.URL
+	if _, rest, ok := strings.Cut(path, "://"); ok {
+		path = rest
+	}
+	path, _, _ = strings.Cut(path, "?")
+	if i := strings.Index(path, "/"); i >= 0 {
+		path = path[i:]
+	} else {
+		path = "/"
+	}
+	return r.Method + " " + path
 }
