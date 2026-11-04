@@ -180,3 +180,37 @@ func TestViewParsesEachSourceOnce(t *testing.T) {
 		t.Fatal("source not cached")
 	}
 }
+
+func TestErrorsSuggestAndListTheValidNames(t *testing.T) {
+	_, err := Parse("t.vml", []byte(`<row><txt/></row>`))
+	if err == nil || !strings.Contains(err.Error(), `did you mean "text"`) || !strings.Contains(err.Error(), "elements:") {
+		t.Fatalf("%v", err)
+	}
+	_, err = Parse("t.vml", []byte(`<row border_top="border"/>`))
+	if err == nil || !strings.Contains(err.Error(), `did you mean "border-top"`) {
+		t.Fatalf("%v", err)
+	}
+	_, err = Parse("t.vml", []byte(`<row zzzzzzzz="1"/>`))
+	if err == nil || strings.Contains(err.Error(), "did you mean") || !strings.Contains(err.Error(), "attributes:") {
+		t.Fatalf("a far-off name must not be guessed: %v", err)
+	}
+}
+
+func TestReferenceListsEveryElementAndAttribute(t *testing.T) {
+	ref := Reference()
+	for n := range elements {
+		if !strings.Contains(ref, "<"+n+">") {
+			t.Errorf("reference misses element %s", n)
+		}
+	}
+	for n := range attributes {
+		if !strings.Contains(ref, "  "+n+"\n") {
+			t.Errorf("reference misses attribute %s", n)
+		}
+	}
+	for n := range directives {
+		if !strings.Contains(ref, "  "+n+"\n") {
+			t.Errorf("reference misses directive %s", n)
+		}
+	}
+}

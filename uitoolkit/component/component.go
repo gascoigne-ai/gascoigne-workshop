@@ -35,6 +35,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -280,12 +281,12 @@ func Parse(name string, src []byte) (*Template, error) {
 		case xml.StartElement:
 			l := line()
 			if _, ok := elements[t.Name.Local]; !ok {
-				return fail(l, "unknown element <%s>", t.Name.Local)
+				return fail(l, "unknown element <%s>%s", t.Name.Local, hint(t.Name.Local, elementNames(), "elements"))
 			}
 			n := &node{tag: t.Name.Local, line: l}
 			for _, a := range t.Attr {
 				if _, ok := attributes[a.Name.Local]; !ok && !directives[a.Name.Local] {
-					return fail(l, "unknown attribute %q on <%s>", a.Name.Local, n.tag)
+					return fail(l, "unknown attribute %q on <%s>%s", a.Name.Local, n.tag, hint(a.Name.Local, attributeNames(), "attributes"))
 				}
 				n.attrs = append(n.attrs, attr{a.Name.Local, a.Value, l})
 			}
@@ -538,4 +539,83 @@ func asList(v any) ([]any, error) {
 		return out, nil
 	}
 	return nil, errors.New("is not a list")
+}
+
+func elementNames() []string {
+	names := make([]string, 0, len(elements))
+	for n := range elements {
+		names = append(names, n)
+	}
+	sort.Strings(names)
+	return names
+}
+
+func attributeNames() []string {
+	names := make([]string, 0, len(attributes)+len(directives))
+	for n := range attributes {
+		names = append(names, n)
+	}
+	for n := range directives {
+		names = append(names, n)
+	}
+	sort.Strings(names)
+	return names
+}
+
+// hint is the end of an error message about an unknown name: the
+// closest known name, when one is near, and the list of all of them.
+func hint(got string, known []string, what string) string {
+	best, bestD := "", 3
+	for _, k := range known {
+		if d := distance(got, k); d < bestD {
+			best, bestD = k, d
+		}
+	}
+	out := ""
+	if best != "" {
+		out = fmt.Sprintf(" (did you mean %q?)", best)
+	}
+	return out + "; " + what + ": " + strings.Join(known, " ")
+}
+
+// distance is the edit distance between a and b.
+func distance(a, b string) int {
+	prev := make([]int, len(b)+1)
+	for j := range prev {
+		prev[j] = j
+	}
+	for i := 1; i <= len(a); i++ {
+		cur := make([]int, len(b)+1)
+		cur[0] = i
+		for j := 1; j <= len(b); j++ {
+			cost := 1
+			if a[i-1] == b[j-1] {
+				cost = 0
+			}
+			cur[j] = min(prev[j]+1, cur[j-1]+1, prev[j-1]+cost)
+		}
+		prev = cur
+	}
+	return prev[len(b)]
+}
+
+// Reference describes every element and attribute a template may use, as
+// text. It is built from the same tables the parser checks against, so
+// it cannot be out of date.
+func Reference() string {
+	var sb strings.Builder
+	sb.WriteString("Elements:\n")
+	for _, n := range elementNames() {
+		kind := "container"
+		if elements[n].leaf {
+			kind = "text and no children"
+		}
+		fmt.Fprintf(&sb, "  <%s>  %s\n", n, kind)
+	}
+	sb.WriteString("Attributes (Go option in kebab-case):\n")
+	for _, n := range attributeNames() {
+		fmt.Fprintf(&sb, "  %s\n", n)
+	}
+	sb.WriteString("Text and attribute values may use {{path}}; if=\"name\" or \"!name\"; for=\"item in list\"; onclick=\"handler\".\n")
+	return sb.String()
 }
