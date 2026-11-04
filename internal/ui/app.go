@@ -92,6 +92,7 @@ type reqTab struct {
 	prompts               []proto.MCPPrompt         // the prompts an MCP server announced
 	respHist              []respEntry               // earlier responses, newest first
 	tools                 []proto.MCPTool           // the tools an MCP server announced
+	lastEventID           string                    // the last id an SSE stream sent, offered again when it reconnects
 	reconnect             bool                      // reopen a dropped connection
 	wantOpen              bool                      // the user wants the connection open, so a drop is retried
 }

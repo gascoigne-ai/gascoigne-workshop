@@ -26,6 +26,7 @@ type Event struct {
 	Text string // the message, or the description for Info events
 	Size int    // bytes of the message
 	Code int    // close status code, for "close"
+	ID   string // the id of a server-sent event, for resuming after a reconnect
 }
 
 // Session is a live, two-way connection. Events carries everything that

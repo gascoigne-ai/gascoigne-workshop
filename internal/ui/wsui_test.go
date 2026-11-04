@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -257,5 +258,49 @@ func TestSSETabListensAndShowsNoComposer(t *testing.T) {
 	}
 	if strings.Contains(vml.Dump(a.messagesPane(wsPanes[0], tab, nil)), "Connect to send messages") {
 		t.Fatal("an SSE tab must not show the composer")
+	}
+}
+
+func TestSSEReconnectResumesFromTheLastEventID(t *testing.T) {
+	retryDelay = 10 * time.Millisecond
+	var mu sync.Mutex
+	var seen []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		seen = append(seen, r.Header.Get("Last-Event-ID"))
+		n := len(seen)
+		mu.Unlock()
+		w.Header().Set("Content-Type", "text/event-stream")
+		if n == 1 {
+			io.WriteString(w, "id: 41\ndata: first\n\n") // then the stream ends: a drop
+			return
+		}
+		io.WriteString(w, "id: 42\ndata: second\n\n")
+		w.(http.Flusher).Flush() // the client waits for the headers of a stream that stays open
+		<-r.Context().Done()
+	}))
+	defer func() { srv.CloseClientConnections(); srv.Close() }()
+	a, _ := newTestApp(t)
+	tab := a.cur()
+	tab.req.Protocol, tab.req.URL, tab.reconnect = "sse", srv.URL, true
+	defer func() {
+		if t.Failed() {
+			t.Logf("log:\n%s\nwantOpen=%v connecting=%v sess=%v gen=%d", logText(tab), tab.wantOpen, tab.connecting, tab.sess != nil, tab.wsGen)
+		}
+	}()
+	a.send(tab)
+	until(t, a, "the second stream's event", func() bool { return strings.Contains(logText(tab), "second") || t.Failed() })
+	if !strings.Contains(logText(tab), "second") {
+		t.Fatalf("log:\n%s", logText(tab))
+	}
+	mu.Lock()
+	got := append([]string(nil), seen...)
+	mu.Unlock()
+	if len(got) < 2 || got[0] != "" || got[1] != "41" {
+		t.Fatalf("Last-Event-ID per connection: %q", got)
+	}
+	a.send(tab) // disconnect
+	if tab.lastEventID != "" {
+		t.Fatal("a deliberate disconnect must forget the id")
 	}
 }

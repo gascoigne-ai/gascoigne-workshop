@@ -190,6 +190,10 @@ func (s *mcpSession) deliver(msg []byte) {
 		kind = "request"
 	}
 	s.emit(Event{Dir: Received, Kind: kind, Text: compactJSON(msg), Size: len(msg)})
+	if kind == "request" {
+		go s.answerServer(m)
+		return
+	}
 	if m.Method == "" && m.ID != nil {
 		var id int64
 		if json.Unmarshal(*m.ID, &id) == nil {
@@ -572,4 +576,25 @@ func (m *mcpStdio) close() error {
 	t := time.AfterFunc(time.Second, func() { _ = m.cmd.Process.Kill() })
 	defer t.Stop()
 	return nil
+}
+
+// answerServer replies to a request the server sent: it answers ping and
+// roots/list (this client offers no roots), and refuses anything else with
+// "method not found", so a server that waits for an answer is not left
+// hanging.
+func (s *mcpSession) answerServer(m rpcMessage) {
+	reply := map[string]any{"jsonrpc": "2.0", "id": json.RawMessage(*m.ID)}
+	switch m.Method {
+	case "ping":
+		reply["result"] = map[string]any{}
+	case "roots/list":
+		reply["result"] = map[string]any{"roots": []any{}}
+	default:
+		reply["error"] = map[string]any{"code": -32601, "message": "method not found: " + m.Method}
+	}
+	b, err := json.Marshal(reply)
+	if err != nil {
+		return
+	}
+	_ = s.write(context.Background(), "response", b)
 }

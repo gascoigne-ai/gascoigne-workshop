@@ -114,7 +114,7 @@ func (s SSE) Connect(ctx context.Context, req model.Request) (Session, error) {
 			if ev.id != "" {
 				text = fmt.Sprintf("[%s] %s", ev.id, ev.data)
 			}
-			se.emit(Event{Dir: Received, Kind: kind, Text: text, Size: len(ev.data)})
+			se.emit(Event{Dir: Received, Kind: kind, Text: text, Size: len(ev.data), ID: ev.id})
 		})
 		if err := sc.Err(); err != nil && !se.isClosing() {
 			se.emit(Event{Dir: Info, Kind: "close", Code: 1006, Text: "Connection lost: " + err.Error()})

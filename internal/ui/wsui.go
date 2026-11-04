@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
 	"strings"
 	"time"
 
@@ -66,6 +67,9 @@ func (a *App) connect(t *reqTab) {
 	t.connecting = true
 	a.status = "Connecting to " + t.req.URL
 	req := t.req.Expanded(a.varsFor(t.req))
+	if t.req.Protocol == "sse" && t.lastEventID != "" { // resume where the stream stopped
+		req.Headers = append(req.Headers, model.KV{Name: "Last-Event-ID", Value: t.lastEventID, Enabled: true})
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), a.timeoutFor(req))
 	t.wsCancel = cancel
 	go func() {
@@ -95,6 +99,7 @@ func (a *App) connect(t *reqTab) {
 // disconnect closes the session of t, or abandons a connect in progress.
 func (a *App) disconnect(t *reqTab) {
 	t.wantOpen = false
+	t.lastEventID = "" // a deliberate disconnect starts the stream over next time
 	if t.sess != nil {
 		_ = t.sess.Close() // the end of the event stream clears the session
 		return
@@ -157,6 +162,9 @@ func (a *App) applyWS(e wsEvent) {
 	case e.hasEv:
 		if tools := proto.ParseTools(e.ev.Text); e.ev.Dir == proto.Received && tools != nil {
 			t.tools = tools
+		}
+		if e.ev.Dir == proto.Received && e.ev.ID != "" {
+			t.lastEventID = e.ev.ID
 		}
 		if e.ev.Dir == proto.Received {
 			if res := proto.ParseResources(e.ev.Text); res != nil {
