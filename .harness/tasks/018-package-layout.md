@@ -1,4 +1,4 @@
-status: todo
+status: done for what does not need window state (the rest stays in internal/ui)
 
 # Organize packages by functionality
 
@@ -13,3 +13,7 @@ Packages are grouped by layer more than by feature, so related code is spread ou
 ## Acceptance
 - No behavior change; `make check` passes after every move.
 - `.harness/architecture.md` describes the new layout in the same commit.
+
+## Progress
+- Done: feature packages `internal/respview` (response bodies to lines, compact filter), `internal/textfmt`, `internal/appearance` (themes, colors, user themes, choices), `internal/collection` (tree rows, filter, sample), next to the existing `model`, `proto`, `store`, `settings`, `state`, `jsonview`. Toolkit moved to `uitoolkit/` (task 019).
+- Left in `internal/ui` on purpose: panes, environments, WebSocket/MCP tab, workspace saving, overlays and shortcuts all read and write the `App` state (tabs, settings, collection). Splitting them further needs an explicit app-state interface; do that when one of them gets a second user.
