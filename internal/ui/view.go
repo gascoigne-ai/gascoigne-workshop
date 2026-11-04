@@ -5,10 +5,10 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/textfmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/component"
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/component"
 	// The view DSL is dot-imported so views read like markup: Row(...), Text(...).
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -345,5 +345,10 @@ func statusPill(status int) (fg, bg w.Token) {
 // ── Status bar ─────────────────────────────────────────────────────────
 
 func (a *App) statusBar() Node {
-	return a.templateView("statusbar.vml", component.Scope{"status": a.status, "version": version})
+	return component.View(`
+		<row h="28" pad="12 0" gap="12" bg="frame" control="statusbar" border-top="border">
+		  <text small muted ellipsis grow="1">{{status}}</text>
+		  <text small muted>{{version}}</text>
+		</row>`,
+		component.Scope{"status": a.status, "version": version})
 }

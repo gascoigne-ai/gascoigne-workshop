@@ -19,10 +19,11 @@
 // component or an inline `template` option: a .vml file read by a Loader
 // (embedded, or from a folder with reload on edit), or a string in Go code:
 //
-//	var statusBar = component.Must("statusbar", `
-//	  <row h="28" bg="frame"><text small muted>{{status}}</text></row>`)
-//	...
-//	node := statusBar.MustBuild(component.Scope{"status": a.status})
+//	func (a *App) statusBar() Node {
+//		return component.View(`
+//		  <row h="28" bg="frame"><text small muted>{{status}}</text></row>`,
+//			component.Scope{"status": a.status})
+//	}
 //
 // The result is the same *vml.El tree the Go DSL makes, so both styles
 // share one runtime and can be mixed: a template can be a part of a
@@ -37,6 +38,7 @@ import (
 	"io"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -72,6 +74,31 @@ type node struct {
 type Template struct {
 	name string
 	root *node
+}
+
+var (
+	viewMu    sync.Mutex
+	viewCache = map[string]*Template{}
+)
+
+// View builds an inline template for scope. Each distinct source string is
+// parsed once and kept, so a view written inside a method costs only the
+// build on every frame. A syntax error or a bad scope panics: both are
+// mistakes in the program, not in its input.
+//
+//	func (a *App) statusBar() Node {
+//		return component.View(`<row h="28"><text small>{{status}}</text></row>`,
+//			component.Scope{"status": a.status})
+//	}
+func View(src string, sc Scope) vml.Node {
+	viewMu.Lock()
+	t, ok := viewCache[src]
+	if !ok {
+		t = Must("inline", src)
+		viewCache[src] = t
+	}
+	viewMu.Unlock()
+	return t.MustBuild(sc)
 }
 
 // Must is Parse for templates written in Go source: it panics on a

@@ -6,7 +6,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/textfmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/component"
 	"reflect"
 	"strconv"
 	"time"
@@ -183,12 +182,11 @@ type App struct {
 	sidebarSplit     vml.SplitState // width of the collections sidebar
 	paneSplit        vml.SplitState // request pane share of the request/response area
 	statePath        string         // where the UI state is remembered
-	views            *component.Loader
-	env              int    // index of the active environment in col.Envs, -1 for none
-	workspace        string // the folder the collection is saved to; "" for none yet
-	defaultWorkspace string // where the first save goes when there is no workspace
-	colSaved         string // the collection as last loaded or saved, as JSON
-	colSeen          string // the last collection seen, to notice changes
+	env              int            // index of the active environment in col.Envs, -1 for none
+	workspace        string         // the folder the collection is saved to; "" for none yet
+	defaultWorkspace string         // where the first save goes when there is no workspace
+	colSaved         string         // the collection as last loaded or saved, as JSON
+	colSeen          string         // the last collection seen, to notice changes
 	colAt            time.Time
 	stateSeen        string       // the last snapshot seen, to notice changes
 	stateSaved       string       // the last snapshot written
@@ -205,7 +203,6 @@ type Options struct {
 	StatePath        string // remembered UI state; "" keeps it in memory
 	ThemesDir        string // folder of user theme files (*.json); "" for none
 	OpenMenu         bool   // start with the settings menu open
-	ViewsDir         string // folder of view templates (*.vml) that replace the built-in ones; "" for the built-in
 	WorkspaceDir     string // collection folder; "" uses the remembered one, else the built-in sample
 	DefaultWorkspace string // where saving goes when there is no workspace yet
 }
@@ -231,7 +228,6 @@ func NewApp(opts Options) (*App, error) {
 		expanded:         map[*model.Folder]bool{},
 		results:          make(chan sendResult, 8),
 		wsEvents:         make(chan wsEvent, 64),
-		views:            newViewLoader(opts.ViewsDir),
 		status:           "Ready",
 		shot:             screenshot{path: opts.ScreenshotPath, sendOnStart: opts.SendOnStart},
 

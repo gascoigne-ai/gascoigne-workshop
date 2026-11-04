@@ -202,3 +202,19 @@ func TestInlineTemplateWithMust(t *testing.T) {
 		}()
 	}
 }
+
+func TestViewParsesEachSourceOnce(t *testing.T) {
+	const src = `<text>{{n}}</text>`
+	a := View(src, Scope{"n": 1})
+	b := View(src, Scope{"n": 2})
+	if !strings.Contains(vml.Dump(a), `"1"`) || !strings.Contains(vml.Dump(b), `"2"`) {
+		t.Fatal("scope not applied per call")
+	}
+	viewMu.Lock()
+	n := len(viewCache)
+	_, ok := viewCache[src]
+	viewMu.Unlock()
+	if !ok || n < 1 {
+		t.Fatal("source not cached")
+	}
+}
