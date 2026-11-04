@@ -89,7 +89,7 @@ var cornerChoices = []struct {
 }{
 	{"square", "Square", 0},
 	{"soft", "Soft", 1},
-	{"round", "Round", 1.7},
+	{"round", "Round", 1.5},
 }
 
 // cornerScale is the radius factor of a corner id; unknown ids are soft.

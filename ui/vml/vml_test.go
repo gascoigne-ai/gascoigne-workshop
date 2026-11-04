@@ -885,3 +885,14 @@ func TestBorderLeftOptionRecordsTheTokenAndInset(t *testing.T) {
 		t.Fatalf("%q %d", e.borderLeft, e.borderInset)
 	}
 }
+
+func TestOverlineAndBoldIfRecordTheirSettings(t *testing.T) {
+	e := box(Overline(widget.AccentLine))
+	if e.overline != widget.AccentLine {
+		t.Fatalf("overline %q", e.overline)
+	}
+	on, off := Text("x", BoldIf(true)), Text("x", BoldIf(false))
+	if !on.bold || off.bold {
+		t.Fatalf("bold: on %v off %v", on.bold, off.bold)
+	}
+}

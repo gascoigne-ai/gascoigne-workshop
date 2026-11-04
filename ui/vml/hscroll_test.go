@@ -149,21 +149,31 @@ func TestHScrollFollowsTheHorizontalWheelOfATouchpad(t *testing.T) {
 	}
 }
 
-func TestHScrollArrowsAreAlwaysShownWhenOverflowingAndAtALimitStillTakeTheClick(t *testing.T) {
+func TestHScrollShowsOnlyTheArrowsThatHaveSomewhereToScroll(t *testing.T) {
 	var hits []int
 	st := &ScrollState{}
 	root := Col(strip(st, 5, &hits))
 	c := testCtx(t)
 	Layout(c, root, 300, 100)
-	if l, r := hscrollOf(root).arrowsShown(root.kids[0]); !l || !r {
-		t.Fatalf("both arrows are drawn while the strip overflows, got %v %v", l, r)
+	h, e := hscrollOf(root), root.kids[0]
+	if l, r := h.arrowsShown(e); l || !r {
+		t.Fatalf("at the left end only the right arrow shows, got %v %v", l, r)
 	}
-	// At the left end the left arrow is dim, but a click on it must not
-	// fall through to the tab beneath.
-	c.In = widget.Input{X: 3, Y: 10, Click: true, Held: true}
+	// With no left arrow, nothing swallows a click on the first tab.
+	c.In = widget.Input{X: 30, Y: 10, Click: true, Held: true}
 	Update(c, root)
-	if st.X != 0 || len(hits) != 0 {
+	if st.X != 0 || len(hits) != 1 || hits[0] != 0 {
 		t.Fatalf("X = %d hits %v", st.X, hits)
+	}
+	st.X = 136
+	Layout(c, root, 300, 100)
+	if l, r := h.arrowsShown(e); !l || r {
+		t.Fatalf("at the right end only the left arrow shows, got %v %v", l, r)
+	}
+	st.X = 50
+	Layout(c, root, 300, 100)
+	if l, r := h.arrowsShown(e); !l || !r {
+		t.Fatalf("in the middle both show, got %v %v", l, r)
 	}
 	fit := Col(strip(&ScrollState{}, 2, &hits))
 	Layout(c, fit, 300, 100)

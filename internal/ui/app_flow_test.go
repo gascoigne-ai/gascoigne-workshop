@@ -172,14 +172,14 @@ func TestTypingInTheURLFieldUpdatesParams(t *testing.T) {
 func TestTogglingAParamRewritesTheURL(t *testing.T) {
 	a, _ := newTestApp(t)
 	req := a.cur().req
-	click(a, 290, 262) // checkbox of the first Params row (q)
+	click(a, 290, paramsRow0Y) // checkbox of the first Params row (q)
 	if req.Params[0].Enabled || strings.Contains(req.URL, "q=") {
 		t.Fatalf("q must be disabled and gone from %q", req.URL)
 	}
 	if !strings.Contains(req.URL, "order=desc") {
 		t.Fatalf("other params must stay in %q", req.URL)
 	}
-	click(a, 290, 262)
+	click(a, 290, paramsRow0Y)
 	if !req.Params[0].Enabled || !strings.Contains(req.URL, "q=gioui") {
 		t.Fatalf("toggling back must restore q in %q", req.URL)
 	}
@@ -188,7 +188,7 @@ func TestTogglingAParamRewritesTheURL(t *testing.T) {
 func TestDeletingAParamRewritesTheURL(t *testing.T) {
 	a, _ := newTestApp(t)
 	req := a.cur().req
-	click(a, 739, 262) // delete button of the first Params row
+	click(a, 739, paramsRow0Y) // delete button of the first Params row
 	if len(req.Params) != 2 || req.Params[0].Name != "order" || strings.Contains(req.URL, "q=") {
 		t.Fatalf("params %+v url %q", req.Params, req.URL)
 	}
@@ -456,8 +456,8 @@ func TestNoResponseStates(t *testing.T) {
 // Cells of the Params table at 1280x800: request pane starts at x=260,
 // the table at x=272, columns: actions 36, name 115, value 165, description 132.
 const (
-	paramsRow0Y   = 262
-	paramsRow3Y   = 346 // the placeholder row below the three params
+	paramsRow0Y   = 272
+	paramsRow3Y   = 356 // the placeholder row below the three params
 	nameCellX     = 365
 	valueCellX    = 500
 	descCellX     = 650
@@ -729,7 +729,7 @@ func TestTreeScrollsWhenItDoesNotFit(t *testing.T) {
 // row, the editor below y=228, a form table's placeholder row at y=270.
 const (
 	bodyTabIdx = 1
-	chipsY     = 206
+	chipsY     = 216
 	noneChipX  = 300
 	jsonChipX  = 374
 	textChipX  = 444
@@ -977,7 +977,7 @@ func TestDirtyFollowsEditsAndUndoingThemByHand(t *testing.T) {
 	if dirty(tab) {
 		t.Fatal("restoring the original text makes it clean again")
 	}
-	click(a, 739, 262) // delete a param
+	click(a, 739, paramsRow0Y) // delete a param
 	if !dirty(tab) {
 		t.Fatal("deleting a param is a change")
 	}
@@ -2279,13 +2279,13 @@ func TestTreeKeysDoNothingWhileTyping(t *testing.T) {
 
 // ---- table rows: keyboard operations, enable all, undo, bulk edit -------
 
-// Params table at 1280x800: header cells at y=234 (the action cell at
-// x=290), rows at y=262, 290, 318 and the placeholder at 346.
+// Params table at 1280x800: header cells at y=244 (the action cell at
+// x=290), rows at y=272, 300, 328 and the placeholder at 356.
 const (
-	paramsHeaderY = 234
+	paramsHeaderY = 244
 	checkAllX     = 290
-	row1Y         = 290
-	row2Y         = 318
+	row1Y         = 300
+	row2Y         = 328
 	bulkBtnX      = 715
 )
 

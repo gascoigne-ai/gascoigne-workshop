@@ -96,20 +96,20 @@ func (s *hscrollB) arrows(e *El) (left, right widget.Rect) {
 	return
 }
 
-// arrowsShown reports which arrows are drawn: both whenever the strip
-// overflows (one is dim at the end of its way), none when everything fits.
+// arrowsShown reports which arrows are drawn: only those with something
+// to scroll to that way, so none when everything fits and one at an end.
 func (s *hscrollB) arrowsShown(e *El) (left, right bool) {
-	return s.overflow(e), s.overflow(e)
+	return s.overflow(e) && s.state.X > 0, s.overflow(e) && s.state.X < s.maxX(e)
 }
 
-// preUpdate takes clicks on the arrows before the children under them see
-// them, also on a dim arrow, which sits over the edge of a tab.
+// preUpdate takes clicks on the arrows before the children under them see them.
 func (s *hscrollB) preUpdate(e *El, c *widget.Ctx) {
 	in, st, r := c.In, s.state, e.rect
 	if !s.overflow(e) {
 		return
 	}
 	left, right := s.arrows(e)
+	showL, showR := s.arrowsShown(e)
 	step := func(dir, by int) { st.X = max(0, min(st.X+dir*by, s.maxX(e))) }
 	if !in.Held {
 		st.holdDir, st.holdN = 0, 0
@@ -119,11 +119,11 @@ func (s *hscrollB) preUpdate(e *El, c *widget.Ctx) {
 	}
 	if in.Click {
 		switch {
-		case left.Contains(in.X, in.Y):
+		case showL && left.Contains(in.X, in.Y):
 			st.holdDir, st.holdN = -1, 0
 			step(-1, r.W/2)
 			c.In.Click = false
-		case right.Contains(in.X, in.Y):
+		case showR && right.Contains(in.X, in.Y):
 			st.holdDir, st.holdN = 1, 0
 			step(1, r.W/2)
 			c.In.Click = false
@@ -173,22 +173,20 @@ func (s *hscrollB) update(e *El, c *widget.Ctx) {
 }
 
 func (s *hscrollB) drawOver(e *El, c *widget.Ctx, dst *ebiten.Image) {
-	if !s.overflow(e) {
-		return
-	}
 	left, right := s.arrows(e)
+	showL, showR := s.arrowsShown(e)
 	for _, a := range []struct {
-		box widget.Rect
-		on  bool // there is more to scroll to that way
-		dir float32
-	}{{left, s.state.X > 0, -1}, {right, s.state.X < s.maxX(e), 1}} {
+		box  widget.Rect
+		show bool
+		dir  float32
+	}{{left, showL, -1}, {right, showR, 1}} {
+		if !a.show {
+			continue
+		}
 		c.Fill(dst, a.box, c.Col(widget.Frame))
-		clr := c.Col(widget.Rule) // dim at the end of the way
-		if a.on {
-			clr = c.Col(widget.Muted)
-			if c.Hovered(a.box) {
-				clr = c.Col(widget.Text)
-			}
+		clr := c.Col(widget.Muted)
+		if c.Hovered(a.box) {
+			clr = c.Col(widget.Text)
 		}
 		cx, cy := float32(a.box.X+a.box.W/2), float32(a.box.Y+a.box.H/2)
 		c.Line(dst, cx-2*a.dir, cy-4, cx+2*a.dir, cy, 1.5, clr)
@@ -198,7 +196,8 @@ func (s *hscrollB) drawOver(e *El, c *widget.Ctx, dst *ebiten.Image) {
 
 // HScroll is a horizontally scrolling row: its children keep their
 // natural width and may be wider than the box, which clips them and
-// shows arrows at the ends. Mark the child to keep in view with Reveal.
+// shows arrows at the ends that have more to scroll to. Mark the child to
+// keep in view with Reveal.
 func HScroll(state *ScrollState, items ...Item) *El {
 	return newEl(&hscrollB{flow: flow{horiz: true}, state: state}, append([]Item{Clip()}, items...))
 }

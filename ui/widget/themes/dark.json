@@ -47,31 +47,31 @@
   },
   "controls": {
     "button": {
-      "radius": 6,
+      "radius": 4,
       "border": "border-strong"
     },
     "icon-button": {
-      "radius": 6,
+      "radius": 4,
       "border": "border-strong"
     },
     "primary": {
-      "radius": 6,
+      "radius": 4,
       "border": "accent-line"
     },
     "field": {
-      "radius": 6,
+      "radius": 4,
       "border": "border-strong"
     },
     "table": {
-      "radius": 8,
+      "radius": 6,
       "border": "border-soft"
     },
     "menu": {
-      "radius": 10,
+      "radius": 8,
       "border": "border-strong"
     },
     "tooltip": {
-      "radius": 6,
+      "radius": 4,
       "border": "border-strong"
     },
     "tabstrip": {},

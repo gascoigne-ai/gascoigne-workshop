@@ -2,6 +2,7 @@ package vml
 
 import (
 	"strconv"
+	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/ui/widget"
 )
@@ -56,7 +57,7 @@ func tabItems(items []TabItem, active int, onSelect func(i int)) []Item {
 			Gap(4), PadXY(10, 0), AlignItems(AlignBaseline),
 			OnClick(func() { onSelect(i) }),
 			Separator(i > 0, 10),
-			Text(it.Label, Color(tabColor(i == active))),
+			Text(it.Label, Color(tabColor(i == active)), BoldIf(i == active)),
 			If(it.Badge > 0, Text(strconv.Itoa(it.Badge), Small(), Muted())),
 		}
 		if i == active {
@@ -172,11 +173,11 @@ func Table(t TableSpec, opts ...Option) *El {
 // tableHeader is the caption row; with a Widths state it carries the
 // draggable column dividers on top.
 func tableHeader(t TableSpec) Node {
-	header := Row(H(widget.RowH), BorderBottom(widget.BorderSoft),
+	header := Row(H(widget.RowH), Bg(widget.Panel), BorderBottom(widget.Border),
 		If(t.Editable, headerCheck(t)),
 		For(t.Columns, func(i int, name string) Node {
 			return Row(Grow(t.weight(i)), PadXY(8, 0), Separator(i > 0, 7),
-				Text(name, Small(), Bold(), Muted(), Grow(1)))
+				Text(strings.ToUpper(name), Small(), Bold(), Muted(), Grow(1)))
 		}),
 		If(t.Editable, Row(W(tableActionW))),
 	)

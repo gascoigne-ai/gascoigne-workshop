@@ -13,10 +13,10 @@ import (
 const (
 	sidebarW  = 260
 	headerH   = 44
-	tabsH     = 40
+	tabsH     = 46
 	urlH      = 56
 	statusH   = 28
-	paneTabsH = 40
+	paneTabsH = 44
 
 	// Smallest sizes the dividers allow.
 	minSidebarW = 160
@@ -173,7 +173,7 @@ func (a *App) requestTabs() Node {
 		HScroll(&a.tabsScroll, Grow(1), For(a.tabs, func(i int, t *reqTab) Node {
 			look := []Item{Bg(w.Frame), Control("tabstrip")} // inactive tabs blend into the strip; the active one joins the pane
 			if i == a.active {
-				look = []Item{Bg(w.Bg), Reveal()}
+				look = []Item{Bg(w.Bg), Reveal(), Overline(w.AccentLine)} // the open tab: pane color, accent bar on top, bold name
 			}
 			grab := OnClick(func() {
 				a.active = i
@@ -186,7 +186,7 @@ func (a *App) requestTabs() Node {
 				Separator(i > 0, 12),
 				Row(PadL(14), Gap(8), AlignItems(AlignBaseline), grab, OnHeldOver(func() { a.dragOver(i) }),
 					Text(requestBadge(t.req.Protocol, t.req.Method), Small(), Color(methodToken(t.req.Method)), W(tabBadgeW)),
-					Text(t.req.Name),
+					Text(t.req.Name, BoldIf(i == a.active), Color(tabNameColor(i == a.active))),
 					Row(W(tabDirtyW), AlignSelf(AlignStretch), If(dirty(t), Text(dirtyMark, Color(w.AccentLine), Grow(1)))),
 				),
 				Row(W(24), OnClick(func() { a.closeTab(i) }), Tooltip(a.hint("Close tab", "close-tab")),
@@ -210,9 +210,8 @@ func (a *App) urlBar(t *reqTab) Node {
 	return Row(H(urlH), PadXY(w.Pad, 8), Gap(8), Bg(w.Bg),
 		Row(Grow(1), Bg(w.Sunken), Control("field"),
 			tip("Protocol: click to change", chip(protocolLabel[t.req.Protocol], w.Muted, 64, func() { a.cycleProtocol(t) })),
-			VRuleInset(8),
+			If(isREST, VRuleInset(8)), // a divider between the chips, none after the last one
 			If(isREST, tip("Method: click to change", chip(t.req.Method, methodToken(t.req.Method), 84, func() { a.cycleMethod(t) }))),
-			If(isREST, VRuleInset(8)),
 			Spacer(W(w.Pad-4)), // breathing room between the divider and the URL text
 			Field(&t.url, Grow(1),
 				Placeholder("Enter URL"),
@@ -329,4 +328,13 @@ func (a *App) statusBar() Node {
 		Text(a.status, Small(), Muted(), Ellipsis(), Grow(1)),
 		Text(version, Small(), Muted()),
 	)
+}
+
+// tabNameColor is the open tab's name in the accent color, so it stands
+// out from the quiet others even where the bar above it blends into the banner.
+func tabNameColor(active bool) w.Token {
+	if active {
+		return w.AccentLine
+	}
+	return w.Text
 }

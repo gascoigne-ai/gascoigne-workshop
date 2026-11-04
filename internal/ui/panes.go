@@ -436,24 +436,27 @@ func responseEmpty(t *reqTab) (string, bool) {
 func (a *App) responsePane(_ pane, t *reqTab, _ *ScrollState) Node {
 	return Col(Grow(1),
 		Spacer(H(w.Pad)), // same top inset as the request pane, so first rows line up
-		Row(H(w.RowH), PadXY(w.Pad, 0), Gap(6), BorderBottom(w.Border),
+		Row(H(w.RowH+8), PadXY(w.Pad, 0), Gap(6), AlignItems(AlignCenter), BorderBottom(w.Border),
 			a.viewChip("Pretty", !t.raw, 56, func() { a.setRaw(t, false) }),
 			a.viewChip("Raw", t.raw, 44, func() { a.setRaw(t, true) }),
 			Spacer(),
-			IconButton(SearchIcon(Grow(1)), W(48), OnClick(a.openFind), Tooltip(a.hint("Find in response", "find"))),
-			IconButton(CopyIcon(Grow(1)), W(52), OnClick(func() { a.copyBody(t) }), Tooltip("Copy the response body")),
-			IconButton(PromptIcon(Grow(1)), W(52), OnClick(func() { a.copyCurl(t) }), Tooltip("Copy the request as a cURL command")),
+			IconButton(SearchIcon(Grow(1)), W(48), H(chipH), OnClick(a.openFind), Tooltip(a.hint("Find in response", "find"))),
+			IconButton(CopyIcon(Grow(1)), W(52), H(chipH), OnClick(func() { a.copyBody(t) }), Tooltip("Copy the response body")),
+			IconButton(PromptIcon(Grow(1)), W(52), H(chipH), OnClick(func() { a.copyCurl(t) }), Tooltip("Copy the request as a cURL command")),
 		),
 		If(t.findOpen, a.findBar(t)),
 		Code(&t.view, Grow(1), Bg(w.Sunken), OnRightClick(func(x, y int) { a.openMenu(x, y, a.responseMenuItems(t)) })),
 	)
 }
 
+// chipH is the height of the toolbar's chips and icon buttons: all the same, centered in the row.
+const chipH = 24
+
 func (a *App) viewChip(label string, selected bool, width int, onClick func()) Node {
 	if selected {
-		return PrimaryButton(label, W(width), OnClick(onClick))
+		return PrimaryButton(label, W(width), H(chipH), OnClick(onClick))
 	}
-	return Button(label, W(width), OnClick(onClick))
+	return Button(label, W(width), H(chipH), OnClick(onClick))
 }
 
 func (a *App) findBar(t *reqTab) Node {
