@@ -15,11 +15,11 @@ func TestLoad(t *testing.T) {
 		wantErr bool
 	}{
 		{"missing file gives defaults", nil, Default(), false},
-		{"full file", ptr(`{"theme":"light","textSize":"large"}`), Settings{Theme: "light", TextSize: "large", Layout: "side", Contrast: "normal", TimeoutSec: 60, UIScalePct: 100}, false},
-		{"saved layout", ptr(`{"layout":"stacked"}`), Settings{Theme: "dark", TextSize: "medium", Layout: "stacked", Contrast: "normal", TimeoutSec: 60, UIScalePct: 100}, false},
-		{"saved timeout", ptr(`{"timeoutSec":15}`), Settings{Theme: "dark", TextSize: "medium", Layout: "side", Contrast: "normal", TimeoutSec: 15, UIScalePct: 100}, false},
-		{"missing field keeps default", ptr(`{"theme":"light"}`), Settings{Theme: "light", TextSize: "medium", Layout: "side", Contrast: "normal", TimeoutSec: 60, UIScalePct: 100}, false},
-		{"unknown values pass through", ptr(`{"theme":"neon"}`), Settings{Theme: "neon", TextSize: "medium", Layout: "side", Contrast: "normal", TimeoutSec: 60, UIScalePct: 100}, false},
+		{"full file", ptr(`{"theme":"light","textSize":"large"}`), Settings{Theme: "light", TextSize: "large", Layout: "side", Contrast: "normal", TimeoutSec: 60, UIScalePct: 100, Corners: "soft"}, false},
+		{"saved layout", ptr(`{"layout":"stacked"}`), Settings{Theme: "dark", TextSize: "medium", Layout: "stacked", Contrast: "normal", TimeoutSec: 60, UIScalePct: 100, Corners: "soft"}, false},
+		{"saved timeout", ptr(`{"timeoutSec":15}`), Settings{Theme: "dark", TextSize: "medium", Layout: "side", Contrast: "normal", TimeoutSec: 15, UIScalePct: 100, Corners: "soft"}, false},
+		{"missing field keeps default", ptr(`{"theme":"light"}`), Settings{Theme: "light", TextSize: "medium", Layout: "side", Contrast: "normal", TimeoutSec: 60, UIScalePct: 100, Corners: "soft"}, false},
+		{"unknown values pass through", ptr(`{"theme":"neon"}`), Settings{Theme: "neon", TextSize: "medium", Layout: "side", Contrast: "normal", TimeoutSec: 60, UIScalePct: 100, Corners: "soft"}, false},
 		{"broken json gives defaults and an error", ptr(`{"theme":`), Default(), true},
 	}
 	for _, tt := range tests {
@@ -142,6 +142,24 @@ func TestUIScaleRoundTripsAndOldFilesKeepTheDefault(t *testing.T) {
 		t.Fatal(err)
 	}
 	if got, _ := Load(p); got.UIScalePct != 125 {
+		t.Fatalf("round trip: %+v", got)
+	}
+}
+
+func TestCornersAndFlatRoundTripAndOldFilesKeepTheDashboardLook(t *testing.T) {
+	p := filepath.Join(t.TempDir(), "s.json")
+	if err := os.WriteFile(p, []byte(`{"theme":"light"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	s, err := Load(p)
+	if err != nil || s.Corners != "soft" || s.Flat {
+		t.Fatalf("old file: %+v, %v", s, err)
+	}
+	s.Corners, s.Flat = "round", true
+	if err := s.Save(p); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := Load(p); got.Corners != "round" || !got.Flat {
 		t.Fatalf("round trip: %+v", got)
 	}
 }

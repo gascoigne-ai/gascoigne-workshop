@@ -32,6 +32,13 @@ type Settings struct {
 	// as "Ctrl+Shift+Tab"; "" means unbound. Missing actions keep their default.
 	Shortcuts map[string]string `json:"shortcuts,omitempty"`
 
+	// Corners is how round controls are: "square", "soft" (the theme's own
+	// radii) or "round".
+	Corners string `json:"corners"`
+
+	// Flat turns every gradient into a flat fill.
+	Flat bool `json:"flat"`
+
 	// UIScalePct is the interface scale in percent, on top of the
 	// display's own scale factor; 0 means the default.
 	UIScalePct int `json:"uiScale"`
@@ -59,7 +66,7 @@ func (s Settings) UIScale() float64 {
 
 // Default is what a first run uses.
 func Default() Settings {
-	return Settings{Theme: "dark", TextSize: "medium", Layout: "side", Contrast: "normal", TimeoutSec: 60, UIScalePct: DefaultUIScalePct}
+	return Settings{Theme: "dark", TextSize: "medium", Layout: "side", Contrast: "normal", TimeoutSec: 60, UIScalePct: DefaultUIScalePct, Corners: "soft"}
 }
 
 // Load reads path. A missing file is not an error and yields Default;

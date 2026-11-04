@@ -127,18 +127,26 @@ func TestPalettesFollowTheCLIDashboard(t *testing.T) {
 	}
 }
 
-// Both palettes carry a gradient strength, and the text on every
-// gradient-filled surface keeps its contrast at both ends of the fill.
-func TestThemesHaveGradientsThatKeepTextReadable(t *testing.T) {
+// Every gradient surface keeps its text readable at both ends of the fill.
+func TestThemeGradientsKeepTextReadable(t *testing.T) {
+	surfaces := []struct {
+		control   string
+		base, fgt Token
+	}{
+		{"button", Chip, ChipText}, {"icon-button", Chip, ChipText}, {"primary", Accent, AccentText},
+		{"tabstrip", Frame, Text}, {"statusbar", Frame, Text}, {"hero", "hero", "hero-text"},
+	}
 	for name, th := range map[string]Theme{"dark": Dark(), "light": Light()} {
-		if th.Gradient <= 0 || th.Gradient > 0.2 {
-			t.Errorf("%s: gradient strength %v, want a subtle positive value", name, th.Gradient)
-		}
-		for _, pair := range [][2]Token{{Chip, ChipText}, {Accent, AccentText}, {Frame, Text}} {
-			top, bottom := GradientEnds(th.Color(pair[0]), th.Gradient)
+		for _, s := range surfaces {
+			st := th.Style(s.control)
+			if !st.HasGradient() {
+				t.Errorf("%s: %s has no gradient", name, s.control)
+				continue
+			}
+			top, bottom := GradientFor(th.Color(s.base), st)
 			for end, c := range map[string]color.RGBA{"top": top, "bottom": bottom} {
-				if r := ContrastRatio(c, th.Color(pair[1])); r < 4.5 {
-					t.Errorf("%s: %v text on the %s of the %v gradient: %.2f", name, pair[1], end, pair[0], r)
+				if r := ContrastRatio(c, th.Color(s.fgt)); r < 4.5 {
+					t.Errorf("%s: %v text on the %s of %s: %.2f", name, s.fgt, end, s.control, r)
 				}
 			}
 		}

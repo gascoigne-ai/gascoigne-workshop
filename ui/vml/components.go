@@ -9,7 +9,7 @@ import (
 // Button is an outlined chip with a centered label; it brightens on hover.
 func Button(label string, opts ...Option) *El {
 	return Row(with([]Item{
-		Bg(widget.Chip), Gradient(), Border(widget.Border), Lighten(),
+		Bg(widget.Chip), Control("button"), Lighten(),
 		Text(label, Center(), Grow(1), Color(widget.ChipText)),
 	}, opts)...)
 }
@@ -26,7 +26,7 @@ func LinkButton(label string, opts ...Option) *El {
 // PrimaryButton is the accent-colored call-to-action variant of Button.
 func PrimaryButton(label string, opts ...Option) *El {
 	return Row(with([]Item{
-		Bg(widget.Accent), Gradient(), Border(widget.AccentLine), Lighten(),
+		Bg(widget.Accent), Control("primary"), Lighten(),
 		Text(label, Center(), Grow(1), Color(widget.AccentText)),
 	}, opts)...)
 }
@@ -159,7 +159,7 @@ func Table(t TableSpec, opts ...Option) *El {
 		rows = append(append([]TableRow{}, rows...), TableRow{Cells: t.Placeholder, Muted: true})
 	}
 	return Col(with([]Item{
-		Bg(widget.Sunken), Border(widget.Border),
+		Bg(widget.Sunken), Control("table"),
 		tableHeader(t),
 		For(rows, func(i int, r TableRow) Node {
 			return tableRow(t, i, r, t.Editable && i == len(t.Rows))

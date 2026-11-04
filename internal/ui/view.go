@@ -158,20 +158,20 @@ func (a *App) panes(t *reqTab) Node {
 
 func (a *App) header() Node {
 	toggleMenu := OnClick(func() { a.menu = !a.menu })
-	return Row(H(headerH), PadXY(w.Pad, 0), Bg(w.Bg),
-		Text(a.col.Name),
+	return Row(H(headerH), PadXY(w.Pad, 0), Bg(w.Hero), Control("hero"),
+		Text(a.col.Name, Color(w.HeroText)),
 		Spacer(),
 		Row(W(headerH), toggleMenu, Tooltip(a.hint("Settings", "settings")),
-			Dots(Grow(1)),
+			Dots(Grow(1), Color(w.HeroMuted)),
 		),
 	)
 }
 
 // requestTabs is the strip of open requests, with a "+" for a new one.
 func (a *App) requestTabs() Node {
-	return Row(H(tabsH), Bg(w.Frame), Gradient(), BorderBottom(w.Border),
+	return Row(H(tabsH), Bg(w.Frame), Control("tabstrip"), BorderBottom(w.Border),
 		For(a.tabs, func(i int, t *reqTab) Node {
-			look := []Item{Bg(w.Frame), Gradient()} // inactive tabs blend into the strip; the active one joins the pane
+			look := []Item{Bg(w.Frame), Control("tabstrip")} // inactive tabs blend into the strip; the active one joins the pane
 			if i == a.active {
 				look = []Item{Bg(w.Bg)}
 			}
@@ -202,7 +202,7 @@ func (a *App) urlBar(t *reqTab) Node {
 		send = PrimaryButton("Cancel", W(80), OnClick(func() { a.cancelSend(t) }), Tooltip("Cancel the running request"))
 	}
 	return Row(H(urlH), PadXY(w.Pad, 8), Gap(8), Bg(w.Bg),
-		Row(Grow(1), Bg(w.Sunken), Border(w.Border),
+		Row(Grow(1), Bg(w.Sunken), Control("field"),
 			tip("Protocol: click to change", chip(protocolLabel[t.req.Protocol], w.Muted, 64, func() { a.cycleProtocol(t) })),
 			VRuleInset(8),
 			If(isREST, tip("Method: click to change", chip(t.req.Method, methodToken(t.req.Method), 84, func() { a.cycleMethod(t) }))),
@@ -308,7 +308,7 @@ func (a *App) responseStatus(t *reqTab) Node {
 // ── Status bar ─────────────────────────────────────────────────────────
 
 func (a *App) statusBar() Node {
-	return Row(H(statusH), PadXY(w.Pad, 0), Gap(w.Pad), Bg(w.Frame), Gradient(), BorderTop(w.Border),
+	return Row(H(statusH), PadXY(w.Pad, 0), Gap(w.Pad), Bg(w.Frame), Control("statusbar"), BorderTop(w.Border),
 		Text(a.status, Small(), Muted(), Ellipsis(), Grow(1)),
 		Text(version, Small(), Muted()),
 	)

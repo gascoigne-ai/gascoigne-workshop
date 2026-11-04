@@ -68,6 +68,7 @@ func themeIDOf(id string) string {
 func ThemeWith(s settings.Settings) widget.Theme {
 	id := themeIDOf(s.Theme)
 	th := ThemeFor(id, s.TextSize)
+	th.RadiusScale, th.NoGradients = cornerScale(s.Corners), s.Flat
 	if s.Contrast == "high" {
 		strong := map[widget.Token]color.RGBA{}
 		for _, c := range customColors {

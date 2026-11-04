@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"math"
 	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -260,24 +261,85 @@ var gradientSrc = func() *ebiten.Image {
 	return img
 }()
 
-// FillShaded paints r with base shaded vertically by the theme's gradient
-// strength: lighter at the top, darker at the bottom. With no gradient
-// in the theme it is a flat Fill.
-func (c *Ctx) FillShaded(dst *ebiten.Image, r Rect, base color.RGBA) {
-	if c.Th.Gradient <= 0 {
-		c.Fill(dst, r, base)
+// roundedPath is r (device pixels) with corner radius rad, clamped to half
+// the shorter side so a large radius makes a pill.
+func roundedPath(x0, y0, x1, y1, rad float32) *vector.Path {
+	rad = min(rad, (x1-x0)/2, (y1-y0)/2)
+	var p vector.Path
+	p.MoveTo(x0+rad, y0)
+	p.LineTo(x1-rad, y0)
+	p.Arc(x1-rad, y0+rad, rad, -math.Pi/2, 0, vector.Clockwise)
+	p.LineTo(x1, y1-rad)
+	p.Arc(x1-rad, y1-rad, rad, 0, math.Pi/2, vector.Clockwise)
+	p.LineTo(x0+rad, y1)
+	p.Arc(x0+rad, y1-rad, rad, math.Pi/2, math.Pi, vector.Clockwise)
+	p.LineTo(x0, y0+rad)
+	p.Arc(x0+rad, y0+rad, rad, math.Pi, 3*math.Pi/2, vector.Clockwise)
+	p.Close()
+	return &p
+}
+
+// GradientFor is the top and bottom colors a control's fill takes from
+// base: the style's explicit ends, else base shaded by the style's
+// strength, else base twice.
+func GradientFor(base color.RGBA, st ControlStyle) (top, bottom color.RGBA) {
+	switch {
+	case st.Top != nil && st.Bottom != nil:
+		return *st.Top, *st.Bottom
+	case st.Shade > 0:
+		return GradientEnds(base, st.Shade)
+	}
+	return base, base
+}
+
+// FillStyled paints r the way a control style says: a flat or vertical
+// gradient fill from top to bottom, with rounded corners when the style
+// has a radius. Square flat fills stay on the crisp rectangle path.
+func (c *Ctx) FillStyled(dst *ebiten.Image, r Rect, top, bottom color.RGBA, radius float64) {
+	round := radius*c.Scale >= 1
+	if !round && top == bottom {
+		c.Fill(dst, r, top)
 		return
 	}
-	top, bottom := GradientEnds(base, c.Th.Gradient)
 	x0, y0 := c.dev(float32(r.X)), c.dev(float32(r.Y))
 	x1, y1 := c.dev(float32(r.X+r.W)), c.dev(float32(r.Y+r.H))
-	v := func(x, y float32, k color.RGBA) ebiten.Vertex {
-		return ebiten.Vertex{
-			DstX: x, DstY: y, SrcX: 0.5, SrcY: 0.5,
-			ColorR: float32(k.R) / 255, ColorG: float32(k.G) / 255, ColorB: float32(k.B) / 255, ColorA: float32(k.A) / 255,
-		}
+	var path *vector.Path
+	if round {
+		path = roundedPath(x0, y0, x1, y1, c.dev(float32(radius)))
+	} else {
+		path = &vector.Path{}
+		path.MoveTo(x0, y0)
+		path.LineTo(x1, y0)
+		path.LineTo(x1, y1)
+		path.LineTo(x0, y1)
+		path.Close()
 	}
-	dst.DrawTriangles(
-		[]ebiten.Vertex{v(x0, y0, top), v(x1, y0, top), v(x0, y1, bottom), v(x1, y1, bottom)},
-		[]uint16{0, 1, 2, 1, 2, 3}, gradientSrc, nil)
+	verts, idx := path.AppendVerticesAndIndicesForFilling(nil, nil)
+	span := max(y1-y0, 1)
+	for i := range verts {
+		t := min(max((verts[i].DstY-y0)/span, 0), 1)
+		mix := func(a, b uint8) float32 { return (float32(a) + (float32(b)-float32(a))*t) / 255 }
+		verts[i].ColorR, verts[i].ColorG, verts[i].ColorB, verts[i].ColorA = mix(top.R, bottom.R), mix(top.G, bottom.G), mix(top.B, bottom.B), mix(top.A, bottom.A)
+		verts[i].SrcX, verts[i].SrcY = 0.5, 0.5
+	}
+	dst.DrawTriangles(verts, idx, gradientSrc, &ebiten.DrawTrianglesOptions{AntiAlias: round})
+}
+
+// OutlineStyled strokes a one-pixel border just inside r, with rounded
+// corners when radius is set.
+func (c *Ctx) OutlineStyled(dst *ebiten.Image, r Rect, clr color.RGBA, radius float64) {
+	if radius*c.Scale < 1 {
+		c.Outline(dst, r, clr)
+		return
+	}
+	w := c.dev(1)
+	x0, y0 := c.dev(float32(r.X))+w/2, c.dev(float32(r.Y))+w/2
+	x1, y1 := c.dev(float32(r.X+r.W))-w/2, c.dev(float32(r.Y+r.H))-w/2
+	path := roundedPath(x0, y0, x1, y1, c.dev(float32(radius))-w/2)
+	var so vector.StrokeOptions
+	so.Width = w
+	var dp vector.DrawPathOptions
+	dp.AntiAlias = true
+	dp.ColorScale.ScaleWithColor(clr)
+	vector.StrokePath(dst, path, &so, &dp)
 }

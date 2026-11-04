@@ -79,21 +79,23 @@ func (fieldB) draw(e *El, c *widget.Ctx, dst *ebiten.Image) {
 	if f.Text == "" {
 		c.TextMid(dst, c.F.UI, e.placeholder, r.X+fieldPad, r, c.Col(widget.Muted))
 	}
-	if f.Focused {
-		c.Outline(dst, r, c.Col(widget.AccentLine))
-	} else {
-		c.Outline(dst, r, c.Col(widget.Border))
-	}
 	if f.Focused && (c.Tick/30)%2 == 0 {
 		cx := r.X + fieldPad - f.ScrollX + c.Width(c.F.UI, string([]rune(f.Display())[:f.Cursor]))
 		c.VLine(dst, cx, r.Y+8, r.H-16, c.Col(widget.Text))
 	}
 }
 
+// drawOver is the focus ring, over the field's outline.
+func (fieldB) drawOver(e *El, c *widget.Ctx, dst *ebiten.Image) {
+	if e.field.Focused {
+		c.OutlineStyled(dst, e.rect, c.Col(widget.AccentLine), c.Th.Style(e.control).Radius)
+	}
+}
+
 // Field is a single-line text input bound to f (Vue's v-model: the
 // widget edits f in place).
 func Field(f *widget.TextField, opts ...Option) *El {
-	e := newEl(fieldB{}, with(nil, opts))
+	e := newEl(fieldB{}, with([]Item{Control("field")}, opts))
 	e.field = f
 	return e
 }

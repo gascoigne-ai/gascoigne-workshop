@@ -1,0 +1,82 @@
+{
+  "name": "light",
+  "fontSize": 15,
+  "smallSize": 12,
+  "monoSize": 14,
+  "variables": {
+    "hero-top": "#6e1f3c",
+    "hero-bottom": "#2a0d18"
+  },
+  "colors": {
+    "bg": "#f6f3f4",
+    "frame": "#ece5e8",
+    "panel": "#f5f0f2",
+    "sunken": "#ffffff",
+    "alt": "#f5f0f2",
+    "border": "#a89aa1",
+    "hover": "#ece5e8",
+    "selected": "#ecd3dc",
+    "chip": "#cfc2c8",
+    "chip-text": "#22161b",
+    "rule": "#8c7b83",
+    "text": "#22161b",
+    "muted": "#66545b",
+    "accent": "#7a1f3d",
+    "accent-line": "#7a1f3d",
+    "accent-text": "#ffffff",
+    "ok": "#17804a",
+    "error": "#d1281b",
+    "shadow": "#00000033",
+    "selection": "#f0c9d6",
+    "find-match": "#f6e3b5",
+    "find-active": "#f0c26a",
+    "hero": "#4f1428",
+    "hero-text": "#f8eff2",
+    "hero-muted": "#e3cbd4"
+  },
+  "controls": {
+    "button": {
+      "radius": 6,
+      "gradient": 0.06,
+      "border": "border"
+    },
+    "icon-button": {
+      "radius": 6,
+      "gradient": 0.06,
+      "border": "border"
+    },
+    "primary": {
+      "radius": 6,
+      "gradient": 0.1,
+      "border": "accent-line"
+    },
+    "field": {
+      "radius": 6,
+      "border": "border"
+    },
+    "table": {
+      "radius": 8,
+      "border": "border"
+    },
+    "menu": {
+      "radius": 10,
+      "border": "border"
+    },
+    "tooltip": {
+      "radius": 6,
+      "border": "border"
+    },
+    "tabstrip": {
+      "gradient": 0.06
+    },
+    "statusbar": {
+      "gradient": 0.06
+    },
+    "hero": {
+      "gradient": [
+        "$hero-top",
+        "$hero-bottom"
+      ]
+    }
+  }
+}

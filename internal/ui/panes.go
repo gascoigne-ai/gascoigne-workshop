@@ -363,7 +363,7 @@ func (a *App) settingsPane(_ pane, t *reqTab, scroll *ScrollState) Node {
 	return Scroll(scroll, Pad(w.Pad), Gap(8),
 		Row(H(w.RowH), Gap(12),
 			Text("Timeout (seconds)", W(160)),
-			Field(&t.timeout, W(80), Bg(w.Sunken), Border(w.Border),
+			Field(&t.timeout, W(80), Bg(w.Sunken),
 				OnChange(func() { a.timeoutEdited(t) }),
 				a.textMenuOpt(&t.timeout, func() { a.timeoutEdited(t) })),
 			Text(fmt.Sprintf("blank = default (%d s)", a.timeoutFor(model.Request{})/time.Second), Small(), Muted()),

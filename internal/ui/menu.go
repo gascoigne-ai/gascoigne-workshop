@@ -17,7 +17,7 @@ func (a *App) menuView() Node {
 	}
 	closeMenu := Modal(func() { a.menu = false })
 	maxH := a.h - headerH - 2*w.Pad - 8 // a short window scrolls the menu
-	return Col(W(menuW), Pad(w.Pad), Bg(w.Bg), Border(w.Border), Shadow(), Float(headerH, w.Pad), closeMenu,
+	return Col(W(menuW), Pad(w.Pad), Bg(w.Bg), Control("menu"), Shadow(), Float(headerH, w.Pad), closeMenu,
 		Scroll(&a.menuScroll, MaxHeight(maxH),
 			Row(H(w.RowH), BorderBottom(w.Rule),
 				Caption("Settings"),
@@ -64,6 +64,24 @@ func (a *App) menuView() Node {
 				For(contrastChoices, func(_ int, c contrastChoice) Node {
 					return a.choice(c.label, c.id == a.settings.Contrast, func(s *settings.Settings) { s.Contrast = c.id })
 				}),
+			),
+			Spacer(H(w.Pad)),
+
+			Caption("Corners", H(22)),
+			Row(H(w.RowH), Gap(6),
+				For(cornerChoices, func(_ int, c struct {
+					id, label string
+					scale     float64
+				}) Node {
+					return a.choice(c.label, c.id == cornerIDOf(a.settings.Corners), func(s *settings.Settings) { s.Corners = c.id })
+				}),
+			),
+			Spacer(H(w.Pad)),
+
+			Caption("Gradients", H(22)),
+			Row(H(w.RowH), Gap(6),
+				a.choice("On", !a.settings.Flat, func(s *settings.Settings) { s.Flat = false }),
+				a.choice("Off", a.settings.Flat, func(s *settings.Settings) { s.Flat = true }),
 			),
 			Spacer(H(w.Pad)),
 

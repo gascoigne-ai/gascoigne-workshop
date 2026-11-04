@@ -33,6 +33,9 @@ const (
 	Selection  Token = "selection"
 	FindMatch  Token = "find-match"
 	FindActive Token = "find-active"
+	Hero       Token = "hero"       // the banner behind the window title, as a flat fallback
+	HeroText   Token = "hero-text"  // text on the banner
+	HeroMuted  Token = "hero-muted" // icons on the banner
 )
 
 // Fixed sizes shared by all widgets, in logical pixels.
@@ -46,10 +49,19 @@ type Theme struct {
 	Colors                        map[Token]color.RGBA
 	FontSize, SmallSize, MonoSize float64
 
-	// Gradient is how strongly gradient-filled surfaces (buttons, bars)
-	// shade from light at the top to dark at the bottom, as a mix toward
-	// white and black; 0 turns gradients off.
-	Gradient float64
+	// Name is the theme's name, from its file.
+	Name string
+
+	// Controls are the per-control styles (corner radius, gradient,
+	// outline) by control name; see ControlStyle and Theme.Style.
+	Controls map[string]ControlStyle
+
+	// RadiusScale multiplies every control's corner radius: 0 gives square
+	// corners, 1 the theme's own.
+	RadiusScale float64
+
+	// NoGradients turns every gradient into a flat fill.
+	NoGradients bool
 }
 
 // Color returns the color of tok, or the text color for unknown tokens
@@ -93,38 +105,10 @@ func RGB(hex uint32) color.RGBA {
 // than its soft web borders, so a native window's edges can be seen
 // (see TestNonTextElementsAreVisible).
 
-// Dark is warm near-black surfaces with a rose accent.
-func Dark() Theme {
-	return Theme{
-		FontSize: 15, SmallSize: 12, MonoSize: 14, Gradient: 0.10,
-		Colors: map[Token]color.RGBA{
-			Bg: RGB(0x241b20), Frame: RGB(0x140f12), Panel: RGB(0x2d2228),
-			Sunken: RGB(0x1c1519), Alt: RGB(0x251c21), Border: RGB(0x5f4d57),
-			Hover: RGB(0x302429), Selected: RGB(0x4a2234),
-			Chip: RGB(0x4a3a42), ChipText: RGB(0xf1e8eb), Rule: RGB(0x76626c),
-			Text: RGB(0xf1e8eb), Muted: RGB(0xbfaab2),
-			Accent: RGB(0xe88aa6), AccentLine: RGB(0xe88aa6), AccentText: RGB(0x2a0d18),
-			OK: RGB(0x5ed39a), Error: RGB(0xff6b5e),
-			Shadow: {A: 0x66}, Selection: RGB(0x8a4a66),
-			FindMatch: RGB(0x4a3a1a), FindActive: RGB(0x8a5d12),
-		},
-	}
-}
+// Dark is warm near-black surfaces with a rose accent. The palette and
+// control styles live in themes/dark.json.
+func Dark() Theme { return builtin("dark") }
 
-// Light is cream surfaces, white lists and a burgundy accent.
-func Light() Theme {
-	return Theme{
-		FontSize: 15, SmallSize: 12, MonoSize: 14, Gradient: 0.06,
-		Colors: map[Token]color.RGBA{
-			Bg: RGB(0xf6f3f4), Frame: RGB(0xece5e8), Panel: RGB(0xf5f0f2),
-			Sunken: RGB(0xffffff), Alt: RGB(0xf5f0f2), Border: RGB(0xa89aa1),
-			Hover: RGB(0xece5e8), Selected: RGB(0xecd3dc),
-			Chip: RGB(0xcfc2c8), ChipText: RGB(0x22161b), Rule: RGB(0x8c7b83),
-			Text: RGB(0x22161b), Muted: RGB(0x66545b),
-			Accent: RGB(0x7a1f3d), AccentLine: RGB(0x7a1f3d), AccentText: RGB(0xffffff),
-			OK: RGB(0x17804a), Error: RGB(0xd1281b),
-			Shadow: {A: 0x33}, Selection: RGB(0xf0c9d6),
-			FindMatch: RGB(0xf6e3b5), FindActive: RGB(0xf0c26a),
-		},
-	}
-}
+// Light is cream surfaces, white lists and a burgundy accent
+// (themes/light.json).
+func Light() Theme { return builtin("light") }

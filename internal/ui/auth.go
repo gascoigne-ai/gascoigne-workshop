@@ -138,7 +138,7 @@ func (a *App) authFieldRow(t *reqTab, f authField) Node {
 	in.Masked = f.secret && !t.showSecrets
 	return Row(H(w.RowH), Gap(12),
 		Text(f.label, W(120)),
-		Field(in, Grow(1), Bg(w.Sunken), Border(w.Border),
+		Field(in, Grow(1), Bg(w.Sunken),
 			OnChange(func() { *f.value(&t.req.Auth) = in.Text }),
 			a.textMenuOpt(in, func() { *f.value(&t.req.Auth) = in.Text })),
 	)

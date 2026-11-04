@@ -200,8 +200,10 @@ func (e *El) draw(c *widget.Ctx, dst *ebiten.Image) {
 		defer func(was bool) { c.HoverOff = was }(c.HoverOff)
 		c.HoverOff = false // hover works inside the overlay
 	}
+	style := c.Th.Style(e.control)
 	if e.shadow {
-		c.Fill(dst, widget.Rect{X: r.X + 4, Y: r.Y + 4, W: r.W, H: r.H}, c.Col(widget.Shadow))
+		sh := c.Col(widget.Shadow)
+		c.FillStyled(dst, widget.Rect{X: r.X + 4, Y: r.Y + 4, W: r.W, H: r.H}, sh, sh, style.Radius)
 	}
 	over := c.Hovered(r)
 	e.hover = over
@@ -213,14 +215,12 @@ func (e *El) draw(c *widget.Ctx, dst *ebiten.Image) {
 		if e.lighten && over {
 			clr = widget.Lighten(clr)
 		}
-		if e.gradient {
-			c.FillShaded(dst, r, clr)
-		} else {
-			c.Fill(dst, r, clr)
-		}
+		top, bottom := widget.GradientFor(clr, style)
+		c.FillStyled(dst, r, top, bottom, style.Radius)
 	}
 	if e.hoverBg != "" && over {
-		c.Fill(dst, r, c.Col(e.hoverBg))
+		hv := c.Col(e.hoverBg)
+		c.FillStyled(dst, r, hv, hv, style.Radius)
 	}
 	if e.borderTop != "" {
 		c.HLine(dst, r.X, r.Y, r.W, c.Col(e.borderTop))
@@ -237,11 +237,15 @@ func (e *El) draw(c *widget.Ctx, dst *ebiten.Image) {
 	for _, k := range e.kids {
 		k.draw(c, kidsDst)
 	}
+	border := e.border
+	if border == "" {
+		border = style.Border
+	}
+	if border != "" { // after the children, so striped rows do not paint over it
+		c.OutlineStyled(dst, r, c.Col(border), style.Radius)
+	}
 	if o, ok := e.b.(overDrawer); ok {
 		o.drawOver(e, c, dst)
-	}
-	if e.border != "" { // after the children, so striped rows do not paint over it
-		c.Outline(dst, r, c.Col(e.border))
 	}
 
 	if e.underline != "" {

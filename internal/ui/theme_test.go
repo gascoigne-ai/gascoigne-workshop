@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/jsonview"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/ui/widget"
 )
 
@@ -99,5 +100,37 @@ func TestMethodTokenForRequestsWithoutAMethod(t *testing.T) {
 	}
 	if methodToken("GET") != "method.GET" {
 		t.Fatalf("methodToken(GET) = %q", methodToken("GET"))
+	}
+}
+
+func TestThemeWithAppliesCornersAndTheFlatSwitch(t *testing.T) {
+	s := settings.Default()
+	th := ThemeWith(s)
+	if th.RadiusScale != 1 || th.NoGradients || !th.Style("button").HasGradient() || th.Style("button").Radius <= 0 {
+		t.Fatalf("default look: scale %v flat %v %+v", th.RadiusScale, th.NoGradients, th.Style("button"))
+	}
+	s.Corners, s.Flat = "square", true
+	th = ThemeWith(s)
+	if th.Style("button").Radius != 0 || th.Style("button").HasGradient() || th.Style("hero").HasGradient() {
+		t.Fatalf("square and flat: %+v", th.Style("button"))
+	}
+	s.Corners = "round"
+	if ThemeWith(s).Style("button").Radius <= th.Style("button").Radius+1 && cornerScale("round") <= 1 {
+		t.Fatal("round must be rounder than soft")
+	}
+	if cornerScale("nonsense") != 1 {
+		t.Fatal("an unknown corner id is soft")
+	}
+}
+
+func TestAppThemesCarryMethodAndJSONColorsOverTheToolkitStyles(t *testing.T) {
+	for _, id := range []string{"dark", "light"} {
+		th := ThemeFor(id, "medium")
+		if th.Color(methodToken("GET")) == th.Color(widget.Text) || th.Color(jsonTokens[jsonview.Key]) == (color.RGBA{}) {
+			t.Errorf("%s: app colors missing", id)
+		}
+		if th.Style("primary").Radius <= 0 {
+			t.Errorf("%s: toolkit control styles lost under the app overlay", id)
+		}
 	}
 }

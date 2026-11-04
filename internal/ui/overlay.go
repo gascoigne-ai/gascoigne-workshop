@@ -107,7 +107,7 @@ func (a *App) contextMenuView() Node {
 	if m == nil {
 		return nil
 	}
-	return Col(W(menuListW), Pad(menuPad), Bg(w.Bg), Border(w.Border), Shadow(),
+	return Col(W(menuListW), Pad(menuPad), Bg(w.Bg), Control("menu"), Shadow(),
 		FloatAt(m.x, m.y), Modal(a.closeMenu),
 		For(m.items, func(i int, it menuItem) Node { return a.menuRow(m, i, it) }),
 	)
@@ -182,11 +182,11 @@ func (a *App) dialogView() Node {
 	}
 	return Frag(
 		Row(Bg(w.Shadow)), // dims the window
-		Col(W(dialogW), Pad(16), Gap(12), Bg(w.Bg), Border(w.Border), Shadow(),
+		Col(W(dialogW), Pad(16), Gap(12), Bg(w.Bg), Control("menu"), Shadow(),
 			FloatCenter(), FocusScope(), Modal(a.closeDialog),
 			Text(d.title, H(22)),
 			If(d.body != "", Lines(d.body, w.Muted)),
-			If(d.input != nil, Field(d.input, H(w.RowH), Bg(w.Sunken), Border(w.Border), OnEnter(a.dialogDefault), a.textMenuOpt(d.input, nil))),
+			If(d.input != nil, Field(d.input, H(w.RowH), Bg(w.Sunken), OnEnter(a.dialogDefault), a.textMenuOpt(d.input, nil))),
 			Row(H(w.RowH), Gap(8),
 				Spacer(),
 				For(d.buttons, func(_ int, b dialogButton) Node {

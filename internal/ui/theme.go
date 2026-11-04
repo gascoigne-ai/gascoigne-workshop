@@ -1,7 +1,7 @@
 package ui
 
 import (
-	"image/color"
+	"embed"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/jsonview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
@@ -31,38 +31,26 @@ var jsonTokens = map[jsonview.Kind]widget.Token{
 	jsonview.Literal: "json.literal",
 }
 
-func appColors(methods map[string]uint32, key, str, num, lit uint32) map[widget.Token]color.RGBA {
-	colors := map[widget.Token]color.RGBA{
-		jsonTokens[jsonview.Key]:     widget.RGB(key),
-		jsonTokens[jsonview.String]:  widget.RGB(str),
-		jsonTokens[jsonview.Number]:  widget.RGB(num),
-		jsonTokens[jsonview.Literal]: widget.RGB(lit),
+//go:embed themes/*.json
+var themeFiles embed.FS
+
+// appTheme is a toolkit theme with the app's own colors (HTTP methods,
+// JSON syntax) from themes/<id>.json laid over it. The toolkit's palettes
+// and control styles are in ui/widget/themes; both are plain theme files.
+func appTheme(id string, base widget.Theme) widget.Theme {
+	data, err := themeFiles.ReadFile("themes/" + id + ".json")
+	if err != nil {
+		panic(err)
 	}
-	for m, hex := range methods {
-		colors[methodToken(m)] = widget.RGB(hex)
+	th, err := widget.ParseTheme(data, &base)
+	if err != nil {
+		panic("app theme " + id + ": " + err.Error())
 	}
-	return colors
+	return th
 }
 
-func darkTheme() widget.Theme {
-	th := widget.Dark()
-	extra := appColors(map[string]uint32{
-		"GET": 0x5ed39a, "POST": 0xf0b05a, "PUT": 0x7db4ea, "PATCH": 0xe88aa6, "DELETE": 0xff6b5e,
-	}, 0xffffff, 0xf0b05a, 0xe88aa6, 0xff6b5e)
-	extra[jsonTokens[jsonview.Plain]] = th.Color(widget.Text)
-	extra[jsonTokens[jsonview.Punct]] = th.Color(widget.Text)
-	return th.With(extra)
-}
-
-func lightTheme() widget.Theme {
-	th := widget.Light()
-	extra := appColors(map[string]uint32{
-		"GET": 0x17804a, "POST": 0xa8570c, "PUT": 0x1f64b0, "PATCH": 0x7a1f3d, "DELETE": 0xd1281b,
-	}, 0x120a0e, 0xa8570c, 0x7a1f3d, 0xd1281b)
-	extra[jsonTokens[jsonview.Plain]] = th.Color(widget.Text)
-	extra[jsonTokens[jsonview.Punct]] = th.Color(widget.Text)
-	return th.With(extra)
-}
+func darkTheme() widget.Theme  { return appTheme("dark", widget.Dark()) }
+func lightTheme() widget.Theme { return appTheme("light", widget.Light()) }
 
 // themeChoice and sizeChoice are the entries of the settings menu.
 type themeChoice struct {
@@ -92,6 +80,27 @@ const (
 	scaleMax  = 200
 	scaleStep = 5
 )
+
+// cornerChoices are the entries of the corner setting: the id in the
+// settings file, its label, and the factor on every control's radius.
+var cornerChoices = []struct {
+	id, label string
+	scale     float64
+}{
+	{"square", "Square", 0},
+	{"soft", "Soft", 1},
+	{"round", "Round", 1.7},
+}
+
+// cornerScale is the radius factor of a corner id; unknown ids are soft.
+func cornerScale(id string) float64 {
+	for _, c := range cornerChoices {
+		if c.id == id {
+			return c.scale
+		}
+	}
+	return 1
+}
 
 // ThemeFor builds the theme for a settings pair. Unknown ids fall back
 // to the first (dark) theme and the medium text size.
@@ -148,4 +157,14 @@ type layoutChoice struct{ id, label string }
 var layoutChoices = []layoutChoice{
 	{"side", "Side by side"},
 	{"stacked", "Stacked"},
+}
+
+// cornerIDOf is the corner id in effect: unknown ids are soft.
+func cornerIDOf(id string) string {
+	for _, c := range cornerChoices {
+		if c.id == id {
+			return id
+		}
+	}
+	return "soft"
 }

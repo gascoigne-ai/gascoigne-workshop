@@ -2788,17 +2788,17 @@ func TestNarrowColumnsKeepAMinimum(t *testing.T) {
 // ---- colors in the settings menu ------------------------------------------
 
 // Below the layout chooser: Contrast chips at y=374, then Colors rows from
-// y=436 (Selection), 464, 492, 520 (Accent); field at x=1170, Reset at
+// y=560 (Selection), 588, 616, 644 (Accent); field at x=1170, Reset at
 // x=1234; the "Reset colors" button under the last row.
 const (
 	contrastNormalX = 1078
 	contrastHighX   = 1198
 	contrastRowY    = 374
-	colorRow0Y      = 436
+	colorRow0Y      = 560
 	colorFieldX     = 1170
 	colorResetX     = 1234
 	resetColorsX    = 1070
-	resetColorsY    = 548
+	resetColorsY    = 672
 )
 
 func openSettingsMenu(t *testing.T) (*App, string) {

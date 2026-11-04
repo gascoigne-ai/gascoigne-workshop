@@ -1,0 +1,15 @@
+{
+  "colors": {
+    "method.GET": "#5ed39a",
+    "method.POST": "#f0b05a",
+    "method.PUT": "#7db4ea",
+    "method.PATCH": "#e88aa6",
+    "method.DELETE": "#ff6b5e",
+    "json.key": "#ffffff",
+    "json.string": "#f0b05a",
+    "json.number": "#e88aa6",
+    "json.literal": "#ff6b5e",
+    "json.plain": "#f1e8eb",
+    "json.punct": "#f1e8eb"
+  }
+}
