@@ -150,6 +150,7 @@ type Options struct {
 	SendOnStart    bool   // send the first request at startup
 	SettingsPath   string // settings file; "" keeps settings in memory
 	StatePath      string // remembered UI state; "" keeps it in memory
+	ThemesDir      string // folder of user theme files (*.json); "" for none
 	OpenMenu       bool   // start with the settings menu open
 }
 
@@ -159,6 +160,8 @@ func NewApp(opts Options) (*App, error) {
 	if opts.SettingsPath != "" {
 		st, loadErr = settings.Load(opts.SettingsPath)
 	}
+	themes, themeProblems := loadUserThemes(opts.ThemesDir)
+	userThemes = themes
 	th := ThemeWith(st)
 	ctx, err := widget.NewCtx(th)
 	if err != nil {
@@ -192,6 +195,9 @@ func NewApp(opts Options) (*App, error) {
 	a.initial = stored.Window
 	a.restore(stored)
 	a.status = stateNote(a.status, stateErr)
+	if len(themeProblems) > 0 {
+		a.status = stateNote(a.status, fmt.Errorf("%s", themeProblems[0]))
+	}
 	a.stateSeen = stateKey(a.snapshot())
 	a.stateSaved = a.stateSeen
 	return a, nil

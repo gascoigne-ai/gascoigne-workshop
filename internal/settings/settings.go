@@ -106,6 +106,16 @@ func (s Settings) Save(path string) error {
 	return nil
 }
 
+// ThemesDir is where the user's theme files live, or "" when there is no
+// config directory.
+func ThemesDir() string {
+	dir, err := os.UserConfigDir()
+	if err != nil {
+		return ""
+	}
+	return filepath.Join(dir, "gascoigne-workshop", "themes")
+}
+
 // DefaultPath is where settings live for this user, or "" when the
 // platform has no config directory (settings then stay in memory).
 func DefaultPath() string {

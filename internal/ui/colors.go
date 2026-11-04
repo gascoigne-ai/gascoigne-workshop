@@ -53,7 +53,7 @@ func requiredRatio(contrast string) float64 {
 // themeIDOf is the id of the theme a settings value resolves to:
 // unknown ids fall back to the first (dark), as ThemeFor does.
 func themeIDOf(id string) string {
-	for _, c := range themeChoices {
+	for _, c := range allThemeChoices() {
 		if c.id == id {
 			return id
 		}

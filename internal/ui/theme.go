@@ -106,7 +106,7 @@ func cornerScale(id string) float64 {
 // to the first (dark) theme and the medium text size.
 func ThemeFor(themeID, textSizeID string) widget.Theme {
 	th := themeChoices[0].build()
-	for _, c := range themeChoices {
+	for _, c := range allThemeChoices() {
 		if c.id == themeID {
 			th = c.build()
 		}

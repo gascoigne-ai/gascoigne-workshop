@@ -26,7 +26,7 @@ func (a *App) menuView() Node {
 
 			Caption("Theme", H(22)),
 			Row(H(w.RowH), Gap(6),
-				For(themeChoices, func(_ int, c themeChoice) Node {
+				For(allThemeChoices(), func(_ int, c themeChoice) Node {
 					return a.choice(c.label, c.id == a.settings.Theme, func(s *settings.Settings) { s.Theme = c.id })
 				}),
 			),

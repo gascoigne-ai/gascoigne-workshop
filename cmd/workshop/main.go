@@ -25,6 +25,7 @@ func main() {
 	flag.BoolVar(&opts.SendOnStart, "send", false, "send the first request at startup (for screenshots)")
 	flag.StringVar(&opts.SettingsPath, "settings", settings.DefaultPath(), "settings file; empty keeps settings in memory")
 	flag.StringVar(&opts.StatePath, "state", state.DefaultPath(), "remembered window and tabs; empty keeps them in memory")
+	flag.StringVar(&opts.ThemesDir, "themes", settings.ThemesDir(), "folder of theme files (*.json) that extend the dark or light theme; empty for none")
 	flag.BoolVar(&opts.OpenMenu, "menu", false, "start with the settings menu open (for screenshots)")
 	flag.Parse()
 	if opts.ScreenshotPath != "" && !flagSet("state") {

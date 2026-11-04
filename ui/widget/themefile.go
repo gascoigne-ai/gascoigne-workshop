@@ -47,12 +47,26 @@ type controlFile struct {
 
 type themeFile struct {
 	Name      string                 `json:"name"`
+	Extends   string                 `json:"extends"`
 	FontSize  float64                `json:"fontSize"`
 	SmallSize float64                `json:"smallSize"`
 	MonoSize  float64                `json:"monoSize"`
 	Variables map[string]string      `json:"variables"`
 	Colors    map[string]string      `json:"colors"`
 	Controls  map[string]controlFile `json:"controls"`
+}
+
+// ThemeExtends is the name of the built-in theme a file says it builds on
+// ("extends"), "" when it does not say. The caller picks the base theme
+// and passes it to ParseTheme.
+func ThemeExtends(data []byte) (string, error) {
+	var f struct {
+		Extends string `json:"extends"`
+	}
+	if err := json.Unmarshal(data, &f); err != nil {
+		return "", fmt.Errorf("theme file: %w", err)
+	}
+	return f.Extends, nil
 }
 
 // ParseColor reads "#rrggbb" or "#rrggbbaa".
