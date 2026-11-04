@@ -81,6 +81,8 @@ func (fieldB) draw(e *El, c *widget.Ctx, dst *ebiten.Image) {
 	}
 	if f.Focused {
 		c.Outline(dst, r, c.Col(widget.AccentLine))
+	} else {
+		c.Outline(dst, r, c.Col(widget.Border))
 	}
 	if f.Focused && (c.Tick/30)%2 == 0 {
 		cx := r.X + fieldPad - f.ScrollX + c.Width(c.F.UI, string([]rune(f.Display())[:f.Cursor]))

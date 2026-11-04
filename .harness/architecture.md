@@ -123,3 +123,5 @@ Row(H(urlH), PadXY(w.Pad, 8), Gap(8), Bg(w.Bg),
 - WebSocket and MCP are registry stubs.
 
 - **Spacing rhythm**: one `Pad` (12 px) is the inset between panes and content; bars (sidebar header, tabs, toolbars, status) are separated with one token, `Border` (never `Rule`, which is for outlines and table headers). The request and response panes both start their first row `Pad` below the pane tabs, so rows line up across the divider (`TestRequestAndResponsePanesShareTheirFirstRowBand`).
+
+- **Click targets are outlined**: buttons (`Rule` outline; primary buttons `AccentLine`), unfocused text fields and tables (`Border`) carry a 1 px outline so regions to click are visible at rest; a focused field swaps its outline to `AccentLine`.
