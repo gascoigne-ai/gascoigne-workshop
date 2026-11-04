@@ -1,4 +1,4 @@
-status: in progress (left: variable highlighting in header cells and the body editor)
+status: in progress (left: variable highlighting in table cells)
 
 # Environments and variables
 
@@ -22,3 +22,5 @@ Variables live on the collection and there is no environment switcher.
 - Left: the `{{var}}` autocomplete popup and highlighting inside the header and body editors.
 - Done later: `Ctrl+Space` in the URL field opens a menu of the variables that fit at the cursor (a partly typed `{{na` filters) and writes `{{name}}`; typing-time popups were not done because a popup would take the keyboard from the field.
 - Accepted: variable highlighting stays in the URL field (headers are table cells and the body editor styles JSON); the hover value is the URL tooltip.
+- Done later: `{{variables}}` are colored in the body editor too (green when they resolve for the request, red when not), over the JSON colors.
+- Left: table cells (headers, params) show variables as plain text; that needs a styled cell renderer in `vml.Table`.

@@ -356,10 +356,11 @@ func (a *App) bodyPane(p pane, t *reqTab, scroll *ScrollState) Node {
 func (a *App) bodyEditor(t *reqTab, scroll *ScrollState) Node {
 	switch t.req.BodyType {
 	case model.BodyJSON, model.BodyText:
-		t.body.Styler = nil
+		base := plainStyler
 		if t.req.BodyType == model.BodyJSON {
-			t.body.Styler = jsonStyler
+			base = jsonStyler
 		}
+		t.body.Styler = a.withVariables(base, t.req) // {{variables}} stand out, as in the URL
 		sync := func() { t.req.Body = t.body.Text }
 		return Area(&t.body, Grow(1), Bg(w.Sunken), OnChange(sync), a.textMenuOpt(&t.body.TextField, sync))
 	case model.BodyForm, model.BodyMultipart:

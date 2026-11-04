@@ -244,3 +244,5 @@ Row(H(urlH), PadX(w.Pad), PadY(8), Gap(8), Bg(w.Bg),
 - **Postman import** (`internal/postman`, `App.importPostman`): `postman.Parse` maps a v2.x collection to a folder tree and its variables; the importer adds the folder under the chosen one and the variables the collection lacks.
 
 - **Postman export**: `postman.Export(folder, vars)` writes a v2.1 collection (REST requests only; `postman.Skipped` counts the rest); `App.exportPostman` picks a file through `pickFile` and writes it.
+
+- **Variables in the body editor** (`internal/ui/bodystyle.go`): `App.withVariables(base, req)` wraps the JSON or plain line styler so each `{{name}}` is split out and colored by whether `req` resolves it.
