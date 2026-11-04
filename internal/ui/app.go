@@ -32,8 +32,8 @@ const (
 
 // Cycled by clicking the protocol and method chips of the URL bar.
 var (
-	protocolOrder = []string{"rest", "websocket", "mcp"}
-	protocolLabel = map[string]string{"rest": "REST", "websocket": "WS", "mcp": "MCP"}
+	protocolOrder = []string{"rest", "websocket", "mcp", "sse"}
+	protocolLabel = map[string]string{"rest": "REST", "websocket": "WS", "mcp": "MCP", "sse": "SSE"}
 	methodOrder   = []string{"GET", "POST", "PUT", "PATCH", "DELETE"}
 )
 

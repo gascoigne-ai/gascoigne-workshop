@@ -3,6 +3,7 @@ package ui
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -235,5 +236,26 @@ func TestMCPResourcesAndPromptsFillTheComposer(t *testing.T) {
 	a.promptMenu(tab)[0].run()
 	if tab.msg.Text != `prompt review {"code":""}` {
 		t.Fatalf("composer %q", tab.msg.Text)
+	}
+}
+
+func TestSSETabListensAndShowsNoComposer(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream")
+		io.WriteString(w, "event: ping\ndata: hello\n\n")
+	}))
+	defer srv.Close()
+	a, _ := newTestApp(t)
+	tab := a.cur()
+	tab.req.Protocol = "sse"
+	tab.req.URL = srv.URL
+	a.send(tab)
+	until(t, a, "event", func() bool { return strings.Contains(logText(tab), "hello") })
+	until(t, a, "end of stream", func() bool { return tab.sess == nil })
+	if !strings.Contains(vml.Dump(a.messagesPane(wsPanes[0], tab, nil)), "Not connected") {
+		t.Fatal("the pane did not build")
+	}
+	if strings.Contains(vml.Dump(a.messagesPane(wsPanes[0], tab, nil)), "Connect to send messages") {
+		t.Fatal("an SSE tab must not show the composer")
 	}
 }

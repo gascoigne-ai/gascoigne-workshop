@@ -18,7 +18,7 @@ import (
 )
 
 func TestRegistryNames(t *testing.T) {
-	want := []string{"mcp", "rest", "websocket"}
+	want := []string{"mcp", "rest", "sse", "websocket"}
 	if got := NewRegistry().Names(); !reflect.DeepEqual(got, want) {
 		t.Fatalf("Names() = %v, want %v", got, want)
 	}

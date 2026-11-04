@@ -33,7 +33,9 @@ type wsEvent struct {
 var retryDelay = 2 * time.Second
 
 // isSocket reports whether the tab's protocol keeps a connection open.
-func isSocket(t *reqTab) bool { return t.req.Protocol == "websocket" || t.req.Protocol == "mcp" }
+func isSocket(t *reqTab) bool {
+	return t.req.Protocol == "websocket" || t.req.Protocol == "mcp" || t.req.Protocol == "sse"
+}
 
 // wsPanes are the panes of a socket's response side.
 var wsPanes = []pane{{label: "Messages", kind: paneMessages}}
@@ -255,13 +257,14 @@ func (a *App) messagesPane(_ pane, t *reqTab, _ *ScrollState) Node {
 			Button("Clear", W(56), H(w.CompactH), OnClick(func() { a.clearLog(t) }), Tooltip("Empty the message log")),
 		),
 		Code(&t.wsView, Grow(1), Bg(w.Sunken)),
-		Row(H(w.RowH+16), PadX(w.Gutter), PadY(8), Gap(6), BorderT(w.Border),
-			Field(&t.msg, Grow(1), Placeholder(composerHint(t, connected)),
-				OnEnter(func() { a.sendMessage(t) }),
-				a.textMenuOpt(&t.msg, nil),
-			),
-			PrimaryButton("Send", W(70), OnClick(func() { a.sendMessage(t) }), Tooltip("Send the message (Enter)")),
-		),
+		If(t.req.Protocol != "sse", // an event stream only receives, so it has no composer
+			Row(H(w.RowH+16), PadX(w.Gutter), PadY(8), Gap(6), BorderT(w.Border),
+				Field(&t.msg, Grow(1), Placeholder(composerHint(t, connected)),
+					OnEnter(func() { a.sendMessage(t) }),
+					a.textMenuOpt(&t.msg, nil),
+				),
+				PrimaryButton("Send", W(70), OnClick(func() { a.sendMessage(t) }), Tooltip("Send the message (Enter)")),
+			)),
 	)
 }
 

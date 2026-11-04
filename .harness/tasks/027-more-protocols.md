@@ -13,3 +13,7 @@ Protocols are a registry; REST, WebSocket and MCP exist.
 
 ## Acceptance
 - Tests against local stub servers for each; `make check` passes; decisions.md records any dependency decision.
+
+## Progress
+- Done: SSE (`internal/proto/sse.go`, protocol `sse`, chip `SSE`): a receive-only streaming protocol on the Messages pane without a composer; event id shows as `[id] data`, the event name is the kind; one-shot send returns the first event; the Auto-reconnect chip applies. Tested against a streaming `httptest` server.
+- Left: GraphQL (query editor, variables, introspection), gRPC (ask before adding dependencies), `Last-Event-ID` on reconnect.

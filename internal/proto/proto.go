@@ -28,6 +28,7 @@ func NewRegistry() Registry {
 		"rest":      REST{},
 		"websocket": WebSocket{},
 		"mcp":       MCP{},
+		"sse":       SSE{},
 	}
 }
 
