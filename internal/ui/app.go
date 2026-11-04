@@ -144,56 +144,63 @@ type App struct {
 	w, h     int
 	shot     screenshot
 
-	settings      settings.Settings
-	settingsPath  string                             // "" keeps settings in memory only
-	menu          bool                               // settings menu is open
-	edit          *cellEdit                          // the table cell being edited, if any
-	dragTab       int                                // index of the tab being dragged, -1 when none
-	ctxMenu       *contextMenu                       // the open context menu, if any
-	bulk          *bulkEdit                          // the table in bulk-edit mode, if any
-	menuScroll    vml.ScrollState                    // scroll of the settings dialog's page
-	settingsCat   string                             // the settings page shown
-	tabsScroll    vml.ScrollState                    // sideways scroll of the request tab strip
-	scaleSlider   vml.SliderState                    // drag of the interface scale slider
-	dirty         bool                               // something changed since the last draw
-	tps           int                                // the update rate last set
-	lastIn        widget.Input                       // the previous frame's input
-	pacer         engine.Pacer                       // update rate from idle time
-	recording     string                             // the action whose key is being recorded, "" when none
-	recordNotes   map[string]string                  // why a recorded key was refused, by action id
-	colorInputs   map[widget.Token]*widget.TextField // hex fields of the settings menu
-	colorNotes    map[widget.Token]string            // why a typed color was refused
-	colWidths     map[string]*vml.ColumnWidths       // the column sizes of each table, by name
-	rowSel        *rowSelection                      // the table row the keyboard acts on
-	selected      any                                // the tree node last clicked or moved to: a *Folder or *Request
-	treeFocus     bool                               // the tree has the keyboard
-	filter        widget.TextField                   // the sidebar filter
-	dragNode      any                                // the tree node being dragged, nil when none
-	pressedFolder *model.Folder                      // the folder row the button went down on, toggled on release there
-	dropTarget    any                                // the node the pointer is over while dragging
-	dialog        *dialog                            // the open dialog, if any
-	toasts        []toast
-	now           func() time.Time // the clock, replaced in tests
-	sampler       widget.Sampler
-	treeScroll    vml.ScrollState
-	sidebarSplit  vml.SplitState // width of the collections sidebar
-	paneSplit     vml.SplitState // request pane share of the request/response area
-	statePath     string         // where the UI state is remembered
-	stateSeen     string         // the last snapshot seen, to notice changes
-	stateSaved    string         // the last snapshot written
-	stateAt       time.Time      // when the snapshot last changed
-	initial       state.Window   // window geometry of the last run
-	winX, winY    int            // window position, read each frame
+	settings         settings.Settings
+	settingsPath     string                             // "" keeps settings in memory only
+	menu             bool                               // settings menu is open
+	edit             *cellEdit                          // the table cell being edited, if any
+	dragTab          int                                // index of the tab being dragged, -1 when none
+	ctxMenu          *contextMenu                       // the open context menu, if any
+	bulk             *bulkEdit                          // the table in bulk-edit mode, if any
+	menuScroll       vml.ScrollState                    // scroll of the settings dialog's page
+	settingsCat      string                             // the settings page shown
+	tabsScroll       vml.ScrollState                    // sideways scroll of the request tab strip
+	scaleSlider      vml.SliderState                    // drag of the interface scale slider
+	dirty            bool                               // something changed since the last draw
+	tps              int                                // the update rate last set
+	lastIn           widget.Input                       // the previous frame's input
+	pacer            engine.Pacer                       // update rate from idle time
+	recording        string                             // the action whose key is being recorded, "" when none
+	recordNotes      map[string]string                  // why a recorded key was refused, by action id
+	colorInputs      map[widget.Token]*widget.TextField // hex fields of the settings menu
+	colorNotes       map[widget.Token]string            // why a typed color was refused
+	colWidths        map[string]*vml.ColumnWidths       // the column sizes of each table, by name
+	rowSel           *rowSelection                      // the table row the keyboard acts on
+	selected         any                                // the tree node last clicked or moved to: a *Folder or *Request
+	treeFocus        bool                               // the tree has the keyboard
+	filter           widget.TextField                   // the sidebar filter
+	dragNode         any                                // the tree node being dragged, nil when none
+	pressedFolder    *model.Folder                      // the folder row the button went down on, toggled on release there
+	dropTarget       any                                // the node the pointer is over while dragging
+	dialog           *dialog                            // the open dialog, if any
+	toasts           []toast
+	now              func() time.Time // the clock, replaced in tests
+	sampler          widget.Sampler
+	treeScroll       vml.ScrollState
+	sidebarSplit     vml.SplitState // width of the collections sidebar
+	paneSplit        vml.SplitState // request pane share of the request/response area
+	statePath        string         // where the UI state is remembered
+	workspace        string         // the folder the collection is saved to; "" for none yet
+	defaultWorkspace string         // where the first save goes when there is no workspace
+	colSaved         string         // the collection as last loaded or saved, as JSON
+	colSeen          string         // the last collection seen, to notice changes
+	colAt            time.Time
+	stateSeen        string       // the last snapshot seen, to notice changes
+	stateSaved       string       // the last snapshot written
+	stateAt          time.Time    // when the snapshot last changed
+	initial          state.Window // window geometry of the last run
+	winX, winY       int          // window position, read each frame
 }
 
 // Options are the startup switches of the command line.
 type Options struct {
-	ScreenshotPath string // save a PNG of the first settled frame and exit
-	SendOnStart    bool   // send the first request at startup
-	SettingsPath   string // settings file; "" keeps settings in memory
-	StatePath      string // remembered UI state; "" keeps it in memory
-	ThemesDir      string // folder of user theme files (*.json); "" for none
-	OpenMenu       bool   // start with the settings menu open
+	ScreenshotPath   string // save a PNG of the first settled frame and exit
+	SendOnStart      bool   // send the first request at startup
+	SettingsPath     string // settings file; "" keeps settings in memory
+	StatePath        string // remembered UI state; "" keeps it in memory
+	ThemesDir        string // folder of user theme files (*.json); "" for none
+	OpenMenu         bool   // start with the settings menu open
+	WorkspaceDir     string // collection folder; "" uses the remembered one, else the built-in sample
+	DefaultWorkspace string // where saving goes when there is no workspace yet
 }
 
 // NewApp builds the window state around the sample collection.
@@ -210,14 +217,15 @@ func NewApp(opts Options) (*App, error) {
 		return nil, err
 	}
 	a := &App{
-		ctx:      ctx,
-		reg:      proto.NewRegistry(),
-		col:      SampleCollection(),
-		expanded: map[*model.Folder]bool{},
-		results:  make(chan sendResult, 8),
-		wsEvents: make(chan wsEvent, 64),
-		status:   "Ready",
-		shot:     screenshot{path: opts.ScreenshotPath, sendOnStart: opts.SendOnStart},
+		ctx:              ctx,
+		reg:              proto.NewRegistry(),
+		col:              SampleCollection(),
+		defaultWorkspace: opts.DefaultWorkspace,
+		expanded:         map[*model.Folder]bool{},
+		results:          make(chan sendResult, 8),
+		wsEvents:         make(chan wsEvent, 64),
+		status:           "Ready",
+		shot:             screenshot{path: opts.ScreenshotPath, sendOnStart: opts.SendOnStart},
 
 		settings:     st,
 		settingsPath: opts.SettingsPath,
@@ -231,9 +239,7 @@ func NewApp(opts Options) (*App, error) {
 	a.dragTab = -1
 	a.dirty = true
 	a.now = time.Now
-	a.expanded[&a.col.Folder] = true
-	a.expanded[a.col.Folders[1]] = true
-	a.openRequest(a.col.Folders[1].Requests[0])
+	a.openWorkspace(opts.WorkspaceDir)
 	stored, stateErr := state.Load(opts.StatePath)
 	a.initial = stored.Window
 	a.restore(stored)
@@ -445,6 +451,7 @@ func (a *App) step(in widget.Input) {
 	}
 	a.settleBulk()
 	a.stateTick()
+	a.workspaceTick()
 	a.markFrame(active || drained || pruned || a.ctx.TipWaiting)
 	a.pacer.NoteIdle(active || drained || pruned || a.ctx.TipWaiting)
 }

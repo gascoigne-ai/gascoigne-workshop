@@ -220,3 +220,9 @@ func removeAt[T any](items []T, i int) []T {
 	}
 	return append(items[:i], items[i+1:]...)
 }
+
+// Clone returns a deep copy of c.
+func (c Collection) Clone() Collection {
+	cp := c.Folder.deepCopy()
+	return Collection{Folder: *cp, Vars: cloneKV(c.Vars)}
+}

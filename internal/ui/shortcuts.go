@@ -32,6 +32,7 @@ var shortcuts = []shortcut{
 	{"move-row-up", "Move row up", ebiten.KeyArrowUp, false, false, true, func(a *App) { a.moveRow(-1) }},
 	{"move-row-down", "Move row down", ebiten.KeyArrowDown, false, false, true, func(a *App) { a.moveRow(1) }},
 	{"delete-row", "Delete row", ebiten.KeyDelete, false, false, false, (*App).deleteRow},
+	{"save", "Save collection", ebiten.KeyS, true, false, false, (*App).saveWorkspace},
 	{"find", "Find in response", ebiten.KeyF, true, false, false, (*App).openFind},
 	{"settings", "Settings", ebiten.KeyComma, true, false, false, func(a *App) { a.menu = true }},
 }

@@ -47,6 +47,10 @@ type Settings struct {
 	// display's own scale factor; 0 means the default.
 	UIScalePct int `json:"uiScale"`
 
+	// Workspace is the folder the collection is loaded from and saved to;
+	// "" keeps the built-in sample collection in memory.
+	Workspace string `json:"workspace,omitempty"`
+
 	// TimeoutSec is the default request timeout in seconds.
 	TimeoutSec int `json:"timeoutSec"`
 }
@@ -118,6 +122,16 @@ func ThemesDir() string {
 		return ""
 	}
 	return filepath.Join(dir, "gascoigne-workshop", "themes")
+}
+
+// DefaultWorkspace is where the collection is saved when the user saves
+// without having chosen a folder, or "" when there is no config directory.
+func DefaultWorkspace() string {
+	dir, err := os.UserConfigDir()
+	if err != nil {
+		return ""
+	}
+	return filepath.Join(dir, "gascoigne-workshop", "workspace")
 }
 
 // DefaultPath is where settings live for this user, or "" when the
