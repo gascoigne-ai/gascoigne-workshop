@@ -85,7 +85,7 @@ func TestCodeViewScrollClamps(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			v := CodeView{ScrollY: tt.start}
-			v.Scroll(tt.dy, tt.content, tt.vh)
+			v.ScrollBy(tt.dy, tt.content, tt.vh)
 			if v.ScrollY != tt.want {
 				t.Fatalf("ScrollY = %d, want %d", v.ScrollY, tt.want)
 			}

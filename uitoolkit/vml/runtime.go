@@ -167,8 +167,8 @@ func (e *El) update(c *core.Ctx) bool {
 	if e.onMiddle != nil && c.In.MiddleClick && c.In.Over(e.rect) {
 		e.onMiddle()
 	}
-	if e.onHeldOver != nil && (c.In.Held || c.In.MiddleHeld) && c.In.Over(e.rect) {
-		e.onHeldOver()
+	if e.onDragOver != nil && (c.In.Held || c.In.MiddleHeld) && c.In.Over(e.rect) {
+		e.onDragOver()
 	}
 	if e.onRight != nil && c.In.RightClick && c.In.Over(e.rect) {
 		e.onRight(c.In.X, c.In.Y)

@@ -27,13 +27,13 @@
 //	Spacing    Pad PadX PadY PadL PadT PadR PadB   Margin MarginX MarginY MarginL MarginT MarginR MarginB   Gap
 //	Layout     Row Col Stack Split Scroll HScroll Spacer   AlignItems AlignSelf JustifyContent
 //	Look       Bg Border BorderX BorderY BorderL BorderT BorderR BorderB HoverBg Shadow Control Edges
-//	Text       Text Caption Lines   Color Muted Bold Small Mono Ellipsis Center
+//	Text       Text Caption Lines   Color Muted Bold Small Mono Ellipsis TextCenter
 //	Input      Field Area Code Slider Checkbox   (state: TextField TextArea CodeView)   Placeholder OnChange OnEnter
-//	Events     OnClick OnRightClick OnMiddleClick   Tooltip
+//	Events     OnClick OnRightClick OnMiddleClick OnDragOver   Tooltip KeepInView
 //	Composite  Button PrimaryButton LinkButton IconButton Tabs ScrollTabs Table   OnSelect OnSlide
 //	Icons      CrossIcon TriangleIcon DotsIcon TrashIcon PlusIcon CopyIcon SearchIcon PromptIcon ChevronUpIcon ChevronDownIcon
-//	Flow       If For Frag
-//	Overlay    Float FloatAt FloatCenter Modal OnDismiss FocusScope
+//	Flow       If When For Frag
+//	Overlay    FloatTopRight FloatAt FloatCenter Modal OnDismiss FocusScope
 //
 // A side is a letter suffix (PadL, PadT, PadR, PadB) and an axis is X or
 // Y (PadX is left and right). The same options are the attributes of a
@@ -97,7 +97,7 @@ type El struct {
 
 	onClick, onChange, onEnter func()
 	onTab                      func(back bool)
-	onMiddle, onHeldOver       func()
+	onMiddle, onDragOver       func()
 	onSelect                   func(i int)
 
 	edgeTok                      core.Token // Edges: the color of the outline
@@ -222,14 +222,19 @@ func BorderT(t core.Token) Option { return func(e *El) { e.borderT = t } }
 func BorderL(t core.Token) Option { return func(e *El) { e.borderL = t } }
 
 // Separator draws the soft hairline between neighbours (tabs, table
-// columns) on the element's left edge when show is set, so the first one
-// has none; inset keeps it off the top and bottom.
-func Separator(show bool, inset int) Option {
-	return func(e *El) {
-		if show {
-			e.borderL, e.borderInset = core.BorderSoft, inset
-		}
+// columns) on the element's left edge; inset keeps it off the top and
+// bottom. The first of a row has none: When(i > 0, Separator(10)).
+func Separator(inset int) Option {
+	return func(e *El) { e.borderL, e.borderInset = core.BorderSoft, inset }
+}
+
+// When applies opt only if cond holds: the option form of If, so a
+// condition is never a bool parameter of the option itself.
+func When(cond bool, opt Option) Option {
+	if cond {
+		return opt
 	}
+	return func(*El) {}
 }
 
 // BorderInset keeps the BorderL and BorderR lines this many pixels from the top and bottom.
@@ -283,14 +288,14 @@ func OnClick(f func()) Option { return func(e *El) { e.onClick = f } }
 // OnMiddleClick runs f when the element is middle-clicked.
 func OnMiddleClick(f func()) Option { return func(e *El) { e.onMiddle = f } }
 
-// OnHeldOver runs f every frame the left or middle button is held with the pointer
+// OnDragOver runs f every frame the left or middle button is held with the pointer
 // over the element, for drag and drop: the element under the dragged
 // item learns the item is over it.
-func OnHeldOver(f func()) Option { return func(e *El) { e.onHeldOver = f } }
+func OnDragOver(f func()) Option { return func(e *El) { e.onDragOver = f } }
 
 // Float takes the element out of the layout of its Stack and pins it
 // top and right, this many pixels from those edges.
-func Float(top, right int) Option {
+func FloatTopRight(top, right int) Option {
 	return func(e *El) { e.fl.on, e.fl.top, e.fl.right = true, top, right }
 }
 

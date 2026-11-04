@@ -100,7 +100,7 @@ func TestHScrollRevealsTheFlaggedChildOnceWhenItChanges(t *testing.T) {
 		for i := 0; i < 5; i++ {
 			opts := []Item{W(40)}
 			if i == flagged {
-				opts = append(opts, Reveal())
+				opts = append(opts, KeepInView())
 			}
 			items = append(items, box(opts...))
 		}

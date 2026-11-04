@@ -11,7 +11,7 @@ import (
 func Button(label string, opts ...Option) *El {
 	return Row(with([]Item{
 		Bg(core.Sunken), Control("button"), Lighten(),
-		Text(label, Center(), Grow(1), Color(core.ChipText)),
+		Text(label, TextCenter(), Grow(1), Color(core.ChipText)),
 	}, opts)...)
 }
 
@@ -20,7 +20,7 @@ func Button(label string, opts ...Option) *El {
 func LinkButton(label string, opts ...Option) *El {
 	return Row(with([]Item{
 		PadX(8), HoverBg(core.Hover),
-		Text(label, Center(), Color(core.AccentLine)),
+		Text(label, TextCenter(), Color(core.AccentLine)),
 	}, opts)...)
 }
 
@@ -28,7 +28,7 @@ func LinkButton(label string, opts ...Option) *El {
 func PrimaryButton(label string, opts ...Option) *El {
 	return Row(with([]Item{
 		Bg(core.Accent), Control("primary"), Lighten(),
-		Text(label, Center(), Grow(1), Color(core.AccentText)),
+		Text(label, TextCenter(), Grow(1), Color(core.AccentText)),
 	}, opts)...)
 }
 
@@ -73,12 +73,12 @@ func tabItems(items []TabItem, active int, onSelect func(i int)) []Item {
 		tab := []Item{
 			Gap(4), PadX(10), AlignItems(AlignBaseline),
 			OnClick(func() { onSelect(i) }),
-			Separator(i > 0, 10),
+			When(i > 0, Separator(10)),
 			Text(it.Label, Color(tabColor(i == active))),
 			If(it.Badge > 0, Text(strconv.Itoa(it.Badge), Small(), Muted())),
 		}
 		if i == active { // outlined top, left and right in the accent and open at the bottom, where the strip's line runs under the others
-			tab = append(tab, Bg(core.Bg), Edges(core.AccentLine, true, true, true), Reveal())
+			tab = append(tab, Bg(core.Bg), Edges(core.AccentLine, true, true, true), KeepInView())
 		}
 		out[i] = Row(tab...)
 	}
@@ -193,7 +193,7 @@ func tableHeader(t TableSpec) Node {
 	header := Row(H(core.RowH), Bg(core.Panel), BorderB(core.Border),
 		If(t.Editable, headerCheck(t)),
 		For(t.Columns, func(i int, name string) Node {
-			return Row(Grow(t.weight(i)), PadX(8), Separator(i > 0, 7),
+			return Row(Grow(t.weight(i)), PadX(8), When(i > 0, Separator(7)),
 				Text(strings.ToUpper(name), Small(), Bold(), Muted(), Grow(1)))
 		}),
 		If(t.Editable, Row(W(tableActionW))),
@@ -253,11 +253,11 @@ func tableRow(t TableSpec, i int, r TableRow, placeholder, last bool) Node {
 func tableCell(t TableSpec, row, col int, text string, clr core.Token) Node {
 	if e := t.Editing; e != nil && e.Row == row && e.Col == col {
 		// The field is inset in its cell so its rounded outline and focus ring have room.
-		return Row(Grow(t.weight(col)), PadX(3), PadY(3), Separator(col > 0, 0),
+		return Row(Grow(t.weight(col)), PadX(3), PadY(3), When(col > 0, Separator(0)),
 			Field(e.Field, Grow(1), Bg(core.Sunken), FieldPad(5) /* 3 + 5 = the 8 px of a shown cell, so the text does not move */, OnEnter(e.OnEnter), OnTab(e.OnTab), menuOption(e.OnMenu)),
 		)
 	}
-	items := []Item{Grow(t.weight(col)), PadX(8), Clip(), Text(text, Ellipsis(), Color(clr), Grow(1)), Separator(col > 0, 0)}
+	items := []Item{Grow(t.weight(col)), PadX(8), Clip(), Text(text, Ellipsis(), Color(clr), Grow(1)), When(col > 0, Separator(0))}
 	if t.Editable && t.OnEditCell != nil {
 		items = append(items, OnClick(func() { t.OnEditCell(row, col) }))
 	}

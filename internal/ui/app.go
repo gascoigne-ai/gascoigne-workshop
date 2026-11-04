@@ -55,7 +55,7 @@ type reqTab struct {
 	resp                  *model.Response
 	view                  vml.CodeView    // response body
 	bodyView              vml.CodeView    // request body, read-only
-	body                  *vml.TextArea   // request body editor
+	body                  vml.TextArea    // request body editor
 	reqScroll, respScroll vml.ScrollState // scroll of the table and note panes
 	reqTabsX, respTabsX   vml.ScrollState // sideways scroll of the two pane tab strips
 	sending               bool

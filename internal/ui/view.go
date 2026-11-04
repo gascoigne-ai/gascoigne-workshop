@@ -88,7 +88,7 @@ func (a *App) treeRow(row collection.Row, selected bool) Node {
 	events := []Item{
 		OnClick(func() { a.pressTreeRow(row) }),
 		OnRightClick(func(x, y int) { a.openMenu(x, y, a.treeMenuItems(row)) }),
-		OnHeldOver(func() { a.dropTarget = node }),
+		OnDragOver(func() { a.dropTarget = node }),
 		Control("row"),
 	}
 	if a.dragNode != nil && a.dropTarget == node && node != a.dragNode {
@@ -182,7 +182,7 @@ func (a *App) requestTabs() Node {
 		HScroll(&a.tabsScroll, Grow(1), For(a.tabs, func(i int, t *reqTab) Node {
 			look := []Item{} // inactive tabs blend into the strip; the active one joins the pane
 			if i == a.active {
-				look = []Item{Bg(w.Bg), Edges(w.AccentLine, true, true, true), Reveal()} // outlined top, left and right, open at the bottom
+				look = []Item{Bg(w.Bg), Edges(w.AccentLine, true, true, true), KeepInView()} // outlined top, left and right, open at the bottom
 			}
 			grab := OnClick(func() {
 				a.active = i
@@ -192,8 +192,8 @@ func (a *App) requestTabs() Node {
 			})
 			return Row(append(look, OnMiddleClick(func() { a.active, a.dragTab = i, i }), // a middle drag reorders, like a left one
 				OnRightClick(func(x, y int) { a.openMenu(x, y, a.tabMenuItems(i)) }),
-				Separator(i > 0, 12),
-				Row(PadL(14), Gap(8), AlignItems(AlignBaseline), grab, OnHeldOver(func() { a.dragOver(i) }),
+				When(i > 0, Separator(12)),
+				Row(PadL(14), Gap(8), AlignItems(AlignBaseline), grab, OnDragOver(func() { a.dragOver(i) }),
 					Text(requestBadge(t.req.Protocol, t.req.Method), Small(), Color(appearance.MethodToken(t.req.Method)), W(tabBadgeW)),
 					Text(t.req.Name),
 					Row(W(tabDirtyW), AlignSelf(AlignStretch), If(dirty(t), Text(dirtyMark, Color(w.AccentLine), Grow(1)))),
@@ -257,7 +257,7 @@ func (a *App) hint(text, shortcutID string) string {
 // chip is a clickable label of fixed width, used for protocol and method.
 func chip(label string, color w.Token, width int, onClick func()) *El {
 	return Row(W(width), OnClick(onClick),
-		Text(label, Center(), Grow(1), Color(color)),
+		Text(label, TextCenter(), Grow(1), Color(color)),
 	)
 }
 

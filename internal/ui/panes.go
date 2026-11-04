@@ -261,7 +261,7 @@ func bulkLabel(inBulk bool) string {
 func (a *App) bulkView(p pane, t *reqTab, pad int) Node {
 	return Col(Grow(1), Pad(pad), Gap(6),
 		a.tableCaption(p, t),
-		Area(a.bulk.area, Grow(1), Bg(w.Sunken), a.textMenuOpt(&a.bulk.area.TextField, nil)),
+		Area(&a.bulk.area, Grow(1), Bg(w.Sunken), a.textMenuOpt(&a.bulk.area.TextField, nil)),
 	)
 }
 
@@ -338,7 +338,7 @@ func (a *App) bodyEditor(t *reqTab, scroll *ScrollState) Node {
 			t.body.Styler = jsonStyler
 		}
 		sync := func() { t.req.Body = t.body.Text }
-		return Area(t.body, Grow(1), Bg(w.Sunken), OnChange(sync), a.textMenuOpt(&t.body.TextField, sync))
+		return Area(&t.body, Grow(1), Bg(w.Sunken), OnChange(sync), a.textMenuOpt(&t.body.TextField, sync))
 	case model.BodyForm, model.BodyMultipart:
 		return a.tableView(formPane, t, scroll, 0)
 	}

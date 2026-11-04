@@ -32,7 +32,7 @@ type hscrollB struct {
 // different child is flagged than last time, the strip scrolls to show
 // it once, so a selection made elsewhere is never hidden, while the
 // user's own scrolling is left alone.
-func Reveal() Option { return func(e *El) { e.reveal = true } }
+func KeepInView() Option { return func(e *El) { e.reveal = true } }
 
 func (s *hscrollB) overflow(e *El) bool { return s.content > e.rect.W }
 

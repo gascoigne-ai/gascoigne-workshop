@@ -9,7 +9,7 @@ import (
 type bulkEdit struct {
 	pane pane
 	tab  *reqTab
-	area *vml.TextArea
+	area vml.TextArea
 }
 
 // rowSelection is the table row the keyboard operations act on.

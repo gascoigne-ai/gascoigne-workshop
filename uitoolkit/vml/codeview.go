@@ -205,9 +205,9 @@ func indentOf(l Line) int {
 	return len(t) - len(strings.TrimLeft(t, " "))
 }
 
-// Scroll moves the view by dy pixels, keeping it inside the content of
+// ScrollBy moves the view by dy pixels, keeping it inside the content of
 // contentH pixels shown in a viewport of viewH.
-func (v *CodeView) Scroll(dy, contentH, viewH int) {
+func (v *CodeView) ScrollBy(dy, contentH, viewH int) {
 	v.ScrollY = min(max(v.ScrollY+dy, 0), max(contentH-viewH, 0))
 }
 
@@ -335,7 +335,7 @@ func (v *CodeView) updatePointer(c *core.Ctx, r core.Rect, g codeGeometry, b bar
 		if in.Shift {
 			v.ScrollX = ClampScroll(v.ScrollX+int(-in.Wheel*float64(g.charW)*6), v.contentWidth(c, r), b.viewW)
 		} else {
-			v.Scroll(int(-in.Wheel*float64(g.lineH)*3), len(vis)*g.lineH, b.viewH)
+			v.ScrollBy(int(-in.Wheel*float64(g.lineH)*3), len(vis)*g.lineH, b.viewH)
 		}
 		c.In.Wheel = 0 // consumed, so an enclosing scroller does not move too
 	}

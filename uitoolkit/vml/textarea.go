@@ -23,8 +23,8 @@ type TextArea struct {
 }
 
 // NewTextArea returns an editor holding text.
-func NewTextArea(text string) *TextArea {
-	a := &TextArea{TextField: NewMultiline(text)}
+func NewTextArea(text string) TextArea {
+	a := TextArea{TextField: NewMultiline(text)}
 	a.revealed = -1
 	return a
 }

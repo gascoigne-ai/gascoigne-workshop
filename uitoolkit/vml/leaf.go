@@ -86,7 +86,7 @@ func Mono() Option { return func(e *El) { e.mono = true } }
 func Ellipsis() Option { return func(e *El) { e.ellipsis = true } }
 
 // Center centers text horizontally in its box.
-func Center() Option { return func(e *El) { e.ctr = true } }
+func TextCenter() Option { return func(e *El) { e.ctr = true } }
 
 // Lines stacks the lines of s, one Text each, in the given color.
 func Lines(s string, clr core.Token, opts ...Option) *El {

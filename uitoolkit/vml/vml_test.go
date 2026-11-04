@@ -81,7 +81,7 @@ func TestOptionalChildIsDroppedOnlyWhenTooNarrow(t *testing.T) {
 }
 
 func TestStackFloatPinsTopRight(t *testing.T) {
-	under, menu := box(), box(W(60), H(40), Float(30, 10))
+	under, menu := box(), box(W(60), H(40), FloatTopRight(30, 10))
 	root := Stack(under, menu)
 	Layout(testCtx(t), root, 400, 300)
 
@@ -131,7 +131,7 @@ func TestClickReachesOnlyTheElementUnderThePointer(t *testing.T) {
 
 func TestModalSwallowsClicksAndDismissesOnOutsideClick(t *testing.T) {
 	var under, inside, dismissed int
-	menu := box(W(40), H(40), Float(0, 0), OnClick(func() { inside++ }), Modal(), OnDismiss(func() { dismissed++ }))
+	menu := box(W(40), H(40), FloatTopRight(0, 0), OnClick(func() { inside++ }), Modal(), OnDismiss(func() { dismissed++ }))
 	root := Stack(box(OnClick(func() { under++ })), menu)
 	c := testCtx(t)
 	Layout(c, root, 200, 100)
@@ -603,7 +603,8 @@ func TestCtrlTabIsNotFocusCycling(t *testing.T) {
 // areaBox is a 400x100 text area in a window of the same size.
 func areaBox(t *testing.T, text string) (*TextArea, *core.Ctx, *El, *int) {
 	t.Helper()
-	a := NewTextArea(text)
+	area := NewTextArea(text)
+	a := &area
 	changes := 0
 	root := Row(Area(a, Grow(1), OnChange(func() { changes++ })))
 	c := testCtx(t)
