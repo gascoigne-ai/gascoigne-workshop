@@ -135,3 +135,27 @@ func TestURLTooltipShowsTheResolvedURLAndWhatIsMissing(t *testing.T) {
 		t.Fatalf("tip %q", tip)
 	}
 }
+
+func TestFolderVariablesAreEditedInTheVarsPaneAndResolveForTheirRequests(t *testing.T) {
+	a, _ := newTestApp(t)
+	folder := a.col.Folders[1] // holds the open request
+	req := a.cur().req
+	a.col.Vars = []model.KV{{Name: "host", Value: "collection.test", Enabled: true}}
+	a.editVars(folder)
+	pane := requestPanes[a.cur().paneTab]
+	if pane.label != "Vars" || pane.rows(a, a.cur()) != &folder.Vars || pane.captionOf(a) != "Folder: "+folder.Name {
+		t.Fatalf("pane %q caption %q", pane.label, pane.captionOf(a))
+	}
+	folder.Vars = []model.KV{{Name: "host", Value: "folder.test", Enabled: true}}
+	if got := model.Expand("{{host}}", a.varsFor(req)); got != "folder.test" {
+		t.Fatalf("folder variable not used: %q", got)
+	}
+	a.editVars(&a.col.Folder)
+	if requestPanes[a.cur().paneTab].rows(a, a.cur()) != &a.col.Vars {
+		t.Fatal("the root edits the collection's variables")
+	}
+	a.addEnv("Dev") // choosing an environment goes back to the usual pane
+	if requestPanes[a.cur().paneTab].rows(a, a.cur()) != &a.col.Envs[0].Vars {
+		t.Fatal("selecting an environment resets the Vars pane")
+	}
+}

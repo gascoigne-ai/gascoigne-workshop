@@ -503,7 +503,7 @@ func (a *App) copyBody(t *reqTab) {
 }
 
 func (a *App) copyCurl(t *reqTab) {
-	_ = a.ctx.Clipboard.Write(proto.Curl(t.req.Expanded(a.vars())))
+	_ = a.ctx.Clipboard.Write(proto.Curl(t.req.Expanded(a.varsFor(t.req))))
 }
 
 // openFind shows the find bar for the current response and focuses it.

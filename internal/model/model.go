@@ -46,6 +46,7 @@ const (
 // siblings are added, removed or moved (open tabs point at requests).
 type Folder struct {
 	Name     string
+	Vars     []KV // variables of the requests below, over the environment's and the collection's
 	Folders  []*Folder
 	Requests []*Request
 }

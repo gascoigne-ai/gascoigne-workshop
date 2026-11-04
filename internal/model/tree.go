@@ -136,7 +136,7 @@ func (f *Folder) Duplicate(node any) any {
 }
 
 func (f *Folder) deepCopy() *Folder {
-	cp := &Folder{Name: f.Name}
+	cp := &Folder{Name: f.Name, Vars: cloneKV(f.Vars)}
 	for _, sub := range f.Folders {
 		cp.Folders = append(cp.Folders, sub.deepCopy())
 	}

@@ -271,7 +271,7 @@ func chip(label string, color w.Token, width int, onClick func()) *El {
 // URL: defined ones in the success color, unresolved ones as errors.
 func (a *App) varSegments(s string) []Span {
 	var segs []Span
-	vars := a.vars()
+	vars := a.varsFor(a.cur().req)
 	for _, seg := range splitVars(s) {
 		style := w.Text
 		if seg.isVar {

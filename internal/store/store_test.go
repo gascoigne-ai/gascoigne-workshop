@@ -25,7 +25,7 @@ func sample() model.Collection {
 						Auth: model.Auth{Type: model.AuthBearer, Token: "s3cret"}, TimeoutSec: 5, NoRedirects: true},
 					{Name: "Create", Protocol: "rest", Method: "PUT", URL: "{{base}}/users/1"}, // same name twice
 				}},
-				{Name: "Empty"},
+				{Name: "Empty", Vars: []model.KV{{Name: "folder-var", Value: "fv", Enabled: true}}},
 				{Name: "a/b: weird?*", Requests: []*model.Request{{Name: "Echo", Protocol: "websocket", URL: "wss://e.test"}}},
 			},
 		},

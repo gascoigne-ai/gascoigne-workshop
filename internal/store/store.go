@@ -177,7 +177,7 @@ func saveFolder(dir, rel string, f *model.Folder, meta folderMeta, secrets map[s
 		name := unique(slug(sub.Name), taken)
 		keep[name] = true
 		meta.Order = append(meta.Order, name+"/")
-		if err := saveFolder(filepath.Join(dir, name), path.Join(rel, name), sub, folderMeta{Name: sub.Name}, secrets); err != nil {
+		if err := saveFolder(filepath.Join(dir, name), path.Join(rel, name), sub, folderMeta{Name: sub.Name, Vars: toKV(sub.Vars)}, secrets); err != nil {
 			return err
 		}
 	}
@@ -407,6 +407,9 @@ func loadFolder(dir, rel string, f *model.Folder, secrets map[string]secret) (fo
 		return meta, err
 	}
 	f.Name = meta.Name
+	if rel != "" { // the root's variables are the collection's (Load sets them)
+		f.Vars = fromKV(meta.Vars)
+	}
 	if f.Name == "" {
 		f.Name = filepath.Base(dir)
 	}

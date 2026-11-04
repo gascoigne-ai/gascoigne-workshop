@@ -55,6 +55,7 @@ func (a *App) treeMenuItems(row collection.Row) []menuItem {
 		{label: "New request", run: func() { a.newRequestIn(row.Dir) }},
 		{label: "New folder", run: func() { a.newFolderIn(row.Dir) }},
 		{label: "Import cURL from clipboard", run: func() { a.importCurl(row.Dir) }},
+		{label: "Variables", run: func() { a.editVars(row.Dir) }},
 		sep,
 		rename,
 	}
@@ -144,7 +145,7 @@ func (a *App) closeTabsIn(node any) {
 }
 
 func (a *App) copyRequestURL(req *model.Request) {
-	_ = a.ctx.Clipboard.Write(model.Expand(req.URL, a.vars()))
+	_ = a.ctx.Clipboard.Write(model.Expand(req.URL, a.varsFor(req)))
 }
 
 // ---- drag and drop ---------------------------------------------------------

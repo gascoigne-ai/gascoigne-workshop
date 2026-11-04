@@ -39,16 +39,26 @@ func (a *App) vars() []model.KV {
 	return a.col.Vars
 }
 
+// varsFor are the variables req is sent with: the collection's, the active
+// environment's and those of the folders above it (model.VarsFor).
+func (a *App) varsFor(req *model.Request) []model.KV { return a.col.VarsFor(req, a.activeEnv()) }
+
 // varsRows are the rows the Vars pane edits.
 func (a *App) varsRows() *[]model.KV {
-	if e := a.activeEnv(); e != nil {
+	if f := a.varsFolder; f != nil {
+		return &f.Vars
+	}
+	if e := a.activeEnv(); e != nil && !a.varsCollection {
 		return &e.Vars
 	}
 	return &a.col.Vars
 }
 
 func (a *App) varsCaption() string {
-	if e := a.activeEnv(); e != nil {
+	if f := a.varsFolder; f != nil {
+		return "Folder: " + f.Name
+	}
+	if e := a.activeEnv(); e != nil && !a.varsCollection {
 		return "Environment: " + e.Name
 	}
 	return "Collection variables"
@@ -62,6 +72,7 @@ func (a *App) selectEnv(i int) {
 		i = -1
 	}
 	a.env = i
+	a.varsFolder, a.varsCollection = nil, false
 	name := a.envName()
 	a.saveSettings(func(s *settings.Settings) { s.Environment = name })
 }
@@ -182,10 +193,26 @@ func (a *App) urlTip(t *reqTab) string {
 	if len(names) == 0 {
 		return ""
 	}
-	vars := a.vars()
+	vars := a.varsFor(t.req)
 	tip := "Resolves to " + model.Expand(t.req.URL, vars)
 	if missing := model.Unresolved(t.req.URL, vars); len(missing) > 0 {
 		tip += "\nNot defined: " + strings.Join(missing, ", ")
 	}
 	return tip
+}
+
+// editVars points the Vars pane at the variables of dir (the collection's
+// for the root) and shows it.
+func (a *App) editVars(dir *model.Folder) {
+	a.commitEdit()
+	if dir == &a.col.Folder {
+		a.varsFolder, a.varsCollection = nil, true
+	} else {
+		a.varsFolder, a.varsCollection = dir, false
+	}
+	for i, p := range requestPanes {
+		if p.label == "Vars" {
+			a.cur().paneTab = i
+		}
+	}
 }

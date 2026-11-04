@@ -65,3 +65,29 @@ func Unresolved(s string, vars []KV) []string {
 	}
 	return out
 }
+
+// VarsFor are the variables req is sent with. From lowest to highest
+// priority: the collection's, the active environment's (nil for none),
+// the variables of the folders above the request, outermost first, so
+// the nearest folder wins. The request itself has no variables of its
+// own: its fields are where a value is written.
+func (c *Collection) VarsFor(req *Request, env *Environment) []KV {
+	vars := c.Vars
+	if env != nil {
+		vars = MergeVars(vars, env.Vars)
+	}
+	var chain []*Folder // from the request's folder up to, not including, the root
+	var node any = req
+	for {
+		parent, ok := c.Folder.Parent(node)
+		if !ok || parent == &c.Folder {
+			break
+		}
+		chain = append(chain, parent)
+		node = parent
+	}
+	for i := len(chain) - 1; i >= 0; i-- {
+		vars = MergeVars(vars, chain[i].Vars)
+	}
+	return vars
+}

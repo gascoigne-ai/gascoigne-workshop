@@ -1,4 +1,4 @@
-status: in progress (save, load, autosave done; close prompt and import pending)
+status: done (OpenAPI import is a follow-up)
 
 # Collections on disk
 
@@ -20,3 +20,5 @@ The sample collection is built in and nothing is saved.
 - Done: cURL import (`proto.ParseCurl`, folder menu `Import cURL from clipboard`).
 - Left: unsaved-changes prompt on close (autosave makes it rare), an open/new workspace dialog (only the flag and the default folder exist), OpenAPI import.
 - Done later: `App.FlushWorkspace` saves pending edits when the window closes (`main`), so the unsaved-changes prompt is not needed.
+- Done later: `Ctrl+O` opens another collection folder (pending edits saved first, tabs closed, remembered); an empty or new folder starts a collection.
+- Left: OpenAPI import (its own follow-up task).
