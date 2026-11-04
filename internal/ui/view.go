@@ -17,6 +17,7 @@ const (
 	urlH      = 56
 	statusH   = 28
 	paneTabsH = 40
+	tabGap    = 6 // space above the tabs, so their outline never touches the banner or the bar above
 
 	// Smallest sizes the dividers allow.
 	minSidebarW = 160
@@ -170,7 +171,7 @@ func (a *App) header() Node {
 
 // requestTabs is the strip of open requests, with a "+" for a new one.
 func (a *App) requestTabs() Node {
-	return Row(H(tabsH), Bg(w.Frame), Control("tabstrip"), BorderBottom(w.Border),
+	return Row(H(tabsH), PadT(tabGap), Bg(w.Frame), Control("tabstrip"), BorderBottom(w.Border),
 		HScroll(&a.tabsScroll, Grow(1), For(a.tabs, func(i int, t *reqTab) Node {
 			look := []Item{} // inactive tabs blend into the strip; the active one joins the pane
 			if i == a.active {
@@ -288,7 +289,7 @@ func splitVars(s string) []urlSeg {
 func (a *App) pane(t *reqTab, panes []pane, active *int, scroll, tabsX *ScrollState, extra Node) Node {
 	selectTab := func(i int) { *active, scroll.Y = i, 0 }
 	return Col(Grow(1), Bg(w.Bg),
-		Row(H(paneTabsH), BorderBottom(w.Border),
+		Row(H(paneTabsH), PadT(tabGap), BorderBottom(w.Border),
 			ScrollTabs(tabsX, a.tabItems(panes, t), *active, selectTab),
 			extra,
 		),

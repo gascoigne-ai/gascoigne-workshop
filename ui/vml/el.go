@@ -167,6 +167,9 @@ func PadXY(x, y int) Option {
 // PadL sets the left padding.
 func PadL(n int) Option { return func(e *El) { e.padL = n } }
 
+// PadT sets the top padding.
+func PadT(n int) Option { return func(e *El) { e.padT = n } }
+
 // PadR sets the right padding.
 func PadR(n int) Option { return func(e *El) { e.padR = n } }
 
