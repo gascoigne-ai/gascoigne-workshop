@@ -17,3 +17,4 @@ Variables live on the collection and there is no environment switcher.
 ## Progress
 - Done: `model.Environment`, `MergeVars` (environment over collection), header switcher with new / rename / delete, remembered choice (`settings.environment`), Vars pane edits the active environment, secret variables (masked in the table, values in `.secrets.json`, `environments/*.env.json` on disk), unresolved `{{vars}}` in the URL shown as errors.
 - Left: `{{var}}` autocomplete popup, hover showing the resolved value, folder-level variables (order request, folder, environment, collection; today environment over collection), highlighting in header and body editors.
+- Done later: the URL field tooltip shows what the URL resolves to and which names are not defined.

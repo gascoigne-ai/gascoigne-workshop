@@ -19,3 +19,4 @@ The sample collection is built in and nothing is saved.
 - Done: `internal/store` (format in decisions 9, round-trip tests with unicode, duplicate names, empty folders, secrets kept out of request files), `-workspace` flag, remembered workspace, `Ctrl+S`, debounced autosave.
 - Done: cURL import (`proto.ParseCurl`, folder menu `Import cURL from clipboard`).
 - Left: unsaved-changes prompt on close (autosave makes it rare), an open/new workspace dialog (only the flag and the default folder exist), OpenAPI import.
+- Done later: `App.FlushWorkspace` saves pending edits when the window closes (`main`), so the unsaved-changes prompt is not needed.

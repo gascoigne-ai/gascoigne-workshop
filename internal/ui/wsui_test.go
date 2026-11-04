@@ -175,3 +175,21 @@ func TestWebSocketWithoutReconnectStaysClosed(t *testing.T) {
 		t.Fatalf("%d connections, want 1", conns.Load())
 	}
 }
+
+func TestComposerSendsHexAsABinaryMessage(t *testing.T) {
+	a, _ := newTestApp(t)
+	tab := a.cur()
+	tab.req.Protocol = "websocket"
+	tab.req.URL = echoServer(t)
+	a.send(tab)
+	until(t, a, "connection", func() bool { return tab.sess != nil })
+	tab.msg = vml.NewTextField("hex: de ad BE ef")
+	a.sendMessage(tab)
+	until(t, a, "sent bytes", func() bool { return strings.Contains(logText(tab), "↑ deadbeef") })
+	tab.msg = vml.NewTextField("hex: xyz")
+	a.sendMessage(tab)
+	if !strings.Contains(logText(tab), "hex:") {
+		t.Fatalf("a bad hex message must be explained:\n%s", logText(tab))
+	}
+	a.disconnect(tab)
+}

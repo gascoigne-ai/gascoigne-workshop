@@ -163,3 +163,19 @@ func TestImportCurlAddsARequestFromTheClipboard(t *testing.T) {
 		t.Fatal("a bad command opened a tab")
 	}
 }
+
+func TestFlushWorkspaceSavesPendingEditsAtExit(t *testing.T) {
+	dir := t.TempDir()
+	a := workspaceApp(t, dir, Options{})
+	a.cur().req.URL = "https://edited-just-now.test" // the autosave pause has not passed
+	if err := a.FlushWorkspace(); err != nil {
+		t.Fatal(err)
+	}
+	got, err := store.Load(dir)
+	if err != nil || got.Requests[0].URL != "https://edited-just-now.test" {
+		t.Fatalf("%+v %v", got, err)
+	}
+	if err := workspaceApp(t, "", Options{}).FlushWorkspace(); err != nil {
+		t.Fatalf("no workspace is no error: %v", err)
+	}
+}

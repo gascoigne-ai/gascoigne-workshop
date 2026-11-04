@@ -39,6 +39,12 @@ type Session interface {
 	Close() error
 }
 
+// BinarySender is implemented by sessions that can send binary messages
+// (WebSocket). Others take text only.
+type BinarySender interface {
+	SendBinary(data []byte) error
+}
+
 // Streamer is implemented by protocols that keep a connection open.
 // Protocol.Send of such a protocol is the one-shot form: connect, send
 // the body, wait for the first reply, disconnect.

@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
@@ -117,5 +118,20 @@ func TestToggleSecretOnAnEnvironmentRow(t *testing.T) {
 	a.toggleSecret(0)
 	if a.col.Envs[0].Vars[0].Secret {
 		t.Fatal("not unmarked")
+	}
+}
+
+func TestURLTooltipShowsTheResolvedURLAndWhatIsMissing(t *testing.T) {
+	a, _ := newTestApp(t)
+	tab := a.cur()
+	tab.req.URL = "https://plain.test/x"
+	if a.urlTip(tab) != "" {
+		t.Fatal("a URL without variables needs no tooltip")
+	}
+	a.col.Vars = []model.KV{{Name: "host", Value: "api.test", Enabled: true}}
+	tab.req.URL = "https://{{host}}/{{path}}"
+	tip := a.urlTip(tab)
+	if !strings.Contains(tip, "Resolves to https://api.test/{{path}}") || !strings.Contains(tip, "Not defined: path") {
+		t.Fatalf("tip %q", tip)
 	}
 }

@@ -2,6 +2,7 @@ package ui
 
 import (
 	"strconv"
+	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
@@ -171,4 +172,20 @@ func (a *App) envChip() Node {
 		Tooltip("Environment: variables that override the collection's"),
 		Text(label, Small(), Bold(), Color(w.Hero)),
 	)
+}
+
+// urlTip is the tooltip of the URL field: what the URL resolves to with the
+// active variables, and the names that do not resolve. Empty when the URL
+// uses no variables.
+func (a *App) urlTip(t *reqTab) string {
+	names := model.VarNames(t.req.URL)
+	if len(names) == 0 {
+		return ""
+	}
+	vars := a.vars()
+	tip := "Resolves to " + model.Expand(t.req.URL, vars)
+	if missing := model.Unresolved(t.req.URL, vars); len(missing) > 0 {
+		tip += "\nNot defined: " + strings.Join(missing, ", ")
+	}
+	return tip
 }

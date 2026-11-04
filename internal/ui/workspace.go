@@ -121,3 +121,21 @@ func (a *App) workspaceTick() {
 	}
 	a.saveWorkspace()
 }
+
+// FlushWorkspace saves the collection if it changed since the last save,
+// for the moment the window closes (the autosave pause may not have
+// passed). Nothing is written without a workspace.
+func (a *App) FlushWorkspace() error {
+	if a.workspace == "" {
+		return nil
+	}
+	a.commitEdit()
+	if collectionKey(a.col) == a.colSaved {
+		return nil
+	}
+	if err := store.Save(a.workspace, a.col); err != nil {
+		return err
+	}
+	a.colSaved = collectionKey(a.col)
+	return nil
+}

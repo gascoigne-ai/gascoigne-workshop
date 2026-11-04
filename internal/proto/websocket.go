@@ -216,6 +216,18 @@ func (s *wsSession) Send(text string) error {
 	return nil
 }
 
+// SendBinary implements BinarySender. The log shows the bytes as hex.
+func (s *wsSession) SendBinary(data []byte) error {
+	if err := s.alive(); err != nil {
+		return err
+	}
+	if err := s.conn.Write(ws.Binary, data); err != nil {
+		return err
+	}
+	s.emit(Event{Dir: Sent, Kind: "binary", Text: hex.EncodeToString(data), Size: len(data)})
+	return nil
+}
+
 func (s *wsSession) Ping() error {
 	if err := s.alive(); err != nil {
 		return err

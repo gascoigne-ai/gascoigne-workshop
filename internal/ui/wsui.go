@@ -2,6 +2,8 @@ package ui
 
 import (
 	"context"
+	"encoding/hex"
+	"fmt"
 	"strings"
 	"time"
 
@@ -108,7 +110,7 @@ func (a *App) sendMessage(t *reqTab) {
 	if t.sess == nil || t.msg.Text == "" {
 		return
 	}
-	if err := t.sess.Send(t.msg.Text); err != nil {
+	if err := sendComposed(t.sess, t.msg.Text); err != nil {
 		a.logInfo(t, err.Error(), w.Error)
 		return
 	}
@@ -266,4 +268,23 @@ func composerHint(t *reqTab, connected bool) string {
 		return "call TOOL {json}  ·  read URI  ·  prompt NAME {json}  ·  method {json}  ·  or raw JSON-RPC"
 	}
 	return "Message"
+}
+
+// binaryPrefix starts a composer line that is sent as a binary message:
+// "hex: de ad be ef".
+const binaryPrefix = "hex:"
+
+// sendComposed sends the composer's text: as a binary message when it
+// starts with "hex:" and the session can send binary, else as text.
+func sendComposed(s proto.Session, text string) error {
+	rest, ok := strings.CutPrefix(text, binaryPrefix)
+	bs, canBinary := s.(proto.BinarySender)
+	if !ok || !canBinary {
+		return s.Send(text)
+	}
+	data, err := hex.DecodeString(strings.Join(strings.Fields(rest), ""))
+	if err != nil {
+		return fmt.Errorf("hex: %v", err)
+	}
+	return bs.SendBinary(data)
 }

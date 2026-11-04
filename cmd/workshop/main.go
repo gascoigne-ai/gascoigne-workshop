@@ -51,6 +51,9 @@ func main() {
 	if err := ebiten.RunGame(app); err != nil && !errors.Is(err, ebiten.Termination) {
 		log.Fatal(err)
 	}
+	if err := app.FlushWorkspace(); err != nil {
+		log.Printf("saving the collection: %v", err)
+	}
 	if err := app.SaveState(); err != nil {
 		log.Printf("saving state: %v", err)
 	}

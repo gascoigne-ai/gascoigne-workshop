@@ -223,7 +223,7 @@ func (a *App) urlBar(t *reqTab) Node {
 		send = PrimaryButton("Cancel", W(80), OnClick(func() { a.cancelSend(t) }), Tooltip("Cancel the running request"))
 	}
 	return Row(H(urlH), PadX(w.Gutter), PadY(8), Gap(8), Bg(w.Bg),
-		Row(Grow(1), Bg(w.Sunken), Control("field"),
+		Row(Grow(1), Bg(w.Sunken), Control("field"), Tooltip(a.urlTip(t)),
 			tip("Protocol: click to change", chip(protocolLabel[t.req.Protocol], w.Muted, 64, func() { a.cycleProtocol(t) })),
 			If(isREST, VRuleInset(8)), // a divider between the chips, none after the last one
 			If(isREST, tip("Method: click to change", chip(t.req.Method, appearance.MethodToken(t.req.Method), 84, func() { a.cycleMethod(t) }))),
