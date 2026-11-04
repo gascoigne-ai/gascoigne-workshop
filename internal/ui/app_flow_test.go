@@ -3328,3 +3328,102 @@ func TestLeftDragOnAnOverflowingTabStripPansItInsteadOfReorderingTabs(t *testing
 		t.Fatalf("dragTab = %d", a.dragTab)
 	}
 }
+
+// A response with nested blocks: one match deep inside one item, one at
+// the top, and plenty of siblings that must disappear while searching.
+const compactBody = `{"total":3,"items":[` +
+	`{"id":1,"name":"alpha","tags":["red","green","blue","yellow","orange","purple","brown","black"],"owner":{"login":"ann","site":"https://a.example.org/very/long/path/to/ann"}},` +
+	`{"id":2,"name":"beta","tags":["red","green","blue","yellow","orange","purple","brown","black"],"owner":{"login":"bob","site":"https://b.example.org/very/long/path/to/bob"}},` +
+	`{"id":3,"name":"gamma","tags":["cyan","magenta","teal","olive","navy","maroon","lime","aqua"],"owner":{"login":"cy","site":"https://c.example.org/very/long/path/to/cy"}}]}`
+
+const compactX = rawX + 64 // the Compact chip follows Raw
+
+func viewText(t *reqTab) string {
+	var sb strings.Builder
+	for _, i := range t.view.Visible() {
+		for _, sp := range t.view.Lines[i].Spans {
+			sb.WriteString(sp.Text)
+		}
+		sb.WriteString("\n")
+	}
+	return sb.String()
+}
+
+func TestCompactChipShowsJSONCompactlyWithDeepBlocksFolded(t *testing.T) {
+	a := jsonResponse(t, compactBody)
+	tab := a.cur()
+	pretty := len(tab.view.Visible())
+	click(a, compactX, toolbarY)
+	if !tab.compact || tab.raw {
+		t.Fatalf("compact %v raw %v", tab.compact, tab.raw)
+	}
+	text := viewText(tab)
+	if got := len(tab.view.Visible()); got >= pretty {
+		t.Fatalf("compact shows %d lines, pretty showed %d", got, pretty)
+	}
+	// Items are blocks at depth 2: folded, so only their previews show.
+	if strings.Contains(text, `"login": "ann"`) && !strings.Contains(text, `…`) {
+		t.Fatalf("deep blocks must be folded to previews:\n%s", text)
+	}
+	if !strings.Contains(text, `"total": 3`) {
+		t.Fatalf("top-level values stay:\n%s", text)
+	}
+	click(a, rawX, toolbarY)
+	if tab.compact || !tab.raw {
+		t.Fatal("Raw replaces Compact")
+	}
+	click(a, prettyX, toolbarY)
+	if tab.compact || tab.raw {
+		t.Fatal("Pretty replaces both")
+	}
+}
+
+func TestFindInCompactViewKeepsOnlyMatchingLeavesTheirChildrenAndTheirPath(t *testing.T) {
+	a := jsonResponse(t, compactBody)
+	tab := a.cur()
+	click(a, compactX, toolbarY)
+	a.openFind()
+	a.typeText("cy")
+	text := viewText(tab)
+	if !strings.Contains(text, `"login": "cy"`) {
+		t.Fatalf("the match must be visible and unfolded:\n%s", text)
+	}
+	for _, gone := range []string{`"alpha"`, `"beta"`, `"ann"`, `"bob"`, `"total"`, `cyan`} {
+		if gone == "cyan" {
+			continue // "cyan" also contains the query: it is a match, so it stays
+		}
+		if strings.Contains(text, gone) {
+			t.Fatalf("%s is unrelated to the match and must be filtered out:\n%s", gone, text)
+		}
+	}
+	if !strings.Contains(text, `"items": [`) || !strings.HasPrefix(text, "{") {
+		t.Fatalf("the path to the match stays:\n%s", text)
+	}
+	if len(tab.view.Matches()) == 0 || tab.matchIdx != 0 {
+		t.Fatalf("matches %d idx %d", len(tab.view.Matches()), tab.matchIdx)
+	}
+	// A matching block keeps all of its children.
+	a.find(tab, "owner")
+	text = viewText(tab)
+	for _, want := range []string{`"login": "ann"`, `"login": "bob"`, `"login": "cy"`} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("children of a matching block must stay, missing %s:\n%s", want, text)
+		}
+	}
+	// Clearing the search restores the full compact view with its folds.
+	a.find(tab, "")
+	if !strings.Contains(viewText(tab), `"total": 3`) {
+		t.Fatal("an empty query shows everything again")
+	}
+	a.closeFind(tab)
+	if !strings.Contains(viewText(tab), `"total": 3`) {
+		t.Fatal("closing the find bar restores the view")
+	}
+}
+
+// find replaces the search text, as typing would.
+func (a *App) find(t *reqTab, text string) {
+	t.find = widget.NewTextField(text)
+	t.find.Focused = true
+	a.runFind(t)
+}

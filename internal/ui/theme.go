@@ -134,6 +134,45 @@ func codeLines(body []byte) []widget.Line {
 	return lines
 }
 
+// compactWidth is how wide a block may be and still stay on one line in
+// the compact view.
+const compactWidth = 90
+
+// compactFoldDepth is the nesting level from which blocks start folded
+// in the compact view: the top level and its children are open.
+const compactFoldDepth = 2
+
+// compactLines is the response as compact JSON lines; the opening line of
+// every block carries its one-line preview for when it is folded.
+func compactLines(body []byte) []widget.Line {
+	src := jsonview.Compact(body, compactWidth)
+	lines := make([]widget.Line, len(src))
+	for i, l := range src {
+		lines[i] = widget.Line{Spans: toSpans(l.Spans), Foldable: l.Foldable, FoldedSpans: toSpans(l.Folded), Depth: l.Depth}
+	}
+	return lines
+}
+
+func toSpans(src []jsonview.Span) []widget.Span {
+	if src == nil {
+		return nil
+	}
+	spans := make([]widget.Span, len(src))
+	for j, s := range src {
+		spans[j] = widget.Span{Text: s.Text, Style: jsonTokens[s.Kind]}
+	}
+	return spans
+}
+
+// foldDeep folds every block that opens at nesting depth or deeper.
+func foldDeep(v *widget.CodeView, depth int) {
+	for i, l := range v.Lines {
+		if l.Foldable && l.Depth >= depth {
+			v.Folded[i] = true
+		}
+	}
+}
+
 // kvRows turns key/value rows into table rows with two or three cells.
 func kvRows(rows []model.KV, withDesc, flagDuplicates bool) []vml.TableRow {
 	out := make([]vml.TableRow, len(rows))

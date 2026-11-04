@@ -63,6 +63,8 @@ type reqTab struct {
 	auth                  map[string]*widget.TextField // Auth pane inputs by field id, created on first use
 	showSecrets           bool                         // show masked credential fields
 	raw                   bool                         // show the response body as received, not pretty-printed
+	compact               bool                         // show JSON compactly, as a browser's viewer does
+	compactAll            []widget.Line                // the unfiltered compact lines, kept while a search filters the view
 	findOpen              bool                         // the find bar is showing
 	find                  widget.TextField             // the search text
 	matchIdx              int                          // the active match, -1 for none

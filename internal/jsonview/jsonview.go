@@ -31,6 +31,8 @@ type Span struct {
 type Line struct {
 	Spans    []Span
 	Foldable bool
+	Folded   []Span // Compact: the block's one-line preview, shown while it is folded
+	Depth    int    // Compact: nesting level
 }
 
 // Lines pretty-prints body when it is valid JSON and splits it into

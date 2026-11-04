@@ -19,6 +19,10 @@ type Span struct {
 type Line struct {
 	Spans    []Span
 	Foldable bool
+	// FoldedSpans, when set, replace Spans while the line is folded, to
+	// show a one-line preview of the hidden block.
+	FoldedSpans []Span
+	Depth       int // nesting level of a block's opening line, for folding by depth
 }
 
 // CodeView is a read-only, scrollable, foldable text viewer with line
@@ -364,11 +368,15 @@ func (v *CodeView) Draw(c *Ctx, dst *ebiten.Image, r Rect) {
 		}
 
 		x := g.textX - v.ScrollX
-		for _, sp := range line.Spans {
+		spans, folded := line.Spans, v.Folded[idx] && line.Foldable
+		if folded && len(line.FoldedSpans) > 0 {
+			spans = line.FoldedSpans
+		}
+		for _, sp := range spans {
 			c.TextMid(text, c.F.Mono, sp.Text, x, cell, c.Col(sp.Style))
 			x += c.Width(c.F.Mono, sp.Text)
 		}
-		if v.Folded[idx] {
+		if folded && len(line.FoldedSpans) == 0 {
 			c.TextMid(text, c.F.Mono, " ... }", x, cell, muted)
 		}
 

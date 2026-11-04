@@ -437,8 +437,9 @@ func (a *App) responsePane(_ pane, t *reqTab, _ *ScrollState) Node {
 	return Col(Grow(1),
 		Spacer(H(w.Pad)), // same top inset as the request pane, so first rows line up
 		Row(H(w.RowH+8), PadXY(w.Pad, 0), Gap(6), AlignItems(AlignCenter), BorderBottom(w.Border),
-			a.viewChip("Pretty", !t.raw, 56, func() { a.setRaw(t, false) }),
-			a.viewChip("Raw", t.raw, 44, func() { a.setRaw(t, true) }),
+			a.viewChip("Pretty", !t.raw && !t.compact, 56, func() { a.setView(t, false, false) }),
+			a.viewChip("Raw", t.raw, 44, func() { a.setView(t, true, false) }),
+			a.viewChip("Compact", t.compact, 72, func() { a.setView(t, false, true) }),
 			Spacer(),
 			IconButton(SearchIcon(Grow(1)), W(48), H(chipH), OnClick(a.openFind), Tooltip(a.hint("Find in response", "find"))),
 			IconButton(CopyIcon(Grow(1)), W(52), H(chipH), OnClick(func() { a.copyBody(t) }), Tooltip("Copy the response body")),
@@ -473,9 +474,9 @@ func (a *App) findBar(t *reqTab) Node {
 	)
 }
 
-// setRaw switches between the pretty-printed and the raw response view.
-func (a *App) setRaw(t *reqTab, raw bool) {
-	t.raw = raw
+// setView picks the response view: pretty-printed, as received, or compact.
+func (a *App) setView(t *reqTab, raw, compact bool) {
+	t.raw, t.compact = raw, compact
 	a.refreshView(t)
 }
 
@@ -487,6 +488,10 @@ func (a *App) refreshView(t *reqTab) {
 		t.view.SetLines(nil)
 	case t.raw:
 		t.view.SetLines(rawLines(t.resp.Body))
+	case t.compact:
+		t.compactAll = compactLines(t.resp.Body)
+		a.showCompact(t)
+		return // showCompact searches too
 	default:
 		t.view.SetLines(codeLines(t.resp.Body))
 	}
@@ -526,8 +531,33 @@ func (a *App) openFind() {
 	a.runFind(t)
 }
 
-// runFind searches for the typed text and goes to the first match.
+// showCompact fills the view with the compact lines: all of them with
+// the deep blocks folded, or, while a search has text, only the matching
+// lines with their children and the blocks around them (filterCompact).
+func (a *App) showCompact(t *reqTab) {
+	if t.findOpen && t.find.Text != "" {
+		t.view.SetLines(filterCompact(t.compactAll, t.find.Text))
+	} else {
+		t.view.SetLines(t.compactAll)
+		foldDeep(&t.view, compactFoldDepth)
+	}
+	if t.findOpen {
+		a.searchView(t)
+	}
+}
+
+// runFind searches for the typed text and goes to the first match. The
+// compact view is filtered to the matches first.
 func (a *App) runFind(t *reqTab) {
+	if t.compact && t.resp != nil && !looksBinary(t.resp.Body) {
+		a.showCompact(t)
+		return
+	}
+	a.searchView(t)
+}
+
+// searchView highlights the matches in the view and reveals the first.
+func (a *App) searchView(t *reqTab) {
 	matches := t.view.Find(t.find.Text)
 	t.matchIdx = -1
 	if len(matches) > 0 {
@@ -565,4 +595,7 @@ func (a *App) closeFind(t *reqTab) {
 	t.findOpen = false
 	t.find.Focused = false
 	t.view.SetMatches(nil, -1)
+	if t.compact && t.resp != nil && !looksBinary(t.resp.Body) {
+		a.showCompact(t) // leave the filtered view
+	}
 }
