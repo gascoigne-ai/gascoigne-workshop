@@ -98,7 +98,7 @@ var responsePanes = []pane{
 			return &t.resp.Headers
 		}},
 	{label: "Timeline", kind: paneNote, empty: noResponse,
-		note: func(t *reqTab) string { return timelineText(t.resp) }},
+		note: func(t *reqTab) string { return respview.Timeline(t.resp) }},
 	{label: "Tests", kind: paneResults},
 }
 

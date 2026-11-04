@@ -56,3 +56,30 @@ func TestVarsForFollowsTheResolutionOrder(t *testing.T) {
 		t.Fatalf("a request at the root sees the collection's variables: %q", g)
 	}
 }
+
+func TestVarCompletionFiltersByWhatFollowsAnOpenBrace(t *testing.T) {
+	vars := []KV{{Name: "host", Enabled: true}, {Name: "hostname", Enabled: true}, {Name: "token", Enabled: true}, {Name: "off"}, {Name: "host", Enabled: true}}
+	names, from := VarCompletion("https://{{ho", 12, vars)
+	if from != 8 || !reflect.DeepEqual(names, []string{"host", "hostname"}) {
+		t.Fatalf("%v from %d", names, from)
+	}
+	names, from = VarCompletion("https://x/", 10, vars)
+	if from != -1 || !reflect.DeepEqual(names, []string{"host", "hostname", "token"}) {
+		t.Fatalf("outside braces: %v from %d", names, from)
+	}
+	if names, from = VarCompletion("{{host}} {{", 11, vars); from != 9 || len(names) != 3 {
+		t.Fatalf("a closed brace pair ends the partial name: %v %d", names, from)
+	}
+	if names, from = VarCompletion("ż{{t", 99, vars); from != 1 || len(names) != 1 || names[0] != "token" {
+		t.Fatalf("runes, and a cursor past the end: %v %d", names, from)
+	}
+}
+
+func TestUpsertVarUpdatesInPlaceOrAppends(t *testing.T) {
+	rows := []KV{{Name: "a", Value: "1"}}
+	rows = UpsertVar(rows, "a", "2")
+	rows = UpsertVar(rows, "b", "3")
+	if len(rows) != 2 || rows[0].Value != "2" || !rows[0].Enabled || rows[1].Name != "b" {
+		t.Fatalf("%+v", rows)
+	}
+}

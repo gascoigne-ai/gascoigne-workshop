@@ -2,7 +2,7 @@ package ui
 
 import (
 	"fmt"
-	"mime"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/respview"
 	"os"
 	"path/filepath"
 	"strings"
@@ -59,46 +59,13 @@ func (a *App) showHistory(t *reqTab, i int) {
 	a.refreshView(t)
 }
 
-// extensions are the file extensions of the content types people save;
-// the system's MIME table is the fallback, and its first choice is not
-// always the usual one (".ehtml" for HTML).
-var extensions = map[string]string{
-	"application/json": ".json", "text/html": ".html", "application/xml": ".xml", "text/xml": ".xml",
-	"text/plain": ".txt", "text/csv": ".csv", "text/css": ".css", "text/javascript": ".js",
-	"image/png": ".png", "image/jpeg": ".jpg", "image/gif": ".gif", "application/pdf": ".pdf",
-}
-
-// suggestedFileName is a name for saving the body: response.json, .html...
-// from the content type.
-func suggestedFileName(r *model.Response) string {
-	for _, h := range r.Headers {
-		if !strings.EqualFold(h.Name, "Content-Type") {
-			continue
-		}
-		mt, _, err := mime.ParseMediaType(h.Value)
-		if err != nil {
-			break
-		}
-		if ext, ok := extensions[mt]; ok {
-			return "response" + ext
-		}
-		if strings.HasSuffix(mt, "+json") {
-			return "response.json"
-		}
-		if exts, _ := mime.ExtensionsByType(mt); len(exts) > 0 {
-			return "response" + exts[0]
-		}
-	}
-	return "response.txt"
-}
-
 // saveBody asks for a path and writes the response body there.
 func (a *App) saveBody(t *reqTab) {
 	if t.resp == nil || t.resp.Err != "" {
 		a.toast("There is no response to save", true)
 		return
 	}
-	a.pickFile("Save response body", true, suggestedFileName(t.resp), func(path string) { a.writeBody(t, path) })
+	a.pickFile("Save response body", true, respview.SuggestedFileName(t.resp), func(path string) { a.writeBody(t, path) })
 }
 
 // writeBody saves the body to path (a leading ~ is the home folder); an

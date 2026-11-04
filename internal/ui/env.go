@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"sort"
 	"strconv"
 	"strings"
 
@@ -218,29 +217,10 @@ func (a *App) editVars(dir *model.Folder) {
 	}
 }
 
-// variableCompletion is what Ctrl+Space in the URL field offers: the names
-// of the variables that fit what is typed after an open "{{", and where
-// that partial name starts (in runes), or -1 when the cursor is not in one.
+// variableCompletion is what Ctrl+Space in the URL field offers (see
+// model.VarCompletion).
 func (a *App) variableCompletion(t *reqTab) (names []string, from int) {
-	runes := []rune(t.url.Text)
-	cur := min(t.url.Cursor, len(runes))
-	before := string(runes[:cur])
-	open := strings.LastIndex(before, "{{")
-	from = -1
-	prefix := ""
-	if open >= 0 && !strings.Contains(before[open:], "}}") {
-		from = len([]rune(before[:open]))
-		prefix = before[open+2:]
-	}
-	seen := map[string]bool{}
-	for _, v := range a.varsFor(t.req) {
-		if v.Enabled && v.Name != "" && !seen[v.Name] && strings.HasPrefix(v.Name, prefix) {
-			seen[v.Name] = true
-			names = append(names, v.Name)
-		}
-	}
-	sort.Strings(names)
-	return names, from
+	return model.VarCompletion(t.url.Text, t.url.Cursor, a.varsFor(t.req))
 }
 
 // completeVariable opens a menu of the variables that fit at the cursor of

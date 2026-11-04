@@ -56,24 +56,11 @@ func (a *App) resultsPane(_ pane, t *reqTab, _ *ScrollState) Node {
 }
 
 // setVariable stores a captured value in the active environment, or in the
-// collection's variables when none is active: an existing row of that name
-// gets the value (and is switched on), else a row is added.
+// collection's variables when none is active (model.UpsertVar).
 func (a *App) setVariable(name, value string) {
-	rows := a.col.Vars
-	env := a.activeEnv()
-	if env != nil {
-		rows = env.Vars
+	if env := a.activeEnv(); env != nil {
+		env.Vars = model.UpsertVar(env.Vars, name, value)
+		return
 	}
-	for i := range rows {
-		if rows[i].Name == name {
-			rows[i].Value, rows[i].Enabled = value, true
-			return
-		}
-	}
-	rows = append(rows, model.KV{Name: name, Value: value, Enabled: true})
-	if env != nil {
-		env.Vars = rows
-	} else {
-		a.col.Vars = rows
-	}
+	a.col.Vars = model.UpsertVar(a.col.Vars, name, value)
 }

@@ -1,6 +1,9 @@
 package model
 
-import "strings"
+import (
+	"sort"
+	"strings"
+)
 
 // MergeVars is the variables a request sees when an environment is
 // active: the enabled ones of over win against base by name. Expand
@@ -90,4 +93,42 @@ func (c *Collection) VarsFor(req *Request, env *Environment) []KV {
 		vars = MergeVars(vars, chain[i].Vars)
 	}
 	return vars
+}
+
+// VarCompletion is what completing a {{variable}} at cursor (in runes) of
+// text offers: the names of the enabled variables that start with what is
+// typed after an open "{{", sorted, and where that partial name starts (in
+// runes), or -1 when the cursor is not inside braces and every name fits.
+func VarCompletion(text string, cursor int, vars []KV) (names []string, from int) {
+	runes := []rune(text)
+	cur := min(max(cursor, 0), len(runes))
+	before := string(runes[:cur])
+	open := strings.LastIndex(before, "{{")
+	from = -1
+	prefix := ""
+	if open >= 0 && !strings.Contains(before[open:], "}}") {
+		from = len([]rune(before[:open]))
+		prefix = before[open+2:]
+	}
+	seen := map[string]bool{}
+	for _, v := range vars {
+		if v.Enabled && v.Name != "" && !seen[v.Name] && strings.HasPrefix(v.Name, prefix) {
+			seen[v.Name] = true
+			names = append(names, v.Name)
+		}
+	}
+	sort.Strings(names)
+	return names, from
+}
+
+// UpsertVar sets the variable called name to value: an existing row gets
+// the value and is switched on, else a row is added. It returns the rows.
+func UpsertVar(rows []KV, name, value string) []KV {
+	for i := range rows {
+		if rows[i].Name == name {
+			rows[i].Value, rows[i].Enabled = value, true
+			return rows
+		}
+	}
+	return append(rows, KV{Name: name, Value: value, Enabled: true})
 }

@@ -1,4 +1,4 @@
-package ui
+package respview
 
 import (
 	"fmt"
@@ -9,9 +9,9 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/textfmt"
 )
 
-// timelineText is the Timeline pane: the total, the phases the connection
+// Timeline is the Timeline pane: the total, the phases the connection
 // went through and the size, with a note when the body was cut.
-func timelineText(r *model.Response) string {
+func Timeline(r *model.Response) string {
 	var sb strings.Builder
 	line := func(name string, d time.Duration) {
 		if d > 0 {

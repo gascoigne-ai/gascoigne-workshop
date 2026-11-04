@@ -59,24 +59,6 @@ func TestHistoryKeepsEarlierResponsesNewestFirstAndSwapsOnPick(t *testing.T) {
 	}
 }
 
-func TestSuggestedFileNameFollowsTheContentType(t *testing.T) {
-	for ct, want := range map[string]string{
-		"application/json; charset=utf-8": "response.json",
-		"text/html":                       "response.html",
-		"application/vnd.api+json":        "response.json",
-		"image/png":                       "response.png",
-		"":                                "response.txt",
-	} {
-		r := &model.Response{}
-		if ct != "" {
-			r.Headers = []model.KV{{Name: "content-type", Value: ct, Enabled: true}}
-		}
-		if got := suggestedFileName(r); got != want {
-			t.Errorf("%q: %q, want %q", ct, got, want)
-		}
-	}
-}
-
 func TestSaveBodyWritesTheFileAndReportsFailures(t *testing.T) {
 	t.Setenv("PATH", t.TempDir()) // no dialog program: the path is asked as text
 	a, _ := newTestApp(t)
