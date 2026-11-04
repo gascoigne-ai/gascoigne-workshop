@@ -261,3 +261,35 @@ func TestGraphQLBodyTypeSendsAQueryAndCanLoadTheSchema(t *testing.T) {
 		t.Fatal("loading the schema must not touch the tab's own query")
 	}
 }
+
+func TestADragRestingOverAClosedFolderOpensIt(t *testing.T) {
+	a, _ := newTestApp(t)
+	closed := a.col.Folders[0]
+	a.expanded[closed] = false
+	req := a.col.Folders[1].Requests[0]
+	a.dragNode, a.dropTarget = req, closed
+	for i := 0; i < dragExpandTicks-1; i++ {
+		a.dragHover()
+	}
+	if a.expanded[closed] {
+		t.Fatal("opened too early")
+	}
+	a.dragHover()
+	if !a.expanded[closed] {
+		t.Fatal("the folder did not open")
+	}
+	other := a.col.Folders[2]
+	a.expanded[other] = false
+	a.dropTarget = other
+	a.dragHover()
+	a.dropTarget = closed // moved away before the time was up
+	a.dragHover()
+	if a.hoverFolder != closed || a.hoverTicks != 1 {
+		t.Fatalf("the rest time must start over on a new folder: %v %d", a.hoverFolder, a.hoverTicks)
+	}
+	a.dragNode = nil
+	a.dragHover()
+	if a.hoverFolder != nil {
+		t.Fatal("without a drag nothing hovers")
+	}
+}

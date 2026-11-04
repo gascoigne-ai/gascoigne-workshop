@@ -191,6 +191,8 @@ type App struct {
 	filter           vml.TextField                 // the sidebar filter
 	dragNode         any                           // the tree node being dragged, nil when none
 	pressedFolder    *model.Folder                 // the folder row the button went down on, toggled on release there
+	hoverFolder      *model.Folder                 // the closed folder a drag has been over
+	hoverTicks       int                           // for how many frames
 	dropTarget       any                           // the node the pointer is over while dragging
 	dialog           *dialog                       // the open dialog, if any
 	toasts           []toast
@@ -495,6 +497,7 @@ func (a *App) step(in core.Input) {
 	if a.edit != nil && !a.edit.field.Focused { // a click elsewhere ends the edit
 		a.commitEdit()
 	}
+	a.dragHover()
 	a.settleBulk()
 	a.stateTick()
 	a.workspaceTick()

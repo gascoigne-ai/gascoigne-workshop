@@ -17,6 +17,51 @@ func Update(c *core.Ctx, root Node) {
 	c.PointerX, c.PointerY = c.In.X, c.In.Y
 	root.update(c)
 	cycleFocus(c, root)
+	if c.In.Tab {
+		revealFocused(root)
+	}
+}
+
+// revealFocused scrolls every Scroll that holds the focused element so the
+// element is inside its box, which is what Tab moving focus into a field
+// that is out of view needs. It uses this frame's layout; the container
+// shows the new position on the next frame.
+func revealFocused(root Node) {
+	var path []*El
+	var find func(e *El) bool
+	find = func(e *El) bool {
+		if e.hidden {
+			return false
+		}
+		path = append(path, e)
+		if e.focusable() && e.focused() {
+			return true
+		}
+		for _, k := range e.kids {
+			if find(k) {
+				return true
+			}
+		}
+		path = path[:len(path)-1]
+		return false
+	}
+	if !find(root) {
+		return
+	}
+	target := path[len(path)-1].rect
+	for _, e := range path {
+		sc, ok := e.b.(*scrollB)
+		if !ok {
+			continue
+		}
+		view := e.rect
+		switch {
+		case target.Y < view.Y:
+			sc.state.Y = max(sc.state.Y-(view.Y-target.Y), 0)
+		case target.Y+target.H > view.Y+view.H:
+			sc.state.Y += target.Y + target.H - (view.Y + view.H)
+		}
+	}
 }
 
 // focusable reports whether e takes keyboard focus: text fields and code views.

@@ -152,3 +152,51 @@ func TestScrollbarThumbDragMovesTheContent(t *testing.T) {
 		t.Fatalf("dragging the bar must not click rows, hits %v", hits)
 	}
 }
+
+func TestTabScrollsTheFocusedFieldIntoView(t *testing.T) {
+	c := testCtx(t)
+	st := &ScrollState{}
+	fields := make([]TextField, 20)
+	items := make([]Item, len(fields))
+	for i := range fields {
+		fields[i] = NewTextField("")
+		items[i] = Field(&fields[i], H(30))
+	}
+	build := func() Node { return Col(Scroll(st, append([]Item{Grow(1), Gap(4)}, items...)...)) }
+	frame := func(in core.Input) Node {
+		c.In = in
+		root := build()
+		Layout(c, root, 300, 150)
+		Update(c, root)
+		return root
+	}
+	frame(core.Input{X: 5000, Y: 5000})
+	fields[0].Focused = true
+	for range 12 { // twelve Tabs: the twelfth field is far below a 150px box
+		frame(core.Input{X: 5000, Y: 5000, Tab: true})
+	}
+	root := frame(core.Input{X: 5000, Y: 5000})
+	if st.Y == 0 {
+		t.Fatal("Tab moved the focus out of view and the scroller did not follow")
+	}
+	if !fields[12].Focused {
+		t.Fatalf("focus is not on field 12")
+	}
+	var focused *El
+	for _, e := range collectFocusables(root, nil) {
+		if e.focused() {
+			focused = e
+		}
+	}
+	scroll := root.kids[0]
+	if focused == nil || focused.rect.Y < scroll.rect.Y || focused.rect.Y+focused.rect.H > scroll.rect.Y+scroll.rect.H {
+		t.Fatalf("the focused field %+v is outside the scroll box %+v", focused.rect, scroll.rect)
+	}
+	for range 8 { // Shift+Tab back up scrolls up again
+		frame(core.Input{X: 5000, Y: 5000, Tab: true, Shift: true})
+	}
+	root = frame(core.Input{X: 5000, Y: 5000})
+	if !fields[4].Focused || st.Y >= 12*34 {
+		t.Fatalf("scrolled back? focus on 4: %v, Y %d", fields[4].Focused, st.Y)
+	}
+}

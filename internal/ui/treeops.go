@@ -302,3 +302,23 @@ func (a *App) importOpenAPI(dir *model.Folder) {
 	}
 	a.status = "Imported " + res.Folder.Name
 }
+
+// dragExpandTicks is how long a drag must rest over a closed folder
+// before the folder opens, so something can be dropped inside it.
+const dragExpandTicks = 30
+
+// dragHover opens the closed folder a drag rests over.
+func (a *App) dragHover() {
+	f, ok := a.dropTarget.(*model.Folder)
+	if a.dragNode == nil || !ok || a.expanded[f] || any(f) == a.dragNode {
+		a.hoverFolder, a.hoverTicks = nil, 0
+		return
+	}
+	if a.hoverFolder != f {
+		a.hoverFolder, a.hoverTicks = f, 0
+	}
+	if a.hoverTicks++; a.hoverTicks >= dragExpandTicks {
+		a.expanded[f] = true
+		a.hoverFolder, a.hoverTicks = nil, 0
+	}
+}
