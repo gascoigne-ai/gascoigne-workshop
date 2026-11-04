@@ -179,3 +179,33 @@ func TestFlushWorkspaceSavesPendingEditsAtExit(t *testing.T) {
 		t.Fatalf("no workspace is no error: %v", err)
 	}
 }
+
+func TestOpenWorkspaceAtSwitchesCollectionsAndSavesTheOldOne(t *testing.T) {
+	first, second := t.TempDir(), t.TempDir()
+	if err := store.Save(second, model.Collection{Folder: model.Folder{Name: "Second", Requests: []*model.Request{{Name: "Two", Protocol: "rest", Method: "GET", URL: "u2"}}}}); err != nil {
+		t.Fatal(err)
+	}
+	a := workspaceApp(t, first, Options{})
+	a.cur().req.URL = "https://unsaved.test"
+	a.openWorkspaceAt(second)
+	if a.col.Name != "Second" || len(a.tabs) != 1 || a.cur().req.Name != "Two" || a.workspace != second {
+		t.Fatalf("col %q tabs %d workspace %q", a.col.Name, len(a.tabs), a.workspace)
+	}
+	if old, err := store.Load(first); err != nil || old.Requests[0].URL != "https://unsaved.test" {
+		t.Fatalf("the old collection lost its edit: %+v %v", old, err)
+	}
+	st, err := settings.Load(a.settingsPath)
+	if err != nil || st.Workspace != second {
+		t.Fatalf("remembered %q %v", st.Workspace, err)
+	}
+	broken := t.TempDir()
+	os.WriteFile(filepath.Join(broken, "bad.req.json"), []byte("{nope"), 0o644)
+	a.openWorkspaceAt(broken)
+	if a.workspace != second || a.col.Name != "Second" {
+		t.Fatal("a folder that cannot be read must change nothing")
+	}
+	a.openWorkspaceAt("   ")
+	if a.workspace != second {
+		t.Fatal("an empty path changes nothing")
+	}
+}

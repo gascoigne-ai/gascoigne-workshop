@@ -3,6 +3,7 @@ package ui
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
@@ -138,4 +139,48 @@ func (a *App) FlushWorkspace() error {
 	}
 	a.colSaved = collectionKey(a.col)
 	return nil
+}
+
+// openWorkspaceAt switches to the collection in dir: pending edits of
+// the current one are saved, every tab is closed and the folder becomes
+// the remembered workspace. A folder that cannot be read changes nothing
+// and says why.
+func (a *App) openWorkspaceAt(dir string) {
+	dir = strings.TrimSpace(dir)
+	if dir == "" {
+		return
+	}
+	if err := a.FlushWorkspace(); err != nil {
+		a.toast("Saving the current collection failed: "+err.Error(), true)
+		return
+	}
+	col, err := store.Load(dir)
+	if err != nil {
+		a.toast("Cannot open "+dir+": "+err.Error(), true)
+		return
+	}
+	for _, t := range a.tabs {
+		a.disconnect(t)
+	}
+	a.commitEdit()
+	a.col, a.workspace = col, dir
+	a.tabs, a.active, a.selected = nil, 0, nil
+	a.expanded = map[*model.Folder]bool{}
+	a.expandAll(&a.col.Folder)
+	first := firstRequest(&a.col.Folder)
+	if first == nil {
+		first = a.col.AddRequest(model.Request{Name: "New Request", Protocol: "rest", Method: "GET"})
+	}
+	a.openRequest(first)
+	a.pickEnv()
+	a.colSaved = collectionKey(a.col)
+	a.colSeen = a.colSaved
+	a.saveSettings(func(s *settings.Settings) { s.Workspace = dir })
+	a.status = "Opened " + dir
+}
+
+// promptWorkspace asks for the folder of a collection to open; an empty or
+// new folder starts a new collection there.
+func (a *App) promptWorkspace() {
+	a.prompt("Open collection folder", a.workspace, "Open", a.openWorkspaceAt)
 }
