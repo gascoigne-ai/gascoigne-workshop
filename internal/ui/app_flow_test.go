@@ -3250,3 +3250,32 @@ func TestTooltipKeepsFramesComingWhileItWaits(t *testing.T) {
 		t.Fatal("frames must keep being drawn until the tooltip shows")
 	}
 }
+
+func TestManyTabsScrollTheStripAndKeepTheActiveTabInView(t *testing.T) {
+	a, _ := newTestApp(t)
+	for range 14 {
+		a.newRequest()
+	}
+	a.step(widget.Input{})
+	if a.tabsScroll.X <= 0 {
+		t.Fatalf("the new, active tab is past the right edge: X = %d", a.tabsScroll.X)
+	}
+	x := a.tabsScroll.X
+	a.step(widget.Input{X: 600, Y: tabStripY, WheelX: 1}) // two-finger swipe right: back toward the first tabs
+	if a.tabsScroll.X >= x {
+		t.Fatalf("a sideways swipe must scroll the strip back: %d -> %d", x, a.tabsScroll.X)
+	}
+	x = a.tabsScroll.X
+	a.step(widget.Input{X: 600, Y: tabStripY, Wheel: -1}) // the mouse wheel scrolls it too
+	if a.tabsScroll.X <= x {
+		t.Fatalf("the wheel must scroll the strip forward: %d -> %d", x, a.tabsScroll.X)
+	}
+	x = a.tabsScroll.X
+	click(a, sidebarW+4, tabStripY) // the left arrow, at the strip's left edge
+	if a.tabsScroll.X >= x {
+		t.Fatalf("clicking the left arrow must scroll back: %d -> %d", x, a.tabsScroll.X)
+	}
+	if len(a.tabs) != 15 || a.active != 14 {
+		t.Fatalf("an arrow click must not select or close a tab: %d tabs, active %d", len(a.tabs), a.active)
+	}
+}

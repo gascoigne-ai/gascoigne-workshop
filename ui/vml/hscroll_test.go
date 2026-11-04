@@ -27,8 +27,8 @@ func TestHScrollWheelScrollsSidewaysAndClamps(t *testing.T) {
 		Update(c, root)
 		Layout(c, root, 300, 100)
 	}
-	if st.X != 100 {
-		t.Fatalf("X = %d, want the clamp 100", st.X)
+	if st.X != 136 { // content 200 + an arrow's room at each end - the box 100
+		t.Fatalf("X = %d, want the clamp 136", st.X)
 	}
 	for range 20 {
 		wheel(c, 50, 10, 1)
@@ -110,8 +110,8 @@ func TestHScrollRevealsTheFlaggedChildOnceWhenItChanges(t *testing.T) {
 	c := testCtx(t)
 	root := Col(build(4))
 	Layout(c, root, 300, 100)
-	if st.X != 100 { // the last box ends at 200; clamped to the maximum
-		t.Fatalf("X = %d, want 100", st.X)
+	if st.X != 136 { // the last box ends at 200; clamped to the maximum
+		t.Fatalf("X = %d, want 136", st.X)
 	}
 	st.X = 0 // the user scrolls away; the same flagged child must not pull it back
 	root = Col(build(4))
@@ -126,3 +126,50 @@ func TestHScrollRevealsTheFlaggedChildOnceWhenItChanges(t *testing.T) {
 		t.Fatalf("X = %d, want the first box revealed", st.X)
 	}
 }
+
+func TestHScrollFollowsTheHorizontalWheelOfATouchpad(t *testing.T) {
+	var hits []int
+	st := &ScrollState{}
+	root := Col(strip(st, 5, &hits))
+	c := testCtx(t)
+	Layout(c, root, 300, 100)
+	c.In = widget.Input{X: 50, Y: 10, WheelX: -1} // two fingers swiping left
+	Update(c, root)
+	if st.X <= 0 {
+		t.Fatalf("a sideways swipe must scroll the strip, X = %d", st.X)
+	}
+	if c.In.WheelX != 0 {
+		t.Fatal("the swipe is consumed")
+	}
+	x := st.X
+	c.In = widget.Input{X: 50, Y: 10, WheelX: 1}
+	Update(c, root)
+	if st.X >= x {
+		t.Fatalf("swiping back must scroll back, X = %d", st.X)
+	}
+}
+
+func TestHScrollArrowsAreAlwaysShownWhenOverflowingAndAtALimitStillTakeTheClick(t *testing.T) {
+	var hits []int
+	st := &ScrollState{}
+	root := Col(strip(st, 5, &hits))
+	c := testCtx(t)
+	Layout(c, root, 300, 100)
+	if l, r := hscrollOf(root).arrowsShown(root.kids[0]); !l || !r {
+		t.Fatalf("both arrows are drawn while the strip overflows, got %v %v", l, r)
+	}
+	// At the left end the left arrow is dim, but a click on it must not
+	// fall through to the tab beneath.
+	c.In = widget.Input{X: 3, Y: 10, Click: true, Held: true}
+	Update(c, root)
+	if st.X != 0 || len(hits) != 0 {
+		t.Fatalf("X = %d hits %v", st.X, hits)
+	}
+	fit := Col(strip(&ScrollState{}, 2, &hits))
+	Layout(c, fit, 300, 100)
+	if l, r := hscrollOf(fit).arrowsShown(fit.kids[0]); l || r {
+		t.Fatalf("no arrows when everything fits, got %v %v", l, r)
+	}
+}
+
+func hscrollOf(root *El) *hscrollB { return root.kids[0].b.(*hscrollB) }

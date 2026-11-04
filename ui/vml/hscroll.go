@@ -28,7 +28,21 @@ func Reveal() Option { return func(e *El) { e.reveal = true } }
 
 func (s *hscrollB) overflow(e *El) bool { return s.content > e.rect.W }
 
-func (s *hscrollB) maxX(e *El) int { return max(s.content-e.rect.W, 0) }
+// inset is the room kept clear at each end for the arrows, so the first
+// and last tab are not hidden under them; none when everything fits.
+func (s *hscrollB) inset(e *El) int {
+	if s.overflow(e) {
+		return hscrollArrowW
+	}
+	return 0
+}
+
+func (s *hscrollB) maxX(e *El) int {
+	if !s.overflow(e) {
+		return 0
+	}
+	return s.content + 2*s.inset(e) - e.rect.W
+}
 
 func (s *hscrollB) layout(e *El, c *widget.Ctx) {
 	r := e.rect
@@ -52,20 +66,16 @@ func (s *hscrollB) layout(e *El, c *widget.Ctx) {
 		st.revealed = 0
 	case st.revealed != flagged+1:
 		st.revealed = flagged + 1
-		room := 0
-		if s.overflow(e) {
-			room = hscrollArrowW
+		if start < st.X { // the clear area starts one arrow in, where the content starts
+			st.X = start
 		}
-		if start-room < st.X {
-			st.X = start - room
-		}
-		if end+room > st.X+r.W {
-			st.X = end + room - r.W
+		if end+2*s.inset(e) > st.X+r.W {
+			st.X = end + 2*s.inset(e) - r.W
 		}
 	}
 	st.X = max(0, min(st.X, s.maxX(e)))
 
-	e.rect = widget.Rect{X: r.X - st.X, Y: r.Y, W: max(s.content, r.W), H: r.H}
+	e.rect = widget.Rect{X: r.X - st.X + s.inset(e), Y: r.Y, W: max(s.content, r.W), H: r.H}
 	s.flow.layout(e, c)
 	e.rect = r
 }
@@ -77,7 +87,14 @@ func (s *hscrollB) arrows(e *El) (left, right widget.Rect) {
 	return
 }
 
-// preUpdate takes clicks on the arrows before the children under them see them.
+// arrowsShown reports which arrows are drawn: both whenever the strip
+// overflows (one is dim at the end of its way), none when everything fits.
+func (s *hscrollB) arrowsShown(e *El) (left, right bool) {
+	return s.overflow(e), s.overflow(e)
+}
+
+// preUpdate takes clicks on the arrows before the children under them see
+// them, also on a dim arrow, which sits over the edge of a tab.
 func (s *hscrollB) preUpdate(e *El, c *widget.Ctx) {
 	in, st, r := c.In, s.state, e.rect
 	if !s.overflow(e) || !in.Click {
@@ -85,18 +102,26 @@ func (s *hscrollB) preUpdate(e *El, c *widget.Ctx) {
 	}
 	left, right := s.arrows(e)
 	switch {
-	case st.X > 0 && left.Contains(in.X, in.Y):
+	case left.Contains(in.X, in.Y):
 		st.X = max(st.X-r.W/2, 0)
 		c.In.Click = false
-	case st.X < s.maxX(e) && right.Contains(in.X, in.Y):
+	case right.Contains(in.X, in.Y):
 		st.X = min(st.X+r.W/2, s.maxX(e))
 		c.In.Click = false
 	}
 }
 
+// update scrolls with the wheel and with a touchpad's sideways swipe.
 func (s *hscrollB) update(e *El, c *widget.Ctx) {
 	in, st := c.In, s.state
-	if s.overflow(e) && in.Wheel != 0 && in.Over(e.rect) {
+	if !s.overflow(e) || !in.Over(e.rect) {
+		return
+	}
+	switch {
+	case in.WheelX != 0:
+		st.X = max(0, min(st.X+int(-in.WheelX*wheelStep), s.maxX(e)))
+		c.In.WheelX = 0
+	case in.Wheel != 0:
 		st.X = max(0, min(st.X+int(-in.Wheel*wheelStep), s.maxX(e)))
 		c.In.Wheel = 0
 	}
@@ -108,17 +133,17 @@ func (s *hscrollB) drawOver(e *El, c *widget.Ctx, dst *ebiten.Image) {
 	}
 	left, right := s.arrows(e)
 	for _, a := range []struct {
-		box  widget.Rect
-		show bool
-		dir  float32
+		box widget.Rect
+		on  bool // there is more to scroll to that way
+		dir float32
 	}{{left, s.state.X > 0, -1}, {right, s.state.X < s.maxX(e), 1}} {
-		if !a.show {
-			continue
-		}
-		c.Fill(dst, a.box, c.Col(widget.Bg))
-		clr := c.Col(widget.Muted)
-		if c.Hovered(a.box) {
-			clr = c.Col(widget.Text)
+		c.Fill(dst, a.box, c.Col(widget.Frame))
+		clr := c.Col(widget.Rule) // dim at the end of the way
+		if a.on {
+			clr = c.Col(widget.Muted)
+			if c.Hovered(a.box) {
+				clr = c.Col(widget.Text)
+			}
 		}
 		cx, cy := float32(a.box.X+a.box.W/2), float32(a.box.Y+a.box.H/2)
 		c.Line(dst, cx-2*a.dir, cy-4, cx+2*a.dir, cy, 1.5, clr)

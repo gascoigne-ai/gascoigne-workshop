@@ -170,10 +170,10 @@ func (a *App) header() Node {
 // requestTabs is the strip of open requests, with a "+" for a new one.
 func (a *App) requestTabs() Node {
 	return Row(H(tabsH), Bg(w.Frame), Control("tabstrip"), BorderBottom(w.Border),
-		For(a.tabs, func(i int, t *reqTab) Node {
+		HScroll(&a.tabsScroll, Grow(1), For(a.tabs, func(i int, t *reqTab) Node {
 			look := []Item{Bg(w.Frame), Control("tabstrip")} // inactive tabs blend into the strip; the active one joins the pane
 			if i == a.active {
-				look = []Item{Bg(w.Bg)}
+				look = []Item{Bg(w.Bg), Reveal()}
 			}
 			grab := OnClick(func() { a.active, a.dragTab = i, i })
 			return Row(append(look, OnMiddleClick(func() { a.closeTab(i) }),
@@ -187,7 +187,7 @@ func (a *App) requestTabs() Node {
 					Cross(Grow(1)),
 				),
 			)...)
-		}),
+		})),
 		Row(W(40), OnClick(a.newRequest), Tooltip(a.hint("New request", "new-request")),
 			Plus(Grow(1)),
 		),

@@ -143,7 +143,7 @@ func (e *El) update(c *widget.Ctx) bool {
 		// scrolled out of view): they must not be hit by a pointer that
 		// is outside it. The click itself still reaches them, so a text
 		// field there can see it was clicked away from and blur.
-		c.In.X, c.In.Y, c.In.Wheel = -1<<20, -1<<20, 0
+		c.In.X, c.In.Y, c.In.Wheel, c.In.WheelX = -1<<20, -1<<20, 0, 0
 	}
 	swallowed := false
 	for i := len(e.kids) - 1; i >= 0; i-- {
@@ -152,10 +152,10 @@ func (e *El) update(c *widget.Ctx) bool {
 			break
 		}
 	}
-	wheel, rightClick := c.In.Wheel, c.In.RightClick // a child may have used them
+	wheel, wheelX, rightClick := c.In.Wheel, c.In.WheelX, c.In.RightClick // a child may have used them
 	c.In = saved
 	if !masked {
-		c.In.Wheel, c.In.RightClick = wheel, rightClick
+		c.In.Wheel, c.In.WheelX, c.In.RightClick = wheel, wheelX, rightClick
 	}
 	if swallowed {
 		return true
