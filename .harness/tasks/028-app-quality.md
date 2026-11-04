@@ -15,3 +15,7 @@ Make the app dependable to ship.
 
 ## Acceptance
 - A checklist of failure paths each with a test; screenshots compared in CI; `make check` passes.
+
+## Progress
+- Done: the window title shows the collection and a dot while something is unsaved (`App.Title`); a minimum window size of 720x480.
+- Left: the rest.

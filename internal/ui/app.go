@@ -82,6 +82,7 @@ type reqTab struct {
 	msg                   vml.TextField             // the message being composed
 	resources             []proto.MCPResource       // the resources an MCP server announced
 	prompts               []proto.MCPPrompt         // the prompts an MCP server announced
+	respHist              []respEntry               // earlier responses, newest first
 	tools                 []proto.MCPTool           // the tools an MCP server announced
 	reconnect             bool                      // reopen a dropped connection
 	wantOpen              bool                      // the user wants the connection open, so a drop is retried
@@ -189,6 +190,7 @@ type App struct {
 	statePath        string         // where the UI state is remembered
 	varsFolder       *model.Folder  // the folder whose variables the Vars pane edits, nil for the environment's or the collection's
 	varsCollection   bool           // the Vars pane edits the collection's variables although an environment is active
+	title            string         // the window title last set
 	jar              http.CookieJar // cookies the server set, kept until the app closes
 	env              int            // index of the active environment in col.Envs, -1 for none
 	workspace        string         // the folder the collection is saved to; "" for none yet
@@ -365,6 +367,7 @@ func (a *App) apply(r sendResult) {
 		return // the answer to a send that was cancelled or replaced
 	}
 	t.sending = false
+	remember(t, t.resp)
 	t.resp = &r.resp
 	a.refreshView(t)
 	if r.resp.Err != "" {
@@ -394,6 +397,10 @@ func (a *App) Layout(w, h int) (int, int) {
 func (a *App) Update() error {
 	a.winX, a.winY = ebiten.WindowPosition()
 	a.step(a.sampler.Read().Scaled(a.ctx.Scale))
+	if title := a.Title(); title != a.title {
+		a.title = title
+		ebiten.SetWindowTitle(title)
+	}
 	ebiten.SetCursorShape(cursorShapes[a.ctx.Cursor])
 	if tps := a.pacer.TPS(); tps != a.tps {
 		ebiten.SetTPS(tps)

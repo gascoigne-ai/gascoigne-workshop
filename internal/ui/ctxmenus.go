@@ -183,6 +183,7 @@ func (a *App) responseMenuItems(t *reqTab) []menuItem {
 			_ = a.ctx.Clipboard.Write(t.view.SelectedText())
 		}},
 		{label: "Copy body", run: func() { a.copyBody(t) }},
+		{label: "Save body...", disabled: t.resp == nil || t.resp.Err != "", run: func() { a.saveBody(t) }},
 		{label: "Copy as cURL", run: func() { a.copyCurl(t) }},
 		menuSeparator,
 		{label: "Select all", shortcut: "Ctrl+A", run: func() { t.view.SelectLines(0, len(t.view.Lines)-1) }},

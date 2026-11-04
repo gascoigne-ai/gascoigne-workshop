@@ -46,6 +46,7 @@ func main() {
 		}
 	}
 	ebiten.SetWindowTitle("Gascoigne Workshop")
+	ebiten.SetWindowSizeLimits(720, 480, -1, -1) // below this the panes cannot show their controls
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 	ebiten.SetScreenClearedEveryFrame(false) // frames without changes are skipped in App.Draw
 	if err := ebiten.RunGame(app); err != nil && !errors.Is(err, ebiten.Termination) {
