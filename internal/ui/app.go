@@ -260,7 +260,7 @@ func NewApp(opts Options) (*App, error) {
 		a.status = loadErr.Error()
 	}
 	a.jar, _ = cookiejar.New(nil)
-	a.reg["rest"] = proto.REST{Jar: a.jar, Proxy: st.Proxy}
+	a.reg["rest"] = restFor(a.jar, st)
 	ctx.Clipboard = statusClipboard{inner: ctx.Clipboard, report: a.clipboardNote}
 	a.dragTab = -1
 	a.dirty = true

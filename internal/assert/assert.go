@@ -10,6 +10,13 @@
 //	json total_count > 0
 //	json items[0].name == "alpha"
 //	json items.length >= 1
+//	set token = json access_token
+//	set id = header X-Request-Id
+//	set code = status
+//
+// A set line stores a value of the response in a variable, for the next
+// requests to use as {{token}}: Run reports it like an assertion that
+// passes when the value exists, and Captures returns what to store.
 //
 // Lines that are empty or start with # are skipped. An assertion that
 // cannot be parsed fails with the reason, so a typo is never a pass.
@@ -60,7 +67,91 @@ func Summary(results []Result) string {
 	return fmt.Sprintf("%d/%d passed", n, len(results))
 }
 
+// Capture is a value taken from a response to keep in a variable.
+type Capture struct{ Name, Value string }
+
+// Captures returns the values the set lines of text take from resp; lines
+// whose value is missing are left out.
+func Captures(text string, resp *model.Response) []Capture {
+	var out []Capture
+	for _, raw := range strings.Split(text, "\n") {
+		line := strings.TrimSpace(raw)
+		if c, ok, _ := capture(line, resp); ok {
+			out = append(out, c)
+		}
+	}
+	return out
+}
+
+// capture evaluates a "set name = source" line: isSet says it is one,
+// ok that the value was found.
+func capture(line string, resp *model.Response) (c Capture, ok bool, detail string) {
+	rest, isSet := strings.CutPrefix(line, "set ")
+	if !isSet {
+		return c, false, ""
+	}
+	name, source, found := strings.Cut(rest, "=")
+	name, source = strings.TrimSpace(name), strings.TrimSpace(source)
+	if !found || name == "" || source == "" {
+		return c, false, "write: set name = json path, header Name or status"
+	}
+	if resp == nil || resp.Err != "" {
+		return c, false, "there is no response to take it from"
+	}
+	kind, arg, _ := strings.Cut(source, " ")
+	arg = strings.TrimSpace(arg)
+	var value string
+	switch kind {
+	case "status":
+		value = strconv.Itoa(resp.Status)
+	case "header":
+		for _, h := range resp.Headers {
+			if strings.EqualFold(h.Name, arg) {
+				value = h.Value
+				found = true
+				break
+			}
+			found = false
+		}
+		if !found {
+			return c, false, "the header is not there"
+		}
+	case "json":
+		var doc any
+		if err := json.Unmarshal(resp.Body, &doc); err != nil {
+			return c, false, "the body is not JSON"
+		}
+		v, has := lookup(doc, arg)
+		if !has {
+			return c, false, "no such path"
+		}
+		switch x := v.(type) {
+		case string:
+			value = x
+		case float64:
+			value = strconv.FormatFloat(x, 'f', -1, 64)
+		case nil:
+			value = "null"
+		case bool:
+			value = strconv.FormatBool(x)
+		default:
+			b, _ := json.Marshal(x)
+			value = string(b)
+		}
+	default:
+		return c, false, "take a value from status, header or json"
+	}
+	return Capture{Name: name, Value: value}, true, ""
+}
+
 func check(line string, resp *model.Response) (bool, string) {
+	if strings.HasPrefix(line, "set ") {
+		c, ok, detail := capture(line, resp)
+		if ok {
+			return true, c.Name + " = " + abbreviateValue(c.Value)
+		}
+		return false, detail
+	}
 	if resp == nil || resp.Err != "" {
 		return false, "there is no response to check"
 	}
@@ -310,4 +401,12 @@ func abbreviate(s string) string {
 		return strconv.Quote(string(r[:40])) + "…"
 	}
 	return strconv.Quote(s)
+}
+
+func abbreviateValue(s string) string {
+	r := []rune(s)
+	if len(r) > 30 {
+		return string(r[:30]) + "…"
+	}
+	return s
 }

@@ -2,6 +2,7 @@ package ui
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/assert"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
 )
@@ -9,6 +10,9 @@ import (
 // runTests checks the tab's assertions against its shown response.
 func (a *App) runTests(t *reqTab) {
 	t.testResults = assert.Run(t.req.Tests, t.resp)
+	for _, c := range assert.Captures(t.req.Tests, t.resp) {
+		a.setVariable(c.Name, c.Value)
+	}
 	if len(t.testResults) == 0 {
 		return
 	}
@@ -24,7 +28,7 @@ func (a *App) assertionsPane(_ pane, t *reqTab, _ *ScrollState) Node {
 		t.testResults = assert.Run(t.req.Tests, t.resp) // live, against the response on screen
 	}
 	return Col(Grow(1), Pad(w.Gutter), Gap(8),
-		Text("One assertion per line: status == 200, time < 500ms, header Content-Type contains json, body contains \"ok\", json items.length > 0, json items[0].name == \"a\". Lines starting with # are notes.", Small(), Muted()),
+		Text("One assertion per line: status == 200, time < 500ms, header Content-Type contains json, body contains \"ok\", json items.length > 0, json items[0].name == \"a\". set token = json access_token keeps a value as {{token}} for later requests. Lines starting with # are notes.", Small(), Muted()),
 		Area(&t.tests, Grow(1), Bg(w.Sunken), OnChange(sync), a.textMenuOpt(&t.tests.TextField, sync)),
 	)
 }
@@ -49,4 +53,27 @@ func (a *App) resultsPane(_ pane, t *reqTab, _ *ScrollState) Node {
 		rows = append(rows, Text(mark+text, Color(color), Mono()))
 	}
 	return Scroll(&t.respScroll, append([]Item{Pad(w.Gutter), Gap(4)}, rows...)...)
+}
+
+// setVariable stores a captured value in the active environment, or in the
+// collection's variables when none is active: an existing row of that name
+// gets the value (and is switched on), else a row is added.
+func (a *App) setVariable(name, value string) {
+	rows := a.col.Vars
+	env := a.activeEnv()
+	if env != nil {
+		rows = env.Vars
+	}
+	for i := range rows {
+		if rows[i].Name == name {
+			rows[i].Value, rows[i].Enabled = value, true
+			return
+		}
+	}
+	rows = append(rows, model.KV{Name: name, Value: value, Enabled: true})
+	if env != nil {
+		env.Vars = rows
+	} else {
+		a.col.Vars = rows
+	}
 }

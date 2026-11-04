@@ -3,6 +3,8 @@ package ui
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
+	"net/http"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -62,5 +64,33 @@ func TestTypingAColonSegmentAddsAPathParameterRowThatFillsTheSentURL(t *testing.
 	row.Value = "42"
 	if got := tab.req.Expanded(a.varsFor(tab.req)).URL; got != "https://api.test/users/42" {
 		t.Fatalf("sent URL %q", got)
+	}
+}
+
+func TestCookiesDialogListsWhatTheJarHoldsForTheURL(t *testing.T) {
+	a, _ := newTestApp(t)
+	tab := a.cur()
+	tab.req.URL = "https://api.test/x"
+	a.showCookies(tab)
+	if a.dialog == nil || !strings.Contains(a.dialog.body, "No cookies for api.test") {
+		t.Fatalf("dialog %+v", a.dialog)
+	}
+	a.closeDialog()
+	u, _ := url.Parse("https://api.test/x")
+	a.jar.SetCookies(u, []*http.Cookie{{Name: "session", Value: "abc", Path: "/"}})
+	a.showCookies(tab)
+	if !strings.Contains(a.dialog.body, "session=abc") {
+		t.Fatalf("body %q", a.dialog.body)
+	}
+	first := a.jar
+	a.dialog.buttons[len(a.dialog.buttons)-1].run() // Clear all cookies
+	if a.jar == first || len(a.jar.Cookies(u)) != 0 {
+		t.Fatal("the jar must be replaced and empty")
+	}
+	tab.req.URL = "not a url"
+	a.closeDialog()
+	a.showCookies(tab)
+	if a.dialog != nil {
+		t.Fatal("no dialog for a URL without a host")
 	}
 }

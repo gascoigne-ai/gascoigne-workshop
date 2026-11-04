@@ -58,6 +58,13 @@ type Settings struct {
 	// "http://localhost:8080"; "" uses the environment's.
 	Proxy string `json:"proxy,omitempty"`
 
+	// CACert is a PEM file of extra certificate authorities to trust;
+	// ClientCert and ClientKey are a client certificate for servers that
+	// ask for one.
+	CACert     string `json:"caCert,omitempty"`
+	ClientCert string `json:"clientCert,omitempty"`
+	ClientKey  string `json:"clientKey,omitempty"`
+
 	// TimeoutSec is the default request timeout in seconds.
 	TimeoutSec int `json:"timeoutSec"`
 }

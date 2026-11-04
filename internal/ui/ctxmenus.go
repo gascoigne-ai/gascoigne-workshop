@@ -1,6 +1,10 @@
 package ui
 
 import (
+	"net/http"
+	"net/url"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"net/http/cookiejar"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
@@ -27,7 +31,7 @@ func (a *App) tabMenuItems(i int) []menuItem {
 		menuSeparator,
 		{label: "Duplicate", run: func() { a.duplicateTab(i) }},
 		{label: "Copy URL", run: func() { a.copyRequestURL(t.req) }},
-		{label: "Clear cookies", run: a.clearCookies},
+		{label: "Cookies...", run: func() { a.showCookies(t) }},
 	}
 }
 
@@ -200,6 +204,31 @@ func (a *App) clearCookies() {
 		return
 	}
 	a.jar = jar
-	a.reg["rest"] = proto.REST{Jar: jar, Proxy: a.settings.Proxy}
+	a.reg["rest"] = restFor(jar, a.settings)
 	a.toast("Cookies cleared", false)
+}
+
+// restFor is the REST protocol with the cookie jar and the network
+// settings (proxy, certificates) of the settings file.
+func restFor(jar http.CookieJar, s settings.Settings) proto.REST {
+	return proto.REST{Jar: jar, Proxy: s.Proxy, CAFile: s.CACert, CertFile: s.ClientCert, KeyFile: s.ClientKey}
+}
+
+// showCookies lists the cookies the jar holds for the request's URL and
+// offers to clear all of them.
+func (a *App) showCookies(t *reqTab) {
+	u, err := url.Parse(t.req.Expanded(a.varsFor(t.req)).URL)
+	if err != nil || u.Host == "" {
+		a.toast("The URL has no host to look up cookies for", true)
+		return
+	}
+	var lines []string
+	for _, c := range a.jar.Cookies(u) {
+		lines = append(lines, c.Name+"="+c.Value)
+	}
+	body := "No cookies for " + u.Host + "."
+	if len(lines) > 0 {
+		body = "Sent to " + u.Host + ":\n" + strings.Join(lines, "\n")
+	}
+	a.confirm("Cookies", body, "Clear all cookies", a.clearCookies)
 }

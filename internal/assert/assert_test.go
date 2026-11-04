@@ -92,3 +92,29 @@ func TestNoResponseOrAFailedOneFailsEveryAssertion(t *testing.T) {
 		t.Fatalf("%+v", res)
 	}
 }
+
+func TestSetLinesCaptureValuesForLaterRequests(t *testing.T) {
+	r := resp()
+	text := "set count = json total_count\nset first = json items[0].name\nset ct = header content-type\nset code = status\nset tags = json items[0].tags\nset none = json none\nset missing = json nope\nset bad\nset x = body"
+	caps := Captures(text, r)
+	got := map[string]string{}
+	for _, c := range caps {
+		got[c.Name] = c.Value
+	}
+	want := map[string]string{"count": "116", "first": "a", "ct": "application/json; charset=utf-8", "code": "200", "tags": `["x","y"]`, "none": "null"}
+	if len(got) != len(want) {
+		t.Fatalf("captured %v", got)
+	}
+	for k, v := range want {
+		if got[k] != v {
+			t.Errorf("%s = %q, want %q", k, got[k], v)
+		}
+	}
+	res := Run(text, r)
+	if !res[0].OK || res[0].Detail != "count = 116" || res[6].OK || res[7].OK || res[8].OK {
+		t.Fatalf("%+v", res)
+	}
+	if got := Captures("set a = status", nil); got != nil {
+		t.Fatal("nothing to capture without a response")
+	}
+}

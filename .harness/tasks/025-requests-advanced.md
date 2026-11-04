@@ -1,4 +1,4 @@
-status: todo
+status: done
 
 # Requests: the rest of what a REST client needs
 
@@ -22,4 +22,5 @@ Sending works for plain calls. Missing for real APIs: path variables, cookies, p
 - Done later: path variables: typing a `:name` segment in the URL path adds a `:name` row to the Params table (`model.MergeParams`), its value fills the segment (escaped, `{{variables}}` allowed) when the request is sent or copied as cURL (`model.ApplyPathParams` in `Request.Expanded`), and such rows never go into the query string.
 - Done later: assertions (`internal/assert`): a request's Tests tab holds one assertion per line (`status == 200`, `time < 500ms`, `header Content-Type contains json`, `body contains "x"`, `json items[0].name == "a"`, `json items.length > 0`, `exists`); the response Tests tab lists what they found, the status bar shows `Tests: 2/3 passed`, tab badges count assertions and failures, and they are saved with the request. No scripting language: the line syntax is the whole feature.
 - Done later: file bodies (body type `File`: the path is sent as it is, content type from the extension) and multipart file fields (a value `@path` sends the file, `@@x` the text `@x`); the `Choose...` button uses the file dialog.
-- Left: cookie viewer, SOCKS5 and custom CA and client certificates, pre-request scripts.
+- Done later: request chaining: `set token = json access_token` (also `header Name`, `status`) in the Tests tab stores the value in the active environment or the collection variables after each response; a tab-menu `Cookies...` dialog lists the cookies the jar holds for the URL and clears them; the proxy accepts `socks5://`; `settings.caCert`, `clientCert` and `clientKey` add a trusted CA and a client certificate (tested with a test CA and a server that requires a client certificate).
+- Left: nothing planned; a scripting language was decided against (assertions and `set` lines cover chaining).

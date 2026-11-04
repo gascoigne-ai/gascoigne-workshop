@@ -199,3 +199,27 @@ func TestFileBodyTypeKeepsItsPathSeparateFromTheTextBody(t *testing.T) {
 		t.Fatalf("file editor:\n%s", d)
 	}
 }
+
+func TestCapturedValuesBecomeVariablesInTheActiveScope(t *testing.T) {
+	a, _ := newTestApp(t)
+	tab := a.cur()
+	tab.req.Tests = "set token = json access_token"
+	send := func(body string) {
+		tab.sending, tab.seq = true, tab.seq+1
+		a.apply(sendResult{tab: tab, seq: tab.seq, resp: model.Response{Status: 200, Body: []byte(body)}})
+	}
+	a.col.Vars = nil
+	send(`{"access_token":"t1"}`)
+	if got := model.Expand("{{token}}", a.varsFor(tab.req)); got != "t1" {
+		t.Fatalf("collection variable: %q", got)
+	}
+	send(`{"access_token":"t2"}`)
+	if len(a.col.Vars) != 1 || a.col.Vars[0].Value != "t2" {
+		t.Fatalf("an existing row is updated, not duplicated: %+v", a.col.Vars)
+	}
+	a.addEnv("Dev")
+	send(`{"access_token":"t3"}`)
+	if a.col.Vars[0].Value != "t2" || len(a.col.Envs[0].Vars) != 1 || a.col.Envs[0].Vars[0].Value != "t3" {
+		t.Fatalf("with an environment active the value goes there: %+v %+v", a.col.Vars, a.col.Envs[0].Vars)
+	}
+}

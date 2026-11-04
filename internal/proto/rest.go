@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"io"
@@ -15,6 +16,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -32,9 +34,15 @@ type REST struct {
 	// Jar, when set, keeps cookies between requests (shared by all of them).
 	Jar http.CookieJar
 
-	// Proxy is the URL of an HTTP proxy for every request; "" uses the
-	// environment's (HTTP_PROXY and friends).
+	// Proxy is the URL of a proxy for every request, http://host:port,
+	// https://... or socks5://host:port; "" uses the environment's
+	// (HTTP_PROXY and friends).
 	Proxy string
+
+	// CAFile is a PEM file of certificate authorities to trust in addition
+	// to the system's; CertFile and KeyFile are a client certificate and its
+	// key for servers that ask for one.
+	CAFile, CertFile, KeyFile string
 
 	// MaxBody bounds how much of a response is kept; 0 means the default
 	// of 32 MiB. A longer body is cut and the response says so.
@@ -238,7 +246,7 @@ func (r REST) client(req model.Request) (*http.Client, error) {
 	if req.NoRedirects {
 		c.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
 	}
-	if r.Proxy == "" && !req.InsecureTLS {
+	if r.Proxy == "" && !req.InsecureTLS && r.CAFile == "" && r.CertFile == "" {
 		return c, nil
 	}
 	var base *http.Transport
@@ -252,15 +260,18 @@ func (r REST) client(req model.Request) (*http.Client, error) {
 	}
 	if r.Proxy != "" {
 		u, err := url.Parse(r.Proxy)
-		if err != nil || u.Host == "" {
-			return nil, fmt.Errorf("the proxy %q is not a URL like http://host:port", r.Proxy)
+		if err != nil || u.Host == "" || !slices.Contains([]string{"http", "https", "socks5", "socks5h"}, u.Scheme) {
+			return nil, fmt.Errorf("the proxy %q is not a URL like http://host:port or socks5://host:port", r.Proxy)
 		}
 		base.Proxy = http.ProxyURL(u)
 	}
+	if base.TLSClientConfig == nil {
+		base.TLSClientConfig = &tls.Config{}
+	}
+	if err := r.trust(base.TLSClientConfig); err != nil {
+		return nil, err
+	}
 	if req.InsecureTLS {
-		if base.TLSClientConfig == nil {
-			base.TLSClientConfig = &tls.Config{}
-		}
 		base.TLSClientConfig.InsecureSkipVerify = true //nolint: the request asked for it
 	}
 	c.Transport = base
@@ -303,4 +314,32 @@ func encodeFile(req model.Request) ([]byte, string, error) {
 		return nil, "", fmt.Errorf("body file: %w", err)
 	}
 	return data, fileContentType(path), nil
+}
+
+// trust adds the configured authorities and client certificate to cfg.
+func (r REST) trust(cfg *tls.Config) error {
+	if r.CAFile != "" {
+		pem, err := os.ReadFile(r.CAFile)
+		if err != nil {
+			return fmt.Errorf("CA file: %w", err)
+		}
+		pool := cfg.RootCAs
+		if pool == nil {
+			if pool, _ = x509.SystemCertPool(); pool == nil {
+				pool = x509.NewCertPool()
+			}
+		}
+		if !pool.AppendCertsFromPEM(pem) {
+			return fmt.Errorf("CA file %s holds no PEM certificate", filepath.Base(r.CAFile))
+		}
+		cfg.RootCAs = pool
+	}
+	if r.CertFile != "" {
+		cert, err := tls.LoadX509KeyPair(r.CertFile, r.KeyFile)
+		if err != nil {
+			return fmt.Errorf("client certificate: %w", err)
+		}
+		cfg.Certificates = []tls.Certificate{cert}
+	}
+	return nil
 }
