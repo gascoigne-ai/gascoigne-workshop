@@ -58,14 +58,14 @@ Task numbers refer to `tasks/`; "-" means no task yet.
 ### Deferred from finished tasks
 - Tab strip overflow: horizontal scrolling with the active tab kept in view (needs a horizontal `vml.Scroll`).
 - Shortcuts: the text widgets' own keys (Ctrl+A/C/V/X/Z/Y) are fixed and not listed in the settings yet; plain-key bindings are refused rather than allowed with a warning.
-- Table columns: resizing from the keyboard (Alt+Left/Right on a header cell needs a header focus concept), saving the widths (task 020).
+- Table columns: resizing from the keyboard (Alt+Left/Right on a header cell needs a header focus concept); the widths are saved in the state file.
 - Table rows: a drag handle to reorder rows with the mouse (keyboard and menu moves exist), bulk edit for form fields.
 - Tree: match highlighting in the filter, expanding a folder while a drag hovers over it.
 - Scroll-into-view of a focused child inside a `vml.Scroll`.
 - Response: line wrap, image and HTML preview, save body to a file (needs the dialogs of task 012), Shift+arrow selection in the code view.
 
 ### Added later
-- Right-click menus everywhere (018), table row operations and change handling (019), remembering window and UI state (020). Task 018 depends on 012 (menu primitive) and uses 013 and 019; 020 depends on 011.
+- Right-click menus everywhere (018), table row operations and change handling (019). Task 018 depends on 012 (menu primitive) and uses 013 and 019; 
 
 - Added after review: resizable table columns (021), configurable colors and selection contrast (022), configurable shortcuts (023). 021 follows 019; 022 and 023 extend the settings menu and are independent of the other tasks. Layout resizing is part of 011.
 

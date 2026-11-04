@@ -10,6 +10,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/state"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui"
 )
 
@@ -23,21 +24,41 @@ func main() {
 	flag.StringVar(&opts.ScreenshotPath, "screenshot", "", "save a PNG of the window to this path and exit")
 	flag.BoolVar(&opts.SendOnStart, "send", false, "send the first request at startup (for screenshots)")
 	flag.StringVar(&opts.SettingsPath, "settings", settings.DefaultPath(), "settings file; empty keeps settings in memory")
+	flag.StringVar(&opts.StatePath, "state", state.DefaultPath(), "remembered window and tabs; empty keeps them in memory")
 	flag.BoolVar(&opts.OpenMenu, "menu", false, "start with the settings menu open (for screenshots)")
 	flag.Parse()
+	if opts.ScreenshotPath != "" && !flagSet("state") {
+		opts.StatePath = "" // screenshots must not read or write the real state
+	}
 
 	app, err := ui.NewApp(opts)
 	if err != nil {
 		log.Fatal(err)
 	}
 	ebiten.SetWindowSize(windowWidth, windowHeight)
+	if mw, mh := ebiten.Monitor().Size(); mw > 0 && mh > 0 {
+		if w := app.RestoredWindow(mw, mh); w.W > 0 {
+			ebiten.SetWindowSize(w.W, w.H)
+			ebiten.SetWindowPosition(w.X, w.Y)
+		}
+	}
 	ebiten.SetWindowTitle("Gascoigne Workshop")
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 	ebiten.SetScreenClearedEveryFrame(false) // frames without changes are skipped in App.Draw
 	if err := ebiten.RunGame(app); err != nil && !errors.Is(err, ebiten.Termination) {
 		log.Fatal(err)
 	}
+	if err := app.SaveState(); err != nil {
+		log.Printf("saving state: %v", err)
+	}
 	if err := app.Err(); err != nil {
 		log.Fatal(err)
 	}
+}
+
+// flagSet reports whether the flag was given on the command line.
+func flagSet(name string) bool {
+	set := false
+	flag.Visit(func(f *flag.Flag) { set = set || f.Name == name })
+	return set
 }

@@ -1,0 +1,140 @@
+package ui
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+	"time"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/state"
+	"github.com/gascoigne-ai/gascoigne-workshop/ui/widget"
+)
+
+func stateApp(t *testing.T, path string) *App {
+	t.Helper()
+	a, err := NewApp(Options{StatePath: path})
+	if err != nil {
+		t.Fatal(err)
+	}
+	a.w, a.h = winW, winH
+	a.step(widget.Input{})
+	return a
+}
+
+func TestStateSnapshotCapturesTabsFoldersAndSizes(t *testing.T) {
+	a := stateApp(t, "")
+	a.openRequest(a.col.Folders[0].Requests[0]) // User/<first>
+	a.cur().paneTab, a.cur().respTab = 2, 1
+	a.sidebarSplit.Size = 310
+	a.paneSplit.Size = 0.4
+	a.widthsFor(pane{label: "Params", editable: true}).Weights = []float64{1, 2, 3}
+	s := a.snapshot()
+	if len(s.Tabs) != 2 || s.Active != 1 {
+		t.Fatalf("tabs %+v active %d", s.Tabs, s.Active)
+	}
+	if got := s.Tabs[1]; got.Path != "User/"+a.col.Folders[0].Requests[0].Name || got.Pane != 2 || got.Resp != 1 {
+		t.Fatalf("tab %+v", got)
+	}
+	if s.SidebarW != 310 || s.PaneSplit != 0.4 || len(s.Columns["Params"]) != 3 {
+		t.Fatalf("sizes %+v", s)
+	}
+	want := map[string]bool{"Repository": true}
+	for _, p := range s.Expanded {
+		delete(want, p)
+	}
+	if len(want) != 0 {
+		t.Fatalf("expanded folders %v", s.Expanded)
+	}
+	if s.Window.W != winW || s.Window.H != winH {
+		t.Fatalf("window %+v", s.Window)
+	}
+}
+
+func TestStateRestoreRoundTripsThroughTheFile(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "state.json")
+	a := stateApp(t, path)
+	a.openRequest(a.col.Folders[0].Requests[0])
+	a.cur().paneTab = 3
+	a.sidebarSplit.Size = 300
+	a.expanded[a.col.Folders[2]] = true
+	if err := a.SaveState(); err != nil {
+		t.Fatal(err)
+	}
+	b := stateApp(t, path)
+	if len(b.tabs) != 2 || b.active != 1 || b.cur().paneTab != 3 {
+		t.Fatalf("tabs %d active %d pane %d", len(b.tabs), b.active, b.cur().paneTab)
+	}
+	if b.cur().req != b.col.Folders[0].Requests[0] || b.selected != b.cur().req {
+		t.Fatal("the restored tab must be the request in the new tree")
+	}
+	if b.sidebarSplit.Size != 300 || !b.expanded[b.col.Folders[2]] {
+		t.Fatal("split and expanded folders restored")
+	}
+}
+
+func TestStateRestoreDropsMissingRequestsAndBadValues(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "state.json")
+	err := state.State{
+		Tabs:     []state.Tab{{Path: "Gone/Nothing"}, {Path: "User/" + SampleCollection().Folders[0].Requests[0].Name, Pane: 99, Resp: -4}},
+		Active:   7,
+		Expanded: []string{"Nowhere"},
+	}.Save(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	a := stateApp(t, path)
+	if len(a.tabs) != 1 || a.active != 0 {
+		t.Fatalf("tabs %d active %d", len(a.tabs), a.active)
+	}
+	if p := a.cur().paneTab; p < 0 || p > 4 {
+		t.Fatalf("pane tab %d out of range", p)
+	}
+	if a.cur().respTab < 0 {
+		t.Fatal("negative response tab")
+	}
+}
+
+func TestStateWithNoTabsOpensTheFirstRequest(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "state.json")
+	state.State{Tabs: []state.Tab{{Path: "Gone"}}}.Save(path)
+	a := stateApp(t, path)
+	if len(a.tabs) != 1 {
+		t.Fatalf("%d tabs", len(a.tabs))
+	}
+}
+
+func TestStateCorruptFileStartsFreshWithAStatusNote(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "state.json")
+	if err := os.WriteFile(path, []byte("{broken"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	a := stateApp(t, path)
+	if len(a.tabs) != 1 || a.status == "Ready" {
+		t.Fatalf("tabs %d status %q", len(a.tabs), a.status)
+	}
+}
+
+func TestStateIsSavedAfterAQuietSpell(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "state.json")
+	a := stateApp(t, path)
+	clock := time.Unix(1000, 0)
+	a.now = func() time.Time { return clock }
+	a.step(widget.Input{})
+	a.sidebarSplit.Size = 280
+	a.step(widget.Input{}) // change noticed, not yet written
+	if s, _ := state.Load(path); s.SidebarW != 0 {
+		t.Fatal("written before the debounce")
+	}
+	clock = clock.Add(2 * time.Second)
+	a.step(widget.Input{})
+	if s, _ := state.Load(path); s.SidebarW != 280 {
+		t.Fatalf("not written after the debounce: %+v", s)
+	}
+}
+
+func TestEmptyStatePathWritesNothing(t *testing.T) {
+	a := stateApp(t, "")
+	if err := a.SaveState(); err != nil {
+		t.Fatal(err)
+	}
+}

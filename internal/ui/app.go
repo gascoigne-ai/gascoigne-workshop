@@ -12,6 +12,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/state"
 	"github.com/gascoigne-ai/gascoigne-workshop/ui/engine"
 	"github.com/gascoigne-ai/gascoigne-workshop/ui/vml"
 	"github.com/gascoigne-ai/gascoigne-workshop/ui/widget"
@@ -132,6 +133,12 @@ type App struct {
 	treeScroll    vml.ScrollState
 	sidebarSplit  vml.SplitState // width of the collections sidebar
 	paneSplit     vml.SplitState // request pane share of the request/response area
+	statePath     string         // where the UI state is remembered
+	stateSeen     string         // the last snapshot seen, to notice changes
+	stateSaved    string         // the last snapshot written
+	stateAt       time.Time      // when the snapshot last changed
+	initial       state.Window   // window geometry of the last run
+	winX, winY    int            // window position, read each frame
 }
 
 // Options are the startup switches of the command line.
@@ -139,6 +146,7 @@ type Options struct {
 	ScreenshotPath string // save a PNG of the first settled frame and exit
 	SendOnStart    bool   // send the first request at startup
 	SettingsPath   string // settings file; "" keeps settings in memory
+	StatePath      string // remembered UI state; "" keeps it in memory
 	OpenMenu       bool   // start with the settings menu open
 }
 
@@ -164,6 +172,7 @@ func NewApp(opts Options) (*App, error) {
 
 		settings:     st,
 		settingsPath: opts.SettingsPath,
+		statePath:    opts.StatePath,
 		menu:         opts.OpenMenu,
 	}
 	if loadErr != nil {
@@ -176,6 +185,12 @@ func NewApp(opts Options) (*App, error) {
 	a.expanded[&a.col.Folder] = true
 	a.expanded[a.col.Folders[1]] = true
 	a.openRequest(a.col.Folders[1].Requests[0])
+	stored, stateErr := state.Load(opts.StatePath)
+	a.initial = stored.Window
+	a.restore(stored)
+	a.status = stateNote(a.status, stateErr)
+	a.stateSeen = stateKey(a.snapshot())
+	a.stateSaved = a.stateSeen
 	return a, nil
 }
 
@@ -297,6 +312,7 @@ func (a *App) Layout(w, h int) (int, int) {
 
 // Update implements ebiten.Game: it samples input and runs one frame.
 func (a *App) Update() error {
+	a.winX, a.winY = ebiten.WindowPosition()
 	a.step(a.sampler.Read().Scaled(a.ctx.Scale))
 	ebiten.SetCursorShape(cursorShapes[a.ctx.Cursor])
 	if tps := a.pacer.TPS(); tps != a.tps {
@@ -368,6 +384,7 @@ func (a *App) step(in widget.Input) {
 		a.commitEdit()
 	}
 	a.settleBulk()
+	a.stateTick()
 	a.markFrame(active || drained || pruned)
 	a.pacer.NoteIdle(active || drained || pruned)
 }
