@@ -70,7 +70,8 @@ type El struct {
 	onTab                      func(back bool)
 	onMiddle, onHeldOver       func()
 
-	scrollMaxH int // MaxHeight of a Scroll, 0 for none
+	scrollMaxH int  // MaxHeight of a Scroll, 0 for none
+	reveal     bool // an HScroll keeps this child in view when it becomes the flagged one
 
 	alignItems, alignSelf         Align
 	justify                       Justify

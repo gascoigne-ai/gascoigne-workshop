@@ -1,4 +1,4 @@
-status: todo
+status: in progress (protocol layer done; UI pending)
 
 # WebSocket client
 
@@ -14,3 +14,7 @@ WebSocket is a stub that answers "not implemented yet".
 ## Acceptance
 - Tests against an `httptest` WebSocket server (echo, server close, slow consumer).
 - `make check` passes.
+
+## Progress
+- Done: `internal/proto/ws` (hand-written RFC 6455 client and server handshake), `proto.WebSocket` (`Connect` session with an event channel, one-shot `Send`), `Registry.Connect`, tests against an `httptest` server (echo, server close, slow consumer, ping/pong, fragments, size limit).
+- Left: the message-log pane in place of the response, the composer in place of the body, connect/disconnect/ping buttons, reconnect option.

@@ -147,8 +147,8 @@ func (a *App) mainColumn() Node {
 func (a *App) panes(t *reqTab) Node {
 	items := []Item{
 		AsRatio(), Grow(1), MinFirst(minPaneSize), MinSecond(minPaneSize),
-		a.pane(t, requestPanes, &t.paneTab, &t.reqScroll, nil),
-		a.pane(t, responsePanes, &t.respTab, &t.respScroll, a.responseStatus(t)),
+		a.pane(t, requestPanes, &t.paneTab, &t.reqScroll, &t.reqTabsX, nil),
+		a.pane(t, responsePanes, &t.respTab, &t.respScroll, &t.respTabsX, a.responseStatus(t)),
 	}
 	if a.settings.Layout == "stacked" {
 		items = append(items, Vertical())
@@ -207,6 +207,7 @@ func (a *App) urlBar(t *reqTab) Node {
 			VRuleInset(8),
 			If(isREST, chip(t.req.Method, methodToken(t.req.Method), 84, func() { a.cycleMethod(t) })),
 			If(isREST, VRuleInset(8)),
+			Spacer(W(w.Pad-4)), // breathing room between the divider and the URL text
 			Field(&t.url, Grow(1),
 				Placeholder("Enter URL"),
 				Segments(varSegments),
@@ -264,12 +265,11 @@ func splitVars(s string) []urlSeg {
 
 // pane is one tabbed area: a tab strip, with extra at its right end,
 // above the body of the active tab.
-func (a *App) pane(t *reqTab, panes []pane, active *int, scroll *ScrollState, extra Node) Node {
+func (a *App) pane(t *reqTab, panes []pane, active *int, scroll, tabsX *ScrollState, extra Node) Node {
 	selectTab := func(i int) { *active, scroll.Y = i, 0 }
 	return Col(Grow(1), Bg(w.Bg),
 		Row(H(paneTabsH), BorderBottom(w.Border),
-			Tabs(a.tabItems(panes, t), *active, selectTab),
-			Spacer(),
+			ScrollTabs(tabsX, a.tabItems(panes, t), *active, selectTab),
 			extra,
 		),
 		a.paneBody(panes[*active], t, scroll),

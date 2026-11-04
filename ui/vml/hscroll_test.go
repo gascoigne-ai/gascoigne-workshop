@@ -1,0 +1,128 @@
+package vml
+
+import (
+	"testing"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/ui/widget"
+)
+
+// strip is an HScroll 100px wide with n 40px boxes that record clicks.
+func strip(st *ScrollState, n int, hits *[]int) *El {
+	var items []Item
+	for i := 0; i < n; i++ {
+		i := i
+		items = append(items, box(W(40), OnClick(func() { *hits = append(*hits, i) })))
+	}
+	return HScroll(st, append([]Item{W(100), H(20)}, items...)...)
+}
+
+func TestHScrollWheelScrollsSidewaysAndClamps(t *testing.T) {
+	var hits []int
+	st := &ScrollState{}
+	root := Col(strip(st, 5, &hits)) // 200px of boxes in 100px
+	c := testCtx(t)
+	Layout(c, root, 300, 100)
+	for range 20 {
+		wheel(c, 50, 10, -1)
+		Update(c, root)
+		Layout(c, root, 300, 100)
+	}
+	if st.X != 100 {
+		t.Fatalf("X = %d, want the clamp 100", st.X)
+	}
+	for range 20 {
+		wheel(c, 50, 10, 1)
+		Update(c, root)
+	}
+	if st.X != 0 {
+		t.Fatalf("X = %d, want 0", st.X)
+	}
+}
+
+func TestHScrollThatFitsDoesNotScrollAndLeavesWheelAlone(t *testing.T) {
+	var hits []int
+	st := &ScrollState{}
+	root := Col(strip(st, 2, &hits)) // 80px in 100px
+	c := testCtx(t)
+	Layout(c, root, 300, 100)
+	wheel(c, 50, 10, -1)
+	Update(c, root)
+	if st.X != 0 || c.In.Wheel == 0 {
+		t.Fatalf("X = %d, wheel left = %v", st.X, c.In.Wheel)
+	}
+}
+
+func TestHScrolledContentIsClickableAtItsNewPosition(t *testing.T) {
+	var hits []int
+	st := &ScrollState{X: 100}
+	root := Col(strip(st, 5, &hits))
+	c := testCtx(t)
+	Layout(c, root, 300, 100)
+	// Box 4 is the last 40px; with X=100 it sits at 60..100. The arrows
+	// cover the edges, so click the middle of box 3 (20..60 -> 40).
+	c.In = widget.Input{X: 40, Y: 10, Click: true, Held: true}
+	Update(c, root)
+	c.In = widget.Input{X: 40, Y: 10}
+	Update(c, root)
+	if len(hits) != 1 || hits[0] != 3 {
+		t.Fatalf("hits %v, want box 3", hits)
+	}
+}
+
+func TestHScrollArrowsStepTheStrip(t *testing.T) {
+	var hits []int
+	st := &ScrollState{}
+	root := Col(strip(st, 5, &hits))
+	c := testCtx(t)
+	Layout(c, root, 300, 100)
+	right := widget.Rect{X: 100 - hscrollArrowW, Y: 0, W: hscrollArrowW, H: 20}
+	c.In = widget.Input{X: right.X + 2, Y: 10, Click: true, Held: true}
+	Update(c, root)
+	if st.X <= 0 {
+		t.Fatalf("the right arrow must scroll right, X = %d", st.X)
+	}
+	if len(hits) != 0 {
+		t.Fatal("an arrow click must not reach the tab under it")
+	}
+	Layout(c, root, 300, 100)
+	c.In = widget.Input{X: 2, Y: 10, Click: true, Held: true}
+	Update(c, root)
+	if st.X != 0 {
+		t.Fatalf("the left arrow must scroll back, X = %d", st.X)
+	}
+}
+
+func TestHScrollRevealsTheFlaggedChildOnceWhenItChanges(t *testing.T) {
+	var hits []int
+	st := &ScrollState{}
+	build := func(flagged int) *El {
+		var items []Item
+		for i := 0; i < 5; i++ {
+			opts := []Item{W(40)}
+			if i == flagged {
+				opts = append(opts, Reveal())
+			}
+			items = append(items, box(opts...))
+		}
+		return HScroll(st, append([]Item{W(100), H(20)}, items...)...)
+	}
+	_ = hits
+	c := testCtx(t)
+	root := Col(build(4))
+	Layout(c, root, 300, 100)
+	if st.X != 100 { // the last box ends at 200; clamped to the maximum
+		t.Fatalf("X = %d, want 100", st.X)
+	}
+	st.X = 0 // the user scrolls away; the same flagged child must not pull it back
+	root = Col(build(4))
+	Layout(c, root, 300, 100)
+	if st.X != 0 {
+		t.Fatalf("X = %d, a repeated reveal must not fight the user", st.X)
+	}
+	root = Col(build(0)) // a different child is flagged now
+	st.X = 100
+	Layout(c, root, 300, 100)
+	if st.X >= 100 || st.X > 0 {
+		t.Fatalf("X = %d, want the first box revealed", st.X)
+	}
+}

@@ -38,7 +38,7 @@ func TestRegistrySend(t *testing.T) {
 		want    int    // Response.Status
 	}{
 		{"rest", model.Request{Protocol: "rest", URL: srv.URL}, false, "", 200},
-		{"websocket stub", model.Request{Protocol: "websocket"}, false, "not implemented", 0},
+		{"websocket", model.Request{Protocol: "websocket"}, false, "URL scheme", 0},
 		{"mcp stub", model.Request{Protocol: "mcp"}, false, "not implemented", 0},
 		{"unknown", model.Request{Protocol: "carrier-pigeon"}, true, "", 0},
 	}

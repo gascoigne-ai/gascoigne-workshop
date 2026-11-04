@@ -214,7 +214,7 @@ func (a *App) tableView(p pane, t *reqTab, scroll *ScrollState, pad int) Node {
 			spec.Selected = &sel.row
 		}
 	}
-	return Scroll(scroll, Pad(pad),
+	return Scroll(scroll, Pad(pad), Gap(6),
 		a.tableCaption(p, t),
 		Table(spec),
 	)
@@ -242,7 +242,7 @@ func bulkLabel(inBulk bool) string {
 
 // bulkView shows the rows as text under the same caption.
 func (a *App) bulkView(p pane, t *reqTab, pad int) Node {
-	return Col(Grow(1), Pad(pad),
+	return Col(Grow(1), Pad(pad), Gap(6),
 		a.tableCaption(p, t),
 		TextArea(a.bulk.area, Grow(1), Bg(w.Sunken), a.textMenuOpt(&a.bulk.area.TextField, nil)),
 	)

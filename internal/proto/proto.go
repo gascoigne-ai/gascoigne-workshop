@@ -26,7 +26,7 @@ type Registry map[string]Protocol
 func NewRegistry() Registry {
 	return Registry{
 		"rest":      REST{},
-		"websocket": notImplemented{name: "websocket"},
+		"websocket": WebSocket{},
 		"mcp":       notImplemented{name: "mcp"},
 	}
 }

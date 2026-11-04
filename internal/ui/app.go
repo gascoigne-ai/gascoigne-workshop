@@ -54,6 +54,7 @@ type reqTab struct {
 	bodyView              widget.CodeView  // request body, read-only
 	body                  *widget.TextArea // request body editor
 	reqScroll, respScroll vml.ScrollState  // scroll of the table and note panes
+	reqTabsX, respTabsX   vml.ScrollState  // sideways scroll of the two pane tab strips
 	sending               bool
 	hist                  map[string]*rowHistory       // undo history of each table
 	saved                 model.Request                // the request as it was when opened or last saved

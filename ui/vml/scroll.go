@@ -13,6 +13,9 @@ const wheelStep = 48
 // owns it, so the position survives the view being rebuilt every frame.
 type ScrollState struct {
 	Y int
+	X int // horizontal position, for HScroll
+
+	revealed int // HScroll: index+1 of the child last brought into view, 0 for none
 
 	dragging bool // the thumb is being dragged
 	grab     int  // pointer offset inside the thumb when the drag began

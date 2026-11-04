@@ -39,21 +39,31 @@ type TabItem struct {
 
 // Tabs is a strip of labels with a gold bar under the active one.
 func Tabs(items []TabItem, active int, onSelect func(i int), opts ...Option) *El {
-	return Row(with([]Item{
-		PadL(2),
-		For(items, func(i int, it TabItem) Node {
-			tab := []Item{
-				Gap(4), PadXY(10, 0), AlignItems(AlignBaseline),
-				OnClick(func() { onSelect(i) }),
-				Text(it.Label, Color(tabColor(i == active))),
-				If(it.Badge > 0, Text(strconv.Itoa(it.Badge), Small(), Muted())),
-			}
-			if i == active {
-				tab = append(tab, Underline(widget.AccentLine, 10))
-			}
-			return Row(tab...)
-		}),
-	}, opts)...)
+	return Row(with(append([]Item{PadL(2)}, tabItems(items, active, onSelect)...), opts)...)
+}
+
+// ScrollTabs is Tabs in a strip that scrolls sideways when the labels do
+// not fit, keeping the active tab in view. It grows to the free width.
+func ScrollTabs(state *ScrollState, items []TabItem, active int, onSelect func(i int), opts ...Option) *El {
+	return HScroll(state, with(append([]Item{Grow(1), PadL(2)}, tabItems(items, active, onSelect)...), opts)...)
+}
+
+func tabItems(items []TabItem, active int, onSelect func(i int)) []Item {
+	out := make([]Item, len(items))
+	for i, it := range items {
+		i, it := i, it
+		tab := []Item{
+			Gap(4), PadXY(10, 0), AlignItems(AlignBaseline),
+			OnClick(func() { onSelect(i) }),
+			Text(it.Label, Color(tabColor(i == active))),
+			If(it.Badge > 0, Text(strconv.Itoa(it.Badge), Small(), Muted())),
+		}
+		if i == active {
+			tab = append(tab, Underline(widget.AccentLine, 10), Reveal())
+		}
+		out[i] = Row(tab...)
+	}
+	return out
 }
 
 func tabColor(active bool) widget.Token {
@@ -175,7 +185,7 @@ func tableHeader(t TableSpec) Node {
 }
 
 func headerCheck(t TableSpec) Node {
-	items := []Item{W(tableActionW), Checkbox(t.AllChecked)}
+	items := []Item{W(tableActionW), JustifyContent(JustifyCenter), Checkbox(t.AllChecked)}
 	if t.OnToggleAll != nil {
 		items = append(items, OnClick(t.OnToggleAll))
 	}
@@ -190,7 +200,7 @@ func tableRow(t TableSpec, i int, r TableRow, placeholder bool) Node {
 	actions := t.Editable && !placeholder
 	row := []Item{
 		H(widget.RowH),
-		If(actions, Row(W(tableActionW), OnClick(func() { t.OnToggle(i) }), Checkbox(r.Checked))),
+		If(actions, Row(W(tableActionW), JustifyContent(JustifyCenter), OnClick(func() { t.OnToggle(i) }), Checkbox(r.Checked))),
 		If(placeholder, Row(W(tableActionW))),
 		For(r.Cells, func(j int, s string) Node {
 			cellClr := clr
@@ -199,7 +209,7 @@ func tableRow(t TableSpec, i int, r TableRow, placeholder bool) Node {
 			}
 			return tableCell(t, i, j, s, cellClr)
 		}),
-		If(actions, Row(W(tableActionW), OnClick(func() { t.OnDelete(i) }), Cross())),
+		If(actions, Row(W(tableActionW), JustifyContent(JustifyCenter), OnClick(func() { t.OnDelete(i) }), Cross())),
 		If(placeholder, Row(W(tableActionW))),
 	}
 	if t.OnRowMenu != nil && !placeholder {

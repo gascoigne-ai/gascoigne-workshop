@@ -119,10 +119,19 @@ func hasModal(e *El) bool {
 	return false
 }
 
+// preUpdater is implemented by behaviors that must see the input before
+// their children do, to take a click away from them.
+type preUpdater interface {
+	preUpdate(e *El, c *widget.Ctx)
+}
+
 // update reports whether a modal element swallowed the input.
 func (e *El) update(c *widget.Ctx) bool {
 	if e.hidden {
 		return false
+	}
+	if p, ok := e.b.(preUpdater); ok {
+		p.preUpdate(e, c)
 	}
 	saved := c.In
 	masked := e.clip && !c.In.Over(e.rect)

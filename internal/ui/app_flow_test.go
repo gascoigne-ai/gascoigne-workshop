@@ -277,6 +277,13 @@ func TestOtherProtocolsAnswerThroughTheSameUI(t *testing.T) {
 	click(a, 300, urlBarY) // rest -> websocket
 	click(a, sendX, urlBarY)
 	waitForResponse(t, a, tab)
+	if !strings.Contains(tab.resp.Err, "not ws or wss") { // an https URL is no WebSocket address
+		t.Fatalf("resp = %+v", tab.resp)
+	}
+	tab.resp = nil
+	click(a, 300, urlBarY) // websocket -> mcp
+	click(a, sendX, urlBarY)
+	waitForResponse(t, a, tab)
 	if !strings.Contains(tab.resp.Err, "not implemented") {
 		t.Fatalf("resp = %+v", tab.resp)
 	}
