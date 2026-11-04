@@ -6,9 +6,9 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
-// TipDelayTicks is how long the pointer rests on an element before its
+// tipDelayTicks is how long the pointer rests on an element before its
 // tooltip shows (half a second at 60 ticks per second).
-const TipDelayTicks = 30
+const tipDelayTicks = 30
 
 // Tooltip box metrics.
 const (
@@ -29,7 +29,7 @@ func drawTooltip(c *core.Ctx, dst *ebiten.Image, screen core.Rect) {
 	if c.TipText != c.TipFor || c.In.Click {
 		c.TipFor, c.TipSince = c.TipText, c.Tick // a new element, or a click: wait again
 	}
-	if c.Tick-c.TipSince < TipDelayTicks {
+	if c.Tick-c.TipSince < tipDelayTicks {
 		c.TipWaiting = true
 		return
 	}

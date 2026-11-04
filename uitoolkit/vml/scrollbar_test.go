@@ -34,18 +34,18 @@ func TestPosFromOffsetInvertsThumb(t *testing.T) {
 	step := maxPos / (track - minThumbLen) // one pixel of thumb travel
 	for _, pos := range []int{0, 100, 450, 899, 900} {
 		off, _, _ := Thumb(track, content, view, pos)
-		got := PosFromOffset(track, content, view, off)
+		got := posFromOffset(track, content, view, off)
 		if d := got - pos; d < -step || d > step {
 			t.Errorf("pos %d -> off %d -> pos %d (tolerance %d)", pos, off, got, step)
 		}
 	}
-	if got := PosFromOffset(track, content, view, 5000); got != maxPos {
+	if got := posFromOffset(track, content, view, 5000); got != maxPos {
 		t.Errorf("dragging past the end gives %d, want %d", got, maxPos)
 	}
-	if got := PosFromOffset(track, content, view, -40); got != 0 {
+	if got := posFromOffset(track, content, view, -40); got != 0 {
 		t.Errorf("dragging before the start gives %d, want 0", got)
 	}
-	if got := PosFromOffset(track, 50, view, 10); got != 0 {
+	if got := posFromOffset(track, 50, view, 10); got != 0 {
 		t.Errorf("nothing to scroll gives %d", got)
 	}
 }
@@ -54,8 +54,8 @@ func TestClampScroll(t *testing.T) {
 	for _, tt := range []struct{ pos, content, view, want int }{
 		{50, 1000, 100, 50}, {-1, 1000, 100, 0}, {950, 1000, 100, 900}, {5, 50, 100, 0},
 	} {
-		if got := ClampScroll(tt.pos, tt.content, tt.view); got != tt.want {
-			t.Errorf("ClampScroll(%d,%d,%d) = %d, want %d", tt.pos, tt.content, tt.view, got, tt.want)
+		if got := clampScroll(tt.pos, tt.content, tt.view); got != tt.want {
+			t.Errorf("clampScroll(%d,%d,%d) = %d, want %d", tt.pos, tt.content, tt.view, got, tt.want)
 		}
 	}
 }

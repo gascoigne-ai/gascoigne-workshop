@@ -19,9 +19,9 @@ import (
 // Fonts are the three faces the toolkit draws with.
 type Fonts struct{ UI, Small, Mono, Bold, SmallBold *text.GoTextFace }
 
-// NewFonts builds the faces from the embedded Go fonts, sized for a
+// newFonts builds the faces from the embedded Go fonts, sized for a
 // display with the given device scale factor.
-func NewFonts(th Theme, scale float64) (Fonts, error) {
+func newFonts(th Theme, scale float64) (Fonts, error) {
 	regular, err := text.NewGoTextFaceSource(bytes.NewReader(goregular.TTF))
 	if err != nil {
 		return Fonts{}, fmt.Errorf("load regular font: %w", err)
@@ -89,7 +89,7 @@ const (
 
 // NewCtx returns a context at scale 1.
 func NewCtx(th Theme) (*Ctx, error) {
-	fonts, err := NewFonts(th, 1)
+	fonts, err := newFonts(th, 1)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +102,7 @@ func (c *Ctx) SetScale(scale float64) error {
 	if scale <= 0 || scale == c.Scale {
 		return nil
 	}
-	fonts, err := NewFonts(c.Th, scale)
+	fonts, err := newFonts(c.Th, scale)
 	if err != nil {
 		return err
 	}
@@ -112,7 +112,7 @@ func (c *Ctx) SetScale(scale float64) error {
 
 // SetTheme switches theme and rebuilds the fonts, whose sizes the theme sets.
 func (c *Ctx) SetTheme(th Theme) error {
-	fonts, err := NewFonts(th, c.Scale)
+	fonts, err := newFonts(th, c.Scale)
 	if err != nil {
 		return err
 	}
@@ -307,7 +307,7 @@ func GradientFor(base color.RGBA, st ControlStyle) (top, bottom color.RGBA) {
 	case st.Top != nil && st.Bottom != nil:
 		return *st.Top, *st.Bottom
 	case st.Shade > 0:
-		return GradientEnds(base, st.Shade)
+		return gradientEnds(base, st.Shade)
 	}
 	return base, base
 }

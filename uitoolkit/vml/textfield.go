@@ -417,11 +417,11 @@ func (f *TextField) step(dir int, extend bool) {
 	f.moveTo(f.Cursor+dir, extend)
 }
 
-// TabWidth is the number of spaces Tab inserts (to the next tab stop).
-const TabWidth = 2
+// tabWidth is the number of spaces Tab inserts (to the next tab stop).
+const tabWidth = 2
 
-// NewMultiline returns a multi-line field holding text.
-func NewMultiline(text string) TextField {
+// newMultiline returns a multi-line field holding text.
+func newMultiline(text string) TextField {
 	f := NewTextField(text)
 	f.Multiline = true
 	return f
@@ -567,12 +567,12 @@ func (f *TextField) indent() bool {
 		if lo, _, ok := f.Selection(); ok {
 			_, col = f.LineCol(lo)
 		}
-		return f.insert(strings.Repeat(" ", TabWidth-col%TabWidth), kindOther)
+		return f.insert(strings.Repeat(" ", tabWidth-col%tabWidth), kindOther)
 	}
-	return f.shiftLines(starts, func(_ []rune, _ int) int { return TabWidth })
+	return f.shiftLines(starts, func(_ []rune, _ int) int { return tabWidth })
 }
 
-// dedent removes one indent level (up to TabWidth spaces, or a tab)
+// dedent removes one indent level (up to tabWidth spaces, or a tab)
 // from the start of every selected line or the cursor's line.
 func (f *TextField) dedent() bool {
 	return f.shiftLines(f.selectedLines(), func(r []rune, start int) int {
@@ -580,7 +580,7 @@ func (f *TextField) dedent() bool {
 			return -1
 		}
 		n := 0
-		for n < TabWidth && start+n < len(r) && r[start+n] == ' ' {
+		for n < tabWidth && start+n < len(r) && r[start+n] == ' ' {
 			n++
 		}
 		return -n

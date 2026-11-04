@@ -259,7 +259,7 @@ func (c *Catalog) LoadUser(dir string) (themes map[string]Choice, problems []str
 			problems = append(problems, fmt.Sprintf("theme %s: %v", id, err))
 			continue
 		}
-		baseID, err := ThemeExtends(data)
+		baseID, err := themeExtends(data)
 		if err != nil {
 			problems = append(problems, fmt.Sprintf("theme %s: %v", id, err))
 			continue

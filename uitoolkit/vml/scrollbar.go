@@ -12,8 +12,8 @@ const (
 	minThumbLen = 24 // the thumb never gets shorter than this
 )
 
-// ClampScroll keeps pos inside [0, contentLen-viewLen].
-func ClampScroll(pos, contentLen, viewLen int) int {
+// clampScroll keeps pos inside [0, contentLen-viewLen].
+func clampScroll(pos, contentLen, viewLen int) int {
 	return min(max(pos, 0), max(contentLen-viewLen, 0))
 }
 
@@ -25,13 +25,13 @@ func Thumb(trackLen, contentLen, viewLen, pos int) (off, length int, ok bool) {
 		return 0, 0, false
 	}
 	length = min(max(trackLen*viewLen/contentLen, minThumbLen), trackLen)
-	pos = ClampScroll(pos, contentLen, viewLen)
+	pos = clampScroll(pos, contentLen, viewLen)
 	return (trackLen - length) * pos / (contentLen - viewLen), length, true
 }
 
-// PosFromOffset is the scroll position that puts the thumb at off, so a
+// posFromOffset is the scroll position that puts the thumb at off, so a
 // dragged thumb can drive the content.
-func PosFromOffset(trackLen, contentLen, viewLen, off int) int {
+func posFromOffset(trackLen, contentLen, viewLen, off int) int {
 	_, length, ok := Thumb(trackLen, contentLen, viewLen, 0)
 	if !ok || trackLen-length <= 0 {
 		return 0
@@ -119,14 +119,14 @@ func (d *barDrag) update(c *core.Ctx, b bars, contentW, contentH int, sx, sy *in
 			d.bar = barNone
 			return
 		}
-		*sy = PosFromOffset(b.vTrack.H, contentH, b.viewH, in.Y-b.vTrack.Y-d.grab)
+		*sy = posFromOffset(b.vTrack.H, contentH, b.viewH, in.Y-b.vTrack.Y-d.grab)
 		return
 	case barH:
 		if !in.Held {
 			d.bar = barNone
 			return
 		}
-		*sx = PosFromOffset(b.hTrack.W, contentW, b.viewW, in.X-b.hTrack.X-d.grab)
+		*sx = posFromOffset(b.hTrack.W, contentW, b.viewW, in.X-b.hTrack.X-d.grab)
 		return
 	}
 	if !in.Click {
@@ -149,9 +149,9 @@ func (d *barDrag) press(track, content, view, pos, at, bar int, scroll *int) {
 	case at >= off && at < off+length:
 		d.bar, d.grab = bar, at-off
 	case at < off:
-		*scroll = ClampScroll(pos-view, content, view)
+		*scroll = clampScroll(pos-view, content, view)
 	default:
-		*scroll = ClampScroll(pos+view, content, view)
+		*scroll = clampScroll(pos+view, content, view)
 	}
 }
 

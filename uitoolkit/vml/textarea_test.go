@@ -7,7 +7,7 @@ import "testing"
 const poem = "abcdef\nab\nabcdef"
 
 func area(text string) *TextField {
-	f := NewMultiline(text)
+	f := newMultiline(text)
 	f.ViewLines = 2
 	return &f
 }

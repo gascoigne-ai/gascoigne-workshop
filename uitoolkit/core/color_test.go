@@ -21,7 +21,7 @@ func TestShadeMovesTowardWhiteOrBlackAndKeepsAlpha(t *testing.T) {
 
 func TestGradientEndsBracketTheBaseColor(t *testing.T) {
 	base := color.RGBA{R: 120, G: 80, B: 90, A: 255}
-	top, bottom := GradientEnds(base, 0.1)
+	top, bottom := gradientEnds(base, 0.1)
 	if !(top.R > base.R && bottom.R < base.R) {
 		t.Fatalf("top %+v bottom %+v around %+v", top, bottom, base)
 	}

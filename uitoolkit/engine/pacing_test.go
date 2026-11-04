@@ -15,9 +15,9 @@ func TestMustDraw(t *testing.T) {
 	}{
 		{"idle", 1, false, false, false, false},
 		{"input", 1, true, false, false, true},
-		{"caret on blink tick", BlinkTicks, false, true, false, true},
-		{"caret off blink tick", BlinkTicks + 1, false, true, false, false},
-		{"blink tick without caret", BlinkTicks, false, false, false, false},
+		{"caret on blink tick", blinkTicks, false, true, false, true},
+		{"caret off blink tick", blinkTicks + 1, false, true, false, false},
+		{"blink tick without caret", blinkTicks, false, false, false, false},
 		{"heartbeat", HeartbeatTicks, false, false, false, true},
 		{"always", 1, false, false, true, true},
 	}

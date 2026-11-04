@@ -33,9 +33,9 @@ func IsModifierKey(k ebiten.Key) bool {
 	return false
 }
 
-// KeyLabel is how a key is written in key strings: the friendly name
+// keyLabel is how a key is written in key strings: the friendly name
 // from KeyNames, else Ebitengine's.
-func KeyLabel(k ebiten.Key) string {
+func keyLabel(k ebiten.Key) string {
 	if name, ok := KeyNames[k]; ok {
 		return name
 	}
@@ -51,7 +51,7 @@ var keyByName = func() map[string]ebiten.Key {
 			continue
 		}
 		m[strings.ToLower(k.String())] = k
-		m[strings.ToLower(KeyLabel(k))] = k
+		m[strings.ToLower(keyLabel(k))] = k
 	}
 	return m
 }()
@@ -96,5 +96,5 @@ func (b Binding) String() string {
 	if b.Shift {
 		parts = append(parts, "Shift")
 	}
-	return strings.Join(append(parts, KeyLabel(b.Key)), "+")
+	return strings.Join(append(parts, keyLabel(b.Key)), "+")
 }

@@ -267,7 +267,7 @@ func Edges(t core.Token, top, left, right bool) Option {
 }
 
 // Tooltip shows text near the pointer once it has rested on the element
-// for TipDelayTicks.
+// for tipDelayTicks.
 func Tooltip(text string) Option { return func(e *El) { e.tip = text } }
 
 // HoverBg fills the element while the pointer is over it.

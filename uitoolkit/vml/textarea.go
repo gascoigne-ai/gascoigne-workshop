@@ -24,7 +24,7 @@ type TextArea struct {
 
 // NewTextArea returns an editor holding text.
 func NewTextArea(text string) TextArea {
-	a := TextArea{TextField: NewMultiline(text)}
+	a := TextArea{TextField: newMultiline(text)}
 	a.revealed = -1
 	return a
 }
@@ -78,8 +78,8 @@ func (a *TextArea) Update(c *core.Ctx, r core.Rect) (changed bool) {
 	if a.Focused {
 		changed = a.updateKeys(c, r, g, b)
 	}
-	a.ScrollY = ClampScroll(a.ScrollY, g.contentH(), b.viewH)
-	a.ScrollX = ClampScroll(a.ScrollX, g.contentW(core.Rect{W: b.viewW}), b.viewW)
+	a.ScrollY = clampScroll(a.ScrollY, g.contentH(), b.viewH)
+	a.ScrollX = clampScroll(a.ScrollX, g.contentW(core.Rect{W: b.viewW}), b.viewW)
 	return changed
 }
 
@@ -103,9 +103,9 @@ func (a *TextArea) updatePointer(c *core.Ctx, r core.Rect, g areaGeometry, b bar
 	}
 	if over && in.Wheel != 0 {
 		if in.Shift {
-			a.ScrollX = ClampScroll(a.ScrollX+int(-in.Wheel*float64(g.charW)*6), g.contentW(core.Rect{W: b.viewW}), b.viewW)
+			a.ScrollX = clampScroll(a.ScrollX+int(-in.Wheel*float64(g.charW)*6), g.contentW(core.Rect{W: b.viewW}), b.viewW)
 		} else {
-			a.ScrollY = ClampScroll(a.ScrollY+int(-in.Wheel*float64(g.lineH)*3), g.contentH(), b.viewH)
+			a.ScrollY = clampScroll(a.ScrollY+int(-in.Wheel*float64(g.lineH)*3), g.contentH(), b.viewH)
 		}
 		c.In.Wheel = 0 // consumed, so an enclosing scroller does not move too
 	}

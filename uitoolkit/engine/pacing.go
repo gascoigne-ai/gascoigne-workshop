@@ -9,8 +9,8 @@ import "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 // even when nothing changed, in case the window system lost the content.
 const HeartbeatTicks = 120
 
-// BlinkTicks is the half period of the text caret's blink.
-const BlinkTicks = 30
+// blinkTicks is the half period of the text caret's blink.
+const blinkTicks = 30
 
 // Ticks of no activity before the update rate drops, and the two rates.
 const (
@@ -56,5 +56,5 @@ func (p *Pacer) TPS() int {
 // MustDraw reports whether the frame at tick must be drawn: something
 // changed, the caret blinks, the heartbeat is due, or always is set.
 func MustDraw(tick int, active, caret, always bool) bool {
-	return active || (tick%BlinkTicks == 0 && caret) || tick%HeartbeatTicks == 0 || always
+	return active || (tick%blinkTicks == 0 && caret) || tick%HeartbeatTicks == 0 || always
 }

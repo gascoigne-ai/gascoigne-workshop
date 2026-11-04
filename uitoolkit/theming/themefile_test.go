@@ -119,14 +119,14 @@ func TestBuiltinThemesListTheSameControlsAndTokens(t *testing.T) {
 }
 
 func TestThemeExtendsNamesTheBaseAFileBuildsOn(t *testing.T) {
-	name, err := ThemeExtends([]byte(`{"extends": "light", "colors": {}}`))
+	name, err := themeExtends([]byte(`{"extends": "light", "colors": {}}`))
 	if err != nil || name != "light" {
 		t.Fatalf("%q %v", name, err)
 	}
-	if name, err := ThemeExtends([]byte(`{"colors": {}}`)); err != nil || name != "" {
+	if name, err := themeExtends([]byte(`{"colors": {}}`)); err != nil || name != "" {
 		t.Fatalf("no extends: %q %v", name, err)
 	}
-	if _, err := ThemeExtends([]byte(`{`)); err == nil {
+	if _, err := themeExtends([]byte(`{`)); err == nil {
 		t.Fatal("broken json")
 	}
 	// ParseTheme accepts the field (it is resolved by the caller).

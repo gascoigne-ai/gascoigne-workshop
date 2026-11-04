@@ -54,7 +54,7 @@ func (s *scrollB) track(e *El) core.Rect {
 func (s *scrollB) layout(e *El, c *core.Ctx) {
 	r := e.rect
 	_, s.content = s.flow.measure(e, c, e.inner().W)
-	s.state.Y = ClampScroll(s.state.Y, s.content, r.H)
+	s.state.Y = clampScroll(s.state.Y, s.content, r.H)
 
 	width := r.W
 	if s.content > r.H {
@@ -73,7 +73,7 @@ func (s *scrollB) update(e *El, c *core.Ctx) {
 			st.dragging = false
 			return
 		}
-		st.Y = PosFromOffset(track.H, s.content, r.H, in.Y-track.Y-st.grab)
+		st.Y = posFromOffset(track.H, s.content, r.H, in.Y-track.Y-st.grab)
 		return
 	}
 	if in.Click && track.Contains(in.X, in.Y) {
@@ -81,7 +81,7 @@ func (s *scrollB) update(e *El, c *core.Ctx) {
 		return
 	}
 	if in.Wheel != 0 && in.Over(r) && s.content > r.H {
-		st.Y = ClampScroll(st.Y+int(-in.Wheel*wheelStep), s.content, r.H)
+		st.Y = clampScroll(st.Y+int(-in.Wheel*wheelStep), s.content, r.H)
 		c.In.Wheel = 0 // consumed, so an enclosing scroller does not move too
 	}
 }
@@ -96,9 +96,9 @@ func (s *scrollB) press(track core.Rect, view, at int) {
 	case at >= off && at < off+length:
 		st.dragging, st.grab = true, at-off
 	case at < off:
-		st.Y = ClampScroll(st.Y-view, s.content, view)
+		st.Y = clampScroll(st.Y-view, s.content, view)
 	default:
-		st.Y = ClampScroll(st.Y+view, s.content, view)
+		st.Y = clampScroll(st.Y+view, s.content, view)
 	}
 }
 

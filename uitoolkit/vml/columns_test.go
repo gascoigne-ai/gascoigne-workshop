@@ -33,7 +33,7 @@ func TestResizePair(t *testing.T) {
 	}
 	for _, tt := range tests {
 		orig := append([]float64(nil), tt.weights...)
-		got := ResizePair(tt.weights, tt.i, tt.leftPx, tt.totalPx, tt.min)
+		got := resizePair(tt.weights, tt.i, tt.leftPx, tt.totalPx, tt.min)
 		if len(got) != len(orig) {
 			t.Fatalf("%s: %v", tt.name, got)
 		}

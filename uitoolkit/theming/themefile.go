@@ -47,10 +47,10 @@ type themeFile struct {
 	Controls   map[string]controlFile `json:"controls"`
 }
 
-// ThemeExtends is the name of the built-in theme a file says it builds on
+// themeExtends is the name of the built-in theme a file says it builds on
 // ("extends"), "" when it does not say. The caller picks the base theme
 // and passes it to ParseTheme.
-func ThemeExtends(data []byte) (string, error) {
+func themeExtends(data []byte) (string, error) {
 	var f struct {
 		Extends string `json:"extends"`
 	}
@@ -60,8 +60,8 @@ func ThemeExtends(data []byte) (string, error) {
 	return f.Extends, nil
 }
 
-// ParseColor reads "#rrggbb" or "#rrggbbaa".
-func ParseColor(s string) (color.RGBA, error) {
+// parseColor reads "#rrggbb" or "#rrggbbaa".
+func parseColor(s string) (color.RGBA, error) {
 	if len(s) == 9 {
 		c, err := ParseHex(s[:7])
 		if err != nil {
@@ -158,7 +158,7 @@ func resolveColor(s string, vars map[string]color.RGBA) (color.RGBA, error) {
 		}
 		return c, nil
 	}
-	return ParseColor(s)
+	return parseColor(s)
 }
 
 // parseGradient reads a control's gradient: absent or 0 for none, a

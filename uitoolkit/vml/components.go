@@ -295,11 +295,11 @@ func menuOption(f func(x, y int)) Option {
 // MinColumnPx is the narrowest a table column can be dragged.
 const MinColumnPx = 56
 
-// ResizePair moves the divider between columns i and i+1: the two share
+// resizePair moves the divider between columns i and i+1: the two share
 // their combined weight so that column i is leftPx wide out of totalPx
 // for the pair, neither narrower than minPx. The other weights and the
 // total stay as they were. weights is not changed.
-func ResizePair(weights []float64, i, leftPx, totalPx, minPx int) []float64 {
+func resizePair(weights []float64, i, leftPx, totalPx, minPx int) []float64 {
 	out := append([]float64(nil), weights...)
 	if i < 0 || i+1 >= len(out) || totalPx <= 0 {
 		return out
@@ -342,7 +342,7 @@ func (h colHandlesB) update(e *El, c *core.Ctx) {
 		}
 		c.Cursor = core.CursorResizeH
 		left, right := cells[st.divider].rect, cells[st.divider+1].rect
-		st.Weights = ResizePair(h.spec.weights(), st.divider, in.X-left.X-st.grab, left.W+right.W, MinColumnPx)
+		st.Weights = resizePair(h.spec.weights(), st.divider, in.X-left.X-st.grab, left.W+right.W, MinColumnPx)
 		return
 	}
 	for i := 0; i < len(cells)-1; i++ {

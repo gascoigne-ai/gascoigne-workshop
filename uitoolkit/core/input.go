@@ -73,8 +73,8 @@ func pressed(key ebiten.Key) bool {
 	return d == 1 || (d >= repeatDelay && d%repeatEvery == 0)
 }
 
-// ReadInput samples the devices for this frame.
-func ReadInput() Input {
+// readInput samples the devices for this frame.
+func readInput() Input {
 	x, y := ebiten.CursorPosition()
 	wheelX, wheel := ebiten.Wheel()
 	in := Input{
@@ -164,7 +164,7 @@ func (s *Sampler) Click(now time.Time, x, y int) int {
 
 // Read samples the devices for this frame, including the click count.
 func (s *Sampler) Read() Input {
-	in := ReadInput()
+	in := readInput()
 	if in.Click {
 		in.Clicks = s.Click(time.Now(), in.X, in.Y)
 	}
