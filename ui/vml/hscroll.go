@@ -183,7 +183,9 @@ func (s *hscrollB) drawOver(e *El, c *widget.Ctx, dst *ebiten.Image) {
 		if !a.show {
 			continue
 		}
-		c.Fill(dst, a.box, c.Col(widget.Frame))
+		fill := a.box
+		fill.H-- // leave the strip's bottom line running under the arrow
+		c.Fill(dst, fill, c.Col(widget.Frame))
 		clr := c.Col(widget.Muted)
 		if c.Hovered(a.box) {
 			clr = c.Col(widget.Text)

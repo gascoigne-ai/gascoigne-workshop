@@ -173,7 +173,7 @@ func (a *App) requestTabs() Node {
 		HScroll(&a.tabsScroll, Grow(1), For(a.tabs, func(i int, t *reqTab) Node {
 			look := []Item{Bg(w.Frame), Control("tabstrip")} // inactive tabs blend into the strip; the active one joins the pane
 			if i == a.active {
-				look = []Item{Bg(w.Selected), Reveal()} // the open tab has the selected-row tint
+				look = []Item{Bg(w.Selected), Underline(w.AccentLine, 0), Reveal()} // selected-row tint and an accent line; the strip's line runs on under all tabs
 			}
 			grab := OnClick(func() {
 				a.active = i

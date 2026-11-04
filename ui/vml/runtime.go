@@ -258,7 +258,7 @@ func (e *El) draw(c *widget.Ctx, dst *ebiten.Image) {
 	}
 
 	if e.underline != "" {
-		c.Fill(dst, widget.Rect{X: r.X + e.underInset, Y: r.Y + r.H - 2, W: r.W - 2*e.underInset, H: 2}, c.Col(e.underline))
+		c.Fill(dst, widget.Rect{X: r.X + e.underInset, Y: r.Y + r.H - 3, W: r.W - 2*e.underInset, H: 3}, c.Col(e.underline))
 	}
 }
 
