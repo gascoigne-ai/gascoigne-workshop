@@ -211,10 +211,11 @@ func (a *App) tableView(p pane, t *reqTab, scroll *ScrollState, pad int) Node {
 	}
 	rows := p.rows(a, t)
 	spec := TableSpec{
-		Widths:  a.widthsFor(p),
-		Columns: []string{"Name", "Value"},
-		Weights: []float64{35, 65},
-		Rows:    kvRows(*rows, false, false),
+		CellStyler: a.cellStyler(t.req),
+		Widths:     a.widthsFor(p),
+		Columns:    []string{"Name", "Value"},
+		Weights:    []float64{35, 65},
+		Rows:       kvRows(*rows, false, false),
 	}
 	if !p.editable {
 		spec.OnRowMenu = func(row, x, y int) { a.openMenu(x, y, a.copyRowItems(*rows, row, true)) }

@@ -63,3 +63,27 @@ func varName(text string) string {
 	}
 	return text[2 : len(text)-2]
 }
+
+// cellStyler colors the {{variables}} in a table cell the way the URL
+// field does: green when req resolves them, red when not. Cells without a
+// variable are drawn as they are.
+func (a *App) cellStyler(req *model.Request) func(string) []Span {
+	vars := a.varsFor(req)
+	return func(text string) []Span {
+		if !containsVar(text) {
+			return nil
+		}
+		var out []Span
+		for _, seg := range splitVars(text) {
+			sp := Span{Text: seg.text}
+			if seg.isVar {
+				sp.Style = w.OK
+				if !model.Defined(varName(seg.text), vars) {
+					sp.Style = w.Error
+				}
+			}
+			out = append(out, sp)
+		}
+		return out
+	}
+}

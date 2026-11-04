@@ -175,3 +175,25 @@ func TestImageMeasuresItsPictureAndDrawsScaledToFit(t *testing.T) {
 	}
 	drawn(t, c, Row(W(30), H(30), Image(nil)), 30, 30) // no picture, no crash
 }
+
+func TestTableCellStylerSplitsACellIntoColoredParts(t *testing.T) {
+	spec := TableSpec{
+		Columns: []string{"Name", "Value"}, Weights: []float64{1, 1},
+		Rows: []TableRow{{Cells: []string{"k", "a{{v}}b"}}},
+		CellStyler: func(text string) []Span {
+			if text != "a{{v}}b" {
+				return nil
+			}
+			return []Span{{Text: "a"}, {Text: "{{v}}", Style: core.OK}, {Text: "b"}}
+		},
+	}
+	d := Dump(Table(spec))
+	for _, want := range []string{`text="a"`, `text="{{v}}"`, `fg=ok`, `text="b"`} {
+		if !strings.Contains(d, want) {
+			t.Errorf("missing %s in\n%s", want, d)
+		}
+	}
+	if !strings.Contains(d, `text="k"`) {
+		t.Errorf("a cell the styler declines stays plain:\n%s", d)
+	}
+}

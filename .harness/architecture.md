@@ -248,3 +248,5 @@ Row(H(urlH), PadX(w.Pad), PadY(8), Gap(8), Bg(w.Bg),
 - **Variables in the body editor** (`internal/ui/bodystyle.go`): `App.withVariables(base, req)` wraps the JSON or plain line styler so each `{{name}}` is split out and colored by whether `req` resolves it.
 
 - **YAML subset** (`internal/miniyaml`): a hand-written reader for what API descriptions use (block mappings and sequences, plain and quoted scalars with the core-schema types, one-line flow collections, `|` and `>` block scalars, comments); anchors, aliases, tags, multi-line flow collections and several documents are refused with a line number. The result has the shape `encoding/json` gives, so `openapi.Parse` marshals it and reads it like JSON. Decision: no YAML dependency, for the same reason as the other hand-written parsers.
+
+- **Variables in table cells**: `vml.TableSpec.CellStyler` may cut a cell's text into colored `Span`s (an empty style keeps the cell's own color); `App.cellStyler(req)` colors `{{variables}}` green when the request resolves them and red when not, so Params, Headers, Vars and form tables match the URL field and the body editor.

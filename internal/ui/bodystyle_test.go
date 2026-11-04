@@ -41,3 +41,16 @@ func TestBodyEditorColorsVariablesByWhetherTheyResolve(t *testing.T) {
 		t.Fatalf("a line without variables is one span: %+v", got)
 	}
 }
+
+func TestTableCellsColorVariablesLikeTheURLField(t *testing.T) {
+	a, _ := newTestApp(t)
+	a.col.Vars = []model.KV{{Name: "known", Value: "1", Enabled: true}}
+	style := a.cellStyler(a.cur().req)
+	if style("plain text") != nil {
+		t.Fatal("a cell without a variable is drawn as it is")
+	}
+	spans := style("Bearer {{known}} {{missing}}")
+	if len(spans) != 4 || spans[0].Style != "" || spans[1].Style != w.OK || spans[2].Style != "" || spans[3].Style != w.Error {
+		t.Fatalf("%+v", spans)
+	}
+}

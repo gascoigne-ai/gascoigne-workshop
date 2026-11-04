@@ -123,6 +123,11 @@ type TableSpec struct {
 	OnToggleAll func()
 	Selected    *int
 
+	// CellStyler, when set, may color parts of a cell's text: it returns
+	// the text cut into spans (an empty Style keeps the cell's own color),
+	// or nil to draw the cell as plain text.
+	CellStyler func(text string) []Span
+
 	// OnRowMenu runs when a data row is right-clicked, with the pointer position.
 	OnRowMenu func(row, x, y int)
 
@@ -257,7 +262,22 @@ func tableCell(t TableSpec, row, col int, text string, clr core.Token) Node {
 			Field(e.Field, Grow(1), Bg(core.Sunken), FieldPad(5) /* 3 + 5 = the 8 px of a shown cell, so the text does not move */, OnEnter(e.OnEnter), OnTab(e.OnTab), menuOption(e.OnMenu)),
 		)
 	}
-	items := []Item{Grow(t.weight(col)), PadX(8), Clip(), Text(text, Ellipsis(), Color(clr), Grow(1)), When(col > 0, Separator(0))}
+	var label *El = Text(text, Ellipsis(), Color(clr), Grow(1))
+	if t.CellStyler != nil {
+		if spans := t.CellStyler(text); len(spans) > 0 {
+			parts := make([]Item, 0, len(spans)+1)
+			parts = append(parts, Grow(1))
+			for _, sp := range spans {
+				color := sp.Style
+				if color == "" {
+					color = clr
+				}
+				parts = append(parts, Text(sp.Text, Color(color)))
+			}
+			label = Row(parts...)
+		}
+	}
+	items := []Item{Grow(t.weight(col)), PadX(8), Clip(), label, When(col > 0, Separator(0))}
 	if t.Editable && t.OnEditCell != nil {
 		items = append(items, OnClick(func() { t.OnEditCell(row, col) }))
 	}
