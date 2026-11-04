@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
 	"net/http"
 	"net/http/httptest"
@@ -192,4 +193,47 @@ func TestComposerSendsHexAsABinaryMessage(t *testing.T) {
 		t.Fatalf("a bad hex message must be explained:\n%s", logText(tab))
 	}
 	a.disconnect(tab)
+}
+
+func TestMCPToolsFillTheComposerFromTheirSchemas(t *testing.T) {
+	a, _ := newTestApp(t)
+	tab := a.cur()
+	tab.req.Protocol = "mcp"
+	list := `{"jsonrpc":"2.0","id":2,"result":{"tools":[{"name":"search","inputSchema":{"type":"object","properties":{"q":{"type":"string"},"limit":{"type":"integer","default":5}},"required":["q"]}},{"name":"ping"}]}}`
+	a.applyWS(wsEvent{tab: tab, ev: proto.Event{Dir: proto.Received, Kind: "response", Text: list}, hasEv: true})
+	if len(tab.tools) != 2 {
+		t.Fatalf("tools %+v", tab.tools)
+	}
+	items := a.toolMenu(tab)
+	if len(items) != 2 || items[0].label != "search" {
+		t.Fatalf("menu %+v", items)
+	}
+	items[0].run()
+	if got := tab.msg.Text; got != `call search {"limit":5,"q":""}` {
+		t.Fatalf("composer %q", got)
+	}
+	items[1].run()
+	if got := tab.msg.Text; got != "call ping {}" {
+		t.Fatalf("composer %q", got)
+	}
+	a.applyWS(wsEvent{tab: tab, closed: true})
+	if tab.tools != nil {
+		t.Fatal("tools must go when the session ends")
+	}
+}
+
+func TestMCPResourcesAndPromptsFillTheComposer(t *testing.T) {
+	a, _ := newTestApp(t)
+	tab := a.cur()
+	tab.req.Protocol = "mcp"
+	a.applyWS(wsEvent{tab: tab, hasEv: true, ev: proto.Event{Dir: proto.Received, Kind: "response", Text: `{"result":{"resources":[{"uri":"file:///a.txt","name":"A"}]}}`}})
+	a.applyWS(wsEvent{tab: tab, hasEv: true, ev: proto.Event{Dir: proto.Received, Kind: "response", Text: `{"result":{"prompts":[{"name":"review","arguments":[{"name":"code","required":true}]}]}}`}})
+	a.resourceMenu(tab)[0].run()
+	if tab.msg.Text != "read file:///a.txt" {
+		t.Fatalf("composer %q", tab.msg.Text)
+	}
+	a.promptMenu(tab)[0].run()
+	if tab.msg.Text != `prompt review {"code":""}` {
+		t.Fatalf("composer %q", tab.msg.Text)
+	}
 }

@@ -149,9 +149,21 @@ func (a *App) applyWS(e wsEvent) {
 		}
 	case e.closed:
 		t.sess, t.connecting = nil, false
+		t.tools, t.resources, t.prompts = nil, nil, nil
 		a.status = "Disconnected from " + t.req.URL
 		a.scheduleRetry(t)
 	case e.hasEv:
+		if tools := proto.ParseTools(e.ev.Text); e.ev.Dir == proto.Received && tools != nil {
+			t.tools = tools
+		}
+		if e.ev.Dir == proto.Received {
+			if res := proto.ParseResources(e.ev.Text); res != nil {
+				t.resources = res
+			}
+			if prompts := proto.ParsePrompts(e.ev.Text); prompts != nil {
+				t.prompts = prompts
+			}
+		}
 		a.logEvent(t, e.ev)
 	case e.err != nil:
 		t.connecting = false
@@ -236,6 +248,9 @@ func (a *App) messagesPane(_ pane, t *reqTab, _ *ScrollState) Node {
 			Text(connState(t), Small(), Muted()),
 			Spacer(),
 			a.viewChip("Auto-reconnect", t.reconnect, 116, func() { t.reconnect = !t.reconnect }),
+			If(len(t.tools) > 0, Button(fmt.Sprintf("Tools (%d)", len(t.tools)), W(84), H(w.CompactH), OnClick(func() { a.openMenu(a.ctx.In.X, a.ctx.In.Y, a.toolMenu(t)) }), Tooltip("Pick a tool: the composer gets a call with its arguments filled in"))),
+			If(len(t.resources) > 0, Button(fmt.Sprintf("Resources (%d)", len(t.resources)), W(104), H(w.CompactH), OnClick(func() { a.openMenu(a.ctx.In.X, a.ctx.In.Y, a.resourceMenu(t)) }), Tooltip("Pick a resource: the composer gets a read of it"))),
+			If(len(t.prompts) > 0, Button(fmt.Sprintf("Prompts (%d)", len(t.prompts)), W(94), H(w.CompactH), OnClick(func() { a.openMenu(a.ctx.In.X, a.ctx.In.Y, a.promptMenu(t)) }), Tooltip("Pick a prompt: the composer gets a request for it"))),
 			Button("Ping", W(56), H(w.CompactH), OnClick(func() { a.pingSocket(t) }), Tooltip("Send a ping frame")),
 			Button("Clear", W(56), H(w.CompactH), OnClick(func() { a.clearLog(t) }), Tooltip("Empty the message log")),
 		),
@@ -287,4 +302,54 @@ func sendComposed(s proto.Session, text string) error {
 		return fmt.Errorf("hex: %v", err)
 	}
 	return bs.SendBinary(data)
+}
+
+// toolMenu lists the tools the server announced; picking one puts a
+// ready-to-edit call, with the arguments the tool's schema asks for, in
+// the composer.
+func (a *App) toolMenu(t *reqTab) []menuItem {
+	items := make([]menuItem, 0, len(t.tools))
+	for _, tool := range t.tools {
+		items = append(items, menuItem{label: tool.Name, run: func() { a.composeCall(t, tool) }})
+	}
+	return items
+}
+
+// composeCall fills the composer with a call of tool.
+func (a *App) composeCall(t *reqTab, tool proto.MCPTool) {
+	args := "{}"
+	if tool.Schema != nil {
+		args = proto.Skeleton(tool.Schema)
+	}
+	t.msg = NewTextField("call " + tool.Name + " " + args)
+	t.msg.Focused = true
+}
+
+// resourceMenu lists the announced resources; picking one composes a read.
+func (a *App) resourceMenu(t *reqTab) []menuItem {
+	items := make([]menuItem, 0, len(t.resources))
+	for _, r := range t.resources {
+		label := r.URI
+		if r.Name != "" {
+			label = r.Name + "  " + r.URI
+		}
+		items = append(items, menuItem{label: label, run: func() {
+			t.msg = NewTextField("read " + r.URI)
+			t.msg.Focused = true
+		}})
+	}
+	return items
+}
+
+// promptMenu lists the announced prompts; picking one composes a request
+// with its required arguments filled in.
+func (a *App) promptMenu(t *reqTab) []menuItem {
+	items := make([]menuItem, 0, len(t.prompts))
+	for _, p := range t.prompts {
+		items = append(items, menuItem{label: p.Name, run: func() {
+			t.msg = NewTextField("prompt " + p.Name + " " + p.ArgsJSON())
+			t.msg.Focused = true
+		}})
+	}
+	return items
 }

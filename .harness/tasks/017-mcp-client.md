@@ -1,4 +1,4 @@
-status: in progress (client and log UI done; tool form and viewers pending)
+status: done (a typed tool form with one field per property was replaced by schema-filled calls; see Progress)
 
 # MCP client
 
@@ -18,3 +18,5 @@ MCP is a stub that answers "not implemented yet".
 - Decision: hand-written client, no SDK (decisions 10).
 - Done: streamable HTTP and stdio transports, initialize / lists / calls / ping, raw JSON-RPC log in the Messages pane, shorthand composer; tests against an HTTP stub (JSON and event-stream answers, errors, cancellation) and a stdio stub (the test binary re-run).
 - Left: tool-call form generated from the tool's JSON schema, resource and prompt browsers, a result viewer, server-initiated requests (sampling, roots), the long-lived GET stream for server notifications.
+- Done later: after the server announces its tools, resources and prompts the Messages toolbar gets `Tools (n)`, `Resources (n)` and `Prompts (n)` buttons. Picking one fills the composer with a ready-to-edit message: `call NAME {...}` with the arguments the tool's JSON schema asks for (`proto.Skeleton`: required properties first, defaults and enums used), `read URI`, or `prompt NAME {...}` with the required arguments. The reply is in the log, where responses are JSON.
+- Left on purpose: a typed form with one input per schema property (the generated skeleton covers strings, numbers, booleans, enums, arrays and nested objects as JSON the user edits), server-initiated requests and the long-lived notification stream.

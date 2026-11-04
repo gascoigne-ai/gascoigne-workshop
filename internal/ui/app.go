@@ -78,6 +78,9 @@ type reqTab struct {
 	wsCancel              context.CancelFunc        // ends the timeout of the connect in progress
 	wsView                vml.CodeView              // the message log
 	msg                   vml.TextField             // the message being composed
+	resources             []proto.MCPResource       // the resources an MCP server announced
+	prompts               []proto.MCPPrompt         // the prompts an MCP server announced
+	tools                 []proto.MCPTool           // the tools an MCP server announced
 	reconnect             bool                      // reopen a dropped connection
 	wantOpen              bool                      // the user wants the connection open, so a drop is retried
 }
