@@ -8,6 +8,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/openapi"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/postman"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
@@ -57,6 +58,7 @@ func (a *App) treeMenuItems(row collection.Row) []menuItem {
 		{label: "New folder", run: func() { a.newFolderIn(row.Dir) }},
 		{label: "Import cURL from clipboard", run: func() { a.importCurl(row.Dir) }},
 		{label: "Import OpenAPI from clipboard", run: func() { a.importOpenAPI(row.Dir) }},
+		{label: "Import Postman from clipboard", run: func() { a.importPostman(row.Dir) }},
 		{label: "Variables", run: func() { a.editVars(row.Dir) }},
 		sep,
 		rename,
@@ -321,4 +323,32 @@ func (a *App) dragHover() {
 		a.expanded[f] = true
 		a.hoverFolder, a.hoverTicks = nil, 0
 	}
+}
+
+// importPostman adds the Postman collection (JSON) on the clipboard to dir
+// as a folder, and adds its variables that the collection does not have.
+func (a *App) importPostman(dir *model.Folder) {
+	text, err := a.ctx.Clipboard.Read()
+	if err != nil {
+		a.toast("Cannot read the clipboard: "+err.Error(), true)
+		return
+	}
+	res, err := postman.Parse([]byte(text))
+	if err != nil {
+		a.toast("Not a Postman collection: "+err.Error(), true)
+		return
+	}
+	res.Folder.Name = dir.UniqueName(res.Folder.Name)
+	dir.Folders = append(dir.Folders, res.Folder)
+	for _, v := range res.Vars {
+		if !model.Defined(v.Name, a.col.Vars) {
+			a.col.Vars = append(a.col.Vars, v)
+		}
+	}
+	a.expanded[dir] = true
+	a.expandAll(res.Folder)
+	if first := firstRequest(res.Folder); first != nil {
+		a.openRequest(first)
+	}
+	a.status = "Imported " + res.Folder.Name
 }

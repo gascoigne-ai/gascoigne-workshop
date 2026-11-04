@@ -1,0 +1,59 @@
+{
+  "info": {
+    "_postman_id": "9f3b6c3e-0000-4000-8000-000000000001",
+    "name": "Echo API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [{"key": "baseUrl", "value": "https://postman-echo.com"}],
+  "item": [
+    {
+      "name": "Requests",
+      "item": [
+        {
+          "name": "GET with query",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json"}, {"key": "X-Off", "value": "1", "disabled": true}],
+            "url": {
+              "raw": "{{baseUrl}}/get?foo=bar&baz=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["get"],
+              "query": [{"key": "foo", "value": "bar"}, {"key": "baz", "value": "1"}, {"key": "skip", "value": "x", "disabled": true}]
+            },
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]}
+          }
+        },
+        {
+          "name": "POST json",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"a\": 1\n}", "options": {"raw": {"language": "json"}}},
+            "url": "{{baseUrl}}/post"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Form",
+      "request": {
+        "method": "POST",
+        "body": {"mode": "urlencoded", "urlencoded": [{"key": "user", "value": "ann"}, {"key": "off", "value": "x", "disabled": true}]},
+        "url": {"raw": "{{baseUrl}}/post"}
+      }
+    },
+    {
+      "name": "Upload",
+      "request": {
+        "method": "POST",
+        "body": {"mode": "formdata", "formdata": [{"key": "title", "value": "t", "type": "text"}, {"key": "file", "type": "file", "src": "/tmp/a.txt"}]},
+        "url": {"raw": "{{baseUrl}}/post"},
+        "auth": {"type": "basic", "basic": [{"key": "username", "value": "u"}, {"key": "password", "value": "p"}]}
+      }
+    },
+    {
+      "name": "Keyed",
+      "request": {"method": "GET", "url": "{{baseUrl}}/k", "auth": {"type": "apikey", "apikey": [{"key": "key", "value": "X-Api-Key"}, {"key": "value", "value": "secret"}, {"key": "in", "value": "header"}]}}
+    }
+  ]
+}

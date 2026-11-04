@@ -240,3 +240,5 @@ Row(H(urlH), PadX(w.Pad), PadY(8), Gap(8), Bg(w.Bg),
 - **Focus scrolling and drag-expand**: after a Tab moves focus, `vml.revealFocused` scrolls every `Scroll` holding the focused field so the field is inside its box; `App.dragHover` opens a closed folder a tree drag has rested over for `dragExpandTicks` (30) frames.
 
 - **Icon and packaging**: `internal/appicon.Image(size)` draws the program icon (burgundy rounded square, the `>_` prompt); `main` sets it as the window icon and `-icon-png FILE` writes it for packaging. `packaging/gascoigne-workshop.desktop` and `make install` install the binary, the entry and the icon; `.github/workflows/check.yml` runs `make check` under xvfb.
+
+- **Postman import** (`internal/postman`, `App.importPostman`): `postman.Parse` maps a v2.x collection to a folder tree and its variables; the importer adds the folder under the chosen one and the variables the collection lacks.

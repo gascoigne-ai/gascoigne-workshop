@@ -237,3 +237,30 @@ func TestImportOpenAPIAddsAFolderOfRequestsAndTheBaseURL(t *testing.T) {
 		t.Fatal("a bad document changed the collection")
 	}
 }
+
+func TestImportPostmanAddsAFolderAndItsVariables(t *testing.T) {
+	data, err := os.ReadFile("../postman/testdata/collection.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	a, _ := newTestApp(t)
+	a.col.Vars = []model.KV{{Name: "baseUrl", Value: "mine", Enabled: true}}
+	a.ctx.Clipboard = &fakeClip{text: string(data)}
+	before := len(a.col.Folders)
+	a.importPostman(&a.col.Folder)
+	if len(a.col.Folders) != before+1 || a.col.Folders[before].Name != "Echo API" {
+		t.Fatalf("folders %d", len(a.col.Folders))
+	}
+	if len(a.col.Vars) != 1 || a.col.Vars[0].Value != "mine" {
+		t.Fatalf("an existing variable must not be overwritten: %+v", a.col.Vars)
+	}
+	if a.cur().req.Name != "Form" { // requests of a folder come before its subfolders
+		t.Fatalf("the first imported request is not open: %q", a.cur().req.Name)
+	}
+	n := len(a.col.Folders)
+	a.ctx.Clipboard = &fakeClip{text: `{"openapi":"3.0.0"}`}
+	a.importPostman(&a.col.Folder)
+	if len(a.col.Folders) != n {
+		t.Fatal("a bad document changed the collection")
+	}
+}
