@@ -1,6 +1,7 @@
 package component
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/theming"
 	"strings"
 	"testing"
 
@@ -23,7 +24,7 @@ func build(t *testing.T, src string, sc Scope) vml.Node {
 
 // The same view written in Go and as a template dumps identically, laid out.
 func TestTemplateMatchesTheGoDSL(t *testing.T) {
-	c, err := core.NewCtx(core.Dark())
+	c, err := core.NewCtx(theming.Dark())
 	if err != nil {
 		t.Fatal(err)
 	}

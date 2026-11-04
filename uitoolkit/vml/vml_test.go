@@ -2,6 +2,7 @@ package vml
 
 import (
 	"errors"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/theming"
 	"reflect"
 	"strings"
 	"testing"
@@ -11,7 +12,7 @@ import (
 
 func testCtx(t *testing.T) *core.Ctx {
 	t.Helper()
-	c, err := core.NewCtx(core.Dark())
+	c, err := core.NewCtx(theming.Dark())
 	if err != nil {
 		t.Fatal(err)
 	}

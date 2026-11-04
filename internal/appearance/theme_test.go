@@ -2,6 +2,7 @@ package appearance
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/respview"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/theming"
 	"image/color"
 	"math"
 	"testing"
@@ -61,10 +62,10 @@ func TestThemeFor(t *testing.T) {
 		wantBg            color.RGBA
 		wantFont          float64
 	}{
-		{"dark medium", "dark", "medium", core.Dark().Color(core.Bg), 14},
-		{"light large", "light", "large", core.Light().Color(core.Bg), 16},
-		{"unknown theme falls back to dark", "neon", "small", core.Dark().Color(core.Bg), 13},
-		{"unknown size falls back to medium", "light", "huge", core.Light().Color(core.Bg), 14},
+		{"dark medium", "dark", "medium", theming.Dark().Color(core.Bg), 14},
+		{"light large", "light", "large", theming.Light().Color(core.Bg), 16},
+		{"unknown theme falls back to dark", "neon", "small", theming.Dark().Color(core.Bg), 13},
+		{"unknown size falls back to medium", "light", "huge", theming.Light().Color(core.Bg), 14},
 	}
 	for _, tt := range tests {
 		th := ThemeFor(tt.theme, tt.size)

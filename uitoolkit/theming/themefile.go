@@ -1,4 +1,4 @@
-package core
+package theming
 
 import (
 	"bytes"
@@ -6,12 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"image/color"
 	"sort"
 	"strings"
 )
 
-// Theme files are JSON in the style of editor themes: named variables
+// core.Theme files are JSON in the style of editor themes: named variables
 // that colors refer to as "$name", a flat token-to-color table, and a
 // table of per-control styles (corner radius, gradient, outline).
 //
@@ -25,19 +26,6 @@ import (
 //
 // A file may leave out whatever a base theme already defines; colors and
 // controls are merged over it.
-
-// ControlStyle is how one kind of control is drawn. The zero value is a
-// flat, square control with no outline of its own.
-type ControlStyle struct {
-	Radius float64 // corner radius in logical pixels; larger than half the height makes a pill
-	Shade  float64 // gradient strength: the fill mixes toward white above and black below
-	Top    *color.RGBA
-	Bottom *color.RGBA // explicit gradient ends, replacing Shade
-	Border Token       // outline color token, "" for none
-}
-
-// HasGradient reports whether the control's fill is a gradient.
-func (s ControlStyle) HasGradient() bool { return s.Shade > 0 || s.Top != nil }
 
 type controlFile struct {
 	Radius   float64         `json:"radius"`
@@ -88,22 +76,22 @@ func ParseColor(s string) (color.RGBA, error) {
 
 // ParseTheme reads a theme file over base (nil for none). Unknown fields
 // are errors, so a typo in a theme file is not silently ignored.
-func ParseTheme(data []byte, base *Theme) (Theme, error) {
+func ParseTheme(data []byte, base *core.Theme) (core.Theme, error) {
 	var f themeFile
 	dec := json.NewDecoder(bytes.NewReader(data))
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(&f); err != nil {
-		return Theme{}, fmt.Errorf("theme file: %w", err)
+		return core.Theme{}, fmt.Errorf("theme file: %w", err)
 	}
-	var th Theme
+	var th core.Theme
 	if base != nil {
 		th = base.With(nil)
 		th.Controls = copyControls(base.Controls)
 	} else {
-		th = Theme{Colors: map[Token]color.RGBA{}, Controls: map[string]ControlStyle{}, RadiusScale: 1}
+		th = core.Theme{Colors: map[core.Token]color.RGBA{}, Controls: map[string]core.ControlStyle{}, RadiusScale: 1}
 	}
 	if th.Controls == nil {
-		th.Controls = map[string]ControlStyle{}
+		th.Controls = map[string]core.ControlStyle{}
 	}
 	if th.RadiusScale == 0 {
 		th.RadiusScale = 1
@@ -125,29 +113,29 @@ func ParseTheme(data []byte, base *Theme) (Theme, error) {
 	for _, name := range sortedKeys(f.Variables) {
 		c, err := resolveColor(f.Variables[name], vars)
 		if err != nil {
-			return Theme{}, fmt.Errorf("theme file: variable %q: %w", name, err)
+			return core.Theme{}, fmt.Errorf("theme file: variable %q: %w", name, err)
 		}
 		vars[name] = c
 	}
 	for _, name := range sortedKeys(f.Colors) {
 		c, err := resolveColor(f.Colors[name], vars)
 		if err != nil {
-			return Theme{}, fmt.Errorf("theme file: color %q: %w", name, err)
+			return core.Theme{}, fmt.Errorf("theme file: color %q: %w", name, err)
 		}
-		th.Colors[Token(name)] = c
+		th.Colors[core.Token(name)] = c
 	}
 	for _, name := range sortedControlKeys(f.Controls) {
 		cf := f.Controls[name]
-		st := ControlStyle{Radius: cf.Radius, Border: Token(cf.Border)}
+		st := core.ControlStyle{Radius: cf.Radius, Border: core.Token(cf.Border)}
 		if st.Radius < 0 {
-			return Theme{}, fmt.Errorf("theme file: control %q: negative radius", name)
+			return core.Theme{}, fmt.Errorf("theme file: control %q: negative radius", name)
 		}
 		if err := parseGradient(cf.Gradient, vars, &st); err != nil {
-			return Theme{}, fmt.Errorf("theme file: control %q: %w", name, err)
+			return core.Theme{}, fmt.Errorf("theme file: control %q: %w", name, err)
 		}
 		if st.Border != "" {
 			if _, ok := th.Colors[st.Border]; !ok {
-				return Theme{}, fmt.Errorf("theme file: control %q: border token %q has no color", name, st.Border)
+				return core.Theme{}, fmt.Errorf("theme file: control %q: border token %q has no color", name, st.Border)
 			}
 		}
 		th.Controls[name] = st
@@ -169,7 +157,7 @@ func resolveColor(s string, vars map[string]color.RGBA) (color.RGBA, error) {
 
 // parseGradient reads a control's gradient: absent or 0 for none, a
 // number for a shade strength, or [top, bottom] colors.
-func parseGradient(raw json.RawMessage, vars map[string]color.RGBA, st *ControlStyle) error {
+func parseGradient(raw json.RawMessage, vars map[string]color.RGBA, st *core.ControlStyle) error {
 	if len(raw) == 0 || string(raw) == "null" {
 		return nil
 	}
@@ -197,8 +185,8 @@ func parseGradient(raw json.RawMessage, vars map[string]color.RGBA, st *ControlS
 	return nil
 }
 
-func copyControls(m map[string]ControlStyle) map[string]ControlStyle {
-	out := make(map[string]ControlStyle, len(m))
+func copyControls(m map[string]core.ControlStyle) map[string]core.ControlStyle {
+	out := make(map[string]core.ControlStyle, len(m))
 	for k, v := range m {
 		out[k] = v
 	}
@@ -226,7 +214,7 @@ func sortedControlKeys(m map[string]controlFile) []string {
 //go:embed themes/*.json
 var builtinThemes embed.FS
 
-func builtin(name string) Theme {
+func builtin(name string) core.Theme {
 	data, err := builtinThemes.ReadFile("themes/" + name + ".json")
 	if err != nil {
 		panic(err)
@@ -238,15 +226,10 @@ func builtin(name string) Theme {
 	return th
 }
 
-// Style is the style of the named control with the theme's global
-// switches applied: corners scaled by RadiusScale, and gradients dropped
-// when NoGradients is set (the control then shows its own Bg color). A control the theme does not list is plain.
-func (t Theme) Style(name string) ControlStyle {
-	st := t.Controls[name]
-	st.Radius *= t.RadiusScale
-	if t.NoGradients {
-		st.Shade = 0
-		st.Top, st.Bottom = nil, nil
-	}
-	return st
-}
+// Dark is warm near-black surfaces with a rose accent. The palette and
+// control styles live in themes/dark.json.
+func Dark() core.Theme { return builtin("dark") }
+
+// Light is cream surfaces, white lists and a burgundy accent
+// (themes/light.json).
+func Light() core.Theme { return builtin("light") }

@@ -6,6 +6,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/respview"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/theming"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
 	"github.com/hajimehoshi/ebiten/v2"
 	"io"
@@ -322,7 +323,7 @@ func TestSettingsMenuOpensChangesThemeAndSaves(t *testing.T) {
 	if a.settings.Theme != "light" || !a.menu {
 		t.Fatalf("theme %q, menu open %v (choosing must keep it open)", a.settings.Theme, a.menu)
 	}
-	if a.ctx.Th.Color(core.Bg) != core.Light().Color(core.Bg) {
+	if a.ctx.Th.Color(core.Bg) != theming.Light().Color(core.Bg) {
 		t.Fatal("the live theme did not change")
 	}
 	saved, err := settings.Load(path)
@@ -405,7 +406,7 @@ func TestSettingsStartFromTheSavedChoice(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if a.ctx.Th.Color(core.Bg) != core.Light().Color(core.Bg) || a.ctx.Th.FontSize != 13 || !a.menu {
+	if a.ctx.Th.Color(core.Bg) != theming.Light().Color(core.Bg) || a.ctx.Th.FontSize != 13 || !a.menu {
 		t.Fatalf("theme/size/menu not restored: font %v menu %v", a.ctx.Th.FontSize, a.menu)
 	}
 }
@@ -2886,12 +2887,12 @@ func typeColor(a *App, tok core.Token, row int, text string) {
 
 func TestContrastChooserStrengthensTheColorsAndIsSaved(t *testing.T) {
 	a, path := openSettingsMenu(t)
-	before := core.ContrastRatio(a.ctx.Th.Color(core.Selection), a.ctx.Th.Color(core.Text))
+	before := theming.ContrastRatio(a.ctx.Th.Color(core.Selection), a.ctx.Th.Color(core.Text))
 	click(a, contrastHighX, contrastRowY)
 	if a.settings.Contrast != "high" {
 		t.Fatalf("Contrast = %q", a.settings.Contrast)
 	}
-	after := core.ContrastRatio(a.ctx.Th.Color(core.Selection), a.ctx.Th.Color(core.Text))
+	after := theming.ContrastRatio(a.ctx.Th.Color(core.Selection), a.ctx.Th.Color(core.Text))
 	if after < appearance.HighRatio-0.01 || after <= before {
 		t.Fatalf("selection contrast %.2f -> %.2f", before, after)
 	}
@@ -2899,7 +2900,7 @@ func TestContrastChooserStrengthensTheColorsAndIsSaved(t *testing.T) {
 		t.Fatalf("saved %+v", saved)
 	}
 	click(a, contrastNormalX, contrastRowY)
-	if a.settings.Contrast != "normal" || core.ContrastRatio(a.ctx.Th.Color(core.Selection), a.ctx.Th.Color(core.Text)) != before {
+	if a.settings.Contrast != "normal" || theming.ContrastRatio(a.ctx.Th.Color(core.Selection), a.ctx.Th.Color(core.Text)) != before {
 		t.Fatal("back to normal restores the default colors")
 	}
 }
@@ -2949,7 +2950,7 @@ func TestResetButtonsRestoreTheDefaults(t *testing.T) {
 	typeColor(a, core.Selection, 0, "#223344")
 	typeColor(a, core.FindMatch, 1, "#334455")
 	click(a, colorResetX, colorRow0Y)
-	if a.ctx.Th.Color(core.Selection) != def || a.colorInput(core.Selection).Text != core.FormatHex(def) {
+	if a.ctx.Th.Color(core.Selection) != def || a.colorInput(core.Selection).Text != theming.FormatHex(def) {
 		t.Fatalf("selection %v, field %q", a.ctx.Th.Color(core.Selection), a.colorInput(core.Selection).Text)
 	}
 	if a.ctx.Th.Color(core.FindMatch) != core.RGB(0x334455) {
@@ -2973,7 +2974,7 @@ func TestSwitchingThemeShowsThatThemesColorsAndKeepsEachThemesOverrides(t *testi
 	if a.ctx.Th.Color(core.Selection) != appearance.ThemeFor("light", "medium").Color(core.Selection) {
 		t.Fatal("the dark override must not leak into the light theme")
 	}
-	if a.colorInput(core.Selection).Text != core.FormatHex(appearance.ThemeFor("light", "medium").Color(core.Selection)) {
+	if a.colorInput(core.Selection).Text != theming.FormatHex(appearance.ThemeFor("light", "medium").Color(core.Selection)) {
 		t.Fatalf("the field must show the light theme's color, got %q", a.colorInput(core.Selection).Text)
 	}
 	click(a, 584, themeRowY) // back to Dark
@@ -2997,7 +2998,7 @@ func TestColorsAreRestoredAtStart(t *testing.T) {
 	if a.ctx.Th.Color(core.Accent) != core.RGB(0xaaccee) {
 		t.Fatalf("accent = %v", a.ctx.Th.Color(core.Accent))
 	}
-	if core.ContrastRatio(a.ctx.Th.Color(core.Selection), a.ctx.Th.Color(core.Text)) < appearance.HighRatio-0.01 {
+	if theming.ContrastRatio(a.ctx.Th.Color(core.Selection), a.ctx.Th.Color(core.Text)) < appearance.HighRatio-0.01 {
 		t.Fatal("high contrast is applied at start")
 	}
 }

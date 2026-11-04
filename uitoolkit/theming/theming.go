@@ -128,8 +128,8 @@ type Prefs struct {
 // Builtins are the toolkit's own dark and light themes.
 func Builtins() []Choice {
 	return []Choice{
-		{"dark", "Dark", core.Dark},
-		{"light", "Light", core.Light},
+		{"dark", "Dark", Dark},
+		{"light", "Light", Light},
 	}
 }
 
@@ -218,7 +218,7 @@ func (c *Catalog) Theme(p Prefs) core.Theme {
 	if p.Contrast == "high" {
 		strong := map[core.Token]color.RGBA{}
 		for _, cc := range CustomColors {
-			strong[cc.Token] = core.EnsureContrast(th.Color(cc.Token), th.Color(cc.Text), HighRatio)
+			strong[cc.Token] = EnsureContrast(th.Color(cc.Token), th.Color(cc.Text), HighRatio)
 		}
 		th = th.With(strong)
 	}
@@ -229,8 +229,8 @@ func (c *Catalog) Theme(p Prefs) core.Theme {
 		if !ok {
 			continue
 		}
-		col, err := core.ParseHex(hex)
-		if err != nil || core.ContrastRatio(col, th.Color(cc.Text)) < need {
+		col, err := ParseHex(hex)
+		if err != nil || ContrastRatio(col, th.Color(cc.Text)) < need {
 			continue
 		}
 		overrides[cc.Token] = col
@@ -259,7 +259,7 @@ func (c *Catalog) LoadUser(dir string) (themes map[string]Choice, problems []str
 			problems = append(problems, fmt.Sprintf("theme %s: %v", id, err))
 			continue
 		}
-		baseID, err := core.ThemeExtends(data)
+		baseID, err := ThemeExtends(data)
 		if err != nil {
 			problems = append(problems, fmt.Sprintf("theme %s: %v", id, err))
 			continue
@@ -272,7 +272,7 @@ func (c *Catalog) LoadUser(dir string) (themes map[string]Choice, problems []str
 			problems = append(problems, fmt.Sprintf("theme %s extends unknown theme %q", id, baseID))
 			continue
 		}
-		th, err := core.ParseTheme(data, &base)
+		th, err := ParseTheme(data, &base)
 		if err != nil {
 			problems = append(problems, fmt.Sprintf("theme %s: %v", id, err))
 			continue

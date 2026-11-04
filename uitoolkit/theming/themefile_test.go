@@ -1,6 +1,7 @@
-package core
+package theming
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"image/color"
 	"strings"
 	"testing"
@@ -22,15 +23,15 @@ func TestParseThemeResolvesVariablesAlphaAndControls(t *testing.T) {
 	if th.Name != "t" || th.FontSize != 16 || th.RadiusScale != 1 {
 		t.Fatalf("header: %+v", th)
 	}
-	if th.Color(Accent) != RGB(0xe88aa6) || th.Color(Shadow) != (color.RGBA{R: 0x10, G: 0x20, B: 0x30, A: 0x40}) {
-		t.Fatalf("colors: %+v %+v", th.Color(Accent), th.Color(Shadow))
+	if th.Color(core.Accent) != core.RGB(0xe88aa6) || th.Color(core.Shadow) != (color.RGBA{R: 0x10, G: 0x20, B: 0x30, A: 0x40}) {
+		t.Fatalf("colors: %+v %+v", th.Color(core.Accent), th.Color(core.Shadow))
 	}
 	b := th.Controls["button"]
-	if b.Radius != 6 || b.Shade != 0.1 || b.Border != Border || b.Top != nil {
+	if b.Radius != 6 || b.Shade != 0.1 || b.Border != core.Border || b.Top != nil {
 		t.Fatalf("button: %+v", b)
 	}
 	h := th.Controls["hero"]
-	if h.Top == nil || *h.Top != RGB(0xe88aa6) || *h.Bottom != RGB(0) || !h.HasGradient() {
+	if h.Top == nil || *h.Top != core.RGB(0xe88aa6) || *h.Bottom != core.RGB(0) || !h.HasGradient() {
 		t.Fatalf("hero: %+v", h)
 	}
 	if th.Controls["flat"].HasGradient() {
@@ -44,13 +45,13 @@ func TestParseThemeMergesOverABase(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if th.Color(Accent) != RGB(0x112233) || th.Color(Bg) != base.Color(Bg) {
+	if th.Color(core.Accent) != core.RGB(0x112233) || th.Color(core.Bg) != base.Color(core.Bg) {
 		t.Fatal("a color is replaced, the rest kept")
 	}
 	if th.Controls["button"].Radius != 2 || th.Controls["primary"].Radius != base.Controls["primary"].Radius {
 		t.Fatal("a control is replaced, the rest kept")
 	}
-	if base.Color(Accent) == RGB(0x112233) || base.Controls["button"].Radius == 2 {
+	if base.Color(core.Accent) == core.RGB(0x112233) || base.Controls["button"].Radius == 2 {
 		t.Fatal("the base theme must not change")
 	}
 }
@@ -90,7 +91,7 @@ func TestStyleAppliesRoundingScaleAndTheGradientSwitch(t *testing.T) {
 	if th.Style("button").HasGradient() || th.Style("hero").HasGradient() {
 		t.Fatal("gradients off must flatten every control")
 	}
-	if (Dark()).Style("not-a-control") != (ControlStyle{}) {
+	if (Dark()).Style("not-a-control") != (core.ControlStyle{}) {
 		t.Fatal("an unlisted control is plain")
 	}
 }

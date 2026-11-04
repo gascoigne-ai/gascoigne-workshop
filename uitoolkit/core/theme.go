@@ -125,10 +125,28 @@ func RGB(hex uint32) color.RGBA {
 // than its soft web borders, so a native window's edges can be seen
 // (see TestNonTextElementsAreVisible).
 
-// Dark is warm near-black surfaces with a rose accent. The palette and
-// control styles live in themes/dark.json.
-func Dark() Theme { return builtin("dark") }
+// ControlStyle is how one kind of control is drawn. The zero value is a
+// flat, square control with no outline of its own.
+type ControlStyle struct {
+	Radius float64 // corner radius in logical pixels; larger than half the height makes a pill
+	Shade  float64 // gradient strength: the fill mixes toward white above and black below
+	Top    *color.RGBA
+	Bottom *color.RGBA // explicit gradient ends, replacing Shade
+	Border Token       // outline color token, "" for none
+}
 
-// Light is cream surfaces, white lists and a burgundy accent
-// (themes/light.json).
-func Light() Theme { return builtin("light") }
+// HasGradient reports whether the control's fill is a gradient.
+func (s ControlStyle) HasGradient() bool { return s.Shade > 0 || s.Top != nil }
+
+// Style is the style of the named control with the theme's global
+// switches applied: corners scaled by RadiusScale, and gradients dropped
+// when NoGradients is set (the control then shows its own Bg color). A control the theme does not list is plain.
+func (t Theme) Style(name string) ControlStyle {
+	st := t.Controls[name]
+	st.Radius *= t.RadiusScale
+	if t.NoGradients {
+		st.Shade = 0
+		st.Top, st.Bottom = nil, nil
+	}
+	return st
+}

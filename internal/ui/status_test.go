@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/theming"
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/appearance"
@@ -20,7 +21,7 @@ func TestStatusPillsFollowTheDashboardBadges(t *testing.T) {
 		th := appearance.ThemeFor(id, "medium")
 		for _, status := range []int{200, 301, 404} {
 			fg, bg := statusPill(status)
-			if r := core.ContrastRatio(th.Color(fg), th.Color(bg)); r < 3.5 {
+			if r := theming.ContrastRatio(th.Color(fg), th.Color(bg)); r < 3.5 {
 				t.Errorf("%s: pill %d text %.2f:1 on its background", id, status, r)
 			}
 		}

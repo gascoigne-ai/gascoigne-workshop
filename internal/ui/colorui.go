@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/appearance"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/theming"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -19,7 +20,7 @@ func (a *App) colorInput(tok w.Token) *TextField {
 		a.colorInputs = map[w.Token]*TextField{}
 	}
 	in := new(TextField)
-	*in = NewTextField(w.FormatHex(a.ctx.Th.Color(tok)))
+	*in = NewTextField(theming.FormatHex(a.ctx.Th.Color(tok)))
 	a.colorInputs[tok] = in
 	return in
 }
@@ -40,13 +41,13 @@ func (a *App) setColorNote(tok w.Token, note string) {
 // (with the ratio), is refused and nothing changes.
 func (a *App) colorEdited(c appearance.CustomColor) {
 	text := a.colorInput(c.Token).Text
-	col, err := w.ParseHex(text)
+	col, err := theming.ParseHex(text)
 	if err != nil {
 		a.setColorNote(c.Token, "Use #rrggbb")
 		return
 	}
 	need := appearance.RequiredRatio(a.settings.Contrast)
-	if ratio := w.ContrastRatio(col, a.ctx.Th.Color(c.Text)); ratio < need {
+	if ratio := theming.ContrastRatio(col, a.ctx.Th.Color(c.Text)); ratio < need {
 		a.setColorNote(c.Token, fmt.Sprintf("Contrast %.1f:1 is below %.1f:1", ratio, need))
 		return
 	}
@@ -59,7 +60,7 @@ func (a *App) colorEdited(c appearance.CustomColor) {
 		if s.Colors[id] == nil {
 			s.Colors[id] = map[string]string{}
 		}
-		s.Colors[id][string(c.Token)] = w.FormatHex(col)
+		s.Colors[id][string(c.Token)] = theming.FormatHex(col)
 	})
 }
 

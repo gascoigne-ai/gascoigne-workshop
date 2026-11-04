@@ -7,7 +7,7 @@
 //
 // The packages, each depending only on the ones listed before it:
 //
-//   - core: the fundamentals: theme files and tokens, colors, the drawing
+//   - core: the fundamentals: the Theme type and color tokens, the drawing
 //     context (Ctx), pointer and keyboard input, the clipboard.
 //   - vml: a Go-native view DSL (Row, Col, Stack, Scroll, Split, Table,
 //     Tabs...) that lays out, updates and draws a tree of elements, with
@@ -15,7 +15,8 @@
 //     Field, Area and Code.
 //   - engine: frame pacing and input helpers for Ebitengine games.
 //   - component: HTML-style templates that build the same vml trees.
-//   - theming: turns appearance preferences into a core.Theme.
+//   - theming: everything that makes a core.Theme: the JSON theme files, the
+//     dark and light palettes, color math, and appearance preferences.
 //
 // Applications import the toolkit packages directly; nothing under this
 // directory may import the application's internal packages

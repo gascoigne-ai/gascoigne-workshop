@@ -1,4 +1,4 @@
-status: todo
+status: done (option A)
 
 # Move the theme files out of core into a dedicated package
 

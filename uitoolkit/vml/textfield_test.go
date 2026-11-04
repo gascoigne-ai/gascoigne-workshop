@@ -1,6 +1,9 @@
 package vml
 
-import "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+import (
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/theming"
+)
 
 import "testing"
 
@@ -293,7 +296,7 @@ func TestMaskedFieldHidesItsTextAndNeverCopiesIt(t *testing.T) {
 		t.Fatalf("an unmasked field displays its text, got %q", plain.Display())
 	}
 
-	c, err := core.NewCtx(core.Dark())
+	c, err := core.NewCtx(theming.Dark())
 	if err != nil {
 		t.Fatal(err)
 	}

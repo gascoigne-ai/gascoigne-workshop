@@ -2,6 +2,7 @@ package theming_test
 
 import (
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/theming"
 )
@@ -21,4 +22,12 @@ func Example() {
 	// dark
 	// dark - Dark
 	// light - Light
+}
+
+// A theme is data: colors by token name, resolved to RGBA.
+func ExampleTheme_Color() {
+	th := theming.Dark()
+	c := th.Color(core.Accent)
+	fmt.Println(theming.FormatHex(c) != "")
+	// Output: true
 }

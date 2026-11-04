@@ -1,6 +1,7 @@
 package core
 
 import (
+	"image/color"
 	"testing"
 	"time"
 )
@@ -38,7 +39,7 @@ func TestInputScaled(t *testing.T) {
 
 // Text measures in logical pixels, so layouts do not shift with the scale.
 func TestMeasureIsScaleStable(t *testing.T) {
-	c, err := NewCtx(Dark())
+	c, err := NewCtx(testTheme())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -98,7 +99,7 @@ func TestClickCountingNeedsSpeedAndPlace(t *testing.T) {
 // Edges land on device pixels and neighbours share them at every scale.
 func TestSnapSharesEdgesAndLinesAreWholePixels(t *testing.T) {
 	for _, scale := range []float64{1, 1.25, 1.5, 1.75, 2, 2.5, 3} {
-		c, err := NewCtx(Dark())
+		c, err := NewCtx(testTheme())
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -124,5 +125,14 @@ func TestCtrlHomeEndMapToDocMovement(t *testing.T) {
 		if got, ok := ctrlEdit(in); !ok || got != want {
 			t.Errorf("ctrlEdit(%v) = %v %v, want %v", in, got, ok, want)
 		}
+	}
+}
+
+// testTheme is the smallest theme a Ctx can be built from; the real
+// palettes live in uitoolkit/theming, which imports this package.
+func testTheme() Theme {
+	return Theme{
+		Colors:   map[Token]color.RGBA{Text: RGB(0xffffff), Bg: RGB(0x101010)},
+		FontSize: 14, SmallSize: 12, MonoSize: 13,
 	}
 }

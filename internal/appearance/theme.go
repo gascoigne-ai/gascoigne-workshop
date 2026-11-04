@@ -31,15 +31,15 @@ func appTheme(id string, base core.Theme) core.Theme {
 	if err != nil {
 		panic(err)
 	}
-	th, err := core.ParseTheme(data, &base)
+	th, err := theming.ParseTheme(data, &base)
 	if err != nil {
 		panic("app theme " + id + ": " + err.Error())
 	}
 	return th
 }
 
-func DarkTheme() core.Theme  { return appTheme("dark", core.Dark()) }
-func LightTheme() core.Theme { return appTheme("light", core.Light()) }
+func DarkTheme() core.Theme  { return appTheme("dark", theming.Dark()) }
+func LightTheme() core.Theme { return appTheme("light", theming.Light()) }
 
 // The mechanics (choices, text sizes, corners, contrast, color overrides,
 // the user's theme folder) are the toolkit's, in uitoolkit/theming. This
