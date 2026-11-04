@@ -217,7 +217,7 @@ func OnClick(f func()) Option { return func(e *El) { e.onClick = f } }
 // OnMiddleClick runs f when the element is middle-clicked.
 func OnMiddleClick(f func()) Option { return func(e *El) { e.onMiddle = f } }
 
-// OnHeldOver runs f every frame the left button is held with the pointer
+// OnHeldOver runs f every frame the left or middle button is held with the pointer
 // over the element, for drag and drop: the element under the dragged
 // item learns the item is over it.
 func OnHeldOver(f func()) Option { return func(e *El) { e.onHeldOver = f } }

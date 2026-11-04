@@ -921,11 +921,35 @@ func TestClickingTheLabelSelectsAndDoesNotClose(t *testing.T) {
 	}
 }
 
-func TestMiddleClickClosesATab(t *testing.T) {
+func TestMiddleButtonDragReordersTabsAndDoesNotCloseThem(t *testing.T) {
+	a := twoTabs(t)
+	first := a.tabs[0]
+	l0, _ := a.tabX(0)
+	l1, w1 := a.tabX(1)
+	a.step(widget.Input{X: l0 + 20, Y: tabStripY, MiddleClick: true, MiddleHeld: true}) // press the first tab
+	if len(a.tabs) != 2 {
+		t.Fatal("a middle press must not close the tab any more")
+	}
+	a.step(widget.Input{X: l1 + w1/2, Y: tabStripY, MiddleHeld: true}) // drag over the second
+	if a.tabs[1] != first {
+		t.Fatal("the dragged tab must move to the second place")
+	}
+	a.step(widget.Input{X: l1 + w1/2, Y: tabStripY}) // release
+	if a.dragTab != -1 {
+		t.Fatalf("dragTab = %d after the release", a.dragTab)
+	}
+	a.step(widget.Input{X: l0 + 20, Y: tabStripY, MiddleHeld: true}) // held again, but not pressed on a tab
+	if a.tabs[1] != first {
+		t.Fatal("after the release, moving must not drag")
+	}
+}
+
+func TestMiddleClickWithoutMovingLeavesTheTabsAlone(t *testing.T) {
 	a := twoTabs(t)
 	left, width := a.tabX(1)
-	a.step(widget.Input{X: left + width/2, Y: tabStripY, MiddleClick: true})
-	if len(a.tabs) != 1 || a.cur().req.Name != "Search Repos" {
+	a.step(widget.Input{X: left + width/2, Y: tabStripY, MiddleClick: true, MiddleHeld: true})
+	a.step(widget.Input{X: left + width/2, Y: tabStripY})
+	if len(a.tabs) != 2 || a.cur().req.Name != "Repository Info" {
 		t.Fatalf("%d tabs, current %q", len(a.tabs), a.cur().req.Name)
 	}
 }

@@ -333,7 +333,7 @@ func (a *App) step(in widget.Input) {
 	a.ctx.Tick++
 	a.ctx.In = in
 	a.ctx.Cursor = widget.CursorDefault
-	if !in.Held {
+	if !in.Held && !in.MiddleHeld {
 		a.dragTab = -1
 	}
 	drained := a.drain()

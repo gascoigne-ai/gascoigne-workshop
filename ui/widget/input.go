@@ -12,6 +12,7 @@ type Input struct {
 	X, Y        int
 	Click       bool    // left button went down this frame
 	MiddleClick bool    // middle button went down this frame
+	MiddleHeld  bool    // middle button is down
 	RightClick  bool    // right button went down this frame
 	Wheel       float64 // vertical wheel movement, positive = up
 	WheelX      float64 // horizontal wheel movement (a touchpad's two-finger swipe), positive = right
@@ -87,6 +88,7 @@ func ReadInput() Input {
 		Tab:         inpututil.IsKeyJustPressed(ebiten.KeyTab),
 		Held:        ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft),
 		MiddleClick: inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonMiddle),
+		MiddleHeld:  ebiten.IsMouseButtonPressed(ebiten.MouseButtonMiddle),
 		RightClick:  inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonRight),
 		Keys:        inpututil.AppendJustPressedKeys(nil),
 		Shift:       ebiten.IsKeyPressed(ebiten.KeyShift),

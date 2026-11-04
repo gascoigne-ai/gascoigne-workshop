@@ -176,7 +176,7 @@ func (a *App) requestTabs() Node {
 				look = []Item{Bg(w.Bg), Reveal()}
 			}
 			grab := OnClick(func() { a.active, a.dragTab = i, i })
-			return Row(append(look, OnMiddleClick(func() { a.closeTab(i) }),
+			return Row(append(look, OnMiddleClick(func() { a.active, a.dragTab = i, i }), // a middle drag reorders, like a left one
 				OnRightClick(func(x, y int) { a.openMenu(x, y, a.tabMenuItems(i)) }),
 				Row(PadL(14), Gap(8), AlignItems(AlignBaseline), grab, OnHeldOver(func() { a.dragOver(i) }),
 					Text(requestBadge(t.req.Protocol, t.req.Method), Small(), Color(methodToken(t.req.Method)), W(tabBadgeW)),
