@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 func build(t *testing.T, src string, sc Scope) vml.Node {
@@ -23,12 +23,12 @@ func build(t *testing.T, src string, sc Scope) vml.Node {
 
 // The same view written in Go and as a template dumps identically, laid out.
 func TestTemplateMatchesTheGoDSL(t *testing.T) {
-	c, err := widget.NewCtx(widget.Dark())
+	c, err := core.NewCtx(core.Dark())
 	if err != nil {
 		t.Fatal(err)
 	}
 	clicked := false
-	goView := vml.Row(vml.H(28), vml.PadX(12), vml.Gap(12), vml.Bg(widget.Frame), vml.Control("statusbar"), vml.BorderTop(widget.Border),
+	goView := vml.Row(vml.H(28), vml.PadX(12), vml.Gap(12), vml.Bg(core.Frame), vml.Control("statusbar"), vml.BorderTop(core.Border),
 		vml.Text("Ready", vml.Small(), vml.Muted(), vml.Ellipsis(), vml.Grow(1)),
 		vml.Text("v0.1.0", vml.Small(), vml.Muted(), vml.OnClick(func() { clicked = true })),
 		vml.Button("Go", vml.W(60), vml.Tooltip("Go on")),

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 func withColors(theme string, colors map[string]string) settings.Settings {
@@ -33,11 +33,11 @@ func TestThemeWithDefaultsEqualsThemeFor(t *testing.T) {
 
 func TestAnOverrideAppliesToItsThemeOnly(t *testing.T) {
 	s := withColors("dark", map[string]string{"selection": "#223344"})
-	if got := ThemeWith(s).Color(widget.Selection); got != widget.RGB(0x223344) {
+	if got := ThemeWith(s).Color(core.Selection); got != core.RGB(0x223344) {
 		t.Fatalf("dark selection = %v", got)
 	}
 	s.Theme = "light" // the override belongs to dark
-	if got := ThemeWith(s).Color(widget.Selection); got != ThemeFor("light", "medium").Color(widget.Selection) {
+	if got := ThemeWith(s).Color(core.Selection); got != ThemeFor("light", "medium").Color(core.Selection) {
 		t.Fatalf("light selection = %v, want the light default", got)
 	}
 }
@@ -52,13 +52,13 @@ func TestBadOverridesAreIgnored(t *testing.T) {
 		"find-active": "#6e5a10", // the default value: fine
 	})
 	th := ThemeWith(s)
-	if th.Color(widget.Selection) != def.Color(widget.Selection) || th.Color(widget.FindMatch) != def.Color(widget.FindMatch) {
+	if th.Color(core.Selection) != def.Color(core.Selection) || th.Color(core.FindMatch) != def.Color(core.FindMatch) {
 		t.Fatal("unparsable and unreadable overrides must be ignored")
 	}
-	if th.Color(widget.Text) != def.Color(widget.Text) || th.Color("nonsense") != def.Color(widget.Text) {
+	if th.Color(core.Text) != def.Color(core.Text) || th.Color("nonsense") != def.Color(core.Text) {
 		t.Fatal("only the listed tokens can be overridden")
 	}
-	if th.Color(widget.FindActive) != widget.RGB(0x6e5a10) {
+	if th.Color(core.FindActive) != core.RGB(0x6e5a10) {
 		t.Fatal("a valid override applies")
 	}
 }
@@ -69,12 +69,12 @@ func TestHighContrastMakesTheListedColorsReadableInEveryTheme(t *testing.T) {
 		s.Theme, s.Contrast = tc.ID, "high"
 		th := ThemeWith(s)
 		for _, c := range CustomColors {
-			if r := widget.ContrastRatio(th.Color(c.Token), th.Color(c.Text)); r < HighRatio-0.01 {
+			if r := core.ContrastRatio(th.Color(c.Token), th.Color(c.Text)); r < HighRatio-0.01 {
 				t.Errorf("%s: %s has contrast %.2f, want at least %.1f", tc.ID, c.Token, r, HighRatio)
 			}
 		}
 		normal := ThemeFor(tc.ID, s.TextSize)
-		if th.Color(widget.Bg) != normal.Color(widget.Bg) || th.Color(widget.Text) != normal.Color(widget.Text) {
+		if th.Color(core.Bg) != normal.Color(core.Bg) || th.Color(core.Text) != normal.Color(core.Text) {
 			t.Errorf("%s: high contrast must not touch the rest of the palette", tc.ID)
 		}
 	}
@@ -83,17 +83,17 @@ func TestHighContrastMakesTheListedColorsReadableInEveryTheme(t *testing.T) {
 func TestHighContrastRaisesTheBarForOverrides(t *testing.T) {
 	// readable in normal contrast (>= 4.5) but not in high (< 7)
 	hex := "#5a5a2a"
-	c, _ := widget.ParseHex(hex)
-	r := widget.ContrastRatio(c, ThemeFor("dark", "medium").Color(widget.Text))
+	c, _ := core.ParseHex(hex)
+	r := core.ContrastRatio(c, ThemeFor("dark", "medium").Color(core.Text))
 	if r < NormalRatio || r >= HighRatio {
 		t.Fatalf("test setup: ratio %.2f", r)
 	}
 	s := withColors("dark", map[string]string{"selection": hex})
-	if got := ThemeWith(s).Color(widget.Selection); got != c {
+	if got := ThemeWith(s).Color(core.Selection); got != c {
 		t.Fatalf("normal contrast accepts it: %v", got)
 	}
 	s.Contrast = "high"
-	if got := ThemeWith(s).Color(widget.Selection); got == c {
+	if got := ThemeWith(s).Color(core.Selection); got == c {
 		t.Fatal("high contrast must refuse it and keep the strengthened default")
 	}
 }
@@ -104,7 +104,7 @@ func TestUnknownThemeIDFallsBackLikeThemeFor(t *testing.T) {
 	}
 	s := withColors("dark", map[string]string{"accent": "#aaccee"})
 	s.Theme = "neon" // resolves to dark, so dark's overrides apply
-	if got := ThemeWith(s).Color(widget.Accent); got != (color.RGBA{0xaa, 0xcc, 0xee, 0xff}) {
+	if got := ThemeWith(s).Color(core.Accent); got != (color.RGBA{0xaa, 0xcc, 0xee, 0xff}) {
 		t.Fatalf("accent = %v", got)
 	}
 }
@@ -122,7 +122,7 @@ func TestCustomColorLookup(t *testing.T) {
 			t.Errorf("CustomColorOf(%s) = %v %v", c.Token, got, ok)
 		}
 	}
-	if _, ok := CustomColorOf(widget.Text); ok {
+	if _, ok := CustomColorOf(core.Text); ok {
 		t.Fatal("text is not customizable")
 	}
 }

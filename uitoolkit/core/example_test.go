@@ -1,15 +1,15 @@
-package widget_test
+package core_test
 
 import (
 	"fmt"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 // Widgets keep their state in plain structs the application owns; a
 // field edits its text in place.
 func ExampleTextField() {
-	f := widget.NewTextField("hello")
+	f := core.NewTextField("hello")
 	f.SelectAll()
 	f.Insert("world")
 	fmt.Println(f.Text)
@@ -18,8 +18,8 @@ func ExampleTextField() {
 
 // A theme is data: colors by token name, resolved to RGBA.
 func ExampleTheme_Color() {
-	th := widget.Dark()
-	c := th.Color(widget.Accent)
-	fmt.Println(widget.FormatHex(c) != "")
+	th := core.Dark()
+	c := th.Color(core.Accent)
+	fmt.Println(core.FormatHex(c) != "")
 	// Output: true
 }

@@ -7,8 +7,8 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // bindingOf is the effective binding of a shortcut: the user's override
@@ -66,7 +66,7 @@ func defaultBinding(s shortcut) engine.Binding {
 // else reacts to the keys. Modifier keys alone are waited out, Escape
 // cancels, Backspace unbinds, and a refused combination leaves the
 // recording running with a note.
-func (a *App) recordKey(in widget.Input) bool {
+func (a *App) recordKey(in core.Input) bool {
 	id := a.recording
 	if id == "" {
 		return false

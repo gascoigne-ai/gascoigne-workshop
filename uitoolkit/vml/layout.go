@@ -3,21 +3,21 @@ package vml
 import (
 	"github.com/hajimehoshi/ebiten/v2"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 // plain is a behavior with no content of its own.
 type plain struct{}
 
-func (plain) measure(*El, *widget.Ctx, int) (int, int) { return 0, 0 }
-func (plain) layout(*El, *widget.Ctx)                  {}
-func (plain) draw(*El, *widget.Ctx, *ebiten.Image)     {}
-func (plain) update(*El, *widget.Ctx)                  {}
+func (plain) measure(*El, *core.Ctx, int) (int, int) { return 0, 0 }
+func (plain) layout(*El, *core.Ctx)                  {}
+func (plain) draw(*El, *core.Ctx, *ebiten.Image)     {}
+func (plain) update(*El, *core.Ctx)                  {}
 
 // inner is the rect inside the padding.
-func (e *El) inner() widget.Rect {
+func (e *El) inner() core.Rect {
 	r := e.rect
-	return widget.Rect{
+	return core.Rect{
 		X: r.X + e.padL, Y: r.Y + e.padT,
 		W: max(r.W-e.padL-e.padR, 0), H: max(r.H-e.padT-e.padB, 0),
 	}
@@ -25,7 +25,7 @@ func (e *El) inner() widget.Rect {
 
 // size is the element's wanted size: its fixed size where set, else
 // what its behavior measures.
-func (e *El) size(c *widget.Ctx, maxW int) (w, h int) {
+func (e *El) size(c *core.Ctx, maxW int) (w, h int) {
 	w, h = e.b.measure(e, c, maxW)
 	if e.w > 0 {
 		w = e.w
@@ -36,7 +36,7 @@ func (e *El) size(c *widget.Ctx, maxW int) (w, h int) {
 	return e.clampSize(w, h)
 }
 
-func (e *El) place(c *widget.Ctx, r widget.Rect) {
+func (e *El) place(c *core.Ctx, r core.Rect) {
 	e.rect = r
 	e.b.layout(e, c)
 }
@@ -92,14 +92,14 @@ func (f flow) marginCrossLead(k *El) int {
 
 // baseline is the distance from a child's top to its text baseline; a
 // child that is not text has its bottom edge as baseline.
-func (f flow) baseline(k *El, c *widget.Ctx, hugCross int) int {
+func (f flow) baseline(k *El, c *core.Ctx, hugCross int) int {
 	if _, isText := k.b.(textB); isText {
 		return c.Ascent(k.face(c))
 	}
 	return hugCross
 }
 
-func (f flow) measure(e *El, c *widget.Ctx, maxW int) (int, int) {
+func (f flow) measure(e *El, c *core.Ctx, maxW int) (int, int) {
 	inW := max(maxW-e.padL-e.padR, 0)
 	var main, cross, n, above, below int
 	for _, k := range e.kids {
@@ -127,7 +127,7 @@ func (f flow) measure(e *El, c *widget.Ctx, maxW int) (int, int) {
 	return cross + e.padL + e.padR, main + e.padT + e.padB
 }
 
-func (f flow) layout(e *El, c *widget.Ctx) {
+func (f flow) layout(e *El, c *core.Ctx) {
 	in := e.inner()
 	avail, crossAvail := f.main(in.W, in.H), f.cross(in.W, in.H)
 
@@ -178,7 +178,7 @@ func (f flow) layout(e *El, c *widget.Ctx) {
 	}
 	for i, k := range e.kids {
 		if k.hidden || k.fl.on {
-			k.rect = widget.Rect{}
+			k.rect = core.Rect{}
 			continue
 		}
 		outer := sizes[i]
@@ -239,7 +239,7 @@ func (f flow) justified(e *El, pos, free, n int) (start, extra int) {
 // crossPlacement is a child's size across the axis and its offset from
 // the start of the container's inner area, margins excluded from the
 // size and included in the offset by the caller.
-func (f flow) crossPlacement(e *El, k *El, c *widget.Ctx, crossAvail, hug, baseMax, lineTop int) (size, off int) {
+func (f flow) crossPlacement(e *El, k *El, c *core.Ctx, crossAvail, hug, baseMax, lineTop int) (size, off int) {
 	avail := max(crossAvail-f.marginCross(k), 0)
 	fixed := k.w
 	if f.horiz {
@@ -282,11 +282,11 @@ func (f flow) crossPlacement(e *El, k *El, c *widget.Ctx, crossAvail, hug, baseM
 
 // rect builds a child's rect from its main-axis start and size and its
 // cross-axis offset and size.
-func (f flow) rect(in widget.Rect, mainPos, crossOff, mainSize, crossSize int) widget.Rect {
+func (f flow) rect(in core.Rect, mainPos, crossOff, mainSize, crossSize int) core.Rect {
 	if f.horiz {
-		return widget.Rect{X: mainPos, Y: in.Y + crossOff, W: mainSize, H: crossSize}
+		return core.Rect{X: mainPos, Y: in.Y + crossOff, W: mainSize, H: crossSize}
 	}
-	return widget.Rect{X: in.X + crossOff, Y: mainPos, W: crossSize, H: mainSize}
+	return core.Rect{X: in.X + crossOff, Y: mainPos, W: crossSize, H: mainSize}
 }
 
 // dropOptional hides optional children when everything does not fit.
@@ -315,7 +315,7 @@ func (e *El) dropOptional(f flow, sizes []int, avail int) {
 // unless it floats.
 type stack struct{ plain }
 
-func (stack) measure(e *El, c *widget.Ctx, maxW int) (int, int) {
+func (stack) measure(e *El, c *core.Ctx, maxW int) (int, int) {
 	var w, h int
 	for _, k := range e.kids {
 		if k.fl.on {
@@ -327,7 +327,7 @@ func (stack) measure(e *El, c *widget.Ctx, maxW int) (int, int) {
 	return w + e.padL + e.padR, h + e.padT + e.padB
 }
 
-func (stack) layout(e *El, c *widget.Ctx) {
+func (stack) layout(e *El, c *core.Ctx) {
 	in := e.inner()
 	for _, k := range e.kids {
 		if !k.fl.on {
@@ -355,10 +355,10 @@ func Stack(items ...Item) *El { return newEl(stack{}, items) }
 func Spacer(opts ...Option) *El { return newEl(plain{}, with([]Item{Grow(1)}, opts)) }
 
 // HRule is a one-pixel horizontal line in the border color.
-func HRule() *El { return newEl(plain{}, []Item{H(1), Bg(widget.Border)}) }
+func HRule() *El { return newEl(plain{}, []Item{H(1), Bg(core.Border)}) }
 
 // VRule is a one-pixel vertical line in the border color.
-func VRule() *El { return newEl(plain{}, []Item{W(1), Bg(widget.Border)}) }
+func VRule() *El { return newEl(plain{}, []Item{W(1), Bg(core.Border)}) }
 
 // VRuleInset is a vertical line shortened by inset pixels at both ends,
 // for dividing the chips of a bar.
@@ -374,7 +374,7 @@ func with(base []Item, opts []Option) []Item {
 }
 
 // floatRect places a floating child in the stack's inner rect.
-func floatRect(k *El, in widget.Rect, w, h int) widget.Rect {
+func floatRect(k *El, in core.Rect, w, h int) core.Rect {
 	switch k.fl.mode {
 	case floatPoint:
 		x, y := in.X+k.fl.right, in.Y+k.fl.top // floatRight holds x, floatTop holds y
@@ -384,9 +384,9 @@ func floatRect(k *El, in widget.Rect, w, h int) widget.Rect {
 		if y+h > in.Y+in.H {
 			y -= h // no room below: open above
 		}
-		return widget.Rect{X: max(x, in.X), Y: max(y, in.Y), W: w, H: h}
+		return core.Rect{X: max(x, in.X), Y: max(y, in.Y), W: w, H: h}
 	case floatMiddle:
-		return widget.Rect{X: in.X + (in.W-w)/2, Y: in.Y + (in.H-h)/2, W: w, H: h}
+		return core.Rect{X: in.X + (in.W-w)/2, Y: in.Y + (in.H-h)/2, W: w, H: h}
 	}
-	return widget.Rect{X: in.X + in.W - k.fl.right - w, Y: in.Y + k.fl.top, W: w, H: h}
+	return core.Rect{X: in.X + in.W - k.fl.right - w, Y: in.Y + k.fl.top, W: w, H: h}
 }

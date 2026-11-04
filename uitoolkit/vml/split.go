@@ -3,7 +3,7 @@ package vml
 import (
 	"github.com/hajimehoshi/ebiten/v2"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 // handleSlop is how many pixels each side of the divider still grab it.
@@ -23,7 +23,7 @@ type splitB struct {
 	plain
 	state   *SplitState
 	def     float64
-	divider widget.Rect
+	divider core.Rect
 }
 
 func (s *splitB) axis(e *El) (origin, total int) {
@@ -48,7 +48,7 @@ func (s *splitB) firstSize(e *El, avail int) int {
 	return min(max(px, e.split.minFirst), hi)
 }
 
-func (s *splitB) layout(e *El, c *widget.Ctx) {
+func (s *splitB) layout(e *El, c *core.Ctx) {
 	if len(e.kids) != 2 {
 		return
 	}
@@ -57,37 +57,37 @@ func (s *splitB) layout(e *El, c *widget.Ctx) {
 	avail := max(total-1, 0)
 	px := min(s.firstSize(e, avail), avail)
 	if e.split.vertical {
-		s.divider = widget.Rect{X: r.X, Y: r.Y + px, W: r.W, H: 1}
-		e.kids[0].place(c, widget.Rect{X: r.X, Y: r.Y, W: r.W, H: px})
-		e.kids[1].place(c, widget.Rect{X: r.X, Y: r.Y + px + 1, W: r.W, H: avail - px})
+		s.divider = core.Rect{X: r.X, Y: r.Y + px, W: r.W, H: 1}
+		e.kids[0].place(c, core.Rect{X: r.X, Y: r.Y, W: r.W, H: px})
+		e.kids[1].place(c, core.Rect{X: r.X, Y: r.Y + px + 1, W: r.W, H: avail - px})
 		return
 	}
-	s.divider = widget.Rect{X: r.X + px, Y: r.Y, W: 1, H: r.H}
-	e.kids[0].place(c, widget.Rect{X: r.X, Y: r.Y, W: px, H: r.H})
-	e.kids[1].place(c, widget.Rect{X: r.X + px + 1, Y: r.Y, W: avail - px, H: r.H})
+	s.divider = core.Rect{X: r.X + px, Y: r.Y, W: 1, H: r.H}
+	e.kids[0].place(c, core.Rect{X: r.X, Y: r.Y, W: px, H: r.H})
+	e.kids[1].place(c, core.Rect{X: r.X + px + 1, Y: r.Y, W: avail - px, H: r.H})
 }
 
-func (s *splitB) draw(e *El, c *widget.Ctx, dst *ebiten.Image) {
-	c.Fill(dst, s.divider, c.Col(widget.Border))
+func (s *splitB) draw(e *El, c *core.Ctx, dst *ebiten.Image) {
+	c.Fill(dst, s.divider, c.Col(core.Border))
 }
 
 // handle is the area that grabs the divider, a little wider than it.
-func (s *splitB) handle(e *El) widget.Rect {
+func (s *splitB) handle(e *El) core.Rect {
 	d := s.divider
 	if e.split.vertical {
-		return widget.Rect{X: d.X, Y: d.Y - handleSlop, W: d.W, H: 1 + 2*handleSlop}
+		return core.Rect{X: d.X, Y: d.Y - handleSlop, W: d.W, H: 1 + 2*handleSlop}
 	}
-	return widget.Rect{X: d.X - handleSlop, Y: d.Y, W: 1 + 2*handleSlop, H: d.H}
+	return core.Rect{X: d.X - handleSlop, Y: d.Y, W: 1 + 2*handleSlop, H: d.H}
 }
 
-func (s *splitB) update(e *El, c *widget.Ctx) {
+func (s *splitB) update(e *El, c *core.Ctx) {
 	if len(e.kids) != 2 {
 		return
 	}
 	in, st := c.In, s.state
-	cursor, pointer, divPos := widget.CursorResizeH, in.X, s.divider.X
+	cursor, pointer, divPos := core.CursorResizeH, in.X, s.divider.X
 	if e.split.vertical {
-		cursor, pointer, divPos = widget.CursorResizeV, in.Y, s.divider.Y
+		cursor, pointer, divPos = core.CursorResizeV, in.Y, s.divider.Y
 	}
 	origin, total := s.axis(e)
 	avail := max(total-1, 1)

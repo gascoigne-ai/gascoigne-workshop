@@ -16,9 +16,9 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/state"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 const (
@@ -49,37 +49,37 @@ func next(order []string, cur string) string {
 // reqTab is one open request with its editor and response state.
 type reqTab struct {
 	req                   *model.Request
-	url                   widget.TextField
+	url                   core.TextField
 	paneTab               int
 	respTab               int
 	resp                  *model.Response
-	view                  widget.CodeView  // response body
-	bodyView              widget.CodeView  // request body, read-only
-	body                  *widget.TextArea // request body editor
-	reqScroll, respScroll vml.ScrollState  // scroll of the table and note panes
-	reqTabsX, respTabsX   vml.ScrollState  // sideways scroll of the two pane tab strips
+	view                  core.CodeView   // response body
+	bodyView              core.CodeView   // request body, read-only
+	body                  *core.TextArea  // request body editor
+	reqScroll, respScroll vml.ScrollState // scroll of the table and note panes
+	reqTabsX, respTabsX   vml.ScrollState // sideways scroll of the two pane tab strips
 	sending               bool
-	hist                  map[string]*rowHistory       // undo history of each table
-	saved                 model.Request                // the request as it was when opened or last saved
-	timeout               widget.TextField             // the request's timeout seconds, as typed
-	cancel                context.CancelFunc           // stops the running request
-	auth                  map[string]*widget.TextField // Auth pane inputs by field id, created on first use
-	showSecrets           bool                         // show masked credential fields
-	raw                   bool                         // show the response body as received, not pretty-printed
-	compact               bool                         // show JSON compactly, as a browser's viewer does
-	compactAll            []widget.Line                // the unfiltered compact lines, kept while a search filters the view
-	findOpen              bool                         // the find bar is showing
-	find                  widget.TextField             // the search text
-	matchIdx              int                          // the active match, -1 for none
-	seq                   int                          // numbers the sends, so a late result of an old one is ignored
-	sess                  proto.Session                // the open connection of a socket tab
-	connecting            bool                         // a connect is in progress
-	wsGen                 int                          // numbers the connects, so a late answer of an old one is ignored
-	wsCancel              context.CancelFunc           // ends the timeout of the connect in progress
-	wsView                widget.CodeView              // the message log
-	msg                   widget.TextField             // the message being composed
-	reconnect             bool                         // reopen a dropped connection
-	wantOpen              bool                         // the user wants the connection open, so a drop is retried
+	hist                  map[string]*rowHistory     // undo history of each table
+	saved                 model.Request              // the request as it was when opened or last saved
+	timeout               core.TextField             // the request's timeout seconds, as typed
+	cancel                context.CancelFunc         // stops the running request
+	auth                  map[string]*core.TextField // Auth pane inputs by field id, created on first use
+	showSecrets           bool                       // show masked credential fields
+	raw                   bool                       // show the response body as received, not pretty-printed
+	compact               bool                       // show JSON compactly, as a browser's viewer does
+	compactAll            []core.Line                // the unfiltered compact lines, kept while a search filters the view
+	findOpen              bool                       // the find bar is showing
+	find                  core.TextField             // the search text
+	matchIdx              int                        // the active match, -1 for none
+	seq                   int                        // numbers the sends, so a late result of an old one is ignored
+	sess                  proto.Session              // the open connection of a socket tab
+	connecting            bool                       // a connect is in progress
+	wsGen                 int                        // numbers the connects, so a late answer of an old one is ignored
+	wsCancel              context.CancelFunc         // ends the timeout of the connect in progress
+	wsView                core.CodeView              // the message log
+	msg                   core.TextField             // the message being composed
+	reconnect             bool                       // reopen a dropped connection
+	wantOpen              bool                       // the user wants the connection open, so a drop is retried
 }
 
 // responseViews are the values of the response view setting.
@@ -111,7 +111,7 @@ func (a *App) makeTab(req *model.Request) *reqTab {
 }
 
 func newTab(req *model.Request) *reqTab {
-	t := &reqTab{req: req, url: widget.NewTextField(req.URL)}
+	t := &reqTab{req: req, url: core.NewTextField(req.URL)}
 	if req.BodyType == "" { // requests from before body types: infer one
 		req.BodyType = model.BodyNone
 		if req.Body != "" {
@@ -122,8 +122,8 @@ func newTab(req *model.Request) *reqTab {
 	t.matchIdx = -1
 	t.wsView.Follow = true
 	t.wsCancel = func() {}
-	t.timeout = widget.NewTextField(timeoutText(req.TimeoutSec))
-	t.body = widget.NewTextArea(req.Body)
+	t.timeout = core.NewTextField(timeoutText(req.TimeoutSec))
+	t.body = core.NewTextArea(req.Body)
 	return t
 }
 
@@ -135,7 +135,7 @@ type sendResult struct {
 
 // App is the whole window. It implements ebiten.Game.
 type App struct {
-	ctx      *widget.Ctx
+	ctx      *core.Ctx
 	reg      proto.Registry
 	col      model.Collection
 	expanded map[*model.Folder]bool
@@ -148,36 +148,36 @@ type App struct {
 	shot     screenshot
 
 	settings         settings.Settings
-	settingsPath     string                             // "" keeps settings in memory only
-	menu             bool                               // settings menu is open
-	edit             *cellEdit                          // the table cell being edited, if any
-	dragTab          int                                // index of the tab being dragged, -1 when none
-	ctxMenu          *contextMenu                       // the open context menu, if any
-	bulk             *bulkEdit                          // the table in bulk-edit mode, if any
-	menuScroll       vml.ScrollState                    // scroll of the settings dialog's page
-	settingsCat      string                             // the settings page shown
-	tabsScroll       vml.ScrollState                    // sideways scroll of the request tab strip
-	scaleSlider      vml.SliderState                    // drag of the interface scale slider
-	dirty            bool                               // something changed since the last draw
-	tps              int                                // the update rate last set
-	lastIn           widget.Input                       // the previous frame's input
-	pacer            engine.Pacer                       // update rate from idle time
-	recording        string                             // the action whose key is being recorded, "" when none
-	recordNotes      map[string]string                  // why a recorded key was refused, by action id
-	colorInputs      map[widget.Token]*widget.TextField // hex fields of the settings menu
-	colorNotes       map[widget.Token]string            // why a typed color was refused
-	colWidths        map[string]*vml.ColumnWidths       // the column sizes of each table, by name
-	rowSel           *rowSelection                      // the table row the keyboard acts on
-	selected         any                                // the tree node last clicked or moved to: a *Folder or *Request
-	treeFocus        bool                               // the tree has the keyboard
-	filter           widget.TextField                   // the sidebar filter
-	dragNode         any                                // the tree node being dragged, nil when none
-	pressedFolder    *model.Folder                      // the folder row the button went down on, toggled on release there
-	dropTarget       any                                // the node the pointer is over while dragging
-	dialog           *dialog                            // the open dialog, if any
+	settingsPath     string                         // "" keeps settings in memory only
+	menu             bool                           // settings menu is open
+	edit             *cellEdit                      // the table cell being edited, if any
+	dragTab          int                            // index of the tab being dragged, -1 when none
+	ctxMenu          *contextMenu                   // the open context menu, if any
+	bulk             *bulkEdit                      // the table in bulk-edit mode, if any
+	menuScroll       vml.ScrollState                // scroll of the settings dialog's page
+	settingsCat      string                         // the settings page shown
+	tabsScroll       vml.ScrollState                // sideways scroll of the request tab strip
+	scaleSlider      vml.SliderState                // drag of the interface scale slider
+	dirty            bool                           // something changed since the last draw
+	tps              int                            // the update rate last set
+	lastIn           core.Input                     // the previous frame's input
+	pacer            engine.Pacer                   // update rate from idle time
+	recording        string                         // the action whose key is being recorded, "" when none
+	recordNotes      map[string]string              // why a recorded key was refused, by action id
+	colorInputs      map[core.Token]*core.TextField // hex fields of the settings menu
+	colorNotes       map[core.Token]string          // why a typed color was refused
+	colWidths        map[string]*vml.ColumnWidths   // the column sizes of each table, by name
+	rowSel           *rowSelection                  // the table row the keyboard acts on
+	selected         any                            // the tree node last clicked or moved to: a *Folder or *Request
+	treeFocus        bool                           // the tree has the keyboard
+	filter           core.TextField                 // the sidebar filter
+	dragNode         any                            // the tree node being dragged, nil when none
+	pressedFolder    *model.Folder                  // the folder row the button went down on, toggled on release there
+	dropTarget       any                            // the node the pointer is over while dragging
+	dialog           *dialog                        // the open dialog, if any
 	toasts           []toast
 	now              func() time.Time // the clock, replaced in tests
-	sampler          widget.Sampler
+	sampler          core.Sampler
 	treeScroll       vml.ScrollState
 	sidebarSplit     vml.SplitState // width of the collections sidebar
 	paneSplit        vml.SplitState // request pane share of the request/response area
@@ -216,7 +216,7 @@ func NewApp(opts Options) (*App, error) {
 	themes, themeProblems := appearance.LoadUserThemes(opts.ThemesDir)
 	appearance.SetUserThemes(themes)
 	th := appearance.ThemeWith(st)
-	ctx, err := widget.NewCtx(th)
+	ctx, err := core.NewCtx(th)
 	if err != nil {
 		return nil, err
 	}
@@ -365,10 +365,10 @@ func (a *App) apply(r sendResult) {
 }
 
 // cursorShapes maps the cursor widgets ask for to the window system's.
-var cursorShapes = map[widget.Cursor]ebiten.CursorShapeType{
-	widget.CursorDefault: ebiten.CursorShapeDefault,
-	widget.CursorResizeH: ebiten.CursorShapeEWResize,
-	widget.CursorResizeV: ebiten.CursorShapeNSResize,
+var cursorShapes = map[core.Cursor]ebiten.CursorShapeType{
+	core.CursorDefault: ebiten.CursorShapeDefault,
+	core.CursorResizeH: ebiten.CursorShapeEWResize,
+	core.CursorResizeV: ebiten.CursorShapeNSResize,
 }
 
 // Layout implements ebiten.Game. The UI is laid out in logical pixels
@@ -395,10 +395,10 @@ func (a *App) Update() error {
 // step runs one frame with the given input: it applies finished sends,
 // builds the view, lays it out and lets it react. Handlers in the view
 // change App state. Tests drive the app through step without a window.
-func (a *App) step(in widget.Input) {
+func (a *App) step(in core.Input) {
 	a.ctx.Tick++
 	a.ctx.In = in
-	a.ctx.Cursor = widget.CursorDefault
+	a.ctx.Cursor = core.CursorDefault
 	if !in.Held && !in.MiddleHeld {
 		a.dragTab = -1
 	}

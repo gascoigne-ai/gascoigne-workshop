@@ -46,7 +46,7 @@ package vml
 import (
 	"github.com/hajimehoshi/ebiten/v2"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 // Node is an element of the view tree. Constructors return *El so
@@ -58,18 +58,18 @@ type Node = *El
 // and how it reacts to input. Kinds are values of this interface, not
 // switch cases.
 type behavior interface {
-	measure(e *El, c *widget.Ctx, maxW int) (w, h int)
-	layout(e *El, c *widget.Ctx)
-	draw(e *El, c *widget.Ctx, dst *ebiten.Image)
-	update(e *El, c *widget.Ctx)
+	measure(e *El, c *core.Ctx, maxW int) (w, h int)
+	layout(e *El, c *core.Ctx)
+	draw(e *El, c *core.Ctx, dst *ebiten.Image)
+	update(e *El, c *core.Ctx)
 }
 
 // El is one element: a behavior plus the attributes shared by all.
 type El struct {
 	b     behavior
 	kids  []*El
-	rect  widget.Rect // set by layout
-	hover bool        // the pointer was over this element at the last draw, and hover was not blocked
+	rect  core.Rect // set by layout
+	hover bool      // the pointer was over this element at the last draw, and hover was not blocked
 
 	w, h             int // fixed size; 0 = content size
 	grow             float64
@@ -78,19 +78,19 @@ type El struct {
 	padR, padB       int
 	gap              int
 
-	bg, border, borderTop, borderBottom, borderLeft widget.Token
+	bg, border, borderTop, borderBottom, borderLeft core.Token
 	borderInset                                     int // BorderLeft stops this far from the top and bottom
-	hoverBg                                         widget.Token
+	hoverBg                                         core.Token
 	shadow, clip, lighten                           bool
 
 	text                             string
-	fg                               widget.Token
+	fg                               core.Token
 	small, mono, bold, ellipsis, ctr bool
 	placeholder                      string
 	segments                         func(string) []Seg
-	field                            *widget.TextField
-	view                             *widget.CodeView
-	area                             *widget.TextArea
+	field                            *core.TextField
+	view                             *core.CodeView
+	area                             *core.TextArea
 	icon                             iconKind
 	on                               bool
 
@@ -98,7 +98,7 @@ type El struct {
 	onTab                      func(back bool)
 	onMiddle, onHeldOver       func()
 
-	edgeTok                      widget.Token // Edges: the color of the outline
+	edgeTok                      core.Token // Edges: the color of the outline
 	edgeTop, edgeLeft, edgeRight bool
 	fieldInset                   int    // Field padding when not the default
 	control                      string // the theme control style that shapes and shades this element
@@ -205,19 +205,19 @@ func Gap(n int) Option { return func(e *El) { e.gap = n } }
 // Appearance options.
 
 // Bg fills the element with a theme color.
-func Bg(t widget.Token) Option { return func(e *El) { e.bg = t } }
+func Bg(t core.Token) Option { return func(e *El) { e.bg = t } }
 
 // Border outlines the element.
-func Border(t widget.Token) Option { return func(e *El) { e.border = t } }
+func Border(t core.Token) Option { return func(e *El) { e.border = t } }
 
 // BorderTop draws a hairline along the top edge.
-func BorderTop(t widget.Token) Option { return func(e *El) { e.borderTop = t } }
+func BorderTop(t core.Token) Option { return func(e *El) { e.borderTop = t } }
 
 // BorderBottom draws a hairline along the bottom edge, under the
 // background and below the children.
 // BorderLeft draws a one-pixel line down the element's left edge, to
 // separate neighbours such as tabs or table columns; BorderInset shortens it.
-func BorderLeft(t widget.Token) Option { return func(e *El) { e.borderLeft = t } }
+func BorderLeft(t core.Token) Option { return func(e *El) { e.borderLeft = t } }
 
 // Separator draws the soft hairline between neighbours (tabs, table
 // columns) on the element's left edge when show is set, so the first one
@@ -225,7 +225,7 @@ func BorderLeft(t widget.Token) Option { return func(e *El) { e.borderLeft = t }
 func Separator(show bool, inset int) Option {
 	return func(e *El) {
 		if show {
-			e.borderLeft, e.borderInset = widget.BorderSoft, inset
+			e.borderLeft, e.borderInset = core.BorderSoft, inset
 		}
 	}
 }
@@ -234,7 +234,7 @@ func Separator(show bool, inset int) Option {
 func BorderInset(n int) Option { return func(e *El) { e.borderInset = n } }
 
 // BorderBottom draws a hairline along the bottom edge.
-func BorderBottom(t widget.Token) Option { return func(e *El) { e.borderBottom = t } }
+func BorderBottom(t core.Token) Option { return func(e *El) { e.borderBottom = t } }
 
 // Control names the theme style that draws this element: its corner
 // radius, gradient fill and outline come from Theme.Controls[name], so
@@ -244,7 +244,7 @@ func Control(name string) Option { return func(e *El) { e.control = name } }
 // Edges outlines the element on its top, left and right sides with a
 // two-pixel line, leaving the bottom open: the look of the open tab,
 // which runs into the pane below it.
-func Edges(t widget.Token, top, left, right bool) Option {
+func Edges(t core.Token, top, left, right bool) Option {
 	return func(e *El) { e.edgeTok, e.edgeTop, e.edgeLeft, e.edgeRight = t, top, left, right }
 }
 
@@ -253,7 +253,7 @@ func Edges(t widget.Token, top, left, right bool) Option {
 func Tooltip(text string) Option { return func(e *El) { e.tip = text } }
 
 // HoverBg fills the element while the pointer is over it.
-func HoverBg(t widget.Token) Option { return func(e *El) { e.hoverBg = t } }
+func HoverBg(t core.Token) Option { return func(e *El) { e.hoverBg = t } }
 
 // Lighten brightens the background while the pointer is over it.
 func Lighten() Option { return func(e *El) { e.lighten = true } }

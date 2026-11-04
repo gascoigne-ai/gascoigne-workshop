@@ -3,7 +3,7 @@ package vml
 import (
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 // slide is a 50..200 slider with 100 in the middle, on a 200px track.
@@ -14,7 +14,7 @@ type slide struct {
 	root  *El
 }
 
-func newSlide(t *testing.T, value int, opts ...Option) (*slide, *widget.Ctx) {
+func newSlide(t *testing.T, value int, opts ...Option) (*slide, *core.Ctx) {
 	s := &slide{st: &SliderState{}}
 	items := append([]Option{W(200 + 2*sliderPad), H(20), OnSlideEnd(func(v int) { s.ended = append(s.ended, v) })}, opts...)
 	s.root = Col(Slider(s.st, 50, 200, 5, value, func(v int) { s.live = append(s.live, v) }, items...))
@@ -23,8 +23,8 @@ func newSlide(t *testing.T, value int, opts ...Option) (*slide, *widget.Ctx) {
 	return s, c
 }
 
-func (s *slide) at(c *widget.Ctx, x int, held, click bool) {
-	c.In = widget.Input{X: x, Y: 10, Click: click, Held: held}
+func (s *slide) at(c *core.Ctx, x int, held, click bool) {
+	c.In = core.Input{X: x, Y: 10, Click: click, Held: held}
 	Update(c, s.root)
 }
 
@@ -57,7 +57,7 @@ func TestSliderDragFollowsPointerMovementNotTheTrackPosition(t *testing.T) {
 	// the same pointer position would mean another fraction. Movement is
 	// what counts: 20 device px right of the press is +15 on this track.
 	s.root.kids[0].rect.X += 37
-	c.In = widget.Input{X: sliderPad + 120, Y: 10, Held: true}
+	c.In = core.Input{X: sliderPad + 120, Y: 10, Held: true}
 	Update(c, s.root)
 	if got := s.live[len(s.live)-1]; got != 140 {
 		t.Fatalf("live %v, want 140", s.live)
@@ -108,9 +108,9 @@ func TestSliderKeepsFollowingAPointerThatLeavesItsClippingContainer(t *testing.T
 	root := Col(Scroll(&ScrollState{}, H(20), W(216), slider)) // clips: a pointer outside is hidden from the slider
 	c := testCtx(t)
 	Layout(c, root, 400, 100)
-	c.In = widget.Input{X: sliderPad + 100, Y: 10, Click: true, Held: true}
+	c.In = core.Input{X: sliderPad + 100, Y: 10, Click: true, Held: true}
 	Update(c, root)
-	c.In = widget.Input{X: 380, Y: 90, Held: true} // far outside the scroller
+	c.In = core.Input{X: 380, Y: 90, Held: true} // far outside the scroller
 	Update(c, root)
 	if got := live[len(live)-1]; got != 200 {
 		t.Fatalf("live %v, want the maximum", live)

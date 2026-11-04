@@ -3,17 +3,17 @@ package vml
 import (
 	"github.com/hajimehoshi/ebiten/v2"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 // Layout places the tree in a w by h window.
-func Layout(c *widget.Ctx, root Node, w, h int) {
-	root.place(c, widget.Rect{W: w, H: h})
+func Layout(c *core.Ctx, root Node, w, h int) {
+	root.place(c, core.Rect{W: w, H: h})
 }
 
 // Update delivers this frame's input (c.In) to the tree, top-most
 // element first. It must follow Layout on the same tree.
-func Update(c *widget.Ctx, root Node) {
+func Update(c *core.Ctx, root Node) {
 	c.PointerX, c.PointerY = c.In.X, c.In.Y
 	root.update(c)
 	cycleFocus(c, root)
@@ -62,7 +62,7 @@ func collectFocusables(e *El, out []*El) []*El {
 // cycleFocus moves focus to the next focusable element in tree order on
 // Tab, or the previous one on Shift+Tab, wrapping at the ends. A focused
 // field that handles Tab itself (a table cell editor) keeps it.
-func cycleFocus(c *widget.Ctx, root Node) {
+func cycleFocus(c *core.Ctx, root Node) {
 	if !c.In.Tab || c.In.Ctrl {
 		return
 	}
@@ -98,7 +98,7 @@ func cycleFocus(c *widget.Ctx, root Node) {
 }
 
 // Draw paints the tree. It must follow Layout on the same tree.
-func Draw(c *widget.Ctx, root Node, dst *ebiten.Image) {
+func Draw(c *core.Ctx, root Node, dst *ebiten.Image) {
 	c.HoverOff = hasModal(root) // only the overlay's own elements react to the pointer
 	c.TipText = ""
 	root.draw(c, dst)
@@ -125,11 +125,11 @@ func hasModal(e *El) bool {
 // preUpdater is implemented by behaviors that must see the input before
 // their children do, to take a click away from them.
 type preUpdater interface {
-	preUpdate(e *El, c *widget.Ctx)
+	preUpdate(e *El, c *core.Ctx)
 }
 
 // update reports whether a modal element swallowed the input.
-func (e *El) update(c *widget.Ctx) bool {
+func (e *El) update(c *core.Ctx) bool {
 	if e.hidden {
 		return false
 	}
@@ -188,10 +188,10 @@ func (e *El) update(c *widget.Ctx) bool {
 // overDrawer is implemented by behaviors that paint over their children,
 // such as a scrollbar.
 type overDrawer interface {
-	drawOver(e *El, c *widget.Ctx, dst *ebiten.Image)
+	drawOver(e *El, c *core.Ctx, dst *ebiten.Image)
 }
 
-func (e *El) draw(c *widget.Ctx, dst *ebiten.Image) {
+func (e *El) draw(c *core.Ctx, dst *ebiten.Image) {
 	if e.hidden {
 		return
 	}
@@ -202,8 +202,8 @@ func (e *El) draw(c *widget.Ctx, dst *ebiten.Image) {
 	}
 	style := c.Th.Style(e.control)
 	if e.shadow {
-		sh := c.Col(widget.Shadow)
-		c.FillStyled(dst, widget.Rect{X: r.X + 4, Y: r.Y + 4, W: r.W, H: r.H}, sh, sh, style.Radius)
+		sh := c.Col(core.Shadow)
+		c.FillStyled(dst, core.Rect{X: r.X + 4, Y: r.Y + 4, W: r.W, H: r.H}, sh, sh, style.Radius)
 	}
 	over := c.Hovered(r)
 	e.hover = over
@@ -213,9 +213,9 @@ func (e *El) draw(c *widget.Ctx, dst *ebiten.Image) {
 	if e.bg != "" {
 		clr := c.Col(e.bg)
 		if e.lighten && over {
-			clr = widget.Lighten(clr)
+			clr = core.Lighten(clr)
 		}
-		top, bottom := widget.GradientFor(clr, style)
+		top, bottom := core.GradientFor(clr, style)
 		c.FillStyled(dst, r, top, bottom, style.Radius)
 	}
 	if e.hoverBg != "" && over {
@@ -254,13 +254,13 @@ func (e *El) draw(c *widget.Ctx, dst *ebiten.Image) {
 	if e.edgeTok != "" { // the open tab's outline: top, left and right, bottom left open
 		col := c.Col(e.edgeTok)
 		if e.edgeTop {
-			c.Fill(dst, widget.Rect{X: r.X, Y: r.Y, W: r.W, H: 2}, col)
+			c.Fill(dst, core.Rect{X: r.X, Y: r.Y, W: r.W, H: 2}, col)
 		}
 		if e.edgeLeft {
-			c.Fill(dst, widget.Rect{X: r.X, Y: r.Y, W: 2, H: r.H}, col)
+			c.Fill(dst, core.Rect{X: r.X, Y: r.Y, W: 2, H: r.H}, col)
 		}
 		if e.edgeRight {
-			c.Fill(dst, widget.Rect{X: r.X + r.W - 2, Y: r.Y, W: 2, H: r.H}, col)
+			c.Fill(dst, core.Rect{X: r.X + r.W - 2, Y: r.Y, W: 2, H: r.H}, col)
 		}
 	}
 }

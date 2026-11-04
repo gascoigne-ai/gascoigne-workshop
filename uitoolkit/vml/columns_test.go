@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 func sum(w []float64) (s float64) {
@@ -57,7 +57,7 @@ func TestResizePair(t *testing.T) {
 // The view is rebuilt after every change, as the app does each frame.
 type tableRig struct {
 	t        *testing.T
-	c        *widget.Ctx
+	c        *core.Ctx
 	widths   *ColumnWidths
 	editable bool
 	root     *El
@@ -77,7 +77,7 @@ func (r *tableRig) rebuild() {
 	Layout(r.c, r.root, 400, 400)
 }
 
-func (r *tableRig) input(in widget.Input) {
+func (r *tableRig) input(in core.Input) {
 	r.c.In = in
 	Update(r.c, r.root)
 	r.rebuild()
@@ -99,16 +99,16 @@ func TestDraggingAHeaderDividerResizesTheColumns(t *testing.T) {
 	if a, b := r.columnWidths(); a != 164 || b != 164 {
 		t.Fatalf("default widths %d %d", a, b)
 	}
-	r.input(widget.Input{X: 200, Y: 14, Click: true, Held: true})
-	r.input(widget.Input{X: 260, Y: 14, Held: true})
+	r.input(core.Input{X: 200, Y: 14, Click: true, Held: true})
+	r.input(core.Input{X: 260, Y: 14, Held: true})
 	if a, b := r.columnWidths(); a < 222 || a > 226 || a+b != 328 {
 		t.Fatalf("after dragging to x=260 the columns are %d and %d", a, b)
 	}
 	if len(widths.Weights) != 2 {
 		t.Fatalf("widths = %v", widths.Weights)
 	}
-	r.input(widget.Input{X: 260, Y: 14}) // release
-	r.input(widget.Input{X: 100, Y: 14, Held: true})
+	r.input(core.Input{X: 260, Y: 14}) // release
+	r.input(core.Input{X: 100, Y: 14, Held: true})
 	if a, _ := r.columnWidths(); a < 222 {
 		t.Fatalf("a released divider must not follow the pointer, first = %d", a)
 	}
@@ -117,8 +117,8 @@ func TestDraggingAHeaderDividerResizesTheColumns(t *testing.T) {
 func TestDividerDragStopsAtTheMinimumWidth(t *testing.T) {
 	var widths ColumnWidths
 	r := newRig(t, &widths, true)
-	r.input(widget.Input{X: 200, Y: 14, Click: true, Held: true})
-	r.input(widget.Input{X: 36, Y: 14, Held: true}) // all the way left
+	r.input(core.Input{X: 200, Y: 14, Click: true, Held: true})
+	r.input(core.Input{X: 36, Y: 14, Held: true}) // all the way left
 	if a, b := r.columnWidths(); a != MinColumnPx || b != 328-MinColumnPx {
 		t.Fatalf("columns %d and %d", a, b)
 	}
@@ -130,7 +130,7 @@ func TestDoubleClickOnADividerResetsTheWidths(t *testing.T) {
 	if a, _ := r.columnWidths(); a != 246 {
 		t.Fatalf("test setup: %d", a)
 	}
-	r.input(widget.Input{X: 36 + 246, Y: 14, Click: true, Held: true, Clicks: 2})
+	r.input(core.Input{X: 36 + 246, Y: 14, Click: true, Held: true, Clicks: 2})
 	if widths.Weights != nil {
 		t.Fatalf("widths = %v, want nil (the defaults)", widths.Weights)
 	}
@@ -142,8 +142,8 @@ func TestDoubleClickOnADividerResetsTheWidths(t *testing.T) {
 func TestReadOnlyTablesCanBeResizedToo(t *testing.T) {
 	var widths ColumnWidths
 	r := newRig(t, &widths, false) // columns start at x=0: 200 each
-	r.input(widget.Input{X: 200, Y: 14, Click: true, Held: true})
-	r.input(widget.Input{X: 300, Y: 14, Held: true})
+	r.input(core.Input{X: 200, Y: 14, Click: true, Held: true})
+	r.input(core.Input{X: 300, Y: 14, Held: true})
 	if a, _ := r.columnWidths(); a < 298 || a > 302 {
 		t.Fatalf("first = %d", a)
 	}
@@ -159,18 +159,18 @@ func TestDividerAsksForTheResizeCursorAndCellsStillClick(t *testing.T) {
 	c := testCtx(t)
 	Layout(c, root, 400, 400)
 
-	c.In = widget.Input{X: 200, Y: 14}
+	c.In = core.Input{X: 200, Y: 14}
 	Update(c, root)
-	if c.Cursor != widget.CursorResizeH {
+	if c.Cursor != core.CursorResizeH {
 		t.Fatalf("cursor %v over the divider", c.Cursor)
 	}
-	c.Cursor = widget.CursorDefault
-	c.In = widget.Input{X: 100, Y: 14}
+	c.Cursor = core.CursorDefault
+	c.In = core.Input{X: 100, Y: 14}
 	Update(c, root)
-	if c.Cursor != widget.CursorDefault {
+	if c.Cursor != core.CursorDefault {
 		t.Fatalf("cursor %v away from it", c.Cursor)
 	}
-	c.In = widget.Input{X: cellX0, Y: cellY(0), Click: true, Held: true}
+	c.In = core.Input{X: cellX0, Y: cellY(0), Click: true, Held: true}
 	Update(c, root)
 	if len(edits) != 1 {
 		t.Fatalf("a click in a cell still edits it, edits = %v", edits)
@@ -182,9 +182,9 @@ func TestTablesWithoutWidthsStateHaveNoDividers(t *testing.T) {
 	root := Col(Table(spec))
 	c := testCtx(t)
 	Layout(c, root, 400, 400)
-	c.In = widget.Input{X: 200, Y: 14, Click: true, Held: true}
+	c.In = core.Input{X: 200, Y: 14, Click: true, Held: true}
 	Update(c, root)
-	if c.Cursor != widget.CursorDefault {
+	if c.Cursor != core.CursorDefault {
 		t.Fatal("no divider without a Widths state")
 	}
 }

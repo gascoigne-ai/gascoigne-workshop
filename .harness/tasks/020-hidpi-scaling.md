@@ -16,5 +16,5 @@ Scaling is split between the `uiScale` setting (zoom), `ebiten.DeviceScaleFactor
 - `make check` passes; architecture.md updated.
 
 ## Progress
-- Done: one scale source in `widget.Ctx` (device scale x `uiScale`, set by `SetScale`); text measured in logical pixels; fills, outlines and 1 px lines snap their edges to device pixels (`Ctx.snap`) and lines are `Ctx.LineWidth()` whole pixels, so they stay sharp at 125%-175%; tests over fractional scales.
+- Done: one scale source in `core.Ctx` (device scale x `uiScale`, set by `SetScale`); text measured in logical pixels; fills, outlines and 1 px lines snap their edges to device pixels (`Ctx.snap`) and lines are `Ctx.LineWidth()` whole pixels, so they stay sharp at 125%-175%; tests over fractional scales.
 - Left: pointer positions are truncated to whole logical pixels (`Input.Scaled`) and the slider and tab pan still read device-relative `RawX/RawY`; per-monitor scale change while running; text face sizes at fractional scales; golden screenshots at 150%.

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/state"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 func stateApp(t *testing.T, path string) *App {
@@ -18,7 +18,7 @@ func stateApp(t *testing.T, path string) *App {
 		t.Fatal(err)
 	}
 	a.w, a.h = winW, winH
-	a.step(widget.Input{})
+	a.step(core.Input{})
 	return a
 }
 
@@ -120,14 +120,14 @@ func TestStateIsSavedAfterAQuietSpell(t *testing.T) {
 	a := stateApp(t, path)
 	clock := time.Unix(1000, 0)
 	a.now = func() time.Time { return clock }
-	a.step(widget.Input{})
+	a.step(core.Input{})
 	a.sidebarSplit.Size = 280
-	a.step(widget.Input{}) // change noticed, not yet written
+	a.step(core.Input{}) // change noticed, not yet written
 	if s, _ := state.Load(path); s.SidebarW != 0 {
 		t.Fatal("written before the debounce")
 	}
 	clock = clock.Add(2 * time.Second)
-	a.step(widget.Input{})
+	a.step(core.Input{})
 	if s, _ := state.Load(path); s.SidebarW != 280 {
 		t.Fatalf("not written after the debounce: %+v", s)
 	}

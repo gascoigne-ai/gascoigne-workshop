@@ -4,14 +4,14 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 // Button is an outlined chip with a centered label; it brightens on hover.
 func Button(label string, opts ...Option) *El {
 	return Row(with([]Item{
-		Bg(widget.Sunken), Control("button"), Lighten(),
-		Text(label, Center(), Grow(1), Color(widget.ChipText)),
+		Bg(core.Sunken), Control("button"), Lighten(),
+		Text(label, Center(), Grow(1), Color(core.ChipText)),
 	}, opts)...)
 }
 
@@ -19,16 +19,16 @@ func Button(label string, opts ...Option) *El {
 // background, lit softly under the pointer. It sizes to its label.
 func LinkButton(label string, opts ...Option) *El {
 	return Row(with([]Item{
-		PadX(8), HoverBg(widget.Hover),
-		Text(label, Center(), Color(widget.AccentLine)),
+		PadX(8), HoverBg(core.Hover),
+		Text(label, Center(), Color(core.AccentLine)),
 	}, opts)...)
 }
 
 // PrimaryButton is the accent-colored call-to-action variant of Button.
 func PrimaryButton(label string, opts ...Option) *El {
 	return Row(with([]Item{
-		Bg(widget.Accent), Control("primary"), Lighten(),
-		Text(label, Center(), Grow(1), Color(widget.AccentText)),
+		Bg(core.Accent), Control("primary"), Lighten(),
+		Text(label, Center(), Grow(1), Color(core.AccentText)),
 	}, opts)...)
 }
 
@@ -61,18 +61,18 @@ func tabItems(items []TabItem, active int, onSelect func(i int)) []Item {
 			If(it.Badge > 0, Text(strconv.Itoa(it.Badge), Small(), Muted())),
 		}
 		if i == active { // outlined top, left and right in the accent and open at the bottom, where the strip's line runs under the others
-			tab = append(tab, Bg(widget.Bg), Edges(widget.AccentLine, true, true, true), Reveal())
+			tab = append(tab, Bg(core.Bg), Edges(core.AccentLine, true, true, true), Reveal())
 		}
 		out[i] = Row(tab...)
 	}
 	return out
 }
 
-func tabColor(active bool) widget.Token {
+func tabColor(active bool) core.Token {
 	if active {
-		return widget.Text
+		return core.Text
 	}
-	return widget.Muted
+	return core.Muted
 }
 
 // TableRow is one row of a Table. Muted rows (disabled entries) are drawn dim.
@@ -146,7 +146,7 @@ func (t TableSpec) weights() []float64 {
 // the text, and what Enter and Tab do.
 type TableEdit struct {
 	Row, Col int
-	Field    *widget.TextField
+	Field    *core.TextField
 	OnEnter  func()
 	OnTab    func(back bool)
 	OnMenu   func(x, y int) // right click on the edit field
@@ -161,7 +161,7 @@ func Table(t TableSpec, opts ...Option) *El {
 		rows = append(append([]TableRow{}, rows...), TableRow{Cells: t.Placeholder, Muted: true})
 	}
 	return Col(with([]Item{
-		Bg(widget.Sunken), Control("table"),
+		Bg(core.Sunken), Control("table"),
 		tableHeader(t),
 		For(rows, func(i int, r TableRow) Node {
 			return tableRow(t, i, r, t.Editable && i == len(t.Rows), i == len(rows)-1)
@@ -173,7 +173,7 @@ func Table(t TableSpec, opts ...Option) *El {
 // tableHeader is the caption row; with a Widths state it carries the
 // draggable column dividers on top.
 func tableHeader(t TableSpec) Node {
-	header := Row(H(widget.RowH), Bg(widget.Panel), BorderBottom(widget.Border),
+	header := Row(H(core.RowH), Bg(core.Panel), BorderBottom(core.Border),
 		If(t.Editable, headerCheck(t)),
 		For(t.Columns, func(i int, name string) Node {
 			return Row(Grow(t.weight(i)), PadX(8), Separator(i > 0, 7),
@@ -184,7 +184,7 @@ func tableHeader(t TableSpec) Node {
 	if t.Widths == nil {
 		return header
 	}
-	return Stack(H(widget.RowH), header, newEl(colHandlesB{header: header, spec: t}, nil))
+	return Stack(H(core.RowH), header, newEl(colHandlesB{header: header, spec: t}, nil))
 }
 
 func headerCheck(t TableSpec) Node {
@@ -196,19 +196,19 @@ func headerCheck(t TableSpec) Node {
 }
 
 func tableRow(t TableSpec, i int, r TableRow, placeholder, last bool) Node {
-	clr := widget.Text
+	clr := core.Text
 	if r.Muted {
-		clr = widget.Muted
+		clr = core.Muted
 	}
 	actions := t.Editable && !placeholder
 	row := []Item{
-		H(widget.RowH),
+		H(core.RowH),
 		If(actions, Row(W(tableActionW), JustifyContent(JustifyCenter), OnClick(func() { t.OnToggle(i) }), Tooltip("Enable or disable this row"), Checkbox(r.Checked))),
 		If(placeholder, Row(W(tableActionW))),
 		For(r.Cells, func(j int, s string) Node {
 			cellClr := clr
 			if j == 0 && r.Flagged {
-				cellClr = widget.Error
+				cellClr = core.Error
 			}
 			return tableCell(t, i, j, s, cellClr)
 		}),
@@ -220,24 +220,24 @@ func tableRow(t TableSpec, i int, r TableRow, placeholder, last bool) Node {
 	}
 	switch {
 	case t.Selected != nil && *t.Selected == i && !placeholder:
-		row = append(row, Bg(widget.Selected))
+		row = append(row, Bg(core.Selected))
 	}
 	if !last { // hairlines between rows, as the dashboard's tables draw them
-		row = append(row, BorderBottom(widget.BorderSoft))
+		row = append(row, BorderBottom(core.BorderSoft))
 	}
 	if !placeholder {
-		row = append(row, HoverBg(widget.Hover)) // the row under the pointer
+		row = append(row, HoverBg(core.Hover)) // the row under the pointer
 	}
 	return Row(row...)
 }
 
 // tableCell is one cell: its text, or the edit field when it is being
 // edited. In an editable table a click on it asks to edit it.
-func tableCell(t TableSpec, row, col int, text string, clr widget.Token) Node {
+func tableCell(t TableSpec, row, col int, text string, clr core.Token) Node {
 	if e := t.Editing; e != nil && e.Row == row && e.Col == col {
 		// The field is inset in its cell so its rounded outline and focus ring have room.
 		return Row(Grow(t.weight(col)), PadX(3), PadY(3), Separator(col > 0, 0),
-			Field(e.Field, Grow(1), Bg(widget.Sunken), FieldPad(5) /* 3 + 5 = the 8 px of a shown cell, so the text does not move */, OnEnter(e.OnEnter), OnTab(e.OnTab), menuOption(e.OnMenu)),
+			Field(e.Field, Grow(1), Bg(core.Sunken), FieldPad(5) /* 3 + 5 = the 8 px of a shown cell, so the text does not move */, OnEnter(e.OnEnter), OnTab(e.OnTab), menuOption(e.OnMenu)),
 		)
 	}
 	items := []Item{Grow(t.weight(col)), PadX(8), Clip(), Text(text, Ellipsis(), Color(clr), Grow(1)), Separator(col > 0, 0)}
@@ -286,7 +286,7 @@ type colHandlesB struct {
 	spec   TableSpec
 }
 
-func (colHandlesB) measure(*El, *widget.Ctx, int) (int, int) { return 0, 0 }
+func (colHandlesB) measure(*El, *core.Ctx, int) (int, int) { return 0, 0 }
 
 func (h colHandlesB) cells() []*El {
 	off := 0
@@ -296,25 +296,25 @@ func (h colHandlesB) cells() []*El {
 	return h.header.kids[off : off+len(h.spec.Columns)]
 }
 
-func (h colHandlesB) update(e *El, c *widget.Ctx) {
+func (h colHandlesB) update(e *El, c *core.Ctx) {
 	st, in, cells := h.spec.Widths, c.In, h.cells()
 	if st.dragging {
 		if !in.Held {
 			st.dragging = false
 			return
 		}
-		c.Cursor = widget.CursorResizeH
+		c.Cursor = core.CursorResizeH
 		left, right := cells[st.divider].rect, cells[st.divider+1].rect
 		st.Weights = ResizePair(h.spec.weights(), st.divider, in.X-left.X-st.grab, left.W+right.W, MinColumnPx)
 		return
 	}
 	for i := 0; i < len(cells)-1; i++ {
 		x := cells[i].rect.X + cells[i].rect.W
-		grab := widget.Rect{X: x - handleSlop, Y: h.header.rect.Y, W: 1 + 2*handleSlop, H: h.header.rect.H}
+		grab := core.Rect{X: x - handleSlop, Y: h.header.rect.Y, W: 1 + 2*handleSlop, H: h.header.rect.H}
 		if !in.Over(grab) {
 			continue
 		}
-		c.Cursor = widget.CursorResizeH
+		c.Cursor = core.CursorResizeH
 		if in.Click && in.Clicks >= 2 {
 			st.Weights = nil // back to the defaults
 		} else if in.Click {

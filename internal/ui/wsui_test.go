@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto/ws"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 // echoServer is a WebSocket server that sends every message back.
@@ -39,7 +39,7 @@ func echoServer(t *testing.T) string {
 func until(t *testing.T, a *App, what string, cond func() bool) {
 	t.Helper()
 	for range 400 {
-		a.step(widget.Input{})
+		a.step(core.Input{})
 		if cond() {
 			return
 		}
@@ -64,7 +64,7 @@ func TestWebSocketTabConnectsSendsAndDisconnects(t *testing.T) {
 	tab := a.cur()
 	tab.req.Protocol = "websocket"
 	tab.req.URL = echoServer(t)
-	tab.url = widget.NewTextField(tab.req.URL)
+	tab.url = core.NewTextField(tab.req.URL)
 
 	a.send(tab) // the Send button of a socket connects
 	until(t, a, "connection", func() bool { return strings.Contains(logText(tab), "Connected") })
@@ -72,7 +72,7 @@ func TestWebSocketTabConnectsSendsAndDisconnects(t *testing.T) {
 		t.Fatal("no session after connecting")
 	}
 
-	tab.msg = widget.NewTextField("hello")
+	tab.msg = core.NewTextField("hello")
 	a.sendMessage(tab)
 	until(t, a, "echo", func() bool { return strings.Contains(logText(tab), "↓ hello") })
 	if !strings.Contains(logText(tab), "↑ hello") {
@@ -146,7 +146,7 @@ func TestWebSocketReconnectsAfterTheServerClosesWhenAsked(t *testing.T) {
 	a.send(tab) // a deliberate disconnect must not reconnect
 	until(t, a, "close", func() bool { return tab.sess == nil })
 	time.Sleep(100 * time.Millisecond)
-	a.step(widget.Input{})
+	a.step(core.Input{})
 	if tab.sess != nil || tab.connecting || conns.Load() != 2 {
 		t.Fatalf("reconnected after a disconnect: %d connections", conns.Load())
 	}
@@ -169,7 +169,7 @@ func TestWebSocketWithoutReconnectStaysClosed(t *testing.T) {
 	a.send(tab)
 	until(t, a, "close", func() bool { return strings.Contains(logText(tab), "Closed by server") && tab.sess == nil })
 	time.Sleep(100 * time.Millisecond)
-	a.step(widget.Input{})
+	a.step(core.Input{})
 	if conns.Load() != 1 {
 		t.Fatalf("%d connections, want 1", conns.Load())
 	}

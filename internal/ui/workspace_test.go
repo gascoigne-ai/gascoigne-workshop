@@ -9,7 +9,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/store"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 func workspaceApp(t *testing.T, dir string, opts Options) *App {
@@ -21,7 +21,7 @@ func workspaceApp(t *testing.T, dir string, opts Options) *App {
 		t.Fatal(err)
 	}
 	a.w, a.h = winW, winH
-	a.step(widget.Input{})
+	a.step(core.Input{})
 	return a
 }
 
@@ -83,14 +83,14 @@ func TestEditsAreSavedAfterAPause(t *testing.T) {
 	a := workspaceApp(t, dir, Options{})
 	now := time.Now()
 	a.now = func() time.Time { return now }
-	a.step(widget.Input{})
+	a.step(core.Input{})
 	a.cur().req.Name = "Renamed"
-	a.step(widget.Input{})
+	a.step(core.Input{})
 	if got, _ := store.Load(dir); len(got.Requests) > 0 && got.Requests[0].Name == "Renamed" {
 		t.Fatal("saved before the pause")
 	}
 	now = now.Add(2 * time.Second)
-	a.step(widget.Input{})
+	a.step(core.Input{})
 	got, err := store.Load(dir)
 	if err != nil || got.Requests[0].Name != "Renamed" {
 		t.Fatalf("%+v %v", got, err)

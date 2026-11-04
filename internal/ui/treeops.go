@@ -8,7 +8,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 // ---- what the tree shows -------------------------------------------------
@@ -202,7 +202,7 @@ func (a *App) sidebarWidth() int {
 
 // treeKeys handles Up, Down, Enter, F2 and Delete while the tree has the
 // keyboard and nothing is being typed.
-func (a *App) treeKeys(in widget.Input) {
+func (a *App) treeKeys(in core.Input) {
 	if a.textFocused() || in.Click && in.X > a.sidebarWidth() {
 		a.treeFocus = false
 	}

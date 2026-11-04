@@ -40,8 +40,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // Scope holds what a template can read: strings, numbers, bools, lists
@@ -216,12 +216,12 @@ func floatAttr(f func(float64) vml.Option) func(string) (vml.Option, error) {
 	}
 }
 
-func tokenAttr(f func(widget.Token) vml.Option) func(string) (vml.Option, error) {
+func tokenAttr(f func(core.Token) vml.Option) func(string) (vml.Option, error) {
 	return func(v string) (vml.Option, error) {
 		if strings.TrimSpace(v) == "" {
 			return nil, errors.New("a color token is needed")
 		}
-		return f(widget.Token(strings.TrimSpace(v))), nil
+		return f(core.Token(strings.TrimSpace(v))), nil
 	}
 }
 

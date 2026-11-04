@@ -2,8 +2,8 @@ package ui
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
+	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
-	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // authChoice is one option of a chooser field.

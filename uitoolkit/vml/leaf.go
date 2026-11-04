@@ -9,13 +9,13 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 // text draws one line.
 type textB struct{ plain }
 
-func (e *El) face(c *widget.Ctx) *text.GoTextFace {
+func (e *El) face(c *core.Ctx) *text.GoTextFace {
 	switch {
 	case e.mono:
 		return c.F.Mono
@@ -29,25 +29,25 @@ func (e *El) face(c *widget.Ctx) *text.GoTextFace {
 	return c.F.UI
 }
 
-func (e *El) color(c *widget.Ctx, def widget.Token) widget.Token {
+func (e *El) color(c *core.Ctx, def core.Token) core.Token {
 	if e.fg != "" {
 		return e.fg
 	}
 	return def
 }
 
-func (textB) measure(e *El, c *widget.Ctx, _ int) (int, int) {
+func (textB) measure(e *El, c *core.Ctx, _ int) (int, int) {
 	face := e.face(c)
 	return c.Width(face, e.text), c.LineH(face)
 }
 
-func (textB) draw(e *El, c *widget.Ctx, dst *ebiten.Image) {
+func (textB) draw(e *El, c *core.Ctx, dst *ebiten.Image) {
 	face := e.face(c)
 	s := e.text
 	if e.ellipsis {
 		s = c.Ellipsize(face, s, e.rect.W)
 	}
-	clr := c.Col(e.color(c, widget.Text))
+	clr := c.Col(e.color(c, core.Text))
 	if e.ctr {
 		c.TextCenter(dst, face, s, e.rect, clr)
 		return
@@ -68,10 +68,10 @@ func Caption(s string, opts ...Option) *El {
 }
 
 // Color sets the text (or icon) color.
-func Color(t widget.Token) Option { return func(e *El) { e.fg = t } }
+func Color(t core.Token) Option { return func(e *El) { e.fg = t } }
 
-// Muted is Color(widget.Muted).
-func Muted() Option { return Color(widget.Muted) }
+// Muted is Color(core.Muted).
+func Muted() Option { return Color(core.Muted) }
 
 // Bold uses the bold face, for headings and table headers.
 func Bold() Option { return func(e *El) { e.bold = true } }
@@ -89,10 +89,10 @@ func Ellipsis() Option { return func(e *El) { e.ellipsis = true } }
 func Center() Option { return func(e *El) { e.ctr = true } }
 
 // Lines stacks the lines of s, one Text each, in the given color.
-func Lines(s string, clr widget.Token, opts ...Option) *El {
+func Lines(s string, clr core.Token, opts ...Option) *El {
 	rows := []Item{}
 	for _, l := range strings.Split(s, "\n") {
-		rows = append(rows, Text(l, Color(clr), H(widget.LabelH)))
+		rows = append(rows, Text(l, Color(clr), H(core.LabelH)))
 	}
 	for _, o := range opts {
 		rows = append(rows, o)
@@ -124,21 +124,21 @@ var iconSizes = map[iconKind][2]int{
 	iconTrash: {14, 16}, iconCopy: {14, 14}, iconSearch: {14, 14}, iconPlus: {12, 12}, iconPrompt: {16, 14}, iconUp: {12, 8}, iconDown: {12, 8},
 }
 
-func (iconB) measure(e *El, _ *widget.Ctx, _ int) (int, int) {
+func (iconB) measure(e *El, _ *core.Ctx, _ int) (int, int) {
 	s := iconSizes[e.icon]
 	return s[0], s[1]
 }
 
-func (iconB) draw(e *El, c *widget.Ctx, dst *ebiten.Image) {
+func (iconB) draw(e *El, c *core.Ctx, dst *ebiten.Image) {
 	r := e.rect
 	cx, cy := float32(r.X+r.W/2), float32(r.Y+r.H/2)
-	clr := c.Col(e.color(c, widget.Muted))
+	clr := c.Col(e.color(c, core.Muted))
 	switch e.icon {
 	case iconCheck:
-		drawCheckbox(c, dst, widget.Rect{X: r.X + (r.W-14)/2, Y: r.Y + (r.H-14)/2, W: 14, H: 14}, e.on, c.Hovered(r))
+		drawCheckbox(c, dst, core.Rect{X: r.X + (r.W-14)/2, Y: r.Y + (r.H-14)/2, W: 14, H: 14}, e.on, c.Hovered(r))
 	case iconCross:
 		if c.Hovered(r) {
-			clr = c.Col(widget.Error) // a delete button turns red under the pointer
+			clr = c.Col(core.Error) // a delete button turns red under the pointer
 		}
 		c.Cross(dst, cx, cy, 4, clr)
 	case iconTriangle:
@@ -150,29 +150,29 @@ func (iconB) draw(e *El, c *widget.Ctx, dst *ebiten.Image) {
 		glyphs[e.icon](c, dst, cx, cy, clr)
 	case iconDots:
 		if c.Hovered(r) {
-			clr = c.Col(widget.Text)
+			clr = c.Col(core.Text)
 		}
 		for i := -1; i <= 1; i++ {
-			c.Fill(dst, widget.Rect{X: int(cx) - 1, Y: int(cy) + i*6 - 1, W: 3, H: 3}, clr)
+			c.Fill(dst, core.Rect{X: int(cx) - 1, Y: int(cy) + i*6 - 1, W: 3, H: 3}, clr)
 		}
 	}
 }
 
 // drawCheckbox draws a 14px box: an accent square with a white check
 // when on, a plain outline when off (darker under the pointer).
-func drawCheckbox(c *widget.Ctx, dst *ebiten.Image, box widget.Rect, on, hover bool) {
+func drawCheckbox(c *core.Ctx, dst *ebiten.Image, box core.Rect, on, hover bool) {
 	if !on {
-		edge := widget.Rule
+		edge := core.Rule
 		if hover {
-			edge = widget.Muted
+			edge = core.Muted
 		}
 		c.OutlineStyled(dst, box, c.Col(edge), c.Radius("checkbox"))
 		return
 	}
-	accent := c.Col(widget.Accent)
+	accent := c.Col(core.Accent)
 	c.FillStyled(dst, box, accent, accent, c.Radius("checkbox"))
 	x, y := float32(box.X), float32(box.Y)
-	mark := c.Col(widget.AccentText)
+	mark := c.Col(core.AccentText)
 	c.Line(dst, x+3.5, y+7.5, x+6, y+10, 1.8, mark)
 	c.Line(dst, x+6, y+10, x+10.5, y+4.5, 1.8, mark)
 }
@@ -197,14 +197,14 @@ func Dots(opts ...Option) *El { return icon(iconDots, false, opts) }
 
 // glyphHover is the color a glyph takes under the pointer: red for the
 // destructive one, the text color for the rest.
-var glyphHover = map[iconKind]widget.Token{
-	iconTrash: widget.Error, iconCopy: widget.Text, iconSearch: widget.Text, iconPlus: widget.Text, iconPrompt: widget.Text,
-	iconUp: widget.Text, iconDown: widget.Text,
+var glyphHover = map[iconKind]core.Token{
+	iconTrash: core.Error, iconCopy: core.Text, iconSearch: core.Text, iconPlus: core.Text, iconPrompt: core.Text,
+	iconUp: core.Text, iconDown: core.Text,
 }
 
 // glyphs draw the line icons around a center point, in one stroke width.
-var glyphs = map[iconKind]func(c *widget.Ctx, dst *ebiten.Image, cx, cy float32, clr color.RGBA){
-	iconTrash: func(c *widget.Ctx, dst *ebiten.Image, cx, cy float32, clr color.RGBA) {
+var glyphs = map[iconKind]func(c *core.Ctx, dst *ebiten.Image, cx, cy float32, clr color.RGBA){
+	iconTrash: func(c *core.Ctx, dst *ebiten.Image, cx, cy float32, clr color.RGBA) {
 		c.Line(dst, cx-6, cy-4.5, cx+6, cy-4.5, 1.4, clr) // lid
 		c.Line(dst, cx-2, cy-6.5, cx+2, cy-6.5, 1.4, clr) // handle
 		c.Line(dst, cx-2, cy-6.5, cx-2, cy-4.5, 1.4, clr)
@@ -215,7 +215,7 @@ var glyphs = map[iconKind]func(c *widget.Ctx, dst *ebiten.Image, cx, cy float32,
 		c.Line(dst, cx-1.5, cy-1, cx-1.5, cy+4.5, 1.2, clr) // slats
 		c.Line(dst, cx+1.5, cy-1, cx+1.5, cy+4.5, 1.2, clr)
 	},
-	iconCopy: func(c *widget.Ctx, dst *ebiten.Image, cx, cy float32, clr color.RGBA) {
+	iconCopy: func(c *core.Ctx, dst *ebiten.Image, cx, cy float32, clr color.RGBA) {
 		c.Line(dst, cx-6, cy-6, cx+2, cy-6, 1.4, clr) // back sheet: top and left edges
 		c.Line(dst, cx-6, cy-6, cx-6, cy+2, 1.4, clr)
 		x0, y0, x1, y1 := cx-3, cy-3, cx+6, cy+6 // front sheet
@@ -224,7 +224,7 @@ var glyphs = map[iconKind]func(c *widget.Ctx, dst *ebiten.Image, cx, cy float32,
 		c.Line(dst, x1, y1, x0, y1, 1.4, clr)
 		c.Line(dst, x0, y1, x0, y0, 1.4, clr)
 	},
-	iconSearch: func(c *widget.Ctx, dst *ebiten.Image, cx, cy float32, clr color.RGBA) {
+	iconSearch: func(c *core.Ctx, dst *ebiten.Image, cx, cy float32, clr color.RGBA) {
 		const n = 14
 		ox, oy, r := cx-1.5, cy-1.5, float32(4.5)
 		px, py := ox+r, oy
@@ -236,19 +236,19 @@ var glyphs = map[iconKind]func(c *widget.Ctx, dst *ebiten.Image, cx, cy float32,
 		}
 		c.Line(dst, cx+1.8, cy+1.8, cx+6, cy+6, 1.8, clr) // handle
 	},
-	iconPlus: func(c *widget.Ctx, dst *ebiten.Image, cx, cy float32, clr color.RGBA) {
+	iconPlus: func(c *core.Ctx, dst *ebiten.Image, cx, cy float32, clr color.RGBA) {
 		c.Line(dst, cx-5, cy, cx+5, cy, 1.5, clr)
 		c.Line(dst, cx, cy-5, cx, cy+5, 1.5, clr)
 	},
-	iconUp: func(c *widget.Ctx, dst *ebiten.Image, cx, cy float32, clr color.RGBA) {
+	iconUp: func(c *core.Ctx, dst *ebiten.Image, cx, cy float32, clr color.RGBA) {
 		c.Line(dst, cx-5, cy+2.5, cx, cy-2.5, 1.5, clr)
 		c.Line(dst, cx, cy-2.5, cx+5, cy+2.5, 1.5, clr)
 	},
-	iconDown: func(c *widget.Ctx, dst *ebiten.Image, cx, cy float32, clr color.RGBA) {
+	iconDown: func(c *core.Ctx, dst *ebiten.Image, cx, cy float32, clr color.RGBA) {
 		c.Line(dst, cx-5, cy-2.5, cx, cy+2.5, 1.5, clr)
 		c.Line(dst, cx, cy+2.5, cx+5, cy-2.5, 1.5, clr)
 	},
-	iconPrompt: func(c *widget.Ctx, dst *ebiten.Image, cx, cy float32, clr color.RGBA) {
+	iconPrompt: func(c *core.Ctx, dst *ebiten.Image, cx, cy float32, clr color.RGBA) {
 		c.Line(dst, cx-7, cy-4, cx-2.5, cy, 1.5, clr) // the > chevron
 		c.Line(dst, cx-2.5, cy, cx-7, cy+4, 1.5, clr)
 		c.Line(dst, cx, cy+5, cx+7, cy+5, 1.5, clr) // the _ cursor
@@ -276,5 +276,5 @@ func ChevronDown(opts ...Option) *El { return icon(iconDown, false, opts) }
 
 // IconButton is Button with an icon in place of the label.
 func IconButton(glyph *El, opts ...Option) *El {
-	return Row(with([]Item{Bg(widget.Sunken), Control("icon-button"), Lighten(), glyph}, opts)...)
+	return Row(with([]Item{Bg(core.Sunken), Control("icon-button"), Lighten(), glyph}, opts)...)
 }

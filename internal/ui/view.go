@@ -10,8 +10,8 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
 	// The view DSL is dot-imported so views read like markup: Row(...), Text(...).
+	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
-	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // Sizes of the window chrome, in logical pixels.

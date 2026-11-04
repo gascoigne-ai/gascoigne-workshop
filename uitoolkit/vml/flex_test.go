@@ -3,7 +3,7 @@ package vml
 import (
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 func TestAlignItemsPlacesChildrenAcrossARow(t *testing.T) {
@@ -186,4 +186,4 @@ func TestAscentIsPositiveAndShrinksWithTheFont(t *testing.T) {
 	}
 }
 
-var _ = widget.Rect{}
+var _ = core.Rect{}

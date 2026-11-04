@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
+	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
-	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // The settings dialog: a title bar, a list of categories on the left and

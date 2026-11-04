@@ -1,6 +1,6 @@
 // Package theming turns a user's appearance preferences (which theme,
 // text size, corner roundness, contrast, color overrides) into a
-// widget.Theme, and loads extra themes from a folder of theme files.
+// core.Theme, and loads extra themes from a folder of theme files.
 //
 // It is the mechanics only. An application decides which themes exist
 // (a Catalog of built-in choices), keeps its own settings and maps them
@@ -15,13 +15,13 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 // Choice is one selectable theme.
 type Choice struct {
 	ID, Label string
-	Build     func() widget.Theme
+	Build     func() core.Theme
 }
 
 // SizeChoice is a text size: the font sizes of the UI, small and mono faces.
@@ -66,21 +66,21 @@ const (
 // CustomColor is a color users can change, and the text that has to stay
 // readable on it.
 type CustomColor struct {
-	Token widget.Token
+	Token core.Token
 	Label string
-	Text  widget.Token // the text color drawn on it
+	Text  core.Token // the text color drawn on it
 }
 
 // CustomColors are the tokens users may override.
 var CustomColors = []CustomColor{
-	{widget.Selection, "Selection", widget.Text},
-	{widget.FindMatch, "Find match", widget.Text},
-	{widget.FindActive, "Active match", widget.Text},
-	{widget.Accent, "Accent / focus", widget.AccentText},
+	{core.Selection, "Selection", core.Text},
+	{core.FindMatch, "Find match", core.Text},
+	{core.FindActive, "Active match", core.Text},
+	{core.Accent, "Accent / focus", core.AccentText},
 }
 
 // CustomColorOf finds the customizable color of a token.
-func CustomColorOf(tok widget.Token) (CustomColor, bool) {
+func CustomColorOf(tok core.Token) (CustomColor, bool) {
 	for _, c := range CustomColors {
 		if c.Token == tok {
 			return c, true
@@ -128,8 +128,8 @@ type Prefs struct {
 // Builtins are the toolkit's own dark and light themes.
 func Builtins() []Choice {
 	return []Choice{
-		{"dark", "Dark", widget.Dark},
-		{"light", "Light", widget.Light},
+		{"dark", "Dark", core.Dark},
+		{"light", "Light", core.Light},
 	}
 }
 
@@ -179,18 +179,18 @@ func (c *Catalog) ThemeID(id string) string {
 }
 
 // builtinNamed is the built-in theme a theme file may extend.
-func (c *Catalog) builtinNamed(id string) (widget.Theme, bool) {
+func (c *Catalog) builtinNamed(id string) (core.Theme, bool) {
 	for _, ch := range c.Builtin {
 		if ch.ID == id {
 			return ch.Build(), true
 		}
 	}
-	return widget.Theme{}, false
+	return core.Theme{}, false
 }
 
 // For builds the theme for a theme id and a text size id. Unknown ids
 // fall back to the first built-in theme and the medium text size.
-func (c *Catalog) For(themeID, textSizeID string) widget.Theme {
+func (c *Catalog) For(themeID, textSizeID string) core.Theme {
 	th := c.Builtin[0].Build()
 	for _, ch := range c.All() {
 		if ch.ID == themeID {
@@ -211,26 +211,26 @@ func (c *Catalog) For(themeID, textSizeID string) widget.Theme {
 // colors moved until their text reaches HighRatio), then the user's color
 // overrides for that theme. An override is ignored unless it parses as a
 // hex color, names a customizable token and reaches the required ratio.
-func (c *Catalog) Theme(p Prefs) widget.Theme {
+func (c *Catalog) Theme(p Prefs) core.Theme {
 	id := c.ThemeID(p.Theme)
 	th := c.For(id, p.TextSize)
 	th.RadiusScale, th.NoGradients = CornerScale(p.Corners), p.Flat
 	if p.Contrast == "high" {
-		strong := map[widget.Token]color.RGBA{}
+		strong := map[core.Token]color.RGBA{}
 		for _, cc := range CustomColors {
-			strong[cc.Token] = widget.EnsureContrast(th.Color(cc.Token), th.Color(cc.Text), HighRatio)
+			strong[cc.Token] = core.EnsureContrast(th.Color(cc.Token), th.Color(cc.Text), HighRatio)
 		}
 		th = th.With(strong)
 	}
 	need := RequiredRatio(p.Contrast)
-	overrides := map[widget.Token]color.RGBA{}
+	overrides := map[core.Token]color.RGBA{}
 	for name, hex := range p.Colors[id] {
-		cc, ok := CustomColorOf(widget.Token(name))
+		cc, ok := CustomColorOf(core.Token(name))
 		if !ok {
 			continue
 		}
-		col, err := widget.ParseHex(hex)
-		if err != nil || widget.ContrastRatio(col, th.Color(cc.Text)) < need {
+		col, err := core.ParseHex(hex)
+		if err != nil || core.ContrastRatio(col, th.Color(cc.Text)) < need {
 			continue
 		}
 		overrides[cc.Token] = col
@@ -259,7 +259,7 @@ func (c *Catalog) LoadUser(dir string) (themes map[string]Choice, problems []str
 			problems = append(problems, fmt.Sprintf("theme %s: %v", id, err))
 			continue
 		}
-		baseID, err := widget.ThemeExtends(data)
+		baseID, err := core.ThemeExtends(data)
 		if err != nil {
 			problems = append(problems, fmt.Sprintf("theme %s: %v", id, err))
 			continue
@@ -272,7 +272,7 @@ func (c *Catalog) LoadUser(dir string) (themes map[string]Choice, problems []str
 			problems = append(problems, fmt.Sprintf("theme %s extends unknown theme %q", id, baseID))
 			continue
 		}
-		th, err := widget.ParseTheme(data, &base)
+		th, err := core.ParseTheme(data, &base)
 		if err != nil {
 			problems = append(problems, fmt.Sprintf("theme %s: %v", id, err))
 			continue
@@ -282,7 +282,7 @@ func (c *Catalog) LoadUser(dir string) (themes map[string]Choice, problems []str
 			label = id
 		}
 		built := th
-		themes[id] = Choice{ID: id, Label: label, Build: func() widget.Theme { return built }}
+		themes[id] = Choice{ID: id, Label: label, Build: func() core.Theme { return built }}
 	}
 	return themes, problems
 }

@@ -3,14 +3,14 @@ package vml
 import (
 	"github.com/hajimehoshi/ebiten/v2"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 // Seg is a run of field text with its own color, so a view can
 // highlight parts of what the user typed.
 type Seg struct {
 	Text  string
-	Style widget.Token
+	Style core.Token
 }
 
 const fieldPad = 10
@@ -28,12 +28,12 @@ func (e *El) textInset() int {
 // already has padding of its own, so text lines up with its neighbours.
 func FieldPad(n int) Option { return func(e *El) { e.fieldInset = n } }
 
-// field is a single-line text input editing a widget.TextField.
+// field is a single-line text input editing a core.TextField.
 type fieldB struct{ plain }
 
-func (fieldB) measure(*El, *widget.Ctx, int) (int, int) { return 0, 0 }
+func (fieldB) measure(*El, *core.Ctx, int) (int, int) { return 0, 0 }
 
-func (fieldB) update(e *El, c *widget.Ctx) {
+func (fieldB) update(e *El, c *core.Ctx) {
 	f, in := e.field, c.In
 	at := func() int { return c.CursorAt(f.Display(), in.X-(e.rect.X+e.textInset())+f.ScrollX) }
 	if in.Click {
@@ -71,7 +71,7 @@ func (fieldB) update(e *El, c *widget.Ctx) {
 	f.Reveal(c.Width(c.F.UI, string([]rune(f.Display())[:f.Cursor])), e.rect.W-2*e.textInset())
 }
 
-func (fieldB) draw(e *El, c *widget.Ctx, dst *ebiten.Image) {
+func (fieldB) draw(e *El, c *core.Ctx, dst *ebiten.Image) {
 	f, r := e.field, e.rect
 	dst = c.Clip(dst, r)
 	x := r.X + e.textInset() - f.ScrollX
@@ -79,9 +79,9 @@ func (fieldB) draw(e *El, c *widget.Ctx, dst *ebiten.Image) {
 		runes := []rune(f.Display())
 		x0 := x + c.Width(c.F.UI, string(runes[:lo]))
 		x1 := x + c.Width(c.F.UI, string(runes[:hi]))
-		c.Fill(dst, widget.Rect{X: x0, Y: r.Y + 6, W: x1 - x0, H: r.H - 12}, c.Col(widget.Selection))
+		c.Fill(dst, core.Rect{X: x0, Y: r.Y + 6, W: x1 - x0, H: r.H - 12}, c.Col(core.Selection))
 	}
-	segs := []Seg{{Text: f.Display(), Style: widget.Text}}
+	segs := []Seg{{Text: f.Display(), Style: core.Text}}
 	if e.segments != nil && !f.Masked {
 		segs = e.segments(f.Text)
 	}
@@ -90,24 +90,24 @@ func (fieldB) draw(e *El, c *widget.Ctx, dst *ebiten.Image) {
 		x += c.Width(c.F.UI, s.Text)
 	}
 	if f.Text == "" {
-		c.TextMid(dst, c.F.UI, e.placeholder, r.X+e.textInset(), r, c.Col(widget.Muted))
+		c.TextMid(dst, c.F.UI, e.placeholder, r.X+e.textInset(), r, c.Col(core.Muted))
 	}
 	if f.Focused && (c.Tick/30)%2 == 0 {
 		cx := r.X + e.textInset() - f.ScrollX + c.Width(c.F.UI, string([]rune(f.Display())[:f.Cursor]))
-		c.VLine(dst, cx, r.Y+8, r.H-16, c.Col(widget.Text))
+		c.VLine(dst, cx, r.Y+8, r.H-16, c.Col(core.Text))
 	}
 }
 
 // drawOver is the focus ring, over the field's outline.
-func (fieldB) drawOver(e *El, c *widget.Ctx, dst *ebiten.Image) {
+func (fieldB) drawOver(e *El, c *core.Ctx, dst *ebiten.Image) {
 	if e.field.Focused {
-		c.OutlineStyled(dst, e.rect, c.Col(widget.AccentLine), c.Th.Style(e.control).Radius)
+		c.OutlineStyled(dst, e.rect, c.Col(core.AccentLine), c.Th.Style(e.control).Radius)
 	}
 }
 
 // Field is a single-line text input bound to f (Vue's v-model: the
 // widget edits f in place).
-func Field(f *widget.TextField, opts ...Option) *El {
+func Field(f *core.TextField, opts ...Option) *El {
 	e := newEl(fieldB{}, with([]Item{Control("field")}, opts))
 	e.field = f
 	return e
@@ -128,20 +128,20 @@ func OnTab(f func(back bool)) Option { return func(e *El) { e.onTab = f } }
 // OnEnter runs when Enter is pressed in the focused field.
 func OnEnter(f func()) Option { return func(e *El) { e.onEnter = f } }
 
-// code shows a widget.CodeView.
+// code shows a core.CodeView.
 type codeB struct{ plain }
 
-func (codeB) measure(*El, *widget.Ctx, int) (int, int) { return 0, 0 }
-func (codeB) update(e *El, c *widget.Ctx)              { e.view.Update(c, e.rect) }
-func (codeB) draw(e *El, c *widget.Ctx, dst *ebiten.Image) {
+func (codeB) measure(*El, *core.Ctx, int) (int, int) { return 0, 0 }
+func (codeB) update(e *El, c *core.Ctx)              { e.view.Update(c, e.rect) }
+func (codeB) draw(e *El, c *core.Ctx, dst *ebiten.Image) {
 	e.view.Draw(c, dst, e.rect)
 	if e.view.Focused {
-		c.Outline(dst, e.rect, c.Col(widget.AccentLine))
+		c.Outline(dst, e.rect, c.Col(core.AccentLine))
 	}
 }
 
 // Code is a scrollable, foldable code viewer; give it a Bg.
-func Code(v *widget.CodeView, opts ...Option) *El {
+func Code(v *core.CodeView, opts ...Option) *El {
 	e := newEl(codeB{}, with(nil, opts))
 	e.view = v
 	return e

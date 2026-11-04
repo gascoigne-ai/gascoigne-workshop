@@ -3,7 +3,7 @@ package vml
 import (
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 // rows builds n clickable 20px rows that record their index when clicked.
@@ -21,8 +21,8 @@ func scroller(st *ScrollState, h int, items ...Item) *El {
 	return Scroll(st, append([]Item{H(h)}, items...)...)
 }
 
-func wheel(c *widget.Ctx, x, y int, dy float64) {
-	c.In = widget.Input{X: x, Y: y, Wheel: dy}
+func wheel(c *core.Ctx, x, y int, dy float64) {
+	c.In = core.Input{X: x, Y: y, Wheel: dy}
 }
 
 func TestScrollWheelMovesContentAndClampsAtBothEnds(t *testing.T) {
@@ -128,22 +128,22 @@ func TestScrollbarThumbDragMovesTheContent(t *testing.T) {
 	c := testCtx(t)
 	Layout(c, root, 200, 100)
 
-	off, length, ok := widget.Thumb(100, 400, 100, 0)
+	off, length, ok := core.Thumb(100, 400, 100, 0)
 	if !ok {
 		t.Fatal("a thumb is expected")
 	}
-	x := 200 - widget.ScrollbarW/2
+	x := 200 - core.ScrollbarW/2
 	click(c, x, off+length/2)
 	Update(c, root)
-	c.In = widget.Input{X: x, Y: off + length/2 + 30, Held: true}
+	c.In = core.Input{X: x, Y: off + length/2 + 30, Held: true}
 	Update(c, root)
 	if st.Y <= 0 {
 		t.Fatalf("Y = %d after dragging the thumb", st.Y)
 	}
-	c.In = widget.Input{X: x, Y: 5} // released
+	c.In = core.Input{X: x, Y: 5} // released
 	Update(c, root)
 	y := st.Y
-	c.In = widget.Input{X: x, Y: 90, Held: true}
+	c.In = core.Input{X: x, Y: 90, Held: true}
 	Update(c, root)
 	if st.Y != y {
 		t.Fatal("a released thumb must not follow the pointer")

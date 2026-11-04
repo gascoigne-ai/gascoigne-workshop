@@ -3,7 +3,7 @@ package vml
 import (
 	"github.com/hajimehoshi/ebiten/v2"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 // TipDelayTicks is how long the pointer rests on an element before its
@@ -20,7 +20,7 @@ const (
 // drawTooltip updates the delay bookkeeping for the element under the
 // pointer and, once it is due, draws its tooltip over everything, kept
 // inside screen.
-func drawTooltip(c *widget.Ctx, dst *ebiten.Image, screen widget.Rect) {
+func drawTooltip(c *core.Ctx, dst *ebiten.Image, screen core.Rect) {
 	c.TipShown, c.TipWaiting = false, false
 	if c.TipText == "" {
 		c.TipFor = ""
@@ -41,13 +41,13 @@ func drawTooltip(c *widget.Ctx, dst *ebiten.Image, screen widget.Rect) {
 	if y+h > screen.Y+screen.H {
 		y = c.In.Y - tipOffset - h // no room below: above the pointer
 	}
-	box := widget.Rect{X: x, Y: max(screen.Y, y), W: w, H: h}
+	box := core.Rect{X: x, Y: max(screen.Y, y), W: w, H: h}
 	st := c.Th.Style("tooltip")
-	c.FillStyled(dst, box, c.Col(widget.Frame), c.Col(widget.Frame), st.Radius)
+	c.FillStyled(dst, box, c.Col(core.Frame), c.Col(core.Frame), st.Radius)
 	border := st.Border
 	if border == "" {
-		border = widget.Border
+		border = core.Border
 	}
 	c.OutlineStyled(dst, box, c.Col(border), st.Radius)
-	c.TextMid(dst, c.F.Small, c.TipText, box.X+tipPadX, box, c.Col(widget.Text))
+	c.TextMid(dst, c.F.Small, c.TipText, box.X+tipPadX, box, c.Col(core.Text))
 }

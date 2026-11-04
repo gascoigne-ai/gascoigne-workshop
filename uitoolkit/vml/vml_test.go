@@ -6,12 +6,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
-func testCtx(t *testing.T) *widget.Ctx {
+func testCtx(t *testing.T) *core.Ctx {
 	t.Helper()
-	c, err := widget.NewCtx(widget.Dark())
+	c, err := core.NewCtx(core.Dark())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -25,7 +25,7 @@ func TestRowFixedGrowGapPad(t *testing.T) {
 	root := Row(Pad(10), Gap(5), a, b, c3)
 	Layout(testCtx(t), root, 300, 100)
 
-	want := []widget.Rect{
+	want := []core.Rect{
 		{X: 10, Y: 10, W: 50, H: 80},
 		{X: 65, Y: 10, W: 300 - 20 - 50 - 30 - 10, H: 80},
 		{X: 300 - 10 - 30, Y: 10, W: 30, H: 80},
@@ -54,13 +54,13 @@ func TestColFixedHeightAndFixedWidthChild(t *testing.T) {
 	root := Col(top, rest, narrow)
 	Layout(testCtx(t), root, 200, 100)
 
-	if top.rect != (widget.Rect{X: 0, Y: 0, W: 200, H: 40}) {
+	if top.rect != (core.Rect{X: 0, Y: 0, W: 200, H: 40}) {
 		t.Errorf("top = %+v", top.rect)
 	}
-	if rest.rect != (widget.Rect{X: 0, Y: 40, W: 200, H: 50}) {
+	if rest.rect != (core.Rect{X: 0, Y: 40, W: 200, H: 50}) {
 		t.Errorf("rest = %+v", rest.rect)
 	}
-	if narrow.rect != (widget.Rect{X: 0, Y: 90, W: 20, H: 10}) {
+	if narrow.rect != (core.Rect{X: 0, Y: 90, W: 20, H: 10}) {
 		t.Errorf("narrow = %+v", narrow.rect)
 	}
 }
@@ -84,10 +84,10 @@ func TestStackFloatPinsTopRight(t *testing.T) {
 	root := Stack(under, menu)
 	Layout(testCtx(t), root, 400, 300)
 
-	if under.rect != (widget.Rect{W: 400, H: 300}) {
+	if under.rect != (core.Rect{W: 400, H: 300}) {
 		t.Errorf("under = %+v", under.rect)
 	}
-	if menu.rect != (widget.Rect{X: 330, Y: 30, W: 60, H: 40}) {
+	if menu.rect != (core.Rect{X: 330, Y: 30, W: 60, H: 40}) {
 		t.Errorf("menu = %+v", menu.rect)
 	}
 }
@@ -106,7 +106,7 @@ func TestIfForAndFragmentsFlatten(t *testing.T) {
 	}
 }
 
-func click(c *widget.Ctx, x, y int) { c.In = widget.Input{X: x, Y: y, Click: true} }
+func click(c *core.Ctx, x, y int) { c.In = core.Input{X: x, Y: y, Click: true} }
 
 func TestClickReachesOnlyTheElementUnderThePointer(t *testing.T) {
 	var hits []string
@@ -161,10 +161,10 @@ func TestTableHeightAndEditHandlers(t *testing.T) {
 	Layout(c, root, 400, 400)
 
 	// header + 2 rows + placeholder
-	if got, want := tbl.rect.H, 4*widget.RowH; got != want {
+	if got, want := tbl.rect.H, 4*core.RowH; got != want {
 		t.Fatalf("table height = %d, want %d", got, want)
 	}
-	rowY := func(i int) int { return (i+1)*widget.RowH + widget.RowH/2 }
+	rowY := func(i int) int { return (i+1)*core.RowH + core.RowH/2 }
 	click(c, 10, rowY(1))
 	Update(c, root)
 	click(c, 395, rowY(0))
@@ -202,7 +202,7 @@ func (f *fakeClipboard) Write(s string) error  { f.text = s; return nil }
 
 func TestFieldCopyCutPasteSelectAll(t *testing.T) {
 	changes := 0
-	f := widget.NewTextField("hello world")
+	f := core.NewTextField("hello world")
 	f.Focused = true
 	field := Field(&f, OnChange(func() { changes++ }))
 	root := Row(field)
@@ -211,43 +211,43 @@ func TestFieldCopyCutPasteSelectAll(t *testing.T) {
 	c.Clipboard = clip
 	Layout(c, root, 300, 30)
 
-	step := func(in widget.Input) {
+	step := func(in core.Input) {
 		c.In = in
 		Update(c, root)
 	}
 
-	step(widget.Input{Ctrl: true, SelectAll: true})
-	step(widget.Input{Ctrl: true, Copy: true})
+	step(core.Input{Ctrl: true, SelectAll: true})
+	step(core.Input{Ctrl: true, Copy: true})
 	if clip.text != "hello world" || f.Text != "hello world" || changes != 0 {
 		t.Fatalf("copy: clipboard %q text %q changes %d", clip.text, f.Text, changes)
 	}
 
-	step(widget.Input{Ctrl: true, Cut: true})
+	step(core.Input{Ctrl: true, Cut: true})
 	if f.Text != "" || clip.text != "hello world" || changes != 1 {
 		t.Fatalf("cut: clipboard %q text %q changes %d", clip.text, f.Text, changes)
 	}
 
 	clip.text = "new\r\nvalue"
-	step(widget.Input{Ctrl: true, Paste: true})
+	step(core.Input{Ctrl: true, Paste: true})
 	if f.Text != "new  value" || changes != 2 {
 		t.Fatalf("paste: text %q changes %d", f.Text, changes)
 	}
 
 	// Ctrl+V must not also type the letter the key reports.
-	step(widget.Input{Ctrl: true, Typed: []rune("v")})
+	step(core.Input{Ctrl: true, Typed: []rune("v")})
 	if f.Text != "new  value" {
 		t.Fatalf("ctrl+letter typed text: %q", f.Text)
 	}
 }
 
 func TestFieldPasteFailureLeavesTextAlone(t *testing.T) {
-	f := widget.NewTextField("keep")
+	f := core.NewTextField("keep")
 	f.Focused = true
 	root := Row(Field(&f))
 	c := testCtx(t)
 	c.Clipboard = &fakeClipboard{text: "lost", readErr: errTest}
 	Layout(c, root, 300, 30)
-	c.In = widget.Input{Ctrl: true, Paste: true}
+	c.In = core.Input{Ctrl: true, Paste: true}
 	Update(c, root)
 	if f.Text != "keep" {
 		t.Fatalf("text = %q", f.Text)
@@ -255,17 +255,17 @@ func TestFieldPasteFailureLeavesTextAlone(t *testing.T) {
 }
 
 func TestFieldDragSelectsAndReleaseEndsTheDrag(t *testing.T) {
-	f := widget.NewTextField("hello")
+	f := core.NewTextField("hello")
 	root := Row(Field(&f, Grow(1)))
 	c := testCtx(t)
 	Layout(c, root, 300, 30)
 
 	// press at the start of the text, drag far past its end, release
-	c.In = widget.Input{X: fieldPad, Y: 10, Click: true, Held: true}
+	c.In = core.Input{X: fieldPad, Y: 10, Click: true, Held: true}
 	Update(c, root)
-	c.In = widget.Input{X: fieldPad + 200, Y: 10, Held: true}
+	c.In = core.Input{X: fieldPad + 200, Y: 10, Held: true}
 	Update(c, root)
-	c.In = widget.Input{X: fieldPad + 200, Y: 10}
+	c.In = core.Input{X: fieldPad + 200, Y: 10}
 	Update(c, root)
 
 	if f.SelectedText() != "hello" || f.Dragging {
@@ -278,7 +278,7 @@ var errTest = errors.New("no clipboard")
 func TestButtonsClickAndOverrideDefaults(t *testing.T) {
 	var plain, primary int
 	b1 := Button("Cancel", W(80), OnClick(func() { plain++ }))
-	b2 := PrimaryButton("Send", W(80), Bg(widget.Error), OnClick(func() { primary++ }))
+	b2 := PrimaryButton("Send", W(80), Bg(core.Error), OnClick(func() { primary++ }))
 	root := Row(b1, b2)
 	c := testCtx(t)
 	Layout(c, root, 200, 30)
@@ -291,22 +291,22 @@ func TestButtonsClickAndOverrideDefaults(t *testing.T) {
 	if plain != 1 || primary != 1 {
 		t.Fatalf("plain %d primary %d, want 1 and 1", plain, primary)
 	}
-	if b2.bg != widget.Error {
+	if b2.bg != core.Error {
 		t.Fatalf("caller options must override the button's defaults, bg = %q", b2.bg)
 	}
-	if b1.bg != widget.Sunken {
+	if b1.bg != core.Sunken {
 		t.Fatalf("a plain button uses the surface color, bg = %q", b1.bg)
 	}
 }
 
 func TestEnterInAFocusedFieldFiresOnEnterOnly(t *testing.T) {
 	enters := 0
-	f := widget.NewTextField("x")
+	f := core.NewTextField("x")
 	root := Row(Field(&f, Grow(1), Placeholder("p"), OnEnter(func() { enters++ })))
 	c := testCtx(t)
 	Layout(c, root, 200, 30)
 
-	c.In = widget.Input{Enter: true}
+	c.In = core.Input{Enter: true}
 	Update(c, root)
 	if enters != 0 {
 		t.Fatal("an unfocused field must ignore Enter")
@@ -339,26 +339,26 @@ func TestSpacerAndRulesTakeTheirSizes(t *testing.T) {
 }
 
 func TestLinesMakesOneRowPerLine(t *testing.T) {
-	lines := Lines("a\nb\nc", widget.Muted)
+	lines := Lines("a\nb\nc", core.Muted)
 	Layout(testCtx(t), Col(lines), 100, 200)
 	if len(lines.kids) != 3 || lines.rect.H != 3*22 {
 		t.Fatalf("rows %d height %d, want 3 rows of 22px", len(lines.kids), lines.rect.H)
 	}
 	for _, k := range lines.kids {
-		if k.fg != widget.Muted {
+		if k.fg != core.Muted {
 			t.Fatalf("line color = %q", k.fg)
 		}
 	}
 }
 
 func TestCodeNodeForwardsInputToTheView(t *testing.T) {
-	v := &widget.CodeView{}
-	v.SetLines([]widget.Line{{Spans: []widget.Span{{Text: "one"}}}, {Spans: []widget.Span{{Text: "two"}}}})
+	v := &core.CodeView{}
+	v.SetLines([]core.Line{{Spans: []core.Span{{Text: "one"}}}, {Spans: []core.Span{{Text: "two"}}}})
 	root := Row(Code(v, Grow(1)))
 	c := testCtx(t)
 	Layout(c, root, 400, 100)
 
-	c.In = widget.Input{X: 300, Y: 15, Click: true, Held: true, Clicks: 3} // triple click in the text area of the first line
+	c.In = core.Input{X: 300, Y: 15, Click: true, Held: true, Clicks: 3} // triple click in the text area of the first line
 	Update(c, root)
 	if v.SelectedText() != "one" || !v.Focused {
 		t.Fatalf("selection %q focused %v", v.SelectedText(), v.Focused)
@@ -390,7 +390,7 @@ func editableSpec() TableSpec {
 // Columns of a 400px editable table: 36px actions, then two 164px cells.
 const cellX0, cellX1 = 36 + 80, 36 + 164 + 80
 
-func cellY(row int) int { return (row+1)*widget.RowH + widget.RowH/2 }
+func cellY(row int) int { return (row+1)*core.RowH + core.RowH/2 }
 
 func TestClickingACellStartsEditingIt(t *testing.T) {
 	var got [][2]int
@@ -428,7 +428,7 @@ func TestReadOnlyTableCellsIgnoreClicks(t *testing.T) {
 func TestEditedCellShowsAFieldWithEnterAndTab(t *testing.T) {
 	var enters int
 	var tabs []bool
-	f := widget.NewTextField("x")
+	f := core.NewTextField("x")
 	f.Focused = true
 	spec := editableSpec()
 	spec.Editing = &TableEdit{Row: 0, Col: 1, Field: &f,
@@ -437,25 +437,25 @@ func TestEditedCellShowsAFieldWithEnterAndTab(t *testing.T) {
 	c := testCtx(t)
 	Layout(c, root, 400, 400)
 
-	c.In = widget.Input{Typed: []rune("yz")}
+	c.In = core.Input{Typed: []rune("yz")}
 	Update(c, root)
 	if f.Text != "xyz" {
 		t.Fatalf("typing reached the field as %q, want xyz", f.Text)
 	}
-	c.In = widget.Input{Enter: true}
+	c.In = core.Input{Enter: true}
 	Update(c, root)
-	c.In = widget.Input{Tab: true}
+	c.In = core.Input{Tab: true}
 	Update(c, root)
-	c.In = widget.Input{Tab: true, Shift: true}
+	c.In = core.Input{Tab: true, Shift: true}
 	Update(c, root)
 	if enters != 1 || len(tabs) != 2 || tabs[0] || !tabs[1] {
 		t.Fatalf("enters %d tabs %v, want 1 and [false true]", enters, tabs)
 	}
 }
 
-func focusedField(t *testing.T, text string, width int) (*widget.TextField, *widget.Ctx, *El, *int) {
+func focusedField(t *testing.T, text string, width int) (*core.TextField, *core.Ctx, *El, *int) {
 	t.Helper()
-	f := widget.NewTextField(text)
+	f := core.NewTextField(text)
 	f.Focused = true
 	changes := 0
 	root := Row(Field(&f, Grow(1), OnChange(func() { changes++ })))
@@ -466,18 +466,18 @@ func focusedField(t *testing.T, text string, width int) (*widget.TextField, *wid
 
 func TestFieldUndoRedoShortcuts(t *testing.T) {
 	f, c, root, changes := focusedField(t, "", 300)
-	c.In = widget.Input{Typed: []rune("abc")}
+	c.In = core.Input{Typed: []rune("abc")}
 	Update(c, root)
 	if f.Text != "abc" || *changes != 1 {
 		t.Fatalf("typed: %q changes %d", f.Text, *changes)
 	}
 
-	c.In = widget.Input{Ctrl: true, Undo: true}
+	c.In = core.Input{Ctrl: true, Undo: true}
 	Update(c, root)
 	if f.Text != "" || *changes != 2 {
 		t.Fatalf("undo: %q changes %d (undo must report a change)", f.Text, *changes)
 	}
-	c.In = widget.Input{Ctrl: true, Redo: true}
+	c.In = core.Input{Ctrl: true, Redo: true}
 	Update(c, root)
 	if f.Text != "abc" || *changes != 3 {
 		t.Fatalf("redo: %q changes %d", f.Text, *changes)
@@ -488,14 +488,14 @@ func TestDoubleAndTripleClickSelectWordAndAll(t *testing.T) {
 	f, c, root, _ := focusedField(t, "alpha beta", 300)
 	inWord := fieldPad + c.Width(c.F.UI, "alpha b") // inside "beta"
 
-	c.In = widget.Input{X: inWord, Y: 10, Click: true, Held: true, Clicks: 1}
+	c.In = core.Input{X: inWord, Y: 10, Click: true, Held: true, Clicks: 1}
 	Update(c, root)
-	c.In = widget.Input{X: inWord, Y: 10, Click: true, Held: true, Clicks: 2}
+	c.In = core.Input{X: inWord, Y: 10, Click: true, Held: true, Clicks: 2}
 	Update(c, root)
 	if f.SelectedText() != "beta" {
 		t.Fatalf("double click selected %q, want beta", f.SelectedText())
 	}
-	c.In = widget.Input{X: inWord, Y: 10, Click: true, Held: true, Clicks: 3}
+	c.In = core.Input{X: inWord, Y: 10, Click: true, Held: true, Clicks: 3}
 	Update(c, root)
 	if f.SelectedText() != "alpha beta" {
 		t.Fatalf("triple click selected %q", f.SelectedText())
@@ -506,40 +506,40 @@ func TestLongTextScrollsToTheCursorAndClicksAccountForIt(t *testing.T) {
 	long := strings.Repeat("w", 80)
 	f, c, root, _ := focusedField(t, long, 120)
 
-	c.In = widget.Input{Typed: []rune("z")}
+	c.In = core.Input{Typed: []rune("z")}
 	Update(c, root)
 	if f.ScrollX <= 0 {
 		t.Fatalf("the cursor at the end of long text must scroll the view, ScrollX = %d", f.ScrollX)
 	}
 
-	c.In = widget.Input{X: fieldPad, Y: 10, Click: true, Held: true, Clicks: 1}
+	c.In = core.Input{X: fieldPad, Y: 10, Click: true, Held: true, Clicks: 1}
 	Update(c, root)
 	if f.Cursor < 40 {
 		t.Fatalf("a click at the left edge of the scrolled view hit position %d; the scroll offset must count", f.Cursor)
 	}
 
 	f.Cursor, f.HasSel = 0, false
-	c.In = widget.Input{Edits: []widget.Edit{widget.EditHome}}
+	c.In = core.Input{Edits: []core.Edit{core.EditHome}}
 	Update(c, root)
 	if f.ScrollX != 0 {
 		t.Fatalf("Home must scroll back to the start, ScrollX = %d", f.ScrollX)
 	}
 }
 
-func focusFlags(f1, f2 *widget.TextField, v *widget.CodeView) [3]bool {
+func focusFlags(f1, f2 *core.TextField, v *core.CodeView) [3]bool {
 	return [3]bool{f1.Focused, f2.Focused, v.Focused}
 }
 
 func TestTabCyclesFocusThroughFieldsAndCodeViews(t *testing.T) {
-	a, b := widget.NewTextField("a"), widget.NewTextField("b")
-	v := &widget.CodeView{}
-	v.SetLines([]widget.Line{{Spans: []widget.Span{{Text: "x"}}}})
+	a, b := core.NewTextField("a"), core.NewTextField("b")
+	v := &core.CodeView{}
+	v.SetLines([]core.Line{{Spans: []core.Span{{Text: "x"}}}})
 	root := Col(Field(&a, H(30)), Field(&b, H(30)), Code(v, H(30)))
 	c := testCtx(t)
 	Layout(c, root, 200, 100)
 
 	tab := func(shift bool) {
-		c.In = widget.Input{Tab: true, Shift: shift}
+		c.In = core.Input{Tab: true, Shift: shift}
 		Update(c, root)
 	}
 	steps := []struct {
@@ -562,11 +562,11 @@ func TestTabCyclesFocusThroughFieldsAndCodeViews(t *testing.T) {
 }
 
 func TestTabSelectsTheTextOfTheFieldItFocuses(t *testing.T) {
-	a := widget.NewTextField("hello")
+	a := core.NewTextField("hello")
 	root := Col(Field(&a, H(30)))
 	c := testCtx(t)
 	Layout(c, root, 200, 30)
-	c.In = widget.Input{Tab: true}
+	c.In = core.Input{Tab: true}
 	Update(c, root)
 	if a.SelectedText() != "hello" {
 		t.Fatalf("selection %q", a.SelectedText())
@@ -574,13 +574,13 @@ func TestTabSelectsTheTextOfTheFieldItFocuses(t *testing.T) {
 }
 
 func TestTabIsLeftToAFieldThatHandlesIt(t *testing.T) {
-	a, b := widget.NewTextField("a"), widget.NewTextField("b")
+	a, b := core.NewTextField("a"), core.NewTextField("b")
 	a.Focused = true
 	var tabs int
 	root := Col(Field(&a, H(30), OnTab(func(bool) { tabs++ })), Field(&b, H(30)))
 	c := testCtx(t)
 	Layout(c, root, 200, 60)
-	c.In = widget.Input{Tab: true}
+	c.In = core.Input{Tab: true}
 	Update(c, root)
 	if tabs != 1 || !a.Focused || b.Focused {
 		t.Fatalf("handler calls %d, focus a=%v b=%v: a field with OnTab keeps focus", tabs, a.Focused, b.Focused)
@@ -588,11 +588,11 @@ func TestTabIsLeftToAFieldThatHandlesIt(t *testing.T) {
 }
 
 func TestCtrlTabIsNotFocusCycling(t *testing.T) {
-	a := widget.NewTextField("a")
+	a := core.NewTextField("a")
 	root := Col(Field(&a, H(30)))
 	c := testCtx(t)
 	Layout(c, root, 200, 30)
-	c.In = widget.Input{Tab: true, Ctrl: true}
+	c.In = core.Input{Tab: true, Ctrl: true}
 	Update(c, root)
 	if a.Focused {
 		t.Fatal("Ctrl+Tab switches tabs in the app, it must not move focus")
@@ -600,9 +600,9 @@ func TestCtrlTabIsNotFocusCycling(t *testing.T) {
 }
 
 // areaBox is a 400x100 text area in a window of the same size.
-func areaBox(t *testing.T, text string) (*widget.TextArea, *widget.Ctx, *El, *int) {
+func areaBox(t *testing.T, text string) (*core.TextArea, *core.Ctx, *El, *int) {
 	t.Helper()
-	a := widget.NewTextArea(text)
+	a := core.NewTextArea(text)
 	changes := 0
 	root := Row(TextArea(a, Grow(1), OnChange(func() { changes++ })))
 	c := testCtx(t)
@@ -610,10 +610,10 @@ func areaBox(t *testing.T, text string) (*widget.TextArea, *widget.Ctx, *El, *in
 	return a, c, root, &changes
 }
 
-func focusArea(a *widget.TextArea, c *widget.Ctx, root *El) {
-	c.In = widget.Input{X: 380, Y: 5, Click: true, Held: true, Clicks: 1}
+func focusArea(a *core.TextArea, c *core.Ctx, root *El) {
+	c.In = core.Input{X: 380, Y: 5, Click: true, Held: true, Clicks: 1}
 	Update(c, root)
-	c.In = widget.Input{X: 380, Y: 5}
+	c.In = core.Input{X: 380, Y: 5}
 	Update(c, root)
 	_ = a
 }
@@ -624,16 +624,16 @@ func TestTextAreaTypingEnterAndUndo(t *testing.T) {
 	if !a.Focused {
 		t.Fatal("a click must focus the area")
 	}
-	c.In = widget.Input{Typed: []rune("hi")}
+	c.In = core.Input{Typed: []rune("hi")}
 	Update(c, root)
-	c.In = widget.Input{Enter: true}
+	c.In = core.Input{Enter: true}
 	Update(c, root)
-	c.In = widget.Input{Typed: []rune("yo")}
+	c.In = core.Input{Typed: []rune("yo")}
 	Update(c, root)
 	if a.Text != "hi\nyo" || *changes != 3 {
 		t.Fatalf("text %q changes %d", a.Text, *changes)
 	}
-	c.In = widget.Input{Ctrl: true, Undo: true}
+	c.In = core.Input{Ctrl: true, Undo: true}
 	Update(c, root)
 	if a.Text != "hi\n" {
 		t.Fatalf("undo: %q", a.Text)
@@ -644,12 +644,12 @@ func TestTextAreaClickPlacesTheCursorByLineAndColumn(t *testing.T) {
 	a, c, root, _ := areaBox(t, "abc\ndef\nghi")
 	lineH := c.LineH(c.F.Mono) + 4
 
-	c.In = widget.Input{X: 390, Y: lineH + 3, Click: true, Held: true, Clicks: 1}
+	c.In = core.Input{X: 390, Y: lineH + 3, Click: true, Held: true, Clicks: 1}
 	Update(c, root)
 	if l, col := a.LineCol(a.Cursor); l != 1 || col != 3 {
 		t.Fatalf("far right on line 1: %d,%d want 1,3", l, col)
 	}
-	c.In = widget.Input{X: 2, Y: 2*lineH + 3, Click: true, Held: true, Clicks: 1} // in the gutter
+	c.In = core.Input{X: 2, Y: 2*lineH + 3, Click: true, Held: true, Clicks: 1} // in the gutter
 	Update(c, root)
 	if l, col := a.LineCol(a.Cursor); l != 2 || col != 0 {
 		t.Fatalf("left edge on line 2: %d,%d want 2,0", l, col)
@@ -659,11 +659,11 @@ func TestTextAreaClickPlacesTheCursorByLineAndColumn(t *testing.T) {
 func TestTextAreaDragSelectsAcrossLines(t *testing.T) {
 	a, c, root, _ := areaBox(t, "abc\ndef\nghi")
 	lineH := c.LineH(c.F.Mono) + 4
-	c.In = widget.Input{X: 390, Y: 3, Click: true, Held: true, Clicks: 1}
+	c.In = core.Input{X: 390, Y: 3, Click: true, Held: true, Clicks: 1}
 	Update(c, root)
-	c.In = widget.Input{X: 390, Y: lineH + 3, Held: true}
+	c.In = core.Input{X: 390, Y: lineH + 3, Held: true}
 	Update(c, root)
-	c.In = widget.Input{X: 390, Y: lineH + 3}
+	c.In = core.Input{X: 390, Y: lineH + 3}
 	Update(c, root)
 	if a.SelectedText() != "\ndef" || a.Dragging {
 		t.Fatalf("selection %q dragging %v", a.SelectedText(), a.Dragging)
@@ -672,18 +672,18 @@ func TestTextAreaDragSelectsAcrossLines(t *testing.T) {
 
 func TestTextAreaTabIndentsAndKeepsFocus(t *testing.T) {
 	a, c, _, _ := areaBox(t, "x")
-	b := widget.NewTextField("other")
+	b := core.NewTextField("other")
 	root := Col(TextArea(a, H(50)), Field(&b, H(30)))
 	Layout(c, root, 400, 80)
 	a.Focused = true
 
-	c.In = widget.Input{Tab: true}
+	c.In = core.Input{Tab: true}
 	Update(c, root)
 	if a.Text != "x " || !a.Focused || b.Focused {
 		t.Fatalf("Tab: text %q area focused %v field focused %v; Tab belongs to the editor", a.Text, a.Focused, b.Focused)
 	}
 	a.Text, a.Cursor = "  x", 3
-	c.In = widget.Input{Tab: true, Shift: true}
+	c.In = core.Input{Tab: true, Shift: true}
 	Update(c, root)
 	if a.Text != "x" {
 		t.Fatalf("Shift+Tab: %q", a.Text)
@@ -693,7 +693,7 @@ func TestTextAreaTabIndentsAndKeepsFocus(t *testing.T) {
 func TestTextAreaEscapeBlurs(t *testing.T) {
 	a, c, root, _ := areaBox(t, "x")
 	a.Focused = true
-	c.In = widget.Input{Escape: true}
+	c.In = core.Input{Escape: true}
 	Update(c, root)
 	if a.Focused {
 		t.Fatal("Escape must leave the editor")
@@ -706,7 +706,7 @@ func TestTextAreaScrollsWithWheelAndFollowsTheCursor(t *testing.T) {
 		text += "line\n"
 	}
 	a, c, root, _ := areaBox(t, text)
-	c.In = widget.Input{X: 50, Y: 20, Wheel: -2}
+	c.In = core.Input{X: 50, Y: 20, Wheel: -2}
 	Update(c, root)
 	if a.ScrollY <= 0 {
 		t.Fatalf("wheel must scroll, ScrollY = %d", a.ScrollY)
@@ -714,7 +714,7 @@ func TestTextAreaScrollsWithWheelAndFollowsTheCursor(t *testing.T) {
 
 	a.Focused = true
 	a.Cursor = 0
-	c.In = widget.Input{Edits: []widget.Edit{widget.EditDocEnd}}
+	c.In = core.Input{Edits: []core.Edit{core.EditDocEnd}}
 	Update(c, root)
 	lineH := c.LineH(c.F.Mono) + 4
 	if want := 101*lineH - 100; a.ScrollY < want-ScrollbarSlack || a.ScrollY > want+ScrollbarSlack {
@@ -723,13 +723,13 @@ func TestTextAreaScrollsWithWheelAndFollowsTheCursor(t *testing.T) {
 }
 
 // ScrollbarSlack allows for the horizontal scrollbar eating a few pixels.
-const ScrollbarSlack = widget.ScrollbarW
+const ScrollbarSlack = core.ScrollbarW
 
 func TestTextAreaPasteKeepsLines(t *testing.T) {
 	a, c, root, _ := areaBox(t, "")
 	a.Focused = true
 	c.Clipboard = &fakeClipboard{text: "{\r\n  \"a\": 1\r\n}"}
-	c.In = widget.Input{Ctrl: true, Paste: true}
+	c.In = core.Input{Ctrl: true, Paste: true}
 	Update(c, root)
 	if a.Text != "{\n  \"a\": 1\n}" || a.LineCount() != 3 {
 		t.Fatalf("text %q", a.Text)
@@ -742,7 +742,7 @@ func TestTextAreaShiftWheelScrollsSideways(t *testing.T) {
 		long += "w"
 	}
 	a, c, root, _ := areaBox(t, long)
-	c.In = widget.Input{X: 50, Y: 20, Wheel: -2, Shift: true}
+	c.In = core.Input{X: 50, Y: 20, Wheel: -2, Shift: true}
 	Update(c, root)
 	if a.ScrollX <= 0 || a.ScrollY != 0 {
 		t.Fatalf("ScrollX %d ScrollY %d", a.ScrollX, a.ScrollY)
@@ -776,13 +776,13 @@ func TestFloatCenterCentersTheElement(t *testing.T) {
 	dialog := box(W(100), H(40), FloatCenter())
 	root := Stack(box(), dialog)
 	Layout(testCtx(t), root, 400, 200)
-	if dialog.rect != (widget.Rect{X: 150, Y: 80, W: 100, H: 40}) {
+	if dialog.rect != (core.Rect{X: 150, Y: 80, W: 100, H: 40}) {
 		t.Fatalf("dialog = %+v", dialog.rect)
 	}
 }
 
 func TestFocusScopeTrapsTab(t *testing.T) {
-	outside, in1, in2 := widget.NewTextField("o"), widget.NewTextField("1"), widget.NewTextField("2")
+	outside, in1, in2 := core.NewTextField("o"), core.NewTextField("1"), core.NewTextField("2")
 	root := Stack(
 		Col(Field(&outside, H(30))),
 		Col(FocusScope(), FloatAt(0, 40), Field(&in1, H(30)), Field(&in2, H(30))),
@@ -790,7 +790,7 @@ func TestFocusScopeTrapsTab(t *testing.T) {
 	c := testCtx(t)
 	Layout(c, root, 200, 150)
 	tab := func(shift bool) {
-		c.In = widget.Input{Tab: true, Shift: shift}
+		c.In = core.Input{Tab: true, Shift: shift}
 		Update(c, root)
 	}
 	flags := func() [3]bool { return [3]bool{outside.Focused, in1.Focused, in2.Focused} }
@@ -815,11 +815,11 @@ func TestOnRightClickGetsThePointer(t *testing.T) {
 	root := Row(box(W(100), OnRightClick(func(x, y int) { gx, gy, n = x, y, n+1 })))
 	c := testCtx(t)
 	Layout(c, root, 200, 50)
-	c.In = widget.Input{X: 30, Y: 20, RightClick: true}
+	c.In = core.Input{X: 30, Y: 20, RightClick: true}
 	Update(c, root)
-	c.In = widget.Input{X: 150, Y: 20, RightClick: true} // outside the element
+	c.In = core.Input{X: 150, Y: 20, RightClick: true} // outside the element
 	Update(c, root)
-	c.In = widget.Input{X: 30, Y: 20, Click: true} // a left click is not a right click
+	c.In = core.Input{X: 30, Y: 20, Click: true} // a left click is not a right click
 	Update(c, root)
 	if n != 1 || gx != 30 || gy != 20 {
 		t.Fatalf("calls %d at %d,%d", n, gx, gy)
@@ -832,7 +832,7 @@ func TestModalAlsoSwallowsAndDismissesOnRightClickOutside(t *testing.T) {
 	root := Stack(box(OnRightClick(func(int, int) { under++ })), menu)
 	c := testCtx(t)
 	Layout(c, root, 200, 100)
-	c.In = widget.Input{X: 150, Y: 80, RightClick: true}
+	c.In = core.Input{X: 150, Y: 80, RightClick: true}
 	Update(c, root)
 	if dismissed != 1 || under != 0 {
 		t.Fatalf("dismissed %d, reached the element below %d", dismissed, under)
@@ -845,12 +845,12 @@ func TestRightClickIsHandledByTheInnermostElementOnly(t *testing.T) {
 		Row(W(50), OnRightClick(func(int, int) { inner++ }))))
 	c := testCtx(t)
 	Layout(c, root, 200, 50)
-	c.In = widget.Input{X: 20, Y: 10, RightClick: true} // over the inner element
+	c.In = core.Input{X: 20, Y: 10, RightClick: true} // over the inner element
 	Update(c, root)
 	if inner != 1 || outer != 0 {
 		t.Fatalf("inner %d outer %d: one right click opens one menu", inner, outer)
 	}
-	c.In = widget.Input{X: 80, Y: 10, RightClick: true} // over the outer only
+	c.In = core.Input{X: 80, Y: 10, RightClick: true} // over the outer only
 	Update(c, root)
 	if inner != 1 || outer != 1 {
 		t.Fatalf("inner %d outer %d", inner, outer)
@@ -865,7 +865,7 @@ func TestTableRowRightClickReportsTheRowButNotThePlaceholder(t *testing.T) {
 	c := testCtx(t)
 	Layout(c, root, 400, 400)
 	for _, row := range []int{0, 1, 2} { // 2 is the placeholder row
-		c.In = widget.Input{X: 150, Y: cellY(row), RightClick: true}
+		c.In = core.Input{X: 150, Y: cellY(row), RightClick: true}
 		Update(c, root)
 	}
 	if !reflect.DeepEqual(rows, []int{0, 1}) {
@@ -874,14 +874,14 @@ func TestTableRowRightClickReportsTheRowButNotThePlaceholder(t *testing.T) {
 }
 
 func TestBorderLeftOptionRecordsTheTokenAndInset(t *testing.T) {
-	e := box(BorderLeft(widget.BorderSoft), BorderInset(6))
-	if e.borderLeft != widget.BorderSoft || e.borderInset != 6 {
+	e := box(BorderLeft(core.BorderSoft), BorderInset(6))
+	if e.borderLeft != core.BorderSoft || e.borderInset != 6 {
 		t.Fatalf("%q %d", e.borderLeft, e.borderInset)
 	}
 }
 
 func TestFieldTextInsetDefaultsAndCanBeReduced(t *testing.T) {
-	f := widget.NewTextField("x")
+	f := core.NewTextField("x")
 	plain := Field(&f)
 	tight := Field(&f, FieldPad(5))
 	if plain.textInset() != fieldPad || tight.textInset() != 5 {

@@ -8,7 +8,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/jsonview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 func luminance(c color.RGBA) float64 {
@@ -32,7 +32,7 @@ func contrast(a, b color.RGBA) float64 {
 func TestAppColorsAreReadableOnLists(t *testing.T) {
 	for _, tc := range ThemeChoices {
 		th := tc.Build()
-		bg := th.Color(widget.Sunken)
+		bg := th.Color(core.Sunken)
 		for _, m := range []string{"GET", "POST", "PUT", "PATCH", "DELETE"} {
 			if got := contrast(th.Color(MethodToken(m)), bg); got < 3.5 {
 				t.Errorf("%s: method %s contrast %.2f", tc.ID, m, got)
@@ -61,22 +61,22 @@ func TestThemeFor(t *testing.T) {
 		wantBg            color.RGBA
 		wantFont          float64
 	}{
-		{"dark medium", "dark", "medium", widget.Dark().Color(widget.Bg), 14},
-		{"light large", "light", "large", widget.Light().Color(widget.Bg), 16},
-		{"unknown theme falls back to dark", "neon", "small", widget.Dark().Color(widget.Bg), 13},
-		{"unknown size falls back to medium", "light", "huge", widget.Light().Color(widget.Bg), 14},
+		{"dark medium", "dark", "medium", core.Dark().Color(core.Bg), 14},
+		{"light large", "light", "large", core.Light().Color(core.Bg), 16},
+		{"unknown theme falls back to dark", "neon", "small", core.Dark().Color(core.Bg), 13},
+		{"unknown size falls back to medium", "light", "huge", core.Light().Color(core.Bg), 14},
 	}
 	for _, tt := range tests {
 		th := ThemeFor(tt.theme, tt.size)
-		if th.Color(widget.Bg) != tt.wantBg || th.FontSize != tt.wantFont {
-			t.Errorf("%s: bg %v font %v", tt.name, th.Color(widget.Bg), th.FontSize)
+		if th.Color(core.Bg) != tt.wantBg || th.FontSize != tt.wantFont {
+			t.Errorf("%s: bg %v font %v", tt.name, th.Color(core.Bg), th.FontSize)
 		}
 	}
 }
 
 func TestUnknownMethodFallsBackToTheTextColor(t *testing.T) {
 	th := ThemeFor("dark", "medium")
-	if th.Color(MethodToken("PROPFIND")) != th.Color(widget.Text) {
+	if th.Color(MethodToken("PROPFIND")) != th.Color(core.Text) {
 		t.Fatal("unknown method must resolve to the text color")
 	}
 }
@@ -86,7 +86,7 @@ func TestCodeLinesKeepsStructureAndColors(t *testing.T) {
 	if len(lines) != 3 || !lines[0].Foldable || lines[1].Foldable {
 		t.Fatalf("lines = %+v", lines)
 	}
-	var styles []widget.Token
+	var styles []core.Token
 	for _, s := range lines[1].Spans {
 		styles = append(styles, s.Style)
 	}
@@ -96,7 +96,7 @@ func TestCodeLinesKeepsStructureAndColors(t *testing.T) {
 }
 
 func TestMethodTokenForRequestsWithoutAMethod(t *testing.T) {
-	if MethodToken("") != widget.Muted {
+	if MethodToken("") != core.Muted {
 		t.Fatal("a request without a method (WebSocket, MCP) uses the muted color")
 	}
 	if MethodToken("GET") != "method.GET" {
@@ -127,7 +127,7 @@ func TestThemeWithAppliesCornersAndTheFlatSwitch(t *testing.T) {
 func TestAppThemesCarryMethodAndJSONColorsOverTheToolkitStyles(t *testing.T) {
 	for _, id := range []string{"dark", "light"} {
 		th := ThemeFor(id, "medium")
-		if th.Color(MethodToken("GET")) == th.Color(widget.Text) || th.Color(respview.Tokens[jsonview.Key]) == (color.RGBA{}) {
+		if th.Color(MethodToken("GET")) == th.Color(core.Text) || th.Color(respview.Tokens[jsonview.Key]) == (color.RGBA{}) {
 			t.Errorf("%s: app colors missing", id)
 		}
 		if th.Style("primary").Radius <= 0 {

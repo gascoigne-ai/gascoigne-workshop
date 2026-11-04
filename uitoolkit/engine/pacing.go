@@ -3,7 +3,7 @@
 // key-binding model. Nothing here knows about the workshop's screens.
 package engine
 
-import "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+import "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 
 // HeartbeatTicks is the number of ticks after which a frame is drawn
 // even when nothing changed, in case the window system lost the content.
@@ -22,7 +22,7 @@ const (
 // InputActive reports whether this frame's input differs from the last
 // one in a way that can change what is on screen. A resting pointer and
 // held-still keys are not activity.
-func InputActive(prev, in widget.Input) bool {
+func InputActive(prev, in core.Input) bool {
 	return in.X != prev.X || in.Y != prev.Y ||
 		in.Click || in.Held || prev.Held || in.RightClick || in.MiddleClick || in.Wheel != 0 ||
 		len(in.Typed) > 0 || len(in.Keys) > 0 || len(in.Edits) > 0 ||

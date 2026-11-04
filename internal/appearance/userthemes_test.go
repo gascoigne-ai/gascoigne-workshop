@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 func writeTheme(t *testing.T, dir, file, content string) {
@@ -29,13 +29,13 @@ func TestUserThemeFilesBuildOnABuiltInThemeAndAreListed(t *testing.T) {
 		t.Fatalf("themes %v problems %v", themes, problems)
 	}
 	ocean := themes["ocean"]
-	if ocean.Label != "Ocean" || ocean.Build().Color(widget.Accent) != widget.RGB(0x115577) {
+	if ocean.Label != "Ocean" || ocean.Build().Color(core.Accent) != core.RGB(0x115577) {
 		t.Fatalf("ocean: %+v", ocean)
 	}
-	if ocean.Build().Color(widget.Bg) != LightTheme().Color(widget.Bg) || ocean.Build().Style("button").Radius != 12 {
+	if ocean.Build().Color(core.Bg) != LightTheme().Color(core.Bg) || ocean.Build().Style("button").Radius != 12 {
 		t.Fatal("it builds on the light theme and overrides its button")
 	}
-	if themes["plain"].Build().Color(widget.Text) != DarkTheme().Color(widget.Text) || themes["plain"].Label != "plain" {
+	if themes["plain"].Build().Color(core.Text) != DarkTheme().Color(core.Text) || themes["plain"].Label != "plain" {
 		t.Fatal("no extends means dark, and the label falls back to the file name")
 	}
 }
@@ -69,11 +69,11 @@ func TestSettingsCanSelectAUserThemeAndFallBackWhenItVanishes(t *testing.T) {
 	}
 	s := settings.Default()
 	s.Theme = "ocean"
-	if ThemeWith(s).Color(widget.Accent) != widget.RGB(0x115577) {
+	if ThemeWith(s).Color(core.Accent) != core.RGB(0x115577) {
 		t.Fatal("the user theme is selected")
 	}
 	s.Theme = "gone"
-	if ThemeWith(s).Color(widget.Bg) != DarkTheme().Color(widget.Bg) {
+	if ThemeWith(s).Color(core.Bg) != DarkTheme().Color(core.Bg) {
 		t.Fatal("a missing theme falls back to dark")
 	}
 	none, _ := LoadUserThemes("") // no folder: only the built-ins

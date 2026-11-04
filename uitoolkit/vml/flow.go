@@ -3,14 +3,14 @@ package vml
 import (
 	"github.com/hajimehoshi/ebiten/v2"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 // fragment groups children without adding a box, so For can return many
 // nodes where one is expected. Parents splice it away.
 type fragment struct{ plain }
 
-func (fragment) draw(*El, *widget.Ctx, *ebiten.Image) {}
+func (fragment) draw(*El, *core.Ctx, *ebiten.Image) {}
 
 func isFragment(e *El) bool {
 	_, ok := e.b.(fragment)

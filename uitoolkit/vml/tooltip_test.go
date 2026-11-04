@@ -3,7 +3,7 @@ package vml
 import (
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 func TestTooltipAppearsAfterTheHoverDelayAndOnlyThenIsShown(t *testing.T) {
@@ -11,7 +11,7 @@ func TestTooltipAppearsAfterTheHoverDelayAndOnlyThenIsShown(t *testing.T) {
 	b := box(W(100), Tooltip("Other"))
 	root := Row(a, b)
 	c := testCtx(t)
-	c.In = widget.Input{X: 50, Y: 10}
+	c.In = core.Input{X: 50, Y: 10}
 	c.Tick = 100
 	drawn(t, c, root, 200, 50)
 	if c.TipShown || !c.TipWaiting || c.TipText != "Copy the body" {
@@ -28,7 +28,7 @@ func TestTooltipAppearsAfterTheHoverDelayAndOnlyThenIsShown(t *testing.T) {
 		t.Fatalf("after the delay: shown %v waiting %v", c.TipShown, c.TipWaiting)
 	}
 	// Moving to another element starts the wait again.
-	c.In = widget.Input{X: 150, Y: 10}
+	c.In = core.Input{X: 150, Y: 10}
 	c.Tick++
 	drawn(t, c, root, 200, 50)
 	if c.TipShown || c.TipText != "Other" {
@@ -40,7 +40,7 @@ func TestTooltipGoesAwayOffTheElementAndOnClick(t *testing.T) {
 	a := box(W(100), Tooltip("tip"))
 	root := Row(a, box(W(100)))
 	c := testCtx(t)
-	c.In = widget.Input{X: 50, Y: 10}
+	c.In = core.Input{X: 50, Y: 10}
 	c.Tick = 10
 	drawn(t, c, root, 200, 50)
 	c.Tick = 10 + TipDelayTicks
@@ -48,13 +48,13 @@ func TestTooltipGoesAwayOffTheElementAndOnClick(t *testing.T) {
 	if !c.TipShown {
 		t.Fatal("setup: the tip must be shown")
 	}
-	c.In = widget.Input{X: 50, Y: 10, Click: true, Held: true}
+	c.In = core.Input{X: 50, Y: 10, Click: true, Held: true}
 	c.Tick++
 	drawn(t, c, root, 200, 50)
 	if c.TipShown {
 		t.Fatal("a click hides the tooltip")
 	}
-	c.In = widget.Input{X: 150, Y: 10}
+	c.In = core.Input{X: 150, Y: 10}
 	c.Tick++
 	drawn(t, c, root, 200, 50)
 	if c.TipText != "" || c.TipShown || c.TipWaiting {
@@ -67,7 +67,7 @@ func TestNoTooltipForElementsUnderAModalOverlay(t *testing.T) {
 	overlay := box(W(10), H(10), FloatAt(150, 0), Modal(func() {}))
 	root := Stack(Row(under), overlay)
 	c := testCtx(t)
-	c.In = widget.Input{X: 50, Y: 30}
+	c.In = core.Input{X: 50, Y: 30}
 	drawn(t, c, root, 200, 50)
 	if c.TipText != "" {
 		t.Fatalf("tooltip %q under a modal", c.TipText)
@@ -92,7 +92,7 @@ func TestEveryLineIconHasASizeAHoverColorAndDrawsWithoutHelp(t *testing.T) {
 		}
 		c := testCtx(t)
 		root := Row(W(30), H(30), e)
-		c.In = widget.Input{X: 10, Y: 10} // hovered, so the hover color path runs too
+		c.In = core.Input{X: 10, Y: 10} // hovered, so the hover color path runs too
 		drawn(t, c, root, 30, 30)
 	}
 }
@@ -100,7 +100,7 @@ func TestEveryLineIconHasASizeAHoverColorAndDrawsWithoutHelp(t *testing.T) {
 func TestIconButtonIsAnOutlinedChipAroundTheGlyph(t *testing.T) {
 	g := Trash(Grow(1))
 	b := IconButton(g, W(40), H(28))
-	if b.bg != widget.Sunken || b.control != "icon-button" {
+	if b.bg != core.Sunken || b.control != "icon-button" {
 		t.Fatalf("bg %q control %q", b.bg, b.control)
 	}
 	Layout(testCtx(t), Col(b), 100, 100)

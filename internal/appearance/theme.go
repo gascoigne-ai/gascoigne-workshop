@@ -4,8 +4,8 @@ import (
 	"embed"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/theming"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // App-specific color tokens, added to the widget theme.
@@ -13,11 +13,11 @@ const MethodTokenPrefix = "method."
 
 // MethodToken is the color token of an HTTP method; unknown methods
 // resolve to the text color through Theme.Color's fallback.
-func MethodToken(method string) widget.Token {
+func MethodToken(method string) core.Token {
 	if method == "" {
-		return widget.Muted
+		return core.Muted
 	}
-	return widget.Token(MethodTokenPrefix + method)
+	return core.Token(MethodTokenPrefix + method)
 }
 
 //go:embed themes/*.json
@@ -25,21 +25,21 @@ var themeFiles embed.FS
 
 // appTheme is a toolkit theme with the app's own colors (HTTP methods,
 // JSON syntax) from themes/<id>.json laid over it. The toolkit's palettes
-// and control styles are in uitoolkit/widget/themes; both are plain theme files.
-func appTheme(id string, base widget.Theme) widget.Theme {
+// and control styles are in uitoolkit/core/themes; both are plain theme files.
+func appTheme(id string, base core.Theme) core.Theme {
 	data, err := themeFiles.ReadFile("themes/" + id + ".json")
 	if err != nil {
 		panic(err)
 	}
-	th, err := widget.ParseTheme(data, &base)
+	th, err := core.ParseTheme(data, &base)
 	if err != nil {
 		panic("app theme " + id + ": " + err.Error())
 	}
 	return th
 }
 
-func DarkTheme() widget.Theme  { return appTheme("dark", widget.Dark()) }
-func LightTheme() widget.Theme { return appTheme("light", widget.Light()) }
+func DarkTheme() core.Theme  { return appTheme("dark", core.Dark()) }
+func LightTheme() core.Theme { return appTheme("light", core.Light()) }
 
 // The mechanics (choices, text sizes, corners, contrast, color overrides,
 // the user's theme folder) are the toolkit's, in uitoolkit/theming. This
@@ -90,10 +90,10 @@ func AllThemeChoices() []ThemeChoice { return catalog.All() }
 func ThemeIDOf(id string) string { return catalog.ThemeID(id) }
 
 // ThemeFor builds the theme for a theme id and a text size id.
-func ThemeFor(themeID, textSizeID string) widget.Theme { return catalog.For(themeID, textSizeID) }
+func ThemeFor(themeID, textSizeID string) core.Theme { return catalog.For(themeID, textSizeID) }
 
 // ThemeWith is the theme for the settings.
-func ThemeWith(s settings.Settings) widget.Theme {
+func ThemeWith(s settings.Settings) core.Theme {
 	return catalog.Theme(theming.Prefs{Theme: s.Theme, TextSize: s.TextSize, Corners: s.Corners,
 		Contrast: s.Contrast, Flat: s.Flat, Colors: s.Colors})
 }

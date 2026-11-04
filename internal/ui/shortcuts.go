@@ -6,8 +6,8 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // shortcut is a global key binding. A binding fires only when its
@@ -57,7 +57,7 @@ func (s shortcut) label() string {
 }
 
 // runShortcuts runs the bindings whose key went down this frame.
-func (a *App) runShortcuts(in widget.Input) {
+func (a *App) runShortcuts(in core.Input) {
 	for _, k := range in.Keys {
 		for _, s := range shortcuts {
 			if b := a.bindingOf(s); b.Bound && b.Key == k && b.Ctrl == in.Ctrl && b.Shift == in.Shift && b.Alt == in.Alt {

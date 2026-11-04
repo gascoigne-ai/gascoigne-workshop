@@ -9,11 +9,11 @@ import (
 	"unicode/utf8"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/jsonview"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 // Tokens colors the spans of a JSON response.
-var Tokens = map[jsonview.Kind]widget.Token{
+var Tokens = map[jsonview.Kind]core.Token{
 	jsonview.Plain:   "json.plain",
 	jsonview.Punct:   "json.punct",
 	jsonview.Key:     "json.key",
@@ -23,15 +23,15 @@ var Tokens = map[jsonview.Kind]widget.Token{
 }
 
 // CodeLines turns a response body into colored code-view lines.
-func CodeLines(body []byte) []widget.Line {
+func CodeLines(body []byte) []core.Line {
 	src := jsonview.Lines(body)
-	lines := make([]widget.Line, len(src))
+	lines := make([]core.Line, len(src))
 	for i, l := range src {
-		spans := make([]widget.Span, len(l.Spans))
+		spans := make([]core.Span, len(l.Spans))
 		for j, s := range l.Spans {
-			spans[j] = widget.Span{Text: s.Text, Style: Tokens[s.Kind]}
+			spans[j] = core.Span{Text: s.Text, Style: Tokens[s.Kind]}
 		}
-		lines[i] = widget.Line{Spans: spans, Foldable: l.Foldable}
+		lines[i] = core.Line{Spans: spans, Foldable: l.Foldable}
 	}
 	return lines
 }
@@ -46,28 +46,28 @@ const CompactFoldDepth = 2
 
 // CompactLines is the response as compact JSON lines; the opening line of
 // every block carries its one-line preview for when it is folded.
-func CompactLines(body []byte) []widget.Line {
+func CompactLines(body []byte) []core.Line {
 	src := jsonview.Compact(body, CompactWidth)
-	lines := make([]widget.Line, len(src))
+	lines := make([]core.Line, len(src))
 	for i, l := range src {
-		lines[i] = widget.Line{Spans: toSpans(l.Spans), Foldable: l.Foldable, FoldedSpans: toSpans(l.Folded), Depth: l.Depth, Num: i + 1}
+		lines[i] = core.Line{Spans: toSpans(l.Spans), Foldable: l.Foldable, FoldedSpans: toSpans(l.Folded), Depth: l.Depth, Num: i + 1}
 	}
 	return lines
 }
 
-func toSpans(src []jsonview.Span) []widget.Span {
+func toSpans(src []jsonview.Span) []core.Span {
 	if src == nil {
 		return nil
 	}
-	spans := make([]widget.Span, len(src))
+	spans := make([]core.Span, len(src))
 	for j, s := range src {
-		spans[j] = widget.Span{Text: s.Text, Style: Tokens[s.Kind]}
+		spans[j] = core.Span{Text: s.Text, Style: Tokens[s.Kind]}
 	}
 	return spans
 }
 
 // FoldDeep folds every block that opens at nesting depth or deeper.
-func FoldDeep(v *widget.CodeView, depth int) {
+func FoldDeep(v *core.CodeView, depth int) {
 	for i, l := range v.Lines {
 		if l.Foldable && l.Depth >= depth {
 			v.Folded[i] = true
@@ -91,11 +91,11 @@ func LooksBinary(body []byte) bool {
 const binarySample = 8 << 10
 
 // RawLines shows a body exactly as received, one plain line per line.
-func RawLines(body []byte) []widget.Line {
+func RawLines(body []byte) []core.Line {
 	texts := strings.Split(string(body), "\n")
-	lines := make([]widget.Line, len(texts))
+	lines := make([]core.Line, len(texts))
 	for i, text := range texts {
-		lines[i] = widget.Line{Spans: []widget.Span{{Text: strings.TrimRight(text, "\r"), Style: Tokens[jsonview.Plain]}}}
+		lines[i] = core.Line{Spans: []core.Span{{Text: strings.TrimRight(text, "\r"), Style: Tokens[jsonview.Plain]}}}
 	}
 	return lines
 }

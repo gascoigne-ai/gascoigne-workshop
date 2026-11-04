@@ -8,14 +8,14 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // settle runs idle frames and clears the dirty flag, as drawing does.
 func settle(a *App, frames int) {
 	for range frames {
-		a.step(widget.Input{X: a.lastIn.X, Y: a.lastIn.Y})
+		a.step(core.Input{X: a.lastIn.X, Y: a.lastIn.Y})
 		a.dirty = false
 	}
 }
@@ -27,7 +27,7 @@ func TestAFreshAppNeedsADrawAndAnIdleOneDoesNot(t *testing.T) {
 	}
 	settle(a, 3)
 	for range 300 {
-		a.step(widget.Input{X: a.lastIn.X, Y: a.lastIn.Y})
+		a.step(core.Input{X: a.lastIn.X, Y: a.lastIn.Y})
 		if a.dirty && a.ctx.Tick%engine.HeartbeatTicks != 0 {
 			t.Fatalf("an idle frame at tick %d asked for a redraw", a.ctx.Tick)
 		}
@@ -40,7 +40,7 @@ func TestIdleHeartbeatRedrawsOnceInAWhile(t *testing.T) {
 	settle(a, 3)
 	beats := 0
 	for range 3 * engine.HeartbeatTicks {
-		a.step(widget.Input{X: a.lastIn.X, Y: a.lastIn.Y})
+		a.step(core.Input{X: a.lastIn.X, Y: a.lastIn.Y})
 		if a.dirty {
 			beats++
 		}
@@ -54,7 +54,7 @@ func TestIdleHeartbeatRedrawsOnceInAWhile(t *testing.T) {
 func TestInputMakesTheNextFrameDirtyOnlyWhenItChangesSomething(t *testing.T) {
 	a, _ := newTestApp(t)
 	settle(a, 3)
-	still := widget.Input{X: 10, Y: 10}
+	still := core.Input{X: 10, Y: 10}
 	a.step(still)
 	a.dirty = false
 	a.step(still)
@@ -63,7 +63,7 @@ func TestInputMakesTheNextFrameDirtyOnlyWhenItChangesSomething(t *testing.T) {
 	}
 	a.dirty = false
 
-	for name, in := range map[string]widget.Input{
+	for name, in := range map[string]core.Input{
 		"a moved pointer": {X: 70, Y: 80},
 		"a click":         {X: 50, Y: 60, Click: true, Held: true},
 		"a held button":   {X: 50, Y: 60, Held: true},
@@ -71,13 +71,13 @@ func TestInputMakesTheNextFrameDirtyOnlyWhenItChangesSomething(t *testing.T) {
 		"a right click":   {X: 50, Y: 60, RightClick: true},
 		"typed text":      {X: 50, Y: 60, Typed: []rune("a")},
 		"a key":           {X: 50, Y: 60, Keys: []ebiten.Key{ebiten.KeyF3}},
-		"an edit key":     {X: 50, Y: 60, Edits: []widget.Edit{widget.EditLeft}},
+		"an edit key":     {X: 50, Y: 60, Edits: []core.Edit{core.EditLeft}},
 		"Escape":          {X: 50, Y: 60, Escape: true},
 		"a clipboard key": {X: 50, Y: 60, Paste: true},
 	} {
 		// map order is random: put the pointer at a known place first, so only
 		// the case under test can be what makes the frame dirty
-		a.step(widget.Input{X: 50, Y: 60})
+		a.step(core.Input{X: 50, Y: 60})
 		settle(a, 2)
 		a.dirty = false
 		a.step(in)
@@ -90,9 +90,9 @@ func TestInputMakesTheNextFrameDirtyOnlyWhenItChangesSomething(t *testing.T) {
 
 func TestReleasingTheButtonIsActivity(t *testing.T) {
 	a, _ := newTestApp(t)
-	a.step(widget.Input{X: 5, Y: 5, Held: true})
+	a.step(core.Input{X: 5, Y: 5, Held: true})
 	a.dirty = false
-	a.step(widget.Input{X: 5, Y: 5}) // released, nothing else changed
+	a.step(core.Input{X: 5, Y: 5}) // released, nothing else changed
 	if !a.dirty {
 		t.Fatal("the release ends a drag or a press: redraw")
 	}
@@ -106,7 +106,7 @@ func TestAnArrivingResponseRequestsARedraw(t *testing.T) {
 	a.send(tab)
 	for range 400 {
 		a.dirty = false
-		a.step(widget.Input{X: a.lastIn.X, Y: a.lastIn.Y})
+		a.step(core.Input{X: a.lastIn.X, Y: a.lastIn.Y})
 		if tab.resp != nil {
 			if !a.dirty {
 				t.Fatal("the frame that applied the response must be drawn")
@@ -129,7 +129,7 @@ func TestToastsRequestRedrawsWhenShownAndWhenTheyExpire(t *testing.T) {
 	}
 	settle(a, 2)
 	clock = clock.Add(10 * time.Second)
-	a.step(widget.Input{X: a.lastIn.X, Y: a.lastIn.Y})
+	a.step(core.Input{X: a.lastIn.X, Y: a.lastIn.Y})
 	if !a.dirty || len(a.toasts) != 0 {
 		t.Fatalf("an expired toast must be removed and drawn away (dirty %v, toasts %d)", a.dirty, len(a.toasts))
 	}
@@ -140,7 +140,7 @@ func TestTheCaretBlinkRedrawsOnlyWhileATextWidgetHasFocus(t *testing.T) {
 	settle(a, 3)
 	blinks := func(frames int) (n int) {
 		for range frames {
-			a.step(widget.Input{X: a.lastIn.X, Y: a.lastIn.Y})
+			a.step(core.Input{X: a.lastIn.X, Y: a.lastIn.Y})
 			if a.dirty && a.ctx.Tick%engine.HeartbeatTicks != 0 {
 				n++
 			}
@@ -179,7 +179,7 @@ func TestResizingOrChangingScaleRequestsARedraw(t *testing.T) {
 func TestScreenshotModeAlwaysDraws(t *testing.T) {
 	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png")})
 	settle(a, 2)
-	a.step(widget.Input{})
+	a.step(core.Input{})
 	a.shotUpdate()
 	if !a.dirty && !a.alwaysDraw() {
 		t.Fatal("a screenshot needs every frame")
@@ -241,16 +241,16 @@ func TestFrameSizeAppliesTheInterfaceScaleOnTopOfTheDisplayScale(t *testing.T) {
 func TestInterfaceScaleSliderResizesLiveAndSavesOnRelease(t *testing.T) {
 	a, path := newTestApp(t)
 	click(a, menuBtnX, menuBtnY)
-	a.step(widget.Input{})
-	a.step(widget.Input{X: scaleTrackX0 + (scaleTrackX1-scaleTrackX0)/3, Y: scaleRowY, Click: true, Held: true})
-	a.step(widget.Input{X: scaleTrackX1 + 400, Y: scaleRowY, Held: true}) // far right: the maximum
+	a.step(core.Input{})
+	a.step(core.Input{X: scaleTrackX0 + (scaleTrackX1-scaleTrackX0)/3, Y: scaleRowY, Click: true, Held: true})
+	a.step(core.Input{X: scaleTrackX1 + 400, Y: scaleRowY, Held: true}) // far right: the maximum
 	if a.settings.UIScalePct != 200 {
 		t.Fatalf("not applied while dragging: %d", a.settings.UIScalePct)
 	}
 	if got, _ := settings.Load(path); got.UIScalePct == 200 {
 		t.Fatal("saved before the release")
 	}
-	a.step(widget.Input{X: scaleTrackX1 + 400, Y: scaleRowY})
+	a.step(core.Input{X: scaleTrackX1 + 400, Y: scaleRowY})
 	if got, _ := settings.Load(path); got.UIScalePct != 200 {
 		t.Fatalf("not saved after the release: %+v", got)
 	}

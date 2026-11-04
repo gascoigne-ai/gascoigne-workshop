@@ -3,7 +3,7 @@ package vml
 import (
 	"github.com/hajimehoshi/ebiten/v2"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 // hscrollArrowW is the width of the arrow buttons at the ends of an
@@ -52,7 +52,7 @@ func (s *hscrollB) maxX(e *El) int {
 	return s.content + 2*s.inset(e) - e.rect.W
 }
 
-func (s *hscrollB) layout(e *El, c *widget.Ctx) {
+func (s *hscrollB) layout(e *El, c *core.Ctx) {
 	r := e.rect
 	s.content, _ = s.flow.measure(e, c, 1<<20)
 	st := s.state
@@ -84,15 +84,15 @@ func (s *hscrollB) layout(e *El, c *widget.Ctx) {
 	}
 	st.X = max(0, min(st.X, s.maxX(e)))
 
-	e.rect = widget.Rect{X: r.X - st.X + s.inset(e), Y: r.Y, W: max(s.content, r.W), H: r.H}
+	e.rect = core.Rect{X: r.X - st.X + s.inset(e), Y: r.Y, W: max(s.content, r.W), H: r.H}
 	s.flow.layout(e, c)
 	e.rect = r
 }
 
-func (s *hscrollB) arrows(e *El) (left, right widget.Rect) {
+func (s *hscrollB) arrows(e *El) (left, right core.Rect) {
 	r := e.rect
-	left = widget.Rect{X: r.X, Y: r.Y, W: hscrollArrowW, H: r.H}
-	right = widget.Rect{X: r.X + r.W - hscrollArrowW, Y: r.Y, W: hscrollArrowW, H: r.H}
+	left = core.Rect{X: r.X, Y: r.Y, W: hscrollArrowW, H: r.H}
+	right = core.Rect{X: r.X + r.W - hscrollArrowW, Y: r.Y, W: hscrollArrowW, H: r.H}
 	return
 }
 
@@ -103,7 +103,7 @@ func (s *hscrollB) arrowsShown(e *El) (left, right bool) {
 }
 
 // preUpdate takes clicks on the arrows before the children under them see them.
-func (s *hscrollB) preUpdate(e *El, c *widget.Ctx) {
+func (s *hscrollB) preUpdate(e *El, c *core.Ctx) {
 	in, st, r := c.In, s.state, e.rect
 	if !s.overflow(e) {
 		return
@@ -157,7 +157,7 @@ func (s *hscrollB) preUpdate(e *El, c *widget.Ctx) {
 }
 
 // update scrolls with the wheel and with a touchpad's sideways swipe.
-func (s *hscrollB) update(e *El, c *widget.Ctx) {
+func (s *hscrollB) update(e *El, c *core.Ctx) {
 	in, st := c.In, s.state
 	if !s.overflow(e) || !in.Over(e.rect) {
 		return
@@ -172,11 +172,11 @@ func (s *hscrollB) update(e *El, c *widget.Ctx) {
 	}
 }
 
-func (s *hscrollB) drawOver(e *El, c *widget.Ctx, dst *ebiten.Image) {
+func (s *hscrollB) drawOver(e *El, c *core.Ctx, dst *ebiten.Image) {
 	left, right := s.arrows(e)
 	showL, showR := s.arrowsShown(e)
 	for _, a := range []struct {
-		box  widget.Rect
+		box  core.Rect
 		show bool
 		dir  float32
 	}{{left, showL, -1}, {right, showR, 1}} {
@@ -185,10 +185,10 @@ func (s *hscrollB) drawOver(e *El, c *widget.Ctx, dst *ebiten.Image) {
 		}
 		fill := a.box
 		fill.H-- // leave the strip's bottom line running under the arrow
-		c.Fill(dst, fill, c.Col(widget.Frame))
-		clr := c.Col(widget.Muted)
+		c.Fill(dst, fill, c.Col(core.Frame))
+		clr := c.Col(core.Muted)
 		if c.Hovered(a.box) {
-			clr = c.Col(widget.Text)
+			clr = c.Col(core.Text)
 		}
 		cx, cy := float32(a.box.X+a.box.W/2), float32(a.box.Y+a.box.H/2)
 		c.Line(dst, cx-2*a.dir, cy-4, cx+2*a.dir, cy, 1.5, clr)

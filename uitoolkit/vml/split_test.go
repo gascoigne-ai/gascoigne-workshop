@@ -3,10 +3,10 @@ package vml
 import (
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
-func splitRoot(t *testing.T, st *SplitState, w, h int, items ...Item) (*El, *El, *El, *widget.Ctx) {
+func splitRoot(t *testing.T, st *SplitState, w, h int, items ...Item) (*El, *El, *El, *core.Ctx) {
 	t.Helper()
 	first, second := box(), box()
 	root := Split(st, 200, append(items, first, second)...)
@@ -17,17 +17,17 @@ func splitRoot(t *testing.T, st *SplitState, w, h int, items ...Item) (*El, *El,
 
 func TestSplitPlacesTwoChildrenAroundAOnePixelDivider(t *testing.T) {
 	_, first, second, _ := splitRoot(t, &SplitState{}, 600, 100)
-	if first.rect != (widget.Rect{W: 200, H: 100}) {
+	if first.rect != (core.Rect{W: 200, H: 100}) {
 		t.Errorf("first = %+v", first.rect)
 	}
-	if second.rect != (widget.Rect{X: 201, W: 399, H: 100}) {
+	if second.rect != (core.Rect{X: 201, W: 399, H: 100}) {
 		t.Errorf("second = %+v (the divider takes one pixel)", second.rect)
 	}
 }
 
 func TestSplitVerticalStacksTheChildren(t *testing.T) {
 	_, first, second, _ := splitRoot(t, &SplitState{}, 100, 600, Vertical())
-	if first.rect != (widget.Rect{W: 100, H: 200}) || second.rect != (widget.Rect{Y: 201, W: 100, H: 399}) {
+	if first.rect != (core.Rect{W: 100, H: 200}) || second.rect != (core.Rect{Y: 201, W: 100, H: 399}) {
 		t.Fatalf("first %+v second %+v", first.rect, second.rect)
 	}
 }
@@ -84,17 +84,17 @@ func TestDraggingTheDividerResizesTheFirstChild(t *testing.T) {
 	st := &SplitState{}
 	root, first, _, c := splitRoot(t, st, 600, 100, MinFirst(50))
 
-	c.In = widget.Input{X: 200, Y: 40, Click: true, Held: true}
+	c.In = core.Input{X: 200, Y: 40, Click: true, Held: true}
 	Update(c, root)
-	c.In = widget.Input{X: 320, Y: 40, Held: true}
+	c.In = core.Input{X: 320, Y: 40, Held: true}
 	Update(c, root)
 	Layout(c, root, 600, 100)
 	if first.rect.W != 320 {
 		t.Fatalf("after dragging to x=320 the first child is %d wide", first.rect.W)
 	}
-	c.In = widget.Input{X: 320, Y: 40} // release
+	c.In = core.Input{X: 320, Y: 40} // release
 	Update(c, root)
-	c.In = widget.Input{X: 500, Y: 40, Held: true}
+	c.In = core.Input{X: 500, Y: 40, Held: true}
 	Update(c, root)
 	Layout(c, root, 600, 100)
 	if first.rect.W != 320 {
@@ -105,9 +105,9 @@ func TestDraggingTheDividerResizesTheFirstChild(t *testing.T) {
 func TestDragKeepsTheGrabOffset(t *testing.T) {
 	st := &SplitState{}
 	root, first, _, c := splitRoot(t, st, 600, 100)
-	c.In = widget.Input{X: 202, Y: 40, Click: true, Held: true} // two pixels right of the divider
+	c.In = core.Input{X: 202, Y: 40, Click: true, Held: true} // two pixels right of the divider
 	Update(c, root)
-	c.In = widget.Input{X: 302, Y: 40, Held: true}
+	c.In = core.Input{X: 302, Y: 40, Held: true}
 	Update(c, root)
 	Layout(c, root, 600, 100)
 	if first.rect.W != 300 {
@@ -118,7 +118,7 @@ func TestDragKeepsTheGrabOffset(t *testing.T) {
 func TestDoubleClickOnTheDividerResetsTheSize(t *testing.T) {
 	st := &SplitState{Size: 340}
 	root, first, _, c := splitRoot(t, st, 600, 100)
-	c.In = widget.Input{X: 340, Y: 40, Click: true, Held: true, Clicks: 2}
+	c.In = core.Input{X: 340, Y: 40, Click: true, Held: true, Clicks: 2}
 	Update(c, root)
 	Layout(c, root, 600, 100)
 	if first.rect.W != 200 {
@@ -148,14 +148,14 @@ func TestDividerAsksForAResizeCursor(t *testing.T) {
 	root, _, _, c := splitRoot(t, st, 600, 100)
 	for _, tt := range []struct {
 		name string
-		in   widget.Input
-		want widget.Cursor
+		in   core.Input
+		want core.Cursor
 	}{
-		{"over the divider", widget.Input{X: 200, Y: 40}, widget.CursorResizeH},
-		{"a little off it", widget.Input{X: 202, Y: 40}, widget.CursorResizeH},
-		{"elsewhere", widget.Input{X: 50, Y: 40}, widget.CursorDefault},
+		{"over the divider", core.Input{X: 200, Y: 40}, core.CursorResizeH},
+		{"a little off it", core.Input{X: 202, Y: 40}, core.CursorResizeH},
+		{"elsewhere", core.Input{X: 50, Y: 40}, core.CursorDefault},
 	} {
-		c.Cursor = widget.CursorDefault
+		c.Cursor = core.CursorDefault
 		c.In = tt.in
 		Update(c, root)
 		if c.Cursor != tt.want {
@@ -163,9 +163,9 @@ func TestDividerAsksForAResizeCursor(t *testing.T) {
 		}
 	}
 	vroot, _, _, vc := splitRoot(t, &SplitState{}, 100, 600, Vertical())
-	vc.In = widget.Input{X: 40, Y: 200}
+	vc.In = core.Input{X: 40, Y: 200}
 	Update(vc, vroot)
-	if vc.Cursor != widget.CursorResizeV {
+	if vc.Cursor != core.CursorResizeV {
 		t.Errorf("a vertical split asks for the up/down cursor, got %v", vc.Cursor)
 	}
 }
@@ -173,12 +173,12 @@ func TestDividerAsksForAResizeCursor(t *testing.T) {
 func TestDraggingKeepsTheResizeCursorEvenOffTheDivider(t *testing.T) {
 	st := &SplitState{}
 	root, _, _, c := splitRoot(t, st, 600, 100)
-	c.In = widget.Input{X: 200, Y: 40, Click: true, Held: true}
+	c.In = core.Input{X: 200, Y: 40, Click: true, Held: true}
 	Update(c, root)
-	c.Cursor = widget.CursorDefault
-	c.In = widget.Input{X: 450, Y: 40, Held: true}
+	c.Cursor = core.CursorDefault
+	c.In = core.Input{X: 450, Y: 40, Held: true}
 	Update(c, root)
-	if c.Cursor != widget.CursorResizeH {
+	if c.Cursor != core.CursorResizeH {
 		t.Fatalf("cursor %v while dragging", c.Cursor)
 	}
 }

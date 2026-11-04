@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 // These tests drive the whole window without a GPU: step() builds the
@@ -35,7 +35,7 @@ const (
 	menuBtnY   = headerH / 2
 )
 
-func treeRowY(i int) int { return headerH + i*widget.RowH + widget.RowH/2 }
+func treeRowY(i int) int { return headerH + i*core.RowH + core.RowH/2 }
 
 func newTestApp(t *testing.T) (*App, string) {
 	t.Helper()
@@ -64,14 +64,14 @@ func startTestApp(t *testing.T, path string) (*App, string) {
 		t.Fatal(err)
 	}
 	a.w, a.h = winW, winH
-	a.step(widget.Input{}) // first frame: lay everything out once
+	a.step(core.Input{}) // first frame: lay everything out once
 	return a, path
 }
 
 // click is a press followed by a release at the same place.
 func click(a *App, x, y int) {
-	a.step(widget.Input{X: x, Y: y, Click: true, Held: true})
-	a.step(widget.Input{X: x, Y: y})
+	a.step(core.Input{X: x, Y: y, Click: true, Held: true})
+	a.step(core.Input{X: x, Y: y})
 }
 
 // jsonServer answers every request with a small JSON body.
@@ -87,13 +87,13 @@ func jsonServer(t *testing.T) *httptest.Server {
 // pointTabAt makes the open request target url, as if typed into the field.
 func pointTabAt(t *reqTab, url string) {
 	t.req.URL = url
-	t.url = widget.NewTextField(url)
+	t.url = core.NewTextField(url)
 }
 
 func waitForResponse(t *testing.T, a *App, tab *reqTab) {
 	t.Helper()
 	for range 400 {
-		a.step(widget.Input{})
+		a.step(core.Input{})
 		if tab.resp != nil {
 			return
 		}
@@ -177,7 +177,7 @@ func TestTypingInTheURLFieldUpdatesParams(t *testing.T) {
 	a, _ := newTestApp(t)
 	req := a.cur().req
 	click(a, 1100, urlBarY) // inside the field, past the end of the text: cursor at the end
-	a.step(widget.Input{Typed: []rune("&page=2")})
+	a.step(core.Input{Typed: []rune("&page=2")})
 
 	if !strings.HasSuffix(req.URL, "&page=2") {
 		t.Fatalf("url = %q", req.URL)
@@ -246,7 +246,7 @@ func TestEnterInTheURLFieldSends(t *testing.T) {
 	pointTabAt(tab, srv.URL)
 
 	click(a, 1100, urlBarY) // focus the field
-	a.step(widget.Input{Enter: true})
+	a.step(core.Input{Enter: true})
 	waitForResponse(t, a, tab)
 	if tab.resp.Status != 200 {
 		t.Fatalf("resp = %+v", tab.resp)
@@ -322,7 +322,7 @@ func TestSettingsMenuOpensChangesThemeAndSaves(t *testing.T) {
 	if a.settings.Theme != "light" || !a.menu {
 		t.Fatalf("theme %q, menu open %v (choosing must keep it open)", a.settings.Theme, a.menu)
 	}
-	if a.ctx.Th.Color(widget.Bg) != widget.Light().Color(widget.Bg) {
+	if a.ctx.Th.Color(core.Bg) != core.Light().Color(core.Bg) {
 		t.Fatal("the live theme did not change")
 	}
 	saved, err := settings.Load(path)
@@ -342,7 +342,7 @@ func TestSettingsMenuOpensChangesThemeAndSaves(t *testing.T) {
 func TestMenuClosesOnEscapeAndOnOutsideClick(t *testing.T) {
 	a, _ := newTestApp(t)
 	click(a, menuBtnX, menuBtnY)
-	a.step(widget.Input{Escape: true})
+	a.step(core.Input{Escape: true})
 	if a.menu {
 		t.Fatal("Escape must close the menu")
 	}
@@ -405,7 +405,7 @@ func TestSettingsStartFromTheSavedChoice(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if a.ctx.Th.Color(widget.Bg) != widget.Light().Color(widget.Bg) || a.ctx.Th.FontSize != 13 || !a.menu {
+	if a.ctx.Th.Color(core.Bg) != core.Light().Color(core.Bg) || a.ctx.Th.FontSize != 13 || !a.menu {
 		t.Fatalf("theme/size/menu not restored: font %v menu %v", a.ctx.Th.FontSize, a.menu)
 	}
 }
@@ -433,7 +433,7 @@ func TestEveryPaneBuildsInEveryResponseState(t *testing.T) {
 		for i := range requestPanes {
 			for j := range responsePanes {
 				tab.paneTab, tab.respTab = i, j
-				a.step(widget.Input{}) // panics on a bad pane
+				a.step(core.Input{}) // panics on a bad pane
 			}
 		}
 	}
@@ -488,7 +488,7 @@ const (
 	headersTabIdx = 2
 )
 
-func (a *App) typeText(s string) { a.step(widget.Input{Typed: []rune(s)}) }
+func (a *App) typeText(s string) { a.step(core.Input{Typed: []rune(s)}) }
 
 func TestEditingAParamValueUpdatesTheURL(t *testing.T) {
 	a, _ := newTestApp(t)
@@ -497,7 +497,7 @@ func TestEditingAParamValueUpdatesTheURL(t *testing.T) {
 		t.Fatalf("edit = %+v", a.edit)
 	}
 	a.typeText("rust") // the old text is selected, so typing replaces it
-	a.step(widget.Input{Enter: true})
+	a.step(core.Input{Enter: true})
 
 	req := a.cur().req
 	if a.edit != nil || req.Params[0].Value != "rust" || !strings.Contains(req.URL, "q=rust") {
@@ -512,10 +512,10 @@ func TestEditingAParamNameAndDescription(t *testing.T) {
 	a, _ := newTestApp(t)
 	click(a, nameCellX, paramsRow0Y)
 	a.typeText("search")
-	a.step(widget.Input{Enter: true})
+	a.step(core.Input{Enter: true})
 	click(a, descCellX, paramsRow0Y)
 	a.typeText("what to find")
-	a.step(widget.Input{Enter: true})
+	a.step(core.Input{Enter: true})
 
 	p := a.cur().req.Params[0]
 	if p.Name != "search" || p.Description != "what to find" || !strings.Contains(a.cur().req.URL, "search=gioui") {
@@ -527,7 +527,7 @@ func TestEscapeCancelsACellEdit(t *testing.T) {
 	a, _ := newTestApp(t)
 	click(a, valueCellX, paramsRow0Y)
 	a.typeText("zzz")
-	a.step(widget.Input{Escape: true})
+	a.step(core.Input{Escape: true})
 	if a.edit != nil || a.cur().req.Params[0].Value != "gioui" {
 		t.Fatalf("edit %+v value %q", a.edit, a.cur().req.Params[0].Value)
 	}
@@ -538,7 +538,7 @@ func TestClickingElsewhereCommitsACellEdit(t *testing.T) {
 	click(a, valueCellX, paramsRow0Y)
 	a.typeText("go")
 	click(a, farAwayX, farAwayY)
-	a.step(widget.Input{})
+	a.step(core.Input{})
 	if a.edit != nil || a.cur().req.Params[0].Value != "go" {
 		t.Fatalf("edit %+v value %q", a.edit, a.cur().req.Params[0].Value)
 	}
@@ -548,7 +548,7 @@ func TestClickingAnotherCellCommitsAndMovesTheEdit(t *testing.T) {
 	a, _ := newTestApp(t)
 	click(a, valueCellX, paramsRow0Y)
 	a.typeText("go")
-	click(a, valueCellX, paramsRow0Y+widget.RowH) // the order row
+	click(a, valueCellX, paramsRow0Y+core.RowH) // the order row
 	if a.cur().req.Params[0].Value != "go" || a.edit == nil || a.edit.row != 1 {
 		t.Fatalf("value %q edit %+v", a.cur().req.Params[0].Value, a.edit)
 	}
@@ -558,16 +558,16 @@ func TestTabMovesToTheNextCellAndShiftTabBack(t *testing.T) {
 	a, _ := newTestApp(t)
 	click(a, nameCellX, paramsRow0Y)
 	a.typeText("k")
-	a.step(widget.Input{Tab: true})
+	a.step(core.Input{Tab: true})
 	if a.edit == nil || a.edit.row != 0 || a.edit.col != 1 || a.cur().req.Params[0].Name != "k" {
 		t.Fatalf("after Tab: edit %+v name %q", a.edit, a.cur().req.Params[0].Name)
 	}
-	a.step(widget.Input{Tab: true})
-	a.step(widget.Input{Tab: true}) // description, then the next row's name
+	a.step(core.Input{Tab: true})
+	a.step(core.Input{Tab: true}) // description, then the next row's name
 	if a.edit == nil || a.edit.row != 1 || a.edit.col != 0 {
 		t.Fatalf("Tab past the last column must wrap to the next row, edit %+v", a.edit)
 	}
-	a.step(widget.Input{Tab: true, Shift: true})
+	a.step(core.Input{Tab: true, Shift: true})
 	if a.edit == nil || a.edit.row != 0 || a.edit.col != 2 {
 		t.Fatalf("Shift+Tab goes back, edit %+v", a.edit)
 	}
@@ -577,9 +577,9 @@ func TestTypingInThePlaceholderRowAddsARow(t *testing.T) {
 	a, _ := newTestApp(t)
 	click(a, nameCellX, paramsRow3Y)
 	a.typeText("page")
-	a.step(widget.Input{Tab: true})
+	a.step(core.Input{Tab: true})
 	a.typeText("2")
-	a.step(widget.Input{Enter: true})
+	a.step(core.Input{Enter: true})
 
 	req := a.cur().req
 	if len(req.Params) != 4 {
@@ -596,7 +596,7 @@ func TestTypingInThePlaceholderRowAddsARow(t *testing.T) {
 func TestLeavingThePlaceholderRowEmptyAddsNothing(t *testing.T) {
 	a, _ := newTestApp(t)
 	click(a, nameCellX, paramsRow3Y)
-	a.step(widget.Input{Enter: true})
+	a.step(core.Input{Enter: true})
 	if len(a.cur().req.Params) != 3 || a.edit != nil {
 		t.Fatalf("params %+v edit %+v", a.cur().req.Params, a.edit)
 	}
@@ -605,12 +605,12 @@ func TestLeavingThePlaceholderRowEmptyAddsNothing(t *testing.T) {
 func TestHeadersTableIsEditableToo(t *testing.T) {
 	a, _ := newTestApp(t)
 	a.cur().paneTab = headersTabIdx
-	a.step(widget.Input{})
+	a.step(core.Input{})
 	click(a, nameCellX, paramsRow0Y) // headers have no rows: the placeholder is the first row
 	a.typeText("X-Test")
-	a.step(widget.Input{Tab: true})
+	a.step(core.Input{Tab: true})
 	a.typeText("1")
-	a.step(widget.Input{Enter: true})
+	a.step(core.Input{Enter: true})
 	h := a.cur().req.Headers
 	if len(h) != 1 || h[0].Name != "X-Test" || h[0].Value != "1" || !h[0].Enabled {
 		t.Fatalf("headers = %+v", h)
@@ -625,15 +625,15 @@ func TestResponseHeadersAreNotEditable(t *testing.T) {
 	a.send(tab)
 	waitForResponse(t, a, tab)
 	tab.respTab = 1 // Headers
-	a.step(widget.Input{})
+	a.step(core.Input{})
 	click(a, 1000, paramsRow0Y)
 	if a.edit != nil {
 		t.Fatalf("response headers must stay read-only, edit %+v", a.edit)
 	}
 }
 
-func key(k ebiten.Key, ctrl, shift bool) widget.Input {
-	return widget.Input{Keys: []ebiten.Key{k}, Ctrl: ctrl, Shift: shift}
+func key(k ebiten.Key, ctrl, shift bool) core.Input {
+	return core.Input{Keys: []ebiten.Key{k}, Ctrl: ctrl, Shift: shift}
 }
 
 func TestCtrlEnterSendsTheRequest(t *testing.T) {
@@ -726,21 +726,21 @@ func TestTreeScrollsWhenItDoesNotFit(t *testing.T) {
 	for _, i := range []int{0, 2} { // User and Realtime
 		a.expanded[a.col.Folders[i]] = true
 	}
-	a.step(widget.Input{})
+	a.step(core.Input{})
 	rowsN := len(collection.Rows(&a.col.Folder, a.expanded))
-	if rowsN*widget.RowH <= a.h-headerH-statusH {
+	if rowsN*core.RowH <= a.h-headerH-statusH {
 		t.Fatalf("test setup: %d rows fit, nothing to scroll", rowsN)
 	}
 
-	a.step(widget.Input{X: 100, Y: 100, Wheel: -5})
+	a.step(core.Input{X: 100, Y: 100, Wheel: -5})
 	if a.treeScroll.Y <= 0 {
 		t.Fatalf("tree scroll = %d after wheeling over it", a.treeScroll.Y)
 	}
 
 	// scroll to the end, then click the last row: it must open that request
-	a.step(widget.Input{X: 100, Y: 100, Wheel: -50})
+	a.step(core.Input{X: 100, Y: 100, Wheel: -50})
 	last := collection.Rows(&a.col.Folder, a.expanded)[rowsN-1]
-	click(a, 100, a.h-statusH-widget.RowH/2)
+	click(a, 100, a.h-statusH-core.RowH/2)
 	if a.cur().req != last.Req {
 		t.Fatalf("clicking the bottom row opened %q, want %q", a.cur().req.Name, last.Name)
 	}
@@ -766,7 +766,7 @@ const (
 func openBodyPane(t *testing.T) *App {
 	a, _ := newTestApp(t)
 	a.cur().paneTab = bodyTabIdx
-	a.step(widget.Input{})
+	a.step(core.Input{})
 	return a
 }
 
@@ -801,7 +801,7 @@ func TestTypingInTheBodyEditor(t *testing.T) {
 	click(a, jsonChipX, chipsY)
 	click(a, editorX, editorY)
 	a.typeText(`{"a":1}`)
-	a.step(widget.Input{Enter: true})
+	a.step(core.Input{Enter: true})
 	a.typeText("x")
 	if got := a.cur().req.Body; got != "{\"a\":1}\nx" {
 		t.Fatalf("Body = %q", got)
@@ -850,9 +850,9 @@ func TestFormBodyFieldsAreEditable(t *testing.T) {
 	click(a, formChipX, chipsY)
 	click(a, nameCellX, formRow0Y)
 	a.typeText("user")
-	a.step(widget.Input{Tab: true})
+	a.step(core.Input{Tab: true})
 	a.typeText("ann")
-	a.step(widget.Input{Enter: true})
+	a.step(core.Input{Enter: true})
 	if len(req.Form) != 1 || req.Form[0].Name != "user" || req.Form[0].Value != "ann" || !req.Form[0].Enabled {
 		t.Fatalf("Form = %+v", req.Form)
 	}
@@ -888,7 +888,7 @@ func TestEachTabKeepsItsOwnBodyEditor(t *testing.T) {
 	a.newRequest()
 	second := a.cur()
 	second.paneTab = bodyTabIdx
-	a.step(widget.Input{})
+	a.step(core.Input{})
 	click(a, textChipX, chipsY)
 	click(a, editorX, editorY)
 	a.typeText("second")
@@ -948,19 +948,19 @@ func TestMiddleButtonDragReordersTabsAndDoesNotCloseThem(t *testing.T) {
 	first := a.tabs[0]
 	l0, _ := a.tabX(0)
 	l1, w1 := a.tabX(1)
-	a.step(widget.Input{X: l0 + 20, Y: tabStripY, MiddleClick: true, MiddleHeld: true}) // press the first tab
+	a.step(core.Input{X: l0 + 20, Y: tabStripY, MiddleClick: true, MiddleHeld: true}) // press the first tab
 	if len(a.tabs) != 2 {
 		t.Fatal("a middle press must not close the tab any more")
 	}
-	a.step(widget.Input{X: l1 + w1/2, Y: tabStripY, MiddleHeld: true}) // drag over the second
+	a.step(core.Input{X: l1 + w1/2, Y: tabStripY, MiddleHeld: true}) // drag over the second
 	if a.tabs[1] != first {
 		t.Fatal("the dragged tab must move to the second place")
 	}
-	a.step(widget.Input{X: l1 + w1/2, Y: tabStripY}) // release
+	a.step(core.Input{X: l1 + w1/2, Y: tabStripY}) // release
 	if a.dragTab != -1 {
 		t.Fatalf("dragTab = %d after the release", a.dragTab)
 	}
-	a.step(widget.Input{X: l0 + 20, Y: tabStripY, MiddleHeld: true}) // held again, but not pressed on a tab
+	a.step(core.Input{X: l0 + 20, Y: tabStripY, MiddleHeld: true}) // held again, but not pressed on a tab
 	if a.tabs[1] != first {
 		t.Fatal("after the release, moving must not drag")
 	}
@@ -969,8 +969,8 @@ func TestMiddleButtonDragReordersTabsAndDoesNotCloseThem(t *testing.T) {
 func TestMiddleClickWithoutMovingLeavesTheTabsAlone(t *testing.T) {
 	a := twoTabs(t)
 	left, width := a.tabX(1)
-	a.step(widget.Input{X: left + width/2, Y: tabStripY, MiddleClick: true, MiddleHeld: true})
-	a.step(widget.Input{X: left + width/2, Y: tabStripY})
+	a.step(core.Input{X: left + width/2, Y: tabStripY, MiddleClick: true, MiddleHeld: true})
+	a.step(core.Input{X: left + width/2, Y: tabStripY})
 	if len(a.tabs) != 2 || a.cur().req.Name != "Repository Info" {
 		t.Fatalf("%d tabs, current %q", len(a.tabs), a.cur().req.Name)
 	}
@@ -995,7 +995,7 @@ func TestDirtyFollowsEditsAndUndoingThemByHand(t *testing.T) {
 	if !dirty(tab) {
 		t.Fatal("editing the URL makes the tab dirty")
 	}
-	a.step(widget.Input{Edits: []widget.Edit{widget.EditBackspace}})
+	a.step(core.Input{Edits: []core.Edit{core.EditBackspace}})
 	if dirty(tab) {
 		t.Fatal("restoring the original text makes it clean again")
 	}
@@ -1011,7 +1011,7 @@ func TestTabWidthDoesNotChangeWhenTheRequestChanges(t *testing.T) {
 	req := a.tabs[0].req
 	req.Method = "DELETE"                                                 // a longer badge
 	req.Headers = append(req.Headers, model.KV{Name: "X", Enabled: true}) // and an unsaved dot
-	a.step(widget.Input{})
+	a.step(core.Input{})
 	if !dirty(a.tabs[0]) {
 		t.Fatal("test setup: the tab must be dirty")
 	}
@@ -1026,7 +1026,7 @@ func TestTabWidthDoesNotChangeWhenTheRequestChanges(t *testing.T) {
 
 func TestTheTabSlotsFitTheirContentAtEveryTextSize(t *testing.T) {
 	for _, size := range appearance.TextSizeChoices {
-		ctx, err := widget.NewCtx(appearance.ThemeFor("dark", size.ID))
+		ctx, err := core.NewCtx(appearance.ThemeFor("dark", size.ID))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1047,13 +1047,13 @@ func TestDraggingATabReordersIt(t *testing.T) {
 	l0, w0 := a.tabX(0)
 	l1, w1 := a.tabX(1)
 
-	a.step(widget.Input{X: l0 + 20, Y: tabStripY, Click: true, Held: true}) // press the first tab
-	a.step(widget.Input{X: l1 + w1/2, Y: tabStripY, Held: true})            // drag over the second
+	a.step(core.Input{X: l0 + 20, Y: tabStripY, Click: true, Held: true}) // press the first tab
+	a.step(core.Input{X: l1 + w1/2, Y: tabStripY, Held: true})            // drag over the second
 	if a.tabs[1] != first {
 		t.Fatalf("the dragged tab must move to the second place")
 	}
-	a.step(widget.Input{X: l1 + w1/2, Y: tabStripY}) // release
-	a.step(widget.Input{X: l0 + w0/2, Y: tabStripY, Held: true})
+	a.step(core.Input{X: l1 + w1/2, Y: tabStripY}) // release
+	a.step(core.Input{X: l0 + w0/2, Y: tabStripY, Held: true})
 	if a.tabs[1] != first {
 		t.Fatal("after release, moving over another tab must not drag")
 	}
@@ -1068,8 +1068,8 @@ func TestDraggingKeepsTheActiveTabActive(t *testing.T) {
 	l0, _ := a.tabX(0)
 	_, w1 := a.tabX(1)
 	l1, _ := a.tabX(1)
-	a.step(widget.Input{X: l0 + 20, Y: tabStripY, Click: true, Held: true})
-	a.step(widget.Input{X: l1 + w1/2, Y: tabStripY, Held: true})
+	a.step(core.Input{X: l0 + 20, Y: tabStripY, Click: true, Held: true})
+	a.step(core.Input{X: l1 + w1/2, Y: tabStripY, Held: true})
 	if a.cur() == active {
 		t.Fatal("pressing the first tab activates it, so it is the active one")
 	}
@@ -1130,11 +1130,11 @@ func TestEscapeCancelsARunningRequestButClosesTheMenuFirst(t *testing.T) {
 	click(a, sendX, urlBarY)
 
 	a.menu = true
-	a.step(widget.Input{Escape: true})
+	a.step(core.Input{Escape: true})
 	if a.menu || !tab.sending {
 		t.Fatalf("the first Escape closes the menu only: menu %v sending %v", a.menu, tab.sending)
 	}
-	a.step(widget.Input{Escape: true})
+	a.step(core.Input{Escape: true})
 	if tab.sending || tab.resp == nil || tab.resp.Err != "Cancelled" {
 		t.Fatalf("the second Escape cancels: sending %v resp %+v", tab.sending, tab.resp)
 	}
@@ -1142,7 +1142,7 @@ func TestEscapeCancelsARunningRequestButClosesTheMenuFirst(t *testing.T) {
 
 func TestEscapeWithNothingRunningDoesNothing(t *testing.T) {
 	a, _ := newTestApp(t)
-	a.step(widget.Input{Escape: true})
+	a.step(core.Input{Escape: true})
 	if a.cur().resp != nil {
 		t.Fatal("Escape must not invent a response")
 	}
@@ -1160,13 +1160,13 @@ func TestALateResultFromACancelledRequestIsIgnored(t *testing.T) {
 	click(a, sendX, urlBarY)
 	waitForResponse(t, a, tab)
 	for tab.resp.Err != "" || string(tab.resp.Body) != "fast" { // the cancelled one may still be in flight
-		a.step(widget.Input{})
+		a.step(core.Input{})
 		time.Sleep(5 * time.Millisecond)
 	}
 
 	release()
 	for range 40 {
-		a.step(widget.Input{})
+		a.step(core.Input{})
 		time.Sleep(5 * time.Millisecond)
 	}
 	if tab.resp.Err != "" || string(tab.resp.Body) != "fast" {
@@ -1221,7 +1221,7 @@ const (
 func openSettingsPane(t *testing.T) *App {
 	a, _ := newTestApp(t)
 	a.cur().paneTab = settingsTabIdx
-	a.step(widget.Input{})
+	a.step(core.Input{})
 	return a
 }
 
@@ -1237,7 +1237,7 @@ func TestTimeoutFieldAcceptsWholeSecondsOnly(t *testing.T) {
 	if req.TimeoutSec != 7 {
 		t.Fatalf("a non-numeric edit must not change the timeout, got %d", req.TimeoutSec)
 	}
-	a.step(widget.Input{Edits: []widget.Edit{widget.EditBackspace, widget.EditBackspace}}) // clears the field
+	a.step(core.Input{Edits: []core.Edit{core.EditBackspace, core.EditBackspace}}) // clears the field
 	if req.TimeoutSec != 0 {
 		t.Fatalf("an empty field means the default, got %d", req.TimeoutSec)
 	}
@@ -1307,7 +1307,7 @@ const (
 func openAuthPane(t *testing.T) *App {
 	a, _ := newTestApp(t)
 	a.cur().paneTab = authTabIdx
-	a.step(widget.Input{})
+	a.step(core.Input{})
 	return a
 }
 
@@ -1438,7 +1438,7 @@ const (
 	findBtnX   = 1176
 	copyBtnX   = 1214
 	curlBtnX   = 1252
-	findBarY   = chipsY + widget.RowH // the find bar is the row below the toolbar
+	findBarY   = chipsY + core.RowH // the find bar is the row below the toolbar
 	findFieldX = 900
 	findPrevX  = 1176
 	findNextX  = 1214
@@ -1508,7 +1508,7 @@ func TestCurlCopyExpandsVariables(t *testing.T) {
 	a.cur().view.SetLines(respview.CodeLines([]byte("{}")))
 	clip := &fakeClip{}
 	a.ctx.Clipboard = clip
-	a.step(widget.Input{})
+	a.step(core.Input{})
 	click(a, curlBtnX, toolbarY)
 	if !strings.Contains(clip.text, "https://api.github.com/search/repositories?q=gioui") || strings.Contains(clip.text, "{{") {
 		t.Fatalf("cURL = %q", clip.text)
@@ -1526,15 +1526,15 @@ func TestCtrlFOpensFindAndTypingSearches(t *testing.T) {
 	if tab.matchIdx != 0 || len(tab.view.Find("id")) != 2 {
 		t.Fatalf("matchIdx %d, matches %d", tab.matchIdx, len(tab.view.Find("id")))
 	}
-	a.step(widget.Input{Enter: true})
+	a.step(core.Input{Enter: true})
 	if tab.matchIdx != 1 {
 		t.Fatalf("Enter goes to the next match, idx %d", tab.matchIdx)
 	}
-	a.step(widget.Input{Enter: true}) // wraps
+	a.step(core.Input{Enter: true}) // wraps
 	if tab.matchIdx != 0 {
 		t.Fatalf("wrap: idx %d", tab.matchIdx)
 	}
-	a.step(widget.Input{Enter: true, Shift: true})
+	a.step(core.Input{Enter: true, Shift: true})
 	if tab.matchIdx != 1 {
 		t.Fatalf("Shift+Enter goes back and wraps, idx %d", tab.matchIdx)
 	}
@@ -1568,7 +1568,7 @@ func TestEscapeClosesFindBeforeAnythingElse(t *testing.T) {
 	tab := a.cur()
 	a.step(key(ebiten.KeyF, true, false))
 	a.typeText("id")
-	a.step(widget.Input{Escape: true})
+	a.step(core.Input{Escape: true})
 	if tab.findOpen || len(tab.view.Find("")) != 0 {
 		t.Fatal("Escape closes the find bar")
 	}
@@ -1597,9 +1597,9 @@ func TestANewResponseRerunsAnOpenSearch(t *testing.T) {
 const dividerY = 400 // anywhere along the tall dividers
 
 func drag(a *App, fromX, toX, y int) {
-	a.step(widget.Input{X: fromX, Y: y, Click: true, Held: true})
-	a.step(widget.Input{X: toX, Y: y, Held: true})
-	a.step(widget.Input{X: toX, Y: y}) // release
+	a.step(core.Input{X: fromX, Y: y, Click: true, Held: true})
+	a.step(core.Input{X: toX, Y: y, Held: true})
+	a.step(core.Input{X: toX, Y: y}) // release
 }
 
 func TestDraggingTheSidebarDividerResizesTheSidebar(t *testing.T) {
@@ -1626,8 +1626,8 @@ func TestSidebarKeepsAMinimumWidthAndDoubleClickResets(t *testing.T) {
 		t.Fatal("x=200 is outside a minimum-width sidebar")
 	}
 
-	a.step(widget.Input{X: 159, Y: dividerY, Click: true, Held: true, Clicks: 2})
-	a.step(widget.Input{})
+	a.step(core.Input{X: 159, Y: dividerY, Click: true, Held: true, Clicks: 2})
+	a.step(core.Input{})
 	if a.sidebarSplit.Size != 0 {
 		t.Fatalf("double click must reset the width, Size = %v", a.sidebarSplit.Size)
 	}
@@ -1650,13 +1650,13 @@ func TestResizeCursorOverTheDividers(t *testing.T) {
 	for _, tt := range []struct {
 		name string
 		x, y int
-		want widget.Cursor
+		want core.Cursor
 	}{
-		{"sidebar divider", 259, dividerY, widget.CursorResizeH},
-		{"pane divider", 769, dividerY, widget.CursorResizeH},
-		{"elsewhere", 500, dividerY, widget.CursorDefault},
+		{"sidebar divider", 259, dividerY, core.CursorResizeH},
+		{"pane divider", 769, dividerY, core.CursorResizeH},
+		{"elsewhere", 500, dividerY, core.CursorDefault},
 	} {
-		a.step(widget.Input{X: tt.x, Y: tt.y})
+		a.step(core.Input{X: tt.x, Y: tt.y})
 		if a.ctx.Cursor != tt.want {
 			t.Errorf("%s: cursor %v, want %v", tt.name, a.ctx.Cursor, tt.want)
 		}
@@ -1717,7 +1717,7 @@ func openTestMenu(t *testing.T) (*App, *ran) {
 	paste := r.item("Paste")
 	paste.disabled = true
 	a.openMenu(500, 300, []menuItem{r.item("Copy"), {separator: true}, paste, r.item("Delete")})
-	a.step(widget.Input{})
+	a.step(core.Input{})
 	if a.ctxMenu == nil {
 		t.Fatal("test setup: the menu must be open")
 	}
@@ -1786,7 +1786,7 @@ func TestMenuKeyboardNavigationSkipsSeparatorsAndDisabledRows(t *testing.T) {
 func TestEscapeClosesTheMenuFirst(t *testing.T) {
 	a, r := openTestMenu(t)
 	a.menu = true // the settings menu is open too
-	a.step(widget.Input{Escape: true})
+	a.step(core.Input{Escape: true})
 	if a.ctxMenu != nil || !a.menu || len(r.log) != 0 {
 		t.Fatalf("context menu open %v, settings menu open %v: Escape closes the top one only", a.ctxMenu != nil, a.menu)
 	}
@@ -1796,7 +1796,7 @@ func TestMenuNearTheWindowEdgeStaysOnScreen(t *testing.T) {
 	a, _ := newTestApp(t)
 	r := &ran{}
 	a.openMenu(1270, 790, []menuItem{r.item("Copy"), {separator: true}, r.item("Paste"), r.item("Delete")})
-	a.step(widget.Input{})
+	a.step(core.Input{})
 	// 220x89 menu: moved left to x=1060 and up to y=701; Copy row is 705..729
 	click(a, 1100, 717)
 	if len(r.log) != 1 || r.log[0] != "Copy" {
@@ -1822,13 +1822,13 @@ const (
 
 func TestConfirmRunsOnEnterAndOnTheButton(t *testing.T) {
 	for name, act := range map[string]func(a *App){
-		"Enter":  func(a *App) { a.step(widget.Input{Enter: true}) },
+		"Enter":  func(a *App) { a.step(core.Input{Enter: true}) },
 		"button": func(a *App) { click(a, dialogOKX, dialogButtonY) },
 	} {
 		a, _ := newTestApp(t)
 		var ok int
 		a.confirm("Delete request?", "This cannot be undone.", "Delete", func() { ok++ })
-		a.step(widget.Input{})
+		a.step(core.Input{})
 		if a.dialog == nil {
 			t.Fatalf("%s: no dialog", name)
 		}
@@ -1841,14 +1841,14 @@ func TestConfirmRunsOnEnterAndOnTheButton(t *testing.T) {
 
 func TestConfirmCancelsOnEscapeCancelButtonAndOutsideClick(t *testing.T) {
 	for name, act := range map[string]func(a *App){
-		"Escape":  func(a *App) { a.step(widget.Input{Escape: true}) },
+		"Escape":  func(a *App) { a.step(core.Input{Escape: true}) },
 		"Cancel":  func(a *App) { click(a, dialogCancelX, dialogButtonY) },
 		"outside": func(a *App) { click(a, 100, 700) },
 	} {
 		a, _ := newTestApp(t)
 		var ok int
 		a.confirm("Delete request?", "This cannot be undone.", "Delete", func() { ok++ })
-		a.step(widget.Input{})
+		a.step(core.Input{})
 		act(a)
 		if ok != 0 || a.dialog != nil {
 			t.Fatalf("%s: onOK ran %d times, dialog open %v", name, ok, a.dialog != nil)
@@ -1860,12 +1860,12 @@ func TestPromptReturnsTheTypedText(t *testing.T) {
 	a, _ := newTestApp(t)
 	var got string
 	a.prompt("Rename", "Old name", "Rename", func(text string) { got = text })
-	a.step(widget.Input{})
+	a.step(core.Input{})
 	if a.dialog == nil || !a.dialog.input.Focused || a.dialog.input.SelectedText() != "Old name" {
 		t.Fatalf("the field starts focused with its text selected: %+v", a.dialog)
 	}
 	a.typeText("New name")
-	a.step(widget.Input{Enter: true})
+	a.step(core.Input{Enter: true})
 	if got != "New name" || a.dialog != nil {
 		t.Fatalf("got %q, dialog open %v", got, a.dialog != nil)
 	}
@@ -1874,8 +1874,8 @@ func TestPromptReturnsTheTypedText(t *testing.T) {
 func TestDialogTrapsFocusAndBlocksShortcuts(t *testing.T) {
 	a, _ := newTestApp(t)
 	a.prompt("Rename", "x", "Rename", func(string) {})
-	a.step(widget.Input{})
-	a.step(widget.Input{Tab: true})
+	a.step(core.Input{})
+	a.step(core.Input{Tab: true})
 	if !a.dialog.input.Focused || a.cur().url.Focused {
 		t.Fatal("Tab must stay inside the dialog")
 	}
@@ -1898,23 +1898,23 @@ func TestInfoToastsExpireAndErrorsStayUntilClicked(t *testing.T) {
 	a.now = func() time.Time { return clock }
 	a.toast("Saved", false)
 	a.toast("Disk full", true)
-	a.step(widget.Input{})
+	a.step(core.Input{})
 	if len(a.toasts) != 2 {
 		t.Fatalf("toasts = %d", len(a.toasts))
 	}
 
 	clock = clock.Add(2 * time.Second)
-	a.step(widget.Input{})
+	a.step(core.Input{})
 	if len(a.toasts) != 2 {
 		t.Fatal("an info toast stays for a few seconds")
 	}
 	clock = clock.Add(2 * time.Second)
-	a.step(widget.Input{})
+	a.step(core.Input{})
 	if len(a.toasts) != 1 || !a.toasts[0].isErr {
 		t.Fatalf("after 4s only the error is left: %+v", a.toasts)
 	}
 	clock = clock.Add(10 * time.Minute)
-	a.step(widget.Input{})
+	a.step(core.Input{})
 	if len(a.toasts) != 1 {
 		t.Fatal("errors persist")
 	}
@@ -1929,7 +1929,7 @@ func TestClickingOneToastDismissesOnlyThatOne(t *testing.T) {
 	a, _ := newTestApp(t)
 	a.toast("first", true)
 	a.toast("second", true)
-	a.step(widget.Input{})
+	a.step(core.Input{})
 	x, y, w, h := toastRect(2, 0)
 	click(a, x+w/2, y+h/2)
 	if len(a.toasts) != 1 || a.toasts[0].text != "second" {
@@ -1963,7 +1963,7 @@ func TestClipboardFailureBecomesAnErrorToast(t *testing.T) {
 
 // ---- collection tree: create, rename, delete, move ----------------------
 
-func rightClick(a *App, x, y int) { a.step(widget.Input{X: x, Y: y, RightClick: true}) }
+func rightClick(a *App, x, y int) { a.step(core.Input{X: x, Y: y, RightClick: true}) }
 
 // Sample tree rows: 0 root, 1 User, 2 Repository, 3 Search Repos,
 // 4 Repository Info, 5 Repository Tags, 6 Realtime.
@@ -2032,12 +2032,12 @@ func TestRightClickOnATreeRowOpensItsMenu(t *testing.T) {
 	if got, want := menuLabels(a), []string{"Rename", "Duplicate", "Copy URL", "", "Delete"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("request menu = %q, want %q", got, want)
 	}
-	a.step(widget.Input{Escape: true})
+	a.step(core.Input{Escape: true})
 	rightClick(a, 100, treeRowY(rowRepo))
 	if got, want := menuLabels(a), []string{"New request", "New folder", "Import cURL from clipboard", "", "Rename", "Duplicate", "Delete"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("folder menu = %q, want %q", got, want)
 	}
-	a.step(widget.Input{Escape: true})
+	a.step(core.Input{Escape: true})
 	rightClick(a, 100, treeRowY(rowRoot))
 	if got, want := menuLabels(a), []string{"New request", "New folder", "Import cURL from clipboard", "", "Rename"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("root menu = %q, want %q (the collection itself cannot be deleted or duplicated)", got, want)
@@ -2053,7 +2053,7 @@ func TestRenameThroughTheMenuUpdatesTheTreeAndTheTab(t *testing.T) {
 		t.Fatalf("dialog = %+v", a.dialog)
 	}
 	a.typeText("Repo details")
-	a.step(widget.Input{Enter: true})
+	a.step(core.Input{Enter: true})
 	if info.Name != "Repo details" {
 		t.Fatalf("name = %q", info.Name)
 	}
@@ -2069,7 +2069,7 @@ func TestRenameToATakenNameIsRefusedWithAToast(t *testing.T) {
 	rightClick(a, 100, treeRowY(rowInfo))
 	pickMenu(t, a, "Rename")
 	a.typeText("Repository Tags")
-	a.step(widget.Input{Enter: true})
+	a.step(core.Input{Enter: true})
 	if info.Name != "Repository Info" || len(a.toasts) != 1 || !a.toasts[0].isErr {
 		t.Fatalf("name %q toasts %+v", info.Name, a.toasts)
 	}
@@ -2095,14 +2095,14 @@ func TestDeleteAsksFirstAndClosesTheRequestsTab(t *testing.T) {
 	if a.dialog == nil || findReq(a, "Repository Info") == nil {
 		t.Fatal("deleting must ask first and change nothing yet")
 	}
-	a.step(widget.Input{Escape: true})
+	a.step(core.Input{Escape: true})
 	if findReq(a, "Repository Info") == nil {
 		t.Fatal("cancelling keeps the request")
 	}
 
 	rightClick(a, 100, treeRowY(rowInfo))
 	pickMenu(t, a, "Delete")
-	a.step(widget.Input{Enter: true})
+	a.step(core.Input{Enter: true})
 	if findReq(a, "Repository Info") != nil {
 		t.Fatal("the request must be gone")
 	}
@@ -2117,7 +2117,7 @@ func TestDeletingAFolderClosesTheTabsOfEverythingInIt(t *testing.T) {
 	a, _ := newTestApp(t) // Search Repos (inside Repository) is open
 	rightClick(a, 100, treeRowY(rowRepo))
 	pickMenu(t, a, "Delete")
-	a.step(widget.Input{Enter: true})
+	a.step(core.Input{Enter: true})
 	if len(a.col.Folders) != 2 {
 		t.Fatalf("folders = %d", len(a.col.Folders))
 	}
@@ -2166,9 +2166,9 @@ func TestDraggingARequestOntoAFolderMovesIt(t *testing.T) {
 	a, _ := newTestApp(t)
 	tags := findReq(a, "Repository Tags")
 	user := a.col.Folders[0]
-	a.step(widget.Input{X: 100, Y: treeRowY(rowTags), Click: true, Held: true})
-	a.step(widget.Input{X: 100, Y: treeRowY(rowUser), Held: true})
-	a.step(widget.Input{X: 100, Y: treeRowY(rowUser)}) // release over the User folder
+	a.step(core.Input{X: 100, Y: treeRowY(rowTags), Click: true, Held: true})
+	a.step(core.Input{X: 100, Y: treeRowY(rowUser), Held: true})
+	a.step(core.Input{X: 100, Y: treeRowY(rowUser)}) // release over the User folder
 	if got, ok := a.col.Folder.Parent(tags); !ok || got != user {
 		t.Fatalf("Tags is in %v", got)
 	}
@@ -2180,9 +2180,9 @@ func TestDraggingARequestOntoAFolderMovesIt(t *testing.T) {
 func TestDraggingARequestOntoARequestInsertsBeforeIt(t *testing.T) {
 	a, _ := newTestApp(t)
 	repo := a.col.Folders[1]
-	a.step(widget.Input{X: 100, Y: treeRowY(rowTags), Click: true, Held: true})
-	a.step(widget.Input{X: 100, Y: treeRowY(rowSearch), Held: true})
-	a.step(widget.Input{X: 100, Y: treeRowY(rowSearch)})
+	a.step(core.Input{X: 100, Y: treeRowY(rowTags), Click: true, Held: true})
+	a.step(core.Input{X: 100, Y: treeRowY(rowSearch), Held: true})
+	a.step(core.Input{X: 100, Y: treeRowY(rowSearch)})
 	if got := requestNames(repo); !reflect.DeepEqual(got, []string{"Repository Tags", "Search Repos", "Repository Info"}) {
 		t.Fatalf("Repository = %v", got)
 	}
@@ -2193,9 +2193,9 @@ func TestADropThatIsNotAllowedChangesNothingAndSaysWhy(t *testing.T) {
 	a.expanded[a.col.Folders[1]] = true
 	// drag the Repository folder onto its own request: that is moving it into itself's parent, fine;
 	// drag it onto a request inside itself is the refused case
-	a.step(widget.Input{X: 100, Y: treeRowY(rowRepo), Click: true, Held: true})
-	a.step(widget.Input{X: 100, Y: treeRowY(rowInfo), Held: true})
-	a.step(widget.Input{X: 100, Y: treeRowY(rowInfo)})
+	a.step(core.Input{X: 100, Y: treeRowY(rowRepo), Click: true, Held: true})
+	a.step(core.Input{X: 100, Y: treeRowY(rowInfo), Held: true})
+	a.step(core.Input{X: 100, Y: treeRowY(rowInfo)})
 	if len(a.col.Folders) != 3 || len(a.col.Folders[1].Requests) != 3 {
 		t.Fatal("a refused move changes nothing")
 	}
@@ -2206,8 +2206,8 @@ func TestADropThatIsNotAllowedChangesNothingAndSaysWhy(t *testing.T) {
 
 func TestReleasingOnTheSameRowIsJustAClick(t *testing.T) {
 	a, _ := newTestApp(t)
-	a.step(widget.Input{X: 100, Y: treeRowY(rowInfo), Click: true, Held: true})
-	a.step(widget.Input{X: 100, Y: treeRowY(rowInfo)})
+	a.step(core.Input{X: 100, Y: treeRowY(rowInfo), Click: true, Held: true})
+	a.step(core.Input{X: 100, Y: treeRowY(rowInfo)})
 	if got := requestNames(a.col.Folders[1]); !reflect.DeepEqual(got, []string{"Search Repos", "Repository Info", "Repository Tags"}) {
 		t.Fatalf("Repository = %v", got)
 	}
@@ -2244,7 +2244,7 @@ func TestFilterShowsMatchesByNameAndURL(t *testing.T) {
 		t.Fatalf("no match leaves just the root, got %d rows", len(got))
 	}
 	a.filter.SelectAll()
-	a.step(widget.Input{Edits: []widget.Edit{widget.EditBackspace}})
+	a.step(core.Input{Edits: []core.Edit{core.EditBackspace}})
 	if got := a.visibleRows(); len(got) != len(collection.Rows(&a.col.Folder, a.expanded)) {
 		t.Fatal("an empty filter shows the tree as usual")
 	}
@@ -2282,7 +2282,7 @@ func TestTreeKeyboardNavigation(t *testing.T) {
 	if a.dialog == nil || a.dialog.input.Text != "Repository Info" {
 		t.Fatal("F2 renames the selection")
 	}
-	a.step(widget.Input{Escape: true})
+	a.step(core.Input{Escape: true})
 	a.step(key(ebiten.KeyDelete, false, false))
 	if a.dialog == nil {
 		t.Fatal("Delete asks before deleting the selection")
@@ -2312,7 +2312,7 @@ const (
 	bulkBtnX      = 715
 )
 
-func altKey(k ebiten.Key) widget.Input { return widget.Input{Keys: []ebiten.Key{k}, Alt: true} }
+func altKey(k ebiten.Key) core.Input { return core.Input{Keys: []ebiten.Key{k}, Alt: true} }
 
 func paramNames(a *App) []string {
 	var out []string
@@ -2375,7 +2375,7 @@ func TestAltArrowsMoveTheRowAndTheEditFollows(t *testing.T) {
 func TestDeleteRemovesTheSelectedRowWhenNothingIsBeingTyped(t *testing.T) {
 	a, _ := newTestApp(t)
 	click(a, valueCellX, paramsRow0Y)
-	a.step(widget.Input{Enter: true}) // commit; the row stays selected
+	a.step(core.Input{Enter: true}) // commit; the row stays selected
 	a.step(key(ebiten.KeyDelete, false, false))
 	if got := paramNames(a); !reflect.DeepEqual(got, []string{"order", "sort"}) || strings.Contains(a.cur().req.URL, "q=") {
 		t.Fatalf("params %v url %q", got, a.cur().req.URL)
@@ -2424,23 +2424,23 @@ func TestUndoAndRedoOfTableChanges(t *testing.T) {
 	if len(req.Params) != 2 {
 		t.Fatal("test setup")
 	}
-	a.step(widget.Input{Ctrl: true, Undo: true})
+	a.step(core.Input{Ctrl: true, Undo: true})
 	if len(req.Params) != 3 || req.Params[0].Name != "q" || !strings.Contains(req.URL, "q=gioui") {
 		t.Fatalf("undo: %+v url %q", req.Params, req.URL)
 	}
-	a.step(widget.Input{Ctrl: true, Redo: true})
+	a.step(core.Input{Ctrl: true, Redo: true})
 	if len(req.Params) != 2 || strings.Contains(req.URL, "q=") {
 		t.Fatalf("redo: %+v url %q", req.Params, req.URL)
 	}
-	a.step(widget.Input{Ctrl: true, Undo: true})
+	a.step(core.Input{Ctrl: true, Undo: true})
 	click(a, 290, row1Y) // a new change after an undo clears redo
-	a.step(widget.Input{Ctrl: true, Redo: true})
+	a.step(core.Input{Ctrl: true, Redo: true})
 	if req.Params[1].Enabled {
 		t.Fatalf("redo must be gone after a new change: %+v", req.Params)
 	}
-	a.step(widget.Input{Ctrl: true, Undo: true})
-	a.step(widget.Input{Ctrl: true, Undo: true})
-	a.step(widget.Input{Ctrl: true, Undo: true}) // more undos than changes: stops at the start
+	a.step(core.Input{Ctrl: true, Undo: true})
+	a.step(core.Input{Ctrl: true, Undo: true})
+	a.step(core.Input{Ctrl: true, Undo: true}) // more undos than changes: stops at the start
 	if len(req.Params) != 3 {
 		t.Fatalf("params = %+v", req.Params)
 	}
@@ -2451,7 +2451,7 @@ func TestUndoGoesToTheCellTextWhileACellIsEdited(t *testing.T) {
 	click(a, 739, paramsRow0Y) // a table change to undo
 	click(a, valueCellX, paramsRow0Y)
 	a.typeText("zz")
-	a.step(widget.Input{Ctrl: true, Undo: true})
+	a.step(core.Input{Ctrl: true, Undo: true})
 	if len(a.cur().req.Params) != 2 {
 		t.Fatal("Ctrl+Z inside a cell undoes the typing, not the table")
 	}
@@ -2459,7 +2459,7 @@ func TestUndoGoesToTheCellTextWhileACellIsEdited(t *testing.T) {
 
 func TestEveryTableChangeGoesThroughOnePlace(t *testing.T) {
 	a, _ := newTestApp(t)
-	click(a, valueCellX, paramsRow0Y+2*widget.RowH) // edit row 2
+	click(a, valueCellX, paramsRow0Y+2*core.RowH) // edit row 2
 	if a.edit == nil || a.edit.row != 2 {
 		t.Fatal("test setup")
 	}
@@ -2494,7 +2494,7 @@ func TestBulkEditShowsLinesAndAppliesThemBack(t *testing.T) {
 	if !reflect.DeepEqual(req.Params, want) || !strings.HasSuffix(req.URL, "?q=rust&page=2") {
 		t.Fatalf("params %+v url %q", req.Params, req.URL)
 	}
-	a.step(widget.Input{Ctrl: true, Undo: true})
+	a.step(core.Input{Ctrl: true, Undo: true})
 	if len(req.Params) != 3 || req.Params[0].Value != "gioui" {
 		t.Fatalf("a bulk edit is one undo step: %+v", req.Params)
 	}
@@ -2506,7 +2506,7 @@ func TestLeavingTheTabWhileBulkEditingAppliesTheText(t *testing.T) {
 	a.bulk.area.SelectAll()
 	a.bulk.area.Insert("only: one")
 	a.cur().paneTab = headersTabIdx // as clicking the Headers tab does
-	a.step(widget.Input{})
+	a.step(core.Input{})
 	if a.bulk != nil || !reflect.DeepEqual(paramNames(a), []string{"only"}) {
 		t.Fatalf("bulk %v params %v: nothing typed may be lost", a.bulk != nil, paramNames(a))
 	}
@@ -2627,7 +2627,7 @@ func TestTableRowMenuActionsUseTheSameUndoableChanges(t *testing.T) {
 		t.Fatalf("delete: %v", paramNames(a))
 	}
 	for range 4 {
-		a.step(widget.Input{Ctrl: true, Undo: true})
+		a.step(core.Input{Ctrl: true, Undo: true})
 	}
 	if got := paramNames(a); !reflect.DeepEqual(got, []string{"q", "order", "sort"}) || !strings.Contains(req.URL, "q=gioui") {
 		t.Fatalf("undoing every menu action restores the table: %v url %q", got, req.URL)
@@ -2815,8 +2815,8 @@ func TestEachTableKeepsItsOwnColumnWidths(t *testing.T) {
 func TestDoubleClickOnAParamsDividerResetsIt(t *testing.T) {
 	a, _ := newTestApp(t)
 	drag(a, nameValueDividerX, 480, paramsHeaderY)
-	a.step(widget.Input{X: 480, Y: paramsHeaderY, Click: true, Held: true, Clicks: 2})
-	a.step(widget.Input{})
+	a.step(core.Input{X: 480, Y: paramsHeaderY, Click: true, Held: true, Clicks: 2})
+	a.step(core.Input{})
 	if a.widthsFor(requestPanes[0]).Weights != nil {
 		t.Fatal("double click resets the widths")
 	}
@@ -2864,7 +2864,7 @@ const (
 func openSettingsPage(t *testing.T, id string) (*App, string) {
 	a, path := openSettingsMenu(t)
 	a.settingsCat = id
-	a.step(widget.Input{})
+	a.step(core.Input{})
 	return a, path
 }
 
@@ -2877,21 +2877,21 @@ func openSettingsMenu(t *testing.T) (*App, string) {
 	return a, path
 }
 
-func typeColor(a *App, tok widget.Token, row int, text string) {
+func typeColor(a *App, tok core.Token, row int, text string) {
 	in := a.colorInput(tok)
-	click(a, colorFieldX, colorRow0Y+row*widget.RowH)
+	click(a, colorFieldX, colorRow0Y+row*core.RowH)
 	in.SelectAll()
 	a.typeText(text)
 }
 
 func TestContrastChooserStrengthensTheColorsAndIsSaved(t *testing.T) {
 	a, path := openSettingsMenu(t)
-	before := widget.ContrastRatio(a.ctx.Th.Color(widget.Selection), a.ctx.Th.Color(widget.Text))
+	before := core.ContrastRatio(a.ctx.Th.Color(core.Selection), a.ctx.Th.Color(core.Text))
 	click(a, contrastHighX, contrastRowY)
 	if a.settings.Contrast != "high" {
 		t.Fatalf("Contrast = %q", a.settings.Contrast)
 	}
-	after := widget.ContrastRatio(a.ctx.Th.Color(widget.Selection), a.ctx.Th.Color(widget.Text))
+	after := core.ContrastRatio(a.ctx.Th.Color(core.Selection), a.ctx.Th.Color(core.Text))
 	if after < appearance.HighRatio-0.01 || after <= before {
 		t.Fatalf("selection contrast %.2f -> %.2f", before, after)
 	}
@@ -2899,64 +2899,64 @@ func TestContrastChooserStrengthensTheColorsAndIsSaved(t *testing.T) {
 		t.Fatalf("saved %+v", saved)
 	}
 	click(a, contrastNormalX, contrastRowY)
-	if a.settings.Contrast != "normal" || widget.ContrastRatio(a.ctx.Th.Color(widget.Selection), a.ctx.Th.Color(widget.Text)) != before {
+	if a.settings.Contrast != "normal" || core.ContrastRatio(a.ctx.Th.Color(core.Selection), a.ctx.Th.Color(core.Text)) != before {
 		t.Fatal("back to normal restores the default colors")
 	}
 }
 
 func TestTypingAColorAppliesItLiveAndSavesIt(t *testing.T) {
 	a, path := openSettingsPage(t, "colors")
-	typeColor(a, widget.Selection, 0, "#223344")
-	if got := a.ctx.Th.Color(widget.Selection); got != widget.RGB(0x223344) {
+	typeColor(a, core.Selection, 0, "#223344")
+	if got := a.ctx.Th.Color(core.Selection); got != core.RGB(0x223344) {
 		t.Fatalf("live color = %v", got)
 	}
 	saved, _ := settings.Load(path)
 	if saved.Colors["dark"]["selection"] != "#223344" {
 		t.Fatalf("saved %+v", saved.Colors)
 	}
-	if a.colorNotes[widget.Selection] != "" {
-		t.Fatalf("note = %q", a.colorNotes[widget.Selection])
+	if a.colorNotes[core.Selection] != "" {
+		t.Fatalf("note = %q", a.colorNotes[core.Selection])
 	}
 }
 
 func TestAnUnreadableColorIsRefusedWithItsRatio(t *testing.T) {
 	a, path := openSettingsPage(t, "colors")
-	def := a.ctx.Th.Color(widget.FindMatch)
-	typeColor(a, widget.FindMatch, 1, "#ffffff") // white under light text
-	note := a.colorNotes[widget.FindMatch]
+	def := a.ctx.Th.Color(core.FindMatch)
+	typeColor(a, core.FindMatch, 1, "#ffffff") // white under light text
+	note := a.colorNotes[core.FindMatch]
 	if !strings.Contains(note, "below 4.5:1") || !strings.Contains(note, "1.") {
 		t.Fatalf("note = %q: it must say how far off the contrast is", note)
 	}
-	if a.ctx.Th.Color(widget.FindMatch) != def {
+	if a.ctx.Th.Color(core.FindMatch) != def {
 		t.Fatal("a refused color must not apply")
 	}
 	if saved, _ := settings.Load(path); len(saved.Colors["dark"]) != 0 {
 		t.Fatalf("a refused color must not be saved: %+v", saved.Colors)
 	}
-	typeColor(a, widget.FindMatch, 1, "zzz")
-	if !strings.Contains(a.colorNotes[widget.FindMatch], "#rrggbb") {
-		t.Fatalf("note = %q", a.colorNotes[widget.FindMatch])
+	typeColor(a, core.FindMatch, 1, "zzz")
+	if !strings.Contains(a.colorNotes[core.FindMatch], "#rrggbb") {
+		t.Fatalf("note = %q", a.colorNotes[core.FindMatch])
 	}
-	typeColor(a, widget.FindMatch, 1, "#334455")
-	if a.colorNotes[widget.FindMatch] != "" || a.ctx.Th.Color(widget.FindMatch) != widget.RGB(0x334455) {
-		t.Fatalf("a readable color clears the note and applies: %q %v", a.colorNotes[widget.FindMatch], a.ctx.Th.Color(widget.FindMatch))
+	typeColor(a, core.FindMatch, 1, "#334455")
+	if a.colorNotes[core.FindMatch] != "" || a.ctx.Th.Color(core.FindMatch) != core.RGB(0x334455) {
+		t.Fatalf("a readable color clears the note and applies: %q %v", a.colorNotes[core.FindMatch], a.ctx.Th.Color(core.FindMatch))
 	}
 }
 
 func TestResetButtonsRestoreTheDefaults(t *testing.T) {
 	a, path := openSettingsPage(t, "colors")
-	def := a.ctx.Th.Color(widget.Selection)
-	typeColor(a, widget.Selection, 0, "#223344")
-	typeColor(a, widget.FindMatch, 1, "#334455")
+	def := a.ctx.Th.Color(core.Selection)
+	typeColor(a, core.Selection, 0, "#223344")
+	typeColor(a, core.FindMatch, 1, "#334455")
 	click(a, colorResetX, colorRow0Y)
-	if a.ctx.Th.Color(widget.Selection) != def || a.colorInput(widget.Selection).Text != widget.FormatHex(def) {
-		t.Fatalf("selection %v, field %q", a.ctx.Th.Color(widget.Selection), a.colorInput(widget.Selection).Text)
+	if a.ctx.Th.Color(core.Selection) != def || a.colorInput(core.Selection).Text != core.FormatHex(def) {
+		t.Fatalf("selection %v, field %q", a.ctx.Th.Color(core.Selection), a.colorInput(core.Selection).Text)
 	}
-	if a.ctx.Th.Color(widget.FindMatch) != widget.RGB(0x334455) {
+	if a.ctx.Th.Color(core.FindMatch) != core.RGB(0x334455) {
 		t.Fatal("resetting one color must leave the others")
 	}
 	click(a, resetColorsX, resetColorsY)
-	if a.ctx.Th.Color(widget.FindMatch) == widget.RGB(0x334455) {
+	if a.ctx.Th.Color(core.FindMatch) == core.RGB(0x334455) {
 		t.Fatal("Reset colors drops every override")
 	}
 	if saved, _ := settings.Load(path); len(saved.Colors["dark"]) != 0 {
@@ -2966,18 +2966,18 @@ func TestResetButtonsRestoreTheDefaults(t *testing.T) {
 
 func TestSwitchingThemeShowsThatThemesColorsAndKeepsEachThemesOverrides(t *testing.T) {
 	a, _ := openSettingsPage(t, "colors")
-	typeColor(a, widget.Selection, 0, "#223344")
+	typeColor(a, core.Selection, 0, "#223344")
 	a.settingsCat = "appearance"
-	a.step(widget.Input{})
+	a.step(core.Input{})
 	click(a, lightChipX, themeRowY) // the Light theme chip
-	if a.ctx.Th.Color(widget.Selection) != appearance.ThemeFor("light", "medium").Color(widget.Selection) {
+	if a.ctx.Th.Color(core.Selection) != appearance.ThemeFor("light", "medium").Color(core.Selection) {
 		t.Fatal("the dark override must not leak into the light theme")
 	}
-	if a.colorInput(widget.Selection).Text != widget.FormatHex(appearance.ThemeFor("light", "medium").Color(widget.Selection)) {
-		t.Fatalf("the field must show the light theme's color, got %q", a.colorInput(widget.Selection).Text)
+	if a.colorInput(core.Selection).Text != core.FormatHex(appearance.ThemeFor("light", "medium").Color(core.Selection)) {
+		t.Fatalf("the field must show the light theme's color, got %q", a.colorInput(core.Selection).Text)
 	}
 	click(a, 584, themeRowY) // back to Dark
-	if a.ctx.Th.Color(widget.Selection) != widget.RGB(0x223344) {
+	if a.ctx.Th.Color(core.Selection) != core.RGB(0x223344) {
 		t.Fatal("the dark override is remembered")
 	}
 }
@@ -2994,10 +2994,10 @@ func TestColorsAreRestoredAtStart(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if a.ctx.Th.Color(widget.Accent) != widget.RGB(0xaaccee) {
-		t.Fatalf("accent = %v", a.ctx.Th.Color(widget.Accent))
+	if a.ctx.Th.Color(core.Accent) != core.RGB(0xaaccee) {
+		t.Fatalf("accent = %v", a.ctx.Th.Color(core.Accent))
 	}
-	if widget.ContrastRatio(a.ctx.Th.Color(widget.Selection), a.ctx.Th.Color(widget.Text)) < appearance.HighRatio-0.01 {
+	if core.ContrastRatio(a.ctx.Th.Color(core.Selection), a.ctx.Th.Color(core.Text)) < appearance.HighRatio-0.01 {
 		t.Fatal("high contrast is applied at start")
 	}
 }
@@ -3017,8 +3017,8 @@ func TestShortcutLabelsReadNaturally(t *testing.T) {
 
 // ---- configurable shortcuts ---------------------------------------------------
 
-func combo(k ebiten.Key, ctrl, shift, alt bool) widget.Input {
-	return widget.Input{Keys: []ebiten.Key{k}, Ctrl: ctrl, Shift: shift, Alt: alt}
+func combo(k ebiten.Key, ctrl, shift, alt bool) core.Input {
+	return core.Input{Keys: []ebiten.Key{k}, Ctrl: ctrl, Shift: shift, Alt: alt}
 }
 
 func TestRecordingANewBindingRebindsTheAction(t *testing.T) {
@@ -3051,7 +3051,7 @@ func TestRecordingANewBindingRebindsTheAction(t *testing.T) {
 func TestEscapeCancelsRecordingAndBackspaceUnbinds(t *testing.T) {
 	a, _ := newTestApp(t)
 	a.startRecording("close-tab")
-	a.step(widget.Input{Escape: true})
+	a.step(core.Input{Escape: true})
 	if a.recording != "" || len(a.settings.Shortcuts) != 0 || a.menu {
 		t.Fatalf("recording %q shortcuts %v", a.recording, a.settings.Shortcuts)
 	}
@@ -3101,7 +3101,7 @@ func TestRecordingRefusesTakenAndReservedCombinationsAndKeepsListening(t *testin
 func TestAModifierKeyAloneDoesNotEndRecording(t *testing.T) {
 	a, _ := newTestApp(t)
 	a.startRecording("close-tab")
-	a.step(widget.Input{Keys: []ebiten.Key{ebiten.KeyControlLeft}, Ctrl: true})
+	a.step(core.Input{Keys: []ebiten.Key{ebiten.KeyControlLeft}, Ctrl: true})
 	if a.recording != "close-tab" || len(a.settings.Shortcuts) != 0 {
 		t.Fatalf("recording %q shortcuts %v", a.recording, a.settings.Shortcuts)
 	}
@@ -3158,7 +3158,7 @@ func TestShortcutSettingsRenderWhileRecording(t *testing.T) {
 	a, _ := openSettingsPage(t, "shortcuts")
 	a.startRecording("close-tab")
 	a.recordNotes = map[string]string{"close-tab": "Already used by New request"}
-	a.step(widget.Input{}) // the menu with a recording row and a note must lay out
+	a.step(core.Input{}) // the menu with a recording row and a note must lay out
 	if !a.menu || a.recording != "close-tab" {
 		t.Fatal("the menu stays open while recording")
 	}
@@ -3185,7 +3185,7 @@ func TestRequestAndResponsePanesShareTheirFirstRowBand(t *testing.T) {
 func openResponseRowMenu(t *testing.T, a *App) {
 	t.Helper()
 	a.cur().respTab = 1 // Headers
-	a.step(widget.Input{})
+	a.step(core.Input{})
 	for y := 150; y < 500; y += 4 {
 		rightClick(a, 900, y)
 		if a.ctxMenu != nil {
@@ -3249,7 +3249,7 @@ func TestEditableTableMenuAlsoCopiesCells(t *testing.T) {
 	a.cur().req.Params = []model.KV{{Name: "q", Value: "giou", Enabled: true}}
 	clip := &fakeClip{}
 	a.ctx.Clipboard = clip
-	a.step(widget.Input{})
+	a.step(core.Input{})
 	items := a.rowMenuItems(requestPanes[0], a.cur(), 0)
 	var found bool
 	for _, it := range items {
@@ -3265,7 +3265,7 @@ func TestEditableTableMenuAlsoCopiesCells(t *testing.T) {
 
 // tipAt hovers (x, y) long enough and draws; it returns the tooltip shown.
 func tipAt(a *App, x, y int) string {
-	a.step(widget.Input{X: x, Y: y})
+	a.step(core.Input{X: x, Y: y})
 	img := ebiten.NewImage(winW, winH)
 	a.Draw(img) // the pointer comes to rest on the element
 	a.ctx.Tick += 100
@@ -3308,13 +3308,13 @@ func TestDeleteButtonIsATrashCanWithATooltip(t *testing.T) {
 
 func TestTooltipKeepsFramesComingWhileItWaits(t *testing.T) {
 	a, _ := newTestApp(t)
-	a.step(widget.Input{X: sendX, Y: urlBarY})
+	a.step(core.Input{X: sendX, Y: urlBarY})
 	a.Draw(ebiten.NewImage(winW, winH))
 	if !a.ctx.TipWaiting {
 		t.Fatal("hovering a button with a tooltip must be waiting")
 	}
 	a.dirty = false
-	a.step(widget.Input{X: sendX, Y: urlBarY}) // nothing else changed
+	a.step(core.Input{X: sendX, Y: urlBarY}) // nothing else changed
 	if !a.dirty {
 		t.Fatal("frames must keep being drawn until the tooltip shows")
 	}
@@ -3325,17 +3325,17 @@ func TestManyTabsScrollTheStripAndKeepTheActiveTabInView(t *testing.T) {
 	for range 14 {
 		a.newRequest()
 	}
-	a.step(widget.Input{})
+	a.step(core.Input{})
 	if a.tabsScroll.X <= 0 {
 		t.Fatalf("the new, active tab is past the right edge: X = %d", a.tabsScroll.X)
 	}
 	x := a.tabsScroll.X
-	a.step(widget.Input{X: 600, Y: tabStripY, WheelX: 1}) // two-finger swipe right: back toward the first tabs
+	a.step(core.Input{X: 600, Y: tabStripY, WheelX: 1}) // two-finger swipe right: back toward the first tabs
 	if a.tabsScroll.X >= x {
 		t.Fatalf("a sideways swipe must scroll the strip back: %d -> %d", x, a.tabsScroll.X)
 	}
 	x = a.tabsScroll.X
-	a.step(widget.Input{X: 600, Y: tabStripY, Wheel: -1}) // the mouse wheel scrolls it too
+	a.step(core.Input{X: 600, Y: tabStripY, Wheel: -1}) // the mouse wheel scrolls it too
 	if a.tabsScroll.X <= x {
 		t.Fatalf("the wheel must scroll the strip forward: %d -> %d", x, a.tabsScroll.X)
 	}
@@ -3354,12 +3354,12 @@ func TestLeftDragOnAnOverflowingTabStripPansItInsteadOfReorderingTabs(t *testing
 	for range 14 {
 		a.newRequest()
 	}
-	a.step(widget.Input{})
+	a.step(core.Input{})
 	order := append([]*reqTab(nil), a.tabs...)
 	x0 := a.tabsScroll.X // the active (last) tab was revealed: the strip is at its right end
-	a.step(widget.Input{X: 600, Y: tabStripY, Click: true, Held: true})
-	a.step(widget.Input{X: 700, Y: tabStripY, Held: true}) // drag right: earlier tabs come into view
-	a.step(widget.Input{X: 800, Y: tabStripY, Held: true})
+	a.step(core.Input{X: 600, Y: tabStripY, Click: true, Held: true})
+	a.step(core.Input{X: 700, Y: tabStripY, Held: true}) // drag right: earlier tabs come into view
+	a.step(core.Input{X: 800, Y: tabStripY, Held: true})
 	if want := x0 - 200; a.tabsScroll.X != want {
 		t.Fatalf("X = %d, want %d: the strip follows the pointer", a.tabsScroll.X, want)
 	}
@@ -3368,7 +3368,7 @@ func TestLeftDragOnAnOverflowingTabStripPansItInsteadOfReorderingTabs(t *testing
 			t.Fatalf("tab %d moved: a left drag on an overflowing strip must not reorder", i)
 		}
 	}
-	a.step(widget.Input{X: 800, Y: tabStripY}) // release
+	a.step(core.Input{X: 800, Y: tabStripY}) // release
 	if a.dragTab != -1 {
 		t.Fatalf("dragTab = %d", a.dragTab)
 	}
@@ -3466,7 +3466,7 @@ func TestFindInCompactViewKeepsOnlyMatchingLeavesTheirChildrenAndTheirPath(t *te
 
 // find replaces the search text, as typing would.
 func (a *App) find(t *reqTab, text string) {
-	t.find = widget.NewTextField(text)
+	t.find = core.NewTextField(text)
 	t.find.Focused = true
 	a.runFind(t)
 }

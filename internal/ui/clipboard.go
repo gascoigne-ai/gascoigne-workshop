@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"unicode/utf8"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 // statusClipboard reports clipboard results in the status bar: what was
 // copied, or why the clipboard is not usable (no tool installed).
 type statusClipboard struct {
-	inner  widget.Clipboard
+	inner  core.Clipboard
 	report func(msg string, isErr bool)
 }
 

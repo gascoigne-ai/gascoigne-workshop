@@ -3,8 +3,8 @@ package vml_test
 import (
 	"fmt"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // A view is a function from state to a tree. Dump prints the tree, which
@@ -31,7 +31,7 @@ func Example() {
 // Options may stand anywhere in the list; a later one wins. Button uses
 // this to let its caller override the defaults.
 func ExampleButton() {
-	b := vml.Button("Save", vml.Bg(widget.Accent))
+	b := vml.Button("Save", vml.Bg(core.Accent))
 	fmt.Print(vml.Dump(b))
 	// Output:
 	// flow bg=accent control=button lighten=true

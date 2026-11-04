@@ -3,7 +3,7 @@ package engine
 import (
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 func TestMustDraw(t *testing.T) {
@@ -46,15 +46,15 @@ func TestPacerSlowsDownWhenIdle(t *testing.T) {
 }
 
 func TestInputActive(t *testing.T) {
-	var still widget.Input
+	var still core.Input
 	if InputActive(still, still) {
 		t.Fatal("identical empty input is not activity")
 	}
-	moved := widget.Input{X: 3}
+	moved := core.Input{X: 3}
 	if !InputActive(still, moved) {
 		t.Fatal("pointer move is activity")
 	}
-	if !InputActive(still, widget.Input{Enter: true}) {
+	if !InputActive(still, core.Input{Enter: true}) {
 		t.Fatal("Enter is activity")
 	}
 }

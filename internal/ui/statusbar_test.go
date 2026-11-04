@@ -3,8 +3,8 @@ package ui
 import (
 	"testing"
 
+	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
-	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // The inline status bar template renders exactly what the Go view it replaced did.

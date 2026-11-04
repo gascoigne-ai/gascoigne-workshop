@@ -1,4 +1,4 @@
-package widget
+package core
 
 import "github.com/hajimehoshi/ebiten/v2"
 

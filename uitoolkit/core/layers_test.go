@@ -1,4 +1,4 @@
-package widget
+package core
 
 import (
 	"go/parser"
@@ -9,17 +9,17 @@ import (
 	"testing"
 )
 
-// The toolkit must stay usable without the application: widget imports
-// nothing from this module, vml only the widget package, and no toolkit
+// The toolkit must stay usable without the application: core imports
+// nothing from this module, vml only the core package, and no toolkit
 // package imports the application (internal or cmd).
 func TestToolkitImportsStayInTheirLayer(t *testing.T) {
 	const module = "github.com/gascoigne-ai/gascoigne-workshop"
 	allowed := map[string][]string{
-		"../widget":    {},
-		"../vml":       {module + "/uitoolkit/widget"},
-		"../engine":    {module + "/uitoolkit/widget"},
-		"../component": {module + "/uitoolkit/widget", module + "/uitoolkit/vml"},
-		"../theming":   {module + "/uitoolkit/widget"},
+		"../core":    {},
+		"../vml":       {module + "/uitoolkit/core"},
+		"../engine":    {module + "/uitoolkit/core"},
+		"../component": {module + "/uitoolkit/core", module + "/uitoolkit/vml"},
+		"../theming":   {module + "/uitoolkit/core"},
 	}
 	for dir, ok := range allowed {
 		files, err := filepath.Glob(filepath.Join(dir, "*.go"))

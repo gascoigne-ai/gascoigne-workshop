@@ -3,7 +3,7 @@ package vml
 import (
 	"github.com/hajimehoshi/ebiten/v2"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 // sliderPad is the room at each end of the track for half the thumb.
@@ -76,9 +76,9 @@ func (s *sliderB) fracOf(v int) float64 {
 	return 0.5 + 0.5*float64(v-s.mid)/float64(s.max-s.mid)
 }
 
-func (s *sliderB) measure(*El, *widget.Ctx, int) (int, int) { return 120, 20 }
+func (s *sliderB) measure(*El, *core.Ctx, int) (int, int) { return 120, 20 }
 
-func (s *sliderB) update(e *El, c *widget.Ctx) {
+func (s *sliderB) update(e *El, c *core.Ctx) {
 	in, st := c.In, s.state
 	switch {
 	case st.Dragging:
@@ -109,34 +109,34 @@ func (s *sliderB) update(e *El, c *widget.Ctx) {
 	}
 }
 
-func (s *sliderB) draw(e *El, c *widget.Ctx, dst *ebiten.Image) {
+func (s *sliderB) draw(e *El, c *core.Ctx, dst *ebiten.Image) {
 	r := e.rect
 	x, w := s.track(e)
 	frac := s.fracOf(s.state.Shown(s.value))
 	mid := r.Y + r.H/2
 	pill := float64(2) * min(c.Th.RadiusScale, 1) // the track is square when corners are
-	chip, accent := c.Col(widget.Chip), c.Col(widget.Accent)
-	c.FillStyled(dst, widget.Rect{X: x, Y: mid - 2, W: w, H: 4}, chip, chip, pill)
+	chip, accent := c.Col(core.Chip), c.Col(core.Accent)
+	c.FillStyled(dst, core.Rect{X: x, Y: mid - 2, W: w, H: 4}, chip, chip, pill)
 	if s.mid != 0 { // a tick at the middle value
-		c.Fill(dst, widget.Rect{X: x + w/2, Y: mid - 5, W: 1, H: 10}, c.Col(widget.Rule))
+		c.Fill(dst, core.Rect{X: x + w/2, Y: mid - 5, W: 1, H: 10}, c.Col(core.Rule))
 	}
-	c.FillStyled(dst, widget.Rect{X: x, Y: mid - 2, W: int(frac*float64(w) + 0.5), H: 4}, accent, accent, pill)
+	c.FillStyled(dst, core.Rect{X: x, Y: mid - 2, W: int(frac*float64(w) + 0.5), H: 4}, accent, accent, pill)
 	tx := x + int(frac*float64(w)+0.5)
-	thumb := widget.Rect{X: tx - 5, Y: mid - 8, W: 10, H: 16}
-	clr := widget.Accent
+	thumb := core.Rect{X: tx - 5, Y: mid - 8, W: 10, H: 16}
+	clr := core.Accent
 	if s.state.Dragging || c.Hovered(r) {
-		clr = widget.AccentLine
+		clr = core.AccentLine
 	}
 	tc := c.Col(clr)
 	c.FillStyled(dst, thumb, tc, tc, c.Radius("slider"))
-	c.OutlineStyled(dst, thumb, c.Col(widget.Border), c.Radius("slider"))
+	c.OutlineStyled(dst, thumb, c.Col(core.Border), c.Radius("slider"))
 }
 
 // Slider picks an integer from min to max in steps, by dragging. onChange
 // runs with each new value while the thumb moves, so the effect can be
 // seen live.
 func Slider(state *SliderState, min, max, step, value int, onChange func(int), opts ...Option) *El {
-	return newEl(&sliderB{state: state, min: min, max: max, step: step, value: value, onChange: onChange}, with([]Item{Grow(1), H(widget.CompactH)}, opts))
+	return newEl(&sliderB{state: state, min: min, max: max, step: step, value: value, onChange: onChange}, with([]Item{Grow(1), H(core.CompactH)}, opts))
 }
 
 // SliderMid puts value mid in the middle of the slider's track, scaling
