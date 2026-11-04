@@ -2,7 +2,7 @@
 
 Ideas and gaps that have no task yet, plus the map of what a basic working client needs. Work for
 the autonomous loop is in `tasks/` (one commit each, in numeric order); read this before picking
-work that has no task. Finished tasks are deleted; what they left open is under "Deferred from finished tasks".
+work that has no task.
 
 ## What exists (milestone 1)
 Window with collections tree, request tabs, URL bar (type, select, copy, paste), Params / Headers /
@@ -43,11 +43,11 @@ Task numbers refer to `tasks/`; "-" means no task yet.
 
 ### Collections and data
 - Create, rename, delete, duplicate, move, filter (013). Tabs: close, reorder, dirty (007).
-- Save and load on disk, autosave, import cURL and OpenAPI JSON (done). Import YAML OpenAPI, Postman and other collection formats, export (-).
-- Environments, secrets, folder variables, Ctrl+Space completion (done). Request history (-).
+- Save and load on disk, autosave, import cURL (014). Import OpenAPI and other collection formats, export (-).
+- Environments, secrets, variable autocomplete (015). Request history (-).
 
 ### Protocols
-- WebSocket and MCP (done). SSE, GraphQL (query editor, variables, schema), gRPC (-).
+- WebSocket (016), MCP (017). SSE, GraphQL (query editor, variables, schema), gRPC (-).
 
 ### App quality
 - Dialogs, toasts (012). Error states for every failure the user can see (-).
@@ -63,13 +63,6 @@ Task numbers refer to `tasks/`; "-" means no task yet.
 - Tree: match highlighting in the filter, expanding a folder while a drag hovers over it.
 - Scroll-into-view of a focused child inside a `vml.Scroll`.
 - Response: line wrap, image and HTML preview, save body to a file (needs the dialogs of task 012), Shift+arrow selection in the code view.
-- Collections: a YAML OpenAPI reader (stdlib has no YAML; convert to JSON first today).
-- Environments: `{{variable}}` highlighting in header cells and the body editor (only the URL field has it); a popup while typing (the URL field has Ctrl+Space instead, so it keeps the keyboard).
-- WebSocket: a JSON-formatting composer (the composer is one line); reconnect and the hex binary composer exist.
-- MCP: a typed form with one input per tool property (today a schema-filled `call` line is edited as JSON), server-initiated requests (sampling, roots), the long-lived notification stream.
-- Toolkit: templates for tables, fields, scroll and tabs (they need state objects in the scope) and moving the tab strips and the Messages toolbar to templates; an icon mask cache if profiling asks for it and an open icon set (check the license, vendor only what is used); `core` could be freed of the `Theme` type by making `Ctx` take a colors interface; pointer positions are whole logical pixels (accepted); no automated golden screenshots at 150%; trim exported names only the workshop uses.
-- App state: panes, environments, the WebSocket/MCP tab, workspace saving, overlays and shortcuts stay in `internal/ui` because they share `App` state; split them when one gets a second user (needs an app-state interface).
-
 
 ### Added later
 - Right-click menus everywhere (018), table row operations and change handling (019). Task 018 depends on 012 (menu primitive) and uses 013 and 019; 
@@ -82,4 +75,8 @@ request side (006, 008, 009, 007), then response tools (010), layout (011), over
 (012, 013), table rows and right-click menus (019, 018), persistence, remembered state and environments (014, 020, 015), then protocols (016, 017).
 
 ## Open questions
+- File format for collections (task 014): single YAML per request, JSON, or a directory tree
+  mirroring the sidebar? Decide before starting 014 and record in `decisions.md`.
+- MCP client: official SDK or a small hand-written JSON-RPC client (task 017). Dependencies need
+  the user's approval.
 - Native file dialogs: shell out to zenity / kdialog, or build a file picker widget.
