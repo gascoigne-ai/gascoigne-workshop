@@ -2545,7 +2545,7 @@ func TestTabMenuCopyURL(t *testing.T) {
 func TestTableRowMenu(t *testing.T) {
 	a, _ := newTestApp(t)
 	rightClick(a, 400, paramsRow0Y)
-	want := []string{"Insert row above", "Insert row below", "Duplicate", "Move up", "Move down", "", "Enable all", "Disable all", "", "Delete"}
+	want := []string{"Copy value", "Copy name", "Copy as Name: Value", "", "Insert row above", "Insert row below", "Duplicate", "Move up", "Move down", "", "Enable all", "Disable all", "", "Delete"}
 	if got := menuLabels(a); !reflect.DeepEqual(got, want) {
 		t.Fatalf("row menu = %q", got)
 	}
@@ -3108,5 +3108,88 @@ func TestRequestAndResponsePanesShareTheirFirstRowBand(t *testing.T) {
 	click(a, copyBtnX, chipsY+10) // the lower edge of the shared band, below the old toolbar
 	if clip.text != `{"ok":true}` {
 		t.Fatalf("the Copy button is not in the same band as Bulk edit, clipboard %q", clip.text)
+	}
+}
+
+// openResponseRowMenu right-clicks down the response Headers table until
+// a row menu opens (the exact row height is the table's business).
+func openResponseRowMenu(t *testing.T, a *App) {
+	t.Helper()
+	a.cur().respTab = 1 // Headers
+	a.step(widget.Input{})
+	for y := 150; y < 500; y += 4 {
+		rightClick(a, 900, y)
+		if a.ctxMenu != nil {
+			return
+		}
+	}
+	t.Fatal("right-clicking the response headers opened no menu")
+}
+
+func TestResponseHeaderRowsHaveACopyMenu(t *testing.T) {
+	a := jsonResponse(t, `{}`)
+	clip := &fakeClip{}
+	a.ctx.Clipboard = clip
+	openResponseRowMenu(t, a)
+	labels := menuLabels(a)
+	for _, want := range []string{"Copy value", "Copy name", "Copy as Name: Value", "Copy all headers"} {
+		found := false
+		for _, l := range labels {
+			found = found || l == want
+		}
+		if !found {
+			t.Fatalf("menu %v lacks %q", labels, want)
+		}
+	}
+	for _, l := range labels {
+		if strings.HasPrefix(l, "Insert") || l == "Delete" {
+			t.Fatalf("a read-only table must not offer %q", l)
+		}
+	}
+	h := (*responsePanes[1].rows(a, a.cur()))[0]
+	pickMenu(t, a, "Copy as Name: Value")
+	if clip.text != h.Name+": "+h.Value {
+		t.Fatalf("clipboard %q", clip.text)
+	}
+}
+
+func TestResponseHeaderMenuCopiesNameValueAndAll(t *testing.T) {
+	a := jsonResponse(t, `{}`)
+	clip := &fakeClip{}
+	a.ctx.Clipboard = clip
+	rows := *responsePanes[1].rows(a, a.cur())
+	openResponseRowMenu(t, a)
+	pickMenu(t, a, "Copy value")
+	if clip.text != rows[0].Value {
+		t.Fatalf("value: %q", clip.text)
+	}
+	openResponseRowMenu(t, a)
+	pickMenu(t, a, "Copy name")
+	if clip.text != rows[0].Name {
+		t.Fatalf("name: %q", clip.text)
+	}
+	openResponseRowMenu(t, a)
+	pickMenu(t, a, "Copy all headers")
+	if !strings.Contains(clip.text, rows[0].Name+": "+rows[0].Value+"\n") || strings.Count(clip.text, "\n") < len(rows)-1 {
+		t.Fatalf("all: %q", clip.text)
+	}
+}
+
+func TestEditableTableMenuAlsoCopiesCells(t *testing.T) {
+	a, _ := newTestApp(t)
+	a.cur().req.Params = []model.KV{{Name: "q", Value: "giou", Enabled: true}}
+	clip := &fakeClip{}
+	a.ctx.Clipboard = clip
+	a.step(widget.Input{})
+	items := a.rowMenuItems(requestPanes[0], a.cur(), 0)
+	var found bool
+	for _, it := range items {
+		if it.label == "Copy value" {
+			it.run()
+			found = true
+		}
+	}
+	if !found || clip.text != "giou" {
+		t.Fatalf("found %v clipboard %q", found, clip.text)
 	}
 }

@@ -182,6 +182,9 @@ func (a *App) tableView(p pane, t *reqTab, scroll *ScrollState, pad int) Node {
 		Weights: []float64{35, 65},
 		Rows:    kvRows(*rows, false, false),
 	}
+	if !p.editable {
+		spec.OnRowMenu = func(row, x, y int) { a.openMenu(x, y, a.copyRowItems(*rows, row, true)) }
+	}
 	if p.editable {
 		spec.Editable = true
 		spec.Columns = []string{"Name", "Value", "Description"}

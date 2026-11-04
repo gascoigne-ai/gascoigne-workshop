@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"strings"
+
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
 	. "github.com/gascoigne-ai/gascoigne-workshop/ui/vml"
 	w "github.com/gascoigne-ai/gascoigne-workshop/ui/widget"
@@ -71,7 +73,7 @@ func (a *App) rowMenuItems(p pane, t *reqTab, row int) []menuItem {
 			a.applyRows(p, t, f)
 		}
 	}
-	return []menuItem{
+	return append(a.copyRowItems(*p.rows(a, t), row, false), append([]menuItem{menuSeparator}, []menuItem{
 		{label: "Insert row above", run: change(func(r []model.KV) []model.KV { return model.InsertRow(r, row, model.KV{Enabled: true}) })},
 		{label: "Insert row below", run: change(func(r []model.KV) []model.KV { return model.InsertRow(r, row+1, model.KV{Enabled: true}) })},
 		{label: "Duplicate", run: change(func(r []model.KV) []model.KV { return model.DuplicateRow(r, row) })},
@@ -82,7 +84,32 @@ func (a *App) rowMenuItems(p pane, t *reqTab, row int) []menuItem {
 		{label: "Disable all", run: change(func(r []model.KV) []model.KV { return model.SetAll(r, false) })},
 		menuSeparator,
 		{label: "Delete", run: change(func(r []model.KV) []model.KV { return model.DeleteRow(r, row) })},
+	}...)...)
+}
+
+// copyRowItems copy parts of table row i to the clipboard. They are the
+// whole menu of a read-only table and lead the menu of an editable one.
+func (a *App) copyRowItems(rows []model.KV, i int, withAll bool) []menuItem {
+	if i < 0 || i >= len(rows) {
+		return nil
 	}
+	r := rows[i]
+	copyText := func(text string) func() {
+		return func() { _ = a.ctx.Clipboard.Write(text) } // the clipboard reports its own failures
+	}
+	var all strings.Builder
+	for _, h := range rows {
+		all.WriteString(h.Name + ": " + h.Value + "\n")
+	}
+	items := []menuItem{
+		{label: "Copy value", run: copyText(r.Value)},
+		{label: "Copy name", run: copyText(r.Name)},
+		{label: "Copy as Name: Value", run: copyText(r.Name + ": " + r.Value)},
+	}
+	if withAll {
+		items = append(items, menuItem{label: "Copy all headers", run: copyText(all.String())})
+	}
+	return items
 }
 
 // ---- text widgets ---------------------------------------------------------------
