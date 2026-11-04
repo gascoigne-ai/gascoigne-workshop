@@ -297,8 +297,8 @@ func TestButtonsClickAndOverrideDefaults(t *testing.T) {
 	if b2.bg != widget.Error {
 		t.Fatalf("caller options must override the button's defaults, bg = %q", b2.bg)
 	}
-	if b1.bg != widget.Chip {
-		t.Fatalf("a plain button uses the chip color, bg = %q", b1.bg)
+	if b1.bg != widget.Sunken {
+		t.Fatalf("a plain button uses the surface color, bg = %q", b1.bg)
 	}
 }
 

@@ -100,7 +100,7 @@ func TestEveryLineIconHasASizeAHoverColorAndDrawsWithoutHelp(t *testing.T) {
 func TestIconButtonIsAnOutlinedChipAroundTheGlyph(t *testing.T) {
 	g := Trash(Grow(1))
 	b := IconButton(g, W(40), H(28))
-	if b.bg != widget.Chip || b.control != "icon-button" {
+	if b.bg != widget.Sunken || b.control != "icon-button" {
 		t.Fatalf("bg %q control %q", b.bg, b.control)
 	}
 	Layout(testCtx(t), Col(b), 100, 100)

@@ -4,17 +4,17 @@
   "smallSize": 12,
   "monoSize": 13,
   "variables": {
-    "hero-top": "#571a33",
-    "hero-bottom": "#1f0a13"
+    "hero-top": "#1f0a13",
+    "hero-bottom": "#571a33"
   },
   "colors": {
     "bg": "#1c1519",
     "frame": "#140f12",
-    "panel": "#2d2228",
+    "panel": "#241b20",
     "sunken": "#1c1519",
-    "alt": "#251c21",
+    "alt": "#241b20",
     "border": "#5f4d57",
-    "hover": "#302429",
+    "hover": "#35232a",
     "selected": "#4a2234",
     "chip": "#4a3a42",
     "chip-text": "#f1e8eb",
@@ -40,46 +40,42 @@
     "accent-soft": "#3a1a27",
     "track": "#2d2228",
     "faint": "#85717a",
-    "warn": "#f0b05a"
+    "warn": "#f0b05a",
+    "border-strong": "#47353e",
+    "info": "#6cb0f0",
+    "info-soft": "#12243a"
   },
   "controls": {
     "button": {
       "radius": 6,
-      "gradient": 0.1,
-      "border": "border"
+      "border": "border-strong"
     },
     "icon-button": {
       "radius": 6,
-      "gradient": 0.1,
-      "border": "border"
+      "border": "border-strong"
     },
     "primary": {
       "radius": 6,
-      "gradient": 0.12,
       "border": "accent-line"
     },
     "field": {
       "radius": 6,
-      "border": "border"
+      "border": "border-strong"
     },
     "table": {
       "radius": 8,
-      "border": "border"
+      "border": "border-soft"
     },
     "menu": {
       "radius": 10,
-      "border": "border"
+      "border": "border-strong"
     },
     "tooltip": {
       "radius": 6,
-      "border": "border"
+      "border": "border-strong"
     },
-    "tabstrip": {
-      "gradient": 0.1
-    },
-    "statusbar": {
-      "gradient": 0.1
-    },
+    "tabstrip": {},
+    "statusbar": {},
     "hero": {
       "gradient": [
         "$hero-top",

@@ -106,12 +106,12 @@ func TestMethodTokenForRequestsWithoutAMethod(t *testing.T) {
 func TestThemeWithAppliesCornersAndTheFlatSwitch(t *testing.T) {
 	s := settings.Default()
 	th := ThemeWith(s)
-	if th.RadiusScale != 1 || th.NoGradients || !th.Style("button").HasGradient() || th.Style("button").Radius <= 0 {
+	if th.RadiusScale != 1 || th.NoGradients || !th.Style("hero").HasGradient() || th.Style("button").Radius <= 0 {
 		t.Fatalf("default look: scale %v flat %v %+v", th.RadiusScale, th.NoGradients, th.Style("button"))
 	}
 	s.Corners, s.Flat = "square", true
 	th = ThemeWith(s)
-	if th.Style("button").Radius != 0 || th.Style("button").HasGradient() || th.Style("hero").HasGradient() {
+	if th.Style("button").Radius != 0 || th.Style("hero").HasGradient() {
 		t.Fatalf("square and flat: %+v", th.Style("button"))
 	}
 	s.Corners = "round"

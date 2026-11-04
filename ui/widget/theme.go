@@ -11,39 +11,42 @@ type Token string
 // raised panes, Sunken lists and code, Alt zebra rows, Selected the
 // current row.
 const (
-	Bg         Token = "bg"
-	Frame      Token = "frame"
-	Panel      Token = "panel"
-	Sunken     Token = "sunken"
-	Alt        Token = "alt"
-	Border     Token = "border"
-	Hover      Token = "hover"
-	Selected   Token = "selected"
-	Chip       Token = "chip"
-	ChipText   Token = "chip-text"
-	Rule       Token = "rule"
-	Text       Token = "text"
-	Muted      Token = "muted"
-	Accent     Token = "accent"
-	AccentLine Token = "accent-line" // the accent as a line: outlines, underlines, marks
-	AccentText Token = "accent-text"
-	OK         Token = "ok"
-	Error      Token = "error"
-	Shadow     Token = "shadow"
-	Selection  Token = "selection"
-	FindMatch  Token = "find-match"
-	FindActive Token = "find-active"
-	BorderSoft Token = "border-soft" // hairlines between table rows, as the dashboard draws them
-	Warn       Token = "warn"
-	OKSoft     Token = "ok-soft" // pale backgrounds for status pills
-	WarnSoft   Token = "warn-soft"
-	ErrorSoft  Token = "error-soft"
-	AccentSoft Token = "accent-soft"
-	Track      Token = "track"      // the empty part of a bar
-	Faint      Token = "faint"      // the quietest text
-	Hero       Token = "hero"       // the banner behind the window title, as a flat fallback
-	HeroText   Token = "hero-text"  // text on the banner
-	HeroMuted  Token = "hero-muted" // icons on the banner
+	Bg           Token = "bg"
+	Frame        Token = "frame"
+	Panel        Token = "panel"
+	Sunken       Token = "sunken"
+	Alt          Token = "alt"
+	Border       Token = "border"
+	Hover        Token = "hover"
+	Selected     Token = "selected"
+	Chip         Token = "chip"
+	ChipText     Token = "chip-text"
+	Rule         Token = "rule"
+	Text         Token = "text"
+	Muted        Token = "muted"
+	Accent       Token = "accent"
+	AccentLine   Token = "accent-line" // the accent as a line: outlines, underlines, marks
+	AccentText   Token = "accent-text"
+	OK           Token = "ok"
+	Error        Token = "error"
+	Shadow       Token = "shadow"
+	Selection    Token = "selection"
+	FindMatch    Token = "find-match"
+	FindActive   Token = "find-active"
+	BorderSoft   Token = "border-soft"   // hairlines between table rows, as the dashboard draws them
+	BorderStrong Token = "border-strong" // control outlines (buttons, fields, menus)
+	Info         Token = "info"
+	InfoSoft     Token = "info-soft"
+	Warn         Token = "warn"
+	OKSoft       Token = "ok-soft" // pale backgrounds for status pills
+	WarnSoft     Token = "warn-soft"
+	ErrorSoft    Token = "error-soft"
+	AccentSoft   Token = "accent-soft"
+	Track        Token = "track"      // the empty part of a bar
+	Faint        Token = "faint"      // the quietest text
+	Hero         Token = "hero"       // the banner behind the window title, as a flat fallback
+	HeroText     Token = "hero-text"  // text on the banner
+	HeroMuted    Token = "hero-muted" // icons on the banner
 )
 
 // Fixed sizes shared by all widgets, in logical pixels.

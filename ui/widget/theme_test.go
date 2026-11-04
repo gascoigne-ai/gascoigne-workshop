@@ -111,7 +111,7 @@ func TestPalettesFollowTheCLIDashboard(t *testing.T) {
 	want := map[string]map[Token]uint32{
 		"dark": {
 			Text: 0xf1e8eb, Muted: 0xbfaab2, Accent: 0xe88aa6, OK: 0x5ed39a, Error: 0xff6b5e,
-			Frame: 0x140f12, Sunken: 0x1c1519, Bg: 0x1c1519, Alt: 0x251c21,
+			Frame: 0x140f12, Sunken: 0x1c1519, Bg: 0x1c1519, Alt: 0x241b20, Panel: 0x241b20,
 		},
 		"light": {
 			Text: 0x22161b, Muted: 0x66545b, Accent: 0x7a1f3d, OK: 0x17804a, Error: 0xd1281b,
@@ -133,8 +133,7 @@ func TestThemeGradientsKeepTextReadable(t *testing.T) {
 		control   string
 		base, fgt Token
 	}{
-		{"button", Chip, ChipText}, {"icon-button", Chip, ChipText}, {"primary", Accent, AccentText},
-		{"tabstrip", Frame, Text}, {"statusbar", Frame, Text}, {"hero", "hero", "hero-text"},
+		{"hero", "hero", "hero-text"}, // the dashboard has no other gradient surface; a theme may add them
 	}
 	for name, th := range map[string]Theme{"dark": Dark(), "light": Light()} {
 		for _, s := range surfaces {

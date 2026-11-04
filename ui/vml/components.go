@@ -9,7 +9,7 @@ import (
 // Button is an outlined chip with a centered label; it brightens on hover.
 func Button(label string, opts ...Option) *El {
 	return Row(with([]Item{
-		Bg(widget.Chip), Control("button"), Lighten(),
+		Bg(widget.Sunken), Control("button"), Lighten(),
 		Text(label, Center(), Grow(1), Color(widget.ChipText)),
 	}, opts)...)
 }

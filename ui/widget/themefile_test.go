@@ -75,7 +75,7 @@ func TestParseThemeRejectsMistakes(t *testing.T) {
 func TestStyleAppliesRoundingScaleAndTheGradientSwitch(t *testing.T) {
 	th := Dark()
 	base := th.Style("button")
-	if base.Radius <= 0 || !base.HasGradient() {
+	if base.Radius <= 0 || !th.Style("hero").HasGradient() {
 		t.Fatalf("the dashboard look: %+v", base)
 	}
 	th.RadiusScale = 0

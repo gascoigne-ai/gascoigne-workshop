@@ -2,10 +2,10 @@
   "colors": {
     "method.GET": "#17804a",
     "method.POST": "#a8570c",
-    "method.PUT": "#1f64b0",
+    "method.PUT": "#1f6fb2",
     "method.PATCH": "#7a1f3d",
     "method.DELETE": "#d1281b",
-    "json.key": "#120a0e",
+    "json.key": "#22161b",
     "json.string": "#a8570c",
     "json.number": "#7a1f3d",
     "json.literal": "#d1281b",
