@@ -21,4 +21,5 @@ The response viewer shows text bodies well. Missing: other body kinds, long bodi
 - Done: bodies longer than the limit are cut and `Response.Truncated` says so (`REST.MaxBody`, default 32 MiB; the Timeline pane shows the note).
 - Left: the rest.
 - Done later: `Save body...` in the response menu (prompt for a path, `~/` allowed, name suggested from the content type); a `History` button lists the last 10 successful responses of the tab (newest first, picking one swaps it with the shown one).
-- Left: image and HTML preview, line wrap, Shift+arrow selection, history across restarts and a workspace-wide request history.
+- Done later: image preview (PNG, JPEG, GIF, sniffed from the bytes, scaled down to fit, never up; `Save` button; `vml.Image` element, `respview.Decode`).
+- Left: HTML preview (no engine, source view only), line wrap (CodeView needs wrapped line heights), Shift+arrow selection, history across restarts and a workspace-wide request history.

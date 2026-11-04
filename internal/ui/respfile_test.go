@@ -1,7 +1,10 @@
 package ui
 
 import (
+	"bytes"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
+	"image"
+	"image/png"
 	"os"
 	"path/filepath"
 	"strings"
@@ -123,5 +126,32 @@ func TestAssertionsRunWhenAResponseArrivesAndAfterEdits(t *testing.T) {
 	}
 	if d := vml.Dump(a.resultsPane(responsePanes[3], tab, nil)); !strings.Contains(d, "2/3 passed") || !strings.Contains(d, "status == 404") {
 		t.Fatalf("results pane:\n%s", d)
+	}
+}
+
+func TestAnImageResponseIsShownAsAPicture(t *testing.T) {
+	var buf bytes.Buffer
+	img := image.NewRGBA(image.Rect(0, 0, 40, 20))
+	if err := png.Encode(&buf, img); err != nil {
+		t.Fatal(err)
+	}
+	a, _ := newTestApp(t)
+	tab := a.cur()
+	tab.sending, tab.seq = true, tab.seq+1
+	a.apply(sendResult{tab: tab, seq: tab.seq, resp: model.Response{Status: 200, StatusText: "OK", Body: buf.Bytes(),
+		Headers: []model.KV{{Name: "Content-Type", Value: "text/plain", Enabled: true}}}}) // mislabeled on purpose
+	if tab.picture == nil || !strings.HasPrefix(tab.pictureInfo, "PNG 40x20") {
+		t.Fatalf("picture %v info %q", tab.picture, tab.pictureInfo)
+	}
+	if msg, _ := responseEmpty(tab); msg != "" {
+		t.Fatalf("a picture must not be reported as binary: %q", msg)
+	}
+	if d := vml.Dump(a.responsePane(responsePanes[0], tab, nil)); !strings.Contains(d, "PNG 40x20") || !strings.Contains(d, "Save") {
+		t.Fatalf("pane:\n%s", d)
+	}
+	tab.sending, tab.seq = true, tab.seq+1
+	a.apply(sendResult{tab: tab, seq: tab.seq, resp: model.Response{Status: 200, Body: []byte(`{"a":1}`)}})
+	if tab.picture != nil {
+		t.Fatal("the next, non-image response must clear the picture")
 	}
 }

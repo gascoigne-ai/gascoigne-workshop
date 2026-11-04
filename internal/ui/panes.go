@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/textfmt"
+	"github.com/hajimehoshi/ebiten/v2"
 	"strconv"
 	"strings"
 	"time"
@@ -450,6 +451,9 @@ func responseEmpty(t *reqTab) (string, bool) {
 	if msg, isErr := noResponse(t); msg != "" {
 		return msg, isErr
 	}
+	if t.picture != nil {
+		return "", false
+	}
 	if respview.LooksBinary(t.resp.Body) {
 		return fmt.Sprintf("Binary body, %s (not shown)", textfmt.Size(len(t.resp.Body))), false
 	}
@@ -458,6 +462,17 @@ func responseEmpty(t *reqTab) (string, bool) {
 
 // responsePane is the response body with its toolbar and find bar.
 func (a *App) responsePane(_ pane, t *reqTab, _ *ScrollState) Node {
+	if t.picture != nil {
+		return Col(Grow(1),
+			Spacer(H(w.Gutter)),
+			Row(H(w.RowH+8), PadX(w.Gutter), Gap(6), AlignItems(AlignCenter), BorderB(w.Border),
+				Text(t.pictureInfo, Small(), Muted()),
+				Spacer(),
+				Button("Save", W(56), H(w.CompactH), OnClick(func() { a.saveBody(t) }), Tooltip("Save the image to a file")),
+			),
+			Image(t.picture, Grow(1), Bg(w.Sunken), Tooltip("The image, scaled down to fit")),
+		)
+	}
 	return Col(Grow(1),
 		Spacer(H(w.Gutter)), // same top inset as the request pane, so first rows line up
 		Row(H(w.RowH+8), PadX(w.Gutter), Gap(6), AlignItems(AlignCenter), BorderB(w.Border),
@@ -505,6 +520,15 @@ func (a *App) setView(t *reqTab, raw, compact bool) {
 // refreshView rebuilds the response view for the current mode and
 // redoes an open search. Bodies that are not text are not loaded.
 func (a *App) refreshView(t *reqTab) {
+	t.picture, t.pictureInfo = nil, ""
+	if t.resp != nil {
+		if p, ok := respview.Decode(t.resp.Body); ok {
+			t.picture = ebiten.NewImageFromImage(p.Image)
+			t.pictureInfo = fmt.Sprintf("%s %dx%d, %s", strings.ToUpper(p.Format), p.Width, p.Height, textfmt.Size(len(t.resp.Body)))
+			t.view.SetLines(nil)
+			return
+		}
+	}
 	switch {
 	case t.resp == nil || respview.LooksBinary(t.resp.Body):
 		t.view.SetLines(nil)

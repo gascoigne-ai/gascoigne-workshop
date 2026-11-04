@@ -58,6 +58,8 @@ type reqTab struct {
 	resp                  *model.Response
 	view                  vml.CodeView    // response body
 	bodyView              vml.CodeView    // request body, read-only
+	picture               *ebiten.Image   // the response body when it is an image
+	pictureInfo           string          // "PNG 640x480, 12.5KB"
 	tests                 vml.TextArea    // the assertions editor
 	testResults           []assert.Result // what the assertions found in the shown response
 	body                  vml.TextArea    // request body editor
