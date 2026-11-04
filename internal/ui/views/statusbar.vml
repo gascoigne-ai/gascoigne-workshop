@@ -1,0 +1,5 @@
+<!-- The bar at the bottom of the window: the status line and the version. -->
+<row h="28" pad="12 0" gap="12" bg="frame" control="statusbar" border-top="border">
+  <text small muted ellipsis grow="1">{{status}}</text>
+  <text small muted>{{version}}</text>
+</row>
