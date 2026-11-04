@@ -106,7 +106,6 @@ func TestRequestBadge(t *testing.T) {
 	}
 }
 
-
 func folderNames(f *model.Folder) (out []string) {
 	for _, s := range f.Folders {
 		out = append(out, s.Name)
