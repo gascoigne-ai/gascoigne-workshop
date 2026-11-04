@@ -35,7 +35,7 @@ func WithParams(raw string, params []KV) string {
 	base, _, _ := strings.Cut(raw, "?")
 	var pairs []string
 	for _, p := range params {
-		if p.Enabled && p.Name != "" {
+		if p.Enabled && p.Name != "" && !IsPathParam(p.Name) {
 			pairs = append(pairs, url.QueryEscape(p.Name)+"="+url.QueryEscape(p.Value))
 		}
 	}
@@ -67,9 +67,77 @@ func MergeParams(old []KV, rawURL string) []KV {
 		}
 	}
 	for _, o := range old {
-		if !o.Enabled {
+		if !o.Enabled && !IsPathParam(o.Name) {
 			params = append(params, o)
 		}
 	}
+	// path parameters follow the URL: one row for each :name segment, with
+	// the value and description of the row it had
+	for _, name := range PathParamNames(rawURL) {
+		row := KV{Name: ":" + name, Enabled: true}
+		for _, o := range old {
+			if o.Name == row.Name {
+				row.Value, row.Description, row.Enabled = o.Value, o.Description, o.Enabled
+				break
+			}
+		}
+		params = append(params, row)
+	}
 	return params
+}
+
+// IsPathParam reports whether a Params row name stands for a :name segment
+// of the URL path (":id") and not for a query parameter.
+func IsPathParam(name string) bool { return len(name) > 1 && name[0] == ':' }
+
+// pathSpan is where the path of raw lies: after the host of a URL with a
+// scheme, or the start for a bare path; up to the query or fragment.
+func pathSpan(raw string) (start, end int) {
+	start = 0
+	if i := strings.Index(raw, "://"); i >= 0 {
+		if j := strings.IndexByte(raw[i+3:], '/'); j >= 0 {
+			start = i + 3 + j
+		} else {
+			start = len(raw)
+		}
+	}
+	end = len(raw)
+	if k := strings.IndexAny(raw[start:], "?#"); k >= 0 {
+		end = start + k
+	}
+	return start, end
+}
+
+// PathParamNames lists the :name segments of the URL path, in order and
+// without repeats. {{variables}} are not path parameters.
+func PathParamNames(raw string) []string {
+	start, end := pathSpan(raw)
+	var names []string
+	seen := map[string]bool{}
+	for _, seg := range strings.Split(raw[start:end], "/") {
+		if IsPathParam(seg) && !strings.Contains(seg, "{{") && !seen[seg] {
+			seen[seg] = true
+			names = append(names, seg[1:])
+		}
+	}
+	return names
+}
+
+// ApplyPathParams replaces each :name segment of the URL path with the
+// escaped value of the enabled ":name" row; segments without a value stay.
+func ApplyPathParams(raw string, params []KV) string {
+	start, end := pathSpan(raw)
+	segs := strings.Split(raw[start:end], "/")
+	for i, seg := range segs {
+		if !IsPathParam(seg) {
+			continue
+		}
+		for _, p := range params {
+			if p.Enabled && p.Name == seg && p.Value != "" {
+				segs[i] = url.PathEscape(p.Value)
+				break
+			}
+		}
+	}
+	return raw[:start] + strings.Join(segs, "/") + raw[end:]
 }

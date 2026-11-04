@@ -2,6 +2,7 @@ package ui
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
 	"strings"
 	"testing"
 	"time"
@@ -41,5 +42,25 @@ func TestRequestsShareACookieJarThatClearCookiesEmpties(t *testing.T) {
 	rest, _ = a.reg["rest"].(proto.REST)
 	if a.jar == first || rest.Jar != a.jar {
 		t.Fatal("clearing cookies must install a new jar everywhere")
+	}
+}
+
+func TestTypingAColonSegmentAddsAPathParameterRowThatFillsTheSentURL(t *testing.T) {
+	a, _ := newTestApp(t)
+	tab := a.cur()
+	tab.url = vml.NewTextField("https://api.test/users/:id")
+	a.urlEdited(tab)
+	var row *model.KV
+	for i := range tab.req.Params {
+		if tab.req.Params[i].Name == ":id" {
+			row = &tab.req.Params[i]
+		}
+	}
+	if row == nil {
+		t.Fatalf("no :id row in %+v", tab.req.Params)
+	}
+	row.Value = "42"
+	if got := tab.req.Expanded(a.varsFor(tab.req)).URL; got != "https://api.test/users/42" {
+		t.Fatalf("sent URL %q", got)
 	}
 }

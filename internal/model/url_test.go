@@ -2,6 +2,7 @@ package model
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -143,5 +144,36 @@ func TestRequestExpandedLeavesUnknownVariablesVisible(t *testing.T) {
 	got := Request{URL: "{{nope}}/a", Auth: Auth{Token: "{{nope}}"}}.Expanded(nil)
 	if got.URL != "{{nope}}/a" || got.Auth.Token != "{{nope}}" {
 		t.Fatalf("%+v", got)
+	}
+}
+
+func TestPathParametersFollowTheURLAndFillIt(t *testing.T) {
+	names := PathParamNames("https://api.test/users/:id/posts/:post?x=:notme#:nor")
+	if len(names) != 2 || names[0] != "id" || names[1] != "post" {
+		t.Fatalf("names %v", names)
+	}
+	if got := PathParamNames("https://:8080/{{x}}/:{{y}}/:ok"); len(got) != 1 || got[0] != "ok" {
+		t.Fatalf("a port, a variable and a mixed segment are not path parameters: %v", got)
+	}
+	rows := MergeParams([]KV{{Name: ":id", Value: "42", Description: "user", Enabled: true}, {Name: ":gone", Value: "x", Enabled: true}}, "https://api.test/users/:id/posts/:post?q=1")
+	if len(rows) != 3 || rows[0].Name != "q" || rows[1].Name != ":id" || rows[1].Value != "42" || rows[1].Description != "user" || rows[2].Name != ":post" || rows[2].Value != "" {
+		t.Fatalf("rows %+v", rows)
+	}
+	if got := WithParams("https://api.test/users/:id", rows); got != "https://api.test/users/:id?q=1" {
+		t.Fatalf("path rows must not go into the query: %q", got)
+	}
+	r := Request{URL: "https://api.test/users/:id/posts/:post?q=1", Params: rows}
+	r.Params[1].Value = "a b/c"
+	if got := r.Expanded(nil).URL; got != "https://api.test/users/a%20b%2Fc/posts/:post?q=1" {
+		t.Fatalf("expanded %q", got)
+	}
+	r.Params[1].Enabled = false
+	if got := r.Expanded(nil).URL; !strings.Contains(got, "/users/:id/") {
+		t.Fatalf("a disabled row leaves the segment: %q", got)
+	}
+	vars := []KV{{Name: "uid", Value: "7", Enabled: true}}
+	r2 := Request{URL: "http://h/u/:id", Params: []KV{{Name: ":id", Value: "{{uid}}", Enabled: true}}}
+	if got := r2.Expanded(vars).URL; got != "http://h/u/7" {
+		t.Fatalf("a path value may use variables: %q", got)
 	}
 }

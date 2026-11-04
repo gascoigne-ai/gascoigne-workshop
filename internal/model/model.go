@@ -133,7 +133,12 @@ type Auth struct {
 // URL, header names and values, bodies, form fields and credentials.
 func (r Request) Expanded(vars []KV) Request {
 	r = r.Clone()
-	r.URL, r.Body = Expand(r.URL, vars), Expand(r.Body, vars)
+	for i := range r.Params { // values may use {{variables}}, and path parameters fill the URL
+		if IsPathParam(r.Params[i].Name) {
+			r.Params[i].Value = Expand(r.Params[i].Value, vars)
+		}
+	}
+	r.URL, r.Body = Expand(ApplyPathParams(r.URL, r.Params), vars), Expand(r.Body, vars)
 	for _, rows := range [][]KV{r.Headers, r.Form} {
 		for i := range rows {
 			rows[i].Name, rows[i].Value = Expand(rows[i].Name, vars), Expand(rows[i].Value, vars)
