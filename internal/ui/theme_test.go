@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/respview"
 	"image/color"
 	"math"
 	"testing"
@@ -37,7 +38,7 @@ func TestAppColorsAreReadableOnLists(t *testing.T) {
 				t.Errorf("%s: method %s contrast %.2f", tc.id, m, got)
 			}
 		}
-		for kind, tok := range jsonTokens {
+		for kind, tok := range respview.Tokens {
 			if got := contrast(th.Color(tok), bg); got < 3.5 {
 				t.Errorf("%s: json kind %d contrast %.2f", tc.id, kind, got)
 			}
@@ -48,7 +49,7 @@ func TestAppColorsAreReadableOnLists(t *testing.T) {
 func TestEveryJSONKindHasAToken(t *testing.T) {
 	kinds := []jsonview.Kind{jsonview.Plain, jsonview.Punct, jsonview.Key, jsonview.String, jsonview.Number, jsonview.Literal}
 	for _, k := range kinds {
-		if jsonTokens[k] == "" {
+		if respview.Tokens[k] == "" {
 			t.Errorf("no token for json kind %d", k)
 		}
 	}
@@ -81,7 +82,7 @@ func TestUnknownMethodFallsBackToTheTextColor(t *testing.T) {
 }
 
 func TestCodeLinesKeepsStructureAndColors(t *testing.T) {
-	lines := codeLines([]byte(`{"a":1}`))
+	lines := respview.CodeLines([]byte(`{"a":1}`))
 	if len(lines) != 3 || !lines[0].Foldable || lines[1].Foldable {
 		t.Fatalf("lines = %+v", lines)
 	}
@@ -89,7 +90,7 @@ func TestCodeLinesKeepsStructureAndColors(t *testing.T) {
 	for _, s := range lines[1].Spans {
 		styles = append(styles, s.Style)
 	}
-	if styles[1] != jsonTokens[jsonview.Key] || styles[len(styles)-1] != jsonTokens[jsonview.Number] {
+	if styles[1] != respview.Tokens[jsonview.Key] || styles[len(styles)-1] != respview.Tokens[jsonview.Number] {
 		t.Fatalf("styles = %v", styles)
 	}
 }
@@ -126,7 +127,7 @@ func TestThemeWithAppliesCornersAndTheFlatSwitch(t *testing.T) {
 func TestAppThemesCarryMethodAndJSONColorsOverTheToolkitStyles(t *testing.T) {
 	for _, id := range []string{"dark", "light"} {
 		th := ThemeFor(id, "medium")
-		if th.Color(methodToken("GET")) == th.Color(widget.Text) || th.Color(jsonTokens[jsonview.Key]) == (color.RGBA{}) {
+		if th.Color(methodToken("GET")) == th.Color(widget.Text) || th.Color(respview.Tokens[jsonview.Key]) == (color.RGBA{}) {
 			t.Errorf("%s: app colors missing", id)
 		}
 		if th.Style("primary").Radius <= 0 {

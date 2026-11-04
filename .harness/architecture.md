@@ -184,3 +184,5 @@ Row(H(urlH), PadXY(w.Pad, 8), Gap(8), Bg(w.Bg),
 - **Pixel snapping**: `Ctx.Fill`, `Outline`, `HLine` and `VLine` convert logical edges to device pixels with `Ctx.snap` (rounded per edge, so neighbours share an edge with no gap) and draw lines `Ctx.LineWidth()` thick, the scale rounded to whole pixels and at least one, so borders stay sharp at fractional scales.
 
 - **Toolkit location**: the UI toolkit lives under the root `uitoolkit/` directory (`widget`, `vml`, `engine`; `uitoolkit/doc.go` describes the layers). It never imports `internal/*` or `cmd/*`; `uitoolkit/boundary_test.go` fails the build if it does. Earlier notes that say `ui/widget`, `ui/vml` or `ui/engine` mean the same packages under this name.
+
+- **Feature packages** (task 018): code that does not need the `App` lives in a package of its own under `internal/`: `respview` (response body to colored lines: `CodeLines`, `CompactLines`, `RawLines`, `FoldDeep`, `LooksBinary`, `Filter` for the compact search, `Tokens` for the JSON colors), `textfmt` (`Duration`, `Size`). `internal/ui` keeps only what shares window state.

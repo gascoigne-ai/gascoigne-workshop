@@ -5,7 +5,6 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/jsonview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -21,16 +20,6 @@ func methodToken(method string) widget.Token {
 		return widget.Muted
 	}
 	return widget.Token(methodTokenPrefix + method)
-}
-
-// jsonTokens colors the spans of a JSON response.
-var jsonTokens = map[jsonview.Kind]widget.Token{
-	jsonview.Plain:   "json.plain",
-	jsonview.Punct:   "json.punct",
-	jsonview.Key:     "json.key",
-	jsonview.String:  "json.string",
-	jsonview.Number:  "json.number",
-	jsonview.Literal: "json.literal",
 }
 
 //go:embed themes/*.json
@@ -120,59 +109,6 @@ func ThemeFor(themeID, textSizeID string) widget.Theme {
 		}
 	}
 	return th.WithTextSize(size.font, size.small, size.mono)
-}
-
-// codeLines turns a response body into colored code-view lines.
-func codeLines(body []byte) []widget.Line {
-	src := jsonview.Lines(body)
-	lines := make([]widget.Line, len(src))
-	for i, l := range src {
-		spans := make([]widget.Span, len(l.Spans))
-		for j, s := range l.Spans {
-			spans[j] = widget.Span{Text: s.Text, Style: jsonTokens[s.Kind]}
-		}
-		lines[i] = widget.Line{Spans: spans, Foldable: l.Foldable}
-	}
-	return lines
-}
-
-// compactWidth is how wide a block may be and still stay on one line in
-// the compact view.
-const compactWidth = 90
-
-// compactFoldDepth is the nesting level from which blocks start folded
-// in the compact view: the top level and its children are open.
-const compactFoldDepth = 2
-
-// compactLines is the response as compact JSON lines; the opening line of
-// every block carries its one-line preview for when it is folded.
-func compactLines(body []byte) []widget.Line {
-	src := jsonview.Compact(body, compactWidth)
-	lines := make([]widget.Line, len(src))
-	for i, l := range src {
-		lines[i] = widget.Line{Spans: toSpans(l.Spans), Foldable: l.Foldable, FoldedSpans: toSpans(l.Folded), Depth: l.Depth, Num: i + 1}
-	}
-	return lines
-}
-
-func toSpans(src []jsonview.Span) []widget.Span {
-	if src == nil {
-		return nil
-	}
-	spans := make([]widget.Span, len(src))
-	for j, s := range src {
-		spans[j] = widget.Span{Text: s.Text, Style: jsonTokens[s.Kind]}
-	}
-	return spans
-}
-
-// foldDeep folds every block that opens at nesting depth or deeper.
-func foldDeep(v *widget.CodeView, depth int) {
-	for i, l := range v.Lines {
-		if l.Foldable && l.Depth >= depth {
-			v.Folded[i] = true
-		}
-	}
 }
 
 // kvRows turns key/value rows into table rows with two or three cells.

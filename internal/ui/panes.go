@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/respview"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/textfmt"
 	"strconv"
 	"strings"
 	"time"
-	"unicode/utf8"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/jsonview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
@@ -94,7 +95,7 @@ var responsePanes = []pane{
 		}},
 	{label: "Timeline", kind: paneNote, empty: noResponse,
 		note: func(t *reqTab) string {
-			return fmt.Sprintf("Duration  %s\nSize      %s", formatDuration(t.resp.Duration), formatSize(t.resp.Size))
+			return fmt.Sprintf("Duration  %s\nSize      %s", textfmt.Duration(t.resp.Duration), textfmt.Size(t.resp.Size))
 		}},
 	{label: "Tests", kind: paneNote,
 		note: func(*reqTab) string { return "No tests" }},
@@ -366,7 +367,7 @@ func jsonStyler(line string) []w.Span {
 	src := jsonview.Tokenize(line)
 	spans := make([]w.Span, len(src))
 	for i, s := range src {
-		spans[i] = w.Span{Text: s.Text, Style: jsonTokens[s.Kind]}
+		spans[i] = w.Span{Text: s.Text, Style: respview.Tokens[s.Kind]}
 	}
 	return spans
 }
@@ -405,21 +406,6 @@ func (a *App) timeoutEdited(t *reqTab) {
 	t.req.TimeoutSec = n
 }
 
-// looksBinary reports whether a body is not text: it has a NUL byte or
-// is not valid UTF-8 (judged on the first 8 KiB).
-func looksBinary(body []byte) bool {
-	sample := body
-	if len(body) > binarySample {
-		sample = body[:binarySample]
-		for i := 0; i < utf8.UTFMax-1 && !utf8.Valid(sample); i++ {
-			sample = sample[:len(sample)-1] // the cut may split a character
-		}
-	}
-	return bytes.IndexByte(sample, 0) >= 0 || !utf8.Valid(sample)
-}
-
-const binarySample = 8 << 10
-
 // findCount is the counter shown in the find bar: "3/12", "No matches",
 // "3 matches" when none is active, or nothing for an empty query.
 func findCount(query string, matches, index int) string {
@@ -439,8 +425,8 @@ func responseEmpty(t *reqTab) (string, bool) {
 	if msg, isErr := noResponse(t); msg != "" {
 		return msg, isErr
 	}
-	if looksBinary(t.resp.Body) {
-		return fmt.Sprintf("Binary body, %s (not shown)", formatSize(len(t.resp.Body))), false
+	if respview.LooksBinary(t.resp.Body) {
+		return fmt.Sprintf("Binary body, %s (not shown)", textfmt.Size(len(t.resp.Body))), false
 	}
 	return "", false
 }
@@ -494,30 +480,20 @@ func (a *App) setView(t *reqTab, raw, compact bool) {
 // redoes an open search. Bodies that are not text are not loaded.
 func (a *App) refreshView(t *reqTab) {
 	switch {
-	case t.resp == nil || looksBinary(t.resp.Body):
+	case t.resp == nil || respview.LooksBinary(t.resp.Body):
 		t.view.SetLines(nil)
 	case t.raw:
-		t.view.SetLines(rawLines(t.resp.Body))
+		t.view.SetLines(respview.RawLines(t.resp.Body))
 	case t.compact:
-		t.compactAll = compactLines(t.resp.Body)
+		t.compactAll = respview.CompactLines(t.resp.Body)
 		a.showCompact(t)
 		return // showCompact searches too
 	default:
-		t.view.SetLines(codeLines(t.resp.Body))
+		t.view.SetLines(respview.CodeLines(t.resp.Body))
 	}
 	if t.findOpen {
 		a.runFind(t)
 	}
-}
-
-// rawLines shows a body exactly as received, one plain line per line.
-func rawLines(body []byte) []w.Line {
-	texts := strings.Split(string(body), "\n")
-	lines := make([]w.Line, len(texts))
-	for i, text := range texts {
-		lines[i] = w.Line{Spans: []w.Span{{Text: strings.TrimRight(text, "\r"), Style: jsonTokens[jsonview.Plain]}}}
-	}
-	return lines
 }
 
 func (a *App) copyBody(t *reqTab) {
@@ -546,10 +522,10 @@ func (a *App) openFind() {
 // lines with their children and the blocks around them (filterCompact).
 func (a *App) showCompact(t *reqTab) {
 	if t.findOpen && t.find.Text != "" {
-		t.view.SetLines(filterCompact(t.compactAll, t.find.Text))
+		t.view.SetLines(respview.Filter(t.compactAll, t.find.Text))
 	} else {
 		t.view.SetLines(t.compactAll)
-		foldDeep(&t.view, compactFoldDepth)
+		respview.FoldDeep(&t.view, respview.CompactFoldDepth)
 	}
 	if t.findOpen {
 		a.searchView(t)
@@ -559,7 +535,7 @@ func (a *App) showCompact(t *reqTab) {
 // runFind searches for the typed text and goes to the first match. The
 // compact view is filtered to the matches first.
 func (a *App) runFind(t *reqTab) {
-	if t.compact && t.resp != nil && !looksBinary(t.resp.Body) {
+	if t.compact && t.resp != nil && !respview.LooksBinary(t.resp.Body) {
 		a.showCompact(t)
 		return
 	}
@@ -605,7 +581,7 @@ func (a *App) closeFind(t *reqTab) {
 	t.findOpen = false
 	t.find.Focused = false
 	t.view.SetMatches(nil, -1)
-	if t.compact && t.resp != nil && !looksBinary(t.resp.Body) {
+	if t.compact && t.resp != nil && !respview.LooksBinary(t.resp.Body) {
 		a.showCompact(t) // leave the filtered view
 	}
 }

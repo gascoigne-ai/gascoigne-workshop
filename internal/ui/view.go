@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/textfmt"
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
@@ -322,7 +323,7 @@ func (a *App) responseStatus(t *reqTab) Node {
 		Row(PadXY(10, 0), H(20), Bg(bg), Control("pill"), AlignItems(AlignCenter),
 			Text(fmt.Sprintf("%d %s", t.resp.Status, t.resp.StatusText), Small(), Bold(), Color(fg)),
 		),
-		Text(fmt.Sprintf("%s  %s", formatDuration(t.resp.Duration), formatSize(t.resp.Size))),
+		Text(fmt.Sprintf("%s  %s", textfmt.Duration(t.resp.Duration), textfmt.Size(t.resp.Size))),
 	)
 }
 

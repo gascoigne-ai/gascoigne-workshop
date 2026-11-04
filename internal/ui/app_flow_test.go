@@ -3,6 +3,7 @@ package ui
 import (
 	"errors"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
 	"github.com/hajimehoshi/ebiten/v2"
 	"io"
@@ -1502,7 +1503,7 @@ func TestCopyBodyAndCopyAsCurl(t *testing.T) {
 func TestCurlCopyExpandsVariables(t *testing.T) {
 	a, _ := newTestApp(t) // the sample request uses {{baseUrl}}
 	a.cur().resp = &model.Response{Status: 200, Body: []byte("{}")}
-	a.cur().view.SetLines(codeLines([]byte("{}")))
+	a.cur().view.SetLines(respview.CodeLines([]byte("{}")))
 	clip := &fakeClip{}
 	a.ctx.Clipboard = clip
 	a.step(widget.Input{})

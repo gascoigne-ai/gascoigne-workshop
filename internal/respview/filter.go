@@ -1,4 +1,4 @@
-package ui
+package respview
 
 import (
 	"strings"
@@ -33,11 +33,11 @@ func blockEnds(lines []widget.Line) map[int]int {
 	return ends
 }
 
-// filterCompact keeps only what a search needs from the compact lines:
+// Filter keeps only what a search needs from the compact lines:
 // the lines that contain query (any case), all lines inside a matching
 // block (its children), and the opening and closing lines of the blocks
 // around them, so every match is shown in its place in the tree.
-func filterCompact(lines []widget.Line, query string) []widget.Line {
+func Filter(lines []widget.Line, query string) []widget.Line {
 	q := strings.ToLower(query)
 	n := len(lines)
 	ends := blockEnds(lines)

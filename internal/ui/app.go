@@ -3,6 +3,7 @@ package ui
 import (
 	"context"
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/textfmt"
 	"reflect"
 	"strconv"
 	"time"
@@ -358,7 +359,7 @@ func (a *App) apply(r sendResult) {
 		a.status = "Request failed"
 		return
 	}
-	a.status = fmt.Sprintf("%s %s: %d %s in %s", t.req.Method, t.req.URL, r.resp.Status, r.resp.StatusText, formatDuration(r.resp.Duration))
+	a.status = fmt.Sprintf("%s %s: %d %s in %s", t.req.Method, t.req.URL, r.resp.Status, r.resp.StatusText, textfmt.Duration(r.resp.Duration))
 }
 
 // cursorShapes maps the cursor widgets ask for to the window system's.
