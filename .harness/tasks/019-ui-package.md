@@ -17,5 +17,6 @@ Make the UI toolkit (`uitoolkit/core`, `uitoolkit/vml`, `uitoolkit/engine`) a se
 ## Progress
 - Decision: the toolkit stays in this module under the root `uitoolkit/` directory (`uitoolkit/core`, `uitoolkit/vml`, `uitoolkit/engine`); it is not a separate module yet. Import boundary enforced by tests (`uitoolkit/boundary_test.go`, `widget/layers_test.go`).
 - Done: moved from `ui/`, `uitoolkit/doc.go` documents the layers.
-- Left: a minimal example app and trimming exported names that only the workshop needs.
+- Done later: a runnable example, `uitoolkit/examples/hello` (Go DSL and a template side by side, tested).
+- Left: trimming exported names that only the workshop needs.
 - Done: unused exports removed, naming rule applied (PadX/PadY/PadB, MarginX/MarginY), package docs corrected, `Example*` functions in vml, component, theming and widget, overview in `uitoolkit/doc.go`, theming mechanics moved in (`uitoolkit/theming`).
