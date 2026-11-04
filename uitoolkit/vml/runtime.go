@@ -225,9 +225,6 @@ func (e *El) draw(c *widget.Ctx, dst *ebiten.Image) {
 	if e.borderTop != "" {
 		c.HLine(dst, r.X, r.Y, r.W, c.Col(e.borderTop))
 	}
-	if e.overline != "" {
-		c.Fill(dst, widget.Rect{X: r.X, Y: r.Y, W: r.W, H: 2}, c.Col(e.overline))
-	}
 	if e.borderLeft != "" {
 		c.VLine(dst, r.X, r.Y+e.borderInset, r.H-2*e.borderInset, c.Col(e.borderLeft))
 	}
@@ -265,9 +262,6 @@ func (e *El) draw(c *widget.Ctx, dst *ebiten.Image) {
 		if e.edgeRight {
 			c.Fill(dst, widget.Rect{X: r.X + r.W - 2, Y: r.Y, W: 2, H: r.H}, col)
 		}
-	}
-	if e.underline != "" {
-		c.Fill(dst, widget.Rect{X: r.X + e.underInset, Y: r.Y + r.H - 3, W: r.W - 2*e.underInset, H: 3}, c.Col(e.underline))
 	}
 }
 

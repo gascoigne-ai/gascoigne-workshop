@@ -52,8 +52,7 @@ type El struct {
 
 	bg, border, borderTop, borderBottom, borderLeft widget.Token
 	borderInset                                     int // BorderLeft stops this far from the top and bottom
-	hoverBg, underline                              widget.Token
-	underInset                                      int
+	hoverBg                                         widget.Token
 	shadow, clip, lighten                           bool
 
 	text                             string
@@ -71,8 +70,6 @@ type El struct {
 	onTab                      func(back bool)
 	onMiddle, onHeldOver       func()
 
-	scrollMaxH                   int          // MaxHeight of a Scroll, 0 for none
-	overline                     widget.Token // a bar across the top edge
 	edgeTok                      widget.Token // Edges: the color of the outline
 	edgeTop, edgeLeft, edgeRight bool
 	fieldInset                   int    // Field padding when not the default
@@ -159,10 +156,11 @@ func Pad(n int) Option {
 	return func(e *El) { e.padL, e.padT, e.padR, e.padB = n, n, n, n }
 }
 
-// PadXY sets horizontal and vertical padding.
-func PadXY(x, y int) Option {
-	return func(e *El) { e.padL, e.padR, e.padT, e.padB = x, x, y, y }
-}
+// PadX sets the left and right padding.
+func PadX(n int) Option { return func(e *El) { e.padL, e.padR = n, n } }
+
+// PadY sets the top and bottom padding.
+func PadY(n int) Option { return func(e *El) { e.padT, e.padB = n, n } }
 
 // PadL sets the left padding.
 func PadL(n int) Option { return func(e *El) { e.padL = n } }
@@ -172,6 +170,9 @@ func PadT(n int) Option { return func(e *El) { e.padT = n } }
 
 // PadR sets the right padding.
 func PadR(n int) Option { return func(e *El) { e.padR = n } }
+
+// PadB sets the bottom padding.
+func PadB(n int) Option { return func(e *El) { e.padB = n } }
 
 // Gap sets the space between children.
 func Gap(n int) Option { return func(e *El) { e.gap = n } }
@@ -207,17 +208,13 @@ func Separator(show bool, inset int) Option {
 // BorderInset keeps the BorderLeft line this many pixels from the top and bottom.
 func BorderInset(n int) Option { return func(e *El) { e.borderInset = n } }
 
+// BorderBottom draws a hairline along the bottom edge.
 func BorderBottom(t widget.Token) Option { return func(e *El) { e.borderBottom = t } }
 
-// HoverBg fills the element while the pointer is over it.
 // Control names the theme style that draws this element: its corner
 // radius, gradient fill and outline come from Theme.Controls[name], so
 // every control of a kind looks the same and the theme file decides how.
 func Control(name string) Option { return func(e *El) { e.control = name } }
-
-// Overline draws a two-pixel bar across the top of the element, marking
-// it as the current one (the open tab).
-func Overline(t widget.Token) Option { return func(e *El) { e.overline = t } }
 
 // Edges outlines the element on its top, left and right sides with a
 // two-pixel line, leaving the bottom open: the look of the open tab,
@@ -230,15 +227,11 @@ func Edges(t widget.Token, top, left, right bool) Option {
 // for TipDelayTicks.
 func Tooltip(text string) Option { return func(e *El) { e.tip = text } }
 
+// HoverBg fills the element while the pointer is over it.
 func HoverBg(t widget.Token) Option { return func(e *El) { e.hoverBg = t } }
 
 // Lighten brightens the background while the pointer is over it.
 func Lighten() Option { return func(e *El) { e.lighten = true } }
-
-// Underline draws a two-pixel bar along the bottom, inset on both sides.
-func Underline(t widget.Token, inset int) Option {
-	return func(e *El) { e.underline, e.underInset = t, inset }
-}
 
 // Shadow draws a soft offset shadow behind the element.
 func Shadow() Option { return func(e *El) { e.shadow = true } }
@@ -277,12 +270,4 @@ func If(cond bool, n Node) Node {
 		return n
 	}
 	return nil
-}
-
-// Either is v-if with v-else.
-func Either(cond bool, yes, no Node) Node {
-	if cond {
-		return yes
-	}
-	return no
 }

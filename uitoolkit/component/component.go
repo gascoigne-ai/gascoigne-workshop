@@ -173,6 +173,12 @@ var attributes = map[string]func(v string) (vml.Option, error){
 	"gap":           intAttr(vml.Gap),
 	"grow":          floatAttr(vml.Grow),
 	"pad":           padAttr,
+	"pad-x":         intAttr(vml.PadX),
+	"pad-y":         intAttr(vml.PadY),
+	"pad-l":         intAttr(vml.PadL),
+	"pad-t":         intAttr(vml.PadT),
+	"pad-r":         intAttr(vml.PadR),
+	"pad-b":         intAttr(vml.PadB),
 	"bg":            tokenAttr(vml.Bg),
 	"border":        tokenAttr(vml.Border),
 	"border-top":    tokenAttr(vml.BorderTop),
@@ -246,7 +252,8 @@ func padAttr(v string) (vml.Option, error) {
 	case 1:
 		return vml.Pad(nums[0]), nil
 	case 2:
-		return vml.PadXY(nums[0], nums[1]), nil
+		x, y := nums[0], nums[1]
+		return func(e *vml.El) { vml.PadX(x)(e); vml.PadY(y)(e) }, nil
 	}
 	return nil, fmt.Errorf("pad takes one or two numbers, not %q", v)
 }

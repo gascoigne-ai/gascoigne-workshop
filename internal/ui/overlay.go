@@ -115,7 +115,7 @@ func (a *App) contextMenuView() Node {
 
 func (a *App) menuRow(m *contextMenu, i int, it menuItem) Node {
 	if it.separator {
-		return Row(H(menuSepH), PadXY(6, 0), HRule())
+		return Row(H(menuSepH), PadX(6), HRule())
 	}
 	color := w.Text
 	if it.disabled {
@@ -128,7 +128,7 @@ func (a *App) menuRow(m *contextMenu, i int, it menuItem) Node {
 	case i == m.hot:
 		look = Bg(w.Selected)
 	}
-	return Row(H(menuRowH), PadXY(10, 0), Gap(8), AlignItems(AlignBaseline), Control("row"), look, OnClick(func() { a.runMenuItem(i) }),
+	return Row(H(menuRowH), PadX(10), Gap(8), AlignItems(AlignBaseline), Control("row"), look, OnClick(func() { a.runMenuItem(i) }),
 		Text(it.label, Color(color)),
 		Spacer(),
 		Text(it.shortcut, Small(), Muted()),
@@ -254,7 +254,7 @@ func (a *App) toastsView() Node {
 			if t.isErr {
 				border, color = w.Error, w.Error
 			}
-			return Row(H(toastH), PadXY(w.Pad, 0), Bg(w.Panel), Border(border), Shadow(), OnClick(func() { a.dismissToast(i) }),
+			return Row(H(toastH), PadX(w.Pad), Bg(w.Panel), Border(border), Shadow(), OnClick(func() { a.dismissToast(i) }),
 				Text(t.text, Ellipsis(), Color(color), Grow(1)),
 			)
 		}),

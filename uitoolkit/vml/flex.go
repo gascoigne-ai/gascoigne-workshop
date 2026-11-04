@@ -44,8 +44,11 @@ func MaxH(n int) Option { return func(e *El) { e.maxH = n } }
 // Margin is space around an element, inside its parent's layout.
 func Margin(n int) Option { return func(e *El) { e.mL, e.mT, e.mR, e.mB = n, n, n, n } }
 
-// MarginXY is horizontal and vertical margin.
-func MarginXY(x, y int) Option { return func(e *El) { e.mL, e.mR, e.mT, e.mB = x, x, y, y } }
+// MarginX is left and right margin.
+func MarginX(n int) Option { return func(e *El) { e.mL, e.mR = n, n } }
+
+// MarginY is top and bottom margin.
+func MarginY(n int) Option { return func(e *El) { e.mT, e.mB = n, n } }
 
 // clampSize applies MinW/MaxW/MinH/MaxH.
 func (e *El) clampSize(w, h int) (int, int) {

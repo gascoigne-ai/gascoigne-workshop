@@ -230,7 +230,7 @@ func (a *App) messagesPane(_ pane, t *reqTab, _ *ScrollState) Node {
 	connected := t.sess != nil
 	return Col(Grow(1),
 		Spacer(H(w.Pad)),
-		Row(H(w.RowH+8), PadXY(w.Pad, 0), Gap(6), AlignItems(AlignCenter), BorderBottom(w.Border),
+		Row(H(w.RowH+8), PadX(w.Pad), Gap(6), AlignItems(AlignCenter), BorderBottom(w.Border),
 			Text(connState(t), Small(), Muted()),
 			Spacer(),
 			a.viewChip("Auto-reconnect", t.reconnect, 116, func() { t.reconnect = !t.reconnect }),
@@ -238,7 +238,7 @@ func (a *App) messagesPane(_ pane, t *reqTab, _ *ScrollState) Node {
 			Button("Clear", W(56), H(w.CompactH), OnClick(func() { a.clearLog(t) }), Tooltip("Empty the message log")),
 		),
 		Code(&t.wsView, Grow(1), Bg(w.Sunken)),
-		Row(H(w.RowH+16), PadXY(w.Pad, 8), Gap(6), BorderTop(w.Border),
+		Row(H(w.RowH+16), PadX(w.Pad), PadY(8), Gap(6), BorderTop(w.Border),
 			Field(&t.msg, Grow(1), Placeholder(composerHint(t, connected)),
 				OnEnter(func() { a.sendMessage(t) }),
 				a.textMenuOpt(&t.msg, nil),

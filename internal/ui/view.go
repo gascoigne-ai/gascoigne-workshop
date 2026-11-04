@@ -66,7 +66,7 @@ func (a *App) view() Node {
 
 func (a *App) sidebar() Node {
 	return Col(
-		Row(H(headerH), PadXY(w.Pad, 0), Gap(6), Bg(w.Bg), BorderBottom(w.Border),
+		Row(H(headerH), PadX(w.Pad), Gap(6), Bg(w.Bg), BorderBottom(w.Border),
 			Caption("Collections", W(96)),
 			Field(&a.filter, H(28), Grow(1), Bg(w.Sunken), Placeholder("Filter"), a.textMenuOpt(&a.filter, nil)),
 		),
@@ -165,7 +165,7 @@ func (a *App) panes(t *reqTab) Node {
 
 func (a *App) header() Node {
 	toggleMenu := OnClick(func() { a.menu = !a.menu })
-	return Row(H(headerH), PadXY(w.Pad, 0), Bg(w.Hero), Control("hero"),
+	return Row(H(headerH), PadX(w.Pad), Bg(w.Hero), Control("hero"),
 		Text(a.col.Name, Bold(), Color(w.HeroText)),
 		Spacer(),
 		a.envChip(),
@@ -222,7 +222,7 @@ func (a *App) urlBar(t *reqTab) Node {
 	} else if t.sending {
 		send = PrimaryButton("Cancel", W(80), OnClick(func() { a.cancelSend(t) }), Tooltip("Cancel the running request"))
 	}
-	return Row(H(urlH), PadXY(w.Pad, 8), Gap(8), Bg(w.Bg),
+	return Row(H(urlH), PadX(w.Pad), PadY(8), Gap(8), Bg(w.Bg),
 		Row(Grow(1), Bg(w.Sunken), Control("field"),
 			tip("Protocol: click to change", chip(protocolLabel[t.req.Protocol], w.Muted, 64, func() { a.cycleProtocol(t) })),
 			If(isREST, VRuleInset(8)), // a divider between the chips, none after the last one
@@ -323,7 +323,7 @@ func (a *App) responseStatus(t *reqTab) Node {
 	}
 	fg, bg := statusPill(t.resp.Status)
 	return Row(Gap(12), PadR(w.Pad), Optional(), AlignItems(AlignCenter),
-		Row(PadXY(10, 0), H(20), Bg(bg), Control("pill"), AlignItems(AlignCenter),
+		Row(PadX(10), H(20), Bg(bg), Control("pill"), AlignItems(AlignCenter),
 			Text(fmt.Sprintf("%d %s", t.resp.Status, t.resp.StatusText), Small(), Bold(), Color(fg)),
 		),
 		Text(fmt.Sprintf("%s  %s", textfmt.Duration(t.resp.Duration), textfmt.Size(t.resp.Size))),

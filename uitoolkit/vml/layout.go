@@ -362,7 +362,7 @@ func VRule() *El { return newEl(plain{}, []Item{W(1), Bg(widget.Border)}) }
 
 // VRuleInset is a vertical line shortened by inset pixels at both ends,
 // for dividing the chips of a bar.
-func VRuleInset(inset int) *El { return Row(W(1), PadXY(0, inset), VRule()) }
+func VRuleInset(inset int) *El { return Row(W(1), PadY(inset), VRule()) }
 
 // with appends opts to base, so a component's defaults come first and
 // the caller's options override them.

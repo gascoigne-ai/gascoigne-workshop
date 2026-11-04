@@ -76,11 +76,6 @@ func Muted() Option { return Color(widget.Muted) }
 // Bold uses the bold face, for headings and table headers.
 func Bold() Option { return func(e *El) { e.bold = true } }
 
-// BoldIf is Bold when on, no change otherwise.
-func BoldIf(on bool) Option {
-	return func(e *El) { e.bold = e.bold || on }
-}
-
 // Small uses the small font.
 func Small() Option { return func(e *El) { e.small = true } }
 

@@ -58,7 +58,7 @@ func (a *App) menuView() Node {
 	return Frag(
 		Row(Bg(w.Shadow)), // dims the window
 		Col(W(settingsW), H(h), Bg(w.Bg), Control("menu"), Shadow(), FloatCenter(), FocusScope(), Modal(func() { a.menu = false }),
-			Row(H(settingsTitleH), PadXY(16, 0), AlignItems(AlignCenter), BorderBottom(w.BorderSoft),
+			Row(H(settingsTitleH), PadX(16), AlignItems(AlignCenter), BorderBottom(w.BorderSoft),
 				Text("Settings", Bold(), Grow(1)),
 				IconButton(Cross(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(func() { a.menu = false }), Tooltip("Close (Esc)")),
 			),
@@ -75,7 +75,7 @@ func (a *App) menuView() Node {
 // navItem is one category in the dialog's list: the open one is tinted and bold.
 func (a *App) navItem(c settingsCategory, open bool) Node {
 	items := []Item{
-		H(w.RowH), PadXY(12, 0), AlignItems(AlignCenter), Control("button"),
+		H(w.RowH), PadX(12), AlignItems(AlignCenter), Control("button"),
 		OnClick(func() { a.settingsCat, a.menuScroll.Y = c.id, 0 }),
 	}
 	if open {

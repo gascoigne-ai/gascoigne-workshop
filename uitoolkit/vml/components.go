@@ -19,7 +19,7 @@ func Button(label string, opts ...Option) *El {
 // background, lit softly under the pointer. It sizes to its label.
 func LinkButton(label string, opts ...Option) *El {
 	return Row(with([]Item{
-		PadXY(8, 0), HoverBg(widget.Hover),
+		PadX(8), HoverBg(widget.Hover),
 		Text(label, Center(), Color(widget.AccentLine)),
 	}, opts)...)
 }
@@ -54,7 +54,7 @@ func tabItems(items []TabItem, active int, onSelect func(i int)) []Item {
 	for i, it := range items {
 		i, it := i, it
 		tab := []Item{
-			Gap(4), PadXY(10, 0), AlignItems(AlignBaseline),
+			Gap(4), PadX(10), AlignItems(AlignBaseline),
 			OnClick(func() { onSelect(i) }),
 			Separator(i > 0, 10),
 			Text(it.Label, Color(tabColor(i == active))),
@@ -176,7 +176,7 @@ func tableHeader(t TableSpec) Node {
 	header := Row(H(widget.RowH), Bg(widget.Panel), BorderBottom(widget.Border),
 		If(t.Editable, headerCheck(t)),
 		For(t.Columns, func(i int, name string) Node {
-			return Row(Grow(t.weight(i)), PadXY(8, 0), Separator(i > 0, 7),
+			return Row(Grow(t.weight(i)), PadX(8), Separator(i > 0, 7),
 				Text(strings.ToUpper(name), Small(), Bold(), Muted(), Grow(1)))
 		}),
 		If(t.Editable, Row(W(tableActionW))),
@@ -236,11 +236,11 @@ func tableRow(t TableSpec, i int, r TableRow, placeholder, last bool) Node {
 func tableCell(t TableSpec, row, col int, text string, clr widget.Token) Node {
 	if e := t.Editing; e != nil && e.Row == row && e.Col == col {
 		// The field is inset in its cell so its rounded outline and focus ring have room.
-		return Row(Grow(t.weight(col)), PadXY(3, 3), Separator(col > 0, 0),
+		return Row(Grow(t.weight(col)), PadX(3), PadY(3), Separator(col > 0, 0),
 			Field(e.Field, Grow(1), Bg(widget.Sunken), FieldPad(5) /* 3 + 5 = the 8 px of a shown cell, so the text does not move */, OnEnter(e.OnEnter), OnTab(e.OnTab), menuOption(e.OnMenu)),
 		)
 	}
-	items := []Item{Grow(t.weight(col)), PadXY(8, 0), Clip(), Text(text, Ellipsis(), Color(clr), Grow(1)), Separator(col > 0, 0)}
+	items := []Item{Grow(t.weight(col)), PadX(8), Clip(), Text(text, Ellipsis(), Color(clr), Grow(1)), Separator(col > 0, 0)}
 	if t.Editable && t.OnEditCell != nil {
 		items = append(items, OnClick(func() { t.OnEditCell(row, col) }))
 	}

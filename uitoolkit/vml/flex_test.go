@@ -163,7 +163,7 @@ func TestMarginsShiftAndEnlargeTheOuterBox(t *testing.T) {
 }
 
 func TestMarginsShrinkAStretchedChild(t *testing.T) {
-	child := box(W(50), MarginXY(0, 10))
+	child := box(W(50), MarginY(10))
 	root := Row(H(100), child)
 	Layout(testCtx(t), root, 300, 100)
 	if child.rect.Y != 10 || child.rect.H != 80 {

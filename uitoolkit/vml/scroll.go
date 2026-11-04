@@ -38,19 +38,13 @@ type scrollB struct {
 	content int // height of the content, set by layout
 }
 
-// measure is the content's size, but no taller than MaxHeight, so a
+// measure is the content's size, but no taller than MaxH, so a
 // scroller in a floating or hugging parent shrinks to its content and
 // scrolls only when the content is taller than the limit.
 func (s *scrollB) measure(e *El, c *widget.Ctx, maxW int) (int, int) {
 	w, h := s.flow.measure(e, c, maxW)
-	if e.scrollMaxH > 0 {
-		h = min(h, e.scrollMaxH)
-	}
 	return w, h
 }
-
-// MaxHeight limits the height a Scroll asks for to n pixels.
-func MaxHeight(n int) Option { return func(e *El) { e.scrollMaxH = n } }
 
 func (s *scrollB) track(e *El) widget.Rect {
 	r := e.rect

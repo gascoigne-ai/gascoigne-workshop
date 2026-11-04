@@ -104,9 +104,6 @@ func TestIfForAndFragmentsFlatten(t *testing.T) {
 	if got := len(root.kids); got != 1+3+2 {
 		t.Fatalf("children = %d, want 6", got)
 	}
-	if got := Either(false, box(W(1)), box(W(2))).w; got != 2 {
-		t.Fatalf("Either picked the wrong branch")
-	}
 }
 
 func click(c *widget.Ctx, x, y int) { c.In = widget.Input{X: x, Y: y, Click: true} }
@@ -368,7 +365,7 @@ func TestCodeNodeForwardsInputToTheView(t *testing.T) {
 	}
 }
 
-func TestEitherAndIconsMeasure(t *testing.T) {
+func TestIconsMeasure(t *testing.T) {
 	c := testCtx(t)
 	icons := Row(Checkbox(true), Cross(), Triangle(false), Dots())
 	Layout(c, icons, 200, 30)
@@ -377,9 +374,6 @@ func TestEitherAndIconsMeasure(t *testing.T) {
 		if k.rect.W != want[i] {
 			t.Errorf("icon %d width %d, want %d", i, k.rect.W, want[i])
 		}
-	}
-	if Either(true, box(W(1)), box(W(2))).w != 1 {
-		t.Fatal("Either(true) picks the first")
 	}
 }
 
@@ -883,17 +877,6 @@ func TestBorderLeftOptionRecordsTheTokenAndInset(t *testing.T) {
 	e := box(BorderLeft(widget.BorderSoft), BorderInset(6))
 	if e.borderLeft != widget.BorderSoft || e.borderInset != 6 {
 		t.Fatalf("%q %d", e.borderLeft, e.borderInset)
-	}
-}
-
-func TestOverlineAndBoldIfRecordTheirSettings(t *testing.T) {
-	e := box(Overline(widget.AccentLine))
-	if e.overline != widget.AccentLine {
-		t.Fatalf("overline %q", e.overline)
-	}
-	on, off := Text("x", BoldIf(true)), Text("x", BoldIf(false))
-	if !on.bold || off.bold {
-		t.Fatalf("bold: on %v off %v", on.bold, off.bold)
 	}
 }
 
