@@ -50,10 +50,11 @@ type El struct {
 	padR, padB       int
 	gap              int
 
-	bg, border, borderTop, borderBottom widget.Token
-	hoverBg, underline                  widget.Token
-	underInset                          int
-	shadow, clip, lighten               bool
+	bg, border, borderTop, borderBottom, borderLeft widget.Token
+	borderInset                                     int // BorderLeft stops this far from the top and bottom
+	hoverBg, underline                              widget.Token
+	underInset                                      int
+	shadow, clip, lighten                           bool
 
 	text                             string
 	fg                               widget.Token
@@ -181,6 +182,24 @@ func BorderTop(t widget.Token) Option { return func(e *El) { e.borderTop = t } }
 
 // BorderBottom draws a hairline along the bottom edge, under the
 // background and below the children.
+// BorderLeft draws a one-pixel line down the element's left edge, to
+// separate neighbours such as tabs or table columns; BorderInset shortens it.
+func BorderLeft(t widget.Token) Option { return func(e *El) { e.borderLeft = t } }
+
+// Separator draws the soft hairline between neighbours (tabs, table
+// columns) on the element's left edge when show is set, so the first one
+// has none; inset keeps it off the top and bottom.
+func Separator(show bool, inset int) Option {
+	return func(e *El) {
+		if show {
+			e.borderLeft, e.borderInset = widget.BorderSoft, inset
+		}
+	}
+}
+
+// BorderInset keeps the BorderLeft line this many pixels from the top and bottom.
+func BorderInset(n int) Option { return func(e *El) { e.borderInset = n } }
+
 func BorderBottom(t widget.Token) Option { return func(e *El) { e.borderBottom = t } }
 
 // HoverBg fills the element while the pointer is over it.

@@ -878,3 +878,10 @@ func TestTableRowRightClickReportsTheRowButNotThePlaceholder(t *testing.T) {
 		t.Fatalf("rows = %v", rows)
 	}
 }
+
+func TestBorderLeftOptionRecordsTheTokenAndInset(t *testing.T) {
+	e := box(BorderLeft(widget.BorderSoft), BorderInset(6))
+	if e.borderLeft != widget.BorderSoft || e.borderInset != 6 {
+		t.Fatalf("%q %d", e.borderLeft, e.borderInset)
+	}
+}

@@ -10,6 +10,13 @@ import (
 // overflowing HScroll.
 const hscrollArrowW = 18
 
+// Holding an arrow scrolls once at the press, then repeats every
+// hscrollHoldEvery frames after hscrollHoldDelay frames.
+const (
+	hscrollHoldDelay = 20
+	hscrollHoldEvery = 3
+)
+
 // hscrollB lays its children out in a row at their natural width, wider
 // than the box when they do not fit, and shows the part at ScrollState.X.
 // When it overflows, an arrow at each end that can still move scrolls by
@@ -97,17 +104,38 @@ func (s *hscrollB) arrowsShown(e *El) (left, right bool) {
 // them, also on a dim arrow, which sits over the edge of a tab.
 func (s *hscrollB) preUpdate(e *El, c *widget.Ctx) {
 	in, st, r := c.In, s.state, e.rect
-	if !s.overflow(e) || !in.Click {
+	if !s.overflow(e) {
 		return
 	}
 	left, right := s.arrows(e)
-	switch {
-	case left.Contains(in.X, in.Y):
-		st.X = max(st.X-r.W/2, 0)
-		c.In.Click = false
-	case right.Contains(in.X, in.Y):
-		st.X = min(st.X+r.W/2, s.maxX(e))
-		c.In.Click = false
+	step := func(dir, by int) { st.X = max(0, min(st.X+dir*by, s.maxX(e))) }
+	if !in.Held {
+		st.holdDir, st.holdN = 0, 0
+	}
+	if in.Click {
+		switch {
+		case left.Contains(in.X, in.Y):
+			st.holdDir, st.holdN = -1, 0
+			step(-1, r.W/2)
+			c.In.Click = false
+		case right.Contains(in.X, in.Y):
+			st.holdDir, st.holdN = 1, 0
+			step(1, r.W/2)
+			c.In.Click = false
+		}
+		return
+	}
+	// Held on the arrow the press started on: scroll on, a little at a time.
+	arrow := left
+	if st.holdDir > 0 {
+		arrow = right
+	}
+	if st.holdDir == 0 || !in.Held || !arrow.Contains(in.X, in.Y) {
+		return
+	}
+	st.holdN++
+	if st.holdN >= hscrollHoldDelay && (st.holdN-hscrollHoldDelay)%hscrollHoldEvery == 0 {
+		step(st.holdDir, max(r.W/8, 1))
 	}
 }
 

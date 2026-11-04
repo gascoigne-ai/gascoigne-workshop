@@ -225,6 +225,9 @@ func (e *El) draw(c *widget.Ctx, dst *ebiten.Image) {
 	if e.borderTop != "" {
 		c.HLine(dst, r.X, r.Y, r.W, c.Col(e.borderTop))
 	}
+	if e.borderLeft != "" {
+		c.VLine(dst, r.X, r.Y+e.borderInset, r.H-2*e.borderInset, c.Col(e.borderLeft))
+	}
 	if e.borderBottom != "" {
 		c.HLine(dst, r.X, r.Y+r.H-1, r.W, c.Col(e.borderBottom))
 	}

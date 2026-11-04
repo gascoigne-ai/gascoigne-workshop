@@ -15,6 +15,8 @@ type ScrollState struct {
 	Y int
 	X int // horizontal position, for HScroll
 
+	holdDir, holdN int // HScroll: the arrow held down (-1 left, 1 right) and for how many frames
+
 	revealed int // HScroll: index+1 of the child last brought into view, 0 for none
 
 	dragging bool // the thumb is being dragged

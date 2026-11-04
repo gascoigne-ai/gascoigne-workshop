@@ -55,6 +55,7 @@ func tabItems(items []TabItem, active int, onSelect func(i int)) []Item {
 		tab := []Item{
 			Gap(4), PadXY(10, 0), AlignItems(AlignBaseline),
 			OnClick(func() { onSelect(i) }),
+			Separator(i > 0, 10),
 			Text(it.Label, Color(tabColor(i == active))),
 			If(it.Badge > 0, Text(strconv.Itoa(it.Badge), Small(), Muted())),
 		}
@@ -174,7 +175,8 @@ func tableHeader(t TableSpec) Node {
 	header := Row(H(widget.RowH), BorderBottom(widget.BorderSoft),
 		If(t.Editable, headerCheck(t)),
 		For(t.Columns, func(i int, name string) Node {
-			return Row(Grow(t.weight(i)), PadXY(8, 0), Text(name, Small(), Bold(), Muted(), Grow(1)))
+			return Row(Grow(t.weight(i)), PadXY(8, 0), Separator(i > 0, 7),
+				Text(name, Small(), Bold(), Muted(), Grow(1)))
 		}),
 		If(t.Editable, Row(W(tableActionW))),
 	)
@@ -232,11 +234,12 @@ func tableRow(t TableSpec, i int, r TableRow, placeholder, last bool) Node {
 // edited. In an editable table a click on it asks to edit it.
 func tableCell(t TableSpec, row, col int, text string, clr widget.Token) Node {
 	if e := t.Editing; e != nil && e.Row == row && e.Col == col {
-		return Row(Grow(t.weight(col)), Border(widget.AccentLine), Bg(widget.Panel),
-			Field(e.Field, Grow(1), OnEnter(e.OnEnter), OnTab(e.OnTab), menuOption(e.OnMenu)),
+		// The field is inset in its cell so its rounded outline and focus ring have room.
+		return Row(Grow(t.weight(col)), PadXY(3, 3), Separator(col > 0, 0),
+			Field(e.Field, Grow(1), Bg(widget.Sunken), OnEnter(e.OnEnter), OnTab(e.OnTab), menuOption(e.OnMenu)),
 		)
 	}
-	items := []Item{Grow(t.weight(col)), PadXY(8, 0), Clip(), Text(text, Ellipsis(), Color(clr), Grow(1))}
+	items := []Item{Grow(t.weight(col)), PadXY(8, 0), Clip(), Text(text, Ellipsis(), Color(clr), Grow(1)), Separator(col > 0, 0)}
 	if t.Editable && t.OnEditCell != nil {
 		items = append(items, OnClick(func() { t.OnEditCell(row, col) }))
 	}

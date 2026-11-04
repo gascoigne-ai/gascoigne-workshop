@@ -173,3 +173,43 @@ func TestHScrollArrowsAreAlwaysShownWhenOverflowingAndAtALimitStillTakeTheClick(
 }
 
 func hscrollOf(root *El) *hscrollB { return root.kids[0].b.(*hscrollB) }
+
+func TestHoldingAnArrowKeepsScrolling(t *testing.T) {
+	var hits []int
+	st := &ScrollState{}
+	root := Col(strip(st, 20, &hits)) // 800px of boxes in 100px
+	c := testCtx(t)
+	Layout(c, root, 300, 100)
+	press := widget.Input{X: 100 - hscrollArrowW + 2, Y: 10, Click: true, Held: true}
+	c.In = press
+	Update(c, root)
+	first := st.X
+	if first <= 0 {
+		t.Fatal("the press scrolls once")
+	}
+	held := widget.Input{X: press.X, Y: 10, Held: true}
+	for range hscrollHoldDelay - 2 { // not yet repeating
+		c.In = held
+		Update(c, root)
+	}
+	if st.X != first {
+		t.Fatalf("repeated too early: %d -> %d", first, st.X)
+	}
+	for range 30 {
+		c.In = held
+		Update(c, root)
+	}
+	if st.X <= first {
+		t.Fatalf("holding the arrow must keep scrolling: %d -> %d", first, st.X)
+	}
+	x := st.X
+	c.In = widget.Input{X: press.X, Y: 10} // released
+	Update(c, root)
+	for range 30 {
+		c.In = held // pressed elsewhere and dragged onto the arrow: not a hold
+		Update(c, root)
+	}
+	if st.X != x {
+		t.Fatalf("a drag onto the arrow must not scroll: %d -> %d", x, st.X)
+	}
+}
