@@ -141,6 +141,10 @@ func (iconB) draw(e *El, c *core.Ctx, dst *ebiten.Image) {
 		cur = ic.hover
 	}
 	s := k * c.Scale
+	weight := 1.0 // the theme can thicken or thin every icon
+	if c.Th.IconStroke > 0 {
+		weight = c.Th.IconStroke
+	}
 	dx, dy := ox*c.Scale, oy*c.Scale
 	for _, sh := range ic.shapes {
 		var p vector.Path
@@ -172,7 +176,7 @@ func (iconB) draw(e *El, c *core.Ctx, dst *ebiten.Image) {
 			var dp vector.DrawPathOptions
 			dp.AntiAlias = true
 			dp.ColorScale.ScaleWithColor(c.Color(paintToken(sh.line, cur)))
-			vector.StrokePath(dst, &p, &vector.StrokeOptions{Width: float32(sh.width * s), LineCap: sh.cap, LineJoin: sh.join}, &dp)
+			vector.StrokePath(dst, &p, &vector.StrokeOptions{Width: float32(sh.width * s * weight), LineCap: sh.cap, LineJoin: sh.join}, &dp)
 		}
 	}
 }

@@ -134,3 +134,18 @@ func TestThemeExtendsNamesTheBaseAFileBuildsOn(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestIconStrokeComesFromThemeFiles(t *testing.T) {
+	base := Dark()
+	if base.IconStroke != 0 {
+		t.Fatalf("the built-in themes keep the icon width as drawn, got %v", base.IconStroke)
+	}
+	th, err := ParseTheme([]byte(`{"iconStroke": 1.4}`), &base)
+	if err != nil || th.IconStroke != 1.4 {
+		t.Fatalf("%v %v", th.IconStroke, err)
+	}
+	same, err := ParseTheme([]byte(`{}`), &th)
+	if err != nil || same.IconStroke != 1.4 {
+		t.Fatalf("a file that does not say keeps the base: %v %v", same.IconStroke, err)
+	}
+}

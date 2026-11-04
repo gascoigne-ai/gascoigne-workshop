@@ -150,3 +150,9 @@ func TestPathDataCommands(t *testing.T) {
 		t.Errorf("arc middle x = %v", mid[4])
 	}
 }
+
+func TestThemeIconStrokeScalesTheLines(t *testing.T) {
+	c := testCtx(t)
+	c.Th.IconStroke = 1.6
+	drawn(t, c, Row(W(30), H(30), Icon("trash")), 30, 30) // draws with the thicker stroke without a window
+}

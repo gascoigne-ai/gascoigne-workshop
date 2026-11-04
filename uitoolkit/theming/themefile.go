@@ -34,14 +34,17 @@ type controlFile struct {
 }
 
 type themeFile struct {
-	Name      string                 `json:"name"`
-	Extends   string                 `json:"extends"`
-	FontSize  float64                `json:"fontSize"`
-	SmallSize float64                `json:"smallSize"`
-	MonoSize  float64                `json:"monoSize"`
-	Variables map[string]string      `json:"variables"`
-	Colors    map[string]string      `json:"colors"`
-	Controls  map[string]controlFile `json:"controls"`
+	Name      string  `json:"name"`
+	Extends   string  `json:"extends"`
+	FontSize  float64 `json:"fontSize"`
+	SmallSize float64 `json:"smallSize"`
+	MonoSize  float64 `json:"monoSize"`
+	// IconStroke multiplies the stroke width of every icon: 0.8 for thin
+	// icons, 1.3 for bold ones; absent or 0 keeps the base theme's.
+	IconStroke float64                `json:"iconStroke"`
+	Variables  map[string]string      `json:"variables"`
+	Colors     map[string]string      `json:"colors"`
+	Controls   map[string]controlFile `json:"controls"`
 }
 
 // ThemeExtends is the name of the built-in theme a file says it builds on
@@ -104,6 +107,9 @@ func ParseTheme(data []byte, base *core.Theme) (core.Theme, error) {
 	}
 	if f.SmallSize > 0 {
 		th.SmallSize = f.SmallSize
+	}
+	if f.IconStroke > 0 {
+		th.IconStroke = f.IconStroke
 	}
 	if f.MonoSize > 0 {
 		th.MonoSize = f.MonoSize

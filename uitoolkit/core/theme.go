@@ -80,6 +80,9 @@ type Theme struct {
 	// corners, 1 the theme's own.
 	RadiusScale float64
 
+	// IconStroke multiplies the stroke width of icons; 0 means 1.
+	IconStroke float64
+
 	// NoGradients turns every gradient into a flat fill.
 	NoGradients bool
 }
