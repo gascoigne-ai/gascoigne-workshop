@@ -149,6 +149,7 @@ var elements = map[string]struct {
 	"hr":      {func(o []vml.Option, _ []vml.Item, _ string) vml.Node { return withOpts(vml.HRule(), o) }, true},
 	"vr":      {func(o []vml.Option, _ []vml.Item, _ string) vml.Node { return withOpts(vml.VRule(), o) }, true},
 	"text":    {func(o []vml.Option, _ []vml.Item, t string) vml.Node { return vml.Text(t, o...) }, true},
+	"icon":    {func(o []vml.Option, _ []vml.Item, name string) vml.Node { return vml.Icon(name, o...) }, true},
 	"caption": {func(o []vml.Option, _ []vml.Item, t string) vml.Node { return vml.Caption(t, o...) }, true},
 	"button":  {func(o []vml.Option, _ []vml.Item, t string) vml.Node { return vml.Button(t, o...) }, true},
 }
@@ -301,7 +302,7 @@ func Parse(name string, src []byte) (*Template, error) {
 			}
 			n := &node{tag: t.Name.Local, line: l}
 			for _, a := range t.Attr {
-				if _, ok := attributes[a.Name.Local]; !ok && !directives[a.Name.Local] {
+				if _, ok := attributes[a.Name.Local]; !ok && !directives[a.Name.Local] && !(a.Name.Local == "name" && n.tag == "icon") {
 					return fail(l, "unknown attribute %q on <%s>%s", a.Name.Local, n.tag, hint(a.Name.Local, attributeNames(), "attributes"))
 				}
 				n.attrs = append(n.attrs, attr{a.Name.Local, a.Value, l})
@@ -419,6 +420,8 @@ func (t *Template) buildOne(n *node, sc Scope) (vml.Node, error) {
 			if !ok {
 				return nil, nil
 			}
+		case "name": // the icon's name, which is its text
+			continue
 		case "onclick":
 			v, err := lookup(strings.TrimSpace(a.value), sc)
 			if err != nil {
@@ -454,6 +457,18 @@ func (t *Template) buildOne(n *node, sc Scope) (vml.Node, error) {
 	text, err := interpolate(n.text, sc)
 	if err != nil {
 		return nil, t.errf(n, "%v", err)
+	}
+	if n.tag == "icon" {
+		for _, a := range n.attrs {
+			if a.name == "name" {
+				if text, err = interpolate(a.value, sc); err != nil {
+					return nil, t.errf(n, "%v", err)
+				}
+			}
+		}
+		if !vml.HasIcon(text) {
+			return nil, t.errf(n, "no icon %q; icons: %s", text, strings.Join(vml.IconNames(), " "))
+		}
 	}
 	return elements[n.tag].build(opts, kids, text), nil
 }
@@ -632,6 +647,7 @@ func Reference() string {
 	for _, n := range attributeNames() {
 		fmt.Fprintf(&sb, "  %s\n", n)
 	}
+	sb.WriteString("<icon name=\"trash\"/> draws a built-in or registered icon (vml.IconNames).\n")
 	sb.WriteString("Text and attribute values may use {{path}}; if=\"name\" or \"!name\"; for=\"item in list\"; onclick=\"handler\".\n")
 	return sb.String()
 }

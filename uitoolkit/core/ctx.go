@@ -259,12 +259,6 @@ func (c *Ctx) Triangle(dst *ebiten.Image, cx, cy, size float32, down bool, clr c
 	vector.FillPath(dst, &p, &vector.FillOptions{}, op)
 }
 
-// Cross draws an x centered on cx, cy.
-func (c *Ctx) Cross(dst *ebiten.Image, cx, cy, size float32, clr color.RGBA) {
-	c.Line(dst, cx-size, cy-size, cx+size, cy+size, 1.5, clr)
-	c.Line(dst, cx-size, cy+size, cx+size, cy-size, 1.5, clr)
-}
-
 // Line draws an antialiased segment between logical points.
 func (c *Ctx) Line(dst *ebiten.Image, x0, y0, x1, y1, width float32, clr color.RGBA) {
 	vector.StrokeLine(dst, c.dev(x0), c.dev(y0), c.dev(x1), c.dev(y1), c.dev(width), clr, true)

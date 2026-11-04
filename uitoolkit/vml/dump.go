@@ -44,7 +44,7 @@ func dump(sb *strings.Builder, e *El, depth int) {
 	}{
 		{"bg", string(e.bg)}, {"border", string(e.border)}, {"borderT", string(e.borderT)},
 		{"borderB", string(e.borderB)}, {"borderL", string(e.borderL)}, {"borderR", string(e.borderR)}, {"fg", string(e.fg)},
-		{"control", e.control}, {"tip", e.tip}, {"hoverBg", string(e.hoverBg)}, {"edge", string(e.edgeTok)},
+		{"icon", e.iconName}, {"control", e.control}, {"tip", e.tip}, {"hoverBg", string(e.hoverBg)}, {"edge", string(e.edgeTok)},
 	} {
 		if f.v != "" {
 			add(f.name, f.v)

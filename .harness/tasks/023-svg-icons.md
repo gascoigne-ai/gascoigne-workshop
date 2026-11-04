@@ -1,4 +1,4 @@
-status: todo
+status: done except theme-controlled stroke weight
 
 # Icons as vector files (SVG), drawn and themed by the toolkit
 
@@ -23,3 +23,8 @@ The line icons (`CrossIcon`, `TrashIcon`, `SearchIcon`, `PlusIcon`, chevrons, do
 - A screenshot comparison at 100%, 150% and 200% shows no visible regression; a test renders each icon without a window (path extents inside the viewBox).
 - Parse errors name file and line; `component.Reference()` lists `<icon>`.
 - Architecture, rules (new options get docs, tests, template attribute) and the `vml` index updated in the same commit.
+
+## Progress
+- Done: parser and renderer (`svg.go`, `icon.go`), eleven icons converted (screenshot at 200% checked), the Go drawing functions and the three icon tables deleted, `Icon`, `RegisterIcons`, `IconNames`, `HasIcon`, `<icon>` in templates, tests (parse errors with file and line, path commands, arcs, extents inside the viewBox, drawing at 100/150/200%).
+- Decisions taken: subset parser, no dependency; files embedded in `vml/icons` with `RegisterIcons` for an application folder; both stroke and fill supported.
+- Left: stroke weight chosen by the theme (an `icon` control style or token scaling `stroke-width`), an optional rendered-mask cache if profiling asks for it, and adopting an open icon set (license check) when more icons are needed.

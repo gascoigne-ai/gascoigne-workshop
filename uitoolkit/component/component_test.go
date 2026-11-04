@@ -241,3 +241,21 @@ func TestRemainingAttributesMatchTheGoOptions(t *testing.T) {
 		}
 	}
 }
+
+func TestIconElementMatchesTheGoIcon(t *testing.T) {
+	got := vml.Dump(build(t, `<row><icon name="trash" w="20"/><icon name="{{which}}"/></row>`, Scope{"which": "plus"}))
+	want := vml.Dump(vml.Row(vml.Icon("trash", vml.W(20)), vml.Icon("plus")))
+	if got != want {
+		t.Fatalf("template:\n%s\nGo:\n%s", got, want)
+	}
+	tp, err := Parse("t.vml", []byte(`<icon name="nope"/>`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := tp.Build(nil); err == nil || !strings.Contains(err.Error(), `no icon "nope"`) {
+		t.Fatalf("err = %v", err)
+	}
+	if _, err := Parse("t.vml", []byte(`<row name="x"/>`)); err == nil {
+		t.Fatal("name is only for icon")
+	}
+}

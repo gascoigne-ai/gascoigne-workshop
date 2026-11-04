@@ -74,29 +74,6 @@ func TestNoTooltipForElementsUnderAModalOverlay(t *testing.T) {
 	}
 }
 
-func TestEveryLineIconHasASizeAHoverColorAndDrawsWithoutHelp(t *testing.T) {
-	makers := map[string]func(...Option) *El{
-		"trash": TrashIcon, "copy": CopyIcon, "search": SearchIcon, "plus": PlusIcon, "prompt": PromptIcon,
-		"up": ChevronUpIcon, "down": ChevronDownIcon,
-	}
-	for name, mk := range makers {
-		e := mk(Grow(1))
-		if _, ok := iconSizes[e.icon]; !ok {
-			t.Errorf("%s has no size", name)
-		}
-		if glyphs[e.icon] == nil {
-			t.Errorf("%s has no drawing", name)
-		}
-		if _, ok := glyphHover[e.icon]; !ok {
-			t.Errorf("%s has no hover color", name)
-		}
-		c := testCtx(t)
-		root := Row(W(30), H(30), e)
-		c.In = core.Input{X: 10, Y: 10} // hovered, so the hover color path runs too
-		drawn(t, c, root, 30, 30)
-	}
-}
-
 func TestIconButtonIsAnOutlinedChipAroundTheGlyph(t *testing.T) {
 	g := TrashIcon(Grow(1))
 	b := IconButton(g, W(40), H(28))
