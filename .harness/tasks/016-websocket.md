@@ -1,4 +1,4 @@
-status: in progress (protocol layer and basic UI done; reconnect and headers UI pending)
+status: in progress (protocol layer and basic UI done; subprotocols and binary pending)
 
 # WebSocket client
 
@@ -18,4 +18,5 @@ WebSocket is a stub that answers "not implemented yet".
 ## Progress
 - Done: `internal/proto/ws` (hand-written RFC 6455 client and server handshake), `proto.WebSocket` (`Connect` session with an event channel, one-shot `Send`), `Registry.Connect`, tests against an `httptest` server (echo, server close, slow consumer, ping/pong, fragments, size limit).
 - Done: `internal/ui/wsui.go` - Send button becomes Connect / Disconnect, the response side of a socket tab is a `Messages` pane (log with time, direction arrow and text, Ping and Clear, follow-the-end scrolling) with a composer under it; tests against an echo server.
-- Left: reconnect option, subprotocols and a JSON-formatted composer, binary send.
+- Done: per-tab `Auto-reconnect` chip (not saved with the request): a drop the user did not ask for is retried after `retryDelay` (2s) until Disconnect.
+- Left: subprotocols and a JSON-formatted composer, binary send.

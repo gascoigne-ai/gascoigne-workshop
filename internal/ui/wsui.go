@@ -24,7 +24,11 @@ type wsEvent struct {
 	ev     proto.Event
 	hasEv  bool
 	closed bool
+	retry  bool // the reconnect delay is over
 }
+
+// retryDelay is the wait before a dropped connection is reopened.
+var retryDelay = 2 * time.Second
 
 // isSocket reports whether the tab's protocol keeps a connection open.
 func isSocket(t *reqTab) bool { return t.req.Protocol == "websocket" }
@@ -43,7 +47,7 @@ func responsePanesFor(t *reqTab) []pane {
 // toggleConnection connects a disconnected socket tab and closes a
 // connected one.
 func (a *App) toggleConnection(t *reqTab) {
-	if t.sess != nil || t.connecting {
+	if t.sess != nil || t.connecting || t.wantOpen {
 		a.disconnect(t)
 		return
 	}
@@ -52,6 +56,7 @@ func (a *App) toggleConnection(t *reqTab) {
 
 // connect dials in the background; the outcome arrives as a wsEvent.
 func (a *App) connect(t *reqTab) {
+	t.wantOpen = true
 	t.wsGen++
 	gen := t.wsGen
 	t.connecting = true
@@ -85,6 +90,7 @@ func (a *App) connect(t *reqTab) {
 
 // disconnect closes the session of t, or abandons a connect in progress.
 func (a *App) disconnect(t *reqTab) {
+	t.wantOpen = false
 	if t.sess != nil {
 		_ = t.sess.Close() // the end of the event stream clears the session
 		return
@@ -135,19 +141,36 @@ func (a *App) applyWS(e wsEvent) {
 		return
 	}
 	switch {
+	case e.retry:
+		if t.wantOpen && t.sess == nil && !t.connecting {
+			a.connect(t)
+		}
 	case e.closed:
 		t.sess, t.connecting = nil, false
 		a.status = "Disconnected from " + t.req.URL
+		a.scheduleRetry(t)
 	case e.hasEv:
 		a.logEvent(t, e.ev)
 	case e.err != nil:
 		t.connecting = false
 		a.logInfo(t, e.err.Error(), w.Error)
 		a.status = "Connection failed"
+		a.scheduleRetry(t)
 	default:
 		t.sess, t.connecting = e.sess, false
 		a.status = "Connected to " + t.req.URL
 	}
+}
+
+// scheduleRetry reopens a connection the user did not close, when the
+// tab asks for it.
+func (a *App) scheduleRetry(t *reqTab) {
+	if !t.reconnect || !t.wantOpen {
+		return
+	}
+	a.logInfo(t, "Reconnecting in "+retryDelay.String(), w.Muted)
+	gen := t.wsGen
+	time.AfterFunc(retryDelay, func() { a.wsEvents <- wsEvent{tab: t, gen: gen, retry: true} })
 }
 
 // logEvent appends an event to the log, one line per line of its text.
@@ -210,6 +233,7 @@ func (a *App) messagesPane(_ pane, t *reqTab, _ *ScrollState) Node {
 		Row(H(w.RowH+8), PadXY(w.Pad, 0), Gap(6), AlignItems(AlignCenter), BorderBottom(w.Border),
 			Text(connState(t), Small(), Muted()),
 			Spacer(),
+			a.viewChip("Auto-reconnect", t.reconnect, 116, func() { t.reconnect = !t.reconnect }),
 			Button("Ping", W(56), H(w.CompactH), OnClick(func() { a.pingSocket(t) }), Tooltip("Send a ping frame")),
 			Button("Clear", W(56), H(w.CompactH), OnClick(func() { a.clearLog(t) }), Tooltip("Empty the message log")),
 		),

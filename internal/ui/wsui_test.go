@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -109,4 +110,67 @@ func TestClearEmptiesTheMessageLog(t *testing.T) {
 		t.Fatal("log not cleared")
 	}
 	a.disconnect(tab)
+}
+
+func TestWebSocketReconnectsAfterTheServerClosesWhenAsked(t *testing.T) {
+	retryDelay = 10 * time.Millisecond
+	var conns atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		c, err := ws.Upgrade(w, r)
+		if err != nil {
+			return
+		}
+		defer c.Close(ws.CloseNormal, "")
+		if conns.Add(1) == 1 {
+			return // the first connection is dropped at once
+		}
+		for {
+			if _, err := c.Read(); err != nil {
+				return
+			}
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	a, _ := newTestApp(t)
+	tab := a.cur()
+	tab.req.Protocol = "websocket"
+	tab.req.URL = "ws" + strings.TrimPrefix(srv.URL, "http")
+	tab.reconnect = true
+	a.send(tab)
+	until(t, a, "second connection", func() bool { return conns.Load() >= 2 && tab.sess != nil })
+	if !strings.Contains(logText(tab), "Reconnecting") {
+		t.Fatalf("log does not mention the retry:\n%s", logText(tab))
+	}
+
+	a.send(tab) // a deliberate disconnect must not reconnect
+	until(t, a, "close", func() bool { return tab.sess == nil })
+	time.Sleep(100 * time.Millisecond)
+	a.step(widget.Input{})
+	if tab.sess != nil || tab.connecting || conns.Load() != 2 {
+		t.Fatalf("reconnected after a disconnect: %d connections", conns.Load())
+	}
+}
+
+func TestWebSocketWithoutReconnectStaysClosed(t *testing.T) {
+	retryDelay = 10 * time.Millisecond
+	var conns atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if c, err := ws.Upgrade(w, r); err == nil {
+			conns.Add(1)
+			c.Close(ws.CloseNormal, "")
+		}
+	}))
+	t.Cleanup(srv.Close)
+	a, _ := newTestApp(t)
+	tab := a.cur()
+	tab.req.Protocol = "websocket"
+	tab.req.URL = "ws" + strings.TrimPrefix(srv.URL, "http")
+	a.send(tab)
+	until(t, a, "close", func() bool { return strings.Contains(logText(tab), "Closed by server") && tab.sess == nil })
+	time.Sleep(100 * time.Millisecond)
+	a.step(widget.Input{})
+	if conns.Load() != 1 {
+		t.Fatalf("%d connections, want 1", conns.Load())
+	}
 }

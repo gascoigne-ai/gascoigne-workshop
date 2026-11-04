@@ -75,6 +75,8 @@ type reqTab struct {
 	wsCancel              context.CancelFunc           // ends the timeout of the connect in progress
 	wsView                widget.CodeView              // the message log
 	msg                   widget.TextField             // the message being composed
+	reconnect             bool                         // reopen a dropped connection
+	wantOpen              bool                         // the user wants the connection open, so a drop is retried
 }
 
 // responseViews are the values of the response view setting.
