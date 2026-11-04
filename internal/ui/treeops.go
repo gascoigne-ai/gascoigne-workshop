@@ -7,6 +7,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/openapi"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
@@ -55,6 +56,7 @@ func (a *App) treeMenuItems(row collection.Row) []menuItem {
 		{label: "New request", run: func() { a.newRequestIn(row.Dir) }},
 		{label: "New folder", run: func() { a.newFolderIn(row.Dir) }},
 		{label: "Import cURL from clipboard", run: func() { a.importCurl(row.Dir) }},
+		{label: "Import OpenAPI from clipboard", run: func() { a.importOpenAPI(row.Dir) }},
 		{label: "Variables", run: func() { a.editVars(row.Dir) }},
 		sep,
 		rename,
@@ -272,4 +274,31 @@ func curlName(r model.Request) string {
 		path = "/"
 	}
 	return r.Method + " " + path
+}
+
+// importOpenAPI adds the OpenAPI document (JSON) on the clipboard to dir as
+// a folder of requests, and defines the baseUrl variable if the
+// collection has none.
+func (a *App) importOpenAPI(dir *model.Folder) {
+	text, err := a.ctx.Clipboard.Read()
+	if err != nil {
+		a.toast("Cannot read the clipboard: "+err.Error(), true)
+		return
+	}
+	res, err := openapi.Parse([]byte(text))
+	if err != nil {
+		a.toast("Not an OpenAPI document: "+err.Error(), true)
+		return
+	}
+	res.Folder.Name = dir.UniqueName(res.Folder.Name)
+	dir.Folders = append(dir.Folders, res.Folder)
+	if !model.Defined(openapi.BaseURLVar, a.col.Vars) {
+		a.col.Vars = append(a.col.Vars, model.KV{Name: openapi.BaseURLVar, Value: res.BaseURL, Enabled: true})
+	}
+	a.expanded[dir] = true
+	a.expandAll(res.Folder)
+	if first := firstRequest(res.Folder); first != nil {
+		a.openRequest(first)
+	}
+	a.status = "Imported " + res.Folder.Name
 }

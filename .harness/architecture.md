@@ -216,3 +216,5 @@ Row(H(urlH), PadX(w.Pad), PadY(8), Gap(8), Bg(w.Bg),
 - **Variable completion**: `Ctrl+Space` (`complete-variable` shortcut, `App.completeVariable`) in the URL field opens a context menu of the enabled variables that fit at the cursor (`variableCompletion` filters by what follows an open `{{`) and `insertVariable` writes `{{name}}` there. It is a key, not a popup while typing, so the field keeps the keyboard.
 
 - **Icon stroke weight is a theme setting**: a theme file may set `"iconStroke": 1.4` (a multiplier, `core.Theme.IconStroke`; absent keeps the base theme's, 0 means 1); `vml.Icon` multiplies every stroke width by it, so thin and bold icon sets are a theme choice.
+
+- **OpenAPI import** (`internal/openapi`, `App.importOpenAPI`): `openapi.Parse` reads an OpenAPI 3 JSON document into a folder (a subfolder per first tag, a request per operation), following `$ref` for parameters and schemas (depth-limited), turning `{id}` into `{{id}}`, and building a JSON body from the example or from `proto.Skeleton` of the schema. The importer defines the `baseUrl` collection variable from the first server when the collection has none.

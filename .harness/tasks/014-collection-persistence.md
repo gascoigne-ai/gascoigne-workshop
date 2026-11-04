@@ -1,4 +1,4 @@
-status: done (OpenAPI import is a follow-up)
+status: done (YAML OpenAPI documents are not read; convert them to JSON)
 
 # Collections on disk
 
@@ -22,3 +22,4 @@ The sample collection is built in and nothing is saved.
 - Done later: `App.FlushWorkspace` saves pending edits when the window closes (`main`), so the unsaved-changes prompt is not needed.
 - Done later: `Ctrl+O` opens another collection folder (pending edits saved first, tabs closed, remembered); an empty or new folder starts a collection.
 - Left: OpenAPI import (its own follow-up task).
+- Done later: OpenAPI 3 import (`internal/openapi`, JSON only): one folder per tag, one request per operation with query and header parameters (`$ref` followed), path parameters as `{{variables}}`, a JSON body from the example or a schema skeleton, URLs starting with `{{baseUrl}}`; folder menu `Import OpenAPI from clipboard`. Fixture: a trimmed Swagger Petstore.

@@ -3,6 +3,7 @@ package ui
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -207,5 +208,32 @@ func TestOpenWorkspaceAtSwitchesCollectionsAndSavesTheOldOne(t *testing.T) {
 	a.openWorkspaceAt("   ")
 	if a.workspace != second {
 		t.Fatal("an empty path changes nothing")
+	}
+}
+
+func TestImportOpenAPIAddsAFolderOfRequestsAndTheBaseURL(t *testing.T) {
+	data, err := os.ReadFile("../openapi/testdata/petstore.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	a, _ := newTestApp(t)
+	a.col.Vars = nil
+	a.ctx.Clipboard = &fakeClip{text: string(data)}
+	before := len(a.col.Folders)
+	a.importOpenAPI(&a.col.Folder)
+	if len(a.col.Folders) != before+1 {
+		t.Fatalf("folders %d, want %d", len(a.col.Folders), before+1)
+	}
+	if !model.Defined("baseUrl", a.col.Vars) {
+		t.Fatal("baseUrl not defined")
+	}
+	if a.cur().req.URL == "" || !strings.HasPrefix(a.cur().req.URL, "{{baseUrl}}") {
+		t.Fatalf("the first imported request is not open: %q", a.cur().req.URL)
+	}
+	n := len(a.tabs)
+	a.ctx.Clipboard = &fakeClip{text: "{}"}
+	a.importOpenAPI(&a.col.Folder)
+	if len(a.tabs) != n || len(a.col.Folders) != before+1 {
+		t.Fatal("a bad document changed the collection")
 	}
 }
