@@ -30,9 +30,10 @@
 //	Text       Text Caption Lines   Color Muted Bold Small Mono Ellipsis Center
 //	Input      Field Area Code Slider Checkbox   (state: TextField TextArea CodeView)   Placeholder OnChange OnEnter
 //	Events     OnClick OnRightClick OnMiddleClick   Tooltip
-//	Composite  Button PrimaryButton LinkButton IconButton Tabs ScrollTabs Table
+//	Composite  Button PrimaryButton LinkButton IconButton Tabs ScrollTabs Table   OnSelect OnSlide
+//	Icons      CrossIcon TriangleIcon DotsIcon TrashIcon PlusIcon CopyIcon SearchIcon PromptIcon ChevronUpIcon ChevronDownIcon
 //	Flow       If For Frag
-//	Overlay    Float FloatAt FloatCenter Modal FocusScope
+//	Overlay    Float FloatAt FloatCenter Modal OnDismiss FocusScope
 //
 // A side is a letter suffix (PadL, PadT, PadR, PadB) and an axis is X or
 // Y (PadX is left and right). The same options are the attributes of a
@@ -87,7 +88,7 @@ type El struct {
 	fg                               core.Token
 	small, mono, bold, ellipsis, ctr bool
 	placeholder                      string
-	segments                         func(string) []Seg
+	segments                         func(string) []Span
 	field                            *TextField
 	view                             *CodeView
 	area                             *TextArea
@@ -97,6 +98,7 @@ type El struct {
 	onClick, onChange, onEnter func()
 	onTab                      func(back bool)
 	onMiddle, onHeldOver       func()
+	onSelect                   func(i int)
 
 	edgeTok                      core.Token // Edges: the color of the outline
 	edgeTop, edgeLeft, edgeRight bool
@@ -292,11 +294,12 @@ func Float(top, right int) Option {
 	return func(e *El) { e.fl.on, e.fl.top, e.fl.right = true, top, right }
 }
 
-// Modal makes a floating element swallow every click; a click outside
-// it runs onDismiss.
-func Modal(onDismiss func()) Option {
-	return func(e *El) { e.modal, e.onDismiss = true, onDismiss }
-}
+// Modal makes a floating element swallow every click; a click outside it
+// runs the OnDismiss handler.
+func Modal() Option { return func(e *El) { e.modal = true } }
+
+// OnDismiss runs when a click lands outside a Modal element.
+func OnDismiss(f func()) Option { return func(e *El) { e.onDismiss = f } }
 
 // If is Vue's v-if: the node when cond holds, else nothing.
 func If(cond bool, n Node) Node {

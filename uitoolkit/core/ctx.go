@@ -124,7 +124,7 @@ func (c *Ctx) SetTheme(th Theme) error {
 func (c *Ctx) Hovered(r Rect) bool { return !c.HoverOff && c.In.Over(r) }
 
 // Col resolves a color token in the current theme.
-func (c *Ctx) Col(tok Token) color.RGBA { return c.Th.Color(tok) }
+func (c *Ctx) Color(tok Token) color.RGBA { return c.Th.Color(tok) }
 
 func (c *Ctx) dev(n float32) float32 { return n * float32(c.Scale) }
 

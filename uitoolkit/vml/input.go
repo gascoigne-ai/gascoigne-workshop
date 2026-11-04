@@ -6,13 +6,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
-// Seg is a run of field text with its own color, so a view can
-// highlight parts of what the user typed.
-type Seg struct {
-	Text  string
-	Style core.Token
-}
-
 const fieldPad = 10
 
 // textInset is the space between a field's edge and its text: fieldPad,
@@ -79,29 +72,29 @@ func (fieldB) draw(e *El, c *core.Ctx, dst *ebiten.Image) {
 		runes := []rune(f.Display())
 		x0 := x + c.Width(c.F.UI, string(runes[:lo]))
 		x1 := x + c.Width(c.F.UI, string(runes[:hi]))
-		c.Fill(dst, core.Rect{X: x0, Y: r.Y + 6, W: x1 - x0, H: r.H - 12}, c.Col(core.Selection))
+		c.Fill(dst, core.Rect{X: x0, Y: r.Y + 6, W: x1 - x0, H: r.H - 12}, c.Color(core.Selection))
 	}
-	segs := []Seg{{Text: f.Display(), Style: core.Text}}
+	segs := []Span{{Text: f.Display(), Style: core.Text}}
 	if e.segments != nil && !f.Masked {
 		segs = e.segments(f.Text)
 	}
 	for _, s := range segs {
-		c.TextMid(dst, c.F.UI, s.Text, x, r, c.Col(s.Style))
+		c.TextMid(dst, c.F.UI, s.Text, x, r, c.Color(s.Style))
 		x += c.Width(c.F.UI, s.Text)
 	}
 	if f.Text == "" {
-		c.TextMid(dst, c.F.UI, e.placeholder, r.X+e.textInset(), r, c.Col(core.Muted))
+		c.TextMid(dst, c.F.UI, e.placeholder, r.X+e.textInset(), r, c.Color(core.Muted))
 	}
 	if f.Focused && (c.Tick/30)%2 == 0 {
 		cx := r.X + e.textInset() - f.ScrollX + c.Width(c.F.UI, string([]rune(f.Display())[:f.Cursor]))
-		c.VLine(dst, cx, r.Y+8, r.H-16, c.Col(core.Text))
+		c.VLine(dst, cx, r.Y+8, r.H-16, c.Color(core.Text))
 	}
 }
 
 // drawOver is the focus ring, over the field's outline.
 func (fieldB) drawOver(e *El, c *core.Ctx, dst *ebiten.Image) {
 	if e.field.Focused {
-		c.OutlineStyled(dst, e.rect, c.Col(core.AccentLine), c.Th.Style(e.control).Radius)
+		c.OutlineStyled(dst, e.rect, c.Color(core.AccentLine), c.Th.Style(e.control).Radius)
 	}
 }
 
@@ -117,7 +110,7 @@ func Field(f *TextField, opts ...Option) *El {
 func Placeholder(s string) Option { return func(e *El) { e.placeholder = s } }
 
 // Segments colors parts of the field's text.
-func Segments(f func(text string) []Seg) Option { return func(e *El) { e.segments = f } }
+func Segments(f func(text string) []Span) Option { return func(e *El) { e.segments = f } }
 
 // OnChange runs after the field's text was edited.
 func OnChange(f func()) Option { return func(e *El) { e.onChange = f } }
@@ -136,7 +129,7 @@ func (codeB) update(e *El, c *core.Ctx)              { e.view.Update(c, e.rect) 
 func (codeB) draw(e *El, c *core.Ctx, dst *ebiten.Image) {
 	e.view.Draw(c, dst, e.rect)
 	if e.view.Focused {
-		c.Outline(dst, e.rect, c.Col(core.AccentLine))
+		c.Outline(dst, e.rect, c.Color(core.AccentLine))
 	}
 }
 

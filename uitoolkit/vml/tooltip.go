@@ -43,11 +43,11 @@ func drawTooltip(c *core.Ctx, dst *ebiten.Image, screen core.Rect) {
 	}
 	box := core.Rect{X: x, Y: max(screen.Y, y), W: w, H: h}
 	st := c.Th.Style("tooltip")
-	c.FillStyled(dst, box, c.Col(core.Frame), c.Col(core.Frame), st.Radius)
+	c.FillStyled(dst, box, c.Color(core.Frame), c.Color(core.Frame), st.Radius)
 	border := st.Border
 	if border == "" {
 		border = core.Border
 	}
-	c.OutlineStyled(dst, box, c.Col(border), st.Radius)
-	c.TextMid(dst, c.F.Small, c.TipText, box.X+tipPadX, box, c.Col(core.Text))
+	c.OutlineStyled(dst, box, c.Color(border), st.Radius)
+	c.TextMid(dst, c.F.Small, c.TipText, box.X+tipPadX, box, c.Color(core.Text))
 }

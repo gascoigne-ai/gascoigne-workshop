@@ -68,7 +68,7 @@ func (s *splitB) layout(e *El, c *core.Ctx) {
 }
 
 func (s *splitB) draw(e *El, c *core.Ctx, dst *ebiten.Image) {
-	c.Fill(dst, s.divider, c.Col(core.Border))
+	c.Fill(dst, s.divider, c.Color(core.Border))
 }
 
 // handle is the area that grabs the divider, a little wider than it.

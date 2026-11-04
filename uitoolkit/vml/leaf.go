@@ -47,7 +47,7 @@ func (textB) draw(e *El, c *core.Ctx, dst *ebiten.Image) {
 	if e.ellipsis {
 		s = c.Ellipsize(face, s, e.rect.W)
 	}
-	clr := c.Col(e.color(c, core.Text))
+	clr := c.Color(e.color(c, core.Text))
 	if e.ctr {
 		c.TextCenter(dst, face, s, e.rect, clr)
 		return
@@ -132,25 +132,25 @@ func (iconB) measure(e *El, _ *core.Ctx, _ int) (int, int) {
 func (iconB) draw(e *El, c *core.Ctx, dst *ebiten.Image) {
 	r := e.rect
 	cx, cy := float32(r.X+r.W/2), float32(r.Y+r.H/2)
-	clr := c.Col(e.color(c, core.Muted))
+	clr := c.Color(e.color(c, core.Muted))
 	switch e.icon {
 	case iconCheck:
 		drawCheckbox(c, dst, core.Rect{X: r.X + (r.W-14)/2, Y: r.Y + (r.H-14)/2, W: 14, H: 14}, e.on, c.Hovered(r))
 	case iconCross:
 		if c.Hovered(r) {
-			clr = c.Col(core.Error) // a delete button turns red under the pointer
+			clr = c.Color(core.Error) // a delete button turns red under the pointer
 		}
 		c.Cross(dst, cx, cy, 4, clr)
 	case iconTriangle:
 		c.Triangle(dst, cx, cy, 4, e.on, clr)
 	case iconTrash, iconCopy, iconSearch, iconPlus, iconPrompt, iconUp, iconDown:
 		if c.Hovered(r) {
-			clr = c.Col(glyphHover[e.icon])
+			clr = c.Color(glyphHover[e.icon])
 		}
 		glyphs[e.icon](c, dst, cx, cy, clr)
 	case iconDots:
 		if c.Hovered(r) {
-			clr = c.Col(core.Text)
+			clr = c.Color(core.Text)
 		}
 		for i := -1; i <= 1; i++ {
 			c.Fill(dst, core.Rect{X: int(cx) - 1, Y: int(cy) + i*6 - 1, W: 3, H: 3}, clr)
@@ -166,13 +166,13 @@ func drawCheckbox(c *core.Ctx, dst *ebiten.Image, box core.Rect, on, hover bool)
 		if hover {
 			edge = core.Muted
 		}
-		c.OutlineStyled(dst, box, c.Col(edge), c.Radius("checkbox"))
+		c.OutlineStyled(dst, box, c.Color(edge), c.Radius("checkbox"))
 		return
 	}
-	accent := c.Col(core.Accent)
+	accent := c.Color(core.Accent)
 	c.FillStyled(dst, box, accent, accent, c.Radius("checkbox"))
 	x, y := float32(box.X), float32(box.Y)
-	mark := c.Col(core.AccentText)
+	mark := c.Color(core.AccentText)
 	c.Line(dst, x+3.5, y+7.5, x+6, y+10, 1.8, mark)
 	c.Line(dst, x+6, y+10, x+10.5, y+4.5, 1.8, mark)
 }
@@ -187,13 +187,13 @@ func icon(kind iconKind, on bool, opts []Option) *El {
 func Checkbox(on bool, opts ...Option) *El { return icon(iconCheck, on, opts) }
 
 // Cross is a small x, for delete buttons.
-func Cross(opts ...Option) *El { return icon(iconCross, false, opts) }
+func CrossIcon(opts ...Option) *El { return icon(iconCross, false, opts) }
 
 // Triangle is a disclosure arrow: down when open, right when closed.
-func Triangle(open bool, opts ...Option) *El { return icon(iconTriangle, open, opts) }
+func TriangleIcon(open bool, opts ...Option) *El { return icon(iconTriangle, open, opts) }
 
 // Dots is the three-dot "more" glyph.
-func Dots(opts ...Option) *El { return icon(iconDots, false, opts) }
+func DotsIcon(opts ...Option) *El { return icon(iconDots, false, opts) }
 
 // glyphHover is the color a glyph takes under the pointer: red for the
 // destructive one, the text color for the rest.
@@ -256,7 +256,7 @@ var glyphs = map[iconKind]func(c *core.Ctx, dst *ebiten.Image, cx, cy float32, c
 }
 
 // Trash is a trash can, for delete buttons; it turns red under the pointer.
-func Trash(opts ...Option) *El { return icon(iconTrash, false, opts) }
+func TrashIcon(opts ...Option) *El { return icon(iconTrash, false, opts) }
 
 // CopyIcon is two overlapping sheets.
 func CopyIcon(opts ...Option) *El { return icon(iconCopy, false, opts) }
@@ -265,14 +265,14 @@ func CopyIcon(opts ...Option) *El { return icon(iconCopy, false, opts) }
 func SearchIcon(opts ...Option) *El { return icon(iconSearch, false, opts) }
 
 // Plus is a plus sign.
-func Plus(opts ...Option) *El { return icon(iconPlus, false, opts) }
+func PlusIcon(opts ...Option) *El { return icon(iconPlus, false, opts) }
 
 // PromptIcon is a terminal prompt, ">_".
 func PromptIcon(opts ...Option) *El { return icon(iconPrompt, false, opts) }
 
 // ChevronUp and ChevronDown are small arrows for stepping through a list.
-func ChevronUp(opts ...Option) *El   { return icon(iconUp, false, opts) }
-func ChevronDown(opts ...Option) *El { return icon(iconDown, false, opts) }
+func ChevronUpIcon(opts ...Option) *El   { return icon(iconUp, false, opts) }
+func ChevronDownIcon(opts ...Option) *El { return icon(iconDown, false, opts) }
 
 // IconButton is Button with an icon in place of the label.
 func IconButton(glyph *El, opts ...Option) *El {

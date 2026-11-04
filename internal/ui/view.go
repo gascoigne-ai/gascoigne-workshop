@@ -66,7 +66,7 @@ func (a *App) view() Node {
 
 func (a *App) sidebar() Node {
 	return Col(
-		Row(H(headerH), PadX(w.Pad), Gap(6), Bg(w.Bg), BorderB(w.Border),
+		Row(H(headerH), PadX(w.Gutter), Gap(6), Bg(w.Bg), BorderB(w.Border),
 			Caption("Collections", W(96)),
 			Field(&a.filter, H(28), Grow(1), Bg(w.Sunken), Placeholder("Filter"), a.textMenuOpt(&a.filter, nil)),
 		),
@@ -84,7 +84,7 @@ func (a *App) treeRow(row collection.Row, selected bool) Node {
 		look = Bg(w.Selected)
 	}
 	node := row.Node()
-	indent := w.Pad + row.Depth*treeIndent
+	indent := w.Gutter + row.Depth*treeIndent
 	events := []Item{
 		OnClick(func() { a.pressTreeRow(row) }),
 		OnRightClick(func(x, y int) { a.openMenu(x, y, a.treeMenuItems(row)) }),
@@ -97,12 +97,12 @@ func (a *App) treeRow(row collection.Row, selected bool) Node {
 
 	if row.Folder {
 		return Row(append([]Item{H(w.RowH), PadL(indent), Gap(6), look,
-			Triangle(row.Open, W(12)),
+			TriangleIcon(row.Open, W(12)),
 			Text(row.Name),
 		}, events...)...)
 	}
 	req := row.Req
-	return Row(append([]Item{H(w.RowH), PadL(indent + 6), PadR(w.Pad), AlignItems(AlignBaseline), look,
+	return Row(append([]Item{H(w.RowH), PadL(indent + 6), PadR(w.Gutter), AlignItems(AlignBaseline), look,
 		Text(requestBadge(req.Protocol, req.Method), Small(), Color(appearance.MethodToken(req.Method)), W(badgeW)),
 		Text(row.Name, Ellipsis(), Grow(1)),
 	}, events...)...)
@@ -165,13 +165,13 @@ func (a *App) panes(t *reqTab) Node {
 
 func (a *App) header() Node {
 	toggleMenu := OnClick(func() { a.menu = !a.menu })
-	return Row(H(headerH), PadX(w.Pad), Bg(w.Hero), Control("hero"),
+	return Row(H(headerH), PadX(w.Gutter), Bg(w.Hero), Control("hero"),
 		Text(a.col.Name, Bold(), Color(w.HeroText)),
 		Spacer(),
 		a.envChip(),
-		Spacer(W(w.Pad)),
+		Spacer(W(w.Gutter)),
 		Row(W(headerH), toggleMenu, Tooltip(a.hint("Settings", "settings")),
-			Dots(Grow(1), Color(w.HeroMuted)),
+			DotsIcon(Grow(1), Color(w.HeroMuted)),
 		),
 	)
 }
@@ -199,12 +199,12 @@ func (a *App) requestTabs() Node {
 					Row(W(tabDirtyW), AlignSelf(AlignStretch), If(dirty(t), Text(dirtyMark, Color(w.AccentLine), Grow(1)))),
 				),
 				Row(W(24), OnClick(func() { a.closeTab(i) }), Tooltip(a.hint("Close tab", "close-tab")),
-					Cross(Grow(1)),
+					CrossIcon(Grow(1)),
 				),
 			)...)
 		})),
 		Row(W(40), OnClick(a.newRequest), Tooltip(a.hint("New request", "new-request")),
-			Plus(Grow(1)),
+			PlusIcon(Grow(1)),
 		),
 	)
 }
@@ -222,12 +222,12 @@ func (a *App) urlBar(t *reqTab) Node {
 	} else if t.sending {
 		send = PrimaryButton("Cancel", W(80), OnClick(func() { a.cancelSend(t) }), Tooltip("Cancel the running request"))
 	}
-	return Row(H(urlH), PadX(w.Pad), PadY(8), Gap(8), Bg(w.Bg),
+	return Row(H(urlH), PadX(w.Gutter), PadY(8), Gap(8), Bg(w.Bg),
 		Row(Grow(1), Bg(w.Sunken), Control("field"),
 			tip("Protocol: click to change", chip(protocolLabel[t.req.Protocol], w.Muted, 64, func() { a.cycleProtocol(t) })),
 			If(isREST, VRuleInset(8)), // a divider between the chips, none after the last one
 			If(isREST, tip("Method: click to change", chip(t.req.Method, appearance.MethodToken(t.req.Method), 84, func() { a.cycleMethod(t) }))),
-			Spacer(W(w.Pad-4)), // breathing room between the divider and the URL text
+			Spacer(W(w.Gutter-4)), // breathing room between the divider and the URL text
 			Field(&t.url, Grow(1),
 				Placeholder("Enter URL"),
 				Segments(a.varSegments),
@@ -263,8 +263,8 @@ func chip(label string, color w.Token, width int, onClick func()) *El {
 
 // varSegments colors {{variables}} so they stand out from the literal
 // URL: defined ones in the success color, unresolved ones as errors.
-func (a *App) varSegments(s string) []Seg {
-	var segs []Seg
+func (a *App) varSegments(s string) []Span {
+	var segs []Span
 	vars := a.vars()
 	for _, seg := range splitVars(s) {
 		style := w.Text
@@ -274,7 +274,7 @@ func (a *App) varSegments(s string) []Seg {
 				style = w.Error
 			}
 		}
-		segs = append(segs, Seg{Text: seg.text, Style: style})
+		segs = append(segs, Span{Text: seg.text, Style: style})
 	}
 	return segs
 }
@@ -309,7 +309,7 @@ func (a *App) pane(t *reqTab, panes []pane, active *int, scroll, tabsX *ScrollSt
 	*active = min(*active, len(panes)-1) // a socket has fewer response panes
 	return Col(Grow(1), Bg(w.Bg),
 		Row(H(paneTabsH), PadT(tabGap), BorderB(w.Border),
-			ScrollTabs(tabsX, a.tabItems(panes, t), *active, selectTab),
+			ScrollTabs(tabsX, a.tabItems(panes, t), *active, OnSelect(selectTab)),
 			extra,
 		),
 		a.paneBody(panes[*active], t, scroll),
@@ -322,7 +322,7 @@ func (a *App) responseStatus(t *reqTab) Node {
 		return nil
 	}
 	fg, bg := statusPill(t.resp.Status)
-	return Row(Gap(12), PadR(w.Pad), Optional(), AlignItems(AlignCenter),
+	return Row(Gap(12), PadR(w.Gutter), Optional(), AlignItems(AlignCenter),
 		Row(PadX(10), H(20), Bg(bg), Control("pill"), AlignItems(AlignCenter),
 			Text(fmt.Sprintf("%d %s", t.resp.Status, t.resp.StatusText), Small(), Bold(), Color(fg)),
 		),

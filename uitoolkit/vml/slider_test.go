@@ -17,7 +17,7 @@ type slide struct {
 func newSlide(t *testing.T, value int, opts ...Option) (*slide, *core.Ctx) {
 	s := &slide{st: &SliderState{}}
 	items := append([]Option{W(200 + 2*sliderPad), H(20), OnSlideEnd(func(v int) { s.ended = append(s.ended, v) })}, opts...)
-	s.root = Col(Slider(s.st, 50, 200, 5, value, func(v int) { s.live = append(s.live, v) }, items...))
+	s.root = Col(Slider(s.st, 50, 200, 5, value, append([]Option{OnSlide(func(v int) { s.live = append(s.live, v) })}, items...)...))
 	c := testCtx(t)
 	Layout(c, s.root, 400, 100)
 	return s, c
@@ -104,7 +104,7 @@ func TestSliderIgnoresClicksOutside(t *testing.T) {
 func TestSliderKeepsFollowingAPointerThatLeavesItsClippingContainer(t *testing.T) {
 	st := &SliderState{}
 	var live []int
-	slider := Slider(st, 50, 200, 5, 100, func(v int) { live = append(live, v) }, W(200+2*sliderPad), H(20))
+	slider := Slider(st, 50, 200, 5, 100, OnSlide(func(v int) { live = append(live, v) }), W(200+2*sliderPad), H(20))
 	root := Col(Scroll(&ScrollState{}, H(20), W(216), slider)) // clips: a pointer outside is hidden from the slider
 	c := testCtx(t)
 	Layout(c, root, 400, 100)

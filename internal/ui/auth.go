@@ -101,7 +101,7 @@ func (a *App) authPane(_ pane, t *reqTab, scroll *ScrollState) Node {
 	for _, f := range current.fields {
 		hasSecret = hasSecret || f.secret
 	}
-	return Scroll(scroll, Pad(w.Pad), Gap(8),
+	return Scroll(scroll, Pad(w.Gutter), Gap(8),
 		Row(H(w.RowH), Gap(6),
 			For(authTypes, func(_ int, at authType) Node {
 				choose := OnClick(func() { t.req.Auth.Type = at.id })

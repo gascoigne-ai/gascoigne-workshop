@@ -185,10 +185,10 @@ func (s *hscrollB) drawOver(e *El, c *core.Ctx, dst *ebiten.Image) {
 		}
 		fill := a.box
 		fill.H-- // leave the strip's bottom line running under the arrow
-		c.Fill(dst, fill, c.Col(core.Frame))
-		clr := c.Col(core.Muted)
+		c.Fill(dst, fill, c.Color(core.Frame))
+		clr := c.Color(core.Muted)
 		if c.Hovered(a.box) {
-			clr = c.Col(core.Text)
+			clr = c.Color(core.Text)
 		}
 		cx, cy := float32(a.box.X+a.box.W/2), float32(a.box.Y+a.box.H/2)
 		c.Line(dst, cx-2*a.dir, cy-4, cx+2*a.dir, cy, 1.5, clr)

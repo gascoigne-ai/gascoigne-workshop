@@ -130,7 +130,7 @@ func TestClickReachesOnlyTheElementUnderThePointer(t *testing.T) {
 
 func TestModalSwallowsClicksAndDismissesOnOutsideClick(t *testing.T) {
 	var under, inside, dismissed int
-	menu := box(W(40), H(40), Float(0, 0), OnClick(func() { inside++ }), Modal(func() { dismissed++ }))
+	menu := box(W(40), H(40), Float(0, 0), OnClick(func() { inside++ }), Modal(), OnDismiss(func() { dismissed++ }))
 	root := Stack(box(OnClick(func() { under++ })), menu)
 	c := testCtx(t)
 	Layout(c, root, 200, 100)
@@ -179,7 +179,7 @@ func TestTableHeightAndEditHandlers(t *testing.T) {
 
 func TestTabsSelect(t *testing.T) {
 	sel := -1
-	tabs := Tabs([]TabItem{{Label: "Params", Badge: 3}, {Label: "Body"}}, 0, func(i int) { sel = i }, H(40))
+	tabs := Tabs([]TabItem{{Label: "Params", Badge: 3}, {Label: "Body"}}, 0, OnSelect(func(i int) { sel = i }), H(40))
 	root := Row(tabs)
 	c := testCtx(t)
 	Layout(c, root, 400, 40)
@@ -367,7 +367,7 @@ func TestCodeNodeForwardsInputToTheView(t *testing.T) {
 
 func TestIconsMeasure(t *testing.T) {
 	c := testCtx(t)
-	icons := Row(Checkbox(true), Cross(), Triangle(false), Dots())
+	icons := Row(Checkbox(true), CrossIcon(), TriangleIcon(false), DotsIcon())
 	Layout(c, icons, 200, 30)
 	want := []int{14, 10, 10, 4}
 	for i, k := range icons.kids {
@@ -828,7 +828,7 @@ func TestOnRightClickGetsThePointer(t *testing.T) {
 
 func TestModalAlsoSwallowsAndDismissesOnRightClickOutside(t *testing.T) {
 	var under, dismissed int
-	menu := box(W(40), H(40), FloatAt(0, 0), Modal(func() { dismissed++ }))
+	menu := box(W(40), H(40), FloatAt(0, 0), Modal(), OnDismiss(func() { dismissed++ }))
 	root := Stack(box(OnRightClick(func(int, int) { under++ })), menu)
 	c := testCtx(t)
 	Layout(c, root, 200, 100)

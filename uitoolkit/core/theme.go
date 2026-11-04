@@ -53,7 +53,7 @@ const (
 // in three steps so neighbours line up: RowH for list and table rows and
 // standard controls, CompactH for chips, icon buttons and inline fields
 // that sit in a row of that height, LabelH and NoteH for section captions
-// and one-line notes. Icon buttons are IconBtnW wide. Pad is the inset
+// and one-line notes. Icon buttons are IconBtnW wide. Gutter is the inset
 // between a container and its content.
 const (
 	RowH     = 28
@@ -61,7 +61,7 @@ const (
 	LabelH   = 22
 	NoteH    = 18
 	IconBtnW = 32
-	Pad      = 12
+	Gutter   = 12
 )
 
 // Theme holds the colors and font sizes the widgets draw with.

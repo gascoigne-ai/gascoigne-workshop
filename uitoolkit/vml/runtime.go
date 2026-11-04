@@ -202,7 +202,7 @@ func (e *El) draw(c *core.Ctx, dst *ebiten.Image) {
 	}
 	style := c.Th.Style(e.control)
 	if e.shadow {
-		sh := c.Col(core.Shadow)
+		sh := c.Color(core.Shadow)
 		c.FillStyled(dst, core.Rect{X: r.X + 4, Y: r.Y + 4, W: r.W, H: r.H}, sh, sh, style.Radius)
 	}
 	over := c.Hovered(r)
@@ -211,7 +211,7 @@ func (e *El) draw(c *core.Ctx, dst *ebiten.Image) {
 		c.TipText = e.tip // children draw later, so the innermost tooltip wins
 	}
 	if e.bg != "" {
-		clr := c.Col(e.bg)
+		clr := c.Color(e.bg)
 		if e.lighten && over {
 			clr = core.Lighten(clr)
 		}
@@ -219,20 +219,20 @@ func (e *El) draw(c *core.Ctx, dst *ebiten.Image) {
 		c.FillStyled(dst, r, top, bottom, style.Radius)
 	}
 	if e.hoverBg != "" && over {
-		hv := c.Col(e.hoverBg)
+		hv := c.Color(e.hoverBg)
 		c.FillStyled(dst, r, hv, hv, style.Radius)
 	}
 	if e.borderT != "" {
-		c.HLine(dst, r.X, r.Y, r.W, c.Col(e.borderT))
+		c.HLine(dst, r.X, r.Y, r.W, c.Color(e.borderT))
 	}
 	if e.borderL != "" {
-		c.VLine(dst, r.X, r.Y+e.borderInset, r.H-2*e.borderInset, c.Col(e.borderL))
+		c.VLine(dst, r.X, r.Y+e.borderInset, r.H-2*e.borderInset, c.Color(e.borderL))
 	}
 	if e.borderR != "" {
-		c.VLine(dst, r.X+r.W-1, r.Y+e.borderInset, r.H-2*e.borderInset, c.Col(e.borderR))
+		c.VLine(dst, r.X+r.W-1, r.Y+e.borderInset, r.H-2*e.borderInset, c.Color(e.borderR))
 	}
 	if e.borderB != "" {
-		c.HLine(dst, r.X, r.Y+r.H-1, r.W, c.Col(e.borderB))
+		c.HLine(dst, r.X, r.Y+r.H-1, r.W, c.Color(e.borderB))
 	}
 
 	e.b.draw(e, c, dst)
@@ -248,14 +248,14 @@ func (e *El) draw(c *core.Ctx, dst *ebiten.Image) {
 		border = style.Border
 	}
 	if border != "" { // after the children, so striped rows do not paint over it
-		c.OutlineStyled(dst, r, c.Col(border), style.Radius)
+		c.OutlineStyled(dst, r, c.Color(border), style.Radius)
 	}
 	if o, ok := e.b.(overDrawer); ok {
 		o.drawOver(e, c, dst)
 	}
 
 	if e.edgeTok != "" { // the open tab's outline: top, left and right, bottom left open
-		col := c.Col(e.edgeTok)
+		col := c.Color(e.edgeTok)
 		if e.edgeTop {
 			c.Fill(dst, core.Rect{X: r.X, Y: r.Y, W: r.W, H: 2}, col)
 		}

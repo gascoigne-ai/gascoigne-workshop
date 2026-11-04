@@ -164,7 +164,7 @@ func (a *App) messagePane(p pane, msg string, isErr bool) Node {
 	if p.kind == paneCode {
 		bg = w.Sunken
 	}
-	return Col(Grow(1), Pad(w.Pad), Bg(bg),
+	return Col(Grow(1), Pad(w.Gutter), Bg(bg),
 		Lines(msg, color),
 	)
 }
@@ -174,13 +174,13 @@ func (a *App) codePane(p pane, t *reqTab, _ *ScrollState) Node {
 }
 
 func (a *App) notePane(p pane, t *reqTab, scroll *ScrollState) Node {
-	return Scroll(scroll, Pad(w.Pad),
+	return Scroll(scroll, Pad(w.Gutter),
 		Lines(p.note(t), w.Text),
 	)
 }
 
 func (a *App) tablePane(p pane, t *reqTab, scroll *ScrollState) Node {
-	return a.tableView(p, t, scroll, w.Pad)
+	return a.tableView(p, t, scroll, w.Gutter)
 }
 
 // tableView is a pane's table with the given padding around it.
@@ -309,7 +309,7 @@ func (a *App) bodyPane(p pane, t *reqTab, scroll *ScrollState) Node {
 	if valid {
 		statusColor = w.OK
 	}
-	return Col(Grow(1), Pad(w.Pad), Gap(8),
+	return Col(Grow(1), Pad(w.Gutter), Gap(8),
 		Row(H(w.RowH), Gap(6),
 			For(bodyTypes, func(_ int, bt struct {
 				id, label string
@@ -374,7 +374,7 @@ func jsonStyler(line string) []Span {
 
 // settingsPane holds the per-request options: timeout and redirects.
 func (a *App) settingsPane(_ pane, t *reqTab, scroll *ScrollState) Node {
-	return Scroll(scroll, Pad(w.Pad), Gap(8),
+	return Scroll(scroll, Pad(w.Gutter), Gap(8),
 		Row(H(w.RowH), Gap(12),
 			Text("Timeout (seconds)", W(160)),
 			Field(&t.timeout, W(80), Bg(w.Sunken),
@@ -434,8 +434,8 @@ func responseEmpty(t *reqTab) (string, bool) {
 // responsePane is the response body with its toolbar and find bar.
 func (a *App) responsePane(_ pane, t *reqTab, _ *ScrollState) Node {
 	return Col(Grow(1),
-		Spacer(H(w.Pad)), // same top inset as the request pane, so first rows line up
-		Row(H(w.RowH+8), PadX(w.Pad), Gap(6), AlignItems(AlignCenter), BorderB(w.Border),
+		Spacer(H(w.Gutter)), // same top inset as the request pane, so first rows line up
+		Row(H(w.RowH+8), PadX(w.Gutter), Gap(6), AlignItems(AlignCenter), BorderB(w.Border),
 			a.viewChip("Compact", t.compact, 72, func() { a.setView(t, false, true) }),
 			a.viewChip("Pretty", !t.raw && !t.compact, 56, func() { a.setView(t, false, false) }),
 			a.viewChip("Raw", t.raw, 44, func() { a.setView(t, true, false) }),
@@ -457,16 +457,16 @@ func (a *App) viewChip(label string, selected bool, width int, onClick func()) N
 }
 
 func (a *App) findBar(t *reqTab) Node {
-	return Row(H(w.RowH), PadX(w.Pad), Gap(6), BorderB(w.Border),
+	return Row(H(w.RowH), PadX(w.Gutter), Gap(6), BorderB(w.Border),
 		Field(&t.find, Grow(1), Placeholder("Find"),
 			OnChange(func() { a.runFind(t) }),
 			OnEnter(func() { a.findEnter(t) }),
 			a.textMenuOpt(&t.find, func() { a.runFind(t) }),
 		),
 		Text(findCount(t.find.Text, len(t.view.Matches()), t.matchIdx), Small(), Muted(), W(64)),
-		IconButton(ChevronUp(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(func() { a.findStep(t, -1) }), Tooltip("Previous match")),
-		IconButton(ChevronDown(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(func() { a.findStep(t, 1) }), Tooltip("Next match")),
-		IconButton(Cross(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(func() { a.closeFind(t) }), Tooltip("Close search (Esc)")),
+		IconButton(ChevronUpIcon(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(func() { a.findStep(t, -1) }), Tooltip("Previous match")),
+		IconButton(ChevronDownIcon(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(func() { a.findStep(t, 1) }), Tooltip("Next match")),
+		IconButton(CrossIcon(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(func() { a.closeFind(t) }), Tooltip("Close search (Esc)")),
 	)
 }
 

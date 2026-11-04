@@ -64,7 +64,7 @@ func TestTooltipGoesAwayOffTheElementAndOnClick(t *testing.T) {
 
 func TestNoTooltipForElementsUnderAModalOverlay(t *testing.T) {
 	under := box(W(100), Tooltip("under"))
-	overlay := box(W(10), H(10), FloatAt(150, 0), Modal(func() {}))
+	overlay := box(W(10), H(10), FloatAt(150, 0), Modal(), OnDismiss(func() {}))
 	root := Stack(Row(under), overlay)
 	c := testCtx(t)
 	c.In = core.Input{X: 50, Y: 30}
@@ -76,8 +76,8 @@ func TestNoTooltipForElementsUnderAModalOverlay(t *testing.T) {
 
 func TestEveryLineIconHasASizeAHoverColorAndDrawsWithoutHelp(t *testing.T) {
 	makers := map[string]func(...Option) *El{
-		"trash": Trash, "copy": CopyIcon, "search": SearchIcon, "plus": Plus, "prompt": PromptIcon,
-		"up": ChevronUp, "down": ChevronDown,
+		"trash": TrashIcon, "copy": CopyIcon, "search": SearchIcon, "plus": PlusIcon, "prompt": PromptIcon,
+		"up": ChevronUpIcon, "down": ChevronDownIcon,
 	}
 	for name, mk := range makers {
 		e := mk(Grow(1))
@@ -98,7 +98,7 @@ func TestEveryLineIconHasASizeAHoverColorAndDrawsWithoutHelp(t *testing.T) {
 }
 
 func TestIconButtonIsAnOutlinedChipAroundTheGlyph(t *testing.T) {
-	g := Trash(Grow(1))
+	g := TrashIcon(Grow(1))
 	b := IconButton(g, W(40), H(28))
 	if b.bg != core.Sunken || b.control != "icon-button" {
 		t.Fatalf("bg %q control %q", b.bg, b.control)

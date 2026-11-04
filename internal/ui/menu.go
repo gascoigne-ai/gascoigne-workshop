@@ -57,10 +57,10 @@ func (a *App) menuView() Node {
 	}
 	return Frag(
 		Row(Bg(w.Shadow)), // dims the window
-		Col(W(settingsW), H(h), Bg(w.Bg), Control("menu"), Shadow(), FloatCenter(), FocusScope(), Modal(func() { a.menu = false }),
+		Col(W(settingsW), H(h), Bg(w.Bg), Control("menu"), Shadow(), FloatCenter(), FocusScope(), Modal(), OnDismiss(func() { a.menu = false }),
 			Row(H(settingsTitleH), PadX(16), AlignItems(AlignCenter), BorderB(w.BorderSoft),
 				Text("Settings", Bold(), Grow(1)),
-				IconButton(Cross(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(func() { a.menu = false }), Tooltip("Close (Esc)")),
+				IconButton(CrossIcon(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(func() { a.menu = false }), Tooltip("Close (Esc)")),
 			),
 			Row(Grow(1),
 				Col(W(settingsNavW), Pad(8), Gap(2), Bg(w.Frame),
@@ -93,7 +93,7 @@ func (a *App) appearanceView() Node {
 				return a.choice(c.Label, c.ID == a.settings.Theme, func(s *settings.Settings) { s.Theme = c.ID })
 			}),
 		),
-		Spacer(H(w.Pad)),
+		Spacer(H(w.Gutter)),
 
 		Caption("Text size", H(w.LabelH)),
 		Row(H(w.RowH), Gap(6),
@@ -101,18 +101,15 @@ func (a *App) appearanceView() Node {
 				return a.choice(c.Label, c.ID == a.settings.TextSize, func(s *settings.Settings) { s.TextSize = c.ID })
 			}),
 		),
-		Spacer(H(w.Pad)),
+		Spacer(H(w.Gutter)),
 
 		Caption("Interface scale", H(w.LabelH)),
 		Row(H(w.RowH), Gap(8),
-			Slider(&a.scaleSlider, appearance.ScaleMin, appearance.ScaleMax, appearance.ScaleStep, a.scalePct(),
-				func(v int) { a.settings.UIScalePct, a.dirty = v, true }, // live: the UI resizes while dragging
-				SliderMid(settings.DefaultUIScalePct),
-				OnSlideEnd(func(int) { a.saveSettings(func(*settings.Settings) {}) }),
-			),
+			Slider(&a.scaleSlider, appearance.ScaleMin, appearance.ScaleMax, appearance.ScaleStep, a.scalePct(), OnSlide(func(v int) { a.settings.UIScalePct, a.dirty = v, true }), // live: the UI resizes while dragging
+				SliderMid(settings.DefaultUIScalePct), OnSlideEnd(func(int) { a.saveSettings(func(*settings.Settings) {}) })),
 			Text(fmt.Sprintf("%d%%", a.scaleSlider.Shown(a.scalePct())), W(40), Color(w.Muted)),
 		),
-		Spacer(H(w.Pad)),
+		Spacer(H(w.Gutter)),
 
 		Caption("Corners", H(w.LabelH)),
 		Row(H(w.RowH), Gap(6),
@@ -120,14 +117,14 @@ func (a *App) appearanceView() Node {
 				return a.choice(c.Label, c.ID == appearance.CornerIDOf(a.settings.Corners), func(s *settings.Settings) { s.Corners = c.ID })
 			}),
 		),
-		Spacer(H(w.Pad)),
+		Spacer(H(w.Gutter)),
 
 		Caption("Gradients", H(w.LabelH)),
 		Row(H(w.RowH), Gap(6),
 			a.choice("On", !a.settings.Flat, func(s *settings.Settings) { s.Flat = false }),
 			a.choice("Off", a.settings.Flat, func(s *settings.Settings) { s.Flat = true }),
 		),
-		Spacer(H(w.Pad)),
+		Spacer(H(w.Gutter)),
 
 		Caption("Request / response", H(w.LabelH)),
 		Row(H(w.RowH), Gap(6),
@@ -135,7 +132,7 @@ func (a *App) appearanceView() Node {
 				return a.choice(c.Label, c.ID == a.settings.Layout, func(s *settings.Settings) { s.Layout = c.ID })
 			}),
 		),
-		Spacer(H(w.Pad)),
+		Spacer(H(w.Gutter)),
 
 		Caption("Contrast", H(w.LabelH)),
 		Row(H(w.RowH), Gap(6),
@@ -143,7 +140,7 @@ func (a *App) appearanceView() Node {
 				return a.choice(c.Label, c.ID == a.settings.Contrast, func(s *settings.Settings) { s.Contrast = c.ID })
 			}),
 		),
-		Spacer(H(w.Pad)),
+		Spacer(H(w.Gutter)),
 
 		Caption("Response view", H(w.LabelH)),
 		Row(H(w.RowH), Gap(6),

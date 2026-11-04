@@ -221,7 +221,7 @@ type codeGeometry struct {
 func (v *CodeView) geometry(c *core.Ctx, r core.Rect) codeGeometry {
 	g := codeGeometry{lineH: c.LineH(c.F.Mono) + 4, charW: c.Width(c.F.Mono, "0")}
 	g.numW = g.charW * v.numberDigits()
-	g.textX = r.X + core.Pad + g.numW + foldColW + 8
+	g.textX = r.X + core.Gutter + g.numW + foldColW + 8
 	return g
 }
 
@@ -342,7 +342,7 @@ func (v *CodeView) updatePointer(c *core.Ctx, r core.Rect, g codeGeometry, b bar
 	if !in.Click || b.vTrack.Contains(in.X, in.Y) || b.hTrack.Contains(in.X, in.Y) {
 		return
 	}
-	foldCol := core.Rect{X: r.X + core.Pad + g.numW + 4, Y: r.Y, W: foldColW, H: r.H}
+	foldCol := core.Rect{X: r.X + core.Gutter + g.numW + 4, Y: r.Y, W: foldColW, H: r.H}
 	line := v.lineAt(in.Y, r, g, vis)
 	switch {
 	case foldCol.Contains(in.X, in.Y):
@@ -387,7 +387,7 @@ func (v *CodeView) Draw(c *core.Ctx, dst *ebiten.Image, r core.Rect) {
 	vis := v.Visible()
 	b := v.bars(c, r, g, len(vis))
 	v.clampScroll(c, r, g, b, len(vis))
-	muted := c.Col(core.Muted)
+	muted := c.Color(core.Muted)
 	gutter := core.Rect{X: r.X, Y: r.Y, W: g.textX - r.X - 4, H: b.viewH}
 	body := core.Rect{X: gutter.X + gutter.W, Y: r.Y, W: b.viewW - gutter.W, H: b.viewH}
 	area := c.Clip(dst, core.Rect{X: r.X, Y: r.Y, W: b.viewW, H: b.viewH})
@@ -412,7 +412,7 @@ func (v *CodeView) Draw(c *core.Ctx, dst *ebiten.Image, r core.Rect) {
 			spans = line.FoldedSpans
 		}
 		for _, sp := range spans {
-			c.TextMid(text, c.F.Mono, sp.Text, x, cell, c.Col(sp.Style))
+			c.TextMid(text, c.F.Mono, sp.Text, x, cell, c.Color(sp.Style))
 			x += c.Width(c.F.Mono, sp.Text)
 		}
 		if folded && len(line.FoldedSpans) == 0 {
@@ -420,9 +420,9 @@ func (v *CodeView) Draw(c *core.Ctx, dst *ebiten.Image, r core.Rect) {
 		}
 
 		num := strconv.Itoa(v.LineNumber(idx))
-		c.TextMid(area, c.F.Mono, num, r.X+core.Pad+g.numW-len(num)*g.charW, cell, muted)
+		c.TextMid(area, c.F.Mono, num, r.X+core.Gutter+g.numW-len(num)*g.charW, cell, muted)
 		if line.Foldable {
-			cx := float32(r.X + core.Pad + g.numW + 4 + foldColW/2)
+			cx := float32(r.X + core.Gutter + g.numW + 4 + foldColW/2)
 			c.Triangle(area, cx, float32(y+g.lineH/2), 4, !v.Folded[idx], muted)
 		}
 	}
@@ -432,7 +432,7 @@ func (v *CodeView) Draw(c *core.Ctx, dst *ebiten.Image, r core.Rect) {
 // contentWidth is the width of the widest line plus the gutter.
 func (v *CodeView) contentWidth(c *core.Ctx, r core.Rect) int {
 	g := v.geometry(c, r)
-	return g.textX - r.X + v.maxRunes*g.charW + core.Pad
+	return g.textX - r.X + v.maxRunes*g.charW + core.Gutter
 }
 
 func (v *CodeView) bars(c *core.Ctx, r core.Rect, g codeGeometry, visible int) bars {
@@ -456,7 +456,7 @@ func (v *CodeView) drawSelection(c *core.Ctx, dst *ebiten.Image, g codeGeometry,
 	}
 	x0 := g.textX - v.ScrollX + from*g.charW
 	x1 := g.textX - v.ScrollX + to*g.charW
-	c.Fill(dst, core.Rect{X: x0, Y: cell.Y, W: max(x1-x0, 0), H: cell.H}, c.Col(core.Selection))
+	c.Fill(dst, core.Rect{X: x0, Y: cell.Y, W: max(x1-x0, 0), H: cell.H}, c.Color(core.Selection))
 }
 
 // Match is one search hit: an original line, a rune column and a length.
@@ -548,7 +548,7 @@ func (v *CodeView) drawMatches(c *core.Ctx, dst *ebiten.Image, g codeGeometry, c
 			tok = core.FindActive
 		}
 		x := g.textX - v.ScrollX + m.Col*g.charW
-		c.Fill(dst, core.Rect{X: x, Y: cell.Y, W: m.Len * g.charW, H: cell.H}, c.Col(tok))
+		c.Fill(dst, core.Rect{X: x, Y: cell.Y, W: m.Len * g.charW, H: cell.H}, c.Color(tok))
 	}
 }
 

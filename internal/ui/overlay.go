@@ -108,7 +108,7 @@ func (a *App) contextMenuView() Node {
 		return nil
 	}
 	return Col(W(menuListW), Pad(menuPad), Bg(w.Bg), Control("menu"), Shadow(),
-		FloatAt(m.x, m.y), Modal(a.closeMenu),
+		FloatAt(m.x, m.y), Modal(), OnDismiss(a.closeMenu),
 		For(m.items, func(i int, it menuItem) Node { return a.menuRow(m, i, it) }),
 	)
 }
@@ -183,7 +183,7 @@ func (a *App) dialogView() Node {
 	return Frag(
 		Row(Bg(w.Shadow)), // dims the window
 		Col(W(dialogW), Pad(16), Gap(12), Bg(w.Bg), Control("menu"), Shadow(),
-			FloatCenter(), FocusScope(), Modal(a.closeDialog),
+			FloatCenter(), FocusScope(), Modal(), OnDismiss(a.closeDialog),
 			Text(d.title, H(w.LabelH)),
 			If(d.body != "", Lines(d.body, w.Muted)),
 			If(d.input != nil, Field(d.input, H(w.RowH), Bg(w.Sunken), OnEnter(a.dialogDefault), a.textMenuOpt(d.input, nil))),
@@ -248,13 +248,13 @@ func (a *App) toastsView() Node {
 	}
 	total := len(a.toasts)*toastH + (len(a.toasts)-1)*toastGap
 	return Col(W(toastW), Gap(toastGap),
-		FloatAt(a.w-w.Pad-toastW, a.h-statusH-toastMargin-total),
+		FloatAt(a.w-w.Gutter-toastW, a.h-statusH-toastMargin-total),
 		For(a.toasts, func(i int, t toast) Node {
 			border, color := w.Border, w.Text
 			if t.isErr {
 				border, color = w.Error, w.Error
 			}
-			return Row(H(toastH), PadX(w.Pad), Bg(w.Panel), Border(border), Shadow(), OnClick(func() { a.dismissToast(i) }),
+			return Row(H(toastH), PadX(w.Gutter), Bg(w.Panel), Border(border), Shadow(), OnClick(func() { a.dismissToast(i) }),
 				Text(t.text, Ellipsis(), Color(color), Grow(1)),
 			)
 		}),

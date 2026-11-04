@@ -283,7 +283,7 @@ func TestCodeViewSelectAllAndBlurOnOutsideClick(t *testing.T) {
 func TestCodeViewFoldArrowToggles(t *testing.T) {
 	v, c, _, r := viewport(t)
 	g := v.geometry(c, r)
-	arrowX := r.X + core.Pad + g.numW + 4 + foldColW/2
+	arrowX := r.X + core.Gutter + g.numW + 4 + foldColW/2
 
 	c.In = core.Input{X: arrowX, Y: rowY(c, v, r, 0), Click: true}
 	v.Update(c, r)
@@ -333,7 +333,7 @@ func TestCtxSetThemeSwitchesColorsAndFontSizes(t *testing.T) {
 	if err := c.SetTheme(small); err != nil {
 		t.Fatal(err)
 	}
-	if c.Col(core.Bg) != core.Light().Color(core.Bg) {
+	if c.Color(core.Bg) != core.Light().Color(core.Bg) {
 		t.Fatal("colors did not switch")
 	}
 	if c.F.UI.Size != 10 {

@@ -54,9 +54,9 @@ func drawScrollbar(c *core.Ctx, dst *ebiten.Image, track core.Rect, contentLen, 
 	if !ok {
 		return
 	}
-	clr := c.Col(core.Muted)
+	clr := c.Color(core.Muted)
 	if active {
-		clr = c.Col(core.Text)
+		clr = c.Color(core.Text)
 	}
 	thumb := core.Rect{X: track.X + 1, Y: track.Y + off, W: track.W - 2, H: length}
 	if !vertical {

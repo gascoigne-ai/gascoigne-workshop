@@ -115,10 +115,10 @@ func (s *sliderB) draw(e *El, c *core.Ctx, dst *ebiten.Image) {
 	frac := s.fracOf(s.state.Shown(s.value))
 	mid := r.Y + r.H/2
 	pill := float64(2) * min(c.Th.RadiusScale, 1) // the track is square when corners are
-	chip, accent := c.Col(core.Chip), c.Col(core.Accent)
+	chip, accent := c.Color(core.Chip), c.Color(core.Accent)
 	c.FillStyled(dst, core.Rect{X: x, Y: mid - 2, W: w, H: 4}, chip, chip, pill)
 	if s.mid != 0 { // a tick at the middle value
-		c.Fill(dst, core.Rect{X: x + w/2, Y: mid - 5, W: 1, H: 10}, c.Col(core.Rule))
+		c.Fill(dst, core.Rect{X: x + w/2, Y: mid - 5, W: 1, H: 10}, c.Color(core.Rule))
 	}
 	c.FillStyled(dst, core.Rect{X: x, Y: mid - 2, W: int(frac*float64(w) + 0.5), H: 4}, accent, accent, pill)
 	tx := x + int(frac*float64(w)+0.5)
@@ -127,16 +127,25 @@ func (s *sliderB) draw(e *El, c *core.Ctx, dst *ebiten.Image) {
 	if s.state.Dragging || c.Hovered(r) {
 		clr = core.AccentLine
 	}
-	tc := c.Col(clr)
+	tc := c.Color(clr)
 	c.FillStyled(dst, thumb, tc, tc, c.Radius("slider"))
-	c.OutlineStyled(dst, thumb, c.Col(core.Border), c.Radius("slider"))
+	c.OutlineStyled(dst, thumb, c.Color(core.Border), c.Radius("slider"))
 }
 
-// Slider picks an integer from min to max in steps, by dragging. onChange
+// Slider picks an integer from min to max in steps, by dragging. OnSlide
 // runs with each new value while the thumb moves, so the effect can be
 // seen live.
-func Slider(state *SliderState, min, max, step, value int, onChange func(int), opts ...Option) *El {
-	return newEl(&sliderB{state: state, min: min, max: max, step: step, value: value, onChange: onChange}, with([]Item{Grow(1), H(core.CompactH)}, opts))
+func Slider(state *SliderState, min, max, step, value int, opts ...Option) *El {
+	return newEl(&sliderB{state: state, min: min, max: max, step: step, value: value}, with([]Item{Grow(1), H(core.CompactH)}, opts))
+}
+
+// OnSlide runs with each new value of a Slider while the thumb moves.
+func OnSlide(f func(int)) Option {
+	return func(e *El) {
+		if s, ok := e.b.(*sliderB); ok {
+			s.onChange = f
+		}
+	}
 }
 
 // SliderMid puts value mid in the middle of the slider's track, scaling

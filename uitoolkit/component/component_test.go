@@ -186,7 +186,7 @@ func TestErrorsSuggestAndListTheValidNames(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), `did you mean "text"`) || !strings.Contains(err.Error(), "elements:") {
 		t.Fatalf("%v", err)
 	}
-	_, err = Parse("t.vml", []byte(`<row border_top="border"/>`))
+	_, err = Parse("t.vml", []byte(`<row border_t="border"/>`))
 	if err == nil || !strings.Contains(err.Error(), `did you mean "border-t"`) {
 		t.Fatalf("%v", err)
 	}

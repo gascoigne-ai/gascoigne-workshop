@@ -48,12 +48,14 @@ func (a *TextArea) geometry(c *core.Ctx, r core.Rect) areaGeometry {
 		off += n + 1
 	}
 	digits := len(strconv.Itoa(len(g.lines)))
-	g.textX = r.X + core.Pad + digits*g.charW + core.Pad
+	g.textX = r.X + core.Gutter + digits*g.charW + core.Gutter
 	return g
 }
 
-func (g areaGeometry) contentW(r core.Rect) int { return g.textX - r.X + g.longest*g.charW + core.Pad }
-func (g areaGeometry) contentH() int            { return len(g.lines) * g.lineH }
+func (g areaGeometry) contentW(r core.Rect) int {
+	return g.textX - r.X + g.longest*g.charW + core.Gutter
+}
+func (g areaGeometry) contentH() int { return len(g.lines) * g.lineH }
 
 // posAtPixel maps a pointer position to a rune position.
 func (a *TextArea) posAtPixel(r core.Rect, g areaGeometry, x, y int) int {
@@ -172,7 +174,7 @@ func (a *TextArea) Draw(c *core.Ctx, dst *ebiten.Image, r core.Rect) {
 		}
 		cell := core.Rect{X: r.X, Y: y, W: b.viewW, H: g.lineH}
 		if a.Focused && !hasSel && i == curLine {
-			c.Fill(area, cell, c.Col(core.Hover))
+			c.Fill(area, cell, c.Color(core.Hover))
 		}
 		line := g.lines[i]
 		if hasSel {
@@ -184,24 +186,24 @@ func (a *TextArea) Draw(c *core.Ctx, dst *ebiten.Image, r core.Rect) {
 			spans = a.Styler(line)
 		}
 		for _, sp := range spans {
-			c.TextMid(text, c.F.Mono, sp.Text, x, cell, c.Col(sp.Style))
+			c.TextMid(text, c.F.Mono, sp.Text, x, cell, c.Color(sp.Style))
 			x += c.Width(c.F.Mono, sp.Text)
 		}
-		numClr := c.Col(core.Muted)
+		numClr := c.Color(core.Muted)
 		if i == curLine {
-			numClr = c.Col(core.Text)
+			numClr = c.Color(core.Text)
 		}
 		num := strconv.Itoa(i + 1)
-		c.TextMid(area, c.F.Mono, num, g.textX-core.Pad-len(num)*g.charW, cell, numClr)
+		c.TextMid(area, c.F.Mono, num, g.textX-core.Gutter-len(num)*g.charW, cell, numClr)
 	}
 	if a.Focused && (c.Tick/30)%2 == 0 {
 		line, col := a.LineCol(a.Cursor)
 		cx, cy := g.textX-a.ScrollX+col*g.charW, r.Y+line*g.lineH-a.ScrollY
-		c.VLine(text, cx, cy+2, g.lineH-4, c.Col(core.Text))
+		c.VLine(text, cx, cy+2, g.lineH-4, c.Color(core.Text))
 	}
 	drawBars(c, dst, b, a.drag, g.contentW(core.Rect{W: b.viewW}), g.contentH(), a.ScrollX, a.ScrollY)
 	if a.Focused {
-		c.Outline(dst, r, c.Col(core.AccentLine))
+		c.Outline(dst, r, c.Color(core.AccentLine))
 	}
 }
 
@@ -214,5 +216,5 @@ func (a *TextArea) drawSelection(c *core.Ctx, dst *ebiten.Image, g areaGeometry,
 	from, to := max(lo, start)-start, min(hi, end+1)-start // +1: the newline counts
 	x0 := g.textX - a.ScrollX + from*g.charW
 	x1 := g.textX - a.ScrollX + to*g.charW
-	c.Fill(dst, core.Rect{X: x0, Y: y, W: max(x1-x0, 0), H: g.lineH}, c.Col(core.Selection))
+	c.Fill(dst, core.Rect{X: x0, Y: y, W: max(x1-x0, 0), H: g.lineH}, c.Color(core.Selection))
 }

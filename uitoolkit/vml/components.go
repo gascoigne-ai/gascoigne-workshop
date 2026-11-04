@@ -39,14 +39,31 @@ type TabItem struct {
 }
 
 // Tabs is a strip of labels with a gold bar under the active one.
-func Tabs(items []TabItem, active int, onSelect func(i int), opts ...Option) *El {
-	return Row(with(append([]Item{PadL(2)}, tabItems(items, active, onSelect)...), opts)...)
+func Tabs(items []TabItem, active int, opts ...Option) *El {
+	var strip *El
+	pick := func(i int) {
+		if strip.onSelect != nil {
+			strip.onSelect(i)
+		}
+	}
+	strip = Row(with(append([]Item{PadL(2)}, tabItems(items, active, pick)...), opts)...)
+	return strip
 }
+
+// OnSelect runs with the index of the tab that was clicked.
+func OnSelect(f func(i int)) Option { return func(e *El) { e.onSelect = f } }
 
 // ScrollTabs is Tabs in a strip that scrolls sideways when the labels do
 // not fit, keeping the active tab in view. It grows to the free width.
-func ScrollTabs(state *ScrollState, items []TabItem, active int, onSelect func(i int), opts ...Option) *El {
-	return HScroll(state, with(append([]Item{Grow(1), PadL(2)}, tabItems(items, active, onSelect)...), opts)...)
+func ScrollTabs(state *ScrollState, items []TabItem, active int, opts ...Option) *El {
+	var strip *El
+	pick := func(i int) {
+		if strip.onSelect != nil {
+			strip.onSelect(i)
+		}
+	}
+	strip = HScroll(state, with(append([]Item{Grow(1), PadL(2)}, tabItems(items, active, pick)...), opts)...)
+	return strip
 }
 
 func tabItems(items []TabItem, active int, onSelect func(i int)) []Item {
@@ -212,7 +229,7 @@ func tableRow(t TableSpec, i int, r TableRow, placeholder, last bool) Node {
 			}
 			return tableCell(t, i, j, s, cellClr)
 		}),
-		If(actions, Row(W(tableActionW), JustifyContent(JustifyCenter), OnClick(func() { t.OnDelete(i) }), Tooltip("Delete row"), Trash())),
+		If(actions, Row(W(tableActionW), JustifyContent(JustifyCenter), OnClick(func() { t.OnDelete(i) }), Tooltip("Delete row"), TrashIcon())),
 		If(placeholder, Row(W(tableActionW))),
 	}
 	if t.OnRowMenu != nil && !placeholder {

@@ -28,7 +28,7 @@ func TestHoverIsOnForElementsUnderThePointer(t *testing.T) {
 func TestAnOpenModalOverlayTurnsHoverOffBelowItButNotInsideIt(t *testing.T) {
 	cell := box(W(100), HoverBg(core.Hover))
 	item := box(W(60), H(20), HoverBg(core.Hover))
-	menu := Col(W(60), H(40), FloatAt(120, 5), Modal(func() {}), item)
+	menu := Col(W(60), H(40), FloatAt(120, 5), Modal(), OnDismiss(func() {}), item)
 	root := Stack(Row(cell, box(W(100))), menu)
 	c := testCtx(t)
 
@@ -68,7 +68,7 @@ func TestAModalOverlaySwallowsTheWheelAndTheCursorBelowIt(t *testing.T) {
 	st := &ScrollState{}
 	split := &SplitState{}
 	first, second := box(), box()
-	menu := box(W(40), H(40), FloatAt(160, 0), Modal(func() {}))
+	menu := box(W(40), H(40), FloatAt(160, 0), Modal(), OnDismiss(func() {}))
 	root := Stack(
 		Col(
 			scroller(st, 100, rows(10, &hits)...),
