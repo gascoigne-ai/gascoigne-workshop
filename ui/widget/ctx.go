@@ -39,11 +39,15 @@ func NewFonts(th Theme, scale float64) (Fonts, error) {
 // frame's input. Widgets work in logical pixels; Scale is the number of
 // device pixels per logical pixel, applied only when drawing.
 type Ctx struct {
-	Th    Theme
-	F     Fonts
-	In    Input
-	Tick  int
-	Scale float64
+	Th Theme
+	F  Fonts
+	In Input
+	// RawX and RawY are the pointer position as sampled, set by vml.Update
+	// before any container hides it from its children; a drag that leaves
+	// its container keeps following the pointer with them.
+	RawX, RawY int
+	Tick       int
+	Scale      float64
 
 	// Clipboard is used by text widgets for copy, cut and paste.
 	Clipboard Clipboard

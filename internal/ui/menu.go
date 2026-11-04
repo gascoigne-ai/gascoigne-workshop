@@ -42,9 +42,11 @@ func (a *App) menuView() Node {
 
 			Caption("Interface scale", H(22)),
 			Row(H(w.RowH), Gap(8),
-				Slider(&a.scaleSlider, scaleMin, scaleMax, scaleStep, a.scalePct(), func(v int) {
-					a.changeSettings(func(s *settings.Settings) { s.UIScalePct = v })
-				}),
+				Slider(&a.scaleSlider, scaleMin, scaleMax, scaleStep, a.scalePct(),
+					func(v int) { a.settings.UIScalePct, a.dirty = v, true }, // live: the UI resizes while dragging
+					SliderMid(settings.DefaultUIScalePct),
+					OnSlideEnd(func(int) { a.saveSettings(func(*settings.Settings) {}) }),
+				),
 				Text(fmt.Sprintf("%d%%", a.scaleSlider.Shown(a.scalePct())), W(40), Color(w.Muted)),
 			),
 			Spacer(H(w.Pad)),

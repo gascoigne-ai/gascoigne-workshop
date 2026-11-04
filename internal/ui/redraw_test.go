@@ -238,23 +238,21 @@ func TestFrameSizeAppliesTheInterfaceScaleOnTopOfTheDisplayScale(t *testing.T) {
 	}
 }
 
-func TestInterfaceScaleSliderCommitsOnReleaseAndIsSaved(t *testing.T) {
+func TestInterfaceScaleSliderResizesLiveAndSavesOnRelease(t *testing.T) {
 	a, path := newTestApp(t)
 	click(a, menuBtnX, menuBtnY)
 	a.step(widget.Input{})
-	// Drag from the thumb at 100% to the far right end: 200%.
-	y := scaleRowY
-	a.step(widget.Input{X: scaleTrackX0 + (scaleTrackX1-scaleTrackX0)/3, Y: y, Click: true, Held: true})
-	a.step(widget.Input{X: scaleTrackX1 + 40, Y: y, Held: true})
-	if a.settings.UIScalePct != 100 {
-		t.Fatalf("applied while dragging: %d", a.settings.UIScalePct)
-	}
-	a.step(widget.Input{X: scaleTrackX1 + 40, Y: y})
+	a.step(widget.Input{X: scaleTrackX0 + (scaleTrackX1-scaleTrackX0)/3, Y: scaleRowY, Click: true, Held: true})
+	a.step(widget.Input{X: scaleTrackX1 + 400, Y: scaleRowY, Held: true}) // far right: the maximum
 	if a.settings.UIScalePct != 200 {
-		t.Fatalf("scale %d after release", a.settings.UIScalePct)
+		t.Fatalf("not applied while dragging: %d", a.settings.UIScalePct)
 	}
+	if got, _ := settings.Load(path); got.UIScalePct == 200 {
+		t.Fatal("saved before the release")
+	}
+	a.step(widget.Input{X: scaleTrackX1 + 400, Y: scaleRowY})
 	if got, _ := settings.Load(path); got.UIScalePct != 200 {
-		t.Fatalf("not saved: %+v", got)
+		t.Fatalf("not saved after the release: %+v", got)
 	}
 }
 
