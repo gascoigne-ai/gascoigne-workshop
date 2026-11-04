@@ -282,6 +282,7 @@ func TestADragRestingOverAClosedFolderOpensIt(t *testing.T) {
 	a.expanded[other] = false
 	a.dropTarget = other
 	a.dragHover()
+	a.expanded[closed] = false
 	a.dropTarget = closed // moved away before the time was up
 	a.dragHover()
 	if a.hoverFolder != closed || a.hoverTicks != 1 {
