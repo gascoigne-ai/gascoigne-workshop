@@ -1,4 +1,4 @@
-status: done for the format and the first views (more views move as they are touched)
+status: in progress (left: templates for tables, fields, scroll and tabs; move the tab strips and the Messages toolbar)
 
 # Non-code definitions (Vue-style)
 

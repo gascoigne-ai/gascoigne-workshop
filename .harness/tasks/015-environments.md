@@ -1,4 +1,4 @@
-status: done (highlighting inside the header and body editors is not done)
+status: in progress (left: variable highlighting in header cells and the body editor)
 
 # Environments and variables
 

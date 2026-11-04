@@ -1,4 +1,4 @@
-status: done (a rendered-mask cache and an open icon set are optional follow-ups)
+status: in progress (left: a mask cache if profiling asks, an open icon set)
 
 # Icons as vector files (SVG), drawn and themed by the toolkit
 

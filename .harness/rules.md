@@ -28,4 +28,3 @@ Apply when adding or changing anything exported. They exist so that a guess is u
 10. **A new option or element comes with** a doc comment that starts with its name, a test of what it does, a line in the `vml` package doc index, and its row in the template tables where rule 9 applies.
 11. **Packages.** `core` has no layout and no widgets with state; `vml` is everything that is a view or an input; `engine`, `component` and `theming` depend downward only.
 
-Known debt against these rules is listed in `.harness/tasks/022-api-consistency.md`.

@@ -1,4 +1,4 @@
-status: done
+status: in progress (left: trim exported names only the workshop uses)
 
 # UI package
 

@@ -1,4 +1,4 @@
-status: done (YAML OpenAPI documents are not read; convert them to JSON)
+status: in progress (left: YAML OpenAPI, Postman import, export)
 
 # Collections on disk
 

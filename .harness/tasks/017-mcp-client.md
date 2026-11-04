@@ -1,4 +1,4 @@
-status: done (a typed tool form with one field per property was replaced by schema-filled calls; see Progress)
+status: in progress (left: a typed form per tool property, server-initiated requests, the notification stream)
 
 # MCP client
 

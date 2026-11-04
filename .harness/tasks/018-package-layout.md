@@ -1,4 +1,4 @@
-status: done for what does not need window state (the rest stays in internal/ui)
+status: in progress (left: split the App-bound features when one gets a second user)
 
 # Organize packages by functionality
 

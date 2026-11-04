@@ -1,4 +1,4 @@
-status: done (a JSON-formatting composer was left out: the field is one line)
+status: in progress (left: a JSON-formatting composer)
 
 # WebSocket client
 

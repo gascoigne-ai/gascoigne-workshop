@@ -1,4 +1,4 @@
-status: done (sub-pixel pointer positions are an accepted exception)
+status: in progress (left: automated golden screenshots at 150%; sub-pixel pointer positions are an accepted exception)
 
 # Generalize HiDPI and scaling
 
