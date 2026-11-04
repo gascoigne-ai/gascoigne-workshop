@@ -150,7 +150,7 @@ func (a *App) panes(t *reqTab) Node {
 	items := []Item{
 		AsRatio(), Grow(1), MinFirst(minPaneSize), MinSecond(minPaneSize),
 		a.pane(t, requestPanes, &t.paneTab, &t.reqScroll, &t.reqTabsX, nil),
-		a.pane(t, responsePanes, &t.respTab, &t.respScroll, &t.respTabsX, a.responseStatus(t)),
+		a.pane(t, responsePanesFor(t), &t.respTab, &t.respScroll, &t.respTabsX, a.responseStatus(t)),
 	}
 	if a.settings.Layout == "stacked" {
 		items = append(items, Vertical())
@@ -206,7 +206,13 @@ func (a *App) requestTabs() Node {
 func (a *App) urlBar(t *reqTab) Node {
 	isREST := t.req.Protocol == "rest"
 	send := PrimaryButton("Send", W(80), OnClick(func() { a.send(t) }), Tooltip(a.hint("Send the request", "send")))
-	if t.sending {
+	if isSocket(t) {
+		label, hint := "Connect", "Open the connection"
+		if t.sess != nil || t.connecting {
+			label, hint = "Disconnect", "Close the connection"
+		}
+		send = PrimaryButton(label, W(96), OnClick(func() { a.toggleConnection(t) }), Tooltip(a.hint(hint, "send")))
+	} else if t.sending {
 		send = PrimaryButton("Cancel", W(80), OnClick(func() { a.cancelSend(t) }), Tooltip("Cancel the running request"))
 	}
 	return Row(H(urlH), PadXY(w.Pad, 8), Gap(8), Bg(w.Bg),
@@ -288,6 +294,7 @@ func splitVars(s string) []urlSeg {
 // above the body of the active tab.
 func (a *App) pane(t *reqTab, panes []pane, active *int, scroll, tabsX *ScrollState, extra Node) Node {
 	selectTab := func(i int) { *active, scroll.Y = i, 0 }
+	*active = min(*active, len(panes)-1) // a socket has fewer response panes
 	return Col(Grow(1), Bg(w.Bg),
 		Row(H(paneTabsH), PadT(tabGap), BorderBottom(w.Border),
 			ScrollTabs(tabsX, a.tabItems(panes, t), *active, selectTab),

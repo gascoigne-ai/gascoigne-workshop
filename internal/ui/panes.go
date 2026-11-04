@@ -26,6 +26,7 @@ const (
 	paneSettings
 	paneAuth
 	paneResponse
+	paneMessages
 )
 
 // pane describes one tab of the request or response area. The tables
@@ -130,6 +131,7 @@ var paneBuilders = map[paneKind]func(a *App, p pane, t *reqTab, scroll *ScrollSt
 	paneSettings: (*App).settingsPane,
 	paneAuth:     (*App).authPane,
 	paneResponse: (*App).responsePane,
+	paneMessages: (*App).messagesPane,
 	paneTable:    (*App).tablePane,
 }
 

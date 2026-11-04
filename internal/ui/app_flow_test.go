@@ -293,11 +293,11 @@ func TestFailedSendShowsTheError(t *testing.T) {
 func TestOtherProtocolsAnswerThroughTheSameUI(t *testing.T) {
 	a, _ := newTestApp(t)
 	tab := a.cur()
-	click(a, 300, urlBarY) // rest -> websocket
-	click(a, sendX, urlBarY)
-	waitForResponse(t, a, tab)
-	if !strings.Contains(tab.resp.Err, "not ws or wss") { // an https URL is no WebSocket address
-		t.Fatalf("resp = %+v", tab.resp)
+	click(a, 300, urlBarY)   // rest -> websocket
+	click(a, sendX, urlBarY) // connect: an https URL is no WebSocket address
+	until(t, a, "failed connect", func() bool { return !tab.connecting && strings.Contains(logText(tab), "not ws or wss") })
+	if tab.sess != nil {
+		t.Fatal("connected to an https URL")
 	}
 	tab.resp = nil
 	click(a, 300, urlBarY) // websocket -> mcp

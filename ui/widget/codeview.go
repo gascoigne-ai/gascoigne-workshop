@@ -47,6 +47,10 @@ type CodeView struct {
 	matches []Match // search hits to highlight
 	current int     // index of the active hit, -1 for none
 	reveal  int     // original line to scroll to on the next update, -1 for none
+
+	// Follow keeps the view at its end as lines are added, like a log;
+	// scrolling up by the user pauses it and reaching the end resumes it.
+	Follow bool
 }
 
 // SetLines replaces the content and resets folds and scroll.
@@ -229,6 +233,7 @@ func (v *CodeView) Update(c *Ctx, r Rect) {
 	if in.Click {
 		v.Focused = over
 	}
+	prevY := v.ScrollY
 	g := v.geometry(c, r)
 	vis := v.Visible()
 	b := v.bars(c, r, g, len(vis))
@@ -244,6 +249,19 @@ func (v *CodeView) Update(c *Ctx, r Rect) {
 	v.clampScroll(c, r, g, b, len(vis))
 	if v.Focused {
 		v.updateKeys(c, r, g, b, len(vis))
+	}
+	v.follow(prevY, len(vis)*g.lineH, b.viewH)
+}
+
+// follow pins a Follow view to its end, unless the user just moved it.
+func (v *CodeView) follow(prevY, contentH, viewH int) {
+	end := max(contentH-viewH, 0)
+	if v.ScrollY != prevY { // moved by the user: following resumes at the end only
+		v.Follow = v.ScrollY >= end
+		return
+	}
+	if v.Follow {
+		v.ScrollY = end
 	}
 }
 

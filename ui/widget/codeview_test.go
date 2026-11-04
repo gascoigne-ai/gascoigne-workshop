@@ -573,3 +573,43 @@ func TestLineNumbersFollowNumWhenSetAndWidenTheGutter(t *testing.T) {
 		t.Fatalf("the gutter must fit 1204, digits %d", got)
 	}
 }
+
+func TestCodeViewFollowStaysAtTheEndUntilTheUserScrollsUp(t *testing.T) {
+	v, c, _, _ := viewport(t)
+	v.Follow = true
+	r := Rect{W: 600, H: 100}
+	v.SetLines(manyLines(100))
+	c.In = Input{X: 50, Y: 20}
+	v.Update(c, r)
+	g := v.geometry(c, r)
+	end := 100*g.lineH - r.H
+	if v.ScrollY != end {
+		t.Fatalf("ScrollY = %d, want the end %d", v.ScrollY, end)
+	}
+
+	v.SetLines(manyLines(120)) // new content arrives
+	v.Update(c, r)
+	if want := 120*g.lineH - r.H; v.ScrollY != want {
+		t.Fatalf("after growing ScrollY = %d, want %d", v.ScrollY, want)
+	}
+
+	c.In = Input{X: 50, Y: 20, Wheel: 2} // scroll up
+	v.Update(c, r)
+	if v.Follow {
+		t.Fatal("scrolling up must stop following")
+	}
+	up := v.ScrollY
+	v.SetLines(manyLines(130))
+	c.In = Input{X: 50, Y: 20}
+	v.Update(c, r)
+	if v.ScrollY == 130*g.lineH-r.H {
+		t.Fatalf("a view the user scrolled up jumped to the end (%d, was %d)", v.ScrollY, up)
+	}
+
+	v.Focused = true
+	c.In = Input{X: 5000, Y: 5000, Keys: []ebiten.Key{ebiten.KeyEnd}}
+	v.Update(c, r)
+	if !v.Follow {
+		t.Fatal("scrolling back to the end must resume following")
+	}
+}

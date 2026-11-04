@@ -69,6 +69,12 @@ type reqTab struct {
 	find                  widget.TextField             // the search text
 	matchIdx              int                          // the active match, -1 for none
 	seq                   int                          // numbers the sends, so a late result of an old one is ignored
+	sess                  proto.Session                // the open connection of a socket tab
+	connecting            bool                         // a connect is in progress
+	wsGen                 int                          // numbers the connects, so a late answer of an old one is ignored
+	wsCancel              context.CancelFunc           // ends the timeout of the connect in progress
+	wsView                widget.CodeView              // the message log
+	msg                   widget.TextField             // the message being composed
 }
 
 // responseViews are the values of the response view setting.
@@ -109,6 +115,8 @@ func newTab(req *model.Request) *reqTab {
 	}
 	t.saved = req.Clone()
 	t.matchIdx = -1
+	t.wsView.Follow = true
+	t.wsCancel = func() {}
 	t.timeout = widget.NewTextField(timeoutText(req.TimeoutSec))
 	t.body = widget.NewTextArea(req.Body)
 	return t
@@ -129,6 +137,7 @@ type App struct {
 	tabs     []*reqTab
 	active   int
 	results  chan sendResult
+	wsEvents chan wsEvent
 	status   string
 	w, h     int
 	shot     screenshot
@@ -204,6 +213,7 @@ func NewApp(opts Options) (*App, error) {
 		col:      SampleCollection(),
 		expanded: map[*model.Folder]bool{},
 		results:  make(chan sendResult, 8),
+		wsEvents: make(chan wsEvent, 64),
 		status:   "Ready",
 		shot:     screenshot{path: opts.ScreenshotPath, sendOnStart: opts.SendOnStart},
 
@@ -252,6 +262,10 @@ func (a *App) openRequest(req *model.Request) {
 // send runs t's request off the UI goroutine; the result comes back
 // through a.results and is applied in Update.
 func (a *App) send(t *reqTab) {
+	if isSocket(t) {
+		a.toggleConnection(t)
+		return
+	}
 	if t.sending {
 		return
 	}
@@ -313,6 +327,9 @@ func (a *App) drain() (any bool) {
 		select {
 		case r := <-a.results:
 			a.apply(r)
+			any = true
+		case e := <-a.wsEvents:
+			a.applyWS(e)
 			any = true
 		default:
 			return any
@@ -455,6 +472,7 @@ func (a *App) clickTree(row treeRow) {
 func (a *App) newRequest() { a.newRequestIn(a.selectedFolder()) }
 
 func (a *App) cycleProtocol(t *reqTab) {
+	a.disconnect(t) // a connection belongs to the protocol that opened it
 	t.req.Protocol = next(protocolOrder, t.req.Protocol)
 	if t.req.Protocol == "rest" && t.req.Method == "" {
 		t.req.Method = "GET"
