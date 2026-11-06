@@ -28,3 +28,7 @@ Apply when adding or changing anything exported. They exist so that a guess is u
 10. **A new option or element comes with** a doc comment that starts with its name, a test of what it does, a line in the `vml` package doc index, and its row in the template tables where rule 9 applies.
 11. **Packages.** `core` has no layout and no widgets with state; `vml` is everything that is a view or an input; `engine`, `component` and `theming` depend downward only.
 
+## Tasks
+- Finish one task completely before starting another: every item of its Scope done and tested, its Acceptance met, `make check` green, docs updated. Then delete the task file in the same commit as the last item. Do not switch tasks while items are open; an item that cannot be done (blocked, needs a decision, not possible on this platform) is written into the task file with the reason and what would unblock it, and the user decides whether the task closes.
+- Work through a task in the order of its Scope, one commit per item.
+
