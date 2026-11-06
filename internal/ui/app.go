@@ -94,6 +94,7 @@ type reqTab struct {
 	resources             []proto.MCPResource       // the resources an MCP server announced
 	prompts               []proto.MCPPrompt         // the prompts an MCP server announced
 	respHist              []respEntry               // earlier responses, newest first
+	schema                *proto.Schema             // what a GraphQL introspection answered
 	tools                 []proto.MCPTool           // the tools an MCP server announced
 	lastEventID           string                    // the last id an SSE stream sent, offered again when it reconnects
 	reconnect             bool                      // reopen a dropped connection
@@ -409,6 +410,7 @@ func (a *App) apply(r sendResult) {
 	t.resp = &r.resp
 	a.saveHistory(t)
 	a.recordSent(t, &r.resp)
+	a.rememberSchema(t, &r.resp)
 	a.refreshView(t)
 	if r.resp.Err != "" {
 		a.status = "Request failed"
