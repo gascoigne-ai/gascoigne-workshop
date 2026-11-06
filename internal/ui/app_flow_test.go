@@ -160,6 +160,7 @@ func TestProtocolAndMethodChipsCycle(t *testing.T) {
 	click(a, 300, urlBarY)
 	click(a, 300, urlBarY)
 	click(a, 300, urlBarY)
+	click(a, 300, urlBarY)
 	if req.Protocol != "rest" || req.Method != "POST" {
 		t.Fatalf("after a full cycle: %q %q", req.Protocol, req.Method)
 	}
@@ -168,7 +169,7 @@ func TestProtocolAndMethodChipsCycle(t *testing.T) {
 func TestSwitchingToRESTRestoresAMethod(t *testing.T) {
 	a, _ := newTestApp(t)
 	req := a.cur().req
-	req.Protocol, req.Method = "sse", ""
+	req.Protocol, req.Method = "grpc", ""
 	a.cycleProtocol(a.cur())
 	if req.Protocol != "rest" || req.Method != "GET" {
 		t.Fatalf("got %q %q, want rest GET", req.Protocol, req.Method)

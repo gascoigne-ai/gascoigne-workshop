@@ -229,7 +229,7 @@ func (a *App) requestTabs() Node {
 
 // urlBar is [protocol | method | URL field ........] [Send].
 func (a *App) urlBar(t *reqTab) Node {
-	isREST := t.req.Protocol == "rest"
+	isREST, isGRPC := t.req.Protocol == "rest", t.req.Protocol == "grpc"
 	send := PrimaryButton("Send", W(80), OnClick(func() { a.send(t) }), Tooltip(a.hint("Send the request", "send")))
 	if isSocket(t) {
 		label, hint := "Connect", "Open the connection"
@@ -243,8 +243,9 @@ func (a *App) urlBar(t *reqTab) Node {
 	return Row(H(urlH), PadX(w.Gutter), PadY(8), Gap(8), Bg(w.Bg),
 		Row(Grow(1), Bg(w.Sunken), Control("field"), Tooltip(a.urlTip(t)),
 			tip("Protocol: click to change", chip(protocolLabel[t.req.Protocol], w.Muted, 64, func() { a.cycleProtocol(t) })),
-			If(isREST, VRuleInset(8)), // a divider between the chips, none after the last one
+			If(isREST || isGRPC, VRuleInset(8)), // a divider between the chips, none after the last one
 			If(isREST, tip("Method: click to change", chip(t.req.Method, appearance.MethodToken(t.req.Method), 84, func() { a.cycleMethod(t) }))),
+			If(isGRPC, a.grpcMethodChip(t)),
 			Spacer(W(w.Gutter-4)), // breathing room between the divider and the URL text
 			Field(&t.url, Grow(1),
 				Placeholder("Enter URL"),

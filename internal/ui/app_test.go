@@ -15,7 +15,7 @@ func TestNext(t *testing.T) {
 		name, cur, want string
 	}{
 		{"advances", "rest", "websocket"},
-		{"wraps", "sse", "rest"},
+		{"wraps", "grpc", "rest"},
 		{"unknown starts over", "carrier-pigeon", "rest"},
 	}
 	for _, tt := range tests {

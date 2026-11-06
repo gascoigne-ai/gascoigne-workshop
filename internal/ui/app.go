@@ -12,6 +12,7 @@ import (
 	"net/http/cookiejar"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -34,8 +35,8 @@ const (
 
 // Cycled by clicking the protocol and method chips of the URL bar.
 var (
-	protocolOrder = []string{"rest", "websocket", "mcp", "sse"}
-	protocolLabel = map[string]string{"rest": "REST", "websocket": "WS", "mcp": "MCP", "sse": "SSE"}
+	protocolOrder = []string{"rest", "websocket", "mcp", "sse", "grpc"}
+	protocolLabel = map[string]string{"rest": "REST", "websocket": "WS", "mcp": "MCP", "sse": "SSE", "grpc": "gRPC"}
 	methodOrder   = []string{"GET", "POST", "PUT", "PATCH", "DELETE"}
 )
 
@@ -538,7 +539,7 @@ func (a *App) newRequest() { a.newRequestIn(a.selectedFolder()) }
 func (a *App) cycleProtocol(t *reqTab) {
 	a.disconnect(t) // a connection belongs to the protocol that opened it
 	t.req.Protocol = next(protocolOrder, t.req.Protocol)
-	if t.req.Protocol == "rest" && t.req.Method == "" {
+	if t.req.Protocol == "rest" && (t.req.Method == "" || strings.Contains(t.req.Method, "/")) { // "" or a gRPC method
 		t.req.Method = "GET"
 	}
 }
