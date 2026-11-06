@@ -20,3 +20,8 @@ Settings are easy to find, change and inspect, in the style of the settings scre
 - The schema table is the foundation: the form, the raw editor, validation and completion all read it, so there is no second list of settings to keep in step.
 - Completion needs a small JSON-aware editor mode. Decide in `decisions.md` whether to extend `TextArea` or build a separate editor; no new dependency.
 - Related: 028 has "font family setting"; it should be a row in this schema, not a separate mechanism.
+
+## Progress
+- Decisions (user): extend `TextArea` with a completion hook and error marks rather than a new editor; the schema lists every field of `settings.Settings` (internal state `workspace` and `environment` are hidden from the form); reset removes the key from `settings.json` so the default applies.
+- Done: the schema and its logic in `internal/settings` (`schema.go`, `complete.go`): `Schema` (key, title, description, category, kind, allowed values, range, hidden), `Validate` (syntax errors with line and column, unknown keys, wrong types, values out of range, each with a text range), `Parse` (a bad text changes nothing), `Changed`, `Reset`, `Minimal` (only non-default keys) and `Complete` (keys not yet used, enum and boolean values, action ids inside `shortcuts`).
+- Left: the form view with search, the shortcut editor, the raw text mode and its editor hook, the file as single source of truth with reload from disk, screenshot check, docs.
