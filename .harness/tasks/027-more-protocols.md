@@ -19,4 +19,5 @@ Protocols are a registry; REST, WebSocket and MCP exist.
 - Left: GraphQL (query editor, variables, introspection), gRPC (ask before adding dependencies), `Last-Event-ID` on reconnect.
 - Done later: GraphQL as a body type of REST requests (`model.BodyGraphQL`, `Request.GraphQLVars`): the Body tab has a query editor, a JSON variables editor with validation, and `Load schema`, which sends the introspection query (`proto.IntrospectionQuery`) to the tab's URL with its headers and credentials and shows the answer as the response, without touching the tab's own query. The body type chips scroll sideways when the pane is narrow.
 - Done later: `Last-Event-ID`: an SSE tab that reconnects offers the last event id it saw (`Event.ID`, `reqTab.lastEventID`), and a deliberate disconnect forgets it.
-- Left: gRPC (ask before adding dependencies), a schema outline view.
+- Done later: gRPC unary calls with JSON messages through reflection (`internal/proto/grpc.go`, decision 13); the registry has the `grpc` row, the UI chip and method picker are still to do.
+- Left: gRPC in the UI, a schema outline view.

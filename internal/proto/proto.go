@@ -29,6 +29,7 @@ func NewRegistry() Registry {
 		"websocket": WebSocket{},
 		"mcp":       MCP{},
 		"sse":       SSE{},
+		"grpc":      GRPC{},
 	}
 }
 

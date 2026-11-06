@@ -2,7 +2,7 @@
 
 Adds to the shared `common/rules.md`, `common/commit-style.md` and `common/code-style.md`.
 
-- Approved deps: `github.com/hajimehoshi/ebiten/v2` (GPU window, input, 2D drawing, `text/v2`) `golang.org/x/image` (embedded Go fonts, already an Ebitengine requirement) and Ebitengine's other transitive requirements, and `google.golang.org/grpc` with `google.golang.org/protobuf` (gRPC protocol, approved by the user on 2026-11-06). Everything else is stdlib; REST uses `net/http`.
+- Approved deps: `github.com/hajimehoshi/ebiten/v2` (GPU window, input, 2D drawing, `text/v2`) `golang.org/x/image` (embedded Go fonts, already an Ebitengine requirement) and Ebitengine's other transitive requirements, and `google.golang.org/grpc` with `google.golang.org/protobuf` and their transitive requirements (gRPC protocol, approved by the user on 2026-11-06). Everything else is stdlib; REST uses `net/http`.
 - cgo is allowed here (Ebitengine needs it for windowing on Linux). Tests for non-UI packages must still run without a display.
 - Verify UI changes with `make shot` and look at the PNG; layout and widget logic still get unit tests.
 - Layers: `uitoolkit/core` imports nothing from this module, `vml` only `core`, `component` and `theming` only `core` and `vml`, and nothing under `uitoolkit` imports `internal/*` or `cmd/*` (`uitoolkit/core/layers_test.go` enforces it); `internal/ui` uses them. `internal/model` and `internal/proto` stay free of UI.
