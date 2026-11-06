@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"runtime"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -138,7 +139,7 @@ func (a *App) menuRow(m *contextMenu, i int, it menuItem) Node {
 		icon,
 		Text(it.label, Color(color)),
 		Spacer(),
-		Text(it.shortcut, Small(), Muted()),
+		Text(w.PlatformKeyText(runtime.GOOS, it.shortcut), Small(), Muted()),
 	)
 }
 

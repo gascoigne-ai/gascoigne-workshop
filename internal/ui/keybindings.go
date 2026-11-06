@@ -3,6 +3,7 @@ package ui
 import (
 	"errors"
 	"fmt"
+	"runtime"
 
 	"github.com/hajimehoshi/ebiten/v2"
 
@@ -133,7 +134,7 @@ func (a *App) shortcutText(id string) string {
 	for _, s := range shortcuts {
 		if s.id == id {
 			if b := a.bindingOf(s); b.Bound {
-				return b.String()
+				return core.PlatformKeyText(runtime.GOOS, b.String())
 			}
 			return "Unbound"
 		}

@@ -6,6 +6,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
+	"runtime"
 )
 
 // The settings dialog: a title bar, a list of categories on the left and
@@ -175,7 +176,7 @@ func (a *App) shortcutsView() Node {
 		For(textKeys, func(_ int, row struct{ action, keys string }) Node {
 			return Row(H(w.CompactH), Gap(6),
 				Text(row.action, Small(), Grow(1), Ellipsis()),
-				Text(row.keys, Small(), Muted()),
+				Text(w.PlatformKeyText(runtime.GOOS, row.keys), Small(), Muted()),
 			)
 		}),
 	)

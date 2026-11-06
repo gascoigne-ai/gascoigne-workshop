@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -229,7 +230,7 @@ func (a *App) variableCompletion(t *reqTab) (names []string, from int) {
 func (a *App) completeVariable() {
 	t := a.cur()
 	if !t.url.Focused {
-		a.toast("Ctrl+Space completes a {{variable}} in the URL field", false)
+		a.toast(w.PlatformKeyText(runtime.GOOS, "Ctrl+Space")+" completes a {{variable}} in the URL field", false)
 		return
 	}
 	names, from := a.variableCompletion(t)

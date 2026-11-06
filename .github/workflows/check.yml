@@ -14,3 +14,18 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libc6-dev libgl1-mesa-dev libxcursor-dev libxi-dev libxinerama-dev libxrandr-dev libxxf86vm-dev libasound2-dev pkg-config xvfb
       - name: make check
         run: xvfb-run -a make check
+  build:
+    name: build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: build and vet
+        run: go build ./... && go vet ./...
