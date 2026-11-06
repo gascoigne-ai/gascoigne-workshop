@@ -21,7 +21,7 @@ Status: early. REST works; WebSocket and MCP are stubs. See
 ## Install
 
 Download the Linux tarball from the
-[latest release](https://github.com/LukaszByczynski/gascoigne-workshop/releases/latest), or build
+[latest release](https://github.com/gascoigne-ai/gascoigne-workshop/releases/latest), or build
 from source.
 
 ## Build
