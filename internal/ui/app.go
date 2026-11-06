@@ -17,6 +17,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
@@ -194,12 +195,15 @@ type App struct {
 	selected         any                           // the tree node last clicked or moved to: a *Folder or *Request
 	treeFocus        bool                          // the tree has the keyboard
 	filter           vml.TextField                 // the sidebar filter
-	dragNode         any                           // the tree node being dragged, nil when none
-	pressedFolder    *model.Folder                 // the folder row the button went down on, toggled on release there
-	hoverFolder      *model.Folder                 // the closed folder a drag has been over
-	hoverTicks       int                           // for how many frames
-	dropTarget       any                           // the node the pointer is over while dragging
-	dialog           *dialog                       // the open dialog, if any
+	sent             []history.Sent                // requests sent in this workspace, newest first
+	showSent         bool                          // the sidebar lists sent requests instead of the tree
+	sentScroll       vml.ScrollState
+	dragNode         any           // the tree node being dragged, nil when none
+	pressedFolder    *model.Folder // the folder row the button went down on, toggled on release there
+	hoverFolder      *model.Folder // the closed folder a drag has been over
+	hoverTicks       int           // for how many frames
+	dropTarget       any           // the node the pointer is over while dragging
+	dialog           *dialog       // the open dialog, if any
 	toasts           []toast
 	now              func() time.Time           // the clock, replaced in tests
 	openBrowser      func(address string) error // opens a URL in the user's browser, replaced in tests
@@ -282,6 +286,7 @@ func NewApp(opts Options) (*App, error) {
 	stored, stateErr := state.Load(opts.StatePath)
 	a.initial = stored.Window
 	a.restore(stored)
+	a.loadSent()
 	a.status = stateNote(a.status, stateErr)
 	if len(themeProblems) > 0 {
 		a.status = stateNote(a.status, fmt.Errorf("%s", themeProblems[0]))
@@ -403,6 +408,7 @@ func (a *App) apply(r sendResult) {
 	remember(t, t.resp)
 	t.resp = &r.resp
 	a.saveHistory(t)
+	a.recordSent(t, &r.resp)
 	a.refreshView(t)
 	if r.resp.Err != "" {
 		a.status = "Request failed"

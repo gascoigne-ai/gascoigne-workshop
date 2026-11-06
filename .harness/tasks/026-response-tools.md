@@ -11,7 +11,6 @@ The response viewer shows text bodies well. Missing: other body kinds, long bodi
 - Very large bodies: stop reading at a limit, show a truncation notice with the size, offer to save the full body.
 - Save the body to a file (needs the file-dialog decision in task 029).
 - Response history per request (last N, with status and time), pick one to view; kept in the state folder, not in the collection files.
-- Request history across the workspace: a searchable list of what was sent.
 
 ## Acceptance
 - Tests for truncation, wrap geometry, history ring and persistence round trip.
@@ -25,4 +24,5 @@ The response viewer shows text bodies well. Missing: other body kinds, long bodi
 - Done later: HTML preview through the user's browser: `Open in browser` in the response menu serves the body on a temporary loopback port (`internal/preview`).
 - Done later: line wrap (`CodeView.Wrap`, the `Wrap` chip in the response toolbar).
 - Done later: the last 10 responses of a request survive a restart (`internal/history`).
-- Left: Shift+arrow selection and a workspace-wide request history.
+- Done later: workspace request log (`Sent` mode of the sidebar, `history/sent.jsonl`).
+- Left: Shift+arrow selection (needs a caret in the read-only response view).

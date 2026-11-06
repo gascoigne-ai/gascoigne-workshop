@@ -67,15 +67,26 @@ func (a *App) view() Node {
 func (a *App) sidebar() Node {
 	return Col(
 		Row(H(headerH), PadX(w.Gutter), Gap(6), Bg(w.Bg), BorderB(w.Border),
-			Caption("Collections", W(96)),
+			a.sidebarMode(),
 			Field(&a.filter, H(28), Grow(1), Bg(w.Sunken), Placeholder("Filter"), a.textMenuOpt(&a.filter, nil)),
 		),
-		Scroll(&a.treeScroll, Bg(w.Sunken),
+		If(a.showSent, a.sentList()),
+		If(!a.showSent, Scroll(&a.treeScroll, Bg(w.Sunken),
 			For(a.visibleRows(), func(_ int, row collection.Row) Node {
 				return a.treeRow(row, row.Node() == a.selected)
 			}),
-		),
+		)),
 	)
+}
+
+// sidebarMode is the header chip that switches the sidebar between the
+// collection tree and the log of sent requests.
+func (a *App) sidebarMode() Node {
+	label, switchTo := "Collections", func() { a.showSent = true }
+	if a.showSent {
+		label, switchTo = "Sent", func() { a.showSent = false }
+	}
+	return Button(label, W(96), H(28), OnClick(switchTo))
 }
 
 func (a *App) treeRow(row collection.Row, selected bool) Node {
