@@ -302,7 +302,7 @@ func hasKey(keys []ebiten.Key, k ebiten.Key) bool {
 }
 
 // overlayOpen reports whether a menu or dialog has the keyboard.
-func (a *App) overlayOpen() bool { return a.ctxMenu != nil || a.dialog != nil }
+func (a *App) overlayOpen() bool { return a.ctxMenu != nil || a.dialog != nil || a.traceShown }
 
 // dialogForm is the typed form of a dialog, nothing for the others.
 func (a *App) dialogForm(d *dialog) Node {

@@ -58,6 +58,7 @@ func (a *App) view() Node {
 		a.menuView(),
 		a.contextMenuView(),
 		a.dialogView(),
+		a.traceView(),
 		a.toastsView(),
 	)
 }
@@ -387,7 +388,8 @@ func (a *App) statusBar() Node {
 	return component.View(`
 		<row h="28" pad="12 0" gap="12" bg="frame" control="statusbar" border-t="border">
 		  <text small muted ellipsis grow="1">{{status}}</text>
+		  <button w="44" h="20" onclick="openLog" tip="Show the log of calls">Log</button>
 		  <text small muted>{{version}}</text>
 		</row>`,
-		component.Scope{"status": a.status, "version": version})
+		component.Scope{"status": a.status, "version": version, "openLog": a.openTrace})
 }

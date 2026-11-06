@@ -12,7 +12,6 @@ Make the app dependable to ship.
 - CI workflow (`make check` plus the screenshot compare), release packaging and a desktop entry.
 - Accessibility pass: contrast is tested; add focus order review and screen reader hints where the platform allows.
 - Font family setting for the interface, the code views and other text roles.
-- Logging view: a place where the user can trace the logs of calls (requests sent, answers, errors, timings).
 - Support for Windows and macOS (paths, shortcuts with Cmd, packaging, CI builds).
 
 ## Acceptance
@@ -28,3 +27,4 @@ Make the app dependable to ship.
 - Done later: the move cursor shows while a table row, a tab or a tree row is dragged (dividers and column handles already had resize cursors).
 - Already so: settings (`settings.json`), the collection state (`state.json`: tabs, expanded folders, sizes), themes, the default workspace and the response and sent histories all live under `os.UserConfigDir()/gascoigne-workshop` (`settings.DefaultPath`, `state.DefaultPath`); the path is per platform through the standard library. Windows and macOS runs are the open part (see the platform item).
 - Done later: right-click menu rows have icons: `menuItem.icon`, else the table `menuIcons` by the first word of the label (`Copy`, `Cut`, `Paste`, `Delete`, `Rename`, `Close`, `Find`, `New`, `Save`, `Open`, `Undo`...); rows without one keep an empty icon column so labels line up. Seven new icons (pencil, scissors, clipboard, save, external, undo, redo). Not looked at in a live window.
+- Done later: call trace: a `Log` button in the status bar opens a dialog with the last 500 entries (request sent, answer with status, time and size, failures, connections opened, lost or refused), a filter and Clear; in memory only. Messages of an open socket stay in the Messages pane.

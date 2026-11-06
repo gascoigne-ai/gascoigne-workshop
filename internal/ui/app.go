@@ -198,6 +198,11 @@ type App struct {
 	treeFocus        bool                          // the tree has the keyboard
 	filter           vml.TextField                 // the sidebar filter
 	sent             []history.Sent                // requests sent in this workspace, newest first
+	trace            []traceEntry                  // the call trace, oldest first
+	traceFilter      vml.TextField                 // narrows the trace view
+	traceCode        vml.CodeView                  // the trace view
+	traceKey         string                        // what traceCode shows now
+	traceShown       bool                          // the trace view is open
 	showSent         bool                          // the sidebar lists sent requests instead of the tree
 	sentScroll       vml.ScrollState
 	dragNode         any           // the tree node being dragged, nil when none
@@ -335,6 +340,7 @@ func (a *App) dispatch(t *reqTab, source *model.Request) {
 	seq := t.seq
 	a.status = "Sending " + source.URL
 	req := source.Expanded(a.varsFor(t.req))
+	a.traceSent(req)
 	ctx, cancel := context.WithTimeout(context.Background(), a.timeoutFor(req))
 	t.cancel = cancel
 	go func() {
@@ -411,6 +417,7 @@ func (a *App) apply(r sendResult) {
 	t.resp = &r.resp
 	a.saveHistory(t)
 	a.recordSent(t, &r.resp)
+	a.traceAnswer(t.req, &r.resp)
 	a.rememberSchema(t, &r.resp)
 	a.refreshView(t)
 	if r.resp.Err != "" {
@@ -492,6 +499,8 @@ func (a *App) step(in core.Input) {
 			a.closeMenu()
 		case a.dialog != nil:
 			a.closeDialog()
+		case a.traceShown:
+			a.closeTrace()
 		case a.menu:
 			a.menu = false
 		case a.edit != nil:
