@@ -303,3 +303,23 @@ func TestFormFieldsCanBeEditedAsText(t *testing.T) {
 		t.Fatalf("form %+v", tab.req.Form)
 	}
 }
+
+func TestToggleWrapSwitchesTheResponseViewAndSurvivesANewResponse(t *testing.T) {
+	a := jsonResponse(t, `{"ok":true}`)
+	tab := a.cur()
+	if tab.view.Wrap {
+		t.Fatal("lines are not wrapped by default")
+	}
+	a.toggleWrap(tab)
+	if !tab.view.Wrap {
+		t.Fatal("toggling turns wrapping on")
+	}
+	a.refreshView(tab) // a new response or view mode rebuilds the lines
+	if !tab.view.Wrap {
+		t.Fatal("wrapping is a choice of the view, not of one response")
+	}
+	a.toggleWrap(tab)
+	if tab.view.Wrap {
+		t.Fatal("toggling again turns it off")
+	}
+}

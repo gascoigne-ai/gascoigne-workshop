@@ -500,6 +500,8 @@ func (a *App) responsePane(_ pane, t *reqTab, _ *ScrollState) Node {
 			a.viewChip("Compact", t.compact, 72, func() { a.setView(t, false, true) }),
 			a.viewChip("Pretty", !t.raw && !t.compact, 56, func() { a.setView(t, false, false) }),
 			a.viewChip("Raw", t.raw, 44, func() { a.setView(t, true, false) }),
+			Row(W(w.Gutter)),
+			a.viewChip("Wrap", t.view.Wrap, 56, func() { a.toggleWrap(t) }),
 			Spacer(),
 			If(len(t.respHist) > 0, Button("History", W(66), H(w.CompactH), OnClick(func() { a.openMenu(a.ctx.In.X, a.ctx.In.Y, a.historyMenu(t)) }), Tooltip("Earlier responses of this request"))),
 			IconButton(SearchIcon(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(a.openFind), Tooltip(a.hint("Find in response", "find"))),

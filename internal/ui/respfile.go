@@ -115,3 +115,7 @@ func (a *App) openInBrowser(t *reqTab) {
 	}
 	a.toast("Opened in the browser for 5 minutes", false)
 }
+
+// toggleWrap switches the response body between scrolling sideways and
+// breaking long lines at the width of the pane.
+func (a *App) toggleWrap(t *reqTab) { t.view.Wrap = !t.view.Wrap }
