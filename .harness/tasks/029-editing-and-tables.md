@@ -23,4 +23,5 @@ Small gaps found while finishing earlier tasks.
 - Not possible as stated: dropping files onto the window gives an `fs.FS` without real paths (Ebitengine), so a dropped file cannot be sent by path; use `Choose...`.
 - Done later: the Body tab's form fields have the `Bulk edit` link (the table caption `Fields`).
 - Done later: the sidebar filter colors the matched part of a row name (`collection.SplitMatch`).
-- Left: keyboard column resize, row drag handle, listing the text keys in the settings, plain-key bindings with a warning.
+- Done later: a drag handle on editable table rows reorders them with the mouse (`TableSpec.OnGrabRow`, `OnDragOverRow`).
+- Left: keyboard column resize (skipped by choice), listing the text keys in the settings, plain-key bindings with a warning.

@@ -242,6 +242,8 @@ func (a *App) tableView(p pane, t *reqTab, scroll *ScrollState, pad int) Node {
 			a.commitEdit()
 			a.applyRows(p, t, func(r []model.KV) []model.KV { return model.DeleteRow(r, i) })
 		}
+		spec.OnGrabRow = func(row int) { a.grabRow(p, t, row) }
+		spec.OnDragOverRow = func(row int) { a.dragRowOver(row) }
 		spec.OnEditCell = func(row, col int) { a.beginEdit(p, t, row, col) }
 		spec.OnRowMenu = func(row, x, y int) { a.openMenu(x, y, a.rowMenuItems(p, t, row)) }
 		if e := a.edit; e != nil && e.pane.label == p.label && e.tab == t {

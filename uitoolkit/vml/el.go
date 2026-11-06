@@ -31,7 +31,7 @@
 //	Input      Field Area Code Slider Checkbox   (state: TextField TextArea CodeView)   Placeholder OnChange OnEnter
 //	Events     OnClick OnRightClick OnMiddleClick OnDragOver   Tooltip KeepInView
 //	Composite  Button PrimaryButton LinkButton IconButton Tabs ScrollTabs Table   OnSelect OnSlide
-//	Icons      Icon RegisterIcons IconNames   CrossIcon TriangleIcon DotsIcon TrashIcon PlusIcon CopyIcon SearchIcon PromptIcon ChevronUpIcon ChevronDownIcon
+//	Icons      Icon RegisterIcons IconNames   CrossIcon TriangleIcon GripIcon DotsIcon TrashIcon PlusIcon CopyIcon SearchIcon PromptIcon ChevronUpIcon ChevronDownIcon
 //	Flow       If When For Frag
 //	Overlay    FloatTopRight FloatAt FloatCenter Modal OnDismiss FocusScope
 //

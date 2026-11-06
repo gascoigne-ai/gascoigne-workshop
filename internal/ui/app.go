@@ -171,6 +171,7 @@ type App struct {
 	menu             bool                          // settings menu is open
 	edit             *cellEdit                     // the table cell being edited, if any
 	dragTab          int                           // index of the tab being dragged, -1 when none
+	dragRow          *rowSelection                 // the table row being dragged by its grip, nil when none
 	ctxMenu          *contextMenu                  // the open context menu, if any
 	bulk             *bulkEdit                     // the table in bulk-edit mode, if any
 	menuScroll       vml.ScrollState               // scroll of the settings dialog's page
@@ -446,6 +447,7 @@ func (a *App) step(in core.Input) {
 	a.ctx.Cursor = core.CursorDefault
 	if !in.Held && !in.MiddleHeld {
 		a.dragTab = -1
+		a.dragRow = nil
 	}
 	drained := a.drain()
 	pruned := a.pruneToasts()

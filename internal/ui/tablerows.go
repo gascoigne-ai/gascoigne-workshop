@@ -182,6 +182,30 @@ func (a *App) moveRow(delta int) {
 	a.afterRowOp(p, t, to, col, editing)
 }
 
+// grabRow starts dragging a row by its grip; the row becomes the
+// selected one.
+func (a *App) grabRow(p pane, t *reqTab, row int) {
+	a.commitEdit()
+	a.rowSel = &rowSelection{pane: p, tab: t, row: row}
+	a.dragRow = &rowSelection{pane: p, tab: t, row: row}
+}
+
+// dragRowOver moves the dragged row to the place of the row the pointer
+// is over, so the table shows where it would land. A release ends the
+// drag (see step).
+func (a *App) dragRowOver(over int) {
+	drag := a.dragRow
+	if drag == nil || drag.row == over {
+		return
+	}
+	a.applyRows(drag.pane, drag.tab, func(rows []model.KV) []model.KV {
+		moved, _ := model.MoveRow(rows, drag.row, over-drag.row)
+		return moved
+	})
+	drag.row = over
+	a.rowSel = &rowSelection{pane: drag.pane, tab: drag.tab, row: over}
+}
+
 // deleteRow removes the selected row (not while a cell is edited, when
 // Delete belongs to the text).
 func (a *App) deleteRow() {

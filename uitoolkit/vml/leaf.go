@@ -148,6 +148,9 @@ func TriangleIcon(open bool, opts ...Option) *El {
 	return Icon("triangle-right", opts...)
 }
 
+// GripIcon is the six-dot handle that rows are dragged by.
+func GripIcon(opts ...Option) *El { return Icon("grip", opts...) }
+
 // DotsIcon is the three-dot "more" glyph.
 func DotsIcon(opts ...Option) *El { return Icon("dots", opts...) }
 

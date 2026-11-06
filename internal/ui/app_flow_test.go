@@ -196,14 +196,14 @@ func TestTypingInTheURLFieldUpdatesParams(t *testing.T) {
 func TestTogglingAParamRewritesTheURL(t *testing.T) {
 	a, _ := newTestApp(t)
 	req := a.cur().req
-	click(a, 290, paramsRow0Y) // checkbox of the first Params row (q)
+	click(a, 310, paramsRow0Y) // checkbox of the first Params row (q)
 	if req.Params[0].Enabled || strings.Contains(req.URL, "q=") {
 		t.Fatalf("q must be disabled and gone from %q", req.URL)
 	}
 	if !strings.Contains(req.URL, "order=desc") {
 		t.Fatalf("other params must stay in %q", req.URL)
 	}
-	click(a, 290, paramsRow0Y)
+	click(a, 310, paramsRow0Y)
 	if !req.Params[0].Enabled || !strings.Contains(req.URL, "q=gioui") {
 		t.Fatalf("toggling back must restore q in %q", req.URL)
 	}
@@ -478,7 +478,7 @@ func TestNoResponseStates(t *testing.T) {
 }
 
 // Cells of the Params table at 1280x800: request pane starts at x=260,
-// the table at x=272, columns: actions 36, name 115, value 165, description 132.
+// the table at x=272, columns: grip 20, actions 36, name 110, value 157, description 126.
 const (
 	paramsRow0Y   = 264
 	paramsRow3Y   = 348 // the placeholder row below the three params
@@ -2305,10 +2305,10 @@ func TestTreeKeysDoNothingWhileTyping(t *testing.T) {
 // ---- table rows: keyboard operations, enable all, undo, bulk edit -------
 
 // Params table at 1280x800: header cells at y=244 (the action cell at
-// x=290), rows at y=272, 300, 328 and the placeholder at 356.
+// x=310), rows at y=272, 300, 328 and the placeholder at 356.
 const (
 	paramsHeaderY = 236
-	checkAllX     = 290
+	checkAllX     = 310
 	row1Y         = 292
 	row2Y         = 320
 	bulkBtnX      = 715
@@ -2374,6 +2374,31 @@ func TestAltArrowsMoveTheRowAndTheEditFollows(t *testing.T) {
 	}
 }
 
+// The drag handle sits in the first 20 px of the table, which starts at x=272.
+const gripCellX = 282
+
+func TestDraggingARowByItsGripMovesItAndAFurtherDragKeepsMovingIt(t *testing.T) {
+	a, _ := newTestApp(t)
+	rowY := func(row int) int { return paramsRow0Y + row*core.RowH }
+	a.step(core.Input{X: gripCellX, Y: rowY(0), Click: true, Held: true}) // press the first row's grip
+	a.step(core.Input{X: gripCellX, Y: rowY(1), Held: true})
+	if got := paramNames(a); !reflect.DeepEqual(got, []string{"order", "q", "sort"}) {
+		t.Fatalf("after one row down: %v", got)
+	}
+	a.step(core.Input{X: gripCellX, Y: rowY(2), Held: true})
+	if got := paramNames(a); !reflect.DeepEqual(got, []string{"order", "sort", "q"}) {
+		t.Fatalf("after two rows down: %v", got)
+	}
+	if !strings.Contains(a.cur().req.URL, "order=desc&sort=stars&q=gioui") {
+		t.Fatalf("the URL follows the order: %q", a.cur().req.URL)
+	}
+	a.step(core.Input{X: gripCellX, Y: rowY(0)}) // release elsewhere
+	a.step(core.Input{X: gripCellX, Y: rowY(0), Held: true})
+	if got := paramNames(a); !reflect.DeepEqual(got, []string{"order", "sort", "q"}) {
+		t.Fatalf("a held button that did not start on a grip must not move rows: %v", got)
+	}
+}
+
 func TestDeleteRemovesTheSelectedRowWhenNothingIsBeingTyped(t *testing.T) {
 	a, _ := newTestApp(t)
 	click(a, valueCellX, paramsRow0Y)
@@ -2435,7 +2460,7 @@ func TestUndoAndRedoOfTableChanges(t *testing.T) {
 		t.Fatalf("redo: %+v url %q", req.Params, req.URL)
 	}
 	a.step(core.Input{Ctrl: true, Undo: true})
-	click(a, 290, row1Y) // a new change after an undo clears redo
+	click(a, 310, row1Y) // a new change after an undo clears redo
 	a.step(core.Input{Ctrl: true, Redo: true})
 	if req.Params[1].Enabled {
 		t.Fatalf("redo must be gone after a new change: %+v", req.Params)
@@ -2775,9 +2800,9 @@ func TestResponseMenu(t *testing.T) {
 // ---- resizable table columns ------------------------------------------------
 
 // The Params table: columns name|value|description at weights 28/40/32;
-// the name|value divider is at x=423, the header row at y=234.
+// the name|value divider is at x=438, the header row at y=234.
 const (
-	nameValueDividerX = 423
+	nameValueDividerX = 438
 	headersPaneTabIdx = 2
 )
 
@@ -2828,8 +2853,8 @@ func TestNarrowColumnsKeepAMinimum(t *testing.T) {
 	a, _ := newTestApp(t)
 	drag(a, nameValueDividerX, 300, paramsHeaderY) // far left
 	w := a.widthsFor(requestPanes[0])
-	// the name column is at least MinColumnPx of the 413px of columns
-	if min := float64(vml.MinColumnPx) / 413 * 100; w.Weights[0] < min-0.5 {
+	// the name column is at least MinColumnPx of the 393px of columns
+	if min := float64(vml.MinColumnPx) / 393 * 100; w.Weights[0] < min-0.5 {
 		t.Fatalf("name weight %v is below the minimum share %v", w.Weights[0], min)
 	}
 }

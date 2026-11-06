@@ -131,6 +131,14 @@ type TableSpec struct {
 	// OnRowMenu runs when a data row is right-clicked, with the pointer position.
 	OnRowMenu func(row, x, y int)
 
+	// OnGrabRow and OnDragOverRow add a drag handle at the start of every
+	// data row: pressing it runs OnGrabRow, and while the button is held
+	// each row under the pointer runs OnDragOverRow. The app owns the drag
+	// (which row, when it ends), so it survives the view being rebuilt
+	// every frame and is done on a release.
+	OnGrabRow     func(row int)
+	OnDragOverRow func(row int)
+
 	// Widths, when set, makes the column dividers draggable. It is owned
 	// by the app, so the sizes and a drag in progress survive the view
 	// being rebuilt every frame.
@@ -176,6 +184,9 @@ type TableEdit struct {
 
 const tableActionW = 36
 
+// tableGripW is the width of the drag handle column.
+const tableGripW = 20
+
 // Table is a zebra-striped grid under an uppercase header with a rule.
 func Table(t TableSpec, opts ...Option) *El {
 	rows := t.Rows
@@ -196,6 +207,7 @@ func Table(t TableSpec, opts ...Option) *El {
 // draggable column dividers on top.
 func tableHeader(t TableSpec) Node {
 	header := Row(H(core.RowH), Bg(core.Panel), BorderB(core.Border),
+		If(t.hasGrip(), Row(W(tableGripW))),
 		If(t.Editable, headerCheck(t)),
 		For(t.Columns, func(i int, name string) Node {
 			return Row(Grow(t.weight(i)), PadX(8), When(i > 0, Separator(7)),
@@ -208,6 +220,9 @@ func tableHeader(t TableSpec) Node {
 	}
 	return Stack(H(core.RowH), header, newEl(colHandlesB{header: header, spec: t}, nil))
 }
+
+// hasGrip reports whether rows have a drag handle.
+func (t TableSpec) hasGrip() bool { return t.OnGrabRow != nil }
 
 func headerCheck(t TableSpec) Node {
 	items := []Item{W(tableActionW), JustifyContent(JustifyCenter), Tooltip("Enable or disable every row"), Checkbox(t.AllChecked)}
@@ -225,6 +240,7 @@ func tableRow(t TableSpec, i int, r TableRow, placeholder, last bool) Node {
 	actions := t.Editable && !placeholder
 	row := []Item{
 		H(core.RowH),
+		If(t.hasGrip(), gripCell(t, i, placeholder)),
 		If(actions, Row(W(tableActionW), JustifyContent(JustifyCenter), OnClick(func() { t.OnToggle(i) }), Tooltip("Enable or disable this row"), Checkbox(r.Checked))),
 		If(placeholder, Row(W(tableActionW))),
 		For(r.Cells, func(j int, s string) Node {
@@ -236,6 +252,9 @@ func tableRow(t TableSpec, i int, r TableRow, placeholder, last bool) Node {
 		}),
 		If(actions, Row(W(tableActionW), JustifyContent(JustifyCenter), OnClick(func() { t.OnDelete(i) }), Tooltip("Delete row"), TrashIcon())),
 		If(placeholder, Row(W(tableActionW))),
+	}
+	if t.OnDragOverRow != nil && !placeholder {
+		row = append(row, OnDragOver(func() { t.OnDragOverRow(i) }))
 	}
 	if t.OnRowMenu != nil && !placeholder {
 		row = append(row, OnRightClick(func(x, y int) { t.OnRowMenu(i, x, y) }))
@@ -251,6 +270,16 @@ func tableRow(t TableSpec, i int, r TableRow, placeholder, last bool) Node {
 		row = append(row, HoverBg(core.Hover)) // the row under the pointer
 	}
 	return Row(row...)
+}
+
+// gripCell is the drag handle of row i; the placeholder row keeps an
+// empty cell so the columns line up.
+func gripCell(t TableSpec, i int, placeholder bool) Node {
+	if placeholder {
+		return Row(W(tableGripW))
+	}
+	return Row(W(tableGripW), JustifyContent(JustifyCenter), Tooltip("Drag to move the row"),
+		OnClick(func() { t.OnGrabRow(i) }), GripIcon(Muted()))
 }
 
 // tableCell is one cell: its text, or the edit field when it is being
@@ -329,6 +358,9 @@ func (h colHandlesB) cells() []*El {
 	off := 0
 	if h.spec.Editable {
 		off = 1 // the "enable all" cell comes first
+	}
+	if h.spec.hasGrip() {
+		off++ // and the drag handle's before it
 	}
 	return h.header.kids[off : off+len(h.spec.Columns)]
 }
