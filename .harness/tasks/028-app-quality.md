@@ -17,7 +17,6 @@ Make the app dependable to ship.
 - Logging view: a place where the user can trace the logs of calls (requests sent, answers, errors, timings).
 - Icons on the right-click menu rows.
 - Support for Windows and macOS (paths, shortcuts with Cmd, packaging, CI builds).
-- Change the mouse cursor while grabbing (drags of rows, tabs, dividers, column handles).
 
 ## Acceptance
 - A checklist of failure paths each with a test; screenshots compared in CI; `make check` passes.
@@ -29,3 +28,4 @@ Make the app dependable to ship.
 - Left: IME and dead keys (depends on Ebitengine's text input), an accessibility pass.
 - Done later: the settings (hamburger) icon turned the dark text color on hover over the banner; `vml.HoverColor` / `hover-color` now sets it to the banner's text token, which the palette tests hold to the banner's contrast.
 - Done later: selection on folded lines follows what is shown (the block's preview): columns, words, triple click and copy use the preview text, lines hidden inside a fold are left out of a selection across it, and select-all still copies the whole text.
+- Done later: the move cursor shows while a table row, a tab or a tree row is dragged (dividers and column handles already had resize cursors).

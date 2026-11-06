@@ -427,6 +427,7 @@ var cursorShapes = map[core.Cursor]ebiten.CursorShapeType{
 	core.CursorDefault: ebiten.CursorShapeDefault,
 	core.CursorResizeH: ebiten.CursorShapeEWResize,
 	core.CursorResizeV: ebiten.CursorShapeNSResize,
+	core.CursorMove:    ebiten.CursorShapeMove,
 }
 
 // Layout implements ebiten.Game. The UI is laid out in logical pixels
@@ -517,6 +518,7 @@ func (a *App) step(in core.Input) {
 		a.commitEdit()
 	}
 	a.dragHover()
+	a.showGrab()
 	a.settleBulk()
 	a.stateTick()
 	a.workspaceTick()

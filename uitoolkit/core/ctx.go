@@ -85,6 +85,7 @@ const (
 	CursorDefault Cursor = iota
 	CursorResizeH        // resize left/right, over a vertical divider
 	CursorResizeV        // resize up/down, over a horizontal divider
+	CursorMove           // something is held and being moved: a row, a tab
 )
 
 // NewCtx returns a context at scale 1.
