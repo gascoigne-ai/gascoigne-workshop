@@ -93,3 +93,66 @@ func TestCodeViewPlainArrowsAndUnfocusedViewsDoNotSelect(t *testing.T) {
 		t.Fatalf("an unfocused view selected %q", v.SelectedText())
 	}
 }
+
+// Selection in a view with folded blocks. A folded line shows
+// `      "o": { ... }`, so columns, words and copied text must follow what
+// is shown, and lines hidden inside the fold are not part of a selection
+// across it. These failed when selection used the unfolded text.
+
+const foldedShown = `      "o": { ... }`
+
+func TestCodeViewTripleClickOnAFoldedLineSelectsWhatItShows(t *testing.T) {
+	v, c, _, r := viewport(t)
+	v.ToggleFold(5)
+	press(v, c, r, colX(c, v, r, 3), rowY(c, v, r, 5), 3)
+	release(v, c, r, 0, 0)
+	if got := v.SelectedText(); got != foldedShown {
+		t.Fatalf("selected %q, want %q", got, foldedShown)
+	}
+}
+
+func TestCodeViewDoubleClickInsideAFoldPreviewSelectsTheRunAroundThePointer(t *testing.T) {
+	v, c, _, r := viewport(t)
+	v.ToggleFold(5)
+	press(v, c, r, colX(c, v, r, 14), rowY(c, v, r, 5), 2)
+	release(v, c, r, 0, 0)
+	// the punctuation run around the dots, which exist only in the preview
+	if got := v.SelectedText(); got != `": { ... }` {
+		t.Fatalf("selected %q, want %q", got, `": { ... }`)
+	}
+}
+
+func TestCodeViewSelectionAcrossAFoldLeavesOutTheHiddenLines(t *testing.T) {
+	v, c, _, r := viewport(t)
+	v.ToggleFold(5) // hides lines 6 and 7; row 6 is line 8
+	press(v, c, r, colX(c, v, r, 0), rowY(c, v, r, 4), 1)
+	dragTo(v, c, r, colX(c, v, r, 5), rowY(c, v, r, 6))
+	release(v, c, r, 0, 0)
+	want := "      \"id\": 2,\n" + foldedShown + "\n    }"
+	if got := v.SelectedText(); got != want {
+		t.Fatalf("selected %q, want %q", got, want)
+	}
+}
+
+func TestCodeViewSelectAllCopiesTheWholeTextEvenWhenBlocksAreFolded(t *testing.T) {
+	v, c, clip, r := viewport(t)
+	v.ToggleFold(5)
+	v.Focused = true
+	c.In = core.Input{X: 5000, Y: 5000, Ctrl: true, SelectAll: true}
+	v.Update(c, r)
+	c.In = core.Input{X: 5000, Y: 5000, Ctrl: true, Copy: true}
+	v.Update(c, r)
+	if clip.text != v.AllText() {
+		t.Fatalf("copied %q, want the whole text", clip.text)
+	}
+}
+
+func TestCodeViewShiftArrowsOnAFoldedLineUseItsShownLength(t *testing.T) {
+	v, c, _, r := viewport(t)
+	v.ToggleFold(5)
+	clickAt(v, c, r, 5, 0)
+	shiftKey(v, c, r, core.EditEnd)
+	if got := v.SelectedText(); got != foldedShown {
+		t.Fatalf("selected %q, want %q", got, foldedShown)
+	}
+}

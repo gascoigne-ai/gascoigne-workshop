@@ -14,7 +14,6 @@ Make the app dependable to ship.
 - Font family setting for the interface, the code views and other text roles.
 - Save the settings in the user config directory (`os.UserConfigDir`), per platform.
 - Save the user's collection state (open tabs, expanded folders, sizes) in the user config directory.
-- Selection in the compact response view does not work correctly on folded items.
 - Logging view: a place where the user can trace the logs of calls (requests sent, answers, errors, timings).
 - Icons on the right-click menu rows.
 - Support for Windows and macOS (paths, shortcuts with Cmd, packaging, CI builds).
@@ -29,3 +28,4 @@ Make the app dependable to ship.
 - Reviewed: ignored errors in `internal/ui` are the clipboard (it reports through `statusClipboard`), cookie jar creation (cannot fail without options) and closes on shutdown; no silent failure path was found.
 - Left: IME and dead keys (depends on Ebitengine's text input), an accessibility pass.
 - Done later: the settings (hamburger) icon turned the dark text color on hover over the banner; `vml.HoverColor` / `hover-color` now sets it to the banner's text token, which the palette tests hold to the banner's contrast.
+- Done later: selection on folded lines follows what is shown (the block's preview): columns, words, triple click and copy use the preview text, lines hidden inside a fold are left out of a selection across it, and select-all still copies the whole text.

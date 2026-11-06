@@ -103,6 +103,15 @@ func (v *CodeView) rows(g codeGeometry, r core.Rect, vis []int) []wrapRow {
 	}, v.wrapCols(g, r))
 }
 
+// end is the rune column the row stops at: a row with no end of its own
+// (a line drawn whole, such as a folded one) runs to the end of its line.
+func (row wrapRow) end(lineLen int) int {
+	if row.to == 0 {
+		return lineLen
+	}
+	return min(row.to, lineLen)
+}
+
 // whole reports whether the row is all of its line, drawn without cutting.
 func (row wrapRow) whole(lineLen int) bool {
 	return row.from == 0 && (row.to >= lineLen || row.to == 0)
@@ -140,8 +149,35 @@ func (v *CodeView) SetLines(lines []Line) {
 	}
 }
 
-// lineText is the plain text of line i.
+// foldedMore is what a folded block without a preview of its own shows
+// after its first line.
+const foldedMore = " ... }"
+
+// shownSpans are the spans line i is drawn with: the preview of a folded
+// block, else the line itself.
+func (v *CodeView) shownSpans(i int) []Span {
+	line := v.Lines[i]
+	if !v.Folded[i] || !line.Foldable {
+		return line.Spans
+	}
+	if len(line.FoldedSpans) > 0 {
+		return line.FoldedSpans
+	}
+	return append(append([]Span(nil), line.Spans...), Span{Text: foldedMore, Style: core.Muted})
+}
+
+// lineText is the plain text of line i as it is shown, so that columns,
+// words and copied text follow what the user sees.
 func (v *CodeView) lineText(i int) string {
+	var b strings.Builder
+	for _, s := range v.shownSpans(i) {
+		b.WriteString(s.Text)
+	}
+	return b.String()
+}
+
+// rawText is the text of line i itself, whether or not it is folded.
+func (v *CodeView) rawText(i int) string {
 	var b strings.Builder
 	for _, s := range v.Lines[i].Spans {
 		b.WriteString(s.Text)
@@ -155,7 +191,7 @@ func (v *CodeView) AllText() string { return v.textOf(0, len(v.Lines)-1) }
 func (v *CodeView) textOf(lo, hi int) string {
 	parts := make([]string, 0, hi-lo+1)
 	for i := lo; i <= hi && i < len(v.Lines); i++ {
-		parts = append(parts, v.lineText(i))
+		parts = append(parts, v.rawText(i))
 	}
 	return strings.Join(parts, "\n")
 }
@@ -188,8 +224,15 @@ func (v *CodeView) SelectedText() string {
 	if !ok {
 		return ""
 	}
+	last := len(v.Lines) - 1
+	if lo == (textPos{}) && hi.line == last && hi.col >= v.lineLen(last) {
+		return v.AllText() // everything is selected: copy it all, not the folds' previews
+	}
 	parts := make([]string, 0, hi.line-lo.line+1)
-	for i := lo.line; i <= hi.line; i++ {
+	for _, i := range v.Visible() {
+		if i < lo.line || i > hi.line {
+			continue
+		}
 		runes := []rune(v.lineText(i))
 		from, to := 0, len(runes)
 		if i == lo.line {
@@ -359,11 +402,7 @@ func (v *CodeView) posAt(x, y int, r core.Rect, g codeGeometry, rows []wrapRow) 
 	if x-g.textX+v.ScrollX < -g.charW/2 {
 		col = row.from
 	}
-	last := v.lineLen(row.line)
-	if row.to < last {
-		last = row.to
-	}
-	return textPos{row.line, min(max(col, row.from), last)}
+	return textPos{row.line, min(max(col, row.from), row.end(v.lineLen(row.line)))}
 }
 
 // pressText starts a selection at p: a double click selects the word,
@@ -488,19 +527,13 @@ func (v *CodeView) Draw(c *core.Ctx, dst *ebiten.Image, r core.Rect) {
 		}
 
 		x := g.textX - v.ScrollX
-		spans, folded := line.Spans, v.Folded[idx] && line.Foldable
-		if folded && len(line.FoldedSpans) > 0 {
-			spans = line.FoldedSpans
-		}
+		spans := v.shownSpans(idx)
 		if !row.whole(v.lineLen(idx)) {
 			spans = cutSpans(spans, row.from, row.to)
 		}
 		for _, sp := range spans {
 			c.TextMid(text, c.F.Mono, sp.Text, x, cell, c.Color(sp.Style))
 			x += c.Width(c.F.Mono, sp.Text)
-		}
-		if folded && len(line.FoldedSpans) == 0 {
-			c.TextMid(text, c.F.Mono, " ... }", x, cell, muted)
 		}
 
 		if row.from > 0 { // a continuation row has no number and no fold arrow
@@ -536,11 +569,11 @@ func (v *CodeView) Selected() bool { _, _, ok := v.selRange(); return ok }
 // into the next selected line also fill one character for the newline.
 func (v *CodeView) drawSelection(c *core.Ctx, dst *ebiten.Image, g codeGeometry, cell core.Rect, row wrapRow, lo, hi textPos) {
 	idx := row.line
-	from, to := row.from, row.to
+	from, to := row.from, row.end(v.lineLen(idx))
 	if idx == lo.line {
 		from = max(from, lo.col)
 	}
-	last := row.to >= v.lineLen(idx) // the row ends its line
+	last := to >= v.lineLen(idx) // the row ends its line
 	if idx == hi.line {
 		to = min(to, hi.col)
 	} else if last {
@@ -566,7 +599,7 @@ func (v *CodeView) Find(query string) []Match {
 	}
 	var found []Match
 	for i := range v.Lines {
-		hay := []rune(v.lineText(i))
+		hay := []rune(v.rawText(i))
 		for col := 0; col+len(needle) <= len(hay); {
 			if equalFold(hay[col:col+len(needle)], needle) {
 				found = append(found, Match{Line: i, Col: col, Len: len(needle)})
