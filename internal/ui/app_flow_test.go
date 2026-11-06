@@ -2766,7 +2766,7 @@ func TestResponseMenu(t *testing.T) {
 	clip := &fakeClip{}
 	a.ctx.Clipboard = clip
 	rightClick(a, 1000, 400)
-	want := []string{"Copy", "Copy body", "Save body...", "Copy as cURL", "", "Select all", "Find"}
+	want := []string{"Copy", "Copy body", "Save body...", "Open in browser", "Copy as cURL", "", "Select all", "Find"}
 	if got := menuLabels(a); !reflect.DeepEqual(got, want) {
 		t.Fatalf("response menu = %q", got)
 	}

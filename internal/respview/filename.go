@@ -39,3 +39,14 @@ func SuggestedFileName(r *model.Response) string {
 	}
 	return "response.txt"
 }
+
+// ContentType is the Content-Type header of the response as received,
+// "" when it has none.
+func ContentType(r *model.Response) string {
+	for _, h := range r.Headers {
+		if strings.EqualFold(h.Name, "Content-Type") {
+			return h.Value
+		}
+	}
+	return ""
+}

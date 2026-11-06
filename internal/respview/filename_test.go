@@ -23,3 +23,19 @@ func TestSuggestedFileNameFollowsTheContentType(t *testing.T) {
 		}
 	}
 }
+
+func TestContentTypeIsTheHeaderValueAsReceived(t *testing.T) {
+	tests := []struct {
+		name    string
+		headers []model.KV
+		want    string
+	}{
+		{"with a charset", []model.KV{{Name: "content-type", Value: "text/html; charset=utf-8"}}, "text/html; charset=utf-8"},
+		{"no header", []model.KV{{Name: "X-A", Value: "b"}}, ""},
+	}
+	for _, tt := range tests {
+		if got := ContentType(&model.Response{Headers: tt.headers}); got != tt.want {
+			t.Errorf("%s: ContentType = %q, want %q", tt.name, got, tt.want)
+		}
+	}
+}

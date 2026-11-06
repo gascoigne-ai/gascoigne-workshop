@@ -188,6 +188,7 @@ func (a *App) responseMenuItems(t *reqTab) []menuItem {
 		}},
 		{label: "Copy body", run: func() { a.copyBody(t) }},
 		{label: "Save body...", disabled: t.resp == nil || t.resp.Err != "", run: func() { a.saveBody(t) }},
+		{label: "Open in browser", disabled: t.resp == nil || t.resp.Err != "", run: func() { a.openInBrowser(t) }},
 		{label: "Copy as cURL", run: func() { a.copyCurl(t) }},
 		menuSeparator,
 		{label: "Select all", shortcut: "Ctrl+A", run: func() { t.view.SelectLines(0, len(t.view.Lines)-1) }},

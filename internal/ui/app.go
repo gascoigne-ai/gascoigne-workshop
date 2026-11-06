@@ -6,6 +6,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/assert"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/preview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/textfmt"
 	"net/http"
 	"net/http/cookiejar"
@@ -198,7 +199,8 @@ type App struct {
 	dropTarget       any                           // the node the pointer is over while dragging
 	dialog           *dialog                       // the open dialog, if any
 	toasts           []toast
-	now              func() time.Time // the clock, replaced in tests
+	now              func() time.Time           // the clock, replaced in tests
+	openBrowser      func(address string) error // opens a URL in the user's browser, replaced in tests
 	sampler          core.Sampler
 	treeScroll       vml.ScrollState
 	sidebarSplit     vml.SplitState // width of the collections sidebar
@@ -272,6 +274,7 @@ func NewApp(opts Options) (*App, error) {
 	a.dragTab = -1
 	a.dirty = true
 	a.now = time.Now
+	a.openBrowser = preview.OpenInBrowser
 	a.openWorkspace(opts.WorkspaceDir)
 	stored, stateErr := state.Load(opts.StatePath)
 	a.initial = stored.Window
