@@ -8,7 +8,6 @@ Make the app dependable to ship.
 ## Scope
 - Window: minimum size, app icon, title with a dirty marker for unsaved edits.
 - Release packaging for Windows and macOS (see below); the screenshot compare in CI is dropped by decision (no golden screenshots).
-- Accessibility pass: contrast is tested; add focus order review and screen reader hints where the platform allows.
 - Windows and macOS: installers and packaging (a `.app` bundle with the icon, a Windows icon resource and zip), and a run on real machines (window, clipboard, file dialogs, browser preview, IME).
 
 ## Acceptance
@@ -29,3 +28,4 @@ Make the app dependable to ship.
 - Done later: font families: Appearance has `Interface font` and `Code font` fields; typing lists matching installed families as buttons, Enter or Apply picks one (`settings.uiFont`, `codeFont`). Installed fonts are found in the background (`internal/fonts`: platform font folders, .ttf and .otf, grouped by the family name inside the file, regular and bold). Left: the same fields as rows of the settings schema when task 030 lands, a monospace-only filter for the code font, `.ttc` collections, italic styles and per-role sizes.
 - Done later: failure paths: `failurepaths_test.go` is the checklist (network, clipboard unreadable, not cURL / OpenAPI / Postman, collection and settings and state and body saves, no response to save or open), each row asserting an error toast or the status line. Wording rule: `<what> failed: <cause>` or `Not a <thing>: <cause>`. The review found one silent failure: a history write error went to the status line and was replaced at once by the send result; history and sent-log errors are now error toasts, and an identical error toast is shown once.
 - Done later: IME and dead keys (decision: test and document the limit): `composed_test.go` pins that composed text (accents, CJK, emoji, decomposed accents) arrives as whole characters in fields and editors and that Backspace removes one. Ebitengine delivers only the finished text, so an in-progress IME composition cannot be shown; this is recorded in architecture.md.
+- Done later: accessibility pass (decision: focus order and hints): `focusorder_test.go` pins the Tab order (sidebar filter, URL field, response view, then around) and checks that every icon-only control in the window has a tooltip. Contrast is tested in the palette tests. A screen reader cannot be supported: Ebitengine draws to a GPU surface and has no accessibility tree, so there is nothing to announce; recorded in architecture.md.
