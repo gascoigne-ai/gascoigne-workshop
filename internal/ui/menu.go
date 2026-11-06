@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -27,9 +26,10 @@ type settingsCategory struct {
 
 // settingsCategories are the dialog's pages, in order.
 var settingsCategories = []settingsCategory{
-	{"appearance", "Appearance", (*App).appearanceView},
+	{"appearance", "Appearance", func(a *App) Node { return a.formPage("Appearance") }},
 	{"colors", "Colors", (*App).colorsView},
 	{"shortcuts", "Shortcuts", (*App).shortcutsView},
+	{"requests", "Requests", func(a *App) Node { return a.formPage("Requests") }},
 }
 
 // settingsCategoryID is the page shown: the chosen one, else the first.
@@ -60,7 +60,9 @@ func (a *App) menuView() Node {
 		Row(Bg(w.Shadow)), // dims the window
 		Col(W(settingsW), H(h), Bg(w.Bg), Control("menu"), Shadow(), FloatCenter(), FocusScope(), Modal(), OnDismiss(func() { a.menu = false }),
 			Row(H(settingsTitleH), PadX(16), AlignItems(AlignCenter), BorderB(w.BorderSoft),
-				Text("Settings", Bold(), Grow(1)),
+				Text("Settings", Bold(), W(70)),
+				Field(&a.settingsSearch, H(28), Grow(1), Bg(w.Sunken), Placeholder("Search settings"), OnChange(func() { a.menuScroll.Y = 0 }), a.textMenuOpt(&a.settingsSearch, nil)),
+				Spacer(W(8)),
 				IconButton(CrossIcon(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(func() { a.menu = false }), Tooltip("Close (Esc)")),
 			),
 			Row(Grow(1),
@@ -83,81 +85,6 @@ func (a *App) navItem(c settingsCategory, open bool) Node {
 		return Row(append(items, Bg(w.AccentSoft), Text(c.label, Bold(), Color(w.AccentLine), Grow(1)))...)
 	}
 	return Row(append(items, HoverBg(w.Hover), Text(c.label, Muted(), Grow(1)))...)
-}
-
-// appearanceView is the first page: theme, sizes, corners and layout.
-func (a *App) appearanceView() Node {
-	return Col(
-		Caption("Theme", H(w.LabelH)),
-		Row(H(w.RowH), Gap(6),
-			For(appearance.AllThemeChoices(), func(_ int, c appearance.ThemeChoice) Node {
-				return a.choice(c.Label, c.ID == a.settings.Theme, func(s *settings.Settings) { s.Theme = c.ID })
-			}),
-		),
-		Spacer(H(w.Gutter)),
-
-		Caption("Text size", H(w.LabelH)),
-		Row(H(w.RowH), Gap(6),
-			For(appearance.TextSizeChoices, func(_ int, c appearance.SizeChoice) Node {
-				return a.choice(c.Label, c.ID == a.settings.TextSize, func(s *settings.Settings) { s.TextSize = c.ID })
-			}),
-		),
-		Spacer(H(w.Gutter)),
-
-		Caption("Interface scale", H(w.LabelH)),
-		Row(H(w.RowH), Gap(8),
-			Slider(&a.scaleSlider, appearance.ScaleMin, appearance.ScaleMax, appearance.ScaleStep, a.scalePct(), OnSlide(func(v int) { a.settings.UIScalePct, a.dirty = v, true }), // live: the UI resizes while dragging
-				SliderMid(settings.DefaultUIScalePct), OnSlideEnd(func(int) { a.saveSettings(func(*settings.Settings) {}) })),
-			Text(fmt.Sprintf("%d%%", a.scaleSlider.Shown(a.scalePct())), W(40), Color(w.Muted)),
-		),
-		Spacer(H(w.Gutter)),
-
-		Caption("Corners", H(w.LabelH)),
-		Row(H(w.RowH), Gap(6),
-			For(appearance.CornerChoices, func(_ int, c appearance.CornerChoice) Node {
-				return a.choice(c.Label, c.ID == appearance.CornerIDOf(a.settings.Corners), func(s *settings.Settings) { s.Corners = c.ID })
-			}),
-		),
-		Spacer(H(w.Gutter)),
-
-		Caption("Gradients", H(w.LabelH)),
-		Row(H(w.RowH), Gap(6),
-			a.choice("On", !a.settings.Flat, func(s *settings.Settings) { s.Flat = false }),
-			a.choice("Off", a.settings.Flat, func(s *settings.Settings) { s.Flat = true }),
-		),
-		Spacer(H(w.Gutter)),
-
-		Caption("Request / response", H(w.LabelH)),
-		Row(H(w.RowH), Gap(6),
-			For(appearance.LayoutChoices, func(_ int, c appearance.LayoutChoice) Node {
-				return a.choice(c.Label, c.ID == a.settings.Layout, func(s *settings.Settings) { s.Layout = c.ID })
-			}),
-		),
-		Spacer(H(w.Gutter)),
-
-		Caption("Contrast", H(w.LabelH)),
-		Row(H(w.RowH), Gap(6),
-			For(appearance.ContrastChoices, func(_ int, c appearance.ContrastChoice) Node {
-				return a.choice(c.Label, c.ID == a.settings.Contrast, func(s *settings.Settings) { s.Contrast = c.ID })
-			}),
-		),
-		Spacer(H(w.Gutter)),
-
-		Caption("Response view", H(w.LabelH)),
-		Row(H(w.RowH), Gap(6),
-			For(responseViews, func(_ int, c struct {
-				id, label    string
-				raw, compact bool
-			}) Node {
-				return a.choice(c.label, c.id == viewIDOf(a.settings.ResponseView), func(s *settings.Settings) { s.ResponseView = c.id })
-			}),
-		),
-		Spacer(H(w.Gutter)),
-
-		a.fontPicker(fontUI, &a.uiFont, "Interface font"),
-		Spacer(H(w.Gutter)),
-		a.fontPicker(fontCode, &a.codeFont, "Code font"),
-	)
 }
 
 // viewIDOf is the response view setting in effect: unknown ids are compact.

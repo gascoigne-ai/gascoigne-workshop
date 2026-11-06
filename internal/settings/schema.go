@@ -240,3 +240,29 @@ func Minimal(s Settings) ([]byte, error) {
 	}
 	return json.MarshalIndent(kept, "", "  ")
 }
+
+// Value is the value of key in s as JSON gives it back (text, a float64
+// for numbers, a bool, a map), or nil when s has none.
+func Value(s Settings, key string) any {
+	value := asMap(s)[key]
+	if number, ok := value.(float64); ok && number == float64(int(number)) {
+		return int(number)
+	}
+	return value
+}
+
+// With is s with key set to value; an unknown key or a value of the
+// wrong type leaves s as it was.
+func With(s Settings, key string, value any) Settings {
+	if _, known := FieldFor(key); !known {
+		return s
+	}
+	current := asMap(s)
+	current[key] = value
+	data, _ := json.Marshal(current)
+	changed := Default()
+	if err := json.Unmarshal(data, &changed); err != nil {
+		return s
+	}
+	return changed
+}

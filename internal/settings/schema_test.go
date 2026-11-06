@@ -210,3 +210,32 @@ func TestCompletionReplacesTheTypedPrefixOnly(t *testing.T) {
 		t.Fatalf("applying the completion gives %q", result)
 	}
 }
+
+func TestValueAndWithReadAndWriteASettingByItsKey(t *testing.T) {
+	s := Default()
+	tests := []struct {
+		key   string
+		value any
+		check func(Settings) bool
+	}{
+		{"layout", "stacked", func(s Settings) bool { return s.Layout == "stacked" }},
+		{"uiScale", 150, func(s Settings) bool { return s.UIScalePct == 150 }},
+		{"flat", true, func(s Settings) bool { return s.Flat }},
+		{"proxy", "http://localhost:8080", func(s Settings) bool { return s.Proxy == "http://localhost:8080" }},
+	}
+	for _, test := range tests {
+		got := With(s, test.key, test.value)
+		if !test.check(got) {
+			t.Errorf("With(%s, %v) = %+v", test.key, test.value, got)
+		}
+		if Value(got, test.key) != test.value {
+			t.Errorf("Value(%s) = %v, want %v", test.key, Value(got, test.key), test.value)
+		}
+	}
+	if Value(s, "nope") != nil {
+		t.Error("an unknown key has a value")
+	}
+	if got := With(s, "nope", 1); !reflect.DeepEqual(got, s) {
+		t.Error("an unknown key changed the settings")
+	}
+}

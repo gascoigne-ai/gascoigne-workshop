@@ -182,6 +182,9 @@ type App struct {
 	ctxMenu          *contextMenu                  // the open context menu, if any
 	bulk             *bulkEdit                     // the table in bulk-edit mode, if any
 	menuScroll       vml.ScrollState               // scroll of the settings dialog's page
+	settingsSearch   vml.TextField                 // filters the settings form
+	settingInputs    map[string]*vml.TextField     // fields of the text and number settings
+	settingNotes     map[string]string             // why a typed value was refused
 	settingsCat      string                        // the settings page shown
 	tabsScroll       vml.ScrollState               // sideways scroll of the request tab strip
 	scaleSlider      vml.SliderState               // drag of the interface scale slider

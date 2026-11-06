@@ -321,7 +321,8 @@ func TestSettingsMenuOpensChangesThemeAndSaves(t *testing.T) {
 		t.Fatal("the three-dot button must open the menu")
 	}
 
-	click(a, lightChipX, themeRowY) // the Light chip
+	a.settingsSearch = vml.NewTextField("theme") // brings the Theme setting to the top
+	clickText(t, a, "Light", 0)
 	if a.settings.Theme != "light" || !a.menu {
 		t.Fatalf("theme %q, menu open %v (choosing must keep it open)", a.settings.Theme, a.menu)
 	}
@@ -333,7 +334,8 @@ func TestSettingsMenuOpensChangesThemeAndSaves(t *testing.T) {
 		t.Fatalf("saved %+v err %v", saved, err)
 	}
 
-	click(a, largeChipX, textSizeRowY) // the Large text size chip
+	a.settingsSearch = vml.NewTextField("text size")
+	clickText(t, a, "Large", 0)
 	if a.ctx.Th.FontSize != 16 {
 		t.Fatalf("font size = %v, want 16", a.ctx.Th.FontSize)
 	}
@@ -1667,16 +1669,13 @@ func TestResizeCursorOverTheDividers(t *testing.T) {
 }
 
 // Layout chooser at the bottom of the settings menu (below the text size row).
-const (
-	layoutSideX    = 584
-	layoutStackedX = 866
-	layoutRowY     = 526
-)
+const ()
 
 func TestLayoutSettingStacksThePanesAndIsSaved(t *testing.T) {
 	a, path := newTestApp(t)
 	click(a, menuBtnX, menuBtnY)
-	click(a, layoutStackedX, layoutRowY)
+	a.settingsSearch = vml.NewTextField("request and response")
+	clickText(t, a, "Stacked", 0)
 	if a.settings.Layout != "stacked" {
 		t.Fatalf("Layout = %q", a.settings.Layout)
 	}
@@ -1697,7 +1696,7 @@ func TestLayoutSettingStacksThePanesAndIsSaved(t *testing.T) {
 	}
 	_ = tab
 	click(a, menuBtnX, menuBtnY)
-	click(a, layoutSideX, layoutRowY)
+	clickText(t, a, "Side by side", 0)
 	if a.settings.Layout != "side" {
 		t.Fatalf("Layout = %q", a.settings.Layout)
 	}
@@ -2866,27 +2865,18 @@ func TestNarrowColumnsKeepAMinimum(t *testing.T) {
 // y=560 (Selection), 588, 616, 644 (Accent); field at x=1170, Reset at
 // x=1234; the "Reset colors" button under the last row.
 const (
-	contrastNormalX = 584
-	contrastHighX   = 866
-	contrastRowY    = 588
-	colorRow0Y      = 216
-	colorFieldX     = 589
-	colorResetX     = 652
-	resetColorsX    = 496
-	resetColorsY    = 328
+	colorRow0Y   = 216
+	colorFieldX  = 589
+	colorResetX  = 652
+	resetColorsX = 496
+	resetColorsY = 328
 )
 
 // The settings dialog at 1280x800: 760x560 at (260, 120), a 44px title
 // bar, a 170px list of pages on the left and the page's content from
 // x=446, y=180. Appearance sections are 62px apart: Theme, Text size,
 // Interface scale, Corners, Gradients, Request / response, Contrast.
-const (
-	themeRowY        = 216
-	responseViewRowY = 650 // below Contrast, once Response view is added to Appearance
-	textSizeRowY     = 278
-	lightChipX       = 866
-	largeChipX       = 913
-)
+const ()
 
 // openSettingsPage opens the settings dialog on the page with the given id.
 func openSettingsPage(t *testing.T, id string) (*App, string) {
@@ -2914,8 +2904,9 @@ func typeColor(a *App, tok core.Token, row int, text string) {
 
 func TestContrastChooserStrengthensTheColorsAndIsSaved(t *testing.T) {
 	a, path := openSettingsMenu(t)
+	a.settingsSearch = vml.NewTextField("contrast")
 	before := theming.ContrastRatio(a.ctx.Th.Color(core.Selection), a.ctx.Th.Color(core.Text))
-	click(a, contrastHighX, contrastRowY)
+	clickText(t, a, "High", 0)
 	if a.settings.Contrast != "high" {
 		t.Fatalf("Contrast = %q", a.settings.Contrast)
 	}
@@ -2926,7 +2917,7 @@ func TestContrastChooserStrengthensTheColorsAndIsSaved(t *testing.T) {
 	if saved, _ := settings.Load(path); saved.Contrast != "high" {
 		t.Fatalf("saved %+v", saved)
 	}
-	click(a, contrastNormalX, contrastRowY)
+	clickText(t, a, "Normal", 0)
 	if a.settings.Contrast != "normal" || theming.ContrastRatio(a.ctx.Th.Color(core.Selection), a.ctx.Th.Color(core.Text)) != before {
 		t.Fatal("back to normal restores the default colors")
 	}
@@ -2995,16 +2986,16 @@ func TestResetButtonsRestoreTheDefaults(t *testing.T) {
 func TestSwitchingThemeShowsThatThemesColorsAndKeepsEachThemesOverrides(t *testing.T) {
 	a, _ := openSettingsPage(t, "colors")
 	typeColor(a, core.Selection, 0, "#223344")
-	a.settingsCat = "appearance"
+	a.settingsCat, a.settingsSearch = "appearance", vml.NewTextField("theme")
 	a.step(core.Input{})
-	click(a, lightChipX, themeRowY) // the Light theme chip
+	clickText(t, a, "Light", 0)
 	if a.ctx.Th.Color(core.Selection) != appearance.ThemeFor("light", "medium").Color(core.Selection) {
 		t.Fatal("the dark override must not leak into the light theme")
 	}
 	if a.colorInput(core.Selection).Text != theming.FormatHex(appearance.ThemeFor("light", "medium").Color(core.Selection)) {
 		t.Fatalf("the field must show the light theme's color, got %q", a.colorInput(core.Selection).Text)
 	}
-	click(a, 584, themeRowY) // back to Dark
+	clickText(t, a, "Dark", 0) // back to Dark
 	if a.ctx.Th.Color(core.Selection) != core.RGB(0x223344) {
 		t.Fatal("the dark override is remembered")
 	}
@@ -3528,14 +3519,15 @@ func TestResponseViewChipsAreCompactPrettyRawInThatOrder(t *testing.T) {
 
 func TestResponseViewSettingAppliesToOpenTabsAndIsSaved(t *testing.T) {
 	a, path := openSettingsPage(t, "appearance")
-	click(a, 537, responseViewRowY) // Compact
+	a.settingsSearch = vml.NewTextField("response view")
+	clickText(t, a, "Compact", 0)
 	if !a.cur().compact || a.settings.ResponseView != "compact" {
 		t.Fatalf("compact %v setting %q", a.cur().compact, a.settings.ResponseView)
 	}
 	if saved, _ := settings.Load(path); saved.ResponseView != "compact" {
 		t.Fatalf("saved %+v", saved)
 	}
-	click(a, 725, responseViewRowY) // Pretty
+	clickText(t, a, "Pretty", 0)
 	if a.cur().compact || a.cur().raw || a.settings.ResponseView != "pretty" {
 		t.Fatalf("compact %v raw %v setting %q", a.cur().compact, a.cur().raw, a.settings.ResponseView)
 	}

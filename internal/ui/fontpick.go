@@ -106,14 +106,13 @@ func (a *App) scanFonts() {
 
 // fontPicker is the field of one font role with the families that match
 // what was typed, as buttons.
-func (a *App) fontPicker(role fontRole, field *TextField, label string) Node {
+func (a *App) fontPicker(role fontRole, field *TextField) Node {
 	apply := func() { a.setFont(role, field.Text) }
 	note, noteColor := a.fontNotes[role], w.Error
 	if note == "" && len(a.families) == 0 {
 		note, noteColor = "Looking for installed fonts...", w.Muted
 	}
 	return Col(
-		Caption(label, H(w.LabelH)),
 		Row(H(w.RowH), Gap(6),
 			Field(field, Grow(1), Bg(w.Sunken), Placeholder("Built-in"), OnEnter(apply), a.textMenuOpt(field, nil)),
 			Button("Apply", W(64), OnClick(apply)),

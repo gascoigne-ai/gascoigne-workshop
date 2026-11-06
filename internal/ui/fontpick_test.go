@@ -102,8 +102,8 @@ func TestTheAppearancePageHasFontFieldsWithSuggestions(t *testing.T) {
 	a, _ := newTestApp(t)
 	a.families = testFamilies(t)
 	a.uiFont = NewTextField("mono")
-	dump := Dump(a.appearanceView())
-	for _, want := range []string{"INTERFACE FONT", "CODE FONT", `text="Go Mono"`} {
+	dump := Dump(a.formPage("Appearance"))
+	for _, want := range []string{"Interface font", "Code font", `text="Go Mono"`} {
 		if !strings.Contains(dump, want) {
 			t.Errorf("appearance page lacks %q", want)
 		}

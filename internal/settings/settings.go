@@ -113,10 +113,12 @@ func Load(path string) (Settings, error) {
 	return s, nil
 }
 
-// Save writes s to path, creating its directory. The file is replaced
+// Save writes s to path, creating its directory. Only what differs from
+// the defaults is written, so the file shows what the user changed and a
+// reset leaves no trace. The file is replaced
 // atomically so a crash cannot leave half a file behind.
 func (s Settings) Save(path string) error {
-	data, err := json.MarshalIndent(s, "", "  ")
+	data, err := Minimal(s)
 	if err != nil {
 		return fmt.Errorf("encode settings: %w", err)
 	}
