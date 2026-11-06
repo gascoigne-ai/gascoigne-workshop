@@ -13,7 +13,7 @@ import (
 // built into the window's Stack after everything else, newest on top.
 
 const (
-	menuListW    = 220
+	menuListW    = 250 // room for the icon column (menuIconW) and the longest labels
 	menuRowH     = 24
 	menuSepH     = 9
 	menuPad      = 4
@@ -29,6 +29,7 @@ const (
 // menuItem is one row of a context menu. A separator has no label.
 type menuItem struct {
 	label, shortcut string
+	icon            string // an icon name; "" takes the one the label's start maps to (menuIcons)
 	disabled        bool
 	separator       bool
 	run             func()
@@ -129,7 +130,12 @@ func (a *App) menuRow(m *contextMenu, i int, it menuItem) Node {
 	case i == m.hot:
 		look = Bg(w.Selected)
 	}
-	return Row(H(menuRowH), PadX(10), Gap(8), AlignItems(AlignBaseline), Control("row"), look, OnClick(func() { a.runMenuItem(i) }),
+	var icon Node = Spacer(W(menuIconW))
+	if name := menuIcon(it); name != "" {
+		icon = Icon(name, W(menuIconW), Color(color))
+	}
+	return Row(H(menuRowH), PadX(10), Gap(8), AlignItems(AlignCenter), Control("row"), look, OnClick(func() { a.runMenuItem(i) }),
+		icon,
 		Text(it.label, Color(color)),
 		Spacer(),
 		Text(it.shortcut, Small(), Muted()),
