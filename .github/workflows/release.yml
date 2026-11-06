@@ -5,7 +5,7 @@ on:
 permissions:
   contents: write
 jobs:
-  release:
+  linux:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,7 +21,63 @@ jobs:
           name=gascoigne-workshop-${GITHUB_REF_NAME}-linux-amd64
           xvfb-run -a make install PREFIX=/usr DESTDIR="$PWD/dist/$name"
           tar -C dist -czf "$name.tar.gz" "$name"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: "*.tar.gz"
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Build the app bundle
+        run: |
+          name=gascoigne-workshop-${GITHUB_REF_NAME}-macos-arm64
+          go build -o bin/workshop ./cmd/workshop
+          packaging/macos/make-app.sh "${GITHUB_REF_NAME#v}" bin/workshop dist
+          ditto -c -k --keepParent "dist/Gascoigne Workshop.app" "$name.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: "*.zip"
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Build the zip
+        run: |
+          name=gascoigne-workshop-${GITHUB_REF_NAME}-windows-amd64
+          mkdir -p "dist/$name"
+          go build -ldflags "-H=windowsgui" -o "dist/$name/gascoigne-workshop.exe" ./cmd/workshop
+          go build -o bin/workshop.exe ./cmd/workshop
+          bin/workshop.exe -icon-png "dist/$name/icon.png"
+          cd dist && 7z a -tzip "../$name.zip" "$name"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: "*.zip"
+  release:
+    needs: [linux, macos, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: assets
+          merge-multiple: true
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" ./*.tar.gz --generate-notes --title "$GITHUB_REF_NAME"
+          GH_REPO: ${{ github.repository }}
+        run: gh release create "$GITHUB_REF_NAME" assets/* --generate-notes --title "$GITHUB_REF_NAME"
