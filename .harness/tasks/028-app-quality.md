@@ -11,7 +11,6 @@ Make the app dependable to ship.
 - Text input: IME and dead keys.
 - CI workflow (`make check` plus the screenshot compare), release packaging and a desktop entry.
 - Accessibility pass: contrast is tested; add focus order review and screen reader hints where the platform allows.
-- Font family setting for the interface, the code views and other text roles.
 - Windows and macOS: installers and packaging (a `.app` bundle with the icon, a Windows icon resource and zip), and a run on real machines (window, clipboard, file dialogs, browser preview, IME).
 
 ## Acceptance
@@ -29,3 +28,4 @@ Make the app dependable to ship.
 - Done later: right-click menu rows have icons: `menuItem.icon`, else the table `menuIcons` by the first word of the label (`Copy`, `Cut`, `Paste`, `Delete`, `Rename`, `Close`, `Find`, `New`, `Save`, `Open`, `Undo`...); rows without one keep an empty icon column so labels line up. Seven new icons (pencil, scissors, clipboard, save, external, undo, redo). Not looked at in a live window.
 - Done later: call trace: a `Log` button in the status bar opens a dialog with the last 500 entries (request sent, answer with status, time and size, failures, connections opened, lost or refused), a filter and Clear; in memory only. Messages of an open socket stay in the Messages pane.
 - Done later: Windows and macOS groundwork: the code builds for both (CI job `build` on windows and macos runners runs `go build` and `go vet`; a Windows cross build and a macOS vet pass locally); the shortcut modifier is Command on macOS (`core.PrimaryDown`) and every shown key text says `Cmd` there (`core.PlatformKeyText`; stored bindings keep `Ctrl`); paths use `os.UserConfigDir` and `filepath`, the browser preview has its per-OS opener. Not run on either system.
+- Done later: font families: Appearance has `Interface font` and `Code font` fields; typing lists matching installed families as buttons, Enter or Apply picks one (`settings.uiFont`, `codeFont`). Installed fonts are found in the background (`internal/fonts`: platform font folders, .ttf and .otf, grouped by the family name inside the file, regular and bold). Left: the same fields as rows of the settings schema when task 030 lands, a monospace-only filter for the code font, `.ttc` collections, italic styles and per-role sizes.

@@ -104,6 +104,11 @@ func (a *App) appearanceView() Node {
 		),
 		Spacer(H(w.Gutter)),
 
+		a.fontPicker(fontUI, &a.uiFont, "Interface font"),
+		Spacer(H(w.Gutter)),
+		a.fontPicker(fontCode, &a.codeFont, "Code font"),
+		Spacer(H(w.Gutter)),
+
 		Caption("Interface scale", H(w.LabelH)),
 		Row(H(w.RowH), Gap(8),
 			Slider(&a.scaleSlider, appearance.ScaleMin, appearance.ScaleMax, appearance.ScaleStep, a.scalePct(), OnSlide(func(v int) { a.settings.UIScalePct, a.dirty = v, true }), // live: the UI resizes while dragging

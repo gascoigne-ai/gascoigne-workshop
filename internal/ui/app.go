@@ -17,6 +17,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/fonts"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
@@ -198,6 +199,9 @@ type App struct {
 	treeFocus        bool                          // the tree has the keyboard
 	filter           vml.TextField                 // the sidebar filter
 	sent             []history.Sent                // requests sent in this workspace, newest first
+	uiFont, codeFont vml.TextField                 // the font family fields of the settings
+	families         []fonts.Family                // installed font families, once scanned
+	fontNotes        map[fontRole]string           // why a font name was refused
 	trace            []traceEntry                  // the call trace, oldest first
 	traceFilter      vml.TextField                 // narrows the trace view
 	traceCode        vml.CodeView                  // the trace view
@@ -243,6 +247,7 @@ type Options struct {
 	SettingsPath     string // settings file; "" keeps settings in memory
 	StatePath        string // remembered UI state; "" keeps it in memory
 	ThemesDir        string // folder of user theme files (*.json); "" for none
+	ScanFonts        bool   // look for installed fonts in the background, to apply the saved font families
 	OpenMenu         bool   // start with the settings menu open
 	WorkspaceDir     string // collection folder; "" uses the remembered one, else the built-in sample
 	DefaultWorkspace string // where saving goes when there is no workspace yet
@@ -289,6 +294,10 @@ func NewApp(opts Options) (*App, error) {
 	a.dirty = true
 	a.now = time.Now
 	a.openBrowser = preview.OpenInBrowser
+	a.uiFont, a.codeFont = vml.NewTextField(st.UIFont), vml.NewTextField(st.CodeFont)
+	if opts.ScanFonts {
+		a.scanFonts()
+	}
 	a.openWorkspace(opts.WorkspaceDir)
 	stored, stateErr := state.Load(opts.StatePath)
 	a.initial = stored.Window

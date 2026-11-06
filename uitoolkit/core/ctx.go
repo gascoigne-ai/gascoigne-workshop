@@ -19,18 +19,36 @@ import (
 // Fonts are the three faces the toolkit draws with.
 type Fonts struct{ UI, Small, Mono, Bold, SmallBold *text.GoTextFace }
 
-// newFonts builds the faces from the embedded Go fonts, sized for a
-// display with the given device scale factor.
-func newFonts(th Theme, scale float64) (Fonts, error) {
-	regular, err := text.NewGoTextFaceSource(bytes.NewReader(goregular.TTF))
+// FontData is the content of a regular and a bold font file. The zero
+// value means the embedded Go font.
+type FontData struct{ Regular, Bold []byte }
+
+// withDefault is d, or the embedded fonts when d is empty.
+func (d FontData) withDefault(regular, bold []byte) FontData {
+	if len(d.Regular) == 0 {
+		return FontData{Regular: regular, Bold: bold}
+	}
+	if len(d.Bold) == 0 {
+		d.Bold = d.Regular
+	}
+	return d
+}
+
+// newFonts builds the faces from the chosen fonts (the embedded Go fonts
+// where none was chosen), sized for a display with the given device scale
+// factor.
+func newFonts(th Theme, scale float64, chosen Choice) (Fonts, error) {
+	ui := chosen.UI.withDefault(goregular.TTF, gobold.TTF)
+	code := chosen.Code.withDefault(gomono.TTF, gobold.TTF)
+	regular, err := text.NewGoTextFaceSource(bytes.NewReader(ui.Regular))
 	if err != nil {
 		return Fonts{}, fmt.Errorf("load regular font: %w", err)
 	}
-	bold, err := text.NewGoTextFaceSource(bytes.NewReader(gobold.TTF))
+	bold, err := text.NewGoTextFaceSource(bytes.NewReader(ui.Bold))
 	if err != nil {
 		return Fonts{}, fmt.Errorf("load bold font: %w", err)
 	}
-	mono, err := text.NewGoTextFaceSource(bytes.NewReader(gomono.TTF))
+	mono, err := text.NewGoTextFaceSource(bytes.NewReader(code.Regular))
 	if err != nil {
 		return Fonts{}, fmt.Errorf("load mono font: %w", err)
 	}
@@ -43,13 +61,19 @@ func newFonts(th Theme, scale float64) (Fonts, error) {
 	}, nil
 }
 
+// Choice is the fonts picked for the interface and for code.
+type Choice struct{ UI, Code FontData }
+
 // Ctx is what widgets draw and hit-test with: theme, fonts and this
 // frame's input. Widgets work in logical pixels; Scale is the number of
 // device pixels per logical pixel, applied only when drawing.
 type Ctx struct {
 	Th Theme
 	F  Fonts
-	In Input
+	// Chosen are the fonts picked by the user; the zero value is the
+	// embedded ones. They survive theme and scale changes.
+	Chosen Choice
+	In     Input
 	// PointerX and PointerY are the pointer position in logical pixels as
 	// sampled, set by vml.Update before any container hides it from its
 	// children; a drag that leaves its container keeps following the
@@ -90,7 +114,7 @@ const (
 
 // NewCtx returns a context at scale 1.
 func NewCtx(th Theme) (*Ctx, error) {
-	fonts, err := newFonts(th, 1)
+	fonts, err := newFonts(th, 1, Choice{})
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +127,7 @@ func (c *Ctx) SetScale(scale float64) error {
 	if scale <= 0 || scale == c.Scale {
 		return nil
 	}
-	fonts, err := newFonts(c.Th, scale)
+	fonts, err := newFonts(c.Th, scale, c.Chosen)
 	if err != nil {
 		return err
 	}
@@ -113,11 +137,23 @@ func (c *Ctx) SetScale(scale float64) error {
 
 // SetTheme switches theme and rebuilds the fonts, whose sizes the theme sets.
 func (c *Ctx) SetTheme(th Theme) error {
-	fonts, err := newFonts(th, c.Scale)
+	fonts, err := newFonts(th, c.Scale, c.Chosen)
 	if err != nil {
 		return err
 	}
 	c.Th, c.F = th, fonts
+	return nil
+}
+
+// SetFonts switches the interface and code fonts; empty data is the
+// embedded font. Fonts that cannot be read change nothing.
+func (c *Ctx) SetFonts(ui, code FontData) error {
+	chosen := Choice{UI: ui, Code: code}
+	fonts, err := newFonts(c.Th, c.Scale, chosen)
+	if err != nil {
+		return err
+	}
+	c.Chosen, c.F = chosen, fonts
 	return nil
 }
 

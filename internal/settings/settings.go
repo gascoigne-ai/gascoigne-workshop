@@ -47,6 +47,11 @@ type Settings struct {
 	// display's own scale factor; 0 means the default.
 	UIScalePct int `json:"uiScale"`
 
+	// UIFont and CodeFont are the family names of the interface and code
+	// fonts, found among the installed fonts; "" is the built-in Go font.
+	UIFont   string `json:"uiFont,omitempty"`
+	CodeFont string `json:"codeFont,omitempty"`
+
 	// Workspace is the folder the collection is loaded from and saved to;
 	// "" keeps the built-in sample collection in memory.
 	Workspace string `json:"workspace,omitempty"`
