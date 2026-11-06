@@ -11,7 +11,6 @@ Make the app dependable to ship.
 - Text input: IME and dead keys.
 - CI workflow (`make check` plus the screenshot compare), release packaging and a desktop entry.
 - Accessibility pass: contrast is tested; add focus order review and screen reader hints where the platform allows.
-- Hamburger (settings) button has the wrong color on hover: derive the hover color from the contrast rules instead of a fixed token.
 - Font family setting for the interface, the code views and other text roles.
 - Save the settings in the user config directory (`os.UserConfigDir`), per platform.
 - Save the user's collection state (open tabs, expanded folders, sizes) in the user config directory.
@@ -29,3 +28,4 @@ Make the app dependable to ship.
 - Done later: a drawn program icon (`internal/appicon`, set as the window icon, `-icon-png FILE` writes a 256 px PNG), `packaging/gascoigne-workshop.desktop` and `make install PREFIX=...` (binary, desktop entry, icon); a GitHub Actions workflow running `make check` under xvfb.
 - Reviewed: ignored errors in `internal/ui` are the clipboard (it reports through `statusClipboard`), cookie jar creation (cannot fail without options) and closes on shutdown; no silent failure path was found.
 - Left: IME and dead keys (depends on Ebitengine's text input), an accessibility pass.
+- Done later: the settings (hamburger) icon turned the dark text color on hover over the banner; `vml.HoverColor` / `hover-color` now sets it to the banner's text token, which the palette tests hold to the banner's contrast.

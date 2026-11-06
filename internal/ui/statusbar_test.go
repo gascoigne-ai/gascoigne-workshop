@@ -33,7 +33,7 @@ func TestHeaderTemplateMatchesTheGoView(t *testing.T) {
 		a.envChip(),
 		Spacer(W(w.Gutter)),
 		Row(W(headerH), toggle, Tooltip(a.hint("Settings", "settings")),
-			DotsIcon(Grow(1), Color(w.HeroMuted)),
+			DotsIcon(Grow(1), Color(w.HeroMuted), HoverColor(w.HeroText)),
 		),
 	)
 	tplView := a.header()

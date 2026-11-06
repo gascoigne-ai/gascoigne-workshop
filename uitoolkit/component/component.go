@@ -201,6 +201,7 @@ var attributes = map[string]func(v string) (vml.Option, error){
 	"border-l":        tokenAttr(vml.BorderL),
 	"border-inset":    intAttr(vml.BorderInset),
 	"hover-bg":        tokenAttr(vml.HoverBg),
+	"hover-color":     tokenAttr(vml.HoverColor),
 	"float-center":    flagAttr("float-center", vml.FloatCenter),
 	"float-at":        intsAttr("float-at", 2, func(n []int) vml.Option { return vml.FloatAt(n[0], n[1]) }),
 	"float-top-right": intsAttr("float-top-right", 2, func(n []int) vml.Option { return vml.FloatTopRight(n[0], n[1]) }),

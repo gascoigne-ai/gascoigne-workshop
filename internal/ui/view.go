@@ -194,7 +194,7 @@ func (a *App) header() Node {
 		  <slot name="env"/>
 		  <spacer w="12"/>
 		  <row w="44" onclick="toggleMenu" tip="{{settingsTip}}">
-		    <icon name="dots" grow="1" color="hero-muted"/>
+		    <icon name="dots" grow="1" color="hero-muted" hover-color="hero-text"/>
 		  </row>
 		</row>`,
 		component.Scope{

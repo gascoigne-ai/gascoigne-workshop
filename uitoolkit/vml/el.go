@@ -82,6 +82,7 @@ type El struct {
 	bg, border, borderT, borderB, borderL, borderR core.Token
 	borderInset                                    int // BorderL and BorderR stop this far from the top and bottom
 	hoverBg                                        core.Token
+	hoverColor                                     core.Token // an icon's color under the pointer
 	shadow, clip, lighten                          bool
 
 	text                             string
@@ -272,6 +273,12 @@ func Tooltip(text string) Option { return func(e *El) { e.tip = text } }
 
 // HoverBg fills the element while the pointer is over it.
 func HoverBg(t core.Token) Option { return func(e *El) { e.hoverBg = t } }
+
+// HoverColor is the color an icon takes while the pointer is over it, in
+// place of the hover token of the icon itself. Use it where that token
+// does not contrast with the surface behind the icon, such as on the
+// banner.
+func HoverColor(t core.Token) Option { return func(e *El) { e.hoverColor = t } }
 
 // Lighten brightens the background while the pointer is over it.
 func Lighten() Option { return func(e *El) { e.lighten = true } }

@@ -120,6 +120,21 @@ func (iconB) measure(e *El, _ *core.Ctx, _ int) (int, int) {
 	return int(math.Ceil(ic.w)), int(math.Ceil(ic.h))
 }
 
+// iconToken is the color token an icon is drawn in: its color, and under
+// the pointer the element's HoverColor, else the icon's own hover token.
+func iconToken(e *El, ic *svgIcon, hovered bool) core.Token {
+	if !hovered {
+		return e.color(nil, core.Muted)
+	}
+	switch {
+	case e.hoverColor != "":
+		return e.hoverColor
+	case ic.hover != "none" && ic.hover != "":
+		return ic.hover
+	}
+	return e.color(nil, core.Muted)
+}
+
 func (iconB) draw(e *El, c *core.Ctx, dst *ebiten.Image) {
 	ic, ok := lookupIcon(e.iconName)
 	if !ok {
@@ -137,10 +152,7 @@ func (iconB) draw(e *El, c *core.Ctx, dst *ebiten.Image) {
 	}
 	ox := float64(r.X) + (float64(r.W)-ic.w*k)/2
 	oy := float64(r.Y) + (float64(r.H)-ic.h*k)/2
-	cur := e.color(c, core.Muted)
-	if c.Hovered(r) && ic.hover != "none" && ic.hover != "" {
-		cur = ic.hover
-	}
+	cur := iconToken(e, ic, c.Hovered(r))
 	s := k * c.Scale
 	weight := 1.0 // the theme can thicken or thin every icon
 	if c.Th.IconStroke > 0 {

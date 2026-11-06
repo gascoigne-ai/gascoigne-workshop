@@ -311,3 +311,11 @@ func TestIncludeBuildsAnotherDefinedTemplateWithTheSameScope(t *testing.T) {
 		t.Fatal("an include without a name must fail")
 	}
 }
+
+func TestIconHoverColorAttributeMirrorsTheGoOption(t *testing.T) {
+	got := vml.Dump(build(t, `<icon name="dots" color="hero-muted" hover-color="hero-text"/>`, nil))
+	want := vml.Dump(vml.Icon("dots", vml.Color("hero-muted"), vml.HoverColor("hero-text")))
+	if got != want {
+		t.Fatalf("got\n%s\nwant\n%s", got, want)
+	}
+}
