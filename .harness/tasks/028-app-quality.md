@@ -6,7 +6,6 @@ status: todo
 Make the app dependable to ship.
 
 ## Scope
-- Error states for every failure a user can see (network, parse, disk, clipboard): one wording rule, a toast or an in-pane message, never a silent failure; a review pass over `internal/ui`.
 - Window: minimum size, app icon, title with a dirty marker for unsaved edits.
 - Text input: IME and dead keys.
 - CI workflow (`make check` plus the screenshot compare), release packaging and a desktop entry.
@@ -29,3 +28,4 @@ Make the app dependable to ship.
 - Done later: call trace: a `Log` button in the status bar opens a dialog with the last 500 entries (request sent, answer with status, time and size, failures, connections opened, lost or refused), a filter and Clear; in memory only. Messages of an open socket stay in the Messages pane.
 - Done later: Windows and macOS groundwork: the code builds for both (CI job `build` on windows and macos runners runs `go build` and `go vet`; a Windows cross build and a macOS vet pass locally); the shortcut modifier is Command on macOS (`core.PrimaryDown`) and every shown key text says `Cmd` there (`core.PlatformKeyText`; stored bindings keep `Ctrl`); paths use `os.UserConfigDir` and `filepath`, the browser preview has its per-OS opener. Not run on either system.
 - Done later: font families: Appearance has `Interface font` and `Code font` fields; typing lists matching installed families as buttons, Enter or Apply picks one (`settings.uiFont`, `codeFont`). Installed fonts are found in the background (`internal/fonts`: platform font folders, .ttf and .otf, grouped by the family name inside the file, regular and bold). Left: the same fields as rows of the settings schema when task 030 lands, a monospace-only filter for the code font, `.ttc` collections, italic styles and per-role sizes.
+- Done later: failure paths: `failurepaths_test.go` is the checklist (network, clipboard unreadable, not cURL / OpenAPI / Postman, collection and settings and state and body saves, no response to save or open), each row asserting an error toast or the status line. Wording rule: `<what> failed: <cause>` or `Not a <thing>: <cause>`. The review found one silent failure: a history write error went to the status line and was replaced at once by the send result; history and sent-log errors are now error toasts, and an identical error toast is shown once.

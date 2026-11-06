@@ -213,7 +213,7 @@ func (a *App) saveHistory(t *reqTab) {
 		entries = append(entries, historyEntry(earlier.resp, earlier.at))
 	}
 	if err := history.Save(dir, key, entries); err != nil {
-		a.status = err.Error()
+		a.toast("History is not being saved: "+err.Error(), true)
 	}
 }
 
@@ -225,7 +225,7 @@ func (a *App) loadHistory(req *model.Request) []respEntry {
 	}
 	saved, err := history.Load(dir, key)
 	if err != nil {
-		a.status = err.Error()
+		a.toast("History could not be read: "+err.Error(), true)
 		return nil
 	}
 	entries := make([]respEntry, 0, len(saved))

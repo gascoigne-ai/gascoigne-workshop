@@ -214,6 +214,9 @@ func (a *App) dialogView() Node {
 // toast shows a message: an info one fades after a few seconds, an
 // error stays until it is clicked.
 func (a *App) toast(text string, isErr bool) {
+	if isErr && a.hasToast(text) {
+		return // the same failure on every frame or send is one message
+	}
 	t := toast{text: text, isErr: isErr}
 	if !isErr {
 		t.expires = a.now().Add(infoToastFor)
@@ -223,6 +226,16 @@ func (a *App) toast(text string, isErr bool) {
 	if len(a.toasts) > maxToasts {
 		a.toasts = a.toasts[len(a.toasts)-maxToasts:]
 	}
+}
+
+// hasToast reports whether an error toast with exactly this text is shown.
+func (a *App) hasToast(text string) bool {
+	for _, t := range a.toasts {
+		if t.isErr && t.text == text {
+			return true
+		}
+	}
+	return false
 }
 
 // pruneToasts drops the info toasts whose time is up.

@@ -29,7 +29,7 @@ func (a *App) recordSent(t *reqTab, resp *model.Response) {
 		return
 	}
 	if err := history.AppendSent(dir, sent); err != nil {
-		a.status = err.Error()
+		a.toast("History is not being saved: "+err.Error(), true)
 	}
 }
 
@@ -41,7 +41,7 @@ func (a *App) loadSent() {
 	}
 	sent, err := history.LoadSent(dir)
 	if err != nil {
-		a.status = err.Error()
+		a.toast("History could not be read: "+err.Error(), true)
 		return
 	}
 	a.sent = sent
