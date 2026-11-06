@@ -24,4 +24,5 @@ The response viewer shows text bodies well. Missing: other body kinds, long bodi
 - Done later: image preview (PNG, JPEG, GIF, sniffed from the bytes, scaled down to fit, never up; `Save` button; `vml.Image` element, `respview.Decode`).
 - Done later: HTML preview through the user's browser: `Open in browser` in the response menu serves the body on a temporary loopback port (`internal/preview`).
 - Done later: line wrap (`CodeView.Wrap`, the `Wrap` chip in the response toolbar).
-- Left: Shift+arrow selection, history across restarts and a workspace-wide request history.
+- Done later: the last 10 responses of a request survive a restart (`internal/history`).
+- Left: Shift+arrow selection and a workspace-wide request history.

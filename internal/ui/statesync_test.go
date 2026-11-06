@@ -139,3 +139,32 @@ func TestEmptyStatePathWritesNothing(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestResponsesOfARequestComeBackAfterARestart(t *testing.T) {
+	statePath := filepath.Join(t.TempDir(), "state.json")
+	first := stateApp(t, statePath)
+	tab := first.cur()
+	pointTabAt(tab, jsonServer(t).URL)
+	first.send(tab)
+	waitForResponse(t, first, tab)
+
+	second := stateApp(t, statePath)
+	got := second.cur()
+	if got.req.Name != tab.req.Name {
+		t.Fatalf("the restored tab is %q, expected %q", got.req.Name, tab.req.Name)
+	}
+	if len(got.respHist) != 1 || got.respHist[0].resp.Status != 200 || string(got.respHist[0].resp.Body) != `{"ok":true}` {
+		t.Fatalf("history after a restart: %+v", got.respHist)
+	}
+}
+
+func TestAnAppWithoutAStateFileKeepsNoHistoryOnDisk(t *testing.T) {
+	a := stateApp(t, "")
+	tab := a.cur()
+	pointTabAt(tab, jsonServer(t).URL)
+	a.send(tab)
+	waitForResponse(t, a, tab)
+	if a.historyDir() != "" {
+		t.Fatalf("historyDir = %q, want none without a state path", a.historyDir())
+	}
+}

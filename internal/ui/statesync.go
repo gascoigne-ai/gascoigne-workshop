@@ -2,9 +2,11 @@ package ui
 
 import (
 	"encoding/json"
+	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/state"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
@@ -185,3 +187,57 @@ func stateNote(status string, err error) string {
 // windowPx converts a logical size to window pixels (device independent),
 // which is what the window system and the remembered geometry use.
 func (a *App) windowPx(logical int) int { return int(float64(logical)*a.settings.UIScale() + 0.5) }
+
+// historyDir is the folder of the saved responses, next to the state
+// file; "" when the state is not kept on disk.
+func (a *App) historyDir() string {
+	if a.statePath == "" {
+		return ""
+	}
+	return filepath.Join(filepath.Dir(a.statePath), "history")
+}
+
+// saveHistory writes the successful responses of the tab's request, the
+// shown one first, so they are there after a restart. A failed write is
+// shown in the status line and nothing else changes.
+func (a *App) saveHistory(t *reqTab) {
+	dir, key := a.historyDir(), a.requestPath(t.req)
+	if dir == "" || key == "" {
+		return
+	}
+	var entries []history.Entry
+	if t.resp != nil && t.resp.Err == "" {
+		entries = append(entries, historyEntry(t.resp, a.now()))
+	}
+	for _, earlier := range t.respHist {
+		entries = append(entries, historyEntry(earlier.resp, earlier.at))
+	}
+	if err := history.Save(dir, key, entries); err != nil {
+		a.status = err.Error()
+	}
+}
+
+// loadHistory is the saved responses of req, newest first.
+func (a *App) loadHistory(req *model.Request) []respEntry {
+	dir, key := a.historyDir(), a.requestPath(req)
+	if dir == "" || key == "" {
+		return nil
+	}
+	saved, err := history.Load(dir, key)
+	if err != nil {
+		a.status = err.Error()
+		return nil
+	}
+	entries := make([]respEntry, 0, len(saved))
+	for _, entry := range saved {
+		entries = append(entries, respEntry{resp: &model.Response{
+			Status: entry.Status, StatusText: entry.StatusText, Duration: entry.Duration,
+			Size: len(entry.Body), Headers: entry.Headers, Body: entry.Body,
+		}, at: entry.At})
+	}
+	return entries
+}
+
+func historyEntry(resp *model.Response, at time.Time) history.Entry {
+	return history.Entry{At: at, Status: resp.Status, StatusText: resp.StatusText, Duration: resp.Duration, Headers: resp.Headers, Body: resp.Body}
+}

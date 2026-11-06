@@ -124,6 +124,7 @@ func viewFlags(id string) (raw, compact bool) {
 func (a *App) makeTab(req *model.Request) *reqTab {
 	t := newTab(req)
 	t.raw, t.compact = viewFlags(a.settings.ResponseView)
+	t.respHist = a.loadHistory(req)
 	return t
 }
 
@@ -400,6 +401,7 @@ func (a *App) apply(r sendResult) {
 	t.sending = false
 	remember(t, t.resp)
 	t.resp = &r.resp
+	a.saveHistory(t)
 	a.refreshView(t)
 	if r.resp.Err != "" {
 		a.status = "Request failed"
