@@ -32,3 +32,8 @@ Apply when adding or changing anything exported. They exist so that a guess is u
 - Finish one task completely before starting another: every item of its Scope done and tested, its Acceptance met, `make check` green, docs updated. Then delete the task file in the same commit as the last item. Do not switch tasks while items are open; an item that cannot be done (blocked, needs a decision, not possible on this platform) is written into the task file with the reason and what would unblock it, and the user decides whether the task closes.
 - Work through a task in the order of its Scope, one commit per item.
 
+## Ambiguity
+- When a request, a task item or a design can be read in more than one way, or a choice changes behavior the user would notice, ask before building: put the options, with a recommendation first, to the user and wait for the answer. Do not pick silently and do not guess to keep moving. This applies to tasks too: an unclear item is asked about, not interpreted.
+- A question is for a real fork only. A choice with a conventional default, or a fact that can be read from the code, is decided and mentioned in the report, not asked.
+- Record the answer in the task file or `decisions.md` when it will matter later.
+
