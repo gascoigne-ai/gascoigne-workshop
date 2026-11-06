@@ -11,6 +11,15 @@ Make the app dependable to ship.
 - Text input: IME and dead keys.
 - CI workflow (`make check` plus the screenshot compare), release packaging and a desktop entry.
 - Accessibility pass: contrast is tested; add focus order review and screen reader hints where the platform allows.
+- Hamburger (settings) button has the wrong color on hover: derive the hover color from the contrast rules instead of a fixed token.
+- Font family setting for the interface, the code views and other text roles.
+- Save the settings in the user config directory (`os.UserConfigDir`), per platform.
+- Save the user's collection state (open tabs, expanded folders, sizes) in the user config directory.
+- Selection in the compact response view does not work correctly on folded items.
+- Logging view: a place where the user can trace the logs of calls (requests sent, answers, errors, timings).
+- Icons on the right-click menu rows.
+- Support for Windows and macOS (paths, shortcuts with Cmd, packaging, CI builds).
+- Change the mouse cursor while grabbing (drags of rows, tabs, dividers, column handles).
 
 ## Acceptance
 - A checklist of failure paths each with a test; screenshots compared in CI; `make check` passes.
