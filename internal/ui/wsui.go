@@ -314,7 +314,7 @@ func sendComposed(s proto.Session, text string) error {
 func (a *App) toolMenu(t *reqTab) []menuItem {
 	items := make([]menuItem, 0, len(t.tools))
 	for _, tool := range t.tools {
-		items = append(items, menuItem{label: tool.Name, run: func() { a.composeCall(t, tool) }})
+		items = append(items, menuItem{label: tool.Name, run: func() { a.openToolForm(t, tool) }})
 	}
 	return items
 }

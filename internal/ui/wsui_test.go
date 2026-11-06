@@ -210,8 +210,16 @@ func TestMCPToolsFillTheComposerFromTheirSchemas(t *testing.T) {
 	if len(items) != 2 || items[0].label != "search" {
 		t.Fatalf("menu %+v", items)
 	}
-	items[0].run()
-	if got := tab.msg.Text; got != `call search {"limit":5,"q":""}` {
+	items[0].run() // a tool with properties opens its form; its defaults make the call
+	if a.dialog == nil || a.dialog.form == nil {
+		t.Fatal("picking a tool with arguments opens the form")
+	}
+	for _, button := range a.dialog.buttons {
+		if button.label == "Fill composer" {
+			button.run()
+		}
+	}
+	if got := tab.msg.Text; got != `call search {"q":"","limit":5}` {
 		t.Fatalf("composer %q", got)
 	}
 	items[1].run()

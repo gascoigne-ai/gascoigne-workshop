@@ -1,4 +1,4 @@
-status: in progress (left: a typed form per tool property, server-initiated requests, the notification stream)
+status: in progress (left: the notification stream, sampling)
 
 # MCP client
 
@@ -21,3 +21,5 @@ MCP is a stub that answers "not implemented yet".
 - Done later: after the server announces its tools, resources and prompts the Messages toolbar gets `Tools (n)`, `Resources (n)` and `Prompts (n)` buttons. Picking one fills the composer with a ready-to-edit message: `call NAME {...}` with the arguments the tool's JSON schema asks for (`proto.Skeleton`: required properties first, defaults and enums used), `read URI`, or `prompt NAME {...}` with the required arguments. The reply is in the log, where responses are JSON.
 - Left on purpose (together with the notification stream and sampling): a typed form with one input per schema property (the generated skeleton covers strings, numbers, booleans, enums, arrays and nested objects as JSON the user edits), server-initiated requests and the long-lived notification stream.
 - Done later: requests the server sends are answered (`ping` and `roots/list` with an empty list, anything else refused with `method not found`), so a server that waits is not left hanging; both directions show in the log.
+- Done later: a typed form per tool property (`proto.ToolFields`, `proto.Arguments`, `App.openToolForm`): picking a tool opens a dialog with one input per schema property and fills the composer with the typed call.
+- Left: the long-lived GET stream for server notifications and sampling requests.

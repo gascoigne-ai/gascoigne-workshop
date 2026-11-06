@@ -55,6 +55,7 @@ type dialogButton struct {
 type dialog struct {
 	title, body string
 	input       *TextField
+	form        *toolForm // a typed MCP tool form, instead of a single input
 	buttons     []dialogButton
 }
 
@@ -186,6 +187,7 @@ func (a *App) dialogView() Node {
 			FloatCenter(), FocusScope(), Modal(), OnDismiss(a.closeDialog),
 			Text(d.title, H(w.LabelH)),
 			If(d.body != "", Lines(d.body, w.Muted)),
+			a.dialogForm(d),
 			If(d.input != nil, Field(d.input, H(w.RowH), Bg(w.Sunken), OnEnter(a.dialogDefault), a.textMenuOpt(d.input, nil))),
 			Row(H(w.RowH), Gap(8),
 				Spacer(),
@@ -295,3 +297,11 @@ func hasKey(keys []ebiten.Key, k ebiten.Key) bool {
 
 // overlayOpen reports whether a menu or dialog has the keyboard.
 func (a *App) overlayOpen() bool { return a.ctxMenu != nil || a.dialog != nil }
+
+// dialogForm is the typed form of a dialog, nothing for the others.
+func (a *App) dialogForm(d *dialog) Node {
+	if d.form == nil {
+		return nil
+	}
+	return a.toolFormView(d.form)
+}
