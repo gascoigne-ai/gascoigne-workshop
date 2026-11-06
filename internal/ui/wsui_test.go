@@ -304,3 +304,27 @@ func TestSSEReconnectResumesFromTheLastEventID(t *testing.T) {
 		t.Fatal("a deliberate disconnect must forget the id")
 	}
 }
+
+func TestFormatMessageMakesTheComposerOneLineOfJSON(t *testing.T) {
+	a, _ := newTestApp(t)
+	tab := a.cur()
+	tab.msg = vml.NewTextField("{\n  \"op\": \"ping\",\n  \"n\": 1\n}")
+	a.formatMessage(tab)
+	if tab.msg.Text != `{"op":"ping","n":1}` {
+		t.Fatalf("composer = %q", tab.msg.Text)
+	}
+}
+
+func TestFormatMessageLeavesBrokenTextAloneAndSaysWhy(t *testing.T) {
+	a, _ := newTestApp(t)
+	tab := a.cur()
+	tab.msg = vml.NewTextField(`{"op": }`)
+	before := len(a.toasts)
+	a.formatMessage(tab)
+	if tab.msg.Text != `{"op": }` {
+		t.Fatalf("composer = %q, broken text must stay as typed", tab.msg.Text)
+	}
+	if len(a.toasts) != before+1 || !strings.Contains(a.toasts[len(a.toasts)-1].text, "not JSON") {
+		t.Fatalf("toasts = %+v", a.toasts)
+	}
+}

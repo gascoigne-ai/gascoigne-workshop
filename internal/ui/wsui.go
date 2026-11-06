@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/textfmt"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
 )
@@ -262,6 +263,7 @@ func (a *App) messagesPane(_ pane, t *reqTab, _ *ScrollState) Node {
 					OnEnter(func() { a.sendMessage(t) }),
 					a.textMenuOpt(&t.msg, nil),
 				),
+				If(t.req.Protocol == "websocket", Button("{ }", W(40), OnClick(func() { a.formatMessage(t) }), Tooltip("Make the message one line of JSON, or say where it is not JSON"))),
 				PrimaryButton("Send", W(70), OnClick(func() { a.sendMessage(t) }), Tooltip("Send the message (Enter)")),
 			)),
 	)
@@ -354,4 +356,17 @@ func (a *App) promptMenu(t *reqTab) []menuItem {
 		}})
 	}
 	return items
+}
+
+// formatMessage turns the composer's JSON into one line, so a pasted,
+// indented message goes out as a single frame; text that is not JSON
+// stays as typed and a toast says where it breaks.
+func (a *App) formatMessage(t *reqTab) {
+	compact, err := textfmt.CompactJSON(t.msg.Text)
+	if err != nil {
+		a.toast(err.Error(), true)
+		return
+	}
+	t.msg = NewTextField(compact)
+	t.msg.Focused = true
 }

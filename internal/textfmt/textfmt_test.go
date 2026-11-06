@@ -1,6 +1,7 @@
 package textfmt
 
 import (
+	"strings"
 	"testing"
 	"time"
 )
@@ -30,6 +31,31 @@ func TestFormatSize(t *testing.T) {
 	for _, tt := range tests {
 		if got := Size(tt.in); got != tt.want {
 			t.Errorf("Size(%d) = %q, want %q", tt.in, got, tt.want)
+		}
+	}
+}
+
+func TestCompactJSON(t *testing.T) {
+	tests := []struct {
+		name, in, want string
+		wantErr        string // substring of the error; "" means none
+	}{
+		{"spaces and lines go", "{\n  \"a\": 1,\n  \"b\": [1, 2]\n}", `{"a":1,"b":[1,2]}`, ""},
+		{"key order and number text stay", `{"z": 1.50, "a": 12345678901234567890}`, `{"z":1.50,"a":12345678901234567890}`, ""},
+		{"spaces inside strings stay", `{"a": "x  y"}`, `{"a":"x  y"}`, ""},
+		{"surrounding blanks go", "  [1]  ", `[1]`, ""},
+		{"a bare scalar is JSON too", ` "hi" `, `"hi"`, ""},
+		{"broken JSON names where", `{"a": 1,, }`, "", "position 9"},
+		{"empty text", "  ", "", "empty"},
+		{"two values are not one message", `{"a":1} {"b":2}`, "", "more than one"},
+	}
+	for _, tt := range tests {
+		got, err := CompactJSON(tt.in)
+		switch {
+		case tt.wantErr != "" && (err == nil || !strings.Contains(err.Error(), tt.wantErr)):
+			t.Errorf("%s: err = %v, want one mentioning %q", tt.name, err, tt.wantErr)
+		case tt.wantErr == "" && (err != nil || got != tt.want):
+			t.Errorf("%s: CompactJSON = %q, %v; want %q", tt.name, got, err, tt.want)
 		}
 	}
 }
