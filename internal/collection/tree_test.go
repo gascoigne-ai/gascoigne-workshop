@@ -62,3 +62,27 @@ func TestExpansionSurvivesRenamingAFolder(t *testing.T) {
 		t.Fatalf("rows = %d: a renamed folder must stay expanded", got)
 	}
 }
+
+func TestSplitMatch(t *testing.T) {
+	tests := []struct {
+		name, text, filter   string
+		before, match, after string
+	}{
+		{"match in the middle", "List users", "user", "List ", "user", "s"},
+		{"case-insensitive keeps the original case", "Get USER", "user", "Get ", "USER", ""},
+		{"first occurrence only", "ab ab", "ab", "", "ab", " ab"},
+		{"filter is trimmed", "Search", "  arc ", "Se", "arc", "h"},
+		{"empty filter", "Search", "", "Search", "", ""},
+		{"no match", "Search", "zzz", "Search", "", ""},
+		{"multibyte text", "Zażółć gęślą", "gęś", "Zażółć ", "gęś", "lą"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			before, match, after := SplitMatch(tc.text, tc.filter)
+			if before != tc.before || match != tc.match || after != tc.after {
+				t.Errorf("SplitMatch(%q, %q) = %q, %q, %q; want %q, %q, %q",
+					tc.text, tc.filter, before, match, after, tc.before, tc.match, tc.after)
+			}
+		})
+	}
+}

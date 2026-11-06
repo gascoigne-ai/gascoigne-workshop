@@ -97,3 +97,21 @@ func folderHasMatch(f *model.Folder, needle string) bool {
 	}
 	return false
 }
+
+// SplitMatch cuts text around the first case-insensitive occurrence of
+// filter, so a row can color the part the filter matched. Without a
+// match the whole text is returned as before.
+func SplitMatch(text, filter string) (before, match, after string) {
+	needle := strings.TrimSpace(filter)
+	if needle == "" {
+		return text, "", ""
+	}
+	runes, needleRunes := []rune(text), []rune(needle)
+	for start := 0; start+len(needleRunes) <= len(runes); start++ {
+		end := start + len(needleRunes)
+		if strings.EqualFold(string(runes[start:end]), needle) {
+			return string(runes[:start]), string(runes[start:end]), string(runes[end:])
+		}
+	}
+	return text, "", ""
+}

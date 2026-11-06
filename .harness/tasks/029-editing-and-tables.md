@@ -22,4 +22,5 @@ Small gaps found while finishing earlier tasks.
 - Done later: `Tab` into a field outside a `Scroll` scrolls it into view (`revealFocused`, tested for Tab and Shift+Tab); a drag resting over a closed folder opens it after 30 frames (`dragHover`).
 - Not possible as stated: dropping files onto the window gives an `fs.FS` without real paths (Ebitengine), so a dropped file cannot be sent by path; use `Choose...`.
 - Done later: the Body tab's form fields have the `Bulk edit` link (the table caption `Fields`).
-- Left: keyboard column resize, row drag handle, tree match highlight, listing the text keys in the settings, plain-key bindings with a warning.
+- Done later: the sidebar filter colors the matched part of a row name (`collection.SplitMatch`).
+- Left: keyboard column resize, row drag handle, listing the text keys in the settings, plain-key bindings with a warning.

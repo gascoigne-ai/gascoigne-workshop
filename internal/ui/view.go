@@ -98,14 +98,26 @@ func (a *App) treeRow(row collection.Row, selected bool) Node {
 	if row.Folder {
 		return Row(append([]Item{H(w.RowH), PadL(indent), Gap(6), look,
 			TriangleIcon(row.Open, W(12)),
-			Text(row.Name),
+			a.rowName(row.Name),
 		}, events...)...)
 	}
 	req := row.Req
 	return Row(append([]Item{H(w.RowH), PadL(indent + 6), PadR(w.Gutter), AlignItems(AlignBaseline), look,
 		Text(requestBadge(req.Protocol, req.Method), Small(), Color(appearance.MethodToken(req.Method)), W(badgeW)),
-		Text(row.Name, Ellipsis(), Grow(1)),
+		a.rowName(row.Name),
 	}, events...)...)
+}
+
+// rowName is a row's name with the part the sidebar filter matched in
+// the accent color.
+func (a *App) rowName(name string) Node {
+	before, match, after := collection.SplitMatch(name, a.filter.Text)
+	if match == "" {
+		return Text(name, Ellipsis(), Grow(1))
+	}
+	return Row(Grow(1),
+		Text(before), Text(match, Color(w.AccentText)), Text(after, Ellipsis(), Grow(1)),
+	)
 }
 
 // pressTreeRow is a press on a row: it selects it, gives the tree the
