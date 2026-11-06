@@ -11,8 +11,8 @@ import (
 )
 
 // shortcut is a global key binding. A binding fires only when its
-// modifiers match exactly, so plain keys never trigger anything while
-// typing.
+// modifiers match exactly, and a plain key (one the user also types
+// with) is held back while a text field has the keyboard.
 type shortcut struct {
 	id, name         string // id names the action in the settings file
 	key              ebiten.Key
@@ -62,7 +62,11 @@ func (s shortcut) label() string {
 func (a *App) runShortcuts(in core.Input) {
 	for _, k := range in.Keys {
 		for _, s := range shortcuts {
-			if b := a.bindingOf(s); b.Bound && b.Key == k && b.Ctrl == in.Ctrl && b.Shift == in.Shift && b.Alt == in.Alt {
+			b := a.bindingOf(s)
+			if typesText(b) && a.textFocused() {
+				continue // the key is for typing
+			}
+			if b.Bound && b.Key == k && b.Ctrl == in.Ctrl && b.Shift == in.Shift && b.Alt == in.Alt {
 				s.run(a)
 			}
 		}

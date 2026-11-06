@@ -171,6 +171,13 @@ func (a *App) shortcutsView() Node {
 	return Col(
 		Caption("Shortcuts", H(w.LabelH)),
 		For(shortcuts, func(_ int, s shortcut) Node { return a.shortcutRow(s) }),
+		Caption("Text editing", H(w.LabelH)),
+		For(textKeys, func(_ int, row struct{ action, keys string }) Node {
+			return Row(H(w.CompactH), Gap(6),
+				Text(row.action, Small(), Grow(1), Ellipsis()),
+				Text(row.keys, Small(), Muted()),
+			)
+		}),
 	)
 }
 
@@ -180,14 +187,17 @@ func (a *App) shortcutRow(s shortcut) Node {
 	if a.recording == s.id {
 		label, button = "Press keys...", PrimaryButton
 	}
-	note := a.recordNotes[s.id]
+	note, noteColor := a.recordNotes[s.id], w.Error
+	if warning := bindingWarning(a.bindingOf(s)); note == "" && warning != "" {
+		note, noteColor = warning, w.Muted
+	}
 	return Col(
 		Row(H(w.CompactH), Gap(6),
 			Text(s.name, Small(), Grow(1), Ellipsis()),
 			button(label, W(96), H(w.CompactH), OnClick(func() { a.startRecording(s.id) })),
 			If(overridden, Button("Reset", W(40), H(w.CompactH), OnClick(func() { a.resetBinding(s.id) }))),
 		),
-		If(note != "", Row(H(w.NoteH), Text(note, Small(), Color(w.Error), Ellipsis(), Grow(1)))),
+		If(note != "", Row(H(w.NoteH), Text(note, Small(), Color(noteColor), Ellipsis(), Grow(1)))),
 	)
 }
 

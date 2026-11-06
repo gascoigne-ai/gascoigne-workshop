@@ -3112,10 +3112,6 @@ func TestRecordingRefusesTakenAndReservedCombinationsAndKeepsListening(t *testin
 	if !strings.Contains(a.recordNotes["close-tab"], "text") {
 		t.Fatalf("note %q", a.recordNotes["close-tab"])
 	}
-	a.step(combo(ebiten.KeyQ, false, false, false))
-	if !strings.Contains(a.recordNotes["close-tab"], "Ctrl or Alt") {
-		t.Fatalf("note %q", a.recordNotes["close-tab"])
-	}
 	if len(a.settings.Shortcuts) != 0 {
 		t.Fatal("refused combinations must change nothing")
 	}

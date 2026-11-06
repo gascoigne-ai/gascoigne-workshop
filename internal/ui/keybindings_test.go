@@ -4,6 +4,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hajimehoshi/ebiten/v2"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
 )
 
@@ -87,8 +90,8 @@ func TestCheckBinding(t *testing.T) {
 		{"the text widgets' clipboard keys", "close-tab", "Ctrl+C", "text"},
 		{"undo", "close-tab", "Ctrl+Z", "text"},
 		{"select all", "close-tab", "Ctrl+A", "text"},
-		{"a plain letter", "close-tab", "Q", "Ctrl or Alt"},
-		{"shift alone is still typing", "close-tab", "Shift+Q", "Ctrl or Alt"},
+		{"a plain letter is allowed, with a warning", "close-tab", "Q", ""},
+		{"shift alone is allowed, with a warning", "close-tab", "Shift+Q", ""},
 		{"a plain function key is fine", "close-tab", "F6", ""},
 		{"Delete alone is fine", "close-tab", "Delete", "already"},
 		{"Escape is reserved", "close-tab", "Ctrl+Escape", ""},
@@ -112,5 +115,59 @@ func TestCheckBinding(t *testing.T) {
 	}
 	if err := a.checkBinding("close-tab", mk("Escape")); err == nil {
 		t.Error("plain Escape belongs to closing overlays")
+	}
+}
+
+func TestBindingWarningNamesPlainKeysOnly(t *testing.T) {
+	tests := []struct {
+		combo string
+		warn  bool
+	}{
+		{"Q", true},
+		{"Shift+Q", true},
+		{"Ctrl+Q", false},
+		{"Alt+Q", false},
+		{"F6", false},
+		{"Delete", false},
+	}
+	for _, tt := range tests {
+		b, err := engine.ParseBinding(tt.combo)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := bindingWarning(b)
+		if (got != "") != tt.warn || (tt.warn && !strings.Contains(got, "no text field")) {
+			t.Errorf("bindingWarning(%s) = %q, want a warning: %v", tt.combo, got, tt.warn)
+		}
+	}
+}
+
+func TestAPlainKeyBindingFiresOnlyWhileNoTextFieldHasFocus(t *testing.T) {
+	a, _ := newTestApp(t)
+	a.settings.Shortcuts = map[string]string{"close-tab": "Q"}
+	a.newRequest() // closing the only tab opens a fresh one, which would hide the effect
+	tabs := len(a.tabs)
+	a.cur().url.Focused = true
+	a.step(core.Input{Keys: []ebiten.Key{ebiten.KeyQ}})
+	if len(a.tabs) != tabs {
+		t.Fatal("typing Q in the URL field must not close the tab")
+	}
+	a.cur().url.Focused = false
+	a.step(core.Input{Keys: []ebiten.Key{ebiten.KeyQ}})
+	if len(a.tabs) == tabs {
+		t.Fatal("Q with no text field focused closes the tab")
+	}
+}
+
+func TestTextKeysListEveryReservedCombination(t *testing.T) {
+	var listed []string
+	for _, row := range textKeys {
+		listed = append(listed, row.keys)
+	}
+	all := strings.Join(listed, " ")
+	for _, combo := range reservedForText {
+		if !strings.Contains(all, combo) {
+			t.Errorf("%s is reserved for text but not listed in the settings: %v", combo, listed)
+		}
 	}
 }

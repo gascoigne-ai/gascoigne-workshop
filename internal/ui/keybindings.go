@@ -39,8 +39,6 @@ func (a *App) checkBinding(id string, b engine.Binding) error {
 	switch {
 	case b.Key == ebiten.KeyEscape && !b.Ctrl && !b.Alt:
 		return errors.New("Escape closes menus and dialogs")
-	case !b.Ctrl && !b.Alt && !isFunctionKey(b.Key) && b.Key != ebiten.KeyDelete:
-		return errors.New("Use Ctrl or Alt: plain keys are for typing")
 	}
 	for _, s := range shortcuts {
 		if s.id != id && a.bindingOf(s) == b {
@@ -147,6 +145,32 @@ func (a *App) shortcutText(id string) string {
 func (a *App) shortcutHint(id string) string {
 	if text := a.shortcutText(id); text != "Unbound" {
 		return text
+	}
+	return ""
+}
+
+// textKeys are the keys the text widgets answer, listed read-only in the
+// settings next to the shortcuts.
+var textKeys = []struct{ action, keys string }{
+	{"Select all", "Ctrl+A"},
+	{"Copy", "Ctrl+C"},
+	{"Cut", "Ctrl+X"},
+	{"Paste", "Ctrl+V"},
+	{"Undo", "Ctrl+Z"},
+	{"Redo", "Ctrl+Y or Ctrl+Shift+Z"},
+}
+
+// typesText reports whether a binding is a key the user also types with
+// (no Ctrl or Alt, not a function key or Delete).
+func typesText(b engine.Binding) bool {
+	return !b.Ctrl && !b.Alt && !isFunctionKey(b.Key) && b.Key != ebiten.KeyDelete
+}
+
+// bindingWarning is what a user should know about a binding that is
+// allowed but has a catch; "" when it has none.
+func bindingWarning(b engine.Binding) string {
+	if typesText(b) {
+		return "Plain key: works only while no text field has focus"
 	}
 	return ""
 }

@@ -24,4 +24,5 @@ Small gaps found while finishing earlier tasks.
 - Done later: the Body tab's form fields have the `Bulk edit` link (the table caption `Fields`).
 - Done later: the sidebar filter colors the matched part of a row name (`collection.SplitMatch`).
 - Done later: a drag handle on editable table rows reorders them with the mouse (`TableSpec.OnGrabRow`, `OnDragOverRow`).
-- Left: keyboard column resize (skipped by choice), listing the text keys in the settings, plain-key bindings with a warning.
+- Done later: the settings list the text widgets' keys read-only; plain-key bindings are allowed with a warning and fire only while no text field has focus.
+- Left: keyboard column resize (skipped by choice).
