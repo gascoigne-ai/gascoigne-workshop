@@ -22,7 +22,29 @@ import (
 // streamable HTTP (the URL is http or https) or stdio (the URL is
 // "stdio:" followed by the command line). It is a small hand-written
 // client, as the WebSocket one, so the project keeps no SDK dependency.
-type MCP struct{}
+type MCP struct {
+	// Sampler, when set, answers the sampling requests a server sends
+	// (it asks the client to produce a model reply); without one the
+	// client does not offer sampling and refuses such requests.
+	Sampler Sampler
+}
+
+// Sampler produces the reply to a sampling request, or reports false when
+// the request is declined. It may block, for example on a person.
+type Sampler func(ctx context.Context, request SamplingRequest) (SamplingResult, bool)
+
+// SamplingRequest is what a server asked a model to continue.
+type SamplingRequest struct {
+	Messages     []SamplingMessage
+	SystemPrompt string
+	MaxTokens    int
+}
+
+// SamplingMessage is one turn of a sampling request, as text.
+type SamplingMessage struct{ Role, Text string }
+
+// SamplingResult is the reply given to a sampling request.
+type SamplingResult struct{ Text, Model string }
 
 const (
 	mcpVersion     = "2025-06-18"
@@ -44,8 +66,8 @@ type mcpTransport interface {
 // Connect implements Streamer: it opens the transport, runs the
 // initialize handshake and asks for the server's tools, resources and
 // prompts. Everything is logged as events.
-func (MCP) Connect(ctx context.Context, req model.Request) (Session, error) {
-	s := &mcpSession{events: make(chan Event, eventBuffer), done: make(chan struct{}), now: time.Now, waiters: map[int64]chan json.RawMessage{}}
+func (m MCP) Connect(ctx context.Context, req model.Request) (Session, error) {
+	s := &mcpSession{sampler: m.Sampler, events: make(chan Event, eventBuffer), done: make(chan struct{}), now: time.Now, waiters: map[int64]chan json.RawMessage{}}
 	var tr mcpTransport
 	var err error
 	if strings.HasPrefix(req.URL, StdioPrefix) {
@@ -60,9 +82,13 @@ func (MCP) Connect(ctx context.Context, req model.Request) (Session, error) {
 	s.emit(Event{Dir: Info, Kind: "open", Text: "Connecting to " + req.URL})
 	ictx, cancel := context.WithTimeout(ctx, mcpInitTimeout)
 	defer cancel()
+	capabilities := map[string]any{}
+	if m.Sampler != nil {
+		capabilities["sampling"] = map[string]any{}
+	}
 	result, err := s.call(ictx, "initialize", map[string]any{
 		"protocolVersion": mcpVersion,
-		"capabilities":    map[string]any{},
+		"capabilities":    capabilities,
 		"clientInfo":      map[string]any{"name": "gascoigne-workshop", "version": "0"},
 	})
 	if err != nil {
@@ -76,6 +102,9 @@ func (MCP) Connect(ctx context.Context, req model.Request) (Session, error) {
 	}
 	_ = json.Unmarshal(result, &init)
 	tr.setVersion(init.ProtocolVersion)
+	if listener, ok := tr.(interface{ listen() }); ok {
+		listener.listen() // servers may push notifications on a stream of their own
+	}
 	if err := s.notify("notifications/initialized"); err != nil {
 		s.Close()
 		return nil, err
@@ -115,11 +144,12 @@ func (m MCP) Send(ctx context.Context, req model.Request) (model.Response, error
 }
 
 type mcpSession struct {
-	tr     mcpTransport
-	events chan Event
-	done   chan struct{}
-	once   sync.Once
-	now    func() time.Time
+	tr      mcpTransport
+	sampler Sampler // nil: sampling is not offered
+	events  chan Event
+	done    chan struct{}
+	once    sync.Once
+	now     func() time.Time
 
 	mu      sync.Mutex
 	ended   bool
@@ -165,11 +195,20 @@ func (s *mcpSession) finish(err error) {
 type rpcMessage struct {
 	ID     *json.RawMessage `json:"id"`
 	Method string           `json:"method"`
+	Params json.RawMessage  `json:"params"`
 	Result json.RawMessage  `json:"result"`
 	Error  *struct {
 		Code    int    `json:"code"`
 		Message string `json:"message"`
 	} `json:"error"`
+}
+
+// listChanged maps the notifications that say a list changed to the
+// request that fetches it again.
+var listChanged = map[string]string{
+	"notifications/tools/list_changed":     "tools/list",
+	"notifications/resources/list_changed": "resources/list",
+	"notifications/prompts/list_changed":   "prompts/list",
 }
 
 // deliver handles a message from the server: it is logged, and a
@@ -193,6 +232,13 @@ func (s *mcpSession) deliver(msg []byte) {
 	if kind == "request" {
 		go s.answerServer(m)
 		return
+	}
+	if list, ok := listChanged[m.Method]; ok {
+		go func() { // ask again, so the lists the UI shows stay current
+			if _, err := s.request(list, nil); err != nil {
+				s.emit(Event{Dir: Info, Kind: "error", Text: err.Error()})
+			}
+		}()
 	}
 	if m.Method == "" && m.ID != nil {
 		var id int64
@@ -459,6 +505,29 @@ func (h *mcpHTTP) send(ctx context.Context, msg []byte) error {
 	return nil
 }
 
+// listen opens the optional stream a streamable HTTP server pushes
+// requests and notifications on, in the background. A server without one
+// answers 405 or another status, which is not an error: the stream is
+// only read when the server offers it.
+func (h *mcpHTTP) listen() {
+	go func() {
+		r, err := h.newRequest(h.ctx, http.MethodGet, nil)
+		if err != nil {
+			return
+		}
+		r.Header.Set("Accept", "text/event-stream")
+		resp, err := h.client.Do(r)
+		if err != nil {
+			return
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusOK || !strings.HasPrefix(resp.Header.Get("Content-Type"), "text/event-stream") {
+			return
+		}
+		readSSE(resp.Body, h.deliver)
+	}()
+}
+
 // deliverJSON hands over one message, or each message of a batch.
 func deliverJSON(body []byte, deliver func([]byte)) {
 	body = bytes.TrimSpace(body)
@@ -589,6 +658,12 @@ func (s *mcpSession) answerServer(m rpcMessage) {
 		reply["result"] = map[string]any{}
 	case "roots/list":
 		reply["result"] = map[string]any{"roots": []any{}}
+	case "sampling/createMessage":
+		if s.sampler == nil {
+			reply["error"] = map[string]any{"code": -32601, "message": "method not found: " + m.Method}
+			break
+		}
+		s.sample(m, reply)
 	default:
 		reply["error"] = map[string]any{"code": -32601, "message": "method not found: " + m.Method}
 	}
@@ -597,4 +672,54 @@ func (s *mcpSession) answerServer(m rpcMessage) {
 		return
 	}
 	_ = s.write(context.Background(), "response", b)
+}
+
+// sampleRejected is the answer to a sampling request that was declined.
+const sampleRejected = "User rejected sampling request"
+
+// sample puts a sampling request to the Sampler and fills reply with its
+// answer: a text message, or an error when the request is declined or
+// cannot be read.
+func (s *mcpSession) sample(m rpcMessage, reply map[string]any) {
+	var params struct {
+		Messages []struct {
+			Role    string `json:"role"`
+			Content struct {
+				Type string `json:"type"`
+				Text string `json:"text"`
+			} `json:"content"`
+		} `json:"messages"`
+		SystemPrompt string `json:"systemPrompt"`
+		MaxTokens    int    `json:"maxTokens"`
+	}
+	if err := json.Unmarshal(m.Params, &params); err != nil {
+		reply["error"] = map[string]any{"code": -32602, "message": "invalid sampling request: " + err.Error()}
+		return
+	}
+	request := SamplingRequest{SystemPrompt: params.SystemPrompt, MaxTokens: params.MaxTokens}
+	for _, message := range params.Messages {
+		text := message.Content.Text
+		if message.Content.Type != "text" {
+			text = "[" + message.Content.Type + " content]"
+		}
+		request.Messages = append(request.Messages, SamplingMessage{Role: message.Role, Text: text})
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go func() { // the session ending abandons the question
+		select {
+		case <-s.done:
+			cancel()
+		case <-ctx.Done():
+		}
+	}()
+	result, ok := s.sampler(ctx, request)
+	if !ok {
+		reply["error"] = map[string]any{"code": -1, "message": sampleRejected}
+		return
+	}
+	reply["result"] = map[string]any{
+		"role": "assistant", "content": map[string]any{"type": "text", "text": result.Text},
+		"model": result.Model, "stopReason": "endTurn",
+	}
 }

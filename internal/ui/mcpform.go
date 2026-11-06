@@ -1,6 +1,10 @@
 package ui
 
 import (
+	"context"
+	"strings"
+	"time"
+
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
@@ -164,4 +168,87 @@ func (a *App) enumChoice(form *toolForm, field proto.ToolField) Node {
 			return Button(label, H(w.CompactH), pick)
 		}),
 	)
+}
+
+// samplingRetry is how often a sampling request checks whether the
+// dialog it wants to show is free.
+const samplingRetry = 100 * time.Millisecond
+
+// sampleViaDialog is the app's proto.Sampler: it shows the server's
+// request and the person types the reply, or declines. It runs on the
+// session's goroutine and blocks; the dialog itself is opened on the UI
+// goroutine. A request that arrives while another dialog is open waits
+// for it to close.
+func (a *App) sampleViaDialog(ctx context.Context, request proto.SamplingRequest) (proto.SamplingResult, bool) {
+	answer := make(chan proto.SamplingResult, 1)
+	declined := make(chan struct{}, 1)
+	var shown *dialog
+	for shown == nil {
+		opened := make(chan *dialog, 1)
+		select {
+		case a.later <- func() { opened <- a.openSamplingDialog(request, answer, declined) }:
+		case <-ctx.Done():
+			return proto.SamplingResult{}, false
+		}
+		select {
+		case shown = <-opened:
+		case <-ctx.Done():
+			return proto.SamplingResult{}, false
+		}
+		if shown != nil {
+			break
+		}
+		select {
+		case <-time.After(samplingRetry):
+		case <-ctx.Done():
+			return proto.SamplingResult{}, false
+		}
+	}
+	select {
+	case result := <-answer:
+		return result, true
+	case <-declined:
+		return proto.SamplingResult{}, false
+	case <-ctx.Done():
+		select { // the session ended: take the question off the screen
+		case a.later <- func() {
+			if a.dialog == shown {
+				a.closeDialog()
+			}
+		}:
+		default:
+		}
+		return proto.SamplingResult{}, false
+	}
+}
+
+// openSamplingDialog shows the request when no other dialog is open and
+// returns it, nil when the screen is busy.
+func (a *App) openSamplingDialog(request proto.SamplingRequest, answer chan<- proto.SamplingResult, declined chan<- struct{}) *dialog {
+	if a.dialog != nil {
+		return nil
+	}
+	var body strings.Builder
+	body.WriteString("The MCP server asks for a model reply. Type one, or decline.")
+	if request.SystemPrompt != "" {
+		body.WriteString("\n\nSystem: " + request.SystemPrompt)
+	}
+	for _, message := range request.Messages {
+		body.WriteString("\n\n" + message.Role + ": " + message.Text)
+	}
+	input := NewTextField("")
+	input.Focused = true
+	a.dialog = &dialog{
+		title: "Sampling request",
+		body:  body.String(),
+		input: &input,
+		buttons: []dialogButton{
+			{label: "Decline", run: func() { a.closeDialog(); declined <- struct{}{} }},
+			{label: "Send reply", primary: true, run: func() {
+				a.closeDialog()
+				answer <- proto.SamplingResult{Text: input.Text, Model: "user"}
+			}},
+		},
+	}
+	return a.dialog
 }

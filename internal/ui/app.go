@@ -272,6 +272,7 @@ func NewApp(opts Options) (*App, error) {
 	}
 	a.jar, _ = cookiejar.New(nil)
 	a.reg["rest"] = restFor(a.jar, st)
+	a.reg["mcp"] = proto.MCP{Sampler: a.sampleViaDialog}
 	ctx.Clipboard = statusClipboard{inner: ctx.Clipboard, report: a.clipboardNote}
 	a.dragTab = -1
 	a.dirty = true
