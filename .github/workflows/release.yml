@@ -1,0 +1,27 @@
+name: release
+on:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Ebitengine build dependencies
+        run: sudo apt-get update && sudo apt-get install -y libc6-dev libgl1-mesa-dev libxcursor-dev libxi-dev libxinerama-dev libxrandr-dev libxxf86vm-dev libasound2-dev pkg-config xvfb
+      - name: Build tarball
+        run: |
+          name=gascoigne-workshop-${GITHUB_REF_NAME}-linux-amd64
+          xvfb-run -a make install PREFIX=/usr DESTDIR="$PWD/dist/$name"
+          tar -C dist -czf "$name.tar.gz" "$name"
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" ./*.tar.gz --generate-notes --title "$GITHUB_REF_NAME"
