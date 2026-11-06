@@ -2,6 +2,7 @@ package vml
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"sort"
 	"strconv"
 	"strings"
 	"unicode"
@@ -440,6 +441,11 @@ func (v *CodeView) updateKeys(c *core.Ctx, r core.Rect, g codeGeometry, b bars, 
 		}
 		_ = c.Clipboard.Write(text) // the clipboard reports its own failures
 	}
+	if in.Shift {
+		for _, edit := range in.Edits {
+			v.extendSelection(edit)
+		}
+	}
 	for _, k := range in.Keys {
 		switch k {
 		case ebiten.KeyPageDown:
@@ -645,3 +651,60 @@ func (v *CodeView) drawMatches(c *core.Ctx, dst *ebiten.Image, g codeGeometry, c
 
 // Matches returns the search hits currently highlighted.
 func (v *CodeView) Matches() []Match { return v.matches }
+
+// extendSelection moves the end of the selection for one movement key
+// held with Shift. The caret is the end the pointer last set; a view with
+// none starts at its first visible line. Folded lines are skipped, and
+// the view scrolls to keep the caret in sight.
+func (v *CodeView) extendSelection(edit core.Edit) {
+	visible := v.Visible()
+	if len(visible) == 0 {
+		return
+	}
+	if !v.HasSel {
+		v.selA, v.selB, v.HasSel = textPos{visible[0], 0}, textPos{visible[0], 0}, true
+	}
+	v.selB = v.moveCaret(v.selB, edit, visible)
+	v.RevealLine(v.selB.line)
+}
+
+// moveCaret is pos after one movement key, staying on the visible lines.
+func (v *CodeView) moveCaret(pos textPos, edit core.Edit, visible []int) textPos {
+	row := sort.SearchInts(visible, pos.line)
+	row = min(row, len(visible)-1)
+	pos.line = visible[row]
+	atLine := func(target int) textPos {
+		return textPos{visible[target], min(pos.col, v.lineLen(visible[target]))}
+	}
+	switch edit {
+	case core.EditLeft:
+		if pos.col > 0 {
+			return textPos{pos.line, pos.col - 1}
+		}
+		if row > 0 {
+			return textPos{visible[row-1], v.lineLen(visible[row-1])}
+		}
+	case core.EditRight:
+		if pos.col < v.lineLen(pos.line) {
+			return textPos{pos.line, pos.col + 1}
+		}
+		if row+1 < len(visible) {
+			return textPos{visible[row+1], 0}
+		}
+	case core.EditUp:
+		if row > 0 {
+			return atLine(row - 1)
+		}
+		return textPos{pos.line, 0}
+	case core.EditDown:
+		if row+1 < len(visible) {
+			return atLine(row + 1)
+		}
+		return textPos{pos.line, v.lineLen(pos.line)}
+	case core.EditHome:
+		return textPos{pos.line, 0}
+	case core.EditEnd:
+		return textPos{pos.line, v.lineLen(pos.line)}
+	}
+	return pos
+}
