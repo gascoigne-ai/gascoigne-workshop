@@ -257,6 +257,7 @@ func (a *App) urlBar(t *reqTab) Node {
 			If(isREST || isGRPC, VRuleInset(8)), // a divider between the chips, none after the last one
 			If(isREST, tip("Method: click to change", chip(t.req.Method, appearance.MethodToken(t.req.Method), 84, func() { a.cycleMethod(t) }))),
 			If(isGRPC, a.grpcMethodChip(t)),
+			If(isGRPC, tip("Stream: keep the call open and show every message in the Messages pane", chip("Stream", streamColor(t), 56, func() { a.toggleStream(t) }))),
 			Spacer(W(w.Gutter-4)), // breathing room between the divider and the URL text
 			Field(&t.url, Grow(1),
 				Placeholder("Enter URL"),
@@ -268,6 +269,14 @@ func (a *App) urlBar(t *reqTab) Node {
 		),
 		send,
 	)
+}
+
+// streamColor shows the Stream chip lit while the tab streams.
+func streamColor(t *reqTab) w.Token {
+	if t.grpcStream {
+		return w.Accent
+	}
+	return w.Muted
 }
 
 // tip gives n a tooltip.

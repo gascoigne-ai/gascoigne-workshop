@@ -52,3 +52,11 @@ func (a *App) grpcMethodChip(t *reqTab) Node {
 // grpcMethodW is the width of the method chip: wide, as method names are
 // long.
 const grpcMethodW = 200
+
+// toggleStream switches a gRPC tab between single calls and a stream shown
+// in the Messages pane. An open stream is closed first, since it belongs to
+// the mode that opened it.
+func (a *App) toggleStream(t *reqTab) {
+	a.disconnect(t)
+	t.grpcStream = !t.grpcStream
+}

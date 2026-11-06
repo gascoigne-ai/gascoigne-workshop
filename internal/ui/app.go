@@ -94,6 +94,7 @@ type reqTab struct {
 	resources             []proto.MCPResource       // the resources an MCP server announced
 	prompts               []proto.MCPPrompt         // the prompts an MCP server announced
 	respHist              []respEntry               // earlier responses, newest first
+	grpcStream            bool                      // a gRPC tab streams instead of making single calls
 	schema                *proto.Schema             // what a GraphQL introspection answered
 	tools                 []proto.MCPTool           // the tools an MCP server announced
 	lastEventID           string                    // the last id an SSE stream sent, offered again when it reconnects

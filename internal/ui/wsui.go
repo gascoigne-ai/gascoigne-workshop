@@ -36,7 +36,8 @@ var retryDelay = 2 * time.Second
 
 // isSocket reports whether the tab's protocol keeps a connection open.
 func isSocket(t *reqTab) bool {
-	return t.req.Protocol == "websocket" || t.req.Protocol == "mcp" || t.req.Protocol == "sse"
+	return t.req.Protocol == "websocket" || t.req.Protocol == "mcp" || t.req.Protocol == "sse" ||
+		(t.req.Protocol == "grpc" && t.grpcStream)
 }
 
 // wsPanes are the panes of a socket's response side.

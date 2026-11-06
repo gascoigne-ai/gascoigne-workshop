@@ -23,6 +23,14 @@ import (
 // protobuf fixtures. seen receives the metadata of every Check call.
 func grpcStub(t *testing.T) (target string, seen chan metadata.MD) {
 	t.Helper()
+	target, seen, _ = grpcStubWithHealth(t)
+	return target, seen
+}
+
+// grpcStubWithHealth is grpcStub that also hands out the health service,
+// so a test can change a status while a Watch stream is open.
+func grpcStubWithHealth(t *testing.T) (target string, seen chan metadata.MD, healthServer *health.Server) {
+	t.Helper()
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
@@ -34,13 +42,13 @@ func grpcStub(t *testing.T) (target string, seen chan metadata.MD) {
 		}
 		return handler(ctx, request)
 	}))
-	healthServer := health.NewServer()
+	healthServer = health.NewServer()
 	healthServer.SetServingStatus("known", healthpb.HealthCheckResponse_SERVING)
 	healthpb.RegisterHealthServer(server, healthServer)
 	reflection.Register(server)
 	go func() { _ = server.Serve(listener) }()
 	t.Cleanup(server.Stop)
-	return "grpc://" + listener.Addr().String(), seen
+	return "grpc://" + listener.Addr().String(), seen, healthServer
 }
 
 func grpcContext(t *testing.T) context.Context {

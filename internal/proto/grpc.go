@@ -149,10 +149,6 @@ func (GRPC) Send(ctx context.Context, req model.Request) (model.Response, error)
 	fail := func(err error) (model.Response, error) {
 		return model.Response{Err: grpcErrText(ctx, err), Duration: time.Since(start)}, nil
 	}
-	serviceName, methodName, ok := strings.Cut(req.Method, "/")
-	if !ok || serviceName == "" || methodName == "" {
-		return fail(fmt.Errorf("the method %q is not package.Service/Method", req.Method))
-	}
 	conn, err := dial(req)
 	if err != nil {
 		return fail(err)
@@ -162,17 +158,9 @@ func (GRPC) Send(ctx context.Context, req model.Request) (model.Response, error)
 	if err != nil {
 		return fail(err)
 	}
-	files, err := loadSymbol(ctx, conn, serviceName)
+	method, err := resolveMethod(ctx, conn, req.Method)
 	if err != nil {
 		return fail(err)
-	}
-	service, err := findService(files, serviceName)
-	if err != nil {
-		return fail(err)
-	}
-	method := service.Methods().ByName(protoreflect.Name(methodName))
-	if method == nil {
-		return fail(fmt.Errorf("%s has no method %s", serviceName, methodName))
 	}
 	if method.IsStreamingClient() || method.IsStreamingServer() {
 		return fail(fmt.Errorf("%s is a streaming method; only unary calls are supported", req.Method))
@@ -244,4 +232,26 @@ func grpcErrText(ctx context.Context, err error) string {
 		return ErrCancelled
 	}
 	return err.Error()
+}
+
+// resolveMethod finds the descriptor of "package.Service/Method" through
+// the server's reflection.
+func resolveMethod(ctx context.Context, conn *grpc.ClientConn, name string) (protoreflect.MethodDescriptor, error) {
+	serviceName, methodName, ok := strings.Cut(name, "/")
+	if !ok || serviceName == "" || methodName == "" {
+		return nil, fmt.Errorf("the method %q is not package.Service/Method", name)
+	}
+	files, err := loadSymbol(ctx, conn, serviceName)
+	if err != nil {
+		return nil, err
+	}
+	service, err := findService(files, serviceName)
+	if err != nil {
+		return nil, err
+	}
+	method := service.Methods().ByName(protoreflect.Name(methodName))
+	if method == nil {
+		return nil, fmt.Errorf("%s has no method %s", serviceName, methodName)
+	}
+	return method, nil
 }
