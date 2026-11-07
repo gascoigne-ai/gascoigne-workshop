@@ -8,7 +8,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	rport "github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/state"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/state"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
@@ -148,7 +148,7 @@ func (a *App) SaveState() error {
 		return nil
 	}
 	s := a.snapshot()
-	err := s.Save(a.statePath)
+	err := a.states.Save(a.statePath, s)
 	if err == nil {
 		a.stateSaved = stateKey(s)
 	}

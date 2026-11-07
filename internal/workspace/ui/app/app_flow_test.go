@@ -10,6 +10,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/fonts"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/statefile"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/theming"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/hajimehoshi/ebiten/v2"
@@ -78,6 +79,7 @@ func withAdapters(opts Options) Options {
 	opts.History = func(dir string) rport.History { return history.Dir(dir) }
 	opts.Fonts = fonts.System{}
 	opts.Store = store.Files{}
+	opts.States = statefile.Files{}
 	return opts
 }
 

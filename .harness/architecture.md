@@ -29,7 +29,7 @@ flowchart LR
     end
     subgraph workspace
       app
-      wad["adapter/state, filedialog"]
+      wad["adapter/statefile, filedialog"]
     end
   end
   app --> rui & rad & cad & sui & sad & tui & tad & wad
@@ -63,7 +63,7 @@ The toolkit packages are public and independent of the application (`uitoolkit/c
 | `uitoolkit/engine` | key bindings and frame pacing |
 | `internal/workspace/ui/app` | the app (package `ui`): state, handlers, the window, dialogs, menus; the composition root that wires the other domains |
 | `internal/workspace/ui/appicon` | the program icon, drawn |
-| `internal/workspace/adapter/state`, `internal/workspace/adapter/filedialog` | window and tab state file; zenity or kdialog file dialogs |
+| `internal/workspace/adapter/statefile`, `internal/workspace/adapter/filedialog` | window and tab state file; zenity or kdialog file dialogs |
 | `internal/request/model` | `Request`, `Folder`, `Response`, environments, tree operations; MCP list parsers, schema skeletons and tool form fields (`mcpschema.go`, `mcpform.go`) |
 | `internal/request/adapter/proto` | `Protocol` interface and registry; REST, WebSocket, SSE, MCP, gRPC |
 | `internal/request/model/assert` | the assertion language run against a response |
@@ -74,7 +74,8 @@ The toolkit packages are public and independent of the application (`uitoolkit/c
 | `internal/response/model/jsonview`, `internal/response/model/textfmt` | JSON tokens and lines (`Kind.Style` names the theme style); text helpers |
 | `internal/response/ui/respview`, `internal/response/ui/sentlog` | response views and helpers; the sent-request list behind a `Host` |
 | `internal/response/port` | `Sent` and `SentStore`, the stored log of sent requests; `BodyPreview`, shows a body in the browser (`preview.Browser` implements it); `History` and `Entry`, the saved responses and the sent log of one folder (`history.Dir` implements it) |
-| `internal/workspace/port` | `FileDialog` and `ErrCancelled` (`filedialog.System` implements it); `cmd/workshop` hands the adapters to the App through `Options` |
+| `internal/workspace/model/state` | what is remembered between runs: window, tabs, pane sizes (`Window.Clamp`) |
+| `internal/workspace/port` | `FileDialog` and `ErrCancelled` (`filedialog.System` implements it); `StateStore` (`statefile.Files`); `cmd/workshop` hands the adapters to the App through `Options` |
 | `internal/response/adapter/history`, `internal/response/adapter/preview` | response history and the sent-log file (`history.SentLog` implements `SentStore`); browser preview server |
 | `internal/settings/model/settings`, `internal/settings/model/fontfamily` | the settings schema and `settings.json`; font families and their lookup |
 | `internal/settings/port` | `FontStore`, the installed fonts (`fonts.System` implements it; `Options.Fonts` hands it to the App) |
@@ -84,7 +85,7 @@ The toolkit packages are public and independent of the application (`uitoolkit/c
 
 `internal/` is grouped by domain, then by role (decision 19): `internal/<domain>/<role>/<package>`, with domains `request`, `collection`, `response`, `settings`, `workspace` and roles `ui`, `controller`, `port`, `adapter`, `model`. `internal/layers_test.go` enforces the dependency rules: model imports only model; port imports model and port; controller imports model, port and controller; ui and adapter import model, port and controller but never each other; another domain is reached only through its model or port. A test with a table proves each kind of violation is caught.
 
-Go allows one package per directory and a method cannot be declared in another package, so everything that reads and writes the one `App` struct (tabs, panes, sidebar, environments, workspace) is still one package, `workspace/ui/app`. It imports the other domains' adapters, controllers and views directly; those 5 imports are listed in `exceptions` in the layer test and are what task 033 still has to remove by splitting the App into a controller and views behind ports. A feature that needs little of the `App` is its own package with a `Host` interface the App implements, a package doc and tests with a fake host (`calltrace`, `sentlog`, `settingsui`). Adapters of a port are handed to those views through the host (`Host.SentStore`, `Host.FontStore`).
+Go allows one package per directory and a method cannot be declared in another package, so everything that reads and writes the one `App` struct (tabs, panes, sidebar, environments, workspace) is still one package, `workspace/ui/app`. It imports the other domains' adapters, controllers and views directly; those 4 imports are listed in `exceptions` in the layer test and are what task 033 still has to remove by splitting the App into a controller and views behind ports. A feature that needs little of the `App` is its own package with a `Host` interface the App implements, a package doc and tests with a fake host (`calltrace`, `sentlog`, `settingsui`). Adapters of a port are handed to those views through the host (`Host.SentStore`, `Host.FontStore`).
 
 ## Model and protocols
 
@@ -186,7 +187,7 @@ Row(H(urlH), PadX(w.Pad), PadY(8), Gap(8), Bg(w.Bg),
 
 - **Toolkit tree** (`ui/`): `uitoolkit/core` (theme, drawing, text widgets), `uitoolkit/view` (layout DSL on widget) and `uitoolkit/engine` (app-independent frame loop: `Pacer`, `MustDraw`, `InputActive`, and the `Binding` key model with parse/format) form one layer that never imports `internal/`. `internal/workspace/ui/app` is the workshop's screens on top of them. `TestToolkitImportsStayInTheirLayer` guards the direction.
 
-- **Remembered state** (`internal/workspace/adapter/state`, `internal/workspace/ui/app/statesync.go`): `state.json` next to the settings holds the window geometry, sidebar width, pane split, expanded folders (by path), open tabs (request path, selected request and response pane), the active tab and table column weights. It is separate from settings, written atomically, and a missing, broken or partly stale file only means a fresh start (missing requests are dropped, indexes clamped; a broken file shows a status note). `App.stateTick` snapshots each frame and writes after the state was unchanged for one second; `main` writes once more on exit and restores the window clamped to the monitor (`state.Window.Clamp`). `-state PATH` picks the file, empty keeps it in memory, and screenshot runs do not touch it unless `-state` is given.
+- **Remembered state** (`internal/workspace/adapter/statefile`, `internal/workspace/ui/app/statesync.go`): `state.json` next to the settings holds the window geometry, sidebar width, pane split, expanded folders (by path), open tabs (request path, selected request and response pane), the active tab and table column weights. It is separate from settings, written atomically, and a missing, broken or partly stale file only means a fresh start (missing requests are dropped, indexes clamped; a broken file shows a status note). `App.stateTick` snapshots each frame and writes after the state was unchanged for one second; `main` writes once more on exit and restores the window clamped to the monitor (`state.Window.Clamp`). `-state PATH` picks the file, empty keeps it in memory, and screenshot runs do not touch it unless `-state` is given.
 
 - **Streaming and WebSocket** (`internal/request/adapter/proto/stream.go`, `websocket.go`, `ws/`): `Registry.Connect` opens a `Session` with a protocol that implements `Streamer`. `WebSocket.Send` is the one-shot form (connect, send the body, return the first reply as a `Response` with status 101). Headers, Auth pane credentials and a `Sec-WebSocket-Protocol` header (split into subprotocols) go into the handshake. The UI for live sessions is task 016's remaining part.
 - **Sideways scrolling** (`view.HScroll`, `view.ScrollTabs`): a row at natural width inside a clipped box with arrow buttons at overflowing ends (they take the click before the tabs below them), wheel scrolling, and `Reveal()` to keep one child in view when it changes. The pane tab strips use it, so tabs past the pane width (Vars, Settings) stay reachable; their `ScrollState` lives in the request tab.

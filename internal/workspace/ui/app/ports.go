@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/state"
+
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fontfamily"
@@ -38,3 +40,9 @@ func (noStore) Load(string) (model.Collection, error) {
 	return model.Collection{}, errors.New("no collection store")
 }
 func (noStore) Save(string, model.Collection) error { return errors.New("no collection store") }
+
+// noStates keeps no state between runs.
+type noStates struct{}
+
+func (noStates) Load(string) (state.State, error) { return state.State{}, nil }
+func (noStates) Save(string, state.State) error   { return nil }

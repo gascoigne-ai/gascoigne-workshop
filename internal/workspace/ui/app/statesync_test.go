@@ -2,12 +2,13 @@ package ui
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/statefile"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/state"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/state"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
@@ -75,11 +76,11 @@ func TestStateRestoreRoundTripsThroughTheFile(t *testing.T) {
 
 func TestStateRestoreDropsMissingRequestsAndBadValues(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "state.json")
-	err := state.State{
+	err := statefile.Save(path, state.State{
 		Tabs:     []state.Tab{{Path: "Gone/Nothing"}, {Path: "User/" + collection.Sample().Folders[0].Requests[0].Name, Pane: 99, Resp: -4}},
 		Active:   7,
 		Expanded: []string{"Nowhere"},
-	}.Save(path)
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -97,7 +98,7 @@ func TestStateRestoreDropsMissingRequestsAndBadValues(t *testing.T) {
 
 func TestStateWithNoTabsOpensTheFirstRequest(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "state.json")
-	state.State{Tabs: []state.Tab{{Path: "Gone"}}}.Save(path)
+	statefile.Save(path, state.State{Tabs: []state.Tab{{Path: "Gone"}}})
 	a := stateApp(t, path)
 	if len(a.tabs) != 1 {
 		t.Fatalf("%d tabs", len(a.tabs))
@@ -123,12 +124,12 @@ func TestStateIsSavedAfterAQuietSpell(t *testing.T) {
 	a.step(core.Input{})
 	a.sidebarSplit.Size = 280
 	a.step(core.Input{}) // change noticed, not yet written
-	if s, _ := state.Load(path); s.SidebarW != 0 {
+	if s, _ := statefile.Load(path); s.SidebarW != 0 {
 		t.Fatal("written before the debounce")
 	}
 	clock = clock.Add(2 * time.Second)
 	a.step(core.Input{})
-	if s, _ := state.Load(path); s.SidebarW != 280 {
+	if s, _ := statefile.Load(path); s.SidebarW != 280 {
 		t.Fatalf("not written after the debounce: %+v", s)
 	}
 }

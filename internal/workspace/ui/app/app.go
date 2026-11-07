@@ -26,7 +26,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/state"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/state"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -187,6 +187,7 @@ type App struct {
 	bulk               *bulkEdit     // the table in bulk-edit mode, if any
 	actionIDs          []string      // the ids of the shortcut actions, for completing settings.json
 	store              cport.Store
+	states             port.StateStore
 	files              port.FileDialog                // the desktop file chooser, replaced in tests
 	cancelSettingsPick func()                         // takes back a file question the settings dialog asked
 	settingsUnsaved    bool                           // settings were changed but not written (auto-save is off)
@@ -253,6 +254,7 @@ type Options struct {
 	ThemesDir        string                         // folder of user theme files (*.json); "" for none
 	ScanFonts        bool                           // look for installed fonts in the background, to apply the saved font families
 	Store            cport.Store                    // where the collection is saved; nil saves nothing
+	States           port.StateStore                // where the UI state is kept; nil keeps none
 	Files            port.FileDialog                // the desktop file chooser; nil asks for paths as text
 	History          func(dir string) rport.History // the history in a folder; nil keeps none
 	Fonts            sport.FontStore                // installed fonts; nil has none
@@ -304,7 +306,10 @@ func NewApp(opts Options) (*App, error) {
 	a.dirty = true
 	a.now = time.Now
 	ctx.Now = func() time.Time { return a.now() } // the caret blinks by the app clock
-	a.store = opts.Store
+	a.store, a.states = opts.Store, opts.States
+	if a.states == nil {
+		a.states = noStates{}
+	}
 	if a.store == nil {
 		a.store = noStore{}
 	}
@@ -325,7 +330,7 @@ func NewApp(opts Options) (*App, error) {
 		a.prefs.ScanFonts(a)
 	}
 	a.openWorkspace(opts.WorkspaceDir)
-	stored, stateErr := state.Load(opts.StatePath)
+	stored, stateErr := a.states.Load(opts.StatePath)
 	a.initial = stored.Window
 	a.restore(stored)
 	a.sent.Load(a)

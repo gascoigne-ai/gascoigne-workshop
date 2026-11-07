@@ -20,7 +20,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/state"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/statefile"
 	ui "github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/ui/app"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/ui/appicon"
 )
@@ -42,9 +42,10 @@ func main() {
 	})
 	flag.BoolVar(&opts.SendOnStart, "send", false, "send the first request at startup (for screenshots)")
 	flag.StringVar(&opts.SettingsPath, "settings", settings.DefaultPath(), "settings file; empty keeps settings in memory")
-	flag.StringVar(&opts.StatePath, "state", state.DefaultPath(), "remembered window and tabs; empty keeps them in memory")
+	flag.StringVar(&opts.StatePath, "state", statefile.DefaultPath(), "remembered window and tabs; empty keeps them in memory")
 	opts.ScanFonts = true
 	opts.Store = store.Files{}
+	opts.States = statefile.Files{}
 	opts.Files = filedialog.System{}
 	opts.History = func(dir string) port.History { return history.Dir(dir) }
 	home, _ := os.UserHomeDir()

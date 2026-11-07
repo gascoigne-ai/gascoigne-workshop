@@ -21,12 +21,11 @@ type imports map[string][]string
 // Splitting it into a controller and a view behind ports removes them (task
 // 033). Each entry is "importer -> imported". The list only shrinks.
 var exceptions = map[string]bool{
-	"workspace/ui/app -> request/adapter/proto":   true,
-	"workspace/ui/app -> request/ui/calltrace":    true,
-	"workspace/ui/app -> response/ui/respview":    true,
-	"workspace/ui/app -> response/ui/sentlog":     true,
-	"workspace/ui/app -> settings/ui/settingsui":  true,
-	"workspace/ui/app -> workspace/adapter/state": true,
+	"workspace/ui/app -> request/adapter/proto":  true,
+	"workspace/ui/app -> request/ui/calltrace":   true,
+	"workspace/ui/app -> response/ui/respview":   true,
+	"workspace/ui/app -> response/ui/sentlog":    true,
+	"workspace/ui/app -> settings/ui/settingsui": true,
 }
 
 // violations applies the layer rules to the packages that already sit in a
