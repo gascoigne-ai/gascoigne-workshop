@@ -61,7 +61,7 @@ The toolkit packages are public and independent of the application (`uitoolkit/c
 | `internal/appearance`, `internal/fonts` | theme choices from settings; installed font families |
 | `internal/response/model/jsonview`, `internal/respview`, `internal/response/model/textfmt` | JSON views and response helpers |
 | `internal/history`, `internal/state` | response history and the sent log; window and tab state |
-| `internal/collection/adapter/openapi`, `internal/postman`, `internal/miniyaml` | importers |
+| `internal/collection/adapter/openapi`, `internal/collection/adapter/postman`, `internal/miniyaml` | importers |
 
 ## Package layout
 
@@ -281,7 +281,7 @@ Row(H(urlH), PadX(w.Pad), PadY(8), Gap(8), Bg(w.Bg),
 
 - **Icon and packaging**: `internal/appicon.Image(size)` draws the program icon (burgundy rounded square, the `>_` prompt); `main` sets it as the window icon and `-icon-png FILE` writes it for packaging. `packaging/gascoigne-workshop.desktop` and `make install` install the binary, the entry and the icon; `.github/workflows/check.yml` runs `make check` under xvfb.
 
-- **Postman import** (`internal/postman`, `App.importPostman`): `postman.Parse` maps a v2.x collection to a folder tree and its variables; the importer adds the folder under the chosen one and the variables the collection lacks.
+- **Postman import** (`internal/collection/adapter/postman`, `App.importPostman`): `postman.Parse` maps a v2.x collection to a folder tree and its variables; the importer adds the folder under the chosen one and the variables the collection lacks.
 
 - **Postman export**: `postman.Export(folder, vars)` writes a v2.1 collection (REST requests only; `postman.Skipped` counts the rest); `App.exportPostman` picks a file through `pickFile` and writes it.
 

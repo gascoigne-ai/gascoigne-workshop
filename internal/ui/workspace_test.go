@@ -1,7 +1,7 @@
 package ui
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/postman"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/adapter/postman"
 	"os"
 	"path/filepath"
 	"strings"
@@ -240,7 +240,7 @@ func TestImportOpenAPIAddsAFolderOfRequestsAndTheBaseURL(t *testing.T) {
 }
 
 func TestImportPostmanAddsAFolderAndItsVariables(t *testing.T) {
-	data, err := os.ReadFile("../postman/testdata/collection.json")
+	data, err := os.ReadFile("../collection/adapter/postman/testdata/collection.json")
 	if err != nil {
 		t.Fatal(err)
 	}
