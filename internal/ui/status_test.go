@@ -4,7 +4,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/theming"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/appearance"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
