@@ -61,7 +61,7 @@ The toolkit packages are public and independent of the application (`uitoolkit/c
 | `internal/appearance`, `internal/fonts` | theme choices from settings; installed font families |
 | `internal/response/model/jsonview`, `internal/respview`, `internal/response/model/textfmt` | JSON views and response helpers |
 | `internal/history`, `internal/state` | response history and the sent log; window and tab state |
-| `internal/collection/adapter/openapi`, `internal/collection/adapter/postman`, `internal/miniyaml` | importers |
+| `internal/collection/adapter/openapi`, `internal/collection/adapter/postman`, `internal/collection/adapter/miniyaml` | importers |
 
 ## Package layout
 
@@ -256,7 +256,7 @@ Row(H(urlH), PadX(w.Pad), PadY(8), Gap(8), Bg(w.Bg),
 
 - **Icon stroke weight is a theme setting**: a theme file may set `"iconStroke": 1.4` (a multiplier, `core.Theme.IconStroke`; absent keeps the base theme's, 0 means 1); `view.Icon` multiplies every stroke width by it, so thin and bold icon sets are a theme choice.
 
-- **OpenAPI import** (`internal/collection/adapter/openapi`, `App.importOpenAPI`): `openapi.Parse` reads an OpenAPI 3 document in JSON or YAML (YAML through `internal/miniyaml`) into a folder (a subfolder per first tag, a request per operation), following `$ref` for parameters and schemas (depth-limited), turning `{id}` into `{{id}}`, and building a JSON body from the example or from `proto.Skeleton` of the schema. The importer defines the `baseUrl` collection variable from the first server when the collection has none.
+- **OpenAPI import** (`internal/collection/adapter/openapi`, `App.importOpenAPI`): `openapi.Parse` reads an OpenAPI 3 document in JSON or YAML (YAML through `internal/collection/adapter/miniyaml`) into a folder (a subfolder per first tag, a request per operation), following `$ref` for parameters and schemas (depth-limited), turning `{id}` into `{{id}}`, and building a JSON body from the example or from `proto.Skeleton` of the schema. The importer defines the `baseUrl` collection variable from the first server when the collection has none.
 
 - **REST client options** (`proto.REST`): `Jar` (cookies kept for the app's lifetime, `App.jar`, replaced by `clearCookies`), `Proxy` (`settings.proxy`), `MaxBody` (cut and flagged `Response.Truncated`), per request `InsecureTLS` and `NoRedirects`; `REST.client(req)` builds the `http.Client` for a request from those. Every send is traced with `net/http/httptrace` into `Response.Timing` (`internal/proto/trace.go`), shown by `timelineText`.
 
@@ -287,7 +287,7 @@ Row(H(urlH), PadX(w.Pad), PadY(8), Gap(8), Bg(w.Bg),
 
 - **Variables in the body editor** (`internal/ui/bodystyle.go`): `App.withVariables(base, req)` wraps the JSON or plain line styler so each `{{name}}` is split out and colored by whether `req` resolves it.
 
-- **YAML subset** (`internal/miniyaml`): a hand-written reader for what API descriptions use (block mappings and sequences, plain and quoted scalars with the core-schema types, one-line flow collections, `|` and `>` block scalars, comments); anchors, aliases, tags, multi-line flow collections and several documents are refused with a line number. The result has the shape `encoding/json` gives, so `openapi.Parse` marshals it and reads it like JSON. Decision: no YAML dependency, for the same reason as the other hand-written parsers.
+- **YAML subset** (`internal/collection/adapter/miniyaml`): a hand-written reader for what API descriptions use (block mappings and sequences, plain and quoted scalars with the core-schema types, one-line flow collections, `|` and `>` block scalars, comments); anchors, aliases, tags, multi-line flow collections and several documents are refused with a line number. The result has the shape `encoding/json` gives, so `openapi.Parse` marshals it and reads it like JSON. Decision: no YAML dependency, for the same reason as the other hand-written parsers.
 
 - **Variables in table cells**: `view.TableSpec.CellStyler` may cut a cell's text into colored `Span`s (an empty style keeps the cell's own color); `App.cellStyler(req)` colors `{{variables}}` green when the request resolves them and red when not, so Params, Headers, Vars and form tables match the URL field and the body editor.
 

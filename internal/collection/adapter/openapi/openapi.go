@@ -11,7 +11,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/miniyaml"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/adapter/miniyaml"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 )
