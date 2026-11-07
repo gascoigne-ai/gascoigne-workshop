@@ -7,7 +7,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/jsonview"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/jsonview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
