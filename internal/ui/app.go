@@ -237,15 +237,16 @@ type App struct {
 
 // Options are the startup switches of the command line.
 type Options struct {
-	ScreenshotPath   string // save a PNG of the first settled frame and exit
-	SendOnStart      bool   // send the first request at startup
-	SettingsPath     string // settings file; "" keeps settings in memory
-	StatePath        string // remembered UI state; "" keeps it in memory
-	ThemesDir        string // folder of user theme files (*.json); "" for none
-	ScanFonts        bool   // look for installed fonts in the background, to apply the saved font families
-	OpenMenu         bool   // start with the settings menu open
-	WorkspaceDir     string // collection folder; "" uses the remembered one, else the built-in sample
-	DefaultWorkspace string // where saving goes when there is no workspace yet
+	ScreenshotPath   string   // save a PNG of the first settled frame and exit
+	ScreenshotSet    []string // key=value settings applied live before the screenshot
+	SendOnStart      bool     // send the first request at startup
+	SettingsPath     string   // settings file; "" keeps settings in memory
+	StatePath        string   // remembered UI state; "" keeps it in memory
+	ThemesDir        string   // folder of user theme files (*.json); "" for none
+	ScanFonts        bool     // look for installed fonts in the background, to apply the saved font families
+	OpenMenu         bool     // start with the settings menu open
+	WorkspaceDir     string   // collection folder; "" uses the remembered one, else the built-in sample
+	DefaultWorkspace string   // where saving goes when there is no workspace yet
 }
 
 // NewApp builds the window state around the sample collection.
@@ -271,7 +272,7 @@ func NewApp(opts Options) (*App, error) {
 		wsEvents:         make(chan wsEvent, 64),
 		later:            make(chan func(), 8),
 		status:           "Ready",
-		shot:             screenshot{path: opts.ScreenshotPath, sendOnStart: opts.SendOnStart},
+		shot:             screenshot{path: opts.ScreenshotPath, sendOnStart: opts.SendOnStart, set: opts.ScreenshotSet},
 
 		settings:     st,
 		settingsPath: opts.SettingsPath,

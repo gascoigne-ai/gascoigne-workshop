@@ -26,6 +26,10 @@ const (
 func main() {
 	var opts ui.Options
 	flag.StringVar(&opts.ScreenshotPath, "screenshot", "", "save a PNG of the window to this path and exit")
+	flag.Func("set", "key=value: change a setting live before the screenshot, as the settings dialog would (repeatable, for screenshots)", func(spec string) error {
+		opts.ScreenshotSet = append(opts.ScreenshotSet, spec)
+		return nil
+	})
 	flag.BoolVar(&opts.SendOnStart, "send", false, "send the first request at startup (for screenshots)")
 	flag.StringVar(&opts.SettingsPath, "settings", settings.DefaultPath(), "settings file; empty keeps settings in memory")
 	flag.StringVar(&opts.StatePath, "state", state.DefaultPath(), "remembered window and tabs; empty keeps them in memory")
