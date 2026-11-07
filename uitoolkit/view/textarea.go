@@ -32,13 +32,14 @@ func NewTextArea(text string) TextArea {
 // areaGeometry is the pixel layout of an area in r.
 type areaGeometry struct {
 	lineH, charW, textX int
+	adv                 float64 // the exact advance of one character
 	lines               []string
 	starts              []int // rune offset of each line
 	longest             int   // runes in the longest line
 }
 
 func (a *TextArea) geometry(c *core.Ctx, r core.Rect) areaGeometry {
-	g := areaGeometry{lineH: c.LineH(c.F.Mono) + 4, charW: c.Width(c.F.Mono, "0")}
+	g := areaGeometry{lineH: c.LineH(c.F.Mono) + 4, charW: c.Width(c.F.Mono, "0"), adv: c.Advance(c.F.Mono)}
 	g.lines = strings.Split(a.Text, "\n")
 	off := 0
 	for _, l := range g.lines {
@@ -53,14 +54,23 @@ func (a *TextArea) geometry(c *core.Ctx, r core.Rect) areaGeometry {
 }
 
 func (g areaGeometry) contentW(r core.Rect) int {
-	return g.textX - r.X + g.longest*g.charW + core.Gutter
+	return g.textX - r.X + g.colX(g.longest) + core.Gutter
 }
+
+// colX is the pixel offset of the start of column col from the start of the
+// text, by the exact advance.
+func (g areaGeometry) colX(col int) int { return int(float64(col)*g.adv + 0.5) }
+
+// colAt is the column whose cell contains offset x from the start of the
+// text (the nearest boundary), never negative.
+func (g areaGeometry) colAt(x int) int { return max(int((float64(x)+g.adv/2)/g.adv), 0) }
+
 func (g areaGeometry) contentH() int { return len(g.lines) * g.lineH }
 
 // posAtPixel maps a pointer position to a rune position.
 func (a *TextArea) posAtPixel(r core.Rect, g areaGeometry, x, y int) int {
 	line := min(max((y-r.Y+a.ScrollY)/g.lineH, 0), len(g.lines)-1)
-	col := max((x-g.textX+a.ScrollX+g.charW/2)/g.charW, 0)
+	col := g.colAt(x - g.textX + a.ScrollX)
 	return a.PosAt(line, col)
 }
 
@@ -147,7 +157,7 @@ func (a *TextArea) reveal(r core.Rect, g areaGeometry, b bars) {
 	} else if bottom > a.ScrollY+b.viewH {
 		a.ScrollY = bottom - b.viewH
 	}
-	left, right := col*g.charW, (col+1)*g.charW
+	left, right := g.colX(col), g.colX(col+1)
 	textW := b.viewW - (g.textX - r.X) // the text area, from the editor's own left edge
 	if left < a.ScrollX {
 		a.ScrollX = left
@@ -180,14 +190,14 @@ func (a *TextArea) Draw(c *core.Ctx, dst *ebiten.Image, r core.Rect) {
 		if hasSel {
 			a.drawSelection(c, area, g, i, y, lo, hi)
 		}
-		x := g.textX - a.ScrollX
 		spans := []Span{{Text: line, Style: core.Text}}
 		if a.Styler != nil {
 			spans = a.Styler(line)
 		}
+		col := 0 // spans are placed by column, so rounding does not add up along the line
 		for _, sp := range spans {
-			c.TextMid(text, c.F.Mono, sp.Text, x, cell, c.Color(sp.Style))
-			x += c.Width(c.F.Mono, sp.Text)
+			c.TextMid(text, c.F.Mono, sp.Text, g.textX-a.ScrollX+g.colX(col), cell, c.Color(sp.Style))
+			col += len([]rune(sp.Text))
 		}
 		numClr := c.Color(core.Muted)
 		if i == curLine {
@@ -198,8 +208,8 @@ func (a *TextArea) Draw(c *core.Ctx, dst *ebiten.Image, r core.Rect) {
 	}
 	if a.Focused && c.CaretVisible() {
 		line, col := a.LineCol(a.Cursor)
-		cx, cy := g.textX-a.ScrollX+col*g.charW, r.Y+line*g.lineH-a.ScrollY
-		row := core.Rect{X: cx, Y: cy, W: g.charW, H: g.lineH}
+		cx, cy := g.textX-a.ScrollX+g.colX(col), r.Y+line*g.lineH-a.ScrollY
+		row := core.Rect{X: cx, Y: cy, W: g.colX(col+1) - g.colX(col), H: g.lineH}
 		drawBlockCaret(c, text, c.F.Mono, caretGlyph([]rune(a.Text), a.Cursor), cx, row)
 	}
 	drawBars(c, dst, b, a.drag, g.contentW(core.Rect{W: b.viewW}), g.contentH(), a.ScrollX, a.ScrollY)
@@ -215,7 +225,7 @@ func (a *TextArea) drawSelection(c *core.Ctx, dst *ebiten.Image, g areaGeometry,
 		return
 	}
 	from, to := max(lo, start)-start, min(hi, end+1)-start // +1: the newline counts
-	x0 := g.textX - a.ScrollX + from*g.charW
-	x1 := g.textX - a.ScrollX + to*g.charW
+	x0 := g.textX - a.ScrollX + g.colX(from)
+	x1 := g.textX - a.ScrollX + g.colX(to)
 	c.Fill(dst, core.Rect{X: x0, Y: y, W: max(x1-x0, 0), H: g.lineH}, c.Color(core.Selection))
 }

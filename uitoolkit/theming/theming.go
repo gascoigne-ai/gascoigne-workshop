@@ -239,27 +239,39 @@ func (c *Catalog) Theme(p Prefs) core.Theme {
 	return th.With(overrides)
 }
 
-// highBars are the colors high contrast strengthens besides the customizable
-// ones: each must reach its ratio against every surface it is drawn on. They
-// are set well above WCAG's 4.5:1 and 3:1 so the switch is plainly visible in
-// both palettes, which already meet those: 15:1 for the main text, 9:1 for the
-// muted text, 8:1 for the status colors, 6:1 for the accent line, 4.5:1 for
-// the lines.
-var highBars = []struct {
-	token core.Token
-	ratio float64
-}{
-	{core.Text, 15},
-	{core.Muted, 9},
-	{core.Error, 8},
-	{core.OK, 8},
-	{core.AccentLine, 6},
-	{core.Border, 4.5},
-	{core.Rule, 4.5},
+// highBar is one color high contrast strengthens: it must reach ratio
+// against each surface it is drawn on.
+type highBar struct {
+	token    core.Token
+	ratio    float64
+	surfaces []core.Token
 }
 
-// highSurfaces are what those colors are drawn on.
-var highSurfaces = []core.Token{core.Bg, core.Sunken, core.Frame}
+var (
+	textSurfaces = []core.Token{core.Bg, core.Sunken, core.Frame}
+	listSurface  = []core.Token{core.Sunken}
+	paneSurface  = []core.Token{core.Bg}
+)
+
+// highBars are the colors high contrast strengthens besides the customizable
+// ones. They are set well above WCAG's 4.5:1 and 3:1 so the switch is plainly
+// visible in both palettes, which already meet those: 17:1 for the main text,
+// 12:1 for the muted text, 8:1 for the status colors, 6:1 for the accent
+// line, 7:1 for borders and rules, and for the fills that show state (the
+// selected and hovered row, a chip) a clear step away from their surface.
+var highBars = []highBar{
+	{core.Text, 17, textSurfaces},
+	{core.Muted, 12, textSurfaces},
+	{core.Error, 8, textSurfaces},
+	{core.OK, 8, textSurfaces},
+	{core.AccentLine, 6, textSurfaces},
+	{core.Border, 7, textSurfaces},
+	{core.Rule, 7, textSurfaces},
+	{core.BorderSoft, 3, textSurfaces},
+	{core.Selected, 2.2, listSurface},
+	{core.Hover, 1.6, listSurface},
+	{core.Chip, 2, paneSurface},
+}
 
 // strengthened is the colors of th moved, in their own hue, until they reach
 // their high-contrast ratio on every surface. A color that already reaches it
@@ -269,7 +281,7 @@ func strengthened(th core.Theme) map[core.Token]color.RGBA {
 	for _, bar := range highBars {
 		col := th.Color(bar.token)
 		for pass := 0; pass < 2; pass++ { // moving away from one surface can leave another short
-			for _, surface := range highSurfaces {
+			for _, surface := range bar.surfaces {
 				col = EnsureContrast(col, th.Color(surface), bar.ratio)
 			}
 		}

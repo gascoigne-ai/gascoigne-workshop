@@ -17,13 +17,14 @@ func TestHighContrastMeetsTheBarForTextLinesAndStatusColors(t *testing.T) {
 		token core.Token
 		min   float64
 	}{
-		{"text", core.Text, 15},
-		{"muted text", core.Muted, 9},
+		{"text", core.Text, 17},
+		{"muted text", core.Muted, 12},
 		{"error", core.Error, 8},
 		{"ok", core.OK, 8},
 		{"accent line", core.AccentLine, 6},
-		{"border", core.Border, 4.5},
-		{"rule", core.Rule, 4.5},
+		{"border", core.Border, 7},
+		{"rule", core.Rule, 7},
+		{"soft border", core.BorderSoft, 3},
 	}
 	c := NewCatalog(Builtins())
 	for _, theme := range []string{"dark", "light"} {
@@ -65,5 +66,34 @@ func TestHighContrastKeepsTheHueOfWhatItStrengthens(t *testing.T) {
 	n, h := normal.Color(core.Error), high.Color(core.Error)
 	if !(n.R >= n.G && n.R >= n.B) || !(h.R >= h.G && h.R >= h.B) {
 		t.Fatalf("the error color is no longer red-ish: %v -> %v", n, h)
+	}
+}
+
+// The dark palette's text already sat at the bars, so lines and the fills
+// that show state (hover, selection, chips) are what make the switch
+// visible: they must be told apart from their surface much more clearly.
+func TestHighContrastSeparatesStateFillsFromTheirSurface(t *testing.T) {
+	c := NewCatalog(Builtins())
+	bars := []struct {
+		what    string
+		token   core.Token
+		surface core.Token
+		min     float64
+	}{
+		{"selected row", core.Selected, core.Sunken, 2.2},
+		{"hovered row", core.Hover, core.Sunken, 1.6},
+		{"chip", core.Chip, core.Bg, 2},
+	}
+	for _, theme := range []string{"dark", "light"} {
+		normal, high := c.Theme(Prefs{Theme: theme}), c.Theme(Prefs{Theme: theme, Contrast: "high"})
+		for _, bar := range bars {
+			got := ContrastRatio(high.Color(bar.token), high.Color(bar.surface))
+			if got < bar.min-0.01 {
+				t.Errorf("%s: %s on %s is %.2f:1 under high contrast, want at least %.1f:1", theme, bar.what, bar.surface, got, bar.min)
+			}
+			if was := ContrastRatio(normal.Color(bar.token), normal.Color(bar.surface)); got <= was {
+				t.Errorf("%s: %s is no clearer than in normal contrast (%.2f -> %.2f)", theme, bar.what, was, got)
+			}
+		}
 	}
 }

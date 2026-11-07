@@ -65,10 +65,10 @@ func TestClickingASecondVisualRowSelectsFromThatPartOfTheLine(t *testing.T) {
 	v, c, r, cols := wrapped(t)
 	g := v.geometry(c, r)
 	y := r.Y + g.lineH + g.lineH/2       // the second visual row, the continuation of line 0
-	x := g.textX - v.ScrollX + 3*g.charW // three columns into that row
+	x := g.textX - v.ScrollX + g.colX(3) // three columns into that row
 	press(v, c, r, x, y, 1)
-	dragTo(v, c, r, x+4*g.charW, y)
-	release(v, c, r, x+4*g.charW, y)
+	dragTo(v, c, r, x+g.colX(4), y)
+	release(v, c, r, x+g.colX(4), y)
 	want := strings.Repeat("0123456789", 20)[cols+3 : cols+7]
 	if got := v.SelectedText(); got != want {
 		t.Fatalf("selection %q, want %q (columns %d..%d of the line)", got, want, cols+3, cols+7)

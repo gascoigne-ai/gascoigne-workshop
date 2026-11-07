@@ -18,7 +18,7 @@ func TestAnEditorNotAtTheLeftEdgeScrollsOnlyWhenTheCursorReachesItsRightEdge(t *
 	r := core.Rect{X: 300, Y: 40, W: 400, H: 200}
 	g := area.geometry(c, r)
 	b := layoutBars(r, g.contentW(r), g.contentH())
-	fits := (b.viewW - (g.textX - r.X)) / g.charW // columns that fit before the right edge
+	fits := g.colAt(b.viewW - (g.textX - r.X)) // columns that fit before the right edge
 	for i := 0; i < fits-3; i++ {
 		c.In = core.Input{X: 5000, Y: 5000, Typed: []rune("x")}
 		area.Update(c, r)
@@ -35,7 +35,7 @@ func TestAnEditorNotAtTheLeftEdgeScrollsOnlyWhenTheCursorReachesItsRightEdge(t *
 	}
 	line, col := area.LineCol(area.Cursor)
 	_ = line
-	right := g.textX - area.ScrollX + (col+1)*g.charW
+	right := g.textX - area.ScrollX + g.colX(col+1)
 	if right > r.X+b.viewW {
 		t.Fatalf("the cursor at x=%d is outside the editor (right edge %d)", right, r.X+b.viewW)
 	}

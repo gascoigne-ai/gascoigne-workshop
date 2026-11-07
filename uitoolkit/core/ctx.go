@@ -246,6 +246,14 @@ func (c *Ctx) Width(face *text.GoTextFace, s string) int {
 	return int(w/c.Scale + 0.5)
 }
 
+// Advance is the exact logical width of one character of a monospace face,
+// not rounded: columns placed at whole multiples of the rounded Width drift
+// away from the text, which is drawn with the exact advance.
+func (c *Ctx) Advance(face *text.GoTextFace) float64 {
+	w, _ := text.Measure("0", face, 0)
+	return w / c.Scale
+}
+
 // LineH is the logical line height of face.
 func (c *Ctx) LineH(face *text.GoTextFace) int {
 	m := face.Metrics()

@@ -75,7 +75,7 @@ func rowY(c *core.Ctx, v *CodeView, r core.Rect, i int) int {
 // colX is the pixel x of the boundary before column col of the text.
 func colX(c *core.Ctx, v *CodeView, r core.Rect, col int) int {
 	g := v.geometry(c, r)
-	return g.textX - v.ScrollX + col*g.charW
+	return g.textX - v.ScrollX + g.colX(col)
 }
 
 func press(v *CodeView, c *core.Ctx, r core.Rect, x, y, clicks int) {

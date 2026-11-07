@@ -89,7 +89,7 @@ func (v *CodeView) wrapCols(g codeGeometry, r core.Rect) int {
 	// The vertical bar is assumed present, so the columns do not change
 	// when wrapping makes the content long enough to need it.
 	room := r.W - ScrollbarW - (g.textX - r.X) - core.Gutter
-	return max(room/g.charW, 1)
+	return max(int(float64(room)/g.adv), 1)
 }
 
 // rows are the visual rows of the visible lines. A folded line is one row
@@ -328,10 +328,19 @@ const foldColW = 18
 // codeGeometry is the pixel layout of a CodeView in r.
 type codeGeometry struct {
 	lineH, charW, numW, textX int
+	adv                       float64 // the exact advance of one character
 }
 
+// colX is the pixel offset of column col from the start of the text, by the
+// exact advance, so the caret, selection and matches line up with the text
+// however long the line.
+func (g codeGeometry) colX(col int) int { return int(float64(col)*g.adv + 0.5) }
+
+// colAt is the column nearest to offset x from the start of the text.
+func (g codeGeometry) colAt(x int) int { return int((float64(x) + g.adv/2) / g.adv) }
+
 func (v *CodeView) geometry(c *core.Ctx, r core.Rect) codeGeometry {
-	g := codeGeometry{lineH: c.LineH(c.F.Mono) + 4, charW: c.Width(c.F.Mono, "0")}
+	g := codeGeometry{lineH: c.LineH(c.F.Mono) + 4, charW: c.Width(c.F.Mono, "0"), adv: c.Advance(c.F.Mono)}
 	g.numW = g.charW * v.numberDigits()
 	g.textX = r.X + core.Gutter + g.numW + foldColW + 8
 	return g
@@ -398,7 +407,7 @@ func (v *CodeView) rowAt(y int, r core.Rect, g codeGeometry, rows []wrapRow) wra
 // its line.
 func (v *CodeView) posAt(x, y int, r core.Rect, g codeGeometry, rows []wrapRow) textPos {
 	row := v.rowAt(y, r, g, rows)
-	col := row.from + (x-g.textX+v.ScrollX+g.charW/2)/g.charW
+	col := row.from + g.colAt(x-g.textX+v.ScrollX)
 	if x-g.textX+v.ScrollX < -g.charW/2 {
 		col = row.from
 	}
@@ -526,14 +535,14 @@ func (v *CodeView) Draw(c *core.Ctx, dst *ebiten.Image, r core.Rect) {
 			v.drawSelection(c, text, g, cell, row, lo, hi)
 		}
 
-		x := g.textX - v.ScrollX
 		spans := v.shownSpans(idx)
 		if !row.whole(v.lineLen(idx)) {
 			spans = cutSpans(spans, row.from, row.to)
 		}
+		col := 0 // spans are placed by column, so rounding does not add up along the line
 		for _, sp := range spans {
-			c.TextMid(text, c.F.Mono, sp.Text, x, cell, c.Color(sp.Style))
-			x += c.Width(c.F.Mono, sp.Text)
+			c.TextMid(text, c.F.Mono, sp.Text, g.textX-v.ScrollX+g.colX(col), cell, c.Color(sp.Style))
+			col += len([]rune(sp.Text))
 		}
 
 		if row.from > 0 { // a continuation row has no number and no fold arrow
@@ -555,7 +564,7 @@ func (v *CodeView) contentWidth(c *core.Ctx, r core.Rect) int {
 		return 0 // wrapped text fits the width
 	}
 	g := v.geometry(c, r)
-	return g.textX - r.X + v.maxRunes*g.charW + core.Gutter
+	return g.textX - r.X + g.colX(v.maxRunes) + core.Gutter
 }
 
 func (v *CodeView) bars(c *core.Ctx, r core.Rect, g codeGeometry, visible int) bars {
@@ -582,8 +591,8 @@ func (v *CodeView) drawSelection(c *core.Ctx, dst *ebiten.Image, g codeGeometry,
 	if to < from {
 		return
 	}
-	x0 := g.textX - v.ScrollX + (from-row.from)*g.charW
-	x1 := g.textX - v.ScrollX + (to-row.from)*g.charW
+	x0 := g.textX - v.ScrollX + g.colX(from-row.from)
+	x1 := g.textX - v.ScrollX + g.colX(to-row.from)
 	c.Fill(dst, core.Rect{X: x0, Y: cell.Y, W: max(x1-x0, 0), H: cell.H}, c.Color(core.Selection))
 }
 
@@ -677,8 +686,8 @@ func (v *CodeView) drawMatches(c *core.Ctx, dst *ebiten.Image, g codeGeometry, c
 		if i == v.current {
 			tok = core.FindActive
 		}
-		x := g.textX - v.ScrollX + (from-row.from)*g.charW
-		c.Fill(dst, core.Rect{X: x, Y: cell.Y, W: (to - from) * g.charW, H: cell.H}, c.Color(tok))
+		x := g.textX - v.ScrollX + g.colX(from-row.from)
+		c.Fill(dst, core.Rect{X: x, Y: cell.Y, W: g.colX(to-row.from) - g.colX(from-row.from), H: cell.H}, c.Color(tok))
 	}
 }
 

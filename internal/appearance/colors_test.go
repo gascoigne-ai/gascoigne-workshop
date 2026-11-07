@@ -84,12 +84,22 @@ func TestHighContrastMakesTheListedColorsReadableInEveryTheme(t *testing.T) {
 }
 
 func TestHighContrastRaisesTheBarForOverrides(t *testing.T) {
-	// readable in normal contrast (>= 4.5) but not in high (< 7)
-	hex := "#5a5a2a"
-	c, _ := theming.ParseHex(hex)
-	r := theming.ContrastRatio(c, ThemeFor("dark", "medium").Color(core.Text))
-	if r < NormalRatio || r >= HighRatio {
-		t.Fatalf("test setup: ratio %.2f", r)
+	// a color readable in normal contrast (>= 4.5) but not under high
+	// contrast's own, stronger text (< 7)
+	hs := settings.Default()
+	hs.Contrast = "high"
+	highText := ThemeWith(hs).Color(core.Text)
+	normalText := ThemeFor("dark", "medium").Color(core.Text)
+	var hex string
+	var c color.RGBA
+	for v := uint8(0x30); v < 0xa0 && hex == ""; v += 2 {
+		candidate := color.RGBA{v, v, v / 2, 0xff}
+		if theming.ContrastRatio(candidate, normalText) >= NormalRatio && theming.ContrastRatio(candidate, highText) < HighRatio {
+			c, hex = candidate, theming.FormatHex(candidate)
+		}
+	}
+	if hex == "" {
+		t.Fatal("test setup: no color is readable in normal contrast and not in high")
 	}
 	s := withColors("dark", map[string]string{"selection": hex})
 	if got := ThemeWith(s).Color(core.Selection); got != c {
