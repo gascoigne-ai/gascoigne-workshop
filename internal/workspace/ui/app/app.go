@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
+	cport "github.com/gascoigne-ai/gascoigne-workshop/internal/collection/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model/assert"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/ui/calltrace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/textfmt"
@@ -177,14 +178,15 @@ type App struct {
 	shot     screenshot
 
 	settings           settings.Settings
-	settingsPath       string                         // "" keeps settings in memory only
-	menu               bool                           // settings menu is open
-	edit               *cellEdit                      // the table cell being edited, if any
-	dragTab            int                            // index of the tab being dragged, -1 when none
-	dragRow            *rowSelection                  // the table row being dragged by its grip, nil when none
-	ctxMenu            *contextMenu                   // the open context menu, if any
-	bulk               *bulkEdit                      // the table in bulk-edit mode, if any
-	actionIDs          []string                       // the ids of the shortcut actions, for completing settings.json
+	settingsPath       string        // "" keeps settings in memory only
+	menu               bool          // settings menu is open
+	edit               *cellEdit     // the table cell being edited, if any
+	dragTab            int           // index of the tab being dragged, -1 when none
+	dragRow            *rowSelection // the table row being dragged by its grip, nil when none
+	ctxMenu            *contextMenu  // the open context menu, if any
+	bulk               *bulkEdit     // the table in bulk-edit mode, if any
+	actionIDs          []string      // the ids of the shortcut actions, for completing settings.json
+	store              cport.Store
 	files              port.FileDialog                // the desktop file chooser, replaced in tests
 	cancelSettingsPick func()                         // takes back a file question the settings dialog asked
 	settingsUnsaved    bool                           // settings were changed but not written (auto-save is off)
@@ -250,6 +252,7 @@ type Options struct {
 	StatePath        string                         // remembered UI state; "" keeps it in memory
 	ThemesDir        string                         // folder of user theme files (*.json); "" for none
 	ScanFonts        bool                           // look for installed fonts in the background, to apply the saved font families
+	Store            cport.Store                    // where the collection is saved; nil saves nothing
 	Files            port.FileDialog                // the desktop file chooser; nil asks for paths as text
 	History          func(dir string) rport.History // the history in a folder; nil keeps none
 	Fonts            sport.FontStore                // installed fonts; nil has none
@@ -301,6 +304,10 @@ func NewApp(opts Options) (*App, error) {
 	a.dirty = true
 	a.now = time.Now
 	ctx.Now = func() time.Time { return a.now() } // the caret blinks by the app clock
+	a.store = opts.Store
+	if a.store == nil {
+		a.store = noStore{}
+	}
 	a.files, a.previews, a.histories, a.fonts = opts.Files, opts.Previews, opts.History, opts.Fonts
 	if a.fonts == nil {
 		a.fonts = noFonts{}

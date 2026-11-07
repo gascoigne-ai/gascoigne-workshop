@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/port"
 	"io/fs"
 	"os"
 	"path"
@@ -455,3 +456,14 @@ func loadFolder(dir, rel string, f *model.Folder, secrets map[string]secret) (fo
 	}
 	return meta, nil
 }
+
+// Files is the collection store of the file system.
+type Files struct{}
+
+// Load implements port.Store.
+func (Files) Load(dir string) (model.Collection, error) { return Load(dir) }
+
+// Save implements port.Store.
+func (Files) Save(dir string, collection model.Collection) error { return Save(dir, collection) }
+
+var _ port.Store = Files{}

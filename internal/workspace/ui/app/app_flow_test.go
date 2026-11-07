@@ -2,6 +2,7 @@ package ui
 
 import (
 	"errors"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/adapter/store"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/history"
@@ -76,6 +77,7 @@ func startTestApp(t *testing.T, path string) (*App, string) {
 func withAdapters(opts Options) Options {
 	opts.History = func(dir string) rport.History { return history.Dir(dir) }
 	opts.Fonts = fonts.System{}
+	opts.Store = store.Files{}
 	return opts
 }
 

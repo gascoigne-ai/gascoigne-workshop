@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/adapter/store"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 )
@@ -24,7 +23,7 @@ func (a *App) openWorkspace(dir string) {
 		dir = a.settings.Workspace
 	}
 	if dir != "" {
-		col, err := store.Load(dir)
+		col, err := a.store.Load(dir)
 		if err != nil {
 			a.status = "Workspace not loaded: " + err.Error()
 		} else {
@@ -89,7 +88,7 @@ func (a *App) saveWorkspace() {
 			return
 		}
 	}
-	if err := store.Save(dir, a.col); err != nil {
+	if err := a.store.Save(dir, a.col); err != nil {
 		a.colSaved = collectionKey(a.col) // report once, do not retry every frame
 		a.toast("Saving failed: "+err.Error(), true)
 		return
@@ -134,7 +133,7 @@ func (a *App) FlushWorkspace() error {
 	if collectionKey(a.col) == a.colSaved {
 		return nil
 	}
-	if err := store.Save(a.workspace, a.col); err != nil {
+	if err := a.store.Save(a.workspace, a.col); err != nil {
 		return err
 	}
 	a.colSaved = collectionKey(a.col)
@@ -154,7 +153,7 @@ func (a *App) openWorkspaceAt(dir string) {
 		a.toast("Saving the current collection failed: "+err.Error(), true)
 		return
 	}
-	col, err := store.Load(dir)
+	col, err := a.store.Load(dir)
 	if err != nil {
 		a.toast("Cannot open "+dir+": "+err.Error(), true)
 		return

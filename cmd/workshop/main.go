@@ -5,6 +5,7 @@ package main
 import (
 	"errors"
 	"flag"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/adapter/store"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/preview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
@@ -43,6 +44,7 @@ func main() {
 	flag.StringVar(&opts.SettingsPath, "settings", settings.DefaultPath(), "settings file; empty keeps settings in memory")
 	flag.StringVar(&opts.StatePath, "state", state.DefaultPath(), "remembered window and tabs; empty keeps them in memory")
 	opts.ScanFonts = true
+	opts.Store = store.Files{}
 	opts.Files = filedialog.System{}
 	opts.History = func(dir string) port.History { return history.Dir(dir) }
 	home, _ := os.UserHomeDir()

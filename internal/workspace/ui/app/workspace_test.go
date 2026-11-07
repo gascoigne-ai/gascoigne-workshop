@@ -1,7 +1,7 @@
 package ui
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/adapter/postman"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/postman"
 	"os"
 	"path/filepath"
 	"strings"
@@ -18,7 +18,7 @@ func workspaceApp(t *testing.T, dir string, opts Options) *App {
 	t.Helper()
 	opts.SettingsPath = filepath.Join(t.TempDir(), "settings.json")
 	opts.WorkspaceDir = dir
-	a, err := NewApp(opts)
+	a, err := NewApp(withAdapters(opts))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -130,7 +130,7 @@ func TestRemembersTheLastWorkspace(t *testing.T) {
 	if err := s.Save(sp); err != nil {
 		t.Fatal(err)
 	}
-	a, err := NewApp(Options{SettingsPath: sp})
+	a, err := NewApp(withAdapters(Options{SettingsPath: sp}))
 	if err != nil || a.col.Name != "Last" {
 		t.Fatalf("%v %q", err, a.col.Name)
 	}
@@ -213,7 +213,7 @@ func TestOpenWorkspaceAtSwitchesCollectionsAndSavesTheOldOne(t *testing.T) {
 }
 
 func TestImportOpenAPIAddsAFolderOfRequestsAndTheBaseURL(t *testing.T) {
-	data, err := os.ReadFile("../../../collection/adapter/openapi/testdata/petstore.json")
+	data, err := os.ReadFile("../../../collection/model/openapi/testdata/petstore.json")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -240,7 +240,7 @@ func TestImportOpenAPIAddsAFolderOfRequestsAndTheBaseURL(t *testing.T) {
 }
 
 func TestImportPostmanAddsAFolderAndItsVariables(t *testing.T) {
-	data, err := os.ReadFile("../../../collection/adapter/postman/testdata/collection.json")
+	data, err := os.ReadFile("../../../collection/model/postman/testdata/collection.json")
 	if err != nil {
 		t.Fatal(err)
 	}

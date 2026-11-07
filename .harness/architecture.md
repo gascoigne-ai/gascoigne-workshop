@@ -12,8 +12,8 @@ flowchart LR
       rmod["model, model/assert"]
     end
     subgraph collection
-      cad["adapter/store, openapi, postman, miniyaml"]
-      cmod["model/collection"]
+      cad["adapter/store"]
+      cmod["model/collection, openapi, postman, miniyaml"]
     end
     subgraph response
       sui["ui/respview, sentlog"]
@@ -68,8 +68,9 @@ The toolkit packages are public and independent of the application (`uitoolkit/c
 | `internal/request/adapter/proto` | `Protocol` interface and registry; REST, WebSocket, SSE, MCP, gRPC |
 | `internal/request/model/assert` | the assertion language run against a response |
 | `internal/request/ui/calltrace` | the Log dialog behind a `Host` interface |
-| `internal/collection/model/collection` | tree filtering |
-| `internal/collection/adapter/store`, `openapi`, `postman`, `miniyaml` | the folder-of-files format; importers |
+| `internal/collection/model/collection`, `openapi`, `postman`, `miniyaml` | tree filtering; the importers and the Postman exporter, pure functions over bytes |
+| `internal/collection/port` | `Store`, where a collection is saved (`store.Files` implements it) |
+| `internal/collection/adapter/store` | the folder-of-files format |
 | `internal/response/model/jsonview`, `internal/response/model/textfmt` | JSON tokens and lines (`Kind.Style` names the theme style); text helpers |
 | `internal/response/ui/respview`, `internal/response/ui/sentlog` | response views and helpers; the sent-request list behind a `Host` |
 | `internal/response/port` | `Sent` and `SentStore`, the stored log of sent requests; `BodyPreview`, shows a body in the browser (`preview.Browser` implements it); `History` and `Entry`, the saved responses and the sent log of one folder (`history.Dir` implements it) |
@@ -83,7 +84,7 @@ The toolkit packages are public and independent of the application (`uitoolkit/c
 
 `internal/` is grouped by domain, then by role (decision 19): `internal/<domain>/<role>/<package>`, with domains `request`, `collection`, `response`, `settings`, `workspace` and roles `ui`, `controller`, `port`, `adapter`, `model`. `internal/layers_test.go` enforces the dependency rules: model imports only model; port imports model and port; controller imports model, port and controller; ui and adapter import model, port and controller but never each other; another domain is reached only through its model or port. A test with a table proves each kind of violation is caught.
 
-Go allows one package per directory and a method cannot be declared in another package, so everything that reads and writes the one `App` struct (tabs, panes, sidebar, environments, workspace) is still one package, `workspace/ui/app`. It imports the other domains' adapters, controllers and views directly; those 9 imports are listed in `exceptions` in the layer test and are what task 033 still has to remove by splitting the App into a controller and views behind ports. A feature that needs little of the `App` is its own package with a `Host` interface the App implements, a package doc and tests with a fake host (`calltrace`, `sentlog`, `settingsui`). Adapters of a port are handed to those views through the host (`Host.SentStore`, `Host.FontStore`).
+Go allows one package per directory and a method cannot be declared in another package, so everything that reads and writes the one `App` struct (tabs, panes, sidebar, environments, workspace) is still one package, `workspace/ui/app`. It imports the other domains' adapters, controllers and views directly; those 5 imports are listed in `exceptions` in the layer test and are what task 033 still has to remove by splitting the App into a controller and views behind ports. A feature that needs little of the `App` is its own package with a `Host` interface the App implements, a package doc and tests with a fake host (`calltrace`, `sentlog`, `settingsui`). Adapters of a port are handed to those views through the host (`Host.SentStore`, `Host.FontStore`).
 
 ## Model and protocols
 
@@ -274,7 +275,7 @@ Row(H(urlH), PadX(w.Pad), PadY(8), Gap(8), Bg(w.Bg),
 
 - **Icon stroke weight is a theme setting**: a theme file may set `"iconStroke": 1.4` (a multiplier, `core.Theme.IconStroke`; absent keeps the base theme's, 0 means 1); `view.Icon` multiplies every stroke width by it, so thin and bold icon sets are a theme choice.
 
-- **OpenAPI import** (`internal/collection/adapter/openapi`, `App.importOpenAPI`): `openapi.Parse` reads an OpenAPI 3 document in JSON or YAML (YAML through `internal/collection/adapter/miniyaml`) into a folder (a subfolder per first tag, a request per operation), following `$ref` for parameters and schemas (depth-limited), turning `{id}` into `{{id}}`, and building a JSON body from the example or from `proto.Skeleton` of the schema. The importer defines the `baseUrl` collection variable from the first server when the collection has none.
+- **OpenAPI import** (`internal/collection/model/openapi`, `App.importOpenAPI`): `openapi.Parse` reads an OpenAPI 3 document in JSON or YAML (YAML through `internal/collection/model/miniyaml`) into a folder (a subfolder per first tag, a request per operation), following `$ref` for parameters and schemas (depth-limited), turning `{id}` into `{{id}}`, and building a JSON body from the example or from `proto.Skeleton` of the schema. The importer defines the `baseUrl` collection variable from the first server when the collection has none.
 
 - **REST client options** (`proto.REST`): `Jar` (cookies kept for the app's lifetime, `App.jar`, replaced by `clearCookies`), `Proxy` (`settings.proxy`), `MaxBody` (cut and flagged `Response.Truncated`), per request `InsecureTLS` and `NoRedirects`; `REST.client(req)` builds the `http.Client` for a request from those. Every send is traced with `net/http/httptrace` into `Response.Timing` (`internal/request/adapter/proto/trace.go`), shown by `timelineText`.
 
@@ -299,13 +300,13 @@ Row(H(urlH), PadX(w.Pad), PadY(8), Gap(8), Bg(w.Bg),
 
 - **Icon and packaging**: `internal/workspace/ui/appicon.Image(size)` draws the program icon (burgundy rounded square, the `>_` prompt); `main` sets it as the window icon and `-icon-png FILE` writes it for packaging. `packaging/gascoigne-workshop.desktop` and `make install` install the binary, the entry and the icon; `.github/workflows/check.yml` runs `make check` under xvfb.
 
-- **Postman import** (`internal/collection/adapter/postman`, `App.importPostman`): `postman.Parse` maps a v2.x collection to a folder tree and its variables; the importer adds the folder under the chosen one and the variables the collection lacks.
+- **Postman import** (`internal/collection/model/postman`, `App.importPostman`): `postman.Parse` maps a v2.x collection to a folder tree and its variables; the importer adds the folder under the chosen one and the variables the collection lacks.
 
 - **Postman export**: `postman.Export(folder, vars)` writes a v2.1 collection (REST requests only; `postman.Skipped` counts the rest); `App.exportPostman` picks a file through `pickFile` and writes it.
 
 - **Variables in the body editor** (`internal/workspace/ui/app/bodystyle.go`): `App.withVariables(base, req)` wraps the JSON or plain line styler so each `{{name}}` is split out and colored by whether `req` resolves it.
 
-- **YAML subset** (`internal/collection/adapter/miniyaml`): a hand-written reader for what API descriptions use (block mappings and sequences, plain and quoted scalars with the core-schema types, one-line flow collections, `|` and `>` block scalars, comments); anchors, aliases, tags, multi-line flow collections and several documents are refused with a line number. The result has the shape `encoding/json` gives, so `openapi.Parse` marshals it and reads it like JSON. Decision: no YAML dependency, for the same reason as the other hand-written parsers.
+- **YAML subset** (`internal/collection/model/miniyaml`): a hand-written reader for what API descriptions use (block mappings and sequences, plain and quoted scalars with the core-schema types, one-line flow collections, `|` and `>` block scalars, comments); anchors, aliases, tags, multi-line flow collections and several documents are refused with a line number. The result has the shape `encoding/json` gives, so `openapi.Parse` marshals it and reads it like JSON. Decision: no YAML dependency, for the same reason as the other hand-written parsers.
 
 - **Variables in table cells**: `view.TableSpec.CellStyler` may cut a cell's text into colored `Span`s (an empty style keeps the cell's own color); `App.cellStyler(req)` colors `{{variables}}` green when the request resolves them and red when not, so Params, Headers, Vars and form tables match the URL field and the body editor.
 
