@@ -44,7 +44,7 @@ func (d *Dialog) Stamp(path string) {
 // and is reported.
 func (d *Dialog) Poll(host Host) {
 	path := host.SettingsPath()
-	if path == "" {
+	if path == "" || host.Unsaved() { // an outside change must not overwrite what was not saved
 		return
 	}
 	now := statFile(path)
@@ -118,6 +118,12 @@ func (d *Dialog) RawEdited(host Host) {
 	if path == "" {
 		return
 	}
+	if !parsed.AutoSave { // held back until the user saves
+		d.rawPending = true
+		host.MarkUnsaved()
+		return
+	}
+	d.rawPending = false
 	if err := settings.WriteText(path, []byte(text)); err != nil {
 		host.Toast("Could not save settings: "+err.Error(), true)
 		return

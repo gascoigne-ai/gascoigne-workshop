@@ -42,6 +42,15 @@ func (a *App) Close() { a.closeSettings() }
 // closeSettings closes the dialog and what is open inside it, so the next
 // opening starts clean.
 func (a *App) closeSettings() {
+	if a.menu && a.settingsUnsaved {
+		a.askSaveSettings()
+		return
+	}
+	a.closeSettingsNow()
+}
+
+// closeSettingsNow closes the dialog without asking.
+func (a *App) closeSettingsNow() {
 	a.menu = false
 	a.prefs.Fresh()
 }
@@ -106,4 +115,57 @@ func (a *App) toggleSettings() {
 		return
 	}
 	a.menu = true
+}
+
+// Unsaved reports whether settings were changed but not written (auto-save
+// is off).
+func (a *App) Unsaved() bool { return a.settingsUnsaved }
+
+// MarkUnsaved and MarkSaved record what the dialog did with the file itself.
+func (a *App) MarkUnsaved() { a.settingsUnsaved = true }
+
+// MarkSaved says the file now holds the settings in effect.
+func (a *App) MarkSaved() { a.settingsUnsaved = false }
+
+// Persist writes the settings in effect to the file.
+func (a *App) Persist() {
+	if a.settingsPath == "" {
+		a.settingsUnsaved = false
+		return
+	}
+	if err := a.settings.Save(a.settingsPath); err != nil {
+		a.status = "Could not save settings: " + err.Error()
+		a.toast(a.status, true)
+		return
+	}
+	a.prefs.Stamp(a.settingsPath)
+	a.settingsUnsaved = false
+}
+
+// revertSettings puts back what the file holds, dropping unsaved changes.
+func (a *App) revertSettings() {
+	a.settingsUnsaved = false
+	if a.settingsPath == "" {
+		return
+	}
+	loaded, err := settings.Load(a.settingsPath)
+	if err != nil {
+		a.toast("Could not read settings.json: "+err.Error(), true)
+		return
+	}
+	a.applySettings(loaded)
+}
+
+// askSaveSettings asks what to do with unsaved changes when the dialog
+// is closed.
+func (a *App) askSaveSettings() {
+	a.dialog = &dialog{
+		title: "Unsaved settings",
+		body:  "The changes are applied but not written to settings.json.\nSave them, or discard them and go back to what is stored?",
+		buttons: []dialogButton{
+			{label: "Cancel", run: a.closeDialog},
+			{label: "Discard", run: func() { a.closeDialog(); a.revertSettings(); a.closeSettingsNow() }},
+			{label: "Save", primary: true, run: func() { a.closeDialog(); a.Persist(); a.closeSettingsNow() }},
+		},
+	}
 }

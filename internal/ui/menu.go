@@ -100,8 +100,11 @@ func (a *App) changeSettings(edit func(*settings.Settings)) {
 	a.colorInputs, a.colorNotes = nil, nil
 }
 
-// saveSettings edits, applies and saves the settings.
+// saveSettings edits and applies the settings and, unless auto-save is off,
+// writes them. Turning auto-save off writes that choice once; turning it on
+// writes whatever was waiting.
 func (a *App) saveSettings(edit func(*settings.Settings)) {
+	wasAuto := a.settings.AutoSave
 	edit(&a.settings)
 	if err := a.ctx.SetTheme(appearance.ThemeWith(a.settings)); err != nil {
 		a.status = err.Error()
@@ -110,10 +113,11 @@ func (a *App) saveSettings(edit func(*settings.Settings)) {
 	if a.settingsPath == "" {
 		return
 	}
-	if err := a.settings.Save(a.settingsPath); err != nil {
-		a.status = "Could not save settings: " + err.Error()
-		a.toast(a.status, true)
+	if !a.settings.AutoSave && wasAuto == false {
+		a.settingsUnsaved = true // applied now, written when the user saves
 		return
 	}
-	a.prefs.Stamp(a.settingsPath)
+	// auto-save is on, was just turned on (which writes what was pending) or
+	// was just turned off (which writes that choice, and nothing else changed)
+	a.Persist()
 }

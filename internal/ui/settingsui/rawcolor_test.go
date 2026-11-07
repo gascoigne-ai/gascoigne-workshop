@@ -50,7 +50,7 @@ func TestTypingAQuoteOpensTheCompletionMenuWithoutCtrlSpace(t *testing.T) {
 		wantMenu            bool
 		wantFirst           string
 	}{
-		{"an opening quote of a key", `{ `, `{ "`, 3, true, "caCert"},
+		{"an opening quote of a key", `{ `, `{ "`, 3, true, "autoSave"},
 		{"an opening quote of an enum value", `{"layout": `, `{"layout": "`, 12, true, "side"},
 		{"a letter is not a trigger", `{ "`, `{ "l`, 4, false, ""},
 		{"a quote closing a string is not a trigger", `{"layout": "side`, `{"layout": "side"`, 16, false, ""},

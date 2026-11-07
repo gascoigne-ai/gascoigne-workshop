@@ -15,11 +15,11 @@ func TestLoad(t *testing.T) {
 		wantErr bool
 	}{
 		{"missing file gives defaults", nil, Default(), false},
-		{"full file", ptr(`{"theme":"light","textSize":"large"}`), Settings{Theme: "light", TextSize: "large", Layout: "side", Contrast: "normal", TimeoutSec: 60, UIScalePct: 100, Corners: "soft", ResponseView: "compact"}, false},
-		{"saved layout", ptr(`{"layout":"stacked"}`), Settings{Theme: "dark", TextSize: "medium", Layout: "stacked", Contrast: "normal", TimeoutSec: 60, UIScalePct: 100, Corners: "soft", ResponseView: "compact"}, false},
-		{"saved timeout", ptr(`{"timeoutSec":15}`), Settings{Theme: "dark", TextSize: "medium", Layout: "side", Contrast: "normal", TimeoutSec: 15, UIScalePct: 100, Corners: "soft", ResponseView: "compact"}, false},
-		{"missing field keeps default", ptr(`{"theme":"light"}`), Settings{Theme: "light", TextSize: "medium", Layout: "side", Contrast: "normal", TimeoutSec: 60, UIScalePct: 100, Corners: "soft", ResponseView: "compact"}, false},
-		{"unknown values pass through", ptr(`{"theme":"neon"}`), Settings{Theme: "neon", TextSize: "medium", Layout: "side", Contrast: "normal", TimeoutSec: 60, UIScalePct: 100, Corners: "soft", ResponseView: "compact"}, false},
+		{"full file", ptr(`{"theme":"light","textSize":"large"}`), Settings{AutoSave: true, Theme: "light", TextSize: "large", Layout: "side", Contrast: "normal", TimeoutSec: 60, UIScalePct: 100, Corners: "soft", ResponseView: "compact"}, false},
+		{"saved layout", ptr(`{"layout":"stacked"}`), Settings{AutoSave: true, Theme: "dark", TextSize: "medium", Layout: "stacked", Contrast: "normal", TimeoutSec: 60, UIScalePct: 100, Corners: "soft", ResponseView: "compact"}, false},
+		{"saved timeout", ptr(`{"timeoutSec":15}`), Settings{AutoSave: true, Theme: "dark", TextSize: "medium", Layout: "side", Contrast: "normal", TimeoutSec: 15, UIScalePct: 100, Corners: "soft", ResponseView: "compact"}, false},
+		{"missing field keeps default", ptr(`{"theme":"light"}`), Settings{AutoSave: true, Theme: "light", TextSize: "medium", Layout: "side", Contrast: "normal", TimeoutSec: 60, UIScalePct: 100, Corners: "soft", ResponseView: "compact"}, false},
+		{"unknown values pass through", ptr(`{"theme":"neon"}`), Settings{AutoSave: true, Theme: "neon", TextSize: "medium", Layout: "side", Contrast: "normal", TimeoutSec: 60, UIScalePct: 100, Corners: "soft", ResponseView: "compact"}, false},
 		{"broken json gives defaults and an error", ptr(`{"theme":`), Default(), true},
 	}
 	for _, tt := range tests {
@@ -41,7 +41,7 @@ func TestLoad(t *testing.T) {
 func TestSaveRoundTripCreatesDirAndLeavesNoTemp(t *testing.T) {
 	dir := filepath.Join(t.TempDir(), "nested", "cfg")
 	path := filepath.Join(dir, "settings.json")
-	want := Settings{Theme: "light", TextSize: "small"}
+	want := Settings{AutoSave: true, Theme: "light", TextSize: "small"}
 	if err := want.Save(path); err != nil {
 		t.Fatal(err)
 	}

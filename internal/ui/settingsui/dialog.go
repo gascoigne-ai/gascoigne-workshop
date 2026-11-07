@@ -67,6 +67,14 @@ type Host interface {
 	ExtraPage(id string) Node
 	// ActionIDs are the ids of the shortcut actions, offered when completing.
 	ActionIDs() []string
+	// Unsaved reports whether changes were applied but not written to the
+	// file (auto-save is off); Persist writes the settings in effect;
+	// MarkUnsaved and MarkSaved tell the host about a text the dialog wrote
+	// or held back itself.
+	Unsaved() bool
+	Persist()
+	MarkUnsaved()
+	MarkSaved()
 	// Pointer is the pointer position in the window, where a dropdown opens.
 	Pointer() (x, y int)
 	// Close closes the dialog; MarkDirty asks for a redraw; Later runs f on
@@ -88,6 +96,7 @@ var pages = []page{
 	{"colors", "Colors", ""},
 	{"shortcuts", "Shortcuts", ""},
 	{"requests", "Requests", "Requests"},
+	{"general", "General", "General"},
 }
 
 // Dialog is the state of the settings dialog. The zero value is ready.
@@ -105,11 +114,12 @@ type Dialog struct {
 	FontSearch TextField      // narrows the font dropdown
 	list       fontList
 
-	Raw       bool               // the dialog shows settings.json as text
-	RawText   TextArea           // that text
-	Problems  []settings.Problem // what is wrong with it
-	rawBefore string             // the text before the last change, to tell a typed quote from a paste
-	stamp     fileStamp          // settings.json as last written or read
+	Raw        bool               // the dialog shows settings.json as text
+	RawText    TextArea           // that text
+	Problems   []settings.Problem // what is wrong with it
+	rawBefore  string             // the text before the last change, to tell a typed quote from a paste
+	rawPending bool               // the raw text was applied but not written (auto-save is off)
+	stamp      fileStamp          // settings.json as last written or read
 }
 
 // pageID is the page shown: the chosen one, else the first.
@@ -157,6 +167,7 @@ func (d *Dialog) View(host Host) Node {
 				Text("Settings", Bold(), W(70)),
 				If(!d.Raw, Field(&d.Search, H(28), Grow(1), Bg(w.Sunken), Placeholder("Search settings"), OnChange(d.ResetScroll), host.TextMenu(&d.Search, nil))),
 				If(d.Raw, Spacer(Grow(1))),
+				d.saveButton(host),
 				d.modeSwitch(host),
 				IconButton(CrossIcon(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(host.Close), Tooltip("Close (Esc)")),
 			),
@@ -215,3 +226,29 @@ func (d *Dialog) Reload(host Host) {
 
 // Searching reports whether a search text is typed.
 func (d *Dialog) Searching() bool { return strings.TrimSpace(d.Search.Text) != "" }
+
+// saveButton writes the changes that were applied but not stored; it is lit
+// while there are some. With auto-save on there never are.
+func (d *Dialog) saveButton(host Host) Node {
+	if host.Unsaved() {
+		return PrimaryButton("Save", W(60), H(w.CompactH), OnClick(func() { d.Save(host) }), Tooltip("Write the changes to settings.json"))
+	}
+	return Button("Save", W(60), H(w.CompactH), OnClick(func() { d.Save(host) }), Tooltip("Nothing to save: changes are written as you make them, or already stored"))
+}
+
+// Save writes what is applied but not stored: the raw text as typed when
+// that is what was held back, else the settings in effect.
+func (d *Dialog) Save(host Host) {
+	if d.rawPending && d.Raw && len(d.Problems) == 0 && host.SettingsPath() != "" {
+		if err := settings.WriteText(host.SettingsPath(), []byte(d.RawText.Text)); err != nil {
+			host.Toast("Could not save settings: "+err.Error(), true)
+			return
+		}
+		d.Stamp(host.SettingsPath())
+		d.rawPending = false
+		host.MarkSaved()
+		return
+	}
+	d.rawPending = false
+	host.Persist()
+}

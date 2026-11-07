@@ -52,6 +52,10 @@ type Settings struct {
 	UIFont   string `json:"uiFont,omitempty"`
 	CodeFont string `json:"codeFont,omitempty"`
 
+	// AutoSave writes every change to the file at once. When it is off a
+	// change applies but is written only when the user saves.
+	AutoSave bool `json:"autoSave"`
+
 	// Workspace is the folder the collection is loaded from and saved to;
 	// "" keeps the built-in sample collection in memory.
 	Workspace string `json:"workspace,omitempty"`
@@ -93,7 +97,7 @@ func (s Settings) UIScale() float64 {
 
 // Default is what a first run uses.
 func Default() Settings {
-	return Settings{Theme: "dark", TextSize: "medium", Layout: "side", Contrast: "normal", TimeoutSec: 60, UIScalePct: DefaultUIScalePct, Corners: "soft", ResponseView: "compact"}
+	return Settings{AutoSave: true, Theme: "dark", TextSize: "medium", Layout: "side", Contrast: "normal", TimeoutSec: 60, UIScalePct: DefaultUIScalePct, Corners: "soft", ResponseView: "compact"}
 }
 
 // Load reads path. A missing file is not an error and yields Default;

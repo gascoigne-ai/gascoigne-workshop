@@ -183,6 +183,7 @@ type App struct {
 	ctxMenu          *contextMenu                   // the open context menu, if any
 	bulk             *bulkEdit                      // the table in bulk-edit mode, if any
 	actionIDs        []string                       // the ids of the shortcut actions, for completing settings.json
+	settingsUnsaved  bool                           // settings were changed but not written (auto-save is off)
 	prefs            settingsui.Dialog              // the settings dialog
 	shortcutSearch   view.TextField                 // filters the shortcut table
 	pendingKeys      map[string]pendingKey          // recorded keys another action has, by action id

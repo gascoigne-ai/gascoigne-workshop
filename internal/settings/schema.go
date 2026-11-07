@@ -36,7 +36,7 @@ type Field struct {
 }
 
 // Categories are the pages of the form, in order.
-var Categories = []string{"Appearance", "Colors", "Shortcuts", "Requests"}
+var Categories = []string{"Appearance", "Colors", "Shortcuts", "Requests", "General"}
 
 // Schema lists every key of settings.json.
 var Schema = []Field{
@@ -50,6 +50,7 @@ var Schema = []Field{
 	{Key: "contrast", Title: "Contrast", Description: "High strengthens the selection, find and accent colors.", Category: "Appearance", Kind: Enum, Allowed: []string{"normal", "high"}},
 	{Key: "layout", Title: "Request and response", Description: "Place the request and response panes side by side or stacked.", Category: "Appearance", Kind: Enum, Allowed: []string{"side", "stacked"}},
 	{Key: "responseView", Title: "Response view", Description: "How a response body is shown when it arrives.", Category: "Appearance", Kind: Enum, Allowed: []string{"compact", "pretty", "raw"}},
+	{Key: "autoSave", Title: "Save changes automatically", Description: "On: every change is written to settings.json at once. Off: changes apply now but are written only when you click Save.", Category: "General", Kind: Bool},
 	{Key: "colors", Title: "Color overrides", Description: "Your colors, by theme id and token name, as #rrggbb.", Category: "Colors", Kind: Colors},
 	{Key: "shortcuts", Title: "Shortcut overrides", Description: "Your key bindings by action id, such as \"Ctrl+Shift+Tab\"; empty text unbinds.", Category: "Shortcuts", Kind: Shortcuts},
 	{Key: "timeoutSec", Title: "Request timeout", Description: "How long a request may run, in seconds.", Category: "Requests", Kind: Int, Min: 1, Max: 3600},

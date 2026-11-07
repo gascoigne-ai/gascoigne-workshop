@@ -18,6 +18,7 @@ type fakeHost struct {
 	toasts  []string
 	menus   [][]MenuItem
 	menuAt  [2]int // where the last menu opened
+	unsaved bool
 	saved   int
 }
 
@@ -142,3 +143,7 @@ func TestCompletionOffersWhatSettingsCompleteGivesAtTheCaret(t *testing.T) {
 	}
 }
 func (h *fakeHost) Pointer() (int, int) { return 400, 300 }
+func (h *fakeHost) Unsaved() bool       { return h.unsaved }
+func (h *fakeHost) Persist()            { _ = h.current.Save(h.path); h.unsaved = false; h.saved++ }
+func (h *fakeHost) MarkUnsaved()        { h.unsaved = true }
+func (h *fakeHost) MarkSaved()          { h.unsaved = false }
