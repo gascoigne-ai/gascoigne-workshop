@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 )
 
 // The checklist of failures a user can meet. Each row triggers one and

@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	"net/http/cookiejar"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
