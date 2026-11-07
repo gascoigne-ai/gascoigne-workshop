@@ -39,9 +39,24 @@ func (d *Dialog) OpenFontList(host Host, role FontRole) {
 	d.list.open, d.list.role = true, role
 	d.list.x = min(max(px-fontListW/2, fontListGap), width-fontListW-fontListGap)
 	d.list.y = min(py+16, height-fontListH-fontListRowH-fontListGap)
-	d.list.scroll.Y = 0
 	d.FontSearch = NewTextField("")
 	d.FontSearch.Focused = true
+	// open on the family in use, centered, so it is in view at once
+	rows := len(d.Families) + 1 // Built-in comes first
+	centered := d.selectedRow(host)*fontListRowH - (fontListH-fontListRowH)/2
+	d.list.scroll.Y = min(max(centered, 0), max(rows*fontListRowH-fontListH, 0))
+}
+
+// selectedRow is the index of the family in use among the unfiltered rows:
+// 0 for Built-in, or for a name that is not installed.
+func (d *Dialog) selectedRow(host Host) int {
+	current := savedFont(host.Settings(), d.list.role)
+	for i, family := range d.Families {
+		if strings.EqualFold(family.Name, current) {
+			return i + 1
+		}
+	}
+	return 0
 }
 
 // CloseFontList closes the dropdown.

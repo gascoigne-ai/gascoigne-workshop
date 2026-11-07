@@ -112,3 +112,37 @@ func TestEscapingOrClickingOutsideClosesTheList(t *testing.T) {
 		t.Fatal("the list stayed open")
 	}
 }
+
+// Opening the list scrolls to the family in use, so it is on screen without
+// the user hunting for it through hundreds of names.
+func TestTheFontListOpensScrolledToTheSelectedFamily(t *testing.T) {
+	var d Dialog
+	host := newHost(t)
+	for i := range 300 {
+		d.Families = append(d.Families, fonts.Family{Name: fmt.Sprintf("Family %03d", i), Regular: fmt.Sprintf("none#%d", i)})
+	}
+	host.current.UIFont = "Family 200"
+	d.OpenFontList(host, FontUI)
+	list := dump(d.FontList(host))
+	if !strings.Contains(list, `text="Family 200"`) {
+		t.Fatalf("the selected family is not in the rows built on open:\n%.600s", list)
+	}
+	if strings.Contains(list, `text="Family 000"`) {
+		t.Fatal("the list opened at the top instead of at the selection")
+	}
+	// the selected row sits inside the visible part of the list
+	row := d.selectedRow(host)
+	if y := row*fontListRowH - d.list.scroll.Y; y < 0 || y+fontListRowH > fontListH {
+		t.Fatalf("row %d at y=%d is outside the %dpx viewport", row, y, fontListH)
+	}
+}
+
+func TestTheFontListOpensAtTheTopWhenNothingIsSelected(t *testing.T) {
+	var d Dialog
+	host := newHost(t)
+	d.Families = testFamilies(t)
+	d.OpenFontList(host, FontCode) // Built-in is in use
+	if d.list.scroll.Y != 0 {
+		t.Fatalf("scroll = %d, want the top", d.list.scroll.Y)
+	}
+}
