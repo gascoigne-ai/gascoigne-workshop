@@ -133,14 +133,14 @@ func TestCompletionOffersWhatSettingsCompleteGivesAtTheCaret(t *testing.T) {
 	var d Dialog
 	host := newHost(t)
 	d.OpenRaw(host)
-	d.RawText = NewTextArea(`{"la`)
-	d.RawText.Cursor = 4
+	d.RawText = NewTextArea(`{"appearance": {"la`)
+	d.RawText.Cursor = len([]rune(d.RawText.Text))
 	d.CompleteRaw(host)
 	if len(host.menus) != 1 || len(host.menus[0]) != 1 || host.menus[0][0].Label != "layout" {
 		t.Fatalf("menus = %+v", host.menus)
 	}
 	host.menus[0][0].Run()
-	if d.RawText.Text != `{"layout"` {
+	if d.RawText.Text != `{"appearance": {"layout"` {
 		t.Fatalf("text = %q", d.RawText.Text)
 	}
 }

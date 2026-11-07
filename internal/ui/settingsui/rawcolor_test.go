@@ -50,12 +50,12 @@ func TestTypingAQuoteOpensTheCompletionMenuWithoutCtrlSpace(t *testing.T) {
 		wantMenu            bool
 		wantFirst           string
 	}{
-		{"an opening quote of a key", `{ `, `{ "`, 3, true, "autoSave"},
-		{"an opening quote of an enum value", `{"layout": `, `{"layout": "`, 12, true, "side"},
+		{"an opening quote of a key", `{ `, `{ "`, 3, true, "appearance"},
+		{"an opening quote of an enum value", `{"appearance": {"layout": `, `{"appearance": {"layout": "`, 0, true, "side"},
 		{"a letter is not a trigger", `{ "`, `{ "l`, 4, false, ""},
-		{"a quote closing a string is not a trigger", `{"layout": "side`, `{"layout": "side"`, 16, false, ""},
-		{"a pasted run of text is not a trigger", `{ `, `{ "layout"`, 11, false, ""},
-		{"nothing to offer for free text", `{"proxy": `, `{"proxy": "`, 11, false, ""},
+		{"a quote closing a string is not a trigger", `{"appearance": {"layout": "side`, `{"appearance": {"layout": "side"`, 0, false, ""},
+		{"a pasted run of text is not a trigger", `{ `, `{ "layout"`, 0, false, ""},
+		{"nothing to offer for free text", `{"requests": {"proxy": `, `{"requests": {"proxy": "`, 0, false, ""},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -69,7 +69,7 @@ func TestTypingAQuoteOpensTheCompletionMenuWithoutCtrlSpace(t *testing.T) {
 			host.menus = nil
 			host.toasts = nil
 			d.RawText.Text = test.after
-			d.RawText.Cursor = test.cursor
+			d.RawText.Cursor = len([]rune(test.after))
 			d.RawChanged(host)
 			switch {
 			case test.wantMenu && (len(host.menus) != 1 || host.menus[0][0].Label != test.wantFirst):
@@ -89,7 +89,7 @@ func TestTheCompletionMenuOpensAtTheCaret(t *testing.T) {
 	host := newHost(t)
 	d.OpenRaw(host)
 	d.RawText.Focused = true
-	d.RawText.Text = "{\n  \"la"
+	d.RawText.Text = "{\n  \"appearance\": {\n    \"la"
 	d.RawText.Cursor = len([]rune(d.RawText.Text))
 	ctx, err := core.NewCtx(testTheme())
 	if err != nil {

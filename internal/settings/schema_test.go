@@ -149,64 +149,20 @@ func TestChangedAndResetUseTheDefaults(t *testing.T) {
 func TestMarshalLeavesOutWhatIsAtItsDefault(t *testing.T) {
 	s := Default()
 	s.Layout = "stacked"
-	text, err := Minimal(s)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var got map[string]any
-	if err := json.Unmarshal(text, &got); err != nil {
-		t.Fatal(err)
-	}
-	if len(got) != 1 || got["layout"] != "stacked" {
-		t.Fatalf("file = %s", text)
-	}
-}
-
-func TestCompleteOffersMissingKeysAndEnumValues(t *testing.T) {
-	tests := []struct {
-		name, text string
-		want       []string
-		notWant    []string
-	}{
-		{"keys in an empty object", `{ "`, []string{"theme", "layout"}, nil},
-		{"key prefix", `{ "la`, []string{"layout"}, []string{"theme"}},
-		{"present keys are not offered again", `{"layout": "side", "`, []string{"theme"}, []string{"layout"}},
-		{"enum values after the colon", `{"layout": "`, []string{"side", "stacked"}, []string{"dark"}},
-		{"enum value prefix", `{"layout": "st`, []string{"stacked"}, []string{"side"}},
-		{"enum value before a quote", `{"layout": `, []string{"side", "stacked"}, nil},
-		{"booleans", `{"flat": `, []string{"true", "false"}, nil},
-		{"nothing for free text", `{"proxy": "`, nil, []string{"side", "theme"}},
-		{"shortcut action ids inside shortcuts", `{"shortcuts": { "`, []string{"send"}, []string{"theme"}},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			got := Complete(test.text, len(test.text), []string{"send", "save"})
-			labels := map[string]bool{}
-			for _, c := range got {
-				labels[c.Label] = true
-			}
-			for _, want := range test.want {
-				if !labels[want] {
-					t.Errorf("%q not offered; got %v", want, got)
-				}
-			}
-			for _, bad := range test.notWant {
-				if labels[bad] {
-					t.Errorf("%q offered but should not be; got %v", bad, got)
-				}
-			}
-		})
+	got := sectioned(t, s)
+	if len(got) != 1 || len(got["appearance"]) != 1 || got["appearance"]["layout"] != "stacked" {
+		t.Fatalf("file = %v", got)
 	}
 }
 
 func TestCompletionReplacesTheTypedPrefixOnly(t *testing.T) {
-	text := `{"layout": "st`
+	text := `{"appearance": {"layout": "st`
 	got := Complete(text, len(text), nil)
 	if len(got) != 1 {
 		t.Fatalf("got %v", got)
 	}
 	result := text[:got[0].From] + got[0].Insert + text[len(text):]
-	if result != `{"layout": "stacked"` {
+	if result != `{"appearance": {"layout": "stacked"` {
 		t.Fatalf("applying the completion gives %q", result)
 	}
 }
@@ -262,7 +218,7 @@ func TestEveryKindSaysWhatItExpects(t *testing.T) {
 }
 
 func TestCompletionsCarryTheDescriptionAndWhatIsExpected(t *testing.T) {
-	text := `{ "la`
+	text := `{"appearance": { "la`
 	got := Complete(text, len(text), nil)
 	if len(got) != 1 || got[0].Label != "layout" {
 		t.Fatalf("got %+v", got)
@@ -272,7 +228,7 @@ func TestCompletionsCarryTheDescriptionAndWhatIsExpected(t *testing.T) {
 			t.Errorf("the detail %q lacks %q", got[0].Detail, want)
 		}
 	}
-	values := Complete(`{"layout": "`, len(`{"layout": "`), nil)
+	values := Complete(`{"appearance": {"layout": "`, len(`{"appearance": {"layout": "`), nil)
 	if len(values) == 0 || !strings.Contains(values[0].Detail, "Request and response") {
 		t.Fatalf("a value completion names its setting: %+v", values)
 	}

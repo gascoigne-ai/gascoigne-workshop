@@ -41,25 +41,33 @@ func Complete(text string, caret int, actions []string) []Completion {
 	}
 	var candidates []string
 	var quoteValues bool
-	var details map[string]string
+	details := map[string]string{}
+	parent := top.key // the key this object is the value of, "" at the top
+	section := len(stack) == 2 && objectSection(parent)
 	switch {
 	case isKey && len(stack) == 1:
-		details = map[string]string{}
-		for _, field := range Schema {
+		for _, name := range Sections {
+			if !top.keys[name] {
+				candidates = append(candidates, name)
+				details[name] = sectionDescriptions[name] + "\nExpects an object."
+			}
+		}
+	case isKey && section:
+		for _, field := range fieldsOf(parent) {
 			if !top.keys[field.Key] {
 				candidates = append(candidates, field.Key)
 				details[field.Key] = field.Description + "\nExpects " + Expectation(field) + "."
 			}
 		}
-	case isKey && top.key == "shortcuts":
+	case isKey && len(stack) == 2 && parent == "shortcuts":
 		for _, action := range actions {
 			if !top.keys[action] {
 				candidates = append(candidates, action)
 			}
 		}
-	case !isKey && len(stack) == 1 && top.afterColon:
+	case !isKey && section && top.afterColon:
 		field, ok := FieldFor(top.lastKey)
-		if !ok {
+		if !ok || SectionOf(field) != parent {
 			return nil
 		}
 		switch field.Kind {
@@ -68,7 +76,6 @@ func Complete(text string, caret int, actions []string) []Completion {
 		case Bool:
 			candidates = []string{"true", "false"}
 		}
-		details = map[string]string{}
 		for _, candidate := range candidates {
 			details[candidate] = field.Title + ": " + candidate
 		}

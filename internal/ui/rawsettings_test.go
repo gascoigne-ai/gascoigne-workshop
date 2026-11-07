@@ -130,20 +130,20 @@ func TestOurOwnWritesAreNotReloadedAsOutsideChanges(t *testing.T) {
 func TestCtrlSpaceInTheRawViewOffersKeysAndValues(t *testing.T) {
 	a, _ := openSettingsPage(t, "appearance")
 	a.prefs.OpenRaw(a)
-	a.prefs.RawText = view.NewTextArea(`{"la`)
-	a.prefs.RawText.Cursor = 4
+	a.prefs.RawText = view.NewTextArea(`{"appearance": {"la`)
+	a.prefs.RawText.Cursor = len([]rune(a.prefs.RawText.Text))
 	a.prefs.RawText.Focused = true
 	a.completeVariable()
 	if a.ctxMenu == nil || len(a.ctxMenu.items) != 1 || a.ctxMenu.items[0].label != "layout" {
 		t.Fatalf("menu = %+v", a.ctxMenu)
 	}
 	a.ctxMenu.items[0].run()
-	if a.prefs.RawText.Text != `{"layout"` {
+	if a.prefs.RawText.Text != `{"appearance": {"layout"` {
 		t.Fatalf("text after completing = %q", a.prefs.RawText.Text)
 	}
 
 	a.closeMenu()
-	a.prefs.RawText = view.NewTextArea(`{"layout": "st`)
+	a.prefs.RawText = view.NewTextArea(`{"appearance": {"layout": "st`)
 	a.prefs.RawText.Cursor = len([]rune(a.prefs.RawText.Text))
 	a.prefs.RawText.Focused = true
 	a.completeVariable()

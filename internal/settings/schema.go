@@ -59,8 +59,8 @@ var Schema = []Field{
 	{Key: "caCert", Title: "CA certificates", Description: "Path of a PEM file of extra certificate authorities to trust.", Category: "Requests", Kind: File},
 	{Key: "clientCert", Title: "Client certificate", Description: "Path of a client certificate for servers that ask for one.", Category: "Requests", Kind: File},
 	{Key: "clientKey", Title: "Client key", Description: "Path of the private key of the client certificate.", Category: "Requests", Kind: File},
-	{Key: "workspace", Title: "Collection folder", Description: "The folder the collection is loaded from and saved to.", Category: "Requests", Kind: String, Hidden: true},
-	{Key: "environment", Title: "Active environment", Description: "Name of the environment in use.", Category: "Requests", Kind: String, Hidden: true},
+	{Key: "workspace", Title: "Collection folder", Description: "The folder the collection is loaded from and saved to.", Category: "General", Kind: String, Hidden: true},
+	{Key: "environment", Title: "Active environment", Description: "Name of the environment in use.", Category: "General", Kind: String, Hidden: true},
 }
 
 // FieldFor is the schema entry of key.
@@ -107,8 +107,14 @@ func lineColumn(data []byte, offset int) string {
 	return fmt.Sprintf("line %d, column %d", line, column)
 }
 
-// validateKeys walks the top-level object of valid JSON text.
-func validateKeys(data []byte) []Problem {
+// validateKeys checks the settings object of valid JSON text: its sections
+// and, for the older flat form, its keys.
+func validateKeys(data []byte) []Problem { return validateObject(data, 0, "") }
+
+// validateObject walks one object of the text, which starts at byte base:
+// the top level (section "") or the body of a section. Offsets in the
+// problems are in the whole text.
+func validateObject(data []byte, base int, section string) []Problem {
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	if _, err := decoder.Token(); err != nil { // the opening brace
 		return nil
@@ -126,16 +132,39 @@ func validateKeys(data []byte) []Problem {
 		if err := decoder.Decode(&raw); err != nil {
 			break
 		}
-		field, known := FieldFor(key)
-		if !known {
-			problems = append(problems, Problem{Key: key, Message: "unknown setting", Start: keyStart, End: keyEnd})
+		at := func(message string) Problem {
+			return Problem{Key: key, Message: message, Start: base + keyStart, End: base + keyEnd}
+		}
+		if section == "" && objectSection(key) {
+			if len(raw) == 0 || raw[0] != '{' {
+				problems = append(problems, at("must be an object of settings"))
+				continue
+			}
+			valueStart := int(decoder.InputOffset()) - len(raw)
+			problems = append(problems, validateObject(raw, base+valueStart, key)...)
 			continue
 		}
-		if message := checkValue(field, raw); message != "" {
-			problems = append(problems, Problem{Key: key, Message: message, Start: keyStart, End: keyEnd})
+		field, known := FieldFor(key)
+		switch {
+		case !known:
+			problems = append(problems, at("unknown setting"))
+		case section != "" && SectionOf(field) != section:
+			problems = append(problems, at(wrongSection(field)))
+		default:
+			if message := checkValue(field, raw); message != "" {
+				problems = append(problems, at(message))
+			}
 		}
 	}
 	return problems
+}
+
+// wrongSection says where a setting written in the wrong section belongs.
+func wrongSection(field Field) string {
+	if section := SectionOf(field); section != "" {
+		return "belongs in " + section
+	}
+	return "belongs at the top level"
 }
 
 // checkValue is what is wrong with raw as the value of field, or "".
@@ -197,7 +226,7 @@ func Parse(data []byte, last Settings) (Settings, []Problem) {
 		return last, problems
 	}
 	parsed := Default()
-	if err := json.Unmarshal(data, &parsed); err != nil {
+	if err := unmarshalSettings(data, &parsed); err != nil {
 		return last, []Problem{{Message: err.Error(), End: len(data)}}
 	}
 	return parsed, nil
@@ -231,7 +260,7 @@ func Reset(s *Settings, key string) {
 }
 
 // Minimal is the settings text with only what differs from the defaults,
-// so the file stays short and a reset leaves no trace.
+// grouped by section, so the file stays short and a reset leaves no trace.
 func Minimal(s Settings) ([]byte, error) {
 	current, defaults := asMap(s), asMap(Default())
 	kept := map[string]any{}
@@ -240,7 +269,7 @@ func Minimal(s Settings) ([]byte, error) {
 			kept[key] = value
 		}
 	}
-	return json.MarshalIndent(kept, "", "  ")
+	return sectionedText(kept)
 }
 
 // Value is the value of key in s as JSON gives it back (text, a float64

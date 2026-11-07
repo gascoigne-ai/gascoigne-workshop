@@ -4,7 +4,6 @@
 package settings
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -111,7 +110,7 @@ func Load(path string) (Settings, error) {
 	if err != nil {
 		return s, fmt.Errorf("read settings: %w", err)
 	}
-	if err := json.Unmarshal(data, &s); err != nil {
+	if err := unmarshalSettings(data, &s); err != nil {
 		return Default(), fmt.Errorf("parse settings %s: %w", filepath.Base(path), err)
 	}
 	return s, nil
