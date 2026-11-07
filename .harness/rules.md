@@ -37,3 +37,7 @@ Apply when adding or changing anything exported. They exist so that a guess is u
 - A question is for a real fork only. A choice with a conventional default, or a fact that can be read from the code, is decided and mentioned in the report, not asked.
 - Record the answer in the task file or `decisions.md` when it will matter later.
 
+## Layout of `internal/`
+- Target rule: `internal/` is organized by domain first, then by logical role inside a domain: `ui` (views and input), `controller` (state and decisions), `port` (interfaces to the outside), `adapter` (implementations of ports: network, files, system), `model` (plain data and rules). Dependencies point inward (`ui` and `adapter` depend on `controller`, `port` and `model`, never the reverse); domains reach each other through ports or small public APIs.
+- New packages follow it. Existing ones move under `.harness/tasks/033-internal-by-domain.md`, one domain per commit; until then the current layout (decision 17) stands.
+
