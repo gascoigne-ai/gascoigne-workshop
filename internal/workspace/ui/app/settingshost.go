@@ -1,14 +1,12 @@
 package ui
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/fonts"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/settingsui"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
-	"os"
 )
 
 // The methods below make the App the host of the settings dialog
@@ -190,7 +188,4 @@ func (a *App) askSaveSettings() {
 }
 
 // FontStore is the installed fonts of this machine.
-func (a *App) FontStore() port.FontStore {
-	home, _ := os.UserHomeDir()
-	return fonts.System{Home: home}
-}
+func (a *App) FontStore() port.FontStore { return a.fonts }

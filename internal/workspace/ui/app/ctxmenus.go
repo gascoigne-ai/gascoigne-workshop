@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
 	"net/http"
 	"net/url"
@@ -185,11 +184,11 @@ func (a *App) Size() (width, height int) { return a.w, a.h }
 // SentStore, Toast (below), SetStatus, OpenRequest and Badge make the App
 // the host of the sent-request log.
 func (a *App) SentStore() port.SentStore {
-	dir := a.historyDir()
-	if dir == "" {
+	store := a.historyStore()
+	if store == nil {
 		return nil
 	}
-	return history.SentLog{Dir: dir}
+	return store.Sent()
 }
 
 // Toast shows a message over the window.

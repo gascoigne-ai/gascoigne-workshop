@@ -26,10 +26,8 @@ var exceptions = map[string]bool{
 	"workspace/ui/app -> collection/adapter/store":   true,
 	"workspace/ui/app -> request/adapter/proto":      true,
 	"workspace/ui/app -> request/ui/calltrace":       true,
-	"workspace/ui/app -> response/adapter/history":   true,
 	"workspace/ui/app -> response/ui/respview":       true,
 	"workspace/ui/app -> response/ui/sentlog":        true,
-	"workspace/ui/app -> settings/adapter/fonts":     true,
 	"workspace/ui/app -> settings/ui/settingsui":     true,
 	"workspace/ui/app -> workspace/adapter/state":    true,
 }

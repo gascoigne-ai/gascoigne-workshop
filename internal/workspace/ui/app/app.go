@@ -10,6 +10,7 @@ import (
 	rport "github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/sentlog"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
+	sport "github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/settingsui"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
 	"net/http"
@@ -214,7 +215,9 @@ type App struct {
 	dropTarget         any                            // the node the pointer is over while dragging
 	dialog             *dialog                        // the open dialog, if any
 	toasts             []toast
-	now                func() time.Time  // the clock, replaced in tests
+	now                func() time.Time               // the clock, replaced in tests
+	histories          func(dir string) rport.History // nil keeps no history
+	fonts              sport.FontStore
 	previews           rport.BodyPreview // shows a response body in the browser, replaced in tests
 	sampler            core.Sampler
 	treeScroll         view.ScrollState
@@ -240,18 +243,20 @@ type App struct {
 
 // Options are the startup switches of the command line.
 type Options struct {
-	ScreenshotPath   string            // save a PNG of the first settled frame and exit
-	ScreenshotSet    []string          // key=value settings applied live before the screenshot
-	SendOnStart      bool              // send the first request at startup
-	SettingsPath     string            // settings file; "" keeps settings in memory
-	StatePath        string            // remembered UI state; "" keeps it in memory
-	ThemesDir        string            // folder of user theme files (*.json); "" for none
-	ScanFonts        bool              // look for installed fonts in the background, to apply the saved font families
-	Files            port.FileDialog   // the desktop file chooser; nil asks for paths as text
-	Previews         rport.BodyPreview // shows a response body in the browser; nil has none
-	OpenMenu         bool              // start with the settings menu open
-	WorkspaceDir     string            // collection folder; "" uses the remembered one, else the built-in sample
-	DefaultWorkspace string            // where saving goes when there is no workspace yet
+	ScreenshotPath   string                         // save a PNG of the first settled frame and exit
+	ScreenshotSet    []string                       // key=value settings applied live before the screenshot
+	SendOnStart      bool                           // send the first request at startup
+	SettingsPath     string                         // settings file; "" keeps settings in memory
+	StatePath        string                         // remembered UI state; "" keeps it in memory
+	ThemesDir        string                         // folder of user theme files (*.json); "" for none
+	ScanFonts        bool                           // look for installed fonts in the background, to apply the saved font families
+	Files            port.FileDialog                // the desktop file chooser; nil asks for paths as text
+	History          func(dir string) rport.History // the history in a folder; nil keeps none
+	Fonts            sport.FontStore                // installed fonts; nil has none
+	Previews         rport.BodyPreview              // shows a response body in the browser; nil has none
+	OpenMenu         bool                           // start with the settings menu open
+	WorkspaceDir     string                         // collection folder; "" uses the remembered one, else the built-in sample
+	DefaultWorkspace string                         // where saving goes when there is no workspace yet
 }
 
 // NewApp builds the window state around the sample collection.
@@ -296,7 +301,10 @@ func NewApp(opts Options) (*App, error) {
 	a.dirty = true
 	a.now = time.Now
 	ctx.Now = func() time.Time { return a.now() } // the caret blinks by the app clock
-	a.files, a.previews = opts.Files, opts.Previews
+	a.files, a.previews, a.histories, a.fonts = opts.Files, opts.Previews, opts.History, opts.Fonts
+	if a.fonts == nil {
+		a.fonts = noFonts{}
+	}
 	if a.files == nil {
 		a.files = noFileDialog{}
 	}

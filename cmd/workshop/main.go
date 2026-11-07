@@ -5,7 +5,10 @@ package main
 import (
 	"errors"
 	"flag"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/preview"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/fonts"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/filedialog"
 	"image"
 	"image/png"
@@ -41,6 +44,9 @@ func main() {
 	flag.StringVar(&opts.StatePath, "state", state.DefaultPath(), "remembered window and tabs; empty keeps them in memory")
 	opts.ScanFonts = true
 	opts.Files = filedialog.System{}
+	opts.History = func(dir string) port.History { return history.Dir(dir) }
+	home, _ := os.UserHomeDir()
+	opts.Fonts = fonts.System{Home: home}
 	opts.Previews = preview.Browser{Lifetime: previewLifetime}
 	flag.StringVar(&opts.ThemesDir, "themes", settings.ThemesDir(), "folder of theme files (*.json) that extend the dark or light theme; empty for none")
 	flag.StringVar(&opts.WorkspaceDir, "workspace", "", "folder to load and save the collection; empty uses the last one, else the built-in sample")

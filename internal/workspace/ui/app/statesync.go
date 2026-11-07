@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/history"
+	rport "github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/state"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
@@ -200,33 +200,43 @@ func (a *App) historyDir() string {
 	return filepath.Join(filepath.Dir(a.statePath), "history")
 }
 
+// historyStore is the history folder next to the state file, nil when
+// nothing is saved or no history adapter was given.
+func (a *App) historyStore() rport.History {
+	dir := a.historyDir()
+	if dir == "" || a.histories == nil {
+		return nil
+	}
+	return a.histories(dir)
+}
+
 // saveHistory writes the successful responses of the tab's request, the
 // shown one first, so they are there after a restart. A failed write is
 // shown in the status line and nothing else changes.
 func (a *App) saveHistory(t *reqTab) {
-	dir, key := a.historyDir(), a.requestPath(t.req)
-	if dir == "" || key == "" {
+	store, key := a.historyStore(), a.requestPath(t.req)
+	if store == nil || key == "" {
 		return
 	}
-	var entries []history.Entry
+	var entries []rport.Entry
 	if t.resp != nil && t.resp.Err == "" {
 		entries = append(entries, historyEntry(t.resp, a.now()))
 	}
 	for _, earlier := range t.respHist {
 		entries = append(entries, historyEntry(earlier.resp, earlier.at))
 	}
-	if err := history.Save(dir, key, entries); err != nil {
+	if err := store.Save(key, entries); err != nil {
 		a.toast("History is not being saved: "+err.Error(), true)
 	}
 }
 
 // loadHistory is the saved responses of req, newest first.
 func (a *App) loadHistory(req *model.Request) []respEntry {
-	dir, key := a.historyDir(), a.requestPath(req)
-	if dir == "" || key == "" {
+	store, key := a.historyStore(), a.requestPath(req)
+	if store == nil || key == "" {
 		return nil
 	}
-	saved, err := history.Load(dir, key)
+	saved, err := store.Load(key)
 	if err != nil {
 		a.toast("History could not be read: "+err.Error(), true)
 		return nil
@@ -241,6 +251,6 @@ func (a *App) loadHistory(req *model.Request) []respEntry {
 	return entries
 }
 
-func historyEntry(resp *model.Response, at time.Time) history.Entry {
-	return history.Entry{At: at, Status: resp.Status, StatusText: resp.StatusText, Duration: resp.Duration, Headers: resp.Headers, Body: resp.Body}
+func historyEntry(resp *model.Response, at time.Time) rport.Entry {
+	return rport.Entry{At: at, Status: resp.Status, StatusText: resp.StatusText, Duration: resp.Duration, Headers: resp.Headers, Body: resp.Body}
 }

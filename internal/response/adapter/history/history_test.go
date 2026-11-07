@@ -1,6 +1,7 @@
 package history
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -11,8 +12,8 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 )
 
-func entry(status int, body string) Entry {
-	return Entry{
+func entry(status int, body string) port.Entry {
+	return port.Entry{
 		At: time.Date(2026, 11, 6, 10, 0, 0, 0, time.UTC), Status: status, StatusText: "OK",
 		Duration: 1500 * time.Millisecond, Headers: []model.KV{{Name: "Content-Type", Value: "application/json", Enabled: true}},
 		Body: []byte(body),
@@ -21,7 +22,7 @@ func entry(status int, body string) Entry {
 
 func TestSavedEntriesComeBackAsTheyWere(t *testing.T) {
 	dir := t.TempDir()
-	want := []Entry{entry(200, `{"a":1}`), entry(404, "not found\x00binary")}
+	want := []port.Entry{entry(200, `{"a":1}`), entry(404, "not found\x00binary")}
 	if err := Save(dir, "API/Users/List", want); err != nil {
 		t.Fatal(err)
 	}
@@ -43,10 +44,10 @@ func TestLoadingWhatWasNeverSavedIsEmptyNotAnError(t *testing.T) {
 
 func TestRequestsKeepSeparateHistories(t *testing.T) {
 	dir := t.TempDir()
-	if err := Save(dir, "A/one", []Entry{entry(200, "one")}); err != nil {
+	if err := Save(dir, "A/one", []port.Entry{entry(200, "one")}); err != nil {
 		t.Fatal(err)
 	}
-	if err := Save(dir, "A/two", []Entry{entry(201, "two")}); err != nil {
+	if err := Save(dir, "A/two", []port.Entry{entry(201, "two")}); err != nil {
 		t.Fatal(err)
 	}
 	one, _ := Load(dir, "A/one")
@@ -58,7 +59,7 @@ func TestRequestsKeepSeparateHistories(t *testing.T) {
 
 func TestSaveKeepsOnlyTheNewestEntriesThatAreNotTooBig(t *testing.T) {
 	dir := t.TempDir()
-	var entries []Entry
+	var entries []port.Entry
 	for range Limit + 5 {
 		entries = append(entries, entry(200, "small"))
 	}
@@ -79,7 +80,7 @@ func TestSaveKeepsOnlyTheNewestEntriesThatAreNotTooBig(t *testing.T) {
 
 func TestSavingNothingRemovesTheFile(t *testing.T) {
 	dir := t.TempDir()
-	_ = Save(dir, "API/x", []Entry{entry(200, "x")})
+	_ = Save(dir, "API/x", []port.Entry{entry(200, "x")})
 	if err := Save(dir, "API/x", nil); err != nil {
 		t.Fatal(err)
 	}
@@ -90,7 +91,7 @@ func TestSavingNothingRemovesTheFile(t *testing.T) {
 
 func TestABrokenFileIsAnErrorTheCallerCanReport(t *testing.T) {
 	dir := t.TempDir()
-	_ = Save(dir, "API/x", []Entry{entry(200, "x")})
+	_ = Save(dir, "API/x", []port.Entry{entry(200, "x")})
 	files, _ := filepath.Glob(filepath.Join(dir, "*"))
 	if err := os.WriteFile(files[0], []byte("{broken"), 0o600); err != nil {
 		t.Fatal(err)
@@ -103,7 +104,7 @@ func TestABrokenFileIsAnErrorTheCallerCanReport(t *testing.T) {
 
 func TestAFileOfAnotherRequestIsNotShown(t *testing.T) {
 	dir := t.TempDir()
-	_ = Save(dir, "API/x", []Entry{entry(200, "x")})
+	_ = Save(dir, "API/x", []port.Entry{entry(200, "x")})
 	files, _ := filepath.Glob(filepath.Join(dir, "*"))
 	data, _ := os.ReadFile(files[0])
 	// Two keys that hash to the same name cannot be built, so the key

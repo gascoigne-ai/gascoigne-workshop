@@ -13,7 +13,7 @@ import (
 
 func stateApp(t *testing.T, path string) *App {
 	t.Helper()
-	a, err := NewApp(Options{StatePath: path})
+	a, err := NewApp(withAdapters(Options{StatePath: path}))
 	if err != nil {
 		t.Fatal(err)
 	}

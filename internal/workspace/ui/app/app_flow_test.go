@@ -4,7 +4,10 @@ import (
 	"errors"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/history"
+	rport "github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/respview"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/fonts"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/theming"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -60,13 +63,20 @@ func newCompactTestApp(t *testing.T) *App {
 
 func startTestApp(t *testing.T, path string) (*App, string) {
 	t.Helper()
-	a, err := NewApp(Options{SettingsPath: path})
+	a, err := NewApp(withAdapters(Options{SettingsPath: path}))
 	if err != nil {
 		t.Fatal(err)
 	}
 	a.w, a.h = winW, winH
 	a.step(core.Input{}) // first frame: lay everything out once
 	return a, path
+}
+
+// withAdapters gives opts the real history and font adapters, as main does.
+func withAdapters(opts Options) Options {
+	opts.History = func(dir string) rport.History { return history.Dir(dir) }
+	opts.Fonts = fonts.System{}
+	return opts
 }
 
 // click is a press followed by a release at the same place.
