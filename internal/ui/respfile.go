@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/preview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/preview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/textfmt"
 )
 
