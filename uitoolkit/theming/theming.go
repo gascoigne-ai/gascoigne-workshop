@@ -221,6 +221,7 @@ func (c *Catalog) Theme(p Prefs) core.Theme {
 			strong[cc.Token] = EnsureContrast(th.Color(cc.Token), th.Color(cc.Text), HighRatio)
 		}
 		th = th.With(strong)
+		th = th.With(strengthened(th))
 	}
 	need := RequiredRatio(p.Contrast)
 	overrides := map[core.Token]color.RGBA{}
@@ -236,6 +237,45 @@ func (c *Catalog) Theme(p Prefs) core.Theme {
 		overrides[cc.Token] = col
 	}
 	return th.With(overrides)
+}
+
+// highBars are the colors high contrast strengthens besides the customizable
+// ones: each must reach its ratio against every surface it is drawn on. They
+// are set well above WCAG's 4.5:1 and 3:1 so the switch is plainly visible in
+// both palettes, which already meet those: 15:1 for the main text, 9:1 for the
+// muted text, 8:1 for the status colors, 6:1 for the accent line, 4.5:1 for
+// the lines.
+var highBars = []struct {
+	token core.Token
+	ratio float64
+}{
+	{core.Text, 15},
+	{core.Muted, 9},
+	{core.Error, 8},
+	{core.OK, 8},
+	{core.AccentLine, 6},
+	{core.Border, 4.5},
+	{core.Rule, 4.5},
+}
+
+// highSurfaces are what those colors are drawn on.
+var highSurfaces = []core.Token{core.Bg, core.Sunken, core.Frame}
+
+// strengthened is the colors of th moved, in their own hue, until they reach
+// their high-contrast ratio on every surface. A color that already reaches it
+// stays as it is.
+func strengthened(th core.Theme) map[core.Token]color.RGBA {
+	out := map[core.Token]color.RGBA{}
+	for _, bar := range highBars {
+		col := th.Color(bar.token)
+		for pass := 0; pass < 2; pass++ { // moving away from one surface can leave another short
+			for _, surface := range highSurfaces {
+				col = EnsureContrast(col, th.Color(surface), bar.ratio)
+			}
+		}
+		out[bar.token] = col
+	}
+	return out
 }
 
 // LoadUser reads every *.json file in dir as a theme laid over the

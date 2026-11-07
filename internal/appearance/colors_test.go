@@ -75,8 +75,10 @@ func TestHighContrastMakesTheListedColorsReadableInEveryTheme(t *testing.T) {
 			}
 		}
 		normal := ThemeFor(tc.ID, s.TextSize)
-		if th.Color(core.Bg) != normal.Color(core.Bg) || th.Color(core.Text) != normal.Color(core.Text) {
-			t.Errorf("%s: high contrast must not touch the rest of the palette", tc.ID)
+		// the surfaces stay; the text and lines drawn on them are what get stronger
+		// (see theming/highcontrast_test.go)
+		if th.Color(core.Bg) != normal.Color(core.Bg) || th.Color(core.Frame) != normal.Color(core.Frame) || th.Color(core.Sunken) != normal.Color(core.Sunken) {
+			t.Errorf("%s: high contrast must not move the surfaces", tc.ID)
 		}
 	}
 }
