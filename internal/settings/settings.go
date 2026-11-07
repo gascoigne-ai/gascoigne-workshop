@@ -122,11 +122,17 @@ func (s Settings) Save(path string) error {
 	if err != nil {
 		return fmt.Errorf("encode settings: %w", err)
 	}
+	return WriteText(path, append(data, '\n'))
+}
+
+// WriteText replaces the settings file with data exactly as given, creating
+// its directory. The file is replaced atomically.
+func WriteText(path string, data []byte) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return fmt.Errorf("create settings dir: %w", err)
 	}
 	tmp := path + ".tmp"
-	if err := os.WriteFile(tmp, append(data, '\n'), 0o644); err != nil {
+	if err := os.WriteFile(tmp, data, 0o644); err != nil {
 		return fmt.Errorf("write settings: %w", err)
 	}
 	if err := os.Rename(tmp, path); err != nil {

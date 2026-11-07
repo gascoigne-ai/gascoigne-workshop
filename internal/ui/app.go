@@ -182,6 +182,11 @@ type App struct {
 	ctxMenu          *contextMenu                  // the open context menu, if any
 	bulk             *bulkEdit                     // the table in bulk-edit mode, if any
 	menuScroll       vml.ScrollState               // scroll of the settings dialog's page
+	actionIDs        []string                      // the ids of the shortcut actions, for completing settings.json
+	rawMode          bool                          // the settings dialog shows settings.json as text
+	rawText          vml.TextArea                  // that text
+	rawProblems      []settings.Problem            // what is wrong with it
+	settingsStamp    fileStamp                     // settings.json as we last wrote or read it
 	shortcutSearch   vml.TextField                 // filters the shortcut table
 	pendingKeys      map[string]pendingKey         // recorded keys another action has, by action id
 	settingsSearch   vml.TextField                 // filters the settings form
@@ -291,6 +296,7 @@ func NewApp(opts Options) (*App, error) {
 	if loadErr != nil {
 		a.status = loadErr.Error()
 	}
+	a.stampSettings()
 	a.jar, _ = cookiejar.New(nil)
 	a.reg["rest"] = restFor(a.jar, st)
 	a.reg["mcp"] = proto.MCP{Sampler: a.sampleViaDialog}
@@ -299,6 +305,9 @@ func NewApp(opts Options) (*App, error) {
 	a.dirty = true
 	a.now = time.Now
 	a.openBrowser = preview.OpenInBrowser
+	for _, s := range shortcuts {
+		a.actionIDs = append(a.actionIDs, s.id)
+	}
 	a.uiFont, a.codeFont = vml.NewTextField(st.UIFont), vml.NewTextField(st.CodeFont)
 	if opts.ScanFonts {
 		a.scanFonts()
@@ -539,6 +548,9 @@ func (a *App) step(in core.Input) {
 	vml.Update(a.ctx, root)
 	if a.edit != nil && !a.edit.field.Focused { // a click elsewhere ends the edit
 		a.commitEdit()
+	}
+	if a.ctx.Tick%settingsPollTicks == 0 {
+		a.pollSettingsFile()
 	}
 	a.dragHover()
 	a.showGrab()

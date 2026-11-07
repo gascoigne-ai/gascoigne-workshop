@@ -228,6 +228,10 @@ func (a *App) variableCompletion(t *reqTab) (names []string, from int) {
 // the URL field; picking one writes {{name}} there, replacing a partly
 // typed name.
 func (a *App) completeVariable() {
+	if a.rawMode && a.rawText.Focused {
+		a.completeRaw()
+		return
+	}
 	t := a.cur()
 	if !t.url.Focused {
 		a.toast(w.PlatformKeyText(runtime.GOOS, "Ctrl+Space")+" completes a {{variable}} in the URL field", false)

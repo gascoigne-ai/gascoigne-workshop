@@ -61,20 +61,31 @@ func (a *App) menuView() Node {
 	return Frag(
 		Row(Bg(w.Shadow)), // dims the window
 		Col(W(settingsW), H(h), Bg(w.Bg), Control("menu"), Shadow(), FloatCenter(), FocusScope(), Modal(), OnDismiss(func() { a.menu = false }),
-			Row(H(settingsTitleH), PadX(16), AlignItems(AlignCenter), BorderB(w.BorderSoft),
+			Row(H(settingsTitleH), PadX(16), Gap(8), AlignItems(AlignCenter), BorderB(w.BorderSoft),
 				Text("Settings", Bold(), W(70)),
-				Field(&a.settingsSearch, H(28), Grow(1), Bg(w.Sunken), Placeholder("Search settings"), OnChange(func() { a.menuScroll.Y = 0 }), a.textMenuOpt(&a.settingsSearch, nil)),
-				Spacer(W(8)),
+				If(!a.rawMode, Field(&a.settingsSearch, H(28), Grow(1), Bg(w.Sunken), Placeholder("Search settings"), OnChange(func() { a.menuScroll.Y = 0 }), a.textMenuOpt(&a.settingsSearch, nil))),
+				If(a.rawMode, Spacer(Grow(1))),
+				a.modeSwitch(),
 				IconButton(CrossIcon(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(func() { a.menu = false }), Tooltip("Close (Esc)")),
 			),
-			Row(Grow(1),
+			If(a.rawMode, Col(Grow(1), Pad(16), a.rawView())),
+			If(!a.rawMode, Row(Grow(1),
 				Col(W(settingsNavW), Pad(8), Gap(2), Bg(w.Frame),
 					For(settingsCategories, func(_ int, c settingsCategory) Node { return a.navItem(c, c.id == cur) }),
 				),
 				Scroll(&a.menuScroll, Grow(1), Pad(16), BorderL(w.BorderSoft), page),
-			),
+			)),
 		),
 	)
+}
+
+// modeSwitch is the button that changes the dialog between the form and
+// the text of settings.json.
+func (a *App) modeSwitch() Node {
+	if a.rawMode {
+		return Button("Form", W(60), H(w.CompactH), OnClick(a.closeRawSettings), Tooltip("Back to the settings form"))
+	}
+	return Button("JSON", W(60), H(w.CompactH), OnClick(a.openRawSettings), Tooltip("Edit settings.json as text"))
 }
 
 // navItem is one category in the dialog's list: the open one is tinted and bold.
@@ -201,7 +212,9 @@ func (a *App) saveSettings(edit func(*settings.Settings)) {
 	if err := a.settings.Save(a.settingsPath); err != nil {
 		a.status = "Could not save settings: " + err.Error()
 		a.toast(a.status, true)
+		return
 	}
+	a.stampSettings()
 }
 
 // scalePct is the interface scale in percent, as the slider shows it.
