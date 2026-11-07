@@ -37,8 +37,8 @@ var settingControls = map[string]settingControl{
 	},
 	"responseView": func(d *Dialog, host Host, field settings.Field) Node { return d.enumChips(host, field, nil) },
 	"uiScale":      func(d *Dialog, host Host, _ settings.Field) Node { return d.scaleControl(host) },
-	"uiFont":       func(d *Dialog, host Host, _ settings.Field) Node { return d.fontPicker(host, FontUI, &d.UIFont) },
-	"codeFont":     func(d *Dialog, host Host, _ settings.Field) Node { return d.fontPicker(host, FontCode, &d.CodeFont) },
+	"uiFont":       func(d *Dialog, host Host, _ settings.Field) Node { return d.fontControl(host, FontUI) },
+	"codeFont":     func(d *Dialog, host Host, _ settings.Field) Node { return d.fontControl(host, FontCode) },
 }
 
 func sizeLabel(c appearance.SizeChoice) (string, string)         { return c.ID, c.Label }
@@ -159,9 +159,6 @@ func (d *Dialog) Edited(host Host, key string) {
 	}
 	d.setNote(key, "")
 	host.Change(func(s *settings.Settings) { *s = settings.With(*s, key, value) })
-	if key == "uiFont" || key == "codeFont" {
-		d.ApplyFonts(host)
-	}
 }
 
 func (d *Dialog) setNote(key, note string) {
@@ -190,8 +187,6 @@ func (d *Dialog) Reset(host Host, key string) {
 	host.Change(func(s *settings.Settings) { settings.Reset(s, key) })
 	d.inputs, d.notes = nil, nil
 	if key == "uiFont" || key == "codeFont" {
-		current := host.Settings()
-		d.UIFont, d.CodeFont = NewTextField(current.UIFont), NewTextField(current.CodeFont)
 		d.ApplyFonts(host)
 	}
 }

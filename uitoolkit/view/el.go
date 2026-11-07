@@ -27,7 +27,7 @@
 //	Spacing    Pad PadX PadY PadL PadT PadR PadB   Margin MarginX MarginY MarginL MarginT MarginR MarginB   Gap
 //	Layout     Row Col Stack Split Scroll HScroll Spacer   AlignItems AlignSelf JustifyContent
 //	Look       Bg Border BorderX BorderY BorderL BorderT BorderR BorderB HoverBg Shadow Control Edges
-//	Text       Text Caption Lines   Color Muted Bold Small Mono Ellipsis TextCenter
+//	Text       Text Caption Lines   Color Muted Bold Small Mono FontSource Ellipsis TextCenter
 //	Input      Field Area Code Slider Checkbox   (state: TextField TextArea CodeView)   Placeholder OnChange OnEnter
 //	Events     OnClick OnRightClick OnMiddleClick OnDragOver   Tooltip KeepInView
 //	Composite  Button PrimaryButton LinkButton IconButton Tabs ScrollTabs Table   OnSelect OnSlide
@@ -46,6 +46,7 @@ package view
 
 import (
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
@@ -82,7 +83,8 @@ type El struct {
 	bg, border, borderT, borderB, borderL, borderR core.Token
 	borderInset                                    int // BorderL and BorderR stop this far from the top and bottom
 	hoverBg                                        core.Token
-	hoverColor                                     core.Token // an icon's color under the pointer
+	fontSource                                     *text.GoTextFaceSource // draws a text in this font instead of the interface one
+	hoverColor                                     core.Token             // an icon's color under the pointer
 	shadow, clip, lighten                          bool
 
 	text                             string
@@ -273,6 +275,11 @@ func Tooltip(text string) Option { return func(e *El) { e.tip = text } }
 
 // HoverBg fills the element while the pointer is over it.
 func HoverBg(t core.Token) Option { return func(e *El) { e.hoverBg = t } }
+
+// FontSource draws a Text in the font of source, at the size the text's other
+// options choose (Small, Bold), instead of the interface font. Use it to show
+// a font in its own face, as a font list does. It has no template attribute: a font source is a Go value.
+func FontSource(source *text.GoTextFaceSource) Option { return func(e *El) { e.fontSource = source } }
 
 // HoverColor is the color an icon takes while the pointer is over it, in
 // place of the hover token of the icon itself. Use it where that token

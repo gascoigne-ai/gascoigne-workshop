@@ -64,6 +64,8 @@ type Host interface {
 	ExtraPage(id string) Node
 	// ActionIDs are the ids of the shortcut actions, offered when completing.
 	ActionIDs() []string
+	// Pointer is the pointer position in the window, where a dropdown opens.
+	Pointer() (x, y int)
 	// Close closes the dialog; MarkDirty asks for a redraw; Later runs f on
 	// the UI goroutine.
 	Close()
@@ -95,10 +97,9 @@ type Dialog struct {
 	notes  map[string]string     // why a typed value was refused
 	scale  SliderState
 
-	Families []fonts.Family // installed font families, once scanned
-	fontNote map[FontRole]string
-	UIFont   TextField
-	CodeFont TextField
+	Families   []fonts.Family // installed font families, once scanned
+	FontSearch TextField      // narrows the font dropdown
+	list       fontList
 
 	Raw      bool               // the dialog shows settings.json as text
 	RawText  TextArea           // that text
@@ -142,6 +143,7 @@ func (d *Dialog) View(host Host) Node {
 				Scroll(&d.scroll, Grow(1), Pad(16), BorderL(w.BorderSoft), d.pageContent(host, cur)),
 			)),
 		),
+		d.FontList(host),
 	)
 }
 
@@ -179,12 +181,10 @@ func (d *Dialog) modeSwitch(host Host) Node {
 	return Button("JSON", W(60), H(w.CompactH), OnClick(func() { d.OpenRaw(host) }), Tooltip("Edit settings.json as text"))
 }
 
-// Reload resets what depends on the settings in effect: typed text, notes
-// and the font fields. The host calls it after it replaced the settings.
+// Reload resets what depends on the settings in effect: typed text and
+// notes, and the fonts. The host calls it after it replaced the settings.
 func (d *Dialog) Reload(host Host) {
-	current := host.Settings()
 	d.inputs, d.notes = nil, nil
-	d.UIFont, d.CodeFont = NewTextField(current.UIFont), NewTextField(current.CodeFont)
 	d.ApplyFonts(host)
 }
 

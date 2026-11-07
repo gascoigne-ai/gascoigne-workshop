@@ -25,6 +25,9 @@ func dump(sb *strings.Builder, e *El, depth int) {
 	if e.text != "" {
 		add("text", fmt.Sprintf("%q", e.text))
 	}
+	if e.fontSource != nil {
+		add("font", "custom")
+	}
 	for _, f := range []struct {
 		name string
 		v    int

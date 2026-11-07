@@ -42,6 +42,9 @@ func (a *App) Close() { a.menu = false }
 // MarkDirty asks for a redraw.
 func (a *App) MarkDirty() { a.dirty = true }
 
+// Pointer is the pointer position in the window.
+func (a *App) Pointer() (int, int) { return a.ctx.In.X, a.ctx.In.Y }
+
 // Later runs f on the UI goroutine.
 func (a *App) Later(f func()) { a.later <- f }
 

@@ -13,6 +13,14 @@ import (
 type textB struct{ plain }
 
 func (e *El) face(c *core.Ctx) *text.GoTextFace {
+	face := e.chosenFace(c)
+	if e.fontSource == nil {
+		return face
+	}
+	return &text.GoTextFace{Source: e.fontSource, Size: face.Size}
+}
+
+func (e *El) chosenFace(c *core.Ctx) *text.GoTextFace {
 	switch {
 	case e.mono:
 		return c.F.Mono

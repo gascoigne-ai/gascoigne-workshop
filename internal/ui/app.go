@@ -292,7 +292,6 @@ func NewApp(opts Options) (*App, error) {
 	for _, s := range shortcuts {
 		a.actionIDs = append(a.actionIDs, s.id)
 	}
-	a.prefs.UIFont, a.prefs.CodeFont = view.NewTextField(st.UIFont), view.NewTextField(st.CodeFont)
 	if opts.ScanFonts {
 		a.prefs.ScanFonts(a)
 	}

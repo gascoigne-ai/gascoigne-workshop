@@ -69,15 +69,6 @@ func TestPickingACodeFontOnlyChangesTheCodeFace(t *testing.T) {
 	}
 }
 
-func TestAnUnknownFontNameIsReportedAndChangesNothing(t *testing.T) {
-	a, _ := newTestApp(t)
-	a.prefs.Families = testFamilies(t)
-	a.prefs.SetFont(a, settingsui.FontUI, "Comic Nope")
-	if a.settings.UIFont != "" || a.prefs.FontNote(settingsui.FontUI) == "" {
-		t.Fatalf("setting %q, note %q", a.settings.UIFont, a.prefs.FontNote(settingsui.FontUI))
-	}
-}
-
 func TestSavedFontsApplyOnceTheScanFinishes(t *testing.T) {
 	a, _ := newTestApp(t)
 	a.settings.UIFont, a.settings.CodeFont = "Go Mono", "Go"
@@ -99,31 +90,14 @@ func TestASavedFontThatIsGoneFallsBackToTheBuiltInOne(t *testing.T) {
 	}
 }
 
-func TestTheAppearancePageHasFontFieldsWithSuggestions(t *testing.T) {
+func TestTheAppearancePageHasFontControlsShowingTheCurrentFamily(t *testing.T) {
 	a, _ := newTestApp(t)
 	a.prefs.Families = testFamilies(t)
-	a.prefs.UIFont = NewTextField("mono")
+	a.settings.UIFont = "Go Mono"
 	dump := Dump(a.prefs.FormPage(a, "Appearance"))
 	for _, want := range []string{"Interface font", "Code font", `text="Go Mono"`} {
 		if !strings.Contains(dump, want) {
 			t.Errorf("appearance page lacks %q", want)
 		}
-	}
-}
-
-// The suggestions are chips of the width of their names; a long list of
-// them ran out of the settings pane, so they appear only once the user has
-// typed something to narrow them, and there are few.
-func TestFontSuggestionsNeedTypedTextAndAreFew(t *testing.T) {
-	a, _ := newTestApp(t)
-	a.prefs.Families = testFamilies(t)
-	if got := a.prefs.Suggestions(""); len(got) != 0 {
-		t.Fatalf("suggestions for an empty field: %+v", got)
-	}
-	if got := a.prefs.Suggestions("go"); len(got) == 0 {
-		t.Fatal("no suggestions for typed text")
-	}
-	if settingsui.SuggestionCount > 3 {
-		t.Fatalf("SuggestionCount = %d, want at most 3 so the chips fit the pane", settingsui.SuggestionCount)
 	}
 }

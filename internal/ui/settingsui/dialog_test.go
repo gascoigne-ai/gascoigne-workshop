@@ -137,3 +137,4 @@ func TestCompletionOffersWhatSettingsCompleteGivesAtTheCaret(t *testing.T) {
 		t.Fatalf("text = %q", d.RawText.Text)
 	}
 }
+func (h *fakeHost) Pointer() (int, int) { return 400, 300 }
