@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/state"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
