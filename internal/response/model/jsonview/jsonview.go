@@ -21,6 +21,12 @@ const (
 	Literal // true, false, null
 )
 
+// styles name the theme style each Kind is drawn in, indexed by Kind.
+var styles = [...]string{"json.plain", "json.punct", "json.key", "json.string", "json.number", "json.literal"}
+
+// Style is the name of the theme style that colors a Kind.
+func (kind Kind) Style() string { return styles[kind] }
+
 // Span is a run of text of one Kind.
 type Span struct {
 	Text string

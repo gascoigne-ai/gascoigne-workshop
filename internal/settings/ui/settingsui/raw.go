@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/jsonview"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -143,7 +142,7 @@ func (d *Dialog) rawStyler(line string) []Span {
 	tokens := jsonview.Tokenize(line)
 	spans := make([]Span, len(tokens))
 	for i, token := range tokens {
-		style := respview.Tokens[token.Kind]
+		style := w.Token(token.Kind.Style())
 		if token.Kind == jsonview.Key && bad[token.Text] {
 			style = w.Error
 		}

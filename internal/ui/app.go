@@ -10,7 +10,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/textfmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/sentlog"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/appearance"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/settingsui"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/settingsui"
 	"net/http"
 	"net/http/cookiejar"
 	"reflect"

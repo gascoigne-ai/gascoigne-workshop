@@ -1,6 +1,8 @@
 package settingsui
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/fonts"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
 	"image/color"
 	"os"
 	"path/filepath"
@@ -255,3 +257,5 @@ func assertSameDump(t *testing.T, tplView, goView Node, width, height int) {
 		t.Fatalf("template:\n%s\nGo:\n%s", got, want)
 	}
 }
+
+func (h *fakeHost) FontStore() port.FontStore { return fonts.System{} }

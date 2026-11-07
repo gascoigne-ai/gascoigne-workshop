@@ -8,9 +8,10 @@
 package settingsui
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/fonts"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fontfamily"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/component"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -53,6 +54,8 @@ type Host interface {
 	Replace(s settings.Settings)
 	// SettingsPath is the settings file, "" when settings are not kept.
 	SettingsPath() string
+	// FontStore finds installed fonts and reads their files.
+	FontStore() port.FontStore
 	// SetFonts switches the interface and code fonts.
 	SetFonts(ui, code w.FontData) error
 	// Toast shows a message over the window; SetStatus replaces the status line.
@@ -114,8 +117,8 @@ type Dialog struct {
 	notes  map[string]string     // why a typed value was refused
 	scale  SliderState
 
-	Families   []fonts.Family // installed font families, once scanned
-	FontSearch TextField      // narrows the font dropdown
+	Families   []fontfamily.Family // installed font families, once scanned
+	FontSearch TextField           // narrows the font dropdown
 	list       fontList
 
 	Raw        bool               // the dialog shows settings.json as text

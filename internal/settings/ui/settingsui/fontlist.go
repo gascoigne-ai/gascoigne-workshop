@@ -6,7 +6,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/fonts"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fontfamily"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
@@ -77,7 +77,7 @@ func (d *Dialog) loadedFaces() int { return len(d.list.faces) }
 
 // face is the font of family, read the first time it is asked for; nil
 // when the file cannot be read, which draws the name in the interface font.
-func (d *Dialog) face(family fonts.Family) *text.GoTextFaceSource {
+func (d *Dialog) face(host Host, family fontfamily.Family) *text.GoTextFaceSource {
 	if source, seen := d.list.faces[family.Regular]; seen {
 		return source
 	}
@@ -85,7 +85,7 @@ func (d *Dialog) face(family fonts.Family) *text.GoTextFaceSource {
 		d.list.faces = map[string]*text.GoTextFaceSource{}
 	}
 	var source *text.GoTextFaceSource
-	if regular, _, err := fonts.Load(fonts.Family{Name: family.Name, Regular: family.Regular}); err == nil {
+	if regular, _, err := host.FontStore().Load(fontfamily.Family{Name: family.Name, Regular: family.Regular}); err == nil {
 		source, _ = text.NewGoTextFaceSource(bytes.NewReader(regular))
 	}
 	d.list.faces[family.Regular] = source
@@ -94,9 +94,9 @@ func (d *Dialog) face(family fonts.Family) *text.GoTextFaceSource {
 
 // fontLabel is a name shown in its own font: Text with the family's font
 // when it could be loaded.
-func (d *Dialog) fontLabel(family fonts.Family, opts ...Option) Node {
+func (d *Dialog) fontLabel(host Host, family fontfamily.Family, opts ...Option) Node {
 	options := append([]Option{Ellipsis(), Grow(1)}, opts...)
-	if source := d.face(family); source != nil {
+	if source := d.face(host, family); source != nil {
 		options = append(options, FontSource(source))
 	}
 	return Text(family.Name, options...)
@@ -106,11 +106,11 @@ func (d *Dialog) fontLabel(family fonts.Family, opts ...Option) Node {
 // in its font, and a chevron; clicking opens the dropdown.
 func (d *Dialog) fontControl(host Host, role FontRole) Node {
 	name := savedFont(host.Settings(), role)
-	family, found := fonts.Find(d.Families, name)
+	family, found := fontfamily.Find(d.Families, name)
 	label := Text(builtIn, Grow(1), Muted())
 	switch {
 	case found:
-		label = d.fontLabel(family)
+		label = d.fontLabel(host, family)
 	case name != "":
 		label = Text(name+" (not installed)", Ellipsis(), Grow(1), Muted())
 	}
@@ -121,8 +121,8 @@ func (d *Dialog) fontControl(host Host, role FontRole) Node {
 }
 
 // matchingFamilies are the families whose name contains the search text.
-func (d *Dialog) matchingFamilies() []fonts.Family {
-	return fonts.Matching(d.Families, d.FontSearch.Text, len(d.Families))
+func (d *Dialog) matchingFamilies() []fontfamily.Family {
+	return fontfamily.Matching(d.Families, d.FontSearch.Text, len(d.Families))
 }
 
 // FontList is the dropdown while it is open: a search field and the
@@ -153,7 +153,7 @@ func (d *Dialog) FontList(host Host) Node {
 			index = i - 1 // the first row is Built-in
 		}
 		family := families[index]
-		rows = append(rows, d.fontRow(host, d.fontLabel(family), strings.EqualFold(family.Name, current), family.Name))
+		rows = append(rows, d.fontRow(host, d.fontLabel(host, family), strings.EqualFold(family.Name, current), family.Name))
 	}
 	rows = append(rows, Spacer(H((count-last)*fontListRowH)))
 	var note Node

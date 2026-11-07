@@ -13,12 +13,13 @@ import (
 	"golang.org/x/image/font/gofont/goregular"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/fonts"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fontfamily"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 // testFamilies are real font files (the Go fonts) written to a folder and
 // scanned: "Go" and "Go Mono".
-func testFamilies(t *testing.T) []fonts.Family {
+func testFamilies(t *testing.T) []fontfamily.Family {
 	t.Helper()
 	dir := t.TempDir()
 	for name, data := range map[string][]byte{"r.ttf": goregular.TTF, "b.ttf": gobold.TTF, "m.ttf": gomono.TTF, "mb.ttf": gomonobold.TTF} {
@@ -94,7 +95,7 @@ func TestOnlyTheVisibleRowsLoadTheirFonts(t *testing.T) {
 	host := newHost(t)
 	base := testFamilies(t)[0]
 	for i := range 300 {
-		d.Families = append(d.Families, fonts.Family{Name: fmt.Sprintf("Family %03d", i), Regular: fmt.Sprintf("%s#%d", base.Regular, i)})
+		d.Families = append(d.Families, fontfamily.Family{Name: fmt.Sprintf("Family %03d", i), Regular: fmt.Sprintf("%s#%d", base.Regular, i)})
 	}
 	d.OpenFontList(host, FontUI)
 	_ = d.FontList(host)
@@ -119,7 +120,7 @@ func TestTheFontListOpensScrolledToTheSelectedFamily(t *testing.T) {
 	var d Dialog
 	host := newHost(t)
 	for i := range 300 {
-		d.Families = append(d.Families, fonts.Family{Name: fmt.Sprintf("Family %03d", i), Regular: fmt.Sprintf("none#%d", i)})
+		d.Families = append(d.Families, fontfamily.Family{Name: fmt.Sprintf("Family %03d", i), Regular: fmt.Sprintf("none#%d", i)})
 	}
 	host.current.UIFont = "Family 200"
 	d.OpenFontList(host, FontUI)

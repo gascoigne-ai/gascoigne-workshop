@@ -14,14 +14,13 @@ import (
 )
 
 // Tokens colors the spans of a JSON response.
-var Tokens = map[jsonview.Kind]core.Token{
-	jsonview.Plain:   "json.plain",
-	jsonview.Punct:   "json.punct",
-	jsonview.Key:     "json.key",
-	jsonview.String:  "json.string",
-	jsonview.Number:  "json.number",
-	jsonview.Literal: "json.literal",
-}
+var Tokens = func() map[jsonview.Kind]core.Token {
+	tokens := map[jsonview.Kind]core.Token{}
+	for kind := jsonview.Plain; kind <= jsonview.Literal; kind++ {
+		tokens[kind] = core.Token(kind.Style())
+	}
+	return tokens
+}()
 
 // CodeLines turns a response body into colored code-view lines.
 func CodeLines(body []byte) []view.Line {

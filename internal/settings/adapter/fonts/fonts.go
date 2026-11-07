@@ -8,18 +8,14 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fontfamily"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
 	"golang.org/x/image/font/sfnt"
 )
-
-// Family is a typeface by name with the files of its regular and bold
-// styles. Bold is empty when the family has none.
-type Family struct {
-	Name          string
-	Regular, Bold string
-}
 
 // maxFiles bounds a scan, so a huge font folder cannot stall start-up.
 const maxFiles = 5000
@@ -39,8 +35,8 @@ func SystemDirs(goos, home string) []string {
 // Scan reads the .ttf and .otf files under dirs and groups them by the
 // family name inside each file, sorted by name. Folders that do not exist,
 // files that cannot be read and collections (.ttc) are skipped.
-func Scan(dirs ...string) []Family {
-	byName := map[string]*Family{}
+func Scan(dirs ...string) []fontfamily.Family {
+	byName := map[string]*fontfamily.Family{}
 	seen := 0
 	for _, dir := range dirs {
 		_ = filepath.WalkDir(dir, func(path string, entry fs.DirEntry, err error) error {
@@ -58,7 +54,7 @@ func Scan(dirs ...string) []Family {
 			}
 			entryFor := byName[family]
 			if entryFor == nil {
-				entryFor = &Family{Name: family}
+				entryFor = &fontfamily.Family{Name: family}
 				byName[family] = entryFor
 			}
 			switch style {
@@ -70,7 +66,7 @@ func Scan(dirs ...string) []Family {
 			return nil
 		})
 	}
-	families := make([]Family, 0, len(byName))
+	families := make([]fontfamily.Family, 0, len(byName))
 	for _, family := range byName {
 		if family.Regular == "" {
 			continue // italic-only or exotic styles are not offered
@@ -107,35 +103,9 @@ func identify(path string) (family, style string, ok bool) {
 	return family, style, true
 }
 
-// Find is the family called name, ignoring case.
-func Find(families []Family, name string) (Family, bool) {
-	for _, family := range families {
-		if strings.EqualFold(family.Name, strings.TrimSpace(name)) {
-			return family, true
-		}
-	}
-	return Family{}, false
-}
-
-// Matching lists up to limit families whose name contains text, ignoring
-// case; empty text matches all.
-func Matching(families []Family, text string, limit int) []Family {
-	needle := strings.ToLower(strings.TrimSpace(text))
-	var out []Family
-	for _, family := range families {
-		if len(out) == limit {
-			break
-		}
-		if strings.Contains(strings.ToLower(family.Name), needle) {
-			out = append(out, family)
-		}
-	}
-	return out
-}
-
 // Load reads the regular and bold files of family. A family with no bold
 // file uses its regular one for both.
-func Load(family Family) (regular, bold []byte, err error) {
+func Load(family fontfamily.Family) (regular, bold []byte, err error) {
 	if family.Regular == "" {
 		return nil, nil, errors.New("the family has no regular file")
 	}
@@ -164,3 +134,17 @@ func hasLetters(font *sfnt.Font, buf *sfnt.Buffer) bool {
 	}
 	return true
 }
+
+// System is the font store of this machine: the font folders of its OS
+// under Home.
+type System struct{ Home string }
+
+// Scan implements port.FontStore.
+func (system System) Scan() []fontfamily.Family {
+	return Scan(SystemDirs(runtime.GOOS, system.Home)...)
+}
+
+// Load implements port.FontStore.
+func (System) Load(family fontfamily.Family) (regular, bold []byte, err error) { return Load(family) }
+
+var _ port.FontStore = System{}

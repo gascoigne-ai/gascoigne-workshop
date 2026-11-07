@@ -2,11 +2,9 @@ package settingsui
 
 import (
 	"fmt"
-	"os"
-	"runtime"
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/fonts"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fontfamily"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
@@ -34,7 +32,7 @@ func savedFont(s settings.Settings, role FontRole) string {
 func (d *Dialog) SetFont(host Host, role FontRole, name string) {
 	name = strings.TrimSpace(name)
 	if name != "" {
-		family, ok := fonts.Find(d.Families, name)
+		family, ok := fontfamily.Find(d.Families, name)
 		if !ok {
 			host.Toast(fmt.Sprintf("No installed font is called %q", name), true)
 			return
@@ -53,7 +51,7 @@ func (d *Dialog) SetFont(host Host, role FontRole, name string) {
 
 // FontsScanned receives the installed families and applies the saved
 // choices, which could not be resolved before.
-func (d *Dialog) FontsScanned(host Host, families []fonts.Family) {
+func (d *Dialog) FontsScanned(host Host, families []fontfamily.Family) {
 	d.Families = families
 	d.ApplyFonts(host)
 }
@@ -65,11 +63,11 @@ func (d *Dialog) ApplyFonts(host Host) {
 	current := host.Settings()
 	var chosen [2]w.FontData
 	for _, role := range []FontRole{FontUI, FontCode} {
-		family, ok := fonts.Find(d.Families, savedFont(current, role))
+		family, ok := fontfamily.Find(d.Families, savedFont(current, role))
 		if !ok {
 			continue
 		}
-		regular, bold, err := fonts.Load(family)
+		regular, bold, err := host.FontStore().Load(family)
 		if err != nil {
 			host.SetStatus(err.Error())
 			continue
@@ -86,9 +84,9 @@ func (d *Dialog) ApplyFonts(host Host) {
 // ScanFonts reads the installed fonts in the background and hands them to
 // the UI goroutine.
 func (d *Dialog) ScanFonts(host Host) {
-	home, _ := os.UserHomeDir()
+	store := host.FontStore()
 	go func() {
-		families := fonts.Scan(fonts.SystemDirs(runtime.GOOS, home)...)
+		families := store.Scan()
 		host.Later(func() { d.FontsScanned(host, families) })
 	}()
 }

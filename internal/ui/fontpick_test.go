@@ -1,7 +1,7 @@
 package ui
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/settingsui"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/settingsui"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"strings"
 
@@ -16,11 +16,12 @@ import (
 	"golang.org/x/image/font/gofont/goregular"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/fonts"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fontfamily"
 )
 
 // testFamilies are real font files (the Go fonts) written to a folder
 // and scanned: "Go" is proportional, "Go Mono" is monospace.
-func testFamilies(t *testing.T) []fonts.Family {
+func testFamilies(t *testing.T) []fontfamily.Family {
 	t.Helper()
 	dir := t.TempDir()
 	for name, data := range map[string][]byte{"r.ttf": goregular.TTF, "b.ttf": gobold.TTF, "m.ttf": gomono.TTF, "mb.ttf": gomonobold.TTF} {

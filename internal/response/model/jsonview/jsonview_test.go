@@ -114,3 +114,12 @@ func TestTokenizeToleratesBrokenJSON(t *testing.T) {
 		}
 	}
 }
+
+func TestEveryKindNamesAThemeStyle(t *testing.T) {
+	want := map[Kind]string{Plain: "json.plain", Punct: "json.punct", Key: "json.key", String: "json.string", Number: "json.number", Literal: "json.literal"}
+	for kind, style := range want {
+		if got := kind.Style(); got != style {
+			t.Errorf("Kind %d style = %q, want %q", kind, got, style)
+		}
+	}
+}
