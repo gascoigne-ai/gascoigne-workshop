@@ -13,7 +13,7 @@ func TestStatusBarTemplateMatchesTheGoView(t *testing.T) {
 	a.status = "Sent 200 OK in 120ms"
 	goView := Row(H(statusH), PadX(w.Gutter), Gap(w.Gutter), Bg(w.Frame), Control("statusbar"), BorderT(w.Border),
 		Text(a.status, Small(), Muted(), Ellipsis(), Grow(1)),
-		Button("Log", W(44), H(20), OnClick(a.openTrace), Tooltip("Show the log of calls")),
+		Button("Log", W(44), H(20), OnClick(a.calls.Open), Tooltip("Show the log of calls")),
 		Text(version, Small(), Muted()),
 	)
 	tplView := a.statusBar()

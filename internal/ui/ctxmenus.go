@@ -175,6 +175,13 @@ func (a *App) textMenu(f *TextField, changed func()) []menuItem {
 }
 
 // textMenuOpt makes an element open the text menu of f on right click.
+// Size is the window's size in logical pixels; with TextMenu it makes the
+// App the host of the features that live in their own packages.
+func (a *App) Size() (width, height int) { return a.w, a.h }
+
+// TextMenu is the option that gives field the right-click text menu.
+func (a *App) TextMenu(field *TextField) Option { return a.textMenuOpt(field, nil) }
+
 func (a *App) textMenuOpt(f *TextField, changed func()) Option {
 	return OnRightClick(func(x, y int) { a.openMenu(x, y, a.textMenu(f, changed)) })
 }

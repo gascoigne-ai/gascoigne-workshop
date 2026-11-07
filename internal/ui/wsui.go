@@ -158,7 +158,7 @@ func (a *App) applyWS(e wsEvent) {
 		}
 	case e.closed:
 		t.sess, t.connecting = nil, false
-		a.traceInfo("Disconnected from " + t.req.URL)
+		a.calls.Info(a.now(), "Disconnected from "+t.req.URL)
 		t.tools, t.resources, t.prompts = nil, nil, nil
 		a.status = "Disconnected from " + t.req.URL
 		a.scheduleRetry(t)
@@ -180,13 +180,13 @@ func (a *App) applyWS(e wsEvent) {
 		a.logEvent(t, e.ev)
 	case e.err != nil:
 		t.connecting = false
-		a.traceError(fmt.Sprintf("✗ %s: %s", t.req.URL, e.err))
+		a.calls.Error(a.now(), fmt.Sprintf("✗ %s: %s", t.req.URL, e.err))
 		a.logInfo(t, e.err.Error(), w.Error)
 		a.status = "Connection failed"
 		a.scheduleRetry(t)
 	default:
 		t.sess, t.connecting = e.sess, false
-		a.traceInfo("Connected to " + t.req.URL)
+		a.calls.Info(a.now(), "Connected to "+t.req.URL)
 		a.status = "Connected to " + t.req.URL
 	}
 }

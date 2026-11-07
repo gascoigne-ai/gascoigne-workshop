@@ -8,6 +8,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/preview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/textfmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/calltrace"
 	"net/http"
 	"net/http/cookiejar"
 	"reflect"
@@ -212,11 +213,7 @@ type App struct {
 	uiFont, codeFont view.TextField                 // the font family fields of the settings
 	families         []fonts.Family                 // installed font families, once scanned
 	fontNotes        map[fontRole]string            // why a font name was refused
-	trace            []traceEntry                   // the call trace, oldest first
-	traceFilter      view.TextField                 // narrows the trace view
-	traceCode        view.CodeView                  // the trace view
-	traceKey         string                         // what traceCode shows now
-	traceShown       bool                           // the trace view is open
+	calls            calltrace.Log                  // the call trace behind the Log button
 	showSent         bool                           // the sidebar lists sent requests instead of the tree
 	sentScroll       view.ScrollState
 	dragNode         any           // the tree node being dragged, nil when none
@@ -363,7 +360,7 @@ func (a *App) dispatch(t *reqTab, source *model.Request) {
 	seq := t.seq
 	a.status = "Sending " + source.URL
 	req := source.Expanded(a.varsFor(t.req))
-	a.traceSent(req)
+	a.calls.Sent(a.now(), req)
 	ctx, cancel := context.WithTimeout(context.Background(), a.timeoutFor(req))
 	t.cancel = cancel
 	go func() {
@@ -440,7 +437,7 @@ func (a *App) apply(r sendResult) {
 	t.resp = &r.resp
 	a.saveHistory(t)
 	a.recordSent(t, &r.resp)
-	a.traceAnswer(t.req, &r.resp)
+	a.calls.Answer(a.now(), t.req, &r.resp)
 	a.rememberSchema(t, &r.resp)
 	a.refreshView(t)
 	if r.resp.Err != "" {
@@ -522,8 +519,8 @@ func (a *App) step(in core.Input) {
 			a.closeMenu()
 		case a.dialog != nil:
 			a.closeDialog()
-		case a.traceShown:
-			a.closeTrace()
+		case a.calls.Shown():
+			a.calls.Close()
 		case a.menu:
 			a.menu = false
 		case a.edit != nil:

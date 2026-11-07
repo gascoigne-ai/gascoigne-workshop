@@ -58,7 +58,7 @@ func (a *App) view() Node {
 		a.menuView(),
 		a.contextMenuView(),
 		a.dialogView(),
-		a.traceView(),
+		a.calls.View(a),
 		a.toastsView(),
 	)
 }
@@ -391,5 +391,5 @@ func (a *App) statusBar() Node {
 		  <button w="44" h="20" onclick="openLog" tip="Show the log of calls">Log</button>
 		  <text small muted>{{version}}</text>
 		</row>`,
-		component.Scope{"status": a.status, "version": version, "openLog": a.openTrace})
+		component.Scope{"status": a.status, "version": version, "openLog": a.calls.Open})
 }
