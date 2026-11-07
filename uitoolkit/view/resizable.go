@@ -17,7 +17,7 @@ type ResizeState struct {
 }
 
 type resizableB struct {
-	plain
+	flow       // lays its children out top to bottom, like Col
 	state      *ResizeState
 	minW, minH int
 	maxW, maxH int

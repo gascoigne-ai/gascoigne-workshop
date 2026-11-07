@@ -21,7 +21,9 @@ import (
 const (
 	DialogWidth  = 760
 	DialogMaxH   = 560
-	ScreenMargin = 40 // kept free around the dialog in a small window
+	ScreenMargin = 40  // kept free around the dialog in a small window
+	MinWidth     = 520 // the smallest the user can make it
+	MinHeight    = 360
 	DialogNavW   = 170
 	DialogTitleH = 44
 )
@@ -90,8 +92,9 @@ var pages = []page{
 
 // Dialog is the state of the settings dialog. The zero value is ready.
 type Dialog struct {
-	Cat    string    // the page shown
-	Search TextField // filters the settings across pages
+	Size   ResizeState // the size the user gave the dialog; 0 is the default
+	Cat    string      // the page shown
+	Search TextField   // filters the settings across pages
 	scroll ScrollState
 
 	inputs map[string]*TextField // fields of the text and number settings
@@ -119,17 +122,37 @@ func (d *Dialog) pageID() string {
 	return pages[0].id
 }
 
+// Fresh forgets everything the user did in the dialog, as closing it does:
+// the page, the search, the raw view, what was typed and any open list. What
+// the program learned (installed fonts, the file's stamp) stays.
+func (d *Dialog) Fresh() {
+	d.Cat, d.Search = "", NewTextField("")
+	d.scroll = ScrollState{} // the size the user chose stays
+	d.inputs, d.notes = nil, nil
+	d.Raw, d.RawText, d.Problems, d.rawBefore = false, TextArea{}, nil, ""
+	d.FontSearch = NewTextField("")
+	d.list = fontList{faces: d.list.faces}
+}
+
 // ResetScroll puts the page back at its top.
 func (d *Dialog) ResetScroll() { d.scroll.Y = 0 }
 
 // View is the dialog, centered over a dimmed window.
 func (d *Dialog) View(host Host) Node {
-	_, height := host.Size()
-	h := min(DialogMaxH, height-2*ScreenMargin)
+	width, height := host.Size()
+	maxW, maxH := max(width-2*ScreenMargin, 1), max(height-2*ScreenMargin, 1)
+	dw, dh := d.Size.W, d.Size.H
+	if dw == 0 {
+		dw = DialogWidth
+	}
+	if dh == 0 {
+		dh = DialogMaxH
+	}
+	dw, dh = min(max(dw, min(MinWidth, maxW)), maxW), min(max(dh, min(MinHeight, maxH)), maxH)
 	cur := d.pageID()
 	return Frag(
 		Row(Bg(w.Shadow)), // dims the window
-		Col(W(DialogWidth), H(h), Bg(w.Bg), Control("menu"), Shadow(), FloatCenter(), FocusScope(), Modal(), OnDismiss(host.Close),
+		Resizable(&d.Size, min(MinWidth, maxW), min(MinHeight, maxH), maxW, maxH, W(dw), H(dh), Bg(w.Bg), Control("menu"), Shadow(), FloatCenter(), FocusScope(), Modal(), OnDismiss(host.Close),
 			Row(H(DialogTitleH), PadX(16), Gap(8), AlignItems(AlignCenter), BorderB(w.BorderSoft),
 				Text("Settings", Bold(), W(70)),
 				If(!d.Raw, Field(&d.Search, H(28), Grow(1), Bg(w.Sunken), Placeholder("Search settings"), OnChange(d.ResetScroll), host.TextMenu(&d.Search, nil))),

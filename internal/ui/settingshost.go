@@ -43,7 +43,7 @@ func (a *App) Close() { a.closeSettings() }
 // opening starts clean.
 func (a *App) closeSettings() {
 	a.menu = false
-	a.prefs.CloseFontList()
+	a.prefs.Fresh()
 }
 
 // MarkDirty asks for a redraw.

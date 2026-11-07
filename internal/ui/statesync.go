@@ -56,6 +56,8 @@ func (a *App) snapshot() state.State {
 		SidebarW:  a.sidebarSplit.Size,
 		PaneSplit: a.paneSplit.Size,
 		Active:    a.active,
+		SettingsW: a.prefs.Size.W,
+		SettingsH: a.prefs.Size.H,
 	}
 	walkFolders(&a.col.Folder, "", func(p string, f *model.Folder) {
 		if a.expanded[f] {
@@ -88,6 +90,7 @@ func (a *App) snapshot() state.State {
 // restore applies a remembered state to a freshly built app. Anything
 // that no longer exists is skipped, and values are kept in range.
 func (a *App) restore(s state.State) {
+	a.prefs.Size.W, a.prefs.Size.H = max(s.SettingsW, 0), max(s.SettingsH, 0)
 	a.sidebarSplit.Size = max(s.SidebarW, 0)
 	if s.PaneSplit > 0 && s.PaneSplit < 1 {
 		a.paneSplit.Size = s.PaneSplit

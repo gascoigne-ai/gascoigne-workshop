@@ -1696,6 +1696,7 @@ func TestLayoutSettingStacksThePanesAndIsSaved(t *testing.T) {
 	}
 	_ = tab
 	click(a, menuBtnX, menuBtnY)
+	a.prefs.Search = view.NewTextField("request and response") // the reopened dialog is fresh
 	clickText(t, a, "Side by side", 0)
 	if a.settings.Layout != "side" {
 		t.Fatalf("Layout = %q", a.settings.Layout)

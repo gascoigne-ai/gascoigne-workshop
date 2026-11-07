@@ -166,3 +166,21 @@ func TestANumberSettingNeedsAWholeNumberInRange(t *testing.T) {
 		}
 	}
 }
+
+func TestClosingTheSettingsAlwaysOpensThemFresh(t *testing.T) {
+	a, _ := openSettingsPage(t, "requests")
+	a.prefs.Search = view.NewTextField("proxy")
+	a.prefs.OpenRaw(a)
+	*a.prefs.Input(a, "proxy") = view.NewTextField("typed but not entered")
+	a.closeSettings()
+	a.menu = true
+	if a.prefs.Cat != "" || a.prefs.Search.Text != "" || a.prefs.Raw || a.prefs.FontListOpen() {
+		t.Fatalf("page %q search %q raw %v: the reopened dialog is not fresh", a.prefs.Cat, a.prefs.Search.Text, a.prefs.Raw)
+	}
+	if got := a.prefs.Input(a, "proxy").Text; got != a.settings.Proxy {
+		t.Fatalf("a field kept text typed before the dialog was closed: %q", got)
+	}
+	if a.prefs.Searching() {
+		t.Fatal("a search is still active")
+	}
+}

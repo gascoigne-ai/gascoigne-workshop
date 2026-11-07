@@ -57,7 +57,9 @@ type State struct {
 	Expanded  []string             `json:"expanded,omitempty"` // folder paths
 	Tabs      []Tab                `json:"tabs,omitempty"`
 	Active    int                  `json:"active,omitempty"`
-	Columns   map[string][]float64 `json:"columns,omitempty"` // table column weights by table name
+	Columns   map[string][]float64 `json:"columns,omitempty"`   // table column weights by table name
+	SettingsW int                  `json:"settingsW,omitempty"` // the settings dialog size the user chose; 0 is the default
+	SettingsH int                  `json:"settingsH,omitempty"`
 }
 
 // Load reads path. A missing file or an empty path yields the empty
