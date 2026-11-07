@@ -55,7 +55,7 @@ The toolkit packages are public and independent of the application (`uitoolkit/c
 | `uitoolkit/engine` | key bindings and frame pacing |
 | `internal/ui` | the app: state, handlers, the window, dialogs, menus |
 | `internal/ui/calltrace`, `internal/ui/sentlog`, `internal/ui/settingsui` | features split out of `internal/ui`, each behind a `Host` interface the App implements |
-| `internal/request/model`, `internal/collection`, `internal/store` | collections, folders, requests, responses; tree filtering; the folder-of-files format |
+| `internal/request/model`, `internal/collection/model/collection`, `internal/store` | collections, folders, requests, responses; tree filtering; the folder-of-files format |
 | `internal/proto` | `Protocol` interface and registry; REST, WebSocket, SSE, MCP, gRPC |
 | `internal/settings` | the settings schema and `settings.json` |
 | `internal/appearance`, `internal/fonts` | theme choices from settings; installed font families |

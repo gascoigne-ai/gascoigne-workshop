@@ -2,7 +2,7 @@ package ui
 
 import (
 	"fmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
 	"os"
 	"path/filepath"
 	"strings"

@@ -3,7 +3,7 @@ package ui
 import (
 	"errors"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/appearance"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/theming"

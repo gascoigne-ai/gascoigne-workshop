@@ -1,7 +1,7 @@
 package ui
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
 	"os"
 	"path/filepath"
 	"testing"
