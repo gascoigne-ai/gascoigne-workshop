@@ -10,6 +10,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
 	"strings"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
@@ -178,6 +179,37 @@ func (a *App) textMenu(f *TextField, changed func()) []menuItem {
 // Size is the window's size in logical pixels; with TextMenu it makes the
 // App the host of the features that live in their own packages.
 func (a *App) Size() (width, height int) { return a.w, a.h }
+
+// HistoryDir, Toast (below), SetStatus, OpenRequest and Badge make the App
+// the host of the sent-request log.
+func (a *App) HistoryDir() string { return a.historyDir() }
+
+// Toast shows a message over the window.
+func (a *App) Toast(text string, isErr bool) { a.toast(text, isErr) }
+
+// SetStatus replaces the status line.
+func (a *App) SetStatus(text string) { a.status = text }
+
+// OpenRequest focuses the request at path of the collection and reports
+// whether there is one.
+func (a *App) OpenRequest(path string) bool {
+	var found *model.Request
+	walkRequests(&a.col.Folder, "", func(candidate string, req *model.Request) {
+		if candidate == path {
+			found = req
+		}
+	})
+	if found == nil {
+		return false
+	}
+	a.openRequest(found)
+	return true
+}
+
+// Badge is the method label shown before a request's name.
+func (a *App) Badge(protocol, method string) Node {
+	return Text(requestBadge(protocol, method), Small(), Color(appearance.MethodToken(method)), W(badgeW))
+}
 
 // TextMenu is the option that gives field the right-click text menu.
 func (a *App) TextMenu(field *TextField) Option { return a.textMenuOpt(field, nil) }

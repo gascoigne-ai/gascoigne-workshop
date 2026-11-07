@@ -1,0 +1,119 @@
+// Package sentlog is the workspace log of sent requests: every finished
+// send is remembered (and written to the state folder), and the sidebar can
+// list them newest first, filtered by text, to open the request again.
+package sentlog
+
+import (
+	"fmt"
+	"strings"
+	"time"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/history"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
+	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+)
+
+// Host is what the log needs from the application.
+type Host interface {
+	// HistoryDir is the folder the log is kept in, "" when nothing is saved.
+	HistoryDir() string
+	// Toast shows a message over the window.
+	Toast(text string, isErr bool)
+	// SetStatus replaces the status line.
+	SetStatus(text string)
+	// OpenRequest focuses the request at path of the collection and reports
+	// whether there is one.
+	OpenRequest(path string) bool
+	// Badge is the small method label shown before a request's name.
+	Badge(protocol, method string) Node
+}
+
+// Log holds the sent requests, newest first, and the scroll state of their
+// list. The zero value is an empty log.
+type Log struct {
+	rows   []history.Sent
+	scroll ScrollState
+}
+
+// Record adds a finished send of the request at path, writes it to the state
+// folder, and drops the oldest past history.SentLimit.
+func (l *Log) Record(host Host, at time.Time, path string, req *model.Request, status int) {
+	sent := history.Sent{At: at, Path: path, Protocol: req.Protocol, Method: req.Method, URL: req.URL, Status: status}
+	l.rows = append([]history.Sent{sent}, l.rows...)
+	if len(l.rows) > history.SentLimit {
+		l.rows = l.rows[:history.SentLimit]
+	}
+	dir := host.HistoryDir()
+	if dir == "" {
+		return
+	}
+	if err := history.AppendSent(dir, sent); err != nil {
+		host.Toast("History is not being saved: "+err.Error(), true)
+	}
+}
+
+// Load reads the log saved by earlier runs.
+func (l *Log) Load(host Host) {
+	dir := host.HistoryDir()
+	if dir == "" {
+		return
+	}
+	rows, err := history.LoadSent(dir)
+	if err != nil {
+		host.Toast("History could not be read: "+err.Error(), true)
+		return
+	}
+	l.rows = rows
+}
+
+// Rows are the entries whose path, method or URL contains filter, ignoring
+// case, newest first; an empty filter keeps all.
+func (l *Log) Rows(filter string) []history.Sent {
+	needle := strings.ToLower(filter)
+	if needle == "" {
+		return l.rows
+	}
+	var kept []history.Sent
+	for _, sent := range l.rows {
+		if strings.Contains(strings.ToLower(sent.Path+" "+sent.Method+" "+sent.URL), needle) {
+			kept = append(kept, sent)
+		}
+	}
+	return kept
+}
+
+// Open opens the request an entry was sent from; one that has since been
+// deleted or renamed is reported in the status line.
+func (l *Log) Open(host Host, sent history.Sent) {
+	if !host.OpenRequest(sent.Path) {
+		host.SetStatus(fmt.Sprintf("%s is no longer in the collection", sent.Path))
+	}
+}
+
+// List is the sidebar body while it shows the log instead of the tree.
+func (l *Log) List(host Host, filter string) Node {
+	rows := l.Rows(filter)
+	if len(rows) == 0 {
+		return Col(Bg(w.Sunken), Pad(w.Gutter), Text("Nothing sent yet", Muted()))
+	}
+	return Scroll(&l.scroll, Bg(w.Sunken),
+		For(rows, func(_ int, sent history.Sent) Node {
+			return Col(PadX(w.Gutter), PadY(4), HoverBg(w.Hover), Control("row"), OnClick(func() { l.Open(host, sent) }),
+				Row(Gap(6), AlignItems(AlignBaseline),
+					host.Badge(sent.Protocol, sent.Method),
+					Text(sent.Path, Ellipsis(), Grow(1)),
+					Text(status(sent.Status), Small(), Muted()),
+				),
+				Row(Text(sent.URL+"  "+sent.At.Format("15:04:05"), Small(), Muted(), Ellipsis(), Grow(1))),
+			)
+		}),
+	)
+}
+
+func status(code int) string {
+	if code == 0 {
+		return "failed"
+	}
+	return fmt.Sprint(code)
+}

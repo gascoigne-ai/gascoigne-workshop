@@ -23,7 +23,7 @@ func TestSendingARequestListsItInTheSentLogNewestFirst(t *testing.T) {
 		a.send(tab)
 		waitForResponse(t, a, tab)
 	}
-	rows := a.sentRows()
+	rows := a.sent.Rows(a.filter.Text)
 	if len(rows) != 2 || rows[0].Path != a.requestPath(second) || rows[1].Path != a.requestPath(first) {
 		t.Fatalf("sent rows = %+v", rows)
 	}
@@ -41,7 +41,7 @@ func TestTheSentLogComesBackAfterARestart(t *testing.T) {
 	waitForResponse(t, first, tab)
 
 	second := stateApp(t, statePath)
-	if rows := second.sentRows(); len(rows) != 1 || rows[0].Status != 200 {
+	if rows := second.sent.Rows(second.filter.Text); len(rows) != 1 || rows[0].Status != 200 {
 		t.Fatalf("sent rows after a restart = %+v", rows)
 	}
 }
@@ -54,11 +54,11 @@ func TestTheSidebarFilterNarrowsTheSentLog(t *testing.T) {
 	waitForResponse(t, a, tab)
 
 	a.filter.Text = "no-such-thing"
-	if rows := a.sentRows(); len(rows) != 0 {
+	if rows := a.sent.Rows(a.filter.Text); len(rows) != 0 {
 		t.Fatalf("rows for a non-matching filter: %+v", rows)
 	}
 	a.filter.Text = a.cur().req.Name[:2]
-	if rows := a.sentRows(); len(rows) != 1 {
+	if rows := a.sent.Rows(a.filter.Text); len(rows) != 1 {
 		t.Fatalf("rows for a matching filter: %+v", rows)
 	}
 }
@@ -69,10 +69,10 @@ func TestPickingASentRowOpensItsRequest(t *testing.T) {
 	pointTabAt(tab, jsonServer(t).URL)
 	a.send(tab)
 	waitForResponse(t, a, tab)
-	row := a.sentRows()[0]
+	row := a.sent.Rows(a.filter.Text)[0]
 
 	a.openRequest(a.col.Folders[0].Requests[0]) // move away
-	a.openSent(row)
+	a.sent.Open(a, row)
 	if a.cur().req != tab.req {
 		t.Fatalf("opened %q, want %q", a.cur().req.Name, tab.req.Name)
 	}
@@ -80,7 +80,7 @@ func TestPickingASentRowOpensItsRequest(t *testing.T) {
 
 func TestPickingASentRowOfADeletedRequestSaysSo(t *testing.T) {
 	a := stateApp(t, "")
-	a.openSent(history.Sent{Path: "Gone/Request"})
+	a.sent.Open(a, history.Sent{Path: "Gone/Request"})
 	if a.status == "Ready" {
 		t.Fatal("no note for a request that is gone")
 	}

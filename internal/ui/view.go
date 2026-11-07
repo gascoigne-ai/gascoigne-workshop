@@ -71,7 +71,7 @@ func (a *App) sidebar() Node {
 			a.sidebarMode(),
 			Field(&a.filter, H(28), Grow(1), Bg(w.Sunken), Placeholder("Filter"), a.textMenuOpt(&a.filter, nil)),
 		),
-		If(a.showSent, a.sentList()),
+		If(a.showSent, a.sent.List(a, a.filter.Text)),
 		If(!a.showSent, Scroll(&a.treeScroll, Bg(w.Sunken),
 			For(a.visibleRows(), func(_ int, row collection.Row) Node {
 				return a.treeRow(row, row.Node() == a.selected)
