@@ -12,10 +12,10 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/appicon"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/state"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/ui/appicon"
 )
 
 const (
