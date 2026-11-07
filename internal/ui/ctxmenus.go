@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/history"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
 	"net/http"
 	"net/url"
 
@@ -180,9 +182,15 @@ func (a *App) textMenu(f *TextField, changed func()) []menuItem {
 // App the host of the features that live in their own packages.
 func (a *App) Size() (width, height int) { return a.w, a.h }
 
-// HistoryDir, Toast (below), SetStatus, OpenRequest and Badge make the App
+// SentStore, Toast (below), SetStatus, OpenRequest and Badge make the App
 // the host of the sent-request log.
-func (a *App) HistoryDir() string { return a.historyDir() }
+func (a *App) SentStore() port.SentStore {
+	dir := a.historyDir()
+	if dir == "" {
+		return nil
+	}
+	return history.SentLog{Dir: dir}
+}
 
 // Toast shows a message over the window.
 func (a *App) Toast(text string, isErr bool) { a.toast(text, isErr) }

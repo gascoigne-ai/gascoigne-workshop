@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/history"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/component"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -17,8 +17,8 @@ import (
 
 // Host is what the log needs from the application.
 type Host interface {
-	// HistoryDir is the folder the log is kept in, "" when nothing is saved.
-	HistoryDir() string
+	// SentStore keeps the log between runs, nil when nothing is saved.
+	SentStore() port.SentStore
 	// Toast shows a message over the window.
 	Toast(text string, isErr bool)
 	// SetStatus replaces the status line.
@@ -33,34 +33,34 @@ type Host interface {
 // Log holds the sent requests, newest first, and the scroll state of their
 // list. The zero value is an empty log.
 type Log struct {
-	rows   []history.Sent
+	rows   []port.Sent
 	scroll ScrollState
 }
 
 // Record adds a finished send of the request at path, writes it to the state
-// folder, and drops the oldest past history.SentLimit.
+// folder, and drops the oldest past port.SentLimit.
 func (l *Log) Record(host Host, at time.Time, path string, req *model.Request, status int) {
-	sent := history.Sent{At: at, Path: path, Protocol: req.Protocol, Method: req.Method, URL: req.URL, Status: status}
-	l.rows = append([]history.Sent{sent}, l.rows...)
-	if len(l.rows) > history.SentLimit {
-		l.rows = l.rows[:history.SentLimit]
+	sent := port.Sent{At: at, Path: path, Protocol: req.Protocol, Method: req.Method, URL: req.URL, Status: status}
+	l.rows = append([]port.Sent{sent}, l.rows...)
+	if len(l.rows) > port.SentLimit {
+		l.rows = l.rows[:port.SentLimit]
 	}
-	dir := host.HistoryDir()
-	if dir == "" {
+	store := host.SentStore()
+	if store == nil {
 		return
 	}
-	if err := history.AppendSent(dir, sent); err != nil {
+	if err := store.Append(sent); err != nil {
 		host.Toast("History is not being saved: "+err.Error(), true)
 	}
 }
 
 // Load reads the log saved by earlier runs.
 func (l *Log) Load(host Host) {
-	dir := host.HistoryDir()
-	if dir == "" {
+	store := host.SentStore()
+	if store == nil {
 		return
 	}
-	rows, err := history.LoadSent(dir)
+	rows, err := store.Load()
 	if err != nil {
 		host.Toast("History could not be read: "+err.Error(), true)
 		return
@@ -70,12 +70,12 @@ func (l *Log) Load(host Host) {
 
 // Rows are the entries whose path, method or URL contains filter, ignoring
 // case, newest first; an empty filter keeps all.
-func (l *Log) Rows(filter string) []history.Sent {
+func (l *Log) Rows(filter string) []port.Sent {
 	needle := strings.ToLower(filter)
 	if needle == "" {
 		return l.rows
 	}
-	var kept []history.Sent
+	var kept []port.Sent
 	for _, sent := range l.rows {
 		if strings.Contains(strings.ToLower(sent.Path+" "+sent.Method+" "+sent.URL), needle) {
 			kept = append(kept, sent)
@@ -86,7 +86,7 @@ func (l *Log) Rows(filter string) []history.Sent {
 
 // Open opens the request an entry was sent from; one that has since been
 // deleted or renamed is reported in the status line.
-func (l *Log) Open(host Host, sent history.Sent) {
+func (l *Log) Open(host Host, sent port.Sent) {
 	if !host.OpenRequest(sent.Path) {
 		host.SetStatus(fmt.Sprintf("%s is no longer in the collection", sent.Path))
 	}
@@ -99,14 +99,14 @@ func (l *Log) List(host Host, filter string) Node {
 		return Col(Bg(w.Sunken), Pad(w.Gutter), Text("Nothing sent yet", Muted()))
 	}
 	return Scroll(&l.scroll, Bg(w.Sunken),
-		For(rows, func(_ int, sent history.Sent) Node {
+		For(rows, func(_ int, sent port.Sent) Node {
 			return l.row(host, sent)
 		}),
 	)
 }
 
 // row is one sent request: badge, path and status above, URL and time below.
-func (l *Log) row(host Host, sent history.Sent) Node {
+func (l *Log) row(host Host, sent port.Sent) Node {
 	return component.View(`
 		<col pad-x="12" pad-y="4" hover-bg="hover" control="row" onclick="open">
 		  <row gap="6" align-items="baseline">

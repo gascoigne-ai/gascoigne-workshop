@@ -7,7 +7,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/history"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
 )
 
 func TestSendingARequestListsItInTheSentLogNewestFirst(t *testing.T) {
@@ -80,7 +80,7 @@ func TestPickingASentRowOpensItsRequest(t *testing.T) {
 
 func TestPickingASentRowOfADeletedRequestSaysSo(t *testing.T) {
 	a := stateApp(t, "")
-	a.sent.Open(a, history.Sent{Path: "Gone/Request"})
+	a.sent.Open(a, port.Sent{Path: "Gone/Request"})
 	if a.status == "Ready" {
 		t.Fatal("no note for a request that is gone")
 	}

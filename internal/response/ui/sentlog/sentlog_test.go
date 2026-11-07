@@ -9,6 +9,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/history"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
 	core "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
@@ -22,7 +23,12 @@ type fakeHost struct {
 	present map[string]bool
 }
 
-func (h *fakeHost) HistoryDir() string          { return h.dir }
+func (h *fakeHost) SentStore() port.SentStore {
+	if h.dir == "" {
+		return nil
+	}
+	return history.SentLog{Dir: h.dir}
+}
 func (h *fakeHost) Toast(text string, _ bool)   { h.toasts = append(h.toasts, text) }
 func (h *fakeHost) SetStatus(text string)       { h.status = text }
 func (h *fakeHost) Badge(_, method string) Node { return Text(method) }
@@ -61,10 +67,10 @@ func TestRecordedSendsListNewestFirstAndFilterByPathMethodOrURL(t *testing.T) {
 func TestTheLogKeepsOnlyTheNewestSentLimitEntries(t *testing.T) {
 	var log Log
 	host := &fakeHost{}
-	for i := range history.SentLimit + 5 {
+	for i := range port.SentLimit + 5 {
 		send(&log, host, fmt.Sprintf("R%d", i), "https://x.test")
 	}
-	if rows := log.Rows(""); len(rows) != history.SentLimit || rows[0].Path != fmt.Sprintf("R%d", history.SentLimit+4) {
+	if rows := log.Rows(""); len(rows) != port.SentLimit || rows[0].Path != fmt.Sprintf("R%d", port.SentLimit+4) {
 		t.Fatalf("%d rows, first %q", len(rows), rows[0].Path)
 	}
 }
@@ -83,11 +89,11 @@ func TestEntriesSurviveAReloadFromTheStateFolder(t *testing.T) {
 func TestOpeningARowOfARequestThatIsGoneSaysSoInTheStatusLine(t *testing.T) {
 	var log Log
 	host := &fakeHost{present: map[string]bool{"Here": true}}
-	log.Open(host, history.Sent{Path: "Here"})
+	log.Open(host, port.Sent{Path: "Here"})
 	if host.status != "" || len(host.opened) != 1 {
 		t.Fatalf("status %q opened %v", host.status, host.opened)
 	}
-	log.Open(host, history.Sent{Path: "Gone"})
+	log.Open(host, port.Sent{Path: "Gone"})
 	if !strings.Contains(host.status, "Gone") {
 		t.Fatalf("status %q", host.status)
 	}
@@ -109,7 +115,7 @@ func TestTheListShowsAnEmptyNoteAndTheRows(t *testing.T) {
 func TestRowTemplateMatchesTheGoView(t *testing.T) {
 	var log Log
 	host := &fakeHost{}
-	sent := history.Sent{Path: "Users/List", URL: "https://one.test", Protocol: "rest", Method: "GET", Status: 200, At: clock}
+	sent := port.Sent{Path: "Users/List", URL: "https://one.test", Protocol: "rest", Method: "GET", Status: 200, At: clock}
 	goView := Col(PadX(core.Gutter), PadY(4), HoverBg(core.Hover), Control("row"), OnClick(func() { log.Open(host, sent) }),
 		Row(Gap(6), AlignItems(AlignBaseline),
 			host.Badge(sent.Protocol, sent.Method),
