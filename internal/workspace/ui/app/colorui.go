@@ -2,7 +2,7 @@ package ui
 
 import (
 	"fmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/appearance"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/theming"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"

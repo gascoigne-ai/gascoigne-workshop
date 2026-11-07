@@ -13,7 +13,7 @@ import (
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/appearance"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
