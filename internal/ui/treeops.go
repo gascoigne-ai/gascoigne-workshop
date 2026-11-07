@@ -9,7 +9,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/openapi"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/adapter/openapi"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/postman"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
