@@ -3,9 +3,10 @@ package settingsui
 import (
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/jsonview"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -81,10 +82,26 @@ func (d *Dialog) OpenRaw(host Host) {
 	d.RawText = NewTextArea(text)
 	d.RawText.Styler = d.rawStyler
 	d.Problems = settings.Validate([]byte(text))
+	d.rawBefore = text
 }
 
 // CloseRaw switches back to the form.
 func (d *Dialog) CloseRaw() { d.Raw = false }
+
+// RawChanged runs after every change of the raw text: the edit is checked
+// and applied (RawEdited), and typing the opening quote of a key or a value
+// offers what fits there without Ctrl+Space.
+func (d *Dialog) RawChanged(host Host) {
+	before := d.rawBefore
+	d.rawBefore = d.RawText.Text
+	d.RawEdited(host)
+	runes := []rune(d.RawText.Text)
+	caret := d.RawText.Cursor
+	typedQuote := len(runes) == len([]rune(before))+1 && caret > 0 && caret <= len(runes) && runes[caret-1] == '"'
+	if typedQuote && d.RawText.Focused {
+		d.complete(host, true)
+	}
+}
 
 // RawEdited runs after every change of the raw text. Text without problems
 // becomes the settings and is written to the file as typed; text with
@@ -108,23 +125,23 @@ func (d *Dialog) RawEdited(host Host) {
 	d.Stamp(path)
 }
 
-// rawStyler colors the keys that have a problem in the error color.
+// rawStyler colors one line of the text as JSON, and the keys that have a
+// problem in the error color.
 func (d *Dialog) rawStyler(line string) []Span {
-	var spans []Span
-	rest := line
-	for rest != "" {
-		start, end := nextBadKey(rest, d.Problems)
-		if start < 0 {
-			break
+	bad := map[string]bool{}
+	for _, problem := range d.Problems {
+		if problem.Key != "" {
+			bad[`"`+problem.Key+`"`] = true
 		}
-		if start > 0 {
-			spans = append(spans, Span{Text: rest[:start], Style: w.Text})
-		}
-		spans = append(spans, Span{Text: rest[start:end], Style: w.Error})
-		rest = rest[end:]
 	}
-	if rest != "" {
-		spans = append(spans, Span{Text: rest, Style: w.Text})
+	tokens := jsonview.Tokenize(line)
+	spans := make([]Span, len(tokens))
+	for i, token := range tokens {
+		style := respview.Tokens[token.Kind]
+		if token.Kind == jsonview.Key && bad[token.Text] {
+			style = w.Error
+		}
+		spans[i] = Span{Text: token.Text, Style: style}
 	}
 	return spans
 }
@@ -132,30 +149,21 @@ func (d *Dialog) rawStyler(line string) []Span {
 // RawStyle is how the raw view colors one line of its text.
 func (d *Dialog) RawStyle(line string) []Span { return d.rawStyler(line) }
 
-// nextBadKey finds the first quoted key of a problem in text.
-func nextBadKey(text string, problems []settings.Problem) (start, end int) {
-	start = -1
-	for _, problem := range problems {
-		if problem.Key == "" {
-			continue
-		}
-		quoted := `"` + problem.Key + `"`
-		if i := strings.Index(text, quoted); i >= 0 && (start < 0 || i < start) {
-			start, end = i, i+len(quoted)
-		}
-	}
-	return start, end
-}
-
 // CompleteRaw opens a menu of what fits at the caret of the raw text; the
 // choice replaces the part of the word that was typed.
-func (d *Dialog) CompleteRaw(host Host) {
+func (d *Dialog) CompleteRaw(host Host) { d.complete(host, false) }
+
+// complete opens the completion menu; quiet leaves the user alone when
+// there is nothing to offer, as when it opened by itself.
+func (d *Dialog) complete(host Host, quiet bool) {
 	text := d.RawText.Text
 	runes := []rune(text)
 	caret := min(d.RawText.Cursor, len(runes))
 	suggestions := settings.Complete(text, len(string(runes[:caret])), host.ActionIDs())
 	if len(suggestions) == 0 {
-		host.Toast("Nothing to complete here", false)
+		if !quiet {
+			host.Toast("Nothing to complete here", false)
+		}
 		return
 	}
 	items := make([]MenuItem, len(suggestions))
@@ -181,7 +189,7 @@ func (d *Dialog) rawView(host Host) Node {
 	if len(d.Problems) > 0 {
 		status, color = fmt.Sprintf("%d problem(s): the last good settings stay in effect", len(d.Problems)), w.Error
 	}
-	edited := func() { d.RawEdited(host) }
+	edited := func() { d.RawChanged(host) }
 	return Col(Grow(1), Gap(6),
 		Row(H(w.RowH), Gap(6),
 			Text("settings.json", Bold()),

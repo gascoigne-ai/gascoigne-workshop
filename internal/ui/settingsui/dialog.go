@@ -101,10 +101,11 @@ type Dialog struct {
 	FontSearch TextField      // narrows the font dropdown
 	list       fontList
 
-	Raw      bool               // the dialog shows settings.json as text
-	RawText  TextArea           // that text
-	Problems []settings.Problem // what is wrong with it
-	stamp    fileStamp          // settings.json as last written or read
+	Raw       bool               // the dialog shows settings.json as text
+	RawText   TextArea           // that text
+	Problems  []settings.Problem // what is wrong with it
+	rawBefore string             // the text before the last change, to tell a typed quote from a paste
+	stamp     fileStamp          // settings.json as last written or read
 }
 
 // pageID is the page shown: the chosen one, else the first.

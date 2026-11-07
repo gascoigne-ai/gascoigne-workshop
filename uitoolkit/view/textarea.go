@@ -132,14 +132,14 @@ func (a *TextArea) updateKeys(c *core.Ctx, r core.Rect, g areaGeometry, b bars) 
 	}
 	changed = a.Apply(typed, edits, in.Shift) || changed
 	if changed || a.Cursor != a.revealed {
-		a.reveal(g, b)
+		a.reveal(r, g, b)
 		a.revealed = a.Cursor
 	}
 	return changed
 }
 
 // reveal scrolls so the cursor line and column are inside the view.
-func (a *TextArea) reveal(g areaGeometry, b bars) {
+func (a *TextArea) reveal(r core.Rect, g areaGeometry, b bars) {
 	line, col := a.LineCol(a.Cursor)
 	top, bottom := line*g.lineH, (line+1)*g.lineH
 	if top < a.ScrollY {
@@ -148,7 +148,7 @@ func (a *TextArea) reveal(g areaGeometry, b bars) {
 		a.ScrollY = bottom - b.viewH
 	}
 	left, right := col*g.charW, (col+1)*g.charW
-	textW := b.viewW - (g.textX - 0)
+	textW := b.viewW - (g.textX - r.X) // the text area, from the editor's own left edge
 	if left < a.ScrollX {
 		a.ScrollX = left
 	} else if right > a.ScrollX+textW {
