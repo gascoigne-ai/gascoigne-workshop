@@ -5,28 +5,62 @@ Status: window shell, all packages exist; the window is a first milestone (see L
 ```mermaid
 flowchart LR
   cmd["cmd/workshop"] --> ui["internal/ui"]
-  ui --> view["view"]
-  ui --> proto["internal/proto"]
-  ui --> model["internal/model"]
-  ui --> settings["internal/settings"]
-  ui --> jsonview["internal/jsonview"]
-  proto --> model
-  view --> widget["widget"]
-  ui --> widget
+  subgraph app["application"]
+    ui --> calltrace["ui/calltrace"]
+    ui --> sentlog["ui/sentlog"]
+    ui --> appearance["internal/appearance"]
+    ui --> respview["internal/respview"]
+    ui --> store["internal/store"]
+    ui --> imports["openapi, postman"]
+    ui --> fonts["internal/fonts"]
+    ui --> history["internal/history"]
+    ui --> settings["internal/settings"]
+    ui --> proto["internal/proto"]
+    imports --> model["internal/model"]
+    proto --> model
+    store --> model
+    history --> model
+  end
+  subgraph toolkit["uitoolkit (knows nothing of the app)"]
+    component["component"] --> view["view"]
+    view --> core["core"]
+    engine["engine"] --> core
+    theming["theming"] --> core
+  end
+  ui --> component
+  ui --> view
+  ui --> engine
+  ui --> theming
+  calltrace --> view
+  sentlog --> view
+  appearance --> theming
+  appearance --> settings
+  respview --> view
 ```
 
-`widget` and `view` are public packages: a reusable toolkit that knows nothing about the application (a test enforces it: `widget` imports nothing from this module, `view` only `widget`). `internal/ui` is the application: state, handlers and the views written in VML.
+The toolkit packages are public and independent of the application (`uitoolkit/core/layers_test.go` enforces it: `core` imports nothing from this module, `view` only `core`, `component` and `theming` only `core` and `view`, nothing under `uitoolkit` imports `internal` or `cmd`). `internal/ui` is the application: the `App` state, handlers and the window as views. Features that need little of that state live in their own packages under `internal/ui/` (see Package layout below).
 
 | Package | Role |
 |---|---|
 | `cmd/workshop` | flags, window setup and run loop |
-| `widget` | GPU toolkit on Ebitengine: theme tokens, drawing context, input, text field and code view state |
-| `view` | declarative view DSL: node tree, flex layout, event dispatch, `If`/`For`, ready-made Button, Tabs, Table |
-| `internal/ui` | the app: state, handlers, the window as VML views, theme choices, sample data |
-| `internal/model` | collections, folders, requests, responses |
-| `internal/proto` | `Protocol` interface and name registry; REST, WebSocket and MCP implementations |
-| `internal/settings` | user preferences (theme, text size) as JSON in the user config dir |
-| `internal/jsonview` | JSON pretty-print and token spans for the response pane |
+| `uitoolkit/core` | theme tokens, drawing context, input, rectangles, fonts, clipboard |
+| `uitoolkit/theming` | the dark and light palettes, contrast rules, theme files |
+| `uitoolkit/view` | the view API: element tree, flex layout, event dispatch, `If`/`For`, Button, Tabs, Table, text field, text area, code view |
+| `uitoolkit/component` | VML templates (`.vml`, inline `component.Must`) that build the same trees |
+| `uitoolkit/engine` | key bindings and frame pacing |
+| `internal/ui` | the app: state, handlers, the window, dialogs, menus |
+| `internal/ui/calltrace`, `internal/ui/sentlog` | features split out of `internal/ui`, each behind a small `Host` interface |
+| `internal/model`, `internal/collection`, `internal/store` | collections, folders, requests, responses; tree filtering; the folder-of-files format |
+| `internal/proto` | `Protocol` interface and registry; REST, WebSocket, SSE, MCP, gRPC |
+| `internal/settings` | the settings schema and `settings.json` |
+| `internal/appearance`, `internal/fonts` | theme choices from settings; installed font families |
+| `internal/jsonview`, `internal/respview`, `internal/textfmt` | JSON views and response helpers |
+| `internal/history`, `internal/state` | response history and the sent log; window and tab state |
+| `internal/openapi`, `internal/postman`, `internal/miniyaml` | importers |
+
+## Package layout
+
+Go allows one package per directory and a method cannot be declared in another package, so the features that read and write the one `App` struct (tabs, panes, sidebar, environments, workspace) stay in `internal/ui`. A feature moves out when it can be told what it needs through a small `Host` interface the `App` implements: it owns its state (`calltrace.Log`, `sentlog.Log`), draws its own view and calls the host for the few things it cannot do (the window size, a toast, a request lookup). Each such package has a package doc, tests with a fake host and no import of `internal/ui`. Features are moved one per commit, with no behavior change. Decision 17 records the scheme.
 
 ## Model and protocols
 
