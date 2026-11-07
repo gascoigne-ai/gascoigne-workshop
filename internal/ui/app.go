@@ -513,8 +513,10 @@ func (a *App) step(in core.Input) {
 			a.closeDialog()
 		case a.calls.Shown():
 			a.calls.Close()
+		case a.prefs.FontListOpen():
+			a.prefs.CloseFontList()
 		case a.menu:
-			a.menu = false
+			a.closeSettings()
 		case a.edit != nil:
 			a.cancelEdit()
 		case a.cur().findOpen:

@@ -201,7 +201,7 @@ func (a *App) header() Node {
 		component.Scope{
 			"title":       a.col.Name,
 			"env":         a.envChip(),
-			"toggleMenu":  func() { a.menu = !a.menu },
+			"toggleMenu":  a.toggleSettings,
 			"settingsTip": a.hint("Settings", "settings"),
 		})
 }

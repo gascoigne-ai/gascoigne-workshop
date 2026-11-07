@@ -2,6 +2,7 @@ package ui
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/settingsui"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"strings"
 
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -99,5 +100,56 @@ func TestTheAppearancePageHasFontControlsShowingTheCurrentFamily(t *testing.T) {
 		if !strings.Contains(dump, want) {
 			t.Errorf("appearance page lacks %q", want)
 		}
+	}
+}
+
+// A font list left open when the settings dialog closed came back, stale and
+// unclickable, when it was opened again. The list belongs to the dialog's
+// open state; Escape closes the list first, then the dialog.
+func TestEscapeClosesTheFontListBeforeTheDialog(t *testing.T) {
+	a, _ := openSettingsPage(t, "appearance")
+	a.prefs.Families = testFamilies(t)
+	a.prefs.OpenFontList(a, settingsui.FontUI)
+	a.step(core.Input{X: 5000, Y: 5000, Escape: true})
+	if a.prefs.FontListOpen() || !a.menu {
+		t.Fatalf("after the first Escape: list open %v, dialog open %v; want the list closed and the dialog open", a.prefs.FontListOpen(), a.menu)
+	}
+	a.step(core.Input{X: 5000, Y: 5000, Escape: true})
+	if a.menu {
+		t.Fatal("the second Escape should close the dialog")
+	}
+}
+
+func TestReopeningTheSettingsStartsWithTheFontListClosedAndWorking(t *testing.T) {
+	a, _ := openSettingsPage(t, "appearance")
+	a.prefs.Families = testFamilies(t)
+	a.prefs.OpenFontList(a, settingsui.FontUI)
+	a.Close() // the dialog's own close button
+	if a.prefs.FontListOpen() {
+		t.Fatal("the list stayed open behind a closed dialog")
+	}
+	a.menu = true
+	a.step(core.Input{X: 5000, Y: 5000})
+	if a.prefs.FontListOpen() {
+		t.Fatal("the reopened dialog shows the old list")
+	}
+	a.prefs.OpenFontList(a, settingsui.FontUI)
+	if !a.prefs.FontListOpen() {
+		t.Fatal("the list cannot be opened again")
+	}
+}
+
+// The list is a modal overlay: a click outside it only closes it, and the
+// next click reaches the dialog.
+func TestAClickOutsideTheFontListClosesOnlyTheList(t *testing.T) {
+	a, _ := openSettingsPage(t, "appearance")
+	a.prefs.OpenFontList(a, settingsui.FontUI)
+	click(a, menuBtnX, menuBtnY)
+	if !a.menu || a.prefs.FontListOpen() {
+		t.Fatalf("dialog open %v, list open %v; want the list closed and the dialog open", a.menu, a.prefs.FontListOpen())
+	}
+	click(a, menuBtnX, menuBtnY)
+	if a.menu {
+		t.Fatal("the next click on the button should close the dialog")
 	}
 }

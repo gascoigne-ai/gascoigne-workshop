@@ -37,7 +37,14 @@ func (a *App) SetFonts(ui, code w.FontData) error { return a.ctx.SetFonts(ui, co
 func (a *App) ActionIDs() []string { return a.actionIDs }
 
 // Close closes the settings dialog.
-func (a *App) Close() { a.menu = false }
+func (a *App) Close() { a.closeSettings() }
+
+// closeSettings closes the dialog and what is open inside it, so the next
+// opening starts clean.
+func (a *App) closeSettings() {
+	a.menu = false
+	a.prefs.CloseFontList()
+}
 
 // MarkDirty asks for a redraw.
 func (a *App) MarkDirty() { a.dirty = true }
@@ -90,4 +97,13 @@ func (a *App) menuView() Node {
 		return nil
 	}
 	return a.prefs.View(a)
+}
+
+// toggleSettings is the header button: it opens the dialog or closes it.
+func (a *App) toggleSettings() {
+	if a.menu {
+		a.closeSettings()
+		return
+	}
+	a.menu = true
 }
