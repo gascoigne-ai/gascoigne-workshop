@@ -4,7 +4,7 @@ import (
 	"context"
 	"os"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/filedialog"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/filedialog"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )

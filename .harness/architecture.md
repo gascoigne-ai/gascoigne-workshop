@@ -270,7 +270,7 @@ Row(H(urlH), PadX(w.Pad), PadY(8), Gap(8), Bg(w.Bg),
 
 - **Image responses**: `respview.Decode` sniffs a body for PNG, JPEG or GIF (whatever the Content-Type says); `refreshView` then builds `reqTab.picture` and the response pane shows `view.Image` (scaled down to fit, centered, never up) with the format, size and a Save button instead of the text viewer.
 
-- **File dialogs and file bodies**: `internal/filedialog` runs zenity or kdialog (`Open`, `Save`, `ErrCancelled`, `Available`); `App.pickFile` uses it in a goroutine and returns the answer through `App.later`, a channel of funcs drained on the UI goroutine each frame, or falls back to a text prompt. The body type `File` (`model.BodyFile`, `reqTab.file`) sends a file as it is; a multipart form value `@path` sends a file part and `@@x` the literal `@x`.
+- **File dialogs and file bodies**: `internal/workspace/adapter/filedialog` runs zenity or kdialog (`Open`, `Save`, `ErrCancelled`, `Available`); `App.pickFile` uses it in a goroutine and returns the answer through `App.later`, a channel of funcs drained on the UI goroutine each frame, or falls back to a text prompt. The body type `File` (`model.BodyFile`, `reqTab.file`) sends a file as it is; a multipart form value `@path` sends a file part and `@@x` the literal `@x`.
 
 - **Request chaining and network settings**: `set name = json PATH | header Name | status` lines in a request's Tests text (`assert.Captures`) store values into the active environment, else the collection variables (`App.setVariable`), after every response. `proto.REST` also takes `CAFile`, `CertFile`, `KeyFile` (settings `caCert`, `clientCert`, `clientKey`) and a `socks5://` proxy; the tab menu `Cookies...` shows the jar's cookies for the URL.
 
