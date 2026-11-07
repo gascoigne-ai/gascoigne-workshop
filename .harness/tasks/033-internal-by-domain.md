@@ -17,12 +17,14 @@ status: todo
 - A package has one role; a package named after a role alone (`utils`, `common`, `helpers`) is not allowed.
 
 ## Scope
-- Decide the domain list and the role directory names with the user (the names above are a proposal; ask before moving anything, see the Ambiguity rule). Record the decision in `decisions.md` and replace decision 17's scheme where it overlaps.
-- Write the dependency rules as a test next to `uitoolkit/core/layers_test.go` (for example `internal/layers_test.go`): `model` imports no `ui`/`adapter`, `ui` imports no `adapter`, no domain imports another domain's `ui` or `adapter`.
-- Move one domain per commit, mechanical first (move and rename, fix imports, no behavior change, no assertion changed), then split packages that mix roles. Candidates today: `internal/ui` mixes ui, controller and ports (clipboard, file dialog, browser, clock seams); `internal/proto` is adapters plus the protocol interface (port); `internal/store`, `internal/history`, `internal/state` are file adapters of ports that do not exist yet; `internal/respview`, `internal/jsonview`, `internal/textfmt` are response ui and model.
-- Folded in from task 032 (user decision 2026-11-07): the remaining `internal/ui` features that can leave the `App` behind a `Host` interface, each placed in its domain's `ui` role while it moves: MCP tool form (`mcpform.go`), GraphQL schema menu, gRPC method picker, environment chip and its dialogs, colors page, shortcut editor (settings and the shortcut table become host methods). Tabs, panes, tree and workspace stay in the `App`. Template conversions of 032 are done (Log title bar, sent rows, settings title bar and navigation).
-- Turn the test seams that are now fields (`App.openBrowser`, `chooseFile`, `hasFileDialog`, `now`) into explicit ports with adapters, so the controller is tested with fakes.
-- Update `architecture.md`: the tree, a Mermaid diagram of domains and roles with the allowed dependency directions (checked with `mermaid.parse`), and the package table.
+- [done] Domain list and role names agreed with the user (decisions 19, 20).
+- [done] Layer test `internal/layers_test.go`: pure rules function, a table that proves each violation kind is caught, the real tree checked, and an `exceptions` list.
+- [done] Every package moved into `domain/role` (decision 20); cross-domain edges other than the `App` removed (`Skeleton` and MCP helpers to `request/model`, `SentStore` and `FontStore` ports, `fontfamily`, `jsonview.Kind.Style`).
+- [done] `architecture.md` has the tree rules, the Mermaid diagram (checked with `mermaid.parse` under jsdom) and the package table.
+- [open] Split the `App` (`workspace/ui/app`, about 14k lines) into controller and views behind ports until the 15 `exceptions` in the layer test are gone: `collection/adapter/{store,openapi,postman}`, `request/adapter/proto`, `request/controller/assert`, `response/adapter/{history,preview}`, `settings/adapter/fonts`, `settings/controller/appearance`, `workspace/adapter/{state,filedialog}`, and the other domains' views (`calltrace`, `respview`, `sentlog`, `settingsui`). Order: ports and fakes for the file and network adapters, then the controller, then the views. Blocked by size, not by a decision; unblocked by a session per feature.
+- [open] Features that can leave the `App` behind a `Host` (from task 032), each into its domain's `ui` role: MCP tool form (`mcpform.go`), GraphQL schema menu, gRPC method picker, environment chip and its dialogs (this creates the `environment` domain), colors page, shortcut editor. Tabs, panes, tree and workspace stay in the controller.
+- [open] Turn the test seams that are fields (`App.openBrowser`, `chooseFile`, `hasFileDialog`, `now`) into ports with adapters, so the controller is tested with fakes.
+- [open] `settings/model/settings` reads and writes the settings file: split the file part into a port and an adapter.
 
 ## Acceptance
 - Every step keeps `make check` green; no behavior change and no test assertion changed (imports and names only).
@@ -30,5 +32,5 @@ status: todo
 - `architecture.md` and `decisions.md` describe the new layout and the rule.
 
 ## Notes
-- Do this after task 032 (templates and further splits) or fold 032's splits into it: both move code out of `internal/ui`, and doing them apart doubles the churn.
+- Task 032 was folded into this one (user decision, 2026-11-07); its template conversions are done.
 - Large: plan the order by dependency (model first, then ports and adapters, then controllers, then ui) so each step compiles.

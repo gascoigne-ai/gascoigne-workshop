@@ -38,6 +38,6 @@ Apply when adding or changing anything exported. They exist so that a guess is u
 - Record the answer in the task file or `decisions.md` when it will matter later.
 
 ## Layout of `internal/`
-- Target rule: `internal/` is organized by domain first, then by logical role inside a domain: `ui` (views and input), `controller` (state and decisions), `port` (interfaces to the outside), `adapter` (implementations of ports: network, files, system), `model` (plain data and rules). Dependencies point inward (`ui` and `adapter` depend on `controller`, `port` and `model`, never the reverse); domains reach each other through ports or small public APIs.
-- New packages follow it. Existing ones move under `.harness/tasks/033-internal-by-domain.md`, one domain per commit; until then the current layout (decision 17) stands.
-
+- `internal/<domain>/<role>/<package>`; domains `request`, `collection`, `response`, `settings`, `workspace`; roles `ui` (views and input), `controller` (state and decisions), `port` (interfaces to the outside and the types that cross them), `adapter` (implementations of ports: network, files, system), `model` (plain data and rules). Decisions 19 and 20 record the scheme and the package map.
+- Dependencies point inward and are enforced by `internal/layers_test.go`: model imports only model; port imports model and port; controller imports model, port and controller; ui and adapter import model, port and controller, never each other; another domain is reached only through its model or port. A new package goes into a domain and a role; no `utils`, `common` or `helpers`.
+- `workspace/ui/app` (the `App`) is still the composition root and has listed exceptions in the test; they only shrink. Task 033 removes them.
