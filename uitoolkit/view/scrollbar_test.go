@@ -2,7 +2,7 @@ package view
 
 import "testing"
 
-func TestThumb(t *testing.T) {
+func TestScrollbarThumbSizeAndPositionFollowTheContent(t *testing.T) {
 	tests := []struct {
 		name                      string
 		track, content, view, pos int
@@ -50,7 +50,7 @@ func TestPosFromOffsetInvertsThumb(t *testing.T) {
 	}
 }
 
-func TestClampScroll(t *testing.T) {
+func TestClampScrollKeepsAPositionWithinTheContent(t *testing.T) {
 	for _, tt := range []struct{ pos, content, view, want int }{
 		{50, 1000, 100, 50}, {-1, 1000, 100, 0}, {950, 1000, 100, 900}, {5, 50, 100, 0},
 	} {

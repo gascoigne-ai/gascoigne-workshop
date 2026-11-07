@@ -27,4 +27,5 @@ app:
 ## Progress
 - Decisions (user): the package is named `view` (decision 16); `internal/ui` is split in stages, leaf features first as packages behind a small `Host` interface, with `App` staying in `internal/ui` (partly reverses decision 14, for those features only).
 - Done: the rename `vml` -> `view` (one mechanical commit; imports, package clauses, qualified uses, the layer test and docs).
-- Left: review of the toolkit tests (names, table-driven cases, shared helpers in one file); the staged split of `internal/ui` one feature per commit; templates where a feature's UI is a template; the package diagram in architecture.md.
+- Done: review of the toolkit tests: fourteen tests with names that did not say what they check were renamed to the behavior, and the helpers shared across files (`testCtx`, `box`, `click`, the sample-lines view with `press`, `dragTo`, `release`, `shiftKey`, `clickAt`) moved into `uitoolkit/view/helpers_test.go` with a comment; no assertion changed.
+- Left: the staged split of `internal/ui` one feature per commit; templates where a feature's UI is a template; the package diagram in architecture.md.

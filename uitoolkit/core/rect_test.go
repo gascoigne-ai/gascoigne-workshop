@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func TestContains(t *testing.T) {
+func TestRectContainsItsTopLeftAndNotItsFarEdges(t *testing.T) {
 	r := Rect{10, 10, 20, 20}
 	for _, tt := range []struct {
 		x, y int
@@ -18,7 +18,7 @@ func TestContains(t *testing.T) {
 	}
 }
 
-func TestInputScaled(t *testing.T) {
+func TestInputScaledDividesThePointerByTheScale(t *testing.T) {
 	tests := []struct {
 		name         string
 		x, y         int

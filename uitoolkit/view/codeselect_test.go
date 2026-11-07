@@ -6,18 +6,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
-// shiftKey sends one Shift+movement key to a view whose pointer is away.
-func shiftKey(v *CodeView, c *core.Ctx, r core.Rect, edit core.Edit) {
-	c.In = core.Input{X: 5000, Y: 5000, Shift: true, Edits: []core.Edit{edit}}
-	v.Update(c, r)
-}
-
-// clickAt puts the caret before column col of line and releases.
-func clickAt(v *CodeView, c *core.Ctx, r core.Rect, line, col int) {
-	press(v, c, r, colX(c, v, r, col), rowY(c, v, r, line), 1)
-	release(v, c, r, 0, 0)
-}
-
 func TestCodeViewShiftArrowsMoveTheEndOfTheSelection(t *testing.T) {
 	tests := []struct {
 		name      string

@@ -15,7 +15,7 @@ func sum(w []float64) (s float64) {
 	return
 }
 
-func TestResizePair(t *testing.T) {
+func TestResizingTwoColumnsMovesWeightBetweenThemOnly(t *testing.T) {
 	tests := []struct {
 		name                    string
 		weights                 []float64

@@ -112,7 +112,7 @@ func TestTextFieldCutAndCopyText(t *testing.T) {
 	}
 }
 
-func TestWordBoundaries(t *testing.T) {
+func TestWordLeftAndRightStopAtWordBoundaries(t *testing.T) {
 	text := []rune("hello, wörld_1 /x")
 	//              01234567890123456
 	left := map[int]int{0: 0, 5: 0, 6: 0, 7: 0, 8: 7, 13: 7, 14: 7, 16: 7, 17: 16}
@@ -129,7 +129,7 @@ func TestWordBoundaries(t *testing.T) {
 	}
 }
 
-func TestWordEdits(t *testing.T) {
+func TestWordWiseMovementAndDeletionActFromTheCursor(t *testing.T) {
 	tests := []struct {
 		name       string
 		cursor     int

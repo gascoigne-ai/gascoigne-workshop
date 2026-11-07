@@ -2,24 +2,12 @@ package view
 
 import (
 	"errors"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/theming"
 	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
-
-func testCtx(t *testing.T) *core.Ctx {
-	t.Helper()
-	c, err := core.NewCtx(theming.Dark())
-	if err != nil {
-		t.Fatal(err)
-	}
-	return c
-}
-
-func box(items ...Item) *El { return newEl(plain{}, items) }
 
 func TestRowFixedGrowGapPad(t *testing.T) {
 	a, b, c3 := box(W(50)), box(Grow(1)), box(W(30))
@@ -107,8 +95,6 @@ func TestIfForAndFragmentsFlatten(t *testing.T) {
 	}
 }
 
-func click(c *core.Ctx, x, y int) { c.In = core.Input{X: x, Y: y, Click: true} }
-
 func TestClickReachesOnlyTheElementUnderThePointer(t *testing.T) {
 	var hits []string
 	left := box(W(50), OnClick(func() { hits = append(hits, "left") }))
@@ -178,7 +164,7 @@ func TestTableHeightAndEditHandlers(t *testing.T) {
 	}
 }
 
-func TestTabsSelect(t *testing.T) {
+func TestClickingATabSelectsIt(t *testing.T) {
 	sel := -1
 	tabs := Tabs([]TabItem{{Label: "Params", Badge: 3}, {Label: "Body"}}, 0, OnSelect(func(i int) { sel = i }), H(40))
 	root := Row(tabs)
@@ -366,7 +352,7 @@ func TestCodeNodeForwardsInputToTheView(t *testing.T) {
 	}
 }
 
-func TestIconsMeasure(t *testing.T) {
+func TestIconsHaveTheirNaturalWidths(t *testing.T) {
 	c := testCtx(t)
 	icons := Row(Checkbox(true), CrossIcon(), TriangleIcon(false), DotsIcon())
 	Layout(c, icons, 200, 30)

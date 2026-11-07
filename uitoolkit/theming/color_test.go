@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestParseHex(t *testing.T) {
+func TestParseHexTakesThreeAndSixDigitColorsAndRefusesOthers(t *testing.T) {
 	tests := []struct {
 		in      string
 		want    color.RGBA
@@ -39,7 +39,7 @@ func TestFormatHexRoundTrips(t *testing.T) {
 	}
 }
 
-func TestContrastRatio(t *testing.T) {
+func TestContrastRatioIsSymmetricAndRunsFromOneToTwentyOne(t *testing.T) {
 	black, white := core.RGB(0), core.RGB(0xffffff)
 	if got := ContrastRatio(black, white); got < 20.9 || got > 21.1 {
 		t.Errorf("black on white = %v", got)
@@ -56,7 +56,7 @@ func TestContrastRatio(t *testing.T) {
 	}
 }
 
-func TestEnsureContrast(t *testing.T) {
+func TestEnsureContrastMovesABackgroundJustFarEnoughFromItsText(t *testing.T) {
 	light, dark := core.RGB(0xdadada), core.RGB(0x262626)
 	tests := []struct {
 		name   string

@@ -6,7 +6,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
-func TestMustDraw(t *testing.T) {
+func TestAFrameIsDrawnOnlyWhenSomethingChangedOrTheCaretBlinks(t *testing.T) {
 	cases := []struct {
 		name                 string
 		tick                 int
@@ -45,7 +45,7 @@ func TestPacerSlowsDownWhenIdle(t *testing.T) {
 	}
 }
 
-func TestInputActive(t *testing.T) {
+func TestInputIsActivityOnlyWhenItDiffersFromTheLastFrame(t *testing.T) {
 	var still core.Input
 	if InputActive(still, still) {
 		t.Fatal("identical empty input is not activity")
