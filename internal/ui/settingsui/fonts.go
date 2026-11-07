@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/fonts"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/fonts"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )

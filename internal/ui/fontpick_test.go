@@ -15,7 +15,7 @@ import (
 	"golang.org/x/image/font/gofont/gomonobold"
 	"golang.org/x/image/font/gofont/goregular"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/fonts"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/fonts"
 )
 
 // testFamilies are real font files (the Go fonts) written to a folder

@@ -6,7 +6,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/fonts"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/fonts"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
