@@ -21,34 +21,31 @@ func settle(a *App, frames int) {
 	}
 }
 
-func TestAFreshAppNeedsADrawAndAnIdleOneDoesNot(t *testing.T) {
+func TestAFreshAppNeedsADrawAndAnIdleOneIsDrawnOnlyAtTheFloorRate(t *testing.T) {
 	a, _ := newTestApp(t)
 	if !a.dirty {
 		t.Fatal("the first frame must be drawn")
 	}
 	settle(a, 3)
-	for range 300 {
+	const frames = 600
+	drawn, gap, longest := 0, 0, 0
+	for range frames {
 		a.step(core.Input{X: a.lastIn.X, Y: a.lastIn.Y})
-		if a.dirty && a.ctx.Tick%engine.HeartbeatTicks != 0 {
-			t.Fatalf("an idle frame at tick %d asked for a redraw", a.ctx.Tick)
-		}
-		a.dirty = false
-	}
-}
-
-func TestIdleHeartbeatRedrawsOnceInAWhile(t *testing.T) {
-	a, _ := newTestApp(t)
-	settle(a, 3)
-	beats := 0
-	for range 3 * engine.HeartbeatTicks {
-		a.step(core.Input{X: a.lastIn.X, Y: a.lastIn.Y})
+		gap++
 		if a.dirty {
-			beats++
+			drawn++
+			longest = max(longest, gap)
+			gap = 0
 		}
 		a.dirty = false
 	}
-	if beats < 2 || beats > 4 {
-		t.Fatalf("%d heartbeat draws in %d idle frames", beats, 3*engine.HeartbeatTicks)
+	if drawn == frames {
+		t.Fatal("an idle app drew every frame")
+	}
+	// at 60 updates a second the floor is every 6th frame; the rate drops to
+	// 30 when idle, where it is every 3rd, so no gap is longer than 6 frames
+	if longest > engine.ActiveTPS/engine.MinFPS {
+		t.Fatalf("the longest wait between draws was %d frames, more than the %d FPS floor allows", longest, engine.MinFPS)
 	}
 }
 
@@ -59,7 +56,7 @@ func TestInputMakesTheNextFrameDirtyOnlyWhenItChangesSomething(t *testing.T) {
 	a.step(still)
 	a.dirty = false
 	a.step(still)
-	if a.dirty && a.ctx.Tick%engine.HeartbeatTicks != 0 {
+	if a.dirty && a.ctx.Tick%(a.pacer.TPS()/engine.MinFPS) != 0 { // only the floor may draw it
 		t.Fatal("a pointer that did not move is not activity")
 	}
 	a.dirty = false
@@ -136,29 +133,27 @@ func TestToastsRequestRedrawsWhenShownAndWhenTheyExpire(t *testing.T) {
 	}
 }
 
-func TestTheCaretBlinkRedrawsOnlyWhileATextWidgetHasFocus(t *testing.T) {
+// The caret blinks on a clock of ticks and every frame at the floor is
+// drawn, so it keeps blinking with or without a focused field and needs no
+// special redraw of its own.
+func TestTheFloorRateKeepsRedrawingWithAndWithoutAFocusedField(t *testing.T) {
 	a, _ := newTestApp(t)
 	settle(a, 3)
-	blinks := func(frames int) (n int) {
+	draws := func(frames int) (n int) {
 		for range frames {
 			a.step(core.Input{X: a.lastIn.X, Y: a.lastIn.Y})
-			if a.dirty && a.ctx.Tick%engine.HeartbeatTicks != 0 {
+			if a.dirty {
 				n++
 			}
 			a.dirty = false
 		}
 		return
 	}
-	if got := blinks(100); got != 0 {
-		t.Fatalf("no focused field: %d blink redraws", got)
-	}
+	unfocused := draws(120)
 	a.cur().url.Focused = true
-	if got := blinks(100); got < 2 {
-		t.Fatalf("a focused field must redraw for its caret, got %d", got)
-	}
-	a.cur().url.Focused = false
-	if got := blinks(100); got != 0 {
-		t.Fatalf("after losing focus: %d", got)
+	focused := draws(120)
+	if unfocused < 120*engine.MinFPS/engine.ActiveTPS || focused < 120*engine.MinFPS/engine.ActiveTPS {
+		t.Fatalf("draws in 120 frames: unfocused %d, focused %d, want at least %d each", unfocused, focused, 120*engine.MinFPS/engine.ActiveTPS)
 	}
 }
 

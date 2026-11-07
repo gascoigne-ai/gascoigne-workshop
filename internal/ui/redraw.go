@@ -2,9 +2,10 @@ package ui
 
 import "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
 
-// The window is drawn only when something may have changed (Ebitengine
-// skips the GPU work of a frame whose Draw draws nothing), and updates
-// slow down when the app has been idle for a while.
+// The window is drawn when something may have changed and, whatever
+// happens, at least engine.MinFPS times a second (Ebitengine skips the GPU
+// work of a frame whose Draw draws nothing), and updates slow down when the
+// app has been idle for a while.
 
 // setSize records the window size and device scale and reports whether
 // either changed; a change needs a redraw.
@@ -20,22 +21,9 @@ func (a *App) setSize(w, h int, scale float64) bool {
 	return changed
 }
 
-// caretShown reports whether a text caret is on screen, which blinks.
-func (a *App) caretShown() bool {
-	if a.textFocused() || (a.dialog != nil && a.dialog.input != nil && a.dialog.input.Focused) {
-		return true
-	}
-	for _, in := range a.colorInputs {
-		if in.Focused {
-			return true
-		}
-	}
-	return false
-}
-
 // markFrame marks the frame dirty when engine.MustDraw says so.
 func (a *App) markFrame(active bool) {
-	if engine.MustDraw(a.ctx.Tick, active, a.caretShown(), a.alwaysDraw()) {
+	if engine.MustDraw(a.ctx.Tick, a.pacer.TPS(), active, a.alwaysDraw()) {
 		a.dirty = true
 	}
 }

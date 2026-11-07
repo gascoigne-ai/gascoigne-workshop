@@ -5,12 +5,9 @@ package engine
 
 import "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 
-// HeartbeatTicks is the number of ticks after which a frame is drawn
-// even when nothing changed, in case the window system lost the content.
-const HeartbeatTicks = 120
-
-// blinkTicks is the half period of the text caret's blink.
-const blinkTicks = 30
+// MinFPS is the fewest frames drawn per second, whatever happens: it keeps
+// the text caret blinking and the window content fresh, and costs little.
+const MinFPS = 10
 
 // Ticks of no activity before the update rate drops, and the two rates.
 const (
@@ -53,8 +50,10 @@ func (p *Pacer) TPS() int {
 	return ActiveTPS
 }
 
-// MustDraw reports whether the frame at tick must be drawn: something
-// changed, the caret blinks, the heartbeat is due, or always is set.
-func MustDraw(tick int, active, caret, always bool) bool {
-	return active || (tick%blinkTicks == 0 && caret) || tick%HeartbeatTicks == 0 || always
+// MustDraw reports whether the frame at tick must be drawn when updates run
+// at tps per second: something changed, always is set, or it is the turn of
+// the floor, which draws every tps/MinFPS ticks.
+func MustDraw(tick, tps int, active, always bool) bool {
+	floor := max(tps/MinFPS, 1)
+	return active || always || tick%floor == 0
 }

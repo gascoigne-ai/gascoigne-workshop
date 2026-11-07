@@ -6,24 +6,38 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
-func TestAFrameIsDrawnOnlyWhenSomethingChangedOrTheCaretBlinks(t *testing.T) {
+func TestAFrameIsDrawnWhenSomethingChangedAndAtLeastMinFPSTimesASecond(t *testing.T) {
 	cases := []struct {
-		name                 string
-		tick                 int
-		active, caret, alway bool
-		want                 bool
+		name           string
+		tick, tps      int
+		active, always bool
+		want           bool
 	}{
-		{"idle", 1, false, false, false, false},
-		{"input", 1, true, false, false, true},
-		{"caret on blink tick", blinkTicks, false, true, false, true},
-		{"caret off blink tick", blinkTicks + 1, false, true, false, false},
-		{"blink tick without caret", blinkTicks, false, false, false, false},
-		{"heartbeat", HeartbeatTicks, false, false, false, true},
-		{"always", 1, false, false, true, true},
+		{"input at any tick", 1, ActiveTPS, true, false, true},
+		{"always (screenshots)", 1, ActiveTPS, false, true, true},
+		{"idle, off the floor tick at 60 TPS", 5, 60, false, false, false},
+		{"idle, on the floor tick at 60 TPS (every 6th is 10 FPS)", 6, 60, false, false, true},
+		{"idle, off the floor tick at 30 TPS", 2, 30, false, false, false},
+		{"idle, on the floor tick at 30 TPS (every 3rd is 10 FPS)", 3, 30, false, false, true},
+		{"a rate below the floor draws every frame", 1, 5, false, false, true},
 	}
 	for _, c := range cases {
-		if got := MustDraw(c.tick, c.active, c.caret, c.alway); got != c.want {
+		if got := MustDraw(c.tick, c.tps, c.active, c.always); got != c.want {
 			t.Errorf("%s: got %v want %v", c.name, got, c.want)
+		}
+	}
+}
+
+func TestIdleFramesNeverComeLessOftenThanMinFPS(t *testing.T) {
+	for _, tps := range []int{ActiveTPS, IdleTPS} {
+		drawn := 0
+		for tick := 1; tick <= tps; tick++ { // one second of idle frames
+			if MustDraw(tick, tps, false, false) {
+				drawn++
+			}
+		}
+		if drawn < MinFPS {
+			t.Errorf("%d TPS: %d frames drawn in a second, want at least %d", tps, drawn, MinFPS)
 		}
 	}
 }
