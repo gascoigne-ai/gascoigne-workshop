@@ -15,7 +15,7 @@ import (
 	"google.golang.org/grpc/reflection"
 	reflectionv1alpha "google.golang.org/grpc/reflection/grpc_reflection_v1alpha"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 )
 
 // grpcStub runs a real gRPC server with reflection and the standard

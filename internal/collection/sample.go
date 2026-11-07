@@ -1,6 +1,6 @@
 package collection
 
-import "github.com/gascoigne-ai/gascoigne-workshop/internal/model"
+import "github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 
 // Sample is the collection shown until saving and loading
 // collections exists: a few REST calls against a public API, plus one

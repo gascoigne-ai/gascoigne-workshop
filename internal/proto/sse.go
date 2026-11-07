@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 )
 
 // SSE reads Server-Sent Events: a long GET whose answer is a stream of

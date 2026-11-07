@@ -4,7 +4,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 )
 
 // Curl renders req as a curl command line that sends the same request.

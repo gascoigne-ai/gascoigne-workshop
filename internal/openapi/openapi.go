@@ -12,8 +12,8 @@ import (
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/miniyaml"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 )
 
 // BaseURLVar is the collection variable the imported URLs start with.

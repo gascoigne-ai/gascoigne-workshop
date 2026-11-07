@@ -25,7 +25,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 )
 
 const (

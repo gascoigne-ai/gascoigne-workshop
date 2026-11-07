@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 )
 
 // notifyServer is an MCP server over HTTP with a push stream: a GET

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 )
 
 func TestTimelineListsOnlyThePhasesThatHappened(t *testing.T) {

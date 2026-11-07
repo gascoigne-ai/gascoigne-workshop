@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 )
 
 // encodeGraphQL is the usual GraphQL-over-HTTP body: a JSON object with

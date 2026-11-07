@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/history"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/component"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"

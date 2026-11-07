@@ -4,7 +4,7 @@ import (
 	"errors"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/theming"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"

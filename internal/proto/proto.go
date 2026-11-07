@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 )
 
 // Protocol performs a request. Transport failures are reported in

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/store"
 )

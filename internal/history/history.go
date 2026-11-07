@@ -13,7 +13,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 )
 
 // Limit is how many responses are kept per request.

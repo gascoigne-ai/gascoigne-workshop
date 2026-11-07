@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 )
 
 func TestGraphQLBodyCarriesQueryAndVariablesAsJSON(t *testing.T) {

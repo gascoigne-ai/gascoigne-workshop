@@ -3,7 +3,7 @@ package proto
 import (
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 )
 
 func TestCurl(t *testing.T) {

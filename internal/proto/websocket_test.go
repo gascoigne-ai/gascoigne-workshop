@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto/ws"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 )
 
 func wsServer(t *testing.T, handle func(c *ws.Conn, r *http.Request)) string {

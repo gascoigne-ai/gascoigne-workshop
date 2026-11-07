@@ -20,7 +20,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 )
 
 // maxBody bounds how much of a response is kept in memory.

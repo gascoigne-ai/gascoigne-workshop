@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 )
 
 // tracer records when each phase of a request started and ended.

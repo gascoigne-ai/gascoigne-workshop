@@ -11,8 +11,8 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto/ws"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 )
 
 // eventBuffer is how many events a session queues before the reader

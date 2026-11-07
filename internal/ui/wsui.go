@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"strings"
 	"time"
 

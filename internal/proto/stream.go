@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 )
 
 // Direction says where an Event came from.

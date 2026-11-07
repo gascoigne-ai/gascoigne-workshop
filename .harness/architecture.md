@@ -20,7 +20,7 @@ flowchart LR
     ui --> history["internal/history"]
     ui --> settings["internal/settings"]
     ui --> proto["internal/proto"]
-    imports --> model["internal/model"]
+    imports --> model["internal/request/model"]
     proto --> model
     store --> model
     history --> model
@@ -55,7 +55,7 @@ The toolkit packages are public and independent of the application (`uitoolkit/c
 | `uitoolkit/engine` | key bindings and frame pacing |
 | `internal/ui` | the app: state, handlers, the window, dialogs, menus |
 | `internal/ui/calltrace`, `internal/ui/sentlog`, `internal/ui/settingsui` | features split out of `internal/ui`, each behind a `Host` interface the App implements |
-| `internal/model`, `internal/collection`, `internal/store` | collections, folders, requests, responses; tree filtering; the folder-of-files format |
+| `internal/request/model`, `internal/collection`, `internal/store` | collections, folders, requests, responses; tree filtering; the folder-of-files format |
 | `internal/proto` | `Protocol` interface and registry; REST, WebSocket, SSE, MCP, gRPC |
 | `internal/settings` | the settings schema and `settings.json` |
 | `internal/appearance`, `internal/fonts` | theme choices from settings; installed font families |
@@ -75,7 +75,7 @@ Go allows one package per directory and a method cannot be declared in another p
 
 ## Collection tree
 
-`model.Folder` holds `[]*Folder` and `[]*Request`, so a request keeps its identity (open tabs point at it) however siblings change. `internal/model/tree.go` has the operations, all pure and tested: `UniqueName` ("x", "x 2", ... across folders and requests), `AddRequest` / `AddFolder`, `Parent`, `Contains`, `Rename` (trimmed, non-empty, unique among siblings), `Duplicate` (deep copy placed after the original as "<name> copy"), `Delete` and `Move` (into another folder, before a sibling or at the end; refused into itself or its subtree, onto a name clash, or for the root, and then nothing changes). The tree view's `treeRows` works on pointers and the expanded set is keyed by folder pointer, so renaming or moving a folder does not collapse it.
+`model.Folder` holds `[]*Folder` and `[]*Request`, so a request keeps its identity (open tabs point at it) however siblings change. `internal/request/model/tree.go` has the operations, all pure and tested: `UniqueName` ("x", "x 2", ... across folders and requests), `AddRequest` / `AddFolder`, `Parent`, `Contains`, `Rename` (trimmed, non-empty, unique among siblings), `Duplicate` (deep copy placed after the original as "<name> copy"), `Delete` and `Move` (into another folder, before a sibling or at the end; refused into itself or its subtree, onto a name clash, or for the root, and then nothing changes). The tree view's `treeRows` works on pointers and the expanded set is keyed by folder pointer, so renaming or moving a folder does not collapse it.
 
 ## JSON view
 

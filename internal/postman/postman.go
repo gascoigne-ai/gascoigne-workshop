@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 )
 
 // Result is what an import produces.
