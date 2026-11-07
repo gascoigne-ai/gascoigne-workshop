@@ -112,10 +112,12 @@ type Ctx struct {
 type Cursor int
 
 const (
-	CursorDefault Cursor = iota
-	CursorResizeH        // resize left/right, over a vertical divider
-	CursorResizeV        // resize up/down, over a horizontal divider
-	CursorMove           // something is held and being moved: a row, a tab
+	CursorDefault    Cursor = iota
+	CursorResizeH           // resize left/right, over a vertical divider
+	CursorResizeV           // resize up/down, over a horizontal divider
+	CursorResizeNWSE        // resize along a diagonal, over a top-left or bottom-right corner
+	CursorResizeNESW        // resize along the other diagonal
+	CursorMove              // something is held and being moved: a row, a tab
 )
 
 // NewCtx returns a context at scale 1.

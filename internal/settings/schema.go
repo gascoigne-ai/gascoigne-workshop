@@ -266,3 +266,24 @@ func With(s Settings, key string, value any) Settings {
 	}
 	return changed
 }
+
+// Expectation says in words what value a setting takes: "one of side,
+// stacked", "true or false", "a whole number from 50 to 300".
+func Expectation(field Field) string {
+	switch field.Kind {
+	case Enum:
+		if field.Open {
+			return strings.Join(field.Allowed, ", ") + ", or the id of a theme file"
+		}
+		return "one of " + strings.Join(field.Allowed, ", ")
+	case Bool:
+		return "true or false"
+	case Int:
+		return fmt.Sprintf("a whole number from %d to %d", field.Min, field.Max)
+	case Shortcuts:
+		return "an object of action id to key text"
+	case Colors:
+		return "an object of theme id to token to #rrggbb"
+	}
+	return "text"
+}

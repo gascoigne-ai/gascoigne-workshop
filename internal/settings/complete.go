@@ -11,6 +11,7 @@ type Completion struct {
 	Label  string // what the list shows
 	Insert string
 	From   int
+	Detail string // what the setting is and what it expects, for the list to show
 }
 
 // container is an open object or array while scanning text.
@@ -40,11 +41,14 @@ func Complete(text string, caret int, actions []string) []Completion {
 	}
 	var candidates []string
 	var quoteValues bool
+	var details map[string]string
 	switch {
 	case isKey && len(stack) == 1:
+		details = map[string]string{}
 		for _, field := range Schema {
 			if !top.keys[field.Key] {
 				candidates = append(candidates, field.Key)
+				details[field.Key] = field.Description + "\nExpects " + Expectation(field) + "."
 			}
 		}
 	case isKey && top.key == "shortcuts":
@@ -64,21 +68,25 @@ func Complete(text string, caret int, actions []string) []Completion {
 		case Bool:
 			candidates = []string{"true", "false"}
 		}
+		details = map[string]string{}
+		for _, candidate := range candidates {
+			details[candidate] = field.Title + ": " + candidate
+		}
 	}
-	return suggestions(candidates, partial, inString, stringStart, caret, isKey || quoteValues)
+	return suggestions(candidates, details, partial, inString, stringStart, caret, isKey || quoteValues)
 }
 
 // suggestions filters candidates by the typed prefix and shapes each
 // insertion for where the caret is: inside a string, the closing quote is
 // added; outside, the whole quoted text.
-func suggestions(candidates []string, partial string, inString bool, stringStart, caret int, quoted bool) []Completion {
+func suggestions(candidates []string, details map[string]string, partial string, inString bool, stringStart, caret int, quoted bool) []Completion {
 	sort.Strings(candidates)
 	var out []Completion
 	for _, candidate := range candidates {
 		if !strings.HasPrefix(strings.ToLower(candidate), strings.ToLower(partial)) {
 			continue
 		}
-		completion := Completion{Label: candidate, Insert: candidate, From: caret}
+		completion := Completion{Label: candidate, Insert: candidate, From: caret, Detail: details[candidate]}
 		switch {
 		case inString:
 			completion.From = stringStart

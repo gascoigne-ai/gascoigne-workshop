@@ -33,7 +33,7 @@
 //	Composite  Button PrimaryButton LinkButton IconButton Tabs ScrollTabs Table   OnSelect OnSlide
 //	Icons      Icon RegisterIcons IconNames   CrossIcon TriangleIcon GripIcon DotsIcon TrashIcon PlusIcon CopyIcon SearchIcon PromptIcon ChevronUpIcon ChevronDownIcon
 //	Flow       If When For Frag
-//	Overlay    FloatTopRight FloatAt FloatCenter Modal OnDismiss FocusScope
+//	Overlay    FloatTopRight FloatAt FloatCenter Modal OnDismiss FocusScope   Resizable (state: ResizeState)
 //
 // A side is a letter suffix (PadL, PadT, PadR, PadB) and an axis is X or
 // Y (PadX is left and right). The same options are the attributes of a

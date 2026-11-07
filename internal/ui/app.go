@@ -440,10 +440,12 @@ func (a *App) apply(r sendResult) {
 
 // cursorShapes maps the cursor widgets ask for to the window system's.
 var cursorShapes = map[core.Cursor]ebiten.CursorShapeType{
-	core.CursorDefault: ebiten.CursorShapeDefault,
-	core.CursorResizeH: ebiten.CursorShapeEWResize,
-	core.CursorResizeV: ebiten.CursorShapeNSResize,
-	core.CursorMove:    ebiten.CursorShapeMove,
+	core.CursorDefault:    ebiten.CursorShapeDefault,
+	core.CursorResizeH:    ebiten.CursorShapeEWResize,
+	core.CursorResizeV:    ebiten.CursorShapeNSResize,
+	core.CursorMove:       ebiten.CursorShapeMove,
+	core.CursorResizeNWSE: ebiten.CursorShapeNWSEResize,
+	core.CursorResizeNESW: ebiten.CursorShapeNESWResize,
 }
 
 // Layout implements ebiten.Game. The UI is laid out in logical pixels

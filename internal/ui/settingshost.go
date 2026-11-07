@@ -59,7 +59,7 @@ func (a *App) Later(f func()) { a.later <- f }
 func (a *App) OpenMenu(x, y int, items []settingsui.MenuItem) {
 	rows := make([]menuItem, len(items))
 	for i, item := range items {
-		rows[i] = menuItem{label: item.Label, run: item.Run}
+		rows[i] = menuItem{label: item.Label, hint: item.Hint, run: item.Run}
 	}
 	a.openMenu(x, y, rows)
 }

@@ -2,6 +2,7 @@ package ui
 
 import (
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -14,7 +15,9 @@ import (
 // built into the window's Stack after everything else, newest on top.
 
 const (
-	menuListW    = 250 // room for the icon column (menuIconW) and the longest labels
+	menuMinW     = 120 // a menu is as wide as its content, within these
+	menuMaxW     = 420
+	menuHintH    = 16 // the extra height of a row with a hint
 	menuRowH     = 24
 	menuSepH     = 9
 	menuPad      = 4
@@ -30,6 +33,7 @@ const (
 // menuItem is one row of a context menu. A separator has no label.
 type menuItem struct {
 	label, shortcut string
+	hint            string // a muted line under the label saying what the item is
 	icon            string // an icon name; "" takes the one the label's start maps to (menuIcons)
 	disabled        bool
 	separator       bool
@@ -110,7 +114,7 @@ func (a *App) contextMenuView() Node {
 	if m == nil {
 		return nil
 	}
-	return Col(W(menuListW), Pad(menuPad), Bg(w.Bg), Control("menu"), Shadow(),
+	return Col(W(a.menuWidth(m)), Pad(menuPad), Bg(w.Bg), Control("menu"), Shadow(),
 		FloatAt(m.x, m.y), Modal(), OnDismiss(a.closeMenu),
 		For(m.items, func(i int, it menuItem) Node { return a.menuRow(m, i, it) }),
 	)
@@ -131,16 +135,64 @@ func (a *App) menuRow(m *contextMenu, i int, it menuItem) Node {
 	case i == m.hot:
 		look = Bg(w.Selected)
 	}
-	var icon Node = Spacer(W(menuIconW))
-	if name := menuIcon(it); name != "" {
-		icon = Icon(name, W(menuIconW), Color(color))
+	var icon Node
+	if menuHasIcons(m.items) { // the column exists only in a menu where some row has an icon
+		icon = Spacer(W(menuIconW))
+		if name := menuIcon(it); name != "" {
+			icon = Icon(name, W(menuIconW), Color(color))
+		}
 	}
-	return Row(H(menuRowH), PadX(10), Gap(8), AlignItems(AlignCenter), Control("row"), look, OnClick(func() { a.runMenuItem(i) }),
+	label := Node(Text(it.label, Color(color), Grow(1)))
+	height := menuRowH
+	if it.hint != "" {
+		lines := strings.Split(it.hint, "\n") // each line of the hint is a muted line under the label
+		parts := []Item{Grow(1), Text(it.label, Color(color))}
+		for _, line := range lines {
+			parts = append(parts, Text(line, Small(), Muted(), Ellipsis()))
+		}
+		label = Col(parts...)
+		height += menuHintH * len(lines)
+	}
+	return Row(H(height), PadX(10), Gap(8), AlignItems(AlignCenter), Control("row"), look, OnClick(func() { a.runMenuItem(i) }),
 		icon,
-		Text(it.label, Color(color)),
-		Spacer(),
-		Text(w.PlatformKeyText(runtime.GOOS, it.shortcut), Small(), Muted()),
+		label,
+		If(it.shortcut != "", Text(w.PlatformKeyText(runtime.GOOS, it.shortcut), Small(), Muted())),
 	)
+}
+
+// menuHasIcons reports whether any row of the menu has an icon.
+func menuHasIcons(items []menuItem) bool {
+	for _, item := range items {
+		if !item.separator && menuIcon(item) != "" {
+			return true
+		}
+	}
+	return false
+}
+
+// menuWidth is the width of menu m: its widest row, within menuMinW and
+// menuMaxW. A row is its icon column (if the menu has one), the label or the
+// hint, whichever is wider, and the shortcut.
+func (a *App) menuWidth(m *contextMenu) int {
+	widest := 0
+	icons := menuHasIcons(m.items)
+	for _, item := range m.items {
+		if item.separator {
+			continue
+		}
+		row := a.ctx.Width(a.ctx.F.UI, item.label)
+		for _, line := range strings.Split(item.hint, "\n") {
+			row = max(row, a.ctx.Width(a.ctx.F.Small, line))
+		}
+		if item.shortcut != "" {
+			row += 16 + a.ctx.Width(a.ctx.F.Small, w.PlatformKeyText(runtime.GOOS, item.shortcut))
+		}
+		if icons {
+			row += menuIconW + 8
+		}
+		widest = max(widest, row)
+	}
+	return min(max(widest+2*10+2*menuPad, menuMinW), menuMaxW)
 }
 
 // ---- dialogs ---------------------------------------------------------------

@@ -1799,8 +1799,9 @@ func TestMenuNearTheWindowEdgeStaysOnScreen(t *testing.T) {
 	r := &ran{}
 	a.openMenu(1270, 790, []menuItem{r.item("Copy"), {separator: true}, r.item("Paste"), r.item("Delete")})
 	a.step(core.Input{})
-	// 220x89 menu: moved left to x=1060 and up to y=701; Copy row is 705..729
-	click(a, 1100, 717)
+	// the menu is as wide as its content now: moved left so its right edge is
+	// at the window's, and up to y=701 (89 high); the Copy row is 705..729
+	click(a, 1280-a.menuWidth(a.ctxMenu)/2-4, 717)
 	if len(r.log) != 1 || r.log[0] != "Copy" {
 		t.Fatalf("ran %v: the menu must be flipped inside the window", r.log)
 	}

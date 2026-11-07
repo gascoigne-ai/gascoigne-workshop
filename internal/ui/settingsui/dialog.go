@@ -29,6 +29,7 @@ const (
 // MenuItem is one row of the completion menu the dialog asks the host to open.
 type MenuItem struct {
 	Label string
+	Hint  string // what the item is and what it expects, shown under the label
 	Run   func()
 }
 

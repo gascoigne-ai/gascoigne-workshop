@@ -239,3 +239,41 @@ func TestValueAndWithReadAndWriteASettingByItsKey(t *testing.T) {
 		t.Error("an unknown key changed the settings")
 	}
 }
+
+func TestEveryKindSaysWhatItExpects(t *testing.T) {
+	tests := []struct{ key, want string }{
+		{"layout", "one of side, stacked"},
+		{"flat", "true or false"},
+		{"uiScale", "a whole number from 50 to 300"},
+		{"proxy", "text"},
+		{"theme", "dark, light, or the id of a theme file"},
+		{"shortcuts", "an object of action id to key text"},
+		{"colors", "an object of theme id to token to #rrggbb"},
+	}
+	for _, test := range tests {
+		field, ok := FieldFor(test.key)
+		if !ok {
+			t.Fatalf("no field %s", test.key)
+		}
+		if got := Expectation(field); got != test.want {
+			t.Errorf("%s: Expectation = %q, want %q", test.key, got, test.want)
+		}
+	}
+}
+
+func TestCompletionsCarryTheDescriptionAndWhatIsExpected(t *testing.T) {
+	text := `{ "la`
+	got := Complete(text, len(text), nil)
+	if len(got) != 1 || got[0].Label != "layout" {
+		t.Fatalf("got %+v", got)
+	}
+	for _, want := range []string{"Place the request and response panes", "one of side, stacked"} {
+		if !strings.Contains(got[0].Detail, want) {
+			t.Errorf("the detail %q lacks %q", got[0].Detail, want)
+		}
+	}
+	values := Complete(`{"layout": "`, len(`{"layout": "`), nil)
+	if len(values) == 0 || !strings.Contains(values[0].Detail, "Request and response") {
+		t.Fatalf("a value completion names its setting: %+v", values)
+	}
+}
