@@ -17,6 +17,7 @@ type fakeHost struct {
 	path    string
 	toasts  []string
 	menus   [][]MenuItem
+	menuAt  [2]int // where the last menu opened
 	saved   int
 }
 
@@ -30,20 +31,23 @@ func (h *fakeHost) Change(edit func(*settings.Settings)) {
 	edit(&h.current)
 	_ = h.current.Save(h.path)
 }
-func (h *fakeHost) SetScaleLive(percent int)            { h.current.UIScalePct = percent }
-func (h *fakeHost) Save()                               { h.saved++ }
-func (h *fakeHost) Replace(s settings.Settings)         { h.current = s }
-func (h *fakeHost) SettingsPath() string                { return h.path }
-func (h *fakeHost) SetFonts(ui, code w.FontData) error  { return nil }
-func (h *fakeHost) Toast(text string, _ bool)           { h.toasts = append(h.toasts, text) }
-func (h *fakeHost) SetStatus(string)                    {}
-func (h *fakeHost) TextMenu(*TextField, func()) Option  { return func(*El) {} }
-func (h *fakeHost) OpenMenu(_, _ int, items []MenuItem) { h.menus = append(h.menus, items) }
-func (h *fakeHost) ExtraPage(id string) Node            { return Text("page " + id) }
-func (h *fakeHost) ActionIDs() []string                 { return []string{"send"} }
-func (h *fakeHost) Close()                              {}
-func (h *fakeHost) MarkDirty()                          {}
-func (h *fakeHost) Later(f func())                      { f() }
+func (h *fakeHost) SetScaleLive(percent int)           { h.current.UIScalePct = percent }
+func (h *fakeHost) Save()                              { h.saved++ }
+func (h *fakeHost) Replace(s settings.Settings)        { h.current = s }
+func (h *fakeHost) SettingsPath() string               { return h.path }
+func (h *fakeHost) SetFonts(ui, code w.FontData) error { return nil }
+func (h *fakeHost) Toast(text string, _ bool)          { h.toasts = append(h.toasts, text) }
+func (h *fakeHost) SetStatus(string)                   {}
+func (h *fakeHost) TextMenu(*TextField, func()) Option { return func(*El) {} }
+func (h *fakeHost) OpenMenu(x, y int, items []MenuItem) {
+	h.menus = append(h.menus, items)
+	h.menuAt = [2]int{x, y}
+}
+func (h *fakeHost) ExtraPage(id string) Node { return Text("page " + id) }
+func (h *fakeHost) ActionIDs() []string      { return []string{"send"} }
+func (h *fakeHost) Close()                   {}
+func (h *fakeHost) MarkDirty()               {}
+func (h *fakeHost) Later(f func())           { f() }
 
 func dump(node Node) string { return Dump(node) }
 

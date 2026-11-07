@@ -176,6 +176,10 @@ func (d *Dialog) complete(host Host, quiet bool) {
 			d.RawEdited(host)
 		}}
 	}
+	if x, y, ok := d.RawText.CaretAt(); ok {
+		host.OpenMenu(x, y, items) // just below the caret
+		return
+	}
 	width, height := host.Size()
 	host.OpenMenu(width/2-DialogWidth/2+DialogNavW+40, height/2-DialogMaxH/4, items)
 }

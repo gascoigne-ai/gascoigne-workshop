@@ -18,8 +18,10 @@ type TextArea struct {
 	// Styler colors a line; nil draws plain text.
 	Styler func(line string) []Span
 
-	drag     barDrag
-	revealed int // cursor position last scrolled into view
+	drag           barDrag
+	caretX, caretY int // where the caret is on screen, as of the last Update
+	caretKnown     bool
+	revealed       int // cursor position last scrolled into view
 }
 
 // NewTextArea returns an editor holding text.
@@ -89,6 +91,8 @@ func (a *TextArea) Update(c *core.Ctx, r core.Rect) (changed bool) {
 		changed = a.updateKeys(c, r, g, b)
 	}
 	a.ScrollY = clampScroll(a.ScrollY, g.contentH(), b.viewH)
+	line, col := a.LineCol(a.Cursor)
+	a.caretX, a.caretY, a.caretKnown = g.textX-a.ScrollX+g.colX(col), r.Y+(line+1)*g.lineH-a.ScrollY, true
 	a.ScrollX = clampScroll(a.ScrollX, g.contentW(core.Rect{W: b.viewW}), b.viewW)
 	return changed
 }
@@ -229,3 +233,8 @@ func (a *TextArea) drawSelection(c *core.Ctx, dst *ebiten.Image, g areaGeometry,
 	x1 := g.textX - a.ScrollX + g.colX(to)
 	c.Fill(dst, core.Rect{X: x0, Y: y, W: max(x1-x0, 0), H: g.lineH}, c.Color(core.Selection))
 }
+
+// CaretAt is where the caret is on screen as of the last Update: the left
+// edge of its cell and the bottom of its line, which is where a popup for the
+// text opens. ok is false before the editor was first updated.
+func (a *TextArea) CaretAt() (x, y int, ok bool) { return a.caretX, a.caretY, a.caretKnown }

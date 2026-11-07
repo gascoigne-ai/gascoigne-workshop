@@ -1,11 +1,13 @@
 package settingsui
 
 import (
+	"image/color"
 	"strings"
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/jsonview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/respview"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
@@ -79,5 +81,35 @@ func TestTypingAQuoteOpensTheCompletionMenuWithoutCtrlSpace(t *testing.T) {
 				t.Fatalf("an automatic completion toasted: %v", host.toasts)
 			}
 		})
+	}
+}
+
+func TestTheCompletionMenuOpensAtTheCaret(t *testing.T) {
+	var d Dialog
+	host := newHost(t)
+	d.OpenRaw(host)
+	d.RawText.Focused = true
+	d.RawText.Text = "{\n  \"la"
+	d.RawText.Cursor = len([]rune(d.RawText.Text))
+	ctx, err := core.NewCtx(testTheme())
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx.In = core.Input{X: 5000, Y: 5000}
+	d.RawText.Update(ctx, core.Rect{X: 300, Y: 100, W: 500, H: 300})
+	x, y, ok := d.RawText.CaretAt()
+	if !ok {
+		t.Fatal("the editor does not know where its caret is")
+	}
+	d.CompleteRaw(host)
+	if len(host.menus) != 1 || host.menuAt != [2]int{x, y} {
+		t.Fatalf("menu at %v, want the caret at %d,%d (menus %d)", host.menuAt, x, y, len(host.menus))
+	}
+}
+
+func testTheme() core.Theme {
+	return core.Theme{
+		Colors:   map[core.Token]color.RGBA{core.Text: core.RGB(0xffffff), core.Bg: core.RGB(0x101010)},
+		FontSize: 14, SmallSize: 12, MonoSize: 13,
 	}
 }

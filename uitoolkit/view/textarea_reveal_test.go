@@ -40,3 +40,29 @@ func TestAnEditorNotAtTheLeftEdgeScrollsOnlyWhenTheCursorReachesItsRightEdge(t *
 		t.Fatalf("the cursor at x=%d is outside the editor (right edge %d)", right, r.X+b.viewW)
 	}
 }
+
+// A popup that belongs to the text (completions) opens at the caret, so the
+// editor reports where the caret is on screen: the left edge of its cell and
+// the bottom of its line.
+func TestTheEditorReportsWhereItsCaretIsOnScreen(t *testing.T) {
+	c := testCtx(t)
+	area := NewTextArea("ab\ncdef")
+	area.Cursor = len([]rune("ab\ncdef")) // line 1, column 4
+	area.Focused = true
+	r := core.Rect{X: 300, Y: 40, W: 400, H: 200}
+	c.In = core.Input{X: 5000, Y: 5000}
+	area.Update(c, r)
+	g := area.geometry(c, r)
+	x, y, ok := area.CaretAt()
+	wantX, wantY := g.textX-area.ScrollX+g.colX(4), r.Y+2*g.lineH-area.ScrollY // the bottom of line 1
+	if !ok || x != wantX || y != wantY {
+		t.Fatalf("CaretAt = %d,%d,%v want %d,%d", x, y, ok, wantX, wantY)
+	}
+}
+
+func TestAnEditorNeverUpdatedHasNoCaretPosition(t *testing.T) {
+	area := NewTextArea("x")
+	if _, _, ok := area.CaretAt(); ok {
+		t.Fatal("a caret position before the first update")
+	}
+}
