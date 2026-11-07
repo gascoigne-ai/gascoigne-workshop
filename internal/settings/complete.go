@@ -95,6 +95,8 @@ func suggestions(candidates []string, details map[string]string, partial string,
 		}
 		completion := Completion{Label: candidate, Insert: candidate, From: caret, Detail: details[candidate]}
 		switch {
+		case inString && !quoted: // a bare word (true, false): it replaces the quote the user typed
+			completion.From = stringStart - 1
 		case inString:
 			completion.From = stringStart
 			completion.Insert = candidate + `"`

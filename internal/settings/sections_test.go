@@ -164,3 +164,33 @@ func TestCompletionWalksSectionsThenKeysThenValues(t *testing.T) {
 		})
 	}
 }
+
+// A boolean is not text: completing it after the user typed an opening quote
+// must replace that quote with the bare word, not leave "false" as a string,
+// which the validation then refuses.
+func TestCompletingABooleanAfterAQuoteWritesTheBareWord(t *testing.T) {
+	tests := []struct{ text, pick, want string }{
+		{`{"general": {"autoSave": "`, "false", `{"general": {"autoSave": false`},
+		{`{"general": {"autoSave": "f`, "false", `{"general": {"autoSave": false`},
+		{`{"general": {"autoSave": `, "true", `{"general": {"autoSave": true`},
+		{`{"appearance": {"layout": "st`, "stacked", `{"appearance": {"layout": "stacked"`},
+	}
+	for _, test := range tests {
+		var chosen *Completion
+		for _, c := range Complete(test.text, len(test.text), nil) {
+			if c.Label == test.pick {
+				chosen = &c
+			}
+		}
+		if chosen == nil {
+			t.Errorf("%q: %q not offered", test.text, test.pick)
+			continue
+		}
+		if got := test.text[:chosen.From] + chosen.Insert; got != test.want {
+			t.Errorf("%q + %s gives %q, want %q", test.text, test.pick, got, test.want)
+		}
+		if problems := Validate([]byte(test.want + "}}")); len(problems) != 0 {
+			t.Errorf("the completed text is refused: %+v", problems)
+		}
+	}
+}
