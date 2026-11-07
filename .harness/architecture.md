@@ -14,7 +14,7 @@ flowchart LR
     settingsui --> appearance
     ui --> appearance["internal/appearance"]
     ui --> respview["internal/respview"]
-    ui --> store["internal/store"]
+    ui --> store["internal/collection/adapter/store"]
     ui --> imports["openapi, postman"]
     ui --> fonts["internal/fonts"]
     ui --> history["internal/history"]
@@ -55,7 +55,7 @@ The toolkit packages are public and independent of the application (`uitoolkit/c
 | `uitoolkit/engine` | key bindings and frame pacing |
 | `internal/ui` | the app: state, handlers, the window, dialogs, menus |
 | `internal/ui/calltrace`, `internal/ui/sentlog`, `internal/ui/settingsui` | features split out of `internal/ui`, each behind a `Host` interface the App implements |
-| `internal/request/model`, `internal/collection/model/collection`, `internal/store` | collections, folders, requests, responses; tree filtering; the folder-of-files format |
+| `internal/request/model`, `internal/collection/model/collection`, `internal/collection/adapter/store` | collections, folders, requests, responses; tree filtering; the folder-of-files format |
 | `internal/proto` | `Protocol` interface and registry; REST, WebSocket, SSE, MCP, gRPC |
 | `internal/settings/model/settings` | the settings schema and `settings.json` |
 | `internal/appearance`, `internal/fonts` | theme choices from settings; installed font families |
@@ -212,7 +212,7 @@ Row(H(urlH), PadX(w.Pad), PadY(8), Gap(8), Bg(w.Bg),
 
 - **WebSocket auto-reconnect**: the `Auto-reconnect` chip in the Messages toolbar sets `reqTab.reconnect` (per tab, not persisted). `wantOpen` records that the user wants the connection (set by `connect`, cleared by `disconnect`); when the session ends or a connect fails while both are set, `scheduleRetry` logs it and a timer sends a `retry` wsEvent after `retryDelay`. While retrying the button reads Disconnect, which stops it.
 
-- **Workspace on disk** (`internal/store`, `internal/ui/workspace.go`): `store.Save/Load` write and read the collection tree (format in decisions 9; atomic writes, unchanged files are not rewritten). The app loads `-workspace DIR`, else the remembered `settings.workspace`, else keeps the built-in sample in memory; a folder that fails to load is reported and never overwritten. `Ctrl+S` (`save` shortcut) saves; the first save without a workspace goes to `settings.DefaultWorkspace()` and is remembered. Once a workspace is set, `workspaceTick` saves by itself after the collection stays unchanged for `saveDebounce` (1 s); saving also clears the tabs' dirty marks.
+- **Workspace on disk** (`internal/collection/adapter/store`, `internal/ui/workspace.go`): `store.Save/Load` write and read the collection tree (format in decisions 9; atomic writes, unchanged files are not rewritten). The app loads `-workspace DIR`, else the remembered `settings.workspace`, else keeps the built-in sample in memory; a folder that fails to load is reported and never overwritten. `Ctrl+S` (`save` shortcut) saves; the first save without a workspace goes to `settings.DefaultWorkspace()` and is remembered. Once a workspace is set, `workspaceTick` saves by itself after the collection stays unchanged for `saveDebounce` (1 s); saving also clears the tabs' dirty marks.
 
 - **cURL import**: `proto.ParseCurl` (next to `proto.Curl`) splits the command like a POSIX shell (quotes, `$'..'`, line continuations) and maps the flags to a REST request: `-X -H -d/--data* -F -u --url -A -b -e -m -L -I`, bearer headers become Bearer auth, other flags are skipped. Redirects are followed only with `-L`, as in curl. The folder context menu entry `Import cURL from clipboard` adds the result named `METHOD /path`.
 

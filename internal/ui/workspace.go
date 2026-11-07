@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/adapter/store"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/store"
 )
 
 // saveDebounce is how long the collection must stay unchanged before
