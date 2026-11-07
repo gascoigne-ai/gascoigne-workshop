@@ -1,0 +1,201 @@
+package settingsui
+
+import (
+	"fmt"
+	"os"
+	"strings"
+	"time"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
+	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+)
+
+// PollTicks is how often (in frames) the settings file is checked for a
+// change made outside the program.
+const PollTicks = 30
+
+// fileStamp is what identifies a version of settings.json cheaply.
+type fileStamp struct {
+	modified time.Time
+	size     int64
+	exists   bool
+}
+
+func statFile(path string) fileStamp {
+	info, err := os.Stat(path)
+	if err != nil {
+		return fileStamp{}
+	}
+	return fileStamp{modified: info.ModTime(), size: info.Size(), exists: true}
+}
+
+// Stamp notes the file as it is now, so the program's own write is not
+// taken for an outside change.
+func (d *Dialog) Stamp(path string) {
+	if path != "" {
+		d.stamp = statFile(path)
+	}
+}
+
+// Poll applies a change made to settings.json outside the program, to the
+// form and to the open raw view alike. A file with problems changes nothing
+// and is reported.
+func (d *Dialog) Poll(host Host) {
+	path := host.SettingsPath()
+	if path == "" {
+		return
+	}
+	now := statFile(path)
+	if now == d.stamp || !now.exists {
+		return
+	}
+	d.stamp = now
+	data, err := os.ReadFile(path)
+	if err != nil {
+		host.Toast("Cannot read settings.json: "+err.Error(), true)
+		return
+	}
+	parsed, problems := settings.Parse(data, host.Settings())
+	if d.Raw {
+		d.RawText = NewTextArea(string(data))
+		d.RawText.Styler = d.rawStyler
+		d.Problems = problems
+	}
+	if len(problems) > 0 {
+		host.Toast("settings.json has problems and was not applied: "+problems[0].Message, true)
+		return
+	}
+	host.Replace(parsed)
+}
+
+// OpenRaw switches the dialog to the text of settings.json.
+func (d *Dialog) OpenRaw(host Host) {
+	text := ""
+	if data, err := os.ReadFile(host.SettingsPath()); host.SettingsPath() != "" && err == nil {
+		text = string(data)
+	} else if minimal, err := settings.Minimal(host.Settings()); err == nil {
+		text = string(minimal) + "\n"
+	}
+	d.Raw = true
+	d.RawText = NewTextArea(text)
+	d.RawText.Styler = d.rawStyler
+	d.Problems = settings.Validate([]byte(text))
+}
+
+// CloseRaw switches back to the form.
+func (d *Dialog) CloseRaw() { d.Raw = false }
+
+// RawEdited runs after every change of the raw text. Text without problems
+// becomes the settings and is written to the file as typed; text with
+// problems changes nothing, and the problems are listed under the editor.
+func (d *Dialog) RawEdited(host Host) {
+	text := d.RawText.Text
+	d.Problems = settings.Validate([]byte(text))
+	if len(d.Problems) > 0 {
+		return
+	}
+	parsed, _ := settings.Parse([]byte(text), host.Settings())
+	host.Replace(parsed)
+	path := host.SettingsPath()
+	if path == "" {
+		return
+	}
+	if err := settings.WriteText(path, []byte(text)); err != nil {
+		host.Toast("Could not save settings: "+err.Error(), true)
+		return
+	}
+	d.Stamp(path)
+}
+
+// rawStyler colors the keys that have a problem in the error color.
+func (d *Dialog) rawStyler(line string) []Span {
+	var spans []Span
+	rest := line
+	for rest != "" {
+		start, end := nextBadKey(rest, d.Problems)
+		if start < 0 {
+			break
+		}
+		if start > 0 {
+			spans = append(spans, Span{Text: rest[:start], Style: w.Text})
+		}
+		spans = append(spans, Span{Text: rest[start:end], Style: w.Error})
+		rest = rest[end:]
+	}
+	if rest != "" {
+		spans = append(spans, Span{Text: rest, Style: w.Text})
+	}
+	return spans
+}
+
+// RawStyle is how the raw view colors one line of its text.
+func (d *Dialog) RawStyle(line string) []Span { return d.rawStyler(line) }
+
+// nextBadKey finds the first quoted key of a problem in text.
+func nextBadKey(text string, problems []settings.Problem) (start, end int) {
+	start = -1
+	for _, problem := range problems {
+		if problem.Key == "" {
+			continue
+		}
+		quoted := `"` + problem.Key + `"`
+		if i := strings.Index(text, quoted); i >= 0 && (start < 0 || i < start) {
+			start, end = i, i+len(quoted)
+		}
+	}
+	return start, end
+}
+
+// CompleteRaw opens a menu of what fits at the caret of the raw text; the
+// choice replaces the part of the word that was typed.
+func (d *Dialog) CompleteRaw(host Host) {
+	text := d.RawText.Text
+	runes := []rune(text)
+	caret := min(d.RawText.Cursor, len(runes))
+	suggestions := settings.Complete(text, len(string(runes[:caret])), host.ActionIDs())
+	if len(suggestions) == 0 {
+		host.Toast("Nothing to complete here", false)
+		return
+	}
+	items := make([]MenuItem, len(suggestions))
+	for i, suggestion := range suggestions {
+		items[i] = MenuItem{Label: suggestion.Label, Run: func() {
+			from := len([]rune(text[:suggestion.From]))
+			d.RawText.Text = string(runes[:from]) + suggestion.Insert + string(runes[caret:])
+			d.RawText.Cursor = from + len([]rune(suggestion.Insert))
+			d.RawText.Focused = true
+			d.RawEdited(host)
+		}}
+	}
+	width, height := host.Size()
+	host.OpenMenu(width/2-DialogWidth/2+DialogNavW+40, height/2-DialogMaxH/4, items)
+}
+
+// RawFocused reports whether the raw text has the keyboard focus.
+func (d *Dialog) RawFocused() bool { return d.Raw && d.RawText.Focused }
+
+// rawView is the dialog's page while it shows settings.json as text.
+func (d *Dialog) rawView(host Host) Node {
+	status, color := "Saved as you type", w.Muted
+	if len(d.Problems) > 0 {
+		status, color = fmt.Sprintf("%d problem(s): the last good settings stay in effect", len(d.Problems)), w.Error
+	}
+	edited := func() { d.RawEdited(host) }
+	return Col(Grow(1), Gap(6),
+		Row(H(w.RowH), Gap(6),
+			Text("settings.json", Bold()),
+			Spacer(),
+			Text(status, Small(), Color(color)),
+		),
+		Area(&d.RawText, Grow(1), Bg(w.Sunken), OnChange(edited), host.TextMenu(&d.RawText.TextField, edited)),
+		For(d.Problems, func(_ int, problem settings.Problem) Node {
+			prefix := ""
+			if problem.Key != "" {
+				prefix = problem.Key + ": "
+			}
+			return Row(H(w.NoteH), Text(prefix+problem.Message, Small(), Color(w.Error), Ellipsis(), Grow(1)))
+		}),
+		Text(w.PlatformKeyText("linux", "Ctrl+Space")+" completes keys and values", Small(), Muted()),
+	)
+}

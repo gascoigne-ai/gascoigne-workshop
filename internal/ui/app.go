@@ -10,6 +10,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/textfmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/calltrace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sentlog"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/settingsui"
 	"net/http"
 	"net/http/cookiejar"
 	"reflect"
@@ -19,7 +20,6 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/fonts"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
@@ -182,20 +182,11 @@ type App struct {
 	dragRow          *rowSelection                  // the table row being dragged by its grip, nil when none
 	ctxMenu          *contextMenu                   // the open context menu, if any
 	bulk             *bulkEdit                      // the table in bulk-edit mode, if any
-	menuScroll       view.ScrollState               // scroll of the settings dialog's page
 	actionIDs        []string                       // the ids of the shortcut actions, for completing settings.json
-	rawMode          bool                           // the settings dialog shows settings.json as text
-	rawText          view.TextArea                  // that text
-	rawProblems      []settings.Problem             // what is wrong with it
-	settingsStamp    fileStamp                      // settings.json as we last wrote or read it
+	prefs            settingsui.Dialog              // the settings dialog
 	shortcutSearch   view.TextField                 // filters the shortcut table
 	pendingKeys      map[string]pendingKey          // recorded keys another action has, by action id
-	settingsSearch   view.TextField                 // filters the settings form
-	settingInputs    map[string]*view.TextField     // fields of the text and number settings
-	settingNotes     map[string]string              // why a typed value was refused
-	settingsCat      string                         // the settings page shown
 	tabsScroll       view.ScrollState               // sideways scroll of the request tab strip
-	scaleSlider      view.SliderState               // drag of the interface scale slider
 	dirty            bool                           // something changed since the last draw
 	tps              int                            // the update rate last set
 	lastIn           core.Input                     // the previous frame's input
@@ -210,9 +201,6 @@ type App struct {
 	treeFocus        bool                           // the tree has the keyboard
 	filter           view.TextField                 // the sidebar filter
 	sent             sentlog.Log                    // requests sent in this workspace, newest first
-	uiFont, codeFont view.TextField                 // the font family fields of the settings
-	families         []fonts.Family                 // installed font families, once scanned
-	fontNotes        map[fontRole]string            // why a font name was refused
 	calls            calltrace.Log                  // the call trace behind the Log button
 	showSent         bool                           // the sidebar lists sent requests instead of the tree
 	dragNode         any                            // the tree node being dragged, nil when none
@@ -292,7 +280,7 @@ func NewApp(opts Options) (*App, error) {
 	if loadErr != nil {
 		a.status = loadErr.Error()
 	}
-	a.stampSettings()
+	a.prefs.Stamp(a.settingsPath)
 	a.jar, _ = cookiejar.New(nil)
 	a.reg["rest"] = restFor(a.jar, st)
 	a.reg["mcp"] = proto.MCP{Sampler: a.sampleViaDialog}
@@ -304,9 +292,9 @@ func NewApp(opts Options) (*App, error) {
 	for _, s := range shortcuts {
 		a.actionIDs = append(a.actionIDs, s.id)
 	}
-	a.uiFont, a.codeFont = view.NewTextField(st.UIFont), view.NewTextField(st.CodeFont)
+	a.prefs.UIFont, a.prefs.CodeFont = view.NewTextField(st.UIFont), view.NewTextField(st.CodeFont)
 	if opts.ScanFonts {
-		a.scanFonts()
+		a.prefs.ScanFonts(a)
 	}
 	a.openWorkspace(opts.WorkspaceDir)
 	stored, stateErr := state.Load(opts.StatePath)
@@ -547,8 +535,8 @@ func (a *App) step(in core.Input) {
 	if a.edit != nil && !a.edit.field.Focused { // a click elsewhere ends the edit
 		a.commitEdit()
 	}
-	if a.ctx.Tick%settingsPollTicks == 0 {
-		a.pollSettingsFile()
+	if a.ctx.Tick%settingsui.PollTicks == 0 {
+		a.prefs.Poll(a)
 	}
 	a.dragHover()
 	a.showGrab()

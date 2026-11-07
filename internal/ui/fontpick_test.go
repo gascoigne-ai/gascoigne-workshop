@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/settingsui"
 	"strings"
 
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -41,16 +42,16 @@ func monoCode(a *App) bool {
 func TestPickingAnInterfaceFontChangesTheFacesAndIsSaved(t *testing.T) {
 	a, _ := newTestApp(t)
 	a.settingsPath = filepath.Join(t.TempDir(), "settings.json")
-	a.families = testFamilies(t)
+	a.prefs.Families = testFamilies(t)
 
-	a.setFont(fontUI, "go mono")
+	a.prefs.SetFont(a, settingsui.FontUI, "go mono")
 	if !monoUI(a) || a.settings.UIFont != "Go Mono" {
 		t.Fatalf("mono ui = %v, setting %q", monoUI(a), a.settings.UIFont)
 	}
 	if !monoCode(a) {
 		t.Fatal("the code face changed with the interface font")
 	}
-	a.setFont(fontUI, "")
+	a.prefs.SetFont(a, settingsui.FontUI, "")
 	if monoUI(a) || a.settings.UIFont != "" {
 		t.Fatal("an empty name should restore the built-in font")
 	}
@@ -58,8 +59,8 @@ func TestPickingAnInterfaceFontChangesTheFacesAndIsSaved(t *testing.T) {
 
 func TestPickingACodeFontOnlyChangesTheCodeFace(t *testing.T) {
 	a, _ := newTestApp(t)
-	a.families = testFamilies(t)
-	a.setFont(fontCode, "Go")
+	a.prefs.Families = testFamilies(t)
+	a.prefs.SetFont(a, settingsui.FontCode, "Go")
 	if monoCode(a) || a.settings.CodeFont != "Go" {
 		t.Fatalf("code face mono = %v, setting %q", monoCode(a), a.settings.CodeFont)
 	}
@@ -70,17 +71,17 @@ func TestPickingACodeFontOnlyChangesTheCodeFace(t *testing.T) {
 
 func TestAnUnknownFontNameIsReportedAndChangesNothing(t *testing.T) {
 	a, _ := newTestApp(t)
-	a.families = testFamilies(t)
-	a.setFont(fontUI, "Comic Nope")
-	if a.settings.UIFont != "" || a.fontNotes[fontUI] == "" {
-		t.Fatalf("setting %q, note %q", a.settings.UIFont, a.fontNotes[fontUI])
+	a.prefs.Families = testFamilies(t)
+	a.prefs.SetFont(a, settingsui.FontUI, "Comic Nope")
+	if a.settings.UIFont != "" || a.prefs.FontNote(settingsui.FontUI) == "" {
+		t.Fatalf("setting %q, note %q", a.settings.UIFont, a.prefs.FontNote(settingsui.FontUI))
 	}
 }
 
 func TestSavedFontsApplyOnceTheScanFinishes(t *testing.T) {
 	a, _ := newTestApp(t)
 	a.settings.UIFont, a.settings.CodeFont = "Go Mono", "Go"
-	a.fontsScanned(testFamilies(t))
+	a.prefs.FontsScanned(a, testFamilies(t))
 	if !monoUI(a) || monoCode(a) {
 		t.Fatalf("mono ui %v mono code %v after the scan", monoUI(a), monoCode(a))
 	}
@@ -89,7 +90,7 @@ func TestSavedFontsApplyOnceTheScanFinishes(t *testing.T) {
 func TestASavedFontThatIsGoneFallsBackToTheBuiltInOne(t *testing.T) {
 	a, _ := newTestApp(t)
 	a.settings.UIFont = "Removed Font"
-	a.fontsScanned(testFamilies(t))
+	a.prefs.FontsScanned(a, testFamilies(t))
 	if monoUI(a) {
 		t.Fatal("the interface font is not the built-in one")
 	}
@@ -100,9 +101,9 @@ func TestASavedFontThatIsGoneFallsBackToTheBuiltInOne(t *testing.T) {
 
 func TestTheAppearancePageHasFontFieldsWithSuggestions(t *testing.T) {
 	a, _ := newTestApp(t)
-	a.families = testFamilies(t)
-	a.uiFont = NewTextField("mono")
-	dump := Dump(a.formPage("Appearance"))
+	a.prefs.Families = testFamilies(t)
+	a.prefs.UIFont = NewTextField("mono")
+	dump := Dump(a.prefs.FormPage(a, "Appearance"))
 	for _, want := range []string{"Interface font", "Code font", `text="Go Mono"`} {
 		if !strings.Contains(dump, want) {
 			t.Errorf("appearance page lacks %q", want)
@@ -115,12 +116,14 @@ func TestTheAppearancePageHasFontFieldsWithSuggestions(t *testing.T) {
 // typed something to narrow them, and there are few.
 func TestFontSuggestionsNeedTypedTextAndAreFew(t *testing.T) {
 	a, _ := newTestApp(t)
-	a.families = testFamilies(t)
-	a.uiFont = NewTextField("")
-	if dump := Dump(a.fontPicker(fontUI, &a.uiFont)); strings.Contains(dump, `text="Go Mono"`) || strings.Contains(dump, `text="Go"`) {
-		t.Fatalf("suggestions shown for an empty field:\n%s", dump)
+	a.prefs.Families = testFamilies(t)
+	if got := a.prefs.Suggestions(""); len(got) != 0 {
+		t.Fatalf("suggestions for an empty field: %+v", got)
 	}
-	if fontSuggestions > 3 {
-		t.Fatalf("fontSuggestions = %d, want at most 3 so the chips fit the pane", fontSuggestions)
+	if got := a.prefs.Suggestions("go"); len(got) == 0 {
+		t.Fatal("no suggestions for typed text")
+	}
+	if settingsui.SuggestionCount > 3 {
+		t.Fatalf("SuggestionCount = %d, want at most 3 so the chips fit the pane", settingsui.SuggestionCount)
 	}
 }

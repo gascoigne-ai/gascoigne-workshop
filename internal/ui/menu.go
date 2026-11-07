@@ -10,96 +10,6 @@ import (
 	"strings"
 )
 
-// The settings dialog: a title bar, a list of categories on the left and
-// the chosen category's settings on the right.
-const (
-	settingsW      = 760
-	settingsMaxH   = 560
-	settingsMargin = 40 // kept free around the dialog in a small window
-	settingsNavW   = 170
-	settingsTitleH = 44
-)
-
-// settingsCategory is one entry of the dialog's list.
-type settingsCategory struct {
-	id, label string
-	view      func(a *App) Node
-}
-
-// settingsCategories are the dialog's pages, in order.
-var settingsCategories = []settingsCategory{
-	{"appearance", "Appearance", func(a *App) Node { return a.formPage("Appearance") }},
-	{"colors", "Colors", (*App).colorsView},
-	{"shortcuts", "Shortcuts", (*App).shortcutsView},
-	{"requests", "Requests", func(a *App) Node { return a.formPage("Requests") }},
-}
-
-// settingsCategoryID is the page shown: the chosen one, else the first.
-func (a *App) settingsCategoryID() string {
-	for _, c := range settingsCategories {
-		if c.id == a.settingsCat {
-			return c.id
-		}
-	}
-	return settingsCategories[0].id
-}
-
-// menuView is the settings dialog, centered over a dimmed window while
-// it is open.
-func (a *App) menuView() Node {
-	if !a.menu {
-		return nil
-	}
-	h := min(settingsMaxH, a.h-2*settingsMargin)
-	cur := a.settingsCategoryID()
-	var page Node
-	for _, c := range settingsCategories {
-		if c.id == cur {
-			page = c.view(a)
-		}
-	}
-	return Frag(
-		Row(Bg(w.Shadow)), // dims the window
-		Col(W(settingsW), H(h), Bg(w.Bg), Control("menu"), Shadow(), FloatCenter(), FocusScope(), Modal(), OnDismiss(func() { a.menu = false }),
-			Row(H(settingsTitleH), PadX(16), Gap(8), AlignItems(AlignCenter), BorderB(w.BorderSoft),
-				Text("Settings", Bold(), W(70)),
-				If(!a.rawMode, Field(&a.settingsSearch, H(28), Grow(1), Bg(w.Sunken), Placeholder("Search settings"), OnChange(func() { a.menuScroll.Y = 0 }), a.textMenuOpt(&a.settingsSearch, nil))),
-				If(a.rawMode, Spacer(Grow(1))),
-				a.modeSwitch(),
-				IconButton(CrossIcon(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(func() { a.menu = false }), Tooltip("Close (Esc)")),
-			),
-			If(a.rawMode, Col(Grow(1), Pad(16), a.rawView())),
-			If(!a.rawMode, Row(Grow(1),
-				Col(W(settingsNavW), Pad(8), Gap(2), Bg(w.Frame),
-					For(settingsCategories, func(_ int, c settingsCategory) Node { return a.navItem(c, c.id == cur) }),
-				),
-				Scroll(&a.menuScroll, Grow(1), Pad(16), BorderL(w.BorderSoft), page),
-			)),
-		),
-	)
-}
-
-// modeSwitch is the button that changes the dialog between the form and
-// the text of settings.json.
-func (a *App) modeSwitch() Node {
-	if a.rawMode {
-		return Button("Form", W(60), H(w.CompactH), OnClick(a.closeRawSettings), Tooltip("Back to the settings form"))
-	}
-	return Button("JSON", W(60), H(w.CompactH), OnClick(a.openRawSettings), Tooltip("Edit settings.json as text"))
-}
-
-// navItem is one category in the dialog's list: the open one is tinted and bold.
-func (a *App) navItem(c settingsCategory, open bool) Node {
-	items := []Item{
-		H(w.RowH), PadX(12), AlignItems(AlignCenter), Control("button"),
-		OnClick(func() { a.settingsCat, a.menuScroll.Y = c.id, 0 }),
-	}
-	if open {
-		return Row(append(items, Bg(w.AccentSoft), Text(c.label, Bold(), Color(w.AccentLine), Grow(1)))...)
-	}
-	return Row(append(items, HoverBg(w.Hover), Text(c.label, Muted(), Grow(1)))...)
-}
-
 // viewIDOf is the response view setting in effect: unknown ids are compact.
 func viewIDOf(id string) string {
 	for _, v := range responseViews {
@@ -176,15 +86,6 @@ func (a *App) shortcutRow(s shortcut) Node {
 	)
 }
 
-// choice is one chip of a segmented choice: gold when selected.
-func (a *App) choice(label string, selected bool, edit func(*settings.Settings)) Node {
-	apply := OnClick(func() { a.changeSettings(edit) })
-	if selected {
-		return PrimaryButton(label, Grow(1), apply)
-	}
-	return Button(label, Grow(1), apply)
-}
-
 // changeSettings edits the settings, applies them and saves them. The
 // color fields are rebuilt, since the colors in effect may have changed.
 func (a *App) changeSettings(edit func(*settings.Settings)) {
@@ -214,8 +115,5 @@ func (a *App) saveSettings(edit func(*settings.Settings)) {
 		a.toast(a.status, true)
 		return
 	}
-	a.stampSettings()
+	a.prefs.Stamp(a.settingsPath)
 }
-
-// scalePct is the interface scale in percent, as the slider shows it.
-func (a *App) scalePct() int { return int(a.settings.UIScale()*100 + 0.5) }

@@ -212,7 +212,7 @@ func (a *App) Badge(protocol, method string) Node {
 }
 
 // TextMenu is the option that gives field the right-click text menu.
-func (a *App) TextMenu(field *TextField) Option { return a.textMenuOpt(field, nil) }
+func (a *App) TextMenu(field *TextField, changed func()) Option { return a.textMenuOpt(field, changed) }
 
 func (a *App) textMenuOpt(f *TextField, changed func()) Option {
 	return OnRightClick(func(x, y int) { a.openMenu(x, y, a.textMenu(f, changed)) })

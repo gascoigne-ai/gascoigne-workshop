@@ -31,7 +31,7 @@ type Host interface {
 	// Size is the window's size in logical pixels.
 	Size() (width, height int)
 	// TextMenu is the option that gives a field its right-click menu.
-	TextMenu(field *TextField) Option
+	TextMenu(field *TextField, changed func()) Option
 }
 
 // Entry is one line of the log: a request sent, its answer, a connection
@@ -166,7 +166,7 @@ func (l *Log) View(host Host) Node {
 		Col(W(dialogW), H(h), Bg(w.Bg), Control("menu"), Shadow(), FloatCenter(), FocusScope(), Modal(), OnDismiss(l.Close),
 			Row(H(titleH), PadX(16), Gap(8), AlignItems(AlignCenter), BorderB(w.BorderSoft),
 				Text("Log", Bold(), W(40)),
-				Field(&l.filter, H(28), Grow(1), Bg(w.Sunken), Placeholder("Filter"), host.TextMenu(&l.filter)),
+				Field(&l.filter, H(28), Grow(1), Bg(w.Sunken), Placeholder("Filter"), host.TextMenu(&l.filter, nil)),
 				Button("Clear", W(64), H(w.CompactH), OnClick(l.Clear), Tooltip("Forget the entries")),
 				IconButton(CrossIcon(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(l.Close), Tooltip("Close (Esc)")),
 			),

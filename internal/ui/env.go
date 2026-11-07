@@ -228,8 +228,8 @@ func (a *App) variableCompletion(t *reqTab) (names []string, from int) {
 // the URL field; picking one writes {{name}} there, replacing a partly
 // typed name.
 func (a *App) completeVariable() {
-	if a.rawMode && a.rawText.Focused {
-		a.completeRaw()
+	if a.prefs.RawFocused() {
+		a.prefs.CompleteRaw(a)
 		return
 	}
 	t := a.cur()

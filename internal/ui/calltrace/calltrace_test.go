@@ -14,8 +14,8 @@ import (
 // fakeHost is a window of 1000x800 with no right-click menus.
 type fakeHost struct{}
 
-func (fakeHost) Size() (int, int)           { return 1000, 800 }
-func (fakeHost) TextMenu(*TextField) Option { return func(*El) {} }
+func (fakeHost) Size() (int, int)                   { return 1000, 800 }
+func (fakeHost) TextMenu(*TextField, func()) Option { return func(*El) {} }
 
 var clock = time.Date(2026, 11, 7, 12, 0, 0, 0, time.UTC)
 

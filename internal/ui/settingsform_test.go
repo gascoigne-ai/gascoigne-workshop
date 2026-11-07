@@ -91,7 +91,7 @@ func TestSearchFiltersSettingsAcrossCategories(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.query, func(t *testing.T) {
 			a, _ := openSettingsPage(t, "appearance")
-			a.settingsSearch = view.NewTextField(test.query)
+			a.prefs.Search = view.NewTextField(test.query)
 			dump := settingsText(a)
 			for _, want := range test.want {
 				if !strings.Contains(dump, want) {
@@ -109,7 +109,7 @@ func TestSearchFiltersSettingsAcrossCategories(t *testing.T) {
 
 func TestAChangedSettingIsMarkedAndResetRemovesItFromTheFile(t *testing.T) {
 	a, path := openSettingsPage(t, "appearance")
-	a.settingsSearch = view.NewTextField("request and response") // brings the setting to the top of the page
+	a.prefs.Search = view.NewTextField("request and response") // brings the setting to the top of the page
 	clickText(t, a, "Stacked", 0)
 	if a.settings.Layout != "stacked" {
 		t.Fatalf("Layout = %q", a.settings.Layout)
@@ -134,9 +134,9 @@ func TestAChangedSettingIsMarkedAndResetRemovesItFromTheFile(t *testing.T) {
 
 func TestTextSettingsApplyAsTheyAreTyped(t *testing.T) {
 	a, path := openSettingsPage(t, "requests")
-	input := a.settingInput("proxy")
+	input := a.prefs.Input(a, "proxy")
 	*input = view.NewTextField("http://localhost:8080")
-	a.settingEdited("proxy")
+	a.prefs.Edited(a, "proxy")
 	if a.settings.Proxy != "http://localhost:8080" {
 		t.Fatalf("Proxy = %q", a.settings.Proxy)
 	}
@@ -147,7 +147,7 @@ func TestTextSettingsApplyAsTheyAreTyped(t *testing.T) {
 
 func TestANumberSettingNeedsAWholeNumberInRange(t *testing.T) {
 	a, _ := openSettingsPage(t, "requests")
-	input := a.settingInput("timeoutSec")
+	input := a.prefs.Input(a, "timeoutSec")
 	for _, test := range []struct {
 		text     string
 		want     int
@@ -160,9 +160,9 @@ func TestANumberSettingNeedsAWholeNumberInRange(t *testing.T) {
 		{"90", 90, false},
 	} {
 		*input = view.NewTextField(test.text)
-		a.settingEdited("timeoutSec")
-		if a.settings.TimeoutSec != test.want || (a.settingNotes["timeoutSec"] != "") != test.wantNote {
-			t.Errorf("%q: TimeoutSec = %d (want %d), note %q", test.text, a.settings.TimeoutSec, test.want, a.settingNotes["timeoutSec"])
+		a.prefs.Edited(a, "timeoutSec")
+		if a.settings.TimeoutSec != test.want || (a.prefs.Note("timeoutSec") != "") != test.wantNote {
+			t.Errorf("%q: TimeoutSec = %d (want %d), note %q", test.text, a.settings.TimeoutSec, test.want, a.prefs.Note("timeoutSec"))
 		}
 	}
 }

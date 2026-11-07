@@ -321,7 +321,7 @@ func TestSettingsMenuOpensChangesThemeAndSaves(t *testing.T) {
 		t.Fatal("the three-dot button must open the menu")
 	}
 
-	a.settingsSearch = view.NewTextField("theme") // brings the Theme setting to the top
+	a.prefs.Search = view.NewTextField("theme") // brings the Theme setting to the top
 	clickText(t, a, "Light", 0)
 	if a.settings.Theme != "light" || !a.menu {
 		t.Fatalf("theme %q, menu open %v (choosing must keep it open)", a.settings.Theme, a.menu)
@@ -334,7 +334,7 @@ func TestSettingsMenuOpensChangesThemeAndSaves(t *testing.T) {
 		t.Fatalf("saved %+v err %v", saved, err)
 	}
 
-	a.settingsSearch = view.NewTextField("text size")
+	a.prefs.Search = view.NewTextField("text size")
 	clickText(t, a, "Large", 0)
 	if a.ctx.Th.FontSize != 16 {
 		t.Fatalf("font size = %v, want 16", a.ctx.Th.FontSize)
@@ -1674,7 +1674,7 @@ const ()
 func TestLayoutSettingStacksThePanesAndIsSaved(t *testing.T) {
 	a, path := newTestApp(t)
 	click(a, menuBtnX, menuBtnY)
-	a.settingsSearch = view.NewTextField("request and response")
+	a.prefs.Search = view.NewTextField("request and response")
 	clickText(t, a, "Stacked", 0)
 	if a.settings.Layout != "stacked" {
 		t.Fatalf("Layout = %q", a.settings.Layout)
@@ -2881,7 +2881,7 @@ const ()
 // openSettingsPage opens the settings dialog on the page with the given id.
 func openSettingsPage(t *testing.T, id string) (*App, string) {
 	a, path := openSettingsMenu(t)
-	a.settingsCat = id
+	a.prefs.Cat = id
 	a.step(core.Input{})
 	return a, path
 }
@@ -2904,7 +2904,7 @@ func typeColor(a *App, tok core.Token, row int, text string) {
 
 func TestContrastChooserStrengthensTheColorsAndIsSaved(t *testing.T) {
 	a, path := openSettingsMenu(t)
-	a.settingsSearch = view.NewTextField("contrast")
+	a.prefs.Search = view.NewTextField("contrast")
 	before := theming.ContrastRatio(a.ctx.Th.Color(core.Selection), a.ctx.Th.Color(core.Text))
 	clickText(t, a, "High", 0)
 	if a.settings.Contrast != "high" {
@@ -2986,7 +2986,7 @@ func TestResetButtonsRestoreTheDefaults(t *testing.T) {
 func TestSwitchingThemeShowsThatThemesColorsAndKeepsEachThemesOverrides(t *testing.T) {
 	a, _ := openSettingsPage(t, "colors")
 	typeColor(a, core.Selection, 0, "#223344")
-	a.settingsCat, a.settingsSearch = "appearance", view.NewTextField("theme")
+	a.prefs.Cat, a.prefs.Search = "appearance", view.NewTextField("theme")
 	a.step(core.Input{})
 	clickText(t, a, "Light", 0)
 	if a.ctx.Th.Color(core.Selection) != appearance.ThemeFor("light", "medium").Color(core.Selection) {
@@ -3515,7 +3515,7 @@ func TestResponseViewChipsAreCompactPrettyRawInThatOrder(t *testing.T) {
 
 func TestResponseViewSettingAppliesToOpenTabsAndIsSaved(t *testing.T) {
 	a, path := openSettingsPage(t, "appearance")
-	a.settingsSearch = view.NewTextField("response view")
+	a.prefs.Search = view.NewTextField("response view")
 	clickText(t, a, "Compact", 0)
 	if !a.cur().compact || a.settings.ResponseView != "compact" {
 		t.Fatalf("compact %v setting %q", a.cur().compact, a.settings.ResponseView)
