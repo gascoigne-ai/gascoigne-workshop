@@ -2,7 +2,7 @@ package ui
 
 import (
 	"fmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/respview"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/respview"
 	"os"
 	"path/filepath"
 	"strings"

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/textfmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/respview"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/respview"
 	"github.com/hajimehoshi/ebiten/v2"
 	"strconv"
 	"strings"

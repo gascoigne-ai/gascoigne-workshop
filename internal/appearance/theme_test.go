@@ -1,7 +1,7 @@
 package appearance
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/respview"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/theming"
 	"image/color"
 	"math"
