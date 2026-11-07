@@ -58,6 +58,9 @@ func (a *App) closeSettingsNow() {
 // MarkDirty asks for a redraw.
 func (a *App) MarkDirty() { a.dirty = true }
 
+// PickFile asks for a file and calls done with its path.
+func (a *App) PickFile(title string, done func(path string)) { a.pickFile(title, false, "", done) }
+
 // Pointer is the pointer position in the window.
 func (a *App) Pointer() (int, int) { return a.ctx.In.X, a.ctx.In.Y }
 

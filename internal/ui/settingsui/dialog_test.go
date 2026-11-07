@@ -13,13 +13,15 @@ import (
 
 // fakeHost keeps the settings in memory and records what the dialog asked.
 type fakeHost struct {
-	current settings.Settings
-	path    string
-	toasts  []string
-	menus   [][]MenuItem
-	menuAt  [2]int // where the last menu opened
-	unsaved bool
-	saved   int
+	current   settings.Settings
+	path      string
+	toasts    []string
+	menus     [][]MenuItem
+	menuAt    [2]int // where the last menu opened
+	unsaved   bool
+	pickTitle string
+	pickDone  func(path string)
+	saved     int
 }
 
 func newHost(t *testing.T) *fakeHost {
@@ -147,3 +149,23 @@ func (h *fakeHost) Unsaved() bool       { return h.unsaved }
 func (h *fakeHost) Persist()            { _ = h.current.Save(h.path); h.unsaved = false; h.saved++ }
 func (h *fakeHost) MarkUnsaved()        { h.unsaved = true }
 func (h *fakeHost) MarkSaved()          { h.unsaved = false }
+
+func TestAFileSettingHasAChooseButtonThatFillsItsField(t *testing.T) {
+	var d Dialog
+	host := newHost(t)
+	page := dump(d.FormPage(host, "Requests"))
+	if strings.Count(page, `text="Choose..."`) != 3 {
+		t.Fatalf("each of the three certificate settings needs a Choose button:\n%s", page)
+	}
+	d.ChooseFile(host, "caCert")
+	if host.pickTitle == "" || !strings.Contains(host.pickTitle, "CA certificates") {
+		t.Fatalf("the picker title is %q", host.pickTitle)
+	}
+	host.pickDone("/etc/ssl/ca.pem")
+	if host.current.CACert != "/etc/ssl/ca.pem" || d.Input(host, "caCert").Text != "/etc/ssl/ca.pem" {
+		t.Fatalf("CACert %q, field %q", host.current.CACert, d.Input(host, "caCert").Text)
+	}
+}
+func (h *fakeHost) PickFile(title string, done func(path string)) {
+	h.pickTitle, h.pickDone = title, done
+}

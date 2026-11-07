@@ -15,6 +15,7 @@ type Kind int
 // The kinds of value a setting can hold.
 const (
 	String    Kind = iota // text
+	File                  // text that is the path of a file
 	Enum                  // text, one of Allowed (or any text when Open)
 	Bool                  // true or false
 	Int                   // a whole number within Min and Max
@@ -55,9 +56,9 @@ var Schema = []Field{
 	{Key: "shortcuts", Title: "Shortcut overrides", Description: "Your key bindings by action id, such as \"Ctrl+Shift+Tab\"; empty text unbinds.", Category: "Shortcuts", Kind: Shortcuts},
 	{Key: "timeoutSec", Title: "Request timeout", Description: "How long a request may run, in seconds.", Category: "Requests", Kind: Int, Min: 1, Max: 3600},
 	{Key: "proxy", Title: "Proxy", Description: "URL of an HTTP proxy for every REST request; empty uses the environment's.", Category: "Requests", Kind: String},
-	{Key: "caCert", Title: "CA certificates", Description: "Path of a PEM file of extra certificate authorities to trust.", Category: "Requests", Kind: String},
-	{Key: "clientCert", Title: "Client certificate", Description: "Path of a client certificate for servers that ask for one.", Category: "Requests", Kind: String},
-	{Key: "clientKey", Title: "Client key", Description: "Path of the private key of the client certificate.", Category: "Requests", Kind: String},
+	{Key: "caCert", Title: "CA certificates", Description: "Path of a PEM file of extra certificate authorities to trust.", Category: "Requests", Kind: File},
+	{Key: "clientCert", Title: "Client certificate", Description: "Path of a client certificate for servers that ask for one.", Category: "Requests", Kind: File},
+	{Key: "clientKey", Title: "Client key", Description: "Path of the private key of the client certificate.", Category: "Requests", Kind: File},
 	{Key: "workspace", Title: "Collection folder", Description: "The folder the collection is loaded from and saved to.", Category: "Requests", Kind: String, Hidden: true},
 	{Key: "environment", Title: "Active environment", Description: "Name of the environment in use.", Category: "Requests", Kind: String, Hidden: true},
 }
@@ -140,7 +141,7 @@ func validateKeys(data []byte) []Problem {
 // checkValue is what is wrong with raw as the value of field, or "".
 func checkValue(field Field, raw json.RawMessage) string {
 	switch field.Kind {
-	case String:
+	case String, File:
 		var text string
 		if json.Unmarshal(raw, &text) != nil {
 			return "must be text"
@@ -281,6 +282,8 @@ func Expectation(field Field) string {
 		return "true or false"
 	case Int:
 		return fmt.Sprintf("a whole number from %d to %d", field.Min, field.Max)
+	case File:
+		return "the path of a file"
 	case Shortcuts:
 		return "an object of action id to key text"
 	case Colors:

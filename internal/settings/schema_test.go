@@ -277,3 +277,21 @@ func TestCompletionsCarryTheDescriptionAndWhatIsExpected(t *testing.T) {
 		t.Fatalf("a value completion names its setting: %+v", values)
 	}
 }
+
+func TestTheCertificateSettingsAreFilesAndValidateAsText(t *testing.T) {
+	for _, key := range []string{"caCert", "clientCert", "clientKey"} {
+		field, _ := FieldFor(key)
+		if field.Kind != File {
+			t.Errorf("%s is %v, want a file setting", key, field.Kind)
+		}
+		if Expectation(field) != "the path of a file" {
+			t.Errorf("%s expects %q", key, Expectation(field))
+		}
+	}
+	if problems := Validate([]byte(`{"caCert": 3}`)); len(problems) != 1 || !strings.Contains(problems[0].Message, "text") {
+		t.Fatalf("problems = %+v", problems)
+	}
+	if problems := Validate([]byte(`{"caCert": "/etc/ssl/ca.pem"}`)); len(problems) != 0 {
+		t.Fatalf("problems = %+v", problems)
+	}
+}

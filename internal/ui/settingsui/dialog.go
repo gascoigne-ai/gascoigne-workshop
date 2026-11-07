@@ -75,6 +75,9 @@ type Host interface {
 	Persist()
 	MarkUnsaved()
 	MarkSaved()
+	// PickFile asks the user for a file (a native dialog, else a prompt) and
+	// calls done with its path.
+	PickFile(title string, done func(path string))
 	// Pointer is the pointer position in the window, where a dropdown opens.
 	Pointer() (x, y int)
 	// Close closes the dialog; MarkDirty asks for a redraw; Later runs f on
