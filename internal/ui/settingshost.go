@@ -51,6 +51,7 @@ func (a *App) closeSettings() {
 
 // closeSettingsNow closes the dialog without asking.
 func (a *App) closeSettingsNow() {
+	a.cancelSettingsFilePick()
 	a.menu = false
 	a.prefs.Fresh()
 }
@@ -59,7 +60,19 @@ func (a *App) closeSettingsNow() {
 func (a *App) MarkDirty() { a.dirty = true }
 
 // PickFile asks for a file and calls done with its path.
-func (a *App) PickFile(title string, done func(path string)) { a.pickFile(title, false, "", done) }
+func (a *App) PickFile(title string, done func(path string)) {
+	a.cancelSettingsFilePick()
+	a.cancelSettingsPick = a.pickFile(title, false, "", done)
+}
+
+// cancelSettingsFilePick takes back the file question the settings dialog
+// asked, if one is open; a question asked by anything else is left alone.
+func (a *App) cancelSettingsFilePick() {
+	if a.cancelSettingsPick != nil {
+		a.cancelSettingsPick()
+		a.cancelSettingsPick = nil
+	}
+}
 
 // Pointer is the pointer position in the window.
 func (a *App) Pointer() (int, int) { return a.ctx.In.X, a.ctx.In.Y }

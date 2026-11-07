@@ -285,16 +285,17 @@ func (d *Dialog) FormPage(host Host, category string) Node {
 	return Col(rows...)
 }
 
-// fileControl is the field of a file setting with a button that opens the
-// system's file chooser.
+// fileControl is the field of a file setting with a folder button inside it
+// at the right, which opens the system's file chooser.
 func (d *Dialog) fileControl(host Host, field settings.Field) Node {
 	input := d.Input(host, field.Key)
 	note := d.notes[field.Key]
 	edited := func() { d.Edited(host, field.Key) }
 	return Col(
-		Row(H(w.RowH), Gap(6),
-			Field(input, Grow(1), Bg(w.Sunken), Placeholder("No file"), OnChange(edited), host.TextMenu(input, edited)),
-			Button("Choose...", W(86), OnClick(func() { d.ChooseFile(host, field.Key) }), Tooltip("Pick the file")),
+		Row(H(w.RowH), Bg(w.Sunken), Control("field"), AlignItems(AlignCenter),
+			Field(input, Grow(1), Placeholder("No file"), OnChange(edited), host.TextMenu(input, edited)),
+			VRuleInset(6),
+			IconButton(FolderIcon(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(func() { d.ChooseFile(host, field.Key) }), Tooltip("Choose the file")),
 		),
 		If(note != "", Row(H(w.NoteH), Text(note, Small(), Color(w.Error), Ellipsis(), Grow(1)))),
 	)

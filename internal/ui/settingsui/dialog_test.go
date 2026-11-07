@@ -150,12 +150,12 @@ func (h *fakeHost) Persist()            { _ = h.current.Save(h.path); h.unsaved 
 func (h *fakeHost) MarkUnsaved()        { h.unsaved = true }
 func (h *fakeHost) MarkSaved()          { h.unsaved = false }
 
-func TestAFileSettingHasAChooseButtonThatFillsItsField(t *testing.T) {
+func TestAFileSettingHasAFolderButtonInsideItsFieldThatFillsIt(t *testing.T) {
 	var d Dialog
 	host := newHost(t)
 	page := dump(d.FormPage(host, "Requests"))
-	if strings.Count(page, `text="Choose..."`) != 3 {
-		t.Fatalf("each of the three certificate settings needs a Choose button:\n%s", page)
+	if strings.Count(page, "icon=folder") != 3 || strings.Contains(page, `text="Choose..."`) {
+		t.Fatalf("each of the three certificate settings needs a folder button inside its field, not a separate Choose button:\n%s", page)
 	}
 	d.ChooseFile(host, "caCert")
 	if host.pickTitle == "" || !strings.Contains(host.pickTitle, "CA certificates") {
@@ -168,4 +168,23 @@ func TestAFileSettingHasAChooseButtonThatFillsItsField(t *testing.T) {
 }
 func (h *fakeHost) PickFile(title string, done func(path string)) {
 	h.pickTitle, h.pickDone = title, done
+}
+
+func TestTheSaveButtonIsDisabledWhileAutoSaveIsOnAndNothingIsPending(t *testing.T) {
+	var d Dialog
+	host := newHost(t)
+	disabled := dump(d.saveButton(host))
+	if !strings.Contains(disabled, `text="Save"`) || strings.Contains(disabled, "onClick=true") {
+		t.Fatalf("with auto-save on the Save button must be shown but not clickable:\n%s", disabled)
+	}
+	host.current.AutoSave = false
+	off := dump(d.saveButton(host))
+	if !strings.Contains(off, "onClick=true") {
+		t.Fatalf("with auto-save off the Save button must work:\n%s", off)
+	}
+	host.unsaved = true
+	host.current.AutoSave = true // changes pending even though the option is back on: Save stays available
+	if !strings.Contains(dump(d.saveButton(host)), "onClick=true") {
+		t.Fatal("Save is disabled although changes are pending")
+	}
 }

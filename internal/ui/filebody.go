@@ -10,29 +10,51 @@ import (
 )
 
 // pickFile asks for a file: with the desktop's own dialog when there is
-// one (it runs off the UI goroutine and the answer comes back through
-// a.later), else by asking for the path as text.
-func (a *App) pickFile(title string, save bool, name string, done func(path string)) {
-	if !filedialog.Available() {
+// one, else with a prompt for the path. It returns a function that closes
+// the question without an answer (it kills the native dialog or closes the
+// prompt), for a caller that has to take it back, as the settings dialog does
+// when it is closed.
+func (a *App) pickFile(title string, save bool, name string, done func(path string)) (cancel func()) {
+	if !a.fileDialogAvailable() {
 		a.prompt(title, name, "OK", done)
-		return
+		asked := a.dialog
+		return func() {
+			if a.dialog == asked {
+				a.closeDialog()
+			}
+		}
+	}
+	ctx, stop := context.WithCancel(context.Background())
+	choose := a.chooseFile
+	if choose == nil {
+		choose = chooseWithSystemDialog
 	}
 	go func() {
-		var path string
-		var err error
-		if save {
-			path, err = filedialog.Save(context.Background(), title, name)
-		} else {
-			path, err = filedialog.Open(context.Background(), title)
-		}
+		path, err := choose(ctx, title, save, name)
 		switch {
-		case err == filedialog.ErrCancelled:
+		case err == filedialog.ErrCancelled || ctx.Err() != nil: // closed by the user, or taken back
 		case err != nil:
 			a.later <- func() { a.toast("File dialog failed: "+err.Error(), true) }
 		default:
 			a.later <- func() { done(path) }
 		}
 	}()
+	return stop
+}
+
+func (a *App) fileDialogAvailable() bool {
+	if a.hasFileDialog != nil {
+		return a.hasFileDialog()
+	}
+	return filedialog.Available()
+}
+
+// chooseWithSystemDialog shows the desktop's own file dialog.
+func chooseWithSystemDialog(ctx context.Context, title string, save bool, name string) (string, error) {
+	if save {
+		return filedialog.Save(ctx, title, name)
+	}
+	return filedialog.Open(ctx, title)
 }
 
 // fileBody is the editor of a file body: the path, and a button to pick it.

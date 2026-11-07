@@ -174,65 +174,68 @@ type App struct {
 	w, h     int
 	shot     screenshot
 
-	settings         settings.Settings
-	settingsPath     string                         // "" keeps settings in memory only
-	menu             bool                           // settings menu is open
-	edit             *cellEdit                      // the table cell being edited, if any
-	dragTab          int                            // index of the tab being dragged, -1 when none
-	dragRow          *rowSelection                  // the table row being dragged by its grip, nil when none
-	ctxMenu          *contextMenu                   // the open context menu, if any
-	bulk             *bulkEdit                      // the table in bulk-edit mode, if any
-	actionIDs        []string                       // the ids of the shortcut actions, for completing settings.json
-	settingsUnsaved  bool                           // settings were changed but not written (auto-save is off)
-	prefs            settingsui.Dialog              // the settings dialog
-	shortcutSearch   view.TextField                 // filters the shortcut table
-	pendingKeys      map[string]pendingKey          // recorded keys another action has, by action id
-	tabsScroll       view.ScrollState               // sideways scroll of the request tab strip
-	dirty            bool                           // something changed since the last draw
-	tps              int                            // the update rate last set
-	lastIn           core.Input                     // the previous frame's input
-	pacer            engine.Pacer                   // update rate from idle time
-	recording        string                         // the action whose key is being recorded, "" when none
-	recordNotes      map[string]string              // why a recorded key was refused, by action id
-	colorInputs      map[core.Token]*view.TextField // hex fields of the settings menu
-	colorNotes       map[core.Token]string          // why a typed color was refused
-	colWidths        map[string]*view.ColumnWidths  // the column sizes of each table, by name
-	rowSel           *rowSelection                  // the table row the keyboard acts on
-	selected         any                            // the tree node last clicked or moved to: a *Folder or *Request
-	treeFocus        bool                           // the tree has the keyboard
-	filter           view.TextField                 // the sidebar filter
-	sent             sentlog.Log                    // requests sent in this workspace, newest first
-	calls            calltrace.Log                  // the call trace behind the Log button
-	showSent         bool                           // the sidebar lists sent requests instead of the tree
-	dragNode         any                            // the tree node being dragged, nil when none
-	pressedFolder    *model.Folder                  // the folder row the button went down on, toggled on release there
-	hoverFolder      *model.Folder                  // the closed folder a drag has been over
-	hoverTicks       int                            // for how many frames
-	dropTarget       any                            // the node the pointer is over while dragging
-	dialog           *dialog                        // the open dialog, if any
-	toasts           []toast
-	now              func() time.Time           // the clock, replaced in tests
-	openBrowser      func(address string) error // opens a URL in the user's browser, replaced in tests
-	sampler          core.Sampler
-	treeScroll       view.ScrollState
-	sidebarSplit     view.SplitState // width of the collections sidebar
-	paneSplit        view.SplitState // request pane share of the request/response area
-	statePath        string          // where the UI state is remembered
-	varsFolder       *model.Folder   // the folder whose variables the Vars pane edits, nil for the environment's or the collection's
-	varsCollection   bool            // the Vars pane edits the collection's variables although an environment is active
-	title            string          // the window title last set
-	jar              http.CookieJar  // cookies the server set, kept until the app closes
-	env              int             // index of the active environment in col.Envs, -1 for none
-	workspace        string          // the folder the collection is saved to; "" for none yet
-	defaultWorkspace string          // where the first save goes when there is no workspace
-	colSaved         string          // the collection as last loaded or saved, as JSON
-	colSeen          string          // the last collection seen, to notice changes
-	colAt            time.Time
-	stateSeen        string       // the last snapshot seen, to notice changes
-	stateSaved       string       // the last snapshot written
-	stateAt          time.Time    // when the snapshot last changed
-	initial          state.Window // window geometry of the last run
-	winX, winY       int          // window position, read each frame
+	settings           settings.Settings
+	settingsPath       string                                                                          // "" keeps settings in memory only
+	menu               bool                                                                            // settings menu is open
+	edit               *cellEdit                                                                       // the table cell being edited, if any
+	dragTab            int                                                                             // index of the tab being dragged, -1 when none
+	dragRow            *rowSelection                                                                   // the table row being dragged by its grip, nil when none
+	ctxMenu            *contextMenu                                                                    // the open context menu, if any
+	bulk               *bulkEdit                                                                       // the table in bulk-edit mode, if any
+	actionIDs          []string                                                                        // the ids of the shortcut actions, for completing settings.json
+	chooseFile         func(ctx context.Context, title string, save bool, name string) (string, error) // the file dialog; nil is the system's (a test seam)
+	hasFileDialog      func() bool                                                                     // whether there is one; nil asks the system (a test seam)
+	cancelSettingsPick func()                                                                          // takes back a file question the settings dialog asked
+	settingsUnsaved    bool                                                                            // settings were changed but not written (auto-save is off)
+	prefs              settingsui.Dialog                                                               // the settings dialog
+	shortcutSearch     view.TextField                                                                  // filters the shortcut table
+	pendingKeys        map[string]pendingKey                                                           // recorded keys another action has, by action id
+	tabsScroll         view.ScrollState                                                                // sideways scroll of the request tab strip
+	dirty              bool                                                                            // something changed since the last draw
+	tps                int                                                                             // the update rate last set
+	lastIn             core.Input                                                                      // the previous frame's input
+	pacer              engine.Pacer                                                                    // update rate from idle time
+	recording          string                                                                          // the action whose key is being recorded, "" when none
+	recordNotes        map[string]string                                                               // why a recorded key was refused, by action id
+	colorInputs        map[core.Token]*view.TextField                                                  // hex fields of the settings menu
+	colorNotes         map[core.Token]string                                                           // why a typed color was refused
+	colWidths          map[string]*view.ColumnWidths                                                   // the column sizes of each table, by name
+	rowSel             *rowSelection                                                                   // the table row the keyboard acts on
+	selected           any                                                                             // the tree node last clicked or moved to: a *Folder or *Request
+	treeFocus          bool                                                                            // the tree has the keyboard
+	filter             view.TextField                                                                  // the sidebar filter
+	sent               sentlog.Log                                                                     // requests sent in this workspace, newest first
+	calls              calltrace.Log                                                                   // the call trace behind the Log button
+	showSent           bool                                                                            // the sidebar lists sent requests instead of the tree
+	dragNode           any                                                                             // the tree node being dragged, nil when none
+	pressedFolder      *model.Folder                                                                   // the folder row the button went down on, toggled on release there
+	hoverFolder        *model.Folder                                                                   // the closed folder a drag has been over
+	hoverTicks         int                                                                             // for how many frames
+	dropTarget         any                                                                             // the node the pointer is over while dragging
+	dialog             *dialog                                                                         // the open dialog, if any
+	toasts             []toast
+	now                func() time.Time           // the clock, replaced in tests
+	openBrowser        func(address string) error // opens a URL in the user's browser, replaced in tests
+	sampler            core.Sampler
+	treeScroll         view.ScrollState
+	sidebarSplit       view.SplitState // width of the collections sidebar
+	paneSplit          view.SplitState // request pane share of the request/response area
+	statePath          string          // where the UI state is remembered
+	varsFolder         *model.Folder   // the folder whose variables the Vars pane edits, nil for the environment's or the collection's
+	varsCollection     bool            // the Vars pane edits the collection's variables although an environment is active
+	title              string          // the window title last set
+	jar                http.CookieJar  // cookies the server set, kept until the app closes
+	env                int             // index of the active environment in col.Envs, -1 for none
+	workspace          string          // the folder the collection is saved to; "" for none yet
+	defaultWorkspace   string          // where the first save goes when there is no workspace
+	colSaved           string          // the collection as last loaded or saved, as JSON
+	colSeen            string          // the last collection seen, to notice changes
+	colAt              time.Time
+	stateSeen          string       // the last snapshot seen, to notice changes
+	stateSaved         string       // the last snapshot written
+	stateAt            time.Time    // when the snapshot last changed
+	initial            state.Window // window geometry of the last run
+	winX, winY         int          // window position, read each frame
 }
 
 // Options are the startup switches of the command line.

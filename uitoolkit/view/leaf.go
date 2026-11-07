@@ -168,6 +168,9 @@ func TrashIcon(opts ...Option) *El { return Icon("trash", opts...) }
 // CopyIcon is two overlapping sheets.
 func CopyIcon(opts ...Option) *El { return Icon("copy", opts...) }
 
+// FolderIcon is an outlined folder, for choosing a file.
+func FolderIcon(opts ...Option) *El { return Icon("folder", opts...) }
+
 // SearchIcon is a magnifying glass.
 func SearchIcon(opts ...Option) *El { return Icon("search", opts...) }
 
