@@ -213,7 +213,7 @@ func TestOpenWorkspaceAtSwitchesCollectionsAndSavesTheOldOne(t *testing.T) {
 }
 
 func TestImportOpenAPIAddsAFolderOfRequestsAndTheBaseURL(t *testing.T) {
-	data, err := os.ReadFile("../collection/adapter/openapi/testdata/petstore.json")
+	data, err := os.ReadFile("../../../collection/adapter/openapi/testdata/petstore.json")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -240,7 +240,7 @@ func TestImportOpenAPIAddsAFolderOfRequestsAndTheBaseURL(t *testing.T) {
 }
 
 func TestImportPostmanAddsAFolderAndItsVariables(t *testing.T) {
-	data, err := os.ReadFile("../collection/adapter/postman/testdata/collection.json")
+	data, err := os.ReadFile("../../../collection/adapter/postman/testdata/collection.json")
 	if err != nil {
 		t.Fatal(err)
 	}
