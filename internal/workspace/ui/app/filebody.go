@@ -4,7 +4,7 @@ import (
 	"context"
 	"os"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/filedialog"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
@@ -15,7 +15,7 @@ import (
 // prompt), for a caller that has to take it back, as the settings dialog does
 // when it is closed.
 func (a *App) pickFile(title string, save bool, name string, done func(path string)) (cancel func()) {
-	if !a.fileDialogAvailable() {
+	if !a.files.Available() {
 		a.prompt(title, name, "OK", done)
 		asked := a.dialog
 		return func() {
@@ -25,14 +25,10 @@ func (a *App) pickFile(title string, save bool, name string, done func(path stri
 		}
 	}
 	ctx, stop := context.WithCancel(context.Background())
-	choose := a.chooseFile
-	if choose == nil {
-		choose = chooseWithSystemDialog
-	}
 	go func() {
-		path, err := choose(ctx, title, save, name)
+		path, err := a.files.Choose(ctx, title, save, name)
 		switch {
-		case err == filedialog.ErrCancelled || ctx.Err() != nil: // closed by the user, or taken back
+		case err == port.ErrCancelled || ctx.Err() != nil: // closed by the user, or taken back
 		case err != nil:
 			a.later <- func() { a.toast("File dialog failed: "+err.Error(), true) }
 		default:
@@ -40,21 +36,6 @@ func (a *App) pickFile(title string, save bool, name string, done func(path stri
 		}
 	}()
 	return stop
-}
-
-func (a *App) fileDialogAvailable() bool {
-	if a.hasFileDialog != nil {
-		return a.hasFileDialog()
-	}
-	return filedialog.Available()
-}
-
-// chooseWithSystemDialog shows the desktop's own file dialog.
-func chooseWithSystemDialog(ctx context.Context, title string, save bool, name string) (string, error) {
-	if save {
-		return filedialog.Save(ctx, title, name)
-	}
-	return filedialog.Open(ctx, title)
 }
 
 // fileBody is the editor of a file body: the path, and a button to pick it.

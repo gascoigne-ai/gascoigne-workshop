@@ -10,7 +10,7 @@ import (
 // dialog closes the chooser and nothing is applied afterwards.
 func TestClosingTheSettingsClosesAFilePromptOpenedFromThem(t *testing.T) {
 	a, _ := openSettingsMenu(t)
-	a.hasFileDialog = func() bool { return false } // the path prompt is used
+	a.files = fakeDialog{} // unavailable: the path prompt is used
 	picked := ""
 	a.PickFile("Choose CA certificates", func(path string) { picked = path })
 	if a.dialog == nil {
@@ -27,13 +27,12 @@ func TestClosingTheSettingsClosesAFilePromptOpenedFromThem(t *testing.T) {
 
 func TestClosingTheSettingsCancelsTheNativeFileDialogAndIgnoresItsAnswer(t *testing.T) {
 	a, _ := openSettingsMenu(t)
-	a.hasFileDialog = func() bool { return true }
 	finished := make(chan struct{})
-	a.chooseFile = func(ctx context.Context, _ string, _ bool, _ string) (string, error) {
+	a.files = fakeDialog{choose: func(ctx context.Context, _ string, _ bool, _ string) (string, error) {
 		<-ctx.Done() // the dialog stays open until it is cancelled
 		close(finished)
 		return "", ctx.Err()
-	}
+	}}
 	called := false
 	a.PickFile("Choose", func(string) { called = true })
 	a.closeSettingsNow()
@@ -51,10 +50,20 @@ func TestClosingTheSettingsCancelsTheNativeFileDialogAndIgnoresItsAnswer(t *test
 
 func TestAFileDialogOpenedElsewhereSurvivesTheSettingsClosing(t *testing.T) {
 	a, _ := openSettingsMenu(t)
-	a.hasFileDialog = func() bool { return false }
+	a.files = fakeDialog{}
 	a.pickFile("Choose the file to send", false, "", func(string) {}) // the request body's, not the settings'
 	a.closeSettingsNow()
 	if a.dialog == nil {
 		t.Fatal("closing the settings closed a prompt that is not theirs")
 	}
+}
+
+// fakeDialog is a file dialog that exists when choose is set.
+type fakeDialog struct {
+	choose func(ctx context.Context, title string, save bool, name string) (string, error)
+}
+
+func (dialog fakeDialog) Available() bool { return dialog.choose != nil }
+func (dialog fakeDialog) Choose(ctx context.Context, title string, save bool, name string) (string, error) {
+	return dialog.choose(ctx, title, save, name)
 }

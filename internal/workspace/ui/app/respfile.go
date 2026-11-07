@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/preview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/textfmt"
 )
 
@@ -89,9 +88,6 @@ func (a *App) writeBody(t *reqTab, path string) {
 	a.toast(fmt.Sprintf("Saved %s to %s", textfmt.Size(len(t.resp.Body)), filepath.Base(path)), false)
 }
 
-// previewLifetime is how long a response stays served for the browser.
-const previewLifetime = 5 * time.Minute
-
 // openInBrowser serves the response body on a temporary loopback port
 // and opens it in the user's browser, which renders what this app cannot.
 func (a *App) openInBrowser(t *reqTab) {
@@ -103,13 +99,7 @@ func (a *App) openInBrowser(t *reqTab) {
 	if contentType == "" {
 		contentType = "text/plain; charset=utf-8"
 	}
-	page, err := preview.Serve(t.resp.Body, contentType, previewLifetime)
-	if err != nil {
-		a.toast("Preview failed: "+err.Error(), true)
-		return
-	}
-	if err := a.openBrowser(page.URL); err != nil {
-		page.Close()
+	if err := a.previews.Show(t.resp.Body, contentType); err != nil {
 		a.toast("Preview failed: "+err.Error(), true)
 		return
 	}

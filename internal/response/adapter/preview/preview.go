@@ -12,6 +12,8 @@ import (
 	"runtime"
 	"sync"
 	"time"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
 )
 
 // secretBytes is the length of the random path that guards a page.
@@ -100,3 +102,29 @@ func OpenInBrowser(address string) error {
 	}
 	return nil
 }
+
+// Browser serves a body for Lifetime and opens it with Open, which is
+// OpenInBrowser when nil.
+type Browser struct {
+	Lifetime time.Duration
+	Open     func(address string) error
+}
+
+// Show implements port.BodyPreview.
+func (browser Browser) Show(body []byte, contentType string) error {
+	page, err := Serve(body, contentType, browser.Lifetime)
+	if err != nil {
+		return err
+	}
+	open := browser.Open
+	if open == nil {
+		open = OpenInBrowser
+	}
+	if err := open(page.URL); err != nil {
+		page.Close()
+		return err
+	}
+	return nil
+}
+
+var _ port.BodyPreview = Browser{}

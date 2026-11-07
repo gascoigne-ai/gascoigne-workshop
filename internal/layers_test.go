@@ -28,13 +28,11 @@ var exceptions = map[string]bool{
 	"workspace/ui/app -> request/controller/assert":      true,
 	"workspace/ui/app -> request/ui/calltrace":           true,
 	"workspace/ui/app -> response/adapter/history":       true,
-	"workspace/ui/app -> response/adapter/preview":       true,
 	"workspace/ui/app -> response/ui/respview":           true,
 	"workspace/ui/app -> response/ui/sentlog":            true,
 	"workspace/ui/app -> settings/adapter/fonts":         true,
 	"workspace/ui/app -> settings/controller/appearance": true,
 	"workspace/ui/app -> settings/ui/settingsui":         true,
-	"workspace/ui/app -> workspace/adapter/filedialog":   true,
 	"workspace/ui/app -> workspace/adapter/state":        true,
 }
 

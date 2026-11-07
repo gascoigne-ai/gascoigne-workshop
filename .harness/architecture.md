@@ -74,7 +74,8 @@ The toolkit packages are public and independent of the application (`uitoolkit/c
 | `internal/collection/adapter/store`, `openapi`, `postman`, `miniyaml` | the folder-of-files format; importers |
 | `internal/response/model/jsonview`, `internal/response/model/textfmt` | JSON tokens and lines (`Kind.Style` names the theme style); text helpers |
 | `internal/response/ui/respview`, `internal/response/ui/sentlog` | response views and helpers; the sent-request list behind a `Host` |
-| `internal/response/port` | `Sent` and `SentStore`, the stored log of sent requests |
+| `internal/response/port` | `Sent` and `SentStore`, the stored log of sent requests; `BodyPreview`, shows a body in the browser (`preview.Browser` implements it) |
+| `internal/workspace/port` | `FileDialog` and `ErrCancelled` (`filedialog.System` implements it); `cmd/workshop` hands the adapters to the App through `Options` |
 | `internal/response/adapter/history`, `internal/response/adapter/preview` | response history and the sent-log file (`history.SentLog` implements `SentStore`); browser preview server |
 | `internal/settings/model/settings`, `internal/settings/model/fontfamily` | the settings schema and `settings.json`; font families and their lookup |
 | `internal/settings/port` | `FontStore`, what the dialog needs from the installed fonts |
@@ -84,7 +85,7 @@ The toolkit packages are public and independent of the application (`uitoolkit/c
 
 `internal/` is grouped by domain, then by role (decision 19): `internal/<domain>/<role>/<package>`, with domains `request`, `collection`, `response`, `settings`, `workspace` and roles `ui`, `controller`, `port`, `adapter`, `model`. `internal/layers_test.go` enforces the dependency rules: model imports only model; port imports model and port; controller imports model, port and controller; ui and adapter import model, port and controller but never each other; another domain is reached only through its model or port. A test with a table proves each kind of violation is caught.
 
-Go allows one package per directory and a method cannot be declared in another package, so everything that reads and writes the one `App` struct (tabs, panes, sidebar, environments, workspace) is still one package, `workspace/ui/app`. It imports the other domains' adapters, controllers and views directly; those 15 imports are listed in `exceptions` in the layer test and are what task 033 still has to remove by splitting the App into a controller and views behind ports. A feature that needs little of the `App` is its own package with a `Host` interface the App implements, a package doc and tests with a fake host (`calltrace`, `sentlog`, `settingsui`). Adapters of a port are handed to those views through the host (`Host.SentStore`, `Host.FontStore`).
+Go allows one package per directory and a method cannot be declared in another package, so everything that reads and writes the one `App` struct (tabs, panes, sidebar, environments, workspace) is still one package, `workspace/ui/app`. It imports the other domains' adapters, controllers and views directly; those 13 imports are listed in `exceptions` in the layer test and are what task 033 still has to remove by splitting the App into a controller and views behind ports. A feature that needs little of the `App` is its own package with a `Host` interface the App implements, a package doc and tests with a fake host (`calltrace`, `sentlog`, `settingsui`). Adapters of a port are handed to those views through the host (`Host.SentStore`, `Host.FontStore`).
 
 ## Model and protocols
 

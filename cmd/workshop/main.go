@@ -5,10 +5,13 @@ package main
 import (
 	"errors"
 	"flag"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/preview"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/filedialog"
 	"image"
 	"image/png"
 	"log"
 	"os"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 
@@ -23,6 +26,9 @@ const (
 	windowHeight = 800
 )
 
+// previewLifetime is how long a response stays served for the browser.
+const previewLifetime = 5 * time.Minute
+
 func main() {
 	var opts ui.Options
 	flag.StringVar(&opts.ScreenshotPath, "screenshot", "", "save a PNG of the window to this path and exit")
@@ -34,6 +40,8 @@ func main() {
 	flag.StringVar(&opts.SettingsPath, "settings", settings.DefaultPath(), "settings file; empty keeps settings in memory")
 	flag.StringVar(&opts.StatePath, "state", state.DefaultPath(), "remembered window and tabs; empty keeps them in memory")
 	opts.ScanFonts = true
+	opts.Files = filedialog.System{}
+	opts.Previews = preview.Browser{Lifetime: previewLifetime}
 	flag.StringVar(&opts.ThemesDir, "themes", settings.ThemesDir(), "folder of theme files (*.json) that extend the dark or light theme; empty for none")
 	flag.StringVar(&opts.WorkspaceDir, "workspace", "", "folder to load and save the collection; empty uses the last one, else the built-in sample")
 	opts.DefaultWorkspace = settings.DefaultWorkspace()

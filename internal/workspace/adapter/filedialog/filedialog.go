@@ -9,10 +9,12 @@ import (
 	"errors"
 	"os/exec"
 	"strings"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
 )
 
 // ErrCancelled is returned when the user closed the dialog.
-var ErrCancelled = errors.New("cancelled")
+var ErrCancelled = port.ErrCancelled
 
 // tool describes how to run one dialog program.
 type tool struct {
@@ -74,3 +76,19 @@ func Open(ctx context.Context, title string) (string, error) {
 func Save(ctx context.Context, title, name string) (string, error) {
 	return run(ctx, func(t tool) []string { return t.save(title, name) })
 }
+
+// System is the file dialog of this desktop.
+type System struct{}
+
+// Available implements port.FileDialog.
+func (System) Available() bool { return Available() }
+
+// Choose implements port.FileDialog.
+func (System) Choose(ctx context.Context, title string, save bool, name string) (string, error) {
+	if save {
+		return Save(ctx, title, name)
+	}
+	return Open(ctx, title)
+}
+
+var _ port.FileDialog = System{}

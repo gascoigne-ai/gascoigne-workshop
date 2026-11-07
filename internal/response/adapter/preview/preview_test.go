@@ -1,6 +1,7 @@
 package preview
 
 import (
+	"errors"
 	"io"
 	"net"
 	"net/http"
@@ -149,5 +150,32 @@ func TestOpenCommandPerSystem(t *testing.T) {
 		if strings.Join(got, " ") != strings.Join(tt.want, " ") {
 			t.Errorf("openCommand(%q) = %v, want %v", tt.goos, got, tt.want)
 		}
+	}
+}
+
+func TestBrowserServesTheBodyAndHandsItsAddressToOpen(t *testing.T) {
+	var address string
+	browser := Browser{Lifetime: time.Minute, Open: func(url string) error { address = url; return nil }}
+	if err := browser.Show([]byte("hi"), "text/plain"); err != nil {
+		t.Fatal(err)
+	}
+	response, err := http.Get(address)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer response.Body.Close()
+	if body, _ := io.ReadAll(response.Body); string(body) != "hi" {
+		t.Fatalf("served %q", body)
+	}
+}
+
+func TestBrowserStopsServingWhenOpenFails(t *testing.T) {
+	var address string
+	browser := Browser{Lifetime: time.Minute, Open: func(url string) error { address = url; return errors.New("no browser") }}
+	if err := browser.Show([]byte("hi"), "text/plain"); err == nil {
+		t.Fatal("the failure was swallowed")
+	}
+	if _, err := http.Get(address); err == nil {
+		t.Fatal("the page is still served")
 	}
 }
