@@ -39,14 +39,14 @@ func TestPickingAToolWithPropertiesOpensAFormWithTheDefaults(t *testing.T) {
 		t.Fatal("no form opened")
 	}
 	form := a.dialog.form
-	if got := form.inputs["limit"].Text; got != "10" {
+	if got := form.Inputs["limit"].Text; got != "10" {
 		t.Errorf("the default fills the field, got %q", got)
 	}
-	if got := form.inputs["query"].Text; got != "" {
+	if got := form.Inputs["query"].Text; got != "" {
 		t.Errorf("query = %q", got)
 	}
-	if form.choices["safe"] != "" || form.choices["sort"] != "" {
-		t.Errorf("an optional boolean and an optional enum start unset: %v", form.choices)
+	if form.Choices["safe"] != "" || form.Choices["sort"] != "" {
+		t.Errorf("an optional boolean and an optional enum start unset: %v", form.Choices)
 	}
 }
 
@@ -55,10 +55,10 @@ func TestFillingTheFormComposesATypedCall(t *testing.T) {
 	tab := a.cur()
 	a.openToolForm(tab, searchTool())
 	form := a.dialog.form
-	form.inputs["query"].Text = "go"
-	form.inputs["limit"].Text = "5"
-	form.choices["safe"] = "true"
-	form.choices["sort"] = "desc"
+	form.Inputs["query"].Text = "go"
+	form.Inputs["limit"].Text = "5"
+	form.Choices["safe"] = "true"
+	form.Choices["sort"] = "desc"
 	dialogButtonNamed(t, a, "Fill composer").run()
 	if a.dialog != nil {
 		t.Fatal("the form closes once the call is composed")
@@ -74,11 +74,11 @@ func TestAFormWithAnInvalidValueStaysOpenAndSaysWhich(t *testing.T) {
 	tab.msg.Text = "unchanged"
 	a.openToolForm(tab, searchTool())
 	form := a.dialog.form
-	form.inputs["query"].Text = "go"
-	form.inputs["limit"].Text = "lots"
+	form.Inputs["query"].Text = "go"
+	form.Inputs["limit"].Text = "lots"
 	dialogButtonNamed(t, a, "Fill composer").run()
-	if a.dialog == nil || !strings.Contains(form.problem, "limit must be a number") {
-		t.Fatalf("dialog %v problem %q", a.dialog, form.problem)
+	if a.dialog == nil || !strings.Contains(form.Problem, "limit must be a number") {
+		t.Fatalf("dialog %v problem %q", a.dialog, form.Problem)
 	}
 	if tab.msg.Text != "unchanged" {
 		t.Fatalf("the composer changed to %q", tab.msg.Text)

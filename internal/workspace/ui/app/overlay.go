@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/ui/mcpform"
 	"runtime"
 	"strings"
 	"time"
@@ -61,7 +62,7 @@ type dialogButton struct {
 type dialog struct {
 	title, body string
 	input       *TextField
-	form        *toolForm // a typed MCP tool form, instead of a single input
+	form        *mcpform.Form // a typed MCP tool form, instead of a single input
 	buttons     []dialogButton
 }
 
@@ -399,5 +400,5 @@ func (a *App) dialogForm(d *dialog) Node {
 	if d.form == nil {
 		return nil
 	}
-	return a.toolFormView(d.form)
+	return d.form.View(a)
 }
