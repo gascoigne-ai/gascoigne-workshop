@@ -3,8 +3,8 @@ package ui
 import (
 	"context"
 	"fmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/assert"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/assert"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/preview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/textfmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/appearance"

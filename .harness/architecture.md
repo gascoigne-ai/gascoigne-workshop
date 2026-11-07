@@ -266,7 +266,7 @@ Row(H(urlH), PadX(w.Pad), PadY(8), Gap(8), Bg(w.Bg),
 
 - **Response history and saving**: `reqTab.respHist` keeps the last `respHistoryLimit` (10) successful responses a new one replaced; the response toolbar's `History` button (`historyMenu`, `showHistory`) swaps one back in. `Save body...` (`saveBody`, `writeBody`) writes the body to a typed path. `App.Title` is the window title with a dot for unsaved work, set from `Update`.
 
-- **Assertions** (`internal/assert`, `internal/ui/assertpane.go`): `Request.Tests` is text, one assertion per line; `assert.Run(text, resp)` returns a `Result` per line (parse problems are failures with the reason, so a typo never passes). The request side has a `Tests` pane (an `Area` editor, live results as you type) and the response side a `Tests` pane listing results; `App.runTests` runs after each response and adds `Tests: n/m passed` to the status line.
+- **Assertions** (`internal/request/controller/assert`, `internal/ui/assertpane.go`): `Request.Tests` is text, one assertion per line; `assert.Run(text, resp)` returns a `Result` per line (parse problems are failures with the reason, so a typo never passes). The request side has a `Tests` pane (an `Area` editor, live results as you type) and the response side a `Tests` pane listing results; `App.runTests` runs after each response and adds `Tests: n/m passed` to the status line.
 
 - **Image responses**: `respview.Decode` sniffs a body for PNG, JPEG or GIF (whatever the Content-Type says); `refreshView` then builds `reqTab.picture` and the response pane shows `view.Image` (scaled down to fit, centered, never up) with the format, size and a Save button instead of the text viewer.
 
