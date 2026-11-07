@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"github.com/hajimehoshi/ebiten/v2"
 	"os"
 	"strings"
 	"testing"
@@ -149,5 +151,55 @@ func TestCtrlSpaceInTheRawViewOffersKeysAndValues(t *testing.T) {
 	a.completeVariable()
 	if a.ctxMenu == nil || a.ctxMenu.items[0].label != "stacked" {
 		t.Fatalf("menu = %+v", a.ctxMenu)
+	}
+}
+
+// Enter that accepts a completion must not also type a line break into the
+// editor that still has the focus under the menu, and Up and Down that move
+// in the menu must not move the caret.
+func TestEnterAcceptingACompletionDoesNotStartANewLine(t *testing.T) {
+	a, _ := openSettingsPage(t, "appearance")
+	a.prefs.OpenRaw(a)
+	a.prefs.RawText = view.NewTextArea("{\n  \"")
+	a.prefs.RawText.Cursor = len([]rune(a.prefs.RawText.Text))
+	a.prefs.RawText.Focused = true
+	a.completeVariable() // the menu of sections
+	if a.ctxMenu == nil {
+		t.Fatal("no menu")
+	}
+	a.step(core.Input{X: 5000, Y: 5000, Enter: true, Keys: []ebiten.Key{ebiten.KeyEnter}})
+	if strings.Count(a.prefs.RawText.Text, "\n") != 1 {
+		t.Fatalf("Enter added a line break: %q", a.prefs.RawText.Text)
+	}
+	if !strings.Contains(a.prefs.RawText.Text, `"appearance"`) {
+		t.Fatalf("the completion was not applied: %q", a.prefs.RawText.Text)
+	}
+}
+
+func TestTheMenuKeysDoNotMoveTheCaretOfTheEditorUnderIt(t *testing.T) {
+	a, _ := openSettingsPage(t, "appearance")
+	a.prefs.OpenRaw(a)
+	a.prefs.RawText = view.NewTextArea("{\n  \"")
+	a.prefs.RawText.Cursor = len([]rune(a.prefs.RawText.Text))
+	a.prefs.RawText.Focused = true
+	a.completeVariable()
+	caret := a.prefs.RawText.Cursor
+	a.step(core.Input{X: 5000, Y: 5000, Edits: []core.Edit{core.EditUp}, Keys: []ebiten.Key{ebiten.KeyArrowUp}})
+	a.step(core.Input{X: 5000, Y: 5000, Edits: []core.Edit{core.EditDown}, Keys: []ebiten.Key{ebiten.KeyArrowDown}})
+	if a.prefs.RawText.Cursor != caret {
+		t.Fatalf("the caret moved from %d to %d while the menu used the arrows", caret, a.prefs.RawText.Cursor)
+	}
+}
+
+func TestEscapeClosingTheMenuKeepsTheEditorFocused(t *testing.T) {
+	a, _ := openSettingsPage(t, "appearance")
+	a.prefs.OpenRaw(a)
+	a.prefs.RawText = view.NewTextArea("{\n  \"")
+	a.prefs.RawText.Cursor = len([]rune(a.prefs.RawText.Text))
+	a.prefs.RawText.Focused = true
+	a.completeVariable()
+	a.step(core.Input{X: 5000, Y: 5000, Escape: true})
+	if a.ctxMenu != nil || !a.prefs.RawText.Focused {
+		t.Fatalf("menu open %v, editor focused %v: Escape should close only the menu", a.ctxMenu != nil, a.prefs.RawText.Focused)
 	}
 }

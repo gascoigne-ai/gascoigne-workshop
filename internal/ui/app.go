@@ -503,7 +503,11 @@ func (a *App) step(in core.Input) {
 	}
 	hadOverlay := a.overlayOpen()
 	wasRecording := a.recording != ""
+	menuWasOpen := a.ctxMenu != nil
 	a.overlayKeys(in)
+	if menuWasOpen {
+		a.swallowMenuKeys()
+	}
 	if !hadOverlay && !a.overlayOpen() && !wasRecording {
 		a.treeKeys(in)
 	}

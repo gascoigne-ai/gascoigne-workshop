@@ -358,6 +358,30 @@ func (a *App) overlayKeys(in w.Input) {
 	}
 }
 
+// swallowMenuKeys removes the keys a menu used from this frame's input, so
+// the text widget that still has the focus under it does not act on them too:
+// Enter that accepts an item must not type a line break, Up and Down that
+// move in the menu must not move the caret, and Escape that closes the menu
+// must not take the focus off the editor.
+func (a *App) swallowMenuKeys() {
+	in := &a.ctx.In
+	in.Enter, in.Escape, in.Tab = false, false, false
+	edits := in.Edits[:0:0]
+	for _, edit := range in.Edits {
+		if edit != w.EditUp && edit != w.EditDown {
+			edits = append(edits, edit)
+		}
+	}
+	in.Edits = edits
+	keys := in.Keys[:0:0]
+	for _, key := range in.Keys {
+		if key != ebiten.KeyEnter && key != ebiten.KeyArrowUp && key != ebiten.KeyArrowDown && key != ebiten.KeyEscape && key != ebiten.KeyTab {
+			keys = append(keys, key)
+		}
+	}
+	in.Keys = keys
+}
+
 func hasKey(keys []ebiten.Key, k ebiten.Key) bool {
 	for _, p := range keys {
 		if p == k {
