@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/state"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/state"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
