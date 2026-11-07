@@ -22,7 +22,7 @@ const (
 )
 
 // fontSuggestions bounds the family names offered under a font field.
-const fontSuggestions = 6
+const fontSuggestions = 3
 
 // savedFont is the family name stored for role.
 func (a *App) savedFont(role fontRole) string {
@@ -119,9 +119,18 @@ func (a *App) fontPicker(role fontRole, field *TextField) Node {
 		),
 		If(note != "", Row(H(w.NoteH), Text(note, Small(), Color(noteColor), Ellipsis(), Grow(1)))),
 		Row(H(w.RowH), Gap(4),
-			For(fonts.Matching(a.families, field.Text, fontSuggestions), func(_ int, family fonts.Family) Node {
+			For(a.fontSuggestions(field.Text), func(_ int, family fonts.Family) Node {
 				return Button(family.Name, H(w.CompactH), OnClick(func() { *field = NewTextField(family.Name); a.setFont(role, family.Name) }))
 			}),
 		),
 	)
+}
+
+// fontSuggestions are the families to offer for the typed text: none until
+// something is typed, since the whole list would not fit the pane.
+func (a *App) fontSuggestions(typed string) []fonts.Family {
+	if strings.TrimSpace(typed) == "" {
+		return nil
+	}
+	return fonts.Matching(a.families, typed, fontSuggestions)
 }

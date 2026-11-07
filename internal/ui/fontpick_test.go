@@ -109,3 +109,18 @@ func TestTheAppearancePageHasFontFieldsWithSuggestions(t *testing.T) {
 		}
 	}
 }
+
+// The suggestions are chips of the width of their names; a long list of
+// them ran out of the settings pane, so they appear only once the user has
+// typed something to narrow them, and there are few.
+func TestFontSuggestionsNeedTypedTextAndAreFew(t *testing.T) {
+	a, _ := newTestApp(t)
+	a.families = testFamilies(t)
+	a.uiFont = NewTextField("")
+	if dump := Dump(a.fontPicker(fontUI, &a.uiFont)); strings.Contains(dump, `text="Go Mono"`) || strings.Contains(dump, `text="Go"`) {
+		t.Fatalf("suggestions shown for an empty field:\n%s", dump)
+	}
+	if fontSuggestions > 3 {
+		t.Fatalf("fontSuggestions = %d, want at most 3 so the chips fit the pane", fontSuggestions)
+	}
+}
