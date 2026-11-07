@@ -267,3 +267,36 @@ const (
 	scaleTrackX0 = 453
 	scaleTrackX1 = 949
 )
+
+// The caret blinks by the clock, not by ticks: the update rate drops to 30
+// when idle, which used to halve the blink rate. Input restarts the blink
+// so the caret is solid while typing.
+func TestInputRestartsTheCaretBlinkOnTheAppClock(t *testing.T) {
+	a, _ := newTestApp(t)
+	clock := time.Date(2026, 11, 7, 12, 0, 0, 0, time.UTC)
+	a.now = func() time.Time { return clock }
+	a.step(core.Input{X: 5000, Y: 5000, Typed: []rune("a")})
+	if !a.ctx.CaretSince.Equal(clock) {
+		t.Fatalf("CaretSince = %v, want the time of the keystroke", a.ctx.CaretSince)
+	}
+	clock = clock.Add(700 * time.Millisecond)
+	if a.ctx.CaretVisible() {
+		t.Fatal("the caret should be in its hidden phase 700 ms after typing")
+	}
+	a.step(core.Input{X: 5000, Y: 5000, Typed: []rune("b")})
+	if !a.ctx.CaretVisible() {
+		t.Fatal("typing must show the caret again")
+	}
+}
+
+func TestAMovingPointerDoesNotRestartTheCaretBlink(t *testing.T) {
+	a, _ := newTestApp(t)
+	clock := time.Date(2026, 11, 7, 12, 0, 0, 0, time.UTC)
+	a.now = func() time.Time { return clock }
+	a.step(core.Input{X: 5000, Y: 5000, Typed: []rune("a")})
+	clock = clock.Add(700 * time.Millisecond)
+	a.step(core.Input{X: 10, Y: 10}) // only the pointer moved
+	if a.ctx.CaretVisible() {
+		t.Fatal("moving the pointer showed the caret again")
+	}
+}

@@ -7,6 +7,7 @@ import (
 	"image/color"
 	"math"
 	"strings"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
@@ -80,7 +81,12 @@ type Ctx struct {
 	// pointer with them.
 	PointerX, PointerY int
 	Tick               int
-	Scale              float64
+
+	// Now is the clock the caret blinks by; nil is time.Now. CaretSince is
+	// when the caret last became visible (the last input).
+	Now        func() time.Time
+	CaretSince time.Time
+	Scale      float64
 
 	// Clipboard is used by text widgets for copy, cut and paste.
 	Clipboard Clipboard
@@ -119,6 +125,30 @@ func NewCtx(th Theme) (*Ctx, error) {
 		return nil, err
 	}
 	return &Ctx{Th: th, F: fonts, Scale: 1, Clipboard: SystemClipboard()}, nil
+}
+
+// CaretHalfPeriod is how long the caret is shown, and then hidden.
+const CaretHalfPeriod = 500 * time.Millisecond
+
+func (c *Ctx) now() time.Time {
+	if c.Now != nil {
+		return c.Now()
+	}
+	return time.Now()
+}
+
+// RestartCaret makes the caret visible now and starts its blink over, as an
+// edit or a click does.
+func (c *Ctx) RestartCaret() { c.CaretSince = c.now() }
+
+// CaretVisible reports whether the blinking caret is in its shown phase.
+// The phase follows the clock, so it does not depend on how often the app
+// updates or draws.
+func (c *Ctx) CaretVisible() bool {
+	if c.CaretSince.IsZero() {
+		return true
+	}
+	return (c.now().Sub(c.CaretSince)/CaretHalfPeriod)%2 == 0
 }
 
 // SetScale rebuilds the fonts when the device scale factor changes, for

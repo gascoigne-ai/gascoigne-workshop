@@ -288,6 +288,7 @@ func NewApp(opts Options) (*App, error) {
 	a.dragTab = -1
 	a.dirty = true
 	a.now = time.Now
+	ctx.Now = func() time.Time { return a.now() } // the caret blinks by the app clock
 	a.openBrowser = preview.OpenInBrowser
 	for _, s := range shortcuts {
 		a.actionIDs = append(a.actionIDs, s.id)
@@ -484,6 +485,9 @@ func (a *App) step(in core.Input) {
 	drained := a.drain()
 	pruned := a.pruneToasts()
 	active := engine.InputActive(a.lastIn, in)
+	if restartsCaret(in) {
+		a.ctx.RestartCaret()
+	}
 	a.lastIn = in
 	if in.Held {
 		a.dropTarget = nil // set again by the row under the pointer

@@ -196,7 +196,7 @@ func (a *TextArea) Draw(c *core.Ctx, dst *ebiten.Image, r core.Rect) {
 		num := strconv.Itoa(i + 1)
 		c.TextMid(area, c.F.Mono, num, g.textX-core.Gutter-len(num)*g.charW, cell, numClr)
 	}
-	if a.Focused && (c.Tick/30)%2 == 0 {
+	if a.Focused && c.CaretVisible() {
 		line, col := a.LineCol(a.Cursor)
 		cx, cy := g.textX-a.ScrollX+col*g.charW, r.Y+line*g.lineH-a.ScrollY
 		row := core.Rect{X: cx, Y: cy, W: g.charW, H: g.lineH}
