@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
-	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 // Right-click menus for tabs, table rows, text widgets and the response.

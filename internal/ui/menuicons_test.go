@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 func TestMenuRowsGetAnIconFromTheirLabel(t *testing.T) {
@@ -39,7 +39,7 @@ func TestAnItemsOwnIconWinsOverTheLabelTable(t *testing.T) {
 
 func TestEveryMenuIconInTheTableExists(t *testing.T) {
 	for prefix, name := range menuIcons {
-		if !vml.HasIcon(name) {
+		if !view.HasIcon(name) {
 			t.Errorf("%q maps to the missing icon %q", prefix, name)
 		}
 	}
@@ -48,8 +48,8 @@ func TestEveryMenuIconInTheTableExists(t *testing.T) {
 func TestAMenuRowDrawsItsIconAndKeepsLabelsAligned(t *testing.T) {
 	a, _ := newTestApp(t)
 	a.openMenu(10, 10, []menuItem{{label: "Copy"}, {label: "GET /users"}})
-	withIcon := vml.Dump(a.menuRow(a.ctxMenu, 0, a.ctxMenu.items[0]))
-	without := vml.Dump(a.menuRow(a.ctxMenu, 1, a.ctxMenu.items[1]))
+	withIcon := view.Dump(a.menuRow(a.ctxMenu, 0, a.ctxMenu.items[0]))
+	without := view.Dump(a.menuRow(a.ctxMenu, 1, a.ctxMenu.items[1]))
 	if !strings.Contains(withIcon, "icon=copy") {
 		t.Fatalf("no icon on the Copy row:\n%s", withIcon)
 	}

@@ -75,7 +75,7 @@ type Ctx struct {
 	Chosen Choice
 	In     Input
 	// PointerX and PointerY are the pointer position in logical pixels as
-	// sampled, set by vml.Update before any container hides it from its
+	// sampled, set by view.Update before any container hides it from its
 	// children; a drag that leaves its container keeps following the
 	// pointer with them.
 	PointerX, PointerY int
@@ -85,7 +85,7 @@ type Ctx struct {
 	// Clipboard is used by text widgets for copy, cut and paste.
 	Clipboard Clipboard
 
-	// Tooltip state, kept by vml.Draw: the text of the element under the
+	// Tooltip state, kept by view.Draw: the text of the element under the
 	// pointer, whether it has been hovered long enough to show, and
 	// whether it is still waiting to (the app keeps drawing meanwhile).
 	TipText              string

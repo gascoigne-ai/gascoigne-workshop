@@ -9,7 +9,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 var rectPattern = regexp.MustCompile(`rect=(-?\d+),(-?\d+),(\d+),(\d+)`)
@@ -17,8 +17,8 @@ var rectPattern = regexp.MustCompile(`rect=(-?\d+),(-?\d+),(\d+),(\d+)`)
 // layoutDump is the window as text with every element's rectangle.
 func layoutDump(a *App) string {
 	root := a.view()
-	vml.Layout(a.ctx, root, a.w, a.h)
-	return vml.Dump(root)
+	view.Layout(a.ctx, root, a.w, a.h)
+	return view.Dump(root)
 }
 
 // clickText clicks the middle of the nth (from 0) element that shows text
@@ -50,7 +50,7 @@ func clickText(t *testing.T, a *App, text string, nth int) {
 	t.Fatalf("no element with text %q (#%d) in:\n%s", text, nth, layoutDump(a))
 }
 
-func settingsText(a *App) string { return vml.Dump(a.menuView()) }
+func settingsText(a *App) string { return view.Dump(a.menuView()) }
 
 func TestTheSettingsFormShowsATitleADescriptionAndAControlPerSetting(t *testing.T) {
 	a, _ := openSettingsPage(t, "appearance")
@@ -91,7 +91,7 @@ func TestSearchFiltersSettingsAcrossCategories(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.query, func(t *testing.T) {
 			a, _ := openSettingsPage(t, "appearance")
-			a.settingsSearch = vml.NewTextField(test.query)
+			a.settingsSearch = view.NewTextField(test.query)
 			dump := settingsText(a)
 			for _, want := range test.want {
 				if !strings.Contains(dump, want) {
@@ -109,7 +109,7 @@ func TestSearchFiltersSettingsAcrossCategories(t *testing.T) {
 
 func TestAChangedSettingIsMarkedAndResetRemovesItFromTheFile(t *testing.T) {
 	a, path := openSettingsPage(t, "appearance")
-	a.settingsSearch = vml.NewTextField("request and response") // brings the setting to the top of the page
+	a.settingsSearch = view.NewTextField("request and response") // brings the setting to the top of the page
 	clickText(t, a, "Stacked", 0)
 	if a.settings.Layout != "stacked" {
 		t.Fatalf("Layout = %q", a.settings.Layout)
@@ -135,7 +135,7 @@ func TestAChangedSettingIsMarkedAndResetRemovesItFromTheFile(t *testing.T) {
 func TestTextSettingsApplyAsTheyAreTyped(t *testing.T) {
 	a, path := openSettingsPage(t, "requests")
 	input := a.settingInput("proxy")
-	*input = vml.NewTextField("http://localhost:8080")
+	*input = view.NewTextField("http://localhost:8080")
 	a.settingEdited("proxy")
 	if a.settings.Proxy != "http://localhost:8080" {
 		t.Fatalf("Proxy = %q", a.settings.Proxy)
@@ -159,7 +159,7 @@ func TestANumberSettingNeedsAWholeNumberInRange(t *testing.T) {
 		{"99999", 30, true},
 		{"90", 90, false},
 	} {
-		*input = vml.NewTextField(test.text)
+		*input = view.NewTextField(test.text)
 		a.settingEdited("timeoutSec")
 		if a.settings.TimeoutSec != test.want || (a.settingNotes["timeoutSec"] != "") != test.wantNote {
 			t.Errorf("%q: TimeoutSec = %d (want %d), note %q", test.text, a.settings.TimeoutSec, test.want, a.settingNotes["timeoutSec"])

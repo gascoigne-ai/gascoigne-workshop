@@ -1,4 +1,4 @@
-// Package component builds vml views from HTML-style component
+// Package component builds view views from HTML-style component
 // templates, so a layout can change without recompiling Go code, or be
 // written inline in Go as a string.
 //
@@ -24,7 +24,7 @@
 //			component.Scope{"status": a.status})
 //	}
 //
-// The result is the same *vml.El tree the Go DSL makes, so both styles
+// The result is the same *view.El tree the Go DSL makes, so both styles
 // share one runtime and can be mixed: a template can be a part of a
 // hand-built view and the other way round.
 package component
@@ -41,7 +41,7 @@ import (
 	"sync"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 // Scope holds what a template can read: strings, numbers, bools, lists
@@ -90,7 +90,7 @@ var (
 //		return component.View(`<row h="28"><text small>{{status}}</text></row>`,
 //			component.Scope{"status": a.status})
 //	}
-func View(src string, sc Scope) vml.Node {
+func View(src string, sc Scope) view.Node {
 	viewMu.Lock()
 	t, ok := viewCache[src]
 	if !ok {
@@ -114,7 +114,7 @@ func Must(name, src string) *Template {
 
 // MustBuild is Build for a scope the caller controls: an error (an unknown
 // name, a malformed value) is a programming mistake and panics.
-func (t *Template) MustBuild(sc Scope) vml.Node {
+func (t *Template) MustBuild(sc Scope) view.Node {
 	n, err := t.Build(sc)
 	if err != nil {
 		panic(err)
@@ -126,10 +126,10 @@ func (t *Template) MustBuild(sc Scope) vml.Node {
 func (t *Template) Name() string { return t.name }
 
 // element builds one kind of element from its options, children and text.
-type element func(opts []vml.Option, kids []vml.Item, text string) vml.Node
+type element func(opts []view.Option, kids []view.Item, text string) view.Node
 
-func items(opts []vml.Option, kids []vml.Item) []vml.Item {
-	out := make([]vml.Item, 0, len(opts)+len(kids))
+func items(opts []view.Option, kids []view.Item) []view.Item {
+	out := make([]view.Item, 0, len(opts)+len(kids))
 	for _, o := range opts {
 		out = append(out, o)
 	}
@@ -142,24 +142,24 @@ var elements = map[string]struct {
 	build element
 	leaf  bool
 }{
-	"row":            {func(o []vml.Option, k []vml.Item, _ string) vml.Node { return vml.Row(items(o, k)...) }, false},
-	"col":            {func(o []vml.Option, k []vml.Item, _ string) vml.Node { return vml.Col(items(o, k)...) }, false},
-	"stack":          {func(o []vml.Option, k []vml.Item, _ string) vml.Node { return vml.Stack(items(o, k)...) }, false},
-	"spacer":         {func(o []vml.Option, _ []vml.Item, _ string) vml.Node { return vml.Spacer(o...) }, true},
-	"hr":             {func(o []vml.Option, _ []vml.Item, _ string) vml.Node { return withOpts(vml.HRule(), o) }, true},
-	"vr":             {func(o []vml.Option, _ []vml.Item, _ string) vml.Node { return withOpts(vml.VRule(), o) }, true},
-	"text":           {func(o []vml.Option, _ []vml.Item, t string) vml.Node { return vml.Text(t, o...) }, true},
-	"primary-button": {func(o []vml.Option, _ []vml.Item, t string) vml.Node { return vml.PrimaryButton(t, o...) }, true},
-	"link-button":    {func(o []vml.Option, _ []vml.Item, t string) vml.Node { return vml.LinkButton(t, o...) }, true},
-	"include":        {func([]vml.Option, []vml.Item, string) vml.Node { return nil }, true},
-	"icon":           {func(o []vml.Option, _ []vml.Item, name string) vml.Node { return vml.Icon(name, o...) }, true},
-	"slot":           {func(o []vml.Option, _ []vml.Item, _ string) vml.Node { return nil }, true},
-	"caption":        {func(o []vml.Option, _ []vml.Item, t string) vml.Node { return vml.Caption(t, o...) }, true},
-	"button":         {func(o []vml.Option, _ []vml.Item, t string) vml.Node { return vml.Button(t, o...) }, true},
+	"row":            {func(o []view.Option, k []view.Item, _ string) view.Node { return view.Row(items(o, k)...) }, false},
+	"col":            {func(o []view.Option, k []view.Item, _ string) view.Node { return view.Col(items(o, k)...) }, false},
+	"stack":          {func(o []view.Option, k []view.Item, _ string) view.Node { return view.Stack(items(o, k)...) }, false},
+	"spacer":         {func(o []view.Option, _ []view.Item, _ string) view.Node { return view.Spacer(o...) }, true},
+	"hr":             {func(o []view.Option, _ []view.Item, _ string) view.Node { return withOpts(view.HRule(), o) }, true},
+	"vr":             {func(o []view.Option, _ []view.Item, _ string) view.Node { return withOpts(view.VRule(), o) }, true},
+	"text":           {func(o []view.Option, _ []view.Item, t string) view.Node { return view.Text(t, o...) }, true},
+	"primary-button": {func(o []view.Option, _ []view.Item, t string) view.Node { return view.PrimaryButton(t, o...) }, true},
+	"link-button":    {func(o []view.Option, _ []view.Item, t string) view.Node { return view.LinkButton(t, o...) }, true},
+	"include":        {func([]view.Option, []view.Item, string) view.Node { return nil }, true},
+	"icon":           {func(o []view.Option, _ []view.Item, name string) view.Node { return view.Icon(name, o...) }, true},
+	"slot":           {func(o []view.Option, _ []view.Item, _ string) view.Node { return nil }, true},
+	"caption":        {func(o []view.Option, _ []view.Item, t string) view.Node { return view.Caption(t, o...) }, true},
+	"button":         {func(o []view.Option, _ []view.Item, t string) view.Node { return view.Button(t, o...) }, true},
 }
 
 // withOpts applies options to an element that was built without them.
-func withOpts(n vml.Node, opts []vml.Option) vml.Node {
+func withOpts(n view.Node, opts []view.Option) view.Node {
 	for _, o := range opts {
 		o(n)
 	}
@@ -172,57 +172,57 @@ var directives = map[string]bool{"if": true, "for": true, "onclick": true}
 // attributes turn an attribute value (already interpolated) into an
 // option. A flag is written bare (`small`) or `small="true"`; "false" is
 // off. An option may be nil, meaning nothing to apply.
-var attributes = map[string]func(v string) (vml.Option, error){
-	"w":               intAttr(vml.W),
-	"h":               intAttr(vml.H),
-	"gap":             intAttr(vml.Gap),
-	"grow":            floatAttr(vml.Grow),
-	"align-items":     enumAttr("align-items", alignments, vml.AlignItems),
-	"align-self":      enumAttr("align-self", alignments, vml.AlignSelf),
-	"justify":         enumAttr("justify", justifications, vml.JustifyContent),
+var attributes = map[string]func(v string) (view.Option, error){
+	"w":               intAttr(view.W),
+	"h":               intAttr(view.H),
+	"gap":             intAttr(view.Gap),
+	"grow":            floatAttr(view.Grow),
+	"align-items":     enumAttr("align-items", alignments, view.AlignItems),
+	"align-self":      enumAttr("align-self", alignments, view.AlignSelf),
+	"justify":         enumAttr("justify", justifications, view.JustifyContent),
 	"pad":             padAttr,
-	"pad-x":           intAttr(vml.PadX),
-	"pad-y":           intAttr(vml.PadY),
-	"pad-l":           intAttr(vml.PadL),
-	"pad-t":           intAttr(vml.PadT),
-	"pad-r":           intAttr(vml.PadR),
-	"pad-b":           intAttr(vml.PadB),
-	"margin":          intAttr(vml.Margin),
-	"margin-x":        intAttr(vml.MarginX),
-	"margin-y":        intAttr(vml.MarginY),
-	"margin-l":        intAttr(vml.MarginL),
-	"margin-t":        intAttr(vml.MarginT),
-	"margin-r":        intAttr(vml.MarginR),
-	"margin-b":        intAttr(vml.MarginB),
-	"bg":              tokenAttr(vml.Bg),
-	"border":          tokenAttr(vml.Border),
-	"border-t":        tokenAttr(vml.BorderT),
-	"border-b":        tokenAttr(vml.BorderB),
-	"border-l":        tokenAttr(vml.BorderL),
-	"border-inset":    intAttr(vml.BorderInset),
-	"hover-bg":        tokenAttr(vml.HoverBg),
-	"hover-color":     tokenAttr(vml.HoverColor),
-	"float-center":    flagAttr("float-center", vml.FloatCenter),
-	"float-at":        intsAttr("float-at", 2, func(n []int) vml.Option { return vml.FloatAt(n[0], n[1]) }),
-	"float-top-right": intsAttr("float-top-right", 2, func(n []int) vml.Option { return vml.FloatTopRight(n[0], n[1]) }),
+	"pad-x":           intAttr(view.PadX),
+	"pad-y":           intAttr(view.PadY),
+	"pad-l":           intAttr(view.PadL),
+	"pad-t":           intAttr(view.PadT),
+	"pad-r":           intAttr(view.PadR),
+	"pad-b":           intAttr(view.PadB),
+	"margin":          intAttr(view.Margin),
+	"margin-x":        intAttr(view.MarginX),
+	"margin-y":        intAttr(view.MarginY),
+	"margin-l":        intAttr(view.MarginL),
+	"margin-t":        intAttr(view.MarginT),
+	"margin-r":        intAttr(view.MarginR),
+	"margin-b":        intAttr(view.MarginB),
+	"bg":              tokenAttr(view.Bg),
+	"border":          tokenAttr(view.Border),
+	"border-t":        tokenAttr(view.BorderT),
+	"border-b":        tokenAttr(view.BorderB),
+	"border-l":        tokenAttr(view.BorderL),
+	"border-inset":    intAttr(view.BorderInset),
+	"hover-bg":        tokenAttr(view.HoverBg),
+	"hover-color":     tokenAttr(view.HoverColor),
+	"float-center":    flagAttr("float-center", view.FloatCenter),
+	"float-at":        intsAttr("float-at", 2, func(n []int) view.Option { return view.FloatAt(n[0], n[1]) }),
+	"float-top-right": intsAttr("float-top-right", 2, func(n []int) view.Option { return view.FloatTopRight(n[0], n[1]) }),
 	"edges":           edgesAttr,
-	"border-r":        tokenAttr(vml.BorderR),
-	"border-x":        tokenAttr(vml.BorderX),
-	"border-y":        tokenAttr(vml.BorderY),
-	"color":           tokenAttr(vml.Color),
-	"control":         func(v string) (vml.Option, error) { return vml.Control(v), nil },
-	"tip":             func(v string) (vml.Option, error) { return vml.Tooltip(v), nil },
-	"small":           flagAttr("small", vml.Small),
-	"muted":           flagAttr("muted", vml.Muted),
-	"bold":            flagAttr("bold", vml.Bold),
-	"mono":            flagAttr("mono", vml.Mono),
-	"ellipsis":        flagAttr("ellipsis", vml.Ellipsis),
-	"text-center":     flagAttr("text-center", vml.TextCenter),
-	"optional":        flagAttr("optional", vml.Optional),
+	"border-r":        tokenAttr(view.BorderR),
+	"border-x":        tokenAttr(view.BorderX),
+	"border-y":        tokenAttr(view.BorderY),
+	"color":           tokenAttr(view.Color),
+	"control":         func(v string) (view.Option, error) { return view.Control(v), nil },
+	"tip":             func(v string) (view.Option, error) { return view.Tooltip(v), nil },
+	"small":           flagAttr("small", view.Small),
+	"muted":           flagAttr("muted", view.Muted),
+	"bold":            flagAttr("bold", view.Bold),
+	"mono":            flagAttr("mono", view.Mono),
+	"ellipsis":        flagAttr("ellipsis", view.Ellipsis),
+	"text-center":     flagAttr("text-center", view.TextCenter),
+	"optional":        flagAttr("optional", view.Optional),
 }
 
-func intAttr(f func(int) vml.Option) func(string) (vml.Option, error) {
-	return func(v string) (vml.Option, error) {
+func intAttr(f func(int) view.Option) func(string) (view.Option, error) {
+	return func(v string) (view.Option, error) {
 		n, err := strconv.Atoi(strings.TrimSpace(v))
 		if err != nil {
 			return nil, fmt.Errorf("%q is not a whole number", v)
@@ -231,8 +231,8 @@ func intAttr(f func(int) vml.Option) func(string) (vml.Option, error) {
 	}
 }
 
-func floatAttr(f func(float64) vml.Option) func(string) (vml.Option, error) {
-	return func(v string) (vml.Option, error) {
+func floatAttr(f func(float64) view.Option) func(string) (view.Option, error) {
+	return func(v string) (view.Option, error) {
 		n, err := strconv.ParseFloat(strings.TrimSpace(v), 64)
 		if err != nil {
 			return nil, fmt.Errorf("%q is not a number", v)
@@ -241,8 +241,8 @@ func floatAttr(f func(float64) vml.Option) func(string) (vml.Option, error) {
 	}
 }
 
-func tokenAttr(f func(core.Token) vml.Option) func(string) (vml.Option, error) {
-	return func(v string) (vml.Option, error) {
+func tokenAttr(f func(core.Token) view.Option) func(string) (view.Option, error) {
+	return func(v string) (view.Option, error) {
 		if strings.TrimSpace(v) == "" {
 			return nil, errors.New("a color token is needed")
 		}
@@ -250,8 +250,8 @@ func tokenAttr(f func(core.Token) vml.Option) func(string) (vml.Option, error) {
 	}
 }
 
-func flagAttr(name string, f func() vml.Option) func(string) (vml.Option, error) {
-	return func(v string) (vml.Option, error) {
+func flagAttr(name string, f func() view.Option) func(string) (view.Option, error) {
+	return func(v string) (view.Option, error) {
 		switch strings.TrimSpace(v) {
 		case "", "true", name: // a bare attribute reads as its own name
 			return f(), nil
@@ -263,7 +263,7 @@ func flagAttr(name string, f func() vml.Option) func(string) (vml.Option, error)
 }
 
 // padAttr is `pad="12"` for all sides or `pad="12 4"` for horizontal and vertical.
-func padAttr(v string) (vml.Option, error) {
+func padAttr(v string) (view.Option, error) {
 	f := strings.Fields(v)
 	nums := make([]int, len(f))
 	for i, s := range f {
@@ -275,10 +275,10 @@ func padAttr(v string) (vml.Option, error) {
 	}
 	switch len(nums) {
 	case 1:
-		return vml.Pad(nums[0]), nil
+		return view.Pad(nums[0]), nil
 	case 2:
 		x, y := nums[0], nums[1]
-		return func(e *vml.El) { vml.PadX(x)(e); vml.PadY(y)(e) }, nil
+		return func(e *view.El) { view.PadX(x)(e); view.PadY(y)(e) }, nil
 	}
 	return nil, fmt.Errorf("pad takes one or two numbers, not %q", v)
 }
@@ -361,8 +361,8 @@ func Parse(name string, src []byte) (*Template, error) {
 }
 
 // Build makes the view tree for scope. A root whose `if` is false gives a
-// nil node, which vml ignores.
-func (t *Template) Build(sc Scope) (vml.Node, error) {
+// nil node, which view ignores.
+func (t *Template) Build(sc Scope) (view.Node, error) {
 	n, err := t.build(t.root, sc)
 	if err != nil {
 		return nil, err
@@ -375,7 +375,7 @@ func (t *Template) errf(n *node, format string, args ...any) error {
 }
 
 // build makes the element of n, or a fragment for a `for`.
-func (t *Template) build(n *node, sc Scope) (vml.Node, error) {
+func (t *Template) build(n *node, sc Scope) (view.Node, error) {
 	var forAttr *attr
 	for i := range n.attrs {
 		if n.attrs[i].name == "for" {
@@ -398,7 +398,7 @@ func (t *Template) build(n *node, sc Scope) (vml.Node, error) {
 	if err != nil {
 		return nil, t.errf(n, "%s: %v", strings.TrimSpace(listExpr), err)
 	}
-	var nodes []vml.Item
+	var nodes []view.Item
 	for i, it := range list {
 		child := Scope{}
 		for k, val := range sc {
@@ -411,12 +411,12 @@ func (t *Template) build(n *node, sc Scope) (vml.Node, error) {
 		}
 		nodes = append(nodes, el)
 	}
-	return vml.Frag(nodes...), nil
+	return view.Frag(nodes...), nil
 }
 
 // buildOne makes the element of n once, honoring `if`.
-func (t *Template) buildOne(n *node, sc Scope) (vml.Node, error) {
-	var opts []vml.Option
+func (t *Template) buildOne(n *node, sc Scope) (view.Node, error) {
+	var opts []view.Option
 	for _, a := range n.attrs {
 		switch a.name {
 		case "for":
@@ -439,7 +439,7 @@ func (t *Template) buildOne(n *node, sc Scope) (vml.Node, error) {
 			if !ok {
 				return nil, t.errf(n, "%s is not a func()", a.value)
 			}
-			opts = append(opts, vml.OnClick(f))
+			opts = append(opts, view.OnClick(f))
 		default:
 			val, err := interpolate(a.value, sc)
 			if err != nil {
@@ -454,7 +454,7 @@ func (t *Template) buildOne(n *node, sc Scope) (vml.Node, error) {
 			}
 		}
 	}
-	var kids []vml.Item
+	var kids []view.Item
 	for _, c := range n.children {
 		k, err := t.build(c, sc)
 		if err != nil {
@@ -487,9 +487,9 @@ func (t *Template) buildOne(n *node, sc Scope) (vml.Node, error) {
 				if !ok {
 					return nil, t.errf(n, "unknown slot %q", a.value)
 				}
-				node, ok := v.(vml.Node)
+				node, ok := v.(view.Node)
 				if !ok {
-					return nil, t.errf(n, "slot %q is not a vml.Node", a.value)
+					return nil, t.errf(n, "slot %q is not a view.Node", a.value)
 				}
 				return node, nil
 			}
@@ -504,8 +504,8 @@ func (t *Template) buildOne(n *node, sc Scope) (vml.Node, error) {
 				}
 			}
 		}
-		if !vml.HasIcon(text) {
-			return nil, t.errf(n, "no icon %q; icons: %s", text, strings.Join(vml.IconNames(), " "))
+		if !view.HasIcon(text) {
+			return nil, t.errf(n, "no icon %q; icons: %s", text, strings.Join(view.IconNames(), " "))
 		}
 	}
 	return elements[n.tag].build(opts, kids, text), nil
@@ -686,15 +686,15 @@ func Reference() string {
 		fmt.Fprintf(&sb, "  %s\n", n)
 	}
 	sb.WriteString("<include name=\"x\"/> builds the template registered with component.Define(\"x\", ...) with this scope.\n")
-	sb.WriteString("<slot name=\"x\"/> puts the vml.Node the scope holds under x here.\n")
-	sb.WriteString("<icon name=\"trash\"/> draws a built-in or registered icon (vml.IconNames).\n")
+	sb.WriteString("<slot name=\"x\"/> puts the view.Node the scope holds under x here.\n")
+	sb.WriteString("<icon name=\"trash\"/> draws a built-in or registered icon (view.IconNames).\n")
 	sb.WriteString("Text and attribute values may use {{path}}; if=\"name\" or \"!name\"; for=\"item in list\"; onclick=\"handler\".\n")
 	return sb.String()
 }
 
 // intsAttr reads exactly n whole numbers separated by spaces.
-func intsAttr(name string, n int, f func([]int) vml.Option) func(string) (vml.Option, error) {
-	return func(v string) (vml.Option, error) {
+func intsAttr(name string, n int, f func([]int) view.Option) func(string) (view.Option, error) {
+	return func(v string) (view.Option, error) {
 		fields := strings.Fields(v)
 		if len(fields) != n {
 			return nil, fmt.Errorf("%s takes %d numbers, not %q", name, n, v)
@@ -713,7 +713,7 @@ func intsAttr(name string, n int, f func([]int) vml.Option) func(string) (vml.Op
 
 // edgesAttr is `edges="accent-line top left right"`: a token, then the
 // sides that get the two-pixel line (any of top, left, right).
-func edgesAttr(v string) (vml.Option, error) {
+func edgesAttr(v string) (view.Option, error) {
 	f := strings.Fields(v)
 	if len(f) < 2 {
 		return nil, fmt.Errorf("edges is a token and the sides (top, left, right), not %q", v)
@@ -731,22 +731,22 @@ func edgesAttr(v string) (vml.Option, error) {
 			return nil, fmt.Errorf("%q is not a side: top, left or right", side)
 		}
 	}
-	return vml.Edges(core.Token(f[0]), top, left, right), nil
+	return view.Edges(core.Token(f[0]), top, left, right), nil
 }
 
-var alignments = map[string]vml.Align{
-	"default": vml.AlignDefault, "start": vml.AlignStart, "center": vml.AlignCenter,
-	"end": vml.AlignEnd, "stretch": vml.AlignStretch, "baseline": vml.AlignBaseline,
+var alignments = map[string]view.Align{
+	"default": view.AlignDefault, "start": view.AlignStart, "center": view.AlignCenter,
+	"end": view.AlignEnd, "stretch": view.AlignStretch, "baseline": view.AlignBaseline,
 }
 
-var justifications = map[string]vml.Justify{
-	"start": vml.JustifyStart, "center": vml.JustifyCenter, "end": vml.JustifyEnd,
-	"between": vml.JustifyBetween, "around": vml.JustifyAround,
+var justifications = map[string]view.Justify{
+	"start": view.JustifyStart, "center": view.JustifyCenter, "end": view.JustifyEnd,
+	"between": view.JustifyBetween, "around": view.JustifyAround,
 }
 
 // enumAttr reads one word out of a table of names.
-func enumAttr[T any](name string, table map[string]T, f func(T) vml.Option) func(string) (vml.Option, error) {
-	return func(v string) (vml.Option, error) {
+func enumAttr[T any](name string, table map[string]T, f func(T) view.Option) func(string) (view.Option, error) {
+	return func(v string) (view.Option, error) {
 		val, ok := table[strings.TrimSpace(v)]
 		if !ok {
 			names := make([]string, 0, len(table))

@@ -9,7 +9,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/fonts"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
-	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 // fontRole is which text a font is for.

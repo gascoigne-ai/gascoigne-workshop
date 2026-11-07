@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 func traceText(a *App) string { return strings.Join(a.traceLines(), "\n") }
@@ -87,7 +87,7 @@ func TestConnectionEventsAreTraced(t *testing.T) {
 func TestTheStatusBarLogButtonOpensTheTraceView(t *testing.T) {
 	a, _ := newTestApp(t)
 	a.traceInfo("→ GET https://one.test")
-	if dump := vml.Dump(a.statusBar()); !strings.Contains(dump, `"Log"`) {
+	if dump := view.Dump(a.statusBar()); !strings.Contains(dump, `"Log"`) {
 		t.Fatalf("no Log button in the status bar:\n%s", dump)
 	}
 	if a.traceView() != nil {
@@ -95,7 +95,7 @@ func TestTheStatusBarLogButtonOpensTheTraceView(t *testing.T) {
 	}
 	a.openTrace()
 	a.step(core.Input{X: 5000, Y: 5000})
-	if dump := vml.Dump(a.traceView()); !strings.Contains(dump, "Log") {
+	if dump := view.Dump(a.traceView()); !strings.Contains(dump, "Log") {
 		t.Fatalf("trace view:\n%s", dump)
 	}
 	a.closeTrace()

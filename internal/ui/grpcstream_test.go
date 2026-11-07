@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 func grpcTab(a *App) *reqTab {
@@ -32,18 +32,18 @@ func TestAGRPCTabIsASocketOnlyWhileStreamIsOn(t *testing.T) {
 func TestTheUnaryGRPCTabOffersAStreamChipThatTurnsConnectOn(t *testing.T) {
 	a, _ := newTestApp(t)
 	tab := grpcTab(a)
-	if dump := vml.Dump(a.urlBar(tab)); !strings.Contains(dump, "Stream") || !strings.Contains(dump, `"Send"`) {
+	if dump := view.Dump(a.urlBar(tab)); !strings.Contains(dump, "Stream") || !strings.Contains(dump, `"Send"`) {
 		t.Fatalf("url bar:\n%s", dump)
 	}
 	a.toggleStream(tab)
-	if dump := vml.Dump(a.urlBar(tab)); !strings.Contains(dump, `"Connect"`) {
+	if dump := view.Dump(a.urlBar(tab)); !strings.Contains(dump, `"Connect"`) {
 		t.Fatalf("url bar with Stream on:\n%s", dump)
 	}
 }
 
 func TestOtherProtocolsHaveNoStreamChip(t *testing.T) {
 	a, _ := newTestApp(t)
-	if dump := vml.Dump(a.urlBar(a.cur())); strings.Contains(dump, "Stream") {
+	if dump := view.Dump(a.urlBar(a.cur())); strings.Contains(dump, "Stream") {
 		t.Fatalf("a REST tab has a Stream chip:\n%s", dump)
 	}
 }

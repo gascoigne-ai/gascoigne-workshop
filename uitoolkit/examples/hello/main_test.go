@@ -6,7 +6,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/theming"
-	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 // The example's view builds, lays out and reacts to its state.

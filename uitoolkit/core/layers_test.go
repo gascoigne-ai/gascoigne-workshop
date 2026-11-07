@@ -10,15 +10,15 @@ import (
 )
 
 // The toolkit must stay usable without the application: core imports
-// nothing from this module, vml only the core package, and no toolkit
+// nothing from this module, view only the core package, and no toolkit
 // package imports the application (internal or cmd).
 func TestToolkitImportsStayInTheirLayer(t *testing.T) {
 	const module = "github.com/gascoigne-ai/gascoigne-workshop"
 	allowed := map[string][]string{
 		"../core":      {},
-		"../vml":       {module + "/uitoolkit/core"},
+		"../view":      {module + "/uitoolkit/core"},
 		"../engine":    {module + "/uitoolkit/core"},
-		"../component": {module + "/uitoolkit/core", module + "/uitoolkit/vml"},
+		"../component": {module + "/uitoolkit/core", module + "/uitoolkit/view"},
 		"../theming":   {module + "/uitoolkit/core"},
 	}
 	for dir, ok := range allowed {

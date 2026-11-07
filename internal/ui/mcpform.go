@@ -7,7 +7,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
-	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 // toolFormMaxH is the tallest the form's fields grow before they scroll.

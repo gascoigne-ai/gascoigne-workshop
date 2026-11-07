@@ -3,7 +3,7 @@ package ui
 import (
 	"strings"
 
-	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"os"
 	"path/filepath"
 	"testing"

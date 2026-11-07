@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/component"
-	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 // messagesToolbar is the bar above the message log, written as a template:

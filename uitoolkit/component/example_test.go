@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/component"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 // A template written inline in the method that feeds it.
@@ -17,7 +17,7 @@ func ExampleView() {
 		  <text small if="saved">saved</text>
 		</row>`,
 		component.Scope{"status": status, "saved": true})
-	fmt.Print(vml.Dump(node))
+	fmt.Print(view.Dump(node))
 	// Output:
 	// flow h=28 padL=12 padR=12 bg=frame
 	//   textB text="Ready" fg=muted small=true
@@ -40,7 +40,7 @@ func ExampleParse() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(strings.Count(vml.Dump(node), "text="), "labels")
+	fmt.Println(strings.Count(view.Dump(node), "text="), "labels")
 	// Output: 2 labels
 }
 

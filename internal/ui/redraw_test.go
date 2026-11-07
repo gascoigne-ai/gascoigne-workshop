@@ -1,7 +1,7 @@
 package ui
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"path/filepath"
 	"testing"
 	"time"
@@ -242,7 +242,7 @@ func TestFrameSizeAppliesTheInterfaceScaleOnTopOfTheDisplayScale(t *testing.T) {
 func TestInterfaceScaleSliderResizesLiveAndSavesOnRelease(t *testing.T) {
 	a, path := newTestApp(t)
 	click(a, menuBtnX, menuBtnY)
-	a.settingsSearch = vml.NewTextField("interface scale")
+	a.settingsSearch = view.NewTextField("interface scale")
 	a.step(core.Input{})
 	a.step(core.Input{X: scaleTrackX0 + (scaleTrackX1-scaleTrackX0)/3, Y: scaleRowY, Click: true, Held: true})
 	a.step(core.Input{X: scaleTrackX1 + 400, Y: scaleRowY, Held: true}) // far right: the maximum

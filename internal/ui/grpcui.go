@@ -6,7 +6,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
-	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 // pickGRPCMethod asks the server for its methods in the background and

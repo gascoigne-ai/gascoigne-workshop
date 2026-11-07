@@ -1,7 +1,7 @@
 package ui
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"strings"
 	"testing"
 
@@ -168,7 +168,7 @@ func TestCtrlSpaceCompletesVariablesInTheURLField(t *testing.T) {
 		{Name: "host", Value: "h", Enabled: true}, {Name: "hostname", Value: "n", Enabled: true},
 		{Name: "token", Value: "t", Enabled: true}, {Name: "off", Value: "x"},
 	}
-	tab.url = vml.NewTextField("https://{{ho")
+	tab.url = view.NewTextField("https://{{ho")
 	tab.url.Focused = true
 	names, from := a.variableCompletion(tab)
 	if from != len("https://") || len(names) != 2 || names[0] != "host" || names[1] != "hostname" {
@@ -183,7 +183,7 @@ func TestCtrlSpaceCompletesVariablesInTheURLField(t *testing.T) {
 		t.Fatalf("url %q req %q cursor %d", tab.url.Text, tab.req.URL, tab.url.Cursor)
 	}
 
-	tab.url = vml.NewTextField("https://x/")
+	tab.url = view.NewTextField("https://x/")
 	tab.url.Focused = true
 	names, from = a.variableCompletion(tab)
 	if from != -1 || len(names) != 3 { // outside braces every enabled variable fits, and only enabled ones
@@ -193,7 +193,7 @@ func TestCtrlSpaceCompletesVariablesInTheURLField(t *testing.T) {
 	if tab.url.Text != "https://x/{{token}}" {
 		t.Fatalf("url %q", tab.url.Text)
 	}
-	tab.url = vml.NewTextField("a")
+	tab.url = view.NewTextField("a")
 	tab.url.Focused = false
 	a.closeMenu()
 	a.completeVariable()

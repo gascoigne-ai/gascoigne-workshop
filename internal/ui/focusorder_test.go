@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
@@ -69,8 +69,8 @@ func TestEveryIconOnlyControlHasATooltip(t *testing.T) {
 	a, _ := newTestApp(t)
 	a.step(core.Input{X: 5000, Y: 5000})
 	root := a.view()
-	vml.Layout(a.ctx, root, a.w, a.h)
-	if bad := iconOnlyWithoutHint(vml.Dump(root)); len(bad) > 0 {
+	view.Layout(a.ctx, root, a.w, a.h)
+	if bad := iconOnlyWithoutHint(view.Dump(root)); len(bad) > 0 {
 		t.Fatalf("icon-only controls without a tooltip:\n%s", strings.Join(bad, "\n"))
 	}
 }

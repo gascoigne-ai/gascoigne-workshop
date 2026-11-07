@@ -2,7 +2,7 @@ package ui
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 // editColumns is the number of editable columns of a key/value table:
@@ -15,7 +15,7 @@ type cellEdit struct {
 	pane     pane
 	tab      *reqTab
 	row, col int
-	field    vml.TextField
+	field    view.TextField
 }
 
 // cellText is the text of a cell of rows, "" for the placeholder row.
@@ -35,7 +35,7 @@ func kvField(kv *model.KV, col int) *string {
 // The old text is selected so typing replaces it.
 func (a *App) beginEdit(p pane, t *reqTab, row, col int) {
 	a.commitEdit()
-	field := vml.NewTextField(cellText(*p.rows(a, t), row, col))
+	field := view.NewTextField(cellText(*p.rows(a, t), row, col))
 	if field.Text != "" {
 		field.SelectAll()
 	}

@@ -2,7 +2,7 @@ package ui
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -68,7 +68,7 @@ func TestWebSocketTabConnectsSendsAndDisconnects(t *testing.T) {
 	tab := a.cur()
 	tab.req.Protocol = "websocket"
 	tab.req.URL = echoServer(t)
-	tab.url = vml.NewTextField(tab.req.URL)
+	tab.url = view.NewTextField(tab.req.URL)
 
 	a.send(tab) // the Send button of a socket connects
 	until(t, a, "connection", func() bool { return strings.Contains(logText(tab), "Connected") })
@@ -76,7 +76,7 @@ func TestWebSocketTabConnectsSendsAndDisconnects(t *testing.T) {
 		t.Fatal("no session after connecting")
 	}
 
-	tab.msg = vml.NewTextField("hello")
+	tab.msg = view.NewTextField("hello")
 	a.sendMessage(tab)
 	until(t, a, "echo", func() bool { return strings.Contains(logText(tab), "↓ hello") })
 	if !strings.Contains(logText(tab), "↑ hello") {
@@ -186,10 +186,10 @@ func TestComposerSendsHexAsABinaryMessage(t *testing.T) {
 	tab.req.URL = echoServer(t)
 	a.send(tab)
 	until(t, a, "connection", func() bool { return tab.sess != nil })
-	tab.msg = vml.NewTextField("hex: de ad BE ef")
+	tab.msg = view.NewTextField("hex: de ad BE ef")
 	a.sendMessage(tab)
 	until(t, a, "sent bytes", func() bool { return strings.Contains(logText(tab), "↑ deadbeef") })
-	tab.msg = vml.NewTextField("hex: xyz")
+	tab.msg = view.NewTextField("hex: xyz")
 	a.sendMessage(tab)
 	if !strings.Contains(logText(tab), "hex:") {
 		t.Fatalf("a bad hex message must be explained:\n%s", logText(tab))
@@ -261,10 +261,10 @@ func TestSSETabListensAndShowsNoComposer(t *testing.T) {
 	a.send(tab)
 	until(t, a, "event", func() bool { return strings.Contains(logText(tab), "hello") })
 	until(t, a, "end of stream", func() bool { return tab.sess == nil })
-	if !strings.Contains(vml.Dump(a.messagesPane(wsPanes[0], tab, nil)), "Not connected") {
+	if !strings.Contains(view.Dump(a.messagesPane(wsPanes[0], tab, nil)), "Not connected") {
 		t.Fatal("the pane did not build")
 	}
-	if strings.Contains(vml.Dump(a.messagesPane(wsPanes[0], tab, nil)), "Connect to send messages") {
+	if strings.Contains(view.Dump(a.messagesPane(wsPanes[0], tab, nil)), "Connect to send messages") {
 		t.Fatal("an SSE tab must not show the composer")
 	}
 }
@@ -316,7 +316,7 @@ func TestSSEReconnectResumesFromTheLastEventID(t *testing.T) {
 func TestFormatMessageMakesTheComposerOneLineOfJSON(t *testing.T) {
 	a, _ := newTestApp(t)
 	tab := a.cur()
-	tab.msg = vml.NewTextField("{\n  \"op\": \"ping\",\n  \"n\": 1\n}")
+	tab.msg = view.NewTextField("{\n  \"op\": \"ping\",\n  \"n\": 1\n}")
 	a.formatMessage(tab)
 	if tab.msg.Text != `{"op":"ping","n":1}` {
 		t.Fatalf("composer = %q", tab.msg.Text)
@@ -326,7 +326,7 @@ func TestFormatMessageMakesTheComposerOneLineOfJSON(t *testing.T) {
 func TestFormatMessageLeavesBrokenTextAloneAndSaysWhy(t *testing.T) {
 	a, _ := newTestApp(t)
 	tab := a.cur()
-	tab.msg = vml.NewTextField(`{"op": }`)
+	tab.msg = view.NewTextField(`{"op": }`)
 	before := len(a.toasts)
 	a.formatMessage(tab)
 	if tab.msg.Text != `{"op": }` {

@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 // introspectionServer answers every request with a small schema (shaped
@@ -35,14 +35,14 @@ func graphQLTab(t *testing.T, a *App, url string) *reqTab {
 func TestLoadingTheSchemaOffersItsOperationsInAMenu(t *testing.T) {
 	a, _ := newTestApp(t)
 	tab := graphQLTab(t, a, introspectionServer(t).URL)
-	if strings.Contains(vml.Dump(a.graphQLBody(tab)), "Schema (") {
+	if strings.Contains(view.Dump(a.graphQLBody(tab)), "Schema (") {
 		t.Fatal("a schema button before the schema is loaded")
 	}
 	a.loadSchema(tab)
 	waitForResponse(t, a, tab)
 
-	if !strings.Contains(vml.Dump(a.graphQLBody(tab)), "Schema (1)") {
-		t.Fatalf("no schema button:\n%s", vml.Dump(a.graphQLBody(tab)))
+	if !strings.Contains(view.Dump(a.graphQLBody(tab)), "Schema (1)") {
+		t.Fatalf("no schema button:\n%s", view.Dump(a.graphQLBody(tab)))
 	}
 	items := a.schemaMenu(tab)
 	if len(items) != 1 || items[0].label != "query repo(name: String!): Repo" {

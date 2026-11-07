@@ -7,7 +7,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 func TestRecordingATakenKeyOffersReplaceAndSavesNothingYet(t *testing.T) {
@@ -24,7 +24,7 @@ func TestRecordingATakenKeyOffersReplaceAndSavesNothingYet(t *testing.T) {
 	if len(a.settings.Shortcuts) != 0 {
 		t.Fatalf("shortcuts = %v, want nothing saved before the user replaces", a.settings.Shortcuts)
 	}
-	if dump := vml.Dump(a.shortcutsView()); !strings.Contains(dump, "Used by New request") || !strings.Contains(dump, "Replace") {
+	if dump := view.Dump(a.shortcutsView()); !strings.Contains(dump, "Used by New request") || !strings.Contains(dump, "Replace") {
 		t.Fatalf("the row shows no conflict:\n%s", dump)
 	}
 }
@@ -81,16 +81,16 @@ func TestShortcutSearchMatchesTheActionNameOrTheKey(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.query, func(t *testing.T) {
 			a, _ := newTestApp(t)
-			a.shortcutSearch = vml.NewTextField(test.query)
-			dump := vml.Dump(a.shortcutsView())
+			a.shortcutSearch = view.NewTextField(test.query)
+			dump := view.Dump(a.shortcutsView())
 			if !strings.Contains(dump, test.want) || strings.Contains(dump, test.notWant) {
 				t.Fatalf("search %q:\n%s", test.query, dump)
 			}
 		})
 	}
 	a, _ := newTestApp(t)
-	a.shortcutSearch = vml.NewTextField("zzzz")
-	if !strings.Contains(vml.Dump(a.shortcutsView()), "No shortcut matches") {
+	a.shortcutSearch = view.NewTextField("zzzz")
+	if !strings.Contains(view.Dump(a.shortcutsView()), "No shortcut matches") {
 		t.Fatal("no empty-result note")
 	}
 }
@@ -102,7 +102,7 @@ func TestAKeyThatTypesTextIsAWarningNotARefusal(t *testing.T) {
 	if a.settings.Shortcuts["close-tab"] != "J" {
 		t.Fatalf("shortcuts = %v", a.settings.Shortcuts)
 	}
-	if !strings.Contains(vml.Dump(a.shortcutsView()), "text") {
+	if !strings.Contains(view.Dump(a.shortcutsView()), "text") {
 		t.Fatal("no warning on the row")
 	}
 }

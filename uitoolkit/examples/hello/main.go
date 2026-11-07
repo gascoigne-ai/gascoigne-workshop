@@ -12,7 +12,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/component"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/theming"
-	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 // hello is the state of the program; the view is a function of it.

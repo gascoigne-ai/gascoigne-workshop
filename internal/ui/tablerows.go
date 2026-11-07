@@ -2,14 +2,14 @@ package ui
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 // bulkEdit is a table shown as text, one "name: value" line per row.
 type bulkEdit struct {
 	pane pane
 	tab  *reqTab
-	area vml.TextArea
+	area view.TextArea
 }
 
 // rowSelection is the table row the keyboard operations act on.
@@ -230,7 +230,7 @@ func (a *App) toggleBulk(p pane, t *reqTab) {
 		return
 	}
 	a.commitEdit()
-	a.bulk = &bulkEdit{pane: p, tab: t, area: vml.NewTextArea(model.FormatBulk(*p.rows(a, t)))}
+	a.bulk = &bulkEdit{pane: p, tab: t, area: view.NewTextArea(model.FormatBulk(*p.rows(a, t)))}
 }
 
 // closeBulk turns the text back into rows, as one change.

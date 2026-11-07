@@ -7,7 +7,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/theming"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/hajimehoshi/ebiten/v2"
 	"io"
 	"net/http"
@@ -88,7 +88,7 @@ func jsonServer(t *testing.T) *httptest.Server {
 // pointTabAt makes the open request target url, as if typed into the field.
 func pointTabAt(t *reqTab, url string) {
 	t.req.URL = url
-	t.url = vml.NewTextField(url)
+	t.url = view.NewTextField(url)
 }
 
 func waitForResponse(t *testing.T, a *App, tab *reqTab) {
@@ -321,7 +321,7 @@ func TestSettingsMenuOpensChangesThemeAndSaves(t *testing.T) {
 		t.Fatal("the three-dot button must open the menu")
 	}
 
-	a.settingsSearch = vml.NewTextField("theme") // brings the Theme setting to the top
+	a.settingsSearch = view.NewTextField("theme") // brings the Theme setting to the top
 	clickText(t, a, "Light", 0)
 	if a.settings.Theme != "light" || !a.menu {
 		t.Fatalf("theme %q, menu open %v (choosing must keep it open)", a.settings.Theme, a.menu)
@@ -334,7 +334,7 @@ func TestSettingsMenuOpensChangesThemeAndSaves(t *testing.T) {
 		t.Fatalf("saved %+v err %v", saved, err)
 	}
 
-	a.settingsSearch = vml.NewTextField("text size")
+	a.settingsSearch = view.NewTextField("text size")
 	clickText(t, a, "Large", 0)
 	if a.ctx.Th.FontSize != 16 {
 		t.Fatalf("font size = %v, want 16", a.ctx.Th.FontSize)
@@ -1674,7 +1674,7 @@ const ()
 func TestLayoutSettingStacksThePanesAndIsSaved(t *testing.T) {
 	a, path := newTestApp(t)
 	click(a, menuBtnX, menuBtnY)
-	a.settingsSearch = vml.NewTextField("request and response")
+	a.settingsSearch = view.NewTextField("request and response")
 	clickText(t, a, "Stacked", 0)
 	if a.settings.Layout != "stacked" {
 		t.Fatalf("Layout = %q", a.settings.Layout)
@@ -2854,7 +2854,7 @@ func TestNarrowColumnsKeepAMinimum(t *testing.T) {
 	drag(a, nameValueDividerX, 300, paramsHeaderY) // far left
 	w := a.widthsFor(requestPanes[0])
 	// the name column is at least MinColumnPx of the 393px of columns
-	if min := float64(vml.MinColumnPx) / 393 * 100; w.Weights[0] < min-0.5 {
+	if min := float64(view.MinColumnPx) / 393 * 100; w.Weights[0] < min-0.5 {
 		t.Fatalf("name weight %v is below the minimum share %v", w.Weights[0], min)
 	}
 }
@@ -2904,7 +2904,7 @@ func typeColor(a *App, tok core.Token, row int, text string) {
 
 func TestContrastChooserStrengthensTheColorsAndIsSaved(t *testing.T) {
 	a, path := openSettingsMenu(t)
-	a.settingsSearch = vml.NewTextField("contrast")
+	a.settingsSearch = view.NewTextField("contrast")
 	before := theming.ContrastRatio(a.ctx.Th.Color(core.Selection), a.ctx.Th.Color(core.Text))
 	clickText(t, a, "High", 0)
 	if a.settings.Contrast != "high" {
@@ -2986,7 +2986,7 @@ func TestResetButtonsRestoreTheDefaults(t *testing.T) {
 func TestSwitchingThemeShowsThatThemesColorsAndKeepsEachThemesOverrides(t *testing.T) {
 	a, _ := openSettingsPage(t, "colors")
 	typeColor(a, core.Selection, 0, "#223344")
-	a.settingsCat, a.settingsSearch = "appearance", vml.NewTextField("theme")
+	a.settingsCat, a.settingsSearch = "appearance", view.NewTextField("theme")
 	a.step(core.Input{})
 	clickText(t, a, "Light", 0)
 	if a.ctx.Th.Color(core.Selection) != appearance.ThemeFor("light", "medium").Color(core.Selection) {
@@ -3477,7 +3477,7 @@ func TestFindInCompactViewKeepsOnlyMatchingLeavesTheirChildrenAndTheirPath(t *te
 
 // find replaces the search text, as typing would.
 func (a *App) find(t *reqTab, text string) {
-	t.find = vml.NewTextField(text)
+	t.find = view.NewTextField(text)
 	t.find.Focused = true
 	a.runFind(t)
 }
@@ -3515,7 +3515,7 @@ func TestResponseViewChipsAreCompactPrettyRawInThatOrder(t *testing.T) {
 
 func TestResponseViewSettingAppliesToOpenTabsAndIsSaved(t *testing.T) {
 	a, path := openSettingsPage(t, "appearance")
-	a.settingsSearch = vml.NewTextField("response view")
+	a.settingsSearch = view.NewTextField("response view")
 	clickText(t, a, "Compact", 0)
 	if !a.cur().compact || a.settings.ResponseView != "compact" {
 		t.Fatalf("compact %v setting %q", a.cur().compact, a.settings.ResponseView)

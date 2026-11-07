@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"image"
 	"image/png"
 	"io"
@@ -112,7 +112,7 @@ func TestAssertionsRunWhenAResponseArrivesAndAfterEdits(t *testing.T) {
 	if got := reqTests.badge(a, tab); got != 3 {
 		t.Fatalf("the request Tests tab counts assertions: %d", got)
 	}
-	if d := vml.Dump(a.resultsPane(responsePanes[3], tab, nil)); !strings.Contains(d, "2/3 passed") || !strings.Contains(d, "status == 404") {
+	if d := view.Dump(a.resultsPane(responsePanes[3], tab, nil)); !strings.Contains(d, "2/3 passed") || !strings.Contains(d, "status == 404") {
 		t.Fatalf("results pane:\n%s", d)
 	}
 }
@@ -134,7 +134,7 @@ func TestAnImageResponseIsShownAsAPicture(t *testing.T) {
 	if msg, _ := responseEmpty(tab); msg != "" {
 		t.Fatalf("a picture must not be reported as binary: %q", msg)
 	}
-	if d := vml.Dump(a.responsePane(responsePanes[0], tab, nil)); !strings.Contains(d, "PNG 40x20") || !strings.Contains(d, "Save") {
+	if d := view.Dump(a.responsePane(responsePanes[0], tab, nil)); !strings.Contains(d, "PNG 40x20") || !strings.Contains(d, "Save") {
 		t.Fatalf("pane:\n%s", d)
 	}
 	tab.sending, tab.seq = true, tab.seq+1
@@ -170,19 +170,19 @@ func TestPickFileUsesTheDesktopDialogWhenThereIsOne(t *testing.T) {
 func TestFileBodyTypeKeepsItsPathSeparateFromTheTextBody(t *testing.T) {
 	a, _ := newTestApp(t)
 	tab := a.cur()
-	tab.body = vml.NewTextArea("typed text")
+	tab.body = view.NewTextArea("typed text")
 	tab.req.Body = "typed text"
 	a.setBodyType(tab, model.BodyFile)
 	if tab.req.BodyType != model.BodyFile || tab.req.Body != "" {
 		t.Fatalf("type %q body %q", tab.req.BodyType, tab.req.Body)
 	}
-	tab.file = vml.NewTextField("/tmp/x.bin")
+	tab.file = view.NewTextField("/tmp/x.bin")
 	tab.req.Body = tab.file.Text
 	a.setBodyType(tab, model.BodyText)
 	if tab.req.Body != "typed text" {
 		t.Fatalf("the text body must come back: %q", tab.req.Body)
 	}
-	if d := vml.Dump(a.fileBody(tab)); !strings.Contains(d, "Choose...") {
+	if d := view.Dump(a.fileBody(tab)); !strings.Contains(d, "Choose...") {
 		t.Fatalf("file editor:\n%s", d)
 	}
 }
@@ -224,12 +224,12 @@ func TestGraphQLBodyTypeSendsAQueryAndCanLoadTheSchema(t *testing.T) {
 	a, _ := newTestApp(t)
 	tab := a.cur()
 	tab.req.URL, tab.req.Method = srv.URL, "GET"
-	tab.body = vml.NewTextArea("{ repos { name } }")
+	tab.body = view.NewTextArea("{ repos { name } }")
 	a.setBodyType(tab, model.BodyGraphQL)
 	if tab.req.Method != "POST" || tab.req.Body != "{ repos { name } }" {
 		t.Fatalf("method %q body %q", tab.req.Method, tab.req.Body)
 	}
-	if d := vml.Dump(a.graphQLBody(tab)); !strings.Contains(d, "Load schema") || !strings.Contains(d, "VARIABLES") {
+	if d := view.Dump(a.graphQLBody(tab)); !strings.Contains(d, "Load schema") || !strings.Contains(d, "VARIABLES") {
 		t.Fatalf("editor:\n%s", d)
 	}
 	a.send(tab)
@@ -297,7 +297,7 @@ func TestFormFieldsCanBeEditedAsText(t *testing.T) {
 	if a.bulk == nil || a.bulk.area.Text != "user: ann" {
 		t.Fatalf("bulk text %q", a.bulk.area.Text)
 	}
-	a.bulk.area = vml.NewTextArea("user: bob\nrole: admin")
+	a.bulk.area = view.NewTextArea("user: bob\nrole: admin")
 	a.closeBulk()
 	if len(tab.req.Form) != 2 || tab.req.Form[0].Value != "bob" || tab.req.Form[1].Name != "role" {
 		t.Fatalf("form %+v", tab.req.Form)

@@ -7,7 +7,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 func setRaw(a *App, text string) {
@@ -43,7 +43,7 @@ func TestARawEditWithProblemsLeavesTheLastGoodSettingsAndTheFile(t *testing.T) {
 			t.Errorf("%q: the file changed to %q", bad, data)
 		}
 	}
-	if dump := vml.Dump(a.menuView()); !strings.Contains(dump, "JSON") {
+	if dump := view.Dump(a.menuView()); !strings.Contains(dump, "JSON") {
 		t.Fatalf("raw view:\n%s", dump)
 	}
 }
@@ -71,7 +71,7 @@ func TestTheRawViewMarksKeysThatHaveProblems(t *testing.T) {
 
 func TestOpeningTheRawViewShowsWhatTheFormChanged(t *testing.T) {
 	a, _ := openSettingsPage(t, "appearance")
-	a.settingsSearch = vml.NewTextField("request and response")
+	a.settingsSearch = view.NewTextField("request and response")
 	clickText(t, a, "Stacked", 0)
 	a.openRawSettings()
 	if !strings.Contains(a.rawText.Text, `"layout": "stacked"`) {
@@ -130,7 +130,7 @@ func TestOurOwnWritesAreNotReloadedAsOutsideChanges(t *testing.T) {
 func TestCtrlSpaceInTheRawViewOffersKeysAndValues(t *testing.T) {
 	a, _ := openSettingsPage(t, "appearance")
 	a.openRawSettings()
-	a.rawText = vml.NewTextArea(`{"la`)
+	a.rawText = view.NewTextArea(`{"la`)
 	a.rawText.Cursor = 4
 	a.rawText.Focused = true
 	a.completeVariable()
@@ -143,7 +143,7 @@ func TestCtrlSpaceInTheRawViewOffersKeysAndValues(t *testing.T) {
 	}
 
 	a.closeMenu()
-	a.rawText = vml.NewTextArea(`{"layout": "st`)
+	a.rawText = view.NewTextArea(`{"layout": "st`)
 	a.rawText.Cursor = len([]rune(a.rawText.Text))
 	a.rawText.Focused = true
 	a.completeVariable()

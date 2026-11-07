@@ -4,7 +4,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/assert"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
-	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 // runTests checks the tab's assertions against its shown response.

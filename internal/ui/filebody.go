@@ -6,7 +6,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/filedialog"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
-	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 // pickFile asks for a file: with the desktop's own dialog when there is
