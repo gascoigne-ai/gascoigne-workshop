@@ -11,7 +11,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/adapter/openapi"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/adapter/postman"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )

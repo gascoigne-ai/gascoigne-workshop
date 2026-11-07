@@ -2,10 +2,11 @@ package ui
 
 import (
 	"context"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"strings"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
@@ -15,8 +16,8 @@ const toolFormMaxH = 360
 
 // toolForm is the dialog content of a tool call: one input per property.
 type toolForm struct {
-	tool    proto.MCPTool
-	fields  []proto.ToolField
+	tool    model.MCPTool
+	fields  []model.ToolField
 	inputs  map[string]*TextField // text, number and JSON fields
 	choices map[string]string     // boolean and enum fields: the chosen value, "" for unset
 	problem string                // why the last attempt was refused
@@ -25,8 +26,8 @@ type toolForm struct {
 
 // openToolForm shows the form of tool; a tool with no properties is
 // composed at once.
-func (a *App) openToolForm(t *reqTab, tool proto.MCPTool) {
-	fields := proto.ToolFields(tool.Schema)
+func (a *App) openToolForm(t *reqTab, tool model.MCPTool) {
+	fields := model.ToolFields(tool.Schema)
 	if len(fields) == 0 {
 		a.composeCall(t, tool)
 		return
@@ -34,7 +35,7 @@ func (a *App) openToolForm(t *reqTab, tool proto.MCPTool) {
 	form := &toolForm{tool: tool, fields: fields, inputs: map[string]*TextField{}, choices: map[string]string{}}
 	for _, field := range fields {
 		switch field.Kind {
-		case proto.FieldBoolean, proto.FieldEnum:
+		case model.FieldBoolean, model.FieldEnum:
 			form.choices[field.Name] = initialChoice(field)
 		default:
 			input := NewTextField(field.Initial())
@@ -54,14 +55,14 @@ func (a *App) openToolForm(t *reqTab, tool proto.MCPTool) {
 // initialChoice is where a boolean or enum starts: its default, else the
 // first option when the argument is required, else unset (so it is left
 // out of the call).
-func initialChoice(field proto.ToolField) string {
+func initialChoice(field model.ToolField) string {
 	switch {
 	case field.Default != nil:
 		return field.Initial()
-	case field.Required && field.Kind == proto.FieldBoolean:
+	case field.Required && field.Kind == model.FieldBoolean:
 		return "false"
 	case field.Required && len(field.Enum) > 0:
-		return proto.ToolField{Kind: proto.FieldEnum, Default: field.Enum[0]}.Initial()
+		return model.ToolField{Kind: model.FieldEnum, Default: field.Enum[0]}.Initial()
 	}
 	return ""
 }
@@ -81,7 +82,7 @@ func (form *toolForm) values() map[string]string {
 // fillFromForm puts the call the form describes into the composer, or
 // keeps the form open and says what is wrong.
 func (a *App) fillFromForm(t *reqTab, form *toolForm) {
-	args, err := proto.Arguments(form.fields, form.values())
+	args, err := model.Arguments(form.fields, form.values())
 	if err != nil {
 		form.problem = err.Error()
 		return
@@ -96,7 +97,7 @@ func (a *App) toolFormView(form *toolForm) Node {
 	return Col(Gap(8),
 		If(form.tool.Description != "", Lines(form.tool.Description, w.Muted)),
 		Scroll(&form.scroll, MaxH(toolFormMaxH), Gap(8),
-			For(form.fields, func(_ int, field proto.ToolField) Node { return a.toolFieldView(form, field) }),
+			For(form.fields, func(_ int, field model.ToolField) Node { return a.toolFieldView(form, field) }),
 		),
 		If(form.problem != "", Text(form.problem, Small(), Color(w.Error))),
 	)
@@ -104,7 +105,7 @@ func (a *App) toolFormView(form *toolForm) Node {
 
 // toolFieldView is one field: its name (starred when required), the
 // description, and the input of its kind.
-func (a *App) toolFieldView(form *toolForm, field proto.ToolField) Node {
+func (a *App) toolFieldView(form *toolForm, field model.ToolField) Node {
 	name := field.Name
 	if field.Required {
 		name += " *"
@@ -115,15 +116,15 @@ func (a *App) toolFieldView(form *toolForm, field proto.ToolField) Node {
 	)
 }
 
-func (a *App) toolInput(form *toolForm, field proto.ToolField) Node {
+func (a *App) toolInput(form *toolForm, field model.ToolField) Node {
 	switch field.Kind {
-	case proto.FieldBoolean:
+	case model.FieldBoolean:
 		on := form.choices[field.Name] == "true"
 		return Row(H(w.RowH), Gap(8), OnClick(func() { form.choices[field.Name] = boolText(!on) }),
 			Checkbox(on),
 			Text(form.boolHint(field), Small(), Muted()),
 		)
-	case proto.FieldEnum:
+	case model.FieldEnum:
 		return a.enumChoice(form, field)
 	}
 	input := form.inputs[field.Name]
@@ -138,7 +139,7 @@ func boolText(on bool) string {
 }
 
 // boolHint says whether an untouched optional boolean is sent.
-func (form *toolForm) boolHint(field proto.ToolField) string {
+func (form *toolForm) boolHint(field model.ToolField) string {
 	if form.choices[field.Name] == "" {
 		return "not sent"
 	}
@@ -147,13 +148,13 @@ func (form *toolForm) boolHint(field proto.ToolField) string {
 
 // enumChoice is a row of buttons, one per option; an optional field also
 // has a "none" one that leaves it out.
-func (a *App) enumChoice(form *toolForm, field proto.ToolField) Node {
+func (a *App) enumChoice(form *toolForm, field model.ToolField) Node {
 	options := []string{}
 	if !field.Required {
 		options = append(options, "")
 	}
 	for _, option := range field.Enum {
-		options = append(options, proto.ToolField{Kind: proto.FieldEnum, Default: option}.Initial())
+		options = append(options, model.ToolField{Kind: model.FieldEnum, Default: option}.Initial())
 	}
 	return Row(H(w.RowH), Gap(6),
 		For(options, func(_ int, option string) Node {

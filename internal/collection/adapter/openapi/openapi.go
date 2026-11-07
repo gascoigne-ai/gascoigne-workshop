@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/adapter/miniyaml"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 )
 
@@ -204,7 +203,7 @@ func buildRequest(d *doc, method, path string, op operation, shared []param) mod
 				b, _ := json.MarshalIndent(mt.Example, "", "  ")
 				req.Body = string(b)
 			case mt.Schema != nil:
-				req.Body = indent(proto.Skeleton(d.schema(mt.Schema, 0)))
+				req.Body = indent(model.Skeleton(d.schema(mt.Schema, 0)))
 			default:
 				req.Body = "{}"
 			}

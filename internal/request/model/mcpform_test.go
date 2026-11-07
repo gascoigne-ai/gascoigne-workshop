@@ -1,4 +1,4 @@
-package proto
+package model
 
 import (
 	"encoding/json"

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/textfmt"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -163,17 +163,17 @@ func (a *App) applyWS(e wsEvent) {
 		a.status = "Disconnected from " + t.req.URL
 		a.scheduleRetry(t)
 	case e.hasEv:
-		if tools := proto.ParseTools(e.ev.Text); e.ev.Dir == proto.Received && tools != nil {
+		if tools := model.ParseTools(e.ev.Text); e.ev.Dir == proto.Received && tools != nil {
 			t.tools = tools
 		}
 		if e.ev.Dir == proto.Received && e.ev.ID != "" {
 			t.lastEventID = e.ev.ID
 		}
 		if e.ev.Dir == proto.Received {
-			if res := proto.ParseResources(e.ev.Text); res != nil {
+			if res := model.ParseResources(e.ev.Text); res != nil {
 				t.resources = res
 			}
-			if prompts := proto.ParsePrompts(e.ev.Text); prompts != nil {
+			if prompts := model.ParsePrompts(e.ev.Text); prompts != nil {
 				t.prompts = prompts
 			}
 		}
@@ -324,10 +324,10 @@ func (a *App) toolMenu(t *reqTab) []menuItem {
 }
 
 // composeCall fills the composer with a call of tool.
-func (a *App) composeCall(t *reqTab, tool proto.MCPTool) {
+func (a *App) composeCall(t *reqTab, tool model.MCPTool) {
 	args := "{}"
 	if tool.Schema != nil {
-		args = proto.Skeleton(tool.Schema)
+		args = model.Skeleton(tool.Schema)
 	}
 	t.msg = NewTextField("call " + tool.Name + " " + args)
 	t.msg.Focused = true

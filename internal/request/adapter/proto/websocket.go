@@ -11,7 +11,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto/ws"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto/ws"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 )
 

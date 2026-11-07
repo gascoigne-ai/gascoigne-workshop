@@ -1,7 +1,7 @@
 package ui
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"io"
 	"net/http"
@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto/ws"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto/ws"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 

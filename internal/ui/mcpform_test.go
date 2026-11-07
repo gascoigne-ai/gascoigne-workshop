@@ -1,15 +1,15 @@
 package ui
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
-func searchTool() proto.MCPTool {
-	return proto.MCPTool{Name: "search", Schema: map[string]any{
+func searchTool() model.MCPTool {
+	return model.MCPTool{Name: "search", Schema: map[string]any{
 		"type":     "object",
 		"required": []any{"query"},
 		"properties": map[string]any{
@@ -88,7 +88,7 @@ func TestAFormWithAnInvalidValueStaysOpenAndSaysWhich(t *testing.T) {
 func TestPickingAToolWithoutPropertiesComposesItRightAway(t *testing.T) {
 	a, _ := newTestApp(t)
 	tab := a.cur()
-	a.openToolForm(tab, proto.MCPTool{Name: "ping"})
+	a.openToolForm(tab, model.MCPTool{Name: "ping"})
 	if a.dialog != nil {
 		t.Fatal("a tool with no arguments needs no form")
 	}

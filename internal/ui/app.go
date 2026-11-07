@@ -20,7 +20,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/state"
@@ -93,12 +93,12 @@ type reqTab struct {
 	wsCancel              context.CancelFunc         // ends the timeout of the connect in progress
 	wsView                view.CodeView              // the message log
 	msg                   view.TextField             // the message being composed
-	resources             []proto.MCPResource        // the resources an MCP server announced
-	prompts               []proto.MCPPrompt          // the prompts an MCP server announced
+	resources             []model.MCPResource        // the resources an MCP server announced
+	prompts               []model.MCPPrompt          // the prompts an MCP server announced
 	respHist              []respEntry                // earlier responses, newest first
 	grpcStream            bool                       // a gRPC tab streams instead of making single calls
 	schema                *proto.Schema              // what a GraphQL introspection answered
-	tools                 []proto.MCPTool            // the tools an MCP server announced
+	tools                 []model.MCPTool            // the tools an MCP server announced
 	lastEventID           string                     // the last id an SSE stream sent, offered again when it reconnects
 	reconnect             bool                       // reopen a dropped connection
 	wantOpen              bool                       // the user wants the connection open, so a drop is retried
