@@ -3090,19 +3090,15 @@ func TestEscapeCancelsRecordingAndBackspaceUnbinds(t *testing.T) {
 	}
 }
 
-func TestRecordingRefusesTakenAndReservedCombinationsAndKeepsListening(t *testing.T) {
+// A key a text widget answers is refused and recording goes on; a key
+// another action uses is not refused but offered with a Replace button (see
+// shortcuteditor_test.go).
+func TestRecordingRefusesKeysThatBelongToTextEditingAndKeepsListening(t *testing.T) {
 	a, _ := newTestApp(t)
 	a.startRecording("close-tab")
-	a.step(combo(ebiten.KeyT, true, false, false))
-	if !strings.Contains(a.recordNotes["close-tab"], "New request") || a.recording != "close-tab" {
-		t.Fatalf("note %q recording %q", a.recordNotes["close-tab"], a.recording)
-	}
-	if len(a.tabs) != 1 {
-		t.Fatal("while recording, the key must not trigger its action")
-	}
 	a.step(combo(ebiten.KeyC, true, false, false))
-	if !strings.Contains(a.recordNotes["close-tab"], "text") {
-		t.Fatalf("note %q", a.recordNotes["close-tab"])
+	if !strings.Contains(a.recordNotes["close-tab"], "text") || a.recording != "close-tab" {
+		t.Fatalf("note %q recording %q", a.recordNotes["close-tab"], a.recording)
 	}
 	if len(a.settings.Shortcuts) != 0 {
 		t.Fatal("refused combinations must change nothing")

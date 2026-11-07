@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -170,4 +171,17 @@ func TestTextKeysListEveryReservedCombination(t *testing.T) {
 			t.Errorf("%s is reserved for text but not listed in the settings: %v", combo, listed)
 		}
 	}
+}
+
+// checkBinding says why combination b cannot be given to action id as it
+// stands: refused outright, or taken by another action (which the editor
+// offers to replace).
+func (a *App) checkBinding(id string, b engine.Binding) error {
+	if err := refuseBinding(b); err != nil {
+		return err
+	}
+	if other, taken := a.conflictWith(id, b); taken {
+		return fmt.Errorf("Already used by %s", other.name)
+	}
+	return nil
 }

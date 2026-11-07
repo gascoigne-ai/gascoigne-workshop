@@ -1,11 +1,13 @@
 package ui
 
 import (
+	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/vml"
 	"runtime"
+	"strings"
 )
 
 // The settings dialog: a title bar, a list of categories on the left and
@@ -97,13 +99,26 @@ func viewIDOf(id string) string {
 	return "compact"
 }
 
-// shortcutsView is the Shortcuts section: every action with its key.
-// Clicking a key records a new one; Reset appears when it differs from
-// the default.
+// shortcutsView is the Shortcuts page: a search field and a table of
+// actions with their keys. A key button records the next combination;
+// Clear unbinds and Reset gives the default back. A key another action has
+// is offered with a Replace button, and a key that types text is a warning.
 func (a *App) shortcutsView() Node {
+	var rows []Item
+	for _, s := range shortcuts {
+		if shortcutMatches(s, a.shortcutText(s.id), a.shortcutSearch.Text) {
+			rows = append(rows, a.shortcutRow(s))
+		}
+	}
+	if len(rows) == 0 {
+		rows = append(rows, Text("No shortcut matches", Muted()))
+	}
 	return Col(
-		Caption("Shortcuts", H(w.LabelH)),
-		For(shortcuts, func(_ int, s shortcut) Node { return a.shortcutRow(s) }),
+		Row(H(w.RowH), Gap(6),
+			Field(&a.shortcutSearch, Grow(1), Bg(w.Sunken), Placeholder("Search by action or key"), a.textMenuOpt(&a.shortcutSearch, nil)),
+		),
+		Spacer(H(w.Gutter)),
+		Col(rows...),
 		Caption("Text editing", H(w.LabelH)),
 		For(textKeys, func(_ int, row struct{ action, keys string }) Node {
 			return Row(H(w.CompactH), Gap(6),
@@ -114,23 +129,39 @@ func (a *App) shortcutsView() Node {
 	)
 }
 
+// shortcutMatches reports whether an action's name or its key text contains
+// the search text, ignoring case.
+func shortcutMatches(s shortcut, keyText, query string) bool {
+	needle := strings.ToLower(strings.TrimSpace(query))
+	return needle == "" || strings.Contains(strings.ToLower(s.name), needle) || strings.Contains(strings.ToLower(keyText), needle)
+}
+
 func (a *App) shortcutRow(s shortcut) Node {
 	_, overridden := a.settings.Shortcuts[s.id]
+	bound := a.bindingOf(s).Bound
 	label, button := a.shortcutText(s.id), Button
 	if a.recording == s.id {
 		label, button = "Press keys...", PrimaryButton
 	}
-	note, noteColor := a.recordNotes[s.id], w.Error
-	if warning := bindingWarning(a.bindingOf(s)); note == "" && warning != "" {
-		note, noteColor = warning, w.Muted
+	var note Node
+	if pending, ok := a.pendingKeys[s.id]; ok {
+		note = Row(H(w.CompactH), Gap(6),
+			Text(fmt.Sprintf("Used by %s (%s)", pending.otherName, w.PlatformKeyText(runtime.GOOS, pending.binding.String())), Small(), Color(w.Error), Ellipsis(), Grow(1)),
+			Button("Replace", W(64), H(w.CompactH), OnClick(func() { a.replaceBinding(s.id) }), Tooltip("Unbind "+pending.otherName+" and use this key here")),
+		)
+	} else if text := a.recordNotes[s.id]; text != "" {
+		note = Row(H(w.NoteH), Text(text, Small(), Color(w.Error), Ellipsis(), Grow(1)))
+	} else if warning := bindingWarning(a.bindingOf(s)); warning != "" {
+		note = Row(H(w.NoteH), Text(warning, Small(), Color(w.Muted), Ellipsis(), Grow(1)))
 	}
 	return Col(
 		Row(H(w.CompactH), Gap(6),
 			Text(s.name, Small(), Grow(1), Ellipsis()),
-			button(label, W(96), H(w.CompactH), OnClick(func() { a.startRecording(s.id) })),
-			If(overridden, Button("Reset", W(40), H(w.CompactH), OnClick(func() { a.resetBinding(s.id) }))),
+			button(label, W(96), H(w.CompactH), OnClick(func() { a.startRecording(s.id) }), Tooltip("Click, then press the keys")),
+			If(bound, Button("Clear", W(44), H(w.CompactH), OnClick(func() { a.clearBinding(s.id) }), Tooltip("Leave the action without a key"))),
+			If(overridden, Button("Reset", W(44), H(w.CompactH), OnClick(func() { a.resetBinding(s.id) }), Tooltip("Back to the default key"))),
 		),
-		If(note != "", Row(H(w.NoteH), Text(note, Small(), Color(noteColor), Ellipsis(), Grow(1)))),
+		note,
 	)
 }
 

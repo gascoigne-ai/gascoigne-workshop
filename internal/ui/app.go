@@ -182,6 +182,8 @@ type App struct {
 	ctxMenu          *contextMenu                  // the open context menu, if any
 	bulk             *bulkEdit                     // the table in bulk-edit mode, if any
 	menuScroll       vml.ScrollState               // scroll of the settings dialog's page
+	shortcutSearch   vml.TextField                 // filters the shortcut table
+	pendingKeys      map[string]pendingKey         // recorded keys another action has, by action id
 	settingsSearch   vml.TextField                 // filters the settings form
 	settingInputs    map[string]*vml.TextField     // fields of the text and number settings
 	settingNotes     map[string]string             // why a typed value was refused

@@ -28,31 +28,62 @@ var reservedForText = []string{"Ctrl+A", "Ctrl+C", "Ctrl+V", "Ctrl+X", "Ctrl+Z",
 
 func isFunctionKey(k ebiten.Key) bool { return k >= ebiten.KeyF1 && k <= ebiten.KeyF12 }
 
-// checkBinding says why a combination cannot be given to action id: it
-// belongs to text editing, it is a plain key that would fire while
-// typing, it closes overlays (plain Escape), or another action has it.
-func (a *App) checkBinding(id string, b engine.Binding) error {
+// refuseBinding says why a combination cannot be given to any action: a
+// text widget answers it, or Escape closes menus and dialogs.
+func refuseBinding(b engine.Binding) error {
 	for _, r := range reservedForText {
 		if reserved, _ := engine.ParseBinding(r); reserved == b {
 			return fmt.Errorf("%s belongs to text editing", b)
 		}
 	}
-	switch {
-	case b.Key == ebiten.KeyEscape && !b.Ctrl && !b.Alt:
+	if b.Key == ebiten.KeyEscape && !b.Ctrl && !b.Alt {
 		return errors.New("Escape closes menus and dialogs")
 	}
+	return nil
+}
+
+// conflictWith is the other action that has combination b, if any.
+func (a *App) conflictWith(id string, b engine.Binding) (shortcut, bool) {
 	for _, s := range shortcuts {
 		if s.id != id && a.bindingOf(s) == b {
-			return fmt.Errorf("Already used by %s", s.name)
+			return s, true
 		}
 	}
-	return nil
+	return shortcut{}, false
+}
+
+// pendingKey is a recorded combination that another action already has,
+// waiting for the user to replace that action's binding or record again.
+type pendingKey struct {
+	binding   engine.Binding
+	otherID   string
+	otherName string
 }
 
 // startRecording makes the next key combination the binding of action id.
 func (a *App) startRecording(id string) {
 	a.recording = id
 	delete(a.recordNotes, id)
+	delete(a.pendingKeys, id)
+}
+
+// clearBinding leaves the action without a key.
+func (a *App) clearBinding(id string) {
+	a.setBinding(id, engine.Binding{})
+	delete(a.recordNotes, id)
+	delete(a.pendingKeys, id)
+}
+
+// replaceBinding gives the pending combination of action id to it and
+// unbinds the action that had it.
+func (a *App) replaceBinding(id string) {
+	pending, ok := a.pendingKeys[id]
+	if !ok {
+		return
+	}
+	delete(a.pendingKeys, id)
+	a.setBinding(pending.otherID, engine.Binding{})
+	a.setBinding(id, pending.binding)
 }
 
 // defaultBinding is the built-in binding of a shortcut.
@@ -94,11 +125,20 @@ func (a *App) recordCombo(id string, b engine.Binding) {
 	case plain && b.Key == ebiten.KeyBackspace:
 		a.setBinding(id, engine.Binding{})
 	default:
-		if err := a.checkBinding(id, b); err != nil {
+		if err := refuseBinding(b); err != nil {
 			if a.recordNotes == nil {
 				a.recordNotes = map[string]string{}
 			}
 			a.recordNotes[id] = err.Error()
+			return
+		}
+		if other, taken := a.conflictWith(id, b); taken {
+			if a.pendingKeys == nil {
+				a.pendingKeys = map[string]pendingKey{}
+			}
+			a.pendingKeys[id] = pendingKey{binding: b, otherID: other.id, otherName: other.name}
+			a.recording = ""
+			delete(a.recordNotes, id)
 			return
 		}
 		a.setBinding(id, b)
