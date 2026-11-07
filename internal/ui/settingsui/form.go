@@ -285,17 +285,28 @@ func (d *Dialog) FormPage(host Host, category string) Node {
 	return Col(rows...)
 }
 
-// fileControl is the field of a file setting with a folder button inside it
-// at the right, which opens the system's file chooser.
+// fileControl is the control of a file setting. With no file it is one
+// button, a folder icon and "Choose file", since an empty field has nothing
+// to show; with a file it is a field with the path and a folder button inside
+// it at the right, which chooses another.
 func (d *Dialog) fileControl(host Host, field settings.Field) Node {
 	input := d.Input(host, field.Key)
+	choose := func() { d.ChooseFile(host, field.Key) }
+	if strings.TrimSpace(input.Text) == "" && !input.Focused {
+		return Row(H(w.RowH),
+			Row(W(150), H(w.RowH), Bg(w.Sunken), Control("button"), Lighten(), PadX(10), Gap(8), AlignItems(AlignCenter),
+				OnClick(choose), Tooltip("Choose the file"),
+				FolderIcon(W(16)), Text("Choose file", Grow(1), Color(w.ChipText)),
+			),
+			Spacer(),
+		)
+	}
 	note := d.notes[field.Key]
 	edited := func() { d.Edited(host, field.Key) }
 	return Col(
 		Row(H(w.RowH), Bg(w.Sunken), Control("field"), AlignItems(AlignCenter),
 			Field(input, Grow(1), Placeholder("No file"), OnChange(edited), host.TextMenu(input, edited)),
-			VRuleInset(6),
-			IconButton(FolderIcon(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(func() { d.ChooseFile(host, field.Key) }), Tooltip("Choose the file")),
+			IconButton(FolderIcon(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(choose), Tooltip("Choose another file")),
 		),
 		If(note != "", Row(H(w.NoteH), Text(note, Small(), Color(w.Error), Ellipsis(), Grow(1)))),
 	)

@@ -232,15 +232,13 @@ func (d *Dialog) Searching() bool { return strings.TrimSpace(d.Search.Text) != "
 
 // saveButton writes the changes that were applied but not stored; it is lit
 // while there are some. With auto-save on and nothing pending there is
-// nothing to save and the button is shown disabled.
+// nothing to save and there is no button.
 func (d *Dialog) saveButton(host Host) Node {
 	if host.Unsaved() {
 		return PrimaryButton("Save", W(60), H(w.CompactH), OnClick(func() { d.Save(host) }), Tooltip("Write the changes to settings.json"))
 	}
 	if host.Settings().AutoSave {
-		return Row(W(60), H(w.CompactH), AlignItems(AlignCenter), Tooltip("Auto-save is on: changes are written as you make them"),
-			Text("Save", Muted(), Grow(1), TextCenter()),
-		)
+		return nil
 	}
 	return Button("Save", W(60), H(w.CompactH), OnClick(func() { d.Save(host) }), Tooltip("Nothing to save yet; changes are written when you click Save"))
 }

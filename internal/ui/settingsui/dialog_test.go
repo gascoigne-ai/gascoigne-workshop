@@ -154,8 +154,8 @@ func TestAFileSettingHasAFolderButtonInsideItsFieldThatFillsIt(t *testing.T) {
 	var d Dialog
 	host := newHost(t)
 	page := dump(d.FormPage(host, "Requests"))
-	if strings.Count(page, "icon=folder") != 3 || strings.Contains(page, `text="Choose..."`) {
-		t.Fatalf("each of the three certificate settings needs a folder button inside its field, not a separate Choose button:\n%s", page)
+	if strings.Count(page, "icon=folder") != 3 {
+		t.Fatalf("each of the three certificate settings needs a folder button:\n%s", page)
 	}
 	d.ChooseFile(host, "caCert")
 	if host.pickTitle == "" || !strings.Contains(host.pickTitle, "CA certificates") {
@@ -170,21 +170,43 @@ func (h *fakeHost) PickFile(title string, done func(path string)) {
 	h.pickTitle, h.pickDone = title, done
 }
 
-func TestTheSaveButtonIsDisabledWhileAutoSaveIsOnAndNothingIsPending(t *testing.T) {
+func TestTheSaveButtonIsHiddenWhileAutoSaveIsOnAndNothingIsPending(t *testing.T) {
 	var d Dialog
 	host := newHost(t)
-	disabled := dump(d.saveButton(host))
-	if !strings.Contains(disabled, `text="Save"`) || strings.Contains(disabled, "onClick=true") {
-		t.Fatalf("with auto-save on the Save button must be shown but not clickable:\n%s", disabled)
+	if d.saveButton(host) != nil {
+		t.Fatal("with auto-save on and nothing pending there is nothing to save, so no button")
 	}
 	host.current.AutoSave = false
-	off := dump(d.saveButton(host))
-	if !strings.Contains(off, "onClick=true") {
-		t.Fatalf("with auto-save off the Save button must work:\n%s", off)
+	if !strings.Contains(dump(d.saveButton(host)), "onClick=true") {
+		t.Fatalf("with auto-save off the Save button must work:\n%s", dump(d.saveButton(host)))
 	}
 	host.unsaved = true
 	host.current.AutoSave = true // changes pending even though the option is back on: Save stays available
 	if !strings.Contains(dump(d.saveButton(host)), "onClick=true") {
-		t.Fatal("Save is disabled although changes are pending")
+		t.Fatal("Save is hidden although changes are pending")
 	}
+}
+
+func TestAnEmptyFileSettingIsOnlyAButtonAndAFilledOneShowsItsPath(t *testing.T) {
+	var d Dialog
+	host := newHost(t)
+	empty := dump(d.fileControl(host, mustField(t, "caCert")))
+	if strings.Contains(empty, "fieldB") || !strings.Contains(empty, "icon=folder") || !strings.Contains(empty, "Choose file") {
+		t.Fatalf("an empty file setting should be one button with the folder icon and a label, no field:\n%s", empty)
+	}
+	host.current.CACert = "/etc/ssl/ca.pem"
+	d = Dialog{}
+	filled := dump(d.fileControl(host, mustField(t, "caCert")))
+	if !strings.Contains(filled, "fieldB") || !strings.Contains(filled, "icon=folder") {
+		t.Fatalf("a set file shows its path with a folder button:\n%s", filled)
+	}
+}
+
+func mustField(t *testing.T, key string) settings.Field {
+	t.Helper()
+	field, ok := settings.FieldFor(key)
+	if !ok {
+		t.Fatalf("no setting %s", key)
+	}
+	return field
 }

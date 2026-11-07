@@ -129,9 +129,12 @@ func TestAnOutsideChangeOfTheFileDoesNotOverwriteUnsavedChanges(t *testing.T) {
 
 func TestTheDialogHasASaveButtonAndTheAutoSaveSetting(t *testing.T) {
 	a, _ := openSettingsMenu(t)
-	dump := view.Dump(a.menuView())
-	if !strings.Contains(dump, `text="Save"`) {
-		t.Fatalf("no Save button in the title bar:\n%.800s", dump)
+	if dump := view.Dump(a.menuView()); strings.Contains(dump, `text="Save"`) {
+		t.Fatalf("a Save button while auto-save is on and nothing is pending:\n%.800s", dump)
+	}
+	a.Change(func(s *settings.Settings) { s.AutoSave = false })
+	if dump := view.Dump(a.menuView()); !strings.Contains(dump, `text="Save"`) {
+		t.Fatalf("no Save button in the title bar with auto-save off:\n%.800s", dump)
 	}
 	a.prefs.Cat = "general"
 	a.step(core.Input{})
