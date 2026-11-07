@@ -2,12 +2,14 @@ package sentlog
 
 import (
 	"fmt"
+	"image/color"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
+	core "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
@@ -100,5 +102,30 @@ func TestTheListShowsAnEmptyNoteAndTheRows(t *testing.T) {
 	send(&log, host, "Users/List", "https://one.test")
 	if dump := Dump(log.List(host, "")); !strings.Contains(dump, "Users/List") || !strings.Contains(dump, "200") {
 		t.Fatalf("list:\n%s", dump)
+	}
+}
+
+// The row template renders exactly what the Go view it replaced did.
+func TestRowTemplateMatchesTheGoView(t *testing.T) {
+	var log Log
+	host := &fakeHost{}
+	sent := history.Sent{Path: "Users/List", URL: "https://one.test", Protocol: "rest", Method: "GET", Status: 200, At: clock}
+	goView := Col(PadX(core.Gutter), PadY(4), HoverBg(core.Hover), Control("row"), OnClick(func() { log.Open(host, sent) }),
+		Row(Gap(6), AlignItems(AlignBaseline),
+			host.Badge(sent.Protocol, sent.Method),
+			Text(sent.Path, Ellipsis(), Grow(1)),
+			Text(status(sent.Status), Small(), Muted()),
+		),
+		Row(Text(sent.URL+"  "+sent.At.Format("15:04:05"), Small(), Muted(), Ellipsis(), Grow(1))),
+	)
+	ctx, err := core.NewCtx(core.Theme{Colors: map[core.Token]color.RGBA{core.Text: core.RGB(0xffffff)}, FontSize: 14, SmallSize: 12, MonoSize: 13})
+	if err != nil {
+		t.Fatal(err)
+	}
+	tplView := log.row(host, sent)
+	Layout(ctx, goView, 300, 60)
+	Layout(ctx, tplView, 300, 60)
+	if got, want := Dump(tplView), Dump(goView); got != want {
+		t.Fatalf("template:\n%s\nGo:\n%s", got, want)
 	}
 }

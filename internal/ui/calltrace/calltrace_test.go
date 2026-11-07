@@ -89,3 +89,25 @@ func testTheme() core.Theme {
 		FontSize: 14, SmallSize: 12, MonoSize: 13,
 	}
 }
+
+// The title bar template renders exactly what the Go view it replaced did.
+func TestTitleBarTemplateMatchesTheGoView(t *testing.T) {
+	var log Log
+	host := fakeHost{}
+	goView := Row(H(titleH), PadX(16), Gap(8), AlignItems(AlignCenter), BorderB(core.BorderSoft),
+		Text("Log", Bold(), W(40)),
+		Field(&log.filter, H(28), Grow(1), Bg(core.Sunken), Placeholder("Filter"), host.TextMenu(&log.filter, nil)),
+		Button("Clear", W(64), H(core.CompactH), OnClick(log.Clear), Tooltip("Forget the entries")),
+		IconButton(CrossIcon(Grow(1)), W(core.IconBtnW), H(core.CompactH), OnClick(log.Close), Tooltip("Close (Esc)")),
+	)
+	ctx, err := core.NewCtx(testTheme())
+	if err != nil {
+		t.Fatal(err)
+	}
+	tplView := log.titleBar(host)
+	Layout(ctx, goView, 800, titleH)
+	Layout(ctx, tplView, 800, titleH)
+	if got, want := Dump(tplView), Dump(goView); got != want {
+		t.Fatalf("template:\n%s\nGo:\n%s", got, want)
+	}
+}

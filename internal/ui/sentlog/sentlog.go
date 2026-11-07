@@ -10,6 +10,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/component"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
@@ -99,16 +100,29 @@ func (l *Log) List(host Host, filter string) Node {
 	}
 	return Scroll(&l.scroll, Bg(w.Sunken),
 		For(rows, func(_ int, sent history.Sent) Node {
-			return Col(PadX(w.Gutter), PadY(4), HoverBg(w.Hover), Control("row"), OnClick(func() { l.Open(host, sent) }),
-				Row(Gap(6), AlignItems(AlignBaseline),
-					host.Badge(sent.Protocol, sent.Method),
-					Text(sent.Path, Ellipsis(), Grow(1)),
-					Text(status(sent.Status), Small(), Muted()),
-				),
-				Row(Text(sent.URL+"  "+sent.At.Format("15:04:05"), Small(), Muted(), Ellipsis(), Grow(1))),
-			)
+			return l.row(host, sent)
 		}),
 	)
+}
+
+// row is one sent request: badge, path and status above, URL and time below.
+func (l *Log) row(host Host, sent history.Sent) Node {
+	return component.View(`
+		<col pad-x="12" pad-y="4" hover-bg="hover" control="row" onclick="open">
+		  <row gap="6" align-items="baseline">
+		    <slot name="badge"/>
+		    <text ellipsis grow="1">{{path}}</text>
+		    <text small muted>{{status}}</text>
+		  </row>
+		  <row><text small muted ellipsis grow="1">{{when}}</text></row>
+		</col>`,
+		component.Scope{
+			"badge":  host.Badge(sent.Protocol, sent.Method),
+			"path":   sent.Path,
+			"status": status(sent.Status),
+			"when":   sent.URL + "  " + sent.At.Format("15:04:05"),
+			"open":   func() { l.Open(host, sent) },
+		})
 }
 
 func status(code int) string {

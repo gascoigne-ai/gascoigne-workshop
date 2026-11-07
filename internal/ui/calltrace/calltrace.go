@@ -11,6 +11,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/textfmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/component"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
@@ -164,13 +165,27 @@ func (l *Log) View(host Host) Node {
 	return Frag(
 		Row(Bg(w.Shadow)), // dims the window
 		Col(W(dialogW), H(h), Bg(w.Bg), Control("menu"), Shadow(), FloatCenter(), FocusScope(), Modal(), OnDismiss(l.Close),
-			Row(H(titleH), PadX(16), Gap(8), AlignItems(AlignCenter), BorderB(w.BorderSoft),
-				Text("Log", Bold(), W(40)),
-				Field(&l.filter, H(28), Grow(1), Bg(w.Sunken), Placeholder("Filter"), host.TextMenu(&l.filter, nil)),
-				Button("Clear", W(64), H(w.CompactH), OnClick(l.Clear), Tooltip("Forget the entries")),
-				IconButton(CrossIcon(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(l.Close), Tooltip("Close (Esc)")),
-			),
+			l.titleBar(host),
 			Code(&l.code, Grow(1), Bg(w.Sunken)),
 		),
 	)
+}
+
+// titleBar is the dialog's header: name, filter, Clear and Close. The filter
+// field is a slot because Field keeps its state outside the template.
+func (l *Log) titleBar(host Host) Node {
+	return component.View(`
+		<row h="44" pad-x="16" gap="8" align-items="center" border-b="border-soft">
+		  <text bold w="40">Log</text>
+		  <slot name="filter"/>
+		  <button w="64" h="24" onclick="clear" tip="Forget the entries">Clear</button>
+		  <row w="32" h="24" bg="sunken" control="icon-button" lighten onclick="close" tip="Close (Esc)">
+		    <icon name="cross" grow="1"/>
+		  </row>
+		</row>`,
+		component.Scope{
+			"filter": Field(&l.filter, H(28), Grow(1), Bg(w.Sunken), Placeholder("Filter"), host.TextMenu(&l.filter, nil)),
+			"clear":  l.Clear,
+			"close":  l.Close,
+		})
 }

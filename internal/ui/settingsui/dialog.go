@@ -12,6 +12,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/fonts"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/component"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
@@ -166,14 +167,7 @@ func (d *Dialog) View(host Host) Node {
 	return Frag(
 		Row(Bg(w.Shadow)), // dims the window
 		Resizable(&d.Size, min(MinWidth, maxW), min(MinHeight, maxH), maxW, maxH, W(dw), H(dh), Bg(w.Bg), Control("menu"), Shadow(), FloatCenter(), FocusScope(), Modal(), OnDismiss(host.Close),
-			Row(H(DialogTitleH), PadX(16), Gap(8), AlignItems(AlignCenter), BorderB(w.BorderSoft),
-				Text("Settings", Bold(), W(70)),
-				If(!d.Raw, Field(&d.Search, H(28), Grow(1), Bg(w.Sunken), Placeholder("Search settings"), OnChange(d.ResetScroll), host.TextMenu(&d.Search, nil))),
-				If(d.Raw, Spacer(Grow(1))),
-				d.saveButton(host),
-				d.modeSwitch(host),
-				IconButton(CrossIcon(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(host.Close), Tooltip("Close (Esc)")),
-			),
+			d.titleBar(host),
 			If(d.Raw, Col(Grow(1), Pad(16), d.rawView(host))),
 			If(!d.Raw, Row(Grow(1),
 				Col(W(DialogNavW), Pad(8), Gap(2), Bg(w.Frame),
@@ -200,16 +194,47 @@ func (d *Dialog) pageContent(host Host, id string) Node {
 	return nil
 }
 
+// titleBar is the dialog's header. The search field (or a spacer in the raw
+// view), Save and the mode switch are slots: they hold state or logic.
+func (d *Dialog) titleBar(host Host) Node {
+	search := If(!d.Raw, Field(&d.Search, H(28), Grow(1), Bg(w.Sunken), Placeholder("Search settings"), OnChange(d.ResetScroll), host.TextMenu(&d.Search, nil)))
+	if d.Raw {
+		search = Spacer(Grow(1))
+	}
+	return component.View(`
+		<row h="44" pad-x="16" gap="8" align-items="center" border-b="border-soft">
+		  <text bold w="70">Settings</text>
+		  <slot name="search"/>
+		  <slot name="save"/>
+		  <slot name="mode"/>
+		  <row w="32" h="24" bg="sunken" control="icon-button" lighten onclick="close" tip="Close (Esc)">
+		    <icon name="cross" grow="1"/>
+		  </row>
+		</row>`,
+		component.Scope{"search": search, "save": d.saveButton(host), "mode": d.modeSwitch(host), "close": host.Close})
+}
+
+const (
+	navOpenTemplate = `
+		<row h="28" pad-x="12" align-items="center" control="button" onclick="pick" bg="accent-soft">
+		  <text bold color="accent-line" grow="1">{{label}}</text>
+		</row>`
+	navClosedTemplate = `
+		<row h="28" pad-x="12" align-items="center" control="button" onclick="pick" hover-bg="hover">
+		  <text muted grow="1">{{label}}</text>
+		</row>`
+)
+
 // navItem is one page in the list: the open one is tinted and bold.
 func (d *Dialog) navItem(p page, open bool) Node {
-	items := []Item{
-		H(w.RowH), PadX(12), AlignItems(AlignCenter), Control("button"),
-		OnClick(func() { d.Cat, d.scroll.Y = p.id, 0 }),
-	}
+	template := navClosedTemplate
 	if open {
-		return Row(append(items, Bg(w.AccentSoft), Text(p.label, Bold(), Color(w.AccentLine), Grow(1)))...)
+		template = navOpenTemplate
 	}
-	return Row(append(items, HoverBg(w.Hover), Text(p.label, Muted(), Grow(1)))...)
+	return component.View(template, component.Scope{
+		"label": p.label,
+		"pick":  func() { d.Cat, d.scroll.Y = p.id, 0 },
+	})
 }
 
 // modeSwitch changes the dialog between the form and the text of settings.json.

@@ -1,6 +1,7 @@
 package settingsui
 
 import (
+	"image/color"
 	"os"
 	"path/filepath"
 	"strings"
@@ -209,4 +210,48 @@ func mustField(t *testing.T, key string) settings.Field {
 		t.Fatalf("no setting %s", key)
 	}
 	return field
+}
+
+// The title bar and the navigation item templates render exactly what the Go
+// views they replaced did.
+func TestTitleBarTemplateMatchesTheGoView(t *testing.T) {
+	for _, raw := range []bool{false, true} {
+		d := Dialog{Raw: raw}
+		host := newHost(t)
+		goView := Row(H(DialogTitleH), PadX(16), Gap(8), AlignItems(AlignCenter), BorderB(w.BorderSoft),
+			Text("Settings", Bold(), W(70)),
+			If(!d.Raw, Field(&d.Search, H(28), Grow(1), Bg(w.Sunken), Placeholder("Search settings"), OnChange(d.ResetScroll), host.TextMenu(&d.Search, nil))),
+			If(d.Raw, Spacer(Grow(1))),
+			d.saveButton(host),
+			d.modeSwitch(host),
+			IconButton(CrossIcon(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(host.Close), Tooltip("Close (Esc)")),
+		)
+		assertSameDump(t, d.titleBar(host), goView, 900, DialogTitleH)
+	}
+}
+
+func TestNavItemTemplateMatchesTheGoView(t *testing.T) {
+	var d Dialog
+	p := pages[0]
+	for _, open := range []bool{true, false} {
+		items := []Item{H(w.RowH), PadX(12), AlignItems(AlignCenter), Control("button"), OnClick(func() { d.Cat, d.scroll.Y = p.id, 0 })}
+		goView := Row(append(items, HoverBg(w.Hover), Text(p.label, Muted(), Grow(1)))...)
+		if open {
+			goView = Row(append(items, Bg(w.AccentSoft), Text(p.label, Bold(), Color(w.AccentLine), Grow(1)))...)
+		}
+		assertSameDump(t, d.navItem(p, open), goView, 170, w.RowH)
+	}
+}
+
+func assertSameDump(t *testing.T, tplView, goView Node, width, height int) {
+	t.Helper()
+	ctx, err := w.NewCtx(w.Theme{Colors: map[w.Token]color.RGBA{w.Text: w.RGB(0xffffff)}, FontSize: 14, SmallSize: 12, MonoSize: 13})
+	if err != nil {
+		t.Fatal(err)
+	}
+	Layout(ctx, tplView, width, height)
+	Layout(ctx, goView, width, height)
+	if got, want := Dump(tplView), Dump(goView); got != want {
+		t.Fatalf("template:\n%s\nGo:\n%s", got, want)
+	}
 }

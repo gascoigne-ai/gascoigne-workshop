@@ -319,3 +319,11 @@ func TestIconHoverColorAttributeMirrorsTheGoOption(t *testing.T) {
 		t.Fatalf("got\n%s\nwant\n%s", got, want)
 	}
 }
+
+func TestLightenAttributeMatchesTheGoOption(t *testing.T) {
+	got := view.Dump(build(t, `<row lighten/>`, nil))
+	want := view.Dump(view.Row(view.Lighten()))
+	if got != want {
+		t.Fatalf("template:\n%s\nGo:\n%s", got, want)
+	}
+}

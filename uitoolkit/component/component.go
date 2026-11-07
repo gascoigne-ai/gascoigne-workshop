@@ -219,6 +219,7 @@ var attributes = map[string]func(v string) (view.Option, error){
 	"ellipsis":        flagAttr("ellipsis", view.Ellipsis),
 	"text-center":     flagAttr("text-center", view.TextCenter),
 	"optional":        flagAttr("optional", view.Optional),
+	"lighten":         flagAttr("lighten", view.Lighten),
 }
 
 func intAttr(f func(int) view.Option) func(string) (view.Option, error) {
