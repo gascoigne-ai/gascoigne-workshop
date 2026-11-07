@@ -1,4 +1,4 @@
-package proto
+package model
 
 import (
 	"encoding/json"
@@ -168,3 +168,19 @@ func starterSelection(ref typeRef, types map[string]schemaType) string {
 	}
 	return " {\n" + strings.Join(picked, "\n") + "\n  }"
 }
+
+// IntrospectionQuery asks a GraphQL server for its schema: the types with
+// their fields, arguments and kinds, enough to read what can be queried.
+const IntrospectionQuery = `query IntrospectionQuery {
+  __schema {
+    queryType { name }
+    mutationType { name }
+    types {
+      kind name description
+      fields(includeDeprecated: true) { name description args { name type { ...TypeRef } } type { ...TypeRef } }
+      inputFields { name type { ...TypeRef } }
+      enumValues(includeDeprecated: true) { name }
+    }
+  }
+}
+fragment TypeRef on __Type { kind name ofType { kind name ofType { kind name ofType { kind name } } } }`

@@ -16,13 +16,9 @@ const modulePrefix = "github.com/gascoigne-ai/gascoigne-workshop/internal/"
 // to the internal packages its non-test files import, in the same form.
 type imports map[string][]string
 
-// exceptions are known violations: the App in workspace/ui/app still reads
-// and writes the other domains' adapters, controllers and views directly.
-// Splitting it into a controller and a view behind ports removes them (task
-// 033). Each entry is "importer -> imported". The list only shrinks.
-var exceptions = map[string]bool{
-	"workspace/ui/app -> request/adapter/proto": true,
-}
+// exceptions are known violations, each "importer -> imported". The list
+// only shrinks; it is empty now.
+var exceptions = map[string]bool{}
 
 // violations applies the layer rules to the packages that already sit in a
 // domain: domain/role/..., where role is ui, controller, port, adapter or model.

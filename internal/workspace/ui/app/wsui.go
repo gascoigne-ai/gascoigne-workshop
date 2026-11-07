@@ -5,10 +5,10 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"strings"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/textfmt"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -23,9 +23,9 @@ import (
 type wsEvent struct {
 	tab    *reqTab
 	gen    int // which connect of the tab this belongs to
-	sess   proto.Session
+	sess   reqport.Session
 	err    error
-	ev     proto.Event
+	ev     reqport.Event
 	hasEv  bool
 	closed bool
 	retry  bool // the reconnect delay is over
@@ -110,7 +110,7 @@ func (a *App) disconnect(t *reqTab) {
 		t.wsGen++ // the answer of the abandoned connect is dropped
 		t.connecting = false
 		t.wsCancel()
-		a.status = proto.ErrCancelled
+		a.status = model.ErrCancelled
 	}
 }
 
@@ -163,13 +163,13 @@ func (a *App) applyWS(e wsEvent) {
 		a.status = "Disconnected from " + t.req.URL
 		a.scheduleRetry(t)
 	case e.hasEv:
-		if tools := model.ParseTools(e.ev.Text); e.ev.Dir == proto.Received && tools != nil {
+		if tools := model.ParseTools(e.ev.Text); e.ev.Dir == reqport.Received && tools != nil {
 			t.tools = tools
 		}
-		if e.ev.Dir == proto.Received && e.ev.ID != "" {
+		if e.ev.Dir == reqport.Received && e.ev.ID != "" {
 			t.lastEventID = e.ev.ID
 		}
-		if e.ev.Dir == proto.Received {
+		if e.ev.Dir == reqport.Received {
 			if res := model.ParseResources(e.ev.Text); res != nil {
 				t.resources = res
 			}
@@ -203,19 +203,19 @@ func (a *App) scheduleRetry(t *reqTab) {
 }
 
 // logEvent appends an event to the log, one line per line of its text.
-func (a *App) logEvent(t *reqTab, e proto.Event) {
+func (a *App) logEvent(t *reqTab, e reqport.Event) {
 	mark, tok := "•", w.Muted
 	switch e.Dir {
-	case proto.Sent:
+	case reqport.Sent:
 		mark, tok = "↑", w.Info
-	case proto.Received:
+	case reqport.Received:
 		mark, tok = "↓", w.OK
 	}
 	text := e.Text
 	if text == "" && e.Kind != "text" && e.Kind != "binary" {
 		text = e.Kind // a ping has no payload
 	}
-	if e.Dir == proto.Info && strings.HasPrefix(e.Text, "Connection lost") {
+	if e.Dir == reqport.Info && strings.HasPrefix(e.Text, "Connection lost") {
 		tok = w.Error
 	}
 	stamp := e.Time.Format("15:04:05")
@@ -238,8 +238,8 @@ func (a *App) logEvent(t *reqTab, e proto.Event) {
 
 // textToken is the color of a log line's text: the direction's own for
 // problems and notes, plain for messages.
-func textToken(d proto.Direction, tok w.Token) w.Token {
-	if d == proto.Info {
+func textToken(d reqport.Direction, tok w.Token) w.Token {
+	if d == reqport.Info {
 		return tok
 	}
 	return w.Text
@@ -247,7 +247,7 @@ func textToken(d proto.Direction, tok w.Token) w.Token {
 
 // logInfo appends a note of the UI itself to the log.
 func (a *App) logInfo(t *reqTab, text string, tok w.Token) {
-	a.logEvent(t, proto.Event{Time: time.Now(), Dir: proto.Info, Kind: "info", Text: text})
+	a.logEvent(t, reqport.Event{Time: time.Now(), Dir: reqport.Info, Kind: "info", Text: text})
 	if tok == w.Error { // recolor the line just added
 		last := &t.wsView.Lines[len(t.wsView.Lines)-1]
 		last.Spans[1].Style = w.Error
@@ -299,9 +299,9 @@ const binaryPrefix = "hex:"
 
 // sendComposed sends the composer's text: as a binary message when it
 // starts with "hex:" and the session can send binary, else as text.
-func sendComposed(s proto.Session, text string) error {
+func sendComposed(s reqport.Session, text string) error {
 	rest, ok := strings.CutPrefix(text, binaryPrefix)
-	bs, canBinary := s.(proto.BinarySender)
+	bs, canBinary := s.(reqport.BinarySender)
 	if !ok || !canBinary {
 		return s.Send(text)
 	}

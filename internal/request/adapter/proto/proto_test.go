@@ -8,6 +8,7 @@ import (
 	"mime"
 	"mime/multipart"
 	"net/http"
+	"net/http/cookiejar"
 	"net/http/httptest"
 	"reflect"
 	"strings"
@@ -15,6 +16,7 @@ import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 )
 
 func TestRegistryNames(t *testing.T) {
@@ -343,5 +345,25 @@ func TestAuthOverridesAManualAuthorizationHeader(t *testing.T) {
 func TestUnknownAuthTypeIsAnError(t *testing.T) {
 	if _, err := (REST{}).Send(context.Background(), model.Request{URL: "http://x", Auth: model.Auth{Type: "kerberos"}}); err == nil {
 		t.Fatal("want an error for an unknown auth type")
+	}
+}
+
+func TestConfiguredPassesTheNetworkSettingsToRESTAndTheSamplerToMCP(t *testing.T) {
+	jar, _ := cookiejar.New(nil)
+	sampler := func(context.Context, port.SamplingRequest) (port.SamplingResult, bool) {
+		return port.SamplingResult{}, false
+	}
+	registry := Configured(port.ProtocolConfig{Jar: jar, Proxy: "http://p", CACert: "ca", ClientCert: "cert", ClientKey: "key", Sampler: sampler})
+	rest, ok := registry["rest"].(REST)
+	if !ok || rest.Jar != jar || rest.Proxy != "http://p" || rest.CAFile != "ca" || rest.CertFile != "cert" || rest.KeyFile != "key" {
+		t.Fatalf("rest = %+v", registry["rest"])
+	}
+	if mcp, ok := registry["mcp"].(MCP); !ok || mcp.Sampler == nil {
+		t.Fatalf("mcp = %+v", registry["mcp"])
+	}
+	for _, name := range []string{"websocket", "sse", "grpc"} {
+		if registry[name] == nil {
+			t.Errorf("%s is missing", name)
+		}
 	}
 }

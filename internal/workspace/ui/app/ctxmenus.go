@@ -1,14 +1,12 @@
 package ui
 
 import (
+	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
-	"net/http"
 	"net/url"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	"net/http/cookiejar"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto"
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
@@ -251,14 +249,18 @@ func (a *App) clearCookies() {
 		return
 	}
 	a.jar = jar
-	a.reg["rest"] = restFor(jar, a.settings)
+	a.reg = a.newRegistry()
 	a.toast("Cookies cleared", false)
 }
 
-// restFor is the REST protocol with the cookie jar and the network
-// settings (proxy, certificates) of the settings file.
-func restFor(jar http.CookieJar, s settings.Settings) proto.REST {
-	return proto.REST{Jar: jar, Proxy: s.Proxy, CAFile: s.CACert, CertFile: s.ClientCert, KeyFile: s.ClientKey}
+// newRegistry builds the protocols from the cookie jar, the network
+// settings (proxy, certificates) and the app's sampling dialog.
+func (a *App) newRegistry() reqport.Registry {
+	if a.protocols == nil {
+		return reqport.Registry{}
+	}
+	s := a.settings
+	return a.protocols(reqport.ProtocolConfig{Jar: a.jar, Proxy: s.Proxy, CACert: s.CACert, ClientCert: s.ClientCert, ClientKey: s.ClientKey, Sampler: a.sampleViaDialog})
 }
 
 // showCookies lists the cookies the jar holds for the request's URL and

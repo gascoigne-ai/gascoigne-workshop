@@ -58,3 +58,16 @@ func TestCurl(t *testing.T) {
 		})
 	}
 }
+
+// Curl and ParseCurl read each other.
+func TestCurlRoundTrip(t *testing.T) {
+	req := model.Request{Protocol: "rest", Method: "POST", URL: "https://api.test/u", BodyType: model.BodyJSON, Body: `{"it's":"ok"}`,
+		Headers: []model.KV{{Name: "X-A", Value: "1", Enabled: true}}, Auth: model.Auth{Type: model.AuthBearer, Token: "t"}}
+	got, err := model.ParseCurl(Curl(req))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Body != req.Body || got.Method != "POST" || got.URL != req.URL || got.Auth.Token != "t" {
+		t.Fatalf("%+v", got)
+	}
+}

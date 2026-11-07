@@ -1,4 +1,4 @@
-package proto
+package model
 
 import (
 	"errors"
@@ -6,26 +6,24 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 )
 
 // ParseCurl turns a curl command line into a REST request, the way
 // "Copy as cURL" of a browser or an API doc writes it. Flags that do
 // not change the request (-s, -k, --compressed...) are skipped. As with
 // curl, redirects are followed only with -L.
-func ParseCurl(cmd string) (model.Request, error) {
-	args, err := shellSplit(cmd)
+func ParseCurl(cmd string) (Request, error) {
+	args, err := ShellSplit(cmd)
 	if err != nil {
-		return model.Request{}, err
+		return Request{}, err
 	}
 	if len(args) == 0 {
-		return model.Request{}, errors.New("the command is empty")
+		return Request{}, errors.New("the command is empty")
 	}
 	if args[0] != "curl" {
-		return model.Request{}, errors.New("not a curl command")
+		return Request{}, errors.New("not a curl command")
 	}
-	req := model.Request{Protocol: "rest", NoRedirects: true}
+	req := Request{Protocol: "rest", NoRedirects: true}
 	var data, forms []string
 	var user, method string
 	head := false
@@ -52,7 +50,7 @@ func ParseCurl(cmd string) (model.Request, error) {
 		case "-H", "--header":
 			if v, err = value(); err == nil {
 				name, val, _ := strings.Cut(v, ":")
-				req.Headers = append(req.Headers, model.KV{Name: strings.TrimSpace(name), Value: strings.TrimSpace(val), Enabled: true})
+				req.Headers = append(req.Headers, KV{Name: strings.TrimSpace(name), Value: strings.TrimSpace(val), Enabled: true})
 			}
 		case "-d", "--data", "--data-raw", "--data-binary", "--data-ascii", "--data-urlencode":
 			if v, err = value(); err == nil {
@@ -68,15 +66,15 @@ func ParseCurl(cmd string) (model.Request, error) {
 			req.URL, err = value()
 		case "-A", "--user-agent":
 			if v, err = value(); err == nil {
-				req.Headers = append(req.Headers, model.KV{Name: "User-Agent", Value: v, Enabled: true})
+				req.Headers = append(req.Headers, KV{Name: "User-Agent", Value: v, Enabled: true})
 			}
 		case "-b", "--cookie":
 			if v, err = value(); err == nil {
-				req.Headers = append(req.Headers, model.KV{Name: "Cookie", Value: v, Enabled: true})
+				req.Headers = append(req.Headers, KV{Name: "Cookie", Value: v, Enabled: true})
 			}
 		case "-e", "--referer":
 			if v, err = value(); err == nil {
-				req.Headers = append(req.Headers, model.KV{Name: "Referer", Value: v, Enabled: true})
+				req.Headers = append(req.Headers, KV{Name: "Referer", Value: v, Enabled: true})
 			}
 		case "-m", "--max-time":
 			if v, err = value(); err == nil {
@@ -96,13 +94,13 @@ func ParseCurl(cmd string) (model.Request, error) {
 			}
 		}
 		if err != nil {
-			return model.Request{}, err
+			return Request{}, err
 		}
 	}
 	if req.URL == "" {
-		return model.Request{}, errors.New("no URL in the command")
+		return Request{}, errors.New("no URL in the command")
 	}
-	req.Params = model.ParamsFromURL(req.URL)
+	req.Params = ParamsFromURL(req.URL)
 	if len(req.Params) == 0 {
 		req.Params = nil
 	}
@@ -112,10 +110,10 @@ func ParseCurl(cmd string) (model.Request, error) {
 }
 
 // curlAuth takes credentials out of a -u flag or a bearer header.
-func curlAuth(req *model.Request, user string) model.Auth {
+func curlAuth(req *Request, user string) Auth {
 	if user != "" {
 		name, pw, _ := strings.Cut(user, ":")
-		return model.Auth{Type: model.AuthBasic, User: name, Password: pw}
+		return Auth{Type: AuthBasic, User: name, Password: pw}
 	}
 	for i, h := range req.Headers {
 		if strings.EqualFold(h.Name, "Authorization") && strings.HasPrefix(h.Value, "Bearer ") {
@@ -123,14 +121,14 @@ func curlAuth(req *model.Request, user string) model.Auth {
 			if len(req.Headers) == 0 {
 				req.Headers = nil
 			}
-			return model.Auth{Type: model.AuthBearer, Token: strings.TrimPrefix(h.Value, "Bearer ")}
+			return Auth{Type: AuthBearer, Token: strings.TrimPrefix(h.Value, "Bearer ")}
 		}
 	}
-	return model.Auth{}
+	return Auth{}
 }
 
 // curlBodyOf decides the method and the body kind from the data flags.
-func curlBodyOf(headers []model.KV, method string, head bool, data, forms []string) (m, bodyType, body string, form []model.KV) {
+func curlBodyOf(headers []KV, method string, head bool, data, forms []string) (m, bodyType, body string, form []KV) {
 	contentType := ""
 	for _, h := range headers {
 		if strings.EqualFold(h.Name, "Content-Type") {
@@ -139,34 +137,34 @@ func curlBodyOf(headers []model.KV, method string, head bool, data, forms []stri
 	}
 	switch {
 	case len(forms) > 0:
-		bodyType = model.BodyMultipart
+		bodyType = BodyMultipart
 		for _, f := range forms {
 			name, val, _ := strings.Cut(f, "=")
-			form = append(form, model.KV{Name: name, Value: val, Enabled: true})
+			form = append(form, KV{Name: name, Value: val, Enabled: true})
 		}
 	case len(data) > 0:
 		joined := strings.Join(data, "&")
 		switch {
 		case strings.Contains(contentType, "json") || (contentType == "" && looksJSON(joined)):
-			bodyType, body = model.BodyJSON, joined
+			bodyType, body = BodyJSON, joined
 		case contentType == "" || strings.Contains(contentType, "x-www-form-urlencoded"):
-			bodyType = model.BodyForm
+			bodyType = BodyForm
 			for _, pair := range strings.Split(joined, "&") {
 				name, val, _ := strings.Cut(pair, "=")
-				form = append(form, model.KV{Name: unescapeForm(name), Value: unescapeForm(val), Enabled: true})
+				form = append(form, KV{Name: unescapeForm(name), Value: unescapeForm(val), Enabled: true})
 			}
 		default:
-			bodyType, body = model.BodyText, joined
+			bodyType, body = BodyText, joined
 		}
 	default:
-		bodyType = model.BodyNone
+		bodyType = BodyNone
 	}
 	switch {
 	case method != "":
 		m = method
 	case head:
 		m = "HEAD"
-	case bodyType != model.BodyNone:
+	case bodyType != BodyNone:
 		m = "POST"
 	default:
 		m = "GET"
@@ -186,10 +184,10 @@ func unescapeForm(s string) string {
 	return s
 }
 
-// shellSplit splits a command line into words the way a POSIX shell
+// ShellSplit splits a command line into words the way a POSIX shell
 // does: single quotes, double quotes, $'...' escapes, backslashes and
 // line continuations.
-func shellSplit(s string) ([]string, error) {
+func ShellSplit(s string) ([]string, error) {
 	var words []string
 	var cur strings.Builder
 	inWord := false

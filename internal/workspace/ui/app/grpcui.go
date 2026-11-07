@@ -2,9 +2,10 @@ package ui
 
 import (
 	"context"
+	"errors"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
@@ -22,7 +23,7 @@ func (a *App) pickGRPCMethod(t *reqTab) {
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), a.timeoutFor(req))
 		defer cancel()
-		methods, err := proto.ListGRPCMethods(ctx, req)
+		methods, err := a.listGRPCMethods(ctx, req)
 		a.later <- func() {
 			if err != nil {
 				a.toast("Listing methods failed: "+err.Error(), true)
@@ -59,4 +60,11 @@ const grpcMethodW = 200
 func (a *App) toggleStream(t *reqTab) {
 	a.disconnect(t)
 	t.grpcStream = !t.grpcStream
+}
+
+func (a *App) listGRPCMethods(ctx context.Context, req model.Request) ([]string, error) {
+	if a.grpcMethods == nil {
+		return nil, errors.New("no gRPC client")
+	}
+	return a.grpcMethods(ctx, req)
 }

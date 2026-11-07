@@ -6,6 +6,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
 	cport "github.com/gascoigne-ai/gascoigne-workshop/internal/collection/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model/assert"
+	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/ui/calltrace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/textfmt"
 	rport "github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
@@ -23,7 +24,6 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/state"
@@ -90,7 +90,7 @@ type reqTab struct {
 	find                  view.TextField             // the search text
 	matchIdx              int                        // the active match, -1 for none
 	seq                   int                        // numbers the sends, so a late result of an old one is ignored
-	sess                  proto.Session              // the open connection of a socket tab
+	sess                  reqport.Session            // the open connection of a socket tab
 	connecting            bool                       // a connect is in progress
 	wsGen                 int                        // numbers the connects, so a late answer of an old one is ignored
 	wsCancel              context.CancelFunc         // ends the timeout of the connect in progress
@@ -100,7 +100,7 @@ type reqTab struct {
 	prompts               []model.MCPPrompt          // the prompts an MCP server announced
 	respHist              []respEntry                // earlier responses, newest first
 	grpcStream            bool                       // a gRPC tab streams instead of making single calls
-	schema                *proto.Schema              // what a GraphQL introspection answered
+	schema                *model.Schema              // what a GraphQL introspection answered
 	tools                 []model.MCPTool            // the tools an MCP server announced
 	lastEventID           string                     // the last id an SSE stream sent, offered again when it reconnects
 	reconnect             bool                       // reopen a dropped connection
@@ -164,18 +164,21 @@ type sendResult struct {
 
 // App is the whole window. It implements ebiten.Game.
 type App struct {
-	ctx      *core.Ctx
-	reg      proto.Registry
-	col      model.Collection
-	expanded map[*model.Folder]bool
-	tabs     []*reqTab
-	active   int
-	results  chan sendResult
-	wsEvents chan wsEvent
-	later    chan func() // things other goroutines want done on the UI goroutine, such as a chosen file
-	status   string
-	w, h     int
-	shot     screenshot
+	ctx         *core.Ctx
+	reg         reqport.Registry
+	protocols   func(reqport.ProtocolConfig) reqport.Registry // builds the registry; nil has no protocols
+	grpcMethods reqport.GRPCMethods
+	curl        func(model.Request) string
+	col         model.Collection
+	expanded    map[*model.Folder]bool
+	tabs        []*reqTab
+	active      int
+	results     chan sendResult
+	wsEvents    chan wsEvent
+	later       chan func() // things other goroutines want done on the UI goroutine, such as a chosen file
+	status      string
+	w, h        int
+	shot        screenshot
 
 	settings           settings.Settings
 	settingsPath       string        // "" keeps settings in memory only
@@ -246,22 +249,25 @@ type App struct {
 
 // Options are the startup switches of the command line.
 type Options struct {
-	ScreenshotPath   string                         // save a PNG of the first settled frame and exit
-	ScreenshotSet    []string                       // key=value settings applied live before the screenshot
-	SendOnStart      bool                           // send the first request at startup
-	SettingsPath     string                         // settings file; "" keeps settings in memory
-	StatePath        string                         // remembered UI state; "" keeps it in memory
-	ThemesDir        string                         // folder of user theme files (*.json); "" for none
-	ScanFonts        bool                           // look for installed fonts in the background, to apply the saved font families
-	Store            cport.Store                    // where the collection is saved; nil saves nothing
-	States           port.StateStore                // where the UI state is kept; nil keeps none
-	Files            port.FileDialog                // the desktop file chooser; nil asks for paths as text
-	History          func(dir string) rport.History // the history in a folder; nil keeps none
-	Fonts            sport.FontStore                // installed fonts; nil has none
-	Previews         rport.BodyPreview              // shows a response body in the browser; nil has none
-	OpenMenu         bool                           // start with the settings menu open
-	WorkspaceDir     string                         // collection folder; "" uses the remembered one, else the built-in sample
-	DefaultWorkspace string                         // where saving goes when there is no workspace yet
+	ScreenshotPath   string                                        // save a PNG of the first settled frame and exit
+	ScreenshotSet    []string                                      // key=value settings applied live before the screenshot
+	SendOnStart      bool                                          // send the first request at startup
+	SettingsPath     string                                        // settings file; "" keeps settings in memory
+	StatePath        string                                        // remembered UI state; "" keeps it in memory
+	ThemesDir        string                                        // folder of user theme files (*.json); "" for none
+	ScanFonts        bool                                          // look for installed fonts in the background, to apply the saved font families
+	Protocols        func(reqport.ProtocolConfig) reqport.Registry // builds the protocols; nil has none
+	GRPCMethods      reqport.GRPCMethods                           // lists gRPC methods by reflection; nil cannot
+	Curl             func(model.Request) string                    // the cURL command of a request; nil copies nothing
+	Store            cport.Store                                   // where the collection is saved; nil saves nothing
+	States           port.StateStore                               // where the UI state is kept; nil keeps none
+	Files            port.FileDialog                               // the desktop file chooser; nil asks for paths as text
+	History          func(dir string) rport.History                // the history in a folder; nil keeps none
+	Fonts            sport.FontStore                               // installed fonts; nil has none
+	Previews         rport.BodyPreview                             // shows a response body in the browser; nil has none
+	OpenMenu         bool                                          // start with the settings menu open
+	WorkspaceDir     string                                        // collection folder; "" uses the remembered one, else the built-in sample
+	DefaultWorkspace string                                        // where saving goes when there is no workspace yet
 }
 
 // NewApp builds the window state around the sample collection.
@@ -279,7 +285,6 @@ func NewApp(opts Options) (*App, error) {
 	}
 	a := &App{
 		ctx:              ctx,
-		reg:              proto.NewRegistry(),
 		col:              collection.Sample(),
 		defaultWorkspace: opts.DefaultWorkspace,
 		expanded:         map[*model.Folder]bool{},
@@ -299,8 +304,8 @@ func NewApp(opts Options) (*App, error) {
 	}
 	a.prefs.Stamp(a.settingsPath)
 	a.jar, _ = cookiejar.New(nil)
-	a.reg["rest"] = restFor(a.jar, st)
-	a.reg["mcp"] = proto.MCP{Sampler: a.sampleViaDialog}
+	a.protocols, a.grpcMethods, a.curl = opts.Protocols, opts.GRPCMethods, opts.Curl
+	a.reg = a.newRegistry()
 	ctx.Clipboard = statusClipboard{inner: ctx.Clipboard, report: a.clipboardNote}
 	a.dragTab = -1
 	a.dirty = true
@@ -402,9 +407,9 @@ func (a *App) cancelSend(t *reqTab) {
 	t.cancel()
 	t.sending = false
 	t.seq++
-	t.resp = &model.Response{Err: proto.ErrCancelled}
+	t.resp = &model.Response{Err: model.ErrCancelled}
 	t.view.SetLines(nil)
-	a.status = proto.ErrCancelled
+	a.status = model.ErrCancelled
 }
 
 // timeoutFor is how long a request may run: its own setting, else the

@@ -4,23 +4,11 @@
 package proto
 
 import (
-	"context"
-	"fmt"
 	"sort"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 )
-
-// Protocol performs a request. Transport failures are reported in
-// Response.Err rather than as an error, so the UI always has something
-// to show; the error return is for misuse (bad method, bad URL).
-type Protocol interface {
-	Send(ctx context.Context, req model.Request) (model.Response, error)
-}
-
-// Registry maps protocol names ("rest", "websocket", "mcp") to
-// implementations.
-type Registry map[string]Protocol
 
 // NewRegistry returns the built-in protocols.
 func NewRegistry() Registry {
@@ -33,23 +21,12 @@ func NewRegistry() Registry {
 	}
 }
 
-// Names lists the registered protocol names in sorted order.
-func (r Registry) Names() []string {
-	names := make([]string, 0, len(r))
-	for name := range r {
-		names = append(names, name)
-	}
-	sort.Strings(names)
-	return names
-}
-
-// Send runs req with the protocol it names.
-func (r Registry) Send(ctx context.Context, req model.Request) (model.Response, error) {
-	p, ok := r[req.Protocol]
-	if !ok {
-		return model.Response{}, fmt.Errorf("unknown protocol %q", req.Protocol)
-	}
-	return p.Send(ctx, req)
+// Configured is NewRegistry with REST and MCP made from config.
+func Configured(config port.ProtocolConfig) Registry {
+	registry := NewRegistry()
+	registry["rest"] = REST{Jar: config.Jar, Proxy: config.Proxy, CAFile: config.CACert, CertFile: config.ClientCert, KeyFile: config.ClientKey}
+	registry["mcp"] = MCP{Sampler: config.Sampler}
+	return registry
 }
 
 func sortKV(rows []model.KV) {
@@ -60,9 +37,3 @@ func sortKV(rows []model.KV) {
 		return rows[i].Value < rows[j].Value
 	})
 }
-
-// Messages in Response.Err for the two ways a request can be stopped.
-const (
-	ErrCancelled = "Cancelled"
-	ErrTimedOut  = "Timed out"
-)

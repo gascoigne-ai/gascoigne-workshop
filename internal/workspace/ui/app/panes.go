@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/jsonview"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -576,7 +575,7 @@ func (a *App) copyBody(t *reqTab) {
 }
 
 func (a *App) copyCurl(t *reqTab) {
-	_ = a.ctx.Clipboard.Write(proto.Curl(t.req.Expanded(a.varsFor(t.req))))
+	_ = a.ctx.Clipboard.Write(a.curlOf(t.req.Expanded(a.varsFor(t.req))))
 }
 
 // openFind shows the find bar for the current response and focuses it.
@@ -657,4 +656,12 @@ func (a *App) closeFind(t *reqTab) {
 	if t.compact && t.resp != nil && !respview.LooksBinary(t.resp.Body) {
 		a.showCompact(t) // leave the filtered view
 	}
+}
+
+// curlOf is the cURL command of req, "" when the app has no formatter.
+func (a *App) curlOf(req model.Request) string {
+	if a.curl == nil {
+		return ""
+	}
+	return a.curl(req)
 }

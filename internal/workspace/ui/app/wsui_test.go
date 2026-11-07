@@ -1,7 +1,7 @@
 package ui
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto"
+	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"io"
 	"net/http"
@@ -202,7 +202,7 @@ func TestMCPToolsFillTheComposerFromTheirSchemas(t *testing.T) {
 	tab := a.cur()
 	tab.req.Protocol = "mcp"
 	list := `{"jsonrpc":"2.0","id":2,"result":{"tools":[{"name":"search","inputSchema":{"type":"object","properties":{"q":{"type":"string"},"limit":{"type":"integer","default":5}},"required":["q"]}},{"name":"ping"}]}}`
-	a.applyWS(wsEvent{tab: tab, ev: proto.Event{Dir: proto.Received, Kind: "response", Text: list}, hasEv: true})
+	a.applyWS(wsEvent{tab: tab, ev: reqport.Event{Dir: reqport.Received, Kind: "response", Text: list}, hasEv: true})
 	if len(tab.tools) != 2 {
 		t.Fatalf("tools %+v", tab.tools)
 	}
@@ -236,8 +236,8 @@ func TestMCPResourcesAndPromptsFillTheComposer(t *testing.T) {
 	a, _ := newTestApp(t)
 	tab := a.cur()
 	tab.req.Protocol = "mcp"
-	a.applyWS(wsEvent{tab: tab, hasEv: true, ev: proto.Event{Dir: proto.Received, Kind: "response", Text: `{"result":{"resources":[{"uri":"file:///a.txt","name":"A"}]}}`}})
-	a.applyWS(wsEvent{tab: tab, hasEv: true, ev: proto.Event{Dir: proto.Received, Kind: "response", Text: `{"result":{"prompts":[{"name":"review","arguments":[{"name":"code","required":true}]}]}}`}})
+	a.applyWS(wsEvent{tab: tab, hasEv: true, ev: reqport.Event{Dir: reqport.Received, Kind: "response", Text: `{"result":{"resources":[{"uri":"file:///a.txt","name":"A"}]}}`}})
+	a.applyWS(wsEvent{tab: tab, hasEv: true, ev: reqport.Event{Dir: reqport.Received, Kind: "response", Text: `{"result":{"prompts":[{"name":"review","arguments":[{"name":"code","required":true}]}]}}`}})
 	a.resourceMenu(tab)[0].run()
 	if tab.msg.Text != "read file:///a.txt" {
 		t.Fatalf("composer %q", tab.msg.Text)

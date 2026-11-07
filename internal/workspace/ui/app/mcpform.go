@@ -3,10 +3,10 @@ package ui
 import (
 	"context"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"strings"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
@@ -175,13 +175,13 @@ func (a *App) enumChoice(form *toolForm, field model.ToolField) Node {
 // dialog it wants to show is free.
 const samplingRetry = 100 * time.Millisecond
 
-// sampleViaDialog is the app's proto.Sampler: it shows the server's
+// sampleViaDialog is the app's reqport.Sampler: it shows the server's
 // request and the person types the reply, or declines. It runs on the
 // session's goroutine and blocks; the dialog itself is opened on the UI
 // goroutine. A request that arrives while another dialog is open waits
 // for it to close.
-func (a *App) sampleViaDialog(ctx context.Context, request proto.SamplingRequest) (proto.SamplingResult, bool) {
-	answer := make(chan proto.SamplingResult, 1)
+func (a *App) sampleViaDialog(ctx context.Context, request reqport.SamplingRequest) (reqport.SamplingResult, bool) {
+	answer := make(chan reqport.SamplingResult, 1)
 	declined := make(chan struct{}, 1)
 	var shown *dialog
 	for shown == nil {
@@ -189,12 +189,12 @@ func (a *App) sampleViaDialog(ctx context.Context, request proto.SamplingRequest
 		select {
 		case a.later <- func() { opened <- a.openSamplingDialog(request, answer, declined) }:
 		case <-ctx.Done():
-			return proto.SamplingResult{}, false
+			return reqport.SamplingResult{}, false
 		}
 		select {
 		case shown = <-opened:
 		case <-ctx.Done():
-			return proto.SamplingResult{}, false
+			return reqport.SamplingResult{}, false
 		}
 		if shown != nil {
 			break
@@ -202,14 +202,14 @@ func (a *App) sampleViaDialog(ctx context.Context, request proto.SamplingRequest
 		select {
 		case <-time.After(samplingRetry):
 		case <-ctx.Done():
-			return proto.SamplingResult{}, false
+			return reqport.SamplingResult{}, false
 		}
 	}
 	select {
 	case result := <-answer:
 		return result, true
 	case <-declined:
-		return proto.SamplingResult{}, false
+		return reqport.SamplingResult{}, false
 	case <-ctx.Done():
 		select { // the session ended: take the question off the screen
 		case a.later <- func() {
@@ -219,13 +219,13 @@ func (a *App) sampleViaDialog(ctx context.Context, request proto.SamplingRequest
 		}:
 		default:
 		}
-		return proto.SamplingResult{}, false
+		return reqport.SamplingResult{}, false
 	}
 }
 
 // openSamplingDialog shows the request when no other dialog is open and
 // returns it, nil when the screen is busy.
-func (a *App) openSamplingDialog(request proto.SamplingRequest, answer chan<- proto.SamplingResult, declined chan<- struct{}) *dialog {
+func (a *App) openSamplingDialog(request reqport.SamplingRequest, answer chan<- reqport.SamplingResult, declined chan<- struct{}) *dialog {
 	if a.dialog != nil {
 		return nil
 	}
@@ -247,7 +247,7 @@ func (a *App) openSamplingDialog(request proto.SamplingRequest, answer chan<- pr
 			{label: "Decline", run: func() { a.closeDialog(); declined <- struct{}{} }},
 			{label: "Send reply", primary: true, run: func() {
 				a.closeDialog()
-				answer <- proto.SamplingResult{Text: input.Text, Model: "user"}
+				answer <- reqport.SamplingResult{Text: input.Text, Model: "user"}
 			}},
 		},
 	}

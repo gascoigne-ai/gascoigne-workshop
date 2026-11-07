@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/adapter/store"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/history"
 	rport "github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
@@ -78,6 +79,9 @@ func startTestApp(t *testing.T, path string) (*App, string) {
 func withAdapters(opts Options) Options {
 	opts.History = func(dir string) rport.History { return history.Dir(dir) }
 	opts.Fonts = fonts.System{}
+	opts.Protocols = proto.Configured
+	opts.GRPCMethods = proto.ListGRPCMethods
+	opts.Curl = proto.Curl
 	opts.Store = store.Files{}
 	opts.States = statefile.Files{}
 	return opts

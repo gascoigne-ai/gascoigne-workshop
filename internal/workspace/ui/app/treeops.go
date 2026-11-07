@@ -11,7 +11,6 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/openapi"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/postman"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
@@ -255,7 +254,7 @@ func (a *App) importCurl(dir *model.Folder) {
 		a.toast("Cannot read the clipboard: "+err.Error(), true)
 		return
 	}
-	req, err := proto.ParseCurl(text)
+	req, err := model.ParseCurl(text)
 	if err != nil {
 		a.toast("Not a cURL command: "+err.Error(), true)
 		return

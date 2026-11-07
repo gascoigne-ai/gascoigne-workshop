@@ -3,7 +3,6 @@ package ui
 import (
 	"fmt"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -47,7 +46,7 @@ func (a *App) graphQLBody(t *reqTab) Node {
 func (a *App) loadSchema(t *reqTab) {
 	src := t.req.Clone()
 	src.Method, src.BodyType = "POST", model.BodyGraphQL
-	src.Body, src.GraphQLVars = proto.IntrospectionQuery, ""
+	src.Body, src.GraphQLVars = model.IntrospectionQuery, ""
 	a.dispatch(t, &src)
 }
 
@@ -65,7 +64,7 @@ func (a *App) schemaMenu(t *reqTab) []menuItem {
 }
 
 // useOperation puts the starter query and variables of op into the tab.
-func (a *App) useOperation(t *reqTab, op proto.Operation) {
+func (a *App) useOperation(t *reqTab, op model.Operation) {
 	t.body = NewTextArea(op.Query)
 	t.gqlVars = NewTextArea(op.Variables)
 	t.req.Body, t.req.GraphQLVars = op.Query, op.Variables
@@ -77,7 +76,7 @@ func (a *App) rememberSchema(t *reqTab, resp *model.Response) {
 	if t.req.BodyType != model.BodyGraphQL {
 		return
 	}
-	if schema, err := proto.ParseSchema(resp.Body); err == nil {
+	if schema, err := model.ParseSchema(resp.Body); err == nil {
 		t.schema = schema
 	}
 }

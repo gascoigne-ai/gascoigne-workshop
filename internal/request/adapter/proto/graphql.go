@@ -32,19 +32,3 @@ func encodeGraphQL(req model.Request) ([]byte, string, error) {
 	}
 	return bytes.TrimSpace(buf.Bytes()), "application/json", nil
 }
-
-// IntrospectionQuery asks a GraphQL server for its schema: the types with
-// their fields, arguments and kinds, enough to read what can be queried.
-const IntrospectionQuery = `query IntrospectionQuery {
-  __schema {
-    queryType { name }
-    mutationType { name }
-    types {
-      kind name description
-      fields(includeDeprecated: true) { name description args { name type { ...TypeRef } } type { ...TypeRef } }
-      inputFields { name type { ...TypeRef } }
-      enumValues(includeDeprecated: true) { name }
-    }
-  }
-}
-fragment TypeRef on __Type { kind name ofType { kind name ofType { kind name ofType { kind name } } } }`

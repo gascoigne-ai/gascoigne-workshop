@@ -29,23 +29,6 @@ type MCP struct {
 	Sampler Sampler
 }
 
-// Sampler produces the reply to a sampling request, or reports false when
-// the request is declined. It may block, for example on a person.
-type Sampler func(ctx context.Context, request SamplingRequest) (SamplingResult, bool)
-
-// SamplingRequest is what a server asked a model to continue.
-type SamplingRequest struct {
-	Messages     []SamplingMessage
-	SystemPrompt string
-	MaxTokens    int
-}
-
-// SamplingMessage is one turn of a sampling request, as text.
-type SamplingMessage struct{ Role, Text string }
-
-// SamplingResult is the reply given to a sampling request.
-type SamplingResult struct{ Text, Model string }
-
 const (
 	mcpVersion     = "2025-06-18"
 	mcpInitTimeout = 30 * time.Second
@@ -595,7 +578,7 @@ type mcpStdio struct {
 }
 
 func newMCPStdio(command string, deliver func([]byte), finish func(error)) (*mcpStdio, error) {
-	args, err := shellSplit(command)
+	args, err := model.ShellSplit(command)
 	if err != nil {
 		return nil, err
 	}

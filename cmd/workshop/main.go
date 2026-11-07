@@ -6,6 +6,7 @@ import (
 	"errors"
 	"flag"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/adapter/store"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/preview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
@@ -44,6 +45,9 @@ func main() {
 	flag.StringVar(&opts.SettingsPath, "settings", settings.DefaultPath(), "settings file; empty keeps settings in memory")
 	flag.StringVar(&opts.StatePath, "state", statefile.DefaultPath(), "remembered window and tabs; empty keeps them in memory")
 	opts.ScanFonts = true
+	opts.Protocols = proto.Configured
+	opts.GRPCMethods = proto.ListGRPCMethods
+	opts.Curl = proto.Curl
 	opts.Store = store.Files{}
 	opts.States = statefile.Files{}
 	opts.Files = filedialog.System{}
