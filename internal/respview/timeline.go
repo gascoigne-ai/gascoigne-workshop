@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/textfmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/textfmt"
 )
 
 // Timeline is the Timeline pane: the total, the phases the connection

@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/proto"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/textfmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/textfmt"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )

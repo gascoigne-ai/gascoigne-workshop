@@ -7,7 +7,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/assert"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/preview"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/textfmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/textfmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/calltrace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sentlog"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/settingsui"

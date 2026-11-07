@@ -59,7 +59,7 @@ The toolkit packages are public and independent of the application (`uitoolkit/c
 | `internal/proto` | `Protocol` interface and registry; REST, WebSocket, SSE, MCP, gRPC |
 | `internal/settings` | the settings schema and `settings.json` |
 | `internal/appearance`, `internal/fonts` | theme choices from settings; installed font families |
-| `internal/jsonview`, `internal/respview`, `internal/textfmt` | JSON views and response helpers |
+| `internal/jsonview`, `internal/respview`, `internal/response/model/textfmt` | JSON views and response helpers |
 | `internal/history`, `internal/state` | response history and the sent log; window and tab state |
 | `internal/openapi`, `internal/postman`, `internal/miniyaml` | importers |
 

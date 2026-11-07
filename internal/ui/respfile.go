@@ -10,7 +10,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/preview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/textfmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/textfmt"
 )
 
 // respHistoryLimit is how many earlier responses a tab keeps for its History menu.
