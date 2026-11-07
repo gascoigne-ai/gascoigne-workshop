@@ -24,7 +24,8 @@ status: todo
 - [done] The layer test has no exceptions: the App takes every adapter through `Options` ports (decisions 21–26) and may import other domains' ui (decision 25).
 - [open] Split the `App` (`workspace/ui/app`, about 14k lines) into a `controller` (state, handlers) and views: the role exists in the rules but holds no package yet. Order: tabs and panes, tree and workspace, then the dialogs.
 - [done] MCP tool form: `request/ui/mcpform`.
-- [open] Features that can leave the `App` behind a `Host` (from task 032), each into its domain's `ui` role: GraphQL schema menu, gRPC method picker, environment chip and its dialogs (this creates the `environment` domain), colors page, shortcut editor. Tabs, panes, tree and workspace stay in the controller.
+- [done] Environment state and decisions: `environment/controller/envs` (first `controller` and the `environment` domain).
+- [open] Features that can leave the `App` behind a `Host` (from task 032), each into its domain's `ui` role: environment dialogs and chip view, colors page, shortcut editor. Tabs, panes, tree and workspace stay in the controller.
 - [done] Test seams `openBrowser`, `chooseFile`, `hasFileDialog` are ports (decision 21).
 - [open] The `now` clock seam into a port.
 - [open] `settings/model/settings` reads and writes the settings file: split the file part into a port and an adapter.

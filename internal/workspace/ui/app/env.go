@@ -2,7 +2,6 @@ package ui
 
 import (
 	"runtime"
-	"strconv"
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
@@ -16,20 +15,10 @@ import (
 // active one in a.col.Envs, -1 for none.
 
 // activeEnv is the active environment, or nil.
-func (a *App) activeEnv() *model.Environment {
-	if a.env < 0 || a.env >= len(a.col.Envs) {
-		return nil
-	}
-	return &a.col.Envs[a.env]
-}
+func (a *App) activeEnv() *model.Environment { return a.env.Active(&a.col) }
 
 // envName is the name of the active environment, "" for none.
-func (a *App) envName() string {
-	if e := a.activeEnv(); e != nil {
-		return e.Name
-	}
-	return ""
-}
+func (a *App) envName() string { return a.env.Name(&a.col) }
 
 // vars are the variables requests are sent with: the collection's,
 // overridden by the active environment's.
@@ -69,72 +58,36 @@ func (a *App) varsCaption() string {
 // remembers the choice.
 func (a *App) selectEnv(i int) {
 	a.commitEdit()
-	if i < 0 || i >= len(a.col.Envs) {
-		i = -1
-	}
-	a.env = i
+	name := a.env.Select(&a.col, i)
 	a.varsFolder, a.varsCollection = nil, false
-	name := a.envName()
+	a.rememberEnv(name)
+}
+
+func (a *App) rememberEnv(name string) {
 	a.saveSettings(func(s *settings.Settings) { s.Environment = name })
 }
 
 // pickEnv sets the active environment from the remembered name.
-func (a *App) pickEnv() {
-	a.env = -1
-	for i, e := range a.col.Envs {
-		if e.Name == a.settings.Environment {
-			a.env = i
-		}
-	}
-}
-
-func (a *App) envNameTaken(name string, except int) bool {
-	for i, e := range a.col.Envs {
-		if i != except && e.Name == name {
-			return true
-		}
-	}
-	return false
-}
-
-func (a *App) uniqueEnvName(base string, except int) string {
-	name := base
-	for n := 2; a.envNameTaken(name, except); n++ {
-		name = base + " " + strconv.Itoa(n)
-	}
-	return name
-}
+func (a *App) pickEnv() { a.env.Pick(&a.col, a.settings.Environment) }
 
 // addEnv creates an environment and makes it active.
 func (a *App) addEnv(name string) {
-	if name == "" {
-		name = "Environment"
-	}
-	a.col.Envs = append(a.col.Envs, model.Environment{Name: a.uniqueEnvName(name, -1)})
-	a.selectEnv(len(a.col.Envs) - 1)
+	a.commitEdit()
+	remembered := a.env.Add(&a.col, name)
+	a.varsFolder, a.varsCollection = nil, false
+	a.rememberEnv(remembered)
 }
 
 func (a *App) renameEnv(i int, name string) {
-	if i < 0 || i >= len(a.col.Envs) || name == "" {
-		return
-	}
-	a.col.Envs[i].Name = a.uniqueEnvName(name, i)
-	if i == a.env {
+	if _, changed := a.env.Rename(&a.col, i, name); changed && i == a.env.Index {
 		a.selectEnv(i) // the remembered name follows
 	}
 }
 
 func (a *App) deleteEnv(i int) {
-	if i < 0 || i >= len(a.col.Envs) {
-		return
-	}
 	a.commitEdit()
-	a.col.Envs = append(a.col.Envs[:i], a.col.Envs[i+1:]...)
-	switch {
-	case a.env == i:
-		a.selectEnv(-1)
-	case a.env > i:
-		a.selectEnv(a.env - 1)
+	if a.env.Delete(&a.col, i) {
+		a.selectEnv(a.env.Index)
 	}
 }
 
@@ -157,11 +110,11 @@ func (a *App) envMenu() []menuItem {
 		}
 		return "   " + label
 	}
-	items := []menuItem{{label: mark(a.env < 0, "No environment"), run: func() { a.selectEnv(-1) }}}
+	items := []menuItem{{label: mark(a.env.Index < 0, "No environment"), run: func() { a.selectEnv(-1) }}}
 	for i, e := range a.col.Envs {
-		items = append(items, menuItem{label: mark(i == a.env, e.Name), run: func() { a.selectEnv(i) }})
+		items = append(items, menuItem{label: mark(i == a.env.Index, e.Name), run: func() { a.selectEnv(i) }})
 	}
-	cur := a.env
+	cur := a.env.Index
 	return append(items, menuSeparator,
 		menuItem{label: "New environment...", run: func() { a.prompt("New environment", "", "Create", a.addEnv) }},
 		menuItem{label: "Rename...", disabled: cur < 0, run: func() {

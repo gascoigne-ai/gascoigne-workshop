@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
 	cport "github.com/gascoigne-ai/gascoigne-workshop/internal/collection/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/environment/controller/envs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model/assert"
 	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/ui/calltrace"
@@ -234,7 +235,7 @@ type App struct {
 	varsCollection     bool            // the Vars pane edits the collection's variables although an environment is active
 	title              string          // the window title last set
 	jar                http.CookieJar  // cookies the server set, kept until the app closes
-	env                int             // index of the active environment in col.Envs, -1 for none
+	env                envs.Selection  // the active environment of col
 	workspace          string          // the folder the collection is saved to; "" for none yet
 	defaultWorkspace   string          // where the first save goes when there is no workspace
 	colSaved           string          // the collection as last loaded or saved, as JSON

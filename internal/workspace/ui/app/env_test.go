@@ -44,20 +44,20 @@ func TestEnvironmentLifecycle(t *testing.T) {
 	a, _ := newTestApp(t)
 	a.addEnv("Dev")
 	a.addEnv("Dev") // a clashing name gets a suffix
-	if len(a.col.Envs) != 2 || a.col.Envs[1].Name == "Dev" || a.env != 1 {
-		t.Fatalf("%+v active %d", a.col.Envs, a.env)
+	if len(a.col.Envs) != 2 || a.col.Envs[1].Name == "Dev" || a.env.Index != 1 {
+		t.Fatalf("%+v active %d", a.col.Envs, a.env.Index)
 	}
 	a.renameEnv(1, "Staging")
 	if a.col.Envs[1].Name != "Staging" || a.envName() != "Staging" {
 		t.Fatalf("%+v", a.col.Envs)
 	}
 	a.deleteEnv(1)
-	if len(a.col.Envs) != 1 || a.env != -1 {
-		t.Fatalf("%+v active %d", a.col.Envs, a.env)
+	if len(a.col.Envs) != 1 || a.env.Index != -1 {
+		t.Fatalf("%+v active %d", a.col.Envs, a.env.Index)
 	}
 	a.selectEnv(0)
 	a.deleteEnv(0)
-	if len(a.col.Envs) != 0 || a.env != -1 {
+	if len(a.col.Envs) != 0 || a.env.Index != -1 {
 		t.Fatal("last environment not removed")
 	}
 }

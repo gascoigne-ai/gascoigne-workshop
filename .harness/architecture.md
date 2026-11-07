@@ -28,11 +28,16 @@ flowchart LR
       tad["adapter/fonts"]
       tmod["model/settings, fontfamily, appearance"]
     end
+    subgraph environment
+      ectl["controller/envs"]
+    end
     subgraph workspace
       app
       wad["adapter/statefile, filedialog"]
     end
   end
+  app --> ectl
+  ectl --> rmod
   app --> rui & rad & cad & sui & sad & tui & tad & wad
   rui & rad & cad & sui & tui --> rmod
   rad -. implements .-> rport
@@ -71,6 +76,7 @@ The toolkit packages are public and independent of the application (`uitoolkit/c
 | `internal/request/port` | `Protocol`, `Registry`, `Streamer`, `Session`, `Event`, the sampling types, `ProtocolConfig`, `GRPCMethods` |
 | `internal/request/model/assert` | the assertion language run against a response |
 | `internal/request/ui/calltrace`, `internal/request/ui/mcpform` | the Log dialog; the MCP tool-call form (`Form.Command` composes the call), each behind a `Host` interface |
+| `internal/environment/controller/envs` | which environment is active and how add, rename and delete move the choice; the App keeps the menu, prompts and the remembered name |
 | `internal/collection/model/collection`, `openapi`, `postman`, `miniyaml` | tree filtering; the importers and the Postman exporter, pure functions over bytes |
 | `internal/collection/port` | `Store`, where a collection is saved (`store.Files` implements it) |
 | `internal/collection/adapter/store` | the folder-of-files format |
@@ -86,7 +92,7 @@ The toolkit packages are public and independent of the application (`uitoolkit/c
 
 ## Package layout
 
-`internal/` is grouped by domain, then by role (decision 19): `internal/<domain>/<role>/<package>`, with domains `request`, `collection`, `response`, `settings`, `workspace` and roles `ui`, `controller`, `port`, `adapter`, `model`. `internal/layers_test.go` enforces the dependency rules: model imports only model; port imports model and port; controller imports model, port and controller; ui and adapter import model, port and controller but never each other; another domain is reached only through its model or port, except that `workspace` (the composition root, decision 25) may also import their ui. A test with a table proves each kind of violation is caught.
+`internal/` is grouped by domain, then by role (decision 19): `internal/<domain>/<role>/<package>`, with domains `request`, `collection`, `response`, `settings`, `workspace` and roles `ui`, `controller`, `port`, `adapter`, `model`. `internal/layers_test.go` enforces the dependency rules: model imports only model; port imports model and port; controller imports model, port and controller; ui and adapter import model, port and controller but never each other; another domain is reached only through its model or port, except that `workspace` (the composition root, decisions 25 and 27) may also import their ui and controller. A test with a table proves each kind of violation is caught.
 
 Go allows one package per directory and a method cannot be declared in another package, so everything that reads and writes the one `App` struct (tabs, panes, sidebar, environments, workspace) is still one package, `workspace/ui/app`. It imports the other domains' views (decision 25) and gets their adapters through ports in `Options`, which `cmd/workshop` fills; `exceptions` in the layer test is empty. A feature that needs little of the `App` is its own package with a `Host` interface the App implements, a package doc and tests with a fake host (`calltrace`, `mcpform`, `sentlog`, `settingsui`). Adapters of a port are handed to those views through the host (`Host.SentStore`, `Host.FontStore`).
 

@@ -29,7 +29,7 @@ var exceptions = map[string]bool{}
 //   - controller imports model, port and controller, never ui or adapter;
 //   - ui and adapter import model, port and controller, never each other;
 //   - another domain may be reached only through its model or port; the
-//     workspace domain may also import their ui.
+//     workspace domain may also import their ui and controller.
 func violations(all imports, allowed map[string]bool) []string {
 	var found []string
 	for importer, targets := range all {
@@ -75,12 +75,13 @@ func locate(pkg string) (place, bool) {
 	return place{parts[0], parts[1]}, known
 }
 
-// compositionRoot is the domain that assembles the others' views into the
-// window, so it may import their ui packages (each sits behind a Host).
+// compositionRoot is the domain that assembles the others' views and state
+// into the window, so it may import their ui and controller packages (a ui
+// sits behind a Host). Adapters reach it only through ports.
 const compositionRoot = "workspace"
 
 func broken(from, to place) string {
-	composes := from.domain == compositionRoot && to.role == "ui"
+	composes := from.domain == compositionRoot && (to.role == "ui" || to.role == "controller")
 	if from.domain != to.domain && !composes && !slices.Contains(outsideRoles, to.role) {
 		return "a domain is reached only through its model or port, not its " + to.role
 	}
@@ -115,6 +116,7 @@ func TestRulesCatchEachKindOfViolation(t *testing.T) {
 		{"other domain adapter", "collection/adapter/openapi", "request/adapter/proto", true},
 		{"other domain controller", "collection/ui/tree", "request/controller/assert", true},
 		{"composition root imports another domain's ui", "workspace/ui/app", "response/ui/respview", false},
+		{"composition root imports another domain's controller", "workspace/ui/app", "environment/controller/envs", false},
 		{"composition root imports another domain's adapter", "workspace/ui/app", "request/adapter/proto", true},
 		{"composition root imports another domain's port", "workspace/ui/app", "response/port", false},
 		{"legacy package is not checked", "request/model", "textfmt", false},
