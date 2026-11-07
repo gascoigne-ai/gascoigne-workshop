@@ -3,6 +3,7 @@ package fonts
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"golang.org/x/image/font/gofont/gobold"
@@ -111,5 +112,28 @@ func TestSystemDirsNamePlacesPerPlatform(t *testing.T) {
 		if !found {
 			t.Errorf("%s: %q missing from %v", test.goos, test.contains, SystemDirs(test.goos, test.home))
 		}
+	}
+}
+
+// A symbol, icon or single-script font has no glyphs for the letters a label
+// needs; drawing the interface in it would show boxes, so it is not offered.
+// NotoSansRunic-Regular.ttf is a real font of that kind (SIL Open Font
+// License), copied from a system font folder.
+func TestFamiliesWithoutTheLettersOfTheAlphabetAreNotOffered(t *testing.T) {
+	dir := fontDir(t)
+	data, err := os.ReadFile(filepath.Join("testdata", "NotoSansRunic-Regular.ttf"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "runic.ttf"), data, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	for _, family := range Scan(dir) {
+		if strings.Contains(family.Name, "Runic") {
+			t.Fatalf("the font without Latin letters %q is offered", family.Name)
+		}
+	}
+	if got := Scan(dir); len(got) != 2 {
+		t.Fatalf("families = %+v, want only the two text families", got)
 	}
 }

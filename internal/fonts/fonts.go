@@ -93,6 +93,9 @@ func identify(path string) (family, style string, ok bool) {
 		return "", "", false
 	}
 	var buf sfnt.Buffer
+	if !hasLetters(font, &buf) {
+		return "", "", false
+	}
 	family, err = font.Name(&buf, sfnt.NameIDFamily)
 	if err != nil || family == "" {
 		return "", "", false
@@ -148,4 +151,16 @@ func Load(family Family) (regular, bold []byte, err error) {
 		return nil, nil, fmt.Errorf("read %s: %w", family.Bold, err)
 	}
 	return regular, bold, nil
+}
+
+// hasLetters reports whether the font has a glyph for every letter of the
+// basic Latin alphabet, which is what a label needs at the least. Symbol and
+// icon fonts do not, and the interface drawn in them would be boxes.
+func hasLetters(font *sfnt.Font, buf *sfnt.Buffer) bool {
+	for _, r := range "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz" {
+		if index, err := font.GlyphIndex(buf, r); err != nil || index == 0 {
+			return false
+		}
+	}
+	return true
 }
