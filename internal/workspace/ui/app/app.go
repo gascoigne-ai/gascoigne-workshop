@@ -644,14 +644,9 @@ func (a *App) dragOver(i int) {
 
 // moveTab moves a tab to a new place; the active tab stays the same tab.
 func (a *App) moveTab(from, to int) {
-	active := a.cur()
+	a.active = tabs.AfterMove(a.active, from, to)
 	tab := a.tabs[from]
 	a.tabs = append(a.tabs[:from], a.tabs[from+1:]...)
 	a.tabs = append(a.tabs[:to], append([]*reqTab{tab}, a.tabs[to:]...)...)
-	for i, t := range a.tabs {
-		if t == active {
-			a.active = i
-		}
-	}
 	a.dragTab = to
 }

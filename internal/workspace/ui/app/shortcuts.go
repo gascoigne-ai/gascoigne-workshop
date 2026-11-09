@@ -7,6 +7,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/shortcutpage"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
 )
@@ -96,7 +97,7 @@ func (a *App) focusURL() {
 
 // switchTab activates the tab dir places away, wrapping at the ends.
 func (a *App) switchTab(dir int) {
-	a.active = (a.active + dir + len(a.tabs)) % len(a.tabs)
+	a.active = tabs.Next(a.active, len(a.tabs), dir)
 }
 
 // closeTab closes tab i; closing the last one leaves a blank request.
@@ -105,13 +106,8 @@ func (a *App) closeTab(i int) {
 		a.cancelEdit()
 	}
 	a.tabs = append(a.tabs[:i], a.tabs[i+1:]...)
-	switch {
-	case len(a.tabs) == 0:
+	if len(a.tabs) == 0 {
 		a.tabs = append(a.tabs, a.makeTab(&model.Request{Name: "New Request", Protocol: "rest", Method: "GET"}))
-		a.active = 0
-	case i < a.active:
-		a.active--
-	case a.active >= len(a.tabs):
-		a.active = len(a.tabs) - 1
 	}
+	a.active = tabs.AfterClose(a.active, i, len(a.tabs))
 }

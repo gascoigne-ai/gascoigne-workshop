@@ -68,3 +68,35 @@ func (tab *Tab) Cancel() bool {
 	tab.Resp = &model.Response{Err: model.ErrCancelled}
 	return true
 }
+
+// Next is the tab step places away from active among count tabs, wrapping
+// at the ends.
+func Next(active, count, step int) int { return (active + step + count) % count }
+
+// AfterClose is the active tab once tab closed is gone and remaining tabs
+// are left: the same tab when it is still there, else its neighbour.
+func AfterClose(active, closed, remaining int) int {
+	switch {
+	case remaining == 0:
+		return 0
+	case closed < active:
+		return active - 1
+	case active >= remaining:
+		return remaining - 1
+	}
+	return active
+}
+
+// AfterMove is the active tab once tab from has moved to place to: the tab
+// that was active stays the active one.
+func AfterMove(active, from, to int) int {
+	switch {
+	case active == from:
+		return to
+	case from < active && active <= to:
+		return active - 1
+	case to <= active && active < from:
+		return active + 1
+	}
+	return active
+}
