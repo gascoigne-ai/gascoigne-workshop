@@ -3,6 +3,7 @@ package ui
 import (
 	"context"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
@@ -74,7 +75,10 @@ func (a *App) connect(t *reqTab) {
 	reg := a.reg // the goroutine must not read App fields the UI goroutine replaces
 	go func() {
 		defer cancel()
-		s, err := reg.Connect(context.Background(), req)
+		s, err := reg.Connect(ctx, req) // ctx ends only the connect, not the session
+		if err != nil && errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			err = context.DeadlineExceeded // the protocol reports the closed socket, not the cause
+		}
 		if err == nil {
 			select {
 			case <-ctx.Done(): // dialing took longer than the timeout

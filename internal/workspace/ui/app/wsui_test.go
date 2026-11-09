@@ -336,3 +336,32 @@ func TestFormatMessageLeavesBrokenTextAloneAndSaysWhy(t *testing.T) {
 		t.Fatalf("toasts = %+v", a.toasts)
 	}
 }
+
+// Regression: connect dialed with context.Background and checked the
+// timeout only after the dial returned, so a server that accepted the
+// connection but never answered the handshake held the tab on
+// "Connecting" forever.
+func TestWebSocketConnectGivesUpWhenTheServerNeverAnswersTheHandshake(t *testing.T) {
+	release := make(chan struct{})
+	srv := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { <-release }))
+	t.Cleanup(srv.Close)
+	t.Cleanup(func() { close(release) }) // runs before srv.Close, which waits for the handler
+	a, _ := newTestApp(t)
+	tab := a.cur()
+	tab.Req.Protocol = "websocket"
+	tab.Req.URL = "ws" + strings.TrimPrefix(srv.URL, "http")
+	tab.Req.TimeoutSec = 1
+
+	a.send(tab)
+	deadline := time.Now().Add(4 * time.Second)
+	for tab.Connecting && time.Now().Before(deadline) {
+		a.step(core.Input{})
+		time.Sleep(5 * time.Millisecond)
+	}
+	if tab.Connecting {
+		t.Fatal("still connecting after the timeout")
+	}
+	if !strings.Contains(logText(tab), "deadline exceeded") {
+		t.Fatalf("the log does not say the connect timed out:\n%s", logText(tab))
+	}
+}
