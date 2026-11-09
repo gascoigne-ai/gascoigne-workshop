@@ -10,6 +10,7 @@ import (
 	"testing"
 )
 
+const toolkitPrefix = "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/"
 const modulePrefix = "github.com/gascoigne-ai/gascoigne-workshop/internal/"
 
 // imports maps a package path under internal/ (like "request/adapter/proto")
@@ -38,6 +39,10 @@ func violations(all imports, allowed map[string]bool) []string {
 			continue
 		}
 		for _, target := range targets {
+			if from.role == "controller" && strings.HasPrefix(target, "uitoolkit/") {
+				found = append(found, importer+" -> "+target+": a controller holds no widget state, so it must not import the toolkit")
+				continue
+			}
 			to, ok := locate(target)
 			if !ok || allowed[importer+" -> "+target] {
 				continue
@@ -119,6 +124,9 @@ func TestRulesCatchEachKindOfViolation(t *testing.T) {
 		{"composition root imports another domain's controller", "workspace/ui/app", "environment/controller/envs", false},
 		{"composition root imports another domain's adapter", "workspace/ui/app", "request/adapter/proto", true},
 		{"composition root imports another domain's port", "workspace/ui/app", "response/port", false},
+		{"controller imports the toolkit", "workspace/controller/tabs", "uitoolkit/view", true},
+		{"controller imports the toolkit core", "workspace/controller/tabs", "uitoolkit/core", true},
+		{"ui imports the toolkit", "request/ui/calltrace", "uitoolkit/view", false},
 		{"legacy package is not checked", "request/model", "textfmt", false},
 	}
 	for _, tc := range cases {
@@ -160,7 +168,11 @@ func scan(t *testing.T) imports {
 		dir := filepath.ToSlash(filepath.Dir(path))
 		for _, spec := range file.Imports {
 			path := strings.Trim(spec.Path.Value, `"`)
-			if rest, ok := strings.CutPrefix(path, modulePrefix); ok && !slices.Contains(all[dir], rest) {
+			rest, ok := strings.CutPrefix(path, modulePrefix)
+			if toolkit, isToolkit := strings.CutPrefix(path, toolkitPrefix); isToolkit {
+				rest, ok = "uitoolkit/"+toolkit, true
+			}
+			if ok && !slices.Contains(all[dir], rest) {
 				all[dir] = append(all[dir], rest)
 			}
 		}
