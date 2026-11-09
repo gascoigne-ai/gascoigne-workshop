@@ -266,6 +266,7 @@ type Options struct {
 	History          func(dir string) rport.History                // the history in a folder; nil keeps none
 	Fonts            sport.FontStore                               // installed fonts; nil has none
 	Previews         rport.BodyPreview                             // shows a response body in the browser; nil has none
+	Clock            port.Clock                                    // the time source; nil uses the wall clock
 	OpenMenu         bool                                          // start with the settings menu open
 	WorkspaceDir     string                                        // collection folder; "" uses the remembered one, else the built-in sample
 	DefaultWorkspace string                                        // where saving goes when there is no workspace yet
@@ -310,7 +311,10 @@ func NewApp(opts Options) (*App, error) {
 	ctx.Clipboard = statusClipboard{inner: ctx.Clipboard, report: a.clipboardNote}
 	a.dragTab = -1
 	a.dirty = true
-	a.now = time.Now
+	a.now = time.Now // the fallback when no Clock port is given
+	if opts.Clock != nil {
+		a.now = opts.Clock.Now
+	}
 	ctx.Now = func() time.Time { return a.now() } // the caret blinks by the app clock
 	a.store, a.states = opts.Store, opts.States
 	if a.states == nil {

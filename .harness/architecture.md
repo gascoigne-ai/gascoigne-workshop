@@ -70,7 +70,7 @@ The toolkit packages are public and independent of the application (`uitoolkit/c
 | `uitoolkit/engine` | key bindings and frame pacing |
 | `internal/workspace/ui/app` | the app (package `ui`): state, handlers, the window, dialogs, menus; the composition root that wires the other domains |
 | `internal/workspace/ui/appicon` | the program icon, drawn |
-| `internal/workspace/adapter/statefile`, `internal/workspace/adapter/filedialog` | window and tab state file; zenity or kdialog file dialogs |
+| `internal/workspace/adapter/statefile`, `internal/workspace/adapter/filedialog`, `internal/workspace/adapter/systemclock` | window and tab state file; zenity or kdialog file dialogs; the wall clock |
 | `internal/request/model` | `Request`, `Folder`, `Response`, environments, tree operations; MCP list parsers, schema skeletons and tool form fields (`mcpschema.go`, `mcpform.go`), cURL parsing, GraphQL schema parsing, `ErrCancelled` |
 | `internal/request/adapter/proto` | REST, WebSocket, SSE, MCP, gRPC, `Curl`; `Configured` builds the registry; type aliases keep the port names |
 | `internal/request/port` | `Protocol`, `Registry`, `Streamer`, `Session`, `Event`, the sampling types, `ProtocolConfig`, `GRPCMethods` |
@@ -84,7 +84,7 @@ The toolkit packages are public and independent of the application (`uitoolkit/c
 | `internal/response/ui/respview`, `internal/response/ui/sentlog` | response views and helpers; the sent-request list behind a `Host` |
 | `internal/response/port` | `Sent` and `SentStore`, the stored log of sent requests; `BodyPreview`, shows a body in the browser (`preview.Browser` implements it); `History` and `Entry`, the saved responses and the sent log of one folder (`history.Dir` implements it) |
 | `internal/workspace/model/state` | what is remembered between runs: window, tabs, pane sizes (`Window.Clamp`) |
-| `internal/workspace/port` | `FileDialog` and `ErrCancelled` (`filedialog.System` implements it); `StateStore` (`statefile.Files`); `cmd/workshop` hands the adapters to the App through `Options` |
+| `internal/workspace/port` | `FileDialog` and `ErrCancelled` (`filedialog.System` implements it); `StateStore` (`statefile.Files`); `Clock` (`systemclock.Clock`); `cmd/workshop` hands the adapters to the App through `Options` |
 | `internal/response/adapter/history`, `internal/response/adapter/preview` | response history and the sent-log file (`history.SentLog` implements `SentStore`); browser preview server |
 | `internal/settings/model/settings`, `internal/settings/model/fontfamily` | the settings schema and `settings.json`; font families and their lookup |
 | `internal/settings/port` | `FontStore`, the installed fonts (`fonts.System` implements it; `Options.Fonts` hands it to the App) |

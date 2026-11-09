@@ -12,6 +12,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/fonts"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/filedialog"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/systemclock"
 	"image"
 	"image/png"
 	"log"
@@ -55,6 +56,7 @@ func main() {
 	home, _ := os.UserHomeDir()
 	opts.Fonts = fonts.System{Home: home}
 	opts.Previews = preview.Browser{Lifetime: previewLifetime}
+	opts.Clock = systemclock.Clock{}
 	flag.StringVar(&opts.ThemesDir, "themes", settings.ThemesDir(), "folder of theme files (*.json) that extend the dark or light theme; empty for none")
 	flag.StringVar(&opts.WorkspaceDir, "workspace", "", "folder to load and save the collection; empty uses the last one, else the built-in sample")
 	opts.DefaultWorkspace = settings.DefaultWorkspace()

@@ -17,17 +17,8 @@ status: todo
 - A package has one role; a package named after a role alone (`utils`, `common`, `helpers`) is not allowed.
 
 ## Scope
-- [done] Domain list and role names agreed with the user (decisions 19, 20).
-- [done] Layer test `internal/layers_test.go`: pure rules function, a table that proves each violation kind is caught, the real tree checked, and an `exceptions` list.
-- [done] Every package moved into `domain/role` (decision 20); cross-domain edges other than the `App` removed (`Skeleton` and MCP helpers to `request/model`, `SentStore` and `FontStore` ports, `fontfamily`, `jsonview.Kind.Style`).
-- [done] `architecture.md` has the tree rules, the Mermaid diagram (checked with `mermaid.parse` under jsdom) and the package table.
-- [done] The layer test has no exceptions: the App takes every adapter through `Options` ports (decisions 21–26) and may import other domains' ui (decision 25).
 - [open] Split the `App` (`workspace/ui/app`, about 14k lines) into a `controller` (state, handlers) and views: the role exists in the rules but holds no package yet. Order: tabs and panes, tree and workspace, then the dialogs.
-- [done] MCP tool form: `request/ui/mcpform`.
-- [done] Environment state and decisions: `environment/controller/envs` (first `controller` and the `environment` domain).
 - [open] Features that can leave the `App` behind a `Host` (from task 032), each into its domain's `ui` role: environment dialogs and chip view, colors page, shortcut editor. Tabs, panes, tree and workspace stay in the controller.
-- [done] Test seams `openBrowser`, `chooseFile`, `hasFileDialog` are ports (decision 21).
-- [open] The `now` clock seam into a port.
 - [open] `settings/model/settings` reads and writes the settings file: split the file part into a port and an adapter.
 
 ## Acceptance
