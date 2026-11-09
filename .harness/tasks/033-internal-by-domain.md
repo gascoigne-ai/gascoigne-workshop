@@ -17,7 +17,7 @@ status: todo
 - A package has one role; a package named after a role alone (`utils`, `common`, `helpers`) is not allowed.
 
 ## Scope
-- [open] Split the `App` (`workspace/ui/app`, about 14k lines) into a `controller` (state, handlers) and views: the role exists in the rules but holds no package yet. Order: tabs and panes, tree and workspace, then the dialogs.
+- [open] Split the `App` (`workspace/ui/app`) into a `controller` and views (decision 31). Done: `workspace/controller/tabs` (`Tab`, tab strip rules, `Connection`, `RowHistory`, earlier responses), `autosave` (`Debounce`) and `toasts` (`Stack`), and the layer test rejects a toolkit import from a controller. Left, each a handler that calls `prompt`, `confirm`, `openMenu`, `toast` or reads widget state: tree and workspace operations (`treeops.go`, `workspace.go`: rename, duplicate, delete, drag, open), the find bar and response view mode in `panes.go` (they drive a `CodeView`), and the dialog and menu state in `overlay.go`. Needs the user to say whether these also move or the item closes here.
 
 ## Acceptance
 - Every step keeps `make check` green; no behavior change and no test assertion changed (imports and names only).
