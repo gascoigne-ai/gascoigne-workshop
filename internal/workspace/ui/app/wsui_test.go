@@ -72,7 +72,7 @@ func TestWebSocketTabConnectsSendsAndDisconnects(t *testing.T) {
 
 	a.send(tab) // the Send button of a socket connects
 	until(t, a, "connection", func() bool { return strings.Contains(logText(tab), "Connected") })
-	if tab.sess == nil {
+	if tab.Session == nil {
 		t.Fatal("no session after connecting")
 	}
 
@@ -87,7 +87,7 @@ func TestWebSocketTabConnectsSendsAndDisconnects(t *testing.T) {
 	}
 
 	a.send(tab) // connected: the same button disconnects
-	until(t, a, "close", func() bool { return tab.sess == nil })
+	until(t, a, "close", func() bool { return tab.Session == nil })
 }
 
 func TestWebSocketConnectFailureShowsInTheLog(t *testing.T) {
@@ -96,8 +96,8 @@ func TestWebSocketConnectFailureShowsInTheLog(t *testing.T) {
 	tab.Req.Protocol = "websocket"
 	tab.Req.URL = "ws://127.0.0.1:1/"
 	a.send(tab)
-	until(t, a, "failure", func() bool { return tab.sess == nil && !tab.connecting && len(tab.wsView.Lines) > 0 })
-	if tab.sess != nil {
+	until(t, a, "failure", func() bool { return tab.Session == nil && !tab.Connecting && len(tab.wsView.Lines) > 0 })
+	if tab.Session != nil {
 		t.Fatal("session after a failed connect")
 	}
 }
@@ -108,7 +108,7 @@ func TestClearEmptiesTheMessageLog(t *testing.T) {
 	tab.Req.Protocol = "websocket"
 	tab.Req.URL = echoServer(t)
 	a.send(tab)
-	until(t, a, "connection", func() bool { return tab.sess != nil && len(tab.wsView.Lines) > 0 })
+	until(t, a, "connection", func() bool { return tab.Session != nil && len(tab.wsView.Lines) > 0 })
 	a.clearLog(tab)
 	if len(tab.wsView.Lines) != 0 {
 		t.Fatal("log not cleared")
@@ -140,18 +140,18 @@ func TestWebSocketReconnectsAfterTheServerClosesWhenAsked(t *testing.T) {
 	tab := a.cur()
 	tab.Req.Protocol = "websocket"
 	tab.Req.URL = "ws" + strings.TrimPrefix(srv.URL, "http")
-	tab.reconnect = true
+	tab.Reconnect = true
 	a.send(tab)
-	until(t, a, "second connection", func() bool { return conns.Load() >= 2 && tab.sess != nil })
+	until(t, a, "second connection", func() bool { return conns.Load() >= 2 && tab.Session != nil })
 	if !strings.Contains(logText(tab), "Reconnecting") {
 		t.Fatalf("log does not mention the retry:\n%s", logText(tab))
 	}
 
 	a.send(tab) // a deliberate disconnect must not reconnect
-	until(t, a, "close", func() bool { return tab.sess == nil })
+	until(t, a, "close", func() bool { return tab.Session == nil })
 	time.Sleep(100 * time.Millisecond)
 	a.step(core.Input{})
-	if tab.sess != nil || tab.connecting || conns.Load() != 2 {
+	if tab.Session != nil || tab.Connecting || conns.Load() != 2 {
 		t.Fatalf("reconnected after a disconnect: %d connections", conns.Load())
 	}
 }
@@ -171,7 +171,7 @@ func TestWebSocketWithoutReconnectStaysClosed(t *testing.T) {
 	tab.Req.Protocol = "websocket"
 	tab.Req.URL = "ws" + strings.TrimPrefix(srv.URL, "http")
 	a.send(tab)
-	until(t, a, "close", func() bool { return strings.Contains(logText(tab), "Closed by server") && tab.sess == nil })
+	until(t, a, "close", func() bool { return strings.Contains(logText(tab), "Closed by server") && tab.Session == nil })
 	time.Sleep(100 * time.Millisecond)
 	a.step(core.Input{})
 	if conns.Load() != 1 {
@@ -185,7 +185,7 @@ func TestComposerSendsHexAsABinaryMessage(t *testing.T) {
 	tab.Req.Protocol = "websocket"
 	tab.Req.URL = echoServer(t)
 	a.send(tab)
-	until(t, a, "connection", func() bool { return tab.sess != nil })
+	until(t, a, "connection", func() bool { return tab.Session != nil })
 	tab.msg = view.NewTextField("hex: de ad BE ef")
 	a.sendMessage(tab)
 	until(t, a, "sent bytes", func() bool { return strings.Contains(logText(tab), "↑ deadbeef") })
@@ -203,8 +203,8 @@ func TestMCPToolsFillTheComposerFromTheirSchemas(t *testing.T) {
 	tab.Req.Protocol = "mcp"
 	list := `{"jsonrpc":"2.0","id":2,"result":{"tools":[{"name":"search","inputSchema":{"type":"object","properties":{"q":{"type":"string"},"limit":{"type":"integer","default":5}},"required":["q"]}},{"name":"ping"}]}}`
 	a.applyWS(wsEvent{tab: tab, ev: reqport.Event{Dir: reqport.Received, Kind: "response", Text: list}, hasEv: true})
-	if len(tab.tools) != 2 {
-		t.Fatalf("tools %+v", tab.tools)
+	if len(tab.Tools) != 2 {
+		t.Fatalf("tools %+v", tab.Tools)
 	}
 	items := a.toolMenu(tab)
 	if len(items) != 2 || items[0].label != "search" {
@@ -227,7 +227,7 @@ func TestMCPToolsFillTheComposerFromTheirSchemas(t *testing.T) {
 		t.Fatalf("composer %q", got)
 	}
 	a.applyWS(wsEvent{tab: tab, closed: true})
-	if tab.tools != nil {
+	if tab.Tools != nil {
 		t.Fatal("tools must go when the session ends")
 	}
 }
@@ -260,7 +260,7 @@ func TestSSETabListensAndShowsNoComposer(t *testing.T) {
 	tab.Req.URL = srv.URL
 	a.send(tab)
 	until(t, a, "event", func() bool { return strings.Contains(logText(tab), "hello") })
-	until(t, a, "end of stream", func() bool { return tab.sess == nil })
+	until(t, a, "end of stream", func() bool { return tab.Session == nil })
 	if !strings.Contains(view.Dump(a.messagesPane(wsPanes[0], tab, nil)), "Not connected") {
 		t.Fatal("the pane did not build")
 	}
@@ -290,10 +290,10 @@ func TestSSEReconnectResumesFromTheLastEventID(t *testing.T) {
 	defer func() { srv.CloseClientConnections(); srv.Close() }()
 	a, _ := newTestApp(t)
 	tab := a.cur()
-	tab.Req.Protocol, tab.Req.URL, tab.reconnect = "sse", srv.URL, true
+	tab.Req.Protocol, tab.Req.URL, tab.Reconnect = "sse", srv.URL, true
 	defer func() {
 		if t.Failed() {
-			t.Logf("log:\n%s\nwantOpen=%v connecting=%v sess=%v gen=%d", logText(tab), tab.wantOpen, tab.connecting, tab.sess != nil, tab.wsGen)
+			t.Logf("log:\n%s\nwantOpen=%v connecting=%v sess=%v gen=%d", logText(tab), tab.WantOpen, tab.Connecting, tab.Session != nil, tab.Gen)
 		}
 	}()
 	a.send(tab)
@@ -308,7 +308,7 @@ func TestSSEReconnectResumesFromTheLastEventID(t *testing.T) {
 		t.Fatalf("Last-Event-ID per connection: %q", got)
 	}
 	a.send(tab) // disconnect
-	if tab.lastEventID != "" {
+	if tab.LastEventID != "" {
 		t.Fatal("a deliberate disconnect must forget the id")
 	}
 }

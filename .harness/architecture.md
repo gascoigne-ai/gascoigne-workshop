@@ -77,7 +77,7 @@ The toolkit packages are public and independent of the application (`uitoolkit/c
 | `internal/request/port` | `Protocol`, `Registry`, `Streamer`, `Session`, `Event`, the sampling types, `ProtocolConfig`, `GRPCMethods` |
 | `internal/request/model/assert` | the assertion language run against a response |
 | `internal/request/ui/calltrace`, `internal/request/ui/mcpform` | the Log dialog; the MCP tool-call form (`Form.Command` composes the call), each behind a `Host` interface |
-| `internal/workspace/controller/tabs` | the UI-free state of an open request: request and saved copy, shown response, send number (`BeginSend`, `Accept`, `Cancel`) and the rules of the tab strip (`Next`, `AfterClose`, `AfterMove`); the App's `reqTab` embeds it and keeps the widget state |
+| `internal/workspace/controller/tabs` | the UI-free state of an open request: request and saved copy, shown response, send number (`BeginSend`, `Accept`, `Cancel`) , the rules of the tab strip (`Next`, `AfterClose`, `AfterMove`) and the state of an open socket (`Connection`: wanted, connecting, session, what an MCP server announced); the App's `reqTab` embeds it and keeps the widget state |
 | `internal/environment/controller/envs` | which environment is active and how add, rename and delete move the choice; the App keeps the menu, prompts and the remembered name |
 | `internal/collection/model/collection`, `openapi`, `postman`, `miniyaml` | tree filtering; the importers and the Postman exporter, pure functions over bytes |
 | `internal/collection/port` | `Store`, where a collection is saved (`store.Files` implements it) |

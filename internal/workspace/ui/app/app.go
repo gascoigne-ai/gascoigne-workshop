@@ -89,21 +89,12 @@ type reqTab struct {
 	findOpen              bool                       // the find bar is showing
 	find                  view.TextField             // the search text
 	matchIdx              int                        // the active match, -1 for none
-	sess                  reqport.Session            // the open connection of a socket tab
-	connecting            bool                       // a connect is in progress
-	wsGen                 int                        // numbers the connects, so a late answer of an old one is ignored
 	wsCancel              context.CancelFunc         // ends the timeout of the connect in progress
 	wsView                view.CodeView              // the message log
 	msg                   view.TextField             // the message being composed
-	resources             []model.MCPResource        // the resources an MCP server announced
-	prompts               []model.MCPPrompt          // the prompts an MCP server announced
 	respHist              []respEntry                // earlier responses, newest first
 	grpcStream            bool                       // a gRPC tab streams instead of making single calls
 	schema                *model.Schema              // what a GraphQL introspection answered
-	tools                 []model.MCPTool            // the tools an MCP server announced
-	lastEventID           string                     // the last id an SSE stream sent, offered again when it reconnects
-	reconnect             bool                       // reopen a dropped connection
-	wantOpen              bool                       // the user wants the connection open, so a drop is retried
 }
 
 // responseViews are the values of the response view setting.

@@ -245,7 +245,7 @@ func (a *App) urlBar(t *reqTab) Node {
 	send := PrimaryButton("Send", W(80), OnClick(func() { a.send(t) }), Tooltip(a.hint("Send the request", "send")))
 	if isSocket(t) {
 		label, hint := "Connect", "Open the connection"
-		if t.sess != nil || t.connecting || t.wantOpen {
+		if t.Active() {
 			label, hint = "Disconnect", "Close the connection"
 		}
 		send = PrimaryButton(label, W(96), OnClick(func() { a.toggleConnection(t) }), Tooltip(a.hint(hint, "send")))

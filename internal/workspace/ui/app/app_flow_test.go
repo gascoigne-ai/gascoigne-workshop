@@ -323,8 +323,8 @@ func TestOtherProtocolsAnswerThroughTheSameUI(t *testing.T) {
 	tab := a.cur()
 	click(a, 300, urlBarY)   // rest -> websocket
 	click(a, sendX, urlBarY) // connect: an https URL is no WebSocket address
-	until(t, a, "failed connect", func() bool { return !tab.connecting && strings.Contains(logText(tab), "not ws or wss") })
-	if tab.sess != nil {
+	until(t, a, "failed connect", func() bool { return !tab.Connecting && strings.Contains(logText(tab), "not ws or wss") })
+	if tab.Session != nil {
 		t.Fatal("connected to an https URL")
 	}
 	click(a, 300, urlBarY) // websocket -> mcp
@@ -333,7 +333,7 @@ func TestOtherProtocolsAnswerThroughTheSameUI(t *testing.T) {
 	}
 	tab.Req.URL = "ftp://nowhere.test" // no network in tests
 	click(a, sendX, urlBarY)
-	until(t, a, "failed connect", func() bool { return !tab.connecting && strings.Contains(logText(tab), "not an http or https URL") })
+	until(t, a, "failed connect", func() bool { return !tab.Connecting && strings.Contains(logText(tab), "not an http or https URL") })
 }
 
 func TestSettingsMenuOpensChangesThemeAndSaves(t *testing.T) {

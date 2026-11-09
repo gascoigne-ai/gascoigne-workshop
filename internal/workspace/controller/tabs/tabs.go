@@ -16,6 +16,7 @@ type Tab struct {
 	Resp    *model.Response
 	Sending bool
 	Seq     int // numbers the sends, so a late result of an old one is ignored
+	Connection
 }
 
 // New opens req. A request from before body types gets one inferred.

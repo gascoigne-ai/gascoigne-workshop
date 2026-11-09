@@ -54,7 +54,7 @@ func responsePanesFor(t *reqTab) []pane {
 // toggleConnection connects a disconnected socket tab and closes a
 // connected one.
 func (a *App) toggleConnection(t *reqTab) {
-	if t.sess != nil || t.connecting || t.wantOpen {
+	if t.Active() {
 		a.disconnect(t)
 		return
 	}
@@ -63,14 +63,11 @@ func (a *App) toggleConnection(t *reqTab) {
 
 // connect dials in the background; the outcome arrives as a wsEvent.
 func (a *App) connect(t *reqTab) {
-	t.wantOpen = true
-	t.wsGen++
-	gen := t.wsGen
-	t.connecting = true
+	gen := t.Begin()
 	a.status = "Connecting to " + t.Req.URL
 	req := t.Req.Expanded(a.varsFor(t.Req))
-	if t.Req.Protocol == "sse" && t.lastEventID != "" { // resume where the stream stopped
-		req.Headers = append(req.Headers, model.KV{Name: "Last-Event-ID", Value: t.lastEventID, Enabled: true})
+	if t.Req.Protocol == "sse" && t.LastEventID != "" { // resume where the stream stopped
+		req.Headers = append(req.Headers, model.KV{Name: "Last-Event-ID", Value: t.LastEventID, Enabled: true})
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), a.timeoutFor(req))
 	t.wsCancel = cancel
@@ -100,15 +97,12 @@ func (a *App) connect(t *reqTab) {
 
 // disconnect closes the session of t, or abandons a connect in progress.
 func (a *App) disconnect(t *reqTab) {
-	t.wantOpen = false
-	t.lastEventID = "" // a deliberate disconnect starts the stream over next time
-	if t.sess != nil {
-		_ = t.sess.Close() // the end of the event stream clears the session
+	session, abandoned := t.Disconnect()
+	if session != nil {
+		_ = session.Close() // the end of the event stream clears the session
 		return
 	}
-	if t.connecting {
-		t.wsGen++ // the answer of the abandoned connect is dropped
-		t.connecting = false
+	if abandoned {
 		t.wsCancel()
 		a.status = model.ErrCancelled
 	}
@@ -116,10 +110,10 @@ func (a *App) disconnect(t *reqTab) {
 
 // sendMessage sends the composer's text and empties it.
 func (a *App) sendMessage(t *reqTab) {
-	if t.sess == nil || t.msg.Text == "" {
+	if t.Session == nil || t.msg.Text == "" {
 		return
 	}
-	if err := sendComposed(t.sess, t.msg.Text); err != nil {
+	if err := sendComposed(t.Session, t.msg.Text); err != nil {
 		a.logInfo(t, err.Error(), w.Error)
 		return
 	}
@@ -129,10 +123,10 @@ func (a *App) sendMessage(t *reqTab) {
 
 // pingSocket sends a ping.
 func (a *App) pingSocket(t *reqTab) {
-	if t.sess == nil {
+	if t.Session == nil {
 		return
 	}
-	if err := t.sess.Ping(); err != nil {
+	if err := t.Session.Ping(); err != nil {
 		a.logInfo(t, err.Error(), w.Error)
 	}
 }
@@ -145,7 +139,7 @@ func (a *App) clearLog(t *reqTab) {
 // applyWS applies one wsEvent.
 func (a *App) applyWS(e wsEvent) {
 	t := e.tab
-	if e.gen != t.wsGen {
+	if !t.Current(e.gen) {
 		if e.sess != nil { // a connect that was abandoned meanwhile
 			_ = e.sess.Close()
 		}
@@ -153,39 +147,25 @@ func (a *App) applyWS(e wsEvent) {
 	}
 	switch {
 	case e.retry:
-		if t.wantOpen && t.sess == nil && !t.connecting {
+		if t.CanRetry() {
 			a.connect(t)
 		}
 	case e.closed:
-		t.sess, t.connecting = nil, false
+		t.Closed()
 		a.calls.Info(a.now(), "Disconnected from "+t.Req.URL)
-		t.tools, t.resources, t.prompts = nil, nil, nil
 		a.status = "Disconnected from " + t.Req.URL
 		a.scheduleRetry(t)
 	case e.hasEv:
-		if tools := model.ParseTools(e.ev.Text); e.ev.Dir == reqport.Received && tools != nil {
-			t.tools = tools
-		}
-		if e.ev.Dir == reqport.Received && e.ev.ID != "" {
-			t.lastEventID = e.ev.ID
-		}
-		if e.ev.Dir == reqport.Received {
-			if res := model.ParseResources(e.ev.Text); res != nil {
-				t.resources = res
-			}
-			if prompts := model.ParsePrompts(e.ev.Text); prompts != nil {
-				t.prompts = prompts
-			}
-		}
+		t.Received(e.ev)
 		a.logEvent(t, e.ev)
 	case e.err != nil:
-		t.connecting = false
+		t.Failed()
 		a.calls.Error(a.now(), fmt.Sprintf("✗ %s: %s", t.Req.URL, e.err))
 		a.logInfo(t, e.err.Error(), w.Error)
 		a.status = "Connection failed"
 		a.scheduleRetry(t)
 	default:
-		t.sess, t.connecting = e.sess, false
+		t.Opened(e.sess)
 		a.calls.Info(a.now(), "Connected to "+t.Req.URL)
 		a.status = "Connected to " + t.Req.URL
 	}
@@ -194,11 +174,11 @@ func (a *App) applyWS(e wsEvent) {
 // scheduleRetry reopens a connection the user did not close, when the
 // tab asks for it.
 func (a *App) scheduleRetry(t *reqTab) {
-	if !t.reconnect || !t.wantOpen {
+	if !t.RetryWanted() {
 		return
 	}
 	a.logInfo(t, "Reconnecting in "+retryDelay.String(), w.Muted)
-	gen := t.wsGen
+	gen := t.Gen
 	time.AfterFunc(retryDelay, func() { a.wsEvents <- wsEvent{tab: t, gen: gen, retry: true} })
 }
 
@@ -256,7 +236,7 @@ func (a *App) logInfo(t *reqTab, text string, tok w.Token) {
 
 // messagesPane is the log with its toolbar and the composer.
 func (a *App) messagesPane(_ pane, t *reqTab, _ *ScrollState) Node {
-	connected := t.sess != nil
+	connected := t.Session != nil
 	return Col(Grow(1),
 		Spacer(H(w.Gutter)),
 		a.messagesToolbar(t),
@@ -275,9 +255,9 @@ func (a *App) messagesPane(_ pane, t *reqTab, _ *ScrollState) Node {
 
 func connState(t *reqTab) string {
 	switch {
-	case t.connecting:
+	case t.Connecting:
 		return "Connecting..."
-	case t.sess != nil:
+	case t.Session != nil:
 		return "Connected"
 	}
 	return "Not connected"
@@ -316,8 +296,8 @@ func sendComposed(s reqport.Session, text string) error {
 // ready-to-edit call, with the arguments the tool's schema asks for, in
 // the composer.
 func (a *App) toolMenu(t *reqTab) []menuItem {
-	items := make([]menuItem, 0, len(t.tools))
-	for _, tool := range t.tools {
+	items := make([]menuItem, 0, len(t.Tools))
+	for _, tool := range t.Tools {
 		items = append(items, menuItem{label: tool.Name, run: func() { a.openToolForm(t, tool) }})
 	}
 	return items
@@ -335,8 +315,8 @@ func (a *App) composeCall(t *reqTab, tool model.MCPTool) {
 
 // resourceMenu lists the announced resources; picking one composes a read.
 func (a *App) resourceMenu(t *reqTab) []menuItem {
-	items := make([]menuItem, 0, len(t.resources))
-	for _, r := range t.resources {
+	items := make([]menuItem, 0, len(t.Resources))
+	for _, r := range t.Resources {
 		label := r.URI
 		if r.Name != "" {
 			label = r.Name + "  " + r.URI
@@ -352,8 +332,8 @@ func (a *App) resourceMenu(t *reqTab) []menuItem {
 // promptMenu lists the announced prompts; picking one composes a request
 // with its required arguments filled in.
 func (a *App) promptMenu(t *reqTab) []menuItem {
-	items := make([]menuItem, 0, len(t.prompts))
-	for _, p := range t.prompts {
+	items := make([]menuItem, 0, len(t.Prompts))
+	for _, p := range t.Prompts {
 		items = append(items, menuItem{label: p.Name, run: func() {
 			t.msg = NewTextField("prompt " + p.Name + " " + p.ArgsJSON())
 			t.msg.Focused = true
