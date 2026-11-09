@@ -165,24 +165,6 @@ func TestJSONStatus(t *testing.T) {
 	}
 }
 
-func TestFindCount(t *testing.T) {
-	tests := []struct {
-		query          string
-		matches, index int
-		want           string
-	}{
-		{"", 0, -1, ""},
-		{"x", 0, -1, "No matches"},
-		{"x", 12, 0, "1/12"},
-		{"x", 12, 11, "12/12"},
-		{"x", 3, -1, "3 matches"},
-	}
-	for _, tt := range tests {
-		if got := findCount(tt.query, tt.matches, tt.index); got != tt.want {
-			t.Errorf("findCount(%q,%d,%d) = %q, want %q", tt.query, tt.matches, tt.index, got, tt.want)
-		}
-	}
-}
 func TestSampleCollectionIsConsistent(t *testing.T) {
 	col := collection.Sample()
 	reg := proto.NewRegistry()

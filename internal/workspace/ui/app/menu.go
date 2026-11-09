@@ -1,19 +1,10 @@
 package ui
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/controller/viewer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 )
-
-// viewIDOf is the response view setting in effect: unknown ids are compact.
-func viewIDOf(id string) string {
-	for _, v := range responseViews {
-		if v.id == id {
-			return id
-		}
-	}
-	return "compact"
-}
 
 // changeSettings edits the settings, applies them and saves them. The
 // color fields are rebuilt, since the colors in effect may have changed.
@@ -22,7 +13,7 @@ func (a *App) changeSettings(edit func(*settings.Settings)) {
 	a.saveSettings(edit)
 	if a.settings.ResponseView != was { // the choice applies to the tabs already open
 		for _, t := range a.tabs {
-			t.raw, t.compact = viewFlags(a.settings.ResponseView)
+			t.raw, t.compact = viewer.Flags(a.settings.ResponseView)
 			a.refreshView(t)
 		}
 	}

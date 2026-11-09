@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/controller/viewer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/textfmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/respview"
 	"github.com/hajimehoshi/ebiten/v2"
@@ -452,20 +453,6 @@ func (a *App) timeoutEdited(t *reqTab) {
 	t.Req.TimeoutSec = n
 }
 
-// findCount is the counter shown in the find bar: "3/12", "No matches",
-// "3 matches" when none is active, or nothing for an empty query.
-func findCount(query string, matches, index int) string {
-	switch {
-	case query == "":
-		return ""
-	case matches == 0:
-		return "No matches"
-	case index < 0:
-		return fmt.Sprintf("%d matches", matches)
-	}
-	return fmt.Sprintf("%d/%d", index+1, matches)
-}
-
 // responseEmpty is noResponse plus the case of a body that is not text.
 func responseEmpty(t *reqTab) (string, bool) {
 	if msg, isErr := noResponse(t); msg != "" {
@@ -526,7 +513,7 @@ func (a *App) findBar(t *reqTab) Node {
 			OnEnter(func() { a.findEnter(t) }),
 			a.textMenuOpt(&t.find, func() { a.runFind(t) }),
 		),
-		Text(findCount(t.find.Text, len(t.view.Matches()), t.matchIdx), Small(), Muted(), W(64)),
+		Text(viewer.Count(t.find.Text, len(t.view.Matches()), t.matchIdx), Small(), Muted(), W(64)),
 		IconButton(ChevronUpIcon(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(func() { a.findStep(t, -1) }), Tooltip("Previous match")),
 		IconButton(ChevronDownIcon(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(func() { a.findStep(t, 1) }), Tooltip("Next match")),
 		IconButton(CrossIcon(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(func() { a.closeFind(t) }), Tooltip("Close search (Esc)")),
@@ -631,10 +618,7 @@ func (a *App) findStep(t *reqTab, dir int) {
 	if len(matches) == 0 {
 		return
 	}
-	next := (t.matchIdx + dir + len(matches)) % len(matches)
-	if t.matchIdx < 0 && dir < 0 {
-		next = len(matches) - 1
-	}
+	next := viewer.Step(t.matchIdx, dir, len(matches))
 	t.matchIdx = next
 	t.view.SetMatches(matches, next)
 	t.view.RevealLine(matches[next].Line)

@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/controller/viewer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
@@ -109,7 +110,7 @@ func (a *App) applySettings(s settings.Settings) {
 		a.status = err.Error()
 	}
 	for _, t := range a.tabs {
-		t.raw, t.compact = viewFlags(s.ResponseView)
+		t.raw, t.compact = viewer.Flags(s.ResponseView)
 		a.refreshView(t)
 	}
 	a.colors.Forget()

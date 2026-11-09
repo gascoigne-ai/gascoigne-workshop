@@ -9,6 +9,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model/assert"
 	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/ui/calltrace"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/controller/viewer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/textfmt"
 	rport "github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/sentlog"
@@ -97,31 +98,10 @@ type reqTab struct {
 	schema                *model.Schema              // what a GraphQL introspection answered
 }
 
-// responseViews are the values of the response view setting.
-var responseViews = []struct {
-	id, label    string
-	raw, compact bool
-}{
-	{"compact", "Compact", false, true},
-	{"pretty", "Pretty", false, false},
-	{"raw", "Raw", true, false},
-}
-
-// viewFlags are the raw and compact flags of a response view setting;
-// anything unknown is compact, the default.
-func viewFlags(id string) (raw, compact bool) {
-	for _, v := range responseViews {
-		if v.id == id {
-			return v.raw, v.compact
-		}
-	}
-	return false, true
-}
-
 // makeTab is newTab with the response view the settings ask for.
 func (a *App) makeTab(req *model.Request) *reqTab {
 	t := newTab(req)
-	t.raw, t.compact = viewFlags(a.settings.ResponseView)
+	t.raw, t.compact = viewer.Flags(a.settings.ResponseView)
 	t.Earlier = a.loadHistory(req)
 	return t
 }
