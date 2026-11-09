@@ -288,7 +288,7 @@ func TestExportPostmanWritesACollectionFileThatImportsBack(t *testing.T) {
 	}
 	found := false
 	for _, ts := range a.toasts {
-		found = found || strings.Contains(ts.text, "left out") // the sample has WebSocket and MCP requests
+		found = found || strings.Contains(ts.Text, "left out") // the sample has WebSocket and MCP requests
 	}
 	if !found {
 		t.Fatal("the message must say what was left out")

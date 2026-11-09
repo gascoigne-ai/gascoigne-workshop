@@ -83,7 +83,7 @@ func TestSaveBodyWritesTheFileAndReportsFailures(t *testing.T) {
 	a.writeBody(tab, filepath.Join(t.TempDir(), "no", "such", "dir", "x"))
 	found := false
 	for _, ts := range a.toasts {
-		found = found || (ts.isErr && strings.Contains(ts.text, "Saving failed"))
+		found = found || (ts.IsErr && strings.Contains(ts.Text, "Saving failed"))
 	}
 	if !found {
 		t.Fatal("a failed save must be reported")

@@ -332,7 +332,7 @@ func TestFormatMessageLeavesBrokenTextAloneAndSaysWhy(t *testing.T) {
 	if tab.msg.Text != `{"op": }` {
 		t.Fatalf("composer = %q, broken text must stay as typed", tab.msg.Text)
 	}
-	if len(a.toasts) != before+1 || !strings.Contains(a.toasts[len(a.toasts)-1].text, "not JSON") {
+	if len(a.toasts) != before+1 || !strings.Contains(a.toasts[len(a.toasts)-1].Text, "not JSON") {
 		t.Fatalf("toasts = %+v", a.toasts)
 	}
 }

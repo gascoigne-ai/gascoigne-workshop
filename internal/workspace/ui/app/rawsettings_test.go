@@ -112,7 +112,7 @@ func TestABadFileOnDiskKeepsTheSettingsAndSaysSo(t *testing.T) {
 	}
 	found := false
 	for _, toast := range a.toasts {
-		found = found || (toast.isErr && strings.Contains(toast.text, "settings.json"))
+		found = found || (toast.IsErr && strings.Contains(toast.Text, "settings.json"))
 	}
 	if !found {
 		t.Fatalf("no toast about the file; toasts %+v", a.toasts)

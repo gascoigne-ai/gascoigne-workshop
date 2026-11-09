@@ -2,9 +2,9 @@ package ui
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/ui/mcpform"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/toasts"
 	"runtime"
 	"strings"
-	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 
@@ -16,19 +16,17 @@ import (
 // built into the window's Stack after everything else, newest on top.
 
 const (
-	menuMinW     = 120 // a menu is as wide as its content, within these
-	menuMaxW     = 420
-	menuHintH    = 16 // the extra height of a row with a hint
-	menuRowH     = 24
-	menuSepH     = 9
-	menuPad      = 4
-	dialogW      = 380
-	toastW       = 320
-	toastH       = 36
-	toastGap     = 6
-	toastMargin  = 8
-	maxToasts    = 5 // older toasts are dropped beyond this
-	infoToastFor = 3 * time.Second
+	menuMinW    = 120 // a menu is as wide as its content, within these
+	menuMaxW    = 420
+	menuHintH   = 16 // the extra height of a row with a hint
+	menuRowH    = 24
+	menuSepH    = 9
+	menuPad     = 4
+	dialogW     = 380
+	toastW      = 320
+	toastH      = 36
+	toastGap    = 6
+	toastMargin = 8
 )
 
 // menuItem is one row of a context menu. A separator has no label.
@@ -64,13 +62,6 @@ type dialog struct {
 	input       *TextField
 	form        *mcpform.Form // a typed MCP tool form, instead of a single input
 	buttons     []dialogButton
-}
-
-// toast is a short message over the window.
-type toast struct {
-	text    string
-	isErr   bool
-	expires time.Time // zero: stays until clicked
 }
 
 // ---- context menu --------------------------------------------------------
@@ -267,45 +258,15 @@ func (a *App) dialogView() Node {
 // toast shows a message: an info one fades after a few seconds, an
 // error stays until it is clicked.
 func (a *App) toast(text string, isErr bool) {
-	if isErr && a.hasToast(text) {
-		return // the same failure on every frame or send is one message
+	if a.toasts.Show(text, isErr, a.now()) {
+		a.dirty = true
 	}
-	t := toast{text: text, isErr: isErr}
-	if !isErr {
-		t.expires = a.now().Add(infoToastFor)
-	}
-	a.toasts = append(a.toasts, t)
-	a.dirty = true
-	if len(a.toasts) > maxToasts {
-		a.toasts = a.toasts[len(a.toasts)-maxToasts:]
-	}
-}
-
-// hasToast reports whether an error toast with exactly this text is shown.
-func (a *App) hasToast(text string) bool {
-	for _, t := range a.toasts {
-		if t.isErr && t.text == text {
-			return true
-		}
-	}
-	return false
 }
 
 // pruneToasts drops the info toasts whose time is up.
-func (a *App) pruneToasts() bool {
-	now := a.now()
-	kept := a.toasts[:0]
-	for _, t := range a.toasts {
-		if t.expires.IsZero() || now.Before(t.expires) {
-			kept = append(kept, t)
-		}
-	}
-	removed := len(kept) != len(a.toasts)
-	a.toasts = kept
-	return removed
-}
+func (a *App) pruneToasts() bool { return a.toasts.Prune(a.now()) }
 
-func (a *App) dismissToast(i int) { a.toasts = append(a.toasts[:i], a.toasts[i+1:]...) }
+func (a *App) dismissToast(i int) { a.toasts.Dismiss(i) }
 
 // clipboardNote reports what the clipboard did: failures are error
 // toasts, a successful copy is a status line.
@@ -324,13 +285,13 @@ func (a *App) toastsView() Node {
 	total := len(a.toasts)*toastH + (len(a.toasts)-1)*toastGap
 	return Col(W(toastW), Gap(toastGap),
 		FloatAt(a.w-w.Gutter-toastW, a.h-statusH-toastMargin-total),
-		For(a.toasts, func(i int, t toast) Node {
+		For(a.toasts, func(i int, t toasts.Toast) Node {
 			border, color := w.Border, w.Text
-			if t.isErr {
+			if t.IsErr {
 				border, color = w.Error, w.Error
 			}
 			return Row(H(toastH), PadX(w.Gutter), Bg(w.Panel), Border(border), Shadow(), OnClick(func() { a.dismissToast(i) }),
-				Text(t.text, Ellipsis(), Color(color), Grow(1)),
+				Text(t.Text, Ellipsis(), Color(color), Grow(1)),
 			)
 		}),
 	)

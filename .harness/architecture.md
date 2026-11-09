@@ -33,7 +33,7 @@ flowchart LR
     end
     subgraph workspace
       app
-      wctl["controller/tabs, autosave"]
+      wctl["controller/tabs, autosave, toasts"]
       wad["adapter/statefile, filedialog"]
     end
   end
@@ -79,6 +79,7 @@ The toolkit packages are public and independent of the application (`uitoolkit/c
 | `internal/request/ui/calltrace`, `internal/request/ui/mcpform` | the Log dialog; the MCP tool-call form (`Form.Command` composes the call), each behind a `Host` interface |
 | `internal/workspace/controller/tabs` | the UI-free state of an open request: request and saved copy, shown response, send number (`BeginSend`, `Accept`, `Cancel`) , the rules of the tab strip (`Next`, `AfterClose`, `AfterMove`) the table undo history (`RowHistory`), the earlier responses (`Remember`, `Recall`) and the state of an open socket (`Connection`: wanted, connecting, session, what an MCP server announced); the App's `reqTab` embeds it and keeps the widget state |
 | `internal/workspace/controller/autosave` | when the collection and the remembered state are written: once their content stayed the same for a pause (`Debounce`) |
+| `internal/workspace/controller/toasts` | the messages over the window: info fades, errors stay, a repeated error is one, at most five (`Stack`); the App draws them |
 | `internal/environment/controller/envs` | which environment is active and how add, rename and delete move the choice; the App keeps the menu, prompts and the remembered name |
 | `internal/collection/model/collection`, `openapi`, `postman`, `miniyaml` | tree filtering; the importers and the Postman exporter, pure functions over bytes |
 | `internal/collection/port` | `Store`, where a collection is saved (`store.Files` implements it) |

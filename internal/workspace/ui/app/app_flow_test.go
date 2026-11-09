@@ -15,6 +15,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/shortcutpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/statefile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/toasts"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/theming"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/hajimehoshi/ebiten/v2"
@@ -1936,7 +1937,7 @@ func TestInfoToastsExpireAndErrorsStayUntilClicked(t *testing.T) {
 	}
 	clock = clock.Add(2 * time.Second)
 	a.step(core.Input{})
-	if len(a.toasts) != 1 || !a.toasts[0].isErr {
+	if len(a.toasts) != 1 || !a.toasts[0].IsErr {
 		t.Fatalf("after 4s only the error is left: %+v", a.toasts)
 	}
 	clock = clock.Add(10 * time.Minute)
@@ -1958,7 +1959,7 @@ func TestClickingOneToastDismissesOnlyThatOne(t *testing.T) {
 	a.step(core.Input{})
 	x, y, w, h := toastRect(2, 0)
 	click(a, x+w/2, y+h/2)
-	if len(a.toasts) != 1 || a.toasts[0].text != "second" {
+	if len(a.toasts) != 1 || a.toasts[0].Text != "second" {
 		t.Fatalf("toasts = %+v", a.toasts)
 	}
 }
@@ -1968,8 +1969,8 @@ func TestOnlyTheNewestToastsAreKept(t *testing.T) {
 	for i := 0; i < 8; i++ {
 		a.toast(strings.Repeat("x", i+1), true)
 	}
-	if len(a.toasts) != maxToasts || len(a.toasts[len(a.toasts)-1].text) != 8 {
-		t.Fatalf("%d toasts, newest %q", len(a.toasts), a.toasts[len(a.toasts)-1].text)
+	if len(a.toasts) != toasts.Max || len(a.toasts[len(a.toasts)-1].Text) != 8 {
+		t.Fatalf("%d toasts, newest %q", len(a.toasts), a.toasts[len(a.toasts)-1].Text)
 	}
 }
 
@@ -1977,7 +1978,7 @@ func TestClipboardFailureBecomesAnErrorToast(t *testing.T) {
 	a, _ := newTestApp(t)
 	a.ctx.Clipboard = statusClipboard{inner: &fakeClip{err: errors.New("no clipboard tool found")}, report: a.clipboardNote}
 	a.ctx.Clipboard.Write("x")
-	if len(a.toasts) != 1 || !a.toasts[0].isErr || !strings.Contains(a.toasts[0].text, "no clipboard tool") {
+	if len(a.toasts) != 1 || !a.toasts[0].IsErr || !strings.Contains(a.toasts[0].Text, "no clipboard tool") {
 		t.Fatalf("toasts = %+v", a.toasts)
 	}
 	a.ctx.Clipboard = statusClipboard{inner: &fakeClip{}, report: a.clipboardNote}
@@ -2096,7 +2097,7 @@ func TestRenameToATakenNameIsRefusedWithAToast(t *testing.T) {
 	pickMenu(t, a, "Rename")
 	a.typeText("Repository Tags")
 	a.step(core.Input{Enter: true})
-	if info.Name != "Repository Info" || len(a.toasts) != 1 || !a.toasts[0].isErr {
+	if info.Name != "Repository Info" || len(a.toasts) != 1 || !a.toasts[0].IsErr {
 		t.Fatalf("name %q toasts %+v", info.Name, a.toasts)
 	}
 }
@@ -2225,7 +2226,7 @@ func TestADropThatIsNotAllowedChangesNothingAndSaysWhy(t *testing.T) {
 	if len(a.col.Folders) != 3 || len(a.col.Folders[1].Requests) != 3 {
 		t.Fatal("a refused move changes nothing")
 	}
-	if len(a.toasts) != 1 || !a.toasts[0].isErr {
+	if len(a.toasts) != 1 || !a.toasts[0].IsErr {
 		t.Fatalf("toasts = %+v", a.toasts)
 	}
 }

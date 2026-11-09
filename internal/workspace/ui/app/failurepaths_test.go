@@ -97,7 +97,7 @@ func TestEveryFailurePathIsShownToTheUser(t *testing.T) {
 			if test.wantToast != "" {
 				found := false
 				for _, toast := range a.toasts {
-					found = found || (toast.isErr && strings.Contains(toast.text, test.wantToast))
+					found = found || (toast.IsErr && strings.Contains(toast.Text, test.wantToast))
 				}
 				if !found {
 					t.Fatalf("no error toast containing %q; toasts %+v, status %q", test.wantToast, a.toasts, a.status)
@@ -127,7 +127,7 @@ func TestAHistoryThatCannotBeWrittenIsReportedByAToast(t *testing.T) {
 
 	found := false
 	for _, toast := range a.toasts {
-		found = found || (toast.isErr && strings.Contains(toast.text, "history"))
+		found = found || (toast.IsErr && strings.Contains(toast.Text, "history"))
 	}
 	if !found {
 		t.Fatalf("no toast about the history; toasts %+v, status %q", a.toasts, a.status)

@@ -19,6 +19,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/shortcutpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/autosave"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/toasts"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
 	"net/http"
 	"net/http/cookiejar"
@@ -198,7 +199,7 @@ type App struct {
 	hoverTicks         int                           // for how many frames
 	dropTarget         any                           // the node the pointer is over while dragging
 	dialog             *dialog                       // the open dialog, if any
-	toasts             []toast
+	toasts             toasts.Stack
 	now                func() time.Time               // the clock, replaced in tests
 	histories          func(dir string) rport.History // nil keeps no history
 	fonts              sport.FontStore
