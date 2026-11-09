@@ -3,6 +3,8 @@
 // Reading and writing the file is the settingsfile adapter's job.
 package settings
 
+import "time"
+
 // Settings are the user preferences.
 type Settings struct {
 	Theme    string `json:"theme"`    // "dark" or "light"
@@ -110,4 +112,12 @@ func Encode(s Settings) ([]byte, error) {
 		return nil, err
 	}
 	return append(data, '\n'), nil
+}
+
+// FileStamp identifies a version of the settings file cheaply: a changed
+// stamp means the file was written. The zero value is a missing file.
+type FileStamp struct {
+	Modified time.Time
+	Size     int64
+	Exists   bool
 }

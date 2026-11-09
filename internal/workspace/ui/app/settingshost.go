@@ -155,7 +155,7 @@ func (a *App) Persist() {
 		a.toast(a.status, true)
 		return
 	}
-	a.prefs.Stamp(a.settingsPath)
+	a.prefs.Stamp(a, a.settingsPath)
 	a.settingsUnsaved = false
 }
 
@@ -187,8 +187,8 @@ func (a *App) askSaveSettings() {
 	}
 }
 
-// WriteSettings replaces the settings file with text exactly as given.
-func (a *App) WriteSettings(text []byte) error { return a.settingFiles.WriteText(a.settingsPath, text) }
+// SettingsStore is the settings file's store.
+func (a *App) SettingsStore() port.SettingsStore { return a.settingFiles }
 
 // FontStore is the installed fonts of this machine.
 func (a *App) FontStore() port.FontStore { return a.fonts }

@@ -169,3 +169,27 @@ func TestResponseViewDefaultsToCompactAndRoundTrips(t *testing.T) {
 		t.Fatalf("round trip: %+v", got)
 	}
 }
+
+func TestStatChangesWhenTheFileIsWrittenAndIsZeroWhenMissing(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "settings.json")
+	store := Files{}
+	if got := store.Stat(path); got != (settings.FileStamp{}) {
+		t.Fatalf("missing file stamp = %+v, want zero", got)
+	}
+	if err := store.WriteText(path, []byte(`{}`)); err != nil {
+		t.Fatal(err)
+	}
+	first := store.Stat(path)
+	if !first.Exists || first.Size != 2 {
+		t.Fatalf("stamp = %+v", first)
+	}
+	if err := store.WriteText(path, []byte(`{"theme":"light"}`)); err != nil {
+		t.Fatal(err)
+	}
+	if store.Stat(path) == first {
+		t.Fatal("stamp must change when the file changes")
+	}
+	if text, err := store.ReadText(path); err != nil || string(text) != `{"theme":"light"}` {
+		t.Fatalf("ReadText = %q, %v", text, err)
+	}
+}

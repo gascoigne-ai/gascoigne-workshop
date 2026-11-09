@@ -118,7 +118,7 @@ func TestAChangeOnDiskIsPickedUpOnceAndAnOwnWriteIsNot(t *testing.T) {
 	var d Dialog
 	host := newHost(t)
 	host.Change(func(s *settings.Settings) { s.Corners = "round" })
-	d.Stamp(host.path)
+	d.Stamp(host, host.path)
 	host.current.Corners = "square" // unsaved: an own write must not reload over it
 	d.Poll(host)
 	if host.current.Corners != "square" {
@@ -148,12 +148,12 @@ func TestCompletionOffersWhatSettingsCompleteGivesAtTheCaret(t *testing.T) {
 		t.Fatalf("text = %q", d.RawText.Text)
 	}
 }
-func (h *fakeHost) Pointer() (int, int)             { return 400, 300 }
-func (h *fakeHost) Unsaved() bool                   { return h.unsaved }
-func (h *fakeHost) Persist()                        { _ = settingsfile.Save(h.path, h.current); h.unsaved = false; h.saved++ }
-func (h *fakeHost) WriteSettings(text []byte) error { return settingsfile.WriteText(h.path, text) }
-func (h *fakeHost) MarkUnsaved()                    { h.unsaved = true }
-func (h *fakeHost) MarkSaved()                      { h.unsaved = false }
+func (h *fakeHost) Pointer() (int, int)               { return 400, 300 }
+func (h *fakeHost) Unsaved() bool                     { return h.unsaved }
+func (h *fakeHost) Persist()                          { _ = settingsfile.Save(h.path, h.current); h.unsaved = false; h.saved++ }
+func (h *fakeHost) SettingsStore() port.SettingsStore { return settingsfile.Files{} }
+func (h *fakeHost) MarkUnsaved()                      { h.unsaved = true }
+func (h *fakeHost) MarkSaved()                        { h.unsaved = false }
 
 func TestAFileSettingHasAFolderButtonInsideItsFieldThatFillsIt(t *testing.T) {
 	var d Dialog

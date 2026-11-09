@@ -54,8 +54,8 @@ type Host interface {
 	Replace(s settings.Settings)
 	// SettingsPath is the settings file, "" when settings are not kept.
 	SettingsPath() string
-	// WriteSettings replaces the settings file with text exactly as given.
-	WriteSettings(text []byte) error
+	// SettingsStore reads, stats and writes the settings file.
+	SettingsStore() port.SettingsStore
 	// FontStore finds installed fonts and reads their files.
 	FontStore() port.FontStore
 	// SetFonts switches the interface and code fonts.
@@ -128,7 +128,7 @@ type Dialog struct {
 	Problems   []settings.Problem // what is wrong with it
 	rawBefore  string             // the text before the last change, to tell a typed quote from a paste
 	rawPending bool               // the raw text was applied but not written (auto-save is off)
-	stamp      fileStamp          // settings.json as last written or read
+	stamp      settings.FileStamp // settings.json as last written or read
 }
 
 // pageID is the page shown: the chosen one, else the first.
@@ -277,11 +277,11 @@ func (d *Dialog) saveButton(host Host) Node {
 // that is what was held back, else the settings in effect.
 func (d *Dialog) Save(host Host) {
 	if d.rawPending && d.Raw && len(d.Problems) == 0 && host.SettingsPath() != "" {
-		if err := host.WriteSettings([]byte(d.RawText.Text)); err != nil {
+		if err := host.SettingsStore().WriteText(host.SettingsPath(), []byte(d.RawText.Text)); err != nil {
 			host.Toast("Could not save settings: "+err.Error(), true)
 			return
 		}
-		d.Stamp(host.SettingsPath())
+		d.Stamp(host, host.SettingsPath())
 		d.rawPending = false
 		host.MarkSaved()
 		return

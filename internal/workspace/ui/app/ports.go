@@ -50,7 +50,9 @@ func (noSettingFiles) Load(string) (settings.Settings, error) { return settings.
 func (noSettingFiles) Save(string, settings.Settings) error {
 	return errors.New("no settings store")
 }
-func (noSettingFiles) WriteText(string, []byte) error { return errors.New("no settings store") }
+func (noSettingFiles) ReadText(string) ([]byte, error) { return nil, errors.New("no settings store") }
+func (noSettingFiles) Stat(string) settings.FileStamp  { return settings.FileStamp{} }
+func (noSettingFiles) WriteText(string, []byte) error  { return errors.New("no settings store") }
 
 // noStates keeps no state between runs.
 type noStates struct{}

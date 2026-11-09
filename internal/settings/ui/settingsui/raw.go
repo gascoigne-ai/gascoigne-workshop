@@ -2,8 +2,6 @@ package settingsui
 
 import (
 	"fmt"
-	"os"
-	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/jsonview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
@@ -15,26 +13,11 @@ import (
 // change made outside the program.
 const PollTicks = 30
 
-// fileStamp is what identifies a version of settings.json cheaply.
-type fileStamp struct {
-	modified time.Time
-	size     int64
-	exists   bool
-}
-
-func statFile(path string) fileStamp {
-	info, err := os.Stat(path)
-	if err != nil {
-		return fileStamp{}
-	}
-	return fileStamp{modified: info.ModTime(), size: info.Size(), exists: true}
-}
-
 // Stamp notes the file as it is now, so the program's own write is not
 // taken for an outside change.
-func (d *Dialog) Stamp(path string) {
+func (d *Dialog) Stamp(host Host, path string) {
 	if path != "" {
-		d.stamp = statFile(path)
+		d.stamp = host.SettingsStore().Stat(path)
 	}
 }
 
@@ -46,12 +29,12 @@ func (d *Dialog) Poll(host Host) {
 	if path == "" || host.Unsaved() { // an outside change must not overwrite what was not saved
 		return
 	}
-	now := statFile(path)
-	if now == d.stamp || !now.exists {
+	now := host.SettingsStore().Stat(path)
+	if now == d.stamp || !now.Exists {
 		return
 	}
 	d.stamp = now
-	data, err := os.ReadFile(path)
+	data, err := host.SettingsStore().ReadText(path)
 	if err != nil {
 		host.Toast("Cannot read settings.json: "+err.Error(), true)
 		return
@@ -72,7 +55,7 @@ func (d *Dialog) Poll(host Host) {
 // OpenRaw switches the dialog to the text of settings.json.
 func (d *Dialog) OpenRaw(host Host) {
 	text := ""
-	if data, err := os.ReadFile(host.SettingsPath()); host.SettingsPath() != "" && err == nil {
+	if data, err := host.SettingsStore().ReadText(host.SettingsPath()); host.SettingsPath() != "" && err == nil {
 		text = string(data)
 	} else if minimal, err := settings.Minimal(host.Settings()); err == nil {
 		text = string(minimal) + "\n"
@@ -123,11 +106,11 @@ func (d *Dialog) RawEdited(host Host) {
 		return
 	}
 	d.rawPending = false
-	if err := host.WriteSettings([]byte(text)); err != nil {
+	if err := host.SettingsStore().WriteText(path, []byte(text)); err != nil {
 		host.Toast("Could not save settings: "+err.Error(), true)
 		return
 	}
-	d.Stamp(path)
+	d.Stamp(host, path)
 }
 
 // rawStyler colors one line of the text as JSON, and the keys that have a

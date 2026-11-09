@@ -311,7 +311,7 @@ func NewApp(opts Options) (*App, error) {
 	if loadErr != nil {
 		a.status = loadErr.Error()
 	}
-	a.prefs.Stamp(a.settingsPath)
+	a.prefs.Stamp(a, a.settingsPath)
 	a.jar, _ = cookiejar.New(nil)
 	a.protocols, a.grpcMethods, a.curl = opts.Protocols, opts.GRPCMethods, opts.Curl
 	a.reg = a.newRegistry()

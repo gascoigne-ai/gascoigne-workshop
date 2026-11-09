@@ -86,6 +86,18 @@ func (Files) Load(path string) (settings.Settings, error) { return Load(path) }
 // Save implements port.SettingsStore.
 func (Files) Save(path string, current settings.Settings) error { return Save(path, current) }
 
+// ReadText implements port.SettingsStore.
+func (Files) ReadText(path string) ([]byte, error) { return os.ReadFile(path) }
+
+// Stat implements port.SettingsStore.
+func (Files) Stat(path string) settings.FileStamp {
+	info, err := os.Stat(path)
+	if err != nil {
+		return settings.FileStamp{}
+	}
+	return settings.FileStamp{Modified: info.ModTime(), Size: info.Size(), Exists: true}
+}
+
 // WriteText implements port.SettingsStore.
 func (Files) WriteText(path string, text []byte) error { return WriteText(path, text) }
 
