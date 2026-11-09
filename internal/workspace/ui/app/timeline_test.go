@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 )
 
 func TestRequestsShareACookieJarThatClearCookiesEmpties(t *testing.T) {
@@ -73,5 +74,19 @@ func TestCookiesDialogListsWhatTheJarHoldsForTheURL(t *testing.T) {
 	a.showCookies(tab)
 	if a.dialog != nil {
 		t.Fatal("no dialog for a URL without a host")
+	}
+}
+
+// Regression: the protocol registry was built at start and when cookies
+// were cleared, so a proxy or certificate chosen in the settings did
+// nothing until the next restart.
+func TestChangingTheProxyInTheSettingsReachesTheProtocols(t *testing.T) {
+	a, _ := newTestApp(t)
+
+	a.changeSettings(func(s *settings.Settings) { s.Proxy = "http://127.0.0.1:3128" })
+
+	rest, ok := a.reg["rest"].(proto.REST)
+	if !ok || rest.Proxy != "http://127.0.0.1:3128" {
+		t.Fatalf("REST protocol did not get the proxy: %+v", a.reg["rest"])
 	}
 }
