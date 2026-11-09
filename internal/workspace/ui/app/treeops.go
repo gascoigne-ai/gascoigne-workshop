@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/tree"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
 	"os"
 	"path/filepath"
@@ -93,23 +94,11 @@ func (a *App) newFolderIn(dir *model.Folder) {
 // renameNode asks for a new name and applies it; a refused name is
 // explained in a toast.
 func (a *App) renameNode(node any) {
-	field := *nodeName(node)
-	a.prompt("Rename", field, "Rename", func(text string) {
+	a.prompt("Rename", tree.NameOf(node), "Rename", func(text string) {
 		if err := a.col.Folder.Rename(node, text); err != nil {
 			a.toast("Cannot rename: "+err.Error(), true)
 		}
 	})
-}
-
-func nodeName(node any) *string {
-	switch n := node.(type) {
-	case *model.Request:
-		return &n.Name
-	case *model.Folder:
-		return &n.Name
-	}
-	empty := ""
-	return &empty
 }
 
 func (a *App) duplicateNode(node any) {
@@ -124,11 +113,8 @@ func (a *App) deleteNode(node any) {
 	if node == nil || node == any(&a.col.Folder) {
 		return
 	}
-	body := "This cannot be undone."
-	if _, isFolder := node.(*model.Folder); isFolder {
-		body = "The folder and everything in it will be removed."
-	}
-	a.confirm("Delete "+*nodeName(node)+"?", body, "Delete", func() {
+	title, body := tree.DeletePrompt(node)
+	a.confirm(title, body, "Delete", func() {
 		a.closeTabsIn(node)
 		a.col.Folder.Delete(node)
 		if a.selected == node {
@@ -140,12 +126,7 @@ func (a *App) deleteNode(node any) {
 // closeTabsIn closes the tabs whose request is node or inside it.
 func (a *App) closeTabsIn(node any) {
 	for i := len(a.tabs) - 1; i >= 0; i-- {
-		req := a.tabs[i].Req
-		inside := any(req) == node
-		if f, ok := node.(*model.Folder); ok {
-			inside = f.Contains(req)
-		}
-		if inside {
+		if tree.Inside(node, a.tabs[i].Req) {
 			a.closeTab(i)
 		}
 	}
@@ -168,18 +149,7 @@ func (a *App) finishDrag() {
 	if node == nil || target == nil || target == node {
 		return
 	}
-	var dir *model.Folder
-	var before any
-	switch t := target.(type) {
-	case *model.Folder:
-		dir = t
-	case *model.Request:
-		dir, _ = a.col.Folder.Parent(t)
-		before = t // a request lands before the one it was dropped on
-	}
-	if _, movingFolder := node.(*model.Folder); movingFolder {
-		before = nil
-	}
+	dir, before := tree.DropPlace(&a.col.Folder, node, target)
 	if err := a.col.Folder.Move(node, dir, before); err != nil {
 		a.toast("Cannot move: "+err.Error(), true)
 		return
@@ -302,7 +272,7 @@ func (a *App) importOpenAPI(dir *model.Folder) {
 	}
 	a.expanded[dir] = true
 	a.expandAll(res.Folder)
-	if first := firstRequest(res.Folder); first != nil {
+	if first := tree.FirstRequest(res.Folder); first != nil {
 		a.openRequest(first)
 	}
 	a.status = "Imported " + res.Folder.Name
@@ -350,7 +320,7 @@ func (a *App) importPostman(dir *model.Folder) {
 	}
 	a.expanded[dir] = true
 	a.expandAll(res.Folder)
-	if first := firstRequest(res.Folder); first != nil {
+	if first := tree.FirstRequest(res.Folder); first != nil {
 		a.openRequest(first)
 	}
 	a.status = "Imported " + res.Folder.Name

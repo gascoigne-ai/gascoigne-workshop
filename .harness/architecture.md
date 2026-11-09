@@ -14,6 +14,7 @@ flowchart LR
     end
     subgraph collection
       cad["adapter/store"]
+      cctl["controller/tree"]
       cmod["model/collection, openapi, postman, miniyaml"]
     end
     subgraph response
@@ -37,8 +38,8 @@ flowchart LR
       wad["adapter/statefile, filedialog"]
     end
   end
-  app --> ectl & wctl
-  ectl & wctl --> rmod
+  app --> ectl & wctl & cctl
+  ectl & wctl & cctl --> rmod
   app --> rui & rad & cad & sui & sad & tui & tad & wad
   rui & rad & cad & sui & tui --> rmod
   rad -. implements .-> rport
@@ -77,6 +78,7 @@ The toolkit packages are public and independent of the application (`uitoolkit/c
 | `internal/request/port` | `Protocol`, `Registry`, `Streamer`, `Session`, `Event`, the sampling types, `ProtocolConfig`, `GRPCMethods` |
 | `internal/request/model/assert` | the assertion language run against a response |
 | `internal/request/ui/calltrace`, `internal/request/ui/mcpform` | the Log dialog; the MCP tool-call form (`Form.Command` composes the call), each behind a `Host` interface |
+| `internal/collection/controller/tree` | what the tree's operations mean: where a drop lands, which tabs a delete closes, the delete question, the first request, the key that notices a change; the App draws the tree and asks |
 | `internal/workspace/controller/tabs` | the UI-free state of an open request: request and saved copy, shown response, send number (`BeginSend`, `Accept`, `Cancel`) , the rules of the tab strip (`Next`, `AfterClose`, `AfterMove`) the table undo history (`RowHistory`), the earlier responses (`Remember`, `Recall`) and the state of an open socket (`Connection`: wanted, connecting, session, what an MCP server announced); the App's `reqTab` embeds it and keeps the widget state |
 | `internal/workspace/controller/autosave` | when the collection and the remembered state are written: once their content stayed the same for a pause (`Debounce`) |
 | `internal/workspace/controller/toasts` | the messages over the window: info fades, errors stay, a repeated error is one, at most five (`Stack`); the App draws them |

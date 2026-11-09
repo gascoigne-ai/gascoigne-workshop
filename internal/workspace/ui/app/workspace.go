@@ -1,8 +1,8 @@
 package ui
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/tree"
 	"strings"
 	"time"
 
@@ -36,14 +36,14 @@ func (a *App) openWorkspace(dir string) {
 		a.openRequest(a.col.Folders[1].Requests[0])
 	} else {
 		a.expandAll(&a.col.Folder)
-		first := firstRequest(&a.col.Folder)
+		first := tree.FirstRequest(&a.col.Folder)
 		if first == nil {
 			first = a.col.AddRequest(model.Request{Name: "New Request", Protocol: "rest", Method: "GET"})
 		}
 		a.openRequest(first)
 	}
 	a.pickEnv()
-	a.colSave.Saved(collectionKey(a.col))
+	a.colSave.Saved(tree.Key(a.col))
 }
 
 func (a *App) expandAll(f *model.Folder) {
@@ -51,28 +51,6 @@ func (a *App) expandAll(f *model.Folder) {
 	for _, sub := range f.Folders {
 		a.expandAll(sub)
 	}
-}
-
-// firstRequest is the first request in tree order, or nil.
-func firstRequest(f *model.Folder) *model.Request {
-	if len(f.Requests) > 0 {
-		return f.Requests[0]
-	}
-	for _, sub := range f.Folders {
-		if r := firstRequest(sub); r != nil {
-			return r
-		}
-	}
-	return nil
-}
-
-// collectionKey is a comparable form of the collection.
-func collectionKey(c model.Collection) string {
-	b, err := json.Marshal(c)
-	if err != nil {
-		return err.Error()
-	}
-	return string(b)
 }
 
 // saveWorkspace writes the collection to the workspace. Without one it
@@ -88,7 +66,7 @@ func (a *App) saveWorkspace() {
 		}
 	}
 	if err := a.store.Save(dir, a.col); err != nil {
-		a.colSave.Saved(collectionKey(a.col)) // report once, do not retry every frame
+		a.colSave.Saved(tree.Key(a.col)) // report once, do not retry every frame
 		a.toast("Saving failed: "+err.Error(), true)
 		return
 	}
@@ -99,7 +77,7 @@ func (a *App) saveWorkspace() {
 	for _, t := range a.tabs {
 		t.MarkSaved()
 	}
-	a.colSave.Saved(collectionKey(a.col))
+	a.colSave.Saved(tree.Key(a.col))
 	a.status = fmt.Sprintf("Saved %s", a.col.Name)
 }
 
@@ -109,7 +87,7 @@ func (a *App) workspaceTick() {
 	if a.workspace == "" {
 		return
 	}
-	if a.colSave.Due(collectionKey(a.col), a.now()) {
+	if a.colSave.Due(tree.Key(a.col), a.now()) {
 		a.saveWorkspace()
 	}
 }
@@ -122,13 +100,13 @@ func (a *App) FlushWorkspace() error {
 		return nil
 	}
 	a.commitEdit()
-	if !a.colSave.Pending(collectionKey(a.col)) {
+	if !a.colSave.Pending(tree.Key(a.col)) {
 		return nil
 	}
 	if err := a.store.Save(a.workspace, a.col); err != nil {
 		return err
 	}
-	a.colSave.Saved(collectionKey(a.col))
+	a.colSave.Saved(tree.Key(a.col))
 	return nil
 }
 
@@ -158,13 +136,13 @@ func (a *App) openWorkspaceAt(dir string) {
 	a.tabs, a.active, a.selected = nil, 0, nil
 	a.expanded = map[*model.Folder]bool{}
 	a.expandAll(&a.col.Folder)
-	first := firstRequest(&a.col.Folder)
+	first := tree.FirstRequest(&a.col.Folder)
 	if first == nil {
 		first = a.col.AddRequest(model.Request{Name: "New Request", Protocol: "rest", Method: "GET"})
 	}
 	a.openRequest(first)
 	a.pickEnv()
-	a.colSave.Saved(collectionKey(a.col))
+	a.colSave.Saved(tree.Key(a.col))
 	a.saveSettings(func(s *settings.Settings) { s.Workspace = dir })
 	a.status = "Opened " + dir
 }
