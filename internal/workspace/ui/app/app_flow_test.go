@@ -12,6 +12,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/fonts"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/settingsfile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/shortcutpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/statefile"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/theming"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -2918,7 +2919,7 @@ func openSettingsMenu(t *testing.T) (*App, string) {
 }
 
 func typeColor(a *App, tok core.Token, row int, text string) {
-	in := a.colors.Input(colorHost{a}, tok)
+	in := a.colors.Input(pageHost{a}, tok)
 	click(a, colorFieldX, colorRow0Y+row*core.RowH)
 	in.SelectAll()
 	a.typeText(text)
@@ -2990,8 +2991,8 @@ func TestResetButtonsRestoreTheDefaults(t *testing.T) {
 	typeColor(a, core.Selection, 0, "#223344")
 	typeColor(a, core.FindMatch, 1, "#334455")
 	click(a, colorResetX, colorRow0Y)
-	if a.ctx.Th.Color(core.Selection) != def || a.colors.Input(colorHost{a}, core.Selection).Text != theming.FormatHex(def) {
-		t.Fatalf("selection %v, field %q", a.ctx.Th.Color(core.Selection), a.colors.Input(colorHost{a}, core.Selection).Text)
+	if a.ctx.Th.Color(core.Selection) != def || a.colors.Input(pageHost{a}, core.Selection).Text != theming.FormatHex(def) {
+		t.Fatalf("selection %v, field %q", a.ctx.Th.Color(core.Selection), a.colors.Input(pageHost{a}, core.Selection).Text)
 	}
 	if a.ctx.Th.Color(core.FindMatch) != core.RGB(0x334455) {
 		t.Fatal("resetting one color must leave the others")
@@ -3014,8 +3015,8 @@ func TestSwitchingThemeShowsThatThemesColorsAndKeepsEachThemesOverrides(t *testi
 	if a.ctx.Th.Color(core.Selection) != appearance.ThemeFor("light", "medium").Color(core.Selection) {
 		t.Fatal("the dark override must not leak into the light theme")
 	}
-	if a.colors.Input(colorHost{a}, core.Selection).Text != theming.FormatHex(appearance.ThemeFor("light", "medium").Color(core.Selection)) {
-		t.Fatalf("the field must show the light theme's color, got %q", a.colors.Input(colorHost{a}, core.Selection).Text)
+	if a.colors.Input(pageHost{a}, core.Selection).Text != theming.FormatHex(appearance.ThemeFor("light", "medium").Color(core.Selection)) {
+		t.Fatalf("the field must show the light theme's color, got %q", a.colors.Input(pageHost{a}, core.Selection).Text)
 	}
 	clickText(t, a, "Dark", 0) // back to Dark
 	if a.ctx.Th.Color(core.Selection) != core.RGB(0x223344) {
@@ -3065,13 +3066,13 @@ func combo(k ebiten.Key, ctrl, shift, alt bool) core.Input {
 func TestRecordingANewBindingRebindsTheAction(t *testing.T) {
 	a, path := newTestApp(t)
 	a.newRequest() // two tabs
-	a.startRecording("close-tab")
-	if a.recording != "close-tab" {
+	a.shortcutKeys.Start("close-tab")
+	if a.shortcutKeys.Recording() != "close-tab" {
 		t.Fatal("recording must start")
 	}
 	a.step(combo(ebiten.KeyQ, true, false, false))
-	if a.recording != "" || a.settings.Shortcuts["close-tab"] != "Ctrl+Q" {
-		t.Fatalf("recording %q shortcuts %v", a.recording, a.settings.Shortcuts)
+	if a.shortcutKeys.Recording() != "" || a.settings.Shortcuts["close-tab"] != "Ctrl+Q" {
+		t.Fatalf("recording %q shortcuts %v", a.shortcutKeys.Recording(), a.settings.Shortcuts)
 	}
 	if saved, _ := settingsfile.Load(path); saved.Shortcuts["close-tab"] != "Ctrl+Q" {
 		t.Fatalf("saved %+v", saved.Shortcuts)
@@ -3084,21 +3085,21 @@ func TestRecordingANewBindingRebindsTheAction(t *testing.T) {
 	if len(a.tabs) != 1 {
 		t.Fatal("Ctrl+Q closes a tab")
 	}
-	if a.shortcutText("close-tab") != "Ctrl+Q" {
-		t.Fatalf("text = %q", a.shortcutText("close-tab"))
+	if shortcutpage.KeyText(pageHost{a}, "close-tab") != "Ctrl+Q" {
+		t.Fatalf("text = %q", shortcutpage.KeyText(pageHost{a}, "close-tab"))
 	}
 }
 
 func TestEscapeCancelsRecordingAndBackspaceUnbinds(t *testing.T) {
 	a, _ := newTestApp(t)
-	a.startRecording("close-tab")
+	a.shortcutKeys.Start("close-tab")
 	a.step(core.Input{Escape: true})
-	if a.recording != "" || len(a.settings.Shortcuts) != 0 || a.menu {
-		t.Fatalf("recording %q shortcuts %v", a.recording, a.settings.Shortcuts)
+	if a.shortcutKeys.Recording() != "" || len(a.settings.Shortcuts) != 0 || a.menu {
+		t.Fatalf("recording %q shortcuts %v", a.shortcutKeys.Recording(), a.settings.Shortcuts)
 	}
 
 	a.newRequest()
-	a.startRecording("close-tab")
+	a.shortcutKeys.Start("close-tab")
 	a.step(combo(ebiten.KeyBackspace, false, false, false))
 	if v, ok := a.settings.Shortcuts["close-tab"]; !ok || v != "" {
 		t.Fatalf("shortcuts = %v: Backspace stores an empty (unbound) binding", a.settings.Shortcuts)
@@ -3107,8 +3108,8 @@ func TestEscapeCancelsRecordingAndBackspaceUnbinds(t *testing.T) {
 	if len(a.tabs) != 2 {
 		t.Fatal("an unbound action fires nothing")
 	}
-	if a.shortcutText("close-tab") != "Unbound" {
-		t.Fatalf("text = %q", a.shortcutText("close-tab"))
+	if shortcutpage.KeyText(pageHost{a}, "close-tab") != "Unbound" {
+		t.Fatalf("text = %q", shortcutpage.KeyText(pageHost{a}, "close-tab"))
 	}
 }
 
@@ -3117,38 +3118,38 @@ func TestEscapeCancelsRecordingAndBackspaceUnbinds(t *testing.T) {
 // shortcuteditor_test.go).
 func TestRecordingRefusesKeysThatBelongToTextEditingAndKeepsListening(t *testing.T) {
 	a, _ := newTestApp(t)
-	a.startRecording("close-tab")
+	a.shortcutKeys.Start("close-tab")
 	a.step(combo(ebiten.KeyC, true, false, false))
-	if !strings.Contains(a.recordNotes["close-tab"], "text") || a.recording != "close-tab" {
-		t.Fatalf("note %q recording %q", a.recordNotes["close-tab"], a.recording)
+	if !strings.Contains(a.shortcutKeys.Note("close-tab"), "text") || a.shortcutKeys.Recording() != "close-tab" {
+		t.Fatalf("note %q recording %q", a.shortcutKeys.Note("close-tab"), a.shortcutKeys.Recording())
 	}
 	if len(a.settings.Shortcuts) != 0 {
 		t.Fatal("refused combinations must change nothing")
 	}
 	a.step(combo(ebiten.KeyQ, true, false, false)) // a good one ends it and clears the note
-	if a.recording != "" || a.recordNotes["close-tab"] != "" || a.settings.Shortcuts["close-tab"] != "Ctrl+Q" {
-		t.Fatalf("recording %q note %q shortcuts %v", a.recording, a.recordNotes["close-tab"], a.settings.Shortcuts)
+	if a.shortcutKeys.Recording() != "" || a.shortcutKeys.Note("close-tab") != "" || a.settings.Shortcuts["close-tab"] != "Ctrl+Q" {
+		t.Fatalf("recording %q note %q shortcuts %v", a.shortcutKeys.Recording(), a.shortcutKeys.Note("close-tab"), a.settings.Shortcuts)
 	}
 }
 
 func TestAModifierKeyAloneDoesNotEndRecording(t *testing.T) {
 	a, _ := newTestApp(t)
-	a.startRecording("close-tab")
+	a.shortcutKeys.Start("close-tab")
 	a.step(core.Input{Keys: []ebiten.Key{ebiten.KeyControlLeft}, Ctrl: true})
-	if a.recording != "close-tab" || len(a.settings.Shortcuts) != 0 {
-		t.Fatalf("recording %q shortcuts %v", a.recording, a.settings.Shortcuts)
+	if a.shortcutKeys.Recording() != "close-tab" || len(a.settings.Shortcuts) != 0 {
+		t.Fatalf("recording %q shortcuts %v", a.shortcutKeys.Recording(), a.settings.Shortcuts)
 	}
 }
 
 func TestRebindingToTheDefaultStoresNothingAndResetRestoresIt(t *testing.T) {
 	a, _ := newTestApp(t)
-	a.startRecording("close-tab")
+	a.shortcutKeys.Start("close-tab")
 	a.step(combo(ebiten.KeyQ, true, false, false))
-	a.resetBinding("close-tab")
-	if _, ok := a.settings.Shortcuts["close-tab"]; ok || a.shortcutText("close-tab") != "Ctrl+W" {
-		t.Fatalf("shortcuts %v text %q", a.settings.Shortcuts, a.shortcutText("close-tab"))
+	a.shortcutKeys.Reset(pageHost{a}, "close-tab")
+	if _, ok := a.settings.Shortcuts["close-tab"]; ok || shortcutpage.KeyText(pageHost{a}, "close-tab") != "Ctrl+W" {
+		t.Fatalf("shortcuts %v text %q", a.settings.Shortcuts, shortcutpage.KeyText(pageHost{a}, "close-tab"))
 	}
-	a.startRecording("close-tab")
+	a.shortcutKeys.Start("close-tab")
 	a.step(combo(ebiten.KeyW, true, false, false)) // its own default
 	if _, ok := a.settings.Shortcuts["close-tab"]; ok {
 		t.Fatalf("a binding equal to the default must not be stored: %v", a.settings.Shortcuts)
@@ -3179,7 +3180,7 @@ func TestSavedBindingsApplyFromTheStart(t *testing.T) {
 
 func TestMenusShowTheConfiguredKey(t *testing.T) {
 	a := jsonResponse(t, `{"ok":true}`)
-	a.startRecording("find")
+	a.shortcutKeys.Start("find")
 	a.step(combo(ebiten.KeyG, true, false, false))
 	rightClick(a, 1000, 400)
 	if got := itemByLabel(a, "Find").shortcut; got != "Ctrl+G" {
@@ -3189,10 +3190,10 @@ func TestMenusShowTheConfiguredKey(t *testing.T) {
 
 func TestShortcutSettingsRenderWhileRecording(t *testing.T) {
 	a, _ := openSettingsPage(t, "shortcuts")
-	a.startRecording("close-tab")
-	a.recordNotes = map[string]string{"close-tab": "Already used by New request"}
-	a.step(core.Input{}) // the menu with a recording row and a note must lay out
-	if !a.menu || a.recording != "close-tab" {
+	a.shortcutKeys.Start("close-tab")
+	a.step(combo(ebiten.KeyC, true, false, false)) // refused: it belongs to text editing, so a note shows
+	a.step(core.Input{})                           // the menu with a recording row and a note must lay out
+	if !a.menu || a.shortcutKeys.Recording() != "close-tab" {
 		t.Fatal("the menu stays open while recording")
 	}
 }

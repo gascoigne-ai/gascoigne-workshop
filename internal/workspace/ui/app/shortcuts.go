@@ -6,6 +6,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/shortcutpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
 )
@@ -63,7 +64,7 @@ func (a *App) runShortcuts(in core.Input) {
 	for _, k := range in.Keys {
 		for _, s := range shortcuts {
 			b := a.bindingOf(s)
-			if typesText(b) && a.textFocused() {
+			if shortcutpage.TypesText(b) && a.textFocused() {
 				continue // the key is for typing
 			}
 			if b.Bound && b.Key == k && b.Ctrl == in.Ctrl && b.Shift == in.Shift && b.Alt == in.Alt {

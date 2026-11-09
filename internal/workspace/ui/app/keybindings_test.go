@@ -1,12 +1,12 @@
 package ui
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/hajimehoshi/ebiten/v2"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/shortcutpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
 )
@@ -99,7 +99,7 @@ func TestCheckBinding(t *testing.T) {
 		{"Alt with a letter is fine", "close-tab", "Alt+Q", ""},
 	}
 	for _, tt := range tests {
-		err := a.checkBinding(tt.id, mk(tt.combo))
+		err := shortcutpage.Check(pageHost{a}, tt.id, mk(tt.combo))
 		switch {
 		case tt.name == "Delete alone is fine":
 			// Delete is the default of "delete-row": taken, so it names that action
@@ -114,7 +114,7 @@ func TestCheckBinding(t *testing.T) {
 			t.Errorf("%s: %q gave %v, want an error mentioning %q", tt.name, tt.combo, err, tt.wantErr)
 		}
 	}
-	if err := a.checkBinding("close-tab", mk("Escape")); err == nil {
+	if err := shortcutpage.Check(pageHost{a}, "close-tab", mk("Escape")); err == nil {
 		t.Error("plain Escape belongs to closing overlays")
 	}
 }
@@ -136,9 +136,9 @@ func TestBindingWarningNamesPlainKeysOnly(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		got := bindingWarning(b)
+		got := shortcutpage.Warning(b)
 		if (got != "") != tt.warn || (tt.warn && !strings.Contains(got, "no text field")) {
-			t.Errorf("bindingWarning(%s) = %q, want a warning: %v", tt.combo, got, tt.warn)
+			t.Errorf("Warning(%s) = %q, want a warning: %v", tt.combo, got, tt.warn)
 		}
 	}
 }
@@ -162,26 +162,13 @@ func TestAPlainKeyBindingFiresOnlyWhileNoTextFieldHasFocus(t *testing.T) {
 
 func TestTextKeysListEveryReservedCombination(t *testing.T) {
 	var listed []string
-	for _, row := range textKeys {
-		listed = append(listed, row.keys)
+	for _, row := range shortcutpage.TextKeys {
+		listed = append(listed, row.Keys)
 	}
 	all := strings.Join(listed, " ")
-	for _, combo := range reservedForText {
+	for _, combo := range shortcutpage.ReservedForText {
 		if !strings.Contains(all, combo) {
 			t.Errorf("%s is reserved for text but not listed in the settings: %v", combo, listed)
 		}
 	}
-}
-
-// checkBinding says why combination b cannot be given to action id as it
-// stands: refused outright, or taken by another action (which the editor
-// offers to replace).
-func (a *App) checkBinding(id string, b engine.Binding) error {
-	if err := refuseBinding(b); err != nil {
-		return err
-	}
-	if other, taken := a.conflictWith(id, b); taken {
-		return fmt.Errorf("Already used by %s", other.name)
-	}
-	return nil
 }

@@ -18,7 +18,7 @@ status: todo
 
 ## Scope
 - [open] Split the `App` (`workspace/ui/app`, about 14k lines) into a `controller` (state, handlers) and views: the role exists in the rules but holds no package yet. Order: tabs and panes, tree and workspace, then the dialogs.
-- [open] Features that can leave the `App` behind a `Host` (from task 032), each into its domain's `ui` role: environment dialogs and chip view, shortcut editor (the colors page is `settings/ui/colorpage`). Tabs, panes, tree and workspace stay in the controller.
+- [open] Features that can leave the `App` behind a `Host` (from task 032), each into its domain's `ui` role: environment dialogs and chip view (the colors page and the shortcut editor are `settings/ui/colorpage` and `settings/ui/shortcutpage`). Tabs, panes, tree and workspace stay in the controller.
 
 ## Acceptance
 - Every step keeps `make check` green; no behavior change and no test assertion changed (imports and names only).

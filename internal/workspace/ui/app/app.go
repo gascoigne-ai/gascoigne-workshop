@@ -16,6 +16,7 @@ import (
 	sport "github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/colorpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/settingsui"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/shortcutpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
 	"net/http"
 	"net/http/cookiejar"
@@ -197,15 +198,12 @@ type App struct {
 	cancelSettingsPick func()                        // takes back a file question the settings dialog asked
 	settingsUnsaved    bool                          // settings were changed but not written (auto-save is off)
 	prefs              settingsui.Dialog             // the settings dialog
-	shortcutSearch     view.TextField                // filters the shortcut table
-	pendingKeys        map[string]pendingKey         // recorded keys another action has, by action id
+	shortcutKeys       shortcutpage.Page             // the Shortcuts page of the settings dialog
 	tabsScroll         view.ScrollState              // sideways scroll of the request tab strip
 	dirty              bool                          // something changed since the last draw
 	tps                int                           // the update rate last set
 	lastIn             core.Input                    // the previous frame's input
 	pacer              engine.Pacer                  // update rate from idle time
-	recording          string                        // the action whose key is being recorded, "" when none
-	recordNotes        map[string]string             // why a recorded key was refused, by action id
 	colors             colorpage.Page                // the Colors page of the settings dialog
 	colWidths          map[string]*view.ColumnWidths // the column sizes of each table, by name
 	rowSel             *rowSelection                 // the table row the keyboard acts on
@@ -547,7 +545,7 @@ func (a *App) step(in core.Input) {
 		a.finishDrag()
 	}
 	hadOverlay := a.overlayOpen()
-	wasRecording := a.recording != ""
+	wasRecording := a.shortcutKeys.Recording() != ""
 	menuWasOpen := a.ctxMenu != nil
 	a.overlayKeys(in)
 	if menuWasOpen {
@@ -557,7 +555,7 @@ func (a *App) step(in core.Input) {
 		a.treeKeys(in)
 	}
 	if wasRecording {
-		a.recordKey(in)
+		a.shortcutKeys.RecordKey(pageHost{a}, in)
 	} else if !a.overlayOpen() {
 		a.runShortcuts(in)
 	}

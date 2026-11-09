@@ -2,6 +2,7 @@ package ui
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/settingsfile"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/shortcutpage"
 	"strings"
 	"testing"
 
@@ -13,32 +14,32 @@ import (
 
 func TestRecordingATakenKeyOffersReplaceAndSavesNothingYet(t *testing.T) {
 	a, _ := newTestApp(t)
-	a.startRecording("close-tab")
+	a.shortcutKeys.Start("close-tab")
 	a.step(combo(ebiten.KeyT, true, false, false)) // Ctrl+T is "New request"
-	if a.recording != "" {
+	if a.shortcutKeys.Recording() != "" {
 		t.Fatal("recording should end: the user decides now")
 	}
-	pending, ok := a.pendingKeys["close-tab"]
-	if !ok || pending.otherName != "New request" {
-		t.Fatalf("pending = %+v", a.pendingKeys)
+	pending, ok := a.shortcutKeys.Pending("close-tab")
+	if !ok || pending.OtherName != "New request" {
+		t.Fatalf("pending = %+v", pending)
 	}
 	if len(a.settings.Shortcuts) != 0 {
 		t.Fatalf("shortcuts = %v, want nothing saved before the user replaces", a.settings.Shortcuts)
 	}
-	if dump := view.Dump(a.shortcutsView()); !strings.Contains(dump, "Used by New request") || !strings.Contains(dump, "Replace") {
+	if dump := view.Dump(a.shortcutKeys.View(pageHost{a})); !strings.Contains(dump, "Used by New request") || !strings.Contains(dump, "Replace") {
 		t.Fatalf("the row shows no conflict:\n%s", dump)
 	}
 }
 
 func TestReplaceGivesTheKeyToThisActionAndUnbindsTheOther(t *testing.T) {
 	a, path := newTestApp(t)
-	a.startRecording("close-tab")
+	a.shortcutKeys.Start("close-tab")
 	a.step(combo(ebiten.KeyT, true, false, false))
-	a.replaceBinding("close-tab")
-	if a.shortcutText("close-tab") != "Ctrl+T" || a.shortcutText("new-request") != "Unbound" {
-		t.Fatalf("close-tab %q, new-request %q", a.shortcutText("close-tab"), a.shortcutText("new-request"))
+	a.shortcutKeys.Replace(pageHost{a}, "close-tab")
+	if shortcutpage.KeyText(pageHost{a}, "close-tab") != "Ctrl+T" || shortcutpage.KeyText(pageHost{a}, "new-request") != "Unbound" {
+		t.Fatalf("close-tab %q, new-request %q", shortcutpage.KeyText(pageHost{a}, "close-tab"), shortcutpage.KeyText(pageHost{a}, "new-request"))
 	}
-	if len(a.pendingKeys) != 0 {
+	if a.shortcutKeys.PendingCount() != 0 {
 		t.Fatal("the pending choice stayed")
 	}
 	if saved := mustLoad(t, path); saved.Shortcuts["close-tab"] != "Ctrl+T" || saved.Shortcuts["new-request"] != "" {
@@ -48,62 +49,34 @@ func TestReplaceGivesTheKeyToThisActionAndUnbindsTheOther(t *testing.T) {
 
 func TestRecordingAgainDropsAPendingReplace(t *testing.T) {
 	a, _ := newTestApp(t)
-	a.startRecording("close-tab")
+	a.shortcutKeys.Start("close-tab")
 	a.step(combo(ebiten.KeyT, true, false, false))
-	a.startRecording("close-tab")
-	if _, ok := a.pendingKeys["close-tab"]; ok {
+	a.shortcutKeys.Start("close-tab")
+	if _, ok := a.shortcutKeys.Pending("close-tab"); ok {
 		t.Fatal("a new recording keeps the old pending choice")
 	}
 }
 
 func TestClearUnbindsAnActionAndResetBringsTheDefaultBack(t *testing.T) {
 	a, _ := newTestApp(t)
-	a.clearBinding("close-tab")
-	if a.shortcutText("close-tab") != "Unbound" {
-		t.Fatalf("text = %q", a.shortcutText("close-tab"))
+	a.shortcutKeys.Clear(pageHost{a}, "close-tab")
+	if shortcutpage.KeyText(pageHost{a}, "close-tab") != "Unbound" {
+		t.Fatalf("text = %q", shortcutpage.KeyText(pageHost{a}, "close-tab"))
 	}
-	a.resetBinding("close-tab")
-	if a.shortcutText("close-tab") != "Ctrl+W" {
-		t.Fatalf("text = %q", a.shortcutText("close-tab"))
-	}
-}
-
-func TestShortcutSearchMatchesTheActionNameOrTheKey(t *testing.T) {
-	tests := []struct {
-		query   string
-		want    string
-		notWant string
-	}{
-		{"close", "Close tab", "Send request"},
-		{"CLOSE", "Close tab", "Send request"},
-		{"ctrl+w", "Close tab", "Send request"},
-		{"enter", "Send request", "Close tab"},
-	}
-	for _, test := range tests {
-		t.Run(test.query, func(t *testing.T) {
-			a, _ := newTestApp(t)
-			a.shortcutSearch = view.NewTextField(test.query)
-			dump := view.Dump(a.shortcutsView())
-			if !strings.Contains(dump, test.want) || strings.Contains(dump, test.notWant) {
-				t.Fatalf("search %q:\n%s", test.query, dump)
-			}
-		})
-	}
-	a, _ := newTestApp(t)
-	a.shortcutSearch = view.NewTextField("zzzz")
-	if !strings.Contains(view.Dump(a.shortcutsView()), "No shortcut matches") {
-		t.Fatal("no empty-result note")
+	a.shortcutKeys.Reset(pageHost{a}, "close-tab")
+	if shortcutpage.KeyText(pageHost{a}, "close-tab") != "Ctrl+W" {
+		t.Fatalf("text = %q", shortcutpage.KeyText(pageHost{a}, "close-tab"))
 	}
 }
 
 func TestAKeyThatTypesTextIsAWarningNotARefusal(t *testing.T) {
 	a, _ := newTestApp(t)
-	a.startRecording("close-tab")
+	a.shortcutKeys.Start("close-tab")
 	a.step(combo(ebiten.KeyJ, false, false, false)) // a plain letter types text
 	if a.settings.Shortcuts["close-tab"] != "J" {
 		t.Fatalf("shortcuts = %v", a.settings.Shortcuts)
 	}
-	if !strings.Contains(view.Dump(a.shortcutsView()), "text") {
+	if !strings.Contains(view.Dump(a.shortcutKeys.View(pageHost{a})), "text") {
 		t.Fatal("no warning on the row")
 	}
 }

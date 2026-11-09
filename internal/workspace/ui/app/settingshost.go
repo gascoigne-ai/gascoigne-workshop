@@ -94,9 +94,9 @@ func (a *App) OpenMenu(x, y int, items []settingsui.MenuItem) {
 func (a *App) ExtraPage(id string) Node {
 	switch id {
 	case "colors":
-		return a.colors.View(colorHost{a})
+		return a.colors.View(pageHost{a})
 	case "shortcuts":
-		return a.shortcutsView()
+		return a.shortcutKeys.View(pageHost{a})
 	}
 	return nil
 }
