@@ -3577,3 +3577,24 @@ func TestFindWorksInEveryResponseView(t *testing.T) {
 		}
 	}
 }
+
+// Regression: the send goroutine read a.reg and a.settings while clearing
+// the cookies replaced a.reg on the UI goroutine, a data race. The
+// goroutine must work from what dispatch captured before it started.
+func TestClearingCookiesWhileARequestRunsIsRaceFree(t *testing.T) {
+	release := make(chan struct{})
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		<-release
+		io.WriteString(w, `{"ok":true}`)
+	}))
+	t.Cleanup(srv.Close)
+	a, _ := newTestApp(t)
+	tab := a.cur()
+	pointTabAt(tab, srv.URL)
+
+	a.dispatch(tab, tab.Req)
+	a.clearCookies()
+	close(release)
+
+	waitForResponse(t, a, tab)
+}

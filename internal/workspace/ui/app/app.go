@@ -352,9 +352,10 @@ func (a *App) dispatch(t *reqTab, source *model.Request) {
 	a.calls.Sent(a.now(), req)
 	ctx, cancel := context.WithTimeout(context.Background(), a.timeoutFor(req))
 	t.cancel = cancel
+	reg := a.reg // the goroutine must not read App fields the UI goroutine replaces
 	go func() {
 		defer cancel()
-		resp, err := a.reg.Send(ctx, req)
+		resp, err := reg.Send(ctx, req)
 		if err != nil {
 			resp = model.Response{Err: err.Error()}
 		}

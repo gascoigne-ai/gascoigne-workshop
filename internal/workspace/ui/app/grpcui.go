@@ -20,8 +20,9 @@ func (a *App) pickGRPCMethod(t *reqTab) {
 	req := t.Req.Expanded(a.varsFor(t.Req))
 	x, y := a.ctx.In.X, a.ctx.In.Y
 	a.status = "Listing methods of " + req.URL
+	timeout := a.timeoutFor(req) // read here: the goroutine must not touch App fields
 	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), a.timeoutFor(req))
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
 		methods, err := a.listGRPCMethods(ctx, req)
 		a.later <- func() {

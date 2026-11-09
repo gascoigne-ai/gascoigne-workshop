@@ -71,9 +71,10 @@ func (a *App) connect(t *reqTab) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), a.timeoutFor(req))
 	t.wsCancel = cancel
+	reg := a.reg // the goroutine must not read App fields the UI goroutine replaces
 	go func() {
 		defer cancel()
-		s, err := a.reg.Connect(context.Background(), req)
+		s, err := reg.Connect(context.Background(), req)
 		if err == nil {
 			select {
 			case <-ctx.Done(): // dialing took longer than the timeout
