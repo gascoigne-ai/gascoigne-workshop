@@ -11,11 +11,12 @@ import (
 
 // Tab is one open request.
 type Tab struct {
-	Req     *model.Request
-	Saved   model.Request // the request as it was when opened or last saved
-	Resp    *model.Response
-	Sending bool
-	Seq     int // numbers the sends, so a late result of an old one is ignored
+	Req       *model.Request
+	Saved     model.Request // the request as it was when opened or last saved
+	Resp      *model.Response
+	Sending   bool
+	Seq       int                    // numbers the sends, so a late result of an old one is ignored
+	histories map[string]*RowHistory // undo history of each table
 	Connection
 }
 

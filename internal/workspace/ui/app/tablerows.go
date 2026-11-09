@@ -19,57 +19,14 @@ type rowSelection struct {
 	row  int
 }
 
-// historyLimit is how many table changes can be undone per table.
-const historyLimit = 100
-
-// rowHistory is the undo and redo stack of one table of a tab.
-type rowHistory struct{ undo, redo [][]model.KV }
-
-func (t *reqTab) history(label string) *rowHistory {
-	if t.hist == nil {
-		t.hist = map[string]*rowHistory{}
-	}
-	if h, ok := t.hist[label]; ok {
-		return h
-	}
-	h := &rowHistory{}
-	t.hist[label] = h
-	return h
-}
-
-func cloneRows(rows []model.KV) []model.KV { return append([]model.KV(nil), rows...) }
-
-func sameRows(a, b []model.KV) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-	return true
-}
-
 // applyRows is the one place a table's rows change: it runs change on a
 // copy, and when the rows differ records the old ones for undo, stores
 // the new ones and runs the pane's changed hook (the URL rewrite for
 // Params). An edit or selection pointing past the new rows is dropped.
 func (a *App) applyRows(p pane, t *reqTab, change func(rows []model.KV) []model.KV) {
-	rows := p.rows(a, t)
-	before := cloneRows(*rows)
-	after := change(cloneRows(*rows))
-	if sameRows(before, after) {
-		return
+	if t.History(p.label).Apply(p.rows(a, t), change) {
+		a.rowsAltered(p, t)
 	}
-	h := t.history(p.label)
-	h.undo = append(h.undo, before)
-	if len(h.undo) > historyLimit {
-		h.undo = h.undo[len(h.undo)-historyLimit:]
-	}
-	h.redo = nil
-	*rows = after
-	a.rowsAltered(p, t)
 }
 
 // rowsAltered runs what must follow any change of a table's rows.
@@ -85,23 +42,16 @@ func (a *App) rowsAltered(p pane, t *reqTab) {
 }
 
 // undoRows takes back the last change of a table; redoRows reapplies it.
-func (a *App) undoRows(p pane, t *reqTab) { a.stepHistory(p, t, true) }
-func (a *App) redoRows(p pane, t *reqTab) { a.stepHistory(p, t, false) }
+func (a *App) undoRows(p pane, t *reqTab) {
+	if t.History(p.label).Undo(p.rows(a, t)) {
+		a.rowsAltered(p, t)
+	}
+}
 
-func (a *App) stepHistory(p pane, t *reqTab, undo bool) {
-	h := t.history(p.label)
-	from, to := &h.undo, &h.redo
-	if !undo {
-		from, to = to, from
+func (a *App) redoRows(p pane, t *reqTab) {
+	if t.History(p.label).Redo(p.rows(a, t)) {
+		a.rowsAltered(p, t)
 	}
-	if len(*from) == 0 {
-		return
-	}
-	rows := p.rows(a, t)
-	*to = append(*to, cloneRows(*rows))
-	*rows = (*from)[len(*from)-1]
-	*from = (*from)[:len(*from)-1]
-	a.rowsAltered(p, t)
 }
 
 // visibleTable is the editable table the request pane shows, if any:

@@ -78,7 +78,6 @@ type reqTab struct {
 	reqScroll, respScroll view.ScrollState           // scroll of the table and note panes
 	bodyTypesX            view.ScrollState           // sideways scroll of the body type chips
 	reqTabsX, respTabsX   view.ScrollState           // sideways scroll of the two pane tab strips
-	hist                  map[string]*rowHistory     // undo history of each table
 	timeout               view.TextField             // the request's timeout seconds, as typed
 	cancel                context.CancelFunc         // stops the running request
 	auth                  map[string]*view.TextField // Auth pane inputs by field id, created on first use
