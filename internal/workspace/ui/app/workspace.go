@@ -43,8 +43,7 @@ func (a *App) openWorkspace(dir string) {
 		a.openRequest(first)
 	}
 	a.pickEnv()
-	a.colSaved = collectionKey(a.col)
-	a.colSeen = a.colSaved
+	a.colSave.Saved(collectionKey(a.col))
 }
 
 func (a *App) expandAll(f *model.Folder) {
@@ -89,7 +88,7 @@ func (a *App) saveWorkspace() {
 		}
 	}
 	if err := a.store.Save(dir, a.col); err != nil {
-		a.colSaved = collectionKey(a.col) // report once, do not retry every frame
+		a.colSave.Saved(collectionKey(a.col)) // report once, do not retry every frame
 		a.toast("Saving failed: "+err.Error(), true)
 		return
 	}
@@ -100,8 +99,7 @@ func (a *App) saveWorkspace() {
 	for _, t := range a.tabs {
 		t.MarkSaved()
 	}
-	a.colSaved = collectionKey(a.col)
-	a.colSeen = a.colSaved
+	a.colSave.Saved(collectionKey(a.col))
 	a.status = fmt.Sprintf("Saved %s", a.col.Name)
 }
 
@@ -111,15 +109,9 @@ func (a *App) workspaceTick() {
 	if a.workspace == "" {
 		return
 	}
-	key := collectionKey(a.col)
-	if key != a.colSeen {
-		a.colSeen, a.colAt = key, a.now()
-		return
+	if a.colSave.Due(collectionKey(a.col), a.now()) {
+		a.saveWorkspace()
 	}
-	if key == a.colSaved || a.now().Sub(a.colAt) < saveDebounce {
-		return
-	}
-	a.saveWorkspace()
 }
 
 // FlushWorkspace saves the collection if it changed since the last save,
@@ -130,13 +122,13 @@ func (a *App) FlushWorkspace() error {
 		return nil
 	}
 	a.commitEdit()
-	if collectionKey(a.col) == a.colSaved {
+	if !a.colSave.Pending(collectionKey(a.col)) {
 		return nil
 	}
 	if err := a.store.Save(a.workspace, a.col); err != nil {
 		return err
 	}
-	a.colSaved = collectionKey(a.col)
+	a.colSave.Saved(collectionKey(a.col))
 	return nil
 }
 
@@ -172,8 +164,7 @@ func (a *App) openWorkspaceAt(dir string) {
 	}
 	a.openRequest(first)
 	a.pickEnv()
-	a.colSaved = collectionKey(a.col)
-	a.colSeen = a.colSaved
+	a.colSave.Saved(collectionKey(a.col))
 	a.saveSettings(func(s *settings.Settings) { s.Workspace = dir })
 	a.status = "Opened " + dir
 }

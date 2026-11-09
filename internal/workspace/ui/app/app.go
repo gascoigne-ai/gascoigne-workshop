@@ -17,6 +17,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/colorpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/settingsui"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/shortcutpage"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/autosave"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
 	"net/http"
@@ -205,24 +206,20 @@ type App struct {
 	previews           rport.BodyPreview // shows a response body in the browser, replaced in tests
 	sampler            core.Sampler
 	treeScroll         view.ScrollState
-	sidebarSplit       view.SplitState // width of the collections sidebar
-	paneSplit          view.SplitState // request pane share of the request/response area
-	statePath          string          // where the UI state is remembered
-	varsFolder         *model.Folder   // the folder whose variables the Vars pane edits, nil for the environment's or the collection's
-	varsCollection     bool            // the Vars pane edits the collection's variables although an environment is active
-	title              string          // the window title last set
-	jar                http.CookieJar  // cookies the server set, kept until the app closes
-	env                envs.Selection  // the active environment of col
-	workspace          string          // the folder the collection is saved to; "" for none yet
-	defaultWorkspace   string          // where the first save goes when there is no workspace
-	colSaved           string          // the collection as last loaded or saved, as JSON
-	colSeen            string          // the last collection seen, to notice changes
-	colAt              time.Time
-	stateSeen          string       // the last snapshot seen, to notice changes
-	stateSaved         string       // the last snapshot written
-	stateAt            time.Time    // when the snapshot last changed
-	initial            state.Window // window geometry of the last run
-	winX, winY         int          // window position, read each frame
+	sidebarSplit       view.SplitState   // width of the collections sidebar
+	paneSplit          view.SplitState   // request pane share of the request/response area
+	statePath          string            // where the UI state is remembered
+	varsFolder         *model.Folder     // the folder whose variables the Vars pane edits, nil for the environment's or the collection's
+	varsCollection     bool              // the Vars pane edits the collection's variables although an environment is active
+	title              string            // the window title last set
+	jar                http.CookieJar    // cookies the server set, kept until the app closes
+	env                envs.Selection    // the active environment of col
+	workspace          string            // the folder the collection is saved to; "" for none yet
+	defaultWorkspace   string            // where the first save goes when there is no workspace
+	colSave            autosave.Debounce // when the collection was last written
+	stateSave          autosave.Debounce // when the remembered state was last written
+	initial            state.Window      // window geometry of the last run
+	winX, winY         int               // window position, read each frame
 }
 
 // Options are the startup switches of the command line.
@@ -280,6 +277,7 @@ func NewApp(opts Options) (*App, error) {
 
 		settings:     st,
 		settingFiles: settingFiles,
+		colSave:      autosave.New(saveDebounce, ""),
 		settingsPath: opts.SettingsPath,
 		statePath:    opts.StatePath,
 		menu:         opts.OpenMenu,
@@ -331,8 +329,7 @@ func NewApp(opts Options) (*App, error) {
 	if len(themeProblems) > 0 {
 		a.status = stateNote(a.status, fmt.Errorf("%s", themeProblems[0]))
 	}
-	a.stateSeen = stateKey(a.snapshot())
-	a.stateSaved = a.stateSeen
+	a.stateSave = autosave.New(stateDebounce, stateKey(a.snapshot()))
 	return a, nil
 }
 

@@ -151,7 +151,7 @@ func (a *App) SaveState() error {
 	s := a.snapshot()
 	err := a.states.Save(a.statePath, s)
 	if err == nil {
-		a.stateSaved = stateKey(s)
+		a.stateSave.Saved(stateKey(s))
 	}
 	return err
 }
@@ -167,15 +167,11 @@ func (a *App) stateTick() {
 		return
 	}
 	key := stateKey(a.snapshot())
-	if key != a.stateSeen {
-		a.stateSeen, a.stateAt = key, a.now()
-		return
-	}
-	if key == a.stateSaved || a.now().Sub(a.stateAt) < stateDebounce {
+	if !a.stateSave.Due(key, a.now()) {
 		return
 	}
 	if err := a.SaveState(); err != nil {
-		a.stateSaved = key // report once, do not retry every frame
+		a.stateSave.Saved(key) // report once, do not retry every frame
 		a.toast(err.Error(), true)
 	}
 }

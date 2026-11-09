@@ -7,7 +7,7 @@ const appName = "Gascoigne Workshop"
 // in front while something is not saved: an edited request in a tab, or a
 // change to the collection that has not been written to its folder yet.
 func (a *App) Title() string {
-	unsaved := a.workspace != "" && collectionKey(a.col) != a.colSaved
+	unsaved := a.workspace != "" && a.colSave.Pending(collectionKey(a.col))
 	for _, t := range a.tabs {
 		unsaved = unsaved || (a.workspace == "" && dirty(t))
 	}
