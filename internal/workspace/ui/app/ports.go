@@ -9,6 +9,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fontfamily"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 )
 
 // noFileDialog is the file chooser of an app started without one: callers
@@ -40,6 +41,16 @@ func (noStore) Load(string) (model.Collection, error) {
 	return model.Collection{}, errors.New("no collection store")
 }
 func (noStore) Save(string, model.Collection) error { return errors.New("no collection store") }
+
+// noSettingFiles is the settings store of an app started without one: it
+// reads the defaults and cannot save.
+type noSettingFiles struct{}
+
+func (noSettingFiles) Load(string) (settings.Settings, error) { return settings.Default(), nil }
+func (noSettingFiles) Save(string, settings.Settings) error {
+	return errors.New("no settings store")
+}
+func (noSettingFiles) WriteText(string, []byte) error { return errors.New("no settings store") }
 
 // noStates keeps no state between runs.
 type noStates struct{}

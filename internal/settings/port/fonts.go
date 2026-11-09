@@ -1,5 +1,5 @@
 // Package port holds what the settings domain needs from the outside: the
-// installed fonts.
+// installed fonts and the settings file.
 package port
 
 import "github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fontfamily"

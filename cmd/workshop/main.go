@@ -21,7 +21,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/settingsfile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/statefile"
 	ui "github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/ui/app"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/ui/appicon"
@@ -43,7 +43,7 @@ func main() {
 		return nil
 	})
 	flag.BoolVar(&opts.SendOnStart, "send", false, "send the first request at startup (for screenshots)")
-	flag.StringVar(&opts.SettingsPath, "settings", settings.DefaultPath(), "settings file; empty keeps settings in memory")
+	flag.StringVar(&opts.SettingsPath, "settings", settingsfile.DefaultPath(), "settings file; empty keeps settings in memory")
 	flag.StringVar(&opts.StatePath, "state", statefile.DefaultPath(), "remembered window and tabs; empty keeps them in memory")
 	opts.ScanFonts = true
 	opts.Protocols = proto.Configured
@@ -57,9 +57,10 @@ func main() {
 	opts.Fonts = fonts.System{Home: home}
 	opts.Previews = preview.Browser{Lifetime: previewLifetime}
 	opts.Clock = systemclock.Clock{}
-	flag.StringVar(&opts.ThemesDir, "themes", settings.ThemesDir(), "folder of theme files (*.json) that extend the dark or light theme; empty for none")
+	opts.SettingsFiles = settingsfile.Files{}
+	flag.StringVar(&opts.ThemesDir, "themes", settingsfile.ThemesDir(), "folder of theme files (*.json) that extend the dark or light theme; empty for none")
 	flag.StringVar(&opts.WorkspaceDir, "workspace", "", "folder to load and save the collection; empty uses the last one, else the built-in sample")
-	opts.DefaultWorkspace = settings.DefaultWorkspace()
+	opts.DefaultWorkspace = settingsfile.DefaultWorkspace()
 	iconPNG := flag.String("icon-png", "", "write the program icon (256x256 PNG) to this path and exit, for packaging")
 	flag.BoolVar(&opts.OpenMenu, "menu", false, "start with the settings menu open (for screenshots)")
 	flag.Parse()

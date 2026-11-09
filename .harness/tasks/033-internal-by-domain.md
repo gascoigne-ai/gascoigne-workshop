@@ -19,7 +19,7 @@ status: todo
 ## Scope
 - [open] Split the `App` (`workspace/ui/app`, about 14k lines) into a `controller` (state, handlers) and views: the role exists in the rules but holds no package yet. Order: tabs and panes, tree and workspace, then the dialogs.
 - [open] Features that can leave the `App` behind a `Host` (from task 032), each into its domain's `ui` role: environment dialogs and chip view, colors page, shortcut editor. Tabs, panes, tree and workspace stay in the controller.
-- [open] `settings/model/settings` reads and writes the settings file: split the file part into a port and an adapter.
+- [open] `settingsui` still stats and reads `settings.json` itself (`statFile`, raw view, `Poll`): move those reads behind `SettingsStore` too.
 
 ## Acceptance
 - Every step keeps `make check` green; no behavior change and no test assertion changed (imports and names only).

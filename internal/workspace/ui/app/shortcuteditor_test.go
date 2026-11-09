@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/settingsfile"
 	"strings"
 	"testing"
 
@@ -109,7 +110,7 @@ func TestAKeyThatTypesTextIsAWarningNotARefusal(t *testing.T) {
 
 func mustLoad(t *testing.T, path string) settings.Settings {
 	t.Helper()
-	saved, err := settings.Load(path)
+	saved, err := settingsfile.Load(path)
 	if err != nil {
 		t.Fatal(err)
 	}

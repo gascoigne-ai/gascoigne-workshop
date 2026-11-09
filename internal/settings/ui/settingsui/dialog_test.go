@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/settingsfile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -35,7 +36,7 @@ func (h *fakeHost) Size() (int, int)            { return 1280, 800 }
 func (h *fakeHost) Settings() settings.Settings { return h.current }
 func (h *fakeHost) Change(edit func(*settings.Settings)) {
 	edit(&h.current)
-	_ = h.current.Save(h.path)
+	_ = settingsfile.Save(h.path, h.current)
 }
 func (h *fakeHost) SetScaleLive(percent int)           { h.current.UIScalePct = percent }
 func (h *fakeHost) Save()                              { h.saved++ }
@@ -147,11 +148,12 @@ func TestCompletionOffersWhatSettingsCompleteGivesAtTheCaret(t *testing.T) {
 		t.Fatalf("text = %q", d.RawText.Text)
 	}
 }
-func (h *fakeHost) Pointer() (int, int) { return 400, 300 }
-func (h *fakeHost) Unsaved() bool       { return h.unsaved }
-func (h *fakeHost) Persist()            { _ = h.current.Save(h.path); h.unsaved = false; h.saved++ }
-func (h *fakeHost) MarkUnsaved()        { h.unsaved = true }
-func (h *fakeHost) MarkSaved()          { h.unsaved = false }
+func (h *fakeHost) Pointer() (int, int)             { return 400, 300 }
+func (h *fakeHost) Unsaved() bool                   { return h.unsaved }
+func (h *fakeHost) Persist()                        { _ = settingsfile.Save(h.path, h.current); h.unsaved = false; h.saved++ }
+func (h *fakeHost) WriteSettings(text []byte) error { return settingsfile.WriteText(h.path, text) }
+func (h *fakeHost) MarkUnsaved()                    { h.unsaved = true }
+func (h *fakeHost) MarkSaved()                      { h.unsaved = false }
 
 func TestAFileSettingHasAFolderButtonInsideItsFieldThatFillsIt(t *testing.T) {
 	var d Dialog

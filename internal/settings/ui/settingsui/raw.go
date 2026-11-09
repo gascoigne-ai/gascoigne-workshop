@@ -123,7 +123,7 @@ func (d *Dialog) RawEdited(host Host) {
 		return
 	}
 	d.rawPending = false
-	if err := settings.WriteText(path, []byte(text)); err != nil {
+	if err := host.WriteSettings([]byte(text)); err != nil {
 		host.Toast("Could not save settings: "+err.Error(), true)
 		return
 	}

@@ -150,7 +150,7 @@ func (a *App) Persist() {
 		a.settingsUnsaved = false
 		return
 	}
-	if err := a.settings.Save(a.settingsPath); err != nil {
+	if err := a.settingFiles.Save(a.settingsPath, a.settings); err != nil {
 		a.status = "Could not save settings: " + err.Error()
 		a.toast(a.status, true)
 		return
@@ -165,7 +165,7 @@ func (a *App) revertSettings() {
 	if a.settingsPath == "" {
 		return
 	}
-	loaded, err := settings.Load(a.settingsPath)
+	loaded, err := a.settingFiles.Load(a.settingsPath)
 	if err != nil {
 		a.toast("Could not read settings.json: "+err.Error(), true)
 		return
@@ -186,6 +186,9 @@ func (a *App) askSaveSettings() {
 		},
 	}
 }
+
+// WriteSettings replaces the settings file with text exactly as given.
+func (a *App) WriteSettings(text []byte) error { return a.settingFiles.WriteText(a.settingsPath, text) }
 
 // FontStore is the installed fonts of this machine.
 func (a *App) FontStore() port.FontStore { return a.fonts }

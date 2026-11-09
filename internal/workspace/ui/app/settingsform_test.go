@@ -2,12 +2,12 @@ package ui
 
 import (
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/settingsfile"
 	"os"
 	"regexp"
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
@@ -140,7 +140,7 @@ func TestTextSettingsApplyAsTheyAreTyped(t *testing.T) {
 	if a.settings.Proxy != "http://localhost:8080" {
 		t.Fatalf("Proxy = %q", a.settings.Proxy)
 	}
-	if saved, _ := settings.Load(path); saved.Proxy != "http://localhost:8080" {
+	if saved, _ := settingsfile.Load(path); saved.Proxy != "http://localhost:8080" {
 		t.Fatalf("saved %+v", saved)
 	}
 }

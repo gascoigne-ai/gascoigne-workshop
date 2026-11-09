@@ -1,15 +1,7 @@
-// Package settings stores the user's preferences as a small JSON file in
-// the user config directory. Unknown values are kept as written; the UI
-// decides how to fall back.
+// Package settings holds the user's preferences and the rules of their JSON
+// text. Unknown values are kept as written; the UI decides how to fall back.
+// Reading and writing the file is the settingsfile adapter's job.
 package settings
-
-import (
-	"errors"
-	"fmt"
-	"io/fs"
-	"os"
-	"path/filepath"
-)
 
 // Settings are the user preferences.
 type Settings struct {
@@ -99,77 +91,23 @@ func Default() Settings {
 	return Settings{AutoSave: true, Theme: "dark", TextSize: "medium", Layout: "side", Contrast: "normal", TimeoutSec: 60, UIScalePct: DefaultUIScalePct, Corners: "soft", ResponseView: "compact"}
 }
 
-// Load reads path. A missing file is not an error and yields Default;
-// fields missing from the file keep their defaults.
-func Load(path string) (Settings, error) {
+// Decode reads settings text over the defaults, so fields missing from
+// the text keep their defaults. Text that does not parse yields Default
+// and an error.
+func Decode(data []byte) (Settings, error) {
 	s := Default()
-	data, err := os.ReadFile(path)
-	if errors.Is(err, fs.ErrNotExist) {
-		return s, nil
-	}
-	if err != nil {
-		return s, fmt.Errorf("read settings: %w", err)
-	}
 	if err := unmarshalSettings(data, &s); err != nil {
-		return Default(), fmt.Errorf("parse settings %s: %w", filepath.Base(path), err)
+		return Default(), err
 	}
 	return s, nil
 }
 
-// Save writes s to path, creating its directory. Only what differs from
-// the defaults is written, so the file shows what the user changed and a
-// reset leaves no trace. The file is replaced
-// atomically so a crash cannot leave half a file behind.
-func (s Settings) Save(path string) error {
+// Encode writes only what differs from the defaults, so the text shows
+// what the user changed and a reset leaves no trace.
+func Encode(s Settings) ([]byte, error) {
 	data, err := Minimal(s)
 	if err != nil {
-		return fmt.Errorf("encode settings: %w", err)
+		return nil, err
 	}
-	return WriteText(path, append(data, '\n'))
-}
-
-// WriteText replaces the settings file with data exactly as given, creating
-// its directory. The file is replaced atomically.
-func WriteText(path string, data []byte) error {
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return fmt.Errorf("create settings dir: %w", err)
-	}
-	tmp := path + ".tmp"
-	if err := os.WriteFile(tmp, data, 0o644); err != nil {
-		return fmt.Errorf("write settings: %w", err)
-	}
-	if err := os.Rename(tmp, path); err != nil {
-		return fmt.Errorf("replace settings: %w", err)
-	}
-	return nil
-}
-
-// ThemesDir is where the user's theme files live, or "" when there is no
-// config directory.
-func ThemesDir() string {
-	dir, err := os.UserConfigDir()
-	if err != nil {
-		return ""
-	}
-	return filepath.Join(dir, "gascoigne-workshop", "themes")
-}
-
-// DefaultWorkspace is where the collection is saved when the user saves
-// without having chosen a folder, or "" when there is no config directory.
-func DefaultWorkspace() string {
-	dir, err := os.UserConfigDir()
-	if err != nil {
-		return ""
-	}
-	return filepath.Join(dir, "gascoigne-workshop", "workspace")
-}
-
-// DefaultPath is where settings live for this user, or "" when the
-// platform has no config directory (settings then stay in memory).
-func DefaultPath() string {
-	dir, err := os.UserConfigDir()
-	if err != nil {
-		return ""
-	}
-	return filepath.Join(dir, "gascoigne-workshop", "settings.json")
+	return append(data, '\n'), nil
 }

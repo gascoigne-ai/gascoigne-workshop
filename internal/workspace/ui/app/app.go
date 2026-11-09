@@ -225,6 +225,7 @@ type App struct {
 	now                func() time.Time               // the clock, replaced in tests
 	histories          func(dir string) rport.History // nil keeps no history
 	fonts              sport.FontStore
+	settingFiles       sport.SettingsStore
 	previews           rport.BodyPreview // shows a response body in the browser, replaced in tests
 	sampler            core.Sampler
 	treeScroll         view.ScrollState
@@ -265,6 +266,7 @@ type Options struct {
 	Files            port.FileDialog                               // the desktop file chooser; nil asks for paths as text
 	History          func(dir string) rport.History                // the history in a folder; nil keeps none
 	Fonts            sport.FontStore                               // installed fonts; nil has none
+	SettingsFiles    sport.SettingsStore                           // the settings file; nil reads the defaults and cannot save
 	Previews         rport.BodyPreview                             // shows a response body in the browser; nil has none
 	Clock            port.Clock                                    // the time source; nil uses the wall clock
 	OpenMenu         bool                                          // start with the settings menu open
@@ -274,9 +276,13 @@ type Options struct {
 
 // NewApp builds the window state around the sample collection.
 func NewApp(opts Options) (*App, error) {
+	settingFiles := opts.SettingsFiles
+	if settingFiles == nil {
+		settingFiles = noSettingFiles{}
+	}
 	st, loadErr := settings.Default(), error(nil)
 	if opts.SettingsPath != "" {
-		st, loadErr = settings.Load(opts.SettingsPath)
+		st, loadErr = settingFiles.Load(opts.SettingsPath)
 	}
 	themes, themeProblems := appearance.LoadUserThemes(opts.ThemesDir)
 	appearance.SetUserThemes(themes)
@@ -297,6 +303,7 @@ func NewApp(opts Options) (*App, error) {
 		shot:             screenshot{path: opts.ScreenshotPath, sendOnStart: opts.SendOnStart, set: opts.ScreenshotSet},
 
 		settings:     st,
+		settingFiles: settingFiles,
 		settingsPath: opts.SettingsPath,
 		statePath:    opts.StatePath,
 		menu:         opts.OpenMenu,

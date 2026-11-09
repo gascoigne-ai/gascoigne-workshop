@@ -2,6 +2,7 @@ package ui
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/postman"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/settingsfile"
 	"os"
 	"path/filepath"
 	"strings"
@@ -113,7 +114,7 @@ func TestSavingWithoutAWorkspaceUsesTheDefaultOneAndRemembersIt(t *testing.T) {
 	if err != nil || len(got.Folders) == 0 {
 		t.Fatalf("%+v %v", got, err)
 	}
-	st, err := settings.Load(a.settingsPath)
+	st, err := settingsfile.Load(a.settingsPath)
 	if err != nil || st.Workspace != def {
 		t.Fatalf("remembered %q %v", st.Workspace, err)
 	}
@@ -127,7 +128,7 @@ func TestRemembersTheLastWorkspace(t *testing.T) {
 	sp := filepath.Join(t.TempDir(), "settings.json")
 	s := settings.Default()
 	s.Workspace = dir
-	if err := s.Save(sp); err != nil {
+	if err := settingsfile.Save(sp, s); err != nil {
 		t.Fatal(err)
 	}
 	a, err := NewApp(withAdapters(Options{SettingsPath: sp}))
@@ -196,7 +197,7 @@ func TestOpenWorkspaceAtSwitchesCollectionsAndSavesTheOldOne(t *testing.T) {
 	if old, err := store.Load(first); err != nil || old.Requests[0].URL != "https://unsaved.test" {
 		t.Fatalf("the old collection lost its edit: %+v %v", old, err)
 	}
-	st, err := settings.Load(a.settingsPath)
+	st, err := settingsfile.Load(a.settingsPath)
 	if err != nil || st.Workspace != second {
 		t.Fatalf("remembered %q %v", st.Workspace, err)
 	}
