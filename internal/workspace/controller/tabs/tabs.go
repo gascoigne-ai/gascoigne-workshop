@@ -16,6 +16,7 @@ type Tab struct {
 	Resp      *model.Response
 	Sending   bool
 	Seq       int                    // numbers the sends, so a late result of an old one is ignored
+	Earlier   []PastResponse         // earlier responses, newest first
 	histories map[string]*RowHistory // undo history of each table
 	Connection
 }

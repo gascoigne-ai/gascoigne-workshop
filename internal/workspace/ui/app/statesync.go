@@ -2,6 +2,7 @@ package ui
 
 import (
 	"encoding/json"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
 	"path/filepath"
 	"strings"
 	"time"
@@ -222,8 +223,8 @@ func (a *App) saveHistory(t *reqTab) {
 	if t.Resp != nil && t.Resp.Err == "" {
 		entries = append(entries, historyEntry(t.Resp, a.now()))
 	}
-	for _, earlier := range t.respHist {
-		entries = append(entries, historyEntry(earlier.resp, earlier.at))
+	for _, earlier := range t.Earlier {
+		entries = append(entries, historyEntry(earlier.Resp, earlier.At))
 	}
 	if err := store.Save(key, entries); err != nil {
 		a.toast("History is not being saved: "+err.Error(), true)
@@ -231,7 +232,7 @@ func (a *App) saveHistory(t *reqTab) {
 }
 
 // loadHistory is the saved responses of req, newest first.
-func (a *App) loadHistory(req *model.Request) []respEntry {
+func (a *App) loadHistory(req *model.Request) []tabs.PastResponse {
 	store, key := a.historyStore(), a.requestPath(req)
 	if store == nil || key == "" {
 		return nil
@@ -241,12 +242,12 @@ func (a *App) loadHistory(req *model.Request) []respEntry {
 		a.toast("History could not be read: "+err.Error(), true)
 		return nil
 	}
-	entries := make([]respEntry, 0, len(saved))
+	entries := make([]tabs.PastResponse, 0, len(saved))
 	for _, entry := range saved {
-		entries = append(entries, respEntry{resp: &model.Response{
+		entries = append(entries, tabs.PastResponse{Resp: &model.Response{
 			Status: entry.Status, StatusText: entry.StatusText, Duration: entry.Duration,
 			Size: len(entry.Body), Headers: entry.Headers, Body: entry.Body,
-		}, at: entry.At})
+		}, At: entry.At})
 	}
 	return entries
 }

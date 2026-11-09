@@ -154,8 +154,8 @@ func TestResponsesOfARequestComeBackAfterARestart(t *testing.T) {
 	if got.Req.Name != tab.Req.Name {
 		t.Fatalf("the restored tab is %q, expected %q", got.Req.Name, tab.Req.Name)
 	}
-	if len(got.respHist) != 1 || got.respHist[0].resp.Status != 200 || string(got.respHist[0].resp.Body) != `{"ok":true}` {
-		t.Fatalf("history after a restart: %+v", got.respHist)
+	if len(got.Earlier) != 1 || got.Earlier[0].Resp.Status != 200 || string(got.Earlier[0].Resp.Body) != `{"ok":true}` {
+		t.Fatalf("history after a restart: %+v", got.Earlier)
 	}
 }
 

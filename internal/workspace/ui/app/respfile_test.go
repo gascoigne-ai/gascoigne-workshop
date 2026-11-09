@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/filedialog"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"image"
@@ -27,36 +28,36 @@ func TestHistoryKeepsEarlierResponsesNewestFirstAndSwapsOnPick(t *testing.T) {
 		a.apply(sendResult{tab: tab, seq: tab.Seq, resp: model.Response{Status: status, StatusText: "S", Body: []byte("{}")}})
 	}
 	send(200)
-	if len(tab.respHist) != 0 {
+	if len(tab.Earlier) != 0 {
 		t.Fatal("the first response has no predecessor")
 	}
 	send(201)
 	send(202)
-	if len(tab.respHist) != 2 || tab.respHist[0].resp.Status != 201 || tab.respHist[1].resp.Status != 200 {
-		t.Fatalf("history %+v", tab.respHist)
+	if len(tab.Earlier) != 2 || tab.Earlier[0].Resp.Status != 201 || tab.Earlier[1].Resp.Status != 200 {
+		t.Fatalf("history %+v", tab.Earlier)
 	}
 	items := a.historyMenu(tab)
 	if len(items) != 2 || !strings.HasPrefix(items[0].label, "201") {
 		t.Fatalf("menu %+v", items)
 	}
 	items[1].run() // pick the 200
-	if tab.Resp.Status != 200 || tab.respHist[1].resp.Status != 202 {
-		t.Fatalf("shown %d, history %+v", tab.Resp.Status, tab.respHist)
+	if tab.Resp.Status != 200 || tab.Earlier[1].Resp.Status != 202 {
+		t.Fatalf("shown %d, history %+v", tab.Resp.Status, tab.Earlier)
 	}
-	for i := 0; i < respHistoryLimit+5; i++ {
+	for i := 0; i < tabs.PastLimit+5; i++ {
 		send(300 + i)
 	}
-	if len(tab.respHist) != respHistoryLimit {
-		t.Fatalf("history grew to %d", len(tab.respHist))
+	if len(tab.Earlier) != tabs.PastLimit {
+		t.Fatalf("history grew to %d", len(tab.Earlier))
 	}
 	tab.Sending, tab.Seq = true, tab.Seq+1
-	n := len(tab.respHist)
+	n := len(tab.Earlier)
 	a.apply(sendResult{tab: tab, seq: tab.Seq, resp: model.Response{Err: "boom"}})
 	a.apply(sendResult{tab: tab, seq: tab.Seq + 1, resp: model.Response{Status: 200}}) // stale: ignored
 	tab.Sending, tab.Seq = true, tab.Seq+1
 	a.apply(sendResult{tab: tab, seq: tab.Seq, resp: model.Response{Status: 204}})
-	if len(tab.respHist) != n {
-		t.Fatalf("a failed response must not enter the history: %d -> %d", n, len(tab.respHist))
+	if len(tab.Earlier) != n {
+		t.Fatalf("a failed response must not enter the history: %d -> %d", n, len(tab.Earlier))
 	}
 }
 

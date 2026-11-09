@@ -6,38 +6,15 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/textfmt"
 )
 
-// respHistoryLimit is how many earlier responses a tab keeps for its History menu.
-const respHistoryLimit = 10
-
-// remember puts the response a new one replaces into the tab's history,
-// newest first. Failed requests are not kept: there is nothing to look at.
-func remember(t *reqTab, old *model.Response) {
-	if old == nil || old.Err != "" {
-		return
-	}
-	t.respHist = append([]respEntry{{resp: old, at: time.Now()}}, t.respHist...)
-	if len(t.respHist) > respHistoryLimit {
-		t.respHist = t.respHist[:respHistoryLimit]
-	}
-}
-
-// respEntry is an earlier response of a tab and when it was replaced.
-type respEntry struct {
-	resp *model.Response
-	at   time.Time
-}
-
 // historyMenu lists the earlier responses; picking one shows it again.
 func (a *App) historyMenu(t *reqTab) []menuItem {
-	items := make([]menuItem, 0, len(t.respHist))
-	for i, h := range t.respHist {
-		label := fmt.Sprintf("%d %s  %s  %s", h.resp.Status, h.resp.StatusText, textfmt.Duration(h.resp.Duration), textfmt.Size(h.resp.Size))
+	items := make([]menuItem, 0, len(t.Earlier))
+	for i, h := range t.Earlier {
+		label := fmt.Sprintf("%d %s  %s  %s", h.Resp.Status, h.Resp.StatusText, textfmt.Duration(h.Resp.Duration), textfmt.Size(h.Resp.Size))
 		items = append(items, menuItem{label: label, run: func() { a.showHistory(t, i) }})
 	}
 	return items
@@ -46,17 +23,9 @@ func (a *App) historyMenu(t *reqTab) []menuItem {
 // showHistory makes the response of history entry i the shown one; the
 // shown one goes into the history in its place, so nothing is lost.
 func (a *App) showHistory(t *reqTab, i int) {
-	if i < 0 || i >= len(t.respHist) {
-		return
+	if t.Recall(i, a.now()) {
+		a.refreshView(t)
 	}
-	picked := t.respHist[i].resp
-	if t.Resp != nil && t.Resp.Err == "" {
-		t.respHist[i] = respEntry{resp: t.Resp, at: time.Now()}
-	} else {
-		t.respHist = append(t.respHist[:i], t.respHist[i+1:]...)
-	}
-	t.Resp = picked
-	a.refreshView(t)
 }
 
 // saveBody asks for a path and writes the response body there.

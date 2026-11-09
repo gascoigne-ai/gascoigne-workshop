@@ -91,7 +91,6 @@ type reqTab struct {
 	wsCancel              context.CancelFunc         // ends the timeout of the connect in progress
 	wsView                view.CodeView              // the message log
 	msg                   view.TextField             // the message being composed
-	respHist              []respEntry                // earlier responses, newest first
 	grpcStream            bool                       // a gRPC tab streams instead of making single calls
 	schema                *model.Schema              // what a GraphQL introspection answered
 }
@@ -121,7 +120,7 @@ func viewFlags(id string) (raw, compact bool) {
 func (a *App) makeTab(req *model.Request) *reqTab {
 	t := newTab(req)
 	t.raw, t.compact = viewFlags(a.settings.ResponseView)
-	t.respHist = a.loadHistory(req)
+	t.Earlier = a.loadHistory(req)
 	return t
 }
 
@@ -441,7 +440,7 @@ func (a *App) apply(r sendResult) {
 	if !t.Accept(r.seq) {
 		return // the answer to a send that was cancelled or replaced
 	}
-	remember(t, t.Resp)
+	t.Remember(t.Resp, a.now())
 	t.Resp = &r.resp
 	a.saveHistory(t)
 	if path := a.requestPath(t.Req); path != "" {
