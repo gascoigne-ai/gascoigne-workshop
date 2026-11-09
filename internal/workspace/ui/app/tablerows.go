@@ -112,7 +112,7 @@ func (a *App) visibleTable() (pane, *reqTab, bool) {
 	switch {
 	case p.kind == paneTable && p.editable:
 		return p, t, true
-	case p.kind == paneBody && (t.req.BodyType == model.BodyForm || t.req.BodyType == model.BodyMultipart):
+	case p.kind == paneBody && (t.Req.BodyType == model.BodyForm || t.Req.BodyType == model.BodyMultipart):
 		return formPane, t, true
 	}
 	return pane{}, nil, false

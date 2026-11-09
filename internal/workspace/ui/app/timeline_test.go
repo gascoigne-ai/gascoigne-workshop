@@ -34,16 +34,16 @@ func TestTypingAColonSegmentAddsAPathParameterRowThatFillsTheSentURL(t *testing.
 	tab.url = view.NewTextField("https://api.test/users/:id")
 	a.urlEdited(tab)
 	var row *model.KV
-	for i := range tab.req.Params {
-		if tab.req.Params[i].Name == ":id" {
-			row = &tab.req.Params[i]
+	for i := range tab.Req.Params {
+		if tab.Req.Params[i].Name == ":id" {
+			row = &tab.Req.Params[i]
 		}
 	}
 	if row == nil {
-		t.Fatalf("no :id row in %+v", tab.req.Params)
+		t.Fatalf("no :id row in %+v", tab.Req.Params)
 	}
 	row.Value = "42"
-	if got := tab.req.Expanded(a.varsFor(tab.req)).URL; got != "https://api.test/users/42" {
+	if got := tab.Req.Expanded(a.varsFor(tab.Req)).URL; got != "https://api.test/users/42" {
 		t.Fatalf("sent URL %q", got)
 	}
 }
@@ -51,7 +51,7 @@ func TestTypingAColonSegmentAddsAPathParameterRowThatFillsTheSentURL(t *testing.
 func TestCookiesDialogListsWhatTheJarHoldsForTheURL(t *testing.T) {
 	a, _ := newTestApp(t)
 	tab := a.cur()
-	tab.req.URL = "https://api.test/x"
+	tab.Req.URL = "https://api.test/x"
 	a.showCookies(tab)
 	if a.dialog == nil || !strings.Contains(a.dialog.body, "No cookies for api.test") {
 		t.Fatalf("dialog %+v", a.dialog)
@@ -68,7 +68,7 @@ func TestCookiesDialogListsWhatTheJarHoldsForTheURL(t *testing.T) {
 	if a.jar == first || len(a.jar.Cookies(u)) != 0 {
 		t.Fatal("the jar must be replaced and empty")
 	}
-	tab.req.URL = "not a url"
+	tab.Req.URL = "not a url"
 	a.closeDialog()
 	a.showCookies(tab)
 	if a.dialog != nil {

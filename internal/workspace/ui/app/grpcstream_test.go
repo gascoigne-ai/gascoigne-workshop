@@ -9,7 +9,7 @@ import (
 
 func grpcTab(a *App) *reqTab {
 	tab := a.cur()
-	tab.req.Protocol, tab.req.Method = "grpc", "grpc.health.v1.Health/Watch"
+	tab.Req.Protocol, tab.Req.Method = "grpc", "grpc.health.v1.Health/Watch"
 	return tab
 }
 

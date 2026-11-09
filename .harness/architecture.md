@@ -33,11 +33,12 @@ flowchart LR
     end
     subgraph workspace
       app
+      wctl["controller/tabs"]
       wad["adapter/statefile, filedialog"]
     end
   end
-  app --> ectl
-  ectl --> rmod
+  app --> ectl & wctl
+  ectl & wctl --> rmod
   app --> rui & rad & cad & sui & sad & tui & tad & wad
   rui & rad & cad & sui & tui --> rmod
   rad -. implements .-> rport
@@ -76,6 +77,7 @@ The toolkit packages are public and independent of the application (`uitoolkit/c
 | `internal/request/port` | `Protocol`, `Registry`, `Streamer`, `Session`, `Event`, the sampling types, `ProtocolConfig`, `GRPCMethods` |
 | `internal/request/model/assert` | the assertion language run against a response |
 | `internal/request/ui/calltrace`, `internal/request/ui/mcpform` | the Log dialog; the MCP tool-call form (`Form.Command` composes the call), each behind a `Host` interface |
+| `internal/workspace/controller/tabs` | the UI-free state of an open request: request and saved copy, shown response, send number (`BeginSend`, `Accept`, `Cancel`); the App's `reqTab` embeds it and keeps the widget state |
 | `internal/environment/controller/envs` | which environment is active and how add, rename and delete move the choice; the App keeps the menu, prompts and the remembered name |
 | `internal/collection/model/collection`, `openapi`, `postman`, `miniyaml` | tree filtering; the importers and the Postman exporter, pure functions over bytes |
 | `internal/collection/port` | `Store`, where a collection is saved (`store.Files` implements it) |

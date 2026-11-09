@@ -2,6 +2,7 @@ package ui
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
 	"reflect"
 	"strings"
 	"testing"
@@ -71,7 +72,7 @@ func TestPaneTablesAreComplete(t *testing.T) {
 
 func TestResponsePanesNeverTouchNilResponse(t *testing.T) {
 	a := &App{}
-	tab := &reqTab{req: &model.Request{}}
+	tab := &reqTab{Tab: &tabs.Tab{Req: &model.Request{}}}
 	for _, p := range responsePanes {
 		msg, _ := paneEmpty(p, tab)
 		if p.kind == paneNote && msg == "" && p.label != "Tests" {
@@ -92,8 +93,8 @@ func TestParamsChangedRewritesURL(t *testing.T) {
 		},
 	})
 	paramsChanged(tab)
-	if tab.req.URL != "http://x/s?q=a" || tab.url.Text != tab.req.URL {
-		t.Fatalf("url = %q field = %q", tab.req.URL, tab.url.Text)
+	if tab.Req.URL != "http://x/s?q=a" || tab.url.Text != tab.Req.URL {
+		t.Fatalf("url = %q field = %q", tab.Req.URL, tab.url.Text)
 	}
 }
 

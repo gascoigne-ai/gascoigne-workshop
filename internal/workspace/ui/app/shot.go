@@ -61,7 +61,7 @@ func (s *screenshot) ready(a *App) bool {
 	if s.path == "" || s.captured || s.frames < settleFrames {
 		return false
 	}
-	if s.sendOnStart && a.cur().resp == nil && s.frames < shotTimeout {
+	if s.sendOnStart && a.cur().Resp == nil && s.frames < shotTimeout {
 		return false
 	}
 	return true

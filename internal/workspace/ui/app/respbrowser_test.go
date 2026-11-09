@@ -15,7 +15,7 @@ func TestOpenInBrowserServesTheBodyAndOpensItsAddress(t *testing.T) {
 	var opened string
 	a.previews = preview.Browser{Lifetime: time.Minute, Open: func(address string) error { opened = address; return nil }}
 	tab := a.cur()
-	tab.resp = &model.Response{Status: 200, Body: []byte("<h1>hi</h1>"),
+	tab.Resp = &model.Response{Status: 200, Body: []byte("<h1>hi</h1>"),
 		Headers: []model.KV{{Name: "Content-Type", Value: "text/html"}}}
 
 	a.openInBrowser(tab)
@@ -45,7 +45,7 @@ func TestOpenInBrowserFallsBackToTextPlainWithoutAContentType(t *testing.T) {
 	var opened string
 	a.previews = preview.Browser{Lifetime: time.Minute, Open: func(address string) error { opened = address; return nil }}
 	tab := a.cur()
-	tab.resp = &model.Response{Status: 200, Body: []byte("plain")}
+	tab.Resp = &model.Response{Status: 200, Body: []byte("plain")}
 	a.openInBrowser(tab)
 	response, err := http.Get(opened)
 	if err != nil {

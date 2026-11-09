@@ -140,7 +140,7 @@ func (a *App) deleteNode(node any) {
 // closeTabsIn closes the tabs whose request is node or inside it.
 func (a *App) closeTabsIn(node any) {
 	for i := len(a.tabs) - 1; i >= 0; i-- {
-		req := a.tabs[i].req
+		req := a.tabs[i].Req
 		inside := any(req) == node
 		if f, ok := node.(*model.Folder); ok {
 			inside = f.Contains(req)

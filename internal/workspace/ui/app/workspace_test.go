@@ -35,14 +35,14 @@ func TestStartsFromTheWorkspaceFolder(t *testing.T) {
 		t.Fatal(err)
 	}
 	a := workspaceApp(t, dir, Options{})
-	if a.col.Name != "Mine" || a.cur().req.Name != "One" {
-		t.Fatalf("collection %q, tab %q", a.col.Name, a.cur().req.Name)
+	if a.col.Name != "Mine" || a.cur().Req.Name != "One" {
+		t.Fatalf("collection %q, tab %q", a.col.Name, a.cur().Req.Name)
 	}
 }
 
 func TestEmptyWorkspaceStartsWithOneBlankRequest(t *testing.T) {
 	a := workspaceApp(t, t.TempDir(), Options{})
-	if len(a.tabs) != 1 || a.cur().req.Name != "New Request" {
+	if len(a.tabs) != 1 || a.cur().Req.Name != "New Request" {
 		t.Fatalf("tabs %d", len(a.tabs))
 	}
 }
@@ -67,7 +67,7 @@ func TestSaveWritesTheWorkspaceAndClearsTheDirtyMark(t *testing.T) {
 	dir := t.TempDir()
 	a := workspaceApp(t, dir, Options{})
 	tab := a.cur()
-	tab.req.URL = "https://changed.test"
+	tab.Req.URL = "https://changed.test"
 	if !dirty(tab) {
 		t.Fatal("edit not dirty")
 	}
@@ -87,7 +87,7 @@ func TestEditsAreSavedAfterAPause(t *testing.T) {
 	now := time.Now()
 	a.now = func() time.Time { return now }
 	a.step(core.Input{})
-	a.cur().req.Name = "Renamed"
+	a.cur().Req.Name = "Renamed"
 	a.step(core.Input{})
 	if got, _ := store.Load(dir); len(got.Requests) > 0 && got.Requests[0].Name == "Renamed" {
 		t.Fatal("saved before the pause")
@@ -152,7 +152,7 @@ func TestImportCurlAddsARequestFromTheClipboard(t *testing.T) {
 	clip := &fakeClip{text: `curl -X POST 'https://api.test/v1/users?x=1' -H 'Content-Type: application/json' -d '{"a":1}'`}
 	a.ctx.Clipboard = clip
 	a.importCurl(&a.col.Folder)
-	r := a.cur().req
+	r := a.cur().Req
 	if r.Name != "POST /v1/users" || r.Method != "POST" || r.Body != `{"a":1}` {
 		t.Fatalf("%+v", r)
 	}
@@ -170,7 +170,7 @@ func TestImportCurlAddsARequestFromTheClipboard(t *testing.T) {
 func TestFlushWorkspaceSavesPendingEditsAtExit(t *testing.T) {
 	dir := t.TempDir()
 	a := workspaceApp(t, dir, Options{})
-	a.cur().req.URL = "https://edited-just-now.test" // the autosave pause has not passed
+	a.cur().Req.URL = "https://edited-just-now.test" // the autosave pause has not passed
 	if err := a.FlushWorkspace(); err != nil {
 		t.Fatal(err)
 	}
@@ -189,9 +189,9 @@ func TestOpenWorkspaceAtSwitchesCollectionsAndSavesTheOldOne(t *testing.T) {
 		t.Fatal(err)
 	}
 	a := workspaceApp(t, first, Options{})
-	a.cur().req.URL = "https://unsaved.test"
+	a.cur().Req.URL = "https://unsaved.test"
 	a.openWorkspaceAt(second)
-	if a.col.Name != "Second" || len(a.tabs) != 1 || a.cur().req.Name != "Two" || a.workspace != second {
+	if a.col.Name != "Second" || len(a.tabs) != 1 || a.cur().Req.Name != "Two" || a.workspace != second {
 		t.Fatalf("col %q tabs %d workspace %q", a.col.Name, len(a.tabs), a.workspace)
 	}
 	if old, err := store.Load(first); err != nil || old.Requests[0].URL != "https://unsaved.test" {
@@ -229,8 +229,8 @@ func TestImportOpenAPIAddsAFolderOfRequestsAndTheBaseURL(t *testing.T) {
 	if !model.Defined("baseUrl", a.col.Vars) {
 		t.Fatal("baseUrl not defined")
 	}
-	if a.cur().req.URL == "" || !strings.HasPrefix(a.cur().req.URL, "{{baseUrl}}") {
-		t.Fatalf("the first imported request is not open: %q", a.cur().req.URL)
+	if a.cur().Req.URL == "" || !strings.HasPrefix(a.cur().Req.URL, "{{baseUrl}}") {
+		t.Fatalf("the first imported request is not open: %q", a.cur().Req.URL)
 	}
 	n := len(a.tabs)
 	a.ctx.Clipboard = &fakeClip{text: "{}"}
@@ -256,8 +256,8 @@ func TestImportPostmanAddsAFolderAndItsVariables(t *testing.T) {
 	if len(a.col.Vars) != 1 || a.col.Vars[0].Value != "mine" {
 		t.Fatalf("an existing variable must not be overwritten: %+v", a.col.Vars)
 	}
-	if a.cur().req.Name != "Form" { // requests of a folder come before its subfolders
-		t.Fatalf("the first imported request is not open: %q", a.cur().req.Name)
+	if a.cur().Req.Name != "Form" { // requests of a folder come before its subfolders
+		t.Fatalf("the first imported request is not open: %q", a.cur().Req.Name)
 	}
 	n := len(a.col.Folders)
 	a.ctx.Clipboard = &fakeClip{text: `{"openapi":"3.0.0"}`}

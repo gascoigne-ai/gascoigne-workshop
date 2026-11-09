@@ -105,7 +105,7 @@ func TestAnArrivingResponseRequestsARedraw(t *testing.T) {
 	for range 400 {
 		a.dirty = false
 		a.step(core.Input{X: a.lastIn.X, Y: a.lastIn.Y})
-		if tab.resp != nil {
+		if tab.Resp != nil {
 			if !a.dirty {
 				t.Fatal("the frame that applied the response must be drawn")
 			}

@@ -50,22 +50,22 @@ func (a *App) showHistory(t *reqTab, i int) {
 		return
 	}
 	picked := t.respHist[i].resp
-	if t.resp != nil && t.resp.Err == "" {
-		t.respHist[i] = respEntry{resp: t.resp, at: time.Now()}
+	if t.Resp != nil && t.Resp.Err == "" {
+		t.respHist[i] = respEntry{resp: t.Resp, at: time.Now()}
 	} else {
 		t.respHist = append(t.respHist[:i], t.respHist[i+1:]...)
 	}
-	t.resp = picked
+	t.Resp = picked
 	a.refreshView(t)
 }
 
 // saveBody asks for a path and writes the response body there.
 func (a *App) saveBody(t *reqTab) {
-	if t.resp == nil || t.resp.Err != "" {
+	if t.Resp == nil || t.Resp.Err != "" {
 		a.toast("There is no response to save", true)
 		return
 	}
-	a.pickFile("Save response body", true, respview.SuggestedFileName(t.resp), func(path string) { a.writeBody(t, path) })
+	a.pickFile("Save response body", true, respview.SuggestedFileName(t.Resp), func(path string) { a.writeBody(t, path) })
 }
 
 // writeBody saves the body to path (a leading ~ is the home folder); an
@@ -73,7 +73,7 @@ func (a *App) saveBody(t *reqTab) {
 // its name again, which is what the prompt already did, so it is replaced.
 func (a *App) writeBody(t *reqTab, path string) {
 	path = strings.TrimSpace(path)
-	if path == "" || t.resp == nil {
+	if path == "" || t.Resp == nil {
 		return
 	}
 	if rest, ok := strings.CutPrefix(path, "~/"); ok {
@@ -81,25 +81,25 @@ func (a *App) writeBody(t *reqTab, path string) {
 			path = filepath.Join(home, rest)
 		}
 	}
-	if err := os.WriteFile(path, t.resp.Body, 0o644); err != nil {
+	if err := os.WriteFile(path, t.Resp.Body, 0o644); err != nil {
 		a.toast("Saving failed: "+err.Error(), true)
 		return
 	}
-	a.toast(fmt.Sprintf("Saved %s to %s", textfmt.Size(len(t.resp.Body)), filepath.Base(path)), false)
+	a.toast(fmt.Sprintf("Saved %s to %s", textfmt.Size(len(t.Resp.Body)), filepath.Base(path)), false)
 }
 
 // openInBrowser serves the response body on a temporary loopback port
 // and opens it in the user's browser, which renders what this app cannot.
 func (a *App) openInBrowser(t *reqTab) {
-	if t.resp == nil || t.resp.Err != "" {
+	if t.Resp == nil || t.Resp.Err != "" {
 		a.toast("There is no response to open", true)
 		return
 	}
-	contentType := respview.ContentType(t.resp)
+	contentType := respview.ContentType(t.Resp)
 	if contentType == "" {
 		contentType = "text/plain; charset=utf-8"
 	}
-	if err := a.previews.Show(t.resp.Body, contentType); err != nil {
+	if err := a.previews.Show(t.Resp.Body, contentType); err != nil {
 		a.toast("Preview failed: "+err.Error(), true)
 		return
 	}

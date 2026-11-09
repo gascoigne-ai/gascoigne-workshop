@@ -27,7 +27,7 @@ func introspectionServer(t *testing.T) *httptest.Server {
 func graphQLTab(t *testing.T, a *App, url string) *reqTab {
 	t.Helper()
 	tab := a.cur()
-	tab.req.URL, tab.req.Method = url, "POST"
+	tab.Req.URL, tab.Req.Method = url, "POST"
 	a.setBodyType(tab, model.BodyGraphQL)
 	return tab
 }
@@ -58,10 +58,10 @@ func TestPickingAnOperationFillsTheQueryAndVariablesOfTheTab(t *testing.T) {
 
 	a.schemaMenu(tab)[0].run()
 	wantQuery := "query repo($name: String!) {\n  repo(name: $name) {\n    name\n  }\n}"
-	if tab.body.Text != wantQuery || tab.req.Body != wantQuery {
-		t.Fatalf("query = %q (request %q), want %q", tab.body.Text, tab.req.Body, wantQuery)
+	if tab.body.Text != wantQuery || tab.Req.Body != wantQuery {
+		t.Fatalf("query = %q (request %q), want %q", tab.body.Text, tab.Req.Body, wantQuery)
 	}
-	if want := "{\n  \"name\": \"\"\n}"; tab.gqlVars.Text != want || tab.req.GraphQLVars != want {
-		t.Fatalf("variables = %q (request %q), want %q", tab.gqlVars.Text, tab.req.GraphQLVars, want)
+	if want := "{\n  \"name\": \"\"\n}"; tab.gqlVars.Text != want || tab.Req.GraphQLVars != want {
+		t.Fatalf("variables = %q (request %q), want %q", tab.gqlVars.Text, tab.Req.GraphQLVars, want)
 	}
 }

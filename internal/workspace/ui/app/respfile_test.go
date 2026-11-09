@@ -23,8 +23,8 @@ func TestHistoryKeepsEarlierResponsesNewestFirstAndSwapsOnPick(t *testing.T) {
 	a, _ := newTestApp(t)
 	tab := a.cur()
 	send := func(status int) {
-		tab.sending, tab.seq = true, tab.seq+1
-		a.apply(sendResult{tab: tab, seq: tab.seq, resp: model.Response{Status: status, StatusText: "S", Body: []byte("{}")}})
+		tab.Sending, tab.Seq = true, tab.Seq+1
+		a.apply(sendResult{tab: tab, seq: tab.Seq, resp: model.Response{Status: status, StatusText: "S", Body: []byte("{}")}})
 	}
 	send(200)
 	if len(tab.respHist) != 0 {
@@ -40,8 +40,8 @@ func TestHistoryKeepsEarlierResponsesNewestFirstAndSwapsOnPick(t *testing.T) {
 		t.Fatalf("menu %+v", items)
 	}
 	items[1].run() // pick the 200
-	if tab.resp.Status != 200 || tab.respHist[1].resp.Status != 202 {
-		t.Fatalf("shown %d, history %+v", tab.resp.Status, tab.respHist)
+	if tab.Resp.Status != 200 || tab.respHist[1].resp.Status != 202 {
+		t.Fatalf("shown %d, history %+v", tab.Resp.Status, tab.respHist)
 	}
 	for i := 0; i < respHistoryLimit+5; i++ {
 		send(300 + i)
@@ -49,12 +49,12 @@ func TestHistoryKeepsEarlierResponsesNewestFirstAndSwapsOnPick(t *testing.T) {
 	if len(tab.respHist) != respHistoryLimit {
 		t.Fatalf("history grew to %d", len(tab.respHist))
 	}
-	tab.sending, tab.seq = true, tab.seq+1
+	tab.Sending, tab.Seq = true, tab.Seq+1
 	n := len(tab.respHist)
-	a.apply(sendResult{tab: tab, seq: tab.seq, resp: model.Response{Err: "boom"}})
-	a.apply(sendResult{tab: tab, seq: tab.seq + 1, resp: model.Response{Status: 200}}) // stale: ignored
-	tab.sending, tab.seq = true, tab.seq+1
-	a.apply(sendResult{tab: tab, seq: tab.seq, resp: model.Response{Status: 204}})
+	a.apply(sendResult{tab: tab, seq: tab.Seq, resp: model.Response{Err: "boom"}})
+	a.apply(sendResult{tab: tab, seq: tab.Seq + 1, resp: model.Response{Status: 200}}) // stale: ignored
+	tab.Sending, tab.Seq = true, tab.Seq+1
+	a.apply(sendResult{tab: tab, seq: tab.Seq, resp: model.Response{Status: 204}})
 	if len(tab.respHist) != n {
 		t.Fatalf("a failed response must not enter the history: %d -> %d", n, len(tab.respHist))
 	}
@@ -68,7 +68,7 @@ func TestSaveBodyWritesTheFileAndReportsFailures(t *testing.T) {
 	if a.dialog != nil {
 		t.Fatal("no dialog without a response")
 	}
-	tab.resp = &model.Response{Status: 200, Body: []byte(`{"a":1}`)}
+	tab.Resp = &model.Response{Status: 200, Body: []byte(`{"a":1}`)}
 	a.saveBody(tab)
 	if a.dialog == nil || a.dialog.input == nil || a.dialog.input.Text != "response.txt" {
 		t.Fatalf("the prompt did not open with a name: %+v", a.dialog)
@@ -92,9 +92,9 @@ func TestSaveBodyWritesTheFileAndReportsFailures(t *testing.T) {
 func TestAssertionsRunWhenAResponseArrivesAndAfterEdits(t *testing.T) {
 	a, _ := newTestApp(t)
 	tab := a.cur()
-	tab.req.Tests = "status == 200\njson ok == true\nstatus == 404"
-	tab.sending, tab.seq = true, tab.seq+1
-	a.apply(sendResult{tab: tab, seq: tab.seq, resp: model.Response{Status: 200, StatusText: "OK", Body: []byte(`{"ok":true}`)}})
+	tab.Req.Tests = "status == 200\njson ok == true\nstatus == 404"
+	tab.Sending, tab.Seq = true, tab.Seq+1
+	a.apply(sendResult{tab: tab, seq: tab.Seq, resp: model.Response{Status: 200, StatusText: "OK", Body: []byte(`{"ok":true}`)}})
 	if len(tab.testResults) != 3 || !tab.testResults[0].OK || !tab.testResults[1].OK || tab.testResults[2].OK {
 		t.Fatalf("%+v", tab.testResults)
 	}
@@ -126,8 +126,8 @@ func TestAnImageResponseIsShownAsAPicture(t *testing.T) {
 	}
 	a, _ := newTestApp(t)
 	tab := a.cur()
-	tab.sending, tab.seq = true, tab.seq+1
-	a.apply(sendResult{tab: tab, seq: tab.seq, resp: model.Response{Status: 200, StatusText: "OK", Body: buf.Bytes(),
+	tab.Sending, tab.Seq = true, tab.Seq+1
+	a.apply(sendResult{tab: tab, seq: tab.Seq, resp: model.Response{Status: 200, StatusText: "OK", Body: buf.Bytes(),
 		Headers: []model.KV{{Name: "Content-Type", Value: "text/plain", Enabled: true}}}}) // mislabeled on purpose
 	if tab.picture == nil || !strings.HasPrefix(tab.pictureInfo, "PNG 40x20") {
 		t.Fatalf("picture %v info %q", tab.picture, tab.pictureInfo)
@@ -138,8 +138,8 @@ func TestAnImageResponseIsShownAsAPicture(t *testing.T) {
 	if d := view.Dump(a.responsePane(responsePanes[0], tab, nil)); !strings.Contains(d, "PNG 40x20") || !strings.Contains(d, "Save") {
 		t.Fatalf("pane:\n%s", d)
 	}
-	tab.sending, tab.seq = true, tab.seq+1
-	a.apply(sendResult{tab: tab, seq: tab.seq, resp: model.Response{Status: 200, Body: []byte(`{"a":1}`)}})
+	tab.Sending, tab.Seq = true, tab.Seq+1
+	a.apply(sendResult{tab: tab, seq: tab.Seq, resp: model.Response{Status: 200, Body: []byte(`{"a":1}`)}})
 	if tab.picture != nil {
 		t.Fatal("the next, non-image response must clear the picture")
 	}
@@ -173,16 +173,16 @@ func TestFileBodyTypeKeepsItsPathSeparateFromTheTextBody(t *testing.T) {
 	a, _ := newTestApp(t)
 	tab := a.cur()
 	tab.body = view.NewTextArea("typed text")
-	tab.req.Body = "typed text"
+	tab.Req.Body = "typed text"
 	a.setBodyType(tab, model.BodyFile)
-	if tab.req.BodyType != model.BodyFile || tab.req.Body != "" {
-		t.Fatalf("type %q body %q", tab.req.BodyType, tab.req.Body)
+	if tab.Req.BodyType != model.BodyFile || tab.Req.Body != "" {
+		t.Fatalf("type %q body %q", tab.Req.BodyType, tab.Req.Body)
 	}
 	tab.file = view.NewTextField("/tmp/x.bin")
-	tab.req.Body = tab.file.Text
+	tab.Req.Body = tab.file.Text
 	a.setBodyType(tab, model.BodyText)
-	if tab.req.Body != "typed text" {
-		t.Fatalf("the text body must come back: %q", tab.req.Body)
+	if tab.Req.Body != "typed text" {
+		t.Fatalf("the text body must come back: %q", tab.Req.Body)
 	}
 	if d := view.Dump(a.fileBody(tab)); !strings.Contains(d, "Choose...") {
 		t.Fatalf("file editor:\n%s", d)
@@ -192,14 +192,14 @@ func TestFileBodyTypeKeepsItsPathSeparateFromTheTextBody(t *testing.T) {
 func TestCapturedValuesBecomeVariablesInTheActiveScope(t *testing.T) {
 	a, _ := newTestApp(t)
 	tab := a.cur()
-	tab.req.Tests = "set token = json access_token"
+	tab.Req.Tests = "set token = json access_token"
 	send := func(body string) {
-		tab.sending, tab.seq = true, tab.seq+1
-		a.apply(sendResult{tab: tab, seq: tab.seq, resp: model.Response{Status: 200, Body: []byte(body)}})
+		tab.Sending, tab.Seq = true, tab.Seq+1
+		a.apply(sendResult{tab: tab, seq: tab.Seq, resp: model.Response{Status: 200, Body: []byte(body)}})
 	}
 	a.col.Vars = nil
 	send(`{"access_token":"t1"}`)
-	if got := model.Expand("{{token}}", a.varsFor(tab.req)); got != "t1" {
+	if got := model.Expand("{{token}}", a.varsFor(tab.Req)); got != "t1" {
 		t.Fatalf("collection variable: %q", got)
 	}
 	send(`{"access_token":"t2"}`)
@@ -225,24 +225,24 @@ func TestGraphQLBodyTypeSendsAQueryAndCanLoadTheSchema(t *testing.T) {
 	defer srv.Close()
 	a, _ := newTestApp(t)
 	tab := a.cur()
-	tab.req.URL, tab.req.Method = srv.URL, "GET"
+	tab.Req.URL, tab.Req.Method = srv.URL, "GET"
 	tab.body = view.NewTextArea("{ repos { name } }")
 	a.setBodyType(tab, model.BodyGraphQL)
-	if tab.req.Method != "POST" || tab.req.Body != "{ repos { name } }" {
-		t.Fatalf("method %q body %q", tab.req.Method, tab.req.Body)
+	if tab.Req.Method != "POST" || tab.Req.Body != "{ repos { name } }" {
+		t.Fatalf("method %q body %q", tab.Req.Method, tab.Req.Body)
 	}
 	if d := view.Dump(a.graphQLBody(tab)); !strings.Contains(d, "Load schema") || !strings.Contains(d, "VARIABLES") {
 		t.Fatalf("editor:\n%s", d)
 	}
 	a.send(tab)
 	waitForResponse(t, a, tab)
-	tab.resp = nil
+	tab.Resp = nil
 	a.loadSchema(tab)
 	waitForResponse(t, a, tab)
 	if len(queries) != 2 || queries[0] != "{ repos { name } }" || !strings.Contains(queries[1], "__schema") {
 		t.Fatalf("queries %q", queries)
 	}
-	if tab.req.Body != "{ repos { name } }" {
+	if tab.Req.Body != "{ repos { name } }" {
 		t.Fatal("loading the schema must not touch the tab's own query")
 	}
 }
@@ -283,8 +283,8 @@ func TestADragRestingOverAClosedFolderOpensIt(t *testing.T) {
 func TestFormFieldsCanBeEditedAsText(t *testing.T) {
 	a, _ := newTestApp(t)
 	tab := a.cur()
-	tab.req.BodyType = model.BodyForm
-	tab.req.Form = []model.KV{{Name: "user", Value: "ann", Enabled: true}}
+	tab.Req.BodyType = model.BodyForm
+	tab.Req.Form = []model.KV{{Name: "user", Value: "ann", Enabled: true}}
 	for i, p := range requestPanes {
 		if p.kind == paneBody {
 			tab.paneTab = i
@@ -301,8 +301,8 @@ func TestFormFieldsCanBeEditedAsText(t *testing.T) {
 	}
 	a.bulk.area = view.NewTextArea("user: bob\nrole: admin")
 	a.closeBulk()
-	if len(tab.req.Form) != 2 || tab.req.Form[0].Value != "bob" || tab.req.Form[1].Name != "role" {
-		t.Fatalf("form %+v", tab.req.Form)
+	if len(tab.Req.Form) != 2 || tab.Req.Form[0].Value != "bob" || tab.Req.Form[1].Name != "role" {
+		t.Fatalf("form %+v", tab.Req.Form)
 	}
 }
 

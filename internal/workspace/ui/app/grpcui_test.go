@@ -36,23 +36,23 @@ func TestTheProtocolChipCyclesThroughGRPCAndBackToRESTWithAMethod(t *testing.T) 
 	seen := map[string]bool{}
 	for range protocolOrder {
 		a.cycleProtocol(tab)
-		seen[tab.req.Protocol] = true
-		if tab.req.Protocol == "grpc" {
-			tab.req.Method = "pkg.Service/Call" // a gRPC method is not an HTTP one
+		seen[tab.Req.Protocol] = true
+		if tab.Req.Protocol == "grpc" {
+			tab.Req.Method = "pkg.Service/Call" // a gRPC method is not an HTTP one
 		}
 	}
 	if !seen["grpc"] {
 		t.Fatalf("the protocols are %v, gRPC is missing", protocolOrder)
 	}
-	if tab.req.Protocol != "rest" || tab.req.Method != "GET" {
-		t.Fatalf("back on %s %q: a REST request needs an HTTP method", tab.req.Protocol, tab.req.Method)
+	if tab.Req.Protocol != "rest" || tab.Req.Method != "GET" {
+		t.Fatalf("back on %s %q: a REST request needs an HTTP method", tab.Req.Protocol, tab.Req.Method)
 	}
 }
 
 func TestPickingAGRPCMethodListsTheServersMethodsAndSetsIt(t *testing.T) {
 	a, _ := newTestApp(t)
 	tab := a.cur()
-	tab.req.Protocol, tab.req.URL = "grpc", grpcServer(t)
+	tab.Req.Protocol, tab.Req.URL = "grpc", grpcServer(t)
 
 	a.pickGRPCMethod(tab)
 	for range 400 {
@@ -69,27 +69,27 @@ func TestPickingAGRPCMethodListsTheServersMethodsAndSetsIt(t *testing.T) {
 		t.Fatalf("methods = %v", menuLabels(a))
 	}
 	itemByLabel(a, "grpc.health.v1.Health/Check").run()
-	if tab.req.Method != "grpc.health.v1.Health/Check" {
-		t.Fatalf("Method = %q", tab.req.Method)
+	if tab.Req.Method != "grpc.health.v1.Health/Check" {
+		t.Fatalf("Method = %q", tab.Req.Method)
 	}
 }
 
 func TestSendingAGRPCTabShowsTheAnswerAsAResponse(t *testing.T) {
 	a, _ := newTestApp(t)
 	tab := a.cur()
-	tab.req.Protocol, tab.req.URL, tab.req.Method, tab.req.Body = "grpc", grpcServer(t), "grpc.health.v1.Health/Check", `{}`
-	tab.resp = nil
+	tab.Req.Protocol, tab.Req.URL, tab.Req.Method, tab.Req.Body = "grpc", grpcServer(t), "grpc.health.v1.Health/Check", `{}`
+	tab.Resp = nil
 	a.send(tab)
 	waitForResponse(t, a, tab)
-	if tab.resp.Err != "" || tab.resp.Status != 200 || !strings.Contains(string(tab.resp.Body), "SERVING") {
-		t.Fatalf("%+v", tab.resp)
+	if tab.Resp.Err != "" || tab.Resp.Status != 200 || !strings.Contains(string(tab.Resp.Body), "SERVING") {
+		t.Fatalf("%+v", tab.Resp)
 	}
 }
 
 func TestAGRPCPickerWithoutAServerSaysSo(t *testing.T) {
 	a, _ := newTestApp(t)
 	tab := a.cur()
-	tab.req.Protocol, tab.req.URL = "grpc", ""
+	tab.Req.Protocol, tab.Req.URL = "grpc", ""
 	a.pickGRPCMethod(tab)
 	a.step(core.Input{})
 	if a.ctxMenu != nil {

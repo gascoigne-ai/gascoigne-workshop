@@ -68,10 +68,10 @@ func TestScreenshotWithSendWaitsForTheResponse(t *testing.T) {
 	for range settleFrames + 2 {
 		a.shotUpdate()
 	}
-	if a.shot.ready(a) && tab.resp == nil {
+	if a.shot.ready(a) && tab.Resp == nil {
 		t.Fatal("with -send the capture must wait for the response")
 	}
-	if !tab.sending && tab.resp == nil {
+	if !tab.Sending && tab.Resp == nil {
 		t.Fatal("-send must start the request on the first frame")
 	}
 

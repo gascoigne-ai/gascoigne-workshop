@@ -17,10 +17,10 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/colorpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/settingsui"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/shortcutpage"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
 	"net/http"
 	"net/http/cookiejar"
-	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -62,26 +62,23 @@ func next(order []string, cur string) string {
 
 // reqTab is one open request with its editor and response state.
 type reqTab struct {
-	req                   *model.Request
+	*tabs.Tab
 	url                   view.TextField
 	paneTab               int
 	respTab               int
-	resp                  *model.Response
-	view                  view.CodeView    // response body
-	bodyView              view.CodeView    // request body, read-only
-	picture               *ebiten.Image    // the response body when it is an image
-	pictureInfo           string           // "PNG 640x480, 12.5KB"
-	tests                 view.TextArea    // the assertions editor
-	testResults           []assert.Result  // what the assertions found in the shown response
-	gqlVars               view.TextArea    // the variables of a GraphQL body
-	file                  view.TextField   // the path of a file body
-	body                  view.TextArea    // request body editor
-	reqScroll, respScroll view.ScrollState // scroll of the table and note panes
-	bodyTypesX            view.ScrollState // sideways scroll of the body type chips
-	reqTabsX, respTabsX   view.ScrollState // sideways scroll of the two pane tab strips
-	sending               bool
+	view                  view.CodeView              // response body
+	bodyView              view.CodeView              // request body, read-only
+	picture               *ebiten.Image              // the response body when it is an image
+	pictureInfo           string                     // "PNG 640x480, 12.5KB"
+	tests                 view.TextArea              // the assertions editor
+	testResults           []assert.Result            // what the assertions found in the shown response
+	gqlVars               view.TextArea              // the variables of a GraphQL body
+	file                  view.TextField             // the path of a file body
+	body                  view.TextArea              // request body editor
+	reqScroll, respScroll view.ScrollState           // scroll of the table and note panes
+	bodyTypesX            view.ScrollState           // sideways scroll of the body type chips
+	reqTabsX, respTabsX   view.ScrollState           // sideways scroll of the two pane tab strips
 	hist                  map[string]*rowHistory     // undo history of each table
-	saved                 model.Request              // the request as it was when opened or last saved
 	timeout               view.TextField             // the request's timeout seconds, as typed
 	cancel                context.CancelFunc         // stops the running request
 	auth                  map[string]*view.TextField // Auth pane inputs by field id, created on first use
@@ -92,7 +89,6 @@ type reqTab struct {
 	findOpen              bool                       // the find bar is showing
 	find                  view.TextField             // the search text
 	matchIdx              int                        // the active match, -1 for none
-	seq                   int                        // numbers the sends, so a late result of an old one is ignored
 	sess                  reqport.Session            // the open connection of a socket tab
 	connecting            bool                       // a connect is in progress
 	wsGen                 int                        // numbers the connects, so a late answer of an old one is ignored
@@ -140,14 +136,7 @@ func (a *App) makeTab(req *model.Request) *reqTab {
 }
 
 func newTab(req *model.Request) *reqTab {
-	t := &reqTab{req: req, url: view.NewTextField(req.URL)}
-	if req.BodyType == "" { // requests from before body types: infer one
-		req.BodyType = model.BodyNone
-		if req.Body != "" {
-			req.BodyType = model.BodyText
-		}
-	}
-	t.saved = req.Clone()
+	t := &reqTab{Tab: tabs.New(req), url: view.NewTextField(req.URL)}
 	t.matchIdx = -1
 	t.wsView.Follow = true
 	t.wsCancel = func() {}
@@ -364,7 +353,7 @@ func (a *App) cur() *reqTab { return a.tabs[a.active] }
 func (a *App) openRequest(req *model.Request) {
 	a.selected = req
 	for i, t := range a.tabs {
-		if t.req == req {
+		if t.Req == req {
 			a.active = i
 			return
 		}
@@ -380,21 +369,19 @@ func (a *App) send(t *reqTab) {
 		a.toggleConnection(t)
 		return
 	}
-	a.dispatch(t, t.req)
+	a.dispatch(t, t.Req)
 }
 
 // dispatch sends req on behalf of tab t: the request of the tab, or a
 // helper one such as a GraphQL schema query that uses the tab's URL and
 // credentials.
 func (a *App) dispatch(t *reqTab, source *model.Request) {
-	if t.sending {
+	seq, started := t.BeginSend()
+	if !started {
 		return
 	}
-	t.sending = true
-	t.seq++
-	seq := t.seq
 	a.status = "Sending " + source.URL
-	req := source.Expanded(a.varsFor(t.req))
+	req := source.Expanded(a.varsFor(t.Req))
 	a.calls.Sent(a.now(), req)
 	ctx, cancel := context.WithTimeout(context.Background(), a.timeoutFor(req))
 	t.cancel = cancel
@@ -411,13 +398,10 @@ func (a *App) dispatch(t *reqTab, source *model.Request) {
 // cancelSend stops the running request of t. Its late result, which
 // arrives after this, belongs to an older send and is dropped.
 func (a *App) cancelSend(t *reqTab) {
-	if !t.sending {
+	if !t.Cancel() {
 		return
 	}
 	t.cancel()
-	t.sending = false
-	t.seq++
-	t.resp = &model.Response{Err: model.ErrCancelled}
 	t.view.SetLines(nil)
 	a.status = model.ErrCancelled
 }
@@ -464,17 +448,16 @@ func (a *App) drain() (any bool) {
 
 func (a *App) apply(r sendResult) {
 	t := r.tab
-	if r.seq != t.seq {
+	if !t.Accept(r.seq) {
 		return // the answer to a send that was cancelled or replaced
 	}
-	t.sending = false
-	remember(t, t.resp)
-	t.resp = &r.resp
+	remember(t, t.Resp)
+	t.Resp = &r.resp
 	a.saveHistory(t)
-	if path := a.requestPath(t.req); path != "" {
-		a.sent.Record(a, a.now(), path, t.req, r.resp.Status)
+	if path := a.requestPath(t.Req); path != "" {
+		a.sent.Record(a, a.now(), path, t.Req, r.resp.Status)
 	}
-	a.calls.Answer(a.now(), t.req, &r.resp)
+	a.calls.Answer(a.now(), t.Req, &r.resp)
 	a.rememberSchema(t, &r.resp)
 	a.refreshView(t)
 	if r.resp.Err != "" {
@@ -482,7 +465,7 @@ func (a *App) apply(r sendResult) {
 		a.runTests(t)
 		return
 	}
-	a.status = fmt.Sprintf("%s %s: %d %s in %s", t.req.Method, t.req.URL, r.resp.Status, r.resp.StatusText, textfmt.Duration(r.resp.Duration))
+	a.status = fmt.Sprintf("%s %s: %d %s in %s", t.Req.Method, t.Req.URL, r.resp.Status, r.resp.StatusText, textfmt.Duration(r.resp.Duration))
 	a.runTests(t)
 }
 
@@ -632,25 +615,25 @@ func (a *App) newRequest() { a.newRequestIn(a.selectedFolder()) }
 
 func (a *App) cycleProtocol(t *reqTab) {
 	a.disconnect(t) // a connection belongs to the protocol that opened it
-	t.req.Protocol = next(protocolOrder, t.req.Protocol)
-	if t.req.Protocol == "rest" && (t.req.Method == "" || strings.Contains(t.req.Method, "/")) { // "" or a gRPC method
-		t.req.Method = "GET"
+	t.Req.Protocol = next(protocolOrder, t.Req.Protocol)
+	if t.Req.Protocol == "rest" && (t.Req.Method == "" || strings.Contains(t.Req.Method, "/")) { // "" or a gRPC method
+		t.Req.Method = "GET"
 	}
 }
 
-func (a *App) cycleMethod(t *reqTab) { t.req.Method = next(methodOrder, t.req.Method) }
+func (a *App) cycleMethod(t *reqTab) { t.Req.Method = next(methodOrder, t.Req.Method) }
 
 // urlEdited keeps the request and its Params table in step with the URL field.
 func (a *App) urlEdited(t *reqTab) {
-	t.req.URL = t.url.Text
-	t.req.Params = model.MergeParams(t.req.Params, t.req.URL)
+	t.Req.URL = t.url.Text
+	t.Req.Params = model.MergeParams(t.Req.Params, t.Req.URL)
 }
 
 // dirtyMark is shown on tabs whose request changed since it was opened.
 const dirtyMark = "\u2022"
 
 // dirty reports whether the request differs from its state when opened.
-func dirty(t *reqTab) bool { return !reflect.DeepEqual(t.saved, t.req.Clone()) }
+func dirty(t *reqTab) bool { return t.Dirty() }
 
 // dragOver moves the tab being dragged to where the pointer is over tab i.
 func (a *App) dragOver(i int) {

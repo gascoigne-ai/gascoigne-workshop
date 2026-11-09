@@ -36,8 +36,8 @@ var retryDelay = 2 * time.Second
 
 // isSocket reports whether the tab's protocol keeps a connection open.
 func isSocket(t *reqTab) bool {
-	return t.req.Protocol == "websocket" || t.req.Protocol == "mcp" || t.req.Protocol == "sse" ||
-		(t.req.Protocol == "grpc" && t.grpcStream)
+	return t.Req.Protocol == "websocket" || t.Req.Protocol == "mcp" || t.Req.Protocol == "sse" ||
+		(t.Req.Protocol == "grpc" && t.grpcStream)
 }
 
 // wsPanes are the panes of a socket's response side.
@@ -67,9 +67,9 @@ func (a *App) connect(t *reqTab) {
 	t.wsGen++
 	gen := t.wsGen
 	t.connecting = true
-	a.status = "Connecting to " + t.req.URL
-	req := t.req.Expanded(a.varsFor(t.req))
-	if t.req.Protocol == "sse" && t.lastEventID != "" { // resume where the stream stopped
+	a.status = "Connecting to " + t.Req.URL
+	req := t.Req.Expanded(a.varsFor(t.Req))
+	if t.Req.Protocol == "sse" && t.lastEventID != "" { // resume where the stream stopped
 		req.Headers = append(req.Headers, model.KV{Name: "Last-Event-ID", Value: t.lastEventID, Enabled: true})
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), a.timeoutFor(req))
@@ -158,9 +158,9 @@ func (a *App) applyWS(e wsEvent) {
 		}
 	case e.closed:
 		t.sess, t.connecting = nil, false
-		a.calls.Info(a.now(), "Disconnected from "+t.req.URL)
+		a.calls.Info(a.now(), "Disconnected from "+t.Req.URL)
 		t.tools, t.resources, t.prompts = nil, nil, nil
-		a.status = "Disconnected from " + t.req.URL
+		a.status = "Disconnected from " + t.Req.URL
 		a.scheduleRetry(t)
 	case e.hasEv:
 		if tools := model.ParseTools(e.ev.Text); e.ev.Dir == reqport.Received && tools != nil {
@@ -180,14 +180,14 @@ func (a *App) applyWS(e wsEvent) {
 		a.logEvent(t, e.ev)
 	case e.err != nil:
 		t.connecting = false
-		a.calls.Error(a.now(), fmt.Sprintf("✗ %s: %s", t.req.URL, e.err))
+		a.calls.Error(a.now(), fmt.Sprintf("✗ %s: %s", t.Req.URL, e.err))
 		a.logInfo(t, e.err.Error(), w.Error)
 		a.status = "Connection failed"
 		a.scheduleRetry(t)
 	default:
 		t.sess, t.connecting = e.sess, false
-		a.calls.Info(a.now(), "Connected to "+t.req.URL)
-		a.status = "Connected to " + t.req.URL
+		a.calls.Info(a.now(), "Connected to "+t.Req.URL)
+		a.status = "Connected to " + t.Req.URL
 	}
 }
 
@@ -261,13 +261,13 @@ func (a *App) messagesPane(_ pane, t *reqTab, _ *ScrollState) Node {
 		Spacer(H(w.Gutter)),
 		a.messagesToolbar(t),
 		Code(&t.wsView, Grow(1), Bg(w.Sunken)),
-		If(t.req.Protocol != "sse", // an event stream only receives, so it has no composer
+		If(t.Req.Protocol != "sse", // an event stream only receives, so it has no composer
 			Row(H(w.RowH+16), PadX(w.Gutter), PadY(8), Gap(6), BorderT(w.Border),
 				Field(&t.msg, Grow(1), Placeholder(composerHint(t, connected)),
 					OnEnter(func() { a.sendMessage(t) }),
 					a.textMenuOpt(&t.msg, nil),
 				),
-				If(t.req.Protocol == "websocket", Button("{ }", W(40), OnClick(func() { a.formatMessage(t) }), Tooltip("Make the message one line of JSON, or say where it is not JSON"))),
+				If(t.Req.Protocol == "websocket", Button("{ }", W(40), OnClick(func() { a.formatMessage(t) }), Tooltip("Make the message one line of JSON, or say where it is not JSON"))),
 				PrimaryButton("Send", W(70), OnClick(func() { a.sendMessage(t) }), Tooltip("Send the message (Enter)")),
 			)),
 	)
@@ -287,7 +287,7 @@ func composerHint(t *reqTab, connected bool) string {
 	switch {
 	case !connected:
 		return "Connect to send messages"
-	case t.req.Protocol == "mcp":
+	case t.Req.Protocol == "mcp":
 		return "call TOOL {json}  ·  read URI  ·  prompt NAME {json}  ·  method {json}  ·  or raw JSON-RPC"
 	}
 	return "Message"

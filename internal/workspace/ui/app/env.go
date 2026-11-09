@@ -143,13 +143,13 @@ func (a *App) envChip() Node {
 // active variables, and the names that do not resolve. Empty when the URL
 // uses no variables.
 func (a *App) urlTip(t *reqTab) string {
-	names := model.VarNames(t.req.URL)
+	names := model.VarNames(t.Req.URL)
 	if len(names) == 0 {
 		return ""
 	}
-	vars := a.varsFor(t.req)
-	tip := "Resolves to " + model.Expand(t.req.URL, vars)
-	if missing := model.Unresolved(t.req.URL, vars); len(missing) > 0 {
+	vars := a.varsFor(t.Req)
+	tip := "Resolves to " + model.Expand(t.Req.URL, vars)
+	if missing := model.Unresolved(t.Req.URL, vars); len(missing) > 0 {
 		tip += "\nNot defined: " + strings.Join(missing, ", ")
 	}
 	return tip
@@ -174,7 +174,7 @@ func (a *App) editVars(dir *model.Folder) {
 // variableCompletion is what Ctrl+Space in the URL field offers (see
 // model.VarCompletion).
 func (a *App) variableCompletion(t *reqTab) (names []string, from int) {
-	return model.VarCompletion(t.url.Text, t.url.Cursor, a.varsFor(t.req))
+	return model.VarCompletion(t.url.Text, t.url.Cursor, a.varsFor(t.Req))
 }
 
 // completeVariable opens a menu of the variables that fit at the cursor of

@@ -10,7 +10,7 @@ import (
 func TestBodyEditorColorsVariablesByWhetherTheyResolve(t *testing.T) {
 	a, _ := newTestApp(t)
 	a.col.Vars = []model.KV{{Name: "known", Value: "1", Enabled: true}}
-	style := a.withVariables(jsonStyler, a.cur().req)
+	style := a.withVariables(jsonStyler, a.cur().Req)
 	spans := style(`{"a": "{{known}}", "b": "{{missing}}"}`)
 	var known, missing w.Token
 	var plain int
@@ -37,7 +37,7 @@ func TestBodyEditorColorsVariablesByWhetherTheyResolve(t *testing.T) {
 	if joined != `{"a": "{{known}}", "b": "{{missing}}"}` {
 		t.Fatalf("styling must not change the text: %q", joined)
 	}
-	if got := a.withVariables(plainStyler, a.cur().req)("no variables here"); len(got) != 1 {
+	if got := a.withVariables(plainStyler, a.cur().Req)("no variables here"); len(got) != 1 {
 		t.Fatalf("a line without variables is one span: %+v", got)
 	}
 }
@@ -45,7 +45,7 @@ func TestBodyEditorColorsVariablesByWhetherTheyResolve(t *testing.T) {
 func TestTableCellsColorVariablesLikeTheURLField(t *testing.T) {
 	a, _ := newTestApp(t)
 	a.col.Vars = []model.KV{{Name: "known", Value: "1", Enabled: true}}
-	style := a.cellStyler(a.cur().req)
+	style := a.cellStyler(a.cur().Req)
 	if style("plain text") != nil {
 		t.Fatal("a cell without a variable is drawn as it is")
 	}

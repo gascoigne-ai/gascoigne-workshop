@@ -66,7 +66,7 @@ func TestStateRestoreRoundTripsThroughTheFile(t *testing.T) {
 	if len(b.tabs) != 2 || b.active != 1 || b.cur().paneTab != 3 {
 		t.Fatalf("tabs %d active %d pane %d", len(b.tabs), b.active, b.cur().paneTab)
 	}
-	if b.cur().req != b.col.Folders[0].Requests[0] || b.selected != b.cur().req {
+	if b.cur().Req != b.col.Folders[0].Requests[0] || b.selected != b.cur().Req {
 		t.Fatal("the restored tab must be the request in the new tree")
 	}
 	if b.sidebarSplit.Size != 300 || !b.expanded[b.col.Folders[2]] {
@@ -151,8 +151,8 @@ func TestResponsesOfARequestComeBackAfterARestart(t *testing.T) {
 
 	second := stateApp(t, statePath)
 	got := second.cur()
-	if got.req.Name != tab.req.Name {
-		t.Fatalf("the restored tab is %q, expected %q", got.req.Name, tab.req.Name)
+	if got.Req.Name != tab.Req.Name {
+		t.Fatalf("the restored tab is %q, expected %q", got.Req.Name, tab.Req.Name)
 	}
 	if len(got.respHist) != 1 || got.respHist[0].resp.Status != 200 || string(got.respHist[0].resp.Body) != `{"ok":true}` {
 		t.Fatalf("history after a restart: %+v", got.respHist)

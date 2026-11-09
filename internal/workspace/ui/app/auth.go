@@ -75,7 +75,7 @@ func (t *reqTab) authInput(id string) *TextField {
 	f, _ := authFieldByID(id)
 	in := new(TextField)
 	if f.value != nil {
-		*in = NewTextField(*f.value(&t.req.Auth))
+		*in = NewTextField(*f.value(&t.Req.Auth))
 	}
 	in.Masked = f.secret && !t.showSecrets
 	if t.auth == nil {
@@ -96,7 +96,7 @@ func (t *reqTab) toggleSecrets() {
 
 // authPane is the Auth tab: a type chooser and the fields of that type.
 func (a *App) authPane(_ pane, t *reqTab, scroll *ScrollState) Node {
-	current := authTypeOf(t.req.Auth.Type)
+	current := authTypeOf(t.Req.Auth.Type)
 	hasSecret := false
 	for _, f := range current.fields {
 		hasSecret = hasSecret || f.secret
@@ -104,7 +104,7 @@ func (a *App) authPane(_ pane, t *reqTab, scroll *ScrollState) Node {
 	return Scroll(scroll, Pad(w.Gutter), Gap(8),
 		Row(H(w.RowH), Gap(6),
 			For(authTypes, func(_ int, at authType) Node {
-				choose := OnClick(func() { t.req.Auth.Type = at.id })
+				choose := OnClick(func() { t.Req.Auth.Type = at.id })
 				if at.id == current.id {
 					return PrimaryButton(at.label, W(at.width), choose)
 				}
@@ -125,8 +125,8 @@ func (a *App) authFieldRow(t *reqTab, f authField) Node {
 		return Row(H(w.RowH), Gap(12),
 			Text(f.label, W(120)),
 			Row(Gap(6), For(f.choices, func(_ int, c authChoice) Node {
-				choose := OnClick(func() { *f.value(&t.req.Auth) = c.id })
-				stored := *f.value(&t.req.Auth)
+				choose := OnClick(func() { *f.value(&t.Req.Auth) = c.id })
+				stored := *f.value(&t.Req.Auth)
 				if stored == c.id || (stored == "" && c.id == f.choices[0].id) {
 					return PrimaryButton(c.label, W(70), choose)
 				}
@@ -139,7 +139,7 @@ func (a *App) authFieldRow(t *reqTab, f authField) Node {
 	return Row(H(w.RowH), Gap(12),
 		Text(f.label, W(120)),
 		Field(in, Grow(1), Bg(w.Sunken),
-			OnChange(func() { *f.value(&t.req.Auth) = in.Text }),
-			a.textMenuOpt(in, func() { *f.value(&t.req.Auth) = in.Text })),
+			OnChange(func() { *f.value(&t.Req.Auth) = in.Text }),
+			a.textMenuOpt(in, func() { *f.value(&t.Req.Auth) = in.Text })),
 	)
 }

@@ -66,7 +66,7 @@ func (a *App) snapshot() state.State {
 	})
 	var kept []int // tab index -> remembered index, -1 when not in the tree
 	for _, t := range a.tabs {
-		if p := a.requestPath(t.req); p != "" {
+		if p := a.requestPath(t.Req); p != "" {
 			s.Tabs = append(s.Tabs, state.Tab{Path: p, Pane: t.paneTab, Resp: t.respTab})
 			kept = append(kept, len(s.Tabs)-1)
 		} else {
@@ -125,7 +125,7 @@ func (a *App) restore(s state.State) {
 	}
 	if len(tabs) > 0 {
 		a.tabs, a.active = tabs, active
-		a.selected = tabs[active].req
+		a.selected = tabs[active].Req
 	}
 	for name, ws := range s.Columns {
 		if len(ws) == 0 {
@@ -214,13 +214,13 @@ func (a *App) historyStore() rport.History {
 // shown one first, so they are there after a restart. A failed write is
 // shown in the status line and nothing else changes.
 func (a *App) saveHistory(t *reqTab) {
-	store, key := a.historyStore(), a.requestPath(t.req)
+	store, key := a.historyStore(), a.requestPath(t.Req)
 	if store == nil || key == "" {
 		return
 	}
 	var entries []rport.Entry
-	if t.resp != nil && t.resp.Err == "" {
-		entries = append(entries, historyEntry(t.resp, a.now()))
+	if t.Resp != nil && t.Resp.Err == "" {
+		entries = append(entries, historyEntry(t.Resp, a.now()))
 	}
 	for _, earlier := range t.respHist {
 		entries = append(entries, historyEntry(earlier.resp, earlier.at))

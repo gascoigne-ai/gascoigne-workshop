@@ -40,7 +40,7 @@ func (a *App) pickFile(title string, save bool, name string, done func(path stri
 
 // fileBody is the editor of a file body: the path, and a button to pick it.
 func (a *App) fileBody(t *reqTab) Node {
-	sync := func() { t.req.Body = t.file.Text }
+	sync := func() { t.Req.Body = t.file.Text }
 	size := ""
 	if info, err := os.Stat(t.file.Text); err == nil && !info.IsDir() {
 		size = "found"

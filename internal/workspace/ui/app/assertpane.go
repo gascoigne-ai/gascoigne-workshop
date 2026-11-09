@@ -9,14 +9,14 @@ import (
 
 // runTests checks the tab's assertions against its shown response.
 func (a *App) runTests(t *reqTab) {
-	t.testResults = assert.Run(t.req.Tests, t.resp)
-	for _, c := range assert.Captures(t.req.Tests, t.resp) {
+	t.testResults = assert.Run(t.Req.Tests, t.Resp)
+	for _, c := range assert.Captures(t.Req.Tests, t.Resp) {
 		a.setVariable(c.Name, c.Value)
 	}
 	if len(t.testResults) == 0 {
 		return
 	}
-	if sum := assert.Summary(t.testResults); sum != "" && t.resp != nil && t.resp.Err == "" {
+	if sum := assert.Summary(t.testResults); sum != "" && t.Resp != nil && t.Resp.Err == "" {
 		a.status += "  Tests: " + sum
 	}
 }
@@ -24,8 +24,8 @@ func (a *App) runTests(t *reqTab) {
 // assertionsPane is where the assertions are written, one per line.
 func (a *App) assertionsPane(_ pane, t *reqTab, _ *ScrollState) Node {
 	sync := func() {
-		t.req.Tests = t.tests.Text
-		t.testResults = assert.Run(t.req.Tests, t.resp) // live, against the response on screen
+		t.Req.Tests = t.tests.Text
+		t.testResults = assert.Run(t.Req.Tests, t.Resp) // live, against the response on screen
 	}
 	return Col(Grow(1), Pad(w.Gutter), Gap(8),
 		Text("One assertion per line: status == 200, time < 500ms, header Content-Type contains json, body contains \"ok\", json items.length > 0, json items[0].name == \"a\". set token = json access_token keeps a value as {{token}} for later requests. Lines starting with # are notes.", Small(), Muted()),

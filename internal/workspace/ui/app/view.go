@@ -224,8 +224,8 @@ func (a *App) requestTabs() Node {
 				OnRightClick(func(x, y int) { a.openMenu(x, y, a.tabMenuItems(i)) }),
 				When(i > 0, Separator(12)),
 				Row(PadL(14), Gap(8), AlignItems(AlignBaseline), grab, OnDragOver(func() { a.dragOver(i) }),
-					Text(requestBadge(t.req.Protocol, t.req.Method), Small(), Color(appearance.MethodToken(t.req.Method)), W(tabBadgeW)),
-					Text(t.req.Name),
+					Text(requestBadge(t.Req.Protocol, t.Req.Method), Small(), Color(appearance.MethodToken(t.Req.Method)), W(tabBadgeW)),
+					Text(t.Req.Name),
 					Row(W(tabDirtyW), AlignSelf(AlignStretch), If(dirty(t), Text(dirtyMark, Color(w.AccentLine), Grow(1)))),
 				),
 				Row(W(24), OnClick(func() { a.closeTab(i) }), Tooltip(a.hint("Close tab", "close-tab")),
@@ -241,7 +241,7 @@ func (a *App) requestTabs() Node {
 
 // urlBar is [protocol | method | URL field ........] [Send].
 func (a *App) urlBar(t *reqTab) Node {
-	isREST, isGRPC := t.req.Protocol == "rest", t.req.Protocol == "grpc"
+	isREST, isGRPC := t.Req.Protocol == "rest", t.Req.Protocol == "grpc"
 	send := PrimaryButton("Send", W(80), OnClick(func() { a.send(t) }), Tooltip(a.hint("Send the request", "send")))
 	if isSocket(t) {
 		label, hint := "Connect", "Open the connection"
@@ -249,14 +249,14 @@ func (a *App) urlBar(t *reqTab) Node {
 			label, hint = "Disconnect", "Close the connection"
 		}
 		send = PrimaryButton(label, W(96), OnClick(func() { a.toggleConnection(t) }), Tooltip(a.hint(hint, "send")))
-	} else if t.sending {
+	} else if t.Sending {
 		send = PrimaryButton("Cancel", W(80), OnClick(func() { a.cancelSend(t) }), Tooltip("Cancel the running request"))
 	}
 	return Row(H(urlH), PadX(w.Gutter), PadY(8), Gap(8), Bg(w.Bg),
 		Row(Grow(1), Bg(w.Sunken), Control("field"), Tooltip(a.urlTip(t)),
-			tip("Protocol: click to change", chip(protocolLabel[t.req.Protocol], w.Muted, 64, func() { a.cycleProtocol(t) })),
+			tip("Protocol: click to change", chip(protocolLabel[t.Req.Protocol], w.Muted, 64, func() { a.cycleProtocol(t) })),
 			If(isREST || isGRPC, VRuleInset(8)), // a divider between the chips, none after the last one
-			If(isREST, tip("Method: click to change", chip(t.req.Method, appearance.MethodToken(t.req.Method), 84, func() { a.cycleMethod(t) }))),
+			If(isREST, tip("Method: click to change", chip(t.Req.Method, appearance.MethodToken(t.Req.Method), 84, func() { a.cycleMethod(t) }))),
 			If(isGRPC, a.grpcMethodChip(t)),
 			If(isGRPC, tip("Stream: keep the call open and show every message in the Messages pane", chip("Stream", streamColor(t), 56, func() { a.toggleStream(t) }))),
 			Spacer(W(w.Gutter-4)), // breathing room between the divider and the URL text
@@ -305,7 +305,7 @@ func chip(label string, color w.Token, width int, onClick func()) *El {
 // URL: defined ones in the success color, unresolved ones as errors.
 func (a *App) varSegments(s string) []Span {
 	var segs []Span
-	vars := a.varsFor(a.cur().req)
+	vars := a.varsFor(a.cur().Req)
 	for _, seg := range splitVars(s) {
 		style := w.Text
 		if seg.isVar {
@@ -358,15 +358,15 @@ func (a *App) pane(t *reqTab, panes []pane, active *int, scroll, tabsX *ScrollSt
 
 // responseStatus is "200 OK  1.4s  156.67KB", dropped when the tabs need the room.
 func (a *App) responseStatus(t *reqTab) Node {
-	if t.resp == nil || t.resp.Err != "" {
+	if t.Resp == nil || t.Resp.Err != "" {
 		return nil
 	}
-	fg, bg := statusPill(t.resp.Status)
+	fg, bg := statusPill(t.Resp.Status)
 	return Row(Gap(12), PadR(w.Gutter), Optional(), AlignItems(AlignCenter),
 		Row(PadX(10), H(20), Bg(bg), Control("pill"), AlignItems(AlignCenter),
-			Text(fmt.Sprintf("%d %s", t.resp.Status, t.resp.StatusText), Small(), Bold(), Color(fg)),
+			Text(fmt.Sprintf("%d %s", t.Resp.Status, t.Resp.StatusText), Small(), Bold(), Color(fg)),
 		),
-		Text(fmt.Sprintf("%s  %s", textfmt.Duration(t.resp.Duration), textfmt.Size(t.resp.Size))),
+		Text(fmt.Sprintf("%s  %s", textfmt.Duration(t.Resp.Duration), textfmt.Size(t.Resp.Size))),
 	)
 }
 

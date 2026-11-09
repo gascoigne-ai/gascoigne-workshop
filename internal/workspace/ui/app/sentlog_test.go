@@ -57,7 +57,7 @@ func TestTheSidebarFilterNarrowsTheSentLog(t *testing.T) {
 	if rows := a.sent.Rows(a.filter.Text); len(rows) != 0 {
 		t.Fatalf("rows for a non-matching filter: %+v", rows)
 	}
-	a.filter.Text = a.cur().req.Name[:2]
+	a.filter.Text = a.cur().Req.Name[:2]
 	if rows := a.sent.Rows(a.filter.Text); len(rows) != 1 {
 		t.Fatalf("rows for a matching filter: %+v", rows)
 	}
@@ -73,8 +73,8 @@ func TestPickingASentRowOpensItsRequest(t *testing.T) {
 
 	a.openRequest(a.col.Folders[0].Requests[0]) // move away
 	a.sent.Open(a, row)
-	if a.cur().req != tab.req {
-		t.Fatalf("opened %q, want %q", a.cur().req.Name, tab.req.Name)
+	if a.cur().Req != tab.Req {
+		t.Fatalf("opened %q, want %q", a.cur().Req.Name, tab.Req.Name)
 	}
 }
 

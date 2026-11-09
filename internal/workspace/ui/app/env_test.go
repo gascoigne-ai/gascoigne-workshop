@@ -125,12 +125,12 @@ func TestToggleSecretOnAnEnvironmentRow(t *testing.T) {
 func TestURLTooltipShowsTheResolvedURLAndWhatIsMissing(t *testing.T) {
 	a, _ := newTestApp(t)
 	tab := a.cur()
-	tab.req.URL = "https://plain.test/x"
+	tab.Req.URL = "https://plain.test/x"
 	if a.urlTip(tab) != "" {
 		t.Fatal("a URL without variables needs no tooltip")
 	}
 	a.col.Vars = []model.KV{{Name: "host", Value: "api.test", Enabled: true}}
-	tab.req.URL = "https://{{host}}/{{path}}"
+	tab.Req.URL = "https://{{host}}/{{path}}"
 	tip := a.urlTip(tab)
 	if !strings.Contains(tip, "Resolves to https://api.test/{{path}}") || !strings.Contains(tip, "Not defined: path") {
 		t.Fatalf("tip %q", tip)
@@ -140,7 +140,7 @@ func TestURLTooltipShowsTheResolvedURLAndWhatIsMissing(t *testing.T) {
 func TestFolderVariablesAreEditedInTheVarsPaneAndResolveForTheirRequests(t *testing.T) {
 	a, _ := newTestApp(t)
 	folder := a.col.Folders[1] // holds the open request
-	req := a.cur().req
+	req := a.cur().Req
 	a.col.Vars = []model.KV{{Name: "host", Value: "collection.test", Enabled: true}}
 	a.editVars(folder)
 	pane := requestPanes[a.cur().paneTab]
@@ -179,8 +179,8 @@ func TestCtrlSpaceCompletesVariablesInTheURLField(t *testing.T) {
 		t.Fatal("no completion menu")
 	}
 	a.ctxMenu.items[1].run() // hostname
-	if tab.url.Text != "https://{{hostname}}" || tab.req.URL != "https://{{hostname}}" || tab.url.Cursor != len("https://{{hostname}}") {
-		t.Fatalf("url %q req %q cursor %d", tab.url.Text, tab.req.URL, tab.url.Cursor)
+	if tab.url.Text != "https://{{hostname}}" || tab.Req.URL != "https://{{hostname}}" || tab.url.Cursor != len("https://{{hostname}}") {
+		t.Fatalf("url %q req %q cursor %d", tab.url.Text, tab.Req.URL, tab.url.Cursor)
 	}
 
 	tab.url = view.NewTextField("https://x/")

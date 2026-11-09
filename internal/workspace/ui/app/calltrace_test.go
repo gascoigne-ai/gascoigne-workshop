@@ -20,7 +20,7 @@ func TestASendIsTracedWithItsOutcome(t *testing.T) {
 	waitForResponse(t, a, tab)
 
 	text := traceText(a)
-	for _, want := range []string{"→ " + tab.req.Method + " " + server.URL, "← 200", "11B"} {
+	for _, want := range []string{"→ " + tab.Req.Method + " " + server.URL, "← 200", "11B"} {
 		if !strings.Contains(text, want) {
 			t.Errorf("trace lacks %q:\n%s", want, text)
 		}
@@ -48,7 +48,7 @@ func TestAFailedSendIsTracedAsAnError(t *testing.T) {
 func TestConnectionEventsAreTraced(t *testing.T) {
 	a, _ := newTestApp(t)
 	tab := a.cur()
-	tab.req.URL = "ws://example.test/socket"
+	tab.Req.URL = "ws://example.test/socket"
 	a.applyWS(wsEvent{tab: tab, gen: tab.wsGen, err: fmt.Errorf("dial refused")})
 	if text := traceText(a); !strings.Contains(text, "dial refused") || !strings.Contains(text, "ws://example.test/socket") {
 		t.Fatalf("trace:\n%s", text)

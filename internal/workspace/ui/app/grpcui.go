@@ -13,11 +13,11 @@ import (
 // pickGRPCMethod asks the server for its methods in the background and
 // opens a menu of them; the chosen one becomes the request's method.
 func (a *App) pickGRPCMethod(t *reqTab) {
-	if strings.TrimSpace(t.req.URL) == "" {
+	if strings.TrimSpace(t.Req.URL) == "" {
 		a.toast("Enter the gRPC server first, for example grpc://localhost:50051", true)
 		return
 	}
-	req := t.req.Expanded(a.varsFor(t.req))
+	req := t.Req.Expanded(a.varsFor(t.Req))
 	x, y := a.ctx.In.X, a.ctx.In.Y
 	a.status = "Listing methods of " + req.URL
 	go func() {
@@ -31,7 +31,7 @@ func (a *App) pickGRPCMethod(t *reqTab) {
 			}
 			items := make([]menuItem, 0, len(methods))
 			for _, method := range methods {
-				items = append(items, menuItem{label: method, run: func() { t.req.Method = method }})
+				items = append(items, menuItem{label: method, run: func() { t.Req.Method = method }})
 			}
 			a.openMenu(x, y, items)
 		}
@@ -41,7 +41,7 @@ func (a *App) pickGRPCMethod(t *reqTab) {
 // grpcMethodChip is the chip of a gRPC tab that shows its method and,
 // when clicked, lists the server's.
 func (a *App) grpcMethodChip(t *reqTab) Node {
-	label, color := t.req.Method, w.Accent
+	label, color := t.Req.Method, w.Accent
 	if label == "" {
 		label, color = "Pick method...", w.Muted
 	}

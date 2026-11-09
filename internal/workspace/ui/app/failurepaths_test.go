@@ -68,15 +68,15 @@ func TestEveryFailurePathIsShownToTheUser(t *testing.T) {
 		}, "Could not save settings", ""},
 		{"a response body cannot be written", func(t *testing.T, a *App) {
 			tab := a.cur()
-			tab.resp = &model.Response{Status: 200, Body: []byte("x")}
+			tab.Resp = &model.Response{Status: 200, Body: []byte("x")}
 			a.writeBody(tab, blockedDir(t))
 		}, "Saving failed", ""},
 		{"there is no response to save", func(t *testing.T, a *App) {
-			a.cur().resp = nil
+			a.cur().Resp = nil
 			a.saveBody(a.cur())
 		}, "There is no response to save", ""},
 		{"there is no response to open in the browser", func(t *testing.T, a *App) {
-			a.cur().resp = nil
+			a.cur().Resp = nil
 			a.openInBrowser(a.cur())
 		}, "There is no response to open", ""},
 		{"the state cannot be saved", func(t *testing.T, a *App) {

@@ -66,9 +66,9 @@ func logText(tab *reqTab) string {
 func TestWebSocketTabConnectsSendsAndDisconnects(t *testing.T) {
 	a, _ := newTestApp(t)
 	tab := a.cur()
-	tab.req.Protocol = "websocket"
-	tab.req.URL = echoServer(t)
-	tab.url = view.NewTextField(tab.req.URL)
+	tab.Req.Protocol = "websocket"
+	tab.Req.URL = echoServer(t)
+	tab.url = view.NewTextField(tab.Req.URL)
 
 	a.send(tab) // the Send button of a socket connects
 	until(t, a, "connection", func() bool { return strings.Contains(logText(tab), "Connected") })
@@ -93,8 +93,8 @@ func TestWebSocketTabConnectsSendsAndDisconnects(t *testing.T) {
 func TestWebSocketConnectFailureShowsInTheLog(t *testing.T) {
 	a, _ := newTestApp(t)
 	tab := a.cur()
-	tab.req.Protocol = "websocket"
-	tab.req.URL = "ws://127.0.0.1:1/"
+	tab.Req.Protocol = "websocket"
+	tab.Req.URL = "ws://127.0.0.1:1/"
 	a.send(tab)
 	until(t, a, "failure", func() bool { return tab.sess == nil && !tab.connecting && len(tab.wsView.Lines) > 0 })
 	if tab.sess != nil {
@@ -105,8 +105,8 @@ func TestWebSocketConnectFailureShowsInTheLog(t *testing.T) {
 func TestClearEmptiesTheMessageLog(t *testing.T) {
 	a, _ := newTestApp(t)
 	tab := a.cur()
-	tab.req.Protocol = "websocket"
-	tab.req.URL = echoServer(t)
+	tab.Req.Protocol = "websocket"
+	tab.Req.URL = echoServer(t)
 	a.send(tab)
 	until(t, a, "connection", func() bool { return tab.sess != nil && len(tab.wsView.Lines) > 0 })
 	a.clearLog(tab)
@@ -138,8 +138,8 @@ func TestWebSocketReconnectsAfterTheServerClosesWhenAsked(t *testing.T) {
 
 	a, _ := newTestApp(t)
 	tab := a.cur()
-	tab.req.Protocol = "websocket"
-	tab.req.URL = "ws" + strings.TrimPrefix(srv.URL, "http")
+	tab.Req.Protocol = "websocket"
+	tab.Req.URL = "ws" + strings.TrimPrefix(srv.URL, "http")
 	tab.reconnect = true
 	a.send(tab)
 	until(t, a, "second connection", func() bool { return conns.Load() >= 2 && tab.sess != nil })
@@ -168,8 +168,8 @@ func TestWebSocketWithoutReconnectStaysClosed(t *testing.T) {
 	t.Cleanup(srv.Close)
 	a, _ := newTestApp(t)
 	tab := a.cur()
-	tab.req.Protocol = "websocket"
-	tab.req.URL = "ws" + strings.TrimPrefix(srv.URL, "http")
+	tab.Req.Protocol = "websocket"
+	tab.Req.URL = "ws" + strings.TrimPrefix(srv.URL, "http")
 	a.send(tab)
 	until(t, a, "close", func() bool { return strings.Contains(logText(tab), "Closed by server") && tab.sess == nil })
 	time.Sleep(100 * time.Millisecond)
@@ -182,8 +182,8 @@ func TestWebSocketWithoutReconnectStaysClosed(t *testing.T) {
 func TestComposerSendsHexAsABinaryMessage(t *testing.T) {
 	a, _ := newTestApp(t)
 	tab := a.cur()
-	tab.req.Protocol = "websocket"
-	tab.req.URL = echoServer(t)
+	tab.Req.Protocol = "websocket"
+	tab.Req.URL = echoServer(t)
 	a.send(tab)
 	until(t, a, "connection", func() bool { return tab.sess != nil })
 	tab.msg = view.NewTextField("hex: de ad BE ef")
@@ -200,7 +200,7 @@ func TestComposerSendsHexAsABinaryMessage(t *testing.T) {
 func TestMCPToolsFillTheComposerFromTheirSchemas(t *testing.T) {
 	a, _ := newTestApp(t)
 	tab := a.cur()
-	tab.req.Protocol = "mcp"
+	tab.Req.Protocol = "mcp"
 	list := `{"jsonrpc":"2.0","id":2,"result":{"tools":[{"name":"search","inputSchema":{"type":"object","properties":{"q":{"type":"string"},"limit":{"type":"integer","default":5}},"required":["q"]}},{"name":"ping"}]}}`
 	a.applyWS(wsEvent{tab: tab, ev: reqport.Event{Dir: reqport.Received, Kind: "response", Text: list}, hasEv: true})
 	if len(tab.tools) != 2 {
@@ -235,7 +235,7 @@ func TestMCPToolsFillTheComposerFromTheirSchemas(t *testing.T) {
 func TestMCPResourcesAndPromptsFillTheComposer(t *testing.T) {
 	a, _ := newTestApp(t)
 	tab := a.cur()
-	tab.req.Protocol = "mcp"
+	tab.Req.Protocol = "mcp"
 	a.applyWS(wsEvent{tab: tab, hasEv: true, ev: reqport.Event{Dir: reqport.Received, Kind: "response", Text: `{"result":{"resources":[{"uri":"file:///a.txt","name":"A"}]}}`}})
 	a.applyWS(wsEvent{tab: tab, hasEv: true, ev: reqport.Event{Dir: reqport.Received, Kind: "response", Text: `{"result":{"prompts":[{"name":"review","arguments":[{"name":"code","required":true}]}]}}`}})
 	a.resourceMenu(tab)[0].run()
@@ -256,8 +256,8 @@ func TestSSETabListensAndShowsNoComposer(t *testing.T) {
 	defer srv.Close()
 	a, _ := newTestApp(t)
 	tab := a.cur()
-	tab.req.Protocol = "sse"
-	tab.req.URL = srv.URL
+	tab.Req.Protocol = "sse"
+	tab.Req.URL = srv.URL
 	a.send(tab)
 	until(t, a, "event", func() bool { return strings.Contains(logText(tab), "hello") })
 	until(t, a, "end of stream", func() bool { return tab.sess == nil })
@@ -290,7 +290,7 @@ func TestSSEReconnectResumesFromTheLastEventID(t *testing.T) {
 	defer func() { srv.CloseClientConnections(); srv.Close() }()
 	a, _ := newTestApp(t)
 	tab := a.cur()
-	tab.req.Protocol, tab.req.URL, tab.reconnect = "sse", srv.URL, true
+	tab.Req.Protocol, tab.Req.URL, tab.reconnect = "sse", srv.URL, true
 	defer func() {
 		if t.Failed() {
 			t.Logf("log:\n%s\nwantOpen=%v connecting=%v sess=%v gen=%d", logText(tab), tab.wantOpen, tab.connecting, tab.sess != nil, tab.wsGen)

@@ -11,8 +11,8 @@ import (
 // graphQLBody is the editor of a GraphQL body: the query, the variables as
 // JSON, and a button that asks the server for its schema.
 func (a *App) graphQLBody(t *reqTab) Node {
-	syncQuery := func() { t.req.Body = t.body.Text }
-	syncVars := func() { t.req.GraphQLVars = t.gqlVars.Text }
+	syncQuery := func() { t.Req.Body = t.body.Text }
+	syncVars := func() { t.Req.GraphQLVars = t.gqlVars.Text }
 	status, valid := jsonStatus(t.gqlVars.Text)
 	statusColor := w.Error
 	if valid {
@@ -44,7 +44,7 @@ func (a *App) graphQLBody(t *reqTab) Node {
 // loadSchema sends the introspection query to the tab's URL, with its
 // headers and credentials, and shows the answer as the response.
 func (a *App) loadSchema(t *reqTab) {
-	src := t.req.Clone()
+	src := t.Req.Clone()
 	src.Method, src.BodyType = "POST", model.BodyGraphQL
 	src.Body, src.GraphQLVars = model.IntrospectionQuery, ""
 	a.dispatch(t, &src)
@@ -67,13 +67,13 @@ func (a *App) schemaMenu(t *reqTab) []menuItem {
 func (a *App) useOperation(t *reqTab, op model.Operation) {
 	t.body = NewTextArea(op.Query)
 	t.gqlVars = NewTextArea(op.Variables)
-	t.req.Body, t.req.GraphQLVars = op.Query, op.Variables
+	t.Req.Body, t.Req.GraphQLVars = op.Query, op.Variables
 }
 
 // rememberSchema keeps the schema when resp is an introspection answer;
 // any other answer leaves what the tab already knows.
 func (a *App) rememberSchema(t *reqTab, resp *model.Response) {
-	if t.req.BodyType != model.BodyGraphQL {
+	if t.Req.BodyType != model.BodyGraphQL {
 		return
 	}
 	if schema, err := model.ParseSchema(resp.Body); err == nil {

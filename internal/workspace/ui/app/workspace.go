@@ -98,7 +98,7 @@ func (a *App) saveWorkspace() {
 		a.saveSettings(func(s *settings.Settings) { s.Workspace = dir })
 	}
 	for _, t := range a.tabs {
-		t.saved = t.req.Clone()
+		t.MarkSaved()
 	}
 	a.colSaved = collectionKey(a.col)
 	a.colSeen = a.colSaved

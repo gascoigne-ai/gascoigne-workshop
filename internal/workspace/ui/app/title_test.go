@@ -13,7 +13,7 @@ func TestTitleShowsTheCollectionAndAnUnsavedMark(t *testing.T) {
 	if got := a.Title(); got != a.col.Name+" - "+appName {
 		t.Fatalf("title %q", got)
 	}
-	a.cur().req.URL = "https://changed.test"
+	a.cur().Req.URL = "https://changed.test"
 	if got := a.Title(); !strings.HasPrefix(got, dirtyMark+" ") {
 		t.Fatalf("an edited request in the in-memory sample is unsaved: %q", got)
 	}
@@ -25,7 +25,7 @@ func TestTitleShowsTheCollectionAndAnUnsavedMark(t *testing.T) {
 	if strings.HasPrefix(w.Title(), dirtyMark) {
 		t.Fatalf("a fresh workspace is saved: %q", w.Title())
 	}
-	w.cur().req.URL = "https://typed.test"
+	w.cur().Req.URL = "https://typed.test"
 	if !strings.HasPrefix(w.Title(), dirtyMark) {
 		t.Fatalf("a pending edit shows: %q", w.Title())
 	}

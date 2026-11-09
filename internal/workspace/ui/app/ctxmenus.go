@@ -30,7 +30,7 @@ func (a *App) tabMenuItems(i int) []menuItem {
 		{label: "Close tabs to the right", disabled: i == len(a.tabs)-1, run: func() { a.closeRightOf(i) }},
 		menuSeparator,
 		{label: "Duplicate", run: func() { a.duplicateTab(i) }},
-		{label: "Copy URL", run: func() { a.copyRequestURL(t.req) }},
+		{label: "Copy URL", run: func() { a.copyRequestURL(t.Req) }},
 		{label: "Cookies...", run: func() { a.showCookies(t) }},
 	}
 }
@@ -59,7 +59,7 @@ func (a *App) closeRightOf(i int) {
 // duplicateTab copies the tab's request next to the original in the
 // tree (or into the root when it is not in the tree) and opens the copy.
 func (a *App) duplicateTab(i int) {
-	req := a.tabs[i].req
+	req := a.tabs[i].Req
 	cp, _ := a.col.Folder.Duplicate(req).(*model.Request)
 	if cp == nil {
 		clone := req.Clone()
@@ -231,8 +231,8 @@ func (a *App) responseMenuItems(t *reqTab) []menuItem {
 			_ = a.ctx.Clipboard.Write(t.view.SelectedText())
 		}},
 		{label: "Copy body", run: func() { a.copyBody(t) }},
-		{label: "Save body...", disabled: t.resp == nil || t.resp.Err != "", run: func() { a.saveBody(t) }},
-		{label: "Open in browser", disabled: t.resp == nil || t.resp.Err != "", run: func() { a.openInBrowser(t) }},
+		{label: "Save body...", disabled: t.Resp == nil || t.Resp.Err != "", run: func() { a.saveBody(t) }},
+		{label: "Open in browser", disabled: t.Resp == nil || t.Resp.Err != "", run: func() { a.openInBrowser(t) }},
 		{label: "Copy as cURL", run: func() { a.copyCurl(t) }},
 		menuSeparator,
 		{label: "Select all", shortcut: "Ctrl+A", run: func() { t.view.SelectLines(0, len(t.view.Lines)-1) }},
@@ -266,7 +266,7 @@ func (a *App) newRegistry() reqport.Registry {
 // showCookies lists the cookies the jar holds for the request's URL and
 // offers to clear all of them.
 func (a *App) showCookies(t *reqTab) {
-	u, err := url.Parse(t.req.Expanded(a.varsFor(t.req)).URL)
+	u, err := url.Parse(t.Req.Expanded(a.varsFor(t.Req)).URL)
 	if err != nil || u.Host == "" {
 		a.toast("The URL has no host to look up cookies for", true)
 		return

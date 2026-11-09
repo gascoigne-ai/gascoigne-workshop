@@ -57,16 +57,16 @@ func (p pane) captionOf(a *App) string {
 }
 
 func paramsChanged(t *reqTab) {
-	t.req.URL = model.WithParams(t.req.URL, t.req.Params)
-	t.url = NewTextField(t.req.URL)
+	t.Req.URL = model.WithParams(t.Req.URL, t.Req.Params)
+	t.url = NewTextField(t.Req.URL)
 }
 
 var requestPanes = []pane{
 	{label: "Params", kind: paneTable, title: "Query", editable: true, changed: paramsChanged,
-		rows: func(_ *App, t *reqTab) *[]model.KV { return &t.req.Params }},
+		rows: func(_ *App, t *reqTab) *[]model.KV { return &t.Req.Params }},
 	{label: "Body", kind: paneBody},
 	{label: "Headers", kind: paneTable, title: "Headers", editable: true, flagDuplicates: true,
-		rows: func(_ *App, t *reqTab) *[]model.KV { return &t.req.Headers }},
+		rows: func(_ *App, t *reqTab) *[]model.KV { return &t.Req.Headers }},
 	{label: "Auth", kind: paneAuth},
 	{label: "Vars", kind: paneTable, title: "Collection variables", editable: true,
 		caption: (*App).varsCaption,
@@ -77,12 +77,12 @@ var requestPanes = []pane{
 
 func noResponse(t *reqTab) (string, bool) {
 	switch {
-	case t.sending:
+	case t.Sending:
 		return "Sending...", false
-	case t.resp == nil:
+	case t.Resp == nil:
 		return "Send the request to see the response", false
-	case t.resp.Err != "":
-		return t.resp.Err, true
+	case t.Resp.Err != "":
+		return t.Resp.Err, true
 	}
 	return "", false
 }
@@ -91,13 +91,13 @@ var responsePanes = []pane{
 	{label: "Response", kind: paneResponse, empty: responseEmpty},
 	{label: "Headers", kind: paneTable, empty: noResponse,
 		rows: func(_ *App, t *reqTab) *[]model.KV {
-			if t.resp == nil {
+			if t.Resp == nil {
 				return &[]model.KV{}
 			}
-			return &t.resp.Headers
+			return &t.Resp.Headers
 		}},
 	{label: "Timeline", kind: paneNote, empty: noResponse,
-		note: func(t *reqTab) string { return respview.Timeline(t.resp) }},
+		note: func(t *reqTab) string { return respview.Timeline(t.Resp) }},
 	{label: "Tests", kind: paneResults},
 }
 
@@ -106,7 +106,7 @@ func (p pane) badge(a *App, t *reqTab) int {
 	switch p.kind {
 	case paneAssertions: // how many assertions are written
 		n := 0
-		for _, l := range strings.Split(t.req.Tests, "\n") {
+		for _, l := range strings.Split(t.Req.Tests, "\n") {
 			if l = strings.TrimSpace(l); l != "" && !strings.HasPrefix(l, "#") {
 				n++
 			}
@@ -210,7 +210,7 @@ func (a *App) tableView(p pane, t *reqTab, scroll *ScrollState, pad int) Node {
 	}
 	rows := p.rows(a, t)
 	spec := TableSpec{
-		CellStyler: a.cellStyler(t.req),
+		CellStyler: a.cellStyler(t.Req),
 		Widths:     a.widthsFor(p),
 		Columns:    []string{"Name", "Value"},
 		Weights:    []float64{35, 65},
@@ -323,11 +323,11 @@ var bodyTypes = []struct {
 
 // formPane is the table of form and multipart fields.
 var formPane = pane{label: "Body", kind: paneTable, title: "Fields", editable: true,
-	rows: func(_ *App, t *reqTab) *[]model.KV { return &t.req.Form }}
+	rows: func(_ *App, t *reqTab) *[]model.KV { return &t.Req.Form }}
 
 // bodyPane is the body editor: a type chooser, then an editor that fits the type.
 func (a *App) bodyPane(p pane, t *reqTab, scroll *ScrollState) Node {
-	kind := t.req.BodyType
+	kind := t.Req.BodyType
 	isJSON := kind == model.BodyJSON
 	status, valid := jsonStatus(t.body.Text)
 	statusColor := w.Error
@@ -356,14 +356,14 @@ func (a *App) bodyPane(p pane, t *reqTab, scroll *ScrollState) Node {
 
 // bodyEditor is the part of the body pane under the type chooser.
 func (a *App) bodyEditor(t *reqTab, scroll *ScrollState) Node {
-	switch t.req.BodyType {
+	switch t.Req.BodyType {
 	case model.BodyJSON, model.BodyText:
 		base := plainStyler
-		if t.req.BodyType == model.BodyJSON {
+		if t.Req.BodyType == model.BodyJSON {
 			base = jsonStyler
 		}
-		t.body.Styler = a.withVariables(base, t.req) // {{variables}} stand out, as in the URL
-		sync := func() { t.req.Body = t.body.Text }
+		t.body.Styler = a.withVariables(base, t.Req) // {{variables}} stand out, as in the URL
+		sync := func() { t.Req.Body = t.body.Text }
 		return Area(&t.body, Grow(1), Bg(w.Sunken), OnChange(sync), a.textMenuOpt(&t.body.TextField, sync))
 	case model.BodyForm, model.BodyMultipart:
 		return a.tableView(formPane, t, scroll, 0)
@@ -377,18 +377,18 @@ func (a *App) bodyEditor(t *reqTab, scroll *ScrollState) Node {
 
 func (a *App) setBodyType(t *reqTab, id string) {
 	a.commitEdit()
-	if t.req.BodyType == model.BodyFile && id != model.BodyFile { // the path is not text to keep
-		t.req.Body = t.body.Text
+	if t.Req.BodyType == model.BodyFile && id != model.BodyFile { // the path is not text to keep
+		t.Req.Body = t.body.Text
 	}
 	if id == model.BodyFile {
-		t.req.Body = t.file.Text
+		t.Req.Body = t.file.Text
 	} else if id == model.BodyGraphQL {
-		t.req.Body = t.body.Text
-		if t.req.Protocol == "rest" && (t.req.Method == "" || t.req.Method == "GET") {
-			t.req.Method = "POST" // a query goes in the body
+		t.Req.Body = t.body.Text
+		if t.Req.Protocol == "rest" && (t.Req.Method == "" || t.Req.Method == "GET") {
+			t.Req.Method = "POST" // a query goes in the body
 		}
 	}
-	t.req.BodyType = id
+	t.Req.BodyType = id
 }
 
 // formatBody re-indents a JSON body. Invalid JSON is left alone.
@@ -400,7 +400,7 @@ func (a *App) formatBody(t *reqTab) {
 	}
 	t.body.SelectAll()
 	t.body.Insert(out.String()) // as an edit, so it can be undone
-	t.req.Body = t.body.Text
+	t.Req.Body = t.body.Text
 }
 
 // jsonStyler colors one line of a JSON body.
@@ -423,12 +423,12 @@ func (a *App) settingsPane(_ pane, t *reqTab, scroll *ScrollState) Node {
 				a.textMenuOpt(&t.timeout, func() { a.timeoutEdited(t) })),
 			Text(fmt.Sprintf("blank = default (%d s)", a.timeoutFor(model.Request{})/time.Second), Small(), Muted()),
 		),
-		Row(H(w.RowH), Gap(8), OnClick(func() { t.req.NoRedirects = !t.req.NoRedirects }),
-			Checkbox(!t.req.NoRedirects),
+		Row(H(w.RowH), Gap(8), OnClick(func() { t.Req.NoRedirects = !t.Req.NoRedirects }),
+			Checkbox(!t.Req.NoRedirects),
 			Text("Follow redirects"),
 		),
-		Row(H(w.RowH), Gap(8), OnClick(func() { t.req.InsecureTLS = !t.req.InsecureTLS }),
-			Checkbox(!t.req.InsecureTLS),
+		Row(H(w.RowH), Gap(8), OnClick(func() { t.Req.InsecureTLS = !t.Req.InsecureTLS }),
+			Checkbox(!t.Req.InsecureTLS),
 			Text("Verify the server certificate"),
 			Text("off accepts self-signed certificates", Small(), Muted()),
 		),
@@ -440,16 +440,16 @@ func (a *App) settingsPane(_ pane, t *reqTab, scroll *ScrollState) Node {
 func (a *App) timeoutEdited(t *reqTab) {
 	text := strings.TrimSpace(t.timeout.Text)
 	if text == "" {
-		t.req.TimeoutSec = 0
+		t.Req.TimeoutSec = 0
 		return
 	}
 	n, err := strconv.Atoi(text)
 	if err != nil || n < 0 {
-		t.timeout = NewTextField(timeoutText(t.req.TimeoutSec))
+		t.timeout = NewTextField(timeoutText(t.Req.TimeoutSec))
 		t.timeout.Focused = true
 		return
 	}
-	t.req.TimeoutSec = n
+	t.Req.TimeoutSec = n
 }
 
 // findCount is the counter shown in the find bar: "3/12", "No matches",
@@ -474,8 +474,8 @@ func responseEmpty(t *reqTab) (string, bool) {
 	if t.picture != nil {
 		return "", false
 	}
-	if respview.LooksBinary(t.resp.Body) {
-		return fmt.Sprintf("Binary body, %s (not shown)", textfmt.Size(len(t.resp.Body))), false
+	if respview.LooksBinary(t.Resp.Body) {
+		return fmt.Sprintf("Binary body, %s (not shown)", textfmt.Size(len(t.Resp.Body))), false
 	}
 	return "", false
 }
@@ -543,25 +543,25 @@ func (a *App) setView(t *reqTab, raw, compact bool) {
 // redoes an open search. Bodies that are not text are not loaded.
 func (a *App) refreshView(t *reqTab) {
 	t.picture, t.pictureInfo = nil, ""
-	if t.resp != nil {
-		if p, ok := respview.Decode(t.resp.Body); ok {
+	if t.Resp != nil {
+		if p, ok := respview.Decode(t.Resp.Body); ok {
 			t.picture = ebiten.NewImageFromImage(p.Image)
-			t.pictureInfo = fmt.Sprintf("%s %dx%d, %s", strings.ToUpper(p.Format), p.Width, p.Height, textfmt.Size(len(t.resp.Body)))
+			t.pictureInfo = fmt.Sprintf("%s %dx%d, %s", strings.ToUpper(p.Format), p.Width, p.Height, textfmt.Size(len(t.Resp.Body)))
 			t.view.SetLines(nil)
 			return
 		}
 	}
 	switch {
-	case t.resp == nil || respview.LooksBinary(t.resp.Body):
+	case t.Resp == nil || respview.LooksBinary(t.Resp.Body):
 		t.view.SetLines(nil)
 	case t.raw:
-		t.view.SetLines(respview.RawLines(t.resp.Body))
+		t.view.SetLines(respview.RawLines(t.Resp.Body))
 	case t.compact:
-		t.compactAll = respview.CompactLines(t.resp.Body)
+		t.compactAll = respview.CompactLines(t.Resp.Body)
 		a.showCompact(t)
 		return // showCompact searches too
 	default:
-		t.view.SetLines(respview.CodeLines(t.resp.Body))
+		t.view.SetLines(respview.CodeLines(t.Resp.Body))
 	}
 	if t.findOpen {
 		a.runFind(t)
@@ -569,13 +569,13 @@ func (a *App) refreshView(t *reqTab) {
 }
 
 func (a *App) copyBody(t *reqTab) {
-	if t.resp != nil {
-		_ = a.ctx.Clipboard.Write(string(t.resp.Body)) // the clipboard reports its own failures
+	if t.Resp != nil {
+		_ = a.ctx.Clipboard.Write(string(t.Resp.Body)) // the clipboard reports its own failures
 	}
 }
 
 func (a *App) copyCurl(t *reqTab) {
-	_ = a.ctx.Clipboard.Write(a.curlOf(t.req.Expanded(a.varsFor(t.req))))
+	_ = a.ctx.Clipboard.Write(a.curlOf(t.Req.Expanded(a.varsFor(t.Req))))
 }
 
 // openFind shows the find bar for the current response and focuses it.
@@ -607,7 +607,7 @@ func (a *App) showCompact(t *reqTab) {
 // runFind searches for the typed text and goes to the first match. The
 // compact view is filtered to the matches first.
 func (a *App) runFind(t *reqTab) {
-	if t.compact && t.resp != nil && !respview.LooksBinary(t.resp.Body) {
+	if t.compact && t.Resp != nil && !respview.LooksBinary(t.Resp.Body) {
 		a.showCompact(t)
 		return
 	}
@@ -653,7 +653,7 @@ func (a *App) closeFind(t *reqTab) {
 	t.findOpen = false
 	t.find.Focused = false
 	t.view.SetMatches(nil, -1)
-	if t.compact && t.resp != nil && !respview.LooksBinary(t.resp.Body) {
+	if t.compact && t.Resp != nil && !respview.LooksBinary(t.Resp.Body) {
 		a.showCompact(t) // leave the filtered view
 	}
 }

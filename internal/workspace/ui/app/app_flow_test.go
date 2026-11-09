@@ -14,6 +14,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/shortcutpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/statefile"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/theming"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/hajimehoshi/ebiten/v2"
@@ -108,7 +109,7 @@ func jsonServer(t *testing.T) *httptest.Server {
 
 // pointTabAt makes the open request target url, as if typed into the field.
 func pointTabAt(t *reqTab, url string) {
-	t.req.URL = url
+	t.Req.URL = url
 	t.url = view.NewTextField(url)
 }
 
@@ -116,7 +117,7 @@ func waitForResponse(t *testing.T, a *App, tab *reqTab) {
 	t.Helper()
 	for range 400 {
 		a.step(core.Input{})
-		if tab.resp != nil {
+		if tab.Resp != nil {
 			return
 		}
 		time.Sleep(5 * time.Millisecond)
@@ -126,13 +127,13 @@ func waitForResponse(t *testing.T, a *App, tab *reqTab) {
 
 func TestClickingARequestInTheTreeOpensItsTab(t *testing.T) {
 	a, _ := newTestApp(t)
-	if len(a.tabs) != 1 || a.cur().req.Name != "Search Repos" {
-		t.Fatalf("start: %d tabs, current %q", len(a.tabs), a.cur().req.Name)
+	if len(a.tabs) != 1 || a.cur().Req.Name != "Search Repos" {
+		t.Fatalf("start: %d tabs, current %q", len(a.tabs), a.cur().Req.Name)
 	}
 
 	click(a, 100, treeRowY(4)) // Repository Info
-	if len(a.tabs) != 2 || a.cur().req.Name != "Repository Info" {
-		t.Fatalf("after click: %d tabs, current %q", len(a.tabs), a.cur().req.Name)
+	if len(a.tabs) != 2 || a.cur().Req.Name != "Repository Info" {
+		t.Fatalf("after click: %d tabs, current %q", len(a.tabs), a.cur().Req.Name)
 	}
 
 	click(a, 100, treeRowY(4)) // the same request again focuses its tab
@@ -157,7 +158,7 @@ func TestClickingAFolderTogglesIt(t *testing.T) {
 func TestNewRequestAndSwitchingTabs(t *testing.T) {
 	a, _ := newTestApp(t)
 	a.newRequest()
-	if len(a.tabs) != 2 || a.active != 1 || a.cur().req.Name != "New Request" {
+	if len(a.tabs) != 2 || a.active != 1 || a.cur().Req.Name != "New Request" {
 		t.Fatalf("tabs %d active %d", len(a.tabs), a.active)
 	}
 	click(a, 280, headerH+tabsH/2) // the first tab sits at the left edge of the strip
@@ -168,7 +169,7 @@ func TestNewRequestAndSwitchingTabs(t *testing.T) {
 
 func TestProtocolAndMethodChipsCycle(t *testing.T) {
 	a, _ := newTestApp(t)
-	req := a.cur().req
+	req := a.cur().Req
 
 	click(a, 380, urlBarY) // method chip
 	if req.Method != "POST" {
@@ -189,7 +190,7 @@ func TestProtocolAndMethodChipsCycle(t *testing.T) {
 
 func TestSwitchingToRESTRestoresAMethod(t *testing.T) {
 	a, _ := newTestApp(t)
-	req := a.cur().req
+	req := a.cur().Req
 	req.Protocol, req.Method = "grpc", ""
 	a.cycleProtocol(a.cur())
 	if req.Protocol != "rest" || req.Method != "GET" {
@@ -199,7 +200,7 @@ func TestSwitchingToRESTRestoresAMethod(t *testing.T) {
 
 func TestTypingInTheURLFieldUpdatesParams(t *testing.T) {
 	a, _ := newTestApp(t)
-	req := a.cur().req
+	req := a.cur().Req
 	click(a, 1100, urlBarY) // inside the field, past the end of the text: cursor at the end
 	a.step(core.Input{Typed: []rune("&page=2")})
 
@@ -217,7 +218,7 @@ func TestTypingInTheURLFieldUpdatesParams(t *testing.T) {
 
 func TestTogglingAParamRewritesTheURL(t *testing.T) {
 	a, _ := newTestApp(t)
-	req := a.cur().req
+	req := a.cur().Req
 	click(a, 310, paramsRow0Y) // checkbox of the first Params row (q)
 	if req.Params[0].Enabled || strings.Contains(req.URL, "q=") {
 		t.Fatalf("q must be disabled and gone from %q", req.URL)
@@ -233,7 +234,7 @@ func TestTogglingAParamRewritesTheURL(t *testing.T) {
 
 func TestDeletingAParamRewritesTheURL(t *testing.T) {
 	a, _ := newTestApp(t)
-	req := a.cur().req
+	req := a.cur().Req
 	click(a, 739, paramsRow0Y) // delete button of the first Params row
 	if len(req.Params) != 2 || req.Params[0].Name != "order" || strings.Contains(req.URL, "q=") {
 		t.Fatalf("params %+v url %q", req.Params, req.URL)
@@ -247,13 +248,13 @@ func TestSendShowsTheResponse(t *testing.T) {
 	pointTabAt(tab, srv.URL)
 
 	click(a, sendX, urlBarY)
-	if !tab.sending {
+	if !tab.Sending {
 		t.Fatal("a click on Send must start a request")
 	}
 	waitForResponse(t, a, tab)
 
-	if tab.sending || tab.resp.Status != 200 || tab.resp.Err != "" {
-		t.Fatalf("sending %v resp %+v", tab.sending, tab.resp)
+	if tab.Sending || tab.Resp.Status != 200 || tab.Resp.Err != "" {
+		t.Fatalf("sending %v resp %+v", tab.Sending, tab.Resp)
 	}
 	if len(tab.view.Lines) != 3 { // pretty-printed {"ok":true}
 		t.Fatalf("response view has %d lines", len(tab.view.Lines))
@@ -272,8 +273,8 @@ func TestEnterInTheURLFieldSends(t *testing.T) {
 	click(a, 1100, urlBarY) // focus the field
 	a.step(core.Input{Enter: true})
 	waitForResponse(t, a, tab)
-	if tab.resp.Status != 200 {
-		t.Fatalf("resp = %+v", tab.resp)
+	if tab.Resp.Status != 200 {
+		t.Fatalf("resp = %+v", tab.Resp)
 	}
 }
 
@@ -312,8 +313,8 @@ func TestFailedSendShowsTheError(t *testing.T) {
 
 	click(a, sendX, urlBarY)
 	waitForResponse(t, a, tab)
-	if tab.resp.Err == "" || a.status != "Request failed" {
-		t.Fatalf("err %q status %q", tab.resp.Err, a.status)
+	if tab.Resp.Err == "" || a.status != "Request failed" {
+		t.Fatalf("err %q status %q", tab.Resp.Err, a.status)
 	}
 }
 
@@ -327,10 +328,10 @@ func TestOtherProtocolsAnswerThroughTheSameUI(t *testing.T) {
 		t.Fatal("connected to an https URL")
 	}
 	click(a, 300, urlBarY) // websocket -> mcp
-	if tab.req.Protocol != "mcp" {
-		t.Fatalf("protocol %q", tab.req.Protocol)
+	if tab.Req.Protocol != "mcp" {
+		t.Fatalf("protocol %q", tab.Req.Protocol)
 	}
-	tab.req.URL = "ftp://nowhere.test" // no network in tests
+	tab.Req.URL = "ftp://nowhere.test" // no network in tests
 	click(a, sendX, urlBarY)
 	until(t, a, "failed connect", func() bool { return !tab.connecting && strings.Contains(logText(tab), "not an http or https URL") })
 }
@@ -444,11 +445,11 @@ func TestEveryPaneBuildsInEveryResponseState(t *testing.T) {
 	tab := a.cur()
 
 	states := map[string]func(){
-		"no response": func() { tab.resp, tab.sending = nil, false },
-		"sending":     func() { tab.resp, tab.sending = nil, true },
-		"error":       func() { tab.resp, tab.sending = &respErr, false },
+		"no response": func() { tab.Resp, tab.Sending = nil, false },
+		"sending":     func() { tab.Resp, tab.Sending = nil, true },
+		"error":       func() { tab.Resp, tab.Sending = &respErr, false },
 		"ok": func() {
-			tab.sending = false
+			tab.Sending = false
 			pointTabAt(tab, srv.URL)
 			a.send(tab)
 			waitForResponse(t, a, tab)
@@ -475,7 +476,7 @@ func TestTabItemsCountEnabledRowsAndHeaders(t *testing.T) {
 			t.Errorf("%s badge = %d, want %d", it.Label, it.Badge, want[it.Label])
 		}
 	}
-	tab.req.Params[0].Enabled = false
+	tab.Req.Params[0].Enabled = false
 	if got := a.tabItems(requestPanes, tab)[0].Badge; got != 2 {
 		t.Errorf("disabled params must not count, badge = %d", got)
 	}
@@ -488,10 +489,10 @@ func TestNoResponseStates(t *testing.T) {
 		wantMsg string
 		wantErr bool
 	}{
-		{"sending", reqTab{sending: true}, "Sending...", false},
-		{"not sent", reqTab{}, "Send the request to see the response", false},
-		{"failed", reqTab{resp: &respErr}, "boom", true},
-		{"ok", reqTab{resp: &respOK}, "", false},
+		{"sending", reqTab{Tab: &tabs.Tab{Sending: true}}, "Sending...", false},
+		{"not sent", reqTab{Tab: &tabs.Tab{}}, "Send the request to see the response", false},
+		{"failed", reqTab{Tab: &tabs.Tab{Resp: &respErr}}, "boom", true},
+		{"ok", reqTab{Tab: &tabs.Tab{Resp: &respOK}}, "", false},
 	}
 	for _, tt := range tests {
 		msg, isErr := noResponse(&tt.tab)
@@ -525,7 +526,7 @@ func TestEditingAParamValueUpdatesTheURL(t *testing.T) {
 	a.typeText("rust") // the old text is selected, so typing replaces it
 	a.step(core.Input{Enter: true})
 
-	req := a.cur().req
+	req := a.cur().Req
 	if a.edit != nil || req.Params[0].Value != "rust" || !strings.Contains(req.URL, "q=rust") {
 		t.Fatalf("edit %+v params %+v url %q", a.edit, req.Params, req.URL)
 	}
@@ -543,9 +544,9 @@ func TestEditingAParamNameAndDescription(t *testing.T) {
 	a.typeText("what to find")
 	a.step(core.Input{Enter: true})
 
-	p := a.cur().req.Params[0]
-	if p.Name != "search" || p.Description != "what to find" || !strings.Contains(a.cur().req.URL, "search=gioui") {
-		t.Fatalf("param %+v url %q", p, a.cur().req.URL)
+	p := a.cur().Req.Params[0]
+	if p.Name != "search" || p.Description != "what to find" || !strings.Contains(a.cur().Req.URL, "search=gioui") {
+		t.Fatalf("param %+v url %q", p, a.cur().Req.URL)
 	}
 }
 
@@ -554,8 +555,8 @@ func TestEscapeCancelsACellEdit(t *testing.T) {
 	click(a, valueCellX, paramsRow0Y)
 	a.typeText("zzz")
 	a.step(core.Input{Escape: true})
-	if a.edit != nil || a.cur().req.Params[0].Value != "gioui" {
-		t.Fatalf("edit %+v value %q", a.edit, a.cur().req.Params[0].Value)
+	if a.edit != nil || a.cur().Req.Params[0].Value != "gioui" {
+		t.Fatalf("edit %+v value %q", a.edit, a.cur().Req.Params[0].Value)
 	}
 }
 
@@ -565,8 +566,8 @@ func TestClickingElsewhereCommitsACellEdit(t *testing.T) {
 	a.typeText("go")
 	click(a, farAwayX, farAwayY)
 	a.step(core.Input{})
-	if a.edit != nil || a.cur().req.Params[0].Value != "go" {
-		t.Fatalf("edit %+v value %q", a.edit, a.cur().req.Params[0].Value)
+	if a.edit != nil || a.cur().Req.Params[0].Value != "go" {
+		t.Fatalf("edit %+v value %q", a.edit, a.cur().Req.Params[0].Value)
 	}
 }
 
@@ -575,8 +576,8 @@ func TestClickingAnotherCellCommitsAndMovesTheEdit(t *testing.T) {
 	click(a, valueCellX, paramsRow0Y)
 	a.typeText("go")
 	click(a, valueCellX, paramsRow0Y+core.RowH) // the order row
-	if a.cur().req.Params[0].Value != "go" || a.edit == nil || a.edit.row != 1 {
-		t.Fatalf("value %q edit %+v", a.cur().req.Params[0].Value, a.edit)
+	if a.cur().Req.Params[0].Value != "go" || a.edit == nil || a.edit.row != 1 {
+		t.Fatalf("value %q edit %+v", a.cur().Req.Params[0].Value, a.edit)
 	}
 }
 
@@ -585,8 +586,8 @@ func TestTabMovesToTheNextCellAndShiftTabBack(t *testing.T) {
 	click(a, nameCellX, paramsRow0Y)
 	a.typeText("k")
 	a.step(core.Input{Tab: true})
-	if a.edit == nil || a.edit.row != 0 || a.edit.col != 1 || a.cur().req.Params[0].Name != "k" {
-		t.Fatalf("after Tab: edit %+v name %q", a.edit, a.cur().req.Params[0].Name)
+	if a.edit == nil || a.edit.row != 0 || a.edit.col != 1 || a.cur().Req.Params[0].Name != "k" {
+		t.Fatalf("after Tab: edit %+v name %q", a.edit, a.cur().Req.Params[0].Name)
 	}
 	a.step(core.Input{Tab: true})
 	a.step(core.Input{Tab: true}) // description, then the next row's name
@@ -607,7 +608,7 @@ func TestTypingInThePlaceholderRowAddsARow(t *testing.T) {
 	a.typeText("2")
 	a.step(core.Input{Enter: true})
 
-	req := a.cur().req
+	req := a.cur().Req
 	if len(req.Params) != 4 {
 		t.Fatalf("params = %+v", req.Params)
 	}
@@ -623,8 +624,8 @@ func TestLeavingThePlaceholderRowEmptyAddsNothing(t *testing.T) {
 	a, _ := newTestApp(t)
 	click(a, nameCellX, paramsRow3Y)
 	a.step(core.Input{Enter: true})
-	if len(a.cur().req.Params) != 3 || a.edit != nil {
-		t.Fatalf("params %+v edit %+v", a.cur().req.Params, a.edit)
+	if len(a.cur().Req.Params) != 3 || a.edit != nil {
+		t.Fatalf("params %+v edit %+v", a.cur().Req.Params, a.edit)
 	}
 }
 
@@ -637,7 +638,7 @@ func TestHeadersTableIsEditableToo(t *testing.T) {
 	a.step(core.Input{Tab: true})
 	a.typeText("1")
 	a.step(core.Input{Enter: true})
-	h := a.cur().req.Headers
+	h := a.cur().Req.Headers
 	if len(h) != 1 || h[0].Name != "X-Test" || h[0].Value != "1" || !h[0].Enabled {
 		t.Fatalf("headers = %+v", h)
 	}
@@ -669,8 +670,8 @@ func TestCtrlEnterSendsTheRequest(t *testing.T) {
 	pointTabAt(tab, srv.URL)
 	a.step(key(ebiten.KeyEnter, true, false))
 	waitForResponse(t, a, tab)
-	if tab.resp.Status != 200 {
-		t.Fatalf("resp = %+v", tab.resp)
+	if tab.Resp.Status != 200 {
+		t.Fatalf("resp = %+v", tab.Resp)
 	}
 }
 
@@ -691,12 +692,12 @@ func TestCtrlTOpensAndCtrlWClosesTabs(t *testing.T) {
 		t.Fatalf("Ctrl+T: %d tabs, active %d", len(a.tabs), a.active)
 	}
 	a.step(key(ebiten.KeyW, true, false))
-	if len(a.tabs) != 1 || a.active != 0 || a.cur().req.Name != "Search Repos" {
-		t.Fatalf("Ctrl+W: %d tabs, active %d (%s)", len(a.tabs), a.active, a.cur().req.Name)
+	if len(a.tabs) != 1 || a.active != 0 || a.cur().Req.Name != "Search Repos" {
+		t.Fatalf("Ctrl+W: %d tabs, active %d (%s)", len(a.tabs), a.active, a.cur().Req.Name)
 	}
 	a.step(key(ebiten.KeyW, true, false))
-	if len(a.tabs) != 1 || a.cur().req.Name != "New Request" {
-		t.Fatalf("closing the last tab must leave a blank request, got %d tabs (%s)", len(a.tabs), a.cur().req.Name)
+	if len(a.tabs) != 1 || a.cur().Req.Name != "New Request" {
+		t.Fatalf("closing the last tab must leave a blank request, got %d tabs (%s)", len(a.tabs), a.cur().Req.Name)
 	}
 }
 
@@ -727,7 +728,7 @@ func TestShortcutsNeedTheirModifiers(t *testing.T) {
 	for _, k := range []ebiten.Key{ebiten.KeyT, ebiten.KeyW, ebiten.KeyL, ebiten.KeyEnter, ebiten.KeyComma, ebiten.KeyTab} {
 		a.step(key(k, false, false)) // plain letters must never trigger anything
 	}
-	if len(a.tabs) != 1 || a.menu || a.cur().sending {
+	if len(a.tabs) != 1 || a.menu || a.cur().Sending {
 		t.Fatalf("plain keys changed state: %d tabs, menu %v", len(a.tabs), a.menu)
 	}
 }
@@ -767,8 +768,8 @@ func TestTreeScrollsWhenItDoesNotFit(t *testing.T) {
 	a.step(core.Input{X: 100, Y: 100, Wheel: -50})
 	last := collection.Rows(&a.col.Folder, a.expanded)[rowsN-1]
 	click(a, 100, a.h-statusH-core.RowH/2)
-	if a.cur().req != last.Req {
-		t.Fatalf("clicking the bottom row opened %q, want %q", a.cur().req.Name, last.Name)
+	if a.cur().Req != last.Req {
+		t.Fatalf("clicking the bottom row opened %q, want %q", a.cur().Req.Name, last.Name)
 	}
 }
 
@@ -798,7 +799,7 @@ func openBodyPane(t *testing.T) *App {
 
 func TestBodyTypeChipsSwitchTheTypeAndKeepTheText(t *testing.T) {
 	a := openBodyPane(t)
-	req := a.cur().req
+	req := a.cur().Req
 	if req.BodyType != model.BodyNone {
 		t.Fatalf("a request without a body starts as none, got %q", req.BodyType)
 	}
@@ -829,14 +830,14 @@ func TestTypingInTheBodyEditor(t *testing.T) {
 	a.typeText(`{"a":1}`)
 	a.step(core.Input{Enter: true})
 	a.typeText("x")
-	if got := a.cur().req.Body; got != "{\"a\":1}\nx" {
+	if got := a.cur().Req.Body; got != "{\"a\":1}\nx" {
 		t.Fatalf("Body = %q", got)
 	}
 }
 
 func TestFormatButtonIndentsValidJSONOnly(t *testing.T) {
 	a := openBodyPane(t)
-	req := a.cur().req
+	req := a.cur().Req
 	click(a, jsonChipX, chipsY)
 	req.Body = `{"a":1,"b":[1,2]}`
 	a.cur().body.SelectAll()
@@ -859,7 +860,7 @@ func TestFormatButtonIndentsValidJSONOnly(t *testing.T) {
 
 func TestFormatButtonOnlyExistsForJSON(t *testing.T) {
 	a := openBodyPane(t)
-	req := a.cur().req
+	req := a.cur().Req
 	click(a, textChipX, chipsY)
 	req.Body = `{"a":1}`
 	a.cur().body.SelectAll()
@@ -872,7 +873,7 @@ func TestFormatButtonOnlyExistsForJSON(t *testing.T) {
 
 func TestFormBodyFieldsAreEditable(t *testing.T) {
 	a := openBodyPane(t)
-	req := a.cur().req
+	req := a.cur().Req
 	click(a, formChipX, chipsY)
 	click(a, nameCellX, formRow0Y)
 	a.typeText("user")
@@ -896,8 +897,8 @@ func TestSendingAFormBodyUsesTheRows(t *testing.T) {
 	defer srv.Close()
 	a, _ := newTestApp(t)
 	tab := a.cur()
-	tab.req.Method, tab.req.BodyType = "POST", model.BodyForm
-	tab.req.Form = []model.KV{{Name: "q", Value: "go lang", Enabled: true}}
+	tab.Req.Method, tab.Req.BodyType = "POST", model.BodyForm
+	tab.Req.Form = []model.KV{{Name: "q", Value: "go lang", Enabled: true}}
 	pointTabAt(tab, srv.URL)
 	a.send(tab)
 	waitForResponse(t, a, tab)
@@ -919,8 +920,8 @@ func TestEachTabKeepsItsOwnBodyEditor(t *testing.T) {
 	click(a, editorX, editorY)
 	a.typeText("second")
 	a.switchTab(-1)
-	if a.cur().req.Body != "first" || second.req.Body != "second" {
-		t.Fatalf("bodies %q and %q", a.cur().req.Body, second.req.Body)
+	if a.cur().Req.Body != "first" || second.Req.Body != "second" {
+		t.Fatalf("bodies %q and %q", a.cur().Req.Body, second.Req.Body)
 	}
 }
 
@@ -931,7 +932,7 @@ func TestEachTabKeepsItsOwnBodyEditor(t *testing.T) {
 func (a *App) tabX(i int) (left, width int) {
 	x := 260
 	for j, t := range a.tabs {
-		wd := 14 + tabBadgeW + 8 + a.ctx.Width(a.ctx.F.UI, t.req.Name) + 8 + tabDirtyW + 24
+		wd := 14 + tabBadgeW + 8 + a.ctx.Width(a.ctx.F.UI, t.Req.Name) + 8 + tabDirtyW + 24
 		if j == i {
 			return x, wd
 		}
@@ -955,8 +956,8 @@ func TestCloseButtonClosesOnlyThatTab(t *testing.T) {
 	a := twoTabs(t) // active: the second
 	left, width := a.tabX(0)
 	click(a, left+width-12, tabStripY) // the × of the first tab
-	if len(a.tabs) != 1 || a.cur().req.Name != "Repository Info" {
-		t.Fatalf("%d tabs, current %q", len(a.tabs), a.cur().req.Name)
+	if len(a.tabs) != 1 || a.cur().Req.Name != "Repository Info" {
+		t.Fatalf("%d tabs, current %q", len(a.tabs), a.cur().Req.Name)
 	}
 }
 
@@ -997,16 +998,16 @@ func TestMiddleClickWithoutMovingLeavesTheTabsAlone(t *testing.T) {
 	left, width := a.tabX(1)
 	a.step(core.Input{X: left + width/2, Y: tabStripY, MiddleClick: true, MiddleHeld: true})
 	a.step(core.Input{X: left + width/2, Y: tabStripY})
-	if len(a.tabs) != 2 || a.cur().req.Name != "Repository Info" {
-		t.Fatalf("%d tabs, current %q", len(a.tabs), a.cur().req.Name)
+	if len(a.tabs) != 2 || a.cur().Req.Name != "Repository Info" {
+		t.Fatalf("%d tabs, current %q", len(a.tabs), a.cur().Req.Name)
 	}
 }
 
 func TestClosingATabBeforeTheActiveOneKeepsTheSameTabActive(t *testing.T) {
 	a := twoTabs(t)
 	a.closeTab(0)
-	if a.active != 0 || a.cur().req.Name != "Repository Info" {
-		t.Fatalf("active %d current %q", a.active, a.cur().req.Name)
+	if a.active != 0 || a.cur().Req.Name != "Repository Info" {
+		t.Fatalf("active %d current %q", a.active, a.cur().Req.Name)
 	}
 }
 
@@ -1034,7 +1035,7 @@ func TestDirtyFollowsEditsAndUndoingThemByHand(t *testing.T) {
 func TestTabWidthDoesNotChangeWhenTheRequestChanges(t *testing.T) {
 	a := twoTabs(t)
 	left, width := a.tabX(0)
-	req := a.tabs[0].req
+	req := a.tabs[0].Req
 	req.Method = "DELETE"                                                 // a longer badge
 	req.Headers = append(req.Headers, model.KV{Name: "X", Enabled: true}) // and an unsaved dot
 	a.step(core.Input{})
@@ -1045,7 +1046,7 @@ func TestTabWidthDoesNotChangeWhenTheRequestChanges(t *testing.T) {
 	// The × sits where it did before the edits; if the tab had grown it
 	// would be somewhere else and the click would only select the tab.
 	click(a, left+width-12, tabStripY)
-	if len(a.tabs) != 1 || a.cur().req.Name != "Repository Info" {
+	if len(a.tabs) != 1 || a.cur().Req.Name != "Repository Info" {
 		t.Fatalf("%d tabs: the tab changed size when its request changed", len(a.tabs))
 	}
 }
@@ -1136,12 +1137,12 @@ func TestSendingTurnsIntoCancelAndStopsTheRequest(t *testing.T) {
 	pointTabAt(tab, srv.URL+"/slow")
 
 	click(a, sendX, urlBarY)
-	if !tab.sending {
+	if !tab.Sending {
 		t.Fatal("test setup: the request must be running")
 	}
 	click(a, sendX, urlBarY) // the same button now cancels
-	if tab.sending || tab.resp == nil || tab.resp.Err != "Cancelled" {
-		t.Fatalf("sending %v resp %+v", tab.sending, tab.resp)
+	if tab.Sending || tab.Resp == nil || tab.Resp.Err != "Cancelled" {
+		t.Fatalf("sending %v resp %+v", tab.Sending, tab.Resp)
 	}
 	if a.status != "Cancelled" {
 		t.Fatalf("status = %q", a.status)
@@ -1157,19 +1158,19 @@ func TestEscapeCancelsARunningRequestButClosesTheMenuFirst(t *testing.T) {
 
 	a.menu = true
 	a.step(core.Input{Escape: true})
-	if a.menu || !tab.sending {
-		t.Fatalf("the first Escape closes the menu only: menu %v sending %v", a.menu, tab.sending)
+	if a.menu || !tab.Sending {
+		t.Fatalf("the first Escape closes the menu only: menu %v sending %v", a.menu, tab.Sending)
 	}
 	a.step(core.Input{Escape: true})
-	if tab.sending || tab.resp == nil || tab.resp.Err != "Cancelled" {
-		t.Fatalf("the second Escape cancels: sending %v resp %+v", tab.sending, tab.resp)
+	if tab.Sending || tab.Resp == nil || tab.Resp.Err != "Cancelled" {
+		t.Fatalf("the second Escape cancels: sending %v resp %+v", tab.Sending, tab.Resp)
 	}
 }
 
 func TestEscapeWithNothingRunningDoesNothing(t *testing.T) {
 	a, _ := newTestApp(t)
 	a.step(core.Input{Escape: true})
-	if a.cur().resp != nil {
+	if a.cur().Resp != nil {
 		t.Fatal("Escape must not invent a response")
 	}
 }
@@ -1185,7 +1186,7 @@ func TestALateResultFromACancelledRequestIsIgnored(t *testing.T) {
 	pointTabAt(tab, srv.URL+"/fast")
 	click(a, sendX, urlBarY)
 	waitForResponse(t, a, tab)
-	for tab.resp.Err != "" || string(tab.resp.Body) != "fast" { // the cancelled one may still be in flight
+	for tab.Resp.Err != "" || string(tab.Resp.Body) != "fast" { // the cancelled one may still be in flight
 		a.step(core.Input{})
 		time.Sleep(5 * time.Millisecond)
 	}
@@ -1195,8 +1196,8 @@ func TestALateResultFromACancelledRequestIsIgnored(t *testing.T) {
 		a.step(core.Input{})
 		time.Sleep(5 * time.Millisecond)
 	}
-	if tab.resp.Err != "" || string(tab.resp.Body) != "fast" {
-		t.Fatalf("the cancelled request's late result replaced the new one: %+v", tab.resp)
+	if tab.Resp.Err != "" || string(tab.Resp.Body) != "fast" {
+		t.Fatalf("the cancelled request's late result replaced the new one: %+v", tab.Resp)
 	}
 }
 
@@ -1205,13 +1206,13 @@ func TestRequestTimeoutStopsASlowRequest(t *testing.T) {
 	a, _ := newTestApp(t)
 	tab := a.cur()
 	pointTabAt(tab, srv.URL+"/slow")
-	tab.req.TimeoutSec = 1
+	tab.Req.TimeoutSec = 1
 
 	start := time.Now()
 	click(a, sendX, urlBarY)
 	waitForResponse(t, a, tab)
-	if tab.resp.Err != "Timed out" || time.Since(start) > 4*time.Second {
-		t.Fatalf("resp %+v after %v", tab.resp, time.Since(start))
+	if tab.Resp.Err != "Timed out" || time.Since(start) > 4*time.Second {
+		t.Fatalf("resp %+v after %v", tab.Resp, time.Since(start))
 	}
 }
 
@@ -1253,7 +1254,7 @@ func openSettingsPane(t *testing.T) *App {
 
 func TestTimeoutFieldAcceptsWholeSecondsOnly(t *testing.T) {
 	a := openSettingsPane(t)
-	req := a.cur().req
+	req := a.cur().Req
 	click(a, timeoutFieldX, chipsY)
 	a.typeText("7")
 	if req.TimeoutSec != 7 {
@@ -1277,19 +1278,19 @@ func TestFollowRedirectsToggleControlsRedirects(t *testing.T) {
 
 	a.send(tab)
 	waitForResponse(t, a, tab)
-	if tab.resp.Status != 200 {
-		t.Fatalf("redirects are followed by default, status %d", tab.resp.Status)
+	if tab.Resp.Status != 200 {
+		t.Fatalf("redirects are followed by default, status %d", tab.Resp.Status)
 	}
 
 	click(a, followRowX, followRowY)
-	if !tab.req.NoRedirects {
+	if !tab.Req.NoRedirects {
 		t.Fatal("the checkbox row must turn following off")
 	}
-	tab.resp = nil
+	tab.Resp = nil
 	a.send(tab)
 	waitForResponse(t, a, tab)
-	if tab.resp.Status != 302 {
-		t.Fatalf("redirects are not followed now, status %d", tab.resp.Status)
+	if tab.Resp.Status != 302 {
+		t.Fatalf("redirects are not followed now, status %d", tab.Resp.Status)
 	}
 }
 
@@ -1341,7 +1342,7 @@ func sendAndWait(t *testing.T, a *App, url string) {
 	t.Helper()
 	tab := a.cur()
 	pointTabAt(tab, url)
-	tab.resp = nil
+	tab.Resp = nil
 	a.send(tab)
 	waitForResponse(t, a, tab)
 }
@@ -1352,7 +1353,7 @@ func TestBearerAuthSendsTheToken(t *testing.T) {
 	click(a, authBearerX, chipsY)
 	click(a, authFieldX, authRow1Y)
 	a.typeText("abc")
-	req := a.cur().req
+	req := a.cur().Req
 	if req.Auth.Type != model.AuthBearer || req.Auth.Token != "abc" {
 		t.Fatalf("auth = %+v", req.Auth)
 	}
@@ -1397,8 +1398,8 @@ func TestAPIKeyGoesInTheHeaderOrTheQuery(t *testing.T) {
 	}
 
 	click(a, 516, authRow3Y) // the Query choice
-	if a.cur().req.Auth.KeyIn != model.KeyInQuery {
-		t.Fatalf("KeyIn = %q", a.cur().req.Auth.KeyIn)
+	if a.cur().Req.Auth.KeyIn != model.KeyInQuery {
+		t.Fatalf("KeyIn = %q", a.cur().Req.Auth.KeyIn)
 	}
 	sendAndWait(t, a, srv.URL)
 	if r := last(); r.query != "X-Key=v1" || r.header.Get("X-Key") != "" {
@@ -1427,7 +1428,7 @@ func TestVariablesInCredentialsAndHeadersAreExpandedAtSend(t *testing.T) {
 	srv, last := recordServer(t)
 	a := openAuthPane(t)
 	a.col.Vars = append(a.col.Vars, model.KV{Name: "tok", Value: "sekret", Enabled: true})
-	a.cur().req.Headers = []model.KV{{Name: "X-Token", Value: "{{tok}}", Enabled: true}}
+	a.cur().Req.Headers = []model.KV{{Name: "X-Token", Value: "{{tok}}", Enabled: true}}
 	click(a, authBearerX, chipsY)
 	click(a, authFieldX, authRow1Y)
 	a.typeText("{{tok}}")
@@ -1436,7 +1437,7 @@ func TestVariablesInCredentialsAndHeadersAreExpandedAtSend(t *testing.T) {
 	if r.header.Get("Authorization") != "Bearer sekret" || r.header.Get("X-Token") != "sekret" {
 		t.Fatalf("headers %v", r.header)
 	}
-	if a.cur().req.Auth.Token != "{{tok}}" {
+	if a.cur().Req.Auth.Token != "{{tok}}" {
 		t.Fatal("the stored request keeps the variable")
 	}
 }
@@ -1449,8 +1450,8 @@ func TestSwitchingAuthTypesKeepsEachTypesValues(t *testing.T) {
 	click(a, authBasicX, chipsY)
 	click(a, authNoneX, chipsY)
 	click(a, authBearerX, chipsY)
-	if a.cur().req.Auth.Token != "abc" || a.cur().authInput("token").Text != "abc" {
-		t.Fatalf("auth %+v field %q", a.cur().req.Auth, a.cur().authInput("token").Text)
+	if a.cur().Req.Auth.Token != "abc" || a.cur().authInput("token").Text != "abc" {
+		t.Fatalf("auth %+v field %q", a.cur().Req.Auth, a.cur().authInput("token").Text)
 	}
 }
 
@@ -1530,7 +1531,7 @@ func TestCopyBodyAndCopyAsCurl(t *testing.T) {
 
 func TestCurlCopyExpandsVariables(t *testing.T) {
 	a, _ := newTestApp(t) // the sample request uses {{baseUrl}}
-	a.cur().resp = &model.Response{Status: 200, Body: []byte("{}")}
+	a.cur().Resp = &model.Response{Status: 200, Body: []byte("{}")}
 	a.cur().view.SetLines(respview.CodeLines([]byte("{}")))
 	clip := &fakeClip{}
 	a.ctx.Clipboard = clip
@@ -1598,7 +1599,7 @@ func TestEscapeClosesFindBeforeAnythingElse(t *testing.T) {
 	if tab.findOpen || len(tab.view.Find("")) != 0 {
 		t.Fatal("Escape closes the find bar")
 	}
-	if tab.resp == nil {
+	if tab.Resp == nil {
 		t.Fatal("and must not touch the response")
 	}
 }
@@ -1635,8 +1636,8 @@ func TestDraggingTheSidebarDividerResizesTheSidebar(t *testing.T) {
 		t.Fatalf("sidebar size = %v", a.sidebarSplit.Size)
 	}
 	click(a, 350, treeRowY(4)) // x=350 was the main column before; it is the tree now
-	if a.cur().req.Name != "Repository Info" {
-		t.Fatalf("a click at x=350 opened %q: the sidebar did not grow", a.cur().req.Name)
+	if a.cur().Req.Name != "Repository Info" {
+		t.Fatalf("a click at x=350 opened %q: the sidebar did not grow", a.cur().Req.Name)
 	}
 }
 
@@ -1644,11 +1645,11 @@ func TestSidebarKeepsAMinimumWidthAndDoubleClickResets(t *testing.T) {
 	a, _ := newTestApp(t)
 	drag(a, 259, 5, dividerY)
 	click(a, 150, treeRowY(4)) // the minimum is 160px wide
-	if a.cur().req.Name != "Repository Info" {
+	if a.cur().Req.Name != "Repository Info" {
 		t.Fatal("the sidebar must not shrink below its minimum")
 	}
 	click(a, 200, treeRowY(5))
-	if a.cur().req.Name == "Repository Tags" {
+	if a.cur().Req.Name == "Repository Tags" {
 		t.Fatal("x=200 is outside a minimum-width sidebar")
 	}
 
@@ -1658,7 +1659,7 @@ func TestSidebarKeepsAMinimumWidthAndDoubleClickResets(t *testing.T) {
 		t.Fatalf("double click must reset the width, Size = %v", a.sidebarSplit.Size)
 	}
 	click(a, 250, treeRowY(5))
-	if a.cur().req.Name != "Repository Tags" {
+	if a.cur().Req.Name != "Repository Tags" {
 		t.Fatal("back at the default width x=250 is in the tree again")
 	}
 }
@@ -2083,7 +2084,7 @@ func TestRenameThroughTheMenuUpdatesTheTreeAndTheTab(t *testing.T) {
 		t.Fatalf("name = %q", info.Name)
 	}
 	click(a, 100, treeRowY(rowInfo))
-	if a.cur().req != info || a.cur().req.Name != "Repo details" {
+	if a.cur().Req != info || a.cur().Req.Name != "Repo details" {
 		t.Fatal("the open tab must show the new name")
 	}
 }
@@ -2114,7 +2115,7 @@ func TestDuplicateAddsACopyRightAfter(t *testing.T) {
 func TestDeleteAsksFirstAndClosesTheRequestsTab(t *testing.T) {
 	a, _ := newTestApp(t)
 	click(a, 100, treeRowY(rowInfo)) // opens it in a tab
-	info := a.cur().req
+	info := a.cur().Req
 	rightClick(a, 100, treeRowY(rowInfo))
 	pickMenu(t, a, "Delete")
 	if a.dialog == nil || findReq(a, "Repository Info") == nil {
@@ -2132,7 +2133,7 @@ func TestDeleteAsksFirstAndClosesTheRequestsTab(t *testing.T) {
 		t.Fatal("the request must be gone")
 	}
 	for _, tab := range a.tabs {
-		if tab.req == info {
+		if tab.Req == info {
 			t.Fatal("its tab must be closed")
 		}
 	}
@@ -2146,8 +2147,8 @@ func TestDeletingAFolderClosesTheTabsOfEverythingInIt(t *testing.T) {
 	if len(a.col.Folders) != 2 {
 		t.Fatalf("folders = %d", len(a.col.Folders))
 	}
-	if len(a.tabs) != 1 || a.cur().req.Name != "New Request" {
-		t.Fatalf("the open request was inside: %d tabs, current %q", len(a.tabs), a.cur().req.Name)
+	if len(a.tabs) != 1 || a.cur().Req.Name != "New Request" {
+		t.Fatalf("the open request was inside: %d tabs, current %q", len(a.tabs), a.cur().Req.Name)
 	}
 }
 
@@ -2167,8 +2168,8 @@ func TestNewRequestAndNewFolderFromTheFolderMenu(t *testing.T) {
 	repo := a.col.Folders[1]
 	rightClick(a, 100, treeRowY(rowRepo))
 	pickMenu(t, a, "New request")
-	if len(repo.Requests) != 4 || repo.Requests[3].Name != "New Request" || a.cur().req != repo.Requests[3] {
-		t.Fatalf("requests %v, current %q", requestNames(repo), a.cur().req.Name)
+	if len(repo.Requests) != 4 || repo.Requests[3].Name != "New Request" || a.cur().Req != repo.Requests[3] {
+		t.Fatalf("requests %v, current %q", requestNames(repo), a.cur().Req.Name)
 	}
 	rightClick(a, 100, treeRowY(rowRepo))
 	pickMenu(t, a, "New folder")
@@ -2182,7 +2183,7 @@ func TestPlusCreatesTheRequestInTheSelectedFolder(t *testing.T) {
 	user := a.col.Folders[0]
 	click(a, 100, treeRowY(rowUser)) // selects (and expands) the User folder
 	a.step(key(ebiten.KeyT, true, false))
-	if len(user.Requests) != 2 || a.cur().req != user.Requests[1] {
+	if len(user.Requests) != 2 || a.cur().Req != user.Requests[1] {
 		t.Fatalf("User now has %v", requestNames(user))
 	}
 }
@@ -2197,7 +2198,7 @@ func TestDraggingARequestOntoAFolderMovesIt(t *testing.T) {
 	if got, ok := a.col.Folder.Parent(tags); !ok || got != user {
 		t.Fatalf("Tags is in %v", got)
 	}
-	if a.cur().req != tags {
+	if a.cur().Req != tags {
 		t.Fatal("pressing the row opened it, and it stays the open request")
 	}
 }
@@ -2280,8 +2281,8 @@ func TestFilteredRowsStillOpenTheRightRequest(t *testing.T) {
 	click(a, 180, headerH/2)
 	a.typeText("tags")
 	click(a, 100, treeRowY(2)) // third visible row: Repository Tags
-	if a.cur().req.Name != "Repository Tags" {
-		t.Fatalf("opened %q", a.cur().req.Name)
+	if a.cur().Req.Name != "Repository Tags" {
+		t.Fatalf("opened %q", a.cur().Req.Name)
 	}
 }
 
@@ -2299,8 +2300,8 @@ func TestTreeKeyboardNavigation(t *testing.T) {
 	}
 	a.step(key(ebiten.KeyArrowDown, false, false))
 	a.step(key(ebiten.KeyEnter, false, false))
-	if a.cur().req.Name != "Repository Info" {
-		t.Fatalf("Enter opens the selected request, got %q", a.cur().req.Name)
+	if a.cur().Req.Name != "Repository Info" {
+		t.Fatalf("Enter opens the selected request, got %q", a.cur().Req.Name)
 	}
 
 	a.step(key(ebiten.KeyF2, false, false))
@@ -2341,7 +2342,7 @@ func altKey(k ebiten.Key) core.Input { return core.Input{Keys: []ebiten.Key{k}, 
 
 func paramNames(a *App) []string {
 	var out []string
-	for _, p := range a.cur().req.Params {
+	for _, p := range a.cur().Req.Params {
 		out = append(out, p.Name)
 	}
 	return out
@@ -2351,7 +2352,7 @@ func TestCtrlEnterWhileEditingInsertsARowBelowAndEditsIt(t *testing.T) {
 	a, _ := newTestApp(t)
 	click(a, valueCellX, paramsRow0Y)
 	a.step(key(ebiten.KeyEnter, true, false))
-	req := a.cur().req
+	req := a.cur().Req
 	if len(req.Params) != 4 || req.Params[1].Name != "" || !req.Params[1].Enabled || req.Params[0].Name != "q" {
 		t.Fatalf("params = %+v", req.Params)
 	}
@@ -2367,7 +2368,7 @@ func TestCtrlDDuplicatesTheEditedRow(t *testing.T) {
 	a, _ := newTestApp(t)
 	click(a, valueCellX, paramsRow0Y)
 	a.step(key(ebiten.KeyD, true, false))
-	p := a.cur().req.Params
+	p := a.cur().Req.Params
 	if len(p) != 4 || p[1] != p[0] || p[1].Name != "q" {
 		t.Fatalf("params = %+v", p)
 	}
@@ -2384,11 +2385,11 @@ func TestAltArrowsMoveTheRowAndTheEditFollows(t *testing.T) {
 	if got := paramNames(a); !reflect.DeepEqual(got, []string{"order", "q", "sort"}) {
 		t.Fatalf("params = %v", got)
 	}
-	if a.edit == nil || a.edit.row != 1 || a.cur().req.Params[1].Value != "rust" {
-		t.Fatalf("edit %+v value %q", a.edit, a.cur().req.Params[1].Value)
+	if a.edit == nil || a.edit.row != 1 || a.cur().Req.Params[1].Value != "rust" {
+		t.Fatalf("edit %+v value %q", a.edit, a.cur().Req.Params[1].Value)
 	}
-	if !strings.Contains(a.cur().req.URL, "order=desc&q=rust&sort=stars") {
-		t.Fatalf("the URL follows the order: %q", a.cur().req.URL)
+	if !strings.Contains(a.cur().Req.URL, "order=desc&q=rust&sort=stars") {
+		t.Fatalf("the URL follows the order: %q", a.cur().Req.URL)
 	}
 	a.step(altKey(ebiten.KeyArrowUp))
 	a.step(altKey(ebiten.KeyArrowUp)) // already at the top: stays
@@ -2412,8 +2413,8 @@ func TestDraggingARowByItsGripMovesItAndAFurtherDragKeepsMovingIt(t *testing.T) 
 	if got := paramNames(a); !reflect.DeepEqual(got, []string{"order", "sort", "q"}) {
 		t.Fatalf("after two rows down: %v", got)
 	}
-	if !strings.Contains(a.cur().req.URL, "order=desc&sort=stars&q=gioui") {
-		t.Fatalf("the URL follows the order: %q", a.cur().req.URL)
+	if !strings.Contains(a.cur().Req.URL, "order=desc&sort=stars&q=gioui") {
+		t.Fatalf("the URL follows the order: %q", a.cur().Req.URL)
 	}
 	a.step(core.Input{X: gripCellX, Y: rowY(0)}) // release elsewhere
 	a.step(core.Input{X: gripCellX, Y: rowY(0), Held: true})
@@ -2427,11 +2428,11 @@ func TestDeleteRemovesTheSelectedRowWhenNothingIsBeingTyped(t *testing.T) {
 	click(a, valueCellX, paramsRow0Y)
 	a.step(core.Input{Enter: true}) // commit; the row stays selected
 	a.step(key(ebiten.KeyDelete, false, false))
-	if got := paramNames(a); !reflect.DeepEqual(got, []string{"order", "sort"}) || strings.Contains(a.cur().req.URL, "q=") {
-		t.Fatalf("params %v url %q", got, a.cur().req.URL)
+	if got := paramNames(a); !reflect.DeepEqual(got, []string{"order", "sort"}) || strings.Contains(a.cur().Req.URL, "q=") {
+		t.Fatalf("params %v url %q", got, a.cur().Req.URL)
 	}
 	a.step(key(ebiten.KeyDelete, false, false)) // the selection moved on: a second Delete removes the next row
-	if len(a.cur().req.Params) > 2 {
+	if len(a.cur().Req.Params) > 2 {
 		t.Fatal("unreachable")
 	}
 }
@@ -2439,19 +2440,19 @@ func TestDeleteRemovesTheSelectedRowWhenNothingIsBeingTyped(t *testing.T) {
 func TestDeleteDoesNothingWithoutASelectedRowOrWhileTyping(t *testing.T) {
 	a, _ := newTestApp(t)
 	a.step(key(ebiten.KeyDelete, false, false))
-	if len(a.cur().req.Params) != 3 {
+	if len(a.cur().Req.Params) != 3 {
 		t.Fatal("no row is selected")
 	}
 	click(a, valueCellX, paramsRow0Y) // editing: Delete is a text key
 	a.step(key(ebiten.KeyDelete, false, false))
-	if len(a.cur().req.Params) != 3 {
+	if len(a.cur().Req.Params) != 3 {
 		t.Fatal("while a cell is edited Delete belongs to the text")
 	}
 }
 
 func TestHeaderCheckboxEnablesOrDisablesEveryRow(t *testing.T) {
 	a, _ := newTestApp(t)
-	req := a.cur().req
+	req := a.cur().Req
 	click(a, checkAllX, paramsHeaderY)
 	for _, p := range req.Params {
 		if p.Enabled {
@@ -2469,7 +2470,7 @@ func TestHeaderCheckboxEnablesOrDisablesEveryRow(t *testing.T) {
 
 func TestUndoAndRedoOfTableChanges(t *testing.T) {
 	a, _ := newTestApp(t)
-	req := a.cur().req
+	req := a.cur().Req
 	click(a, 739, paramsRow0Y) // delete the first row
 	if len(req.Params) != 2 {
 		t.Fatal("test setup")
@@ -2502,7 +2503,7 @@ func TestUndoGoesToTheCellTextWhileACellIsEdited(t *testing.T) {
 	click(a, valueCellX, paramsRow0Y)
 	a.typeText("zz")
 	a.step(core.Input{Ctrl: true, Undo: true})
-	if len(a.cur().req.Params) != 2 {
+	if len(a.cur().Req.Params) != 2 {
 		t.Fatal("Ctrl+Z inside a cell undoes the typing, not the table")
 	}
 }
@@ -2517,14 +2518,14 @@ func TestEveryTableChangeGoesThroughOnePlace(t *testing.T) {
 	if a.edit != nil {
 		t.Fatalf("an edit pointing at a row that is gone must be dropped: %+v", a.edit)
 	}
-	if got := paramNames(a); !reflect.DeepEqual(got, []string{"q"}) || strings.Contains(a.cur().req.URL, "order") {
-		t.Fatalf("params %v url %q", got, a.cur().req.URL)
+	if got := paramNames(a); !reflect.DeepEqual(got, []string{"q"}) || strings.Contains(a.cur().Req.URL, "order") {
+		t.Fatalf("params %v url %q", got, a.cur().Req.URL)
 	}
 }
 
 func TestBulkEditShowsLinesAndAppliesThemBack(t *testing.T) {
 	a, _ := newTestApp(t)
-	req := a.cur().req
+	req := a.cur().Req
 	req.Params[1].Enabled = false
 	click(a, bulkBtnX, chipsY)
 	if a.bulk == nil || a.bulk.area.Text != "q: gioui\n# order: desc\nsort: stars" {
@@ -2593,8 +2594,8 @@ func TestTabMenu(t *testing.T) {
 		t.Fatalf("tab menu = %q", got)
 	}
 	pickMenu(t, a, "Close tabs to the right")
-	if len(a.tabs) != 1 || a.cur().req.Name != "Search Repos" {
-		t.Fatalf("%d tabs, current %q", len(a.tabs), a.cur().req.Name)
+	if len(a.tabs) != 1 || a.cur().Req.Name != "Search Repos" {
+		t.Fatalf("%d tabs, current %q", len(a.tabs), a.cur().Req.Name)
 	}
 	rightClick(a, left+20, tabStripY)
 	if !itemByLabel(a, "Close others").disabled || !itemByLabel(a, "Close tabs to the right").disabled {
@@ -2610,7 +2611,7 @@ func TestCloseOthersKeepsOnlyThatTab(t *testing.T) {
 	rightClick(a, left+20, tabStripY)
 	pickMenu(t, a, "Close others")
 	if len(a.tabs) != 1 || a.tabs[0] != keep || a.cur() != keep {
-		t.Fatalf("%d tabs, current %q", len(a.tabs), a.cur().req.Name)
+		t.Fatalf("%d tabs, current %q", len(a.tabs), a.cur().Req.Name)
 	}
 }
 
@@ -2622,8 +2623,8 @@ func TestDuplicateTabAddsACopyToTheTreeAndOpensIt(t *testing.T) {
 	if got := requestNames(a.col.Folders[1]); !reflect.DeepEqual(got, []string{"Search Repos", "Search Repos copy", "Repository Info", "Repository Tags"}) {
 		t.Fatalf("Repository = %v", got)
 	}
-	if a.cur().req.Name != "Search Repos copy" || len(a.tabs) != 2 {
-		t.Fatalf("current %q, %d tabs", a.cur().req.Name, len(a.tabs))
+	if a.cur().Req.Name != "Search Repos copy" || len(a.tabs) != 2 {
+		t.Fatalf("current %q, %d tabs", a.cur().Req.Name, len(a.tabs))
 	}
 }
 
@@ -2650,7 +2651,7 @@ func TestTableRowMenu(t *testing.T) {
 		t.Fatal("the first row cannot move up, but can move down")
 	}
 	pickMenu(t, a, "Insert row above")
-	req := a.cur().req
+	req := a.cur().Req
 	if len(req.Params) != 4 || req.Params[0].Name != "" || req.Params[1].Name != "q" {
 		t.Fatalf("params = %+v", req.Params)
 	}
@@ -2658,7 +2659,7 @@ func TestTableRowMenu(t *testing.T) {
 
 func TestTableRowMenuActionsUseTheSameUndoableChanges(t *testing.T) {
 	a, _ := newTestApp(t)
-	req := a.cur().req
+	req := a.cur().Req
 	rightClick(a, 400, row1Y) // the "order" row
 	pickMenu(t, a, "Duplicate")
 	if got := paramNames(a); !reflect.DeepEqual(got, []string{"q", "order", "order", "sort"}) {
@@ -2732,14 +2733,14 @@ func TestTextFieldMenuStatesAndActions(t *testing.T) {
 	}
 	rightClick(a, 1100, urlBarY)
 	pickMenu(t, a, "Cut")
-	if url.Text != "" || a.cur().req.URL != "" {
-		t.Fatalf("cut: field %q request %q (the model must follow)", url.Text, a.cur().req.URL)
+	if url.Text != "" || a.cur().Req.URL != "" {
+		t.Fatalf("cut: field %q request %q (the model must follow)", url.Text, a.cur().Req.URL)
 	}
 	clip.text = "https://x.test"
 	rightClick(a, 1100, urlBarY)
 	pickMenu(t, a, "Paste")
-	if url.Text != "https://x.test" || a.cur().req.URL != "https://x.test" {
-		t.Fatalf("paste: field %q request %q", url.Text, a.cur().req.URL)
+	if url.Text != "https://x.test" || a.cur().Req.URL != "https://x.test" {
+		t.Fatalf("paste: field %q request %q", url.Text, a.cur().Req.URL)
 	}
 	rightClick(a, 1100, urlBarY)
 	pickMenu(t, a, "Undo")
@@ -2779,8 +2780,8 @@ func TestBodyEditorMenuPastesLinesAndKeepsTheModelInSync(t *testing.T) {
 	click(a, jsonChipX, chipsY)
 	rightClick(a, editorX, editorY)
 	pickMenu(t, a, "Paste")
-	if a.cur().req.Body != "{\n  \"a\": 1\n}" || a.cur().body.LineCount() != 3 {
-		t.Fatalf("Body = %q", a.cur().req.Body)
+	if a.cur().Req.Body != "{\n  \"a\": 1\n}" || a.cur().body.LineCount() != 3 {
+		t.Fatalf("Body = %q", a.cur().Req.Body)
 	}
 }
 
@@ -3280,7 +3281,7 @@ func TestResponseHeaderMenuCopiesNameValueAndAll(t *testing.T) {
 
 func TestEditableTableMenuAlsoCopiesCells(t *testing.T) {
 	a, _ := newTestApp(t)
-	a.cur().req.Params = []model.KV{{Name: "q", Value: "giou", Enabled: true}}
+	a.cur().Req.Params = []model.KV{{Name: "q", Value: "giou", Enabled: true}}
 	clip := &fakeClip{}
 	a.ctx.Clipboard = clip
 	a.step(core.Input{})
