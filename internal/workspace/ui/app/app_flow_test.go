@@ -3598,3 +3598,35 @@ func TestClearingCookiesWhileARequestRunsIsRaceFree(t *testing.T) {
 
 	waitForResponse(t, a, tab)
 }
+
+// Regression: textFocused listed the focused fields by hand and missed
+// the assertions editor, the GraphQL variables, the file path and the
+// message composer, so plain-key shortcuts and table undo fired while
+// they had the keyboard.
+func TestTextFocusedCoversEveryEditorOfTheTab(t *testing.T) {
+	cases := []struct {
+		name  string
+		focus func(*reqTab)
+	}{
+		{"url", func(tab *reqTab) { tab.url.Focused = true }},
+		{"find", func(tab *reqTab) { tab.find.Focused = true }},
+		{"timeout", func(tab *reqTab) { tab.timeout.Focused = true }},
+		{"body", func(tab *reqTab) { tab.body.Focused = true }},
+		{"tests", func(tab *reqTab) { tab.tests.Focused = true }},
+		{"graphql variables", func(tab *reqTab) { tab.gqlVars.Focused = true }},
+		{"file path", func(tab *reqTab) { tab.file.Focused = true }},
+		{"message composer", func(tab *reqTab) { tab.msg.Focused = true }},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			a, _ := newTestApp(t)
+			if a.textFocused() {
+				t.Fatal("nothing is focused at the start")
+			}
+			c.focus(a.cur())
+			if !a.textFocused() {
+				t.Fatalf("%s has the keyboard but textFocused is false", c.name)
+			}
+		})
+	}
+}
