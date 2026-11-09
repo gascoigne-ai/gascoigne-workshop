@@ -14,6 +14,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/sentlog"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
 	sport "github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/colorpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/settingsui"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
 	"net/http"
@@ -192,35 +193,34 @@ type App struct {
 	actionIDs          []string      // the ids of the shortcut actions, for completing settings.json
 	store              cport.Store
 	states             port.StateStore
-	files              port.FileDialog                // the desktop file chooser, replaced in tests
-	cancelSettingsPick func()                         // takes back a file question the settings dialog asked
-	settingsUnsaved    bool                           // settings were changed but not written (auto-save is off)
-	prefs              settingsui.Dialog              // the settings dialog
-	shortcutSearch     view.TextField                 // filters the shortcut table
-	pendingKeys        map[string]pendingKey          // recorded keys another action has, by action id
-	tabsScroll         view.ScrollState               // sideways scroll of the request tab strip
-	dirty              bool                           // something changed since the last draw
-	tps                int                            // the update rate last set
-	lastIn             core.Input                     // the previous frame's input
-	pacer              engine.Pacer                   // update rate from idle time
-	recording          string                         // the action whose key is being recorded, "" when none
-	recordNotes        map[string]string              // why a recorded key was refused, by action id
-	colorInputs        map[core.Token]*view.TextField // hex fields of the settings menu
-	colorNotes         map[core.Token]string          // why a typed color was refused
-	colWidths          map[string]*view.ColumnWidths  // the column sizes of each table, by name
-	rowSel             *rowSelection                  // the table row the keyboard acts on
-	selected           any                            // the tree node last clicked or moved to: a *Folder or *Request
-	treeFocus          bool                           // the tree has the keyboard
-	filter             view.TextField                 // the sidebar filter
-	sent               sentlog.Log                    // requests sent in this workspace, newest first
-	calls              calltrace.Log                  // the call trace behind the Log button
-	showSent           bool                           // the sidebar lists sent requests instead of the tree
-	dragNode           any                            // the tree node being dragged, nil when none
-	pressedFolder      *model.Folder                  // the folder row the button went down on, toggled on release there
-	hoverFolder        *model.Folder                  // the closed folder a drag has been over
-	hoverTicks         int                            // for how many frames
-	dropTarget         any                            // the node the pointer is over while dragging
-	dialog             *dialog                        // the open dialog, if any
+	files              port.FileDialog               // the desktop file chooser, replaced in tests
+	cancelSettingsPick func()                        // takes back a file question the settings dialog asked
+	settingsUnsaved    bool                          // settings were changed but not written (auto-save is off)
+	prefs              settingsui.Dialog             // the settings dialog
+	shortcutSearch     view.TextField                // filters the shortcut table
+	pendingKeys        map[string]pendingKey         // recorded keys another action has, by action id
+	tabsScroll         view.ScrollState              // sideways scroll of the request tab strip
+	dirty              bool                          // something changed since the last draw
+	tps                int                           // the update rate last set
+	lastIn             core.Input                    // the previous frame's input
+	pacer              engine.Pacer                  // update rate from idle time
+	recording          string                        // the action whose key is being recorded, "" when none
+	recordNotes        map[string]string             // why a recorded key was refused, by action id
+	colors             colorpage.Page                // the Colors page of the settings dialog
+	colWidths          map[string]*view.ColumnWidths // the column sizes of each table, by name
+	rowSel             *rowSelection                 // the table row the keyboard acts on
+	selected           any                           // the tree node last clicked or moved to: a *Folder or *Request
+	treeFocus          bool                          // the tree has the keyboard
+	filter             view.TextField                // the sidebar filter
+	sent               sentlog.Log                   // requests sent in this workspace, newest first
+	calls              calltrace.Log                 // the call trace behind the Log button
+	showSent           bool                          // the sidebar lists sent requests instead of the tree
+	dragNode           any                           // the tree node being dragged, nil when none
+	pressedFolder      *model.Folder                 // the folder row the button went down on, toggled on release there
+	hoverFolder        *model.Folder                 // the closed folder a drag has been over
+	hoverTicks         int                           // for how many frames
+	dropTarget         any                           // the node the pointer is over while dragging
+	dialog             *dialog                       // the open dialog, if any
 	toasts             []toast
 	now                func() time.Time               // the clock, replaced in tests
 	histories          func(dir string) rport.History // nil keeps no history

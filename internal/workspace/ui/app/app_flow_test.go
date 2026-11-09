@@ -2918,7 +2918,7 @@ func openSettingsMenu(t *testing.T) (*App, string) {
 }
 
 func typeColor(a *App, tok core.Token, row int, text string) {
-	in := a.colorInput(tok)
+	in := a.colors.Input(colorHost{a}, tok)
 	click(a, colorFieldX, colorRow0Y+row*core.RowH)
 	in.SelectAll()
 	a.typeText(text)
@@ -2955,8 +2955,8 @@ func TestTypingAColorAppliesItLiveAndSavesIt(t *testing.T) {
 	if saved.Colors["dark"]["selection"] != "#223344" {
 		t.Fatalf("saved %+v", saved.Colors)
 	}
-	if a.colorNotes[core.Selection] != "" {
-		t.Fatalf("note = %q", a.colorNotes[core.Selection])
+	if a.colors.Note(core.Selection) != "" {
+		t.Fatalf("note = %q", a.colors.Note(core.Selection))
 	}
 }
 
@@ -2964,7 +2964,7 @@ func TestAnUnreadableColorIsRefusedWithItsRatio(t *testing.T) {
 	a, path := openSettingsPage(t, "colors")
 	def := a.ctx.Th.Color(core.FindMatch)
 	typeColor(a, core.FindMatch, 1, "#ffffff") // white under light text
-	note := a.colorNotes[core.FindMatch]
+	note := a.colors.Note(core.FindMatch)
 	if !strings.Contains(note, "below 4.5:1") || !strings.Contains(note, "1.") {
 		t.Fatalf("note = %q: it must say how far off the contrast is", note)
 	}
@@ -2975,12 +2975,12 @@ func TestAnUnreadableColorIsRefusedWithItsRatio(t *testing.T) {
 		t.Fatalf("a refused color must not be saved: %+v", saved.Colors)
 	}
 	typeColor(a, core.FindMatch, 1, "zzz")
-	if !strings.Contains(a.colorNotes[core.FindMatch], "#rrggbb") {
-		t.Fatalf("note = %q", a.colorNotes[core.FindMatch])
+	if !strings.Contains(a.colors.Note(core.FindMatch), "#rrggbb") {
+		t.Fatalf("note = %q", a.colors.Note(core.FindMatch))
 	}
 	typeColor(a, core.FindMatch, 1, "#334455")
-	if a.colorNotes[core.FindMatch] != "" || a.ctx.Th.Color(core.FindMatch) != core.RGB(0x334455) {
-		t.Fatalf("a readable color clears the note and applies: %q %v", a.colorNotes[core.FindMatch], a.ctx.Th.Color(core.FindMatch))
+	if a.colors.Note(core.FindMatch) != "" || a.ctx.Th.Color(core.FindMatch) != core.RGB(0x334455) {
+		t.Fatalf("a readable color clears the note and applies: %q %v", a.colors.Note(core.FindMatch), a.ctx.Th.Color(core.FindMatch))
 	}
 }
 
@@ -2990,8 +2990,8 @@ func TestResetButtonsRestoreTheDefaults(t *testing.T) {
 	typeColor(a, core.Selection, 0, "#223344")
 	typeColor(a, core.FindMatch, 1, "#334455")
 	click(a, colorResetX, colorRow0Y)
-	if a.ctx.Th.Color(core.Selection) != def || a.colorInput(core.Selection).Text != theming.FormatHex(def) {
-		t.Fatalf("selection %v, field %q", a.ctx.Th.Color(core.Selection), a.colorInput(core.Selection).Text)
+	if a.ctx.Th.Color(core.Selection) != def || a.colors.Input(colorHost{a}, core.Selection).Text != theming.FormatHex(def) {
+		t.Fatalf("selection %v, field %q", a.ctx.Th.Color(core.Selection), a.colors.Input(colorHost{a}, core.Selection).Text)
 	}
 	if a.ctx.Th.Color(core.FindMatch) != core.RGB(0x334455) {
 		t.Fatal("resetting one color must leave the others")
@@ -3014,8 +3014,8 @@ func TestSwitchingThemeShowsThatThemesColorsAndKeepsEachThemesOverrides(t *testi
 	if a.ctx.Th.Color(core.Selection) != appearance.ThemeFor("light", "medium").Color(core.Selection) {
 		t.Fatal("the dark override must not leak into the light theme")
 	}
-	if a.colorInput(core.Selection).Text != theming.FormatHex(appearance.ThemeFor("light", "medium").Color(core.Selection)) {
-		t.Fatalf("the field must show the light theme's color, got %q", a.colorInput(core.Selection).Text)
+	if a.colors.Input(colorHost{a}, core.Selection).Text != theming.FormatHex(appearance.ThemeFor("light", "medium").Color(core.Selection)) {
+		t.Fatalf("the field must show the light theme's color, got %q", a.colors.Input(colorHost{a}, core.Selection).Text)
 	}
 	clickText(t, a, "Dark", 0) // back to Dark
 	if a.ctx.Th.Color(core.Selection) != core.RGB(0x223344) {

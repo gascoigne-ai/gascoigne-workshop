@@ -89,7 +89,7 @@ The toolkit packages are public and independent of the application (`uitoolkit/c
 | `internal/settings/model/settings`, `internal/settings/model/fontfamily` | the settings schema and the rules of the `settings.json` text (`Decode`, `Encode`, `Minimal`); font families and their lookup |
 | `internal/settings/port` | `FontStore`, the installed fonts (`fonts.System` implements it; `Options.Fonts` hands it to the App); `SettingsStore`, the settings file (`settingsfile.Files` implements it; `Options.SettingsFiles`) |
 | `internal/settings/adapter/settingsfile` | reads and writes `settings.json` atomically; the default paths of settings, themes and workspace |
-| `internal/settings/model/appearance`, `internal/settings/adapter/fonts`, `internal/settings/ui/settingsui` | theme choices from settings; font scanning (`fonts.System` implements `FontStore`); the settings dialog behind a `Host` |
+| `internal/settings/model/appearance`, `internal/settings/adapter/fonts`, `internal/settings/ui/settingsui`, `internal/settings/ui/colorpage` | theme choices from settings; font scanning (`fonts.System` implements `FontStore`); the settings dialog behind a `Host`; its Colors page behind a `Host` (the App's `colorHost`) |
 
 ## Package layout
 

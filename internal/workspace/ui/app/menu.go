@@ -97,7 +97,7 @@ func (a *App) changeSettings(edit func(*settings.Settings)) {
 			a.refreshView(t)
 		}
 	}
-	a.colorInputs, a.colorNotes = nil, nil
+	a.colors.Forget()
 }
 
 // saveSettings edits and applies the settings and, unless auto-save is off,

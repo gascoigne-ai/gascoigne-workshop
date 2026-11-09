@@ -94,7 +94,7 @@ func (a *App) OpenMenu(x, y int, items []settingsui.MenuItem) {
 func (a *App) ExtraPage(id string) Node {
 	switch id {
 	case "colors":
-		return a.colorsView()
+		return a.colors.View(colorHost{a})
 	case "shortcuts":
 		return a.shortcutsView()
 	}
@@ -112,7 +112,7 @@ func (a *App) applySettings(s settings.Settings) {
 		t.raw, t.compact = viewFlags(s.ResponseView)
 		a.refreshView(t)
 	}
-	a.colorInputs, a.colorNotes = nil, nil
+	a.colors.Forget()
 	a.prefs.Reload(a)
 	a.dirty = true
 }
