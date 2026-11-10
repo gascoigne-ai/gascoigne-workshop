@@ -10,7 +10,7 @@ Everything that arrives from a goroutine reaches the UI through one bus as a typ
 - [done] `internal/workspace/controller/bus`: `Dispatch(msg)` safe from any goroutine and never blocking the caller, drained once per frame; any message marks the frame dirty (replaces `drained` / `pruned` flags by hand). Unit tests: ordering, dispatch from the UI goroutine with a full queue, dirty mark.
 - [done] Cmd runtime (`Bus.Run`, `Cmd`): runs a `Cmd` with a `context.Context` on a goroutine and dispatches its result message. It does not own the protocol registry or a settings snapshot (changed from the first draft: that would be an owner type with one user); a `Cmd` is built on the UI goroutine and captures the registry and timeout it needs, so no goroutine reads `App` fields, as `dispatch` and `connect` already do since task 034.
 - [done] Move the `results` channel (`dispatch`, `apply`) onto the bus.
-- [open] Move `wsEvents` (`connect`, `applyWS`, retries via `time.AfterFunc`) onto the bus.
+- [done] Move `wsEvents` (`connect`, `applyWS`, retries via `time.AfterFunc`) onto the bus.
 - [open] Move the `later` channel and its users (file dialog, gRPC method list, MCP sampling, `settingsui.Host.Later`) onto the bus; delete the three channels.
 
 ## Acceptance

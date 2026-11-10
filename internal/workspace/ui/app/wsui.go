@@ -89,14 +89,14 @@ func (a *App) connect(t *reqTab) {
 			default:
 			}
 		}
-		a.wsEvents <- wsEvent{tab: t, gen: gen, sess: s, err: err}
+		a.bus.Dispatch(wsEvent{tab: t, gen: gen, sess: s, err: err})
 		if err != nil {
 			return
 		}
 		for e := range s.Events() {
-			a.wsEvents <- wsEvent{tab: t, gen: gen, ev: e, hasEv: true}
+			a.bus.Dispatch(wsEvent{tab: t, gen: gen, ev: e, hasEv: true})
 		}
-		a.wsEvents <- wsEvent{tab: t, gen: gen, closed: true}
+		a.bus.Dispatch(wsEvent{tab: t, gen: gen, closed: true})
 	}()
 }
 
@@ -184,7 +184,7 @@ func (a *App) scheduleRetry(t *reqTab) {
 	}
 	a.logInfo(t, "Reconnecting in "+retryDelay.String(), w.Muted)
 	gen := t.Gen
-	time.AfterFunc(retryDelay, func() { a.wsEvents <- wsEvent{tab: t, gen: gen, retry: true} })
+	time.AfterFunc(retryDelay, func() { a.bus.Dispatch(wsEvent{tab: t, gen: gen, retry: true}) })
 }
 
 // logEvent appends an event to the log, one line per line of its text.
