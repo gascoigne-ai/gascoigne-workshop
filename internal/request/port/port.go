@@ -93,6 +93,14 @@ type BinarySender interface {
 	SendBinary(data []byte) error
 }
 
+// Requester is implemented by sessions that can send one message and hand
+// back its answer (MCP). The text is what Send takes, except a raw
+// message; the result is the JSON of the answer, and a server's error
+// comes back as the error.
+type Requester interface {
+	Request(ctx context.Context, text string) (result string, err error)
+}
+
 // Streamer is implemented by protocols that keep a connection open.
 // Protocol.Send of such a protocol is the one-shot form: connect, send
 // the body, wait for the first reply, disconnect.

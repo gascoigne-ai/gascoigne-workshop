@@ -277,3 +277,28 @@ func TestMCPConnectAnnouncesTheServerInfoAsAnEvent(t *testing.T) {
 		t.Fatalf("%+v %v", server, ok)
 	}
 }
+
+func TestMCPRequestReturnsTheResultOrTheServersError(t *testing.T) {
+	url, _ := mcpHTTPServer(t)
+	s, err := MCP{}.Connect(context.Background(), model.Request{Protocol: "mcp", URL: url})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	requester, ok := s.(Requester)
+	if !ok {
+		t.Fatal("an MCP session answers requests")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	result, err := requester.Request(ctx, `call echo {"x":1}`)
+	if err != nil || !strings.Contains(result, `echo {`) {
+		t.Fatalf("result %q err %v", result, err)
+	}
+	if _, err := requester.Request(ctx, `call boom`); err == nil || !strings.Contains(err.Error(), "no such tool") {
+		t.Fatalf("err = %v, want the server's message", err)
+	}
+	if _, err := requester.Request(ctx, `call`); err == nil {
+		t.Fatal("a call without a name is refused")
+	}
+}

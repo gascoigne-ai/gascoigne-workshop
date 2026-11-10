@@ -14,6 +14,7 @@ type (
 	Event           = port.Event
 	Session         = port.Session
 	BinarySender    = port.BinarySender
+	Requester       = port.Requester
 	Streamer        = port.Streamer
 	Sampler         = port.Sampler
 	SamplingRequest = port.SamplingRequest

@@ -50,7 +50,7 @@ type mcpTransport interface {
 // initialize handshake and asks for the server's tools, resources and
 // prompts. Everything is logged as events.
 func (m MCP) Connect(ctx context.Context, req model.Request) (Session, error) {
-	s := &mcpSession{sampler: m.Sampler, events: make(chan Event, eventBuffer), done: make(chan struct{}), now: time.Now, waiters: map[int64]chan json.RawMessage{}}
+	s := &mcpSession{sampler: m.Sampler, events: make(chan Event, eventBuffer), done: make(chan struct{}), now: time.Now, waiters: map[int64]chan rpcAnswer{}}
 	var tr mcpTransport
 	var err error
 	if strings.HasPrefix(req.URL, StdioPrefix) {
@@ -139,7 +139,7 @@ type mcpSession struct {
 	ended   bool
 	closing atomic.Bool // the user closed the session, so the end is no loss
 	nextID  int64
-	waiters map[int64]chan json.RawMessage
+	waiters map[int64]chan rpcAnswer
 }
 
 func (s *mcpSession) Events() <-chan Event { return s.events }
@@ -174,6 +174,12 @@ func (s *mcpSession) finish(err error) {
 		close(s.events)
 		s.mu.Unlock()
 	})
+}
+
+// rpcAnswer is what a waiting call gets: the result, or the server's error.
+type rpcAnswer struct {
+	result json.RawMessage
+	err    error
 }
 
 type rpcMessage struct {
@@ -233,9 +239,9 @@ func (s *mcpSession) deliver(msg []byte) {
 			s.mu.Unlock()
 			if w != nil {
 				if m.Error != nil {
-					w <- nil
+					w <- rpcAnswer{err: errors.New(m.Error.Message)}
 				} else {
-					w <- m.Result
+					w <- rpcAnswer{result: m.Result}
 				}
 			}
 		}
@@ -296,7 +302,7 @@ func (s *mcpSession) call(ctx context.Context, method string, params any) (json.
 	if err != nil {
 		return nil, err
 	}
-	w := make(chan json.RawMessage, 1)
+	w := make(chan rpcAnswer, 1)
 	s.mu.Lock()
 	s.waiters[id] = w
 	s.mu.Unlock()
@@ -304,14 +310,14 @@ func (s *mcpSession) call(ctx context.Context, method string, params any) (json.
 		return nil, err
 	}
 	select {
-	case r, ok := <-w:
+	case answer, ok := <-w:
 		if !ok {
 			return nil, errors.New("the connection closed before the server answered")
 		}
-		if r == nil {
-			return nil, fmt.Errorf("%s failed: the server answered with an error", method)
+		if answer.err != nil {
+			return nil, fmt.Errorf("%s failed: %w", method, answer.err)
 		}
-		return r, nil
+		return answer.result, nil
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	}
@@ -365,21 +371,43 @@ func (s *mcpSession) Send(text string) error {
 		}
 		return s.write(context.Background(), "request", []byte(text))
 	}
+	method, params, err := parseCommand(text)
+	if err != nil {
+		return err
+	}
+	_, err = s.request(method, params)
+	return err
+}
+
+// parseCommand turns "call NAME {json}", another shorthand or
+// "method {json params}" into a method and its params.
+func parseCommand(text string) (method string, params any, err error) {
 	head, rest, _ := strings.Cut(text, " ")
 	rest = strings.TrimSpace(rest)
-	method, params := head, any(nil)
-	if sh, ok := shorthands[head]; ok {
-		var err error
-		if method, params, err = sh(rest); err != nil {
-			return err
-		}
-	} else if rest != "" {
+	if shorthand, ok := shorthands[head]; ok {
+		return shorthand(rest)
+	}
+	if rest != "" {
 		if err := json.Unmarshal([]byte(rest), &params); err != nil {
-			return fmt.Errorf("the params must be JSON: %w", err)
+			return "", nil, fmt.Errorf("the params must be JSON: %w", err)
 		}
 	}
-	_, err := s.request(method, params)
-	return err
+	return head, params, nil
+}
+
+// Request implements Requester: it sends the command like Send does and
+// waits for the server's answer. The exchange is logged as usual.
+func (s *mcpSession) Request(ctx context.Context, text string) (string, error) {
+	text = strings.TrimSpace(text)
+	if text == "" || strings.HasPrefix(text, "{") {
+		return "", errors.New("a method, or a shorthand like call NAME {json}, is needed")
+	}
+	method, params, err := parseCommand(text)
+	if err != nil {
+		return "", err
+	}
+	result, err := s.call(ctx, method, params)
+	return string(result), err
 }
 
 func (s *mcpSession) Ping() error {
