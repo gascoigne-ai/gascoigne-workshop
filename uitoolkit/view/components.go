@@ -41,13 +41,18 @@ type TabItem struct {
 // Tabs is a strip of labels with a gold bar under the active one.
 func Tabs(items []TabItem, active int, opts ...Option) *El {
 	var strip *El
-	pick := func(i int) {
-		if strip.onSelect != nil {
-			strip.onSelect(i)
+	strip = Row(with(append([]Item{PadL(2)}, tabItems(items, active, selector(&strip))...), opts)...)
+	return strip
+}
+
+// selector is the click handler of the tabs of *strip: it runs the strip's
+// OnSelect, which is set only after the tabs are built.
+func selector(strip **El) func(i int) {
+	return func(i int) {
+		if (*strip).onSelect != nil {
+			(*strip).onSelect(i)
 		}
 	}
-	strip = Row(with(append([]Item{PadL(2)}, tabItems(items, active, pick)...), opts)...)
-	return strip
 }
 
 // OnSelect runs with the index of the tab that was clicked.
@@ -57,12 +62,7 @@ func OnSelect(f func(i int)) Option { return func(e *El) { e.onSelect = f } }
 // not fit, keeping the active tab in view. It grows to the free width.
 func ScrollTabs(state *ScrollState, items []TabItem, active int, opts ...Option) *El {
 	var strip *El
-	pick := func(i int) {
-		if strip.onSelect != nil {
-			strip.onSelect(i)
-		}
-	}
-	strip = HScroll(state, with(append([]Item{Grow(1), PadL(2)}, tabItems(items, active, pick)...), opts)...)
+	strip = HScroll(state, with(append([]Item{Grow(1), PadL(2)}, tabItems(items, active, selector(&strip))...), opts)...)
 	return strip
 }
 

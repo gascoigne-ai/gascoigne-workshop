@@ -67,22 +67,29 @@ func revealFocused(root Node) {
 	}
 }
 
-// focusable reports whether e takes keyboard focus: text fields and code views.
-func (e *El) focusable() bool { return e.field != nil || e.view != nil || e.area != nil }
-
-func (e *El) focused() bool {
-	switch {
-	case e.field != nil:
-		return e.field.Focused
-	case e.area != nil:
-		return e.area.Focused
-	}
-	return e.view != nil && e.view.Focused
+// focusState is what takes keyboard focus: a text field, text area or code
+// view. Each answers for itself, so the focus code does not ask which it is.
+type focusState interface {
+	focused() bool
+	setFocused(on bool)
 }
 
-// focusKey is the state e edits, which is what identifies it as the focus
-// owner.
-func (e *El) focusKey() any {
+func (f *TextField) focused() bool { return f.Focused }
+func (f *TextField) setFocused(on bool) {
+	f.Focused = on
+	if on {
+		f.SelectAll()
+	}
+}
+
+func (a *TextArea) focused() bool      { return a.Focused }
+func (a *TextArea) setFocused(on bool) { a.Focused = on }
+func (v *CodeView) focused() bool      { return v.Focused }
+func (v *CodeView) setFocused(on bool) { v.Focused = on }
+
+// state is what e edits and focuses, nil for an element that is not
+// focusable. It is also what identifies the focus owner.
+func (e *El) state() focusState {
 	switch {
 	case e.field != nil:
 		return e.field
@@ -94,15 +101,28 @@ func (e *El) focusKey() any {
 	return nil
 }
 
+func (e *El) focusable() bool { return e.state() != nil }
+
+func (e *El) focused() bool { return e.focusable() && e.state().focused() }
+
+func (e *El) setFocused(on bool) {
+	if state := e.state(); state != nil {
+		state.setFocused(on)
+	}
+}
+
+// focusKey identifies the focus owner: the state's pointer.
+func (e *El) focusKey() any {
+	if state := e.state(); state != nil {
+		return state
+	}
+	return nil
+}
+
 // blurKey takes the keyboard from a state that may no longer be in the tree.
 func blurKey(key any) {
-	switch state := key.(type) {
-	case *TextField:
-		state.Focused = false
-	case *TextArea:
-		state.Focused = false
-	case *CodeView:
-		state.Focused = false
+	if state, ok := key.(focusState); ok {
+		state.setFocused(false)
 	}
 }
 
@@ -131,20 +151,6 @@ func settleFocus(c *core.Ctx, root Node) {
 		if key := e.focusKey(); key != c.FocusOwner && e.focused() {
 			e.setFocused(false)
 		}
-	}
-}
-
-func (e *El) setFocused(on bool) {
-	switch {
-	case e.field != nil:
-		e.field.Focused = on
-		if on {
-			e.field.SelectAll()
-		}
-	case e.area != nil:
-		e.area.Focused = on
-	case e.view != nil:
-		e.view.Focused = on
 	}
 }
 

@@ -925,3 +925,17 @@ func TestOnClickAtGetsThePointerOfTheClick(t *testing.T) {
 		t.Fatalf("calls %d at %d,%d", n, gx, gy)
 	}
 }
+
+func TestCheckboxOnChangeRunsWhenTheBoxIsClicked(t *testing.T) {
+	var changes int
+	root := Row(Checkbox(true, W(20), H(20), OnChange(func() { changes++ })))
+	c := testCtx(t)
+	Layout(c, root, 100, 20)
+	c.In = core.Input{X: 60, Y: 10, Click: true} // beside the box
+	Update(c, root)
+	c.In = core.Input{X: 10, Y: 10, Click: true}
+	Update(c, root)
+	if changes != 1 {
+		t.Fatalf("OnChange ran %d times, want 1", changes)
+	}
+}

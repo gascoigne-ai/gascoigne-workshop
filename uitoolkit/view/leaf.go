@@ -111,6 +111,13 @@ type checkB struct{ plain }
 
 func (checkB) measure(*El, *core.Ctx, int) (int, int) { return 14, 14 }
 
+// update runs OnChange when the box is clicked; the caller owns the value.
+func (checkB) update(e *El, c *core.Ctx) {
+	if e.onChange != nil && c.In.Hit(e.rect) {
+		e.onChange()
+	}
+}
+
 func (checkB) draw(e *El, c *core.Ctx, dst *ebiten.Image) {
 	r := e.rect
 	drawCheckbox(c, dst, core.Rect{X: r.X + (r.W-14)/2, Y: r.Y + (r.H-14)/2, W: 14, H: 14}, e.on, c.Hovered(r))
@@ -136,6 +143,7 @@ func drawCheckbox(c *core.Ctx, dst *ebiten.Image, box core.Rect, on, hover bool)
 }
 
 // Checkbox is a square that shows an accent fill and a check when on.
+// OnChange runs when it is clicked; the caller flips the value it passes in.
 func Checkbox(on bool, opts ...Option) *El {
 	e := newEl(checkB{}, with(nil, opts))
 	e.on = on
