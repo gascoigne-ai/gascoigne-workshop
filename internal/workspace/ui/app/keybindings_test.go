@@ -19,7 +19,7 @@ func TestEveryDefaultBindingRoundTripsAndHasAnID(t *testing.T) {
 			t.Errorf("shortcut %q has a missing or duplicate id %q", s.name, s.id)
 		}
 		ids[s.id] = true
-		def := engine.Binding{Key: s.key, Ctrl: s.ctrl, Shift: s.shift, Alt: s.alt, Bound: true}
+		def := s.def
 		back, err := engine.ParseBinding(def.String())
 		if err != nil || back != def {
 			t.Errorf("%s: %q does not round trip: %+v %v", s.id, def.String(), back, err)

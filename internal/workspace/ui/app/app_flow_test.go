@@ -755,7 +755,7 @@ func TestShortcutsNeedTheirModifiers(t *testing.T) {
 func TestShortcutTableHasUniqueBindingsAndLabels(t *testing.T) {
 	seen := map[string]bool{}
 	for _, s := range shortcuts {
-		id := s.label()
+		id := s.def.String()
 		if s.name == "" || s.run == nil || seen[id] {
 			t.Errorf("bad or duplicate shortcut %q (%q)", s.name, id)
 		}
@@ -3067,7 +3067,7 @@ func TestColorsAreRestoredAtStart(t *testing.T) {
 func TestShortcutLabelsReadNaturally(t *testing.T) {
 	labels := map[string]string{}
 	for _, s := range shortcuts {
-		labels[s.name] = s.label()
+		labels[s.name] = s.def.String()
 	}
 	want := map[string]string{"Move row up": "Alt+Up", "Move row down": "Alt+Down", "Delete row": "Delete", "Settings": "Ctrl+,", "Next tab": "Ctrl+Tab"}
 	for name, label := range want {

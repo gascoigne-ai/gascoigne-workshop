@@ -7,7 +7,7 @@ import (
 
 // action is the shortcut as the Shortcuts page knows it.
 func (s shortcut) action() shortcutpage.Action {
-	return shortcutpage.Action{ID: s.id, Name: s.name, Default: engine.Binding{Key: s.key, Ctrl: s.ctrl, Shift: s.shift, Alt: s.alt, Bound: true}}
+	return shortcutpage.Action{ID: s.id, Name: s.name, Default: s.def}
 }
 
 // bindingOf is the effective binding of a shortcut: the user's override

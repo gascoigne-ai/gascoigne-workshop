@@ -1,8 +1,6 @@
 package ui
 
 import (
-	"strings"
-
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/shortcutpage"
@@ -15,48 +13,33 @@ import (
 // modifiers match exactly, and a plain key (one the user also types
 // with) is held back while a text field has the keyboard.
 type shortcut struct {
-	id, name         string // id names the action in the settings file
-	key              ebiten.Key
-	ctrl, shift, alt bool
-	run              func(a *App)
+	id, name string         // id names the action in the settings file
+	def      engine.Binding // the binding until the user rebinds it
+	run      func(a *App)
 }
 
 // shortcuts is the whole key map; the settings menu lists it.
 var shortcuts = []shortcut{
-	{"send", "Send request", ebiten.KeyEnter, true, false, false, (*App).sendCurrent},
-	{"focus-url", "Focus URL", ebiten.KeyL, true, false, false, (*App).focusURL},
-	{"new-request", "New request", ebiten.KeyT, true, false, false, (*App).newRequest},
-	{"close-tab", "Close tab", ebiten.KeyW, true, false, false, func(a *App) { a.closeTab(a.list.Active) }},
-	{"next-tab", "Next tab", ebiten.KeyTab, true, false, false, func(a *App) { a.switchTab(1) }},
-	{"prev-tab", "Previous tab", ebiten.KeyTab, true, true, false, func(a *App) { a.switchTab(-1) }},
-	{"duplicate-row", "Duplicate row", ebiten.KeyD, true, false, false, (*App).duplicateRow},
-	{"move-row-up", "Move row up", ebiten.KeyArrowUp, false, false, true, func(a *App) { a.moveRow(-1) }},
-	{"move-row-down", "Move row down", ebiten.KeyArrowDown, false, false, true, func(a *App) { a.moveRow(1) }},
-	{"delete-row", "Delete row", ebiten.KeyDelete, false, false, false, (*App).deleteRow},
-	{"complete-variable", "Complete variable", ebiten.KeySpace, true, false, false, (*App).completeVariable},
-	{"save", "Save collection", ebiten.KeyS, true, false, false, (*App).saveWorkspace},
-	{"open-workspace", "Open collection folder", ebiten.KeyO, true, false, false, (*App).promptWorkspace},
-	{"find", "Find in response", ebiten.KeyF, true, false, false, (*App).openFind},
-	{"settings", "Settings", ebiten.KeyComma, true, false, false, func(a *App) { a.menu = true }},
+	{"send", "Send request", keys(ebiten.KeyEnter, true, false, false), (*App).sendCurrent},
+	{"focus-url", "Focus URL", keys(ebiten.KeyL, true, false, false), (*App).focusURL},
+	{"new-request", "New request", keys(ebiten.KeyT, true, false, false), (*App).newRequest},
+	{"close-tab", "Close tab", keys(ebiten.KeyW, true, false, false), func(a *App) { a.closeTab(a.list.Active) }},
+	{"next-tab", "Next tab", keys(ebiten.KeyTab, true, false, false), func(a *App) { a.switchTab(1) }},
+	{"prev-tab", "Previous tab", keys(ebiten.KeyTab, true, true, false), func(a *App) { a.switchTab(-1) }},
+	{"duplicate-row", "Duplicate row", keys(ebiten.KeyD, true, false, false), (*App).duplicateRow},
+	{"move-row-up", "Move row up", keys(ebiten.KeyArrowUp, false, false, true), func(a *App) { a.moveRow(-1) }},
+	{"move-row-down", "Move row down", keys(ebiten.KeyArrowDown, false, false, true), func(a *App) { a.moveRow(1) }},
+	{"delete-row", "Delete row", keys(ebiten.KeyDelete, false, false, false), (*App).deleteRow},
+	{"complete-variable", "Complete variable", keys(ebiten.KeySpace, true, false, false), (*App).completeVariable},
+	{"save", "Save collection", keys(ebiten.KeyS, true, false, false), (*App).saveWorkspace},
+	{"open-workspace", "Open collection folder", keys(ebiten.KeyO, true, false, false), (*App).promptWorkspace},
+	{"find", "Find in response", keys(ebiten.KeyF, true, false, false), (*App).openFind},
+	{"settings", "Settings", keys(ebiten.KeyComma, true, false, false), func(a *App) { a.menu = true }},
 }
 
-// label is the binding as users read it, for example "Ctrl+Shift+Tab".
-func (s shortcut) label() string {
-	var parts []string
-	if s.ctrl {
-		parts = append(parts, "Ctrl")
-	}
-	if s.alt {
-		parts = append(parts, "Alt")
-	}
-	if s.shift {
-		parts = append(parts, "Shift")
-	}
-	name, ok := engine.KeyNames[s.key]
-	if !ok {
-		name = s.key.String()
-	}
-	return strings.Join(append(parts, name), "+")
+// keys is a default binding for the shortcut table.
+func keys(key ebiten.Key, ctrl, shift, alt bool) engine.Binding {
+	return engine.Binding{Key: key, Ctrl: ctrl, Shift: shift, Alt: alt, Bound: true}
 }
 
 // runShortcuts runs the bindings whose key went down this frame.
