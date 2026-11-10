@@ -210,34 +210,40 @@ func (a *App) header() Node {
 // requestTabs is the strip of open requests, with a "+" for a new one.
 func (a *App) requestTabs() Node {
 	return Row(H(tabsH), PadT(tabGap), Bg(w.Frame), Control("tabstrip"), BorderB(w.Border),
-		HScroll(&a.tabsScroll, Grow(1), For(a.openTabs(), func(i int, t *reqTab) Node {
-			look := []Item{} // inactive tabs blend into the strip; the active one joins the pane
-			if i == a.list.Active {
-				look = []Item{Bg(w.Bg), Edges(w.AccentLine, true, true, true), KeepInView()} // outlined top, left and right, open at the bottom
-			}
-			grab := OnClick(func() {
-				a.updateTabs(tabs.Activate{Index: i})
-				if !a.tabsScroll.Overflowing { // an overflowing strip is panned by a left drag; the middle button reorders
-					a.updateTabs(tabs.DragBegin{Index: i})
-				}
-			})
-			return Row(append(look, OnMiddleClick(func() { a.updateTabs(tabs.DragBegin{Index: i}) }), // a middle drag reorders, like a left one
-				OnRightClick(func(x, y int) { a.openMenu(x, y, a.tabMenuItems(i)) }),
-				When(i > 0, Separator(12)),
-				Row(PadL(14), Gap(8), AlignItems(AlignBaseline), grab, OnDragOver(func() { a.updateTabs(tabs.DragOver{Index: i}) }),
-					Text(requestBadge(t.Req.Protocol, t.Req.Method), Small(), Color(appearance.MethodToken(t.Req.Method)), W(tabBadgeW)),
-					Text(t.Req.Name),
-					Row(W(tabDirtyW), AlignSelf(AlignStretch), If(dirty(t), Text(dirtyMark, Color(w.AccentLine), Grow(1)))),
-				),
-				Row(W(24), OnClick(func() { a.closeTab(i) }), Tooltip(a.hint("Close tab", "close-tab")),
-					CrossIcon(Grow(1)),
-				),
-			)...)
-		})),
+		HScroll(&a.tabsScroll, Grow(1), For(a.openTabs(), a.requestTab)),
 		Row(W(40), OnClick(a.newRequest), Tooltip(a.hint("New request", "new-request")),
 			PlusIcon(Grow(1)),
 		),
 	)
+}
+
+// requestTab is tab i of the strip: badge, name, dirty mark and the cross.
+func (a *App) requestTab(i int, t *reqTab) Node {
+	look := []Item{} // inactive tabs blend into the strip; the active one joins the pane
+	if i == a.list.Active {
+		look = []Item{Bg(w.Bg), Edges(w.AccentLine, true, true, true), KeepInView()} // outlined top, left and right, open at the bottom
+	}
+	return Row(append(look, OnMiddleClick(func() { a.updateTabs(tabs.DragBegin{Index: i}) }), // a middle drag reorders, like a left one
+		OnRightClick(func(x, y int) { a.openMenu(x, y, a.tabMenuItems(i)) }),
+		When(i > 0, Separator(12)),
+		Row(PadL(14), Gap(8), AlignItems(AlignBaseline), OnClick(func() { a.pressTab(i) }), OnDragOver(func() { a.updateTabs(tabs.DragOver{Index: i}) }),
+			Text(requestBadge(t.Req.Protocol, t.Req.Method), Small(), Color(appearance.MethodToken(t.Req.Method)), W(tabBadgeW)),
+			Text(t.Req.Name),
+			Row(W(tabDirtyW), AlignSelf(AlignStretch), If(dirty(t), Text(dirtyMark, Color(w.AccentLine), Grow(1)))),
+		),
+		Row(W(24), OnClick(func() { a.closeTab(i) }), Tooltip(a.hint("Close tab", "close-tab")),
+			CrossIcon(Grow(1)),
+		),
+	)...)
+}
+
+// pressTab activates tab i and starts dragging it, unless the strip
+// overflows: a left drag then pans the strip, and the middle button reorders.
+func (a *App) pressTab(i int) {
+	a.updateTabs(tabs.Activate{Index: i})
+	if !a.tabsScroll.Overflowing {
+		a.updateTabs(tabs.DragBegin{Index: i})
+	}
 }
 
 // urlBar is [protocol | method | URL field ........] [Send].
