@@ -142,11 +142,24 @@ func tabItems(items []TabItem, active int, onSelect func(i int)) []Item {
 			If(it.Badge > 0, Text(strconv.Itoa(it.Badge), Small(), Muted())),
 		}
 		if i == active { // outlined top, left and right in the accent and open at the bottom, where the strip's line runs under the others
-			tab = append(tab, Bg(core.Bg), EdgeT(core.AccentLine), EdgeL(core.AccentLine), EdgeR(core.AccentLine), KeepInView())
+			tab = append(tab, ActiveTab())
 		}
 		out[i] = Row(tab...)
 	}
 	return out
+}
+
+// ActiveTab is the look of the open tab: the pane background, outlined in
+// the accent on top, left and right and open at the bottom, where the
+// strip's line runs under the other tabs; the strip scrolls it into view.
+// Tabs apply it to their active item; a hand-built tab (one with handlers
+// Tabs does not offer) uses it the same way.
+func ActiveTab() Option {
+	return func(tab *El) {
+		for _, option := range []Option{Bg(core.Bg), EdgeT(core.AccentLine), EdgeL(core.AccentLine), EdgeR(core.AccentLine), KeepInView()} {
+			option(tab)
+		}
+	}
 }
 
 func tabColor(active bool) core.Token {

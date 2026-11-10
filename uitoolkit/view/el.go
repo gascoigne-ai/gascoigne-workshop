@@ -26,7 +26,7 @@
 //	Size       W H MinW MaxW MinH MaxH Grow Optional Clip
 //	Spacing    Pad PadX PadY PadL PadT PadR PadB   Margin MarginX MarginY MarginL MarginT MarginR MarginB   Gap
 //	Layout     Row Col Stack Split Scroll HScroll Spacer   AlignItems AlignSelf JustifyContent
-//	Look       Bg Border BorderX BorderY BorderL BorderT BorderR BorderB HoverBg BorderInset Shadow Control EdgeT EdgeL EdgeR HoverColor Lighten
+//	Look       Bg ActiveTab Border BorderX BorderY BorderL BorderT BorderR BorderB HoverBg BorderInset Shadow Control EdgeT EdgeL EdgeR HoverColor Lighten
 //	Text       Text Caption Lines Note   Color Muted Bold Small Mono FontSource Ellipsis TextCenter
 //	Input      Field Area Code Slider Checkbox   (state: TextField TextArea CodeView)   Placeholder FieldPad Segments OnChange OnEnter OnTab
 //	Events     OnClick OnClickAt OnRightClick OnMiddleClick OnDragOver   Tooltip KeepInView

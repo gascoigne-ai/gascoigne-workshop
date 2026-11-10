@@ -173,3 +173,15 @@ func TestTabBarLeavesRoomAboveTheTabs(t *testing.T) {
 		t.Error("a tab bar has a line under it")
 	}
 }
+
+// The open tab joins the pane below it: the pane background, outlined in
+// the accent on top, left and right, and kept in view when the strip scrolls.
+func TestActiveTabLookIsOneOption(t *testing.T) {
+	tab := Row(ActiveTab())
+	if tab.bg != core.Bg || !tab.edgeTop || !tab.edgeLeft || !tab.edgeRight || tab.edgeTok != core.AccentLine {
+		t.Fatalf("active tab: bg %q edges top %v left %v right %v token %q", tab.bg, tab.edgeTop, tab.edgeLeft, tab.edgeRight, tab.edgeTok)
+	}
+	if plain := Row(); plain.edgeTop || plain.bg != "" {
+		t.Fatal("an inactive tab has no look")
+	}
+}

@@ -214,7 +214,7 @@ func (a *App) requestTabs() Node {
 func (a *App) requestTab(i int, t *reqTab) Node {
 	look := []Item{} // inactive tabs blend into the strip; the active one joins the pane
 	if i == a.list.Active {
-		look = []Item{Bg(w.Bg), EdgeT(w.AccentLine), EdgeL(w.AccentLine), EdgeR(w.AccentLine), KeepInView()} // outlined top, left and right, open at the bottom
+		look = []Item{ActiveTab()}
 	}
 	return Row(append(look, OnMiddleClick(func() { a.updateTabs(tabs.DragBegin{Index: i}) }), // a middle drag reorders, like a left one
 		OnRightClick(func(x, y int) { a.openMenu(x, y, a.tabMenuItems(i)) }),
