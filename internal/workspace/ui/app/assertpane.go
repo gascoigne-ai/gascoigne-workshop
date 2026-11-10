@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model/assert"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -24,7 +25,7 @@ func (a *App) runTests(t *reqTab) {
 // assertionsPane is where the assertions are written, one per line.
 func (a *App) assertionsPane(_ pane, t *reqTab, _ *ScrollState) Node {
 	sync := func() {
-		t.Req.Tests = t.tests.Text
+		editRequest(t, editor.TestsTyped{Text: t.tests.Text})
 		t.testResults = assert.Run(t.Req.Tests, t.Resp) // live, against the response on screen
 	}
 	return Col(Grow(1), Pad(w.Gutter), Gap(8),

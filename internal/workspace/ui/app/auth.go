@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -10,12 +11,11 @@ import (
 type authChoice struct{ id, label string }
 
 // authField is one input of an auth type: a text field, or a chooser
-// when choices are given. value points at the field's place in the
-// request's Auth.
+// when choices are given. id names the field's place in the request's Auth,
+// which the editor package knows.
 type authField struct {
 	id, label string
 	secret    bool
-	value     func(a *model.Auth) *string
 	choices   []authChoice
 }
 
@@ -30,16 +30,16 @@ type authType struct {
 var authTypes = []authType{
 	{id: model.AuthNone, label: "None", width: 64},
 	{id: model.AuthBearer, label: "Bearer", width: 72, fields: []authField{
-		{id: "token", label: "Token", secret: true, value: func(a *model.Auth) *string { return &a.Token }},
+		{id: "token", label: "Token", secret: true},
 	}},
 	{id: model.AuthBasic, label: "Basic", width: 64, fields: []authField{
-		{id: "user", label: "User", value: func(a *model.Auth) *string { return &a.User }},
-		{id: "password", label: "Password", secret: true, value: func(a *model.Auth) *string { return &a.Password }},
+		{id: "user", label: "User"},
+		{id: "password", label: "Password", secret: true},
 	}},
 	{id: model.AuthAPIKey, label: "API key", width: 80, fields: []authField{
-		{id: "keyname", label: "Name", value: func(a *model.Auth) *string { return &a.KeyName }},
-		{id: "keyvalue", label: "Value", secret: true, value: func(a *model.Auth) *string { return &a.KeyValue }},
-		{id: "keyin", label: "Add to", value: func(a *model.Auth) *string { return &a.KeyIn },
+		{id: "keyname", label: "Name"},
+		{id: "keyvalue", label: "Value", secret: true},
+		{id: "keyin", label: "Add to",
 			choices: []authChoice{{model.KeyInHeader, "Header"}, {model.KeyInQuery, "Query"}}},
 	}},
 }
@@ -74,8 +74,8 @@ func (t *reqTab) authInput(id string) *TextField {
 	}
 	f, _ := authFieldByID(id)
 	in := new(TextField)
-	if f.value != nil {
-		*in = NewTextField(*f.value(&t.Req.Auth))
+	if f.id != "" {
+		*in = NewTextField(editor.AuthValue(t.Req.Auth, f.id))
 	}
 	in.Masked = f.secret && !t.showSecrets
 	if t.auth == nil {
@@ -104,7 +104,7 @@ func (a *App) authPane(_ pane, t *reqTab, scroll *ScrollState) Node {
 	return Scroll(scroll, Pad(w.Gutter), Gap(8),
 		Row(H(w.RowH), Gap(6),
 			For(authTypes, func(_ int, at authType) Node {
-				choose := OnClick(func() { t.Req.Auth.Type = at.id })
+				choose := OnClick(func() { editRequest(t, editor.AuthTypeChosen{Type: at.id}) })
 				if at.id == current.id {
 					return PrimaryButton(at.label, W(at.width), choose)
 				}
@@ -125,8 +125,8 @@ func (a *App) authFieldRow(t *reqTab, f authField) Node {
 		return Row(H(w.RowH), Gap(12),
 			Text(f.label, W(120)),
 			Row(Gap(6), For(f.choices, func(_ int, c authChoice) Node {
-				choose := OnClick(func() { *f.value(&t.Req.Auth) = c.id })
-				stored := *f.value(&t.Req.Auth)
+				choose := OnClick(func() { editRequest(t, editor.AuthFieldSet{Field: f.id, Value: c.id}) })
+				stored := editor.AuthValue(t.Req.Auth, f.id)
 				if stored == c.id || (stored == "" && c.id == f.choices[0].id) {
 					return PrimaryButton(c.label, W(70), choose)
 				}
@@ -136,10 +136,11 @@ func (a *App) authFieldRow(t *reqTab, f authField) Node {
 	}
 	in := t.authInput(f.id)
 	in.Masked = f.secret && !t.showSecrets
+	sync := func() { editRequest(t, editor.AuthFieldSet{Field: f.id, Value: in.Text}) }
 	return Row(H(w.RowH), Gap(12),
 		Text(f.label, W(120)),
 		Field(in, Grow(1), Bg(w.Sunken),
-			OnChange(func() { *f.value(&t.Req.Auth) = in.Text }),
-			a.textMenuOpt(in, func() { *f.value(&t.Req.Auth) = in.Text })),
+			OnChange(sync),
+			a.textMenuOpt(in, sync)),
 	)
 }

@@ -12,7 +12,7 @@ Every edit of the request in a tab is a typed message handled by one pure `Updat
 - [done] Package `editor` (`request/controller/editor`; helper `editRequest` in `app.go`, a function not a method so `paramsChanged` can use it) with the URL, method, protocol and timeout edits; `urlEdited` and `paramsChanged` rules (`model.MergeParams`, `model.WithParams`) move into it. Table tests; the helper in `App`; the first writes in `app.go` go through it.
 - [done] Params, Headers, Vars and form-field table edits: no code change needed. They already follow the pattern: `App.applyRows` is the one place a table's rows change, it runs a pure `model.*` row function (`InsertRow`, `DuplicateRow`, `DeleteRow`, `SetAll`, `ParseBulk`) on a copy, undo and redo live in `tabs.RowHistory`, and no write to `Params`, `Headers`, `Vars` or a form row exists outside it. Turning each row operation into a message would only rename the call.
 - [done] Body: type, text, file path; GraphQL query, variables and starter operation (`BodyTyped`, `VarsTyped`, `BodyTypeChosen`, `OperationChosen`). The form fields are table rows and were done by the previous item.
-- [open] Auth fields and the assertions text (`assertpane.go`).
+- [done] Auth type and fields and the assertions text (`AuthTypeChosen`, `AuthFieldSet`, `TestsTyped`). The id-to-field table of the credentials moved from the App's `authField.value` accessors to `editor` (`AuthValue` reads), so the mapping exists once; an unknown field id panics, since the ids come from a table.
 - [open] gRPC method and stream flag (`grpcui.go`), and whatever write to `t.Req.` is left (grep `t\.Req\.[A-Za-z.]* =`); none remain outside `editor`'s helper.
 
 ## Acceptance

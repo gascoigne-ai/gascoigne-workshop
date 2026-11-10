@@ -41,6 +41,16 @@ type BodyTypeChosen struct{ Type, Text, FilePath string }
 // OperationChosen puts a starter GraphQL query and its variables in the body.
 type OperationChosen struct{ Query, Variables string }
 
+// AuthTypeChosen sets the authentication type.
+type AuthTypeChosen struct{ Type string }
+
+// AuthFieldSet sets one credential field, named by its id: token, user,
+// password, keyname, keyvalue or keyin.
+type AuthFieldSet struct{ Field, Value string }
+
+// TestsTyped is the assertions text changed.
+type TestsTyped struct{ Text string }
+
 func (URLTyped) editMsg()        {}
 func (ParamsChanged) editMsg()   {}
 func (MethodChosen) editMsg()    {}
@@ -50,6 +60,32 @@ func (BodyTyped) editMsg()       {}
 func (VarsTyped) editMsg()       {}
 func (BodyTypeChosen) editMsg()  {}
 func (OperationChosen) editMsg() {}
+func (AuthTypeChosen) editMsg()  {}
+func (AuthFieldSet) editMsg()    {}
+func (TestsTyped) editMsg()      {}
+
+// authFields is where each credential field named in AuthFieldSet lives.
+var authFields = map[string]func(*model.Auth) *string{
+	"token":    func(auth *model.Auth) *string { return &auth.Token },
+	"user":     func(auth *model.Auth) *string { return &auth.User },
+	"password": func(auth *model.Auth) *string { return &auth.Password },
+	"keyname":  func(auth *model.Auth) *string { return &auth.KeyName },
+	"keyvalue": func(auth *model.Auth) *string { return &auth.KeyValue },
+	"keyin":    func(auth *model.Auth) *string { return &auth.KeyIn },
+}
+
+// authField is the place of the credential field called id. An unknown id
+// is a mistake in the caller's table, not user input, so it panics.
+func authField(auth *model.Auth, id string) *string {
+	place, ok := authFields[id]
+	if !ok {
+		panic("editor: unknown auth field " + id)
+	}
+	return place(auth)
+}
+
+// AuthValue is the credential field of auth named by id.
+func AuthValue(auth model.Auth, field string) string { return *authField(&auth, field) }
 
 // Update returns req after msg. The request it is given is not changed: a
 // slice or map an edit changes is replaced, not written into.
@@ -77,6 +113,12 @@ func Update(req model.Request, msg Msg) model.Request {
 		return chooseBodyType(req, msg)
 	case OperationChosen:
 		req.Body, req.GraphQLVars = msg.Query, msg.Variables
+	case AuthTypeChosen:
+		req.Auth.Type = msg.Type
+	case AuthFieldSet:
+		*authField(&req.Auth, msg.Field) = msg.Value // req is a copy, and Auth holds only strings
+	case TestsTyped:
+		req.Tests = msg.Text
 	}
 	return req
 }

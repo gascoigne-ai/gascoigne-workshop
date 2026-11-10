@@ -152,3 +152,52 @@ func TestUpdateOperationChosenFillsQueryAndVariables(t *testing.T) {
 		t.Fatalf("body %q variables %q", got.Body, got.GraphQLVars)
 	}
 }
+
+func TestUpdateAuthTypeAndFieldsAreSetOneAtATime(t *testing.T) {
+	cases := []struct {
+		field string
+		read  func(model.Auth) string
+	}{
+		{"token", func(auth model.Auth) string { return auth.Token }},
+		{"user", func(auth model.Auth) string { return auth.User }},
+		{"password", func(auth model.Auth) string { return auth.Password }},
+		{"keyname", func(auth model.Auth) string { return auth.KeyName }},
+		{"keyvalue", func(auth model.Auth) string { return auth.KeyValue }},
+		{"keyin", func(auth model.Auth) string { return auth.KeyIn }},
+	}
+	for _, c := range cases {
+		t.Run(c.field, func(t *testing.T) {
+			got := Update(model.Request{}, AuthFieldSet{Field: c.field, Value: "v"})
+
+			if c.read(got.Auth) != "v" || AuthValue(got.Auth, c.field) != "v" {
+				t.Fatalf("%s not set: %+v", c.field, got.Auth)
+			}
+			other := model.Auth{Token: "t", User: "u", Password: "p", KeyName: "n", KeyValue: "kv", KeyIn: "i"}
+			after := Update(model.Request{Auth: other}, AuthFieldSet{Field: c.field, Value: "v"}).Auth
+			if before := AuthValue(other, c.field); before == "v" || after == other {
+				t.Fatalf("setting %s changed nothing, or changed the others: %+v", c.field, after)
+			}
+		})
+	}
+
+	got := Update(model.Request{}, AuthTypeChosen{Type: model.AuthBearer})
+	if got.Auth.Type != model.AuthBearer {
+		t.Fatalf("auth type %q", got.Auth.Type)
+	}
+}
+
+func TestUpdateAnUnknownAuthFieldIsABug(t *testing.T) {
+	defer func() {
+		if recover() == nil {
+			t.Fatal("an unknown auth field must panic, not be dropped")
+		}
+	}()
+
+	Update(model.Request{}, AuthFieldSet{Field: "pasword", Value: "x"})
+}
+
+func TestUpdateTestsTyped(t *testing.T) {
+	if got := Update(model.Request{}, TestsTyped{Text: "status == 200"}); got.Tests != "status == 200" {
+		t.Fatalf("tests %q", got.Tests)
+	}
+}
