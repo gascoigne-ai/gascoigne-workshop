@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/jsonview"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -58,7 +59,7 @@ func (p pane) captionOf(a *App) string {
 }
 
 func paramsChanged(t *reqTab) {
-	t.Req.URL = model.WithParams(t.Req.URL, t.Req.Params)
+	editRequest(t, editor.ParamsChanged{})
 	t.url = NewTextField(t.Req.URL)
 }
 
@@ -441,7 +442,7 @@ func (a *App) settingsPane(_ pane, t *reqTab, scroll *ScrollState) Node {
 func (a *App) timeoutEdited(t *reqTab) {
 	text := strings.TrimSpace(t.timeout.Text)
 	if text == "" {
-		t.Req.TimeoutSec = 0
+		editRequest(t, editor.TimeoutSet{Seconds: 0})
 		return
 	}
 	n, err := strconv.Atoi(text)
@@ -450,7 +451,7 @@ func (a *App) timeoutEdited(t *reqTab) {
 		t.timeout.Focused = true
 		return
 	}
-	t.Req.TimeoutSec = n
+	editRequest(t, editor.TimeoutSet{Seconds: n})
 }
 
 // responseEmpty is noResponse plus the case of a body that is not text.

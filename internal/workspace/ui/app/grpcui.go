@@ -3,6 +3,7 @@ package ui
 import (
 	"context"
 	"errors"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/bus"
 	"strings"
@@ -33,7 +34,7 @@ func (a *App) pickGRPCMethod(t *reqTab) {
 			}
 			items := make([]menuItem, 0, len(methods))
 			for _, method := range methods {
-				items = append(items, menuItem{label: method, run: func() { t.Req.Method = method }})
+				items = append(items, menuItem{label: method, run: func() { editRequest(t, editor.MethodChosen{Method: method}) }})
 			}
 			a.openMenu(x, y, items)
 		}

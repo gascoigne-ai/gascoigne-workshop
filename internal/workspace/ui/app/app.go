@@ -27,11 +27,11 @@ import (
 	"net/http/cookiejar"
 	"slices"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/state"
@@ -605,19 +605,19 @@ func (a *App) newRequest() { a.newRequestIn(a.selectedFolder()) }
 
 func (a *App) cycleProtocol(t *reqTab) {
 	a.disconnect(t) // a connection belongs to the protocol that opened it
-	t.Req.Protocol = next(protocolOrder, t.Req.Protocol)
-	if t.Req.Protocol == "rest" && (t.Req.Method == "" || strings.Contains(t.Req.Method, "/")) { // "" or a gRPC method
-		t.Req.Method = "GET"
-	}
+	editRequest(t, editor.ProtocolChosen{Protocol: next(protocolOrder, t.Req.Protocol)})
 }
 
-func (a *App) cycleMethod(t *reqTab) { t.Req.Method = next(methodOrder, t.Req.Method) }
+func (a *App) cycleMethod(t *reqTab) {
+	editRequest(t, editor.MethodChosen{Method: next(methodOrder, t.Req.Method)})
+}
 
 // urlEdited keeps the request and its Params table in step with the URL field.
-func (a *App) urlEdited(t *reqTab) {
-	t.Req.URL = t.url.Text
-	t.Req.Params = model.MergeParams(t.Req.Params, t.Req.URL)
-}
+func (a *App) urlEdited(t *reqTab) { editRequest(t, editor.URLTyped{Text: t.url.Text}) }
+
+// editRequest applies an edit to the request of t, which is the collection's
+// own, so the sidebar and the autosave see it at once.
+func editRequest(t *reqTab, msg editor.Msg) { *t.Req = editor.Update(*t.Req, msg) }
 
 // dirtyMark is shown on tabs whose request changed since it was opened.
 const dirtyMark = "\u2022"
