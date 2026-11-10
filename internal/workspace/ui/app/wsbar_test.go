@@ -25,11 +25,11 @@ func TestMessagesToolbarTemplateMatchesTheGoView(t *testing.T) {
 			Text(connState(tab), Small(), Muted()),
 			Spacer(),
 			a.viewChip("Auto-reconnect", tab.Reconnect, 116, func() {}),
-			If(len(tab.Tools) > 0, Button(fmt.Sprintf("Tools (%d)", len(tab.Tools)), W(84), H(w.CompactH), OnClick(func() {}), Tooltip("Pick a tool: the composer gets a call with its arguments filled in"))),
-			If(len(tab.Resources) > 0, Button(fmt.Sprintf("Resources (%d)", len(tab.Resources)), W(104), H(w.CompactH), OnClick(func() {}), Tooltip("Pick a resource: the composer gets a read of it"))),
-			If(len(tab.Prompts) > 0, Button(fmt.Sprintf("Prompts (%d)", len(tab.Prompts)), W(94), H(w.CompactH), OnClick(func() {}), Tooltip("Pick a prompt: the composer gets a request for it"))),
-			Button("Ping", W(56), H(w.CompactH), OnClick(func() {}), Tooltip("Send a ping frame")),
-			Button("Clear", W(56), H(w.CompactH), OnClick(func() {}), Tooltip("Empty the message log")),
+			If(len(tab.Tools) > 0, Button(fmt.Sprintf("Tools (%d)", len(tab.Tools)), MinW(84), H(w.CompactH), OnClick(func() {}), Tooltip("Pick a tool: the composer gets a call with its arguments filled in"))),
+			If(len(tab.Resources) > 0, Button(fmt.Sprintf("Resources (%d)", len(tab.Resources)), MinW(104), H(w.CompactH), OnClick(func() {}), Tooltip("Pick a resource: the composer gets a read of it"))),
+			If(len(tab.Prompts) > 0, Button(fmt.Sprintf("Prompts (%d)", len(tab.Prompts)), MinW(94), H(w.CompactH), OnClick(func() {}), Tooltip("Pick a prompt: the composer gets a request for it"))),
+			Button("Ping", MinW(56), H(w.CompactH), OnClick(func() {}), Tooltip("Send a ping frame")),
+			Button("Clear", MinW(56), H(w.CompactH), OnClick(func() {}), Tooltip("Empty the message log")),
 		)
 		tplView := a.messagesToolbar(tab)
 		Layout(a.ctx, goView, 700, 36)

@@ -249,13 +249,13 @@ func (a *App) pressTab(i int) {
 // urlBar is [protocol | method | URL field ........] [Send].
 func (a *App) urlBar(t *reqTab) Node {
 	isREST, isGRPC := t.Req.Protocol == "rest", t.Req.Protocol == "grpc"
-	send := PrimaryButton("Send", W(80), OnClick(func() { a.send(t) }), Tooltip(a.hint("Send the request", "send")))
+	send := PrimaryButton("Send", MinW(80), OnClick(func() { a.send(t) }), Tooltip(a.hint("Send the request", "send")))
 	if isSocket(t) {
 		label, hint := "Connect", "Open the connection"
 		if t.Active() {
 			label, hint = "Disconnect", "Close the connection"
 		}
-		send = PrimaryButton(label, W(96), OnClick(func() { a.toggleConnection(t) }), Tooltip(a.hint(hint, "send")))
+		send = PrimaryButton(label, MinW(96), OnClick(func() { a.toggleConnection(t) }), Tooltip(a.hint(hint, "send")))
 	} else if t.Sending {
 		send = PrimaryButton("Cancel", W(80), OnClick(func() { a.cancelSend(t) }), Tooltip("Cancel the running request"))
 	}

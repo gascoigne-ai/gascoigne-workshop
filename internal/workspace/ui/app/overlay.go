@@ -245,9 +245,9 @@ func (a *App) dialogView() Node {
 				Spacer(),
 				For(d.buttons, func(_ int, b dialogButton) Node {
 					if b.primary {
-						return PrimaryButton(b.label, W(80), OnClick(b.run))
+						return PrimaryButton(b.label, MinW(80), OnClick(b.run))
 					}
-					return Button(b.label, W(80), OnClick(b.run))
+					return Button(b.label, MinW(80), OnClick(b.run))
 				}),
 			),
 		),

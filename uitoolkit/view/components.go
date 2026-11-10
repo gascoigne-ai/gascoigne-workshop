@@ -7,11 +7,14 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
+// buttonPadX is the inset between the edge of a button and its label.
+const buttonPadX = 10
+
 // Button is an outlined chip with a centered label; it brightens on hover.
 func Button(label string, opts ...Option) *El {
 	return Row(with([]Item{
-		Bg(core.Sunken), Control("button"), Lighten(),
-		Text(label, TextCenter(), Grow(1), Color(core.ChipText)),
+		Bg(core.Sunken), Control("button"), Lighten(), PadX(buttonPadX),
+		Text(label, TextCenter(), Ellipsis(), Grow(1), Color(core.ChipText)),
 	}, opts)...)
 }
 
@@ -27,8 +30,8 @@ func LinkButton(label string, opts ...Option) *El {
 // PrimaryButton is the accent-colored call-to-action variant of Button.
 func PrimaryButton(label string, opts ...Option) *El {
 	return Row(with([]Item{
-		Bg(core.Accent), Control("primary"), Lighten(),
-		Text(label, TextCenter(), Grow(1), Color(core.AccentText)),
+		Bg(core.Accent), Control("primary"), Lighten(), PadX(buttonPadX),
+		Text(label, TextCenter(), Ellipsis(), Grow(1), Color(core.AccentText)),
 	}, opts)...)
 }
 

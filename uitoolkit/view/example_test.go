@@ -22,8 +22,8 @@ func Example() {
 	// Output:
 	// flow padL=12 padT=12 padR=12 padB=12 gap=8
 	//   textB text="Hello" fg=muted
-	//   flow w=80 bg=sunken control=button lighten=true
-	//     textB text="Log out" grow=1 fg=chip-text center=true
+	//   flow w=80 padL=10 padR=10 bg=sunken control=button lighten=true
+	//     textB text="Log out" grow=1 fg=chip-text ellipsis=true center=true
 	//   textB text="a" small=true
 	//   textB text="b" small=true
 }
@@ -34,8 +34,8 @@ func ExampleButton() {
 	b := view.Button("Save", view.Bg(core.Accent))
 	fmt.Print(view.Dump(b))
 	// Output:
-	// flow bg=accent control=button lighten=true
-	//   textB text="Save" grow=1 fg=chip-text center=true
+	// flow padL=10 padR=10 bg=accent control=button lighten=true
+	//   textB text="Save" grow=1 fg=chip-text ellipsis=true center=true
 }
 
 // Widgets keep their state in plain structs the application owns; a
