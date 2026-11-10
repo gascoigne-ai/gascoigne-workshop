@@ -538,7 +538,7 @@ func (a *App) step(in core.Input) {
 	if active || drained || pruned {
 		a.markStale()
 	}
-	if restartsCaret(in) {
+	if in.RestartsCaret() {
 		a.ctx.RestartCaret()
 	}
 	a.lastIn = in

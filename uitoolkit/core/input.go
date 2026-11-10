@@ -83,6 +83,14 @@ func withoutEdit(edits []Edit, drop Edit) []Edit {
 	return kept
 }
 
+// RestartsCaret reports whether this input shows a text caret again:
+// typing, editing keys and clicks do; a pointer moving over the window
+// does not.
+func (in Input) RestartsCaret() bool {
+	return len(in.Typed) > 0 || len(in.Keys) > 0 || len(in.Edits) > 0 || in.Click || in.Enter ||
+		in.Paste || in.Cut || in.Undo || in.Redo || in.SelectAll
+}
+
 // Hit reports whether a click landed inside r.
 func (in Input) Hit(r Rect) bool { return in.Click && r.Contains(in.X, in.Y) }
 

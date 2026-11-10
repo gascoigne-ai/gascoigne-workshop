@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
 )
 
@@ -29,13 +28,6 @@ func (a *App) markFrame(active bool) {
 	if engine.MustDraw(a.ctx.Tick, a.pacer.TPS(), active, a.alwaysDraw()) {
 		a.dirty = true
 	}
-}
-
-// restartsCaret reports whether this input shows the caret again: typing,
-// editing keys and clicks do; a pointer moving over the window does not.
-func restartsCaret(in core.Input) bool {
-	return len(in.Typed) > 0 || len(in.Keys) > 0 || len(in.Edits) > 0 || in.Click || in.Enter ||
-		in.Paste || in.Cut || in.Undo || in.Redo || in.SelectAll
 }
 
 // alwaysDraw reports whether every frame must be drawn (screenshots).

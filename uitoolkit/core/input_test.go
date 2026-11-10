@@ -47,3 +47,27 @@ func TestInputPressed(t *testing.T) {
 		t.Fatal("Pressed must report only keys that went down")
 	}
 }
+
+func TestInputRestartsCaret(t *testing.T) {
+	tests := []struct {
+		name  string
+		input Input
+		want  bool
+	}{
+		{"typing", Input{Typed: []rune("a")}, true},
+		{"key down", Input{Keys: []ebiten.Key{ebiten.KeyA}}, true},
+		{"editing key", Input{Edits: []Edit{EditLeft}}, true},
+		{"click", Input{Click: true}, true},
+		{"enter", Input{Enter: true}, true},
+		{"paste", Input{Paste: true}, true},
+		{"pointer moving only", Input{X: 10, Y: 20}, false},
+		{"wheel only", Input{Wheel: 1}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.input.RestartsCaret(); got != tt.want {
+				t.Fatalf("RestartsCaret = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
