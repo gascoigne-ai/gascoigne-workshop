@@ -30,9 +30,9 @@ func (a *App) pickFile(title string, save bool, name string, done func(path stri
 		switch {
 		case err == port.ErrCancelled || ctx.Err() != nil: // closed by the user, or taken back
 		case err != nil:
-			a.later <- func() { a.toast("File dialog failed: "+err.Error(), true) }
+			a.bus.Dispatch(func() { a.toast("File dialog failed: "+err.Error(), true) })
 		default:
-			a.later <- func() { done(path) }
+			a.bus.Dispatch(func() { done(path) })
 		}
 	}()
 	return stop

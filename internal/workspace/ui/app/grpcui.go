@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/bus"
 	"strings"
 
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -21,11 +22,11 @@ func (a *App) pickGRPCMethod(t *reqTab) {
 	x, y := a.ctx.In.X, a.ctx.In.Y
 	a.status = "Listing methods of " + req.URL
 	timeout := a.timeoutFor(req) // read here: the goroutine must not touch App fields
-	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	a.bus.Run(context.Background(), func(ctx context.Context) bus.Msg {
+		ctx, cancel := context.WithTimeout(ctx, timeout)
 		defer cancel()
 		methods, err := a.listGRPCMethods(ctx, req)
-		a.later <- func() {
+		return func() { // runs on the UI goroutine
 			if err != nil {
 				a.toast("Listing methods failed: "+err.Error(), true)
 				return
@@ -36,7 +37,7 @@ func (a *App) pickGRPCMethod(t *reqTab) {
 			}
 			a.openMenu(x, y, items)
 		}
-	}()
+	})
 }
 
 // grpcMethodChip is the chip of a gRPC tab that shows its method and,

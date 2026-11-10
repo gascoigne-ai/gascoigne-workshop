@@ -80,7 +80,7 @@ func (a *App) cancelSettingsFilePick() {
 func (a *App) Pointer() (int, int) { return a.ctx.In.X, a.ctx.In.Y }
 
 // Later runs f on the UI goroutine.
-func (a *App) Later(f func()) { a.later <- f }
+func (a *App) Later(f func()) { a.bus.Dispatch(f) }
 
 // OpenMenu opens a menu of items at a point of the window.
 func (a *App) OpenMenu(x, y int, items []settingsui.MenuItem) {

@@ -26,11 +26,7 @@ func (a *App) sampleViaDialog(ctx context.Context, request reqport.SamplingReque
 	var shown *dialog
 	for shown == nil {
 		opened := make(chan *dialog, 1)
-		select {
-		case a.later <- func() { opened <- a.openSamplingDialog(request, answer, declined) }:
-		case <-ctx.Done():
-			return reqport.SamplingResult{}, false
-		}
+		a.bus.Dispatch(func() { opened <- a.openSamplingDialog(request, answer, declined) })
 		select {
 		case shown = <-opened:
 		case <-ctx.Done():
@@ -51,14 +47,11 @@ func (a *App) sampleViaDialog(ctx context.Context, request reqport.SamplingReque
 	case <-declined:
 		return reqport.SamplingResult{}, false
 	case <-ctx.Done():
-		select { // the session ended: take the question off the screen
-		case a.later <- func() {
+		a.bus.Dispatch(func() { // the session ended: take the question off the screen
 			if a.dialog == shown {
 				a.closeDialog()
 			}
-		}:
-		default:
-		}
+		})
 		return reqport.SamplingResult{}, false
 	}
 }

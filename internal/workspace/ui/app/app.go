@@ -137,8 +137,7 @@ type App struct {
 	expanded    map[*model.Folder]bool
 	tabs        []*reqTab
 	active      int
-	bus         *bus.Bus    // what goroutines report back, drained once per frame
-	later       chan func() // things other goroutines want done on the UI goroutine, such as a chosen file
+	bus         *bus.Bus // what goroutines report back, drained once per frame
 	status      string
 	w, h        int
 	shot        screenshot
@@ -251,7 +250,6 @@ func NewApp(opts Options) (*App, error) {
 		defaultWorkspace: opts.DefaultWorkspace,
 		expanded:         map[*model.Folder]bool{},
 		bus:              bus.New(),
-		later:            make(chan func(), 8),
 		status:           "Ready",
 		shot:             screenshot{path: opts.ScreenshotPath, sendOnStart: opts.SendOnStart, set: opts.ScreenshotSet},
 
@@ -396,18 +394,7 @@ func timeoutText(sec int) string {
 
 // drain applies what other goroutines reported and reports whether there was
 // anything.
-func (a *App) drain() (any bool) {
-	any = a.bus.Drain(a.handle)
-	for {
-		select {
-		case f := <-a.later:
-			f()
-			any = true
-		default:
-			return any
-		}
-	}
-}
+func (a *App) drain() bool { return a.bus.Drain(a.handle) }
 
 // handle applies one message from the bus.
 func (a *App) handle(msg bus.Msg) {
@@ -416,6 +403,8 @@ func (a *App) handle(msg bus.Msg) {
 		a.apply(msg)
 	case wsEvent:
 		a.applyWS(msg)
+	case func(): // something a goroutine wants done on the UI goroutine, such as a chosen file
+		msg()
 	}
 }
 
