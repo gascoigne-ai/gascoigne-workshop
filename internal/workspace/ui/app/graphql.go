@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/editor"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -11,8 +12,8 @@ import (
 // graphQLBody is the editor of a GraphQL body: the query, the variables as
 // JSON, and a button that asks the server for its schema.
 func (a *App) graphQLBody(t *reqTab) Node {
-	syncQuery := func() { t.Req.Body = t.body.Text }
-	syncVars := func() { t.Req.GraphQLVars = t.gqlVars.Text }
+	syncQuery := func() { editRequest(t, editor.BodyTyped{Text: t.body.Text}) }
+	syncVars := func() { editRequest(t, editor.VarsTyped{Text: t.gqlVars.Text}) }
 	status, valid := jsonStatus(t.gqlVars.Text)
 	statusColor := w.Error
 	if valid {
@@ -67,7 +68,7 @@ func (a *App) schemaMenu(t *reqTab) []menuItem {
 func (a *App) useOperation(t *reqTab, op model.Operation) {
 	t.body = NewTextArea(op.Query)
 	t.gqlVars = NewTextArea(op.Variables)
-	t.Req.Body, t.Req.GraphQLVars = op.Query, op.Variables
+	editRequest(t, editor.OperationChosen{Query: op.Query, Variables: op.Variables})
 }
 
 // rememberSchema keeps the schema when resp is an introspection answer;

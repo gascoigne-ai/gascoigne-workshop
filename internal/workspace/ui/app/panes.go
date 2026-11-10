@@ -365,7 +365,7 @@ func (a *App) bodyEditor(t *reqTab, scroll *ScrollState) Node {
 			base = jsonStyler
 		}
 		t.body.Styler = a.withVariables(base, t.Req) // {{variables}} stand out, as in the URL
-		sync := func() { t.Req.Body = t.body.Text }
+		sync := func() { editRequest(t, editor.BodyTyped{Text: t.body.Text}) }
 		return Area(&t.body, Grow(1), Bg(w.Sunken), OnChange(sync), a.textMenuOpt(&t.body.TextField, sync))
 	case model.BodyForm, model.BodyMultipart:
 		return a.tableView(formPane, t, scroll, 0)
@@ -379,18 +379,7 @@ func (a *App) bodyEditor(t *reqTab, scroll *ScrollState) Node {
 
 func (a *App) setBodyType(t *reqTab, id string) {
 	a.commitEdit()
-	if t.Req.BodyType == model.BodyFile && id != model.BodyFile { // the path is not text to keep
-		t.Req.Body = t.body.Text
-	}
-	if id == model.BodyFile {
-		t.Req.Body = t.file.Text
-	} else if id == model.BodyGraphQL {
-		t.Req.Body = t.body.Text
-		if t.Req.Protocol == "rest" && (t.Req.Method == "" || t.Req.Method == "GET") {
-			t.Req.Method = "POST" // a query goes in the body
-		}
-	}
-	t.Req.BodyType = id
+	editRequest(t, editor.BodyTypeChosen{Type: id, Text: t.body.Text, FilePath: t.file.Text})
 }
 
 // formatBody re-indents a JSON body. Invalid JSON is left alone.
@@ -402,7 +391,7 @@ func (a *App) formatBody(t *reqTab) {
 	}
 	t.body.SelectAll()
 	t.body.Insert(out.String()) // as an edit, so it can be undone
-	t.Req.Body = t.body.Text
+	editRequest(t, editor.BodyTyped{Text: t.body.Text})
 }
 
 // jsonStyler colors one line of a JSON body.

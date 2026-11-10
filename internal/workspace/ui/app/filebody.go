@@ -2,6 +2,7 @@ package ui
 
 import (
 	"context"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/editor"
 	"os"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
@@ -40,7 +41,7 @@ func (a *App) pickFile(title string, save bool, name string, done func(path stri
 
 // fileBody is the editor of a file body: the path, and a button to pick it.
 func (a *App) fileBody(t *reqTab) Node {
-	sync := func() { t.Req.Body = t.file.Text }
+	sync := func() { editRequest(t, editor.BodyTyped{Text: t.file.Text}) }
 	size := ""
 	if info, err := os.Stat(t.file.Text); err == nil && !info.IsDir() {
 		size = "found"

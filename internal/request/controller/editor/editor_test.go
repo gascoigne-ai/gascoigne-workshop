@@ -88,3 +88,67 @@ func TestUpdateDoesNotChangeTheRequestItWasGiven(t *testing.T) {
 		t.Fatalf("the input request changed: %+v", req)
 	}
 }
+
+func TestUpdateBodyAndVariablesTyped(t *testing.T) {
+	got := Update(Update(model.Request{}, BodyTyped{Text: `{"a":1}`}), VarsTyped{Text: `{"id":3}`})
+
+	if got.Body != `{"a":1}` || got.GraphQLVars != `{"id":3}` {
+		t.Fatalf("body %q variables %q", got.Body, got.GraphQLVars)
+	}
+}
+
+func TestUpdateBodyTypeChosenKeepsTheRightTextForEachType(t *testing.T) {
+	cases := []struct {
+		name       string
+		req        model.Request
+		msg        BodyTypeChosen
+		wantType   string
+		wantBody   string
+		wantMethod string
+	}{
+		{"to a file body the body is the path",
+			model.Request{BodyType: model.BodyJSON, Body: "{}", Method: "POST"},
+			BodyTypeChosen{Type: model.BodyFile, Text: "{}", FilePath: "/tmp/a.bin"},
+			model.BodyFile, "/tmp/a.bin", "POST"},
+		{"from a file body the text comes back",
+			model.Request{BodyType: model.BodyFile, Body: "/tmp/a.bin", Method: "POST"},
+			BodyTypeChosen{Type: model.BodyText, Text: "hello", FilePath: "/tmp/a.bin"},
+			model.BodyText, "hello", "POST"},
+		{"between text types the body stays",
+			model.Request{BodyType: model.BodyText, Body: "hello", Method: "POST"},
+			BodyTypeChosen{Type: model.BodyJSON, Text: "hello"},
+			model.BodyJSON, "hello", "POST"},
+		{"to GraphQL a GET request becomes a POST",
+			model.Request{Protocol: "rest", Method: "GET", BodyType: model.BodyNone},
+			BodyTypeChosen{Type: model.BodyGraphQL, Text: "{ me }"},
+			model.BodyGraphQL, "{ me }", "POST"},
+		{"to GraphQL a request with no method becomes a POST",
+			model.Request{Protocol: "rest", Method: "", BodyType: model.BodyNone},
+			BodyTypeChosen{Type: model.BodyGraphQL, Text: "{ me }"},
+			model.BodyGraphQL, "{ me }", "POST"},
+		{"to GraphQL another method is kept",
+			model.Request{Protocol: "rest", Method: "PUT", BodyType: model.BodyNone},
+			BodyTypeChosen{Type: model.BodyGraphQL, Text: "{ me }"},
+			model.BodyGraphQL, "{ me }", "PUT"},
+		{"to GraphQL on another protocol the method is kept",
+			model.Request{Protocol: "grpc", Method: "GET", BodyType: model.BodyNone},
+			BodyTypeChosen{Type: model.BodyGraphQL, Text: "{ me }"},
+			model.BodyGraphQL, "{ me }", "GET"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			got := Update(c.req, c.msg)
+			if got.BodyType != c.wantType || got.Body != c.wantBody || got.Method != c.wantMethod {
+				t.Fatalf("type %q body %q method %q, want %q %q %q", got.BodyType, got.Body, got.Method, c.wantType, c.wantBody, c.wantMethod)
+			}
+		})
+	}
+}
+
+func TestUpdateOperationChosenFillsQueryAndVariables(t *testing.T) {
+	got := Update(model.Request{}, OperationChosen{Query: "query { me }", Variables: `{"a":1}`})
+
+	if got.Body != "query { me }" || got.GraphQLVars != `{"a":1}` {
+		t.Fatalf("body %q variables %q", got.Body, got.GraphQLVars)
+	}
+}
