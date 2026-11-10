@@ -1,6 +1,10 @@
 package view
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+)
 
 // A button without a width is as wide as its label plus the inset, and a
 // button with a width too small for its label shortens the label instead
@@ -61,5 +65,21 @@ func TestChoiceLightsOnlyTheSelectedOption(t *testing.T) {
 				t.Error("the click handler was dropped")
 			}
 		})
+	}
+}
+
+// A list row shows the selection with a fixed background and any other row
+// with a hover tint; the options of the caller (height, click) still apply.
+func TestListRowLooksSelectedOrHoverable(t *testing.T) {
+	selected := ListRow(true, H(28), OnClick(func() {}))
+	if selected.control != "row" || selected.bg != core.Selected || selected.hoverBg != "" {
+		t.Errorf("selected row: control %q bg %v hoverBg %v", selected.control, selected.bg, selected.hoverBg)
+	}
+	plain := ListRow(false, H(28))
+	if plain.control != "row" || plain.hoverBg != core.Hover || plain.bg == core.Selected {
+		t.Errorf("plain row: control %q bg %v hoverBg %v", plain.control, plain.bg, plain.hoverBg)
+	}
+	if selected.h != 28 || selected.onClick == nil {
+		t.Errorf("selected row lost its options: h %d onClick %v", selected.h, selected.onClick != nil)
 	}
 }

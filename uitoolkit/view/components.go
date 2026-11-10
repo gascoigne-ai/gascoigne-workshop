@@ -45,6 +45,17 @@ func Choice(label string, selected bool, opts ...Option) *El {
 	return Button(label, opts...)
 }
 
+// ListRow is a row of a list: the selected one has the selection
+// background, the others a tint under the pointer. Its content and options
+// (H, PadX, OnClick) are the caller's.
+func ListRow(selected bool, items ...Item) *El {
+	look := HoverBg(core.Hover)
+	if selected {
+		look = Bg(core.Selected)
+	}
+	return Row(append([]Item{Control("row"), look}, items...)...)
+}
+
 // TabItem is one tab; Badge > 0 shows a count after the label.
 type TabItem struct {
 	Label string

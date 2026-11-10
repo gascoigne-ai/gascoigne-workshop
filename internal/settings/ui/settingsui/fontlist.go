@@ -172,9 +172,5 @@ func (d *Dialog) FontList(host Host) Node {
 
 // fontRow is one row of the list; picking it applies the family.
 func (d *Dialog) fontRow(host Host, label Node, selected bool, name string) Node {
-	look := HoverBg(w.Hover)
-	if selected {
-		look = Bg(w.Selected)
-	}
-	return Row(H(fontListRowH), PadX(8), AlignItems(AlignCenter), Control("row"), look, OnClick(func() { d.PickFont(host, name) }), label)
+	return ListRow(selected, H(fontListRowH), PadX(8), AlignItems(AlignCenter), OnClick(func() { d.PickFont(host, name) }), label)
 }

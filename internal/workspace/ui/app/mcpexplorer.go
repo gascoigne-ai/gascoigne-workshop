@@ -136,13 +136,11 @@ func (a *App) explorerList(t *reqTab) Node {
 		Scroll(&t.listScroll, Grow(1),
 			If(len(entries) == 0, Col(Pad(w.Gutter), Text("Nothing announced", Small(), Muted()))),
 			For(entries, func(index int, entry mcpexplorer.Entry) Node {
-				look := HoverBg(w.Hover)
-				if index == state.Selected {
-					look = Bg(w.Selected)
-				}
-				return Col(look, PadX(w.Gutter), PadY(6), OnClick(func() { a.exploreOpen(t, index) }),
-					Text(entry.Title, Ellipsis()),
-					If(entry.Detail != "", Text(entry.Detail, Small(), Muted(), Ellipsis())),
+				return ListRow(index == state.Selected, PadX(w.Gutter), PadY(6), OnClick(func() { a.exploreOpen(t, index) }),
+					Col(Grow(1),
+						Text(entry.Title, Ellipsis()),
+						If(entry.Detail != "", Text(entry.Detail, Small(), Muted(), Ellipsis())),
+					),
 				)
 			}),
 		),

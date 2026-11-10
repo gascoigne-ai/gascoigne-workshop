@@ -92,30 +92,25 @@ func (a *App) sidebarMode() Node {
 }
 
 func (a *App) treeRow(row collection.Row, selected bool) Node {
-	look := HoverBg(w.Hover)
-	if selected {
-		look = Bg(w.Selected)
-	}
 	node := row.Node()
 	indent := w.Gutter + row.Depth*treeIndent
 	events := []Item{
 		OnClick(func() { a.pressTreeRow(row) }),
 		OnRightClick(func(x, y int) { a.openMenu(x, y, a.treeMenuItems(row)) }),
 		OnDragOver(func() { a.dropTarget = node }),
-		Control("row"),
 	}
 	if a.dragNode != nil && a.dropTarget == node && node != a.dragNode {
 		events = append(events, Border(w.AccentLine)) // where the drop would land
 	}
 
 	if row.Folder {
-		return Row(append([]Item{H(w.RowH), PadL(indent), Gap(6), look,
+		return ListRow(selected, append([]Item{H(w.RowH), PadL(indent), Gap(6),
 			TriangleIcon(row.Open, W(12)),
 			a.rowName(row.Name),
 		}, events...)...)
 	}
 	req := row.Req
-	return Row(append([]Item{H(w.RowH), PadL(indent + 6), PadR(w.Gutter), AlignItems(AlignBaseline), look,
+	return ListRow(selected, append([]Item{H(w.RowH), PadL(indent + 6), PadR(w.Gutter), AlignItems(AlignBaseline),
 		Text(requestBadge(req.Protocol, req.Method), Small(), Color(appearance.MethodToken(req.Method)), W(badgeW)),
 		a.rowName(row.Name),
 	}, events...)...)
