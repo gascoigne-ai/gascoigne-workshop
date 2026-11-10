@@ -19,11 +19,11 @@ func (a *App) messagesToolbar(t *reqTab) Node {
 		  <text small muted>{{state}}</text>
 		  <spacer/>
 		  <slot name="reconnect"/>
-		  <button if="hasTools" w="84" h="24" onclick="pickTool" tip="Pick a tool: the composer gets a call with its arguments filled in">{{toolsLabel}}</button>
-		  <button if="hasResources" w="104" h="24" onclick="pickResource" tip="Pick a resource: the composer gets a read of it">{{resourcesLabel}}</button>
-		  <button if="hasPrompts" w="94" h="24" onclick="pickPrompt" tip="Pick a prompt: the composer gets a request for it">{{promptsLabel}}</button>
-		  <button w="56" h="24" onclick="ping" tip="Send a ping frame">Ping</button>
-		  <button w="56" h="24" onclick="clear" tip="Empty the message log">Clear</button>
+		  <button if="hasTools" w="84" h="24" on-click="pickTool" tooltip="Pick a tool: the composer gets a call with its arguments filled in">{{toolsLabel}}</button>
+		  <button if="hasResources" w="104" h="24" on-click="pickResource" tooltip="Pick a resource: the composer gets a read of it">{{resourcesLabel}}</button>
+		  <button if="hasPrompts" w="94" h="24" on-click="pickPrompt" tooltip="Pick a prompt: the composer gets a request for it">{{promptsLabel}}</button>
+		  <button w="56" h="24" on-click="ping" tooltip="Send a ping frame">Ping</button>
+		  <button w="56" h="24" on-click="clear" tooltip="Empty the message log">Clear</button>
 		</row>`,
 		component.Scope{
 			"state":          connState(t),

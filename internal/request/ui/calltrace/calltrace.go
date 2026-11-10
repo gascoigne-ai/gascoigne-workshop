@@ -178,8 +178,8 @@ func (l *Log) titleBar(host Host) Node {
 		<row h="44" pad-x="16" gap="8" align-items="center" border-b="border-soft">
 		  <text bold w="40">Log</text>
 		  <slot name="filter"/>
-		  <button w="64" h="24" onclick="clear" tip="Forget the entries">Clear</button>
-		  <row w="32" h="24" bg="sunken" control="icon-button" lighten onclick="close" tip="Close (Esc)">
+		  <button w="64" h="24" on-click="clear" tooltip="Forget the entries">Clear</button>
+		  <row w="32" h="24" bg="sunken" control="icon-button" lighten on-click="close" tooltip="Close (Esc)">
 		    <icon name="cross" grow="1"/>
 		  </row>
 		</row>`,

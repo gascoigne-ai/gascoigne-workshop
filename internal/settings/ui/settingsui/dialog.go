@@ -186,7 +186,7 @@ func (d *Dialog) titleBar(host Host) Node {
 		  <slot name="search"/>
 		  <slot name="save"/>
 		  <slot name="mode"/>
-		  <row w="32" h="24" bg="sunken" control="icon-button" lighten onclick="close" tip="Close (Esc)">
+		  <row w="32" h="24" bg="sunken" control="icon-button" lighten on-click="close" tooltip="Close (Esc)">
 		    <icon name="cross" grow="1"/>
 		  </row>
 		</row>`,
@@ -195,11 +195,11 @@ func (d *Dialog) titleBar(host Host) Node {
 
 const (
 	navOpenTemplate = `
-		<row h="28" pad-x="12" align-items="center" control="button" onclick="pick" bg="accent-soft">
+		<row h="28" pad-x="12" align-items="center" control="button" on-click="pick" bg="accent-soft">
 		  <text bold color="accent-line" grow="1">{{label}}</text>
 		</row>`
 	navClosedTemplate = `
-		<row h="28" pad-x="12" align-items="center" control="button" onclick="pick" hover-bg="hover">
+		<row h="28" pad-x="12" align-items="center" control="button" on-click="pick" hover-bg="hover">
 		  <text muted grow="1">{{label}}</text>
 		</row>`
 )

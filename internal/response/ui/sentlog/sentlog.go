@@ -108,7 +108,7 @@ func (l *Log) List(host Host, filter string) Node {
 // row is one sent request: badge, path and status above, URL and time below.
 func (l *Log) row(host Host, sent port.Sent) Node {
 	return component.View(`
-		<col pad-x="12" pad-y="4" hover-bg="hover" control="row" onclick="open">
+		<col pad-x="12" pad-y="4" hover-bg="hover" control="row" on-click="open">
 		  <row gap="6" align-items="baseline">
 		    <slot name="badge"/>
 		    <text ellipsis grow="1">{{path}}</text>

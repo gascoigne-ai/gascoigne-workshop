@@ -5,7 +5,7 @@
 //	<row h="28" pad="12 0" gap="12" bg="frame" control="statusbar" border-t="border">
 //	  <text small muted ellipsis grow="1">{{status}}</text>
 //	  <text small muted if="showVersion">{{version}}</text>
-//	  <button for="b in buttons" onclick="b.click">{{b.label}}</button>
+//	  <button for="b in buttons" on-click="b.click">{{b.label}}</button>
 //	</row>
 //
 // A template is XML with HTML's leniency (bare flag attributes such as
@@ -13,7 +13,7 @@
 // (elements, attributes below), so a new one is a new row; anything not
 // in them is an error that names the file and line. Text and attribute
 // values may use {{path}} to read the Scope; `if` and `for="x in xs"` are
-// the two directives, and `onclick` names a func() of the scope.
+// the two directives, and `on-click` names a func() of the scope.
 //
 // The usual form is an inline template in the method that feeds it, as
 // with a Vue component's `template` option:
@@ -146,8 +146,8 @@ var elements = map[string]struct {
 	"col":            {func(o []view.Option, k []view.Item, _ string) view.Node { return view.Col(items(o, k)...) }, false},
 	"stack":          {func(o []view.Option, k []view.Item, _ string) view.Node { return view.Stack(items(o, k)...) }, false},
 	"spacer":         {func(o []view.Option, _ []view.Item, _ string) view.Node { return view.Spacer(o...) }, true},
-	"hr":             {func(o []view.Option, _ []view.Item, _ string) view.Node { return withOpts(view.HRule(), o) }, true},
-	"vr":             {func(o []view.Option, _ []view.Item, _ string) view.Node { return withOpts(view.VRule(), o) }, true},
+	"hrule":          {func(o []view.Option, _ []view.Item, _ string) view.Node { return withOpts(view.HRule(), o) }, true},
+	"vrule":          {func(o []view.Option, _ []view.Item, _ string) view.Node { return withOpts(view.VRule(), o) }, true},
 	"text":           {func(o []view.Option, _ []view.Item, t string) view.Node { return view.Text(t, o...) }, true},
 	"primary-button": {func(o []view.Option, _ []view.Item, t string) view.Node { return view.PrimaryButton(t, o...) }, true},
 	"link-button":    {func(o []view.Option, _ []view.Item, t string) view.Node { return view.LinkButton(t, o...) }, true},
@@ -167,7 +167,7 @@ func withOpts(n view.Node, opts []view.Option) view.Node {
 }
 
 // directives are attributes that control building, not looks.
-var directives = map[string]bool{"if": true, "for": true, "onclick": true}
+var directives = map[string]bool{"if": true, "for": true, "on-click": true}
 
 // attributes turn an attribute value (already interpolated) into an
 // option. A flag is written bare (`small`) or `small="true"`; "false" is
@@ -179,7 +179,7 @@ var attributes = map[string]func(v string) (view.Option, error){
 	"grow":            floatAttr(view.Grow),
 	"align-items":     enumAttr("align-items", alignments, view.AlignItems),
 	"align-self":      enumAttr("align-self", alignments, view.AlignSelf),
-	"justify":         enumAttr("justify", justifications, view.JustifyContent),
+	"justify-content": enumAttr("justify-content", justifications, view.JustifyContent),
 	"pad":             padAttr,
 	"pad-x":           intAttr(view.PadX),
 	"pad-y":           intAttr(view.PadY),
@@ -202,16 +202,27 @@ var attributes = map[string]func(v string) (view.Option, error){
 	"border-inset":    intAttr(view.BorderInset),
 	"hover-bg":        tokenAttr(view.HoverBg),
 	"hover-color":     tokenAttr(view.HoverColor),
+	"min-w":           intAttr(view.MinW),
+	"max-w":           intAttr(view.MaxW),
+	"min-h":           intAttr(view.MinH),
+	"max-h":           intAttr(view.MaxH),
+	"field-pad":       intAttr(view.FieldPad),
+	"placeholder":     func(v string) (view.Option, error) { return view.Placeholder(v), nil },
+	"shadow":          flagAttr("shadow", view.Shadow),
+	"clip":            flagAttr("clip", view.Clip),
+	"modal":           flagAttr("modal", view.Modal),
 	"float-center":    flagAttr("float-center", view.FloatCenter),
 	"float-at":        intsAttr("float-at", 2, func(n []int) view.Option { return view.FloatAt(n[0], n[1]) }),
-	"float-top-right": intsAttr("float-top-right", 2, func(n []int) view.Option { return view.FloatTopRight(n[0], n[1]) }),
-	"edges":           edgesAttr,
+	"float-tr":        intsAttr("float-tr", 2, func(n []int) view.Option { return view.FloatTR(n[0], n[1]) }),
+	"edge-t":          tokenAttr(view.EdgeT),
+	"edge-l":          tokenAttr(view.EdgeL),
+	"edge-r":          tokenAttr(view.EdgeR),
 	"border-r":        tokenAttr(view.BorderR),
 	"border-x":        tokenAttr(view.BorderX),
 	"border-y":        tokenAttr(view.BorderY),
 	"color":           tokenAttr(view.Color),
 	"control":         func(v string) (view.Option, error) { return view.Control(v), nil },
-	"tip":             func(v string) (view.Option, error) { return view.Tooltip(v), nil },
+	"tooltip":         func(v string) (view.Option, error) { return view.Tooltip(v), nil },
 	"small":           flagAttr("small", view.Small),
 	"muted":           flagAttr("muted", view.Muted),
 	"bold":            flagAttr("bold", view.Bold),
@@ -431,7 +442,7 @@ func (t *Template) buildOne(n *node, sc Scope) (view.Node, error) {
 			}
 		case "name": // the icon's name, which is its text
 			continue
-		case "onclick":
+		case "on-click":
 			v, err := lookup(strings.TrimSpace(a.value), sc)
 			if err != nil {
 				return nil, t.errf(n, "%v", err)
@@ -689,7 +700,7 @@ func Reference() string {
 	sb.WriteString("<include name=\"x\"/> builds the template registered with component.Define(\"x\", ...) with this scope.\n")
 	sb.WriteString("<slot name=\"x\"/> puts the view.Node the scope holds under x here.\n")
 	sb.WriteString("<icon name=\"trash\"/> draws a built-in or registered icon (view.IconNames).\n")
-	sb.WriteString("Text and attribute values may use {{path}}; if=\"name\" or \"!name\"; for=\"item in list\"; onclick=\"handler\".\n")
+	sb.WriteString("Text and attribute values may use {{path}}; if=\"name\" or \"!name\"; for=\"item in list\"; on-click=\"handler\".\n")
 	return sb.String()
 }
 
@@ -710,29 +721,6 @@ func intsAttr(name string, n int, f func([]int) view.Option) func(string) (view.
 		}
 		return f(nums), nil
 	}
-}
-
-// edgesAttr is `edges="accent-line top left right"`: a token, then the
-// sides that get the two-pixel line (any of top, left, right).
-func edgesAttr(v string) (view.Option, error) {
-	f := strings.Fields(v)
-	if len(f) < 2 {
-		return nil, fmt.Errorf("edges is a token and the sides (top, left, right), not %q", v)
-	}
-	var top, left, right bool
-	for _, side := range f[1:] {
-		switch side {
-		case "top":
-			top = true
-		case "left":
-			left = true
-		case "right":
-			right = true
-		default:
-			return nil, fmt.Errorf("%q is not a side: top, left or right", side)
-		}
-	}
-	return view.Edges(core.Token(f[0]), top, left, right), nil
 }
 
 var alignments = map[string]view.Align{

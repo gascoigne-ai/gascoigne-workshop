@@ -23,17 +23,18 @@
 //
 // The names follow a few rules, so a guess is usually right:
 //
-//	Size       W H MinW MaxW MinH MaxH Grow Optional
+//	Size       W H MinW MaxW MinH MaxH Grow Optional Clip
 //	Spacing    Pad PadX PadY PadL PadT PadR PadB   Margin MarginX MarginY MarginL MarginT MarginR MarginB   Gap
 //	Layout     Row Col Stack Split Scroll HScroll Spacer   AlignItems AlignSelf JustifyContent
-//	Look       Bg Border BorderX BorderY BorderL BorderT BorderR BorderB HoverBg Shadow Control Edges
+//	Look       Bg Border BorderX BorderY BorderL BorderT BorderR BorderB HoverBg BorderInset Shadow Control EdgeT EdgeL EdgeR HoverColor Lighten
 //	Text       Text Caption Lines   Color Muted Bold Small Mono FontSource Ellipsis TextCenter
-//	Input      Field Area Code Slider Checkbox   (state: TextField TextArea CodeView)   Placeholder OnChange OnEnter
+//	Input      Field Area Code Slider Checkbox   (state: TextField TextArea CodeView)   Placeholder FieldPad Segments OnChange OnEnter OnTab
 //	Events     OnClick OnClickAt OnRightClick OnMiddleClick OnDragOver   Tooltip KeepInView
-//	Composite  Button PrimaryButton LinkButton IconButton Tabs ScrollTabs Table   OnSelect OnSlide
+//	Composite  Button PrimaryButton LinkButton IconButton Tabs ScrollTabs Table   OnSelect OnSlide OnSlideEnd SliderMid   Separator
+//	Split      Vertical AsRatio MinFirst MinSecond
 //	Icons      Icon RegisterIcons IconNames   CrossIcon TriangleIcon GripIcon DotsIcon TrashIcon PlusIcon CopyIcon FolderIcon SearchIcon PromptIcon ChevronUpIcon ChevronDownIcon
 //	Flow       If When For Frag
-//	Overlay    FloatTopRight FloatAt FloatCenter Modal OnDismiss FocusScope   Resizable (state: ResizeState)
+//	Overlay    FloatTR FloatAt FloatCenter Modal OnDismiss FocusScope   Resizable (state: ResizeState)
 //
 // A side is a letter suffix (PadL, PadT, PadR, PadB) and an axis is X or
 // Y (PadX is left and right). The same options are the attributes of a
@@ -263,12 +264,16 @@ func BorderY(t core.Token) Option { return func(e *El) { e.borderT, e.borderB = 
 // every control of a kind looks the same and the theme file decides how.
 func Control(name string) Option { return func(e *El) { e.control = name } }
 
-// Edges outlines the element on its top, left and right sides with a
-// two-pixel line, leaving the bottom open: the look of the open tab,
-// which runs into the pane below it.
-func Edges(t core.Token, top, left, right bool) Option {
-	return func(e *El) { e.edgeTok, e.edgeTop, e.edgeLeft, e.edgeRight = t, top, left, right }
-}
+// EdgeT, EdgeL and EdgeR outline the element on that side with a
+// two-pixel line of the token's color; all three make the look of the open
+// tab, which runs into the pane below it. The color of the last one wins.
+func EdgeT(t core.Token) Option { return func(e *El) { e.edgeTok, e.edgeTop = t, true } }
+
+// EdgeL outlines the left side (see EdgeT).
+func EdgeL(t core.Token) Option { return func(e *El) { e.edgeTok, e.edgeLeft = t, true } }
+
+// EdgeR outlines the right side (see EdgeT).
+func EdgeR(t core.Token) Option { return func(e *El) { e.edgeTok, e.edgeRight = t, true } }
 
 // Tooltip shows text near the pointer once it has rested on the element
 // for tipDelayTicks.
@@ -315,9 +320,9 @@ func OnMiddleClick(f func()) Option { return func(e *El) { e.onMiddle = f } }
 // item learns the item is over it.
 func OnDragOver(f func()) Option { return func(e *El) { e.onDragOver = f } }
 
-// Float takes the element out of the layout of its Stack and pins it
+// FloatTR takes the element out of the layout of its Stack and pins it
 // top and right, this many pixels from those edges.
-func FloatTopRight(top, right int) Option {
+func FloatTR(top, right int) Option {
 	return func(e *El) { e.fl.on, e.fl.top, e.fl.right = true, top, right }
 }
 

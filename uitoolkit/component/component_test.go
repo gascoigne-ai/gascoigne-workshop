@@ -37,8 +37,8 @@ func TestTemplateMatchesTheGoDSL(t *testing.T) {
 	tplView := build(t, `
 		<row h="28" pad="12 0" gap="12" bg="frame" control="statusbar" border-t="border">
 		  <text small muted ellipsis grow="1">{{status}}</text>
-		  <text small muted onclick="bump">{{version}}</text>
-		  <button w="60" tip="Go on">Go</button>
+		  <text small muted on-click="bump">{{version}}</text>
+		  <button w="60" tooltip="Go on">Go</button>
 		</row>`, Scope{"status": "Ready", "version": "v0.1.0", "bump": func() { clicked = true }})
 	view.Layout(c, goView, 600, 28)
 	view.Layout(c, tplView, 600, 28)
@@ -103,7 +103,7 @@ func TestBuildErrorsNameTheFileAndLine(t *testing.T) {
 		"unknown name":  {"<row>\n<text>{{nope}}</text></row>", Scope{}, `t.vml:2: unknown name "nope"`},
 		"bad number":    {`<row w="wide"/>`, Scope{}, "not a whole number"},
 		"bad pad":       {`<row pad="1 2 3"/>`, Scope{}, "pad takes one or two"},
-		"not a handler": {`<text onclick="x">a</text>`, Scope{"x": "str"}, "not a func()"},
+		"not a handler": {`<text on-click="x">a</text>`, Scope{"x": "str"}, "not a func()"},
 		"bad for":       {`<col><text for="items">a</text></col>`, Scope{}, `must read "item in list"`},
 		"not a list":    {`<col><text for="i in x">a</text></col>`, Scope{"x": 3}, "is not a list"},
 		"bad flag":      {`<text small="maybe">a</text>`, Scope{}, "not true or false"},
@@ -226,12 +226,12 @@ func TestSideAttributesMatchTheGoOptions(t *testing.T) {
 }
 
 func TestRemainingAttributesMatchTheGoOptions(t *testing.T) {
-	got := view.Dump(build(t, `<stack hover-bg="hover" border-inset="3" float-top-right="4 5" edges="accent-line top left"/>`, nil))
-	want := view.Dump(view.Stack(view.HoverBg("hover"), view.BorderInset(3), view.FloatTopRight(4, 5), view.Edges("accent-line", true, true, false)))
+	got := view.Dump(build(t, `<stack hover-bg="hover" border-inset="3" float-tr="4 5" edge-t="accent-line" edge-l="accent-line"/>`, nil))
+	want := view.Dump(view.Stack(view.HoverBg("hover"), view.BorderInset(3), view.FloatTR(4, 5), view.EdgeT("accent-line"), view.EdgeL("accent-line")))
 	if got != want {
 		t.Fatalf("template:\n%s\nGo:\n%s", got, want)
 	}
-	for _, bad := range []string{`<row edges="accent-line"/>`, `<row edges="x middle"/>`, `<row float-at="1"/>`} {
+	for _, bad := range []string{`<row edge-t="x" float-tr="1"/>`, `<row edge-l=""/>`, `<row float-at="1"/>`} {
 		tp, err := Parse("t.vml", []byte(bad))
 		if err != nil {
 			t.Fatal(err)
@@ -278,7 +278,7 @@ func TestSlotInsertsANodeFromTheScope(t *testing.T) {
 }
 
 func TestAlignmentAttributesAndButtonsMatchTheGoOptions(t *testing.T) {
-	got := view.Dump(build(t, `<row align-items="center" justify="between"><primary-button w="70">Go</primary-button><link-button>More</link-button></row>`, nil))
+	got := view.Dump(build(t, `<row align-items="center" justify-content="between"><primary-button w="70">Go</primary-button><link-button>More</link-button></row>`, nil))
 	want := view.Dump(view.Row(view.AlignItems(view.AlignCenter), view.JustifyContent(view.JustifyBetween), view.PrimaryButton("Go", view.W(70)), view.LinkButton("More")))
 	if got != want {
 		t.Fatalf("template:\n%s\nGo:\n%s", got, want)
@@ -323,6 +323,14 @@ func TestIconHoverColorAttributeMirrorsTheGoOption(t *testing.T) {
 func TestLightenAttributeMatchesTheGoOption(t *testing.T) {
 	got := view.Dump(build(t, `<row lighten/>`, nil))
 	want := view.Dump(view.Row(view.Lighten()))
+	if got != want {
+		t.Fatalf("template:\n%s\nGo:\n%s", got, want)
+	}
+}
+
+func TestSizeLimitsAndFlagsAreAttributes(t *testing.T) {
+	got := view.Dump(build(t, `<row min-w="10" max-w="20" min-h="5" max-h="9" shadow clip/>`, nil))
+	want := view.Dump(view.Row(view.MinW(10), view.MaxW(20), view.MinH(5), view.MaxH(9), view.Shadow(), view.Clip()))
 	if got != want {
 		t.Fatalf("template:\n%s\nGo:\n%s", got, want)
 	}

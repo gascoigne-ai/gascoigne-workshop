@@ -28,7 +28,7 @@ func ExampleView() {
 func ExampleParse() {
 	t, err := component.Parse("tabs.vml", []byte(`
 		<row gap="4">
-		  <button for="tab in tabs" onclick="pick">{{tab.name}}</button>
+		  <button for="tab in tabs" on-click="pick">{{tab.name}}</button>
 		</row>`))
 	if err != nil {
 		panic(err)

@@ -69,7 +69,7 @@ func TestOptionalChildIsDroppedOnlyWhenTooNarrow(t *testing.T) {
 }
 
 func TestStackFloatPinsTopRight(t *testing.T) {
-	under, menu := box(), box(W(60), H(40), FloatTopRight(30, 10))
+	under, menu := box(), box(W(60), H(40), FloatTR(30, 10))
 	root := Stack(under, menu)
 	Layout(testCtx(t), root, 400, 300)
 
@@ -117,7 +117,7 @@ func TestClickReachesOnlyTheElementUnderThePointer(t *testing.T) {
 
 func TestModalSwallowsClicksAndDismissesOnOutsideClick(t *testing.T) {
 	var under, inside, dismissed int
-	menu := box(W(40), H(40), FloatTopRight(0, 0), OnClick(func() { inside++ }), Modal(), OnDismiss(func() { dismissed++ }))
+	menu := box(W(40), H(40), FloatTR(0, 0), OnClick(func() { inside++ }), Modal(), OnDismiss(func() { dismissed++ }))
 	root := Stack(box(OnClick(func() { under++ })), menu)
 	c := testCtx(t)
 	Layout(c, root, 200, 100)

@@ -195,7 +195,7 @@ func (a *App) header() Node {
 		  <spacer/>
 		  <slot name="env"/>
 		  <spacer w="12"/>
-		  <row w="44" onclick="toggleMenu" tip="{{settingsTip}}">
+		  <row w="44" on-click="toggleMenu" tooltip="{{settingsTip}}">
 		    <icon name="dots" grow="1" color="hero-muted" hover-color="hero-text"/>
 		  </row>
 		</row>`,
@@ -221,7 +221,7 @@ func (a *App) requestTabs() Node {
 func (a *App) requestTab(i int, t *reqTab) Node {
 	look := []Item{} // inactive tabs blend into the strip; the active one joins the pane
 	if i == a.list.Active {
-		look = []Item{Bg(w.Bg), Edges(w.AccentLine, true, true, true), KeepInView()} // outlined top, left and right, open at the bottom
+		look = []Item{Bg(w.Bg), EdgeT(w.AccentLine), EdgeL(w.AccentLine), EdgeR(w.AccentLine), KeepInView()} // outlined top, left and right, open at the bottom
 	}
 	return Row(append(look, OnMiddleClick(func() { a.updateTabs(tabs.DragBegin{Index: i}) }), // a middle drag reorders, like a left one
 		OnRightClick(func(x, y int) { a.openMenu(x, y, a.tabMenuItems(i)) }),
@@ -395,7 +395,7 @@ func (a *App) statusBar() Node {
 	return component.View(`
 		<row h="28" pad="12 0" gap="12" bg="frame" control="statusbar" border-t="border">
 		  <text small muted ellipsis grow="1">{{status}}</text>
-		  <button w="44" h="20" onclick="openLog" tip="Show the log of calls">Log</button>
+		  <button w="44" h="20" on-click="openLog" tooltip="Show the log of calls">Log</button>
 		  <text small muted>{{version}}</text>
 		</row>`,
 		component.Scope{"status": a.status, "version": version, "openLog": a.calls.Open})
