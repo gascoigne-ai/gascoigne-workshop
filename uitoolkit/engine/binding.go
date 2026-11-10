@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 // KeyNames spells keys whose ebiten name is not what users read.
@@ -97,4 +99,11 @@ func (b Binding) String() string {
 		parts = append(parts, "Shift")
 	}
 	return strings.Join(append(parts, keyLabel(b.Key)), "+")
+}
+
+// Matches reports whether key, pressed this frame under the modifiers in
+// input, triggers the Binding. Modifiers must match exactly, so Ctrl+Tab
+// does not fire on Ctrl+Shift+Tab.
+func (b Binding) Matches(input core.Input, key ebiten.Key) bool {
+	return b.Bound && b.Key == key && b.Ctrl == input.Ctrl && b.Shift == input.Shift && b.Alt == input.Alt
 }

@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/hajimehoshi/ebiten/v2"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 func TestParseAndFormatBindings(t *testing.T) {
@@ -45,5 +47,29 @@ func TestParseBindingRejectsNonsense(t *testing.T) {
 		if b, err := ParseBinding(in); err == nil {
 			t.Errorf("ParseBinding(%q) = %+v, want an error", in, b)
 		}
+	}
+}
+
+func TestBindingMatchesOnlyTheExactModifiers(t *testing.T) {
+	ctrlTab := Binding{Key: ebiten.KeyTab, Ctrl: true, Bound: true}
+	tests := []struct {
+		name    string
+		binding Binding
+		input   core.Input
+		key     ebiten.Key
+		want    bool
+	}{
+		{"same key and modifiers", ctrlTab, core.Input{Ctrl: true}, ebiten.KeyTab, true},
+		{"extra shift", ctrlTab, core.Input{Ctrl: true, Shift: true}, ebiten.KeyTab, false},
+		{"missing ctrl", ctrlTab, core.Input{}, ebiten.KeyTab, false},
+		{"other key", ctrlTab, core.Input{Ctrl: true}, ebiten.KeyEnter, false},
+		{"unbound never matches", Binding{Key: ebiten.KeyTab}, core.Input{}, ebiten.KeyTab, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.binding.Matches(tt.input, tt.key); got != tt.want {
+				t.Fatalf("Matches = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }

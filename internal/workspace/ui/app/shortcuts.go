@@ -50,7 +50,7 @@ func (a *App) runShortcuts(in core.Input) {
 			if shortcutpage.TypesText(b) && a.textFocused() {
 				continue // the key is for typing
 			}
-			if b.Bound && b.Key == k && b.Ctrl == in.Ctrl && b.Shift == in.Shift && b.Alt == in.Alt {
+			if b.Matches(in, k) {
 				s.run(a)
 			}
 		}
