@@ -6,26 +6,26 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 )
 
-// changeSettings edits the settings, applies them and saves them. The
-// color fields are rebuilt, since the colors in effect may have changed.
+// changeSettings is saveSettings for the settings dialog's own controls: the
+// color fields are rebuilt afterwards, since the colors in effect may have
+// changed.
 func (a *App) changeSettings(edit func(*settings.Settings)) {
-	was := a.settings.ResponseView
 	a.saveSettings(edit)
-	if a.settings.ResponseView != was { // the choice applies to the tabs already open
-		for _, t := range a.tabs {
-			t.raw, t.compact = viewer.Flags(a.settings.ResponseView)
-			a.refreshView(t)
-		}
-	}
-	a.colors.Forget()
+	a.colors.Forget() // not in saveSettings: the Colors page edits through it while a field is being typed
 }
 
 // saveSettings edits and applies the settings and, unless auto-save is off,
 // writes them. Turning auto-save off writes that choice once; turning it on
 // writes whatever was waiting.
 func (a *App) saveSettings(edit func(*settings.Settings)) {
-	wasAuto, wasNetwork := a.settings.AutoSave, a.networkSettings()
+	wasAuto, wasNetwork, wasView := a.settings.AutoSave, a.networkSettings(), a.settings.ResponseView
 	edit(&a.settings)
+	if a.settings.ResponseView != wasView { // the choice applies to the tabs already open
+		for _, t := range a.tabs {
+			t.raw, t.compact = viewer.Flags(a.settings.ResponseView)
+			a.refreshView(t)
+		}
+	}
 	if a.networkSettings() != wasNetwork {
 		a.reg = a.newRegistry() // protocols hold the proxy and certificates they were built with
 	}

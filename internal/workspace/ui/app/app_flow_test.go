@@ -3630,3 +3630,20 @@ func TestTextFocusedCoversEveryEditorOfTheTab(t *testing.T) {
 		})
 	}
 }
+
+// Regression: only changeSettings refreshed the open tabs when the
+// response view setting changed; an edit through saveSettings (the colour
+// and shortcut pages, the environment chip) left them on the old view.
+func TestAnySettingsEditThatChangesTheResponseViewRefreshesOpenTabs(t *testing.T) {
+	a, _ := newTestApp(t) // starts on "pretty"
+	tab := a.cur()
+	if tab.raw {
+		t.Fatal("start: the tab should not be raw")
+	}
+
+	pageHost{a}.Edit(func(s *settings.Settings) { s.ResponseView = "raw" })
+
+	if !tab.raw {
+		t.Fatal("the open tab kept its old response view")
+	}
+}
