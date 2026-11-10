@@ -355,10 +355,10 @@ func composed(s reqport.Session, text string) (func() error, error) {
 // toolMenu lists the tools the server announced; picking one puts a
 // ready-to-edit call, with the arguments the tool's schema asks for, in
 // the composer.
-func (a *App) toolMenu(t *reqTab) []menuItem {
-	items := make([]menuItem, 0, len(t.Tools))
+func (a *App) toolMenu(t *reqTab) []MenuItem {
+	items := make([]MenuItem, 0, len(t.Tools))
 	for _, tool := range t.Tools {
-		items = append(items, menuItem{label: tool.Name, run: func() { a.openToolForm(t, tool) }})
+		items = append(items, MenuItem{Label: tool.Name, Run: func() { a.openToolForm(t, tool) }})
 	}
 	return items
 }
@@ -374,14 +374,14 @@ func (a *App) composeCall(t *reqTab, tool model.MCPTool) {
 }
 
 // resourceMenu lists the announced resources; picking one composes a read.
-func (a *App) resourceMenu(t *reqTab) []menuItem {
-	items := make([]menuItem, 0, len(t.Resources))
+func (a *App) resourceMenu(t *reqTab) []MenuItem {
+	items := make([]MenuItem, 0, len(t.Resources))
 	for _, r := range t.Resources {
 		label := r.URI
 		if r.Name != "" {
 			label = r.Name + "  " + r.URI
 		}
-		items = append(items, menuItem{label: label, run: func() {
+		items = append(items, MenuItem{Label: label, Run: func() {
 			t.msg = NewTextField("read " + r.URI)
 			t.msg.Focused = true
 		}})
@@ -391,10 +391,10 @@ func (a *App) resourceMenu(t *reqTab) []menuItem {
 
 // promptMenu lists the announced prompts; picking one composes a request
 // with its required arguments filled in.
-func (a *App) promptMenu(t *reqTab) []menuItem {
-	items := make([]menuItem, 0, len(t.Prompts))
+func (a *App) promptMenu(t *reqTab) []MenuItem {
+	items := make([]MenuItem, 0, len(t.Prompts))
 	for _, p := range t.Prompts {
-		items = append(items, menuItem{label: p.Name, run: func() {
+		items = append(items, MenuItem{Label: p.Name, Run: func() {
 			t.msg = NewTextField("prompt " + p.Name + " " + p.ArgsJSON())
 			t.msg.Focused = true
 		}})

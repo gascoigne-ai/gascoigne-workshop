@@ -1,6 +1,10 @@
 package ui
 
-import "strings"
+import (
+	"strings"
+
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+)
 
 // menuIcons maps the first word of a menu label (or its first two words,
 // which win) to the icon shown before it.
@@ -14,17 +18,13 @@ var menuIcons = map[string]string{
 	"Undo": "undo", "Redo": "redo",
 }
 
-// menuIconW is the width of the icon column of a menu row; rows without an
-// icon keep the space so the labels line up.
-const menuIconW = 14
-
 // menuIcon is the icon of an item: its own, else the one its label starts
 // with, else none.
-func menuIcon(item menuItem) string {
-	if item.icon != "" {
-		return item.icon
+func menuIcon(item MenuItem) string {
+	if item.Icon != "" {
+		return item.Icon
 	}
-	words := strings.Fields(strings.TrimRight(item.label, "."))
+	words := strings.Fields(strings.TrimRight(item.Label, "."))
 	if len(words) >= 2 {
 		if name, ok := menuIcons[words[0]+" "+words[1]]; ok {
 			return name

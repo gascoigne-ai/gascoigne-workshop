@@ -24,7 +24,7 @@ func TestMenuRowsGetAnIconFromTheirLabel(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.label, func(t *testing.T) {
-			if got := menuIcon(menuItem{label: test.label}); got != test.want {
+			if got := menuIcon(view.MenuItem{Label: test.label}); got != test.want {
 				t.Fatalf("icon = %q, want %q", got, test.want)
 			}
 		})
@@ -32,7 +32,7 @@ func TestMenuRowsGetAnIconFromTheirLabel(t *testing.T) {
 }
 
 func TestAnItemsOwnIconWinsOverTheLabelTable(t *testing.T) {
-	if got := menuIcon(menuItem{label: "Copy", icon: "search"}); got != "search" {
+	if got := menuIcon(view.MenuItem{Label: "Copy", Icon: "search"}); got != "search" {
 		t.Fatalf("icon = %q, want the item's own", got)
 	}
 }
@@ -45,19 +45,17 @@ func TestEveryMenuIconInTheTableExists(t *testing.T) {
 	}
 }
 
-func TestAMenuRowDrawsItsIconAndKeepsLabelsAligned(t *testing.T) {
+func TestOpenMenuFillsTheIconsFromTheLabels(t *testing.T) {
 	a, _ := newTestApp(t)
-	a.openMenu(10, 10, []menuItem{{label: "Copy"}, {label: "GET /users"}})
-	withIcon := view.Dump(a.menuRow(a.ctxMenu, 0, a.ctxMenu.items[0]))
-	without := view.Dump(a.menuRow(a.ctxMenu, 1, a.ctxMenu.items[1]))
-	if !strings.Contains(withIcon, "icon=copy") {
-		t.Fatalf("no icon on the Copy row:\n%s", withIcon)
+	a.openMenu(10, 10, []view.MenuItem{{Label: "Copy"}, {Label: "GET /users"}})
+	if got := a.ctxMenu.Items[0].Icon; got != "copy" {
+		t.Fatalf("Copy row icon = %q, want copy", got)
 	}
-	if strings.Contains(without, "icon=") {
-		t.Fatalf("an icon on a row with no match:\n%s", without)
+	if got := a.ctxMenu.Items[1].Icon; got != "" {
+		t.Fatalf("a row with no match has icon %q, want none", got)
 	}
-	if !strings.Contains(without, "w="+itoa(menuIconW)) {
-		t.Fatalf("the unmatched row has no icon-sized spacer, so its label would not line up:\n%s", without)
+	if dump := view.Dump(a.contextMenuView()); !strings.Contains(dump, "icon=copy") {
+		t.Fatalf("the menu does not draw the Copy icon:\n%s", dump)
 	}
 }
 

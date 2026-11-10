@@ -155,9 +155,9 @@ func (d *Dialog) complete(host Host, quiet bool) {
 		}
 		return
 	}
-	items := make([]MenuItem, len(suggestions))
+	items := make([]prefs.MenuItem, len(suggestions))
 	for i, suggestion := range suggestions {
-		items[i] = MenuItem{Label: suggestion.Label, Hint: suggestion.Detail, Run: func() {
+		items[i] = prefs.MenuItem{Label: suggestion.Label, Hint: suggestion.Detail, Run: func() {
 			from := len([]rune(text[:suggestion.From]))
 			d.RawText.Text = string(runes[:from]) + suggestion.Insert + string(runes[caret:])
 			d.RawText.Cursor = from + len([]rune(suggestion.Insert))

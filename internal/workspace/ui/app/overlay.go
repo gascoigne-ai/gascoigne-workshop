@@ -4,8 +4,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/ui/mcpform"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/overlay"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/toasts"
-	"runtime"
-	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
 
@@ -17,38 +15,12 @@ import (
 // built into the window's Stack after everything else, newest on top.
 
 const (
-	menuMinW    = 120 // a menu is as wide as its content, within these
-	menuMaxW    = 420
-	menuHintH   = 16 // the extra height of a row with a hint
-	menuRowH    = 24
-	menuSepH    = 9
-	menuPad     = 4
 	dialogW     = 380
 	toastW      = 320
 	toastH      = 36
 	toastGap    = 6
 	toastMargin = 8
 )
-
-// menuItem is one row of a context menu. A separator has no label.
-type menuItem struct {
-	label, shortcut string
-	hint            string // a muted line under the label saying what the item is
-	icon            string // an icon name; "" takes the one the label's start maps to (menuIcons)
-	disabled        bool
-	separator       bool
-	run             func()
-}
-
-func (m menuItem) selectable() bool { return !m.separator && !m.disabled }
-
-// contextMenu is the open context menu: where it is, its rows, and the
-// highlighted row for the keyboard.
-type contextMenu struct {
-	x, y  int
-	items []menuItem
-	hot   int
-}
 
 // dialogButton is a button of a dialog.
 type dialogButton struct {
@@ -68,34 +40,29 @@ type dialog struct {
 // ---- context menu --------------------------------------------------------
 
 // openMenu shows a context menu at the pointer position x, y.
-func (a *App) openMenu(x, y int, items []menuItem) {
-	m := &contextMenu{x: x, y: y, items: items}
-	m.hot = nextSelectable(items, -1, 1)
-	a.ctxMenu = m
+func (a *App) openMenu(x, y int, items []MenuItem) {
+	a.ctxMenu = NewMenu(x, y, withIcons(items))
 }
 
 func (a *App) closeMenu() { a.ctxMenu = nil }
 
-// nextSelectable is the index of the next enabled, non-separator row
-// from index from in direction dir (1 or -1), wrapping; -1 if none.
-func nextSelectable(items []menuItem, from, dir int) int {
-	n := len(items)
-	for step := 1; step <= n; step++ {
-		i := ((from+dir*step)%n + n) % n
-		if items[i].selectable() {
-			return i
-		}
+// withIcons gives every item without an icon the one its label maps to.
+func withIcons(items []MenuItem) []MenuItem {
+	out := make([]MenuItem, len(items))
+	for i, item := range items {
+		item.Icon = menuIcon(item)
+		out[i] = item
 	}
-	return -1
+	return out
 }
 
 // runMenuItem closes the menu, then runs row i, so the action may open
 // another menu or dialog.
 func (a *App) runMenuItem(i int) {
-	if a.ctxMenu == nil || !a.ctxMenu.items[i].selectable() {
+	if a.ctxMenu == nil || !a.ctxMenu.Items[i].Selectable() {
 		return
 	}
-	run := a.ctxMenu.items[i].run
+	run := a.ctxMenu.Items[i].Run
 	a.closeMenu()
 	if run != nil {
 		run()
@@ -103,92 +70,11 @@ func (a *App) runMenuItem(i int) {
 }
 
 func (a *App) contextMenuView() Node {
-	m := a.ctxMenu
-	if m == nil {
+	if a.ctxMenu == nil {
 		return nil
 	}
-	return Col(W(a.menuWidth(m)), Pad(menuPad), Bg(w.Bg), Control("menu"), Shadow(),
-		FloatAt(m.x, m.y), Modal(), OnDismiss(a.closeMenu),
-		For(m.items, func(i int, it menuItem) Node { return a.menuRow(m, i, it) }),
-	)
+	return Menu(a.ctx, a.ctxMenu, OnSelect(a.runMenuItem), OnDismiss(a.closeMenu))
 }
-
-func (a *App) menuRow(m *contextMenu, i int, it menuItem) Node {
-	if it.separator {
-		return Row(H(menuSepH), PadX(6), HRule())
-	}
-	color := w.Text
-	if it.disabled {
-		color = w.Muted
-	}
-	look := HoverBg(w.Hover)
-	switch {
-	case it.disabled:
-		look = Gap(0)
-	case i == m.hot:
-		look = Bg(w.Selected)
-	}
-	var icon Node
-	if menuHasIcons(m.items) { // the column exists only in a menu where some row has an icon
-		icon = Spacer(W(menuIconW))
-		if name := menuIcon(it); name != "" {
-			icon = Icon(name, W(menuIconW), Color(color))
-		}
-	}
-	label := Node(Text(it.label, Color(color), Grow(1)))
-	height := menuRowH
-	if it.hint != "" {
-		lines := strings.Split(it.hint, "\n") // each line of the hint is a muted line under the label
-		parts := []Item{Grow(1), Text(it.label, Color(color))}
-		for _, line := range lines {
-			parts = append(parts, Text(line, Small(), Muted(), Ellipsis()))
-		}
-		label = Col(parts...)
-		height += menuHintH * len(lines)
-	}
-	return Row(H(height), PadX(10), Gap(8), AlignItems(AlignCenter), Control("row"), look, OnClick(func() { a.runMenuItem(i) }),
-		icon,
-		label,
-		If(it.shortcut != "", Text(w.PlatformKeyText(runtime.GOOS, it.shortcut), Small(), Muted())),
-	)
-}
-
-// menuHasIcons reports whether any row of the menu has an icon.
-func menuHasIcons(items []menuItem) bool {
-	for _, item := range items {
-		if !item.separator && menuIcon(item) != "" {
-			return true
-		}
-	}
-	return false
-}
-
-// menuWidth is the width of menu m: its widest row, within menuMinW and
-// menuMaxW. A row is its icon column (if the menu has one), the label or the
-// hint, whichever is wider, and the shortcut.
-func (a *App) menuWidth(m *contextMenu) int {
-	widest := 0
-	icons := menuHasIcons(m.items)
-	for _, item := range m.items {
-		if item.separator {
-			continue
-		}
-		row := a.ctx.Width(a.ctx.F.UI, item.label)
-		for _, line := range strings.Split(item.hint, "\n") {
-			row = max(row, a.ctx.Width(a.ctx.F.Small, line))
-		}
-		if item.shortcut != "" {
-			row += 16 + a.ctx.Width(a.ctx.F.Small, w.PlatformKeyText(runtime.GOOS, item.shortcut))
-		}
-		if icons {
-			row += menuIconW + 8
-		}
-		widest = max(widest, row)
-	}
-	return min(max(widest+2*10+2*menuPad, menuMinW), menuMaxW)
-}
-
-// ---- dialogs ---------------------------------------------------------------
 
 // confirm asks a yes/no question; onOK runs only on the primary button or Enter.
 func (a *App) confirm(title, body, okLabel string, onOK func()) {
@@ -306,15 +192,8 @@ func (a *App) overlayKeys(in w.Input) {
 	enter := in.Enter || in.Pressed(ebiten.KeyEnter)
 	switch {
 	case a.ctxMenu != nil:
-		m := a.ctxMenu
-		if in.Pressed(ebiten.KeyArrowDown) {
-			m.hot = nextSelectable(m.items, m.hot, 1)
-		}
-		if in.Pressed(ebiten.KeyArrowUp) {
-			m.hot = nextSelectable(m.items, m.hot, -1)
-		}
-		if enter && m.hot >= 0 {
-			a.runMenuItem(m.hot)
+		if picked := a.ctxMenu.Keys(in); picked >= 0 {
+			a.runMenuItem(picked)
 		}
 	case a.dialog != nil && a.dialog.input == nil && enter:
 		a.dialogDefault()

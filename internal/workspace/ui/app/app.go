@@ -186,13 +186,13 @@ type App struct {
 	shot        screenshot
 
 	settings           settings.Settings
-	settingsPath       string        // "" keeps settings in memory only
-	menu               bool          // settings menu is open
-	edit               *cellEdit     // the table cell being edited, if any
-	dragRow            *rowSelection // the table row being dragged by its grip, nil when none
-	ctxMenu            *contextMenu  // the open context menu, if any
-	bulk               *bulkEdit     // the table in bulk-edit mode, if any
-	actionIDs          []string      // the ids of the shortcut actions, for completing settings.json
+	settingsPath       string          // "" keeps settings in memory only
+	menu               bool            // settings menu is open
+	edit               *cellEdit       // the table cell being edited, if any
+	dragRow            *rowSelection   // the table row being dragged by its grip, nil when none
+	ctxMenu            *view.MenuState // the open context menu, if any
+	bulk               *bulkEdit       // the table in bulk-edit mode, if any
+	actionIDs          []string        // the ids of the shortcut actions, for completing settings.json
 	store              cport.Store
 	clients            cport.ClientConfigs // the build's client config; nil has none
 	states             port.StateStore

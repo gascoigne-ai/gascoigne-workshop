@@ -1748,8 +1748,8 @@ func TestLayoutSettingStacksThePanesAndIsSaved(t *testing.T) {
 
 type ran struct{ log []string }
 
-func (r *ran) item(label string) menuItem {
-	return menuItem{label: label, run: func() { r.log = append(r.log, label) }}
+func (r *ran) item(label string) view.MenuItem {
+	return view.MenuItem{Label: label, Run: func() { r.log = append(r.log, label) }}
 }
 
 // A menu opened at (500, 300): rows are 24px under 4px of padding, a
@@ -1759,8 +1759,8 @@ func openTestMenu(t *testing.T) (*App, *ran) {
 	a, _ := newTestApp(t)
 	r := &ran{}
 	paste := r.item("Paste")
-	paste.disabled = true
-	a.openMenu(500, 300, []menuItem{r.item("Copy"), {separator: true}, paste, r.item("Delete")})
+	paste.Disabled = true
+	a.openMenu(500, 300, []view.MenuItem{r.item("Copy"), {Separator: true}, paste, r.item("Delete")})
 	a.step(core.Input{})
 	if a.ctxMenu == nil {
 		t.Fatal("test setup: the menu must be open")
@@ -1806,20 +1806,20 @@ func TestMenuKeyboardNavigationSkipsSeparatorsAndDisabledRows(t *testing.T) {
 	a, r := openTestMenu(t)
 	down := func() { a.step(key(ebiten.KeyArrowDown, false, false)) }
 	up := func() { a.step(key(ebiten.KeyArrowUp, false, false)) }
-	if a.ctxMenu.hot != 0 {
-		t.Fatalf("the first enabled row starts highlighted, hot = %d", a.ctxMenu.hot)
+	if a.ctxMenu.Hot != 0 {
+		t.Fatalf("the first enabled row starts highlighted, hot = %d", a.ctxMenu.Hot)
 	}
 	down()
-	if a.ctxMenu.hot != 3 {
-		t.Fatalf("Down skips the separator and the disabled row: hot = %d", a.ctxMenu.hot)
+	if a.ctxMenu.Hot != 3 {
+		t.Fatalf("Down skips the separator and the disabled row: hot = %d", a.ctxMenu.Hot)
 	}
 	down()
-	if a.ctxMenu.hot != 0 {
-		t.Fatalf("Down wraps: hot = %d", a.ctxMenu.hot)
+	if a.ctxMenu.Hot != 0 {
+		t.Fatalf("Down wraps: hot = %d", a.ctxMenu.Hot)
 	}
 	up()
-	if a.ctxMenu.hot != 3 {
-		t.Fatalf("Up wraps backwards: hot = %d", a.ctxMenu.hot)
+	if a.ctxMenu.Hot != 3 {
+		t.Fatalf("Up wraps backwards: hot = %d", a.ctxMenu.Hot)
 	}
 	a.step(key(ebiten.KeyEnter, false, false))
 	if len(r.log) != 1 || r.log[0] != "Delete" || a.ctxMenu != nil {
@@ -1839,11 +1839,11 @@ func TestEscapeClosesTheMenuFirst(t *testing.T) {
 func TestMenuNearTheWindowEdgeStaysOnScreen(t *testing.T) {
 	a, _ := newTestApp(t)
 	r := &ran{}
-	a.openMenu(1270, 790, []menuItem{r.item("Copy"), {separator: true}, r.item("Paste"), r.item("Delete")})
+	a.openMenu(1270, 790, []view.MenuItem{r.item("Copy"), {Separator: true}, r.item("Paste"), r.item("Delete")})
 	a.step(core.Input{})
 	// the menu is as wide as its content now: moved left so its right edge is
 	// at the window's, and up to y=701 (89 high); the Copy row is 705..729
-	click(a, 1280-a.menuWidth(a.ctxMenu)/2-4, 717)
+	click(a, 1280-view.MenuWidth(a.ctx, a.ctxMenu.Items)/2-4, 717)
 	if len(r.log) != 1 || r.log[0] != "Copy" {
 		t.Fatalf("ran %v: the menu must be flipped inside the window", r.log)
 	}
@@ -2018,8 +2018,8 @@ const (
 
 func menuLabels(a *App) []string {
 	var out []string
-	for _, it := range a.ctxMenu.items {
-		out = append(out, it.label)
+	for _, it := range a.ctxMenu.Items {
+		out = append(out, it.Label)
 	}
 	return out
 }
@@ -2031,14 +2031,14 @@ func pickMenu(t *testing.T, a *App, label string) {
 	if m == nil {
 		t.Fatal("no menu is open")
 	}
-	y := m.y + menuPad
-	for _, it := range m.items {
-		h := menuRowH
-		if it.separator {
-			h = menuSepH
+	y := m.Y + view.MenuPad
+	for _, it := range m.Items {
+		h := view.MenuRowH
+		if it.Separator {
+			h = view.MenuSepH
 		}
-		if it.label == label {
-			click(a, m.x+100, y+h/2)
+		if it.Label == label {
+			click(a, m.X+100, y+h/2)
 			return
 		}
 		y += h
@@ -2595,10 +2595,10 @@ func TestDuplicateHeaderNamesAreFlagged(t *testing.T) {
 
 // ---- right-click menus: tabs, table rows, text, response ----------------
 
-func itemByLabel(a *App, label string) *menuItem {
-	for i := range a.ctxMenu.items {
-		if a.ctxMenu.items[i].label == label {
-			return &a.ctxMenu.items[i]
+func itemByLabel(a *App, label string) *view.MenuItem {
+	for i := range a.ctxMenu.Items {
+		if a.ctxMenu.Items[i].Label == label {
+			return &a.ctxMenu.Items[i]
 		}
 	}
 	return nil
@@ -2617,7 +2617,7 @@ func TestTabMenu(t *testing.T) {
 		t.Fatalf("%d tabs, current %q", len(a.list.Tabs), a.cur().Req.Name)
 	}
 	rightClick(a, left+20, tabStripY)
-	if !itemByLabel(a, "Close others").disabled || !itemByLabel(a, "Close tabs to the right").disabled {
+	if !itemByLabel(a, "Close others").Disabled || !itemByLabel(a, "Close tabs to the right").Disabled {
 		t.Fatal("with one tab there is nothing else to close")
 	}
 }
@@ -2666,7 +2666,7 @@ func TestTableRowMenu(t *testing.T) {
 	if got := menuLabels(a); !reflect.DeepEqual(got, want) {
 		t.Fatalf("row menu = %q", got)
 	}
-	if !itemByLabel(a, "Move up").disabled || itemByLabel(a, "Move down").disabled {
+	if !itemByLabel(a, "Move up").Disabled || itemByLabel(a, "Move down").Disabled {
 		t.Fatal("the first row cannot move up, but can move down")
 	}
 	pickMenu(t, a, "Insert row above")
@@ -2722,15 +2722,15 @@ func TestTextFieldMenuStatesAndActions(t *testing.T) {
 		t.Fatalf("text menu = %q", got)
 	}
 	for _, l := range []string{"Undo", "Redo", "Cut", "Copy"} {
-		if !itemByLabel(a, l).disabled {
+		if !itemByLabel(a, l).Disabled {
 			t.Errorf("%s must be disabled with nothing to undo or selected", l)
 		}
 	}
-	if itemByLabel(a, "Paste").disabled || itemByLabel(a, "Select all").disabled {
+	if itemByLabel(a, "Paste").Disabled || itemByLabel(a, "Select all").Disabled {
 		t.Fatal("Paste and Select all are available")
 	}
-	if itemByLabel(a, "Copy").shortcut != "Ctrl+C" {
-		t.Fatalf("shortcut text = %q", itemByLabel(a, "Copy").shortcut)
+	if itemByLabel(a, "Copy").Shortcut != "Ctrl+C" {
+		t.Fatalf("shortcut text = %q", itemByLabel(a, "Copy").Shortcut)
 	}
 
 	pickMenu(t, a, "Select all")
@@ -2742,7 +2742,7 @@ func TestTextFieldMenuStatesAndActions(t *testing.T) {
 	if url.SelectedText() != url.Text {
 		t.Fatal("a right click must not clear the selection")
 	}
-	if itemByLabel(a, "Copy").disabled || itemByLabel(a, "Cut").disabled {
+	if itemByLabel(a, "Copy").Disabled || itemByLabel(a, "Cut").Disabled {
 		t.Fatal("Cut and Copy are available with a selection")
 	}
 	original := url.Text
@@ -2775,10 +2775,10 @@ func TestSecretFieldsCannotBeCutOrCopiedFromTheMenu(t *testing.T) {
 	a.typeText("s3cret")
 	a.cur().authInput("token").SelectAll()
 	rightClick(a, authFieldX, authRow1Y)
-	if !itemByLabel(a, "Cut").disabled || !itemByLabel(a, "Copy").disabled {
+	if !itemByLabel(a, "Cut").Disabled || !itemByLabel(a, "Copy").Disabled {
 		t.Fatal("a masked field must not offer Cut or Copy")
 	}
-	if itemByLabel(a, "Paste").disabled {
+	if itemByLabel(a, "Paste").Disabled {
 		t.Fatal("pasting a secret in is fine")
 	}
 }
@@ -2813,7 +2813,7 @@ func TestResponseMenu(t *testing.T) {
 	if got := menuLabels(a); !reflect.DeepEqual(got, want) {
 		t.Fatalf("response menu = %q", got)
 	}
-	if !itemByLabel(a, "Copy").disabled {
+	if !itemByLabel(a, "Copy").Disabled {
 		t.Fatal("Copy needs a selection")
 	}
 	pickMenu(t, a, "Copy body")
@@ -2826,7 +2826,7 @@ func TestResponseMenu(t *testing.T) {
 		t.Fatal("Select all")
 	}
 	rightClick(a, 1000, 400)
-	if itemByLabel(a, "Copy").disabled {
+	if itemByLabel(a, "Copy").Disabled {
 		t.Fatal("Copy works with a selection")
 	}
 	pickMenu(t, a, "Copy as cURL")
@@ -3203,7 +3203,7 @@ func TestMenusShowTheConfiguredKey(t *testing.T) {
 	a.shortcutKeys.Start("find")
 	a.step(combo(ebiten.KeyG, true, false, false))
 	rightClick(a, 1000, 400)
-	if got := itemByLabel(a, "Find").shortcut; got != "Ctrl+G" {
+	if got := itemByLabel(a, "Find").Shortcut; got != "Ctrl+G" {
 		t.Fatalf("the Find item shows %q", got)
 	}
 }
@@ -3307,8 +3307,8 @@ func TestEditableTableMenuAlsoCopiesCells(t *testing.T) {
 	items := a.rowMenuItems(requestPanes[0], a.cur(), 0)
 	var found bool
 	for _, it := range items {
-		if it.label == "Copy value" {
-			it.run()
+		if it.Label == "Copy value" {
+			it.Run()
 			found = true
 		}
 	}

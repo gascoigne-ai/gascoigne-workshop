@@ -21,7 +21,7 @@ type fakeHost struct {
 	current   settings.Settings
 	path      string
 	toasts    []string
-	menus     [][]MenuItem
+	menus     [][]prefs.MenuItem
 	menuAt    [2]int // where the last menu opened
 	unsaved   bool
 	pickTitle string
@@ -47,7 +47,7 @@ func (h *fakeHost) SetFonts(ui, code w.FontData) error { return nil }
 func (h *fakeHost) Toast(text string, _ bool)          { h.toasts = append(h.toasts, text) }
 func (h *fakeHost) SetStatus(string)                   {}
 func (h *fakeHost) TextMenu(*TextField, func()) Option { return func(*El) {} }
-func (h *fakeHost) OpenMenu(x, y int, items []MenuItem) {
+func (h *fakeHost) OpenMenu(x, y int, items []prefs.MenuItem) {
 	h.menus = append(h.menus, items)
 	h.menuAt = [2]int{x, y}
 }

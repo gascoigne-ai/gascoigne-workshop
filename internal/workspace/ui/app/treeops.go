@@ -14,6 +14,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/postman"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 // ---- what the tree shows -------------------------------------------------
@@ -43,27 +44,27 @@ func (a *App) selectedFolder() *model.Folder {
 }
 
 // treeMenuItems are the right-click actions for a row.
-func (a *App) treeMenuItems(row collection.Row) []menuItem {
+func (a *App) treeMenuItems(row collection.Row) []MenuItem {
 	node := row.Node()
-	rename := menuItem{label: "Rename", run: func() { a.renameNode(tree.Of(node)) }}
-	sep := menuItem{separator: true}
+	rename := MenuItem{Label: "Rename", Run: func() { a.renameNode(tree.Of(node)) }}
+	sep := MenuItem{Separator: true}
 	if row.Req != nil {
-		return []menuItem{
+		return []MenuItem{
 			rename,
-			{label: "Duplicate", run: func() { a.duplicateNode(tree.Of(node)) }},
-			{label: "Copy URL", run: func() { a.copyRequestURL(row.Req) }},
+			{Label: "Duplicate", Run: func() { a.duplicateNode(tree.Of(node)) }},
+			{Label: "Copy URL", Run: func() { a.copyRequestURL(row.Req) }},
 			sep,
-			{label: "Delete", run: func() { a.deleteNode(tree.Of(node)) }},
+			{Label: "Delete", Run: func() { a.deleteNode(tree.Of(node)) }},
 		}
 	}
-	create := []menuItem{
-		{label: "New request", run: func() { a.newRequestIn(row.Dir) }},
-		{label: "New folder", run: func() { a.newFolderIn(row.Dir) }},
-		{label: "Import cURL from clipboard", run: func() { a.importCurl(row.Dir) }},
-		{label: "Import OpenAPI from clipboard", run: func() { a.importOpenAPI(row.Dir) }},
-		{label: "Import Postman from clipboard", run: func() { a.importPostman(row.Dir) }},
-		{label: "Export as Postman...", run: func() { a.exportPostman(row.Dir) }},
-		{label: "Variables", run: func() { a.editVars(row.Dir) }},
+	create := []MenuItem{
+		{Label: "New request", Run: func() { a.newRequestIn(row.Dir) }},
+		{Label: "New folder", Run: func() { a.newFolderIn(row.Dir) }},
+		{Label: "Import cURL from clipboard", Run: func() { a.importCurl(row.Dir) }},
+		{Label: "Import OpenAPI from clipboard", Run: func() { a.importOpenAPI(row.Dir) }},
+		{Label: "Import Postman from clipboard", Run: func() { a.importPostman(row.Dir) }},
+		{Label: "Export as Postman...", Run: func() { a.exportPostman(row.Dir) }},
+		{Label: "Variables", Run: func() { a.editVars(row.Dir) }},
 		sep,
 		rename,
 	}
@@ -71,8 +72,8 @@ func (a *App) treeMenuItems(row collection.Row) []menuItem {
 		return create // the collection itself is not duplicated or deleted
 	}
 	return append(create,
-		menuItem{label: "Duplicate", run: func() { a.duplicateNode(tree.Of(node)) }},
-		menuItem{label: "Delete", run: func() { a.deleteNode(tree.Of(node)) }},
+		MenuItem{Label: "Duplicate", Run: func() { a.duplicateNode(tree.Of(node)) }},
+		MenuItem{Label: "Delete", Run: func() { a.deleteNode(tree.Of(node)) }},
 	)
 }
 

@@ -105,11 +105,11 @@ func (a *App) toggleSecret(i int) {
 
 // envMenu is the menu of the environment chip: envs.Menu decides the rows,
 // this says what each one does.
-func (a *App) envMenu() []menuItem {
+func (a *App) envMenu() []MenuItem {
 	rows := envs.Menu(a.env, &a.col)
-	items := make([]menuItem, len(rows))
+	items := make([]MenuItem, len(rows))
 	for i, row := range rows {
-		items[i] = menuItem{label: row.Label, disabled: row.Disabled, run: a.envAction(row)}
+		items[i] = MenuItem{Label: row.Label, Disabled: row.Disabled, Run: a.envAction(row)}
 		if row.Action == envs.Separator {
 			items[i] = menuSeparator
 		}
@@ -205,9 +205,9 @@ func (a *App) completeVariable() {
 		a.toast("No variable fits here", false)
 		return
 	}
-	items := make([]menuItem, len(names))
+	items := make([]MenuItem, len(names))
 	for i, name := range names {
-		items[i] = menuItem{label: name, run: func() { a.insertVariable(t, name, from) }}
+		items[i] = MenuItem{Label: name, Run: func() { a.insertVariable(t, name, from) }}
 	}
 	a.openMenu(sidebarW+120, headerH+tabsH+urlH-8, items)
 }

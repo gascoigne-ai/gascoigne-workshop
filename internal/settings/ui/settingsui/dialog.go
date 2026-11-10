@@ -31,9 +31,6 @@ const (
 	DialogTitleH = 44
 )
 
-// MenuItem is one row of the completion menu the dialog asks the host to open.
-type MenuItem = prefs.MenuItem
-
 // Host is what the dialog needs from the application: reads, and Send for
 // everything it asks to be done.
 type Host interface {

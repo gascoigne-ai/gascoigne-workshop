@@ -11,7 +11,7 @@ import (
 // the connection state, the auto-reconnect chip (a hand-built node in a
 // slot), the pickers an MCP server enabled, Ping and Clear.
 func (a *App) messagesToolbar(t *reqTab) Node {
-	pick := func(menu func(*reqTab) []menuItem) func() {
+	pick := func(menu func(*reqTab) []MenuItem) func() {
 		return func() { a.openMenu(a.ctx.In.X, a.ctx.In.Y, menu(t)) }
 	}
 	return component.View(`

@@ -37,10 +37,10 @@ func TestHistoryKeepsEarlierResponsesNewestFirstAndSwapsOnPick(t *testing.T) {
 		t.Fatalf("history %+v", tab.Earlier)
 	}
 	items := a.historyMenu(tab)
-	if len(items) != 2 || !strings.HasPrefix(items[0].label, "201") {
+	if len(items) != 2 || !strings.HasPrefix(items[0].Label, "201") {
 		t.Fatalf("menu %+v", items)
 	}
-	items[1].run() // pick the 200
+	items[1].Run() // pick the 200
 	if tab.Resp.Status != 200 || tab.Earlier[1].Resp.Status != 202 {
 		t.Fatalf("shown %d, history %+v", tab.Resp.Status, tab.Earlier)
 	}

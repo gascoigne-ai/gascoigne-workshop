@@ -8,14 +8,15 @@ import (
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/textfmt"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 // historyMenu lists the earlier responses; picking one shows it again.
-func (a *App) historyMenu(t *reqTab) []menuItem {
-	items := make([]menuItem, 0, len(t.Earlier))
+func (a *App) historyMenu(t *reqTab) []MenuItem {
+	items := make([]MenuItem, 0, len(t.Earlier))
 	for i, h := range t.Earlier {
 		label := fmt.Sprintf("%d %s  %s  %s", h.Resp.Status, h.Resp.StatusText, textfmt.Duration(h.Resp.Duration), textfmt.Size(h.Resp.Size))
-		items = append(items, menuItem{label: label, run: func() { a.showHistory(t, i) }})
+		items = append(items, MenuItem{Label: label, Run: func() { a.showHistory(t, i) }})
 	}
 	return items
 }

@@ -45,7 +45,7 @@ func TestLoadingTheSchemaOffersItsOperationsInAMenu(t *testing.T) {
 		t.Fatalf("no schema button:\n%s", view.Dump(a.graphQLBody(tab)))
 	}
 	items := a.schemaMenu(tab)
-	if len(items) != 1 || items[0].label != "query repo(name: String!): Repo" {
+	if len(items) != 1 || items[0].Label != "query repo(name: String!): Repo" {
 		t.Fatalf("menu = %+v", items)
 	}
 }
@@ -56,7 +56,7 @@ func TestPickingAnOperationFillsTheQueryAndVariablesOfTheTab(t *testing.T) {
 	a.loadSchema(tab)
 	waitForResponse(t, a, tab)
 
-	a.schemaMenu(tab)[0].run()
+	a.schemaMenu(tab)[0].Run()
 	wantQuery := "query repo($name: String!) {\n  repo(name: $name) {\n    name\n  }\n}"
 	if tab.body.Text != wantQuery || tab.Req.Body != wantQuery {
 		t.Fatalf("query = %q (request %q), want %q", tab.body.Text, tab.Req.Body, wantQuery)

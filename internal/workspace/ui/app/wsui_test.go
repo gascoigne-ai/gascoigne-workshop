@@ -210,10 +210,10 @@ func TestMCPToolsFillTheComposerFromTheirSchemas(t *testing.T) {
 		t.Fatalf("tools %+v", tab.Tools)
 	}
 	items := a.toolMenu(tab)
-	if len(items) != 2 || items[0].label != "search" {
+	if len(items) != 2 || items[0].Label != "search" {
 		t.Fatalf("menu %+v", items)
 	}
-	items[0].run() // a tool with properties opens its form; its defaults make the call
+	items[0].Run() // a tool with properties opens its form; its defaults make the call
 	if a.dialog == nil || a.dialog.form == nil {
 		t.Fatal("picking a tool with arguments opens the form")
 	}
@@ -225,7 +225,7 @@ func TestMCPToolsFillTheComposerFromTheirSchemas(t *testing.T) {
 	if got := tab.msg.Text; got != `call search {"q":"","limit":5}` {
 		t.Fatalf("composer %q", got)
 	}
-	items[1].run()
+	items[1].Run()
 	if got := tab.msg.Text; got != "call ping {}" {
 		t.Fatalf("composer %q", got)
 	}
@@ -241,11 +241,11 @@ func TestMCPResourcesAndPromptsFillTheComposer(t *testing.T) {
 	tab.Req.Protocol = "mcp"
 	a.applyWS(wsEvent{tab: tab, hasEv: true, ev: reqport.Event{Dir: reqport.Received, Kind: "response", Text: `{"result":{"resources":[{"uri":"file:///a.txt","name":"A"}]}}`}})
 	a.applyWS(wsEvent{tab: tab, hasEv: true, ev: reqport.Event{Dir: reqport.Received, Kind: "response", Text: `{"result":{"prompts":[{"name":"review","arguments":[{"name":"code","required":true}]}]}}`}})
-	a.resourceMenu(tab)[0].run()
+	a.resourceMenu(tab)[0].Run()
 	if tab.msg.Text != "read file:///a.txt" {
 		t.Fatalf("composer %q", tab.msg.Text)
 	}
-	a.promptMenu(tab)[0].run()
+	a.promptMenu(tab)[0].Run()
 	if tab.msg.Text != `prompt review {"code":""}` {
 		t.Fatalf("composer %q", tab.msg.Text)
 	}

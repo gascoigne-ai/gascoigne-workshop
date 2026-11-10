@@ -175,10 +175,10 @@ func TestCtrlSpaceCompletesVariablesInTheURLField(t *testing.T) {
 		t.Fatalf("names %v from %d", names, from)
 	}
 	a.completeVariable()
-	if a.ctxMenu == nil || len(a.ctxMenu.items) != 2 {
+	if a.ctxMenu == nil || len(a.ctxMenu.Items) != 2 {
 		t.Fatal("no completion menu")
 	}
-	a.ctxMenu.items[1].run() // hostname
+	a.ctxMenu.Items[1].Run() // hostname
 	if tab.url.Text != "https://{{hostname}}" || tab.Req.URL != "https://{{hostname}}" || tab.url.Cursor != len("https://{{hostname}}") {
 		t.Fatalf("url %q req %q cursor %d", tab.url.Text, tab.Req.URL, tab.url.Cursor)
 	}

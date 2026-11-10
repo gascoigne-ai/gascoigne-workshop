@@ -136,10 +136,10 @@ func TestCtrlSpaceInTheRawViewOffersKeysAndValues(t *testing.T) {
 	a.prefs.RawText.Cursor = len([]rune(a.prefs.RawText.Text))
 	a.prefs.RawText.Focused = true
 	a.completeVariable()
-	if a.ctxMenu == nil || len(a.ctxMenu.items) != 1 || a.ctxMenu.items[0].label != "layout" {
+	if a.ctxMenu == nil || len(a.ctxMenu.Items) != 1 || a.ctxMenu.Items[0].Label != "layout" {
 		t.Fatalf("menu = %+v", a.ctxMenu)
 	}
-	a.ctxMenu.items[0].run()
+	a.ctxMenu.Items[0].Run()
 	if a.prefs.RawText.Text != `{"appearance": {"layout"` {
 		t.Fatalf("text after completing = %q", a.prefs.RawText.Text)
 	}
@@ -149,7 +149,7 @@ func TestCtrlSpaceInTheRawViewOffersKeysAndValues(t *testing.T) {
 	a.prefs.RawText.Cursor = len([]rune(a.prefs.RawText.Text))
 	a.prefs.RawText.Focused = true
 	a.completeVariable()
-	if a.ctxMenu == nil || a.ctxMenu.items[0].label != "stacked" {
+	if a.ctxMenu == nil || a.ctxMenu.Items[0].Label != "stacked" {
 		t.Fatalf("menu = %+v", a.ctxMenu)
 	}
 }

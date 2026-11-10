@@ -64,9 +64,9 @@ func (a *App) Pointer() (int, int) { return a.ctx.In.X, a.ctx.In.Y }
 
 // openMenuItems opens a menu of a page's items at a point of the window.
 func (a *App) openMenuItems(x, y int, items []prefs.MenuItem) {
-	rows := make([]menuItem, len(items))
+	rows := make([]MenuItem, len(items))
 	for i, item := range items {
-		rows[i] = menuItem{label: item.Label, hint: item.Hint, run: item.Run}
+		rows[i] = MenuItem{Label: item.Label, Hint: item.Hint, Run: item.Run}
 	}
 	a.openMenu(x, y, rows)
 }

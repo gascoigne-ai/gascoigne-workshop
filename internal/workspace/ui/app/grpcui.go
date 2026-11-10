@@ -32,9 +32,9 @@ func (a *App) pickGRPCMethod(t *reqTab) {
 				a.toast("Listing methods failed: "+err.Error(), true)
 				return
 			}
-			items := make([]menuItem, 0, len(methods))
+			items := make([]MenuItem, 0, len(methods))
 			for _, method := range methods {
-				items = append(items, menuItem{label: method, run: func() { editRequest(t, editor.MethodChosen{Method: method}) }})
+				items = append(items, MenuItem{Label: method, Run: func() { editRequest(t, editor.MethodChosen{Method: method}) }})
 			}
 			a.openMenu(x, y, items)
 		}

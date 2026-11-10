@@ -53,13 +53,13 @@ func (a *App) loadSchema(t *reqTab) {
 
 // schemaMenu lists the operations of the loaded schema; picking one
 // replaces the tab's query and variables with a starter for it.
-func (a *App) schemaMenu(t *reqTab) []menuItem {
+func (a *App) schemaMenu(t *reqTab) []MenuItem {
 	if t.schema == nil {
 		return nil
 	}
-	items := make([]menuItem, 0, len(t.schema.Operations))
+	items := make([]MenuItem, 0, len(t.schema.Operations))
 	for _, op := range t.schema.Operations {
-		items = append(items, menuItem{label: op.Label, run: func() { a.useOperation(t, op) }})
+		items = append(items, MenuItem{Label: op.Label, Run: func() { a.useOperation(t, op) }})
 	}
 	return items
 }

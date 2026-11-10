@@ -68,7 +68,7 @@ func TestPickingAGRPCMethodListsTheServersMethodsAndSetsIt(t *testing.T) {
 	if !strings.Contains(strings.Join(menuLabels(a), " "), "grpc.health.v1.Health/Check") {
 		t.Fatalf("methods = %v", menuLabels(a))
 	}
-	itemByLabel(a, "grpc.health.v1.Health/Check").run()
+	itemByLabel(a, "grpc.health.v1.Health/Check").Run()
 	if tab.Req.Method != "grpc.health.v1.Health/Check" {
 		t.Fatalf("Method = %q", tab.Req.Method)
 	}
