@@ -123,3 +123,13 @@ func BindingFrom(input core.Input) (binding Binding, ok bool) {
 	}
 	return Binding{}, false
 }
+
+// IsFunctionKey reports whether k is one of F1 to F12.
+func IsFunctionKey(k ebiten.Key) bool { return k >= ebiten.KeyF1 && k <= ebiten.KeyF12 }
+
+// TypesText reports whether the Binding is a key the user also types
+// with: no Ctrl or Alt, not a function key, not Delete. Such a binding
+// should fire only while no text field has focus.
+func (b Binding) TypesText() bool {
+	return !b.Ctrl && !b.Alt && !IsFunctionKey(b.Key) && b.Key != ebiten.KeyDelete
+}

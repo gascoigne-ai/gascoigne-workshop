@@ -79,8 +79,6 @@ func Effective(current settings.Settings, action Action) engine.Binding {
 	return action.Default
 }
 
-func isFunctionKey(key ebiten.Key) bool { return key >= ebiten.KeyF1 && key <= ebiten.KeyF12 }
-
 // Refuse says why a combination cannot be given to any action: the text
 // widgets or the overlays need it.
 func Refuse(binding engine.Binding) error {
@@ -95,15 +93,9 @@ func Refuse(binding engine.Binding) error {
 	return nil
 }
 
-// TypesText reports whether a binding is a key the user also types with,
-// so it fires only while no text field has focus.
-func TypesText(binding engine.Binding) bool {
-	return !binding.Ctrl && !binding.Alt && !isFunctionKey(binding.Key) && binding.Key != ebiten.KeyDelete
-}
-
 // Warning is what a user should know about a binding that is also typed.
 func Warning(binding engine.Binding) string {
-	if TypesText(binding) {
+	if binding.TypesText() {
 		return "Plain key: works only while no text field has focus"
 	}
 	return ""

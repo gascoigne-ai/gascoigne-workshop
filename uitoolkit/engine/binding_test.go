@@ -96,3 +96,33 @@ func TestBindingFromReadsTheCombinationPressedThisFrame(t *testing.T) {
 		})
 	}
 }
+
+func TestBindingTypesText(t *testing.T) {
+	tests := []struct {
+		name    string
+		binding Binding
+		want    bool
+	}{
+		{"plain letter", Binding{Key: ebiten.KeyA, Bound: true}, true},
+		{"shift letter", Binding{Key: ebiten.KeyA, Shift: true, Bound: true}, true},
+		{"ctrl letter", Binding{Key: ebiten.KeyA, Ctrl: true, Bound: true}, false},
+		{"alt arrow", Binding{Key: ebiten.KeyArrowUp, Alt: true, Bound: true}, false},
+		{"function key", Binding{Key: ebiten.KeyF5, Bound: true}, false},
+		{"delete", Binding{Key: ebiten.KeyDelete, Bound: true}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.binding.TypesText(); got != tt.want {
+				t.Fatalf("TypesText = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestIsFunctionKey(t *testing.T) {
+	for key, want := range map[ebiten.Key]bool{ebiten.KeyF1: true, ebiten.KeyF12: true, ebiten.KeyA: false, ebiten.KeyEnter: false} {
+		if got := IsFunctionKey(key); got != want {
+			t.Errorf("IsFunctionKey(%v) = %v, want %v", key, got, want)
+		}
+	}
+}
