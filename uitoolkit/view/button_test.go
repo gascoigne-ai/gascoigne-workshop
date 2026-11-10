@@ -83,3 +83,20 @@ func TestListRowLooksSelectedOrHoverable(t *testing.T) {
 		t.Errorf("selected row lost its options: h %d onClick %v", selected.h, selected.onClick != nil)
 	}
 }
+
+// A note is one line of small text in the given color, NoteH high, that
+// shortens with an ellipsis instead of wrapping.
+func TestNoteIsOneColoredLineOfSmallText(t *testing.T) {
+	c := testCtx(t)
+	note := Note("Port must be a number", core.Error)
+	Layout(c, Row(W(400), H(60), note), 400, 60)
+	if note.h != core.NoteH {
+		t.Errorf("height = %d, want NoteH %d", note.h, core.NoteH)
+	}
+	if len(note.kids) != 1 || note.kids[0].fg != core.Error {
+		t.Fatalf("want one text child in the Error color, got %d kids", len(note.kids))
+	}
+	if muted := Note("careful", core.Muted); muted.kids[0].fg != core.Muted {
+		t.Errorf("muted note color = %q", muted.kids[0].fg)
+	}
+}

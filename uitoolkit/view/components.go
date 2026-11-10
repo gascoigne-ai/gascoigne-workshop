@@ -56,6 +56,16 @@ func ListRow(selected bool, items ...Item) *El {
 	return Row(append([]Item{Control("row"), look}, items...)...)
 }
 
+// Note is a one-line message under a control, in small text of the given
+// color (core.Error for a problem, core.Muted for a hint). It is NoteH high
+// and cuts a long text with an ellipsis.
+func Note(text string, tone core.Token, opts ...Option) *El {
+	return Row(with([]Item{
+		H(core.NoteH),
+		Text(text, Small(), Color(tone), Ellipsis(), Grow(1)),
+	}, opts)...)
+}
+
 // TabItem is one tab; Badge > 0 shows a count after the label.
 type TabItem struct {
 	Label string

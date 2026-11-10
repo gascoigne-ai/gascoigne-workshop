@@ -195,7 +195,7 @@ func (d *Dialog) rawView(host Host) Node {
 			if problem.Key != "" {
 				prefix = problem.Key + ": "
 			}
-			return Row(H(w.NoteH), Text(prefix+problem.Message, Small(), Color(w.Error), Ellipsis(), Grow(1)))
+			return Note(prefix+problem.Message, w.Error)
 		}),
 		Text(w.PlatformKeyText("linux", "Ctrl+Space")+" completes keys and values", Small(), Muted()),
 	)

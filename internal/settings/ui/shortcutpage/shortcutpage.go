@@ -303,9 +303,9 @@ func (p *Page) row(host Host, action Action) Node {
 			Button("Replace", W(64), H(w.CompactH), OnClick(func() { p.Replace(host, action.ID) }), Tooltip("Unbind "+pending.OtherName+" and use this key here")),
 		)
 	} else if text := p.notes[action.ID]; text != "" {
-		note = Row(H(w.NoteH), Text(text, Small(), Color(w.Error), Ellipsis(), Grow(1)))
+		note = Note(text, w.Error)
 	} else if warning := Warning(binding); warning != "" {
-		note = Row(H(w.NoteH), Text(warning, Small(), Color(w.Muted), Ellipsis(), Grow(1)))
+		note = Note(warning, w.Muted)
 	}
 	return Col(
 		Row(H(w.CompactH), Gap(6),

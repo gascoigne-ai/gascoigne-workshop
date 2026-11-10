@@ -136,6 +136,6 @@ func (p *Page) row(host Host, c appearance.CustomColor) Node {
 				host.TextMenu(in, func() { p.edited(host, c) })),
 			Button("Reset", W(44), H(w.CompactH), OnClick(func() { p.reset(host, c.Token) })),
 		),
-		If(note != "", Row(H(w.NoteH), Text(note, Small(), Color(w.Error), Ellipsis(), Grow(1)))),
+		If(note != "", Note(note, w.Error)),
 	)
 }
