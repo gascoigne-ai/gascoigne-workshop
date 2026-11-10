@@ -6,7 +6,7 @@ status: todo
 A frame does no work proportional to the collection size and no blocking I/O.
 
 ## Scope
-- [open] `workspaceTick` marshals the whole collection to JSON every frame (`tree.Key`, `workspace.go`); `stateTick` does the same with `stateKey(a.snapshot())` (`statesync.go`). Replace both with a revision counter bumped by `Update`.
+- [done] `workspaceTick`, `stateTick` and the window title no longer marshal the collection and the state every frame: `changeKeys` (`changekeys.go`) rebuilds the JSON forms only on frames where input, a message, a toast change or a window change could have changed something (user chose this over a revision counter, which needs a bump at every mutation site and loses an edit if one is missed). Saves, loads and flushes build a fresh key. Idle frames cost nothing; a frame with input still pays the marshal, so a counter stays a follow-up if that shows in a profile.
 - [open] Tab `Dirty()` runs `reflect.DeepEqual` on a `Clone()` per tab per frame; use the revision of the draft (task 037).
 - [open] Save of the collection, history and UI state, settings `Persist` and image decode in `refreshView` run as commands (task 035), not on the UI goroutine.
 - [open] `Sender.Send` and `Ping` of WebSocket sessions (`wsui.go`) run as commands.

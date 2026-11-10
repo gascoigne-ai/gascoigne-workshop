@@ -123,6 +123,7 @@ func TestStateIsSavedAfterAQuietSpell(t *testing.T) {
 	a.now = func() time.Time { return clock }
 	a.step(core.Input{})
 	a.sidebarSplit.Size = 280
+	a.markStale()        // the test edits the model directly; in the app an edit comes with input, which marks the keys stale
 	a.step(core.Input{}) // change noticed, not yet written
 	if s, _ := statefile.Load(path); s.SidebarW != 0 {
 		t.Fatal("written before the debounce")

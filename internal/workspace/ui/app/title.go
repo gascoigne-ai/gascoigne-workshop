@@ -1,7 +1,5 @@
 package ui
 
-import "github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/tree"
-
 // appName is the program's name in the window title.
 const appName = "Gascoigne Workshop"
 
@@ -9,7 +7,7 @@ const appName = "Gascoigne Workshop"
 // in front while something is not saved: an edited request in a tab, or a
 // change to the collection that has not been written to its folder yet.
 func (a *App) Title() string {
-	unsaved := a.workspace != "" && a.colSave.Pending(tree.Key(a.col))
+	unsaved := a.workspace != "" && a.colSave.Pending(a.collectionKey())
 	for _, t := range a.openTabs() {
 		unsaved = unsaved || (a.workspace == "" && dirty(t))
 	}

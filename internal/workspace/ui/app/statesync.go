@@ -169,7 +169,7 @@ func (a *App) stateTick() {
 	if a.statePath == "" {
 		return
 	}
-	key := stateKey(a.snapshot())
+	key := a.stateNow()
 	if !a.stateSave.Due(key, a.now()) {
 		return
 	}

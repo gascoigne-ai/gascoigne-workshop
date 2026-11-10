@@ -26,6 +26,7 @@ func TestTitleShowsTheCollectionAndAnUnsavedMark(t *testing.T) {
 		t.Fatalf("a fresh workspace is saved: %q", w.Title())
 	}
 	w.cur().Req.URL = "https://typed.test"
+	w.markStale() // the test edits the model directly; in the app an edit comes with input, which marks the keys stale
 	if !strings.HasPrefix(w.Title(), dirtyMark) {
 		t.Fatalf("a pending edit shows: %q", w.Title())
 	}

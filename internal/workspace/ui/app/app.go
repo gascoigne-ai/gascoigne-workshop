@@ -228,6 +228,7 @@ type App struct {
 	workspace          string            // the folder the collection is saved to; "" for none yet
 	defaultWorkspace   string            // where the first save goes when there is no workspace
 	colSave            autosave.Debounce // when the collection was last written
+	keys               changeKeys        // the comparable forms of the collection and the state, recomputed only on frames where something could have changed
 	stateSave          autosave.Debounce // when the remembered state was last written
 	initial            state.Window      // window geometry of the last run
 	winX, winY         int               // window position, read each frame
@@ -505,6 +506,10 @@ func (a *App) step(in core.Input) {
 	drained := a.drain()
 	pruned := a.pruneToasts()
 	active := engine.InputActive(a.lastIn, in)
+	a.noteGeometry()
+	if active || drained || pruned {
+		a.markStale()
+	}
 	if restartsCaret(in) {
 		a.ctx.RestartCaret()
 	}

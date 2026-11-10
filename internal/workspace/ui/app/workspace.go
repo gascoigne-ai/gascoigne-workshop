@@ -44,7 +44,7 @@ func (a *App) openWorkspace(dir string) {
 		a.openRequest(first)
 	}
 	a.pickEnv()
-	a.colSave.Saved(tree.Key(a.col))
+	a.colSave.Saved(a.collectionKeyNow())
 }
 
 func (a *App) expandAll(f *model.Folder) {
@@ -67,7 +67,7 @@ func (a *App) saveWorkspace() {
 		}
 	}
 	if err := a.store.Save(dir, a.col); err != nil {
-		a.colSave.Saved(tree.Key(a.col)) // report once, do not retry every frame
+		a.colSave.Saved(a.collectionKeyNow()) // report once, do not retry every frame
 		a.toast("Saving failed: "+err.Error(), true)
 		return
 	}
@@ -78,7 +78,7 @@ func (a *App) saveWorkspace() {
 	for _, t := range a.openTabs() {
 		t.MarkSaved()
 	}
-	a.colSave.Saved(tree.Key(a.col))
+	a.colSave.Saved(a.collectionKeyNow())
 	a.status = fmt.Sprintf("Saved %s", a.col.Name)
 }
 
@@ -88,7 +88,7 @@ func (a *App) workspaceTick() {
 	if a.workspace == "" {
 		return
 	}
-	if a.colSave.Due(tree.Key(a.col), a.now()) {
+	if a.colSave.Due(a.collectionKey(), a.now()) {
 		a.saveWorkspace()
 	}
 }
@@ -101,13 +101,13 @@ func (a *App) FlushWorkspace() error {
 		return nil
 	}
 	a.commitEdit()
-	if !a.colSave.Pending(tree.Key(a.col)) {
+	if !a.colSave.Pending(a.collectionKeyNow()) {
 		return nil
 	}
 	if err := a.store.Save(a.workspace, a.col); err != nil {
 		return err
 	}
-	a.colSave.Saved(tree.Key(a.col))
+	a.colSave.Saved(a.collectionKeyNow())
 	return nil
 }
 
@@ -144,7 +144,7 @@ func (a *App) openWorkspaceAt(dir string) {
 	}
 	a.openRequest(first)
 	a.pickEnv()
-	a.colSave.Saved(tree.Key(a.col))
+	a.colSave.Saved(a.collectionKeyNow())
 	a.saveSettings(func(s *settings.Settings) { s.Workspace = dir })
 	a.status = "Opened " + dir
 }
