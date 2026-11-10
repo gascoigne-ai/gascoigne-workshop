@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/environment/controller/envs"
 	"runtime"
 	"strings"
 
@@ -102,28 +103,37 @@ func (a *App) toggleSecret(i int) {
 	e.Vars[i].Secret = !e.Vars[i].Secret
 }
 
-// envMenu is the menu of the environment chip.
+// envMenu is the menu of the environment chip: envs.Menu decides the rows,
+// this says what each one does.
 func (a *App) envMenu() []menuItem {
-	mark := func(on bool, label string) string {
-		if on {
-			return "✓ " + label
+	rows := envs.Menu(a.env, &a.col)
+	items := make([]menuItem, len(rows))
+	for i, row := range rows {
+		items[i] = menuItem{label: row.Label, disabled: row.Disabled, run: a.envAction(row)}
+		if row.Action == envs.Separator {
+			items[i] = menuSeparator
 		}
-		return "   " + label
 	}
-	items := []menuItem{{label: mark(a.env.Index < 0, "No environment"), run: func() { a.selectEnv(-1) }}}
-	for i, e := range a.col.Envs {
-		items = append(items, menuItem{label: mark(i == a.env.Index, e.Name), run: func() { a.selectEnv(i) }})
+	return items
+}
+
+// envAction is what a row of the chip's menu does.
+func (a *App) envAction(row envs.Row) func() {
+	switch row.Action {
+	case envs.Select:
+		return func() { a.selectEnv(row.Env) }
+	case envs.New:
+		return func() { a.prompt("New environment", "", "Create", a.addEnv) }
+	case envs.Rename:
+		return func() {
+			a.prompt("Rename environment", a.envName(), "Rename", func(text string) { a.renameEnv(row.Env, text) })
+		}
+	case envs.Delete:
+		return func() {
+			a.confirm("Delete environment", "Delete \""+a.envName()+"\" and its variables?", "Delete", func() { a.deleteEnv(row.Env) })
+		}
 	}
-	cur := a.env.Index
-	return append(items, menuSeparator,
-		menuItem{label: "New environment...", run: func() { a.prompt("New environment", "", "Create", a.addEnv) }},
-		menuItem{label: "Rename...", disabled: cur < 0, run: func() {
-			a.prompt("Rename environment", a.envName(), "Rename", func(t string) { a.renameEnv(cur, t) })
-		}},
-		menuItem{label: "Delete", disabled: cur < 0, run: func() {
-			a.confirm("Delete environment", "Delete \""+a.envName()+"\" and its variables?", "Delete", func() { a.deleteEnv(cur) })
-		}},
-	)
+	return nil
 }
 
 // envChip is the environment switcher in the header.

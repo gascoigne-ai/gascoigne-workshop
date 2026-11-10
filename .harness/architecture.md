@@ -85,7 +85,7 @@ The toolkit packages are public and independent of the application (`uitoolkit/c
 | `internal/workspace/controller/autosave` | when the collection and the remembered state are written: once their content stayed the same for a pause (`Debounce`) |
 | `internal/workspace/controller/toasts` | the messages over the window: info fades, errors stay, a repeated error is one, at most five (`Stack`); the App draws them |
 | `internal/workspace/controller/overlay` | which open thing Escape closes: the ordered `Layer`s (context menu, dialog, call log, font list, settings, cell edit, find bar, running request) and `Open.Top`; the App fills the set (`openLayers`) and closes the top one (`escape`, `overlay.go`) |
-| `internal/environment/controller/envs` | which environment is active and how add, rename and delete move the choice; the App keeps the menu, prompts and the remembered name |
+| `internal/environment/controller/envs` | which environment is active and how add, rename and delete move the choice, and the rows of the chip's menu (`envs.Menu`: labels, the tick, which rows are disabled); the App turns a row into an action (`envAction`) and keeps the prompts and the remembered name |
 | `internal/collection/model/collection`, `openapi`, `postman`, `miniyaml` | tree filtering; the importers and the Postman exporter, pure functions over bytes |
 | `internal/collection/port` | `Store`, where a collection is saved (`store.Files` implements it) |
 | `internal/collection/adapter/store` | the folder-of-files format |
