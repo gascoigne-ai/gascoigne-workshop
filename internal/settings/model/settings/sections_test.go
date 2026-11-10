@@ -22,12 +22,12 @@ func sectioned(t *testing.T, s Settings) map[string]map[string]any {
 
 func TestTheFileGroupsSettingsBySection(t *testing.T) {
 	s := Default()
-	s.Layout, s.TimeoutSec, s.AutoSave = "stacked", 30, false
+	s.Layout, s.TimeoutSec, s.AutoSave = "side", 30, false
 	s.Shortcuts = map[string]string{"send": "Ctrl+Enter"}
 	s.Colors = map[string]map[string]string{"dark": {"accent": "#ff0000"}}
 	got := sectioned(t, s)
 	want := map[string]map[string]any{
-		"appearance": {"layout": "stacked"},
+		"appearance": {"layout": "side"},
 		"requests":   {"timeoutSec": float64(30)},
 		"general":    {"autoSave": false},
 		"shortcuts":  {"send": "Ctrl+Enter"},
@@ -60,8 +60,8 @@ func TestTheSectionsComeInAStableOrderWithTheirKeysInSchemaOrder(t *testing.T) {
 }
 
 func TestSectionedAndLegacyFlatFilesReadAlike(t *testing.T) {
-	nested := `{"appearance": {"layout": "stacked", "theme": "light"}, "requests": {"timeoutSec": 7}, "general": {"autoSave": false}}`
-	flat := `{"layout": "stacked", "theme": "light", "timeoutSec": 7, "autoSave": false}`
+	nested := `{"appearance": {"layout": "side", "theme": "light"}, "requests": {"timeoutSec": 7}, "general": {"autoSave": false}}`
+	flat := `{"layout": "side", "theme": "light", "timeoutSec": 7, "autoSave": false}`
 	a, problems := Parse([]byte(nested), Default())
 	if len(problems) != 0 {
 		t.Fatalf("problems: %+v", problems)
@@ -70,7 +70,7 @@ func TestSectionedAndLegacyFlatFilesReadAlike(t *testing.T) {
 	if len(problems) != 0 {
 		t.Fatalf("legacy flat file refused: %+v", problems)
 	}
-	if !reflect.DeepEqual(a, b) || a.Layout != "stacked" || a.TimeoutSec != 7 || a.AutoSave {
+	if !reflect.DeepEqual(a, b) || a.Layout != "side" || a.TimeoutSec != 7 || a.AutoSave {
 		t.Fatalf("nested %+v\nflat   %+v", a, b)
 	}
 }
@@ -78,7 +78,7 @@ func TestSectionedAndLegacyFlatFilesReadAlike(t *testing.T) {
 func TestEverySettingSurvivesAWriteAndARead(t *testing.T) {
 	s := Default()
 	s.Theme, s.TextSize, s.UIScalePct, s.UIFont, s.CodeFont = "light", "large", 130, "Go", "Go Mono"
-	s.Corners, s.Flat, s.Contrast, s.Layout, s.ResponseView = "round", true, "high", "stacked", "raw"
+	s.Corners, s.Flat, s.Contrast, s.Layout, s.ResponseView = "round", true, "high", "side", "raw"
 	s.Proxy, s.CACert, s.ClientCert, s.ClientKey, s.TimeoutSec = "http://p", "/a", "/b", "/c", 9
 	s.AutoSave, s.Workspace, s.Environment = false, "/w", "Dev"
 	s.Shortcuts = map[string]string{"send": "F5"}
@@ -139,7 +139,7 @@ func TestCompletionWalksSectionsThenKeysThenValues(t *testing.T) {
 		{"inside a section only its keys", `{"appearance": { "`, []string{"theme", "layout", "corners"}, []string{"proxy", "timeoutSec", "autoSave"}},
 		{"inside the requests section", `{"requests": { "`, []string{"proxy", "timeoutSec", "caCert"}, []string{"theme"}},
 		{"used keys are not offered again", `{"appearance": {"theme": "dark", "`, []string{"layout"}, []string{"theme"}},
-		{"values of an enum inside a section", `{"appearance": {"layout": "`, []string{"side", "stacked"}, nil},
+		{"values of an enum inside a section", `{"appearance": {"layout": "`, []string{"stacked", "side"}, nil},
 		{"booleans inside a section", `{"general": {"autoSave": `, []string{"true", "false"}, nil},
 		{"action ids inside shortcuts", `{"shortcuts": { "`, []string{"send"}, []string{"appearance"}},
 		{"no values for free text", `{"requests": {"proxy": "`, nil, []string{"side", "true"}},

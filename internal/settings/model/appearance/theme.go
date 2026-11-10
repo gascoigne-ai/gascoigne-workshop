@@ -108,6 +108,6 @@ func SetUserThemes(themes map[string]ThemeChoice) { catalog.SetUser(themes) }
 type LayoutChoice struct{ ID, Label string }
 
 var LayoutChoices = []LayoutChoice{
-	{"side", "Side by side"},
 	{"stacked", "Stacked"},
+	{"side", "Side by side"},
 }

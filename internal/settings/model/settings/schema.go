@@ -49,7 +49,7 @@ var Schema = []Field{
 	{Key: "corners", Title: "Corners", Description: "How round controls are.", Category: "Appearance", Kind: Enum, Allowed: []string{"square", "soft", "round"}},
 	{Key: "flat", Title: "Flat colors", Description: "Turn every gradient into a flat fill.", Category: "Appearance", Kind: Bool},
 	{Key: "contrast", Title: "Contrast", Description: "High strengthens the selection, find and accent colors.", Category: "Appearance", Kind: Enum, Allowed: []string{"normal", "high"}},
-	{Key: "layout", Title: "Request and response", Description: "Place the request and response panes side by side or stacked.", Category: "Appearance", Kind: Enum, Allowed: []string{"side", "stacked"}},
+	{Key: "layout", Title: "Request and response", Description: "Place the request and response panes stacked or side by side.", Category: "Appearance", Kind: Enum, Allowed: []string{"stacked", "side"}},
 	{Key: "responseView", Title: "Response view", Description: "How a response body is shown when it arrives.", Category: "Appearance", Kind: Enum, Allowed: []string{"compact", "pretty", "raw"}},
 	{Key: "autoSave", Title: "Save changes automatically", Description: "On: every change is written to settings.json at once. Off: changes apply now but are written only when you click Save.", Category: "General", Kind: Bool},
 	{Key: "colors", Title: "Color overrides", Description: "Your colors, by theme id and token name, as #rrggbb.", Category: "Colors", Kind: Colors},

@@ -49,13 +49,30 @@ const (
 
 func treeRowY(i int) int { return headerH + i*core.RowH + core.RowH/2 }
 
+// newTestApp is a test app with the panes side by side, whose geometry
+// the click coordinates of most tests assume, and the pretty-printed
+// response, which most tests were written against. The defaults have their
+// own tests: newSettingsTestApp for the layout, newCompactTestApp for the
+// response view.
 func newTestApp(t *testing.T) (*App, string) {
 	t.Helper()
+	return newTestAppWith(t, func(s *settings.Settings) { s.Layout = "side" })
+}
+
+// newSettingsTestApp is a test app whose settings are the defaults except
+// the pretty-printed response, so a test can change a setting from its
+// default and see it written to the file.
+func newSettingsTestApp(t *testing.T) (*App, string) {
+	t.Helper()
+	return newTestAppWith(t, func(*settings.Settings) {})
+}
+
+func newTestAppWith(t *testing.T, adjust func(*settings.Settings)) (*App, string) {
+	t.Helper()
 	path := filepath.Join(t.TempDir(), "settings.json")
-	// Most tests were written against the pretty-printed response; the
-	// compact default has its own tests (newCompactTestApp).
 	s := settings.Default()
 	s.ResponseView = "pretty"
+	adjust(&s)
 	if err := settingsfile.Save(path, s); err != nil {
 		t.Fatal(err)
 	}
@@ -2913,7 +2930,7 @@ func openSettingsPage(t *testing.T, id string) (*App, string) {
 }
 
 func openSettingsMenu(t *testing.T) (*App, string) {
-	a, path := newTestApp(t)
+	a, path := newSettingsTestApp(t)
 	click(a, menuBtnX, menuBtnY)
 	if !a.menu {
 		t.Fatal("test setup")

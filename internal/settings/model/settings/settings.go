@@ -10,7 +10,7 @@ type Settings struct {
 	Theme    string `json:"theme"`    // "dark" or "light"
 	TextSize string `json:"textSize"` // "small", "medium" or "large"
 
-	// Layout places the request and response panes: "side" by side or "stacked".
+	// Layout places the request and response panes: "stacked" (the default) or "side" by side.
 	Layout string `json:"layout"`
 
 	// Contrast is "normal" or "high"; high strengthens the selection,
@@ -90,7 +90,7 @@ func (s Settings) UIScale() float64 {
 
 // Default is what a first run uses.
 func Default() Settings {
-	return Settings{AutoSave: true, Theme: "dark", TextSize: "medium", Layout: "side", Contrast: "normal", TimeoutSec: 60, UIScalePct: DefaultUIScalePct, Corners: "soft", ResponseView: "compact"}
+	return Settings{AutoSave: true, Theme: "dark", TextSize: "medium", Layout: "stacked", Contrast: "normal", TimeoutSec: 60, UIScalePct: DefaultUIScalePct, Corners: "soft", ResponseView: "compact"}
 }
 
 // Decode reads settings text over the defaults, so fields missing from

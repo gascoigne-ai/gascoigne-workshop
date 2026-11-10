@@ -3,6 +3,9 @@ package ui
 import (
 	"context"
 	"errors"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -160,4 +163,25 @@ func TestLeavingMCPShowsTheFirstResponsePane(t *testing.T) {
 		t.Fatalf("respTab %d", tab.respTab)
 	}
 	a.step(core.Input{})
+}
+
+// The empty list's note sat flush against the edge of the list and the
+// tab strip had no line under it, unlike every other tab strip.
+func TestExplorerListInsetsItsNoteAndRulesTheTabStrip(t *testing.T) {
+	a, _ := newTestApp(t)
+	tab := a.cur()
+	tab.Req.Protocol = "mcp"
+	list := a.explorerList(tab)
+	Layout(a.ctx, list, explorerListW, 300)
+	dump := Dump(list)
+	if !strings.Contains(dump, "borderB=border") {
+		t.Errorf("the tab strip has no rule under it:\n%s", dump)
+	}
+	match := regexp.MustCompile(`text="Nothing announced".*rect=(\d+),`).FindStringSubmatch(dump)
+	if match == nil {
+		t.Fatalf("no note in:\n%s", dump)
+	}
+	if x, _ := strconv.Atoi(match[1]); x < core.Gutter {
+		t.Errorf("the note starts at x=%d, want at least the gutter %d", x, core.Gutter)
+	}
 }

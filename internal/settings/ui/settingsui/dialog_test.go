@@ -89,9 +89,9 @@ func TestANumberOutsideItsRangeIsExplainedAndNotApplied(t *testing.T) {
 func TestResetRemovesTheKeyFromTheFile(t *testing.T) {
 	var d Dialog
 	host := newHost(t)
-	host.Change(func(s *settings.Settings) { s.Layout = "stacked" })
+	host.Change(func(s *settings.Settings) { s.Layout = "side" })
 	d.Reset(host, "layout")
-	if data, _ := os.ReadFile(host.path); strings.Contains(string(data), "layout") || host.current.Layout != "side" {
+	if data, _ := os.ReadFile(host.path); strings.Contains(string(data), "layout") || host.current.Layout != "stacked" {
 		t.Fatalf("layout %q, file %q", host.current.Layout, data)
 	}
 }
@@ -102,12 +102,12 @@ func TestRawTextWithProblemsChangesNothingAndGoodTextIsWrittenAsTyped(t *testing
 	d.OpenRaw(host)
 	d.RawText.Text = `{"layout": "diagonal"}`
 	d.RawEdited(host)
-	if host.current.Layout != "side" || len(d.Problems) != 1 {
+	if host.current.Layout != "stacked" || len(d.Problems) != 1 {
 		t.Fatalf("layout %q problems %+v", host.current.Layout, d.Problems)
 	}
-	d.RawText.Text = "{\n  \"layout\": \"stacked\"\n}"
+	d.RawText.Text = "{\n  \"layout\": \"side\"\n}"
 	d.RawEdited(host)
-	if host.current.Layout != "stacked" || len(d.Problems) != 0 {
+	if host.current.Layout != "side" || len(d.Problems) != 0 {
 		t.Fatalf("layout %q problems %+v", host.current.Layout, d.Problems)
 	}
 	if data, _ := os.ReadFile(host.path); string(data) != d.RawText.Text {

@@ -24,41 +24,41 @@ func setLayout(a *App, layout string) {
 }
 
 func TestSettingsAreSavedAutomaticallyByDefault(t *testing.T) {
-	a, path := newTestApp(t)
+	a, path := newSettingsTestApp(t)
 	if !a.settings.AutoSave {
 		t.Fatal("auto-save is off by default")
 	}
-	setLayout(a, "stacked")
-	if !strings.Contains(fileText(t, path), `"layout": "stacked"`) || a.settingsUnsaved {
+	setLayout(a, "side")
+	if !strings.Contains(fileText(t, path), `"layout": "side"`) || a.settingsUnsaved {
 		t.Fatalf("file %q unsaved %v", fileText(t, path), a.settingsUnsaved)
 	}
 }
 
 func TestWithAutoSaveOffChangesApplyAtOnceButAreWrittenOnlyOnSave(t *testing.T) {
-	a, path := newTestApp(t)
+	a, path := newSettingsTestApp(t)
 	a.changeSettings(func(s *settings.Settings) { s.AutoSave = false })
 	if !strings.Contains(fileText(t, path), `"autoSave": false`) {
 		t.Fatalf("turning auto-save off must itself be stored, file %q", fileText(t, path))
 	}
-	setLayout(a, "stacked")
-	if a.settings.Layout != "stacked" {
+	setLayout(a, "side")
+	if a.settings.Layout != "side" {
 		t.Fatal("the change did not apply")
 	}
 	if strings.Contains(fileText(t, path), "layout") || !a.settingsUnsaved {
 		t.Fatalf("the change was written (file %q) or not marked unsaved (%v)", fileText(t, path), a.settingsUnsaved)
 	}
 	a.prefs.Save(a)
-	if !strings.Contains(fileText(t, path), `"layout": "stacked"`) || a.settingsUnsaved {
+	if !strings.Contains(fileText(t, path), `"layout": "side"`) || a.settingsUnsaved {
 		t.Fatalf("after Save: file %q unsaved %v", fileText(t, path), a.settingsUnsaved)
 	}
 }
 
 func TestTurningAutoSaveBackOnWritesWhatWasPending(t *testing.T) {
-	a, path := newTestApp(t)
+	a, path := newSettingsTestApp(t)
 	a.changeSettings(func(s *settings.Settings) { s.AutoSave = false })
-	setLayout(a, "stacked")
+	setLayout(a, "side")
 	a.changeSettings(func(s *settings.Settings) { s.AutoSave = true })
-	if !strings.Contains(fileText(t, path), `"layout": "stacked"`) || a.settingsUnsaved {
+	if !strings.Contains(fileText(t, path), `"layout": "side"`) || a.settingsUnsaved {
 		t.Fatalf("file %q unsaved %v", fileText(t, path), a.settingsUnsaved)
 	}
 }
@@ -67,7 +67,7 @@ func TestClosingWithUnsavedChangesAsksWhatToDo(t *testing.T) {
 	setup := func(t *testing.T) (*App, string) {
 		a, path := openSettingsMenu(t)
 		a.changeSettings(func(s *settings.Settings) { s.AutoSave = false })
-		setLayout(a, "stacked")
+		setLayout(a, "side")
 		a.closeSettings()
 		if a.dialog == nil || !a.menu {
 			t.Fatal("closing with unsaved changes must ask first and keep the settings open")
@@ -86,21 +86,21 @@ func TestClosingWithUnsavedChangesAsksWhatToDo(t *testing.T) {
 	t.Run("cancel keeps the dialog and the changes", func(t *testing.T) {
 		a, _ := setup(t)
 		press(a, "Cancel")
-		if a.dialog != nil || !a.menu || a.settings.Layout != "stacked" {
+		if a.dialog != nil || !a.menu || a.settings.Layout != "side" {
 			t.Fatalf("dialog %v menu %v layout %q", a.dialog != nil, a.menu, a.settings.Layout)
 		}
 	})
 	t.Run("save writes and closes", func(t *testing.T) {
 		a, path := setup(t)
 		press(a, "Save")
-		if a.menu || !strings.Contains(fileText(t, path), `"layout": "stacked"`) {
+		if a.menu || !strings.Contains(fileText(t, path), `"layout": "side"`) {
 			t.Fatalf("menu open %v, file %q", a.menu, fileText(t, path))
 		}
 	})
 	t.Run("discard reverts to what was stored and closes", func(t *testing.T) {
 		a, path := setup(t)
 		press(a, "Discard")
-		if a.menu || a.settings.Layout != "side" || strings.Contains(fileText(t, path), "stacked") || a.settingsUnsaved {
+		if a.menu || a.settings.Layout != "stacked" || strings.Contains(fileText(t, path), "side") || a.settingsUnsaved {
 			t.Fatalf("menu %v layout %q file %q unsaved %v", a.menu, a.settings.Layout, fileText(t, path), a.settingsUnsaved)
 		}
 	})
@@ -115,14 +115,14 @@ func TestACleanDialogClosesWithoutAsking(t *testing.T) {
 }
 
 func TestAnOutsideChangeOfTheFileDoesNotOverwriteUnsavedChanges(t *testing.T) {
-	a, path := newTestApp(t)
+	a, path := newSettingsTestApp(t)
 	a.changeSettings(func(s *settings.Settings) { s.AutoSave = false })
-	setLayout(a, "stacked")
+	setLayout(a, "side")
 	if err := os.WriteFile(path, []byte(`{"autoSave": false, "corners": "square"}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	a.prefs.Poll(a)
-	if a.settings.Layout != "stacked" || a.settings.Corners == "square" {
+	if a.settings.Layout != "side" || a.settings.Corners == "square" {
 		t.Fatalf("layout %q corners %q: the reload clobbered the unsaved changes", a.settings.Layout, a.settings.Corners)
 	}
 }

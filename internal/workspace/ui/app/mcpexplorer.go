@@ -130,9 +130,11 @@ func (a *App) explorerList(t *reqTab) Node {
 	items := []TabItem{{Label: "Tools", Badge: len(t.Tools)}, {Label: "Resources", Badge: len(t.Resources)}, {Label: "Prompts", Badge: len(t.Prompts)}}
 	entries := mcpexplorer.Entries(state.Kind, t.Tools, t.Resources, t.Prompts)
 	return Col(W(explorerListW), BorderR(w.Border),
-		Tabs(items, int(state.Kind), H(36), OnSelect(func(index int) { a.exploreChoose(t, mcpexplorer.Kind(index)) })),
+		Row(H(paneTabsH), PadT(tabGap), BorderB(w.Border), // as the strips of the panes: a line under the inactive tabs
+			Tabs(items, int(state.Kind), OnSelect(func(index int) { a.exploreChoose(t, mcpexplorer.Kind(index)) })),
+		),
 		Scroll(&t.listScroll, Grow(1),
-			If(len(entries) == 0, Text("Nothing announced", Small(), Muted(), Pad(w.Gutter))),
+			If(len(entries) == 0, Col(Pad(w.Gutter), Text("Nothing announced", Small(), Muted()))),
 			For(entries, func(index int, entry mcpexplorer.Entry) Node {
 				look := HoverBg(w.Hover)
 				if index == state.Selected {

@@ -110,18 +110,18 @@ func TestSearchFiltersSettingsAcrossCategories(t *testing.T) {
 func TestAChangedSettingIsMarkedAndResetRemovesItFromTheFile(t *testing.T) {
 	a, path := openSettingsPage(t, "appearance")
 	a.prefs.Search = view.NewTextField("request and response") // brings the setting to the top of the page
-	clickText(t, a, "Stacked", 0)
-	if a.settings.Layout != "stacked" {
+	clickText(t, a, "Side by side", 0)
+	if a.settings.Layout != "side" {
 		t.Fatalf("Layout = %q", a.settings.Layout)
 	}
-	if data, _ := os.ReadFile(path); !strings.Contains(string(data), `"layout": "stacked"`) {
+	if data, _ := os.ReadFile(path); !strings.Contains(string(data), `"layout": "side"`) {
 		t.Fatalf("file = %s", data)
 	}
 	if !strings.Contains(settingsText(a), "Reset") {
 		t.Fatal("a changed setting has no Reset button")
 	}
 	clickText(t, a, "Reset", 0)
-	if a.settings.Layout != "side" {
+	if a.settings.Layout != "stacked" {
 		t.Fatalf("Layout = %q after reset", a.settings.Layout)
 	}
 	if data, _ := os.ReadFile(path); strings.Contains(string(data), "layout") {

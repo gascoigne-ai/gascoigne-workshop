@@ -21,9 +21,9 @@ func setRaw(a *App, text string) {
 func TestAValidRawEditAppliesAtOnceAndIsWrittenAsTyped(t *testing.T) {
 	a, path := openSettingsPage(t, "appearance")
 	a.prefs.OpenRaw(a)
-	text := "{\n  \"layout\": \"stacked\"\n}\n"
+	text := "{\n  \"layout\": \"side\"\n}\n"
 	setRaw(a, text)
-	if a.settings.Layout != "stacked" || len(a.prefs.Problems) != 0 {
+	if a.settings.Layout != "side" || len(a.prefs.Problems) != 0 {
 		t.Fatalf("Layout %q problems %+v", a.settings.Layout, a.prefs.Problems)
 	}
 	if data, _ := os.ReadFile(path); string(data) != text {
@@ -34,11 +34,11 @@ func TestAValidRawEditAppliesAtOnceAndIsWrittenAsTyped(t *testing.T) {
 func TestARawEditWithProblemsLeavesTheLastGoodSettingsAndTheFile(t *testing.T) {
 	a, path := openSettingsPage(t, "appearance")
 	a.prefs.OpenRaw(a)
-	setRaw(a, `{"layout": "stacked"}`)
+	setRaw(a, `{"layout": "side"}`)
 	good, _ := os.ReadFile(path)
 	for _, bad := range []string{`{"layout": `, `{"layout": "diagonal"}`, `{"colour": 1}`, `[1]`} {
 		setRaw(a, bad)
-		if a.settings.Layout != "stacked" || len(a.prefs.Problems) == 0 {
+		if a.settings.Layout != "side" || len(a.prefs.Problems) == 0 {
 			t.Errorf("%q: Layout %q problems %v", bad, a.settings.Layout, a.prefs.Problems)
 		}
 		if data, _ := os.ReadFile(path); string(data) != string(good) {
@@ -53,7 +53,7 @@ func TestARawEditWithProblemsLeavesTheLastGoodSettingsAndTheFile(t *testing.T) {
 func TestTheRawViewMarksKeysThatHaveProblems(t *testing.T) {
 	a, _ := openSettingsPage(t, "appearance")
 	a.prefs.OpenRaw(a)
-	setRaw(a, "{\n  \"colour\": 1,\n  \"layout\": \"side\"\n}")
+	setRaw(a, "{\n  \"colour\": 1,\n  \"layout\": \"stacked\"\n}")
 	marked := func(line string) []string {
 		var out []string
 		for _, span := range a.prefs.RawText.Styler(line) {
@@ -66,7 +66,7 @@ func TestTheRawViewMarksKeysThatHaveProblems(t *testing.T) {
 	if got := marked(`  "colour": 1,`); len(got) != 1 || got[0] != `"colour"` {
 		t.Fatalf("marked on the bad line: %q", got)
 	}
-	if got := marked(`  "layout": "side"`); len(got) != 0 {
+	if got := marked(`  "layout": "stacked"`); len(got) != 0 {
 		t.Fatalf("marked on a good line: %q", got)
 	}
 }
@@ -74,9 +74,9 @@ func TestTheRawViewMarksKeysThatHaveProblems(t *testing.T) {
 func TestOpeningTheRawViewShowsWhatTheFormChanged(t *testing.T) {
 	a, _ := openSettingsPage(t, "appearance")
 	a.prefs.Search = view.NewTextField("request and response")
-	clickText(t, a, "Stacked", 0)
+	clickText(t, a, "Side by side", 0)
 	a.prefs.OpenRaw(a)
-	if !strings.Contains(a.prefs.RawText.Text, `"layout": "stacked"`) {
+	if !strings.Contains(a.prefs.RawText.Text, `"layout": "side"`) {
 		t.Fatalf("raw text = %q", a.prefs.RawText.Text)
 	}
 	a.prefs.CloseRaw()

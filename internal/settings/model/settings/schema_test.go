@@ -75,7 +75,7 @@ func TestValidateReportsUnknownKeysWrongTypesAndBadValues(t *testing.T) {
 		{"wrong type string", `{"theme": 3}`, "theme", "text"},
 		{"wrong type number", `{"timeoutSec": "ten"}`, "timeoutSec", "number"},
 		{"wrong type bool", `{"flat": "yes"}`, "flat", "true or false"},
-		{"enum value not allowed", `{"layout": "diagonal"}`, "layout", "side"},
+		{"enum value not allowed", `{"layout": "diagonal"}`, "layout", "stacked"},
 		{"number below range", `{"uiScale": 10}`, "uiScale", "between"},
 		{"number above range", `{"uiScale": 900}`, "uiScale", "between"},
 		{"shortcuts must be an object of text", `{"shortcuts": {"send": 1}}`, "shortcuts", "text"},
@@ -118,13 +118,13 @@ func TestValidateReportsASyntaxErrorWithItsPosition(t *testing.T) {
 
 func TestParseKeepsTheLastGoodSettingsWhenTheTextIsBad(t *testing.T) {
 	good := Default()
-	good.Layout = "stacked"
+	good.Layout = "side"
 	got, problems := Parse([]byte(`{"layout": "diagonal"`), good)
-	if len(problems) == 0 || got.Layout != "stacked" {
+	if len(problems) == 0 || got.Layout != "side" {
 		t.Fatalf("got %+v with problems %+v", got, problems)
 	}
-	got, problems = Parse([]byte(`{"layout": "side", "uiScale": 150}`), good)
-	if len(problems) != 0 || got.Layout != "side" || got.UIScalePct != 150 {
+	got, problems = Parse([]byte(`{"layout": "stacked", "uiScale": 150}`), good)
+	if len(problems) != 0 || got.Layout != "stacked" || got.UIScalePct != 150 {
 		t.Fatalf("got %+v with problems %+v", got, problems)
 	}
 }
@@ -134,7 +134,7 @@ func TestChangedAndResetUseTheDefaults(t *testing.T) {
 	if Changed(s, "layout") {
 		t.Fatal("a default value is marked changed")
 	}
-	s.Layout = "stacked"
+	s.Layout = "side"
 	s.Shortcuts = map[string]string{"send": "Ctrl+Enter"}
 	if !Changed(s, "layout") || !Changed(s, "shortcuts") {
 		t.Fatal("a changed value is not marked")
@@ -148,9 +148,9 @@ func TestChangedAndResetUseTheDefaults(t *testing.T) {
 
 func TestMarshalLeavesOutWhatIsAtItsDefault(t *testing.T) {
 	s := Default()
-	s.Layout = "stacked"
+	s.Layout = "side"
 	got := sectioned(t, s)
-	if len(got) != 1 || len(got["appearance"]) != 1 || got["appearance"]["layout"] != "stacked" {
+	if len(got) != 1 || len(got["appearance"]) != 1 || got["appearance"]["layout"] != "side" {
 		t.Fatalf("file = %v", got)
 	}
 }
@@ -174,7 +174,7 @@ func TestValueAndWithReadAndWriteASettingByItsKey(t *testing.T) {
 		value any
 		check func(Settings) bool
 	}{
-		{"layout", "stacked", func(s Settings) bool { return s.Layout == "stacked" }},
+		{"layout", "side", func(s Settings) bool { return s.Layout == "side" }},
 		{"uiScale", 150, func(s Settings) bool { return s.UIScalePct == 150 }},
 		{"flat", true, func(s Settings) bool { return s.Flat }},
 		{"proxy", "http://localhost:8080", func(s Settings) bool { return s.Proxy == "http://localhost:8080" }},
@@ -249,5 +249,11 @@ func TestTheCertificateSettingsAreFilesAndValidateAsText(t *testing.T) {
 	}
 	if problems := Validate([]byte(`{"caCert": "/etc/ssl/ca.pem"}`)); len(problems) != 0 {
 		t.Fatalf("problems = %+v", problems)
+	}
+}
+
+func TestDefaultLayoutIsStacked(t *testing.T) {
+	if got := Default().Layout; got != "stacked" {
+		t.Fatalf("default layout = %q", got)
 	}
 }
