@@ -1,6 +1,6 @@
-.PHONY: check fmt-check vet test build run shot install
+.PHONY: check fmt-check vet test vet-release test-release build release run example-server shot install
 
-check: fmt-check vet test
+check: fmt-check vet test vet-release test-release
 
 fmt-check:
 	@test -z "$$(gofmt -l .)" || { gofmt -l .; exit 1; }
@@ -11,11 +11,29 @@ vet:
 test:
 	go test -race ./...
 
+# The release build has its own files (build tag "release"); check them too.
+vet-release:
+	go vet -tags release ./...
+
+test-release:
+	go test -race -tags release ./...
+
 build:
 	go build -o bin/workshop ./cmd/workshop
 
+# The release build ships no example endpoints and opens the client config
+# (.workshop.yaml, .json or .toml in the config directory and the working
+# directory) instead.
+release:
+	go build -tags release -o bin/workshop-release ./cmd/workshop
+
 run:
 	go run ./cmd/workshop
+
+# Serve every protocol on localhost (REST 8081, WebSocket 8082, SSE 8083,
+# MCP 8084, gRPC 8085) for the default build's example requests.
+example-server:
+	go run ./cmd/example-server
 
 # Render the window once to a PNG (needs a display): make shot OUT=shot.png
 shot:
