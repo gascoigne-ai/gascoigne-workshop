@@ -45,8 +45,19 @@ func isSocket(t *reqTab) bool {
 // wsPanes are the panes of a socket's response side.
 var wsPanes = []pane{{label: "Messages", kind: paneMessages}}
 
+// mcpPanes are the response side of an MCP server: what it offers, and
+// the JSON-RPC traffic with the composer for anything else.
+var mcpPanes = []pane{{label: "Explorer", kind: paneExplorer}, {label: "JSON-RPC", kind: paneMessages}}
+
+// responsePanesByProtocol lists the protocols whose response side differs
+// from the generic socket or REST one.
+var responsePanesByProtocol = map[string][]pane{"mcp": mcpPanes}
+
 // responsePanesFor are the panes of the response side of t.
 func responsePanesFor(t *reqTab) []pane {
+	if panes, ok := responsePanesByProtocol[t.Req.Protocol]; ok {
+		return panes
+	}
 	if isSocket(t) {
 		return wsPanes
 	}

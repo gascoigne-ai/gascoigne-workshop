@@ -81,3 +81,17 @@ func TestViewListsEveryFieldAndTheProblem(t *testing.T) {
 		}
 	}
 }
+
+func TestArgumentsAreTheJSONObjectOfTheEntries(t *testing.T) {
+	form := New(searchTool())
+	form.Inputs["query"].Text = "go"
+	form.Choices["safe"] = "true"
+	got, err := form.Arguments()
+	if want := `{"query":"go","limit":10,"safe":true}`; err != nil || got != want {
+		t.Fatalf("arguments %q, err %v, want %q", got, err, want)
+	}
+	form.Inputs["limit"].Text = "lots"
+	if _, err := form.Arguments(); err == nil {
+		t.Fatal("an invalid value is refused")
+	}
+}

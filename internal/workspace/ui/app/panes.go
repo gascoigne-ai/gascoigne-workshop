@@ -32,6 +32,7 @@ const (
 	paneMessages
 	paneAssertions // the request side: the assertions being written
 	paneResults    // the response side: what they found
+	paneExplorer   // the response side of MCP: what the server offers
 )
 
 // pane describes one tab of the request or response area. The tables
@@ -180,6 +181,7 @@ var paneBuilders = map[paneKind]func(a *App, p pane, t *reqTab, scroll *ScrollSt
 	paneAuth:       (*App).authPane,
 	paneResponse:   (*App).responsePane,
 	paneMessages:   (*App).messagesPane,
+	paneExplorer:   (*App).explorerPane,
 	paneAssertions: (*App).assertionsPane,
 	paneResults:    (*App).resultsPane,
 	paneTable:      (*App).tablePane,

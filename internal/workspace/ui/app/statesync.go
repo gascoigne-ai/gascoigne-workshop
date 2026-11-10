@@ -125,7 +125,7 @@ func (a *App) restore(s state.State) {
 			if rt.Pane >= 0 && rt.Pane < len(requestPanesFor(t)) {
 				t.paneTab = rt.Pane
 			}
-			if rt.Resp >= 0 && rt.Resp < len(responsePanes) {
+			if rt.Resp >= 0 && rt.Resp < len(responsePanesFor(t)) {
 				t.respTab = rt.Resp
 			}
 		}

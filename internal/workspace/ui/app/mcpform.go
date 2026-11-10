@@ -118,6 +118,12 @@ func (a *App) fillFromForm(t *reqTab, form *mcpform.Form) {
 	t.msg.Focused = true
 }
 
-// Submit makes the App the host of the tool form: Enter in a field fills
-// the composer.
-func (a *App) Submit() { a.fillFromForm(a.cur(), a.dialog.form) }
+// Submit makes the App the host of the tool form: Enter in a field of the
+// dialog fills the composer, in the explorer's form it calls.
+func (a *App) Submit() {
+	if a.dialog != nil && a.dialog.form != nil {
+		a.fillFromForm(a.cur(), a.dialog.form)
+		return
+	}
+	a.exploreCall(a.cur()) // Enter in a field of the explorer's form
+}

@@ -197,14 +197,18 @@ func ParsePrompts(message string) []MCPPrompt {
 	return out
 }
 
-// ArgsJSON is {"name":"",...} for a prompt's required arguments.
-func (p MCPPrompt) ArgsJSON() string {
+// Schema is the JSON schema of the prompt's arguments: its required ones,
+// all strings.
+func (p MCPPrompt) Schema() map[string]any {
 	props := map[string]any{}
 	for _, a := range p.Args {
 		props[a] = map[string]any{"type": "string"}
 	}
-	return Skeleton(map[string]any{"type": "object", "properties": props, "required": toAny(p.Args)})
+	return map[string]any{"type": "object", "properties": props, "required": toAny(p.Args)}
 }
+
+// ArgsJSON is {"name":"",...} for a prompt's required arguments.
+func (p MCPPrompt) ArgsJSON() string { return Skeleton(p.Schema()) }
 
 func toAny(s []string) []any {
 	out := make([]any, len(s))

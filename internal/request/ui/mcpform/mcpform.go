@@ -74,10 +74,16 @@ func (form *Form) values() map[string]string {
 	return out
 }
 
+// Arguments is the JSON object of the entries, or the error saying which
+// value is wrong.
+func (form *Form) Arguments() (string, error) {
+	return model.Arguments(form.fields, form.values())
+}
+
 // Command is the composer text of the call the form describes, or the
 // error saying which value is wrong.
 func (form *Form) Command() (string, error) {
-	args, err := model.Arguments(form.fields, form.values())
+	args, err := form.Arguments()
 	if err != nil {
 		return "", err
 	}

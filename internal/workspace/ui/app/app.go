@@ -33,7 +33,9 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/editor"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/mcpexplorer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/ui/mcpform"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/state"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -98,6 +100,11 @@ type reqTab struct {
 	msg                   view.TextField             // the message being composed
 	grpcStream            bool                       // a gRPC tab streams instead of making single calls
 	schema                *model.Schema              // what a GraphQL introspection answered
+	explorer              mcpexplorer.State          // the MCP explorer: the list shown, the open entry, its answer
+	form                  *mcpform.Form              // the argument form of the open entry, nil for none
+	resultView            view.CodeView              // the last answer of the explorer
+	listScroll            view.ScrollState           // scroll of the explorer's list
+	detailScroll          view.ScrollState           // scroll of the open entry
 }
 
 // makeTab is newTab with the response view the settings ask for.
@@ -147,6 +154,7 @@ func newReqTab(tab *tabs.Tab) *reqTab {
 	t.look.Match = -1
 	t.wsView.Follow = true
 	t.wsCancel = func() {}
+	t.explorer = mcpexplorer.New()
 	t.timeout = view.NewTextField(timeoutText(req.TimeoutSec))
 	t.body = view.NewTextArea(req.Body)
 	t.tests = view.NewTextArea(req.Tests)
@@ -608,7 +616,7 @@ func (a *App) newRequest() { a.newRequestIn(a.selectedFolder()) }
 func (a *App) cycleProtocol(t *reqTab) {
 	a.disconnect(t) // a connection belongs to the protocol that opened it
 	editRequest(t, editor.ProtocolChosen{Protocol: next(protocolOrder, t.Req.Protocol)})
-	t.paneTab = 0 // the index points into the panes of the protocol
+	t.paneTab, t.respTab = 0, 0 // the indexes point into the panes of the protocol
 }
 
 func (a *App) cycleMethod(t *reqTab) {
