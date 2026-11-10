@@ -61,10 +61,26 @@ func (s *screenshot) ready(a *App) bool {
 	if s.path == "" || s.captured || s.frames < settleFrames {
 		return false
 	}
-	if s.sendOnStart && a.cur().Resp == nil && s.frames < shotTimeout {
+	if s.sendOnStart && !answered(a.cur()) && s.frames < shotTimeout {
 		return false
 	}
 	return true
+}
+
+// answered reports whether what -send started has an outcome to show: a
+// response, or for a socket an open connection (an MCP server also has
+// said who it is) or a failed one.
+func answered(t *reqTab) bool {
+	if !isSocket(t) {
+		return t.Resp != nil
+	}
+	if t.Connecting {
+		return false
+	}
+	if t.Session == nil {
+		return len(t.wsView.Lines) > 0 // the error is in the log
+	}
+	return t.Req.Protocol != "mcp" || t.Server != nil
 }
 
 func (a *App) shotDraw(screen *ebiten.Image) {

@@ -89,3 +89,36 @@ func TestScreenshotGivesUpWaitingForAResponse(t *testing.T) {
 		t.Fatal("after the timeout the capture must go ahead without a response")
 	}
 }
+
+// A socket never gets a response, so -send waits for its connection.
+func TestScreenshotWithSendOnASocketWaitsForTheConnection(t *testing.T) {
+	a := shotApp(t, withAdapters(Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), SendOnStart: true}))
+	tab := a.cur()
+	tab.Req.Protocol = "websocket"
+	tab.Req.URL = echoServer(t)
+	for range settleFrames + 2 {
+		a.shotUpdate()
+	}
+	if a.shot.ready(a) && tab.Session == nil {
+		t.Fatal("with -send the capture must wait for the connection")
+	}
+	until(t, a, "the connection", func() bool { return tab.Session != nil })
+	if !a.shot.ready(a) {
+		t.Fatal("ready once connected")
+	}
+	a.disconnect(tab)
+}
+
+func TestScreenshotWithSendOnASocketGoesAheadAfterAFailedConnect(t *testing.T) {
+	a := shotApp(t, withAdapters(Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), SendOnStart: true}))
+	tab := a.cur()
+	tab.Req.Protocol = "websocket"
+	tab.Req.URL = "ws://127.0.0.1:1/"
+	for range settleFrames + 2 {
+		a.shotUpdate()
+	}
+	until(t, a, "the failure", func() bool { return !tab.Connecting && tab.Session == nil && len(tab.wsView.Lines) > 0 })
+	if !a.shot.ready(a) {
+		t.Fatal("the error is what the shot should show")
+	}
+}
