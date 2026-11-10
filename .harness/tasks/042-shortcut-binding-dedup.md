@@ -8,7 +8,7 @@ status: todo
 ## Scope
 - [done] `shortcut` holds an `engine.Binding` default instead of `key, ctrl, shift, alt`; delete `shortcut.label()` (`app/shortcuts.go:44`) and use `Binding.String()`; `action()` in `keybindings.go:10` loses its rebuild. Tests that call `label()` (`app_flow_test.go:758,3070`) switch to `Binding.String()` with the same expectations.
 - [done] `Binding.Matches(in core.Input, key ebiten.Key) bool` from `runShortcuts` (`shortcuts.go:70`).
-- [open] `engine.BindingFrom(in core.Input, key)` from `shortcutpage.RecordKey` (`shortcutpage.go:200-215`).
+- [done] `engine.BindingFrom(in core.Input, key)` from `shortcutpage.RecordKey` (`shortcutpage.go:200-215`).
 - [open] `Binding.TypesText()` and `Binding.IsFunctionKey()` from `shortcutpage.TypesText/isFunctionKey` (`:82-101`); `Refuse` keeps its app-flavoured messages in `shortcutpage`.
 
 ## Acceptance

@@ -208,16 +208,8 @@ func (p *Page) RecordKey(host Host, input w.Input) bool {
 	if id == "" {
 		return false
 	}
-	if input.Escape && !input.Ctrl && !input.Alt {
-		p.record(host, id, engine.Binding{Key: ebiten.KeyEscape, Bound: true})
-		return true
-	}
-	for _, key := range input.Keys {
-		if engine.IsModifierKey(key) {
-			continue
-		}
-		p.record(host, id, engine.Binding{Key: key, Ctrl: input.Ctrl, Shift: input.Shift, Alt: input.Alt, Bound: true})
-		break
+	if binding, ok := engine.BindingFrom(input); ok {
+		p.record(host, id, binding)
 	}
 	return true
 }

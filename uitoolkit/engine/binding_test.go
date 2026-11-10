@@ -73,3 +73,26 @@ func TestBindingMatchesOnlyTheExactModifiers(t *testing.T) {
 		})
 	}
 }
+
+func TestBindingFromReadsTheCombinationPressedThisFrame(t *testing.T) {
+	tests := []struct {
+		name   string
+		input  core.Input
+		want   Binding
+		wantOK bool
+	}{
+		{"key with modifiers", core.Input{Keys: []ebiten.Key{ebiten.KeyTab}, Ctrl: true, Shift: true}, Binding{Key: ebiten.KeyTab, Ctrl: true, Shift: true, Bound: true}, true},
+		{"modifier keys alone are waited out", core.Input{Keys: []ebiten.Key{ebiten.KeyControlLeft}, Ctrl: true}, Binding{}, false},
+		{"modifier then key takes the key", core.Input{Keys: []ebiten.Key{ebiten.KeyShiftLeft, ebiten.KeyA}, Shift: true}, Binding{Key: ebiten.KeyA, Shift: true, Bound: true}, true},
+		{"escape alone", core.Input{Escape: true}, Binding{Key: ebiten.KeyEscape, Bound: true}, true},
+		{"nothing pressed", core.Input{}, Binding{}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, ok := BindingFrom(tt.input)
+			if got != tt.want || ok != tt.wantOK {
+				t.Fatalf("BindingFrom = %+v, %v; want %+v, %v", got, ok, tt.want, tt.wantOK)
+			}
+		})
+	}
+}

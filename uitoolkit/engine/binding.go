@@ -107,3 +107,19 @@ func (b Binding) String() string {
 func (b Binding) Matches(input core.Input, key ebiten.Key) bool {
 	return b.Bound && b.Key == key && b.Ctrl == input.Ctrl && b.Shift == input.Shift && b.Alt == input.Alt
 }
+
+// BindingFrom reads the combination a user pressed this frame, for a
+// "press the new shortcut" prompt. Escape counts unless Ctrl or Alt is
+// held; modifier keys alone are waited out (ok is false).
+func BindingFrom(input core.Input) (binding Binding, ok bool) {
+	if input.Escape && !input.Ctrl && !input.Alt {
+		return Binding{Key: ebiten.KeyEscape, Bound: true}, true
+	}
+	for _, key := range input.Keys {
+		if IsModifierKey(key) {
+			continue
+		}
+		return Binding{Key: key, Ctrl: input.Ctrl, Shift: input.Shift, Alt: input.Alt, Bound: true}, true
+	}
+	return Binding{}, false
+}
