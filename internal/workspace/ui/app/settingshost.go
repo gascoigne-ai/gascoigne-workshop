@@ -109,7 +109,7 @@ func (a *App) applySettings(s settings.Settings) {
 	if err := a.ctx.SetTheme(appearance.ThemeWith(s)); err != nil {
 		a.status = err.Error()
 	}
-	for _, t := range a.tabs {
+	for _, t := range a.openTabs() {
 		t.raw, t.compact = viewer.Flags(s.ResponseView)
 		a.refreshView(t)
 	}

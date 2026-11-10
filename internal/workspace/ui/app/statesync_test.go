@@ -63,8 +63,8 @@ func TestStateRestoreRoundTripsThroughTheFile(t *testing.T) {
 		t.Fatal(err)
 	}
 	b := stateApp(t, path)
-	if len(b.tabs) != 2 || b.active != 1 || b.cur().paneTab != 3 {
-		t.Fatalf("tabs %d active %d pane %d", len(b.tabs), b.active, b.cur().paneTab)
+	if len(b.list.Tabs) != 2 || b.list.Active != 1 || b.cur().paneTab != 3 {
+		t.Fatalf("tabs %d active %d pane %d", len(b.list.Tabs), b.list.Active, b.cur().paneTab)
 	}
 	if b.cur().Req != b.col.Folders[0].Requests[0] || b.selected != b.cur().Req {
 		t.Fatal("the restored tab must be the request in the new tree")
@@ -85,8 +85,8 @@ func TestStateRestoreDropsMissingRequestsAndBadValues(t *testing.T) {
 		t.Fatal(err)
 	}
 	a := stateApp(t, path)
-	if len(a.tabs) != 1 || a.active != 0 {
-		t.Fatalf("tabs %d active %d", len(a.tabs), a.active)
+	if len(a.list.Tabs) != 1 || a.list.Active != 0 {
+		t.Fatalf("tabs %d active %d", len(a.list.Tabs), a.list.Active)
 	}
 	if p := a.cur().paneTab; p < 0 || p > 4 {
 		t.Fatalf("pane tab %d out of range", p)
@@ -100,8 +100,8 @@ func TestStateWithNoTabsOpensTheFirstRequest(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "state.json")
 	statefile.Save(path, state.State{Tabs: []state.Tab{{Path: "Gone"}}})
 	a := stateApp(t, path)
-	if len(a.tabs) != 1 {
-		t.Fatalf("%d tabs", len(a.tabs))
+	if len(a.list.Tabs) != 1 {
+		t.Fatalf("%d tabs", len(a.list.Tabs))
 	}
 }
 
@@ -111,8 +111,8 @@ func TestStateCorruptFileStartsFreshWithAStatusNote(t *testing.T) {
 		t.Fatal(err)
 	}
 	a := stateApp(t, path)
-	if len(a.tabs) != 1 || a.status == "Ready" {
-		t.Fatalf("tabs %d status %q", len(a.tabs), a.status)
+	if len(a.list.Tabs) != 1 || a.status == "Ready" {
+		t.Fatalf("tabs %d status %q", len(a.list.Tabs), a.status)
 	}
 }
 

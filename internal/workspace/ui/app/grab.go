@@ -13,7 +13,7 @@ func (a *App) grabbing() bool {
 	if !a.ctx.In.Held && !a.ctx.In.MiddleHeld {
 		return false
 	}
-	return a.dragTab >= 0 || a.dragRow != nil || a.treeDragging()
+	return a.list.Drag >= 0 || a.dragRow != nil || a.treeDragging()
 }
 
 // showGrab turns the cursor into the move shape while something is held,

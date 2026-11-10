@@ -56,7 +56,7 @@ func (a *App) snapshot() state.State {
 		Window:    state.Window{W: a.windowPx(a.w), H: a.windowPx(a.h), X: a.winX, Y: a.winY},
 		SidebarW:  a.sidebarSplit.Size,
 		PaneSplit: a.paneSplit.Size,
-		Active:    a.active,
+		Active:    a.list.Active,
 		SettingsW: a.prefs.Size.W,
 		SettingsH: a.prefs.Size.H,
 	}
@@ -66,7 +66,7 @@ func (a *App) snapshot() state.State {
 		}
 	})
 	var kept []int // tab index -> remembered index, -1 when not in the tree
-	for _, t := range a.tabs {
+	for _, t := range a.openTabs() {
 		if p := a.requestPath(t.Req); p != "" {
 			s.Tabs = append(s.Tabs, state.Tab{Path: p, Pane: t.paneTab, Resp: t.respTab})
 			kept = append(kept, len(s.Tabs)-1)
@@ -74,8 +74,8 @@ func (a *App) snapshot() state.State {
 			kept = append(kept, -1)
 		}
 	}
-	if a.active < len(kept) {
-		s.Active = max(kept[a.active], 0)
+	if a.list.Active < len(kept) {
+		s.Active = max(kept[a.list.Active], 0)
 	}
 	for name, w := range a.colWidths {
 		if len(w.Weights) > 0 {
@@ -105,28 +105,31 @@ func (a *App) restore(s state.State) {
 	}
 	byPath := map[string]*model.Request{}
 	walkRequests(&a.col.Folder, "", func(p string, r *model.Request) { byPath[p] = r })
-	var tabs []*reqTab
+	var saved []state.Tab
 	active := 0
 	for i, rt := range s.Tabs {
-		req := byPath[rt.Path]
-		if req == nil {
+		if byPath[rt.Path] == nil {
 			continue
 		}
-		t := a.makeTab(req)
-		if rt.Pane >= 0 && rt.Pane < len(requestPanes) {
-			t.paneTab = rt.Pane
-		}
-		if rt.Resp >= 0 && rt.Resp < len(responsePanes) {
-			t.respTab = rt.Resp
-		}
 		if i == s.Active {
-			active = len(tabs)
+			active = len(saved)
 		}
-		tabs = append(tabs, t)
+		saved = append(saved, rt)
 	}
-	if len(tabs) > 0 {
-		a.tabs, a.active = tabs, active
-		a.selected = tabs[active].Req
+	if len(saved) > 0 {
+		a.updateTabs(tabs.Reset{})
+		for _, rt := range saved {
+			a.updateTabs(tabs.Open{Req: byPath[rt.Path]})
+			t := a.cur()
+			if rt.Pane >= 0 && rt.Pane < len(requestPanes) {
+				t.paneTab = rt.Pane
+			}
+			if rt.Resp >= 0 && rt.Resp < len(responsePanes) {
+				t.respTab = rt.Resp
+			}
+		}
+		a.updateTabs(tabs.Activate{Index: active})
+		a.selected = a.cur().Req
 	}
 	for name, ws := range s.Columns {
 		if len(ws) == 0 {

@@ -10,7 +10,7 @@ const appName = "Gascoigne Workshop"
 // change to the collection that has not been written to its folder yet.
 func (a *App) Title() string {
 	unsaved := a.workspace != "" && a.colSave.Pending(tree.Key(a.col))
-	for _, t := range a.tabs {
+	for _, t := range a.openTabs() {
 		unsaved = unsaved || (a.workspace == "" && dirty(t))
 	}
 	title := appName

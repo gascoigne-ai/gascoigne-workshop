@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/tree"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
 	"strings"
 	"time"
 
@@ -74,7 +75,7 @@ func (a *App) saveWorkspace() {
 		a.workspace = dir
 		a.saveSettings(func(s *settings.Settings) { s.Workspace = dir })
 	}
-	for _, t := range a.tabs {
+	for _, t := range a.openTabs() {
 		t.MarkSaved()
 	}
 	a.colSave.Saved(tree.Key(a.col))
@@ -128,12 +129,13 @@ func (a *App) openWorkspaceAt(dir string) {
 		a.toast("Cannot open "+dir+": "+err.Error(), true)
 		return
 	}
-	for _, t := range a.tabs {
+	for _, t := range a.openTabs() {
 		a.disconnect(t)
 	}
 	a.commitEdit()
 	a.col, a.workspace = col, dir
-	a.tabs, a.active, a.selected = nil, 0, nil
+	a.updateTabs(tabs.Reset{})
+	a.selected = nil
 	a.expanded = map[*model.Folder]bool{}
 	a.expandAll(&a.col.Folder)
 	first := tree.FirstRequest(&a.col.Folder)

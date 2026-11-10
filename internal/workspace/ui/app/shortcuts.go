@@ -5,7 +5,6 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/shortcutpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -27,7 +26,7 @@ var shortcuts = []shortcut{
 	{"send", "Send request", ebiten.KeyEnter, true, false, false, (*App).sendCurrent},
 	{"focus-url", "Focus URL", ebiten.KeyL, true, false, false, (*App).focusURL},
 	{"new-request", "New request", ebiten.KeyT, true, false, false, (*App).newRequest},
-	{"close-tab", "Close tab", ebiten.KeyW, true, false, false, func(a *App) { a.closeTab(a.active) }},
+	{"close-tab", "Close tab", ebiten.KeyW, true, false, false, func(a *App) { a.closeTab(a.list.Active) }},
 	{"next-tab", "Next tab", ebiten.KeyTab, true, false, false, func(a *App) { a.switchTab(1) }},
 	{"prev-tab", "Previous tab", ebiten.KeyTab, true, true, false, func(a *App) { a.switchTab(-1) }},
 	{"duplicate-row", "Duplicate row", ebiten.KeyD, true, false, false, (*App).duplicateRow},
@@ -88,7 +87,7 @@ func (a *App) sendCurrent() {
 // focusURL puts the keyboard in the URL field with its text selected.
 func (a *App) focusURL() {
 	a.commitEdit()
-	for _, t := range a.tabs {
+	for _, t := range a.openTabs() {
 		t.view.Focused, t.body.Focused = false, false
 	}
 	a.cur().url.Focused = true
@@ -96,18 +95,7 @@ func (a *App) focusURL() {
 }
 
 // switchTab activates the tab dir places away, wrapping at the ends.
-func (a *App) switchTab(dir int) {
-	a.active = tabs.Next(a.active, len(a.tabs), dir)
-}
+func (a *App) switchTab(dir int) { a.updateTabs(tabs.Step{By: dir}) }
 
 // closeTab closes tab i; closing the last one leaves a blank request.
-func (a *App) closeTab(i int) {
-	if a.edit != nil && a.edit.tab == a.tabs[i] {
-		a.cancelEdit()
-	}
-	a.tabs = append(a.tabs[:i], a.tabs[i+1:]...)
-	if len(a.tabs) == 0 {
-		a.tabs = append(a.tabs, a.makeTab(&model.Request{Name: "New Request", Protocol: "rest", Method: "GET"}))
-	}
-	a.active = tabs.AfterClose(a.active, i, len(a.tabs))
-}
+func (a *App) closeTab(i int) { a.updateTabs(tabs.Close{Index: i}) }

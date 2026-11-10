@@ -128,18 +128,18 @@ func waitForResponse(t *testing.T, a *App, tab *reqTab) {
 
 func TestClickingARequestInTheTreeOpensItsTab(t *testing.T) {
 	a, _ := newTestApp(t)
-	if len(a.tabs) != 1 || a.cur().Req.Name != "Search Repos" {
-		t.Fatalf("start: %d tabs, current %q", len(a.tabs), a.cur().Req.Name)
+	if len(a.list.Tabs) != 1 || a.cur().Req.Name != "Search Repos" {
+		t.Fatalf("start: %d tabs, current %q", len(a.list.Tabs), a.cur().Req.Name)
 	}
 
 	click(a, 100, treeRowY(4)) // Repository Info
-	if len(a.tabs) != 2 || a.cur().Req.Name != "Repository Info" {
-		t.Fatalf("after click: %d tabs, current %q", len(a.tabs), a.cur().Req.Name)
+	if len(a.list.Tabs) != 2 || a.cur().Req.Name != "Repository Info" {
+		t.Fatalf("after click: %d tabs, current %q", len(a.list.Tabs), a.cur().Req.Name)
 	}
 
 	click(a, 100, treeRowY(4)) // the same request again focuses its tab
-	if len(a.tabs) != 2 {
-		t.Fatalf("reopening must not add a tab, have %d", len(a.tabs))
+	if len(a.list.Tabs) != 2 {
+		t.Fatalf("reopening must not add a tab, have %d", len(a.list.Tabs))
 	}
 }
 
@@ -159,12 +159,12 @@ func TestClickingAFolderTogglesIt(t *testing.T) {
 func TestNewRequestAndSwitchingTabs(t *testing.T) {
 	a, _ := newTestApp(t)
 	a.newRequest()
-	if len(a.tabs) != 2 || a.active != 1 || a.cur().Req.Name != "New Request" {
-		t.Fatalf("tabs %d active %d", len(a.tabs), a.active)
+	if len(a.list.Tabs) != 2 || a.list.Active != 1 || a.cur().Req.Name != "New Request" {
+		t.Fatalf("tabs %d active %d", len(a.list.Tabs), a.list.Active)
 	}
 	click(a, 280, headerH+tabsH/2) // the first tab sits at the left edge of the strip
-	if a.active != 0 {
-		t.Fatalf("active = %d, want 0", a.active)
+	if a.list.Active != 0 {
+		t.Fatalf("active = %d, want 0", a.list.Active)
 	}
 }
 
@@ -380,7 +380,7 @@ func TestMenuClosesOnEscapeAndOnOutsideClick(t *testing.T) {
 	if a.menu {
 		t.Fatal("an outside click must close the menu")
 	}
-	if len(a.tabs) != 1 {
+	if len(a.list.Tabs) != 1 {
 		t.Fatal("the click that closes the menu must not reach the tree below")
 	}
 
@@ -689,16 +689,16 @@ func TestCtrlLFocusesAndSelectsTheURL(t *testing.T) {
 func TestCtrlTOpensAndCtrlWClosesTabs(t *testing.T) {
 	a, _ := newTestApp(t)
 	a.step(key(ebiten.KeyT, true, false))
-	if len(a.tabs) != 2 || a.active != 1 {
-		t.Fatalf("Ctrl+T: %d tabs, active %d", len(a.tabs), a.active)
+	if len(a.list.Tabs) != 2 || a.list.Active != 1 {
+		t.Fatalf("Ctrl+T: %d tabs, active %d", len(a.list.Tabs), a.list.Active)
 	}
 	a.step(key(ebiten.KeyW, true, false))
-	if len(a.tabs) != 1 || a.active != 0 || a.cur().Req.Name != "Search Repos" {
-		t.Fatalf("Ctrl+W: %d tabs, active %d (%s)", len(a.tabs), a.active, a.cur().Req.Name)
+	if len(a.list.Tabs) != 1 || a.list.Active != 0 || a.cur().Req.Name != "Search Repos" {
+		t.Fatalf("Ctrl+W: %d tabs, active %d (%s)", len(a.list.Tabs), a.list.Active, a.cur().Req.Name)
 	}
 	a.step(key(ebiten.KeyW, true, false))
-	if len(a.tabs) != 1 || a.cur().Req.Name != "New Request" {
-		t.Fatalf("closing the last tab must leave a blank request, got %d tabs (%s)", len(a.tabs), a.cur().Req.Name)
+	if len(a.list.Tabs) != 1 || a.cur().Req.Name != "New Request" {
+		t.Fatalf("closing the last tab must leave a blank request, got %d tabs (%s)", len(a.list.Tabs), a.cur().Req.Name)
 	}
 }
 
@@ -707,12 +707,12 @@ func TestCtrlTabSwitchesTabsAndWraps(t *testing.T) {
 	a.newRequest()
 	a.newRequest() // three tabs, the last active
 	a.step(key(ebiten.KeyTab, true, false))
-	if a.active != 0 {
-		t.Fatalf("Ctrl+Tab from the last tab must wrap to the first, active %d", a.active)
+	if a.list.Active != 0 {
+		t.Fatalf("Ctrl+Tab from the last tab must wrap to the first, active %d", a.list.Active)
 	}
 	a.step(key(ebiten.KeyTab, true, true))
-	if a.active != 2 {
-		t.Fatalf("Ctrl+Shift+Tab must go back and wrap, active %d", a.active)
+	if a.list.Active != 2 {
+		t.Fatalf("Ctrl+Shift+Tab must go back and wrap, active %d", a.list.Active)
 	}
 }
 
@@ -729,8 +729,8 @@ func TestShortcutsNeedTheirModifiers(t *testing.T) {
 	for _, k := range []ebiten.Key{ebiten.KeyT, ebiten.KeyW, ebiten.KeyL, ebiten.KeyEnter, ebiten.KeyComma, ebiten.KeyTab} {
 		a.step(key(k, false, false)) // plain letters must never trigger anything
 	}
-	if len(a.tabs) != 1 || a.menu || a.cur().Sending {
-		t.Fatalf("plain keys changed state: %d tabs, menu %v", len(a.tabs), a.menu)
+	if len(a.list.Tabs) != 1 || a.menu || a.cur().Sending {
+		t.Fatalf("plain keys changed state: %d tabs, menu %v", len(a.list.Tabs), a.menu)
 	}
 }
 
@@ -932,7 +932,7 @@ func TestEachTabKeepsItsOwnBodyEditor(t *testing.T) {
 // button. Nothing but the name changes a tab's width.
 func (a *App) tabX(i int) (left, width int) {
 	x := 260
-	for j, t := range a.tabs {
+	for j, t := range a.openTabs() {
 		wd := 14 + tabBadgeW + 8 + a.ctx.Width(a.ctx.F.UI, t.Req.Name) + 8 + tabDirtyW + 24
 		if j == i {
 			return x, wd
@@ -947,7 +947,7 @@ const tabStripY = headerH + tabsH/2
 func twoTabs(t *testing.T) *App {
 	a, _ := newTestApp(t)
 	click(a, 100, treeRowY(4)) // opens "Repository Info" as the second tab
-	if len(a.tabs) != 2 {
+	if len(a.list.Tabs) != 2 {
 		t.Fatal("test setup: want two tabs")
 	}
 	return a
@@ -957,8 +957,8 @@ func TestCloseButtonClosesOnlyThatTab(t *testing.T) {
 	a := twoTabs(t) // active: the second
 	left, width := a.tabX(0)
 	click(a, left+width-12, tabStripY) // the × of the first tab
-	if len(a.tabs) != 1 || a.cur().Req.Name != "Repository Info" {
-		t.Fatalf("%d tabs, current %q", len(a.tabs), a.cur().Req.Name)
+	if len(a.list.Tabs) != 1 || a.cur().Req.Name != "Repository Info" {
+		t.Fatalf("%d tabs, current %q", len(a.list.Tabs), a.cur().Req.Name)
 	}
 }
 
@@ -966,30 +966,30 @@ func TestClickingTheLabelSelectsAndDoesNotClose(t *testing.T) {
 	a := twoTabs(t)
 	left, _ := a.tabX(0)
 	click(a, left+30, tabStripY)
-	if len(a.tabs) != 2 || a.active != 0 {
-		t.Fatalf("%d tabs, active %d", len(a.tabs), a.active)
+	if len(a.list.Tabs) != 2 || a.list.Active != 0 {
+		t.Fatalf("%d tabs, active %d", len(a.list.Tabs), a.list.Active)
 	}
 }
 
 func TestMiddleButtonDragReordersTabsAndDoesNotCloseThem(t *testing.T) {
 	a := twoTabs(t)
-	first := a.tabs[0]
+	first := a.openTabs()[0]
 	l0, _ := a.tabX(0)
 	l1, w1 := a.tabX(1)
 	a.step(core.Input{X: l0 + 20, Y: tabStripY, MiddleClick: true, MiddleHeld: true}) // press the first tab
-	if len(a.tabs) != 2 {
+	if len(a.list.Tabs) != 2 {
 		t.Fatal("a middle press must not close the tab any more")
 	}
 	a.step(core.Input{X: l1 + w1/2, Y: tabStripY, MiddleHeld: true}) // drag over the second
-	if a.tabs[1] != first {
+	if a.openTabs()[1] != first {
 		t.Fatal("the dragged tab must move to the second place")
 	}
 	a.step(core.Input{X: l1 + w1/2, Y: tabStripY}) // release
-	if a.dragTab != -1 {
-		t.Fatalf("dragTab = %d after the release", a.dragTab)
+	if a.list.Drag != -1 {
+		t.Fatalf("dragTab = %d after the release", a.list.Drag)
 	}
 	a.step(core.Input{X: l0 + 20, Y: tabStripY, MiddleHeld: true}) // held again, but not pressed on a tab
-	if a.tabs[1] != first {
+	if a.openTabs()[1] != first {
 		t.Fatal("after the release, moving must not drag")
 	}
 }
@@ -999,16 +999,16 @@ func TestMiddleClickWithoutMovingLeavesTheTabsAlone(t *testing.T) {
 	left, width := a.tabX(1)
 	a.step(core.Input{X: left + width/2, Y: tabStripY, MiddleClick: true, MiddleHeld: true})
 	a.step(core.Input{X: left + width/2, Y: tabStripY})
-	if len(a.tabs) != 2 || a.cur().Req.Name != "Repository Info" {
-		t.Fatalf("%d tabs, current %q", len(a.tabs), a.cur().Req.Name)
+	if len(a.list.Tabs) != 2 || a.cur().Req.Name != "Repository Info" {
+		t.Fatalf("%d tabs, current %q", len(a.list.Tabs), a.cur().Req.Name)
 	}
 }
 
 func TestClosingATabBeforeTheActiveOneKeepsTheSameTabActive(t *testing.T) {
 	a := twoTabs(t)
 	a.closeTab(0)
-	if a.active != 0 || a.cur().Req.Name != "Repository Info" {
-		t.Fatalf("active %d current %q", a.active, a.cur().Req.Name)
+	if a.list.Active != 0 || a.cur().Req.Name != "Repository Info" {
+		t.Fatalf("active %d current %q", a.list.Active, a.cur().Req.Name)
 	}
 }
 
@@ -1036,19 +1036,19 @@ func TestDirtyFollowsEditsAndUndoingThemByHand(t *testing.T) {
 func TestTabWidthDoesNotChangeWhenTheRequestChanges(t *testing.T) {
 	a := twoTabs(t)
 	left, width := a.tabX(0)
-	req := a.tabs[0].Req
+	req := a.openTabs()[0].Req
 	req.Method = "DELETE"                                                 // a longer badge
 	req.Headers = append(req.Headers, model.KV{Name: "X", Enabled: true}) // and an unsaved dot
 	a.step(core.Input{})
-	if !dirty(a.tabs[0]) {
+	if !dirty(a.openTabs()[0]) {
 		t.Fatal("test setup: the tab must be dirty")
 	}
 
 	// The × sits where it did before the edits; if the tab had grown it
 	// would be somewhere else and the click would only select the tab.
 	click(a, left+width-12, tabStripY)
-	if len(a.tabs) != 1 || a.cur().Req.Name != "Repository Info" {
-		t.Fatalf("%d tabs: the tab changed size when its request changed", len(a.tabs))
+	if len(a.list.Tabs) != 1 || a.cur().Req.Name != "Repository Info" {
+		t.Fatalf("%d tabs: the tab changed size when its request changed", len(a.list.Tabs))
 	}
 }
 
@@ -1071,22 +1071,22 @@ func TestTheTabSlotsFitTheirContentAtEveryTextSize(t *testing.T) {
 
 func TestDraggingATabReordersIt(t *testing.T) {
 	a := twoTabs(t)
-	first := a.tabs[0]
+	first := a.openTabs()[0]
 	l0, w0 := a.tabX(0)
 	l1, w1 := a.tabX(1)
 
 	a.step(core.Input{X: l0 + 20, Y: tabStripY, Click: true, Held: true}) // press the first tab
 	a.step(core.Input{X: l1 + w1/2, Y: tabStripY, Held: true})            // drag over the second
-	if a.tabs[1] != first {
+	if a.openTabs()[1] != first {
 		t.Fatalf("the dragged tab must move to the second place")
 	}
 	a.step(core.Input{X: l1 + w1/2, Y: tabStripY}) // release
 	a.step(core.Input{X: l0 + w0/2, Y: tabStripY, Held: true})
-	if a.tabs[1] != first {
+	if a.openTabs()[1] != first {
 		t.Fatal("after release, moving over another tab must not drag")
 	}
-	if a.dragTab != -1 {
-		t.Fatalf("dragTab = %d after release", a.dragTab)
+	if a.list.Drag != -1 {
+		t.Fatalf("dragTab = %d after release", a.list.Drag)
 	}
 }
 
@@ -1101,7 +1101,7 @@ func TestDraggingKeepsTheActiveTabActive(t *testing.T) {
 	if a.cur() == active {
 		t.Fatal("pressing the first tab activates it, so it is the active one")
 	}
-	if a.cur() != a.tabs[1] {
+	if a.cur() != a.openTabs()[1] {
 		t.Fatal("the active tab must travel with the drag")
 	}
 }
@@ -1779,7 +1779,7 @@ func TestClickingOutsideClosesTheMenuWithoutReachingWhatIsBelow(t *testing.T) {
 	if a.ctxMenu != nil || len(r.log) != 0 {
 		t.Fatalf("menu open %v ran %v", a.ctxMenu != nil, r.log)
 	}
-	if len(a.tabs) != 1 {
+	if len(a.list.Tabs) != 1 {
 		t.Fatal("the click that closes a menu must not also open the request under it")
 	}
 }
@@ -1834,7 +1834,7 @@ func TestMenuNearTheWindowEdgeStaysOnScreen(t *testing.T) {
 func TestShortcutsAreIgnoredWhileAMenuIsOpen(t *testing.T) {
 	a, _ := openTestMenu(t)
 	a.step(key(ebiten.KeyT, true, false))
-	if len(a.tabs) != 1 {
+	if len(a.list.Tabs) != 1 {
 		t.Fatal("Ctrl+T must not open a tab behind a menu")
 	}
 }
@@ -1907,7 +1907,7 @@ func TestDialogTrapsFocusAndBlocksShortcuts(t *testing.T) {
 		t.Fatal("Tab must stay inside the dialog")
 	}
 	a.step(key(ebiten.KeyT, true, false))
-	if len(a.tabs) != 1 {
+	if len(a.list.Tabs) != 1 {
 		t.Fatal("global shortcuts are off while a dialog is open")
 	}
 }
@@ -2133,7 +2133,7 @@ func TestDeleteAsksFirstAndClosesTheRequestsTab(t *testing.T) {
 	if findReq(a, "Repository Info") != nil {
 		t.Fatal("the request must be gone")
 	}
-	for _, tab := range a.tabs {
+	for _, tab := range a.openTabs() {
 		if tab.Req == info {
 			t.Fatal("its tab must be closed")
 		}
@@ -2148,8 +2148,8 @@ func TestDeletingAFolderClosesTheTabsOfEverythingInIt(t *testing.T) {
 	if len(a.col.Folders) != 2 {
 		t.Fatalf("folders = %d", len(a.col.Folders))
 	}
-	if len(a.tabs) != 1 || a.cur().Req.Name != "New Request" {
-		t.Fatalf("the open request was inside: %d tabs, current %q", len(a.tabs), a.cur().Req.Name)
+	if len(a.list.Tabs) != 1 || a.cur().Req.Name != "New Request" {
+		t.Fatalf("the open request was inside: %d tabs, current %q", len(a.list.Tabs), a.cur().Req.Name)
 	}
 }
 
@@ -2595,8 +2595,8 @@ func TestTabMenu(t *testing.T) {
 		t.Fatalf("tab menu = %q", got)
 	}
 	pickMenu(t, a, "Close tabs to the right")
-	if len(a.tabs) != 1 || a.cur().Req.Name != "Search Repos" {
-		t.Fatalf("%d tabs, current %q", len(a.tabs), a.cur().Req.Name)
+	if len(a.list.Tabs) != 1 || a.cur().Req.Name != "Search Repos" {
+		t.Fatalf("%d tabs, current %q", len(a.list.Tabs), a.cur().Req.Name)
 	}
 	rightClick(a, left+20, tabStripY)
 	if !itemByLabel(a, "Close others").disabled || !itemByLabel(a, "Close tabs to the right").disabled {
@@ -2608,11 +2608,11 @@ func TestCloseOthersKeepsOnlyThatTab(t *testing.T) {
 	a := twoTabs(t)
 	a.newRequest() // three tabs
 	left, _ := a.tabX(1)
-	keep := a.tabs[1]
+	keep := a.openTabs()[1]
 	rightClick(a, left+20, tabStripY)
 	pickMenu(t, a, "Close others")
-	if len(a.tabs) != 1 || a.tabs[0] != keep || a.cur() != keep {
-		t.Fatalf("%d tabs, current %q", len(a.tabs), a.cur().Req.Name)
+	if len(a.list.Tabs) != 1 || a.openTabs()[0] != keep || a.cur() != keep {
+		t.Fatalf("%d tabs, current %q", len(a.list.Tabs), a.cur().Req.Name)
 	}
 }
 
@@ -2624,8 +2624,8 @@ func TestDuplicateTabAddsACopyToTheTreeAndOpensIt(t *testing.T) {
 	if got := requestNames(a.col.Folders[1]); !reflect.DeepEqual(got, []string{"Search Repos", "Search Repos copy", "Repository Info", "Repository Tags"}) {
 		t.Fatalf("Repository = %v", got)
 	}
-	if a.cur().Req.Name != "Search Repos copy" || len(a.tabs) != 2 {
-		t.Fatalf("current %q, %d tabs", a.cur().Req.Name, len(a.tabs))
+	if a.cur().Req.Name != "Search Repos copy" || len(a.list.Tabs) != 2 {
+		t.Fatalf("current %q, %d tabs", a.cur().Req.Name, len(a.list.Tabs))
 	}
 }
 
@@ -3080,11 +3080,11 @@ func TestRecordingANewBindingRebindsTheAction(t *testing.T) {
 		t.Fatalf("saved %+v", saved.Shortcuts)
 	}
 	a.step(key(ebiten.KeyW, true, false)) // the old key does nothing now
-	if len(a.tabs) != 2 {
+	if len(a.list.Tabs) != 2 {
 		t.Fatal("Ctrl+W must no longer close a tab")
 	}
 	a.step(key(ebiten.KeyQ, true, false))
-	if len(a.tabs) != 1 {
+	if len(a.list.Tabs) != 1 {
 		t.Fatal("Ctrl+Q closes a tab")
 	}
 	if shortcutpage.KeyText(pageHost{a}, "close-tab") != "Ctrl+Q" {
@@ -3107,7 +3107,7 @@ func TestEscapeCancelsRecordingAndBackspaceUnbinds(t *testing.T) {
 		t.Fatalf("shortcuts = %v: Backspace stores an empty (unbound) binding", a.settings.Shortcuts)
 	}
 	a.step(key(ebiten.KeyW, true, false))
-	if len(a.tabs) != 2 {
+	if len(a.list.Tabs) != 2 {
 		t.Fatal("an unbound action fires nothing")
 	}
 	if shortcutpage.KeyText(pageHost{a}, "close-tab") != "Unbound" {
@@ -3171,11 +3171,11 @@ func TestSavedBindingsApplyFromTheStart(t *testing.T) {
 	}
 	a.w, a.h = winW, winH
 	a.step(key(ebiten.KeyN, true, false))
-	if len(a.tabs) != 2 {
+	if len(a.list.Tabs) != 2 {
 		t.Fatal("the saved binding must work")
 	}
 	a.step(key(ebiten.KeyT, true, false))
-	if len(a.tabs) != 2 {
+	if len(a.list.Tabs) != 2 {
 		t.Fatal("the replaced default must not")
 	}
 }
@@ -3380,8 +3380,8 @@ func TestManyTabsScrollTheStripAndKeepTheActiveTabInView(t *testing.T) {
 	if a.tabsScroll.X >= x {
 		t.Fatalf("clicking the left arrow must scroll back: %d -> %d", x, a.tabsScroll.X)
 	}
-	if len(a.tabs) != 15 || a.active != 14 {
-		t.Fatalf("an arrow click must not select or close a tab: %d tabs, active %d", len(a.tabs), a.active)
+	if len(a.list.Tabs) != 15 || a.list.Active != 14 {
+		t.Fatalf("an arrow click must not select or close a tab: %d tabs, active %d", len(a.list.Tabs), a.list.Active)
 	}
 }
 
@@ -3391,7 +3391,7 @@ func TestLeftDragOnAnOverflowingTabStripPansItInsteadOfReorderingTabs(t *testing
 		a.newRequest()
 	}
 	a.step(core.Input{})
-	order := append([]*reqTab(nil), a.tabs...)
+	order := append([]*reqTab(nil), a.openTabs()...)
 	x0 := a.tabsScroll.X // the active (last) tab was revealed: the strip is at its right end
 	a.step(core.Input{X: 600, Y: tabStripY, Click: true, Held: true})
 	a.step(core.Input{X: 700, Y: tabStripY, Held: true}) // drag right: earlier tabs come into view
@@ -3400,13 +3400,13 @@ func TestLeftDragOnAnOverflowingTabStripPansItInsteadOfReorderingTabs(t *testing
 		t.Fatalf("X = %d, want %d: the strip follows the pointer", a.tabsScroll.X, want)
 	}
 	for i := range order {
-		if a.tabs[i] != order[i] {
+		if a.openTabs()[i] != order[i] {
 			t.Fatalf("tab %d moved: a left drag on an overflowing strip must not reorder", i)
 		}
 	}
 	a.step(core.Input{X: 800, Y: tabStripY}) // release
-	if a.dragTab != -1 {
-		t.Fatalf("dragTab = %d", a.dragTab)
+	if a.list.Drag != -1 {
+		t.Fatalf("dragTab = %d", a.list.Drag)
 	}
 }
 

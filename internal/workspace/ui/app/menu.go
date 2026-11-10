@@ -21,7 +21,7 @@ func (a *App) saveSettings(edit func(*settings.Settings)) {
 	wasAuto, wasNetwork, wasView := a.settings.AutoSave, a.networkSettings(), a.settings.ResponseView
 	edit(&a.settings)
 	if a.settings.ResponseView != wasView { // the choice applies to the tabs already open
-		for _, t := range a.tabs {
+		for _, t := range a.openTabs() {
 			t.raw, t.compact = viewer.Flags(a.settings.ResponseView)
 			a.refreshView(t)
 		}

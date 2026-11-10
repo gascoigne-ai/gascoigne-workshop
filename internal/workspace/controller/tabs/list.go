@@ -40,6 +40,10 @@ type DragBegin struct{ Index int }
 // DragOver moves the dragged tab to where the pointer is, over tab Index.
 type DragOver struct{ Index int }
 
+// Reset closes every tab without leaving a blank one; the caller opens what
+// comes next, as when another workspace is loaded.
+type Reset struct{}
+
 // DragEnd ends the drag.
 type DragEnd struct{}
 
@@ -52,6 +56,7 @@ func (Step) listMsg()         {}
 func (DragBegin) listMsg()    {}
 func (DragOver) listMsg()     {}
 func (DragEnd) listMsg()      {}
+func (Reset) listMsg()        {}
 
 // Update returns the list after msg. The list it is given is not changed.
 // A message that names a tab that is no longer there, such as a menu that
@@ -74,7 +79,11 @@ func Update(list List, msg Msg) List {
 			list.Active = msg.Index
 		}
 	case Step:
-		list.Active = Next(list.Active, len(list.Tabs), msg.By)
+		if len(list.Tabs) > 0 {
+			list.Active = Next(list.Active, len(list.Tabs), msg.By)
+		}
+	case Reset:
+		list = List{Drag: -1}
 	case DragBegin:
 		if list.has(msg.Index) {
 			list.Active, list.Drag = msg.Index, msg.Index

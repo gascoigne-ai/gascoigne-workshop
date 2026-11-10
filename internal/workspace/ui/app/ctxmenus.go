@@ -3,6 +3,7 @@ package ui
 import (
 	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
 	"net/url"
 
 	"net/http/cookiejar"
@@ -23,11 +24,11 @@ var menuSeparator = menuItem{separator: true}
 // ---- request tabs ------------------------------------------------------------
 
 func (a *App) tabMenuItems(i int) []menuItem {
-	t := a.tabs[i]
+	t := a.widgets[a.list.Tabs[i]]
 	return []menuItem{
 		{label: "Close", run: func() { a.closeTab(i) }},
-		{label: "Close others", disabled: len(a.tabs) == 1, run: func() { a.closeOthers(i) }},
-		{label: "Close tabs to the right", disabled: i == len(a.tabs)-1, run: func() { a.closeRightOf(i) }},
+		{label: "Close others", disabled: len(a.list.Tabs) == 1, run: func() { a.closeOthers(i) }},
+		{label: "Close tabs to the right", disabled: i == len(a.list.Tabs)-1, run: func() { a.closeRightOf(i) }},
 		menuSeparator,
 		{label: "Duplicate", run: func() { a.duplicateTab(i) }},
 		{label: "Copy URL", run: func() { a.copyRequestURL(t.Req) }},
@@ -36,30 +37,14 @@ func (a *App) tabMenuItems(i int) []menuItem {
 }
 
 // closeOthers closes every tab but tab i, which becomes the active one.
-func (a *App) closeOthers(i int) {
-	keep := a.tabs[i]
-	for j := len(a.tabs) - 1; j >= 0; j-- {
-		if a.tabs[j] != keep {
-			a.closeTab(j)
-		}
-	}
-	for j, t := range a.tabs {
-		if t == keep {
-			a.active = j
-		}
-	}
-}
+func (a *App) closeOthers(i int) { a.updateTabs(tabs.CloseOthers{Index: i}) }
 
-func (a *App) closeRightOf(i int) {
-	for j := len(a.tabs) - 1; j > i; j-- {
-		a.closeTab(j)
-	}
-}
+func (a *App) closeRightOf(i int) { a.updateTabs(tabs.CloseRightOf{Index: i}) }
 
 // duplicateTab copies the tab's request next to the original in the
 // tree (or into the root when it is not in the tree) and opens the copy.
 func (a *App) duplicateTab(i int) {
-	req := a.tabs[i].Req
+	req := a.list.Tabs[i].Req
 	cp, _ := a.col.Folder.Duplicate(req).(*model.Request)
 	if cp == nil {
 		clone := req.Clone()

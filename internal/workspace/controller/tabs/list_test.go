@@ -193,3 +193,16 @@ func TestUpdateIgnoresAnIndexOfATabThatIsGone(t *testing.T) {
 		}
 	}
 }
+
+func TestUpdateResetEmptiesTheListAndStepOnAnEmptyListIsSafe(t *testing.T) {
+	list := Update(listOf("abc", 2), DragBegin{Index: 1})
+
+	got := Update(list, Reset{})
+	if len(got.Tabs) != 0 || got.Active != 0 || got.Drag != -1 {
+		t.Fatalf("after Reset: %d tabs, active %d, drag %d; want none, 0, -1", len(got.Tabs), got.Active, got.Drag)
+	}
+
+	if after := Update(got, Step{By: 1}); after.Active != 0 {
+		t.Fatalf("Step on an empty list moved the active tab to %d", after.Active)
+	}
+}

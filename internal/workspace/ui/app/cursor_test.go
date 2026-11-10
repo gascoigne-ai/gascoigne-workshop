@@ -17,7 +17,7 @@ func TestTheCursorIsAGrabWhileSomethingIsBeingDragged(t *testing.T) {
 	}{
 		{"nothing grabbed", func(*App) {}, true, core.CursorDefault},
 		{"a table row being dragged", func(a *App) { a.dragRow = &rowSelection{} }, true, core.CursorMove},
-		{"a tab being dragged", func(a *App) { a.dragTab = 0 }, true, core.CursorMove},
+		{"a tab being dragged", func(a *App) { a.list.Drag = 0 }, true, core.CursorMove},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

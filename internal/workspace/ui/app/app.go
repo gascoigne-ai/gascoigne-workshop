@@ -25,6 +25,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
 	"net/http"
 	"net/http/cookiejar"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -100,15 +101,49 @@ type reqTab struct {
 }
 
 // makeTab is newTab with the response view the settings ask for.
-func (a *App) makeTab(req *model.Request) *reqTab {
-	t := newTab(req)
+func (a *App) makeTab(tab *tabs.Tab) *reqTab {
+	t := newReqTab(tab)
 	t.raw, t.compact = viewer.Flags(a.settings.ResponseView)
-	t.Earlier = a.loadHistory(req)
+	t.Earlier = a.loadHistory(tab.Req)
 	return t
 }
 
-func newTab(req *model.Request) *reqTab {
-	t := &reqTab{Tab: tabs.New(req), url: view.NewTextField(req.URL)}
+// updateTabs applies msg to the tab list, then does what the change means
+// for the window: an inline edit in a closed tab ends, closed tabs lose
+// their widgets and new ones get theirs.
+func (a *App) updateTabs(msg tabs.Msg) {
+	next := tabs.Update(a.list, msg)
+	for tab, widgets := range a.widgets {
+		if slices.Contains(next.Tabs, tab) {
+			continue
+		}
+		if a.edit != nil && a.edit.tab == widgets {
+			a.cancelEdit()
+		}
+		delete(a.widgets, tab)
+	}
+	for _, tab := range next.Tabs {
+		if a.widgets[tab] == nil {
+			a.widgets[tab] = a.makeTab(tab)
+		}
+	}
+	a.list = next
+}
+
+// openTabs are the widget states of the open tabs, in the order of the strip.
+func (a *App) openTabs() []*reqTab {
+	open := make([]*reqTab, len(a.list.Tabs))
+	for i, tab := range a.list.Tabs {
+		open[i] = a.widgets[tab]
+	}
+	return open
+}
+
+func newTab(req *model.Request) *reqTab { return newReqTab(tabs.New(req)) }
+
+func newReqTab(tab *tabs.Tab) *reqTab {
+	req := tab.Req
+	t := &reqTab{Tab: tab, url: view.NewTextField(req.URL)}
 	t.matchIdx = -1
 	t.wsView.Follow = true
 	t.wsCancel = func() {}
@@ -135,9 +170,9 @@ type App struct {
 	curl        func(model.Request) string
 	col         model.Collection
 	expanded    map[*model.Folder]bool
-	tabs        []*reqTab
-	active      int
-	bus         *bus.Bus // what goroutines report back, drained once per frame
+	list        tabs.List             // the open tabs, the active one and the one being dragged
+	widgets     map[*tabs.Tab]*reqTab // the widget state of each open tab
+	bus         *bus.Bus              // what goroutines report back, drained once per frame
 	status      string
 	w, h        int
 	shot        screenshot
@@ -146,7 +181,6 @@ type App struct {
 	settingsPath       string        // "" keeps settings in memory only
 	menu               bool          // settings menu is open
 	edit               *cellEdit     // the table cell being edited, if any
-	dragTab            int           // index of the tab being dragged, -1 when none
 	dragRow            *rowSelection // the table row being dragged by its grip, nil when none
 	ctxMenu            *contextMenu  // the open context menu, if any
 	bulk               *bulkEdit     // the table in bulk-edit mode, if any
@@ -249,6 +283,7 @@ func NewApp(opts Options) (*App, error) {
 		col:              collection.Sample(),
 		defaultWorkspace: opts.DefaultWorkspace,
 		expanded:         map[*model.Folder]bool{},
+		widgets:          map[*tabs.Tab]*reqTab{},
 		bus:              bus.New(),
 		status:           "Ready",
 		shot:             screenshot{path: opts.ScreenshotPath, sendOnStart: opts.SendOnStart, set: opts.ScreenshotSet},
@@ -268,7 +303,7 @@ func NewApp(opts Options) (*App, error) {
 	a.protocols, a.grpcMethods, a.curl = opts.Protocols, opts.GRPCMethods, opts.Curl
 	a.reg = a.newRegistry()
 	ctx.Clipboard = statusClipboard{inner: ctx.Clipboard, report: a.clipboardNote}
-	a.dragTab = -1
+	a.list.Drag = -1
 	a.dirty = true
 	a.now = time.Now // the fallback when no Clock port is given
 	if opts.Clock != nil {
@@ -311,19 +346,12 @@ func NewApp(opts Options) (*App, error) {
 	return a, nil
 }
 
-func (a *App) cur() *reqTab { return a.tabs[a.active] }
+func (a *App) cur() *reqTab { return a.widgets[a.list.Tabs[a.list.Active]] }
 
 // openRequest focuses the tab of req, opening one if needed.
 func (a *App) openRequest(req *model.Request) {
 	a.selected = req
-	for i, t := range a.tabs {
-		if t.Req == req {
-			a.active = i
-			return
-		}
-	}
-	a.tabs = append(a.tabs, a.makeTab(req))
-	a.active = len(a.tabs) - 1
+	a.updateTabs(tabs.Open{Req: req})
 }
 
 // send runs t's request off the UI goroutine; the result comes back
@@ -474,7 +502,7 @@ func (a *App) step(in core.Input) {
 	a.ctx.In = in
 	a.ctx.Cursor = core.CursorDefault
 	if !in.Held && !in.MiddleHeld {
-		a.dragTab = -1
+		a.updateTabs(tabs.DragEnd{})
 		a.dragRow = nil
 	}
 	drained := a.drain()
@@ -596,19 +624,3 @@ const dirtyMark = "\u2022"
 
 // dirty reports whether the request differs from its state when opened.
 func dirty(t *reqTab) bool { return t.Dirty() }
-
-// dragOver moves the tab being dragged to where the pointer is over tab i.
-func (a *App) dragOver(i int) {
-	if a.dragTab >= 0 && a.dragTab != i {
-		a.moveTab(a.dragTab, i)
-	}
-}
-
-// moveTab moves a tab to a new place; the active tab stays the same tab.
-func (a *App) moveTab(from, to int) {
-	a.active = tabs.AfterMove(a.active, from, to)
-	tab := a.tabs[from]
-	a.tabs = append(a.tabs[:from], a.tabs[from+1:]...)
-	a.tabs = append(a.tabs[:to], append([]*reqTab{tab}, a.tabs[to:]...)...)
-	a.dragTab = to
-}

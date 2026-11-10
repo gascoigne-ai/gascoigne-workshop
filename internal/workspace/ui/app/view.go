@@ -5,6 +5,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/textfmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/component"
 	"strings"
 
@@ -209,21 +210,21 @@ func (a *App) header() Node {
 // requestTabs is the strip of open requests, with a "+" for a new one.
 func (a *App) requestTabs() Node {
 	return Row(H(tabsH), PadT(tabGap), Bg(w.Frame), Control("tabstrip"), BorderB(w.Border),
-		HScroll(&a.tabsScroll, Grow(1), For(a.tabs, func(i int, t *reqTab) Node {
+		HScroll(&a.tabsScroll, Grow(1), For(a.openTabs(), func(i int, t *reqTab) Node {
 			look := []Item{} // inactive tabs blend into the strip; the active one joins the pane
-			if i == a.active {
+			if i == a.list.Active {
 				look = []Item{Bg(w.Bg), Edges(w.AccentLine, true, true, true), KeepInView()} // outlined top, left and right, open at the bottom
 			}
 			grab := OnClick(func() {
-				a.active = i
+				a.updateTabs(tabs.Activate{Index: i})
 				if !a.tabsScroll.Overflowing { // an overflowing strip is panned by a left drag; the middle button reorders
-					a.dragTab = i
+					a.updateTabs(tabs.DragBegin{Index: i})
 				}
 			})
-			return Row(append(look, OnMiddleClick(func() { a.active, a.dragTab = i, i }), // a middle drag reorders, like a left one
+			return Row(append(look, OnMiddleClick(func() { a.updateTabs(tabs.DragBegin{Index: i}) }), // a middle drag reorders, like a left one
 				OnRightClick(func(x, y int) { a.openMenu(x, y, a.tabMenuItems(i)) }),
 				When(i > 0, Separator(12)),
-				Row(PadL(14), Gap(8), AlignItems(AlignBaseline), grab, OnDragOver(func() { a.dragOver(i) }),
+				Row(PadL(14), Gap(8), AlignItems(AlignBaseline), grab, OnDragOver(func() { a.updateTabs(tabs.DragOver{Index: i}) }),
 					Text(requestBadge(t.Req.Protocol, t.Req.Method), Small(), Color(appearance.MethodToken(t.Req.Method)), W(tabBadgeW)),
 					Text(t.Req.Name),
 					Row(W(tabDirtyW), AlignSelf(AlignStretch), If(dirty(t), Text(dirtyMark, Color(w.AccentLine), Grow(1)))),
