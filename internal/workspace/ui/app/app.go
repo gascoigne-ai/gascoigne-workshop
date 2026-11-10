@@ -19,6 +19,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/settingsui"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/shortcutpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/autosave"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/bus"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/toasts"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
@@ -136,7 +137,7 @@ type App struct {
 	expanded    map[*model.Folder]bool
 	tabs        []*reqTab
 	active      int
-	results     chan sendResult
+	bus         *bus.Bus // what goroutines report back, drained once per frame
 	wsEvents    chan wsEvent
 	later       chan func() // things other goroutines want done on the UI goroutine, such as a chosen file
 	status      string
@@ -250,7 +251,7 @@ func NewApp(opts Options) (*App, error) {
 		col:              collection.Sample(),
 		defaultWorkspace: opts.DefaultWorkspace,
 		expanded:         map[*model.Folder]bool{},
-		results:          make(chan sendResult, 8),
+		bus:              bus.New(),
 		wsEvents:         make(chan wsEvent, 64),
 		later:            make(chan func(), 8),
 		status:           "Ready",
@@ -330,7 +331,7 @@ func (a *App) openRequest(req *model.Request) {
 }
 
 // send runs t's request off the UI goroutine; the result comes back
-// through a.results and is applied in Update.
+// through the bus and is applied in drain.
 func (a *App) send(t *reqTab) {
 	if isSocket(t) {
 		a.toggleConnection(t)
@@ -352,15 +353,15 @@ func (a *App) dispatch(t *reqTab, source *model.Request) {
 	a.calls.Sent(a.now(), req)
 	ctx, cancel := context.WithTimeout(context.Background(), a.timeoutFor(req))
 	t.cancel = cancel
-	reg := a.reg // the goroutine must not read App fields the UI goroutine replaces
-	go func() {
+	reg := a.reg // the command must not read App fields the UI goroutine replaces
+	a.bus.Run(ctx, func(ctx context.Context) bus.Msg {
 		defer cancel()
 		resp, err := reg.Send(ctx, req)
 		if err != nil {
 			resp = model.Response{Err: err.Error()}
 		}
-		a.results <- sendResult{tab: t, seq: seq, resp: resp}
-	}()
+		return sendResult{tab: t, seq: seq, resp: resp}
+	})
 }
 
 // cancelSend stops the running request of t. Its late result, which
@@ -395,13 +396,12 @@ func timeoutText(sec int) string {
 	return strconv.Itoa(sec)
 }
 
-// drain applies the results of finished sends and reports whether there were any.
+// drain applies what other goroutines reported and reports whether there was
+// anything.
 func (a *App) drain() (any bool) {
+	any = a.bus.Drain(a.handle)
 	for {
 		select {
-		case r := <-a.results:
-			a.apply(r)
-			any = true
 		case e := <-a.wsEvents:
 			a.applyWS(e)
 			any = true
@@ -411,6 +411,14 @@ func (a *App) drain() (any bool) {
 		default:
 			return any
 		}
+	}
+}
+
+// handle applies one message from the bus.
+func (a *App) handle(msg bus.Msg) {
+	switch msg := msg.(type) {
+	case sendResult:
+		a.apply(msg)
 	}
 }
 
