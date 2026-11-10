@@ -72,6 +72,7 @@ func TestSaveWritesTheWorkspaceAndClearsTheDirtyMark(t *testing.T) {
 		t.Fatal("edit not dirty")
 	}
 	a.saveWorkspace()
+	a.waitWrites()
 	if dirty(tab) {
 		t.Fatal("still dirty after saving")
 	}
@@ -95,6 +96,7 @@ func TestEditsAreSavedAfterAPause(t *testing.T) {
 	}
 	now = now.Add(2 * time.Second)
 	a.step(core.Input{})
+	a.waitWrites()
 	got, err := store.Load(dir)
 	if err != nil || got.Requests[0].Name != "Renamed" {
 		t.Fatalf("%+v %v", got, err)
@@ -108,6 +110,7 @@ func TestSavingWithoutAWorkspaceUsesTheDefaultOneAndRemembersIt(t *testing.T) {
 		t.Fatal("workspace without being asked")
 	}
 	a.saveWorkspace()
+	a.waitWrites()
 	if a.workspace != def {
 		t.Fatalf("workspace %q", a.workspace)
 	}

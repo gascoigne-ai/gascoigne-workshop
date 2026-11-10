@@ -94,6 +94,7 @@ func TestEveryFailurePathIsShownToTheUser(t *testing.T) {
 			a, _ := newTestApp(t)
 			before := a.status
 			test.trigger(t, a)
+			a.waitWrites() // saves run in the background
 			if test.wantToast != "" {
 				found := false
 				for _, toast := range a.toasts {

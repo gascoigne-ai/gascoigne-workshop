@@ -130,6 +130,7 @@ func TestStateIsSavedAfterAQuietSpell(t *testing.T) {
 	}
 	clock = clock.Add(2 * time.Second)
 	a.step(core.Input{})
+	a.waitWrites()
 	if s, _ := statefile.Load(path); s.SidebarW != 280 {
 		t.Fatalf("not written after the debounce: %+v", s)
 	}

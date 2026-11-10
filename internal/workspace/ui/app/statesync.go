@@ -2,6 +2,7 @@ package ui
 
 import (
 	"encoding/json"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/serial"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
 	"path/filepath"
 	"strings"
@@ -151,6 +152,7 @@ func (a *App) SaveState() error {
 	if a.statePath == "" {
 		return nil
 	}
+	a.waitWrites()
 	s := a.snapshot()
 	err := a.states.Save(a.statePath, s)
 	if err == nil {
@@ -164,7 +166,8 @@ func stateKey(s state.State) string {
 	return string(b)
 }
 
-// stateTick writes the state once it has been unchanged for stateDebounce.
+// stateTick writes the state, off the UI goroutine, once it has been
+// unchanged for stateDebounce.
 func (a *App) stateTick() {
 	if a.statePath == "" {
 		return
@@ -173,10 +176,16 @@ func (a *App) stateTick() {
 	if !a.stateSave.Due(key, a.now()) {
 		return
 	}
-	if err := a.SaveState(); err != nil {
-		a.stateSave.Saved(key) // report once, do not retry every frame
-		a.toast(err.Error(), true)
-	}
+	snapshot, path := a.snapshot(), a.statePath
+	a.stateSave.Saved(key) // an error is reported once, not retried every frame
+	a.write("state:"+path, serial.Job{
+		Run: func() error { return a.states.Save(path, snapshot) },
+		Done: func(err error) {
+			if err != nil {
+				a.toast(err.Error(), true)
+			}
+		},
+	})
 }
 
 // stateNote joins a state load problem into the status line.

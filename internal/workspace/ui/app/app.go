@@ -20,6 +20,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/shortcutpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/autosave"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/bus"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/serial"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/toasts"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
@@ -228,6 +229,7 @@ type App struct {
 	workspace          string            // the folder the collection is saved to; "" for none yet
 	defaultWorkspace   string            // where the first save goes when there is no workspace
 	colSave            autosave.Debounce // when the collection was last written
+	writes             serial.Queue      // the background writes in flight and waiting, by file
 	keys               changeKeys        // the comparable forms of the collection and the state, recomputed only on frames where something could have changed
 	stateSave          autosave.Debounce // when the remembered state was last written
 	initial            state.Window      // window geometry of the last run

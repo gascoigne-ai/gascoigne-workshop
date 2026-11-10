@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/tree"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/serial"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
 	"strings"
 	"time"
@@ -66,20 +67,25 @@ func (a *App) saveWorkspace() {
 			return
 		}
 	}
-	if err := a.store.Save(dir, a.col); err != nil {
-		a.colSave.Saved(a.collectionKeyNow()) // report once, do not retry every frame
-		a.toast("Saving failed: "+err.Error(), true)
-		return
-	}
-	if a.workspace == "" {
-		a.workspace = dir
-		a.saveSettings(func(s *settings.Settings) { s.Workspace = dir })
-	}
+	snapshot := a.col.Clone()             // written off the UI goroutine while the UI goes on editing
+	a.colSave.Saved(a.collectionKeyNow()) // an error is reported once, not retried every frame
 	for _, t := range a.openTabs() {
 		t.MarkSaved()
 	}
-	a.colSave.Saved(a.collectionKeyNow())
-	a.status = fmt.Sprintf("Saved %s", a.col.Name)
+	a.write("collection:"+dir, serial.Job{
+		Run: func() error { return a.store.Save(dir, snapshot) },
+		Done: func(err error) {
+			if err != nil {
+				a.toast("Saving failed: "+err.Error(), true)
+				return
+			}
+			if a.workspace == "" {
+				a.workspace = dir
+				a.saveSettings(func(s *settings.Settings) { s.Workspace = dir })
+			}
+			a.status = fmt.Sprintf("Saved %s", snapshot.Name)
+		},
+	})
 }
 
 // workspaceTick saves the collection once it has been unchanged for
@@ -101,6 +107,7 @@ func (a *App) FlushWorkspace() error {
 		return nil
 	}
 	a.commitEdit()
+	a.waitWrites()
 	if !a.colSave.Pending(a.collectionKeyNow()) {
 		return nil
 	}
