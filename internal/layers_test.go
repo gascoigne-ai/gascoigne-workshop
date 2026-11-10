@@ -43,7 +43,9 @@ var exceptions = map[string]bool{}
 //   - model imports only other model packages;
 //   - port imports only model and port;
 //   - controller imports model, port and controller, never ui or adapter;
-//   - ui and adapter import model, port and controller, never each other;
+//   - ui and adapter import model, port and controller, never each other, and
+//     a ui package never imports another ui package (a view is self-contained
+//     behind a Host);
 //   - another domain may be reached only through its model or port; the
 //     workspace domain may also import their ui and controller.
 func violations(all imports, allowed map[string]bool) []string {
@@ -83,7 +85,7 @@ var canImport = map[string][]string{
 	"model":      {"model"},
 	"port":       {"model", "port"},
 	"controller": {"model", "port", "controller"},
-	"ui":         {"model", "port", "controller", "ui"},
+	"ui":         {"model", "port", "controller"},
 	"adapter":    {"model", "port", "controller", "adapter"},
 }
 
@@ -105,11 +107,11 @@ func locate(pkg string) (place, bool) {
 const compositionRoot = "workspace"
 
 func broken(from, to place) string {
-	composes := from.domain == compositionRoot && (to.role == "ui" || to.role == "controller")
+	composes := from.domain == compositionRoot && from.domain != to.domain && (to.role == "ui" || to.role == "controller")
 	if from.domain != to.domain && !composes && !slices.Contains(outsideRoles, to.role) {
 		return "a domain is reached only through its model or port, not its " + to.role
 	}
-	if !slices.Contains(canImport[from.role], to.role) {
+	if !composes && !slices.Contains(canImport[from.role], to.role) {
 		return from.role + " must not import " + to.role
 	}
 	return ""
@@ -149,6 +151,8 @@ func TestRulesCatchEachKindOfViolation(t *testing.T) {
 		{"controller imports net/http", "response/controller/viewer", externalHTTP, true},
 		{"ui imports ebiten", "request/ui/calltrace", externalEbiten, false},
 		{"adapter imports net/http", "request/adapter/proto", externalHTTP, false},
+		{"ui imports a ui of its domain", "request/ui/calltrace", "request/ui/mcpform", true},
+		{"ui imports a ui of its domain's other package", "settings/ui/settingsui", "settings/ui/colorpage", true},
 		{"ui imports the toolkit", "request/ui/calltrace", "uitoolkit/view", false},
 		{"legacy package is not checked", "request/model", "textfmt", false},
 	}
