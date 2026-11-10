@@ -125,6 +125,7 @@ func TestAHistoryThatCannotBeWrittenIsReportedByAToast(t *testing.T) {
 	pointTabAt(tab, jsonServer(t).URL)
 	a.send(tab)
 	waitForResponse(t, a, tab)
+	a.waitWrites() // the history is written in the background
 
 	found := false
 	for _, toast := range a.toasts {

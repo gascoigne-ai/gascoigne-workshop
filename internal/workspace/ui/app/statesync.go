@@ -234,9 +234,14 @@ func (a *App) saveHistory(t *reqTab) {
 	for _, earlier := range t.Earlier {
 		entries = append(entries, historyEntry(earlier.Resp, earlier.At))
 	}
-	if err := store.Save(key, entries); err != nil {
-		a.toast("History is not being saved: "+err.Error(), true)
-	}
+	a.write("history:"+key, serial.Job{ // the entries are values; the bodies are never changed
+		Run: func() error { return store.Save(key, entries) },
+		Done: func(err error) {
+			if err != nil {
+				a.toast("History is not being saved: "+err.Error(), true)
+			}
+		},
+	})
 }
 
 // loadHistory is the saved responses of req, newest first.
