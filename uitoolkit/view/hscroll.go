@@ -52,12 +52,24 @@ func (s *hscrollB) maxX(e *El) int {
 	return s.content + 2*s.inset(e) - e.rect.W
 }
 
+// layout places the children for the scroll position the state holds,
+// clamped; it does not change the state (settle does, in update).
 func (s *hscrollB) layout(e *El, c *core.Ctx) {
 	r := e.rect
 	s.content, _ = s.flow.measure(e, c, 1<<20)
+	x := max(0, min(s.state.X, s.maxX(e)))
+	e.rect = core.Rect{X: r.X - x + s.inset(e), Y: r.Y, W: max(s.content, r.W), H: r.H}
+	s.flow.layout(e, c)
+	e.rect = r
+}
+
+// settle is what the layout found, written to the state before the frame's
+// input is handled: whether the content overflows, the scroll position
+// clamped, and the position that brings the child marked KeepInView into
+// view when that child changed.
+func (s *hscrollB) settle(e *El, c *core.Ctx) {
 	st := s.state
 	st.Overflowing = s.overflow(e)
-
 	flagged, x := -1, e.padL
 	var start, end int
 	for i, k := range e.kids {
@@ -78,15 +90,11 @@ func (s *hscrollB) layout(e *El, c *core.Ctx) {
 		if start < st.X { // the clear area starts one arrow in, where the content starts
 			st.X = start
 		}
-		if end+2*s.inset(e) > st.X+r.W {
-			st.X = end + 2*s.inset(e) - r.W
+		if end+2*s.inset(e) > st.X+e.rect.W {
+			st.X = end + 2*s.inset(e) - e.rect.W
 		}
 	}
 	st.X = max(0, min(st.X, s.maxX(e)))
-
-	e.rect = core.Rect{X: r.X - st.X + s.inset(e), Y: r.Y, W: max(s.content, r.W), H: r.H}
-	s.flow.layout(e, c)
-	e.rect = r
 }
 
 func (s *hscrollB) arrows(e *El) (left, right core.Rect) {
@@ -104,6 +112,7 @@ func (s *hscrollB) arrowsShown(e *El) (left, right bool) {
 
 // preUpdate takes clicks on the arrows before the children under them see them.
 func (s *hscrollB) preUpdate(e *El, c *core.Ctx) {
+	s.settle(e, c)
 	in, st, r := c.In, s.state, e.rect
 	if !s.overflow(e) {
 		return

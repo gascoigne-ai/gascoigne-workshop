@@ -109,19 +109,19 @@ func TestHScrollRevealsTheFlaggedChildOnceWhenItChanges(t *testing.T) {
 	_ = hits
 	c := testCtx(t)
 	root := Col(build(4))
-	Layout(c, root, 300, 100)
+	layoutAndSettle(c, root, 300, 100)
 	if st.X != 136 { // the last box ends at 200; clamped to the maximum
 		t.Fatalf("X = %d, want 136", st.X)
 	}
 	st.X = 0 // the user scrolls away; the same flagged child must not pull it back
 	root = Col(build(4))
-	Layout(c, root, 300, 100)
+	layoutAndSettle(c, root, 300, 100)
 	if st.X != 0 {
 		t.Fatalf("X = %d, a repeated reveal must not fight the user", st.X)
 	}
 	root = Col(build(0)) // a different child is flagged now
 	st.X = 100
-	Layout(c, root, 300, 100)
+	layoutAndSettle(c, root, 300, 100)
 	if st.X >= 100 || st.X > 0 {
 		t.Fatalf("X = %d, want the first box revealed", st.X)
 	}
@@ -274,8 +274,16 @@ func TestHScrollThatFitsDoesNotPanAndReportsOverflow(t *testing.T) {
 	}
 	st2 := &ScrollState{}
 	root2 := Col(strip(st2, 5, &hits))
-	Layout(c, root2, 300, 100)
+	layoutAndSettle(c, root2, 300, 100)
 	if !st2.Overflowing {
 		t.Fatal("an overflowing strip says so, so the app can tell panning from reordering")
 	}
+}
+
+// layoutAndSettle is one frame without input: Layout places, Update settles
+// the scroll state (clamp, reveal, overflow) that Layout must not write.
+func layoutAndSettle(c *core.Ctx, root Node, w, h int) {
+	Layout(c, root, w, h)
+	c.In = core.Input{}
+	Update(c, root)
 }

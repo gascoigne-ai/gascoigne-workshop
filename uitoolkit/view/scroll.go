@@ -53,19 +53,20 @@ func (s *scrollB) track(e *El) core.Rect {
 func (s *scrollB) layout(e *El, c *core.Ctx) {
 	r := e.rect
 	_, s.content = s.flow.measure(e, c, e.inner().W)
-	s.state.Y = clampScroll(s.state.Y, s.content, r.H)
+	y := clampScroll(s.state.Y, s.content, r.H) // update writes it back
 
 	width := r.W
 	if s.content > r.H {
 		width -= ScrollbarW
 	}
-	e.rect = core.Rect{X: r.X, Y: r.Y - s.state.Y, W: width, H: max(s.content, r.H)}
+	e.rect = core.Rect{X: r.X, Y: r.Y - y, W: width, H: max(s.content, r.H)}
 	s.flow.layout(e, c)
 	e.rect = r
 }
 
 func (s *scrollB) update(e *El, c *core.Ctx) {
 	in, st, r := c.In, s.state, e.rect
+	st.Y = clampScroll(st.Y, s.content, r.H)
 	track := s.track(e)
 	if st.drag.on {
 		if st.drag.held(in) {
