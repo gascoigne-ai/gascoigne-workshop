@@ -9,12 +9,10 @@ import "github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 const ExampleServerFolder = "Example Server"
 
 // Sample is the collection a debug build shows until a workspace is
-// opened: the GitHub calls and one folder with a request per protocol
-// against cmd/example-server on its default ports.
+// opened: one request per endpoint of cmd/example-server on its default
+// ports, and nothing that leaves the machine.
 func Sample() model.Collection {
-	sample := GitHubSample()
-	sample.Folders = append(sample.Folders, exampleServerFolder())
-	return sample
+	return model.Collection{Folder: *exampleServerFolder()}
 }
 
 // The ports are the defaults of exampleserver.DefaultConfig; a test there

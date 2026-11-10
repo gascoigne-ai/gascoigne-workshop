@@ -19,11 +19,7 @@ func TestDebugSampleRequestsUseTheDefaultPorts(t *testing.T) {
 	defaults := DefaultConfig()
 	ports := map[string]int{"rest": defaults.REST, "websocket": defaults.WebSocket, "sse": defaults.SSE, "mcp": defaults.MCP, "grpc": defaults.GRPC}
 	sample := collection.Sample()
-	example := sample.Folders[len(sample.Folders)-1]
-	if example.Name != collection.ExampleServerFolder {
-		t.Fatalf("last folder = %q, want %q", example.Name, collection.ExampleServerFolder)
-	}
-	for _, request := range example.Requests {
+	for _, request := range sample.Requests {
 		parsed, err := url.Parse(request.URL)
 		if err != nil {
 			t.Fatalf("%s: %v", request.Name, err)
@@ -57,10 +53,9 @@ func matchesPattern(pattern, path string) bool {
 // endpoints, so each route of the REST example needs a request.
 func TestDebugSampleHasARequestForEveryRESTRoute(t *testing.T) {
 	sample := collection.Sample()
-	example := sample.Folders[len(sample.Folders)-1]
 	for _, route := range restRoutes() {
 		found := false
-		for _, request := range example.Requests {
+		for _, request := range sample.Requests {
 			parsed, err := url.Parse(request.URL)
 			if err == nil && request.Protocol == "rest" && matchesPattern(route.pattern, parsed.Path) {
 				found = true
