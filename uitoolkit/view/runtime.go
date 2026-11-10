@@ -1,6 +1,8 @@
 package view
 
 import (
+	"slices"
+
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -15,6 +17,7 @@ func Layout(c *core.Ctx, root Node, w, h int) {
 // element first. It must follow Layout on the same tree.
 func Update(c *core.Ctx, root Node) {
 	c.PointerX, c.PointerY = c.In.X, c.In.Y
+	settleFocus(c, root)
 	root.update(c)
 	cycleFocus(c, root)
 	if c.In.Tab {
@@ -75,6 +78,60 @@ func (e *El) focused() bool {
 		return e.area.Focused
 	}
 	return e.view != nil && e.view.Focused
+}
+
+// focusKey is the state e edits, which is what identifies it as the focus
+// owner.
+func (e *El) focusKey() any {
+	switch {
+	case e.field != nil:
+		return e.field
+	case e.area != nil:
+		return e.area
+	case e.view != nil:
+		return e.view
+	}
+	return nil
+}
+
+// blurKey takes the keyboard from a state that may no longer be in the tree.
+func blurKey(key any) {
+	switch state := key.(type) {
+	case *TextField:
+		state.Focused = false
+	case *TextArea:
+		state.Focused = false
+	case *CodeView:
+		state.Focused = false
+	}
+}
+
+// settleFocus keeps the one-owner rule before the frame's input is
+// delivered. The app asks for focus by setting a state's Focused, so the
+// owner is the focused state that was not the owner before (the last one in
+// tree order if several asked); every other state is blurred, and so is an
+// owner that left the tree.
+func settleFocus(c *core.Ctx, root Node) {
+	list := collectFocusables(root, nil)
+	var asked any
+	for _, e := range list {
+		if key := e.focusKey(); e.focused() && key != c.FocusOwner {
+			asked = key
+		}
+	}
+	switch {
+	case asked != nil:
+		blurKey(c.FocusOwner)
+		c.FocusOwner = asked
+	case c.FocusOwner != nil && !slices.ContainsFunc(list, func(e *El) bool { return e.focusKey() == c.FocusOwner && e.focused() }):
+		blurKey(c.FocusOwner)
+		c.FocusOwner = nil
+	}
+	for _, e := range list {
+		if key := e.focusKey(); key != c.FocusOwner && e.focused() {
+			e.setFocused(false)
+		}
+	}
 }
 
 func (e *El) setFocused(on bool) {

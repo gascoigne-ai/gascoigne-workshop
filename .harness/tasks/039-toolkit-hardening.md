@@ -6,7 +6,7 @@ status: todo
 The toolkit follows its own rules and has one answer for focus and event handling. Independent of tasks 035 to 038.
 
 ## Scope
-- [open] Focus owner in `core.Ctx` (one focused id) in place of a `Focused` bool per state struct; hidden elements lose focus; `focusURL` and `openFind` stop clearing by hand.
+- [done] Focus owner in `core.Ctx` (`FocusOwner`, kept by `view.Update`): one owner, hidden elements lose focus, `focusURL` stops clearing by hand. The `Focused` bool stays as the way to ask for focus and to read it (about 120 sites); it is no longer the source of truth. The settings dialog has no `Ctx`, so a `ctx.Focus()` call there would need a message; asking through the field kept one mechanism.
 - [open] One event rule: say which events propagate (left click reaches every ancestor, right click the innermost, wheel the first user) in the `view` doc and test it; `OnClick` carries the pointer position so the app stops reading `a.ctx.In.X/Y` (`env.go`, `grpcui.go`, `panes.go`, `graphql.go`, `wsbar.go`).
 - [open] One drag helper replaces the six hand-written drag machines (`split`, `resizable`, `components` columns, `scroll`, `slider`, `scrollbar`); `scrollB.press` and `barDrag.press` merge.
 - [open] Layout is pure: `hscroll.go`, `scroll.go` and `layout.go` stop writing state during layout; the double build per frame stops repeating the writes.

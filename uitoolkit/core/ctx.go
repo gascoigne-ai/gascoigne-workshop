@@ -91,6 +91,13 @@ type Ctx struct {
 	// Clipboard is used by text widgets for copy, cut and paste.
 	Clipboard Clipboard
 
+	// FocusOwner is the one widget state (a *TextField, *TextArea or
+	// *CodeView) that has the keyboard, nil for none. view.Update keeps it:
+	// the app asks for focus by setting a state's Focused, and the owner
+	// is whoever asked last; any other focused state, and one that is no
+	// longer in the tree, is blurred.
+	FocusOwner any
+
 	// Tooltip state, kept by view.Draw: the text of the element under the
 	// pointer, whether it has been hovered long enough to show, and
 	// whether it is still waiting to (the app keeps drawing meanwhile).

@@ -87,10 +87,7 @@ func (a *App) sendCurrent() {
 // focusURL puts the keyboard in the URL field with its text selected.
 func (a *App) focusURL() {
 	a.commitEdit()
-	for _, t := range a.openTabs() {
-		t.view.Focused, t.body.Focused = false, false
-	}
-	a.cur().url.Focused = true
+	a.cur().url.Focused = true // the context takes the keyboard from whatever had it
 	a.cur().url.SelectAll()
 }
 
