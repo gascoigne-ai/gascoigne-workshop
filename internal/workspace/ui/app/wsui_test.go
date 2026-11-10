@@ -365,3 +365,55 @@ func TestWebSocketConnectGivesUpWhenTheServerNeverAnswersTheHandshake(t *testing
 		t.Fatalf("the log does not say the connect timed out:\n%s", logText(tab))
 	}
 }
+
+// slowSession is a session whose Send and Ping wait to be released and
+// record the order they were asked in.
+type slowSession struct {
+	release chan struct{}
+	mu      sync.Mutex
+	sent    []string
+}
+
+func (s *slowSession) Events() <-chan reqport.Event { return nil }
+func (s *slowSession) Close() error                 { return nil }
+func (s *slowSession) Send(text string) error {
+	<-s.release
+	s.mu.Lock()
+	s.sent = append(s.sent, text)
+	s.mu.Unlock()
+	return nil
+}
+func (s *slowSession) Ping() error { return s.Send("ping") }
+
+func (s *slowSession) log() []string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return append([]string(nil), s.sent...)
+}
+
+func TestSendingAndPingingDoNotBlockTheFrameAndKeepTheirOrder(t *testing.T) {
+	a, _ := newTestApp(t)
+	tab := a.cur()
+	session := &slowSession{release: make(chan struct{})}
+	tab.Session = session
+
+	done := make(chan struct{})
+	go func() {
+		tab.msg = view.NewTextField("one")
+		a.sendMessage(tab)
+		a.pingSocket(tab)
+		tab.msg = view.NewTextField("two")
+		a.sendMessage(tab)
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("sending blocked the caller")
+	}
+	close(session.release)
+	until(t, a, "all sent", func() bool { return len(session.log()) == 3 })
+	if got := strings.Join(session.log(), ","); got != "one,ping,two" {
+		t.Fatalf("order %s", got)
+	}
+}

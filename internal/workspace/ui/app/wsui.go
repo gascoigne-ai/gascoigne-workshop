@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/bus"
 	"strings"
 	"time"
 
@@ -118,12 +119,44 @@ func (a *App) sendMessage(t *reqTab) {
 	if t.Session == nil || t.msg.Text == "" {
 		return
 	}
-	if err := sendComposed(t.Session, t.msg.Text); err != nil {
+	send, err := composed(t.Session, t.msg.Text)
+	if err != nil {
 		a.logInfo(t, err.Error(), w.Error)
 		return
 	}
+	a.sendInOrder(t, send)
 	t.msg = NewTextField("")
 	t.msg.Focused = true
+}
+
+// sendInOrder runs send off the UI goroutine, after the sends and pings
+// already asked for on this tab: messages go out in the order they were
+// written. A failure is logged in the message log.
+func (a *App) sendInOrder(t *reqTab, send func() error) {
+	t.outbox = append(t.outbox, send)
+	if t.outboxBusy {
+		return
+	}
+	t.outboxBusy = true
+	a.runOutbox(t)
+}
+
+func (a *App) runOutbox(t *reqTab) {
+	send := t.outbox[0]
+	t.outbox = t.outbox[1:]
+	a.bus.Run(context.Background(), func(context.Context) bus.Msg {
+		err := send()
+		return func() { // on the UI goroutine
+			if err != nil {
+				a.logInfo(t, err.Error(), w.Error)
+			}
+			if len(t.outbox) > 0 {
+				a.runOutbox(t)
+				return
+			}
+			t.outboxBusy = false
+		}
+	})
 }
 
 // pingSocket sends a ping.
@@ -131,9 +164,7 @@ func (a *App) pingSocket(t *reqTab) {
 	if t.Session == nil {
 		return
 	}
-	if err := t.Session.Ping(); err != nil {
-		a.logInfo(t, err.Error(), w.Error)
-	}
+	a.sendInOrder(t, t.Session.Ping)
 }
 
 // clearLog empties the message log.
@@ -285,16 +316,26 @@ const binaryPrefix = "hex:"
 // sendComposed sends the composer's text: as a binary message when it
 // starts with "hex:" and the session can send binary, else as text.
 func sendComposed(s reqport.Session, text string) error {
+	send, err := composed(s, text)
+	if err != nil {
+		return err
+	}
+	return send()
+}
+
+// composed is the send of the composer's text, ready to run; a text that
+// cannot be sent (bad hex) is refused here, before anything is sent.
+func composed(s reqport.Session, text string) (func() error, error) {
 	rest, ok := strings.CutPrefix(text, binaryPrefix)
 	bs, canBinary := s.(reqport.BinarySender)
 	if !ok || !canBinary {
-		return s.Send(text)
+		return func() error { return s.Send(text) }, nil
 	}
 	data, err := hex.DecodeString(strings.Join(strings.Fields(rest), ""))
 	if err != nil {
-		return fmt.Errorf("hex: %v", err)
+		return nil, fmt.Errorf("hex: %v", err)
 	}
-	return bs.SendBinary(data)
+	return func() error { return bs.SendBinary(data) }, nil
 }
 
 // toolMenu lists the tools the server announced; picking one puts a

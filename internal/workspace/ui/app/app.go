@@ -92,6 +92,8 @@ type reqTab struct {
 	compactAll            []view.Line                // the unfiltered compact lines, kept while a search filters the view
 	find                  view.TextField             // the search text
 	wsCancel              context.CancelFunc         // ends the timeout of the connect in progress
+	outbox                []func() error             // sends and pings waiting for the one in flight, in order
+	outboxBusy            bool                       // a send is in flight
 	wsView                view.CodeView              // the message log
 	msg                   view.TextField             // the message being composed
 	grpcStream            bool                       // a gRPC tab streams instead of making single calls
