@@ -102,13 +102,11 @@ func HasIcon(name string) bool { _, ok := lookupIcon(name); return ok }
 // natural size, centered; W and H scale it to fit. An unknown name panics
 // and lists the names: it is a mistake in the program.
 func Icon(name string, opts ...Option) *El {
-	ic, ok := lookupIcon(name)
-	if !ok {
+	if _, ok := lookupIcon(name); !ok {
 		panic(fmt.Sprintf("view: no icon %q; icons: %s", name, strings.Join(IconNames(), " ")))
 	}
 	e := newEl(iconB{}, with(nil, opts))
 	e.iconName = name
-	_ = ic
 	return e
 }
 

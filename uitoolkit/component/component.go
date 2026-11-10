@@ -76,6 +76,9 @@ type Template struct {
 	root *node
 }
 
+// maxViewCache bounds the parsed inline templates kept.
+const maxViewCache = 256
+
 var (
 	viewMu    sync.Mutex
 	viewCache = map[string]*Template{}
@@ -95,6 +98,9 @@ func View(src string, sc Scope) view.Node {
 	t, ok := viewCache[src]
 	if !ok {
 		t = Must("inline", src)
+		if len(viewCache) >= maxViewCache { // sources built from data would grow it for ever
+			clear(viewCache)
+		}
 		viewCache[src] = t
 	}
 	viewMu.Unlock()

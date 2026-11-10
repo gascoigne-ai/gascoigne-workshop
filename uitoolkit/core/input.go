@@ -145,6 +145,8 @@ const (
 
 // Sampler reads input each frame and counts rapid clicks.
 type Sampler struct {
+	// Now is the clock clicks are timed by; nil is time.Now.
+	Now   func() time.Time
 	last  time.Time
 	x, y  int
 	count int
@@ -163,11 +165,18 @@ func (s *Sampler) Click(now time.Time, x, y int) int {
 	return s.count
 }
 
+func (s *Sampler) now() time.Time {
+	if s.Now != nil {
+		return s.Now()
+	}
+	return time.Now()
+}
+
 // Read samples the devices for this frame, including the click count.
 func (s *Sampler) Read() Input {
 	in := readInput()
 	if in.Click {
-		in.Clicks = s.Click(time.Now(), in.X, in.Y)
+		in.Clicks = s.Click(s.now(), in.X, in.Y)
 	}
 	return in
 }

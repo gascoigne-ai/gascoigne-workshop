@@ -1,6 +1,7 @@
 package component
 
 import (
+	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/theming"
 	"strings"
 	"testing"
@@ -333,5 +334,19 @@ func TestSizeLimitsAndFlagsAreAttributes(t *testing.T) {
 	want := view.Dump(view.Row(view.MinW(10), view.MaxW(20), view.MinH(5), view.MaxH(9), view.Shadow(), view.Clip()))
 	if got != want {
 		t.Fatalf("template:\n%s\nGo:\n%s", got, want)
+	}
+}
+
+// A view whose source is built from data (a name in a string) would add a
+// cache entry per value for ever.
+func TestViewCacheStaysBounded(t *testing.T) {
+	for i := range maxViewCache + 50 {
+		View(fmt.Sprintf(`<text>n%d</text>`, i), Scope{})
+	}
+	viewMu.Lock()
+	n := len(viewCache)
+	viewMu.Unlock()
+	if n > maxViewCache {
+		t.Fatalf("%d cached sources, want at most %d", n, maxViewCache)
 	}
 }
