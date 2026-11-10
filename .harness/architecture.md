@@ -166,6 +166,8 @@ Row(H(urlH), PadX(w.Pad), PadY(8), Gap(8), Bg(w.Bg),
 
 ## internal/ui: the app
 
+**Direction** (decision 34): state changes move, domain by domain, to Model, Msg, Update and Cmd behind one message bus. Until a domain is moved, the handlers below still mutate the `App`; each task of the migration (035 to 041) rewrites its part of this section in the commit that changes the behavior.
+
 `ui.App` implements `ebiten.Game` and owns the state: open `reqTab`s (pointing at the collection's `model.Request`, plus URL `TextField`, active pane tabs, last `Response`, two `CodeView`s), the expanded tree folders, settings and the status line. `view.go` is the window as VML views (`sidebar`, `header`, `tabStrip`, `urlBar`, `pane`, `statusBar`); handlers are plain closures that change `App`.
 
 - **Panes** are two tables, `requestPanes` and `responsePanes`: label, kind (table, code, note), row source, edit hook and an `empty` hook that supplies "Sending...", errors and "no response yet". A map from kind to builder turns a pane into nodes; adding a pane means adding a row.
