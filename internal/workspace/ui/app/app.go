@@ -608,6 +608,7 @@ func (a *App) newRequest() { a.newRequestIn(a.selectedFolder()) }
 func (a *App) cycleProtocol(t *reqTab) {
 	a.disconnect(t) // a connection belongs to the protocol that opened it
 	editRequest(t, editor.ProtocolChosen{Protocol: next(protocolOrder, t.Req.Protocol)})
+	t.paneTab = 0 // the index points into the panes of the protocol
 }
 
 func (a *App) cycleMethod(t *reqTab) {

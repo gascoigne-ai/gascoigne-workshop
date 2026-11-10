@@ -58,7 +58,7 @@ func (a *App) redoRows(p pane, t *reqTab) {
 // Params, Headers, Vars, or the form fields of the Body pane.
 func (a *App) visibleTable() (pane, *reqTab, bool) {
 	t := a.cur()
-	p := requestPanes[t.paneTab]
+	p := requestPanesFor(t)[t.paneTab]
 	switch {
 	case p.kind == paneTable && p.editable:
 		return p, t, true

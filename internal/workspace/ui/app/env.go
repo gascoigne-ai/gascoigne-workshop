@@ -174,7 +174,7 @@ func (a *App) editVars(dir *model.Folder) {
 	} else {
 		a.varsFolder, a.varsCollection = dir, false
 	}
-	for i, p := range requestPanes {
+	for i, p := range requestPanesFor(a.cur()) {
 		if p.label == "Vars" {
 			a.cur().paneTab = i
 		}

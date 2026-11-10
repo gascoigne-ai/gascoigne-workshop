@@ -400,3 +400,11 @@ func (a *App) formatMessage(t *reqTab) {
 	t.msg = NewTextField(compact)
 	t.msg.Focused = true
 }
+
+// requestPanesFor are the panes of the request side of t.
+func requestPanesFor(t *reqTab) []pane {
+	if panes, ok := requestPanesByProtocol[t.Req.Protocol]; ok {
+		return panes
+	}
+	return requestPanes
+}

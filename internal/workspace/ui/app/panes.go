@@ -63,18 +63,35 @@ func paramsChanged(t *reqTab) {
 	t.url = NewTextField(t.Req.URL)
 }
 
-var requestPanes = []pane{
-	{label: "Params", kind: paneTable, title: "Query", editable: true, changed: paramsChanged,
-		rows: func(_ *App, t *reqTab) *[]model.KV { return &t.Req.Params }},
-	{label: "Body", kind: paneBody},
-	{label: "Headers", kind: paneTable, title: "Headers", editable: true, flagDuplicates: true,
-		rows: func(_ *App, t *reqTab) *[]model.KV { return &t.Req.Headers }},
-	{label: "Auth", kind: paneAuth},
-	{label: "Vars", kind: paneTable, title: "Collection variables", editable: true,
+var (
+	paramsPane = pane{label: "Params", kind: paneTable, title: "Query", editable: true, changed: paramsChanged,
+		rows: func(_ *App, t *reqTab) *[]model.KV { return &t.Req.Params }}
+	bodyPane    = pane{label: "Body", kind: paneBody}
+	headersPane = pane{label: "Headers", kind: paneTable, title: "Headers", editable: true, flagDuplicates: true,
+		rows: func(_ *App, t *reqTab) *[]model.KV { return &t.Req.Headers }}
+	authPane = pane{label: "Auth", kind: paneAuth}
+	varsPane = pane{label: "Vars", kind: paneTable, title: "Collection variables", editable: true,
 		caption: (*App).varsCaption,
-		rows:    func(a *App, _ *reqTab) *[]model.KV { return a.varsRows() }},
-	{label: "Tests", kind: paneAssertions},
-	{label: "Settings", kind: paneSettings},
+		rows:    func(a *App, _ *reqTab) *[]model.KV { return a.varsRows() }}
+	testsPane    = pane{label: "Tests", kind: paneAssertions}
+	settingsPane = pane{label: "Settings", kind: paneSettings}
+)
+
+// requestPanes are the request side of REST and of every protocol with no
+// panes of its own.
+var requestPanes = []pane{paramsPane, bodyPane, headersPane, authPane, varsPane, testsPane, settingsPane}
+
+// connectionRequestPanes are the request side of a protocol that opens a
+// connection: what it sends is composed in the Messages pane, so there is
+// no Params, Body or Tests tab.
+var connectionRequestPanes = []pane{headersPane, authPane, varsPane, settingsPane}
+
+// requestPanesByProtocol lists the protocols whose request side differs
+// from requestPanes.
+var requestPanesByProtocol = map[string][]pane{
+	"websocket": connectionRequestPanes,
+	"sse":       connectionRequestPanes,
+	"mcp":       connectionRequestPanes,
 }
 
 func noResponse(t *reqTab) (string, bool) {

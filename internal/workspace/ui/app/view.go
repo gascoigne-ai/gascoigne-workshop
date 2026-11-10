@@ -179,7 +179,7 @@ func (a *App) mainColumn() Node {
 func (a *App) panes(t *reqTab) Node {
 	items := []Item{
 		AsRatio(), Grow(1), MinFirst(minPaneSize), MinSecond(minPaneSize),
-		a.pane(t, requestPanes, &t.paneTab, &t.reqScroll, &t.reqTabsX, nil),
+		a.pane(t, requestPanesFor(t), &t.paneTab, &t.reqScroll, &t.reqTabsX, nil),
 		a.pane(t, responsePanesFor(t), &t.respTab, &t.respScroll, &t.respTabsX, a.responseStatus(t)),
 	}
 	if a.settings.Layout == "stacked" {

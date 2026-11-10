@@ -122,7 +122,7 @@ func (a *App) restore(s state.State) {
 		for _, rt := range saved {
 			a.updateTabs(tabs.Open{Req: byPath[rt.Path]})
 			t := a.cur()
-			if rt.Pane >= 0 && rt.Pane < len(requestPanes) {
+			if rt.Pane >= 0 && rt.Pane < len(requestPanesFor(t)) {
 				t.paneTab = rt.Pane
 			}
 			if rt.Resp >= 0 && rt.Resp < len(responsePanes) {
