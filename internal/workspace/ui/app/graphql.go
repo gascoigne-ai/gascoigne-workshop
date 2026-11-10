@@ -29,7 +29,7 @@ func (a *App) graphQLBody(t *reqTab) Node {
 			Caption("Query"),
 			Spacer(),
 			If(operations > 0, Button(fmt.Sprintf("Schema (%d)", operations), W(104),
-				OnClick(func() { a.openMenu(a.ctx.In.X, a.ctx.In.Y, a.schemaMenu(t)) }), Tooltip("Pick an operation: the query and variables are replaced by a starter for it"))),
+				OnClickAt(func(x, y int) { a.openMenu(x, y, a.schemaMenu(t)) }), Tooltip("Pick an operation: the query and variables are replaced by a starter for it"))),
 			Button("Load schema", W(104), OnClick(func() { a.loadSchema(t) }), Tooltip("Ask the server for its types; the answer opens in the response")),
 		),
 		Area(&t.body, Grow(3), Bg(w.Sunken), OnChange(syncQuery), a.textMenuOpt(&t.body.TextField, syncQuery)),

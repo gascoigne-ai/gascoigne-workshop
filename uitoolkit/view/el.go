@@ -29,7 +29,7 @@
 //	Look       Bg Border BorderX BorderY BorderL BorderT BorderR BorderB HoverBg Shadow Control Edges
 //	Text       Text Caption Lines   Color Muted Bold Small Mono FontSource Ellipsis TextCenter
 //	Input      Field Area Code Slider Checkbox   (state: TextField TextArea CodeView)   Placeholder OnChange OnEnter
-//	Events     OnClick OnRightClick OnMiddleClick OnDragOver   Tooltip KeepInView
+//	Events     OnClick OnClickAt OnRightClick OnMiddleClick OnDragOver   Tooltip KeepInView
 //	Composite  Button PrimaryButton LinkButton IconButton Tabs ScrollTabs Table   OnSelect OnSlide
 //	Icons      Icon RegisterIcons IconNames   CrossIcon TriangleIcon GripIcon DotsIcon TrashIcon PlusIcon CopyIcon FolderIcon SearchIcon PromptIcon ChevronUpIcon ChevronDownIcon
 //	Flow       If When For Frag
@@ -99,6 +99,7 @@ type El struct {
 	on                               bool
 
 	onClick, onChange, onEnter func()
+	onClickAt                  func(x, y int)
 	onTab                      func(back bool)
 	onMiddle, onDragOver       func()
 	onSelect                   func(i int)
@@ -300,6 +301,11 @@ func Clip() Option { return func(e *El) { e.clip = true } }
 
 // OnClick runs f when the element is clicked.
 func OnClick(f func()) Option { return func(e *El) { e.onClick = f } }
+
+// OnClickAt is OnClick with the pointer position, for what opens at the
+// click (a menu under the cursor); the app does not read the pointer itself.
+// It has no template attribute: a template names a func(), not a func(x, y).
+func OnClickAt(f func(x, y int)) Option { return func(e *El) { e.onClickAt = f } }
 
 // OnMiddleClick runs f when the element is middle-clicked.
 func OnMiddleClick(f func()) Option { return func(e *El) { e.onMiddle = f } }

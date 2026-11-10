@@ -895,3 +895,33 @@ func TestSideOptionsAreConsistent(t *testing.T) {
 		t.Fatal("single sides")
 	}
 }
+
+// Event rule: a left click reaches the onClick of every element it is over
+// and of every ancestor, innermost first; a right click only the innermost
+// handler (TestRightClickIsHandledByTheInnermostElementOnly).
+func TestLeftClickReachesEveryAncestorInnermostFirst(t *testing.T) {
+	var order []string
+	root := Row(W(100), OnClick(func() { order = append(order, "outer") }),
+		Row(W(100), OnClick(func() { order = append(order, "inner") })))
+	c := testCtx(t)
+	Layout(c, root, 200, 50)
+	c.In = core.Input{X: 30, Y: 20, Click: true}
+	Update(c, root)
+	if len(order) != 2 || order[0] != "inner" || order[1] != "outer" {
+		t.Fatalf("order %v", order)
+	}
+}
+
+func TestOnClickAtGetsThePointerOfTheClick(t *testing.T) {
+	var gx, gy, n int
+	root := Row(box(W(100), OnClickAt(func(x, y int) { gx, gy, n = x, y, n+1 })))
+	c := testCtx(t)
+	Layout(c, root, 200, 50)
+	c.In = core.Input{X: 150, Y: 20, Click: true} // outside the element
+	Update(c, root)
+	c.In = core.Input{X: 30, Y: 20, Click: true}
+	Update(c, root)
+	if n != 1 || gx != 30 || gy != 20 {
+		t.Fatalf("calls %d at %d,%d", n, gx, gy)
+	}
+}

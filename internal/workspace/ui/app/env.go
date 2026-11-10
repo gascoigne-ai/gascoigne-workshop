@@ -143,7 +143,7 @@ func (a *App) envChip() Node {
 		label = n
 	}
 	return Row(PadX(10), H(w.CompactH), Bg(w.HeroText), Control("pill"), AlignItems(AlignCenter),
-		OnClick(func() { a.openMenu(a.ctx.In.X, a.ctx.In.Y, a.envMenu()) }),
+		OnClickAt(func(x, y int) { a.openMenu(x, y, a.envMenu()) }),
 		Tooltip("Environment: variables that override the collection's"),
 		Text(label, Small(), Bold(), Color(w.Hero)),
 	)

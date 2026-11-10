@@ -266,6 +266,9 @@ func (e *El) update(c *core.Ctx) bool {
 	if e.onClick != nil && c.In.Hit(e.rect) {
 		e.onClick()
 	}
+	if e.onClickAt != nil && c.In.Hit(e.rect) {
+		e.onClickAt(c.In.X, c.In.Y)
+	}
 	if e.onMiddle != nil && c.In.MiddleClick && c.In.Over(e.rect) {
 		e.onMiddle()
 	}
