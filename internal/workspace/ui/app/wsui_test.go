@@ -420,3 +420,14 @@ func TestSendingAndPingingDoNotBlockTheFrameAndKeepTheirOrder(t *testing.T) {
 		t.Fatalf("order %s", got)
 	}
 }
+
+// The initialize result is already in the log as the response to the
+// initialize request; the copy that feeds the server info is not a line.
+func TestLogSkipsTheServerInfoEvent(t *testing.T) {
+	a, _ := newTestApp(t)
+	tab := a.cur()
+	a.logEvent(tab, reqport.Event{Dir: reqport.Info, Kind: "initialize", Text: `{"protocolVersion":"2025-06-18"}`})
+	if len(tab.wsView.Lines) != 0 {
+		t.Fatalf("log has %d lines", len(tab.wsView.Lines))
+	}
+}

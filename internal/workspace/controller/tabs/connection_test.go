@@ -126,3 +126,15 @@ func TestRetryNeedsAWantedConnectionThatIsDown(t *testing.T) {
 		})
 	}
 }
+
+func TestReceivedKeepsTheServerInfoUntilTheSessionEnds(t *testing.T) {
+	var conn Connection
+	conn.Received(port.Event{Dir: port.Info, Kind: "initialize", Text: `{"protocolVersion":"2025-06-18","serverInfo":{"name":"mock","version":"1"}}`})
+	if conn.Server == nil || conn.Server.Name != "mock" {
+		t.Fatalf("Server = %+v", conn.Server)
+	}
+	conn.Closed()
+	if conn.Server != nil {
+		t.Fatalf("Server after close = %+v", conn.Server)
+	}
+}

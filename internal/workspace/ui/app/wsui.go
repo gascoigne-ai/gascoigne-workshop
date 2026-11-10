@@ -220,6 +220,9 @@ func (a *App) scheduleRetry(t *reqTab) {
 
 // logEvent appends an event to the log, one line per line of its text.
 func (a *App) logEvent(t *reqTab, e reqport.Event) {
+	if e.Kind == "initialize" {
+		return
+	}
 	mark, tok := "•", w.Muted
 	switch e.Dir {
 	case reqport.Sent:

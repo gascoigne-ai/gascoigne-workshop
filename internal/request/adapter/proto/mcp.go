@@ -84,6 +84,7 @@ func (m MCP) Connect(ctx context.Context, req model.Request) (Session, error) {
 		ServerInfo      struct{ Name, Version string }
 	}
 	_ = json.Unmarshal(result, &init)
+	s.emit(Event{Dir: Info, Kind: "initialize", Text: string(result)}) // the UI shows what the server said about itself
 	tr.setVersion(init.ProtocolVersion)
 	if listener, ok := tr.(interface{ listen() }); ok {
 		listener.listen() // servers may push notifications on a stream of their own

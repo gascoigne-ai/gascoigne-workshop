@@ -257,3 +257,23 @@ func TestMCPStdioMissingCommand(t *testing.T) {
 		t.Fatal("started an empty command")
 	}
 }
+
+func TestMCPConnectAnnouncesTheServerInfoAsAnEvent(t *testing.T) {
+	url, _ := mcpHTTPServer(t)
+	s, err := MCP{}.Connect(context.Background(), model.Request{Protocol: "mcp", URL: url})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	var e Event
+	for e.Kind != "initialize" {
+		e = waitFor(t, s, `"serverInfo"`) // the response is logged too, as traffic
+	}
+	if e.Dir != Info {
+		t.Fatalf("%+v", e)
+	}
+	server, ok := model.ParseServerInfo(e.Text)
+	if !ok || server.Name != "mock" || server.Version != "1" {
+		t.Fatalf("%+v %v", server, ok)
+	}
+}

@@ -19,6 +19,7 @@ type Connection struct {
 	Resources []model.MCPResource // the resources an MCP server announced
 	Prompts   []model.MCPPrompt   // the prompts an MCP server announced
 	Tools     []model.MCPTool     // the tools an MCP server announced
+	Server    *model.MCPServer    // what an MCP server said about itself, nil before it did
 }
 
 // Active reports whether the connection is up, being made or wanted, so the
@@ -56,7 +57,7 @@ func (conn *Connection) Failed() {
 // server announced no longer holds.
 func (conn *Connection) Closed() {
 	conn.Session, conn.Connecting = nil, false
-	conn.Tools, conn.Resources, conn.Prompts = nil, nil, nil
+	conn.Tools, conn.Resources, conn.Prompts, conn.Server = nil, nil, nil, nil
 }
 
 // Disconnect records that the user no longer wants the connection. It
@@ -76,9 +77,15 @@ func (conn *Connection) Disconnect() (session port.Session, abandoned bool) {
 	return nil, false
 }
 
-// Received takes what a received event announces: the server's tools,
-// resources and prompts, and the id to resume an event stream from.
+// Received takes what a received event announces: the server's own
+// description, its tools, resources and prompts, and the id to resume an event stream from.
 func (conn *Connection) Received(event port.Event) {
+	if event.Dir == port.Info && event.Kind == "initialize" {
+		if server, ok := model.ParseServerInfo(event.Text); ok {
+			conn.Server = &server
+		}
+		return
+	}
 	if event.Dir != port.Received {
 		return
 	}
