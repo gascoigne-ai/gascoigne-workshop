@@ -76,6 +76,8 @@ The toolkit packages are public and independent of the application (`uitoolkit/c
 | `internal/workspace/adapter/statefile`, `internal/workspace/adapter/filedialog`, `internal/workspace/adapter/systemclock` | window and tab state file; zenity or kdialog file dialogs; the wall clock |
 | `internal/request/model` | `Request`, `Folder`, `Response`, environments, tree operations; MCP list parsers, schema skeletons and tool form fields (`mcpschema.go`, `mcpform.go`), cURL parsing, GraphQL schema parsing, `ErrCancelled` |
 | `internal/request/adapter/proto` | REST, WebSocket, SSE, MCP, gRPC, `Curl`; `Configured` builds the registry; type aliases keep the port names |
+| `internal/request/adapter/proto/ws` | the WebSocket client (handshake, frames) behind `proto.WebSocket` |
+| `internal/request/controller/editor` | the typed edits of a request (`Msg`) and the pure `Update(request, msg)`; no code outside it assigns to a field of a tab's request |
 | `internal/request/port` | `Protocol`, `Registry`, `Streamer`, `Session`, `Event`, the sampling types, `ProtocolConfig`, `GRPCMethods` |
 | `internal/request/model/assert` | the assertion language run against a response |
 | `internal/request/ui/calltrace`, `internal/request/ui/mcpform` | the Log dialog; the MCP tool-call form (`Form.Command` composes the call), each behind a `Host` interface |
@@ -86,6 +88,8 @@ The toolkit packages are public and independent of the application (`uitoolkit/c
 | `internal/workspace/controller/toasts` | the messages over the window: info fades, errors stay, a repeated error is one, at most five (`Stack`); the App draws them |
 | `internal/workspace/controller/serial` | when a file write may start: one per name at a time, the newest waiting write replaces older ones (`Queue`); no I/O |
 | `internal/workspace/controller/overlay` | which open thing Escape closes: the ordered `Layer`s (context menu, dialog, call log, font list, settings, cell edit, find bar, running request) and `Open.Top`; the App fills the set (`openLayers`) and closes the top one (`escape`, `overlay.go`) |
+| `internal/workspace/controller/bus` | the one queue goroutines report through (`Dispatch`, `Drain`, `Run` with a `Cmd`); drained once per frame |
+| `internal/settings/controller/prefs` | what a settings page asks of the application, as typed messages sent through `Host.Send` |
 | `internal/environment/controller/envs` | which environment is active and how add, rename and delete move the choice, and the rows of the chip's menu (`envs.Menu`: labels, the tick, which rows are disabled); the App turns a row into an action (`envAction`) and keeps the prompts and the remembered name |
 | `internal/collection/model/collection`, `openapi`, `postman`, `miniyaml` | tree filtering; the importers and the Postman exporter, pure functions over bytes |
 | `internal/collection/port` | `Store`, where a collection is saved (`store.Files` implements it) |
