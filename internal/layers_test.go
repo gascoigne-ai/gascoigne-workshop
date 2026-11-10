@@ -11,6 +11,21 @@ import (
 )
 
 const toolkitPrefix = "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/"
+
+// External packages the scan also records, as pseudo internal paths, because
+// a controller must not use them.
+const (
+	externalEbiten = "external/ebiten"
+	externalHTTP   = "external/net/http"
+)
+
+// externals maps the import paths a controller must not use to the pseudo
+// paths the scan records them as.
+var externals = map[string]string{
+	"github.com/hajimehoshi/ebiten/v2": externalEbiten,
+	"net/http":                         externalHTTP,
+}
+
 const modulePrefix = "github.com/gascoigne-ai/gascoigne-workshop/internal/"
 
 // imports maps a package path under internal/ (like "request/adapter/proto")
@@ -41,6 +56,10 @@ func violations(all imports, allowed map[string]bool) []string {
 		for _, target := range targets {
 			if from.role == "controller" && strings.HasPrefix(target, "uitoolkit/") {
 				found = append(found, importer+" -> "+target+": a controller holds no widget state, so it must not import the toolkit")
+				continue
+			}
+			if from.role == "controller" && strings.HasPrefix(target, "external/") {
+				found = append(found, importer+" -> "+target+": a controller holds no window or network code, so it must not import "+strings.TrimPrefix(target, "external/"))
 				continue
 			}
 			to, ok := locate(target)
@@ -108,24 +127,28 @@ func TestRulesCatchEachKindOfViolation(t *testing.T) {
 		{"model imports ui", "request/model", "response/ui/respview", true},
 		{"port imports model", "request/port", "request/model", false},
 		{"port imports adapter", "request/port", "request/adapter/proto", true},
-		{"controller imports port", "request/controller/assert", "request/port", false},
-		{"controller imports adapter", "request/controller/assert", "request/adapter/proto", true},
-		{"controller imports ui", "request/controller/assert", "request/ui/calltrace", true},
-		{"ui imports controller", "request/ui/calltrace", "request/controller/assert", false},
+		{"controller imports port", "request/controller/editor", "request/port", false},
+		{"controller imports adapter", "request/controller/editor", "request/adapter/proto", true},
+		{"controller imports ui", "request/controller/editor", "request/ui/calltrace", true},
+		{"ui imports controller", "request/ui/calltrace", "request/controller/editor", false},
 		{"ui imports adapter", "request/ui/calltrace", "request/adapter/proto", true},
 		{"adapter imports ui", "request/adapter/proto", "request/ui/calltrace", true},
 		{"adapter imports port", "request/adapter/proto", "request/port", false},
-		{"adapter imports controller", "request/adapter/proto", "request/controller/assert", false},
+		{"adapter imports controller", "request/adapter/proto", "request/controller/editor", false},
 		{"other domain model", "collection/adapter/store", "request/model", false},
 		{"other domain ui", "settings/ui/settingsui", "response/ui/respview", true},
 		{"other domain adapter", "collection/adapter/openapi", "request/adapter/proto", true},
-		{"other domain controller", "collection/ui/tree", "request/controller/assert", true},
+		{"other domain controller", "collection/adapter/store", "request/controller/editor", true},
 		{"composition root imports another domain's ui", "workspace/ui/app", "response/ui/respview", false},
 		{"composition root imports another domain's controller", "workspace/ui/app", "environment/controller/envs", false},
 		{"composition root imports another domain's adapter", "workspace/ui/app", "request/adapter/proto", true},
 		{"composition root imports another domain's port", "workspace/ui/app", "response/port", false},
 		{"controller imports the toolkit", "workspace/controller/tabs", "uitoolkit/view", true},
 		{"controller imports the toolkit core", "workspace/controller/tabs", "uitoolkit/core", true},
+		{"controller imports ebiten", "workspace/controller/tabs", externalEbiten, true},
+		{"controller imports net/http", "response/controller/viewer", externalHTTP, true},
+		{"ui imports ebiten", "request/ui/calltrace", externalEbiten, false},
+		{"adapter imports net/http", "request/adapter/proto", externalHTTP, false},
 		{"ui imports the toolkit", "request/ui/calltrace", "uitoolkit/view", false},
 		{"legacy package is not checked", "request/model", "textfmt", false},
 	}
@@ -171,6 +194,11 @@ func scan(t *testing.T) imports {
 			rest, ok := strings.CutPrefix(path, modulePrefix)
 			if toolkit, isToolkit := strings.CutPrefix(path, toolkitPrefix); isToolkit {
 				rest, ok = "uitoolkit/"+toolkit, true
+			}
+			for external, pseudo := range externals {
+				if path == external || strings.HasPrefix(path, external+"/") {
+					rest, ok = pseudo, true
+				}
 			}
 			if ok && !slices.Contains(all[dir], rest) {
 				all[dir] = append(all[dir], rest)

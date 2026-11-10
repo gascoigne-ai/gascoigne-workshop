@@ -6,7 +6,7 @@ status: todo
 `internal/layers_test.go` rejects the violations the analysis found, and has no stale cases.
 
 ## Scope
-- [open] Controllers may not import `ebiten`, `net/http` or anything under `uitoolkit`; add a case that proves each fails for a deliberate violation.
+- [done] Controllers may not import `ebiten`, `net/http` or anything under `uitoolkit`; a case proves each fails (the scan records the two external packages as `external/...` pseudo paths).
 - [open] A `ui` package may not import another `ui` package of the same domain.
 - [open] Delete the stale cases that name `request/controller/assert` (now `request/model/assert`, decision 22) and `collection/ui/tree` (does not exist), or point them at real packages.
 - [open] `architecture.md` lists the final package map.
