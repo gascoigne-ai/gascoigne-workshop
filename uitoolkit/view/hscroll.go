@@ -28,7 +28,7 @@ type hscrollB struct {
 	content int // natural width of the children, set by layout
 }
 
-// Reveal marks the child an HScroll must keep in view: whenever a
+// KeepInView marks the child an HScroll must keep in view: whenever a
 // different child is flagged than last time, the strip scrolls to show
 // it once, so a selection made elsewhere is never hidden, while the
 // user's own scrolling is left alone.
