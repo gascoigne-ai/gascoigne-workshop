@@ -1994,12 +1994,12 @@ func TestOnlyTheNewestToastsAreKept(t *testing.T) {
 
 func TestClipboardFailureBecomesAnErrorToast(t *testing.T) {
 	a, _ := newTestApp(t)
-	a.ctx.Clipboard = statusClipboard{inner: &fakeClip{err: errors.New("no clipboard tool found")}, report: a.clipboardNote}
+	a.ctx.Clipboard = core.ReportClipboard(&fakeClip{err: errors.New("no clipboard tool found")}, a.clipboardNote)
 	a.ctx.Clipboard.Write("x")
 	if len(a.toasts) != 1 || !a.toasts[0].IsErr || !strings.Contains(a.toasts[0].Text, "no clipboard tool") {
 		t.Fatalf("toasts = %+v", a.toasts)
 	}
-	a.ctx.Clipboard = statusClipboard{inner: &fakeClip{}, report: a.clipboardNote}
+	a.ctx.Clipboard = core.ReportClipboard(&fakeClip{}, a.clipboardNote)
 	a.ctx.Clipboard.Write("hello")
 	if len(a.toasts) != 1 || a.status != "Copied 5 characters" {
 		t.Fatalf("a successful copy is a status line, not a toast: toasts %d status %q", len(a.toasts), a.status)

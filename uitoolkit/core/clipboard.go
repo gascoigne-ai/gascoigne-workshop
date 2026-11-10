@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 // Clipboard reads and writes the system clipboard as text.
@@ -81,3 +82,32 @@ var errNoClipboard = errors.New("no clipboard tool found (install wl-clipboard o
 
 func (noClipboard) Read() (string, error) { return "", errNoClipboard }
 func (noClipboard) Write(string) error    { return errNoClipboard }
+
+// ReportClipboard wraps inner so that every outcome is reported: what was
+// copied (isErr false), or why the clipboard is not usable, for example
+// when no tool is installed (isErr true). A successful read is silent.
+func ReportClipboard(inner Clipboard, report func(message string, isErr bool)) Clipboard {
+	return reportClipboard{inner: inner, report: report}
+}
+
+type reportClipboard struct {
+	inner  Clipboard
+	report func(message string, isErr bool)
+}
+
+func (clipboard reportClipboard) Read() (string, error) {
+	text, err := clipboard.inner.Read()
+	if err != nil {
+		clipboard.report(err.Error(), true)
+	}
+	return text, err
+}
+
+func (clipboard reportClipboard) Write(text string) error {
+	if err := clipboard.inner.Write(text); err != nil {
+		clipboard.report(err.Error(), true)
+		return err
+	}
+	clipboard.report(fmt.Sprintf("Copied %d characters", utf8.RuneCountInString(text)), false)
+	return nil
+}

@@ -8,7 +8,7 @@ status: todo
 ## Scope
 - [open] `view.TextMenu(field *TextField, opts...)` option that opens the toolkit menu on right click.
 - [open] Remove `Host.TextMenu` from `shortcutpage.go:38`, calltrace, settingsui, colorpage and re-point the 24 uses.
-- [open] `statusClipboard` replacement (task 044) stays app-side wiring.
+- [open] The clipboard report wrapper is `core.ReportClipboard` (task 044, done).
 
 ## Acceptance
 - Test written first and seen failing for the right reason, then passing; `make check` green; `make shot` PNG checked for UI changes; `architecture.md` and the `view` package doc index updated in the same commit; this task file deleted in the last item's commit.

@@ -328,7 +328,7 @@ func NewApp(opts Options) (*App, error) {
 	a.jar, _ = cookiejar.New(nil)
 	a.protocols, a.grpcMethods, a.curl = opts.Protocols, opts.GRPCMethods, opts.Curl
 	a.reg = a.newRegistry()
-	ctx.Clipboard = statusClipboard{inner: ctx.Clipboard, report: a.clipboardNote}
+	ctx.Clipboard = core.ReportClipboard(ctx.Clipboard, a.clipboardNote)
 	a.list.Drag = -1
 	a.dirty = true
 	a.now = time.Now // the fallback when no Clock port is given
