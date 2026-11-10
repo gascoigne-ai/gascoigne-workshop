@@ -9,7 +9,7 @@ const appName = "Gascoigne Workshop"
 func (a *App) Title() string {
 	unsaved := a.workspace != "" && a.colSave.Pending(a.collectionKey())
 	for _, t := range a.openTabs() {
-		unsaved = unsaved || (a.workspace == "" && dirty(t))
+		unsaved = unsaved || (a.workspace == "" && a.tabDirty(t))
 	}
 	title := appName
 	if a.col.Name != "" {

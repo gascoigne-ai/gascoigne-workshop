@@ -16,6 +16,8 @@ type changeKeys struct {
 	stale             bool // a rebuild is due: something may have changed since the last one
 	built             bool
 	collectionOf      func(model.Collection) string // tree.Key; a field so a test can count the builds
+	dirtyOf           func(*reqTab) bool            // dirty; a field so a test can count the comparisons
+	dirty             map[*reqTab]bool              // which open tabs differ from their saved copy
 	geometry          [4]int                        // window size and position at the last frame
 }
 
@@ -48,7 +50,25 @@ func (a *App) freshKeys() {
 	}
 	a.keys.collection = build(a.col)
 	a.keys.state = stateKey(a.snapshot())
+	a.keys.dirty = map[*reqTab]bool{}
 	a.keys.stale, a.keys.built = false, true
+}
+
+// tabDirty reports whether the tab's request differs from its saved copy,
+// as of the last frame that could have changed it.
+func (a *App) tabDirty(t *reqTab) bool {
+	if a.keys.stale || !a.keys.built {
+		a.freshKeys()
+	}
+	if marked, ok := a.keys.dirty[t]; ok {
+		return marked
+	}
+	compare := a.keys.dirtyOf
+	if compare == nil {
+		compare = dirty
+	}
+	a.keys.dirty[t] = compare(t)
+	return a.keys.dirty[t]
 }
 
 // collectionKeyNow is a key built right now, for code that has just

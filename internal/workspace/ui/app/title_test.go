@@ -14,6 +14,7 @@ func TestTitleShowsTheCollectionAndAnUnsavedMark(t *testing.T) {
 		t.Fatalf("title %q", got)
 	}
 	a.cur().Req.URL = "https://changed.test"
+	a.markStale() // the test edits the model directly; in the app an edit comes with input, which marks the keys stale
 	if got := a.Title(); !strings.HasPrefix(got, dirtyMark+" ") {
 		t.Fatalf("an edited request in the in-memory sample is unsaved: %q", got)
 	}

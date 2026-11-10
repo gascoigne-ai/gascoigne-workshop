@@ -229,7 +229,7 @@ func (a *App) requestTab(i int, t *reqTab) Node {
 		Row(PadL(14), Gap(8), AlignItems(AlignBaseline), OnClick(func() { a.pressTab(i) }), OnDragOver(func() { a.updateTabs(tabs.DragOver{Index: i}) }),
 			Text(requestBadge(t.Req.Protocol, t.Req.Method), Small(), Color(appearance.MethodToken(t.Req.Method)), W(tabBadgeW)),
 			Text(t.Req.Name),
-			Row(W(tabDirtyW), AlignSelf(AlignStretch), If(dirty(t), Text(dirtyMark, Color(w.AccentLine), Grow(1)))),
+			Row(W(tabDirtyW), AlignSelf(AlignStretch), If(a.tabDirty(t), Text(dirtyMark, Color(w.AccentLine), Grow(1)))),
 		),
 		Row(W(24), OnClick(func() { a.closeTab(i) }), Tooltip(a.hint("Close tab", "close-tab")),
 			CrossIcon(Grow(1)),

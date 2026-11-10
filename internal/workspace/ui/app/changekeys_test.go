@@ -28,3 +28,23 @@ func TestIdleFramesDoNotRebuildTheChangeKeys(t *testing.T) {
 		t.Fatal("a frame with input must check the collection")
 	}
 }
+
+// The dirty mark of a tab compares its request with the saved copy, which
+// clones and walks the request: not for every tab on every frame.
+func TestIdleFramesDoNotRecompareTheTabsWithTheirSavedCopies(t *testing.T) {
+	a, _ := newTestApp(t)
+	var calls int
+	a.keys.dirtyOf = func(tab *reqTab) bool { calls++; return dirty(tab) }
+	a.step(core.Input{})
+	before := calls
+	for range 30 {
+		a.step(core.Input{})
+	}
+	if calls != before {
+		t.Fatalf("%d comparisons over 30 idle frames", calls-before)
+	}
+	a.step(core.Input{X: 10, Y: 10, Click: true})
+	if calls == before {
+		t.Fatal("a frame with input must compare again")
+	}
+}
