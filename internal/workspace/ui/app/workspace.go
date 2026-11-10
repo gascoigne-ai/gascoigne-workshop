@@ -22,7 +22,7 @@ const saveDebounce = time.Second
 // A folder that cannot be read leaves the sample in place and no
 // workspace set, so a later save cannot overwrite what is there.
 func (a *App) openWorkspace(dir string) {
-	if dir == "" {
+	if dir == "" && !a.ignoreRemembered {
 		dir = a.settings.Workspace
 	}
 	if dir != "" {

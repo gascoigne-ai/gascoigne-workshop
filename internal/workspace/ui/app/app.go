@@ -239,6 +239,7 @@ type App struct {
 	env                envs.Selection    // the active environment of col
 	workspace          string            // the folder the collection is saved to; "" for none yet
 	defaultWorkspace   string            // where the first save goes when there is no workspace
+	ignoreRemembered   bool              // the remembered workspace is not opened at start
 	colSave            autosave.Debounce // when the collection was last written
 	writes             serial.Queue      // the background writes in flight and waiting, by file
 	keys               changeKeys        // the comparable forms of the collection and the state, recomputed only on frames where something could have changed
@@ -249,29 +250,30 @@ type App struct {
 
 // Options are the startup switches of the command line.
 type Options struct {
-	ScreenshotPath   string                                        // save a PNG of the first settled frame and exit
-	ScreenshotSet    []string                                      // key=value settings applied live before the screenshot
-	SendOnStart      bool                                          // send the first request at startup
-	SettingsPath     string                                        // settings file; "" keeps settings in memory
-	StatePath        string                                        // remembered UI state; "" keeps it in memory
-	ThemesDir        string                                        // folder of user theme files (*.json); "" for none
-	ScanFonts        bool                                          // look for installed fonts in the background, to apply the saved font families
-	Protocols        func(reqport.ProtocolConfig) reqport.Registry // builds the protocols; nil has none
-	GRPCMethods      reqport.GRPCMethods                           // lists gRPC methods by reflection; nil cannot
-	Curl             func(model.Request) string                    // the cURL command of a request; nil copies nothing
-	Store            cport.Store                                   // where the collection is saved; nil saves nothing
-	States           port.StateStore                               // where the UI state is kept; nil keeps none
-	Files            port.FileDialog                               // the desktop file chooser; nil asks for paths as text
-	History          func(dir string) rport.History                // the history in a folder; nil keeps none
-	Fonts            sport.FontStore                               // installed fonts; nil has none
-	SettingsFiles    sport.SettingsStore                           // the settings file; nil reads the defaults and cannot save
-	Previews         rport.BodyPreview                             // shows a response body in the browser; nil has none
-	Clock            port.Clock                                    // the time source; nil uses the wall clock
-	OpenMenu         bool                                          // start with the settings menu open
-	WorkspaceDir     string                                        // collection folder; "" uses the remembered one, else the client config, else the sample
-	Sample           func() model.Collection                       // the collection shown without a workspace or client config; nil uses collection.GitHubSample
-	Clients          cport.ClientConfigs                           // the client config a build offers without a workspace; nil has none
-	DefaultWorkspace string                                        // where saving goes when there is no workspace yet
+	ScreenshotPath            string                                        // save a PNG of the first settled frame and exit
+	ScreenshotSet             []string                                      // key=value settings applied live before the screenshot
+	SendOnStart               bool                                          // send the first request at startup
+	SettingsPath              string                                        // settings file; "" keeps settings in memory
+	StatePath                 string                                        // remembered UI state; "" keeps it in memory
+	ThemesDir                 string                                        // folder of user theme files (*.json); "" for none
+	ScanFonts                 bool                                          // look for installed fonts in the background, to apply the saved font families
+	Protocols                 func(reqport.ProtocolConfig) reqport.Registry // builds the protocols; nil has none
+	GRPCMethods               reqport.GRPCMethods                           // lists gRPC methods by reflection; nil cannot
+	Curl                      func(model.Request) string                    // the cURL command of a request; nil copies nothing
+	Store                     cport.Store                                   // where the collection is saved; nil saves nothing
+	States                    port.StateStore                               // where the UI state is kept; nil keeps none
+	Files                     port.FileDialog                               // the desktop file chooser; nil asks for paths as text
+	History                   func(dir string) rport.History                // the history in a folder; nil keeps none
+	Fonts                     sport.FontStore                               // installed fonts; nil has none
+	SettingsFiles             sport.SettingsStore                           // the settings file; nil reads the defaults and cannot save
+	Previews                  rport.BodyPreview                             // shows a response body in the browser; nil has none
+	Clock                     port.Clock                                    // the time source; nil uses the wall clock
+	OpenMenu                  bool                                          // start with the settings menu open
+	WorkspaceDir              string                                        // collection folder; "" uses the remembered one, else the client config, else the sample
+	Sample                    func() model.Collection                       // the collection shown without a workspace or client config; nil uses collection.GitHubSample
+	Clients                   cport.ClientConfigs                           // the client config a build offers without a workspace; nil has none
+	IgnoreRememberedWorkspace bool                                          // start from the sample or client config unless WorkspaceDir is given, whatever an earlier run remembered
+	DefaultWorkspace          string                                        // where saving goes when there is no workspace yet
 }
 
 // startCollection is the collection shown before a workspace or client
@@ -305,6 +307,7 @@ func NewApp(opts Options) (*App, error) {
 		col:              startCollection(opts.Sample),
 		clients:          opts.Clients,
 		defaultWorkspace: opts.DefaultWorkspace,
+		ignoreRemembered: opts.IgnoreRememberedWorkspace,
 		expanded:         map[*model.Folder]bool{},
 		widgets:          map[*tabs.Tab]*reqTab{},
 		bus:              bus.New(),

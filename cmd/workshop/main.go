@@ -53,6 +53,7 @@ func main() {
 	opts.Store = store.Files{}
 	opts.Sample = collection.Sample // which sample is a build decision, see clients_*.go
 	opts.Clients = clientConfigs()
+	opts.IgnoreRememberedWorkspace = ignoreRememberedWorkspace
 	opts.States = statefile.Files{}
 	opts.Files = filedialog.System{}
 	opts.History = func(dir string) port.History { return history.Dir(dir) }
@@ -62,7 +63,7 @@ func main() {
 	opts.Clock = systemclock.Clock{}
 	opts.SettingsFiles = settingsfile.Files{}
 	flag.StringVar(&opts.ThemesDir, "themes", settingsfile.ThemesDir(), "folder of theme files (*.json) that extend the dark or light theme; empty for none")
-	flag.StringVar(&opts.WorkspaceDir, "workspace", "", "folder to load and save the collection; empty uses the last one, else the client config (release build) or the built-in sample")
+	flag.StringVar(&opts.WorkspaceDir, "workspace", "", "folder to load and save the collection; empty uses the last one, else the client config (release build); the default build ignores the last one and shows the example server")
 	opts.DefaultWorkspace = settingsfile.DefaultWorkspace()
 	iconPNG := flag.String("icon-png", "", "write the program icon (256x256 PNG) to this path and exit, for packaging")
 	flag.BoolVar(&opts.OpenMenu, "menu", false, "start with the settings menu open (for screenshots)")

@@ -298,3 +298,41 @@ func TestExportPostmanWritesACollectionFileThatImportsBack(t *testing.T) {
 		t.Fatal("the message must say what was left out")
 	}
 }
+
+// A debug build run from an IDE kept showing an old collection: an
+// earlier run had saved one and remembered it, which beat the sample.
+func TestDebugStartIgnoresTheRememberedWorkspaceButNotTheFlag(t *testing.T) {
+	remembered, flagged := t.TempDir(), t.TempDir()
+	for dir, name := range map[string]string{remembered: "Last", flagged: "Asked"} {
+		c := model.Collection{Folder: model.Folder{Name: name, Requests: []*model.Request{{Name: "R", Protocol: "rest", Method: "GET"}}}}
+		if err := store.Save(dir, c); err != nil {
+			t.Fatal(err)
+		}
+	}
+	sample := func() model.Collection {
+		return model.Collection{Folder: model.Folder{Name: "Sample", Requests: []*model.Request{{Name: "S", Protocol: "rest", Method: "GET"}}}}
+	}
+	sp := filepath.Join(t.TempDir(), "settings.json")
+	s := settings.Default()
+	s.Workspace = remembered
+	if err := settingsfile.Save(sp, s); err != nil {
+		t.Fatal(err)
+	}
+	tests := []struct {
+		name string
+		opts Options
+		want string
+	}{
+		{"remembered is ignored", Options{SettingsPath: sp, Sample: sample, IgnoreRememberedWorkspace: true}, "Sample"},
+		{"the flag still wins", Options{SettingsPath: sp, Sample: sample, IgnoreRememberedWorkspace: true, WorkspaceDir: flagged}, "Asked"},
+		{"remembered is used otherwise", Options{SettingsPath: sp, Sample: sample}, "Last"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			a, err := NewApp(withAdapters(test.opts))
+			if err != nil || a.col.Name != test.want {
+				t.Fatalf("%v: collection %q, want %q", err, a.col.Name, test.want)
+			}
+		})
+	}
+}
