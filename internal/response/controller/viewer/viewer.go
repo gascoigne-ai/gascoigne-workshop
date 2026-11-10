@@ -14,6 +14,19 @@ var Views = []struct {
 	{"raw", "Raw", true, false},
 }
 
+// ModeOf is the mode of a response view setting; anything unknown is
+// compact, the default.
+func ModeOf(id string) Mode {
+	raw, compact := Flags(id)
+	switch {
+	case raw:
+		return Raw
+	case compact:
+		return Compact
+	}
+	return Pretty
+}
+
 // Flags are the raw and compact flags of a response view setting; anything
 // unknown is compact, the default.
 func Flags(id string) (raw, compact bool) {

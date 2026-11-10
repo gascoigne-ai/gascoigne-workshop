@@ -87,12 +87,9 @@ type reqTab struct {
 	cancel                context.CancelFunc         // stops the running request
 	auth                  map[string]*view.TextField // Auth pane inputs by field id, created on first use
 	showSecrets           bool                       // show masked credential fields
-	raw                   bool                       // show the response body as received, not pretty-printed
-	compact               bool                       // show JSON compactly, as a browser's viewer does
+	look                  viewer.Model               // the response mode, the find bar and its active match
 	compactAll            []view.Line                // the unfiltered compact lines, kept while a search filters the view
-	findOpen              bool                       // the find bar is showing
 	find                  view.TextField             // the search text
-	matchIdx              int                        // the active match, -1 for none
 	wsCancel              context.CancelFunc         // ends the timeout of the connect in progress
 	wsView                view.CodeView              // the message log
 	msg                   view.TextField             // the message being composed
@@ -103,7 +100,7 @@ type reqTab struct {
 // makeTab is newTab with the response view the settings ask for.
 func (a *App) makeTab(tab *tabs.Tab) *reqTab {
 	t := newReqTab(tab)
-	t.raw, t.compact = viewer.Flags(a.settings.ResponseView)
+	t.look = viewer.New(a.settings.ResponseView)
 	t.Earlier = a.loadHistory(tab.Req)
 	return t
 }
@@ -144,7 +141,7 @@ func newTab(req *model.Request) *reqTab { return newReqTab(tabs.New(req)) }
 func newReqTab(tab *tabs.Tab) *reqTab {
 	req := tab.Req
 	t := &reqTab{Tab: tab, url: view.NewTextField(req.URL)}
-	t.matchIdx = -1
+	t.look.Match = -1
 	t.wsView.Follow = true
 	t.wsCancel = func() {}
 	t.timeout = view.NewTextField(timeoutText(req.TimeoutSec))
@@ -546,7 +543,7 @@ func (a *App) step(in core.Input) {
 			a.closeSettings()
 		case a.edit != nil:
 			a.cancelEdit()
-		case a.cur().findOpen:
+		case a.cur().look.FindOpen:
 			a.closeFind(a.cur())
 		default:
 			a.cancelSend(a.cur())

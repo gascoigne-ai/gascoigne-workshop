@@ -7,6 +7,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/history"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/controller/viewer"
 	rport "github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/fonts"
@@ -1490,12 +1491,12 @@ func TestRawAndPrettyToggleTheResponseView(t *testing.T) {
 		t.Fatalf("pretty view has %d lines", len(tab.view.Lines))
 	}
 	click(a, rawX, toolbarY)
-	if !tab.raw || len(tab.view.Lines) != 1 || tab.view.AllText() != `{"a":1,"b":[2]}` {
+	if !tab.look.Raw() || len(tab.view.Lines) != 1 || tab.view.AllText() != `{"a":1,"b":[2]}` {
 		t.Fatalf("raw: %d lines %q", len(tab.view.Lines), tab.view.AllText())
 	}
 	click(a, prettyX, toolbarY)
-	if tab.raw || len(tab.view.Lines) != 6 {
-		t.Fatalf("back to pretty: raw %v, %d lines", tab.raw, len(tab.view.Lines))
+	if tab.look.Raw() || len(tab.view.Lines) != 6 {
+		t.Fatalf("back to pretty: raw %v, %d lines", tab.look.Raw(), len(tab.view.Lines))
 	}
 }
 
@@ -1547,24 +1548,24 @@ func TestCtrlFOpensFindAndTypingSearches(t *testing.T) {
 	a := jsonResponse(t, `{"id":1,"name":"x","ids":[1,2]}`)
 	tab := a.cur()
 	a.step(key(ebiten.KeyF, true, false))
-	if !tab.findOpen || !tab.find.Focused {
-		t.Fatalf("findOpen %v focused %v", tab.findOpen, tab.find.Focused)
+	if !tab.look.FindOpen || !tab.find.Focused {
+		t.Fatalf("findOpen %v focused %v", tab.look.FindOpen, tab.find.Focused)
 	}
 	a.typeText("id")
-	if tab.matchIdx != 0 || len(tab.view.Find("id")) != 2 {
-		t.Fatalf("matchIdx %d, matches %d", tab.matchIdx, len(tab.view.Find("id")))
+	if tab.look.Match != 0 || len(tab.view.Find("id")) != 2 {
+		t.Fatalf("matchIdx %d, matches %d", tab.look.Match, len(tab.view.Find("id")))
 	}
 	a.step(core.Input{Enter: true})
-	if tab.matchIdx != 1 {
-		t.Fatalf("Enter goes to the next match, idx %d", tab.matchIdx)
+	if tab.look.Match != 1 {
+		t.Fatalf("Enter goes to the next match, idx %d", tab.look.Match)
 	}
 	a.step(core.Input{Enter: true}) // wraps
-	if tab.matchIdx != 0 {
-		t.Fatalf("wrap: idx %d", tab.matchIdx)
+	if tab.look.Match != 0 {
+		t.Fatalf("wrap: idx %d", tab.look.Match)
 	}
 	a.step(core.Input{Enter: true, Shift: true})
-	if tab.matchIdx != 1 {
-		t.Fatalf("Shift+Enter goes back and wraps, idx %d", tab.matchIdx)
+	if tab.look.Match != 1 {
+		t.Fatalf("Shift+Enter goes back and wraps, idx %d", tab.look.Match)
 	}
 }
 
@@ -1572,21 +1573,21 @@ func TestFindButtonsAndClose(t *testing.T) {
 	a := jsonResponse(t, `{"id":1,"ids":[1]}`)
 	tab := a.cur()
 	click(a, findBtnX, toolbarY)
-	if !tab.findOpen {
+	if !tab.look.FindOpen {
 		t.Fatal("the Find button opens the bar")
 	}
 	click(a, findFieldX, findBarY)
 	a.typeText("id")
 	click(a, findNextX, findBarY)
-	if tab.matchIdx != 1 {
-		t.Fatalf("next: %d", tab.matchIdx)
+	if tab.look.Match != 1 {
+		t.Fatalf("next: %d", tab.look.Match)
 	}
 	click(a, findPrevX, findBarY)
-	if tab.matchIdx != 0 {
-		t.Fatalf("previous: %d", tab.matchIdx)
+	if tab.look.Match != 0 {
+		t.Fatalf("previous: %d", tab.look.Match)
 	}
 	click(a, findCloseX, findBarY)
-	if tab.findOpen {
+	if tab.look.FindOpen {
 		t.Fatal("× closes the bar")
 	}
 }
@@ -1597,7 +1598,7 @@ func TestEscapeClosesFindBeforeAnythingElse(t *testing.T) {
 	a.step(key(ebiten.KeyF, true, false))
 	a.typeText("id")
 	a.step(core.Input{Escape: true})
-	if tab.findOpen || len(tab.view.Find("")) != 0 {
+	if tab.look.FindOpen || len(tab.view.Find("")) != 0 {
 		t.Fatal("Escape closes the find bar")
 	}
 	if tab.Resp == nil {
@@ -1617,8 +1618,8 @@ func TestANewResponseRerunsAnOpenSearch(t *testing.T) {
 	if got := len(tab.view.Find("id")); got != 3 {
 		t.Fatalf("matches after the new response: %d", got)
 	}
-	if tab.matchIdx != 0 {
-		t.Fatalf("matchIdx = %d", tab.matchIdx)
+	if tab.look.Match != 0 {
+		t.Fatalf("matchIdx = %d", tab.look.Match)
 	}
 }
 
@@ -2817,7 +2818,7 @@ func TestResponseMenu(t *testing.T) {
 	}
 	rightClick(a, 1000, 400)
 	pickMenu(t, a, "Find")
-	if !a.cur().findOpen {
+	if !a.cur().look.FindOpen {
 		t.Fatal("Find opens the find bar")
 	}
 }
@@ -3433,8 +3434,8 @@ func TestCompactChipShowsJSONCompactlyWithDeepBlocksFolded(t *testing.T) {
 	tab := a.cur()
 	pretty := len(tab.view.Visible())
 	click(a, compactX, toolbarY)
-	if !tab.compact || tab.raw {
-		t.Fatalf("compact %v raw %v", tab.compact, tab.raw)
+	if !tab.look.Compact() || tab.look.Raw() {
+		t.Fatalf("compact %v raw %v", tab.look.Compact(), tab.look.Raw())
 	}
 	text := viewText(tab)
 	if got := len(tab.view.Visible()); got >= pretty {
@@ -3448,11 +3449,11 @@ func TestCompactChipShowsJSONCompactlyWithDeepBlocksFolded(t *testing.T) {
 		t.Fatalf("top-level values stay:\n%s", text)
 	}
 	click(a, rawX, toolbarY)
-	if tab.compact || !tab.raw {
+	if tab.look.Compact() || !tab.look.Raw() {
 		t.Fatal("Raw replaces Compact")
 	}
 	click(a, prettyX, toolbarY)
-	if tab.compact || tab.raw {
+	if tab.look.Compact() || tab.look.Raw() {
 		t.Fatal("Pretty replaces both")
 	}
 }
@@ -3478,8 +3479,8 @@ func TestFindInCompactViewKeepsOnlyMatchingLeavesTheirChildrenAndTheirPath(t *te
 	if !strings.Contains(text, `"items": [`) || !strings.HasPrefix(text, "{") {
 		t.Fatalf("the path to the match stays:\n%s", text)
 	}
-	if len(tab.view.Matches()) == 0 || tab.matchIdx != 0 {
-		t.Fatalf("matches %d idx %d", len(tab.view.Matches()), tab.matchIdx)
+	if len(tab.view.Matches()) == 0 || tab.look.Match != 0 {
+		t.Fatalf("matches %d idx %d", len(tab.view.Matches()), tab.look.Match)
 	}
 	// A matching block keeps all of its children.
 	a.find(tab, "owner")
@@ -3509,11 +3510,11 @@ func (a *App) find(t *reqTab, text string) {
 
 func TestNewTabsShowResponsesCompactByDefault(t *testing.T) {
 	a := newCompactTestApp(t)
-	if !a.cur().compact || a.cur().raw {
-		t.Fatalf("compact %v raw %v", a.cur().compact, a.cur().raw)
+	if !a.cur().look.Compact() || a.cur().look.Raw() {
+		t.Fatalf("compact %v raw %v", a.cur().look.Compact(), a.cur().look.Raw())
 	}
 	a.newRequest()
-	if !a.cur().compact {
+	if !a.cur().look.Compact() {
 		t.Fatal("a new tab starts compact too")
 	}
 }
@@ -3522,15 +3523,15 @@ func TestResponseViewChipsAreCompactPrettyRawInThatOrder(t *testing.T) {
 	a := jsonResponse(t, `{"a":1}`)
 	tab := a.cur()
 	click(a, rawX, toolbarY)
-	if !tab.raw {
+	if !tab.look.Raw() {
 		t.Fatal("the third chip is Raw")
 	}
 	click(a, prettyX, toolbarY)
-	if tab.raw || tab.compact {
+	if tab.look.Raw() || tab.look.Compact() {
 		t.Fatal("the second chip is Pretty")
 	}
 	click(a, compactX, toolbarY)
-	if !tab.compact {
+	if !tab.look.Compact() {
 		t.Fatal("the first chip is Compact")
 	}
 	if !(compactX < prettyX && prettyX < rawX) {
@@ -3542,34 +3543,34 @@ func TestResponseViewSettingAppliesToOpenTabsAndIsSaved(t *testing.T) {
 	a, path := openSettingsPage(t, "appearance")
 	a.prefs.Search = view.NewTextField("response view")
 	clickText(t, a, "Compact", 0)
-	if !a.cur().compact || a.settings.ResponseView != "compact" {
-		t.Fatalf("compact %v setting %q", a.cur().compact, a.settings.ResponseView)
+	if !a.cur().look.Compact() || a.settings.ResponseView != "compact" {
+		t.Fatalf("compact %v setting %q", a.cur().look.Compact(), a.settings.ResponseView)
 	}
 	if saved, _ := settingsfile.Load(path); saved.ResponseView != "compact" {
 		t.Fatalf("saved %+v", saved)
 	}
 	clickText(t, a, "Pretty", 0)
-	if a.cur().compact || a.cur().raw || a.settings.ResponseView != "pretty" {
-		t.Fatalf("compact %v raw %v setting %q", a.cur().compact, a.cur().raw, a.settings.ResponseView)
+	if a.cur().look.Compact() || a.cur().look.Raw() || a.settings.ResponseView != "pretty" {
+		t.Fatalf("compact %v raw %v setting %q", a.cur().look.Compact(), a.cur().look.Raw(), a.settings.ResponseView)
 	}
 }
 
 func TestFindWorksInEveryResponseView(t *testing.T) {
 	for _, mode := range []struct {
-		name         string
-		raw, compact bool
-	}{{"pretty", false, false}, {"raw", true, false}, {"compact", false, true}} {
+		name string
+		mode viewer.Mode
+	}{{"pretty", viewer.Pretty}, {"raw", viewer.Raw}, {"compact", viewer.Compact}} {
 		a := jsonResponse(t, compactBody)
 		tab := a.cur()
-		a.setView(tab, mode.raw, mode.compact)
+		a.setView(tab, mode.mode)
 		a.openFind()
 		a.typeText("login")
-		if len(tab.view.Matches()) != 3 || tab.matchIdx != 0 {
-			t.Fatalf("%s: %d matches, current %d", mode.name, len(tab.view.Matches()), tab.matchIdx)
+		if len(tab.view.Matches()) != 3 || tab.look.Match != 0 {
+			t.Fatalf("%s: %d matches, current %d", mode.name, len(tab.view.Matches()), tab.look.Match)
 		}
 		a.findStep(tab, 1)
-		if tab.matchIdx != 1 {
-			t.Fatalf("%s: stepping goes to the second match, got %d", mode.name, tab.matchIdx)
+		if tab.look.Match != 1 {
+			t.Fatalf("%s: stepping goes to the second match, got %d", mode.name, tab.look.Match)
 		}
 		a.closeFind(tab)
 		if len(tab.view.Matches()) != 0 {
@@ -3637,13 +3638,13 @@ func TestTextFocusedCoversEveryEditorOfTheTab(t *testing.T) {
 func TestAnySettingsEditThatChangesTheResponseViewRefreshesOpenTabs(t *testing.T) {
 	a, _ := newTestApp(t) // starts on "pretty"
 	tab := a.cur()
-	if tab.raw {
+	if tab.look.Raw() {
 		t.Fatal("start: the tab should not be raw")
 	}
 
 	pageHost{a}.Edit(func(s *settings.Settings) { s.ResponseView = "raw" })
 
-	if !tab.raw {
+	if !tab.look.Raw() {
 		t.Fatal("the open tab kept its old response view")
 	}
 }

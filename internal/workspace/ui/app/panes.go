@@ -473,9 +473,9 @@ func (a *App) responsePane(_ pane, t *reqTab, _ *ScrollState) Node {
 	return Col(Grow(1),
 		Spacer(H(w.Gutter)), // same top inset as the request pane, so first rows line up
 		Row(H(w.RowH+8), PadX(w.Gutter), Gap(6), AlignItems(AlignCenter), BorderB(w.Border),
-			a.viewChip("Compact", t.compact, 72, func() { a.setView(t, false, true) }),
-			a.viewChip("Pretty", !t.raw && !t.compact, 56, func() { a.setView(t, false, false) }),
-			a.viewChip("Raw", t.raw, 44, func() { a.setView(t, true, false) }),
+			a.viewChip("Compact", t.look.Compact(), 72, func() { a.setView(t, viewer.Compact) }),
+			a.viewChip("Pretty", t.look.Mode == viewer.Pretty, 56, func() { a.setView(t, viewer.Pretty) }),
+			a.viewChip("Raw", t.look.Raw(), 44, func() { a.setView(t, viewer.Raw) }),
 			Row(W(w.Gutter)),
 			a.viewChip("Wrap", t.view.Wrap, 56, func() { a.toggleWrap(t) }),
 			Spacer(),
@@ -484,7 +484,7 @@ func (a *App) responsePane(_ pane, t *reqTab, _ *ScrollState) Node {
 			IconButton(CopyIcon(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(func() { a.copyBody(t) }), Tooltip("Copy the response body")),
 			IconButton(PromptIcon(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(func() { a.copyCurl(t) }), Tooltip("Copy the request as a cURL command")),
 		),
-		If(t.findOpen, a.findBar(t)),
+		If(t.look.FindOpen, a.findBar(t)),
 		Code(&t.view, Grow(1), Bg(w.Sunken), OnRightClick(func(x, y int) { a.openMenu(x, y, a.responseMenuItems(t)) })),
 	)
 }
@@ -503,7 +503,7 @@ func (a *App) findBar(t *reqTab) Node {
 			OnEnter(func() { a.findEnter(t) }),
 			a.textMenuOpt(&t.find, func() { a.runFind(t) }),
 		),
-		Text(viewer.Count(t.find.Text, len(t.view.Matches()), t.matchIdx), Small(), Muted(), W(64)),
+		Text(viewer.Count(t.find.Text, len(t.view.Matches()), t.look.Match), Small(), Muted(), W(64)),
 		IconButton(ChevronUpIcon(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(func() { a.findStep(t, -1) }), Tooltip("Previous match")),
 		IconButton(ChevronDownIcon(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(func() { a.findStep(t, 1) }), Tooltip("Next match")),
 		IconButton(CrossIcon(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(func() { a.closeFind(t) }), Tooltip("Close search (Esc)")),
@@ -511,8 +511,8 @@ func (a *App) findBar(t *reqTab) Node {
 }
 
 // setView picks the response view: pretty-printed, as received, or compact.
-func (a *App) setView(t *reqTab, raw, compact bool) {
-	t.raw, t.compact = raw, compact
+func (a *App) setView(t *reqTab, mode viewer.Mode) {
+	t.look = viewer.Update(t.look, viewer.ModeChosen{Mode: mode})
 	a.refreshView(t)
 }
 
@@ -531,16 +531,16 @@ func (a *App) refreshView(t *reqTab) {
 	switch {
 	case t.Resp == nil || respview.LooksBinary(t.Resp.Body):
 		t.view.SetLines(nil)
-	case t.raw:
+	case t.look.Raw():
 		t.view.SetLines(respview.RawLines(t.Resp.Body))
-	case t.compact:
+	case t.look.Compact():
 		t.compactAll = respview.CompactLines(t.Resp.Body)
 		a.showCompact(t)
 		return // showCompact searches too
 	default:
 		t.view.SetLines(respview.CodeLines(t.Resp.Body))
 	}
-	if t.findOpen {
+	if t.look.FindOpen {
 		a.runFind(t)
 	}
 }
@@ -560,7 +560,7 @@ func (a *App) openFind() {
 	a.commitEdit()
 	t := a.cur()
 	t.respTab = 0
-	t.findOpen = true
+	t.look = viewer.Update(t.look, viewer.FindOpened{})
 	t.find.Focused = true
 	t.find.SelectAll()
 	a.runFind(t)
@@ -570,13 +570,13 @@ func (a *App) openFind() {
 // the deep blocks folded, or, while a search has text, only the matching
 // lines with their children and the blocks around them (filterCompact).
 func (a *App) showCompact(t *reqTab) {
-	if t.findOpen && t.find.Text != "" {
+	if t.look.FindOpen && t.find.Text != "" {
 		t.view.SetLines(respview.Filter(t.compactAll, t.find.Text))
 	} else {
 		t.view.SetLines(t.compactAll)
 		respview.FoldDeep(&t.view, respview.CompactFoldDepth)
 	}
-	if t.findOpen {
+	if t.look.FindOpen {
 		a.searchView(t)
 	}
 }
@@ -584,7 +584,7 @@ func (a *App) showCompact(t *reqTab) {
 // runFind searches for the typed text and goes to the first match. The
 // compact view is filtered to the matches first.
 func (a *App) runFind(t *reqTab) {
-	if t.compact && t.Resp != nil && !respview.LooksBinary(t.Resp.Body) {
+	if t.look.Compact() && t.Resp != nil && !respview.LooksBinary(t.Resp.Body) {
 		a.showCompact(t)
 		return
 	}
@@ -594,12 +594,11 @@ func (a *App) runFind(t *reqTab) {
 // searchView highlights the matches in the view and reveals the first.
 func (a *App) searchView(t *reqTab) {
 	matches := t.view.Find(t.find.Text)
-	t.matchIdx = -1
+	t.look = viewer.Update(t.look, viewer.Searched{Matches: len(matches)})
 	if len(matches) > 0 {
-		t.matchIdx = 0
 		t.view.RevealLine(matches[0].Line)
 	}
-	t.view.SetMatches(matches, t.matchIdx)
+	t.view.SetMatches(matches, t.look.Match)
 }
 
 // findStep moves to the next (dir 1) or previous (dir -1) match, wrapping.
@@ -608,8 +607,8 @@ func (a *App) findStep(t *reqTab, dir int) {
 	if len(matches) == 0 {
 		return
 	}
-	next := viewer.Step(t.matchIdx, dir, len(matches))
-	t.matchIdx = next
+	t.look = viewer.Update(t.look, viewer.Stepped{Dir: dir, Matches: len(matches)})
+	next := t.look.Match
 	t.view.SetMatches(matches, next)
 	t.view.RevealLine(matches[next].Line)
 }
@@ -624,10 +623,10 @@ func (a *App) findEnter(t *reqTab) {
 }
 
 func (a *App) closeFind(t *reqTab) {
-	t.findOpen = false
+	t.look = viewer.Update(t.look, viewer.FindClosed{})
 	t.find.Focused = false
 	t.view.SetMatches(nil, -1)
-	if t.compact && t.Resp != nil && !respview.LooksBinary(t.Resp.Body) {
+	if t.look.Compact() && t.Resp != nil && !respview.LooksBinary(t.Resp.Body) {
 		a.showCompact(t) // leave the filtered view
 	}
 }

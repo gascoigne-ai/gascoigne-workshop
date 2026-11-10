@@ -110,7 +110,7 @@ func (a *App) applySettings(s settings.Settings) {
 		a.status = err.Error()
 	}
 	for _, t := range a.openTabs() {
-		t.raw, t.compact = viewer.Flags(s.ResponseView)
+		t.look.Mode = viewer.ModeOf(s.ResponseView)
 		a.refreshView(t)
 	}
 	a.colors.Forget()

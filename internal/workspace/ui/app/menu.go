@@ -22,7 +22,7 @@ func (a *App) saveSettings(edit func(*settings.Settings)) {
 	edit(&a.settings)
 	if a.settings.ResponseView != wasView { // the choice applies to the tabs already open
 		for _, t := range a.openTabs() {
-			t.raw, t.compact = viewer.Flags(a.settings.ResponseView)
+			t.look.Mode = viewer.ModeOf(a.settings.ResponseView)
 			a.refreshView(t)
 		}
 	}
