@@ -21,16 +21,33 @@ const (
 // /auth wants an Authorization header.
 func restHandler() http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/{$}", index)
-	mux.HandleFunc("/echo", echo)
-	mux.HandleFunc("/status/{code}", status)
-	mux.HandleFunc("/delay/{ms}", delay)
-	mux.HandleFunc("/auth", auth)
+	for _, route := range restRoutes() {
+		mux.HandleFunc(route.pattern, route.handler)
+	}
 	return mux
 }
 
-func index(writer http.ResponseWriter, _ *http.Request) {
-	fmt.Fprint(writer, "gascoigne example server\n/echo\n/status/{code}\n/delay/{ms}\n/auth\n")
+// restRoute is one endpoint of the REST example. The debug sample
+// collection has a request for each (sample_test.go keeps them in step).
+type restRoute struct {
+	pattern string
+	handler http.HandlerFunc
+}
+
+func restRoutes() []restRoute {
+	routes := []restRoute{
+		{"/echo", echo},
+		{"/status/{code}", status},
+		{"/delay/{ms}", delay},
+		{"/auth", auth},
+	}
+	index := func(writer http.ResponseWriter, _ *http.Request) {
+		fmt.Fprint(writer, "gascoigne example server\n")
+		for _, route := range routes {
+			fmt.Fprintln(writer, route.pattern)
+		}
+	}
+	return append([]restRoute{{"/{$}", index}}, routes...)
 }
 
 func writeJSON(writer http.ResponseWriter, code int, value any) {
