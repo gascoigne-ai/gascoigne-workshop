@@ -201,3 +201,21 @@ func TestUpdateTestsTyped(t *testing.T) {
 		t.Fatalf("tests %q", got.Tests)
 	}
 }
+
+func TestUpdateTogglesFlipTheirOwnFlagOnly(t *testing.T) {
+	flipped := Update(model.Request{}, NoRedirectsToggled{})
+	if !flipped.NoRedirects || flipped.InsecureTLS {
+		t.Fatalf("NoRedirectsToggled: %+v", flipped)
+	}
+	if again := Update(flipped, NoRedirectsToggled{}); again.NoRedirects {
+		t.Fatal("a second NoRedirectsToggled must turn it off")
+	}
+
+	flipped = Update(model.Request{}, InsecureTLSToggled{})
+	if !flipped.InsecureTLS || flipped.NoRedirects {
+		t.Fatalf("InsecureTLSToggled: %+v", flipped)
+	}
+	if again := Update(flipped, InsecureTLSToggled{}); again.InsecureTLS {
+		t.Fatal("a second InsecureTLSToggled must turn it off")
+	}
+}

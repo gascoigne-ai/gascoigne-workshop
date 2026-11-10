@@ -51,18 +51,26 @@ type AuthFieldSet struct{ Field, Value string }
 // TestsTyped is the assertions text changed.
 type TestsTyped struct{ Text string }
 
-func (URLTyped) editMsg()        {}
-func (ParamsChanged) editMsg()   {}
-func (MethodChosen) editMsg()    {}
-func (ProtocolChosen) editMsg()  {}
-func (TimeoutSet) editMsg()      {}
-func (BodyTyped) editMsg()       {}
-func (VarsTyped) editMsg()       {}
-func (BodyTypeChosen) editMsg()  {}
-func (OperationChosen) editMsg() {}
-func (AuthTypeChosen) editMsg()  {}
-func (AuthFieldSet) editMsg()    {}
-func (TestsTyped) editMsg()      {}
+// NoRedirectsToggled flips whether redirects are left unfollowed.
+type NoRedirectsToggled struct{}
+
+// InsecureTLSToggled flips whether certificate errors are ignored.
+type InsecureTLSToggled struct{}
+
+func (URLTyped) editMsg()           {}
+func (ParamsChanged) editMsg()      {}
+func (MethodChosen) editMsg()       {}
+func (ProtocolChosen) editMsg()     {}
+func (TimeoutSet) editMsg()         {}
+func (BodyTyped) editMsg()          {}
+func (VarsTyped) editMsg()          {}
+func (BodyTypeChosen) editMsg()     {}
+func (OperationChosen) editMsg()    {}
+func (AuthTypeChosen) editMsg()     {}
+func (AuthFieldSet) editMsg()       {}
+func (TestsTyped) editMsg()         {}
+func (NoRedirectsToggled) editMsg() {}
+func (InsecureTLSToggled) editMsg() {}
 
 // authFields is where each credential field named in AuthFieldSet lives.
 var authFields = map[string]func(*model.Auth) *string{
@@ -119,6 +127,10 @@ func Update(req model.Request, msg Msg) model.Request {
 		*authField(&req.Auth, msg.Field) = msg.Value // req is a copy, and Auth holds only strings
 	case TestsTyped:
 		req.Tests = msg.Text
+	case NoRedirectsToggled:
+		req.NoRedirects = !req.NoRedirects
+	case InsecureTLSToggled:
+		req.InsecureTLS = !req.InsecureTLS
 	}
 	return req
 }
