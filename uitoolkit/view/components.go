@@ -81,6 +81,21 @@ func CheckRow(on bool, items ...Item) *El {
 	return Row(append([]Item{H(core.RowH), Gap(8), Checkbox(on)}, items...)...)
 }
 
+// Toolbar is a bar of controls over a pane: ToolbarH high, inset by the
+// gutter, centered vertically, with a line under it.
+func Toolbar(items ...Item) *El {
+	return Row(append([]Item{
+		H(core.ToolbarH), PadX(core.Gutter), Gap(6), AlignItems(AlignCenter), BorderB(core.Border),
+	}, items...)...)
+}
+
+// TabBar is the strip that holds Tabs or ScrollTabs (and anything beside
+// them): TabBarH high, TabGap of room above the tabs, a line under the
+// inactive ones.
+func TabBar(items ...Item) *El {
+	return Row(append([]Item{H(core.TabBarH), PadT(core.TabGap), BorderB(core.Border)}, items...)...)
+}
+
 // TabItem is one tab; Badge > 0 shows a count after the label.
 type TabItem struct {
 	Label string

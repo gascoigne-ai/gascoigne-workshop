@@ -61,6 +61,9 @@ const (
 	LabelH   = 22
 	NoteH    = 18
 	IconBtnW = 32
+	ToolbarH = RowH + 8 // a bar of controls over a pane
+	TabBarH  = 40       // a strip of tabs, with TabGap above them
+	TabGap   = 6        // space above tabs, so their outline never touches the banner or bar above
 	Gutter   = 12
 )
 

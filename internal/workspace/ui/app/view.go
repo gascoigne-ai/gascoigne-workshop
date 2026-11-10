@@ -17,13 +17,11 @@ import (
 
 // Sizes of the window chrome, in logical pixels.
 const (
-	sidebarW  = 260
-	headerH   = 44
-	tabsH     = 42
-	urlH      = 56
-	statusH   = 28
-	paneTabsH = 40
-	tabGap    = 6 // space above the tabs, so their outline never touches the banner or the bar above
+	sidebarW = 260
+	headerH  = 44
+	tabsH    = 42
+	urlH     = 56
+	statusH  = 28
 
 	// Smallest sizes the dividers allow.
 	minSidebarW = 160
@@ -204,7 +202,7 @@ func (a *App) header() Node {
 
 // requestTabs is the strip of open requests, with a "+" for a new one.
 func (a *App) requestTabs() Node {
-	return Row(H(tabsH), PadT(tabGap), Bg(w.Frame), Control("tabstrip"), BorderB(w.Border),
+	return Row(H(tabsH), PadT(w.TabGap), Bg(w.Frame), Control("tabstrip"), BorderB(w.Border),
 		HScroll(&a.tabsScroll, Grow(1), For(a.openTabs(), a.requestTab)),
 		Row(W(40), OnClick(a.newRequest), Tooltip(a.hint("New request", "new-request")),
 			PlusIcon(Grow(1)),
@@ -350,7 +348,7 @@ func (a *App) pane(t *reqTab, panes []pane, active *int, scroll, tabsX *ScrollSt
 	selectTab := func(i int) { *active, scroll.Y = i, 0 }
 	*active = min(*active, len(panes)-1) // a socket has fewer response panes
 	return Col(Grow(1), Bg(w.Bg),
-		Row(H(paneTabsH), PadT(tabGap), BorderB(w.Border),
+		TabBar(
 			ScrollTabs(tabsX, a.tabItems(panes, t), *active, OnSelect(selectTab)),
 			extra,
 		),

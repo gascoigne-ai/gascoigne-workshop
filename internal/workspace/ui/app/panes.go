@@ -475,7 +475,7 @@ func (a *App) responsePane(_ pane, t *reqTab, _ *ScrollState) Node {
 	if t.picture != nil {
 		return Col(Grow(1),
 			Spacer(H(w.Gutter)),
-			Row(H(w.RowH+8), PadX(w.Gutter), Gap(6), AlignItems(AlignCenter), BorderB(w.Border),
+			Toolbar(
 				Text(t.pictureInfo, Small(), Muted()),
 				Spacer(),
 				Button("Save", W(56), H(w.CompactH), OnClick(func() { a.saveBody(t) }), Tooltip("Save the image to a file")),
@@ -485,7 +485,7 @@ func (a *App) responsePane(_ pane, t *reqTab, _ *ScrollState) Node {
 	}
 	return Col(Grow(1),
 		Spacer(H(w.Gutter)), // same top inset as the request pane, so first rows line up
-		Row(H(w.RowH+8), PadX(w.Gutter), Gap(6), AlignItems(AlignCenter), BorderB(w.Border),
+		Toolbar(
 			a.viewChip("Compact", t.look.Compact(), 72, func() { a.setView(t, viewer.Compact) }),
 			a.viewChip("Pretty", t.look.Mode == viewer.Pretty, 56, func() { a.setView(t, viewer.Pretty) }),
 			a.viewChip("Raw", t.look.Raw(), 44, func() { a.setView(t, viewer.Raw) }),

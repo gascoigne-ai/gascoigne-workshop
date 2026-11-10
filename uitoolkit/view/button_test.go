@@ -138,3 +138,38 @@ func TestCheckRowClicksAnywhere(t *testing.T) {
 		t.Fatalf("clicks on the row toggled %d times, want 1", toggled)
 	}
 }
+
+// A toolbar is a row of controls, vertically centered, with a line under it.
+func TestToolbarCentersItsControlsAndLinesTheBottom(t *testing.T) {
+	c := testCtx(t)
+	bar := Toolbar(Button("Save", W(56), H(core.CompactH)))
+	Layout(c, Col(W(400), H(100), bar), 400, 100)
+	if bar.h != core.ToolbarH {
+		t.Errorf("height = %d, want ToolbarH %d", bar.h, core.ToolbarH)
+	}
+	button := bar.kids[0]
+	if want := bar.rect.Y + (bar.rect.H-button.rect.H)/2; button.rect.Y != want {
+		t.Errorf("button Y = %d, want %d (centered)", button.rect.Y, want)
+	}
+	if bar.borderB == "" {
+		t.Error("a toolbar has a line under it")
+	}
+}
+
+// A tab bar leaves room above the tabs, so their outline never touches the
+// bar above, and draws a line under the inactive ones.
+func TestTabBarLeavesRoomAboveTheTabs(t *testing.T) {
+	c := testCtx(t)
+	tabs := Tabs([]TabItem{{Label: "Params"}}, 0)
+	bar := TabBar(tabs)
+	Layout(c, Col(W(400), H(100), bar), 400, 100)
+	if bar.h != core.TabBarH {
+		t.Errorf("height = %d, want TabBarH %d", bar.h, core.TabBarH)
+	}
+	if tabs.rect.Y != bar.rect.Y+core.TabGap {
+		t.Errorf("tabs start at %d, want %d below the top", tabs.rect.Y-bar.rect.Y, core.TabGap)
+	}
+	if bar.borderB == "" {
+		t.Error("a tab bar has a line under it")
+	}
+}
