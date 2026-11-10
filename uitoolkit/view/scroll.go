@@ -26,8 +26,7 @@ type ScrollState struct {
 
 	revealed int // HScroll: index+1 of the child last brought into view, 0 for none
 
-	dragging bool // the thumb is being dragged
-	grab     int  // pointer offset inside the thumb when the drag began
+	drag grab // the thumb being dragged
 }
 
 // scrollB lays its children out as a column taller than the box and
@@ -68,12 +67,10 @@ func (s *scrollB) layout(e *El, c *core.Ctx) {
 func (s *scrollB) update(e *El, c *core.Ctx) {
 	in, st, r := c.In, s.state, e.rect
 	track := s.track(e)
-	if st.dragging {
-		if !in.Held {
-			st.dragging = false
-			return
+	if st.drag.on {
+		if st.drag.held(in) {
+			st.Y = posFromOffset(track.H, s.content, r.H, in.Y-track.Y-st.drag.off)
 		}
-		st.Y = posFromOffset(track.H, s.content, r.H, in.Y-track.Y-st.grab)
 		return
 	}
 	if in.Click && track.Contains(in.X, in.Y) {
@@ -90,21 +87,16 @@ func (s *scrollB) update(e *El, c *core.Ctx) {
 // toward the press.
 func (s *scrollB) press(track core.Rect, view, at int) {
 	st := s.state
-	off, length, ok := Thumb(track.H, s.content, view, st.Y)
-	switch {
-	case !ok:
-	case at >= off && at < off+length:
-		st.dragging, st.grab = true, at-off
-	case at < off:
-		st.Y = clampScroll(st.Y-view, s.content, view)
-	default:
-		st.Y = clampScroll(st.Y+view, s.content, view)
+	grabbed, off, pos := pressThumb(track.H, s.content, view, st.Y, at)
+	st.Y = pos
+	if grabbed {
+		st.drag.begin(off)
 	}
 }
 
 func (s *scrollB) drawOver(e *El, c *core.Ctx, dst *ebiten.Image) {
 	track := s.track(e)
-	drawScrollbar(c, dst, track, s.content, e.rect.H, s.state.Y, s.state.dragging || c.Hovered(track))
+	drawScrollbar(c, dst, track, s.content, e.rect.H, s.state.Y, s.state.drag.on || c.Hovered(track))
 }
 
 // Scroll is a vertically scrolling column: its children may be taller

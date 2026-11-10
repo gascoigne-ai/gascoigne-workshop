@@ -138,8 +138,8 @@ func TestClicksNextToTheDividerStillReachTheChildren(t *testing.T) {
 	Update(c, root)
 	click(c, 400, 50)
 	Update(c, root)
-	if len(hits) != 2 || st.dragging {
-		t.Fatalf("hits %v dragging %v", hits, st.dragging)
+	if len(hits) != 2 || st.drag.on {
+		t.Fatalf("hits %v dragging %v", hits, st.drag.on)
 	}
 }
 

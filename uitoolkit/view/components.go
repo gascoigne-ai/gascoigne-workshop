@@ -151,9 +151,8 @@ type TableSpec struct {
 type ColumnWidths struct {
 	Weights []float64
 
-	dragging bool
-	divider  int // the divider being dragged: between columns divider and divider+1
-	grab     int // pointer offset inside the divider when the drag began
+	drag    grab
+	divider int // the divider being dragged: between columns divider and divider+1
 }
 
 // weight is column i's relative width.
@@ -367,14 +366,13 @@ func (h colHandlesB) cells() []*El {
 
 func (h colHandlesB) update(e *El, c *core.Ctx) {
 	st, in, cells := h.spec.Widths, c.In, h.cells()
-	if st.dragging {
-		if !in.Held {
-			st.dragging = false
+	if st.drag.on {
+		if !st.drag.held(in) {
 			return
 		}
 		c.Cursor = core.CursorResizeH
 		left, right := cells[st.divider].rect, cells[st.divider+1].rect
-		st.Weights = resizePair(h.spec.weights(), st.divider, in.X-left.X-st.grab, left.W+right.W, MinColumnPx)
+		st.Weights = resizePair(h.spec.weights(), st.divider, in.X-left.X-st.drag.off, left.W+right.W, MinColumnPx)
 		return
 	}
 	for i := 0; i < len(cells)-1; i++ {
@@ -387,7 +385,8 @@ func (h colHandlesB) update(e *El, c *core.Ctx) {
 		if in.Click && in.Clicks >= 2 {
 			st.Weights = nil // back to the defaults
 		} else if in.Click {
-			st.dragging, st.divider, st.grab = true, i, in.X-x
+			st.drag.begin(in.X - x)
+			st.divider = i
 		}
 		return
 	}

@@ -101,10 +101,10 @@ const (
 	barH
 )
 
-// barDrag tracks a scrollbar thumb being dragged.
+// barDrag tracks a scrollbar thumb being dragged: which bar, and the grab.
 type barDrag struct {
 	bar  int // barNone, barV or barH
-	grab int // pointer offset inside the thumb when the drag began
+	grab grab
 }
 
 func (d *barDrag) active() bool { return d.bar != barNone }
@@ -113,45 +113,37 @@ func (d *barDrag) active() bool { return d.bar != barNone }
 // track, moving *sx and *sy.
 func (d *barDrag) update(c *core.Ctx, b bars, contentW, contentH int, sx, sy *int) {
 	in := c.In
-	switch d.bar {
-	case barV:
-		if !in.Held {
+	if d.bar != barNone {
+		if !d.grab.held(in) {
 			d.bar = barNone
 			return
 		}
-		*sy = posFromOffset(b.vTrack.H, contentH, b.viewH, in.Y-b.vTrack.Y-d.grab)
-		return
-	case barH:
-		if !in.Held {
-			d.bar = barNone
-			return
+		if d.bar == barV {
+			*sy = posFromOffset(b.vTrack.H, contentH, b.viewH, in.Y-b.vTrack.Y-d.grab.off)
+		} else {
+			*sx = posFromOffset(b.hTrack.W, contentW, b.viewW, in.X-b.hTrack.X-d.grab.off)
 		}
-		*sx = posFromOffset(b.hTrack.W, contentW, b.viewW, in.X-b.hTrack.X-d.grab)
 		return
 	}
 	if !in.Click {
 		return
 	}
 	if b.vOK && b.vTrack.Contains(in.X, in.Y) {
-		d.press(b.vTrack.H, contentH, b.viewH, *sy, in.Y-b.vTrack.Y, barV, sy)
+		d.press(barV, b.vTrack.H, contentH, b.viewH, in.Y-b.vTrack.Y, sy)
 	}
 	if b.hOK && b.hTrack.Contains(in.X, in.Y) {
-		d.press(b.hTrack.W, contentW, b.viewW, *sx, in.X-b.hTrack.X, barH, sx)
+		d.press(barH, b.hTrack.W, contentW, b.viewW, in.X-b.hTrack.X, sx)
 	}
 }
 
-// press starts dragging the thumb when the press is on it, else pages
-// toward the press.
-func (d *barDrag) press(track, content, view, pos, at, bar int, scroll *int) {
-	off, length, ok := Thumb(track, content, view, pos)
-	switch {
-	case !ok:
-	case at >= off && at < off+length:
-		d.bar, d.grab = bar, at-off
-	case at < off:
-		*scroll = clampScroll(pos-view, content, view)
-	default:
-		*scroll = clampScroll(pos+view, content, view)
+// press grabs the thumb of bar when the press is on it, else pages toward
+// the press.
+func (d *barDrag) press(bar, track, content, view, at int, scroll *int) {
+	grabbed, off, pos := pressThumb(track, content, view, *scroll, at)
+	*scroll = pos
+	if grabbed {
+		d.bar = bar
+		d.grab.begin(off)
 	}
 }
 

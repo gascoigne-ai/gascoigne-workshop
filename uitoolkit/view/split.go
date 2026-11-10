@@ -14,8 +14,7 @@ const handleSlop = 2
 type SplitState struct {
 	Size float64 // size of the first part: pixels, or a fraction of the container with AsRatio; 0 = the default
 
-	dragging bool
-	grab     int // pointer offset inside the divider when the drag began
+	drag grab // the divider being dragged
 }
 
 // splitB lays two children out around a one-pixel divider that can be dragged.
@@ -92,13 +91,12 @@ func (s *splitB) update(e *El, c *core.Ctx) {
 	origin, total := s.axis(e)
 	avail := max(total-1, 1)
 
-	if st.dragging {
-		if !in.Held {
-			st.dragging = false
+	if st.drag.on {
+		if !st.drag.held(in) {
 			return
 		}
 		c.Cursor = cursor
-		px := float64(pointer - origin - st.grab)
+		px := float64(pointer - origin - st.drag.off)
 		if e.split.ratio {
 			px /= float64(avail)
 		}
@@ -116,7 +114,7 @@ func (s *splitB) update(e *El, c *core.Ctx) {
 		st.Size = 0 // back to the default
 		return
 	}
-	st.dragging, st.grab = true, pointer-divPos
+	st.drag.begin(pointer - divPos)
 }
 
 // Split puts its two children side by side (or one above the other with
