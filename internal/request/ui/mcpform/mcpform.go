@@ -118,8 +118,7 @@ func (form *Form) input(host Host, field model.ToolField) Node {
 	switch field.Kind {
 	case model.FieldBoolean:
 		on := form.Choices[field.Name] == "true"
-		return Row(H(w.RowH), Gap(8), OnClick(func() { form.Choices[field.Name] = boolText(!on) }),
-			Checkbox(on),
+		return CheckRow(on, OnClick(func() { form.Choices[field.Name] = boolText(!on) }),
 			Text(form.boolHint(field), Small(), Muted()),
 		)
 	case model.FieldEnum:

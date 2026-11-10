@@ -110,8 +110,7 @@ func (a *App) authPane(_ pane, t *reqTab, scroll *ScrollState) Node {
 		),
 		If(len(current.fields) == 0, Lines("No authentication", w.Muted)),
 		For(current.fields, func(_ int, f authField) Node { return a.authFieldRow(t, f) }),
-		If(hasSecret, Row(H(w.RowH), Gap(8), OnClick(t.toggleSecrets),
-			Checkbox(t.showSecrets),
+		If(hasSecret, CheckRow(t.showSecrets, OnClick(t.toggleSecrets),
 			Text("Show secrets"),
 		)),
 	)
@@ -119,8 +118,7 @@ func (a *App) authPane(_ pane, t *reqTab, scroll *ScrollState) Node {
 
 func (a *App) authFieldRow(t *reqTab, f authField) Node {
 	if f.choices != nil {
-		return Row(H(w.RowH), Gap(12),
-			Text(f.label, W(120)),
+		return FormRow(f.label, 120,
 			Row(Gap(6), For(f.choices, func(_ int, c authChoice) Node {
 				choose := OnClick(func() { editRequest(t, editor.AuthFieldSet{Field: f.id, Value: c.id}) })
 				stored := editor.AuthValue(t.Req.Auth, f.id)
@@ -131,8 +129,7 @@ func (a *App) authFieldRow(t *reqTab, f authField) Node {
 	in := t.authInput(f.id)
 	in.Masked = f.secret && !t.showSecrets
 	sync := func() { editRequest(t, editor.AuthFieldSet{Field: f.id, Value: in.Text}) }
-	return Row(H(w.RowH), Gap(12),
-		Text(f.label, W(120)),
+	return FormRow(f.label, 120,
 		Field(in, Grow(1), Bg(w.Sunken),
 			OnChange(sync),
 			a.textMenuOpt(in, sync)),

@@ -66,6 +66,21 @@ func Note(text string, tone core.Token, opts ...Option) *El {
 	}, opts)...)
 }
 
+// formLabelGap is the space between a form row's label and its controls.
+const formLabelGap = 12
+
+// FormRow is a settings-style row: a label in a column of labelWidth, then
+// the controls. Rows with the same labelWidth line their controls up.
+func FormRow(label string, labelWidth int, items ...Item) *El {
+	return Row(append([]Item{H(core.RowH), Gap(formLabelGap), Text(label, W(labelWidth))}, items...)...)
+}
+
+// CheckRow is a checkbox followed by its items (usually a Text label and a
+// muted hint). Give it OnClick: the whole row is the click target.
+func CheckRow(on bool, items ...Item) *El {
+	return Row(append([]Item{H(core.RowH), Gap(8), Checkbox(on)}, items...)...)
+}
+
 // TabItem is one tab; Badge > 0 shows a count after the label.
 type TabItem struct {
 	Label string

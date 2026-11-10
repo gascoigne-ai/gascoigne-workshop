@@ -100,3 +100,41 @@ func TestNoteIsOneColoredLineOfSmallText(t *testing.T) {
 		t.Errorf("muted note color = %q", muted.kids[0].fg)
 	}
 }
+
+// A form row puts a fixed-width label before its controls, which share the
+// rest of the row.
+func TestFormRowKeepsTheLabelColumnAligned(t *testing.T) {
+	c := testCtx(t)
+	shortField, longField := NewTextField(""), NewTextField("")
+	short := FormRow("Timeout", 160, Field(&shortField, W(80)))
+	long := FormRow("A much longer label", 160, Field(&longField, W(80)))
+	Layout(c, Col(short, long), 600, 100)
+	for _, row := range []*El{short, long} {
+		if row.h != core.RowH {
+			t.Errorf("row height = %d, want RowH %d", row.h, core.RowH)
+		}
+		if row.kids[0].rect.W != 160 {
+			t.Errorf("label width = %d, want 160", row.kids[0].rect.W)
+		}
+	}
+	if short.kids[1].rect.X != long.kids[1].rect.X {
+		t.Errorf("controls start at %d and %d, want one column", short.kids[1].rect.X, long.kids[1].rect.X)
+	}
+}
+
+// A check row is a checkbox followed by its label, and a click anywhere on
+// the row toggles it.
+func TestCheckRowClicksAnywhere(t *testing.T) {
+	c := testCtx(t)
+	toggled := 0
+	row := CheckRow(true, OnClick(func() { toggled++ }), Text("Follow redirects"))
+	Layout(c, Row(row), 400, 40)
+	if row.h != core.RowH || len(row.kids) != 2 {
+		t.Fatalf("row height %d with %d kids, want RowH and checkbox + label", row.h, len(row.kids))
+	}
+	click(c, row.rect.X+row.rect.W-2, row.rect.Y+row.rect.H/2)
+	Update(c, row)
+	if toggled != 1 {
+		t.Fatalf("clicks on the row toggled %d times, want 1", toggled)
+	}
+}

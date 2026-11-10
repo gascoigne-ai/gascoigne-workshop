@@ -30,7 +30,7 @@
 //	Text       Text Caption Lines Note   Color Muted Bold Small Mono FontSource Ellipsis TextCenter
 //	Input      Field Area Code Slider Checkbox   (state: TextField TextArea CodeView)   Placeholder FieldPad Segments OnChange OnEnter OnTab
 //	Events     OnClick OnClickAt OnRightClick OnMiddleClick OnDragOver   Tooltip KeepInView
-//	Composite  Button PrimaryButton Choice ListRow LinkButton IconButton Tabs ScrollTabs Table   OnSelect OnSlide OnSlideEnd SliderMid   Separator
+//	Composite  Button PrimaryButton Choice ListRow FormRow CheckRow LinkButton IconButton Tabs ScrollTabs Table   OnSelect OnSlide OnSlideEnd SliderMid   Separator
 //	Split      Vertical AsRatio MinFirst MinSecond
 //	Icons      Icon RegisterIcons IconNames   CrossIcon TriangleIcon GripIcon DotsIcon TrashIcon PlusIcon CopyIcon FolderIcon SearchIcon PromptIcon ChevronUpIcon ChevronDownIcon
 //	Flow       If When For Frag
