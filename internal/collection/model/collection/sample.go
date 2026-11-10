@@ -2,10 +2,11 @@ package collection
 
 import "github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 
-// Sample is the collection shown until saving and loading
-// collections exists: a few REST calls against a public API, plus one
-// call per other protocol so the registry is visible in the UI.
-func Sample() model.Collection {
+// GitHubSample is a few REST calls against a public API, plus one call per
+// other protocol so the registry is visible in the UI. The debug build's
+// Sample starts from it and the App uses it when no Sample is given, so
+// tests may rely on its folder order.
+func GitHubSample() model.Collection {
 	get := func(name, url string, params ...model.KV) *model.Request {
 		return &model.Request{Name: name, Protocol: "rest", Method: "GET", URL: url, Params: params}
 	}

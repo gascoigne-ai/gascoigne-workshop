@@ -6,6 +6,7 @@ import (
 	"errors"
 	"flag"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/adapter/store"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/preview"
@@ -50,6 +51,8 @@ func main() {
 	opts.GRPCMethods = proto.ListGRPCMethods
 	opts.Curl = proto.Curl
 	opts.Store = store.Files{}
+	opts.Sample = collection.Sample // which sample is a build decision, see clients_*.go
+	opts.Clients = clientConfigs()
 	opts.States = statefile.Files{}
 	opts.Files = filedialog.System{}
 	opts.History = func(dir string) port.History { return history.Dir(dir) }
@@ -59,7 +62,7 @@ func main() {
 	opts.Clock = systemclock.Clock{}
 	opts.SettingsFiles = settingsfile.Files{}
 	flag.StringVar(&opts.ThemesDir, "themes", settingsfile.ThemesDir(), "folder of theme files (*.json) that extend the dark or light theme; empty for none")
-	flag.StringVar(&opts.WorkspaceDir, "workspace", "", "folder to load and save the collection; empty uses the last one, else the built-in sample")
+	flag.StringVar(&opts.WorkspaceDir, "workspace", "", "folder to load and save the collection; empty uses the last one, else the client config (release build) or the built-in sample")
 	opts.DefaultWorkspace = settingsfile.DefaultWorkspace()
 	iconPNG := flag.String("icon-png", "", "write the program icon (256x256 PNG) to this path and exit, for packaging")
 	flag.BoolVar(&opts.OpenMenu, "menu", false, "start with the settings menu open (for screenshots)")

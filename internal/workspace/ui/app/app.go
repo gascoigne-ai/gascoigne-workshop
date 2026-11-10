@@ -186,6 +186,7 @@ type App struct {
 	bulk               *bulkEdit     // the table in bulk-edit mode, if any
 	actionIDs          []string      // the ids of the shortcut actions, for completing settings.json
 	store              cport.Store
+	clients            cport.ClientConfigs // the build's client config; nil has none
 	states             port.StateStore
 	files              port.FileDialog               // the desktop file chooser, replaced in tests
 	cancelSettingsPick func()                        // takes back a file question the settings dialog asked
@@ -259,8 +260,19 @@ type Options struct {
 	Previews         rport.BodyPreview                             // shows a response body in the browser; nil has none
 	Clock            port.Clock                                    // the time source; nil uses the wall clock
 	OpenMenu         bool                                          // start with the settings menu open
-	WorkspaceDir     string                                        // collection folder; "" uses the remembered one, else the built-in sample
+	WorkspaceDir     string                                        // collection folder; "" uses the remembered one, else the client config, else the sample
+	Sample           func() model.Collection                       // the collection shown without a workspace or client config; nil uses collection.GitHubSample
+	Clients          cport.ClientConfigs                           // the client config a build offers without a workspace; nil has none
 	DefaultWorkspace string                                        // where saving goes when there is no workspace yet
+}
+
+// startCollection is the collection shown before a workspace or client
+// config replaces it.
+func startCollection(sample func() model.Collection) model.Collection {
+	if sample == nil {
+		return collection.GitHubSample()
+	}
+	return sample()
 }
 
 // NewApp builds the window state around the sample collection.
@@ -282,7 +294,8 @@ func NewApp(opts Options) (*App, error) {
 	}
 	a := &App{
 		ctx:              ctx,
-		col:              collection.Sample(),
+		col:              startCollection(opts.Sample),
+		clients:          opts.Clients,
 		defaultWorkspace: opts.DefaultWorkspace,
 		expanded:         map[*model.Folder]bool{},
 		widgets:          map[*tabs.Tab]*reqTab{},

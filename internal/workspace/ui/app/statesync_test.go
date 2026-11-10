@@ -77,7 +77,7 @@ func TestStateRestoreRoundTripsThroughTheFile(t *testing.T) {
 func TestStateRestoreDropsMissingRequestsAndBadValues(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "state.json")
 	err := statefile.Save(path, state.State{
-		Tabs:     []state.Tab{{Path: "Gone/Nothing"}, {Path: "User/" + collection.Sample().Folders[0].Requests[0].Name, Pane: 99, Resp: -4}},
+		Tabs:     []state.Tab{{Path: "Gone/Nothing"}, {Path: "User/" + collection.GitHubSample().Folders[0].Requests[0].Name, Pane: 99, Resp: -4}},
 		Active:   7,
 		Expanded: []string{"Nowhere"},
 	})

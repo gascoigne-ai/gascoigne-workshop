@@ -166,7 +166,7 @@ func TestJSONStatus(t *testing.T) {
 }
 
 func TestSampleCollectionIsConsistent(t *testing.T) {
-	col := collection.Sample()
+	col := collection.GitHubSample()
 	reg := proto.NewRegistry()
 	var check func(f *model.Folder, path string)
 	check = func(f *model.Folder, path string) {

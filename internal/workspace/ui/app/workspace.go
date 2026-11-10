@@ -17,7 +17,8 @@ import (
 const saveDebounce = time.Second
 
 // openWorkspace loads the collection from dir, or from the remembered
-// workspace when dir is empty; with neither, the built-in sample stays.
+// workspace when dir is empty; with neither, the build's client config, if it
+// has one, replaces the built-in sample.
 // A folder that cannot be read leaves the sample in place and no
 // workspace set, so a later save cannot overwrite what is there.
 func (a *App) openWorkspace(dir string) {
@@ -32,7 +33,8 @@ func (a *App) openWorkspace(dir string) {
 			a.col, a.workspace = col, dir
 		}
 	}
-	if a.workspace == "" { // the sample opens on its search call
+	sample := a.workspace == "" && !a.loadClients()
+	if sample && len(a.col.Folders) > 1 { // the sample opens on its search call
 		a.expanded[&a.col.Folder] = true
 		a.expanded[a.col.Folders[1]] = true
 		a.openRequest(a.col.Folders[1].Requests[0])
@@ -46,6 +48,25 @@ func (a *App) openWorkspace(dir string) {
 	}
 	a.pickEnv()
 	a.colSave.Saved(a.collectionKeyNow())
+}
+
+// loadClients replaces the collection with the client config's tree. It
+// reports false when there is no config or it is empty, and when it cannot
+// be read, which the status then says.
+func (a *App) loadClients() bool {
+	if a.clients == nil {
+		return false
+	}
+	config, err := a.clients.Load()
+	if err != nil {
+		a.status = "Client config not loaded: " + err.Error()
+		return false
+	}
+	if config.Empty() {
+		return false
+	}
+	a.col = config.Collection()
+	return true
 }
 
 func (a *App) expandAll(f *model.Folder) {
