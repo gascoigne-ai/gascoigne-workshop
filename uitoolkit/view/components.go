@@ -35,6 +35,16 @@ func PrimaryButton(label string, opts ...Option) *El {
 	}, opts)...)
 }
 
+// Choice is one chip of a segmented choice: a PrimaryButton when it is the
+// selected one, a Button otherwise. Options (W, H, OnClick, KeepInView)
+// apply to both.
+func Choice(label string, selected bool, opts ...Option) *El {
+	if selected {
+		return PrimaryButton(label, opts...)
+	}
+	return Button(label, opts...)
+}
+
 // TabItem is one tab; Badge > 0 shows a count after the label.
 type TabItem struct {
 	Label string

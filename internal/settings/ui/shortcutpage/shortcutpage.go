@@ -291,9 +291,10 @@ func (p *Page) View(host Host) Node {
 func (p *Page) row(host Host, action Action) Node {
 	_, overridden := host.Settings().Shortcuts[action.ID]
 	binding := Effective(host.Settings(), action)
-	label, button := KeyText(host, action.ID), Button
-	if p.recording == action.ID {
-		label, button = "Press keys...", PrimaryButton
+	recording := p.recording == action.ID
+	label := KeyText(host, action.ID)
+	if recording {
+		label = "Press keys..."
 	}
 	var note Node
 	if pending, ok := p.pending[action.ID]; ok {
@@ -309,7 +310,7 @@ func (p *Page) row(host Host, action Action) Node {
 	return Col(
 		Row(H(w.CompactH), Gap(6),
 			Text(action.Name, Small(), Grow(1), Ellipsis()),
-			button(label, W(96), H(w.CompactH), OnClick(func() { p.Start(action.ID) }), Tooltip("Click, then press the keys")),
+			Choice(label, recording, W(96), H(w.CompactH), OnClick(func() { p.Start(action.ID) }), Tooltip("Click, then press the keys")),
 			If(binding.Bound, Button("Clear", W(44), H(w.CompactH), OnClick(func() { p.Clear(host, action.ID) }), Tooltip("Leave the action without a key"))),
 			If(overridden, Button("Reset", W(44), H(w.CompactH), OnClick(func() { p.Reset(host, action.ID) }), Tooltip("Back to the default key"))),
 		),

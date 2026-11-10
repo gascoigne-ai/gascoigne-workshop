@@ -69,10 +69,7 @@ func capitalized(id string) string {
 // choice is one chip of a segmented choice: gold when selected.
 func choice(host Host, label string, selected bool, edit func(*settings.Settings)) Node {
 	apply := OnClick(func() { host.Send(prefs.Change{Edit: edit}) })
-	if selected {
-		return PrimaryButton(label, Grow(1), apply)
-	}
-	return Button(label, Grow(1), apply)
+	return Choice(label, selected, Grow(1), apply)
 }
 
 // enumChips is a row of chips, one per allowed value; the current one is lit.

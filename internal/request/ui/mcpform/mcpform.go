@@ -161,10 +161,7 @@ func (form *Form) enumChoice(field model.ToolField) Node {
 				label = "none"
 			}
 			pick := OnClick(func() { form.Choices[field.Name] = option })
-			if form.Choices[field.Name] == option {
-				return PrimaryButton(label, H(w.RowH), pick)
-			}
-			return Button(label, H(w.RowH), pick)
+			return Choice(label, form.Choices[field.Name] == option, H(w.RowH), pick)
 		}),
 	)
 }

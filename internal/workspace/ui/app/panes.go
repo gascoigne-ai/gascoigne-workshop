@@ -363,10 +363,7 @@ func (a *App) bodyPane(p pane, t *reqTab, scroll *ScrollState) Node {
 					width     int
 				}) Node {
 					choose := OnClick(func() { a.setBodyType(t, bt.id) })
-					if bt.id == kind {
-						return PrimaryButton(bt.label, W(bt.width), choose, KeepInView())
-					}
-					return Button(bt.label, W(bt.width), choose)
+					return Choice(bt.label, bt.id == kind, W(bt.width), choose, When(bt.id == kind, KeepInView()))
 				})),
 			If(isJSON && status != "", Text(status, Small(), Color(statusColor), Ellipsis(), Optional())),
 			If(isJSON, Button("Format", W(70), OnClick(func() { a.formatBody(t) }))),
@@ -509,10 +506,7 @@ func (a *App) responsePane(_ pane, t *reqTab, _ *ScrollState) Node {
 }
 
 func (a *App) viewChip(label string, selected bool, width int, onClick func()) Node {
-	if selected {
-		return PrimaryButton(label, W(width), H(w.CompactH), OnClick(onClick))
-	}
-	return Button(label, W(width), H(w.CompactH), OnClick(onClick))
+	return Choice(label, selected, W(width), H(w.CompactH), OnClick(onClick))
 }
 
 func (a *App) findBar(t *reqTab) Node {

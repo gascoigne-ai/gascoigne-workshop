@@ -35,3 +35,31 @@ func TestButtonLabelNeverOverflowsTheButton(t *testing.T) {
 		}
 	}
 }
+
+// Choice shows the selected option as a primary button and the others as
+// plain ones, and keeps the options it was given (width, click).
+func TestChoiceLightsOnlyTheSelectedOption(t *testing.T) {
+	clicked := 0
+	tests := []struct {
+		name     string
+		selected bool
+		control  string
+	}{
+		{"selected", true, "primary"},
+		{"not selected", false, "button"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			chip := Choice("JSON", test.selected, W(70), OnClick(func() { clicked++ }))
+			if chip.control != test.control {
+				t.Errorf("control = %q, want %q", chip.control, test.control)
+			}
+			if chip.w != 70 {
+				t.Errorf("width = %d, want the given 70", chip.w)
+			}
+			if chip.onClick == nil {
+				t.Error("the click handler was dropped")
+			}
+		})
+	}
+}

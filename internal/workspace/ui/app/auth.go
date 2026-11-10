@@ -105,10 +105,7 @@ func (a *App) authPane(_ pane, t *reqTab, scroll *ScrollState) Node {
 		Row(H(w.RowH), Gap(6),
 			For(authTypes, func(_ int, at authType) Node {
 				choose := OnClick(func() { editRequest(t, editor.AuthTypeChosen{Type: at.id}) })
-				if at.id == current.id {
-					return PrimaryButton(at.label, W(at.width), choose)
-				}
-				return Button(at.label, W(at.width), choose)
+				return Choice(at.label, at.id == current.id, W(at.width), choose)
 			}),
 		),
 		If(len(current.fields) == 0, Lines("No authentication", w.Muted)),
@@ -127,10 +124,7 @@ func (a *App) authFieldRow(t *reqTab, f authField) Node {
 			Row(Gap(6), For(f.choices, func(_ int, c authChoice) Node {
 				choose := OnClick(func() { editRequest(t, editor.AuthFieldSet{Field: f.id, Value: c.id}) })
 				stored := editor.AuthValue(t.Req.Auth, f.id)
-				if stored == c.id || (stored == "" && c.id == f.choices[0].id) {
-					return PrimaryButton(c.label, W(70), choose)
-				}
-				return Button(c.label, W(70), choose)
+				return Choice(c.label, stored == c.id || (stored == "" && c.id == f.choices[0].id), W(70), choose)
 			})),
 		)
 	}
