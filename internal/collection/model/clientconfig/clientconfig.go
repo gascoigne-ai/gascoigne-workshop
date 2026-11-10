@@ -263,3 +263,29 @@ func rows(values map[string]string) []model.KV {
 	}
 	return kvs
 }
+
+// Merge returns base with every server and collection of override added;
+// one with the same name as an entry of base replaces it in place.
+func Merge(base, override Config) Config {
+	return Config{
+		Servers:     mergeByName(base.Servers, override.Servers, func(server Server) string { return server.Name }),
+		Collections: mergeByName(base.Collections, override.Collections, func(collection *model.Collection) string { return collection.Name }),
+	}
+}
+
+func mergeByName[T any](base, override []T, name func(T) string) []T {
+	merged := append([]T(nil), base...)
+	for _, entry := range override {
+		replaced := false
+		for i := range merged {
+			if name(merged[i]) == name(entry) {
+				merged[i], replaced = entry, true
+				break
+			}
+		}
+		if !replaced {
+			merged = append(merged, entry)
+		}
+	}
+	return merged
+}

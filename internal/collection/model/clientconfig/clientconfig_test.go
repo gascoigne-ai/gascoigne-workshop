@@ -133,3 +133,24 @@ func TestCollectionsAppendsServersAsOneCollection(t *testing.T) {
 		t.Fatalf("server request = %+v", request)
 	}
 }
+
+func TestMergeLetsTheOverrideReplaceEntriesOfTheSameName(t *testing.T) {
+	base := Config{
+		Servers: []Server{{Name: "A", URL: "http://base-a"}, {Name: "B", URL: "http://base-b"}},
+		Collections: []*model.Collection{
+			{Folder: model.Folder{Name: "One"}}, {Folder: model.Folder{Name: "Two"}},
+		},
+	}
+	override := Config{
+		Servers:     []Server{{Name: "B", URL: "http://over-b"}, {Name: "C", URL: "http://over-c"}},
+		Collections: []*model.Collection{{Folder: model.Folder{Name: "Two", Requests: []*model.Request{{Name: "r"}}}}},
+	}
+	got := Merge(base, override)
+	wantServers := []Server{{Name: "A", URL: "http://base-a"}, {Name: "B", URL: "http://over-b"}, {Name: "C", URL: "http://over-c"}}
+	if !reflect.DeepEqual(got.Servers, wantServers) {
+		t.Fatalf("servers = %+v, want %+v", got.Servers, wantServers)
+	}
+	if len(got.Collections) != 2 || got.Collections[0].Name != "One" || len(got.Collections[1].Requests) != 1 {
+		t.Fatalf("collections = %+v, want One kept and Two replaced in place", got.Collections)
+	}
+}
