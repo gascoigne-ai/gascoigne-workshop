@@ -42,7 +42,7 @@ func (a *App) saveSettings(edit func(*settings.Settings)) {
 	}
 	// auto-save is on, was just turned on (which writes what was pending) or
 	// was just turned off (which writes that choice, and nothing else changed)
-	a.Persist()
+	a.persistSettings()
 }
 
 // networkSettings are the settings the protocols are built from.

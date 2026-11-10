@@ -1,6 +1,7 @@
 package colorpage
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
 	"image/color"
 	"testing"
 
@@ -63,5 +64,11 @@ func TestResetAllForgetsOverridesNotesAndFields(t *testing.T) {
 	page.resetAll(host)
 	if len(host.current.Colors) != 0 || page.Note(custom.Token) != "" || len(page.inputs) != 0 {
 		t.Fatalf("colors %+v note %q inputs %d", host.current.Colors, page.Note(custom.Token), len(page.inputs))
+	}
+}
+
+func (host *fakeHost) Send(msg prefs.Msg) {
+	if edit, ok := msg.(prefs.Edit); ok {
+		host.Edit(edit.Edit)
 	}
 }

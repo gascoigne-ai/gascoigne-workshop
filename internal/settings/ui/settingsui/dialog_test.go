@@ -2,6 +2,7 @@ package settingsui
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/fonts"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
 	"image/color"
 	"os"
@@ -261,3 +262,37 @@ func assertSameDump(t *testing.T, tplView, goView Node, width, height int) {
 }
 
 func (h *fakeHost) FontStore() port.FontStore { return fonts.System{} }
+
+// Send routes a message to the fake's own recorder of it.
+func (h *fakeHost) Send(msg prefs.Msg) {
+	switch msg := msg.(type) {
+	case prefs.Change:
+		h.Change(msg.Edit)
+	case prefs.ScaleLive:
+		h.SetScaleLive(msg.Percent)
+	case prefs.Save:
+		h.Save()
+	case prefs.Replace:
+		h.Replace(msg.Settings)
+	case prefs.Persist:
+		h.Persist()
+	case prefs.MarkUnsaved:
+		h.MarkUnsaved()
+	case prefs.MarkSaved:
+		h.MarkSaved()
+	case prefs.Toast:
+		h.Toast(msg.Text, msg.IsErr)
+	case prefs.SetStatus:
+		h.SetStatus(msg.Text)
+	case prefs.OpenMenu:
+		h.OpenMenu(msg.X, msg.Y, msg.Items)
+	case prefs.PickFile:
+		h.PickFile(msg.Title, msg.Done)
+	case prefs.Close:
+		h.Close()
+	case prefs.MarkDirty:
+		h.MarkDirty()
+	case prefs.Later:
+		h.Later(msg.Func)
+	}
+}

@@ -8,6 +8,7 @@
 package settingsui
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
 	"strings"
 
@@ -31,66 +32,39 @@ const (
 )
 
 // MenuItem is one row of the completion menu the dialog asks the host to open.
-type MenuItem struct {
-	Label string
-	Hint  string // what the item is and what it expects, shown under the label
-	Run   func()
-}
+type MenuItem = prefs.MenuItem
 
-// Host is what the dialog needs from the application.
+// Host is what the dialog needs from the application: reads, and Send for
+// everything it asks to be done.
 type Host interface {
 	// Size is the window's size in logical pixels.
 	Size() (width, height int)
 	// Settings are the settings in effect.
 	Settings() settings.Settings
-	// Change edits the settings, applies them and saves the file.
-	Change(edit func(*settings.Settings))
-	// SetScaleLive applies an interface scale while its slider is dragged,
-	// without saving; Save writes the file when the drag ends.
-	SetScaleLive(percent int)
-	Save()
-	// Replace makes s the settings in effect with everything that follows
-	// from them (theme, views, fields), without writing the file.
-	Replace(s settings.Settings)
+	// Send asks the application to do something (see package prefs).
+	Send(msg prefs.Msg)
 	// SettingsPath is the settings file, "" when settings are not kept.
 	SettingsPath() string
 	// SettingsStore reads, stats and writes the settings file.
 	SettingsStore() port.SettingsStore
 	// FontStore finds installed fonts and reads their files.
 	FontStore() port.FontStore
-	// SetFonts switches the interface and code fonts.
+	// SetFonts switches the interface and code fonts; the error says why
+	// they were refused, which is why this is not a message.
 	SetFonts(ui, code w.FontData) error
-	// Toast shows a message over the window; SetStatus replaces the status line.
-	Toast(text string, isErr bool)
-	SetStatus(text string)
 	// TextMenu is the option that gives a field its right-click menu;
 	// changed runs after the menu changed the text.
 	TextMenu(field *TextField, changed func()) Option
-	// OpenMenu opens a menu at a point of the window.
-	OpenMenu(x, y int, items []MenuItem)
 	// ExtraPage is the content of a page the application draws itself, nil
 	// for an id it does not know.
 	ExtraPage(id string) Node
 	// ActionIDs are the ids of the shortcut actions, offered when completing.
 	ActionIDs() []string
 	// Unsaved reports whether changes were applied but not written to the
-	// file (auto-save is off); Persist writes the settings in effect;
-	// MarkUnsaved and MarkSaved tell the host about a text the dialog wrote
-	// or held back itself.
+	// file (auto-save is off).
 	Unsaved() bool
-	Persist()
-	MarkUnsaved()
-	MarkSaved()
-	// PickFile asks the user for a file (a native dialog, else a prompt) and
-	// calls done with its path.
-	PickFile(title string, done func(path string))
 	// Pointer is the pointer position in the window, where a dropdown opens.
 	Pointer() (x, y int)
-	// Close closes the dialog; MarkDirty asks for a redraw; Later runs f on
-	// the UI goroutine.
-	Close()
-	MarkDirty()
-	Later(f func())
 }
 
 // page is one entry of the dialog's list: a form of the settings of a
@@ -171,7 +145,7 @@ func (d *Dialog) View(host Host) Node {
 	cur := d.pageID()
 	return Frag(
 		Row(Bg(w.Shadow)), // dims the window
-		Resizable(&d.Size, min(MinWidth, maxW), min(MinHeight, maxH), maxW, maxH, W(dw), H(dh), Bg(w.Bg), Control("menu"), Shadow(), FloatCenter(), FocusScope(), Modal(), OnDismiss(host.Close),
+		Resizable(&d.Size, min(MinWidth, maxW), min(MinHeight, maxH), maxW, maxH, W(dw), H(dh), Bg(w.Bg), Control("menu"), Shadow(), FloatCenter(), FocusScope(), Modal(), OnDismiss(func() { host.Send(prefs.Close{}) }),
 			d.titleBar(host),
 			If(d.Raw, Col(Grow(1), Pad(16), d.rawView(host))),
 			If(!d.Raw, Row(Grow(1),
@@ -216,7 +190,7 @@ func (d *Dialog) titleBar(host Host) Node {
 		    <icon name="cross" grow="1"/>
 		  </row>
 		</row>`,
-		component.Scope{"search": search, "save": d.saveButton(host), "mode": d.modeSwitch(host), "close": host.Close})
+		component.Scope{"search": search, "save": d.saveButton(host), "mode": d.modeSwitch(host), "close": func() { host.Send(prefs.Close{}) }})
 }
 
 const (
@@ -278,14 +252,14 @@ func (d *Dialog) saveButton(host Host) Node {
 func (d *Dialog) Save(host Host) {
 	if d.rawPending && d.Raw && len(d.Problems) == 0 && host.SettingsPath() != "" {
 		if err := host.SettingsStore().WriteText(host.SettingsPath(), []byte(d.RawText.Text)); err != nil {
-			host.Toast("Could not save settings: "+err.Error(), true)
+			host.Send(prefs.Toast{Text: "Could not save settings: " + err.Error(), IsErr: true})
 			return
 		}
 		d.Stamp(host, host.SettingsPath())
 		d.rawPending = false
-		host.MarkSaved()
+		host.Send(prefs.MarkSaved{})
 		return
 	}
 	d.rawPending = false
-	host.Persist()
+	host.Send(prefs.Persist{})
 }

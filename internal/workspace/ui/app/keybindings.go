@@ -17,4 +17,4 @@ func (a *App) bindingOf(s shortcut) engine.Binding {
 }
 
 // shortcutHint is the key of an action for a menu item: nothing when unbound.
-func (a *App) shortcutHint(id string) string { return shortcutpage.Hint(pageHost{a}, id) }
+func (a *App) shortcutHint(id string) string { return shortcutpage.Hint(a, id) }

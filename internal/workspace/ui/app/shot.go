@@ -112,5 +112,5 @@ func (a *App) applyShotSetting(spec string) {
 		a.shot.err = err
 		return
 	}
-	a.Change(func(s *settings.Settings) { *s = settings.With(*s, key, value) })
+	a.changeSettings(func(s *settings.Settings) { *s = settings.With(*s, key, value) })
 }

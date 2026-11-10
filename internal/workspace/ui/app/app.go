@@ -525,7 +525,7 @@ func (a *App) step(in core.Input) {
 		a.treeKeys(in)
 	}
 	if wasRecording {
-		a.shortcutKeys.RecordKey(pageHost{a}, in)
+		a.shortcutKeys.RecordKey(a, in)
 	} else if !a.overlayOpen() {
 		a.runShortcuts(in)
 	}

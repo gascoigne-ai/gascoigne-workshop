@@ -2,12 +2,14 @@ package ui
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/controller/viewer"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/settingsui"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/shortcutpage"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	"image/color"
 )
 
 // The methods below make the App the host of the settings dialog
@@ -15,19 +17,6 @@ import (
 
 // Settings are the settings in effect.
 func (a *App) Settings() settings.Settings { return a.settings }
-
-// Change edits the settings, applies them and saves the file.
-func (a *App) Change(edit func(*settings.Settings)) { a.changeSettings(edit) }
-
-// SetScaleLive applies an interface scale while its slider is dragged.
-func (a *App) SetScaleLive(percent int) { a.settings.UIScalePct, a.dirty = percent, true }
-
-// Save writes the settings file.
-func (a *App) Save() { a.saveSettings(func(*settings.Settings) {}) }
-
-// Replace makes s the settings in effect, with everything that follows
-// from them, without writing the file.
-func (a *App) Replace(s settings.Settings) { a.applySettings(s) }
 
 // SettingsPath is the settings file, "" when settings are not kept.
 func (a *App) SettingsPath() string { return a.settingsPath }
@@ -37,9 +26,6 @@ func (a *App) SetFonts(ui, code w.FontData) error { return a.ctx.SetFonts(ui, co
 
 // ActionIDs are the ids of the shortcut actions.
 func (a *App) ActionIDs() []string { return a.actionIDs }
-
-// Close closes the settings dialog.
-func (a *App) Close() { a.closeSettings() }
 
 // closeSettings closes the dialog and what is open inside it, so the next
 // opening starts clean.
@@ -58,11 +44,8 @@ func (a *App) closeSettingsNow() {
 	a.prefs.Fresh()
 }
 
-// MarkDirty asks for a redraw.
-func (a *App) MarkDirty() { a.dirty = true }
-
-// PickFile asks for a file and calls done with its path.
-func (a *App) PickFile(title string, done func(path string)) {
+// pickSettingsFile asks for a file and calls done with its path.
+func (a *App) pickSettingsFile(title string, done func(path string)) {
 	a.cancelSettingsFilePick()
 	a.cancelSettingsPick = a.pickFile(title, false, "", done)
 }
@@ -79,11 +62,8 @@ func (a *App) cancelSettingsFilePick() {
 // Pointer is the pointer position in the window.
 func (a *App) Pointer() (int, int) { return a.ctx.In.X, a.ctx.In.Y }
 
-// Later runs f on the UI goroutine.
-func (a *App) Later(f func()) { a.bus.Dispatch(f) }
-
-// OpenMenu opens a menu of items at a point of the window.
-func (a *App) OpenMenu(x, y int, items []settingsui.MenuItem) {
+// openMenuItems opens a menu of a page's items at a point of the window.
+func (a *App) openMenuItems(x, y int, items []prefs.MenuItem) {
 	rows := make([]menuItem, len(items))
 	for i, item := range items {
 		rows[i] = menuItem{label: item.Label, hint: item.Hint, run: item.Run}
@@ -95,9 +75,9 @@ func (a *App) OpenMenu(x, y int, items []settingsui.MenuItem) {
 func (a *App) ExtraPage(id string) Node {
 	switch id {
 	case "colors":
-		return a.colors.View(pageHost{a})
+		return a.colors.View(a)
 	case "shortcuts":
-		return a.shortcutKeys.View(pageHost{a})
+		return a.shortcutKeys.View(a)
 	}
 	return nil
 }
@@ -139,14 +119,8 @@ func (a *App) toggleSettings() {
 // is off).
 func (a *App) Unsaved() bool { return a.settingsUnsaved }
 
-// MarkUnsaved and MarkSaved record what the dialog did with the file itself.
-func (a *App) MarkUnsaved() { a.settingsUnsaved = true }
-
-// MarkSaved says the file now holds the settings in effect.
-func (a *App) MarkSaved() { a.settingsUnsaved = false }
-
-// Persist writes the settings in effect to the file.
-func (a *App) Persist() {
+// persistSettings writes the settings in effect to the file.
+func (a *App) persistSettings() {
 	if a.settingsPath == "" {
 		a.settingsUnsaved = false
 		return
@@ -183,7 +157,7 @@ func (a *App) askSaveSettings() {
 		buttons: []dialogButton{
 			{label: "Cancel", run: a.closeDialog},
 			{label: "Discard", run: func() { a.closeDialog(); a.revertSettings(); a.closeSettingsNow() }},
-			{label: "Save", primary: true, run: func() { a.closeDialog(); a.Persist(); a.closeSettingsNow() }},
+			{label: "Save", primary: true, run: func() { a.closeDialog(); a.persistSettings(); a.closeSettingsNow() }},
 		},
 	}
 }
@@ -193,3 +167,52 @@ func (a *App) SettingsStore() port.SettingsStore { return a.settingFiles }
 
 // FontStore is the installed fonts of this machine.
 func (a *App) FontStore() port.FontStore { return a.fonts }
+
+// Send applies a message of a settings page. The page's host is the App:
+// its other methods only read.
+func (a *App) Send(msg prefs.Msg) {
+	switch msg := msg.(type) {
+	case prefs.Change:
+		a.changeSettings(msg.Edit)
+	case prefs.Edit:
+		a.saveSettings(msg.Edit)
+	case prefs.ScaleLive:
+		a.settings.UIScalePct, a.dirty = msg.Percent, true
+	case prefs.Save:
+		a.saveSettings(func(*settings.Settings) {})
+	case prefs.Replace:
+		a.applySettings(msg.Settings)
+	case prefs.Persist:
+		a.persistSettings()
+	case prefs.MarkUnsaved:
+		a.settingsUnsaved = true
+	case prefs.MarkSaved:
+		a.settingsUnsaved = false
+	case prefs.Toast:
+		a.toast(msg.Text, msg.IsErr)
+	case prefs.SetStatus:
+		a.status = msg.Text
+	case prefs.OpenMenu:
+		a.openMenuItems(msg.X, msg.Y, msg.Items)
+	case prefs.PickFile:
+		a.pickSettingsFile(msg.Title, msg.Done)
+	case prefs.Close:
+		a.closeSettings()
+	case prefs.MarkDirty:
+		a.dirty = true
+	case prefs.Later:
+		a.bus.Dispatch(msg.Func)
+	}
+}
+
+// Color is the color in effect for a token.
+func (a *App) Color(tok w.Token) color.RGBA { return a.ctx.Th.Color(tok) }
+
+// Actions are the shortcut actions that have keys, in display order.
+func (a *App) Actions() []shortcutpage.Action {
+	actions := make([]shortcutpage.Action, len(shortcuts))
+	for i, s := range shortcuts {
+		actions[i] = s.action()
+	}
+	return actions
+}

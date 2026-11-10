@@ -7,6 +7,7 @@ package shortcutpage
 import (
 	"errors"
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
 	"runtime"
 	"strings"
 
@@ -29,9 +30,8 @@ type Action struct {
 type Host interface {
 	// Settings are the settings in effect.
 	Settings() settings.Settings
-	// Edit changes the settings, applies them and saves them as the user
-	// has chosen.
-	Edit(edit func(*settings.Settings))
+	// Send asks the application to change the settings (prefs.Edit).
+	Send(msg prefs.Msg)
 	// Actions are the actions that have keys, in display order.
 	Actions() []Action
 	// TextMenu is the right-click menu of a text field.
@@ -174,7 +174,7 @@ func (p *Page) Replace(host Host, id string) {
 
 // Reset gives the action its default key back.
 func (p *Page) Reset(host Host, id string) {
-	host.Edit(func(current *settings.Settings) { delete(current.Shortcuts, id) })
+	host.Send(prefs.Edit{Edit: func(current *settings.Settings) { delete(current.Shortcuts, id) }})
 	delete(p.notes, id)
 }
 
@@ -256,7 +256,7 @@ func (p *Page) record(host Host, id string, binding engine.Binding) {
 
 // set stores a binding; one equal to the default is not stored.
 func (p *Page) set(host Host, id string, binding engine.Binding) {
-	host.Edit(func(current *settings.Settings) {
+	host.Send(prefs.Edit{Edit: func(current *settings.Settings) {
 		for _, action := range host.Actions() {
 			if action.ID == id && binding == action.Default {
 				delete(current.Shortcuts, id)
@@ -267,7 +267,7 @@ func (p *Page) set(host Host, id string, binding engine.Binding) {
 			current.Shortcuts = map[string]string{}
 		}
 		current.Shortcuts[id] = binding.String()
-	})
+	}})
 }
 
 // matches reports whether an action's name or its key text contains the

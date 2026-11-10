@@ -2,6 +2,7 @@ package settingsui
 
 import (
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fontfamily"
@@ -34,18 +35,18 @@ func (d *Dialog) SetFont(host Host, role FontRole, name string) {
 	if name != "" {
 		family, ok := fontfamily.Find(d.Families, name)
 		if !ok {
-			host.Toast(fmt.Sprintf("No installed font is called %q", name), true)
+			host.Send(prefs.Toast{Text: fmt.Sprintf("No installed font is called %q", name), IsErr: true})
 			return
 		}
 		name = family.Name
 	}
-	host.Change(func(s *settings.Settings) {
+	host.Send(prefs.Change{Edit: func(s *settings.Settings) {
 		if role == FontCode {
 			s.CodeFont = name
 		} else {
 			s.UIFont = name
 		}
-	})
+	}})
 	d.ApplyFonts(host)
 }
 
@@ -69,16 +70,16 @@ func (d *Dialog) ApplyFonts(host Host) {
 		}
 		regular, bold, err := host.FontStore().Load(family)
 		if err != nil {
-			host.SetStatus(err.Error())
+			host.Send(prefs.SetStatus{Text: err.Error()})
 			continue
 		}
 		chosen[role] = w.FontData{Regular: regular, Bold: bold}
 	}
 	if err := host.SetFonts(chosen[FontUI], chosen[FontCode]); err != nil {
-		host.SetStatus("Font not usable: " + err.Error())
+		host.Send(prefs.SetStatus{Text: "Font not usable: " + err.Error()})
 		_ = host.SetFonts(w.FontData{}, w.FontData{}) // the built-in fonts always load
 	}
-	host.MarkDirty()
+	host.Send(prefs.MarkDirty{})
 }
 
 // ScanFonts reads the installed fonts in the background and hands them to
@@ -87,6 +88,6 @@ func (d *Dialog) ScanFonts(host Host) {
 	store := host.FontStore()
 	go func() {
 		families := store.Scan()
-		host.Later(func() { d.FontsScanned(host, families) })
+		host.Send(prefs.Later{Func: func() { d.FontsScanned(host, families) }})
 	}()
 }

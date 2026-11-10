@@ -2922,7 +2922,7 @@ func openSettingsMenu(t *testing.T) (*App, string) {
 }
 
 func typeColor(a *App, tok core.Token, row int, text string) {
-	in := a.colors.Input(pageHost{a}, tok)
+	in := a.colors.Input(a, tok)
 	click(a, colorFieldX, colorRow0Y+row*core.RowH)
 	in.SelectAll()
 	a.typeText(text)
@@ -2994,8 +2994,8 @@ func TestResetButtonsRestoreTheDefaults(t *testing.T) {
 	typeColor(a, core.Selection, 0, "#223344")
 	typeColor(a, core.FindMatch, 1, "#334455")
 	click(a, colorResetX, colorRow0Y)
-	if a.ctx.Th.Color(core.Selection) != def || a.colors.Input(pageHost{a}, core.Selection).Text != theming.FormatHex(def) {
-		t.Fatalf("selection %v, field %q", a.ctx.Th.Color(core.Selection), a.colors.Input(pageHost{a}, core.Selection).Text)
+	if a.ctx.Th.Color(core.Selection) != def || a.colors.Input(a, core.Selection).Text != theming.FormatHex(def) {
+		t.Fatalf("selection %v, field %q", a.ctx.Th.Color(core.Selection), a.colors.Input(a, core.Selection).Text)
 	}
 	if a.ctx.Th.Color(core.FindMatch) != core.RGB(0x334455) {
 		t.Fatal("resetting one color must leave the others")
@@ -3018,8 +3018,8 @@ func TestSwitchingThemeShowsThatThemesColorsAndKeepsEachThemesOverrides(t *testi
 	if a.ctx.Th.Color(core.Selection) != appearance.ThemeFor("light", "medium").Color(core.Selection) {
 		t.Fatal("the dark override must not leak into the light theme")
 	}
-	if a.colors.Input(pageHost{a}, core.Selection).Text != theming.FormatHex(appearance.ThemeFor("light", "medium").Color(core.Selection)) {
-		t.Fatalf("the field must show the light theme's color, got %q", a.colors.Input(pageHost{a}, core.Selection).Text)
+	if a.colors.Input(a, core.Selection).Text != theming.FormatHex(appearance.ThemeFor("light", "medium").Color(core.Selection)) {
+		t.Fatalf("the field must show the light theme's color, got %q", a.colors.Input(a, core.Selection).Text)
 	}
 	clickText(t, a, "Dark", 0) // back to Dark
 	if a.ctx.Th.Color(core.Selection) != core.RGB(0x223344) {
@@ -3088,8 +3088,8 @@ func TestRecordingANewBindingRebindsTheAction(t *testing.T) {
 	if len(a.list.Tabs) != 1 {
 		t.Fatal("Ctrl+Q closes a tab")
 	}
-	if shortcutpage.KeyText(pageHost{a}, "close-tab") != "Ctrl+Q" {
-		t.Fatalf("text = %q", shortcutpage.KeyText(pageHost{a}, "close-tab"))
+	if shortcutpage.KeyText(a, "close-tab") != "Ctrl+Q" {
+		t.Fatalf("text = %q", shortcutpage.KeyText(a, "close-tab"))
 	}
 }
 
@@ -3111,8 +3111,8 @@ func TestEscapeCancelsRecordingAndBackspaceUnbinds(t *testing.T) {
 	if len(a.list.Tabs) != 2 {
 		t.Fatal("an unbound action fires nothing")
 	}
-	if shortcutpage.KeyText(pageHost{a}, "close-tab") != "Unbound" {
-		t.Fatalf("text = %q", shortcutpage.KeyText(pageHost{a}, "close-tab"))
+	if shortcutpage.KeyText(a, "close-tab") != "Unbound" {
+		t.Fatalf("text = %q", shortcutpage.KeyText(a, "close-tab"))
 	}
 }
 
@@ -3148,9 +3148,9 @@ func TestRebindingToTheDefaultStoresNothingAndResetRestoresIt(t *testing.T) {
 	a, _ := newTestApp(t)
 	a.shortcutKeys.Start("close-tab")
 	a.step(combo(ebiten.KeyQ, true, false, false))
-	a.shortcutKeys.Reset(pageHost{a}, "close-tab")
-	if _, ok := a.settings.Shortcuts["close-tab"]; ok || shortcutpage.KeyText(pageHost{a}, "close-tab") != "Ctrl+W" {
-		t.Fatalf("shortcuts %v text %q", a.settings.Shortcuts, shortcutpage.KeyText(pageHost{a}, "close-tab"))
+	a.shortcutKeys.Reset(a, "close-tab")
+	if _, ok := a.settings.Shortcuts["close-tab"]; ok || shortcutpage.KeyText(a, "close-tab") != "Ctrl+W" {
+		t.Fatalf("shortcuts %v text %q", a.settings.Shortcuts, shortcutpage.KeyText(a, "close-tab"))
 	}
 	a.shortcutKeys.Start("close-tab")
 	a.step(combo(ebiten.KeyW, true, false, false)) // its own default
@@ -3642,7 +3642,7 @@ func TestAnySettingsEditThatChangesTheResponseViewRefreshesOpenTabs(t *testing.T
 		t.Fatal("start: the tab should not be raw")
 	}
 
-	pageHost{a}.Edit(func(s *settings.Settings) { s.ResponseView = "raw" })
+	a.saveSettings(func(s *settings.Settings) { s.ResponseView = "raw" })
 
 	if !tab.look.Raw() {
 		t.Fatal("the open tab kept its old response view")

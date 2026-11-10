@@ -12,7 +12,7 @@ func TestClosingTheSettingsClosesAFilePromptOpenedFromThem(t *testing.T) {
 	a, _ := openSettingsMenu(t)
 	a.files = fakeDialog{} // unavailable: the path prompt is used
 	picked := ""
-	a.PickFile("Choose CA certificates", func(path string) { picked = path })
+	a.pickSettingsFile("Choose CA certificates", func(path string) { picked = path })
 	if a.dialog == nil {
 		t.Fatal("no prompt")
 	}
@@ -34,7 +34,7 @@ func TestClosingTheSettingsCancelsTheNativeFileDialogAndIgnoresItsAnswer(t *test
 		return "", ctx.Err()
 	}}
 	called := false
-	a.PickFile("Choose", func(string) { called = true })
+	a.pickSettingsFile("Choose", func(string) { called = true })
 	a.closeSettingsNow()
 	select {
 	case <-finished:

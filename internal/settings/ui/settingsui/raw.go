@@ -2,6 +2,7 @@ package settingsui
 
 import (
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/jsonview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
@@ -36,7 +37,7 @@ func (d *Dialog) Poll(host Host) {
 	d.stamp = now
 	data, err := host.SettingsStore().ReadText(path)
 	if err != nil {
-		host.Toast("Cannot read settings.json: "+err.Error(), true)
+		host.Send(prefs.Toast{Text: "Cannot read settings.json: " + err.Error(), IsErr: true})
 		return
 	}
 	parsed, problems := settings.Parse(data, host.Settings())
@@ -46,10 +47,10 @@ func (d *Dialog) Poll(host Host) {
 		d.Problems = problems
 	}
 	if len(problems) > 0 {
-		host.Toast("settings.json has problems and was not applied: "+problems[0].Message, true)
+		host.Send(prefs.Toast{Text: "settings.json has problems and was not applied: " + problems[0].Message, IsErr: true})
 		return
 	}
-	host.Replace(parsed)
+	host.Send(prefs.Replace{Settings: parsed})
 }
 
 // OpenRaw switches the dialog to the text of settings.json.
@@ -95,19 +96,19 @@ func (d *Dialog) RawEdited(host Host) {
 		return
 	}
 	parsed, _ := settings.Parse([]byte(text), host.Settings())
-	host.Replace(parsed)
+	host.Send(prefs.Replace{Settings: parsed})
 	path := host.SettingsPath()
 	if path == "" {
 		return
 	}
 	if !parsed.AutoSave { // held back until the user saves
 		d.rawPending = true
-		host.MarkUnsaved()
+		host.Send(prefs.MarkUnsaved{})
 		return
 	}
 	d.rawPending = false
 	if err := host.SettingsStore().WriteText(path, []byte(text)); err != nil {
-		host.Toast("Could not save settings: "+err.Error(), true)
+		host.Send(prefs.Toast{Text: "Could not save settings: " + err.Error(), IsErr: true})
 		return
 	}
 	d.Stamp(host, path)
@@ -150,7 +151,7 @@ func (d *Dialog) complete(host Host, quiet bool) {
 	suggestions := settings.Complete(text, len(string(runes[:caret])), host.ActionIDs())
 	if len(suggestions) == 0 {
 		if !quiet {
-			host.Toast("Nothing to complete here", false)
+			host.Send(prefs.Toast{Text: "Nothing to complete here", IsErr: false})
 		}
 		return
 	}
@@ -165,11 +166,11 @@ func (d *Dialog) complete(host Host, quiet bool) {
 		}}
 	}
 	if x, y, ok := d.RawText.CaretAt(); ok {
-		host.OpenMenu(x, y, items) // just below the caret
+		host.Send(prefs.OpenMenu{X: x, Y: y, Items: items}) // just below the caret
 		return
 	}
 	width, height := host.Size()
-	host.OpenMenu(width/2-DialogWidth/2+DialogNavW+40, height/2-DialogMaxH/4, items)
+	host.Send(prefs.OpenMenu{X: width/2 - DialogWidth/2 + DialogNavW + 40, Y: height/2 - DialogMaxH/4, Items: items})
 }
 
 // RawFocused reports whether the raw text has the keyboard focus.

@@ -99,7 +99,7 @@ func TestCheckBinding(t *testing.T) {
 		{"Alt with a letter is fine", "close-tab", "Alt+Q", ""},
 	}
 	for _, tt := range tests {
-		err := shortcutpage.Check(pageHost{a}, tt.id, mk(tt.combo))
+		err := shortcutpage.Check(a, tt.id, mk(tt.combo))
 		switch {
 		case tt.name == "Delete alone is fine":
 			// Delete is the default of "delete-row": taken, so it names that action
@@ -114,7 +114,7 @@ func TestCheckBinding(t *testing.T) {
 			t.Errorf("%s: %q gave %v, want an error mentioning %q", tt.name, tt.combo, err, tt.wantErr)
 		}
 	}
-	if err := shortcutpage.Check(pageHost{a}, "close-tab", mk("Escape")); err == nil {
+	if err := shortcutpage.Check(a, "close-tab", mk("Escape")); err == nil {
 		t.Error("plain Escape belongs to closing overlays")
 	}
 }

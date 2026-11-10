@@ -1,6 +1,7 @@
 package shortcutpage
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
 	"strings"
 	"testing"
 
@@ -48,5 +49,11 @@ func TestSearchMatchesTheActionNameOrTheKey(t *testing.T) {
 	page.search = NewTextField("zzzz")
 	if !strings.Contains(Dump(page.View(&fakeHost{current: settings.Default()})), "No shortcut matches") {
 		t.Fatal("no empty-result note")
+	}
+}
+
+func (host *fakeHost) Send(msg prefs.Msg) {
+	if edit, ok := msg.(prefs.Edit); ok {
+		host.Edit(edit.Edit)
 	}
 }

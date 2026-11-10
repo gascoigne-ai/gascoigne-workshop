@@ -5,6 +5,7 @@ package colorpage
 
 import (
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/theming"
 	"image/color"
@@ -18,9 +19,8 @@ import (
 type Host interface {
 	// Settings are the settings in effect.
 	Settings() settings.Settings
-	// Edit changes the settings, applies them and saves them as the user
-	// has chosen.
-	Edit(edit func(*settings.Settings))
+	// Send asks the application to change the settings (prefs.Edit).
+	Send(msg prefs.Msg)
 	// Color is the color in effect for a token.
 	Color(tok w.Token) color.RGBA
 	// TextMenu is the right-click menu of a text field.
@@ -82,7 +82,7 @@ func (p *Page) edited(host Host, c appearance.CustomColor) {
 		return
 	}
 	p.setNote(c.Token, "")
-	host.Edit(func(s *settings.Settings) {
+	host.Send(prefs.Edit{Edit: func(s *settings.Settings) {
 		id := appearance.ThemeIDOf(s.Theme)
 		if s.Colors == nil {
 			s.Colors = map[string]map[string]string{}
@@ -91,21 +91,21 @@ func (p *Page) edited(host Host, c appearance.CustomColor) {
 			s.Colors[id] = map[string]string{}
 		}
 		s.Colors[id][string(c.Token)] = theming.FormatHex(col)
-	})
+	}})
 }
 
 // resetColor drops the override of one color in the current theme.
 func (p *Page) reset(host Host, tok w.Token) {
-	host.Edit(func(s *settings.Settings) {
+	host.Send(prefs.Edit{Edit: func(s *settings.Settings) {
 		delete(s.Colors[appearance.ThemeIDOf(s.Theme)], string(tok))
-	})
+	}})
 	delete(p.inputs, tok)
 	p.setNote(tok, "")
 }
 
 // resetColors drops every color override of the current theme.
 func (p *Page) resetAll(host Host) {
-	host.Edit(func(s *settings.Settings) { delete(s.Colors, appearance.ThemeIDOf(s.Theme)) })
+	host.Send(prefs.Edit{Edit: func(s *settings.Settings) { delete(s.Colors, appearance.ThemeIDOf(s.Theme)) }})
 	p.Forget()
 }
 

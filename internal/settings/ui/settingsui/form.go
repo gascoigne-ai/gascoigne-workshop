@@ -2,6 +2,7 @@ package settingsui
 
 import (
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
 	"strconv"
 	"strings"
 
@@ -67,7 +68,7 @@ func capitalized(id string) string {
 
 // choice is one chip of a segmented choice: gold when selected.
 func choice(host Host, label string, selected bool, edit func(*settings.Settings)) Node {
-	apply := OnClick(func() { host.Change(edit) })
+	apply := OnClick(func() { host.Send(prefs.Change{Edit: edit}) })
 	if selected {
 		return PrimaryButton(label, Grow(1), apply)
 	}
@@ -103,8 +104,8 @@ func (d *Dialog) themeChips(host Host) Node {
 func (d *Dialog) scaleControl(host Host) Node {
 	percent := int(host.Settings().UIScale()*100 + 0.5)
 	return Row(H(w.RowH), Gap(8),
-		Slider(&d.scale, appearance.ScaleMin, appearance.ScaleMax, appearance.ScaleStep, percent, OnSlide(host.SetScaleLive), // live: the UI resizes while dragging
-			SliderMid(settings.DefaultUIScalePct), OnSlideEnd(func(int) { host.Save() })),
+		Slider(&d.scale, appearance.ScaleMin, appearance.ScaleMax, appearance.ScaleStep, percent, OnSlide(func(percent int) { host.Send(prefs.ScaleLive{Percent: percent}) }), // live: the UI resizes while dragging
+			SliderMid(settings.DefaultUIScalePct), OnSlideEnd(func(int) { host.Send(prefs.Save{}) })),
 		Text(fmt.Sprintf("%d%%", d.scale.Shown(percent)), W(40), Color(w.Muted)),
 	)
 }
@@ -158,7 +159,7 @@ func (d *Dialog) Edited(host Host, key string) {
 		value = number
 	}
 	d.setNote(key, "")
-	host.Change(func(s *settings.Settings) { *s = settings.With(*s, key, value) })
+	host.Send(prefs.Change{Edit: func(s *settings.Settings) { *s = settings.With(*s, key, value) }})
 }
 
 func (d *Dialog) setNote(key, note string) {
@@ -184,7 +185,7 @@ func (d *Dialog) textControl(host Host, field settings.Field) Node {
 
 // Reset puts the default back for key and drops it from the file.
 func (d *Dialog) Reset(host Host, key string) {
-	host.Change(func(s *settings.Settings) { settings.Reset(s, key) })
+	host.Send(prefs.Change{Edit: func(s *settings.Settings) { settings.Reset(s, key) }})
 	d.inputs, d.notes = nil, nil
 	if key == "uiFont" || key == "codeFont" {
 		d.ApplyFonts(host)
@@ -319,8 +320,8 @@ func (d *Dialog) ChooseFile(host Host, key string) {
 	if !ok {
 		return
 	}
-	host.PickFile("Choose "+field.Title, func(path string) {
+	host.Send(prefs.PickFile{Title: "Choose " + field.Title, Done: func(path string) {
 		*d.Input(host, key) = NewTextField(path)
 		d.Edited(host, key)
-	})
+	}})
 }

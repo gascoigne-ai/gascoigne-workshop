@@ -26,7 +26,7 @@ func TestRecordingATakenKeyOffersReplaceAndSavesNothingYet(t *testing.T) {
 	if len(a.settings.Shortcuts) != 0 {
 		t.Fatalf("shortcuts = %v, want nothing saved before the user replaces", a.settings.Shortcuts)
 	}
-	if dump := view.Dump(a.shortcutKeys.View(pageHost{a})); !strings.Contains(dump, "Used by New request") || !strings.Contains(dump, "Replace") {
+	if dump := view.Dump(a.shortcutKeys.View(a)); !strings.Contains(dump, "Used by New request") || !strings.Contains(dump, "Replace") {
 		t.Fatalf("the row shows no conflict:\n%s", dump)
 	}
 }
@@ -35,9 +35,9 @@ func TestReplaceGivesTheKeyToThisActionAndUnbindsTheOther(t *testing.T) {
 	a, path := newTestApp(t)
 	a.shortcutKeys.Start("close-tab")
 	a.step(combo(ebiten.KeyT, true, false, false))
-	a.shortcutKeys.Replace(pageHost{a}, "close-tab")
-	if shortcutpage.KeyText(pageHost{a}, "close-tab") != "Ctrl+T" || shortcutpage.KeyText(pageHost{a}, "new-request") != "Unbound" {
-		t.Fatalf("close-tab %q, new-request %q", shortcutpage.KeyText(pageHost{a}, "close-tab"), shortcutpage.KeyText(pageHost{a}, "new-request"))
+	a.shortcutKeys.Replace(a, "close-tab")
+	if shortcutpage.KeyText(a, "close-tab") != "Ctrl+T" || shortcutpage.KeyText(a, "new-request") != "Unbound" {
+		t.Fatalf("close-tab %q, new-request %q", shortcutpage.KeyText(a, "close-tab"), shortcutpage.KeyText(a, "new-request"))
 	}
 	if a.shortcutKeys.PendingCount() != 0 {
 		t.Fatal("the pending choice stayed")
@@ -59,13 +59,13 @@ func TestRecordingAgainDropsAPendingReplace(t *testing.T) {
 
 func TestClearUnbindsAnActionAndResetBringsTheDefaultBack(t *testing.T) {
 	a, _ := newTestApp(t)
-	a.shortcutKeys.Clear(pageHost{a}, "close-tab")
-	if shortcutpage.KeyText(pageHost{a}, "close-tab") != "Unbound" {
-		t.Fatalf("text = %q", shortcutpage.KeyText(pageHost{a}, "close-tab"))
+	a.shortcutKeys.Clear(a, "close-tab")
+	if shortcutpage.KeyText(a, "close-tab") != "Unbound" {
+		t.Fatalf("text = %q", shortcutpage.KeyText(a, "close-tab"))
 	}
-	a.shortcutKeys.Reset(pageHost{a}, "close-tab")
-	if shortcutpage.KeyText(pageHost{a}, "close-tab") != "Ctrl+W" {
-		t.Fatalf("text = %q", shortcutpage.KeyText(pageHost{a}, "close-tab"))
+	a.shortcutKeys.Reset(a, "close-tab")
+	if shortcutpage.KeyText(a, "close-tab") != "Ctrl+W" {
+		t.Fatalf("text = %q", shortcutpage.KeyText(a, "close-tab"))
 	}
 }
 
@@ -76,7 +76,7 @@ func TestAKeyThatTypesTextIsAWarningNotARefusal(t *testing.T) {
 	if a.settings.Shortcuts["close-tab"] != "J" {
 		t.Fatalf("shortcuts = %v", a.settings.Shortcuts)
 	}
-	if !strings.Contains(view.Dump(a.shortcutKeys.View(pageHost{a})), "text") {
+	if !strings.Contains(view.Dump(a.shortcutKeys.View(a)), "text") {
 		t.Fatal("no warning on the row")
 	}
 }

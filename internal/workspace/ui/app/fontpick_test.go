@@ -125,7 +125,7 @@ func TestReopeningTheSettingsStartsWithTheFontListClosedAndWorking(t *testing.T)
 	a, _ := openSettingsPage(t, "appearance")
 	a.prefs.Families = testFamilies(t)
 	a.prefs.OpenFontList(a, settingsui.FontUI)
-	a.Close() // the dialog's own close button
+	a.closeSettings() // the dialog's own close button
 	if a.prefs.FontListOpen() {
 		t.Fatal("the list stayed open behind a closed dialog")
 	}
