@@ -530,24 +530,7 @@ func (a *App) step(in core.Input) {
 		a.runShortcuts(in)
 	}
 	if in.Escape && !wasRecording { // one step per press: overlays, the settings menu, a cell edit, find, a running request
-		switch {
-		case a.ctxMenu != nil:
-			a.closeMenu()
-		case a.dialog != nil:
-			a.closeDialog()
-		case a.calls.Shown():
-			a.calls.Close()
-		case a.prefs.FontListOpen():
-			a.prefs.CloseFontList()
-		case a.menu:
-			a.closeSettings()
-		case a.edit != nil:
-			a.cancelEdit()
-		case a.cur().look.FindOpen:
-			a.closeFind(a.cur())
-		default:
-			a.cancelSend(a.cur())
-		}
+		a.escape()
 	}
 	if (in.Undo || in.Redo) && !a.overlayOpen() && !a.textFocused() {
 		if p, t, ok := a.visibleTable(); ok {

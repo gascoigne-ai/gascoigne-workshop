@@ -2,6 +2,7 @@ package ui
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/ui/mcpform"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/overlay"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/toasts"
 	"runtime"
 	"strings"
@@ -362,4 +363,35 @@ func (a *App) dialogForm(d *dialog) Node {
 		return nil
 	}
 	return d.form.View(a)
+}
+
+// openLayers are the things Escape can close right now.
+func (a *App) openLayers() overlay.Open {
+	var open overlay.Open
+	open[overlay.ContextMenu] = a.ctxMenu != nil
+	open[overlay.Dialog] = a.dialog != nil
+	open[overlay.CallLog] = a.calls.Shown()
+	open[overlay.FontList] = a.prefs.FontListOpen()
+	open[overlay.Settings] = a.menu
+	open[overlay.CellEdit] = a.edit != nil
+	open[overlay.FindBar] = a.cur().look.FindOpen
+	open[overlay.Request] = true // the last resort: cancel what is being sent
+	return open
+}
+
+// escape does one step of Escape: it closes the topmost open layer.
+func (a *App) escape() {
+	closers := [...]func(){
+		overlay.ContextMenu: a.closeMenu,
+		overlay.Dialog:      a.closeDialog,
+		overlay.CallLog:     a.calls.Close,
+		overlay.FontList:    a.prefs.CloseFontList,
+		overlay.Settings:    a.closeSettings,
+		overlay.CellEdit:    a.cancelEdit,
+		overlay.FindBar:     func() { a.closeFind(a.cur()) },
+		overlay.Request:     func() { a.cancelSend(a.cur()) },
+	}
+	if layer, ok := a.openLayers().Top(); ok {
+		closers[layer]()
+	}
 }
