@@ -94,6 +94,8 @@ The toolkit packages are public and independent of the application (`uitoolkit/c
 | `internal/collection/model/collection`, `openapi`, `postman`, `miniyaml` | tree filtering; the importers and the Postman exporter, pure functions over bytes |
 | `internal/collection/port` | `Store`, where a collection is saved (`store.Files` implements it) |
 | `internal/collection/adapter/store` | the folder-of-files format |
+| `internal/collection/model/clientconfig`, `internal/collection/adapter/clientfile` | the `.workshop.{yaml,json,toml}` client config: `Parse` by extension, `Merge`, `Config.Collection`; `clientfile.Files` reads the global and the local file (`collection/port.ClientConfigs`) |
+| `internal/request/adapter/exampleserver` | `cmd/example-server`: REST, WebSocket, SSE, MCP and gRPC examples, one port each (`Listen`, `Serve`) |
 | `internal/response/model/jsonview`, `internal/response/model/textfmt` | JSON tokens and lines (`Kind.Style` names the theme style); text helpers |
 | `internal/response/ui/respview`, `internal/response/ui/sentlog` | response views and helpers; the sent-request list behind a `Host` |
 | `internal/response/port` | `Sent` and `SentStore`, the stored log of sent requests; `BodyPreview`, shows a body in the browser (`preview.Browser` implements it); `History` and `Entry`, the saved responses and the sent log of one folder (`history.Dir` implements it) |
@@ -115,7 +117,42 @@ Go allows one package per directory and a method cannot be declared in another p
 
 `model.Request` is protocol-neutral: `Protocol` picks the implementation, `Method` only matters for REST. `{{name}}` in a URL is expanded from the collection vars (`model.Expand`) and the params table is folded into the URL with `model.WithParams`; `model.ParamsFromURL` goes the other way (`model.MergeParams` rebuilds the table after a URL edit, keeping descriptions and disabled rows), so the URL bar and the Params table stay in sync. The caller does both before sending.
 
-`proto.Registry` is a name-to-`Protocol` table (`rest`, `websocket`, `mcp`). `Send` returns an error only for misuse (unknown protocol, malformed method or URL). Transport failures arrive in `Response.Err` so the UI always has a value to render. `rest` uses `net/http`, keeps at most 32 MiB of body, and skips disabled header rows. The request body is encoded by a table keyed by `Request.BodyType` (`none`, `json`, `text`, `form`, `multipart`; "" sends `Body` as is with no Content-Type) which also gives the automatic Content-Type; an enabled `Content-Type` header of the user replaces it. Form and multipart bodies use the enabled, named rows of `Request.Form`. `websocket` and `mcp` are stubs answering "not implemented yet".
+`proto.Registry` is a name-to-`Protocol` table (`rest`, `websocket`, `mcp`, `sse`, `grpc`). `Send` returns an error only for misuse (unknown protocol, malformed method or URL). Transport failures arrive in `Response.Err` so the UI always has a value to render. `rest` uses `net/http`, keeps at most 32 MiB of body, and skips disabled header rows. The request body is encoded by a table keyed by `Request.BodyType` (`none`, `json`, `text`, `form`, `multipart`; "" sends `Body` as is with no Content-Type) which also gives the automatic Content-Type; an enabled `Content-Type` header of the user replaces it. Form and multipart bodies use the enabled, named rows of `Request.Form`. `websocket`, `sse`, `mcp` and `grpc` are streaming or call clients of their own (decisions 7, 10 and 13).
+
+## Example server and client config
+
+Decision 38. `make example-server` runs `cmd/example-server` (`internal/request/adapter/exampleserver`), one port per protocol on `127.0.0.1`: REST 8081 (`/echo`, `/status/{code}`, `/delay/{ms}`, `/auth`), WebSocket 8082 (echo), SSE 8083 (`/events?count=&interval=`), MCP 8084 (`/mcp`, tools `echo` and `add`) and gRPC 8085 (health and reflection). Flags change host and ports; port 0 picks a free one. The services are a table (`services`), so a new protocol is a new row.
+
+The default build's `collection.Sample()` is the GitHub sample plus an `Example Server` folder with a request per protocol on those ports (a test in `exampleserver` keeps them in step), and it reads no config file. `make release` builds `bin/workshop-release` with `-tags release`: `Sample()` is empty and `cmd/workshop` hands `clientfile.Files` to the App (`Options.Clients`). With no workspace (flag or remembered), the App opens the client config's tree instead of the sample; an unreadable config is named in the status line and the sample stays. `make check` also vets and tests with the tag.
+
+A client config is `.workshop.yaml` (or `.yml`, `.json`, `.toml`) in the settings directory (global) and in the working directory (local). An entry of the same name in the local file replaces the global one; two files in one directory are an error. YAML is read by `miniyaml` (a subset), TOML by `github.com/BurntSushi/toml`, JSON by `encoding/json`; all three become one generic tree that is decoded strictly, so a misspelled key is an error. The window holds one collection, so each configured collection becomes a folder (variables on the folder, environments on the root) and servers become requests in a `Servers` folder.
+
+```yaml
+servers:
+  - name: Local REST
+    protocol: rest
+    url: http://127.0.0.1:8081/echo
+    auth: {type: bearer, token: secret}
+collections:
+  - name: Demo
+    vars: {baseUrl: http://127.0.0.1:8081}
+    envs:
+      - name: Dev
+        vars: {token: abc}
+    requests:
+      - name: Echo
+        protocol: rest
+        method: POST
+        url: "{{baseUrl}}/echo"
+        headers: {X-Trace: "1"}
+        body_type: json
+        body: '{"hello": "world"}'
+    folders:
+      - name: More
+        requests: []
+```
+
+Request keys: `name`, `protocol`, `method`, `url`, `params` and `headers` (maps), `body`, `body_type`, `timeout` (seconds), `auth` (`type`, `token`, `user`, `password`, `key_name`, `key_value`, `key_in`).
 
 ## Collection tree
 
@@ -213,7 +250,6 @@ Row(H(urlH), PadX(w.Pad), PadY(8), Gap(8), Bg(w.Bg),
 - No saving or loading of collections; the sample collection is built in (`ui.SampleCollection`).
 - No text wrapping in the code view. Fractional scales round logical text metrics to whole pixels.
 - VML is Go and templates: the Go builders and the `.vml` templates of `uitoolkit/component` (an XML parser over the same tables) emit the same `view.El` tree.
-- WebSocket and MCP are registry stubs.
 
 - **Spacing rhythm**: one `Pad` (12 px) is the inset between panes and content; bars (sidebar header, tabs, toolbars, status) are separated with one token, `Border` (never `Rule`, which is for outlines and table headers). The request and response panes both start their first row `Pad` below the pane tabs, so rows line up across the divider (`TestRequestAndResponsePanesShareTheirFirstRowBand`).
 
@@ -266,7 +302,7 @@ Row(H(urlH), PadX(w.Pad), PadY(8), Gap(8), Bg(w.Bg),
 
 - **WebSocket auto-reconnect**: the `Auto-reconnect` chip in the Messages toolbar sets `reqTab.reconnect` (per tab, not persisted). `wantOpen` records that the user wants the connection (set by `connect`, cleared by `disconnect`); when the session ends or a connect fails while both are set, `scheduleRetry` logs it and a timer sends a `retry` wsEvent after `retryDelay`. While retrying the button reads Disconnect, which stops it.
 
-- **Workspace on disk** (`internal/collection/adapter/store`, `internal/workspace/ui/app/workspace.go`): `store.Save/Load` write and read the collection tree (format in decisions 9; atomic writes, unchanged files are not rewritten). The app loads `-workspace DIR`, else the remembered `settings.workspace`, else keeps the built-in sample in memory; a folder that fails to load is reported and never overwritten. `Ctrl+S` (`save` shortcut) saves; the first save without a workspace goes to `settings.DefaultWorkspace()` and is remembered. Once a workspace is set, `workspaceTick` saves by itself after the collection stays unchanged for `saveDebounce` (1 s); saving also clears the tabs' dirty marks.
+- **Workspace on disk** (`internal/collection/adapter/store`, `internal/workspace/ui/app/workspace.go`): `store.Save/Load` write and read the collection tree (format in decisions 9; atomic writes, unchanged files are not rewritten). The app loads `-workspace DIR`, else the remembered `settings.workspace`, else, in a release build, the client config, else keeps the built-in sample in memory; a folder that fails to load is reported and never overwritten. `Ctrl+S` (`save` shortcut) saves; the first save without a workspace goes to `settings.DefaultWorkspace()` and is remembered. Once a workspace is set, `workspaceTick` saves by itself after the collection stays unchanged for `saveDebounce` (1 s); saving also clears the tabs' dirty marks.
 
 - **cURL import**: `proto.ParseCurl` (next to `proto.Curl`) splits the command like a POSIX shell (quotes, `$'..'`, line continuations) and maps the flags to a REST request: `-X -H -d/--data* -F -u --url -A -b -e -m -L -I`, bearer headers become Bearer auth, other flags are skipped. Redirects are followed only with `-L`, as in curl. The folder context menu entry `Import cURL from clipboard` adds the result named `METHOD /path`.
 
