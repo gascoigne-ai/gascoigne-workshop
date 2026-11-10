@@ -45,15 +45,15 @@ func (a *App) selectedFolder() *model.Folder {
 // treeMenuItems are the right-click actions for a row.
 func (a *App) treeMenuItems(row collection.Row) []menuItem {
 	node := row.Node()
-	rename := menuItem{label: "Rename", run: func() { a.renameNode(node) }}
+	rename := menuItem{label: "Rename", run: func() { a.renameNode(tree.Of(node)) }}
 	sep := menuItem{separator: true}
 	if row.Req != nil {
 		return []menuItem{
 			rename,
-			{label: "Duplicate", run: func() { a.duplicateNode(node) }},
+			{label: "Duplicate", run: func() { a.duplicateNode(tree.Of(node)) }},
 			{label: "Copy URL", run: func() { a.copyRequestURL(row.Req) }},
 			sep,
-			{label: "Delete", run: func() { a.deleteNode(node) }},
+			{label: "Delete", run: func() { a.deleteNode(tree.Of(node)) }},
 		}
 	}
 	create := []menuItem{
@@ -71,60 +71,59 @@ func (a *App) treeMenuItems(row collection.Row) []menuItem {
 		return create // the collection itself is not duplicated or deleted
 	}
 	return append(create,
-		menuItem{label: "Duplicate", run: func() { a.duplicateNode(node) }},
-		menuItem{label: "Delete", run: func() { a.deleteNode(node) }},
+		menuItem{label: "Duplicate", run: func() { a.duplicateNode(tree.Of(node)) }},
+		menuItem{label: "Delete", run: func() { a.deleteNode(tree.Of(node)) }},
 	)
 }
 
 // ---- operations ----------------------------------------------------------
 
-// newRequestIn adds a blank request to dir and opens it.
-func (a *App) newRequestIn(dir *model.Folder) {
-	req := dir.AddRequest(model.Request{Name: "New Request", Protocol: "rest", Method: "GET"})
-	a.expanded[dir] = true
-	a.openRequest(req)
+// applyTree runs a tree message against the collection and takes over
+// what it says: the selection, the folder to open, the request to show.
+func (a *App) applyTree(msg tree.Msg) tree.Result {
+	res := tree.Update(&a.col, tree.Of(a.selected), msg)
+	a.selected = res.Selected.Any()
+	if res.Expand != nil {
+		a.expanded[res.Expand] = true
+	}
+	if res.Open != nil {
+		a.openRequest(res.Open)
+	}
+	if res.Removed != (tree.Node{}) {
+		a.closeTabsIn(res.Removed)
+	}
+	return res
 }
 
-func (a *App) newFolderIn(dir *model.Folder) {
-	sub := dir.AddFolder("New Folder")
-	a.expanded[dir] = true
-	a.selectNode(sub)
-}
+// newRequestIn adds a blank request to dir and opens it.
+func (a *App) newRequestIn(dir *model.Folder) { a.applyTree(tree.NewRequest{Dir: dir}) }
+
+func (a *App) newFolderIn(dir *model.Folder) { a.applyTree(tree.NewFolder{Dir: dir}) }
 
 // renameNode asks for a new name and applies it; a refused name is
 // explained in a toast.
-func (a *App) renameNode(node any) {
-	a.prompt("Rename", tree.NameOf(node), "Rename", func(text string) {
-		if err := a.col.Folder.Rename(node, text); err != nil {
+func (a *App) renameNode(node tree.Node) {
+	a.prompt("Rename", node.Name(), "Rename", func(text string) {
+		if err := a.applyTree(tree.Rename{Node: node, Name: text}).Err; err != nil {
 			a.toast("Cannot rename: "+err.Error(), true)
 		}
 	})
 }
 
-func (a *App) duplicateNode(node any) {
-	if cp := a.col.Folder.Duplicate(node); cp != nil {
-		a.selectNode(cp)
-	}
-}
+func (a *App) duplicateNode(node tree.Node) { a.applyTree(tree.Duplicate{Node: node}) }
 
 // deleteNode asks, then removes the node and closes the tabs of
 // everything that was in it.
-func (a *App) deleteNode(node any) {
-	if node == nil || node == any(&a.col.Folder) {
+func (a *App) deleteNode(node tree.Node) {
+	if node == (tree.Node{}) || node.Dir == &a.col.Folder {
 		return
 	}
 	title, body := tree.DeletePrompt(node)
-	a.confirm(title, body, "Delete", func() {
-		a.closeTabsIn(node)
-		a.col.Folder.Delete(node)
-		if a.selected == node {
-			a.selected = nil
-		}
-	})
+	a.confirm(title, body, "Delete", func() { a.applyTree(tree.Delete{Node: node}) })
 }
 
 // closeTabsIn closes the tabs whose request is node or inside it.
-func (a *App) closeTabsIn(node any) {
+func (a *App) closeTabsIn(node tree.Node) {
 	for i := len(a.list.Tabs) - 1; i >= 0; i-- {
 		if tree.Inside(node, a.list.Tabs[i].Req) {
 			a.closeTab(i)
@@ -146,15 +145,9 @@ func (a *App) finishDrag() {
 		a.expanded[pressed] = !a.expanded[pressed]
 		return
 	}
-	if node == nil || target == nil || target == node {
-		return
-	}
-	dir, before := tree.DropPlace(&a.col.Folder, node, target)
-	if err := a.col.Folder.Move(node, dir, before); err != nil {
+	if err := a.applyTree(tree.Move{Node: tree.Of(node), Target: tree.Of(target)}).Err; err != nil {
 		a.toast("Cannot move: "+err.Error(), true)
-		return
 	}
-	a.expanded[dir] = true
 }
 
 // ---- keyboard ---------------------------------------------------------------
@@ -209,10 +202,10 @@ func (a *App) treeKeys(in core.Input) {
 			}
 		case ebiten.KeyF2:
 			if a.selected != nil {
-				a.renameNode(a.selected)
+				a.renameNode(tree.Of(a.selected))
 			}
 		case ebiten.KeyDelete:
-			a.deleteNode(a.selected)
+			a.deleteNode(tree.Of(a.selected))
 		}
 	}
 }

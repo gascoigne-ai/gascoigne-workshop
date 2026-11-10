@@ -10,49 +10,38 @@ import (
 )
 
 // DropPlace is the folder a node dropped on target goes into and the node it
-// goes before (nil for the end). A request dropped on another request lands
+// goes before (zero for the end). A request dropped on another request lands
 // before it; a folder is always added at the end.
-func DropPlace(root *model.Folder, node, target any) (dir *model.Folder, before any) {
-	switch dropped := target.(type) {
-	case *model.Folder:
-		dir = dropped
-	case *model.Request:
-		dir, _ = root.Parent(dropped)
-		before = dropped
+func DropPlace(root *model.Folder, node, target Node) (dir *model.Folder, before Node) {
+	switch {
+	case target.Dir != nil:
+		dir = target.Dir
+	case target.Req != nil:
+		dir, _ = root.Parent(target.Req)
+		before = target
 	}
-	if _, movingFolder := node.(*model.Folder); movingFolder {
-		before = nil
+	if node.Dir != nil {
+		before = Node{}
 	}
 	return dir, before
 }
 
 // Inside reports whether req is node or lies inside the folder node.
-func Inside(node any, req *model.Request) bool {
-	if folder, ok := node.(*model.Folder); ok {
-		return folder.Contains(req)
+func Inside(node Node, req *model.Request) bool {
+	if node.Dir != nil {
+		return node.Dir.Contains(req)
 	}
-	return any(req) == node
-}
-
-// NameOf is the name of a request or folder, "" for anything else.
-func NameOf(node any) string {
-	switch named := node.(type) {
-	case *model.Request:
-		return named.Name
-	case *model.Folder:
-		return named.Name
-	}
-	return ""
+	return node.Req == req
 }
 
 // DeletePrompt is the title and the warning of the question asked before
 // node is deleted.
-func DeletePrompt(node any) (title, body string) {
+func DeletePrompt(node Node) (title, body string) {
 	body = "This cannot be undone."
-	if _, isFolder := node.(*model.Folder); isFolder {
+	if node.Dir != nil {
 		body = "The folder and everything in it will be removed."
 	}
-	return "Delete " + NameOf(node) + "?", body
+	return "Delete " + node.Name() + "?", body
 }
 
 // FirstRequest is the first request in tree order, or nil.

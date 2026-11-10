@@ -6,7 +6,7 @@ status: todo
 The rest of the `App` decisions follow the pattern of task 036, domain by domain, until `App` only owns models, the bus and the frame loop.
 
 ## Scope
-- [open] Collection tree: rename, duplicate, delete, drag, open (`treeops.go`, `workspace.go`) as messages; `collection/controller/tree` stops type-switching on `any` nodes.
+- [done] Collection tree: rename, duplicate, delete, drag, new request/folder as `tree` messages over typed `Node`s, applied in place (tabs hold pointers into the collection). `model.Folder` operations still take `any`; retyping them is left for a later cleanup. Imports and keyboard selection stay App methods.
 - [open] Response view: raw and compact mode, find bar and match index, filter (`panes.go`, `reqTab`) as a model; `viewer` becomes its `Update`.
 - [open] Settings: the 25-method `Host` of `settingsui` becomes messages; drop the `pageHost` wrapper.
 - [open] Overlay state (dialogs, menus, prompts, confirm; `overlay.go`) as a model with one Escape chain in place of the hand-ordered `switch` in `step`.
