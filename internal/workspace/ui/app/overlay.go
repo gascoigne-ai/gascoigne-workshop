@@ -303,14 +303,14 @@ func (a *App) toastsView() Node {
 // overlayKeys handles the keys of an open menu (Up, Down, Enter) or
 // dialog (Enter, for one without a text field, which has its own).
 func (a *App) overlayKeys(in w.Input) {
-	enter := in.Enter || hasKey(in.Keys, ebiten.KeyEnter)
+	enter := in.Enter || in.Pressed(ebiten.KeyEnter)
 	switch {
 	case a.ctxMenu != nil:
 		m := a.ctxMenu
-		if hasKey(in.Keys, ebiten.KeyArrowDown) {
+		if in.Pressed(ebiten.KeyArrowDown) {
 			m.hot = nextSelectable(m.items, m.hot, 1)
 		}
-		if hasKey(in.Keys, ebiten.KeyArrowUp) {
+		if in.Pressed(ebiten.KeyArrowUp) {
 			m.hot = nextSelectable(m.items, m.hot, -1)
 		}
 		if enter && m.hot >= 0 {
@@ -322,36 +322,9 @@ func (a *App) overlayKeys(in w.Input) {
 }
 
 // swallowMenuKeys removes the keys a menu used from this frame's input, so
-// the text widget that still has the focus under it does not act on them too:
-// Enter that accepts an item must not type a line break, Up and Down that
-// move in the menu must not move the caret, and Escape that closes the menu
-// must not take the focus off the editor.
+// the text widget that still has the focus under it does not act on them too.
 func (a *App) swallowMenuKeys() {
-	in := &a.ctx.In
-	in.Enter, in.Escape, in.Tab = false, false, false
-	edits := in.Edits[:0:0]
-	for _, edit := range in.Edits {
-		if edit != w.EditUp && edit != w.EditDown {
-			edits = append(edits, edit)
-		}
-	}
-	in.Edits = edits
-	keys := in.Keys[:0:0]
-	for _, key := range in.Keys {
-		if key != ebiten.KeyEnter && key != ebiten.KeyArrowUp && key != ebiten.KeyArrowDown && key != ebiten.KeyEscape && key != ebiten.KeyTab {
-			keys = append(keys, key)
-		}
-	}
-	in.Keys = keys
-}
-
-func hasKey(keys []ebiten.Key, k ebiten.Key) bool {
-	for _, p := range keys {
-		if p == k {
-			return true
-		}
-	}
-	return false
+	a.ctx.In.Consume(ebiten.KeyEnter, ebiten.KeyArrowUp, ebiten.KeyArrowDown, ebiten.KeyEscape, ebiten.KeyTab)
 }
 
 // overlayOpen reports whether a menu or dialog has the keyboard.

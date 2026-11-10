@@ -6,7 +6,7 @@ status: todo
 `swallowMenuKeys`, `hasKey` and `restartsCaret` are pure functions of `core.Input`.
 
 ## Scope
-- [open] `core.Input.Consume(keys ...ebiten.Key)` replaces `swallowMenuKeys`/`hasKey` (`app/overlay.go:329,348`).
+- [done] `core.Input.Consume(keys ...ebiten.Key)` replaces `swallowMenuKeys`/`hasKey` (`app/overlay.go:329,348`).
 - [open] `core.Input.RestartsCaret()` replaces `restartsCaret(in)` (`app/redraw.go:36`).
 
 ## Acceptance

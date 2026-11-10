@@ -2,6 +2,7 @@ package core
 
 import (
 	"runtime"
+	"slices"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -39,6 +40,47 @@ func (in Input) Scaled(scale float64) Input {
 	in.X = int(float64(in.X) / scale)
 	in.Y = int(float64(in.Y) / scale)
 	return in
+}
+
+// Pressed reports whether key went down this frame.
+func (in Input) Pressed(key ebiten.Key) bool { return slices.Contains(in.Keys, key) }
+
+// Consume removes keys from this frame's input in every form they take
+// (the Enter, Escape and Tab flags, the Up and Down edits, the Keys list),
+// so a widget under an overlay that used them does not act on them too:
+// Enter that accepts a menu item must not type a line break.
+func (in *Input) Consume(keys ...ebiten.Key) {
+	for _, key := range keys {
+		switch key {
+		case ebiten.KeyEnter:
+			in.Enter = false
+		case ebiten.KeyEscape:
+			in.Escape = false
+		case ebiten.KeyTab:
+			in.Tab = false
+		case ebiten.KeyArrowUp:
+			in.Edits = withoutEdit(in.Edits, EditUp)
+		case ebiten.KeyArrowDown:
+			in.Edits = withoutEdit(in.Edits, EditDown)
+		}
+	}
+	remaining := make([]ebiten.Key, 0, len(in.Keys))
+	for _, down := range in.Keys {
+		if !slices.Contains(keys, down) {
+			remaining = append(remaining, down)
+		}
+	}
+	in.Keys = remaining
+}
+
+func withoutEdit(edits []Edit, drop Edit) []Edit {
+	kept := make([]Edit, 0, len(edits))
+	for _, edit := range edits {
+		if edit != drop {
+			kept = append(kept, edit)
+		}
+	}
+	return kept
 }
 
 // Hit reports whether a click landed inside r.
