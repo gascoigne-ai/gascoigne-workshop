@@ -100,6 +100,9 @@ func TestWebSocketConnectFailureShowsInTheLog(t *testing.T) {
 	if tab.Session != nil {
 		t.Fatal("session after a failed connect")
 	}
+	if tab.Active() {
+		t.Fatal("a failed connect leaves the button on Disconnect")
+	}
 }
 
 func TestClearEmptiesTheMessageLog(t *testing.T) {

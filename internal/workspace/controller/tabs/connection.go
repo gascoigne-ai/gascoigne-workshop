@@ -42,8 +42,15 @@ func (conn *Connection) Opened(session port.Session) {
 	conn.Session, conn.Connecting = session, false
 }
 
-// Failed records that a connect did not succeed.
-func (conn *Connection) Failed() { conn.Connecting = false }
+// Failed records that a connect did not succeed. Without a reconnect asked
+// for the connection is no longer wanted, so the tab offers Connect again
+// instead of a Disconnect that closes nothing.
+func (conn *Connection) Failed() {
+	conn.Connecting = false
+	if !conn.Reconnect {
+		conn.WantOpen = false
+	}
+}
 
 // Closed records that the session ended: nothing is open and what the
 // server announced no longer holds.

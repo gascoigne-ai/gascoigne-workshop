@@ -53,6 +53,29 @@ func TestDisconnectHandsBackTheOpenSessionToClose(t *testing.T) {
 	}
 }
 
+// A failed connect used to leave WantOpen set, so the button kept reading
+// "Disconnect" with nothing open.
+func TestFailedConnectIsNotActiveUnlessAReconnectIsAsked(t *testing.T) {
+	tests := []struct {
+		name      string
+		reconnect bool
+		active    bool
+	}{
+		{"reconnect off", false, false},
+		{"reconnect on keeps retrying", true, true},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			conn := Connection{Reconnect: test.reconnect}
+			conn.Begin()
+			conn.Failed()
+			if conn.Connecting || conn.Active() != test.active {
+				t.Fatalf("conn %+v Active = %v, want %v", conn, conn.Active(), test.active)
+			}
+		})
+	}
+}
+
 func TestClosedClearsTheSessionAndWhatTheServerAnnounced(t *testing.T) {
 	var conn Connection
 	conn.Begin()
