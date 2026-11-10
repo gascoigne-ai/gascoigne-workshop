@@ -19,7 +19,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 )
 
-// ServersName is the name of the collection that holds one request per
+// ServersName is the name of the folder that holds one request per
 // configured server.
 const ServersName = "Servers"
 
@@ -107,20 +107,37 @@ func parseWith(f format, file string, data []byte) (Config, error) {
 	return config, nil
 }
 
-// AllCollections returns the configured collections followed by one
-// collection with a request per server, when there are servers.
-func (config Config) AllCollections() []*model.Collection {
-	all := append([]*model.Collection(nil), config.Collections...)
-	if len(config.Servers) == 0 {
-		return all
+// RootName is the name of the collection Collection builds.
+const RootName = "Clients"
+
+// Empty reports whether the config defines nothing.
+func (config Config) Empty() bool {
+	return len(config.Servers) == 0 && len(config.Collections) == 0
+}
+
+// Collection returns the config as the one collection the window shows:
+// every configured collection becomes a folder (its variables on the
+// folder), followed by a "Servers" folder with a request per server. The
+// environments of all collections are gathered on the root.
+func (config Config) Collection() model.Collection {
+	root := model.Collection{Folder: model.Folder{Name: RootName}}
+	for _, collection := range config.Collections {
+		folder := collection.Folder
+		folder.Vars = collection.Vars
+		root.Folders = append(root.Folders, &folder)
+		root.Envs = append(root.Envs, collection.Envs...)
 	}
-	servers := &model.Collection{Folder: model.Folder{Name: ServersName}}
+	if len(config.Servers) == 0 {
+		return root
+	}
+	servers := &model.Folder{Name: ServersName}
 	for _, server := range config.Servers {
 		servers.Requests = append(servers.Requests, &model.Request{
 			Name: server.Name, Protocol: server.Protocol, URL: server.URL, Auth: server.Auth,
 		})
 	}
-	return append(all, servers)
+	root.Folders = append(root.Folders, servers)
+	return root
 }
 
 type fileConfig struct {

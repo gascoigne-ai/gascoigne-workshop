@@ -122,15 +122,30 @@ func TestParseRejectsBadInput(t *testing.T) {
 	}
 }
 
-func TestCollectionsAppendsServersAsOneCollection(t *testing.T) {
+func TestCollectionBuildsOneTreeFromCollectionsAndServers(t *testing.T) {
 	config := wantConfig()
-	got := config.AllCollections()
-	if len(got) != 2 || got[1].Name != ServersName {
-		t.Fatalf("collections = %d, want the Demo collection then %q", len(got), ServersName)
+	config.Collections[0].Envs = []model.Environment{{Name: "Dev", Vars: []model.KV{{Name: "token", Value: "x", Enabled: true}}}}
+	root := config.Collection()
+
+	if len(root.Folders) != 2 || root.Folders[0].Name != "Demo" || root.Folders[1].Name != ServersName {
+		t.Fatalf("folders = %+v, want Demo then %q", root.Folders, ServersName)
 	}
-	request := got[1].Requests[0]
+	demo := root.Folders[0]
+	if len(demo.Vars) != 1 || demo.Vars[0].Name != "baseUrl" || len(demo.Requests) != 1 {
+		t.Fatalf("Demo = %+v, want its variables on the folder and its request kept", demo)
+	}
+	request := root.Folders[1].Requests[0]
 	if request.Name != "Local REST" || request.URL != "http://localhost:8081" || request.Auth.Token != "secret" {
 		t.Fatalf("server request = %+v", request)
+	}
+	if len(root.Envs) != 1 || root.Envs[0].Name != "Dev" {
+		t.Fatalf("envs = %+v, want the collection's environments on the root", root.Envs)
+	}
+}
+
+func TestCollectionOfNothingIsEmpty(t *testing.T) {
+	if !(Config{}).Empty() || wantConfig().Empty() {
+		t.Fatal("Empty must be true only for a config without servers and collections")
 	}
 }
 
