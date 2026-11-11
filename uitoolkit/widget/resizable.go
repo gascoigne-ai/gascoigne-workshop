@@ -1,6 +1,9 @@
-package view
+package widget
 
-import "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+import (
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+)
 
 // edgeSlop is how far from the border, inside it, a press grabs the edge.
 const edgeSlop = 6
@@ -17,7 +20,7 @@ type ResizeState struct {
 }
 
 type resizableB struct {
-	flow       // lays its children out top to bottom, like Col
+	Linear     // lays its children out top to bottom, like Col
 	state      *ResizeState
 	minW, minH int
 	maxW, maxH int
@@ -28,9 +31,10 @@ type resizableB struct {
 // the size changes by twice the pointer's movement, so the edge stays under
 // the pointer. The size is kept in state within the given minimum and
 // maximum; the caller applies state.W and state.H to the element's own size,
-// and a double click on an edge puts both back to 0, the default.
+// and a double click on an edge puts both back to 0, the default. It has
+// no template attribute: its state is a Go value.
 func Resizable(state *ResizeState, minW, minH, maxW, maxH int, items ...Item) *El {
-	return newEl(&resizableB{state: state, minW: minW, minH: minH, maxW: maxW, maxH: maxH}, items)
+	return Custom(&resizableB{state: state, minW: minW, minH: minH, maxW: maxW, maxH: maxH}, items...)
 }
 
 // edges reports which edges of r the point is on, if it is on the border.
@@ -56,7 +60,7 @@ func cursorFor(left, right, top, bottom bool) core.Cursor {
 	return core.CursorResizeV
 }
 
-func (b *resizableB) update(e *El, c *core.Ctx) {
+func (b *resizableB) Update(e *El, c *core.Ctx) {
 	in, st := c.In, b.state
 	if st.active {
 		if !in.Held {
@@ -81,7 +85,7 @@ func (b *resizableB) update(e *El, c *core.Ctx) {
 		}
 		return
 	}
-	left, right, top, bottom := edges(e.rect, in.X, in.Y)
+	left, right, top, bottom := edges(e.Rect(), in.X, in.Y)
 	if !(left || right || top || bottom) {
 		return
 	}
@@ -94,6 +98,6 @@ func (b *resizableB) update(e *El, c *core.Ctx) {
 		return
 	}
 	st.active, st.left, st.right, st.top, st.bottom = true, left, right, top, bottom
-	st.startX, st.startY, st.startW, st.startH = in.X, in.Y, e.rect.W, e.rect.H
-	st.W, st.H = e.rect.W, e.rect.H // both are the user's size from now on, whichever edge moves
+	st.startX, st.startY, st.startW, st.startH = in.X, in.Y, e.Rect().W, e.Rect().H
+	st.W, st.H = e.Rect().W, e.Rect().H // both are the user's size from now on, whichever edge moves
 }

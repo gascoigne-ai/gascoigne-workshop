@@ -13,6 +13,7 @@
 //	Dialogs    Dialog ResizableDialog DialogTitle MessageDialog   (state: DialogState DialogButton)
 //	Toasts     Toasts   (state: ToastStack Toast)
 //	Pictures   Image
+//	Resizing   Resizable   (state: ResizeState)
 //	Sliders    Slider OnSlide OnSlideEnd SliderMid   (state: SliderState)
 //
 // The popup menu lives in core.Ctx.Menu: any element opens one with

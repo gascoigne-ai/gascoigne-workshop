@@ -1,15 +1,16 @@
-package view
+package widget
 
 import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 // resizeRig is a 300x200 resizable element at the origin of a context.
 func resizeRig(t *testing.T, st *ResizeState) (*El, *core.Ctx) {
 	t.Helper()
-	root := Resizable(st, 120, 80, 500, 400, box())
+	root := Resizable(st, 120, 80, 500, 400, Row())
 	c := testCtx(t)
 	Layout(c, root, 300, 200)
 	return root, c

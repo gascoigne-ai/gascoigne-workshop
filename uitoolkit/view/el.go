@@ -35,7 +35,7 @@
 //	Icons      Icon RegisterIcons IconNames   CrossIcon TriangleIcon GripIcon DotsIcon TrashIcon PlusIcon CopyIcon FolderIcon SearchIcon PromptIcon ChevronUpIcon ChevronDownIcon
 //	Flow       If When For Frag
 //	Extend     Behavior Base Linear Custom (El.Behavior)   a component outside this package is an element through these
-//	Overlay    FloatTR FloatAt FloatCenter Modal OnDismiss FocusScope   Resizable (state: ResizeState)
+//	Overlay    FloatTR FloatAt FloatCenter Modal OnDismiss FocusScope
 //
 // A side is a letter suffix (PadL, PadT, PadR, PadB) and an axis is X or
 // Y (PadX is left and right). The same options are the attributes of a
