@@ -1,14 +1,10 @@
-package view
+package core
 
-import (
-	"github.com/hajimehoshi/ebiten/v2"
+import "github.com/hajimehoshi/ebiten/v2"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
-)
-
-// tipDelayTicks is how long the pointer rests on an element before its
+// TipDelayTicks is how long the pointer rests on an element before its
 // tooltip shows (half a second at 60 ticks per second).
-const tipDelayTicks = 30
+const TipDelayTicks = 30
 
 // Tooltip box metrics.
 const (
@@ -17,10 +13,10 @@ const (
 	tipOffset = 16 // below and right of the pointer, clear of the cursor
 )
 
-// drawTooltip updates the delay bookkeeping for the element under the
-// pointer and, once it is due, draws its tooltip over everything, kept
-// inside screen.
-func drawTooltip(c *core.Ctx, dst *ebiten.Image, screen core.Rect) {
+// DrawTooltip updates the delay bookkeeping for the element under the
+// pointer (TipText, set by the views while they draw) and, once it is
+// due, draws its tooltip over everything, kept inside screen.
+func (c *Ctx) DrawTooltip(dst *ebiten.Image, screen Rect) {
 	c.TipShown, c.TipWaiting = false, false
 	if c.TipText == "" {
 		c.TipFor = ""
@@ -29,7 +25,7 @@ func drawTooltip(c *core.Ctx, dst *ebiten.Image, screen core.Rect) {
 	if c.TipText != c.TipFor || c.In.Click {
 		c.TipFor, c.TipSince = c.TipText, c.Tick // a new element, or a click: wait again
 	}
-	if c.Tick-c.TipSince < tipDelayTicks {
+	if c.Tick-c.TipSince < TipDelayTicks {
 		c.TipWaiting = true
 		return
 	}
@@ -41,13 +37,13 @@ func drawTooltip(c *core.Ctx, dst *ebiten.Image, screen core.Rect) {
 	if y+h > screen.Y+screen.H {
 		y = c.In.Y - tipOffset - h // no room below: above the pointer
 	}
-	box := core.Rect{X: x, Y: max(screen.Y, y), W: w, H: h}
+	box := Rect{X: x, Y: max(screen.Y, y), W: w, H: h}
 	st := c.Th.Style("tooltip")
-	c.FillStyled(dst, box, c.Color(core.Frame), c.Color(core.Frame), st.Radius)
+	c.FillStyled(dst, box, c.Color(Frame), c.Color(Frame), st.Radius)
 	border := st.Border
 	if border == "" {
-		border = core.Border
+		border = Border
 	}
 	c.OutlineStyled(dst, box, c.Color(border), st.Radius)
-	c.TextMid(dst, c.F.Small, c.TipText, box.X+tipPadX, box, c.Color(core.Text))
+	c.TextMid(dst, c.F.Small, c.TipText, box.X+tipPadX, box, c.Color(Text))
 }

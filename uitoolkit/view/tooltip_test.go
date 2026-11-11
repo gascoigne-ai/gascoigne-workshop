@@ -17,12 +17,12 @@ func TestTooltipAppearsAfterTheHoverDelayAndOnlyThenIsShown(t *testing.T) {
 	if c.TipShown || !c.TipWaiting || c.TipText != "Copy the body" {
 		t.Fatalf("first frame: shown %v waiting %v text %q", c.TipShown, c.TipWaiting, c.TipText)
 	}
-	c.Tick = 100 + tipDelayTicks - 1
+	c.Tick = 100 + core.TipDelayTicks - 1
 	drawn(t, c, root, 200, 50)
 	if c.TipShown {
 		t.Fatal("shown before the delay")
 	}
-	c.Tick = 100 + tipDelayTicks
+	c.Tick = 100 + core.TipDelayTicks
 	drawn(t, c, root, 200, 50)
 	if !c.TipShown || c.TipWaiting {
 		t.Fatalf("after the delay: shown %v waiting %v", c.TipShown, c.TipWaiting)
@@ -43,7 +43,7 @@ func TestTooltipGoesAwayOffTheElementAndOnClick(t *testing.T) {
 	c.In = core.Input{X: 50, Y: 10}
 	c.Tick = 10
 	drawn(t, c, root, 200, 50)
-	c.Tick = 10 + tipDelayTicks
+	c.Tick = 10 + core.TipDelayTicks
 	drawn(t, c, root, 200, 50)
 	if !c.TipShown {
 		t.Fatal("setup: the tip must be shown")
