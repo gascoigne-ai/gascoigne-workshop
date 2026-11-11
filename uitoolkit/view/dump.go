@@ -20,7 +20,7 @@ func dump(sb *strings.Builder, e *El, depth int) {
 	if e == nil {
 		return
 	}
-	fmt.Fprintf(sb, "%s%s", strings.Repeat("  ", depth), strings.TrimPrefix(fmt.Sprintf("%T", e.b), "view."))
+	fmt.Fprintf(sb, "%s%s", strings.Repeat("  ", depth), kindName(e))
 	add := func(name string, v any) { fmt.Fprintf(sb, " %s=%v", name, v) }
 	if e.text != "" {
 		add("text", fmt.Sprintf("%q", e.text))
@@ -72,4 +72,15 @@ func dump(sb *strings.Builder, e *El, depth int) {
 	for _, k := range e.kids {
 		dump(sb, k, depth+1)
 	}
+}
+
+// kindName is the type of the element's behavior without its package,
+// so a component prints the same wherever it lives.
+func kindName(e *El) string {
+	var behavior any = e.b
+	if custom, ok := e.b.(customB); ok {
+		behavior = custom.Behavior
+	}
+	name := strings.TrimPrefix(fmt.Sprintf("%T", behavior), "*")
+	return name[strings.LastIndex(name, ".")+1:]
 }

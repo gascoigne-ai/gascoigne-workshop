@@ -34,6 +34,7 @@
 //	Split      Vertical AsRatio MinFirst MinSecond
 //	Icons      Icon RegisterIcons IconNames   CrossIcon TriangleIcon GripIcon DotsIcon TrashIcon PlusIcon CopyIcon FolderIcon SearchIcon PromptIcon ChevronUpIcon ChevronDownIcon
 //	Flow       If When For Frag
+//	Extend     Behavior Base Custom (El.Behavior)   a component outside this package is an element through these
 //	Overlay    FloatTR FloatAt FloatCenter Modal OnDismiss FocusScope   Resizable (state: ResizeState)
 //
 // A side is a letter suffix (PadL, PadT, PadR, PadB) and an axis is X or
