@@ -88,7 +88,7 @@ func (fieldB) draw(e *El, c *core.Ctx, dst *ebiten.Image) {
 	if f.Focused && c.CaretVisible() {
 		shown := []rune(f.Display())
 		cx := r.X + e.textInset() - f.ScrollX + c.Width(c.F.UI, string(shown[:f.Cursor]))
-		drawBlockCaret(c, dst, c.F.UI, caretGlyph(shown, f.Cursor), cx, r)
+		c.DrawBlockCaret(dst, c.F.UI, shown, f.Cursor, cx, r)
 	}
 }
 

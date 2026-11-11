@@ -214,7 +214,7 @@ func (a *TextArea) Draw(c *core.Ctx, dst *ebiten.Image, r core.Rect) {
 		line, col := a.LineCol(a.Cursor)
 		cx, cy := g.textX-a.ScrollX+g.colX(col), r.Y+line*g.lineH-a.ScrollY
 		row := core.Rect{X: cx, Y: cy, W: g.colX(col+1) - g.colX(col), H: g.lineH}
-		drawBlockCaret(c, text, c.F.Mono, caretGlyph([]rune(a.Text), a.Cursor), cx, row)
+		c.DrawBlockCaret(text, c.F.Mono, []rune(a.Text), a.Cursor, cx, row)
 	}
 	drawBars(c, dst, b, a.drag, g.contentW(core.Rect{W: b.viewW}), g.contentH(), a.ScrollX, a.ScrollY)
 	if a.Focused {
