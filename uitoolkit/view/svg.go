@@ -1,4 +1,4 @@
-package core
+package view
 
 import (
 	"bytes"
@@ -11,6 +11,8 @@ import (
 	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2/vector"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 // An icon is a small SVG file: the subset below, drawn by the toolkit in
@@ -38,7 +40,7 @@ type svgCmd struct {
 // svgPaint is a fill or stroke: nothing, the element's color, or a token.
 type svgPaint struct {
 	none  bool
-	token Token // "" means currentColor
+	token core.Token // "" means currentColor
 }
 
 type svgShape struct {
@@ -53,7 +55,7 @@ type svgShape struct {
 type svgIcon struct {
 	name   string
 	w, h   float64 // the viewBox size, which is the icon's natural size in pixels
-	hover  Token
+	hover  core.Token
 	shapes []svgShape
 }
 
@@ -83,7 +85,7 @@ func parseSVG(name string, src []byte) (*svgIcon, error) {
 	fail := func(format string, args ...any) (*svgIcon, error) {
 		return nil, &svgError{name, line(), fmt.Sprintf(format, args...)}
 	}
-	icon := &svgIcon{name: name, hover: Text}
+	icon := &svgIcon{name: name, hover: core.Text}
 	styles := []svgStyle{defaultSVGStyle()}
 	seenRoot := false
 	for {
@@ -123,7 +125,7 @@ func parseSVG(name string, src []byte) (*svgIcon, error) {
 				}
 				icon.w, icon.h = w, h
 				if v := attrs["data-hover"]; v != "" {
-					icon.hover = Token(v)
+					icon.hover = core.Token(v)
 				}
 				continue
 			}
@@ -156,7 +158,7 @@ func parsePaint(v string) (svgPaint, error) {
 	case v == "currentColor":
 		return svgPaint{}, nil
 	case strings.HasPrefix(v, "token(") && strings.HasSuffix(v, ")"):
-		return svgPaint{token: Token(strings.TrimSpace(v[6 : len(v)-1]))}, nil
+		return svgPaint{token: core.Token(strings.TrimSpace(v[6 : len(v)-1]))}, nil
 	}
 	return svgPaint{}, fmt.Errorf("a paint is none, currentColor or token(name), not %q", v)
 }

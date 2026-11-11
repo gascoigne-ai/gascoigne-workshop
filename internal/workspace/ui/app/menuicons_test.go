@@ -5,7 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
@@ -41,7 +40,7 @@ func TestAnItemsOwnIconWinsOverTheLabelTable(t *testing.T) {
 
 func TestEveryMenuIconInTheTableExists(t *testing.T) {
 	for prefix, name := range menuIcons {
-		if !core.HasIcon(name) {
+		if !view.HasIcon(name) {
 			t.Errorf("%q maps to the missing icon %q", prefix, name)
 		}
 	}

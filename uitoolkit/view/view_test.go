@@ -672,7 +672,7 @@ func TestTextAreaScrollsWithWheelAndFollowsTheCursor(t *testing.T) {
 }
 
 // ScrollbarSlack allows for the horizontal scrollbar eating a few pixels.
-const ScrollbarSlack = core.ScrollbarW
+const ScrollbarSlack = ScrollbarW
 
 func TestTextAreaPasteKeepsLines(t *testing.T) {
 	a, c, root, _ := areaBox(t, "")

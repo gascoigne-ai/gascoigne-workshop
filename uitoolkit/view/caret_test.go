@@ -1,6 +1,10 @@
-package core
+package view
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+)
 
 func TestCaretGlyphIsTheRuneUnderTheBlock(t *testing.T) {
 	cases := []struct {
@@ -30,12 +34,12 @@ func TestCaretGlyphIsTheRuneUnderTheBlock(t *testing.T) {
 func TestCaretBlockIsLineHighWhateverTheRowHeight(t *testing.T) {
 	cases := []struct {
 		name string
-		row  Rect
-		want Rect
+		row  core.Rect
+		want core.Rect
 	}{
-		{"tall row", Rect{X: 0, Y: 10, W: 200, H: 40}, Rect{X: 30, Y: 22, W: 8, H: 16}},
-		{"short table cell", Rect{X: 0, Y: 10, W: 200, H: 20}, Rect{X: 30, Y: 12, W: 8, H: 16}},
-		{"row shorter than the line", Rect{X: 0, Y: 10, W: 200, H: 12}, Rect{X: 30, Y: 10, W: 8, H: 12}},
+		{"tall row", core.Rect{X: 0, Y: 10, W: 200, H: 40}, core.Rect{X: 30, Y: 22, W: 8, H: 16}},
+		{"short table cell", core.Rect{X: 0, Y: 10, W: 200, H: 20}, core.Rect{X: 30, Y: 12, W: 8, H: 16}},
+		{"row shorter than the line", core.Rect{X: 0, Y: 10, W: 200, H: 12}, core.Rect{X: 30, Y: 10, W: 8, H: 12}},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

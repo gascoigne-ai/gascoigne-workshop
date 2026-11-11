@@ -151,7 +151,7 @@ func Checkbox(on bool, opts ...Option) *El {
 }
 
 // The named icons below are wrappers over Icon for the icons the toolkit
-// ships (core/icons/*.svg).
+// ships (view/icons/*.svg).
 
 // CrossIcon is a small x, for delete buttons; it turns red under the pointer.
 func CrossIcon(opts ...Option) *El { return Icon("cross", opts...) }

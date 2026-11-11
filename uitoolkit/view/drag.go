@@ -21,3 +21,19 @@ func (g *grab) held(in core.Input) bool {
 	}
 	return g.on
 }
+
+// pressThumb is a press at `at` in a scrollbar track for content shown
+// through a view scrolled to pos: it either grabs the thumb (grabbed, with
+// the offset inside it) or pages toward the press (the new pos).
+func pressThumb(track, content, view, pos, at int) (grabbed bool, off, newPos int) {
+	thumb, length, ok := Thumb(track, content, view, pos)
+	switch {
+	case !ok:
+		return false, 0, pos
+	case at >= thumb && at < thumb+length:
+		return true, at - thumb, pos
+	case at < thumb:
+		return false, 0, clampScroll(pos-view, content, view)
+	}
+	return false, 0, clampScroll(pos+view, content, view)
+}

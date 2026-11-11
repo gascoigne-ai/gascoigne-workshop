@@ -98,7 +98,7 @@ type Ctx struct {
 	// longer in the tree, is blurred.
 	FocusOwner any
 
-	// Tooltip state, kept by DrawTooltip (view.Draw calls it): the text of the element under the
+	// Tooltip state, kept by view.Draw: the text of the element under the
 	// pointer, whether it has been hovered long enough to show, and
 	// whether it is still waiting to (the app keeps drawing meanwhile).
 	TipText              string

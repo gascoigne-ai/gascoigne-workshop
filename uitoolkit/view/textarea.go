@@ -26,8 +26,7 @@ type TextArea struct {
 
 // NewTextArea returns an editor holding text.
 func NewTextArea(text string) TextArea {
-	a := TextArea{TextField: NewTextField(text)}
-	a.Multiline = true
+	a := TextArea{TextField: newMultiline(text)}
 	a.revealed = -1
 	return a
 }
@@ -91,10 +90,10 @@ func (a *TextArea) Update(c *core.Ctx, r core.Rect) (changed bool) {
 	if a.Focused {
 		changed = a.updateKeys(c, r, g, b)
 	}
-	a.ScrollY = core.ClampScroll(a.ScrollY, g.contentH(), b.viewH)
+	a.ScrollY = clampScroll(a.ScrollY, g.contentH(), b.viewH)
 	line, col := a.LineCol(a.Cursor)
 	a.caretX, a.caretY, a.caretKnown = g.textX-a.ScrollX+g.colX(col), r.Y+(line+1)*g.lineH-a.ScrollY, true
-	a.ScrollX = core.ClampScroll(a.ScrollX, g.contentW(core.Rect{W: b.viewW}), b.viewW)
+	a.ScrollX = clampScroll(a.ScrollX, g.contentW(core.Rect{W: b.viewW}), b.viewW)
 	return changed
 }
 
@@ -118,9 +117,9 @@ func (a *TextArea) updatePointer(c *core.Ctx, r core.Rect, g areaGeometry, b bar
 	}
 	if over && in.Wheel != 0 {
 		if in.Shift {
-			a.ScrollX = core.ClampScroll(a.ScrollX+int(-in.Wheel*float64(g.charW)*6), g.contentW(core.Rect{W: b.viewW}), b.viewW)
+			a.ScrollX = clampScroll(a.ScrollX+int(-in.Wheel*float64(g.charW)*6), g.contentW(core.Rect{W: b.viewW}), b.viewW)
 		} else {
-			a.ScrollY = core.ClampScroll(a.ScrollY+int(-in.Wheel*float64(g.lineH)*3), g.contentH(), b.viewH)
+			a.ScrollY = clampScroll(a.ScrollY+int(-in.Wheel*float64(g.lineH)*3), g.contentH(), b.viewH)
 		}
 		c.In.Wheel = 0 // consumed, so an enclosing scroller does not move too
 	}
@@ -215,7 +214,7 @@ func (a *TextArea) Draw(c *core.Ctx, dst *ebiten.Image, r core.Rect) {
 		line, col := a.LineCol(a.Cursor)
 		cx, cy := g.textX-a.ScrollX+g.colX(col), r.Y+line*g.lineH-a.ScrollY
 		row := core.Rect{X: cx, Y: cy, W: g.colX(col+1) - g.colX(col), H: g.lineH}
-		c.DrawBlockCaret(text, c.F.Mono, []rune(a.Text), a.Cursor, cx, row)
+		drawBlockCaret(c, text, c.F.Mono, caretGlyph([]rune(a.Text), a.Cursor), cx, row)
 	}
 	drawBars(c, dst, b, a.drag, g.contentW(core.Rect{W: b.viewW}), g.contentH(), a.ScrollX, a.ScrollY)
 	if a.Focused {
