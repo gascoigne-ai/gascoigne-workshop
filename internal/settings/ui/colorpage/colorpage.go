@@ -23,8 +23,6 @@ type Host interface {
 	Send(msg prefs.Msg)
 	// Color is the color in effect for a token.
 	Color(tok w.Token) color.RGBA
-	// TextMenu is the right-click menu of a text field.
-	TextMenu(field *TextField, changed func()) Option
 }
 
 // Page holds the hex fields of the colors and why a typed one was refused.
@@ -133,7 +131,7 @@ func (p *Page) row(host Host, c appearance.CustomColor) Node {
 			Row(W(20), H(w.NoteH), Bg(c.Token), Control("swatch")), // shows the color in effect
 			Field(in, W(70), H(w.CompactH), Bg(w.Sunken), Border(border),
 				OnChange(func() { p.edited(host, c) }),
-				host.TextMenu(in, func() { p.edited(host, c) })),
+				TextMenu(in)),
 			Button("Reset", W(44), H(w.CompactH), OnClick(func() { p.reset(host, c.Token) })),
 		),
 		If(note != "", Note(note, w.Error)),

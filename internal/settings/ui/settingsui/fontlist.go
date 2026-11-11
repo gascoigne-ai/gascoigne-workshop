@@ -164,7 +164,7 @@ func (d *Dialog) FontList(host Host) Node {
 	}
 	return Col(W(fontListW), Pad(6), Gap(6), Bg(w.Bg), Border(w.Border), Control("menu"), Shadow(),
 		FloatAt(d.list.x, d.list.y), Modal(), FocusScope(), OnDismiss(d.CloseFontList),
-		Field(&d.FontSearch, H(28), Bg(w.Sunken), Placeholder("Search fonts"), OnChange(func() { d.list.scroll.Y = 0 }), host.TextMenu(&d.FontSearch, nil)),
+		Field(&d.FontSearch, H(28), Bg(w.Sunken), Placeholder("Search fonts"), OnChange(func() { d.list.scroll.Y = 0 }), TextMenu(&d.FontSearch)),
 		note,
 		Scroll(&d.list.scroll, H(fontListH), Col(rows...)),
 	)

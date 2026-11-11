@@ -285,6 +285,10 @@ func (e *El) update(c *core.Ctx) bool {
 		e.onRight(c.In.X, c.In.Y)
 		c.In.RightClick = false // one right click opens one menu: the innermost wins
 	}
+	if e.onRightIn != nil && c.In.RightClick && c.In.Over(e.rect) {
+		e.onRightIn(c, c.In.X, c.In.Y)
+		c.In.RightClick = false
+	}
 	if e.modal {
 		// A modal overlay owns the pointer: nothing under it gets clicks,
 		// wheel or hover, and a click outside it dismisses it.

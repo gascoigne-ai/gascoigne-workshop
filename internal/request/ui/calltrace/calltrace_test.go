@@ -96,7 +96,7 @@ func TestTitleBarTemplateMatchesTheGoView(t *testing.T) {
 	host := fakeHost{}
 	goView := Row(H(titleH), PadX(16), Gap(8), AlignItems(AlignCenter), BorderB(core.BorderSoft),
 		Text("Log", Bold(), W(40)),
-		Field(&log.filter, H(28), Grow(1), Bg(core.Sunken), Placeholder("Filter"), host.TextMenu(&log.filter, nil)),
+		Field(&log.filter, H(28), Grow(1), Bg(core.Sunken), Placeholder("Filter"), TextMenu(&log.filter)),
 		Button("Clear", W(64), H(core.CompactH), OnClick(log.Clear), Tooltip("Forget the entries")),
 		IconButton(CrossIcon(Grow(1)), W(core.IconBtnW), H(core.CompactH), OnClick(log.Close), Tooltip("Close (Esc)")),
 	)

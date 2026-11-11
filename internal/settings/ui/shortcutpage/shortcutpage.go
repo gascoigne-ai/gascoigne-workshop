@@ -34,8 +34,6 @@ type Host interface {
 	Send(msg prefs.Msg)
 	// Actions are the actions that have keys, in display order.
 	Actions() []Action
-	// TextMenu is the right-click menu of a text field.
-	TextMenu(field *TextField, changed func()) Option
 }
 
 // PendingKey is a recorded combination that another action already has,
@@ -274,7 +272,7 @@ func (p *Page) View(host Host) Node {
 	}
 	return Col(
 		Row(H(w.RowH), Gap(6),
-			Field(&p.search, Grow(1), Bg(w.Sunken), Placeholder("Search by action or key"), host.TextMenu(&p.search, nil)),
+			Field(&p.search, Grow(1), Bg(w.Sunken), Placeholder("Search by action or key"), TextMenu(&p.search)),
 		),
 		Spacer(H(w.Gutter)),
 		Col(rows...),

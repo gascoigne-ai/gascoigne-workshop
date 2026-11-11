@@ -162,3 +162,87 @@ func TestPopupMenuClickOutsideDismisses(t *testing.T) {
 		t.Fatal("a click outside closes the menu")
 	}
 }
+
+// ---- TextMenu -------------------------------------------------------------
+
+func rightClick(c *core.Ctx, el *El) {
+	c.In = core.Input{X: el.rect.X + 2, Y: el.rect.Y + 2, RightClick: true}
+}
+
+func openTextMenu(t *testing.T, field *TextField, changes *int) (*core.Ctx, *fakeClipboard) {
+	t.Helper()
+	c := testCtx(t)
+	clipboard := &fakeClipboard{}
+	c.Clipboard = clipboard
+	el := Field(field, W(200), H(28), OnChange(func() { *changes++ }), TextMenu(field))
+	root := Row(el)
+	Layout(c, root, 400, 100)
+	rightClick(c, el)
+	Update(c, root)
+	if !MenuOpen(c) {
+		t.Fatal("a right click on the field opens its text menu")
+	}
+	return c, clipboard
+}
+
+func menuItemNamed(t *testing.T, c *core.Ctx, label string) MenuItem {
+	t.Helper()
+	for _, item := range PopupMenu(c).Items {
+		if item.Label == label {
+			return item
+		}
+	}
+	t.Fatalf("no %q row in the text menu", label)
+	return MenuItem{}
+}
+
+func TestTextMenuDisablesWhatTheFieldCannotDo(t *testing.T) {
+	field := NewTextField("")
+	changes := 0
+	c, _ := openTextMenu(t, &field, &changes)
+	for _, label := range []string{"Undo", "Redo", "Cut", "Copy", "Select all"} {
+		if !menuItemNamed(t, c, label).Disabled {
+			t.Errorf("%s should be disabled for an empty, untouched field", label)
+		}
+	}
+	if menuItemNamed(t, c, "Paste").Disabled {
+		t.Error("Paste is always available")
+	}
+}
+
+func TestTextMenuCutAndPasteEditTheFieldAndReportTheChange(t *testing.T) {
+	field := NewTextField("hello world")
+	field.SelectAll()
+	changes := 0
+	c, clipboard := openTextMenu(t, &field, &changes)
+
+	menuItemNamed(t, c, "Cut").Run()
+	if clipboard.text != "hello world" || field.Text != "" || changes != 1 {
+		t.Fatalf("cut: clipboard %q, field %q, changes %d", clipboard.text, field.Text, changes)
+	}
+	menuItemNamed(t, c, "Paste").Run()
+	if field.Text != "hello world" || changes != 2 {
+		t.Fatalf("paste: field %q, changes %d", field.Text, changes)
+	}
+	menuItemNamed(t, c, "Undo").Run()
+	if field.Text != "" || changes != 3 {
+		t.Fatalf("undo: field %q, changes %d", field.Text, changes)
+	}
+}
+
+// Secrets never reach the clipboard: a masked field cannot cut or copy.
+func TestTextMenuNeverCopiesAMaskedField(t *testing.T) {
+	field := NewTextField("hunter2")
+	field.Masked = true
+	field.SelectAll()
+	changes := 0
+	c, clipboard := openTextMenu(t, &field, &changes)
+	for _, label := range []string{"Cut", "Copy"} {
+		if !menuItemNamed(t, c, label).Disabled {
+			t.Errorf("%s of a masked field must be disabled", label)
+		}
+	}
+	if clipboard.text != "" {
+		t.Fatalf("clipboard = %q", clipboard.text)
+	}
+}

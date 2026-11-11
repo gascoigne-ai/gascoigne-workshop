@@ -189,7 +189,7 @@ func (d *Dialog) rawView(host Host) Node {
 			Spacer(),
 			Text(status, Small(), Color(color)),
 		),
-		Area(&d.RawText, Grow(1), Bg(w.Sunken), OnChange(edited), host.TextMenu(&d.RawText.TextField, edited)),
+		Area(&d.RawText, Grow(1), Bg(w.Sunken), OnChange(edited), TextMenu(&d.RawText.TextField)),
 		For(d.Problems, func(_ int, problem settings.Problem) Node {
 			prefix := ""
 			if problem.Key != "" {

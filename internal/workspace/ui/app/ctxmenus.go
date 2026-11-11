@@ -119,49 +119,8 @@ func (a *App) copyRowItems(rows []model.KV, i int, withAll bool) []MenuItem {
 	return items
 }
 
-// ---- text widgets ---------------------------------------------------------------
-
-// textMenu is the menu of a text field or area. changed, when given,
-// runs after the menu changed the text, so the model follows.
-func (a *App) textMenu(f *TextField, changed func()) []MenuItem {
-	done := func() {
-		if changed != nil {
-			changed()
-		}
-	}
-	hasSel := f.SelectedText() != "" && !f.Masked // secrets never reach the clipboard
-	return []MenuItem{
-		{Label: "Undo", Shortcut: "Ctrl+Z", Disabled: !f.CanUndo(), Run: func() {
-			if f.Undo() {
-				done()
-			}
-		}},
-		{Label: "Redo", Shortcut: "Ctrl+Y", Disabled: !f.CanRedo(), Run: func() {
-			if f.Redo() {
-				done()
-			}
-		}},
-		menuSeparator,
-		{Label: "Cut", Shortcut: "Ctrl+X", Disabled: !hasSel, Run: func() {
-			_ = a.ctx.Clipboard.Write(f.SelectedText())
-			if f.DeleteSelection() {
-				done()
-			}
-		}},
-		{Label: "Copy", Shortcut: "Ctrl+C", Disabled: !hasSel, Run: func() { _ = a.ctx.Clipboard.Write(f.SelectedText()) }},
-		{Label: "Paste", Shortcut: "Ctrl+V", Run: func() {
-			if text, err := a.ctx.Clipboard.Read(); err == nil && f.Insert(text) {
-				done()
-			}
-		}},
-		menuSeparator,
-		{Label: "Select all", Shortcut: "Ctrl+A", Disabled: f.Text == "", Run: f.SelectAll},
-	}
-}
-
-// textMenuOpt makes an element open the text menu of f on right click.
-// Size is the window's size in logical pixels; with TextMenu it makes the
-// App the host of the features that live in their own packages.
+// Size is the window's size in logical pixels; with the methods below it
+// makes the App the host of the features that live in their own packages.
 func (a *App) Size() (width, height int) { return a.w, a.h }
 
 // SentStore, Toast (below), SetStatus, OpenRequest and Badge make the App
@@ -199,13 +158,6 @@ func (a *App) OpenRequest(path string) bool {
 // Badge is the method label shown before a request's name.
 func (a *App) Badge(protocol, method string) Node {
 	return Text(requestBadge(protocol, method), Small(), Color(appearance.MethodToken(method)), W(badgeW))
-}
-
-// TextMenu is the option that gives field the right-click text menu.
-func (a *App) TextMenu(field *TextField, changed func()) Option { return a.textMenuOpt(field, changed) }
-
-func (a *App) textMenuOpt(f *TextField, changed func()) Option {
-	return OnRightClick(func(x, y int) { a.openMenu(x, y, a.textMenu(f, changed)) })
 }
 
 // ---- the response ------------------------------------------------------------------

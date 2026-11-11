@@ -295,7 +295,7 @@ func (a *App) messagesPane(_ pane, t *reqTab, _ *ScrollState) Node {
 			Row(H(w.RowH+16), PadX(w.Gutter), PadY(8), Gap(6), BorderT(w.Border),
 				Field(&t.msg, Grow(1), Placeholder(composerHint(t, connected)),
 					OnEnter(func() { a.sendMessage(t) }),
-					a.textMenuOpt(&t.msg, nil),
+					TextMenu(&t.msg),
 				),
 				If(t.Req.Protocol == "websocket", Button("{ }", MinW(40), OnClick(func() { a.formatMessage(t) }), Tooltip("Make the message one line of JSON, or say where it is not JSON"))),
 				PrimaryButton("Send", MinW(70), OnClick(func() { a.sendMessage(t) }), Tooltip("Send the message (Enter)")),

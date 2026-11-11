@@ -49,9 +49,6 @@ type Host interface {
 	// SetFonts switches the interface and code fonts; the error says why
 	// they were refused, which is why this is not a message.
 	SetFonts(ui, code w.FontData) error
-	// TextMenu is the option that gives a field its right-click menu;
-	// changed runs after the menu changed the text.
-	TextMenu(field *TextField, changed func()) Option
 	// ExtraPage is the content of a page the application draws itself, nil
 	// for an id it does not know.
 	ExtraPage(id string) Node
@@ -173,7 +170,7 @@ func (d *Dialog) pageContent(host Host, id string) Node {
 // titleBar is the dialog's header. The search field (or a spacer in the raw
 // view), Save and the mode switch are slots: they hold state or logic.
 func (d *Dialog) titleBar(host Host) Node {
-	search := If(!d.Raw, Field(&d.Search, H(28), Grow(1), Bg(w.Sunken), Placeholder("Search settings"), OnChange(d.ResetScroll), host.TextMenu(&d.Search, nil)))
+	search := If(!d.Raw, Field(&d.Search, H(28), Grow(1), Bg(w.Sunken), Placeholder("Search settings"), OnChange(d.ResetScroll), TextMenu(&d.Search)))
 	if d.Raw {
 		search = Spacer(Grow(1))
 	}

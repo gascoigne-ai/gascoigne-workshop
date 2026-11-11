@@ -267,8 +267,7 @@ func (a *App) tableView(p pane, t *reqTab, scroll *ScrollState, pad int) Node {
 		spec.OnEditCell = func(row, col int) { a.beginEdit(p, t, row, col) }
 		spec.OnRowMenu = func(row, x, y int) { a.openMenu(x, y, a.rowMenuItems(p, t, row)) }
 		if e := a.edit; e != nil && e.pane.label == p.label && e.tab == t {
-			spec.Editing = &TableEdit{Row: e.row, Col: e.col, Field: &e.field, OnEnter: a.commitEdit, OnTab: a.tabEdit,
-				OnMenu: func(x, y int) { a.openMenu(x, y, a.textMenu(&e.field, nil)) }}
+			spec.Editing = &TableEdit{Row: e.row, Col: e.col, Field: &e.field, OnEnter: a.commitEdit, OnTab: a.tabEdit}
 		}
 		if sel := a.rowSel; sel != nil && sel.tab == t && sel.pane.label == p.label && sel.row < len(*rows) {
 			spec.Selected = &sel.row
@@ -305,7 +304,7 @@ func bulkLabel(inBulk bool) string {
 func (a *App) bulkView(p pane, t *reqTab, pad int) Node {
 	return Col(Grow(1), Pad(pad), Gap(6),
 		a.tableCaption(p, t),
-		Area(&a.bulk.area, Grow(1), Bg(w.Sunken), a.textMenuOpt(&a.bulk.area.TextField, nil)),
+		Area(&a.bulk.area, Grow(1), Bg(w.Sunken), TextMenu(&a.bulk.area.TextField)),
 	)
 }
 
@@ -382,7 +381,7 @@ func (a *App) bodyEditor(t *reqTab, scroll *ScrollState) Node {
 		}
 		t.body.Styler = a.withVariables(base, t.Req) // {{variables}} stand out, as in the URL
 		sync := func() { editRequest(t, editor.BodyTyped{Text: t.body.Text}) }
-		return Area(&t.body, Grow(1), Bg(w.Sunken), OnChange(sync), a.textMenuOpt(&t.body.TextField, sync))
+		return Area(&t.body, Grow(1), Bg(w.Sunken), OnChange(sync), TextMenu(&t.body.TextField))
 	case model.BodyForm, model.BodyMultipart:
 		return a.tableView(formPane, t, scroll, 0)
 	case model.BodyFile:
@@ -426,7 +425,7 @@ func (a *App) settingsPane(_ pane, t *reqTab, scroll *ScrollState) Node {
 		FormRow("Timeout (seconds)", 160,
 			Field(&t.timeout, W(80), Bg(w.Sunken),
 				OnChange(func() { a.timeoutEdited(t) }),
-				a.textMenuOpt(&t.timeout, func() { a.timeoutEdited(t) })),
+				TextMenu(&t.timeout)),
 			Text(fmt.Sprintf("blank = default (%d s)", a.timeoutFor(model.Request{})/time.Second), Small(), Muted()),
 		),
 		CheckRow(!t.Req.NoRedirects, OnClick(func() { editRequest(t, editor.NoRedirectsToggled{}) }),
@@ -511,7 +510,7 @@ func (a *App) findBar(t *reqTab) Node {
 		Field(&t.find, Grow(1), Placeholder("Find"),
 			OnChange(func() { a.runFind(t) }),
 			OnEnter(func() { a.findEnter(t) }),
-			a.textMenuOpt(&t.find, func() { a.runFind(t) }),
+			TextMenu(&t.find),
 		),
 		Text(viewer.Count(t.find.Text, len(t.view.Matches()), t.look.Match), Small(), Muted(), W(64)),
 		IconButton(ChevronUpIcon(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(func() { a.findStep(t, -1) }), Tooltip("Previous match")),

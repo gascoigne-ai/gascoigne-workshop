@@ -255,7 +255,6 @@ type TableEdit struct {
 	Field    *TextField
 	OnEnter  func()
 	OnTab    func(back bool)
-	OnMenu   func(x, y int) // right click on the edit field
 }
 
 const tableActionW = 36
@@ -364,7 +363,7 @@ func tableCell(t TableSpec, row, col int, text string, clr core.Token) Node {
 	if e := t.Editing; e != nil && e.Row == row && e.Col == col {
 		// The field is inset in its cell so its rounded outline and focus ring have room.
 		return Row(Grow(t.weight(col)), PadX(3), PadY(3), When(col > 0, Separator(0)),
-			Field(e.Field, Grow(1), Bg(core.Sunken), FieldPad(5) /* 3 + 5 = the 8 px of a shown cell, so the text does not move */, OnEnter(e.OnEnter), OnTab(e.OnTab), menuOption(e.OnMenu)),
+			Field(e.Field, Grow(1), Bg(core.Sunken), FieldPad(5) /* 3 + 5 = the 8 px of a shown cell, so the text does not move */, OnEnter(e.OnEnter), OnTab(e.OnTab), TextMenu(e.Field)),
 		)
 	}
 	var label *El = Text(text, Ellipsis(), Color(clr), Grow(1))
@@ -387,14 +386,6 @@ func tableCell(t TableSpec, row, col int, text string, clr core.Token) Node {
 		items = append(items, OnClick(func() { t.OnEditCell(row, col) }))
 	}
 	return Row(items...)
-}
-
-// menuOption is OnRightClick for an optional handler.
-func menuOption(f func(x, y int)) Option {
-	if f == nil {
-		return func(*El) {}
-	}
-	return OnRightClick(f)
 }
 
 // MinColumnPx is the narrowest a table column can be dragged.

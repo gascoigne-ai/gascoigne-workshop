@@ -68,7 +68,7 @@ func (a *App) sidebar() Node {
 	return Col(
 		Row(H(headerH), PadX(w.Gutter), Gap(6), Bg(w.Bg), BorderB(w.Border),
 			a.sidebarMode(),
-			Field(&a.filter, H(28), Grow(1), Bg(w.Sunken), Placeholder("Filter"), a.textMenuOpt(&a.filter, nil)),
+			Field(&a.filter, H(28), Grow(1), Bg(w.Sunken), Placeholder("Filter"), TextMenu(&a.filter)),
 		),
 		If(a.showSent, a.sent.List(a, a.filter.Text)),
 		If(!a.showSent, Scroll(&a.treeScroll, Bg(w.Sunken),
@@ -265,7 +265,7 @@ func (a *App) urlBar(t *reqTab) Node {
 				Segments(a.varSegments),
 				OnChange(func() { a.urlEdited(t) }),
 				OnEnter(func() { a.send(t) }),
-				a.textMenuOpt(&t.url, func() { a.urlEdited(t) }),
+				TextMenu(&t.url),
 			),
 		),
 		send,

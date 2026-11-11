@@ -175,7 +175,7 @@ func (d *Dialog) textControl(host Host, field settings.Field) Node {
 	note := d.notes[field.Key]
 	edited := func() { d.Edited(host, field.Key) }
 	return Col(
-		Field(input, H(w.RowH), Bg(w.Sunken), Placeholder("Default"), OnChange(edited), host.TextMenu(input, edited)),
+		Field(input, H(w.RowH), Bg(w.Sunken), Placeholder("Default"), OnChange(edited), TextMenu(input)),
 		If(note != "", Note(note, w.Error)),
 	)
 }
@@ -303,7 +303,7 @@ func (d *Dialog) fileControl(host Host, field settings.Field) Node {
 	edited := func() { d.Edited(host, field.Key) }
 	return Col(
 		Row(H(w.RowH), Bg(w.Sunken), Control("field"), AlignItems(AlignCenter),
-			Field(input, Grow(1), Placeholder("No file"), OnChange(edited), host.TextMenu(input, edited)),
+			Field(input, Grow(1), Placeholder("No file"), OnChange(edited), TextMenu(input)),
 			IconButton(FolderIcon(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(choose), Tooltip("Choose another file")),
 		),
 		If(note != "", Note(note, w.Error)),

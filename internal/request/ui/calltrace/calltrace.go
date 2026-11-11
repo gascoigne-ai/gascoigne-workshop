@@ -31,8 +31,6 @@ const (
 type Host interface {
 	// Size is the window's size in logical pixels.
 	Size() (width, height int)
-	// TextMenu is the option that gives a field its right-click menu.
-	TextMenu(field *TextField, changed func()) Option
 }
 
 // Entry is one line of the log: a request sent, its answer, a connection
@@ -184,7 +182,7 @@ func (l *Log) titleBar(host Host) Node {
 		  </row>
 		</row>`,
 		component.Scope{
-			"filter": Field(&l.filter, H(28), Grow(1), Bg(w.Sunken), Placeholder("Filter"), host.TextMenu(&l.filter, nil)),
+			"filter": Field(&l.filter, H(28), Grow(1), Bg(w.Sunken), Placeholder("Filter"), TextMenu(&l.filter)),
 			"clear":  l.Clear,
 			"close":  l.Close,
 		})

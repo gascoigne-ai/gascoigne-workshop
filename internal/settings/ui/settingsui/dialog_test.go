@@ -46,7 +46,6 @@ func (h *fakeHost) SettingsPath() string               { return h.path }
 func (h *fakeHost) SetFonts(ui, code w.FontData) error { return nil }
 func (h *fakeHost) Toast(text string, _ bool)          { h.toasts = append(h.toasts, text) }
 func (h *fakeHost) SetStatus(string)                   {}
-func (h *fakeHost) TextMenu(*TextField, func()) Option { return func(*El) {} }
 func (h *fakeHost) OpenMenu(x, y int, items []prefs.MenuItem) {
 	h.menus = append(h.menus, items)
 	h.menuAt = [2]int{x, y}
@@ -225,7 +224,7 @@ func TestTitleBarTemplateMatchesTheGoView(t *testing.T) {
 		host := newHost(t)
 		goView := Row(H(DialogTitleH), PadX(16), Gap(8), AlignItems(AlignCenter), BorderB(w.BorderSoft),
 			Text("Settings", Bold(), W(70)),
-			If(!d.Raw, Field(&d.Search, H(28), Grow(1), Bg(w.Sunken), Placeholder("Search settings"), OnChange(d.ResetScroll), host.TextMenu(&d.Search, nil))),
+			If(!d.Raw, Field(&d.Search, H(28), Grow(1), Bg(w.Sunken), Placeholder("Search settings"), OnChange(d.ResetScroll), TextMenu(&d.Search))),
 			If(d.Raw, Spacer(Grow(1))),
 			d.saveButton(host),
 			d.modeSwitch(host),

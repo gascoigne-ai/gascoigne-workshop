@@ -50,7 +50,7 @@ func (a *App) fileBody(t *reqTab) Node {
 	}
 	return Col(Grow(1), Gap(8),
 		Row(H(w.RowH), Gap(6),
-			Field(&t.file, Grow(1), Placeholder("Path of the file to send"), OnChange(sync), a.textMenuOpt(&t.file, sync)),
+			Field(&t.file, Grow(1), Placeholder("Path of the file to send"), OnChange(sync), TextMenu(&t.file)),
 			Button("Choose...", W(90), OnClick(func() {
 				a.pickFile("Choose the file to send", false, "", func(path string) {
 					t.file = NewTextField(path)

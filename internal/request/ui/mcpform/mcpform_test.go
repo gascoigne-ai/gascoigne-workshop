@@ -12,8 +12,7 @@ import (
 
 type fakeHost struct{ submitted int }
 
-func (host *fakeHost) TextMenu(*TextField, func()) Option { return func(*El) {} }
-func (host *fakeHost) Submit()                            { host.submitted++ }
+func (host *fakeHost) Submit() { host.submitted++ }
 
 func searchTool() model.MCPTool {
 	return model.MCPTool{Name: "search", Description: "Find things", Schema: map[string]any{

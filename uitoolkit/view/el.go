@@ -29,7 +29,7 @@
 //	Look       Bg ActiveTab Border BorderX BorderY BorderL BorderT BorderR BorderB HoverBg BorderInset Shadow Control EdgeT EdgeL EdgeR HoverColor Lighten
 //	Text       Text Caption Lines Note   Color Muted Bold Small Mono FontSource Ellipsis TextCenter
 //	Input      Field Area Code Slider Checkbox   (state: TextField TextArea CodeView)   Placeholder FieldPad Segments OnChange OnEnter OnTab
-//	Events     OnClick OnClickAt OnRightClick OnMiddleClick OnDragOver   Tooltip KeepInView
+//	Events     OnClick OnClickAt OnRightClick TextMenu OnMiddleClick OnDragOver   Tooltip KeepInView
 //	Composite  Button PrimaryButton Choice ListRow FormRow CheckRow Toolbar TabBar LinkButton IconButton Tabs ScrollTabs Table   OnSelect OnSlide OnSlideEnd SliderMid   Separator
 //	Split      Vertical AsRatio MinFirst MinSecond
 //	Icons      Icon RegisterIcons IconNames   CrossIcon TriangleIcon GripIcon DotsIcon TrashIcon PlusIcon CopyIcon FolderIcon SearchIcon PromptIcon ChevronUpIcon ChevronDownIcon
@@ -101,6 +101,7 @@ type El struct {
 
 	onClick, onChange, onEnter func()
 	onClickAt                  func(x, y int)
+	onRightIn                  func(c *core.Ctx, x, y int) // a right click that needs the context, as TextMenu does
 	onTab                      func(back bool)
 	onMiddle, onDragOver       func()
 	onSelect                   func(i int)

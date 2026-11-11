@@ -106,7 +106,7 @@ func (a *App) dialogView() Node {
 			Text(d.title, H(w.LabelH)),
 			If(d.body != "", Lines(d.body, w.Muted)),
 			a.dialogForm(d),
-			If(d.input != nil, Field(d.input, H(w.RowH), Bg(w.Sunken), OnEnter(a.dialogDefault), a.textMenuOpt(d.input, nil))),
+			If(d.input != nil, Field(d.input, H(w.RowH), Bg(w.Sunken), OnEnter(a.dialogDefault), TextMenu(d.input))),
 			Row(H(w.RowH), Gap(8),
 				Spacer(),
 				For(d.buttons, func(_ int, b dialogButton) Node {

@@ -32,13 +32,13 @@ func (a *App) graphQLBody(t *reqTab) Node {
 				OnClickAt(func(x, y int) { a.openMenu(x, y, a.schemaMenu(t)) }), Tooltip("Pick an operation: the query and variables are replaced by a starter for it"))),
 			Button("Load schema", W(104), OnClick(func() { a.loadSchema(t) }), Tooltip("Ask the server for its types; the answer opens in the response")),
 		),
-		Area(&t.body, Grow(3), Bg(w.Sunken), OnChange(syncQuery), a.textMenuOpt(&t.body.TextField, syncQuery)),
+		Area(&t.body, Grow(3), Bg(w.Sunken), OnChange(syncQuery), TextMenu(&t.body.TextField)),
 		Row(H(w.LabelH), Gap(6),
 			Caption("Variables (JSON)"),
 			Spacer(),
 			If(t.gqlVars.Text != "", Text(status, Small(), Color(statusColor))),
 		),
-		Area(&t.gqlVars, Grow(1), Bg(w.Sunken), OnChange(syncVars), a.textMenuOpt(&t.gqlVars.TextField, syncVars)),
+		Area(&t.gqlVars, Grow(1), Bg(w.Sunken), OnChange(syncVars), TextMenu(&t.gqlVars.TextField)),
 	)
 }
 

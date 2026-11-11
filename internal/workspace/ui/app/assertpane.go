@@ -30,7 +30,7 @@ func (a *App) assertionsPane(_ pane, t *reqTab, _ *ScrollState) Node {
 	}
 	return Col(Grow(1), Pad(w.Gutter), Gap(8),
 		Text("One assertion per line: status == 200, time < 500ms, header Content-Type contains json, body contains \"ok\", json items.length > 0, json items[0].name == \"a\". set token = json access_token keeps a value as {{token}} for later requests. Lines starting with # are notes.", Small(), Muted()),
-		Area(&t.tests, Grow(1), Bg(w.Sunken), OnChange(sync), a.textMenuOpt(&t.tests.TextField, sync)),
+		Area(&t.tests, Grow(1), Bg(w.Sunken), OnChange(sync), TextMenu(&t.tests.TextField)),
 	)
 }
 

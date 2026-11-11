@@ -16,7 +16,6 @@ type fakeHost struct{ current settings.Settings }
 
 func (host *fakeHost) Settings() settings.Settings        { return host.current }
 func (host *fakeHost) Edit(edit func(*settings.Settings)) { edit(&host.current) }
-func (host *fakeHost) TextMenu(*TextField, func()) Option { return OnRightClick(func(int, int) {}) }
 func (host *fakeHost) Actions() []Action {
 	return []Action{
 		{ID: "close-tab", Name: "Close tab", Default: engine.Binding{Key: ebiten.KeyW, Ctrl: true, Bound: true}},

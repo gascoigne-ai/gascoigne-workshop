@@ -23,8 +23,6 @@ type Form struct {
 
 // Host is what the form asks of the application.
 type Host interface {
-	// TextMenu makes an element open the text menu of field on right click.
-	TextMenu(field *TextField, afterEdit func()) Option
 	// Submit is called when Enter is pressed in a field.
 	Submit()
 }
@@ -125,7 +123,7 @@ func (form *Form) input(host Host, field model.ToolField) Node {
 		return form.enumChoice(field)
 	}
 	input := form.Inputs[field.Name]
-	return Field(input, H(w.RowH), Bg(w.Sunken), OnEnter(host.Submit), host.TextMenu(input, nil))
+	return Field(input, H(w.RowH), Bg(w.Sunken), OnEnter(host.Submit), TextMenu(input))
 }
 
 func boolText(on bool) string {

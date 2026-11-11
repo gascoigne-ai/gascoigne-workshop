@@ -132,6 +132,6 @@ func (a *App) authFieldRow(t *reqTab, f authField) Node {
 	return FormRow(f.label, 120,
 		Field(in, Grow(1), Bg(w.Sunken),
 			OnChange(sync),
-			a.textMenuOpt(in, sync)),
+			TextMenu(in)),
 	)
 }

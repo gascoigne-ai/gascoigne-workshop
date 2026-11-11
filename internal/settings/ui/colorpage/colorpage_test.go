@@ -8,7 +8,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
-	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 type fakeHost struct {
@@ -26,7 +25,6 @@ func (host *fakeHost) Color(tok w.Token) color.RGBA {
 	}
 	return color.RGBA{A: 255}
 }
-func (host *fakeHost) TextMenu(*TextField, func()) Option { return nil }
 
 func newHost() *fakeHost {
 	return &fakeHost{current: settings.Default(), colors: map[w.Token]color.RGBA{}}
