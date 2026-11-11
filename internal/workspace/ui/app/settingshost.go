@@ -151,15 +151,15 @@ func (a *App) revertSettings() {
 // askSaveSettings asks what to do with unsaved changes when the dialog
 // is closed.
 func (a *App) askSaveSettings() {
-	a.dialog = &dialog{
-		title: "Unsaved settings",
-		body:  "The changes are applied but not written to settings.json.\nSave them, or discard them and go back to what is stored?",
-		buttons: []dialogButton{
-			{label: "Cancel", run: a.closeDialog},
-			{label: "Discard", run: func() { a.closeDialog(); a.revertSettings(); a.closeSettingsNow() }},
-			{label: "Save", primary: true, run: func() { a.closeDialog(); a.persistSettings(); a.closeSettingsNow() }},
+	a.dialog = &dialog{DialogState: DialogState{
+		Title: "Unsaved settings",
+		Body:  "The changes are applied but not written to settings.json.\nSave them, or discard them and go back to what is stored?",
+		Buttons: []DialogButton{
+			{Label: "Cancel", Run: a.closeDialog},
+			{Label: "Discard", Run: func() { a.closeDialog(); a.revertSettings(); a.closeSettingsNow() }},
+			{Label: "Save", Primary: true, Run: func() { a.closeDialog(); a.persistSettings(); a.closeSettingsNow() }},
 		},
-	}
+	}}
 }
 
 // SettingsStore is the settings file's store.

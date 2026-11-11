@@ -72,18 +72,18 @@ func (a *App) openSamplingDialog(request reqport.SamplingRequest, answer chan<- 
 	}
 	input := NewTextField("")
 	input.Focused = true
-	a.dialog = &dialog{
-		title: "Sampling request",
-		body:  body.String(),
-		input: &input,
-		buttons: []dialogButton{
-			{label: "Decline", run: func() { a.closeDialog(); declined <- struct{}{} }},
-			{label: "Send reply", primary: true, run: func() {
+	a.dialog = &dialog{DialogState: DialogState{
+		Title: "Sampling request",
+		Body:  body.String(),
+		Input: &input,
+		Buttons: []DialogButton{
+			{Label: "Decline", Run: func() { a.closeDialog(); declined <- struct{}{} }},
+			{Label: "Send reply", Primary: true, Run: func() {
 				a.closeDialog()
 				answer <- reqport.SamplingResult{Text: input.Text, Model: "user"}
 			}},
 		},
-	}
+	}}
 	return a.dialog
 }
 
@@ -96,12 +96,14 @@ func (a *App) openToolForm(t *reqTab, tool model.MCPTool) {
 		return
 	}
 	a.dialog = &dialog{
-		title: "Call " + tool.Name,
-		form:  form,
-		buttons: []dialogButton{
-			{label: "Cancel", run: a.closeDialog},
-			{label: "Fill composer", primary: true, run: func() { a.fillFromForm(t, form) }},
+		DialogState: DialogState{
+			Title: "Call " + tool.Name,
+			Buttons: []DialogButton{
+				{Label: "Cancel", Run: a.closeDialog},
+				{Label: "Fill composer", Primary: true, Run: func() { a.fillFromForm(t, form) }},
+			},
 		},
+		form: form,
 	}
 }
 

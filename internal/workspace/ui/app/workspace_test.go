@@ -275,13 +275,13 @@ func TestExportPostmanWritesACollectionFileThatImportsBack(t *testing.T) {
 	t.Setenv("PATH", t.TempDir()) // no dialog program: the path is asked as text
 	a, _ := newTestApp(t)
 	a.exportPostman(&a.col.Folder)
-	if a.dialog == nil || a.dialog.input == nil || !strings.HasSuffix(a.dialog.input.Text, ".postman_collection.json") {
+	if a.dialog == nil || a.dialog.Input == nil || !strings.HasSuffix(a.dialog.Input.Text, ".postman_collection.json") {
 		t.Fatalf("dialog %+v", a.dialog)
 	}
 	path := filepath.Join(t.TempDir(), "out.json")
-	a.dialog.input.SelectAll()
-	a.dialog.input.Insert(path)
-	a.dialog.buttons[len(a.dialog.buttons)-1].run()
+	a.dialog.Input.SelectAll()
+	a.dialog.Input.Insert(path)
+	a.dialog.Buttons[len(a.dialog.Buttons)-1].Run()
 	data, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)

@@ -37,3 +37,53 @@ func DialogTitle(title string, items ...Item) *El {
 	}, items...), closeButton)...)
 	return bar
 }
+
+// DialogButton is a button of a message dialog; the primary one is lit and
+// is what Enter runs.
+type DialogButton struct {
+	Label   string
+	Primary bool
+	Run     func()
+}
+
+// DialogState is a modal message: a title, a text, an optional input line
+// (a prompt) and buttons. Buttons close the dialog themselves in their
+// Run, so the state needs no knowledge of its owner.
+type DialogState struct {
+	Title, Body string
+	Input       *TextField
+	Buttons     []DialogButton
+}
+
+// Default runs the primary button, if the dialog has one: what Enter does.
+func (state *DialogState) Default() {
+	for _, button := range state.Buttons {
+		if button.Primary {
+			button.Run()
+			return
+		}
+	}
+}
+
+// MessageDialogW is the width of a message dialog.
+const MessageDialogW = 380
+
+// MessageDialog shows state as a DialogBox: title, body, any items you add
+// (a form, between the body and the input), the input line and the buttons
+// on the right. Enter in the input runs the primary button. Give it
+// OnDismiss for what an outside click does.
+func MessageDialog(state *DialogState, items ...Item) *El {
+	return DialogBox(append([]Item{
+		W(MessageDialogW), Pad(16), Gap(12),
+		Text(state.Title, H(core.LabelH)),
+		If(state.Body != "", Lines(state.Body, core.Muted)),
+	}, append(items,
+		If(state.Input != nil, Field(state.Input, H(core.RowH), Bg(core.Sunken), OnEnter(state.Default), TextMenu(state.Input))),
+		Row(H(core.RowH), Gap(8),
+			Spacer(),
+			For(state.Buttons, func(_ int, button DialogButton) Node {
+				return Choice(button.Label, button.Primary, MinW(80), OnClick(button.Run))
+			}),
+		),
+	)...)...)
+}

@@ -1,6 +1,7 @@
 package view
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -60,3 +61,52 @@ func TestDialogTitleHasTheCloseButton(t *testing.T) {
 		t.Fatalf("the close button dismissed %d times, want 1", closed)
 	}
 }
+
+// ---- MessageDialog --------------------------------------------------------
+
+func TestDialogStateDefaultRunsThePrimaryButton(t *testing.T) {
+	ran := ""
+	state := &DialogState{Buttons: []DialogButton{
+		{Label: "Cancel", Run: func() { ran = "cancel" }},
+		{Label: "OK", Primary: true, Run: func() { ran = "ok" }},
+	}}
+	state.Default()
+	if ran != "ok" {
+		t.Fatalf("Default ran %q, want the primary button", ran)
+	}
+	(&DialogState{Buttons: []DialogButton{{Label: "Close", Run: func() { ran = "close" }}}}).Default()
+	if ran != "ok" {
+		t.Fatalf("a dialog without a primary button ran %q on Default", ran)
+	}
+}
+
+func TestMessageDialogShowsTitleBodyInputAndButtons(t *testing.T) {
+	c := testCtx(t)
+	input := NewTextField("name")
+	input.Focused = true
+	ran := ""
+	state := &DialogState{
+		Title: "Rename", Body: "Pick a new name.", Input: &input,
+		Buttons: []DialogButton{
+			{Label: "Cancel", Run: func() { ran = "cancel" }},
+			{Label: "Rename", Primary: true, Run: func() { ran = "rename" }},
+		},
+	}
+	panel := MessageDialog(state, OnDismiss(func() {}))
+	root := Stack(panel)
+	Layout(c, root, 800, 600)
+	dump := Dump(panel)
+	for _, want := range []string{"Rename", "Pick a new name.", "fieldB", "Cancel"} {
+		if !contains(dump, want) {
+			t.Errorf("dialog lacks %q:\n%s", want, dump)
+		}
+	}
+	// Enter in the input runs the primary button.
+	c.In = core.Input{Enter: true}
+	Update(c, root)
+	if ran != "rename" {
+		t.Fatalf("Enter in the input ran %q, want the primary button", ran)
+	}
+}
+
+func contains(text, part string) bool { return strings.Contains(text, part) }

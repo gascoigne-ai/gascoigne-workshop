@@ -71,7 +71,7 @@ func TestSaveBodyWritesTheFileAndReportsFailures(t *testing.T) {
 	}
 	tab.Resp = &model.Response{Status: 200, Body: []byte(`{"a":1}`)}
 	a.saveBody(tab)
-	if a.dialog == nil || a.dialog.input == nil || a.dialog.input.Text != "response.txt" {
+	if a.dialog == nil || a.dialog.Input == nil || a.dialog.Input.Text != "response.txt" {
 		t.Fatalf("the prompt did not open with a name: %+v", a.dialog)
 	}
 	a.closeDialog()
@@ -165,7 +165,7 @@ func TestPickFileUsesTheDesktopDialogWhenThereIsOne(t *testing.T) {
 	t.Setenv("PATH", t.TempDir())
 	got = ""
 	a.pickFile("Pick", false, "start.txt", func(p string) { got = p })
-	if a.dialog == nil || a.dialog.input == nil || a.dialog.input.Text != "start.txt" {
+	if a.dialog == nil || a.dialog.Input == nil || a.dialog.Input.Text != "start.txt" {
 		t.Fatal("without one the path is asked as text")
 	}
 }

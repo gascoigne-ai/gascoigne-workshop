@@ -15,26 +15,17 @@ import (
 // built into the window's Stack after everything else, newest on top.
 
 const (
-	dialogW     = 380
 	toastW      = 320
 	toastH      = 36
 	toastGap    = 6
 	toastMargin = 8
 )
 
-// dialogButton is a button of a dialog.
-type dialogButton struct {
-	label   string
-	primary bool
-	run     func()
-}
-
-// dialog is a modal message with buttons and, for a prompt, a text field.
+// dialog is a message dialog (the toolkit's DialogState) that may also
+// carry the typed form of an MCP tool, drawn between its body and input.
 type dialog struct {
-	title, body string
-	input       *TextField
-	form        *mcpform.Form // a typed MCP tool form, instead of a single input
-	buttons     []dialogButton
+	DialogState
+	form *mcpform.Form
 }
 
 // ---- context menu --------------------------------------------------------
@@ -58,10 +49,10 @@ func withIcons(items []MenuItem) []MenuItem {
 
 // confirm asks a yes/no question; onOK runs only on the primary button or Enter.
 func (a *App) confirm(title, body, okLabel string, onOK func()) {
-	a.dialog = &dialog{title: title, body: body, buttons: []dialogButton{
-		{label: "Cancel", run: a.closeDialog},
-		{label: okLabel, primary: true, run: func() { a.closeDialog(); onOK() }},
-	}}
+	a.dialog = &dialog{DialogState: DialogState{Title: title, Body: body, Buttons: []DialogButton{
+		{Label: "Cancel", Run: a.closeDialog},
+		{Label: okLabel, Primary: true, Run: func() { a.closeDialog(); onOK() }},
+	}}}
 }
 
 // prompt asks for a line of text, starting with initial selected.
@@ -71,26 +62,18 @@ func (a *App) prompt(title, initial, okLabel string, onOK func(text string)) {
 	if initial != "" {
 		input.SelectAll()
 	}
-	d := &dialog{title: title, input: &input}
-	d.buttons = []dialogButton{
-		{label: "Cancel", run: a.closeDialog},
-		{label: okLabel, primary: true, run: func() { a.closeDialog(); onOK(input.Text) }},
-	}
-	a.dialog = d
+	a.dialog = &dialog{DialogState: DialogState{Title: title, Input: &input, Buttons: []DialogButton{
+		{Label: "Cancel", Run: a.closeDialog},
+		{Label: okLabel, Primary: true, Run: func() { a.closeDialog(); onOK(input.Text) }},
+	}}}
 }
 
 func (a *App) closeDialog() { a.dialog = nil }
 
 // dialogDefault runs the primary button: what Enter does.
 func (a *App) dialogDefault() {
-	if a.dialog == nil {
-		return
-	}
-	for _, b := range a.dialog.buttons {
-		if b.primary {
-			b.run()
-			return
-		}
+	if a.dialog != nil {
+		a.dialog.Default()
 	}
 }
 
@@ -99,18 +82,7 @@ func (a *App) dialogView() Node {
 	if d == nil {
 		return nil
 	}
-	return DialogBox(W(dialogW), Pad(16), Gap(12), OnDismiss(a.closeDialog),
-		Text(d.title, H(w.LabelH)),
-		If(d.body != "", Lines(d.body, w.Muted)),
-		a.dialogForm(d),
-		If(d.input != nil, Field(d.input, H(w.RowH), Bg(w.Sunken), OnEnter(a.dialogDefault), TextMenu(d.input))),
-		Row(H(w.RowH), Gap(8),
-			Spacer(),
-			For(d.buttons, func(_ int, b dialogButton) Node {
-				return Choice(b.label, b.primary, MinW(80), OnClick(b.run))
-			}),
-		),
-	)
+	return MessageDialog(&d.DialogState, OnDismiss(a.closeDialog), a.dialogForm(d))
 }
 
 // ---- toasts ----------------------------------------------------------------
@@ -166,7 +138,7 @@ func (a *App) overlayKeys(in w.Input) {
 	switch {
 	case MenuOpen(a.ctx):
 		PopupMenuKeys(a.ctx, in)
-	case a.dialog != nil && a.dialog.input == nil && enter:
+	case a.dialog != nil && a.dialog.Input == nil && enter:
 		a.dialogDefault()
 	}
 }

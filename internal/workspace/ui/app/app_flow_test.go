@@ -1906,7 +1906,7 @@ func TestPromptReturnsTheTypedText(t *testing.T) {
 	var got string
 	a.prompt("Rename", "Old name", "Rename", func(text string) { got = text })
 	a.step(core.Input{})
-	if a.dialog == nil || !a.dialog.input.Focused || a.dialog.input.SelectedText() != "Old name" {
+	if a.dialog == nil || !a.dialog.Input.Focused || a.dialog.Input.SelectedText() != "Old name" {
 		t.Fatalf("the field starts focused with its text selected: %+v", a.dialog)
 	}
 	a.typeText("New name")
@@ -1921,7 +1921,7 @@ func TestDialogTrapsFocusAndBlocksShortcuts(t *testing.T) {
 	a.prompt("Rename", "x", "Rename", func(string) {})
 	a.step(core.Input{})
 	a.step(core.Input{Tab: true})
-	if !a.dialog.input.Focused || a.cur().url.Focused {
+	if !a.dialog.Input.Focused || a.cur().url.Focused {
 		t.Fatal("Tab must stay inside the dialog")
 	}
 	a.step(key(ebiten.KeyT, true, false))
@@ -2094,7 +2094,7 @@ func TestRenameThroughTheMenuUpdatesTheTreeAndTheTab(t *testing.T) {
 	info := findReq(a, "Repository Info")
 	rightClick(a, 100, treeRowY(rowInfo))
 	pickMenu(t, a, "Rename")
-	if a.dialog == nil || a.dialog.input.Text != "Repository Info" {
+	if a.dialog == nil || a.dialog.Input.Text != "Repository Info" {
 		t.Fatalf("dialog = %+v", a.dialog)
 	}
 	a.typeText("Repo details")
@@ -2324,7 +2324,7 @@ func TestTreeKeyboardNavigation(t *testing.T) {
 	}
 
 	a.step(key(ebiten.KeyF2, false, false))
-	if a.dialog == nil || a.dialog.input.Text != "Repository Info" {
+	if a.dialog == nil || a.dialog.Input.Text != "Repository Info" {
 		t.Fatal("F2 renames the selection")
 	}
 	a.step(core.Input{Escape: true})

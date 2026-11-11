@@ -75,13 +75,13 @@ func TestClosingWithUnsavedChangesAsksWhatToDo(t *testing.T) {
 		return a, path
 	}
 	press := func(a *App, label string) {
-		for _, b := range a.dialog.buttons {
-			if b.label == label {
-				b.run()
+		for _, b := range a.dialog.Buttons {
+			if b.Label == label {
+				b.Run()
 				return
 			}
 		}
-		t.Fatalf("no %q button in %+v", label, a.dialog.buttons)
+		t.Fatalf("no %q button in %+v", label, a.dialog.Buttons)
 	}
 	t.Run("cancel keeps the dialog and the changes", func(t *testing.T) {
 		a, _ := setup(t)

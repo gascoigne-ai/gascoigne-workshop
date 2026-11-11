@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 func searchTool() model.MCPTool {
@@ -21,15 +22,15 @@ func searchTool() model.MCPTool {
 	}}
 }
 
-func dialogButtonNamed(t *testing.T, a *App, label string) dialogButton {
+func dialogButtonNamed(t *testing.T, a *App, label string) view.DialogButton {
 	t.Helper()
-	for _, button := range a.dialog.buttons {
-		if button.label == label {
+	for _, button := range a.dialog.Buttons {
+		if button.Label == label {
 			return button
 		}
 	}
-	t.Fatalf("no %q button in %+v", label, a.dialog.buttons)
-	return dialogButton{}
+	t.Fatalf("no %q button in %+v", label, a.dialog.Buttons)
+	return view.DialogButton{}
 }
 
 func TestPickingAToolWithPropertiesOpensAFormWithTheDefaults(t *testing.T) {
@@ -59,7 +60,7 @@ func TestFillingTheFormComposesATypedCall(t *testing.T) {
 	form.Inputs["limit"].Text = "5"
 	form.Choices["safe"] = "true"
 	form.Choices["sort"] = "desc"
-	dialogButtonNamed(t, a, "Fill composer").run()
+	dialogButtonNamed(t, a, "Fill composer").Run()
 	if a.dialog != nil {
 		t.Fatal("the form closes once the call is composed")
 	}
@@ -76,7 +77,7 @@ func TestAFormWithAnInvalidValueStaysOpenAndSaysWhich(t *testing.T) {
 	form := a.dialog.form
 	form.Inputs["query"].Text = "go"
 	form.Inputs["limit"].Text = "lots"
-	dialogButtonNamed(t, a, "Fill composer").run()
+	dialogButtonNamed(t, a, "Fill composer").Run()
 	if a.dialog == nil || !strings.Contains(form.Problem, "limit must be a number") {
 		t.Fatalf("dialog %v problem %q", a.dialog, form.Problem)
 	}

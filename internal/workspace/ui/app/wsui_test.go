@@ -217,9 +217,9 @@ func TestMCPToolsFillTheComposerFromTheirSchemas(t *testing.T) {
 	if a.dialog == nil || a.dialog.form == nil {
 		t.Fatal("picking a tool with arguments opens the form")
 	}
-	for _, button := range a.dialog.buttons {
-		if button.label == "Fill composer" {
-			button.run()
+	for _, button := range a.dialog.Buttons {
+		if button.Label == "Fill composer" {
+			button.Run()
 		}
 	}
 	if got := tab.msg.Text; got != `call search {"q":"","limit":5}` {

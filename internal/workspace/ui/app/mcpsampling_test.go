@@ -56,11 +56,11 @@ func TestASamplingRequestOpensADialogAndTheTypedReplyIsTheAnswer(t *testing.T) {
 	a, _ := newTestApp(t)
 	answer := ask(a, context.Background())
 	stepUntil(t, a, "the sampling dialog", func() bool { return a.dialog != nil })
-	if !strings.Contains(a.dialog.body, "Say hi") || !strings.Contains(a.dialog.body, "Be brief") {
-		t.Fatalf("the dialog must show the request, body = %q", a.dialog.body)
+	if !strings.Contains(a.dialog.Body, "Say hi") || !strings.Contains(a.dialog.Body, "Be brief") {
+		t.Fatalf("the dialog must show the request, body = %q", a.dialog.Body)
 	}
-	a.dialog.input.Text = "Hello!"
-	dialogButtonNamed(t, a, "Send reply").run()
+	a.dialog.Input.Text = "Hello!"
+	dialogButtonNamed(t, a, "Send reply").Run()
 	got := <-answer
 	if !got.ok || got.result.Text != "Hello!" {
 		t.Fatalf("answer = %+v", got)
@@ -74,7 +74,7 @@ func TestDecliningASamplingRequestAnswersNo(t *testing.T) {
 	a, _ := newTestApp(t)
 	answer := ask(a, context.Background())
 	stepUntil(t, a, "the sampling dialog", func() bool { return a.dialog != nil })
-	dialogButtonNamed(t, a, "Decline").run()
+	dialogButtonNamed(t, a, "Decline").Run()
 	if got := <-answer; got.ok {
 		t.Fatalf("answer = %+v", got)
 	}
@@ -100,11 +100,11 @@ func TestASamplingRequestWaitsForTheDialogThatIsOpen(t *testing.T) {
 		a.step(core.Input{})
 		time.Sleep(5 * time.Millisecond)
 	}
-	if a.dialog.title != "Something else" {
-		t.Fatalf("the sampling request replaced the open dialog: %q", a.dialog.title)
+	if a.dialog.Title != "Something else" {
+		t.Fatalf("the sampling request replaced the open dialog: %q", a.dialog.Title)
 	}
 	a.closeDialog()
-	stepUntil(t, a, "the sampling dialog after the other closed", func() bool { return a.dialog != nil && a.dialog.title != "Something else" })
-	dialogButtonNamed(t, a, "Decline").run()
+	stepUntil(t, a, "the sampling dialog after the other closed", func() bool { return a.dialog != nil && a.dialog.Title != "Something else" })
+	dialogButtonNamed(t, a, "Decline").Run()
 	<-answer
 }
