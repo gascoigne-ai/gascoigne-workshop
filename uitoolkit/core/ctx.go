@@ -98,13 +98,9 @@ type Ctx struct {
 	// longer in the tree, is blurred.
 	FocusOwner any
 
-	// Tooltip state, kept by view.Draw: the text of the element under the
-	// pointer, whether it has been hovered long enough to show, and
-	// whether it is still waiting to (the app keeps drawing meanwhile).
-	TipText              string
-	TipShown, TipWaiting bool
-	TipFor               string // the text the delay is counted for
-	TipSince             int    // tick at which the pointer came to rest on it
+	// TipText is the tooltip text of the element under the pointer, set by
+	// view.Draw for widget.TooltipLayer to show.
+	TipText string
 
 	// Menu is the open popup menu; view owns its type (*widget.MenuState) and
 	// core only carries it, so that any element can open a menu without a

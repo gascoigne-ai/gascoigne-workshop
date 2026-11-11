@@ -13,6 +13,7 @@
 //	Dialogs    Dialog ResizableDialog DialogTitle MessageDialog   (state: DialogState DialogButton)
 //	Toasts     Toasts   (state: ToastStack Toast)
 //	Pictures   Image
+//	Tooltips   TooltipLayer   (state: TooltipState)   (the Tooltip option is view's)
 //	Icons      Icon RegisterIcons IconNames HasIcon   CrossIcon TriangleIcon GripIcon DotsIcon TrashIcon PlusIcon CopyIcon FolderIcon SearchIcon PromptIcon ChevronUpIcon ChevronDownIcon
 //	Checkboxes Checkbox
 //	Tables     Table   (state: TableSpec TableRow TableEdit ColumnWidths)   MinColumnPx

@@ -211,7 +211,6 @@ func Draw(c *core.Ctx, root Node, dst *ebiten.Image) {
 	c.TipText = ""
 	root.draw(c, dst)
 	c.HoverOff = false
-	drawTooltip(c, dst, root.rect)
 }
 
 // hasModal reports whether any visible element is a modal overlay.

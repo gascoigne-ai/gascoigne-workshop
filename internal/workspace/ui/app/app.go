@@ -228,6 +228,7 @@ type App struct {
 	previews           rport.BodyPreview // shows a response body in the browser, replaced in tests
 	sampler            core.Sampler
 	treeScroll         view.ScrollState
+	tips               widget.TooltipState
 	sidebarSplit       widget.SplitState // width of the collections sidebar
 	paneSplit          widget.SplitState // request pane share of the request/response area
 	statePath          string            // where the UI state is remembered
@@ -587,8 +588,8 @@ func (a *App) step(in core.Input) {
 	a.settleBulk()
 	a.stateTick()
 	a.workspaceTick()
-	a.markFrame(active || drained || pruned || a.ctx.TipWaiting)
-	a.pacer.NoteIdle(active || drained || pruned || a.ctx.TipWaiting)
+	a.markFrame(active || drained || pruned || a.tips.Waiting())
+	a.pacer.NoteIdle(active || drained || pruned || a.tips.Waiting())
 }
 
 // Draw implements ebiten.Game. The view is rebuilt so it shows the

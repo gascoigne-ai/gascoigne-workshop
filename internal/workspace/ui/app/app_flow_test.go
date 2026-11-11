@@ -3325,7 +3325,7 @@ func tipAt(a *App, x, y int) string {
 	a.ctx.Tick += 100
 	a.dirty = true
 	a.Draw(img)
-	if a.ctx.TipShown {
+	if a.tips.Shown() {
 		return a.ctx.TipText
 	}
 	return ""
@@ -3364,7 +3364,7 @@ func TestTooltipKeepsFramesComingWhileItWaits(t *testing.T) {
 	a, _ := newTestApp(t)
 	a.step(core.Input{X: sendX, Y: urlBarY})
 	a.Draw(ebiten.NewImage(winW, winH))
-	if !a.ctx.TipWaiting {
+	if !a.tips.Waiting() {
 		t.Fatal("hovering a button with a tooltip must be waiting")
 	}
 	a.dirty = false

@@ -45,7 +45,8 @@ const (
 //	│  │  ├─ sidebar        collections tree
 //	│  │  └─ mainColumn     header, request tabs, URL bar, request | response
 //	│  └─ statusBar
-//	└─ menuView             settings, floating above, only while open
+//	├─ menuView             settings, floating above, only while open
+//	└─ TooltipLayer         the tooltip of the hovered element, last so it is on top
 func (a *App) view() Node {
 	return Stack(
 		Col(Bg(w.Frame),
@@ -60,6 +61,7 @@ func (a *App) view() Node {
 		a.dialogView(),
 		a.calls.View(a),
 		a.toastsView(),
+		TooltipLayer(&a.tips),
 	)
 }
 
