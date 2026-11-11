@@ -65,6 +65,11 @@ func dump(sb *strings.Builder, e *El, depth int) {
 			add(f.name, true)
 		}
 	}
+	if custom, ok := e.b.(customB); ok {
+		if describer, ok := custom.Behavior.(Describer); ok {
+			sb.WriteString(" " + describer.Describe())
+		}
+	}
 	if e.rect.W != 0 || e.rect.H != 0 {
 		fmt.Fprintf(sb, " rect=%d,%d,%d,%d", e.rect.X, e.rect.Y, e.rect.W, e.rect.H)
 	}

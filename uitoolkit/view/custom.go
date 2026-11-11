@@ -71,3 +71,18 @@ func (l Linear) Layout(e *El, c *core.Ctx) { flow{horiz: l.Horizontal}.layout(e,
 // Place gives the element the rect r and lays its own children out in
 // it. A container's Layout calls it on each child.
 func (e *El) Place(c *core.Ctx, r core.Rect) { e.place(c, r) }
+
+// Describer is implemented by a Behavior that has attributes worth
+// showing in Dump: Describe returns them as "name=value" pairs.
+type Describer interface{ Describe() string }
+
+// FixedSize is the size given with W and H, 0 where the element takes its
+// content's size.
+func (e *El) FixedSize() (w, h int) { return e.w, e.h }
+
+// ColorToken is the token given with Color, or fallback when there is
+// none: the color a component draws in.
+func (e *El) ColorToken(fallback core.Token) core.Token { return e.color(nil, fallback) }
+
+// HoverColorToken is the token given with HoverColor, "" for none.
+func (e *El) HoverColorToken() core.Token { return e.hoverColor }

@@ -143,3 +143,37 @@ func TestPlaceSetsAChildsRectAndLaysItOut(t *testing.T) {
 		t.Fatalf("a placed child lays its own children out too: %+v", got)
 	}
 }
+
+type described struct{ view.Base }
+
+func (described) Describe() string { return "glyph=star" }
+
+func TestDumpPrintsWhatADescriberSays(t *testing.T) {
+	dump := view.Dump(view.Custom(described{}))
+	if first, _, _ := strings.Cut(dump, "\n"); first != "described glyph=star" {
+		t.Fatalf("dump %q, want the kind and the description", first)
+	}
+}
+
+func TestAnElementReportsTheLookItWasGiven(t *testing.T) {
+	node := view.Custom(&probe{}, view.W(20), view.H(10), view.Color(core.Accent), view.HoverColor(core.Error))
+	if w, h := node.FixedSize(); w != 20 || h != 10 {
+		t.Errorf("FixedSize = %d, %d", w, h)
+	}
+	if got := node.ColorToken(core.Muted); got != core.Accent {
+		t.Errorf("ColorToken = %q, want the one given", got)
+	}
+	if got := node.HoverColorToken(); got != core.Error {
+		t.Errorf("HoverColorToken = %q", got)
+	}
+	bare := view.Custom(&probe{})
+	if w, h := bare.FixedSize(); w != 0 || h != 0 {
+		t.Errorf("a bare element has no fixed size: %d, %d", w, h)
+	}
+	if got := bare.ColorToken(core.Muted); got != core.Muted {
+		t.Errorf("ColorToken without Color = %q, want the fallback", got)
+	}
+	if got := bare.HoverColorToken(); got != "" {
+		t.Errorf("HoverColorToken without HoverColor = %q", got)
+	}
+}
