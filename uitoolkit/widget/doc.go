@@ -13,6 +13,7 @@
 //	Dialogs    Dialog ResizableDialog DialogTitle MessageDialog   (state: DialogState DialogButton)
 //	Toasts     Toasts   (state: ToastStack Toast)
 //	Pictures   Image
+//	Checkboxes Checkbox
 //	Tables     Table   (state: TableSpec TableRow TableEdit ColumnWidths)   MinColumnPx
 //	Resizing   Resizable   (state: ResizeState)
 //	Splitting  Split Vertical AsRatio MinFirst MinSecond   (state: SplitState)

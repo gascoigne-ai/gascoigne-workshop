@@ -282,9 +282,9 @@ func TestCodeNodeForwardsInputToTheView(t *testing.T) {
 
 func TestIconsHaveTheirNaturalWidths(t *testing.T) {
 	c := testCtx(t)
-	icons := Row(Checkbox(true), CrossIcon(), TriangleIcon(false), DotsIcon())
+	icons := Row(CrossIcon(), TriangleIcon(false), DotsIcon())
 	Layout(c, icons, 200, 30)
-	want := []int{14, 10, 10, 4}
+	want := []int{10, 10, 4}
 	for i, k := range icons.kids {
 		if k.rect.W != want[i] {
 			t.Errorf("icon %d width %d, want %d", i, k.rect.W, want[i])
@@ -759,19 +759,5 @@ func TestOnClickAtGetsThePointerOfTheClick(t *testing.T) {
 	Update(c, root)
 	if n != 1 || gx != 30 || gy != 20 {
 		t.Fatalf("calls %d at %d,%d", n, gx, gy)
-	}
-}
-
-func TestCheckboxOnChangeRunsWhenTheBoxIsClicked(t *testing.T) {
-	var changes int
-	root := Row(Checkbox(true, W(20), H(20), OnChange(func() { changes++ })))
-	c := testCtx(t)
-	Layout(c, root, 100, 20)
-	c.In = core.Input{X: 60, Y: 10, Click: true} // beside the box
-	Update(c, root)
-	c.In = core.Input{X: 10, Y: 10, Click: true}
-	Update(c, root)
-	if changes != 1 {
-		t.Fatalf("OnChange ran %d times, want 1", changes)
 	}
 }
