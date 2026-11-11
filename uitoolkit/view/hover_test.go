@@ -63,16 +63,23 @@ func TestWithoutAModalOverlayHoverWorksEverywhere(t *testing.T) {
 	}
 }
 
+// cursorProbe asks for a resize cursor while the pointer is over it.
+type cursorProbe struct{ plain }
+
+func (*cursorProbe) update(e *El, c *core.Ctx) {
+	if c.In.Over(e.rect) {
+		c.Cursor = core.CursorResizeH
+	}
+}
+
 func TestAModalOverlaySwallowsTheWheelAndTheCursorBelowIt(t *testing.T) {
 	var hits []int
 	st := &ScrollState{}
-	split := &SplitState{}
-	first, second := box(), box()
 	menu := box(W(40), H(40), FloatAt(160, 0), Modal(), OnDismiss(func() {}))
 	root := Stack(
 		Col(
 			scroller(st, 100, rows(10, &hits)...),
-			Split(split, 100, H(50), first, second),
+			newEl(&cursorProbe{}, []Item{H(50)}), // wants a resize cursor while the pointer is on it, as a divider does
 		),
 		menu,
 	)
@@ -86,7 +93,7 @@ func TestAModalOverlaySwallowsTheWheelAndTheCursorBelowIt(t *testing.T) {
 	}
 
 	c.Cursor = core.CursorDefault
-	c.In = core.Input{X: 100, Y: 125} // on the split divider, outside the menu
+	c.In = core.Input{X: 100, Y: 125} // on the divider, outside the menu
 	Update(c, root)
 	if c.Cursor != core.CursorDefault {
 		t.Fatalf("the divider below a modal asked for cursor %v", c.Cursor)

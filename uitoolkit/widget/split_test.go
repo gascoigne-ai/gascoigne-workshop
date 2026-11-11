@@ -1,14 +1,15 @@
-package view
+package widget
 
 import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 func splitRoot(t *testing.T, st *SplitState, w, h int, items ...Item) (*El, *El, *El, *core.Ctx) {
 	t.Helper()
-	first, second := box(), box()
+	first, second := Row(), Row()
 	root := Split(st, 200, append(items, first, second)...)
 	c := testCtx(t)
 	Layout(c, root, w, h)
@@ -17,33 +18,33 @@ func splitRoot(t *testing.T, st *SplitState, w, h int, items ...Item) (*El, *El,
 
 func TestSplitPlacesTwoChildrenAroundAOnePixelDivider(t *testing.T) {
 	_, first, second, _ := splitRoot(t, &SplitState{}, 600, 100)
-	if first.rect != (core.Rect{W: 200, H: 100}) {
-		t.Errorf("first = %+v", first.rect)
+	if first.Rect() != (core.Rect{W: 200, H: 100}) {
+		t.Errorf("first = %+v", first.Rect())
 	}
-	if second.rect != (core.Rect{X: 201, W: 399, H: 100}) {
-		t.Errorf("second = %+v (the divider takes one pixel)", second.rect)
+	if second.Rect() != (core.Rect{X: 201, W: 399, H: 100}) {
+		t.Errorf("second = %+v (the divider takes one pixel)", second.Rect())
 	}
 }
 
 func TestSplitVerticalStacksTheChildren(t *testing.T) {
 	_, first, second, _ := splitRoot(t, &SplitState{}, 100, 600, Vertical())
-	if first.rect != (core.Rect{W: 100, H: 200}) || second.rect != (core.Rect{Y: 201, W: 100, H: 399}) {
-		t.Fatalf("first %+v second %+v", first.rect, second.rect)
+	if first.Rect() != (core.Rect{W: 100, H: 200}) || second.Rect() != (core.Rect{Y: 201, W: 100, H: 399}) {
+		t.Fatalf("first %+v second %+v", first.Rect(), second.Rect())
 	}
 }
 
 func TestSplitRatioIsAFractionOfTheContainer(t *testing.T) {
 	st := &SplitState{}
-	first, second := box(), box()
+	first, second := Row(), Row()
 	root := Split(st, 0.25, AsRatio(), first, second)
 	c := testCtx(t)
 	Layout(c, root, 801, 50)
-	if first.rect.W != 200 { // 25% of the 800px left after the divider
-		t.Fatalf("first = %+v", first.rect)
+	if first.Rect().W != 200 { // 25% of the 800px left after the divider
+		t.Fatalf("first = %+v", first.Rect())
 	}
 	Layout(c, root, 401, 50)
-	if first.rect.W != 100 {
-		t.Fatalf("a smaller window keeps the proportion, first = %+v", first.rect)
+	if first.Rect().W != 100 {
+		t.Fatalf("a smaller window keeps the proportion, first = %+v", first.Rect())
 	}
 	_ = second
 }
@@ -52,8 +53,8 @@ func TestSplitPixelSizeStaysWhenTheWindowChanges(t *testing.T) {
 	st := &SplitState{}
 	root, first, _, c := splitRoot(t, st, 600, 50)
 	Layout(c, root, 900, 50)
-	if first.rect.W != 200 {
-		t.Fatalf("first = %+v", first.rect)
+	if first.Rect().W != 200 {
+		t.Fatalf("first = %+v", first.Rect())
 	}
 }
 
@@ -71,11 +72,11 @@ func TestSplitMinimumsClampBothSides(t *testing.T) {
 	}
 	for _, tt := range tests {
 		st := &SplitState{Size: tt.size}
-		first, second := box(), box()
+		first, second := Row(), Row()
 		root := Split(st, 200, MinFirst(120), MinSecond(150), first, second)
 		Layout(testCtx(t), root, tt.width, 50)
-		if first.rect.W != tt.want {
-			t.Errorf("%s: first.W = %d, want %d", tt.name, first.rect.W, tt.want)
+		if first.Rect().W != tt.want {
+			t.Errorf("%s: first.W = %d, want %d", tt.name, first.Rect().W, tt.want)
 		}
 	}
 }
@@ -89,16 +90,16 @@ func TestDraggingTheDividerResizesTheFirstChild(t *testing.T) {
 	c.In = core.Input{X: 320, Y: 40, Held: true}
 	Update(c, root)
 	Layout(c, root, 600, 100)
-	if first.rect.W != 320 {
-		t.Fatalf("after dragging to x=320 the first child is %d wide", first.rect.W)
+	if first.Rect().W != 320 {
+		t.Fatalf("after dragging to x=320 the first child is %d wide", first.Rect().W)
 	}
 	c.In = core.Input{X: 320, Y: 40} // release
 	Update(c, root)
 	c.In = core.Input{X: 500, Y: 40, Held: true}
 	Update(c, root)
 	Layout(c, root, 600, 100)
-	if first.rect.W != 320 {
-		t.Fatalf("after release the divider must not follow the pointer, first = %d", first.rect.W)
+	if first.Rect().W != 320 {
+		t.Fatalf("after release the divider must not follow the pointer, first = %d", first.Rect().W)
 	}
 }
 
@@ -110,8 +111,8 @@ func TestDragKeepsTheGrabOffset(t *testing.T) {
 	c.In = core.Input{X: 302, Y: 40, Held: true}
 	Update(c, root)
 	Layout(c, root, 600, 100)
-	if first.rect.W != 300 {
-		t.Fatalf("the divider moves by the pointer's travel, not jumping to it: %d", first.rect.W)
+	if first.Rect().W != 300 {
+		t.Fatalf("the divider moves by the pointer's travel, not jumping to it: %d", first.Rect().W)
 	}
 }
 
@@ -121,16 +122,16 @@ func TestDoubleClickOnTheDividerResetsTheSize(t *testing.T) {
 	c.In = core.Input{X: 340, Y: 40, Click: true, Held: true, Clicks: 2}
 	Update(c, root)
 	Layout(c, root, 600, 100)
-	if first.rect.W != 200 {
-		t.Fatalf("first = %d, want the default 200", first.rect.W)
+	if first.Rect().W != 200 {
+		t.Fatalf("first = %d, want the default 200", first.Rect().W)
 	}
 }
 
 func TestClicksNextToTheDividerStillReachTheChildren(t *testing.T) {
 	st := &SplitState{}
 	var hits []string
-	left := box(OnClick(func() { hits = append(hits, "left") }))
-	right := box(OnClick(func() { hits = append(hits, "right") }))
+	left := Row(OnClick(func() { hits = append(hits, "left") }))
+	right := Row(OnClick(func() { hits = append(hits, "right") }))
 	root := Split(st, 200, left, right)
 	c := testCtx(t)
 	Layout(c, root, 600, 100)

@@ -25,13 +25,12 @@
 //
 //	Size       W H MinW MaxW MinH MaxH Grow Optional Clip
 //	Spacing    Pad PadX PadY PadL PadT PadR PadB   Margin MarginX MarginY MarginL MarginT MarginR MarginB   Gap
-//	Layout     Row Col Stack Split Scroll HScroll Spacer   AlignItems AlignSelf JustifyContent
+//	Layout     Row Col Stack Scroll HScroll Spacer   AlignItems AlignSelf JustifyContent
 //	Look       Bg Border BorderX BorderY BorderL BorderT BorderR BorderB HoverBg BorderInset Shadow Control EdgeT EdgeL EdgeR HoverColor Lighten
 //	Text       Text Caption Lines   Color Muted Bold Small Mono FontSource Ellipsis TextCenter
 //	Input      Field Area Code Checkbox   (state: TextField TextArea CodeView)   Placeholder FieldPad Segments OnChange OnEnter OnTab
 //	Events     OnClick OnClickAt OnRightClick OnRightClickIn OnMiddleClick OnDragOver   Tooltip KeepInView
 //	Events+    OnSelect SelectHandler DismissHandler ChangeHandler   Separator   (Button, Tabs, Menu, Dialog and the rest of the ready-made widgets are in package widget)
-//	Split      Vertical AsRatio MinFirst MinSecond
 //	Icons      Icon RegisterIcons IconNames   CrossIcon TriangleIcon GripIcon DotsIcon TrashIcon PlusIcon CopyIcon FolderIcon SearchIcon PromptIcon ChevronUpIcon ChevronDownIcon
 //	Flow       If When For Frag
 //	Extend     Behavior Base Linear Custom (El.Behavior El.Place)   a component outside this package is an element through these
@@ -117,8 +116,7 @@ type El struct {
 	alignItems, alignSelf  Align
 	justify                Justify
 	minW, maxW, minH, maxH int
-	mL, mT, mR, mB         int       // margins
-	split                  splitOpts // set by Split
+	mL, mT, mR, mB         int // margins
 
 	fl         floatOpts // set by Float, FloatAt and FloatCenter
 	focusScope bool
@@ -341,12 +339,6 @@ func If(cond bool, n Node) Node {
 		return n
 	}
 	return nil
-}
-
-// splitOpts are the settings of a Split element.
-type splitOpts struct {
-	vertical, ratio     bool
-	minFirst, minSecond int
 }
 
 // floatOpts are the settings of a floating element.

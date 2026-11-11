@@ -15,6 +15,7 @@
 //	Pictures   Image
 //	Tables     Table   (state: TableSpec TableRow TableEdit ColumnWidths)   MinColumnPx
 //	Resizing   Resizable   (state: ResizeState)
+//	Splitting  Split Vertical AsRatio MinFirst MinSecond   (state: SplitState)
 //	Sliders    Slider OnSlide OnSlideEnd SliderMid   (state: SliderState)
 //
 // The popup menu lives in core.Ctx.Menu: any element opens one with

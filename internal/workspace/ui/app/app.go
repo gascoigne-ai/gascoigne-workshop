@@ -228,8 +228,8 @@ type App struct {
 	previews           rport.BodyPreview // shows a response body in the browser, replaced in tests
 	sampler            core.Sampler
 	treeScroll         view.ScrollState
-	sidebarSplit       view.SplitState   // width of the collections sidebar
-	paneSplit          view.SplitState   // request pane share of the request/response area
+	sidebarSplit       widget.SplitState // width of the collections sidebar
+	paneSplit          widget.SplitState // request pane share of the request/response area
 	statePath          string            // where the UI state is remembered
 	varsFolder         *model.Folder     // the folder whose variables the Vars pane edits, nil for the environment's or the collection's
 	varsCollection     bool              // the Vars pane edits the collection's variables although an environment is active
