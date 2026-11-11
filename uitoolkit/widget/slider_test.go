@@ -1,9 +1,10 @@
-package view
+package widget
 
 import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 // slide is a 50..200 slider with 100 in the middle, on a 200px track.
@@ -56,7 +57,8 @@ func TestSliderDragFollowsPointerMovementNotTheTrackPosition(t *testing.T) {
 	// The UI changes size mid-drag: the track now starts elsewhere and
 	// the same pointer position would mean another fraction. Movement is
 	// what counts: 20 device px right of the press is +15 on this track.
-	s.root.kids[0].rect.X += 37
+	s.root = Col(PadL(37), s.root.Children()[0])
+	Layout(c, s.root, 400, 100)
 	c.In = core.Input{X: sliderPad + 120, Y: 10, Held: true}
 	Update(c, s.root)
 	if got := s.live[len(s.live)-1]; got != 140 {

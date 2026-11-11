@@ -13,6 +13,7 @@
 //	Dialogs    Dialog ResizableDialog DialogTitle MessageDialog   (state: DialogState DialogButton)
 //	Toasts     Toasts   (state: ToastStack Toast)
 //	Pictures   Image
+//	Sliders    Slider OnSlide OnSlideEnd SliderMid   (state: SliderState)
 //
 // The popup menu lives in core.Ctx.Menu: any element opens one with
 // OpenMenu, and the window mounts PopupMenuLayer once and calls

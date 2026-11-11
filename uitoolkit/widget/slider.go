@@ -1,9 +1,10 @@
-package view
+package widget
 
 import (
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 // sliderPad is the room at each end of the track for half the thumb.
@@ -33,7 +34,7 @@ func (s *SliderState) Shown(stored int) int {
 }
 
 type sliderB struct {
-	plain
+	Base
 	state          *SliderState
 	min, max, step int
 	mid            int // value at the middle of the track; 0 for a linear track
@@ -43,7 +44,7 @@ type sliderB struct {
 }
 
 func (s *sliderB) track(e *El) (x, w int) {
-	return e.rect.X + sliderPad, max(e.rect.W-2*sliderPad, 1)
+	return e.Rect().X + sliderPad, max(e.Rect().W-2*sliderPad, 1)
 }
 
 // valueAt maps a track fraction (0..1) to a stepped value. With a mid
@@ -76,9 +77,9 @@ func (s *sliderB) fracOf(v int) float64 {
 	return 0.5 + 0.5*float64(v-s.mid)/float64(s.max-s.mid)
 }
 
-func (s *sliderB) measure(*El, *core.Ctx, int) (int, int) { return 120, 20 }
+func (s *sliderB) Measure(*El, *core.Ctx, int) (int, int) { return 120, 20 }
 
-func (s *sliderB) update(e *El, c *core.Ctx) {
+func (s *sliderB) Update(e *El, c *core.Ctx) {
 	in, st := c.In, s.state
 	switch {
 	case st.Dragging:
@@ -96,7 +97,7 @@ func (s *sliderB) update(e *El, c *core.Ctx) {
 		if s.onEnd != nil {
 			s.onEnd(st.pending)
 		}
-	case in.Click && in.Over(e.rect):
+	case in.Click && in.Over(e.Rect()):
 		x, w := s.track(e)
 		st.Dragging = true
 		st.startF = max(0, min(float64(in.X-x)/float64(w), 1))
@@ -109,8 +110,8 @@ func (s *sliderB) update(e *El, c *core.Ctx) {
 	}
 }
 
-func (s *sliderB) draw(e *El, c *core.Ctx, dst *ebiten.Image) {
-	r := e.rect
+func (s *sliderB) Draw(e *El, c *core.Ctx, dst *ebiten.Image) {
+	r := e.Rect()
 	x, w := s.track(e)
 	frac := s.fracOf(s.state.Shown(s.value))
 	mid := r.Y + r.H/2
@@ -134,15 +135,16 @@ func (s *sliderB) draw(e *El, c *core.Ctx, dst *ebiten.Image) {
 
 // Slider picks an integer from min to max in steps, by dragging. OnSlide
 // runs with each new value while the thumb moves, so the effect can be
-// seen live.
+// seen live. A slider has no template attribute: its state and callbacks
+// are Go values.
 func Slider(state *SliderState, min, max, step, value int, opts ...Option) *El {
-	return newEl(&sliderB{state: state, min: min, max: max, step: step, value: value}, with([]Item{Grow(1), H(core.CompactH)}, opts))
+	return Custom(&sliderB{state: state, min: min, max: max, step: step, value: value}, with([]Item{Grow(1), H(core.CompactH)}, opts)...)
 }
 
 // OnSlide runs with each new value of a Slider while the thumb moves.
 func OnSlide(f func(int)) Option {
 	return func(e *El) {
-		if s, ok := e.b.(*sliderB); ok {
+		if s, ok := e.Behavior().(*sliderB); ok {
 			s.onChange = f
 		}
 	}
@@ -152,7 +154,7 @@ func OnSlide(f func(int)) Option {
 // the two halves separately.
 func SliderMid(mid int) Option {
 	return func(e *El) {
-		if s, ok := e.b.(*sliderB); ok {
+		if s, ok := e.Behavior().(*sliderB); ok {
 			s.mid = mid
 		}
 	}
@@ -161,7 +163,7 @@ func SliderMid(mid int) Option {
 // OnSlideEnd runs with the final value when the thumb is released.
 func OnSlideEnd(f func(int)) Option {
 	return func(e *El) {
-		if s, ok := e.b.(*sliderB); ok {
+		if s, ok := e.Behavior().(*sliderB); ok {
 			s.onEnd = f
 		}
 	}
