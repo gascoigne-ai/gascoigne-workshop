@@ -1,6 +1,6 @@
-// Package component builds view views from HTML-style component
-// templates, so a layout can change without recompiling Go code, or be
-// written inline in Go as a string.
+// Package markup builds views from HTML-style templates, so a layout
+// can change without recompiling Go code, or be written inline in Go as
+// a string.
 //
 //	<row h="28" pad="12 0" gap="12" bg="frame" control="statusbar" border-t="border">
 //	  <text small muted ellipsis grow="1">{{status}}</text>

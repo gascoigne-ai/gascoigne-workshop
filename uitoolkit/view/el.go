@@ -38,7 +38,7 @@
 //
 // A side is a letter suffix (PadL, PadT, PadR, PadB) and an axis is X or
 // Y (PadX is left and right). The same options are the attributes of a
-// template in the component package, in kebab-case (pad-x, border-t).
+// template in package markup, in kebab-case (pad-x, border-t).
 //
 // Layout is a flexbox subset: a fixed size (W, H), a proportional share of
 // the free space (Grow), or the content's own size. Dump prints a laid-out
