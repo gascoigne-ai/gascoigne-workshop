@@ -365,8 +365,8 @@ func TestCodeViewScrollbarThumbDragScrollsTheContent(t *testing.T) {
 	v.SetLines(manyLines(100))
 	r := core.Rect{W: 400, H: 200}
 	g := v.geometry(c, r)
-	track := core.Rect{X: r.W - ScrollbarW, Y: 0, W: ScrollbarW, H: r.H}
-	off, length, ok := Thumb(track.H, 100*g.lineH, r.H, v.ScrollY)
+	track := core.Rect{X: r.W - core.ScrollbarW, Y: 0, W: core.ScrollbarW, H: r.H}
+	off, length, ok := core.Thumb(track.H, 100*g.lineH, r.H, v.ScrollY)
 	if !ok {
 		t.Fatal("100 rows in 200px must need a scrollbar")
 	}

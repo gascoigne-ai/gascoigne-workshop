@@ -88,7 +88,7 @@ func (v *CodeView) wrapCols(g codeGeometry, r core.Rect) int {
 	}
 	// The vertical bar is assumed present, so the columns do not change
 	// when wrapping makes the content long enough to need it.
-	room := r.W - ScrollbarW - (g.textX - r.X) - core.Gutter
+	room := r.W - core.ScrollbarW - (g.textX - r.X) - core.Gutter
 	return max(int(float64(room)/g.adv), 1)
 }
 
@@ -388,8 +388,8 @@ func (v *CodeView) follow(prevY, contentH, viewH int) {
 }
 
 func (v *CodeView) clampScroll(c *core.Ctx, r core.Rect, g codeGeometry, b bars, visible int) {
-	v.ScrollY = clampScroll(v.ScrollY, visible*g.lineH, b.viewH)
-	v.ScrollX = clampScroll(v.ScrollX, v.contentWidth(c, r), b.viewW)
+	v.ScrollY = core.ClampScroll(v.ScrollY, visible*g.lineH, b.viewH)
+	v.ScrollX = core.ClampScroll(v.ScrollX, v.contentWidth(c, r), b.viewW)
 }
 
 // updateBars handles grabbing, dragging and page-clicking the scrollbars.
@@ -457,7 +457,7 @@ func (v *CodeView) updatePointer(c *core.Ctx, r core.Rect, g codeGeometry, b bar
 	}
 	if in.Wheel != 0 {
 		if in.Shift {
-			v.ScrollX = clampScroll(v.ScrollX+int(-in.Wheel*float64(g.charW)*6), v.contentWidth(c, r), b.viewW)
+			v.ScrollX = core.ClampScroll(v.ScrollX+int(-in.Wheel*float64(g.charW)*6), v.contentWidth(c, r), b.viewW)
 		} else {
 			v.ScrollBy(int(-in.Wheel*float64(g.lineH)*3), len(rows)*g.lineH, b.viewH)
 		}
@@ -497,13 +497,13 @@ func (v *CodeView) updateKeys(c *core.Ctx, r core.Rect, g codeGeometry, b bars, 
 	for _, k := range in.Keys {
 		switch k {
 		case ebiten.KeyPageDown:
-			v.ScrollY = clampScroll(v.ScrollY+b.viewH-g.lineH, contentH, b.viewH)
+			v.ScrollY = core.ClampScroll(v.ScrollY+b.viewH-g.lineH, contentH, b.viewH)
 		case ebiten.KeyPageUp:
-			v.ScrollY = clampScroll(v.ScrollY-b.viewH+g.lineH, contentH, b.viewH)
+			v.ScrollY = core.ClampScroll(v.ScrollY-b.viewH+g.lineH, contentH, b.viewH)
 		case ebiten.KeyHome:
 			v.ScrollY = 0
 		case ebiten.KeyEnd:
-			v.ScrollY = clampScroll(contentH, contentH, b.viewH)
+			v.ScrollY = core.ClampScroll(contentH, contentH, b.viewH)
 		}
 	}
 }

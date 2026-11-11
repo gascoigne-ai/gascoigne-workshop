@@ -90,10 +90,10 @@ func (a *TextArea) Update(c *core.Ctx, r core.Rect) (changed bool) {
 	if a.Focused {
 		changed = a.updateKeys(c, r, g, b)
 	}
-	a.ScrollY = clampScroll(a.ScrollY, g.contentH(), b.viewH)
+	a.ScrollY = core.ClampScroll(a.ScrollY, g.contentH(), b.viewH)
 	line, col := a.LineCol(a.Cursor)
 	a.caretX, a.caretY, a.caretKnown = g.textX-a.ScrollX+g.colX(col), r.Y+(line+1)*g.lineH-a.ScrollY, true
-	a.ScrollX = clampScroll(a.ScrollX, g.contentW(core.Rect{W: b.viewW}), b.viewW)
+	a.ScrollX = core.ClampScroll(a.ScrollX, g.contentW(core.Rect{W: b.viewW}), b.viewW)
 	return changed
 }
 
@@ -117,9 +117,9 @@ func (a *TextArea) updatePointer(c *core.Ctx, r core.Rect, g areaGeometry, b bar
 	}
 	if over && in.Wheel != 0 {
 		if in.Shift {
-			a.ScrollX = clampScroll(a.ScrollX+int(-in.Wheel*float64(g.charW)*6), g.contentW(core.Rect{W: b.viewW}), b.viewW)
+			a.ScrollX = core.ClampScroll(a.ScrollX+int(-in.Wheel*float64(g.charW)*6), g.contentW(core.Rect{W: b.viewW}), b.viewW)
 		} else {
-			a.ScrollY = clampScroll(a.ScrollY+int(-in.Wheel*float64(g.lineH)*3), g.contentH(), b.viewH)
+			a.ScrollY = core.ClampScroll(a.ScrollY+int(-in.Wheel*float64(g.lineH)*3), g.contentH(), b.viewH)
 		}
 		c.In.Wheel = 0 // consumed, so an enclosing scroller does not move too
 	}
