@@ -138,8 +138,7 @@ func (d *Dialog) View(host Host) Node {
 	dw, dh = min(max(dw, min(MinWidth, maxW)), maxW), min(max(dh, min(MinHeight, maxH)), maxH)
 	cur := d.pageID()
 	return Frag(
-		Row(Bg(w.Shadow)), // dims the window
-		Resizable(&d.Size, min(MinWidth, maxW), min(MinHeight, maxH), maxW, maxH, W(dw), H(dh), Bg(w.Bg), Control("menu"), Shadow(), FloatCenter(), FocusScope(), Modal(), OnDismiss(func() { host.Send(prefs.Close{}) }),
+		ResizableDialogBox(&d.Size, min(MinWidth, maxW), min(MinHeight, maxH), maxW, maxH, W(dw), H(dh), OnDismiss(func() { host.Send(prefs.Close{}) }),
 			d.titleBar(host),
 			If(d.Raw, Col(Grow(1), Pad(16), d.rawView(host))),
 			If(!d.Raw, Row(Grow(1),
@@ -174,17 +173,7 @@ func (d *Dialog) titleBar(host Host) Node {
 	if d.Raw {
 		search = Spacer(Grow(1))
 	}
-	return component.View(`
-		<row h="44" pad-x="16" gap="8" align-items="center" border-b="border-soft">
-		  <text bold w="70">Settings</text>
-		  <slot name="search"/>
-		  <slot name="save"/>
-		  <slot name="mode"/>
-		  <row w="32" h="24" bg="sunken" control="icon-button" lighten on-click="close" tooltip="Close (Esc)">
-		    <icon name="cross" grow="1"/>
-		  </row>
-		</row>`,
-		component.Scope{"search": search, "save": d.saveButton(host), "mode": d.modeSwitch(host), "close": func() { host.Send(prefs.Close{}) }})
+	return DialogTitle("Settings", OnDismiss(func() { host.Send(prefs.Close{}) }), search, d.saveButton(host), d.modeSwitch(host))
 }
 
 const (

@@ -11,7 +11,6 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/textfmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/component"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
@@ -160,30 +159,16 @@ func (l *Log) View(host Host) Node {
 	l.refresh()
 	_, height := host.Size()
 	h := min(dialogMaxH, height-2*margin)
-	return Frag(
-		Row(Bg(w.Shadow)), // dims the window
-		Col(W(dialogW), H(h), Bg(w.Bg), Control("menu"), Shadow(), FloatCenter(), FocusScope(), Modal(), OnDismiss(l.Close),
-			l.titleBar(host),
-			Code(&l.code, Grow(1), Bg(w.Sunken)),
-		),
+	return DialogBox(W(dialogW), H(h), OnDismiss(l.Close),
+		l.titleBar(host),
+		Code(&l.code, Grow(1), Bg(w.Sunken)),
 	)
 }
 
-// titleBar is the dialog's header: name, filter, Clear and Close. The filter
-// field is a slot because Field keeps its state outside the template.
+// titleBar is the dialog's header: name, filter and Clear, then the close button.
 func (l *Log) titleBar(host Host) Node {
-	return component.View(`
-		<row h="44" pad-x="16" gap="8" align-items="center" border-b="border-soft">
-		  <text bold w="40">Log</text>
-		  <slot name="filter"/>
-		  <button w="64" h="24" on-click="clear" tooltip="Forget the entries">Clear</button>
-		  <row w="32" h="24" bg="sunken" control="icon-button" lighten on-click="close" tooltip="Close (Esc)">
-		    <icon name="cross" grow="1"/>
-		  </row>
-		</row>`,
-		component.Scope{
-			"filter": Field(&l.filter, H(28), Grow(1), Bg(w.Sunken), Placeholder("Filter"), TextMenu(&l.filter)),
-			"clear":  l.Clear,
-			"close":  l.Close,
-		})
+	return DialogTitle("Log", OnDismiss(l.Close),
+		Field(&l.filter, H(28), Grow(1), Bg(w.Sunken), Placeholder("Filter"), TextMenu(&l.filter)),
+		Button("Clear", W(64), H(w.CompactH), OnClick(l.Clear), Tooltip("Forget the entries")),
+	)
 }

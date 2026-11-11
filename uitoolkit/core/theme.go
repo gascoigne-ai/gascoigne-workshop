@@ -56,15 +56,16 @@ const (
 // and one-line notes. Icon buttons are IconBtnW wide. Gutter is the inset
 // between a container and its content.
 const (
-	RowH     = 28
-	CompactH = 24
-	LabelH   = 22
-	NoteH    = 18
-	IconBtnW = 32
-	ToolbarH = RowH + 8 // a bar of controls over a pane
-	TabBarH  = 40       // a strip of tabs, with TabGap above them
-	TabGap   = 6        // space above tabs, so their outline never touches the banner or bar above
-	Gutter   = 12
+	RowH         = 28
+	CompactH     = 24
+	LabelH       = 22
+	NoteH        = 18
+	IconBtnW     = 32
+	DialogTitleH = 44       // the title bar of a dialog
+	ToolbarH     = RowH + 8 // a bar of controls over a pane
+	TabBarH      = 40       // a strip of tabs, with TabGap above them
+	TabGap       = 6        // space above tabs, so their outline never touches the banner or bar above
+	Gutter       = 12
 )
 
 // Theme holds the colors and font sizes the widgets draw with.

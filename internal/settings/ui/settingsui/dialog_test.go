@@ -216,21 +216,23 @@ func mustField(t *testing.T, key string) settings.Field {
 	return field
 }
 
-// The title bar and the navigation item templates render exactly what the Go
-// views they replaced did.
-func TestTitleBarTemplateMatchesTheGoView(t *testing.T) {
+// The title bar names the dialog; the raw view has no search field.
+func TestTitleBarHasTheSearchFieldOnlyOutsideTheRawView(t *testing.T) {
 	for _, raw := range []bool{false, true} {
 		d := Dialog{Raw: raw}
-		host := newHost(t)
-		goView := Row(H(DialogTitleH), PadX(16), Gap(8), AlignItems(AlignCenter), BorderB(w.BorderSoft),
-			Text("Settings", Bold(), W(70)),
-			If(!d.Raw, Field(&d.Search, H(28), Grow(1), Bg(w.Sunken), Placeholder("Search settings"), OnChange(d.ResetScroll), TextMenu(&d.Search))),
-			If(d.Raw, Spacer(Grow(1))),
-			d.saveButton(host),
-			d.modeSwitch(host),
-			IconButton(CrossIcon(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(host.Close), Tooltip("Close (Esc)")),
-		)
-		assertSameDump(t, d.titleBar(host), goView, 900, DialogTitleH)
+		bar := d.titleBar(newHost(t))
+		ctx, err := w.NewCtx(w.Theme{Colors: map[w.Token]color.RGBA{w.Text: w.RGB(0xffffff)}, FontSize: 14, SmallSize: 12, MonoSize: 13})
+		if err != nil {
+			t.Fatal(err)
+		}
+		Layout(ctx, bar, 900, DialogTitleH)
+		dump := Dump(bar)
+		if !strings.Contains(dump, "Settings") {
+			t.Errorf("raw %v: no title:\n%s", raw, dump)
+		}
+		if has := strings.Contains(dump, "fieldB"); has == raw {
+			t.Errorf("raw %v: search field present = %v", raw, has)
+		}
 	}
 }
 

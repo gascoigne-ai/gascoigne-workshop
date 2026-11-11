@@ -11,11 +11,10 @@ import (
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
-// fakeHost is a window of 1000x800 with no right-click menus.
+// fakeHost is a window of 1000x800.
 type fakeHost struct{}
 
-func (fakeHost) Size() (int, int)                   { return 1000, 800 }
-func (fakeHost) TextMenu(*TextField, func()) Option { return func(*El) {} }
+func (fakeHost) Size() (int, int) { return 1000, 800 }
 
 var clock = time.Date(2026, 11, 7, 12, 0, 0, 0, time.UTC)
 
@@ -90,24 +89,27 @@ func testTheme() core.Theme {
 	}
 }
 
-// The title bar template renders exactly what the Go view it replaced did.
-func TestTitleBarTemplateMatchesTheGoView(t *testing.T) {
+// The title bar names the dialog, holds the filter and Clear, and its close
+// button closes the log.
+func TestTitleBarClosesTheLog(t *testing.T) {
 	var log Log
-	host := fakeHost{}
-	goView := Row(H(titleH), PadX(16), Gap(8), AlignItems(AlignCenter), BorderB(core.BorderSoft),
-		Text("Log", Bold(), W(40)),
-		Field(&log.filter, H(28), Grow(1), Bg(core.Sunken), Placeholder("Filter"), TextMenu(&log.filter)),
-		Button("Clear", W(64), H(core.CompactH), OnClick(log.Clear), Tooltip("Forget the entries")),
-		IconButton(CrossIcon(Grow(1)), W(core.IconBtnW), H(core.CompactH), OnClick(log.Close), Tooltip("Close (Esc)")),
-	)
+	log.Open()
 	ctx, err := core.NewCtx(testTheme())
 	if err != nil {
 		t.Fatal(err)
 	}
-	tplView := log.titleBar(host)
-	Layout(ctx, goView, 800, titleH)
-	Layout(ctx, tplView, 800, titleH)
-	if got, want := Dump(tplView), Dump(goView); got != want {
-		t.Fatalf("template:\n%s\nGo:\n%s", got, want)
+	bar := log.titleBar(fakeHost{})
+	root := Col(W(800), H(titleH), bar)
+	Layout(ctx, root, 800, titleH)
+	dump := Dump(bar)
+	for _, want := range []string{"Log", "fieldB", "Clear"} {
+		if !strings.Contains(dump, want) {
+			t.Errorf("title bar has no %q:\n%s", want, dump)
+		}
+	}
+	ctx.In = core.Input{X: 800 - 16 - 16, Y: titleH / 2, Click: true} // the close button: 16 px bar padding, 32 px wide
+	Update(ctx, root)
+	if log.Shown() {
+		t.Fatal("the close button leaves the log open")
 	}
 }

@@ -99,23 +99,16 @@ func (a *App) dialogView() Node {
 	if d == nil {
 		return nil
 	}
-	return Frag(
-		Row(Bg(w.Shadow)), // dims the window
-		Col(W(dialogW), Pad(16), Gap(12), Bg(w.Bg), Control("menu"), Shadow(),
-			FloatCenter(), FocusScope(), Modal(), OnDismiss(a.closeDialog),
-			Text(d.title, H(w.LabelH)),
-			If(d.body != "", Lines(d.body, w.Muted)),
-			a.dialogForm(d),
-			If(d.input != nil, Field(d.input, H(w.RowH), Bg(w.Sunken), OnEnter(a.dialogDefault), TextMenu(d.input))),
-			Row(H(w.RowH), Gap(8),
-				Spacer(),
-				For(d.buttons, func(_ int, b dialogButton) Node {
-					if b.primary {
-						return PrimaryButton(b.label, MinW(80), OnClick(b.run))
-					}
-					return Button(b.label, MinW(80), OnClick(b.run))
-				}),
-			),
+	return DialogBox(W(dialogW), Pad(16), Gap(12), OnDismiss(a.closeDialog),
+		Text(d.title, H(w.LabelH)),
+		If(d.body != "", Lines(d.body, w.Muted)),
+		a.dialogForm(d),
+		If(d.input != nil, Field(d.input, H(w.RowH), Bg(w.Sunken), OnEnter(a.dialogDefault), TextMenu(d.input))),
+		Row(H(w.RowH), Gap(8),
+			Spacer(),
+			For(d.buttons, func(_ int, b dialogButton) Node {
+				return Choice(b.label, b.primary, MinW(80), OnClick(b.run))
+			}),
 		),
 	)
 }
