@@ -1,7 +1,6 @@
 package appearance
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/theming"
 	"image/color"
 	"testing"
 
@@ -70,7 +69,7 @@ func TestHighContrastMakesTheListedColorsReadableInEveryTheme(t *testing.T) {
 		s.Theme, s.Contrast = tc.ID, "high"
 		th := ThemeWith(s)
 		for _, c := range CustomColors {
-			if r := theming.ContrastRatio(th.Color(c.Token), th.Color(c.Text)); r < HighRatio-0.01 {
+			if r := core.ContrastRatio(th.Color(c.Token), th.Color(c.Text)); r < HighRatio-0.01 {
 				t.Errorf("%s: %s has contrast %.2f, want at least %.1f", tc.ID, c.Token, r, HighRatio)
 			}
 		}
@@ -94,8 +93,8 @@ func TestHighContrastRaisesTheBarForOverrides(t *testing.T) {
 	var c color.RGBA
 	for v := uint8(0x30); v < 0xa0 && hex == ""; v += 2 {
 		candidate := color.RGBA{v, v, v / 2, 0xff}
-		if theming.ContrastRatio(candidate, normalText) >= NormalRatio && theming.ContrastRatio(candidate, highText) < HighRatio {
-			c, hex = candidate, theming.FormatHex(candidate)
+		if core.ContrastRatio(candidate, normalText) >= NormalRatio && core.ContrastRatio(candidate, highText) < HighRatio {
+			c, hex = candidate, core.FormatHex(candidate)
 		}
 	}
 	if hex == "" {

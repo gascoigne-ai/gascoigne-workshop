@@ -95,7 +95,7 @@ func TestNonTextElementsAreVisible(t *testing.T) {
 			{"chip on a pane", core.Chip, core.Bg, 1.5},
 		}
 		for _, p := range pairs {
-			if got := ContrastRatio(th.Color(p.a), th.Color(p.b)); got < p.min {
+			if got := core.ContrastRatio(th.Color(p.a), th.Color(p.b)); got < p.min {
 				t.Errorf("%s: %s: %s on %s is %.2f:1, want at least %.2f:1", name, p.what, p.a, p.b, got, p.min)
 			}
 		}
@@ -122,7 +122,7 @@ func TestPalettesFollowTheCLIDashboard(t *testing.T) {
 	for name, th := range map[string]core.Theme{"dark": Dark(), "light": Light()} {
 		for tok, hex := range want[name] {
 			if got := th.Color(tok); got != core.RGB(hex) {
-				t.Errorf("%s %s = %s, want %s", name, tok, FormatHex(got), FormatHex(core.RGB(hex)))
+				t.Errorf("%s %s = %s, want %s", name, tok, core.FormatHex(got), core.FormatHex(core.RGB(hex)))
 			}
 		}
 	}
@@ -145,7 +145,7 @@ func TestThemeGradientsKeepTextReadable(t *testing.T) {
 			}
 			top, bottom := core.GradientFor(th.Color(s.base), st)
 			for end, c := range map[string]color.RGBA{"top": top, "bottom": bottom} {
-				if r := ContrastRatio(c, th.Color(s.fgt)); r < 4.5 {
+				if r := core.ContrastRatio(c, th.Color(s.fgt)); r < 4.5 {
 					t.Errorf("%s: %v text on the %s of %s: %.2f", name, s.fgt, end, s.control, r)
 				}
 			}

@@ -2948,12 +2948,12 @@ func typeColor(a *App, tok core.Token, row int, text string) {
 func TestContrastChooserStrengthensTheColorsAndIsSaved(t *testing.T) {
 	a, path := openSettingsMenu(t)
 	a.prefs.Search = view.NewTextField("contrast")
-	before := theming.ContrastRatio(a.ctx.Th.Color(core.Selection), a.ctx.Th.Color(core.Text))
+	before := core.ContrastRatio(a.ctx.Th.Color(core.Selection), a.ctx.Th.Color(core.Text))
 	clickText(t, a, "High", 0)
 	if a.settings.Contrast != "high" {
 		t.Fatalf("Contrast = %q", a.settings.Contrast)
 	}
-	after := theming.ContrastRatio(a.ctx.Th.Color(core.Selection), a.ctx.Th.Color(core.Text))
+	after := core.ContrastRatio(a.ctx.Th.Color(core.Selection), a.ctx.Th.Color(core.Text))
 	if after < appearance.HighRatio-0.01 || after <= before {
 		t.Fatalf("selection contrast %.2f -> %.2f", before, after)
 	}
@@ -2961,7 +2961,7 @@ func TestContrastChooserStrengthensTheColorsAndIsSaved(t *testing.T) {
 		t.Fatalf("saved %+v", saved)
 	}
 	clickText(t, a, "Normal", 0)
-	if a.settings.Contrast != "normal" || theming.ContrastRatio(a.ctx.Th.Color(core.Selection), a.ctx.Th.Color(core.Text)) != before {
+	if a.settings.Contrast != "normal" || core.ContrastRatio(a.ctx.Th.Color(core.Selection), a.ctx.Th.Color(core.Text)) != before {
 		t.Fatal("back to normal restores the default colors")
 	}
 }
@@ -3011,7 +3011,7 @@ func TestResetButtonsRestoreTheDefaults(t *testing.T) {
 	typeColor(a, core.Selection, 0, "#223344")
 	typeColor(a, core.FindMatch, 1, "#334455")
 	click(a, colorResetX, colorRow0Y)
-	if a.ctx.Th.Color(core.Selection) != def || a.colors.Input(a, core.Selection).Text != theming.FormatHex(def) {
+	if a.ctx.Th.Color(core.Selection) != def || a.colors.Input(a, core.Selection).Text != core.FormatHex(def) {
 		t.Fatalf("selection %v, field %q", a.ctx.Th.Color(core.Selection), a.colors.Input(a, core.Selection).Text)
 	}
 	if a.ctx.Th.Color(core.FindMatch) != core.RGB(0x334455) {
@@ -3035,7 +3035,7 @@ func TestSwitchingThemeShowsThatThemesColorsAndKeepsEachThemesOverrides(t *testi
 	if a.ctx.Th.Color(core.Selection) != appearance.ThemeFor("light", "medium").Color(core.Selection) {
 		t.Fatal("the dark override must not leak into the light theme")
 	}
-	if a.colors.Input(a, core.Selection).Text != theming.FormatHex(appearance.ThemeFor("light", "medium").Color(core.Selection)) {
+	if a.colors.Input(a, core.Selection).Text != core.FormatHex(appearance.ThemeFor("light", "medium").Color(core.Selection)) {
 		t.Fatalf("the field must show the light theme's color, got %q", a.colors.Input(a, core.Selection).Text)
 	}
 	clickText(t, a, "Dark", 0) // back to Dark
@@ -3059,7 +3059,7 @@ func TestColorsAreRestoredAtStart(t *testing.T) {
 	if a.ctx.Th.Color(core.Accent) != core.RGB(0xaaccee) {
 		t.Fatalf("accent = %v", a.ctx.Th.Color(core.Accent))
 	}
-	if theming.ContrastRatio(a.ctx.Th.Color(core.Selection), a.ctx.Th.Color(core.Text)) < appearance.HighRatio-0.01 {
+	if core.ContrastRatio(a.ctx.Th.Color(core.Selection), a.ctx.Th.Color(core.Text)) < appearance.HighRatio-0.01 {
 		t.Fatal("high contrast is applied at start")
 	}
 }

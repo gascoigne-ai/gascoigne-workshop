@@ -40,7 +40,7 @@ func TestOverridesNeedContrastAndHighContrastRaisesTheBar(t *testing.T) {
 	}
 	high := c.Theme(Prefs{Theme: "dark", Contrast: "high"})
 	for _, cc := range CustomColors {
-		if r := ContrastRatio(high.Color(cc.Token), high.Color(cc.Text)); r < HighRatio-0.01 {
+		if r := core.ContrastRatio(high.Color(cc.Token), high.Color(cc.Text)); r < HighRatio-0.01 {
 			t.Errorf("%s: %.2f:1 under high contrast", cc.Label, r)
 		}
 	}

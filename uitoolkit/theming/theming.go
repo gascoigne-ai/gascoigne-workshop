@@ -219,7 +219,7 @@ func (c *Catalog) Theme(p Prefs) core.Theme {
 	if p.Contrast == "high" {
 		strong := map[core.Token]color.RGBA{}
 		for _, cc := range CustomColors {
-			strong[cc.Token] = EnsureContrast(th.Color(cc.Token), th.Color(cc.Text), HighRatio)
+			strong[cc.Token] = core.EnsureContrast(th.Color(cc.Token), th.Color(cc.Text), HighRatio)
 		}
 		th = th.With(strong)
 		th = th.With(strengthened(th))
@@ -231,8 +231,8 @@ func (c *Catalog) Theme(p Prefs) core.Theme {
 		if !ok {
 			continue
 		}
-		col, err := ParseHex(hex)
-		if err != nil || ContrastRatio(col, th.Color(cc.Text)) < need {
+		col, err := core.ParseHex(hex)
+		if err != nil || core.ContrastRatio(col, th.Color(cc.Text)) < need {
 			continue
 		}
 		overrides[cc.Token] = col
@@ -283,7 +283,7 @@ func strengthened(th core.Theme) map[core.Token]color.RGBA {
 		col := th.Color(bar.token)
 		for pass := 0; pass < 2; pass++ { // moving away from one surface can leave another short
 			for _, surface := range bar.surfaces {
-				col = EnsureContrast(col, th.Color(surface), bar.ratio)
+				col = core.EnsureContrast(col, th.Color(surface), bar.ratio)
 			}
 		}
 		out[bar.token] = col

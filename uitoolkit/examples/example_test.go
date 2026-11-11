@@ -116,6 +116,6 @@ func Example_theming() {
 func Example_themeColor() {
 	th := theming.Dark()
 	c := th.Color(core.Accent)
-	fmt.Println(theming.FormatHex(c) != "")
+	fmt.Println(core.FormatHex(c) != "")
 	// Output: true
 }

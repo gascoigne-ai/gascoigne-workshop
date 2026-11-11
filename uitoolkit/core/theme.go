@@ -119,11 +119,6 @@ func (t Theme) WithTextSize(font, small, mono float64) Theme {
 	return t
 }
 
-// RGB converts 0xRRGGBB to a color.
-func RGB(hex uint32) color.RGBA {
-	return color.RGBA{R: uint8(hex >> 16), G: uint8(hex >> 8), B: uint8(hex), A: 0xff}
-}
-
 // Dark and Light follow the gascoigne CLI dashboard's palette
 // (cmd/gascoigne/pages.css in gascoigne-cli): burgundy accent, warm
 // near-black or cream surfaces. Its surface tokens map to Frame (the

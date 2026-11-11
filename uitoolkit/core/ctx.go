@@ -353,13 +353,6 @@ func (c *Ctx) Line(dst *ebiten.Image, x0, y0, x1, y1, width float32, clr color.R
 	vector.StrokeLine(dst, c.dev(x0), c.dev(y0), c.dev(x1), c.dev(y1), c.dev(width), clr, true)
 }
 
-// Lighten nudges a color toward white, for hover states.
-func Lighten(c color.RGBA) color.RGBA {
-	const step = 16
-	up := func(v uint8) uint8 { return uint8(min(int(v)+step, 255)) }
-	return color.RGBA{R: up(c.R), G: up(c.G), B: up(c.B), A: c.A}
-}
-
 var gradientSrc = func() *ebiten.Image {
 	img := ebiten.NewImage(1, 1)
 	img.Fill(color.White)
@@ -387,19 +380,6 @@ func roundedPath(x0, y0, x1, y1, rad float32) *vector.Path {
 // Radius is the corner radius of the named control in this theme, after
 // the user's corner setting: what every component draws its corners with.
 func (c *Ctx) Radius(control string) float64 { return c.Th.Style(control).Radius }
-
-// GradientFor is the top and bottom colors a control's fill takes from
-// base: the style's explicit ends, else base shaded by the style's
-// strength, else base twice.
-func GradientFor(base color.RGBA, st ControlStyle) (top, bottom color.RGBA) {
-	switch {
-	case st.Top != nil && st.Bottom != nil:
-		return *st.Top, *st.Bottom
-	case st.Shade > 0:
-		return gradientEnds(base, st.Shade)
-	}
-	return base, base
-}
 
 // FillStyled paints r the way a control style says: a flat or vertical
 // gradient fill from top to bottom, with rounded corners when the style

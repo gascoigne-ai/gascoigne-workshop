@@ -31,7 +31,7 @@ func TestHighContrastMeetsTheBarForTextLinesAndStatusColors(t *testing.T) {
 		high := c.Theme(Prefs{Theme: theme, Contrast: "high"})
 		for _, bar := range bars {
 			for _, surface := range surfaces {
-				if got := ContrastRatio(high.Color(bar.token), high.Color(surface)); got < bar.min-0.01 {
+				if got := core.ContrastRatio(high.Color(bar.token), high.Color(surface)); got < bar.min-0.01 {
 					t.Errorf("%s: %s on %s is %.2f:1 under high contrast, want at least %.1f:1", theme, bar.what, surface, got, bar.min)
 				}
 			}
@@ -87,11 +87,11 @@ func TestHighContrastSeparatesStateFillsFromTheirSurface(t *testing.T) {
 	for _, theme := range []string{"dark", "light"} {
 		normal, high := c.Theme(Prefs{Theme: theme}), c.Theme(Prefs{Theme: theme, Contrast: "high"})
 		for _, bar := range bars {
-			got := ContrastRatio(high.Color(bar.token), high.Color(bar.surface))
+			got := core.ContrastRatio(high.Color(bar.token), high.Color(bar.surface))
 			if got < bar.min-0.01 {
 				t.Errorf("%s: %s on %s is %.2f:1 under high contrast, want at least %.1f:1", theme, bar.what, bar.surface, got, bar.min)
 			}
-			if was := ContrastRatio(normal.Color(bar.token), normal.Color(bar.surface)); got <= was {
+			if was := core.ContrastRatio(normal.Color(bar.token), normal.Color(bar.surface)); got <= was {
 				t.Errorf("%s: %s is no clearer than in normal contrast (%.2f -> %.2f)", theme, bar.what, was, got)
 			}
 		}

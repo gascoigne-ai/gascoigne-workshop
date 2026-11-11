@@ -63,7 +63,7 @@ func themeExtends(data []byte) (string, error) {
 // parseColor reads "#rrggbb" or "#rrggbbaa".
 func parseColor(s string) (color.RGBA, error) {
 	if len(s) == 9 {
-		c, err := ParseHex(s[:7])
+		c, err := core.ParseHex(s[:7])
 		if err != nil {
 			return c, err
 		}
@@ -74,7 +74,7 @@ func parseColor(s string) (color.RGBA, error) {
 		c.A = a
 		return c, nil
 	}
-	return ParseHex(s)
+	return core.ParseHex(s)
 }
 
 // ParseTheme reads a theme file over base (nil for none). Unknown fields

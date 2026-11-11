@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/theming"
 	"image/color"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
@@ -49,7 +48,7 @@ func (p *Page) Input(host Host, tok w.Token) *TextField {
 		p.inputs = map[w.Token]*TextField{}
 	}
 	in := new(TextField)
-	*in = NewTextField(theming.FormatHex(host.Color(tok)))
+	*in = NewTextField(w.FormatHex(host.Color(tok)))
 	p.inputs[tok] = in
 	return in
 }
@@ -70,13 +69,13 @@ func (p *Page) setNote(tok w.Token, note string) {
 // (with the ratio), is refused and nothing changes.
 func (p *Page) edited(host Host, c appearance.CustomColor) {
 	text := p.Input(host, c.Token).Text
-	col, err := theming.ParseHex(text)
+	col, err := w.ParseHex(text)
 	if err != nil {
 		p.setNote(c.Token, "Use #rrggbb")
 		return
 	}
 	need := appearance.RequiredRatio(host.Settings().Contrast)
-	if ratio := theming.ContrastRatio(col, host.Color(c.Text)); ratio < need {
+	if ratio := w.ContrastRatio(col, host.Color(c.Text)); ratio < need {
 		p.setNote(c.Token, fmt.Sprintf("Contrast %.1f:1 is below %.1f:1", ratio, need))
 		return
 	}
@@ -89,7 +88,7 @@ func (p *Page) edited(host Host, c appearance.CustomColor) {
 		if s.Colors[id] == nil {
 			s.Colors[id] = map[string]string{}
 		}
-		s.Colors[id][string(c.Token)] = theming.FormatHex(col)
+		s.Colors[id][string(c.Token)] = w.FormatHex(col)
 	}})
 }
 
