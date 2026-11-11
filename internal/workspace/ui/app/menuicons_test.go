@@ -48,13 +48,13 @@ func TestEveryMenuIconInTheTableExists(t *testing.T) {
 func TestOpenMenuFillsTheIconsFromTheLabels(t *testing.T) {
 	a, _ := newTestApp(t)
 	a.openMenu(10, 10, []view.MenuItem{{Label: "Copy"}, {Label: "GET /users"}})
-	if got := a.ctxMenu.Items[0].Icon; got != "copy" {
+	if got := view.PopupMenu(a.ctx).Items[0].Icon; got != "copy" {
 		t.Fatalf("Copy row icon = %q, want copy", got)
 	}
-	if got := a.ctxMenu.Items[1].Icon; got != "" {
+	if got := view.PopupMenu(a.ctx).Items[1].Icon; got != "" {
 		t.Fatalf("a row with no match has icon %q, want none", got)
 	}
-	if dump := view.Dump(a.contextMenuView()); !strings.Contains(dump, "icon=copy") {
+	if dump := view.Dump(view.PopupMenuLayer(a.ctx)); !strings.Contains(dump, "icon=copy") {
 		t.Fatalf("the menu does not draw the Copy icon:\n%s", dump)
 	}
 }

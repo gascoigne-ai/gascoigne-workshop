@@ -41,10 +41,10 @@ type dialog struct {
 
 // openMenu shows a context menu at the pointer position x, y.
 func (a *App) openMenu(x, y int, items []MenuItem) {
-	a.ctxMenu = NewMenu(x, y, withIcons(items))
+	OpenMenu(a.ctx, x, y, withIcons(items))
 }
 
-func (a *App) closeMenu() { a.ctxMenu = nil }
+func (a *App) closeMenu() { CloseMenu(a.ctx) }
 
 // withIcons gives every item without an icon the one its label maps to.
 func withIcons(items []MenuItem) []MenuItem {
@@ -54,26 +54,6 @@ func withIcons(items []MenuItem) []MenuItem {
 		out[i] = item
 	}
 	return out
-}
-
-// runMenuItem closes the menu, then runs row i, so the action may open
-// another menu or dialog.
-func (a *App) runMenuItem(i int) {
-	if a.ctxMenu == nil || !a.ctxMenu.Items[i].Selectable() {
-		return
-	}
-	run := a.ctxMenu.Items[i].Run
-	a.closeMenu()
-	if run != nil {
-		run()
-	}
-}
-
-func (a *App) contextMenuView() Node {
-	if a.ctxMenu == nil {
-		return nil
-	}
-	return Menu(a.ctx, a.ctxMenu, OnSelect(a.runMenuItem), OnDismiss(a.closeMenu))
 }
 
 // confirm asks a yes/no question; onOK runs only on the primary button or Enter.
@@ -191,10 +171,8 @@ func (a *App) toastsView() Node {
 func (a *App) overlayKeys(in w.Input) {
 	enter := in.Enter || in.Pressed(ebiten.KeyEnter)
 	switch {
-	case a.ctxMenu != nil:
-		if picked := a.ctxMenu.Keys(in); picked >= 0 {
-			a.runMenuItem(picked)
-		}
+	case MenuOpen(a.ctx):
+		PopupMenuKeys(a.ctx, in)
 	case a.dialog != nil && a.dialog.input == nil && enter:
 		a.dialogDefault()
 	}
@@ -207,7 +185,7 @@ func (a *App) swallowMenuKeys() {
 }
 
 // overlayOpen reports whether a menu or dialog has the keyboard.
-func (a *App) overlayOpen() bool { return a.ctxMenu != nil || a.dialog != nil || a.calls.Shown() }
+func (a *App) overlayOpen() bool { return MenuOpen(a.ctx) || a.dialog != nil || a.calls.Shown() }
 
 // dialogForm is the typed form of a dialog, nothing for the others.
 func (a *App) dialogForm(d *dialog) Node {
@@ -220,7 +198,7 @@ func (a *App) dialogForm(d *dialog) Node {
 // openLayers are the things Escape can close right now.
 func (a *App) openLayers() overlay.Open {
 	var open overlay.Open
-	open[overlay.ContextMenu] = a.ctxMenu != nil
+	open[overlay.ContextMenu] = MenuOpen(a.ctx)
 	open[overlay.Dialog] = a.dialog != nil
 	open[overlay.CallLog] = a.calls.Shown()
 	open[overlay.FontList] = a.prefs.FontListOpen()

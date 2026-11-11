@@ -106,6 +106,11 @@ type Ctx struct {
 	TipFor               string // the text the delay is counted for
 	TipSince             int    // tick at which the pointer came to rest on it
 
+	// Menu is the open popup menu; view owns its type (*view.MenuState) and
+	// core only carries it, so that any element can open a menu without a
+	// host. nil when none is open.
+	Menu any
+
 	// HoverOff turns hover feedback off for everything drawn while it is
 	// set: elements under a modal overlay must not light up.
 	HoverOff bool

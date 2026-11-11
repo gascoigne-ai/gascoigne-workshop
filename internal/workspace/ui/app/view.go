@@ -55,7 +55,7 @@ func (a *App) view() Node {
 			a.statusBar(),
 		),
 		a.menuView(),
-		a.contextMenuView(),
+		PopupMenuLayer(a.ctx),
 		a.dialogView(),
 		a.calls.View(a),
 		a.toastsView(),

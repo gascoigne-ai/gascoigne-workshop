@@ -136,10 +136,10 @@ func TestCtrlSpaceInTheRawViewOffersKeysAndValues(t *testing.T) {
 	a.prefs.RawText.Cursor = len([]rune(a.prefs.RawText.Text))
 	a.prefs.RawText.Focused = true
 	a.completeVariable()
-	if a.ctxMenu == nil || len(a.ctxMenu.Items) != 1 || a.ctxMenu.Items[0].Label != "layout" {
-		t.Fatalf("menu = %+v", a.ctxMenu)
+	if view.PopupMenu(a.ctx) == nil || len(view.PopupMenu(a.ctx).Items) != 1 || view.PopupMenu(a.ctx).Items[0].Label != "layout" {
+		t.Fatalf("menu = %+v", view.PopupMenu(a.ctx))
 	}
-	a.ctxMenu.Items[0].Run()
+	view.PopupMenu(a.ctx).Items[0].Run()
 	if a.prefs.RawText.Text != `{"appearance": {"layout"` {
 		t.Fatalf("text after completing = %q", a.prefs.RawText.Text)
 	}
@@ -149,8 +149,8 @@ func TestCtrlSpaceInTheRawViewOffersKeysAndValues(t *testing.T) {
 	a.prefs.RawText.Cursor = len([]rune(a.prefs.RawText.Text))
 	a.prefs.RawText.Focused = true
 	a.completeVariable()
-	if a.ctxMenu == nil || a.ctxMenu.Items[0].Label != "stacked" {
-		t.Fatalf("menu = %+v", a.ctxMenu)
+	if view.PopupMenu(a.ctx) == nil || view.PopupMenu(a.ctx).Items[0].Label != "stacked" {
+		t.Fatalf("menu = %+v", view.PopupMenu(a.ctx))
 	}
 }
 
@@ -164,7 +164,7 @@ func TestEnterAcceptingACompletionDoesNotStartANewLine(t *testing.T) {
 	a.prefs.RawText.Cursor = len([]rune(a.prefs.RawText.Text))
 	a.prefs.RawText.Focused = true
 	a.completeVariable() // the menu of sections
-	if a.ctxMenu == nil {
+	if view.PopupMenu(a.ctx) == nil {
 		t.Fatal("no menu")
 	}
 	a.step(core.Input{X: 5000, Y: 5000, Enter: true, Keys: []ebiten.Key{ebiten.KeyEnter}})
@@ -199,7 +199,7 @@ func TestEscapeClosingTheMenuKeepsTheEditorFocused(t *testing.T) {
 	a.prefs.RawText.Focused = true
 	a.completeVariable()
 	a.step(core.Input{X: 5000, Y: 5000, Escape: true})
-	if a.ctxMenu != nil || !a.prefs.RawText.Focused {
-		t.Fatalf("menu open %v, editor focused %v: Escape should close only the menu", a.ctxMenu != nil, a.prefs.RawText.Focused)
+	if view.PopupMenu(a.ctx) != nil || !a.prefs.RawText.Focused {
+		t.Fatalf("menu open %v, editor focused %v: Escape should close only the menu", view.PopupMenu(a.ctx) != nil, a.prefs.RawText.Focused)
 	}
 }

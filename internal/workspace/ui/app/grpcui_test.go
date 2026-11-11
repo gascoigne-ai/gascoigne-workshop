@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc/reflection"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 // grpcServer runs a real gRPC server with reflection and the standard
@@ -57,12 +58,12 @@ func TestPickingAGRPCMethodListsTheServersMethodsAndSetsIt(t *testing.T) {
 	a.pickGRPCMethod(tab)
 	for range 400 {
 		a.step(core.Input{})
-		if a.ctxMenu != nil {
+		if view.PopupMenu(a.ctx) != nil {
 			break
 		}
 		time.Sleep(5 * time.Millisecond)
 	}
-	if a.ctxMenu == nil {
+	if view.PopupMenu(a.ctx) == nil {
 		t.Fatal("no menu of methods opened")
 	}
 	if !strings.Contains(strings.Join(menuLabels(a), " "), "grpc.health.v1.Health/Check") {
@@ -92,7 +93,7 @@ func TestAGRPCPickerWithoutAServerSaysSo(t *testing.T) {
 	tab.Req.Protocol, tab.Req.URL = "grpc", ""
 	a.pickGRPCMethod(tab)
 	a.step(core.Input{})
-	if a.ctxMenu != nil {
+	if view.PopupMenu(a.ctx) != nil {
 		t.Fatal("a menu opened without a server")
 	}
 	if len(a.toasts) == 0 {

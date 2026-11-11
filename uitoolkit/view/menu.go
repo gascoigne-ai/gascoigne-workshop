@@ -177,3 +177,56 @@ func MenuWidth(c *core.Ctx, items []MenuItem) int {
 	}
 	return min(max(widest+2*menuRowPadX+2*MenuPad, MenuMinW), MenuMaxW)
 }
+
+// OpenMenu opens a popup menu at x, y; it replaces one that is open. Mount
+// PopupMenuLayer in the window's Stack to show it and call PopupMenuKeys
+// each frame for its keyboard.
+func OpenMenu(c *core.Ctx, x, y int, items []MenuItem) { c.Menu = NewMenu(x, y, items) }
+
+// CloseMenu closes the popup menu, if one is open.
+func CloseMenu(c *core.Ctx) { c.Menu = nil }
+
+// MenuOpen reports whether a popup menu is open.
+func MenuOpen(c *core.Ctx) bool { return PopupMenu(c) != nil }
+
+// PopupMenu is the open popup menu, nil when there is none.
+func PopupMenu(c *core.Ctx) *MenuState {
+	state, _ := c.Menu.(*MenuState)
+	return state
+}
+
+// PopupMenuLayer is the open popup menu as an overlay, nil when none is
+// open. A pick or a click outside closes it; a pick then runs the row's
+// action, so the action may open another menu.
+func PopupMenuLayer(c *core.Ctx) Node {
+	state := PopupMenu(c)
+	if state == nil {
+		return nil
+	}
+	return Menu(c, state, OnSelect(func(index int) { pickMenuRow(c, index) }), OnDismiss(func() { CloseMenu(c) }))
+}
+
+// PopupMenuKeys drives the open popup menu with the frame's keys: Up and
+// Down move the highlight, Enter picks it. Without an open menu it does
+// nothing.
+func PopupMenuKeys(c *core.Ctx, input core.Input) {
+	state := PopupMenu(c)
+	if state == nil {
+		return
+	}
+	if picked := state.Keys(input); picked >= 0 {
+		pickMenuRow(c, picked)
+	}
+}
+
+func pickMenuRow(c *core.Ctx, index int) {
+	state := PopupMenu(c)
+	if state == nil || !state.Items[index].Selectable() {
+		return
+	}
+	run := state.Items[index].Run
+	CloseMenu(c)
+	if run != nil {
+		run()
+	}
+}

@@ -110,3 +110,55 @@ func TestMenuRowClickPicksOnlyEnabledRows(t *testing.T) {
 		t.Fatalf("picked %v, want only the enabled rows 0 and 3", picked)
 	}
 }
+
+// The open menu lives in the context, so any element can open one and the
+// app only mounts PopupMenuLayer once.
+func TestPopupMenuOpensPicksAndClosesBeforeRunning(t *testing.T) {
+	c := testCtx(t)
+	if MenuOpen(c) || PopupMenuLayer(c) != nil {
+		t.Fatal("a new context has no open menu")
+	}
+	var stateWhenRun bool
+	OpenMenu(c, 5, 5, []MenuItem{
+		{Label: "a", Run: func() { stateWhenRun = MenuOpen(c) }},
+		{Label: "b"},
+	})
+	if !MenuOpen(c) || PopupMenu(c).Hot != 0 {
+		t.Fatal("OpenMenu opens it with the first row highlighted")
+	}
+	layer := PopupMenuLayer(c)
+	root := Stack(layer)
+	Layout(c, root, 400, 300)
+	row := layer.kids[0]
+	click(c, row.rect.X+row.rect.W/2, row.rect.Y+row.rect.H/2)
+	Update(c, root)
+	if MenuOpen(c) || stateWhenRun {
+		t.Fatalf("a pick closes the menu first (open after: %v, open while running: %v)", MenuOpen(c), stateWhenRun)
+	}
+}
+
+func TestPopupMenuKeysMoveAndEnterRuns(t *testing.T) {
+	c := testCtx(t)
+	ran := ""
+	OpenMenu(c, 0, 0, []MenuItem{{Label: "a", Run: func() { ran = "a" }}, {Label: "b", Run: func() { ran = "b" }}})
+	PopupMenuKeys(c, core.Input{Keys: []ebiten.Key{ebiten.KeyArrowDown}})
+	if PopupMenu(c).Hot != 1 || ran != "" {
+		t.Fatalf("Down moves only the highlight: hot %d, ran %q", PopupMenu(c).Hot, ran)
+	}
+	PopupMenuKeys(c, core.Input{Enter: true})
+	if ran != "b" || MenuOpen(c) {
+		t.Fatalf("Enter runs the highlighted row and closes: ran %q, open %v", ran, MenuOpen(c))
+	}
+}
+
+func TestPopupMenuClickOutsideDismisses(t *testing.T) {
+	c := testCtx(t)
+	OpenMenu(c, 5, 5, []MenuItem{{Label: "a"}})
+	root := Stack(PopupMenuLayer(c))
+	Layout(c, root, 400, 300)
+	click(c, 390, 290)
+	Update(c, root)
+	if MenuOpen(c) {
+		t.Fatal("a click outside closes the menu")
+	}
+}
