@@ -121,22 +121,3 @@ func OnTab(f func(back bool)) Option { return func(e *El) { e.onTab = f } }
 
 // OnEnter runs when Enter is pressed in the focused field.
 func OnEnter(f func()) Option { return func(e *El) { e.onEnter = f } }
-
-// code shows a CodeView.
-type codeB struct{ plain }
-
-func (codeB) measure(*El, *core.Ctx, int) (int, int) { return 0, 0 }
-func (codeB) update(e *El, c *core.Ctx)              { e.view.Update(c, e.rect) }
-func (codeB) draw(e *El, c *core.Ctx, dst *ebiten.Image) {
-	e.view.Draw(c, dst, e.rect)
-	if e.view.Focused {
-		c.Outline(dst, e.rect, c.Color(core.AccentLine))
-	}
-}
-
-// Code is a scrollable, foldable code viewer; give it a Bg.
-func Code(v *CodeView, opts ...Option) *El {
-	e := newEl(codeB{}, with(nil, opts))
-	e.view = v
-	return e
-}

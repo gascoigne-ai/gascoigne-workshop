@@ -43,12 +43,3 @@ func TestBackspaceRemovesOneComposedCharacter(t *testing.T) {
 		t.Fatalf("text %q, want %q", field.Text, "日本")
 	}
 }
-
-func TestComposedTextReachesAMultilineEditor(t *testing.T) {
-	area := NewTextArea("")
-	area.Apply([]rune("ça va\n"), nil, false)
-	area.Apply([]rune("日本"), nil, false)
-	if area.Text != "ça va日本" { // the line break comes from Enter, not from typed text
-		t.Fatalf("text %q", area.Text)
-	}
-}

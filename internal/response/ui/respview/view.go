@@ -6,6 +6,7 @@ package respview
 import (
 	"bytes"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"strings"
 	"unicode/utf8"
 
@@ -23,15 +24,15 @@ var Tokens = func() map[jsonview.Kind]core.Token {
 }()
 
 // CodeLines turns a response body into colored code-view lines.
-func CodeLines(body []byte) []view.Line {
+func CodeLines(body []byte) []widget.Line {
 	src := jsonview.Lines(body)
-	lines := make([]view.Line, len(src))
+	lines := make([]widget.Line, len(src))
 	for i, l := range src {
 		spans := make([]view.Span, len(l.Spans))
 		for j, s := range l.Spans {
 			spans[j] = view.Span{Text: s.Text, Style: Tokens[s.Kind]}
 		}
-		lines[i] = view.Line{Spans: spans, Foldable: l.Foldable}
+		lines[i] = widget.Line{Spans: spans, Foldable: l.Foldable}
 	}
 	return lines
 }
@@ -46,11 +47,11 @@ const CompactFoldDepth = 2
 
 // CompactLines is the response as compact JSON lines; the opening line of
 // every block carries its one-line preview for when it is folded.
-func CompactLines(body []byte) []view.Line {
+func CompactLines(body []byte) []widget.Line {
 	src := jsonview.Compact(body, CompactWidth)
-	lines := make([]view.Line, len(src))
+	lines := make([]widget.Line, len(src))
 	for i, l := range src {
-		lines[i] = view.Line{Spans: toSpans(l.Spans), Foldable: l.Foldable, FoldedSpans: toSpans(l.Folded), Depth: l.Depth, Num: i + 1}
+		lines[i] = widget.Line{Spans: toSpans(l.Spans), Foldable: l.Foldable, FoldedSpans: toSpans(l.Folded), Depth: l.Depth, Num: i + 1}
 	}
 	return lines
 }
@@ -67,7 +68,7 @@ func toSpans(src []jsonview.Span) []view.Span {
 }
 
 // FoldDeep folds every block that opens at nesting depth or deeper.
-func FoldDeep(v *view.CodeView, depth int) {
+func FoldDeep(v *widget.CodeView, depth int) {
 	for i, l := range v.Lines {
 		if l.Foldable && l.Depth >= depth {
 			v.Folded[i] = true
@@ -91,11 +92,11 @@ func LooksBinary(body []byte) bool {
 const binarySample = 8 << 10
 
 // RawLines shows a body exactly as received, one plain line per line.
-func RawLines(body []byte) []view.Line {
+func RawLines(body []byte) []widget.Line {
 	texts := strings.Split(string(body), "\n")
-	lines := make([]view.Line, len(texts))
+	lines := make([]widget.Line, len(texts))
 	for i, text := range texts {
-		lines[i] = view.Line{Spans: []view.Span{{Text: strings.TrimRight(text, "\r"), Style: Tokens[jsonview.Plain]}}}
+		lines[i] = widget.Line{Spans: []view.Span{{Text: strings.TrimRight(text, "\r"), Style: Tokens[jsonview.Plain]}}}
 	}
 	return lines
 }

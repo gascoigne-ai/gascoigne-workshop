@@ -28,7 +28,7 @@
 //	Layout     Row Col Stack Spacer   AlignItems AlignSelf JustifyContent
 //	Look       Bg Border BorderX BorderY BorderL BorderT BorderR BorderB HoverBg BorderInset Shadow Control EdgeT EdgeL EdgeR HoverColor Lighten
 //	Text       Text Caption Lines   Color Muted Bold Small Mono FontSource Ellipsis TextCenter
-//	Input      Field Area Code   (state: TextField TextArea CodeView)   Placeholder FieldPad Segments OnChange OnEnter OnTab
+//	Input      Field   (state: TextField)   Placeholder FieldPad Segments OnChange OnEnter OnTab
 //	Events     OnClick OnClickAt OnRightClick OnRightClickIn OnMiddleClick OnDragOver   Tooltip KeepInView
 //	Events+    OnSelect SelectHandler DismissHandler ChangeHandler   Separator   (Button, Tabs, Menu, Dialog and the rest of the ready-made widgets are in package widget)
 //	Flow       If When For Frag
@@ -93,8 +93,6 @@ type El struct {
 	placeholder                      string
 	segments                         func(string) []Span
 	field                            *TextField
-	view                             *CodeView
-	area                             *TextArea
 
 	onClick, onChange, onEnter func()
 	onClickAt                  func(x, y int)

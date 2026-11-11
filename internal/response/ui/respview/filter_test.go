@@ -1,7 +1,7 @@
 package respview
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"testing"
 )
 
@@ -21,7 +21,7 @@ func TestFilteredLinesKeepTheirRealLineNumbers(t *testing.T) {
 			t.Fatalf("filtered line %q claims number %d, which is %q", lineText(l), l.Num, lineText(lines[max(l.Num-1, 0)]))
 		}
 	}
-	var v view.CodeView
+	var v widget.CodeView
 	v.SetLines(filtered)
 	last := filtered[len(filtered)-1].Num
 	if v.LineNumber(len(filtered)-1) != last || last <= len(filtered) {

@@ -74,15 +74,15 @@ type reqTab struct {
 	url                   view.TextField
 	paneTab               int
 	respTab               int
-	view                  view.CodeView              // response body
-	bodyView              view.CodeView              // request body, read-only
+	view                  widget.CodeView            // response body
+	bodyView              widget.CodeView            // request body, read-only
 	picture               *ebiten.Image              // the response body when it is an image
 	pictureInfo           string                     // "PNG 640x480, 12.5KB"
-	tests                 view.TextArea              // the assertions editor
+	tests                 widget.TextArea            // the assertions editor
 	testResults           []assert.Result            // what the assertions found in the shown response
-	gqlVars               view.TextArea              // the variables of a GraphQL body
+	gqlVars               widget.TextArea            // the variables of a GraphQL body
 	file                  view.TextField             // the path of a file body
-	body                  view.TextArea              // request body editor
+	body                  widget.TextArea            // request body editor
 	reqScroll, respScroll widget.ScrollState         // scroll of the table and note panes
 	bodyTypesX            widget.ScrollState         // sideways scroll of the body type chips
 	reqTabsX, respTabsX   widget.ScrollState         // sideways scroll of the two pane tab strips
@@ -91,18 +91,18 @@ type reqTab struct {
 	auth                  map[string]*view.TextField // Auth pane inputs by field id, created on first use
 	showSecrets           bool                       // show masked credential fields
 	look                  viewer.Model               // the response mode, the find bar and its active match
-	compactAll            []view.Line                // the unfiltered compact lines, kept while a search filters the view
+	compactAll            []widget.Line              // the unfiltered compact lines, kept while a search filters the view
 	find                  view.TextField             // the search text
 	wsCancel              context.CancelFunc         // ends the timeout of the connect in progress
 	outbox                []func() error             // sends and pings waiting for the one in flight, in order
 	outboxBusy            bool                       // a send is in flight
-	wsView                view.CodeView              // the message log
+	wsView                widget.CodeView            // the message log
 	msg                   view.TextField             // the message being composed
 	grpcStream            bool                       // a gRPC tab streams instead of making single calls
 	schema                *model.Schema              // what a GraphQL introspection answered
 	explorer              mcpexplorer.State          // the MCP explorer: the list shown, the open entry, its answer
 	form                  *mcpform.Form              // the argument form of the open entry, nil for none
-	resultView            view.CodeView              // the last answer of the explorer
+	resultView            widget.CodeView            // the last answer of the explorer
 	listScroll            widget.ScrollState         // scroll of the explorer's list
 	detailScroll          widget.ScrollState         // scroll of the open entry
 }
@@ -156,10 +156,10 @@ func newReqTab(tab *tabs.Tab) *reqTab {
 	t.wsCancel = func() {}
 	t.explorer = mcpexplorer.New()
 	t.timeout = view.NewTextField(timeoutText(req.TimeoutSec))
-	t.body = view.NewTextArea(req.Body)
-	t.tests = view.NewTextArea(req.Tests)
+	t.body = widget.NewTextArea(req.Body)
+	t.tests = widget.NewTextArea(req.Tests)
 	t.file = view.NewTextField(req.Body)
-	t.gqlVars = view.NewTextArea(req.GraphQLVars)
+	t.gqlVars = widget.NewTextArea(req.GraphQLVars)
 	return t
 }
 

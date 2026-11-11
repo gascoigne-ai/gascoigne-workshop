@@ -133,7 +133,7 @@ func TestOurOwnWritesAreNotReloadedAsOutsideChanges(t *testing.T) {
 func TestCtrlSpaceInTheRawViewOffersKeysAndValues(t *testing.T) {
 	a, _ := openSettingsPage(t, "appearance")
 	a.prefs.OpenRaw(a)
-	a.prefs.RawText = view.NewTextArea(`{"appearance": {"la`)
+	a.prefs.RawText = widget.NewTextArea(`{"appearance": {"la`)
 	a.prefs.RawText.Cursor = len([]rune(a.prefs.RawText.Text))
 	a.prefs.RawText.Focused = true
 	a.completeVariable()
@@ -146,7 +146,7 @@ func TestCtrlSpaceInTheRawViewOffersKeysAndValues(t *testing.T) {
 	}
 
 	a.closeMenu()
-	a.prefs.RawText = view.NewTextArea(`{"appearance": {"layout": "st`)
+	a.prefs.RawText = widget.NewTextArea(`{"appearance": {"layout": "st`)
 	a.prefs.RawText.Cursor = len([]rune(a.prefs.RawText.Text))
 	a.prefs.RawText.Focused = true
 	a.completeVariable()
@@ -161,7 +161,7 @@ func TestCtrlSpaceInTheRawViewOffersKeysAndValues(t *testing.T) {
 func TestEnterAcceptingACompletionDoesNotStartANewLine(t *testing.T) {
 	a, _ := openSettingsPage(t, "appearance")
 	a.prefs.OpenRaw(a)
-	a.prefs.RawText = view.NewTextArea("{\n  \"")
+	a.prefs.RawText = widget.NewTextArea("{\n  \"")
 	a.prefs.RawText.Cursor = len([]rune(a.prefs.RawText.Text))
 	a.prefs.RawText.Focused = true
 	a.completeVariable() // the menu of sections
@@ -180,7 +180,7 @@ func TestEnterAcceptingACompletionDoesNotStartANewLine(t *testing.T) {
 func TestTheMenuKeysDoNotMoveTheCaretOfTheEditorUnderIt(t *testing.T) {
 	a, _ := openSettingsPage(t, "appearance")
 	a.prefs.OpenRaw(a)
-	a.prefs.RawText = view.NewTextArea("{\n  \"")
+	a.prefs.RawText = widget.NewTextArea("{\n  \"")
 	a.prefs.RawText.Cursor = len([]rune(a.prefs.RawText.Text))
 	a.prefs.RawText.Focused = true
 	a.completeVariable()
@@ -195,7 +195,7 @@ func TestTheMenuKeysDoNotMoveTheCaretOfTheEditorUnderIt(t *testing.T) {
 func TestEscapeClosingTheMenuKeepsTheEditorFocused(t *testing.T) {
 	a, _ := openSettingsPage(t, "appearance")
 	a.prefs.OpenRaw(a)
-	a.prefs.RawText = view.NewTextArea("{\n  \"")
+	a.prefs.RawText = widget.NewTextArea("{\n  \"")
 	a.prefs.RawText.Cursor = len([]rune(a.prefs.RawText.Text))
 	a.prefs.RawText.Focused = true
 	a.completeVariable()

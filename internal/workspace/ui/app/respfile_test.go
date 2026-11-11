@@ -7,6 +7,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"image"
 	"image/png"
 	"io"
@@ -173,7 +174,7 @@ func TestPickFileUsesTheDesktopDialogWhenThereIsOne(t *testing.T) {
 func TestFileBodyTypeKeepsItsPathSeparateFromTheTextBody(t *testing.T) {
 	a, _ := newTestApp(t)
 	tab := a.cur()
-	tab.body = view.NewTextArea("typed text")
+	tab.body = widget.NewTextArea("typed text")
 	tab.Req.Body = "typed text"
 	a.setBodyType(tab, model.BodyFile)
 	if tab.Req.BodyType != model.BodyFile || tab.Req.Body != "" {
@@ -227,7 +228,7 @@ func TestGraphQLBodyTypeSendsAQueryAndCanLoadTheSchema(t *testing.T) {
 	a, _ := newTestApp(t)
 	tab := a.cur()
 	tab.Req.URL, tab.Req.Method = srv.URL, "GET"
-	tab.body = view.NewTextArea("{ repos { name } }")
+	tab.body = widget.NewTextArea("{ repos { name } }")
 	a.setBodyType(tab, model.BodyGraphQL)
 	if tab.Req.Method != "POST" || tab.Req.Body != "{ repos { name } }" {
 		t.Fatalf("method %q body %q", tab.Req.Method, tab.Req.Body)
@@ -300,7 +301,7 @@ func TestFormFieldsCanBeEditedAsText(t *testing.T) {
 	if a.bulk == nil || a.bulk.area.Text != "user: ann" {
 		t.Fatalf("bulk text %q", a.bulk.area.Text)
 	}
-	a.bulk.area = view.NewTextArea("user: bob\nrole: admin")
+	a.bulk.area = widget.NewTextArea("user: bob\nrole: admin")
 	a.closeBulk()
 	if len(tab.Req.Form) != 2 || tab.Req.Form[0].Value != "bob" || tab.Req.Form[1].Name != "role" {
 		t.Fatalf("form %+v", tab.Req.Form)

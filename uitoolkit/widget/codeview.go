@@ -1,20 +1,16 @@
-package view
+package widget
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"sort"
 	"strconv"
 	"strings"
 	"unicode"
 
 	"github.com/hajimehoshi/ebiten/v2"
-)
 
-// Span is a run of text colored by a theme token.
-type Span struct {
-	Text  string
-	Style core.Token
-}
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+)
 
 // Line is one row of a CodeView. Foldable lines open a block that is
 // indented deeper than the line itself.
@@ -88,7 +84,7 @@ func (v *CodeView) wrapCols(g codeGeometry, r core.Rect) int {
 	}
 	// The vertical bar is assumed present, so the columns do not change
 	// when wrapping makes the content long enough to need it.
-	room := r.W - ScrollbarW - (g.textX - r.X) - core.Gutter
+	room := r.W - scrollbarW - (g.textX - r.X) - core.Gutter
 	return max(int(float64(room)/g.adv), 1)
 }
 
@@ -429,6 +425,8 @@ func (v *CodeView) pressText(p textPos, clicks int) {
 	}
 }
 
+func isWordRune(r rune) bool { return unicode.IsLetter(r) || unicode.IsDigit(r) || r == '_' }
+
 // wordRange is the run of word characters, or of other characters, at col.
 func wordRange(r []rune, col int) (lo, hi int) {
 	at := min(col, len(r)-1)
@@ -750,3 +748,6 @@ func (v *CodeView) moveCaret(pos textPos, edit core.Edit, visible []int) textPos
 	}
 	return pos
 }
+
+func (v *CodeView) HasFocus() bool   { return v.Focused }
+func (v *CodeView) SetFocus(on bool) { v.Focused = on }

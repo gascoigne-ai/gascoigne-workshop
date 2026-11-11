@@ -1,11 +1,13 @@
-package view
+package widget
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"strconv"
 	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 // TextArea is a multi-line editor: a multi-line TextField plus the
@@ -26,7 +28,8 @@ type TextArea struct {
 
 // NewTextArea returns an editor holding text.
 func NewTextArea(text string) TextArea {
-	a := TextArea{TextField: newMultiline(text)}
+	a := TextArea{TextField: NewTextField(text)}
+	a.Multiline = true
 	a.revealed = -1
 	return a
 }
@@ -238,3 +241,6 @@ func (a *TextArea) drawSelection(c *core.Ctx, dst *ebiten.Image, g areaGeometry,
 // edge of its cell and the bottom of its line, which is where a popup for the
 // text opens. ok is false before the editor was first updated.
 func (a *TextArea) CaretAt() (x, y int, ok bool) { return a.caretX, a.caretY, a.caretKnown }
+
+func (a *TextArea) HasFocus() bool   { return a.Focused }
+func (a *TextArea) SetFocus(on bool) { a.Focused = on }

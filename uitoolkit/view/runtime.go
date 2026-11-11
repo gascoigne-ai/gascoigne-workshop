@@ -67,24 +67,14 @@ func (f *TextField) SetFocus(on bool) {
 	}
 }
 
-func (a *TextArea) HasFocus() bool   { return a.Focused }
-func (a *TextArea) SetFocus(on bool) { a.Focused = on }
-func (v *CodeView) HasFocus() bool   { return v.Focused }
-func (v *CodeView) SetFocus(on bool) { v.Focused = on }
-
 // state is what e edits and focuses, nil for an element that is not
 // focusable. It is also what identifies the focus owner.
 func (e *El) state() Focuser {
 	if focusable, ok := e.Behavior().(Focusable); ok {
 		return focusable.FocusTarget()
 	}
-	switch {
-	case e.field != nil:
+	if e.field != nil {
 		return e.field
-	case e.area != nil:
-		return e.area
-	case e.view != nil:
-		return e.view
 	}
 	return nil
 }
@@ -105,7 +95,7 @@ func (e *El) keepsTab() bool {
 	if focusable, ok := e.Behavior().(Focusable); ok && focusable.KeepsTab() {
 		return true
 	}
-	return e.onTab != nil || e.area != nil
+	return e.onTab != nil
 }
 
 // focusKey identifies the focus owner: the state's pointer.

@@ -1,8 +1,9 @@
-package view
+package widget
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/theming"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"reflect"
 	"strings"
 	"testing"
@@ -365,8 +366,8 @@ func TestCodeViewScrollbarThumbDragScrollsTheContent(t *testing.T) {
 	v.SetLines(manyLines(100))
 	r := core.Rect{W: 400, H: 200}
 	g := v.geometry(c, r)
-	track := core.Rect{X: r.W - ScrollbarW, Y: 0, W: ScrollbarW, H: r.H}
-	off, length, ok := Thumb(track.H, 100*g.lineH, r.H, v.ScrollY)
+	track := core.Rect{X: r.W - scrollbarW, Y: 0, W: scrollbarW, H: r.H}
+	off, length, ok := thumb(track.H, 100*g.lineH, r.H, v.ScrollY)
 	if !ok {
 		t.Fatal("100 rows in 200px must need a scrollbar")
 	}

@@ -11,11 +11,11 @@
 //     context (Ctx), pointer and keyboard input, the clipboard.
 //   - view: a Go-native view DSL (Row, Col, Stack...)
 //     that lays out, updates and draws a tree of elements, with
-//     the inputs: TextField, TextArea and CodeView and their elements
-//     Field, Area and Code.
+//     the text field TextField and its element Field.
 //   - engine: frame pacing and input helpers for Ebitengine games.
-//   - widget: ready-made widgets composed from view: buttons, rows, tabs,
-//     menus, dialogs and toasts. It depends on core and view.
+//   - widget: the components built on view: buttons, rows, tabs, menus,
+//     dialogs, toasts, scrolling, tables, sliders, icons, tooltips and the
+//     text area and code view. It depends on core and view.
 //   - markup: HTML-style templates that build the same view trees.
 //   - examples: runnable examples, tested with their output (hello is a
 //     small program with a window).

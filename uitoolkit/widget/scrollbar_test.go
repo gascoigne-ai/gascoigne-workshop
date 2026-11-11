@@ -1,6 +1,8 @@
-package view
+package widget
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestScrollbarThumbSizeAndPositionFollowTheContent(t *testing.T) {
 	tests := []struct {
@@ -21,7 +23,7 @@ func TestScrollbarThumbSizeAndPositionFollowTheContent(t *testing.T) {
 		{"negative position is clamped", 100, 200, 100, -5, 0, 50, true},
 	}
 	for _, tt := range tests {
-		off, length, ok := Thumb(tt.track, tt.content, tt.view, tt.pos)
+		off, length, ok := thumb(tt.track, tt.content, tt.view, tt.pos)
 		if ok != tt.wantOK || off != tt.wantOff || length != tt.wantLen {
 			t.Errorf("%s: got off %d len %d ok %v; want %d %d %v", tt.name, off, length, ok, tt.wantOff, tt.wantLen, tt.wantOK)
 		}
@@ -33,7 +35,7 @@ func TestPosFromOffsetInvertsThumb(t *testing.T) {
 	maxPos := content - view
 	step := maxPos / (track - minThumbLen) // one pixel of thumb travel
 	for _, pos := range []int{0, 100, 450, 899, 900} {
-		off, _, _ := Thumb(track, content, view, pos)
+		off, _, _ := thumb(track, content, view, pos)
 		got := posFromOffset(track, content, view, off)
 		if d := got - pos; d < -step || d > step {
 			t.Errorf("pos %d -> off %d -> pos %d (tolerance %d)", pos, off, got, step)

@@ -13,6 +13,7 @@
 //	Dialogs    Dialog ResizableDialog DialogTitle MessageDialog   (state: DialogState DialogButton)
 //	Toasts     Toasts   (state: ToastStack Toast)
 //	Pictures   Image
+//	Editors    Area Code   (state: TextArea CodeView Line Match)
 //	Tooltips   TooltipLayer   (state: TooltipState)   (the Tooltip option is view's)
 //	Icons      Icon RegisterIcons IconNames HasIcon   CrossIcon TriangleIcon GripIcon DotsIcon TrashIcon PlusIcon CopyIcon FolderIcon SearchIcon PromptIcon ChevronUpIcon ChevronDownIcon
 //	Checkboxes Checkbox
