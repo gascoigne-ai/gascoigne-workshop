@@ -11,7 +11,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	rport "github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/state"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // stateDebounce is how long the remembered state must stay unchanged
@@ -137,9 +137,9 @@ func (a *App) restore(s state.State) {
 			continue
 		}
 		if a.colWidths == nil {
-			a.colWidths = map[string]*view.ColumnWidths{}
+			a.colWidths = map[string]*widget.ColumnWidths{}
 		}
-		a.colWidths[name] = &view.ColumnWidths{Weights: append([]float64(nil), ws...)}
+		a.colWidths[name] = &widget.ColumnWidths{Weights: append([]float64(nil), ws...)}
 	}
 }
 

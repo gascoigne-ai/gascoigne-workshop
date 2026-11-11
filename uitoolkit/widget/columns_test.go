@@ -1,4 +1,4 @@
-package view
+package widget
 
 import (
 	"math"
@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 func sum(w []float64) (s float64) {
@@ -85,12 +86,12 @@ func (r *tableRig) input(in core.Input) {
 
 // columnWidths reads the layout: the first two header column cells.
 func (r *tableRig) columnWidths() (first, second int) {
-	header := r.root.kids[0].kids[0].kids[0] // table, header Stack, header Row
+	header := r.root.Children()[0].Children()[0].Children()[0] // table, header Stack, header Row
 	off := 0
 	if r.editable {
 		off = 1
 	}
-	return header.kids[off].rect.W, header.kids[off+1].rect.W
+	return header.Children()[off].Rect().W, header.Children()[off+1].Rect().W
 }
 
 func TestDraggingAHeaderDividerResizesTheColumns(t *testing.T) {

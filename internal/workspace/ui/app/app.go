@@ -195,31 +195,31 @@ type App struct {
 	store              cport.Store
 	clients            cport.ClientConfigs // the build's client config; nil has none
 	states             port.StateStore
-	files              port.FileDialog               // the desktop file chooser, replaced in tests
-	cancelSettingsPick func()                        // takes back a file question the settings dialog asked
-	settingsUnsaved    bool                          // settings were changed but not written (auto-save is off)
-	prefs              settingsui.SettingsDialog     // the settings dialog
-	shortcutKeys       shortcutpage.Page             // the Shortcuts page of the settings dialog
-	tabsScroll         view.ScrollState              // sideways scroll of the request tab strip
-	dirty              bool                          // something changed since the last draw
-	tps                int                           // the update rate last set
-	lastIn             core.Input                    // the previous frame's input
-	pacer              engine.Pacer                  // update rate from idle time
-	colors             colorpage.Page                // the Colors page of the settings dialog
-	colWidths          map[string]*view.ColumnWidths // the column sizes of each table, by name
-	rowSel             *rowSelection                 // the table row the keyboard acts on
-	selected           any                           // the tree node last clicked or moved to: a *Folder or *Request
-	treeFocus          bool                          // the tree has the keyboard
-	filter             view.TextField                // the sidebar filter
-	sent               sentlog.Log                   // requests sent in this workspace, newest first
-	calls              calltrace.Log                 // the call trace behind the Log button
-	showSent           bool                          // the sidebar lists sent requests instead of the tree
-	dragNode           any                           // the tree node being dragged, nil when none
-	pressedFolder      *model.Folder                 // the folder row the button went down on, toggled on release there
-	hoverFolder        *model.Folder                 // the closed folder a drag has been over
-	hoverTicks         int                           // for how many frames
-	dropTarget         any                           // the node the pointer is over while dragging
-	dialog             *dialog                       // the open dialog, if any
+	files              port.FileDialog                 // the desktop file chooser, replaced in tests
+	cancelSettingsPick func()                          // takes back a file question the settings dialog asked
+	settingsUnsaved    bool                            // settings were changed but not written (auto-save is off)
+	prefs              settingsui.SettingsDialog       // the settings dialog
+	shortcutKeys       shortcutpage.Page               // the Shortcuts page of the settings dialog
+	tabsScroll         view.ScrollState                // sideways scroll of the request tab strip
+	dirty              bool                            // something changed since the last draw
+	tps                int                             // the update rate last set
+	lastIn             core.Input                      // the previous frame's input
+	pacer              engine.Pacer                    // update rate from idle time
+	colors             colorpage.Page                  // the Colors page of the settings dialog
+	colWidths          map[string]*widget.ColumnWidths // the column sizes of each table, by name
+	rowSel             *rowSelection                   // the table row the keyboard acts on
+	selected           any                             // the tree node last clicked or moved to: a *Folder or *Request
+	treeFocus          bool                            // the tree has the keyboard
+	filter             view.TextField                  // the sidebar filter
+	sent               sentlog.Log                     // requests sent in this workspace, newest first
+	calls              calltrace.Log                   // the call trace behind the Log button
+	showSent           bool                            // the sidebar lists sent requests instead of the tree
+	dragNode           any                             // the tree node being dragged, nil when none
+	pressedFolder      *model.Folder                   // the folder row the button went down on, toggled on release there
+	hoverFolder        *model.Folder                   // the closed folder a drag has been over
+	hoverTicks         int                             // for how many frames
+	dropTarget         any                             // the node the pointer is over while dragging
+	dialog             *dialog                         // the open dialog, if any
 	toasts             widget.ToastStack
 	now                func() time.Time               // the clock, replaced in tests
 	histories          func(dir string) rport.History // nil keeps no history

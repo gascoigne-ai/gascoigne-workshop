@@ -1,9 +1,10 @@
-package view
+package widget
 
 import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 // gripRig builds a three-row table with a drag handle and records what

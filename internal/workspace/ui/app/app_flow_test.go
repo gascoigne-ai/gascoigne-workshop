@@ -2897,7 +2897,7 @@ func TestNarrowColumnsKeepAMinimum(t *testing.T) {
 	drag(a, nameValueDividerX, 300, paramsHeaderY) // far left
 	w := a.widthsFor(requestPanes[0])
 	// the name column is at least MinColumnPx of the 393px of columns
-	if min := float64(view.MinColumnPx) / 393 * 100; w.Weights[0] < min-0.5 {
+	if min := float64(widget.MinColumnPx) / 393 * 100; w.Weights[0] < min-0.5 {
 		t.Fatalf("name weight %v is below the minimum share %v", w.Weights[0], min)
 	}
 }

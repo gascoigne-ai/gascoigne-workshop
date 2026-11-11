@@ -30,7 +30,7 @@
 //	Text       Text Caption Lines   Color Muted Bold Small Mono FontSource Ellipsis TextCenter
 //	Input      Field Area Code Checkbox   (state: TextField TextArea CodeView)   Placeholder FieldPad Segments OnChange OnEnter OnTab
 //	Events     OnClick OnClickAt OnRightClick OnRightClickIn OnMiddleClick OnDragOver   Tooltip KeepInView
-//	Composite  Table   OnSelect SelectHandler DismissHandler ChangeHandler   Separator   (Button, Tabs, Menu, Dialog and the rest of the ready-made widgets are in package widget)
+//	Events+    OnSelect SelectHandler DismissHandler ChangeHandler   Separator   (Button, Tabs, Menu, Dialog and the rest of the ready-made widgets are in package widget)
 //	Split      Vertical AsRatio MinFirst MinSecond
 //	Icons      Icon RegisterIcons IconNames   CrossIcon TriangleIcon GripIcon DotsIcon TrashIcon PlusIcon CopyIcon FolderIcon SearchIcon PromptIcon ChevronUpIcon ChevronDownIcon
 //	Flow       If When For Frag

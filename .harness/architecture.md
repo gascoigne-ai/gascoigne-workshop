@@ -70,7 +70,7 @@ The toolkit packages are public and independent of the application (`uitoolkit/c
 | `cmd/workshop` | flags, window setup and run loop |
 | `uitoolkit/core` | theme tokens, drawing context, input, rectangles, fonts, clipboard |
 | `uitoolkit/theming` | the dark and light palettes, contrast rules, theme files |
-| `uitoolkit/view` | the view API: element tree, flex layout, event dispatch, `If`/`For`, options, Table, text field, text area, code view |
+| `uitoolkit/view` | the view API: element tree, flex layout, event dispatch, `If`/`For`, options, text field, text area, code view; `Table` is in `widget` |
 | `uitoolkit/widget` | ready-made widgets composed from view: buttons, `Choice`, rows, tabs, the popup menu, dialogs, toasts, `TextMenu` |
 | `uitoolkit/markup` | VML templates (`.vml`, inline `markup.Must`) that build the same trees, widgets included |
 | `uitoolkit/engine` | key bindings and frame pacing |

@@ -1,12 +1,14 @@
 package ui
 
-import "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+import (
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+)
 
 // widthsFor is the column sizes of a pane's table, created on first use.
 // Each table keeps its own; request tables are named by their pane,
 // response tables get a prefix because the request and response panes
 // both have a Headers table.
-func (a *App) widthsFor(p pane) *view.ColumnWidths {
+func (a *App) widthsFor(p pane) *widget.ColumnWidths {
 	key := p.label
 	if !p.editable {
 		key = "response " + p.label
@@ -15,9 +17,9 @@ func (a *App) widthsFor(p pane) *view.ColumnWidths {
 		return w
 	}
 	if a.colWidths == nil {
-		a.colWidths = map[string]*view.ColumnWidths{}
+		a.colWidths = map[string]*widget.ColumnWidths{}
 	}
-	w := &view.ColumnWidths{}
+	w := &widget.ColumnWidths{}
 	a.colWidths[key] = w
 	return w
 }

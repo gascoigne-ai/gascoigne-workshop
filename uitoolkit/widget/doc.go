@@ -13,6 +13,7 @@
 //	Dialogs    Dialog ResizableDialog DialogTitle MessageDialog   (state: DialogState DialogButton)
 //	Toasts     Toasts   (state: ToastStack Toast)
 //	Pictures   Image
+//	Tables     Table   (state: TableSpec TableRow TableEdit ColumnWidths)   MinColumnPx
 //	Resizing   Resizable   (state: ResizeState)
 //	Sliders    Slider OnSlide OnSlideEnd SliderMid   (state: SliderState)
 //

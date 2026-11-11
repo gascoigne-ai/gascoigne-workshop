@@ -1,9 +1,10 @@
-package view
+package widget
 
 import (
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 // TableRow is one row of a Table. Muted rows (disabled entries) are drawn dim.
@@ -132,7 +133,7 @@ func tableHeader(t TableSpec) Node {
 	if t.Widths == nil {
 		return header
 	}
-	return Stack(H(core.RowH), header, newEl(colHandlesB{header: header, spec: t}, nil))
+	return Stack(H(core.RowH), header, Custom(colHandlesB{header: header, spec: t}))
 }
 
 // hasGrip reports whether rows have a drag handle.
@@ -253,12 +254,12 @@ func resizePair(weights []float64, i, leftPx, totalPx, minPx int) []float64 {
 // colHandlesB covers a table header and turns the boundaries between
 // its column cells into draggable dividers.
 type colHandlesB struct {
-	plain
+	Base
 	header *El // the header row; its column cells are kids[offset : offset+columns]
 	spec   TableSpec
 }
 
-func (colHandlesB) measure(*El, *core.Ctx, int) (int, int) { return 0, 0 }
+func (colHandlesB) Measure(*El, *core.Ctx, int) (int, int) { return 0, 0 }
 
 func (h colHandlesB) cells() []*El {
 	off := 0
@@ -268,23 +269,23 @@ func (h colHandlesB) cells() []*El {
 	if h.spec.hasGrip() {
 		off++ // and the drag handle's before it
 	}
-	return h.header.kids[off : off+len(h.spec.Columns)]
+	return h.header.Children()[off : off+len(h.spec.Columns)]
 }
 
-func (h colHandlesB) update(e *El, c *core.Ctx) {
+func (h colHandlesB) Update(e *El, c *core.Ctx) {
 	st, in, cells := h.spec.Widths, c.In, h.cells()
 	if st.drag.on {
 		if !st.drag.held(in) {
 			return
 		}
 		c.Cursor = core.CursorResizeH
-		left, right := cells[st.divider].rect, cells[st.divider+1].rect
+		left, right := cells[st.divider].Rect(), cells[st.divider+1].Rect()
 		st.Weights = resizePair(h.spec.weights(), st.divider, in.X-left.X-st.drag.off, left.W+right.W, MinColumnPx)
 		return
 	}
 	for i := 0; i < len(cells)-1; i++ {
-		x := cells[i].rect.X + cells[i].rect.W
-		grab := core.Rect{X: x - handleSlop, Y: h.header.rect.Y, W: 1 + 2*handleSlop, H: h.header.rect.H}
+		x := cells[i].Rect().X + cells[i].Rect().W
+		grab := core.Rect{X: x - handleSlop, Y: h.header.Rect().Y, W: 1 + 2*handleSlop, H: h.header.Rect().H}
 		if !in.Over(grab) {
 			continue
 		}

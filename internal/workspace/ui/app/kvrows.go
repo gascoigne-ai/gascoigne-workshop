@@ -5,12 +5,12 @@ import (
 	"unicode/utf8"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // kvRows turns key/value rows into table rows with two or three cells.
-func kvRows(rows []model.KV, withDesc, flagDuplicates bool) []view.TableRow {
-	out := make([]view.TableRow, len(rows))
+func kvRows(rows []model.KV, withDesc, flagDuplicates bool) []widget.TableRow {
+	out := make([]widget.TableRow, len(rows))
 	var dup []bool
 	if flagDuplicates {
 		dup = model.DuplicateNames(rows)
@@ -23,7 +23,7 @@ func kvRows(rows []model.KV, withDesc, flagDuplicates bool) []view.TableRow {
 		if withDesc {
 			cells = append(cells, kv.Description)
 		}
-		out[i] = view.TableRow{Cells: cells, Checked: kv.Enabled, Muted: !kv.Enabled, Flagged: dup != nil && dup[i]}
+		out[i] = widget.TableRow{Cells: cells, Checked: kv.Enabled, Muted: !kv.Enabled, Flagged: dup != nil && dup[i]}
 	}
 	return out
 }
