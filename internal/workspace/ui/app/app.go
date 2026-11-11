@@ -197,7 +197,7 @@ type App struct {
 	files              port.FileDialog               // the desktop file chooser, replaced in tests
 	cancelSettingsPick func()                        // takes back a file question the settings dialog asked
 	settingsUnsaved    bool                          // settings were changed but not written (auto-save is off)
-	prefs              settingsui.Dialog             // the settings dialog
+	prefs              settingsui.SettingsDialog     // the settings dialog
 	shortcutKeys       shortcutpage.Page             // the Shortcuts page of the settings dialog
 	tabsScroll         view.ScrollState              // sideways scroll of the request tab strip
 	dirty              bool                          // something changed since the last draw

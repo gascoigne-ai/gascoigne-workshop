@@ -6,16 +6,16 @@ import "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 // panel in the middle of the window that owns the keyboard focus.
 var dialogLook = []Item{Bg(core.Bg), Control("menu"), Shadow(), FloatCenter(), FocusScope(), Modal()}
 
-// DialogBox is a modal panel centered in the window over a dimmed scrim. Give
+// Dialog is a modal panel centered in the window over a dimmed scrim. Give
 // it its size (W, H), layout options and content, and OnDismiss for what
 // an outside click does. Mount it in the window's Stack while it is open.
-func DialogBox(items ...Item) *El {
+func Dialog(items ...Item) *El {
 	return Frag(Row(Bg(core.Shadow)), Col(append(append([]Item{}, dialogLook...), items...)...))
 }
 
-// ResizableDialogBox is a DialogBox the user can resize between the given
+// ResizableDialog is a Dialog the user can resize between the given
 // bounds; state keeps the size across frames.
-func ResizableDialogBox(state *ResizeState, minW, minH, maxW, maxH int, items ...Item) *El {
+func ResizableDialog(state *ResizeState, minW, minH, maxW, maxH int, items ...Item) *El {
 	return Frag(Row(Bg(core.Shadow)), Resizable(state, minW, minH, maxW, maxH, append(append([]Item{}, dialogLook...), items...)...))
 }
 
@@ -68,12 +68,12 @@ func (state *DialogState) Default() {
 // MessageDialogW is the width of a message dialog.
 const MessageDialogW = 380
 
-// MessageDialog shows state as a DialogBox: title, body, any items you add
+// MessageDialog shows state as a Dialog: title, body, any items you add
 // (a form, between the body and the input), the input line and the buttons
 // on the right. Enter in the input runs the primary button. Give it
 // OnDismiss for what an outside click does.
 func MessageDialog(state *DialogState, items ...Item) *El {
-	return DialogBox(append([]Item{
+	return Dialog(append([]Item{
 		W(MessageDialogW), Pad(16), Gap(12),
 		Text(state.Title, H(core.LabelH)),
 		If(state.Body != "", Lines(state.Body, core.Muted)),

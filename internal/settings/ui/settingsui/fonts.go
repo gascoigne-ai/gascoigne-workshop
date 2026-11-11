@@ -30,7 +30,7 @@ func savedFont(s settings.Settings, role FontRole) string {
 // SetFont picks the family called name for role, applies it and saves the
 // choice. An empty name goes back to the built-in font; a name that no
 // installed family has is explained next to the field and changes nothing.
-func (d *Dialog) SetFont(host Host, role FontRole, name string) {
+func (d *SettingsDialog) SetFont(host Host, role FontRole, name string) {
 	name = strings.TrimSpace(name)
 	if name != "" {
 		family, ok := fontfamily.Find(d.Families, name)
@@ -52,7 +52,7 @@ func (d *Dialog) SetFont(host Host, role FontRole, name string) {
 
 // FontsScanned receives the installed families and applies the saved
 // choices, which could not be resolved before.
-func (d *Dialog) FontsScanned(host Host, families []fontfamily.Family) {
+func (d *SettingsDialog) FontsScanned(host Host, families []fontfamily.Family) {
 	d.Families = families
 	d.ApplyFonts(host)
 }
@@ -60,7 +60,7 @@ func (d *Dialog) FontsScanned(host Host, families []fontfamily.Family) {
 // ApplyFonts loads the saved families for both roles. A name that is not
 // installed (any more) uses the built-in font and stays saved, so the font
 // returns when it is installed again.
-func (d *Dialog) ApplyFonts(host Host) {
+func (d *SettingsDialog) ApplyFonts(host Host) {
 	current := host.Settings()
 	var chosen [2]w.FontData
 	for _, role := range []FontRole{FontUI, FontCode} {
@@ -84,7 +84,7 @@ func (d *Dialog) ApplyFonts(host Host) {
 
 // ScanFonts reads the installed fonts in the background and hands them to
 // the UI goroutine.
-func (d *Dialog) ScanFonts(host Host) {
+func (d *SettingsDialog) ScanFonts(host Host) {
 	store := host.FontStore()
 	go func() {
 		families := store.Scan()

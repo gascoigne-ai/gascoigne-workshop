@@ -31,7 +31,7 @@ func testFamilies(t *testing.T) []fontfamily.Family {
 }
 
 func TestTheFontControlShowsTheCurrentFamilyInItsOwnFont(t *testing.T) {
-	var d Dialog
+	var d SettingsDialog
 	host := newHost(t)
 	d.Families = testFamilies(t)
 	host.current.UIFont = "Go Mono"
@@ -42,7 +42,7 @@ func TestTheFontControlShowsTheCurrentFamilyInItsOwnFont(t *testing.T) {
 }
 
 func TestTheFontListOpensWithEveryFamilyEachInItsOwnFont(t *testing.T) {
-	var d Dialog
+	var d SettingsDialog
 	host := newHost(t)
 	d.Families = testFamilies(t)
 	if d.FontList(host) != nil {
@@ -61,7 +61,7 @@ func TestTheFontListOpensWithEveryFamilyEachInItsOwnFont(t *testing.T) {
 }
 
 func TestPickingAFamilyAppliesItAndClosesTheList(t *testing.T) {
-	var d Dialog
+	var d SettingsDialog
 	host := newHost(t)
 	d.Families = testFamilies(t)
 	d.OpenFontList(host, FontCode)
@@ -77,7 +77,7 @@ func TestPickingAFamilyAppliesItAndClosesTheList(t *testing.T) {
 }
 
 func TestTheFontListSearchNarrowsTheFamilies(t *testing.T) {
-	var d Dialog
+	var d SettingsDialog
 	host := newHost(t)
 	d.Families = testFamilies(t)
 	d.OpenFontList(host, FontUI)
@@ -91,7 +91,7 @@ func TestTheFontListSearchNarrowsTheFamilies(t *testing.T) {
 // A system can have hundreds of families; reading every font file to draw
 // the list would stall it, so only the rows in view load their font.
 func TestOnlyTheVisibleRowsLoadTheirFonts(t *testing.T) {
-	var d Dialog
+	var d SettingsDialog
 	host := newHost(t)
 	base := testFamilies(t)[0]
 	for i := range 300 {
@@ -105,7 +105,7 @@ func TestOnlyTheVisibleRowsLoadTheirFonts(t *testing.T) {
 }
 
 func TestEscapingOrClickingOutsideClosesTheList(t *testing.T) {
-	var d Dialog
+	var d SettingsDialog
 	host := newHost(t)
 	d.OpenFontList(host, FontUI)
 	d.CloseFontList()
@@ -117,7 +117,7 @@ func TestEscapingOrClickingOutsideClosesTheList(t *testing.T) {
 // Opening the list scrolls to the family in use, so it is on screen without
 // the user hunting for it through hundreds of names.
 func TestTheFontListOpensScrolledToTheSelectedFamily(t *testing.T) {
-	var d Dialog
+	var d SettingsDialog
 	host := newHost(t)
 	for i := range 300 {
 		d.Families = append(d.Families, fontfamily.Family{Name: fmt.Sprintf("Family %03d", i), Regular: fmt.Sprintf("none#%d", i)})
@@ -139,7 +139,7 @@ func TestTheFontListOpensScrolledToTheSelectedFamily(t *testing.T) {
 }
 
 func TestTheFontListOpensAtTheTopWhenNothingIsSelected(t *testing.T) {
-	var d Dialog
+	var d SettingsDialog
 	host := newHost(t)
 	d.Families = testFamilies(t)
 	d.OpenFontList(host, FontCode) // Built-in is in use

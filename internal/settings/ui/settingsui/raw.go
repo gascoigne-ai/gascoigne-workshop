@@ -16,7 +16,7 @@ const PollTicks = 30
 
 // Stamp notes the file as it is now, so the program's own write is not
 // taken for an outside change.
-func (d *Dialog) Stamp(host Host, path string) {
+func (d *SettingsDialog) Stamp(host Host, path string) {
 	if path != "" {
 		d.stamp = host.SettingsStore().Stat(path)
 	}
@@ -25,7 +25,7 @@ func (d *Dialog) Stamp(host Host, path string) {
 // Poll applies a change made to settings.json outside the program, to the
 // form and to the open raw view alike. A file with problems changes nothing
 // and is reported.
-func (d *Dialog) Poll(host Host) {
+func (d *SettingsDialog) Poll(host Host) {
 	path := host.SettingsPath()
 	if path == "" || host.Unsaved() { // an outside change must not overwrite what was not saved
 		return
@@ -54,7 +54,7 @@ func (d *Dialog) Poll(host Host) {
 }
 
 // OpenRaw switches the dialog to the text of settings.json.
-func (d *Dialog) OpenRaw(host Host) {
+func (d *SettingsDialog) OpenRaw(host Host) {
 	text := ""
 	if data, err := host.SettingsStore().ReadText(host.SettingsPath()); host.SettingsPath() != "" && err == nil {
 		text = string(data)
@@ -69,12 +69,12 @@ func (d *Dialog) OpenRaw(host Host) {
 }
 
 // CloseRaw switches back to the form.
-func (d *Dialog) CloseRaw() { d.Raw = false }
+func (d *SettingsDialog) CloseRaw() { d.Raw = false }
 
 // RawChanged runs after every change of the raw text: the edit is checked
 // and applied (RawEdited), and typing the opening quote of a key or a value
 // offers what fits there without Ctrl+Space.
-func (d *Dialog) RawChanged(host Host) {
+func (d *SettingsDialog) RawChanged(host Host) {
 	before := d.rawBefore
 	d.rawBefore = d.RawText.Text
 	d.RawEdited(host)
@@ -89,7 +89,7 @@ func (d *Dialog) RawChanged(host Host) {
 // RawEdited runs after every change of the raw text. Text without problems
 // becomes the settings and is written to the file as typed; text with
 // problems changes nothing, and the problems are listed under the editor.
-func (d *Dialog) RawEdited(host Host) {
+func (d *SettingsDialog) RawEdited(host Host) {
 	text := d.RawText.Text
 	d.Problems = settings.Validate([]byte(text))
 	if len(d.Problems) > 0 {
@@ -116,7 +116,7 @@ func (d *Dialog) RawEdited(host Host) {
 
 // rawStyler colors one line of the text as JSON, and the keys that have a
 // problem in the error color.
-func (d *Dialog) rawStyler(line string) []Span {
+func (d *SettingsDialog) rawStyler(line string) []Span {
 	bad := map[string]bool{}
 	for _, problem := range d.Problems {
 		if problem.Key != "" {
@@ -136,15 +136,15 @@ func (d *Dialog) rawStyler(line string) []Span {
 }
 
 // RawStyle is how the raw view colors one line of its text.
-func (d *Dialog) RawStyle(line string) []Span { return d.rawStyler(line) }
+func (d *SettingsDialog) RawStyle(line string) []Span { return d.rawStyler(line) }
 
 // CompleteRaw opens a menu of what fits at the caret of the raw text; the
 // choice replaces the part of the word that was typed.
-func (d *Dialog) CompleteRaw(host Host) { d.complete(host, false) }
+func (d *SettingsDialog) CompleteRaw(host Host) { d.complete(host, false) }
 
 // complete opens the completion menu; quiet leaves the user alone when
 // there is nothing to offer, as when it opened by itself.
-func (d *Dialog) complete(host Host, quiet bool) {
+func (d *SettingsDialog) complete(host Host, quiet bool) {
 	text := d.RawText.Text
 	runes := []rune(text)
 	caret := min(d.RawText.Cursor, len(runes))
@@ -174,10 +174,10 @@ func (d *Dialog) complete(host Host, quiet bool) {
 }
 
 // RawFocused reports whether the raw text has the keyboard focus.
-func (d *Dialog) RawFocused() bool { return d.Raw && d.RawText.Focused }
+func (d *SettingsDialog) RawFocused() bool { return d.Raw && d.RawText.Focused }
 
 // rawView is the dialog's page while it shows settings.json as text.
-func (d *Dialog) rawView(host Host) Node {
+func (d *SettingsDialog) rawView(host Host) Node {
 	status, color := "Saved as you type", w.Muted
 	if len(d.Problems) > 0 {
 		status, color = fmt.Sprintf("%d problem(s): the last good settings stay in effect", len(d.Problems)), w.Error

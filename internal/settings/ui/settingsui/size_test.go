@@ -13,7 +13,7 @@ import (
 var dialogRect = regexp.MustCompile(`resizableB w=(\d+) h=(\d+)`)
 
 // dialogSize is the size the laid out dialog has.
-func dialogSize(t *testing.T, d *Dialog, host Host) (int, int) {
+func dialogSize(t *testing.T, d *SettingsDialog, host Host) (int, int) {
 	t.Helper()
 	ctx, err := core.NewCtx(testTheme())
 	if err != nil {
@@ -34,7 +34,7 @@ func dialogSize(t *testing.T, d *Dialog, host Host) (int, int) {
 }
 
 func TestTheDialogHasItsDefaultSizeUntilTheUserResizesIt(t *testing.T) {
-	var d Dialog
+	var d SettingsDialog
 	host := newHost(t)
 	if w, h := dialogSize(t, &d, host); w != DialogWidth || h != DialogMaxH {
 		t.Fatalf("default size %dx%d, want %dx%d", w, h, DialogWidth, DialogMaxH)
@@ -46,7 +46,7 @@ func TestTheDialogHasItsDefaultSizeUntilTheUserResizesIt(t *testing.T) {
 }
 
 func TestTheDialogSizeStaysInsideTheWindowAndAboveItsMinimum(t *testing.T) {
-	var d Dialog
+	var d SettingsDialog
 	host := newHost(t) // a 1280x800 window
 	d.Size.W, d.Size.H = 5000, 5000
 	if w, h := dialogSize(t, &d, host); w != 1280-2*ScreenMargin || h != 800-2*ScreenMargin {
@@ -59,7 +59,7 @@ func TestTheDialogSizeStaysInsideTheWindowAndAboveItsMinimum(t *testing.T) {
 }
 
 func TestAFreshDialogKeepsTheSizeTheUserChose(t *testing.T) {
-	var d Dialog
+	var d SettingsDialog
 	d.Size.W, d.Size.H = 900, 480
 	d.Fresh()
 	if d.Size.W != 900 || d.Size.H != 480 {

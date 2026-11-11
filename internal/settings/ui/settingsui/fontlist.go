@@ -33,7 +33,7 @@ type fontList struct {
 }
 
 // OpenFontList opens the dropdown for role below the pointer.
-func (d *Dialog) OpenFontList(host Host, role FontRole) {
+func (d *SettingsDialog) OpenFontList(host Host, role FontRole) {
 	px, py := host.Pointer()
 	width, height := host.Size()
 	d.list.open, d.list.role = true, role
@@ -49,7 +49,7 @@ func (d *Dialog) OpenFontList(host Host, role FontRole) {
 
 // selectedRow is the index of the family in use among the unfiltered rows:
 // 0 for Built-in, or for a name that is not installed.
-func (d *Dialog) selectedRow(host Host) int {
+func (d *SettingsDialog) selectedRow(host Host) int {
 	current := savedFont(host.Settings(), d.list.role)
 	for i, family := range d.Families {
 		if strings.EqualFold(family.Name, current) {
@@ -60,24 +60,24 @@ func (d *Dialog) selectedRow(host Host) int {
 }
 
 // CloseFontList closes the dropdown.
-func (d *Dialog) CloseFontList() { d.list.open = false }
+func (d *SettingsDialog) CloseFontList() { d.list.open = false }
 
 // FontListOpen reports whether the dropdown is open.
-func (d *Dialog) FontListOpen() bool { return d.list.open }
+func (d *SettingsDialog) FontListOpen() bool { return d.list.open }
 
 // PickFont applies the family called name, "" for the built-in font, for
 // the role the dropdown was opened for, and closes it.
-func (d *Dialog) PickFont(host Host, name string) {
+func (d *SettingsDialog) PickFont(host Host, name string) {
 	d.CloseFontList()
 	d.SetFont(host, d.list.role, name)
 }
 
 // loadedFaces is how many font files the list has tried to read.
-func (d *Dialog) loadedFaces() int { return len(d.list.faces) }
+func (d *SettingsDialog) loadedFaces() int { return len(d.list.faces) }
 
 // face is the font of family, read the first time it is asked for; nil
 // when the file cannot be read, which draws the name in the interface font.
-func (d *Dialog) face(host Host, family fontfamily.Family) *text.GoTextFaceSource {
+func (d *SettingsDialog) face(host Host, family fontfamily.Family) *text.GoTextFaceSource {
 	if source, seen := d.list.faces[family.Regular]; seen {
 		return source
 	}
@@ -94,7 +94,7 @@ func (d *Dialog) face(host Host, family fontfamily.Family) *text.GoTextFaceSourc
 
 // fontLabel is a name shown in its own font: Text with the family's font
 // when it could be loaded.
-func (d *Dialog) fontLabel(host Host, family fontfamily.Family, opts ...Option) Node {
+func (d *SettingsDialog) fontLabel(host Host, family fontfamily.Family, opts ...Option) Node {
 	options := append([]Option{Ellipsis(), Grow(1)}, opts...)
 	if source := d.face(host, family); source != nil {
 		options = append(options, FontSource(source))
@@ -104,7 +104,7 @@ func (d *Dialog) fontLabel(host Host, family fontfamily.Family, opts ...Option) 
 
 // fontControl is the control of a font setting: the current family, drawn
 // in its font, and a chevron; clicking opens the dropdown.
-func (d *Dialog) fontControl(host Host, role FontRole) Node {
+func (d *SettingsDialog) fontControl(host Host, role FontRole) Node {
 	name := savedFont(host.Settings(), role)
 	family, found := fontfamily.Find(d.Families, name)
 	label := Text(builtIn, Grow(1), Muted())
@@ -121,14 +121,14 @@ func (d *Dialog) fontControl(host Host, role FontRole) Node {
 }
 
 // matchingFamilies are the families whose name contains the search text.
-func (d *Dialog) matchingFamilies() []fontfamily.Family {
+func (d *SettingsDialog) matchingFamilies() []fontfamily.Family {
 	return fontfamily.Matching(d.Families, d.FontSearch.Text, len(d.Families))
 }
 
 // FontList is the dropdown while it is open: a search field and the
 // families, each in its own font. Only the rows in view are built, so only
 // their fonts are read.
-func (d *Dialog) FontList(host Host) Node {
+func (d *SettingsDialog) FontList(host Host) Node {
 	if !d.list.open {
 		return nil
 	}
@@ -171,6 +171,6 @@ func (d *Dialog) FontList(host Host) Node {
 }
 
 // fontRow is one row of the list; picking it applies the family.
-func (d *Dialog) fontRow(host Host, label Node, selected bool, name string) Node {
+func (d *SettingsDialog) fontRow(host Host, label Node, selected bool, name string) Node {
 	return ListRow(selected, H(fontListRowH), PadX(8), AlignItems(AlignCenter), OnClick(func() { d.PickFont(host, name) }), label)
 }

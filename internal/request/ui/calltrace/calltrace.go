@@ -159,7 +159,7 @@ func (l *Log) View(host Host) Node {
 	l.refresh()
 	_, height := host.Size()
 	h := min(dialogMaxH, height-2*margin)
-	return DialogBox(W(dialogW), H(h), OnDismiss(l.Close),
+	return Dialog(W(dialogW), H(h), OnDismiss(l.Close),
 		l.titleBar(host),
 		Code(&l.code, Grow(1), Bg(w.Sunken)),
 	)

@@ -9,10 +9,10 @@ import (
 
 // A dialog dims the window and floats a modal panel in the middle; a click
 // outside the panel dismisses it.
-func TestDialogBoxDimsTheWindowAndDismissesOnAnOutsideClick(t *testing.T) {
+func TestDialogDimsTheWindowAndDismissesOnAnOutsideClick(t *testing.T) {
 	c := testCtx(t)
 	dismissed := 0
-	panel := DialogBox(W(200), H(100), OnDismiss(func() { dismissed++ }), Text("hello"))
+	panel := Dialog(W(200), H(100), OnDismiss(func() { dismissed++ }), Text("hello"))
 	root := Stack(Row(Grow(1)), panel)
 	Layout(c, root, 600, 400)
 
@@ -36,7 +36,7 @@ func TestDialogBoxDimsTheWindowAndDismissesOnAnOutsideClick(t *testing.T) {
 func TestResizableDialogKeepsTheDialogLook(t *testing.T) {
 	c := testCtx(t)
 	var size ResizeState
-	panel := ResizableDialogBox(&size, 200, 100, 500, 300, W(300), H(200), Text("hi"))
+	panel := ResizableDialog(&size, 200, 100, 500, 300, W(300), H(200), Text("hi"))
 	Layout(c, Stack(panel), 600, 400)
 	body := panel.kids[1]
 	if panel.kids[0].bg != core.Shadow || !body.modal || body.control != "menu" {

@@ -59,7 +59,7 @@ func (h *fakeHost) Later(f func())           { f() }
 func dump(node Node) string { return Dump(node) }
 
 func TestAPageShowsItsSettingsAndTheSearchFiltersAcrossPages(t *testing.T) {
-	var d Dialog
+	var d SettingsDialog
 	host := newHost(t)
 	if text := dump(d.FormPage(host, "Requests")); !strings.Contains(text, "Proxy") || strings.Contains(text, "Corners") {
 		t.Fatalf("Requests page:\n%s", text)
@@ -71,7 +71,7 @@ func TestAPageShowsItsSettingsAndTheSearchFiltersAcrossPages(t *testing.T) {
 }
 
 func TestANumberOutsideItsRangeIsExplainedAndNotApplied(t *testing.T) {
-	var d Dialog
+	var d SettingsDialog
 	host := newHost(t)
 	*d.Input(host, "timeoutSec") = NewTextField("0")
 	d.Edited(host, "timeoutSec")
@@ -86,7 +86,7 @@ func TestANumberOutsideItsRangeIsExplainedAndNotApplied(t *testing.T) {
 }
 
 func TestResetRemovesTheKeyFromTheFile(t *testing.T) {
-	var d Dialog
+	var d SettingsDialog
 	host := newHost(t)
 	host.Change(func(s *settings.Settings) { s.Layout = "side" })
 	d.Reset(host, "layout")
@@ -96,7 +96,7 @@ func TestResetRemovesTheKeyFromTheFile(t *testing.T) {
 }
 
 func TestRawTextWithProblemsChangesNothingAndGoodTextIsWrittenAsTyped(t *testing.T) {
-	var d Dialog
+	var d SettingsDialog
 	host := newHost(t)
 	d.OpenRaw(host)
 	d.RawText.Text = `{"layout": "diagonal"}`
@@ -115,7 +115,7 @@ func TestRawTextWithProblemsChangesNothingAndGoodTextIsWrittenAsTyped(t *testing
 }
 
 func TestAChangeOnDiskIsPickedUpOnceAndAnOwnWriteIsNot(t *testing.T) {
-	var d Dialog
+	var d SettingsDialog
 	host := newHost(t)
 	host.Change(func(s *settings.Settings) { s.Corners = "round" })
 	d.Stamp(host, host.path)
@@ -134,7 +134,7 @@ func TestAChangeOnDiskIsPickedUpOnceAndAnOwnWriteIsNot(t *testing.T) {
 }
 
 func TestCompletionOffersWhatSettingsCompleteGivesAtTheCaret(t *testing.T) {
-	var d Dialog
+	var d SettingsDialog
 	host := newHost(t)
 	d.OpenRaw(host)
 	d.RawText = NewTextArea(`{"appearance": {"la`)
@@ -156,7 +156,7 @@ func (h *fakeHost) MarkUnsaved()                      { h.unsaved = true }
 func (h *fakeHost) MarkSaved()                        { h.unsaved = false }
 
 func TestAFileSettingHasAFolderButtonInsideItsFieldThatFillsIt(t *testing.T) {
-	var d Dialog
+	var d SettingsDialog
 	host := newHost(t)
 	page := dump(d.FormPage(host, "Requests"))
 	if strings.Count(page, "icon=folder") != 3 {
@@ -176,7 +176,7 @@ func (h *fakeHost) PickFile(title string, done func(path string)) {
 }
 
 func TestTheSaveButtonIsHiddenWhileAutoSaveIsOnAndNothingIsPending(t *testing.T) {
-	var d Dialog
+	var d SettingsDialog
 	host := newHost(t)
 	if d.saveButton(host) != nil {
 		t.Fatal("with auto-save on and nothing pending there is nothing to save, so no button")
@@ -193,14 +193,14 @@ func TestTheSaveButtonIsHiddenWhileAutoSaveIsOnAndNothingIsPending(t *testing.T)
 }
 
 func TestAnEmptyFileSettingIsOnlyAButtonAndAFilledOneShowsItsPath(t *testing.T) {
-	var d Dialog
+	var d SettingsDialog
 	host := newHost(t)
 	empty := dump(d.fileControl(host, mustField(t, "caCert")))
 	if strings.Contains(empty, "fieldB") || !strings.Contains(empty, "icon=folder") || !strings.Contains(empty, "Choose file") {
 		t.Fatalf("an empty file setting should be one button with the folder icon and a label, no field:\n%s", empty)
 	}
 	host.current.CACert = "/etc/ssl/ca.pem"
-	d = Dialog{}
+	d = SettingsDialog{}
 	filled := dump(d.fileControl(host, mustField(t, "caCert")))
 	if !strings.Contains(filled, "fieldB") || !strings.Contains(filled, "icon=folder") {
 		t.Fatalf("a set file shows its path with a folder button:\n%s", filled)
@@ -219,7 +219,7 @@ func mustField(t *testing.T, key string) settings.Field {
 // The title bar names the dialog; the raw view has no search field.
 func TestTitleBarHasTheSearchFieldOnlyOutsideTheRawView(t *testing.T) {
 	for _, raw := range []bool{false, true} {
-		d := Dialog{Raw: raw}
+		d := SettingsDialog{Raw: raw}
 		bar := d.titleBar(newHost(t))
 		ctx, err := w.NewCtx(w.Theme{Colors: map[w.Token]color.RGBA{w.Text: w.RGB(0xffffff)}, FontSize: 14, SmallSize: 12, MonoSize: 13})
 		if err != nil {
@@ -237,7 +237,7 @@ func TestTitleBarHasTheSearchFieldOnlyOutsideTheRawView(t *testing.T) {
 }
 
 func TestNavItemTemplateMatchesTheGoView(t *testing.T) {
-	var d Dialog
+	var d SettingsDialog
 	p := pages[0]
 	for _, open := range []bool{true, false} {
 		items := []Item{H(w.RowH), PadX(12), AlignItems(AlignCenter), Control("button"), OnClick(func() { d.Cat, d.scroll.Y = p.id, 0 })}

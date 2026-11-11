@@ -17,29 +17,29 @@ import (
 const descriptionCols = 76
 
 // settingControl draws the control of one setting.
-type settingControl func(d *Dialog, host Host, field settings.Field) Node
+type settingControl func(d *SettingsDialog, host Host, field settings.Field) Node
 
 // settingControls are the settings whose control is not the plain one for
 // their kind. Everything else is a row of chips (an enum), On / Off (a
 // boolean) or a text field (text and numbers).
 var settingControls = map[string]settingControl{
-	"theme": func(d *Dialog, host Host, _ settings.Field) Node { return d.themeChips(host) },
-	"textSize": func(d *Dialog, host Host, field settings.Field) Node {
+	"theme": func(d *SettingsDialog, host Host, _ settings.Field) Node { return d.themeChips(host) },
+	"textSize": func(d *SettingsDialog, host Host, field settings.Field) Node {
 		return d.enumChips(host, field, labelsOf(appearance.TextSizeChoices, sizeLabel))
 	},
-	"corners": func(d *Dialog, host Host, field settings.Field) Node {
+	"corners": func(d *SettingsDialog, host Host, field settings.Field) Node {
 		return d.enumChips(host, field, labelsOf(appearance.CornerChoices, cornerLabel))
 	},
-	"contrast": func(d *Dialog, host Host, field settings.Field) Node {
+	"contrast": func(d *SettingsDialog, host Host, field settings.Field) Node {
 		return d.enumChips(host, field, labelsOf(appearance.ContrastChoices, contrastLabel))
 	},
-	"layout": func(d *Dialog, host Host, field settings.Field) Node {
+	"layout": func(d *SettingsDialog, host Host, field settings.Field) Node {
 		return d.enumChips(host, field, labelsOf(appearance.LayoutChoices, layoutLabel))
 	},
-	"responseView": func(d *Dialog, host Host, field settings.Field) Node { return d.enumChips(host, field, nil) },
-	"uiScale":      func(d *Dialog, host Host, _ settings.Field) Node { return d.scaleControl(host) },
-	"uiFont":       func(d *Dialog, host Host, _ settings.Field) Node { return d.fontControl(host, FontUI) },
-	"codeFont":     func(d *Dialog, host Host, _ settings.Field) Node { return d.fontControl(host, FontCode) },
+	"responseView": func(d *SettingsDialog, host Host, field settings.Field) Node { return d.enumChips(host, field, nil) },
+	"uiScale":      func(d *SettingsDialog, host Host, _ settings.Field) Node { return d.scaleControl(host) },
+	"uiFont":       func(d *SettingsDialog, host Host, _ settings.Field) Node { return d.fontControl(host, FontUI) },
+	"codeFont":     func(d *SettingsDialog, host Host, _ settings.Field) Node { return d.fontControl(host, FontCode) },
 }
 
 func sizeLabel(c appearance.SizeChoice) (string, string)         { return c.ID, c.Label }
@@ -73,7 +73,7 @@ func choice(host Host, label string, selected bool, edit func(*settings.Settings
 }
 
 // enumChips is a row of chips, one per allowed value; the current one is lit.
-func (d *Dialog) enumChips(host Host, field settings.Field, labels map[string]string) Node {
+func (d *SettingsDialog) enumChips(host Host, field settings.Field, labels map[string]string) Node {
 	current, _ := settings.Value(host.Settings(), field.Key).(string)
 	if field.Key == "corners" {
 		current = appearance.CornerIDOf(current)
@@ -89,7 +89,7 @@ func (d *Dialog) enumChips(host Host, field settings.Field, labels map[string]st
 	)
 }
 
-func (d *Dialog) themeChips(host Host) Node {
+func (d *SettingsDialog) themeChips(host Host) Node {
 	current := host.Settings().Theme
 	return Row(H(w.RowH), Gap(6),
 		For(appearance.AllThemeChoices(), func(_ int, c appearance.ThemeChoice) Node {
@@ -98,7 +98,7 @@ func (d *Dialog) themeChips(host Host) Node {
 	)
 }
 
-func (d *Dialog) scaleControl(host Host) Node {
+func (d *SettingsDialog) scaleControl(host Host) Node {
 	percent := int(host.Settings().UIScale()*100 + 0.5)
 	return Row(H(w.RowH), Gap(8),
 		Slider(&d.scale, appearance.ScaleMin, appearance.ScaleMax, appearance.ScaleStep, percent, OnSlide(func(percent int) { host.Send(prefs.ScaleLive{Percent: percent}) }), // live: the UI resizes while dragging
@@ -108,7 +108,7 @@ func (d *Dialog) scaleControl(host Host) Node {
 }
 
 // boolChips is Off and On for a true-or-false setting.
-func (d *Dialog) boolChips(host Host, field settings.Field) Node {
+func (d *SettingsDialog) boolChips(host Host, field settings.Field) Node {
 	on, _ := settings.Value(host.Settings(), field.Key).(bool)
 	set := func(value bool) func(*settings.Settings) {
 		return func(s *settings.Settings) { *s = settings.With(*s, field.Key, value) }
@@ -118,7 +118,7 @@ func (d *Dialog) boolChips(host Host, field settings.Field) Node {
 
 // Input is the text field of a text or number setting, filled from the
 // setting the first time it is needed.
-func (d *Dialog) Input(host Host, key string) *TextField {
+func (d *SettingsDialog) Input(host Host, key string) *TextField {
 	if d.inputs == nil {
 		d.inputs = map[string]*TextField{}
 	}
@@ -140,7 +140,7 @@ func (d *Dialog) Input(host Host, key string) *TextField {
 // Edited applies the text typed into the field of key. A number that is not
 // a whole number in range is explained under the field, and the setting
 // keeps its last good value.
-func (d *Dialog) Edited(host Host, key string) {
+func (d *SettingsDialog) Edited(host Host, key string) {
 	field, ok := settings.FieldFor(key)
 	if !ok {
 		return
@@ -159,7 +159,7 @@ func (d *Dialog) Edited(host Host, key string) {
 	host.Send(prefs.Change{Edit: func(s *settings.Settings) { *s = settings.With(*s, key, value) }})
 }
 
-func (d *Dialog) setNote(key, note string) {
+func (d *SettingsDialog) setNote(key, note string) {
 	if d.notes == nil {
 		d.notes = map[string]string{}
 	}
@@ -167,10 +167,10 @@ func (d *Dialog) setNote(key, note string) {
 }
 
 // Note is why the value typed for key was refused, "" when it was not.
-func (d *Dialog) Note(key string) string { return d.notes[key] }
+func (d *SettingsDialog) Note(key string) string { return d.notes[key] }
 
 // textControl is the field of a text or number setting.
-func (d *Dialog) textControl(host Host, field settings.Field) Node {
+func (d *SettingsDialog) textControl(host Host, field settings.Field) Node {
 	input := d.Input(host, field.Key)
 	note := d.notes[field.Key]
 	edited := func() { d.Edited(host, field.Key) }
@@ -181,7 +181,7 @@ func (d *Dialog) textControl(host Host, field settings.Field) Node {
 }
 
 // Reset puts the default back for key and drops it from the file.
-func (d *Dialog) Reset(host Host, key string) {
+func (d *SettingsDialog) Reset(host Host, key string) {
 	host.Send(prefs.Change{Edit: func(s *settings.Settings) { settings.Reset(s, key) }})
 	d.inputs, d.notes = nil, nil
 	if key == "uiFont" || key == "codeFont" {
@@ -208,7 +208,7 @@ func wrapWords(text string, cols int) string {
 
 // settingRow is one setting: its title with a mark and a Reset button when
 // it differs from the default, its description and its control.
-func (d *Dialog) settingRow(host Host, field settings.Field) Node {
+func (d *SettingsDialog) settingRow(host Host, field settings.Field) Node {
 	changed := settings.Changed(host.Settings(), field.Key)
 	var control Node
 	switch custom, ok := settingControls[field.Key]; {
@@ -239,7 +239,7 @@ func (d *Dialog) settingRow(host Host, field settings.Field) Node {
 
 // openPageButton leads from a search result to the page that edits the
 // setting, which is a table and not a single control.
-func (d *Dialog) openPageButton(field settings.Field) Node {
+func (d *SettingsDialog) openPageButton(field settings.Field) Node {
 	page := "colors"
 	if field.Kind == settings.Shortcuts {
 		page = "shortcuts"
@@ -263,7 +263,7 @@ func settingMatches(field settings.Field, query string) bool {
 
 // FormPage is the settings of one category, or, while a search text is
 // typed, those of every category that match it.
-func (d *Dialog) FormPage(host Host, category string) Node {
+func (d *SettingsDialog) FormPage(host Host, category string) Node {
 	searching := d.Searching()
 	var rows []Item
 	last := ""
@@ -287,7 +287,7 @@ func (d *Dialog) FormPage(host Host, category string) Node {
 // button, a folder icon and "Choose file", since an empty field has nothing
 // to show; with a file it is a field with the path and a folder button inside
 // it at the right, which chooses another.
-func (d *Dialog) fileControl(host Host, field settings.Field) Node {
+func (d *SettingsDialog) fileControl(host Host, field settings.Field) Node {
 	input := d.Input(host, field.Key)
 	choose := func() { d.ChooseFile(host, field.Key) }
 	if strings.TrimSpace(input.Text) == "" && !input.Focused {
@@ -312,7 +312,7 @@ func (d *Dialog) fileControl(host Host, field settings.Field) Node {
 
 // ChooseFile asks for a file for the setting key and puts its path in the
 // setting.
-func (d *Dialog) ChooseFile(host Host, key string) {
+func (d *SettingsDialog) ChooseFile(host Host, key string) {
 	field, ok := settings.FieldFor(key)
 	if !ok {
 		return

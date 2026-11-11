@@ -76,8 +76,8 @@ var pages = []page{
 	{"general", "General", "General"},
 }
 
-// Dialog is the state of the settings dialog. The zero value is ready.
-type Dialog struct {
+// SettingsDialog is the state of the settings dialog. The zero value is ready.
+type SettingsDialog struct {
 	Size   ResizeState // the size the user gave the dialog; 0 is the default
 	Cat    string      // the page shown
 	Search TextField   // filters the settings across pages
@@ -100,7 +100,7 @@ type Dialog struct {
 }
 
 // pageID is the page shown: the chosen one, else the first.
-func (d *Dialog) pageID() string {
+func (d *SettingsDialog) pageID() string {
 	for _, p := range pages {
 		if p.id == d.Cat {
 			return p.id
@@ -112,7 +112,7 @@ func (d *Dialog) pageID() string {
 // Fresh forgets everything the user did in the dialog, as closing it does:
 // the page, the search, the raw view, what was typed and any open list. What
 // the program learned (installed fonts, the file's stamp) stays.
-func (d *Dialog) Fresh() {
+func (d *SettingsDialog) Fresh() {
 	d.Cat, d.Search = "", NewTextField("")
 	d.scroll = ScrollState{} // the size the user chose stays
 	d.inputs, d.notes = nil, nil
@@ -122,10 +122,10 @@ func (d *Dialog) Fresh() {
 }
 
 // ResetScroll puts the page back at its top.
-func (d *Dialog) ResetScroll() { d.scroll.Y = 0 }
+func (d *SettingsDialog) ResetScroll() { d.scroll.Y = 0 }
 
 // View is the dialog, centered over a dimmed window.
-func (d *Dialog) View(host Host) Node {
+func (d *SettingsDialog) View(host Host) Node {
 	width, height := host.Size()
 	maxW, maxH := max(width-2*ScreenMargin, 1), max(height-2*ScreenMargin, 1)
 	dw, dh := d.Size.W, d.Size.H
@@ -138,7 +138,7 @@ func (d *Dialog) View(host Host) Node {
 	dw, dh = min(max(dw, min(MinWidth, maxW)), maxW), min(max(dh, min(MinHeight, maxH)), maxH)
 	cur := d.pageID()
 	return Frag(
-		ResizableDialogBox(&d.Size, min(MinWidth, maxW), min(MinHeight, maxH), maxW, maxH, W(dw), H(dh), OnDismiss(func() { host.Send(prefs.Close{}) }),
+		ResizableDialog(&d.Size, min(MinWidth, maxW), min(MinHeight, maxH), maxW, maxH, W(dw), H(dh), OnDismiss(func() { host.Send(prefs.Close{}) }),
 			d.titleBar(host),
 			If(d.Raw, Col(Grow(1), Pad(16), d.rawView(host))),
 			If(!d.Raw, Row(Grow(1),
@@ -153,7 +153,7 @@ func (d *Dialog) View(host Host) Node {
 }
 
 // pageContent is the content of page id.
-func (d *Dialog) pageContent(host Host, id string) Node {
+func (d *SettingsDialog) pageContent(host Host, id string) Node {
 	for _, p := range pages {
 		if p.id != id {
 			continue
@@ -168,7 +168,7 @@ func (d *Dialog) pageContent(host Host, id string) Node {
 
 // titleBar is the dialog's header. The search field (or a spacer in the raw
 // view), Save and the mode switch are slots: they hold state or logic.
-func (d *Dialog) titleBar(host Host) Node {
+func (d *SettingsDialog) titleBar(host Host) Node {
 	search := If(!d.Raw, Field(&d.Search, H(28), Grow(1), Bg(w.Sunken), Placeholder("Search settings"), OnChange(d.ResetScroll), TextMenu(&d.Search)))
 	if d.Raw {
 		search = Spacer(Grow(1))
@@ -188,7 +188,7 @@ const (
 )
 
 // navItem is one page in the list: the open one is tinted and bold.
-func (d *Dialog) navItem(p page, open bool) Node {
+func (d *SettingsDialog) navItem(p page, open bool) Node {
 	template := navClosedTemplate
 	if open {
 		template = navOpenTemplate
@@ -200,7 +200,7 @@ func (d *Dialog) navItem(p page, open bool) Node {
 }
 
 // modeSwitch changes the dialog between the form and the text of settings.json.
-func (d *Dialog) modeSwitch(host Host) Node {
+func (d *SettingsDialog) modeSwitch(host Host) Node {
 	if d.Raw {
 		return Button("Form", W(60), H(w.CompactH), OnClick(d.CloseRaw), Tooltip("Back to the settings form"))
 	}
@@ -209,18 +209,18 @@ func (d *Dialog) modeSwitch(host Host) Node {
 
 // Reload resets what depends on the settings in effect: typed text and
 // notes, and the fonts. The host calls it after it replaced the settings.
-func (d *Dialog) Reload(host Host) {
+func (d *SettingsDialog) Reload(host Host) {
 	d.inputs, d.notes = nil, nil
 	d.ApplyFonts(host)
 }
 
 // Searching reports whether a search text is typed.
-func (d *Dialog) Searching() bool { return strings.TrimSpace(d.Search.Text) != "" }
+func (d *SettingsDialog) Searching() bool { return strings.TrimSpace(d.Search.Text) != "" }
 
 // saveButton writes the changes that were applied but not stored; it is lit
 // while there are some. With auto-save on and nothing pending there is
 // nothing to save and there is no button.
-func (d *Dialog) saveButton(host Host) Node {
+func (d *SettingsDialog) saveButton(host Host) Node {
 	if host.Unsaved() {
 		return PrimaryButton("Save", W(60), H(w.CompactH), OnClick(func() { d.Save(host) }), Tooltip("Write the changes to settings.json"))
 	}
@@ -232,7 +232,7 @@ func (d *Dialog) saveButton(host Host) Node {
 
 // Save writes what is applied but not stored: the raw text as typed when
 // that is what was held back, else the settings in effect.
-func (d *Dialog) Save(host Host) {
+func (d *SettingsDialog) Save(host Host) {
 	if d.rawPending && d.Raw && len(d.Problems) == 0 && host.SettingsPath() != "" {
 		if err := host.SettingsStore().WriteText(host.SettingsPath(), []byte(d.RawText.Text)); err != nil {
 			host.Send(prefs.Toast{Text: "Could not save settings: " + err.Error(), IsErr: true})

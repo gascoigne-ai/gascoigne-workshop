@@ -12,7 +12,7 @@ import (
 )
 
 func TestTheRawViewColorsKeysStringsNumbersAndLiterals(t *testing.T) {
-	var d Dialog
+	var d SettingsDialog
 	host := newHost(t)
 	d.OpenRaw(host)
 	line := `  "layout": "side", "uiScale": 150, "flat": true`
@@ -59,7 +59,7 @@ func TestTypingAQuoteOpensTheCompletionMenuWithoutCtrlSpace(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			var d Dialog
+			var d SettingsDialog
 			host := newHost(t)
 			d.OpenRaw(host)
 			d.RawText.Focused = true
@@ -85,7 +85,7 @@ func TestTypingAQuoteOpensTheCompletionMenuWithoutCtrlSpace(t *testing.T) {
 }
 
 func TestTheCompletionMenuOpensAtTheCaret(t *testing.T) {
-	var d Dialog
+	var d SettingsDialog
 	host := newHost(t)
 	d.OpenRaw(host)
 	d.RawText.Focused = true
