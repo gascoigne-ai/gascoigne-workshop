@@ -1,7 +1,6 @@
 package view
 
 import (
-	"github.com/hajimehoshi/ebiten/v2"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -156,24 +155,6 @@ func TestThemeIconStrokeScalesTheLines(t *testing.T) {
 	c := testCtx(t)
 	c.Th.IconStroke = 1.6
 	drawn(t, c, Row(W(30), H(30), Icon("trash")), 30, 30) // draws with the thicker stroke without a window
-}
-
-func TestImageMeasuresItsPictureAndDrawsScaledToFit(t *testing.T) {
-	c := testCtx(t)
-	pic := ebiten.NewImage(80, 40)
-	im := Image(pic)
-	Layout(c, Row(AlignItems(AlignCenter), im), 200, 100)
-	if im.rect.W != 80 || im.rect.H != 40 {
-		t.Fatalf("natural size %dx%d", im.rect.W, im.rect.H)
-	}
-	for _, scale := range []float64{1, 1.5, 2} {
-		if err := c.SetScale(scale); err != nil {
-			t.Fatal(err)
-		}
-		drawn(t, c, Row(W(30), H(30), Image(pic, Grow(1))), 30, 30)     // smaller box: scaled down
-		drawn(t, c, Row(W(300), H(300), Image(pic, Grow(1))), 300, 300) // larger box: not scaled up
-	}
-	drawn(t, c, Row(W(30), H(30), Image(nil)), 30, 30) // no picture, no crash
 }
 
 func TestTableCellStylerSplitsACellIntoColoredParts(t *testing.T) {

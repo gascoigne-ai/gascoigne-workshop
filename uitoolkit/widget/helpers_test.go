@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hajimehoshi/ebiten/v2"
+
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/theming"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -16,6 +18,12 @@ func testCtx(t *testing.T) *core.Ctx {
 		t.Fatal(err)
 	}
 	return c
+}
+
+func drawn(t *testing.T, c *core.Ctx, root *El, w, h int) {
+	t.Helper()
+	Layout(c, root, w, h)
+	Draw(c, root, ebiten.NewImage(w, h))
 }
 
 func click(c *core.Ctx, x, y int) { c.In = core.Input{X: x, Y: y, Click: true} }

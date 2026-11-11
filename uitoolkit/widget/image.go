@@ -1,4 +1,4 @@
-package view
+package widget
 
 import (
 	"math"
@@ -6,22 +6,21 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 // Image shows a picture scaled down to fit its box, centered, keeping its
-// proportions. It is never scaled up past its own size. Give it Grow or
-// W and H to decide the box; without them it asks for the picture's size.
+// proportions; a picture smaller than the box is not scaled up.
 func Image(img *ebiten.Image, opts ...Option) *El {
-	e := newEl(imageB{img: img}, with(nil, opts))
-	return e
+	return Custom(imageB{img: img}, with(nil, opts)...)
 }
 
 type imageB struct {
-	plain
+	Base
 	img *ebiten.Image
 }
 
-func (b imageB) measure(*El, *core.Ctx, int) (int, int) {
+func (b imageB) Measure(*El, *core.Ctx, int) (int, int) {
 	if b.img == nil {
 		return 0, 0
 	}
@@ -29,11 +28,11 @@ func (b imageB) measure(*El, *core.Ctx, int) (int, int) {
 	return r.Dx(), r.Dy()
 }
 
-func (b imageB) draw(e *El, c *core.Ctx, dst *ebiten.Image) {
+func (b imageB) Draw(e *El, c *core.Ctx, dst *ebiten.Image) {
 	if b.img == nil {
 		return
 	}
-	r := e.rect
+	r := e.Rect()
 	iw, ih := float64(b.img.Bounds().Dx()), float64(b.img.Bounds().Dy())
 	if iw == 0 || ih == 0 || r.W <= 0 || r.H <= 0 {
 		return

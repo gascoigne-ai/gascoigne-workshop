@@ -12,6 +12,7 @@
 //	Menus      Menu OpenMenu CloseMenu MenuOpen PopupMenu PopupMenuLayer PopupMenuKeys NewMenu NextSelectable MenuWidth TextMenu   (state: MenuItem MenuState)
 //	Dialogs    Dialog ResizableDialog DialogTitle MessageDialog   (state: DialogState DialogButton)
 //	Toasts     Toasts   (state: ToastStack Toast)
+//	Pictures   Image
 //
 // The popup menu lives in core.Ctx.Menu: any element opens one with
 // OpenMenu, and the window mounts PopupMenuLayer once and calls
