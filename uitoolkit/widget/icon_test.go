@@ -1,4 +1,4 @@
-package view
+package widget
 
 import (
 	"strings"
@@ -6,6 +6,7 @@ import (
 	"testing/fstest"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 // Every built-in icon parses, draws something inside its own viewBox, and
@@ -48,10 +49,10 @@ func TestIconsHaveTheirNaturalSizeAndScaleToFit(t *testing.T) {
 	c := testCtx(t)
 	nat := Icon("trash")
 	Layout(c, Row(AlignItems(AlignCenter), nat), 100, 100)
-	if nat.rect.W != 14 || nat.rect.H != 16 {
-		t.Fatalf("natural size %dx%d", nat.rect.W, nat.rect.H)
+	if nat.Rect().W != 14 || nat.Rect().H != 16 {
+		t.Fatalf("natural size %dx%d", nat.Rect().W, nat.Rect().H)
 	}
-	if TriangleIcon(true).iconName != "triangle-down" || TriangleIcon(false).iconName != "triangle-right" {
+	if !hasIcon(TriangleIcon(true), "triangle-down") || !hasIcon(TriangleIcon(false), "triangle-right") {
 		t.Fatal("the disclosure triangle picks its icon by state")
 	}
 }
@@ -190,5 +191,21 @@ func TestIconMasksAreCachedPerSizeAndWeightAndTokenIconsAreDrawnDirectly(t *test
 	masks.Unlock()
 	if n != 1 {
 		t.Fatalf("%d masks after drawing one icon three times", n)
+	}
+}
+
+// hasIcon reports whether the element is the icon called name, as a Dump
+// shows it.
+func hasIcon(e *El, name string) bool { return contains(props(e), "icon="+name) }
+
+func TestIconsHaveTheirNaturalWidths(t *testing.T) {
+	c := testCtx(t)
+	icons := Row(CrossIcon(), TriangleIcon(false), DotsIcon())
+	Layout(c, icons, 200, 30)
+	want := []int{10, 10, 4}
+	for i, k := range icons.Children() {
+		if k.Rect().W != want[i] {
+			t.Errorf("icon %d width %d, want %d", i, k.Rect().W, want[i])
+		}
 	}
 }

@@ -280,18 +280,6 @@ func TestCodeNodeForwardsInputToTheView(t *testing.T) {
 	}
 }
 
-func TestIconsHaveTheirNaturalWidths(t *testing.T) {
-	c := testCtx(t)
-	icons := Row(CrossIcon(), TriangleIcon(false), DotsIcon())
-	Layout(c, icons, 200, 30)
-	want := []int{10, 10, 4}
-	for i, k := range icons.kids {
-		if k.rect.W != want[i] {
-			t.Errorf("icon %d width %d, want %d", i, k.rect.W, want[i])
-		}
-	}
-}
-
 func focusedField(t *testing.T, text string, width int) (*TextField, *core.Ctx, *El, *int) {
 	t.Helper()
 	f := NewTextField(text)

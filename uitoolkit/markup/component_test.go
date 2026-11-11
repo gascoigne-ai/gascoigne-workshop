@@ -246,7 +246,7 @@ func TestRemainingAttributesMatchTheGoOptions(t *testing.T) {
 
 func TestIconElementMatchesTheGoIcon(t *testing.T) {
 	got := view.Dump(build(t, `<row><icon name="trash" w="20"/><icon name="{{which}}"/></row>`, Scope{"which": "plus"}))
-	want := view.Dump(view.Row(view.Icon("trash", view.W(20)), view.Icon("plus")))
+	want := view.Dump(view.Row(widget.Icon("trash", view.W(20)), widget.Icon("plus")))
 	if got != want {
 		t.Fatalf("template:\n%s\nGo:\n%s", got, want)
 	}
@@ -316,7 +316,7 @@ func TestIncludeBuildsAnotherDefinedTemplateWithTheSameScope(t *testing.T) {
 
 func TestIconHoverColorAttributeMirrorsTheGoOption(t *testing.T) {
 	got := view.Dump(build(t, `<icon name="dots" color="hero-muted" hover-color="hero-text"/>`, nil))
-	want := view.Dump(view.Icon("dots", view.Color("hero-muted"), view.HoverColor("hero-text")))
+	want := view.Dump(widget.Icon("dots", view.Color("hero-muted"), view.HoverColor("hero-text")))
 	if got != want {
 		t.Fatalf("got\n%s\nwant\n%s", got, want)
 	}

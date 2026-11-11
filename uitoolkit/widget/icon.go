@@ -1,4 +1,4 @@
-package view
+package widget
 
 import (
 	"embed"
@@ -15,6 +15,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/vector"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 //go:embed icons/*.svg
@@ -103,18 +104,22 @@ func HasIcon(name string) bool { _, ok := lookupIcon(name); return ok }
 // and lists the names: it is a mistake in the program.
 func Icon(name string, opts ...Option) *El {
 	if _, ok := lookupIcon(name); !ok {
-		panic(fmt.Sprintf("view: no icon %q; icons: %s", name, strings.Join(IconNames(), " ")))
+		panic(fmt.Sprintf("widget: no icon %q; icons: %s", name, strings.Join(IconNames(), " ")))
 	}
-	e := newEl(iconB{}, with(nil, opts))
-	e.iconName = name
-	return e
+	return Custom(iconB{name: name}, with(nil, opts)...)
 }
 
 // iconB draws a parsed SVG icon.
-type iconB struct{ plain }
+type iconB struct {
+	Base
+	name string
+}
 
-func (iconB) measure(e *El, _ *core.Ctx, _ int) (int, int) {
-	ic, _ := lookupIcon(e.iconName)
+// Describe puts the icon's name in a Dump.
+func (b iconB) Describe() string { return "icon=" + b.name }
+
+func (b iconB) Measure(*El, *core.Ctx, int) (int, int) {
+	ic, _ := lookupIcon(b.name)
 	return int(math.Ceil(ic.w)), int(math.Ceil(ic.h))
 }
 
@@ -122,31 +127,32 @@ func (iconB) measure(e *El, _ *core.Ctx, _ int) (int, int) {
 // the pointer the element's HoverColor, else the icon's own hover token.
 func iconToken(e *El, ic *svgIcon, hovered bool) core.Token {
 	if !hovered {
-		return e.color(nil, core.Muted)
+		return e.ColorToken(core.Muted)
 	}
-	switch {
-	case e.hoverColor != "":
-		return e.hoverColor
+	switch hover := e.HoverColorToken(); {
+	case hover != "":
+		return hover
 	case ic.hover != "none" && ic.hover != "":
 		return ic.hover
 	}
-	return e.color(nil, core.Muted)
+	return e.ColorToken(core.Muted)
 }
 
-func (iconB) draw(e *El, c *core.Ctx, dst *ebiten.Image) {
-	ic, ok := lookupIcon(e.iconName)
+func (b iconB) Draw(e *El, c *core.Ctx, dst *ebiten.Image) {
+	ic, ok := lookupIcon(b.name)
 	if !ok {
 		return
 	}
-	r := e.rect
+	r := e.Rect()
+	w, h := e.FixedSize()
 	k := 1.0
 	switch {
-	case e.w > 0 && e.h > 0:
-		k = math.Min(float64(e.w)/ic.w, float64(e.h)/ic.h)
-	case e.w > 0:
-		k = float64(e.w) / ic.w
-	case e.h > 0:
-		k = float64(e.h) / ic.h
+	case w > 0 && h > 0:
+		k = math.Min(float64(w)/ic.w, float64(h)/ic.h)
+	case w > 0:
+		k = float64(w) / ic.w
+	case h > 0:
+		k = float64(h) / ic.h
 	}
 	ox := float64(r.X) + (float64(r.W)-ic.w*k)/2
 	oy := float64(r.Y) + (float64(r.H)-ic.h*k)/2
@@ -263,3 +269,45 @@ func paintToken(p svgPaint, current core.Token) core.Token {
 	}
 	return current
 }
+
+// The named icons below are wrappers over Icon for the icons the toolkit
+// ships (widget/icons/*.svg).
+
+// CrossIcon is a small x, for delete buttons; it turns red under the pointer.
+func CrossIcon(opts ...Option) *El { return Icon("cross", opts...) }
+
+// TriangleIcon is a disclosure arrow: down when open, right when closed.
+func TriangleIcon(open bool, opts ...Option) *El {
+	if open {
+		return Icon("triangle-down", opts...)
+	}
+	return Icon("triangle-right", opts...)
+}
+
+// GripIcon is the six-dot handle that rows are dragged by.
+func GripIcon(opts ...Option) *El { return Icon("grip", opts...) }
+
+// DotsIcon is the three-dot "more" glyph.
+func DotsIcon(opts ...Option) *El { return Icon("dots", opts...) }
+
+// TrashIcon is a trash can, for delete buttons; it turns red under the pointer.
+func TrashIcon(opts ...Option) *El { return Icon("trash", opts...) }
+
+// CopyIcon is two overlapping sheets.
+func CopyIcon(opts ...Option) *El { return Icon("copy", opts...) }
+
+// FolderIcon is an outlined folder, for choosing a file.
+func FolderIcon(opts ...Option) *El { return Icon("folder", opts...) }
+
+// SearchIcon is a magnifying glass.
+func SearchIcon(opts ...Option) *El { return Icon("search", opts...) }
+
+// PlusIcon is a plus sign.
+func PlusIcon(opts ...Option) *El { return Icon("plus", opts...) }
+
+// PromptIcon is a terminal prompt, ">_".
+func PromptIcon(opts ...Option) *El { return Icon("prompt", opts...) }
+
+// ChevronUpIcon and ChevronDownIcon are small arrows for stepping through a list.
+func ChevronUpIcon(opts ...Option) *El   { return Icon("chevron-up", opts...) }
+func ChevronDownIcon(opts ...Option) *El { return Icon("chevron-down", opts...) }
