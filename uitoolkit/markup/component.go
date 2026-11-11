@@ -1,6 +1,6 @@
 // Package markup builds views from HTML-style templates, so a layout
 // can change without recompiling Go code, or be written inline in Go as
-// a string.
+// a string. Runnable examples: package uitoolkit/examples.
 //
 //	<row h="28" pad="12 0" gap="12" bg="frame" control="statusbar" border-t="border">
 //	  <text small muted ellipsis grow="1">{{status}}</text>

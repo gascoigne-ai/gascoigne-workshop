@@ -2,6 +2,7 @@
 // buttons, rows, tabs, menus, dialogs and toasts. Each one is a plain
 // composition of view primitives, so it needs nothing from the runtime
 // beyond what view exports. Like view, most callers dot-import it.
+// Runnable examples: package uitoolkit/examples.
 //
 // # Finding your way
 //

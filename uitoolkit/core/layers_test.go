@@ -15,21 +15,31 @@ import (
 // package imports the application (internal or cmd).
 func TestToolkitImportsStayInTheirLayer(t *testing.T) {
 	const module = "github.com/gascoigne-ai/gascoigne-workshop"
-	allowed := map[string][]string{
-		"../core":    {},
-		"../view":    {module + "/uitoolkit/core"},
-		"../engine":  {module + "/uitoolkit/core"},
-		"../widget":  {module + "/uitoolkit/core", module + "/uitoolkit/view"},
-		"../markup":  {module + "/uitoolkit/core", module + "/uitoolkit/view", module + "/uitoolkit/widget"},
-		"../theming": {module + "/uitoolkit/core"},
+	core := module + "/uitoolkit/core"
+	view := module + "/uitoolkit/view"
+	widget := module + "/uitoolkit/widget"
+	markup := module + "/uitoolkit/markup"
+	theming := module + "/uitoolkit/theming"
+	engine := module + "/uitoolkit/engine"
+	// The examples are test files and a main package, so they are checked
+	// as well: a separate package is what keeps them to the exported API.
+	allowed := map[string]layer{
+		"../core":           {},
+		"../view":           {imports: []string{core}},
+		"../engine":         {imports: []string{core}},
+		"../widget":         {imports: []string{core, view}},
+		"../markup":         {imports: []string{core, view, widget}},
+		"../theming":        {imports: []string{core}},
+		"../examples":       {imports: []string{core, view, widget, markup, theming, engine}, tests: true},
+		"../examples/hello": {imports: []string{core, view, widget, markup, theming, engine}, tests: true},
 	}
-	for dir, ok := range allowed {
+	for dir, layer := range allowed {
 		files, err := filepath.Glob(filepath.Join(dir, "*.go"))
 		if err != nil || len(files) == 0 {
 			t.Fatalf("no files in %s: %v", dir, err)
 		}
 		for _, file := range files {
-			if strings.HasSuffix(file, "_test.go") {
+			if strings.HasSuffix(file, "_test.go") && !layer.tests {
 				continue
 			}
 			src, err := os.ReadFile(file)
@@ -42,12 +52,19 @@ func TestToolkitImportsStayInTheirLayer(t *testing.T) {
 			}
 			for _, imp := range f.Imports {
 				path := strings.Trim(imp.Path.Value, `"`)
-				if strings.HasPrefix(path, module) && !contains(ok, path) {
+				if strings.HasPrefix(path, module) && !contains(layer.imports, path) {
 					t.Errorf("%s imports %s", file, path)
 				}
 			}
 		}
 	}
+}
+
+// layer is what a toolkit directory may import; tests says whether its
+// _test.go files are held to the same list.
+type layer struct {
+	imports []string
+	tests   bool
 }
 
 func contains(list []string, s string) bool {

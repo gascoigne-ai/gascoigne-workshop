@@ -5,6 +5,7 @@
 // It is the mechanics only. An application decides which themes exist
 // (a Catalog of built-in choices), keeps its own settings and maps them
 // to Prefs; the toolkit's dark and light palettes are Builtins.
+// Runnable examples: package uitoolkit/examples.
 package theming
 
 import (
