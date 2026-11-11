@@ -59,29 +59,25 @@ func revealFocused(root Node) {
 	}
 }
 
-// focusState is what takes keyboard focus: a text field, text area or code
-// view. Each answers for itself, so the focus code does not ask which it is.
-type focusState interface {
-	focused() bool
-	setFocused(on bool)
-}
-
-func (f *TextField) focused() bool { return f.Focused }
-func (f *TextField) setFocused(on bool) {
+func (f *TextField) HasFocus() bool { return f.Focused }
+func (f *TextField) SetFocus(on bool) {
 	f.Focused = on
 	if on {
 		f.SelectAll()
 	}
 }
 
-func (a *TextArea) focused() bool      { return a.Focused }
-func (a *TextArea) setFocused(on bool) { a.Focused = on }
-func (v *CodeView) focused() bool      { return v.Focused }
-func (v *CodeView) setFocused(on bool) { v.Focused = on }
+func (a *TextArea) HasFocus() bool   { return a.Focused }
+func (a *TextArea) SetFocus(on bool) { a.Focused = on }
+func (v *CodeView) HasFocus() bool   { return v.Focused }
+func (v *CodeView) SetFocus(on bool) { v.Focused = on }
 
 // state is what e edits and focuses, nil for an element that is not
 // focusable. It is also what identifies the focus owner.
-func (e *El) state() focusState {
+func (e *El) state() Focuser {
+	if focusable, ok := e.Behavior().(Focusable); ok {
+		return focusable.FocusTarget()
+	}
 	switch {
 	case e.field != nil:
 		return e.field
@@ -95,12 +91,21 @@ func (e *El) state() focusState {
 
 func (e *El) focusable() bool { return e.state() != nil }
 
-func (e *El) focused() bool { return e.focusable() && e.state().focused() }
+func (e *El) focused() bool { return e.focusable() && e.state().HasFocus() }
 
 func (e *El) setFocused(on bool) {
 	if state := e.state(); state != nil {
-		state.setFocused(on)
+		state.SetFocus(on)
 	}
+}
+
+// keepsTab reports whether the focused element uses Tab itself, so Tab
+// does not move the focus away from it.
+func (e *El) keepsTab() bool {
+	if focusable, ok := e.Behavior().(Focusable); ok && focusable.KeepsTab() {
+		return true
+	}
+	return e.onTab != nil || e.area != nil
 }
 
 // focusKey identifies the focus owner: the state's pointer.
@@ -113,8 +118,8 @@ func (e *El) focusKey() any {
 
 // blurKey takes the keyboard from a state that may no longer be in the tree.
 func blurKey(key any) {
-	if state, ok := key.(focusState); ok {
-		state.setFocused(false)
+	if state, ok := key.(Focuser); ok {
+		state.SetFocus(false)
 	}
 }
 
@@ -177,7 +182,7 @@ func cycleFocus(c *core.Ctx, root Node) {
 	for i, e := range list {
 		if e.focused() {
 			cur = i
-			if e.onTab != nil || e.area != nil { // these keep Tab for themselves
+			if e.keepsTab() { // these keep Tab for themselves
 				return
 			}
 		}

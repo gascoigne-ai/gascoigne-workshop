@@ -145,3 +145,22 @@ func (l Linear) LayoutIn(e *El, c *core.Ctx, r core.Rect) {
 // user's own scrolling is left alone. It is an attribute of the child, set
 // here and read by its parent through KeepsInView.
 func KeepInView() Option { return func(e *El) { e.reveal = true } }
+
+// Focuser is the state of a component that takes the keyboard: it holds
+// the focus flag the window and the runtime read and write.
+type Focuser interface {
+	HasFocus() bool
+	SetFocus(on bool)
+}
+
+// Focusable is implemented by a Behavior that takes keyboard focus. The
+// runtime moves focus between the Focusables in tree order on Tab, keeps
+// one owner, and blurs one that has left the tree, all through the Focuser.
+type Focusable interface {
+	// FocusTarget is the state that holds the focus; it is also what
+	// identifies the owner, so it must be a pointer.
+	FocusTarget() Focuser
+	// KeepsTab reports whether the component uses Tab itself (an editor
+	// that indents), so the runtime leaves the focus where it is.
+	KeepsTab() bool
+}

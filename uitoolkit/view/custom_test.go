@@ -280,3 +280,79 @@ func (s scroller) Layout(e *view.El, c *core.Ctx) {
 	r := e.Rect()
 	s.LayoutIn(e, c, core.Rect{X: r.X, Y: r.Y - 40, W: r.W, H: r.H + 40})
 }
+
+// input is a focusable component written outside view: a state with a
+// focus flag, and an element that exposes it.
+type inputState struct{ focused bool }
+
+func (s *inputState) HasFocus() bool   { return s.focused }
+func (s *inputState) SetFocus(on bool) { s.focused = on }
+
+type inputB struct {
+	view.Base
+	state   *inputState
+	keepTab bool
+}
+
+func (b inputB) FocusTarget() view.Focuser { return b.state }
+func (b inputB) KeepsTab() bool            { return b.keepTab }
+
+func TestTabMovesFocusBetweenFocusableCustomElements(t *testing.T) {
+	ctx := newCtx(t)
+	states := []*inputState{{}, {}, {}}
+	root := view.Col(
+		view.Custom(inputB{state: states[0]}, view.H(10)),
+		view.Custom(inputB{state: states[1]}, view.H(10)),
+		view.Custom(inputB{state: states[2]}, view.H(10)),
+	)
+	view.Layout(ctx, root, 100, 100)
+	focus := func() (on [3]bool) {
+		for i, state := range states {
+			on[i] = state.focused
+		}
+		return on
+	}
+	tab := func(shift bool) {
+		ctx.In = core.Input{X: 5000, Y: 5000, Tab: true, Shift: shift}
+		view.Update(ctx, root)
+	}
+
+	tab(false)
+	if focus() != [3]bool{true, false, false} {
+		t.Fatalf("Tab with nothing focused starts at the first: %v", focus())
+	}
+	tab(false)
+	tab(false)
+	if focus() != [3]bool{false, false, true} {
+		t.Fatalf("two more Tabs reach the last: %v", focus())
+	}
+	tab(true)
+	if focus() != [3]bool{false, true, false} {
+		t.Fatalf("Shift+Tab goes back one: %v", focus())
+	}
+}
+
+func TestOnlyOneCustomElementKeepsTheFocus(t *testing.T) {
+	ctx := newCtx(t)
+	first, second := &inputState{focused: true}, &inputState{}
+	root := view.Col(view.Custom(inputB{state: first}, view.H(10)), view.Custom(inputB{state: second}, view.H(10)))
+	view.Layout(ctx, root, 100, 100)
+	view.Update(ctx, root) // the first one owns the focus
+	second.focused = true  // the app asks for it on the second
+	view.Update(ctx, root)
+	if first.focused || !second.focused {
+		t.Fatalf("the last to ask has the keyboard: first %v second %v", first.focused, second.focused)
+	}
+}
+
+func TestACustomElementThatKeepsTabKeepsTheFocusOnTab(t *testing.T) {
+	ctx := newCtx(t)
+	editor, other := &inputState{focused: true}, &inputState{}
+	root := view.Col(view.Custom(inputB{state: editor, keepTab: true}, view.H(10)), view.Custom(inputB{state: other}, view.H(10)))
+	view.Layout(ctx, root, 100, 100)
+	ctx.In = core.Input{X: 5000, Y: 5000, Tab: true}
+	view.Update(ctx, root)
+	if !editor.focused || other.focused {
+		t.Fatalf("an editor that uses Tab keeps the focus: editor %v other %v", editor.focused, other.focused)
+	}
+}
