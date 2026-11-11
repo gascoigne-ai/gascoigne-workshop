@@ -6,8 +6,8 @@
 //	func view(a *App) view.Node {
 //		return view.Col(view.Grow(1), view.Pad(12), view.Gap(8), // options first, by convention
 //			view.Text("Hello", view.Muted()),
-//			view.Field(&a.name, view.Placeholder("Your name"), view.OnEnter(a.save)),
-//			view.If(a.name.Text != "", view.Button("Save", view.W(80), view.OnClick(a.save))),
+//			widget.Field(&a.name, widget.Placeholder("Your name"), widget.OnEnter(a.save)),
+//			view.If(a.name.Text != "", widget.Button("Save", view.W(80), view.OnClick(a.save))),
 //		)
 //	}
 //
