@@ -1,4 +1,4 @@
-package view
+package widget
 
 import (
 	"strconv"
@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 var toastStart = time.Date(2026, 11, 10, 9, 0, 0, 0, time.UTC)
@@ -69,14 +70,14 @@ func TestToastsStackAboveTheInsetAndAClickDismissesOne(t *testing.T) {
 	root := Stack(view)
 	Layout(c, root, 800, 600)
 
-	first, second := view.kids[0], view.kids[1]
-	if view.rect.X+view.rect.W != 800-core.Gutter {
-		t.Errorf("toasts end at x=%d, want the gutter %d from the right edge", view.rect.X+view.rect.W, core.Gutter)
+	first, second := view.Children()[0].Rect(), view.Children()[1].Rect()
+	if view.Rect().X+view.Rect().W != 800-core.Gutter {
+		t.Errorf("toasts end at x=%d, want the gutter %d from the right edge", view.Rect().X+view.Rect().W, core.Gutter)
 	}
-	if second.rect.Y+second.rect.H > 600-28 || first.rect.Y >= second.rect.Y {
-		t.Errorf("rows at %d and %d, want oldest on top and the stack above the inset", first.rect.Y, second.rect.Y)
+	if second.Y+second.H > 600-28 || first.Y >= second.Y {
+		t.Errorf("rows at %d and %d, want oldest on top and the stack above the inset", first.Y, second.Y)
 	}
-	click(c, first.rect.X+5, first.rect.Y+5)
+	click(c, first.X+5, first.Y+5)
 	Update(c, root)
 	if len(stack) != 1 || stack[0].Text != "boom" {
 		t.Fatalf("clicking the first toast left %+v", stack)

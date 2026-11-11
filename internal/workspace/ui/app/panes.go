@@ -17,6 +17,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/jsonview"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 type paneKind int
@@ -267,7 +268,7 @@ func (a *App) tableView(p pane, t *reqTab, scroll *ScrollState, pad int) Node {
 		spec.OnEditCell = func(row, col int) { a.beginEdit(p, t, row, col) }
 		spec.OnRowMenu = func(row, x, y int) { a.openMenu(x, y, a.rowMenuItems(p, t, row)) }
 		if e := a.edit; e != nil && e.pane.label == p.label && e.tab == t {
-			spec.Editing = &TableEdit{Row: e.row, Col: e.col, Field: &e.field, OnEnter: a.commitEdit, OnTab: a.tabEdit}
+			spec.Editing = &TableEdit{Row: e.row, Col: e.col, Field: &e.field, OnEnter: a.commitEdit, OnTab: a.tabEdit, Options: TextMenu(&e.field)}
 		}
 		if sel := a.rowSel; sel != nil && sel.tab == t && sel.pane.label == p.label && sel.row < len(*rows) {
 			spec.Selected = &sel.row

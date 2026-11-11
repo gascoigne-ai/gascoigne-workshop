@@ -10,6 +10,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 func setRaw(a *App, text string) {
@@ -136,10 +137,10 @@ func TestCtrlSpaceInTheRawViewOffersKeysAndValues(t *testing.T) {
 	a.prefs.RawText.Cursor = len([]rune(a.prefs.RawText.Text))
 	a.prefs.RawText.Focused = true
 	a.completeVariable()
-	if view.PopupMenu(a.ctx) == nil || len(view.PopupMenu(a.ctx).Items) != 1 || view.PopupMenu(a.ctx).Items[0].Label != "layout" {
-		t.Fatalf("menu = %+v", view.PopupMenu(a.ctx))
+	if widget.PopupMenu(a.ctx) == nil || len(widget.PopupMenu(a.ctx).Items) != 1 || widget.PopupMenu(a.ctx).Items[0].Label != "layout" {
+		t.Fatalf("menu = %+v", widget.PopupMenu(a.ctx))
 	}
-	view.PopupMenu(a.ctx).Items[0].Run()
+	widget.PopupMenu(a.ctx).Items[0].Run()
 	if a.prefs.RawText.Text != `{"appearance": {"layout"` {
 		t.Fatalf("text after completing = %q", a.prefs.RawText.Text)
 	}
@@ -149,8 +150,8 @@ func TestCtrlSpaceInTheRawViewOffersKeysAndValues(t *testing.T) {
 	a.prefs.RawText.Cursor = len([]rune(a.prefs.RawText.Text))
 	a.prefs.RawText.Focused = true
 	a.completeVariable()
-	if view.PopupMenu(a.ctx) == nil || view.PopupMenu(a.ctx).Items[0].Label != "stacked" {
-		t.Fatalf("menu = %+v", view.PopupMenu(a.ctx))
+	if widget.PopupMenu(a.ctx) == nil || widget.PopupMenu(a.ctx).Items[0].Label != "stacked" {
+		t.Fatalf("menu = %+v", widget.PopupMenu(a.ctx))
 	}
 }
 
@@ -164,7 +165,7 @@ func TestEnterAcceptingACompletionDoesNotStartANewLine(t *testing.T) {
 	a.prefs.RawText.Cursor = len([]rune(a.prefs.RawText.Text))
 	a.prefs.RawText.Focused = true
 	a.completeVariable() // the menu of sections
-	if view.PopupMenu(a.ctx) == nil {
+	if widget.PopupMenu(a.ctx) == nil {
 		t.Fatal("no menu")
 	}
 	a.step(core.Input{X: 5000, Y: 5000, Enter: true, Keys: []ebiten.Key{ebiten.KeyEnter}})
@@ -199,7 +200,7 @@ func TestEscapeClosingTheMenuKeepsTheEditorFocused(t *testing.T) {
 	a.prefs.RawText.Focused = true
 	a.completeVariable()
 	a.step(core.Input{X: 5000, Y: 5000, Escape: true})
-	if view.PopupMenu(a.ctx) != nil || !a.prefs.RawText.Focused {
-		t.Fatalf("menu open %v, editor focused %v: Escape should close only the menu", view.PopupMenu(a.ctx) != nil, a.prefs.RawText.Focused)
+	if widget.PopupMenu(a.ctx) != nil || !a.prefs.RawText.Focused {
+		t.Fatalf("menu open %v, editor focused %v: Escape should close only the menu", widget.PopupMenu(a.ctx) != nil, a.prefs.RawText.Focused)
 	}
 }

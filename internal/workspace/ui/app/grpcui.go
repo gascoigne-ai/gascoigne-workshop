@@ -10,6 +10,7 @@ import (
 
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // pickGRPCMethod asks the server for its methods in the background and

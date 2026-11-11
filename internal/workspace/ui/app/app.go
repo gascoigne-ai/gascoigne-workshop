@@ -40,6 +40,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 const (
@@ -219,7 +220,7 @@ type App struct {
 	hoverTicks         int                           // for how many frames
 	dropTarget         any                           // the node the pointer is over while dragging
 	dialog             *dialog                       // the open dialog, if any
-	toasts             view.ToastStack
+	toasts             widget.ToastStack
 	now                func() time.Time               // the clock, replaced in tests
 	histories          func(dir string) rport.History // nil keeps no history
 	fonts              sport.FontStore
@@ -547,7 +548,7 @@ func (a *App) step(in core.Input) {
 	}
 	hadOverlay := a.overlayOpen()
 	wasRecording := a.shortcutKeys.Recording() != ""
-	menuWasOpen := view.MenuOpen(a.ctx)
+	menuWasOpen := widget.MenuOpen(a.ctx)
 	a.overlayKeys(in)
 	if menuWasOpen {
 		a.swallowMenuKeys()

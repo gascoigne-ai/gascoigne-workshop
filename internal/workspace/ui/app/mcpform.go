@@ -9,6 +9,7 @@ import (
 	"time"
 
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // samplingRetry is how often a sampling request checks whether the

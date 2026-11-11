@@ -3,6 +3,7 @@ package ui
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/settingsfile"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"strings"
 	"testing"
 
@@ -175,10 +176,10 @@ func TestCtrlSpaceCompletesVariablesInTheURLField(t *testing.T) {
 		t.Fatalf("names %v from %d", names, from)
 	}
 	a.completeVariable()
-	if view.PopupMenu(a.ctx) == nil || len(view.PopupMenu(a.ctx).Items) != 2 {
+	if widget.PopupMenu(a.ctx) == nil || len(widget.PopupMenu(a.ctx).Items) != 2 {
 		t.Fatal("no completion menu")
 	}
-	view.PopupMenu(a.ctx).Items[1].Run() // hostname
+	widget.PopupMenu(a.ctx).Items[1].Run() // hostname
 	if tab.url.Text != "https://{{hostname}}" || tab.Req.URL != "https://{{hostname}}" || tab.url.Cursor != len("https://{{hostname}}") {
 		t.Fatalf("url %q req %q cursor %d", tab.url.Text, tab.Req.URL, tab.url.Cursor)
 	}
@@ -197,7 +198,7 @@ func TestCtrlSpaceCompletesVariablesInTheURLField(t *testing.T) {
 	tab.url.Focused = false
 	a.closeMenu()
 	a.completeVariable()
-	if view.PopupMenu(a.ctx) != nil {
+	if widget.PopupMenu(a.ctx) != nil {
 		t.Fatal("completion outside the URL field must not open a menu")
 	}
 }

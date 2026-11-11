@@ -191,8 +191,3 @@ func PromptIcon(opts ...Option) *El { return Icon("prompt", opts...) }
 // ChevronUpIcon and ChevronDownIcon are small arrows for stepping through a list.
 func ChevronUpIcon(opts ...Option) *El   { return Icon("chevron-up", opts...) }
 func ChevronDownIcon(opts ...Option) *El { return Icon("chevron-down", opts...) }
-
-// IconButton is Button with an icon in place of the label.
-func IconButton(glyph *El, opts ...Option) *El {
-	return Row(with([]Item{Bg(core.Sunken), Control("icon-button"), Lighten(), glyph}, opts)...)
-}

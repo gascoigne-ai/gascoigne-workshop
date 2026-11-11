@@ -1,10 +1,10 @@
-package view
+package widget
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 // A dialog dims the window and floats a modal panel in the middle; a click
@@ -16,15 +16,11 @@ func TestDialogDimsTheWindowAndDismissesOnAnOutsideClick(t *testing.T) {
 	root := Stack(Row(Grow(1)), panel)
 	Layout(c, root, 600, 400)
 
-	scrim, body := panel.kids[0], panel.kids[1]
-	if scrim.bg != core.Shadow {
-		t.Errorf("first child bg = %q, want the Shadow scrim", scrim.bg)
-	}
-	if !body.modal || !body.focusScope || body.control != "menu" || !body.shadow {
-		t.Errorf("panel modal %v focusScope %v control %q shadow %v", body.modal, body.focusScope, body.control, body.shadow)
-	}
-	if body.rect.X != (600-200)/2 || body.rect.Y != (400-100)/2 {
-		t.Errorf("panel at %d,%d, want it centered", body.rect.X, body.rect.Y)
+	scrim, body := panel.Children()[0], panel.Children()[1]
+	hasProps(t, scrim, "bg=shadow")
+	hasProps(t, body, "modal=true", "focusScope=true", "control=menu", "shadow=true", "onDismiss=true")
+	if rect := body.Rect(); rect.X != (600-200)/2 || rect.Y != (400-100)/2 {
+		t.Errorf("panel at %d,%d, want it centered", rect.X, rect.Y)
 	}
 	click(c, 5, 5)
 	Update(c, root)
@@ -38,10 +34,8 @@ func TestResizableDialogKeepsTheDialogLook(t *testing.T) {
 	var size ResizeState
 	panel := ResizableDialog(&size, 200, 100, 500, 300, W(300), H(200), Text("hi"))
 	Layout(c, Stack(panel), 600, 400)
-	body := panel.kids[1]
-	if panel.kids[0].bg != core.Shadow || !body.modal || body.control != "menu" {
-		t.Fatalf("resizable dialog lost the scrim or the dialog look: scrim %q modal %v control %q", panel.kids[0].bg, body.modal, body.control)
-	}
+	hasProps(t, panel.Children()[0], "bg=shadow")
+	hasProps(t, panel.Children()[1], "modal=true", "control=menu")
 }
 
 // The title bar is DialogTitleH high: the title, the caller's controls, and
@@ -51,11 +45,11 @@ func TestDialogTitleHasTheCloseButton(t *testing.T) {
 	closed := 0
 	bar := DialogTitle("Log", Spacer(Grow(1)), OnDismiss(func() { closed++ }))
 	Layout(c, Row(W(600), H(100), bar), 600, 100)
-	if bar.h != core.DialogTitleH {
-		t.Errorf("height = %d, want DialogTitleH %d", bar.h, core.DialogTitleH)
+	if bar.Rect().H != core.DialogTitleH {
+		t.Errorf("height = %d, want DialogTitleH %d", bar.Rect().H, core.DialogTitleH)
 	}
-	closeButton := bar.kids[len(bar.kids)-1]
-	click(c, closeButton.rect.X+closeButton.rect.W/2, closeButton.rect.Y+closeButton.rect.H/2)
+	closeButton := bar.Children()[len(bar.Children())-1].Rect()
+	click(c, closeButton.X+closeButton.W/2, closeButton.Y+closeButton.H/2)
 	Update(c, Row(bar))
 	if closed != 1 {
 		t.Fatalf("the close button dismissed %d times, want 1", closed)
@@ -108,5 +102,3 @@ func TestMessageDialogShowsTitleBodyInputAndButtons(t *testing.T) {
 		t.Fatalf("Enter in the input ran %q, want the primary button", ran)
 	}
 }
-
-func contains(text, part string) bool { return strings.Contains(text, part) }

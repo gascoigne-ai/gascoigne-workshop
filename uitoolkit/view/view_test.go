@@ -164,21 +164,6 @@ func TestTableHeightAndEditHandlers(t *testing.T) {
 	}
 }
 
-func TestClickingATabSelectsIt(t *testing.T) {
-	sel := -1
-	tabs := Tabs([]TabItem{{Label: "Params", Badge: 3}, {Label: "Body"}}, 0, OnSelect(func(i int) { sel = i }), H(40))
-	root := Row(tabs)
-	c := testCtx(t)
-	Layout(c, root, 400, 40)
-
-	second := tabs.kids[1].rect
-	click(c, second.X+second.W/2, 20)
-	Update(c, root)
-	if sel != 1 {
-		t.Fatalf("selected %d, want 1", sel)
-	}
-}
-
 type fakeClipboard struct {
 	text    string
 	readErr error
@@ -261,30 +246,6 @@ func TestFieldDragSelectsAndReleaseEndsTheDrag(t *testing.T) {
 }
 
 var errTest = errors.New("no clipboard")
-
-func TestButtonsClickAndOverrideDefaults(t *testing.T) {
-	var plain, primary int
-	b1 := Button("Cancel", W(80), OnClick(func() { plain++ }))
-	b2 := PrimaryButton("Send", W(80), Bg(core.Error), OnClick(func() { primary++ }))
-	root := Row(b1, b2)
-	c := testCtx(t)
-	Layout(c, root, 200, 30)
-
-	click(c, 10, 10)
-	click(c, 10, 10)
-	Update(c, root)
-	click(c, 100, 10)
-	Update(c, root)
-	if plain != 1 || primary != 1 {
-		t.Fatalf("plain %d primary %d, want 1 and 1", plain, primary)
-	}
-	if b2.bg != core.Error {
-		t.Fatalf("caller options must override the button's defaults, bg = %q", b2.bg)
-	}
-	if b1.bg != core.Sunken {
-		t.Fatalf("a plain button uses the surface color, bg = %q", b1.bg)
-	}
-}
 
 func TestEnterInAFocusedFieldFiresOnEnterOnly(t *testing.T) {
 	enters := 0

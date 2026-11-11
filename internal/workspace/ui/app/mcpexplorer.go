@@ -15,6 +15,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/bus"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // mcpCallTimeout is how long the explorer waits for the answer of a call.

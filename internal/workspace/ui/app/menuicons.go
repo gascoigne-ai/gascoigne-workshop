@@ -3,7 +3,7 @@ package ui
 import (
 	"strings"
 
-	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // menuIcons maps the first word of a menu label (or its first two words,

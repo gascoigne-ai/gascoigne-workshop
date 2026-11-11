@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 func searchTool() model.MCPTool {
@@ -22,7 +22,7 @@ func searchTool() model.MCPTool {
 	}}
 }
 
-func dialogButtonNamed(t *testing.T, a *App, label string) view.DialogButton {
+func dialogButtonNamed(t *testing.T, a *App, label string) widget.DialogButton {
 	t.Helper()
 	for _, button := range a.dialog.Buttons {
 		if button.Label == label {
@@ -30,7 +30,7 @@ func dialogButtonNamed(t *testing.T, a *App, label string) view.DialogButton {
 		}
 	}
 	t.Fatalf("no %q button in %+v", label, a.dialog.Buttons)
-	return view.DialogButton{}
+	return widget.DialogButton{}
 }
 
 func TestPickingAToolWithPropertiesOpensAFormWithTheDefaults(t *testing.T) {

@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/textfmt"
-	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // historyMenu lists the earlier responses; picking one shows it again.

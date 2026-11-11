@@ -10,6 +10,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // descriptionCols is how many characters a setting's description may have

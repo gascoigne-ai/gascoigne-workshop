@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 func TestMenuRowsGetAnIconFromTheirLabel(t *testing.T) {
@@ -24,7 +25,7 @@ func TestMenuRowsGetAnIconFromTheirLabel(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.label, func(t *testing.T) {
-			if got := menuIcon(view.MenuItem{Label: test.label}); got != test.want {
+			if got := menuIcon(widget.MenuItem{Label: test.label}); got != test.want {
 				t.Fatalf("icon = %q, want %q", got, test.want)
 			}
 		})
@@ -32,7 +33,7 @@ func TestMenuRowsGetAnIconFromTheirLabel(t *testing.T) {
 }
 
 func TestAnItemsOwnIconWinsOverTheLabelTable(t *testing.T) {
-	if got := menuIcon(view.MenuItem{Label: "Copy", Icon: "search"}); got != "search" {
+	if got := menuIcon(widget.MenuItem{Label: "Copy", Icon: "search"}); got != "search" {
 		t.Fatalf("icon = %q, want the item's own", got)
 	}
 }
@@ -47,14 +48,14 @@ func TestEveryMenuIconInTheTableExists(t *testing.T) {
 
 func TestOpenMenuFillsTheIconsFromTheLabels(t *testing.T) {
 	a, _ := newTestApp(t)
-	a.openMenu(10, 10, []view.MenuItem{{Label: "Copy"}, {Label: "GET /users"}})
-	if got := view.PopupMenu(a.ctx).Items[0].Icon; got != "copy" {
+	a.openMenu(10, 10, []widget.MenuItem{{Label: "Copy"}, {Label: "GET /users"}})
+	if got := widget.PopupMenu(a.ctx).Items[0].Icon; got != "copy" {
 		t.Fatalf("Copy row icon = %q, want copy", got)
 	}
-	if got := view.PopupMenu(a.ctx).Items[1].Icon; got != "" {
+	if got := widget.PopupMenu(a.ctx).Items[1].Icon; got != "" {
 		t.Fatalf("a row with no match has icon %q, want none", got)
 	}
-	if dump := view.Dump(view.PopupMenuLayer(a.ctx)); !strings.Contains(dump, "icon=copy") {
+	if dump := view.Dump(widget.PopupMenuLayer(a.ctx)); !strings.Contains(dump, "icon=copy") {
 		t.Fatalf("the menu does not draw the Copy icon:\n%s", dump)
 	}
 }

@@ -59,6 +59,7 @@ func dump(sb *strings.Builder, e *El, depth int) {
 	}{
 		{"small", e.small}, {"bold", e.bold}, {"mono", e.mono}, {"ellipsis", e.ellipsis}, {"center", e.ctr},
 		{"optional", e.optional}, {"float", e.fl.on}, {"edgeTop", e.edgeTop}, {"edgeLeft", e.edgeLeft}, {"edgeRight", e.edgeRight}, {"lighten", e.lighten}, {"onClick", e.onClick != nil},
+		{"modal", e.modal}, {"focusScope", e.focusScope}, {"shadow", e.shadow}, {"onSelect", e.onSelect != nil}, {"onDismiss", e.onDismiss != nil},
 	} {
 		if f.v {
 			add(f.name, true)

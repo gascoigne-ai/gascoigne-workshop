@@ -8,6 +8,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // pickFile asks for a file: with the desktop's own dialog when there is

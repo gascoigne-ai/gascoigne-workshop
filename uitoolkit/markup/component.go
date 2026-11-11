@@ -42,6 +42,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // Scope holds what a template can read: strings, numbers, bools, lists
@@ -155,13 +156,13 @@ var elements = map[string]struct {
 	"hrule":          {func(o []view.Option, _ []view.Item, _ string) view.Node { return withOpts(view.HRule(), o) }, true},
 	"vrule":          {func(o []view.Option, _ []view.Item, _ string) view.Node { return withOpts(view.VRule(), o) }, true},
 	"text":           {func(o []view.Option, _ []view.Item, t string) view.Node { return view.Text(t, o...) }, true},
-	"primary-button": {func(o []view.Option, _ []view.Item, t string) view.Node { return view.PrimaryButton(t, o...) }, true},
-	"link-button":    {func(o []view.Option, _ []view.Item, t string) view.Node { return view.LinkButton(t, o...) }, true},
+	"primary-button": {func(o []view.Option, _ []view.Item, t string) view.Node { return widget.PrimaryButton(t, o...) }, true},
+	"link-button":    {func(o []view.Option, _ []view.Item, t string) view.Node { return widget.LinkButton(t, o...) }, true},
 	"include":        {func([]view.Option, []view.Item, string) view.Node { return nil }, true},
 	"icon":           {func(o []view.Option, _ []view.Item, name string) view.Node { return view.Icon(name, o...) }, true},
 	"slot":           {func(o []view.Option, _ []view.Item, _ string) view.Node { return nil }, true},
 	"caption":        {func(o []view.Option, _ []view.Item, t string) view.Node { return view.Caption(t, o...) }, true},
-	"button":         {func(o []view.Option, _ []view.Item, t string) view.Node { return view.Button(t, o...) }, true},
+	"button":         {func(o []view.Option, _ []view.Item, t string) view.Node { return widget.Button(t, o...) }, true},
 }
 
 // withOpts applies options to an element that was built without them.

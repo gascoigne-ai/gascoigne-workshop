@@ -1,6 +1,10 @@
-package view
+package widget
 
-import "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+import (
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+)
 
 // dialogLook is what makes a panel a dialog: a floating, modal menu-style
 // panel in the middle of the window that owns the keyboard focus.
@@ -26,8 +30,8 @@ func DialogTitle(title string, items ...Item) *El {
 	var bar *El
 	closeButton := Row(W(32), H(core.CompactH), Bg(core.Sunken), Control("icon-button"), Lighten(), Tooltip("Close (Esc)"),
 		OnClick(func() {
-			if bar.onDismiss != nil {
-				bar.onDismiss()
+			if bar.DismissHandler() != nil {
+				bar.DismissHandler()()
 			}
 		}),
 		CrossIcon(Grow(1)),

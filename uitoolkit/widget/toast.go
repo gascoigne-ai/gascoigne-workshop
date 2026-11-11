@@ -1,9 +1,10 @@
-package view
+package widget
 
 import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 const (

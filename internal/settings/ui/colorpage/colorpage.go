@@ -13,6 +13,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // Host is what the page needs of the application.

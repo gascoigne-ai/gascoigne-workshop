@@ -5,6 +5,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // authChoice is one option of a chooser field.

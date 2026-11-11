@@ -1,12 +1,14 @@
-package view
+package widget
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 func TestNextSelectableSkipsSeparatorsAndDisabledRowsAndWraps(t *testing.T) {
@@ -63,11 +65,14 @@ func TestMenuKeysMoveTheHighlightAndEnterPicks(t *testing.T) {
 
 func TestMenuWidthFitsItsContentWithinLimits(t *testing.T) {
 	c := testCtx(t)
-	width := func(items ...MenuItem) int { return Menu(c, NewMenu(0, 0, items)).w }
+	width := func(items ...MenuItem) int { return MenuWidth(c, items) }
 	narrow := width(MenuItem{Label: "ab"})
 	wide := width(MenuItem{Label: "ab"}, MenuItem{Label: strings.Repeat("a long label ", 20)})
 	if narrow >= wide || narrow < MenuMinW || wide > MenuMaxW {
 		t.Fatalf("widths %d and %d, want a short menu narrower than a long one within %d..%d", narrow, wide, MenuMinW, MenuMaxW)
+	}
+	if menu := Menu(c, NewMenu(0, 0, []MenuItem{{Label: "ab"}})); !contains(props(menu), fmt.Sprintf("w=%d", narrow)) {
+		t.Fatalf("the menu is not as wide as MenuWidth says: %s", props(menu))
 	}
 	if width(MenuItem{Label: "Copy"}, MenuItem{Label: "Paste", Shortcut: "Ctrl+V"}) < width(MenuItem{Label: "Paste"}) {
 		t.Fatal("a shortcut text takes room")
@@ -101,8 +106,9 @@ func TestMenuRowClickPicksOnlyEnabledRows(t *testing.T) {
 		OnSelect(func(index int) { picked = append(picked, index) }))
 	root := Stack(menu)
 	Layout(c, root, 400, 300)
-	for index, row := range menu.kids {
-		click(c, row.rect.X+row.rect.W/2, row.rect.Y+row.rect.H/2)
+	for index, row := range menu.Children() {
+		rect := row.Rect()
+		click(c, rect.X+rect.W/2, rect.Y+rect.H/2)
 		Update(c, root)
 		_ = index
 	}
@@ -129,8 +135,8 @@ func TestPopupMenuOpensPicksAndClosesBeforeRunning(t *testing.T) {
 	layer := PopupMenuLayer(c)
 	root := Stack(layer)
 	Layout(c, root, 400, 300)
-	row := layer.kids[0]
-	click(c, row.rect.X+row.rect.W/2, row.rect.Y+row.rect.H/2)
+	row := layer.Children()[0].Rect()
+	click(c, row.X+row.W/2, row.Y+row.H/2)
 	Update(c, root)
 	if MenuOpen(c) || stateWhenRun {
 		t.Fatalf("a pick closes the menu first (open after: %v, open while running: %v)", MenuOpen(c), stateWhenRun)
@@ -166,7 +172,7 @@ func TestPopupMenuClickOutsideDismisses(t *testing.T) {
 // ---- TextMenu -------------------------------------------------------------
 
 func rightClick(c *core.Ctx, el *El) {
-	c.In = core.Input{X: el.rect.X + 2, Y: el.rect.Y + 2, RightClick: true}
+	c.In = core.Input{X: el.Rect().X + 2, Y: el.Rect().Y + 2, RightClick: true}
 }
 
 func openTextMenu(t *testing.T, field *TextField, changes *int) (*core.Ctx, *fakeClipboard) {

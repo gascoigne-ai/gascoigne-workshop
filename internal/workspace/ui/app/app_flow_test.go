@@ -18,6 +18,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/theming"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"github.com/hajimehoshi/ebiten/v2"
 	"io"
 	"net/http"
@@ -1747,8 +1748,8 @@ func TestLayoutSettingStacksThePanesAndIsSaved(t *testing.T) {
 
 type ran struct{ log []string }
 
-func (r *ran) item(label string) view.MenuItem {
-	return view.MenuItem{Label: label, Run: func() { r.log = append(r.log, label) }}
+func (r *ran) item(label string) widget.MenuItem {
+	return widget.MenuItem{Label: label, Run: func() { r.log = append(r.log, label) }}
 }
 
 // A menu opened at (500, 300): rows are 24px under 4px of padding, a
@@ -1759,9 +1760,9 @@ func openTestMenu(t *testing.T) (*App, *ran) {
 	r := &ran{}
 	paste := r.item("Paste")
 	paste.Disabled = true
-	a.openMenu(500, 300, []view.MenuItem{r.item("Copy"), {Separator: true}, paste, r.item("Delete")})
+	a.openMenu(500, 300, []widget.MenuItem{r.item("Copy"), {Separator: true}, paste, r.item("Delete")})
 	a.step(core.Input{})
-	if view.PopupMenu(a.ctx) == nil {
+	if widget.PopupMenu(a.ctx) == nil {
 		t.Fatal("test setup: the menu must be open")
 	}
 	return a, r
@@ -1777,24 +1778,24 @@ const (
 func TestClickingAMenuItemRunsItAndClosesTheMenu(t *testing.T) {
 	a, r := openTestMenu(t)
 	click(a, menuItemX, menuCopyY)
-	if len(r.log) != 1 || r.log[0] != "Copy" || view.PopupMenu(a.ctx) != nil {
-		t.Fatalf("ran %v, menu open %v", r.log, view.PopupMenu(a.ctx) != nil)
+	if len(r.log) != 1 || r.log[0] != "Copy" || widget.PopupMenu(a.ctx) != nil {
+		t.Fatalf("ran %v, menu open %v", r.log, widget.PopupMenu(a.ctx) != nil)
 	}
 }
 
 func TestDisabledItemsDoNothingAndKeepTheMenuOpen(t *testing.T) {
 	a, r := openTestMenu(t)
 	click(a, menuItemX, menuPasteY)
-	if len(r.log) != 0 || view.PopupMenu(a.ctx) == nil {
-		t.Fatalf("ran %v, menu open %v", r.log, view.PopupMenu(a.ctx) != nil)
+	if len(r.log) != 0 || widget.PopupMenu(a.ctx) == nil {
+		t.Fatalf("ran %v, menu open %v", r.log, widget.PopupMenu(a.ctx) != nil)
 	}
 }
 
 func TestClickingOutsideClosesTheMenuWithoutReachingWhatIsBelow(t *testing.T) {
 	a, r := openTestMenu(t)
 	click(a, 100, treeRowY(4)) // a request row in the sidebar
-	if view.PopupMenu(a.ctx) != nil || len(r.log) != 0 {
-		t.Fatalf("menu open %v ran %v", view.PopupMenu(a.ctx) != nil, r.log)
+	if widget.PopupMenu(a.ctx) != nil || len(r.log) != 0 {
+		t.Fatalf("menu open %v ran %v", widget.PopupMenu(a.ctx) != nil, r.log)
 	}
 	if len(a.list.Tabs) != 1 {
 		t.Fatal("the click that closes a menu must not also open the request under it")
@@ -1805,23 +1806,23 @@ func TestMenuKeyboardNavigationSkipsSeparatorsAndDisabledRows(t *testing.T) {
 	a, r := openTestMenu(t)
 	down := func() { a.step(key(ebiten.KeyArrowDown, false, false)) }
 	up := func() { a.step(key(ebiten.KeyArrowUp, false, false)) }
-	if view.PopupMenu(a.ctx).Hot != 0 {
-		t.Fatalf("the first enabled row starts highlighted, hot = %d", view.PopupMenu(a.ctx).Hot)
+	if widget.PopupMenu(a.ctx).Hot != 0 {
+		t.Fatalf("the first enabled row starts highlighted, hot = %d", widget.PopupMenu(a.ctx).Hot)
 	}
 	down()
-	if view.PopupMenu(a.ctx).Hot != 3 {
-		t.Fatalf("Down skips the separator and the disabled row: hot = %d", view.PopupMenu(a.ctx).Hot)
+	if widget.PopupMenu(a.ctx).Hot != 3 {
+		t.Fatalf("Down skips the separator and the disabled row: hot = %d", widget.PopupMenu(a.ctx).Hot)
 	}
 	down()
-	if view.PopupMenu(a.ctx).Hot != 0 {
-		t.Fatalf("Down wraps: hot = %d", view.PopupMenu(a.ctx).Hot)
+	if widget.PopupMenu(a.ctx).Hot != 0 {
+		t.Fatalf("Down wraps: hot = %d", widget.PopupMenu(a.ctx).Hot)
 	}
 	up()
-	if view.PopupMenu(a.ctx).Hot != 3 {
-		t.Fatalf("Up wraps backwards: hot = %d", view.PopupMenu(a.ctx).Hot)
+	if widget.PopupMenu(a.ctx).Hot != 3 {
+		t.Fatalf("Up wraps backwards: hot = %d", widget.PopupMenu(a.ctx).Hot)
 	}
 	a.step(key(ebiten.KeyEnter, false, false))
-	if len(r.log) != 1 || r.log[0] != "Delete" || view.PopupMenu(a.ctx) != nil {
+	if len(r.log) != 1 || r.log[0] != "Delete" || widget.PopupMenu(a.ctx) != nil {
 		t.Fatalf("Enter runs the highlighted row: ran %v", r.log)
 	}
 }
@@ -1830,19 +1831,19 @@ func TestEscapeClosesTheMenuFirst(t *testing.T) {
 	a, r := openTestMenu(t)
 	a.menu = true // the settings menu is open too
 	a.step(core.Input{Escape: true})
-	if view.PopupMenu(a.ctx) != nil || !a.menu || len(r.log) != 0 {
-		t.Fatalf("context menu open %v, settings menu open %v: Escape closes the top one only", view.PopupMenu(a.ctx) != nil, a.menu)
+	if widget.PopupMenu(a.ctx) != nil || !a.menu || len(r.log) != 0 {
+		t.Fatalf("context menu open %v, settings menu open %v: Escape closes the top one only", widget.PopupMenu(a.ctx) != nil, a.menu)
 	}
 }
 
 func TestMenuNearTheWindowEdgeStaysOnScreen(t *testing.T) {
 	a, _ := newTestApp(t)
 	r := &ran{}
-	a.openMenu(1270, 790, []view.MenuItem{r.item("Copy"), {Separator: true}, r.item("Paste"), r.item("Delete")})
+	a.openMenu(1270, 790, []widget.MenuItem{r.item("Copy"), {Separator: true}, r.item("Paste"), r.item("Delete")})
 	a.step(core.Input{})
 	// the menu is as wide as its content now: moved left so its right edge is
 	// at the window's, and up to y=701 (89 high); the Copy row is 705..729
-	click(a, 1280-view.MenuWidth(a.ctx, view.PopupMenu(a.ctx).Items)/2-4, 717)
+	click(a, 1280-widget.MenuWidth(a.ctx, widget.PopupMenu(a.ctx).Items)/2-4, 717)
 	if len(r.log) != 1 || r.log[0] != "Copy" {
 		t.Fatalf("ran %v: the menu must be flipped inside the window", r.log)
 	}
@@ -1986,7 +1987,7 @@ func TestOnlyTheNewestToastsAreKept(t *testing.T) {
 	for i := 0; i < 8; i++ {
 		a.toast(strings.Repeat("x", i+1), true)
 	}
-	if len(a.toasts) != view.ToastMax || len(a.toasts[len(a.toasts)-1].Text) != 8 {
+	if len(a.toasts) != widget.ToastMax || len(a.toasts[len(a.toasts)-1].Text) != 8 {
 		t.Fatalf("%d toasts, newest %q", len(a.toasts), a.toasts[len(a.toasts)-1].Text)
 	}
 }
@@ -2017,7 +2018,7 @@ const (
 
 func menuLabels(a *App) []string {
 	var out []string
-	for _, it := range view.PopupMenu(a.ctx).Items {
+	for _, it := range widget.PopupMenu(a.ctx).Items {
 		out = append(out, it.Label)
 	}
 	return out
@@ -2026,15 +2027,15 @@ func menuLabels(a *App) []string {
 // pickMenu clicks the menu item with the given label.
 func pickMenu(t *testing.T, a *App, label string) {
 	t.Helper()
-	m := view.PopupMenu(a.ctx)
+	m := widget.PopupMenu(a.ctx)
 	if m == nil {
 		t.Fatal("no menu is open")
 	}
-	y := m.Y + view.MenuPad
+	y := m.Y + widget.MenuPad
 	for _, it := range m.Items {
-		h := view.MenuRowH
+		h := widget.MenuRowH
 		if it.Separator {
-			h = view.MenuSepH
+			h = widget.MenuSepH
 		}
 		if it.Label == label {
 			click(a, m.X+100, y+h/2)
@@ -2070,7 +2071,7 @@ func allOpen(a *App) map[*model.Folder]bool {
 func TestRightClickOnATreeRowOpensItsMenu(t *testing.T) {
 	a, _ := newTestApp(t)
 	rightClick(a, 100, treeRowY(rowInfo))
-	if view.PopupMenu(a.ctx) == nil {
+	if widget.PopupMenu(a.ctx) == nil {
 		t.Fatal("no menu")
 	}
 	if got, want := menuLabels(a), []string{"Rename", "Duplicate", "Copy URL", "", "Delete"}; !reflect.DeepEqual(got, want) {
@@ -2594,10 +2595,10 @@ func TestDuplicateHeaderNamesAreFlagged(t *testing.T) {
 
 // ---- right-click menus: tabs, table rows, text, response ----------------
 
-func itemByLabel(a *App, label string) *view.MenuItem {
-	for i := range view.PopupMenu(a.ctx).Items {
-		if view.PopupMenu(a.ctx).Items[i].Label == label {
-			return &view.PopupMenu(a.ctx).Items[i]
+func itemByLabel(a *App, label string) *widget.MenuItem {
+	for i := range widget.PopupMenu(a.ctx).Items {
+		if widget.PopupMenu(a.ctx).Items[i].Label == label {
+			return &widget.PopupMenu(a.ctx).Items[i]
 		}
 	}
 	return nil
@@ -2706,7 +2707,7 @@ func TestTableRowMenuActionsUseTheSameUndoableChanges(t *testing.T) {
 func TestPlaceholderRowHasNoMenu(t *testing.T) {
 	a, _ := newTestApp(t)
 	rightClick(a, 400, paramsRow3Y)
-	if view.PopupMenu(a.ctx) != nil {
+	if widget.PopupMenu(a.ctx) != nil {
 		t.Fatal("the empty placeholder row has no row menu")
 	}
 }
@@ -2786,8 +2787,8 @@ func TestCellEditFieldGetsTheTextMenuNotTheRowMenu(t *testing.T) {
 	a, _ := newTestApp(t)
 	click(a, valueCellX, paramsRow0Y) // editing
 	rightClick(a, valueCellX, paramsRow0Y)
-	if view.PopupMenu(a.ctx) == nil || menuLabels(a)[0] != "Undo" {
-		t.Fatalf("menu = %v", view.PopupMenu(a.ctx))
+	if widget.PopupMenu(a.ctx) == nil || menuLabels(a)[0] != "Undo" {
+		t.Fatalf("menu = %v", widget.PopupMenu(a.ctx))
 	}
 }
 
@@ -3241,7 +3242,7 @@ func openResponseRowMenu(t *testing.T, a *App) {
 	a.step(core.Input{})
 	for y := 150; y < 500; y += 4 {
 		rightClick(a, 900, y)
-		if view.PopupMenu(a.ctx) != nil {
+		if widget.PopupMenu(a.ctx) != nil {
 			return
 		}
 	}

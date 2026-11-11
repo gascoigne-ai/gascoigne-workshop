@@ -1,4 +1,4 @@
-package view
+package widget
 
 import (
 	"runtime"
@@ -7,6 +7,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 const (
@@ -90,8 +91,8 @@ func (menu *MenuState) Keys(input core.Input) int {
 func Menu(c *core.Ctx, state *MenuState, opts ...Option) *El {
 	var menu *El
 	pick := func(index int) {
-		if menu.onSelect != nil && state.Items[index].Selectable() {
-			menu.onSelect(index)
+		if menu.SelectHandler() != nil && state.Items[index].Selectable() {
+			menu.SelectHandler()(index)
 		}
 	}
 	rows := make([]Item, len(state.Items))

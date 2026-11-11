@@ -8,6 +8,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 func build(t *testing.T, src string, sc Scope) view.Node {
@@ -33,7 +34,7 @@ func TestTemplateMatchesTheGoDSL(t *testing.T) {
 	goView := view.Row(view.H(28), view.PadX(12), view.Gap(12), view.Bg(core.Frame), view.Control("statusbar"), view.BorderT(core.Border),
 		view.Text("Ready", view.Small(), view.Muted(), view.Ellipsis(), view.Grow(1)),
 		view.Text("v0.1.0", view.Small(), view.Muted(), view.OnClick(func() { clicked = true })),
-		view.Button("Go", view.W(60), view.Tooltip("Go on")),
+		widget.Button("Go", view.W(60), view.Tooltip("Go on")),
 	)
 	tplView := build(t, `
 		<row h="28" pad="12 0" gap="12" bg="frame" control="statusbar" border-t="border">
@@ -280,7 +281,7 @@ func TestSlotInsertsANodeFromTheScope(t *testing.T) {
 
 func TestAlignmentAttributesAndButtonsMatchTheGoOptions(t *testing.T) {
 	got := view.Dump(build(t, `<row align-items="center" justify-content="between"><primary-button w="70">Go</primary-button><link-button>More</link-button></row>`, nil))
-	want := view.Dump(view.Row(view.AlignItems(view.AlignCenter), view.JustifyContent(view.JustifyBetween), view.PrimaryButton("Go", view.W(70)), view.LinkButton("More")))
+	want := view.Dump(view.Row(view.AlignItems(view.AlignCenter), view.JustifyContent(view.JustifyBetween), widget.PrimaryButton("Go", view.W(70)), widget.LinkButton("More")))
 	if got != want {
 		t.Fatalf("template:\n%s\nGo:\n%s", got, want)
 	}

@@ -73,15 +73,3 @@ func TestNoTooltipForElementsUnderAModalOverlay(t *testing.T) {
 		t.Fatalf("tooltip %q under a modal", c.TipText)
 	}
 }
-
-func TestIconButtonIsAnOutlinedChipAroundTheGlyph(t *testing.T) {
-	g := TrashIcon(Grow(1))
-	b := IconButton(g, W(40), H(28))
-	if b.bg != core.Sunken || b.control != "icon-button" {
-		t.Fatalf("bg %q control %q", b.bg, b.control)
-	}
-	Layout(testCtx(t), Col(b), 100, 100)
-	if g.rect.W != 40 {
-		t.Fatalf("the glyph must fill the button so hover and clicks land on it, W=%d", g.rect.W)
-	}
-}

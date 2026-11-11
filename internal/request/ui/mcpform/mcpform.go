@@ -6,6 +6,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // maxH is the tallest the form's fields grow before they scroll.

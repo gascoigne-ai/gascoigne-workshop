@@ -9,6 +9,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fontfamily"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // The size of the font list: its width, the height of the scrolling part

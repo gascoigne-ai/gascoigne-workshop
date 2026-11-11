@@ -9,6 +9,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/shortcutpage"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"image/color"
 )
 

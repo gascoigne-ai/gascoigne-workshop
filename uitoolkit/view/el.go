@@ -26,15 +26,15 @@
 //	Size       W H MinW MaxW MinH MaxH Grow Optional Clip
 //	Spacing    Pad PadX PadY PadL PadT PadR PadB   Margin MarginX MarginY MarginL MarginT MarginR MarginB   Gap
 //	Layout     Row Col Stack Split Scroll HScroll Spacer   AlignItems AlignSelf JustifyContent
-//	Look       Bg ActiveTab Border BorderX BorderY BorderL BorderT BorderR BorderB HoverBg BorderInset Shadow Control EdgeT EdgeL EdgeR HoverColor Lighten
-//	Text       Text Caption Lines Note   Color Muted Bold Small Mono FontSource Ellipsis TextCenter
+//	Look       Bg Border BorderX BorderY BorderL BorderT BorderR BorderB HoverBg BorderInset Shadow Control EdgeT EdgeL EdgeR HoverColor Lighten
+//	Text       Text Caption Lines   Color Muted Bold Small Mono FontSource Ellipsis TextCenter
 //	Input      Field Area Code Slider Checkbox   (state: TextField TextArea CodeView)   Placeholder FieldPad Segments OnChange OnEnter OnTab
-//	Events     OnClick OnClickAt OnRightClick TextMenu OnMiddleClick OnDragOver   Tooltip KeepInView
-//	Composite  Button PrimaryButton Choice ListRow FormRow CheckRow Toolbar TabBar LinkButton IconButton Tabs ScrollTabs Table   OnSelect OnSlide OnSlideEnd SliderMid   Separator
+//	Events     OnClick OnClickAt OnRightClick OnRightClickIn OnMiddleClick OnDragOver   Tooltip KeepInView
+//	Composite  Table   OnSelect SelectHandler DismissHandler ChangeHandler OnSlide OnSlideEnd SliderMid   Separator   (Button, Tabs, Menu, Dialog and the rest of the ready-made widgets are in package widget)
 //	Split      Vertical AsRatio MinFirst MinSecond
 //	Icons      Icon RegisterIcons IconNames   CrossIcon TriangleIcon GripIcon DotsIcon TrashIcon PlusIcon CopyIcon FolderIcon SearchIcon PromptIcon ChevronUpIcon ChevronDownIcon
 //	Flow       If When For Frag
-//	Overlay    FloatTR FloatAt FloatCenter Modal OnDismiss FocusScope Toasts (state: ToastStack Toast) Dialog ResizableDialog DialogTitle MessageDialog (state: DialogState DialogButton)   Menu OpenMenu CloseMenu PopupMenuLayer PopupMenuKeys   Resizable (state: ResizeState)
+//	Overlay    FloatTR FloatAt FloatCenter Modal OnDismiss FocusScope   Resizable (state: ResizeState)
 //
 // A side is a letter suffix (PadL, PadT, PadR, PadB) and an axis is X or
 // Y (PadX is left and right). The same options are the attributes of a
@@ -354,3 +354,32 @@ type floatOpts struct {
 	top, right int
 	mode       int // floatCorner, floatPoint or floatMiddle
 }
+
+// SelectHandler is the function given with OnSelect, nil for none. Widgets
+// built on view read it when the user picks something, because the option
+// is applied after they build their children.
+func (e *El) SelectHandler() func(index int) { return e.onSelect }
+
+// DismissHandler is the function given with OnDismiss, nil for none.
+func (e *El) DismissHandler() func() { return e.onDismiss }
+
+// ChangeHandler is the function given with OnChange, nil for none.
+func (e *El) ChangeHandler() func() { return e.onChange }
+
+// OnRightClickIn runs f when the element is right-clicked, with the context
+// and the pointer position. It is OnRightClick for a handler that needs
+// the context, such as one that opens a popup menu.
+func OnRightClickIn(f func(c *core.Ctx, x, y int)) Option {
+	return func(e *El) { e.onRightIn = f }
+}
+
+// OnSelect runs with the index of the item the user picked: the tab of a
+// Tabs strip, the row of a Menu.
+func OnSelect(f func(i int)) Option { return func(e *El) { e.onSelect = f } }
+
+// Rect is where the last Layout put the element, in window pixels.
+func (e *El) Rect() core.Rect { return e.rect }
+
+// Children are the element's child elements in tree order. It is for
+// code that looks at a laid-out tree, such as tests of widgets.
+func (e *El) Children() []*El { return e.kids }

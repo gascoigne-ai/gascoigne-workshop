@@ -1,6 +1,10 @@
-package view
+package widget
 
-import "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+import (
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+)
 
 // TextMenu gives a Field or Area the right-click menu of a text field:
 // Undo, Redo, Cut, Copy, Paste and Select all, through the context's
@@ -10,9 +14,9 @@ import "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 // edits (for an Area, its TextField).
 func TextMenu(field *TextField) Option {
 	return func(e *El) {
-		e.onRightIn = func(c *core.Ctx, x, y int) {
-			OpenMenu(c, x, y, textMenuItems(c.Clipboard, field, e.onChange))
-		}
+		OnRightClickIn(func(c *core.Ctx, x, y int) {
+			OpenMenu(c, x, y, textMenuItems(c.Clipboard, field, e.ChangeHandler()))
+		})(e)
 	}
 }
 
