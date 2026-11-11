@@ -1,6 +1,6 @@
 // Package core is a small GPU-drawn UI toolkit on Ebitengine: theme
 // tokens, a drawing context that works in logical pixels, input
-// sampling and the clipboard. It knows nothing about the application;
+// sampling, the clipboard and the text edit model (TextBuffer). It knows nothing about the application;
 // package view builds declarative views on top of it.
 package core
 

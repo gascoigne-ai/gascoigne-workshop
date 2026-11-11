@@ -429,6 +429,8 @@ func (v *CodeView) pressText(p textPos, clicks int) {
 	}
 }
 
+func isWordRune(r rune) bool { return unicode.IsLetter(r) || unicode.IsDigit(r) || r == '_' }
+
 // wordRange is the run of word characters, or of other characters, at col.
 func wordRange(r []rune, col int) (lo, hi int) {
 	at := min(col, len(r)-1)

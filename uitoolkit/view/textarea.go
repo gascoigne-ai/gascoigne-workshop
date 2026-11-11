@@ -26,7 +26,8 @@ type TextArea struct {
 
 // NewTextArea returns an editor holding text.
 func NewTextArea(text string) TextArea {
-	a := TextArea{TextField: newMultiline(text)}
+	a := TextArea{TextField: NewTextField(text)}
+	a.Multiline = true
 	a.revealed = -1
 	return a
 }
