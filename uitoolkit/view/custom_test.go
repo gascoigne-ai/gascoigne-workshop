@@ -83,3 +83,32 @@ func TestDumpNamesACustomElementByItsKindWithoutPackage(t *testing.T) {
 		t.Fatalf("dump %q, want it to start with the bare kind", dump)
 	}
 }
+
+func TestLinearLaysCustomChildrenOutLikeColAndRow(t *testing.T) {
+	tests := []struct {
+		name       string
+		linear     view.Linear
+		reference  func(...view.Item) *view.El
+		wantSecond core.Rect
+	}{
+		{"vertical is a Col", view.Linear{}, view.Col, core.Rect{X: 0, Y: 20, W: 200, H: 20}},
+		{"horizontal is a Row", view.Linear{Horizontal: true}, view.Row, core.Rect{X: 30, Y: 0, W: 30, H: 100}},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ctx := newCtx(t)
+			second := view.Custom(&probe{size: 30})
+			custom := view.Custom(test.linear, view.Custom(&probe{size: 30}), second)
+			view.Layout(ctx, custom, 200, 100)
+			if got := second.Rect(); got != test.wantSecond {
+				t.Fatalf("second child at %+v, want %+v", got, test.wantSecond)
+			}
+
+			reference := test.reference(view.Custom(&probe{size: 30}), view.Custom(&probe{size: 30}))
+			view.Layout(ctx, reference, 200, 100)
+			if got := reference.Children()[1].Rect(); got != test.wantSecond {
+				t.Fatalf("the built-in container puts it at %+v, the test expects %+v", got, test.wantSecond)
+			}
+		})
+	}
+}

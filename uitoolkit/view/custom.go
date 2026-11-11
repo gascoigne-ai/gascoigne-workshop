@@ -52,3 +52,18 @@ func (e *El) Behavior() Behavior {
 	}
 	return nil
 }
+
+// Linear is the Behavior of a Row (Horizontal) or a Col: it lays its
+// children out along one axis with the container options (Gap, Pad,
+// Grow, AlignItems, JustifyContent...). A component that is a container
+// embeds it and overrides what it adds, as Resizable does with Update.
+type Linear struct {
+	Base
+	Horizontal bool
+}
+
+func (l Linear) Measure(e *El, c *core.Ctx, maxW int) (int, int) {
+	return flow{horiz: l.Horizontal}.measure(e, c, maxW)
+}
+
+func (l Linear) Layout(e *El, c *core.Ctx) { flow{horiz: l.Horizontal}.layout(e, c) }
