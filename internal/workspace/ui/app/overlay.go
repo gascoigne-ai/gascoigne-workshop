@@ -3,7 +3,6 @@ package ui
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/ui/mcpform"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/overlay"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/toasts"
 
 	"github.com/hajimehoshi/ebiten/v2"
 
@@ -14,12 +13,7 @@ import (
 // Overlays (context menu, dialog, toasts) are state on the App and are
 // built into the window's Stack after everything else, newest on top.
 
-const (
-	toastW      = 320
-	toastH      = 36
-	toastGap    = 6
-	toastMargin = 8
-)
+const ()
 
 // dialog is a message dialog (the toolkit's DialogState) that may also
 // carry the typed form of an MCP tool, drawn between its body and input.
@@ -98,8 +92,6 @@ func (a *App) toast(text string, isErr bool) {
 // pruneToasts drops the info toasts whose time is up.
 func (a *App) pruneToasts() bool { return a.toasts.Prune(a.now()) }
 
-func (a *App) dismissToast(i int) { a.toasts.Dismiss(i) }
-
 // clipboardNote reports what the clipboard did: failures are error
 // toasts, a successful copy is a status line.
 func (a *App) clipboardNote(msg string, isErr bool) {
@@ -110,24 +102,7 @@ func (a *App) clipboardNote(msg string, isErr bool) {
 	a.status = msg
 }
 
-func (a *App) toastsView() Node {
-	if len(a.toasts) == 0 {
-		return nil
-	}
-	total := len(a.toasts)*toastH + (len(a.toasts)-1)*toastGap
-	return Col(W(toastW), Gap(toastGap),
-		FloatAt(a.w-w.Gutter-toastW, a.h-statusH-toastMargin-total),
-		For(a.toasts, func(i int, t toasts.Toast) Node {
-			border, color := w.Border, w.Text
-			if t.IsErr {
-				border, color = w.Error, w.Error
-			}
-			return Row(H(toastH), PadX(w.Gutter), Bg(w.Panel), Border(border), Shadow(), OnClick(func() { a.dismissToast(i) }),
-				Text(t.Text, Ellipsis(), Color(color), Grow(1)),
-			)
-		}),
-	)
-}
+func (a *App) toastsView() Node { return Toasts(&a.toasts, a.w, a.h, statusH) }
 
 // ---- keyboard --------------------------------------------------------------
 

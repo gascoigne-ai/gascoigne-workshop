@@ -35,7 +35,7 @@ flowchart LR
     end
     subgraph workspace
       app
-      wctl["controller/tabs, autosave, toasts"]
+      wctl["controller/tabs, autosave"]
       wad["adapter/statefile, filedialog"]
     end
   end
@@ -85,7 +85,6 @@ The toolkit packages are public and independent of the application (`uitoolkit/c
 | `internal/response/controller/viewer` | the response pane's `Model` (mode compact/pretty/raw, find bar open, active match) with typed messages (`ModeChosen`, `FindOpened`, `FindClosed`, `Searched`, `Stepped`) and a pure `Update`; each tab holds one (`reqTab.look`); also the find bar's counter and stepping. The App drives the `CodeView` and the find text field and reports the match count |
 | `internal/workspace/controller/tabs` | the UI-free state of an open request: request and saved copy, shown response, send number (`BeginSend`, `Accept`, `Cancel`) , the rules of the tab strip (`Next`, `AfterClose`, `AfterMove`) the table undo history (`RowHistory`), the earlier responses (`Remember`, `Recall`) and the state of an open socket (`Connection`: wanted, connecting, session, what an MCP server announced); the App's `reqTab` embeds it and keeps the widget state |
 | `internal/workspace/controller/autosave` | when the collection and the remembered state are written: once their content stayed the same for a pause (`Debounce`) |
-| `internal/workspace/controller/toasts` | the messages over the window: info fades, errors stay, a repeated error is one, at most five (`Stack`); the App draws them |
 | `internal/workspace/controller/serial` | when a file write may start: one per name at a time, the newest waiting write replaces older ones (`Queue`); no I/O |
 | `internal/workspace/controller/overlay` | which open thing Escape closes: the ordered `Layer`s (context menu, dialog, call log, font list, settings, cell edit, find bar, running request) and `Open.Top`; the App fills the set (`openLayers`) and closes the top one (`escape`, `overlay.go`) |
 | `internal/workspace/controller/bus` | the one queue goroutines report through (`Dispatch`, `Drain`, `Run` with a `Cmd`); drained once per frame |

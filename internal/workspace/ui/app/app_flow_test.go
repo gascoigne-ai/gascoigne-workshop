@@ -16,7 +16,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/shortcutpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/statefile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/toasts"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/theming"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/hajimehoshi/ebiten/v2"
@@ -1987,7 +1986,7 @@ func TestOnlyTheNewestToastsAreKept(t *testing.T) {
 	for i := 0; i < 8; i++ {
 		a.toast(strings.Repeat("x", i+1), true)
 	}
-	if len(a.toasts) != toasts.Max || len(a.toasts[len(a.toasts)-1].Text) != 8 {
+	if len(a.toasts) != view.ToastMax || len(a.toasts[len(a.toasts)-1].Text) != 8 {
 		t.Fatalf("%d toasts, newest %q", len(a.toasts), a.toasts[len(a.toasts)-1].Text)
 	}
 }
