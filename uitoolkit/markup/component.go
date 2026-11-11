@@ -523,8 +523,8 @@ func (t *Template) buildOne(n *node, sc Scope) (view.Node, error) {
 				}
 			}
 		}
-		if !view.HasIcon(text) {
-			return nil, t.errf(n, "no icon %q; icons: %s", text, strings.Join(view.IconNames(), " "))
+		if !core.HasIcon(text) {
+			return nil, t.errf(n, "no icon %q; icons: %s", text, strings.Join(core.IconNames(), " "))
 		}
 	}
 	return elements[n.tag].build(opts, kids, text), nil
@@ -706,7 +706,7 @@ func Reference() string {
 	}
 	sb.WriteString("<include name=\"x\"/> builds the template registered with markup.Define(\"x\", ...) with this scope.\n")
 	sb.WriteString("<slot name=\"x\"/> puts the view.Node the scope holds under x here.\n")
-	sb.WriteString("<icon name=\"trash\"/> draws a built-in or registered icon (view.IconNames).\n")
+	sb.WriteString("<icon name=\"trash\"/> draws a built-in or registered icon (core.IconNames).\n")
 	sb.WriteString("Text and attribute values may use {{path}}; if=\"name\" or \"!name\"; for=\"item in list\"; on-click=\"handler\".\n")
 	return sb.String()
 }

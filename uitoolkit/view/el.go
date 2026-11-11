@@ -32,7 +32,7 @@
 //	Events     OnClick OnClickAt OnRightClick OnRightClickIn OnMiddleClick OnDragOver   Tooltip KeepInView
 //	Composite  Table   OnSelect SelectHandler DismissHandler ChangeHandler OnSlide OnSlideEnd SliderMid   Separator   (Button, Tabs, Menu, Dialog and the rest of the ready-made widgets are in package widget)
 //	Split      Vertical AsRatio MinFirst MinSecond
-//	Icons      Icon RegisterIcons IconNames   CrossIcon TriangleIcon GripIcon DotsIcon TrashIcon PlusIcon CopyIcon FolderIcon SearchIcon PromptIcon ChevronUpIcon ChevronDownIcon
+//	Icons      Icon   (registry: core.RegisterIcons core.IconNames core.HasIcon)   CrossIcon TriangleIcon GripIcon DotsIcon TrashIcon PlusIcon CopyIcon FolderIcon SearchIcon PromptIcon ChevronUpIcon ChevronDownIcon
 //	Flow       If When For Frag
 //	Overlay    FloatTR FloatAt FloatCenter Modal OnDismiss FocusScope   Resizable (state: ResizeState)
 //

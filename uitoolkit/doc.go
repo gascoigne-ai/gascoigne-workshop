@@ -8,7 +8,9 @@
 // The packages, each depending only on the ones listed before it:
 //
 //   - core: the fundamentals: the Theme type and color tokens, the drawing
-//     context (Ctx), pointer and keyboard input, the clipboard.
+//     context (Ctx), pointer and keyboard input, the clipboard, and the
+//     drawing primitives that need no element: tooltip, block caret, SVG
+//     icons with their registry.
 //   - view: a Go-native view DSL (Row, Col, Stack, Scroll, Split,
 //     Table...) that lays out, updates and draws a tree of elements, with
 //     the inputs: TextField, TextArea and CodeView and their elements

@@ -19,8 +19,7 @@ func TestIconHoverColorOverridesTheIconsOwnHoverToken(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			icon, _ := lookupIcon("dots")
-			if got := iconToken(Icon("dots", test.opts...), icon, test.hovered); got != test.want {
+			if got := iconToken(Icon("dots", test.opts...), core.IconHover("dots"), test.hovered); got != test.want {
 				t.Fatalf("token = %q, want %q", got, test.want)
 			}
 		})
