@@ -9,8 +9,8 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/component"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/theming"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
@@ -39,7 +39,7 @@ func (g *hello) view() Node {
 // list is the same kind of view written as a template; the data it reads
 // is the scope.
 func (g *hello) list() Node {
-	return component.View(`
+	return markup.View(`
 		<col gap="4">
 		  <caption>Greeted</caption>
 		  <row for="who in greeted" h="22" gap="6">
@@ -48,7 +48,7 @@ func (g *hello) list() Node {
 		  </row>
 		  <text small muted if="!any">Nobody yet</text>
 		</col>`,
-		component.Scope{"greeted": g.names(), "any": len(g.greeted) > 0})
+		markup.Scope{"greeted": g.names(), "any": len(g.greeted) > 0})
 }
 
 func (g *hello) names() []string { return g.greeted }

@@ -19,15 +19,15 @@
 // with a Vue component's `template` option:
 //
 //	func (a *App) statusBar() Node {
-//		return component.View(`
+//		return markup.View(`
 //		  <row h="28" bg="frame"><text small muted>{{status}}</text></row>`,
-//			component.Scope{"status": a.status})
+//			markup.Scope{"status": a.status})
 //	}
 //
 // The result is the same *view.El tree the Go DSL makes, so both styles
 // share one runtime and can be mixed: a template can be a part of a
 // hand-built view and the other way round.
-package component
+package markup
 
 import (
 	"bytes"
@@ -90,8 +90,8 @@ var (
 // mistakes in the program, not in its input.
 //
 //	func (a *App) statusBar() Node {
-//		return component.View(`<row h="28"><text small>{{status}}</text></row>`,
-//			component.Scope{"status": a.status})
+//		return markup.View(`<row h="28"><text small>{{status}}</text></row>`,
+//			markup.Scope{"status": a.status})
 //	}
 func View(src string, sc Scope) view.Node {
 	viewMu.Lock()
@@ -703,7 +703,7 @@ func Reference() string {
 	for _, n := range attributeNames() {
 		fmt.Fprintf(&sb, "  %s\n", n)
 	}
-	sb.WriteString("<include name=\"x\"/> builds the template registered with component.Define(\"x\", ...) with this scope.\n")
+	sb.WriteString("<include name=\"x\"/> builds the template registered with markup.Define(\"x\", ...) with this scope.\n")
 	sb.WriteString("<slot name=\"x\"/> puts the view.Node the scope holds under x here.\n")
 	sb.WriteString("<icon name=\"trash\"/> draws a built-in or registered icon (view.IconNames).\n")
 	sb.WriteString("Text and attribute values may use {{path}}; if=\"name\" or \"!name\"; for=\"item in list\"; on-click=\"handler\".\n")

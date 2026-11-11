@@ -6,7 +6,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/textfmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/component"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
@@ -182,7 +182,7 @@ func (a *App) panes(t *reqTab) Node {
 }
 
 func (a *App) header() Node {
-	return component.View(`
+	return markup.View(`
 		<row h="44" pad-x="12" bg="hero" control="hero">
 		  <text bold color="hero-text">{{title}}</text>
 		  <spacer/>
@@ -192,7 +192,7 @@ func (a *App) header() Node {
 		    <icon name="dots" grow="1" color="hero-muted" hover-color="hero-text"/>
 		  </row>
 		</row>`,
-		component.Scope{
+		markup.Scope{
 			"title":       a.col.Name,
 			"env":         a.envChip(),
 			"toggleMenu":  a.toggleSettings,
@@ -385,11 +385,11 @@ func statusPill(status int) (fg, bg w.Token) {
 // ── Status bar ─────────────────────────────────────────────────────────
 
 func (a *App) statusBar() Node {
-	return component.View(`
+	return markup.View(`
 		<row h="28" pad="12 0" gap="12" bg="frame" control="statusbar" border-t="border">
 		  <text small muted ellipsis grow="1">{{status}}</text>
 		  <button w="44" h="20" on-click="openLog" tooltip="Show the log of calls">Log</button>
 		  <text small muted>{{version}}</text>
 		</row>`,
-		component.Scope{"status": a.status, "version": version, "openLog": a.calls.Open})
+		markup.Scope{"status": a.status, "version": version, "openLog": a.calls.Open})
 }

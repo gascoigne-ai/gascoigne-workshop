@@ -14,8 +14,8 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fontfamily"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/component"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
@@ -193,7 +193,7 @@ func (d *SettingsDialog) navItem(p page, open bool) Node {
 	if open {
 		template = navOpenTemplate
 	}
-	return component.View(template, component.Scope{
+	return markup.View(template, markup.Scope{
 		"label": p.label,
 		"pick":  func() { d.Cat, d.scroll.Y = p.id, 0 },
 	})

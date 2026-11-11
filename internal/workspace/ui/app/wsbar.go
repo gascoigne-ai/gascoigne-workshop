@@ -3,7 +3,7 @@ package ui
 import (
 	"fmt"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/component"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
@@ -14,7 +14,7 @@ func (a *App) messagesToolbar(t *reqTab) Node {
 	pick := func(menu func(*reqTab) []MenuItem) func() {
 		return func() { a.openMenu(a.ctx.In.X, a.ctx.In.Y, menu(t)) }
 	}
-	return component.View(`
+	return markup.View(`
 		<row h="36" pad-x="12" gap="6" align-items="center" border-b="border">
 		  <text small muted>{{state}}</text>
 		  <spacer/>
@@ -25,7 +25,7 @@ func (a *App) messagesToolbar(t *reqTab) Node {
 		  <button min-w="56" h="24" on-click="ping" tooltip="Send a ping frame">Ping</button>
 		  <button min-w="56" h="24" on-click="clear" tooltip="Empty the message log">Clear</button>
 		</row>`,
-		component.Scope{
+		markup.Scope{
 			"state":          connState(t),
 			"reconnect":      a.viewChip("Auto-reconnect", t.Reconnect, 116, func() { t.Reconnect = !t.Reconnect }),
 			"hasTools":       len(t.Tools) > 0,

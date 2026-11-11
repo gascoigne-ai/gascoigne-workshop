@@ -15,11 +15,11 @@ import (
 func TestToolkitImportsStayInTheirLayer(t *testing.T) {
 	const module = "github.com/gascoigne-ai/gascoigne-workshop"
 	allowed := map[string][]string{
-		"../core":      {},
-		"../view":      {module + "/uitoolkit/core"},
-		"../engine":    {module + "/uitoolkit/core"},
-		"../component": {module + "/uitoolkit/core", module + "/uitoolkit/view"},
-		"../theming":   {module + "/uitoolkit/core"},
+		"../core":    {},
+		"../view":    {module + "/uitoolkit/core"},
+		"../engine":  {module + "/uitoolkit/core"},
+		"../markup":  {module + "/uitoolkit/core", module + "/uitoolkit/view"},
+		"../theming": {module + "/uitoolkit/core"},
 	}
 	for dir, ok := range allowed {
 		files, err := filepath.Glob(filepath.Join(dir, "*.go"))

@@ -52,16 +52,16 @@ flowchart LR
   cad --> cmod
   sui --> smod
   subgraph toolkit["uitoolkit (knows nothing of the app)"]
-    component["component"] --> view["view"]
+    markup["markup"] --> view["view"]
     view --> core["core"]
     engine["engine"] --> core
     theming["theming"] --> core
   end
-  app --> component & view & engine & theming
+  app --> markup & view & engine & theming
   rui & sui & tui --> view
 ```
 
-The toolkit packages are public and independent of the application (`uitoolkit/core/layers_test.go` enforces it: `core` imports nothing from this module, `view` only `core`, `component` and `theming` only `core` and `view`, nothing under `uitoolkit` imports `internal` or `cmd`). `internal/workspace/ui/app` is the application: the `App` state, handlers and the window as views. Features that need little of that state live in their own packages under `internal/workspace/ui/app/`: `calltrace`, `sentlog` and `settingsui` (see Package layout below).
+The toolkit packages are public and independent of the application (`uitoolkit/core/layers_test.go` enforces it: `core` imports nothing from this module, `view` only `core`, `markup` and `theming` only `core` and `view`, nothing under `uitoolkit` imports `internal` or `cmd`). `internal/workspace/ui/app` is the application: the `App` state, handlers and the window as views. Features that need little of that state live in their own packages under `internal/workspace/ui/app/`: `calltrace`, `sentlog` and `settingsui` (see Package layout below).
 
 | Package | Role |
 |---|---|
@@ -69,7 +69,7 @@ The toolkit packages are public and independent of the application (`uitoolkit/c
 | `uitoolkit/core` | theme tokens, drawing context, input, rectangles, fonts, clipboard |
 | `uitoolkit/theming` | the dark and light palettes, contrast rules, theme files |
 | `uitoolkit/view` | the view API: element tree, flex layout, event dispatch, `If`/`For`, Button, Tabs, Table, text field, text area, code view |
-| `uitoolkit/component` | VML templates (`.vml`, inline `component.Must`) that build the same trees |
+| `uitoolkit/markup` | VML templates (`.vml`, inline `markup.Must`) that build the same trees |
 | `uitoolkit/engine` | key bindings and frame pacing |
 | `internal/workspace/ui/app` | the app (package `ui`): state, handlers, the window, dialogs, menus; the composition root that wires the other domains |
 | `internal/workspace/ui/appicon` | the program icon, drawn |
@@ -248,7 +248,7 @@ Row(H(urlH), PadX(w.Pad), PadY(8), Gap(8), Bg(w.Bg),
 - The URL, the Params, Headers, Vars and form-field cells, and the JSON and text body are editable. Multipart sends text fields only (no files). Copy and paste work in the URL field and the code views; no IME, no word-wise movement, no double-click word selection, and the code view selects whole lines only.
 - No saving or loading of collections; the sample collection is built in (`ui.SampleCollection`).
 - No text wrapping in the code view. Fractional scales round logical text metrics to whole pixels.
-- VML is Go and templates: the Go builders and the `.vml` templates of `uitoolkit/component` (an XML parser over the same tables) emit the same `view.El` tree.
+- VML is Go and templates: the Go builders and the `.vml` templates of `uitoolkit/markup` (an XML parser over the same tables) emit the same `view.El` tree.
 
 - **Spacing rhythm**: one `Pad` (12 px) is the inset between panes and content; bars (sidebar header, tabs, toolbars, status) are separated with one token, `Border` (never `Rule`, which is for outlines and table headers). The request and response panes both start their first row `Pad` below the pane tabs, so rows line up across the divider (`TestRequestAndResponsePanesShareTheirFirstRowBand`).
 
@@ -315,11 +315,11 @@ Row(H(urlH), PadX(w.Pad), PadY(8), Gap(8), Bg(w.Bg),
 
 - **Feature packages** (task 018): code that does not need the `App` lives in a package of its own under `internal/`: `respview` (response body to colored lines: `CodeLines`, `CompactLines`, `RawLines`, `FoldDeep`, `LooksBinary`, `Filter` for the compact search, `Tokens` for the JSON colors), `textfmt` (`Duration`, `Size`). `appearance` (theme files, the user's theme folder, choices for theme / text size / corners / layout / contrast, `ThemeWith(settings)`, customizable colors and `MethodToken`; embedded `themes/*.json`). `collection` (the collection tree: `Rows`, `FilteredRows`, `Row`, and the built-in `Sample`). `internal/workspace/ui/app` keeps only what shares window state.
 
-- **Templates** (`uitoolkit/component`, named after Vue's components): `component.View(src, scope)` builds an HTML-style template written inline in a Go method (parsed once per source string, panics on a mistake in the program); `component.Parse`/`Must` and `Template.Build`/`MustBuild` are the explicit forms (there is no file loader: one way to write a template). Rules of the format are in decisions 11 and the package doc. The status bar is the first view moved over (`App.statusBar`); `view.Dump` prints a laid-out tree, and the test that it matches the Go view it replaced compares dumps, which is the pattern for moving more views.
+- **Templates** (`uitoolkit/markup`, once `component`): `markup.View(src, scope)` builds an HTML-style template written inline in a Go method (parsed once per source string, panics on a mistake in the program); `component.Parse`/`Must` and `Template.Build`/`MustBuild` are the explicit forms (there is no file loader: one way to write a template). Rules of the format are in decisions 11 and the package doc. The status bar is the first view moved over (`App.statusBar`); `view.Dump` prints a laid-out tree, and the test that it matches the Go view it replaced compares dumps, which is the pattern for moving more views.
 
 - **Theming mechanics are toolkit code** (`uitoolkit/theming`): `Catalog` (the built-in choices, the user's theme folder via `LoadUser`/`SetUser`, `For`, `ThemeID`), `Prefs` (theme, text size, corners, contrast, flat, color overrides) and `Catalog.Theme(Prefs)`, plus the choice tables (`SizeChoices`, `CornerChoices`, `ContrastChoices`, `CustomColors`) and contrast rules. `internal/settings/model/appearance` is now only the app's part: its embedded overlay themes (HTTP method and JSON colors), `MethodToken`, `LayoutChoices`, and thin wrappers that map `settings.Settings` to `theming.Prefs`.
 
-- **Toolkit API conventions** (developer experience): one naming rule (a side is a letter suffix, an axis is X or Y, sizes are `W H MinW MaxW MinH MaxH`); options may stand anywhere among the children and a later option overrides an earlier one (components rely on it), with options-first as the style; every package has a package doc and tested `Example*` functions (`view`, `component`, `theming`, `core`), and the `view` doc has a family index of the option names. Template errors name the file and line, suggest the nearest name and list the valid ones; `component.Reference()` prints the elements and attributes from the same tables the parser uses. `Ctx.PointerX/PointerY` are the pointer position that containers do not hide (drags); the slider measures drags in device pixels because its value can rescale the UI mid-drag.
+- **Toolkit API conventions** (developer experience): one naming rule (a side is a letter suffix, an axis is X or Y, sizes are `W H MinW MaxW MinH MaxH`); options may stand anywhere among the children and a later option overrides an earlier one (components rely on it), with options-first as the style; every package has a package doc and tested `Example*` functions (`view`, `markup`, `theming`, `core`), and the `view` doc has a family index of the option names. Template errors name the file and line, suggest the nearest name and list the valid ones; `markup.Reference()` prints the elements and attributes from the same tables the parser uses. `Ctx.PointerX/PointerY` are the pointer position that containers do not hide (drags); the slider measures drags in device pixels because its value can rescale the UI mid-drag.
 
 - **core and view** (toolkit layout): `uitoolkit/core` holds the fundamentals only: theme files and tokens, colors, the drawing context `Ctx`, pointer and keyboard `Input` (including the `Edit` vocabulary of text keys) and the clipboard. `uitoolkit/view` holds everything that is a view or an input: the element tree and layout, and the input widgets `TextField`, `TextArea` and `CodeView` with their elements `Field`, `Area` and `Code` (a state type and its element share one stem), plus the scrollbar drawing they use. Views import `view` (dot-imported) and reach `core` only for tokens, sizes and the context.
 
@@ -385,7 +385,7 @@ Row(H(urlH), PadX(w.Pad), PadY(8), Gap(8), Bg(w.Bg),
 
 - **Icon masks** (`view/icon.go`): an icon drawn in one color (the usual case) is rendered once in white per icon, scale and stroke weight (`iconMask`, up to 512 entries, dropped when full), then drawn as one image tinted with the element's color; icons with `token(...)` paints are drawn from their paths each frame. Adding icons from an open set (Lucide is ISC, Tabler is MIT) is a matter of dropping SVG files into `view/icons` with the license file; none were needed yet.
 
-- **Template includes and layout attributes**: `component.Define(name, src)` registers a template for `<include name="name"/>` (built with the includer's scope); templates may set `align-items`, `align-self` (default, start, center, end, stretch, baseline) and `justify-content` (start, center, end, between, around) and use `<primary-button>` and `<link-button>`. `App.messagesToolbar` (`internal/workspace/ui/app/wsbar.go`) is the first multi-handler template and is compared with its Go original in `wsbar_test.go`.
+- **Template includes and layout attributes**: `markup.Define(name, src)` registers a template for `<include name="name"/>` (built with the includer's scope); templates may set `align-items`, `align-self` (default, start, center, end, stretch, baseline) and `justify-content` (start, center, end, between, around) and use `<primary-button>` and `<link-button>`. `App.messagesToolbar` (`internal/workspace/ui/app/wsbar.go`) is the first multi-handler template and is compared with its Go original in `wsbar_test.go`.
 
 - **More pure logic moved out of the UI**: variable completion (`model.VarCompletion`), storing a captured value (`model.UpsertVar`), the Timeline text and the suggested file name of a saved body (`respview`). `internal/workspace/ui/app` keeps only the glue that reads or changes `App` state.
 

@@ -10,8 +10,8 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/component"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
@@ -107,7 +107,7 @@ func (l *Log) List(host Host, filter string) Node {
 
 // row is one sent request: badge, path and status above, URL and time below.
 func (l *Log) row(host Host, sent port.Sent) Node {
-	return component.View(`
+	return markup.View(`
 		<col pad-x="12" pad-y="4" hover-bg="hover" control="row" on-click="open">
 		  <row gap="6" align-items="baseline">
 		    <slot name="badge"/>
@@ -116,7 +116,7 @@ func (l *Log) row(host Host, sent port.Sent) Node {
 		  </row>
 		  <row><text small muted ellipsis grow="1">{{when}}</text></row>
 		</col>`,
-		component.Scope{
+		markup.Scope{
 			"badge":  host.Badge(sent.Protocol, sent.Method),
 			"path":   sent.Path,
 			"status": status(sent.Status),
