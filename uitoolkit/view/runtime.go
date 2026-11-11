@@ -53,6 +53,10 @@ func revealFocused(root Node) {
 	}
 	target := path[len(path)-1].rect
 	for _, e := range path {
+		if scroller, ok := e.Behavior().(Scroller); ok {
+			scroller.ScrollTo(e, target)
+			continue
+		}
 		sc, ok := e.b.(*scrollB)
 		if !ok {
 			continue

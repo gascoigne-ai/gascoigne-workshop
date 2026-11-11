@@ -40,6 +40,20 @@ func (b customB) layout(e *El, c *core.Ctx)                       { b.Layout(e, 
 func (b customB) update(e *El, c *core.Ctx)                       { b.Update(e, c) }
 func (b customB) draw(e *El, c *core.Ctx, dst *ebiten.Image)      { b.Draw(e, c, dst) }
 
+// preUpdate and drawOver pass the runtime's optional hooks on to the
+// component when it implements them.
+func (b customB) preUpdate(e *El, c *core.Ctx) {
+	if hook, ok := b.Behavior.(PreUpdater); ok {
+		hook.PreUpdate(e, c)
+	}
+}
+
+func (b customB) drawOver(e *El, c *core.Ctx, dst *ebiten.Image) {
+	if hook, ok := b.Behavior.(OverDrawer); ok {
+		hook.DrawOver(e, c, dst)
+	}
+}
+
 // Custom makes an element that behaves as b. The component's options
 // configure b through Behavior.
 func Custom(b Behavior, items ...Item) *El { return newEl(customB{b}, items) }
@@ -86,3 +100,41 @@ func (e *El) ColorToken(fallback core.Token) core.Token { return e.color(nil, fa
 
 // HoverColorToken is the token given with HoverColor, "" for none.
 func (e *El) HoverColorToken() core.Token { return e.hoverColor }
+
+// PreUpdater is implemented by a Behavior that must see the input before
+// its children do, to take a click away from them.
+type PreUpdater interface {
+	PreUpdate(e *El, c *core.Ctx)
+}
+
+// OverDrawer is implemented by a Behavior that paints over its children.
+type OverDrawer interface {
+	DrawOver(e *El, c *core.Ctx, dst *ebiten.Image)
+}
+
+// Scroller is implemented by a Behavior that scrolls its children. When
+// Tab moves the focus, the runtime asks every Scroller above the focused
+// element to bring the element's rect into view.
+type Scroller interface {
+	ScrollTo(e *El, target core.Rect)
+}
+
+// InFlow reports whether the element takes part in its parent's layout:
+// it is neither dropped for lack of room (Optional) nor floating.
+func (e *El) InFlow() bool { return !e.hidden && !e.fl.on }
+
+// KeepsInView reports whether the element was given KeepInView.
+func (e *El) KeepsInView() bool { return e.reveal }
+
+// Inner is the element's rect inside its padding.
+func (e *El) Inner() core.Rect { return e.inner() }
+
+// LayoutIn lays the children out as if the element's rect were r, and
+// leaves the element's own rect alone: a scrolling container lays its
+// children out in a rect shifted by the scroll position.
+func (l Linear) LayoutIn(e *El, c *core.Ctx, r core.Rect) {
+	own := e.rect
+	e.rect = r
+	flow{horiz: l.Horizontal}.layout(e, c)
+	e.rect = own
+}

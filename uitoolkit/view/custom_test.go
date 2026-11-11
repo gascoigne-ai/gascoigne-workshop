@@ -177,3 +177,106 @@ func TestAnElementReportsTheLookItWasGiven(t *testing.T) {
 		t.Errorf("HoverColorToken without HoverColor = %q", got)
 	}
 }
+
+// order records what the runtime calls and in which sequence.
+type order struct{ calls []string }
+
+func (o *order) note(call string) { o.calls = append(o.calls, call) }
+
+type hooked struct {
+	view.Base
+	order *order
+}
+
+func (h hooked) PreUpdate(*view.El, *core.Ctx)               { h.order.note("pre") }
+func (h hooked) Update(*view.El, *core.Ctx)                  { h.order.note("update") }
+func (h hooked) Draw(*view.El, *core.Ctx, *ebiten.Image)     { h.order.note("draw") }
+func (h hooked) DrawOver(*view.El, *core.Ctx, *ebiten.Image) { h.order.note("over") }
+
+type noter struct {
+	view.Base
+	order *order
+	name  string
+}
+
+func (n noter) Update(*view.El, *core.Ctx)              { n.order.note(n.name + " update") }
+func (n noter) Draw(*view.El, *core.Ctx, *ebiten.Image) { n.order.note(n.name + " draw") }
+
+func TestPreUpdaterRunsBeforeTheChildrenAndOverDrawerAfterThem(t *testing.T) {
+	ctx := newCtx(t)
+	rec := &order{}
+	root := view.Custom(hooked{order: rec}, view.Custom(noter{order: rec, name: "child"}))
+	view.Layout(ctx, root, 100, 100)
+	view.Update(ctx, root)
+	view.Draw(ctx, root, ebiten.NewImage(100, 100))
+	got := strings.Join(rec.calls, ",")
+	want := "pre,child update,update,draw,child draw,over"
+	if got != want {
+		t.Fatalf("calls %s, want %s", got, want)
+	}
+}
+
+type scrollProbe struct {
+	view.Linear
+	targets []core.Rect
+}
+
+func (p *scrollProbe) ScrollTo(_ *view.El, target core.Rect) { p.targets = append(p.targets, target) }
+
+func TestTabAsksAScrollerToShowTheFocusedElement(t *testing.T) {
+	ctx := newCtx(t)
+	first, second := view.NewTextField(""), view.NewTextField("")
+	probe := &scrollProbe{}
+	field := view.Field(&second, view.H(20))
+	root := view.Custom(probe, view.Field(&first, view.H(20)), field)
+	view.Layout(ctx, root, 200, 100)
+	first.Focused = true
+	ctx.In = core.Input{X: 5000, Y: 5000, Tab: true} // the second field takes the focus
+	view.Update(ctx, root)
+	if !second.Focused {
+		t.Fatal("setup: Tab must move the focus to the second field")
+	}
+	if len(probe.targets) != 1 || probe.targets[0] != field.Rect() {
+		t.Fatalf("ScrollTo got %v, want the second field's rect %+v", probe.targets, field.Rect())
+	}
+}
+
+func TestAnElementReportsItsPlaceInLayout(t *testing.T) {
+	ctx := newCtx(t)
+	hidden := view.Custom(&probe{size: 30}, view.Optional()) // dropped: the row is too narrow for it
+	floating := view.Custom(&probe{}, view.FloatAt(0, 0))
+	plain := view.Custom(&probe{size: 10}, view.KeepInView(), view.PadL(3), view.PadR(4))
+	root := view.Custom(view.Linear{Horizontal: true}, hidden, floating, plain)
+	view.Layout(ctx, root, 20, 100)
+	if hidden.InFlow() || floating.InFlow() || !plain.InFlow() {
+		t.Errorf("InFlow: hidden %v floating %v plain %v", hidden.InFlow(), floating.InFlow(), plain.InFlow())
+	}
+	if hidden.KeepsInView() || !plain.KeepsInView() {
+		t.Errorf("KeepsInView: hidden %v plain %v", hidden.KeepsInView(), plain.KeepsInView())
+	}
+	if inner := plain.Inner(); inner.X != plain.Rect().X+3 || inner.W != plain.Rect().W-7 {
+		t.Errorf("Inner %+v inside %+v", inner, plain.Rect())
+	}
+}
+
+func TestLinearLayoutInLaysChildrenOutInAShiftedRect(t *testing.T) {
+	ctx := newCtx(t)
+	child := view.Custom(&probe{size: 30})
+	shifted := scroller{}
+	root := view.Custom(shifted, child)
+	view.Layout(ctx, root, 100, 50)
+	if got := child.Rect(); got.Y != -40 || got.W != 100 {
+		t.Fatalf("child %+v, want it laid out 40 above the box at the box width", got)
+	}
+	if got := root.Rect(); got != (core.Rect{W: 100, H: 50}) {
+		t.Fatalf("the container keeps its own rect, got %+v", got)
+	}
+}
+
+// scroller lays its children out in a rect 40 pixels higher than its own.
+type scroller struct{ view.Linear }
+
+func (s scroller) Layout(e *view.El, c *core.Ctx) {
+	r := e.Rect()
+	s.LayoutIn(e, c, core.Rect{X: r.X, Y: r.Y - 40, W: r.W, H: r.H + 40})
+}
