@@ -225,19 +225,18 @@ func (p *scrollProbe) ScrollTo(_ *view.El, target core.Rect) { p.targets = appen
 
 func TestTabAsksAScrollerToShowTheFocusedElement(t *testing.T) {
 	ctx := newCtx(t)
-	first, second := view.NewTextField(""), view.NewTextField("")
+	first, second := &inputState{focused: true}, &inputState{}
 	probe := &scrollProbe{}
-	field := view.Field(&second, view.H(20))
-	root := view.Custom(probe, view.Field(&first, view.H(20)), field)
+	target := view.Custom(inputB{state: second}, view.H(20))
+	root := view.Custom(probe, view.Custom(inputB{state: first}, view.H(20)), target)
 	view.Layout(ctx, root, 200, 100)
-	first.Focused = true
-	ctx.In = core.Input{X: 5000, Y: 5000, Tab: true} // the second field takes the focus
+	ctx.In = core.Input{X: 5000, Y: 5000, Tab: true} // the second element takes the focus
 	view.Update(ctx, root)
-	if !second.Focused {
-		t.Fatal("setup: Tab must move the focus to the second field")
+	if !second.focused {
+		t.Fatal("setup: Tab must move the focus to the second element")
 	}
-	if len(probe.targets) != 1 || probe.targets[0] != field.Rect() {
-		t.Fatalf("ScrollTo got %v, want the second field's rect %+v", probe.targets, field.Rect())
+	if len(probe.targets) != 1 || probe.targets[0] != target.Rect() {
+		t.Fatalf("ScrollTo got %v, want the second element's rect %+v", probe.targets, target.Rect())
 	}
 }
 
@@ -354,5 +353,14 @@ func TestACustomElementThatKeepsTabKeepsTheFocusOnTab(t *testing.T) {
 	view.Update(ctx, root)
 	if !editor.focused || other.focused {
 		t.Fatalf("an editor that uses Tab keeps the focus: editor %v other %v", editor.focused, other.focused)
+	}
+}
+
+func TestControlNameIsTheStyleGivenWithControl(t *testing.T) {
+	if got := view.Custom(&probe{}, view.Control("field")).ControlName(); got != "field" {
+		t.Fatalf("ControlName = %q, want the control given", got)
+	}
+	if got := view.Custom(&probe{}).ControlName(); got != "" {
+		t.Fatalf("ControlName without Control = %q", got)
 	}
 }

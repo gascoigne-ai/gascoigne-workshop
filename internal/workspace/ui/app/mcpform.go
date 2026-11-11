@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 

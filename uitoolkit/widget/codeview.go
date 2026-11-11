@@ -9,7 +9,6 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
-	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 // Line is one row of a CodeView. Foldable lines open a block that is
@@ -424,8 +423,6 @@ func (v *CodeView) pressText(p textPos, clicks int) {
 		v.selA, v.selB, v.HasSel, v.dragging = p, p, true, true
 	}
 }
-
-func isWordRune(r rune) bool { return unicode.IsLetter(r) || unicode.IsDigit(r) || r == '_' }
 
 // wordRange is the run of word characters, or of other characters, at col.
 func wordRange(r []rune, col int) (lo, hi int) {

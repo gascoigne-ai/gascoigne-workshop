@@ -2,7 +2,7 @@ package ui
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/settingsfile"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"path/filepath"
 	"testing"
 	"time"
@@ -237,7 +237,7 @@ func TestFrameSizeAppliesTheInterfaceScaleOnTopOfTheDisplayScale(t *testing.T) {
 func TestInterfaceScaleSliderResizesLiveAndSavesOnRelease(t *testing.T) {
 	a, path := newTestApp(t)
 	click(a, menuBtnX, menuBtnY)
-	a.prefs.Search = view.NewTextField("interface scale")
+	a.prefs.Search = widget.NewTextField("interface scale")
 	a.step(core.Input{})
 	a.step(core.Input{X: scaleTrackX0 + (scaleTrackX1-scaleTrackX0)/3, Y: scaleRowY, Click: true, Held: true})
 	a.step(core.Input{X: scaleTrackX1 + 400, Y: scaleRowY, Held: true}) // far right: the maximum

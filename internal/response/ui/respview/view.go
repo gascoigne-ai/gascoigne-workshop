@@ -5,7 +5,6 @@ package respview
 
 import (
 	"bytes"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"strings"
 	"unicode/utf8"
@@ -28,9 +27,9 @@ func CodeLines(body []byte) []widget.Line {
 	src := jsonview.Lines(body)
 	lines := make([]widget.Line, len(src))
 	for i, l := range src {
-		spans := make([]view.Span, len(l.Spans))
+		spans := make([]widget.Span, len(l.Spans))
 		for j, s := range l.Spans {
-			spans[j] = view.Span{Text: s.Text, Style: Tokens[s.Kind]}
+			spans[j] = widget.Span{Text: s.Text, Style: Tokens[s.Kind]}
 		}
 		lines[i] = widget.Line{Spans: spans, Foldable: l.Foldable}
 	}
@@ -56,13 +55,13 @@ func CompactLines(body []byte) []widget.Line {
 	return lines
 }
 
-func toSpans(src []jsonview.Span) []view.Span {
+func toSpans(src []jsonview.Span) []widget.Span {
 	if src == nil {
 		return nil
 	}
-	spans := make([]view.Span, len(src))
+	spans := make([]widget.Span, len(src))
 	for j, s := range src {
-		spans[j] = view.Span{Text: s.Text, Style: Tokens[s.Kind]}
+		spans[j] = widget.Span{Text: s.Text, Style: Tokens[s.Kind]}
 	}
 	return spans
 }
@@ -96,7 +95,7 @@ func RawLines(body []byte) []widget.Line {
 	texts := strings.Split(string(body), "\n")
 	lines := make([]widget.Line, len(texts))
 	for i, text := range texts {
-		lines[i] = widget.Line{Spans: []view.Span{{Text: strings.TrimRight(text, "\r"), Style: Tokens[jsonview.Plain]}}}
+		lines[i] = widget.Line{Spans: []widget.Span{{Text: strings.TrimRight(text, "\r"), Style: Tokens[jsonview.Plain]}}}
 	}
 	return lines
 }

@@ -28,7 +28,7 @@
 //	Layout     Row Col Stack Spacer   AlignItems AlignSelf JustifyContent
 //	Look       Bg Border BorderX BorderY BorderL BorderT BorderR BorderB HoverBg BorderInset Shadow Control EdgeT EdgeL EdgeR HoverColor Lighten
 //	Text       Text Caption Lines   Color Muted Bold Small Mono FontSource Ellipsis TextCenter
-//	Input      Field   (state: TextField)   Placeholder FieldPad Segments OnChange OnEnter OnTab
+//	Input      OnChange   (the text inputs, Field and its options, are in package widget)
 //	Events     OnClick OnClickAt OnRightClick OnRightClickIn OnMiddleClick OnDragOver   Tooltip KeepInView
 //	Events+    OnSelect SelectHandler DismissHandler ChangeHandler   Separator   (Button, Tabs, Menu, Dialog and the rest of the ready-made widgets are in package widget)
 //	Flow       If When For Frag
@@ -90,20 +90,15 @@ type El struct {
 	text                             string
 	fg                               core.Token
 	small, mono, bold, ellipsis, ctr bool
-	placeholder                      string
-	segments                         func(string) []Span
-	field                            *TextField
 
-	onClick, onChange, onEnter func()
-	onClickAt                  func(x, y int)
-	onRightIn                  func(c *core.Ctx, x, y int) // a right click that needs the context, as TextMenu does
-	onTab                      func(back bool)
-	onMiddle, onDragOver       func()
-	onSelect                   func(i int)
+	onClick, onChange    func()
+	onClickAt            func(x, y int)
+	onRightIn            func(c *core.Ctx, x, y int) // a right click that needs the context, as TextMenu does
+	onMiddle, onDragOver func()
+	onSelect             func(i int)
 
 	edgeTok                      core.Token // Edges: the color of the outline
 	edgeTop, edgeLeft, edgeRight bool
-	fieldInset                   int    // Field padding when not the default
 	control                      string // the theme control style that shapes and shades this element
 	tip                          string // tooltip text, shown after the pointer rests on the element
 	reveal                       bool   // an HScroll keeps this child in view when it becomes the flagged one

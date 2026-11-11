@@ -164,3 +164,12 @@ type Focusable interface {
 	// that indents), so the runtime leaves the focus where it is.
 	KeepsTab() bool
 }
+
+// ControlName is the theme control style given with Control, "" for
+// none: the name a component asks the theme for its corner radius with.
+func (e *El) ControlName() string { return e.control }
+
+// OnChange runs after the element's value was edited: the text of a field
+// or an area, or a checkbox that was clicked. It is an attribute of any
+// element, read by the component through ChangeHandler.
+func OnChange(f func()) Option { return func(e *El) { e.onChange = f } }

@@ -34,7 +34,7 @@ func Example_view() {
 // Widgets keep their state in plain structs the application owns; a
 // field edits its text in place.
 func Example_textField() {
-	f := view.NewTextField("hello")
+	f := widget.NewTextField("hello")
 	f.SelectAll()
 	f.Insert("world")
 	fmt.Println(f.Text)

@@ -59,22 +59,11 @@ func revealFocused(root Node) {
 	}
 }
 
-func (f *TextField) HasFocus() bool { return f.Focused }
-func (f *TextField) SetFocus(on bool) {
-	f.Focused = on
-	if on {
-		f.SelectAll()
-	}
-}
-
 // state is what e edits and focuses, nil for an element that is not
 // focusable. It is also what identifies the focus owner.
 func (e *El) state() Focuser {
 	if focusable, ok := e.Behavior().(Focusable); ok {
 		return focusable.FocusTarget()
-	}
-	if e.field != nil {
-		return e.field
 	}
 	return nil
 }
@@ -92,10 +81,8 @@ func (e *El) setFocused(on bool) {
 // keepsTab reports whether the focused element uses Tab itself, so Tab
 // does not move the focus away from it.
 func (e *El) keepsTab() bool {
-	if focusable, ok := e.Behavior().(Focusable); ok && focusable.KeepsTab() {
-		return true
-	}
-	return e.onTab != nil
+	focusable, ok := e.Behavior().(Focusable)
+	return ok && focusable.KeepsTab()
 }
 
 // focusKey identifies the focus owner: the state's pointer.

@@ -74,7 +74,7 @@ func TestTheRawViewMarksKeysThatHaveProblems(t *testing.T) {
 
 func TestOpeningTheRawViewShowsWhatTheFormChanged(t *testing.T) {
 	a, _ := openSettingsPage(t, "appearance")
-	a.prefs.Search = view.NewTextField("request and response")
+	a.prefs.Search = widget.NewTextField("request and response")
 	clickText(t, a, "Side by side", 0)
 	a.prefs.OpenRaw(a)
 	if !strings.Contains(a.prefs.RawText.Text, `"layout": "side"`) {

@@ -1,8 +1,6 @@
 package view
 
 import (
-	"errors"
-	"strings"
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -139,100 +137,6 @@ type fakeClipboard struct {
 func (f *fakeClipboard) Read() (string, error) { return f.text, f.readErr }
 func (f *fakeClipboard) Write(s string) error  { f.text = s; return nil }
 
-func TestFieldCopyCutPasteSelectAll(t *testing.T) {
-	changes := 0
-	f := NewTextField("hello world")
-	f.Focused = true
-	field := Field(&f, OnChange(func() { changes++ }))
-	root := Row(field)
-	c := testCtx(t)
-	clip := &fakeClipboard{}
-	c.Clipboard = clip
-	Layout(c, root, 300, 30)
-
-	step := func(in core.Input) {
-		c.In = in
-		Update(c, root)
-	}
-
-	step(core.Input{Ctrl: true, SelectAll: true})
-	step(core.Input{Ctrl: true, Copy: true})
-	if clip.text != "hello world" || f.Text != "hello world" || changes != 0 {
-		t.Fatalf("copy: clipboard %q text %q changes %d", clip.text, f.Text, changes)
-	}
-
-	step(core.Input{Ctrl: true, Cut: true})
-	if f.Text != "" || clip.text != "hello world" || changes != 1 {
-		t.Fatalf("cut: clipboard %q text %q changes %d", clip.text, f.Text, changes)
-	}
-
-	clip.text = "new\r\nvalue"
-	step(core.Input{Ctrl: true, Paste: true})
-	if f.Text != "new  value" || changes != 2 {
-		t.Fatalf("paste: text %q changes %d", f.Text, changes)
-	}
-
-	// Ctrl+V must not also type the letter the key reports.
-	step(core.Input{Ctrl: true, Typed: []rune("v")})
-	if f.Text != "new  value" {
-		t.Fatalf("ctrl+letter typed text: %q", f.Text)
-	}
-}
-
-func TestFieldPasteFailureLeavesTextAlone(t *testing.T) {
-	f := NewTextField("keep")
-	f.Focused = true
-	root := Row(Field(&f))
-	c := testCtx(t)
-	c.Clipboard = &fakeClipboard{text: "lost", readErr: errTest}
-	Layout(c, root, 300, 30)
-	c.In = core.Input{Ctrl: true, Paste: true}
-	Update(c, root)
-	if f.Text != "keep" {
-		t.Fatalf("text = %q", f.Text)
-	}
-}
-
-func TestFieldDragSelectsAndReleaseEndsTheDrag(t *testing.T) {
-	f := NewTextField("hello")
-	root := Row(Field(&f, Grow(1)))
-	c := testCtx(t)
-	Layout(c, root, 300, 30)
-
-	// press at the start of the text, drag far past its end, release
-	c.In = core.Input{X: fieldPad, Y: 10, Click: true, Held: true}
-	Update(c, root)
-	c.In = core.Input{X: fieldPad + 200, Y: 10, Held: true}
-	Update(c, root)
-	c.In = core.Input{X: fieldPad + 200, Y: 10}
-	Update(c, root)
-
-	if f.SelectedText() != "hello" || f.Dragging {
-		t.Fatalf("selection %q dragging %v", f.SelectedText(), f.Dragging)
-	}
-}
-
-var errTest = errors.New("no clipboard")
-
-func TestEnterInAFocusedFieldFiresOnEnterOnly(t *testing.T) {
-	enters := 0
-	f := NewTextField("x")
-	root := Row(Field(&f, Grow(1), Placeholder("p"), OnEnter(func() { enters++ })))
-	c := testCtx(t)
-	Layout(c, root, 200, 30)
-
-	c.In = core.Input{Enter: true}
-	Update(c, root)
-	if enters != 0 {
-		t.Fatal("an unfocused field must ignore Enter")
-	}
-	f.Focused = true
-	Update(c, root)
-	if enters != 1 {
-		t.Fatalf("enters = %d, want 1", enters)
-	}
-}
-
 func TestSpacerAndRulesTakeTheirSizes(t *testing.T) {
 	h, v, gap := HRule(), VRule(), Spacer()
 	inset := VRuleInset(8)
@@ -266,117 +170,6 @@ func TestLinesMakesOneRowPerLine(t *testing.T) {
 	}
 }
 
-func focusedField(t *testing.T, text string, width int) (*TextField, *core.Ctx, *El, *int) {
-	t.Helper()
-	f := NewTextField(text)
-	f.Focused = true
-	changes := 0
-	root := Row(Field(&f, Grow(1), OnChange(func() { changes++ })))
-	c := testCtx(t)
-	Layout(c, root, width, 30)
-	return &f, c, root, &changes
-}
-
-func TestFieldUndoRedoShortcuts(t *testing.T) {
-	f, c, root, changes := focusedField(t, "", 300)
-	c.In = core.Input{Typed: []rune("abc")}
-	Update(c, root)
-	if f.Text != "abc" || *changes != 1 {
-		t.Fatalf("typed: %q changes %d", f.Text, *changes)
-	}
-
-	c.In = core.Input{Ctrl: true, Undo: true}
-	Update(c, root)
-	if f.Text != "" || *changes != 2 {
-		t.Fatalf("undo: %q changes %d (undo must report a change)", f.Text, *changes)
-	}
-	c.In = core.Input{Ctrl: true, Redo: true}
-	Update(c, root)
-	if f.Text != "abc" || *changes != 3 {
-		t.Fatalf("redo: %q changes %d", f.Text, *changes)
-	}
-}
-
-func TestDoubleAndTripleClickSelectWordAndAll(t *testing.T) {
-	f, c, root, _ := focusedField(t, "alpha beta", 300)
-	inWord := fieldPad + c.Width(c.F.UI, "alpha b") // inside "beta"
-
-	c.In = core.Input{X: inWord, Y: 10, Click: true, Held: true, Clicks: 1}
-	Update(c, root)
-	c.In = core.Input{X: inWord, Y: 10, Click: true, Held: true, Clicks: 2}
-	Update(c, root)
-	if f.SelectedText() != "beta" {
-		t.Fatalf("double click selected %q, want beta", f.SelectedText())
-	}
-	c.In = core.Input{X: inWord, Y: 10, Click: true, Held: true, Clicks: 3}
-	Update(c, root)
-	if f.SelectedText() != "alpha beta" {
-		t.Fatalf("triple click selected %q", f.SelectedText())
-	}
-}
-
-func TestLongTextScrollsToTheCursorAndClicksAccountForIt(t *testing.T) {
-	long := strings.Repeat("w", 80)
-	f, c, root, _ := focusedField(t, long, 120)
-
-	c.In = core.Input{Typed: []rune("z")}
-	Update(c, root)
-	if f.ScrollX <= 0 {
-		t.Fatalf("the cursor at the end of long text must scroll the view, ScrollX = %d", f.ScrollX)
-	}
-
-	c.In = core.Input{X: fieldPad, Y: 10, Click: true, Held: true, Clicks: 1}
-	Update(c, root)
-	if f.Cursor < 40 {
-		t.Fatalf("a click at the left edge of the scrolled view hit position %d; the scroll offset must count", f.Cursor)
-	}
-
-	f.Cursor, f.HasSel = 0, false
-	c.In = core.Input{Edits: []core.Edit{core.EditHome}}
-	Update(c, root)
-	if f.ScrollX != 0 {
-		t.Fatalf("Home must scroll back to the start, ScrollX = %d", f.ScrollX)
-	}
-}
-
-func TestTabSelectsTheTextOfTheFieldItFocuses(t *testing.T) {
-	a := NewTextField("hello")
-	root := Col(Field(&a, H(30)))
-	c := testCtx(t)
-	Layout(c, root, 200, 30)
-	c.In = core.Input{Tab: true}
-	Update(c, root)
-	if a.SelectedText() != "hello" {
-		t.Fatalf("selection %q", a.SelectedText())
-	}
-}
-
-func TestTabIsLeftToAFieldThatHandlesIt(t *testing.T) {
-	a, b := NewTextField("a"), NewTextField("b")
-	a.Focused = true
-	var tabs int
-	root := Col(Field(&a, H(30), OnTab(func(bool) { tabs++ })), Field(&b, H(30)))
-	c := testCtx(t)
-	Layout(c, root, 200, 60)
-	c.In = core.Input{Tab: true}
-	Update(c, root)
-	if tabs != 1 || !a.Focused || b.Focused {
-		t.Fatalf("handler calls %d, focus a=%v b=%v: a field with OnTab keeps focus", tabs, a.Focused, b.Focused)
-	}
-}
-
-func TestCtrlTabIsNotFocusCycling(t *testing.T) {
-	a := NewTextField("a")
-	root := Col(Field(&a, H(30)))
-	c := testCtx(t)
-	Layout(c, root, 200, 30)
-	c.In = core.Input{Tab: true, Ctrl: true}
-	Update(c, root)
-	if a.Focused {
-		t.Fatal("Ctrl+Tab switches tabs in the app, it must not move focus")
-	}
-}
-
 func TestFloatAtKeepsTheElementInsideTheStack(t *testing.T) {
 	tests := []struct {
 		name  string
@@ -406,35 +199,6 @@ func TestFloatCenterCentersTheElement(t *testing.T) {
 	Layout(testCtx(t), root, 400, 200)
 	if dialog.rect != (core.Rect{X: 150, Y: 80, W: 100, H: 40}) {
 		t.Fatalf("dialog = %+v", dialog.rect)
-	}
-}
-
-func TestFocusScopeTrapsTab(t *testing.T) {
-	outside, in1, in2 := NewTextField("o"), NewTextField("1"), NewTextField("2")
-	root := Stack(
-		Col(Field(&outside, H(30))),
-		Col(FocusScope(), FloatAt(0, 40), Field(&in1, H(30)), Field(&in2, H(30))),
-	)
-	c := testCtx(t)
-	Layout(c, root, 200, 150)
-	tab := func(shift bool) {
-		c.In = core.Input{Tab: true, Shift: shift}
-		Update(c, root)
-	}
-	flags := func() [3]bool { return [3]bool{outside.Focused, in1.Focused, in2.Focused} }
-
-	tab(false)
-	if flags() != [3]bool{false, true, false} {
-		t.Fatalf("Tab must start inside the scope, focus %v", flags())
-	}
-	tab(false)
-	tab(false) // wraps inside the scope, never to the field outside
-	if flags() != [3]bool{false, true, false} {
-		t.Fatalf("Tab must wrap inside the scope, focus %v", flags())
-	}
-	tab(true)
-	if flags() != [3]bool{false, false, true} {
-		t.Fatalf("Shift+Tab, focus %v", flags())
 	}
 }
 
@@ -489,15 +253,6 @@ func TestBorderLeftOptionRecordsTheTokenAndInset(t *testing.T) {
 	e := box(BorderL(core.BorderSoft), BorderInset(6))
 	if e.borderL != core.BorderSoft || e.borderInset != 6 {
 		t.Fatalf("%q %d", e.borderL, e.borderInset)
-	}
-}
-
-func TestFieldTextInsetDefaultsAndCanBeReduced(t *testing.T) {
-	f := NewTextField("x")
-	plain := Field(&f)
-	tight := Field(&f, FieldPad(5))
-	if plain.textInset() != fieldPad || tight.textInset() != 5 {
-		t.Fatalf("insets %d %d", plain.textInset(), tight.textInset())
 	}
 }
 

@@ -1,6 +1,7 @@
-package view
+package widget
 
 import (
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"

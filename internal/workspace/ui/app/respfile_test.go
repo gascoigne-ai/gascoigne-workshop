@@ -180,7 +180,7 @@ func TestFileBodyTypeKeepsItsPathSeparateFromTheTextBody(t *testing.T) {
 	if tab.Req.BodyType != model.BodyFile || tab.Req.Body != "" {
 		t.Fatalf("type %q body %q", tab.Req.BodyType, tab.Req.Body)
 	}
-	tab.file = view.NewTextField("/tmp/x.bin")
+	tab.file = widget.NewTextField("/tmp/x.bin")
 	tab.Req.Body = tab.file.Text
 	a.setBodyType(tab, model.BodyText)
 	if tab.Req.Body != "typed text" {

@@ -10,6 +10,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 var rectPattern = regexp.MustCompile(`rect=(-?\d+),(-?\d+),(\d+),(\d+)`)
@@ -91,7 +92,7 @@ func TestSearchFiltersSettingsAcrossCategories(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.query, func(t *testing.T) {
 			a, _ := openSettingsPage(t, "appearance")
-			a.prefs.Search = view.NewTextField(test.query)
+			a.prefs.Search = widget.NewTextField(test.query)
 			dump := settingsText(a)
 			for _, want := range test.want {
 				if !strings.Contains(dump, want) {
@@ -109,7 +110,7 @@ func TestSearchFiltersSettingsAcrossCategories(t *testing.T) {
 
 func TestAChangedSettingIsMarkedAndResetRemovesItFromTheFile(t *testing.T) {
 	a, path := openSettingsPage(t, "appearance")
-	a.prefs.Search = view.NewTextField("request and response") // brings the setting to the top of the page
+	a.prefs.Search = widget.NewTextField("request and response") // brings the setting to the top of the page
 	clickText(t, a, "Side by side", 0)
 	if a.settings.Layout != "side" {
 		t.Fatalf("Layout = %q", a.settings.Layout)
@@ -135,7 +136,7 @@ func TestAChangedSettingIsMarkedAndResetRemovesItFromTheFile(t *testing.T) {
 func TestTextSettingsApplyAsTheyAreTyped(t *testing.T) {
 	a, path := openSettingsPage(t, "requests")
 	input := a.prefs.Input(a, "proxy")
-	*input = view.NewTextField("http://localhost:8080")
+	*input = widget.NewTextField("http://localhost:8080")
 	a.prefs.Edited(a, "proxy")
 	if a.settings.Proxy != "http://localhost:8080" {
 		t.Fatalf("Proxy = %q", a.settings.Proxy)
@@ -159,7 +160,7 @@ func TestANumberSettingNeedsAWholeNumberInRange(t *testing.T) {
 		{"99999", 30, true},
 		{"90", 90, false},
 	} {
-		*input = view.NewTextField(test.text)
+		*input = widget.NewTextField(test.text)
 		a.prefs.Edited(a, "timeoutSec")
 		if a.settings.TimeoutSec != test.want || (a.prefs.Note("timeoutSec") != "") != test.wantNote {
 			t.Errorf("%q: TimeoutSec = %d (want %d), note %q", test.text, a.settings.TimeoutSec, test.want, a.prefs.Note("timeoutSec"))
@@ -169,9 +170,9 @@ func TestANumberSettingNeedsAWholeNumberInRange(t *testing.T) {
 
 func TestClosingTheSettingsAlwaysOpensThemFresh(t *testing.T) {
 	a, _ := openSettingsPage(t, "requests")
-	a.prefs.Search = view.NewTextField("proxy")
+	a.prefs.Search = widget.NewTextField("proxy")
 	a.prefs.OpenRaw(a)
-	*a.prefs.Input(a, "proxy") = view.NewTextField("typed but not entered")
+	*a.prefs.Input(a, "proxy") = widget.NewTextField("typed but not entered")
 	a.closeSettings()
 	a.menu = true
 	if a.prefs.Cat != "" || a.prefs.Search.Text != "" || a.prefs.Raw || a.prefs.FontListOpen() {

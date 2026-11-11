@@ -1,7 +1,6 @@
 package widget
 
 import (
-	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"reflect"
 	"strings"
 	"testing"

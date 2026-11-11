@@ -5,7 +5,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/jsonview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/respview"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
-	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // plainStyler draws a line in the plain text color.

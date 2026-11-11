@@ -9,13 +9,13 @@
 //
 //   - core: the fundamentals: the Theme type and color tokens, the drawing
 //     context (Ctx), pointer and keyboard input, the clipboard.
-//   - view: a Go-native view DSL (Row, Col, Stack...)
-//     that lays out, updates and draws a tree of elements, with
-//     the text field TextField and its element Field.
+//   - view: the framework: a Go-native view DSL (Row, Col, Stack...) that
+//     lays out, updates and draws a tree of elements, and the extension
+//     point (Behavior, Custom) a component uses to be an element.
 //   - engine: frame pacing and input helpers for Ebitengine games.
-//   - widget: the components built on view: buttons, rows, tabs, menus,
+//   - widget: every component built on view: buttons, rows, tabs, menus,
 //     dialogs, toasts, scrolling, tables, sliders, icons, tooltips and the
-//     text area and code view. It depends on core and view.
+//     text inputs (field, area, code view). It depends on core and view.
 //   - markup: HTML-style templates that build the same view trees.
 //   - examples: runnable examples, tested with their output (hello is a
 //     small program with a window).

@@ -2,7 +2,7 @@ package ui
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"net/http"
 	"net/url"
 	"strings"
@@ -32,7 +32,7 @@ func TestRequestsShareACookieJarThatClearCookiesEmpties(t *testing.T) {
 func TestTypingAColonSegmentAddsAPathParameterRowThatFillsTheSentURL(t *testing.T) {
 	a, _ := newTestApp(t)
 	tab := a.cur()
-	tab.url = view.NewTextField("https://api.test/users/:id")
+	tab.url = widget.NewTextField("https://api.test/users/:id")
 	a.urlEdited(tab)
 	var row *model.KV
 	for i := range tab.Req.Params {

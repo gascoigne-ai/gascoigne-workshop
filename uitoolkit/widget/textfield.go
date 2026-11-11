@@ -1,4 +1,4 @@
-package view
+package widget
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -663,3 +663,11 @@ func (f *TextField) Display() string {
 // CanUndo and CanRedo report whether there is anything to undo or redo.
 func (f *TextField) CanUndo() bool { return len(f.undo) > 0 }
 func (f *TextField) CanRedo() bool { return len(f.redo) > 0 }
+
+func (f *TextField) HasFocus() bool { return f.Focused }
+func (f *TextField) SetFocus(on bool) {
+	f.Focused = on
+	if on {
+		f.SelectAll()
+	}
+}

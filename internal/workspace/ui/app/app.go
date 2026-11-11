@@ -71,40 +71,40 @@ func next(order []string, cur string) string {
 // reqTab is one open request with its editor and response state.
 type reqTab struct {
 	*tabs.Tab
-	url                   view.TextField
+	url                   widget.TextField
 	paneTab               int
 	respTab               int
-	view                  widget.CodeView            // response body
-	bodyView              widget.CodeView            // request body, read-only
-	picture               *ebiten.Image              // the response body when it is an image
-	pictureInfo           string                     // "PNG 640x480, 12.5KB"
-	tests                 widget.TextArea            // the assertions editor
-	testResults           []assert.Result            // what the assertions found in the shown response
-	gqlVars               widget.TextArea            // the variables of a GraphQL body
-	file                  view.TextField             // the path of a file body
-	body                  widget.TextArea            // request body editor
-	reqScroll, respScroll widget.ScrollState         // scroll of the table and note panes
-	bodyTypesX            widget.ScrollState         // sideways scroll of the body type chips
-	reqTabsX, respTabsX   widget.ScrollState         // sideways scroll of the two pane tab strips
-	timeout               view.TextField             // the request's timeout seconds, as typed
-	cancel                context.CancelFunc         // stops the running request
-	auth                  map[string]*view.TextField // Auth pane inputs by field id, created on first use
-	showSecrets           bool                       // show masked credential fields
-	look                  viewer.Model               // the response mode, the find bar and its active match
-	compactAll            []widget.Line              // the unfiltered compact lines, kept while a search filters the view
-	find                  view.TextField             // the search text
-	wsCancel              context.CancelFunc         // ends the timeout of the connect in progress
-	outbox                []func() error             // sends and pings waiting for the one in flight, in order
-	outboxBusy            bool                       // a send is in flight
-	wsView                widget.CodeView            // the message log
-	msg                   view.TextField             // the message being composed
-	grpcStream            bool                       // a gRPC tab streams instead of making single calls
-	schema                *model.Schema              // what a GraphQL introspection answered
-	explorer              mcpexplorer.State          // the MCP explorer: the list shown, the open entry, its answer
-	form                  *mcpform.Form              // the argument form of the open entry, nil for none
-	resultView            widget.CodeView            // the last answer of the explorer
-	listScroll            widget.ScrollState         // scroll of the explorer's list
-	detailScroll          widget.ScrollState         // scroll of the open entry
+	view                  widget.CodeView              // response body
+	bodyView              widget.CodeView              // request body, read-only
+	picture               *ebiten.Image                // the response body when it is an image
+	pictureInfo           string                       // "PNG 640x480, 12.5KB"
+	tests                 widget.TextArea              // the assertions editor
+	testResults           []assert.Result              // what the assertions found in the shown response
+	gqlVars               widget.TextArea              // the variables of a GraphQL body
+	file                  widget.TextField             // the path of a file body
+	body                  widget.TextArea              // request body editor
+	reqScroll, respScroll widget.ScrollState           // scroll of the table and note panes
+	bodyTypesX            widget.ScrollState           // sideways scroll of the body type chips
+	reqTabsX, respTabsX   widget.ScrollState           // sideways scroll of the two pane tab strips
+	timeout               widget.TextField             // the request's timeout seconds, as typed
+	cancel                context.CancelFunc           // stops the running request
+	auth                  map[string]*widget.TextField // Auth pane inputs by field id, created on first use
+	showSecrets           bool                         // show masked credential fields
+	look                  viewer.Model                 // the response mode, the find bar and its active match
+	compactAll            []widget.Line                // the unfiltered compact lines, kept while a search filters the view
+	find                  widget.TextField             // the search text
+	wsCancel              context.CancelFunc           // ends the timeout of the connect in progress
+	outbox                []func() error               // sends and pings waiting for the one in flight, in order
+	outboxBusy            bool                         // a send is in flight
+	wsView                widget.CodeView              // the message log
+	msg                   widget.TextField             // the message being composed
+	grpcStream            bool                         // a gRPC tab streams instead of making single calls
+	schema                *model.Schema                // what a GraphQL introspection answered
+	explorer              mcpexplorer.State            // the MCP explorer: the list shown, the open entry, its answer
+	form                  *mcpform.Form                // the argument form of the open entry, nil for none
+	resultView            widget.CodeView              // the last answer of the explorer
+	listScroll            widget.ScrollState           // scroll of the explorer's list
+	detailScroll          widget.ScrollState           // scroll of the open entry
 }
 
 // makeTab is newTab with the response view the settings ask for.
@@ -150,15 +150,15 @@ func newTab(req *model.Request) *reqTab { return newReqTab(tabs.New(req)) }
 
 func newReqTab(tab *tabs.Tab) *reqTab {
 	req := tab.Req
-	t := &reqTab{Tab: tab, url: view.NewTextField(req.URL)}
+	t := &reqTab{Tab: tab, url: widget.NewTextField(req.URL)}
 	t.look.Match = -1
 	t.wsView.Follow = true
 	t.wsCancel = func() {}
 	t.explorer = mcpexplorer.New()
-	t.timeout = view.NewTextField(timeoutText(req.TimeoutSec))
+	t.timeout = widget.NewTextField(timeoutText(req.TimeoutSec))
 	t.body = widget.NewTextArea(req.Body)
 	t.tests = widget.NewTextArea(req.Tests)
-	t.file = view.NewTextField(req.Body)
+	t.file = widget.NewTextField(req.Body)
 	t.gqlVars = widget.NewTextArea(req.GraphQLVars)
 	return t
 }
@@ -210,7 +210,7 @@ type App struct {
 	rowSel             *rowSelection                   // the table row the keyboard acts on
 	selected           any                             // the tree node last clicked or moved to: a *Folder or *Request
 	treeFocus          bool                            // the tree has the keyboard
-	filter             view.TextField                  // the sidebar filter
+	filter             widget.TextField                // the sidebar filter
 	sent               sentlog.Log                     // requests sent in this workspace, newest first
 	calls              calltrace.Log                   // the call trace behind the Log button
 	showSent           bool                            // the sidebar lists sent requests instead of the tree

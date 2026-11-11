@@ -3,6 +3,7 @@ package ui
 import (
 	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -68,7 +69,7 @@ func TestWebSocketTabConnectsSendsAndDisconnects(t *testing.T) {
 	tab := a.cur()
 	tab.Req.Protocol = "websocket"
 	tab.Req.URL = echoServer(t)
-	tab.url = view.NewTextField(tab.Req.URL)
+	tab.url = widget.NewTextField(tab.Req.URL)
 
 	a.send(tab) // the Send button of a socket connects
 	until(t, a, "connection", func() bool { return strings.Contains(logText(tab), "Connected") })
@@ -76,7 +77,7 @@ func TestWebSocketTabConnectsSendsAndDisconnects(t *testing.T) {
 		t.Fatal("no session after connecting")
 	}
 
-	tab.msg = view.NewTextField("hello")
+	tab.msg = widget.NewTextField("hello")
 	a.sendMessage(tab)
 	until(t, a, "echo", func() bool { return strings.Contains(logText(tab), "↓ hello") })
 	if !strings.Contains(logText(tab), "↑ hello") {
@@ -189,10 +190,10 @@ func TestComposerSendsHexAsABinaryMessage(t *testing.T) {
 	tab.Req.URL = echoServer(t)
 	a.send(tab)
 	until(t, a, "connection", func() bool { return tab.Session != nil })
-	tab.msg = view.NewTextField("hex: de ad BE ef")
+	tab.msg = widget.NewTextField("hex: de ad BE ef")
 	a.sendMessage(tab)
 	until(t, a, "sent bytes", func() bool { return strings.Contains(logText(tab), "↑ deadbeef") })
-	tab.msg = view.NewTextField("hex: xyz")
+	tab.msg = widget.NewTextField("hex: xyz")
 	a.sendMessage(tab)
 	if !strings.Contains(logText(tab), "hex:") {
 		t.Fatalf("a bad hex message must be explained:\n%s", logText(tab))
@@ -319,7 +320,7 @@ func TestSSEReconnectResumesFromTheLastEventID(t *testing.T) {
 func TestFormatMessageMakesTheComposerOneLineOfJSON(t *testing.T) {
 	a, _ := newTestApp(t)
 	tab := a.cur()
-	tab.msg = view.NewTextField("{\n  \"op\": \"ping\",\n  \"n\": 1\n}")
+	tab.msg = widget.NewTextField("{\n  \"op\": \"ping\",\n  \"n\": 1\n}")
 	a.formatMessage(tab)
 	if tab.msg.Text != `{"op":"ping","n":1}` {
 		t.Fatalf("composer = %q", tab.msg.Text)
@@ -329,7 +330,7 @@ func TestFormatMessageMakesTheComposerOneLineOfJSON(t *testing.T) {
 func TestFormatMessageLeavesBrokenTextAloneAndSaysWhy(t *testing.T) {
 	a, _ := newTestApp(t)
 	tab := a.cur()
-	tab.msg = view.NewTextField(`{"op": }`)
+	tab.msg = widget.NewTextField(`{"op": }`)
 	before := len(a.toasts)
 	a.formatMessage(tab)
 	if tab.msg.Text != `{"op": }` {
@@ -402,10 +403,10 @@ func TestSendingAndPingingDoNotBlockTheFrameAndKeepTheirOrder(t *testing.T) {
 
 	done := make(chan struct{})
 	go func() {
-		tab.msg = view.NewTextField("one")
+		tab.msg = widget.NewTextField("one")
 		a.sendMessage(tab)
 		a.pingSocket(tab)
-		tab.msg = view.NewTextField("two")
+		tab.msg = widget.NewTextField("two")
 		a.sendMessage(tab)
 		close(done)
 	}()
