@@ -83,9 +83,9 @@ type reqTab struct {
 	gqlVars               view.TextArea              // the variables of a GraphQL body
 	file                  view.TextField             // the path of a file body
 	body                  view.TextArea              // request body editor
-	reqScroll, respScroll view.ScrollState           // scroll of the table and note panes
-	bodyTypesX            view.ScrollState           // sideways scroll of the body type chips
-	reqTabsX, respTabsX   view.ScrollState           // sideways scroll of the two pane tab strips
+	reqScroll, respScroll widget.ScrollState         // scroll of the table and note panes
+	bodyTypesX            widget.ScrollState         // sideways scroll of the body type chips
+	reqTabsX, respTabsX   widget.ScrollState         // sideways scroll of the two pane tab strips
 	timeout               view.TextField             // the request's timeout seconds, as typed
 	cancel                context.CancelFunc         // stops the running request
 	auth                  map[string]*view.TextField // Auth pane inputs by field id, created on first use
@@ -103,8 +103,8 @@ type reqTab struct {
 	explorer              mcpexplorer.State          // the MCP explorer: the list shown, the open entry, its answer
 	form                  *mcpform.Form              // the argument form of the open entry, nil for none
 	resultView            view.CodeView              // the last answer of the explorer
-	listScroll            view.ScrollState           // scroll of the explorer's list
-	detailScroll          view.ScrollState           // scroll of the open entry
+	listScroll            widget.ScrollState         // scroll of the explorer's list
+	detailScroll          widget.ScrollState         // scroll of the open entry
 }
 
 // makeTab is newTab with the response view the settings ask for.
@@ -200,7 +200,7 @@ type App struct {
 	settingsUnsaved    bool                            // settings were changed but not written (auto-save is off)
 	prefs              settingsui.SettingsDialog       // the settings dialog
 	shortcutKeys       shortcutpage.Page               // the Shortcuts page of the settings dialog
-	tabsScroll         view.ScrollState                // sideways scroll of the request tab strip
+	tabsScroll         widget.ScrollState              // sideways scroll of the request tab strip
 	dirty              bool                            // something changed since the last draw
 	tps                int                             // the update rate last set
 	lastIn             core.Input                      // the previous frame's input
@@ -227,7 +227,7 @@ type App struct {
 	settingFiles       sport.SettingsStore
 	previews           rport.BodyPreview // shows a response body in the browser, replaced in tests
 	sampler            core.Sampler
-	treeScroll         view.ScrollState
+	treeScroll         widget.ScrollState
 	tips               widget.TooltipState
 	sidebarSplit       widget.SplitState // width of the collections sidebar
 	paneSplit          widget.SplitState // request pane share of the request/response area

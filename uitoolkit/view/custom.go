@@ -138,3 +138,10 @@ func (l Linear) LayoutIn(e *El, c *core.Ctx, r core.Rect) {
 	flow{horiz: l.Horizontal}.layout(e, c)
 	e.rect = own
 }
+
+// KeepInView marks the child a scrolling strip must keep in view: whenever
+// a different child is flagged than last time, an HScroll scrolls to show
+// it once, so a selection made elsewhere is never hidden, while the
+// user's own scrolling is left alone. It is an attribute of the child, set
+// here and read by its parent through KeepsInView.
+func KeepInView() Option { return func(e *El) { e.reveal = true } }

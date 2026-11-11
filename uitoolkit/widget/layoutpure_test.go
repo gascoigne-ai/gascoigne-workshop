@@ -1,6 +1,7 @@
-package view
+package widget
 
 import (
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -45,10 +46,10 @@ func TestUpdateBringsTheKeptChildIntoView(t *testing.T) {
 	var items []Item
 	for i := range 5 {
 		if i == 4 {
-			items = append(items, box(W(40), KeepInView()))
+			items = append(items, Row(W(40), KeepInView()))
 			continue
 		}
-		items = append(items, box(W(40)))
+		items = append(items, Row(W(40)))
 	}
 	root := Col(HScroll(st, append([]Item{W(100), H(20)}, items...)...))
 	c := testCtx(t)

@@ -55,18 +55,6 @@ func revealFocused(root Node) {
 	for _, e := range path {
 		if scroller, ok := e.Behavior().(Scroller); ok {
 			scroller.ScrollTo(e, target)
-			continue
-		}
-		sc, ok := e.b.(*scrollB)
-		if !ok {
-			continue
-		}
-		view := e.rect
-		switch {
-		case target.Y < view.Y:
-			sc.state.Y = max(sc.state.Y-(view.Y-target.Y), 0)
-		case target.Y+target.H > view.Y+view.H:
-			sc.state.Y += target.Y + target.H - (view.Y + view.H)
 		}
 	}
 }

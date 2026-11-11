@@ -9,7 +9,7 @@
 //
 //   - core: the fundamentals: the Theme type and color tokens, the drawing
 //     context (Ctx), pointer and keyboard input, the clipboard.
-//   - view: a Go-native view DSL (Row, Col, Stack, Scroll...)
+//   - view: a Go-native view DSL (Row, Col, Stack...)
 //     that lays out, updates and draws a tree of elements, with
 //     the inputs: TextField, TextArea and CodeView and their elements
 //     Field, Area and Code.

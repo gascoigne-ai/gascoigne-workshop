@@ -1,9 +1,10 @@
-package view
+package widget
 
 import (
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 // wheelStep is how many pixels one wheel notch scrolls.
@@ -32,7 +33,7 @@ type ScrollState struct {
 // scrollB lays its children out as a column taller than the box and
 // shows the part at ScrollState.Y, with a scrollbar when it overflows.
 type scrollB struct {
-	flow
+	Linear
 	state   *ScrollState
 	content int // height of the content, set by layout
 }
@@ -40,32 +41,25 @@ type scrollB struct {
 // measure is the content's size, but no taller than MaxH, so a
 // scroller in a floating or hugging parent shrinks to its content and
 // scrolls only when the content is taller than the limit.
-func (s *scrollB) measure(e *El, c *core.Ctx, maxW int) (int, int) {
-	w, h := s.flow.measure(e, c, maxW)
-	return w, h
-}
-
 func (s *scrollB) track(e *El) core.Rect {
-	r := e.rect
-	return core.Rect{X: r.X + r.W - ScrollbarW, Y: r.Y, W: ScrollbarW, H: r.H}
+	r := e.Rect()
+	return core.Rect{X: r.X + r.W - scrollbarW, Y: r.Y, W: scrollbarW, H: r.H}
 }
 
-func (s *scrollB) layout(e *El, c *core.Ctx) {
-	r := e.rect
-	_, s.content = s.flow.measure(e, c, e.inner().W)
+func (s *scrollB) Layout(e *El, c *core.Ctx) {
+	r := e.Rect()
+	_, s.content = s.Linear.Measure(e, c, e.Inner().W)
 	y := clampScroll(s.state.Y, s.content, r.H) // update writes it back
 
 	width := r.W
 	if s.content > r.H {
-		width -= ScrollbarW
+		width -= scrollbarW
 	}
-	e.rect = core.Rect{X: r.X, Y: r.Y - y, W: width, H: max(s.content, r.H)}
-	s.flow.layout(e, c)
-	e.rect = r
+	s.LayoutIn(e, c, core.Rect{X: r.X, Y: r.Y - y, W: width, H: max(s.content, r.H)})
 }
 
-func (s *scrollB) update(e *El, c *core.Ctx) {
-	in, st, r := c.In, s.state, e.rect
+func (s *scrollB) Update(e *El, c *core.Ctx) {
+	in, st, r := c.In, s.state, e.Rect()
 	st.Y = clampScroll(st.Y, s.content, r.H)
 	track := s.track(e)
 	if st.drag.on {
@@ -95,16 +89,30 @@ func (s *scrollB) press(track core.Rect, view, at int) {
 	}
 }
 
-func (s *scrollB) drawOver(e *El, c *core.Ctx, dst *ebiten.Image) {
+func (s *scrollB) DrawOver(e *El, c *core.Ctx, dst *ebiten.Image) {
 	track := s.track(e)
-	drawScrollbar(c, dst, track, s.content, e.rect.H, s.state.Y, s.state.drag.on || c.Hovered(track))
+	drawScrollbar(c, dst, track, s.content, e.Rect().H, s.state.Y, s.state.drag.on || c.Hovered(track))
 }
 
 // Scroll is a vertically scrolling column: its children may be taller
 // than the box, the wheel and a draggable scrollbar move them, and
 // children scrolled out of view do not receive clicks. It grows to fill
-// its parent unless given a size.
+// its parent unless given a size. It has no template attribute: its state
+// is a Go value.
 func Scroll(state *ScrollState, items ...Item) *El {
 	b := &scrollB{state: state}
-	return newEl(b, append([]Item{Grow(1), Clip()}, items...))
+	return Custom(b, append([]Item{Grow(1), Clip()}, items...)...)
+}
+
+// ScrollTo moves the scroll position just far enough to bring target, a
+// rect from this frame's layout, inside the box: what Tab moving the
+// focus to a field out of view needs. The box shows it on the next frame.
+func (s *scrollB) ScrollTo(e *El, target core.Rect) {
+	view := e.Rect()
+	switch {
+	case target.Y < view.Y:
+		s.state.Y = max(s.state.Y-(view.Y-target.Y), 0)
+	case target.Y+target.H > view.Y+view.H:
+		s.state.Y += target.Y + target.H - (view.Y + view.H)
+	}
 }

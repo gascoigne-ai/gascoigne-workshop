@@ -1,6 +1,7 @@
-package view
+package widget
 
 import (
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -11,7 +12,7 @@ func rows(n int, hits *[]int) []Item {
 	var items []Item
 	for i := 0; i < n; i++ {
 		i := i
-		items = append(items, box(H(20), OnClick(func() { *hits = append(*hits, i) })))
+		items = append(items, Row(H(20), OnClick(func() { *hits = append(*hits, i) })))
 	}
 	return items
 }
@@ -73,7 +74,7 @@ func TestRowsScrolledOutOfViewDoNotReceiveClicksOutsideTheScroller(t *testing.T)
 	st := &ScrollState{Y: 0}
 	root := Col(
 		scroller(st, 100, rows(10, &hits)...), // rows 5..9 extend below the viewport
-		box(H(100), OnClick(func() { below = append(below, 1) })),
+		Row(H(100), OnClick(func() { below = append(below, 1) })),
 	)
 	c := testCtx(t)
 	Layout(c, root, 200, 200)
@@ -103,7 +104,7 @@ func TestWheelScrollsTheInnermostScroller(t *testing.T) {
 	outer, inner := &ScrollState{}, &ScrollState{}
 	root := Col(scroller(outer, 150,
 		scroller(inner, 100, rows(10, &hits)...),
-		box(H(200)),
+		Row(H(200)),
 	))
 	c := testCtx(t)
 	Layout(c, root, 200, 150)
@@ -158,9 +159,11 @@ func TestTabScrollsTheFocusedFieldIntoView(t *testing.T) {
 	st := &ScrollState{}
 	fields := make([]TextField, 20)
 	items := make([]Item, len(fields))
+	elements := make([]*El, len(fields))
 	for i := range fields {
 		fields[i] = NewTextField("")
-		items[i] = Field(&fields[i], H(30))
+		elements[i] = Field(&fields[i], H(30))
+		items[i] = elements[i]
 	}
 	build := func() Node { return Col(Scroll(st, append([]Item{Grow(1), Gap(4)}, items...)...)) }
 	frame := func(in core.Input) Node {
@@ -182,15 +185,10 @@ func TestTabScrollsTheFocusedFieldIntoView(t *testing.T) {
 	if !fields[12].Focused {
 		t.Fatalf("focus is not on field 12")
 	}
-	var focused *El
-	for _, e := range collectFocusables(root, nil) {
-		if e.focused() {
-			focused = e
-		}
-	}
-	scroll := root.kids[0]
-	if focused == nil || focused.rect.Y < scroll.rect.Y || focused.rect.Y+focused.rect.H > scroll.rect.Y+scroll.rect.H {
-		t.Fatalf("the focused field %+v is outside the scroll box %+v", focused.rect, scroll.rect)
+	focused := elements[12]
+	scroll := root.Children()[0]
+	if focused.Rect().Y < scroll.Rect().Y || focused.Rect().Y+focused.Rect().H > scroll.Rect().Y+scroll.Rect().H {
+		t.Fatalf("the focused field %+v is outside the scroll box %+v", focused.Rect(), scroll.Rect())
 	}
 	for range 8 { // Shift+Tab back up scrolls up again
 		frame(core.Input{X: 5000, Y: 5000, Tab: true, Shift: true})

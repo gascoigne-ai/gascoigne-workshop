@@ -1,9 +1,10 @@
-package view
+package widget
 
 import (
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 // hscrollArrowW is the width of the arrow buttons at the ends of an
@@ -23,18 +24,17 @@ const (
 // When it overflows, an arrow at each end that can still move scrolls by
 // half a box, and the wheel scrolls sideways.
 type hscrollB struct {
-	flow
+	Linear
 	state   *ScrollState
 	content int // natural width of the children, set by layout
+	origin  int // x of the shifted rect the children were laid out in
 }
 
 // KeepInView marks the child an HScroll must keep in view: whenever a
 // different child is flagged than last time, the strip scrolls to show
 // it once, so a selection made elsewhere is never hidden, while the
 // user's own scrolling is left alone.
-func KeepInView() Option { return func(e *El) { e.reveal = true } }
-
-func (s *hscrollB) overflow(e *El) bool { return s.content > e.rect.W }
+func (s *hscrollB) overflow(e *El) bool { return s.content > e.Rect().W }
 
 // inset is the room kept clear at each end for the arrows, so the first
 // and last tab are not hidden under them; none when everything fits.
@@ -49,18 +49,17 @@ func (s *hscrollB) maxX(e *El) int {
 	if !s.overflow(e) {
 		return 0
 	}
-	return s.content + 2*s.inset(e) - e.rect.W
+	return s.content + 2*s.inset(e) - e.Rect().W
 }
 
 // layout places the children for the scroll position the state holds,
 // clamped; it does not change the state (settle does, in update).
-func (s *hscrollB) layout(e *El, c *core.Ctx) {
-	r := e.rect
-	s.content, _ = s.flow.measure(e, c, 1<<20)
+func (s *hscrollB) Layout(e *El, c *core.Ctx) {
+	r := e.Rect()
+	s.content, _ = s.Linear.Measure(e, c, 1<<20)
 	x := max(0, min(s.state.X, s.maxX(e)))
-	e.rect = core.Rect{X: r.X - x + s.inset(e), Y: r.Y, W: max(s.content, r.W), H: r.H}
-	s.flow.layout(e, c)
-	e.rect = r
+	s.origin = r.X - x + s.inset(e)
+	s.LayoutIn(e, c, core.Rect{X: s.origin, Y: r.Y, W: max(s.content, r.W), H: r.H})
 }
 
 // settle is what the layout found, written to the state before the frame's
@@ -70,17 +69,15 @@ func (s *hscrollB) layout(e *El, c *core.Ctx) {
 func (s *hscrollB) settle(e *El, c *core.Ctx) {
 	st := s.state
 	st.Overflowing = s.overflow(e)
-	flagged, x := -1, e.padL
+	flagged := -1
 	var start, end int
-	for i, k := range e.kids {
-		if k.hidden || k.fl.on {
+	for i, k := range e.Children() {
+		if !k.InFlow() {
 			continue
 		}
-		w, _ := k.size(c, 1<<20)
-		if k.reveal && flagged < 0 {
-			flagged, start, end = i, x, x+w
+		if kr := k.Rect(); k.KeepsInView() && flagged < 0 {
+			flagged, start, end = i, kr.X-s.origin, kr.X+kr.W-s.origin
 		}
-		x += w + e.gap
 	}
 	switch {
 	case flagged < 0:
@@ -90,15 +87,15 @@ func (s *hscrollB) settle(e *El, c *core.Ctx) {
 		if start < st.X { // the clear area starts one arrow in, where the content starts
 			st.X = start
 		}
-		if end+2*s.inset(e) > st.X+e.rect.W {
-			st.X = end + 2*s.inset(e) - e.rect.W
+		if end+2*s.inset(e) > st.X+e.Rect().W {
+			st.X = end + 2*s.inset(e) - e.Rect().W
 		}
 	}
 	st.X = max(0, min(st.X, s.maxX(e)))
 }
 
 func (s *hscrollB) arrows(e *El) (left, right core.Rect) {
-	r := e.rect
+	r := e.Rect()
 	left = core.Rect{X: r.X, Y: r.Y, W: hscrollArrowW, H: r.H}
 	right = core.Rect{X: r.X + r.W - hscrollArrowW, Y: r.Y, W: hscrollArrowW, H: r.H}
 	return
@@ -111,9 +108,9 @@ func (s *hscrollB) arrowsShown(e *El) (left, right bool) {
 }
 
 // preUpdate takes clicks on the arrows before the children under them see them.
-func (s *hscrollB) preUpdate(e *El, c *core.Ctx) {
+func (s *hscrollB) PreUpdate(e *El, c *core.Ctx) {
 	s.settle(e, c)
-	in, st, r := c.In, s.state, e.rect
+	in, st, r := c.In, s.state, e.Rect()
 	if !s.overflow(e) {
 		return
 	}
@@ -166,9 +163,9 @@ func (s *hscrollB) preUpdate(e *El, c *core.Ctx) {
 }
 
 // update scrolls with the wheel and with a touchpad's sideways swipe.
-func (s *hscrollB) update(e *El, c *core.Ctx) {
+func (s *hscrollB) Update(e *El, c *core.Ctx) {
 	in, st := c.In, s.state
-	if !s.overflow(e) || !in.Over(e.rect) {
+	if !s.overflow(e) || !in.Over(e.Rect()) {
 		return
 	}
 	switch {
@@ -181,7 +178,7 @@ func (s *hscrollB) update(e *El, c *core.Ctx) {
 	}
 }
 
-func (s *hscrollB) drawOver(e *El, c *core.Ctx, dst *ebiten.Image) {
+func (s *hscrollB) DrawOver(e *El, c *core.Ctx, dst *ebiten.Image) {
 	left, right := s.arrows(e)
 	showL, showR := s.arrowsShown(e)
 	for _, a := range []struct {
@@ -210,5 +207,5 @@ func (s *hscrollB) drawOver(e *El, c *core.Ctx, dst *ebiten.Image) {
 // shows arrows at the ends that have more to scroll to. Mark the child to
 // keep in view with Reveal.
 func HScroll(state *ScrollState, items ...Item) *El {
-	return newEl(&hscrollB{flow: flow{horiz: true}, state: state}, append([]Item{Clip()}, items...))
+	return Custom(&hscrollB{Linear: Linear{Horizontal: true}, state: state}, append([]Item{Clip()}, items...)...)
 }

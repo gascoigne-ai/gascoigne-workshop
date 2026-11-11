@@ -18,6 +18,7 @@
 //	Checkboxes Checkbox
 //	Tables     Table   (state: TableSpec TableRow TableEdit ColumnWidths)   MinColumnPx
 //	Resizing   Resizable   (state: ResizeState)
+//	Scrolling  Scroll HScroll   (state: ScrollState)   (the KeepInView option is view's)
 //	Splitting  Split Vertical AsRatio MinFirst MinSecond   (state: SplitState)
 //	Sliders    Slider OnSlide OnSlideEnd SliderMid   (state: SliderState)
 //

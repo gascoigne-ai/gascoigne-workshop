@@ -1,6 +1,7 @@
-package view
+package widget
 
 import (
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -11,7 +12,7 @@ func strip(st *ScrollState, n int, hits *[]int) *El {
 	var items []Item
 	for i := 0; i < n; i++ {
 		i := i
-		items = append(items, box(W(40), OnClick(func() { *hits = append(*hits, i) })))
+		items = append(items, Row(W(40), OnClick(func() { *hits = append(*hits, i) })))
 	}
 	return HScroll(st, append([]Item{W(100), H(20)}, items...)...)
 }
@@ -102,7 +103,7 @@ func TestHScrollRevealsTheFlaggedChildOnceWhenItChanges(t *testing.T) {
 			if i == flagged {
 				opts = append(opts, KeepInView())
 			}
-			items = append(items, box(opts...))
+			items = append(items, Row(opts...))
 		}
 		return HScroll(st, append([]Item{W(100), H(20)}, items...)...)
 	}
@@ -155,7 +156,7 @@ func TestHScrollShowsOnlyTheArrowsThatHaveSomewhereToScroll(t *testing.T) {
 	root := Col(strip(st, 5, &hits))
 	c := testCtx(t)
 	Layout(c, root, 300, 100)
-	h, e := hscrollOf(root), root.kids[0]
+	h, e := hscrollOf(root), root.Children()[0]
 	if l, r := h.arrowsShown(e); l || !r {
 		t.Fatalf("at the left end only the right arrow shows, got %v %v", l, r)
 	}
@@ -177,12 +178,12 @@ func TestHScrollShowsOnlyTheArrowsThatHaveSomewhereToScroll(t *testing.T) {
 	}
 	fit := Col(strip(&ScrollState{}, 2, &hits))
 	Layout(c, fit, 300, 100)
-	if l, r := hscrollOf(fit).arrowsShown(fit.kids[0]); l || r {
+	if l, r := hscrollOf(fit).arrowsShown(fit.Children()[0]); l || r {
 		t.Fatalf("no arrows when everything fits, got %v %v", l, r)
 	}
 }
 
-func hscrollOf(root *El) *hscrollB { return root.kids[0].b.(*hscrollB) }
+func hscrollOf(root *El) *hscrollB { return root.Children()[0].Behavior().(*hscrollB) }
 
 func TestHoldingAnArrowKeepsScrolling(t *testing.T) {
 	var hits []int
