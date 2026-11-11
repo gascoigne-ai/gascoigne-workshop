@@ -67,3 +67,7 @@ func (l Linear) Measure(e *El, c *core.Ctx, maxW int) (int, int) {
 }
 
 func (l Linear) Layout(e *El, c *core.Ctx) { flow{horiz: l.Horizontal}.layout(e, c) }
+
+// Place gives the element the rect r and lays its own children out in
+// it. A container's Layout calls it on each child.
+func (e *El) Place(c *core.Ctx, r core.Rect) { e.place(c, r) }

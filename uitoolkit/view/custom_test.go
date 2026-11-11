@@ -112,3 +112,34 @@ func TestLinearLaysCustomChildrenOutLikeColAndRow(t *testing.T) {
 		})
 	}
 }
+
+// halves is a container written outside view: it puts its two children
+// side by side, the first on the left half.
+type halves struct{ view.Base }
+
+func (halves) Layout(e *view.El, c *core.Ctx) {
+	r := e.Rect()
+	kids := e.Children()
+	kids[0].Place(c, core.Rect{X: r.X, Y: r.Y, W: r.W / 2, H: r.H})
+	kids[1].Place(c, core.Rect{X: r.X + r.W/2, Y: r.Y, W: r.W - r.W/2, H: r.H})
+}
+
+func TestPlaceSetsAChildsRectAndLaysItOut(t *testing.T) {
+	ctx := newCtx(t)
+	inner := &probe{size: 10}
+	nested := view.Custom(inner)
+	left := view.Custom(halves{}, nested, view.Custom(&probe{}))
+	right := view.Custom(&probe{})
+	root := view.Custom(halves{}, left, right)
+
+	view.Layout(ctx, root, 400, 100)
+	if got := left.Rect(); got != (core.Rect{W: 200, H: 100}) {
+		t.Fatalf("left half %+v", got)
+	}
+	if got := right.Rect(); got != (core.Rect{X: 200, W: 200, H: 100}) {
+		t.Fatalf("right half %+v", got)
+	}
+	if got := nested.Rect(); got != (core.Rect{W: 100, H: 100}) {
+		t.Fatalf("a placed child lays its own children out too: %+v", got)
+	}
+}
