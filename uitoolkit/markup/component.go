@@ -21,7 +21,9 @@
 // (handlers). A container or widget takes its Go constructor's arguments
 // as attributes: state and specs name a scope entry of their Go type
 // (<scroll state="list"> wants a *widget.ScrollState), and a wrong type
-// is an error that names it, as is a nil state pointer. Options and
+// is an error that names it, as is a nil state pointer. A <slot name="path"/>
+// puts in a view.Node of the scope, such as a view.Custom component, which
+// keeps its own layout and input. Options and
 // handlers that only work on one widget (a field's on-enter) are valid on
 // that element only.
 //
@@ -1022,9 +1024,10 @@ func (t *Template) buildOne(n *node, sc Scope) (view.Node, error) {
 	if n.tag == "slot" { // a node the caller made, as a Vue slot
 		for _, a := range n.attrs {
 			if a.name == "name" {
-				v, ok := sc[a.value]
-				if !ok {
-					return nil, t.errf(n, "unknown slot %q", a.value)
+				// a path, so each item of a for can bring its own node
+				v, err := lookup(strings.TrimSpace(a.value), sc)
+				if err != nil {
+					return nil, t.errf(n, "slot: %v", err)
 				}
 				node, ok := v.(view.Node)
 				if !ok {
@@ -1274,7 +1277,7 @@ func Reference() string {
 		fmt.Fprintf(&sb, "  %s\n", n)
 	}
 	sb.WriteString("<include name=\"x\"/> builds the template registered with markup.Define(\"x\", ...) with this scope.\n")
-	sb.WriteString("<slot name=\"x\"/> puts the view.Node the scope holds under x here.\n")
+	sb.WriteString("<slot name=\"x\"/> puts the view.Node the scope holds under the path x here (row.Knob in a for), a view.Custom one included.\n")
 	sb.WriteString("<icon name=\"trash\"/> draws a built-in or registered icon (widget.IconNames).\n")
 	sb.WriteString("Text and attribute values may use {{path}}, each step a map key or an exported struct field; if=\"name\" or \"!name\"; for=\"item in list\" over any slice, with {{$index}}; on-click=\"handler\" (and the other on-* events, each a func of the scope).\n")
 	sb.WriteString("What an element takes (state=\"x\", ...) are its Go constructor's arguments, all required; state and specs name a scope entry of the Go type.\n")
