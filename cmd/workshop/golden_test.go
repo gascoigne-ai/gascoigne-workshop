@@ -37,3 +37,13 @@ func distinctColors(img image.Image) int {
 	}
 	return len(seen)
 }
+
+// A golden is only worth comparing if the same scene drawn twice is the same
+// picture: nothing in the window (clock, caret blink, hover) may leak into
+// the capture.
+func TestShotsOfTheSameSceneAreIdentical(t *testing.T) {
+	first, second := renderShot(t), renderShot(t)
+	if diff := compareImages(first, second); diff.SizeDiffers || diff.Differing != 0 {
+		t.Errorf("two shots of the default window differ: %+v", diff)
+	}
+}
