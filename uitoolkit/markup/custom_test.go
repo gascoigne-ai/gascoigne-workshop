@@ -2,6 +2,7 @@ package markup
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -66,6 +67,26 @@ func TestSlotKeepsACustomNodesLayoutAndInput(t *testing.T) {
 	}
 	if got, want := view.Dump(template), view.Dump(goView); got != want {
 		t.Fatalf("after the click, template:\n%s\nGo:\n%s", got, want)
+	}
+}
+
+// A slot or include used to accept look and handler attributes at parse
+// and then drop them at build, so `<slot name="x" grow="1"/>` built a node
+// that did not grow and said nothing. They are a parse error now; name,
+// if and for, which both honor, are still accepted.
+func TestSlotAndIncludeRejectAttributesTheyWouldDrop(t *testing.T) {
+	for _, tag := range []string{"slot", "include"} {
+		for _, attribute := range []string{`grow="1"`, `bg="panel"`, `on-click="act"`} {
+			_, err := Parse("t.vml", []byte(`<row><`+tag+` name="x" `+attribute+`/></row>`))
+			if err == nil || !strings.Contains(err.Error(), "on <"+tag+">") {
+				t.Errorf("<%s %s>: err = %v, want an unknown attribute on <%s>", tag, attribute, err, tag)
+			}
+		}
+		for _, attribute := range []string{`if="show"`, `for="item in items"`} {
+			if _, err := Parse("t.vml", []byte(`<row><`+tag+` name="x" `+attribute+`/></row>`)); err != nil {
+				t.Errorf("<%s %s>: %v", tag, attribute, err)
+			}
+		}
 	}
 }
 

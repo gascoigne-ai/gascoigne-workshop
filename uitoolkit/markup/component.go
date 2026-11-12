@@ -586,6 +586,11 @@ func withOpts(node view.Node, opts []view.Option) view.Node {
 	return node
 }
 
+// standsIn are the elements that stand in for a node built elsewhere (a
+// slot's node, an included template): they take only name and the
+// directives, because an option on them would have nothing to apply to.
+var standsIn = map[string]bool{"slot": true, "include": true}
+
 // directives are attributes that control building, not looks.
 var directives = map[string]bool{"if": true, "for": true}
 
@@ -801,6 +806,9 @@ func Parse(name string, src []byte) (*Template, error) {
 			n := &node{tag: t.Name.Local, line: l}
 			spec := elements[n.tag]
 			for _, a := range t.Attr {
+				if standsIn[n.tag] && a.Name.Local != "name" && !directives[a.Name.Local] {
+					return fail(l, "unknown attribute %q on <%s>: it takes only name, if and for", a.Name.Local, n.tag)
+				}
 				_, isParam := spec.param(a.Name.Local)
 				_, isHandler := spec.handler(a.Name.Local)
 				if _, ok := spec.option(a.Name.Local); !ok && !isParam && !directives[a.Name.Local] && !isHandler && !(a.Name.Local == "name" && (n.tag == "icon" || n.tag == "slot" || n.tag == "include")) {
@@ -1278,6 +1286,7 @@ func Reference() string {
 	}
 	sb.WriteString("<include name=\"x\"/> builds the template registered with markup.Define(\"x\", ...) with this scope.\n")
 	sb.WriteString("<slot name=\"x\"/> puts the view.Node the scope holds under the path x here (row.Knob in a for), a view.Custom one included.\n")
+	sb.WriteString("<include> and <slot> take only name, if and for.\n")
 	sb.WriteString("<icon name=\"trash\"/> draws a built-in or registered icon (widget.IconNames).\n")
 	sb.WriteString("Text and attribute values may use {{path}}, each step a map key or an exported struct field; if=\"name\" or \"!name\"; for=\"item in list\" over any slice, with {{$index}}; on-click=\"handler\" (and the other on-* events, each a func of the scope).\n")
 	sb.WriteString("What an element takes (state=\"x\", ...) are its Go constructor's arguments, all required; state and specs name a scope entry of the Go type.\n")
