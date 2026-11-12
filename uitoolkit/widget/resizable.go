@@ -32,7 +32,8 @@ type resizableB struct {
 // the pointer. The size is kept in state within the given minimum and
 // maximum; the caller applies state.W and state.H to the element's own size,
 // and a double click on an edge puts both back to 0, the default. It has
-// no template attribute: its state is a Go value.
+// no element of its own in templates, because only a dialog uses it:
+// <resizable-dialog> is the template form.
 func Resizable(state *ResizeState, minW, minH, maxW, maxH int, items ...Item) *El {
 	return Custom(&resizableB{state: state, minW: minW, minH: minH, maxW: maxW, maxH: maxH}, items...)
 }

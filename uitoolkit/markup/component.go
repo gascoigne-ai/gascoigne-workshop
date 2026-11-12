@@ -33,7 +33,7 @@
 //	Viewers     code image
 //	Containers  scroll hscroll split (vertical as-ratio min-first min-second)
 //	Widgets     tabs scroll-tabs table   separator active-tab
-//	Dialogs     dialog dialog-title message-dialog   focus-scope
+//	Dialogs     dialog dialog-title message-dialog resizable-dialog   focus-scope
 //	Overlays    menu toasts
 //	Templates   include slot
 //
@@ -350,6 +350,13 @@ func messageDialog(parts elementParts) (view.Node, error) {
 	return widget.MessageDialog(parts.args[0].(*widget.DialogState), parts.items()...), nil
 }
 
+// resizableDialog builds a ResizableDialog from its state and its size
+// bounds, in the Go order: minimum width and height, maximum width and
+// height.
+func resizableDialog(parts elementParts) (view.Node, error) {
+	return widget.ResizableDialog(parts.args[0].(*widget.ResizeState), parts.args[1].(int), parts.args[2].(int), parts.args[3].(int), parts.args[4].(int), parts.items()...), nil
+}
+
 // popupMenu builds a Menu from the context it measures its rows with and
 // its state.
 func popupMenu(parts elementParts) (view.Node, error) {
@@ -547,6 +554,8 @@ var elements = map[string]elementSpec{
 	"dialog":         {build: container(widget.Dialog)},
 	"dialog-title":   {build: dialogTitle, params: []param{textParam("title")}},
 	"message-dialog": {build: messageDialog, params: []param{scopedState[widget.DialogState]("state")}},
+	"resizable-dialog": {build: resizableDialog, params: []param{scopedState[widget.ResizeState]("state"),
+		wholeParam("min-width"), wholeParam("min-height"), wholeParam("max-width"), wholeParam("max-height")}},
 	"menu": {build: popupMenu, holds: holdsNothing,
 		params: []param{scopedState[core.Ctx]("ctx"), scopedState[widget.MenuState]("state")}},
 	"toasts": {build: toastCorner, holds: holdsNothing,

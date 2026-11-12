@@ -335,6 +335,59 @@ func TestFontSourceAttributeTakesANilFace(t *testing.T) {
 	}
 }
 
+// resizableDialogTemplate is a 300x200 dialog, between 120x80 and 500x400,
+// centered in an 800x600 window: from x=250 to x=550.
+const resizableDialogTemplate = `
+	<stack>
+	  <row grow="1"/>
+	  <resizable-dialog state="size" min-width="120" min-height="80" max-width="{{maxWidth}}" max-height="400" w="300" h="200" on-dismiss="close">
+	    <text>body</text>
+	  </resizable-dialog>
+	</stack>`
+
+func TestResizableDialogElementMatchesTheGoResizableDialog(t *testing.T) {
+	size := &widget.ResizeState{}
+	closeDialog := func() {}
+	template := build(t, resizableDialogTemplate, Scope{"size": size, "maxWidth": 500, "close": closeDialog})
+	goView := view.Stack(view.Row(view.Grow(1)),
+		widget.ResizableDialog(size, 120, 80, 500, 400, view.W(300), view.H(200), view.OnDismiss(closeDialog), view.Text("body")))
+	sameLayout(t, testCtx(t), template, goView, 800, 600)
+	last := func(node view.Node) string {
+		children := node.Children()
+		return fmt.Sprintf("%+v", children[len(children)-1].Behavior())
+	}
+	if got, want := last(template), last(goView); got != want {
+		t.Fatalf("template dialog:\n%s\nGo dialog:\n%s", got, want)
+	}
+}
+
+func TestResizableDialogElementDragResizesTheStateWithinItsBounds(t *testing.T) {
+	ctx := testCtx(t)
+	size := &widget.ResizeState{}
+	template := build(t, resizableDialogTemplate, Scope{"size": size, "maxWidth": 500, "close": func() {}})
+	view.Layout(ctx, template, 800, 600)
+	for _, input := range []core.Input{{X: 548, Y: 300, Click: true, Held: true}, {X: 2000, Y: 300, Held: true}} {
+		ctx.In = input
+		view.Update(ctx, template)
+	}
+	if size.W != 500 {
+		t.Fatalf("dragging the right edge far out left the scope's state %d wide, want max-width 500", size.W)
+	}
+	ctx.In = core.Input{X: -2000, Y: 300, Held: true}
+	view.Update(ctx, template)
+	if size.W != 120 {
+		t.Fatalf("dragging the right edge far in left the scope's state %d wide, want min-width 120", size.W)
+	}
+}
+
+func TestResizableDialogNeedsItsStateAndFourBounds(t *testing.T) {
+	parseError(t, `<resizable-dialog state="s" min-width="1" min-height="1" max-width="9"/>`, "<resizable-dialog> needs a max-height")
+	err := buildError(t, `<resizable-dialog state="s" min-width="1" min-height="1" max-width="9" max-height="9"/>`, Scope{"s": (*widget.ResizeState)(nil)})
+	if err == nil || !strings.Contains(err.Error(), "nil *widget.ResizeState") {
+		t.Errorf("error = %v, want it to say s is a nil *widget.ResizeState", err)
+	}
+}
+
 func TestCheckboxOnMustBeTrueOrFalse(t *testing.T) {
 	parseError(t, `<checkbox/>`, "<checkbox> needs a on")
 	err := buildError(t, `<checkbox on="yes"/>`, nil)
