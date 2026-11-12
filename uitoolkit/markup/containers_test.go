@@ -3,6 +3,7 @@ package markup
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/theming"
@@ -308,6 +309,50 @@ func TestMenuElementClickPicksThroughTheScopeHandler(t *testing.T) {
 	view.Update(ctx, template)
 	if len(picked) != 1 || picked[0] != 3 {
 		t.Fatalf("clicking the last row picked %v, want [3]", picked)
+	}
+}
+
+func toastStack() *widget.ToastStack {
+	stack := &widget.ToastStack{}
+	stack.Show("saved", false, time.Unix(0, 0))
+	stack.Show("boom", true, time.Unix(0, 0))
+	return stack
+}
+
+func TestToastsElementMatchesTheGoToasts(t *testing.T) {
+	stack := toastStack()
+	template := build(t, `<stack><toasts stack="toasts" width="{{w}}" height="600" bottom-inset="28"/></stack>`,
+		Scope{"toasts": stack, "w": 800})
+	goView := view.Stack(widget.Toasts(stack, 800, 600, 28))
+	sameLayout(t, testCtx(t), template, goView, 800, 600)
+}
+
+func TestToastsElementClickDismissesFromTheStackOfTheScope(t *testing.T) {
+	ctx := testCtx(t)
+	stack := toastStack()
+	template := build(t, `<stack><toasts stack="toasts" width="800" height="600" bottom-inset="28"/></stack>`, Scope{"toasts": stack})
+	view.Layout(ctx, template, 800, 600)
+	first := template.Children()[0].Children()[0].Rect()
+	ctx.In = core.Input{X: first.X + 5, Y: first.Y + 5, Click: true}
+	view.Update(ctx, template)
+	if len(*stack) != 1 || (*stack)[0].Text != "boom" {
+		t.Fatalf("clicking the first toast left %+v", *stack)
+	}
+}
+
+func TestToastsElementOfAnEmptyStackBuildsNothing(t *testing.T) {
+	node := build(t, `<toasts stack="toasts" width="800" height="600" bottom-inset="28"/>`, Scope{"toasts": &widget.ToastStack{}})
+	if node != nil {
+		t.Fatalf("an empty stack built\n%s", view.Dump(node))
+	}
+}
+
+// widget.Toasts places itself from the window size and takes no options,
+// so an option on it would have nothing to apply to.
+func TestToastsElementTakesNoOptions(t *testing.T) {
+	err := buildError(t, `<toasts stack="toasts" width="800" height="600" bottom-inset="28" bg="panel"/>`, Scope{"toasts": toastStack()})
+	if err == nil || !strings.Contains(err.Error(), "no options") {
+		t.Errorf("error = %v, want it to say <toasts> takes no options", err)
 	}
 }
 

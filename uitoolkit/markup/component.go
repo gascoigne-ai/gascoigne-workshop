@@ -28,7 +28,7 @@
 //	Containers  scroll hscroll split (vertical as-ratio min-first min-second)
 //	Widgets     tabs scroll-tabs table   separator active-tab
 //	Dialogs     dialog dialog-title message-dialog   focus-scope
-//	Menus       menu
+//	Overlays    menu toasts
 //	Templates   include slot
 //
 // The usual form is an inline template in the method that feeds it, as
@@ -301,6 +301,15 @@ func popupMenu(parts elementParts) (view.Node, error) {
 	return widget.Menu(parts.args[0].(*core.Ctx), parts.args[1].(*widget.MenuState), parts.opts...), nil
 }
 
+// toastCorner builds Toasts from its stack, the window size and the inset
+// at the bottom. Toasts takes no options: it places itself in the window.
+func toastCorner(parts elementParts) (view.Node, error) {
+	if len(parts.opts) > 0 {
+		return nil, errors.New("<toasts> takes no options, only stack, width, height and bottom-inset")
+	}
+	return widget.Toasts(parts.args[0].(*widget.ToastStack), parts.args[1].(int), parts.args[2].(int), parts.args[3].(int)), nil
+}
+
 // grid builds a Table from its spec.
 func grid(parts elementParts) (view.Node, error) {
 	return widget.Table(parts.args[0].(widget.TableSpec), parts.opts...), nil
@@ -421,6 +430,8 @@ var elements = map[string]elementSpec{
 	"message-dialog": {build: messageDialog, params: []param{scoped[*widget.DialogState]("state")}},
 	"menu": {build: popupMenu, holds: holdsNothing,
 		params: []param{scoped[*core.Ctx]("ctx"), scoped[*widget.MenuState]("state")}},
+	"toasts": {build: toastCorner, holds: holdsNothing,
+		params: []param{scoped[*widget.ToastStack]("stack"), wholeParam("width"), wholeParam("height"), wholeParam("bottom-inset")}},
 }
 
 // withOpts applies options to an element that was built without them.
