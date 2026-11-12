@@ -218,9 +218,8 @@ func BorderL(t core.Token) Option { return func(e *El) { e.borderL = t } }
 
 // Separator draws the soft hairline between neighbours (tabs, table
 // columns) on the element's left edge; inset keeps it off the top and
-// bottom. The first of a row has none: When(i > 0, Separator(10)). It has
-// no template attribute because the template language has no conditional
-// options; use border-l where the line is always there.
+// bottom. The first of a row has none: When(i > 0, Separator(10)); a
+// template writes separator="10" on the elements after the first.
 func Separator(inset int) Option {
 	return func(e *El) { e.borderL, e.borderInset = core.BorderSoft, inset }
 }
@@ -301,7 +300,7 @@ func OnClick(f func()) Option { return func(e *El) { e.onClick = f } }
 
 // OnClickAt is OnClick with the pointer position, for what opens at the
 // click (a menu under the cursor); the app does not read the pointer itself.
-// It has no template attribute: a template names a func(), not a func(x, y).
+// In a template on-click-at names a func(x, y int) of the scope.
 func OnClickAt(f func(x, y int)) Option { return func(e *El) { e.onClickAt = f } }
 
 // OnMiddleClick runs f when the element is middle-clicked.

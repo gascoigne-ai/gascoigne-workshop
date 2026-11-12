@@ -97,8 +97,8 @@ func (s *scrollB) DrawOver(e *El, c *core.Ctx, dst *ebiten.Image) {
 // Scroll is a vertically scrolling column: its children may be taller
 // than the box, the wheel and a draggable scrollbar move them, and
 // children scrolled out of view do not receive clicks. It grows to fill
-// its parent unless given a size. It has no template attribute: its state
-// is a Go value.
+// its parent unless given a size. In a template it is <scroll state>, with
+// the state named from the scope.
 func Scroll(state *ScrollState, items ...Item) *El {
 	b := &scrollB{state: state}
 	return Custom(b, append([]Item{Grow(1), Clip()}, items...)...)

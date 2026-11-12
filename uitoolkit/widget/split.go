@@ -120,8 +120,8 @@ func (s *splitB) Update(e *El, c *core.Ctx) {
 // Split puts its two children side by side (or one above the other with
 // Vertical) with a draggable one-pixel divider between them. def is the
 // size of the first child until the user drags: pixels, or a fraction of
-// the container with AsRatio. Double click on the divider resets it. It has no template attribute: its
-// state is a Go value.
+// the container with AsRatio. Double click on the divider resets it. In a
+// template it is <split state default>, with the state named from the scope.
 func Split(state *SplitState, def float64, items ...Item) *El {
 	return Custom(&splitB{state: state, def: def}, items...)
 }
