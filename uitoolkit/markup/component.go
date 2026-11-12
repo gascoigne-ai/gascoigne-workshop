@@ -15,7 +15,18 @@
 // values may use {{path}} to read the Scope; `if` and `for="x in xs"` are
 // the two directives, and an `on-click` or other `on-*` event attribute
 // names a function of the scope with the type of the Go option's argument
-// (handlers).
+// (handlers). A container takes its Go constructor's arguments as
+// attributes: state and specs name a scope entry of their Go type
+// (<scroll state="list"> wants a *widget.ScrollState), and a wrong type
+// is an error that names it.
+//
+// # Finding your way
+//
+//	Layout      row col stack spacer hrule vrule
+//	Text        text caption icon
+//	Buttons     button primary-button link-button
+//	Containers  scroll hscroll
+//	Templates   include slot
 //
 // The usual form is an inline template in the method that feeds it, as
 // with a Vue component's `template` option:
@@ -44,6 +55,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -55,7 +67,8 @@ import (
 )
 
 // Scope holds what a template can read: strings, numbers, bools, lists
-// ([]any, []string or []map[string]any), nested maps, and func() handlers.
+// ([]any, []string or []map[string]any), nested maps, func() handlers,
+// and the typed state and specs that containers take (*widget.ScrollState).
 type Scope map[string]any
 
 // Error is a problem in a template, with where it is.
@@ -141,9 +154,11 @@ func (t *Template) MustBuild(sc Scope) view.Node {
 // Name is the name the template was parsed with.
 func (t *Template) Name() string { return t.name }
 
-// elementParts are what an element is built from: its options, children
+// elementParts are what an element is built from: its constructor
+// arguments (the values of its params, in their order), options, children
 // and text.
 type elementParts struct {
+	args []any
 	opts []view.Option
 	kids []view.Item
 	text string
@@ -186,11 +201,64 @@ func labelled(constructor func(label string, opts ...view.Option) *view.El) elem
 // placeholder is the builder of an element that buildOne makes itself.
 func placeholder(elementParts) (view.Node, error) { return nil, nil }
 
+// scroller builds a container whose constructor takes its scroll state
+// first (Scroll, HScroll).
+func scroller(constructor func(state *widget.ScrollState, items ...view.Item) *view.El) element {
+	return func(parts elementParts) (view.Node, error) {
+		return constructor(parts.args[0].(*widget.ScrollState), parts.items()...), nil
+	}
+}
+
+// param is a constructor argument an element reads from one of its own
+// attributes. Every param is required, as the Go argument is.
+type param struct {
+	name string
+	read func(value string, scope Scope) (any, error)
+}
+
+// scoped is a param whose value names a scope entry of the Go type T, the
+// way handlers bind functions: state and specs that a widget writes back
+// to, which no string can stand for.
+func scoped[T any](name string) param {
+	var zero T
+	want := fmt.Sprintf("%T", zero)
+	return param{name: name, read: func(value string, scope Scope) (any, error) {
+		found, err := lookup(strings.TrimSpace(value), scope)
+		if err != nil {
+			return nil, err
+		}
+		typed, ok := found.(T)
+		if !ok {
+			return nil, fmt.Errorf("%s=%q is not a %s", name, value, want)
+		}
+		return typed, nil
+	}}
+}
+
 // elementSpec is one row of the elements table. A leaf element takes text
 // and no children.
 type elementSpec struct {
-	build element
-	leaf  bool
+	build  element
+	leaf   bool
+	params []param
+}
+
+// param is the element's param called name, if it has one.
+func (spec elementSpec) param(name string) (param, bool) {
+	for _, candidate := range spec.params {
+		if candidate.name == name {
+			return candidate, true
+		}
+	}
+	return param{}, false
+}
+
+func (spec elementSpec) paramNames() []string {
+	names := make([]string, len(spec.params))
+	for i, candidate := range spec.params {
+		names[i] = candidate.name
+	}
+	return names
 }
 
 // elements are the tags a template may use.
@@ -209,6 +277,8 @@ var elements = map[string]elementSpec{
 	"slot":           {build: placeholder, leaf: true},
 	"caption":        {build: labelled(view.Caption), leaf: true},
 	"button":         {build: labelled(widget.Button), leaf: true},
+	"scroll":         {build: scroller(widget.Scroll), params: []param{scoped[*widget.ScrollState]("state")}},
+	"hscroll":        {build: scroller(widget.HScroll), params: []param{scoped[*widget.ScrollState]("state")}},
 }
 
 // withOpts applies options to an element that was built without them.
@@ -318,6 +388,7 @@ var attributes = map[string]func(v string) (view.Option, error){
 	"text-center":     flagAttr("text-center", view.TextCenter),
 	"optional":        flagAttr("optional", view.Optional),
 	"lighten":         flagAttr("lighten", view.Lighten),
+	"keep-in-view":    flagAttr("keep-in-view", view.KeepInView),
 }
 
 func intAttr(f func(int) view.Option) func(string) (view.Option, error) {
@@ -408,11 +479,16 @@ func Parse(name string, src []byte) (*Template, error) {
 				return fail(l, "unknown element <%s>%s", t.Name.Local, hint(t.Name.Local, elementNames(), "elements"))
 			}
 			n := &node{tag: t.Name.Local, line: l}
+			spec := elements[n.tag]
 			for _, a := range t.Attr {
-				if _, ok := attributes[a.Name.Local]; !ok && !directives[a.Name.Local] && !isHandler(a.Name.Local) && !(a.Name.Local == "name" && (n.tag == "icon" || n.tag == "slot" || n.tag == "include")) {
-					return fail(l, "unknown attribute %q on <%s>%s", a.Name.Local, n.tag, hint(a.Name.Local, attributeNames(), "attributes"))
+				_, isParam := spec.param(a.Name.Local)
+				if _, ok := attributes[a.Name.Local]; !ok && !isParam && !directives[a.Name.Local] && !isHandler(a.Name.Local) && !(a.Name.Local == "name" && (n.tag == "icon" || n.tag == "slot" || n.tag == "include")) {
+					return fail(l, "unknown attribute %q on <%s>%s", a.Name.Local, n.tag, hint(a.Name.Local, append(attributeNames(), spec.paramNames()...), "attributes"))
 				}
 				n.attrs = append(n.attrs, attr{a.Name.Local, a.Value, l})
+			}
+			if missing := n.missingParam(spec); missing != "" {
+				return fail(l, "<%s> needs a %s attribute", n.tag, missing)
 			}
 			if len(stack) > 0 {
 				parent := stack[len(stack)-1]
@@ -513,6 +589,36 @@ func (t *Template) build(n *node, sc Scope) (view.Node, error) {
 	return view.Frag(nodes...), nil
 }
 
+// missingParam is the first param of spec that n does not set, "" when it
+// sets them all.
+func (n *node) missingParam(spec elementSpec) string {
+	for _, wanted := range spec.params {
+		if !slices.ContainsFunc(n.attrs, func(set attr) bool { return set.name == wanted.name }) {
+			return wanted.name
+		}
+	}
+	return ""
+}
+
+// args reads the values of the element's params from n's attributes, in
+// the order of the params.
+func (t *Template) args(n *node, spec elementSpec, scope Scope) ([]any, error) {
+	values := make([]any, len(spec.params))
+	for _, set := range n.attrs {
+		for i, wanted := range spec.params {
+			if set.name != wanted.name {
+				continue
+			}
+			value, err := wanted.read(set.value, scope)
+			if err != nil {
+				return nil, t.errf(n, "%v", err)
+			}
+			values[i] = value
+		}
+	}
+	return values, nil
+}
+
 func isHandler(name string) bool {
 	_, ok := handlers[name]
 	return ok
@@ -548,6 +654,9 @@ func (t *Template) buildOne(n *node, sc Scope) (view.Node, error) {
 		case "name": // the icon's name, which is its text
 			continue
 		default:
+			if _, isParam := elements[n.tag].param(a.name); isParam {
+				continue // read by args
+			}
 			if h, ok := handlers[a.name]; ok {
 				opt, err := t.bindHandler(n, a, h, sc)
 				if err != nil {
@@ -623,7 +732,11 @@ func (t *Template) buildOne(n *node, sc Scope) (view.Node, error) {
 			return nil, t.errf(n, "no icon %q; icons: %s", text, strings.Join(widget.IconNames(), " "))
 		}
 	}
-	built, err := elements[n.tag].build(elementParts{opts: opts, kids: kids, text: text})
+	args, err := t.args(n, elements[n.tag], sc)
+	if err != nil {
+		return nil, err
+	}
+	built, err := elements[n.tag].build(elementParts{args: args, opts: opts, kids: kids, text: text})
 	if err != nil {
 		return nil, t.errf(n, "%v", err)
 	}
@@ -801,7 +914,11 @@ func Reference() string {
 		if elements[n].leaf {
 			kind = "text and no children"
 		}
-		fmt.Fprintf(&sb, "  <%s>  %s\n", n, kind)
+		fmt.Fprintf(&sb, "  <%s>  %s", n, kind)
+		if params := elements[n].paramNames(); len(params) > 0 {
+			fmt.Fprintf(&sb, "; takes %s", strings.Join(params, " "))
+		}
+		sb.WriteByte('\n')
 	}
 	sb.WriteString("Attributes (Go option in kebab-case):\n")
 	for _, n := range attributeNames() {
@@ -811,6 +928,7 @@ func Reference() string {
 	sb.WriteString("<slot name=\"x\"/> puts the view.Node the scope holds under x here.\n")
 	sb.WriteString("<icon name=\"trash\"/> draws a built-in or registered icon (widget.IconNames).\n")
 	sb.WriteString("Text and attribute values may use {{path}}; if=\"name\" or \"!name\"; for=\"item in list\"; on-click=\"handler\" (and the other on-* events, each a func of the scope).\n")
+	sb.WriteString("What an element takes (state=\"x\", ...) are its Go constructor's arguments, all required; state and specs name a scope entry of the Go type.\n")
 	return sb.String()
 }
 

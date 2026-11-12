@@ -201,9 +201,14 @@ func TestErrorsSuggestAndListTheValidNames(t *testing.T) {
 
 func TestReferenceListsEveryElementAndAttribute(t *testing.T) {
 	ref := Reference()
-	for n := range elements {
+	for n, spec := range elements {
 		if !strings.Contains(ref, "<"+n+">") {
 			t.Errorf("reference misses element %s", n)
+		}
+		for _, name := range spec.paramNames() {
+			if !strings.Contains(ref, " "+name) {
+				t.Errorf("reference misses %s of <%s>", name, n)
+			}
 		}
 	}
 	for n := range attributes {
