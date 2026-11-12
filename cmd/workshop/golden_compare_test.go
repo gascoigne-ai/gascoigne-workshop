@@ -5,6 +5,7 @@ package main
 import (
 	"image"
 	"image/color"
+	"os/exec"
 	"testing"
 )
 
@@ -96,5 +97,38 @@ func TestMaskImageHidesOnlyTheRectangles(t *testing.T) {
 	}
 	if img.At(3, 3) != (color.RGBA{R: 50, G: 60, B: 70, A: 255}) {
 		t.Error("the original image must not be changed")
+	}
+}
+
+// Mesa's software rasterizer or Xvfb now and then kills a child under heavy
+// CPU load (seen as exit status 139 in make check); a crash is run again
+// once, a normal failure is not.
+func TestRunShotRetriesOnlyACrashedChild(t *testing.T) {
+	crash := func() error { return exec.Command("sh", "-c", "kill -SEGV $$").Run() }
+	failure := func() error { return exec.Command("sh", "-c", "exit 1").Run() }
+
+	tests := []struct {
+		name      string
+		firstRun  func() error
+		wantCalls int
+	}{
+		{"a crash is retried", crash, 2},
+		{"a plain failure is not", failure, 1},
+		{"success runs once", func() error { return nil }, 1},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			calls := 0
+			retryOnCrash(t, func() error {
+				calls++
+				if calls == 1 {
+					return test.firstRun()
+				}
+				return nil
+			})
+			if calls != test.wantCalls {
+				t.Errorf("run called %d times, want %d", calls, test.wantCalls)
+			}
+		})
 	}
 }

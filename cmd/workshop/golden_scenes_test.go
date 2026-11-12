@@ -21,10 +21,11 @@ type goldenScene struct {
 
 // Every scene is a golden under testdata/golden. Add a row, run with -update,
 // look at the PNG, then commit both.
-// The response header and the status bar print how long the request took.
+// The response header and the status bar print how long the request took; the
+// status pill left of it moves with the number of digits, so the mask covers it.
 var (
-	durationStacked = image.Rect(1195, 462, 1280, 497) // response pane under the request
-	durationSide    = image.Rect(1195, 150, 1280, 185) // response pane beside the request
+	durationStacked = image.Rect(1100, 462, 1280, 497) // response pane under the request
+	durationSide    = image.Rect(1100, 150, 1280, 185) // response pane beside the request
 	durationStatus  = image.Rect(0, 772, 400, 800)     // status bar line
 )
 

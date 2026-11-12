@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"image"
 	"image/png"
@@ -71,9 +72,15 @@ func renderShotSized(t *testing.T, width, height int, args ...string) image.Imag
 
 	ctx, cancel := context.WithTimeout(context.Background(), shotRunTimeout)
 	defer cancel()
-	command := exec.CommandContext(ctx, xvfb, append([]string{"-n", fmt.Sprint(displayNumber()), "-s", fmt.Sprintf("-screen 0 %dx%dx24", width, height), binary}, flags...)...)
-	command.Env = softwareEnv(sandbox)
-	if output, err := command.CombinedOutput(); err != nil {
+	var output []byte
+	err = retryOnCrash(t, func() error {
+		command := exec.CommandContext(ctx, xvfb, append([]string{"-n", fmt.Sprint(displayNumber()), "-s", fmt.Sprintf("-screen 0 %dx%dx24", width, height), binary}, flags...)...)
+		command.Env = softwareEnv(sandbox)
+		var runErr error
+		output, runErr = command.CombinedOutput()
+		return runErr
+	})
+	if err != nil {
 		t.Fatalf("run program: %v\n%s", err, output)
 	}
 	return readPNG(t, out)
@@ -126,4 +133,18 @@ func readPNG(t *testing.T, path string) image.Image {
 		t.Fatalf("decode shot: %v", err)
 	}
 	return img
+}
+
+// retryOnCrash runs once more a command that a signal killed: ExitCode is -1
+// for a process that died of one, and above 128 when a shell such as
+// xvfb-run reports it. A normal failure is returned as it is.
+func retryOnCrash(t *testing.T, run func() error) error {
+	t.Helper()
+	err := run()
+	var exitErr *exec.ExitError
+	if !errors.As(err, &exitErr) || (exitErr.ExitCode() != -1 && exitErr.ExitCode() <= 128) {
+		return err
+	}
+	t.Logf("the program was killed (%v); running it once more", err)
+	return run()
 }
