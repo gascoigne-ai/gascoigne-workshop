@@ -25,7 +25,7 @@
 //	Layout      row col stack spacer hrule vrule
 //	Text        text caption icon
 //	Buttons     button primary-button link-button
-//	Containers  scroll hscroll
+//	Containers  scroll hscroll split (vertical as-ratio min-first min-second)
 //	Templates   include slot
 //
 // The usual form is an inline template in the method that feeds it, as
@@ -235,12 +235,71 @@ func scoped[T any](name string) param {
 	}}
 }
 
+// realParam is a param that is a number, written in the template or read
+// with {{path}}.
+func realParam(name string) param {
+	return param{name: name, read: func(value string, scope Scope) (any, error) {
+		text, err := interpolate(value, scope)
+		if err != nil {
+			return nil, err
+		}
+		number, err := strconv.ParseFloat(strings.TrimSpace(text), 64)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %q is not a number", name, text)
+		}
+		return number, nil
+	}}
+}
+
+// splitter builds a Split from its state and default size.
+func splitter(parts elementParts) (view.Node, error) {
+	return widget.Split(parts.args[0].(*widget.SplitState), parts.args[1].(float64), parts.items()...), nil
+}
+
+// attributeReader turns an attribute value into an option.
+type attributeReader func(value string) (view.Option, error)
+
+// splitOptions are the attributes only a split takes: their options
+// configure the split behavior and would panic on another element.
+var splitOptions = map[string]attributeReader{
+	"vertical":   flagAttr("vertical", widget.Vertical),
+	"as-ratio":   flagAttr("as-ratio", widget.AsRatio),
+	"min-first":  intAttr(widget.MinFirst),
+	"min-second": intAttr(widget.MinSecond),
+}
+
 // elementSpec is one row of the elements table. A leaf element takes text
-// and no children.
+// and no children. options are attributes only this element takes.
 type elementSpec struct {
-	build  element
-	leaf   bool
-	params []param
+	build   element
+	leaf    bool
+	params  []param
+	options map[string]attributeReader
+}
+
+// option is the reader of the attribute called name on this element: one
+// of its own options or a generic attribute.
+func (spec elementSpec) option(name string) (attributeReader, bool) {
+	if read, ok := spec.options[name]; ok {
+		return read, true
+	}
+	read, ok := attributes[name]
+	return read, ok
+}
+
+func (spec elementSpec) optionNames() []string {
+	names := make([]string, 0, len(spec.options))
+	for name := range spec.options {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
+}
+
+// ownNames are the names of the attributes only this element takes: its
+// params, then its options.
+func (spec elementSpec) ownNames() []string {
+	return append(spec.paramNames(), spec.optionNames()...)
 }
 
 // param is the element's param called name, if it has one.
@@ -279,6 +338,8 @@ var elements = map[string]elementSpec{
 	"button":         {build: labelled(widget.Button), leaf: true},
 	"scroll":         {build: scroller(widget.Scroll), params: []param{scoped[*widget.ScrollState]("state")}},
 	"hscroll":        {build: scroller(widget.HScroll), params: []param{scoped[*widget.ScrollState]("state")}},
+	"split": {build: splitter, options: splitOptions,
+		params: []param{scoped[*widget.SplitState]("state"), realParam("default")}},
 }
 
 // withOpts applies options to an element that was built without them.
@@ -482,8 +543,8 @@ func Parse(name string, src []byte) (*Template, error) {
 			spec := elements[n.tag]
 			for _, a := range t.Attr {
 				_, isParam := spec.param(a.Name.Local)
-				if _, ok := attributes[a.Name.Local]; !ok && !isParam && !directives[a.Name.Local] && !isHandler(a.Name.Local) && !(a.Name.Local == "name" && (n.tag == "icon" || n.tag == "slot" || n.tag == "include")) {
-					return fail(l, "unknown attribute %q on <%s>%s", a.Name.Local, n.tag, hint(a.Name.Local, append(attributeNames(), spec.paramNames()...), "attributes"))
+				if _, ok := spec.option(a.Name.Local); !ok && !isParam && !directives[a.Name.Local] && !isHandler(a.Name.Local) && !(a.Name.Local == "name" && (n.tag == "icon" || n.tag == "slot" || n.tag == "include")) {
+					return fail(l, "unknown attribute %q on <%s>%s", a.Name.Local, n.tag, hint(a.Name.Local, append(attributeNames(), spec.ownNames()...), "attributes"))
 				}
 				n.attrs = append(n.attrs, attr{a.Name.Local, a.Value, l})
 			}
@@ -669,7 +730,8 @@ func (t *Template) buildOne(n *node, sc Scope) (view.Node, error) {
 			if err != nil {
 				return nil, t.errf(n, "%v", err)
 			}
-			opt, err := attributes[a.name](val)
+			read, _ := elements[n.tag].option(a.name) // Parse checked it exists
+			opt, err := read(val)
 			if err != nil {
 				return nil, t.errf(n, "%s: %v", a.name, err)
 			}
@@ -917,6 +979,9 @@ func Reference() string {
 		fmt.Fprintf(&sb, "  <%s>  %s", n, kind)
 		if params := elements[n].paramNames(); len(params) > 0 {
 			fmt.Fprintf(&sb, "; takes %s", strings.Join(params, " "))
+		}
+		if own := elements[n].optionNames(); len(own) > 0 {
+			fmt.Fprintf(&sb, "; options %s", strings.Join(own, " "))
 		}
 		sb.WriteByte('\n')
 	}

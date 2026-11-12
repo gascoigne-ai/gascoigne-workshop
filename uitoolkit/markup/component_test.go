@@ -205,7 +205,7 @@ func TestReferenceListsEveryElementAndAttribute(t *testing.T) {
 		if !strings.Contains(ref, "<"+n+">") {
 			t.Errorf("reference misses element %s", n)
 		}
-		for _, name := range spec.paramNames() {
+		for _, name := range spec.ownNames() {
 			if !strings.Contains(ref, " "+name) {
 				t.Errorf("reference misses %s of <%s>", name, n)
 			}

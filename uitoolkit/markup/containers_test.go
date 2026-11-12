@@ -92,3 +92,58 @@ func TestScrollWithoutStateIsAParseError(t *testing.T) {
 		t.Errorf("error = %v, want it to say <scroll> needs state", err)
 	}
 }
+
+func TestSplitElementMatchesTheGoSplit(t *testing.T) {
+	tests := []struct {
+		name       string
+		attributes string
+		goView     func(state *widget.SplitState, first, second view.Node) view.Node
+	}{
+		{"pixels", `default="200"`, func(state *widget.SplitState, first, second view.Node) view.Node {
+			return widget.Split(state, 200, first, second)
+		}},
+		{"vertical", `default="150" vertical`, func(state *widget.SplitState, first, second view.Node) view.Node {
+			return widget.Split(state, 150, widget.Vertical(), first, second)
+		}},
+		{"ratio", `default="0.25" as-ratio`, func(state *widget.SplitState, first, second view.Node) view.Node {
+			return widget.Split(state, 0.25, widget.AsRatio(), first, second)
+		}},
+		{"first minimum", `default="10" min-first="120"`, func(state *widget.SplitState, first, second view.Node) view.Node {
+			return widget.Split(state, 10, widget.MinFirst(120), first, second)
+		}},
+		{"second minimum", `default="590" min-second="150"`, func(state *widget.SplitState, first, second view.Node) view.Node {
+			return widget.Split(state, 590, widget.MinSecond(150), first, second)
+		}},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			state := &widget.SplitState{}
+			template := build(t, `<split state="split" `+test.attributes+`><row bg="panel"/><row bg="frame"/></split>`, Scope{"split": state})
+			goView := test.goView(state, view.Row(view.Bg(core.Panel)), view.Row(view.Bg(core.Frame)))
+			sameLayout(t, testCtx(t), template, goView, 601, 400)
+		})
+	}
+}
+
+func TestSplitElementDragMovesTheStateOfTheScope(t *testing.T) {
+	ctx := testCtx(t)
+	state := &widget.SplitState{}
+	template := build(t, `<split state="split" default="200"><row/><row/></split>`, Scope{"split": state})
+	view.Layout(ctx, template, 600, 100)
+	ctx.In = core.Input{X: 200, Y: 40, Click: true, Held: true}
+	view.Update(ctx, template)
+	ctx.In = core.Input{X: 320, Y: 40, Held: true}
+	view.Update(ctx, template)
+	if state.Size != 320 {
+		t.Fatalf("after dragging the divider to x=320 the scope's state holds %v", state.Size)
+	}
+}
+
+// Split's options set the split behavior, so another element must not take them.
+func TestSplitOptionsAreOnlyForSplit(t *testing.T) {
+	for _, attribute := range []string{"vertical", "as-ratio", `min-first="1"`, `min-second="1"`, `default="1"`} {
+		if _, err := Parse("t.vml", []byte(`<row `+attribute+`/>`)); err == nil {
+			t.Errorf("<row %s> parsed", attribute)
+		}
+	}
+}
