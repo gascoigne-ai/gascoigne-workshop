@@ -12,5 +12,12 @@ Each iteration moves one view; the main session does the checks itself, it does 
    c. `refactor(<scope>): <view> is a markup template`, trailer included.
 4. Verify in the worktree, yourself: `make check` (also `-tags release`, run by it); the pinned tests are unchanged in the diff (only additions before the swap); `go test ./cmd/workshop` (golden scenes) green with no golden file changed (`git diff --stat -- '*.png'` empty); `make shot` PNG of an affected scene looked at; Go lines removed.
 5. Pass: merge, set the row `done` with the commit hash. Fail: one retry with a fresh agent given the failure output. Second failure: set `blocked` with the reason; if a later row needs it, stop and ask the user, otherwise continue.
-6. Progress count after each iteration: `grep -rEc '\b(Row|Col|Stack)\(' internal/*/ui` outside `Custom` behaviors, reported in one line.
-7. Next wakeup: 60 to 270 s while an agent runs or work remains; 1200 s or more as a fallback.
+6. Conventions learned from row 1 (give them to every agent):
+   - Sizes and colors that a theme token or constant provides (`w.RowH`, `w.CompactH`) are passed through the scope (`h="{{rowH}}"`), never written as literals (rules.md); a literal that is not a theme value stays a literal.
+   - Typed view models: Go builds a small struct per row (fields only, no methods; decision 53), the template walks it; state objects in it are pointer fields.
+   - `view.Dump` does not show a field's text or ellipsis truncation: pin those through input tests (a retype needs `EditEnd` first).
+   - A row's package name in the manifest may be wrong; check the directory.
+   - Net Go lines usually grow (view models); the measure is construction calls removed.
+   - If markup lacks something, stop and report it; do not special-case.
+7. Progress count after each iteration: `grep -rEc '\b(Row|Col|Stack)\(' internal/*/ui` outside `Custom` behaviors, reported in one line.
+8. Next wakeup: 60 to 270 s while an agent runs or work remains; 1200 s or more as a fallback.
