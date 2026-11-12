@@ -84,3 +84,17 @@ func TestWithinBudgetAllowsAFewPixels(t *testing.T) {
 		}
 	}
 }
+
+func TestMaskImageHidesOnlyTheRectangles(t *testing.T) {
+	img := solid(10, 10, color.RGBA{R: 50, G: 60, B: 70, A: 255})
+	masked := maskImage(img, []image.Rectangle{image.Rect(2, 2, 5, 5)})
+	if masked.At(3, 3) == img.At(3, 3) {
+		t.Error("pixel (3,3) is inside the mask and must change")
+	}
+	if masked.At(5, 5) != img.At(5, 5) || masked.At(1, 1) != img.At(1, 1) {
+		t.Error("pixels outside the mask must stay as they were")
+	}
+	if img.At(3, 3) != (color.RGBA{R: 50, G: 60, B: 70, A: 255}) {
+		t.Error("the original image must not be changed")
+	}
+}

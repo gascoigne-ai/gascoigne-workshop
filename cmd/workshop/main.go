@@ -85,6 +85,8 @@ func main() {
 	flag.StringVar(&opts.WorkspaceDir, "workspace", "", "folder to load and save the collection; empty uses the last one, else the client config (release build); the default build ignores the last one and shows the example server")
 	opts.DefaultWorkspace = settingsfile.DefaultWorkspace()
 	iconPNG := flag.String("icon-png", "", "write the program icon (256x256 PNG) to this path and exit, for packaging")
+	flag.StringVar(&opts.ScreenshotRequest, "request", "", "open the request with this name before the screenshot")
+	flag.StringVar(&opts.ScreenshotPage, "page", "", "open the settings dialog on this page (appearance, colors, shortcuts, requests, general) before the screenshot")
 	windowW, windowH := windowWidth, windowHeight
 	flag.Func("window", "WIDTHxHEIGHT: open the window at this size, for screenshots", func(spec string) error {
 		var err error

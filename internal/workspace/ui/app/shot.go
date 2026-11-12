@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -30,6 +31,8 @@ type screenshot struct {
 	captured    bool
 	err         error
 	set         []string // key=value settings applied live before the capture, as the dialog would
+	request     string   // name of the request to open before the capture
+	page        string   // settings page to show before the capture
 }
 
 // Err is the error of the capture, if any.
@@ -48,6 +51,7 @@ func (a *App) shotUpdate() error {
 		for _, spec := range s.set {
 			a.applyShotSetting(spec)
 		}
+		a.showShotTarget()
 	}
 	if s.sendOnStart && !s.sent {
 		s.sent = true
@@ -129,4 +133,35 @@ func (a *App) applyShotSetting(spec string) {
 		return
 	}
 	a.changeSettings(func(s *settings.Settings) { *s = settings.With(*s, key, value) })
+}
+
+// showShotTarget opens the request and the settings page a capture asks for,
+// so a scene other than the first tab can be drawn. A request that is not in
+// the collection ends the run with an error: showing the default tab instead
+// would let a golden pass for the wrong scene.
+func (a *App) showShotTarget() {
+	s := &a.shot
+	if s.request != "" {
+		req := a.findRequestByName(s.request)
+		if req == nil {
+			s.err = fmt.Errorf("screenshot request %q is not in the collection", s.request)
+			s.captured = true
+			return
+		}
+		a.openRequest(req)
+	}
+	if s.page != "" {
+		a.prefs.Cat = s.page
+		a.menu = true
+	}
+}
+
+func (a *App) findRequestByName(name string) *model.Request {
+	var found *model.Request
+	walkRequests(&a.col.Folder, "", func(_ string, req *model.Request) {
+		if found == nil && req.Name == name {
+			found = req
+		}
+	})
+	return found
 }

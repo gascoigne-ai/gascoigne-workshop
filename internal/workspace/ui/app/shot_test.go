@@ -122,3 +122,37 @@ func TestScreenshotWithSendOnASocketGoesAheadAfterAFailedConnect(t *testing.T) {
 		t.Fatal("the error is what the shot should show")
 	}
 }
+
+func TestScreenshotOpensTheNamedRequest(t *testing.T) {
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotRequest: "Echo"})
+	for range setFrame {
+		if err := a.shotUpdate(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got := a.cur().Req.Name; got != "Echo" {
+		t.Errorf("open request = %q, want Echo", got)
+	}
+}
+
+func TestScreenshotOpensTheNamedSettingsPage(t *testing.T) {
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotPage: "colors"})
+	for range setFrame {
+		if err := a.shotUpdate(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if !a.menu || a.prefs.Cat != "colors" {
+		t.Errorf("settings open = %v, page = %q, want the dialog on colors", a.menu, a.prefs.Cat)
+	}
+}
+
+func TestScreenshotWithAnUnknownRequestFails(t *testing.T) {
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotRequest: "No such request"})
+	for range setFrame {
+		a.shotUpdate()
+	}
+	if a.Err() == nil {
+		t.Error("a request that is not in the collection must be reported, not silently shown as the default")
+	}
+}

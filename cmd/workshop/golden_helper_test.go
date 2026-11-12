@@ -6,6 +6,7 @@ import (
 	"flag"
 	"image"
 	"image/color"
+	"image/draw"
 	"image/png"
 	"os"
 	"path/filepath"
@@ -83,10 +84,21 @@ func channelDiffers(want, got uint8) bool {
 	return got-want > shotTolerance
 }
 
+// maskImage is a copy of img with the rectangles painted black: the places a
+// scene draws something that changes from run to run (a measured duration).
+func maskImage(img image.Image, rects []image.Rectangle) image.Image {
+	masked := image.NewRGBA(img.Bounds())
+	draw.Draw(masked, masked.Bounds(), img, img.Bounds().Min, draw.Src)
+	for _, rect := range rects {
+		draw.Draw(masked, rect, image.NewUniform(color.Black), image.Point{}, draw.Src)
+	}
+	return masked
+}
+
 // assertGolden compares img with testdata/golden/<name>.png. On a mismatch it
 // writes <name>.got.png and <name>.diff.png next to the golden for a look;
 // `go test ./cmd/workshop -update` rewrites the golden.
-func assertGolden(t *testing.T, name string, img image.Image) {
+func assertGolden(t *testing.T, name string, img image.Image, mask ...image.Rectangle) {
 	t.Helper()
 	path := filepath.Join(goldenDir, name+".png")
 	if *updateGolden {
@@ -94,14 +106,14 @@ func assertGolden(t *testing.T, name string, img image.Image) {
 		return
 	}
 	want := readGolden(t, path)
-	diff := compareImages(want, img)
+	diff := compareImages(maskImage(want, mask), maskImage(img, mask))
 	if diff.withinBudget() {
 		return
 	}
 	gotPath := filepath.Join(goldenDir, name+".got.png")
 	writePNG(t, gotPath, img)
 	if !diff.SizeDiffers {
-		writePNG(t, filepath.Join(goldenDir, name+".diff.png"), diffImage(want, img))
+		writePNG(t, filepath.Join(goldenDir, name+".diff.png"), diffImage(maskImage(want, mask), maskImage(img, mask)))
 	}
 	t.Errorf("%s differs from its golden: size differs %v, %d pixels off (budget %d); see %s, then -update if the change is wanted",
 		name, diff.SizeDiffers, diff.Differing, maxDifferingPixels, gotPath)

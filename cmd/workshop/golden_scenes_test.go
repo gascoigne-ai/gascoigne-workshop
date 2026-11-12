@@ -16,33 +16,48 @@ type goldenScene struct {
 	name          string
 	width, height int
 	args          []string
-	server        bool // serve the example root page on :8081, which the sample request calls
+	mask          []image.Rectangle // places that show a measured duration, which changes from run to run
 }
 
 // Every scene is a golden under testdata/golden. Add a row, run with -update,
 // look at the PNG, then commit both.
+// The response header and the status bar print how long the request took.
+var (
+	durationStacked = image.Rect(1195, 462, 1280, 497) // response pane under the request
+	durationSide    = image.Rect(1195, 150, 1280, 185) // response pane beside the request
+	durationStatus  = image.Rect(0, 772, 400, 800)     // status bar line
+)
+
 var goldenScenes = []goldenScene{
 	{name: "default", width: shotWidth, height: shotHeight},
-	{name: "response", width: shotWidth, height: shotHeight, args: []string{"-send"}, server: true},
+	{name: "response", width: shotWidth, height: shotHeight, args: []string{"-send"}, mask: []image.Rectangle{durationStacked, durationStatus}},
 	{name: "settings-menu", width: shotWidth, height: shotHeight, args: []string{"-menu"}},
 	{name: "light-theme", width: shotWidth, height: shotHeight, args: []string{"-set", "theme=light"}},
 	{name: "flat-high-contrast", width: shotWidth, height: shotHeight, args: []string{"-set", "flat=true", "-set", "contrast=high"}},
-	{name: "side-by-side", width: shotWidth, height: shotHeight, args: []string{"-send", "-set", "layout=side"}, server: true},
+	{name: "side-by-side", width: shotWidth, height: shotHeight, args: []string{"-send", "-set", "layout=side"}, mask: []image.Rectangle{durationSide, durationStatus}},
 	{name: "large-text", width: shotWidth, height: shotHeight, args: []string{"-set", "textSize=large"}},
+	{name: "request-post", width: shotWidth, height: shotHeight, args: []string{"-request", "Echo"}},
+	{name: "request-websocket", width: shotWidth, height: shotHeight, args: []string{"-request", "WebSocket Echo"}},
+	{name: "request-sse", width: shotWidth, height: shotHeight, args: []string{"-request", "SSE Ticks"}},
+	{name: "request-mcp", width: shotWidth, height: shotHeight, args: []string{"-request", "MCP Tools"}},
+	{name: "request-grpc", width: shotWidth, height: shotHeight, args: []string{"-request", "gRPC Health"}},
+	{name: "settings-colors", width: shotWidth, height: shotHeight, args: []string{"-page", "colors"}},
+	{name: "settings-shortcuts", width: shotWidth, height: shotHeight, args: []string{"-page", "shortcuts"}},
+	{name: "settings-requests", width: shotWidth, height: shotHeight, args: []string{"-page", "requests"}},
+	{name: "settings-general", width: shotWidth, height: shotHeight, args: []string{"-page", "general"}},
 	{name: "narrow", width: 800, height: 520, args: []string{"-window", "800x520"}},
 }
 
 func TestGoldenScenes(t *testing.T) {
+	serveExampleRoot(t) // once for all scenes: they run in parallel
 	for _, scene := range goldenScenes {
 		t.Run(scene.name, func(t *testing.T) {
-			if scene.server {
-				serveExampleRoot(t)
-			}
+			t.Parallel()
 			img := renderShotSized(t, scene.width, scene.height, scene.args...)
 			if got, want := img.Bounds().Size(), (image.Point{X: scene.width, Y: scene.height}); got != want {
 				t.Fatalf("%s is %v, want the %v the scene asks for", scene.name, got, want)
 			}
-			assertGolden(t, scene.name, img)
+			assertGolden(t, scene.name, img, scene.mask...)
 		})
 	}
 }
@@ -53,7 +68,7 @@ const exampleRoot = "gascoigne example server\n/echo\n/status/{code}\n/delay/{ms
 
 // serveExampleRoot answers the sample request's address, so a scene that
 // sends it shows a response and not "connection refused". A busy port skips
-// the scene: another server there would draw something else.
+// the test: another server there would draw something else.
 func serveExampleRoot(t *testing.T) {
 	t.Helper()
 	listener, err := net.Listen("tcp", "127.0.0.1:8081")

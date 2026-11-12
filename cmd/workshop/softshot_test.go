@@ -11,11 +11,21 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
 
 const shotRunTimeout = 90 * time.Second
+
+// nextDisplay hands every shot its own X display number: xvfb-run -a picks
+// the lowest free one and parallel runs would all pick the same. The test
+// process id spreads the range so two test runs rarely meet.
+var nextDisplay atomic.Int64
+
+func displayNumber() int64 {
+	return 100 + int64(os.Getpid()%500)*100 + nextDisplay.Add(1)%100
+}
 
 // The program is built once per test run; every shot starts it as a child.
 var (
@@ -61,7 +71,7 @@ func renderShotSized(t *testing.T, width, height int, args ...string) image.Imag
 
 	ctx, cancel := context.WithTimeout(context.Background(), shotRunTimeout)
 	defer cancel()
-	command := exec.CommandContext(ctx, xvfb, append([]string{"-a", "-s", fmt.Sprintf("-screen 0 %dx%dx24", width, height), binary}, flags...)...)
+	command := exec.CommandContext(ctx, xvfb, append([]string{"-n", fmt.Sprint(displayNumber()), "-s", fmt.Sprintf("-screen 0 %dx%dx24", width, height), binary}, flags...)...)
 	command.Env = softwareEnv(sandbox)
 	if output, err := command.CombinedOutput(); err != nil {
 		t.Fatalf("run program: %v\n%s", err, output)
