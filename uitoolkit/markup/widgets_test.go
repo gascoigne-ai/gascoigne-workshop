@@ -119,3 +119,41 @@ func TestFieldOptionsAreOnlyForField(t *testing.T) {
 		})
 	}
 }
+
+func TestAreaElementMatchesTheGoArea(t *testing.T) {
+	body := widget.NewTextArea("{\n  \"a\": 1\n}")
+	edited := func() {}
+	template := build(t, `<row><area state="body" grow="1" bg="sunken" on-change="edited" text-menu="bodyText"/></row>`,
+		Scope{"body": &body, "bodyText": &body.TextField, "edited": edited})
+	goView := view.Row(widget.Area(&body, view.Grow(1), view.Bg(core.Sunken), view.OnChange(edited), widget.TextMenu(&body.TextField)))
+	sameWidget(t, template, goView, 400, 100)
+}
+
+func TestAreaElementTypesIntoTheTextAreaOfTheScope(t *testing.T) {
+	body := widget.NewTextArea("")
+	body.Focused = true
+	changes := 0
+	template := build(t, `<row><area state="body" grow="1" on-change="edited"/></row>`, Scope{"body": &body, "edited": func() { changes++ }})
+	ctx := testCtx(t)
+	view.Layout(ctx, template, 400, 100)
+	for _, input := range []core.Input{{Typed: []rune("hi")}, {Enter: true}, {Typed: []rune("yo")}} {
+		ctx.In = input
+		view.Update(ctx, template)
+	}
+	if body.Text != "hi\nyo" || changes != 3 {
+		t.Fatalf("the scope's TextArea holds %q after %d changes, want \"hi\\nyo\" after 3", body.Text, changes)
+	}
+}
+
+func TestAreaStateMustBeATextArea(t *testing.T) {
+	field := widget.NewTextField("")
+	err := buildError(t, `<area state="a"/>`, Scope{"a": &field})
+	if err == nil || !strings.Contains(err.Error(), "*widget.TextArea") {
+		t.Errorf("error = %v, want it to say a is not a *widget.TextArea", err)
+	}
+}
+
+func TestAreaElementTakesNeitherChildrenNorFieldOptions(t *testing.T) {
+	parseError(t, `<area state="a"><row/></area>`, "cannot contain")
+	parseError(t, `<area state="a" on-enter="f"/>`, "unknown attribute")
+}

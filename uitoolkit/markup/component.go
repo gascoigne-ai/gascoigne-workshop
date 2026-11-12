@@ -28,6 +28,7 @@
 //	Text        text caption icon
 //	Buttons     button primary-button link-button
 //	Inputs      field (placeholder field-pad segments text-menu on-enter on-tab)
+//	            area (text-menu)
 //	Containers  scroll hscroll split (vertical as-ratio min-first min-second)
 //	Widgets     tabs scroll-tabs table   separator active-tab
 //	Dialogs     dialog dialog-title message-dialog   focus-scope
@@ -370,6 +371,12 @@ var fieldHandlers = map[string]handlerAttr{
 	"text-menu": handler(widget.TextMenu),
 }
 
+// areaHandlers are the area's own attributes that name a scope entry: the
+// TextField its right-click menu edits (the area's own, &area.TextField).
+var areaHandlers = map[string]handlerAttr{
+	"text-menu": handler(widget.TextMenu),
+}
+
 // stateful builds a widget whose constructor takes the state it edits
 // first, then options (Field, Area, Code).
 func stateful[T any](constructor func(state *T, opts ...view.Option) *view.El) element {
@@ -496,6 +503,8 @@ var elements = map[string]elementSpec{
 		params: []param{scopedState[widget.ToastStack]("stack"), wholeParam("width"), wholeParam("height"), wholeParam("bottom-inset")}},
 	"field": {build: stateful(widget.Field), holds: holdsNothing, options: fieldOptions, handlers: fieldHandlers,
 		params: []param{scopedState[widget.TextField]("state")}},
+	"area": {build: stateful(widget.Area), holds: holdsNothing, handlers: areaHandlers,
+		params: []param{scopedState[widget.TextArea]("state")}},
 }
 
 // withOpts applies options to an element that was built without them.
