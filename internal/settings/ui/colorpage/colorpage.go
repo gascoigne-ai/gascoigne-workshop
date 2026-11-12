@@ -4,6 +4,7 @@
 package colorpage
 
 import (
+	"embed"
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
@@ -107,33 +109,52 @@ func (p *Page) resetAll(host Host) {
 	p.Forget()
 }
 
-// colorsView is the Colors section of the settings menu: one row per
-// customizable color with a swatch, its hex and a reset button.
-// View is the page.
-func (p *Page) View(host Host) Node {
-	return Col(
-		Caption("Colors", H(w.LabelH)),
-		For(appearance.CustomColors, func(_ int, c appearance.CustomColor) Node { return p.row(host, c) }),
-		Row(H(w.RowH), Button("Reset colors", W(110), OnClick(func() { p.resetAll(host) }))),
-	)
+//go:embed colorpage.vml
+var templates embed.FS
+
+var pageTemplate = markup.MustLoad(templates, "colorpage.vml")
+
+// colorRow is what the template shows of one customizable color.
+type colorRow struct {
+	Label  string
+	Token  w.Token // also the swatch's background: the color in effect
+	Input  *TextField
+	Border w.Token // the field's border, red while the typed hex is refused
+	Note   string  // why the typed hex was refused, "" when it was not
+	Edited func()
+	Reset  func()
 }
 
-func (p *Page) row(host Host, c appearance.CustomColor) Node {
-	in := p.Input(host, c.Token)
+// View is the Colors section of the settings menu: one row per
+// customizable color with a swatch, its hex and a reset button.
+func (p *Page) View(host Host) Node {
+	colors := make([]colorRow, 0, len(appearance.CustomColors))
+	for _, custom := range appearance.CustomColors {
+		colors = append(colors, p.row(host, custom))
+	}
+	return pageTemplate.MustBuild(markup.Scope{
+		"colors":   colors,
+		"resetAll": func() { p.resetAll(host) },
+		"labelH":   w.LabelH,
+		"rowH":     w.RowH,
+		"noteH":    w.NoteH,
+		"compactH": w.CompactH,
+	})
+}
+
+func (p *Page) row(host Host, custom appearance.CustomColor) colorRow {
+	note := p.notes[custom.Token]
 	border := w.Border
-	note := p.notes[c.Token]
 	if note != "" {
 		border = w.Error
 	}
-	return Col(
-		Row(H(w.RowH), Gap(6),
-			Text(c.Label, Small(), W(76)),
-			Row(W(20), H(w.NoteH), Bg(c.Token), Control("swatch")), // shows the color in effect
-			Field(in, W(70), H(w.CompactH), Bg(w.Sunken), Border(border),
-				OnChange(func() { p.edited(host, c) }),
-				TextMenu(in)),
-			Button("Reset", W(44), H(w.CompactH), OnClick(func() { p.reset(host, c.Token) })),
-		),
-		If(note != "", Note(note, w.Error)),
-	)
+	return colorRow{
+		Label:  custom.Label,
+		Token:  custom.Token,
+		Input:  p.Input(host, custom.Token),
+		Border: border,
+		Note:   note,
+		Edited: func() { p.edited(host, custom) },
+		Reset:  func() { p.reset(host, custom.Token) },
+	}
 }
