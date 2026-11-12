@@ -4,6 +4,7 @@
 package sentlog
 
 import (
+	"embed"
 	"fmt"
 	"strings"
 	"time"
@@ -106,17 +107,14 @@ func (l *Log) List(host Host, filter string) Node {
 	)
 }
 
+//go:embed row.vml
+var templates embed.FS
+
+var rowTemplate = markup.MustLoad(templates, "row.vml")
+
 // row is one sent request: badge, path and status above, URL and time below.
 func (l *Log) row(host Host, sent port.Sent) Node {
-	return markup.View(`
-		<col pad-x="12" pad-y="4" hover-bg="hover" control="row" on-click="open">
-		  <row gap="6" align-items="baseline">
-		    <slot name="badge"/>
-		    <text ellipsis grow="1">{{path}}</text>
-		    <text small muted>{{status}}</text>
-		  </row>
-		  <row><text small muted ellipsis grow="1">{{when}}</text></row>
-		</col>`,
+	return rowTemplate.MustBuild(
 		markup.Scope{
 			"badge":  host.Badge(sent.Protocol, sent.Method),
 			"path":   sent.Path,

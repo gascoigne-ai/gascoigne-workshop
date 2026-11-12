@@ -1,0 +1,8 @@
+<col pad-x="12" pad-y="4" hover-bg="hover" control="row" on-click="open">
+  <row gap="6" align-items="baseline">
+    <slot name="badge"/>
+    <text ellipsis grow="1">{{path}}</text>
+    <text small muted>{{status}}</text>
+  </row>
+  <row><text small muted ellipsis grow="1">{{when}}</text></row>
+</col>
