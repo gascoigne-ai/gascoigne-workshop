@@ -28,7 +28,7 @@
 //	Text        text caption icon
 //	Buttons     button primary-button link-button
 //	Inputs      field (placeholder field-pad segments text-menu on-enter on-tab)
-//	            area (text-menu)
+//	            area (text-menu) checkbox
 //	Containers  scroll hscroll split (vertical as-ratio min-first min-second)
 //	Widgets     tabs scroll-tabs table   separator active-tab
 //	Dialogs     dialog dialog-title message-dialog   focus-scope
@@ -292,6 +292,29 @@ func wholeParam(name string) param {
 	}}
 }
 
+// boolParam is a param that is true or false, written in the template or
+// read with {{path}}.
+func boolParam(name string) param {
+	return param{name: name, read: func(value string, scope Scope) (any, error) {
+		text, err := interpolate(value, scope)
+		if err != nil {
+			return nil, err
+		}
+		switch strings.TrimSpace(text) {
+		case "true":
+			return true, nil
+		case "false":
+			return false, nil
+		}
+		return nil, fmt.Errorf("%s: %q is not true or false", name, text)
+	}}
+}
+
+// checkbox builds a Checkbox from whether it is on.
+func checkbox(parts elementParts) (view.Node, error) {
+	return widget.Checkbox(parts.args[0].(bool), parts.opts...), nil
+}
+
 // tabStrip builds Tabs from its items and the active index.
 func tabStrip(parts elementParts) (view.Node, error) {
 	return widget.Tabs(parts.args[0].([]widget.TabItem), parts.args[1].(int), parts.opts...), nil
@@ -505,6 +528,7 @@ var elements = map[string]elementSpec{
 		params: []param{scopedState[widget.TextField]("state")}},
 	"area": {build: stateful(widget.Area), holds: holdsNothing, handlers: areaHandlers,
 		params: []param{scopedState[widget.TextArea]("state")}},
+	"checkbox": {build: checkbox, holds: holdsNothing, params: []param{boolParam("on")}},
 }
 
 // withOpts applies options to an element that was built without them.

@@ -157,3 +157,36 @@ func TestAreaElementTakesNeitherChildrenNorFieldOptions(t *testing.T) {
 	parseError(t, `<area state="a"><row/></area>`, "cannot contain")
 	parseError(t, `<area state="a" on-enter="f"/>`, "unknown attribute")
 }
+
+func TestCheckboxElementMatchesTheGoCheckbox(t *testing.T) {
+	toggle := func() {}
+	for _, on := range []bool{true, false} {
+		t.Run(fmt.Sprint(on), func(t *testing.T) {
+			template := build(t, `<row><checkbox on="{{enabled}}" on-change="toggle" tooltip="Follow redirects"/></row>`,
+				Scope{"enabled": on, "toggle": toggle})
+			goView := view.Row(widget.Checkbox(on, view.OnChange(toggle), view.Tooltip("Follow redirects")))
+			sameWidget(t, template, goView, 200, 30)
+		})
+	}
+}
+
+func TestCheckboxElementClickRunsTheScopeChange(t *testing.T) {
+	ctx := testCtx(t)
+	toggles := 0
+	template := build(t, `<row><checkbox on="true" on-change="toggle"/></row>`, Scope{"toggle": func() { toggles++ }})
+	view.Layout(ctx, template, 200, 30)
+	box := template.Children()[0].Rect()
+	ctx.In = core.Input{X: box.X + box.W/2, Y: box.Y + box.H/2, Click: true}
+	view.Update(ctx, template)
+	if toggles != 1 {
+		t.Fatalf("clicking the box ran the scope's on-change %d times, want 1", toggles)
+	}
+}
+
+func TestCheckboxOnMustBeTrueOrFalse(t *testing.T) {
+	parseError(t, `<checkbox/>`, "<checkbox> needs a on")
+	err := buildError(t, `<checkbox on="yes"/>`, nil)
+	if err == nil || !strings.Contains(err.Error(), "true or false") {
+		t.Errorf("error = %v, want it to say on is not true or false", err)
+	}
+}
