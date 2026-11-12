@@ -27,6 +27,7 @@
 //	Buttons     button primary-button link-button
 //	Containers  scroll hscroll split (vertical as-ratio min-first min-second)
 //	Widgets     tabs scroll-tabs table   separator active-tab
+//	Dialogs     dialog dialog-title message-dialog   focus-scope
 //	Templates   include slot
 //
 // The usual form is an inline template in the method that feeds it, as
@@ -278,6 +279,21 @@ func scrollingTabStrip(parts elementParts) (view.Node, error) {
 	return widget.ScrollTabs(parts.args[0].(*widget.ScrollState), parts.args[1].([]widget.TabItem), parts.args[2].(int), parts.opts...), nil
 }
 
+// textParam is a param that is text, open to {{path}}.
+func textParam(name string) param {
+	return param{name: name, read: func(value string, scope Scope) (any, error) { return interpolate(value, scope) }}
+}
+
+// dialogTitle builds a DialogTitle from its title.
+func dialogTitle(parts elementParts) (view.Node, error) {
+	return widget.DialogTitle(parts.args[0].(string), parts.items()...), nil
+}
+
+// messageDialog builds a MessageDialog from its state.
+func messageDialog(parts elementParts) (view.Node, error) {
+	return widget.MessageDialog(parts.args[0].(*widget.DialogState), parts.items()...), nil
+}
+
 // grid builds a Table from its spec.
 func grid(parts elementParts) (view.Node, error) {
 	return widget.Table(parts.args[0].(widget.TableSpec), parts.opts...), nil
@@ -392,7 +408,10 @@ var elements = map[string]elementSpec{
 		params: []param{scoped[[]widget.TabItem]("items"), wholeParam("active")}},
 	"scroll-tabs": {build: scrollingTabStrip, holds: holdsNothing,
 		params: []param{scoped[*widget.ScrollState]("state"), scoped[[]widget.TabItem]("items"), wholeParam("active")}},
-	"table": {build: grid, holds: holdsNothing, params: []param{scoped[widget.TableSpec]("spec")}},
+	"table":          {build: grid, holds: holdsNothing, params: []param{scoped[widget.TableSpec]("spec")}},
+	"dialog":         {build: container(widget.Dialog)},
+	"dialog-title":   {build: dialogTitle, params: []param{textParam("title")}},
+	"message-dialog": {build: messageDialog, params: []param{scoped[*widget.DialogState]("state")}},
 }
 
 // withOpts applies options to an element that was built without them.
@@ -505,6 +524,7 @@ var attributes = map[string]func(v string) (view.Option, error){
 	"keep-in-view":    flagAttr("keep-in-view", view.KeepInView),
 	"separator":       intAttr(view.Separator),
 	"active-tab":      flagAttr("active-tab", widget.ActiveTab),
+	"focus-scope":     flagAttr("focus-scope", view.FocusScope),
 }
 
 func intAttr(f func(int) view.Option) func(string) (view.Option, error) {

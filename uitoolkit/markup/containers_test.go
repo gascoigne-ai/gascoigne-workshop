@@ -230,6 +230,58 @@ func TestTableSpecOfTheWrongTypeNamesTheTypeItWants(t *testing.T) {
 	}
 }
 
+func TestDialogElementsMatchTheGoDialogs(t *testing.T) {
+	closeDialog := func() {}
+	template := build(t, `
+		<stack>
+		  <row grow="1"/>
+		  <dialog w="300" h="200" on-dismiss="close">
+		    <dialog-title title="Rename {{name}}" on-dismiss="close"><button>Help</button></dialog-title>
+		    <text>body</text>
+		  </dialog>
+		</stack>`, Scope{"close": closeDialog, "name": "users"})
+	goView := view.Stack(
+		view.Row(view.Grow(1)),
+		widget.Dialog(view.W(300), view.H(200), view.OnDismiss(closeDialog),
+			widget.DialogTitle("Rename users", view.OnDismiss(closeDialog), widget.Button("Help")),
+			view.Text("body"),
+		),
+	)
+	sameLayout(t, testCtx(t), template, goView, 600, 400)
+}
+
+func TestMessageDialogElementMatchesTheGoMessageDialog(t *testing.T) {
+	state := &widget.DialogState{Title: "Delete?", Body: "It cannot be undone.", Buttons: []widget.DialogButton{
+		{Label: "Cancel", Run: func() {}}, {Label: "Delete", Primary: true, Run: func() {}},
+	}}
+	closeDialog := func() {}
+	template := build(t, `<stack><row grow="1"/><message-dialog state="dialog" on-dismiss="close"><text small>extra</text></message-dialog></stack>`,
+		Scope{"dialog": state, "close": closeDialog})
+	goView := view.Stack(view.Row(view.Grow(1)), widget.MessageDialog(state, view.OnDismiss(closeDialog), view.Text("extra", view.Small())))
+	sameLayout(t, testCtx(t), template, goView, 600, 400)
+}
+
+func TestDialogElementOutsideClickRunsTheScopeDismiss(t *testing.T) {
+	ctx := testCtx(t)
+	dismissed := 0
+	template := build(t, `<stack><row grow="1"/><dialog w="200" h="100" on-dismiss="close"><text>hi</text></dialog></stack>`,
+		Scope{"close": func() { dismissed++ }})
+	view.Layout(ctx, template, 600, 400)
+	ctx.In = core.Input{X: 5, Y: 5, Click: true}
+	view.Update(ctx, template)
+	if dismissed != 1 {
+		t.Fatalf("an outside click dismissed %d times, want 1", dismissed)
+	}
+}
+
+func TestFocusScopeAttributeMatchesTheGoOption(t *testing.T) {
+	got := view.Dump(build(t, `<col focus-scope modal/>`, nil))
+	want := view.Dump(view.Col(view.FocusScope(), view.Modal()))
+	if got != want {
+		t.Fatalf("template:\n%s\nGo:\n%s", got, want)
+	}
+}
+
 // Split's options set the split behavior, so another element must not take them.
 func TestSplitOptionsAreOnlyForSplit(t *testing.T) {
 	for _, attribute := range []string{"vertical", "as-ratio", `min-first="1"`, `min-second="1"`, `default="1"`} {
