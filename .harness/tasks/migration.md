@@ -5,7 +5,7 @@ Status: todo, doing, done, blocked (reason). The loop (`loop.md`) takes the firs
 | # | View (file, function) | Needs | Golden scenes that show it | Status |
 |---|---|---|---|---|
 | 1 | `settings/ui/colorpage` (whole page) | 002 | settings-colors | done (8cc3cfc pins, aef8636 swap) |
-| 2 | response `sentlog` list | 002 | none (log panel): add scene first | todo |
+| 2 | response `sentlog` list | 002 | sent-log (added) | done (bd1b7c4 scene, 3da5868 pins, 979d6f3 swap) |
 | 3 | settingsui `fontlist`, `fontRow` | 002, 003 | settings-menu | todo |
 | 4 | settingsui `settingRow` / `form.go` | 002, 003, 005 | settings-menu, settings-requests, settings-general | todo |
 | 5 | app `mcpexplorer.go` `explorerList` | 002, 003 | request-mcp (not connected only) | todo |

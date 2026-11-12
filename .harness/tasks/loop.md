@@ -18,6 +18,10 @@ Each iteration moves one view; the main session does the checks itself, it does 
    - `view.Dump` does not show a field's text or ellipsis truncation: pin those through input tests (a retype needs `EditEnd` first).
    - A row's package name in the manifest may be wrong; check the directory.
    - Net Go lines usually grow (view models); the measure is construction calls removed.
+   - A test that calls a view helper keeps that helper's signature through the swap; if that blocks the typed view model, walk Go-built nodes with `<slot for=... name=.../>` and note it for a later cleanup.
+   - Markup has one root per template: a view that returns one of two roots is two templates and Go picks. `<include>` only reaches templates registered with `markup.Define`, not `MustLoad` ones (a known gap, report it again only if it blocks a row).
+   - App unit tests use the GitHub sample collection (there "Echo" is a WebSocket request); shot tests that send need `withAdapters`; `App.step` does not call `shotUpdate`.
+   - Measure golden masks from a zoomed crop of the PNG; the pixel slack can hide a changed digit.
    - If markup lacks something, stop and report it; do not special-case.
 7. Progress count after each iteration: `grep -rEc '\b(Row|Col|Stack)\(' internal/*/ui` outside `Custom` behaviors, reported in one line.
 8. Next wakeup: 60 to 270 s while an agent runs or work remains; 1200 s or more as a fallback.
