@@ -282,6 +282,35 @@ func TestFocusScopeAttributeMatchesTheGoOption(t *testing.T) {
 	}
 }
 
+func menuState() *widget.MenuState {
+	return widget.NewMenu(20, 30, []widget.MenuItem{
+		{Label: "Rename", Shortcut: "F2", Icon: "plus"}, {Separator: true}, {Label: "Locked", Disabled: true}, {Label: "Delete", Hint: "removes it"},
+	})
+}
+
+func TestMenuElementMatchesTheGoMenu(t *testing.T) {
+	ctx := testCtx(t)
+	state := menuState()
+	pick := func(int) {}
+	template := build(t, `<stack><menu ctx="ctx" state="menu" on-select="pick"/></stack>`, Scope{"ctx": ctx, "menu": state, "pick": pick})
+	goView := view.Stack(widget.Menu(ctx, state, view.OnSelect(pick)))
+	sameLayout(t, ctx, template, goView, 600, 400)
+}
+
+func TestMenuElementClickPicksThroughTheScopeHandler(t *testing.T) {
+	ctx := testCtx(t)
+	var picked []int
+	template := build(t, `<stack><menu ctx="ctx" state="menu" on-select="pick"/></stack>`,
+		Scope{"ctx": ctx, "menu": menuState(), "pick": func(index int) { picked = append(picked, index) }})
+	view.Layout(ctx, template, 600, 400)
+	last := template.Children()[0].Children()[3].Rect()
+	ctx.In = core.Input{X: last.X + last.W/2, Y: last.Y + last.H/2, Click: true}
+	view.Update(ctx, template)
+	if len(picked) != 1 || picked[0] != 3 {
+		t.Fatalf("clicking the last row picked %v, want [3]", picked)
+	}
+}
+
 // Split's options set the split behavior, so another element must not take them.
 func TestSplitOptionsAreOnlyForSplit(t *testing.T) {
 	for _, attribute := range []string{"vertical", "as-ratio", `min-first="1"`, `min-second="1"`, `default="1"`} {

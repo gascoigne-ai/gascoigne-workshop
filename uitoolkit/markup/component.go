@@ -28,6 +28,7 @@
 //	Containers  scroll hscroll split (vertical as-ratio min-first min-second)
 //	Widgets     tabs scroll-tabs table   separator active-tab
 //	Dialogs     dialog dialog-title message-dialog   focus-scope
+//	Menus       menu
 //	Templates   include slot
 //
 // The usual form is an inline template in the method that feeds it, as
@@ -294,6 +295,12 @@ func messageDialog(parts elementParts) (view.Node, error) {
 	return widget.MessageDialog(parts.args[0].(*widget.DialogState), parts.items()...), nil
 }
 
+// popupMenu builds a Menu from the context it measures its rows with and
+// its state.
+func popupMenu(parts elementParts) (view.Node, error) {
+	return widget.Menu(parts.args[0].(*core.Ctx), parts.args[1].(*widget.MenuState), parts.opts...), nil
+}
+
 // grid builds a Table from its spec.
 func grid(parts elementParts) (view.Node, error) {
 	return widget.Table(parts.args[0].(widget.TableSpec), parts.opts...), nil
@@ -412,6 +419,8 @@ var elements = map[string]elementSpec{
 	"dialog":         {build: container(widget.Dialog)},
 	"dialog-title":   {build: dialogTitle, params: []param{textParam("title")}},
 	"message-dialog": {build: messageDialog, params: []param{scoped[*widget.DialogState]("state")}},
+	"menu": {build: popupMenu, holds: holdsNothing,
+		params: []param{scoped[*core.Ctx]("ctx"), scoped[*widget.MenuState]("state")}},
 }
 
 // withOpts applies options to an element that was built without them.
