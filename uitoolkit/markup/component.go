@@ -141,45 +141,82 @@ func (t *Template) MustBuild(sc Scope) view.Node {
 // Name is the name the template was parsed with.
 func (t *Template) Name() string { return t.name }
 
-// element builds one kind of element from its options, children and text.
-type element func(opts []view.Option, kids []view.Item, text string) view.Node
-
-func items(opts []view.Option, kids []view.Item) []view.Item {
-	out := make([]view.Item, 0, len(opts)+len(kids))
-	for _, o := range opts {
-		out = append(out, o)
-	}
-	return append(out, kids...)
+// elementParts are what an element is built from: its options, children
+// and text.
+type elementParts struct {
+	opts []view.Option
+	kids []view.Item
+	text string
 }
 
-// elements are the tags a template may use. leaf tags take text and no
-// children.
-var elements = map[string]struct {
+// items are the options followed by the children, as a Go constructor
+// takes them.
+func (parts elementParts) items() []view.Item {
+	out := make([]view.Item, 0, len(parts.opts)+len(parts.kids))
+	for _, option := range parts.opts {
+		out = append(out, option)
+	}
+	return append(out, parts.kids...)
+}
+
+// element builds one kind of element from its parts.
+type element func(parts elementParts) (view.Node, error)
+
+// container builds an element that takes options and children.
+func container(constructor func(items ...view.Item) *view.El) element {
+	return func(parts elementParts) (view.Node, error) { return constructor(parts.items()...), nil }
+}
+
+// optioned builds an element that takes options only.
+func optioned(constructor func(opts ...view.Option) *view.El) element {
+	return func(parts elementParts) (view.Node, error) { return constructor(parts.opts...), nil }
+}
+
+// bare builds an element whose constructor takes nothing, then applies the
+// options to it.
+func bare(constructor func() *view.El) element {
+	return func(parts elementParts) (view.Node, error) { return withOpts(constructor(), parts.opts), nil }
+}
+
+// labelled builds an element whose constructor takes its text first.
+func labelled(constructor func(label string, opts ...view.Option) *view.El) element {
+	return func(parts elementParts) (view.Node, error) { return constructor(parts.text, parts.opts...), nil }
+}
+
+// placeholder is the builder of an element that buildOne makes itself.
+func placeholder(elementParts) (view.Node, error) { return nil, nil }
+
+// elementSpec is one row of the elements table. A leaf element takes text
+// and no children.
+type elementSpec struct {
 	build element
 	leaf  bool
-}{
-	"row":            {func(o []view.Option, k []view.Item, _ string) view.Node { return view.Row(items(o, k)...) }, false},
-	"col":            {func(o []view.Option, k []view.Item, _ string) view.Node { return view.Col(items(o, k)...) }, false},
-	"stack":          {func(o []view.Option, k []view.Item, _ string) view.Node { return view.Stack(items(o, k)...) }, false},
-	"spacer":         {func(o []view.Option, _ []view.Item, _ string) view.Node { return view.Spacer(o...) }, true},
-	"hrule":          {func(o []view.Option, _ []view.Item, _ string) view.Node { return withOpts(view.HRule(), o) }, true},
-	"vrule":          {func(o []view.Option, _ []view.Item, _ string) view.Node { return withOpts(view.VRule(), o) }, true},
-	"text":           {func(o []view.Option, _ []view.Item, t string) view.Node { return view.Text(t, o...) }, true},
-	"primary-button": {func(o []view.Option, _ []view.Item, t string) view.Node { return widget.PrimaryButton(t, o...) }, true},
-	"link-button":    {func(o []view.Option, _ []view.Item, t string) view.Node { return widget.LinkButton(t, o...) }, true},
-	"include":        {func([]view.Option, []view.Item, string) view.Node { return nil }, true},
-	"icon":           {func(o []view.Option, _ []view.Item, name string) view.Node { return widget.Icon(name, o...) }, true},
-	"slot":           {func(o []view.Option, _ []view.Item, _ string) view.Node { return nil }, true},
-	"caption":        {func(o []view.Option, _ []view.Item, t string) view.Node { return view.Caption(t, o...) }, true},
-	"button":         {func(o []view.Option, _ []view.Item, t string) view.Node { return widget.Button(t, o...) }, true},
+}
+
+// elements are the tags a template may use.
+var elements = map[string]elementSpec{
+	"row":            {build: container(view.Row)},
+	"col":            {build: container(view.Col)},
+	"stack":          {build: container(view.Stack)},
+	"spacer":         {build: optioned(view.Spacer), leaf: true},
+	"hrule":          {build: bare(view.HRule), leaf: true},
+	"vrule":          {build: bare(view.VRule), leaf: true},
+	"text":           {build: labelled(view.Text), leaf: true},
+	"primary-button": {build: labelled(widget.PrimaryButton), leaf: true},
+	"link-button":    {build: labelled(widget.LinkButton), leaf: true},
+	"include":        {build: placeholder, leaf: true},
+	"icon":           {build: labelled(widget.Icon), leaf: true},
+	"slot":           {build: placeholder, leaf: true},
+	"caption":        {build: labelled(view.Caption), leaf: true},
+	"button":         {build: labelled(widget.Button), leaf: true},
 }
 
 // withOpts applies options to an element that was built without them.
-func withOpts(n view.Node, opts []view.Option) view.Node {
-	for _, o := range opts {
-		o(n)
+func withOpts(node view.Node, opts []view.Option) view.Node {
+	for _, option := range opts {
+		option(node)
 	}
-	return n
+	return node
 }
 
 // directives are attributes that control building, not looks.
@@ -586,7 +623,11 @@ func (t *Template) buildOne(n *node, sc Scope) (view.Node, error) {
 			return nil, t.errf(n, "no icon %q; icons: %s", text, strings.Join(widget.IconNames(), " "))
 		}
 	}
-	return elements[n.tag].build(opts, kids, text), nil
+	built, err := elements[n.tag].build(elementParts{opts: opts, kids: kids, text: text})
+	if err != nil {
+		return nil, t.errf(n, "%v", err)
+	}
+	return built, nil
 }
 
 // interpolate replaces each {{path}} in s with the value it names.
