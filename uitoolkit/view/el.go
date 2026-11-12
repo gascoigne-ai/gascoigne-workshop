@@ -275,7 +275,8 @@ func HoverBg(t core.Token) Option { return func(e *El) { e.hoverBg = t } }
 
 // FontSource draws a Text in the font of source, at the size the text's other
 // options choose (Small, Bold), instead of the interface font. Use it to show
-// a font in its own face, as a font list does. It has no template attribute: a font source is a Go value.
+// a font in its own face, as a font list does. A nil source keeps the
+// interface font. In a template, font-source names the source in the scope.
 func FontSource(source *text.GoTextFaceSource) Option { return func(e *El) { e.fontSource = source } }
 
 // HoverColor is the color an icon takes while the pointer is over it, in

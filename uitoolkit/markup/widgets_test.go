@@ -1,11 +1,14 @@
 package markup
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
+	"golang.org/x/image/font/gofont/gomono"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -291,6 +294,44 @@ func TestSliderElementReadsItsRangeAsWholeNumbers(t *testing.T) {
 func TestSliderOptionsAreOnlyForSlider(t *testing.T) {
 	for _, attribute := range []string{`slider-mid="1"`, `on-slide="f"`, `on-slide-end="f"`} {
 		parseError(t, `<row `+attribute+`/>`, "unknown attribute")
+	}
+}
+
+func monoFace(t *testing.T) *text.GoTextFaceSource {
+	t.Helper()
+	face, err := text.NewGoTextFaceSource(bytes.NewReader(gomono.TTF))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return face
+}
+
+func TestFontSourceAttributeMatchesTheGoOption(t *testing.T) {
+	face := monoFace(t)
+	template := build(t, `<row><text font-source="face">iiii</text></row>`, Scope{"face": face})
+	goView := view.Row(view.Text("iiii", view.FontSource(face)))
+	sameLayout(t, testCtx(t), template, goView, 400, 30)
+}
+
+func TestFontSourceAttributeMeasuresInTheFaceOfTheScope(t *testing.T) {
+	ctx := testCtx(t)
+	template := build(t, `<row><text font-source="face">iiii</text><text>iiii</text></row>`, Scope{"face": monoFace(t)})
+	view.Layout(ctx, template, 400, 30)
+	inFace, inInterface := template.Children()[0].Rect().W, template.Children()[1].Rect().W
+	if inFace <= inInterface {
+		t.Fatalf("iiii is %dpx wide in the monospaced face and %dpx in the interface font; want it wider in the face", inFace, inInterface)
+	}
+}
+
+// A font list keeps a nil face for a file it could not read, and Go draws
+// that text in the interface font.
+func TestFontSourceAttributeTakesANilFace(t *testing.T) {
+	if err := buildError(t, `<text font-source="face">x</text>`, Scope{"face": (*text.GoTextFaceSource)(nil)}); err != nil {
+		t.Fatal(err)
+	}
+	err := buildError(t, `<text font-source="face">x</text>`, Scope{"face": "Go Mono"})
+	if err == nil || !strings.Contains(err.Error(), "*text.GoTextFaceSource") {
+		t.Errorf("error = %v, want it to say face is not a *text.GoTextFaceSource", err)
 	}
 }
 

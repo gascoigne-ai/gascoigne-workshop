@@ -25,7 +25,7 @@
 // # Finding your way
 //
 //	Layout      row col stack spacer hrule vrule
-//	Text        text caption icon
+//	Text        text caption icon   font-source
 //	Buttons     button primary-button link-button
 //	Inputs      field (placeholder field-pad segments text-menu on-enter on-tab)
 //	            area (text-menu) checkbox
@@ -594,8 +594,11 @@ func handler[F any](option func(F) view.Option) handlerAttr {
 	}
 }
 
-// handlers are the event attributes, each the Go option in kebab-case.
+// handlers are the generic attributes whose value names a scope entry,
+// each the Go option in kebab-case: the events, and font-source, a
+// *text.GoTextFaceSource that may be nil (the interface font).
 var handlers = map[string]handlerAttr{
+	"font-source":       handler(view.FontSource),
 	"on-click":          handler(view.OnClick),
 	"on-click-at":       handler(view.OnClickAt),
 	"on-right-click":    handler(view.OnRightClick),
