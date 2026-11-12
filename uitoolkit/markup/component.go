@@ -29,6 +29,7 @@
 //	Buttons     button primary-button link-button
 //	Inputs      field (placeholder field-pad segments text-menu on-enter on-tab)
 //	            area (text-menu) checkbox
+//	Viewers     code
 //	Containers  scroll hscroll split (vertical as-ratio min-first min-second)
 //	Widgets     tabs scroll-tabs table   separator active-tab
 //	Dialogs     dialog dialog-title message-dialog   focus-scope
@@ -529,6 +530,7 @@ var elements = map[string]elementSpec{
 	"area": {build: stateful(widget.Area), holds: holdsNothing, handlers: areaHandlers,
 		params: []param{scopedState[widget.TextArea]("state")}},
 	"checkbox": {build: checkbox, holds: holdsNothing, params: []param{boolParam("on")}},
+	"code":     {build: stateful(widget.Code), holds: holdsNothing, params: []param{scopedState[widget.CodeView]("state")}},
 }
 
 // withOpts applies options to an element that was built without them.

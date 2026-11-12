@@ -183,6 +183,40 @@ func TestCheckboxElementClickRunsTheScopeChange(t *testing.T) {
 	}
 }
 
+func codeLines() *widget.CodeView {
+	code := &widget.CodeView{}
+	code.SetLines([]widget.Line{{Spans: []widget.Span{{Text: "one"}}}, {Spans: []widget.Span{{Text: "two"}}}})
+	return code
+}
+
+func TestCodeElementMatchesTheGoCode(t *testing.T) {
+	code := codeLines()
+	menu := func(int, int) {}
+	template := build(t, `<row><code state="code" grow="1" bg="sunken" on-right-click="menu"/></row>`, Scope{"code": code, "menu": menu})
+	goView := view.Row(widget.Code(code, view.Grow(1), view.Bg(core.Sunken), view.OnRightClick(menu)))
+	sameWidget(t, template, goView, 400, 100)
+}
+
+func TestCodeElementSelectsInTheCodeViewOfTheScope(t *testing.T) {
+	code := codeLines()
+	template := build(t, `<row><code state="code" grow="1"/></row>`, Scope{"code": code})
+	ctx := testCtx(t)
+	view.Layout(ctx, template, 400, 100)
+	ctx.In = core.Input{X: 300, Y: 15, Click: true, Held: true, Clicks: 3} // a triple click on the first line
+	view.Update(ctx, template)
+	if code.SelectedText() != "one" || !code.Focused {
+		t.Fatalf("the scope's CodeView selected %q, focused %v; want \"one\", true", code.SelectedText(), code.Focused)
+	}
+}
+
+func TestCodeStateMustBeACodeView(t *testing.T) {
+	err := buildError(t, `<code state="c"/>`, Scope{"c": widget.CodeView{}})
+	if err == nil || !strings.Contains(err.Error(), "*widget.CodeView") {
+		t.Errorf("error = %v, want it to say c is not a *widget.CodeView", err)
+	}
+	parseError(t, `<code state="c">text</code>`, "text")
+}
+
 func TestCheckboxOnMustBeTrueOrFalse(t *testing.T) {
 	parseError(t, `<checkbox/>`, "<checkbox> needs a on")
 	err := buildError(t, `<checkbox on="yes"/>`, nil)
