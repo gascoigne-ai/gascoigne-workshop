@@ -5,6 +5,7 @@ package main
 import (
 	"errors"
 	"flag"
+	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/adapter/store"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto"
@@ -19,6 +20,8 @@ import (
 	"image/png"
 	"log"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -33,6 +36,20 @@ const (
 	windowWidth  = 1280
 	windowHeight = 800
 )
+
+// parseWindowSize reads "WIDTHxHEIGHT" for the -window flag.
+func parseWindowSize(spec string) (width, height int, err error) {
+	widthText, heightText, ok := strings.Cut(spec, "x")
+	if !ok {
+		return 0, 0, fmt.Errorf("%q is not WIDTHxHEIGHT", spec)
+	}
+	width, widthErr := strconv.Atoi(widthText)
+	height, heightErr := strconv.Atoi(heightText)
+	if widthErr != nil || heightErr != nil || width <= 0 || height <= 0 {
+		return 0, 0, fmt.Errorf("%q is not a positive WIDTHxHEIGHT", spec)
+	}
+	return width, height, nil
+}
 
 // previewLifetime is how long a response stays served for the browser.
 const previewLifetime = 5 * time.Minute
@@ -68,6 +85,12 @@ func main() {
 	flag.StringVar(&opts.WorkspaceDir, "workspace", "", "folder to load and save the collection; empty uses the last one, else the client config (release build); the default build ignores the last one and shows the example server")
 	opts.DefaultWorkspace = settingsfile.DefaultWorkspace()
 	iconPNG := flag.String("icon-png", "", "write the program icon (256x256 PNG) to this path and exit, for packaging")
+	windowW, windowH := windowWidth, windowHeight
+	flag.Func("window", "WIDTHxHEIGHT: open the window at this size, for screenshots", func(spec string) error {
+		var err error
+		windowW, windowH, err = parseWindowSize(spec)
+		return err
+	})
 	flag.BoolVar(&opts.OpenMenu, "menu", false, "start with the settings menu open (for screenshots)")
 	flag.Parse()
 	if *iconPNG != "" {
@@ -84,7 +107,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	ebiten.SetWindowSize(windowWidth, windowHeight)
+	ebiten.SetWindowSize(windowW, windowH)
 	if mw, mh := ebiten.Monitor().Size(); mw > 0 && mh > 0 {
 		if w := app.RestoredWindow(mw, mh); w.W > 0 {
 			ebiten.SetWindowSize(w.W, w.H)

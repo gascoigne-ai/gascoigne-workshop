@@ -39,6 +39,14 @@ func TestMain(m *testing.M) {
 // skipped, except in CI where a missing backend is a failure.
 func renderShot(t *testing.T, args ...string) image.Image {
 	t.Helper()
+	return renderShotSized(t, shotWidth, shotHeight, args...)
+}
+
+// renderShotSized is renderShot on a virtual screen of the given size; the
+// window opens as large as the screen, so it is also how a narrow window is
+// drawn.
+func renderShotSized(t *testing.T, width, height int, args ...string) image.Image {
+	t.Helper()
 	xvfb, err := exec.LookPath("xvfb-run")
 	if err != nil {
 		if os.Getenv("CI") != "" {
@@ -53,7 +61,7 @@ func renderShot(t *testing.T, args ...string) image.Image {
 
 	ctx, cancel := context.WithTimeout(context.Background(), shotRunTimeout)
 	defer cancel()
-	command := exec.CommandContext(ctx, xvfb, append([]string{"-a", "-s", fmt.Sprintf("-screen 0 %dx%dx24", shotWidth, shotHeight), binary}, flags...)...)
+	command := exec.CommandContext(ctx, xvfb, append([]string{"-a", "-s", fmt.Sprintf("-screen 0 %dx%dx24", width, height), binary}, flags...)...)
 	command.Env = softwareEnv(sandbox)
 	if output, err := command.CombinedOutput(); err != nil {
 		t.Fatalf("run program: %v\n%s", err, output)
