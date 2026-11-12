@@ -246,6 +246,54 @@ func TestImageElementTakesANilPicture(t *testing.T) {
 	}
 }
 
+func TestSliderElementMatchesTheGoSlider(t *testing.T) {
+	state := &widget.SliderState{}
+	slide, end := func(int) {}, func(int) {}
+	template := build(t, `<row><slider state="scale" min="50" max="200" step="5" value="{{percent}}" slider-mid="100" on-slide="slide" on-slide-end="end" w="214"/></row>`,
+		Scope{"scale": state, "percent": 125, "slide": slide, "end": end})
+	goView := view.Row(widget.Slider(state, 50, 200, 5, 125, widget.SliderMid(100), widget.OnSlide(slide), widget.OnSlideEnd(end), view.W(214)))
+	sameWidget(t, template, goView, 400, 40)
+}
+
+// The track of a w="214" slider is 200px from x=7: half a thumb of room
+// at each end.
+const sliderTrackStart = 7
+
+func TestSliderElementDragMovesTheStateAndRunsTheScopeHandlers(t *testing.T) {
+	ctx := testCtx(t)
+	state := &widget.SliderState{}
+	var live, ended []int
+	template := build(t, `<row><slider state="scale" min="50" max="200" step="5" value="100" slider-mid="100" on-slide="slide" on-slide-end="end" w="214"/></row>`,
+		Scope{"scale": state, "slide": func(value int) { live = append(live, value) }, "end": func(value int) { ended = append(ended, value) }})
+	view.Layout(ctx, template, 400, 40)
+	ctx.In = core.Input{X: sliderTrackStart + 50, Y: 20, Click: true, Held: true} // a quarter: halfway from 50 to the mid 100
+	view.Update(ctx, template)
+	if !state.Dragging || len(live) != 1 || live[0] != 75 {
+		t.Fatalf("the press left the scope's state dragging=%v and slid %v, want true and [75]", state.Dragging, live)
+	}
+	ctx.In = core.Input{X: sliderTrackStart + 50, Y: 20}
+	view.Update(ctx, template)
+	if state.Dragging || len(ended) != 1 || ended[0] != 75 {
+		t.Fatalf("the release left dragging=%v and ended %v, want false and [75]", state.Dragging, ended)
+	}
+}
+
+func TestSliderElementReadsItsRangeAsWholeNumbers(t *testing.T) {
+	parseError(t, `<slider state="s" min="0" max="10" step="1"/>`, "<slider> needs a value")
+	err := buildError(t, `<slider state="s" min="0" max="ten" step="1" value="0"/>`, Scope{"s": &widget.SliderState{}})
+	if err == nil || !strings.Contains(err.Error(), "max") {
+		t.Errorf("error = %v, want it to say max is not a whole number", err)
+	}
+}
+
+// The slider's options set the slider behavior; another element ignored
+// them in Go, so a template rejects them instead of dropping them.
+func TestSliderOptionsAreOnlyForSlider(t *testing.T) {
+	for _, attribute := range []string{`slider-mid="1"`, `on-slide="f"`, `on-slide-end="f"`} {
+		parseError(t, `<row `+attribute+`/>`, "unknown attribute")
+	}
+}
+
 func TestCheckboxOnMustBeTrueOrFalse(t *testing.T) {
 	parseError(t, `<checkbox/>`, "<checkbox> needs a on")
 	err := buildError(t, `<checkbox on="yes"/>`, nil)

@@ -135,8 +135,8 @@ func (s *sliderB) Draw(e *El, c *core.Ctx, dst *ebiten.Image) {
 
 // Slider picks an integer from min to max in steps, by dragging. OnSlide
 // runs with each new value while the thumb moves, so the effect can be
-// seen live. A slider has no template attribute: its state and callbacks
-// are Go values.
+// seen live. In a template it is <slider state min max step value>, with
+// the state and callbacks named from the scope.
 func Slider(state *SliderState, min, max, step, value int, opts ...Option) *El {
 	return Custom(&sliderB{state: state, min: min, max: max, step: step, value: value}, with([]Item{Grow(1), H(core.CompactH)}, opts)...)
 }

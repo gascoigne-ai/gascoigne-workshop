@@ -29,6 +29,7 @@
 //	Buttons     button primary-button link-button
 //	Inputs      field (placeholder field-pad segments text-menu on-enter on-tab)
 //	            area (text-menu) checkbox
+//	            slider (slider-mid on-slide on-slide-end)
 //	Viewers     code image
 //	Containers  scroll hscroll split (vertical as-ratio min-first min-second)
 //	Widgets     tabs scroll-tabs table   separator active-tab
@@ -409,6 +410,23 @@ var areaHandlers = map[string]handlerAttr{
 	"text-menu": handler(widget.TextMenu),
 }
 
+// sliderOptions are the attributes only a slider takes.
+var sliderOptions = map[string]attributeReader{
+	"slider-mid": intAttr(widget.SliderMid),
+}
+
+// sliderHandlers get the slider's value while the thumb moves and when it
+// is released.
+var sliderHandlers = map[string]handlerAttr{
+	"on-slide":     handler(widget.OnSlide),
+	"on-slide-end": handler(widget.OnSlideEnd),
+}
+
+// slider builds a Slider from its state, range, step and value.
+func slider(parts elementParts) (view.Node, error) {
+	return widget.Slider(parts.args[0].(*widget.SliderState), parts.args[1].(int), parts.args[2].(int), parts.args[3].(int), parts.args[4].(int), parts.opts...), nil
+}
+
 // stateful builds a widget whose constructor takes the state it edits
 // first, then options (Field, Area, Code).
 func stateful[T any](constructor func(state *T, opts ...view.Option) *view.El) element {
@@ -540,6 +558,8 @@ var elements = map[string]elementSpec{
 	"checkbox": {build: checkbox, holds: holdsNothing, params: []param{boolParam("on")}},
 	"code":     {build: stateful(widget.Code), holds: holdsNothing, params: []param{scopedState[widget.CodeView]("state")}},
 	"image":    {build: picture, holds: holdsNothing, params: []param{scoped[*ebiten.Image]("img")}},
+	"slider": {build: slider, holds: holdsNothing, options: sliderOptions, handlers: sliderHandlers,
+		params: []param{scopedState[widget.SliderState]("state"), wholeParam("min"), wholeParam("max"), wholeParam("step"), wholeParam("value")}},
 }
 
 // withOpts applies options to an element that was built without them.
