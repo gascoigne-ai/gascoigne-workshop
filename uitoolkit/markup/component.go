@@ -26,6 +26,7 @@
 //	Text        text caption icon
 //	Buttons     button primary-button link-button
 //	Containers  scroll hscroll split (vertical as-ratio min-first min-second)
+//	Widgets     tabs scroll-tabs   separator active-tab
 //	Templates   include slot
 //
 // The usual form is an inline template in the method that feeds it, as
@@ -89,7 +90,7 @@ type node struct {
 	tag      string
 	attrs    []attr
 	children []*node
-	text     string // the text between the tags, for leaf elements
+	text     string // the text between the tags, for elements that hold text
 	line     int
 }
 
@@ -251,6 +252,32 @@ func realParam(name string) param {
 	}}
 }
 
+// wholeParam is a param that is a whole number, written in the template or
+// read with {{path}}.
+func wholeParam(name string) param {
+	return param{name: name, read: func(value string, scope Scope) (any, error) {
+		text, err := interpolate(value, scope)
+		if err != nil {
+			return nil, err
+		}
+		number, err := strconv.Atoi(strings.TrimSpace(text))
+		if err != nil {
+			return nil, fmt.Errorf("%s: %q is not a whole number", name, text)
+		}
+		return number, nil
+	}}
+}
+
+// tabStrip builds Tabs from its items and the active index.
+func tabStrip(parts elementParts) (view.Node, error) {
+	return widget.Tabs(parts.args[0].([]widget.TabItem), parts.args[1].(int), parts.opts...), nil
+}
+
+// scrollingTabStrip builds ScrollTabs from its state, items and the active index.
+func scrollingTabStrip(parts elementParts) (view.Node, error) {
+	return widget.ScrollTabs(parts.args[0].(*widget.ScrollState), parts.args[1].([]widget.TabItem), parts.args[2].(int), parts.opts...), nil
+}
+
 // splitter builds a Split from its state and default size.
 func splitter(parts elementParts) (view.Node, error) {
 	return widget.Split(parts.args[0].(*widget.SplitState), parts.args[1].(float64), parts.items()...), nil
@@ -268,11 +295,27 @@ var splitOptions = map[string]attributeReader{
 	"min-second": intAttr(widget.MinSecond),
 }
 
-// elementSpec is one row of the elements table. A leaf element takes text
-// and no children. options are attributes only this element takes.
+// holding is what an element may contain.
+type holding int
+
+const (
+	holdsChildren holding = iota
+	holdsText             // text and no children: text, buttons
+	holdsNothing          // a widget made from its arguments alone: tabs, table
+)
+
+// kinds describe each holding in the Reference.
+var kinds = map[holding]string{
+	holdsChildren: "container",
+	holdsText:     "text and no children",
+	holdsNothing:  "no children and no text",
+}
+
+// elementSpec is one row of the elements table. options are attributes
+// only this element takes.
 type elementSpec struct {
 	build   element
-	leaf    bool
+	holds   holding
 	params  []param
 	options map[string]attributeReader
 }
@@ -325,21 +368,25 @@ var elements = map[string]elementSpec{
 	"row":            {build: container(view.Row)},
 	"col":            {build: container(view.Col)},
 	"stack":          {build: container(view.Stack)},
-	"spacer":         {build: optioned(view.Spacer), leaf: true},
-	"hrule":          {build: bare(view.HRule), leaf: true},
-	"vrule":          {build: bare(view.VRule), leaf: true},
-	"text":           {build: labelled(view.Text), leaf: true},
-	"primary-button": {build: labelled(widget.PrimaryButton), leaf: true},
-	"link-button":    {build: labelled(widget.LinkButton), leaf: true},
-	"include":        {build: placeholder, leaf: true},
-	"icon":           {build: labelled(widget.Icon), leaf: true},
-	"slot":           {build: placeholder, leaf: true},
-	"caption":        {build: labelled(view.Caption), leaf: true},
-	"button":         {build: labelled(widget.Button), leaf: true},
+	"spacer":         {build: optioned(view.Spacer), holds: holdsText},
+	"hrule":          {build: bare(view.HRule), holds: holdsText},
+	"vrule":          {build: bare(view.VRule), holds: holdsText},
+	"text":           {build: labelled(view.Text), holds: holdsText},
+	"primary-button": {build: labelled(widget.PrimaryButton), holds: holdsText},
+	"link-button":    {build: labelled(widget.LinkButton), holds: holdsText},
+	"include":        {build: placeholder, holds: holdsText},
+	"icon":           {build: labelled(widget.Icon), holds: holdsText},
+	"slot":           {build: placeholder, holds: holdsText},
+	"caption":        {build: labelled(view.Caption), holds: holdsText},
+	"button":         {build: labelled(widget.Button), holds: holdsText},
 	"scroll":         {build: scroller(widget.Scroll), params: []param{scoped[*widget.ScrollState]("state")}},
 	"hscroll":        {build: scroller(widget.HScroll), params: []param{scoped[*widget.ScrollState]("state")}},
 	"split": {build: splitter, options: splitOptions,
 		params: []param{scoped[*widget.SplitState]("state"), realParam("default")}},
+	"tabs": {build: tabStrip, holds: holdsNothing,
+		params: []param{scoped[[]widget.TabItem]("items"), wholeParam("active")}},
+	"scroll-tabs": {build: scrollingTabStrip, holds: holdsNothing,
+		params: []param{scoped[*widget.ScrollState]("state"), scoped[[]widget.TabItem]("items"), wholeParam("active")}},
 }
 
 // withOpts applies options to an element that was built without them.
@@ -450,6 +497,8 @@ var attributes = map[string]func(v string) (view.Option, error){
 	"optional":        flagAttr("optional", view.Optional),
 	"lighten":         flagAttr("lighten", view.Lighten),
 	"keep-in-view":    flagAttr("keep-in-view", view.KeepInView),
+	"separator":       intAttr(view.Separator),
+	"active-tab":      flagAttr("active-tab", widget.ActiveTab),
 }
 
 func intAttr(f func(int) view.Option) func(string) (view.Option, error) {
@@ -553,7 +602,7 @@ func Parse(name string, src []byte) (*Template, error) {
 			}
 			if len(stack) > 0 {
 				parent := stack[len(stack)-1]
-				if elements[parent.tag].leaf {
+				if elements[parent.tag].holds != holdsChildren {
 					return fail(l, "<%s> cannot contain <%s>", parent.tag, n.tag)
 				}
 				parent.children = append(parent.children, n)
@@ -578,7 +627,7 @@ func Parse(name string, src []byte) (*Template, error) {
 				return fail(line(), "text outside the root element")
 			}
 			parent := stack[len(stack)-1]
-			if !elements[parent.tag].leaf {
+			if elements[parent.tag].holds != holdsText {
 				return fail(line(), "text is only allowed inside <text>, <caption> and <button>, not <%s>", parent.tag)
 			}
 			if parent.text != "" {
@@ -972,11 +1021,7 @@ func Reference() string {
 	var sb strings.Builder
 	sb.WriteString("Elements:\n")
 	for _, n := range elementNames() {
-		kind := "container"
-		if elements[n].leaf {
-			kind = "text and no children"
-		}
-		fmt.Fprintf(&sb, "  <%s>  %s", n, kind)
+		fmt.Fprintf(&sb, "  <%s>  %s", n, kinds[elements[n].holds])
 		if params := elements[n].paramNames(); len(params) > 0 {
 			fmt.Fprintf(&sb, "; takes %s", strings.Join(params, " "))
 		}

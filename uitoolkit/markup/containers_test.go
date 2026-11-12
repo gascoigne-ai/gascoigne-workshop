@@ -139,6 +139,52 @@ func TestSplitElementDragMovesTheStateOfTheScope(t *testing.T) {
 	}
 }
 
+func TestTabsElementsMatchTheGoTabs(t *testing.T) {
+	tabs := []widget.TabItem{{Label: "Body"}, {Label: "Headers", Badge: 3}, {Label: "Settings"}}
+	strip := &widget.ScrollState{}
+	choose := func(int) {}
+	template := build(t, `
+		<col>
+		  <tabs items="tabs" active="1" on-select="choose" h="30"/>
+		  <scroll-tabs state="strip" items="tabs" active="{{active}}" w="100"/>
+		</col>`, Scope{"tabs": tabs, "strip": strip, "choose": choose, "active": 2})
+	goView := view.Col(
+		widget.Tabs(tabs, 1, view.OnSelect(choose), view.H(30)),
+		widget.ScrollTabs(strip, tabs, 2, view.W(100)),
+	)
+	sameLayout(t, testCtx(t), template, goView, 400, 100)
+}
+
+func TestTabsElementClickSelectsThroughTheScopeHandler(t *testing.T) {
+	ctx := testCtx(t)
+	chosen := -1
+	template := build(t, `<col><tabs items="tabs" active="0" on-select="choose"/></col>`,
+		Scope{"tabs": []widget.TabItem{{Label: "One"}, {Label: "Two"}}, "choose": func(index int) { chosen = index }})
+	view.Layout(ctx, template, 400, 100)
+	second := template.Children()[0].Children()[1].Rect()
+	ctx.In = core.Input{X: second.X + second.W/2, Y: second.Y + second.H/2, Click: true}
+	view.Update(ctx, template)
+	if chosen != 1 {
+		t.Fatalf("clicking the second tab chose %d, want 1", chosen)
+	}
+}
+
+func TestSeparatorAndActiveTabAttributesMatchTheGoOptions(t *testing.T) {
+	got := view.Dump(build(t, `<row separator="12"><row active-tab/></row>`, nil))
+	want := view.Dump(view.Row(view.Separator(12), view.Row(widget.ActiveTab())))
+	if got != want {
+		t.Fatalf("template:\n%s\nGo:\n%s", got, want)
+	}
+}
+
+func TestTabsTakeNeitherChildrenNorText(t *testing.T) {
+	for _, src := range []string{`<tabs items="x" active="0"><row/></tabs>`, `<tabs items="x" active="0">label</tabs>`} {
+		if _, err := Parse("t.vml", []byte(src)); err == nil {
+			t.Errorf("%s parsed", src)
+		}
+	}
+}
+
 // Split's options set the split behavior, so another element must not take them.
 func TestSplitOptionsAreOnlyForSplit(t *testing.T) {
 	for _, attribute := range []string{"vertical", "as-ratio", `min-first="1"`, `min-second="1"`, `default="1"`} {
