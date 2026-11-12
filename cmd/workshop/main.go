@@ -11,6 +11,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/preview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/displayscale"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/fonts"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/filedialog"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/systemclock"
@@ -59,6 +60,7 @@ func main() {
 	opts.History = func(dir string) port.History { return history.Dir(dir) }
 	home, _ := os.UserHomeDir()
 	opts.Fonts = fonts.System{Home: home}
+	opts.Display = displayscale.New()
 	opts.Previews = preview.Browser{Lifetime: previewLifetime}
 	opts.Clock = systemclock.Clock{}
 	opts.SettingsFiles = settingsfile.Files{}

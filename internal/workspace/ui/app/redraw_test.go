@@ -2,6 +2,7 @@ package ui
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/settingsfile"
+	sport "github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"path/filepath"
 	"testing"
@@ -227,9 +228,9 @@ func TestFrameSizeAppliesTheInterfaceScaleOnTopOfTheDisplayScale(t *testing.T) {
 		{"hidpi and bigger", 1000, 600, 2, 1.25, 800, 480, 2.5, 2000, 1200},
 	}
 	for _, c := range cases {
-		lw, lh, scale, sw, sh := frameSize(c.w, c.h, c.dsf, c.ui)
-		if lw != c.lw || lh != c.lh || scale != c.scale || sw != c.screenW || sh != c.scH {
-			t.Errorf("%s: got %d %d %v %d %d", c.name, lw, lh, scale, sw, sh)
+		got := frameSize(c.w, c.h, c.dsf, c.dsf, c.ui)
+		if got.LW != c.lw || got.LH != c.lh || got.Scale != c.scale || got.SW != c.screenW || got.SH != c.scH {
+			t.Errorf("%s: got %+v", c.name, got)
 		}
 	}
 }
@@ -298,5 +299,48 @@ func TestAMovingPointerDoesNotRestartTheCaretBlink(t *testing.T) {
 	a.step(core.Input{X: 10, Y: 10}) // only the pointer moved
 	if a.ctx.CaretVisible() {
 		t.Fatal("moving the pointer showed the caret again")
+	}
+}
+
+// A compositor that scales the display itself (Hyprland with Xwayland)
+// leaves Ebitengine at 1: the window is in real pixels, so the logical
+// size shrinks by the true scale and the screen stays the window size.
+func TestFrameSizeUsesAScaleTheWindowSystemDoesNotReport(t *testing.T) {
+	got := frameSize(2000, 1200, 1, 2, 1.25)
+	want := frame{LW: 800, LH: 480, Scale: 2.5, SW: 2000, SH: 1200, WindowScale: 2.5}
+	if got != want {
+		t.Fatalf("got %+v, want %+v", got, want)
+	}
+}
+
+type fakeDisplay float64
+
+func (display fakeDisplay) Factor() float64 { return float64(display) }
+
+func TestDisplayScaleTrustsTheWindowSystemUnlessItReportsOne(t *testing.T) {
+	cases := []struct {
+		name     string
+		reported float64
+		display  sport.DisplayScale
+		want     float64
+	}{
+		{"reported wins when above one", 2, fakeDisplay(1.5), 2},
+		{"desktop fills in a reported one", 1, fakeDisplay(2), 2},
+		{"fractional desktop scale", 1, fakeDisplay(1.25), 1.25},
+		{"unknown desktop scale", 1, fakeDisplay(0), 1},
+		{"no desktop source", 1, nil, 1},
+	}
+	for _, c := range cases {
+		app := &App{display: c.display}
+		if got := app.displayScale(c.reported); got != c.want {
+			t.Errorf("%s: got %v, want %v", c.name, got, c.want)
+		}
+	}
+}
+
+func TestRememberedWindowSizeUsesTheWindowScaleOfTheLastLayout(t *testing.T) {
+	app := &App{windowScale: 2.5}
+	if got := app.windowPx(800); got != 2000 {
+		t.Fatalf("got %d, want 2000", got)
 	}
 }

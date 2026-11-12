@@ -198,7 +198,13 @@ func stateNote(status string, err error) string {
 
 // windowPx converts a logical size to window pixels (device independent),
 // which is what the window system and the remembered geometry use.
-func (a *App) windowPx(logical int) int { return int(float64(logical)*a.settings.UIScale() + 0.5) }
+func (a *App) windowPx(logical int) int {
+	scale := a.windowScale
+	if scale == 0 {
+		scale = a.settings.UIScale() // before the first Layout
+	}
+	return int(float64(logical)*scale + 0.5)
+}
 
 // historyDir is the folder of the saved responses, next to the state
 // file; "" when the state is not kept on disk.

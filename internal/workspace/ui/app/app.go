@@ -224,6 +224,8 @@ type App struct {
 	now                func() time.Time               // the clock, replaced in tests
 	histories          func(dir string) rport.History // nil keeps no history
 	fonts              sport.FontStore
+	display            sport.DisplayScale
+	windowScale        float64 // window units per logical pixel, set by Layout
 	settingFiles       sport.SettingsStore
 	previews           rport.BodyPreview // shows a response body in the browser, replaced in tests
 	sampler            core.Sampler
@@ -264,6 +266,7 @@ type Options struct {
 	States                    port.StateStore                               // where the UI state is kept; nil keeps none
 	Files                     port.FileDialog                               // the desktop file chooser; nil asks for paths as text
 	History                   func(dir string) rport.History                // the history in a folder; nil keeps none
+	Display                   sport.DisplayScale                            // the desktop's display scale when the window system hides it; nil has none
 	Fonts                     sport.FontStore                               // installed fonts; nil has none
 	SettingsFiles             sport.SettingsStore                           // the settings file; nil reads the defaults and cannot save
 	Previews                  rport.BodyPreview                             // shows a response body in the browser; nil has none
@@ -343,6 +346,7 @@ func NewApp(opts Options) (*App, error) {
 	if a.store == nil {
 		a.store = noStore{}
 	}
+	a.display = opts.Display
 	a.files, a.previews, a.histories, a.fonts = opts.Files, opts.Previews, opts.History, opts.Fonts
 	if a.fonts == nil {
 		a.fonts = noFonts{}
@@ -499,9 +503,11 @@ var cursorShapes = map[core.Cursor]ebiten.CursorShapeType{
 // (w by h); the screen is that size times the monitor's scale factor so
 // text and lines stay sharp on HiDPI displays.
 func (a *App) Layout(w, h int) (int, int) {
-	lw, lh, scale, sw, sh := frameSize(w, h, ebiten.Monitor().DeviceScaleFactor(), a.settings.UIScale())
-	a.setSize(lw, lh, scale)
-	return sw, sh
+	reported := ebiten.Monitor().DeviceScaleFactor()
+	f := frameSize(w, h, reported, a.displayScale(reported), a.settings.UIScale())
+	a.windowScale = f.WindowScale
+	a.setSize(f.LW, f.LH, f.Scale)
+	return f.SW, f.SH
 }
 
 // Update implements ebiten.Game: it samples input and runs one frame.
