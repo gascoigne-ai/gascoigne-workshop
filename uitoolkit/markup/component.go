@@ -29,7 +29,7 @@
 //	Buttons     button primary-button link-button
 //	Inputs      field (placeholder field-pad segments text-menu on-enter on-tab)
 //	            area (text-menu) checkbox
-//	Viewers     code
+//	Viewers     code image
 //	Containers  scroll hscroll split (vertical as-ratio min-first min-second)
 //	Widgets     tabs scroll-tabs table   separator active-tab
 //	Dialogs     dialog dialog-title message-dialog   focus-scope
@@ -68,6 +68,8 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -311,6 +313,12 @@ func boolParam(name string) param {
 	}}
 }
 
+// picture builds an Image from its picture, which may be nil: the widget
+// draws nothing until the app has one.
+func picture(parts elementParts) (view.Node, error) {
+	return widget.Image(parts.args[0].(*ebiten.Image), parts.opts...), nil
+}
+
 // checkbox builds a Checkbox from whether it is on.
 func checkbox(parts elementParts) (view.Node, error) {
 	return widget.Checkbox(parts.args[0].(bool), parts.opts...), nil
@@ -531,6 +539,7 @@ var elements = map[string]elementSpec{
 		params: []param{scopedState[widget.TextArea]("state")}},
 	"checkbox": {build: checkbox, holds: holdsNothing, params: []param{boolParam("on")}},
 	"code":     {build: stateful(widget.Code), holds: holdsNothing, params: []param{scopedState[widget.CodeView]("state")}},
+	"image":    {build: picture, holds: holdsNothing, params: []param{scoped[*ebiten.Image]("img")}},
 }
 
 // withOpts applies options to an element that was built without them.
