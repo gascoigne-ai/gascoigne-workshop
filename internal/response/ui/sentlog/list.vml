@@ -1,0 +1,3 @@
+<scroll state="scroll" bg="sunken">
+  <slot for="row in rows" name="row"/>
+</scroll>

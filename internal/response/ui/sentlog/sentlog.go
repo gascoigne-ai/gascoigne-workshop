@@ -94,34 +94,50 @@ func (l *Log) Open(host Host, sent port.Sent) {
 	}
 }
 
-// List is the sidebar body while it shows the log instead of the tree.
-func (l *Log) List(host Host, filter string) Node {
-	rows := l.Rows(filter)
-	if len(rows) == 0 {
-		return Col(Bg(w.Sunken), Pad(w.Gutter), Text("Nothing sent yet", Muted()))
-	}
-	return Scroll(&l.scroll, Bg(w.Sunken),
-		For(rows, func(_ int, sent port.Sent) Node {
-			return l.row(host, sent)
-		}),
-	)
-}
-
-//go:embed row.vml
+//go:embed list.vml empty.vml row.vml
 var templates embed.FS
 
-var rowTemplate = markup.MustLoad(templates, "row.vml")
+var (
+	listTemplate  = markup.MustLoad(templates, "list.vml")
+	emptyTemplate = markup.MustLoad(templates, "empty.vml")
+	rowTemplate   = markup.MustLoad(templates, "row.vml")
+)
+
+// List is the sidebar body while it shows the log instead of the tree:
+// the rows, or a note while none match.
+func (l *Log) List(host Host, filter string) Node {
+	sent := l.Rows(filter)
+	if len(sent) == 0 { // a template has one root, so the note is its own
+		return emptyTemplate.MustBuild(markup.Scope{"gutter": w.Gutter})
+	}
+	rows := make([]Node, 0, len(sent))
+	for _, entry := range sent {
+		rows = append(rows, l.row(host, entry))
+	}
+	return listTemplate.MustBuild(markup.Scope{"scroll": &l.scroll, "rows": rows})
+}
+
+// sentRow is what the row template shows of one sent request.
+type sentRow struct {
+	Badge  Node
+	Path   string
+	Status string // the status code, or "failed"
+	When   string // the URL and the time of day it was sent
+	Open   func()
+}
 
 // row is one sent request: badge, path and status above, URL and time below.
 func (l *Log) row(host Host, sent port.Sent) Node {
-	return rowTemplate.MustBuild(
-		markup.Scope{
-			"badge":  host.Badge(sent.Protocol, sent.Method),
-			"path":   sent.Path,
-			"status": status(sent.Status),
-			"when":   sent.URL + "  " + sent.At.Format("15:04:05"),
-			"open":   func() { l.Open(host, sent) },
-		})
+	return rowTemplate.MustBuild(markup.Scope{
+		"row": sentRow{
+			Badge:  host.Badge(sent.Protocol, sent.Method),
+			Path:   sent.Path,
+			Status: status(sent.Status),
+			When:   sent.URL + "  " + sent.At.Format("15:04:05"),
+			Open:   func() { l.Open(host, sent) },
+		},
+		"gutter": w.Gutter,
+	})
 }
 
 func status(code int) string {

@@ -1,0 +1,3 @@
+<col bg="sunken" pad="{{gutter}}">
+  <text muted>Nothing sent yet</text>
+</col>

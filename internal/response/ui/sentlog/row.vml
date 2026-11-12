@@ -1,8 +1,8 @@
-<col pad-x="12" pad-y="4" hover-bg="hover" control="row" on-click="open">
+<col pad-x="{{gutter}}" pad-y="4" hover-bg="hover" control="row" on-click="row.Open">
   <row gap="6" align-items="baseline">
-    <slot name="badge"/>
-    <text ellipsis grow="1">{{path}}</text>
-    <text small muted>{{status}}</text>
+    <slot name="row.Badge"/>
+    <text ellipsis grow="1">{{row.Path}}</text>
+    <text small muted>{{row.Status}}</text>
   </row>
-  <row><text small muted ellipsis grow="1">{{when}}</text></row>
+  <row><text small muted ellipsis grow="1">{{row.When}}</text></row>
 </col>
