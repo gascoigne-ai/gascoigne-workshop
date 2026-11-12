@@ -15,16 +15,19 @@
 // values may use {{path}} to read the Scope; `if` and `for="x in xs"` are
 // the two directives, and an `on-click` or other `on-*` event attribute
 // names a function of the scope with the type of the Go option's argument
-// (handlers). A container takes its Go constructor's arguments as
-// attributes: state and specs name a scope entry of their Go type
+// (handlers). A container or widget takes its Go constructor's arguments
+// as attributes: state and specs name a scope entry of their Go type
 // (<scroll state="list"> wants a *widget.ScrollState), and a wrong type
-// is an error that names it, as is a nil state pointer.
+// is an error that names it, as is a nil state pointer. Options and
+// handlers that only work on one widget (a field's on-enter) are valid on
+// that element only.
 //
 // # Finding your way
 //
 //	Layout      row col stack spacer hrule vrule
 //	Text        text caption icon
 //	Buttons     button primary-button link-button
+//	Inputs      field (placeholder field-pad segments text-menu on-enter on-tab)
 //	Containers  scroll hscroll split (vertical as-ratio min-first min-second)
 //	Widgets     tabs scroll-tabs table   separator active-tab
 //	Dialogs     dialog dialog-title message-dialog   focus-scope
@@ -350,6 +353,31 @@ var splitOptions = map[string]attributeReader{
 	"min-second": intAttr(widget.MinSecond),
 }
 
+// fieldOptions are the attributes only a field takes: their options set
+// the field behavior and would panic on another element.
+var fieldOptions = map[string]attributeReader{
+	"placeholder": func(value string) (view.Option, error) { return widget.Placeholder(value), nil },
+	"field-pad":   intAttr(widget.FieldPad),
+}
+
+// fieldHandlers are the field's own attributes that name a scope entry:
+// its key handlers, the function that colors its text and the TextField
+// its right-click menu edits.
+var fieldHandlers = map[string]handlerAttr{
+	"on-enter":  handler(widget.OnEnter),
+	"on-tab":    handler(widget.OnTab),
+	"segments":  handler(widget.Segments),
+	"text-menu": handler(widget.TextMenu),
+}
+
+// stateful builds a widget whose constructor takes the state it edits
+// first, then options (Field, Area, Code).
+func stateful[T any](constructor func(state *T, opts ...view.Option) *view.El) element {
+	return func(parts elementParts) (view.Node, error) {
+		return constructor(parts.args[0].(*T), parts.opts...), nil
+	}
+}
+
 // holding is what an element may contain.
 type holding int
 
@@ -366,13 +394,25 @@ var kinds = map[holding]string{
 	holdsNothing:  "no children and no text",
 }
 
-// elementSpec is one row of the elements table. options are attributes
-// only this element takes.
+// elementSpec is one row of the elements table. options and handlers
+// are attributes only this element takes; a handler's value names a
+// scope entry.
 type elementSpec struct {
-	build   element
-	holds   holding
-	params  []param
-	options map[string]attributeReader
+	build    element
+	holds    holding
+	params   []param
+	options  map[string]attributeReader
+	handlers map[string]handlerAttr
+}
+
+// handler is the binding of the attribute called name on this element:
+// one of its own handlers or a generic one.
+func (spec elementSpec) handler(name string) (handlerAttr, bool) {
+	if bind, ok := spec.handlers[name]; ok {
+		return bind, true
+	}
+	bind, ok := handlers[name]
+	return bind, ok
 }
 
 // option is the reader of the attribute called name on this element: one
@@ -385,9 +425,13 @@ func (spec elementSpec) option(name string) (attributeReader, bool) {
 	return read, ok
 }
 
+// optionNames are the names of the element's own options and handlers.
 func (spec elementSpec) optionNames() []string {
-	names := make([]string, 0, len(spec.options))
+	names := make([]string, 0, len(spec.options)+len(spec.handlers))
 	for name := range spec.options {
+		names = append(names, name)
+	}
+	for name := range spec.handlers {
 		names = append(names, name)
 	}
 	sort.Strings(names)
@@ -450,6 +494,8 @@ var elements = map[string]elementSpec{
 		params: []param{scopedState[core.Ctx]("ctx"), scopedState[widget.MenuState]("state")}},
 	"toasts": {build: toastCorner, holds: holdsNothing,
 		params: []param{scopedState[widget.ToastStack]("stack"), wholeParam("width"), wholeParam("height"), wholeParam("bottom-inset")}},
+	"field": {build: stateful(widget.Field), holds: holdsNothing, options: fieldOptions, handlers: fieldHandlers,
+		params: []param{scopedState[widget.TextField]("state")}},
 }
 
 // withOpts applies options to an element that was built without them.
@@ -534,8 +580,6 @@ var attributes = map[string]func(v string) (view.Option, error){
 	"max-w":           intAttr(view.MaxW),
 	"min-h":           intAttr(view.MinH),
 	"max-h":           intAttr(view.MaxH),
-	"field-pad":       intAttr(widget.FieldPad),
-	"placeholder":     func(v string) (view.Option, error) { return widget.Placeholder(v), nil },
 	"shadow":          flagAttr("shadow", view.Shadow),
 	"clip":            flagAttr("clip", view.Clip),
 	"modal":           flagAttr("modal", view.Modal),
@@ -656,7 +700,8 @@ func Parse(name string, src []byte) (*Template, error) {
 			spec := elements[n.tag]
 			for _, a := range t.Attr {
 				_, isParam := spec.param(a.Name.Local)
-				if _, ok := spec.option(a.Name.Local); !ok && !isParam && !directives[a.Name.Local] && !isHandler(a.Name.Local) && !(a.Name.Local == "name" && (n.tag == "icon" || n.tag == "slot" || n.tag == "include")) {
+				_, isHandler := spec.handler(a.Name.Local)
+				if _, ok := spec.option(a.Name.Local); !ok && !isParam && !directives[a.Name.Local] && !isHandler && !(a.Name.Local == "name" && (n.tag == "icon" || n.tag == "slot" || n.tag == "include")) {
 					return fail(l, "unknown attribute %q on <%s>%s", a.Name.Local, n.tag, hint(a.Name.Local, append(attributeNames(), spec.ownNames()...), "attributes"))
 				}
 				n.attrs = append(n.attrs, attr{a.Name.Local, a.Value, l})
@@ -793,11 +838,6 @@ func (t *Template) args(element *node, spec elementSpec, scope Scope) ([]any, er
 	return values, nil
 }
 
-func isHandler(name string) bool {
-	_, ok := handlers[name]
-	return ok
-}
-
 // bindHandler reads the scope function an event attribute names.
 func (t *Template) bindHandler(n *node, a attr, h handlerAttr, sc Scope) (view.Option, error) {
 	value, err := lookup(strings.TrimSpace(a.value), sc)
@@ -831,7 +871,7 @@ func (t *Template) buildOne(n *node, sc Scope) (view.Node, error) {
 			if _, isParam := elements[n.tag].param(a.name); isParam {
 				continue // read by args
 			}
-			if h, ok := handlers[a.name]; ok {
+			if h, ok := elements[n.tag].handler(a.name); ok {
 				opt, err := t.bindHandler(n, a, h, sc)
 				if err != nil {
 					return nil, err
