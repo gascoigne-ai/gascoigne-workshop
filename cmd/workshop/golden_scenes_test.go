@@ -16,17 +16,20 @@ type goldenScene struct {
 	name          string
 	width, height int
 	args          []string
-	mask          []image.Rectangle // places that show a measured duration, which changes from run to run
+	mask          []image.Rectangle // places that show a measured duration or the clock, which change from run to run
 }
 
 // Every scene is a golden under testdata/golden. Add a row, run with -update,
 // look at the PNG, then commit both.
 // The response header and the status bar print how long the request took; the
 // status pill left of it moves with the number of digits, so the mask covers it.
+// A sent log row ends with the time of day it was sent.
 var (
 	durationStacked = image.Rect(1100, 462, 1280, 497) // response pane under the request
 	durationSide    = image.Rect(1100, 150, 1280, 185) // response pane beside the request
 	durationStatus  = image.Rect(0, 772, 400, 800)     // status bar line
+	sentTimeFirst   = image.Rect(156, 62, 236, 80)     // clock time of the sent log's first row, after its URL
+	sentTimeSecond  = image.Rect(132, 99, 210, 117)    // clock time of the second row
 )
 
 var goldenScenes = []goldenScene{
@@ -47,6 +50,7 @@ var goldenScenes = []goldenScene{
 	{name: "settings-requests", width: shotWidth, height: shotHeight, args: []string{"-page", "requests"}},
 	{name: "settings-general", width: shotWidth, height: shotHeight, args: []string{"-page", "general"}},
 	{name: "narrow", width: 800, height: 520, args: []string{"-window", "800x520"}},
+	{name: "sent-log", width: shotWidth, height: shotHeight, args: []string{"-send", "-request", "Echo", "-sent"}, mask: []image.Rectangle{durationStacked, durationStatus, sentTimeFirst, sentTimeSecond}},
 }
 
 func TestGoldenScenes(t *testing.T) {

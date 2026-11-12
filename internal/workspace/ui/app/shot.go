@@ -28,11 +28,14 @@ type screenshot struct {
 	sendOnStart bool
 	frames      int
 	sent        bool
+	waiting     []*reqTab // tabs whose send the capture waits for
+	sendNext    *reqTab   // the tab -request opened, sent once the earlier sends are answered
 	captured    bool
 	err         error
 	set         []string // key=value settings applied live before the capture, as the dialog would
 	request     string   // name of the request to open before the capture
 	page        string   // settings page to show before the capture
+	sentLog     bool     // show the log of sent requests in the sidebar
 }
 
 // Err is the error of the capture, if any.
@@ -55,9 +58,30 @@ func (a *App) shotUpdate() error {
 	}
 	if s.sendOnStart && !s.sent {
 		s.sent = true
-		a.send(a.cur())
+		a.shotSend(a.cur())
+	}
+	if s.sendNext != nil && s.allAnswered() { // in turn, so the sent log's order is fixed
+		next := s.sendNext
+		s.sendNext = nil
+		a.shotSend(next)
 	}
 	return nil
+}
+
+// shotSend sends t's request and makes the capture wait for its outcome.
+func (a *App) shotSend(t *reqTab) {
+	a.shot.waiting = append(a.shot.waiting, t)
+	a.send(t)
+}
+
+// allAnswered reports whether every send of the capture has its outcome.
+func (s *screenshot) allAnswered() bool {
+	for _, t := range s.waiting {
+		if !answered(t) {
+			return false
+		}
+	}
+	return true
 }
 
 // ready reports whether the frame about to be drawn should be saved.
@@ -65,7 +89,7 @@ func (s *screenshot) ready(a *App) bool {
 	if s.path == "" || s.captured || s.frames < settleFrames {
 		return false
 	}
-	if s.sendOnStart && !answered(a.cur()) && s.frames < shotTimeout {
+	if s.sendOnStart && (s.sendNext != nil || !s.allAnswered()) && s.frames < shotTimeout {
 		return false
 	}
 	return true
@@ -149,10 +173,16 @@ func (a *App) showShotTarget() {
 			return
 		}
 		a.openRequest(req)
+		if s.sendOnStart {
+			s.sendNext = a.cur()
+		}
 	}
 	if s.page != "" {
 		a.prefs.Cat = s.page
 		a.menu = true
+	}
+	if s.sentLog {
+		a.showSent = true
 	}
 }
 

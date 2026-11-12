@@ -4,8 +4,11 @@ import (
 	"errors"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 func shotApp(t *testing.T, opts Options) *App {
@@ -144,6 +147,45 @@ func TestScreenshotOpensTheNamedSettingsPage(t *testing.T) {
 	}
 	if !a.menu || a.prefs.Cat != "colors" {
 		t.Errorf("settings open = %v, page = %q, want the dialog on colors", a.menu, a.prefs.Cat)
+	}
+}
+
+func TestScreenshotShowsTheSentLog(t *testing.T) {
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotSentLog: true})
+	for range setFrame {
+		if err := a.shotUpdate(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if !a.showSent {
+		t.Error("the sidebar should list the sent requests")
+	}
+}
+
+// With -send and -request the first request goes out at start-up and the
+// named one once that is answered, so a capture of the sent log has two
+// rows in a fixed order.
+func TestScreenshotWithSendAndARequestSendsBothInTurn(t *testing.T) {
+	srv := jsonServer(t)
+	a := shotApp(t, withAdapters(Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), SendOnStart: true, ScreenshotRequest: "Get User"}))
+	first := a.cur().Req
+	pointTabAt(a.cur(), srv.URL)
+	named := a.findRequestByName("Get User")
+	named.URL = srv.URL
+	for range 400 {
+		a.shotUpdate()
+		a.step(core.Input{})
+		if a.shot.ready(a) {
+			break
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	if !a.shot.ready(a) {
+		t.Fatal("never ready: the named request was not sent or not waited for")
+	}
+	rows := a.sent.Rows("") // as the capture finds them: both must be in
+	if len(rows) != 2 || rows[0].Path != a.requestPath(named) || rows[1].Path != a.requestPath(first) {
+		t.Fatalf("sent rows = %+v, want Get User then %s", rows, first.Name)
 	}
 }
 
