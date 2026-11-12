@@ -1,0 +1,8 @@
+scrollB grow=1 bg=sunken rect=0,0,260,400
+  flow padL=12 padT=4 padR=12 padB=4 control=row hoverBg=hover onClick=true rect=0,0,260,38
+    flow gap=6 rect=12,4,236,16
+      textB text="POST" rect=12,4,38,16
+      textB text="Orders/Create" grow=1 ellipsis=true rect=56,4,156,16
+      textB text="failed" fg=muted small=true rect=218,6,30,14
+    flow rect=12,20,236,14
+      textB text="https://two.test/orders  12:00:00" grow=1 fg=muted small=true ellipsis=true rect=12,20,236,14

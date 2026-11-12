@@ -1,0 +1,2 @@
+flow padL=12 padT=12 padR=12 padB=12 bg=sunken rect=0,0,260,400
+  textB text="Nothing sent yet" fg=muted rect=12,12,236,16
