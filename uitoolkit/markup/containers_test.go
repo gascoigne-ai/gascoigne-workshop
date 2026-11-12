@@ -1,6 +1,7 @@
 package markup
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -85,6 +86,46 @@ func TestScrollStateOfTheWrongTypeNamesTheTypeItWants(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "*widget.ScrollState") {
 		t.Errorf("error = %v, want it to say column is not a *widget.ScrollState", err)
 	}
+}
+
+// A nil *widget.ScrollState in the scope passed the type check, and the
+// scroll panicked at layout, far from the template that bound it.
+func TestNilStateInTheScopeIsABuildErrorNamingTheEntry(t *testing.T) {
+	tests := []struct {
+		name, src string
+		scope     Scope
+		want      string
+	}{
+		{"scroll", `<scroll state="list"/>`, Scope{"list": (*widget.ScrollState)(nil)}, "*widget.ScrollState"},
+		{"hscroll", `<hscroll state="list"/>`, Scope{"list": (*widget.ScrollState)(nil)}, "*widget.ScrollState"},
+		{"split", `<split state="list" default="10"/>`, Scope{"list": (*widget.SplitState)(nil)}, "*widget.SplitState"},
+		{"scroll-tabs", `<scroll-tabs state="list" items="tabs" active="0"/>`,
+			Scope{"list": (*widget.ScrollState)(nil), "tabs": []widget.TabItem{}}, "*widget.ScrollState"},
+		{"message-dialog", `<message-dialog state="list"/>`, Scope{"list": (*widget.DialogState)(nil)}, "*widget.DialogState"},
+		{"menu state", `<menu ctx="ctx" state="list"/>`, Scope{"ctx": testCtx(t), "list": (*widget.MenuState)(nil)}, "*widget.MenuState"},
+		{"menu ctx", `<menu ctx="list" state="menu"/>`, Scope{"list": (*core.Ctx)(nil), "menu": menuState()}, "*core.Ctx"},
+		{"toasts", `<toasts stack="list" width="8" height="6" bottom-inset="2"/>`, Scope{"list": (*widget.ToastStack)(nil)}, "*widget.ToastStack"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := buildErrorOrPanic(t, test.src, test.scope)
+			if err == nil || !strings.Contains(err.Error(), `"list"`) || !strings.Contains(err.Error(), "nil "+test.want) {
+				t.Errorf("error = %v, want it to say list is a nil %s", err, test.want)
+			}
+		})
+	}
+}
+
+// buildErrorOrPanic is buildError that also reports a panic of the build
+// as an error, so one bad case does not stop the others.
+func buildErrorOrPanic(t *testing.T, src string, scope Scope) (err error) {
+	t.Helper()
+	defer func() {
+		if recovered := recover(); recovered != nil {
+			err = fmt.Errorf("build panicked: %v", recovered)
+		}
+	}()
+	return buildError(t, src, scope)
 }
 
 func TestScrollWithoutStateIsAParseError(t *testing.T) {

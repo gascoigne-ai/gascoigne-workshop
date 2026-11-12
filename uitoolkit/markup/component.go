@@ -18,7 +18,7 @@
 // (handlers). A container takes its Go constructor's arguments as
 // attributes: state and specs name a scope entry of their Go type
 // (<scroll state="list"> wants a *widget.ScrollState), and a wrong type
-// is an error that names it.
+// is an error that names it, as is a nil state pointer.
 //
 // # Finding your way
 //
@@ -238,6 +238,24 @@ func scoped[T any](name string) param {
 	}}
 }
 
+// scopedState is scoped for a *T the widget reads and writes. A nil *T has
+// the right type but would panic at layout, far from the template, so it
+// is an error here that names the entry.
+func scopedState[T any](name string) param {
+	pointer := scoped[*T](name)
+	want := fmt.Sprintf("%T", (*T)(nil))
+	return param{name: name, read: func(value string, scope Scope) (any, error) {
+		found, err := pointer.read(value, scope)
+		if err != nil {
+			return nil, err
+		}
+		if found.(*T) == nil {
+			return nil, fmt.Errorf("%s=%q is a nil %s", name, strings.TrimSpace(value), want)
+		}
+		return found, nil
+	}}
+}
+
 // realParam is a param that is a number, written in the template or read
 // with {{path}}.
 func realParam(name string) param {
@@ -416,22 +434,22 @@ var elements = map[string]elementSpec{
 	"slot":           {build: placeholder, holds: holdsText},
 	"caption":        {build: labelled(view.Caption), holds: holdsText},
 	"button":         {build: labelled(widget.Button), holds: holdsText},
-	"scroll":         {build: scroller(widget.Scroll), params: []param{scoped[*widget.ScrollState]("state")}},
-	"hscroll":        {build: scroller(widget.HScroll), params: []param{scoped[*widget.ScrollState]("state")}},
+	"scroll":         {build: scroller(widget.Scroll), params: []param{scopedState[widget.ScrollState]("state")}},
+	"hscroll":        {build: scroller(widget.HScroll), params: []param{scopedState[widget.ScrollState]("state")}},
 	"split": {build: splitter, options: splitOptions,
-		params: []param{scoped[*widget.SplitState]("state"), realParam("default")}},
+		params: []param{scopedState[widget.SplitState]("state"), realParam("default")}},
 	"tabs": {build: tabStrip, holds: holdsNothing,
 		params: []param{scoped[[]widget.TabItem]("items"), wholeParam("active")}},
 	"scroll-tabs": {build: scrollingTabStrip, holds: holdsNothing,
-		params: []param{scoped[*widget.ScrollState]("state"), scoped[[]widget.TabItem]("items"), wholeParam("active")}},
+		params: []param{scopedState[widget.ScrollState]("state"), scoped[[]widget.TabItem]("items"), wholeParam("active")}},
 	"table":          {build: grid, holds: holdsNothing, params: []param{scoped[widget.TableSpec]("spec")}},
 	"dialog":         {build: container(widget.Dialog)},
 	"dialog-title":   {build: dialogTitle, params: []param{textParam("title")}},
-	"message-dialog": {build: messageDialog, params: []param{scoped[*widget.DialogState]("state")}},
+	"message-dialog": {build: messageDialog, params: []param{scopedState[widget.DialogState]("state")}},
 	"menu": {build: popupMenu, holds: holdsNothing,
-		params: []param{scoped[*core.Ctx]("ctx"), scoped[*widget.MenuState]("state")}},
+		params: []param{scopedState[core.Ctx]("ctx"), scopedState[widget.MenuState]("state")}},
 	"toasts": {build: toastCorner, holds: holdsNothing,
-		params: []param{scoped[*widget.ToastStack]("stack"), wholeParam("width"), wholeParam("height"), wholeParam("bottom-inset")}},
+		params: []param{scopedState[widget.ToastStack]("stack"), wholeParam("width"), wholeParam("height"), wholeParam("bottom-inset")}},
 }
 
 // withOpts applies options to an element that was built without them.
