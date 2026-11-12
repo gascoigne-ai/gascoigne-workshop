@@ -408,13 +408,13 @@ var fieldHandlers = map[string]handlerAttr{
 	"on-enter":  handler(widget.OnEnter),
 	"on-tab":    handler(widget.OnTab),
 	"segments":  handler(widget.Segments),
-	"text-menu": handler(widget.TextMenu),
+	"text-menu": stateHandler(widget.TextMenu),
 }
 
 // areaHandlers are the area's own attributes that name a scope entry: the
 // TextField its right-click menu edits (the area's own, &area.TextField).
 var areaHandlers = map[string]handlerAttr{
-	"text-menu": handler(widget.TextMenu),
+	"text-menu": stateHandler(widget.TextMenu),
 }
 
 // sliderOptions are the attributes only a slider takes.
@@ -582,23 +582,42 @@ func withOpts(node view.Node, opts []view.Option) view.Node {
 // directives are attributes that control building, not looks.
 var directives = map[string]bool{"if": true, "for": true}
 
-// handlerAttr binds an attribute to a function of the scope: the attribute
-// value names it, and it must have the type of the Go option's argument.
+// handlerAttr binds an attribute to a function or value of the scope: the
+// attribute value names it, and it must have the type of the Go option's
+// argument. bind's error says what is wrong with the value.
 type handlerAttr struct {
-	want string // the function type, for the error
-	bind func(value any) (view.Option, bool)
+	bind func(value any) (view.Option, error)
 }
 
 func handler[F any](option func(F) view.Option) handlerAttr {
-	var zero F
+	want := fmt.Sprintf("%T", *new(F))
 	return handlerAttr{
-		want: fmt.Sprintf("%T", zero),
-		bind: func(value any) (view.Option, bool) {
+		bind: func(value any) (view.Option, error) {
 			f, ok := value.(F)
 			if !ok {
-				return nil, false
+				return nil, fmt.Errorf("is not a %s", want)
 			}
-			return option(f), true
+			return option(f), nil
+		},
+	}
+}
+
+// stateHandler is handler for an option that takes state the widget
+// writes to (text-menu's *widget.TextField): a nil *T has the right type
+// but would panic on first use, so it is rejected, as scopedState does.
+func stateHandler[T any](option func(*T) view.Option) handlerAttr {
+	typed := handler(option)
+	want := fmt.Sprintf("%T", (*T)(nil))
+	return handlerAttr{
+		bind: func(value any) (view.Option, error) {
+			bound, err := typed.bind(value)
+			if err != nil {
+				return nil, err
+			}
+			if value.(*T) == nil {
+				return nil, fmt.Errorf("is a nil %s", want)
+			}
+			return bound, nil
 		},
 	}
 }
@@ -920,9 +939,9 @@ func (t *Template) bindHandler(n *node, a attr, h handlerAttr, sc Scope) (view.O
 	if err != nil {
 		return nil, t.errf(n, "%v", err)
 	}
-	opt, ok := h.bind(value)
-	if !ok {
-		return nil, t.errf(n, "%s=%q is not a %s", a.name, a.value, h.want)
+	opt, err := h.bind(value)
+	if err != nil {
+		return nil, t.errf(n, "%s=%q %v", a.name, a.value, err)
 	}
 	return opt, nil
 }

@@ -114,6 +114,18 @@ func TestFieldStateMustBeATextField(t *testing.T) {
 	}
 }
 
+// A nil *widget.TextField bound by text-menu built, and the menu panicked
+// on the first right click, far from the template.
+func TestTextMenuOfANilTextFieldIsABuildErrorNamingTheEntry(t *testing.T) {
+	field, area := widget.NewTextField(""), widget.NewTextArea("")
+	for _, src := range []string{`<field state="field" text-menu="menu"/>`, `<area state="area" text-menu="menu"/>`} {
+		err := buildError(t, src, Scope{"field": &field, "area": &area, "menu": (*widget.TextField)(nil)})
+		if err == nil || !strings.Contains(err.Error(), `"menu"`) || !strings.Contains(err.Error(), "nil *widget.TextField") {
+			t.Errorf("%s: error = %v, want it to say menu is a nil *widget.TextField", src, err)
+		}
+	}
+}
+
 // The field's options reach into the field's behavior: placeholder and
 // field-pad were generic attributes, so <row placeholder> parsed and then
 // panicked at build.
