@@ -216,6 +216,11 @@ func TestReferenceListsEveryElementAndAttribute(t *testing.T) {
 			t.Errorf("reference misses directive %s", n)
 		}
 	}
+	for n := range handlers {
+		if !strings.Contains(ref, "  "+n+"\n") {
+			t.Errorf("reference misses handler %s", n)
+		}
+	}
 }
 
 // Template attributes are the Go options in kebab-case, for every side.

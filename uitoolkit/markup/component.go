@@ -13,7 +13,9 @@
 // (elements, attributes below), so a new one is a new row; anything not
 // in them is an error that names the file and line. Text and attribute
 // values may use {{path}} to read the Scope; `if` and `for="x in xs"` are
-// the two directives, and `on-click` names a func() of the scope.
+// the two directives, and an `on-click` or other `on-*` event attribute
+// names a function of the scope with the type of the Go option's argument
+// (handlers).
 //
 // The usual form is an inline template in the method that feeds it, as
 // with a Vue component's `template` option:
@@ -181,7 +183,41 @@ func withOpts(n view.Node, opts []view.Option) view.Node {
 }
 
 // directives are attributes that control building, not looks.
-var directives = map[string]bool{"if": true, "for": true, "on-click": true}
+var directives = map[string]bool{"if": true, "for": true}
+
+// handlerAttr binds an attribute to a function of the scope: the attribute
+// value names it, and it must have the type of the Go option's argument.
+type handlerAttr struct {
+	want string // the function type, for the error
+	bind func(value any) (view.Option, bool)
+}
+
+func handler[F any](option func(F) view.Option) handlerAttr {
+	var zero F
+	return handlerAttr{
+		want: fmt.Sprintf("%T", zero),
+		bind: func(value any) (view.Option, bool) {
+			f, ok := value.(F)
+			if !ok {
+				return nil, false
+			}
+			return option(f), true
+		},
+	}
+}
+
+// handlers are the event attributes, each the Go option in kebab-case.
+var handlers = map[string]handlerAttr{
+	"on-click":          handler(view.OnClick),
+	"on-click-at":       handler(view.OnClickAt),
+	"on-right-click":    handler(view.OnRightClick),
+	"on-right-click-in": handler(view.OnRightClickIn),
+	"on-middle-click":   handler(view.OnMiddleClick),
+	"on-drag-over":      handler(view.OnDragOver),
+	"on-change":         handler(view.OnChange),
+	"on-select":         handler(view.OnSelect),
+	"on-dismiss":        handler(view.OnDismiss),
+}
 
 // attributes turn an attribute value (already interpolated) into an
 // option. A flag is written bare (`small`) or `small="true"`; "false" is
@@ -336,7 +372,7 @@ func Parse(name string, src []byte) (*Template, error) {
 			}
 			n := &node{tag: t.Name.Local, line: l}
 			for _, a := range t.Attr {
-				if _, ok := attributes[a.Name.Local]; !ok && !directives[a.Name.Local] && !(a.Name.Local == "name" && (n.tag == "icon" || n.tag == "slot" || n.tag == "include")) {
+				if _, ok := attributes[a.Name.Local]; !ok && !directives[a.Name.Local] && !isHandler(a.Name.Local) && !(a.Name.Local == "name" && (n.tag == "icon" || n.tag == "slot" || n.tag == "include")) {
 					return fail(l, "unknown attribute %q on <%s>%s", a.Name.Local, n.tag, hint(a.Name.Local, attributeNames(), "attributes"))
 				}
 				n.attrs = append(n.attrs, attr{a.Name.Local, a.Value, l})
@@ -440,6 +476,24 @@ func (t *Template) build(n *node, sc Scope) (view.Node, error) {
 	return view.Frag(nodes...), nil
 }
 
+func isHandler(name string) bool {
+	_, ok := handlers[name]
+	return ok
+}
+
+// bindHandler reads the scope function an event attribute names.
+func (t *Template) bindHandler(n *node, a attr, h handlerAttr, sc Scope) (view.Option, error) {
+	value, err := lookup(strings.TrimSpace(a.value), sc)
+	if err != nil {
+		return nil, t.errf(n, "%v", err)
+	}
+	opt, ok := h.bind(value)
+	if !ok {
+		return nil, t.errf(n, "%s=%q is not a %s", a.name, a.value, h.want)
+	}
+	return opt, nil
+}
+
 // buildOne makes the element of n once, honoring `if`.
 func (t *Template) buildOne(n *node, sc Scope) (view.Node, error) {
 	var opts []view.Option
@@ -456,17 +510,15 @@ func (t *Template) buildOne(n *node, sc Scope) (view.Node, error) {
 			}
 		case "name": // the icon's name, which is its text
 			continue
-		case "on-click":
-			v, err := lookup(strings.TrimSpace(a.value), sc)
-			if err != nil {
-				return nil, t.errf(n, "%v", err)
-			}
-			f, ok := v.(func())
-			if !ok {
-				return nil, t.errf(n, "%s is not a func()", a.value)
-			}
-			opts = append(opts, view.OnClick(f))
 		default:
+			if h, ok := handlers[a.name]; ok {
+				opt, err := t.bindHandler(n, a, h, sc)
+				if err != nil {
+					return nil, err
+				}
+				opts = append(opts, opt)
+				continue
+			}
 			val, err := interpolate(a.value, sc)
 			if err != nil {
 				return nil, t.errf(n, "%v", err)
@@ -646,11 +698,14 @@ func elementNames() []string {
 }
 
 func attributeNames() []string {
-	names := make([]string, 0, len(attributes)+len(directives))
+	names := make([]string, 0, len(attributes)+len(directives)+len(handlers))
 	for n := range attributes {
 		names = append(names, n)
 	}
 	for n := range directives {
+		names = append(names, n)
+	}
+	for n := range handlers {
 		names = append(names, n)
 	}
 	sort.Strings(names)
@@ -714,7 +769,7 @@ func Reference() string {
 	sb.WriteString("<include name=\"x\"/> builds the template registered with markup.Define(\"x\", ...) with this scope.\n")
 	sb.WriteString("<slot name=\"x\"/> puts the view.Node the scope holds under x here.\n")
 	sb.WriteString("<icon name=\"trash\"/> draws a built-in or registered icon (widget.IconNames).\n")
-	sb.WriteString("Text and attribute values may use {{path}}; if=\"name\" or \"!name\"; for=\"item in list\"; on-click=\"handler\".\n")
+	sb.WriteString("Text and attribute values may use {{path}}; if=\"name\" or \"!name\"; for=\"item in list\"; on-click=\"handler\" (and the other on-* events, each a func of the scope).\n")
 	return sb.String()
 }
 
