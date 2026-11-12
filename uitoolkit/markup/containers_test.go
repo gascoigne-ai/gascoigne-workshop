@@ -185,6 +185,51 @@ func TestTabsTakeNeitherChildrenNorText(t *testing.T) {
 	}
 }
 
+// tableSpec is an editable two-column table whose edit requests land in edits.
+func tableSpec(edits *[][2]int) widget.TableSpec {
+	return widget.TableSpec{
+		Columns:     []string{"Name", "Value"},
+		Weights:     []float64{1, 2},
+		Rows:        []widget.TableRow{{Cells: []string{"accept", "json"}, Checked: true}, {Cells: []string{"token", "abc"}, Muted: true}},
+		Placeholder: []string{"Key", "Value"},
+		Editable:    true,
+		OnToggle:    func(int) {},
+		OnDelete:    func(int) {},
+		OnEditCell:  func(row, col int) { *edits = append(*edits, [2]int{row, col}) },
+	}
+}
+
+func TestTableElementMatchesTheGoTable(t *testing.T) {
+	var edits [][2]int
+	spec := tableSpec(&edits)
+	template := build(t, `<col><table spec="spec" margin-t="4"/></col>`, Scope{"spec": spec})
+	goView := view.Col(widget.Table(spec, view.MarginT(4)))
+	sameLayout(t, testCtx(t), template, goView, 400, 300)
+}
+
+func TestTableElementCellClickRunsTheSpecOfTheScope(t *testing.T) {
+	ctx := testCtx(t)
+	var edits [][2]int
+	template := build(t, `<col><table spec="spec"/></col>`, Scope{"spec": tableSpec(&edits)})
+	view.Layout(ctx, template, 400, 300)
+	table := template.Children()[0]
+	secondRow := table.Children()[2].Rect() // after the header
+	ctx.In = core.Input{X: secondRow.X + secondRow.W - 60, Y: secondRow.Y + secondRow.H/2, Click: true}
+	view.Update(ctx, template)
+	if len(edits) != 1 || edits[0] != [2]int{1, 1} {
+		t.Fatalf("clicking the value of the second row asked to edit %v, want [[1 1]]", edits)
+	}
+}
+
+func TestTableSpecOfTheWrongTypeNamesTheTypeItWants(t *testing.T) {
+	var edits [][2]int
+	spec := tableSpec(&edits)
+	err := buildError(t, `<table spec="spec"/>`, Scope{"spec": &spec})
+	if err == nil || !strings.Contains(err.Error(), "widget.TableSpec") {
+		t.Errorf("error = %v, want it to say spec is not a widget.TableSpec", err)
+	}
+}
+
 // Split's options set the split behavior, so another element must not take them.
 func TestSplitOptionsAreOnlyForSplit(t *testing.T) {
 	for _, attribute := range []string{"vertical", "as-ratio", `min-first="1"`, `min-second="1"`, `default="1"`} {

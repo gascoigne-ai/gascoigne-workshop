@@ -26,7 +26,7 @@
 //	Text        text caption icon
 //	Buttons     button primary-button link-button
 //	Containers  scroll hscroll split (vertical as-ratio min-first min-second)
-//	Widgets     tabs scroll-tabs   separator active-tab
+//	Widgets     tabs scroll-tabs table   separator active-tab
 //	Templates   include slot
 //
 // The usual form is an inline template in the method that feeds it, as
@@ -278,6 +278,11 @@ func scrollingTabStrip(parts elementParts) (view.Node, error) {
 	return widget.ScrollTabs(parts.args[0].(*widget.ScrollState), parts.args[1].([]widget.TabItem), parts.args[2].(int), parts.opts...), nil
 }
 
+// grid builds a Table from its spec.
+func grid(parts elementParts) (view.Node, error) {
+	return widget.Table(parts.args[0].(widget.TableSpec), parts.opts...), nil
+}
+
 // splitter builds a Split from its state and default size.
 func splitter(parts elementParts) (view.Node, error) {
 	return widget.Split(parts.args[0].(*widget.SplitState), parts.args[1].(float64), parts.items()...), nil
@@ -387,6 +392,7 @@ var elements = map[string]elementSpec{
 		params: []param{scoped[[]widget.TabItem]("items"), wholeParam("active")}},
 	"scroll-tabs": {build: scrollingTabStrip, holds: holdsNothing,
 		params: []param{scoped[*widget.ScrollState]("state"), scoped[[]widget.TabItem]("items"), wholeParam("active")}},
+	"table": {build: grid, holds: holdsNothing, params: []param{scoped[widget.TableSpec]("spec")}},
 }
 
 // withOpts applies options to an element that was built without them.
