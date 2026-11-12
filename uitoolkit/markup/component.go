@@ -745,29 +745,29 @@ func (t *Template) build(n *node, sc Scope) (view.Node, error) {
 	return view.Frag(nodes...), nil
 }
 
-// missingParam is the first param of spec that n does not set, "" when it
-// sets them all.
-func (n *node) missingParam(spec elementSpec) string {
+// missingParam is the first param of spec that element does not set, ""
+// when it sets them all.
+func (element *node) missingParam(spec elementSpec) string {
 	for _, wanted := range spec.params {
-		if !slices.ContainsFunc(n.attrs, func(set attr) bool { return set.name == wanted.name }) {
+		if !slices.ContainsFunc(element.attrs, func(set attr) bool { return set.name == wanted.name }) {
 			return wanted.name
 		}
 	}
 	return ""
 }
 
-// args reads the values of the element's params from n's attributes, in
+// args reads the values of the element's params from its attributes, in
 // the order of the params.
-func (t *Template) args(n *node, spec elementSpec, scope Scope) ([]any, error) {
+func (t *Template) args(element *node, spec elementSpec, scope Scope) ([]any, error) {
 	values := make([]any, len(spec.params))
-	for _, set := range n.attrs {
+	for _, set := range element.attrs {
 		for i, wanted := range spec.params {
 			if set.name != wanted.name {
 				continue
 			}
 			value, err := wanted.read(set.value, scope)
 			if err != nil {
-				return nil, t.errf(n, "%v", err)
+				return nil, t.errf(element, "%v", err)
 			}
 			values[i] = value
 		}
