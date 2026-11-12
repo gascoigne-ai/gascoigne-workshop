@@ -1,0 +1,35 @@
+flow rect=0,0,220,400
+  textB text="COLORS" h=22 fg=muted small=true rect=0,0,220,22
+  flow rect=0,22,220,28
+    flow h=28 gap=6 rect=0,22,220,28
+      textB text="Selection" w=76 small=true rect=0,22,76,28
+      flow w=20 h=18 bg=selection control=swatch rect=82,27,20,18
+      fieldB w=70 h=24 bg=sunken border=border control=field onRightClickIn=true onChange=true rect=108,24,70,24
+      flow w=44 h=24 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=184,24,44,24
+        textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=194,24,24,24
+  flow rect=0,50,220,46
+    flow h=28 gap=6 rect=0,50,220,28
+      textB text="Find match" w=76 small=true rect=0,50,76,28
+      flow w=20 h=18 bg=find-match control=swatch rect=82,55,20,18
+      fieldB w=70 h=24 bg=sunken border=error control=field onRightClickIn=true onChange=true rect=108,52,70,24
+      flow w=44 h=24 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=184,52,44,24
+        textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=194,52,24,24
+    flow h=18 rect=0,78,220,18
+      textB text="Contrast 1.0:1 is below 4.5:1" grow=1 fg=error small=true ellipsis=true rect=0,78,220,18
+  flow rect=0,96,220,28
+    flow h=28 gap=6 rect=0,96,220,28
+      textB text="Active match" w=76 small=true rect=0,96,76,28
+      flow w=20 h=18 bg=find-active control=swatch rect=82,101,20,18
+      fieldB w=70 h=24 bg=sunken border=border control=field onRightClickIn=true onChange=true rect=108,98,70,24
+      flow w=44 h=24 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=184,98,44,24
+        textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=194,98,24,24
+  flow rect=0,124,220,28
+    flow h=28 gap=6 rect=0,124,220,28
+      textB text="Accent / focus" w=76 small=true rect=0,124,76,28
+      flow w=20 h=18 bg=accent control=swatch rect=82,129,20,18
+      fieldB w=70 h=24 bg=sunken border=border control=field onRightClickIn=true onChange=true rect=108,126,70,24
+      flow w=44 h=24 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=184,126,44,24
+        textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=194,126,24,24
+  flow h=28 rect=0,152,220,28
+    flow w=110 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=0,152,110,28
+      textB text="Reset colors" grow=1 fg=chip-text ellipsis=true center=true rect=10,152,90,28
