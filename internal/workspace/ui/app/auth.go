@@ -1,9 +1,12 @@
 package ui
 
 import (
+	"embed"
+
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
@@ -95,44 +98,88 @@ func (t *reqTab) toggleSecrets() {
 	}
 }
 
-// authPane is the Auth tab: a type chooser and the fields of that type.
-func (a *App) authPane(_ pane, t *reqTab, scroll *ScrollState) Node {
-	current := authTypeOf(t.Req.Auth.Type)
-	hasSecret := false
-	for _, f := range current.fields {
-		hasSecret = hasSecret || f.secret
-	}
-	return Scroll(scroll, Pad(w.Gutter), Gap(8),
-		Row(H(w.RowH), Gap(6),
-			For(authTypes, func(_ int, at authType) Node {
-				choose := OnClick(func() { editRequest(t, editor.AuthTypeChosen{Type: at.id}) })
-				return Choice(at.label, at.id == current.id, W(at.width), choose)
-			}),
-		),
-		If(len(current.fields) == 0, Lines("No authentication", w.Muted)),
-		For(current.fields, func(_ int, f authField) Node { return a.authFieldRow(t, f) }),
-		If(hasSecret, CheckRow(t.showSecrets, OnClick(t.toggleSecrets),
-			Text("Show secrets"),
-		)),
-	)
+//go:embed authpane.vml authchip.vml authchip-selected.vml
+var authTemplates embed.FS
+
+var (
+	authPaneTemplate    = markup.MustLoad(authTemplates, "authpane.vml")
+	authChipTemplate    = markup.MustLoad(authTemplates, "authchip.vml")
+	authChipLitTemplate = markup.MustLoad(authTemplates, "authchip-selected.vml")
+)
+
+// authChoiceChipWidth is the width of every chip of a chooser field.
+const authChoiceChipWidth = 70
+
+// authChip is what a chip template shows of one choice: an auth type or a
+// value of a chooser field.
+type authChip struct {
+	Label string
+	Width int
+	Pick  func()
 }
 
-func (a *App) authFieldRow(t *reqTab, f authField) Node {
-	if f.choices != nil {
-		return FormRow(f.label, 120,
-			Row(Gap(6), For(f.choices, func(_ int, c authChoice) Node {
-				choose := OnClick(func() { editRequest(t, editor.AuthFieldSet{Field: f.id, Value: c.id}) })
-				stored := editor.AuthValue(t.Req.Auth, f.id)
-				return Choice(c.label, stored == c.id || (stored == "" && c.id == f.choices[0].id), W(70), choose)
-			})),
-		)
+// authRow is what the pane's template shows of one field of the current
+// type: a chooser's chips, or the text field it edits.
+type authRow struct {
+	Label string
+	Chips []Node
+	Input *TextField
+	Sync  func()
+}
+
+// authPane is the Auth tab: a type chooser and the fields of that type.
+func (a *App) authPane(_ pane, tab *reqTab, scroll *ScrollState) Node {
+	current := authTypeOf(tab.Req.Auth.Type)
+	types := make([]Node, 0, len(authTypes))
+	for _, at := range authTypes {
+		pick := func() { editRequest(tab, editor.AuthTypeChosen{Type: at.id}) }
+		types = append(types, authChipNode(authChip{Label: at.label, Width: at.width, Pick: pick}, at.id == current.id))
 	}
-	in := t.authInput(f.id)
-	in.Masked = f.secret && !t.showSecrets
-	sync := func() { editRequest(t, editor.AuthFieldSet{Field: f.id, Value: in.Text}) }
-	return FormRow(f.label, 120,
-		Field(in, Grow(1), Bg(w.Sunken),
-			OnChange(sync),
-			TextMenu(in)),
-	)
+	hasSecret := false
+	rows := make([]authRow, 0, len(current.fields))
+	for _, field := range current.fields {
+		hasSecret = hasSecret || field.secret
+		rows = append(rows, authFieldRow(tab, field))
+	}
+	return authPaneTemplate.MustBuild(markup.Scope{
+		"gutter":        w.Gutter,
+		"rowH":          w.RowH,
+		"labelH":        w.LabelH,
+		"scroll":        scroll,
+		"types":         types,
+		"none":          len(current.fields) == 0,
+		"fields":        rows,
+		"hasSecret":     hasSecret,
+		"showSecrets":   tab.showSecrets,
+		"toggleSecrets": tab.toggleSecrets,
+	})
+}
+
+// authFieldRow is the view model of one field: a chooser lights the stored
+// choice, or its first one while nothing is stored; a text field is masked
+// while it is secret and the secrets are hidden.
+func authFieldRow(tab *reqTab, field authField) authRow {
+	if field.choices != nil {
+		stored := editor.AuthValue(tab.Req.Auth, field.id)
+		chips := make([]Node, 0, len(field.choices))
+		for _, c := range field.choices {
+			pick := func() { editRequest(tab, editor.AuthFieldSet{Field: field.id, Value: c.id}) }
+			lit := stored == c.id || (stored == "" && c.id == field.choices[0].id)
+			chips = append(chips, authChipNode(authChip{Label: c.label, Width: authChoiceChipWidth, Pick: pick}, lit))
+		}
+		return authRow{Label: field.label, Chips: chips}
+	}
+	in := tab.authInput(field.id)
+	in.Masked = field.secret && !tab.showSecrets
+	sync := func() { editRequest(tab, editor.AuthFieldSet{Field: field.id, Value: in.Text}) }
+	return authRow{Label: field.label, Input: in, Sync: sync}
+}
+
+// authChipNode is a chip from the chosen or the plain template: markup
+// cannot pick between two roots per item of a list.
+func authChipNode(chip authChip, chosen bool) Node {
+	if chosen {
+		return authChipLitTemplate.MustBuild(markup.Scope{"chip": chip})
+	}
+	return authChipTemplate.MustBuild(markup.Scope{"chip": chip})
 }
