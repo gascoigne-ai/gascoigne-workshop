@@ -1,0 +1,8 @@
+flow h=44 padL=12 padR=12 bg=hero control=hero rect=0,0,280,44
+  textB text="GitHub REST API" fg=hero-text bold=true rect=12,0,118,44
+  plain grow=1 rect=130,0,0,44
+  flow h=24 padL=10 padR=10 bg=hero-text control=pill tip=Environment: variables that override the collection's onClickAt=true rect=130,10,348,24
+    textB text="Staging environment in the second data centre, read only" fg=hero small=true bold=true rect=140,15,328,14
+  plain w=12 grow=1 rect=478,0,12,44
+  flow w=44 tip=Settings (Ctrl+,) onClick=true rect=490,0,44,44
+    iconB grow=1 fg=hero-muted hoverColor=hero-text icon=dots rect=490,0,44,44
