@@ -243,7 +243,7 @@ func TestRemainingAttributesMatchTheGoOptions(t *testing.T) {
 	if got != want {
 		t.Fatalf("template:\n%s\nGo:\n%s", got, want)
 	}
-	for _, bad := range []string{`<row edge-t="x" float-tr="1"/>`, `<row edge-l=""/>`, `<row float-at="1"/>`} {
+	for _, bad := range []string{`<row edge-t="x" float-tr="1"/>`, `<row float-at="1"/>`} {
 		tp, err := Parse("t.vml", []byte(bad))
 		if err != nil {
 			t.Fatal(err)
@@ -359,5 +359,28 @@ func TestViewCacheStaysBounded(t *testing.T) {
 	viewMu.Unlock()
 	if n > maxViewCache {
 		t.Fatalf("%d cached sources, want at most %d", n, maxViewCache)
+	}
+}
+
+// An empty color token switches the option off, so one template serves
+// an item with the option and one without (a drop target's outline).
+func TestEmptyColorTokenAppliesNoOption(t *testing.T) {
+	for _, attribute := range []string{"bg", "border", "border-t", "border-r", "border-b", "border-l", "border-x", "border-y", "edge-t", "edge-l", "edge-r", "hover-bg", "hover-color", "color"} {
+		t.Run(attribute, func(t *testing.T) {
+			got := view.Dump(build(t, `<row `+attribute+`="{{token}}"/>`, Scope{"token": core.Token("")}))
+			if want := view.Dump(view.Row()); got != want {
+				t.Fatalf("template:\n%s\nwant:\n%s", got, want)
+			}
+		})
+	}
+}
+
+func TestNonEmptyColorTokenStillAppliesItsOption(t *testing.T) {
+	got := view.Dump(build(t, `<row border="{{token}}"/>`, Scope{"token": core.AccentLine}))
+	if want := view.Dump(view.Row(view.Border(core.AccentLine))); got != want {
+		t.Fatalf("template:\n%s\nGo:\n%s", got, want)
+	}
+	if got == view.Dump(view.Row()) {
+		t.Fatal("Dump does not show the border, so the empty-token test proves nothing")
 	}
 }

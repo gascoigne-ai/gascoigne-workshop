@@ -27,6 +27,11 @@
 // handlers that only work on one widget (a field's on-enter) are valid on
 // that element only.
 //
+// An option is switched off per item by its value: a color attribute
+// (bg, border, edge-t, hover-bg, color...) given an empty token applies
+// nothing, so border="{{drop}}" outlines only the item whose drop is a
+// token.
+//
 // # Finding your way
 //
 //	Layout      row col stack spacer hrule vrule
@@ -743,12 +748,16 @@ func floatAttr(f func(float64) view.Option) func(string) (view.Option, error) {
 	}
 }
 
+// tokenAttr applies no option for an empty token, so a template switches
+// a color off per item (border="{{dropBorder}}") instead of Go patching
+// the built node or a second template.
 func tokenAttr(f func(core.Token) view.Option) func(string) (view.Option, error) {
 	return func(v string) (view.Option, error) {
-		if strings.TrimSpace(v) == "" {
-			return nil, errors.New("a color token is needed")
+		token := strings.TrimSpace(v)
+		if token == "" {
+			return nil, nil
 		}
-		return f(core.Token(strings.TrimSpace(v))), nil
+		return f(core.Token(token)), nil
 	}
 }
 
@@ -1296,6 +1305,7 @@ func Reference() string {
 	sb.WriteString("<include> and <slot> take only name, if and for.\n")
 	sb.WriteString("<icon name=\"trash\"/> draws a built-in or registered icon (widget.IconNames).\n")
 	sb.WriteString("Text and attribute values may use {{path}}, each step a map key or an exported struct field; if=\"name\" or \"!name\"; for=\"item in list\" over any slice, with {{$index}}; on-click=\"handler\" (and the other on-* events, each a func of the scope).\n")
+	sb.WriteString("A color attribute (bg, border*, edge-*, hover-*, color) given an empty token applies no option.\n")
 	sb.WriteString("What an element takes (state=\"x\", ...) are its Go constructor's arguments, all required; state and specs name a scope entry of the Go type.\n")
 	return sb.String()
 }
