@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
-	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
@@ -42,16 +41,13 @@ func (a *App) pickGRPCMethod(t *reqTab) {
 	})
 }
 
-// grpcMethodChip is the chip of a gRPC tab that shows its method and,
-// when clicked, lists the server's.
-func (a *App) grpcMethodChip(t *reqTab) Node {
-	label, color := t.Req.Method, w.Accent
-	if label == "" {
-		label, color = "Pick method...", w.Muted
+// grpcMethodLabel is what the method chip of a gRPC tab shows, and in
+// which color: the method, or a muted prompt to pick one.
+func grpcMethodLabel(t *reqTab) (string, w.Token) {
+	if t.Req.Method == "" {
+		return "Pick method...", w.Muted
 	}
-	return tip("Method: click to list the server's methods", Row(W(grpcMethodW), OnClick(func() { a.pickGRPCMethod(t) }),
-		Text(label, Ellipsis(), Grow(1), Color(color)),
-	))
+	return t.Req.Method, w.Accent
 }
 
 // grpcMethodW is the width of the method chip: wide, as method names are

@@ -269,37 +269,54 @@ func (a *App) pressTab(i int) {
 	}
 }
 
-// urlBar is [protocol | method | URL field ........] [Send].
+//go:embed urlbar.vml
+var urlBarSource embed.FS
+
+var urlBarTemplate = markup.MustLoad(urlBarSource, "urlbar.vml")
+
+// urlBar is [protocol | method | URL field ........] [Send]. The button
+// is one of three: Send, Connect or Disconnect on a socket, and Cancel
+// while a request runs.
 func (a *App) urlBar(t *reqTab) Node {
-	isREST, isGRPC := t.Req.Protocol == "rest", t.Req.Protocol == "grpc"
-	send := PrimaryButton("Send", MinW(80), OnClick(func() { a.send(t) }), Tooltip(a.hint("Send the request", "send")))
-	if isSocket(t) {
-		label, hint := "Connect", "Open the connection"
-		if t.Active() {
-			label, hint = "Disconnect", "Close the connection"
-		}
-		send = PrimaryButton(label, MinW(96), OnClick(func() { a.toggleConnection(t) }), Tooltip(a.hint(hint, "send")))
-	} else if t.Sending {
-		send = PrimaryButton("Cancel", W(80), OnClick(func() { a.cancelSend(t) }), Tooltip("Cancel the running request"))
+	isREST, isGRPC, socket := t.Req.Protocol == "rest", t.Req.Protocol == "grpc", isSocket(t)
+	sending := !socket && t.Sending
+	connectionLabel, connectionHint := "Connect", "Open the connection"
+	if t.Active() {
+		connectionLabel, connectionHint = "Disconnect", "Close the connection"
 	}
-	return Row(H(urlH), PadX(w.Gutter), PadY(8), Gap(8), Bg(w.Bg),
-		Row(Grow(1), Bg(w.Sunken), Control("field"), Tooltip(a.urlTip(t)),
-			tip("Protocol: click to change", chip(protocolLabel[t.Req.Protocol], w.Muted, 64, func() { a.cycleProtocol(t) })),
-			If(isREST || isGRPC, VRuleInset(8)), // a divider between the chips, none after the last one
-			If(isREST, tip("Method: click to change", chip(t.Req.Method, appearance.MethodToken(t.Req.Method), 84, func() { a.cycleMethod(t) }))),
-			If(isGRPC, a.grpcMethodChip(t)),
-			If(isGRPC, tip("Stream: keep the call open and show every message in the Messages pane", chip("Stream", streamColor(t), 56, func() { a.toggleStream(t) }))),
-			Spacer(W(w.Gutter-4)), // breathing room between the divider and the URL text
-			Field(&t.url, Grow(1),
-				Placeholder("Enter URL"),
-				Segments(a.varSegments),
-				OnChange(func() { a.urlEdited(t) }),
-				OnEnter(func() { a.send(t) }),
-				TextMenu(&t.url),
-			),
-		),
-		send,
-	)
+	grpcMethod, grpcMethodColor := grpcMethodLabel(t)
+	return urlBarTemplate.MustBuild(markup.Scope{
+		"urlH":             urlH,
+		"gutter":           w.Gutter,
+		"urlTextGap":       w.Gutter - 4,
+		"urlTip":           a.urlTip(t),
+		"protocol":         protocolLabel[t.Req.Protocol],
+		"divided":          isREST || isGRPC,
+		"rest":             isREST,
+		"method":           t.Req.Method,
+		"methodColor":      appearance.MethodToken(t.Req.Method),
+		"grpc":             isGRPC,
+		"grpcMethodW":      grpcMethodW,
+		"grpcMethod":       grpcMethod,
+		"grpcMethodColor":  grpcMethodColor,
+		"streamColor":      streamColor(t),
+		"url":              &t.url,
+		"segments":         a.varSegments,
+		"idle":             !socket && !sending,
+		"socket":           socket,
+		"sending":          sending,
+		"sendTip":          a.hint("Send the request", "send"),
+		"connectionLabel":  connectionLabel,
+		"connectionTip":    a.hint(connectionHint, "send"),
+		"cycleProtocol":    func() { a.cycleProtocol(t) },
+		"cycleMethod":      func() { a.cycleMethod(t) },
+		"pickMethod":       func() { a.pickGRPCMethod(t) },
+		"toggleStream":     func() { a.toggleStream(t) },
+		"edited":           func() { a.urlEdited(t) },
+		"send":             func() { a.send(t) },
+		"toggleConnection": func() { a.toggleConnection(t) },
+		"cancel":           func() { a.cancelSend(t) },
+	})
 }
 
 // streamColor shows the Stream chip lit while the tab streams.
@@ -310,25 +327,12 @@ func streamColor(t *reqTab) w.Token {
 	return w.Muted
 }
 
-// tip gives n a tooltip.
-func tip(text string, n *El) *El {
-	Tooltip(text)(n)
-	return n
-}
-
 // hint is a tooltip with the action's shortcut, when it has one.
 func (a *App) hint(text, shortcutID string) string {
 	if key := a.shortcutHint(shortcutID); key != "" {
 		return text + " (" + key + ")"
 	}
 	return text
-}
-
-// chip is a clickable label of fixed width, used for protocol and method.
-func chip(label string, color w.Token, width int, onClick func()) *El {
-	return Row(W(width), OnClick(onClick),
-		Text(label, TextCenter(), Grow(1), Color(color)),
-	)
 }
 
 // varSegments colors {{variables}} so they stand out from the literal

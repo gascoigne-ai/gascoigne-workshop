@@ -1,0 +1,26 @@
+<row h="{{urlH}}" pad-x="{{gutter}}" pad-y="8" gap="8" bg="bg">
+  <row grow="1" bg="sunken" control="field" tooltip="{{urlTip}}">
+    <row w="64" on-click="cycleProtocol" tooltip="Protocol: click to change">
+      <text text-center grow="1" color="muted">{{protocol}}</text>
+    </row>
+    <!-- a divider between the chips, none after the last one; markup has no vrule-inset, so view.VRuleInset's tree is spelled out -->
+    <row if="divided" w="1" pad-y="8">
+      <vrule/>
+    </row>
+    <row if="rest" w="84" on-click="cycleMethod" tooltip="Method: click to change">
+      <text text-center grow="1" color="{{methodColor}}">{{method}}</text>
+    </row>
+    <row if="grpc" w="{{grpcMethodW}}" on-click="pickMethod" tooltip="Method: click to list the server's methods">
+      <text ellipsis grow="1" color="{{grpcMethodColor}}">{{grpcMethod}}</text>
+    </row>
+    <row if="grpc" w="56" on-click="toggleStream" tooltip="Stream: keep the call open and show every message in the Messages pane">
+      <text text-center grow="1" color="{{streamColor}}">Stream</text>
+    </row>
+    <!-- breathing room between the divider and the URL text -->
+    <spacer w="{{urlTextGap}}"/>
+    <field state="url" grow="1" placeholder="Enter URL" segments="segments" on-change="edited" on-enter="send" text-menu="url"/>
+  </row>
+  <primary-button if="idle" min-w="80" on-click="send" tooltip="{{sendTip}}">Send</primary-button>
+  <primary-button if="socket" min-w="96" on-click="toggleConnection" tooltip="{{connectionTip}}">{{connectionLabel}}</primary-button>
+  <primary-button if="sending" w="80" on-click="cancel" tooltip="Cancel the running request">Cancel</primary-button>
+</row>
