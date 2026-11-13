@@ -1,0 +1,12 @@
+scrollB padL=12 padT=12 padR=12 padB=12 gap=8 grow=1 rect=0,0,420,300
+  flow h=28 gap=6 rect=12,12,396,28
+    flow w=64 padL=10 padR=10 bg=accent control=primary lighten=true onClick=true rect=12,12,64,28
+      textB text="None" grow=1 fg=accent-text ellipsis=true center=true rect=22,12,44,28
+    flow w=72 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=82,12,72,28
+      textB text="Bearer" grow=1 fg=chip-text ellipsis=true center=true rect=92,12,52,28
+    flow w=64 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=160,12,64,28
+      textB text="Basic" grow=1 fg=chip-text ellipsis=true center=true rect=170,12,44,28
+    flow w=80 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=230,12,80,28
+      textB text="API key" grow=1 fg=chip-text ellipsis=true center=true rect=240,12,60,28
+  flow rect=12,48,396,22
+    textB text="No authentication" h=22 fg=muted rect=12,48,396,22

@@ -1,0 +1,16 @@
+scrollB padL=12 padT=12 padR=12 padB=12 gap=8 grow=1 rect=0,0,1020,300
+  flow h=28 gap=6 rect=12,12,996,28
+    flow w=64 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=12,12,64,28
+      textB text="None" grow=1 fg=chip-text ellipsis=true center=true rect=22,12,44,28
+    flow w=72 padL=10 padR=10 bg=accent control=primary lighten=true onClick=true rect=82,12,72,28
+      textB text="Bearer" grow=1 fg=accent-text ellipsis=true center=true rect=92,12,52,28
+    flow w=64 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=160,12,64,28
+      textB text="Basic" grow=1 fg=chip-text ellipsis=true center=true rect=170,12,44,28
+    flow w=80 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=230,12,80,28
+      textB text="API key" grow=1 fg=chip-text ellipsis=true center=true rect=240,12,60,28
+  flow h=28 gap=12 rect=12,48,996,28
+    textB text="Token" w=120 rect=12,48,120,28
+    fieldB grow=1 bg=sunken control=field onRightClickIn=true onChange=true rect=144,48,864,28
+  flow h=28 gap=8 onClick=true rect=12,84,996,28
+    checkB rect=12,84,14,28
+    textB text="Show secrets" rect=34,84,84,28
