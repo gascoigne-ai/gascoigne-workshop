@@ -1,0 +1,16 @@
+flow rect=0,0,300,1800
+  flow padT=8 padB=8 borderB=border-soft rect=0,0,300,116
+    flow h=28 gap=6 rect=0,8,300,28
+      textB text="Save changes automatically" bold=true rect=0,8,187,28
+      textB text="•" fg=accent-line tip=Changed from the default rect=193,8,5,28
+      plain grow=1 rect=204,8,34,28
+      flow w=56 h=24 padL=10 padR=10 bg=sunken control=button tip=Remove it from settings.json so the default applies lighten=true onClick=true rect=244,10,56,24
+        textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=254,10,36,24
+    flow rect=0,36,300,44
+      textB text="On: every change is written to settings.json at once. Off: changes apply now" h=22 fg=muted rect=0,36,300,22
+      textB text="but are written only when you click Save." h=22 fg=muted rect=0,58,300,22
+    flow h=28 gap=6 rect=0,80,300,28
+      flow padL=10 padR=10 grow=1 bg=accent control=primary lighten=true onClick=true rect=0,80,147,28
+        textB text="Off" grow=1 fg=accent-text ellipsis=true center=true rect=10,80,127,28
+      flow padL=10 padR=10 grow=1 bg=sunken control=button lighten=true onClick=true rect=153,80,147,28
+        textB text="On" grow=1 fg=chip-text ellipsis=true center=true rect=163,80,127,28

@@ -1,0 +1,134 @@
+flow rect=0,0,300,1800
+  flow padT=8 padB=8 borderB=border-soft rect=0,0,300,94
+    flow h=28 gap=6 rect=0,8,300,28
+      textB text="Theme" bold=true rect=0,8,45,28
+      textB text="•" fg=accent-line tip=Changed from the default rect=51,8,5,28
+      plain grow=1 rect=62,8,176,28
+      flow w=56 h=24 padL=10 padR=10 bg=sunken control=button tip=Remove it from settings.json so the default applies lighten=true onClick=true rect=244,10,56,24
+        textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=254,10,36,24
+    flow rect=0,36,300,22
+      textB text="The color theme: dark, light or the id of a theme file in the themes folder." h=22 fg=muted rect=0,36,300,22
+    flow h=28 gap=6 rect=0,58,300,28
+      flow padL=10 padR=10 grow=1 bg=sunken control=button lighten=true onClick=true rect=0,58,147,28
+        textB text="Dark" grow=1 fg=chip-text ellipsis=true center=true rect=10,58,127,28
+      flow padL=10 padR=10 grow=1 bg=accent control=primary lighten=true onClick=true rect=153,58,147,28
+        textB text="Light" grow=1 fg=accent-text ellipsis=true center=true rect=163,58,127,28
+  flow padT=8 padB=8 borderB=border-soft rect=0,94,300,94
+    flow h=28 gap=6 rect=0,102,300,28
+      textB text="Text size" bold=true rect=0,102,59,28
+      plain grow=1 rect=65,102,235,28
+    flow rect=0,130,300,22
+      textB text="The size of the interface text." h=22 fg=muted rect=0,130,300,22
+    flow h=28 gap=6 rect=0,152,300,28
+      flow padL=10 padR=10 grow=1 bg=sunken control=button lighten=true onClick=true rect=0,152,96,28
+        textB text="Small" grow=1 fg=chip-text ellipsis=true center=true rect=10,152,76,28
+      flow padL=10 padR=10 grow=1 bg=accent control=primary lighten=true onClick=true rect=102,152,96,28
+        textB text="Medium" grow=1 fg=accent-text ellipsis=true center=true rect=112,152,76,28
+      flow padL=10 padR=10 grow=1 bg=sunken control=button lighten=true onClick=true rect=204,152,96,28
+        textB text="Large" grow=1 fg=chip-text ellipsis=true center=true rect=214,152,76,28
+  flow padT=8 padB=8 borderB=border-soft rect=0,188,300,94
+    flow h=28 gap=6 rect=0,196,300,28
+      textB text="Interface scale" bold=true rect=0,196,100,28
+      textB text="•" fg=accent-line tip=Changed from the default rect=106,196,5,28
+      plain grow=1 rect=117,196,121,28
+      flow w=56 h=24 padL=10 padR=10 bg=sunken control=button tip=Remove it from settings.json so the default applies lighten=true onClick=true rect=244,198,56,24
+        textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=254,198,36,24
+    flow rect=0,224,300,22
+      textB text="Scale of the whole interface in percent, on top of the display's own scale." h=22 fg=muted rect=0,224,300,22
+    flow h=28 gap=8 rect=0,246,300,28
+      sliderB h=24 grow=1 rect=0,248,252,24
+      textB text="150%" w=40 fg=muted rect=260,246,40,28
+  flow padT=8 padB=8 borderB=border-soft rect=0,282,300,116
+    flow h=28 gap=6 rect=0,290,300,28
+      textB text="Interface font" bold=true rect=0,290,91,28
+      textB text="•" fg=accent-line tip=Changed from the default rect=97,290,5,28
+      plain grow=1 rect=108,290,130,28
+      flow w=56 h=24 padL=10 padR=10 bg=sunken control=button tip=Remove it from settings.json so the default applies lighten=true onClick=true rect=244,292,56,24
+        textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=254,292,36,24
+    flow rect=0,318,300,44
+      textB text="Family name of an installed font for labels, buttons and fields; empty is" h=22 fg=muted rect=0,318,300,22
+      textB text="the built-in font." h=22 fg=muted rect=0,340,300,22
+    flow h=28 padL=8 padR=8 gap=6 bg=sunken control=field tip=Pick an installed font onClick=true rect=0,362,300,28
+      textB text="Go Mono" font=custom grow=1 ellipsis=true rect=8,368,266,16
+      iconB w=12 icon=chevron-down rect=280,372,12,8
+  flow padT=8 padB=8 borderB=border-soft rect=0,398,300,116
+    flow h=28 gap=6 rect=0,406,300,28
+      textB text="Code font" bold=true rect=0,406,65,28
+      textB text="•" fg=accent-line tip=Changed from the default rect=71,406,5,28
+      plain grow=1 rect=82,406,156,28
+      flow w=56 h=24 padL=10 padR=10 bg=sunken control=button tip=Remove it from settings.json so the default applies lighten=true onClick=true rect=244,408,56,24
+        textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=254,408,36,24
+    flow rect=0,434,300,44
+      textB text="Family name of an installed font for bodies and the code views; empty is the" h=22 fg=muted rect=0,434,300,22
+      textB text="built-in font." h=22 fg=muted rect=0,456,300,22
+    flow h=28 padL=8 padR=8 gap=6 bg=sunken control=field tip=Pick an installed font onClick=true rect=0,478,300,28
+      textB text="Missing Sans (not installed)" grow=1 fg=muted ellipsis=true rect=8,484,266,16
+      iconB w=12 icon=chevron-down rect=280,488,12,8
+  flow padT=8 padB=8 borderB=border-soft rect=0,514,300,94
+    flow h=28 gap=6 rect=0,522,300,28
+      textB text="Corners" bold=true rect=0,522,54,28
+      textB text="•" fg=accent-line tip=Changed from the default rect=60,522,5,28
+      plain grow=1 rect=71,522,167,28
+      flow w=56 h=24 padL=10 padR=10 bg=sunken control=button tip=Remove it from settings.json so the default applies lighten=true onClick=true rect=244,524,56,24
+        textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=254,524,36,24
+    flow rect=0,550,300,22
+      textB text="How round controls are." h=22 fg=muted rect=0,550,300,22
+    flow h=28 gap=6 rect=0,572,300,28
+      flow padL=10 padR=10 grow=1 bg=sunken control=button lighten=true onClick=true rect=0,572,96,28
+        textB text="Square" grow=1 fg=chip-text ellipsis=true center=true rect=10,572,76,28
+      flow padL=10 padR=10 grow=1 bg=sunken control=button lighten=true onClick=true rect=102,572,96,28
+        textB text="Soft" grow=1 fg=chip-text ellipsis=true center=true rect=112,572,76,28
+      flow padL=10 padR=10 grow=1 bg=accent control=primary lighten=true onClick=true rect=204,572,96,28
+        textB text="Round" grow=1 fg=accent-text ellipsis=true center=true rect=214,572,76,28
+  flow padT=8 padB=8 borderB=border-soft rect=0,608,300,94
+    flow h=28 gap=6 rect=0,616,300,28
+      textB text="Flat colors" bold=true rect=0,616,71,28
+      textB text="•" fg=accent-line tip=Changed from the default rect=77,616,5,28
+      plain grow=1 rect=88,616,150,28
+      flow w=56 h=24 padL=10 padR=10 bg=sunken control=button tip=Remove it from settings.json so the default applies lighten=true onClick=true rect=244,618,56,24
+        textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=254,618,36,24
+    flow rect=0,644,300,22
+      textB text="Turn every gradient into a flat fill." h=22 fg=muted rect=0,644,300,22
+    flow h=28 gap=6 rect=0,666,300,28
+      flow padL=10 padR=10 grow=1 bg=sunken control=button lighten=true onClick=true rect=0,666,147,28
+        textB text="Off" grow=1 fg=chip-text ellipsis=true center=true rect=10,666,127,28
+      flow padL=10 padR=10 grow=1 bg=accent control=primary lighten=true onClick=true rect=153,666,147,28
+        textB text="On" grow=1 fg=accent-text ellipsis=true center=true rect=163,666,127,28
+  flow padT=8 padB=8 borderB=border-soft rect=0,702,300,94
+    flow h=28 gap=6 rect=0,710,300,28
+      textB text="Contrast" bold=true rect=0,710,58,28
+      plain grow=1 rect=64,710,236,28
+    flow rect=0,738,300,22
+      textB text="High strengthens the selection, find and accent colors." h=22 fg=muted rect=0,738,300,22
+    flow h=28 gap=6 rect=0,760,300,28
+      flow padL=10 padR=10 grow=1 bg=accent control=primary lighten=true onClick=true rect=0,760,147,28
+        textB text="Normal" grow=1 fg=accent-text ellipsis=true center=true rect=10,760,127,28
+      flow padL=10 padR=10 grow=1 bg=sunken control=button lighten=true onClick=true rect=153,760,147,28
+        textB text="High" grow=1 fg=chip-text ellipsis=true center=true rect=163,760,127,28
+  flow padT=8 padB=8 borderB=border-soft rect=0,796,300,94
+    flow h=28 gap=6 rect=0,804,300,28
+      textB text="Request and response" bold=true rect=0,804,150,28
+      plain grow=1 rect=156,804,144,28
+    flow rect=0,832,300,22
+      textB text="Place the request and response panes stacked or side by side." h=22 fg=muted rect=0,832,300,22
+    flow h=28 gap=6 rect=0,854,300,28
+      flow padL=10 padR=10 grow=1 bg=accent control=primary lighten=true onClick=true rect=0,854,147,28
+        textB text="Stacked" grow=1 fg=accent-text ellipsis=true center=true rect=10,854,127,28
+      flow padL=10 padR=10 grow=1 bg=sunken control=button lighten=true onClick=true rect=153,854,147,28
+        textB text="Side by side" grow=1 fg=chip-text ellipsis=true center=true rect=163,854,127,28
+  flow padT=8 padB=8 borderB=border-soft rect=0,890,300,94
+    flow h=28 gap=6 rect=0,898,300,28
+      textB text="Response view" bold=true rect=0,898,101,28
+      textB text="•" fg=accent-line tip=Changed from the default rect=107,898,5,28
+      plain grow=1 rect=118,898,120,28
+      flow w=56 h=24 padL=10 padR=10 bg=sunken control=button tip=Remove it from settings.json so the default applies lighten=true onClick=true rect=244,900,56,24
+        textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=254,900,36,24
+    flow rect=0,926,300,22
+      textB text="How a response body is shown when it arrives." h=22 fg=muted rect=0,926,300,22
+    flow h=28 gap=6 rect=0,948,300,28
+      flow padL=10 padR=10 grow=1 bg=sunken control=button lighten=true onClick=true rect=0,948,96,28
+        textB text="Compact" grow=1 fg=chip-text ellipsis=true center=true rect=10,948,76,28
+      flow padL=10 padR=10 grow=1 bg=sunken control=button lighten=true onClick=true rect=102,948,96,28
+        textB text="Pretty" grow=1 fg=chip-text ellipsis=true center=true rect=112,948,76,28
+      flow padL=10 padR=10 grow=1 bg=accent control=primary lighten=true onClick=true rect=204,948,96,28
+        textB text="Raw" grow=1 fg=accent-text ellipsis=true center=true rect=214,948,76,28
