@@ -1,0 +1,77 @@
+flow grow=1 rect=0,0,400,160
+  flow h=40 padL=12 padR=12 borderB=border rect=0,0,400,40
+    textB text="Not connected: connect to see what the server offers" fg=muted rect=12,12,328,16
+  flow grow=1 rect=0,40,400,120
+    flow w=260 borderR=border rect=0,40,260,120
+      flow h=40 padT=6 borderB=border rect=0,40,260,40
+        flow padL=2 onSelect=true rect=0,46,233,34
+          flow padL=10 padR=10 gap=4 bg=bg edge=accent-line edgeTop=true edgeLeft=true edgeRight=true onClick=true rect=2,46,72,34
+            textB text="Tools" fg=text rect=12,55,35,16
+            textB text="13" fg=muted small=true rect=51,57,13,14
+          flow padL=10 padR=10 borderInset=10 gap=4 borderL=border-soft onClick=true rect=74,46,87,34
+            textB text="Resources" fg=muted rect=84,55,67,16
+          flow padL=10 padR=10 borderInset=10 gap=4 borderL=border-soft onClick=true rect=161,46,72,34
+            textB text="Prompts" fg=muted rect=171,55,52,16
+      scrollB grow=1 rect=0,80,260,80
+        flow padL=12 padT=6 padR=12 padB=6 bg=selected control=row onClick=true rect=0,80,252,42
+          flow grow=1 rect=12,86,228,30
+            textB text="a_tool_whose_name_is_much_longer_than_the_list_is_wide" ellipsis=true rect=12,86,228,16
+            textB text="A description that goes on well past the right edge of the list next to the open entry" fg=muted small=true ellipsis=true rect=12,102,228,14
+        flow padL=12 padT=6 padR=12 padB=6 control=row hoverBg=hover onClick=true rect=0,122,252,42
+          flow grow=1 rect=12,128,228,30
+            textB text="tool_0" ellipsis=true rect=12,128,228,16
+            textB text="Tool number 0" fg=muted small=true ellipsis=true rect=12,144,228,14
+        flow padL=12 padT=6 padR=12 padB=6 control=row hoverBg=hover onClick=true rect=0,164,252,42
+          flow grow=1 rect=12,170,228,30
+            textB text="tool_1" ellipsis=true rect=12,170,228,16
+            textB text="Tool number 1" fg=muted small=true ellipsis=true rect=12,186,228,14
+        flow padL=12 padT=6 padR=12 padB=6 control=row hoverBg=hover onClick=true rect=0,206,252,42
+          flow grow=1 rect=12,212,228,30
+            textB text="tool_2" ellipsis=true rect=12,212,228,16
+            textB text="Tool number 2" fg=muted small=true ellipsis=true rect=12,228,228,14
+        flow padL=12 padT=6 padR=12 padB=6 control=row hoverBg=hover onClick=true rect=0,248,252,42
+          flow grow=1 rect=12,254,228,30
+            textB text="tool_3" ellipsis=true rect=12,254,228,16
+            textB text="Tool number 3" fg=muted small=true ellipsis=true rect=12,270,228,14
+        flow padL=12 padT=6 padR=12 padB=6 control=row hoverBg=hover onClick=true rect=0,290,252,42
+          flow grow=1 rect=12,296,228,30
+            textB text="tool_4" ellipsis=true rect=12,296,228,16
+            textB text="Tool number 4" fg=muted small=true ellipsis=true rect=12,312,228,14
+        flow padL=12 padT=6 padR=12 padB=6 control=row hoverBg=hover onClick=true rect=0,332,252,42
+          flow grow=1 rect=12,338,228,30
+            textB text="tool_5" ellipsis=true rect=12,338,228,16
+            textB text="Tool number 5" fg=muted small=true ellipsis=true rect=12,354,228,14
+        flow padL=12 padT=6 padR=12 padB=6 control=row hoverBg=hover onClick=true rect=0,374,252,42
+          flow grow=1 rect=12,380,228,30
+            textB text="tool_6" ellipsis=true rect=12,380,228,16
+            textB text="Tool number 6" fg=muted small=true ellipsis=true rect=12,396,228,14
+        flow padL=12 padT=6 padR=12 padB=6 control=row hoverBg=hover onClick=true rect=0,416,252,42
+          flow grow=1 rect=12,422,228,30
+            textB text="tool_7" ellipsis=true rect=12,422,228,16
+            textB text="Tool number 7" fg=muted small=true ellipsis=true rect=12,438,228,14
+        flow padL=12 padT=6 padR=12 padB=6 control=row hoverBg=hover onClick=true rect=0,458,252,42
+          flow grow=1 rect=12,464,228,30
+            textB text="tool_8" ellipsis=true rect=12,464,228,16
+            textB text="Tool number 8" fg=muted small=true ellipsis=true rect=12,480,228,14
+        flow padL=12 padT=6 padR=12 padB=6 control=row hoverBg=hover onClick=true rect=0,500,252,42
+          flow grow=1 rect=12,506,228,30
+            textB text="tool_9" ellipsis=true rect=12,506,228,16
+            textB text="Tool number 9" fg=muted small=true ellipsis=true rect=12,522,228,14
+        flow padL=12 padT=6 padR=12 padB=6 control=row hoverBg=hover onClick=true rect=0,542,252,42
+          flow grow=1 rect=12,548,228,30
+            textB text="tool_10" ellipsis=true rect=12,548,228,16
+            textB text="Tool number 10" fg=muted small=true ellipsis=true rect=12,564,228,14
+        flow padL=12 padT=6 padR=12 padB=6 control=row hoverBg=hover onClick=true rect=0,584,252,42
+          flow grow=1 rect=12,590,228,30
+            textB text="tool_11" ellipsis=true rect=12,590,228,16
+            textB text="Tool number 11" fg=muted small=true ellipsis=true rect=12,606,228,14
+    scrollB padL=12 padT=12 padR=12 padB=12 gap=10 grow=1 rect=260,40,140,120
+      textB text="a_tool_whose_name_is_much_longer_than_the_list_is_wide" bold=true rect=272,52,116,16
+      flow gap=8 rect=272,78,116,30
+        flow rect=272,78,116,22
+          textB text="A description that goes on well past the right edge of the list next to the open entry" h=22 fg=muted rect=272,78,116,22
+        scrollB gap=8 grow=1 rect=272,108,116,0
+      flow gap=8 rect=272,118,116,28
+        flow h=28 padL=12 padR=12 bg=accent control=primary tip=Send it to the server (Enter in a field) lighten=true onClick=true rect=272,118,49,28
+          textB text="Call" grow=1 fg=accent-text ellipsis=true center=true rect=284,118,25,28
+        textB text="Connect first" fg=muted small=true rect=329,125,68,14

@@ -1,0 +1,42 @@
+flow grow=1 rect=0,0,400,160
+  flow h=40 padL=12 padR=12 borderB=border rect=0,0,400,40
+    textB text="Not connected: connect to see what the server offers" fg=muted rect=12,12,328,16
+  flow grow=1 rect=0,40,400,120
+    flow w=260 borderR=border rect=0,40,260,120
+      flow h=40 padT=6 borderB=border rect=0,40,260,40
+        flow padL=2 onSelect=true rect=0,46,249,34
+          flow padL=10 padR=10 gap=4 bg=bg edge=accent-line edgeTop=true edgeLeft=true edgeRight=true onClick=true rect=2,46,66,34
+            textB text="Tools" fg=text rect=12,55,35,16
+            textB text="2" fg=muted small=true rect=51,57,7,14
+          flow padL=10 padR=10 borderInset=10 gap=4 borderL=border-soft onClick=true rect=68,46,98,34
+            textB text="Resources" fg=muted rect=78,55,67,16
+            textB text="1" fg=muted small=true rect=149,57,7,14
+          flow padL=10 padR=10 borderInset=10 gap=4 borderL=border-soft onClick=true rect=166,46,83,34
+            textB text="Prompts" fg=muted rect=176,55,52,16
+            textB text="1" fg=muted small=true rect=232,57,7,14
+      scrollB grow=1 rect=0,80,260,80
+        flow padL=12 padT=6 padR=12 padB=6 bg=selected control=row onClick=true rect=0,80,260,42
+          flow grow=1 rect=12,86,236,30
+            textB text="search" ellipsis=true rect=12,86,236,16
+            textB text="Find" fg=muted small=true ellipsis=true rect=12,102,236,14
+        flow padL=12 padT=6 padR=12 padB=6 control=row hoverBg=hover onClick=true rect=0,122,260,28
+          flow grow=1 rect=12,128,236,16
+            textB text="ping" ellipsis=true rect=12,128,236,16
+    scrollB padL=12 padT=12 padR=12 padB=12 gap=10 grow=1 rect=260,40,140,120
+      textB text="search" bold=true rect=272,52,108,16
+      flow gap=8 rect=272,78,108,142
+        flow rect=272,78,108,22
+          textB text="Find" h=22 fg=muted rect=272,78,108,22
+        scrollB gap=8 grow=1 rect=272,108,108,112
+          flow gap=2 rect=272,108,108,52
+            flow h=22 gap=8 rect=272,108,108,22
+              textB text="q *" small=true bold=true rect=272,108,17,22
+            fieldB h=28 bg=sunken control=field onRightClickIn=true rect=272,132,108,28
+          flow gap=2 rect=272,168,108,52
+            flow h=22 gap=8 rect=272,168,108,22
+              textB text="limit" small=true bold=true rect=272,168,25,22
+            fieldB h=28 bg=sunken control=field onRightClickIn=true rect=272,192,108,28
+      flow gap=8 rect=272,230,108,28
+        flow h=28 padL=12 padR=12 bg=accent control=primary tip=Send it to the server (Enter in a field) lighten=true onClick=true rect=272,230,49,28
+          textB text="Call" grow=1 fg=accent-text ellipsis=true center=true rect=284,230,25,28
+        textB text="Connect first" fg=muted small=true rect=329,237,68,14

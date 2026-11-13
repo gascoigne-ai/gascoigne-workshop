@@ -1,0 +1,19 @@
+flow grow=1 rect=0,0,400,160
+  flow h=40 padL=12 padR=12 borderB=border rect=0,0,400,40
+    textB text="Not connected: connect to see what the server offers" fg=muted rect=12,12,328,16
+  flow grow=1 rect=0,40,400,120
+    flow w=260 borderR=border rect=0,40,260,120
+      flow h=40 padT=6 borderB=border rect=0,40,260,40
+        flow padL=2 onSelect=true rect=0,46,233,34
+          flow padL=10 padR=10 gap=4 onClick=true rect=2,46,72,34
+            textB text="Tools" fg=muted rect=12,55,35,16
+            textB text="13" fg=muted small=true rect=51,57,13,14
+          flow padL=10 padR=10 borderInset=10 gap=4 borderL=border-soft onClick=true rect=74,46,87,34
+            textB text="Resources" fg=muted rect=84,55,67,16
+          flow padL=10 padR=10 borderInset=10 gap=4 bg=bg borderL=border-soft edge=accent-line edgeTop=true edgeLeft=true edgeRight=true onClick=true rect=161,46,72,34
+            textB text="Prompts" fg=text rect=171,55,52,16
+      scrollB grow=1 rect=0,80,260,80
+        flow padL=12 padT=12 padR=12 padB=12 rect=0,80,260,38
+          textB text="Nothing announced" fg=muted small=true rect=12,92,236,14
+    flow padL=12 padT=12 padR=12 padB=12 grow=1 rect=260,40,140,120
+      textB text="Pick a tool, a resource or a prompt" fg=muted rect=272,52,116,16

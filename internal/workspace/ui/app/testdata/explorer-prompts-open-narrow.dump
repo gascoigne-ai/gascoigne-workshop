@@ -1,0 +1,31 @@
+flow grow=1 rect=0,0,400,160
+  flow h=40 padL=12 padR=12 borderB=border rect=0,0,400,40
+    textB text="Connected: connect to see what the server offers" fg=muted rect=12,12,306,16
+  flow grow=1 rect=0,40,400,120
+    flow w=260 borderR=border rect=0,40,260,120
+      flow h=40 padT=6 borderB=border rect=0,40,260,40
+        flow padL=2 onSelect=true rect=0,46,249,34
+          flow padL=10 padR=10 gap=4 onClick=true rect=2,46,66,34
+            textB text="Tools" fg=muted rect=12,55,35,16
+            textB text="2" fg=muted small=true rect=51,57,7,14
+          flow padL=10 padR=10 borderInset=10 gap=4 borderL=border-soft onClick=true rect=68,46,98,34
+            textB text="Resources" fg=muted rect=78,55,67,16
+            textB text="1" fg=muted small=true rect=149,57,7,14
+          flow padL=10 padR=10 borderInset=10 gap=4 bg=bg borderL=border-soft edge=accent-line edgeTop=true edgeLeft=true edgeRight=true onClick=true rect=166,46,83,34
+            textB text="Prompts" fg=text rect=176,55,52,16
+            textB text="1" fg=muted small=true rect=232,57,7,14
+      scrollB grow=1 rect=0,80,260,80
+        flow padL=12 padT=6 padR=12 padB=6 bg=selected control=row onClick=true rect=0,80,260,28
+          flow grow=1 rect=12,86,236,16
+            textB text="review" ellipsis=true rect=12,86,236,16
+    scrollB padL=12 padT=12 padR=12 padB=12 gap=10 grow=1 rect=260,40,140,120
+      textB text="review" bold=true rect=272,52,108,16
+      flow gap=8 rect=272,78,108,52
+        scrollB gap=8 grow=1 rect=272,78,108,52
+          flow gap=2 rect=272,78,108,52
+            flow h=22 gap=8 rect=272,78,108,22
+              textB text="code *" small=true bold=true rect=272,78,38,22
+            fieldB h=28 bg=sunken control=field onRightClickIn=true rect=272,102,108,28
+      flow gap=8 rect=272,140,108,28
+        flow h=28 padL=12 padR=12 bg=accent control=primary tip=Send it to the server (Enter in a field) lighten=true onClick=true rect=272,140,49,28
+          textB text="Call" grow=1 fg=accent-text ellipsis=true center=true rect=284,140,25,28
