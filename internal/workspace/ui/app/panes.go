@@ -276,24 +276,34 @@ func (a *App) tableView(p pane, t *reqTab, scroll *ScrollState, pad int) Node {
 			spec.Selected = &sel.row
 		}
 	}
-	return Scroll(scroll, Pad(pad), Gap(6),
-		a.tableCaption(p, t),
-		Table(spec),
-	)
+	scope := a.tableCaptionScope(p, t, pad)
+	scope["scroll"] = scroll
+	scope["spec"] = spec
+	return tableViewTemplate.MustBuild(scope)
 }
 
-// tableCaption is the row above a table: its title, and for editable
-// tables the switch to bulk editing.
-func (a *App) tableCaption(p pane, t *reqTab) Node {
-	title := p.captionOf(a)
-	if title == "" {
-		return nil
+//go:embed tableview.vml bulkview.vml
+var tableViewSources embed.FS
+
+// The table and its rows as text are two roots, so two templates; Go
+// picks one in tableView.
+var (
+	tableViewTemplate = markup.MustLoad(tableViewSources, "tableview.vml")
+	bulkViewTemplate  = markup.MustLoad(tableViewSources, "bulkview.vml")
+)
+
+// tableCaptionScope is what both templates show in the row above the
+// rows: the pane's title, and for editable tables the switch to bulk
+// editing. An empty title leaves the row out.
+func (a *App) tableCaptionScope(p pane, t *reqTab, pad int) markup.Scope {
+	return markup.Scope{
+		"pad":        pad,
+		"rowH":       w.RowH,
+		"caption":    p.captionOf(a),
+		"editable":   p.editable,
+		"bulkLabel":  bulkLabel(a.bulk != nil),
+		"toggleBulk": func() { a.toggleBulk(p, t) },
 	}
-	return Row(H(w.RowH),
-		Caption(title),
-		Spacer(),
-		If(p.editable, LinkButton(bulkLabel(a.bulk != nil), Tooltip("Edit all rows as text, one per line"), OnClick(func() { a.toggleBulk(p, t) }))),
-	)
 }
 
 func bulkLabel(inBulk bool) string {
@@ -305,10 +315,10 @@ func bulkLabel(inBulk bool) string {
 
 // bulkView shows the rows as text under the same caption.
 func (a *App) bulkView(p pane, t *reqTab, pad int) Node {
-	return Col(Grow(1), Pad(pad), Gap(6),
-		a.tableCaption(p, t),
-		Area(&a.bulk.area, Grow(1), Bg(w.Sunken), TextMenu(&a.bulk.area.TextField)),
-	)
+	scope := a.tableCaptionScope(p, t, pad)
+	scope["area"] = &a.bulk.area
+	scope["areaText"] = &a.bulk.area.TextField
+	return bulkViewTemplate.MustBuild(scope)
 }
 
 func (a *App) rowsChanged(p pane, t *reqTab) {

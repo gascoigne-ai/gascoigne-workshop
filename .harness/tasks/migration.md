@@ -14,7 +14,7 @@ Status: todo, doing, done, blocked (reason). The loop (`loop.md`) takes the firs
 | 8 | app `view.go` `sidebar`, `treeRow`, `rowName` | 004, 007 | default, tree-filter (added) | done (6d6b256 scene, beb68d7 pins, 8c20a14 swap) |
 | 9 | app `view.go` `urlBar` | 003, 005, 006 | default, request-*, request-sending (added) | done (5166f7a scene, 572910c pins, 9381dd7 swap) |
 | 10 | app `view.go` `requestTabs`, `requestTab` | 003, 004 | request-*, request-tabs (added) | done (fc7912e scene, 0b32e8c pins, aaabb32 swap) |
-| 11 | app `panes.go` `tableView` | 004 | default, request-post | todo |
+| 11 | app `panes.go` `tableView` | 004 | default, request-post, request-tabs, request-params (added) | done (b4dae74 shot fix, eb6009d scene, 3eacdb7 pins) |
 | 12 | app `panes.go` `codePane` | 005 | response | todo |
 | 13 | app `panes.go` `responsePane` | 004, 005 | response, side-by-side | todo |
 | 14 | app `panes.go` `settingsPane` | 005 | request-* settings tab | todo |

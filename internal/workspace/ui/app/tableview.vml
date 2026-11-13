@@ -1,0 +1,9 @@
+<scroll state="scroll" pad="{{pad}}" gap="6">
+  <!-- the caption row is copied in bulkview.vml, which keeps it above the rows as text -->
+  <row if="caption" h="{{rowH}}">
+    <caption>{{caption}}</caption>
+    <spacer/>
+    <link-button if="editable" tooltip="Edit all rows as text, one per line" on-click="toggleBulk">{{bulkLabel}}</link-button>
+  </row>
+  <table spec="spec"/>
+</scroll>

@@ -1,0 +1,9 @@
+<col grow="1" pad="{{pad}}" gap="6">
+  <!-- the caption row is copied from tableview.vml, so switching to text keeps the caption in place -->
+  <row if="caption" h="{{rowH}}">
+    <caption>{{caption}}</caption>
+    <spacer/>
+    <link-button if="editable" tooltip="Edit all rows as text, one per line" on-click="toggleBulk">{{bulkLabel}}</link-button>
+  </row>
+  <area state="area" grow="1" bg="sunken" text-menu="areaText"/>
+</col>
