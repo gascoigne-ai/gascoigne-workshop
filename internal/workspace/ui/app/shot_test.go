@@ -5,11 +5,14 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
+	"slices"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
@@ -161,6 +164,46 @@ func TestScreenshotShowsTheSentLog(t *testing.T) {
 	}
 	if !a.showSent {
 		t.Error("the sidebar should list the sent requests")
+	}
+}
+
+// With -open-all the capture opens every request of the collection in its
+// own tab, so the strip of open requests overflows.
+func TestScreenshotOpensEveryRequestInATab(t *testing.T) {
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotOpenAll: true})
+	for range setFrame {
+		if err := a.shotUpdate(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var want []string
+	walkRequests(&a.col.Folder, "", func(_ string, request *model.Request) { want = append(want, request.Name) })
+	var got []string
+	for _, tab := range a.openTabs() {
+		got = append(got, tab.Req.Name)
+	}
+	slices.Sort(got) // the request open at start keeps its place
+	slices.Sort(want)
+	if !slices.Equal(got, want) {
+		t.Errorf("open tabs %q, want every request %q", got, want)
+	}
+}
+
+// With -type-url the capture types the text into the open request's URL,
+// so its tab shows the mark of unsaved changes.
+func TestScreenshotTypesIntoTheURL(t *testing.T) {
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotURL: "?page=2"})
+	url := a.cur().Req.URL
+	for range setFrame {
+		if err := a.shotUpdate(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got := a.cur().Req.URL; !strings.Contains(got, "?page=2") || len(got) != len(url)+len("?page=2") {
+		t.Errorf("URL %q, want %q typed into %q", got, "?page=2", url)
+	}
+	if !a.tabDirty(a.cur()) {
+		t.Error("the tab should be marked as changed")
 	}
 }
 

@@ -53,6 +53,7 @@ var goldenScenes = []goldenScene{
 	{name: "narrow", width: 800, height: 520, args: []string{"-window", "800x520"}},
 	{name: "response-find", width: shotWidth, height: shotHeight, args: []string{"-send", "-find", "/e"}, mask: []image.Rectangle{durationStacked, durationStatus}},
 	{name: "request-sending", width: shotWidth, height: shotHeight, args: []string{"-request", "Delay 500ms", "-sending"}},
+	{name: "request-tabs", width: shotWidth, height: shotHeight, args: []string{"-open-all", "-type-url", "?page=2"}},
 	{name: "tree-filter", width: shotWidth, height: shotHeight, args: []string{"-filter", "Echo"}},
 	{name: "sent-log", width: shotWidth, height: shotHeight, args: []string{"-send", "-request", "Echo", "-sent"}, mask: []image.Rectangle{durationStacked, durationStatus, sentTimeFirst, sentTimeSecond}},
 }

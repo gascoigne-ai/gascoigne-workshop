@@ -40,6 +40,8 @@ type screenshot struct {
 	found       bool     // the find bar is open with find typed in
 	filter      string   // text to type into the sidebar's filter
 	sending     bool     // send the open request and capture while it is in flight
+	openAll     bool     // open every request in its own tab, so the tab strip overflows
+	url         string   // text to type into the open request's URL, so its tab is marked changed
 }
 
 // Err is the error of the capture, if any.
@@ -190,6 +192,9 @@ func (a *App) applyShotSetting(spec string) {
 // would let a golden pass for the wrong scene.
 func (a *App) showShotTarget() {
 	s := &a.shot
+	if s.openAll {
+		walkRequests(&a.col.Folder, "", func(_ string, request *model.Request) { a.openRequest(request) })
+	}
 	if s.request != "" {
 		req := a.findRequestByName(s.request)
 		if req == nil {
@@ -211,6 +216,10 @@ func (a *App) showShotTarget() {
 	}
 	if s.filter != "" {
 		a.filter.Insert(s.filter)
+	}
+	if s.url != "" {
+		a.cur().url.Insert(s.url)
+		a.urlEdited(a.cur())
 	}
 	if s.sending {
 		a.send(a.cur())
