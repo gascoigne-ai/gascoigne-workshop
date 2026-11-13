@@ -533,6 +533,56 @@ func TestFormRowNeedsALabelAndAWholeLabelWidth(t *testing.T) {
 	}
 }
 
+// checkRowTemplate is a check row ticked when the scope says, its label
+// and hint as children.
+const checkRowTemplate = `
+	<col>
+	  <check-row on="{{verify}}" on-click="toggle">
+	    <text>Verify the server certificate</text>
+	    <text small muted>off accepts self-signed certificates</text>
+	  </check-row>
+	</col>`
+
+func TestCheckRowElementMatchesTheGoCheckRow(t *testing.T) {
+	toggle := func() {}
+	for _, on := range []bool{true, false} {
+		t.Run(fmt.Sprint(on), func(t *testing.T) {
+			template := build(t, checkRowTemplate, Scope{"verify": on, "toggle": toggle})
+			goView := view.Col(widget.CheckRow(on, view.OnClick(toggle),
+				view.Text("Verify the server certificate"),
+				view.Text("off accepts self-signed certificates", view.Small(), view.Muted())))
+			sameLayout(t, testCtx(t), template, goView, 400, 60)
+			// Dump does not show the tick, which the checkbox behavior holds
+			got := fmt.Sprintf("%+v", template.Children()[0].Children()[0].Behavior())
+			want := fmt.Sprintf("%+v", goView.Children()[0].Children()[0].Behavior())
+			if got != want {
+				t.Fatalf("template checkbox:\n%s\nGo checkbox:\n%s", got, want)
+			}
+		})
+	}
+}
+
+func TestCheckRowElementClickOnTheLabelRunsTheScopeHandler(t *testing.T) {
+	ctx := testCtx(t)
+	toggles := 0
+	template := build(t, checkRowTemplate, Scope{"verify": false, "toggle": func() { toggles++ }})
+	view.Layout(ctx, template, 400, 60)
+	label := template.Children()[0].Children()[1].Rect()
+	ctx.In = core.Input{X: label.X + label.W/2, Y: label.Y + label.H/2, Click: true}
+	view.Update(ctx, template)
+	if toggles != 1 {
+		t.Fatalf("clicking the label ran the scope's on-click %d times, want 1", toggles)
+	}
+}
+
+func TestCheckRowOnMustBeTrueOrFalse(t *testing.T) {
+	parseError(t, `<check-row><text>x</text></check-row>`, "<check-row> needs a on")
+	err := buildError(t, `<check-row on="yes"/>`, nil)
+	if err == nil || !strings.Contains(err.Error(), "true or false") {
+		t.Errorf("error = %v, want it to say on is not true or false", err)
+	}
+}
+
 func TestCheckboxOnMustBeTrueOrFalse(t *testing.T) {
 	parseError(t, `<checkbox/>`, "<checkbox> needs a on")
 	err := buildError(t, `<checkbox on="yes"/>`, nil)

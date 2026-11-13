@@ -37,7 +37,7 @@
 //	Layout      row col stack spacer hrule vrule
 //	Text        text caption icon   font-source
 //	Buttons     button primary-button link-button icon-button choice
-//	Rows        list-row form-row
+//	Rows        list-row form-row check-row
 //	Inputs      field (placeholder field-pad segments text-menu on-enter on-tab)
 //	            area (text-menu) checkbox
 //	            slider (slider-mid on-slide on-slide-end)
@@ -355,6 +355,13 @@ func formLine(parts elementParts) (view.Node, error) {
 	return widget.FormRow(parts.args[0].(string), parts.args[1].(int), parts.items()...), nil
 }
 
+// tickLine builds a CheckRow from whether its box is ticked; the children
+// are its label and hint, and on-click on it makes the whole row the
+// click target.
+func tickLine(parts elementParts) (view.Node, error) {
+	return widget.CheckRow(parts.args[0].(bool), parts.items()...), nil
+}
+
 // tabStrip builds Tabs from its items and the active index.
 func tabStrip(parts elementParts) (view.Node, error) {
 	return widget.Tabs(parts.args[0].([]widget.TabItem), parts.args[1].(int), parts.opts...), nil
@@ -608,11 +615,12 @@ var elements = map[string]elementSpec{
 		params: []param{scopedState[widget.TextField]("state")}},
 	"area": {build: stateful(widget.Area), holds: holdsNothing, handlers: areaHandlers,
 		params: []param{scopedState[widget.TextArea]("state")}},
-	"checkbox": {build: checkbox, holds: holdsNothing, params: []param{boolParam("on")}},
-	"list-row": {build: listEntry, params: []param{boolParam("selected")}},
-	"form-row": {build: formLine, params: []param{textParam("label"), wholeParam("label-width")}},
-	"code":     {build: stateful(widget.Code), holds: holdsNothing, params: []param{scopedState[widget.CodeView]("state")}},
-	"image":    {build: picture, holds: holdsNothing, params: []param{scoped[*ebiten.Image]("img")}},
+	"checkbox":  {build: checkbox, holds: holdsNothing, params: []param{boolParam("on")}},
+	"list-row":  {build: listEntry, params: []param{boolParam("selected")}},
+	"form-row":  {build: formLine, params: []param{textParam("label"), wholeParam("label-width")}},
+	"check-row": {build: tickLine, params: []param{boolParam("on")}},
+	"code":      {build: stateful(widget.Code), holds: holdsNothing, params: []param{scopedState[widget.CodeView]("state")}},
+	"image":     {build: picture, holds: holdsNothing, params: []param{scoped[*ebiten.Image]("img")}},
 	"slider": {build: slider, holds: holdsNothing, options: sliderOptions, handlers: sliderHandlers,
 		params: []param{scopedState[widget.SliderState]("state"), wholeParam("min"), wholeParam("max"), wholeParam("step"), wholeParam("value")}},
 }
@@ -1348,6 +1356,7 @@ func Reference() string {
 	sb.WriteString("<icon-button icon=\"search\"/> is widget.IconButton around that icon, grown to fill the chip.\n")
 	sb.WriteString("<choice selected=\"{{chosen}}\">Raw</choice> is widget.Choice: a primary-button when selected is true, a button otherwise.\n")
 	sb.WriteString("<form-row label=\"Timeout\" label-width=\"160\">...</form-row> is widget.FormRow: the label in a column that wide, then the children.\n")
+	sb.WriteString("<check-row on=\"{{x}}\" on-click=\"toggle\"><text>Label</text></check-row> is widget.CheckRow: a checkbox, then the children; on-click makes the whole row the target.\n")
 	sb.WriteString("Text and attribute values may use {{path}}, each step a map key or an exported struct field; if=\"name\" or \"!name\"; for=\"item in list\" over any slice, with {{$index}}; on-click=\"handler\" (and the other on-* events, each a func of the scope).\n")
 	sb.WriteString("A color attribute (bg, border*, edge-*, hover-*, color) given an empty token applies no option; so does separator=\"0\".\n")
 	sb.WriteString("What an element takes (state=\"x\", ...) are its Go constructor's arguments, all required; state and specs name a scope entry of the Go type.\n")
