@@ -25,6 +25,10 @@ func workspaceApp(t *testing.T, dir string, opts Options) *App {
 	}
 	a.w, a.h = winW, winH
 	a.step(core.Input{})
+	// A save is written in the background and the tabs read as saved at once,
+	// so a test can end while the file is still being written, and its
+	// temporary folder then cannot be removed ("directory not empty").
+	t.Cleanup(a.waitWrites)
 	return a
 }
 
