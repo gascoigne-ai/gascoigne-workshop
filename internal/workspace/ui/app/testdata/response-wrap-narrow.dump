@@ -1,0 +1,20 @@
+flow grow=1 rect=0,0,300,400
+  plain h=12 grow=1 rect=0,0,300,12
+  flow h=36 padL=12 padR=12 gap=6 borderB=border rect=0,12,300,36
+    flow w=72 h=24 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=12,18,72,24
+      textB text="Compact" grow=1 fg=chip-text ellipsis=true center=true rect=22,18,52,24
+    flow w=56 h=24 padL=10 padR=10 bg=accent control=primary lighten=true onClick=true rect=90,18,56,24
+      textB text="Pretty" grow=1 fg=accent-text ellipsis=true center=true rect=100,18,36,24
+    flow w=44 h=24 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=152,18,44,24
+      textB text="Raw" grow=1 fg=chip-text ellipsis=true center=true rect=162,18,24,24
+    flow w=12 rect=202,30,12,0
+    flow w=56 h=24 padL=10 padR=10 bg=accent control=primary lighten=true onClick=true rect=220,18,56,24
+      textB text="Wrap" grow=1 fg=accent-text ellipsis=true center=true rect=230,18,36,24
+    plain grow=1
+    flow w=32 h=24 bg=sunken control=icon-button tip=Find in response (Ctrl+F) lighten=true onClick=true rect=288,18,32,24
+      iconB grow=1 icon=search rect=288,18,32,24
+    flow w=32 h=24 bg=sunken control=icon-button tip=Copy the response body lighten=true onClick=true rect=326,18,32,24
+      iconB grow=1 icon=copy rect=326,18,32,24
+    flow w=32 h=24 bg=sunken control=icon-button tip=Copy the request as a cURL command lighten=true onClick=true rect=364,18,32,24
+      iconB grow=1 icon=prompt rect=364,18,32,24
+  codeB grow=1 bg=sunken onRightClick=true rect=0,48,300,352

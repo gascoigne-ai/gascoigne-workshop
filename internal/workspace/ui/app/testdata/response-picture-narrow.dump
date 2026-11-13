@@ -1,0 +1,8 @@
+flow grow=1 rect=0,0,300,400
+  plain h=12 grow=1 rect=0,0,300,12
+  flow h=36 padL=12 padR=12 gap=6 borderB=border rect=0,12,300,36
+    textB text="PNG 40x20, 97B" fg=muted small=true rect=12,23,90,14
+    plain grow=1 rect=108,30,118,0
+    flow w=56 h=24 padL=10 padR=10 bg=sunken control=button tip=Save the image to a file lighten=true onClick=true rect=232,18,56,24
+      textB text="Save" grow=1 fg=chip-text ellipsis=true center=true rect=242,18,36,24
+  imageB grow=1 bg=sunken tip=The image, scaled down to fit rect=0,48,300,352
