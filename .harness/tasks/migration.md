@@ -16,7 +16,7 @@ Status: todo, doing, done, blocked (reason). The loop (`loop.md`) takes the firs
 | 10 | app `view.go` `requestTabs`, `requestTab` | 003, 004 | request-*, request-tabs (added) | done (fc7912e scene, 0b32e8c pins, aaabb32 swap) |
 | 11 | app `panes.go` `tableView` | 004 | default, request-post, request-tabs, request-params (added) | done (b4dae74 shot fix, eb6009d scene, 3eacdb7 pins, 456e15b swap) |
 | 12 | app `panes.go` `codePane` | 005 | response | n/a: dead code since ec3c902, removed |
-| 13 | app `panes.go` `responsePane` | 004, 005 | response, side-by-side | todo |
+| 13 | app `panes.go` `responsePane` | 004, 005 | response, side-by-side | done (cc8641e scene, b9c2d81 pins, 416aee4 swap) |
 | 14 | app `panes.go` `settingsPane` | 005 | request-* settings tab | todo |
 | 15 | app `wsui.go` `messagesPane` | 004, 005 | request-websocket (idle only) | todo |
 | 16 | app `overlay.go` `dialogView`, `toastsView`, `dialogForm` | 004 | settings-*; toasts: add scene first | todo |
