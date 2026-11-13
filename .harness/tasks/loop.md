@@ -25,6 +25,9 @@ Each iteration moves one view; the main session does the checks itself, it does 
    - A floating or modal view used as a test's layout root fills the window: wrap it in `Stack(...)` in the test. A bool field printed with `{{...}}` works as a conditional flag; a conditional color is a `core.Token` passed through the scope (`color="{{color}}"`); an optional sub-view is a nil `Node` field plus `<slot if="x.Field" name="x.Field"/>`. To capture dumps, write them from the pin test once behind an environment variable and remove that code before committing.
    - A `for` cannot pick between two roots per item: Go builds each item from a one-root template and the parent walks them with `<slot for="x in xs" name="x"/>`. A big view may be swapped one control kind at a time (one pin commit, then a swap commit per kind). Slider arguments do not show in `Dump`: pin them by pressing at a fraction (at most 0.99) of the slider's width.
    - Known toolkit gaps worked around by writing the primitive tree out: `note`, `lines`, `choice`, `icon-button` elements. If three more views copy one, add the element as a task (like 007).
+   - No conditional option in markup: a conditional option on a template-built node is applied in Go on the built node (sidebar drop outline). A second need makes a toolkit task (`when`-style attribute).
+   - A two-root sub-view inside an item becomes `if`/`if="!x"` siblings in the item template. A fragment shared by two `MustLoad` templates is copied with a comment pointing at the other.
+   - `-filter TEXT` scene flag exists. Task 010: filter match color is near invisible.
    - `icon-button` now has two copies (file-chosen.vml, findbar.vml); a third makes it a task.
    - A scene that needs state after a response: act once `sendsDone()` is true and make `ready` wait for it (`-find`). A field filled with `Insert` leaves the caret always drawn, so no mask needed.
    - `Dump` does not print placeholders; carry them over by hand.

@@ -11,7 +11,7 @@ Status: todo, doing, done, blocked (reason). The loop (`loop.md`) takes the firs
 | 5 | app `mcpexplorer.go` `explorerList`, open entry, result (`serverInfo` stays Go: two roots, `Lines`) | 007 | request-mcp (not connected only) | done (0b0b592 pins, 9c88441 swap) |
 | 6 | app `env.go` `envChip` (menu stays Go: data only) | 002, 003 | default (No environment only) | done (b42315d pins, 0fcfddd swap) |
 | 7 | app `panes.go` `findBar` | 002, 005 | response-find (added) | done (07d023c scene, 6b3153d pins, 88b3b43 swap) |
-| 8 | app `view.go` `sidebar`, `treeRow`, `rowName` | 004, 007 | default | todo |
+| 8 | app `view.go` `sidebar`, `treeRow`, `rowName` | 004, 007 | default, tree-filter (added) | done (6d6b256 scene, beb68d7 pins, 8c20a14 swap) |
 | 9 | app `view.go` `urlBar` | 003, 005, 006 | default, request-* | todo |
 | 10 | app `view.go` `requestTabs`, `requestTab` | 003, 004 | request-* | todo |
 | 11 | app `panes.go` `tableView` | 004 | default, request-post | todo |
