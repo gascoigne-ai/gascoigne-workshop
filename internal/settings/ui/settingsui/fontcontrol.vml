@@ -1,0 +1,5 @@
+<row h="{{rowH}}" bg="sunken" control="field" pad-x="8" gap="6" align-items="center"
+     on-click="open" tooltip="Pick an installed font">
+  <text grow="1" muted="{{current.Muted}}" ellipsis="{{current.Ellipsis}}" font-source="current.Face">{{current.Name}}</text>
+  <icon name="chevron-down" w="12"/>
+</row>

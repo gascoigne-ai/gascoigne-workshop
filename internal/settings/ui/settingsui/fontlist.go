@@ -95,32 +95,23 @@ func (d *SettingsDialog) face(host Host, family fontfamily.Family) *text.GoTextF
 	return source
 }
 
-// fontLabel is a name shown in its own font: Text with the family's font
-// when it could be loaded.
-func (d *SettingsDialog) fontLabel(host Host, family fontfamily.Family, opts ...Option) Node {
-	options := append([]Option{Ellipsis(), Grow(1)}, opts...)
-	if source := d.face(host, family); source != nil {
-		options = append(options, FontSource(source))
-	}
-	return Text(family.Name, options...)
-}
-
 // fontControl is the control of a font setting: the current family, drawn
 // in its font, and a chevron; clicking opens the dropdown.
 func (d *SettingsDialog) fontControl(host Host, role FontRole) Node {
 	name := savedFont(host.Settings(), role)
 	family, found := fontfamily.Find(d.Families, name)
-	label := Text(builtIn, Grow(1), Muted())
+	current := fontChoice{Name: builtIn, Muted: true}
 	switch {
 	case found:
-		label = d.fontLabel(host, family)
+		current = fontChoice{Name: family.Name, Face: d.face(host, family), Ellipsis: true}
 	case name != "":
-		label = Text(name+" (not installed)", Ellipsis(), Grow(1), Muted())
+		current = fontChoice{Name: name + " (not installed)", Muted: true, Ellipsis: true}
 	}
-	return Row(H(w.RowH), Bg(w.Sunken), Control("field"), PadX(8), Gap(6), AlignItems(AlignCenter),
-		OnClick(func() { d.OpenFontList(host, role) }), Tooltip("Pick an installed font"),
-		label, ChevronDownIcon(W(12)),
-	)
+	return fontControlTemplate.MustBuild(markup.Scope{
+		"rowH":    w.RowH,
+		"current": current,
+		"open":    func() { d.OpenFontList(host, role) },
+	})
 }
 
 // matchingFamilies are the families whose name contains the search text.
@@ -181,20 +172,22 @@ func (d *SettingsDialog) FontList(host Host) Node {
 	})
 }
 
-// fontChoice is what a row template shows of one entry of the list.
+// fontChoice is what a template shows of one family: a row of the list, or
+// the family in use in the font control.
 type fontChoice struct {
 	Name     string
 	Face     *text.GoTextFaceSource // nil draws the name in the interface font
-	Muted    bool                   // Built-in, which has no font of its own
+	Muted    bool                   // Built-in, which has no font of its own, or a family not installed
 	Ellipsis bool                   // a family name, which can be long
-	Pick     func()
+	Pick     func()                 // the list's rows only
 }
 
-//go:embed fontlist.vml fontrow.vml fontrow-selected.vml
+//go:embed fontlist.vml fontrow.vml fontrow-selected.vml fontcontrol.vml
 var fontListTemplates embed.FS
 
 var (
-	fontListTemplate = markup.MustLoad(fontListTemplates, "fontlist.vml")
+	fontControlTemplate = markup.MustLoad(fontListTemplates, "fontcontrol.vml")
+	fontListTemplate    = markup.MustLoad(fontListTemplates, "fontlist.vml")
 	// a template has one root, so the selected look is a template of its own
 	fontRowTemplate         = markup.MustLoad(fontListTemplates, "fontrow.vml")
 	selectedFontRowTemplate = markup.MustLoad(fontListTemplates, "fontrow-selected.vml")
