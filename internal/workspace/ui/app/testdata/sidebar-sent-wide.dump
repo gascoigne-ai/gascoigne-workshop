@@ -1,0 +1,7 @@
+flow rect=0,0,259,480
+  flow h=44 padL=12 padR=12 gap=6 bg=bg borderB=border rect=0,0,259,44
+    flow w=96 h=28 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=12,8,96,28
+      textB text="Sent" grow=1 fg=chip-text ellipsis=true center=true rect=22,8,76,28
+    fieldB h=28 grow=1 bg=sunken control=field onRightClickIn=true rect=114,8,133,28
+  flow padL=12 padT=12 padR=12 padB=12 bg=sunken rect=0,44,259,40
+    textB text="Nothing sent yet" fg=muted rect=12,56,235,16

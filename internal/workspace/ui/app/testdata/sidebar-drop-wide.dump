@@ -1,0 +1,27 @@
+flow rect=0,0,259,480
+  flow h=44 padL=12 padR=12 gap=6 bg=bg borderB=border rect=0,0,259,44
+    flow w=96 h=28 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=12,8,96,28
+      textB text="Collections" grow=1 fg=chip-text ellipsis=true center=true rect=22,8,76,28
+    fieldB h=28 grow=1 bg=sunken control=field onRightClickIn=true rect=114,8,133,28
+  scrollB grow=1 bg=sunken rect=0,44,259,436
+    flow h=28 padL=12 gap=6 control=row hoverBg=hover onClick=true onRightClick=true onDragOver=true rect=0,44,259,28
+      iconB w=12 icon=triangle-down rect=12,44,12,28
+      textB text="GitHub REST API" grow=1 ellipsis=true rect=30,44,229,28
+    flow h=28 padL=28 gap=6 control=row hoverBg=hover onClick=true onRightClick=true onDragOver=true rect=0,72,259,28
+      iconB w=12 icon=triangle-right rect=28,72,12,28
+      textB text="User" grow=1 ellipsis=true rect=46,72,213,28
+    flow h=28 padL=28 gap=6 border=accent-line control=row hoverBg=hover onClick=true onRightClick=true onDragOver=true rect=0,100,259,28
+      iconB w=12 icon=triangle-down rect=28,100,12,28
+      textB text="Repository" grow=1 ellipsis=true rect=46,100,213,28
+    flow h=28 padL=50 padR=12 bg=selected control=row onClick=true onRightClick=true onDragOver=true rect=0,128,259,28
+      textB text="GET" w=40 fg=method.GET small=true rect=50,136,40,14
+      textB text="Search Repos" grow=1 ellipsis=true rect=90,134,157,16
+    flow h=28 padL=50 padR=12 control=row hoverBg=hover onClick=true onRightClick=true onDragOver=true rect=0,156,259,28
+      textB text="GET" w=40 fg=method.GET small=true rect=50,164,40,14
+      textB text="Repository Info" grow=1 ellipsis=true rect=90,162,157,16
+    flow h=28 padL=50 padR=12 control=row hoverBg=hover onClick=true onRightClick=true onDragOver=true rect=0,184,259,28
+      textB text="GET" w=40 fg=method.GET small=true rect=50,192,40,14
+      textB text="Repository Tags" grow=1 ellipsis=true rect=90,190,157,16
+    flow h=28 padL=28 gap=6 control=row hoverBg=hover onClick=true onRightClick=true onDragOver=true rect=0,212,259,28
+      iconB w=12 icon=triangle-right rect=28,212,12,28
+      textB text="Realtime" grow=1 ellipsis=true rect=46,212,213,28
