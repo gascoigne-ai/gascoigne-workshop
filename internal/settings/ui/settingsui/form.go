@@ -1,6 +1,7 @@
 package settingsui
 
 import (
+	"embed"
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
@@ -67,10 +69,35 @@ func capitalized(id string) string {
 	return strings.ToUpper(id[:1]) + id[1:]
 }
 
+//go:embed chip.vml chip-selected.vml chips.vml
+var formTemplates embed.FS
+
+var (
+	// a template has one root, so the selected look is a template of its own
+	chipTemplate         = markup.MustLoad(formTemplates, "chip.vml")
+	selectedChipTemplate = markup.MustLoad(formTemplates, "chip-selected.vml")
+	chipsTemplate        = markup.MustLoad(formTemplates, "chips.vml")
+)
+
+// chip is what a chip template shows of one value of a segmented choice.
+type chip struct {
+	Label string
+	Pick  func()
+}
+
 // choice is one chip of a segmented choice: gold when selected.
 func choice(host Host, label string, selected bool, edit func(*settings.Settings)) Node {
-	apply := OnClick(func() { host.Send(prefs.Change{Edit: edit}) })
-	return Choice(label, selected, Grow(1), apply)
+	template := chipTemplate
+	if selected {
+		template = selectedChipTemplate
+	}
+	pick := func() { host.Send(prefs.Change{Edit: edit}) }
+	return template.MustBuild(markup.Scope{"chip": chip{Label: label, Pick: pick}})
+}
+
+// chipRow is a row of chips sharing its width.
+func chipRow(chips []Node) Node {
+	return chipsTemplate.MustBuild(markup.Scope{"chips": chips, "rowH": w.RowH})
 }
 
 // enumChips is a row of chips, one per allowed value; the current one is lit.
@@ -79,24 +106,27 @@ func (d *SettingsDialog) enumChips(host Host, field settings.Field, labels map[s
 	if field.Key == "corners" {
 		current = appearance.CornerIDOf(current)
 	}
-	return Row(H(w.RowH), Gap(6),
-		For(field.Allowed, func(_ int, id string) Node {
-			label := labels[id]
-			if label == "" {
-				label = capitalized(id)
-			}
-			return choice(host, label, id == current, func(s *settings.Settings) { *s = settings.With(*s, field.Key, id) })
-		}),
-	)
+	chips := make([]Node, 0, len(field.Allowed))
+	for _, id := range field.Allowed {
+		label := labels[id]
+		if label == "" {
+			label = capitalized(id)
+		}
+		edit := func(edited *settings.Settings) { *edited = settings.With(*edited, field.Key, id) }
+		chips = append(chips, choice(host, label, id == current, edit))
+	}
+	return chipRow(chips)
 }
 
 func (d *SettingsDialog) themeChips(host Host) Node {
 	current := host.Settings().Theme
-	return Row(H(w.RowH), Gap(6),
-		For(appearance.AllThemeChoices(), func(_ int, c appearance.ThemeChoice) Node {
-			return choice(host, c.Label, c.ID == current, func(s *settings.Settings) { s.Theme = c.ID })
-		}),
-	)
+	themes := appearance.AllThemeChoices()
+	chips := make([]Node, 0, len(themes))
+	for _, theme := range themes {
+		edit := func(edited *settings.Settings) { edited.Theme = theme.ID }
+		chips = append(chips, choice(host, theme.Label, theme.ID == current, edit))
+	}
+	return chipRow(chips)
 }
 
 func (d *SettingsDialog) scaleControl(host Host) Node {
@@ -112,9 +142,9 @@ func (d *SettingsDialog) scaleControl(host Host) Node {
 func (d *SettingsDialog) boolChips(host Host, field settings.Field) Node {
 	on, _ := settings.Value(host.Settings(), field.Key).(bool)
 	set := func(value bool) func(*settings.Settings) {
-		return func(s *settings.Settings) { *s = settings.With(*s, field.Key, value) }
+		return func(edited *settings.Settings) { *edited = settings.With(*edited, field.Key, value) }
 	}
-	return Row(H(w.RowH), Gap(6), choice(host, "Off", !on, set(false)), choice(host, "On", on, set(true)))
+	return chipRow([]Node{choice(host, "Off", !on, set(false)), choice(host, "On", on, set(true))})
 }
 
 // Input is the text field of a text or number setting, filled from the
