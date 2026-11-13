@@ -1,0 +1,20 @@
+<row h="{{tabsH}}" pad-t="{{tabGap}}" bg="frame" control="tabstrip" border-b="border">
+  <hscroll state="tabsScroll" grow="1">
+    <!-- inactive tabs blend into the strip; the active one joins the pane. A middle drag reorders, like a left one -->
+    <row for="tab in tabs" active-tab="{{tab.Active}}" separator="{{tab.Separator}}" on-middle-click="tab.MiddlePress" on-right-click="tab.Menu">
+      <row pad-l="14" gap="8" align-items="baseline" on-click="tab.Press" on-drag-over="tab.DragOver">
+        <text small color="{{tab.Color}}" w="{{tabBadgeW}}">{{tab.Badge}}</text>
+        <text>{{tab.Name}}</text>
+        <row w="{{tabDirtyW}}" align-self="stretch">
+          <text if="tab.Dirty" color="accent-line" grow="1">{{dirtyMark}}</text>
+        </row>
+      </row>
+      <row w="24" on-click="tab.Close" tooltip="{{closeTip}}">
+        <icon name="cross" grow="1"/>
+      </row>
+    </row>
+  </hscroll>
+  <row w="40" on-click="newRequest" tooltip="{{newTip}}">
+    <icon name="plus" grow="1"/>
+  </row>
+</row>

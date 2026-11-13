@@ -229,34 +229,69 @@ func (a *App) header() Node {
 		})
 }
 
-// requestTabs is the strip of open requests, with a "+" for a new one.
-func (a *App) requestTabs() Node {
-	return Row(H(tabsH), PadT(w.TabGap), Bg(w.Frame), Control("tabstrip"), BorderB(w.Border),
-		HScroll(&a.tabsScroll, Grow(1), For(a.openTabs(), a.requestTab)),
-		Row(W(40), OnClick(a.newRequest), Tooltip(a.hint("New request", "new-request")),
-			PlusIcon(Grow(1)),
-		),
-	)
+//go:embed requesttabs.vml
+var requestTabsSource embed.FS
+
+var requestTabsTemplate = markup.MustLoad(requestTabsSource, "requesttabs.vml")
+
+// tabSeparatorInset keeps the line between two tabs off the strip's
+// edges, so the tabs read as one strip and not as boxes.
+const tabSeparatorInset = 12
+
+// requestTabItem is what the strip's template shows of one open request.
+type requestTabItem struct {
+	Badge  string  // the request's method or protocol
+	Color  w.Token // the badge's color
+	Name   string
+	Dirty  bool
+	Active bool
+	// Separator is the line's inset before the tab; 0, no line (the first tab).
+	Separator   int
+	Press       func()
+	MiddlePress func()
+	DragOver    func()
+	Menu        func(pointerX, pointerY int)
+	Close       func()
 }
 
-// requestTab is tab i of the strip: badge, name, dirty mark and the cross.
-func (a *App) requestTab(i int, t *reqTab) Node {
-	look := []Item{} // inactive tabs blend into the strip; the active one joins the pane
-	if i == a.list.Active {
-		look = []Item{ActiveTab()}
+// requestTabs is the strip of open requests, with a "+" for a new one.
+func (a *App) requestTabs() Node {
+	var items []requestTabItem
+	for i, tab := range a.openTabs() {
+		items = append(items, a.requestTab(i, tab))
 	}
-	return Row(append(look, OnMiddleClick(func() { a.updateTabs(tabs.DragBegin{Index: i}) }), // a middle drag reorders, like a left one
-		OnRightClick(func(x, y int) { a.openMenu(x, y, a.tabMenuItems(i)) }),
-		When(i > 0, Separator(12)),
-		Row(PadL(14), Gap(8), AlignItems(AlignBaseline), OnClick(func() { a.pressTab(i) }), OnDragOver(func() { a.updateTabs(tabs.DragOver{Index: i}) }),
-			Text(requestBadge(t.Req.Protocol, t.Req.Method), Small(), Color(appearance.MethodToken(t.Req.Method)), W(tabBadgeW)),
-			Text(t.Req.Name),
-			Row(W(tabDirtyW), AlignSelf(AlignStretch), If(a.tabDirty(t), Text(dirtyMark, Color(w.AccentLine), Grow(1)))),
-		),
-		Row(W(24), OnClick(func() { a.closeTab(i) }), Tooltip(a.hint("Close tab", "close-tab")),
-			CrossIcon(Grow(1)),
-		),
-	)...)
+	return requestTabsTemplate.MustBuild(markup.Scope{
+		"tabsH":      tabsH,
+		"tabGap":     w.TabGap,
+		"tabsScroll": &a.tabsScroll,
+		"tabs":       items,
+		"tabBadgeW":  tabBadgeW,
+		"tabDirtyW":  tabDirtyW,
+		"dirtyMark":  dirtyMark,
+		"closeTip":   a.hint("Close tab", "close-tab"),
+		"newRequest": a.newRequest,
+		"newTip":     a.hint("New request", "new-request"),
+	})
+}
+
+// requestTab is the view model of tab i: badge, name, dirty mark and handlers.
+func (a *App) requestTab(i int, tab *reqTab) requestTabItem {
+	item := requestTabItem{
+		Badge:       requestBadge(tab.Req.Protocol, tab.Req.Method),
+		Color:       appearance.MethodToken(tab.Req.Method),
+		Name:        tab.Req.Name,
+		Dirty:       a.tabDirty(tab),
+		Active:      i == a.list.Active,
+		Press:       func() { a.pressTab(i) },
+		MiddlePress: func() { a.updateTabs(tabs.DragBegin{Index: i}) },
+		DragOver:    func() { a.updateTabs(tabs.DragOver{Index: i}) },
+		Menu:        func(pointerX, pointerY int) { a.openMenu(pointerX, pointerY, a.tabMenuItems(i)) },
+		Close:       func() { a.closeTab(i) },
+	}
+	if i > 0 {
+		item.Separator = tabSeparatorInset
+	}
+	return item
 }
 
 // pressTab activates tab i and starts dragging it, unless the strip
