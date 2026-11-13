@@ -69,7 +69,7 @@ func capitalized(id string) string {
 	return strings.ToUpper(id[:1]) + id[1:]
 }
 
-//go:embed chip.vml chip-selected.vml chips.vml
+//go:embed chip.vml chip-selected.vml chips.vml scale.vml textcontrol.vml openpage.vml
 var formTemplates embed.FS
 
 var (
@@ -77,6 +77,9 @@ var (
 	chipTemplate         = markup.MustLoad(formTemplates, "chip.vml")
 	selectedChipTemplate = markup.MustLoad(formTemplates, "chip-selected.vml")
 	chipsTemplate        = markup.MustLoad(formTemplates, "chips.vml")
+	scaleTemplate        = markup.MustLoad(formTemplates, "scale.vml")
+	textControlTemplate  = markup.MustLoad(formTemplates, "textcontrol.vml")
+	openPageTemplate     = markup.MustLoad(formTemplates, "openpage.vml")
 )
 
 // chip is what a chip template shows of one value of a segmented choice.
@@ -131,11 +134,18 @@ func (d *SettingsDialog) themeChips(host Host) Node {
 
 func (d *SettingsDialog) scaleControl(host Host) Node {
 	percent := int(host.Settings().UIScale()*100 + 0.5)
-	return Row(H(w.RowH), Gap(8),
-		Slider(&d.scale, appearance.ScaleMin, appearance.ScaleMax, appearance.ScaleStep, percent, OnSlide(func(percent int) { host.Send(prefs.ScaleLive{Percent: percent}) }), // live: the UI resizes while dragging
-			SliderMid(settings.DefaultUIScalePct), OnSlideEnd(func(int) { host.Send(prefs.Save{}) })),
-		Text(fmt.Sprintf("%d%%", d.scale.Shown(percent)), W(40), Color(w.Muted)),
-	)
+	return scaleTemplate.MustBuild(markup.Scope{
+		"rowH":     w.RowH,
+		"scale":    &d.scale,
+		"min":      appearance.ScaleMin,
+		"max":      appearance.ScaleMax,
+		"step":     appearance.ScaleStep,
+		"mid":      settings.DefaultUIScalePct,
+		"value":    percent,
+		"slide":    func(percent int) { host.Send(prefs.ScaleLive{Percent: percent}) }, // live: the UI resizes while dragging
+		"slideEnd": func(int) { host.Send(prefs.Save{}) },
+		"shown":    fmt.Sprintf("%d%%", d.scale.Shown(percent)),
+	})
 }
 
 // boolChips is Off and On for a true-or-false setting.
@@ -202,13 +212,13 @@ func (d *SettingsDialog) Note(key string) string { return d.notes[key] }
 
 // textControl is the field of a text or number setting.
 func (d *SettingsDialog) textControl(host Host, field settings.Field) Node {
-	input := d.Input(host, field.Key)
-	note := d.notes[field.Key]
-	edited := func() { d.Edited(host, field.Key) }
-	return Col(
-		Field(input, H(w.RowH), Bg(w.Sunken), Placeholder("Default"), OnChange(edited), TextMenu(input)),
-		If(note != "", Note(note, w.Error)),
-	)
+	return textControlTemplate.MustBuild(markup.Scope{
+		"rowH":   w.RowH,
+		"noteH":  w.NoteH,
+		"input":  d.Input(host, field.Key),
+		"note":   d.notes[field.Key],
+		"edited": func() { d.Edited(host, field.Key) },
+	})
 }
 
 // Reset puts the default back for key and drops it from the file.
@@ -275,10 +285,15 @@ func (d *SettingsDialog) openPageButton(field settings.Field) Node {
 	if field.Kind == settings.Shortcuts {
 		page = "shortcuts"
 	}
-	return Row(H(w.RowH), Button("Open "+strings.ToLower(field.Category), W(120), OnClick(func() {
+	open := func() {
 		d.Cat, d.Search = page, NewTextField("")
 		d.scroll.Y = 0
-	})))
+	}
+	return openPageTemplate.MustBuild(markup.Scope{
+		"rowH":  w.RowH,
+		"label": "Open " + strings.ToLower(field.Category),
+		"open":  open,
+	})
 }
 
 // settingMatches reports whether field fits the search text: its title,
