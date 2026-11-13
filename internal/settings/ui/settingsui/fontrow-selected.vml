@@ -1,3 +1,0 @@
-<row control="row" bg="selected" h="{{rowH}}" pad-x="8" align-items="center" on-click="row.Pick">
-  <text grow="1" muted="{{row.Muted}}" ellipsis="{{row.Ellipsis}}" font-source="row.Face">{{row.Name}}</text>
-</row>

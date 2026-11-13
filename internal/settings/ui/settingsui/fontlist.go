@@ -182,24 +182,18 @@ type fontChoice struct {
 	Pick     func()                 // the list's rows only
 }
 
-//go:embed fontlist.vml fontrow.vml fontrow-selected.vml fontcontrol.vml
+//go:embed fontlist.vml fontrow.vml fontcontrol.vml
 var fontListTemplates embed.FS
 
 var (
 	fontControlTemplate = markup.MustLoad(fontListTemplates, "fontcontrol.vml")
 	fontListTemplate    = markup.MustLoad(fontListTemplates, "fontlist.vml")
-	// a template has one root, so the selected look is a template of its own
-	fontRowTemplate         = markup.MustLoad(fontListTemplates, "fontrow.vml")
-	selectedFontRowTemplate = markup.MustLoad(fontListTemplates, "fontrow-selected.vml")
+	fontRowTemplate     = markup.MustLoad(fontListTemplates, "fontrow.vml")
 )
 
 // fontRow is one row of the list; picking it applies the family called
 // name, "" for Built-in.
 func (d *SettingsDialog) fontRow(host Host, choice fontChoice, selected bool, name string) Node {
 	choice.Pick = func() { d.PickFont(host, name) }
-	template := fontRowTemplate
-	if selected {
-		template = selectedFontRowTemplate
-	}
-	return template.MustBuild(markup.Scope{"row": choice, "rowH": fontListRowH})
+	return fontRowTemplate.MustBuild(markup.Scope{"row": choice, "rowH": fontListRowH, "selected": selected})
 }
