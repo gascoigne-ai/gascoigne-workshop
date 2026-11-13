@@ -468,6 +468,46 @@ func TestIconButtonNeedsAKnownIconAndHoldsNothing(t *testing.T) {
 	}
 }
 
+// choiceTemplate is a 72px chip of a segmented choice, the chosen one when
+// the scope says.
+const choiceTemplate = `
+	<row>
+	  <choice selected="{{chosen}}" w="72" h="24" on-click="pick" tooltip="Compact view">Compact</choice>
+	</row>`
+
+func TestChoiceElementMatchesTheGoChoice(t *testing.T) {
+	pick := func() {}
+	for _, selected := range []bool{true, false} {
+		t.Run(fmt.Sprint(selected), func(t *testing.T) {
+			template := build(t, choiceTemplate, Scope{"chosen": selected, "pick": pick})
+			goView := view.Row(widget.Choice("Compact", selected, view.W(72), view.H(24), view.OnClick(pick), view.Tooltip("Compact view")))
+			sameLayout(t, testCtx(t), template, goView, 200, 30)
+		})
+	}
+}
+
+func TestChoiceElementClickRunsTheScopeHandler(t *testing.T) {
+	ctx := testCtx(t)
+	picks := 0
+	template := build(t, choiceTemplate, Scope{"chosen": true, "pick": func() { picks++ }})
+	view.Layout(ctx, template, 200, 30)
+	chip := template.Children()[0].Rect()
+	ctx.In = core.Input{X: chip.X + chip.W/2, Y: chip.Y + chip.H/2, Click: true}
+	view.Update(ctx, template)
+	if picks != 1 {
+		t.Fatalf("clicking the chip ran the scope's on-click %d times, want 1", picks)
+	}
+}
+
+func TestChoiceSelectedMustBeTrueOrFalse(t *testing.T) {
+	parseError(t, `<choice>Raw</choice>`, "<choice> needs a selected")
+	parseError(t, `<choice selected="true"><row/></choice>`, "<choice> cannot contain <row>")
+	err := buildError(t, `<choice selected="yes">Raw</choice>`, nil)
+	if err == nil || !strings.Contains(err.Error(), "true or false") {
+		t.Errorf("error = %v, want it to say selected is not true or false", err)
+	}
+}
+
 func TestCheckboxOnMustBeTrueOrFalse(t *testing.T) {
 	parseError(t, `<checkbox/>`, "<checkbox> needs a on")
 	err := buildError(t, `<checkbox on="yes"/>`, nil)

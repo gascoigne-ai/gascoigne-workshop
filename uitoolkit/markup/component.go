@@ -36,7 +36,7 @@
 //
 //	Layout      row col stack spacer hrule vrule
 //	Text        text caption icon   font-source
-//	Buttons     button primary-button link-button icon-button
+//	Buttons     button primary-button link-button icon-button choice
 //	Rows        list-row
 //	Inputs      field (placeholder field-pad segments text-menu on-enter on-tab)
 //	            area (text-menu) checkbox
@@ -343,6 +343,12 @@ func listEntry(parts elementParts) (view.Node, error) {
 	return widget.ListRow(parts.args[0].(bool), parts.items()...), nil
 }
 
+// segment builds a Choice from its label and whether it is the chosen one,
+// so one element stands for the PrimaryButton and Button pair.
+func segment(parts elementParts) (view.Node, error) {
+	return widget.Choice(parts.text, parts.args[0].(bool), parts.opts...), nil
+}
+
 // tabStrip builds Tabs from its items and the active index.
 func tabStrip(parts elementParts) (view.Node, error) {
 	return widget.Tabs(parts.args[0].([]widget.TabItem), parts.args[1].(int), parts.opts...), nil
@@ -572,6 +578,7 @@ var elements = map[string]elementSpec{
 	"slot":           {build: placeholder, holds: holdsText},
 	"caption":        {build: labelled(view.Caption), holds: holdsText},
 	"button":         {build: labelled(widget.Button), holds: holdsText},
+	"choice":         {build: segment, holds: holdsText, params: []param{boolParam("selected")}},
 	"icon-button":    {build: iconButton, holds: holdsNothing, params: []param{textParam("icon")}},
 	"scroll":         {build: scroller(widget.Scroll), params: []param{scopedState[widget.ScrollState]("state")}},
 	"hscroll":        {build: scroller(widget.HScroll), params: []param{scopedState[widget.ScrollState]("state")}},
@@ -1332,6 +1339,7 @@ func Reference() string {
 	sb.WriteString("<include> and <slot> take only name, if and for.\n")
 	sb.WriteString("<icon name=\"trash\"/> draws a built-in or registered icon (widget.IconNames).\n")
 	sb.WriteString("<icon-button icon=\"search\"/> is widget.IconButton around that icon, grown to fill the chip.\n")
+	sb.WriteString("<choice selected=\"{{chosen}}\">Raw</choice> is widget.Choice: a primary-button when selected is true, a button otherwise.\n")
 	sb.WriteString("Text and attribute values may use {{path}}, each step a map key or an exported struct field; if=\"name\" or \"!name\"; for=\"item in list\" over any slice, with {{$index}}; on-click=\"handler\" (and the other on-* events, each a func of the scope).\n")
 	sb.WriteString("A color attribute (bg, border*, edge-*, hover-*, color) given an empty token applies no option; so does separator=\"0\".\n")
 	sb.WriteString("What an element takes (state=\"x\", ...) are its Go constructor's arguments, all required; state and specs name a scope entry of the Go type.\n")
