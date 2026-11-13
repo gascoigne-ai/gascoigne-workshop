@@ -422,23 +422,26 @@ func jsonStyler(line string) []Span {
 	return spans
 }
 
-// settingsPane holds the per-request options: timeout and redirects.
+//go:embed settingspane.vml
+var settingsPaneSource embed.FS
+
+var settingsPaneTemplate = markup.MustLoad(settingsPaneSource, "settingspane.vml")
+
+// settingsPane holds the per-request options: timeout, redirects and
+// certificate checks.
 func (a *App) settingsPane(_ pane, t *reqTab, scroll *ScrollState) Node {
-	return Scroll(scroll, Pad(w.Gutter), Gap(8),
-		FormRow("Timeout (seconds)", 160,
-			Field(&t.timeout, W(80), Bg(w.Sunken),
-				OnChange(func() { a.timeoutEdited(t) }),
-				TextMenu(&t.timeout)),
-			Text(fmt.Sprintf("blank = default (%d s)", a.timeoutFor(model.Request{})/time.Second), Small(), Muted()),
-		),
-		CheckRow(!t.Req.NoRedirects, OnClick(func() { editRequest(t, editor.NoRedirectsToggled{}) }),
-			Text("Follow redirects"),
-		),
-		CheckRow(!t.Req.InsecureTLS, OnClick(func() { editRequest(t, editor.InsecureTLSToggled{}) }),
-			Text("Verify the server certificate"),
-			Text("off accepts self-signed certificates", Small(), Muted()),
-		),
-	)
+	return settingsPaneTemplate.MustBuild(markup.Scope{
+		"gutter":            w.Gutter,
+		"rowH":              w.RowH,
+		"scroll":            scroll,
+		"timeout":           &t.timeout,
+		"timeoutHint":       fmt.Sprintf("blank = default (%d s)", a.timeoutFor(model.Request{})/time.Second),
+		"followRedirects":   !t.Req.NoRedirects,
+		"verifyCertificate": !t.Req.InsecureTLS,
+		"timeoutEdited":     func() { a.timeoutEdited(t) },
+		"toggleRedirects":   func() { editRequest(t, editor.NoRedirectsToggled{}) },
+		"toggleVerify":      func() { editRequest(t, editor.InsecureTLSToggled{}) },
+	})
 }
 
 // timeoutEdited applies the typed timeout; text that is not a whole
