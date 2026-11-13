@@ -7,6 +7,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"strings"
 	"testing"
 )
 
@@ -51,6 +52,7 @@ var goldenScenes = []goldenScene{
 	{name: "settings-general", width: shotWidth, height: shotHeight, args: []string{"-page", "general"}},
 	{name: "narrow", width: 800, height: 520, args: []string{"-window", "800x520"}},
 	{name: "response-find", width: shotWidth, height: shotHeight, args: []string{"-send", "-find", "/e"}, mask: []image.Rectangle{durationStacked, durationStatus}},
+	{name: "request-sending", width: shotWidth, height: shotHeight, args: []string{"-request", "Delay 500ms", "-sending"}},
 	{name: "tree-filter", width: shotWidth, height: shotHeight, args: []string{"-filter", "Echo"}},
 	{name: "sent-log", width: shotWidth, height: shotHeight, args: []string{"-send", "-request", "Echo", "-sent"}, mask: []image.Rectangle{durationStacked, durationStatus, sentTimeFirst, sentTimeSecond}},
 }
@@ -74,15 +76,21 @@ func TestGoldenScenes(t *testing.T) {
 const exampleRoot = "gascoigne example server\n/echo\n/status/{code}\n/delay/{ms}\n/auth\n"
 
 // serveExampleRoot answers the sample request's address, so a scene that
-// sends it shows a response and not "connection refused". A busy port skips
-// the test: another server there would draw something else.
+// sends it shows a response and not "connection refused". A delay request
+// is held until its client goes away, so a scene that captures a request in
+// flight never races its answer. A busy port skips the test: another server
+// there would draw something else.
 func serveExampleRoot(t *testing.T) {
 	t.Helper()
 	listener, err := net.Listen("tcp", "127.0.0.1:8081")
 	if err != nil {
 		t.Skipf("port 8081 is in use, the scene needs it free: %v", err)
 	}
-	server := &http.Server{Handler: http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+	server := &http.Server{Handler: http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		if strings.HasPrefix(request.URL.Path, "/delay/") {
+			<-request.Context().Done()
+			return
+		}
 		writer.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		io.WriteString(writer, exampleRoot)
 	})}

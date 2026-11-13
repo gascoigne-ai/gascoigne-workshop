@@ -39,6 +39,7 @@ type screenshot struct {
 	find        string   // text to search the response for in the find bar
 	found       bool     // the find bar is open with find typed in
 	filter      string   // text to type into the sidebar's filter
+	sending     bool     // send the open request and capture while it is in flight
 }
 
 // Err is the error of the capture, if any.
@@ -111,6 +112,9 @@ func (s *screenshot) ready(a *App) bool {
 		return false
 	}
 	if !s.sendsDone() && s.frames < shotTimeout {
+		return false
+	}
+	if s.sending && !a.cur().Sending && s.frames < shotTimeout {
 		return false
 	}
 	return s.find == "" || s.found || s.frames >= shotTimeout
@@ -207,6 +211,9 @@ func (a *App) showShotTarget() {
 	}
 	if s.filter != "" {
 		a.filter.Insert(s.filter)
+	}
+	if s.sending {
+		a.send(a.cur())
 	}
 }
 

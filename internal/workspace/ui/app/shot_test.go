@@ -2,6 +2,8 @@ package ui
 
 import (
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"path/filepath"
 	"testing"
 	"time"
@@ -173,6 +175,44 @@ func TestScreenshotFiltersTheTree(t *testing.T) {
 	}
 	if a.filter.Text != "Echo" {
 		t.Fatalf("filter %q, want %q", a.filter.Text, "Echo")
+	}
+}
+
+// With -sending the capture sends the open request and waits until it is
+// in flight, so the URL bar shows its Cancel button.
+func TestScreenshotWithSendingCapturesTheRequestInFlight(t *testing.T) {
+	release := make(chan struct{})
+	srv := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, request *http.Request) {
+		select { // never answers: the capture must find the request still running
+		case <-request.Context().Done():
+		case <-release:
+		}
+	}))
+	t.Cleanup(srv.Close)
+	t.Cleanup(func() { close(release) })
+	a := shotApp(t, withAdapters(Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotSending: true}))
+	tab := a.cur()
+	pointTabAt(tab, srv.URL)
+	for range settleFrames {
+		if err := a.shotUpdate(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if !tab.Sending {
+		t.Fatal("-sending must start the request")
+	}
+	if !a.shot.ready(a) {
+		t.Fatal("ready while the request is in flight")
+	}
+}
+
+// Without its request in flight, -sending does not capture: the picture
+// would show the Send button, not the Cancel one.
+func TestScreenshotWithSendingWaitsForTheRequestToStart(t *testing.T) {
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotSending: true})
+	a.shot.frames = settleFrames
+	if a.shot.ready(a) {
+		t.Fatal("nothing is sending yet, the capture must wait")
 	}
 }
 
