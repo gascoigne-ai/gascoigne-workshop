@@ -10,7 +10,7 @@ Status: todo, doing, done, blocked (reason). The loop (`loop.md`) takes the firs
 | 4 | settingsui `settingRow` / `form.go`, plus `fontControl` and `fontLabel` from row 3 | 002, 003, 005 | settings-menu, settings-requests, settings-general | done (268fdf1 pins, ed2f230..75760a3 swaps) |
 | 5 | app `mcpexplorer.go` `explorerList`, open entry, result (`serverInfo` stays Go: two roots, `Lines`) | 007 | request-mcp (not connected only) | done (0b0b592 pins, 9c88441 swap) |
 | 6 | app `env.go` `envChip` (menu stays Go: data only) | 002, 003 | default (No environment only) | done (b42315d pins, 0fcfddd swap) |
-| 7 | app `panes.go` `findBar` | 002, 005 | none: add scene first | todo |
+| 7 | app `panes.go` `findBar` | 002, 005 | response-find (added) | done (07d023c scene, 6b3153d pins, 88b3b43 swap) |
 | 8 | app `view.go` `sidebar`, `treeRow`, `rowName` | 004, 007 | default | todo |
 | 9 | app `view.go` `urlBar` | 003, 005, 006 | default, request-* | todo |
 | 10 | app `view.go` `requestTabs`, `requestTab` | 003, 004 | request-* | todo |
