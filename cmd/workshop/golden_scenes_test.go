@@ -50,6 +50,7 @@ var goldenScenes = []goldenScene{
 	{name: "settings-requests", width: shotWidth, height: shotHeight, args: []string{"-page", "requests"}},
 	{name: "settings-general", width: shotWidth, height: shotHeight, args: []string{"-page", "general"}},
 	{name: "narrow", width: 800, height: 520, args: []string{"-window", "800x520"}},
+	{name: "response-find", width: shotWidth, height: shotHeight, args: []string{"-send", "-find", "/e"}, mask: []image.Rectangle{durationStacked, durationStatus}},
 	{name: "sent-log", width: shotWidth, height: shotHeight, args: []string{"-send", "-request", "Echo", "-sent"}, mask: []image.Rectangle{durationStacked, durationStatus, sentTimeFirst, sentTimeSecond}},
 }
 

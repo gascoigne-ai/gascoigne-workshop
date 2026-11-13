@@ -189,6 +189,35 @@ func TestScreenshotWithSendAndARequestSendsBothInTurn(t *testing.T) {
 	}
 }
 
+// With -find the capture waits for the response, then opens the find bar on
+// it and types the query, so the bar shows its matches.
+func TestScreenshotFindsTheQueryInTheResponse(t *testing.T) {
+	srv := jsonServer(t)
+	a := shotApp(t, withAdapters(Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), SendOnStart: true, ScreenshotFind: "ok"}))
+	tab := a.cur()
+	pointTabAt(tab, srv.URL)
+	for range 400 {
+		a.shotUpdate()
+		a.step(core.Input{})
+		if a.shot.ready(a) {
+			break
+		}
+		if tab.Resp == nil && tab.look.FindOpen {
+			t.Fatal("the find bar opened before the response arrived")
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	if !a.shot.ready(a) {
+		t.Fatal("never ready")
+	}
+	if !tab.look.FindOpen || tab.find.Text != "ok" {
+		t.Fatalf("find open = %v with %q, want open with %q", tab.look.FindOpen, tab.find.Text, "ok")
+	}
+	if len(tab.view.Matches()) == 0 {
+		t.Error("the query should match the response")
+	}
+}
+
 func TestScreenshotWithAnUnknownRequestFails(t *testing.T) {
 	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotRequest: "No such request"})
 	for range setFrame {

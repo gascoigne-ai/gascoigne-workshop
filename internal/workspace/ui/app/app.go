@@ -258,6 +258,7 @@ type Options struct {
 	ScreenshotRequest         string                                        // the name of the request to open before the screenshot
 	ScreenshotPage            string                                        // the settings page to show before the screenshot; opens the dialog
 	ScreenshotSentLog         bool                                          // show the log of sent requests in the sidebar before the screenshot
+	ScreenshotFind            string                                        // search the response for this text in the find bar before the screenshot
 	SettingsPath              string                                        // settings file; "" keeps settings in memory
 	StatePath                 string                                        // remembered UI state; "" keeps it in memory
 	ThemesDir                 string                                        // folder of user theme files (*.json); "" for none
@@ -318,7 +319,7 @@ func NewApp(opts Options) (*App, error) {
 		widgets:          map[*tabs.Tab]*reqTab{},
 		bus:              bus.New(),
 		status:           "Ready",
-		shot:             screenshot{path: opts.ScreenshotPath, sendOnStart: opts.SendOnStart, set: opts.ScreenshotSet, request: opts.ScreenshotRequest, page: opts.ScreenshotPage, sentLog: opts.ScreenshotSentLog},
+		shot:             screenshot{path: opts.ScreenshotPath, sendOnStart: opts.SendOnStart, set: opts.ScreenshotSet, request: opts.ScreenshotRequest, page: opts.ScreenshotPage, sentLog: opts.ScreenshotSentLog, find: opts.ScreenshotFind},
 
 		settings:     st,
 		settingFiles: settingFiles,

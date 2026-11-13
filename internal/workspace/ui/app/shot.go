@@ -36,6 +36,8 @@ type screenshot struct {
 	request     string   // name of the request to open before the capture
 	page        string   // settings page to show before the capture
 	sentLog     bool     // show the log of sent requests in the sidebar
+	find        string   // text to search the response for in the find bar
+	found       bool     // the find bar is open with find typed in
 }
 
 // Err is the error of the capture, if any.
@@ -65,7 +67,25 @@ func (a *App) shotUpdate() error {
 		s.sendNext = nil
 		a.shotSend(next)
 	}
+	if s.find != "" && !s.found && s.frames >= setFrame && s.sendsDone() { // after the response, or there is nothing to search
+		s.found = true
+		a.shotFind()
+	}
 	return nil
+}
+
+// shotFind opens the find bar on the current response and types the query,
+// as Ctrl+F and typing would.
+func (a *App) shotFind() {
+	a.openFind()
+	t := a.cur()
+	t.find.Insert(a.shot.find)
+	a.runFind(t)
+}
+
+// sendsDone reports whether every send the capture asked for has its outcome.
+func (s *screenshot) sendsDone() bool {
+	return !s.sendOnStart || (s.sent && s.sendNext == nil && s.allAnswered())
 }
 
 // shotSend sends t's request and makes the capture wait for its outcome.
@@ -89,10 +109,10 @@ func (s *screenshot) ready(a *App) bool {
 	if s.path == "" || s.captured || s.frames < settleFrames {
 		return false
 	}
-	if s.sendOnStart && (s.sendNext != nil || !s.allAnswered()) && s.frames < shotTimeout {
+	if !s.sendsDone() && s.frames < shotTimeout {
 		return false
 	}
-	return true
+	return s.find == "" || s.found || s.frames >= shotTimeout
 }
 
 // answered reports whether what -send started has an outcome to show: a
