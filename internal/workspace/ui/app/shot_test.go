@@ -162,6 +162,20 @@ func TestScreenshotShowsTheSentLog(t *testing.T) {
 	}
 }
 
+// With -filter the capture types the text into the sidebar's filter, so the
+// tree shows only the matches with the matched part highlighted.
+func TestScreenshotFiltersTheTree(t *testing.T) {
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotFilter: "Echo"})
+	for range setFrame {
+		if err := a.shotUpdate(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if a.filter.Text != "Echo" {
+		t.Fatalf("filter %q, want %q", a.filter.Text, "Echo")
+	}
+}
+
 // With -send and -request the first request goes out at start-up and the
 // named one once that is answered, so a capture of the sent log has two
 // rows in a fixed order.

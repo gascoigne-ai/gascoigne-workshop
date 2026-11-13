@@ -38,6 +38,7 @@ type screenshot struct {
 	sentLog     bool     // show the log of sent requests in the sidebar
 	find        string   // text to search the response for in the find bar
 	found       bool     // the find bar is open with find typed in
+	filter      string   // text to type into the sidebar's filter
 }
 
 // Err is the error of the capture, if any.
@@ -203,6 +204,9 @@ func (a *App) showShotTarget() {
 	}
 	if s.sentLog {
 		a.showSent = true
+	}
+	if s.filter != "" {
+		a.filter.Insert(s.filter)
 	}
 }
 
