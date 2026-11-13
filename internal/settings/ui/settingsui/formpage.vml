@@ -1,0 +1,3 @@
+<col>
+  <slot for="row in rows" name="row"/>
+</col>

@@ -71,6 +71,7 @@ func capitalized(id string) string {
 
 //go:embed chip.vml chip-selected.vml chips.vml scale.vml textcontrol.vml openpage.vml
 //go:embed file-empty.vml file-chosen.vml
+//go:embed settingrow.vml formpage.vml formcaption.vml formempty.vml
 var formTemplates embed.FS
 
 var (
@@ -84,6 +85,11 @@ var (
 	// with no file there is no field, only a button (see fileControl)
 	emptyFileTemplate  = markup.MustLoad(formTemplates, "file-empty.vml")
 	chosenFileTemplate = markup.MustLoad(formTemplates, "file-chosen.vml")
+	settingRowTemplate = markup.MustLoad(formTemplates, "settingrow.vml")
+	// a search lists captions between the rows, so the page walks built nodes
+	formPageTemplate    = markup.MustLoad(formTemplates, "formpage.vml")
+	formCaptionTemplate = markup.MustLoad(formTemplates, "formcaption.vml")
+	formEmptyTemplate   = markup.MustLoad(formTemplates, "formempty.vml")
 )
 
 // chip is what a chip template shows of one value of a segmented choice.
@@ -270,16 +276,27 @@ func (d *SettingsDialog) settingRow(host Host, field settings.Field) Node {
 	default:
 		control = d.textControl(host, field)
 	}
-	return Col(PadY(8), BorderB(w.BorderSoft),
-		Row(H(w.RowH), Gap(6),
-			Text(field.Title, Bold()),
-			If(changed, Text("•", Color(w.AccentLine), Tooltip("Changed from the default"))),
-			Spacer(),
-			If(changed, Button("Reset", W(56), H(w.CompactH), OnClick(func() { d.Reset(host, field.Key) }), Tooltip("Remove it from settings.json so the default applies"))),
-		),
-		Lines(wrapWords(field.Description, descriptionCols), w.Muted),
-		control,
-	)
+	return settingRowTemplate.MustBuild(markup.Scope{
+		"rowH":     w.RowH,
+		"compactH": w.CompactH,
+		"labelH":   w.LabelH,
+		"setting": settingView{
+			Title:       field.Title,
+			Changed:     changed,
+			Reset:       func() { d.Reset(host, field.Key) },
+			Description: strings.Split(wrapWords(field.Description, descriptionCols), "\n"),
+			Control:     control,
+		},
+	})
+}
+
+// settingView is what the row template shows of one setting.
+type settingView struct {
+	Title       string
+	Changed     bool // differs from the default: a mark and Reset
+	Reset       func()
+	Description []string // its lines, wrapped
+	Control     Node     // built by the kind's own template
 }
 
 // openPageButton leads from a search result to the page that edits the
@@ -315,7 +332,7 @@ func settingMatches(field settings.Field, query string) bool {
 // typed, those of every category that match it.
 func (d *SettingsDialog) FormPage(host Host, category string) Node {
 	searching := d.Searching()
-	var rows []Item
+	var rows []Node
 	last := ""
 	for _, field := range settings.Schema {
 		if field.Hidden || !settingMatches(field, d.Search.Text) || (!searching && field.Category != category) {
@@ -323,14 +340,14 @@ func (d *SettingsDialog) FormPage(host Host, category string) Node {
 		}
 		if searching && field.Category != last {
 			last = field.Category
-			rows = append(rows, Caption(field.Category, H(w.LabelH)))
+			rows = append(rows, formCaptionTemplate.MustBuild(markup.Scope{"category": field.Category, "labelH": w.LabelH}))
 		}
 		rows = append(rows, d.settingRow(host, field))
 	}
 	if len(rows) == 0 {
-		return Text("No settings match", Muted())
+		return formEmptyTemplate.MustBuild(nil)
 	}
-	return Col(rows...)
+	return formPageTemplate.MustBuild(markup.Scope{"rows": rows})
 }
 
 // fileControl is the control of a file setting. With no file it is one

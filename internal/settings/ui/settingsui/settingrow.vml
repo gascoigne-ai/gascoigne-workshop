@@ -1,0 +1,13 @@
+<col pad-y="8" border-b="border-soft">
+  <row h="{{rowH}}" gap="6">
+    <text bold>{{setting.Title}}</text>
+    <text if="setting.Changed" color="accent-line" tooltip="Changed from the default">•</text>
+    <spacer/>
+    <button if="setting.Changed" w="56" h="{{compactH}}" on-click="setting.Reset"
+            tooltip="Remove it from settings.json so the default applies">Reset</button>
+  </row>
+  <col>
+    <text for="line in setting.Description" color="muted" h="{{labelH}}">{{line}}</text>
+  </col>
+  <slot name="setting.Control"/>
+</col>
