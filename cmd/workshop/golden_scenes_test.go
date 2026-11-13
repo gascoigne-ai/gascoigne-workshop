@@ -58,6 +58,7 @@ var goldenScenes = []goldenScene{
 	{name: "tree-filter", width: shotWidth, height: shotHeight, args: []string{"-filter", "Echo"}},
 	{name: "sent-log", width: shotWidth, height: shotHeight, args: []string{"-send", "-request", "Echo", "-sent"}, mask: []image.Rectangle{durationStacked, durationStatus, sentTimeFirst, sentTimeSecond}},
 	{name: "request-settings", width: shotWidth, height: shotHeight, args: []string{"-pane", "Settings"}},
+	{name: "request-auth", width: shotWidth, height: shotHeight, args: []string{"-request", "Auth", "-pane", "Auth"}},
 	{name: "response-raw", width: shotWidth, height: shotHeight, args: []string{"-send", "-set", "responseView=raw"}, mask: []image.Rectangle{durationStacked, durationStatus}},
 }
 
