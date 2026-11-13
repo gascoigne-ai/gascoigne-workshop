@@ -1,7 +1,7 @@
 <col>
   <row h="{{rowH}}" bg="sunken" control="field" align-items="center">
     <field state="input" grow="1" placeholder="No file" on-change="edited" text-menu="input"/>
-    <!-- an icon button: a Button with an icon in place of its label -->
+    <!-- markup has no icon-button element, so widget.IconButton's tree is spelled out; the form's pins keep it in step -->
     <row w="{{iconBtnW}}" h="{{compactH}}" bg="sunken" control="icon-button" lighten
          on-click="choose" tooltip="Choose another file">
       <icon name="folder" grow="1"/>
