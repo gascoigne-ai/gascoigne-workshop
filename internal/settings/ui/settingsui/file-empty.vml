@@ -1,0 +1,8 @@
+<row h="{{rowH}}">
+  <row w="150" h="{{rowH}}" bg="sunken" control="button" lighten pad-x="10" gap="8" align-items="center"
+       on-click="choose" tooltip="Choose the file">
+    <icon name="folder" w="16"/>
+    <text grow="1" color="chip-text">Choose file</text>
+  </row>
+  <spacer/>
+</row>

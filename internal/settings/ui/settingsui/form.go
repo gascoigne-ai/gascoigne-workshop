@@ -70,6 +70,7 @@ func capitalized(id string) string {
 }
 
 //go:embed chip.vml chip-selected.vml chips.vml scale.vml textcontrol.vml openpage.vml
+//go:embed file-empty.vml file-chosen.vml
 var formTemplates embed.FS
 
 var (
@@ -80,6 +81,9 @@ var (
 	scaleTemplate        = markup.MustLoad(formTemplates, "scale.vml")
 	textControlTemplate  = markup.MustLoad(formTemplates, "textcontrol.vml")
 	openPageTemplate     = markup.MustLoad(formTemplates, "openpage.vml")
+	// with no file there is no field, only a button (see fileControl)
+	emptyFileTemplate  = markup.MustLoad(formTemplates, "file-empty.vml")
+	chosenFileTemplate = markup.MustLoad(formTemplates, "file-chosen.vml")
 )
 
 // chip is what a chip template shows of one value of a segmented choice.
@@ -337,23 +341,18 @@ func (d *SettingsDialog) fileControl(host Host, field settings.Field) Node {
 	input := d.Input(host, field.Key)
 	choose := func() { d.ChooseFile(host, field.Key) }
 	if strings.TrimSpace(input.Text) == "" && !input.Focused {
-		return Row(H(w.RowH),
-			Row(W(150), H(w.RowH), Bg(w.Sunken), Control("button"), Lighten(), PadX(10), Gap(8), AlignItems(AlignCenter),
-				OnClick(choose), Tooltip("Choose the file"),
-				FolderIcon(W(16)), Text("Choose file", Grow(1), Color(w.ChipText)),
-			),
-			Spacer(),
-		)
+		return emptyFileTemplate.MustBuild(markup.Scope{"rowH": w.RowH, "choose": choose})
 	}
-	note := d.notes[field.Key]
-	edited := func() { d.Edited(host, field.Key) }
-	return Col(
-		Row(H(w.RowH), Bg(w.Sunken), Control("field"), AlignItems(AlignCenter),
-			Field(input, Grow(1), Placeholder("No file"), OnChange(edited), TextMenu(input)),
-			IconButton(FolderIcon(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(choose), Tooltip("Choose another file")),
-		),
-		If(note != "", Note(note, w.Error)),
-	)
+	return chosenFileTemplate.MustBuild(markup.Scope{
+		"rowH":     w.RowH,
+		"compactH": w.CompactH,
+		"noteH":    w.NoteH,
+		"iconBtnW": w.IconBtnW,
+		"input":    input,
+		"note":     d.notes[field.Key],
+		"edited":   func() { d.Edited(host, field.Key) },
+		"choose":   choose,
+	})
 }
 
 // ChooseFile asks for a file for the setting key and puts its path in the
