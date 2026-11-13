@@ -57,6 +57,7 @@ var goldenScenes = []goldenScene{
 	{name: "request-params", width: shotWidth, height: shotHeight, args: []string{"-type-url", "?q=gpu-rendered-desktop-clients-written-in-go-with-custom-widgets-and-three-panes&page=2&sort=stars"}},
 	{name: "tree-filter", width: shotWidth, height: shotHeight, args: []string{"-filter", "Echo"}},
 	{name: "sent-log", width: shotWidth, height: shotHeight, args: []string{"-send", "-request", "Echo", "-sent"}, mask: []image.Rectangle{durationStacked, durationStatus, sentTimeFirst, sentTimeSecond}},
+	{name: "request-settings", width: shotWidth, height: shotHeight, args: []string{"-pane", "Settings"}},
 	{name: "response-raw", width: shotWidth, height: shotHeight, args: []string{"-send", "-set", "responseView=raw"}, mask: []image.Rectangle{durationStacked, durationStatus}},
 }
 

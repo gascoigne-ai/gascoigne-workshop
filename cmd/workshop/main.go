@@ -92,6 +92,7 @@ func main() {
 	flag.BoolVar(&opts.ScreenshotSending, "sending", false, "send the open request and take the screenshot while it is in flight")
 	flag.BoolVar(&opts.ScreenshotOpenAll, "open-all", false, "open every request of the collection in its own tab before the screenshot")
 	flag.StringVar(&opts.ScreenshotURL, "type-url", "", "type this text into the open request's URL before the screenshot, so its tab shows unsaved changes")
+	flag.StringVar(&opts.ScreenshotPane, "pane", "", "show the open request's pane with this label (Params, Settings, ...) before the screenshot")
 	flag.StringVar(&opts.ScreenshotFind, "find", "", "search the response for this text in the find bar before the screenshot (after -send's response)")
 	windowW, windowH := windowWidth, windowHeight
 	flag.Func("window", "WIDTHxHEIGHT: open the window at this size, for screenshots", func(spec string) error {

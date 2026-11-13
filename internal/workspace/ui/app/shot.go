@@ -42,6 +42,7 @@ type screenshot struct {
 	sending     bool     // send the open request and capture while it is in flight
 	openAll     bool     // open every request in its own tab, so the tab strip overflows
 	url         string   // text to type into the open request's URL, so its tab is marked changed
+	pane        string   // label of the request pane to show, such as Settings
 }
 
 // Err is the error of the capture, if any.
@@ -207,6 +208,11 @@ func (a *App) showShotTarget() {
 			s.sendNext = a.cur()
 		}
 	}
+	if s.pane != "" && !a.showShotPane(s.pane) {
+		s.err = fmt.Errorf("screenshot pane %q is not a pane of the open request", s.pane)
+		s.captured = true
+		return
+	}
 	if s.page != "" {
 		a.prefs.Cat = s.page
 		a.menu = true
@@ -225,6 +231,19 @@ func (a *App) showShotTarget() {
 	if s.sending {
 		a.send(a.cur())
 	}
+}
+
+// showShotPane selects the open request's pane with this label; it reports
+// whether the request has one.
+func (a *App) showShotPane(label string) bool {
+	tab := a.cur()
+	for i, candidate := range requestPanesFor(tab) {
+		if candidate.label == label {
+			tab.paneTab = i
+			return true
+		}
+	}
+	return false
 }
 
 func (a *App) findRequestByName(name string) *model.Request {

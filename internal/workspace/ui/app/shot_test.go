@@ -226,6 +226,48 @@ func TestScreenshotURLEditShowsOverMarksDrawnBefore(t *testing.T) {
 	}
 }
 
+// With -pane the capture shows the request pane with that label, after
+// -request has opened its request, so a scene can draw a tab other than the
+// first one.
+func TestScreenshotShowsTheNamedRequestPane(t *testing.T) {
+	cases := []struct {
+		name    string
+		request string
+	}{
+		{"http request", ""},
+		{"socket request", "Echo"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotRequest: tc.request, ScreenshotPane: "Settings"})
+			for range setFrame {
+				if err := a.shotUpdate(); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if err := a.Err(); err != nil {
+				t.Fatal(err)
+			}
+			tab := a.cur()
+			if got := requestPanesFor(tab)[tab.paneTab].label; got != "Settings" {
+				t.Errorf("request pane %q, want Settings", got)
+			}
+		})
+	}
+}
+
+// An unknown pane ends the run with an error: capturing the first pane
+// instead would let a golden pass for the wrong scene.
+func TestScreenshotWithAnUnknownPaneFails(t *testing.T) {
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotPane: "Nope"})
+	for range setFrame {
+		a.shotUpdate()
+	}
+	if a.Err() == nil || !a.shot.captured {
+		t.Fatalf("err = %v, captured = %v, want the run ended with an error", a.Err(), a.shot.captured)
+	}
+}
+
 // With -filter the capture types the text into the sidebar's filter, so the
 // tree shows only the matches with the matched part highlighted.
 func TestScreenshotFiltersTheTree(t *testing.T) {
