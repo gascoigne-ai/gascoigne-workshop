@@ -1,0 +1,32 @@
+flow h=42 padT=6 bg=frame borderB=border control=tabstrip rect=0,0,420,42
+  hscrollB grow=1 rect=0,6,380,36
+    flow onRightClick=true onMiddleClick=true rect=18,6,203,36
+      flow padL=14 gap=8 onClick=true onDragOver=true rect=18,6,179,36
+        textB text="GET" w=48 fg=method.GET small=true rect=32,18,48,14
+        textB text="Search Repos" rect=88,16,89,16
+        flow w=12 rect=185,6,12,36
+      flow w=24 tip=Close tab (Ctrl+W) onClick=true rect=197,6,24,36
+        iconB grow=1 icon=cross rect=197,6,24,36
+    flow borderInset=12 bg=bg borderL=border-soft edge=accent-line edgeTop=true edgeLeft=true edgeRight=true onRightClick=true onMiddleClick=true rect=221,6,210,36
+      flow padL=14 gap=8 onClick=true onDragOver=true rect=221,6,186,36
+        textB text="GET" w=48 fg=method.GET small=true rect=235,18,48,14
+        textB text="Repository Info" rect=291,16,96,16
+        flow w=12 rect=395,6,12,36
+      flow w=24 tip=Close tab (Ctrl+W) onClick=true rect=407,6,24,36
+        iconB grow=1 icon=cross rect=407,6,24,36
+    flow borderInset=12 borderL=border-soft onRightClick=true onMiddleClick=true rect=431,6,146,36
+      flow padL=14 gap=8 onClick=true onDragOver=true rect=431,6,122,36
+        textB text="WS" w=48 fg=muted small=true rect=445,18,48,14
+        textB text="Echo" rect=501,16,32,16
+        flow w=12 rect=541,6,12,36
+      flow w=24 tip=Close tab (Ctrl+W) onClick=true rect=553,6,24,36
+        iconB grow=1 icon=cross rect=553,6,24,36
+    flow borderInset=12 borderL=border-soft onRightClick=true onMiddleClick=true rect=577,6,175,36
+      flow padL=14 gap=8 onClick=true onDragOver=true rect=577,6,151,36
+        textB text="MCP" w=48 fg=muted small=true rect=591,18,48,14
+        textB text="List Tools" rect=647,16,61,16
+        flow w=12 rect=716,6,12,36
+      flow w=24 tip=Close tab (Ctrl+W) onClick=true rect=728,6,24,36
+        iconB grow=1 icon=cross rect=728,6,24,36
+  flow w=40 tip=New request (Ctrl+T) onClick=true rect=380,6,40,36
+    iconB grow=1 icon=plus rect=380,6,40,36

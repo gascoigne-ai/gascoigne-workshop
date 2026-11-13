@@ -1,0 +1,19 @@
+flow h=42 padT=6 bg=frame borderB=border control=tabstrip rect=0,0,1020,42
+  hscrollB grow=1 rect=0,6,980,36
+    flow bg=bg edge=accent-line edgeTop=true edgeLeft=true edgeRight=true onRightClick=true onMiddleClick=true rect=0,6,461,36
+      flow padL=14 gap=8 onClick=true onDragOver=true rect=0,6,437,36
+        textB text="DEL" w=48 fg=method.DELETE small=true rect=14,19,48,14
+        textB text="Search repositories by stars, newest first, then by name" rect=70,17,347,16
+        flow w=12 rect=425,6,12,36
+          textB text="•" grow=1 fg=accent-line rect=425,6,12,36
+      flow w=24 tip=Close tab (Ctrl+W) onClick=true rect=437,6,24,36
+        iconB grow=1 icon=cross rect=437,6,24,36
+    flow borderInset=12 borderL=border-soft onRightClick=true onMiddleClick=true rect=461,6,146,36
+      flow padL=14 gap=8 onClick=true onDragOver=true rect=461,6,122,36
+        textB text="WS" w=48 fg=muted small=true rect=475,18,48,14
+        textB text="Echo" rect=531,16,32,16
+        flow w=12 rect=571,6,12,36
+      flow w=24 tip=Close tab (Ctrl+W) onClick=true rect=583,6,24,36
+        iconB grow=1 icon=cross rect=583,6,24,36
+  flow w=40 tip=New request (Ctrl+T) onClick=true rect=980,6,40,36
+    iconB grow=1 icon=plus rect=980,6,40,36

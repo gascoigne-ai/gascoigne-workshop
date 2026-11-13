@@ -1,0 +1,109 @@
+flow h=42 padT=6 bg=frame borderB=border control=tabstrip rect=0,0,420,42
+  hscrollB grow=1 rect=0,6,380,36
+    flow onRightClick=true onMiddleClick=true rect=18,6,203,36
+      flow padL=14 gap=8 onClick=true onDragOver=true rect=18,6,179,36
+        textB text="GET" w=48 fg=method.GET small=true rect=32,18,48,14
+        textB text="Search Repos" rect=88,16,89,16
+        flow w=12 rect=185,6,12,36
+      flow w=24 tip=Close tab (Ctrl+W) onClick=true rect=197,6,24,36
+        iconB grow=1 icon=cross rect=197,6,24,36
+    flow borderInset=12 borderL=border-soft onRightClick=true onMiddleClick=true rect=221,6,198,36
+      flow padL=14 gap=8 onClick=true onDragOver=true rect=221,6,174,36
+        textB text="GET" w=48 fg=method.GET small=true rect=235,18,48,14
+        textB text="New Request" rect=291,16,84,16
+        flow w=12 rect=383,6,12,36
+      flow w=24 tip=Close tab (Ctrl+W) onClick=true rect=395,6,24,36
+        iconB grow=1 icon=cross rect=395,6,24,36
+    flow borderInset=12 borderL=border-soft onRightClick=true onMiddleClick=true rect=419,6,210,36
+      flow padL=14 gap=8 onClick=true onDragOver=true rect=419,6,186,36
+        textB text="GET" w=48 fg=method.GET small=true rect=433,18,48,14
+        textB text="New Request 2" rect=489,16,96,16
+        flow w=12 rect=593,6,12,36
+      flow w=24 tip=Close tab (Ctrl+W) onClick=true rect=605,6,24,36
+        iconB grow=1 icon=cross rect=605,6,24,36
+    flow borderInset=12 borderL=border-soft onRightClick=true onMiddleClick=true rect=629,6,210,36
+      flow padL=14 gap=8 onClick=true onDragOver=true rect=629,6,186,36
+        textB text="GET" w=48 fg=method.GET small=true rect=643,18,48,14
+        textB text="New Request 3" rect=699,16,96,16
+        flow w=12 rect=803,6,12,36
+      flow w=24 tip=Close tab (Ctrl+W) onClick=true rect=815,6,24,36
+        iconB grow=1 icon=cross rect=815,6,24,36
+    flow borderInset=12 borderL=border-soft onRightClick=true onMiddleClick=true rect=839,6,210,36
+      flow padL=14 gap=8 onClick=true onDragOver=true rect=839,6,186,36
+        textB text="GET" w=48 fg=method.GET small=true rect=853,18,48,14
+        textB text="New Request 4" rect=909,16,96,16
+        flow w=12 rect=1013,6,12,36
+      flow w=24 tip=Close tab (Ctrl+W) onClick=true rect=1025,6,24,36
+        iconB grow=1 icon=cross rect=1025,6,24,36
+    flow borderInset=12 borderL=border-soft onRightClick=true onMiddleClick=true rect=1049,6,210,36
+      flow padL=14 gap=8 onClick=true onDragOver=true rect=1049,6,186,36
+        textB text="GET" w=48 fg=method.GET small=true rect=1063,18,48,14
+        textB text="New Request 5" rect=1119,16,96,16
+        flow w=12 rect=1223,6,12,36
+      flow w=24 tip=Close tab (Ctrl+W) onClick=true rect=1235,6,24,36
+        iconB grow=1 icon=cross rect=1235,6,24,36
+    flow borderInset=12 borderL=border-soft onRightClick=true onMiddleClick=true rect=1259,6,210,36
+      flow padL=14 gap=8 onClick=true onDragOver=true rect=1259,6,186,36
+        textB text="GET" w=48 fg=method.GET small=true rect=1273,18,48,14
+        textB text="New Request 6" rect=1329,16,96,16
+        flow w=12 rect=1433,6,12,36
+      flow w=24 tip=Close tab (Ctrl+W) onClick=true rect=1445,6,24,36
+        iconB grow=1 icon=cross rect=1445,6,24,36
+    flow borderInset=12 borderL=border-soft onRightClick=true onMiddleClick=true rect=1469,6,210,36
+      flow padL=14 gap=8 onClick=true onDragOver=true rect=1469,6,186,36
+        textB text="GET" w=48 fg=method.GET small=true rect=1483,18,48,14
+        textB text="New Request 7" rect=1539,16,96,16
+        flow w=12 rect=1643,6,12,36
+      flow w=24 tip=Close tab (Ctrl+W) onClick=true rect=1655,6,24,36
+        iconB grow=1 icon=cross rect=1655,6,24,36
+    flow borderInset=12 borderL=border-soft onRightClick=true onMiddleClick=true rect=1679,6,210,36
+      flow padL=14 gap=8 onClick=true onDragOver=true rect=1679,6,186,36
+        textB text="GET" w=48 fg=method.GET small=true rect=1693,18,48,14
+        textB text="New Request 8" rect=1749,16,96,16
+        flow w=12 rect=1853,6,12,36
+      flow w=24 tip=Close tab (Ctrl+W) onClick=true rect=1865,6,24,36
+        iconB grow=1 icon=cross rect=1865,6,24,36
+    flow borderInset=12 borderL=border-soft onRightClick=true onMiddleClick=true rect=1889,6,210,36
+      flow padL=14 gap=8 onClick=true onDragOver=true rect=1889,6,186,36
+        textB text="GET" w=48 fg=method.GET small=true rect=1903,18,48,14
+        textB text="New Request 9" rect=1959,16,96,16
+        flow w=12 rect=2063,6,12,36
+      flow w=24 tip=Close tab (Ctrl+W) onClick=true rect=2075,6,24,36
+        iconB grow=1 icon=cross rect=2075,6,24,36
+    flow borderInset=12 borderL=border-soft onRightClick=true onMiddleClick=true rect=2099,6,218,36
+      flow padL=14 gap=8 onClick=true onDragOver=true rect=2099,6,194,36
+        textB text="GET" w=48 fg=method.GET small=true rect=2113,18,48,14
+        textB text="New Request 10" rect=2169,16,104,16
+        flow w=12 rect=2281,6,12,36
+      flow w=24 tip=Close tab (Ctrl+W) onClick=true rect=2293,6,24,36
+        iconB grow=1 icon=cross rect=2293,6,24,36
+    flow borderInset=12 borderL=border-soft onRightClick=true onMiddleClick=true rect=2317,6,218,36
+      flow padL=14 gap=8 onClick=true onDragOver=true rect=2317,6,194,36
+        textB text="GET" w=48 fg=method.GET small=true rect=2331,18,48,14
+        textB text="New Request 11" rect=2387,16,104,16
+        flow w=12 rect=2499,6,12,36
+      flow w=24 tip=Close tab (Ctrl+W) onClick=true rect=2511,6,24,36
+        iconB grow=1 icon=cross rect=2511,6,24,36
+    flow borderInset=12 borderL=border-soft onRightClick=true onMiddleClick=true rect=2535,6,218,36
+      flow padL=14 gap=8 onClick=true onDragOver=true rect=2535,6,194,36
+        textB text="GET" w=48 fg=method.GET small=true rect=2549,18,48,14
+        textB text="New Request 12" rect=2605,16,104,16
+        flow w=12 rect=2717,6,12,36
+      flow w=24 tip=Close tab (Ctrl+W) onClick=true rect=2729,6,24,36
+        iconB grow=1 icon=cross rect=2729,6,24,36
+    flow borderInset=12 borderL=border-soft onRightClick=true onMiddleClick=true rect=2753,6,218,36
+      flow padL=14 gap=8 onClick=true onDragOver=true rect=2753,6,194,36
+        textB text="GET" w=48 fg=method.GET small=true rect=2767,18,48,14
+        textB text="New Request 13" rect=2823,16,104,16
+        flow w=12 rect=2935,6,12,36
+      flow w=24 tip=Close tab (Ctrl+W) onClick=true rect=2947,6,24,36
+        iconB grow=1 icon=cross rect=2947,6,24,36
+    flow borderInset=12 bg=bg borderL=border-soft edge=accent-line edgeTop=true edgeLeft=true edgeRight=true onRightClick=true onMiddleClick=true rect=2971,6,218,36
+      flow padL=14 gap=8 onClick=true onDragOver=true rect=2971,6,194,36
+        textB text="GET" w=48 fg=method.GET small=true rect=2985,18,48,14
+        textB text="New Request 14" rect=3041,16,104,16
+        flow w=12 rect=3153,6,12,36
+      flow w=24 tip=Close tab (Ctrl+W) onClick=true rect=3165,6,24,36
+        iconB grow=1 icon=cross rect=3165,6,24,36
+  flow w=40 tip=New request (Ctrl+T) onClick=true rect=380,6,40,36
+    iconB grow=1 icon=plus rect=380,6,40,36

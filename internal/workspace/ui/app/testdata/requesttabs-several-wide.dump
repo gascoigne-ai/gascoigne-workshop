@@ -1,0 +1,32 @@
+flow h=42 padT=6 bg=frame borderB=border control=tabstrip rect=0,0,1020,42
+  hscrollB grow=1 rect=0,6,980,36
+    flow onRightClick=true onMiddleClick=true rect=0,6,203,36
+      flow padL=14 gap=8 onClick=true onDragOver=true rect=0,6,179,36
+        textB text="GET" w=48 fg=method.GET small=true rect=14,18,48,14
+        textB text="Search Repos" rect=70,16,89,16
+        flow w=12 rect=167,6,12,36
+      flow w=24 tip=Close tab (Ctrl+W) onClick=true rect=179,6,24,36
+        iconB grow=1 icon=cross rect=179,6,24,36
+    flow borderInset=12 bg=bg borderL=border-soft edge=accent-line edgeTop=true edgeLeft=true edgeRight=true onRightClick=true onMiddleClick=true rect=203,6,210,36
+      flow padL=14 gap=8 onClick=true onDragOver=true rect=203,6,186,36
+        textB text="GET" w=48 fg=method.GET small=true rect=217,18,48,14
+        textB text="Repository Info" rect=273,16,96,16
+        flow w=12 rect=377,6,12,36
+      flow w=24 tip=Close tab (Ctrl+W) onClick=true rect=389,6,24,36
+        iconB grow=1 icon=cross rect=389,6,24,36
+    flow borderInset=12 borderL=border-soft onRightClick=true onMiddleClick=true rect=413,6,146,36
+      flow padL=14 gap=8 onClick=true onDragOver=true rect=413,6,122,36
+        textB text="WS" w=48 fg=muted small=true rect=427,18,48,14
+        textB text="Echo" rect=483,16,32,16
+        flow w=12 rect=523,6,12,36
+      flow w=24 tip=Close tab (Ctrl+W) onClick=true rect=535,6,24,36
+        iconB grow=1 icon=cross rect=535,6,24,36
+    flow borderInset=12 borderL=border-soft onRightClick=true onMiddleClick=true rect=559,6,175,36
+      flow padL=14 gap=8 onClick=true onDragOver=true rect=559,6,151,36
+        textB text="MCP" w=48 fg=muted small=true rect=573,18,48,14
+        textB text="List Tools" rect=629,16,61,16
+        flow w=12 rect=698,6,12,36
+      flow w=24 tip=Close tab (Ctrl+W) onClick=true rect=710,6,24,36
+        iconB grow=1 icon=cross rect=710,6,24,36
+  flow w=40 tip=New request (Ctrl+T) onClick=true rect=980,6,40,36
+    iconB grow=1 icon=plus rect=980,6,40,36

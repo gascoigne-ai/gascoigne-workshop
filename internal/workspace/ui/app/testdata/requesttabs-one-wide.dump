@@ -1,0 +1,11 @@
+flow h=42 padT=6 bg=frame borderB=border control=tabstrip rect=0,0,1020,42
+  hscrollB grow=1 rect=0,6,980,36
+    flow bg=bg edge=accent-line edgeTop=true edgeLeft=true edgeRight=true onRightClick=true onMiddleClick=true rect=0,6,203,36
+      flow padL=14 gap=8 onClick=true onDragOver=true rect=0,6,179,36
+        textB text="GET" w=48 fg=method.GET small=true rect=14,18,48,14
+        textB text="Search Repos" rect=70,16,89,16
+        flow w=12 rect=167,6,12,36
+      flow w=24 tip=Close tab (Ctrl+W) onClick=true rect=179,6,24,36
+        iconB grow=1 icon=cross rect=179,6,24,36
+  flow w=40 tip=New request (Ctrl+T) onClick=true rect=980,6,40,36
+    iconB grow=1 icon=plus rect=980,6,40,36
