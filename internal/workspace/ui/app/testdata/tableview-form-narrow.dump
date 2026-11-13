@@ -1,0 +1,44 @@
+stack rect=0,0,420,400
+  scrollB gap=6 grow=1 rect=0,0,420,400
+    flow h=28 rect=0,0,420,28
+      textB text="FIELDS" fg=muted small=true rect=0,0,43,28
+      plain grow=1 rect=43,0,306,28
+      flow padL=8 padR=8 tip=Edit all rows as text, one per line hoverBg=hover onClick=true rect=349,0,71,28
+        textB text="Bulk edit" fg=accent-line center=true rect=357,0,55,28
+    flow bg=sunken control=table rect=0,34,420,84
+      stack h=28 rect=0,34,420,28
+        flow h=28 bg=panel borderB=border rect=0,34,420,28
+          flow w=20 rect=0,34,20,28
+          flow w=36 tip=Enable or disable every row onClick=true rect=20,34,36,28
+            checkB rect=31,34,14,28
+          flow padL=8 padR=8 grow=28 rect=56,34,91,28
+            textB text="NAME" grow=1 fg=muted small=true bold=true rect=64,34,75,28
+          flow padL=8 padR=8 borderInset=7 grow=40 borderL=border-soft rect=147,34,131,28
+            textB text="VALUE" grow=1 fg=muted small=true bold=true rect=155,34,115,28
+          flow padL=8 padR=8 borderInset=7 grow=32 borderL=border-soft rect=278,34,106,28
+            textB text="DESCRIPTION" grow=1 fg=muted small=true bold=true rect=286,34,90,28
+          flow w=36 rect=384,34,36,28
+        colHandlesB rect=0,34,420,28
+      flow h=28 borderB=border-soft hoverBg=hover onRightClick=true onDragOver=true rect=0,62,420,28
+        flow w=20 tip=Drag to move the row onClick=true rect=0,62,20,28
+          iconB fg=muted icon=grip rect=5,62,10,28
+        flow w=36 tip=Enable or disable this row onClick=true rect=20,62,36,28
+          checkB rect=31,62,14,28
+        flow padL=8 padR=8 grow=28 onClick=true rect=56,62,91,28
+          textB text="name" grow=1 fg=text ellipsis=true rect=64,62,75,28
+        flow padL=8 padR=8 grow=40 borderL=border-soft onClick=true rect=147,62,131,28
+          textB text="gopher" grow=1 fg=text ellipsis=true rect=155,62,115,28
+        flow padL=8 padR=8 grow=32 borderL=border-soft onClick=true rect=278,62,106,28
+          textB grow=1 fg=text ellipsis=true rect=286,62,90,28
+        flow w=36 tip=Delete row onClick=true rect=384,62,36,28
+          iconB icon=trash rect=395,62,14,28
+      flow h=28 rect=0,90,420,28
+        flow w=20 rect=0,90,20,28
+        flow w=36 rect=20,90,36,28
+        flow padL=8 padR=8 grow=28 onClick=true rect=56,90,91,28
+          textB text="Name" grow=1 fg=muted ellipsis=true rect=64,90,75,28
+        flow padL=8 padR=8 grow=40 borderL=border-soft onClick=true rect=147,90,131,28
+          textB text="Value" grow=1 fg=muted ellipsis=true rect=155,90,115,28
+        flow padL=8 padR=8 grow=32 borderL=border-soft onClick=true rect=278,90,106,28
+          textB text="Description" grow=1 fg=muted ellipsis=true rect=286,90,90,28
+        flow w=36 rect=384,90,36,28

@@ -1,0 +1,20 @@
+stack rect=0,0,420,400
+  scrollB padL=12 padT=12 padR=12 padB=12 gap=6 grow=1 rect=0,0,420,400
+    flow bg=sunken control=table rect=12,12,396,84
+      stack h=28 rect=12,12,396,28
+        flow h=28 bg=panel borderB=border rect=12,12,396,28
+          flow padL=8 padR=8 grow=35 rect=12,12,138,28
+            textB text="NAME" grow=1 fg=muted small=true bold=true rect=20,12,122,28
+          flow padL=8 padR=8 borderInset=7 grow=65 borderL=border-soft rect=150,12,258,28
+            textB text="VALUE" grow=1 fg=muted small=true bold=true rect=158,12,242,28
+        colHandlesB rect=12,12,396,28
+      flow h=28 borderB=border-soft hoverBg=hover onRightClick=true rect=12,40,396,28
+        flow padL=8 padR=8 grow=35 rect=12,40,138,28
+          textB text="Content-Type" grow=1 fg=text ellipsis=true rect=20,40,122,28
+        flow padL=8 padR=8 grow=65 borderL=border-soft rect=150,40,258,28
+          textB text="text/plain; charset=utf-8" grow=1 fg=text ellipsis=true rect=158,40,242,28
+      flow h=28 hoverBg=hover onRightClick=true rect=12,68,396,28
+        flow padL=8 padR=8 grow=35 rect=12,68,138,28
+          textB text="Content-Length" grow=1 fg=text ellipsis=true rect=20,68,122,28
+        flow padL=8 padR=8 grow=65 borderL=border-soft rect=150,68,258,28
+          textB text="82" grow=1 fg=text ellipsis=true rect=158,68,242,28

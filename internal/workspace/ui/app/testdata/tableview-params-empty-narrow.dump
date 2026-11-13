@@ -1,0 +1,31 @@
+stack rect=0,0,420,400
+  scrollB padL=12 padT=12 padR=12 padB=12 gap=6 grow=1 rect=0,0,420,400
+    flow h=28 rect=12,12,396,28
+      textB text="QUERY" fg=muted small=true rect=12,12,43,28
+      plain grow=1 rect=55,12,282,28
+      flow padL=8 padR=8 tip=Edit all rows as text, one per line hoverBg=hover onClick=true rect=337,12,71,28
+        textB text="Bulk edit" fg=accent-line center=true rect=345,12,55,28
+    flow bg=sunken control=table rect=12,46,396,56
+      stack h=28 rect=12,46,396,28
+        flow h=28 bg=panel borderB=border rect=12,46,396,28
+          flow w=20 rect=12,46,20,28
+          flow w=36 tip=Enable or disable every row onClick=true rect=32,46,36,28
+            checkB rect=43,46,14,28
+          flow padL=8 padR=8 grow=28 rect=68,46,85,28
+            textB text="NAME" grow=1 fg=muted small=true bold=true rect=76,46,69,28
+          flow padL=8 padR=8 borderInset=7 grow=40 borderL=border-soft rect=153,46,121,28
+            textB text="VALUE" grow=1 fg=muted small=true bold=true rect=161,46,105,28
+          flow padL=8 padR=8 borderInset=7 grow=32 borderL=border-soft rect=274,46,98,28
+            textB text="DESCRIPTION" grow=1 fg=muted small=true bold=true rect=282,46,82,28
+          flow w=36 rect=372,46,36,28
+        colHandlesB rect=12,46,396,28
+      flow h=28 rect=12,74,396,28
+        flow w=20 rect=12,74,20,28
+        flow w=36 rect=32,74,36,28
+        flow padL=8 padR=8 grow=28 onClick=true rect=68,74,85,28
+          textB text="Name" grow=1 fg=muted ellipsis=true rect=76,74,69,28
+        flow padL=8 padR=8 grow=40 borderL=border-soft onClick=true rect=153,74,121,28
+          textB text="Value" grow=1 fg=muted ellipsis=true rect=161,74,105,28
+        flow padL=8 padR=8 grow=32 borderL=border-soft onClick=true rect=274,74,98,28
+          textB text="Description" grow=1 fg=muted ellipsis=true rect=282,74,82,28
+        flow w=36 rect=372,74,36,28

@@ -1,0 +1,8 @@
+stack rect=0,0,420,400
+  flow padL=12 padT=12 padR=12 padB=12 gap=6 grow=1 rect=0,0,420,400
+    flow h=28 rect=12,12,396,28
+      textB text="QUERY" fg=muted small=true rect=12,12,43,28
+      plain grow=1 rect=55,12,301,28
+      flow padL=8 padR=8 tip=Edit all rows as text, one per line hoverBg=hover onClick=true rect=356,12,52,28
+        textB text="Table" fg=accent-line center=true rect=364,12,36,28
+    areaB grow=1 bg=sunken onRightClickIn=true rect=12,46,396,342
