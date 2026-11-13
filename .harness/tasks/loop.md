@@ -24,7 +24,7 @@ Each iteration moves one view; the main session does the checks itself, it does 
    - Measure golden masks from a zoomed crop of the PNG; the pixel slack can hide a changed digit.
    - A floating or modal view used as a test's layout root fills the window: wrap it in `Stack(...)` in the test. A bool field printed with `{{...}}` works as a conditional flag; a conditional color is a `core.Token` passed through the scope (`color="{{color}}"`); an optional sub-view is a nil `Node` field plus `<slot if="x.Field" name="x.Field"/>`. To capture dumps, write them from the pin test once behind an environment variable and remove that code before committing.
    - A `for` cannot pick between two roots per item: Go builds each item from a one-root template and the parent walks them with `<slot for="x in xs" name="x"/>`. A big view may be swapped one control kind at a time (one pin commit, then a swap commit per kind). Slider arguments do not show in `Dump`: pin them by pressing at a fraction (at most 0.99) of the slider's width.
-   - Known toolkit gaps worked around by writing the primitive tree out: `note`, `lines`, `choice`, `icon-button` elements. If three more views copy one, add the element as a task (like 007).
+   - Known toolkit gaps worked around by writing the primitive tree out: `note`, `lines`, `choice` elements. If three more views copy one, add the element as a task (like 007).
    - Row 13 notes: view-mode scene = `-set responseView=<mode>` with `-send`; `newTestApp` starts in Pretty (app default Compact), set the mode explicitly (row 20). `toolbar` is written out twice (a third copy makes it a task); `choice` as `primary-button if`/`button if="!x"` pairs. Computed tooltip via scope. Nil Node in a scope map also leaves out `<slot if>`.
    - Before step 0 check the row's function is reachable (grep its kind/builder); row 12 `codePane` was dead.
    - "Stable over 3 runs" means the whole TestGoldenScenes set or `make check`, not one scene alone. A shot flag that changes state without input must call `markStale()` (fixed for `-type-url`; check `-filter`, `-request`, `-open-all`). Two-root view = two templates from one `//go:embed a.vml b.vml`.
@@ -33,7 +33,6 @@ Each iteration moves one view; the main session does the checks itself, it does 
    - A conditional option is switched off by its value (decision 54): a color attribute given an empty `core.Token` from the scope applies nothing (`border="{{row.DropBorder}}"`, the sidebar drop outline), and `separator="{{x}}"` with 0 applies none (a tab strip's first tab). No Go-side patching of a built node.
    - A two-root sub-view inside an item becomes `if`/`if="!x"` siblings in the item template. A fragment shared by two `MustLoad` templates is copied with a comment pointing at the other.
    - `-filter TEXT` scene flag exists. Task 010: filter match color is near invisible.
-   - `icon-button` now has two copies (file-chosen.vml, findbar.vml); a third makes it a task.
    - A scene that needs state after a response: act once `sendsDone()` is true and make `ready` wait for it (`-find`). A field filled with `Insert` leaves the caret always drawn, so no mask needed.
    - `Dump` does not print placeholders; carry them over by hand.
    - A test that ends while a background save runs breaks TempDir cleanup: use `t.Cleanup(a.waitWrites)`.
