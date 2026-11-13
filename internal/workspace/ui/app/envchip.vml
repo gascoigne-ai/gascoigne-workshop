@@ -1,0 +1,3 @@
+<row pad-x="10" h="{{compactH}}" bg="hero-text" control="pill" align-items="center" on-click-at="openMenu" tooltip="Environment: variables that override the collection's">
+  <text small bold color="hero">{{label}}</text>
+</row>

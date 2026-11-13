@@ -1,7 +1,10 @@
 package ui
 
 import (
+	"embed"
+
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/environment/controller/envs"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	"runtime"
 	"strings"
 
@@ -137,17 +140,22 @@ func (a *App) envAction(row envs.Row) func() {
 	return nil
 }
 
+//go:embed envchip.vml
+var envChipSource embed.FS
+
+var envChipTemplate = markup.MustLoad(envChipSource, "envchip.vml")
+
 // envChip is the environment switcher in the header.
 func (a *App) envChip() Node {
 	label := "No environment"
 	if n := a.envName(); n != "" {
 		label = n
 	}
-	return Row(PadX(10), H(w.CompactH), Bg(w.HeroText), Control("pill"), AlignItems(AlignCenter),
-		OnClickAt(func(x, y int) { a.openMenu(x, y, a.envMenu()) }),
-		Tooltip("Environment: variables that override the collection's"),
-		Text(label, Small(), Bold(), Color(w.Hero)),
-	)
+	return envChipTemplate.MustBuild(markup.Scope{
+		"label":    label,
+		"compactH": w.CompactH,
+		"openMenu": func(x, y int) { a.openMenu(x, y, a.envMenu()) },
+	})
 }
 
 // urlTip is the tooltip of the URL field: what the URL resolves to with the
