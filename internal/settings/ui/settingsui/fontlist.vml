@@ -1,0 +1,13 @@
+<col w="{{width}}" pad="6" gap="6" bg="bg" border="border" control="menu" shadow float-at="{{x}} {{y}}" modal focus-scope on-dismiss="close">
+  <field state="search" h="28" bg="sunken" placeholder="Search fonts" on-change="searchChanged" text-menu="search"/>
+  <row if="note" h="{{rowH}}" pad-x="8">
+    <text small muted>{{note}}</text>
+  </row>
+  <scroll state="scroll" h="{{height}}">
+    <col>
+      <spacer h="{{above}}"/>
+      <slot for="row in rows" name="row"/>
+      <spacer h="{{below}}"/>
+    </col>
+  </scroll>
+</col>

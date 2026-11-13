@@ -2,12 +2,14 @@ package settingsui
 
 import (
 	"bytes"
+	"embed"
 	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fontfamily"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
@@ -142,11 +144,10 @@ func (d *SettingsDialog) FontList(host Host) Node {
 	}
 	first := min(max(d.list.scroll.Y/fontListRowH, 0), max(count-1, 0))
 	last := min(first+fontListH/fontListRowH+2, count)
-	var rows []Item
-	rows = append(rows, Spacer(H(first*fontListRowH)))
+	rows := make([]Node, 0, last-first)
 	for i := first; i < last; i++ {
 		if showBuiltIn && i == 0 {
-			rows = append(rows, d.fontRow(host, Text(builtIn, Grow(1), Muted()), current == "", ""))
+			rows = append(rows, d.fontRow(host, fontChoice{Name: builtIn, Muted: true}, current == "", ""))
 			continue
 		}
 		index := i
@@ -154,24 +155,58 @@ func (d *SettingsDialog) FontList(host Host) Node {
 			index = i - 1 // the first row is Built-in
 		}
 		family := families[index]
-		rows = append(rows, d.fontRow(host, d.fontLabel(host, family), strings.EqualFold(family.Name, current), family.Name))
+		choice := fontChoice{Name: family.Name, Face: d.face(host, family), Ellipsis: true}
+		rows = append(rows, d.fontRow(host, choice, strings.EqualFold(family.Name, current), family.Name))
 	}
-	rows = append(rows, Spacer(H((count-last)*fontListRowH)))
-	var note Node
+	note := ""
 	if len(d.Families) == 0 {
-		note = Row(H(fontListRowH), PadX(8), Text("Looking for installed fonts...", Small(), Muted()))
+		note = "Looking for installed fonts..."
 	} else if count == 0 {
-		note = Row(H(fontListRowH), PadX(8), Text("No font matches", Small(), Muted()))
+		note = "No font matches"
 	}
-	return Col(W(fontListW), Pad(6), Gap(6), Bg(w.Bg), Border(w.Border), Control("menu"), Shadow(),
-		FloatAt(d.list.x, d.list.y), Modal(), FocusScope(), OnDismiss(d.CloseFontList),
-		Field(&d.FontSearch, H(28), Bg(w.Sunken), Placeholder("Search fonts"), OnChange(func() { d.list.scroll.Y = 0 }), TextMenu(&d.FontSearch)),
-		note,
-		Scroll(&d.list.scroll, H(fontListH), Col(rows...)),
-	)
+	return fontListTemplate.MustBuild(markup.Scope{
+		"width":         fontListW,
+		"height":        fontListH,
+		"rowH":          fontListRowH,
+		"x":             d.list.x,
+		"y":             d.list.y,
+		"close":         d.CloseFontList,
+		"search":        &d.FontSearch,
+		"searchChanged": func() { d.list.scroll.Y = 0 },
+		"note":          note,
+		"scroll":        &d.list.scroll,
+		"above":         first * fontListRowH,
+		"rows":          rows,
+		"below":         (count - last) * fontListRowH,
+	})
 }
 
-// fontRow is one row of the list; picking it applies the family.
-func (d *SettingsDialog) fontRow(host Host, label Node, selected bool, name string) Node {
-	return ListRow(selected, H(fontListRowH), PadX(8), AlignItems(AlignCenter), OnClick(func() { d.PickFont(host, name) }), label)
+// fontChoice is what a row template shows of one entry of the list.
+type fontChoice struct {
+	Name     string
+	Face     *text.GoTextFaceSource // nil draws the name in the interface font
+	Muted    bool                   // Built-in, which has no font of its own
+	Ellipsis bool                   // a family name, which can be long
+	Pick     func()
+}
+
+//go:embed fontlist.vml fontrow.vml fontrow-selected.vml
+var fontListTemplates embed.FS
+
+var (
+	fontListTemplate = markup.MustLoad(fontListTemplates, "fontlist.vml")
+	// a template has one root, so the selected look is a template of its own
+	fontRowTemplate         = markup.MustLoad(fontListTemplates, "fontrow.vml")
+	selectedFontRowTemplate = markup.MustLoad(fontListTemplates, "fontrow-selected.vml")
+)
+
+// fontRow is one row of the list; picking it applies the family called
+// name, "" for Built-in.
+func (d *SettingsDialog) fontRow(host Host, choice fontChoice, selected bool, name string) Node {
+	choice.Pick = func() { d.PickFont(host, name) }
+	template := fontRowTemplate
+	if selected {
+		template = selectedFontRowTemplate
+	}
+	return template.MustBuild(markup.Scope{"row": choice, "rowH": fontListRowH})
 }
