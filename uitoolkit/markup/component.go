@@ -32,6 +32,7 @@
 //	Layout      row col stack spacer hrule vrule
 //	Text        text caption icon   font-source
 //	Buttons     button primary-button link-button
+//	Rows        list-row
 //	Inputs      field (placeholder field-pad segments text-menu on-enter on-tab)
 //	            area (text-menu) checkbox
 //	            slider (slider-mid on-slide on-slide-end)
@@ -332,6 +333,11 @@ func checkbox(parts elementParts) (view.Node, error) {
 	return widget.Checkbox(parts.args[0].(bool), parts.opts...), nil
 }
 
+// listEntry builds a ListRow from whether it is selected.
+func listEntry(parts elementParts) (view.Node, error) {
+	return widget.ListRow(parts.args[0].(bool), parts.items()...), nil
+}
+
 // tabStrip builds Tabs from its items and the active index.
 func tabStrip(parts elementParts) (view.Node, error) {
 	return widget.Tabs(parts.args[0].([]widget.TabItem), parts.args[1].(int), parts.opts...), nil
@@ -572,6 +578,7 @@ var elements = map[string]elementSpec{
 	"area": {build: stateful(widget.Area), holds: holdsNothing, handlers: areaHandlers,
 		params: []param{scopedState[widget.TextArea]("state")}},
 	"checkbox": {build: checkbox, holds: holdsNothing, params: []param{boolParam("on")}},
+	"list-row": {build: listEntry, params: []param{boolParam("selected")}},
 	"code":     {build: stateful(widget.Code), holds: holdsNothing, params: []param{scopedState[widget.CodeView]("state")}},
 	"image":    {build: picture, holds: holdsNothing, params: []param{scoped[*ebiten.Image]("img")}},
 	"slider": {build: slider, holds: holdsNothing, options: sliderOptions, handlers: sliderHandlers,

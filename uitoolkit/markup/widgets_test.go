@@ -200,6 +200,47 @@ func TestCheckboxElementClickRunsTheScopeChange(t *testing.T) {
 	}
 }
 
+// listRowTemplate is a 28px list row that is selected when the scope says.
+const listRowTemplate = `
+	<col>
+	  <list-row selected="{{picked}}" h="28" pad-x="8" align-items="center" on-click="pick">
+	    <text grow="1" ellipsis>users</text>
+	  </list-row>
+	</col>`
+
+func TestListRowElementMatchesTheGoListRow(t *testing.T) {
+	pick := func() {}
+	for _, selected := range []bool{true, false} {
+		t.Run(fmt.Sprint(selected), func(t *testing.T) {
+			template := build(t, listRowTemplate, Scope{"picked": selected, "pick": pick})
+			goView := view.Col(widget.ListRow(selected, view.H(28), view.PadX(8), view.AlignItems(view.AlignCenter), view.OnClick(pick),
+				view.Text("users", view.Grow(1), view.Ellipsis())))
+			sameLayout(t, testCtx(t), template, goView, 300, 100)
+		})
+	}
+}
+
+func TestListRowElementClickRunsTheScopeHandler(t *testing.T) {
+	ctx := testCtx(t)
+	picks := 0
+	template := build(t, listRowTemplate, Scope{"picked": false, "pick": func() { picks++ }})
+	view.Layout(ctx, template, 300, 100)
+	row := template.Children()[0].Rect()
+	ctx.In = core.Input{X: row.X + row.W/2, Y: row.Y + row.H/2, Click: true}
+	view.Update(ctx, template)
+	if picks != 1 {
+		t.Fatalf("clicking the row ran the scope's on-click %d times, want 1", picks)
+	}
+}
+
+func TestListRowSelectedMustBeTrueOrFalse(t *testing.T) {
+	parseError(t, `<list-row/>`, "<list-row> needs a selected")
+	err := buildError(t, `<list-row selected="yes"/>`, nil)
+	if err == nil || !strings.Contains(err.Error(), "true or false") {
+		t.Errorf("error = %v, want it to say selected is not true or false", err)
+	}
+}
+
 func codeLines() *widget.CodeView {
 	code := &widget.CodeView{}
 	code.SetLines([]widget.Line{{Spans: []widget.Span{{Text: "one"}}}, {Spans: []widget.Span{{Text: "two"}}}})
