@@ -54,6 +54,7 @@ var goldenScenes = []goldenScene{
 	{name: "response-find", width: shotWidth, height: shotHeight, args: []string{"-send", "-find", "/e"}, mask: []image.Rectangle{durationStacked, durationStatus}},
 	{name: "request-sending", width: shotWidth, height: shotHeight, args: []string{"-request", "Delay 500ms", "-sending"}},
 	{name: "request-tabs", width: shotWidth, height: shotHeight, args: []string{"-open-all", "-type-url", "?page=2"}},
+	{name: "request-params", width: shotWidth, height: shotHeight, args: []string{"-type-url", "?q=gpu-rendered-desktop-clients-written-in-go-with-custom-widgets-and-three-panes&page=2&sort=stars"}},
 	{name: "tree-filter", width: shotWidth, height: shotHeight, args: []string{"-filter", "Echo"}},
 	{name: "sent-log", width: shotWidth, height: shotHeight, args: []string{"-send", "-request", "Echo", "-sent"}, mask: []image.Rectangle{durationStacked, durationStatus, sentTimeFirst, sentTimeSecond}},
 }
