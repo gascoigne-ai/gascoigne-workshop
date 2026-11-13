@@ -22,6 +22,7 @@ Each iteration moves one view; the main session does the checks itself, it does 
    - Markup has one root per template: a view that returns one of two roots is two templates and Go picks. `<include>` only reaches templates registered with `markup.Define`, not `MustLoad` ones (a known gap, report it again only if it blocks a row).
    - App unit tests use the GitHub sample collection (there "Echo" is a WebSocket request); shot tests that send need `withAdapters`; `App.step` does not call `shotUpdate`.
    - Measure golden masks from a zoomed crop of the PNG; the pixel slack can hide a changed digit.
+   - A floating or modal view used as a test's layout root fills the window: wrap it in `Stack(...)` in the test. A bool field printed with `{{...}}` works as a conditional flag; a conditional color needs its own template or a toolkit element. To capture dumps, write them from the pin test once behind an environment variable and remove that code before committing.
    - If markup lacks something, stop and report it; do not special-case.
 7. Progress count after each iteration: `grep -rEc '\b(Row|Col|Stack)\(' internal/*/ui` outside `Custom` behaviors, reported in one line.
 8. Next wakeup: 60 to 270 s while an agent runs or work remains; 1200 s or more as a fallback.

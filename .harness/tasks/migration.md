@@ -6,12 +6,12 @@ Status: todo, doing, done, blocked (reason). The loop (`loop.md`) takes the firs
 |---|---|---|---|---|
 | 1 | `settings/ui/colorpage` (whole page) | 002 | settings-colors | done (8cc3cfc pins, aef8636 swap) |
 | 2 | response `sentlog` list | 002 | sent-log (added) | done (bd1b7c4 scene, 3da5868 pins, 979d6f3 swap) |
-| 3 | settingsui `fontlist`, `fontRow` | 002, 003 | settings-menu | todo |
-| 4 | settingsui `settingRow` / `form.go` | 002, 003, 005 | settings-menu, settings-requests, settings-general | todo |
-| 5 | app `mcpexplorer.go` `explorerList` | 002, 003 | request-mcp (not connected only) | todo |
+| 3 | settingsui open font list (`fontlist.go`, `fontrow*.vml`) | 002, 003 | none reachable (pinned by tests only) | done (a58d9bc pins, acad305 swap) |
+| 4 | settingsui `settingRow` / `form.go`, plus `fontControl` and `fontLabel` from row 3 | 002, 003, 005 | settings-menu, settings-requests, settings-general | todo |
+| 5 | app `mcpexplorer.go` `explorerList` | 007 | request-mcp (not connected only) | todo |
 | 6 | app `env.go` `envChip` | 002, 003 | default | todo |
 | 7 | app `panes.go` `findBar` | 002, 005 | none: add scene first | todo |
-| 8 | app `view.go` `sidebar`, `treeRow`, `rowName` | 003, 004 | default | todo |
+| 8 | app `view.go` `sidebar`, `treeRow`, `rowName` | 004, 007 | default | todo |
 | 9 | app `view.go` `urlBar` | 003, 005, 006 | default, request-* | todo |
 | 10 | app `view.go` `requestTabs`, `requestTab` | 003, 004 | request-* | todo |
 | 11 | app `panes.go` `tableView` | 004 | default, request-post | todo |
