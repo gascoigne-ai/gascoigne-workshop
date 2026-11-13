@@ -7,7 +7,7 @@ Status: todo, doing, done, blocked (reason). The loop (`loop.md`) takes the firs
 | 1 | `settings/ui/colorpage` (whole page) | 002 | settings-colors | done (8cc3cfc pins, aef8636 swap) |
 | 2 | response `sentlog` list | 002 | sent-log (added) | done (bd1b7c4 scene, 3da5868 pins, 979d6f3 swap) |
 | 3 | settingsui open font list (`fontlist.go`, `fontrow*.vml`) | 002, 003 | none reachable (pinned by tests only) | done (a58d9bc pins, acad305 swap) |
-| 4 | settingsui `settingRow` / `form.go`, plus `fontControl` and `fontLabel` from row 3 | 002, 003, 005 | settings-menu, settings-requests, settings-general | todo |
+| 4 | settingsui `settingRow` / `form.go`, plus `fontControl` and `fontLabel` from row 3 | 002, 003, 005 | settings-menu, settings-requests, settings-general | done (268fdf1 pins, ed2f230..75760a3 swaps) |
 | 5 | app `mcpexplorer.go` `explorerList` | 007 | request-mcp (not connected only) | todo |
 | 6 | app `env.go` `envChip` | 002, 003 | default | todo |
 | 7 | app `panes.go` `findBar` | 002, 005 | none: add scene first | todo |
