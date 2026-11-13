@@ -30,7 +30,7 @@
 // An option is switched off per item by its value: a color attribute
 // (bg, border, edge-t, hover-bg, color...) given an empty token applies
 // nothing, so border="{{drop}}" outlines only the item whose drop is a
-// token.
+// token; separator="0" applies no separator, unlike Go's Separator(0).
 //
 // # Finding your way
 //
@@ -723,7 +723,7 @@ var attributes = map[string]func(v string) (view.Option, error){
 	"optional":        flagAttr("optional", view.Optional),
 	"lighten":         flagAttr("lighten", view.Lighten),
 	"keep-in-view":    flagAttr("keep-in-view", view.KeepInView),
-	"separator":       intAttr(view.Separator),
+	"separator":       separatorAttr,
 	"active-tab":      flagAttr("active-tab", widget.ActiveTab),
 	"focus-scope":     flagAttr("focus-scope", view.FocusScope),
 }
@@ -771,6 +771,20 @@ func flagAttr(name string, f func() view.Option) func(string) (view.Option, erro
 		}
 		return nil, fmt.Errorf("%q is not true or false", v)
 	}
+}
+
+// separatorAttr applies no option for 0, so a tab strip puts
+// separator="{{inset}}" on every tab and gives the first 0. Go's
+// Separator(0) still draws a full-height line.
+func separatorAttr(v string) (view.Option, error) {
+	inset, err := strconv.Atoi(strings.TrimSpace(v))
+	if err != nil {
+		return nil, fmt.Errorf("%q is not a whole number", v)
+	}
+	if inset == 0 {
+		return nil, nil
+	}
+	return view.Separator(inset), nil
 }
 
 // padAttr is `pad="12"` for all sides or `pad="12 4"` for horizontal and vertical.
@@ -1305,7 +1319,7 @@ func Reference() string {
 	sb.WriteString("<include> and <slot> take only name, if and for.\n")
 	sb.WriteString("<icon name=\"trash\"/> draws a built-in or registered icon (widget.IconNames).\n")
 	sb.WriteString("Text and attribute values may use {{path}}, each step a map key or an exported struct field; if=\"name\" or \"!name\"; for=\"item in list\" over any slice, with {{$index}}; on-click=\"handler\" (and the other on-* events, each a func of the scope).\n")
-	sb.WriteString("A color attribute (bg, border*, edge-*, hover-*, color) given an empty token applies no option.\n")
+	sb.WriteString("A color attribute (bg, border*, edge-*, hover-*, color) given an empty token applies no option; so does separator=\"0\".\n")
 	sb.WriteString("What an element takes (state=\"x\", ...) are its Go constructor's arguments, all required; state and specs name a scope entry of the Go type.\n")
 	return sb.String()
 }

@@ -219,6 +219,15 @@ func TestSeparatorAndActiveTabAttributesMatchTheGoOptions(t *testing.T) {
 	}
 }
 
+// A zero separator switches it off, so a tab strip's template puts the
+// separator on every tab but the first.
+func TestZeroSeparatorAppliesNoOption(t *testing.T) {
+	got := view.Dump(build(t, `<row separator="{{width}}"/>`, Scope{"width": 0}))
+	if want := view.Dump(view.Row()); got != want {
+		t.Fatalf("template:\n%s\nwant:\n%s", got, want)
+	}
+}
+
 func TestTabsTakeNeitherChildrenNorText(t *testing.T) {
 	for _, src := range []string{`<tabs items="x" active="0"><row/></tabs>`, `<tabs items="x" active="0">label</tabs>`} {
 		if _, err := Parse("t.vml", []byte(src)); err == nil {
