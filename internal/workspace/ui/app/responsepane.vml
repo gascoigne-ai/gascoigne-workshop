@@ -1,0 +1,31 @@
+<col grow="1">
+  <!-- same top inset as the request pane, so first rows line up -->
+  <spacer h="{{gutter}}"/>
+  <!-- written out: markup has no toolbar element; this is widget.Toolbar, copied in responsepicture.vml -->
+  <row h="{{toolbarH}}" pad-x="{{gutter}}" gap="6" align-items="center" border-b="border">
+    <!-- markup has no choice element: the chosen view is a primary button, the others plain ones -->
+    <primary-button if="compact" w="72" h="{{compactH}}" on-click="showCompact">Compact</primary-button>
+    <button if="!compact" w="72" h="{{compactH}}" on-click="showCompact">Compact</button>
+    <primary-button if="pretty" w="56" h="{{compactH}}" on-click="showPretty">Pretty</primary-button>
+    <button if="!pretty" w="56" h="{{compactH}}" on-click="showPretty">Pretty</button>
+    <primary-button if="raw" w="44" h="{{compactH}}" on-click="showRaw">Raw</primary-button>
+    <button if="!raw" w="44" h="{{compactH}}" on-click="showRaw">Raw</button>
+    <row w="{{gutter}}"/>
+    <primary-button if="wrap" w="56" h="{{compactH}}" on-click="toggleWrap">Wrap</primary-button>
+    <button if="!wrap" w="56" h="{{compactH}}" on-click="toggleWrap">Wrap</button>
+    <spacer/>
+    <button if="history" w="66" h="{{compactH}}" on-click-at="openHistory" tooltip="Earlier responses of this request">History</button>
+    <!-- markup has no icon-button element, so widget.IconButton's tree is spelled out (as in findbar.vml and file-chosen.vml) -->
+    <row w="{{iconBtnW}}" h="{{compactH}}" bg="sunken" control="icon-button" lighten on-click="openFind" tooltip="{{findTip}}">
+      <icon name="search" grow="1"/>
+    </row>
+    <row w="{{iconBtnW}}" h="{{compactH}}" bg="sunken" control="icon-button" lighten on-click="copyBody" tooltip="Copy the response body">
+      <icon name="copy" grow="1"/>
+    </row>
+    <row w="{{iconBtnW}}" h="{{compactH}}" bg="sunken" control="icon-button" lighten on-click="copyCurl" tooltip="Copy the request as a cURL command">
+      <icon name="prompt" grow="1"/>
+    </row>
+  </row>
+  <slot if="findBar" name="findBar"/>
+  <code state="view" grow="1" bg="sunken" on-right-click="openMenu"/>
+</col>

@@ -472,36 +472,56 @@ func responseEmpty(t *reqTab) (string, bool) {
 	return "", false
 }
 
-// responsePane is the response body with its toolbar and find bar.
+//go:embed responsepane.vml responsepicture.vml
+var responsePaneSources embed.FS
+
+// The text view and the picture are two roots, so two templates; Go
+// picks one in responsePane.
+var (
+	responsePaneTemplate    = markup.MustLoad(responsePaneSources, "responsepane.vml")
+	responsePictureTemplate = markup.MustLoad(responsePaneSources, "responsepicture.vml")
+)
+
+// responsePane is the response body with its toolbar and find bar, or
+// the picture of an image body with its size and a Save button.
 func (a *App) responsePane(_ pane, t *reqTab, _ *ScrollState) Node {
 	if t.picture != nil {
-		return Col(Grow(1),
-			Spacer(H(w.Gutter)),
-			Toolbar(
-				Text(t.pictureInfo, Small(), Muted()),
-				Spacer(),
-				Button("Save", W(56), H(w.CompactH), OnClick(func() { a.saveBody(t) }), Tooltip("Save the image to a file")),
-			),
-			Image(t.picture, Grow(1), Bg(w.Sunken), Tooltip("The image, scaled down to fit")),
-		)
+		return responsePictureTemplate.MustBuild(markup.Scope{
+			"gutter":      w.Gutter,
+			"toolbarH":    w.ToolbarH,
+			"compactH":    w.CompactH,
+			"pictureInfo": t.pictureInfo,
+			"picture":     t.picture,
+			"save":        func() { a.saveBody(t) },
+		})
 	}
-	return Col(Grow(1),
-		Spacer(H(w.Gutter)), // same top inset as the request pane, so first rows line up
-		Toolbar(
-			a.viewChip("Compact", t.look.Compact(), 72, func() { a.setView(t, viewer.Compact) }),
-			a.viewChip("Pretty", t.look.Mode == viewer.Pretty, 56, func() { a.setView(t, viewer.Pretty) }),
-			a.viewChip("Raw", t.look.Raw(), 44, func() { a.setView(t, viewer.Raw) }),
-			Row(W(w.Gutter)),
-			a.viewChip("Wrap", t.view.Wrap, 56, func() { a.toggleWrap(t) }),
-			Spacer(),
-			If(len(t.Earlier) > 0, Button("History", W(66), H(w.CompactH), OnClickAt(func(x, y int) { a.openMenu(x, y, a.historyMenu(t)) }), Tooltip("Earlier responses of this request"))),
-			IconButton(SearchIcon(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(a.openFind), Tooltip(a.hint("Find in response", "find"))),
-			IconButton(CopyIcon(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(func() { a.copyBody(t) }), Tooltip("Copy the response body")),
-			IconButton(PromptIcon(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(func() { a.copyCurl(t) }), Tooltip("Copy the request as a cURL command")),
-		),
-		If(t.look.FindOpen, a.findBar(t)),
-		Code(&t.view, Grow(1), Bg(w.Sunken), OnRightClick(func(x, y int) { a.openMenu(x, y, a.responseMenuItems(t)) })),
-	)
+	var findBar Node // stays nil, so the slot is left out, while the bar is closed
+	if t.look.FindOpen {
+		findBar = a.findBar(t)
+	}
+	return responsePaneTemplate.MustBuild(markup.Scope{
+		"gutter":      w.Gutter,
+		"toolbarH":    w.ToolbarH,
+		"compactH":    w.CompactH,
+		"iconBtnW":    w.IconBtnW,
+		"compact":     t.look.Compact(),
+		"pretty":      t.look.Mode == viewer.Pretty,
+		"raw":         t.look.Raw(),
+		"wrap":        t.view.Wrap,
+		"history":     len(t.Earlier) > 0,
+		"findTip":     a.hint("Find in response", "find"),
+		"findBar":     findBar,
+		"view":        &t.view,
+		"showCompact": func() { a.setView(t, viewer.Compact) },
+		"showPretty":  func() { a.setView(t, viewer.Pretty) },
+		"showRaw":     func() { a.setView(t, viewer.Raw) },
+		"toggleWrap":  func() { a.toggleWrap(t) },
+		"openHistory": func(x, y int) { a.openMenu(x, y, a.historyMenu(t)) },
+		"openFind":    a.openFind,
+		"copyBody":    func() { a.copyBody(t) },
+		"copyCurl":    func() { a.copyCurl(t) },
+		"openMenu":    func(x, y int) { a.openMenu(x, y, a.responseMenuItems(t)) },
+	})
 }
 
 func (a *App) viewChip(label string, selected bool, width int, onClick func()) Node {

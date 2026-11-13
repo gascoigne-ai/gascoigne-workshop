@@ -1,0 +1,10 @@
+<col grow="1">
+  <spacer h="{{gutter}}"/>
+  <!-- written out: markup has no toolbar element; this is widget.Toolbar, copied from responsepane.vml -->
+  <row h="{{toolbarH}}" pad-x="{{gutter}}" gap="6" align-items="center" border-b="border">
+    <text small muted>{{pictureInfo}}</text>
+    <spacer/>
+    <button w="56" h="{{compactH}}" on-click="save" tooltip="Save the image to a file">Save</button>
+  </row>
+  <image img="picture" grow="1" bg="sunken" tooltip="The image, scaled down to fit"/>
+</col>
