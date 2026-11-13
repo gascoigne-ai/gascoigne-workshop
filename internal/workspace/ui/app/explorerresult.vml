@@ -1,0 +1,4 @@
+<col gap="4">
+  <text small bold color="{{color}}">{{heading}}</text>
+  <code state="view" h="{{resultH}}" bg="sunken"/>
+</col>

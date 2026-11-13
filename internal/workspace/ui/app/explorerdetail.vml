@@ -1,0 +1,10 @@
+<scroll state="scroll" grow="1" pad="{{gutter}}" gap="10">
+  <text bold>{{detail.Title}}</text>
+  <slot name="detail.Form"/>
+  <row gap="8" align-items="center">
+    <primary-button h="{{rowH}}" pad-x="{{gutter}}" on-click="detail.Call" tooltip="Send it to the server (Enter in a field)">{{detail.Label}}</primary-button>
+    <text if="detail.Disconnected" small muted>Connect first</text>
+    <text if="detail.Calling" small muted>Waiting for the server...</text>
+  </row>
+  <slot if="detail.Result" name="detail.Result"/>
+</scroll>

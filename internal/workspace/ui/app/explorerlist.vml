@@ -1,0 +1,17 @@
+<col w="{{listW}}" border-r="border">
+  <!-- written out: markup has no tab-bar element; this is widget.TabBar -->
+  <row h="{{tabBarH}}" pad-t="{{tabGap}}" border-b="border">
+    <tabs items="tabs" active="{{active}}" on-select="choose"/>
+  </row>
+  <scroll state="scroll" grow="1">
+    <col if="!entries" pad="{{gutter}}">
+      <text small muted>Nothing announced</text>
+    </col>
+    <list-row for="entry in entries" selected="{{entry.Selected}}" pad-x="{{gutter}}" pad-y="6" on-click="entry.Open">
+      <col grow="1">
+        <text ellipsis>{{entry.Title}}</text>
+        <text if="entry.Detail" small muted ellipsis>{{entry.Detail}}</text>
+      </col>
+    </list-row>
+  </scroll>
+</col>

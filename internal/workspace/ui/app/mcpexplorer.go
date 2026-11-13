@@ -4,8 +4,10 @@ import (
 	"strings"
 
 	"context"
+	"embed"
 	"encoding/json"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/mcpexplorer"
@@ -125,31 +127,63 @@ func (a *App) serverInfo(t *reqTab) Node {
 	)
 }
 
+//go:embed explorerlist.vml explorernone.vml explorerdetail.vml explorerresult.vml
+var explorerTemplates embed.FS
+
+var (
+	explorerListTemplate   = markup.MustLoad(explorerTemplates, "explorerlist.vml")
+	explorerNoneTemplate   = markup.MustLoad(explorerTemplates, "explorernone.vml")
+	explorerDetailTemplate = markup.MustLoad(explorerTemplates, "explorerdetail.vml")
+	explorerResultTemplate = markup.MustLoad(explorerTemplates, "explorerresult.vml")
+)
+
+// explorerEntry is what the list template shows of one entry.
+type explorerEntry struct {
+	Title    string
+	Detail   string // muted under the title, left out when empty
+	Selected bool
+	Open     func()
+}
+
 // explorerList is the strip of lists and the entries of the shown one.
 func (a *App) explorerList(t *reqTab) Node {
 	state := t.explorer
 	items := []TabItem{{Label: "Tools", Badge: len(t.Tools)}, {Label: "Resources", Badge: len(t.Resources)}, {Label: "Prompts", Badge: len(t.Prompts)}}
-	entries := mcpexplorer.Entries(state.Kind, t.Tools, t.Resources, t.Prompts)
-	return Col(W(explorerListW), BorderR(w.Border),
-		TabBar( // as the strips of the panes: a line under the inactive tabs
-			Tabs(items, int(state.Kind), OnSelect(func(index int) { a.exploreChoose(t, mcpexplorer.Kind(index)) })),
-		),
-		Scroll(&t.listScroll, Grow(1),
-			If(len(entries) == 0, Col(Pad(w.Gutter), Text("Nothing announced", Small(), Muted()))),
-			For(entries, func(index int, entry mcpexplorer.Entry) Node {
-				return ListRow(index == state.Selected, PadX(w.Gutter), PadY(6), OnClick(func() { a.exploreOpen(t, index) }),
-					Col(Grow(1),
-						Text(entry.Title, Ellipsis()),
-						If(entry.Detail != "", Text(entry.Detail, Small(), Muted(), Ellipsis())),
-					),
-				)
-			}),
-		),
-	)
+	entries := []explorerEntry{}
+	for index, entry := range mcpexplorer.Entries(state.Kind, t.Tools, t.Resources, t.Prompts) {
+		entries = append(entries, explorerEntry{
+			Title:    entry.Title,
+			Detail:   entry.Detail,
+			Selected: index == state.Selected,
+			Open:     func() { a.exploreOpen(t, index) },
+		})
+	}
+	return explorerListTemplate.MustBuild(markup.Scope{
+		"tabs":    items,
+		"active":  int(state.Kind),
+		"choose":  func(index int) { a.exploreChoose(t, mcpexplorer.Kind(index)) },
+		"scroll":  &t.listScroll,
+		"entries": entries,
+		"listW":   explorerListW,
+		"tabBarH": w.TabBarH,
+		"tabGap":  w.TabGap,
+		"gutter":  w.Gutter,
+	})
 }
 
 // explorerListW is the width of the list next to the open entry.
 const explorerListW = 260
+
+// openEntry is what the detail template shows of the open entry.
+type openEntry struct {
+	Title        string
+	Form         Node // the argument form, an empty column for a resource
+	Label        string
+	Call         func()
+	Disconnected bool
+	Calling      bool
+	Result       Node // the last answer, nil before one came
+}
 
 // explorerDetail is the open entry: its form, the button that sends it and
 // the answer.
@@ -157,19 +191,25 @@ func (a *App) explorerDetail(t *reqTab) Node {
 	state := t.explorer
 	entries := mcpexplorer.Entries(state.Kind, t.Tools, t.Resources, t.Prompts)
 	if state.Selected == mcpexplorer.None || state.Selected >= len(entries) {
-		return Col(Grow(1), Pad(w.Gutter), Text("Pick a tool, a resource or a prompt", Muted()))
+		return explorerNoneTemplate.MustBuild(markup.Scope{"gutter": w.Gutter})
 	}
-	return Scroll(&t.detailScroll, Grow(1), Pad(w.Gutter), Gap(10),
-		Text(entries[state.Selected].Title, Bold()),
-		formNode(a, t),
-		Row(Gap(8), AlignItems(AlignCenter),
-			PrimaryButton(callLabel(state), H(w.RowH), PadX(w.Gutter), OnClick(func() { a.exploreCall(t) }),
-				Tooltip("Send it to the server (Enter in a field)")),
-			If(!a.connected(t), Text("Connect first", Small(), Muted())),
-			If(state.Calling, Text("Waiting for the server...", Small(), Muted())),
-		),
-		If(state.Result != "", resultNode(t)),
-	)
+	detail := openEntry{
+		Title:        entries[state.Selected].Title,
+		Form:         formNode(a, t),
+		Label:        callLabel(state),
+		Call:         func() { a.exploreCall(t) },
+		Disconnected: !a.connected(t),
+		Calling:      state.Calling,
+	}
+	if state.Result != "" {
+		detail.Result = resultNode(t)
+	}
+	return explorerDetailTemplate.MustBuild(markup.Scope{
+		"detail": detail,
+		"scroll": &t.detailScroll,
+		"gutter": w.Gutter,
+		"rowH":   w.RowH,
+	})
 }
 
 // formNode is the argument form of the open entry, nothing for a resource.
@@ -198,10 +238,12 @@ func resultNode(t *reqTab) Node {
 	if state.Failed {
 		heading, color = "Error", w.Error
 	}
-	return Col(Gap(4),
-		Text(heading, Small(), Bold(), Color(color)),
-		Code(&t.resultView, H(explorerResultH), Bg(w.Sunken)),
-	)
+	return explorerResultTemplate.MustBuild(markup.Scope{
+		"heading": heading,
+		"color":   color,
+		"view":    &t.resultView,
+		"resultH": explorerResultH,
+	})
 }
 
 // explorerResultH is the height of the answer's view.
