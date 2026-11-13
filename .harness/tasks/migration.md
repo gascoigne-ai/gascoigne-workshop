@@ -12,7 +12,7 @@ Status: todo, doing, done, blocked (reason). The loop (`loop.md`) takes the firs
 | 6 | app `env.go` `envChip` (menu stays Go: data only) | 002, 003 | default (No environment only) | done (b42315d pins, 0fcfddd swap) |
 | 7 | app `panes.go` `findBar` | 002, 005 | response-find (added) | done (07d023c scene, 6b3153d pins, 88b3b43 swap) |
 | 8 | app `view.go` `sidebar`, `treeRow`, `rowName` | 004, 007 | default, tree-filter (added) | done (6d6b256 scene, beb68d7 pins, 8c20a14 swap) |
-| 9 | app `view.go` `urlBar` | 003, 005, 006 | default, request-* | todo |
+| 9 | app `view.go` `urlBar` | 003, 005, 006 | default, request-*, request-sending (added) | done (5166f7a scene, 572910c pins, 9381dd7 swap) |
 | 10 | app `view.go` `requestTabs`, `requestTab` | 003, 004 | request-* | todo |
 | 11 | app `panes.go` `tableView` | 004 | default, request-post | todo |
 | 12 | app `panes.go` `codePane` | 005 | response | todo |
