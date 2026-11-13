@@ -117,9 +117,11 @@ type treeItem struct {
 	Triangle string  // a folder's disclosure icon
 	Badge    string  // a request's method or protocol
 	Color    w.Token // the badge's color
-	Press    func()
-	Menu     func(pointerX, pointerY int)
-	DragOver func()
+	// DropBorder outlines the row a drag would drop on; empty, no outline.
+	DropBorder w.Token
+	Press      func()
+	Menu       func(pointerX, pointerY int)
+	DragOver   func()
 }
 
 // treeRow is one row of the tree, a folder or a request: one template
@@ -147,13 +149,10 @@ func (a *App) treeRow(row collection.Row, selected bool) Node {
 		item.Badge = requestBadge(row.Req.Protocol, row.Req.Method)
 		item.Color = appearance.MethodToken(row.Req.Method)
 	}
-	built := template.MustBuild(markup.Scope{"row": item, "rowH": w.RowH, "gutter": w.Gutter, "badgeW": badgeW})
 	if a.dragNode != nil && a.dropTarget == node && node != a.dragNode {
-		// Where the drop would land. Markup has no conditional option and
-		// an empty color token is an error, so the outline is set here.
-		Border(w.AccentLine)(built)
+		item.DropBorder = w.AccentLine
 	}
-	return built
+	return template.MustBuild(markup.Scope{"row": item, "rowH": w.RowH, "gutter": w.Gutter, "badgeW": badgeW})
 }
 
 // pressTreeRow is a press on a row: it selects it, gives the tree the
