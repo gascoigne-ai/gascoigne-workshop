@@ -26,7 +26,6 @@ type paneKind int
 
 const (
 	paneTable paneKind = iota
-	paneCode
 	paneNote
 	paneBody
 	paneSettings
@@ -48,7 +47,6 @@ type pane struct {
 	editable       bool                                     // table rows can be toggled and deleted
 	changed        func(t *reqTab)                          // runs after an edit
 	flagDuplicates bool                                     // mark rows that repeat a name
-	code           func(t *reqTab) *CodeView                // paneCode
 	note           func(t *reqTab) string                   // paneNote
 	empty          func(t *reqTab) (msg string, isErr bool) // shown instead of the content
 	caption        func(a *App) string                      // the caption when it depends on the app state
@@ -177,7 +175,6 @@ func paneEmpty(p pane, t *reqTab) (string, bool) {
 
 // paneBuilders turns a pane into its view, by kind.
 var paneBuilders = map[paneKind]func(a *App, p pane, t *reqTab, scroll *ScrollState) Node{
-	paneCode:       (*App).codePane,
 	paneNote:       (*App).notePane,
 	paneBody:       (*App).bodyPane,
 	paneSettings:   (*App).settingsPane,
@@ -205,16 +202,9 @@ func (a *App) messagePane(p pane, msg string, isErr bool) Node {
 	if isErr {
 		color = w.Error
 	}
-	if p.kind == paneCode {
-		bg = w.Sunken
-	}
 	return Col(Grow(1), Pad(w.Gutter), Bg(bg),
 		Lines(msg, color),
 	)
-}
-
-func (a *App) codePane(p pane, t *reqTab, _ *ScrollState) Node {
-	return Code(p.code(t), Grow(1), Bg(w.Sunken))
 }
 
 func (a *App) notePane(p pane, t *reqTab, scroll *ScrollState) Node {

@@ -50,7 +50,6 @@ func TestPaneTablesAreComplete(t *testing.T) {
 		for _, p := range panes {
 			ok := map[paneKind]bool{
 				paneTable:      p.rows != nil,
-				paneCode:       p.code != nil,
 				paneNote:       p.note != nil,
 				paneBody:       true, // the body pane is built from the request itself
 				paneSettings:   true, // so is the settings pane
