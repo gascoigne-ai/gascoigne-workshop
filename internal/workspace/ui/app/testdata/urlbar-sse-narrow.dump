@@ -1,0 +1,8 @@
+flow h=56 padL=12 padT=8 padR=12 padB=8 gap=8 bg=bg rect=0,0,420,56
+  flow grow=1 bg=sunken control=field rect=12,8,292,40
+    flow w=64 tip=Protocol: click to change onClick=true rect=12,8,64,40
+      textB text="SSE" grow=1 fg=muted center=true rect=12,8,64,40
+    plain w=8 grow=1 rect=76,8,8,40
+    fieldB grow=1 control=field onRightClickIn=true onChange=true rect=84,8,220,40
+  flow padL=10 padR=10 bg=accent control=primary tip=Open the connection (Ctrl+Enter) lighten=true onClick=true rect=312,8,96,40
+    textB text="Connect" grow=1 fg=accent-text ellipsis=true center=true rect=322,8,76,40

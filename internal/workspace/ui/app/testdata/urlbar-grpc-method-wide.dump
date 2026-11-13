@@ -1,0 +1,14 @@
+flow h=56 padL=12 padT=8 padR=12 padB=8 gap=8 bg=bg rect=0,0,1020,56
+  flow grow=1 bg=sunken control=field rect=12,8,908,40
+    flow w=64 tip=Protocol: click to change onClick=true rect=12,8,64,40
+      textB text="gRPC" grow=1 fg=muted center=true rect=12,8,64,40
+    flow w=1 padT=8 padB=8 rect=76,8,1,40
+      plain w=1 bg=border rect=76,16,1,24
+    flow w=200 tip=Method: click to list the server's methods onClick=true rect=77,8,200,40
+      textB text="grpc.health.v1.Health/Check" grow=1 fg=accent ellipsis=true rect=77,8,200,40
+    flow w=56 tip=Stream: keep the call open and show every message in the Messages pane onClick=true rect=277,8,56,40
+      textB text="Stream" grow=1 fg=muted center=true rect=277,8,56,40
+    plain w=8 grow=1 rect=333,8,8,40
+    fieldB grow=1 control=field onRightClickIn=true onChange=true rect=341,8,579,40
+  flow padL=10 padR=10 bg=accent control=primary tip=Send the request (Ctrl+Enter) lighten=true onClick=true rect=928,8,80,40
+    textB text="Send" grow=1 fg=accent-text ellipsis=true center=true rect=938,8,60,40
