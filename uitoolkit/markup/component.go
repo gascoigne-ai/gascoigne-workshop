@@ -35,7 +35,7 @@
 // # Finding your way
 //
 //	Layout      row col stack spacer hrule vrule
-//	Text        text caption icon   font-source
+//	Text        text caption icon lines note   font-source
 //	Buttons     button primary-button link-button icon-button choice
 //	Rows        list-row form-row check-row
 //	Inputs      field (placeholder field-pad segments text-menu on-enter on-tab)
@@ -384,6 +384,35 @@ func iconButton(parts elementParts) (view.Node, error) {
 	return widget.IconButton(widget.Icon(name, view.Grow(1)), parts.opts...), nil
 }
 
+// tokenParam is a param that is a theme color, written in the template or
+// read with {{path}}. Unlike a color attribute it is required, as the Go
+// argument is, so an empty one is an error.
+func tokenParam(name string) param {
+	return param{name: name, read: func(value string, scope Scope) (any, error) {
+		text, err := interpolate(value, scope)
+		if err != nil {
+			return nil, err
+		}
+		token := strings.TrimSpace(text)
+		if token == "" {
+			return nil, fmt.Errorf("%s is empty, not a color", name)
+		}
+		return core.Token(token), nil
+	}}
+}
+
+// noteLine builds a Note from its text and its tone.
+func noteLine(parts elementParts) (view.Node, error) {
+	return widget.Note(parts.text, parts.args[0].(core.Token), parts.opts...), nil
+}
+
+// stackedLines builds Lines from its text, one Text per line, in its
+// color. The color is the Go argument, so it is a param here and not the
+// generic color option, which would color the column and not its texts.
+func stackedLines(parts elementParts) (view.Node, error) {
+	return view.Lines(parts.text, parts.args[0].(core.Token), parts.opts...), nil
+}
+
 // textParam is a param that is text, open to {{path}}.
 func textParam(name string) param {
 	return param{name: name, read: func(value string, scope Scope) (any, error) { return interpolate(value, scope) }}
@@ -590,6 +619,8 @@ var elements = map[string]elementSpec{
 	"icon":           {build: labelled(widget.Icon), holds: holdsText},
 	"slot":           {build: placeholder, holds: holdsText},
 	"caption":        {build: labelled(view.Caption), holds: holdsText},
+	"lines":          {build: stackedLines, holds: holdsText, params: []param{tokenParam("color")}},
+	"note":           {build: noteLine, holds: holdsText, params: []param{tokenParam("tone")}},
 	"button":         {build: labelled(widget.Button), holds: holdsText},
 	"choice":         {build: segment, holds: holdsText, params: []param{boolParam("selected")}},
 	"icon-button":    {build: iconButton, holds: holdsNothing, params: []param{textParam("icon")}},
@@ -1357,6 +1388,8 @@ func Reference() string {
 	sb.WriteString("<choice selected=\"{{chosen}}\">Raw</choice> is widget.Choice: a primary-button when selected is true, a button otherwise.\n")
 	sb.WriteString("<form-row label=\"Timeout\" label-width=\"160\">...</form-row> is widget.FormRow: the label in a column that wide, then the children.\n")
 	sb.WriteString("<check-row on=\"{{x}}\" on-click=\"toggle\"><text>Label</text></check-row> is widget.CheckRow: a checkbox, then the children; on-click makes the whole row the target.\n")
+	sb.WriteString("<lines color=\"muted\">{{text}}</lines> is view.Lines, one text per line of the scope's text (literal text has its whitespace collapsed); color is its required argument.\n")
+	sb.WriteString("<note tone=\"error\">{{why}}</note> is widget.Note, a one-line small message under a control, cut with an ellipsis.\n")
 	sb.WriteString("Text and attribute values may use {{path}}, each step a map key or an exported struct field; if=\"name\" or \"!name\"; for=\"item in list\" over any slice, with {{$index}}; on-click=\"handler\" (and the other on-* events, each a func of the scope).\n")
 	sb.WriteString("A color attribute (bg, border*, edge-*, hover-*, color) given an empty token applies no option; so does separator=\"0\".\n")
 	sb.WriteString("What an element takes (state=\"x\", ...) are its Go constructor's arguments, all required; state and specs name a scope entry of the Go type.\n")

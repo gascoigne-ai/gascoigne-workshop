@@ -583,6 +583,40 @@ func TestCheckRowOnMustBeTrueOrFalse(t *testing.T) {
 	}
 }
 
+func TestNoteElementMatchesTheGoNote(t *testing.T) {
+	for _, tone := range []core.Token{core.Error, core.Muted} {
+		t.Run(string(tone), func(t *testing.T) {
+			why := "Enter a whole number between 1 and 600, which is a long note"
+			template := build(t, `<col><note tone="{{tone}}" pad-x="4">{{why}}</note></col>`, Scope{"tone": tone, "why": why})
+			goView := view.Col(widget.Note(why, tone, view.PadX(4)))
+			sameLayout(t, testCtx(t), template, goView, 120, 40)
+		})
+	}
+}
+
+func TestNoteNeedsATone(t *testing.T) {
+	parseError(t, `<note>why</note>`, "<note> needs a tone")
+	parseError(t, `<note tone="error"><row/></note>`, "<note> cannot contain <row>")
+}
+
+// Literal text in a template has its whitespace collapsed, so the lines
+// come from the scope, as a view's wrapped description does.
+func TestLinesElementMatchesTheGoLines(t *testing.T) {
+	description := "Seconds to wait for a response\nbefore giving up"
+	template := build(t, `<col><lines color="{{tone}}" gap="2">{{description}}</lines></col>`,
+		Scope{"tone": core.Muted, "description": description})
+	goView := view.Col(view.Lines(description, core.Muted, view.Gap(2)))
+	sameLayout(t, testCtx(t), template, goView, 300, 80)
+	if lines := len(template.Children()[0].Children()); lines != 2 {
+		t.Fatalf("the lines element holds %d texts, want one per line, 2", lines)
+	}
+}
+
+func TestLinesNeedsAColor(t *testing.T) {
+	parseError(t, `<lines>text</lines>`, "<lines> needs a color")
+	parseError(t, `<lines color="muted"><row/></lines>`, "<lines> cannot contain <row>")
+}
+
 func TestCheckboxOnMustBeTrueOrFalse(t *testing.T) {
 	parseError(t, `<checkbox/>`, "<checkbox> needs a on")
 	err := buildError(t, `<checkbox on="yes"/>`, nil)
