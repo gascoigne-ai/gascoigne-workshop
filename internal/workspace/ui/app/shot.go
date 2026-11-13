@@ -220,6 +220,7 @@ func (a *App) showShotTarget() {
 	if s.url != "" {
 		a.cur().url.Insert(s.url)
 		a.urlEdited(a.cur())
+		a.markStale() // no input reports this edit, so the cached unsaved marks would not see it
 	}
 	if s.sending {
 		a.send(a.cur())

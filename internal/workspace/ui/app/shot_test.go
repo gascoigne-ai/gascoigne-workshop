@@ -207,6 +207,25 @@ func TestScreenshotTypesIntoTheURL(t *testing.T) {
 	}
 }
 
+// The -type-url edit came from no input, so the cached unsaved marks of
+// the frames drawn before it stayed: the golden scene showed the tab's
+// mark only when a window event happened to refresh them.
+func TestScreenshotURLEditShowsOverMarksDrawnBefore(t *testing.T) {
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotURL: "?page=2"})
+	for range setFrame - 1 {
+		if err := a.shotUpdate(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if a.tabDirty(a.cur()) {
+		t.Fatal("test setup: the tab must be unchanged before the edit")
+	}
+	a.shotUpdate()
+	if !a.tabDirty(a.cur()) {
+		t.Error("the tab should be marked as changed on the frame of the edit")
+	}
+}
+
 // With -filter the capture types the text into the sidebar's filter, so the
 // tree shows only the matches with the matched part highlighted.
 func TestScreenshotFiltersTheTree(t *testing.T) {
