@@ -1,0 +1,12 @@
+scrollB padL=12 padT=12 padR=12 padB=12 gap=8 grow=1 rect=0,0,420,300
+  flow h=28 gap=12 rect=12,12,396,28
+    textB text="Timeout (seconds)" w=160 rect=12,12,160,28
+    fieldB w=80 bg=sunken control=field onRightClickIn=true onChange=true rect=184,12,80,28
+    textB text="blank = default (60 s)" fg=muted small=true rect=276,12,114,28
+  flow h=28 gap=8 onClick=true rect=12,48,396,28
+    checkB rect=12,48,14,28
+    textB text="Follow redirects" rect=34,48,100,28
+  flow h=28 gap=8 onClick=true rect=12,84,396,28
+    checkB rect=12,84,14,28
+    textB text="Verify the server certificate" rect=34,84,167,28
+    textB text="off accepts self-signed certificates" fg=muted small=true rect=209,84,185,28
