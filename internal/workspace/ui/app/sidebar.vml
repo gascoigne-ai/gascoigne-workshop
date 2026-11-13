@@ -1,0 +1,10 @@
+<col>
+  <row h="{{headerH}}" pad-x="{{gutter}}" gap="6" bg="bg" border-b="border">
+    <button w="96" h="28" on-click="switchMode">{{mode}}</button>
+    <field state="filter" h="28" grow="1" bg="sunken" placeholder="Filter" text-menu="filter"/>
+  </row>
+  <slot if="sentList" name="sentList"/>
+  <scroll if="!showSent" state="treeScroll" bg="sunken">
+    <slot for="row in rows" name="row"/>
+  </scroll>
+</col>

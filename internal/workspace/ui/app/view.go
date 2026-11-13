@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"embed"
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/textfmt"
@@ -67,66 +68,92 @@ func (a *App) view() Node {
 
 // ── Sidebar ────────────────────────────────────────────────────────────
 
-func (a *App) sidebar() Node {
-	return Col(
-		Row(H(headerH), PadX(w.Gutter), Gap(6), Bg(w.Bg), BorderB(w.Border),
-			a.sidebarMode(),
-			Field(&a.filter, H(28), Grow(1), Bg(w.Sunken), Placeholder("Filter"), TextMenu(&a.filter)),
-		),
-		If(a.showSent, a.sent.List(a, a.filter.Text)),
-		If(!a.showSent, Scroll(&a.treeScroll, Bg(w.Sunken),
-			For(a.visibleRows(), func(_ int, row collection.Row) Node {
-				return a.treeRow(row, row.Node() == a.selected)
-			}),
-		)),
-	)
-}
+//go:embed sidebar.vml treefolder.vml treerequest.vml
+var sidebarTemplates embed.FS
 
-// sidebarMode is the header chip that switches the sidebar between the
-// collection tree and the log of sent requests.
-func (a *App) sidebarMode() Node {
+var (
+	sidebarTemplate     = markup.MustLoad(sidebarTemplates, "sidebar.vml")
+	treeFolderTemplate  = markup.MustLoad(sidebarTemplates, "treefolder.vml")
+	treeRequestTemplate = markup.MustLoad(sidebarTemplates, "treerequest.vml")
+)
+
+// sidebar is the header (the chip that switches between the collection
+// tree and the log of sent requests, and the filter) above the one shown.
+func (a *App) sidebar() Node {
 	label, switchTo := "Collections", func() { a.showSent = true }
 	if a.showSent {
 		label, switchTo = "Sent", func() { a.showSent = false }
 	}
-	return Button(label, W(96), H(28), OnClick(switchTo))
+	var sentList Node
+	var rows []Node
+	if a.showSent {
+		sentList = a.sent.List(a, a.filter.Text)
+	} else {
+		for _, row := range a.visibleRows() {
+			rows = append(rows, a.treeRow(row, row.Node() == a.selected))
+		}
+	}
+	return sidebarTemplate.MustBuild(markup.Scope{
+		"mode":       label,
+		"switchMode": switchTo,
+		"filter":     &a.filter,
+		"showSent":   a.showSent,
+		"sentList":   sentList,
+		"treeScroll": &a.treeScroll,
+		"rows":       rows,
+		"headerH":    headerH,
+		"gutter":     w.Gutter,
+	})
 }
 
+// treeItem is what a tree row's template shows of one row.
+type treeItem struct {
+	Name     string // the whole name, shown when the filter matched none of it
+	Before   string // the name cut around the part the filter matched
+	Match    string
+	After    string
+	Indent   int
+	Selected bool
+	Triangle string  // a folder's disclosure icon
+	Badge    string  // a request's method or protocol
+	Color    w.Token // the badge's color
+	Press    func()
+	Menu     func(pointerX, pointerY int)
+	DragOver func()
+}
+
+// treeRow is one row of the tree, a folder or a request: one template
+// each, since their rows differ in padding and alignment.
 func (a *App) treeRow(row collection.Row, selected bool) Node {
 	node := row.Node()
-	indent := w.Gutter + row.Depth*treeIndent
-	events := []Item{
-		OnClick(func() { a.pressTreeRow(row) }),
-		OnRightClick(func(x, y int) { a.openMenu(x, y, a.treeMenuItems(row)) }),
-		OnDragOver(func() { a.dropTarget = node }),
+	item := treeItem{
+		Name:     row.Name,
+		Indent:   w.Gutter + row.Depth*treeIndent,
+		Selected: selected,
+		Press:    func() { a.pressTreeRow(row) },
+		Menu:     func(pointerX, pointerY int) { a.openMenu(pointerX, pointerY, a.treeMenuItems(row)) },
+		DragOver: func() { a.dropTarget = node },
 	}
-	if a.dragNode != nil && a.dropTarget == node && node != a.dragNode {
-		events = append(events, Border(w.AccentLine)) // where the drop would land
-	}
-
+	item.Before, item.Match, item.After = collection.SplitMatch(row.Name, a.filter.Text)
+	template := treeFolderTemplate
 	if row.Folder {
-		return ListRow(selected, append([]Item{H(w.RowH), PadL(indent), Gap(6),
-			TriangleIcon(row.Open, W(12)),
-			a.rowName(row.Name),
-		}, events...)...)
+		item.Triangle = "triangle-right"
+		if row.Open {
+			item.Triangle = "triangle-down"
+		}
+	} else {
+		template = treeRequestTemplate
+		item.Indent += 6
+		item.Badge = requestBadge(row.Req.Protocol, row.Req.Method)
+		item.Color = appearance.MethodToken(row.Req.Method)
 	}
-	req := row.Req
-	return ListRow(selected, append([]Item{H(w.RowH), PadL(indent + 6), PadR(w.Gutter), AlignItems(AlignBaseline),
-		Text(requestBadge(req.Protocol, req.Method), Small(), Color(appearance.MethodToken(req.Method)), W(badgeW)),
-		a.rowName(row.Name),
-	}, events...)...)
-}
-
-// rowName is a row's name with the part the sidebar filter matched in
-// the accent color.
-func (a *App) rowName(name string) Node {
-	before, match, after := collection.SplitMatch(name, a.filter.Text)
-	if match == "" {
-		return Text(name, Ellipsis(), Grow(1))
+	built := template.MustBuild(markup.Scope{"row": item, "rowH": w.RowH, "gutter": w.Gutter, "badgeW": badgeW})
+	if a.dragNode != nil && a.dropTarget == node && node != a.dragNode {
+		// Where the drop would land. Markup has no conditional option and
+		// an empty color token is an error, so the outline is set here.
+		Border(w.AccentLine)(built)
 	}
-	return Row(Grow(1),
-		Text(before), Text(match, Color(w.AccentText)), Text(after, Ellipsis(), Grow(1)),
-	)
+	return built
 }
 
 // pressTreeRow is a press on a row: it selects it, gives the tree the

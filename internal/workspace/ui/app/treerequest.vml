@@ -1,0 +1,10 @@
+<list-row selected="{{row.Selected}}" h="{{rowH}}" pad-l="{{row.Indent}}" pad-r="{{gutter}}" align-items="baseline" on-click="row.Press" on-right-click="row.Menu" on-drag-over="row.DragOver">
+  <text small color="{{row.Color}}" w="{{badgeW}}">{{row.Badge}}</text>
+  <!-- the name, with the part the sidebar filter matched in the accent color; treefolder.vml has the same -->
+  <text if="!row.Match" ellipsis grow="1">{{row.Name}}</text>
+  <row if="row.Match" grow="1">
+    <text>{{row.Before}}</text>
+    <text color="accent-text">{{row.Match}}</text>
+    <text ellipsis grow="1">{{row.After}}</text>
+  </row>
+</list-row>
