@@ -1,0 +1,9 @@
+flow h=28 padL=12 padR=12 gap=6 borderB=border rect=0,0,220,28
+  fieldB grow=1 control=field onRightClickIn=true onChange=true rect=12,0,12,28
+  textB w=64 fg=muted small=true rect=30,0,64,28
+  flow w=32 h=24 bg=sunken control=icon-button tip=Previous match lighten=true onClick=true rect=100,2,32,24
+    iconB grow=1 icon=chevron-up rect=100,2,32,24
+  flow w=32 h=24 bg=sunken control=icon-button tip=Next match lighten=true onClick=true rect=138,2,32,24
+    iconB grow=1 icon=chevron-down rect=138,2,32,24
+  flow w=32 h=24 bg=sunken control=icon-button tip=Close search (Esc) lighten=true onClick=true rect=176,2,32,24
+    iconB grow=1 icon=cross rect=176,2,32,24
