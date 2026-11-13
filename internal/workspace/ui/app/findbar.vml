@@ -1,0 +1,14 @@
+<row h="{{rowH}}" pad-x="{{gutter}}" gap="6" border-b="border">
+  <field state="find" grow="1" placeholder="Find" on-change="search" on-enter="enter" text-menu="find"/>
+  <text small muted w="64">{{count}}</text>
+  <!-- markup has no icon-button element, so widget.IconButton's tree is spelled out; the find bar's pins keep it in step -->
+  <row w="{{iconBtnW}}" h="{{compactH}}" bg="sunken" control="icon-button" lighten on-click="previous" tooltip="Previous match">
+    <icon name="chevron-up" grow="1"/>
+  </row>
+  <row w="{{iconBtnW}}" h="{{compactH}}" bg="sunken" control="icon-button" lighten on-click="next" tooltip="Next match">
+    <icon name="chevron-down" grow="1"/>
+  </row>
+  <row w="{{iconBtnW}}" h="{{compactH}}" bg="sunken" control="icon-button" lighten on-click="close" tooltip="Close search (Esc)">
+    <icon name="cross" grow="1"/>
+  </row>
+</row>

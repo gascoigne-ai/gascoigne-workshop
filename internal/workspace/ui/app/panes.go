@@ -2,6 +2,7 @@ package ui
 
 import (
 	"bytes"
+	"embed"
 	"encoding/json"
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/controller/viewer"
@@ -16,6 +17,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/jsonview"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
@@ -506,18 +508,27 @@ func (a *App) viewChip(label string, selected bool, width int, onClick func()) N
 	return Choice(label, selected, W(width), H(w.CompactH), OnClick(onClick))
 }
 
+//go:embed findbar.vml
+var findBarSource embed.FS
+
+var findBarTemplate = markup.MustLoad(findBarSource, "findbar.vml")
+
+// findBar is the search row above the response: the query, the hit
+// counter and the previous, next and close buttons.
 func (a *App) findBar(t *reqTab) Node {
-	return Row(H(w.RowH), PadX(w.Gutter), Gap(6), BorderB(w.Border),
-		Field(&t.find, Grow(1), Placeholder("Find"),
-			OnChange(func() { a.runFind(t) }),
-			OnEnter(func() { a.findEnter(t) }),
-			TextMenu(&t.find),
-		),
-		Text(viewer.Count(t.find.Text, len(t.view.Matches()), t.look.Match), Small(), Muted(), W(64)),
-		IconButton(ChevronUpIcon(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(func() { a.findStep(t, -1) }), Tooltip("Previous match")),
-		IconButton(ChevronDownIcon(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(func() { a.findStep(t, 1) }), Tooltip("Next match")),
-		IconButton(CrossIcon(Grow(1)), W(w.IconBtnW), H(w.CompactH), OnClick(func() { a.closeFind(t) }), Tooltip("Close search (Esc)")),
-	)
+	return findBarTemplate.MustBuild(markup.Scope{
+		"find":     &t.find,
+		"count":    viewer.Count(t.find.Text, len(t.view.Matches()), t.look.Match),
+		"rowH":     w.RowH,
+		"gutter":   w.Gutter,
+		"iconBtnW": w.IconBtnW,
+		"compactH": w.CompactH,
+		"search":   func() { a.runFind(t) },
+		"enter":    func() { a.findEnter(t) },
+		"previous": func() { a.findStep(t, -1) },
+		"next":     func() { a.findStep(t, 1) },
+		"close":    func() { a.closeFind(t) },
+	})
 }
 
 // setView picks the response view: pretty-printed, as received, or compact.
