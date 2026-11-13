@@ -36,7 +36,7 @@
 //
 //	Layout      row col stack spacer hrule vrule
 //	Text        text caption icon   font-source
-//	Buttons     button primary-button link-button
+//	Buttons     button primary-button link-button icon-button
 //	Rows        list-row
 //	Inputs      field (placeholder field-pad segments text-menu on-enter on-tab)
 //	            area (text-menu) checkbox
@@ -353,6 +353,18 @@ func scrollingTabStrip(parts elementParts) (view.Node, error) {
 	return widget.ScrollTabs(parts.args[0].(*widget.ScrollState), parts.args[1].([]widget.TabItem), parts.args[2].(int), parts.opts...), nil
 }
 
+// iconButton builds an IconButton around the icon its icon param names.
+// The glyph grows so it fills the chip and sits centered in it, as every
+// hand-written copy of the tree had it. An unknown name is a build error
+// naming the template line, where widget.Icon would panic.
+func iconButton(parts elementParts) (view.Node, error) {
+	name := parts.args[0].(string)
+	if !widget.HasIcon(name) {
+		return nil, fmt.Errorf("no icon %q; icons: %s", name, strings.Join(widget.IconNames(), " "))
+	}
+	return widget.IconButton(widget.Icon(name, view.Grow(1)), parts.opts...), nil
+}
+
 // textParam is a param that is text, open to {{path}}.
 func textParam(name string) param {
 	return param{name: name, read: func(value string, scope Scope) (any, error) { return interpolate(value, scope) }}
@@ -560,6 +572,7 @@ var elements = map[string]elementSpec{
 	"slot":           {build: placeholder, holds: holdsText},
 	"caption":        {build: labelled(view.Caption), holds: holdsText},
 	"button":         {build: labelled(widget.Button), holds: holdsText},
+	"icon-button":    {build: iconButton, holds: holdsNothing, params: []param{textParam("icon")}},
 	"scroll":         {build: scroller(widget.Scroll), params: []param{scopedState[widget.ScrollState]("state")}},
 	"hscroll":        {build: scroller(widget.HScroll), params: []param{scopedState[widget.ScrollState]("state")}},
 	"split": {build: splitter, options: splitOptions,
@@ -1318,6 +1331,7 @@ func Reference() string {
 	sb.WriteString("<slot name=\"x\"/> puts the view.Node the scope holds under the path x here (row.Knob in a for), a view.Custom one included.\n")
 	sb.WriteString("<include> and <slot> take only name, if and for.\n")
 	sb.WriteString("<icon name=\"trash\"/> draws a built-in or registered icon (widget.IconNames).\n")
+	sb.WriteString("<icon-button icon=\"search\"/> is widget.IconButton around that icon, grown to fill the chip.\n")
 	sb.WriteString("Text and attribute values may use {{path}}, each step a map key or an exported struct field; if=\"name\" or \"!name\"; for=\"item in list\" over any slice, with {{$index}}; on-click=\"handler\" (and the other on-* events, each a func of the scope).\n")
 	sb.WriteString("A color attribute (bg, border*, edge-*, hover-*, color) given an empty token applies no option; so does separator=\"0\".\n")
 	sb.WriteString("What an element takes (state=\"x\", ...) are its Go constructor's arguments, all required; state and specs name a scope entry of the Go type.\n")

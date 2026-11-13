@@ -441,6 +441,33 @@ func TestResizableDialogNeedsItsStateAndFourBounds(t *testing.T) {
 	}
 }
 
+func TestIconButtonElementMatchesTheGoIconButton(t *testing.T) {
+	find := func() {}
+	template := build(t, `
+		<row>
+		  <icon-button icon="{{which}}" w="32" h="24" on-click="find" tooltip="Find"/>
+		</row>`, Scope{"which": "search", "find": find})
+	goView := view.Row(widget.IconButton(widget.Icon("search", view.Grow(1)),
+		view.W(32), view.H(24), view.OnClick(find), view.Tooltip("Find")))
+	sameWidget(t, template, goView, 100, 30)
+	got := fmt.Sprintf("%+v", template.Children()[0].Children()[0].Behavior())
+	want := fmt.Sprintf("%+v", goView.Children()[0].Children()[0].Behavior())
+	if got != want {
+		t.Fatalf("template glyph:\n%s\nGo glyph:\n%s", got, want)
+	}
+}
+
+func TestIconButtonNeedsAKnownIconAndHoldsNothing(t *testing.T) {
+	parseError(t, `<icon-button/>`, "<icon-button> needs a icon")
+	parseError(t, `<icon-button icon="search">Find</icon-button>`, "text is only allowed")
+	parseError(t, `<icon-button icon="search"><icon name="copy"/></icon-button>`, "<icon-button> cannot contain <icon>")
+	parseError(t, `<icon-button icon="search" name="copy"/>`, `unknown attribute "name"`)
+	err := buildError(t, `<icon-button icon="nope"/>`, nil)
+	if err == nil || !strings.Contains(err.Error(), `no icon "nope"`) {
+		t.Errorf("error = %v, want it to name the unknown icon", err)
+	}
+}
+
 func TestCheckboxOnMustBeTrueOrFalse(t *testing.T) {
 	parseError(t, `<checkbox/>`, "<checkbox> needs a on")
 	err := buildError(t, `<checkbox on="yes"/>`, nil)
