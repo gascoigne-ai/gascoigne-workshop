@@ -1,0 +1,11 @@
+stack rect=0,0,640,400
+  flow w=320 padL=6 padT=6 padR=6 padB=6 floatTop=316 floatRight=240 floatMode=1 gap=6 bg=bg border=border control=menu float=true modal=true focusScope=true shadow=true onDismiss=true rect=240,0,320,320
+    fieldB h=28 bg=sunken control=field onRightClickIn=true onChange=true rect=246,6,308,28
+    flow h=28 padL=8 padR=8 rect=246,40,308,28
+      textB text="Looking for installed fonts..." fg=muted small=true rect=254,40,149,28
+    scrollB h=240 grow=1 rect=246,74,308,240
+      flow rect=246,74,308,28
+        plain grow=1 rect=246,74,308,0
+        flow h=28 padL=8 padR=8 bg=selected control=row onClick=true rect=246,74,308,28
+          textB text="Built-in" grow=1 fg=muted rect=254,80,292,16
+        plain grow=1 rect=246,102,308,0

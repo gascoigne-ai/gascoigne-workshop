@@ -1,0 +1,27 @@
+stack rect=0,0,1280,800
+  flow w=320 padL=6 padT=6 padR=6 padB=6 floatTop=316 floatRight=240 floatMode=1 gap=6 bg=bg border=border control=menu float=true modal=true focusScope=true shadow=true onDismiss=true rect=240,316,320,286
+    fieldB h=28 bg=sunken control=field onRightClickIn=true onChange=true rect=246,322,308,28
+    scrollB h=240 grow=1 rect=246,356,308,240
+      flow rect=246,-3766,300,8428
+        plain h=4116 grow=1 rect=246,-3766,300,4116
+        flow h=28 padL=8 padR=8 control=row hoverBg=hover onClick=true rect=246,350,300,28
+          textB text="Family 146" grow=1 ellipsis=true rect=254,356,284,16
+        flow h=28 padL=8 padR=8 control=row hoverBg=hover onClick=true rect=246,378,300,28
+          textB text="Family 147" grow=1 ellipsis=true rect=254,384,284,16
+        flow h=28 padL=8 padR=8 control=row hoverBg=hover onClick=true rect=246,406,300,28
+          textB text="Family 148" grow=1 ellipsis=true rect=254,412,284,16
+        flow h=28 padL=8 padR=8 control=row hoverBg=hover onClick=true rect=246,434,300,28
+          textB text="Family 149" grow=1 ellipsis=true rect=254,440,284,16
+        flow h=28 padL=8 padR=8 bg=selected control=row onClick=true rect=246,462,300,28
+          textB text="Family 150" grow=1 ellipsis=true rect=254,468,284,16
+        flow h=28 padL=8 padR=8 control=row hoverBg=hover onClick=true rect=246,490,300,28
+          textB text="Family 151" grow=1 ellipsis=true rect=254,496,284,16
+        flow h=28 padL=8 padR=8 control=row hoverBg=hover onClick=true rect=246,518,300,28
+          textB text="Family 152" grow=1 ellipsis=true rect=254,524,284,16
+        flow h=28 padL=8 padR=8 control=row hoverBg=hover onClick=true rect=246,546,300,28
+          textB text="Family 153" grow=1 ellipsis=true rect=254,552,284,16
+        flow h=28 padL=8 padR=8 control=row hoverBg=hover onClick=true rect=246,574,300,28
+          textB text="Family 154" grow=1 ellipsis=true rect=254,580,284,16
+        flow h=28 padL=8 padR=8 control=row hoverBg=hover onClick=true rect=246,602,300,28
+          textB text="Family 155" grow=1 ellipsis=true rect=254,608,284,16
+        plain h=4032 grow=1 rect=246,630,300,4032

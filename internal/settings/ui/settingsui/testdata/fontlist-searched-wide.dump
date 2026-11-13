@@ -1,0 +1,9 @@
+stack rect=0,0,1280,800
+  flow w=320 padL=6 padT=6 padR=6 padB=6 floatTop=316 floatRight=240 floatMode=1 gap=6 bg=bg border=border control=menu float=true modal=true focusScope=true shadow=true onDismiss=true rect=240,316,320,286
+    fieldB h=28 bg=sunken control=field onRightClickIn=true onChange=true rect=246,322,308,28
+    scrollB h=240 grow=1 rect=246,356,308,240
+      flow rect=246,356,308,28
+        plain grow=1 rect=246,356,308,0
+        flow h=28 padL=8 padR=8 control=row hoverBg=hover onClick=true rect=246,356,308,28
+          textB text="Go Mono" font=custom grow=1 ellipsis=true rect=254,362,292,16
+        plain grow=1 rect=246,384,308,0
