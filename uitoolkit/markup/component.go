@@ -37,7 +37,7 @@
 //	Layout      row col stack spacer hrule vrule
 //	Text        text caption icon   font-source
 //	Buttons     button primary-button link-button icon-button choice
-//	Rows        list-row
+//	Rows        list-row form-row
 //	Inputs      field (placeholder field-pad segments text-menu on-enter on-tab)
 //	            area (text-menu) checkbox
 //	            slider (slider-mid on-slide on-slide-end)
@@ -349,6 +349,12 @@ func segment(parts elementParts) (view.Node, error) {
 	return widget.Choice(parts.text, parts.args[0].(bool), parts.opts...), nil
 }
 
+// formLine builds a FormRow from its label and the width of the label
+// column; the children are its controls.
+func formLine(parts elementParts) (view.Node, error) {
+	return widget.FormRow(parts.args[0].(string), parts.args[1].(int), parts.items()...), nil
+}
+
 // tabStrip builds Tabs from its items and the active index.
 func tabStrip(parts elementParts) (view.Node, error) {
 	return widget.Tabs(parts.args[0].([]widget.TabItem), parts.args[1].(int), parts.opts...), nil
@@ -604,6 +610,7 @@ var elements = map[string]elementSpec{
 		params: []param{scopedState[widget.TextArea]("state")}},
 	"checkbox": {build: checkbox, holds: holdsNothing, params: []param{boolParam("on")}},
 	"list-row": {build: listEntry, params: []param{boolParam("selected")}},
+	"form-row": {build: formLine, params: []param{textParam("label"), wholeParam("label-width")}},
 	"code":     {build: stateful(widget.Code), holds: holdsNothing, params: []param{scopedState[widget.CodeView]("state")}},
 	"image":    {build: picture, holds: holdsNothing, params: []param{scoped[*ebiten.Image]("img")}},
 	"slider": {build: slider, holds: holdsNothing, options: sliderOptions, handlers: sliderHandlers,
@@ -1340,6 +1347,7 @@ func Reference() string {
 	sb.WriteString("<icon name=\"trash\"/> draws a built-in or registered icon (widget.IconNames).\n")
 	sb.WriteString("<icon-button icon=\"search\"/> is widget.IconButton around that icon, grown to fill the chip.\n")
 	sb.WriteString("<choice selected=\"{{chosen}}\">Raw</choice> is widget.Choice: a primary-button when selected is true, a button otherwise.\n")
+	sb.WriteString("<form-row label=\"Timeout\" label-width=\"160\">...</form-row> is widget.FormRow: the label in a column that wide, then the children.\n")
 	sb.WriteString("Text and attribute values may use {{path}}, each step a map key or an exported struct field; if=\"name\" or \"!name\"; for=\"item in list\" over any slice, with {{$index}}; on-click=\"handler\" (and the other on-* events, each a func of the scope).\n")
 	sb.WriteString("A color attribute (bg, border*, edge-*, hover-*, color) given an empty token applies no option; so does separator=\"0\".\n")
 	sb.WriteString("What an element takes (state=\"x\", ...) are its Go constructor's arguments, all required; state and specs name a scope entry of the Go type.\n")

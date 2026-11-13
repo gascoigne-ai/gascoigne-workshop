@@ -508,6 +508,31 @@ func TestChoiceSelectedMustBeTrueOrFalse(t *testing.T) {
 	}
 }
 
+func TestFormRowElementMatchesTheGoFormRow(t *testing.T) {
+	timeout := widget.NewTextField("30")
+	template := build(t, `
+		<col>
+		  <form-row label="{{label}}" label-width="{{labelW}}">
+		    <field state="timeout" w="80" bg="sunken"/>
+		    <text small muted>seconds</text>
+		  </form-row>
+		</col>`, Scope{"label": "Timeout", "labelW": 160, "timeout": &timeout})
+	goView := view.Col(widget.FormRow("Timeout", 160,
+		widget.Field(&timeout, view.W(80), view.Bg(core.Sunken)),
+		view.Text("seconds", view.Small(), view.Muted())))
+	sameLayout(t, testCtx(t), template, goView, 400, 60)
+}
+
+func TestFormRowNeedsALabelAndAWholeLabelWidth(t *testing.T) {
+	parseError(t, `<form-row label-width="120"/>`, "<form-row> needs a label")
+	parseError(t, `<form-row label="Name"/>`, "<form-row> needs a label-width")
+	parseError(t, `<form-row label="Name" label-width="120">text</form-row>`, "text is only allowed")
+	err := buildError(t, `<form-row label="Name" label-width="wide"/>`, nil)
+	if err == nil || !strings.Contains(err.Error(), "label-width") {
+		t.Errorf("error = %v, want it to say label-width is not a whole number", err)
+	}
+}
+
 func TestCheckboxOnMustBeTrueOrFalse(t *testing.T) {
 	parseError(t, `<checkbox/>`, "<checkbox> needs a on")
 	err := buildError(t, `<checkbox on="yes"/>`, nil)
