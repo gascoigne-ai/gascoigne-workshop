@@ -19,7 +19,8 @@ Status: todo, doing, done, blocked (reason). The loop (`loop.md`) takes the firs
 | 13 | app `panes.go` `responsePane` | 004, 005 | response, side-by-side | done (cc8641e scene, b9c2d81 pins, 416aee4 swap) |
 | 14 | app `panes.go` `settingsPane` | 005 | request-* settings tab | done (61a7fa4 scene, f124dcd pins, ec8e4cb swap) |
 | 14b | app `auth.go` auth pane (builds FormRow/CheckRow in Go; missing from the first manifest) | 005 | none: add a scene (`-pane Auth`) | done (a20665c scene, 2e95951 pins, 9e900b9 swap) |
-| 15 | app `wsui.go` `messagesPane` | 004, 005 | request-websocket (idle only) | todo |
+| 15 | app `wsui.go` `messagesPane` | 004, 005 | request-websocket (idle only) | done (bfe231b pins, 40c6fa6 swap; no new scene, request-websocket+sse cover the layouts) |
+| 15b | app `wsbar.go` `messagesToolbar`: inline `markup.View` parsed every frame, literal sizes; make it an embedded `.vml` with sizes via scope (wsbar_test.go compares with a Go view; keep it) | 003 | request-websocket | todo |
 | 16 | app `overlay.go` `dialogView`, `toastsView`, `dialogForm` | 004 | settings-*; toasts: add scene first | todo |
 | 17 | settingsui `dialog.go` frame, `raw.go` | 004, 005 | settings-menu | todo |
 | 18 | `shortcutpage` | 004 | settings-shortcuts | todo |
