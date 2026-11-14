@@ -217,19 +217,20 @@ func mustField(t *testing.T, key string) settings.Field {
 	return field
 }
 
-// The title bar names the dialog; the raw view has no search field.
-func TestTitleBarHasTheSearchFieldOnlyOutsideTheRawView(t *testing.T) {
+// The title bar names the dialog; the toolbar under it has the search field,
+// except in the raw view.
+func TestToolbarHasTheSearchFieldOnlyOutsideTheRawView(t *testing.T) {
 	for _, raw := range []bool{false, true} {
 		d := SettingsDialog{Raw: raw}
-		bar := d.titleBar(newHost(t))
+		bar := d.toolbar(newHost(t))
 		ctx, err := w.NewCtx(w.Theme{Colors: map[w.Token]color.RGBA{w.Text: w.RGB(0xffffff)}, FontSize: 14, SmallSize: 12, MonoSize: 13})
 		if err != nil {
 			t.Fatal(err)
 		}
-		Layout(ctx, bar, 900, DialogTitleH)
+		Layout(ctx, bar, 900, w.DialogToolbarH)
 		dump := Dump(bar)
-		if !strings.Contains(dump, "Settings") {
-			t.Errorf("raw %v: no title:\n%s", raw, dump)
+		if title := Dump(d.titleBar(newHost(t))); !strings.Contains(title, "Settings") {
+			t.Errorf("raw %v: no title:\n%s", raw, title)
 		}
 		if has := strings.Contains(dump, "fieldB"); has == raw {
 			t.Errorf("raw %v: search field present = %v", raw, has)

@@ -159,6 +159,7 @@ func (d *SettingsDialog) View(host Host) Node {
 		"height":   dh,
 		"close":    func() { host.Send(prefs.Close{}) },
 		"titleBar": d.titleBar(host),
+		"toolbar":  d.toolbar(host),
 		"raw":      d.Raw,
 		"rawView":  raw,
 		"navW":     DialogNavW,
@@ -169,12 +170,13 @@ func (d *SettingsDialog) View(host Host) Node {
 	return Frag(dialog, d.FontList(host)) // the font list floats over the dialog; a template has one root
 }
 
-//go:embed dialog.vml titlebar.vml save-pending.vml save-idle.vml
+//go:embed dialog.vml titlebar.vml toolbar.vml save-pending.vml save-idle.vml
 var dialogTemplates embed.FS
 
 var (
 	dialogTemplate      = markup.MustLoad(dialogTemplates, "dialog.vml")
 	titleBarTemplate    = markup.MustLoad(dialogTemplates, "titlebar.vml")
+	toolbarTemplate     = markup.MustLoad(dialogTemplates, "toolbar.vml")
 	savePendingTemplate = markup.MustLoad(dialogTemplates, "save-pending.vml")
 	saveIdleTemplate    = markup.MustLoad(dialogTemplates, "save-idle.vml")
 )
@@ -193,11 +195,17 @@ func (d *SettingsDialog) pageContent(host Host, id string) Node {
 	return nil
 }
 
-// titleBar is the dialog's header: the search field (a spacer in the raw
-// view), Save and the switch between the form and the raw text.
+// titleBar is the dialog's title bar: the name and the close button.
 func (d *SettingsDialog) titleBar(host Host) Node {
 	return titleBarTemplate.MustBuild(markup.Scope{
-		"close":    func() { host.Send(prefs.Close{}) },
+		"close": func() { host.Send(prefs.Close{}) },
+	})
+}
+
+// toolbar is the row under the title bar: the search field (a spacer in the
+// raw view), Save and the switch between the form and the raw text.
+func (d *SettingsDialog) toolbar(host Host) Node {
+	return toolbarTemplate.MustBuild(markup.Scope{
 		"raw":      d.Raw,
 		"search":   &d.Search,
 		"searched": d.ResetScroll,

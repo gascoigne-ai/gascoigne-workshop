@@ -3,6 +3,7 @@
 <resizable-dialog state="size" min-width="{{minW}}" min-height="{{minH}}" max-width="{{maxW}}" max-height="{{maxH}}"
                   w="{{width}}" h="{{height}}" moved="move" on-dismiss="close">
   <slot name="titleBar"/>
+  <slot name="toolbar"/>
   <col if="raw" grow="1" pad="16">
     <slot name="rawView"/>
   </col>

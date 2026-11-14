@@ -264,7 +264,7 @@ func TestNewAppsStartAtTheDisplayScale(t *testing.T) {
 // The interface scale slider sits where the scale chooser was: its row at
 // y=250, and its track within x=1030..1190 of the settings menu.
 const (
-	scaleRowY    = 274 // with "interface scale" typed in the search field
+	scaleRowY    = 314 // with "interface scale" typed in the search field
 	scaleTrackX0 = 453
 	scaleTrackX1 = 949
 )

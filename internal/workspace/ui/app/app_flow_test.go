@@ -2907,11 +2907,11 @@ func TestNarrowColumnsKeepAMinimum(t *testing.T) {
 // y=560 (Selection), 588, 616, 644 (Accent); field at x=1170, Reset at
 // x=1234; the "Reset colors" button under the last row.
 const (
-	colorRow0Y   = 216
+	colorRow0Y   = 256
 	colorFieldX  = 589
 	colorResetX  = 652
 	resetColorsX = 496
-	resetColorsY = 328
+	resetColorsY = 368
 )
 
 // The settings dialog at 1280x800: 760x560 at (260, 120), a 44px title
