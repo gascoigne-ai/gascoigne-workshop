@@ -1,0 +1,3 @@
+flow padL=12 padT=12 padR=12 padB=12 gap=8 grow=1 rect=0,0,420,300
+  textB text="One assertion per line: status == 200, time < 500ms, header Content-Type contains json, body contains \"ok\", json items.length > 0, json items[0].name == \"a\". set token = json access_token keeps a value as {{token}} for later requests. Lines starting with # are notes." fg=muted small=true rect=12,12,396,14
+  areaB grow=1 bg=sunken onRightClickIn=true onChange=true rect=12,34,396,254

@@ -1,0 +1,2 @@
+flow padL=12 padT=12 padR=12 padB=12 grow=1 rect=0,0,1020,300
+  textB text="No assertions. Write them in the request's Tests tab." fg=muted rect=12,12,996,16
