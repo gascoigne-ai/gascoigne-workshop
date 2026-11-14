@@ -10,7 +10,7 @@
 //	Rows       ListRow FormRow CheckRow Note Toolbar
 //	Tabs       Tabs ScrollTabs TabBar ActiveTab   (state: TabItem)
 //	Menus      Menu OpenMenu CloseMenu MenuOpen PopupMenu PopupMenuLayer PopupMenuKeys NewMenu NextSelectable MenuWidth TextMenu   (state: MenuItem MenuState)
-//	Dialogs    Dialog ResizableDialog DialogTitle MessageDialog   (state: DialogState DialogButton)
+//	Dialogs    Dialog ResizableDialog DialogTitle DialogToolbar MessageDialog   (state: DialogState DialogButton)
 //	Toasts     Toasts   (state: ToastStack Toast)
 //	Pictures   Image
 //	Inputs     Field Area Code   (state: TextField TextArea CodeView Line Match Span)   Placeholder FieldPad Segments OnEnter OnTab   (OnChange is view's)

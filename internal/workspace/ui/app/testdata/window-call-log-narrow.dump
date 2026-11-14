@@ -170,9 +170,10 @@ stack rect=0,0,640,480
       textB text="v0.1.0" fg=muted small=true rect=594,452,34,28
   flow bg=shadow rect=0,0,640,480
   flow w=820 h=400 floatMode=2 bg=bg control=menu float=true modal=true focusScope=true shadow=true onDismiss=true rect=0,40,640,400
-    flow h=44 padL=16 padR=16 gap=8 borderB=border-soft onDismiss=true rect=0,40,640,44
+    flow h=44 padL=16 padR=16 gap=8 bg=sunken borderB=border-soft onDismiss=true rect=0,40,640,44
       textB text="Log" bold=true rect=16,54,26,16
-      fieldB h=28 grow=1 bg=sunken control=field onRightClickIn=true rect=50,48,462,28
+      plain grow=1 rect=50,62,227,0
+      fieldB h=28 grow=1 bg=sunken control=field onRightClickIn=true rect=285,48,227,28
       flow w=64 h=24 padL=10 padR=10 bg=sunken control=button tip=Forget the entries lighten=true onClick=true rect=520,50,64,24
         textB text="Clear" grow=1 fg=chip-text ellipsis=true center=true rect=530,50,44,24
       flow w=32 h=24 bg=sunken control=icon-button tip=Close (Esc) lighten=true onClick=true rect=592,50,32,24

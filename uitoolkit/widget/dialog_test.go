@@ -56,6 +56,40 @@ func TestDialogTitleHasTheCloseButton(t *testing.T) {
 	}
 }
 
+// The bar is a distinct strip: its own color, a line under it, and the room
+// between the title and the close button drags the dialog.
+func TestDialogTitleIsADragStripOfItsOwn(t *testing.T) {
+	c := testCtx(t)
+	move := &MoveState{}
+	bar := DialogTitle("Log", OnDismiss(func() {}))
+	panel := Col(W(400), H(200), FloatCenter(), Moved(move), Modal(), bar)
+	root := Stack(Row(), panel)
+	Layout(c, root, 800, 600)
+	hasProps(t, bar, "bg=sunken", "borderB=border-soft")
+	r := bar.Rect()
+	x, y := r.X+r.W/2, r.Y+r.H/2 // between the title and the close button
+	c.In = core.Input{X: x, Y: y, Click: true, Held: true}
+	Update(c, root)
+	c.In = core.Input{X: x + 30, Y: y + 20, Held: true}
+	Update(c, root)
+	if move.X != 30 || move.Y != 20 {
+		t.Fatalf("moved by %d,%d, want 30,20", move.X, move.Y)
+	}
+}
+
+func TestDialogToolbarIsARowOfControlsUnderTheTitle(t *testing.T) {
+	c := testCtx(t)
+	bar := DialogToolbar(Spacer(), Row(W(30)))
+	Layout(c, Col(W(400), H(100), bar), 400, 100)
+	if bar.Rect().H != core.DialogToolbarH {
+		t.Fatalf("height = %d, want DialogToolbarH %d", bar.Rect().H, core.DialogToolbarH)
+	}
+	kids := bar.Children()
+	if kids[0].Rect().X != 16 || kids[1].Rect().X+kids[1].Rect().W != 400-16 {
+		t.Fatalf("controls at %+v and %+v, want them between the 16 px paddings", kids[0].Rect(), kids[1].Rect())
+	}
+}
+
 // ---- MessageDialog --------------------------------------------------------
 
 func TestDialogStateDefaultRunsThePrimaryButton(t *testing.T) {

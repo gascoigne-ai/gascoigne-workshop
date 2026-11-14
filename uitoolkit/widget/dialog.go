@@ -23,9 +23,11 @@ func ResizableDialog(state *ResizeState, minW, minH, maxW, maxH int, items ...It
 	return Frag(Row(Bg(core.Shadow)), Resizable(state, minW, minH, maxW, maxH, append(append([]Item{}, dialogLook...), items...)...))
 }
 
-// DialogTitle is the header of a dialog: the title, the items you give
-// (a search field, buttons) and a close button at the end. OnDismiss is
-// what the close button does.
+// DialogTitle is the title bar of a dialog, a bar of its own on the sunken
+// color: the title, free room, any items you give and a close button at the
+// end. The user drags the dialog by the bar (the room between the title and
+// the buttons), so put controls in a DialogToolbar below it, not in the
+// bar. OnDismiss is what the close button does.
 func DialogTitle(title string, items ...Item) *El {
 	var bar *El
 	closeButton := Row(W(32), H(core.CompactH), Bg(core.Sunken), Control("icon-button"), Lighten(), Tooltip("Close (Esc)"),
@@ -37,9 +39,16 @@ func DialogTitle(title string, items ...Item) *El {
 		CrossIcon(Grow(1)),
 	)
 	bar = Row(append(append([]Item{
-		H(core.DialogTitleH), DragHandle(), PadX(16), Gap(8), AlignItems(AlignCenter), BorderB(core.BorderSoft), Text(title, Bold()),
+		H(core.DialogTitleH), DragHandle(), PadX(16), Gap(8), AlignItems(AlignCenter), Bg(core.Sunken), BorderB(core.BorderSoft), Text(title, Bold()), Spacer(),
 	}, items...), closeButton)...)
 	return bar
+}
+
+// DialogToolbar is the row of controls under a dialog's title bar: a search
+// field, Save, a switch. Give it the controls; fields that should take the
+// free room get Grow(1).
+func DialogToolbar(items ...Item) *El {
+	return Row(append([]Item{H(core.DialogToolbarH), PadX(16), Gap(8), AlignItems(AlignCenter), BorderB(core.BorderSoft)}, items...)...)
 }
 
 // DialogButton is a button of a message dialog; the primary one is lit and

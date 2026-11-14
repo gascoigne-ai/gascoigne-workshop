@@ -1,9 +1,10 @@
 stack rect=0,0,600,420
   flow bg=shadow rect=0,0,600,420
   resizableB w=520 h=340 floatMode=2 bg=bg control=menu float=true modal=true focusScope=true shadow=true onDismiss=true rect=40,40,520,340
-    flow h=44 padL=16 padR=16 gap=8 borderB=border-soft onDismiss=true rect=40,40,520,44
+    flow h=44 padL=16 padR=16 gap=8 bg=sunken borderB=border-soft onDismiss=true rect=40,40,520,44
       textB text="Settings" bold=true rect=56,54,55,16
-      fieldB h=28 grow=1 bg=sunken control=field onRightClickIn=true onChange=true rect=119,48,317,28
+      plain grow=1 rect=119,62,154,0
+      fieldB h=28 grow=1 bg=sunken control=field onRightClickIn=true onChange=true rect=281,48,155,28
       flow w=60 h=24 padL=10 padR=10 bg=sunken control=button tip=Edit settings.json as text lighten=true onClick=true rect=444,50,60,24
         textB text="JSON" grow=1 fg=chip-text ellipsis=true center=true rect=454,50,40,24
       flow w=32 h=24 bg=sunken control=icon-button tip=Close (Esc) lighten=true onClick=true rect=512,50,32,24

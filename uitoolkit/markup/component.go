@@ -44,7 +44,7 @@
 //	Viewers     code image
 //	Containers  scroll hscroll split (vertical as-ratio min-first min-second)
 //	Widgets     tab-bar tabs scroll-tabs table   separator active-tab
-//	Dialogs     dialog dialog-title message-dialog resizable-dialog   focus-scope
+//	Dialogs     dialog dialog-title dialog-toolbar message-dialog resizable-dialog   focus-scope
 //	Overlays    menu toasts
 //	Templates   include slot
 //
@@ -636,6 +636,7 @@ var elements = map[string]elementSpec{
 	"table":          {build: grid, holds: holdsNothing, params: []param{scoped[widget.TableSpec]("spec")}},
 	"dialog":         {build: container(widget.Dialog)},
 	"dialog-title":   {build: dialogTitle, params: []param{textParam("title")}},
+	"dialog-toolbar": {build: container(widget.DialogToolbar)},
 	"message-dialog": {build: messageDialog, params: []param{scopedState[widget.DialogState]("state")}},
 	"resizable-dialog": {build: resizableDialog, params: []param{scopedState[widget.ResizeState]("state"),
 		wholeParam("min-width"), wholeParam("min-height"), wholeParam("max-width"), wholeParam("max-height")}},
