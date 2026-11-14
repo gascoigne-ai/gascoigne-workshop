@@ -1,0 +1,18 @@
+flow grow=1 rect=0,0,420,300
+  plain h=12 grow=1 rect=0,0,420,12
+  flow h=36 padL=12 padR=12 gap=6 borderB=border rect=0,12,420,36
+    textB text="Connected" fg=muted small=true rect=12,23,58,14
+    plain grow=1 rect=76,30,86,0
+    flow w=116 h=24 padL=10 padR=10 bg=accent control=primary lighten=true onClick=true rect=168,18,116,24
+      textB text="Auto-reconnect" grow=1 fg=accent-text ellipsis=true center=true rect=178,18,96,24
+    flow h=24 padL=10 padR=10 bg=sunken control=button tip=Send a ping frame lighten=true onClick=true rect=290,18,56,24
+      textB text="Ping" grow=1 fg=chip-text ellipsis=true center=true rect=300,18,36,24
+    flow h=24 padL=10 padR=10 bg=sunken control=button tip=Empty the message log lighten=true onClick=true rect=352,18,56,24
+      textB text="Clear" grow=1 fg=chip-text ellipsis=true center=true rect=362,18,36,24
+  codeB grow=1 bg=sunken rect=0,48,420,208
+  flow h=44 padL=12 padT=8 padR=12 padB=8 gap=6 borderT=border rect=0,256,420,44
+    fieldB grow=1 control=field onRightClickIn=true rect=12,264,274,28
+    flow padL=10 padR=10 bg=sunken control=button tip=Make the message one line of JSON, or say where it is not JSON lighten=true onClick=true rect=292,264,40,28
+      textB text="{ }" grow=1 fg=chip-text ellipsis=true center=true rect=302,264,20,28
+    flow padL=10 padR=10 bg=accent control=primary tip=Send the message (Enter) lighten=true onClick=true rect=338,264,70,28
+      textB text="Send" grow=1 fg=accent-text ellipsis=true center=true rect=348,264,50,28

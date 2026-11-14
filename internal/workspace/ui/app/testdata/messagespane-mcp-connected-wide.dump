@@ -1,0 +1,22 @@
+flow grow=1 rect=0,0,1020,300
+  plain h=12 grow=1 rect=0,0,1020,12
+  flow h=36 padL=12 padR=12 gap=6 borderB=border rect=0,12,1020,36
+    textB text="Connected" fg=muted small=true rect=12,23,58,14
+    plain grow=1 rect=76,30,382,0
+    flow w=116 h=24 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=464,18,116,24
+      textB text="Auto-reconnect" grow=1 fg=chip-text ellipsis=true center=true rect=474,18,96,24
+    flow h=24 padL=10 padR=10 bg=sunken control=button tip=Pick a tool: the composer gets a call with its arguments filled in lighten=true onClick=true rect=586,18,84,24
+      textB text="Tools (1)" grow=1 fg=chip-text ellipsis=true center=true rect=596,18,64,24
+    flow h=24 padL=10 padR=10 bg=sunken control=button tip=Pick a resource: the composer gets a read of it lighten=true onClick=true rect=676,18,108,24
+      textB text="Resources (1)" grow=1 fg=chip-text ellipsis=true center=true rect=686,18,88,24
+    flow h=24 padL=10 padR=10 bg=sunken control=button tip=Pick a prompt: the composer gets a request for it lighten=true onClick=true rect=790,18,94,24
+      textB text="Prompts (1)" grow=1 fg=chip-text ellipsis=true center=true rect=800,18,74,24
+    flow h=24 padL=10 padR=10 bg=sunken control=button tip=Send a ping frame lighten=true onClick=true rect=890,18,56,24
+      textB text="Ping" grow=1 fg=chip-text ellipsis=true center=true rect=900,18,36,24
+    flow h=24 padL=10 padR=10 bg=sunken control=button tip=Empty the message log lighten=true onClick=true rect=952,18,56,24
+      textB text="Clear" grow=1 fg=chip-text ellipsis=true center=true rect=962,18,36,24
+  codeB grow=1 bg=sunken rect=0,48,1020,208
+  flow h=44 padL=12 padT=8 padR=12 padB=8 gap=6 borderT=border rect=0,256,1020,44
+    fieldB grow=1 control=field onRightClickIn=true rect=12,264,920,28
+    flow padL=10 padR=10 bg=accent control=primary tip=Send the message (Enter) lighten=true onClick=true rect=938,264,70,28
+      textB text="Send" grow=1 fg=accent-text ellipsis=true center=true rect=948,264,50,28

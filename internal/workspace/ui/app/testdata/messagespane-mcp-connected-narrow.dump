@@ -1,0 +1,22 @@
+flow grow=1 rect=0,0,420,300
+  plain h=12 grow=1 rect=0,0,420,12
+  flow h=36 padL=12 padR=12 gap=6 borderB=border rect=0,12,420,36
+    textB text="Connected" fg=muted small=true rect=12,23,58,14
+    plain grow=1
+    flow w=116 h=24 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=82,18,116,24
+      textB text="Auto-reconnect" grow=1 fg=chip-text ellipsis=true center=true rect=92,18,96,24
+    flow h=24 padL=10 padR=10 bg=sunken control=button tip=Pick a tool: the composer gets a call with its arguments filled in lighten=true onClick=true rect=204,18,84,24
+      textB text="Tools (1)" grow=1 fg=chip-text ellipsis=true center=true rect=214,18,64,24
+    flow h=24 padL=10 padR=10 bg=sunken control=button tip=Pick a resource: the composer gets a read of it lighten=true onClick=true rect=294,18,108,24
+      textB text="Resources (1)" grow=1 fg=chip-text ellipsis=true center=true rect=304,18,88,24
+    flow h=24 padL=10 padR=10 bg=sunken control=button tip=Pick a prompt: the composer gets a request for it lighten=true onClick=true rect=408,18,94,24
+      textB text="Prompts (1)" grow=1 fg=chip-text ellipsis=true center=true rect=418,18,74,24
+    flow h=24 padL=10 padR=10 bg=sunken control=button tip=Send a ping frame lighten=true onClick=true rect=508,18,56,24
+      textB text="Ping" grow=1 fg=chip-text ellipsis=true center=true rect=518,18,36,24
+    flow h=24 padL=10 padR=10 bg=sunken control=button tip=Empty the message log lighten=true onClick=true rect=570,18,56,24
+      textB text="Clear" grow=1 fg=chip-text ellipsis=true center=true rect=580,18,36,24
+  codeB grow=1 bg=sunken rect=0,48,420,208
+  flow h=44 padL=12 padT=8 padR=12 padB=8 gap=6 borderT=border rect=0,256,420,44
+    fieldB grow=1 control=field onRightClickIn=true rect=12,264,320,28
+    flow padL=10 padR=10 bg=accent control=primary tip=Send the message (Enter) lighten=true onClick=true rect=338,264,70,28
+      textB text="Send" grow=1 fg=accent-text ellipsis=true center=true rect=348,264,50,28

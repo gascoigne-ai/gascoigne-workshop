@@ -1,0 +1,12 @@
+flow grow=1 rect=0,0,1020,300
+  plain h=12 grow=1 rect=0,0,1020,12
+  flow h=36 padL=12 padR=12 gap=6 borderB=border rect=0,12,1020,36
+    textB text="Not connected" fg=muted small=true rect=12,23,77,14
+    plain grow=1 rect=95,30,667,0
+    flow w=116 h=24 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=768,18,116,24
+      textB text="Auto-reconnect" grow=1 fg=chip-text ellipsis=true center=true rect=778,18,96,24
+    flow h=24 padL=10 padR=10 bg=sunken control=button tip=Send a ping frame lighten=true onClick=true rect=890,18,56,24
+      textB text="Ping" grow=1 fg=chip-text ellipsis=true center=true rect=900,18,36,24
+    flow h=24 padL=10 padR=10 bg=sunken control=button tip=Empty the message log lighten=true onClick=true rect=952,18,56,24
+      textB text="Clear" grow=1 fg=chip-text ellipsis=true center=true rect=962,18,36,24
+  codeB grow=1 bg=sunken rect=0,48,1020,252
