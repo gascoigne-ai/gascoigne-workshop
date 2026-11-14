@@ -1,10 +1,13 @@
 package ui
 
 import (
+	"embed"
+
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model/assert"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
@@ -23,26 +26,47 @@ func (a *App) runTests(t *reqTab) {
 	}
 }
 
+//go:embed assertions.vml results.vml results-none.vml
+var assertTemplates embed.FS
+
+var (
+	assertionsTemplate = markup.MustLoad(assertTemplates, "assertions.vml")
+	resultsTemplate    = markup.MustLoad(assertTemplates, "results.vml")
+	noResultsTemplate  = markup.MustLoad(assertTemplates, "results-none.vml")
+)
+
+// assertionsHelp says how assertions are written; it goes through the
+// scope, as a template would read its {{token}} as a variable.
+const assertionsHelp = "One assertion per line: status == 200, time < 500ms, header Content-Type contains json, body contains \"ok\", json items.length > 0, json items[0].name == \"a\". set token = json access_token keeps a value as {{token}} for later requests. Lines starting with # are notes."
+
 // assertionsPane is where the assertions are written, one per line.
 func (a *App) assertionsPane(_ pane, t *reqTab, _ *ScrollState) Node {
 	sync := func() {
 		editRequest(t, editor.TestsTyped{Text: t.tests.Text})
 		t.testResults = assert.Run(t.Req.Tests, t.Resp) // live, against the response on screen
 	}
-	return Col(Grow(1), Pad(w.Gutter), Gap(8),
-		Text("One assertion per line: status == 200, time < 500ms, header Content-Type contains json, body contains \"ok\", json items.length > 0, json items[0].name == \"a\". set token = json access_token keeps a value as {{token}} for later requests. Lines starting with # are notes.", Small(), Muted()),
-		Area(&t.tests, Grow(1), Bg(w.Sunken), OnChange(sync), TextMenu(&t.tests.TextField)),
-	)
+	return assertionsTemplate.MustBuild(markup.Scope{
+		"gutter":    w.Gutter,
+		"help":      assertionsHelp,
+		"tests":     &t.tests,
+		"testsText": &t.tests.TextField,
+		"sync":      sync,
+	})
+}
+
+// resultRow is what the results template shows of one assertion: its
+// line marked as passed or failed, in the matching color.
+type resultRow struct {
+	Text  string
+	Color w.Token
 }
 
 // resultsPane lists what the assertions found.
 func (a *App) resultsPane(_ pane, t *reqTab, _ *ScrollState) Node {
 	if len(t.testResults) == 0 {
-		return Col(Grow(1), Pad(w.Gutter),
-			Text("No assertions. Write them in the request's Tests tab.", Muted()))
+		return noResultsTemplate.MustBuild(markup.Scope{"gutter": w.Gutter})
 	}
-	rows := make([]Item, 0, len(t.testResults)+1)
-	rows = append(rows, Text(assert.Summary(t.testResults), Bold()))
+	rows := make([]resultRow, 0, len(t.testResults))
 	for _, r := range t.testResults {
 		mark, color := "\u2713 ", w.OK
 		text := r.Line
@@ -52,9 +76,14 @@ func (a *App) resultsPane(_ pane, t *reqTab, _ *ScrollState) Node {
 				text += "  \u2014  " + r.Detail
 			}
 		}
-		rows = append(rows, Text(mark+text, Color(color), Mono()))
+		rows = append(rows, resultRow{Text: mark + text, Color: color})
 	}
-	return Scroll(&t.respScroll, append([]Item{Pad(w.Gutter), Gap(4)}, rows...)...)
+	return resultsTemplate.MustBuild(markup.Scope{
+		"gutter":  w.Gutter,
+		"scroll":  &t.respScroll,
+		"summary": assert.Summary(t.testResults),
+		"rows":    rows,
+	})
 }
 
 // setVariable stores a captured value in the active environment, or in the
