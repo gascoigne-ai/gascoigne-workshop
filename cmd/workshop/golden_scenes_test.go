@@ -67,7 +67,7 @@ var goldenScenes = []goldenScene{
 	{name: "request-settings", width: shotWidth, height: shotHeight, args: []string{"-pane", "Settings"}},
 	{name: "request-body-json", width: shotWidth, height: shotHeight, args: []string{"-request", "Echo", "-pane", "Body"}},
 	{name: "request-body-none", width: shotWidth, height: shotHeight, args: []string{"-pane", "Body"}},
-	{name: "request-body-file",width: shotWidth, height: shotHeight, args: []string{"-request", "Echo", "-pane", "Body", "-body", "file"}},
+	{name: "request-body-file", width: shotWidth, height: shotHeight, args: []string{"-request", "Echo", "-pane", "Body", "-body", "file"}},
 	{name: "request-body-graphql", width: shotWidth, height: shotHeight, args: []string{"-request", "Echo", "-pane", "Body", "-body", "graphql"}},
 	{name: "request-tests", width: shotWidth, height: shotHeight, args: []string{"-pane", "Tests", "-response-pane", "Tests"}},
 	{name: "request-auth", width: shotWidth, height: shotHeight, args: []string{"-request", "Auth", "-pane", "Auth"}},
