@@ -195,16 +195,23 @@ func (a *App) paneBody(p pane, t *reqTab, scroll *ScrollState) Node {
 	return paneBuilders[p.kind](a, p, t, scroll)
 }
 
+//go:embed messagepane.vml
+var messagePaneSource embed.FS
+
+var messagePaneTemplate = markup.MustLoad(messagePaneSource, "messagepane.vml")
+
 // messagePane shows a status line ("Sending...", an error) in place of
 // the pane's content.
 func (a *App) messagePane(p pane, msg string, isErr bool) Node {
-	color, bg := w.Muted, w.Bg
+	color := w.Muted
 	if isErr {
 		color = w.Error
 	}
-	return Col(Grow(1), Pad(w.Gutter), Bg(bg),
-		Lines(msg, color),
-	)
+	return messagePaneTemplate.MustBuild(markup.Scope{
+		"gutter":  w.Gutter,
+		"color":   color,
+		"message": msg,
+	})
 }
 
 func (a *App) notePane(p pane, t *reqTab, scroll *ScrollState) Node {
