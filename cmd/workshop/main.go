@@ -104,6 +104,7 @@ func main() {
 	})
 	flag.StringVar(&opts.ScreenshotDialog, "dialog", "", "open this dialog (rename, delete) on the open request before the screenshot")
 	flag.BoolVar(&opts.ScreenshotCallLog, "log", false, "open the Log dialog of calls before the screenshot, as the status bar's Log button does")
+	flag.StringVar(&opts.ScreenshotTool, "tool", "", "open the call form of this tool of the open MCP request before the screenshot, once its server announced it (with -send)")
 	flag.StringVar(&opts.ScreenshotFind, "find", "", "search the response for this text in the find bar before the screenshot (after -send's response)")
 	windowW, windowH := windowWidth, windowHeight
 	flag.Func("window", "WIDTHxHEIGHT: open the window at this size, for screenshots", func(spec string) error {

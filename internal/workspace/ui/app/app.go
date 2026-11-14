@@ -269,6 +269,7 @@ type Options struct {
 	ScreenshotDialog          string                                        // the dialog to open on the open request before the screenshot (rename, delete)
 	ScreenshotRecord          []string                                      // ACTION=KEYS recorded on the Shortcuts page before the screenshot, or ACTION left recording
 	ScreenshotCallLog         bool                                          // open the Log dialog of calls before the screenshot
+	ScreenshotTool            string                                        // open the call form of this tool of the open MCP request before the screenshot
 	SettingsPath              string                                        // settings file; "" keeps settings in memory
 	StatePath                 string                                        // remembered UI state; "" keeps it in memory
 	ThemesDir                 string                                        // folder of user theme files (*.json); "" for none
@@ -329,7 +330,7 @@ func NewApp(opts Options) (*App, error) {
 		widgets:          map[*tabs.Tab]*reqTab{},
 		bus:              bus.New(),
 		status:           "Ready",
-		shot:             screenshot{path: opts.ScreenshotPath, sendOnStart: opts.SendOnStart, set: opts.ScreenshotSet, request: opts.ScreenshotRequest, page: opts.ScreenshotPage, rawSettings: opts.ScreenshotRawSettings, sentLog: opts.ScreenshotSentLog, find: opts.ScreenshotFind, filter: opts.ScreenshotFilter, sending: opts.ScreenshotSending, openAll: opts.ScreenshotOpenAll, url: opts.ScreenshotURL, pane: opts.ScreenshotPane, toasts: opts.ScreenshotToasts, dialog: opts.ScreenshotDialog, record: opts.ScreenshotRecord, callLog: opts.ScreenshotCallLog},
+		shot:             screenshot{path: opts.ScreenshotPath, sendOnStart: opts.SendOnStart, set: opts.ScreenshotSet, request: opts.ScreenshotRequest, page: opts.ScreenshotPage, rawSettings: opts.ScreenshotRawSettings, sentLog: opts.ScreenshotSentLog, find: opts.ScreenshotFind, filter: opts.ScreenshotFilter, sending: opts.ScreenshotSending, openAll: opts.ScreenshotOpenAll, url: opts.ScreenshotURL, pane: opts.ScreenshotPane, toasts: opts.ScreenshotToasts, dialog: opts.ScreenshotDialog, record: opts.ScreenshotRecord, callLog: opts.ScreenshotCallLog, tool: opts.ScreenshotTool},
 
 		settings:     st,
 		settingFiles: settingFiles,

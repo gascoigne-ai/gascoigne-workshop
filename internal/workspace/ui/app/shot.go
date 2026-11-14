@@ -52,6 +52,8 @@ type screenshot struct {
 	dialog      string   // kind of dialog to open on the open request, a key of shotDialogs
 	record      []string // ACTION=KEYS recorded on the Shortcuts page, as a user would; a bare ACTION is left recording
 	callLog     bool     // open the Log dialog of calls, as the status bar's Log button does
+	tool        string   // name of the open MCP request's tool whose call form to open, once the server announced it
+	toolOpened  bool     // the form of tool is open
 }
 
 // shotDialogs are the dialogs -dialog opens on the open request, each
@@ -92,7 +94,23 @@ func (a *App) shotUpdate() error {
 		s.found = true
 		a.shotFind()
 	}
+	if s.tool != "" && !s.toolOpened && s.frames >= setFrame && s.sendsDone() {
+		a.shotToolForm()
+	}
 	return nil
+}
+
+// shotToolForm opens the call form of the capture's tool once the open
+// request's server announced it, as picking it from the tool menu would.
+func (a *App) shotToolForm() {
+	t := a.cur()
+	for _, tool := range t.Tools {
+		if tool.Name == a.shot.tool {
+			a.shot.toolOpened = true
+			a.openToolForm(t, tool)
+			return
+		}
+	}
 }
 
 // shotFind opens the find bar on the current response and types the query,
@@ -134,6 +152,9 @@ func (s *screenshot) ready(a *App) bool {
 		return false
 	}
 	if s.sending && !a.cur().Sending && s.frames < shotTimeout {
+		return false
+	}
+	if s.tool != "" && !s.toolOpened && s.frames < shotTimeout {
 		return false
 	}
 	return s.find == "" || s.found || s.frames >= shotTimeout

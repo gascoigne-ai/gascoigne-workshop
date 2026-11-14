@@ -194,6 +194,31 @@ func TestScreenshotOpensTheCallLog(t *testing.T) {
 	}
 }
 
+// With -tool the capture opens the call form of that tool of the open MCP
+// request, as picking it from the composer's tool menu does. The server
+// announces its tools after the connection opens, so the capture waits for
+// them.
+func TestScreenshotOpensTheFormOfTheNamedTool(t *testing.T) {
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotTool: "search"})
+	for range settleFrames {
+		a.shotUpdate()
+	}
+	if a.dialog != nil || a.shot.ready(a) {
+		t.Fatalf("dialog %+v, ready %v before the server announced the tool", a.dialog, a.shot.ready(a))
+	}
+	a.cur().Tools = []model.MCPTool{{Name: "ping"}, searchTool()}
+	a.shotUpdate()
+	if err := a.Err(); err != nil {
+		t.Fatal(err)
+	}
+	if a.dialog == nil || a.dialog.form == nil || a.dialog.Title != "Call search" {
+		t.Fatalf("dialog %+v, want the form of search", a.dialog)
+	}
+	if !a.shot.ready(a) {
+		t.Fatal("the form is open, the capture should be ready")
+	}
+}
+
 // With -open-all the capture opens every request of the collection in its
 // own tab, so the strip of open requests overflows.
 func TestScreenshotOpensEveryRequestInATab(t *testing.T) {

@@ -3,12 +3,15 @@
 package main
 
 import (
+	"context"
 	"image"
 	"io"
 	"net"
 	"net/http"
 	"strings"
 	"testing"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/exampleserver"
 )
 
 // goldenScene is one picture the program must keep drawing: the flags that
@@ -67,11 +70,13 @@ var goldenScenes = []goldenScene{
 	{name: "dialog-rename", width: shotWidth, height: shotHeight, args: []string{"-dialog", "rename"}},
 	{name: "dialog-delete", width: shotWidth, height: shotHeight, args: []string{"-dialog", "delete"}},
 	{name: "call-log", width: shotWidth, height: shotHeight, args: []string{"-send", "-log"}, mask: []image.Rectangle{durationStacked, durationStatus, logStamps, logDuration}},
+	{name: "mcp-tool-form", width: shotWidth, height: shotHeight, args: []string{"-request", "MCP Tools", "-send", "-tool", "add"}, mask: []image.Rectangle{durationStatus}},
 	{name: "response-raw", width: shotWidth, height: shotHeight, args: []string{"-send", "-set", "responseView=raw"}, mask: []image.Rectangle{durationStacked, durationStatus}},
 }
 
 func TestGoldenScenes(t *testing.T) {
 	serveExampleRoot(t) // once for all scenes: they run in parallel
+	serveExampleMCP(t)
 	for _, scene := range goldenScenes {
 		t.Run(scene.name, func(t *testing.T) {
 			t.Parallel()
@@ -109,4 +114,25 @@ func serveExampleRoot(t *testing.T) {
 	})}
 	go server.Serve(listener)
 	t.Cleanup(func() { server.Close() })
+}
+
+// serveExampleMCP runs the example server's MCP endpoint at the address the
+// sample's MCP request uses, so a scene can show a connected server and the
+// tools it announces. The other protocols get free ports nobody calls.
+func serveExampleMCP(t *testing.T) {
+	t.Helper()
+	config := exampleserver.Config{Host: "127.0.0.1", MCP: exampleserver.DefaultConfig().MCP}
+	endpoints, err := exampleserver.Listen(config)
+	if err != nil {
+		t.Skipf("the MCP port is in use, the scenes need it free: %v", err)
+	}
+	ctx, stop := context.WithCancel(context.Background())
+	served := make(chan error, 1)
+	go func() { served <- exampleserver.Serve(ctx, endpoints) }()
+	t.Cleanup(func() {
+		stop()
+		if err := <-served; err != nil {
+			t.Errorf("example MCP server: %v", err)
+		}
+	})
 }
