@@ -1,0 +1,3 @@
+<scroll state="scroll" pad="{{gutter}}">
+  <lines color="text">{{note}}</lines>
+</scroll>

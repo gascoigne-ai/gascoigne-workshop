@@ -214,10 +214,18 @@ func (a *App) messagePane(p pane, msg string, isErr bool) Node {
 	})
 }
 
+//go:embed notepane.vml
+var notePaneSource embed.FS
+
+var notePaneTemplate = markup.MustLoad(notePaneSource, "notepane.vml")
+
+// notePane shows the pane's text, such as the response's timeline.
 func (a *App) notePane(p pane, t *reqTab, scroll *ScrollState) Node {
-	return Scroll(scroll, Pad(w.Gutter),
-		Lines(p.note(t), w.Text),
-	)
+	return notePaneTemplate.MustBuild(markup.Scope{
+		"gutter": w.Gutter,
+		"scroll": scroll,
+		"note":   p.note(t),
+	})
 }
 
 func (a *App) tablePane(p pane, t *reqTab, scroll *ScrollState) Node {
