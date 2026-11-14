@@ -38,32 +38,40 @@ const (
 	tabDirtyW = 12
 )
 
-// view is the whole window as a function of the app state. Its shape:
-//
-//	Stack
-//	├─ Col                  the frame
-//	│  ├─ Row
-//	│  │  ├─ sidebar        collections tree
-//	│  │  └─ mainColumn     header, request tabs, URL bar, request | response
-//	│  └─ statusBar
-//	├─ menuView             settings, floating above, only while open
-//	└─ TooltipLayer         the tooltip of the hovered element, last so it is on top
+//go:embed window.vml
+var windowSource embed.FS
+
+var windowTemplate = markup.MustLoad(windowSource, "window.vml")
+
+// view is the whole window as a function of the app state (window.vml):
+// the collections tree beside the main column (header, request tabs, URL
+// bar, request | response) above the status bar, and the overlays over
+// them. The popup menu and the tooltip are layers that markup has no
+// element for, so they come in as slots like the views built here.
 func (a *App) view() Node {
-	return Stack(
-		Col(Bg(w.Frame),
-			Split(&a.sidebarSplit, sidebarW-1, Grow(1), MinFirst(minSidebarW), MinSecond(minMainW),
-				a.sidebar(),
-				a.mainColumn(),
-			),
-			a.statusBar(),
-		),
-		a.menuView(),
-		PopupMenuLayer(a.ctx),
-		a.dialogView(),
-		a.calls.View(a),
-		a.toastsView(),
-		TooltipLayer(&a.tips),
-	)
+	t := a.cur()
+	return windowTemplate.MustBuild(markup.Scope{
+		"sidebarSplit":   &a.sidebarSplit,
+		"sidebarDefault": sidebarW - 1,
+		"minSidebarW":    minSidebarW,
+		"minMainW":       minMainW,
+		"sidebar":        a.sidebar(),
+		"header":         a.header(),
+		"requestTabs":    a.requestTabs(),
+		"urlBar":         a.urlBar(t),
+		"paneSplit":      &a.paneSplit,
+		"minPaneSize":    minPaneSize,
+		"stacked":        a.settings.Layout == "stacked",
+		"requestPane":    a.pane(t, requestPanesFor(t), &t.paneTab, &t.reqScroll, &t.reqTabsX, nil),
+		"responsePane":   a.pane(t, responsePanesFor(t), &t.respTab, &t.respScroll, &t.respTabsX, a.responseStatus(t)),
+		"statusBar":      a.statusBar(),
+		"menu":           a.menuView(),
+		"popupMenu":      PopupMenuLayer(a.ctx),
+		"dialog":         a.dialogView(),
+		"callLog":        a.calls.View(a),
+		"toasts":         a.toastsView(),
+		"tooltips":       TooltipLayer(&a.tips),
+	})
 }
 
 // ── Sidebar ────────────────────────────────────────────────────────────
@@ -185,30 +193,6 @@ func requestBadge(protocol, method string) string {
 }
 
 // ── Main column ────────────────────────────────────────────────────────
-
-func (a *App) mainColumn() Node {
-	t := a.cur()
-	return Col(Grow(1),
-		a.header(),
-		a.requestTabs(),
-		a.urlBar(t),
-		a.panes(t),
-	)
-}
-
-// panes is the request pane and the response pane with a draggable
-// divider, side by side or stacked, as the layout setting says.
-func (a *App) panes(t *reqTab) Node {
-	items := []Item{
-		AsRatio(), Grow(1), MinFirst(minPaneSize), MinSecond(minPaneSize),
-		a.pane(t, requestPanesFor(t), &t.paneTab, &t.reqScroll, &t.reqTabsX, nil),
-		a.pane(t, responsePanesFor(t), &t.respTab, &t.respScroll, &t.respTabsX, a.responseStatus(t)),
-	}
-	if a.settings.Layout == "stacked" {
-		items = append(items, Vertical())
-	}
-	return Split(&a.paneSplit, 0.5, items...)
-}
 
 //go:embed header.vml
 var headerSource embed.FS
@@ -423,18 +407,24 @@ func (a *App) pane(t *reqTab, panes []pane, active *int, scroll, tabsX *ScrollSt
 	)
 }
 
+//go:embed responsestatus.vml
+var responseStatusSource embed.FS
+
+var responseStatusTemplate = markup.MustLoad(responseStatusSource, "responsestatus.vml")
+
 // responseStatus is "200 OK  1.4s  156.67KB", dropped when the tabs need the room.
 func (a *App) responseStatus(t *reqTab) Node {
 	if t.Resp == nil || t.Resp.Err != "" {
 		return nil
 	}
 	fg, bg := statusPill(t.Resp.Status)
-	return Row(Gap(12), PadR(w.Gutter), Optional(), AlignItems(AlignCenter),
-		Row(PadX(10), H(20), Bg(bg), Control("pill"), AlignItems(AlignCenter),
-			Text(fmt.Sprintf("%d %s", t.Resp.Status, t.Resp.StatusText), Small(), Bold(), Color(fg)),
-		),
-		Text(fmt.Sprintf("%s  %s", textfmt.Duration(t.Resp.Duration), textfmt.Size(t.Resp.Size))),
-	)
+	return responseStatusTemplate.MustBuild(markup.Scope{
+		"gutter": w.Gutter,
+		"pillFg": fg,
+		"pillBg": bg,
+		"status": fmt.Sprintf("%d %s", t.Resp.Status, t.Resp.StatusText),
+		"timing": fmt.Sprintf("%s  %s", textfmt.Duration(t.Resp.Duration), textfmt.Size(t.Resp.Size)),
+	})
 }
 
 // statusPill is the text and background colors of a response status:

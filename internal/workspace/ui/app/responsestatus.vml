@@ -1,0 +1,6 @@
+<row gap="12" pad-r="{{gutter}}" optional align-items="center">
+  <row pad-x="10" h="20" bg="{{pillBg}}" control="pill" align-items="center">
+    <text small bold color="{{pillFg}}">{{status}}</text>
+  </row>
+  <text>{{timing}}</text>
+</row>
