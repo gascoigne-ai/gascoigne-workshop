@@ -24,7 +24,13 @@ func FloatCenter() Option {
 // offset from the center, in pixels; the zero value is the center. The
 // application owns it, like a scroll state, so it survives the per-frame
 // rebuild.
-type MoveState struct{ X, Y int }
+type MoveState struct {
+	X, Y int
+
+	active         bool
+	startX, startY int // the pointer when the drag began
+	fromX, fromY   int // the offset when the drag began
+}
 
 // Moved moves a FloatCenter element by the offset in state, so the user can
 // drag it; the element is kept inside its Stack.
@@ -39,3 +45,8 @@ func FocusScope() Option { return func(e *El) { e.focusScope = true } }
 // OnRightClick runs f with the pointer position when the element is
 // right-clicked.
 func OnRightClick(f func(x, y int)) Option { return func(e *El) { e.onRight = f } }
+
+// DragHandle marks the element as a place to drag its Moved ancestor by:
+// a dialog's title bar. Clickable and focusable elements inside it (a
+// close button, a search field) keep their clicks.
+func DragHandle() Option { return func(e *El) { e.dragHandle = true } }

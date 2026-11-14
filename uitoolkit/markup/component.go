@@ -771,6 +771,7 @@ var attributes = map[string]func(v string) (view.Option, error){
 	"clip":            flagAttr("clip", view.Clip),
 	"modal":           flagAttr("modal", view.Modal),
 	"float-center":    flagAttr("float-center", view.FloatCenter),
+	"drag-handle":     flagAttr("drag-handle", view.DragHandle),
 	"float-at":        intsAttr("float-at", 2, func(n []int) view.Option { return view.FloatAt(n[0], n[1]) }),
 	"float-tr":        intsAttr("float-tr", 2, func(n []int) view.Option { return view.FloatTR(n[0], n[1]) }),
 	"edge-t":          tokenAttr(view.EdgeT),

@@ -37,7 +37,7 @@ func DialogTitle(title string, items ...Item) *El {
 		CrossIcon(Grow(1)),
 	)
 	bar = Row(append(append([]Item{
-		H(core.DialogTitleH), PadX(16), Gap(8), AlignItems(AlignCenter), BorderB(core.BorderSoft), Text(title, Bold()),
+		H(core.DialogTitleH), DragHandle(), PadX(16), Gap(8), AlignItems(AlignCenter), BorderB(core.BorderSoft), Text(title, Bold()),
 	}, items...), closeButton)...)
 	return bar
 }

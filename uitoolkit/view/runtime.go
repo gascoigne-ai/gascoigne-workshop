@@ -242,6 +242,7 @@ func (e *El) update(c *core.Ctx) bool {
 		return true
 	}
 	e.b.update(e, c)
+	e.dragByHandle(c)
 	if e.onClick != nil && c.In.Hit(e.rect) {
 		e.onClick()
 	}
@@ -371,4 +372,63 @@ func findScope(e *El) *El {
 		}
 	}
 	return found
+}
+
+// dragByHandle moves a Moved element while the pointer drags one of its
+// handles: a press on a handle starts it, the offset follows the pointer
+// until the button is released, and a double click puts the element back in
+// the center.
+func (e *El) dragByHandle(c *core.Ctx) {
+	m := e.fl.moved
+	if m == nil {
+		return
+	}
+	if m.active {
+		if !c.In.Held {
+			m.active = false
+			return
+		}
+		c.Cursor = core.CursorMove
+		m.X, m.Y = m.fromX+c.In.X-m.startX, m.fromY+c.In.Y-m.startY
+		return
+	}
+	if !c.In.Click || !e.rect.Contains(c.In.X, c.In.Y) || !e.onHandle(c.In.X, c.In.Y) {
+		return
+	}
+	if c.In.Clicks >= 2 {
+		m.X, m.Y = 0, 0
+		return
+	}
+	m.active, m.startX, m.startY, m.fromX, m.fromY = true, c.In.X, c.In.Y, m.X, m.Y
+}
+
+// onHandle reports whether the point is on a drag handle of e that no
+// clickable or focusable element inside the handle covers.
+func (e *El) onHandle(x, y int) bool {
+	if e.hidden {
+		return false
+	}
+	if e.dragHandle && e.rect.Contains(x, y) {
+		return !e.coversWithControl(x, y)
+	}
+	for _, k := range e.kids {
+		if k.onHandle(x, y) {
+			return true
+		}
+	}
+	return false
+}
+
+// coversWithControl reports whether a descendant that takes clicks or focus
+// is at the point.
+func (e *El) coversWithControl(x, y int) bool {
+	for _, k := range e.kids {
+		if k.hidden || !k.rect.Contains(x, y) {
+			continue
+		}
+		if k.onClick != nil || k.onClickAt != nil || k.focusable() || k.coversWithControl(x, y) {
+			return true
+		}
+	}
+	return false
 }
