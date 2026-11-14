@@ -1,0 +1,12 @@
+stack rect=0,0,1280,800
+  flow bg=shadow rect=0,0,1280,800
+  flow w=380 padL=16 padT=16 padR=16 padB=16 floatMode=2 gap=12 bg=bg control=menu float=true modal=true focusScope=true shadow=true onDismiss=true rect=450,336,380,128
+    textB text="Delete Search Repos?" h=22 rect=466,352,348,22
+    flow rect=466,386,348,22
+      textB text="This cannot be undone." h=22 fg=muted rect=466,386,348,22
+    flow h=28 gap=8 rect=466,420,348,28
+      plain grow=1 rect=466,420,172,28
+      flow padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=646,420,80,28
+        textB text="Cancel" grow=1 fg=chip-text ellipsis=true center=true rect=656,420,60,28
+      flow padL=10 padR=10 bg=accent control=primary lighten=true onClick=true rect=734,420,80,28
+        textB text="Delete" grow=1 fg=accent-text ellipsis=true center=true rect=744,420,60,28

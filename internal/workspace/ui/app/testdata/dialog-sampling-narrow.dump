@@ -1,0 +1,17 @@
+stack rect=0,0,480,360
+  flow bg=shadow rect=0,0,480,360
+  flow w=380 padL=16 padT=16 padR=16 padB=16 floatMode=2 gap=12 bg=bg control=menu float=true modal=true focusScope=true shadow=true onDismiss=true rect=50,52,380,256
+    textB text="Sampling request" h=22 rect=66,68,348,22
+    flow rect=66,102,348,110
+      textB text="The MCP server asks for a model reply. Type one, or decline." h=22 fg=muted rect=66,102,348,22
+      textB h=22 fg=muted rect=66,124,348,22
+      textB text="System: Be brief" h=22 fg=muted rect=66,146,348,22
+      textB h=22 fg=muted rect=66,168,348,22
+      textB text="user: Say hi" h=22 fg=muted rect=66,190,348,22
+    fieldB h=28 bg=sunken control=field onRightClickIn=true rect=66,224,348,28
+    flow h=28 gap=8 rect=66,264,348,28
+      plain grow=1 rect=66,264,164,28
+      flow padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=238,264,80,28
+        textB text="Decline" grow=1 fg=chip-text ellipsis=true center=true rect=248,264,60,28
+      flow padL=10 padR=10 bg=accent control=primary lighten=true onClick=true rect=326,264,88,28
+        textB text="Send reply" grow=1 fg=accent-text ellipsis=true center=true rect=336,264,68,28

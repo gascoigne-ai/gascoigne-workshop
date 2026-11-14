@@ -1,0 +1,11 @@
+stack rect=0,0,480,360
+  flow bg=shadow rect=0,0,480,360
+  flow w=380 padL=16 padT=16 padR=16 padB=16 floatMode=2 gap=12 bg=bg control=menu float=true modal=true focusScope=true shadow=true onDismiss=true rect=50,113,380,134
+    textB text="Rename" h=22 rect=66,129,348,22
+    fieldB h=28 bg=sunken control=field onRightClickIn=true rect=66,163,348,28
+    flow h=28 gap=8 rect=66,203,348,28
+      plain grow=1 rect=66,203,172,28
+      flow padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=246,203,80,28
+        textB text="Cancel" grow=1 fg=chip-text ellipsis=true center=true rect=256,203,60,28
+      flow padL=10 padR=10 bg=accent control=primary lighten=true onClick=true rect=334,203,80,28
+        textB text="Rename" grow=1 fg=accent-text ellipsis=true center=true rect=344,203,60,28

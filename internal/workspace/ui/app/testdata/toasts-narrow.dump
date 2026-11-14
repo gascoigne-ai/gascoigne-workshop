@@ -1,0 +1,6 @@
+stack rect=0,0,480,360
+  flow w=320 floatTop=246 floatRight=148 floatMode=1 gap=6 float=true rect=148,246,320,78
+    flow h=36 padL=12 padR=12 bg=panel border=border onClick=true shadow=true rect=148,246,320,36
+      textB text="Cookies cleared" grow=1 fg=text ellipsis=true rect=160,246,296,36
+    flow h=36 padL=12 padR=12 bg=panel border=error onClick=true shadow=true rect=148,288,320,36
+      textB text="Enter the gRPC server first, for example grpc://localhost:50051" grow=1 fg=error ellipsis=true rect=160,288,296,36
