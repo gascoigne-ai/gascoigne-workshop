@@ -177,8 +177,6 @@ func (a *App) explorerList(t *reqTab) Node {
 		"scroll":  &t.listScroll,
 		"entries": entries,
 		"listW":   explorerListW,
-		"tabBarH": w.TabBarH,
-		"tabGap":  w.TabGap,
 		"gutter":  w.Gutter,
 	})
 }
