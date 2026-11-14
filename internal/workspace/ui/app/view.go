@@ -393,18 +393,24 @@ func splitVars(s string) []urlSeg {
 	return segs
 }
 
-// pane is one tabbed area: a tab strip, with extra at its right end,
-// above the body of the active tab.
+//go:embed pane.vml
+var paneSource embed.FS
+
+var paneTemplate = markup.MustLoad(paneSource, "pane.vml")
+
+// pane is one tabbed area (pane.vml): a tab strip, with extra at its
+// right end when there is one, above the body of the active tab.
 func (a *App) pane(t *reqTab, panes []pane, active *int, scroll, tabsX *ScrollState, extra Node) Node {
 	selectTab := func(i int) { *active, scroll.Y = i, 0 }
 	*active = min(*active, len(panes)-1) // a socket has fewer response panes
-	return Col(Grow(1), Bg(w.Bg),
-		TabBar(
-			ScrollTabs(tabsX, a.tabItems(panes, t), *active, OnSelect(selectTab)),
-			extra,
-		),
-		a.paneBody(panes[*active], t, scroll),
-	)
+	return paneTemplate.MustBuild(markup.Scope{
+		"tabsX":     tabsX,
+		"tabs":      a.tabItems(panes, t),
+		"active":    *active,
+		"selectTab": selectTab,
+		"extra":     extra,
+		"body":      a.paneBody(panes[*active], t, scroll),
+	})
 }
 
 //go:embed responsestatus.vml

@@ -1,0 +1,7 @@
+<col grow="1" bg="bg">
+  <tab-bar>
+    <scroll-tabs state="tabsX" items="tabs" active="{{active}}" on-select="selectTab"/>
+    <slot if="extra" name="extra"/>
+  </tab-bar>
+  <slot name="body"/>
+</col>
