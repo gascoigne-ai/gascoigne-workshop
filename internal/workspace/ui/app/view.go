@@ -210,23 +210,22 @@ func (a *App) panes(t *reqTab) Node {
 	return Split(&a.paneSplit, 0.5, items...)
 }
 
+//go:embed header.vml
+var headerSource embed.FS
+
+var headerTemplate = markup.MustLoad(headerSource, "header.vml")
+
+// header is the banner over the main column: the collection's name, the
+// environment chip and the settings menu button.
 func (a *App) header() Node {
-	return markup.View(`
-		<row h="44" pad-x="12" bg="hero" control="hero">
-		  <text bold color="hero-text">{{title}}</text>
-		  <spacer/>
-		  <slot name="env"/>
-		  <spacer w="12"/>
-		  <row w="44" on-click="toggleMenu" tooltip="{{settingsTip}}">
-		    <icon name="dots" grow="1" color="hero-muted" hover-color="hero-text"/>
-		  </row>
-		</row>`,
-		markup.Scope{
-			"title":       a.col.Name,
-			"env":         a.envChip(),
-			"toggleMenu":  a.toggleSettings,
-			"settingsTip": a.hint("Settings", "settings"),
-		})
+	return headerTemplate.MustBuild(markup.Scope{
+		"headerH":     headerH,
+		"gutter":      w.Gutter,
+		"title":       a.col.Name,
+		"env":         a.envChip(),
+		"toggleMenu":  a.toggleSettings,
+		"settingsTip": a.hint("Settings", "settings"),
+	})
 }
 
 //go:embed requesttabs.vml

@@ -1,0 +1,9 @@
+<row h="{{headerH}}" pad-x="{{gutter}}" bg="hero" control="hero">
+  <text bold color="hero-text">{{title}}</text>
+  <spacer/>
+  <slot name="env"/>
+  <spacer w="{{gutter}}"/>
+  <row w="{{headerH}}" on-click="toggleMenu" tooltip="{{settingsTip}}">
+    <icon name="dots" grow="1" color="hero-muted" hover-color="hero-text"/>
+  </row>
+</row>
