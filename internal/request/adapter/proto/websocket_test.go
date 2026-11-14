@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -71,6 +72,66 @@ func TestWebSocketSessionLogsMessagesInBothDirections(t *testing.T) {
 	}
 	if e := next(t, s); e.Dir != Received || e.Text != "hi there" || e.Kind != "text" {
 		t.Fatalf("received %+v", e)
+	}
+}
+
+// A send was logged only after its write, so an echo that came back in
+// between was logged first, and the test above failed now and then (about
+// 1 run in 100 under load). The server here echoes only once the send is
+// being logged, which makes that gap certain: the send must be logged
+// before the echo.
+func TestWebSocketSessionLogsASendBeforeItsEcho(t *testing.T) {
+	cases := []struct {
+		name string
+		send func(session *wsSession) error
+		kind string
+	}{
+		{"text", func(session *wsSession) error { return session.Send("hi there") }, "text"},
+		{"binary", func(session *wsSession) error { return session.SendBinary([]byte{0xde, 0xad}) }, "binary"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			release := make(chan struct{})
+			url := wsServer(t, func(c *ws.Conn, _ *http.Request) {
+				message, err := c.Read()
+				if err != nil {
+					return
+				}
+				select {
+				case <-release:
+				case <-time.After(3 * time.Second):
+				}
+				c.Write(message.Type, message.Data)
+				c.Read() // until the client closes
+			})
+			conn, err := ws.Dial(context.Background(), url, ws.Options{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			session := &wsSession{conn: conn, events: make(chan Event, eventBuffer), done: make(chan struct{})}
+			var logging atomic.Bool
+			session.now = func() time.Time {
+				if logging.CompareAndSwap(false, true) { // the first event logged is the send
+					close(release)
+					deadline := time.Now().Add(300 * time.Millisecond)
+					for len(session.events) == 0 && time.Now().Before(deadline) {
+						time.Sleep(time.Millisecond)
+					}
+				}
+				return time.Now()
+			}
+			go session.readLoop()
+			defer session.Close()
+			if err := tc.send(session); err != nil {
+				t.Fatal(err)
+			}
+			if e := next(t, session); e.Dir != Sent || e.Kind != tc.kind {
+				t.Fatalf("first event %+v, want the %s send", e, tc.kind)
+			}
+			if e := next(t, session); e.Dir != Received || e.Kind != tc.kind {
+				t.Fatalf("second event %+v, want the %s echo", e, tc.kind)
+			}
+		})
 	}
 }
 

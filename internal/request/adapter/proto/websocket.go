@@ -209,11 +209,10 @@ func (s *wsSession) Send(text string) error {
 	if err := s.alive(); err != nil {
 		return err
 	}
-	if err := s.conn.Write(ws.Text, []byte(text)); err != nil {
-		return err
-	}
+	// Logged before the write: an echo can arrive as soon as the bytes are
+	// out, and the read loop would log it ahead of the message it answers.
 	s.emit(Event{Dir: Sent, Kind: "text", Text: text, Size: len(text)})
-	return nil
+	return s.conn.Write(ws.Text, []byte(text))
 }
 
 // SendBinary implements BinarySender. The log shows the bytes as hex.
@@ -221,11 +220,8 @@ func (s *wsSession) SendBinary(data []byte) error {
 	if err := s.alive(); err != nil {
 		return err
 	}
-	if err := s.conn.Write(ws.Binary, data); err != nil {
-		return err
-	}
-	s.emit(Event{Dir: Sent, Kind: "binary", Text: hex.EncodeToString(data), Size: len(data)})
-	return nil
+	s.emit(Event{Dir: Sent, Kind: "binary", Text: hex.EncodeToString(data), Size: len(data)}) // before the write, as in Send
+	return s.conn.Write(ws.Binary, data)
 }
 
 func (s *wsSession) Ping() error {
