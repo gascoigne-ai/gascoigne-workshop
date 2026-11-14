@@ -76,6 +76,7 @@ var pages = []page{
 	{"shortcuts", "Shortcuts", ""},
 	{"requests", "Requests", "Requests"},
 	{"general", "General", "General"},
+	{"system", "System", ""},
 }
 
 // SettingsDialog is the state of the settings dialog. The zero value is ready.

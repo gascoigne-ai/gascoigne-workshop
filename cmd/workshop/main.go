@@ -27,6 +27,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/settingsfile"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/systeminfo"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/statefile"
 	ui "github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/ui/app"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/ui/appicon"
@@ -81,12 +82,13 @@ func main() {
 	opts.Previews = preview.Browser{Lifetime: previewLifetime}
 	opts.Clock = systemclock.Clock{}
 	opts.SettingsFiles = settingsfile.Files{}
+	opts.System = systeminfo.Info{Graphics: systeminfo.Ebiten}
 	flag.StringVar(&opts.ThemesDir, "themes", settingsfile.ThemesDir(), "folder of theme files (*.json) that extend the dark or light theme; empty for none")
 	flag.StringVar(&opts.WorkspaceDir, "workspace", "", "folder to load and save the collection; empty uses the last one, else the client config (release build); the default build ignores the last one and shows the example server")
 	opts.DefaultWorkspace = settingsfile.DefaultWorkspace()
 	iconPNG := flag.String("icon-png", "", "write the program icon (256x256 PNG) to this path and exit, for packaging")
 	flag.StringVar(&opts.ScreenshotRequest, "request", "", "open the request with this name before the screenshot")
-	flag.StringVar(&opts.ScreenshotPage, "page", "", "open the settings dialog on this page (appearance, colors, shortcuts, requests, general) before the screenshot")
+	flag.StringVar(&opts.ScreenshotPage, "page", "", "open the settings dialog on this page (appearance, colors, shortcuts, requests, general, system) before the screenshot")
 	flag.BoolVar(&opts.ScreenshotRawSettings, "raw-settings", false, "open the settings dialog on the text of settings.json before the screenshot")
 	flag.BoolVar(&opts.ScreenshotSentLog, "sent", false, "show the log of sent requests in the sidebar before the screenshot")
 	flag.StringVar(&opts.ScreenshotFilter, "filter", "", "type this text into the sidebar's filter before the screenshot")

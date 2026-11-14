@@ -225,7 +225,8 @@ type App struct {
 	histories          func(dir string) rport.History // nil keeps no history
 	fonts              sport.FontStore
 	display            sport.DisplayScale
-	windowScale        float64 // window units per logical pixel, set by Layout
+	system             sport.SystemInfo // what the System page of the settings shows; nil has no report
+	windowScale        float64          // window units per logical pixel, set by Layout
 	settingFiles       sport.SettingsStore
 	previews           rport.BodyPreview // shows a response body in the browser, replaced in tests
 	sampler            core.Sampler
@@ -283,6 +284,7 @@ type Options struct {
 	States                    port.StateStore                               // where the UI state is kept; nil keeps none
 	Files                     port.FileDialog                               // the desktop file chooser; nil asks for paths as text
 	History                   func(dir string) rport.History                // the history in a folder; nil keeps none
+	System                    sport.SystemInfo                              // the system and GPU report of the settings; nil has none
 	Display                   sport.DisplayScale                            // the desktop's display scale when the window system hides it; nil has none
 	Fonts                     sport.FontStore                               // installed fonts; nil has none
 	SettingsFiles             sport.SettingsStore                           // the settings file; nil reads the defaults and cannot save
@@ -326,6 +328,7 @@ func NewApp(opts Options) (*App, error) {
 		ctx:              ctx,
 		col:              startCollection(opts.Sample),
 		clients:          opts.Clients,
+		system:           opts.System,
 		defaultWorkspace: opts.DefaultWorkspace,
 		ignoreRemembered: opts.IgnoreRememberedWorkspace,
 		expanded:         map[*model.Folder]bool{},

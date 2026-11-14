@@ -6,7 +6,9 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/sysinfo"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/shortcutpage"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/systempage"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -79,9 +81,22 @@ func (a *App) ExtraPage(id string) Node {
 		return a.colors.View(a)
 	case "shortcuts":
 		return a.shortcutKeys.View(a)
+	case "system":
+		return systempage.View(a)
 	}
 	return nil
 }
+
+// System is the report the System page shows: empty without a source.
+func (a *App) System() sysinfo.Report {
+	if a.system == nil {
+		return sysinfo.Report{}
+	}
+	return a.system.Read()
+}
+
+// CopyText puts text on the clipboard.
+func (a *App) CopyText(text string) { _ = a.ctx.Clipboard.Write(text) } // the clipboard reports its own failures
 
 // applySettings makes s the settings in effect, with everything that
 // follows from them.
