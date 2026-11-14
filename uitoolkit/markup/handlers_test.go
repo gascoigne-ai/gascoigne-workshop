@@ -26,6 +26,7 @@ func TestHandlerAttributesMatchTheGoOptions(t *testing.T) {
 		{"on-change", func() {}, view.OnChange(func() {})},
 		{"on-select", func(int) {}, view.OnSelect(func(int) {})},
 		{"on-dismiss", func() {}, view.OnDismiss(func() {})},
+		{"moved", &view.MoveState{}, view.Moved(&view.MoveState{})},
 	}
 	for _, test := range tests {
 		t.Run(test.attribute, func(t *testing.T) {

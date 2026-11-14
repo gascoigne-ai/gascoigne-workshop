@@ -33,7 +33,7 @@
 //	Events+    OnSelect SelectHandler DismissHandler ChangeHandler   Separator   (Button, Tabs, Menu, Dialog and the rest of the ready-made widgets are in package widget)
 //	Flow       If When For Frag
 //	Extend     Behavior Base Linear Custom Describer PreUpdater OverDrawer Scroller Focusable Focuser Linear.LayoutIn (El.Inner El.InFlow El.KeepsInView El.Behavior El.Place El.FixedSize El.ColorToken El.HoverColorToken)   a component outside this package is an element through these
-//	Overlay    FloatTR FloatAt FloatCenter Modal OnDismiss FocusScope
+//	Overlay    FloatTR FloatAt FloatCenter Moved MoveState Modal OnDismiss FocusScope
 //
 // A side is a letter suffix (PadL, PadT, PadR, PadB) and an axis is X or
 // Y (PadX is left and right). The same options are the attributes of a
@@ -344,6 +344,7 @@ type floatOpts struct {
 	on         bool
 	top, right int
 	mode       int // floatCorner, floatPoint or floatMiddle
+	moved      *MoveState
 }
 
 // SelectHandler is the function given with OnSelect, nil for none. Widgets

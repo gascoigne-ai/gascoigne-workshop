@@ -427,7 +427,12 @@ func floatRect(k *El, in core.Rect, w, h int) core.Rect {
 		}
 		return core.Rect{X: max(x, in.X), Y: max(y, in.Y), W: w, H: h}
 	case floatMiddle:
-		return core.Rect{X: in.X + (in.W-w)/2, Y: in.Y + (in.H-h)/2, W: w, H: h}
+		r := core.Rect{X: in.X + (in.W-w)/2, Y: in.Y + (in.H-h)/2, W: w, H: h}
+		if p := k.fl.moved; p != nil {
+			r.X = min(max(r.X+p.X, in.X), in.X+in.W-w)
+			r.Y = min(max(r.Y+p.Y, in.Y), in.Y+in.H-h)
+		}
+		return r
 	}
 	return core.Rect{X: in.X + in.W - k.fl.right - w, Y: in.Y + k.fl.top, W: w, H: h}
 }

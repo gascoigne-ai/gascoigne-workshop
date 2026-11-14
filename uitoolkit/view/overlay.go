@@ -20,6 +20,18 @@ func FloatCenter() Option {
 	return func(e *El) { e.fl.on, e.fl.mode = true, floatMiddle }
 }
 
+// MoveState is where the user dragged a centered floating element: its
+// offset from the center, in pixels; the zero value is the center. The
+// application owns it, like a scroll state, so it survives the per-frame
+// rebuild.
+type MoveState struct{ X, Y int }
+
+// Moved moves a FloatCenter element by the offset in state, so the user can
+// drag it; the element is kept inside its Stack.
+func Moved(state *MoveState) Option {
+	return func(e *El) { e.fl.moved = state }
+}
+
 // FocusScope makes Tab cycle only through the focusable elements inside
 // this one while it exists, as a dialog needs.
 func FocusScope() Option { return func(e *El) { e.focusScope = true } }

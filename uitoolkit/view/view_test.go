@@ -251,6 +251,26 @@ func TestFloatCenterCentersTheElement(t *testing.T) {
 	}
 }
 
+func TestMovedShiftsACenteredElementAndKeepsItInsideTheStack(t *testing.T) {
+	tests := []struct {
+		name string
+		move MoveState
+		want core.Rect
+	}{
+		{"zero is the center", MoveState{}, core.Rect{X: 150, Y: 80, W: 100, H: 40}},
+		{"offset from the center", MoveState{X: -50, Y: 30}, core.Rect{X: 100, Y: 110, W: 100, H: 40}},
+		{"stops at the left and top edge", MoveState{X: -999, Y: -999}, core.Rect{X: 0, Y: 0, W: 100, H: 40}},
+		{"stops at the right and bottom edge", MoveState{X: 999, Y: 999}, core.Rect{X: 300, Y: 160, W: 100, H: 40}},
+	}
+	for _, tt := range tests {
+		dialog := box(W(100), H(40), FloatCenter(), Moved(&tt.move))
+		Layout(testCtx(t), Stack(box(), dialog), 400, 200)
+		if dialog.rect != tt.want {
+			t.Errorf("%s: dialog = %+v, want %+v", tt.name, dialog.rect, tt.want)
+		}
+	}
+}
+
 func TestOnRightClickGetsThePointer(t *testing.T) {
 	var gx, gy, n int
 	root := Row(box(W(100), OnRightClick(func(x, y int) { gx, gy, n = x, y, n+1 })))

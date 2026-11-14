@@ -727,6 +727,7 @@ var handlers = map[string]handlerAttr{
 	"on-change":         handler(view.OnChange),
 	"on-select":         handler(view.OnSelect),
 	"on-dismiss":        handler(view.OnDismiss),
+	"moved":             stateHandler(view.Moved),
 }
 
 // attributes turn an attribute value (already interpolated) into an
