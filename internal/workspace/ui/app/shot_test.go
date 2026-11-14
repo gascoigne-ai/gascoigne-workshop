@@ -462,3 +462,57 @@ func TestScreenshotWithAnUnknownRequestFails(t *testing.T) {
 		t.Error("a request that is not in the collection must be reported, not silently shown as the default")
 	}
 }
+
+// With -record the capture records keys on the Shortcuts page through the
+// path a key press takes, so a scene draws a row's conflict, its notes and
+// its recording state.
+func TestScreenshotRecordsShortcutKeys(t *testing.T) {
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotPage: "shortcuts",
+		ScreenshotRecord: []string{"close-tab=Ctrl+L", "new-request=J", "send=Ctrl+C"}})
+	for range setFrame {
+		if err := a.shotUpdate(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := a.Err(); err != nil {
+		t.Fatal(err)
+	}
+	if pending, ok := a.shortcutKeys.Pending("close-tab"); !ok || pending.OtherName != "Focus URL" {
+		t.Errorf("close-tab pending %+v, want a conflict with Focus URL", pending)
+	}
+	if got := a.settings.Shortcuts["new-request"]; got != "J" {
+		t.Errorf("new-request is %q, want J", got)
+	}
+	if a.shortcutKeys.Recording() != "send" || !strings.Contains(a.shortcutKeys.Note("send"), "text editing") {
+		t.Errorf("recording %q, note %q, want send still recording after its refused key", a.shortcutKeys.Recording(), a.shortcutKeys.Note("send"))
+	}
+}
+
+// A bare action is left recording, so a scene shows "Press keys...".
+func TestScreenshotLeavesABareActionRecording(t *testing.T) {
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotRecord: []string{"close-tab"}})
+	for range setFrame {
+		if err := a.shotUpdate(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if a.shortcutKeys.Recording() != "close-tab" {
+		t.Fatalf("recording %q, want close-tab", a.shortcutKeys.Recording())
+	}
+}
+
+// An unknown action or keys that do not parse end the run with an error, so
+// a golden never passes for a page that shows nothing recorded.
+func TestScreenshotWithABadRecordFails(t *testing.T) {
+	for _, spec := range []string{"nope=Ctrl+K", "close-tab=Ctrl+Nope"} {
+		t.Run(spec, func(t *testing.T) {
+			a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotRecord: []string{spec}})
+			for range setFrame {
+				a.shotUpdate()
+			}
+			if a.Err() == nil || !a.shot.captured {
+				t.Fatalf("err = %v, captured = %v, want the run ended with an error", a.Err(), a.shot.captured)
+			}
+		})
+	}
+}

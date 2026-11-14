@@ -48,6 +48,7 @@ var goldenScenes = []goldenScene{
 	{name: "request-grpc", width: shotWidth, height: shotHeight, args: []string{"-request", "gRPC Health"}},
 	{name: "settings-colors", width: shotWidth, height: shotHeight, args: []string{"-page", "colors"}},
 	{name: "settings-shortcuts", width: shotWidth, height: shotHeight, args: []string{"-page", "shortcuts"}},
+	{name: "settings-shortcuts-edited", width: shotWidth, height: shotHeight, args: []string{"-page", "shortcuts", "-record", "close-tab=Ctrl+L", "-record", "new-request=J", "-record", "duplicate-row=Backspace", "-record", "send=Ctrl+C"}},
 	{name: "settings-requests", width: shotWidth, height: shotHeight, args: []string{"-page", "requests"}},
 	{name: "settings-general", width: shotWidth, height: shotHeight, args: []string{"-page", "general"}},
 	{name: "settings-json", width: shotWidth, height: shotHeight, args: []string{"-raw-settings"}},

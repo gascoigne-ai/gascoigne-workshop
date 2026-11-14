@@ -98,6 +98,10 @@ func main() {
 		opts.ScreenshotToasts = append(opts.ScreenshotToasts, text)
 		return nil
 	})
+	flag.Func("record", "ACTION=KEYS: record KEYS for the shortcut ACTION on the Shortcuts page before the screenshot; a bare ACTION is left recording (repeatable)", func(spec string) error {
+		opts.ScreenshotRecord = append(opts.ScreenshotRecord, spec)
+		return nil
+	})
 	flag.StringVar(&opts.ScreenshotDialog, "dialog", "", "open this dialog (rename, delete) on the open request before the screenshot")
 	flag.StringVar(&opts.ScreenshotFind, "find", "", "search the response for this text in the find bar before the screenshot (after -send's response)")
 	windowW, windowH := windowWidth, windowHeight

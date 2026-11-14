@@ -5,12 +5,15 @@ import (
 	"image"
 	"image/png"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/tree"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -47,6 +50,7 @@ type screenshot struct {
 	pane        string   // label of the request pane to show, such as Settings
 	toasts      []string // texts shown as error toasts
 	dialog      string   // kind of dialog to open on the open request, a key of shotDialogs
+	record      []string // ACTION=KEYS recorded on the Shortcuts page, as a user would; a bare ACTION is left recording
 }
 
 // shotDialogs are the dialogs -dialog opens on the open request, each
@@ -240,6 +244,13 @@ func (a *App) showShotTarget() {
 		a.prefs.Cat = s.page
 		a.menu = true
 	}
+	for _, spec := range s.record {
+		if err := a.shotRecord(spec); err != nil {
+			s.err = err
+			s.captured = true
+			return
+		}
+	}
 	if s.rawSettings {
 		a.prefs.OpenRaw(a)
 		a.menu = true
@@ -258,6 +269,26 @@ func (a *App) showShotTarget() {
 	if s.sending {
 		a.send(a.cur())
 	}
+}
+
+// shotRecord starts recording on the action spec names and, when spec
+// gives keys, delivers them as the frame's input the way a key press is.
+func (a *App) shotRecord(spec string) error {
+	id, keys, hasKeys := strings.Cut(spec, "=")
+	known := slices.ContainsFunc(shortcuts, func(candidate shortcut) bool { return candidate.id == id })
+	if !known {
+		return fmt.Errorf("screenshot record: %q is not a shortcut action", id)
+	}
+	a.shortcutKeys.Start(id)
+	if !hasKeys {
+		return nil
+	}
+	binding, err := engine.ParseBinding(keys)
+	if err != nil {
+		return fmt.Errorf("screenshot record %s: %w", id, err)
+	}
+	a.shortcutKeys.RecordKey(a, core.Input{Keys: []ebiten.Key{binding.Key}, Ctrl: binding.Ctrl, Shift: binding.Shift, Alt: binding.Alt})
+	return nil
 }
 
 // showShotPane selects the open request's pane with this label; it reports
