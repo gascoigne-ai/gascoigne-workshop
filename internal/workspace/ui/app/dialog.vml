@@ -1,0 +1,4 @@
+<!-- An MCP tool's typed form, when the dialog has one, sits between its body and its input. -->
+<message-dialog state="state" on-dismiss="dismiss">
+  <slot if="form" name="form"/>
+</message-dialog>

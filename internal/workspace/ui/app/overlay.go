@@ -1,12 +1,15 @@
 package ui
 
 import (
+	"embed"
+
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/ui/mcpform"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/overlay"
 
 	"github.com/hajimehoshi/ebiten/v2"
 
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
@@ -72,12 +75,26 @@ func (a *App) dialogDefault() {
 	}
 }
 
+//go:embed dialog.vml toasts.vml
+var overlayTemplates embed.FS
+
+var (
+	dialogTemplate = markup.MustLoad(overlayTemplates, "dialog.vml")
+	toastsTemplate = markup.MustLoad(overlayTemplates, "toasts.vml")
+)
+
+// dialogView is the open dialog, nothing when none is open: a template
+// always builds its element, so Go decides whether there is one.
 func (a *App) dialogView() Node {
 	d := a.dialog
 	if d == nil {
 		return nil
 	}
-	return MessageDialog(&d.DialogState, OnDismiss(a.closeDialog), a.dialogForm(d))
+	return dialogTemplate.MustBuild(markup.Scope{
+		"state":   &d.DialogState,
+		"dismiss": a.closeDialog,
+		"form":    a.dialogForm(d),
+	})
 }
 
 // ---- toasts ----------------------------------------------------------------
@@ -103,7 +120,16 @@ func (a *App) clipboardNote(msg string, isErr bool) {
 	a.status = msg
 }
 
-func (a *App) toastsView() Node { return Toasts(&a.toasts, a.w, a.h, statusH) }
+// toastsView is the stack of toasts in the window's bottom-right corner,
+// above the status bar.
+func (a *App) toastsView() Node {
+	return toastsTemplate.MustBuild(markup.Scope{
+		"stack":   &a.toasts,
+		"width":   a.w,
+		"height":  a.h,
+		"statusH": statusH,
+	})
+}
 
 // ---- keyboard --------------------------------------------------------------
 
