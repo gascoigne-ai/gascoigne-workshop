@@ -23,34 +23,36 @@ func ResizableDialog(state *ResizeState, minW, minH, maxW, maxH int, items ...It
 	return Frag(Row(Bg(core.Shadow)), Resizable(state, minW, minH, maxW, maxH, append(append([]Item{}, dialogLook...), items...)...))
 }
 
-// DialogTitle is the title bar of a dialog, a bar of its own on the window
-// chrome color with a strong line under it and a hover tint: the title, any
-// items you give (a DialogSubtitle), free room and a close button at the
-// end. The user drags the dialog by the bar (the room between the title and
-// the buttons, which shows the move cursor), so put controls in a
-// DialogToolbar below it, not in the bar. OnDismiss is what the close button
-// does.
+// DialogTitle is the title bar of a dialog, drawn like the window's header:
+// the hero banner (so it differs from the body in every theme) with a strong
+// line under it. It holds the title, any items you give (a DialogSubtitle),
+// free room and a close button at the end. The user drags the dialog by the
+// bar (the room between the title and the buttons); the grab cursor shows
+// only while the button is held. Put controls in a DialogToolbar below it,
+// not in the bar. OnDismiss is what the close button does.
 func DialogTitle(title string, items ...Item) *El {
 	var bar *El
-	closeButton := Row(W(32), H(core.CompactH), Bg(core.Sunken), Control("icon-button"), Lighten(), Tooltip("Close (Esc)"),
+	closeButton := Row(W(32), H(core.CompactH), HoverBg(core.Shadow), Tooltip("Close (Esc)"),
 		OnClick(func() {
 			if bar.DismissHandler() != nil {
 				bar.DismissHandler()()
 			}
 		}),
-		CrossIcon(Grow(1)),
+		CrossIcon(Grow(1), Color(core.HeroMuted)),
 	)
 	bar = Row(append(append([]Item{
-		H(core.DialogTitleH), DragHandle(), PadX(16), Gap(8), AlignItems(AlignCenter), Bg(core.Frame), HoverBg(core.Hover), BorderB(core.Border), Text(title, Bold()),
+		H(core.DialogTitleH), DragHandle(), PadX(16), Gap(8), AlignItems(AlignCenter),
+		Bg(core.Hero), Control("hero"), BorderB(core.Border), Text(title, Bold(), Color(core.HeroText)),
 	}, append(items, Spacer())...), closeButton)...)
 	return bar
 }
 
 // DialogSubtitle is what a title bar says besides its name: the page shown,
-// a count. It is muted and small, gives way before the close button and is
-// cut with an ellipsis; pass it to DialogTitle as an item.
+// a count. It is muted (the banner's muted color) and small, gives way
+// before the close button and is cut with an ellipsis; pass it to
+// DialogTitle as an item.
 func DialogSubtitle(text string) *El {
-	return Text(text, Muted(), Small(), Ellipsis(), Shrink())
+	return Text(text, Color(core.HeroMuted), Small(), Ellipsis(), Shrink())
 }
 
 // DialogToolbar is the row of controls under a dialog's title bar: a search

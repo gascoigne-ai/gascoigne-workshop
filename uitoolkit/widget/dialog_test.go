@@ -65,7 +65,7 @@ func TestDialogTitleIsADragStripOfItsOwn(t *testing.T) {
 	panel := Col(W(400), H(200), FloatCenter(), Moved(move), Modal(), bar)
 	root := Stack(Row(), panel)
 	Layout(c, root, 800, 600)
-	hasProps(t, bar, "bg=frame", "borderB=border", "hoverBg=hover")
+	hasProps(t, bar, "bg=hero", "control=hero", "borderB=border")
 	r := bar.Rect()
 	x, y := r.X+r.W/2, r.Y+r.H/2 // between the title and the close button
 	c.In = core.Input{X: x, Y: y, Click: true, Held: true}

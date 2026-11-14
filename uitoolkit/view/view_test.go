@@ -302,25 +302,29 @@ func TestDraggingAHandleMovesTheDialog(t *testing.T) {
 	}
 }
 
-func TestThePointerOverAFreePartOfAHandleShowsTheMoveCursor(t *testing.T) {
+func TestTheGrabCursorShowsOnlyWhileTheHandleIsPressed(t *testing.T) {
 	m, dismissed := &MoveState{}, 0
 	root, c := dragRig(t, m, &dismissed)
-	for _, tt := range []struct {
-		name string
-		x, y int
-		want core.Cursor
-	}{
-		{"free part of the handle", 200, 90, core.CursorMove},
-		{"on a control in the handle", 155, 90, core.CursorDefault},
-		{"below the handle", 200, 110, core.CursorDefault},
-		{"on the border", 200, 82, core.CursorDefault},
-	} {
+	step := func(in core.Input) core.Cursor {
 		c.Cursor = core.CursorDefault
-		c.In = core.Input{X: tt.x, Y: tt.y}
+		c.In = in
 		Update(c, root)
-		if c.Cursor != tt.want {
-			t.Errorf("%s: cursor %v, want %v", tt.name, c.Cursor, tt.want)
-		}
+		return c.Cursor
+	}
+	if got := step(core.Input{X: 200, Y: 90}); got != core.CursorDefault {
+		t.Errorf("hovering the handle: cursor %v, want the default", got)
+	}
+	if got := step(core.Input{X: 200, Y: 90, Click: true, Held: true}); got != core.CursorMove {
+		t.Errorf("pressing the handle: cursor %v, want the grab cursor", got)
+	}
+	if got := step(core.Input{X: 210, Y: 95, Held: true}); got != core.CursorMove {
+		t.Errorf("dragging: cursor %v, want the grab cursor", got)
+	}
+	if got := step(core.Input{X: 210, Y: 95}); got != core.CursorDefault {
+		t.Errorf("after the release: cursor %v, want the default", got)
+	}
+	if got := step(core.Input{X: 155, Y: 90, Click: true, Held: true}); got != core.CursorDefault {
+		t.Errorf("pressing a control in the handle: cursor %v, want the default", got)
 	}
 }
 

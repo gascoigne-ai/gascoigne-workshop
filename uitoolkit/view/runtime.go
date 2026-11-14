@@ -375,7 +375,8 @@ func findScope(e *El) *El {
 }
 
 // dragByHandle moves a Moved element while the pointer drags one of its
-// handles: a press on a handle starts it, the offset follows the pointer
+// handles: a press on a handle starts it (and shows the grab cursor, only
+// from then until the release), the offset follows the pointer
 // until the button is released, and a double click puts the element back in
 // the center.
 func (e *El) dragByHandle(c *core.Ctx) {
@@ -395,7 +396,6 @@ func (e *El) dragByHandle(c *core.Ctx) {
 	if !e.rect.Contains(c.In.X, c.In.Y) || e.onBorder(c.In.X, c.In.Y) || !e.onHandle(c.In.X, c.In.Y) {
 		return
 	}
-	c.Cursor = core.CursorMove // the pointer is over a free part of a handle
 	if !c.In.Click {
 		return
 	}
@@ -404,6 +404,7 @@ func (e *El) dragByHandle(c *core.Ctx) {
 		return
 	}
 	m.active, m.startX, m.startY, m.fromX, m.fromY = true, c.In.X, c.In.Y, m.X, m.Y
+	c.Cursor = core.CursorMove // grabbed: shown from the press, not while hovering
 }
 
 // onHandle reports whether the point is on a drag handle of e that no

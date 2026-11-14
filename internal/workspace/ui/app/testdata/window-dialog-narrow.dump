@@ -170,11 +170,11 @@ stack rect=0,0,640,480
       textB text="v0.1.0" fg=muted small=true rect=594,452,34,28
   flow bg=shadow rect=0,0,640,480
   flow w=380 floatMode=2 bg=bg control=menu float=true modal=true focusScope=true shadow=true onDismiss=true rect=130,171,380,138
-    flow h=44 padL=16 padR=16 gap=8 bg=frame borderB=border hoverBg=hover onDismiss=true rect=130,171,380,44
-      textB text="Delete Search Repos?" bold=true rect=146,185,148,16
+    flow h=44 padL=16 padR=16 gap=8 bg=hero borderB=border control=hero onDismiss=true rect=130,171,380,44
+      textB text="Delete Search Repos?" fg=hero-text bold=true rect=146,185,148,16
       plain grow=1 rect=302,193,152,0
-      flow w=32 h=24 bg=sunken control=icon-button tip=Close (Esc) lighten=true onClick=true rect=462,181,32,24
-        iconB grow=1 icon=cross rect=462,181,32,24
+      flow w=32 h=24 tip=Close (Esc) hoverBg=shadow onClick=true rect=462,181,32,24
+        iconB grow=1 fg=hero-muted icon=cross rect=462,181,32,24
     flow padL=16 padT=16 padR=16 padB=16 gap=12 rect=130,215,380,94
       flow rect=146,231,348,22
         textB text="This cannot be undone." h=22 fg=muted rect=146,231,348,22

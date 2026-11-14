@@ -1,12 +1,12 @@
 stack rect=0,0,1280,800
   flow bg=shadow rect=0,0,1280,800
   resizableB w=760 h=560 floatMode=2 bg=bg control=menu float=true modal=true focusScope=true shadow=true onDismiss=true rect=260,120,760,560
-    flow h=44 padL=16 padR=16 gap=8 bg=frame borderB=border hoverBg=hover onDismiss=true rect=260,120,760,44
-      textB text="Settings" bold=true rect=276,134,55,16
-      textB text="Appearance" fg=muted small=true ellipsis=true shrink=true rect=339,135,65,14
+    flow h=44 padL=16 padR=16 gap=8 bg=hero borderB=border control=hero onDismiss=true rect=260,120,760,44
+      textB text="Settings" fg=hero-text bold=true rect=276,134,55,16
+      textB text="Appearance" fg=hero-muted small=true ellipsis=true shrink=true rect=339,135,65,14
       plain grow=1 rect=412,142,552,0
-      flow w=32 h=24 bg=sunken control=icon-button tip=Close (Esc) lighten=true onClick=true rect=972,130,32,24
-        iconB grow=1 icon=cross rect=972,130,32,24
+      flow w=32 h=24 tip=Close (Esc) hoverBg=shadow onClick=true rect=972,130,32,24
+        iconB grow=1 fg=hero-muted icon=cross rect=972,130,32,24
     flow h=40 padL=16 padR=16 gap=8 borderB=border-soft rect=260,164,760,40
       fieldB h=28 grow=1 bg=sunken control=field onRightClickIn=true onChange=true rect=276,170,660,28
       flow w=60 h=24 padL=10 padR=10 bg=sunken control=button tip=Edit settings.json as text lighten=true onClick=true rect=944,172,60,24

@@ -1,12 +1,12 @@
 stack rect=0,0,700,500
   flow bg=shadow rect=0,0,700,500
   flow w=820 h=420 floatMode=2 bg=bg control=menu float=true modal=true focusScope=true shadow=true onDismiss=true rect=0,40,700,420
-    flow h=44 padL=16 padR=16 gap=8 bg=frame borderB=border hoverBg=hover onDismiss=true rect=0,40,700,44
-      textB text="Log" bold=true rect=16,54,26,16
-      textB text="3 entries" fg=muted small=true ellipsis=true shrink=true rect=50,55,46,14
+    flow h=44 padL=16 padR=16 gap=8 bg=hero borderB=border control=hero onDismiss=true rect=0,40,700,44
+      textB text="Log" fg=hero-text bold=true rect=16,54,26,16
+      textB text="3 entries" fg=hero-muted small=true ellipsis=true shrink=true rect=50,55,46,14
       plain grow=1 rect=104,62,540,0
-      flow w=32 h=24 bg=sunken control=icon-button tip=Close (Esc) lighten=true onClick=true rect=652,50,32,24
-        iconB grow=1 icon=cross rect=652,50,32,24
+      flow w=32 h=24 tip=Close (Esc) hoverBg=shadow onClick=true rect=652,50,32,24
+        iconB grow=1 fg=hero-muted icon=cross rect=652,50,32,24
     flow h=40 padL=16 padR=16 gap=8 borderB=border-soft rect=0,84,700,40
       fieldB h=28 grow=1 bg=sunken control=field onRightClickIn=true rect=16,90,596,28
       flow w=64 h=24 padL=10 padR=10 bg=sunken control=button tip=Forget the entries lighten=true onClick=true rect=620,92,64,24
