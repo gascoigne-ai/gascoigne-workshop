@@ -314,3 +314,29 @@ func findWidget(root Node, kind string) Node {
 	}
 	return nil
 }
+
+// What Dump does not show of the dialog and its page: the state they
+// resize and scroll, and the dialog's bounds in the window.
+func TestTheDialogAndItsPageAreBoundToTheirState(t *testing.T) {
+	driver := newFrameDriver(t)
+	root := driver.root()
+	cases := []struct {
+		element string
+		want    []string
+	}{
+		{"resizableB", []string{fmt.Sprintf("state:%p", &driver.dialog.Size), "minW:520 minH:360 maxW:1200 maxH:720"}},
+		{"scrollB", []string{fmt.Sprintf("state:%p", &driver.dialog.scroll)}},
+	}
+	for _, tc := range cases {
+		found := findAll(root, tc.element)
+		if len(found) != 1 {
+			t.Fatalf("%d elements are %s:\n%s", len(found), tc.element, Dump(root))
+		}
+		settings := fmt.Sprintf("%+v", found[0].Behavior())
+		for _, want := range tc.want {
+			if !strings.Contains(settings, want) {
+				t.Errorf("%s %s, want %s", tc.element, settings, want)
+			}
+		}
+	}
+}
