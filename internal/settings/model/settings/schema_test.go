@@ -198,7 +198,7 @@ func TestValueAndWithReadAndWriteASettingByItsKey(t *testing.T) {
 
 func TestEveryKindSaysWhatItExpects(t *testing.T) {
 	tests := []struct{ key, want string }{
-		{"layout", "one of side, stacked"},
+		{"layout", "one of stacked, side"},
 		{"flat", "true or false"},
 		{"uiScale", "a whole number from 50 to 300"},
 		{"proxy", "text"},
@@ -223,7 +223,7 @@ func TestCompletionsCarryTheDescriptionAndWhatIsExpected(t *testing.T) {
 	if len(got) != 1 || got[0].Label != "layout" {
 		t.Fatalf("got %+v", got)
 	}
-	for _, want := range []string{"Place the request and response panes", "one of side, stacked"} {
+	for _, want := range []string{"Place the request and response panes", "one of stacked, side"} {
 		if !strings.Contains(got[0].Detail, want) {
 			t.Errorf("the detail %q lacks %q", got[0].Detail, want)
 		}
@@ -255,5 +255,17 @@ func TestTheCertificateSettingsAreFilesAndValidateAsText(t *testing.T) {
 func TestDefaultLayoutIsStacked(t *testing.T) {
 	if got := Default().Layout; got != "stacked" {
 		t.Fatalf("default layout = %q", got)
+	}
+}
+
+// Completing an enum value sorted the schema's own list of allowed values,
+// so the settings menu then showed "Side by side" before "Stacked".
+func TestCompletingAnEnumValueKeepsTheSchemaOrder(t *testing.T) {
+	field, _ := FieldFor("layout")
+	before := append([]string(nil), field.Allowed...)
+	text := `{"appearance": {"layout": "`
+	Complete(text, len(text), nil)
+	if after, _ := FieldFor("layout"); !reflect.DeepEqual(after.Allowed, before) {
+		t.Fatalf("allowed layouts are %v after a completion, were %v", after.Allowed, before)
 	}
 }

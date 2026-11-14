@@ -1,6 +1,7 @@
 package settings
 
 import (
+	"slices"
 	"sort"
 	"strings"
 )
@@ -72,7 +73,8 @@ func Complete(text string, caret int, actions []string) []Completion {
 		}
 		switch field.Kind {
 		case Enum:
-			candidates, quoteValues = field.Allowed, true
+			// a copy: suggestions sorts, and the schema's order is the menu's
+			candidates, quoteValues = slices.Clone(field.Allowed), true
 		case Bool:
 			candidates = []string{"true", "false"}
 		}
