@@ -30,7 +30,7 @@ Status: todo, doing, done, blocked (reason). The loop (`loop.md`) takes the firs
 | 21 | `workspace/ui/appicon` | none | default | n/a: draws the window icon bitmap, no view tree |
 | 22 | app `filebody.go` (file body pane), `graphql.go` (GraphQL pane), `assertpane.go` (assertions pane) | 004, 005 | request-* panes (`-pane`); add scenes for uncovered | done (file body b32bc56+700e24d+e8f726b; GraphQL 3e6b56d+5862837+abde1cf; assertions 67baec2+a86bdbc+5f3456d; 433500b) |
 | 23 | app `panes.go` `messagePane`, `notePane`, body pane (~l.360 Format button) | 004 | default, request-post | done (f15d498 scenes; message 50d0fca+d521247; note d71e938+3fa105b; body ee543fe+c810033; 354662d gofmt) |
-| 24 | app `mcpexplorer.go` remaining Go views (explorer layout, list row, detail, ~l.104-121, :218) | 004 | request-mcp (+connected: MCP server on 8084) | todo |
+| 24 | app `mcpexplorer.go` remaining Go views (explorer layout, list row, detail, ~l.104-121, :218) | 004 | request-mcp (+connected: MCP server on 8084) | done (485f8d2 scene, 2da8433 pins, 4d32440 swap) |
 | 25 | app `view.go` window root (~l.52), main column (~l.191), response status (~l.417-433) | 003, 004 | default, response | todo |
 
 Rows 22-25 were found by the final grep (first manifest missed them); after row 25 re-run `grep -rEn "\b(Row|Col|Stack|Scroll|Table|Tabs|Field|Button)\(" internal --include=*.go | grep -v _test.go` and add rows for anything left except `Custom` behaviors and `Frag` glue.
