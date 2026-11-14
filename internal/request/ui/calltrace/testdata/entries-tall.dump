@@ -1,0 +1,11 @@
+stack rect=0,0,1000,800
+  flow bg=shadow rect=0,0,1000,800
+  flow w=820 h=560 floatMode=2 bg=bg control=menu float=true modal=true focusScope=true shadow=true onDismiss=true rect=90,120,820,560
+    flow h=44 padL=16 padR=16 gap=8 borderB=border-soft onDismiss=true rect=90,120,820,44
+      textB text="Log" bold=true rect=106,134,26,16
+      fieldB h=28 grow=1 bg=sunken control=field onRightClickIn=true rect=140,128,642,28
+      flow w=64 h=24 padL=10 padR=10 bg=sunken control=button tip=Forget the entries lighten=true onClick=true rect=790,130,64,24
+        textB text="Clear" grow=1 fg=chip-text ellipsis=true center=true rect=800,130,44,24
+      flow w=32 h=24 bg=sunken control=icon-button tip=Close (Esc) lighten=true onClick=true rect=862,130,32,24
+        iconB grow=1 icon=cross rect=862,130,32,24
+    codeB grow=1 bg=sunken rect=90,164,820,516
