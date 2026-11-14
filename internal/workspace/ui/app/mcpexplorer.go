@@ -101,36 +101,48 @@ func resultLines(state mcpexplorer.State) []Line {
 // lists it offers on the left and the open entry with its form and its
 // answer on the right.
 func (a *App) explorerPane(_ pane, t *reqTab, _ *ScrollState) Node {
-	return Col(Grow(1),
-		a.serverInfo(t),
-		Row(Grow(1),
-			a.explorerList(t),
-			a.explorerDetail(t),
-		),
-	)
+	return explorerTemplate.MustBuild(markup.Scope{
+		"header":  newExplorerHeader(t),
+		"list":    a.explorerList(t),
+		"detail":  a.explorerDetail(t),
+		"headerH": w.RowH + w.Gutter,
+		"gutter":  w.Gutter,
+	})
 }
 
-// serverInfo is the header of the explorer.
-func (a *App) serverInfo(t *reqTab) Node {
+// explorerHeader is what the explorer template shows of the server: its
+// connection state until it answered, then what it said about itself.
+type explorerHeader struct {
+	Known        bool   // the server answered initialize
+	State        string // the connection state, shown until then
+	Name         string
+	Version      string
+	Protocol     string
+	Offers       string // the capabilities, left out when there are none
+	Instructions string // left out when empty
+}
+
+// newExplorerHeader is the header of t's explorer.
+func newExplorerHeader(t *reqTab) explorerHeader {
 	server := t.Server
 	if server == nil {
-		return Row(H(w.RowH+w.Gutter), PadX(w.Gutter), AlignItems(AlignCenter), BorderB(w.Border),
-			Text(connState(t)+": connect to see what the server offers", Muted()))
+		return explorerHeader{State: connState(t)}
 	}
-	return Col(PadX(w.Gutter), PadY(8), Gap(4), BorderB(w.Border),
-		Row(Gap(8), AlignItems(AlignBaseline),
-			Text(server.Name+" "+server.Version, Bold()),
-			Text("protocol "+server.Protocol, Small(), Muted()),
-		),
-		If(len(server.Capabilities) > 0, Text("Offers: "+strings.Join(server.Capabilities, " · "), Small(), Muted())),
-		If(server.Instructions != "", Lines(server.Instructions, w.Muted)),
-	)
+	return explorerHeader{
+		Known:        true,
+		Name:         server.Name,
+		Version:      server.Version,
+		Protocol:     server.Protocol,
+		Offers:       strings.Join(server.Capabilities, " · "),
+		Instructions: server.Instructions,
+	}
 }
 
-//go:embed explorerlist.vml explorernone.vml explorerdetail.vml explorerresult.vml
+//go:embed explorer.vml explorerlist.vml explorernone.vml explorerdetail.vml explorerresult.vml
 var explorerTemplates embed.FS
 
 var (
+	explorerTemplate       = markup.MustLoad(explorerTemplates, "explorer.vml")
 	explorerListTemplate   = markup.MustLoad(explorerTemplates, "explorerlist.vml")
 	explorerNoneTemplate   = markup.MustLoad(explorerTemplates, "explorernone.vml")
 	explorerDetailTemplate = markup.MustLoad(explorerTemplates, "explorerdetail.vml")
@@ -177,7 +189,7 @@ const explorerListW = 260
 // openEntry is what the detail template shows of the open entry.
 type openEntry struct {
 	Title        string
-	Form         Node // the argument form, an empty column for a resource
+	Form         Node // the argument form, nil for a resource
 	Label        string
 	Call         func()
 	Disconnected bool
@@ -212,10 +224,10 @@ func (a *App) explorerDetail(t *reqTab) Node {
 	})
 }
 
-// formNode is the argument form of the open entry, nothing for a resource.
+// formNode is the argument form of the open entry, nil for a resource.
 func formNode(a *App, t *reqTab) Node {
 	if t.form == nil {
-		return Col()
+		return nil
 	}
 	return t.form.View(a)
 }
