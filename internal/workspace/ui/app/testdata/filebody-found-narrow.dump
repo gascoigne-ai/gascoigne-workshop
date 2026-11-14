@@ -1,0 +1,7 @@
+flow gap=8 grow=1 rect=0,0,420,300
+  flow h=28 gap=6 rect=0,0,420,28
+    fieldB grow=1 control=field onRightClickIn=true onChange=true rect=0,0,324,28
+    flow w=90 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=330,0,90,28
+      textB text="Choose..." grow=1 fg=chip-text ellipsis=true center=true rect=340,0,70,28
+  textB text="found" fg=muted small=true rect=0,36,420,14
+  textB text="The file is sent as it is, with a content type from its extension." fg=muted small=true rect=0,58,420,14
