@@ -1,0 +1,11 @@
+flow rect=0,0,170,140
+  flow h=28 padL=12 padR=12 control=button hoverBg=hover onClick=true rect=0,0,170,28
+    textB text="Appearance" grow=1 fg=muted rect=12,6,146,16
+  flow h=28 padL=12 padR=12 bg=accent-soft control=button onClick=true rect=0,28,170,28
+    textB text="Colors" grow=1 fg=accent-line bold=true rect=12,34,146,16
+  flow h=28 padL=12 padR=12 control=button hoverBg=hover onClick=true rect=0,56,170,28
+    textB text="Shortcuts" grow=1 fg=muted rect=12,62,146,16
+  flow h=28 padL=12 padR=12 control=button hoverBg=hover onClick=true rect=0,84,170,28
+    textB text="Requests" grow=1 fg=muted rect=12,90,146,16
+  flow h=28 padL=12 padR=12 control=button hoverBg=hover onClick=true rect=0,112,170,28
+    textB text="General" grow=1 fg=muted rect=12,118,146,16
