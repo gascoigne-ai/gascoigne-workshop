@@ -63,7 +63,11 @@ func TestDefaultPathFollowsTheUserConfigDir(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("XDG_CONFIG_HOME", dir)
 	t.Setenv("HOME", dir)
-	want := filepath.Join(dir, "gascoigne-workshop", "settings.json")
+	config, err := os.UserConfigDir() // XDG_CONFIG_HOME on Linux, under HOME on macOS
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := filepath.Join(config, "gascoigne-workshop", "settings.json")
 	if got := DefaultPath(); got != want {
 		t.Fatalf("DefaultPath = %q, want %q", got, want)
 	}

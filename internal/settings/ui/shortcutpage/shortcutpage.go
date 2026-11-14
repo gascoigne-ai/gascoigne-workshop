@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
-	"runtime"
 	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -110,7 +109,7 @@ func KeyText(host Host, id string) string {
 			continue
 		}
 		if binding := Effective(host.Settings(), action); binding.Bound {
-			return w.PlatformKeyText(runtime.GOOS, binding.String())
+			return w.PlatformKeyText(w.HostOS, binding.String())
 		}
 		return "Unbound"
 	}
@@ -293,7 +292,7 @@ type textKeyRow struct{ Action, Keys string }
 func textKeyRows() []textKeyRow {
 	rows := make([]textKeyRow, 0, len(TextKeys))
 	for _, keys := range TextKeys {
-		rows = append(rows, textKeyRow{Action: keys.Action, Keys: w.PlatformKeyText(runtime.GOOS, keys.Keys)})
+		rows = append(rows, textKeyRow{Action: keys.Action, Keys: w.PlatformKeyText(w.HostOS, keys.Keys)})
 	}
 	return rows
 }
@@ -336,7 +335,7 @@ func (p *Page) row(host Host, action Action) actionRow {
 		row.Key = "Press keys..."
 	}
 	if pending, ok := p.pending[action.ID]; ok {
-		row.Conflict = fmt.Sprintf("Used by %s (%s)", pending.OtherName, w.PlatformKeyText(runtime.GOOS, pending.Binding.String()))
+		row.Conflict = fmt.Sprintf("Used by %s (%s)", pending.OtherName, w.PlatformKeyText(w.HostOS, pending.Binding.String()))
 		row.ReplaceTip = "Unbind " + pending.OtherName + " and use this key here"
 	} else if text := p.notes[action.ID]; text != "" {
 		row.Refusal = text

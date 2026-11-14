@@ -5,7 +5,6 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/environment/controller/envs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
-	"runtime"
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
@@ -206,7 +205,7 @@ func (a *App) completeVariable() {
 	}
 	t := a.cur()
 	if !t.url.Focused {
-		a.toast(w.PlatformKeyText(runtime.GOOS, "Ctrl+Space")+" completes a {{variable}} in the URL field", false)
+		a.toast(w.PlatformKeyText(w.HostOS, "Ctrl+Space")+" completes a {{variable}} in the URL field", false)
 		return
 	}
 	names, from := a.variableCompletion(t)

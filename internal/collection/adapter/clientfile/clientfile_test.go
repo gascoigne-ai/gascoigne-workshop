@@ -69,9 +69,12 @@ func TestLoadNamesTheBrokenFile(t *testing.T) {
 // DefaultGlobalDir must follow XDG_CONFIG_HOME so tests and users can
 // redirect it; it never falls back to a real home in the tests.
 func TestDefaultGlobalDirFollowsTheConfigDirectory(t *testing.T) {
-	config := t.TempDir()
-	t.Setenv("XDG_CONFIG_HOME", config)
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	t.Setenv("HOME", t.TempDir())
+	config, err := os.UserConfigDir() // XDG_CONFIG_HOME on Linux, under HOME on macOS
+	if err != nil {
+		t.Fatal(err)
+	}
 	if got, want := DefaultGlobalDir(), filepath.Join(config, "gascoigne-workshop"); got != want {
 		t.Fatalf("DefaultGlobalDir = %q, want %q", got, want)
 	}

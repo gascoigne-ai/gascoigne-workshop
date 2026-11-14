@@ -1,6 +1,9 @@
 package core
 
-import "testing"
+import (
+	"runtime"
+	"testing"
+)
 
 func TestThePrimaryModifierIsCommandOnMacAndControlElsewhere(t *testing.T) {
 	tests := []struct {
@@ -41,5 +44,11 @@ func TestKeyTextNamesThePrimaryModifierForThePlatform(t *testing.T) {
 		if got := PlatformKeyText(test.goos, test.in); got != test.want {
 			t.Errorf("%s: PlatformKeyText(%q) = %q, want %q", test.goos, test.in, got, test.want)
 		}
+	}
+}
+
+func TestHostOSIsTheRuntimeOSUntilATestPinsIt(t *testing.T) {
+	if HostOS != runtime.GOOS {
+		t.Fatalf("HostOS = %q, want %q", HostOS, runtime.GOOS)
 	}
 }

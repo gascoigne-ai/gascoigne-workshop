@@ -1,7 +1,6 @@
 package core
 
 import (
-	"runtime"
 	"slices"
 	"time"
 
@@ -144,7 +143,7 @@ func readInput() Input {
 		Keys:        inpututil.AppendJustPressedKeys(nil),
 		Shift:       ebiten.IsKeyPressed(ebiten.KeyShift),
 		Alt:         ebiten.IsKeyPressed(ebiten.KeyAlt),
-		Ctrl:        PrimaryDown(runtime.GOOS, ebiten.IsKeyPressed(ebiten.KeyControl), ebiten.IsKeyPressed(ebiten.KeyMeta)),
+		Ctrl:        PrimaryDown(HostOS, ebiten.IsKeyPressed(ebiten.KeyControl), ebiten.IsKeyPressed(ebiten.KeyMeta)),
 	}
 	if in.Ctrl {
 		in.SelectAll = inpututil.IsKeyJustPressed(ebiten.KeyA)

@@ -1,7 +1,6 @@
 package widget
 
 import (
-	"runtime"
 	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -142,7 +141,7 @@ func menuRow(state *MenuState, index int, item MenuItem, pick func(int)) *El {
 	return Row(H(height), PadX(menuRowPadX), Gap(8), AlignItems(AlignCenter), Control("row"), look, OnClick(func() { pick(index) }),
 		icon,
 		label,
-		If(item.Shortcut != "", Text(core.PlatformKeyText(runtime.GOOS, item.Shortcut), Small(), Muted())),
+		If(item.Shortcut != "", Text(core.PlatformKeyText(core.HostOS, item.Shortcut), Small(), Muted())),
 	)
 }
 
@@ -169,7 +168,7 @@ func MenuWidth(c *core.Ctx, items []MenuItem) int {
 			row = max(row, c.Width(c.F.Small, line))
 		}
 		if item.Shortcut != "" {
-			row += 16 + c.Width(c.F.Small, core.PlatformKeyText(runtime.GOOS, item.Shortcut))
+			row += 16 + c.Width(c.F.Small, core.PlatformKeyText(core.HostOS, item.Shortcut))
 		}
 		if icons {
 			row += menuIconW + 8
