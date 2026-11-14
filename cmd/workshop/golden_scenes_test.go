@@ -76,6 +76,7 @@ var goldenScenes = []goldenScene{
 	{name: "dialog-delete", width: shotWidth, height: shotHeight, args: []string{"-dialog", "delete"}},
 	{name: "call-log", width: shotWidth, height: shotHeight, args: []string{"-send", "-log"}, mask: []image.Rectangle{durationStacked, durationStatus, logStamps, logDuration}},
 	{name: "mcp-tool-form", width: shotWidth, height: shotHeight, args: []string{"-request", "MCP Tools", "-send", "-tool", "add"}, mask: []image.Rectangle{durationStatus}},
+	{name: "mcp-connected", width: shotWidth, height: shotHeight, args: []string{"-request", "MCP Tools", "-send"}, mask: []image.Rectangle{durationStatus}},
 	{name: "response-raw", width: shotWidth, height: shotHeight, args: []string{"-send", "-set", "responseView=raw"}, mask: []image.Rectangle{durationStacked, durationStatus}},
 }
 
