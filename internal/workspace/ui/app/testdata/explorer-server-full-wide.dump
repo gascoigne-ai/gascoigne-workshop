@@ -1,0 +1,32 @@
+flow grow=1 rect=0,0,900,600
+  flow padL=12 padT=8 padR=12 padB=8 gap=4 borderB=border rect=0,0,900,98
+    flow gap=8 rect=12,8,876,16
+      textB text="mock 1.2.0" bold=true rect=12,8,72,16
+      textB text="protocol 2025-06-18" fg=muted small=true rect=92,10,114,14
+    textB text="Offers: resources · tools" fg=muted small=true rect=12,28,876,14
+    flow rect=12,46,876,44
+      textB text="Use echo." h=22 fg=muted rect=12,46,876,22
+      textB text="Then call add with two numbers." h=22 fg=muted rect=12,68,876,22
+  flow grow=1 rect=0,98,900,502
+    flow w=260 borderR=border rect=0,98,260,502
+      flow h=40 padT=6 borderB=border rect=0,98,260,40
+        flow padL=2 onSelect=true rect=0,104,249,34
+          flow padL=10 padR=10 gap=4 bg=bg edge=accent-line edgeTop=true edgeLeft=true edgeRight=true onClick=true rect=2,104,66,34
+            textB text="Tools" fg=text rect=12,113,35,16
+            textB text="2" fg=muted small=true rect=51,115,7,14
+          flow padL=10 padR=10 borderInset=10 gap=4 borderL=border-soft onClick=true rect=68,104,98,34
+            textB text="Resources" fg=muted rect=78,113,67,16
+            textB text="1" fg=muted small=true rect=149,115,7,14
+          flow padL=10 padR=10 borderInset=10 gap=4 borderL=border-soft onClick=true rect=166,104,83,34
+            textB text="Prompts" fg=muted rect=176,113,52,16
+            textB text="1" fg=muted small=true rect=232,115,7,14
+      scrollB grow=1 rect=0,138,260,462
+        flow padL=12 padT=6 padR=12 padB=6 control=row hoverBg=hover onClick=true rect=0,138,260,42
+          flow grow=1 rect=12,144,236,30
+            textB text="search" ellipsis=true rect=12,144,236,16
+            textB text="Find" fg=muted small=true ellipsis=true rect=12,160,236,14
+        flow padL=12 padT=6 padR=12 padB=6 control=row hoverBg=hover onClick=true rect=0,180,260,28
+          flow grow=1 rect=12,186,236,16
+            textB text="ping" ellipsis=true rect=12,186,236,16
+    flow padL=12 padT=12 padR=12 padB=12 grow=1 rect=260,98,640,502
+      textB text="Pick a tool, a resource or a prompt" fg=muted rect=272,110,616,16

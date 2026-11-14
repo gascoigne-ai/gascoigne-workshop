@@ -1,0 +1,20 @@
+flow grow=1 rect=0,0,900,600
+  flow padL=12 padT=8 padR=12 padB=8 gap=4 borderB=border rect=0,0,900,32
+    flow gap=8 rect=12,8,876,16
+      textB text="bare " bold=true rect=12,8,33,16
+      textB text="protocol 2025-06-18" fg=muted small=true rect=53,10,114,14
+  flow grow=1 rect=0,32,900,568
+    flow w=260 borderR=border rect=0,32,260,568
+      flow h=40 padT=6 borderB=border rect=0,32,260,40
+        flow padL=2 onSelect=true rect=0,38,216,34
+          flow padL=10 padR=10 gap=4 bg=bg edge=accent-line edgeTop=true edgeLeft=true edgeRight=true onClick=true rect=2,38,55,34
+            textB text="Tools" fg=text rect=12,47,35,16
+          flow padL=10 padR=10 borderInset=10 gap=4 borderL=border-soft onClick=true rect=57,38,87,34
+            textB text="Resources" fg=muted rect=67,47,67,16
+          flow padL=10 padR=10 borderInset=10 gap=4 borderL=border-soft onClick=true rect=144,38,72,34
+            textB text="Prompts" fg=muted rect=154,47,52,16
+      scrollB grow=1 rect=0,72,260,528
+        flow padL=12 padT=12 padR=12 padB=12 rect=0,72,260,38
+          textB text="Nothing announced" fg=muted small=true rect=12,84,236,14
+    flow padL=12 padT=12 padR=12 padB=12 grow=1 rect=260,32,640,568
+      textB text="Pick a tool, a resource or a prompt" fg=muted rect=272,44,616,16

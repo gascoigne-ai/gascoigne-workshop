@@ -48,6 +48,12 @@ func announceLong(a *App, tab *reqTab) {
 	a.applyWS(wsEvent{tab: tab, hasEv: true, ev: reqport.Event{Dir: reqport.Received, Kind: "response", Text: list}})
 }
 
+// initialize delivers the server's answer to initialize, which the header
+// of the explorer shows.
+func initialize(a *App, tab *reqTab, result string) {
+	a.applyWS(wsEvent{tab: tab, hasEv: true, ev: reqport.Event{Dir: reqport.Info, Kind: "initialize", Text: result}})
+}
+
 // The laid-out explorer is pinned as text (testdata/explorer-*.dump,
 // captured from the Go-built view), so moving it to a template cannot
 // change a rectangle, a color or a handler.
@@ -101,6 +107,13 @@ func TestTheMCPExplorerLaysOutAsPinned(t *testing.T) {
 		{"long-names", func(a *App, tab *reqTab) {
 			announceLong(a, tab)
 			a.exploreOpen(tab, 0)
+		}},
+		{"server-full", func(a *App, tab *reqTab) {
+			initialize(a, tab, `{"protocolVersion":"2025-06-18","capabilities":{"tools":{},"resources":{}},"serverInfo":{"name":"mock","version":"1.2.0"},"instructions":"Use echo.\nThen call add with two numbers."}`)
+			announce(a, tab)
+		}},
+		{"server-bare", func(a *App, tab *reqTab) {
+			initialize(a, tab, `{"protocolVersion":"2025-06-18","serverInfo":{"name":"bare"}}`)
 		}},
 	}
 	sizes := []struct {
