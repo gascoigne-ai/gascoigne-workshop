@@ -266,7 +266,7 @@ func (e *El) update(c *core.Ctx) bool {
 	if e.modal {
 		// A modal overlay owns the pointer: nothing under it gets clicks,
 		// wheel or hover, and a click outside it dismisses it.
-		if (c.In.Click || c.In.RightClick) && !e.rect.Contains(c.In.X, c.In.Y) && e.onDismiss != nil {
+		if (c.In.Click || c.In.RightClick) && !e.rect.Contains(c.In.X, c.In.Y) && !e.nearRect(c.In.X, c.In.Y) && e.onDismiss != nil {
 			e.onDismiss()
 		}
 		return true
@@ -392,7 +392,7 @@ func (e *El) dragByHandle(c *core.Ctx) {
 		m.X, m.Y = m.fromX+c.In.X-m.startX, m.fromY+c.In.Y-m.startY
 		return
 	}
-	if !c.In.Click || !e.rect.Contains(c.In.X, c.In.Y) || !e.onHandle(c.In.X, c.In.Y) {
+	if !c.In.Click || !e.rect.Contains(c.In.X, c.In.Y) || e.onBorder(c.In.X, c.In.Y) || !e.onHandle(c.In.X, c.In.Y) {
 		return
 	}
 	if c.In.Clicks >= 2 {
@@ -431,4 +431,17 @@ func (e *El) coversWithControl(x, y int) bool {
 		}
 	}
 	return false
+}
+
+// nearRect reports whether the point is outside e's rect but within its
+// dismiss margin.
+func (e *El) nearRect(x, y int) bool {
+	m := e.dismissMargin
+	return m > 0 && x >= e.rect.X-m && x < e.rect.X+e.rect.W+m && y >= e.rect.Y-m && y < e.rect.Y+e.rect.H+m
+}
+
+// onBorder reports whether the point is within dragEdge of e's border.
+func (e *El) onBorder(x, y int) bool {
+	r := e.rect
+	return x < r.X+dragEdge || x >= r.X+r.W-dragEdge || y < r.Y+dragEdge || y >= r.Y+r.H-dragEdge
 }

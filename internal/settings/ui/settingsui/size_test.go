@@ -66,3 +66,72 @@ func TestAFreshDialogKeepsTheSizeTheUserChose(t *testing.T) {
 		t.Fatalf("closing the dialog forgot its size: %dx%d", d.Size.W, d.Size.H)
 	}
 }
+
+// A whole drag of the dialog's edge, built, laid out and updated frame by
+// frame as the app does, never closes the dialog.
+func TestResizingTheDialogByAnEdgeKeepsItOpenAndInsideTheWindow(t *testing.T) {
+	presses := []struct {
+		name string
+		at   func(r core.Rect) (int, int)
+		to   func(x, y int) (int, int)
+	}{
+		{"right edge", func(r core.Rect) (int, int) { return r.X + r.W - 2, r.Y + r.H/2 }, func(x, y int) (int, int) { return x + 120, y }},
+		{"left edge", func(r core.Rect) (int, int) { return r.X + 2, r.Y + r.H/2 }, func(x, y int) (int, int) { return x - 120, y }},
+		{"bottom edge", func(r core.Rect) (int, int) { return r.X + r.W/2, r.Y + r.H - 2 }, func(x, y int) (int, int) { return x, y + 80 }},
+		{"top edge", func(r core.Rect) (int, int) { return r.X + r.W/2, r.Y + 2 }, func(x, y int) (int, int) { return x, y - 80 }},
+		{"bottom right corner", func(r core.Rect) (int, int) { return r.X + r.W - 2, r.Y + r.H - 2 }, func(x, y int) (int, int) { return x + 90, y + 60 }},
+	}
+	for _, p := range presses {
+		t.Run(p.name, func(t *testing.T) {
+			var d SettingsDialog
+			host := newHost(t)
+			ctx, err := core.NewCtx(testTheme())
+			if err != nil {
+				t.Fatal(err)
+			}
+			var root Node
+			frame := func(in core.Input) {
+				root = Stack(Row(), d.View(host)) // the window's Stack, which places the floating dialog
+				Layout(ctx, root, 1280, 800)
+				ctx.In = in
+				Update(ctx, root)
+				t.Logf("in %+v size %+v rect %+v", in, d.Size, dialogRectOf(root))
+			}
+			frame(core.Input{})
+			rect := dialogRectOf(root)
+			x, y := p.at(rect)
+			frame(core.Input{X: x, Y: y, Click: true, Held: true})
+			tx, ty := p.to(x, y)
+			for i := 1; i <= 10; i++ {
+				frame(core.Input{X: x + (tx-x)*i/10, Y: y + (ty-y)*i/10, Held: true})
+			}
+			frame(core.Input{X: tx, Y: ty})
+			after := dialogRectOf(root)
+			if after.W == 0 || after.H == 0 {
+				t.Fatalf("the dialog vanished: %+v", after)
+			}
+			if after.X < 0 || after.Y < 0 || after.X+after.W > 1280 || after.Y+after.H > 800 {
+				t.Fatalf("the dialog left the window: %+v", after)
+			}
+			t.Logf("before %+v after %+v move %+v size %+v", rect, after, d.Move, d.Size)
+		})
+	}
+}
+
+// dialogRectOf is the rect of the resizable dialog in a laid out view.
+func dialogRectOf(root Node) core.Rect {
+	var find func(e *El) (core.Rect, bool)
+	find = func(e *El) (core.Rect, bool) {
+		if strings.Contains(strings.SplitN(Dump(e), "\n", 2)[0], "resizableB") {
+			return e.Rect(), true
+		}
+		for _, k := range e.Children() {
+			if r, ok := find(k); ok {
+				return r, true
+			}
+		}
+		return core.Rect{}, false
+	}
+	r, _ := find(root)
+	return r
+}

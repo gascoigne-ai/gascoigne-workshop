@@ -116,7 +116,8 @@ func TestPressingOnTheEdgeOfAModalElementResizesItAndDoesNotDismiss(t *testing.T
 	}{
 		{"inside the border", 298, true, false},
 		{"on the last pixel", 299, true, false},
-		{"outside the element", 301, false, true}, // an outside click dismisses, as for any modal
+		{"just outside the element", 301, true, false},
+		{"far outside the element", 310, false, true}, // an outside click dismisses, as for any modal
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

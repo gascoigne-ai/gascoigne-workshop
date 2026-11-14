@@ -275,7 +275,7 @@ func TestMovedShiftsACenteredElementAndKeepsItInsideTheStack(t *testing.T) {
 // are a drag handle with a 20 px button at its left end.
 func dragRig(t *testing.T, m *MoveState, dismissed *int) (*El, *core.Ctx) {
 	t.Helper()
-	handle := Row(H(10), DragHandle(), box(W(20), OnClick(func() {})))
+	handle := Row(H(20), DragHandle(), box(W(20), OnClick(func() {})))
 	dialog := Col(W(100), H(40), FloatCenter(), Moved(m), Modal(), OnDismiss(func() { *dismissed++ }), handle, box(Grow(1)))
 	root := Stack(box(), dialog)
 	c := testCtx(t)
@@ -287,15 +287,15 @@ func TestDraggingAHandleMovesTheDialog(t *testing.T) {
 	m, dismissed := &MoveState{}, 0
 	root, c := dragRig(t, m, &dismissed)
 	step := func(in core.Input) { c.In = in; Update(c, root) }
-	step(core.Input{X: 200, Y: 85, Click: true, Held: true}) // on the handle, right of the button
-	step(core.Input{X: 230, Y: 95, Held: true})
+	step(core.Input{X: 200, Y: 90, Click: true, Held: true}) // on the handle, right of the button
+	step(core.Input{X: 230, Y: 100, Held: true})
 	if m.X != 30 || m.Y != 10 {
 		t.Fatalf("offset %d,%d, want 30,10", m.X, m.Y)
 	}
 	if c.Cursor != core.CursorMove {
 		t.Fatalf("cursor %v while dragging", c.Cursor)
 	}
-	step(core.Input{X: 300, Y: 95}) // released: the dialog stays
+	step(core.Input{X: 300, Y: 100}) // released: the dialog stays
 	step(core.Input{X: 400, Y: 195})
 	if m.X != 30 || m.Y != 10 || dismissed != 0 {
 		t.Fatalf("after the release offset %d,%d, dismissed %d", m.X, m.Y, dismissed)
@@ -305,9 +305,9 @@ func TestDraggingAHandleMovesTheDialog(t *testing.T) {
 func TestPressingAControlInsideTheHandleDoesNotDrag(t *testing.T) {
 	m, dismissed := &MoveState{}, 0
 	root, c := dragRig(t, m, &dismissed)
-	c.In = core.Input{X: 155, Y: 85, Click: true, Held: true} // on the button
+	c.In = core.Input{X: 155, Y: 90, Click: true, Held: true} // on the button
 	Update(c, root)
-	c.In = core.Input{X: 185, Y: 95, Held: true}
+	c.In = core.Input{X: 185, Y: 100, Held: true}
 	Update(c, root)
 	if m.X != 0 || m.Y != 0 {
 		t.Fatalf("dragged by the button to %d,%d", m.X, m.Y)
@@ -317,7 +317,7 @@ func TestPressingAControlInsideTheHandleDoesNotDrag(t *testing.T) {
 func TestDoubleClickingAHandleCentersTheDialog(t *testing.T) {
 	m, dismissed := &MoveState{X: 40, Y: -20}, 0
 	root, c := dragRig(t, m, &dismissed)
-	c.In = core.Input{X: 250, Y: 65, Click: true, Held: true, Clicks: 2} // the dialog is at 190,60
+	c.In = core.Input{X: 250, Y: 70, Click: true, Held: true, Clicks: 2} // the dialog is at 190,60
 	Update(c, root)
 	if m.X != 0 || m.Y != 0 {
 		t.Fatalf("offset %d,%d, want the center", m.X, m.Y)
@@ -327,9 +327,9 @@ func TestDoubleClickingAHandleCentersTheDialog(t *testing.T) {
 func TestADragPastTheEdgeDoesNotPileUp(t *testing.T) {
 	m, dismissed := &MoveState{}, 0
 	root, c := dragRig(t, m, &dismissed)
-	c.In = core.Input{X: 200, Y: 85, Click: true, Held: true}
+	c.In = core.Input{X: 200, Y: 90, Click: true, Held: true}
 	Update(c, root)
-	c.In = core.Input{X: 2000, Y: 85, Held: true}
+	c.In = core.Input{X: 2000, Y: 90, Held: true}
 	Update(c, root)
 	Layout(c, root, 400, 200) // the layout keeps the dialog inside and writes the offset back
 	if m.X != 150 {

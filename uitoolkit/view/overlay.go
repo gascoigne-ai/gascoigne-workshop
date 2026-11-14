@@ -46,6 +46,15 @@ func FocusScope() Option { return func(e *El) { e.focusScope = true } }
 // right-clicked.
 func OnRightClick(f func(x, y int)) Option { return func(e *El) { e.onRight = f } }
 
+// DismissMargin makes a click within px outside a modal element's rect
+// count as a click on it, so it does not dismiss it: a resizable dialog
+// grabs its edge there.
+func DismissMargin(px int) Option { return func(e *El) { e.dismissMargin = px } }
+
+// dragEdge is how far from the border of a Moved element, inside it, a
+// press does not start a drag: the edge is the resize grab, not the handle.
+const dragEdge = 6
+
 // DragHandle marks the element as a place to drag its Moved ancestor by:
 // a dialog's title bar. Clickable and focusable elements inside it (a
 // close button, a search field) keep their clicks.

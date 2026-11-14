@@ -8,6 +8,10 @@ import (
 // edgeSlop is how far from the border, inside it, a press grabs the edge.
 const edgeSlop = 6
 
+// edgeOut is how far outside the border a press still grabs the edge; the
+// element does not dismiss there (view.DismissMargin).
+const edgeOut = 4
+
 // ResizeState is the size the user gave a Resizable element; 0 means the
 // element's default. The application owns it, like a split or a scroll
 // state, so it survives the per-frame rebuild and can be saved.
@@ -35,14 +39,14 @@ type resizableB struct {
 // no element of its own in templates, because only a dialog uses it:
 // <resizable-dialog> is the template form.
 func Resizable(state *ResizeState, minW, minH, maxW, maxH int, items ...Item) *El {
-	return Custom(&resizableB{state: state, minW: minW, minH: minH, maxW: maxW, maxH: maxH}, items...)
+	return Custom(&resizableB{state: state, minW: minW, minH: minH, maxW: maxW, maxH: maxH}, append([]Item{DismissMargin(edgeOut)}, items...)...)
 }
 
 // edges reports which edges of r the point is on, if it is on the border.
-// The border lies inside r: a press outside r is outside the modal element
-// and dismisses it, so it must not start a resize.
+// The border reaches edgeOut outside r, where a modal element does not
+// dismiss either.
 func edges(r core.Rect, x, y int) (left, right, top, bottom bool) {
-	if !r.Contains(x, y) {
+	if x < r.X-edgeOut || x >= r.X+r.W+edgeOut || y < r.Y-edgeOut || y >= r.Y+r.H+edgeOut {
 		return
 	}
 	left, right = x < r.X+edgeSlop, x >= r.X+r.W-edgeSlop
