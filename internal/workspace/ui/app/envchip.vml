@@ -1,3 +1,5 @@
-<row pad-x="10" h="{{compactH}}" bg="hero-text" control="pill" align-items="center" on-click-at="openMenu" tooltip="Environment: variables that override the collection's">
-  <text small bold color="hero">{{label}}</text>
+<!-- The chip stops at 200 px and cuts a long name, so the settings button
+     beside it stays in a 400 px window; "No environment" (111 px) fits. -->
+<row pad-x="10" h="{{compactH}}" max-w="200" bg="hero-text" control="pill" align-items="center" on-click-at="openMenu" tooltip="Environment: variables that override the collection's">
+  <text small bold ellipsis grow="1" color="hero">{{label}}</text>
 </row>

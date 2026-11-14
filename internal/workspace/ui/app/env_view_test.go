@@ -65,6 +65,39 @@ func TestTheEnvironmentChipLaysOutAsPinned(t *testing.T) {
 	}
 }
 
+// envFitW is a window just wide enough for the title, a chip at its widest
+// and the settings button side by side.
+const envFitW = 400
+
+// A long environment name used to stretch the chip past the window and
+// push the settings button off screen; the chip now stops at a maximum
+// width and cuts its name with an ellipsis.
+func TestALongEnvironmentNameKeepsTheSettingsButtonInTheWindow(t *testing.T) {
+	a, _ := newTestApp(t)
+	t.Cleanup(a.waitWrites)
+	a.addEnv(longEnvName)
+	root := a.header()
+	Layout(a.ctx, root, envFitW, headerH)
+	children := root.Children()
+	button := children[len(children)-1]
+	if right := button.Rect().X + button.Rect().W; right > envFitW {
+		t.Errorf("the settings button ends at x=%d, past the %d px window:\n%s", right, envFitW, Dump(root))
+	}
+	var name *El
+	for _, child := range children {
+		if strings.Contains(Dump(child), "control=pill") {
+			name = child.Children()[0]
+		}
+	}
+	if name == nil {
+		t.Fatalf("no chip in the header:\n%s", Dump(root))
+	}
+	fullW := a.ctx.Width(a.ctx.F.SmallBold, longEnvName)
+	if !strings.Contains(Dump(name), "ellipsis=true") || name.Rect().W >= fullW {
+		t.Errorf("the chip's name is %d px of its %d, want it cut with an ellipsis: %s", name.Rect().W, fullW, Dump(name))
+	}
+}
+
 // Clicking the chip opens the environment menu where the pointer is, with
 // a ticked row for the active environment and Rename and Delete only when
 // one is active.
