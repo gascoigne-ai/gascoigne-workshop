@@ -363,6 +363,25 @@ var bodyTypes = []struct {
 var formPane = pane{label: "Body", kind: paneTable, title: "Fields", editable: true,
 	rows: func(_ *App, t *reqTab) *[]model.KV { return &t.Req.Form }}
 
+//go:embed bodypane.vml bodyarea.vml bodynone.vml
+var bodyPaneSources embed.FS
+
+// The pane and its two simplest editors are templates; the editor is
+// picked in Go (bodyEditor) and enters the pane through a slot.
+var (
+	bodyPaneTemplate = markup.MustLoad(bodyPaneSources, "bodypane.vml")
+	bodyAreaTemplate = markup.MustLoad(bodyPaneSources, "bodyarea.vml")
+	bodyNoneTemplate = markup.MustLoad(bodyPaneSources, "bodynone.vml")
+)
+
+// bodyChip is one chip of the body type row, as bodypane.vml shows it.
+type bodyChip struct {
+	Label    string
+	Width    int
+	Selected bool // the request's body type; also kept in view
+	Choose   func()
+}
+
 // bodyPane is the body editor: a type chooser, then an editor that fits the type.
 func (a *App) bodyPane(p pane, t *reqTab, scroll *ScrollState) Node {
 	kind := t.Req.BodyType
@@ -372,21 +391,24 @@ func (a *App) bodyPane(p pane, t *reqTab, scroll *ScrollState) Node {
 	if valid {
 		statusColor = w.OK
 	}
-	return Col(Grow(1), Pad(w.Gutter), Gap(8),
-		Row(H(w.RowH), Gap(6),
-			HScroll(&t.bodyTypesX, Grow(1), Gap(6), // the type chips scroll sideways when the pane is narrow
-				For(bodyTypes, func(_ int, bt struct {
-					id, label string
-					width     int
-				}) Node {
-					choose := OnClick(func() { a.setBodyType(t, bt.id) })
-					return Choice(bt.label, bt.id == kind, W(bt.width), choose, When(bt.id == kind, KeepInView()))
-				})),
-			If(isJSON && status != "", Text(status, Small(), Color(statusColor), Ellipsis(), Optional())),
-			If(isJSON, Button("Format", W(70), OnClick(func() { a.formatBody(t) }))),
-		),
-		a.bodyEditor(t, scroll),
-	)
+	chips := make([]bodyChip, len(bodyTypes))
+	for i, bodyType := range bodyTypes {
+		id := bodyType.id
+		chips[i] = bodyChip{Label: bodyType.label, Width: bodyType.width, Selected: id == kind,
+			Choose: func() { a.setBodyType(t, id) }}
+	}
+	return bodyPaneTemplate.MustBuild(markup.Scope{
+		"gutter":      w.Gutter,
+		"rowH":        w.RowH,
+		"typesX":      &t.bodyTypesX,
+		"chips":       chips,
+		"showStatus":  isJSON && status != "",
+		"status":      status,
+		"statusColor": statusColor,
+		"isJSON":      isJSON,
+		"format":      func() { a.formatBody(t) },
+		"editor":      a.bodyEditor(t, scroll),
+	})
 }
 
 // bodyEditor is the part of the body pane under the type chooser.
@@ -398,8 +420,11 @@ func (a *App) bodyEditor(t *reqTab, scroll *ScrollState) Node {
 			base = jsonStyler
 		}
 		t.body.Styler = a.withVariables(base, t.Req) // {{variables}} stand out, as in the URL
-		sync := func() { editRequest(t, editor.BodyTyped{Text: t.body.Text}) }
-		return Area(&t.body, Grow(1), Bg(w.Sunken), OnChange(sync), TextMenu(&t.body.TextField))
+		return bodyAreaTemplate.MustBuild(markup.Scope{
+			"body":     &t.body,
+			"bodyText": &t.body.TextField,
+			"sync":     func() { editRequest(t, editor.BodyTyped{Text: t.body.Text}) },
+		})
 	case model.BodyForm, model.BodyMultipart:
 		return a.tableView(formPane, t, scroll, 0)
 	case model.BodyFile:
@@ -407,7 +432,7 @@ func (a *App) bodyEditor(t *reqTab, scroll *ScrollState) Node {
 	case model.BodyGraphQL:
 		return a.graphQLBody(t)
 	}
-	return Lines("This request has no body", w.Muted)
+	return bodyNoneTemplate.MustBuild(markup.Scope{})
 }
 
 func (a *App) setBodyType(t *reqTab, id string) {

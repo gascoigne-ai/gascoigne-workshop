@@ -1,0 +1,13 @@
+<!-- The body pane: the type chips with, for JSON, whether it parses and
+     the Format button; the editor of the chosen type below. -->
+<col grow="1" pad="{{gutter}}" gap="8">
+  <row h="{{rowH}}" gap="6">
+    <!-- the type chips scroll sideways when the pane is narrow -->
+    <hscroll state="typesX" grow="1" gap="6">
+      <choice for="chip in chips" selected="{{chip.Selected}}" w="{{chip.Width}}" keep-in-view="{{chip.Selected}}" on-click="chip.Choose">{{chip.Label}}</choice>
+    </hscroll>
+    <text if="showStatus" small color="{{statusColor}}" ellipsis optional>{{status}}</text>
+    <button if="isJSON" w="70" on-click="format">Format</button>
+  </row>
+  <slot name="editor"/>
+</col>
