@@ -26,7 +26,7 @@ Status: todo, doing, done, blocked (reason). The loop (`loop.md`) takes the firs
 | 17 | settingsui `dialog.go` frame, `raw.go` | 004, 005 | settings-menu | done (63c1a45 scene, 6a244af pins, 6668274 raw swap, 08d33d9 frame swap, 549694a resize pin) |
 | 18 | `shortcutpage` | 004 | settings-shortcuts | done (a3df737 scene, 868ac45 pins, 7b44541 swap) |
 | 19 | `request/ui/calltrace`, `mcpform` | 004, 005 | none: add scene first | done (0e7f17a+a43027e scenes, 117446c+933fd10 calltrace, f531f0b+10789ba mcpform) |
-| 20 | `response/ui/respview` | 004, 005 | response | todo |
+| 20 | `response/ui/respview` | 004, 005 | response | n/a: data only (CodeView lines and spans, Timeline text, filename helpers); its views are `responsePane`, row 13 |
 | 21 | `workspace/ui/appicon` | none | default | todo |
 
 Rule: a row with "none: add scene first" starts by adding the golden scene (and the shot flag it needs), test first, in its own commit.
