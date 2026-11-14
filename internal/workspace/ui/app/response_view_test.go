@@ -73,11 +73,14 @@ func answer(a *App, tab *reqTab, resp model.Response) {
 	a.apply(sendResult{tab: tab, seq: tab.Seq, resp: resp})
 }
 
-// pngBody is a 40x20 PNG, an image response body.
+// pngBody is a 40x20 PNG, an image response body. It is stored uncompressed
+// because the compressed size differs between Go versions and the pinned
+// layouts show the size.
 func pngBody(t *testing.T) []byte {
 	t.Helper()
 	var buf bytes.Buffer
-	if err := png.Encode(&buf, image.NewRGBA(image.Rect(0, 0, 40, 20))); err != nil {
+	enc := png.Encoder{CompressionLevel: png.NoCompression}
+	if err := enc.Encode(&buf, image.NewRGBA(image.Rect(0, 0, 40, 20))); err != nil {
 		t.Fatal(err)
 	}
 	return buf.Bytes()
