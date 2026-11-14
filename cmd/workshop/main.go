@@ -87,6 +87,7 @@ func main() {
 	iconPNG := flag.String("icon-png", "", "write the program icon (256x256 PNG) to this path and exit, for packaging")
 	flag.StringVar(&opts.ScreenshotRequest, "request", "", "open the request with this name before the screenshot")
 	flag.StringVar(&opts.ScreenshotPage, "page", "", "open the settings dialog on this page (appearance, colors, shortcuts, requests, general) before the screenshot")
+	flag.BoolVar(&opts.ScreenshotRawSettings, "raw-settings", false, "open the settings dialog on the text of settings.json before the screenshot")
 	flag.BoolVar(&opts.ScreenshotSentLog, "sent", false, "show the log of sent requests in the sidebar before the screenshot")
 	flag.StringVar(&opts.ScreenshotFilter, "filter", "", "type this text into the sidebar's filter before the screenshot")
 	flag.BoolVar(&opts.ScreenshotSending, "sending", false, "send the open request and take the screenshot while it is in flight")

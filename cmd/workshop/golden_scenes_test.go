@@ -50,6 +50,7 @@ var goldenScenes = []goldenScene{
 	{name: "settings-shortcuts", width: shotWidth, height: shotHeight, args: []string{"-page", "shortcuts"}},
 	{name: "settings-requests", width: shotWidth, height: shotHeight, args: []string{"-page", "requests"}},
 	{name: "settings-general", width: shotWidth, height: shotHeight, args: []string{"-page", "general"}},
+	{name: "settings-json", width: shotWidth, height: shotHeight, args: []string{"-raw-settings"}},
 	{name: "narrow", width: 800, height: 520, args: []string{"-window", "800x520"}},
 	{name: "response-find", width: shotWidth, height: shotHeight, args: []string{"-send", "-find", "/e"}, mask: []image.Rectangle{durationStacked, durationStatus}},
 	{name: "request-sending", width: shotWidth, height: shotHeight, args: []string{"-request", "Delay 500ms", "-sending"}},

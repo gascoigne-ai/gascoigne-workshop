@@ -36,6 +36,7 @@ type screenshot struct {
 	set         []string // key=value settings applied live before the capture, as the dialog would
 	request     string   // name of the request to open before the capture
 	page        string   // settings page to show before the capture
+	rawSettings bool     // open the settings dialog on the text of settings.json
 	sentLog     bool     // show the log of sent requests in the sidebar
 	find        string   // text to search the response for in the find bar
 	found       bool     // the find bar is open with find typed in
@@ -237,6 +238,10 @@ func (a *App) showShotTarget() {
 	}
 	if s.page != "" {
 		a.prefs.Cat = s.page
+		a.menu = true
+	}
+	if s.rawSettings {
+		a.prefs.OpenRaw(a)
 		a.menu = true
 	}
 	if s.sentLog {

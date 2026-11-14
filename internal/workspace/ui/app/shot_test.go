@@ -156,6 +156,18 @@ func TestScreenshotOpensTheNamedSettingsPage(t *testing.T) {
 	}
 }
 
+func TestScreenshotOpensTheSettingsAsText(t *testing.T) {
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotRawSettings: true})
+	for range setFrame {
+		if err := a.shotUpdate(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if !a.menu || !a.prefs.Raw {
+		t.Errorf("settings open = %v, raw = %v, want the dialog showing settings.json", a.menu, a.prefs.Raw)
+	}
+}
+
 func TestScreenshotShowsTheSentLog(t *testing.T) {
 	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotSentLog: true})
 	for range setFrame {
