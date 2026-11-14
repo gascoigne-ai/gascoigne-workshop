@@ -1,0 +1,5 @@
+flow h=28 padL=12 padR=12 gap=12 bg=frame borderT=border control=statusbar rect=0,0,1280,28
+  textB text="Sent 200 OK in 120ms to https://api.github.com/repos/golang/go/issues" grow=1 fg=muted small=true ellipsis=true rect=12,0,1154,28
+  flow w=44 h=20 padL=10 padR=10 bg=sunken control=button tip=Show the log of calls lighten=true onClick=true rect=1178,4,44,20
+    textB text="Log" grow=1 fg=chip-text ellipsis=true center=true rect=1188,4,24,20
+  textB text="v0.1.0" fg=muted small=true rect=1234,0,34,28
