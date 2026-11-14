@@ -1,0 +1,17 @@
+<!-- The settings dialog: the title bar, then the raw text or the list of
+     pages beside the page shown. Go sizes it to the window. -->
+<resizable-dialog state="size" min-width="{{minW}}" min-height="{{minH}}" max-width="{{maxW}}" max-height="{{maxH}}"
+                  w="{{width}}" h="{{height}}" on-dismiss="close">
+  <slot name="titleBar"/>
+  <col if="raw" grow="1" pad="16">
+    <slot name="rawView"/>
+  </col>
+  <row if="!raw" grow="1">
+    <col w="{{navW}}" pad="8" gap="2" bg="frame">
+      <slot for="item in nav" name="item"/>
+    </col>
+    <scroll state="scroll" grow="1" pad="16" border-l="border-soft">
+      <slot if="page" name="page"/>
+    </scroll>
+  </row>
+</resizable-dialog>

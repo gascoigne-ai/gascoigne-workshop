@@ -1,0 +1,1 @@
+<button w="60" h="{{compactH}}" on-click="save" tooltip="Nothing to save yet; changes are written when you click Save">Save</button>

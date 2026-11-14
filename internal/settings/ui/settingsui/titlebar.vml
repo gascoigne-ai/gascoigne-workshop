@@ -1,0 +1,11 @@
+<!-- The dialog's header: the search field (a spacer in the raw view), Save
+     when there is something to save, and the switch between the form and
+     the text of settings.json. -->
+<dialog-title title="Settings" on-dismiss="close">
+  <field if="!raw" state="search" h="28" grow="1" bg="sunken" placeholder="Search settings"
+         on-change="searched" text-menu="search"/>
+  <spacer if="raw" grow="1"/>
+  <slot if="save" name="save"/>
+  <button if="raw" w="60" h="{{compactH}}" on-click="closeRaw" tooltip="Back to the settings form">Form</button>
+  <button if="!raw" w="60" h="{{compactH}}" on-click="openRaw" tooltip="Edit settings.json as text">JSON</button>
+</dialog-title>

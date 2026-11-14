@@ -1,0 +1,1 @@
+<primary-button w="60" h="{{compactH}}" on-click="save" tooltip="Write the changes to settings.json">Save</primary-button>

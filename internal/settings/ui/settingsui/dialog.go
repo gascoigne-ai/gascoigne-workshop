@@ -139,20 +139,43 @@ func (d *SettingsDialog) View(host Host) Node {
 	}
 	dw, dh = min(max(dw, min(MinWidth, maxW)), maxW), min(max(dh, min(MinHeight, maxH)), maxH)
 	cur := d.pageID()
-	return Frag(
-		ResizableDialog(&d.Size, min(MinWidth, maxW), min(MinHeight, maxH), maxW, maxH, W(dw), H(dh), OnDismiss(func() { host.Send(prefs.Close{}) }),
-			d.titleBar(host),
-			If(d.Raw, Col(Grow(1), Pad(16), d.rawView(host))),
-			If(!d.Raw, Row(Grow(1),
-				Col(W(DialogNavW), Pad(8), Gap(2), Bg(w.Frame),
-					For(pages, func(_ int, p page) Node { return d.navItem(p, p.id == cur) }),
-				),
-				Scroll(&d.scroll, Grow(1), Pad(16), BorderL(w.BorderSoft), d.pageContent(host, cur)),
-			)),
-		),
-		d.FontList(host),
-	)
+	nav := make([]Node, len(pages))
+	for i, p := range pages {
+		nav[i] = d.navItem(p, p.id == cur)
+	}
+	var raw Node
+	if d.Raw {
+		raw = d.rawView(host)
+	}
+	dialog := dialogTemplate.MustBuild(markup.Scope{
+		"size":     &d.Size,
+		"minW":     min(MinWidth, maxW),
+		"minH":     min(MinHeight, maxH),
+		"maxW":     maxW,
+		"maxH":     maxH,
+		"width":    dw,
+		"height":   dh,
+		"close":    func() { host.Send(prefs.Close{}) },
+		"titleBar": d.titleBar(host),
+		"raw":      d.Raw,
+		"rawView":  raw,
+		"navW":     DialogNavW,
+		"nav":      nav,
+		"scroll":   &d.scroll,
+		"page":     d.pageContent(host, cur),
+	})
+	return Frag(dialog, d.FontList(host)) // the font list floats over the dialog; a template has one root
 }
+
+//go:embed dialog.vml titlebar.vml save-pending.vml save-idle.vml
+var dialogTemplates embed.FS
+
+var (
+	dialogTemplate      = markup.MustLoad(dialogTemplates, "dialog.vml")
+	titleBarTemplate    = markup.MustLoad(dialogTemplates, "titlebar.vml")
+	savePendingTemplate = markup.MustLoad(dialogTemplates, "save-pending.vml")
+	saveIdleTemplate    = markup.MustLoad(dialogTemplates, "save-idle.vml")
+)
 
 // pageContent is the content of page id.
 func (d *SettingsDialog) pageContent(host Host, id string) Node {
@@ -168,14 +191,19 @@ func (d *SettingsDialog) pageContent(host Host, id string) Node {
 	return nil
 }
 
-// titleBar is the dialog's header. The search field (or a spacer in the raw
-// view), Save and the mode switch are slots: they hold state or logic.
+// titleBar is the dialog's header: the search field (a spacer in the raw
+// view), Save and the switch between the form and the raw text.
 func (d *SettingsDialog) titleBar(host Host) Node {
-	search := If(!d.Raw, Field(&d.Search, H(28), Grow(1), Bg(w.Sunken), Placeholder("Search settings"), OnChange(d.ResetScroll), TextMenu(&d.Search)))
-	if d.Raw {
-		search = Spacer(Grow(1))
-	}
-	return DialogTitle("Settings", OnDismiss(func() { host.Send(prefs.Close{}) }), search, d.saveButton(host), d.modeSwitch(host))
+	return titleBarTemplate.MustBuild(markup.Scope{
+		"close":    func() { host.Send(prefs.Close{}) },
+		"raw":      d.Raw,
+		"search":   &d.Search,
+		"searched": d.ResetScroll,
+		"save":     d.saveButton(host),
+		"compactH": w.CompactH,
+		"closeRaw": d.CloseRaw,
+		"openRaw":  func() { d.OpenRaw(host) },
+	})
 }
 
 //go:embed navitem-open.vml navitem-closed.vml
@@ -200,14 +228,6 @@ func (d *SettingsDialog) navItem(p page, open bool) Node {
 	})
 }
 
-// modeSwitch changes the dialog between the form and the text of settings.json.
-func (d *SettingsDialog) modeSwitch(host Host) Node {
-	if d.Raw {
-		return Button("Form", W(60), H(w.CompactH), OnClick(d.CloseRaw), Tooltip("Back to the settings form"))
-	}
-	return Button("JSON", W(60), H(w.CompactH), OnClick(func() { d.OpenRaw(host) }), Tooltip("Edit settings.json as text"))
-}
-
 // Reload resets what depends on the settings in effect: typed text and
 // notes, and the fonts. The host calls it after it replaced the settings.
 func (d *SettingsDialog) Reload(host Host) {
@@ -222,13 +242,17 @@ func (d *SettingsDialog) Searching() bool { return strings.TrimSpace(d.Search.Te
 // while there are some. With auto-save on and nothing pending there is
 // nothing to save and there is no button.
 func (d *SettingsDialog) saveButton(host Host) Node {
-	if host.Unsaved() {
-		return PrimaryButton("Save", W(60), H(w.CompactH), OnClick(func() { d.Save(host) }), Tooltip("Write the changes to settings.json"))
-	}
-	if host.Settings().AutoSave {
+	template := saveIdleTemplate
+	switch {
+	case host.Unsaved():
+		template = savePendingTemplate
+	case host.Settings().AutoSave:
 		return nil
 	}
-	return Button("Save", W(60), H(w.CompactH), OnClick(func() { d.Save(host) }), Tooltip("Nothing to save yet; changes are written when you click Save"))
+	return template.MustBuild(markup.Scope{
+		"compactH": w.CompactH,
+		"save":     func() { d.Save(host) },
+	})
 }
 
 // Save writes what is applied but not stored: the raw text as typed when
