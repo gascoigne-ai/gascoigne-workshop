@@ -36,8 +36,13 @@ var (
 )
 
 // assertionsHelp says how assertions are written; it goes through the
-// scope, as a template would read its {{token}} as a variable.
-const assertionsHelp = "One assertion per line: status == 200, time < 500ms, header Content-Type contains json, body contains \"ok\", json items.length > 0, json items[0].name == \"a\". set token = json access_token keeps a value as {{token}} for later requests. Lines starting with # are notes."
+// scope, as a template would read its {{token}} as a variable. Text does
+// not wrap by itself, so the lines are broken to fit the narrowest pane.
+const assertionsHelp = "One assertion per line: status == 200, time < 500ms,\n" +
+	"header Content-Type contains json, body contains \"ok\",\n" +
+	"json items.length > 0, json items[0].name == \"a\".\n" +
+	"set token = json access_token keeps a value as {{token}}\n" +
+	"for later requests. Lines starting with # are notes."
 
 // assertionsPane is where the assertions are written, one per line.
 func (a *App) assertionsPane(_ pane, t *reqTab, _ *ScrollState) Node {

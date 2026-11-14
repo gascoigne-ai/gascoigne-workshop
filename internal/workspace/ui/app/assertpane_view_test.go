@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -61,6 +63,48 @@ func TestTheAssertionsAreaEditsTheTabsTests(t *testing.T) {
 	areas := areaStates(a.assertionsPane(testsPane, tab, &widget.ScrollState{}))
 	if len(areas) != 1 || !strings.Contains(areas[0], fmt.Sprintf("%p", &tab.tests)) {
 		t.Fatalf("areas %q, want one editing %p", areas, &tab.tests)
+	}
+}
+
+// dumpedText is the quoted text on an element's own Dump line.
+var dumpedText = regexp.MustCompile(`text=("(?:[^"\\]|\\.)*")`)
+
+// The help above the assertions used to be one line cut off at the pane's
+// edge; in the narrowest pane it now takes several lines that all fit.
+func TestTheAssertionsHelpWrapsInsideANarrowPane(t *testing.T) {
+	a, _ := newTestApp(t)
+	t.Cleanup(a.waitWrites)
+	root := a.assertionsPane(testsPane, a.cur(), &widget.ScrollState{})
+	Layout(a.ctx, root, settingsNarrowW, settingsPaneH)
+	pane := root.Rect()
+	lines := 0
+	var walk func(element *El)
+	walk = func(element *El) {
+		for _, child := range element.Children() {
+			walk(child)
+		}
+		line, _, _ := strings.Cut(Dump(element), "\n")
+		match := dumpedText.FindStringSubmatch(line)
+		if !strings.HasPrefix(strings.TrimSpace(line), "textB ") || match == nil {
+			return
+		}
+		text, err := strconv.Unquote(match[1])
+		if err != nil {
+			t.Fatal(err)
+		}
+		face := a.ctx.F.UI
+		if strings.Contains(line, "small=true") {
+			face = a.ctx.F.Small
+		}
+		lines++
+		rect := element.Rect()
+		if width := a.ctx.Width(face, text); width > rect.W || rect.X < pane.X || rect.X+rect.W > pane.X+pane.W {
+			t.Errorf("help line %q is %d px wide in a %d px rect at x=%d, pane %d px", text, width, rect.W, rect.X, pane.W)
+		}
+	}
+	walk(root)
+	if lines < 2 {
+		t.Fatalf("the help is %d line(s), want several:\n%s", lines, Dump(root))
 	}
 }
 

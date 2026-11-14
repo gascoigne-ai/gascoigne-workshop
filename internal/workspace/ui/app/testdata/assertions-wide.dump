@@ -1,3 +1,8 @@
 flow padL=12 padT=12 padR=12 padB=12 gap=8 grow=1 rect=0,0,1020,300
-  textB text="One assertion per line: status == 200, time < 500ms, header Content-Type contains json, body contains \"ok\", json items.length > 0, json items[0].name == \"a\". set token = json access_token keeps a value as {{token}} for later requests. Lines starting with # are notes." fg=muted small=true rect=12,12,996,14
-  areaB grow=1 bg=sunken onRightClickIn=true onChange=true rect=12,34,996,254
+  flow rect=12,12,996,110
+    textB text="One assertion per line: status == 200, time < 500ms," h=22 fg=muted rect=12,12,996,22
+    textB text="header Content-Type contains json, body contains \"ok\"," h=22 fg=muted rect=12,34,996,22
+    textB text="json items.length > 0, json items[0].name == \"a\"." h=22 fg=muted rect=12,56,996,22
+    textB text="set token = json access_token keeps a value as {{token}}" h=22 fg=muted rect=12,78,996,22
+    textB text="for later requests. Lines starting with # are notes." h=22 fg=muted rect=12,100,996,22
+  areaB grow=1 bg=sunken onRightClickIn=true onChange=true rect=12,130,996,158
