@@ -1,24 +1,15 @@
 <scroll state="scroll" pad="{{gutter}}" gap="8">
   <row h="{{rowH}}" gap="6">
-    <slot for="chip in types" name="chip"/>
+    <choice for="chip in types" selected="{{chip.Chosen}}" w="{{chip.Width}}" on-click="chip.Pick">{{chip.Label}}</choice>
   </row>
-  <!-- view.Lines written out (markup has no lines) -->
-  <col if="none">
-    <text color="muted" h="{{labelH}}">No authentication</text>
-  </col>
-  <!-- widget.FormRow written out (markup has no form-row): 12 is its label
-       gap; settingspane.vml has the other copy -->
-  <row for="row in fields" h="{{rowH}}" gap="12">
-    <text w="120">{{row.Label}}</text>
+  <lines if="none" color="muted">No authentication</lines>
+  <form-row for="row in fields" label="{{row.Label}}" label-width="120">
     <row if="row.Chips" gap="6">
-      <slot for="chip in row.Chips" name="chip"/>
+      <choice for="chip in row.Chips" selected="{{chip.Chosen}}" w="{{chip.Width}}" on-click="chip.Pick">{{chip.Label}}</choice>
     </row>
     <field if="row.Input" state="row.Input" grow="1" bg="sunken" on-change="row.Sync" text-menu="row.Input"/>
-  </row>
-  <!-- widget.CheckRow written out (markup has no check-row); settingspane.vml
-       has the other copies -->
-  <row if="hasSecret" h="{{rowH}}" gap="8" on-click="toggleSecrets">
-    <checkbox on="{{showSecrets}}"/>
+  </form-row>
+  <check-row if="hasSecret" on="{{showSecrets}}" on-click="toggleSecrets">
     <text>Show secrets</text>
-  </row>
+  </check-row>
 </scroll>

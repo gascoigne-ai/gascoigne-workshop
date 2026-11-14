@@ -1,6 +1,4 @@
 <col>
   <field state="input" h="{{rowH}}" bg="sunken" placeholder="Default" on-change="edited" text-menu="input"/>
-  <row if="note" h="{{noteH}}">
-    <text small color="error" ellipsis grow="1">{{note}}</text>
-  </row>
+  <note if="note" tone="error">{{note}}</note>
 </col>

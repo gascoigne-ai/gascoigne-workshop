@@ -6,8 +6,6 @@
     <button if="setting.Changed" w="56" h="{{compactH}}" on-click="setting.Reset"
             tooltip="Remove it from settings.json so the default applies">Reset</button>
   </row>
-  <col>
-    <text for="line in setting.Description" color="muted" h="{{labelH}}">{{line}}</text>
-  </col>
+  <lines color="muted">{{setting.Description}}</lines>
   <slot name="setting.Control"/>
 </col>

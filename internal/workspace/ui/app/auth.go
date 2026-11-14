@@ -98,31 +98,28 @@ func (t *reqTab) toggleSecrets() {
 	}
 }
 
-//go:embed authpane.vml authchip.vml authchip-selected.vml
+//go:embed authpane.vml
 var authTemplates embed.FS
 
-var (
-	authPaneTemplate    = markup.MustLoad(authTemplates, "authpane.vml")
-	authChipTemplate    = markup.MustLoad(authTemplates, "authchip.vml")
-	authChipLitTemplate = markup.MustLoad(authTemplates, "authchip-selected.vml")
-)
+var authPaneTemplate = markup.MustLoad(authTemplates, "authpane.vml")
 
 // authChoiceChipWidth is the width of every chip of a chooser field.
 const authChoiceChipWidth = 70
 
-// authChip is what a chip template shows of one choice: an auth type or a
-// value of a chooser field.
+// authChip is what the pane's template shows of one choice: an auth type
+// or a value of a chooser field.
 type authChip struct {
-	Label string
-	Width int
-	Pick  func()
+	Label  string
+	Width  int
+	Chosen bool
+	Pick   func()
 }
 
 // authRow is what the pane's template shows of one field of the current
 // type: a chooser's chips, or the text field it edits.
 type authRow struct {
 	Label string
-	Chips []Node
+	Chips []authChip
 	Input *TextField
 	Sync  func()
 }
@@ -130,10 +127,10 @@ type authRow struct {
 // authPane is the Auth tab: a type chooser and the fields of that type.
 func (a *App) authPane(_ pane, tab *reqTab, scroll *ScrollState) Node {
 	current := authTypeOf(tab.Req.Auth.Type)
-	types := make([]Node, 0, len(authTypes))
+	types := make([]authChip, 0, len(authTypes))
 	for _, at := range authTypes {
 		pick := func() { editRequest(tab, editor.AuthTypeChosen{Type: at.id}) }
-		types = append(types, authChipNode(authChip{Label: at.label, Width: at.width, Pick: pick}, at.id == current.id))
+		types = append(types, authChip{Label: at.label, Width: at.width, Chosen: at.id == current.id, Pick: pick})
 	}
 	hasSecret := false
 	rows := make([]authRow, 0, len(current.fields))
@@ -144,7 +141,6 @@ func (a *App) authPane(_ pane, tab *reqTab, scroll *ScrollState) Node {
 	return authPaneTemplate.MustBuild(markup.Scope{
 		"gutter":        w.Gutter,
 		"rowH":          w.RowH,
-		"labelH":        w.LabelH,
 		"scroll":        scroll,
 		"types":         types,
 		"none":          len(current.fields) == 0,
@@ -161,11 +157,11 @@ func (a *App) authPane(_ pane, tab *reqTab, scroll *ScrollState) Node {
 func authFieldRow(tab *reqTab, field authField) authRow {
 	if field.choices != nil {
 		stored := editor.AuthValue(tab.Req.Auth, field.id)
-		chips := make([]Node, 0, len(field.choices))
+		chips := make([]authChip, 0, len(field.choices))
 		for _, c := range field.choices {
 			pick := func() { editRequest(tab, editor.AuthFieldSet{Field: field.id, Value: c.id}) }
 			lit := stored == c.id || (stored == "" && c.id == field.choices[0].id)
-			chips = append(chips, authChipNode(authChip{Label: c.label, Width: authChoiceChipWidth, Pick: pick}, lit))
+			chips = append(chips, authChip{Label: c.label, Width: authChoiceChipWidth, Chosen: lit, Pick: pick})
 		}
 		return authRow{Label: field.label, Chips: chips}
 	}
@@ -173,13 +169,4 @@ func authFieldRow(tab *reqTab, field authField) authRow {
 	in.Masked = field.secret && !tab.showSecrets
 	sync := func() { editRequest(tab, editor.AuthFieldSet{Field: field.id, Value: in.Text}) }
 	return authRow{Label: field.label, Input: in, Sync: sync}
-}
-
-// authChipNode is a chip from the chosen or the plain template: markup
-// cannot pick between two roots per item of a list.
-func authChipNode(chip authChip, chosen bool) Node {
-	if chosen {
-		return authChipLitTemplate.MustBuild(markup.Scope{"chip": chip})
-	}
-	return authChipTemplate.MustBuild(markup.Scope{"chip": chip})
 }

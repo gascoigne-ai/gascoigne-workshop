@@ -1,1 +1,0 @@
-<button grow="1" on-click="chip.Pick">{{chip.Label}}</button>

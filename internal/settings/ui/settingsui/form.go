@@ -69,19 +69,16 @@ func capitalized(id string) string {
 	return strings.ToUpper(id[:1]) + id[1:]
 }
 
-//go:embed chip.vml chip-selected.vml chips.vml scale.vml textcontrol.vml openpage.vml
+//go:embed chips.vml scale.vml textcontrol.vml openpage.vml
 //go:embed file-empty.vml file-chosen.vml
 //go:embed settingrow.vml formpage.vml formcaption.vml formempty.vml
 var formTemplates embed.FS
 
 var (
-	// a template has one root, so the selected look is a template of its own
-	chipTemplate         = markup.MustLoad(formTemplates, "chip.vml")
-	selectedChipTemplate = markup.MustLoad(formTemplates, "chip-selected.vml")
-	chipsTemplate        = markup.MustLoad(formTemplates, "chips.vml")
-	scaleTemplate        = markup.MustLoad(formTemplates, "scale.vml")
-	textControlTemplate  = markup.MustLoad(formTemplates, "textcontrol.vml")
-	openPageTemplate     = markup.MustLoad(formTemplates, "openpage.vml")
+	chipsTemplate       = markup.MustLoad(formTemplates, "chips.vml")
+	scaleTemplate       = markup.MustLoad(formTemplates, "scale.vml")
+	textControlTemplate = markup.MustLoad(formTemplates, "textcontrol.vml")
+	openPageTemplate    = markup.MustLoad(formTemplates, "openpage.vml")
 	// with no file there is no field, only a button (see fileControl)
 	emptyFileTemplate  = markup.MustLoad(formTemplates, "file-empty.vml")
 	chosenFileTemplate = markup.MustLoad(formTemplates, "file-chosen.vml")
@@ -92,24 +89,22 @@ var (
 	formEmptyTemplate   = markup.MustLoad(formTemplates, "formempty.vml")
 )
 
-// chip is what a chip template shows of one value of a segmented choice.
+// chip is what the chips template shows of one value of a segmented
+// choice: gold when selected.
 type chip struct {
-	Label string
-	Pick  func()
+	Label    string
+	Selected bool
+	Pick     func()
 }
 
-// choice is one chip of a segmented choice: gold when selected.
-func choice(host Host, label string, selected bool, edit func(*settings.Settings)) Node {
-	template := chipTemplate
-	if selected {
-		template = selectedChipTemplate
-	}
+// choice is one chip of a segmented choice.
+func choice(host Host, label string, selected bool, edit func(*settings.Settings)) chip {
 	pick := func() { host.Send(prefs.Change{Edit: edit}) }
-	return template.MustBuild(markup.Scope{"chip": chip{Label: label, Pick: pick}})
+	return chip{Label: label, Selected: selected, Pick: pick}
 }
 
 // chipRow is a row of chips sharing its width.
-func chipRow(chips []Node) Node {
+func chipRow(chips []chip) Node {
 	return chipsTemplate.MustBuild(markup.Scope{"chips": chips, "rowH": w.RowH})
 }
 
@@ -119,7 +114,7 @@ func (d *SettingsDialog) enumChips(host Host, field settings.Field, labels map[s
 	if field.Key == "corners" {
 		current = appearance.CornerIDOf(current)
 	}
-	chips := make([]Node, 0, len(field.Allowed))
+	chips := make([]chip, 0, len(field.Allowed))
 	for _, id := range field.Allowed {
 		label := labels[id]
 		if label == "" {
@@ -134,7 +129,7 @@ func (d *SettingsDialog) enumChips(host Host, field settings.Field, labels map[s
 func (d *SettingsDialog) themeChips(host Host) Node {
 	current := host.Settings().Theme
 	themes := appearance.AllThemeChoices()
-	chips := make([]Node, 0, len(themes))
+	chips := make([]chip, 0, len(themes))
 	for _, theme := range themes {
 		edit := func(edited *settings.Settings) { edited.Theme = theme.ID }
 		chips = append(chips, choice(host, theme.Label, theme.ID == current, edit))
@@ -164,7 +159,7 @@ func (d *SettingsDialog) boolChips(host Host, field settings.Field) Node {
 	set := func(value bool) func(*settings.Settings) {
 		return func(edited *settings.Settings) { *edited = settings.With(*edited, field.Key, value) }
 	}
-	return chipRow([]Node{choice(host, "Off", !on, set(false)), choice(host, "On", on, set(true))})
+	return chipRow([]chip{choice(host, "Off", !on, set(false)), choice(host, "On", on, set(true))})
 }
 
 // Input is the text field of a text or number setting, filled from the
@@ -224,7 +219,6 @@ func (d *SettingsDialog) Note(key string) string { return d.notes[key] }
 func (d *SettingsDialog) textControl(host Host, field settings.Field) Node {
 	return textControlTemplate.MustBuild(markup.Scope{
 		"rowH":   w.RowH,
-		"noteH":  w.NoteH,
 		"input":  d.Input(host, field.Key),
 		"note":   d.notes[field.Key],
 		"edited": func() { d.Edited(host, field.Key) },
@@ -279,12 +273,11 @@ func (d *SettingsDialog) settingRow(host Host, field settings.Field) Node {
 	return settingRowTemplate.MustBuild(markup.Scope{
 		"rowH":     w.RowH,
 		"compactH": w.CompactH,
-		"labelH":   w.LabelH,
 		"setting": settingView{
 			Title:       field.Title,
 			Changed:     changed,
 			Reset:       func() { d.Reset(host, field.Key) },
-			Description: strings.Split(wrapWords(field.Description, descriptionCols), "\n"),
+			Description: wrapWords(field.Description, descriptionCols),
 			Control:     control,
 		},
 	})
@@ -295,8 +288,8 @@ type settingView struct {
 	Title       string
 	Changed     bool // differs from the default: a mark and Reset
 	Reset       func()
-	Description []string // its lines, wrapped
-	Control     Node     // built by the kind's own template
+	Description string // wrapped, one line per "\n"
+	Control     Node   // built by the kind's own template
 }
 
 // openPageButton leads from a search result to the page that edits the
@@ -363,7 +356,6 @@ func (d *SettingsDialog) fileControl(host Host, field settings.Field) Node {
 	return chosenFileTemplate.MustBuild(markup.Scope{
 		"rowH":     w.RowH,
 		"compactH": w.CompactH,
-		"noteH":    w.NoteH,
 		"iconBtnW": w.IconBtnW,
 		"input":    input,
 		"note":     d.notes[field.Key],

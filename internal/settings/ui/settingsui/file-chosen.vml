@@ -3,7 +3,5 @@
     <field state="input" grow="1" placeholder="No file" on-change="edited" text-menu="input"/>
     <icon-button icon="folder" w="{{iconBtnW}}" h="{{compactH}}" on-click="choose" tooltip="Choose another file"/>
   </row>
-  <row if="note" h="{{noteH}}">
-    <text small color="error" ellipsis grow="1">{{note}}</text>
-  </row>
+  <note if="note" tone="error">{{note}}</note>
 </col>

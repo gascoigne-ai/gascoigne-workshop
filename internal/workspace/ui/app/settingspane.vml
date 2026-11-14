@@ -1,18 +1,13 @@
 <scroll state="scroll" pad="{{gutter}}" gap="8">
-  <!-- widget.FormRow written out (markup has no form-row): 12 is its label gap -->
-  <row h="{{rowH}}" gap="12">
-    <text w="160">Timeout (seconds)</text>
+  <form-row label="Timeout (seconds)" label-width="160">
     <field state="timeout" w="80" bg="sunken" on-change="timeoutEdited" text-menu="timeout"/>
     <text small muted>{{timeoutHint}}</text>
-  </row>
-  <!-- widget.CheckRow written out twice (markup has no check-row) -->
-  <row h="{{rowH}}" gap="8" on-click="toggleRedirects">
-    <checkbox on="{{followRedirects}}"/>
+  </form-row>
+  <check-row on="{{followRedirects}}" on-click="toggleRedirects">
     <text>Follow redirects</text>
-  </row>
-  <row h="{{rowH}}" gap="8" on-click="toggleVerify">
-    <checkbox on="{{verifyCertificate}}"/>
+  </check-row>
+  <check-row on="{{verifyCertificate}}" on-click="toggleVerify">
     <text>Verify the server certificate</text>
     <text small muted>off accepts self-signed certificates</text>
-  </row>
+  </check-row>
 </scroll>

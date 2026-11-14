@@ -8,9 +8,7 @@
              on-change="color.Edited" text-menu="color.Input"/>
       <button w="44" h="{{compactH}}" on-click="color.Reset">Reset</button>
     </row>
-    <row if="color.Note" h="{{noteH}}">
-      <text small color="error" ellipsis grow="1">{{color.Note}}</text>
-    </row>
+    <note if="color.Note" tone="error">{{color.Note}}</note>
   </col>
   <row h="{{rowH}}"><button w="110" on-click="resetAll">Reset colors</button></row>
 </col>

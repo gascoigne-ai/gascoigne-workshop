@@ -1,3 +1,0 @@
-<!-- widget.Choice written out (markup has no choice), the chosen chip;
-     authchip.vml is the one that is not -->
-<primary-button w="{{chip.Width}}" on-click="chip.Pick">{{chip.Label}}</primary-button>
