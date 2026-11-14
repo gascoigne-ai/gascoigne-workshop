@@ -1,0 +1,5 @@
+<row h="{{statusH}}" pad-x="{{gutter}}" gap="{{gutter}}" bg="frame" control="statusbar" border-t="border">
+  <text small muted ellipsis grow="1">{{status}}</text>
+  <button w="44" h="20" on-click="openLog" tooltip="Show the log of calls">Log</button>
+  <text small muted>{{version}}</text>
+</row>

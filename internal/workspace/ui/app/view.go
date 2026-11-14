@@ -451,12 +451,19 @@ func statusPill(status int) (fg, bg w.Token) {
 
 // ── Status bar ─────────────────────────────────────────────────────────
 
+//go:embed statusbar.vml
+var statusBarSource embed.FS
+
+var statusBarTemplate = markup.MustLoad(statusBarSource, "statusbar.vml")
+
+// statusBar is the line under the window: the last status, the Log
+// button and the version.
 func (a *App) statusBar() Node {
-	return markup.View(`
-		<row h="28" pad="12 0" gap="12" bg="frame" control="statusbar" border-t="border">
-		  <text small muted ellipsis grow="1">{{status}}</text>
-		  <button w="44" h="20" on-click="openLog" tooltip="Show the log of calls">Log</button>
-		  <text small muted>{{version}}</text>
-		</row>`,
-		markup.Scope{"status": a.status, "version": version, "openLog": a.calls.Open})
+	return statusBarTemplate.MustBuild(markup.Scope{
+		"statusH": statusH,
+		"gutter":  w.Gutter,
+		"status":  a.status,
+		"version": version,
+		"openLog": a.calls.Open,
+	})
 }
