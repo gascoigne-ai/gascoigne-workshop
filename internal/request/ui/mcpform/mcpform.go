@@ -3,8 +3,11 @@
 package mcpform
 
 import (
+	"embed"
+
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
@@ -89,42 +92,68 @@ func (form *Form) Command() (string, error) {
 	return "call " + form.Tool.Name + " " + args, nil
 }
 
+//go:embed form.vml
+var templates embed.FS
+
+var formTemplate = markup.MustLoad(templates, "form.vml")
+
+// fieldRow is what the form shows of one field: exactly one of IsBool,
+// IsEnum and Input says which input it has.
+type fieldRow struct {
+	Name        string // starred when required
+	Description string
+	IsBool      bool
+	On          bool   // the box is ticked
+	Hint        string // whether the boolean is sent, and as what
+	Toggle      func()
+	IsEnum      bool
+	Options     []optionRow
+	Input       *TextField // nil for a boolean or an enum
+}
+
+// optionRow is one button of an enum's row of choices.
+type optionRow struct {
+	Label    string
+	Selected bool
+	Pick     func()
+}
+
 // View is the fields of the form, scrolling when there are many.
 func (form *Form) View(host Host) Node {
-	return Col(Gap(8),
-		If(form.Tool.Description != "", Lines(form.Tool.Description, w.Muted)),
-		Scroll(&form.scroll, MaxH(maxH), Gap(8),
-			For(form.fields, func(_ int, field model.ToolField) Node { return form.fieldView(host, field) }),
-		),
-		If(form.Problem != "", Text(form.Problem, Small(), Color(w.Error))),
-	)
-}
-
-// fieldView is one field: its name (starred when required), the
-// description, and the input of its kind.
-func (form *Form) fieldView(host Host, field model.ToolField) Node {
-	name := field.Name
-	if field.Required {
-		name += " *"
+	fields := make([]fieldRow, len(form.fields))
+	for i, field := range form.fields {
+		fields[i] = form.fieldRow(field)
 	}
-	return Col(Gap(2),
-		Row(H(w.LabelH), Gap(8), Text(name, Small(), Bold()), If(field.Description != "", Text(field.Description, Small(), Muted(), Ellipsis(), Grow(1)))),
-		form.input(host, field),
-	)
+	return formTemplate.MustBuild(markup.Scope{
+		"description": form.Tool.Description,
+		"scroll":      &form.scroll,
+		"maxH":        maxH,
+		"fields":      fields,
+		"problem":     form.Problem,
+		"submit":      host.Submit,
+		"labelH":      w.LabelH,
+		"rowH":        w.RowH,
+	})
 }
 
-func (form *Form) input(host Host, field model.ToolField) Node {
+// fieldRow is one field: its name (starred when required), the
+// description, and the input of its kind.
+func (form *Form) fieldRow(field model.ToolField) fieldRow {
+	row := fieldRow{Name: field.Name, Description: field.Description}
+	if field.Required {
+		row.Name += " *"
+	}
 	switch field.Kind {
 	case model.FieldBoolean:
 		on := form.Choices[field.Name] == "true"
-		return CheckRow(on, OnClick(func() { form.Choices[field.Name] = boolText(!on) }),
-			Text(form.boolHint(field), Small(), Muted()),
-		)
+		row.IsBool, row.On, row.Hint = true, on, form.boolHint(field)
+		row.Toggle = func() { form.Choices[field.Name] = boolText(!on) }
 	case model.FieldEnum:
-		return form.enumChoice(field)
+		row.IsEnum, row.Options = true, form.enumOptions(field)
+	default:
+		row.Input = form.Inputs[field.Name]
 	}
-	input := form.Inputs[field.Name]
-	return Field(input, H(w.RowH), Bg(w.Sunken), OnEnter(host.Submit), TextMenu(input))
+	return row
 }
 
 func boolText(on bool) string {
@@ -142,9 +171,9 @@ func (form *Form) boolHint(field model.ToolField) string {
 	return "sent as " + form.Choices[field.Name]
 }
 
-// enumChoice is a row of buttons, one per option; an optional field also
-// has a "none" one that leaves it out.
-func (form *Form) enumChoice(field model.ToolField) Node {
+// enumOptions are the buttons of an enum, one per option; an optional
+// field also has a "none" one that leaves it out.
+func (form *Form) enumOptions(field model.ToolField) []optionRow {
 	options := []string{}
 	if !field.Required {
 		options = append(options, "")
@@ -152,14 +181,13 @@ func (form *Form) enumChoice(field model.ToolField) Node {
 	for _, option := range field.Enum {
 		options = append(options, model.ToolField{Kind: model.FieldEnum, Default: option}.Initial())
 	}
-	return Row(H(w.RowH), Gap(6),
-		For(options, func(_ int, option string) Node {
-			label := option
-			if option == "" {
-				label = "none"
-			}
-			pick := OnClick(func() { form.Choices[field.Name] = option })
-			return Choice(label, form.Choices[field.Name] == option, H(w.RowH), pick)
-		}),
-	)
+	rows := make([]optionRow, len(options))
+	for i, option := range options {
+		label := option
+		if option == "" {
+			label = "none"
+		}
+		rows[i] = optionRow{Label: label, Selected: form.Choices[field.Name] == option, Pick: func() { form.Choices[field.Name] = option }}
+	}
+	return rows
 }
