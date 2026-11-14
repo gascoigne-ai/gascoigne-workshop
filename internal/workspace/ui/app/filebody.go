@@ -2,11 +2,13 @@ package ui
 
 import (
 	"context"
+	"embed"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/editor"
 	"os"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
@@ -40,26 +42,32 @@ func (a *App) pickFile(title string, save bool, name string, done func(path stri
 	return stop
 }
 
+//go:embed filebody.vml
+var fileBodyTemplates embed.FS
+
+var fileBodyTemplate = markup.MustLoad(fileBodyTemplates, "filebody.vml")
+
 // fileBody is the editor of a file body: the path, and a button to pick it.
 func (a *App) fileBody(t *reqTab) Node {
 	sync := func() { editRequest(t, editor.BodyTyped{Text: t.file.Text}) }
-	size := ""
+	size, sizeColor := "", w.Token("") // no color of its own: the muted text
 	if info, err := os.Stat(t.file.Text); err == nil && !info.IsDir() {
 		size = "found"
 	} else if t.file.Text != "" {
-		size = "not found"
+		size, sizeColor = "not found", w.Error
 	}
-	return Col(Grow(1), Gap(8),
-		Row(H(w.RowH), Gap(6),
-			Field(&t.file, Grow(1), Placeholder("Path of the file to send"), OnChange(sync), TextMenu(&t.file)),
-			Button("Choose...", W(90), OnClick(func() {
-				a.pickFile("Choose the file to send", false, "", func(path string) {
-					t.file = NewTextField(path)
-					sync()
-				})
-			})),
-		),
-		Text(size, Small(), Muted(), When(size == "not found", Color(w.Error))),
-		Text("The file is sent as it is, with a content type from its extension.", Small(), Muted()),
-	)
+	choose := func() {
+		a.pickFile("Choose the file to send", false, "", func(path string) {
+			t.file = NewTextField(path)
+			sync()
+		})
+	}
+	return fileBodyTemplate.MustBuild(markup.Scope{
+		"rowH":      w.RowH,
+		"file":      &t.file,
+		"sync":      sync,
+		"choose":    choose,
+		"size":      size,
+		"sizeColor": sizeColor,
+	})
 }

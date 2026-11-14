@@ -1,0 +1,9 @@
+<col grow="1" gap="8">
+  <row h="{{rowH}}" gap="6">
+    <field state="file" grow="1" placeholder="Path of the file to send" on-change="sync" text-menu="file"/>
+    <button w="90" on-click="choose">Choose...</button>
+  </row>
+  <!-- always built, even empty, so the hint keeps its place -->
+  <text small muted color="{{sizeColor}}">{{size}}</text>
+  <text small muted>The file is sent as it is, with a content type from its extension.</text>
+</col>
