@@ -28,7 +28,7 @@ flow rect=0,0,300,1800
       textB text="Path of a PEM file of extra certificate authorities to trust." h=22 fg=muted rect=0,242,300,22
     flow rect=0,264,300,28
       flow h=28 bg=sunken control=field rect=0,264,300,28
-        fieldB grow=1 control=field onRightClickIn=true onChange=true rect=0,278,268,0
+        fieldB h=28 grow=1 control=field onRightClickIn=true onChange=true rect=0,264,268,28
         flow w=32 h=24 bg=sunken control=icon-button tip=Choose another file lighten=true onClick=true rect=268,266,32,24
           iconB grow=1 icon=folder rect=268,266,32,24
   flow padT=8 padB=8 borderB=border-soft rect=0,300,300,94

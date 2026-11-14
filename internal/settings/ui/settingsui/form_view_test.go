@@ -324,6 +324,47 @@ func TestRightClickingANumberFieldOpensItsTextMenu(t *testing.T) {
 	}
 }
 
+// chosenFileField is the field of the CA certificates setting once a path
+// is set: the third text field of the Requests page.
+func (driver *formDriver) chosenFileField(root *El) *El {
+	driver.t.Helper()
+	return driver.find(root, 2, "fieldB")
+}
+
+// The field of a chosen file used to lay out 0 px high: it had no height
+// of its own in a row that centers its items, so no click reached it.
+func TestAChosenFileFieldIsAsHighAsTheOtherTextFields(t *testing.T) {
+	driver := newFormDriver(t, "Requests")
+	driver.host.current.CACert = "/etc/ssl/ca.pem"
+	driver.step(func(root *El) core.Input {
+		if got, want := driver.chosenFileField(root).Rect().H, driver.find(root, 0, "fieldB").Rect().H; got != want || got == 0 {
+			t.Fatalf("chosen file field is %d px high, the timeout field %d", got, want)
+		}
+		return core.Input{}
+	})
+}
+
+// The same 0 px field took neither typing nor its text menu.
+func TestAChosenFileFieldTakesTypingAndItsTextMenu(t *testing.T) {
+	driver := newFormDriver(t, "Requests")
+	driver.host.current.CACert = "/etc/ssl/ca.pem"
+	driver.step(func(root *El) core.Input {
+		rect := driver.chosenFileField(root).Rect()
+		return core.Input{X: rect.X + rect.W/2, Y: rect.Y + rect.H/2, Click: true}
+	})
+	driver.retype("/etc/ssl/other.pem")
+	if driver.host.current.CACert != "/etc/ssl/other.pem" {
+		t.Fatalf("CA certificates %q after typing into the field", driver.host.current.CACert)
+	}
+	driver.step(func(root *El) core.Input {
+		rect := driver.chosenFileField(root).Rect()
+		return core.Input{X: rect.X + 2, Y: rect.Y + rect.H/2, RightClick: true}
+	})
+	if !MenuOpen(driver.ctx) {
+		t.Fatal("a right click on the chosen file field did not open its text menu")
+	}
+}
+
 // A search hit on a setting edited on its own page leads to that page.
 func TestOpenGoesToThePageOfATableSetting(t *testing.T) {
 	cases := []struct{ label, page string }{
