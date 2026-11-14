@@ -106,3 +106,32 @@ func TestTheCursorChangesOverAnEdgeEvenWithoutPressing(t *testing.T) {
 		t.Fatalf("cursor %v in the middle", c.Cursor)
 	}
 }
+
+func TestPressingOnTheEdgeOfAModalElementResizesItAndDoesNotDismiss(t *testing.T) {
+	tests := []struct {
+		name        string
+		pressX      int
+		wantResize  bool
+		wantDismiss bool
+	}{
+		{"inside the border", 298, true, false},
+		{"on the last pixel", 299, true, false},
+		{"outside the element", 301, false, true}, // an outside click dismisses, as for any modal
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			st, dismissed := &ResizeState{}, 0
+			root := Resizable(st, 120, 80, 500, 400, Modal(), OnDismiss(func() { dismissed++ }), Row())
+			c := testCtx(t)
+			Layout(c, root, 300, 200)
+			resizeStep(c, root, core.Input{X: test.pressX, Y: 100, Click: true, Held: true})
+			resizeStep(c, root, core.Input{X: test.pressX + 20, Y: 100, Held: true})
+			if (dismissed > 0) != test.wantDismiss {
+				t.Fatalf("a press at x=%d: dismissed %d times, want dismissed=%v", test.pressX, dismissed, test.wantDismiss)
+			}
+			if (st.W != 0) != test.wantResize {
+				t.Fatalf("a press at x=%d: W = %d, want resize=%v", test.pressX, st.W, test.wantResize)
+			}
+		})
+	}
+}

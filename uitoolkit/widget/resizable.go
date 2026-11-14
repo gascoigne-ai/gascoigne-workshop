@@ -39,8 +39,10 @@ func Resizable(state *ResizeState, minW, minH, maxW, maxH int, items ...Item) *E
 }
 
 // edges reports which edges of r the point is on, if it is on the border.
+// The border lies inside r: a press outside r is outside the modal element
+// and dismisses it, so it must not start a resize.
 func edges(r core.Rect, x, y int) (left, right, top, bottom bool) {
-	if x < r.X-2 || x > r.X+r.W+2 || y < r.Y-2 || y > r.Y+r.H+2 {
+	if !r.Contains(x, y) {
 		return
 	}
 	left, right = x < r.X+edgeSlop, x >= r.X+r.W-edgeSlop
