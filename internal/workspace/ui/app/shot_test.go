@@ -308,6 +308,37 @@ func TestScreenshotShowsTheNamedRequestPane(t *testing.T) {
 	}
 }
 
+// With -response-pane the capture shows the response pane with that label,
+// so a scene can draw the response's Tests list; -pane cannot, as both
+// sides have a Tests pane.
+func TestScreenshotShowsTheNamedResponsePane(t *testing.T) {
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotResponsePane: "Tests"})
+	for range setFrame {
+		if err := a.shotUpdate(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := a.Err(); err != nil {
+		t.Fatal(err)
+	}
+	tab := a.cur()
+	if got := responsePanesFor(tab)[tab.respTab].label; got != "Tests" {
+		t.Errorf("response pane %q, want Tests", got)
+	}
+}
+
+// An unknown response pane ends the run with an error, as an unknown
+// request pane does.
+func TestScreenshotWithAnUnknownResponsePaneFails(t *testing.T) {
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotResponsePane: "Nope"})
+	for range setFrame {
+		a.shotUpdate()
+	}
+	if a.Err() == nil || !a.shot.captured {
+		t.Fatalf("err = %v, captured = %v, want the run ended with an error", a.Err(), a.shot.captured)
+	}
+}
+
 // With -body the capture chooses that body type on the open request, as
 // its chip does, so a scene can draw the File or GraphQL body editor that
 // no sample request has. The tab shows its unsaved mark on that frame.

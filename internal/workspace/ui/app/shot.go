@@ -49,6 +49,7 @@ type screenshot struct {
 	url         string   // text to type into the open request's URL, so its tab is marked changed
 	pane        string   // label of the request pane to show, such as Settings
 	body        string   // body type to choose on the open request, such as file
+	respPane    string   // label of the response pane to show, such as Tests
 	toasts      []string // texts shown as error toasts
 	dialog      string   // kind of dialog to open on the open request, a key of shotDialogs
 	record      []string // ACTION=KEYS recorded on the Shortcuts page, as a user would; a bare ACTION is left recording
@@ -251,6 +252,11 @@ func (a *App) showShotTarget() {
 		s.captured = true
 		return
 	}
+	if s.respPane != "" && !a.showShotResponsePane(s.respPane) {
+		s.err = fmt.Errorf("screenshot response pane %q is not a response pane of the open request", s.respPane)
+		s.captured = true
+		return
+	}
 	if s.body != "" && !a.chooseShotBody(s.body) {
 		s.err = fmt.Errorf("screenshot body type %q is not one of the body chips", s.body)
 		s.captured = true
@@ -329,6 +335,19 @@ func (a *App) showShotPane(label string) bool {
 	for i, candidate := range requestPanesFor(tab) {
 		if candidate.label == label {
 			tab.paneTab = i
+			return true
+		}
+	}
+	return false
+}
+
+// showShotResponsePane selects the open request's response pane with this
+// label; it reports whether the request has one.
+func (a *App) showShotResponsePane(label string) bool {
+	tab := a.cur()
+	for i, candidate := range responsePanesFor(tab) {
+		if candidate.label == label {
+			tab.respTab = i
 			return true
 		}
 	}
