@@ -201,6 +201,7 @@ func (d *SettingsDialog) titleBar(host Host) Node {
 		"searched": d.ResetScroll,
 		"save":     d.saveButton(host),
 		"compactH": w.CompactH,
+		"rowH":     w.RowH,
 		"closeRaw": d.CloseRaw,
 		"openRaw":  func() { d.OpenRaw(host) },
 	})

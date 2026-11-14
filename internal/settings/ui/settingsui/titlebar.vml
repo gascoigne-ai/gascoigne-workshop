@@ -2,7 +2,7 @@
      when there is something to save, and the switch between the form and
      the text of settings.json. -->
 <dialog-title title="Settings" on-dismiss="close">
-  <field if="!raw" state="search" h="28" grow="1" bg="sunken" placeholder="Search settings"
+  <field if="!raw" state="search" h="{{rowH}}" grow="1" bg="sunken" placeholder="Search settings"
          on-change="searched" text-menu="search"/>
   <spacer if="raw" grow="1"/>
   <slot if="save" name="save"/>
