@@ -1,0 +1,24 @@
+stack rect=0,0,1280,800
+  flow bg=shadow rect=0,0,1280,800
+  resizableB w=760 h=560 floatMode=2 bg=bg control=menu float=true modal=true focusScope=true shadow=true onDismiss=true rect=260,120,760,560
+    flow h=44 padL=16 padR=16 gap=8 borderB=border-soft onDismiss=true rect=260,120,760,44
+      textB text="Settings" bold=true rect=276,134,55,16
+      fieldB h=28 grow=1 bg=sunken control=field onRightClickIn=true onChange=true rect=339,128,557,28
+      flow w=60 h=24 padL=10 padR=10 bg=sunken control=button tip=Edit settings.json as text lighten=true onClick=true rect=904,130,60,24
+        textB text="JSON" grow=1 fg=chip-text ellipsis=true center=true rect=914,130,40,24
+      flow w=32 h=24 bg=sunken control=icon-button tip=Close (Esc) lighten=true onClick=true rect=972,130,32,24
+        iconB grow=1 icon=cross rect=972,130,32,24
+    flow grow=1 rect=260,164,760,516
+      flow w=170 padL=8 padT=8 padR=8 padB=8 gap=2 bg=frame rect=260,164,170,516
+        flow h=28 padL=12 padR=12 control=button hoverBg=hover onClick=true rect=268,172,154,28
+          textB text="Appearance" grow=1 fg=muted rect=280,178,130,16
+        flow h=28 padL=12 padR=12 bg=accent-soft control=button onClick=true rect=268,202,154,28
+          textB text="Colors" grow=1 fg=accent-line bold=true rect=280,208,130,16
+        flow h=28 padL=12 padR=12 control=button hoverBg=hover onClick=true rect=268,232,154,28
+          textB text="Shortcuts" grow=1 fg=muted rect=280,238,130,16
+        flow h=28 padL=12 padR=12 control=button hoverBg=hover onClick=true rect=268,262,154,28
+          textB text="Requests" grow=1 fg=muted rect=280,268,130,16
+        flow h=28 padL=12 padR=12 control=button hoverBg=hover onClick=true rect=268,292,154,28
+          textB text="General" grow=1 fg=muted rect=280,298,130,16
+      scrollB padL=16 padT=16 padR=16 padB=16 grow=1 borderL=border-soft rect=430,164,590,516
+        textB text="page colors" rect=446,180,558,16

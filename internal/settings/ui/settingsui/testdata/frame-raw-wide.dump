@@ -1,0 +1,18 @@
+stack rect=0,0,1280,800
+  flow bg=shadow rect=0,0,1280,800
+  resizableB w=760 h=560 floatMode=2 bg=bg control=menu float=true modal=true focusScope=true shadow=true onDismiss=true rect=260,120,760,560
+    flow h=44 padL=16 padR=16 gap=8 borderB=border-soft onDismiss=true rect=260,120,760,44
+      textB text="Settings" bold=true rect=276,134,55,16
+      plain grow=1 rect=339,142,557,0
+      flow w=60 h=24 padL=10 padR=10 bg=sunken control=button tip=Back to the settings form lighten=true onClick=true rect=904,130,60,24
+        textB text="Form" grow=1 fg=chip-text ellipsis=true center=true rect=914,130,40,24
+      flow w=32 h=24 bg=sunken control=icon-button tip=Close (Esc) lighten=true onClick=true rect=972,130,32,24
+        iconB grow=1 icon=cross rect=972,130,32,24
+    flow padL=16 padT=16 padR=16 padB=16 grow=1 rect=260,164,760,516
+      flow gap=6 grow=1 rect=276,180,728,484
+        flow h=28 gap=6 rect=276,180,728,28
+          textB text="settings.json" bold=true rect=276,180,87,28
+          plain grow=1 rect=369,180,530,28
+          textB text="Saved as you type" fg=muted small=true rect=905,180,99,28
+        areaB grow=1 bg=sunken onRightClickIn=true onChange=true rect=276,214,728,430
+        textB text="Ctrl+Space completes keys and values" fg=muted small=true rect=276,650,728,14
