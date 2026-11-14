@@ -1,0 +1,114 @@
+package ui
+
+import (
+	"fmt"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+)
+
+// Window sizes the whole window is pinned at: the test window and one so
+// narrow that the response status gives way to the response tabs.
+var windowSizes = []struct {
+	name          string
+	width, height int
+}{
+	{"wide", winW, winH},
+	{"narrow", 640, 480},
+}
+
+// respondWith gives the open tab a response with the status, so the
+// response pane shows its status pill.
+func respondWith(status int, text string) func(a *App) {
+	return func(a *App) {
+		a.cur().Resp = &model.Response{Status: status, StatusText: text, Duration: 1400 * time.Millisecond, Size: 160434}
+	}
+}
+
+// windowStates put the window in each look its root, main column and
+// response status have: no response, each pill color, a failed request
+// (no pill), and each overlay the root stacks over the frame.
+var windowStates = []struct {
+	name    string
+	stacked bool
+	setUp   func(a *App)
+}{
+	{"empty", false, func(*App) {}},
+	{"empty-stacked", true, func(*App) {}},
+	{"ok", false, respondWith(200, "OK")},
+	{"ok-stacked", true, respondWith(200, "OK")},
+	{"redirect", false, respondWith(301, "Moved Permanently")},
+	{"not-found", false, respondWith(404, "Not Found")},
+	{"failed", false, func(a *App) { a.cur().Resp = &model.Response{Err: "connection refused"} }},
+	{"menu", false, func(a *App) { a.toggleSettings() }},
+	{"popup", false, func(a *App) { widget.OpenMenu(a.ctx, 100, 100, []widget.MenuItem{{Label: "Copy"}}) }},
+	{"dialog", false, func(a *App) { a.confirm("Delete Search Repos?", "This cannot be undone.", "Delete", func() {}) }},
+	{"call-log", false, func(a *App) { a.calls.Open() }},
+	{"toast", false, func(a *App) { a.toast("There is no response to save", true) }},
+}
+
+// The whole window is pinned in each state at both window sizes.
+func TestTheWindowLaysOutAsPinned(t *testing.T) {
+	for _, state := range windowStates {
+		for _, size := range windowSizes {
+			name := "window-" + state.name + "-" + size.name
+			t.Run(name, func(t *testing.T) {
+				layout := "side"
+				if state.stacked {
+					layout = "stacked"
+				}
+				a, _ := newTestAppWith(t, func(s *settings.Settings) { s.Layout = layout })
+				t.Cleanup(a.waitWrites)
+				a.w, a.h = size.width, size.height
+				state.setUp(a)
+				assertDumpPinned(t, a, a.view(), name, size.width, size.height)
+			})
+		}
+	}
+}
+
+// findWidgets is every node under root whose behavior has the type kind,
+// in tree order.
+func findWidgets(root Node, kind string) []Node {
+	var found []Node
+	if fmt.Sprintf("%T", root.Behavior()) == kind {
+		found = append(found, root)
+	}
+	for _, child := range root.Children() {
+		found = append(found, findWidgets(child, kind)...)
+	}
+	return found
+}
+
+// The dump does not show a split's settings: the sidebar split keeps its
+// width in pixels between its minimums, the pane split shares the room
+// by ratio, stacked or side by side as the layout setting says.
+func TestTheWindowSplitsAreWiredToTheApp(t *testing.T) {
+	for _, layout := range []string{"side", "stacked"} {
+		t.Run(layout, func(t *testing.T) {
+			a, _ := newTestAppWith(t, func(s *settings.Settings) { s.Layout = layout })
+			t.Cleanup(a.waitWrites)
+			splits := findWidgets(a.view(), "*widget.splitB")
+			if len(splits) != 2 {
+				t.Fatalf("the window has %d splits, want 2", len(splits))
+			}
+			wants := [][]string{
+				{fmt.Sprintf("state:%p", &a.sidebarSplit), "def:259 ", "vertical:false ratio:false", "minFirst:160 minSecond:420"},
+				{fmt.Sprintf("state:%p", &a.paneSplit), "def:0.5 ", fmt.Sprintf("vertical:%t ratio:true", layout == "stacked"), "minFirst:220 minSecond:220"},
+			}
+			for i, split := range splits {
+				settings := fmt.Sprintf("%+v", split.Behavior())
+				for _, want := range wants[i] {
+					if !strings.Contains(settings, want) {
+						t.Errorf("split %d lacks %q: %s", i, want, settings)
+					}
+				}
+			}
+		})
+	}
+}
