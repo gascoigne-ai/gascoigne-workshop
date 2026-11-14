@@ -788,6 +788,7 @@ var attributes = map[string]func(v string) (view.Option, error){
 	"ellipsis":        flagAttr("ellipsis", view.Ellipsis),
 	"text-center":     flagAttr("text-center", view.TextCenter),
 	"optional":        flagAttr("optional", view.Optional),
+	"shrink":          flagAttr("shrink", view.Shrink),
 	"lighten":         flagAttr("lighten", view.Lighten),
 	"keep-in-view":    flagAttr("keep-in-view", view.KeepInView),
 	"separator":       separatorAttr,

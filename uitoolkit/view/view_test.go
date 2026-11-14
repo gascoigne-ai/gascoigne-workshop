@@ -65,6 +65,42 @@ func TestOptionalChildIsDroppedOnlyWhenTooNarrow(t *testing.T) {
 	}
 }
 
+// A row that overflows takes the overflow from its Shrink children, first
+// to last, each down to its MinW; a row that fits is laid out as without
+// Shrink.
+func TestShrinkChildrenGiveUpOnlyTheOverflowFirstToLast(t *testing.T) {
+	cases := []struct {
+		name            string
+		width           int
+		firstW, secondW int
+		lastX           int
+	}{
+		{"fits", 300, 100, 80, 200},
+		{"first gives the overflow", 200, 60, 80, 160},
+		{"first stops at its min, second gives the rest", 140, 30, 50, 100},
+		{"both at their min", 50, 30, 0, 50},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			first := Row(Shrink(), MinW(30), box(W(100)))
+			second := Row(Shrink(), box(W(80)))
+			fixed := box(W(20))
+			last := box(W(40))
+			root := Row(first, second, fixed, last)
+			Layout(testCtx(t), root, tc.width, 10)
+			if first.rect.W != tc.firstW || second.rect.W != tc.secondW {
+				t.Errorf("shrinking children %d and %d wide, want %d and %d", first.rect.W, second.rect.W, tc.firstW, tc.secondW)
+			}
+			if fixed.rect.W != 20 {
+				t.Errorf("a child without Shrink is %d wide, want 20", fixed.rect.W)
+			}
+			if last.rect.X != tc.lastX {
+				t.Errorf("last child at x=%d, want %d", last.rect.X, tc.lastX)
+			}
+		})
+	}
+}
+
 func TestStackFloatPinsTopRight(t *testing.T) {
 	under, menu := box(), box(W(60), H(40), FloatTR(30, 10))
 	root := Stack(under, menu)

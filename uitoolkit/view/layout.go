@@ -139,6 +139,7 @@ func (f flow) layout(e *El, c *core.Ctx) {
 		sizes[i], hug[i] = f.main(w, h)+f.marginMain(k), f.cross(w, h)
 	}
 	e.dropOptional(f, sizes, avail)
+	e.shrinkToFit(f, sizes, avail)
 
 	used, growSum, n := 0, 0.0, 0
 	for i, k := range e.kids {
@@ -309,6 +310,46 @@ func (e *El) dropOptional(f flow, sizes []int, avail int) {
 			k.hidden = true
 		}
 	}
+}
+
+// shrinkToFit takes what the children overflow the row by from its Shrink
+// children, first to last, each down to its minimum size along the axis.
+// A row that fits is left as it is.
+func (e *El) shrinkToFit(f flow, sizes []int, avail int) {
+	used, n := 0, 0
+	for i, k := range e.kids {
+		if k.hidden || k.fl.on {
+			continue
+		}
+		n++
+		if f.growing(k) {
+			used += f.marginMain(k)
+			continue
+		}
+		used += sizes[i]
+	}
+	over := used + max(n-1, 0)*e.gap - avail
+	for i, k := range e.kids {
+		if over <= 0 {
+			return
+		}
+		if !k.shrink || k.hidden || k.fl.on || f.growing(k) {
+			continue
+		}
+		give := min(sizes[i]-f.marginMain(k)-f.minMain(k), over)
+		if give > 0 {
+			sizes[i] -= give
+			over -= give
+		}
+	}
+}
+
+// minMain is a child's MinW in a Row, its MinH in a Col.
+func (f flow) minMain(k *El) int {
+	if f.horiz {
+		return k.minW
+	}
+	return k.minH
 }
 
 // stack layers its children over each other, each filling the element

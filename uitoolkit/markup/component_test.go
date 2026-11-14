@@ -341,8 +341,8 @@ func TestLightenAttributeMatchesTheGoOption(t *testing.T) {
 }
 
 func TestSizeLimitsAndFlagsAreAttributes(t *testing.T) {
-	got := view.Dump(build(t, `<row min-w="10" max-w="20" min-h="5" max-h="9" shadow clip/>`, nil))
-	want := view.Dump(view.Row(view.MinW(10), view.MaxW(20), view.MinH(5), view.MaxH(9), view.Shadow(), view.Clip()))
+	got := view.Dump(build(t, `<row min-w="10" max-w="20" min-h="5" max-h="9" shadow clip shrink/>`, nil))
+	want := view.Dump(view.Row(view.MinW(10), view.MaxW(20), view.MinH(5), view.MaxH(9), view.Shadow(), view.Clip(), view.Shrink()))
 	if got != want {
 		t.Fatalf("template:\n%s\nGo:\n%s", got, want)
 	}

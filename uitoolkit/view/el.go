@@ -23,7 +23,7 @@
 //
 // The names follow a few rules, so a guess is usually right:
 //
-//	Size       W H MinW MaxW MinH MaxH Grow Optional Clip
+//	Size       W H MinW MaxW MinH MaxH Grow Shrink Optional Clip
 //	Spacing    Pad PadX PadY PadL PadT PadR PadB   Margin MarginX MarginY MarginL MarginT MarginR MarginB   Gap
 //	Layout     Row Col Stack Spacer   AlignItems AlignSelf JustifyContent
 //	Look       Bg Border BorderX BorderY BorderL BorderT BorderR BorderB HoverBg BorderInset Shadow Control EdgeT EdgeL EdgeR HoverColor Lighten
@@ -76,6 +76,7 @@ type El struct {
 	w, h             int // fixed size; 0 = content size
 	grow             float64
 	optional, hidden bool // optional elements are dropped when the row is too narrow
+	shrink           bool // gives up width to an overflowing row, down to its MinW
 	padL, padT       int
 	padR, padB       int
 	gap              int
@@ -172,6 +173,12 @@ func Grow(weight float64) Option { return func(e *El) { e.grow = weight } }
 // Optional lets a row or column drop the element when there is not
 // enough room for everything.
 func Optional() Option { return func(e *El) { e.optional = true } }
+
+// Shrink lets an element that does not grow give up room along its parent's
+// axis when the row or column does not fit: the overflow is taken from
+// the Shrink children first to last, each down to its MinW (MinH in a
+// column). A row that fits lays out as if no child had it.
+func Shrink() Option { return func(e *El) { e.shrink = true } }
 
 // Pad sets the same padding on all sides.
 func Pad(n int) Option {
