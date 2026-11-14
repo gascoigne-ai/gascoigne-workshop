@@ -1,0 +1,38 @@
+flow rect=0,0,220,400
+  flow h=28 gap=6 rect=0,0,220,28
+    fieldB grow=1 bg=sunken control=field onRightClickIn=true rect=0,0,220,28
+  plain h=12 grow=1 rect=0,28,220,12
+  flow rect=0,40,220,48
+    flow rect=0,40,220,24
+      flow h=24 gap=6 rect=0,40,220,24
+        textB text="Close tab" grow=1 small=true ellipsis=true rect=0,40,68,24
+        flow w=96 h=24 padL=10 padR=10 bg=sunken control=button tip=Click, then press the keys lighten=true onClick=true rect=74,40,96,24
+          textB text="Ctrl+W" grow=1 fg=chip-text ellipsis=true center=true rect=84,40,76,24
+        flow w=44 h=24 padL=10 padR=10 bg=sunken control=button tip=Leave the action without a key lighten=true onClick=true rect=176,40,44,24
+          textB text="Clear" grow=1 fg=chip-text ellipsis=true center=true rect=186,40,24,24
+    flow rect=0,64,220,24
+      flow h=24 gap=6 rect=0,64,220,24
+        textB text="Send request" grow=1 small=true ellipsis=true rect=0,64,68,24
+        flow w=96 h=24 padL=10 padR=10 bg=sunken control=button tip=Click, then press the keys lighten=true onClick=true rect=74,64,96,24
+          textB text="Ctrl+Enter" grow=1 fg=chip-text ellipsis=true center=true rect=84,64,76,24
+        flow w=44 h=24 padL=10 padR=10 bg=sunken control=button tip=Leave the action without a key lighten=true onClick=true rect=176,64,44,24
+          textB text="Clear" grow=1 fg=chip-text ellipsis=true center=true rect=186,64,24,24
+  textB text="TEXT EDITING" h=22 fg=muted small=true rect=0,88,220,22
+  flow h=24 gap=6 rect=0,110,220,24
+    textB text="Select all" grow=1 small=true ellipsis=true rect=0,110,180,24
+    textB text="Ctrl+A" fg=muted small=true rect=186,110,34,24
+  flow h=24 gap=6 rect=0,134,220,24
+    textB text="Copy" grow=1 small=true ellipsis=true rect=0,134,179,24
+    textB text="Ctrl+C" fg=muted small=true rect=185,134,35,24
+  flow h=24 gap=6 rect=0,158,220,24
+    textB text="Cut" grow=1 small=true ellipsis=true rect=0,158,180,24
+    textB text="Ctrl+X" fg=muted small=true rect=186,158,34,24
+  flow h=24 gap=6 rect=0,182,220,24
+    textB text="Paste" grow=1 small=true ellipsis=true rect=0,182,180,24
+    textB text="Ctrl+V" fg=muted small=true rect=186,182,34,24
+  flow h=24 gap=6 rect=0,206,220,24
+    textB text="Undo" grow=1 small=true ellipsis=true rect=0,206,180,24
+    textB text="Ctrl+Z" fg=muted small=true rect=186,206,34,24
+  flow h=24 gap=6 rect=0,230,220,24
+    textB text="Redo" grow=1 small=true ellipsis=true rect=0,230,97,24
+    textB text="Ctrl+Y or Ctrl+Shift+Z" fg=muted small=true rect=103,230,117,24
