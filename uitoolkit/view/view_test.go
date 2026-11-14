@@ -170,6 +170,19 @@ func TestLinesMakesOneRowPerLine(t *testing.T) {
 	}
 }
 
+func TestSmallLinesUseTheSmallFontAtNoteHeight(t *testing.T) {
+	lines := Lines("a\nb", core.Muted, Small(), Gap(2))
+	Layout(testCtx(t), Col(lines), 100, 200)
+	if len(lines.kids) != 2 || lines.rect.H != 2*core.NoteH+2 {
+		t.Fatalf("rows %d height %d, want 2 rows of %dpx and a 2px gap", len(lines.kids), lines.rect.H, core.NoteH)
+	}
+	for _, k := range lines.kids {
+		if !k.small || k.fg != core.Muted {
+			t.Fatalf("line small=%v color=%q, want a small muted text", k.small, k.fg)
+		}
+	}
+}
+
 func TestFloatAtKeepsTheElementInsideTheStack(t *testing.T) {
 	tests := []struct {
 		name  string

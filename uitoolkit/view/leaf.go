@@ -93,14 +93,17 @@ func Ellipsis() Option { return func(e *El) { e.ellipsis = true } }
 // TextCenter centers text horizontally in its box.
 func TextCenter() Option { return func(e *El) { e.ctr = true } }
 
-// Lines stacks the lines of s, one Text each, in the given color.
+// Lines stacks the lines of s, one Text each, in the given color. The
+// options set the column; Small among them makes every line a small text
+// NoteH high, as a Note is, so a longer help takes little room.
 func Lines(s string, clr core.Token, opts ...Option) *El {
-	rows := []Item{}
-	for _, l := range strings.Split(s, "\n") {
-		rows = append(rows, Text(l, Color(clr), H(core.LabelH)))
+	col := Col(with(nil, opts)...)
+	lineOpts := []Option{Color(clr), H(core.LabelH)}
+	if col.small {
+		lineOpts = []Option{Color(clr), Small(), H(core.NoteH)}
 	}
-	for _, o := range opts {
-		rows = append(rows, o)
+	for _, line := range strings.Split(s, "\n") {
+		col.kids = append(col.kids, Text(line, lineOpts...))
 	}
-	return Col(rows...)
+	return col
 }

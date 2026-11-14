@@ -612,6 +612,17 @@ func TestLinesElementMatchesTheGoLines(t *testing.T) {
 	}
 }
 
+func TestSmallLinesElementMatchesTheGoSmallLines(t *testing.T) {
+	description := "Seconds to wait for a response\nbefore giving up"
+	template := build(t, `<col><lines color="muted" small>{{description}}</lines></col>`,
+		Scope{"description": description})
+	goView := view.Col(view.Lines(description, core.Muted, view.Small()))
+	sameLayout(t, testCtx(t), template, goView, 300, 80)
+	if !strings.Contains(view.Dump(template), `text="before giving up" h=18 fg=muted small=true`) {
+		t.Fatalf("the lines are not small texts of note height:\n%s", view.Dump(template))
+	}
+}
+
 func TestLinesNeedsAColor(t *testing.T) {
 	parseError(t, `<lines>text</lines>`, "<lines> needs a color")
 	parseError(t, `<lines color="muted"><row/></lines>`, "<lines> cannot contain <row>")

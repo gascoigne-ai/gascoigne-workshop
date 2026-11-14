@@ -1389,7 +1389,7 @@ func Reference() string {
 	sb.WriteString("<choice selected=\"{{chosen}}\">Raw</choice> is widget.Choice: a primary-button when selected is true, a button otherwise.\n")
 	sb.WriteString("<form-row label=\"Timeout\" label-width=\"160\">...</form-row> is widget.FormRow: the label in a column that wide, then the children.\n")
 	sb.WriteString("<check-row on=\"{{x}}\" on-click=\"toggle\"><text>Label</text></check-row> is widget.CheckRow: a checkbox, then the children; on-click makes the whole row the target.\n")
-	sb.WriteString("<lines color=\"muted\">{{text}}</lines> is view.Lines, one text per line of the scope's text (literal text has its whitespace collapsed); color is its required argument.\n")
+	sb.WriteString("<lines color=\"muted\">{{text}}</lines> is view.Lines, one text per line of the scope's text (literal text has its whitespace collapsed); color is its required argument; small makes every line a small text NoteH high.\n")
 	sb.WriteString("<tab-bar><scroll-tabs .../><slot name=\"extra\"/></tab-bar> is widget.TabBar: the strip under tabs or scroll-tabs and anything beside them, TabBarH high with TabGap above the tabs and a line under it.\n")
 	sb.WriteString("<note tone=\"error\">{{why}}</note> is widget.Note, a one-line small message under a control, cut with an ellipsis.\n")
 	sb.WriteString("Text and attribute values may use {{path}}, each step a map key or an exported struct field; if=\"name\" or \"!name\"; for=\"item in list\" over any slice, with {{$index}}; on-click=\"handler\" (and the other on-* events, each a func of the scope).\n")
