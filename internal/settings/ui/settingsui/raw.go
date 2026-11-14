@@ -1,12 +1,14 @@
 package settingsui
 
 import (
+	"embed"
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/jsonview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
@@ -177,27 +179,38 @@ func (d *SettingsDialog) complete(host Host, quiet bool) {
 // RawFocused reports whether the raw text has the keyboard focus.
 func (d *SettingsDialog) RawFocused() bool { return d.Raw && d.RawText.Focused }
 
+//go:embed raw.vml
+var rawTemplates embed.FS
+
+var rawTemplate = markup.MustLoad(rawTemplates, "raw.vml")
+
 // rawView is the dialog's page while it shows settings.json as text.
 func (d *SettingsDialog) rawView(host Host) Node {
 	status, color := "Saved as you type", w.Muted
 	if len(d.Problems) > 0 {
 		status, color = fmt.Sprintf("%d problem(s): the last good settings stay in effect", len(d.Problems)), w.Error
 	}
-	edited := func() { d.RawChanged(host) }
-	return Col(Grow(1), Gap(6),
-		Row(H(w.RowH), Gap(6),
-			Text("settings.json", Bold()),
-			Spacer(),
-			Text(status, Small(), Color(color)),
-		),
-		Area(&d.RawText, Grow(1), Bg(w.Sunken), OnChange(edited), TextMenu(&d.RawText.TextField)),
-		For(d.Problems, func(_ int, problem settings.Problem) Node {
-			prefix := ""
-			if problem.Key != "" {
-				prefix = problem.Key + ": "
-			}
-			return Note(prefix+problem.Message, w.Error)
-		}),
-		Text(w.PlatformKeyText("linux", "Ctrl+Space")+" completes keys and values", Small(), Muted()),
-	)
+	return rawTemplate.MustBuild(markup.Scope{
+		"rowH":         w.RowH,
+		"status":       status,
+		"statusColor":  color,
+		"text":         &d.RawText,
+		"menuText":     &d.RawText.TextField,
+		"edited":       func() { d.RawChanged(host) },
+		"problems":     problemLines(d.Problems),
+		"completeHint": w.PlatformKeyText("linux", "Ctrl+Space") + " completes keys and values",
+	})
+}
+
+// problemLines are the problems as the raw view lists them, each led by
+// the key it is about when it has one.
+func problemLines(problems []settings.Problem) []string {
+	lines := make([]string, len(problems))
+	for i, problem := range problems {
+		lines[i] = problem.Message
+		if problem.Key != "" {
+			lines[i] = problem.Key + ": " + problem.Message
+		}
+	}
+	return lines
 }
