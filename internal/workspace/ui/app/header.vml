@@ -1,5 +1,7 @@
+<!-- In a window too narrow for everything the title gives up room first,
+     down to 48 px, then the chip, so the settings button stays inside. -->
 <row h="{{headerH}}" pad-x="{{gutter}}" bg="hero" control="hero">
-  <text bold color="hero-text">{{title}}</text>
+  <text bold ellipsis shrink min-w="48" color="hero-text">{{title}}</text>
   <spacer/>
   <slot name="env"/>
   <spacer w="{{gutter}}"/>

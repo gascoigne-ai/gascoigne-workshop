@@ -98,6 +98,45 @@ func TestALongEnvironmentNameKeepsTheSettingsButtonInTheWindow(t *testing.T) {
 	}
 }
 
+// The header did not fit a 280 px window: the title and the chip kept
+// their full widths and pushed the settings button past the edge, even
+// with no environment (task 015). Both still show, and "No environment"
+// fits there in full.
+func TestANarrowWindowKeepsTheSettingsButtonInside(t *testing.T) {
+	cases := []struct {
+		name  string
+		envs  []string
+		label string
+	}{
+		{"none", nil, "No environment"},
+		{"long", []string{longEnvName}, longEnvName},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			a, _ := newTestApp(t)
+			t.Cleanup(a.waitWrites)
+			for _, env := range tc.envs {
+				a.addEnv(env)
+			}
+			root := a.header()
+			Layout(a.ctx, root, envNarrowW, headerH)
+			children := root.Children()
+			button := children[len(children)-1]
+			if right := button.Rect().X + button.Rect().W; right > envNarrowW {
+				t.Errorf("the settings button ends at x=%d, past the %d px window:\n%s", right, envNarrowW, Dump(root))
+			}
+			title, chip := children[0], children[2]
+			if title.Rect().W == 0 || chip.Rect().W == 0 {
+				t.Errorf("title %d px and chip %d px wide, want both shown:\n%s", title.Rect().W, chip.Rect().W, Dump(root))
+			}
+			label := chip.Children()[0]
+			if fullW := a.ctx.Width(a.ctx.F.SmallBold, tc.label); tc.envs == nil && label.Rect().W < fullW {
+				t.Errorf("%q is %d of its %d px, want it in full:\n%s", tc.label, label.Rect().W, fullW, Dump(root))
+			}
+		})
+	}
+}
+
 // Clicking the chip opens the environment menu where the pointer is, with
 // a ticked row for the active environment and Rename and Delete only when
 // one is active.

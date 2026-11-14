@@ -30,9 +30,9 @@ stack rect=0,0,640,480
             textB text="Realtime" grow=1 ellipsis=true rect=46,212,173,28
       flow grow=1 rect=220,0,420,452
         flow h=44 padL=12 padR=12 bg=hero control=hero rect=220,0,420,44
-          textB text="GitHub REST API" fg=hero-text bold=true rect=232,0,118,44
+          textB text="GitHub REST API" fg=hero-text bold=true ellipsis=true shrink=true rect=232,0,118,44
           plain grow=1 rect=350,0,111,44
-          flow h=24 padL=10 padR=10 bg=hero-text control=pill tip=Environment: variables that override the collection's onClickAt=true rect=461,10,111,24
+          flow h=24 padL=10 padR=10 bg=hero-text control=pill tip=Environment: variables that override the collection's shrink=true onClickAt=true rect=461,10,111,24
             textB text="No environment" grow=1 fg=hero small=true bold=true ellipsis=true rect=471,15,91,14
           plain w=12 grow=1 rect=572,0,12,44
           flow w=44 tip=Settings (Ctrl+,) onClick=true rect=584,0,44,44
