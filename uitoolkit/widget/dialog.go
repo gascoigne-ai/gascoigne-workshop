@@ -81,16 +81,31 @@ func (state *DialogState) Default() {
 // MessageDialogW is the width of a message dialog.
 const MessageDialogW = 380
 
-// MessageDialog shows state as a Dialog: title, body, any items you add
-// (a form, between the body and the input), the input line and the buttons
-// on the right. Enter in the input runs the primary button. Give it
-// OnDismiss for what an outside click does.
+// MessageDialog shows state as a Dialog: a title bar with a close button,
+// then the body, any content items you add (a form, between the body and
+// the input), the input line and the buttons on the right. Options you give
+// apply to the dialog panel: OnDismiss is what an outside click and the
+// close button do, Moved lets the user drag it. Enter in the input runs the
+// primary button.
 func MessageDialog(state *DialogState, items ...Item) *El {
-	return Dialog(append([]Item{
-		W(MessageDialogW), Pad(16), Gap(12),
-		Text(state.Title, H(core.LabelH), DragHandle()),
+	var options, content []Item
+	for _, item := range items {
+		if _, ok := item.(Option); ok {
+			options = append(options, item)
+		} else {
+			content = append(content, item)
+		}
+	}
+	var frag *El
+	dismiss := func() {
+		if panel := frag.Children()[1]; panel.DismissHandler() != nil {
+			panel.DismissHandler()()
+		}
+	}
+	body := Col(append(append([]Item{
+		Pad(16), Gap(12),
 		If(state.Body != "", Lines(state.Body, core.Muted)),
-	}, append(items,
+	}, content...),
 		If(state.Input != nil, Field(state.Input, H(core.RowH), Bg(core.Sunken), OnEnter(state.Default), TextMenu(state.Input))),
 		Row(H(core.RowH), Gap(8),
 			Spacer(),
@@ -98,5 +113,7 @@ func MessageDialog(state *DialogState, items ...Item) *El {
 				return Choice(button.Label, button.Primary, MinW(80), OnClick(button.Run))
 			}),
 		),
-	)...)...)
+	)...)
+	frag = Dialog(append([]Item{W(MessageDialogW), DialogTitle(state.Title, OnDismiss(dismiss)), body}, options...)...)
+	return frag
 }

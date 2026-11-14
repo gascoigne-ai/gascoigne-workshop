@@ -153,3 +153,22 @@ func TestAMessageDialogMovesWhenItsTitleIsDragged(t *testing.T) {
 		t.Fatalf("moved by %d,%d, want 50,25", move.X, move.Y)
 	}
 }
+
+func TestAMessageDialogHasATitleBarWhoseCloseButtonDismissesIt(t *testing.T) {
+	state, closed := &DialogState{Title: "Delete?", Body: "Sure?"}, 0
+	frag := MessageDialog(state, OnDismiss(func() { closed++ }))
+	root := Stack(Row(), frag)
+	c := testCtx(t)
+	Layout(c, root, 800, 600)
+	panel := frag.Children()[1]
+	bar := panel.Children()[0]
+	if bar.Rect().H != core.DialogTitleH || bar.Rect().Y != panel.Rect().Y {
+		t.Fatalf("title bar %+v in panel %+v, want it flush at the top, DialogTitleH high", bar.Rect(), panel.Rect())
+	}
+	cb := bar.Children()[len(bar.Children())-1].Rect()
+	click(c, cb.X+cb.W/2, cb.Y+cb.H/2)
+	Update(c, root)
+	if closed != 1 {
+		t.Fatalf("the close button dismissed %d times, want 1", closed)
+	}
+}

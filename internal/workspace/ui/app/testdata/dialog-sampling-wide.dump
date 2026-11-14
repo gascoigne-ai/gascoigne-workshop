@@ -1,17 +1,22 @@
 stack rect=0,0,1280,800
   flow bg=shadow rect=0,0,1280,800
-  flow w=380 padL=16 padT=16 padR=16 padB=16 floatMode=2 gap=12 bg=bg control=menu float=true modal=true focusScope=true shadow=true onDismiss=true rect=450,272,380,256
-    textB text="Sampling request" h=22 rect=466,288,348,22
-    flow rect=466,322,348,110
-      textB text="The MCP server asks for a model reply. Type one, or decline." h=22 fg=muted rect=466,322,348,22
-      textB h=22 fg=muted rect=466,344,348,22
-      textB text="System: Be brief" h=22 fg=muted rect=466,366,348,22
-      textB h=22 fg=muted rect=466,388,348,22
-      textB text="user: Say hi" h=22 fg=muted rect=466,410,348,22
-    fieldB h=28 bg=sunken control=field onRightClickIn=true rect=466,444,348,28
-    flow h=28 gap=8 rect=466,484,348,28
-      plain grow=1 rect=466,484,164,28
-      flow padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=638,484,80,28
-        textB text="Decline" grow=1 fg=chip-text ellipsis=true center=true rect=648,484,60,28
-      flow padL=10 padR=10 bg=accent control=primary lighten=true onClick=true rect=726,484,88,28
-        textB text="Send reply" grow=1 fg=accent-text ellipsis=true center=true rect=736,484,68,28
+  flow w=380 floatMode=2 bg=bg control=menu float=true modal=true focusScope=true shadow=true onDismiss=true rect=450,267,380,266
+    flow h=44 padL=16 padR=16 gap=8 bg=sunken borderB=border-soft onDismiss=true rect=450,267,380,44
+      textB text="Sampling request" bold=true rect=466,281,118,16
+      plain grow=1 rect=592,289,182,0
+      flow w=32 h=24 bg=sunken control=icon-button tip=Close (Esc) lighten=true onClick=true rect=782,277,32,24
+        iconB grow=1 icon=cross rect=782,277,32,24
+    flow padL=16 padT=16 padR=16 padB=16 gap=12 rect=450,311,380,222
+      flow rect=466,327,348,110
+        textB text="The MCP server asks for a model reply. Type one, or decline." h=22 fg=muted rect=466,327,348,22
+        textB h=22 fg=muted rect=466,349,348,22
+        textB text="System: Be brief" h=22 fg=muted rect=466,371,348,22
+        textB h=22 fg=muted rect=466,393,348,22
+        textB text="user: Say hi" h=22 fg=muted rect=466,415,348,22
+      fieldB h=28 bg=sunken control=field onRightClickIn=true rect=466,449,348,28
+      flow h=28 gap=8 rect=466,489,348,28
+        plain grow=1 rect=466,489,164,28
+        flow padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=638,489,80,28
+          textB text="Decline" grow=1 fg=chip-text ellipsis=true center=true rect=648,489,60,28
+        flow padL=10 padR=10 bg=accent control=primary lighten=true onClick=true rect=726,489,88,28
+          textB text="Send reply" grow=1 fg=accent-text ellipsis=true center=true rect=736,489,68,28

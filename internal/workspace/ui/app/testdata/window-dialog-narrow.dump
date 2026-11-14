@@ -169,14 +169,19 @@ stack rect=0,0,640,480
         textB text="Log" grow=1 fg=chip-text ellipsis=true center=true rect=548,456,24,20
       textB text="v0.1.0" fg=muted small=true rect=594,452,34,28
   flow bg=shadow rect=0,0,640,480
-  flow w=380 padL=16 padT=16 padR=16 padB=16 floatMode=2 gap=12 bg=bg control=menu float=true modal=true focusScope=true shadow=true onDismiss=true rect=130,176,380,128
-    textB text="Delete Search Repos?" h=22 rect=146,192,348,22
-    flow rect=146,226,348,22
-      textB text="This cannot be undone." h=22 fg=muted rect=146,226,348,22
-    flow h=28 gap=8 rect=146,260,348,28
-      plain grow=1 rect=146,260,172,28
-      flow padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=326,260,80,28
-        textB text="Cancel" grow=1 fg=chip-text ellipsis=true center=true rect=336,260,60,28
-      flow padL=10 padR=10 bg=accent control=primary lighten=true onClick=true rect=414,260,80,28
-        textB text="Delete" grow=1 fg=accent-text ellipsis=true center=true rect=424,260,60,28
+  flow w=380 floatMode=2 bg=bg control=menu float=true modal=true focusScope=true shadow=true onDismiss=true rect=130,171,380,138
+    flow h=44 padL=16 padR=16 gap=8 bg=sunken borderB=border-soft onDismiss=true rect=130,171,380,44
+      textB text="Delete Search Repos?" bold=true rect=146,185,148,16
+      plain grow=1 rect=302,193,152,0
+      flow w=32 h=24 bg=sunken control=icon-button tip=Close (Esc) lighten=true onClick=true rect=462,181,32,24
+        iconB grow=1 icon=cross rect=462,181,32,24
+    flow padL=16 padT=16 padR=16 padB=16 gap=12 rect=130,215,380,94
+      flow rect=146,231,348,22
+        textB text="This cannot be undone." h=22 fg=muted rect=146,231,348,22
+      flow h=28 gap=8 rect=146,265,348,28
+        plain grow=1 rect=146,265,172,28
+        flow padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=326,265,80,28
+          textB text="Cancel" grow=1 fg=chip-text ellipsis=true center=true rect=336,265,60,28
+        flow padL=10 padR=10 bg=accent control=primary lighten=true onClick=true rect=414,265,80,28
+          textB text="Delete" grow=1 fg=accent-text ellipsis=true center=true rect=424,265,60,28
   tooltipB rect=0,0,640,480
