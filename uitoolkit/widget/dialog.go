@@ -32,7 +32,7 @@ func ResizableDialog(state *ResizeState, minW, minH, maxW, maxH int, items ...It
 // not in the bar. OnDismiss is what the close button does.
 func DialogTitle(title string, items ...Item) *El {
 	var bar *El
-	closeButton := Row(W(32), H(core.CompactH), HoverBg(core.Shadow), Tooltip("Close (Esc)"),
+	closeButton := Row(W(32), H(core.CompactH), Control("row"), HoverBg(core.Shadow), Tooltip("Close (Esc)"),
 		OnClick(func() {
 			if bar.DismissHandler() != nil {
 				bar.DismissHandler()()

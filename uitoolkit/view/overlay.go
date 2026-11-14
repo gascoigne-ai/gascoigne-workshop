@@ -1,5 +1,7 @@
 package view
 
+import "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+
 // How a floating element is placed in its Stack.
 const (
 	floatCorner = iota // top right, offset by Float
@@ -58,8 +60,21 @@ const dragEdge = 6
 // RoundT rounds the top corners of the element's background to the corner
 // radius of the named control (the panel it sits at the top of, such as
 // "menu"), with anti-aliased edges, so a bar across the top of a rounded
-// panel does not poke out past the panel's corners.
-func RoundT(control string) Option { return func(e *El) { e.roundT = control } }
+// panel does not poke out past the panel's corners. It follows the user's
+// corner setting like the panel does.
+func RoundT(control string) Option { return roundCorners(control, core.CornersTop) }
+
+// RoundB is RoundT for the bottom corners: a pane across the bottom of a
+// rounded panel.
+func RoundB(control string) Option { return roundCorners(control, core.CornersBottom) }
+
+// RoundBL is RoundT for the bottom left corner only: a column down the left
+// side of a rounded panel.
+func RoundBL(control string) Option { return roundCorners(control, core.CornerBL) }
+
+func roundCorners(control string, corners core.Corners) Option {
+	return func(e *El) { e.roundCtl, e.roundCorners = control, e.roundCorners|corners }
+}
 
 // DragHandle marks the element as a place to drag its Moved ancestor by:
 // a dialog's title bar. Clickable and focusable elements inside it (a

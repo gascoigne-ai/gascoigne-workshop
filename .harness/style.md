@@ -12,7 +12,7 @@ Every dialog is a modal floating panel over a dimmed scrim (`widget.Dialog`, `Re
 
 - Height `DialogTitleH` (44), side padding 16, gap 8, items centered vertically, flush with the panel's edges (the panel itself has no padding).
 - The bar is drawn like the window's header, which is the app's identity: `Hero` with the `hero` gradient control (`Control("hero")`), so it differs from the body in every theme, its two top corners rounded to the panel's radius (`RoundT("menu")`, anti-aliased with alpha, so the bar follows the panel's outline instead of poking out of the corners), with a `Border` line under it (the toolbar's line is the soft `BorderSoft`). Text on it is `HeroText`, icons and the subtitle `HeroMuted`; never `Text`/`Muted`, which are for the body.
-- Content from the left: the **title** (bold, `HeroText`; a short noun: "Settings", "Log", "Rename"), an optional **subtitle** (`widget.DialogSubtitle`: `HeroMuted`, small, ellipsized, gives way first; the page shown, a count, the file; never a sentence or an action), free room, then the **close button** (32 x `CompactH`, no chip, `CrossIcon` in `HeroMuted`, darkened under the pointer with `Shadow`, tooltip "Close (Esc)").
+- Content from the left: the **title** (bold, `HeroText`; a short noun: "Settings", "Log", "Rename"), an optional **subtitle** (`widget.DialogSubtitle`: `HeroMuted`, small, ellipsized, gives way first; the page shown, a count, the file; never a sentence or an action), free room, then the **close button** (32 x `CompactH`, no chip, `CrossIcon` in `HeroMuted`, darkened under the pointer with `Shadow` (alpha) in the `row` control's corners, so it follows the Corners setting like the bar, tooltip "Close (Esc)").
 - No controls in the bar: no fields, no buttons except close. Those go in the toolbar.
 - The close button, Escape and a click outside all run the dialog's `OnDismiss`, so they cancel alike. A dialog that must not be cancelled by an outside click still has the button.
 - The bar is the drag handle (`DragHandle`): a press on the free part (not the border, not the close button) drags the dialog, a double click centers it. The grab cursor (`CursorMove`) shows only from the press until the release, never while hovering, so an idle bar looks like a title and not like a control. The dialog stays inside the window (`Moved`, `MoveState`; decision 56).
@@ -23,6 +23,10 @@ Every dialog is a modal floating panel over a dimmed scrim (`widget.Dialog`, `Re
 - Height `DialogToolbarH` (40), side padding 16, gap 8, `BorderSoft` line under it; controls are `CompactH` high (fields `RowH`), a field that takes the room has `Grow(1)`.
 - Holds what acts on the whole dialog: a search or filter field, Save, Clear, a mode switch. Settings: search, Save, JSON/Form. Log: filter, Clear.
 - A dialog with no such control has no toolbar (message dialogs).
+
+### Corners
+
+Everything that fills a corner of the dialog panel (the title bar, the settings page list, the Log text) rounds that corner to the panel's radius with `RoundT`, `RoundB` or `RoundBL` (`round-t`, `round-b`, `round-bl` in templates; the argument is the panel's control, `menu`), drawn with alpha at the edge. The radius is the control's after the user's Corners setting (`Ctx.Radius`), so square, soft and round all fit; a square fill in a rounded panel is a bug.
 
 ### Message dialogs
 

@@ -173,7 +173,7 @@ stack rect=0,0,640,480
     flow h=44 padL=16 padR=16 gap=8 bg=hero borderB=border control=hero onDismiss=true rect=130,171,380,44
       textB text="Delete Search Repos?" fg=hero-text bold=true rect=146,185,148,16
       plain grow=1 rect=302,193,152,0
-      flow w=32 h=24 tip=Close (Esc) hoverBg=shadow onClick=true rect=462,181,32,24
+      flow w=32 h=24 control=row tip=Close (Esc) hoverBg=shadow onClick=true rect=462,181,32,24
         iconB grow=1 fg=hero-muted icon=cross rect=462,181,32,24
     flow padL=16 padT=16 padR=16 padB=16 gap=12 rect=130,215,380,94
       flow rect=146,231,348,22

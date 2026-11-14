@@ -5,7 +5,7 @@ stack rect=0,0,600,420
       textB text="Settings" fg=hero-text bold=true rect=56,54,55,16
       textB text="Colors" fg=hero-muted small=true ellipsis=true shrink=true rect=119,55,35,14
       plain grow=1 rect=162,62,342,0
-      flow w=32 h=24 tip=Close (Esc) hoverBg=shadow onClick=true rect=512,50,32,24
+      flow w=32 h=24 control=row tip=Close (Esc) hoverBg=shadow onClick=true rect=512,50,32,24
         iconB grow=1 fg=hero-muted icon=cross rect=512,50,32,24
     flow h=40 padL=16 padR=16 gap=8 borderB=border-soft rect=40,84,520,40
       fieldB h=28 grow=1 bg=sunken control=field onRightClickIn=true onChange=true rect=56,90,352,28

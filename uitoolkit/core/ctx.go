@@ -417,30 +417,62 @@ func fillGradient(dst *ebiten.Image, path *vector.Path, y0, y1 float32, top, bot
 	dst.DrawTriangles(verts, idx, gradientSrc, &ebiten.DrawTrianglesOptions{AntiAlias: antiAlias})
 }
 
-// FillStyledTop is FillStyled with only the top corners rounded, for a bar
-// across the top of a rounded panel: its corners follow the panel's, with
-// anti-aliased (alpha) edges, instead of poking out past them.
-func (c *Ctx) FillStyledTop(dst *ebiten.Image, r Rect, top, bottom color.RGBA, radius float64) {
-	if radius*c.Scale < 1 {
+// Corners is a set of rectangle corners.
+type Corners uint8
+
+// The corners of a rectangle.
+const (
+	CornerTL Corners = 1 << iota
+	CornerTR
+	CornerBR
+	CornerBL
+
+	CornersTop    = CornerTL | CornerTR
+	CornersBottom = CornerBL | CornerBR
+)
+
+// FillStyledCorners is FillStyled with only the given corners rounded, for
+// a bar or a column that sits in the corner of a rounded panel: its corner
+// follows the panel's, with anti-aliased (alpha) edges, instead of poking
+// out past it.
+func (c *Ctx) FillStyledCorners(dst *ebiten.Image, r Rect, top, bottom color.RGBA, radius float64, corners Corners) {
+	if radius*c.Scale < 1 || corners == 0 {
 		c.FillStyled(dst, r, top, bottom, 0)
 		return
 	}
 	x0, y0 := c.dev(float32(r.X)), c.dev(float32(r.Y))
 	x1, y1 := c.dev(float32(r.X+r.W)), c.dev(float32(r.Y+r.H))
-	fillGradient(dst, roundedTopPath(x0, y0, x1, y1, c.dev(float32(radius))), y0, y1, top, bottom, true)
+	fillGradient(dst, cornersPath(x0, y0, x1, y1, c.dev(float32(radius)), corners), y0, y1, top, bottom, true)
 }
 
-// roundedTopPath is r with the two top corners rounded by rad.
-func roundedTopPath(x0, y0, x1, y1, rad float32) *vector.Path {
-	rad = min(rad, (x1-x0)/2, y1-y0)
+// cornersPath is r with the corners in the set rounded by rad.
+func cornersPath(x0, y0, x1, y1, rad float32, corners Corners) *vector.Path {
+	rad = min(rad, (x1-x0)/2, (y1-y0)/2)
+	r := func(k Corners) float32 {
+		if corners&k != 0 {
+			return rad
+		}
+		return 0
+	}
+	tl, tr, br, bl := r(CornerTL), r(CornerTR), r(CornerBR), r(CornerBL)
 	var p vector.Path
-	p.MoveTo(x0+rad, y0)
-	p.LineTo(x1-rad, y0)
-	p.Arc(x1-rad, y0+rad, rad, -math.Pi/2, 0, vector.Clockwise)
-	p.LineTo(x1, y1)
-	p.LineTo(x0, y1)
-	p.LineTo(x0, y0+rad)
-	p.Arc(x0+rad, y0+rad, rad, math.Pi, 3*math.Pi/2, vector.Clockwise)
+	p.MoveTo(x0+tl, y0)
+	p.LineTo(x1-tr, y0)
+	if tr > 0 {
+		p.Arc(x1-tr, y0+tr, tr, -math.Pi/2, 0, vector.Clockwise)
+	}
+	p.LineTo(x1, y1-br)
+	if br > 0 {
+		p.Arc(x1-br, y1-br, br, 0, math.Pi/2, vector.Clockwise)
+	}
+	p.LineTo(x0+bl, y1)
+	if bl > 0 {
+		p.Arc(x0+bl, y1-bl, bl, math.Pi/2, math.Pi, vector.Clockwise)
+	}
+	p.LineTo(x0, y0+tl)
+	if tl > 0 {
+		p.Arc(x0+tl, y0+tl, tl, math.Pi, 3*math.Pi/2, vector.Clockwise)
+	}
 	p.Close()
 	return &p
 }

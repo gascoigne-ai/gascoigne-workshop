@@ -174,7 +174,7 @@ stack rect=0,0,640,480
       textB text="Log" fg=hero-text bold=true rect=16,54,26,16
       textB text="0 entries" fg=hero-muted small=true ellipsis=true shrink=true rect=50,55,46,14
       plain grow=1 rect=104,62,480,0
-      flow w=32 h=24 tip=Close (Esc) hoverBg=shadow onClick=true rect=592,50,32,24
+      flow w=32 h=24 control=row tip=Close (Esc) hoverBg=shadow onClick=true rect=592,50,32,24
         iconB grow=1 fg=hero-muted icon=cross rect=592,50,32,24
     flow h=40 padL=16 padR=16 gap=8 borderB=border-soft rect=0,84,640,40
       fieldB h=28 grow=1 bg=sunken control=field onRightClickIn=true rect=16,90,536,28

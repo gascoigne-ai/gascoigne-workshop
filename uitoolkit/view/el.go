@@ -33,7 +33,7 @@
 //	Events+    OnSelect SelectHandler DismissHandler ChangeHandler   Separator   (Button, Tabs, Menu, Dialog and the rest of the ready-made widgets are in package widget)
 //	Flow       If When For Frag
 //	Extend     Behavior Base Linear Custom Describer PreUpdater OverDrawer Scroller Focusable Focuser Linear.LayoutIn (El.Inner El.InFlow El.KeepsInView El.Behavior El.Place El.FixedSize El.ColorToken El.HoverColorToken)   a component outside this package is an element through these
-//	Overlay    FloatTR FloatAt FloatCenter Moved MoveState DragHandle DismissMargin RoundT Modal OnDismiss FocusScope
+//	Overlay    FloatTR FloatAt FloatCenter Moved MoveState DragHandle DismissMargin RoundT RoundB RoundBL Modal OnDismiss FocusScope
 //
 // A side is a letter suffix (PadL, PadT, PadR, PadB) and an axis is X or
 // Y (PadX is left and right). The same options are the attributes of a
@@ -112,7 +112,8 @@ type El struct {
 	fl            floatOpts // set by Float, FloatAt and FloatCenter
 	dragHandle    bool      // set by DragHandle
 	dismissMargin int       // set by DismissMargin
-	roundT        string    // set by RoundT
+	roundCtl      string    // set by RoundT, RoundB and RoundBL: the control whose radius the corners take
+	roundCorners  core.Corners
 	focusScope    bool
 	onRight       func(x, y int)
 	modal         bool

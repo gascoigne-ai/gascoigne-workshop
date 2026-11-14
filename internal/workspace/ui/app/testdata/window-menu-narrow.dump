@@ -174,7 +174,7 @@ stack rect=0,0,640,480
       textB text="Settings" fg=hero-text bold=true rect=56,54,55,16
       textB text="Appearance" fg=hero-muted small=true ellipsis=true shrink=true rect=119,55,65,14
       plain grow=1 rect=192,62,352,0
-      flow w=32 h=24 tip=Close (Esc) hoverBg=shadow onClick=true rect=552,50,32,24
+      flow w=32 h=24 control=row tip=Close (Esc) hoverBg=shadow onClick=true rect=552,50,32,24
         iconB grow=1 fg=hero-muted icon=cross rect=552,50,32,24
     flow h=40 padL=16 padR=16 gap=8 borderB=border-soft rect=40,84,560,40
       fieldB h=28 grow=1 bg=sunken control=field onRightClickIn=true onChange=true rect=56,90,460,28
