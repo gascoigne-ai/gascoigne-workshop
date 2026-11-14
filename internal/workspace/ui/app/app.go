@@ -264,6 +264,8 @@ type Options struct {
 	ScreenshotOpenAll         bool                                          // open every request of the collection in its own tab before the screenshot
 	ScreenshotURL             string                                        // type this text into the open request's URL before the screenshot
 	ScreenshotPane            string                                        // the label of the request pane to show before the screenshot
+	ScreenshotToasts          []string                                      // texts shown as error toasts before the screenshot
+	ScreenshotDialog          string                                        // the dialog to open on the open request before the screenshot (rename, delete)
 	SettingsPath              string                                        // settings file; "" keeps settings in memory
 	StatePath                 string                                        // remembered UI state; "" keeps it in memory
 	ThemesDir                 string                                        // folder of user theme files (*.json); "" for none
@@ -324,7 +326,7 @@ func NewApp(opts Options) (*App, error) {
 		widgets:          map[*tabs.Tab]*reqTab{},
 		bus:              bus.New(),
 		status:           "Ready",
-		shot:             screenshot{path: opts.ScreenshotPath, sendOnStart: opts.SendOnStart, set: opts.ScreenshotSet, request: opts.ScreenshotRequest, page: opts.ScreenshotPage, sentLog: opts.ScreenshotSentLog, find: opts.ScreenshotFind, filter: opts.ScreenshotFilter, sending: opts.ScreenshotSending, openAll: opts.ScreenshotOpenAll, url: opts.ScreenshotURL, pane: opts.ScreenshotPane},
+		shot:             screenshot{path: opts.ScreenshotPath, sendOnStart: opts.SendOnStart, set: opts.ScreenshotSet, request: opts.ScreenshotRequest, page: opts.ScreenshotPage, sentLog: opts.ScreenshotSentLog, find: opts.ScreenshotFind, filter: opts.ScreenshotFilter, sending: opts.ScreenshotSending, openAll: opts.ScreenshotOpenAll, url: opts.ScreenshotURL, pane: opts.ScreenshotPane, toasts: opts.ScreenshotToasts, dialog: opts.ScreenshotDialog},
 
 		settings:     st,
 		settingFiles: settingFiles,

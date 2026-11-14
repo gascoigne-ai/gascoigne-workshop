@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/tree"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 
@@ -43,6 +44,15 @@ type screenshot struct {
 	openAll     bool     // open every request in its own tab, so the tab strip overflows
 	url         string   // text to type into the open request's URL, so its tab is marked changed
 	pane        string   // label of the request pane to show, such as Settings
+	toasts      []string // texts shown as error toasts
+	dialog      string   // kind of dialog to open on the open request, a key of shotDialogs
+}
+
+// shotDialogs are the dialogs -dialog opens on the open request, each
+// through the path its tree menu item takes.
+var shotDialogs = map[string]func(a *App, node tree.Node){
+	"rename": (*App).renameNode,
+	"delete": (*App).deleteNode,
 }
 
 // Err is the error of the capture, if any.
@@ -212,6 +222,18 @@ func (a *App) showShotTarget() {
 		s.err = fmt.Errorf("screenshot pane %q is not a pane of the open request", s.pane)
 		s.captured = true
 		return
+	}
+	if s.dialog != "" {
+		open, ok := shotDialogs[s.dialog]
+		if !ok {
+			s.err = fmt.Errorf("screenshot dialog %q is not one of rename, delete", s.dialog)
+			s.captured = true
+			return
+		}
+		open(a, tree.Of(a.cur().Req))
+	}
+	for _, text := range s.toasts {
+		a.toast(text, true)
 	}
 	if s.page != "" {
 		a.prefs.Cat = s.page

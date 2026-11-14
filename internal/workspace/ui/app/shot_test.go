@@ -14,6 +14,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 func shotApp(t *testing.T, opts Options) *App {
@@ -260,6 +261,70 @@ func TestScreenshotShowsTheNamedRequestPane(t *testing.T) {
 // instead would let a golden pass for the wrong scene.
 func TestScreenshotWithAnUnknownPaneFails(t *testing.T) {
 	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotPane: "Nope"})
+	for range setFrame {
+		a.shotUpdate()
+	}
+	if a.Err() == nil || !a.shot.captured {
+		t.Fatalf("err = %v, captured = %v, want the run ended with an error", a.Err(), a.shot.captured)
+	}
+}
+
+// With -toast the capture shows each text as an error toast, oldest first:
+// an error toast stays until it is clicked, so a slow frame cannot let it
+// fade before the capture as an info toast would.
+func TestScreenshotShowsTheToasts(t *testing.T) {
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotToasts: []string{"First", "Second"}})
+	for range setFrame {
+		if err := a.shotUpdate(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	want := widget.ToastStack{{Text: "First", IsErr: true}, {Text: "Second", IsErr: true}}
+	if !slices.Equal(a.toasts, want) {
+		t.Fatalf("toasts %+v, want %+v", a.toasts, want)
+	}
+}
+
+// With -dialog the capture opens that dialog on the open request through
+// the path its menu item takes, so a scene draws an app dialog.
+func TestScreenshotOpensTheNamedDialog(t *testing.T) {
+	cases := []struct {
+		kind      string
+		title     string
+		input     string
+		withInput bool
+	}{
+		{kind: "rename", title: "Rename", input: "Search Repos", withInput: true},
+		{kind: "delete", title: "Delete Search Repos?"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.kind, func(t *testing.T) {
+			a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotDialog: tc.kind})
+			for range setFrame {
+				if err := a.shotUpdate(); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if err := a.Err(); err != nil {
+				t.Fatal(err)
+			}
+			if a.dialog == nil || a.dialog.Title != tc.title {
+				t.Fatalf("dialog %+v, want the one titled %q", a.dialog, tc.title)
+			}
+			if got := a.dialog.Input != nil; got != tc.withInput {
+				t.Fatalf("dialog has an input: %v, want %v", got, tc.withInput)
+			}
+			if tc.withInput && a.dialog.Input.Text != tc.input {
+				t.Errorf("input %q, want %q", a.dialog.Input.Text, tc.input)
+			}
+		})
+	}
+}
+
+// An unknown dialog ends the run with an error, so a golden never passes
+// for a window without the dialog.
+func TestScreenshotWithAnUnknownDialogFails(t *testing.T) {
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotDialog: "nope"})
 	for range setFrame {
 		a.shotUpdate()
 	}

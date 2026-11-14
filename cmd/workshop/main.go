@@ -93,6 +93,11 @@ func main() {
 	flag.BoolVar(&opts.ScreenshotOpenAll, "open-all", false, "open every request of the collection in its own tab before the screenshot")
 	flag.StringVar(&opts.ScreenshotURL, "type-url", "", "type this text into the open request's URL before the screenshot, so its tab shows unsaved changes")
 	flag.StringVar(&opts.ScreenshotPane, "pane", "", "show the open request's pane with this label (Params, Settings, ...) before the screenshot")
+	flag.Func("toast", "show this text as an error toast before the screenshot (repeatable)", func(text string) error {
+		opts.ScreenshotToasts = append(opts.ScreenshotToasts, text)
+		return nil
+	})
+	flag.StringVar(&opts.ScreenshotDialog, "dialog", "", "open this dialog (rename, delete) on the open request before the screenshot")
 	flag.StringVar(&opts.ScreenshotFind, "find", "", "search the response for this text in the find bar before the screenshot (after -send's response)")
 	windowW, windowH := windowWidth, windowHeight
 	flag.Func("window", "WIDTHxHEIGHT: open the window at this size, for screenshots", func(spec string) error {
