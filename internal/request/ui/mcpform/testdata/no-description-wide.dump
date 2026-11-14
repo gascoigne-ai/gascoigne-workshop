@@ -1,0 +1,6 @@
+flow gap=8 rect=0,0,500,600
+  scrollB gap=8 grow=1 rect=0,0,500,360
+    flow gap=2 rect=0,0,500,52
+      flow h=22 gap=8 rect=0,0,500,22
+        textB text="text" small=true bold=true rect=0,0,21,22
+      fieldB h=28 bg=sunken control=field onRightClickIn=true rect=0,24,500,28

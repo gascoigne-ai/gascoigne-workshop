@@ -1,0 +1,30 @@
+flow gap=8 rect=0,0,240,600
+  flow rect=0,0,240,22
+    textB text="Find things" h=22 fg=muted rect=0,0,240,22
+  scrollB gap=8 grow=1 rect=0,30,240,360
+    flow gap=2 rect=0,30,240,52
+      flow h=22 gap=8 rect=0,30,240,22
+        textB text="query *" small=true bold=true rect=0,30,43,22
+        textB text="What to find" grow=1 fg=muted small=true ellipsis=true rect=51,30,189,22
+      fieldB h=28 bg=sunken control=field onRightClickIn=true rect=0,54,240,28
+    flow gap=2 rect=0,90,240,52
+      flow h=22 gap=8 rect=0,90,240,22
+        textB text="limit" small=true bold=true rect=0,90,25,22
+      fieldB h=28 bg=sunken control=field onRightClickIn=true rect=0,114,240,28
+    flow gap=2 rect=0,150,240,52
+      flow h=22 gap=8 rect=0,150,240,22
+        textB text="safe" small=true bold=true rect=0,150,24,22
+      flow h=28 gap=8 onClick=true rect=0,174,240,28
+        checkB rect=0,174,14,28
+        textB text="not sent" fg=muted small=true rect=22,174,43,28
+    flow gap=2 rect=0,210,240,52
+      flow h=22 gap=8 rect=0,210,240,22
+        textB text="sort" small=true bold=true rect=0,210,23,22
+      flow h=28 gap=6 rect=0,234,240,28
+        flow h=28 padL=10 padR=10 bg=accent control=primary lighten=true onClick=true rect=0,234,51,28
+          textB text="none" grow=1 fg=accent-text ellipsis=true center=true rect=10,234,31,28
+        flow h=28 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=57,234,42,28
+          textB text="asc" grow=1 fg=chip-text ellipsis=true center=true rect=67,234,22,28
+        flow h=28 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=105,234,50,28
+          textB text="desc" grow=1 fg=chip-text ellipsis=true center=true rect=115,234,30,28
+  textB text="limit must be a number, not a word like lots" fg=error small=true rect=0,398,240,14

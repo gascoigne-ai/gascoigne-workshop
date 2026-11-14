@@ -1,0 +1,49 @@
+flow gap=8 rect=0,0,500,600
+  flow rect=0,0,500,22
+    textB text="A field of every kind, required and optional" h=22 fg=muted rect=0,0,500,22
+  scrollB gap=8 grow=1 rect=0,30,500,360
+    flow gap=2 rect=0,30,492,52
+      flow h=22 gap=8 rect=0,30,492,22
+        textB text="order *" small=true bold=true rect=0,30,41,22
+      flow h=28 gap=6 rect=0,54,492,28
+        flow h=28 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=0,54,42,28
+          textB text="asc" grow=1 fg=chip-text ellipsis=true center=true rect=10,54,22,28
+        flow h=28 padL=10 padR=10 bg=accent control=primary lighten=true onClick=true rect=48,54,50,28
+          textB text="desc" grow=1 fg=accent-text ellipsis=true center=true rect=58,54,30,28
+    flow gap=2 rect=0,90,492,52
+      flow h=22 gap=8 rect=0,90,492,22
+        textB text="query *" small=true bold=true rect=0,90,43,22
+        textB text="What to find, a long description that a narrow form cuts" grow=1 fg=muted small=true ellipsis=true rect=51,90,441,22
+      fieldB h=28 bg=sunken control=field onRightClickIn=true rect=0,114,492,28
+    flow gap=2 rect=0,150,492,52
+      flow h=22 gap=8 rect=0,150,492,22
+        textB text="strict *" small=true bold=true rect=0,150,40,22
+        textB text="Exact matches only" grow=1 fg=muted small=true ellipsis=true rect=48,150,444,22
+      flow h=28 gap=8 onClick=true rect=0,174,492,28
+        checkB rect=0,174,14,28
+        textB text="sent as true" fg=muted small=true rect=22,174,63,28
+    flow gap=2 rect=0,210,492,52
+      flow h=22 gap=8 rect=0,210,492,22
+        textB text="filters" small=true bold=true rect=0,210,33,22
+      fieldB h=28 bg=sunken control=field onRightClickIn=true rect=0,234,492,28
+    flow gap=2 rect=0,270,492,52
+      flow h=22 gap=8 rect=0,270,492,22
+        textB text="limit" small=true bold=true rect=0,270,25,22
+      fieldB h=28 bg=sunken control=field onRightClickIn=true rect=0,294,492,28
+    flow gap=2 rect=0,330,492,52
+      flow h=22 gap=8 rect=0,330,492,22
+        textB text="safe" small=true bold=true rect=0,330,24,22
+      flow h=28 gap=8 onClick=true rect=0,354,492,28
+        checkB rect=0,354,14,28
+        textB text="sent as false" fg=muted small=true rect=22,354,68,28
+    flow gap=2 rect=0,390,492,52
+      flow h=22 gap=8 rect=0,390,492,22
+        textB text="sort" small=true bold=true rect=0,390,23,22
+        textB text="Sort key" grow=1 fg=muted small=true ellipsis=true rect=31,390,461,22
+      flow h=28 gap=6 rect=0,414,492,28
+        flow h=28 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=0,414,51,28
+          textB text="none" grow=1 fg=chip-text ellipsis=true center=true rect=10,414,31,28
+        flow h=28 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=57,414,55,28
+          textB text="name" grow=1 fg=chip-text ellipsis=true center=true rect=67,414,35,28
+        flow h=28 padL=10 padR=10 bg=accent control=primary lighten=true onClick=true rect=118,414,47,28
+          textB text="date" grow=1 fg=accent-text ellipsis=true center=true rect=128,414,27,28

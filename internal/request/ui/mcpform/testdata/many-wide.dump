@@ -1,0 +1,50 @@
+flow gap=8 rect=0,0,500,600
+  scrollB gap=8 grow=1 rect=0,0,500,360
+    flow gap=2 rect=0,0,492,52
+      flow h=22 gap=8 rect=0,0,492,22
+        textB text="field00" small=true bold=true rect=0,0,38,22
+      fieldB h=28 bg=sunken control=field onRightClickIn=true rect=0,24,492,28
+    flow gap=2 rect=0,60,492,52
+      flow h=22 gap=8 rect=0,60,492,22
+        textB text="field01" small=true bold=true rect=0,60,38,22
+      fieldB h=28 bg=sunken control=field onRightClickIn=true rect=0,84,492,28
+    flow gap=2 rect=0,120,492,52
+      flow h=22 gap=8 rect=0,120,492,22
+        textB text="field02" small=true bold=true rect=0,120,38,22
+      fieldB h=28 bg=sunken control=field onRightClickIn=true rect=0,144,492,28
+    flow gap=2 rect=0,180,492,52
+      flow h=22 gap=8 rect=0,180,492,22
+        textB text="field03" small=true bold=true rect=0,180,38,22
+      fieldB h=28 bg=sunken control=field onRightClickIn=true rect=0,204,492,28
+    flow gap=2 rect=0,240,492,52
+      flow h=22 gap=8 rect=0,240,492,22
+        textB text="field04" small=true bold=true rect=0,240,38,22
+      fieldB h=28 bg=sunken control=field onRightClickIn=true rect=0,264,492,28
+    flow gap=2 rect=0,300,492,52
+      flow h=22 gap=8 rect=0,300,492,22
+        textB text="field05" small=true bold=true rect=0,300,38,22
+      fieldB h=28 bg=sunken control=field onRightClickIn=true rect=0,324,492,28
+    flow gap=2 rect=0,360,492,52
+      flow h=22 gap=8 rect=0,360,492,22
+        textB text="field06" small=true bold=true rect=0,360,38,22
+      fieldB h=28 bg=sunken control=field onRightClickIn=true rect=0,384,492,28
+    flow gap=2 rect=0,420,492,52
+      flow h=22 gap=8 rect=0,420,492,22
+        textB text="field07" small=true bold=true rect=0,420,38,22
+      fieldB h=28 bg=sunken control=field onRightClickIn=true rect=0,444,492,28
+    flow gap=2 rect=0,480,492,52
+      flow h=22 gap=8 rect=0,480,492,22
+        textB text="field08" small=true bold=true rect=0,480,38,22
+      fieldB h=28 bg=sunken control=field onRightClickIn=true rect=0,504,492,28
+    flow gap=2 rect=0,540,492,52
+      flow h=22 gap=8 rect=0,540,492,22
+        textB text="field09" small=true bold=true rect=0,540,38,22
+      fieldB h=28 bg=sunken control=field onRightClickIn=true rect=0,564,492,28
+    flow gap=2 rect=0,600,492,52
+      flow h=22 gap=8 rect=0,600,492,22
+        textB text="field10" small=true bold=true rect=0,600,38,22
+      fieldB h=28 bg=sunken control=field onRightClickIn=true rect=0,624,492,28
+    flow gap=2 rect=0,660,492,52
+      flow h=22 gap=8 rect=0,660,492,22
+        textB text="field11" small=true bold=true rect=0,660,38,22
+      fieldB h=28 bg=sunken control=field onRightClickIn=true rect=0,684,492,28
