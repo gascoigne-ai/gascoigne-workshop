@@ -5,6 +5,7 @@
 package calltrace
 
 import (
+	"embed"
 	"fmt"
 	"strings"
 	"time"
@@ -12,6 +13,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/textfmt"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
@@ -152,6 +154,14 @@ func (l *Log) newest() int64 {
 	return l.entries[len(l.entries)-1].At.UnixNano()
 }
 
+//go:embed dialog.vml title.vml
+var templates embed.FS
+
+var (
+	dialogTemplate = markup.MustLoad(templates, "dialog.vml")
+	titleTemplate  = markup.MustLoad(templates, "title.vml")
+)
+
 // View is the dialog while it is open, nothing otherwise.
 func (l *Log) View(host Host) Node {
 	if !l.shown {
@@ -159,17 +169,22 @@ func (l *Log) View(host Host) Node {
 	}
 	l.refresh()
 	_, height := host.Size()
-	h := min(dialogMaxH, height-2*margin)
-	return Dialog(W(dialogW), H(h), OnDismiss(l.Close),
-		l.titleBar(host),
-		Code(&l.code, Grow(1), Bg(w.Sunken)),
-	)
+	return dialogTemplate.MustBuild(markup.Scope{
+		"width":  dialogW,
+		"height": min(dialogMaxH, height-2*margin),
+		"close":  l.Close,
+		"title":  l.titleBar(host),
+		"code":   &l.code,
+	})
 }
 
-// titleBar is the dialog's header: name, filter and Clear, then the close button.
+// titleBar is the dialog's header: name, filter and Clear, then the close
+// button. It is its own template so its tests can lay it out alone.
 func (l *Log) titleBar(host Host) Node {
-	return DialogTitle("Log", OnDismiss(l.Close),
-		Field(&l.filter, H(28), Grow(1), Bg(w.Sunken), Placeholder("Filter"), TextMenu(&l.filter)),
-		Button("Clear", W(64), H(w.CompactH), OnClick(l.Clear), Tooltip("Forget the entries")),
-	)
+	return titleTemplate.MustBuild(markup.Scope{
+		"close":    l.Close,
+		"filter":   &l.filter,
+		"clear":    l.Clear,
+		"compactH": w.CompactH,
+	})
 }

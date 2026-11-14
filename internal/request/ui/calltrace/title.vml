@@ -1,0 +1,5 @@
+<!-- The dialog's header: name, filter and Clear, then the close button. -->
+<dialog-title title="Log" on-dismiss="close">
+  <field state="filter" h="28" grow="1" bg="sunken" placeholder="Filter" text-menu="filter"/>
+  <button w="64" h="{{compactH}}" on-click="clear" tooltip="Forget the entries">Clear</button>
+</dialog-title>

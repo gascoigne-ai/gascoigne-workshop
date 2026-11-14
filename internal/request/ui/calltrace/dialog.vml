@@ -1,0 +1,4 @@
+<dialog w="{{width}}" h="{{height}}" on-dismiss="close">
+  <slot name="title"/>
+  <code state="code" grow="1" bg="sunken"/>
+</dialog>
