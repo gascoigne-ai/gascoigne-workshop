@@ -783,6 +783,7 @@ var attributes = map[string]func(v string) (view.Option, error){
 	"border-y":        tokenAttr(view.BorderY),
 	"color":           tokenAttr(view.Color),
 	"control":         func(v string) (view.Option, error) { return view.Control(v), nil },
+	"round-t":         func(v string) (view.Option, error) { return view.RoundT(v), nil },
 	"tooltip":         func(v string) (view.Option, error) { return view.Tooltip(v), nil },
 	"small":           flagAttr("small", view.Small),
 	"muted":           flagAttr("muted", view.Muted),

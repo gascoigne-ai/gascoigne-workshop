@@ -399,6 +399,13 @@ func (c *Ctx) FillStyled(dst *ebiten.Image, r Rect, top, bottom color.RGBA, radi
 		path.LineTo(x0, y1)
 		path.Close()
 	}
+	fillGradient(dst, path, y0, y1, top, bottom, round)
+}
+
+// fillGradient fills path, which spans y0 to y1 (device pixels), from top to
+// bottom; anti-aliased edges blend with alpha, so rounded corners have no
+// jagged steps.
+func fillGradient(dst *ebiten.Image, path *vector.Path, y0, y1 float32, top, bottom color.RGBA, antiAlias bool) {
 	verts, idx := path.AppendVerticesAndIndicesForFilling(nil, nil)
 	span := max(y1-y0, 1)
 	for i := range verts {
@@ -407,7 +414,35 @@ func (c *Ctx) FillStyled(dst *ebiten.Image, r Rect, top, bottom color.RGBA, radi
 		verts[i].ColorR, verts[i].ColorG, verts[i].ColorB, verts[i].ColorA = mix(top.R, bottom.R), mix(top.G, bottom.G), mix(top.B, bottom.B), mix(top.A, bottom.A)
 		verts[i].SrcX, verts[i].SrcY = 0.5, 0.5
 	}
-	dst.DrawTriangles(verts, idx, gradientSrc, &ebiten.DrawTrianglesOptions{AntiAlias: round})
+	dst.DrawTriangles(verts, idx, gradientSrc, &ebiten.DrawTrianglesOptions{AntiAlias: antiAlias})
+}
+
+// FillStyledTop is FillStyled with only the top corners rounded, for a bar
+// across the top of a rounded panel: its corners follow the panel's, with
+// anti-aliased (alpha) edges, instead of poking out past them.
+func (c *Ctx) FillStyledTop(dst *ebiten.Image, r Rect, top, bottom color.RGBA, radius float64) {
+	if radius*c.Scale < 1 {
+		c.FillStyled(dst, r, top, bottom, 0)
+		return
+	}
+	x0, y0 := c.dev(float32(r.X)), c.dev(float32(r.Y))
+	x1, y1 := c.dev(float32(r.X+r.W)), c.dev(float32(r.Y+r.H))
+	fillGradient(dst, roundedTopPath(x0, y0, x1, y1, c.dev(float32(radius))), y0, y1, top, bottom, true)
+}
+
+// roundedTopPath is r with the two top corners rounded by rad.
+func roundedTopPath(x0, y0, x1, y1, rad float32) *vector.Path {
+	rad = min(rad, (x1-x0)/2, y1-y0)
+	var p vector.Path
+	p.MoveTo(x0+rad, y0)
+	p.LineTo(x1-rad, y0)
+	p.Arc(x1-rad, y0+rad, rad, -math.Pi/2, 0, vector.Clockwise)
+	p.LineTo(x1, y1)
+	p.LineTo(x0, y1)
+	p.LineTo(x0, y0+rad)
+	p.Arc(x0+rad, y0+rad, rad, math.Pi, 3*math.Pi/2, vector.Clockwise)
+	p.Close()
+	return &p
 }
 
 // OutlineStyled strokes a one-pixel border just inside r, with rounded

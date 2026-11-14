@@ -305,7 +305,11 @@ func (e *El) draw(c *core.Ctx, dst *ebiten.Image) {
 			clr = core.Lighten(clr)
 		}
 		top, bottom := core.GradientFor(clr, style)
-		c.FillStyled(dst, r, top, bottom, style.Radius)
+		if e.roundT != "" {
+			c.FillStyledTop(dst, r, top, bottom, c.Radius(e.roundT))
+		} else {
+			c.FillStyled(dst, r, top, bottom, style.Radius)
+		}
 	}
 	if e.hoverBg != "" && over {
 		hv := c.Color(e.hoverBg)

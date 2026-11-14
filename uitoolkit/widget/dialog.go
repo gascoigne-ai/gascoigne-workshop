@@ -42,7 +42,7 @@ func DialogTitle(title string, items ...Item) *El {
 	)
 	bar = Row(append(append([]Item{
 		H(core.DialogTitleH), DragHandle(), PadX(16), Gap(8), AlignItems(AlignCenter),
-		Bg(core.Hero), Control("hero"), BorderB(core.Border), Text(title, Bold(), Color(core.HeroText)),
+		Bg(core.Hero), Control("hero"), RoundT("menu"), BorderB(core.Border), Text(title, Bold(), Color(core.HeroText)),
 	}, append(items, Spacer())...), closeButton)...)
 	return bar
 }

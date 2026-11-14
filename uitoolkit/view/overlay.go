@@ -55,6 +55,12 @@ func DismissMargin(px int) Option { return func(e *El) { e.dismissMargin = px } 
 // press does not start a drag: the edge is the resize grab, not the handle.
 const dragEdge = 6
 
+// RoundT rounds the top corners of the element's background to the corner
+// radius of the named control (the panel it sits at the top of, such as
+// "menu"), with anti-aliased edges, so a bar across the top of a rounded
+// panel does not poke out past the panel's corners.
+func RoundT(control string) Option { return func(e *El) { e.roundT = control } }
+
 // DragHandle marks the element as a place to drag its Moved ancestor by:
 // a dialog's title bar. Clickable and focusable elements inside it (a
 // close button, a search field) keep their clicks.
