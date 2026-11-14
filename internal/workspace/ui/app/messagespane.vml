@@ -1,0 +1,12 @@
+<col grow="1">
+  <!-- same top inset as the request pane, so first rows line up -->
+  <spacer h="{{gutter}}"/>
+  <slot name="toolbar"/>
+  <code state="log" grow="1" bg="sunken"/>
+  <!-- an event stream only receives, so it has no composer -->
+  <row if="composer" h="{{composerH}}" pad-x="{{gutter}}" pad-y="8" gap="6" border-t="border">
+    <field state="message" grow="1" placeholder="{{hint}}" on-enter="send" text-menu="message"/>
+    <button if="canFormat" min-w="40" on-click="format" tooltip="Make the message one line of JSON, or say where it is not JSON">{ }</button>
+    <primary-button min-w="70" on-click="send" tooltip="Send the message (Enter)">Send</primary-button>
+  </row>
+</col>

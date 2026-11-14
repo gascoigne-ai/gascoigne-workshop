@@ -2,6 +2,7 @@ package ui
 
 import (
 	"context"
+	"embed"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/textfmt"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
@@ -285,23 +287,25 @@ func (a *App) logInfo(t *reqTab, text string, tok w.Token) {
 	}
 }
 
+//go:embed messagespane.vml
+var messagesPaneSource embed.FS
+
+var messagesPaneTemplate = markup.MustLoad(messagesPaneSource, "messagespane.vml")
+
 // messagesPane is the log with its toolbar and the composer.
 func (a *App) messagesPane(_ pane, t *reqTab, _ *ScrollState) Node {
-	connected := t.Session != nil
-	return Col(Grow(1),
-		Spacer(H(w.Gutter)),
-		a.messagesToolbar(t),
-		Code(&t.wsView, Grow(1), Bg(w.Sunken)),
-		If(t.Req.Protocol != "sse", // an event stream only receives, so it has no composer
-			Row(H(w.RowH+16), PadX(w.Gutter), PadY(8), Gap(6), BorderT(w.Border),
-				Field(&t.msg, Grow(1), Placeholder(composerHint(t, connected)),
-					OnEnter(func() { a.sendMessage(t) }),
-					TextMenu(&t.msg),
-				),
-				If(t.Req.Protocol == "websocket", Button("{ }", MinW(40), OnClick(func() { a.formatMessage(t) }), Tooltip("Make the message one line of JSON, or say where it is not JSON"))),
-				PrimaryButton("Send", MinW(70), OnClick(func() { a.sendMessage(t) }), Tooltip("Send the message (Enter)")),
-			)),
-	)
+	return messagesPaneTemplate.MustBuild(markup.Scope{
+		"gutter":    w.Gutter,
+		"composerH": w.RowH + 16,
+		"toolbar":   a.messagesToolbar(t),
+		"log":       &t.wsView,
+		"composer":  t.Req.Protocol != "sse",
+		"message":   &t.msg,
+		"hint":      composerHint(t, t.Session != nil),
+		"canFormat": t.Req.Protocol == "websocket",
+		"send":      func() { a.sendMessage(t) },
+		"format":    func() { a.formatMessage(t) },
+	})
 }
 
 func connState(t *reqTab) string {
