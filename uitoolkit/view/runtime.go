@@ -392,7 +392,11 @@ func (e *El) dragByHandle(c *core.Ctx) {
 		m.X, m.Y = m.fromX+c.In.X-m.startX, m.fromY+c.In.Y-m.startY
 		return
 	}
-	if !c.In.Click || !e.rect.Contains(c.In.X, c.In.Y) || e.onBorder(c.In.X, c.In.Y) || !e.onHandle(c.In.X, c.In.Y) {
+	if !e.rect.Contains(c.In.X, c.In.Y) || e.onBorder(c.In.X, c.In.Y) || !e.onHandle(c.In.X, c.In.Y) {
+		return
+	}
+	c.Cursor = core.CursorMove // the pointer is over a free part of a handle
+	if !c.In.Click {
 		return
 	}
 	if c.In.Clicks >= 2 {

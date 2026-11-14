@@ -170,9 +170,10 @@ stack rect=0,0,640,480
       textB text="v0.1.0" fg=muted small=true rect=594,452,34,28
   flow bg=shadow rect=0,0,640,480
   resizableB w=560 h=400 floatMode=2 bg=bg control=menu float=true modal=true focusScope=true shadow=true onDismiss=true rect=40,40,560,400
-    flow h=44 padL=16 padR=16 gap=8 bg=sunken borderB=border-soft onDismiss=true rect=40,40,560,44
+    flow h=44 padL=16 padR=16 gap=8 bg=frame borderB=border hoverBg=hover onDismiss=true rect=40,40,560,44
       textB text="Settings" bold=true rect=56,54,55,16
-      plain grow=1 rect=119,62,425,0
+      textB text="Appearance" fg=muted small=true ellipsis=true shrink=true rect=119,55,65,14
+      plain grow=1 rect=192,62,352,0
       flow w=32 h=24 bg=sunken control=icon-button tip=Close (Esc) lighten=true onClick=true rect=552,50,32,24
         iconB grow=1 icon=cross rect=552,50,32,24
     flow h=40 padL=16 padR=16 gap=8 borderB=border-soft rect=40,84,560,40

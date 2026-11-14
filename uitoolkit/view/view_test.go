@@ -302,6 +302,28 @@ func TestDraggingAHandleMovesTheDialog(t *testing.T) {
 	}
 }
 
+func TestThePointerOverAFreePartOfAHandleShowsTheMoveCursor(t *testing.T) {
+	m, dismissed := &MoveState{}, 0
+	root, c := dragRig(t, m, &dismissed)
+	for _, tt := range []struct {
+		name string
+		x, y int
+		want core.Cursor
+	}{
+		{"free part of the handle", 200, 90, core.CursorMove},
+		{"on a control in the handle", 155, 90, core.CursorDefault},
+		{"below the handle", 200, 110, core.CursorDefault},
+		{"on the border", 200, 82, core.CursorDefault},
+	} {
+		c.Cursor = core.CursorDefault
+		c.In = core.Input{X: tt.x, Y: tt.y}
+		Update(c, root)
+		if c.Cursor != tt.want {
+			t.Errorf("%s: cursor %v, want %v", tt.name, c.Cursor, tt.want)
+		}
+	}
+}
+
 func TestPressingAControlInsideTheHandleDoesNotDrag(t *testing.T) {
 	m, dismissed := &MoveState{}, 0
 	root, c := dragRig(t, m, &dismissed)

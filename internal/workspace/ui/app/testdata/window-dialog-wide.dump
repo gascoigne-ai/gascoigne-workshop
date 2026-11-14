@@ -170,7 +170,7 @@ stack rect=0,0,1280,800
       textB text="v0.1.0" fg=muted small=true rect=1234,772,34,28
   flow bg=shadow rect=0,0,1280,800
   flow w=380 floatMode=2 bg=bg control=menu float=true modal=true focusScope=true shadow=true onDismiss=true rect=450,331,380,138
-    flow h=44 padL=16 padR=16 gap=8 bg=sunken borderB=border-soft onDismiss=true rect=450,331,380,44
+    flow h=44 padL=16 padR=16 gap=8 bg=frame borderB=border hoverBg=hover onDismiss=true rect=450,331,380,44
       textB text="Delete Search Repos?" bold=true rect=466,345,148,16
       plain grow=1 rect=622,353,152,0
       flow w=32 h=24 bg=sunken control=icon-button tip=Close (Esc) lighten=true onClick=true rect=782,341,32,24

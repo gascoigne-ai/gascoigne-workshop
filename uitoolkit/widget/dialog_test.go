@@ -65,7 +65,7 @@ func TestDialogTitleIsADragStripOfItsOwn(t *testing.T) {
 	panel := Col(W(400), H(200), FloatCenter(), Moved(move), Modal(), bar)
 	root := Stack(Row(), panel)
 	Layout(c, root, 800, 600)
-	hasProps(t, bar, "bg=sunken", "borderB=border-soft")
+	hasProps(t, bar, "bg=frame", "borderB=border", "hoverBg=hover")
 	r := bar.Rect()
 	x, y := r.X+r.W/2, r.Y+r.H/2 // between the title and the close button
 	c.In = core.Input{X: x, Y: y, Click: true, Held: true}
@@ -170,5 +170,19 @@ func TestAMessageDialogHasATitleBarWhoseCloseButtonDismissesIt(t *testing.T) {
 	Update(c, root)
 	if closed != 1 {
 		t.Fatalf("the close button dismissed %d times, want 1", closed)
+	}
+}
+
+func TestDialogSubtitleSitsAfterTheTitleAndGivesWayToTheCloseButton(t *testing.T) {
+	c := testCtx(t)
+	bar := DialogTitle("Settings", DialogSubtitle("A very long page name that cannot fit in a narrow dialog title bar"), OnDismiss(func() {}))
+	Layout(c, Col(W(260), H(100), bar), 260, 100)
+	kids := bar.Children()
+	title, sub, closeButton := kids[0].Rect(), kids[1].Rect(), kids[len(kids)-1].Rect()
+	if sub.X < title.X+title.W {
+		t.Errorf("subtitle at %d overlaps the title ending at %d", sub.X, title.X+title.W)
+	}
+	if sub.X+sub.W > closeButton.X {
+		t.Errorf("subtitle ends at %d, past the close button at %d", sub.X+sub.W, closeButton.X)
 	}
 }

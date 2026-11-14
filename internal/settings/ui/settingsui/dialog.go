@@ -198,8 +198,24 @@ func (d *SettingsDialog) pageContent(host Host, id string) Node {
 // titleBar is the dialog's title bar: the name and the close button.
 func (d *SettingsDialog) titleBar(host Host) Node {
 	return titleBarTemplate.MustBuild(markup.Scope{
-		"close": func() { host.Send(prefs.Close{}) },
+		"close":    func() { host.Send(prefs.Close{}) },
+		"subtitle": DialogSubtitle(d.subtitle()),
 	})
+}
+
+// subtitle is what the title bar says besides the name: the page shown, or
+// the file in the raw view.
+func (d *SettingsDialog) subtitle() string {
+	if d.Raw {
+		return "settings.json"
+	}
+	cur := d.pageID()
+	for _, p := range pages {
+		if p.id == cur {
+			return p.label
+		}
+	}
+	return ""
 }
 
 // toolbar is the row under the title bar: the search field (a spacer in the

@@ -1,9 +1,10 @@
 stack rect=0,0,600,420
   flow bg=shadow rect=0,0,600,420
   resizableB w=520 h=340 floatMode=2 bg=bg control=menu float=true modal=true focusScope=true shadow=true onDismiss=true rect=40,40,520,340
-    flow h=44 padL=16 padR=16 gap=8 bg=sunken borderB=border-soft onDismiss=true rect=40,40,520,44
+    flow h=44 padL=16 padR=16 gap=8 bg=frame borderB=border hoverBg=hover onDismiss=true rect=40,40,520,44
       textB text="Settings" bold=true rect=56,54,55,16
-      plain grow=1 rect=119,62,385,0
+      textB text="Colors" fg=muted small=true ellipsis=true shrink=true rect=119,55,35,14
+      plain grow=1 rect=162,62,342,0
       flow w=32 h=24 bg=sunken control=icon-button tip=Close (Esc) lighten=true onClick=true rect=512,50,32,24
         iconB grow=1 icon=cross rect=512,50,32,24
     flow h=40 padL=16 padR=16 gap=8 borderB=border-soft rect=40,84,520,40

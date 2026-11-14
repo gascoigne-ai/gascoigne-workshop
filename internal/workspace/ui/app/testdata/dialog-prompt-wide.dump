@@ -1,7 +1,7 @@
 stack rect=0,0,1280,800
   flow bg=shadow rect=0,0,1280,800
   flow w=380 floatMode=2 bg=bg control=menu float=true modal=true focusScope=true shadow=true onDismiss=true rect=450,328,380,144
-    flow h=44 padL=16 padR=16 gap=8 bg=sunken borderB=border-soft onDismiss=true rect=450,328,380,44
+    flow h=44 padL=16 padR=16 gap=8 bg=frame borderB=border hoverBg=hover onDismiss=true rect=450,328,380,44
       textB text="Rename" bold=true rect=466,342,54,16
       plain grow=1 rect=528,350,246,0
       flow w=32 h=24 bg=sunken control=icon-button tip=Close (Esc) lighten=true onClick=true rect=782,338,32,24

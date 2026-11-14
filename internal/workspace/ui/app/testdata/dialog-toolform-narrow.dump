@@ -1,7 +1,7 @@
 stack rect=0,0,480,360
   flow bg=shadow rect=0,0,480,360
   flow w=380 floatMode=2 bg=bg control=menu float=true modal=true focusScope=true shadow=true onDismiss=true rect=50,6,380,348
-    flow h=44 padL=16 padR=16 gap=8 bg=sunken borderB=border-soft onDismiss=true rect=50,6,380,44
+    flow h=44 padL=16 padR=16 gap=8 bg=frame borderB=border hoverBg=hover onDismiss=true rect=50,6,380,44
       textB text="Call search" bold=true rect=66,20,75,16
       plain grow=1 rect=149,28,225,0
       flow w=32 h=24 bg=sunken control=icon-button tip=Close (Esc) lighten=true onClick=true rect=382,16,32,24

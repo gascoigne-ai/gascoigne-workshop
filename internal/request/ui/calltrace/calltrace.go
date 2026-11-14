@@ -185,7 +185,11 @@ func (l *Log) View(host Host) Node {
 // titleBar is the dialog's title bar: the name and the close button. It is
 // its own template so its tests can lay it out alone.
 func (l *Log) titleBar(host Host) Node {
-	return titleTemplate.MustBuild(markup.Scope{"close": l.Close})
+	count := fmt.Sprintf("%d entries", len(l.entries))
+	if len(l.entries) == 1 {
+		count = "1 entry"
+	}
+	return titleTemplate.MustBuild(markup.Scope{"close": l.Close, "subtitle": DialogSubtitle(count)})
 }
 
 // toolbar is the row under the title bar: the filter and Clear.

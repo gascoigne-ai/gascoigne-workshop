@@ -1,3 +1,5 @@
-<!-- The dialog's title bar: the name and the close button. The filter and Clear
-     are in toolbar.vml. -->
-<dialog-title title="Log" on-dismiss="close"/>
+<!-- The dialog's title bar: the name, how many entries there are and the close
+     button. The filter and Clear are in toolbar.vml. -->
+<dialog-title title="Log" on-dismiss="close">
+  <slot name="subtitle"/>
+</dialog-title>

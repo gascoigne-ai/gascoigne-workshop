@@ -23,11 +23,13 @@ func ResizableDialog(state *ResizeState, minW, minH, maxW, maxH int, items ...It
 	return Frag(Row(Bg(core.Shadow)), Resizable(state, minW, minH, maxW, maxH, append(append([]Item{}, dialogLook...), items...)...))
 }
 
-// DialogTitle is the title bar of a dialog, a bar of its own on the sunken
-// color: the title, free room, any items you give and a close button at the
+// DialogTitle is the title bar of a dialog, a bar of its own on the window
+// chrome color with a strong line under it and a hover tint: the title, any
+// items you give (a DialogSubtitle), free room and a close button at the
 // end. The user drags the dialog by the bar (the room between the title and
-// the buttons), so put controls in a DialogToolbar below it, not in the
-// bar. OnDismiss is what the close button does.
+// the buttons, which shows the move cursor), so put controls in a
+// DialogToolbar below it, not in the bar. OnDismiss is what the close button
+// does.
 func DialogTitle(title string, items ...Item) *El {
 	var bar *El
 	closeButton := Row(W(32), H(core.CompactH), Bg(core.Sunken), Control("icon-button"), Lighten(), Tooltip("Close (Esc)"),
@@ -39,9 +41,16 @@ func DialogTitle(title string, items ...Item) *El {
 		CrossIcon(Grow(1)),
 	)
 	bar = Row(append(append([]Item{
-		H(core.DialogTitleH), DragHandle(), PadX(16), Gap(8), AlignItems(AlignCenter), Bg(core.Sunken), BorderB(core.BorderSoft), Text(title, Bold()), Spacer(),
-	}, items...), closeButton)...)
+		H(core.DialogTitleH), DragHandle(), PadX(16), Gap(8), AlignItems(AlignCenter), Bg(core.Frame), HoverBg(core.Hover), BorderB(core.Border), Text(title, Bold()),
+	}, append(items, Spacer())...), closeButton)...)
 	return bar
+}
+
+// DialogSubtitle is what a title bar says besides its name: the page shown,
+// a count. It is muted and small, gives way before the close button and is
+// cut with an ellipsis; pass it to DialogTitle as an item.
+func DialogSubtitle(text string) *El {
+	return Text(text, Muted(), Small(), Ellipsis(), Shrink())
 }
 
 // DialogToolbar is the row of controls under a dialog's title bar: a search
