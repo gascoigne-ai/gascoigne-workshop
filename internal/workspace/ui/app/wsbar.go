@@ -1,44 +1,44 @@
 package ui
 
 import (
+	"embed"
 	"fmt"
 
+	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
-// messagesToolbar is the bar above the message log, written as a template:
-// the connection state, the auto-reconnect chip (a hand-built node in a
-// slot), the pickers an MCP server enabled, Ping and Clear.
+//go:embed messagestoolbar.vml
+var messagesToolbarSource embed.FS
+
+var messagesToolbarTemplate = markup.MustLoad(messagesToolbarSource, "messagestoolbar.vml")
+
+// messagesToolbar is the bar above the message log: the connection state,
+// the auto-reconnect chip, the pickers an MCP server enabled, Ping and
+// Clear.
 func (a *App) messagesToolbar(t *reqTab) Node {
 	pick := func(menu func(*reqTab) []MenuItem) func() {
 		return func() { a.openMenu(a.ctx.In.X, a.ctx.In.Y, menu(t)) }
 	}
-	return markup.View(`
-		<row h="36" pad-x="12" gap="6" align-items="center" border-b="border">
-		  <text small muted>{{state}}</text>
-		  <spacer/>
-		  <slot name="reconnect"/>
-		  <button if="hasTools" min-w="84" h="24" on-click="pickTool" tooltip="Pick a tool: the composer gets a call with its arguments filled in">{{toolsLabel}}</button>
-		  <button if="hasResources" min-w="104" h="24" on-click="pickResource" tooltip="Pick a resource: the composer gets a read of it">{{resourcesLabel}}</button>
-		  <button if="hasPrompts" min-w="94" h="24" on-click="pickPrompt" tooltip="Pick a prompt: the composer gets a request for it">{{promptsLabel}}</button>
-		  <button min-w="56" h="24" on-click="ping" tooltip="Send a ping frame">Ping</button>
-		  <button min-w="56" h="24" on-click="clear" tooltip="Empty the message log">Clear</button>
-		</row>`,
-		markup.Scope{
-			"state":          connState(t),
-			"reconnect":      a.viewChip("Auto-reconnect", t.Reconnect, 116, func() { t.Reconnect = !t.Reconnect }),
-			"hasTools":       len(t.Tools) > 0,
-			"toolsLabel":     fmt.Sprintf("Tools (%d)", len(t.Tools)),
-			"pickTool":       pick(a.toolMenu),
-			"hasResources":   len(t.Resources) > 0,
-			"resourcesLabel": fmt.Sprintf("Resources (%d)", len(t.Resources)),
-			"pickResource":   pick(a.resourceMenu),
-			"hasPrompts":     len(t.Prompts) > 0,
-			"promptsLabel":   fmt.Sprintf("Prompts (%d)", len(t.Prompts)),
-			"pickPrompt":     pick(a.promptMenu),
-			"ping":           func() { a.pingSocket(t) },
-			"clear":          func() { a.clearLog(t) },
-		})
+	return messagesToolbarTemplate.MustBuild(markup.Scope{
+		"toolbarH":        w.RowH + 8,
+		"gutter":          w.Gutter,
+		"compactH":        w.CompactH,
+		"state":           connState(t),
+		"reconnect":       t.Reconnect,
+		"toggleReconnect": func() { t.Reconnect = !t.Reconnect },
+		"hasTools":        len(t.Tools) > 0,
+		"toolsLabel":      fmt.Sprintf("Tools (%d)", len(t.Tools)),
+		"pickTool":        pick(a.toolMenu),
+		"hasResources":    len(t.Resources) > 0,
+		"resourcesLabel":  fmt.Sprintf("Resources (%d)", len(t.Resources)),
+		"pickResource":    pick(a.resourceMenu),
+		"hasPrompts":      len(t.Prompts) > 0,
+		"promptsLabel":    fmt.Sprintf("Prompts (%d)", len(t.Prompts)),
+		"pickPrompt":      pick(a.promptMenu),
+		"ping":            func() { a.pingSocket(t) },
+		"clear":           func() { a.clearLog(t) },
+	})
 }
