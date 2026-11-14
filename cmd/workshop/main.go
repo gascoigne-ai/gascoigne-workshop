@@ -62,7 +62,7 @@ func main() {
 		return nil
 	})
 	flag.BoolVar(&opts.SendOnStart, "send", false, "send the first request at startup (for screenshots)")
-	flag.StringVar(&opts.SettingsPath, "settings", settingsfile.DefaultPath(), "settings file; empty keeps settings in memory")
+	flag.StringVar(&opts.SettingsPath, "settings", settingsfile.DefaultPath(), "settings file; empty keeps settings in memory, as a screenshot does unless this flag is given")
 	flag.StringVar(&opts.StatePath, "state", statefile.DefaultPath(), "remembered window and tabs; empty keeps them in memory")
 	opts.ScanFonts = true
 	opts.Protocols = proto.Configured
@@ -122,8 +122,14 @@ func main() {
 		}
 		return
 	}
+	// Screenshots must not read or write the real state or settings: -set and
+	// -record save settings, and a screenshot taken by hand would overwrite
+	// the user's file. Only a path given on the command line is used.
 	if opts.ScreenshotPath != "" && !flagSet("state") {
-		opts.StatePath = "" // screenshots must not read or write the real state
+		opts.StatePath = ""
+	}
+	if opts.ScreenshotPath != "" && !flagSet("settings") {
+		opts.SettingsPath = ""
 	}
 
 	app, err := ui.NewApp(opts)

@@ -58,6 +58,18 @@ func renderShot(t *testing.T, args ...string) image.Image {
 // drawn.
 func renderShotSized(t *testing.T, width, height int, args ...string) image.Image {
 	t.Helper()
+	sandbox := t.TempDir()
+	out := filepath.Join(sandbox, "shot.png")
+	flags := append([]string{"-screenshot", out, "-settings", "", "-state", "", "-themes", ""}, args...)
+	runProgram(t, sandbox, width, height, flags...)
+	return readPNG(t, out)
+}
+
+// runProgram starts the program with flags on a virtual display of the
+// given size, with HOME and every XDG directory in sandbox, and waits for it
+// to exit.
+func runProgram(t *testing.T, sandbox string, width, height int, flags ...string) {
+	t.Helper()
 	xvfb, err := exec.LookPath("xvfb-run")
 	if err != nil {
 		if os.Getenv("CI") != "" {
@@ -66,9 +78,6 @@ func renderShotSized(t *testing.T, width, height int, args ...string) image.Imag
 		t.Skip("xvfb-run not installed: golden shots need a virtual display")
 	}
 	binary := buildProgram(t)
-	sandbox := t.TempDir()
-	out := filepath.Join(sandbox, "shot.png")
-	flags := append([]string{"-screenshot", out, "-settings", "", "-state", "", "-themes", ""}, args...)
 
 	ctx, cancel := context.WithTimeout(context.Background(), shotRunTimeout)
 	defer cancel()
@@ -83,7 +92,6 @@ func renderShotSized(t *testing.T, width, height int, args ...string) image.Imag
 	if err != nil {
 		t.Fatalf("run program: %v\n%s", err, output)
 	}
-	return readPNG(t, out)
 }
 
 // softwareEnv forces Mesa's llvmpipe on an X11 display and keeps the child
