@@ -4,7 +4,7 @@
   <text if="!row.Match" ellipsis grow="1">{{row.Name}}</text>
   <row if="row.Match" grow="1">
     <text>{{row.Before}}</text>
-    <text color="accent-text">{{row.Match}}</text>
+    <text color="accent-line">{{row.Match}}</text>
     <text ellipsis grow="1">{{row.After}}</text>
   </row>
 </list-row>

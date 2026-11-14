@@ -1,8 +1,10 @@
 package ui
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -86,6 +88,49 @@ func TestTheSidebarChipSwitchesBetweenTreeAndSentLog(t *testing.T) {
 		t.Fatal("clicking Sent did not show the tree")
 	}
 	textCenter(t, a, "Collections")
+}
+
+// The part of a folder or request name the filter matched is drawn in the
+// accent meant for lines and marks on a plain background. It was drawn in
+// the text color meant for an accent fill, which on the sunken sidebar is
+// nearly the background color, so the match was invisible.
+func TestTheFilterMatchInATreeRowIsDrawnInTheAccentLine(t *testing.T) {
+	cases := []struct {
+		name   string
+		filter string
+		match  string
+	}{
+		{"folder", "user", "User"},
+		{"request", "tags", "Tags"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			a, _ := newTestApp(t)
+			t.Cleanup(a.waitWrites)
+			click(a, 180, headerH/2)
+			a.typeText(tc.filter)
+			root := a.sidebar()
+			Layout(a.ctx, root, sidebarW-1, sidebarPinH)
+			line := dumpLineWithText(t, Dump(root), tc.match)
+			if want := "fg=" + string(core.AccentLine); !strings.Contains(line, want) {
+				t.Fatalf("matched part drawn as %q, want %s", line, want)
+			}
+		})
+	}
+}
+
+// dumpLineWithText is the first line of a dump whose element shows text
+// exactly.
+func dumpLineWithText(t *testing.T, dump, text string) string {
+	t.Helper()
+	needle := fmt.Sprintf("text=%q", text)
+	for _, line := range strings.Split(dump, "\n") {
+		if strings.Contains(line, needle) {
+			return line
+		}
+	}
+	t.Fatalf("no element with text %q in:\n%s", text, dump)
+	return ""
 }
 
 // While a row is dragged, the row under the pointer, folder or request,

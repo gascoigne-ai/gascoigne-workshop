@@ -14,5 +14,5 @@ flow rect=0,0,259,480
       textB text="GET" w=40 fg=method.GET small=true rect=50,109,40,14
       flow grow=1 rect=90,104,157,16
         textB text="Repository " rect=90,104,71,16
-        textB text="Tags" fg=accent-text rect=161,104,31,16
+        textB text="Tags" fg=accent-line rect=161,104,31,16
         textB grow=1 ellipsis=true rect=192,104,55,16
