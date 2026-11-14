@@ -94,9 +94,10 @@ func Refuse(binding engine.Binding) error {
 	return nil
 }
 
-// Warning is what a user should know about a binding that is also typed.
+// Warning is what a user should know about a binding that is also typed;
+// an unbound action has no key to warn about.
 func Warning(binding engine.Binding) string {
-	if binding.TypesText() {
+	if binding.Bound && binding.TypesText() {
 		return "Plain key: works only while no text field has focus"
 	}
 	return ""

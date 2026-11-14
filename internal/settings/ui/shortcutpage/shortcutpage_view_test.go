@@ -179,6 +179,16 @@ func TestClickingARowsKeyRecordsThatRowsAction(t *testing.T) {
 	}
 }
 
+// An unbound action used to show the "Plain key" warning: its empty
+// binding has no Ctrl or Alt, so it counted as a key that types text.
+func TestAnUnboundActionRowHasNoWarningNote(t *testing.T) {
+	driver := newDriver(t)
+	driver.page.Clear(driver.host, "send")
+	if found := findAll(driver.view(), `text="Plain key`); len(found) != 0 {
+		t.Fatalf("an unbound row shows the plain key warning:\n%s", Dump(driver.view()))
+	}
+}
+
 // A row's Clear unbinds only that row's action.
 func TestARowsClearUnbindsOnlyItsAction(t *testing.T) {
 	driver := newDriver(t)
