@@ -364,6 +364,25 @@ func TestScreenshotChoosesTheBodyType(t *testing.T) {
 	}
 }
 
+// The -body choice comes from no input, so without a stale mark the
+// unsaved marks cached by earlier frames would hide it, as they once hid
+// the -type-url edit.
+func TestScreenshotBodyChoiceShowsOverMarksDrawnBefore(t *testing.T) {
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotBody: model.BodyFile})
+	for range setFrame - 1 {
+		if err := a.shotUpdate(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if a.tabDirty(a.cur()) {
+		t.Fatal("test setup: the tab must be unchanged before the choice")
+	}
+	a.shotUpdate()
+	if !a.tabDirty(a.cur()) {
+		t.Error("the tab should be marked as changed on the frame of the choice")
+	}
+}
+
 // An unknown body type ends the run with an error, as an unknown pane does.
 func TestScreenshotWithAnUnknownBodyTypeFails(t *testing.T) {
 	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotBody: "Nope"})
