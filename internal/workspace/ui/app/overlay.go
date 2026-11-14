@@ -24,6 +24,7 @@ const ()
 type dialog struct {
 	DialogState
 	form *mcpform.Form
+	move MoveState // where the user dragged it
 }
 
 // ---- context menu --------------------------------------------------------
@@ -92,6 +93,7 @@ func (a *App) dialogView() Node {
 	}
 	return dialogTemplate.MustBuild(markup.Scope{
 		"state":   &d.DialogState,
+		"move":    &d.move,
 		"dismiss": a.closeDialog,
 		"form":    a.dialogForm(d),
 	})

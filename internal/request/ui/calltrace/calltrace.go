@@ -51,6 +51,7 @@ type Log struct {
 	code    CodeView
 	key     string // what code shows now
 	shown   bool
+	move    MoveState // where the user dragged the dialog
 }
 
 // Info adds an entry, dropping the oldest past Limit.
@@ -173,6 +174,7 @@ func (l *Log) View(host Host) Node {
 		"width":  dialogW,
 		"height": min(dialogMaxH, height-2*margin),
 		"close":  l.Close,
+		"move":   &l.move,
 		"title":  l.titleBar(host),
 		"code":   &l.code,
 	})

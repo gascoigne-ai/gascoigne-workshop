@@ -79,7 +79,7 @@ const MessageDialogW = 380
 func MessageDialog(state *DialogState, items ...Item) *El {
 	return Dialog(append([]Item{
 		W(MessageDialogW), Pad(16), Gap(12),
-		Text(state.Title, H(core.LabelH)),
+		Text(state.Title, H(core.LabelH), DragHandle()),
 		If(state.Body != "", Lines(state.Body, core.Muted)),
 	}, append(items,
 		If(state.Input != nil, Field(state.Input, H(core.RowH), Bg(core.Sunken), OnEnter(state.Default), TextMenu(state.Input))),

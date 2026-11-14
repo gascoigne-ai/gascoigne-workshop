@@ -81,6 +81,7 @@ var pages = []page{
 // SettingsDialog is the state of the settings dialog. The zero value is ready.
 type SettingsDialog struct {
 	Size   ResizeState // the size the user gave the dialog; 0 is the default
+	Move   MoveState   // where the user dragged it; 0,0 is the center
 	Cat    string      // the page shown
 	Search TextField   // filters the settings across pages
 	scroll ScrollState
@@ -149,6 +150,7 @@ func (d *SettingsDialog) View(host Host) Node {
 	}
 	dialog := dialogTemplate.MustBuild(markup.Scope{
 		"size":     &d.Size,
+		"move":     &d.Move,
 		"minW":     min(MinWidth, maxW),
 		"minH":     min(MinHeight, maxH),
 		"maxW":     maxW,

@@ -102,3 +102,20 @@ func TestMessageDialogShowsTitleBodyInputAndButtons(t *testing.T) {
 		t.Fatalf("Enter in the input ran %q, want the primary button", ran)
 	}
 }
+
+func TestAMessageDialogMovesWhenItsTitleIsDragged(t *testing.T) {
+	state, move := &DialogState{Title: "Delete?", Body: "Sure?"}, &MoveState{}
+	frag := MessageDialog(state, Moved(move))
+	root := Stack(Row(), frag)
+	c := testCtx(t)
+	Layout(c, root, 800, 600)
+	panel := frag.Children()[1].Rect()
+	x, y := panel.X+panel.W/2, panel.Y+20 // on the title row, below the 16 px padding
+	c.In = core.Input{X: x, Y: y, Click: true, Held: true}
+	Update(c, root)
+	c.In = core.Input{X: x + 50, Y: y + 25, Held: true}
+	Update(c, root)
+	if move.X != 50 || move.Y != 25 {
+		t.Fatalf("moved by %d,%d, want 50,25", move.X, move.Y)
+	}
+}
