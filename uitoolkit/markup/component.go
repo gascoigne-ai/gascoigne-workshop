@@ -43,7 +43,7 @@
 //	            slider (slider-mid on-slide on-slide-end)
 //	Viewers     code image
 //	Containers  scroll hscroll split (vertical as-ratio min-first min-second)
-//	Widgets     tabs scroll-tabs table   separator active-tab
+//	Widgets     tab-bar tabs scroll-tabs table   separator active-tab
 //	Dialogs     dialog dialog-title message-dialog resizable-dialog   focus-scope
 //	Overlays    menu toasts
 //	Templates   include slot
@@ -628,6 +628,7 @@ var elements = map[string]elementSpec{
 	"hscroll":        {build: scroller(widget.HScroll), params: []param{scopedState[widget.ScrollState]("state")}},
 	"split": {build: splitter, options: splitOptions,
 		params: []param{scopedState[widget.SplitState]("state"), realParam("default")}},
+	"tab-bar": {build: container(widget.TabBar)},
 	"tabs": {build: tabStrip, holds: holdsNothing,
 		params: []param{scoped[[]widget.TabItem]("items"), wholeParam("active")}},
 	"scroll-tabs": {build: scrollingTabStrip, holds: holdsNothing,
@@ -1389,6 +1390,7 @@ func Reference() string {
 	sb.WriteString("<form-row label=\"Timeout\" label-width=\"160\">...</form-row> is widget.FormRow: the label in a column that wide, then the children.\n")
 	sb.WriteString("<check-row on=\"{{x}}\" on-click=\"toggle\"><text>Label</text></check-row> is widget.CheckRow: a checkbox, then the children; on-click makes the whole row the target.\n")
 	sb.WriteString("<lines color=\"muted\">{{text}}</lines> is view.Lines, one text per line of the scope's text (literal text has its whitespace collapsed); color is its required argument.\n")
+	sb.WriteString("<tab-bar><scroll-tabs .../><slot name=\"extra\"/></tab-bar> is widget.TabBar: the strip under tabs or scroll-tabs and anything beside them, TabBarH high with TabGap above the tabs and a line under it.\n")
 	sb.WriteString("<note tone=\"error\">{{why}}</note> is widget.Note, a one-line small message under a control, cut with an ellipsis.\n")
 	sb.WriteString("Text and attribute values may use {{path}}, each step a map key or an exported struct field; if=\"name\" or \"!name\"; for=\"item in list\" over any slice, with {{$index}}; on-click=\"handler\" (and the other on-* events, each a func of the scope).\n")
 	sb.WriteString("A color attribute (bg, border*, edge-*, hover-*, color) given an empty token applies no option; so does separator=\"0\".\n")

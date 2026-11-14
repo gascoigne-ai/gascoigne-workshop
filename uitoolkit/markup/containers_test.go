@@ -197,6 +197,31 @@ func TestTabsElementsMatchTheGoTabs(t *testing.T) {
 	sameLayout(t, testCtx(t), template, goView, 400, 100)
 }
 
+func TestTabBarElementMatchesTheGoTabBar(t *testing.T) {
+	tabs := []widget.TabItem{{Label: "Body"}, {Label: "Headers", Badge: 3}, {Label: "Settings"}}
+	strip := &widget.ScrollState{}
+	choose := func(int) {}
+	extra := view.Text("200 OK")
+	template := build(t, `
+		<col>
+		  <tab-bar>
+		    <tabs items="tabs" active="1" on-select="choose"/>
+		  </tab-bar>
+		  <tab-bar bg="frame">
+		    <scroll-tabs state="strip" items="tabs" active="2" on-select="choose"/>
+		    <slot name="extra"/>
+		  </tab-bar>
+		</col>`, Scope{"tabs": tabs, "strip": strip, "choose": choose, "extra": extra})
+	goView := view.Col(
+		widget.TabBar(widget.Tabs(tabs, 1, view.OnSelect(choose))),
+		widget.TabBar(view.Bg(core.Frame),
+			widget.ScrollTabs(strip, tabs, 2, view.OnSelect(choose)),
+			extra,
+		),
+	)
+	sameLayout(t, testCtx(t), template, goView, 400, 100)
+}
+
 func TestTabsElementClickSelectsThroughTheScopeHandler(t *testing.T) {
 	ctx := testCtx(t)
 	chosen := -1
