@@ -1,0 +1,9 @@
+scrollB padL=12 padT=12 padR=12 padB=12 grow=1 rect=0,0,420,300
+  flow rect=12,12,396,154
+    textB text="Total      412ms" h=22 fg=text rect=12,12,396,22
+    textB text="DNS        3ms" h=22 fg=text rect=12,34,396,22
+    textB text="Connect    11ms" h=22 fg=text rect=12,56,396,22
+    textB text="TLS        48ms" h=22 fg=text rect=12,78,396,22
+    textB text="First byte 290ms" h=22 fg=text rect=12,100,396,22
+    textB text="Transfer   60ms" h=22 fg=text rect=12,122,396,22
+    textB text="Size       156.67KB" h=22 fg=text rect=12,144,396,22
