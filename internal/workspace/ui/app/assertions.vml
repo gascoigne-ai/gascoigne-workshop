@@ -1,6 +1,6 @@
 <!-- The request's Tests pane: how assertions are written, and the editor.
      The help comes from the scope, as it shows a variable's braces. -->
 <col grow="1" pad="{{gutter}}" gap="8">
-  <lines color="muted">{{help}}</lines>
+  <lines color="muted" small>{{help}}</lines>
   <area state="tests" grow="1" bg="sunken" on-change="sync" text-menu="testsText"/>
 </col>

@@ -108,6 +108,21 @@ func TestTheAssertionsHelpWrapsInsideANarrowPane(t *testing.T) {
 	}
 }
 
+// The wrapped help took five full-size lines and left the editor 158 of
+// its 254 px in the narrowest pane; small lines give most of it back.
+func TestTheAssertionsHelpLeavesTheEditorMostOfTheNarrowPane(t *testing.T) {
+	const minEditorH = 190
+	a, _ := newTestApp(t)
+	t.Cleanup(a.waitWrites)
+	root := a.assertionsPane(testsPane, a.cur(), &widget.ScrollState{})
+	Layout(a.ctx, root, settingsNarrowW, settingsPaneH)
+	children := root.Children()
+	editor := children[len(children)-1]
+	if editor.Rect().H < minEditorH {
+		t.Fatalf("the editor is %d px high, want at least %d:\n%s", editor.Rect().H, minEditorH, Dump(root))
+	}
+}
+
 // pinnedResponse is the response the pinned results are checked against.
 var pinnedResponse = &model.Response{Status: 200, StatusText: "OK", Body: []byte(`{"items":[{"name":"a"}]}`)}
 
