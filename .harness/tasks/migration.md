@@ -28,5 +28,11 @@ Status: todo, doing, done, blocked (reason). The loop (`loop.md`) takes the firs
 | 19 | `request/ui/calltrace`, `mcpform` | 004, 005 | none: add scene first | done (0e7f17a+a43027e scenes, 117446c+933fd10 calltrace, f531f0b+10789ba mcpform) |
 | 20 | `response/ui/respview` | 004, 005 | response | n/a: data only (CodeView lines and spans, Timeline text, filename helpers); its views are `responsePane`, row 13 |
 | 21 | `workspace/ui/appicon` | none | default | n/a: draws the window icon bitmap, no view tree |
+| 22 | app `filebody.go` (file body pane), `graphql.go` (GraphQL pane), `assertpane.go` (assertions pane) | 004, 005 | request-* panes (`-pane`); add scenes for uncovered | todo |
+| 23 | app `panes.go` `messagePane`, `notePane`, body pane (~l.360 Format button) | 004 | default, request-post | todo |
+| 24 | app `mcpexplorer.go` remaining Go views (explorer layout, list row, detail, ~l.104-121, :218) | 004 | request-mcp (+connected: MCP server on 8084) | todo |
+| 25 | app `view.go` window root (~l.52), main column (~l.191), response status (~l.417-433) | 003, 004 | default, response | todo |
+
+Rows 22-25 were found by the final grep (first manifest missed them); after row 25 re-run `grep -rEn "\b(Row|Col|Stack|Scroll|Table|Tabs|Field|Button)\(" internal --include=*.go | grep -v _test.go` and add rows for anything left except `Custom` behaviors and `Frag` glue.
 
 Rule: a row with "none: add scene first" starts by adding the golden scene (and the shot flag it needs), test first, in its own commit.
