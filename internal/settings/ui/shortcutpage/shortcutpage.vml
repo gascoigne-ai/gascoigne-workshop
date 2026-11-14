@@ -1,0 +1,32 @@
+<col>
+  <row h="{{rowH}}" gap="6">
+    <field state="search" grow="1" bg="sunken" placeholder="Search by action or key" text-menu="search"/>
+  </row>
+  <spacer h="{{gutter}}"/>
+  <col>
+    <col for="action in actions">
+      <row h="{{compactH}}" gap="6">
+        <text small grow="1" ellipsis>{{action.Name}}</text>
+        <choice selected="{{action.Recording}}" w="96" h="{{compactH}}" on-click="action.Record"
+                tooltip="Click, then press the keys">{{action.Key}}</choice>
+        <button if="action.Bound" w="44" h="{{compactH}}" on-click="action.Clear"
+                tooltip="Leave the action without a key">Clear</button>
+        <button if="action.Overridden" w="44" h="{{compactH}}" on-click="action.Reset"
+                tooltip="Back to the default key">Reset</button>
+      </row>
+      <!-- at most one of the conflict, the refusal and the warning is set -->
+      <row if="action.Conflict" h="{{compactH}}" gap="6">
+        <text small color="error" ellipsis grow="1">{{action.Conflict}}</text>
+        <button w="64" h="{{compactH}}" on-click="action.Replace" tooltip="{{action.ReplaceTip}}">Replace</button>
+      </row>
+      <note if="action.Refusal" tone="error">{{action.Refusal}}</note>
+      <note if="action.Warning" tone="muted">{{action.Warning}}</note>
+    </col>
+    <text if="noMatch" muted>No shortcut matches</text>
+  </col>
+  <caption h="{{labelH}}">Text editing</caption>
+  <row for="keys in textKeys" h="{{compactH}}" gap="6">
+    <text small grow="1" ellipsis>{{keys.Action}}</text>
+    <text small muted>{{keys.Keys}}</text>
+  </row>
+</col>

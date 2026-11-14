@@ -5,6 +5,7 @@
 package shortcutpage
 
 import (
+	"embed"
 	"errors"
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
@@ -16,6 +17,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
@@ -260,59 +262,85 @@ func matches(action Action, keyText, query string) bool {
 	return needle == "" || strings.Contains(strings.ToLower(action.Name), needle) || strings.Contains(strings.ToLower(keyText), needle)
 }
 
-// View is the page: a search field and a table of actions.
-func (p *Page) View(host Host) Node {
-	var rows []Item
-	for _, action := range host.Actions() {
-		if matches(action, KeyText(host, action.ID), p.search.Text) {
-			rows = append(rows, p.row(host, action))
-		}
-	}
-	if len(rows) == 0 {
-		rows = append(rows, Text("No shortcut matches", Muted()))
-	}
-	return Col(
-		Row(H(w.RowH), Gap(6),
-			Field(&p.search, Grow(1), Bg(w.Sunken), Placeholder("Search by action or key"), TextMenu(&p.search)),
-		),
-		Spacer(H(w.Gutter)),
-		Col(rows...),
-		Caption("Text editing", H(w.LabelH)),
-		For(TextKeys, func(_ int, row struct{ Action, Keys string }) Node {
-			return Row(H(w.CompactH), Gap(6),
-				Text(row.Action, Small(), Grow(1), Ellipsis()),
-				Text(w.PlatformKeyText(runtime.GOOS, row.Keys), Small(), Muted()),
-			)
-		}),
-	)
+//go:embed shortcutpage.vml
+var templates embed.FS
+
+var pageTemplate = markup.MustLoad(templates, "shortcutpage.vml")
+
+// actionRow is what the template shows of one action. At most one of
+// Conflict, Refusal and Warning is set: the line under the row.
+type actionRow struct {
+	Name       string
+	Key        string // the key as users read it, or what recording asks for
+	Recording  bool
+	Bound      bool // shows Clear
+	Overridden bool // shows Reset
+	Conflict   string
+	ReplaceTip string
+	Refusal    string
+	Warning    string
+	Record     func()
+	Clear      func()
+	Reset      func()
+	Replace    func()
 }
 
-func (p *Page) row(host Host, action Action) Node {
+// textKeyRow is one read-only line of the text editing keys.
+type textKeyRow struct{ Action, Keys string }
+
+// textKeyRows are TextKeys as users of this platform read them.
+func textKeyRows() []textKeyRow {
+	rows := make([]textKeyRow, 0, len(TextKeys))
+	for _, keys := range TextKeys {
+		rows = append(rows, textKeyRow{Action: keys.Action, Keys: w.PlatformKeyText(runtime.GOOS, keys.Keys)})
+	}
+	return rows
+}
+
+// View is the page: a search field and a table of actions.
+func (p *Page) View(host Host) Node {
+	var actions []actionRow
+	for _, action := range host.Actions() {
+		if matches(action, KeyText(host, action.ID), p.search.Text) {
+			actions = append(actions, p.row(host, action))
+		}
+	}
+	return pageTemplate.MustBuild(markup.Scope{
+		"search":   &p.search,
+		"actions":  actions,
+		"noMatch":  len(actions) == 0,
+		"textKeys": textKeyRows(),
+		"rowH":     w.RowH,
+		"compactH": w.CompactH,
+		"labelH":   w.LabelH,
+		"gutter":   w.Gutter,
+	})
+}
+
+func (p *Page) row(host Host, action Action) actionRow {
 	_, overridden := host.Settings().Shortcuts[action.ID]
 	binding := Effective(host.Settings(), action)
-	recording := p.recording == action.ID
-	label := KeyText(host, action.ID)
-	if recording {
-		label = "Press keys..."
+	row := actionRow{
+		Name:       action.Name,
+		Key:        KeyText(host, action.ID),
+		Recording:  p.recording == action.ID,
+		Bound:      binding.Bound,
+		Overridden: overridden,
+		Record:     func() { p.Start(action.ID) },
+		Clear:      func() { p.Clear(host, action.ID) },
+		Reset:      func() { p.Reset(host, action.ID) },
+		Replace:    func() { p.Replace(host, action.ID) },
 	}
-	var note Node
+	if row.Recording {
+		row.Key = "Press keys..."
+	}
 	if pending, ok := p.pending[action.ID]; ok {
-		note = Row(H(w.CompactH), Gap(6),
-			Text(fmt.Sprintf("Used by %s (%s)", pending.OtherName, w.PlatformKeyText(runtime.GOOS, pending.Binding.String())), Small(), Color(w.Error), Ellipsis(), Grow(1)),
-			Button("Replace", W(64), H(w.CompactH), OnClick(func() { p.Replace(host, action.ID) }), Tooltip("Unbind "+pending.OtherName+" and use this key here")),
-		)
+		row.Conflict = fmt.Sprintf("Used by %s (%s)", pending.OtherName, w.PlatformKeyText(runtime.GOOS, pending.Binding.String()))
+		row.ReplaceTip = "Unbind " + pending.OtherName + " and use this key here"
 	} else if text := p.notes[action.ID]; text != "" {
-		note = Note(text, w.Error)
-	} else if warning := Warning(binding); warning != "" {
-		note = Note(warning, w.Muted)
+		row.Refusal = text
+	} else {
+		row.Warning = Warning(binding)
 	}
-	return Col(
-		Row(H(w.CompactH), Gap(6),
-			Text(action.Name, Small(), Grow(1), Ellipsis()),
-			Choice(label, recording, W(96), H(w.CompactH), OnClick(func() { p.Start(action.ID) }), Tooltip("Click, then press the keys")),
-			If(binding.Bound, Button("Clear", W(44), H(w.CompactH), OnClick(func() { p.Clear(host, action.ID) }), Tooltip("Leave the action without a key"))),
-			If(overridden, Button("Reset", W(44), H(w.CompactH), OnClick(func() { p.Reset(host, action.ID) }), Tooltip("Back to the default key"))),
-		),
-		note,
-	)
+	return row
 }
