@@ -1,0 +1,3 @@
+<row h="{{rowH}}" pad-x="{{gutter}}" align-items="center" control="button" on-click="pick" hover-bg="hover">
+  <text muted grow="1">{{label}}</text>
+</row>

@@ -8,6 +8,7 @@
 package settingsui
 
 import (
+	"embed"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
 	"strings"
@@ -177,15 +178,12 @@ func (d *SettingsDialog) titleBar(host Host) Node {
 	return DialogTitle("Settings", OnDismiss(func() { host.Send(prefs.Close{}) }), search, d.saveButton(host), d.modeSwitch(host))
 }
 
-const (
-	navOpenTemplate = `
-		<row h="28" pad-x="12" align-items="center" control="button" on-click="pick" bg="accent-soft">
-		  <text bold color="accent-line" grow="1">{{label}}</text>
-		</row>`
-	navClosedTemplate = `
-		<row h="28" pad-x="12" align-items="center" control="button" on-click="pick" hover-bg="hover">
-		  <text muted grow="1">{{label}}</text>
-		</row>`
+//go:embed navitem-open.vml navitem-closed.vml
+var navItemTemplates embed.FS
+
+var (
+	navOpenTemplate   = markup.MustLoad(navItemTemplates, "navitem-open.vml")
+	navClosedTemplate = markup.MustLoad(navItemTemplates, "navitem-closed.vml")
 )
 
 // navItem is one page in the list: the open one is tinted and bold.
@@ -194,9 +192,11 @@ func (d *SettingsDialog) navItem(p page, open bool) Node {
 	if open {
 		template = navOpenTemplate
 	}
-	return markup.View(template, markup.Scope{
-		"label": p.label,
-		"pick":  func() { d.Cat, d.scroll.Y = p.id, 0 },
+	return template.MustBuild(markup.Scope{
+		"rowH":   w.RowH,
+		"gutter": w.Gutter,
+		"label":  p.label,
+		"pick":   func() { d.Cat, d.scroll.Y = p.id, 0 },
 	})
 }
 
