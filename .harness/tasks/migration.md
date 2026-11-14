@@ -24,7 +24,7 @@ Status: todo, doing, done, blocked (reason). The loop (`loop.md`) takes the firs
 | 15c | inline `markup.View` sources: app `view.go` `header` (:214) and `statusBar` (:456), settingsui `dialog.go` `navItem` (:197, two string-constant templates) -> embedded `.vml` via MustLoad, sizes via scope | 003 | default, settings-* | done (d99044b header, 14b3f5a+450442b status bar, af40b23+f481bc1 nav) |
 | 16 | app `overlay.go` `dialogView`, `toastsView`, `dialogForm` | 004 | settings-*; toasts: add scene first | done (98bc7a3 scenes, 4067a7c pins, f8e5c85 swap; dialogForm stays: returns the mcpform view, row 19) |
 | 17 | settingsui `dialog.go` frame, `raw.go` | 004, 005 | settings-menu | done (63c1a45 scene, 6a244af pins, 6668274 raw swap, 08d33d9 frame swap, 549694a resize pin) |
-| 18 | `shortcutpage` | 004 | settings-shortcuts | todo |
+| 18 | `shortcutpage` | 004 | settings-shortcuts | done (a3df737 scene, 868ac45 pins, 7b44541 swap) |
 | 19 | `request/ui/calltrace`, `mcpform` | 004, 005 | none: add scene first | todo |
 | 20 | `response/ui/respview` | 004, 005 | response | todo |
 | 21 | `workspace/ui/appicon` | none | default | todo |
