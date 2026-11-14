@@ -51,6 +51,7 @@ type screenshot struct {
 	toasts      []string // texts shown as error toasts
 	dialog      string   // kind of dialog to open on the open request, a key of shotDialogs
 	record      []string // ACTION=KEYS recorded on the Shortcuts page, as a user would; a bare ACTION is left recording
+	callLog     bool     // open the Log dialog of calls, as the status bar's Log button does
 }
 
 // shotDialogs are the dialogs -dialog opens on the open request, each
@@ -257,6 +258,9 @@ func (a *App) showShotTarget() {
 	}
 	if s.sentLog {
 		a.showSent = true
+	}
+	if s.callLog {
+		a.calls.Open()
 	}
 	if s.filter != "" {
 		a.filter.Insert(s.filter)

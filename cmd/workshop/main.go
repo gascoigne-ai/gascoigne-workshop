@@ -103,6 +103,7 @@ func main() {
 		return nil
 	})
 	flag.StringVar(&opts.ScreenshotDialog, "dialog", "", "open this dialog (rename, delete) on the open request before the screenshot")
+	flag.BoolVar(&opts.ScreenshotCallLog, "log", false, "open the Log dialog of calls before the screenshot, as the status bar's Log button does")
 	flag.StringVar(&opts.ScreenshotFind, "find", "", "search the response for this text in the find bar before the screenshot (after -send's response)")
 	windowW, windowH := windowWidth, windowHeight
 	flag.Func("window", "WIDTHxHEIGHT: open the window at this size, for screenshots", func(spec string) error {

@@ -180,6 +180,20 @@ func TestScreenshotShowsTheSentLog(t *testing.T) {
 	}
 }
 
+// With -log the capture opens the Log dialog, as the status bar's Log
+// button does.
+func TestScreenshotOpensTheCallLog(t *testing.T) {
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotCallLog: true})
+	for range setFrame {
+		if err := a.shotUpdate(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if !a.calls.Shown() {
+		t.Error("the Log dialog should be open")
+	}
+}
+
 // With -open-all the capture opens every request of the collection in its
 // own tab, so the strip of open requests overflows.
 func TestScreenshotOpensEveryRequestInATab(t *testing.T) {

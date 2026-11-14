@@ -31,6 +31,8 @@ var (
 	durationStatus  = image.Rect(0, 772, 400, 800)     // status bar line
 	sentTimeFirst   = image.Rect(156, 62, 236, 80)     // clock time of the sent log's first row, after its URL
 	sentTimeSecond  = image.Rect(132, 99, 210, 117)    // clock time of the second row
+	logStamps       = image.Rect(268, 164, 374, 200)   // clock times of the Log dialog's two lines
+	logDuration     = image.Rect(446, 184, 640, 200)   // duration and size of the Log dialog's answer line
 )
 
 var goldenScenes = []goldenScene{
@@ -64,6 +66,7 @@ var goldenScenes = []goldenScene{
 	{name: "toasts", width: shotWidth, height: shotHeight, args: []string{"-toast", "There is no response to save", "-toast", "Enter the gRPC server first, for example grpc://localhost:50051"}},
 	{name: "dialog-rename", width: shotWidth, height: shotHeight, args: []string{"-dialog", "rename"}},
 	{name: "dialog-delete", width: shotWidth, height: shotHeight, args: []string{"-dialog", "delete"}},
+	{name: "call-log", width: shotWidth, height: shotHeight, args: []string{"-send", "-log"}, mask: []image.Rectangle{durationStacked, durationStatus, logStamps, logDuration}},
 	{name: "response-raw", width: shotWidth, height: shotHeight, args: []string{"-send", "-set", "responseView=raw"}, mask: []image.Rectangle{durationStacked, durationStatus}},
 }
 
