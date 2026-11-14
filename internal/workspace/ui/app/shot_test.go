@@ -199,7 +199,8 @@ func TestScreenshotOpensTheCallLog(t *testing.T) {
 // announces its tools after the connection opens, so the capture waits for
 // them.
 func TestScreenshotOpensTheFormOfTheNamedTool(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotTool: "search"})
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotTool: "search", SendOnStart: true})
+	a.shot.sent = true // pretend the connection is made; its tools come below
 	for range settleFrames {
 		a.shotUpdate()
 	}
@@ -216,6 +217,34 @@ func TestScreenshotOpensTheFormOfTheNamedTool(t *testing.T) {
 	}
 	if !a.shot.ready(a) {
 		t.Fatal("the form is open, the capture should be ready")
+	}
+}
+
+// A -tool the server does not announce, or -tool without -send (nothing
+// connects, so nothing announces it), used to wait for the shot timeout
+// and capture without the form; it ends the run with an error, as an
+// unknown -dialog or -pane does.
+func TestScreenshotWithAToolItCannotOpenFails(t *testing.T) {
+	cases := []struct {
+		name string
+		tool string
+		send bool
+	}{
+		{"unknown tool", "nope", true},
+		{"tool without send", "search", false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotTool: tc.tool, SendOnStart: tc.send})
+			a.shot.sent = true // pretend the connection is made and its tools announced
+			a.cur().Tools = []model.MCPTool{{Name: "ping"}, searchTool()}
+			for range setFrame {
+				a.shotUpdate()
+			}
+			if a.Err() == nil || !a.shot.captured {
+				t.Fatalf("err = %v, captured = %v, want the run ended with an error", a.Err(), a.shot.captured)
+			}
+		})
 	}
 }
 

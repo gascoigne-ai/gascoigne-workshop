@@ -104,6 +104,8 @@ func (a *App) shotUpdate() error {
 
 // shotToolForm opens the call form of the capture's tool once the open
 // request's server announced it, as picking it from the tool menu would.
+// Once the server announced tools without it, the run ends with an error
+// rather than waiting for the timeout.
 func (a *App) shotToolForm() {
 	t := a.cur()
 	for _, tool := range t.Tools {
@@ -113,6 +115,15 @@ func (a *App) shotToolForm() {
 			return
 		}
 	}
+	if len(t.Tools) == 0 {
+		return // not announced yet
+	}
+	names := make([]string, len(t.Tools))
+	for i, tool := range t.Tools {
+		names[i] = tool.Name
+	}
+	a.shot.err = fmt.Errorf("screenshot tool %q is not one the server announced: %s", a.shot.tool, strings.Join(names, ", "))
+	a.shot.captured = true
 }
 
 // shotFind opens the find bar on the current response and types the query,
@@ -270,6 +281,11 @@ func (a *App) showShotTarget() {
 			return
 		}
 		open(a, tree.Of(a.cur().Req))
+	}
+	if s.tool != "" && !s.sendOnStart {
+		s.err = fmt.Errorf("screenshot tool %q needs -send, which connects to the server that announces it", s.tool)
+		s.captured = true
+		return
 	}
 	for _, text := range s.toasts {
 		a.toast(text, true)
