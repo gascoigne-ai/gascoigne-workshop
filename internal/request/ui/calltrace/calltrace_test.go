@@ -89,8 +89,8 @@ func testTheme() core.Theme {
 	}
 }
 
-// The title bar names the dialog, holds the filter and Clear, and its close
-// button closes the log.
+// The title bar names the dialog and its close button closes the log; the
+// filter and Clear are in the toolbar under it.
 func TestTitleBarClosesTheLog(t *testing.T) {
 	var log Log
 	log.Open()
@@ -102,9 +102,13 @@ func TestTitleBarClosesTheLog(t *testing.T) {
 	root := Col(W(800), H(titleH), bar)
 	Layout(ctx, root, 800, titleH)
 	dump := Dump(bar)
-	for _, want := range []string{"Log", "fieldB", "Clear"} {
-		if !strings.Contains(dump, want) {
-			t.Errorf("title bar has no %q:\n%s", want, dump)
+	if !strings.Contains(dump, "Log") || strings.Contains(dump, "fieldB") {
+		t.Errorf("title bar should name the dialog and hold no filter:\n%s", dump)
+	}
+	tools := Dump(log.toolbar(fakeHost{}))
+	for _, want := range []string{"fieldB", "Clear"} {
+		if !strings.Contains(tools, want) {
+			t.Errorf("toolbar has no %q:\n%s", want, tools)
 		}
 	}
 	ctx.In = core.Input{X: 800 - 16 - 16, Y: titleH / 2, Click: true} // the close button: 16 px bar padding, 32 px wide

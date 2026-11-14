@@ -6,7 +6,7 @@ Scope
 1. `DialogTitle` is a distinct bar (sunken background, bottom border, title, spacer, close) and `DialogToolbar(items...)` (`<dialog-toolbar>`) is the row for controls; tests, doc comments, widget doc index, template table.
 2. (done) `MessageDialog` uses the title bar; its close button runs the dialog's own `OnDismiss` (the one an outside click uses), so the app needs no change; pinned dialog dumps updated and looked at.
 3. (done) Settings dialog: title bar, then a toolbar row (search, Save, JSON/Form), then the body; pinned settings dumps and `dialogdrag_test.go` updated.
-4. Call log dialog: title bar, then a toolbar row (filter, Clear).
+4. (done) Call log dialog: title bar, then a toolbar row (filter, Clear).
 5. Docs: `architecture.md` Overlays, a decision in `decisions.md`.
 
 Acceptance: every dialog shows a distinct title bar with a close button that closes it like Escape, and can be dragged anywhere on the bar between the title and the button; `make check` green; `make shot` of the settings, a confirm and the Log dialog looked at.

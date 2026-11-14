@@ -1,4 +1,5 @@
 <dialog w="{{width}}" h="{{height}}" moved="move" on-dismiss="close">
   <slot name="title"/>
+  <slot name="toolbar"/>
   <code state="code" grow="1" bg="sunken"/>
 </dialog>

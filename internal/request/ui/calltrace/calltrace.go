@@ -155,12 +155,13 @@ func (l *Log) newest() int64 {
 	return l.entries[len(l.entries)-1].At.UnixNano()
 }
 
-//go:embed dialog.vml title.vml
+//go:embed dialog.vml title.vml toolbar.vml
 var templates embed.FS
 
 var (
-	dialogTemplate = markup.MustLoad(templates, "dialog.vml")
-	titleTemplate  = markup.MustLoad(templates, "title.vml")
+	dialogTemplate  = markup.MustLoad(templates, "dialog.vml")
+	titleTemplate   = markup.MustLoad(templates, "title.vml")
+	toolbarTemplate = markup.MustLoad(templates, "toolbar.vml")
 )
 
 // View is the dialog while it is open, nothing otherwise.
@@ -171,20 +172,25 @@ func (l *Log) View(host Host) Node {
 	l.refresh()
 	_, height := host.Size()
 	return dialogTemplate.MustBuild(markup.Scope{
-		"width":  dialogW,
-		"height": min(dialogMaxH, height-2*margin),
-		"close":  l.Close,
-		"move":   &l.move,
-		"title":  l.titleBar(host),
-		"code":   &l.code,
+		"width":   dialogW,
+		"height":  min(dialogMaxH, height-2*margin),
+		"close":   l.Close,
+		"move":    &l.move,
+		"title":   l.titleBar(host),
+		"toolbar": l.toolbar(host),
+		"code":    &l.code,
 	})
 }
 
-// titleBar is the dialog's header: name, filter and Clear, then the close
-// button. It is its own template so its tests can lay it out alone.
+// titleBar is the dialog's title bar: the name and the close button. It is
+// its own template so its tests can lay it out alone.
 func (l *Log) titleBar(host Host) Node {
-	return titleTemplate.MustBuild(markup.Scope{
-		"close":    l.Close,
+	return titleTemplate.MustBuild(markup.Scope{"close": l.Close})
+}
+
+// toolbar is the row under the title bar: the filter and Clear.
+func (l *Log) toolbar(host Host) Node {
+	return toolbarTemplate.MustBuild(markup.Scope{
 		"filter":   &l.filter,
 		"clear":    l.Clear,
 		"compactH": w.CompactH,
