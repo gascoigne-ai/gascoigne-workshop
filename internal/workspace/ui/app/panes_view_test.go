@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -103,5 +104,110 @@ func TestTheNotePaneScrollsWithTheGivenState(t *testing.T) {
 	}
 	if settings, want := fmt.Sprintf("%+v", found.Behavior()), fmt.Sprintf("%p", &scroll); !strings.Contains(settings, want) {
 		t.Fatalf("the scroll lacks the pane's state %s: %s", want, settings)
+	}
+}
+
+// bodyPaneStates are the looks of the body pane: each editor kind, and
+// for JSON a valid, an invalid (a long parse error) and an empty body.
+// File is last in the chip row, so at the narrow width it pins the row
+// scrolled to keep the chosen chip in view.
+var bodyPaneStates = []struct {
+	name, bodyType, text string
+}{
+	{"none", model.BodyNone, ""},
+	{"json-valid", model.BodyJSON, "{\n  \"hello\": \"world\"\n}"},
+	{"json-invalid", model.BodyJSON, `{"hello": "world", "list": [1, 2`},
+	{"json-empty", model.BodyJSON, ""},
+	{"text", model.BodyText, "hello"},
+	{"form", model.BodyForm, ""},
+	{"file", model.BodyFile, ""},
+}
+
+// openBodyType gives the open request a body of bodyType holding text.
+func openBodyType(t *testing.T, bodyType, text string) (*App, *reqTab) {
+	a, _ := newTestApp(t)
+	t.Cleanup(a.waitWrites)
+	tab := a.cur()
+	tab.body = widget.NewTextArea(text)
+	a.setBodyType(tab, bodyType)
+	return a, tab
+}
+
+// The body pane is pinned as text (element kinds, options, rects) for
+// each state at two widths, so moving it to a template cannot change it
+// unseen.
+func TestTheBodyPaneLaysOutAsPinned(t *testing.T) {
+	for _, state := range bodyPaneStates {
+		for _, size := range paneSizes {
+			name := "bodypane-" + state.name + "-" + size.name
+			t.Run(name, func(t *testing.T) {
+				a, tab := openBodyType(t, state.bodyType, state.text)
+				var scroll widget.ScrollState
+				assertDumpPinned(t, a, a.paneBody(bodyPane, tab, &scroll), name, size.width, settingsPaneH)
+			})
+		}
+	}
+}
+
+// What Dump does not show of the chip row: it scrolls sideways with the
+// tab's own state.
+func TestTheBodyTypeChipsScrollWithTheTabsState(t *testing.T) {
+	a, tab := openBodyType(t, model.BodyJSON, "")
+	var scroll widget.ScrollState
+	chips := findWidget(a.paneBody(bodyPane, tab, &scroll), "*widget.hscrollB")
+	if chips == nil {
+		t.Fatal("the body pane has no sideways scroll")
+	}
+	if settings, want := fmt.Sprintf("%+v", chips.Behavior()), fmt.Sprintf("%p", &tab.bodyTypesX); !strings.Contains(settings, want) {
+		t.Fatalf("the chip row lacks the tab's state %s: %s", want, settings)
+	}
+}
+
+// What Dump does not show of the chip row: only the chosen type's chip is
+// kept in view, so choosing a type elsewhere scrolls to it.
+func TestOnlyTheChosenBodyTypeChipIsKeptInView(t *testing.T) {
+	choices := []struct {
+		bodyType string
+		chip     int // its place in the row: None, JSON, Text, Form, Multipart, GraphQL, File
+	}{
+		{model.BodyNone, 0},
+		{model.BodyFile, 6},
+	}
+	for _, chosen := range choices {
+		t.Run(chosen.bodyType, func(t *testing.T) {
+			a, tab := openBodyType(t, chosen.bodyType, "")
+			var scroll widget.ScrollState
+			chips := findWidget(a.paneBody(bodyPane, tab, &scroll), "*widget.hscrollB")
+			var kept []int
+			for i, chip := range chips.Children() {
+				if chip.KeepsInView() {
+					kept = append(kept, i)
+				}
+			}
+			if !slices.Equal(kept, []int{chosen.chip}) {
+				t.Fatalf("chips kept in view %v, want only %d", kept, chosen.chip)
+			}
+		})
+	}
+}
+
+// What Dump does not show of the text editors: JSON and Text edit the
+// tab's body area, colored by a styler of their own.
+func TestTheBodyAreaEditsTheTabsBody(t *testing.T) {
+	for _, bodyType := range []string{model.BodyJSON, model.BodyText} {
+		t.Run(bodyType, func(t *testing.T) {
+			a, tab := openBodyType(t, bodyType, "{}")
+			var scroll widget.ScrollState
+			areas := areaStates(a.paneBody(bodyPane, tab, &scroll))
+			if len(areas) != 1 {
+				t.Fatalf("%d areas, want 1: %q", len(areas), areas)
+			}
+			if want := fmt.Sprintf("%p", &tab.body); !strings.Contains(areas[0], want) {
+				t.Errorf("the area lacks the tab's body %s: %s", want, areas[0])
+			}
+			if tab.body.Styler == nil {
+				t.Error("the body area has no styler")
+			}
+		})
 	}
 }

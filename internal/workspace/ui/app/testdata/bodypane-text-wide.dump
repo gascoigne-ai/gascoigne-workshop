@@ -1,0 +1,18 @@
+flow padL=12 padT=12 padR=12 padB=12 gap=8 grow=1 rect=0,0,1020,300
+  flow h=28 gap=6 rect=12,12,996,28
+    hscrollB gap=6 grow=1 rect=12,12,996,28
+      flow w=64 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=12,12,64,28
+        textB text="None" grow=1 fg=chip-text ellipsis=true center=true rect=22,12,44,28
+      flow w=64 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=82,12,64,28
+        textB text="JSON" grow=1 fg=chip-text ellipsis=true center=true rect=92,12,44,28
+      flow w=64 padL=10 padR=10 bg=accent control=primary lighten=true onClick=true rect=152,12,64,28
+        textB text="Text" grow=1 fg=accent-text ellipsis=true center=true rect=162,12,44,28
+      flow w=64 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=222,12,64,28
+        textB text="Form" grow=1 fg=chip-text ellipsis=true center=true rect=232,12,44,28
+      flow w=84 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=292,12,84,28
+        textB text="Multipart" grow=1 fg=chip-text ellipsis=true center=true rect=302,12,64,28
+      flow w=80 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=382,12,80,28
+        textB text="GraphQL" grow=1 fg=chip-text ellipsis=true center=true rect=392,12,60,28
+      flow w=64 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=468,12,64,28
+        textB text="File" grow=1 fg=chip-text ellipsis=true center=true rect=478,12,44,28
+  areaB grow=1 bg=sunken onRightClickIn=true onChange=true rect=12,48,996,240
