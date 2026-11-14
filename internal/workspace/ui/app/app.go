@@ -265,6 +265,7 @@ type Options struct {
 	ScreenshotOpenAll         bool                                          // open every request of the collection in its own tab before the screenshot
 	ScreenshotURL             string                                        // type this text into the open request's URL before the screenshot
 	ScreenshotPane            string                                        // the label of the request pane to show before the screenshot
+	ScreenshotBody            string                                        // the body type to choose on the open request before the screenshot (file, graphql, ...)
 	ScreenshotToasts          []string                                      // texts shown as error toasts before the screenshot
 	ScreenshotDialog          string                                        // the dialog to open on the open request before the screenshot (rename, delete)
 	ScreenshotRecord          []string                                      // ACTION=KEYS recorded on the Shortcuts page before the screenshot, or ACTION left recording
@@ -330,7 +331,7 @@ func NewApp(opts Options) (*App, error) {
 		widgets:          map[*tabs.Tab]*reqTab{},
 		bus:              bus.New(),
 		status:           "Ready",
-		shot:             screenshot{path: opts.ScreenshotPath, sendOnStart: opts.SendOnStart, set: opts.ScreenshotSet, request: opts.ScreenshotRequest, page: opts.ScreenshotPage, rawSettings: opts.ScreenshotRawSettings, sentLog: opts.ScreenshotSentLog, find: opts.ScreenshotFind, filter: opts.ScreenshotFilter, sending: opts.ScreenshotSending, openAll: opts.ScreenshotOpenAll, url: opts.ScreenshotURL, pane: opts.ScreenshotPane, toasts: opts.ScreenshotToasts, dialog: opts.ScreenshotDialog, record: opts.ScreenshotRecord, callLog: opts.ScreenshotCallLog, tool: opts.ScreenshotTool},
+		shot:             screenshot{path: opts.ScreenshotPath, sendOnStart: opts.SendOnStart, set: opts.ScreenshotSet, request: opts.ScreenshotRequest, page: opts.ScreenshotPage, rawSettings: opts.ScreenshotRawSettings, sentLog: opts.ScreenshotSentLog, find: opts.ScreenshotFind, filter: opts.ScreenshotFilter, sending: opts.ScreenshotSending, openAll: opts.ScreenshotOpenAll, url: opts.ScreenshotURL, pane: opts.ScreenshotPane, body: opts.ScreenshotBody, toasts: opts.ScreenshotToasts, dialog: opts.ScreenshotDialog, record: opts.ScreenshotRecord, callLog: opts.ScreenshotCallLog, tool: opts.ScreenshotTool},
 
 		settings:     st,
 		settingFiles: settingFiles,

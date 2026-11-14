@@ -48,6 +48,7 @@ type screenshot struct {
 	openAll     bool     // open every request in its own tab, so the tab strip overflows
 	url         string   // text to type into the open request's URL, so its tab is marked changed
 	pane        string   // label of the request pane to show, such as Settings
+	body        string   // body type to choose on the open request, such as file
 	toasts      []string // texts shown as error toasts
 	dialog      string   // kind of dialog to open on the open request, a key of shotDialogs
 	record      []string // ACTION=KEYS recorded on the Shortcuts page, as a user would; a bare ACTION is left recording
@@ -250,6 +251,11 @@ func (a *App) showShotTarget() {
 		s.captured = true
 		return
 	}
+	if s.body != "" && !a.chooseShotBody(s.body) {
+		s.err = fmt.Errorf("screenshot body type %q is not one of the body chips", s.body)
+		s.captured = true
+		return
+	}
 	if s.dialog != "" {
 		open, ok := shotDialogs[s.dialog]
 		if !ok {
@@ -327,6 +333,23 @@ func (a *App) showShotPane(label string) bool {
 		}
 	}
 	return false
+}
+
+// chooseShotBody chooses the body type id on the open request, as its chip
+// does; it reports whether id is one of the chips.
+func (a *App) chooseShotBody(id string) bool {
+	known := slices.ContainsFunc(bodyTypes, func(candidate struct {
+		id, label string
+		width     int
+	}) bool {
+		return candidate.id == id
+	})
+	if !known {
+		return false
+	}
+	a.setBodyType(a.cur(), id)
+	a.markStale() // no input reports this edit, so the cached unsaved marks would not see it
+	return true
 }
 
 func (a *App) findRequestByName(name string) *model.Request {

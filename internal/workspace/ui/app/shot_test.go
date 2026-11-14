@@ -308,6 +308,42 @@ func TestScreenshotShowsTheNamedRequestPane(t *testing.T) {
 	}
 }
 
+// With -body the capture chooses that body type on the open request, as
+// its chip does, so a scene can draw the File or GraphQL body editor that
+// no sample request has. The tab shows its unsaved mark on that frame.
+func TestScreenshotChoosesTheBodyType(t *testing.T) {
+	for _, bodyType := range []string{model.BodyFile, model.BodyGraphQL} {
+		t.Run(bodyType, func(t *testing.T) {
+			a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotBody: bodyType})
+			for range setFrame {
+				if err := a.shotUpdate(); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if err := a.Err(); err != nil {
+				t.Fatal(err)
+			}
+			if got := a.cur().Req.BodyType; got != bodyType {
+				t.Errorf("body type %q, want %q", got, bodyType)
+			}
+			if !a.tabDirty(a.cur()) {
+				t.Error("the tab should be marked as changed on the frame of the choice")
+			}
+		})
+	}
+}
+
+// An unknown body type ends the run with an error, as an unknown pane does.
+func TestScreenshotWithAnUnknownBodyTypeFails(t *testing.T) {
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotBody: "Nope"})
+	for range setFrame {
+		a.shotUpdate()
+	}
+	if a.Err() == nil || !a.shot.captured {
+		t.Fatalf("err = %v, captured = %v, want the run ended with an error", a.Err(), a.shot.captured)
+	}
+}
+
 // An unknown pane ends the run with an error: capturing the first pane
 // instead would let a golden pass for the wrong scene.
 func TestScreenshotWithAnUnknownPaneFails(t *testing.T) {

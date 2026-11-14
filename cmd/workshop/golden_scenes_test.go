@@ -65,6 +65,7 @@ var goldenScenes = []goldenScene{
 	{name: "tree-filter", width: shotWidth, height: shotHeight, args: []string{"-filter", "Echo"}},
 	{name: "sent-log", width: shotWidth, height: shotHeight, args: []string{"-send", "-request", "Echo", "-sent"}, mask: []image.Rectangle{durationStacked, durationStatus, sentTimeFirst, sentTimeSecond}},
 	{name: "request-settings", width: shotWidth, height: shotHeight, args: []string{"-pane", "Settings"}},
+	{name: "request-body-file", width: shotWidth, height: shotHeight, args: []string{"-request", "Echo", "-pane", "Body", "-body", "file"}},
 	{name: "request-auth", width: shotWidth, height: shotHeight, args: []string{"-request", "Auth", "-pane", "Auth"}},
 	{name: "toasts", width: shotWidth, height: shotHeight, args: []string{"-toast", "There is no response to save", "-toast", "Enter the gRPC server first, for example grpc://localhost:50051"}},
 	{name: "dialog-rename", width: shotWidth, height: shotHeight, args: []string{"-dialog", "rename"}},
