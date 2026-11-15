@@ -4,7 +4,6 @@
 package sentlog
 
 import (
-	"embed"
 	"fmt"
 	"strings"
 	"time"
@@ -94,13 +93,10 @@ func (l *Log) Open(host Host, sent port.Sent) {
 	}
 }
 
-//go:embed list.vml empty.vml row.vml
-var templates embed.FS
-
 var (
-	listTemplate  = markup.MustLoad(templates, "list.vml")
-	emptyTemplate = markup.MustLoad(templates, "empty.vml")
-	rowTemplate   = markup.MustLoad(templates, "row.vml")
+	listTemplate  = markup.Must("list.vml", listSource)
+	emptyTemplate = markup.Must("empty.vml", emptySource)
+	rowTemplate   = markup.Must("row.vml", rowSource)
 )
 
 // List is the sidebar body while it shows the log instead of the tree:
@@ -146,3 +142,26 @@ func status(code int) string {
 	}
 	return fmt.Sprint(code)
 }
+
+// Templates, parsed once above.
+const (
+	listSource = `<scroll state="scroll" bg="sunken">
+  <slot for="row in rows" name="row"/>
+</scroll>
+`
+
+	emptySource = `<col bg="sunken" pad="{{gutter}}">
+  <text muted>Nothing sent yet</text>
+</col>
+`
+
+	rowSource = `<col pad-x="{{gutter}}" pad-y="4" hover-bg="hover" control="row" on-click="row.Open">
+  <row gap="6" align-items="baseline">
+    <slot name="row.Badge"/>
+    <text ellipsis grow="1">{{row.Path}}</text>
+    <text small muted>{{row.Status}}</text>
+  </row>
+  <row><text small muted ellipsis grow="1">{{row.When}}</text></row>
+</col>
+`
+)
