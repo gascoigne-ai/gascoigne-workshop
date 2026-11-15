@@ -1,5 +1,5 @@
 // Package appicon draws the program's icon: a rounded burgundy square with
-// a light mark, at any size. It is drawn, not stored, so there is no image
+// a light spanner, at any size. It is drawn, not stored, so there is no image
 // file to keep in step with the theme.
 package appicon
 
@@ -48,24 +48,32 @@ func roundedCoverage(x, y, s, r float64) float64 {
 	return clamp(0.5 - d)
 }
 
-// markCoverage draws a ">_" prompt, the same glyph as the toolbar's, as
-// two strokes and a cursor, in the middle of the square.
+// markCoverage draws a spanner lying on the diagonal: an open-end jaw at the
+// top right, a ring at the bottom left, a round handle between them. Every
+// part is a signed distance, so the edge is smooth at any size.
 func markCoverage(x, y, s float64) float64 {
-	w := s * 0.075 // stroke half width
-	u := func(v float64) float64 { return v * s }
-	cov := 0.0
-	cov = math.Max(cov, segment(x, y, u(0.25), u(0.34), u(0.45), u(0.5), w))
-	cov = math.Max(cov, segment(x, y, u(0.45), u(0.5), u(0.25), u(0.66), w))
-	cov = math.Max(cov, segment(x, y, u(0.52), u(0.68), u(0.76), u(0.68), w))
-	return cov
+	px, py := x/s, y/s
+	const k = 0.7071067811865476 // 1/sqrt 2
+	handle := distSegment(px, py, 0.30, 0.70, 0.62, 0.38) - 0.058
+	// the jaw: a disc with a slot cut along the diagonal
+	jx, jy := px-0.665, py-0.335
+	jaw := math.Hypot(jx, jy) - 0.185
+	along, perp := (jx-jy)*k, (jx+jy)*k // along points to the top right
+	slot := math.Max(math.Abs(perp)-0.07, 0.02-along)
+	jaw = math.Max(jaw, -slot)
+	// the ring: a disc, with the hole cut after the handle joins it
+	rx, ry := px-0.285, py-0.715
+	ring := math.Hypot(rx, ry) - 0.12
+	hole := math.Hypot(rx, ry) - 0.05
+	d := math.Max(math.Min(handle, math.Min(jaw, ring)), -hole) * s
+	return clamp(0.5 - d)
 }
 
-// segment is the coverage of a round-capped line from a to b, half width w.
-func segment(px, py, ax, ay, bx, by, w float64) float64 {
+// distSegment is the distance from p to the line from a to b.
+func distSegment(px, py, ax, ay, bx, by float64) float64 {
 	vx, vy := bx-ax, by-ay
 	t := clamp(((px-ax)*vx + (py-ay)*vy) / (vx*vx + vy*vy))
-	d := math.Hypot(px-(ax+t*vx), py-(ay+t*vy)) - w
-	return clamp(0.5 - d)
+	return math.Hypot(px-(ax+t*vx), py-(ay+t*vy))
 }
 
 func clamp(v float64) float64 { return math.Min(math.Max(v, 0), 1) }

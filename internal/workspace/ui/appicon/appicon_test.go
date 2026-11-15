@@ -15,7 +15,7 @@ func TestIconIsRoundedAndHasAMarkAtEverySize(t *testing.T) {
 			t.Errorf("size %d: the top edge middle must be solid, alpha %d", size, a)
 		}
 		// the mark: pixels near the middle are lighter than the background above it
-		mark, bg := img.RGBAAt(size*45/100, size/2), img.RGBAAt(size/2, size*12/100)
+		mark, bg := img.RGBAAt(size*46/100, size*54/100), img.RGBAAt(size/2, size*12/100)
 		if int(mark.R)+int(mark.G)+int(mark.B) <= int(bg.R)+int(bg.G)+int(bg.B) {
 			t.Errorf("size %d: no light mark in the middle (%v on %v)", size, mark, bg)
 		}
