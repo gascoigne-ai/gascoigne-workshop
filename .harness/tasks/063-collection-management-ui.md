@@ -11,7 +11,7 @@ Asked for by the user. Today a collection is a directory of JSON files (decision
 4. The rules sit in a pure controller, tested without a window.
 
 Scope
-1. Ask the user first: does "save" mean write the open collection now (autosave exists) or "save as" a new location? Record the answer here.
+1. (decided, user's answers) A collection is a folder on disk, one open at a time (`openWorkspaceAt`). **New**: prompt for a name, create a folder in the default workspace directory, open it. **Rename**: change the name (`folder.json`) and the slug directory. **Save**: write the open collection now (flush; autosave stays). **Delete**: confirm, remove the folder's owned files (decision 7), then open another collection or a fresh one. The actions are entries of the sidebar's Collections chip menu, with shortcuts for New and Save; prompts and confirms reuse `prompt` and `confirm`.
 2. `collection/controller/tree`: create, rename, delete rules, tested.
 3. `collection/port.Store` gains the operations; `store.Files` implements them; tested on a temp dir.
 4. UI: sidebar menu entries, prompts and confirm through the existing `prompt` and `confirm`.

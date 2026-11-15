@@ -6,11 +6,11 @@ Asked for by the user with a screenshot: in the gRPC strip a vertical bar stands
 
 **Objectives**
 1. No stray bar before the method.
-2. The method has a visible field boundary (or the picker's look) and a placeholder when empty.
-3. `Stream` is either a real control or not shown while gRPC is unary only (decision 2).
+2. A divider sits between every chip of the strip (protocol, method, Stream) and none after the last; the method text has padding and a placeholder ("Method...") when empty.
+3. `Stream` is a toggle chip with a visible on and off state (streaming works already; decision 2's "unary only" is stale and is fixed in the docs).
 
 Scope
-1. Find the cause in the URL bar and the gRPC method picker (`internal/workspace/ui/app`, `view.go` and its template); write it here.
+1. (decided, user's choice: dividers, padding, Stream chip) Cause found: `urlbar.vml` draws one divider after the protocol chip only, the gRPC method text is flush against it, and `Stream` is a bare label with no divider. Fix in `internal/workspace/ui/app/urlbar.vml` and `view.go` (`streamColor`).
 2. Fix it; pin the view with a `view.Dump` test at two sizes, written to fail first.
 3. Add a golden scene of a gRPC request if none shows the strip.
 4. `style.md` if the fix sets a pattern for strips.

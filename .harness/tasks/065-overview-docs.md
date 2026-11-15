@@ -11,6 +11,8 @@ Asked for by the user. Do this after 060, 061 and 064 so the text is not written
 4. It says where to add a protocol, a widget, a setting, a view.
 5. It covers the project's organization: harness files, task workflow, `make` targets.
 
+Decided by the user: the file is `.harness/overview.md`, linked from README.md (a short pointer) and CLAUDE.md.
+
 Scope
 1. Draft from the code, not from old docs.
 2. The diagram (text, in the file).

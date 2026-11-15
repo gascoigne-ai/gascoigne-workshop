@@ -13,7 +13,7 @@ Asked for by the user: update the docs and change the settings icon to a gear. L
 Scope
 1. Gear icon in `uitoolkit/widget/icons`, used by the header; pins updated; golden scenes regenerated and looked at.
 2. README and user docs.
-3. Release checklist: `make check` including `-tags release`, a `release.yml` run, changelog.
+3. Release checklist: `make check` including `-tags release`, changelog. Decided by the user: `release.yml` gets a `workflow_dispatch` dry run (builds, no release or upload to a tag); the loop never pushes a tag or the branch, so the checklist item "run the dry run on GitHub" is left to the user and written as blocked with that reason.
 4. Known limitations list.
 
 Acceptance: every checklist line ticked, or written here as blocked with the reason and what would unblock it.
