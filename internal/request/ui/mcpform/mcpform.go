@@ -3,8 +3,6 @@
 package mcpform
 
 import (
-	"embed"
-
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
@@ -92,10 +90,7 @@ func (form *Form) Command() (string, error) {
 	return "call " + form.Tool.Name + " " + args, nil
 }
 
-//go:embed form.vml
-var templates embed.FS
-
-var formTemplate = markup.MustLoad(templates, "form.vml")
+var formTemplate = markup.Must("form.vml", formSource)
 
 // fieldRow is what the form shows of one field: exactly one of IsBool,
 // IsEnum and Input says which input it has.
@@ -191,3 +186,31 @@ func (form *Form) enumOptions(field model.ToolField) []optionRow {
 	}
 	return rows
 }
+
+// Templates, parsed once above.
+const (
+	formSource = `<!-- The fields of a tool's form, scrolling when there are many. Each field is
+     its name (starred when required) with its description, then the input
+     of its kind: a ticked row for a boolean, a row of choices for an enum,
+     a text field for the rest. -->
+<col gap="8">
+  <lines if="description" color="muted">{{description}}</lines>
+  <scroll state="scroll" max-h="{{maxH}}" gap="8">
+    <col for="field in fields" gap="2">
+      <row h="{{labelH}}" gap="8">
+        <text small bold>{{field.Name}}</text>
+        <text if="field.Description" small muted ellipsis grow="1">{{field.Description}}</text>
+      </row>
+      <check-row if="field.IsBool" on="{{field.On}}" on-click="field.Toggle">
+        <text small muted>{{field.Hint}}</text>
+      </check-row>
+      <row if="field.IsEnum" h="{{rowH}}" gap="6">
+        <choice for="option in field.Options" selected="{{option.Selected}}" h="{{rowH}}" on-click="option.Pick">{{option.Label}}</choice>
+      </row>
+      <field if="field.Input" state="field.Input" h="{{rowH}}" bg="sunken" on-enter="submit" text-menu="field.Input"/>
+    </col>
+  </scroll>
+  <text if="problem" small color="error">{{problem}}</text>
+</col>
+`
+)
