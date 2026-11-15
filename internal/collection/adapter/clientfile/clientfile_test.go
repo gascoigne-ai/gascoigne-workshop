@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/userdir"
 )
 
 func write(t *testing.T, dir, name, content string) {
@@ -75,7 +77,7 @@ func TestDefaultGlobalDirFollowsTheConfigDirectory(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, want := DefaultGlobalDir(), filepath.Join(config, "gascoigne-workshop"); got != want {
+	if got, want := DefaultGlobalDir(), filepath.Join(config, userdir.Name); got != want {
 		t.Fatalf("DefaultGlobalDir = %q, want %q", got, want)
 	}
 }

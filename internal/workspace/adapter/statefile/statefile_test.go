@@ -1,12 +1,27 @@
 package statefile
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/userdir"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/state"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
 )
+
+// The state, and the history beside it, live in the same user directory as
+// the settings, so a dev build never reads the release build's tabs.
+func TestDefaultPathIsInTheUserDirectoryOfTheBuild(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("HOME", t.TempDir())
+	config, err := os.UserConfigDir() // XDG_CONFIG_HOME on Linux, under HOME on macOS
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := DefaultPath(), filepath.Join(config, userdir.Name, "state.json"); got != want {
+		t.Fatalf("DefaultPath = %q, want %q", got, want)
+	}
+}
 
 func sample() state.State {
 	return state.State{

@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/clientconfig"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/userdir"
 )
 
 // Files reads client configs from two directories; an empty directory name
@@ -27,7 +28,7 @@ func DefaultGlobalDir() string {
 	if err != nil {
 		return ""
 	}
-	return filepath.Join(dir, "gascoigne-workshop")
+	return filepath.Join(dir, userdir.Name)
 }
 
 // Load returns the global config merged with the local one, which wins for

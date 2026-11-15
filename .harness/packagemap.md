@@ -10,7 +10,7 @@ Each package is `internal/<domain>/<role>/<package>`. The composition root, doma
 | environment |  |  | envs |  |  |
 | request | (root), assert | (root) | editor, mcpexplorer | exampleserver, proto, proto/ws | calltrace, mcpform |
 | response | jsonview, textfmt | (root) | viewer | history, preview | respview, sentlog |
-| settings | appearance, fontfamily, settings, sysinfo | (root) | prefs | displayscale, fonts, settingsfile, systeminfo | colorpage, settingsui, shortcutpage, systempage |
+| settings | appearance, fontfamily, settings, sysinfo, userdir | (root) | prefs | displayscale, fonts, settingsfile, systeminfo | colorpage, settingsui, shortcutpage, systempage |
 | workspace | state | (root) | autosave, bus, filebrowser, overlay, serial, tabs | dockicon, filedialog, folders, statefile, systemclock | app, appicon |
 
 What a role may import, in its own domain; another domain only through its `model` or `port`:

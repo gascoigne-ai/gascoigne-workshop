@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/userdir"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/state"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
 )
@@ -65,7 +66,7 @@ func DefaultPath() string {
 	if err != nil {
 		return ""
 	}
-	return filepath.Join(dir, "gascoigne-workshop", "state.json")
+	return filepath.Join(dir, userdir.Name, "state.json")
 }
 
 // Files is the state store of the file system.

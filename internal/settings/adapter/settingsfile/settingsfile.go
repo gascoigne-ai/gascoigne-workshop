@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/userdir"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
 )
 
@@ -74,7 +75,7 @@ func inConfigDir(name string) string {
 	if err != nil {
 		return ""
 	}
-	return filepath.Join(dir, "gascoigne-workshop", name)
+	return filepath.Join(dir, userdir.Name, name)
 }
 
 // Files is the settings store of the file system.
