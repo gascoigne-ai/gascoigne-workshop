@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"slices"
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
@@ -84,14 +85,19 @@ var tools = []tool{
 		func(title, name string) []string { return []string{"--title", title, "--getsavefilename", name} }},
 }
 
+// toolsBySystem are the dialog programs a system tries, in order; a system
+// not listed (Linux, the BSDs) tries tools. A Mac may have zenity from a
+// package manager, so it is tried after the native panel.
+var toolsBySystem = map[string][]tool{
+	"darwin":  slices.Concat([]tool{osascript}, tools),
+	"windows": {powershell},
+}
+
 // find is the first dialog program on the PATH.
 func find() (tool, string, bool) {
-	list := tools
-	switch goos {
-	case "darwin":
-		list = append([]tool{osascript}, tools...)
-	case "windows":
-		list = []tool{powershell}
+	list, ok := toolsBySystem[goos]
+	if !ok {
+		list = tools
 	}
 	for _, t := range list {
 		if p, err := exec.LookPath(t.name); err == nil {
