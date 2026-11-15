@@ -107,7 +107,7 @@ All of them can be changed in Settings, Shortcuts.
 ## Known limitations
 
 - File dialogs are native on macOS and Windows; Linux needs `zenity` or `kdialog`, and without them the program asks for a path.
-- No text wrapping in the code view, no IME and no word-wise cursor movement.
+- No text wrapping in the code view and no IME.
 - gRPC has no `.proto` file import: methods come from server reflection.
 - One collection is open at a time.
 

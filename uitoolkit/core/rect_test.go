@@ -56,18 +56,39 @@ func TestMeasureIsScaleStable(t *testing.T) {
 	}
 }
 
-func TestCtrlTurnsMovementIntoWordMovement(t *testing.T) {
-	tests := []struct{ in, want Edit }{
-		{EditLeft, EditWordLeft}, {EditRight, EditWordRight},
-		{EditBackspace, EditDeleteWordLeft}, {EditDelete, EditDeleteWordRight},
+func TestTheWordModifierIsOptionOnMacAndControlElsewhere(t *testing.T) {
+	tests := []struct {
+		name         string
+		goos         string
+		edit         Edit
+		primary, alt bool
+		want         Edit
+	}{
+		{"linux ctrl+left moves a word", "linux", EditLeft, true, false, EditWordLeft},
+		{"linux ctrl+right moves a word", "linux", EditRight, true, false, EditWordRight},
+		{"linux ctrl+backspace deletes a word", "linux", EditBackspace, true, false, EditDeleteWordLeft},
+		{"linux ctrl+delete deletes a word", "linux", EditDelete, true, false, EditDeleteWordRight},
+		{"linux alt+left is a plain move", "linux", EditLeft, false, true, EditLeft},
+		{"linux ctrl+home goes to the document start", "linux", EditHome, true, false, EditDocStart},
+		{"linux ctrl+up has no variant", "linux", EditUp, true, false, EditUp},
+		{"windows ctrl+left moves a word", "windows", EditLeft, true, false, EditWordLeft},
+		{"windows ctrl+backspace deletes a word", "windows", EditBackspace, true, false, EditDeleteWordLeft},
+		{"mac option+left moves a word", "darwin", EditLeft, false, true, EditWordLeft},
+		{"mac option+right moves a word", "darwin", EditRight, false, true, EditWordRight},
+		{"mac option+backspace deletes a word", "darwin", EditBackspace, false, true, EditDeleteWordLeft},
+		{"mac option+delete deletes a word", "darwin", EditDelete, false, true, EditDeleteWordRight},
+		{"mac cmd+left is not word movement", "darwin", EditLeft, true, false, EditLeft},
+		{"mac cmd+backspace is not word deletion", "darwin", EditBackspace, true, false, EditBackspace},
+		{"mac cmd+end goes to the document end", "darwin", EditEnd, true, false, EditDocEnd},
+		{"mac option+home stays on the line", "darwin", EditHome, false, true, EditHome},
+		{"plain left stays a character move", "darwin", EditLeft, false, false, EditLeft},
 	}
-	for _, tt := range tests {
-		if got, ok := ctrlEdit(tt.in); !ok || got != tt.want {
-			t.Errorf("ctrlEdit(%v) = %v %v, want %v", tt.in, got, ok, tt.want)
-		}
-	}
-	if _, ok := ctrlEdit(EditUp); ok {
-		t.Error("Up has no Ctrl variant")
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got := modifiedEdit(test.goos, test.edit, test.primary, test.alt); got != test.want {
+				t.Fatalf("modifiedEdit = %v, want %v", got, test.want)
+			}
+		})
 	}
 }
 
@@ -122,8 +143,10 @@ func TestSnapSharesEdgesAndLinesAreWholePixels(t *testing.T) {
 
 func TestCtrlHomeEndMapToDocMovement(t *testing.T) {
 	for in, want := range map[Edit]Edit{EditHome: EditDocStart, EditEnd: EditDocEnd} {
-		if got, ok := ctrlEdit(in); !ok || got != want {
-			t.Errorf("ctrlEdit(%v) = %v %v, want %v", in, got, ok, want)
+		for _, goos := range []string{"linux", "windows", "darwin"} {
+			if got := modifiedEdit(goos, in, true, false); got != want {
+				t.Errorf("%s: modifiedEdit(%v) = %v, want %v", goos, in, got, want)
+			}
 		}
 	}
 }

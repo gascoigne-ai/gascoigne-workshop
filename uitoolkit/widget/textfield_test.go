@@ -129,6 +129,41 @@ func TestWordLeftAndRightStopAtWordBoundaries(t *testing.T) {
 	}
 }
 
+// A word is a run of letters (any script, with their combining marks),
+// digits and underscores; everything else, punctuation included, is
+// skipped like a space, and a line break is crossed.
+func TestWordBoundariesAcrossCharacterClasses(t *testing.T) {
+	tests := []struct {
+		name      string
+		text      string
+		from      int
+		wantLeft  int
+		wantRight int
+	}{
+		{"punctuation inside a name separates words", "user.name", 4, 0, 9},
+		{"a run of operators is skipped", "a == b", 1, 0, 6},
+		{"url segments", "https://h/v1/users", 18, 13, 18},
+		{"url from inside the scheme", "https://h/v1/users", 2, 0, 5},
+		{"digits and underscores belong to the word", "v1.2_3", 2, 0, 6},
+		{"precomposed accents are letters", "café x", 4, 0, 6},
+		{"combining marks stay with their letter", "cafe\u0301 x", 0, 0, 5},
+		{"cjk letters form a word", "日本語 テキスト", 8, 4, 8},
+		{"whitespace runs are skipped", "one   two", 6, 0, 9},
+		{"a line break is crossed", "one\n  two", 6, 0, 9},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			text := []rune(test.text)
+			if got := wordLeft(text, test.from); got != test.wantLeft {
+				t.Errorf("wordLeft(%d) = %d, want %d", test.from, got, test.wantLeft)
+			}
+			if got := wordRight(text, test.from); got != test.wantRight {
+				t.Errorf("wordRight(%d) = %d, want %d", test.from, got, test.wantRight)
+			}
+		})
+	}
+}
+
 func TestWordWiseMovementAndDeletionActFromTheCursor(t *testing.T) {
 	tests := []struct {
 		name       string

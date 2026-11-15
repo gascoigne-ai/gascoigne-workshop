@@ -738,12 +738,51 @@ func (v *CodeView) moveCaret(pos textPos, edit core.Edit, visible []int) textPos
 			return atLine(row + 1)
 		}
 		return textPos{pos.line, v.lineLen(pos.line)}
+	case core.EditWordLeft:
+		return v.wordLeftFrom(pos, row, visible)
+	case core.EditWordRight:
+		return v.wordRightFrom(pos, row, visible)
 	case core.EditHome:
 		return textPos{pos.line, 0}
 	case core.EditEnd:
 		return textPos{pos.line, v.lineLen(pos.line)}
 	}
 	return pos
+}
+
+// wordLeftFrom is the start of the word before pos. Separators are skipped
+// across line ends, as in the text editor where a line break is one, so
+// lines without a word (a lone brace) are passed over.
+func (v *CodeView) wordLeftFrom(pos textPos, row int, visible []int) textPos {
+	for {
+		runes := []rune(v.lineText(visible[row]))
+		col := min(pos.col, len(runes))
+		for col > 0 && !isWordRune(runes[col-1]) {
+			col--
+		}
+		if col > 0 || row == 0 {
+			return textPos{visible[row], wordLeft(runes, col)}
+		}
+		row--
+		pos = textPos{visible[row], v.lineLen(visible[row])}
+	}
+}
+
+// wordRightFrom is the end of the word after pos, skipping separators
+// across line ends like wordLeftFrom.
+func (v *CodeView) wordRightFrom(pos textPos, row int, visible []int) textPos {
+	for {
+		runes := []rune(v.lineText(visible[row]))
+		col := min(pos.col, len(runes))
+		for col < len(runes) && !isWordRune(runes[col]) {
+			col++
+		}
+		if col < len(runes) || row+1 == len(visible) {
+			return textPos{visible[row], wordRight(runes, col)}
+		}
+		row++
+		pos = textPos{visible[row], 0}
+	}
 }
 
 func (v *CodeView) HasFocus() bool   { return v.Focused }

@@ -264,7 +264,13 @@ func (f *TextField) Drag(pos int) {
 	f.Cursor = f.clamp(pos)
 }
 
-func isWordRune(r rune) bool { return unicode.IsLetter(r) || unicode.IsDigit(r) || r == '_' }
+// isWordRune reports whether char belongs to a word: a letter of any
+// script, a digit, an underscore, or a combining mark, so a letter written
+// with a separate accent is not split from it. Everything else
+// (punctuation, spaces, line breaks) separates words.
+func isWordRune(char rune) bool {
+	return unicode.IsLetter(char) || unicode.IsMark(char) || unicode.IsDigit(char) || char == '_'
+}
 
 // wordLeft is the start of the word before pos (skipping separators).
 func wordLeft(r []rune, pos int) int {

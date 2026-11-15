@@ -160,29 +160,44 @@ func readInput() Input {
 		if !pressed(k.key) {
 			continue
 		}
-		edit := k.edit
-		if w, ok := ctrlEdit(edit); ok && in.Ctrl {
-			edit = w
-		}
-		in.Edits = append(in.Edits, edit)
+		in.Edits = append(in.Edits, modifiedEdit(HostOS, k.edit, in.Ctrl, in.Alt))
 	}
 	return in
 }
 
-// ctrlEdits turns movement and deletion keys into their word-wise
-// variants when Ctrl is held.
-var ctrlEdits = map[Edit]Edit{
+// wordEdits are the word-wise variants of movement and deletion keys,
+// taken while the platform's word modifier is held.
+var wordEdits = map[Edit]Edit{
 	EditLeft:      EditWordLeft,
 	EditRight:     EditWordRight,
 	EditBackspace: EditDeleteWordLeft,
 	EditDelete:    EditDeleteWordRight,
-	EditHome:      EditDocStart,
-	EditEnd:       EditDocEnd,
 }
 
-func ctrlEdit(e Edit) (Edit, bool) {
-	w, ok := ctrlEdits[e]
-	return w, ok
+// docEdits are the document-wide variants of Home and End, taken with the
+// primary modifier.
+var docEdits = map[Edit]Edit{
+	EditHome: EditDocStart,
+	EditEnd:  EditDocEnd,
+}
+
+// modifiedEdit is edit as the held modifiers turn it. Word movement and
+// deletion follow each platform's text editors: Option on macOS, where
+// Command is the shortcut key and Control belongs to the system, and
+// Control elsewhere. primary is the platform's shortcut modifier
+// (PrimaryDown), alt the Alt (Option) key.
+func modifiedEdit(goos string, edit Edit, primary, alt bool) Edit {
+	wordModifier := primary
+	if goos == "darwin" {
+		wordModifier = alt
+	}
+	if word, ok := wordEdits[edit]; ok && wordModifier {
+		return word
+	}
+	if doc, ok := docEdits[edit]; ok && primary {
+		return doc
+	}
+	return edit
 }
 
 // Multi-click detection: a click within this time and distance of the

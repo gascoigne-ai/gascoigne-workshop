@@ -277,6 +277,37 @@ func TestFieldCopyCutPasteSelectAll(t *testing.T) {
 	}
 }
 
+// Single-line fields take the word edits too (decided for task 069).
+func TestFieldMovesSelectsAndDeletesByWord(t *testing.T) {
+	f := NewTextField("https://h/v1/users")
+	f.Focused = true
+	f.Cursor = len([]rune(f.Text))
+	root := Row(Field(&f))
+	c := testCtx(t)
+	Layout(c, root, 300, 30)
+	step := func(in core.Input) {
+		c.In = in
+		Update(c, root)
+	}
+
+	step(core.Input{Shift: true, Edits: []core.Edit{core.EditWordLeft}})
+	if got := f.SelectedText(); got != "users" {
+		t.Fatalf("shift+word left selected %q, want %q", got, "users")
+	}
+	step(core.Input{Edits: []core.Edit{core.EditWordLeft}})
+	if f.Cursor != 10 || f.HasSel {
+		t.Fatalf("word left: cursor %d sel %v, want 10 and no selection", f.Cursor, f.HasSel)
+	}
+	step(core.Input{Edits: []core.Edit{core.EditDeleteWordRight}})
+	if f.Text != "https://h//users" {
+		t.Fatalf("delete word right: %q", f.Text)
+	}
+	step(core.Input{Edits: []core.Edit{core.EditDeleteWordLeft}})
+	if f.Text != "https:///users" {
+		t.Fatalf("delete word left: %q", f.Text)
+	}
+}
+
 func TestFieldPasteFailureLeavesTextAlone(t *testing.T) {
 	f := NewTextField("keep")
 	f.Focused = true

@@ -144,3 +144,42 @@ func TestCodeViewShiftArrowsOnAFoldedLineUseItsShownLength(t *testing.T) {
 		t.Fatalf("selected %q, want %q", got, foldedShown)
 	}
 }
+
+func TestCodeViewShiftWordKeysSelectByWord(t *testing.T) {
+	tests := []struct {
+		name      string
+		line, col int
+		keys      []core.Edit
+		want      string
+	}{
+		{name: "word right takes a word", line: 1, col: 0, keys: []core.Edit{core.EditWordRight}, want: `  "a`},
+		{name: "word right twice skips the punctuation between", line: 1, col: 0, keys: []core.Edit{core.EditWordRight, core.EditWordRight}, want: `  "a": 1`},
+		{name: "word left goes back to the word start", line: 2, col: 8, keys: []core.Edit{core.EditWordLeft}, want: "items"},
+		{name: "word left at a line start crosses to the previous word", line: 2, col: 0, keys: []core.Edit{core.EditWordLeft}, want: "1,\n"},
+		{name: "word right at a line end crosses to the next word", line: 1, col: 9, keys: []core.Edit{core.EditWordRight}, want: "\n  \"items"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			v, c, _, r := viewport(t)
+			clickAt(v, c, r, test.line, test.col)
+			for _, edit := range test.keys {
+				shiftKey(v, c, r, edit)
+			}
+			if got := v.SelectedText(); got != test.want {
+				t.Fatalf("selected %q, want %q", got, test.want)
+			}
+		})
+	}
+}
+
+func TestCodeViewShiftWordRightSkipsFoldedAndPunctuationOnlyLines(t *testing.T) {
+	v, c, _, r := viewport(t)
+	v.ToggleFold(5) // hides lines 6 and 7
+	clickAt(v, c, r, 5, 0)
+	shiftKey(v, c, r, core.EditEnd)
+	shiftKey(v, c, r, core.EditWordRight)
+	// Lines 8 and 9 hold only punctuation; the next word is "id" on line 10.
+	if want := (textPos{10, 9}); v.selB != want {
+		t.Fatalf("caret at %+v, want %+v", v.selB, want)
+	}
+}
