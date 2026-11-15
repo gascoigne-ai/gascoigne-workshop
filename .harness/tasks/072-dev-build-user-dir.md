@@ -20,5 +20,4 @@ Acceptance: both builds tested for their directory; no golden changes; `make che
 **Decided (user, 2026-11-15)**
 - Separate user directory with a `-dev` suffix for the dev build; client-config collections stay one collection.
 
-**Open (ask the user first)**
-- Is an existing dev data directory (the unsuffixed one a dev build wrote earlier) migrated, left alone, or ignored?
+- An existing unsuffixed data directory written by an earlier dev build is left alone: the dev build starts fresh in the `-dev` directory, no migration, no warning.
