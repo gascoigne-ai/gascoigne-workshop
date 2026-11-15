@@ -49,11 +49,14 @@ type Settings struct {
 	// change applies but is written only when the user saves.
 	AutoSave bool `json:"autoSave"`
 
-	// Workspace is the folder the collection is loaded from and saved to;
-	// "" keeps the built-in sample collection in memory.
-	Workspace string `json:"workspace,omitempty"`
+	// Collections are the collections the window had open, in tree order.
+	Collections []OpenCollection `json:"collections,omitempty"`
 
-	// Environment is the name of the active environment, "" for none.
+	// Workspace and Environment are what a file written when one collection
+	// was open at a time remembers: its folder and the name of its active
+	// environment. They are read only when Collections is empty
+	// (RememberedCollections) and cleared when it is written.
+	Workspace   string `json:"workspace,omitempty"`
 	Environment string `json:"environment,omitempty"`
 
 	// Proxy is the URL of an HTTP proxy for every REST request, such as

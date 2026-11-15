@@ -14,13 +14,14 @@ type Kind int
 
 // The kinds of value a setting can hold.
 const (
-	String    Kind = iota // text
-	File                  // text that is the path of a file
-	Enum                  // text, one of Allowed (or any text when Open)
-	Bool                  // true or false
-	Int                   // a whole number within Min and Max
-	Shortcuts             // an object of action id to key string
-	Colors                // an object of theme id to an object of token to color
+	String         Kind = iota // text
+	File                       // text that is the path of a file
+	Enum                       // text, one of Allowed (or any text when Open)
+	Bool                       // true or false
+	Int                        // a whole number within Min and Max
+	Shortcuts                  // an object of action id to key string
+	Colors                     // an object of theme id to an object of token to color
+	CollectionList             // a list of open collections, each a folder and an environment name
 )
 
 // Field describes one key of settings.json. The form view, the raw text
@@ -59,8 +60,9 @@ var Schema = []Field{
 	{Key: "caCert", Title: "CA certificates", Description: "Path of a PEM file of extra certificate authorities to trust.", Category: "Requests", Kind: File},
 	{Key: "clientCert", Title: "Client certificate", Description: "Path of a client certificate for servers that ask for one.", Category: "Requests", Kind: File},
 	{Key: "clientKey", Title: "Client key", Description: "Path of the private key of the client certificate.", Category: "Requests", Kind: File},
-	{Key: "workspace", Title: "Collection folder", Description: "The folder the collection is loaded from and saved to.", Category: "General", Kind: String, Hidden: true},
-	{Key: "environment", Title: "Active environment", Description: "Name of the environment in use.", Category: "General", Kind: String, Hidden: true},
+	{Key: "collections", Title: "Open collections", Description: "The collections open in the window, in tree order: the folder of each and the name of its active environment; one without a folder is the built-in or configured collection.", Category: "General", Kind: CollectionList, Hidden: true},
+	{Key: "workspace", Title: "Collection folder", Description: "The one open collection of an older settings file; read only when collections is absent.", Category: "General", Kind: String, Hidden: true},
+	{Key: "environment", Title: "Active environment", Description: "The active environment of an older settings file; read only when collections is absent.", Category: "General", Kind: String, Hidden: true},
 }
 
 // FieldFor is the schema entry of key.
@@ -206,8 +208,20 @@ func checkValue(field Field, raw json.RawMessage) string {
 		if json.Unmarshal(raw, &table) != nil {
 			return "must be an object of themes, each an object of token to #rrggbb text"
 		}
+	case CollectionList:
+		if !decodesStrictly(raw, &[]OpenCollection{}) {
+			return "must be a list of objects with folder and environment text"
+		}
 	}
 	return ""
+}
+
+// decodesStrictly reports whether raw fits into, with no key the type does
+// not have, so a misspelled key is shown rather than silently dropped.
+func decodesStrictly(raw json.RawMessage, into any) bool {
+	decoder := json.NewDecoder(bytes.NewReader(raw))
+	decoder.DisallowUnknownFields()
+	return decoder.Decode(into) == nil
 }
 
 func contains(list []string, value string) bool {
@@ -317,6 +331,8 @@ func Expectation(field Field) string {
 		return "an object of action id to key text"
 	case Colors:
 		return "an object of theme id to token to #rrggbb"
+	case CollectionList:
+		return "a list of objects with folder and environment text"
 	}
 	return "text"
 }

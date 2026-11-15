@@ -80,6 +80,9 @@ func TestValidateReportsUnknownKeysWrongTypesAndBadValues(t *testing.T) {
 		{"number above range", `{"uiScale": 900}`, "uiScale", "between"},
 		{"shortcuts must be an object of text", `{"shortcuts": {"send": 1}}`, "shortcuts", "text"},
 		{"colors must be nested objects", `{"colors": {"dark": "red"}}`, "colors", "object"},
+		{"open collections", `{"general": {"collections": [{"folder": "/a", "environment": "Dev"}, {}]}}`, "", ""},
+		{"open collections must be a list", `{"general": {"collections": "/a"}}`, "collections", "list"},
+		{"open collections have no other keys", `{"general": {"collections": [{"dir": "/a"}]}}`, "collections", "folder and environment"},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -205,6 +208,7 @@ func TestEveryKindSaysWhatItExpects(t *testing.T) {
 		{"theme", "dark, light, or the id of a theme file"},
 		{"shortcuts", "an object of action id to key text"},
 		{"colors", "an object of theme id to token to #rrggbb"},
+		{"collections", "a list of objects with folder and environment text"},
 	}
 	for _, test := range tests {
 		field, ok := FieldFor(test.key)
