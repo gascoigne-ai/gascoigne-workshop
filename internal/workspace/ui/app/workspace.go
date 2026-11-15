@@ -136,11 +136,7 @@ func (a *App) saveCollection(col *model.Collection) {
 	}
 	snapshot := col.Clone() // written off the UI goroutine while the UI goes on editing
 	a.markSaved(col)        // an error is reported once, not retried every frame
-	for _, t := range a.openTabs() {
-		if owner, ok := a.entryFor(t.Req); ok && owner.Collection == col {
-			t.MarkSaved()
-		}
-	}
+	a.markTabsSaved(col)
 	a.write("collection:"+dir, serial.Job{
 		Run: func() error { return a.store.Save(dir, snapshot) },
 		Done: func(err error) {
@@ -215,7 +211,20 @@ func (a *App) flushCollection(entry collections.Entry) error {
 		return err
 	}
 	a.markSaved(col)
+	// renaming another collection flushes this one too, and once it is
+	// saved no autosave runs again to clear the marks of its tabs
+	a.markTabsSaved(col)
 	return nil
+}
+
+// markTabsSaved makes the requests of col's open tabs, as they are now,
+// their saved copies, so their unsaved marks go.
+func (a *App) markTabsSaved(col *model.Collection) {
+	for _, t := range a.openTabs() {
+		if owner, ok := a.entryFor(t.Req); ok && owner.Collection == col {
+			t.MarkSaved()
+		}
+	}
 }
 
 // openWorkspaceAt switches to the collection in dir, which deleting the
