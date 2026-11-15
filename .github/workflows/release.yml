@@ -59,6 +59,13 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
+      - name: Embed the icon in the exe
+        # go-winres turns the program icon into a resource (a .syso file) that
+        # go build links in; Explorer and shortcuts then show it.
+        run: |
+          go build -o bin/workshop.exe ./cmd/workshop
+          bin/workshop.exe -icon-png bin/icon.png
+          go run github.com/tc-hib/go-winres@v0.3.3 simply --icon bin/icon.png --arch amd64 --out cmd/workshop/rsrc
       - name: Build the zip
         run: |
           name=gascoigne-workshop-${GITHUB_REF_NAME}-windows-amd64

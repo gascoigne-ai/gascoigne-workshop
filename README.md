@@ -93,8 +93,8 @@ All of them can be changed in Settings, Shortcuts.
 ## Known limitations
 
 - Windows and macOS builds have never been run on a real machine: window and HiDPI behavior,
-  clipboard, file dialogs, the browser opener and font folders are untested there. The Windows
-  program has no embedded icon.
+  clipboard, file dialogs, the browser opener, font folders and the embedded icon of the `.exe`
+  are untested there.
 - File dialogs are native on macOS and Windows (not yet tried on Windows); Linux needs `zenity` or `kdialog`, and without them the program asks for a path.
 - No text wrapping in the code view, no IME and no word-wise cursor movement.
 - gRPC has no `.proto` file import: methods come from server reflection.
