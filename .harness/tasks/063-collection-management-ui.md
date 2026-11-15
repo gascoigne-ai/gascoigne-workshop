@@ -1,0 +1,20 @@
+# 063 Create, rename, save and delete collections from the UI
+
+Asked for by the user. Today a collection is a directory of JSON files (decision 9) edited outside the app.
+
+**Goal:** manage collections without leaving the app.
+
+**Objectives**
+1. New collection, rename, save and delete are each reachable from the sidebar (menu entry; shortcut where one fits).
+2. Delete asks for confirmation; only files the store owns are removed (decision 9).
+3. Failures show as a toast, never a silent loss.
+4. The rules sit in a pure controller, tested without a window.
+
+Scope
+1. Ask the user first: does "save" mean write the open collection now (autosave exists) or "save as" a new location? Record the answer here.
+2. `collection/controller/tree`: create, rename, delete rules, tested.
+3. `collection/port.Store` gains the operations; `store.Files` implements them; tested on a temp dir.
+4. UI: sidebar menu entries, prompts and confirm through the existing `prompt` and `confirm`.
+5. Docs: architecture.md, a decision, a golden scene of the menu.
+
+Acceptance: an App test runs create, rename, save, reload, delete; `make check` green; `make shot` of the menu looked at.
