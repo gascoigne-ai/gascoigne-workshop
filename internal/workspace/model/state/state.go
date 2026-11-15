@@ -32,22 +32,45 @@ func (w Window) Clamp(mw, mh int) Window {
 	return w
 }
 
-// Tab is one open request, found again by its folder path.
+// Tab is one open request, found again by its collection and folder path.
 type Tab struct {
-	Path string `json:"path"`           // folder names and request name joined by "/"
-	Pane int    `json:"pane,omitempty"` // selected request pane tab
-	Resp int    `json:"resp,omitempty"` // selected response pane tab
+	// Collection is the folder of the request's collection (see CollectionAt).
+	Collection string `json:"collection,omitempty"`
+	Path       string `json:"path"`           // folder names and request name joined by "/"
+	Pane       int    `json:"pane,omitempty"` // selected request pane tab
+	Resp       int    `json:"resp,omitempty"` // selected response pane tab
 }
 
 // State is everything remembered.
 type State struct {
-	Window    Window               `json:"window"`
-	SidebarW  float64              `json:"sidebarW,omitempty"`
-	PaneSplit float64              `json:"paneSplit,omitempty"`
-	Expanded  []string             `json:"expanded,omitempty"` // folder paths
-	Tabs      []Tab                `json:"tabs,omitempty"`
-	Active    int                  `json:"active,omitempty"`
-	Columns   map[string][]float64 `json:"columns,omitempty"`   // table column weights by table name
-	SettingsW int                  `json:"settingsW,omitempty"` // the settings dialog size the user chose; 0 is the default
-	SettingsH int                  `json:"settingsH,omitempty"`
+	Window    Window  `json:"window"`
+	SidebarW  float64 `json:"sidebarW,omitempty"`
+	PaneSplit float64 `json:"paneSplit,omitempty"`
+	// Expanded are the open folders, by path, of the collection that is
+	// not saved, or of the first one in a file written when one collection
+	// was open at a time; ExpandedIn are those of saved collections, by the
+	// collection's folder.
+	Expanded   []string             `json:"expanded,omitempty"`
+	ExpandedIn map[string][]string  `json:"expandedIn,omitempty"`
+	Tabs       []Tab                `json:"tabs,omitempty"`
+	Active     int                  `json:"active,omitempty"`
+	Columns    map[string][]float64 `json:"columns,omitempty"`   // table column weights by table name
+	SettingsW  int                  `json:"settingsW,omitempty"` // the settings dialog size the user chose; 0 is the default
+	SettingsH  int                  `json:"settingsH,omitempty"`
+}
+
+// CollectionAt is the index in dirs, the folders of the open collections
+// in order ("" for one not saved), of the collection ref names; -1 when it
+// is not open. An empty ref is the collection that is not saved, else the
+// first: a file written when one collection was open at a time names none.
+func CollectionAt(ref string, dirs []string) int {
+	for i, dir := range dirs {
+		if dir == ref {
+			return i
+		}
+	}
+	if ref == "" && len(dirs) > 0 {
+		return 0
+	}
+	return -1
 }

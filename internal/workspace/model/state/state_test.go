@@ -2,6 +2,30 @@ package state
 
 import "testing"
 
+// A state file written when one collection was open at a time names no
+// collection: its tabs and folders belong to the one open now.
+func TestCollectionAt(t *testing.T) {
+	tests := []struct {
+		name string
+		ref  string
+		dirs []string
+		want int
+	}{
+		{"a saved collection by its folder", "/b", []string{"/a", "/b"}, 1},
+		{"a folder no longer open", "/c", []string{"/a", "/b"}, -1},
+		{"none open", "", nil, -1},
+		{"the one not saved", "", []string{"/a", ""}, 1},
+		{"an older file: the first", "", []string{"/a", "/b"}, 0},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got := CollectionAt(test.ref, test.dirs); got != test.want {
+				t.Fatalf("got %d, want %d", got, test.want)
+			}
+		})
+	}
+}
+
 func TestClampKeepsTheWindowOnTheMonitor(t *testing.T) {
 	cases := []struct {
 		name string
