@@ -2,6 +2,9 @@ name: release
 on:
   push:
     tags: ["v*"]
+  # A dry run: builds every platform and keeps the files as workflow artifacts,
+  # makes no release (the release job runs only for a tag).
+  workflow_dispatch:
 permissions:
   contents: write
 jobs:
@@ -70,6 +73,7 @@ jobs:
           path: "*.zip"
   release:
     needs: [linux, macos, windows]
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
