@@ -1,8 +1,12 @@
 package app
 
 import (
+	"path/filepath"
+	"time"
+
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"reflect"
 	"strings"
 	"testing"
@@ -215,5 +219,24 @@ func TestTheProtocolChipOffersGRPCAndSSEOnlyWhenTheyAreSwitchedOn(t *testing.T) 
 				t.Errorf("protocolsFor(%q) = %v, want %v", tt.current, got, tt.want)
 			}
 		})
+	}
+}
+
+// fakeKeyRepeat is a desktop with a fixed key repeat setting.
+type fakeKeyRepeat struct{ delay, interval time.Duration }
+
+func (fake fakeKeyRepeat) Timing() (time.Duration, time.Duration) { return fake.delay, fake.interval }
+
+func TestTheWindowRepeatsKeysAtTheDesktopsSpeed(t *testing.T) {
+	want := core.KeyRepeat{Delay: 600 * time.Millisecond, Interval: 25 * time.Millisecond}
+	app, err := NewApp(withAdapters(Options{
+		SettingsPath: filepath.Join(t.TempDir(), "settings.json"),
+		KeyRepeat:    fakeKeyRepeat{want.Delay, want.Interval},
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if app.sampler.Repeat != want {
+		t.Fatalf("key repeat = %+v, want %+v", app.sampler.Repeat, want)
 	}
 }

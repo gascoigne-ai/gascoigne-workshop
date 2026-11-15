@@ -114,19 +114,40 @@ var editKeys = []struct {
 	{ebiten.KeyPageDown, EditPageDown},
 }
 
-// Key repeat: after repeatDelay frames held, fire every repeatEvery.
+// KeyRepeat is how a held key repeats: it fires once when pressed, again
+// after Delay, then every Interval. The zero value is the built-in timing
+// (25 ticks, then every 3), for when the system's own is unknown.
+type KeyRepeat struct {
+	Delay, Interval time.Duration
+}
+
 const (
-	repeatDelay = 25
-	repeatEvery = 3
+	defaultRepeatDelayTicks    = 25
+	defaultRepeatIntervalTicks = 3
 )
 
-func pressed(key ebiten.Key) bool {
-	d := inpututil.KeyPressDuration(key)
-	return d == 1 || (d >= repeatDelay && d%repeatEvery == 0)
+// Fires reports whether a key held for the given number of ticks acts on
+// this tick, at tps ticks a second. The timing is rounded to whole ticks
+// and an interval is at least one tick.
+func (repeat KeyRepeat) Fires(held, tps int) bool {
+	delay, interval := defaultRepeatDelayTicks, defaultRepeatIntervalTicks
+	if repeat.Delay > 0 && repeat.Interval > 0 {
+		delay = max(ticks(repeat.Delay, tps), 1)
+		interval = max(ticks(repeat.Interval, tps), 1)
+	}
+	return held == 1 || (held >= delay && (held-delay)%interval == 0)
+}
+
+func ticks(duration time.Duration, tps int) int {
+	return int((duration*time.Duration(tps) + time.Second/2) / time.Second)
+}
+
+func pressed(key ebiten.Key, repeat KeyRepeat) bool {
+	return repeat.Fires(inpututil.KeyPressDuration(key), ebiten.TPS())
 }
 
 // readInput samples the devices for this frame.
-func readInput() Input {
+func readInput(repeat KeyRepeat) Input {
 	x, y := ebiten.CursorPosition()
 	wheelX, wheel := ebiten.Wheel()
 	in := Input{
@@ -159,7 +180,7 @@ func readInput() Input {
 		in.Redo = inpututil.IsKeyJustPressed(ebiten.KeyY) || (z && in.Shift)
 	}
 	for _, k := range editKeys {
-		if !pressed(k.key) {
+		if !pressed(k.key, repeat) {
 			continue
 		}
 		in.Edits = append(in.Edits, modifiedEdit(HostOS, k.edit, in.Ctrl, in.Alt))
@@ -228,7 +249,10 @@ const (
 // Sampler reads input each frame and counts rapid clicks.
 type Sampler struct {
 	// Now is the clock clicks are timed by; nil is time.Now.
-	Now   func() time.Time
+	Now func() time.Time
+	// Repeat is how held keys repeat; the zero value is the built-in timing.
+	Repeat KeyRepeat
+
 	last  time.Time
 	x, y  int
 	count int
@@ -256,7 +280,7 @@ func (s *Sampler) now() time.Time {
 
 // Read samples the devices for this frame, including the click count.
 func (s *Sampler) Read() Input {
-	in := readInput()
+	in := readInput(s.Repeat)
 	if in.Click {
 		in.Clicks = s.Click(s.now(), in.X, in.Y)
 	}

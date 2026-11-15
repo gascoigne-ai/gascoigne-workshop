@@ -15,6 +15,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/displayscale"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/fonts"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/keyrepeat"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/dockicon"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/filedialog"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/folders"
@@ -82,6 +83,7 @@ func main() {
 	home, _ := os.UserHomeDir()
 	opts.Fonts = fonts.System{Home: home}
 	opts.Display = displayscale.New()
+	opts.KeyRepeat = keyrepeat.New()
 	opts.Previews = preview.Browser{Lifetime: previewLifetime}
 	opts.Clock = systemclock.Clock{}
 	opts.SettingsFiles = settingsfile.Files{}

@@ -293,6 +293,7 @@ type Options struct {
 	Folders                port.Folders                                  // the folders the in-app file browser lists; nil lists none
 	History                func(dir string) rport.History                // the history in a folder; nil keeps none
 	System                 sport.SystemInfo                              // the system and GPU report of the settings; nil has none
+	KeyRepeat              sport.KeyRepeat                               // the desktop's key repeat timing; nil keeps the built-in one
 	Display                sport.DisplayScale                            // the desktop's display scale when the window system hides it; nil has none
 	Fonts                  sport.FontStore                               // installed fonts; nil has none
 	SettingsFiles          sport.SettingsStore                           // the settings file; nil reads the defaults and cannot save
@@ -373,6 +374,10 @@ func NewApp(opts Options) (*App, error) {
 		a.store = noStore{}
 	}
 	a.display = opts.Display
+	if opts.KeyRepeat != nil {
+		delay, interval := opts.KeyRepeat.Timing()
+		a.sampler.Repeat = core.KeyRepeat{Delay: delay, Interval: interval}
+	}
 	a.files, a.previews, a.histories, a.fonts = opts.Files, opts.Previews, opts.History, opts.Fonts
 	if a.fonts == nil {
 		a.fonts = noFonts{}
