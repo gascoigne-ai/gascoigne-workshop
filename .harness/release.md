@@ -11,6 +11,7 @@ Run before a tag `vX.Y.Z`. Tick a line with the date and what was seen; a line t
 - [x] `release.yml` has a dry run (`workflow_dispatch`, builds, no release) and the release job runs only for a tag.
 - [x] Golden PNGs regenerated for the gear icon, the gRPC strip and the dialog style, 2026-11-15, in a container like CI; the PNGs looked at, the whole set green and identical over three runs.
 - [x] Golden PNGs regenerated for the bold collection root and Ctrl+Shift+W on the Shortcuts page (every scene that shows the tree), and `tree-two-collections` and `tree-empty` added, 2026-11-15, in a container like CI; the new PNGs and the changed ones looked at, the whole set green and identical over three runs.
+- [x] Golden `file-browser` added (the in-app file browser with its footer hint, path field masked), 2026-11-15, in a container like CI; the PNG looked at, no other PNG changed, the whole set green and identical over three runs.
 - [ ] **Blocked: run the dry run on GitHub.** Needs the branch pushed; the program never pushes. Unblock: push, Actions, release, Run workflow; download the three artifacts.
 - [ ] **Blocked: run the program on Windows and macOS** (decision 12): window, HiDPI, clipboard, file dialogs, browser opener, fonts, shortcuts. Unblock: a machine or a CI runner with a display.
 - [ ] Tag and push `v0.1.0` (the user's step).

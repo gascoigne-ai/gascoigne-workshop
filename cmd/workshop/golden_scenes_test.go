@@ -28,13 +28,17 @@ type goldenScene struct {
 	// collection (-add-collection); each is copied to a temp dir first, so
 	// nothing the program writes lands in testdata.
 	collections []string
+	// browse is a folder under testdata the in-app file browser opens on
+	// (-browse), copied to a temp dir like collections.
+	browse string
 }
 
 // Every scene is a golden under testdata/golden. Add a row, run with -update,
 // look at the PNG, then commit both.
 // The response header and the status bar print how long the request took; the
 // status pill left of it moves with the number of digits, so the mask covers it.
-// A sent log row ends with the time of day it was sent.
+// A sent log row ends with the time of day it was sent. The file browser's
+// path field shows the temp folder it was opened on.
 var (
 	durationStacked = image.Rect(1100, 462, 1280, 497) // response pane under the request
 	durationSide    = image.Rect(1100, 150, 1280, 185) // response pane beside the request
@@ -43,6 +47,7 @@ var (
 	sentTimeSecond  = image.Rect(132, 99, 210, 117)    // clock time of the second row
 	logStamps       = image.Rect(268, 204, 374, 240)   // clock times of the Log dialog's two lines, under its title bar and toolbar
 	logDuration     = image.Rect(446, 224, 640, 240)   // duration and size of the Log dialog's answer line
+	browserPath     = image.Rect(377, 191, 839, 217)   // inside the file browser's path field: the temp folder's absolute path and the caret after it
 )
 
 var goldenScenes = []goldenScene{
@@ -90,6 +95,8 @@ var goldenScenes = []goldenScene{
 	// github-collection is what the store wrote for the GitHub sample collection
 	{name: "tree-two-collections", width: shotWidth, height: shotHeight, collections: []string{"github-collection"}},
 	{name: "tree-empty", width: shotWidth, height: shotHeight, args: []string{"-close-all"}},
+	// the in-app file browser on a copy of the same folder
+	{name: "file-browser", width: shotWidth, height: shotHeight, browse: "github-collection", mask: []image.Rectangle{browserPath}},
 }
 
 // wrapBody is a JSON body with one string longer than the body pane, so the
@@ -108,11 +115,10 @@ func TestGoldenScenes(t *testing.T) {
 			t.Parallel()
 			args := append([]string(nil), scene.args...)
 			for _, name := range scene.collections {
-				dir := t.TempDir()
-				if err := os.CopyFS(dir, os.DirFS(filepath.Join("testdata", name))); err != nil {
-					t.Fatal(err)
-				}
-				args = append(args, "-add-collection", dir)
+				args = append(args, "-add-collection", copyTestdata(t, name))
+			}
+			if scene.browse != "" {
+				args = append(args, "-browse", copyTestdata(t, scene.browse))
 			}
 			img := renderShotSized(t, scene.width, scene.height, args...)
 			if got, want := img.Bounds().Size(), (image.Point{X: scene.width, Y: scene.height}); got != want {
@@ -121,6 +127,17 @@ func TestGoldenScenes(t *testing.T) {
 			assertGolden(t, scene.name, img, scene.mask...)
 		})
 	}
+}
+
+// copyTestdata copies the folder name under testdata to a temp dir, so
+// nothing the program writes lands in testdata.
+func copyTestdata(t *testing.T, name string) string {
+	t.Helper()
+	dir := t.TempDir()
+	if err := os.CopyFS(dir, os.DirFS(filepath.Join("testdata", name))); err != nil {
+		t.Fatal(err)
+	}
+	return dir
 }
 
 // exampleRoot is the page the example server answers at "/" (captured from
