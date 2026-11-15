@@ -38,7 +38,7 @@ func (GRPC) Connect(ctx context.Context, req model.Request) (Session, error) {
 		conn.Close()
 		return nil, err
 	}
-	method, err := resolveMethod(setupCtx, conn, req.Method)
+	method, err := resolveMethod(setupCtx, conn, req)
 	if err != nil {
 		conn.Close()
 		return nil, err

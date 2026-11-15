@@ -34,8 +34,8 @@ const (
 
 // GRPC makes unary gRPC calls with JSON messages. Request.URL is the
 // server, Request.Method is "package.Service/Method" and Request.Body is
-// the message as JSON. The message types come from the server's
-// reflection, so no .proto files are needed.
+// the message as JSON. The message types come from Request.Proto: its
+// .proto files, or without files the server's reflection (methodSources).
 //
 // The answer maps to a response like an HTTP one: a call that reached the
 // server gives a Status (200 for OK, else the usual HTTP equivalent of
@@ -106,8 +106,8 @@ func outgoing(ctx context.Context, req model.Request) (context.Context, error) {
 }
 
 // ListGRPCMethods lists the methods of the server as
-// "package.Service/Method", asking its reflection service. The
-// reflection service itself is left out.
+// "package.Service/Method", from the request's source: the server's
+// reflection (without the reflection service itself) or its .proto files.
 func ListGRPCMethods(ctx context.Context, req model.Request) ([]string, error) {
 	conn, err := dial(req)
 	if err != nil {
@@ -118,20 +118,17 @@ func ListGRPCMethods(ctx context.Context, req model.Request) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	services, err := listServices(ctx, conn)
+	source, err := openMethodSource(ctx, conn, req.Proto)
+	if err != nil {
+		return nil, err
+	}
+	services, err := source.serviceNames(ctx)
 	if err != nil {
 		return nil, err
 	}
 	var methods []string
 	for _, name := range services {
-		if strings.HasPrefix(name, "grpc.reflection.") {
-			continue
-		}
-		files, err := loadSymbol(ctx, conn, name)
-		if err != nil {
-			return nil, err
-		}
-		service, err := findService(files, name)
+		service, err := source.service(ctx, name)
 		if err != nil {
 			return nil, err
 		}
@@ -158,7 +155,7 @@ func (GRPC) Send(ctx context.Context, req model.Request) (model.Response, error)
 	if err != nil {
 		return fail(err)
 	}
-	method, err := resolveMethod(ctx, conn, req.Method)
+	method, err := resolveMethod(ctx, conn, req)
 	if err != nil {
 		return fail(err)
 	}
@@ -234,18 +231,18 @@ func grpcErrText(ctx context.Context, err error) string {
 	return err.Error()
 }
 
-// resolveMethod finds the descriptor of "package.Service/Method" through
-// the server's reflection.
-func resolveMethod(ctx context.Context, conn *grpc.ClientConn, name string) (protoreflect.MethodDescriptor, error) {
-	serviceName, methodName, ok := strings.Cut(name, "/")
+// resolveMethod finds the descriptor of the request's
+// "package.Service/Method" in its source of methods.
+func resolveMethod(ctx context.Context, conn *grpc.ClientConn, req model.Request) (protoreflect.MethodDescriptor, error) {
+	serviceName, methodName, ok := strings.Cut(req.Method, "/")
 	if !ok || serviceName == "" || methodName == "" {
-		return nil, fmt.Errorf("the method %q is not package.Service/Method", name)
+		return nil, fmt.Errorf("the method %q is not package.Service/Method", req.Method)
 	}
-	files, err := loadSymbol(ctx, conn, serviceName)
+	source, err := openMethodSource(ctx, conn, req.Proto)
 	if err != nil {
 		return nil, err
 	}
-	service, err := findService(files, serviceName)
+	service, err := source.service(ctx, serviceName)
 	if err != nil {
 		return nil, err
 	}
