@@ -76,6 +76,23 @@ func TestListGRPCMethodsReadsTheProtoFiles(t *testing.T) {
 	}
 }
 
+// The Proto tab lists methods and checks the files before a server is
+// entered or reachable: the files alone say what there is.
+func TestListGRPCMethodsFromProtoFilesNeedsNoServer(t *testing.T) {
+	for _, url := range []string{"", "grpc://127.0.0.1:1"} {
+		methods, err := ListGRPCMethods(grpcContext(t), fromHealthProto(t, grpcRequest(url, "", "")))
+		if err != nil {
+			t.Fatalf("URL %q: %v", url, err)
+		}
+		if len(methods) != 3 {
+			t.Errorf("URL %q: methods = %v, want the three of Health", url, methods)
+		}
+	}
+	if _, err := ListGRPCMethods(grpcContext(t), grpcRequest("", "", "")); err == nil {
+		t.Error("reflection without a server listed methods")
+	}
+}
+
 func TestGRPCServerStreamWorksFromAProtoFile(t *testing.T) {
 	target, healthServer := grpcStubWithoutReflection(t)
 	request := fromHealthProto(t, grpcRequest(target, "grpc.health.v1.Health/Watch", `{"service": "known"}`))

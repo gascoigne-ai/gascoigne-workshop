@@ -40,6 +40,12 @@ The in-app file chooser (decision 18): width 640, height 520 at most (40 from th
 
 A resizable dialog is grabbed within 6 px inside or 4 px outside its border (`edgeSlop`, `edgeOut`), grows about its center and stays inside the window with `ScreenMargin` (decision 15). Size and position are app state that outlives the dialog's rebuild.
 
+## Request panes
+
+### Proto (gRPC)
+
+Padded `Gutter`, gap 8, like Auth: a `RowH` row of two choice chips, *Reflection* and *Proto files* (the chosen one lit). Reflection shows one muted line, "Methods come from the server's reflection". Proto files shows two lists, each a caption (FILES, IMPORT PATHS), its rows (a `Sunken` path field `RowH` high that grows, then a Remove icon button `IconBtnW` x `CompactH` with the trash icon, gap 6) and its add button (*Add file...*, *Add path*). Problems found in the files follow the lists, one small `Error` line each, `file:line:col: message`.
+
 ## Sidebar
 
 - With no collection open the tree's place holds, on `Sunken` with padding `Gutter` and gap 8: a muted note "No collection is open", then the buttons *Open collection folder...* and *New collection...*, `RowH`-high (28) and as wide as the sidebar. Nothing is made on disk until one is pressed.

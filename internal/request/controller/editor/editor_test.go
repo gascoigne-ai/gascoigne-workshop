@@ -219,3 +219,55 @@ func TestUpdateTogglesFlipTheirOwnFlagOnly(t *testing.T) {
 		t.Fatal("a second InsecureTLSToggled must turn it off")
 	}
 }
+
+func TestUpdateProtoPathsAreAddedSetAndRemovedPerList(t *testing.T) {
+	cases := []struct {
+		list ProtoList
+		read func(model.ProtoSource) []string
+	}{
+		{ProtoFiles, func(source model.ProtoSource) []string { return source.Files }},
+		{ImportPaths, func(source model.ProtoSource) []string { return source.ImportPaths }},
+	}
+	for _, c := range cases {
+		t.Run(string(c.list), func(t *testing.T) {
+			original := model.Request{Protocol: "grpc"}
+			req := Update(original, ProtoPathAdded{List: c.list, Path: "/protos/a.proto"})
+			req = Update(req, ProtoPathAdded{List: c.list, Path: ""})
+			req = Update(req, ProtoPathSet{List: c.list, Index: 1, Path: "/protos/b.proto"})
+			if got := c.read(req.Proto); !reflect.DeepEqual(got, []string{"/protos/a.proto", "/protos/b.proto"}) {
+				t.Fatalf("after adding and setting: %v", got)
+			}
+			before := req
+			req = Update(req, ProtoPathRemoved{List: c.list, Index: 0})
+			if got := c.read(req.Proto); !reflect.DeepEqual(got, []string{"/protos/b.proto"}) {
+				t.Fatalf("after removing the first: %v", got)
+			}
+			if got := c.read(before.Proto); !reflect.DeepEqual(got, []string{"/protos/a.proto", "/protos/b.proto"}) {
+				t.Fatalf("removing changed the request it was given: %v", got)
+			}
+			if c.read(original.Proto) != nil {
+				t.Fatalf("adding changed the request it was given: %+v", original.Proto)
+			}
+			if got := Update(req, ProtoPathRemoved{List: c.list, Index: 0}); c.read(got.Proto) != nil {
+				t.Fatalf("an emptied list is %v, want none, so it is not saved", c.read(got.Proto))
+			}
+		})
+	}
+}
+
+func TestUpdateProtoPathOutOfRangeChangesNothing(t *testing.T) {
+	req := model.Request{Proto: model.ProtoSource{Files: []string{"/a.proto"}}}
+	for _, msg := range []Msg{ProtoPathSet{List: ProtoFiles, Index: 3, Path: "x"}, ProtoPathRemoved{List: ProtoFiles, Index: -1}} {
+		if got := Update(req, msg); !reflect.DeepEqual(got.Proto, req.Proto) {
+			t.Errorf("%T: %+v", msg, got.Proto)
+		}
+	}
+}
+
+func TestUpdateReflectionChosenDropsTheFilesAndImportPaths(t *testing.T) {
+	req := model.Request{Proto: model.ProtoSource{Files: []string{"/a.proto"}, ImportPaths: []string{"/protos"}}}
+	got := Update(req, ReflectionChosen{})
+	if !reflect.DeepEqual(got.Proto, model.ProtoSource{}) || got.Proto.Kind() != model.SourceReflection {
+		t.Fatalf("proto source %+v", got.Proto)
+	}
+}

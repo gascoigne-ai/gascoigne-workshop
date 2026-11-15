@@ -26,8 +26,15 @@ func layoutDump(a *App) string {
 // exactly, so a test finds a control by its label and not by pixel.
 func clickText(t *testing.T, a *App, text string, nth int) {
 	t.Helper()
+	clickDumped(t, a, fmt.Sprintf("text=%q", text), nth)
+}
+
+// clickDumped clicks the middle of the nth (from 0) element whose line in
+// the layout dump holds needle ("fieldB", "tip=Remove"), for controls that
+// show no text of their own.
+func clickDumped(t *testing.T, a *App, needle string, nth int) {
+	t.Helper()
 	a.step(core.Input{X: 5000, Y: 5000})
-	needle := fmt.Sprintf("text=%q", text)
 	seen := 0
 	for _, line := range strings.Split(layoutDump(a), "\n") {
 		if !strings.Contains(line, needle) {
@@ -48,7 +55,7 @@ func clickText(t *testing.T, a *App, text string, nth int) {
 		click(a, x+w/2, y+h/2)
 		return
 	}
-	t.Fatalf("no element with text %q (#%d) in:\n%s", text, nth, layoutDump(a))
+	t.Fatalf("no element with %s (#%d) in:\n%s", needle, nth, layoutDump(a))
 }
 
 func settingsText(a *App) string { return view.Dump(a.menuView()) }

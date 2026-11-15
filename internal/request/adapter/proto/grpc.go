@@ -107,18 +107,25 @@ func outgoing(ctx context.Context, req model.Request) (context.Context, error) {
 
 // ListGRPCMethods lists the methods of the server as
 // "package.Service/Method", from the request's source: the server's
-// reflection (without the reflection service itself) or its .proto files.
+// reflection (without the reflection service itself) or its .proto files,
+// which are read without a server.
 func ListGRPCMethods(ctx context.Context, req model.Request) ([]string, error) {
-	conn, err := dial(req)
+	kind, err := sourceKindOf(req.Proto)
 	if err != nil {
 		return nil, err
 	}
-	defer conn.Close()
+	var conn *grpc.ClientConn
+	if kind.asksServer {
+		if conn, err = dial(req); err != nil {
+			return nil, err
+		}
+		defer conn.Close()
+	}
 	ctx, err = outgoing(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	source, err := openMethodSource(ctx, conn, req.Proto)
+	source, err := kind.open(ctx, conn, req.Proto)
 	if err != nil {
 		return nil, err
 	}

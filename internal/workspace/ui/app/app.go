@@ -99,6 +99,7 @@ type reqTab struct {
 	wsView                widget.CodeView              // the message log
 	msg                   widget.TextField             // the message being composed
 	grpcStream            bool                         // a gRPC tab streams instead of making single calls
+	proto                 protoState                   // the Proto pane of a gRPC tab
 	schema                *model.Schema                // what a GraphQL introspection answered
 	explorer              mcpexplorer.State            // the MCP explorer: the list shown, the open entry, its answer
 	form                  *mcpform.Form                // the argument form of the open entry, nil for none

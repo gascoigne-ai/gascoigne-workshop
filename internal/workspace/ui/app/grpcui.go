@@ -15,7 +15,8 @@ import (
 // pickGRPCMethod asks the server for its methods in the background and
 // opens a menu of them; the chosen one becomes the request's method.
 func (a *App) pickGRPCMethod(t *reqTab) {
-	if strings.TrimSpace(t.Req.URL) == "" {
+	// Proto files are read without a server; reflection asks one.
+	if t.Req.Proto.Kind() == model.SourceReflection && strings.TrimSpace(t.Req.URL) == "" {
 		a.toast("Enter the gRPC server first, for example grpc://localhost:50051", true)
 		return
 	}

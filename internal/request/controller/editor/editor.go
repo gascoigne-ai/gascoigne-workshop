@@ -57,7 +57,43 @@ type NoRedirectsToggled struct{}
 // InsecureTLSToggled flips whether certificate errors are ignored.
 type InsecureTLSToggled struct{}
 
+// ProtoList names one list of paths of a gRPC request's proto source.
+type ProtoList string
+
+// The lists of model.ProtoSource.
+const (
+	ProtoFiles  ProtoList = "files"
+	ImportPaths ProtoList = "import paths"
+)
+
+// ProtoPathAdded appends Path to a list; "" is a row still to be typed.
+type ProtoPathAdded struct {
+	List ProtoList
+	Path string
+}
+
+// ProtoPathSet replaces the path at Index of a list.
+type ProtoPathSet struct {
+	List  ProtoList
+	Index int
+	Path  string
+}
+
+// ProtoPathRemoved removes the path at Index of a list.
+type ProtoPathRemoved struct {
+	List  ProtoList
+	Index int
+}
+
+// ReflectionChosen drops the proto files and import paths, so the methods
+// come from the server's reflection again.
+type ReflectionChosen struct{}
+
 func (URLTyped) editMsg()           {}
+func (ProtoPathAdded) editMsg()     {}
+func (ProtoPathSet) editMsg()       {}
+func (ProtoPathRemoved) editMsg()   {}
+func (ReflectionChosen) editMsg()   {}
 func (ParamsChanged) editMsg()      {}
 func (MethodChosen) editMsg()       {}
 func (ProtocolChosen) editMsg()     {}
@@ -131,8 +167,50 @@ func Update(req model.Request, msg Msg) model.Request {
 		req.NoRedirects = !req.NoRedirects
 	case InsecureTLSToggled:
 		req.InsecureTLS = !req.InsecureTLS
+	case ProtoPathAdded:
+		list := protoList(&req.Proto, msg.List)
+		*list = append(append([]string(nil), *list...), msg.Path)
+	case ProtoPathSet:
+		list := protoList(&req.Proto, msg.List)
+		if msg.Index >= 0 && msg.Index < len(*list) {
+			*list = append([]string(nil), *list...)
+			(*list)[msg.Index] = msg.Path
+		}
+	case ProtoPathRemoved:
+		list := protoList(&req.Proto, msg.List)
+		if msg.Index >= 0 && msg.Index < len(*list) {
+			*list = withoutIndex(*list, msg.Index)
+		}
+	case ReflectionChosen:
+		req.Proto = model.ProtoSource{}
 	}
 	return req
+}
+
+// protoLists is where each list named in the proto messages lives.
+var protoLists = map[ProtoList]func(*model.ProtoSource) *[]string{
+	ProtoFiles:  func(source *model.ProtoSource) *[]string { return &source.Files },
+	ImportPaths: func(source *model.ProtoSource) *[]string { return &source.ImportPaths },
+}
+
+// protoList is the list called name. An unknown name is a mistake in the
+// caller, not user input, so it panics.
+func protoList(source *model.ProtoSource, name ProtoList) *[]string {
+	place, ok := protoLists[name]
+	if !ok {
+		panic("editor: unknown proto list " + string(name))
+	}
+	return place(source)
+}
+
+// withoutIndex is a new slice of paths without the one at index; an empty
+// result is nil, so an emptied list is not saved.
+func withoutIndex(paths []string, index int) []string {
+	kept := append(append([]string(nil), paths[:index]...), paths[index+1:]...)
+	if len(kept) == 0 {
+		return nil
+	}
+	return kept
 }
 
 // chooseBodyType keeps one Body for all types: a file body holds the path,

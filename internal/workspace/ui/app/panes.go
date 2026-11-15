@@ -34,6 +34,7 @@ const (
 	paneAssertions // the request side: the assertions being written
 	paneResults    // the response side: what they found
 	paneExplorer   // the response side of MCP: what the server offers
+	paneProto      // the request side of gRPC: reflection or .proto files
 )
 
 // pane describes one tab of the request or response area. The tables
@@ -93,6 +94,7 @@ var requestPanesByProtocol = map[string][]pane{
 	"websocket": connectionRequestPanes,
 	"sse":       connectionRequestPanes,
 	"mcp":       connectionRequestPanes,
+	"grpc":      grpcRequestPanes,
 }
 
 func noResponse(t *reqTab) (string, bool) {
@@ -184,6 +186,7 @@ var paneBuilders = map[paneKind]func(a *App, p pane, t *reqTab, scroll *ScrollSt
 	paneAssertions: (*App).assertionsPane,
 	paneResults:    (*App).resultsPane,
 	paneTable:      (*App).tablePane,
+	paneProto:      (*App).protoPane,
 }
 
 // paneBody is what fills the area under a pane's tab strip.

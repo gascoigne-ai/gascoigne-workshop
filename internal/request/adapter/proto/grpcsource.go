@@ -21,20 +21,36 @@ type methodSource interface {
 	service(ctx context.Context, name string) (protoreflect.ServiceDescriptor, error)
 }
 
+// sourceKind is one row of the table of method sources.
+type sourceKind struct {
+	open func(ctx context.Context, conn *grpc.ClientConn, source model.ProtoSource) (methodSource, error)
+	// asksServer says the source reads the server, so listing methods
+	// needs a connection; files are read without one.
+	asksServer bool
+}
+
 // methodSources opens a request's source, by model.ProtoSource.Kind.
-var methodSources = map[string]func(ctx context.Context, conn *grpc.ClientConn, source model.ProtoSource) (methodSource, error){
-	model.SourceReflection: openReflection,
-	model.SourceProtoFiles: openProtoFiles,
+var methodSources = map[string]sourceKind{
+	model.SourceReflection: {open: openReflection, asksServer: true},
+	model.SourceProtoFiles: {open: openProtoFiles},
+}
+
+func sourceKindOf(source model.ProtoSource) (sourceKind, error) {
+	kind, ok := methodSources[source.Kind()]
+	if !ok {
+		return sourceKind{}, fmt.Errorf("no source of gRPC methods is called %q", source.Kind())
+	}
+	return kind, nil
 }
 
 // openMethodSource opens the source of a request's methods. conn is the
 // server's connection, which reflection asks and proto files ignore.
 func openMethodSource(ctx context.Context, conn *grpc.ClientConn, source model.ProtoSource) (methodSource, error) {
-	open, ok := methodSources[source.Kind()]
-	if !ok {
-		return nil, fmt.Errorf("no source of gRPC methods is called %q", source.Kind())
+	kind, err := sourceKindOf(source)
+	if err != nil {
+		return nil, err
 	}
-	return open(ctx, conn, source)
+	return kind.open(ctx, conn, source)
 }
 
 // reflectionSource asks the server's reflection service.
