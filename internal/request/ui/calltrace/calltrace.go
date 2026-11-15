@@ -5,7 +5,6 @@
 package calltrace
 
 import (
-	"embed"
 	"fmt"
 	"strings"
 	"time"
@@ -155,13 +154,10 @@ func (l *Log) newest() int64 {
 	return l.entries[len(l.entries)-1].At.UnixNano()
 }
 
-//go:embed dialog.vml title.vml toolbar.vml
-var templates embed.FS
-
 var (
-	dialogTemplate  = markup.MustLoad(templates, "dialog.vml")
-	titleTemplate   = markup.MustLoad(templates, "title.vml")
-	toolbarTemplate = markup.MustLoad(templates, "toolbar.vml")
+	dialogTemplate  = markup.Must("dialog.vml", dialogSource)
+	titleTemplate   = markup.Must("title.vml", titleSource)
+	toolbarTemplate = markup.Must("toolbar.vml", toolbarSource)
 )
 
 // View is the dialog while it is open, nothing otherwise.
@@ -200,3 +196,27 @@ func (l *Log) toolbar(host Host) Node {
 		"compactH": w.CompactH,
 	})
 }
+
+// Templates, parsed once above.
+const (
+	dialogSource = `<dialog w="{{width}}" h="{{height}}" moved="move" on-dismiss="close">
+  <slot name="title"/>
+  <slot name="toolbar"/>
+  <code state="code" grow="1" bg="sunken" round-b="menu"/>
+</dialog>
+`
+
+	titleSource = `<!-- The dialog's title bar: the name, how many entries there are and the close
+     button. The filter and Clear are in toolbar.vml. -->
+<dialog-title title="Log" on-dismiss="close">
+  <slot name="subtitle"/>
+</dialog-title>
+`
+
+	toolbarSource = `<!-- The row under the title bar: the filter and Clear. -->
+<dialog-toolbar>
+  <field state="filter" h="28" grow="1" bg="sunken" placeholder="Filter" text-menu="filter"/>
+  <button w="64" h="{{compactH}}" on-click="clear" tooltip="Forget the entries">Clear</button>
+</dialog-toolbar>
+`
+)
