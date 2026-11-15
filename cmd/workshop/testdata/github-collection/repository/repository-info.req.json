@@ -1,0 +1,7 @@
+{
+  "name": "Repository Info",
+  "protocol": "rest",
+  "method": "GET",
+  "url": "{{baseUrl}}/repos/golang/go",
+  "auth": {}
+}

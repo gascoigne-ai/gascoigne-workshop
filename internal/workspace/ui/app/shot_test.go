@@ -212,6 +212,36 @@ func TestScreenshotClosesEveryCollection(t *testing.T) {
 	}
 }
 
+// With -add-collection the capture opens each folder's collection beside
+// the start one, in order, as Open collection folder does, so a scene shows
+// several roots in the tree.
+func TestScreenshotAddsCollectionsBesideTheStartOne(t *testing.T) {
+	alphaDir, betaDir := savedCollection(t, "Alpha"), savedCollection(t, "Beta")
+	a := shotApp(t, withAdapters(Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotCollections: []string{alphaDir, betaDir}}))
+	start := a.col().Name
+	for range setFrame {
+		if err := a.shotUpdate(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got, want := openNames(a), []string{start, "Alpha", "Beta"}; !slices.Equal(got, want) {
+		t.Fatalf("open %v, want %v", got, want)
+	}
+}
+
+// A folder that holds no collection ends the run with an error: opening it
+// would start an empty collection there, and a golden would pass for a tree
+// without the collection it was meant to show.
+func TestScreenshotWithAFolderWithoutACollectionFails(t *testing.T) {
+	a := shotApp(t, withAdapters(Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotCollections: []string{t.TempDir()}}))
+	for range setFrame {
+		a.shotUpdate()
+	}
+	if a.Err() == nil || !a.shot.captured || len(a.open.Entries) != 1 {
+		t.Fatalf("err = %v, captured = %v, open %d, want the run ended with an error", a.Err(), a.shot.captured, len(a.open.Entries))
+	}
+}
+
 // With -log the capture opens the Log dialog, as the status bar's Log
 // button does.
 func TestScreenshotOpensTheCallLog(t *testing.T) {

@@ -112,6 +112,10 @@ func main() {
 	})
 	flag.StringVar(&opts.ScreenshotDialog, "dialog", "", "open this dialog (rename, delete) on the open request before the screenshot")
 	flag.BoolVar(&opts.ScreenshotCloseAll, "close-all", false, "close every collection before the screenshot, so the tree shows its empty prompt")
+	flag.Func("add-collection", "open the collection saved in this folder beside the others before the screenshot, as Open collection folder does (repeatable)", func(dir string) error {
+		opts.ScreenshotCollections = append(opts.ScreenshotCollections, dir)
+		return nil
+	})
 	flag.BoolVar(&opts.ScreenshotCallLog, "log", false, "open the Log dialog of calls before the screenshot, as the status bar's Log button does")
 	flag.StringVar(&opts.ScreenshotTool, "tool", "", "open the call form of this tool of the open MCP request before the screenshot, once its server announced it (with -send)")
 	flag.StringVar(&opts.ScreenshotFind, "find", "", "search the response for this text in the find bar before the screenshot (after -send's response)")

@@ -58,6 +58,7 @@ type screenshot struct {
 	record      []string // ACTION=KEYS recorded on the Shortcuts page, as a user would; a bare ACTION is left recording
 	callLog     bool     // open the Log dialog of calls, as the status bar's Log button does
 	closeAll    bool     // close every collection, so the tree shows its empty prompt
+	collections []string // folders whose collections open beside the start one, in order
 	tool        string   // name of the open MCP request's tool whose call form to open, once the server announced it
 	toolOpened  bool     // the form of tool is open
 }
@@ -247,6 +248,13 @@ func (a *App) applyShotSetting(spec string) {
 // would let a golden pass for the wrong scene.
 func (a *App) showShotTarget() {
 	s := &a.shot
+	for _, dir := range s.collections {
+		if err := a.addShotCollection(dir); err != nil {
+			s.err = err
+			s.captured = true
+			return
+		}
+	}
 	if s.openAll {
 		a.eachRoot(func(root *model.Folder) {
 			walkRequests(root, "", func(_ string, request *model.Request) { a.openRequest(request) })
@@ -340,6 +348,21 @@ func (a *App) showShotTarget() {
 	if s.sending {
 		a.send(a.cur())
 	}
+}
+
+// addShotCollection opens the collection saved in dir beside the open ones,
+// as Open collection folder does. A folder with nothing in it is an error
+// here, unlike in that prompt, where it starts a new collection: a scene
+// meant to show a saved collection must not pass with an empty one.
+func (a *App) addShotCollection(dir string) error {
+	loaded, err := a.store.Load(dir)
+	if err != nil {
+		return fmt.Errorf("screenshot collection %q: %w", dir, err)
+	}
+	if len(loaded.Folders) == 0 && len(loaded.Requests) == 0 {
+		return fmt.Errorf("screenshot collection %q: the folder holds no collection", dir)
+	}
+	return a.addCollection(dir)
 }
 
 // shotRecord starts recording on the action spec names and, when spec

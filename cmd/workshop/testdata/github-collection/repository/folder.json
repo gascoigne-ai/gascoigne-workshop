@@ -1,0 +1,8 @@
+{
+  "name": "Repository",
+  "order": [
+    "search-repos.req.json",
+    "repository-info.req.json",
+    "repository-tags.req.json"
+  ]
+}

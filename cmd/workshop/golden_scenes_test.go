@@ -24,6 +24,10 @@ type goldenScene struct {
 	width, height int
 	args          []string
 	mask          []image.Rectangle // places that show a measured duration or the clock, which change from run to run
+	// collections are folders under testdata opened beside the start
+	// collection (-add-collection); each is copied to a temp dir first, so
+	// nothing the program writes lands in testdata.
+	collections []string
 }
 
 // Every scene is a golden under testdata/golden. Add a row, run with -update,
@@ -83,6 +87,9 @@ var goldenScenes = []goldenScene{
 	{name: "response-raw", width: shotWidth, height: shotHeight, args: []string{"-send", "-set", "responseView=raw"}, mask: []image.Rectangle{durationStacked, durationStatus}},
 	{name: "response-wrap", width: shotWidth, height: shotHeight, args: []string{"-request", "Index", "-type-url", "users/octocat", "-send", "-wrap", "-set", "responseView=raw"}, mask: []image.Rectangle{durationStacked, durationStatus}},
 	{name: "request-body-wrap", width: shotWidth, height: shotHeight, args: []string{"-request", "Echo", "-pane", "Body", "-wrap", "-type-body", wrapBody}},
+	// github-collection is what the store wrote for the GitHub sample collection
+	{name: "tree-two-collections", width: shotWidth, height: shotHeight, collections: []string{"github-collection"}},
+	{name: "tree-empty", width: shotWidth, height: shotHeight, args: []string{"-close-all"}},
 }
 
 // wrapBody is a JSON body with one string longer than the body pane, so the
@@ -99,7 +106,15 @@ func TestGoldenScenes(t *testing.T) {
 	for _, scene := range goldenScenes {
 		t.Run(scene.name, func(t *testing.T) {
 			t.Parallel()
-			img := renderShotSized(t, scene.width, scene.height, scene.args...)
+			args := append([]string(nil), scene.args...)
+			for _, name := range scene.collections {
+				dir := t.TempDir()
+				if err := os.CopyFS(dir, os.DirFS(filepath.Join("testdata", name))); err != nil {
+					t.Fatal(err)
+				}
+				args = append(args, "-add-collection", dir)
+			}
+			img := renderShotSized(t, scene.width, scene.height, args...)
 			if got, want := img.Bounds().Size(), (image.Point{X: scene.width, Y: scene.height}); got != want {
 				t.Fatalf("%s is %v, want the %v the scene asks for", scene.name, got, want)
 			}
