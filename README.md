@@ -47,6 +47,10 @@ Download a beta build from the
 tarball, a macOS arm64 app bundle or a Windows zip. Only Linux is tested so far (see
 [Known limitations](#known-limitations)). Or build from source.
 
+On Linux, native open and save dialogs need one of `zenity`, `kdialog`, `yad`, `qarma` or
+`matedialog` (most desktops ship one; `zenity` on GNOME and others, `kdialog` on KDE Plasma).
+Without any of them the program opens its own file browser, whose footer names the one to install.
+
 ## Build
 
 Needs Go (see `go.mod`) and, on Linux, the Ebitengine dependencies
