@@ -95,6 +95,25 @@ func TestAProtoSourceSurvivesStoringAndLoading(t *testing.T) {
 	}
 }
 
+func TestMoveProtoPathsFollowsTheCollectionFolderEverywhereInTheTree(t *testing.T) {
+	from, to := filepath.FromSlash("/work/api"), filepath.FromSlash("/work/office")
+	outside := filepath.FromSlash("/shared/common.proto")
+	inside := func(dir string) ProtoSource {
+		return ProtoSource{Files: []string{filepath.Join(dir, "health.proto"), outside}, ImportPaths: []string{filepath.Join(dir, "protos")}}
+	}
+	top, nested, plain := &Request{Proto: inside(from)}, &Request{Proto: inside(from)}, &Request{}
+	tree := Folder{Requests: []*Request{top, plain}, Folders: []*Folder{{Requests: []*Request{nested}}}}
+	tree.MoveProtoPaths(from, to)
+	for name, request := range map[string]*Request{"top": top, "nested": nested} {
+		if !reflect.DeepEqual(request.Proto, inside(to)) {
+			t.Errorf("%s request: %+v, want %+v", name, request.Proto, inside(to))
+		}
+	}
+	if !reflect.DeepEqual(plain.Proto, ProtoSource{}) {
+		t.Errorf("a reflection request got proto paths: %+v", plain.Proto)
+	}
+}
+
 func TestCloneCopiesTheProtoSource(t *testing.T) {
 	original := Request{Proto: ProtoSource{Files: []string{"a.proto"}, ImportPaths: []string{"protos"}}}
 	clone := original.Clone()

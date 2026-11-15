@@ -48,6 +48,41 @@ func TestProtoPathsAreSavedRelativeInsideTheCollectionAndAbsoluteOutside(t *test
 	}
 }
 
+// A collection opened by a relative folder (a -workspace flag) saved the
+// proto paths inside it as absolute ones, since a relative folder and an
+// absolute path have no relative path between them.
+func TestProtoPathsAreRelativeWhenTheCollectionFolderIsGivenRelative(t *testing.T) {
+	parent := t.TempDir()
+	t.Chdir(parent)
+	inside := filepath.Join(parent, "api", "health.proto")
+	collection := model.Collection{Folder: model.Folder{Name: "gRPC", Requests: []*model.Request{
+		{Name: "Check", Protocol: "grpc", Proto: model.ProtoSource{Files: []string{inside}}},
+	}}}
+	if err := Save("api", collection); err != nil {
+		t.Fatal(err)
+	}
+	raw, err := os.ReadFile(filepath.Join(parent, "api", "check"+reqSuffix))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var saved struct {
+		ProtoFiles []string `json:"protoFiles"`
+	}
+	if err := json.Unmarshal(raw, &saved); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(saved.ProtoFiles, []string{"health.proto"}) {
+		t.Errorf("saved %v, want [health.proto]", saved.ProtoFiles)
+	}
+	loaded, err := Load("api")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := loaded.Requests[0].Proto.Files; !reflect.DeepEqual(got, []string{inside}) {
+		t.Errorf("loaded %v, want [%s]", got, inside)
+	}
+}
+
 func TestAReflectionRequestSavesNoProtoKeys(t *testing.T) {
 	dir := t.TempDir()
 	collection := model.Collection{Folder: model.Folder{Name: "gRPC", Requests: []*model.Request{

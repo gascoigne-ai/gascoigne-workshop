@@ -96,6 +96,7 @@ func (a *App) renameCollection(col *model.Collection, text string) {
 		return
 	}
 	col.Name = name
+	col.MoveProtoPaths(entry.Dir, dir)
 	a.open = collections.Update(a.open, collections.Located{Collection: col, Dir: dir})
 	a.rememberCollections()
 	a.markSaved(col)

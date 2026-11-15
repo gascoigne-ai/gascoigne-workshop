@@ -76,6 +76,21 @@ func TestNewCollectionRefusesAnEmptyNameAndKeepsTheOpenOne(t *testing.T) {
 	}
 }
 
+// Renaming moved the folder but left a gRPC request's proto paths in the
+// old one; the next save then wrote them as absolute paths that no longer
+// exist.
+func TestRenameCollectionMovesTheProtoPathsWithTheFolder(t *testing.T) {
+	a, base := collectionsApp(t)
+	old := a.workspace()
+	request := a.col().Requests[0]
+	request.Proto = model.ProtoSource{Files: []string{filepath.Join(old, "protos", "health.proto")}}
+	a.renameCollection(a.col(), "Office")
+	want := filepath.Join(base, "office", "protos", "health.proto")
+	if got := request.Proto.Files; len(got) != 1 || got[0] != want {
+		t.Fatalf("proto files %v, want [%s]", got, want)
+	}
+}
+
 func TestRenameCollectionRenamesTheFolderAndKeepsTheContent(t *testing.T) {
 	a, base := collectionsApp(t)
 	a.renameCollection(a.col(), "Office")

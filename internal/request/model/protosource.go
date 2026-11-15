@@ -42,6 +42,18 @@ func (s ProtoSource) Loaded(dir string) ProtoSource {
 	return ProtoSource{Files: mapPaths(s.Files, dir, LoadedPath), ImportPaths: mapPaths(s.ImportPaths, dir, LoadedPath)}
 }
 
+// MoveProtoPaths keeps the proto paths of every request below f that
+// were inside the folder from inside the folder to, after the collection
+// was moved there; paths outside it stay as they are.
+func (f *Folder) MoveProtoPaths(from, to string) {
+	for _, request := range f.Requests {
+		request.Proto = request.Proto.Stored(from).Loaded(to)
+	}
+	for _, sub := range f.Folders {
+		sub.MoveProtoPaths(from, to)
+	}
+}
+
 func (s ProtoSource) clone() ProtoSource {
 	return ProtoSource{Files: cloneStrings(s.Files), ImportPaths: cloneStrings(s.ImportPaths)}
 }

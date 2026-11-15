@@ -149,7 +149,7 @@ func unique(base string, taken map[string]bool) string {
 func Save(dir string, c model.Collection) error {
 	secrets := map[string]secret{}
 	meta := folderMeta{Name: c.Name, Vars: toKV(c.Vars)}
-	if err := saveFolder(dir, dir, "", &c.Folder, meta, secrets); err != nil {
+	if err := saveFolder(absoluteDir(dir), dir, "", &c.Folder, meta, secrets); err != nil {
 		return err
 	}
 	if err := saveEnvs(dir, c.Envs, secrets); err != nil {
@@ -297,6 +297,16 @@ func fileExists(p string) bool {
 	return err == nil
 }
 
+// absoluteDir is the collection's folder as the root that proto paths are
+// stored relative to: absolute, since in memory they are.
+func absoluteDir(dir string) string {
+	abs, err := filepath.Abs(dir)
+	if err != nil { // no working directory: paths inside dir stay absolute
+		return dir
+	}
+	return abs
+}
+
 // requestToFile is the file of r in a collection kept in root; proto paths
 // inside root are saved relative to it.
 func requestToFile(r *model.Request, root string) (requestFile, secret) {
@@ -392,7 +402,7 @@ func Load(dir string) (model.Collection, error) {
 		}
 	}
 	var c model.Collection
-	meta, err := loadFolder(dir, dir, "", &c.Folder, secrets)
+	meta, err := loadFolder(absoluteDir(dir), dir, "", &c.Folder, secrets)
 	if err != nil {
 		return model.Collection{}, err
 	}
