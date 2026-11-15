@@ -8,7 +8,7 @@ import (
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
-// Whole collections: new, open, rename, save and delete. A collection is a
+// Whole collections: new, open, rename, save, close, move and delete. A collection is a
 // folder on disk; the open ones are a.open (see openset.go). The rules are
 // in collection/controller/collections, the I/O behind the store port.
 
@@ -27,20 +27,24 @@ func (a *App) collectionsDir() string {
 // focused collection.
 func (a *App) collectionMenu() []MenuItem { return a.collectionMenuOf(a.focusCol()) }
 
-// collectionMenuOf is the collection menu acting on col.
+// collectionMenuOf is the collection menu acting on col; with nothing open
+// (col nil) only New and Open act.
 func (a *App) collectionMenuOf(col *model.Collection) []MenuItem {
+	none := col == nil
 	return []MenuItem{
 		{Label: "New collection...", Run: a.promptNewCollection},
 		{Label: "Open collection folder...", Run: a.promptWorkspace},
 		menuSeparator,
-		{Label: "Rename collection...", Run: func() { a.promptRenameCollection(col) }},
-		{Label: "Save collection", Run: func() { a.saveCollection(col) }},
+		{Label: "Rename collection...", Disabled: none, Run: func() { a.promptRenameCollection(col) }},
+		{Label: "Save collection", Disabled: none, Run: func() { a.saveCollection(col) }},
 		menuSeparator,
-		{Label: "Delete collection...", Run: func() { a.confirmDeleteCollection(col) }},
+		{Label: "Close collection", Disabled: none, Run: func() { a.requestCloseCollection(col) }},
+		{Label: "Delete collection...", Disabled: none, Run: func() { a.confirmDeleteCollection(col) }},
 	}
 }
 
-// promptNewCollection asks for a name, then makes the collection and opens it.
+// promptNewCollection asks for a name, then makes the collection and opens
+// it beside the open ones.
 func (a *App) promptNewCollection() {
 	a.prompt("New collection", "", "Create", a.createCollection)
 }
@@ -56,16 +60,12 @@ func (a *App) createCollection(text string) {
 		a.toast("There is no folder for new collections", true)
 		return
 	}
-	if err := a.FlushWorkspace(); err != nil {
-		a.toast("Saving the current collection failed: "+err.Error(), true)
-		return
-	}
 	dir, err := a.store.Create(parent, name)
 	if err != nil {
 		a.toast("Cannot create the collection: "+err.Error(), true)
 		return
 	}
-	a.openWorkspaceAt(dir)
+	a.openCollectionAt(dir)
 }
 
 // promptRenameCollection asks for the new name of col.

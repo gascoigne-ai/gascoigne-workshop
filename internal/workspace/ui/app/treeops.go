@@ -79,11 +79,8 @@ func (a *App) treeMenuItems(row collection.Row) []MenuItem {
 		sep,
 		rename,
 	}
-	if a.isRoot(row.Dir) { // the collection itself: renamed and deleted as a collection
-		owner, _ := a.open.Owner(row.Dir)
-		col := owner.Collection
-		create[len(create)-1] = MenuItem{Label: "Rename collection...", Run: func() { a.promptRenameCollection(col) }}
-		return append(create, sep, MenuItem{Label: "New collection...", Run: a.promptNewCollection}, MenuItem{Label: "Delete collection...", Run: func() { a.confirmDeleteCollection(col) }})
+	if a.isRoot(row.Dir) {
+		return append(create[:len(create)-1], a.rootMenuItems(row.Dir)...)
 	}
 	return append(create,
 		MenuItem{Label: "Duplicate", Run: func() { a.duplicateNode(tree.Of(node)) }},
@@ -92,6 +89,27 @@ func (a *App) treeMenuItems(row collection.Row) []MenuItem {
 }
 
 // ---- operations ----------------------------------------------------------
+
+// rootMenuItems end the menu of a collection's root row: the collection
+// itself is renamed, moved, closed and deleted as a collection, not as a
+// folder. Moving is by menu rather than by drag, since a drag in the tree
+// moves a node inside its collection.
+func (a *App) rootMenuItems(root *model.Folder) []MenuItem {
+	owner, _ := a.open.Owner(root)
+	col := owner.Collection
+	at := a.openIndex(col)
+	return []MenuItem{
+		{Label: "Rename collection...", Run: func() { a.promptRenameCollection(col) }},
+		{Label: "Move up", Disabled: at == 0, Run: func() { a.moveCollection(col, -1) }},
+		{Label: "Move down", Disabled: at == len(a.open.Entries)-1, Run: func() { a.moveCollection(col, 1) }},
+		menuSeparator,
+		{Label: "New collection...", Run: a.promptNewCollection},
+		{Label: "Open collection folder...", Run: a.promptWorkspace},
+		menuSeparator,
+		{Label: "Close collection", Run: func() { a.requestCloseCollection(col) }},
+		{Label: "Delete collection...", Run: func() { a.confirmDeleteCollection(col) }},
+	}
+}
 
 // errOtherCollection refuses a drop into another collection: requests and
 // folders are not moved across collections.

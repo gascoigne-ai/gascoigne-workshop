@@ -31,7 +31,7 @@ func TestTheCollectionMenuListsTheCollectionActions(t *testing.T) {
 	for _, item := range a.collectionMenu() {
 		labels = append(labels, item.Label)
 	}
-	want := []string{"New collection...", "Open collection folder...", "", "Rename collection...", "Save collection", "", "Delete collection..."}
+	want := []string{"New collection...", "Open collection folder...", "", "Rename collection...", "Save collection", "", "Close collection", "Delete collection..."}
 	if !reflect.DeepEqual(labels, want) {
 		t.Fatalf("menu %q, want %q", labels, want)
 	}
@@ -45,20 +45,21 @@ func TestRightClickOnTheCollectionsChipOpensTheCollectionMenu(t *testing.T) {
 	}
 }
 
-func TestNewCollectionMakesAFolderBesideTheWorkspaceAndOpensIt(t *testing.T) {
+func TestNewCollectionMakesAFolderBesideTheWorkspaceAndOpensItBesideTheOpenOne(t *testing.T) {
 	a, base := collectionsApp(t)
+	home := a.workspace()
 	a.createCollection("  Café API ")
 	want := filepath.Join(base, "collections", "café-api")
-	if a.workspace() != want || a.col().Name != "Café API" {
-		t.Fatalf("workspace %q, name %q; want %q", a.workspace(), a.col().Name, want)
+	if len(a.open.Entries) != 2 || a.workspace() != home || a.open.Entries[1].Dir != want || a.open.Entries[1].Collection.Name != "Café API" {
+		t.Fatalf("open %+v; want Home then %q", a.open.Entries, want)
 	}
-	if len(a.list.Tabs) != 1 || a.cur().Req.Name != "New Request" {
-		t.Fatalf("an empty collection opens one blank request, got %d tabs", len(a.list.Tabs))
+	if owner, _ := a.open.Owner(a.cur().Req); owner.Dir != want || a.cur().Req.Name != "New Request" {
+		t.Fatalf("an empty collection opens one blank request, shown %q of %q", a.cur().Req.Name, owner.Dir)
 	}
 	if _, err := store.Load(want); err != nil {
 		t.Fatal(err)
 	}
-	if got := a.settings.RememberedCollections(); len(got) != 1 || got[0].Folder != want {
+	if got := a.settings.RememberedCollections(); len(got) != 2 || got[0].Folder != home || got[1].Folder != want {
 		t.Fatalf("remembered collections %+v", got)
 	}
 }
@@ -110,7 +111,7 @@ func TestSaveCollectionWritesTheEditsNow(t *testing.T) {
 func TestDeleteCollectionOpensTheNextOne(t *testing.T) {
 	a, base := collectionsApp(t)
 	a.createCollection("Second")
-	second := a.workspace()
+	second := a.open.Entries[1].Dir // made beside Home
 	a.openWorkspaceAt(filepath.Join(base, "workspace"))
 	if a.workspace() != filepath.Join(base, "workspace") {
 		t.Fatalf("workspace %q", a.workspace())

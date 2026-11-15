@@ -218,9 +218,9 @@ func (a *App) flushCollection(entry collections.Entry) error {
 	return nil
 }
 
-// openWorkspaceAt switches to the collection in dir: pending edits of the
-// open ones are saved, they and every tab are closed and the folder
-// becomes the one remembered. A folder that cannot be read changes
+// openWorkspaceAt switches to the collection in dir, which deleting the
+// last collection does: pending edits of the open ones are saved, they and
+// every tab are closed and the folder becomes the one remembered. A folder that cannot be read changes
 // nothing and says why. The environment remembered for the folder is
 // picked, else the one of that name active before, as when one collection
 // was open at a time.
@@ -262,9 +262,9 @@ func (a *App) openWorkspaceAt(dir string) {
 	a.status = "Opened " + dir
 }
 
-// promptWorkspace asks for the folder of a collection to open; an empty or
-// new folder starts a new collection there.
+// promptWorkspace asks for the folder of a collection to open beside the
+// open ones; an empty or new folder starts a new collection there.
 func (a *App) promptWorkspace() {
 	entry, _ := a.focus()
-	a.prompt("Open collection folder", entry.Dir, "Open", a.openWorkspaceAt)
+	a.prompt("Open collection folder", entry.Dir, "Open", a.openCollectionAt)
 }

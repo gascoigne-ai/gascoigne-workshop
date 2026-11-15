@@ -100,6 +100,10 @@ func (a *App) sidebar() Node {
 		"collectionMenu": func(x, y int) { a.openMenu(x, y, a.collectionMenu()) },
 		"filter":         &a.filter,
 		"showSent":       a.showSent,
+		"showTree":       !a.showSent && len(a.open.Entries) > 0,
+		"noCollection":   !a.showSent && len(a.open.Entries) == 0,
+		"openFolder":     a.promptWorkspace,
+		"newCollection":  a.promptNewCollection,
 		"sentList":       sentList,
 		"treeScroll":     &a.treeScroll,
 		"rows":           rows,
@@ -482,13 +486,19 @@ const (
 
 	sidebarSource = `<col>
   <row h="{{headerH}}" pad-x="{{gutter}}" gap="6" bg="bg" border-b="border">
-    <button w="96" h="28" on-click="switchMode" on-right-click="collectionMenu" tooltip="Collections and sent requests. Right-click: new, open, rename, save, delete a collection">{{mode}}</button>
+    <button w="96" h="28" on-click="switchMode" on-right-click="collectionMenu" tooltip="Collections and sent requests. Right-click: new, open, rename, save, close, delete a collection">{{mode}}</button>
     <field state="filter" h="28" grow="1" bg="sunken" placeholder="Filter" text-menu="filter"/>
   </row>
   <slot if="sentList" name="sentList"/>
-  <scroll if="!showSent" state="treeScroll" bg="sunken">
+  <scroll if="showTree" state="treeScroll" bg="sunken">
     <slot for="row in rows" name="row"/>
   </scroll>
+  <!-- closing the last collection leaves this; nothing is made on disk until asked -->
+  <col if="noCollection" grow="1" bg="sunken" pad="{{gutter}}" gap="8">
+    <text muted>No collection is open</text>
+    <button h="28" on-click="openFolder">Open collection folder...</button>
+    <button h="28" on-click="newCollection">New collection...</button>
+  </col>
 </col>
 `
 

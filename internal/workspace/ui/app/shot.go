@@ -57,6 +57,7 @@ type screenshot struct {
 	dialog      string   // kind of dialog to open on the open request, a key of shotDialogs
 	record      []string // ACTION=KEYS recorded on the Shortcuts page, as a user would; a bare ACTION is left recording
 	callLog     bool     // open the Log dialog of calls, as the status bar's Log button does
+	closeAll    bool     // close every collection, so the tree shows its empty prompt
 	tool        string   // name of the open MCP request's tool whose call form to open, once the server announced it
 	toolOpened  bool     // the form of tool is open
 }
@@ -324,6 +325,9 @@ func (a *App) showShotTarget() {
 	}
 	if s.callLog {
 		a.calls.Open()
+	}
+	for s.closeAll && len(a.open.Entries) > 0 {
+		a.closeCollection(a.open.Entries[0].Collection)
 	}
 	if s.filter != "" {
 		a.filter.Insert(s.filter)

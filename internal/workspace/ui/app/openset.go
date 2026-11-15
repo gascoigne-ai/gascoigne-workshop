@@ -3,6 +3,7 @@ package app
 import (
 	"path/filepath"
 	"slices"
+	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/tree"
@@ -105,9 +106,17 @@ func collectionDir(dir string) string {
 
 // addCollection opens the collection saved in dir after the open ones. A
 // folder already open changes nothing and is focused; one that cannot be
-// read is not opened.
+// read is not opened. The new one gets the environment remembered for its
+// folder.
 func (a *App) addCollection(dir string) error {
-	col, err := a.loadCollection(collectionDir(dir), "")
+	dir = collectionDir(dir)
+	if entry, ok := a.open.ByDir(dir); ok {
+		// its edits stay pending, and the remembered list stays as it is,
+		// since the set did not change
+		a.focusCollection(entry.Collection)
+		return nil
+	}
+	col, err := a.loadCollection(dir, a.rememberedEnv(dir))
 	if err != nil {
 		return err
 	}
@@ -153,6 +162,70 @@ func (a *App) focusCollection(col *model.Collection) {
 	a.openRequest(first)
 }
 
+// openCollectionAt opens the collection in dir beside the open ones (an
+// empty or new folder starts a new collection there), or focuses it when
+// it is open already. A folder that cannot be read changes nothing and
+// says why.
+func (a *App) openCollectionAt(dir string) {
+	dir = strings.TrimSpace(dir)
+	if dir == "" {
+		return
+	}
+	if err := a.addCollection(dir); err != nil {
+		a.toast("Cannot open "+dir+": "+err.Error(), true)
+		return
+	}
+	a.status = "Opened " + collectionDir(dir)
+}
+
+// requestCloseCollection closes col, first asking when closing would lose
+// edits: a collection with a folder is written as it closes, as a closed
+// tab keeps its edits in the collection, but one without a folder keeps
+// them nowhere, so it asks the way deleting does.
+func (a *App) requestCloseCollection(col *model.Collection) {
+	entry, ok := a.open.Owner(col)
+	if !ok {
+		return
+	}
+	if entry.Dir != "" || !a.saveOf(col).Pending(a.collectionKeyNow(col)) {
+		a.closeCollection(col)
+		return
+	}
+	title, body := collections.ClosePrompt(col.Name)
+	a.confirm(title, body, "Close", func() { a.closeCollection(col) })
+}
+
+// closeFocusedCollection closes the focused collection (the close command).
+func (a *App) closeFocusedCollection() {
+	if col := a.focusCol(); col != nil {
+		a.requestCloseCollection(col)
+	}
+}
+
+// moveCollection moves col one place up the tree (by -1) or down (by 1);
+// at an end it stays.
+func (a *App) moveCollection(col *model.Collection, by int) {
+	at := a.openIndex(col)
+	to := at + by
+	if at < 0 || to < 0 || to >= len(a.open.Entries) {
+		return
+	}
+	var before *model.Collection // nil puts it last
+	switch {
+	case by < 0:
+		before = a.open.Entries[to].Collection
+	case to+1 < len(a.open.Entries):
+		before = a.open.Entries[to+1].Collection
+	}
+	a.open = collections.Update(a.open, collections.Move{Collection: col, Before: before})
+	a.rememberCollections()
+}
+
+// openIndex is the place of col in the tree, -1 when it is not open.
+func (a *App) openIndex(col *model.Collection) int {
+	return slices.IndexFunc(a.open.Entries, func(entry collections.Entry) bool { return entry.Collection == col })
+}
+
 // closeCollection takes col out of the window: its edits are saved first,
 // its tabs close and the set left is remembered. Closing the last one
 // leaves an empty tree; nothing is made on disk.
@@ -165,6 +238,11 @@ func (a *App) closeCollection(col *model.Collection) {
 	if err := a.flushCollection(entry); err != nil {
 		a.toast("Saving "+col.Name+" failed: "+err.Error(), true)
 		return
+	}
+	for _, open := range a.openTabs() {
+		if col.Folder.Contains(open.Req) { // no tab is left to close its socket later
+			a.disconnect(open)
+		}
 	}
 	a.closeTabsIn(tree.Node{Dir: &col.Folder})
 	a.forget(col)

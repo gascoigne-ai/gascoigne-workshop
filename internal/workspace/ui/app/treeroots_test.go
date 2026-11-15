@@ -1,0 +1,278 @@
+package app
+
+import (
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"reflect"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/hajimehoshi/ebiten/v2"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto/ws"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+)
+
+// rootRow is the index of the tree row of the collection called name.
+func rootRow(t *testing.T, a *App, name string) int {
+	t.Helper()
+	for i, row := range a.visibleRows() {
+		if a.isRoot(row.Dir) && row.Name == name {
+			return i
+		}
+	}
+	t.Fatalf("no root row %q", name)
+	return -1
+}
+
+// openNames are the names of the open collections in tree order.
+func openNames(a *App) []string {
+	var names []string
+	for _, entry := range a.open.Entries {
+		names = append(names, entry.Collection.Name)
+	}
+	return names
+}
+
+// rememberedFolders are the folders of the remembered collections, in order.
+func rememberedFolders(a *App) []string {
+	var folders []string
+	for _, item := range a.settings.RememberedCollections() {
+		folders = append(folders, item.Folder)
+	}
+	return folders
+}
+
+// menuItem is the open menu's item called label.
+func menuItem(t *testing.T, a *App, label string) widget.MenuItem {
+	t.Helper()
+	for _, item := range widget.PopupMenu(a.ctx).Items {
+		if item.Label == label {
+			return item
+		}
+	}
+	t.Fatalf("no menu item %q in %v", label, menuLabels(a))
+	return widget.MenuItem{}
+}
+
+func pressCtrl(a *App, key ebiten.Key) { a.step(core.Input{Keys: []ebiten.Key{key}, Ctrl: true}) }
+
+func TestCtrlOOpensAnotherCollectionBesideTheOpenOne(t *testing.T) {
+	a, alphaDir, _ := twoCollectionsApp(t)
+	gammaDir := savedCollection(t, "Gamma")
+	pressCtrl(a, ebiten.KeyO)
+	if a.dialog == nil {
+		t.Fatal("no prompt for the folder")
+	}
+	a.typeText(gammaDir)
+	a.step(core.Input{Enter: true})
+	if got := openNames(a); !reflect.DeepEqual(got, []string{"Alpha", "Beta", "Gamma"}) {
+		t.Fatalf("open %v", got)
+	}
+	if a.cur().Req.Name != "Gamma call" {
+		t.Fatalf("shown %q, want Gamma's first request", a.cur().Req.Name)
+	}
+	if got := rememberedFolders(a); len(got) != 3 || got[2] != gammaDir {
+		t.Fatalf("remembered %v", got)
+	}
+
+	// an open folder is focused, not opened twice
+	pressCtrl(a, ebiten.KeyO)
+	a.typeText(alphaDir)
+	a.step(core.Input{Enter: true})
+	if got := openNames(a); len(got) != 3 {
+		t.Fatalf("open %v", got)
+	}
+	if owner, _ := a.open.Owner(a.cur().Req); owner.Dir != alphaDir {
+		t.Fatalf("shown %q of %q, want Alpha's", a.cur().Req.Name, owner.Dir)
+	}
+}
+
+func TestOpeningAFolderThatCannotBeReadKeepsTheOpenOnes(t *testing.T) {
+	a, _, _ := twoCollectionsApp(t)
+	broken := t.TempDir()
+	if err := writeFile(filepath.Join(broken, "x.req.json"), "{nope"); err != nil {
+		t.Fatal(err)
+	}
+	a.openCollectionAt(broken)
+	if got := openNames(a); !reflect.DeepEqual(got, []string{"Alpha", "Beta"}) {
+		t.Fatalf("open %v", got)
+	}
+	if !toastSays(a, "Cannot open") {
+		t.Fatal("no toast says why")
+	}
+}
+
+func TestTheRootRowMenuMovesAndClosesItsCollection(t *testing.T) {
+	a, alphaDir, betaDir := twoCollectionsApp(t)
+	rightClick(a, 100, treeRowY(rootRow(t, a, "Beta")))
+	if !menuItem(t, a, "Move down").Disabled || menuItem(t, a, "Move up").Disabled {
+		t.Fatal("the last collection moves up only")
+	}
+	pickMenu(t, a, "Move up")
+	if got := openNames(a); !reflect.DeepEqual(got, []string{"Beta", "Alpha"}) {
+		t.Fatalf("open %v after Move up", got)
+	}
+	if got := rememberedFolders(a); !reflect.DeepEqual(got, []string{betaDir, alphaDir}) {
+		t.Fatalf("remembered %v", got)
+	}
+	if rootRow(t, a, "Beta") != 0 {
+		t.Fatal("Beta's root is not the first row")
+	}
+
+	rightClick(a, 100, treeRowY(rootRow(t, a, "Beta")))
+	if menuItem(t, a, "Move down").Disabled || !menuItem(t, a, "Move up").Disabled {
+		t.Fatal("the first collection moves down only")
+	}
+	pickMenu(t, a, "Move down")
+	if got := openNames(a); !reflect.DeepEqual(got, []string{"Alpha", "Beta"}) {
+		t.Fatalf("open %v after Move down", got)
+	}
+
+	rightClick(a, 100, treeRowY(rootRow(t, a, "Beta")))
+	pickMenu(t, a, "Close collection")
+	if got := openNames(a); !reflect.DeepEqual(got, []string{"Alpha"}) {
+		t.Fatalf("open %v after Close", got)
+	}
+	if _, err := os.Stat(filepath.Join(betaDir, "folder.json")); err != nil {
+		t.Fatalf("closing removed files: %v", err)
+	}
+}
+
+func TestTheRootRowMenuListsTheCollectionActions(t *testing.T) {
+	a, _, _ := twoCollectionsApp(t)
+	rightClick(a, 100, treeRowY(rootRow(t, a, "Alpha")))
+	want := []string{
+		"New request", "New folder", "Import cURL from clipboard", "Import OpenAPI from clipboard", "Import Postman from clipboard", "Export as Postman...", "Variables",
+		"", "Rename collection...", "Move up", "Move down",
+		"", "New collection...", "Open collection folder...",
+		"", "Close collection", "Delete collection...",
+	}
+	if got := menuLabels(a); !reflect.DeepEqual(got, want) {
+		t.Fatalf("root menu %q, want %q", got, want)
+	}
+}
+
+// Close collection is in the shortcut table, unbound until the user binds
+// it, and acts on the focused collection.
+func TestTheCloseCollectionCommandClosesTheFocusedOne(t *testing.T) {
+	a, _, _ := twoCollectionsApp(t)
+	var command *shortcut
+	for i := range shortcuts {
+		if shortcuts[i].id == "close-collection" {
+			command = &shortcuts[i]
+		}
+	}
+	if command == nil || command.def.Bound {
+		t.Fatalf("command %+v", command)
+	}
+	command.run(a) // Beta's tab is the active one
+	if got := openNames(a); !reflect.DeepEqual(got, []string{"Alpha"}) {
+		t.Fatalf("open %v", got)
+	}
+}
+
+// A collection without a folder has nowhere to keep its edits, so closing
+// it asks first, as deleting does; one with a folder is saved and closed.
+func TestClosingAnEditedUnsavedCollectionAsksFirst(t *testing.T) {
+	a, _ := newTestApp(t)
+	t.Cleanup(a.waitWrites)
+	a.cur().Req.URL = "https://edited.test"
+	a.requestCloseCollection(a.col())
+	if a.dialog == nil || len(a.open.Entries) != 1 {
+		t.Fatalf("closed without asking: dialog %v, open %d", a.dialog != nil, len(a.open.Entries))
+	}
+	a.step(core.Input{Enter: true})
+	if len(a.open.Entries) != 0 {
+		t.Fatalf("still open after confirming: %d", len(a.open.Entries))
+	}
+
+	b, _, betaDir := twoCollectionsApp(t)
+	beta := entryNamed(t, b, "Beta").Collection
+	b.cur().Req.URL = "https://beta.edited"
+	b.requestCloseCollection(beta)
+	if b.dialog != nil || len(b.open.Entries) != 1 {
+		t.Fatalf("a saved collection asked or stayed: dialog %v, open %d", b.dialog != nil, len(b.open.Entries))
+	}
+	b.waitWrites()
+	if data, err := os.ReadFile(filepath.Join(betaDir, "beta-call.req.json")); err != nil || !strings.Contains(string(data), "beta.edited") {
+		t.Fatalf("Beta's edit was not saved: %s %v", data, err)
+	}
+}
+
+// With nothing open the tree offers to open or make a collection, and the
+// shortcuts that act on a collection do nothing and write nothing.
+func TestTheEmptyTreeOffersOpenAndNew(t *testing.T) {
+	a, base := collectionsApp(t)
+	a.closeCollection(a.col())
+	a.step(core.Input{})
+	textCenter(t, a, "No collection is open")
+	pressCtrl(a, ebiten.KeyS)
+	pressCtrl(a, ebiten.KeyT)
+	if _, err := os.Stat(filepath.Join(base, "collections")); !os.IsNotExist(err) {
+		t.Fatalf("something was written: %v", err)
+	}
+
+	clickText(t, a, "Open collection folder...", 0)
+	if a.dialog == nil || a.dialog.Title != "Open collection folder" {
+		t.Fatalf("dialog %+v", a.dialog)
+	}
+	a.step(core.Input{Escape: true})
+	clickText(t, a, "New collection...", 0)
+	if a.dialog == nil || a.dialog.Title != "New collection" {
+		t.Fatalf("dialog %+v", a.dialog)
+	}
+	a.typeText("Fresh")
+	a.step(core.Input{Enter: true})
+	if got := openNames(a); !reflect.DeepEqual(got, []string{"Fresh"}) {
+		t.Fatalf("open %v", got)
+	}
+}
+
+func TestTheCollectionMenuIsDisabledForACollectionWithNothingOpen(t *testing.T) {
+	a, _ := collectionsApp(t)
+	a.closeCollection(a.col())
+	for _, item := range a.collectionMenu() {
+		acts := item.Label == "New collection..." || item.Label == "Open collection folder..."
+		if !item.Separator && item.Disabled == acts {
+			t.Fatalf("%q disabled %v with nothing open", item.Label, item.Disabled)
+		}
+	}
+}
+
+// A socket of a closed collection's tab must not stay connected with no
+// tab left to close it.
+func TestClosingACollectionDisconnectsItsSockets(t *testing.T) {
+	closed := make(chan struct{})
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		conn, err := ws.Upgrade(writer, request)
+		if err != nil {
+			return
+		}
+		defer close(closed)
+		for {
+			if message, err := conn.Read(); err != nil || message.Type == ws.Close {
+				return
+			}
+		}
+	}))
+	t.Cleanup(srv.Close)
+	a, _, _ := twoCollectionsApp(t)
+	beta := entryNamed(t, a, "Beta").Collection
+	tab := a.cur()
+	tab.Req.Protocol = "websocket"
+	tab.Req.URL = "ws" + strings.TrimPrefix(srv.URL, "http")
+	tab.url = widget.NewTextField(tab.Req.URL)
+	a.send(tab)
+	until(t, a, "connection", func() bool { return tab.Session != nil })
+	a.closeCollection(beta)
+	select {
+	case <-closed:
+	case <-time.After(2 * time.Second):
+		t.Fatal("the socket of the closed collection stayed open")
+	}
+}

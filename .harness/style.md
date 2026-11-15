@@ -35,3 +35,8 @@ Title bar (title only), then a body padded 16 with gap 12: a muted `Lines` text,
 ### Sizes and position
 
 A resizable dialog is grabbed within 6 px inside or 4 px outside its border (`edgeSlop`, `edgeOut`), grows about its center and stays inside the window with `ScreenMargin` (decision 15). Size and position are app state that outlives the dialog's rebuild.
+
+## Sidebar
+
+- With no collection open the tree's place holds, on `Sunken` with padding `Gutter` and gap 8: a muted note "No collection is open", then the buttons *Open collection folder...* and *New collection...*, `RowH`-high (28) and as wide as the sidebar. Nothing is made on disk until one is pressed.
+- A collection's root row looks like a folder row; several roots stand one after another at depth 0.

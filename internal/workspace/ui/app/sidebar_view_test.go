@@ -20,7 +20,8 @@ const sidebarPinH = 480
 // opens (a selected request, open and closed folders), a selected
 // folder, a filter that matches
 // names and one that matches only URLs, a drag over another row and over
-// itself, and the log of sent requests.
+// itself, the log of sent requests, and the prompt left when no collection
+// is open.
 func TestTheSidebarLaysOutAsPinned(t *testing.T) {
 	cases := []struct {
 		name  string
@@ -45,6 +46,7 @@ func TestTheSidebarLaysOutAsPinned(t *testing.T) {
 			a.dragNode, a.dropTarget = info, info
 		}},
 		{"sent", func(a *App) { a.showSent = true }},
+		{"empty", func(a *App) { a.closeCollection(a.col()) }},
 	}
 	sizes := []struct {
 		name  string

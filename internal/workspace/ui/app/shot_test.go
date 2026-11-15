@@ -198,6 +198,20 @@ func TestScreenshotShowsTheSentLog(t *testing.T) {
 	}
 }
 
+// With -close-all the capture shows the empty tree that closing the last
+// collection leaves.
+func TestScreenshotClosesEveryCollection(t *testing.T) {
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotCloseAll: true})
+	for range setFrame {
+		if err := a.shotUpdate(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if len(a.open.Entries) != 0 {
+		t.Errorf("%d collections still open", len(a.open.Entries))
+	}
+}
+
 // With -log the capture opens the Log dialog, as the status bar's Log
 // button does.
 func TestScreenshotOpensTheCallLog(t *testing.T) {

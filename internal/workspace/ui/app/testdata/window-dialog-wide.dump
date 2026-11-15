@@ -3,7 +3,7 @@ stack rect=0,0,1280,800
     splitB grow=1 rect=0,0,1280,772
       flow rect=0,0,259,772
         flow h=44 padL=12 padR=12 gap=6 bg=bg borderB=border rect=0,0,259,44
-          flow w=96 h=28 padL=10 padR=10 bg=sunken control=button tip=Collections and sent requests. Right-click: new, open, rename, save, delete a collection lighten=true onClick=true onRightClick=true rect=12,8,96,28
+          flow w=96 h=28 padL=10 padR=10 bg=sunken control=button tip=Collections and sent requests. Right-click: new, open, rename, save, close, delete a collection lighten=true onClick=true onRightClick=true rect=12,8,96,28
             textB text="Collections" grow=1 fg=chip-text ellipsis=true center=true rect=22,8,76,28
           fieldB h=28 grow=1 bg=sunken control=field onRightClickIn=true rect=114,8,133,28
         scrollB grow=1 bg=sunken rect=0,44,259,728

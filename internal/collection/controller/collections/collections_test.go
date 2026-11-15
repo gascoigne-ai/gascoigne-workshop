@@ -33,6 +33,13 @@ func TestDeletePromptNamesTheCollection(t *testing.T) {
 	}
 }
 
+func TestClosePromptNamesTheCollectionAndWhatIsLost(t *testing.T) {
+	title, body := ClosePrompt("Echo")
+	if title != "Close Echo?" || !strings.Contains(body, "changes are lost") {
+		t.Fatalf("got %q, %q", title, body)
+	}
+}
+
 func TestNextAfterDelete(t *testing.T) {
 	cases := []struct {
 		name    string

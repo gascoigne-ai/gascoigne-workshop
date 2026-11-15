@@ -2083,7 +2083,7 @@ func TestRightClickOnATreeRowOpensItsMenu(t *testing.T) {
 	}
 	a.step(core.Input{Escape: true})
 	rightClick(a, 100, treeRowY(rowRoot))
-	if got, want := menuLabels(a), []string{"New request", "New folder", "Import cURL from clipboard", "Import OpenAPI from clipboard", "Import Postman from clipboard", "Export as Postman...", "Variables", "", "Rename collection...", "", "New collection...", "Delete collection..."}; !reflect.DeepEqual(got, want) {
+	if got, want := menuLabels(a), []string{"New request", "New folder", "Import cURL from clipboard", "Import OpenAPI from clipboard", "Import Postman from clipboard", "Export as Postman...", "Variables", "", "Rename collection...", "Move up", "Move down", "", "New collection...", "Open collection folder...", "", "Close collection", "Delete collection..."}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("root menu = %q, want %q (the collection itself is renamed and deleted as a collection, not duplicated)", got, want)
 	}
 }

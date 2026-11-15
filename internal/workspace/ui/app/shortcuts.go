@@ -32,6 +32,7 @@ var shortcuts = []shortcut{
 	{"complete-variable", "Complete variable", keys(ebiten.KeySpace, true, false, false), (*App).completeVariable},
 	{"save", "Save collection", keys(ebiten.KeyS, true, false, false), (*App).saveWorkspace},
 	{"open-workspace", "Open collection folder", keys(ebiten.KeyO, true, false, false), (*App).promptWorkspace},
+	{"close-collection", "Close collection", engine.Binding{}, (*App).closeFocusedCollection}, // unbound until the user picks a key
 	{"find", "Find in response", keys(ebiten.KeyF, true, false, false), (*App).openFind},
 	{"settings", "Settings", keys(ebiten.KeyComma, true, false, false), func(a *App) { a.menu = true }},
 }

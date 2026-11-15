@@ -27,8 +27,9 @@ gRPC in a single window, with your requests kept as plain files you own.
 - **Call anything:** REST with params, headers, JSON, form, multipart and file bodies, auth and
   assertions; WebSockets and SSE streams; MCP servers (tools explorer, streamable HTTP and stdio);
   gRPC through server reflection, unary calls and streams.
-- **Organize:** folders and requests in a tree with rename, duplicate, move and delete. Create,
-  rename, save and delete whole collections from the sidebar (right-click the *Collections* chip).
+- **Organize:** folders and requests in a tree with rename, duplicate, move and delete. Open several
+  collections side by side; create, rename, save, reorder, close and delete them from the sidebar
+  (right-click the *Collections* chip or a collection's name).
 - **Reuse:** `{{name}}` variables in URLs, headers and bodies, resolved from the collection, its
   folders and the active environment.
 - **Read responses well:** pretty-printed, foldable and searchable JSON, raw and compact views,
@@ -63,9 +64,13 @@ make example-server                # one local server per protocol, for the exam
 
 ### Collections
 
-A collection is a folder on disk; the program opens the last one. Right-click the *Collections*
-chip (or the collection's name in the tree) for *New collection*, *Open collection folder*,
-*Rename collection*, *Save collection* and *Delete collection*. New collections are made in
+A collection is a folder on disk. Several can be open at once, each a root of the tree with its own
+variables and environment; the program reopens the ones open last. Right-click the *Collections*
+chip (or a collection's name in the tree) for *New collection*, *Open collection folder*,
+*Rename collection*, *Save collection*, *Close collection* and *Delete collection*; New and Open add
+the collection beside the open ones (a folder already open is shown, not opened twice). A
+collection's name in the tree also has *Move up* and *Move down* to reorder them. Closing one keeps
+its files; closing the last leaves an empty tree that offers to open or create one. New collections are made in
 `collections/` next to the default workspace, in the settings directory. Edits are saved a moment
 after you stop typing; `Ctrl+S` saves at once.
 
@@ -96,20 +101,19 @@ collections:
 | Ctrl+W | Close the tab |
 | Ctrl+Tab, Ctrl+Shift+Tab | Next and previous tab |
 | Ctrl+S | Save the collection now |
-| Ctrl+O | Open a collection folder |
+| Ctrl+O | Open a collection folder beside the open ones |
 | Ctrl+F | Find in the response |
 | Ctrl+Space | Complete a `{{variable}}` |
 | Ctrl+D, Alt+Up, Alt+Down, Delete | Duplicate, move and delete a table row |
 | Ctrl+, | Settings |
 
-All of them can be changed in Settings, Shortcuts.
+All of them can be changed in Settings, Shortcuts, where *Close collection* can be given a key too.
 
 ## Known limitations
 
 - File dialogs are native on macOS and Windows; Linux needs `zenity` or `kdialog`, and without them the program asks for a path.
 - No IME.
 - gRPC has no `.proto` file import: methods come from server reflection.
-- One collection is open at a time.
 
 ## Develop
 

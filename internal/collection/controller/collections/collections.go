@@ -35,6 +35,13 @@ func DeletePrompt(name string) (title, body string) {
 		"Its requests, folders and environments are removed from the disk. This cannot be undone."
 }
 
+// ClosePrompt is the title and the question of the confirmation dialog
+// that comes before an edited collection without a folder is closed.
+func ClosePrompt(name string) (title, body string) {
+	return "Close " + name + "?",
+		"It is not saved in a folder, so its changes are lost. Save it first to keep them."
+}
+
 // NextAfterDelete is the collection to open once deleted is gone: the one
 // after it in dirs, else the one before it, else "" when none is left. dirs
 // is the order the store listed them in, deleted included or not.
