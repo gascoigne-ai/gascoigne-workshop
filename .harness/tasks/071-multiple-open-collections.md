@@ -24,3 +24,5 @@ Acceptance: two collections open, edited and saved independently; restart restor
 - One active environment per collection; variables never leak across collections.
 - No limit on open collections.
 - Copying or dragging requests across collections is out of scope (later task).
+- Item 1 is done (6d9c086): `collections.Set` with Entry, Open, Close, Move, Located, ChooseEnv; identity is the folder path; opening an already open folder changes nothing (the caller focuses it); two entries never share a folder; new ones are appended.
+- Decided 2026-11-15: the header environment chip shows and sets the environment of the collection that owns the active tab (with no tab, the selected tree collection); closing the last collection leaves an empty tree (nothing created on disk); the first save of an unsaved collection goes to its own new folder under `collections/`, as New does.
