@@ -77,11 +77,48 @@ func TestTheWordModifierIsOptionOnMacAndControlElsewhere(t *testing.T) {
 		{"mac option+right moves a word", "darwin", EditRight, false, true, EditWordRight},
 		{"mac option+backspace deletes a word", "darwin", EditBackspace, false, true, EditDeleteWordLeft},
 		{"mac option+delete deletes a word", "darwin", EditDelete, false, true, EditDeleteWordRight},
-		{"mac cmd+left is not word movement", "darwin", EditLeft, true, false, EditLeft},
-		{"mac cmd+backspace is not word deletion", "darwin", EditBackspace, true, false, EditBackspace},
+		{"mac cmd+left moves on the line, not by word", "darwin", EditLeft, true, false, EditHome},
+		{"mac cmd+backspace deletes on the line, not by word", "darwin", EditBackspace, true, false, EditDeleteToLineStart},
 		{"mac cmd+end goes to the document end", "darwin", EditEnd, true, false, EditDocEnd},
 		{"mac option+home stays on the line", "darwin", EditHome, false, true, EditHome},
 		{"plain left stays a character move", "darwin", EditLeft, false, false, EditLeft},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got := modifiedEdit(test.goos, test.edit, test.primary, test.alt); got != test.want {
+				t.Fatalf("modifiedEdit = %v, want %v", got, test.want)
+			}
+		})
+	}
+}
+
+// On macOS Command with the arrows and the delete keys acts on the line,
+// as in its text editors; elsewhere Control keeps its word meaning and
+// Home and End are the line keys.
+func TestCommandArrowsAndDeleteKeysAreLineEditsOnMac(t *testing.T) {
+	tests := []struct {
+		name         string
+		goos         string
+		edit         Edit
+		primary, alt bool
+		want         Edit
+	}{
+		{"mac cmd+left goes to the line start, not the document start", "darwin", EditLeft, true, false, EditHome},
+		{"mac cmd+right goes to the line end, not the document end", "darwin", EditRight, true, false, EditEnd},
+		{"mac cmd+backspace deletes to the line start", "darwin", EditBackspace, true, false, EditDeleteToLineStart},
+		{"mac cmd+delete deletes to the line end", "darwin", EditDelete, true, false, EditDeleteToLineEnd},
+		{"mac cmd wins over option", "darwin", EditLeft, true, true, EditHome},
+		{"mac cmd+home still goes to the document start", "darwin", EditHome, true, false, EditDocStart},
+		{"mac cmd+up has no line variant", "darwin", EditUp, true, false, EditUp},
+		{"linux ctrl+left still moves a word", "linux", EditLeft, true, false, EditWordLeft},
+		{"linux ctrl+right still moves a word", "linux", EditRight, true, false, EditWordRight},
+		{"linux ctrl+backspace still deletes a word", "linux", EditBackspace, true, false, EditDeleteWordLeft},
+		{"linux ctrl+delete still deletes a word", "linux", EditDelete, true, false, EditDeleteWordRight},
+		{"linux home stays the line start", "linux", EditHome, false, false, EditHome},
+		{"windows ctrl+left still moves a word", "windows", EditLeft, true, false, EditWordLeft},
+		{"windows ctrl+backspace still deletes a word", "windows", EditBackspace, true, false, EditDeleteWordLeft},
+		{"windows ctrl+delete still deletes a word", "windows", EditDelete, true, false, EditDeleteWordRight},
+		{"windows end stays the line end", "windows", EditEnd, false, false, EditEnd},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

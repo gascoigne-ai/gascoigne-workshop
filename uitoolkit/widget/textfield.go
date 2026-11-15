@@ -355,6 +355,20 @@ func (f *TextField) edit(e core.Edit, extend bool) (changed bool) {
 		return f.deleteRange(wordLeft(runes, f.Cursor), f.Cursor, kindOther)
 	case core.EditDeleteWordRight:
 		return f.deleteRange(f.Cursor, wordRight(runes, f.Cursor), kindOther)
+	case core.EditDeleteToLineStart:
+		// At the line start the range would be empty; taking the line
+		// break joins the lines, as the macOS editors do.
+		lo := lineStart(runes, f.Cursor)
+		if lo == f.Cursor {
+			lo--
+		}
+		return f.deleteRange(lo, f.Cursor, kindOther)
+	case core.EditDeleteToLineEnd:
+		hi := lineEnd(runes, f.Cursor)
+		if hi == f.Cursor {
+			hi++
+		}
+		return f.deleteRange(f.Cursor, hi, kindOther)
 	case core.EditLeft:
 		f.step(-1, extend)
 	case core.EditRight:

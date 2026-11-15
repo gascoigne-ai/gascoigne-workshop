@@ -181,15 +181,31 @@ var docEdits = map[Edit]Edit{
 	EditEnd:  EditDocEnd,
 }
 
+// macLineEdits are what Command does to the arrows and delete keys in the
+// macOS text editors: it acts on the line, since Mac keyboards often have
+// no Home and End keys. Elsewhere Control with these keys is word-wise.
+var macLineEdits = map[Edit]Edit{
+	EditLeft:      EditHome,
+	EditRight:     EditEnd,
+	EditBackspace: EditDeleteToLineStart,
+	EditDelete:    EditDeleteToLineEnd,
+}
+
 // modifiedEdit is edit as the held modifiers turn it. Word movement and
 // deletion follow each platform's text editors: Option on macOS, where
 // Command is the shortcut key and Control belongs to the system, and
-// Control elsewhere. primary is the platform's shortcut modifier
-// (PrimaryDown), alt the Alt (Option) key.
+// Control elsewhere; Command on macOS makes them line edits and wins over
+// Option. primary is the platform's shortcut modifier (PrimaryDown), alt
+// the Alt (Option) key.
 func modifiedEdit(goos string, edit Edit, primary, alt bool) Edit {
 	wordModifier := primary
 	if goos == "darwin" {
 		wordModifier = alt
+		// Return here: Command+Left is the line start, and going on to
+		// docEdits would turn the Home it becomes into the document start.
+		if line, ok := macLineEdits[edit]; ok && primary {
+			return line
+		}
 	}
 	if word, ok := wordEdits[edit]; ok && wordModifier {
 		return word

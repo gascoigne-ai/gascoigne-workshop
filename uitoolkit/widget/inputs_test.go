@@ -308,6 +308,34 @@ func TestFieldMovesSelectsAndDeletesByWord(t *testing.T) {
 	}
 }
 
+// The macOS line edits (Cmd+Left/Right/Backspace/Delete) reach single-line
+// fields as Home, End and the delete-to-line-edge edits.
+func TestFieldDeletesToTheLineEdges(t *testing.T) {
+	f := NewTextField("https://h/v1/users")
+	f.Focused = true
+	f.Cursor = 9
+	root := Row(Field(&f))
+	c := testCtx(t)
+	Layout(c, root, 300, 30)
+	step := func(in core.Input) {
+		c.In = in
+		Update(c, root)
+	}
+
+	step(core.Input{Edits: []core.Edit{core.EditDeleteToLineEnd}})
+	if f.Text != "https://h" {
+		t.Fatalf("delete to line end: %q", f.Text)
+	}
+	step(core.Input{Shift: true, Edits: []core.Edit{core.EditHome}})
+	if got := f.SelectedText(); got != "https://h" {
+		t.Fatalf("shift+home selected %q", got)
+	}
+	step(core.Input{Edits: []core.Edit{core.EditRight, core.EditDeleteToLineStart}})
+	if f.Text != "" {
+		t.Fatalf("delete to line start: %q", f.Text)
+	}
+}
+
 func TestFieldPasteFailureLeavesTextAlone(t *testing.T) {
 	f := NewTextField("keep")
 	f.Focused = true

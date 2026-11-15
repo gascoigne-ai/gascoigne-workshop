@@ -198,6 +198,59 @@ func TestWordWiseMovementAndDeletionActFromTheCursor(t *testing.T) {
 	}
 }
 
+// Deleting to a line edge (Cmd+Backspace and Cmd+Delete on macOS) stays on
+// the cursor's line; at the edge itself it takes the line break, so the
+// lines join as in the macOS editors instead of the key doing nothing.
+func TestDeleteToLineEdgesStaysOnTheLine(t *testing.T) {
+	tests := []struct {
+		name       string
+		text       string
+		cursor     int
+		edit       core.Edit
+		wantText   string
+		wantCursor int
+	}{
+		{"to the start of a single line", "one two", 4, core.EditDeleteToLineStart, "two", 0},
+		{"to the end of a single line", "one two", 3, core.EditDeleteToLineEnd, "one", 3},
+		{"to the start of the cursor's line only", "ab\ncd ef\ngh", 6, core.EditDeleteToLineStart, "ab\nef\ngh", 3},
+		{"to the end of the cursor's line only", "ab\ncd ef\ngh", 5, core.EditDeleteToLineEnd, "ab\ncd\ngh", 5},
+		{"at a line start the line joins the previous one", "ab\ncd", 3, core.EditDeleteToLineStart, "abcd", 2},
+		{"at a line end the next line joins it", "ab\ncd", 2, core.EditDeleteToLineEnd, "abcd", 2},
+		{"at the text start nothing happens", "ab", 0, core.EditDeleteToLineStart, "ab", 0},
+		{"at the text end nothing happens", "ab", 2, core.EditDeleteToLineEnd, "ab", 2},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			f := newMultiline(test.text)
+			f.Cursor = test.cursor
+			f.Apply(nil, []core.Edit{test.edit}, false)
+			if f.Text != test.wantText || f.Cursor != test.wantCursor {
+				t.Fatalf("text %q cursor %d; want %q %d", f.Text, f.Cursor, test.wantText, test.wantCursor)
+			}
+		})
+	}
+}
+
+func TestDeleteToLineEdgeTakesASelectionAndIsItsOwnUndoStep(t *testing.T) {
+	f := NewTextField("one two")
+	f.Cursor = 7
+	f.Apply([]rune("x"), nil, false)
+	f.Apply(nil, []core.Edit{core.EditDeleteToLineStart}, false)
+	if f.Text != "" {
+		t.Fatalf("after delete to line start: %q", f.Text)
+	}
+	f.Undo()
+	if f.Text != "one twox" {
+		t.Fatalf("undo restored %q, want the typed text back", f.Text)
+	}
+
+	f.Anchor, f.Cursor, f.HasSel = 0, 3, true
+	f.Apply(nil, []core.Edit{core.EditDeleteToLineEnd}, false)
+	if f.Text != " twox" {
+		t.Fatalf("with a selection: %q, want only the selection deleted", f.Text)
+	}
+}
+
 func TestPressNSelectsWordOrAll(t *testing.T) {
 	tests := []struct {
 		name    string
