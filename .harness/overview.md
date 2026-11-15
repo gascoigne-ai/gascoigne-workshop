@@ -4,7 +4,7 @@ The 3000 ft view. Details are in `architecture.md`, the reasons in `decisions.md
 
 ## What it is
 
-A desktop client in Go for REST, WebSocket, SSE, MCP and gRPC calls. One window, three panes: the collection tree (left), the request editor (top right), the response viewer (bottom right). It is drawn with Ebitengine (GPU 2D) and its own widget toolkit, so every widget, text input and scroll area is ours (decision 1). A collection is a folder of JSON files (decision 7); several can be open, each with its own variables and environment.
+A desktop client in Go for REST, WebSocket, SSE, MCP and gRPC calls. One window, three panes: the collection tree (left), the request editor (top right), the response viewer (bottom right). It is drawn with Ebitengine (GPU 2D) and its own widget toolkit, so every widget, text input and scroll area is ours (decision 1). A collection is a folder of JSON files (decision 7); several can be open, each a root of the tree known by its folder, with its own variables and environment, and the set is reopened at the next start (decision 17).
 
 ## Where things are
 
