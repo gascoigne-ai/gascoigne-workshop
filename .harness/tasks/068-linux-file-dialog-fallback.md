@@ -20,3 +20,5 @@ Acceptance: on a Linux machine without zenity and kdialog a file can be opened a
 **Decided (user, 2026-11-15)**
 - In-app file browser dialog built from toolkit widgets, used when neither zenity nor kdialog exists. No D-Bus dependency.
 - Still said to the user: which tool gives native dialogs (objective 2).
+- Items 1 and 2 are done (f1c090c to a22f09e): table of dialog programs per system, in-app browser (`controller/filebrowser`, `app/filebrowser.go`), `-browse DIR` shot flag, decision 18.
+- Decided 2026-11-15: the browser starts in the user's home folder (not the working directory) and does not remember the last folder. Detection is widened so the browser is rarely needed: the dialog programs tried are ordered by the desktop (`XDG_CURRENT_DESKTOP`, `XDG_SESSION_DESKTOP`, `DESKTOP_SESSION`) and cover the common ones on Linux (zenity, kdialog, yad, qarma, matedialog and the like), through the same table, no D-Bus. The hint that names the tool to install is a muted footer line in the browser (default taken, the user did not choose a place).
