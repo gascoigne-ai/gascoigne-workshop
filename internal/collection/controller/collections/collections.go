@@ -1,7 +1,8 @@
 // Package collections holds the rules for managing whole collections, each a
-// folder on disk of which one is open at a time: what a name may be, what the
-// delete question says and which collection opens when the open one is
-// deleted. It has no I/O; the store port does the work.
+// folder on disk: what a name may be, what the delete question says, which
+// collection opens when the open one is deleted, and the Set of open
+// collections (order, folder, active environment, which collection a request
+// belongs to). It has no I/O; the store port does the work.
 package collections
 
 import (
