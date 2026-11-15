@@ -12,9 +12,10 @@ Known limitation: no text wrapping in the code view and no word-wise cursor move
 
 Scope
 1. Word motion in the text state (pure, tested), then the key bindings per platform.
-2. Wrap layout as a pure function (rects and visual lines in, rects out), tested without a GPU.
-3. Wrap in `Code` and the editing views through the toolkit, with an option and a template attribute (toolkit API rules 9 and 10).
-4. Golden scenes, `make shot` looked at; docs and package doc index.
+2. macOS line edits (decided 2026-11-15): Cmd+Left/Right go to line start/end, Cmd+Backspace deletes to line start, Shift selects; in the code view and every text field; platform table tested like the word keys.
+3. Wrap layout as a pure function (rects and visual lines in, rects out), tested without a GPU.
+4. Wrap in `Code` and the editing views through the toolkit, with an option and a template attribute (toolkit API rules 9 and 10).
+5. Golden scenes, `make shot` looked at; docs and package doc index.
 
 Acceptance: items tested, `make check` green, docs updated.
 
@@ -23,3 +24,5 @@ Acceptance: items tested, `make check` green, docs updated.
 - Wrap applies to the response viewer and the request body editor.
 - Word-wise movement and deletion also work in the single-line fields.
 - IME stays out of scope.
+- Item 1 (word motion) is done in 87dba94. On macOS Cmd+Left/Right and Cmd+Backspace become line edits (item 2).
+- The word keys are not listed on the Settings Shortcuts page; not part of this task unless the user asks.
