@@ -10,5 +10,6 @@ First release.
 - Import cURL, OpenAPI and Postman; export Postman.
 - Settings: one `settings.json` with a form and a raw editor, shortcut editor, colors page, System page (GPU rendering), dark and light themes, JSON theme files.
 - Client configs (`.workshop.yaml`, `.json`, `.toml`) in release builds; example server for every protocol in the default build.
+- The default (dev) build keeps its data in `gascoigne-workshop-dev`, apart from the release build's `gascoigne-workshop`, and reopens the collections open last.
 - In-app movable and resizable dialogs; a gear icon for the settings button.
 - Native file dialogs on macOS, Windows and Linux (zenity, kdialog, yad, qarma or matedialog, ordered by the desktop); without a dialog program, an in-app file browser for opening and saving.

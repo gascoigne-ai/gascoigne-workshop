@@ -64,6 +64,13 @@ make install PREFIX=$HOME/.local   # binary, desktop entry, icon
 make example-server                # one local server per protocol, for the example requests
 ```
 
+The settings directory holds `settings.json`, the remembered window and tabs (`state.json`),
+history, themes and new collections. A release build uses `gascoigne-workshop` in the user config
+directory (`~/.config` on Linux, `~/Library/Application Support` on macOS, `%AppData%` on Windows);
+the default build (`make build`, `make run`) uses `gascoigne-workshop-dev` beside it, so the two
+never share data. Both reopen the collections open last; the default build's first start shows the
+example server.
+
 ## Use
 
 ### Collections
