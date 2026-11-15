@@ -121,7 +121,7 @@ func TestTheURLBarLaysOutAsPinned(t *testing.T) {
 const (
 	protocolChipX = sidebarW + core.Gutter + 32
 	methodChipX   = protocolChipX + 32 + 1 + 42
-	streamChipX   = protocolChipX + 32 + 1 + grpcMethodW + 28
+	streamChipX   = protocolChipX + 32 + 1 + grpcMethodW + 1 + 28
 	urlFieldX     = 1100
 )
 

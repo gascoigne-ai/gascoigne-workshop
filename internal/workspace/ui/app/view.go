@@ -301,6 +301,7 @@ func (a *App) urlBar(t *reqTab) Node {
 		"grpcMethod":       grpcMethod,
 		"grpcMethodColor":  grpcMethodColor,
 		"streamColor":      streamColor(t),
+		"streamBg":         streamBg(t),
 		"url":              &t.url,
 		"segments":         a.varSegments,
 		"idle":             !socket && !sending,
@@ -326,6 +327,15 @@ func streamColor(t *reqTab) w.Token {
 		return w.Accent
 	}
 	return w.Muted
+}
+
+// streamBg tints the Stream chip while the tab streams; an empty token
+// applies no background (decision 4).
+func streamBg(t *reqTab) w.Token {
+	if t.grpcStream {
+		return w.Selected
+	}
+	return ""
 }
 
 // hint is a tooltip with the action's shortcut, when it has one.
@@ -552,10 +562,13 @@ const (
     <row if="rest" w="84" on-click="cycleMethod" tooltip="Method: click to change">
       <text text-center grow="1" color="{{methodColor}}">{{method}}</text>
     </row>
-    <row if="grpc" w="{{grpcMethodW}}" on-click="pickMethod" tooltip="Method: click to list the server's methods">
+    <row if="grpc" w="{{grpcMethodW}}" pad-x="10" on-click="pickMethod" tooltip="Method: click to list the server's methods">
       <text ellipsis grow="1" color="{{grpcMethodColor}}">{{grpcMethod}}</text>
     </row>
-    <row if="grpc" w="56" on-click="toggleStream" tooltip="Stream: keep the call open and show every message in the Messages pane">
+    <row if="grpc" w="1" pad-y="8">
+      <vrule/>
+    </row>
+    <row if="grpc" w="56" bg="{{streamBg}}" on-click="toggleStream" tooltip="Stream: keep the call open and show every message in the Messages pane">
       <text text-center grow="1" color="{{streamColor}}">Stream</text>
     </row>
     <!-- breathing room between the divider and the URL text -->
