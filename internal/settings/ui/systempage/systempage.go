@@ -5,8 +5,6 @@
 package systempage
 
 import (
-	"embed"
-
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/sysinfo"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
@@ -21,10 +19,7 @@ type Host interface {
 	CopyText(text string)
 }
 
-//go:embed systempage.vml
-var templates embed.FS
-
-var pageTemplate = markup.MustLoad(templates, "systempage.vml")
+var pageTemplate = markup.Must("systempage.vml", systempageSource)
 
 // View is the page: a table of labelled values for each section of the
 // report, then Copy report.
@@ -37,3 +32,20 @@ func View(host Host) Node {
 		"rowH":     w.RowH,
 	})
 }
+
+// Templates, parsed once above.
+const (
+	systempageSource = `<!-- The System page: a table of labelled values for each section of the
+     report, then the button that copies it all as text. -->
+<col gap="8">
+  <col for="section in sections">
+    <caption h="{{labelH}}">{{section.Title}}</caption>
+    <row for="row in section.Rows" h="{{rowH}}" gap="8">
+      <text small w="150" color="muted">{{row.Label}}</text>
+      <text small ellipsis grow="1">{{row.Value}}</text>
+    </row>
+  </col>
+  <row h="{{rowH}}"><button w="110" on-click="copy">Copy report</button></row>
+</col>
+`
+)
