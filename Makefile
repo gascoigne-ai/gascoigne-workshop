@@ -1,6 +1,10 @@
-.PHONY: check fmt-check vet test vet-release test-release build release run example-server shot install
+.PHONY: packagemap check fmt-check vet test vet-release test-release build release run example-server shot install
 
 check: fmt-check vet test vet-release test-release
+
+# Rewrite .harness/packagemap.md from the package tree.
+packagemap:
+	go test ./internal -run TestThePackageMapIsCurrent -update
 
 fmt-check:
 	@test -z "$$(gofmt -l .)" || { gofmt -l .; exit 1; }

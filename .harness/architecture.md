@@ -74,7 +74,7 @@ The toolkit packages are public and independent of the application (`uitoolkit/c
 | `uitoolkit/widget` | every component: buttons, `Choice`, rows, tabs, the popup menu, dialogs, toasts, `TextMenu`, `Scroll`, `HScroll`, `Split`, `Resizable`, `Slider`, `Table`, `Image`, `Checkbox`, icons, `TooltipLayer`, and the text inputs `Field`, `Area` and `Code` |
 | `uitoolkit/markup` | VML templates (`.vml`, inline `markup.Must`) that build the same trees, widgets included |
 | `uitoolkit/engine` | key bindings and frame pacing |
-| `internal/workspace/ui/app` | the app (package `ui`): state, handlers, the window, dialogs, menus; the composition root that wires the other domains |
+| `internal/workspace/ui/app` | the app (package `app`): state, handlers, the window, dialogs, menus; the composition root that wires the other domains |
 | `internal/workspace/ui/appicon` | the program icon, drawn |
 | `internal/workspace/adapter/statefile`, `internal/workspace/adapter/filedialog`, `internal/workspace/adapter/systemclock` | window and tab state file; zenity or kdialog file dialogs; the wall clock |
 | `internal/request/model` | `Request`, `Folder`, `Response`, environments, tree operations; MCP list parsers, the server description (`mcpserver.go`), schema skeletons and tool form fields (`mcpschema.go`, `mcpform.go`), cURL parsing, GraphQL schema parsing, `ErrCancelled` |
@@ -111,6 +111,8 @@ The toolkit packages are public and independent of the application (`uitoolkit/c
 | `internal/settings/model/appearance`, `internal/settings/adapter/fonts`, `internal/settings/ui/settingsui`, `internal/settings/ui/colorpage`, `internal/settings/ui/shortcutpage` | theme choices from settings; font scanning (`fonts.System` implements `FontStore`); the settings dialog behind a `Host`; its Colors and Shortcuts pages behind a `Host` (the App's `pageHost`; the shortcut table with the actions stays in the App) |
 
 ## Package layout
+
+The whole tree, one row per domain and one column per role, is in `.harness/packagemap.md`; it is generated from the tree and the layer test (`make packagemap`), and a test fails when it is stale.
 
 `internal/` is grouped by domain, then by role (decision 11): `internal/<domain>/<role>/<package>`, with domains `request`, `collection`, `response`, `settings`, `workspace` and roles `ui`, `controller`, `port`, `adapter`, `model`. `internal/layers_test.go` enforces the dependency rules: model imports only model; port imports model and port; controller imports model, port and controller; ui and adapter import model, port and controller but never each other; another domain is reached only through its model or port, except that `workspace` (the composition root, decision 11) may also import their ui and controller. A test with a table proves each kind of violation is caught.
 
