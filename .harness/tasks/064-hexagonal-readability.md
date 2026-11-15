@@ -5,7 +5,7 @@ Asked for by the user: revisit the UX code and analyze how to make the hexagonal
 **Goal:** a newcomer finds where code lives, and why, from package names and one picture.
 
 **Objectives**
-1. A written analysis of the `internal/<domain>/<role>/<package>` scheme: what is hard to read (five domains times five roles, the composition root's exemptions, the app package named `ui`, decision 20's package map).
+1. A written analysis of the `internal/<domain>/<role>/<package>` scheme: what is hard to read (five domains times five roles, the composition root's exemptions, the app package named `ui`, decision 11's package map).
 2. Ranked proposals, with the user choosing which to do.
 3. The chosen ones are applied with the layer test still enforcing the rules.
 4. Every package says its domain and role in its doc comment.

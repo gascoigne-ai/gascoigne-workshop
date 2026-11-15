@@ -1,12 +1,12 @@
 # 063 Create, rename, save and delete collections from the UI
 
-Asked for by the user. Today a collection is a directory of JSON files (decision 9) edited outside the app.
+Asked for by the user. Today a collection is a directory of JSON files (decision 7) edited outside the app.
 
 **Goal:** manage collections without leaving the app.
 
 **Objectives**
 1. New collection, rename, save and delete are each reachable from the sidebar (menu entry; shortcut where one fits).
-2. Delete asks for confirmation; only files the store owns are removed (decision 9).
+2. Delete asks for confirmation; only files the store owns are removed (decision 7).
 3. Failures show as a toast, never a silent loss.
 4. The rules sit in a pure controller, tested without a window.
 

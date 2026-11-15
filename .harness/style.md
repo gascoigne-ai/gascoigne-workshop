@@ -15,7 +15,7 @@ Every dialog is a modal floating panel over a dimmed scrim (`widget.Dialog`, `Re
 - Content from the left: the **title** (bold, `HeroText`; a short noun: "Settings", "Log", "Rename"), an optional **subtitle** (`widget.DialogSubtitle`: `HeroMuted`, small, ellipsized, gives way first; the page shown, a count, the file; never a sentence or an action), free room, then the **close button** (32 x `CompactH`, no chip, `CrossIcon` in `HeroMuted`, darkened under the pointer with `Shadow` (alpha) in the `row` control's corners, so it follows the Corners setting like the bar, tooltip "Close (Esc)").
 - No controls in the bar: no fields, no buttons except close. Those go in the toolbar.
 - The close button, Escape and a click outside all run the dialog's `OnDismiss`, so they cancel alike. A dialog that must not be cancelled by an outside click still has the button.
-- The bar is the drag handle (`DragHandle`): a press on the free part (not the border, not the close button) drags the dialog, a double click centers it. The grab cursor (`CursorMove`) shows only from the press until the release, never while hovering, so an idle bar looks like a title and not like a control. The dialog stays inside the window (`Moved`, `MoveState`; decision 56).
+- The bar is the drag handle (`DragHandle`): a press on the free part (not the border, not the close button) drags the dialog, a double click centers it. The grab cursor (`CursorMove`) shows only from the press until the release, never while hovering, so an idle bar looks like a title and not like a control. The dialog stays inside the window (`Moved`, `MoveState`; decision 15).
 - Not done: an icon before the title. The bar lays out title, then items, then room, then close, so an icon would have to be an item placed after the title; add it only with a place for it in `DialogTitle`.
 
 ### Toolbar
@@ -34,4 +34,4 @@ Title bar (title only), then a body padded 16 with gap 12: a muted `Lines` text,
 
 ### Sizes and position
 
-A resizable dialog is grabbed within 6 px inside or 4 px outside its border (`edgeSlop`, `edgeOut`), grows about its center and stays inside the window with `ScreenMargin` (decisions 56, 57). Size and position are app state that outlives the dialog's rebuild.
+A resizable dialog is grabbed within 6 px inside or 4 px outside its border (`edgeSlop`, `edgeOut`), grows about its center and stays inside the window with `ScreenMargin` (decision 15). Size and position are app state that outlives the dialog's rebuild.

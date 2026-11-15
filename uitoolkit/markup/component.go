@@ -1198,7 +1198,7 @@ func interpolate(s string, sc Scope) (string, error) {
 
 // lookup finds a dotted path in the scope. Each step reads a key of a map
 // or an exported field of a struct (through pointers), so a view model
-// reaches the template as its own Go type (decision 53).
+// reaches the template as its own Go type (decision 4).
 func lookup(path string, sc Scope) (any, error) {
 	if path == "" {
 		return nil, errors.New("an empty name")

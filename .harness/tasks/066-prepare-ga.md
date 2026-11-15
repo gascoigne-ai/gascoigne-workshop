@@ -7,7 +7,7 @@ Asked for by the user: update the docs and change the settings icon to a gear. L
 **Objectives**
 1. The settings button shows a gear icon (the "flip" asked for: replace the current icon).
 2. User docs exist: install, `.workshop.*` client configs, shortcuts, collections.
-3. The gaps of decision 18 (Windows and macOS untested, `release.yml` never run) are closed or listed as known limitations.
+3. The gaps of decision 12 (Windows and macOS untested, `release.yml` never run) are closed or listed as known limitations.
 4. A release checklist exists and has been run.
 
 Scope

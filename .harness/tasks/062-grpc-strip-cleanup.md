@@ -7,7 +7,7 @@ Asked for by the user with a screenshot: in the gRPC strip a vertical bar stands
 **Objectives**
 1. No stray bar before the method.
 2. The method has a visible field boundary (or the picker's look) and a placeholder when empty.
-3. `Stream` is either a real control or not shown while gRPC is unary only (decision 13).
+3. `Stream` is either a real control or not shown while gRPC is unary only (decision 2).
 
 Scope
 1. Find the cause in the URL bar and the gRPC method picker (`internal/workspace/ui/app`, `view.go` and its template); write it here.
