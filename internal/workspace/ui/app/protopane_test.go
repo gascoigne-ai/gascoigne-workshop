@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/exampleserver"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
@@ -186,6 +187,80 @@ func TestAParseErrorShowsWithFileLineAndColumn(t *testing.T) {
 		if strings.Contains(line, want) && !strings.Contains(line, "fg=error") {
 			t.Errorf("the problem is not in the error color: %s", line)
 		}
+	}
+}
+
+// exampleServerURLs serves the example server on free ports for the test
+// and returns each service's URL by name.
+func exampleServerURLs(t *testing.T) map[string]string {
+	t.Helper()
+	endpoints, err := exampleserver.Listen(exampleserver.Config{Host: "127.0.0.1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, stop := context.WithCancel(context.Background())
+	served := make(chan error, 1)
+	go func() { served <- exampleserver.Serve(ctx, endpoints) }()
+	t.Cleanup(func() {
+		stop()
+		<-served
+	})
+	urls := map[string]string{}
+	for _, endpoint := range endpoints {
+		urls[endpoint.Name] = endpoint.URL
+	}
+	return urls
+}
+
+// Task 070's acceptance in the app: the example server's port without
+// reflection cannot be called until the Proto pane adds its .proto file,
+// and then the call answers.
+func TestAServerWithoutReflectionIsCalledFromTheProtoFileAddedInThePane(t *testing.T) {
+	a, tab, dir := grpcTabOnProtoPane(t)
+	urls := exampleServerURLs(t)
+	pointTabAt(tab, urls["grpc-no-reflection"])
+	editRequest(tab, editor.MethodChosen{Method: "grpc.health.v1.Health/Check"})
+	editRequest(tab, editor.BodyTyped{Text: `{"service": "example"}`})
+
+	tab.Resp = nil
+	a.send(tab)
+	waitForResponse(t, a, tab)
+	if tab.Resp.Err == "" {
+		t.Fatalf("the server answered without a proto file: %+v", tab.Resp)
+	}
+
+	health := protoFileIn(t, dir, "health.proto", nil)
+	a.files = fakeDialog{choose: func(context.Context, string, bool, string) (string, error) { return health, nil }}
+	clickText(t, a, "Proto files", 0)
+	clickText(t, a, "Add file...", 0)
+	stepUntil(t, a, "the chosen file", func() bool { return len(tab.Req.Proto.Files) > 0 })
+	tab.Resp = nil
+	a.send(tab)
+	waitForResponse(t, a, tab)
+	if tab.Resp.Err != "" || tab.Resp.Status != 200 || !strings.Contains(string(tab.Resp.Body), "SERVING") {
+		t.Fatalf("from the proto file: %+v", tab.Resp)
+	}
+}
+
+// A file that does not parse at send is that call's error, at its line,
+// never a fallback to reflection.
+func TestSendingWithABrokenProtoFileShowsWhereItBreaks(t *testing.T) {
+	a, tab, dir := grpcTabOnProtoPane(t)
+	urls := exampleServerURLs(t)
+	source, err := os.ReadFile(healthProtoSource)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lines := strings.SplitAfter(string(source), "\n")
+	broken := protoFileIn(t, dir, "broken.proto", []byte(strings.Join(lines[:33], "")))
+	pointTabAt(tab, urls["grpc"]) // the port with reflection: the files must still win
+	editRequest(tab, editor.MethodChosen{Method: "grpc.health.v1.Health/Check"})
+	editRequest(tab, editor.ProtoPathAdded{List: editor.ProtoFiles, Path: broken})
+	tab.Resp = nil
+	a.send(tab)
+	waitForResponse(t, a, tab)
+	if !strings.Contains(tab.Resp.Err, broken+":34:") {
+		t.Fatalf("Err = %q, want it to point at %s:34", tab.Resp.Err, broken)
 	}
 }
 
