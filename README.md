@@ -26,7 +26,7 @@ gRPC in a single window, with your requests kept as plain files you own.
 
 - **Call anything:** REST with params, headers, JSON, form, multipart and file bodies, auth and
   assertions; WebSockets and SSE streams; MCP servers (tools explorer, streamable HTTP and stdio);
-  gRPC through server reflection, unary calls and streams.
+  gRPC from server reflection or `.proto` files, unary calls and streams.
 - **Organize:** folders and requests in a tree with rename, duplicate, move and delete. Open several
   collections side by side; create, rename, save, reorder, close and delete them from the sidebar
   (right-click the *Collections* chip or a collection's name).
@@ -78,6 +78,17 @@ its files; closing the last leaves an empty tree that offers to open or create o
 `collections/` next to the default workspace, in the settings directory. Edits are saved a moment
 after you stop typing; `Ctrl+S` saves at once.
 
+### gRPC with .proto files
+
+A gRPC request learns the server's methods from its reflection. For a server without reflection,
+open the request's *Proto* tab and choose *Proto files*: *Add file...* picks a `.proto` file and
+*Add path* adds an import path (a folder searched for the files it imports, in order, as protoc
+does; `google/protobuf/*` is built in). Paths inside the collection's folder are saved relative to
+it, so the folder can move. The method chip then lists the services of those files, without a
+server, and a problem in a file shows under the lists at its file, line and column. Choosing
+*Reflection* again removes the files. The debug build's sample has *gRPC Health from .proto*, which
+calls the example server's port without reflection (8086).
+
 ### Client configs
 
 A release build (`make release`) starts without example requests and reads a client config instead:
@@ -118,7 +129,6 @@ On macOS Ctrl is Cmd. All of them can be changed in Settings, Shortcuts.
 
 - File dialogs are native on macOS and Windows. Linux uses the first of `zenity`, `kdialog`, `yad`, `qarma` and `matedialog` that is installed, in the order the desktop prefers (`kdialog` first on KDE Plasma, `matedialog` on MATE and `qarma` on LXQt when installed, `zenity` first elsewhere); without any of them the program opens its own file browser.
 - No IME.
-- gRPC has no `.proto` file import: methods come from server reflection.
 
 ## Develop
 
