@@ -1,4 +1,4 @@
-flow rect=0,0,60,140
+flow rect=0,0,60,168
   flow h=28 padL=12 padR=12 control=button hoverBg=hover onClick=true rect=0,0,60,28
     textB text="Appearance" grow=1 fg=muted rect=12,6,36,16
   flow h=28 padL=12 padR=12 bg=accent-soft control=button onClick=true rect=0,28,60,28
@@ -9,3 +9,5 @@ flow rect=0,0,60,140
     textB text="Requests" grow=1 fg=muted rect=12,90,36,16
   flow h=28 padL=12 padR=12 control=button hoverBg=hover onClick=true rect=0,112,60,28
     textB text="General" grow=1 fg=muted rect=12,118,36,16
+  flow h=28 padL=12 padR=12 control=button hoverBg=hover onClick=true rect=0,140,60,28
+    textB text="System" grow=1 fg=muted rect=12,146,36,16

@@ -23,5 +23,7 @@ stack rect=0,0,1280,800
           textB text="Requests" grow=1 fg=muted rect=280,308,130,16
         flow h=28 padL=12 padR=12 control=button hoverBg=hover onClick=true rect=268,332,154,28
           textB text="General" grow=1 fg=muted rect=280,338,130,16
+        flow h=28 padL=12 padR=12 control=button hoverBg=hover onClick=true rect=268,362,154,28
+          textB text="System" grow=1 fg=muted rect=280,368,130,16
       scrollB padL=16 padT=16 padR=16 padB=16 grow=1 borderL=border-soft rect=430,204,590,476
         textB text="page colors" rect=446,220,558,16
