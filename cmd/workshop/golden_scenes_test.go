@@ -37,8 +37,8 @@ var (
 	durationStatus  = image.Rect(0, 772, 400, 800)     // status bar line
 	sentTimeFirst   = image.Rect(156, 62, 236, 80)     // clock time of the sent log's first row, after its URL
 	sentTimeSecond  = image.Rect(132, 99, 210, 117)    // clock time of the second row
-	logStamps       = image.Rect(268, 164, 374, 200)   // clock times of the Log dialog's two lines
-	logDuration     = image.Rect(446, 184, 640, 200)   // duration and size of the Log dialog's answer line
+	logStamps       = image.Rect(268, 204, 374, 240)   // clock times of the Log dialog's two lines, under its title bar and toolbar
+	logDuration     = image.Rect(446, 224, 640, 240)   // duration and size of the Log dialog's answer line
 )
 
 var goldenScenes = []goldenScene{
