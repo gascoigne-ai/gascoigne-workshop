@@ -1,6 +1,6 @@
 flow padL=12 padT=12 padR=12 padB=12 gap=8 grow=1 rect=0,0,420,300
   flow h=28 gap=6 rect=12,12,396,28
-    hscrollB gap=6 grow=1 rect=12,12,396,28
+    hscrollB gap=6 grow=1 rect=12,12,334,28
       flow w=64 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=30,12,64,28
         textB text="None" grow=1 fg=chip-text ellipsis=true center=true rect=40,12,44,28
       flow w=64 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=100,12,64,28
@@ -15,4 +15,6 @@ flow padL=12 padT=12 padR=12 padB=12 gap=8 grow=1 rect=0,0,420,300
         textB text="GraphQL" grow=1 fg=chip-text ellipsis=true center=true rect=410,12,60,28
       flow w=64 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=486,12,64,28
         textB text="File" grow=1 fg=chip-text ellipsis=true center=true rect=496,12,44,28
+    flow w=56 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=352,12,56,28
+      textB text="Wrap" grow=1 fg=chip-text ellipsis=true center=true rect=362,12,36,28
   areaB grow=1 bg=sunken onRightClickIn=true onChange=true rect=12,48,396,240

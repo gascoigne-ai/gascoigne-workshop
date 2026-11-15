@@ -251,7 +251,7 @@ func TestTheSearchFieldIsBoundToTheSearchText(t *testing.T) {
 func TestTheRawEditorIsBoundToTheRawText(t *testing.T) {
 	driver := newFrameDriver(t)
 	driver.dialog.OpenRaw(driver.host)
-	area := findWidget(driver.root(), "widget.areaB")
+	area := findWidget(driver.root(), "*widget.areaB")
 	if area == nil {
 		t.Fatal("the raw view has no editor")
 	}

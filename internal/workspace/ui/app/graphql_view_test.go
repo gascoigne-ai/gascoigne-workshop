@@ -70,7 +70,7 @@ func TestTheGraphQLBodyLaysOutAsPinned(t *testing.T) {
 // areaStates prints the behavior of every text area under root, in order.
 func areaStates(root Node) []string {
 	var states []string
-	if fmt.Sprintf("%T", root.Behavior()) == "widget.areaB" {
+	if fmt.Sprintf("%T", root.Behavior()) == "*widget.areaB" {
 		states = append(states, fmt.Sprintf("%+v", root.Behavior()))
 	}
 	for _, child := range root.Children() {

@@ -39,7 +39,7 @@
 //	Buttons     button primary-button link-button icon-button choice
 //	Rows        list-row form-row check-row
 //	Inputs      field (placeholder field-pad segments text-menu on-enter on-tab)
-//	            area (text-menu) checkbox
+//	            area (text-menu wrap) checkbox
 //	            slider (slider-mid on-slide on-slide-end)
 //	Viewers     code (wrap) image
 //	Containers  scroll hscroll split (vertical as-ratio min-first min-second)
@@ -497,8 +497,8 @@ var areaHandlers = map[string]handlerAttr{
 	"text-menu": stateHandler(widget.TextMenu),
 }
 
-// codeOptions are the attributes only a code view takes.
-var codeOptions = map[string]attributeReader{
+// wrapOptions are the attributes only a code view and an area take.
+var wrapOptions = map[string]attributeReader{
 	"wrap": flagAttr("wrap", widget.Wrap),
 }
 
@@ -653,13 +653,13 @@ var elements = map[string]elementSpec{
 		params: []param{scopedState[widget.ToastStack]("stack"), wholeParam("width"), wholeParam("height"), wholeParam("bottom-inset")}},
 	"field": {build: stateful(widget.Field), holds: holdsNothing, options: fieldOptions, handlers: fieldHandlers,
 		params: []param{scopedState[widget.TextField]("state")}},
-	"area": {build: stateful(widget.Area), holds: holdsNothing, handlers: areaHandlers,
+	"area": {build: stateful(widget.Area), holds: holdsNothing, options: wrapOptions, handlers: areaHandlers,
 		params: []param{scopedState[widget.TextArea]("state")}},
 	"checkbox":  {build: checkbox, holds: holdsNothing, params: []param{boolParam("on")}},
 	"list-row":  {build: listEntry, params: []param{boolParam("selected")}},
 	"form-row":  {build: formLine, params: []param{textParam("label"), wholeParam("label-width")}},
 	"check-row": {build: tickLine, params: []param{boolParam("on")}},
-	"code": {build: stateful(widget.Code), holds: holdsNothing, options: codeOptions,
+	"code": {build: stateful(widget.Code), holds: holdsNothing, options: wrapOptions,
 		params: []param{scopedState[widget.CodeView]("state")}},
 	"image": {build: picture, holds: holdsNothing, params: []param{scoped[*ebiten.Image]("img")}},
 	"slider": {build: slider, holds: holdsNothing, options: sliderOptions, handlers: sliderHandlers,

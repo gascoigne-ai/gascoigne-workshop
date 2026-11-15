@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
@@ -186,6 +188,55 @@ func TestOnlyTheChosenBodyTypeChipIsKeptInView(t *testing.T) {
 			}
 			if !slices.Equal(kept, []int{chosen.chip}) {
 				t.Fatalf("chips kept in view %v, want only %d", kept, chosen.chip)
+			}
+		})
+	}
+}
+
+// chipLabelled is the element whose only child is the text label, nil
+// when there is none.
+func chipLabelled(root Node, label string) Node {
+	if kids := root.Children(); len(kids) == 1 && strings.HasPrefix(Dump(kids[0]), `textB text="`+label+`" `) {
+		return root
+	}
+	for _, child := range root.Children() {
+		if found := chipLabelled(child, label); found != nil {
+			return found
+		}
+	}
+	return nil
+}
+
+// The Wrap chip of the JSON and Text editors switches wrap for the tab's
+// body, as the response's Wrap chip does for the response; the other
+// editors have no long text lines to wrap and show no chip.
+func TestTheBodyWrapChipWrapsTheTabsBodyEditor(t *testing.T) {
+	for _, state := range bodyPaneStates {
+		t.Run(state.name, func(t *testing.T) {
+			a, tab := openBodyType(t, state.bodyType, state.text)
+			var scroll widget.ScrollState
+			root := a.paneBody(bodyPane, tab, &scroll)
+			Layout(a.ctx, root, 600, settingsPaneH)
+			chip := chipLabelled(root, "Wrap")
+			editable := state.bodyType == model.BodyJSON || state.bodyType == model.BodyText
+			if (chip != nil) != editable {
+				t.Fatalf("Wrap chip shown %v, want %v", chip != nil, editable)
+			}
+			if !editable {
+				return
+			}
+			at := chip.Rect()
+			a.ctx.In = core.Input{X: at.X + at.W/2, Y: at.Y + at.H/2, Click: true}
+			Update(a.ctx, root)
+			if !tab.body.Wrap {
+				t.Fatal("the Wrap chip left the body unwrapped")
+			}
+			root = a.paneBody(bodyPane, tab, &scroll)
+			Layout(a.ctx, root, 600, settingsPaneH)
+			a.ctx.In = core.Input{X: 5000, Y: 5000}
+			Update(a.ctx, root)
+			if !tab.body.Wrap {
+				t.Fatal("the next frame's editor dropped the wrap the chip chose")
 			}
 		})
 	}

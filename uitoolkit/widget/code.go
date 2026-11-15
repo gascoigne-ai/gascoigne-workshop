@@ -37,10 +37,10 @@ func Code(v *CodeView, opts ...Option) *El {
 	return Custom(&codeB{view: v}, with(nil, opts)...)
 }
 
-// wrapper is an element whose long lines can wrap.
+// wrapper is an element whose long lines can wrap: Code and Area.
 type wrapper interface{ wrapLines() }
 
-// Wrap makes a Code break long lines before a word at its width
+// Wrap makes a Code or Area break long lines before a word at its width
 // instead of scrolling sideways. Without it the element does not wrap,
 // whatever its state held, so a template switches wrap off by leaving it
 // out (wrap="{{on}}").

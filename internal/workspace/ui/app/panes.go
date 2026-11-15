@@ -373,6 +373,7 @@ type bodyChip struct {
 func (a *App) bodyPane(p pane, t *reqTab, scroll *ScrollState) Node {
 	kind := t.Req.BodyType
 	isJSON := kind == model.BodyJSON
+	canWrap := isJSON || kind == model.BodyText // the editors that are a text area
 	status, valid := jsonStatus(t.body.Text)
 	statusColor := w.Error
 	if valid {
@@ -393,6 +394,9 @@ func (a *App) bodyPane(p pane, t *reqTab, scroll *ScrollState) Node {
 		"status":      status,
 		"statusColor": statusColor,
 		"isJSON":      isJSON,
+		"canWrap":     canWrap,
+		"wrap":        t.body.Wrap,
+		"toggleWrap":  func() { a.toggleBodyWrap(t) },
 		"format":      func() { a.formatBody(t) },
 		"editor":      a.bodyEditor(t, scroll),
 	})
@@ -409,6 +413,7 @@ func (a *App) bodyEditor(t *reqTab, scroll *ScrollState) Node {
 		t.body.Styler = a.withVariables(base, t.Req) // {{variables}} stand out, as in the URL
 		return bodyAreaTemplate.MustBuild(markup.Scope{
 			"body":     &t.body,
+			"wrap":     t.body.Wrap,
 			"bodyText": &t.body.TextField,
 			"sync":     func() { editRequest(t, editor.BodyTyped{Text: t.body.Text}) },
 		})
@@ -421,6 +426,11 @@ func (a *App) bodyEditor(t *reqTab, scroll *ScrollState) Node {
 	}
 	return bodyNoneTemplate.MustBuild(markup.Scope{})
 }
+
+// toggleBodyWrap switches the body editor between scrolling sideways and
+// breaking long lines at the width of the pane, per tab like the
+// response's Wrap.
+func (a *App) toggleBodyWrap(t *reqTab) { t.body.Wrap = !t.body.Wrap }
 
 func (a *App) setBodyType(t *reqTab, id string) {
 	a.commitEdit()
@@ -735,8 +745,8 @@ const (
 </col>
 `
 
-	bodypaneSource = `<!-- The body pane: the type chips with, for JSON, whether it parses and
-     the Format button; the editor of the chosen type below. -->
+	bodypaneSource = `<!-- The body pane: the type chips with, for JSON, whether it parses;
+     for JSON and Text the Wrap chip; for JSON the Format button; the editor of the chosen type below. -->
 <col grow="1" pad="{{gutter}}" gap="8">
   <row h="{{rowH}}" gap="6">
     <!-- the type chips scroll sideways when the pane is narrow -->
@@ -744,13 +754,14 @@ const (
       <choice for="chip in chips" selected="{{chip.Selected}}" w="{{chip.Width}}" keep-in-view="{{chip.Selected}}" on-click="chip.Choose">{{chip.Label}}</choice>
     </hscroll>
     <text if="showStatus" small color="{{statusColor}}" ellipsis optional>{{status}}</text>
+    <choice if="canWrap" selected="{{wrap}}" w="56" on-click="toggleWrap">Wrap</choice>
     <button if="isJSON" w="70" on-click="format">Format</button>
   </row>
   <slot name="editor"/>
 </col>
 `
 
-	bodyareaSource = `<area state="body" grow="1" bg="sunken" on-change="sync" text-menu="bodyText"/>
+	bodyareaSource = `<area state="body" grow="1" bg="sunken" wrap="{{wrap}}" on-change="sync" text-menu="bodyText"/>
 `
 
 	bodynoneSource = `<lines color="muted">This request has no body</lines>

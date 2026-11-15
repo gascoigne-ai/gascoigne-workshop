@@ -11,14 +11,18 @@ import (
 type areaB struct {
 	Base
 	area *TextArea
+	wrap bool // the Wrap option
 }
 
-func (b areaB) FocusTarget() Focuser { return b.area }
+func (b *areaB) FocusTarget() Focuser { return b.area }
 
 // KeepsTab: an area uses Tab to indent, so Escape is how focus leaves it.
-func (areaB) KeepsTab() bool { return true }
+func (*areaB) KeepsTab() bool { return true }
 
-func (b areaB) Update(e *El, c *core.Ctx) {
+func (b *areaB) wrapLines() { b.wrap = true }
+
+func (b *areaB) Update(e *El, c *core.Ctx) {
+	b.area.Wrap = b.wrap
 	if !b.area.Update(c, e.Rect()) {
 		return
 	}
@@ -27,10 +31,13 @@ func (b areaB) Update(e *El, c *core.Ctx) {
 	}
 }
 
-func (b areaB) Draw(e *El, c *core.Ctx, dst *ebiten.Image) { b.area.Draw(c, dst, e.Rect()) }
+func (b *areaB) Draw(e *El, c *core.Ctx, dst *ebiten.Image) {
+	b.area.Wrap = b.wrap
+	b.area.Draw(c, dst, e.Rect())
+}
 
 // Area is a multi-line editor bound to a (v-model style). It keeps
 // Tab for indenting, so Escape is how focus leaves it with the keyboard.
 func Area(a *TextArea, opts ...Option) *El {
-	return Custom(areaB{area: a}, with(nil, opts)...)
+	return Custom(&areaB{area: a}, with(nil, opts)...)
 }
