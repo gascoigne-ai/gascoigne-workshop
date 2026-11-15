@@ -24,3 +24,5 @@ Acceptance: a call against a non-reflection server succeeds from a `.proto` file
 - Parser: `github.com/bufbuild/protocompile`. Scope item 1 adds it to the approved deps in `rules.md` (approved by the user on 2026-11-15) and records it in `decisions.md`.
 - Proto files and import paths are stored per request.
 - Paths are saved relative to the collection when inside it; absolute otherwise.
+- Items 1 and 2 are done (1c98b70, d623200, e6242a0, afb8887): `protocompile` v0.14.1 (decision 19), table of method sources (reflection, proto files), `Request.Proto`, relative paths in the store, rename follows.
+- Conventional defaults (2026-11-15): relative proto paths are stored with `/` and converted back on load, so a collection moves between systems; the example server serves a second gRPC port without reflection, so the acceptance check ("a call against a non-reflection server") can be shown in the app and in a golden scene; a proto file that is gone or does not parse at send is that call's error, never a silent fallback to reflection.
