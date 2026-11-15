@@ -72,6 +72,11 @@ type Settings struct {
 
 	// TimeoutSec is the default request timeout in seconds.
 	TimeoutSec int `json:"timeoutSec"`
+
+	// GRPC and SSE turn on the experimental gRPC and Server-Sent Events
+	// protocols; both are off until the user opts in.
+	GRPC bool `json:"grpc,omitempty"`
+	SSE  bool `json:"sse,omitempty"`
 }
 
 // DefaultUIScalePct is the display's own scale; MinUIScalePct and

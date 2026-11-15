@@ -193,3 +193,27 @@ func TestSampleCollectionIsConsistent(t *testing.T) {
 		t.Error("the sample must define baseUrl")
 	}
 }
+
+func TestTheProtocolChipOffersGRPCAndSSEOnlyWhenTheyAreSwitchedOn(t *testing.T) {
+	tests := []struct {
+		name      string
+		grpc, sse bool
+		current   string
+		want      []string
+	}{
+		{"both off", false, false, "rest", []string{"rest", "websocket", "mcp"}},
+		{"sse on", false, true, "rest", []string{"rest", "websocket", "mcp", "sse"}},
+		{"grpc on", true, false, "rest", []string{"rest", "websocket", "mcp", "grpc"}},
+		{"both on", true, true, "rest", []string{"rest", "websocket", "mcp", "sse", "grpc"}},
+		{"a request already on grpc keeps it", false, false, "grpc", []string{"rest", "websocket", "mcp", "grpc"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a, _ := newTestApp(t)
+			a.settings.GRPC, a.settings.SSE = tt.grpc, tt.sse
+			if got := a.protocolsFor(tt.current); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("protocolsFor(%q) = %v, want %v", tt.current, got, tt.want)
+			}
+		})
+	}
+}

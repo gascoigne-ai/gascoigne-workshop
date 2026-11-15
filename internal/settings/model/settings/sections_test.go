@@ -195,3 +195,22 @@ func TestCompletingABooleanAfterAQuoteWritesTheBareWord(t *testing.T) {
 		}
 	}
 }
+
+func TestExperimentalProtocolsAreOffByDefaultAndLiveInTheirOwnSection(t *testing.T) {
+	if s := Default(); s.GRPC || s.SSE {
+		t.Fatalf("defaults %+v, want gRPC and SSE off", s)
+	}
+	if got := sectioned(t, Default()); len(got["experimental"]) != 0 {
+		t.Fatalf("defaults write an experimental section: %v", got)
+	}
+	s := Default()
+	s.GRPC, s.SSE = true, true
+	want := map[string]any{"grpc": true, "sse": true}
+	if got := sectioned(t, s)["experimental"]; !reflect.DeepEqual(got, want) {
+		t.Fatalf("experimental section = %v, want %v", got, want)
+	}
+	read, problems := Parse([]byte(`{"experimental": {"sse": true}}`), Default())
+	if len(problems) != 0 || !read.SSE || read.GRPC {
+		t.Fatalf("read %+v, problems %+v: want only SSE on", read, problems)
+	}
+}

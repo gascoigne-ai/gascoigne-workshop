@@ -33,6 +33,7 @@ func grpcServer(t *testing.T) string {
 
 func TestTheProtocolChipCyclesThroughGRPCAndBackToRESTWithAMethod(t *testing.T) {
 	a, _ := newTestApp(t)
+	a.settings.GRPC, a.settings.SSE = true, true
 	tab := a.cur()
 	seen := map[string]bool{}
 	for range protocolOrder {

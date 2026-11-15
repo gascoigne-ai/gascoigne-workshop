@@ -653,9 +653,24 @@ func (a *App) clickTree(row collection.Row) {
 
 func (a *App) newRequest() { a.newRequestIn(a.selectedFolder()) }
 
+// protocolsFor are the protocols the chip cycles through for a request on
+// current: the experimental ones only when settings switch them on, except
+// the one the request already uses, so it never loses its protocol.
+func (a *App) protocolsFor(current string) []string {
+	enabled := map[string]bool{"sse": a.settings.SSE, "grpc": a.settings.GRPC}
+	var offered []string
+	for _, id := range protocolOrder {
+		experimental, listed := enabled[id]
+		if !listed || experimental || id == current {
+			offered = append(offered, id)
+		}
+	}
+	return offered
+}
+
 func (a *App) cycleProtocol(t *reqTab) {
 	a.disconnect(t) // a connection belongs to the protocol that opened it
-	editRequest(t, editor.ProtocolChosen{Protocol: next(protocolOrder, t.Req.Protocol)})
+	editRequest(t, editor.ProtocolChosen{Protocol: next(a.protocolsFor(t.Req.Protocol), t.Req.Protocol)})
 	t.paneTab, t.respTab = 0, 0 // the indexes point into the panes of the protocol
 }
 

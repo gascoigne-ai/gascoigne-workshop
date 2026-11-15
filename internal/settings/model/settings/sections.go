@@ -9,21 +9,22 @@ import (
 // written. appearance, requests and general hold the settings of that page
 // of the dialog; colors and shortcuts are tables and are the section
 // themselves.
-var Sections = []string{"appearance", "colors", "shortcuts", "requests", "general"}
+var Sections = []string{"appearance", "colors", "shortcuts", "requests", "general", "experimental"}
 
 // sectionDescriptions say what each section holds, for completion.
 var sectionDescriptions = map[string]string{
-	"appearance": "How the window looks: theme, fonts, scale, layout.",
-	"colors":     "Your color overrides, by theme.",
-	"shortcuts":  "Your key bindings, by action.",
-	"requests":   "How requests are sent: timeout, proxy, certificates.",
-	"general":    "Saving, and what the program remembers.",
+	"appearance":   "How the window looks: theme, fonts, scale, layout.",
+	"colors":       "Your color overrides, by theme.",
+	"shortcuts":    "Your key bindings, by action.",
+	"requests":     "How requests are sent: timeout, proxy, certificates.",
+	"general":      "Saving, and what the program remembers.",
+	"experimental": "Features that are not finished: switch them on to try them.",
 }
 
 // objectSection reports whether name is a section that holds settings as an
 // object (colors and shortcuts hold a table and are settings themselves).
 func objectSection(name string) bool {
-	return name == "appearance" || name == "requests" || name == "general"
+	return name == "appearance" || name == "requests" || name == "general" || name == "experimental"
 }
 
 // SectionOf is the section a setting is written in, "" for the two that are
@@ -36,6 +37,8 @@ func SectionOf(field Field) string {
 		return "requests"
 	case "General":
 		return "general"
+	case "Experimental":
+		return "experimental"
 	}
 	return ""
 }

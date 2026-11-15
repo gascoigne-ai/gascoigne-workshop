@@ -187,6 +187,7 @@ func TestNewRequestAndSwitchingTabs(t *testing.T) {
 
 func TestProtocolAndMethodChipsCycle(t *testing.T) {
 	a, _ := newTestApp(t)
+	a.settings.GRPC, a.settings.SSE = true, true // the full cycle takes both experimental protocols
 	req := a.cur().Req
 
 	click(a, 380, urlBarY) // method chip
