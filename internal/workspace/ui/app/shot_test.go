@@ -90,6 +90,24 @@ func TestScreenshotWithSendWaitsForTheResponse(t *testing.T) {
 	}
 }
 
+// -send with -request of the tab that is already open sends it twice, the
+// second time after -type-url changed its URL. The first answer is still
+// on the tab then, so the capture must wait until the second send ends,
+// or it shows the old response.
+func TestScreenshotWaitsForTheLatestSendOfATab(t *testing.T) {
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png")})
+	tab := a.cur()
+	tab.Resp = &model.Response{Status: 200}
+	tab.BeginSend()
+	if answered(tab) {
+		t.Fatal("a tab still sending is not answered by the response of its earlier send")
+	}
+	tab.Accept(tab.Seq)
+	if !answered(tab) {
+		t.Fatal("answered once the send ended")
+	}
+}
+
 func TestScreenshotGivesUpWaitingForAResponse(t *testing.T) {
 	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), SendOnStart: true})
 	a.shot.sent = true // pretend the request was sent and never answers

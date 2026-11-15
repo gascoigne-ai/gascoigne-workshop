@@ -181,7 +181,7 @@ func (s *screenshot) ready(a *App) bool {
 // said who it is) or a failed one.
 func answered(t *reqTab) bool {
 	if !isSocket(t) {
-		return t.Resp != nil
+		return t.Resp != nil && !t.Sending // a tab sent again still holds its earlier response
 	}
 	if t.Connecting {
 		return false
