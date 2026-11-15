@@ -4,7 +4,6 @@
 package colorpage
 
 import (
-	"embed"
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
@@ -109,10 +108,7 @@ func (p *Page) resetAll(host Host) {
 	p.Forget()
 }
 
-//go:embed colorpage.vml
-var templates embed.FS
-
-var pageTemplate = markup.MustLoad(templates, "colorpage.vml")
+var pageTemplate = markup.Must("colorpage.vml", colorpageSource)
 
 // colorRow is what the template shows of one customizable color.
 type colorRow struct {
@@ -158,3 +154,22 @@ func (p *Page) row(host Host, custom appearance.CustomColor) colorRow {
 		Reset:  func() { p.reset(host, custom.Token) },
 	}
 }
+
+// Templates, parsed once above.
+const (
+	colorpageSource = `<col>
+  <caption h="{{labelH}}">Colors</caption>
+  <col for="color in colors">
+    <row h="{{rowH}}" gap="6">
+      <text small w="76">{{color.Label}}</text>
+      <row w="20" h="{{noteH}}" bg="{{color.Token}}" control="swatch"/>
+      <field state="color.Input" w="70" h="{{compactH}}" bg="sunken" border="{{color.Border}}"
+             on-change="color.Edited" text-menu="color.Input"/>
+      <button w="44" h="{{compactH}}" on-click="color.Reset">Reset</button>
+    </row>
+    <note if="color.Note" tone="error">{{color.Note}}</note>
+  </col>
+  <row h="{{rowH}}"><button w="110" on-click="resetAll">Reset colors</button></row>
+</col>
+`
+)
