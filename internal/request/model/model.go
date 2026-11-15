@@ -33,6 +33,8 @@ type Request struct {
 	InsecureTLS bool   // accept any server certificate (self-signed test servers)
 	GraphQLVars string // variables of a GraphQL body, JSON text
 	Tests       string // assertions about the response, one per line (package assert)
+
+	Proto ProtoSource // where a gRPC request finds its methods; empty is the server's reflection
 }
 
 // Body types a request can send.
@@ -97,6 +99,7 @@ type Timing struct {
 // whose rows were all deleted again.
 func (r Request) Clone() Request {
 	r.Params, r.Headers, r.Form = cloneKV(r.Params), cloneKV(r.Headers), cloneKV(r.Form)
+	r.Proto = r.Proto.clone()
 	return r
 }
 

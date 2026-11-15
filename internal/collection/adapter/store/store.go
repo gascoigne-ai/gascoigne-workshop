@@ -73,6 +73,8 @@ type requestFile struct {
 	InsecureTLS bool     `json:"insecureTls,omitempty"`
 	GraphQLVars string   `json:"graphqlVars,omitempty"`
 	Tests       string   `json:"tests,omitempty"`
+	ProtoFiles  []string `json:"protoFiles,omitempty"`  // gRPC: relative to the collection when inside it
+	ImportPaths []string `json:"importPaths,omitempty"` // gRPC: where the imports of ProtoFiles are found
 }
 
 type folderMeta struct {
@@ -147,7 +149,7 @@ func unique(base string, taken map[string]bool) string {
 func Save(dir string, c model.Collection) error {
 	secrets := map[string]secret{}
 	meta := folderMeta{Name: c.Name, Vars: toKV(c.Vars)}
-	if err := saveFolder(dir, "", &c.Folder, meta, secrets); err != nil {
+	if err := saveFolder(dir, dir, "", &c.Folder, meta, secrets); err != nil {
 		return err
 	}
 	if err := saveEnvs(dir, c.Envs, secrets); err != nil {
@@ -159,7 +161,8 @@ func Save(dir string, c model.Collection) error {
 	return ensureIgnore(dir)
 }
 
-func saveFolder(dir, rel string, f *model.Folder, meta folderMeta, secrets map[string]secret) error {
+// saveFolder writes f into dir, which is rel below the collection's root.
+func saveFolder(root, dir, rel string, f *model.Folder, meta folderMeta, secrets map[string]secret) error {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
 	}
@@ -169,7 +172,7 @@ func saveFolder(dir, rel string, f *model.Folder, meta folderMeta, secrets map[s
 		file := unique(slug(r.Name), taken) + reqSuffix
 		keep[file] = true
 		meta.Order = append(meta.Order, file)
-		rf, sec := requestToFile(r)
+		rf, sec := requestToFile(r, root)
 		if !sec.empty() {
 			secrets[path.Join(rel, file)] = sec
 		}
@@ -181,7 +184,7 @@ func saveFolder(dir, rel string, f *model.Folder, meta folderMeta, secrets map[s
 		name := unique(slug(sub.Name), taken)
 		keep[name] = true
 		meta.Order = append(meta.Order, name+"/")
-		if err := saveFolder(filepath.Join(dir, name), path.Join(rel, name), sub, folderMeta{Name: sub.Name, Vars: toKV(sub.Vars)}, secrets); err != nil {
+		if err := saveFolder(root, filepath.Join(dir, name), path.Join(rel, name), sub, folderMeta{Name: sub.Name, Vars: toKV(sub.Vars)}, secrets); err != nil {
 			return err
 		}
 	}
@@ -294,17 +297,22 @@ func fileExists(p string) bool {
 	return err == nil
 }
 
-func requestToFile(r *model.Request) (requestFile, secret) {
+// requestToFile is the file of r in a collection kept in root; proto paths
+// inside root are saved relative to it.
+func requestToFile(r *model.Request, root string) (requestFile, secret) {
+	proto := r.Proto.Stored(root)
 	return requestFile{
 		Name: r.Name, Protocol: r.Protocol, Method: r.Method, URL: r.URL,
 		Params: toKV(r.Params), Headers: toKV(r.Headers),
 		BodyType: r.BodyType, Body: r.Body, Form: toKV(r.Form),
 		Auth:       authFile{Type: r.Auth.Type, User: r.Auth.User, KeyName: r.Auth.KeyName, KeyIn: r.Auth.KeyIn},
 		TimeoutSec: r.TimeoutSec, NoRedirects: r.NoRedirects, InsecureTLS: r.InsecureTLS, GraphQLVars: r.GraphQLVars, Tests: r.Tests,
+		ProtoFiles: proto.Files, ImportPaths: proto.ImportPaths,
 	}, secret{Token: r.Auth.Token, Password: r.Auth.Password, KeyValue: r.Auth.KeyValue}
 }
 
-func fileToRequest(f requestFile, s secret) *model.Request {
+// fileToRequest is the request of a file in a collection kept in root.
+func fileToRequest(f requestFile, s secret, root string) *model.Request {
 	return &model.Request{
 		Name: f.Name, Protocol: f.Protocol, Method: f.Method, URL: f.URL,
 		Params: fromKV(f.Params), Headers: fromKV(f.Headers),
@@ -312,6 +320,7 @@ func fileToRequest(f requestFile, s secret) *model.Request {
 		Auth: model.Auth{Type: f.Auth.Type, User: f.Auth.User, KeyName: f.Auth.KeyName, KeyIn: f.Auth.KeyIn,
 			Token: s.Token, Password: s.Password, KeyValue: s.KeyValue},
 		TimeoutSec: f.TimeoutSec, NoRedirects: f.NoRedirects, InsecureTLS: f.InsecureTLS, GraphQLVars: f.GraphQLVars, Tests: f.Tests,
+		Proto: model.ProtoSource{Files: f.ProtoFiles, ImportPaths: f.ImportPaths}.Loaded(root),
 	}
 }
 
@@ -383,7 +392,7 @@ func Load(dir string) (model.Collection, error) {
 		}
 	}
 	var c model.Collection
-	meta, err := loadFolder(dir, "", &c.Folder, secrets)
+	meta, err := loadFolder(dir, dir, "", &c.Folder, secrets)
 	if err != nil {
 		return model.Collection{}, err
 	}
@@ -405,7 +414,8 @@ func readJSON(p string, v any) error {
 	return nil
 }
 
-func loadFolder(dir, rel string, f *model.Folder, secrets map[string]secret) (folderMeta, error) {
+// loadFolder reads f from dir, which is rel below the collection's root.
+func loadFolder(root, dir, rel string, f *model.Folder, secrets map[string]secret) (folderMeta, error) {
 	var meta folderMeta
 	if err := readJSON(filepath.Join(dir, folderFile), &meta); err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return meta, err
@@ -442,7 +452,7 @@ func loadFolder(dir, rel string, f *model.Folder, secrets map[string]secret) (fo
 	for _, n := range append(order, extra...) {
 		if strings.HasSuffix(n, "/") {
 			sub := &model.Folder{}
-			if _, err := loadFolder(filepath.Join(dir, n), path.Join(rel, strings.TrimSuffix(n, "/")), sub, secrets); err != nil {
+			if _, err := loadFolder(root, filepath.Join(dir, n), path.Join(rel, strings.TrimSuffix(n, "/")), sub, secrets); err != nil {
 				return meta, err
 			}
 			f.Folders = append(f.Folders, sub)
@@ -452,7 +462,7 @@ func loadFolder(dir, rel string, f *model.Folder, secrets map[string]secret) (fo
 		if err := readJSON(filepath.Join(dir, n), &rf); err != nil {
 			return meta, err
 		}
-		f.Requests = append(f.Requests, fileToRequest(rf, secrets[path.Join(rel, n)]))
+		f.Requests = append(f.Requests, fileToRequest(rf, secrets[path.Join(rel, n)], root))
 	}
 	return meta, nil
 }
