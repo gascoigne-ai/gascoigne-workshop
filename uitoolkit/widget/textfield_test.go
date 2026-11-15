@@ -425,3 +425,25 @@ func TestCanUndoAndCanRedoFollowTheHistory(t *testing.T) {
 		t.Fatal("after undo: redo yes, undo no")
 	}
 }
+
+// A selection kept from a longer text (the text was replaced from outside,
+// as when a response or a format step rewrites the payload) reached past the
+// end and made deleting panic with "slice bounds out of range".
+func TestStaleSelectionPastTheTextEndIsClampedWhenDeleting(t *testing.T) {
+	tests := []struct {
+		name string
+		edit core.Edit
+	}{
+		{"backspace", core.EditBackspace},
+		{"delete", core.EditDelete},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			field := &TextField{Text: "abcd", Anchor: 9, Cursor: 2, HasSel: true}
+			field.Apply(nil, []core.Edit{tt.edit}, false)
+			if field.Text != "ab" {
+				t.Errorf("Text = %q, want %q", field.Text, "ab")
+			}
+		})
+	}
+}

@@ -64,12 +64,14 @@ func NewTextField(text string) TextField {
 func (f *TextField) clamp(n int) int { return min(max(n, 0), len([]rune(f.Text))) }
 
 // Selection returns the selected range, low to high; ok is false when
-// nothing is selected.
+// nothing is selected. The range is kept inside the text, since the text
+// can be replaced from outside while Anchor still points into the old one.
 func (f *TextField) Selection() (lo, hi int, ok bool) {
-	if !f.HasSel || f.Anchor == f.Cursor {
+	anchor, cursor := f.clamp(f.Anchor), f.clamp(f.Cursor)
+	if !f.HasSel || anchor == cursor {
 		return 0, 0, false
 	}
-	return min(f.Anchor, f.Cursor), max(f.Anchor, f.Cursor), true
+	return min(anchor, cursor), max(anchor, cursor), true
 }
 
 // SelectedText is the selected text, or "".
