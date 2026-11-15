@@ -29,7 +29,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/settingsfile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/systeminfo"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/statefile"
-	ui "github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/ui/app"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/ui/app"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/ui/appicon"
 )
 
@@ -56,7 +56,7 @@ func parseWindowSize(spec string) (width, height int, err error) {
 const previewLifetime = 5 * time.Minute
 
 func main() {
-	var opts ui.Options
+	var opts app.Options
 	flag.StringVar(&opts.ScreenshotPath, "screenshot", "", "save a PNG of the window to this path and exit")
 	flag.Func("set", "key=value: change a setting live before the screenshot, as the settings dialog would (repeatable, for screenshots)", func(spec string) error {
 		opts.ScreenshotSet = append(opts.ScreenshotSet, spec)
@@ -134,13 +134,13 @@ func main() {
 		opts.SettingsPath = ""
 	}
 
-	app, err := ui.NewApp(opts)
+	window, err := app.NewApp(opts)
 	if err != nil {
 		log.Fatal(err)
 	}
 	ebiten.SetWindowSize(windowW, windowH)
 	if mw, mh := ebiten.Monitor().Size(); mw > 0 && mh > 0 {
-		if w := app.RestoredWindow(mw, mh); w.W > 0 {
+		if w := window.RestoredWindow(mw, mh); w.W > 0 {
 			ebiten.SetWindowSize(w.W, w.H)
 			ebiten.SetWindowPosition(w.X, w.Y)
 		}
@@ -150,16 +150,16 @@ func main() {
 	ebiten.SetWindowSizeLimits(720, 480, -1, -1) // below this the panes cannot show their controls
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 	ebiten.SetScreenClearedEveryFrame(false) // frames without changes are skipped in App.Draw
-	if err := ebiten.RunGame(app); err != nil && !errors.Is(err, ebiten.Termination) {
+	if err := ebiten.RunGame(window); err != nil && !errors.Is(err, ebiten.Termination) {
 		log.Fatal(err)
 	}
-	if err := app.FlushWorkspace(); err != nil {
+	if err := window.FlushWorkspace(); err != nil {
 		log.Printf("saving the collection: %v", err)
 	}
-	if err := app.SaveState(); err != nil {
+	if err := window.SaveState(); err != nil {
 		log.Printf("saving state: %v", err)
 	}
-	if err := app.Err(); err != nil {
+	if err := window.Err(); err != nil {
 		log.Fatal(err)
 	}
 }

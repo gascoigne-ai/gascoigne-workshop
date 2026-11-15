@@ -1,4 +1,4 @@
-package ui
+package app
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"

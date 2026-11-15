@@ -1,4 +1,4 @@
-package ui
+package app
 
 import (
 	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"

@@ -1,4 +1,4 @@
-package ui
+package app
 
 // appName is the program's name in the window title.
 const appName = "Gascoigne Workshop"

@@ -1,4 +1,4 @@
-package ui
+package app
 
 type fakeClip struct {
 	text string
