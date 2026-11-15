@@ -39,4 +39,4 @@ A resizable dialog is grabbed within 6 px inside or 4 px outside its border (`ed
 ## Sidebar
 
 - With no collection open the tree's place holds, on `Sunken` with padding `Gutter` and gap 8: a muted note "No collection is open", then the buttons *Open collection folder...* and *New collection...*, `RowH`-high (28) and as wide as the sidebar. Nothing is made on disk until one is pressed.
-- A collection's root row looks like a folder row; several roots stand one after another at depth 0.
+- A collection's root row looks like a folder row (same height, indent `Gutter`, disclosure triangle, no icon of its own and no extra spacing) except that its name is bold (`bold` on the name's texts, also on the pieces the filter splits it into), so where one collection ends and the next begins reads at a glance; several roots stand one after another at depth 0. Folder and request names stay regular.

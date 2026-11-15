@@ -157,22 +157,22 @@ func TestTheRootRowMenuListsTheCollectionActions(t *testing.T) {
 	}
 }
 
-// Close collection is in the shortcut table, unbound until the user binds
-// it, and acts on the focused collection.
-func TestTheCloseCollectionCommandClosesTheFocusedOne(t *testing.T) {
+// Close collection is Ctrl+Shift+W by default, next to Ctrl+W for the tab,
+// and acts on the focused collection; Ctrl+W alone still closes only the tab.
+func TestCtrlShiftWClosesTheFocusedCollectionAndCtrlWOnlyTheTab(t *testing.T) {
+	if got := byID("close-collection").def.String(); got != "Ctrl+Shift+W" {
+		t.Fatalf("default %q, want Ctrl+Shift+W", got)
+	}
 	a, _, _ := twoCollectionsApp(t)
-	var command *shortcut
-	for i := range shortcuts {
-		if shortcuts[i].id == "close-collection" {
-			command = &shortcuts[i]
-		}
+	a.openRequest(entryNamed(t, a, "Beta").Collection.Folders[0].Requests[0])
+	tabCount := len(a.list.Tabs)
+	pressCtrl(a, ebiten.KeyW)
+	if got := openNames(a); len(got) != 2 || len(a.list.Tabs) != tabCount-1 {
+		t.Fatalf("Ctrl+W: open %v, %d tabs, want both open and %d tabs", got, len(a.list.Tabs), tabCount-1)
 	}
-	if command == nil || command.def.Bound {
-		t.Fatalf("command %+v", command)
-	}
-	command.run(a) // Beta's tab is the active one
+	a.step(core.Input{Keys: []ebiten.Key{ebiten.KeyW}, Ctrl: true, Shift: true}) // Beta's tab is the active one
 	if got := openNames(a); !reflect.DeepEqual(got, []string{"Alpha"}) {
-		t.Fatalf("open %v", got)
+		t.Fatalf("Ctrl+Shift+W: open %v", got)
 	}
 }
 

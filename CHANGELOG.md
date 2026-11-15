@@ -5,7 +5,7 @@
 First release.
 
 - Requests: REST, WebSocket, SSE, MCP (tools explorer, streamable HTTP and stdio) and gRPC (reflection, unary calls and streams), with params, headers, bodies (JSON, text, form, multipart, file), auth, assertions and variables from the collection, its folders and environments.
-- Collections are folders of JSON files; several open side by side; create, open, rename, save, reorder, close and delete them from the sidebar; tree with rename, duplicate, move and delete; secrets kept out of request files.
+- Collections are folders of JSON files; several open side by side; create, open, rename, save, reorder, close (Ctrl+Shift+W) and delete them from the sidebar, each a root of the tree with a bold name; tree with rename, duplicate, move and delete; secrets kept out of request files.
 - Response viewer: pretty, raw and compact views, foldable and searchable JSON, history, timeline, call log, sent-request log.
 - Import cURL, OpenAPI and Postman; export Postman.
 - Settings: one `settings.json` with a form and a raw editor, shortcut editor, colors page, System page (GPU rendering), dark and light themes, JSON theme files.

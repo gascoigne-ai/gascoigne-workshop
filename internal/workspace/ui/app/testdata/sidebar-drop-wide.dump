@@ -6,7 +6,7 @@ flow rect=0,0,259,480
   scrollB grow=1 bg=sunken rect=0,44,259,436
     flow h=28 padL=12 gap=6 control=row hoverBg=hover onClick=true onRightClick=true onDragOver=true rect=0,44,259,28
       iconB w=12 icon=triangle-down rect=12,44,12,28
-      textB text="GitHub REST API" grow=1 ellipsis=true rect=30,44,229,28
+      textB text="GitHub REST API" grow=1 bold=true ellipsis=true rect=30,44,229,28
     flow h=28 padL=28 gap=6 control=row hoverBg=hover onClick=true onRightClick=true onDragOver=true rect=0,72,259,28
       iconB w=12 icon=triangle-right rect=28,72,12,28
       textB text="User" grow=1 ellipsis=true rect=46,72,213,28

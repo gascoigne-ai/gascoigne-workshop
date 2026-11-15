@@ -99,6 +99,7 @@ collections:
 | Ctrl+L | Focus the URL |
 | Ctrl+T | New request |
 | Ctrl+W | Close the tab |
+| Ctrl+Shift+W | Close the collection of the open request |
 | Ctrl+Tab, Ctrl+Shift+Tab | Next and previous tab |
 | Ctrl+S | Save the collection now |
 | Ctrl+O | Open a collection folder beside the open ones |
@@ -107,7 +108,7 @@ collections:
 | Ctrl+D, Alt+Up, Alt+Down, Delete | Duplicate, move and delete a table row |
 | Ctrl+, | Settings |
 
-All of them can be changed in Settings, Shortcuts, where *Close collection* can be given a key too.
+On macOS Ctrl is Cmd. All of them can be changed in Settings, Shortcuts.
 
 ## Known limitations
 

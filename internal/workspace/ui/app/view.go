@@ -120,6 +120,9 @@ type treeItem struct {
 	After    string
 	Indent   int
 	Selected bool
+	// Root marks a collection's own row: its name is bold, so where one
+	// collection ends and the next begins reads at a glance.
+	Root     bool
 	Triangle string  // a folder's disclosure icon
 	Badge    string  // a request's method or protocol
 	Color    w.Token // the badge's color
@@ -145,6 +148,7 @@ func (a *App) treeRow(row collection.Row, selected bool) Node {
 	item.Before, item.Match, item.After = collection.SplitMatch(row.Name, a.filter.Text)
 	template := treeFolderTemplate
 	if row.Folder {
+		item.Root = a.isRoot(row.Dir)
 		item.Triangle = "triangle-right"
 		if row.Open {
 			item.Triangle = "triangle-down"
@@ -505,11 +509,11 @@ const (
 	treefolderSource = `<list-row selected="{{row.Selected}}" border="{{row.DropBorder}}" h="{{rowH}}" pad-l="{{row.Indent}}" gap="6" on-click="row.Press" on-right-click="row.Menu" on-drag-over="row.DragOver">
   <icon name="{{row.Triangle}}" w="12"/>
   <!-- the name, with the part the sidebar filter matched in the accent color; treerequest.vml has the same -->
-  <text if="!row.Match" ellipsis grow="1">{{row.Name}}</text>
+  <text if="!row.Match" bold="{{row.Root}}" ellipsis grow="1">{{row.Name}}</text>
   <row if="row.Match" grow="1">
-    <text>{{row.Before}}</text>
-    <text color="accent-line">{{row.Match}}</text>
-    <text ellipsis grow="1">{{row.After}}</text>
+    <text bold="{{row.Root}}">{{row.Before}}</text>
+    <text bold="{{row.Root}}" color="accent-line">{{row.Match}}</text>
+    <text bold="{{row.Root}}" ellipsis grow="1">{{row.After}}</text>
   </row>
 </list-row>
 `

@@ -121,6 +121,38 @@ func TestTheFilterMatchInATreeRowIsDrawnInTheAccentLine(t *testing.T) {
 	}
 }
 
+// With several roots in one tree, a collection's name must stand out from
+// its folders: the root row's name is bold, with or without the filter
+// splitting it, and a folder's is not.
+func TestARootRowNameIsBoldAndAFolderNameIsNot(t *testing.T) {
+	cases := []struct {
+		name   string
+		filter string
+		text   string
+		bold   bool
+	}{
+		{"root", "", "Alpha", true},
+		{"second root", "", "Beta", true},
+		{"folder", "", "Nested", false},
+		{"root matched by the filter", "Alph", "Alph", true},
+		{"root after the filtered part", "Alph", "a", true},
+		{"folder matched by the filter", "Nest", "Nest", false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			a, _, _ := twoCollectionsApp(t)
+			t.Cleanup(a.waitWrites)
+			a.filter.Text = tc.filter
+			root := a.sidebar()
+			Layout(a.ctx, root, sidebarW-1, sidebarPinH)
+			line := dumpLineWithText(t, Dump(root), tc.text)
+			if got := strings.Contains(line, "bold=true"); got != tc.bold {
+				t.Fatalf("bold %v, want %v: %s", got, tc.bold, line)
+			}
+		})
+	}
+}
+
 // dumpLineWithText is the first line of a dump whose element shows text
 // exactly.
 func dumpLineWithText(t *testing.T, dump, text string) string {
