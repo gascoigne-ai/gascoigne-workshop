@@ -2,7 +2,12 @@
 
 package collection
 
-import "github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+import (
+	"path/filepath"
+	"runtime"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+)
 
 // ExampleServerFolder is the name of the folder of requests that reach
 // cmd/example-server.
@@ -34,5 +39,25 @@ func exampleServerFolder() *model.Folder {
 			Method: "grpc.health.v1.Health/Check", Body: "{\n  \"service\": \"\"\n}"},
 		{Name: "gRPC Health of example", Protocol: "grpc", URL: "grpc://127.0.0.1:8085",
 			Method: "grpc.health.v1.Health/Check", Body: "{\n  \"service\": \"example\"\n}"},
+		{Name: "gRPC Health from .proto", Protocol: "grpc", URL: "grpc://127.0.0.1:8086",
+			Method: "grpc.health.v1.Health/Check", Body: "{\n  \"service\": \"example\"\n}",
+			Proto: model.ProtoSource{Files: []string{exampleHealthProto()}}},
 	}}
+}
+
+// exampleHealthProto is the example server's own copy of health.proto, for
+// its port without reflection. The sample lives in no folder, so a relative
+// path would be read from wherever the program was started (the repository
+// for make run, cmd/workshop for its tests, anything from an IDE); a debug
+// build runs from its source tree, so the file is found from this source
+// file's place in it. A build with -trimpath records no such place and gets
+// the path from the repository's root.
+func exampleHealthProto() string {
+	relative := filepath.FromSlash("internal/request/adapter/exampleserver/protos/grpc/health/v1/health.proto")
+	_, source, _, ok := runtime.Caller(0)
+	if !ok || !filepath.IsAbs(source) {
+		return relative
+	}
+	root := filepath.Join(filepath.Dir(source), "..", "..", "..", "..")
+	return filepath.Join(root, relative)
 }

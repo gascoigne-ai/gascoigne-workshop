@@ -5,30 +5,80 @@ package exampleserver
 import (
 	"net"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 )
 
 // The debug sample collection hard-codes the example server's default
-// ports because a model package cannot import this adapter; this keeps
-// the two from drifting apart.
+// ports; this keeps the two in step. A gRPC request that brings its own
+// .proto files is for the port without reflection.
 func TestDebugSampleRequestsUseTheDefaultPorts(t *testing.T) {
 	defaults := DefaultConfig()
-	ports := map[string]int{"rest": defaults.REST, "websocket": defaults.WebSocket, "sse": defaults.SSE, "mcp": defaults.MCP, "grpc": defaults.GRPC}
-	sample := collection.Sample()
-	for _, request := range sample.Requests {
+	for _, request := range collection.Sample().Requests {
+		service := sampleService(*request)
 		parsed, err := url.Parse(request.URL)
 		if err != nil {
 			t.Fatalf("%s: %v", request.Name, err)
 		}
 		_, port, err := net.SplitHostPort(parsed.Host)
-		if err != nil || port != strconv.Itoa(ports[request.Protocol]) {
-			t.Errorf("%s (%s) uses %q, want port %d", request.Name, request.Protocol, parsed.Host, ports[request.Protocol])
+		if want := portOf(t, service, defaults); err != nil || port != strconv.Itoa(want) {
+			t.Errorf("%s (%s) uses %q, want port %d", request.Name, service, parsed.Host, want)
 		}
 	}
+}
+
+// Every service the example server runs is reached by a sample request,
+// so a person finds each one in the tree.
+func TestDebugSampleHasARequestForEveryService(t *testing.T) {
+	reached := map[string]bool{}
+	for _, request := range collection.Sample().Requests {
+		reached[sampleService(*request)] = true
+	}
+	for _, service := range services {
+		if !reached[service.name] {
+			t.Errorf("no sample request for the %s service", service.name)
+		}
+	}
+}
+
+// The sample's proto file is a real one that the app can read, wherever
+// the program was started from.
+func TestDebugSampleProtoFilesExistAndAreAbsolute(t *testing.T) {
+	for _, request := range collection.Sample().Requests {
+		for _, file := range request.Proto.Files {
+			if !filepath.IsAbs(file) {
+				t.Errorf("%s names %q, which depends on the working folder", request.Name, file)
+			}
+			if _, err := os.Stat(file); err != nil {
+				t.Errorf("%s: %v", request.Name, err)
+			}
+		}
+	}
+}
+
+// sampleService is the example server's service a sample request is for.
+func sampleService(request model.Request) string {
+	if request.Protocol == "grpc" && request.Proto.Kind() == model.SourceProtoFiles {
+		return "grpc-no-reflection"
+	}
+	return request.Protocol
+}
+
+func portOf(t *testing.T, name string, config Config) int {
+	t.Helper()
+	for _, service := range services {
+		if service.name == name {
+			return service.port(config)
+		}
+	}
+	t.Fatalf("no service %q", name)
+	return 0
 }
 
 // matchesPattern reports whether path is served by a route pattern such

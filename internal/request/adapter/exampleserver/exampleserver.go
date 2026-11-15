@@ -21,16 +21,19 @@ type Config struct {
 	SSE       int
 	MCP       int
 	GRPC      int
+	// GRPCNoReflection serves the same gRPC services without reflection,
+	// for clients that read the services from .proto files.
+	GRPCNoReflection int
 }
 
 // DefaultConfig is the layout the debug sample collection expects.
 func DefaultConfig() Config {
-	return Config{Host: "127.0.0.1", REST: 8081, WebSocket: 8082, SSE: 8083, MCP: 8084, GRPC: 8085}
+	return Config{Host: "127.0.0.1", REST: 8081, WebSocket: 8082, SSE: 8083, MCP: 8084, GRPC: 8085, GRPCNoReflection: 8086}
 }
 
 // Endpoint is one listening service.
 type Endpoint struct {
-	Name string // the protocol: rest, websocket, sse, mcp, grpc
+	Name string // the service: rest, websocket, sse, mcp, grpc, grpc-no-reflection
 	URL  string // what to put in a request to reach it
 
 	listener net.Listener
@@ -52,6 +55,7 @@ var services = []service{
 	{"sse", func(config Config) int { return config.SSE }, func(address string) string { return "http://" + address + "/events" }, serveHTTP(sseHandler())},
 	{"mcp", func(config Config) int { return config.MCP }, func(address string) string { return "http://" + address + "/mcp" }, serveHTTP(mcpHandler())},
 	{"grpc", func(config Config) int { return config.GRPC }, func(address string) string { return "grpc://" + address }, serveGRPC},
+	{"grpc-no-reflection", func(config Config) int { return config.GRPCNoReflection }, func(address string) string { return "grpc://" + address }, serveGRPCWithoutReflection},
 }
 
 // Listen opens the port of every service. It opens all or none.

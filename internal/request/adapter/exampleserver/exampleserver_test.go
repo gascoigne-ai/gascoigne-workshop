@@ -3,6 +3,7 @@ package exampleserver
 import (
 	"context"
 	"encoding/json"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -52,7 +53,7 @@ func send(t *testing.T, request model.Request) model.Response {
 
 func TestListenOffersEveryProtocolOnItsOwnPort(t *testing.T) {
 	urls := start(t)
-	for _, name := range []string{"rest", "websocket", "sse", "mcp", "grpc"} {
+	for _, name := range []string{"rest", "websocket", "sse", "mcp", "grpc", "grpc-no-reflection"} {
 		if urls[name] == "" {
 			t.Errorf("no endpoint for %s in %v", name, urls)
 		}
@@ -196,5 +197,24 @@ func TestGRPCServesHealthAndReflection(t *testing.T) {
 	response, err := proto.GRPC{}.Send(within(t), request)
 	if err != nil || response.Status != 200 || !strings.Contains(string(response.Body), "SERVING") {
 		t.Fatalf("check = %d %q, %v; want SERVING", response.Status, response.Body, err)
+	}
+}
+
+// The second gRPC port has no reflection, so a client must bring the
+// service's .proto file: the example server's own copy of health.proto.
+func TestGRPCWithoutReflectionAnswersACallFromTheProtoFile(t *testing.T) {
+	urls := start(t)
+	request := model.Request{Protocol: "grpc", URL: urls["grpc-no-reflection"], Method: "grpc.health.v1.Health/Check", Body: `{"service": "example"}`}
+	if _, err := proto.ListGRPCMethods(within(t), request); err == nil {
+		t.Fatal("the methods were listed without a proto file: the port offers reflection")
+	}
+	healthProto, err := filepath.Abs(filepath.Join("protos", "grpc", "health", "v1", "health.proto"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	request.Proto = model.ProtoSource{Files: []string{healthProto}}
+	response, err := proto.GRPC{}.Send(within(t), request)
+	if err != nil || response.Status != 200 || !strings.Contains(string(response.Body), "SERVING") {
+		t.Fatalf("check = %d %q %q, %v; want SERVING", response.Status, response.Body, response.Err, err)
 	}
 }

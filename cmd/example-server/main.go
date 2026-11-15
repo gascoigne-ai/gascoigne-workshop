@@ -28,6 +28,7 @@ func run() error {
 	flag.IntVar(&config.SSE, "sse", config.SSE, "server-sent events port")
 	flag.IntVar(&config.MCP, "mcp", config.MCP, "MCP port")
 	flag.IntVar(&config.GRPC, "grpc", config.GRPC, "gRPC port")
+	flag.IntVar(&config.GRPCNoReflection, "grpc-no-reflection", config.GRPCNoReflection, "gRPC port without reflection")
 	flag.Parse()
 
 	endpoints, err := exampleserver.Listen(config)
@@ -35,7 +36,7 @@ func run() error {
 		return err
 	}
 	for _, endpoint := range endpoints {
-		fmt.Printf("%-10s %s\n", endpoint.Name, endpoint.URL)
+		fmt.Printf("%-19s %s\n", endpoint.Name, endpoint.URL)
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
