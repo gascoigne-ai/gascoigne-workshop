@@ -2,7 +2,7 @@
 
 Adds to the shared `common/rules.md`, `common/commit-style.md` and `common/code-style.md`.
 
-- Approved deps: `github.com/hajimehoshi/ebiten/v2` (GPU window, input, 2D drawing, `text/v2`) `golang.org/x/image` (embedded Go fonts, already an Ebitengine requirement) and Ebitengine's other transitive requirements, and `google.golang.org/grpc` with `google.golang.org/protobuf` and their transitive requirements (gRPC protocol, approved by the user on 2026-11-06), and `github.com/BurntSushi/toml` (reading `.workshop.toml` client configs, approved by the user on 2026-11-10). Everything else is stdlib; REST uses `net/http`.
+- Approved deps: `github.com/hajimehoshi/ebiten/v2` (GPU window, input, 2D drawing, `text/v2`) `golang.org/x/image` (embedded Go fonts, already an Ebitengine requirement) and Ebitengine's other transitive requirements, and `google.golang.org/grpc` with `google.golang.org/protobuf` and their transitive requirements (gRPC protocol, approved by the user on 2026-11-06), `github.com/BurntSushi/toml` (reading `.workshop.toml` client configs, approved by the user on 2026-11-10), and `github.com/bufbuild/protocompile` (reading `.proto` files for gRPC, approved by the user on 2026-11-15; its own requirements are protobuf and `golang.org/x/sync`, already here). Everything else is stdlib; REST uses `net/http`.
 - cgo is allowed here (Ebitengine needs it for windowing on Linux). Tests for non-UI packages must still run without a display.
 - The look of the UI (dialog title bars and toolbars so far) is written in `.harness/style.md`: a view follows it, and a change to the look updates it in the same commit.
 - Verify UI changes with `make shot` and look at the PNG; layout and widget logic still get unit tests.
