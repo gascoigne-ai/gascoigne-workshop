@@ -34,7 +34,7 @@ func TestProtoPathsAreSavedRelativeInsideTheCollectionAndAbsoluteOutside(t *test
 	if err := json.Unmarshal(raw, &saved); err != nil {
 		t.Fatal(err)
 	}
-	wantFiles := []string{filepath.Join("protos", "health.proto"), filepath.Join(elsewhere, "common.proto")}
+	wantFiles := []string{"protos/health.proto", filepath.Join(elsewhere, "common.proto")}
 	if !reflect.DeepEqual(saved.ProtoFiles, wantFiles) || !reflect.DeepEqual(saved.ImportPaths, []string{"protos", elsewhere}) {
 		t.Errorf("saved %+v, want files %v and import paths [protos %s]", saved, wantFiles, elsewhere)
 	}

@@ -78,8 +78,10 @@ func cloneStrings(values []string) []string {
 
 // StoredPath is how path is saved in a collection kept in dir: relative
 // to dir when it is inside, so the folder can be moved or shared with
-// its files, and absolute when it is outside. An unsaved collection
-// (dir "") keeps the path as it is.
+// its files, and absolute when it is outside. A relative path is written
+// with "/" so the collection reads the same on every system; an absolute
+// one names a place on this machine only and keeps its separators. An
+// unsaved collection (dir "") keeps the path as it is.
 func StoredPath(dir, path string) string {
 	if dir == "" || !filepath.IsAbs(path) {
 		return path
@@ -88,12 +90,13 @@ func StoredPath(dir, path string) string {
 	if err != nil || relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
 		return path
 	}
-	return relative
+	return filepath.ToSlash(relative)
 }
 
 // LoadedPath is the path a stored one stands for in a collection kept in
-// dir: a relative path is taken from dir.
+// dir: a relative path, saved with "/", is taken from dir.
 func LoadedPath(dir, stored string) string {
+	stored = filepath.FromSlash(stored)
 	if dir == "" || filepath.IsAbs(stored) {
 		return stored
 	}

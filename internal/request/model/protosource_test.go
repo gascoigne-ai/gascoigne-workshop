@@ -32,40 +32,46 @@ func TestAnEmptyProtoSourceIsTheServersReflection(t *testing.T) {
 	}
 }
 
-func TestStoredPathIsRelativeInsideTheCollectionAndAbsoluteOutside(t *testing.T) {
+// A relative path is saved with "/" on every system, so a collection made
+// on Windows opens on Linux and macOS and the other way round; an absolute
+// path belongs to one machine and keeps its own separators.
+func TestStoredPathIsRelativeWithSlashesInsideTheCollectionAndAbsoluteOutside(t *testing.T) {
 	collection := filepath.FromSlash("/work/api")
 	cases := []struct {
 		name, dir, path, want string
 	}{
 		{"inside", collection, "/work/api/protos/health.proto", "protos/health.proto"},
+		{"deeper inside", collection, "/work/api/protos/grpc/health/v1/health.proto", "protos/grpc/health/v1/health.proto"},
 		{"the folder itself", collection, "/work/api", "."},
-		{"beside it", collection, "/work/other/health.proto", "/work/other/health.proto"},
-		{"a sibling with the same prefix", collection, "/work/api-v2/health.proto", "/work/api-v2/health.proto"},
-		{"an unsaved collection", "", "/work/api/health.proto", "/work/api/health.proto"},
+		{"beside it", collection, "/work/other/health.proto", filepath.FromSlash("/work/other/health.proto")},
+		{"a sibling with the same prefix", collection, "/work/api-v2/health.proto", filepath.FromSlash("/work/api-v2/health.proto")},
+		{"an unsaved collection", "", "/work/api/health.proto", filepath.FromSlash("/work/api/health.proto")},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			got := StoredPath(c.dir, filepath.FromSlash(c.path))
-			if want := filepath.FromSlash(c.want); got != want {
-				t.Errorf("StoredPath(%q, %q) = %q, want %q", c.dir, c.path, got, want)
+			if got := StoredPath(c.dir, filepath.FromSlash(c.path)); got != c.want {
+				t.Errorf("StoredPath(%q, %q) = %q, want %q", c.dir, c.path, got, c.want)
 			}
 		})
 	}
 }
 
-func TestLoadedPathTakesRelativePathsFromTheCollection(t *testing.T) {
+// Relative paths are read as saved, with "/", and come back with the
+// system's own separators.
+func TestLoadedPathTakesRelativeSlashPathsFromTheCollection(t *testing.T) {
 	collection := filepath.FromSlash("/work/api")
 	cases := []struct {
 		name, dir, stored, want string
 	}{
 		{"relative", collection, "protos/health.proto", "/work/api/protos/health.proto"},
-		{"absolute", collection, "/work/other/health.proto", "/work/other/health.proto"},
+		{"deeper", collection, "protos/grpc/health/v1/health.proto", "/work/api/protos/grpc/health/v1/health.proto"},
+		{"absolute", collection, filepath.FromSlash("/work/other/health.proto"), "/work/other/health.proto"},
 		{"outside by dots", collection, "../other/health.proto", "/work/other/health.proto"},
-		{"an unsaved collection", "", "protos/health.proto", "protos/health.proto"},
+		{"an unsaved collection", "", "protos/health.proto", filepath.FromSlash("protos/health.proto")},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			got := LoadedPath(c.dir, filepath.FromSlash(c.stored))
+			got := LoadedPath(c.dir, c.stored)
 			if want := filepath.FromSlash(c.want); got != want {
 				t.Errorf("LoadedPath(%q, %q) = %q, want %q", c.dir, c.stored, got, want)
 			}
@@ -81,7 +87,7 @@ func TestAProtoSourceSurvivesStoringAndLoading(t *testing.T) {
 	}
 	stored := source.Stored(collection)
 	wantStored := ProtoSource{
-		Files:       []string{filepath.FromSlash("protos/health.proto"), filepath.FromSlash("/shared/common.proto")},
+		Files:       []string{"protos/health.proto", filepath.FromSlash("/shared/common.proto")},
 		ImportPaths: []string{"protos", filepath.FromSlash("/shared")},
 	}
 	if !reflect.DeepEqual(stored, wantStored) {
