@@ -1,95 +1,153 @@
 package app
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/environment/controller/envs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // Environments are named sets of variables (Dev, Prod...) that override
-// the collection's variables while active. a.env is the index of the
-// active one in a.col.Envs, -1 for none.
+// a collection's variables while active. Each open collection has its own
+// active one (collections.Entry.Env); the chip and the Vars pane show the
+// focused collection's.
 
-// activeEnv is the active environment, or nil.
-func (a *App) activeEnv() *model.Environment { return a.env.Active(&a.col) }
-
-// envName is the name of the active environment, "" for none.
-func (a *App) envName() string { return a.env.Name(&a.col) }
-
-// vars are the variables requests are sent with: the collection's,
-// overridden by the active environment's.
-func (a *App) vars() []model.KV {
-	if e := a.activeEnv(); e != nil {
-		return model.MergeVars(a.col.Vars, e.Vars)
+// activeEnv is the focused collection's active environment, or nil.
+func (a *App) activeEnv() *model.Environment {
+	entry, ok := a.focus()
+	if !ok {
+		return nil
 	}
-	return a.col.Vars
+	return entry.Environment()
 }
 
-// varsFor are the variables req is sent with: the collection's, the active
-// environment's and those of the folders above it (model.VarsFor).
-func (a *App) varsFor(req *model.Request) []model.KV { return a.col.VarsFor(req, a.activeEnv()) }
+// envName is the name of the active environment, "" for none.
+func (a *App) envName() string {
+	if env := a.activeEnv(); env != nil {
+		return env.Name
+	}
+	return ""
+}
 
-// varsRows are the rows the Vars pane edits.
+// vars are the variables of the focused collection, overridden by its
+// active environment's.
+func (a *App) vars() []model.KV {
+	entry, ok := a.focus()
+	if !ok {
+		return nil
+	}
+	if env := entry.Environment(); env != nil {
+		return model.MergeVars(entry.Collection.Vars, env.Vars)
+	}
+	return entry.Collection.Vars
+}
+
+// varsFor are the variables req is sent with: those of its own collection,
+// its active environment and the folders above it (model.VarsFor), never
+// another collection's.
+func (a *App) varsFor(req *model.Request) []model.KV {
+	entry, ok := a.entryFor(req)
+	if !ok {
+		return nil
+	}
+	return entry.VarsFor(req)
+}
+
+// varsRows are the rows the Vars pane edits. With nothing open they are a
+// scratch list that is kept nowhere.
 func (a *App) varsRows() *[]model.KV {
 	if f := a.varsFolder; f != nil {
 		return &f.Vars
 	}
-	if e := a.activeEnv(); e != nil && !a.varsCollection {
-		return &e.Vars
+	if col := a.varsCollection; col != nil {
+		return &col.Vars
 	}
-	return &a.col.Vars
+	entry, ok := a.focus()
+	if !ok {
+		return &[]model.KV{}
+	}
+	if env := entry.Environment(); env != nil {
+		return &env.Vars
+	}
+	return &entry.Collection.Vars
 }
 
 func (a *App) varsCaption() string {
 	if f := a.varsFolder; f != nil {
 		return "Folder: " + f.Name
 	}
-	if e := a.activeEnv(); e != nil && !a.varsCollection {
+	if e := a.activeEnv(); e != nil && a.varsCollection == nil {
 		return "Environment: " + e.Name
 	}
 	return "Collection variables"
 }
 
-// selectEnv makes environment i the active one (-1 for none) and
-// remembers the choice.
+// chooseEnv makes environment index the active one of col, without
+// remembering it.
+func (a *App) chooseEnv(col *model.Collection, index int) {
+	a.open = collections.Update(a.open, collections.ChooseEnv{Collection: col, Index: index})
+}
+
+// focusedSelection is the focused collection and its environment choice
+// for the envs rules; ok is false when nothing is open.
+func (a *App) focusedSelection() (col *model.Collection, selection envs.Selection, ok bool) {
+	entry, ok := a.focus()
+	return entry.Collection, envs.Selection{Index: entry.Env}, ok
+}
+
+// selectEnv makes environment i of the focused collection the active one
+// (-1 for none) and remembers the choice.
 func (a *App) selectEnv(i int) {
 	a.commitEdit()
-	name := a.env.Select(&a.col, i)
-	a.varsFolder, a.varsCollection = nil, false
-	a.rememberEnv(name)
+	col, selection, ok := a.focusedSelection()
+	if !ok {
+		return
+	}
+	selection.Select(col, i)
+	a.chooseEnv(col, selection.Index)
+	a.varsFolder, a.varsCollection = nil, nil
+	a.rememberCollections()
 }
 
-func (a *App) rememberEnv(name string) {
-	a.saveSettings(func(s *settings.Settings) { s.Environment = name })
-}
-
-// pickEnv sets the active environment from the remembered name.
-func (a *App) pickEnv() { a.env.Pick(&a.col, a.settings.Environment) }
-
-// addEnv creates an environment and makes it active.
+// addEnv creates an environment in the focused collection and makes it
+// active.
 func (a *App) addEnv(name string) {
 	a.commitEdit()
-	remembered := a.env.Add(&a.col, name)
-	a.varsFolder, a.varsCollection = nil, false
-	a.rememberEnv(remembered)
+	col, selection, ok := a.focusedSelection()
+	if !ok {
+		return
+	}
+	selection.Add(col, name)
+	a.chooseEnv(col, selection.Index)
+	a.varsFolder, a.varsCollection = nil, nil
+	a.rememberCollections()
 }
 
 func (a *App) renameEnv(i int, name string) {
-	if _, changed := a.env.Rename(&a.col, i, name); changed && i == a.env.Index {
+	col, selection, ok := a.focusedSelection()
+	if !ok {
+		return
+	}
+	if _, changed := selection.Rename(col, i, name); changed && i == selection.Index {
 		a.selectEnv(i) // the remembered name follows
 	}
 }
 
 func (a *App) deleteEnv(i int) {
 	a.commitEdit()
-	if a.env.Delete(&a.col, i) {
-		a.selectEnv(a.env.Index)
+	col, selection, ok := a.focusedSelection()
+	if !ok {
+		return
+	}
+	moved := selection.Delete(col, i)
+	a.chooseEnv(col, selection.Index) // a delete before the active one shifts its index
+	if moved {
+		a.selectEnv(selection.Index)
 	}
 }
 
@@ -107,7 +165,11 @@ func (a *App) toggleSecret(i int) {
 // envMenu is the menu of the environment chip: envs.Menu decides the rows,
 // this says what each one does.
 func (a *App) envMenu() []MenuItem {
-	rows := envs.Menu(a.env, &a.col)
+	col, selection, ok := a.focusedSelection()
+	if !ok {
+		return nil
+	}
+	rows := envs.Menu(selection, col)
 	items := make([]MenuItem, len(rows))
 	for i, row := range rows {
 		items[i] = MenuItem{Label: row.Label, Disabled: row.Disabled, Run: a.envAction(row)}
@@ -172,10 +234,11 @@ func (a *App) urlTip(t *reqTab) string {
 // for the root) and shows it.
 func (a *App) editVars(dir *model.Folder) {
 	a.commitEdit()
-	if dir == &a.col.Folder {
-		a.varsFolder, a.varsCollection = nil, true
+	if a.isRoot(dir) {
+		owner, _ := a.open.Owner(dir)
+		a.varsFolder, a.varsCollection = nil, owner.Collection
 	} else {
-		a.varsFolder, a.varsCollection = dir, false
+		a.varsFolder, a.varsCollection = dir, nil
 	}
 	for i, p := range requestPanesFor(a.cur()) {
 		if p.label == "Vars" {

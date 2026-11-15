@@ -12,8 +12,8 @@ import (
 
 func TestActiveEnvironmentOverridesCollectionVariables(t *testing.T) {
 	a, _ := newTestApp(t)
-	a.col.Vars = []model.KV{{Name: "host", Value: "prod.test", Enabled: true}, {Name: "k", Value: "1", Enabled: true}}
-	a.col.Envs = []model.Environment{{Name: "Dev", Vars: []model.KV{{Name: "host", Value: "dev.test", Enabled: true}}}}
+	a.col().Vars = []model.KV{{Name: "host", Value: "prod.test", Enabled: true}, {Name: "k", Value: "1", Enabled: true}}
+	a.col().Envs = []model.Environment{{Name: "Dev", Vars: []model.KV{{Name: "host", Value: "dev.test", Enabled: true}}}}
 	if got := model.Expand("{{host}} {{k}}", a.vars()); got != "prod.test 1" {
 		t.Fatalf("no environment: %q", got)
 	}
@@ -29,11 +29,11 @@ func TestActiveEnvironmentOverridesCollectionVariables(t *testing.T) {
 
 func TestSelectedEnvironmentIsRemembered(t *testing.T) {
 	a, _ := newTestApp(t)
-	a.col.Envs = []model.Environment{{Name: "Dev"}, {Name: "Prod"}}
+	a.col().Envs = []model.Environment{{Name: "Dev"}, {Name: "Prod"}}
 	a.selectEnv(1)
 	st, err := settingsfile.Load(a.settingsPath)
-	if err != nil || st.Environment != "Prod" {
-		t.Fatalf("saved %q %v", st.Environment, err)
+	if got := st.RememberedCollections(); err != nil || len(got) != 1 || got[0].Environment != "Prod" {
+		t.Fatalf("saved %+v %v", got, err)
 	}
 	if a.envName() != "Prod" {
 		t.Fatalf("name %q", a.envName())
@@ -44,20 +44,20 @@ func TestEnvironmentLifecycle(t *testing.T) {
 	a, _ := newTestApp(t)
 	a.addEnv("Dev")
 	a.addEnv("Dev") // a clashing name gets a suffix
-	if len(a.col.Envs) != 2 || a.col.Envs[1].Name == "Dev" || a.env.Index != 1 {
-		t.Fatalf("%+v active %d", a.col.Envs, a.env.Index)
+	if len(a.col().Envs) != 2 || a.col().Envs[1].Name == "Dev" || a.envIndex() != 1 {
+		t.Fatalf("%+v active %d", a.col().Envs, a.envIndex())
 	}
 	a.renameEnv(1, "Staging")
-	if a.col.Envs[1].Name != "Staging" || a.envName() != "Staging" {
-		t.Fatalf("%+v", a.col.Envs)
+	if a.col().Envs[1].Name != "Staging" || a.envName() != "Staging" {
+		t.Fatalf("%+v", a.col().Envs)
 	}
 	a.deleteEnv(1)
-	if len(a.col.Envs) != 1 || a.env.Index != -1 {
-		t.Fatalf("%+v active %d", a.col.Envs, a.env.Index)
+	if len(a.col().Envs) != 1 || a.envIndex() != -1 {
+		t.Fatalf("%+v active %d", a.col().Envs, a.envIndex())
 	}
 	a.selectEnv(0)
 	a.deleteEnv(0)
-	if len(a.col.Envs) != 0 || a.env.Index != -1 {
+	if len(a.col().Envs) != 0 || a.envIndex() != -1 {
 		t.Fatal("last environment not removed")
 	}
 }
@@ -68,11 +68,11 @@ func TestVarsPaneEditsTheActiveEnvironment(t *testing.T) {
 	if pane.label != "Vars" {
 		t.Fatal("Vars pane moved")
 	}
-	if rows := pane.rows(a, a.cur()); rows != &a.col.Vars {
+	if rows := pane.rows(a, a.cur()); rows != &a.col().Vars {
 		t.Fatal("without an environment the pane edits the collection variables")
 	}
 	a.addEnv("Dev")
-	if rows := pane.rows(a, a.cur()); rows != &a.col.Envs[0].Vars {
+	if rows := pane.rows(a, a.cur()); rows != &a.col().Envs[0].Vars {
 		t.Fatal("with an environment the pane edits its variables")
 	}
 	if got := pane.captionOf(a); got != "Environment: Dev" {
@@ -82,7 +82,7 @@ func TestVarsPaneEditsTheActiveEnvironment(t *testing.T) {
 
 func TestUnresolvedVariablesAreFlagged(t *testing.T) {
 	a, _ := newTestApp(t)
-	a.col.Vars = []model.KV{{Name: "known", Value: "1", Enabled: true}}
+	a.col().Vars = []model.KV{{Name: "known", Value: "1", Enabled: true}}
 	segs := a.varSegments("{{known}}/{{missing}}/x")
 	want := []w.Token{w.OK, w.Text, w.Error, w.Text}
 	if len(segs) != 4 {
@@ -111,13 +111,13 @@ func TestSecretValuesAreMaskedInTheTable(t *testing.T) {
 func TestToggleSecretOnAnEnvironmentRow(t *testing.T) {
 	a, _ := newTestApp(t)
 	a.addEnv("Dev")
-	a.col.Envs[0].Vars = []model.KV{{Name: "token", Value: "x", Enabled: true}}
+	a.col().Envs[0].Vars = []model.KV{{Name: "token", Value: "x", Enabled: true}}
 	a.toggleSecret(0)
-	if !a.col.Envs[0].Vars[0].Secret {
+	if !a.col().Envs[0].Vars[0].Secret {
 		t.Fatal("not marked")
 	}
 	a.toggleSecret(0)
-	if a.col.Envs[0].Vars[0].Secret {
+	if a.col().Envs[0].Vars[0].Secret {
 		t.Fatal("not unmarked")
 	}
 }
@@ -129,7 +129,7 @@ func TestURLTooltipShowsTheResolvedURLAndWhatIsMissing(t *testing.T) {
 	if a.urlTip(tab) != "" {
 		t.Fatal("a URL without variables needs no tooltip")
 	}
-	a.col.Vars = []model.KV{{Name: "host", Value: "api.test", Enabled: true}}
+	a.col().Vars = []model.KV{{Name: "host", Value: "api.test", Enabled: true}}
 	tab.Req.URL = "https://{{host}}/{{path}}"
 	tip := a.urlTip(tab)
 	if !strings.Contains(tip, "Resolves to https://api.test/{{path}}") || !strings.Contains(tip, "Not defined: path") {
@@ -139,9 +139,9 @@ func TestURLTooltipShowsTheResolvedURLAndWhatIsMissing(t *testing.T) {
 
 func TestFolderVariablesAreEditedInTheVarsPaneAndResolveForTheirRequests(t *testing.T) {
 	a, _ := newTestApp(t)
-	folder := a.col.Folders[1] // holds the open request
+	folder := a.col().Folders[1] // holds the open request
 	req := a.cur().Req
-	a.col.Vars = []model.KV{{Name: "host", Value: "collection.test", Enabled: true}}
+	a.col().Vars = []model.KV{{Name: "host", Value: "collection.test", Enabled: true}}
 	a.editVars(folder)
 	pane := requestPanes[a.cur().paneTab]
 	if pane.label != "Vars" || pane.rows(a, a.cur()) != &folder.Vars || pane.captionOf(a) != "Folder: "+folder.Name {
@@ -151,12 +151,12 @@ func TestFolderVariablesAreEditedInTheVarsPaneAndResolveForTheirRequests(t *test
 	if got := model.Expand("{{host}}", a.varsFor(req)); got != "folder.test" {
 		t.Fatalf("folder variable not used: %q", got)
 	}
-	a.editVars(&a.col.Folder)
-	if requestPanes[a.cur().paneTab].rows(a, a.cur()) != &a.col.Vars {
+	a.editVars(&a.col().Folder)
+	if requestPanes[a.cur().paneTab].rows(a, a.cur()) != &a.col().Vars {
 		t.Fatal("the root edits the collection's variables")
 	}
 	a.addEnv("Dev") // choosing an environment goes back to the usual pane
-	if requestPanes[a.cur().paneTab].rows(a, a.cur()) != &a.col.Envs[0].Vars {
+	if requestPanes[a.cur().paneTab].rows(a, a.cur()) != &a.col().Envs[0].Vars {
 		t.Fatal("selecting an environment resets the Vars pane")
 	}
 }
@@ -164,7 +164,7 @@ func TestFolderVariablesAreEditedInTheVarsPaneAndResolveForTheirRequests(t *test
 func TestCtrlSpaceCompletesVariablesInTheURLField(t *testing.T) {
 	a, _ := newTestApp(t)
 	tab := a.cur()
-	a.col.Vars = []model.KV{
+	a.col().Vars = []model.KV{
 		{Name: "host", Value: "h", Enabled: true}, {Name: "hostname", Value: "n", Enabled: true},
 		{Name: "token", Value: "t", Enabled: true}, {Name: "off", Value: "x"},
 	}

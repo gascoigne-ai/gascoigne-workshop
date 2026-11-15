@@ -1,0 +1,209 @@
+package app
+
+import (
+	"path/filepath"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/collections"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/tree"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/environment/controller/envs"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/autosave"
+)
+
+// The open collections: a.open holds them in tree order, each with the
+// folder it is saved in and its own active environment (the rules are in
+// collection/controller/collections). Whatever acts on a request, a folder
+// or a tab acts on the collection that holds it; what has no node of its
+// own (the header, the environment chip, Ctrl+S) acts on the focused one.
+
+// focus is the collection the header, the environment chip and the
+// collection commands act on: the one holding the active tab's request,
+// else the tree selection, else the first open one. ok is false when
+// nothing is open.
+func (a *App) focus() (collections.Entry, bool) {
+	if len(a.list.Tabs) > 0 {
+		if entry, ok := a.open.Owner(a.cur().Req); ok {
+			return entry, true
+		}
+	}
+	if entry, ok := a.open.Owner(a.selected); ok {
+		return entry, true
+	}
+	if len(a.open.Entries) == 0 {
+		return collections.Entry{}, false
+	}
+	return a.open.Entries[0], true
+}
+
+// focusCol is the focused collection, nil when nothing is open.
+func (a *App) focusCol() *model.Collection {
+	entry, _ := a.focus()
+	return entry.Collection
+}
+
+// headerTitle is the name of the focused collection, "" when none is open.
+func (a *App) headerTitle() string {
+	if col := a.focusCol(); col != nil {
+		return col.Name
+	}
+	return ""
+}
+
+// entryFor is the collection that holds node. A request of no collection,
+// such as the blank tab left after closing the last one, goes with the
+// focused collection, as it did when one collection was open at a time.
+func (a *App) entryFor(node any) (collections.Entry, bool) {
+	if entry, ok := a.open.Owner(node); ok {
+		return entry, true
+	}
+	return a.focus()
+}
+
+// isRoot reports whether dir is the root folder of an open collection,
+// which is renamed and deleted as a collection, never moved.
+func (a *App) isRoot(dir *model.Folder) bool {
+	for _, entry := range a.open.Entries {
+		if dir == &entry.Collection.Folder {
+			return true
+		}
+	}
+	return false
+}
+
+// eachRoot calls visit with the root folder of every open collection, in
+// tree order.
+func (a *App) eachRoot(visit func(root *model.Folder)) {
+	for _, entry := range a.open.Entries {
+		visit(&entry.Collection.Folder)
+	}
+}
+
+// saveOf is when col was last written.
+func (a *App) saveOf(col *model.Collection) *autosave.Debounce {
+	debounce := a.saves[col]
+	if debounce == nil {
+		fresh := autosave.New(saveDebounce, "")
+		debounce = &fresh
+		a.saves[col] = debounce
+	}
+	return debounce
+}
+
+// markSaved records that col is on disk as it is now.
+func (a *App) markSaved(col *model.Collection) { a.saveOf(col).Saved(a.collectionKeyNow(col)) }
+
+// collectionDir is the folder a collection is identified by: absolute, so
+// one folder typed two ways is still one open collection.
+func collectionDir(dir string) string {
+	if abs, err := filepath.Abs(dir); err == nil {
+		return abs
+	}
+	return dir
+}
+
+// addCollection opens the collection saved in dir after the open ones. A
+// folder already open changes nothing and is focused; one that cannot be
+// read is not opened.
+func (a *App) addCollection(dir string) error {
+	col, err := a.loadCollection(collectionDir(dir), "")
+	if err != nil {
+		return err
+	}
+	a.focusCollection(col)
+	a.markSaved(col) // a blank request added to an empty collection is not an edit
+	a.rememberCollections()
+	return nil
+}
+
+// loadCollection opens the collection in dir with the environment called
+// env active, or gives back the one already open there.
+func (a *App) loadCollection(dir, env string) (*model.Collection, error) {
+	if entry, ok := a.open.ByDir(dir); ok {
+		return entry.Collection, nil
+	}
+	loaded, err := a.store.Load(dir)
+	if err != nil {
+		return nil, err
+	}
+	col := &loaded
+	a.expandAll(&col.Folder)
+	a.include(col, dir, env)
+	return col, nil
+}
+
+// include puts col, saved in dir ("" for not saved), into the open set
+// with the environment called env active, and counts it as saved.
+func (a *App) include(col *model.Collection, dir, env string) {
+	a.open = collections.Update(a.open, collections.Open{Collection: col, Dir: dir})
+	selection := envs.None()
+	selection.Pick(col, env)
+	a.open = collections.Update(a.open, collections.ChooseEnv{Collection: col, Index: selection.Index})
+	a.markSaved(col)
+}
+
+// focusCollection shows col: its first request, or a new blank one in its
+// root when it has none.
+func (a *App) focusCollection(col *model.Collection) {
+	first := tree.FirstRequest(&col.Folder)
+	if first == nil {
+		first = col.AddRequest(model.Request{Name: "New Request", Protocol: "rest", Method: "GET"})
+	}
+	a.openRequest(first)
+}
+
+// closeCollection takes col out of the window: its edits are saved first,
+// its tabs close and the set left is remembered. Closing the last one
+// leaves an empty tree; nothing is made on disk.
+func (a *App) closeCollection(col *model.Collection) {
+	entry, ok := a.open.Owner(col)
+	if !ok {
+		return
+	}
+	a.commitEdit()
+	if err := a.flushCollection(entry); err != nil {
+		a.toast("Saving "+col.Name+" failed: "+err.Error(), true)
+		return
+	}
+	a.closeTabsIn(tree.Node{Dir: &col.Folder})
+	a.forget(col)
+	a.rememberCollections()
+}
+
+// forget drops col from the open set and from everything that pointed
+// into it.
+func (a *App) forget(col *model.Collection) {
+	if a.varsCollection == col || (a.varsFolder != nil && col.Folder.Contains(a.varsFolder)) {
+		a.varsFolder, a.varsCollection = nil, nil
+	}
+	if col.Folder.Contains(a.selected) {
+		a.selected = nil
+	}
+	a.open = collections.Update(a.open, collections.Close{Collection: col})
+	delete(a.saves, col)
+	a.markStale()
+}
+
+// rememberCollections writes the open set to the settings, which then no
+// longer carry the older single workspace and environment.
+func (a *App) rememberCollections() {
+	remembered := make([]settings.OpenCollection, 0, len(a.open.Entries))
+	for _, entry := range a.open.Entries {
+		item := settings.OpenCollection{Folder: entry.Dir}
+		if env := entry.Environment(); env != nil {
+			item.Environment = env.Name
+		}
+		remembered = append(remembered, item)
+	}
+	a.saveSettings(func(s *settings.Settings) { s.RememberCollections(remembered) })
+}
+
+// rememberedEnv is the environment remembered for the collection in dir.
+func (a *App) rememberedEnv(dir string) string {
+	for _, item := range a.settings.RememberedCollections() {
+		if item.Folder == dir || (item.Folder != "" && collectionDir(item.Folder) == dir) {
+			return item.Environment
+		}
+	}
+	return ""
+}

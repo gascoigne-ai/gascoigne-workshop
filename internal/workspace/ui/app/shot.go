@@ -247,7 +247,9 @@ func (a *App) applyShotSetting(spec string) {
 func (a *App) showShotTarget() {
 	s := &a.shot
 	if s.openAll {
-		walkRequests(&a.col.Folder, "", func(_ string, request *model.Request) { a.openRequest(request) })
+		a.eachRoot(func(root *model.Folder) {
+			walkRequests(root, "", func(_ string, request *model.Request) { a.openRequest(request) })
+		})
 	}
 	if s.request != "" {
 		req := a.findRequestByName(s.request)
@@ -416,10 +418,12 @@ func (a *App) typeShotBody(text string) bool {
 
 func (a *App) findRequestByName(name string) *model.Request {
 	var found *model.Request
-	walkRequests(&a.col.Folder, "", func(_ string, req *model.Request) {
-		if found == nil && req.Name == name {
-			found = req
-		}
+	a.eachRoot(func(root *model.Folder) {
+		walkRequests(root, "", func(_ string, req *model.Request) {
+			if found == nil && req.Name == name {
+				found = req
+			}
+		})
 	})
 	return found
 }

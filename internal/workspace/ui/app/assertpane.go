@@ -14,7 +14,7 @@ import (
 func (a *App) runTests(t *reqTab) {
 	t.testResults = assert.Run(t.Req.Tests, t.Resp)
 	for _, c := range assert.Captures(t.Req.Tests, t.Resp) {
-		a.setVariable(c.Name, c.Value)
+		a.setVariable(t.Req, c.Name, c.Value)
 	}
 	if len(t.testResults) == 0 {
 		return
@@ -86,14 +86,19 @@ func (a *App) resultsPane(_ pane, t *reqTab, _ *ScrollState) Node {
 	})
 }
 
-// setVariable stores a captured value in the active environment, or in the
-// collection's variables when none is active (model.UpsertVar).
-func (a *App) setVariable(name, value string) {
-	if env := a.activeEnv(); env != nil {
+// setVariable stores a value captured from the response to req in the
+// active environment of req's collection, or in that collection's
+// variables when none is active (model.UpsertVar).
+func (a *App) setVariable(req *model.Request, name, value string) {
+	entry, ok := a.entryFor(req)
+	if !ok {
+		return
+	}
+	if env := entry.Environment(); env != nil {
 		env.Vars = model.UpsertVar(env.Vars, name, value)
 		return
 	}
-	a.col.Vars = model.UpsertVar(a.col.Vars, name, value)
+	entry.Collection.Vars = model.UpsertVar(entry.Collection.Vars, name, value)
 }
 
 // Templates, parsed once above.

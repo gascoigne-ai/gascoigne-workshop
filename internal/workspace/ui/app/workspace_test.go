@@ -39,8 +39,8 @@ func TestStartsFromTheWorkspaceFolder(t *testing.T) {
 		t.Fatal(err)
 	}
 	a := workspaceApp(t, dir, Options{})
-	if a.col.Name != "Mine" || a.cur().Req.Name != "One" {
-		t.Fatalf("collection %q, tab %q", a.col.Name, a.cur().Req.Name)
+	if a.col().Name != "Mine" || a.cur().Req.Name != "One" {
+		t.Fatalf("collection %q, tab %q", a.col().Name, a.cur().Req.Name)
 	}
 }
 
@@ -58,8 +58,8 @@ func TestBrokenWorkspaceFallsBackWithoutOverwriting(t *testing.T) {
 		t.Fatal(err)
 	}
 	a := workspaceApp(t, dir, Options{})
-	if a.workspace != "" || a.status == "Ready" {
-		t.Fatalf("workspace %q status %q", a.workspace, a.status)
+	if a.workspace() != "" || a.status == "Ready" {
+		t.Fatalf("workspace %q status %q", a.workspace(), a.status)
 	}
 	a.saveWorkspace() // with no workspace and no default this must not write into dir
 	if b := readFile(t, bad); b != "{nope" {
@@ -107,24 +107,27 @@ func TestEditsAreSavedAfterAPause(t *testing.T) {
 	}
 }
 
-func TestSavingWithoutAWorkspaceUsesTheDefaultOneAndRemembersIt(t *testing.T) {
-	def := filepath.Join(t.TempDir(), "ws")
-	a := workspaceApp(t, "", Options{DefaultWorkspace: def})
-	if a.workspace != "" {
+// The first save of a collection without a folder makes one for it in the
+// collections folder, named after it, as New collection does.
+func TestTheFirstSaveMakesTheCollectionAFolderAndRemembersIt(t *testing.T) {
+	base := t.TempDir()
+	a := workspaceApp(t, "", Options{DefaultWorkspace: filepath.Join(base, "ws")})
+	if a.workspace() != "" {
 		t.Fatal("workspace without being asked")
 	}
 	a.saveWorkspace()
 	a.waitWrites()
-	if a.workspace != def {
-		t.Fatalf("workspace %q", a.workspace)
+	want := filepath.Join(base, "collections", "github-rest-api")
+	if a.workspace() != want {
+		t.Fatalf("workspace %q, want %q", a.workspace(), want)
 	}
-	got, err := store.Load(def)
+	got, err := store.Load(want)
 	if err != nil || len(got.Folders) == 0 {
 		t.Fatalf("%+v %v", got, err)
 	}
 	st, err := settingsfile.Load(a.settingsPath)
-	if err != nil || st.Workspace != def {
-		t.Fatalf("remembered %q %v", st.Workspace, err)
+	if remembered := st.RememberedCollections(); err != nil || len(remembered) != 1 || remembered[0].Folder != want {
+		t.Fatalf("remembered %+v %v", remembered, err)
 	}
 }
 
@@ -140,8 +143,8 @@ func TestRemembersTheLastWorkspace(t *testing.T) {
 		t.Fatal(err)
 	}
 	a, err := NewApp(withAdapters(Options{SettingsPath: sp}))
-	if err != nil || a.col.Name != "Last" {
-		t.Fatalf("%v %q", err, a.col.Name)
+	if err != nil || a.col().Name != "Last" {
+		t.Fatalf("%v %q", err, a.col().Name)
 	}
 }
 
@@ -159,17 +162,17 @@ func TestImportCurlAddsARequestFromTheClipboard(t *testing.T) {
 	a, _ := newTestApp(t)
 	clip := &fakeClip{text: `curl -X POST 'https://api.test/v1/users?x=1' -H 'Content-Type: application/json' -d '{"a":1}'`}
 	a.ctx.Clipboard = clip
-	a.importCurl(&a.col.Folder)
+	a.importCurl(&a.col().Folder)
 	r := a.cur().Req
 	if r.Name != "POST /v1/users" || r.Method != "POST" || r.Body != `{"a":1}` {
 		t.Fatalf("%+v", r)
 	}
-	if _, ok := a.col.Folder.Parent(r); !ok {
+	if _, ok := a.col().Folder.Parent(r); !ok {
 		t.Fatal("request not in the collection")
 	}
 	n := len(a.list.Tabs)
 	clip.text = "not curl"
-	a.importCurl(&a.col.Folder)
+	a.importCurl(&a.col().Folder)
 	if len(a.list.Tabs) != n {
 		t.Fatal("a bad command opened a tab")
 	}
@@ -199,24 +202,24 @@ func TestOpenWorkspaceAtSwitchesCollectionsAndSavesTheOldOne(t *testing.T) {
 	a := workspaceApp(t, first, Options{})
 	a.cur().Req.URL = "https://unsaved.test"
 	a.openWorkspaceAt(second)
-	if a.col.Name != "Second" || len(a.list.Tabs) != 1 || a.cur().Req.Name != "Two" || a.workspace != second {
-		t.Fatalf("col %q tabs %d workspace %q", a.col.Name, len(a.list.Tabs), a.workspace)
+	if a.col().Name != "Second" || len(a.list.Tabs) != 1 || a.cur().Req.Name != "Two" || a.workspace() != second {
+		t.Fatalf("col %q tabs %d workspace %q", a.col().Name, len(a.list.Tabs), a.workspace())
 	}
 	if old, err := store.Load(first); err != nil || old.Requests[0].URL != "https://unsaved.test" {
 		t.Fatalf("the old collection lost its edit: %+v %v", old, err)
 	}
 	st, err := settingsfile.Load(a.settingsPath)
-	if err != nil || st.Workspace != second {
-		t.Fatalf("remembered %q %v", st.Workspace, err)
+	if remembered := st.RememberedCollections(); err != nil || len(remembered) != 1 || remembered[0].Folder != second {
+		t.Fatalf("remembered %+v %v", remembered, err)
 	}
 	broken := t.TempDir()
 	os.WriteFile(filepath.Join(broken, "bad.req.json"), []byte("{nope"), 0o644)
 	a.openWorkspaceAt(broken)
-	if a.workspace != second || a.col.Name != "Second" {
+	if a.workspace() != second || a.col().Name != "Second" {
 		t.Fatal("a folder that cannot be read must change nothing")
 	}
 	a.openWorkspaceAt("   ")
-	if a.workspace != second {
+	if a.workspace() != second {
 		t.Fatal("an empty path changes nothing")
 	}
 }
@@ -227,14 +230,14 @@ func TestImportOpenAPIAddsAFolderOfRequestsAndTheBaseURL(t *testing.T) {
 		t.Fatal(err)
 	}
 	a, _ := newTestApp(t)
-	a.col.Vars = nil
+	a.col().Vars = nil
 	a.ctx.Clipboard = &fakeClip{text: string(data)}
-	before := len(a.col.Folders)
-	a.importOpenAPI(&a.col.Folder)
-	if len(a.col.Folders) != before+1 {
-		t.Fatalf("folders %d, want %d", len(a.col.Folders), before+1)
+	before := len(a.col().Folders)
+	a.importOpenAPI(&a.col().Folder)
+	if len(a.col().Folders) != before+1 {
+		t.Fatalf("folders %d, want %d", len(a.col().Folders), before+1)
 	}
-	if !model.Defined("baseUrl", a.col.Vars) {
+	if !model.Defined("baseUrl", a.col().Vars) {
 		t.Fatal("baseUrl not defined")
 	}
 	if a.cur().Req.URL == "" || !strings.HasPrefix(a.cur().Req.URL, "{{baseUrl}}") {
@@ -242,8 +245,8 @@ func TestImportOpenAPIAddsAFolderOfRequestsAndTheBaseURL(t *testing.T) {
 	}
 	n := len(a.list.Tabs)
 	a.ctx.Clipboard = &fakeClip{text: "{}"}
-	a.importOpenAPI(&a.col.Folder)
-	if len(a.list.Tabs) != n || len(a.col.Folders) != before+1 {
+	a.importOpenAPI(&a.col().Folder)
+	if len(a.list.Tabs) != n || len(a.col().Folders) != before+1 {
 		t.Fatal("a bad document changed the collection")
 	}
 }
@@ -254,23 +257,23 @@ func TestImportPostmanAddsAFolderAndItsVariables(t *testing.T) {
 		t.Fatal(err)
 	}
 	a, _ := newTestApp(t)
-	a.col.Vars = []model.KV{{Name: "baseUrl", Value: "mine", Enabled: true}}
+	a.col().Vars = []model.KV{{Name: "baseUrl", Value: "mine", Enabled: true}}
 	a.ctx.Clipboard = &fakeClip{text: string(data)}
-	before := len(a.col.Folders)
-	a.importPostman(&a.col.Folder)
-	if len(a.col.Folders) != before+1 || a.col.Folders[before].Name != "Echo API" {
-		t.Fatalf("folders %d", len(a.col.Folders))
+	before := len(a.col().Folders)
+	a.importPostman(&a.col().Folder)
+	if len(a.col().Folders) != before+1 || a.col().Folders[before].Name != "Echo API" {
+		t.Fatalf("folders %d", len(a.col().Folders))
 	}
-	if len(a.col.Vars) != 1 || a.col.Vars[0].Value != "mine" {
-		t.Fatalf("an existing variable must not be overwritten: %+v", a.col.Vars)
+	if len(a.col().Vars) != 1 || a.col().Vars[0].Value != "mine" {
+		t.Fatalf("an existing variable must not be overwritten: %+v", a.col().Vars)
 	}
 	if a.cur().Req.Name != "Form" { // requests of a folder come before its subfolders
 		t.Fatalf("the first imported request is not open: %q", a.cur().Req.Name)
 	}
-	n := len(a.col.Folders)
+	n := len(a.col().Folders)
 	a.ctx.Clipboard = &fakeClip{text: `{"openapi":"3.0.0"}`}
-	a.importPostman(&a.col.Folder)
-	if len(a.col.Folders) != n {
+	a.importPostman(&a.col().Folder)
+	if len(a.col().Folders) != n {
 		t.Fatal("a bad document changed the collection")
 	}
 }
@@ -278,7 +281,7 @@ func TestImportPostmanAddsAFolderAndItsVariables(t *testing.T) {
 func TestExportPostmanWritesACollectionFileThatImportsBack(t *testing.T) {
 	t.Setenv("PATH", t.TempDir()) // no dialog program: the path is asked as text
 	a, _ := newTestApp(t)
-	a.exportPostman(&a.col.Folder)
+	a.exportPostman(&a.col().Folder)
 	if a.dialog == nil || a.dialog.Input == nil || !strings.HasSuffix(a.dialog.Input.Text, ".postman_collection.json") {
 		t.Fatalf("dialog %+v", a.dialog)
 	}
@@ -291,7 +294,7 @@ func TestExportPostmanWritesACollectionFileThatImportsBack(t *testing.T) {
 		t.Fatal(err)
 	}
 	res, err := postman.Parse(data)
-	if err != nil || res.Folder.Name != a.col.Name || len(res.Folder.Folders) == 0 {
+	if err != nil || res.Folder.Name != a.col().Name || len(res.Folder.Folders) == 0 {
 		t.Fatalf("%v %+v", err, res.Folder)
 	}
 	found := false
@@ -334,8 +337,8 @@ func TestDebugStartIgnoresTheRememberedWorkspaceButNotTheFlag(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			a, err := NewApp(withAdapters(test.opts))
-			if err != nil || a.col.Name != test.want {
-				t.Fatalf("%v: collection %q, want %q", err, a.col.Name, test.want)
+			if err != nil || a.col().Name != test.want {
+				t.Fatalf("%v: collection %q, want %q", err, a.col().Name, test.want)
 			}
 		})
 	}

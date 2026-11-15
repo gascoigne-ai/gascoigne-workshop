@@ -1,72 +1,111 @@
 package app
 
 import (
+	"errors"
 	"fmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/tree"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/serial"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
 	"strings"
 	"time"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/collections"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/serial"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 )
 
-// saveDebounce is how long the collection must stay unchanged before
-// it is saved by itself.
+// saveDebounce is how long a collection must stay unchanged before it is
+// saved by itself.
 const saveDebounce = time.Second
 
-// openWorkspace loads the collection from dir, or from the remembered
-// workspace when dir is empty; with neither, the build's client config, if it
-// has one, replaces the built-in sample.
-// A folder that cannot be read leaves the sample in place and no
-// workspace set, so a later save cannot overwrite what is there.
+// openWorkspace opens the collection in dir, or, when dir is empty, the
+// collections remembered in the settings (an older file's single workspace
+// is a set of one). With none of them, the build's client config, if it
+// has one, replaces the built-in sample. A folder that cannot be read is
+// left out and named in the status line, so a later save cannot
+// overwrite what is there.
 func (a *App) openWorkspace(dir string) {
-	if dir == "" && !a.ignoreRemembered {
-		dir = a.settings.Workspace
+	var wanted []settings.OpenCollection
+	switch {
+	case dir != "":
+		wanted = []settings.OpenCollection{{Folder: dir, Environment: a.rememberedEnv(collectionDir(dir))}}
+	case !a.ignoreRemembered:
+		wanted = a.settings.RememberedCollections()
 	}
-	if dir != "" {
-		col, err := a.store.Load(dir)
-		if err != nil {
-			a.status = "Workspace not loaded: " + err.Error()
-		} else {
-			a.col, a.workspace = col, dir
+	var failed []error
+	var sample *model.Collection
+	for _, item := range wanted {
+		if item.Folder == "" {
+			sample = a.includeStart(item.Environment)
+			continue
+		}
+		if _, err := a.loadCollection(collectionDir(item.Folder), item.Environment); err != nil {
+			failed = append(failed, err)
 		}
 	}
-	sample := a.workspace == "" && !a.loadClients()
-	if sample && len(a.col.Folders) > 1 { // the sample opens on its search call
-		a.expanded[&a.col.Folder] = true
-		a.expanded[a.col.Folders[1]] = true
-		a.openRequest(a.col.Folders[1].Requests[0])
+	if len(failed) > 0 {
+		a.status = "Workspace not loaded: " + errors.Join(failed...).Error()
+	}
+	if len(a.open.Entries) == 0 {
+		sample = a.includeStart(a.rememberedEnv(""))
+	}
+	first := a.open.Entries[0].Collection
+	if first == sample && len(first.Folders) > 1 { // the sample opens on its search call
+		a.openRequest(first.Folders[1].Requests[0])
 	} else {
-		a.expandAll(&a.col.Folder)
-		first := tree.FirstRequest(&a.col.Folder)
-		if first == nil {
-			first = a.col.AddRequest(model.Request{Name: "New Request", Protocol: "rest", Method: "GET"})
-		}
-		a.openRequest(first)
+		a.focusCollection(first)
 	}
-	a.pickEnv()
-	a.colSave.Saved(a.collectionKeyNow())
+	for _, entry := range a.open.Entries { // a blank request added to an empty collection is not an edit
+		a.markSaved(entry.Collection)
+	}
 }
 
-// loadClients replaces the collection with the client config's tree. It
-// reports false when there is no config or it is empty, and when it cannot
-// be read, which the status then says.
-func (a *App) loadClients() bool {
-	if a.clients == nil {
-		return false
+// includeStart opens the collection the program starts with when nothing
+// saved is open: the client config's, else the sample, which it returns
+// (nil for the config's). Only one is opened, however often a settings
+// file names it.
+func (a *App) includeStart(env string) (sample *model.Collection) {
+	if a.startOpen() {
+		return nil
 	}
-	config, err := a.clients.Load()
-	if err != nil {
-		a.status = "Client config not loaded: " + err.Error()
-		return false
+	col, isSample := a.startCollection()
+	if isSample && len(col.Folders) > 1 { // the sample opens on its search call
+		a.expanded[&col.Folder] = true
+		a.expanded[col.Folders[1]] = true
+	} else {
+		a.expandAll(&col.Folder)
 	}
-	if config.Empty() {
-		return false
+	a.include(col, "", env)
+	if isSample {
+		return col
 	}
-	a.col = config.Collection()
-	return true
+	return nil
+}
+
+// startOpen reports whether a collection that is not saved is open.
+func (a *App) startOpen() bool {
+	for _, entry := range a.open.Entries {
+		if entry.Dir == "" {
+			return true
+		}
+	}
+	return false
+}
+
+// startCollection is the client config's tree, or the sample when there is
+// no config, it is empty, or it cannot be read (the status then says why).
+func (a *App) startCollection() (col *model.Collection, isSample bool) {
+	if a.clients != nil {
+		config, err := a.clients.Load()
+		if err != nil {
+			a.status = "Client config not loaded: " + err.Error()
+		} else if !config.Empty() {
+			configured := config.Collection()
+			return &configured, false
+		}
+	}
+	sample := startCollection(a.sample)
+	return &sample, true
 }
 
 func (a *App) expandAll(f *model.Folder) {
@@ -76,22 +115,30 @@ func (a *App) expandAll(f *model.Folder) {
 	}
 }
 
-// saveWorkspace writes the collection to the workspace. Without one it
-// uses the default folder and remembers it.
-func (a *App) saveWorkspace() {
+// saveWorkspace writes the focused collection now (Ctrl+S).
+func (a *App) saveWorkspace() { a.saveCollection(a.focusCol()) }
+
+// saveCollection writes col to its folder. A collection that has none yet
+// gets its own new folder in the collections folder, as a new collection
+// does, and the open set with it is remembered.
+func (a *App) saveCollection(col *model.Collection) {
 	a.commitEdit()
-	dir := a.workspace
+	entry, ok := a.open.Owner(col)
+	if !ok {
+		return
+	}
+	dir := entry.Dir
 	if dir == "" {
-		dir = a.defaultWorkspace
-		if dir == "" {
-			a.toast("No folder to save to", true)
+		if dir = a.locate(col); dir == "" {
 			return
 		}
 	}
-	snapshot := a.col.Clone()             // written off the UI goroutine while the UI goes on editing
-	a.colSave.Saved(a.collectionKeyNow()) // an error is reported once, not retried every frame
+	snapshot := col.Clone() // written off the UI goroutine while the UI goes on editing
+	a.markSaved(col)        // an error is reported once, not retried every frame
 	for _, t := range a.openTabs() {
-		t.MarkSaved()
+		if owner, ok := a.entryFor(t.Req); ok && owner.Collection == col {
+			t.MarkSaved()
+		}
 	}
 	a.write("collection:"+dir, serial.Job{
 		Run: func() error { return a.store.Save(dir, snapshot) },
@@ -100,85 +147,123 @@ func (a *App) saveWorkspace() {
 				a.toast("Saving failed: "+err.Error(), true)
 				return
 			}
-			if a.workspace == "" {
-				a.workspace = dir
-				a.saveSettings(func(s *settings.Settings) { s.Workspace = dir })
-			}
 			a.status = fmt.Sprintf("Saved %s", snapshot.Name)
 		},
 	})
 }
 
-// workspaceTick saves the collection once it has been unchanged for
-// saveDebounce. Nothing is saved until a workspace is set.
-func (a *App) workspaceTick() {
-	if a.workspace == "" {
-		return
+// locate makes the folder of an unsaved collection, named after it, in the
+// collections folder, and records it; "" when there is none to make.
+func (a *App) locate(col *model.Collection) string {
+	parent := a.collectionsDir()
+	if parent == "" {
+		a.toast("No folder to save to", true)
+		return ""
 	}
-	if a.colSave.Due(a.collectionKey(), a.now()) {
-		a.saveWorkspace()
+	name, err := collections.CleanName(col.Name)
+	if err != nil {
+		name = "My collection" // the folder needs a name even when the collection's cannot be one
+	}
+	dir, err := a.store.Create(parent, name)
+	if err != nil {
+		a.toast("Saving failed: "+err.Error(), true)
+		return ""
+	}
+	a.open = collections.Update(a.open, collections.Located{Collection: col, Dir: dir})
+	a.rememberCollections()
+	return dir
+}
+
+// workspaceTick saves each saved collection once it has been unchanged for
+// saveDebounce. A collection without a folder is not saved by itself.
+func (a *App) workspaceTick() {
+	for _, entry := range a.open.Entries {
+		if entry.Dir != "" && a.saveOf(entry.Collection).Due(a.collectionKey(entry.Collection), a.now()) {
+			a.saveCollection(entry.Collection)
+		}
 	}
 }
 
-// FlushWorkspace saves the collection if it changed since the last save,
+// FlushWorkspace saves every collection that changed since its last save,
 // for the moment the window closes (the autosave pause may not have
-// passed). Nothing is written without a workspace.
+// passed). Nothing is written for a collection without a folder.
 func (a *App) FlushWorkspace() error {
-	if a.workspace == "" {
-		return nil
-	}
 	a.commitEdit()
 	a.waitWrites()
-	if !a.colSave.Pending(a.collectionKeyNow()) {
+	var failed []error
+	for _, entry := range a.open.Entries {
+		if err := a.flushCollection(entry); err != nil {
+			failed = append(failed, err)
+		}
+	}
+	return errors.Join(failed...)
+}
+
+// flushCollection writes entry's collection now if it changed since its
+// last save and has a folder.
+func (a *App) flushCollection(entry collections.Entry) error {
+	if entry.Dir == "" {
 		return nil
 	}
-	if err := a.store.Save(a.workspace, a.col); err != nil {
+	a.waitWrites()
+	col := entry.Collection
+	if !a.saveOf(col).Pending(a.collectionKeyNow(col)) {
+		return nil
+	}
+	if err := a.store.Save(entry.Dir, *col); err != nil {
 		return err
 	}
-	a.colSave.Saved(a.collectionKeyNow())
+	a.markSaved(col)
 	return nil
 }
 
-// openWorkspaceAt switches to the collection in dir: pending edits of
-// the current one are saved, every tab is closed and the folder becomes
-// the remembered workspace. A folder that cannot be read changes nothing
-// and says why.
+// openWorkspaceAt switches to the collection in dir: pending edits of the
+// open ones are saved, they and every tab are closed and the folder
+// becomes the one remembered. A folder that cannot be read changes
+// nothing and says why. The environment remembered for the folder is
+// picked, else the one of that name active before, as when one collection
+// was open at a time.
 func (a *App) openWorkspaceAt(dir string) {
 	dir = strings.TrimSpace(dir)
 	if dir == "" {
 		return
 	}
+	dir = collectionDir(dir)
 	if err := a.FlushWorkspace(); err != nil {
 		a.toast("Saving the current collection failed: "+err.Error(), true)
 		return
 	}
-	col, err := a.store.Load(dir)
+	loaded, err := a.store.Load(dir)
 	if err != nil {
 		a.toast("Cannot open "+dir+": "+err.Error(), true)
 		return
+	}
+	env := a.rememberedEnv(dir)
+	if env == "" {
+		env = a.envName()
 	}
 	for _, t := range a.openTabs() {
 		a.disconnect(t)
 	}
 	a.commitEdit()
-	a.col, a.workspace = col, dir
+	for _, entry := range a.open.Entries {
+		a.forget(entry.Collection)
+	}
 	a.updateTabs(tabs.Reset{})
 	a.selected = nil
 	a.expanded = map[*model.Folder]bool{}
-	a.expandAll(&a.col.Folder)
-	first := tree.FirstRequest(&a.col.Folder)
-	if first == nil {
-		first = a.col.AddRequest(model.Request{Name: "New Request", Protocol: "rest", Method: "GET"})
-	}
-	a.openRequest(first)
-	a.pickEnv()
-	a.colSave.Saved(a.collectionKeyNow())
-	a.saveSettings(func(s *settings.Settings) { s.Workspace = dir })
+	col := &loaded
+	a.expandAll(&col.Folder)
+	a.include(col, dir, env)
+	a.focusCollection(col)
+	a.markSaved(col)
+	a.rememberCollections()
 	a.status = "Opened " + dir
 }
 
 // promptWorkspace asks for the folder of a collection to open; an empty or
 // new folder starts a new collection there.
 func (a *App) promptWorkspace() {
-	a.prompt("Open collection folder", a.workspace, "Open", a.openWorkspaceAt)
+	entry, _ := a.focus()
+	a.prompt("Open collection folder", entry.Dir, "Open", a.openWorkspaceAt)
 }

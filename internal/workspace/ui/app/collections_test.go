@@ -49,8 +49,8 @@ func TestNewCollectionMakesAFolderBesideTheWorkspaceAndOpensIt(t *testing.T) {
 	a, base := collectionsApp(t)
 	a.createCollection("  Café API ")
 	want := filepath.Join(base, "collections", "café-api")
-	if a.workspace != want || a.col.Name != "Café API" {
-		t.Fatalf("workspace %q, name %q; want %q", a.workspace, a.col.Name, want)
+	if a.workspace() != want || a.col().Name != "Café API" {
+		t.Fatalf("workspace %q, name %q; want %q", a.workspace(), a.col().Name, want)
 	}
 	if len(a.list.Tabs) != 1 || a.cur().Req.Name != "New Request" {
 		t.Fatalf("an empty collection opens one blank request, got %d tabs", len(a.list.Tabs))
@@ -58,17 +58,17 @@ func TestNewCollectionMakesAFolderBesideTheWorkspaceAndOpensIt(t *testing.T) {
 	if _, err := store.Load(want); err != nil {
 		t.Fatal(err)
 	}
-	if a.settings.Workspace != want {
-		t.Fatalf("remembered workspace %q", a.settings.Workspace)
+	if got := a.settings.RememberedCollections(); len(got) != 1 || got[0].Folder != want {
+		t.Fatalf("remembered collections %+v", got)
 	}
 }
 
 func TestNewCollectionRefusesAnEmptyNameAndKeepsTheOpenOne(t *testing.T) {
 	a, _ := collectionsApp(t)
-	before := a.workspace
+	before := a.workspace()
 	a.createCollection("   ")
-	if a.workspace != before || a.col.Name != "Home" {
-		t.Fatalf("the open collection changed: %q %q", a.workspace, a.col.Name)
+	if a.workspace() != before || a.col().Name != "Home" {
+		t.Fatalf("the open collection changed: %q %q", a.workspace(), a.col().Name)
 	}
 	if !toastSays(a, "empty") {
 		t.Fatal("no toast says why")
@@ -77,10 +77,10 @@ func TestNewCollectionRefusesAnEmptyNameAndKeepsTheOpenOne(t *testing.T) {
 
 func TestRenameCollectionRenamesTheFolderAndKeepsTheContent(t *testing.T) {
 	a, base := collectionsApp(t)
-	a.renameCollection("Office")
+	a.renameCollection(a.col(), "Office")
 	want := filepath.Join(base, "office")
-	if a.workspace != want || a.col.Name != "Office" {
-		t.Fatalf("workspace %q, name %q", a.workspace, a.col.Name)
+	if a.workspace() != want || a.col().Name != "Office" {
+		t.Fatalf("workspace %q, name %q", a.workspace(), a.col().Name)
 	}
 	got, err := store.Load(want)
 	if err != nil || got.Name != "Office" || len(got.Requests) != 1 {
@@ -101,7 +101,7 @@ func TestSaveCollectionWritesTheEditsNow(t *testing.T) {
 	a.cur().Req.URL = "https://changed.test"
 	a.saveWorkspace()
 	a.waitWrites()
-	got, err := store.Load(a.workspace)
+	got, err := store.Load(a.workspace())
 	if err != nil || got.Requests[0].URL != "https://changed.test" {
 		t.Fatalf("loaded %+v, %v", got.Requests, err)
 	}
@@ -110,27 +110,27 @@ func TestSaveCollectionWritesTheEditsNow(t *testing.T) {
 func TestDeleteCollectionOpensTheNextOne(t *testing.T) {
 	a, base := collectionsApp(t)
 	a.createCollection("Second")
-	second := a.workspace
+	second := a.workspace()
 	a.openWorkspaceAt(filepath.Join(base, "workspace"))
-	if a.workspace != filepath.Join(base, "workspace") {
-		t.Fatalf("workspace %q", a.workspace)
+	if a.workspace() != filepath.Join(base, "workspace") {
+		t.Fatalf("workspace %q", a.workspace())
 	}
-	a.deleteCollection()
+	a.deleteCollection(a.col())
 	a.waitWrites()
 	if _, err := os.Stat(filepath.Join(base, "workspace")); !os.IsNotExist(err) {
 		t.Fatalf("the deleted folder is still there: %v", err)
 	}
-	if a.workspace != second || a.col.Name != "Second" {
-		t.Fatalf("opened %q (%q), want %q", a.workspace, a.col.Name, second)
+	if a.workspace() != second || a.col().Name != "Second" {
+		t.Fatalf("opened %q (%q), want %q", a.workspace(), a.col().Name, second)
 	}
 }
 
 func TestDeletingTheLastCollectionOpensANewEmptyOne(t *testing.T) {
 	a, base := collectionsApp(t)
-	a.deleteCollection()
+	a.deleteCollection(a.col())
 	a.waitWrites()
-	if a.workspace == "" || !strings.HasPrefix(a.workspace, filepath.Join(base, "collections")) || a.col.Name != "My collection" {
-		t.Fatalf("opened %q (%q)", a.workspace, a.col.Name)
+	if a.workspace() == "" || !strings.HasPrefix(a.workspace(), filepath.Join(base, "collections")) || a.col().Name != "My collection" {
+		t.Fatalf("opened %q (%q)", a.workspace(), a.col().Name)
 	}
 	if _, err := os.Stat(filepath.Join(base, "workspace")); !os.IsNotExist(err) {
 		t.Fatalf("the deleted folder is still there: %v", err)
@@ -139,7 +139,7 @@ func TestDeletingTheLastCollectionOpensANewEmptyOne(t *testing.T) {
 
 func TestDeleteAsksFirst(t *testing.T) {
 	a, base := collectionsApp(t)
-	a.confirmDeleteCollection()
+	a.confirmDeleteCollection(a.col())
 	if a.dialog == nil || !strings.Contains(a.dialog.Title, "Home") {
 		t.Fatalf("dialog %+v", a.dialog)
 	}
@@ -151,9 +151,9 @@ func TestDeleteAsksFirst(t *testing.T) {
 
 func TestRenameAndDeleteNeedACollectionOnDisk(t *testing.T) {
 	a, _ := collectionsApp(t)
-	a.workspace = ""
-	a.promptRenameCollection()
-	a.confirmDeleteCollection()
+	a.setWorkspace("")
+	a.promptRenameCollection(a.col())
+	a.confirmDeleteCollection(a.col())
 	if a.dialog != nil {
 		t.Fatal("a dialog opened for a collection that is not on disk")
 	}

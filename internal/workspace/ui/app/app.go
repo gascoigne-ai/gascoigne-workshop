@@ -3,9 +3,9 @@ package app
 import (
 	"context"
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
 	cport "github.com/gascoigne-ai/gascoigne-workshop/internal/collection/port"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/environment/controller/envs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model/assert"
 	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/ui/calltrace"
@@ -176,7 +176,8 @@ type App struct {
 	protocols   func(reqport.ProtocolConfig) reqport.Registry // builds the registry; nil has no protocols
 	grpcMethods reqport.GRPCMethods
 	curl        func(model.Request) string
-	col         model.Collection
+	open        collections.Set         // the open collections, in tree order, each with its folder and environment
+	sample      func() model.Collection // the collection shown when nothing is saved or configured
 	expanded    map[*model.Folder]bool
 	list        tabs.List             // the open tabs, the active one and the one being dragged
 	widgets     map[*tabs.Tab]*reqTab // the widget state of each open tab
@@ -232,23 +233,21 @@ type App struct {
 	sampler            core.Sampler
 	treeScroll         widget.ScrollState
 	tips               widget.TooltipState
-	sidebarSplit       widget.SplitState // width of the collections sidebar
-	paneSplit          widget.SplitState // request pane share of the request/response area
-	statePath          string            // where the UI state is remembered
-	varsFolder         *model.Folder     // the folder whose variables the Vars pane edits, nil for the environment's or the collection's
-	varsCollection     bool              // the Vars pane edits the collection's variables although an environment is active
-	title              string            // the window title last set
-	jar                http.CookieJar    // cookies the server set, kept until the app closes
-	env                envs.Selection    // the active environment of col
-	workspace          string            // the folder the collection is saved to; "" for none yet
-	defaultWorkspace   string            // where the first save goes when there is no workspace
-	ignoreRemembered   bool              // the remembered workspace is not opened at start
-	colSave            autosave.Debounce // when the collection was last written
-	writes             serial.Queue      // the background writes in flight and waiting, by file
-	keys               changeKeys        // the comparable forms of the collection and the state, recomputed only on frames where something could have changed
-	stateSave          autosave.Debounce // when the remembered state was last written
-	initial            state.Window      // window geometry of the last run
-	winX, winY         int               // window position, read each frame
+	sidebarSplit       widget.SplitState                        // width of the collections sidebar
+	paneSplit          widget.SplitState                        // request pane share of the request/response area
+	statePath          string                                   // where the UI state is remembered
+	varsFolder         *model.Folder                            // the folder whose variables the Vars pane edits, nil for the environment's or the collection's
+	varsCollection     *model.Collection                        // the collection whose own variables the Vars pane edits although an environment is active; nil for none
+	title              string                                   // the window title last set
+	jar                http.CookieJar                           // cookies the server set, kept until the app closes
+	defaultWorkspace   string                                   // beside it is the collections folder, where a first save goes
+	ignoreRemembered   bool                                     // the remembered collections are not opened at start
+	saves              map[*model.Collection]*autosave.Debounce // when each open collection was last written
+	writes             serial.Queue                             // the background writes in flight and waiting, by file
+	keys               changeKeys                               // the comparable forms of the collection and the state, recomputed only on frames where something could have changed
+	stateSave          autosave.Debounce                        // when the remembered state was last written
+	initial            state.Window                             // window geometry of the last run
+	winX, winY         int                                      // window position, read each frame
 }
 
 // Options are the startup switches of the command line.
@@ -328,7 +327,8 @@ func NewApp(opts Options) (*App, error) {
 	}
 	a := &App{
 		ctx:              ctx,
-		col:              startCollection(opts.Sample),
+		sample:           opts.Sample,
+		saves:            map[*model.Collection]*autosave.Debounce{},
 		clients:          opts.Clients,
 		system:           opts.System,
 		defaultWorkspace: opts.DefaultWorkspace,
@@ -341,7 +341,6 @@ func NewApp(opts Options) (*App, error) {
 
 		settings:     st,
 		settingFiles: settingFiles,
-		colSave:      autosave.New(saveDebounce, ""),
 		settingsPath: opts.SettingsPath,
 		statePath:    opts.StatePath,
 		menu:         opts.OpenMenu,

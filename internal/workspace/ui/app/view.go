@@ -164,7 +164,7 @@ func (a *App) treeRow(row collection.Row, selected bool) Node {
 func (a *App) pressTreeRow(row collection.Row) {
 	a.treeFocus = true
 	a.dragNode = row.Node()
-	if row.Dir == &a.col.Folder {
+	if a.isRoot(row.Dir) {
 		a.dragNode = nil // the collection itself cannot be moved
 	}
 	if row.Folder {
@@ -196,7 +196,7 @@ func (a *App) header() Node {
 	return headerTemplate.MustBuild(markup.Scope{
 		"headerH":     headerH,
 		"gutter":      w.Gutter,
-		"title":       a.col.Name,
+		"title":       a.headerTitle(),
 		"env":         a.envChip(),
 		"toggleMenu":  a.toggleSettings,
 		"settingsTip": a.hint("Settings", "settings"),

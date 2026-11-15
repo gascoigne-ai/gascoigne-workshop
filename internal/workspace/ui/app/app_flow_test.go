@@ -162,13 +162,13 @@ func TestClickingARequestInTheTreeOpensItsTab(t *testing.T) {
 
 func TestClickingAFolderTogglesIt(t *testing.T) {
 	a, _ := newTestApp(t)
-	before := len(collection.Rows(&a.col.Folder, a.expanded))
+	before := len(collection.Rows(&a.col().Folder, a.expanded))
 	click(a, 100, treeRowY(1)) // User folder, collapsed at start
-	if got := len(collection.Rows(&a.col.Folder, a.expanded)); got != before+1 {
+	if got := len(collection.Rows(&a.col().Folder, a.expanded)); got != before+1 {
 		t.Fatalf("rows %d -> %d, want one more (Get User)", before, got)
 	}
 	click(a, 100, treeRowY(1))
-	if got := len(collection.Rows(&a.col.Folder, a.expanded)); got != before {
+	if got := len(collection.Rows(&a.col().Folder, a.expanded)); got != before {
 		t.Fatalf("second click must collapse again, rows = %d", got)
 	}
 }
@@ -769,10 +769,10 @@ func TestTreeScrollsWhenItDoesNotFit(t *testing.T) {
 	a, _ := newTestApp(t)
 	a.h = 200                       // the tree area is about 128px: five rows
 	for _, i := range []int{0, 2} { // User and Realtime
-		a.expanded[a.col.Folders[i]] = true
+		a.expanded[a.col().Folders[i]] = true
 	}
 	a.step(core.Input{})
-	rowsN := len(collection.Rows(&a.col.Folder, a.expanded))
+	rowsN := len(collection.Rows(&a.col().Folder, a.expanded))
 	if rowsN*core.RowH <= a.h-headerH-statusH {
 		t.Fatalf("test setup: %d rows fit, nothing to scroll", rowsN)
 	}
@@ -784,7 +784,7 @@ func TestTreeScrollsWhenItDoesNotFit(t *testing.T) {
 
 	// scroll to the end, then click the last row: it must open that request
 	a.step(core.Input{X: 100, Y: 100, Wheel: -50})
-	last := collection.Rows(&a.col.Folder, a.expanded)[rowsN-1]
+	last := collection.Rows(&a.col().Folder, a.expanded)[rowsN-1]
 	click(a, 100, a.h-statusH-core.RowH/2)
 	if a.cur().Req != last.Req {
 		t.Fatalf("clicking the bottom row opened %q, want %q", a.cur().Req.Name, last.Name)
@@ -1445,7 +1445,7 @@ func TestSecretFieldsAreMaskedUntilShown(t *testing.T) {
 func TestVariablesInCredentialsAndHeadersAreExpandedAtSend(t *testing.T) {
 	srv, last := recordServer(t)
 	a := openAuthPane(t)
-	a.col.Vars = append(a.col.Vars, model.KV{Name: "tok", Value: "sekret", Enabled: true})
+	a.col().Vars = append(a.col().Vars, model.KV{Name: "tok", Value: "sekret", Enabled: true})
 	a.cur().Req.Headers = []model.KV{{Name: "X-Token", Value: "{{tok}}", Enabled: true}}
 	click(a, authBearerX, chipsY)
 	click(a, authFieldX, authRow1Y)
@@ -2046,7 +2046,7 @@ func pickMenu(t *testing.T, a *App, label string) {
 }
 
 func findReq(a *App, name string) *model.Request {
-	for _, r := range collection.Rows(&a.col.Folder, allOpen(a)) {
+	for _, r := range collection.Rows(&a.col().Folder, allOpen(a)) {
 		if r.Req != nil && r.Req.Name == name {
 			return r.Req
 		}
@@ -2063,7 +2063,7 @@ func allOpen(a *App) map[*model.Folder]bool {
 			walk(s)
 		}
 	}
-	walk(&a.col.Folder)
+	walk(&a.col().Folder)
 	return open
 }
 
@@ -2121,10 +2121,10 @@ func TestRenameToATakenNameIsRefusedWithAToast(t *testing.T) {
 
 func TestDuplicateAddsACopyRightAfter(t *testing.T) {
 	a, _ := newTestApp(t)
-	before := len(collection.Rows(&a.col.Folder, a.expanded))
+	before := len(collection.Rows(&a.col().Folder, a.expanded))
 	rightClick(a, 100, treeRowY(rowInfo))
 	pickMenu(t, a, "Duplicate")
-	rows := collection.Rows(&a.col.Folder, a.expanded)
+	rows := collection.Rows(&a.col().Folder, a.expanded)
 	if len(rows) != before+1 || rows[rowInfo+1].Name != "Repository Info copy" {
 		t.Fatalf("rows = %d, next row %q", len(rows), rows[rowInfo+1].Name)
 	}
@@ -2162,8 +2162,8 @@ func TestDeletingAFolderClosesTheTabsOfEverythingInIt(t *testing.T) {
 	rightClick(a, 100, treeRowY(rowRepo))
 	pickMenu(t, a, "Delete")
 	a.step(core.Input{Enter: true})
-	if len(a.col.Folders) != 2 {
-		t.Fatalf("folders = %d", len(a.col.Folders))
+	if len(a.col().Folders) != 2 {
+		t.Fatalf("folders = %d", len(a.col().Folders))
 	}
 	if len(a.list.Tabs) != 1 || a.cur().Req.Name != "New Request" {
 		t.Fatalf("the open request was inside: %d tabs, current %q", len(a.list.Tabs), a.cur().Req.Name)
@@ -2183,7 +2183,7 @@ func TestCopyURLPutsTheExpandedURLOnTheClipboard(t *testing.T) {
 
 func TestNewRequestAndNewFolderFromTheFolderMenu(t *testing.T) {
 	a, _ := newTestApp(t)
-	repo := a.col.Folders[1]
+	repo := a.col().Folders[1]
 	rightClick(a, 100, treeRowY(rowRepo))
 	pickMenu(t, a, "New request")
 	if len(repo.Requests) != 4 || repo.Requests[3].Name != "New Request" || a.cur().Req != repo.Requests[3] {
@@ -2198,7 +2198,7 @@ func TestNewRequestAndNewFolderFromTheFolderMenu(t *testing.T) {
 
 func TestPlusCreatesTheRequestInTheSelectedFolder(t *testing.T) {
 	a, _ := newTestApp(t)
-	user := a.col.Folders[0]
+	user := a.col().Folders[0]
 	click(a, 100, treeRowY(rowUser)) // selects (and expands) the User folder
 	a.step(key(ebiten.KeyT, true, false))
 	if len(user.Requests) != 2 || a.cur().Req != user.Requests[1] {
@@ -2209,11 +2209,11 @@ func TestPlusCreatesTheRequestInTheSelectedFolder(t *testing.T) {
 func TestDraggingARequestOntoAFolderMovesIt(t *testing.T) {
 	a, _ := newTestApp(t)
 	tags := findReq(a, "Repository Tags")
-	user := a.col.Folders[0]
+	user := a.col().Folders[0]
 	a.step(core.Input{X: 100, Y: treeRowY(rowTags), Click: true, Held: true})
 	a.step(core.Input{X: 100, Y: treeRowY(rowUser), Held: true})
 	a.step(core.Input{X: 100, Y: treeRowY(rowUser)}) // release over the User folder
-	if got, ok := a.col.Folder.Parent(tags); !ok || got != user {
+	if got, ok := a.col().Folder.Parent(tags); !ok || got != user {
 		t.Fatalf("Tags is in %v", got)
 	}
 	if a.cur().Req != tags {
@@ -2223,7 +2223,7 @@ func TestDraggingARequestOntoAFolderMovesIt(t *testing.T) {
 
 func TestDraggingARequestOntoARequestInsertsBeforeIt(t *testing.T) {
 	a, _ := newTestApp(t)
-	repo := a.col.Folders[1]
+	repo := a.col().Folders[1]
 	a.step(core.Input{X: 100, Y: treeRowY(rowTags), Click: true, Held: true})
 	a.step(core.Input{X: 100, Y: treeRowY(rowSearch), Held: true})
 	a.step(core.Input{X: 100, Y: treeRowY(rowSearch)})
@@ -2234,13 +2234,13 @@ func TestDraggingARequestOntoARequestInsertsBeforeIt(t *testing.T) {
 
 func TestADropThatIsNotAllowedChangesNothingAndSaysWhy(t *testing.T) {
 	a, _ := newTestApp(t)
-	a.expanded[a.col.Folders[1]] = true
+	a.expanded[a.col().Folders[1]] = true
 	// drag the Repository folder onto its own request: that is moving it into itself's parent, fine;
 	// drag it onto a request inside itself is the refused case
 	a.step(core.Input{X: 100, Y: treeRowY(rowRepo), Click: true, Held: true})
 	a.step(core.Input{X: 100, Y: treeRowY(rowInfo), Held: true})
 	a.step(core.Input{X: 100, Y: treeRowY(rowInfo)})
-	if len(a.col.Folders) != 3 || len(a.col.Folders[1].Requests) != 3 {
+	if len(a.col().Folders) != 3 || len(a.col().Folders[1].Requests) != 3 {
 		t.Fatal("a refused move changes nothing")
 	}
 	if len(a.toasts) != 1 || !a.toasts[0].IsErr {
@@ -2252,7 +2252,7 @@ func TestReleasingOnTheSameRowIsJustAClick(t *testing.T) {
 	a, _ := newTestApp(t)
 	a.step(core.Input{X: 100, Y: treeRowY(rowInfo), Click: true, Held: true})
 	a.step(core.Input{X: 100, Y: treeRowY(rowInfo)})
-	if got := requestNames(a.col.Folders[1]); !reflect.DeepEqual(got, []string{"Search Repos", "Repository Info", "Repository Tags"}) {
+	if got := requestNames(a.col().Folders[1]); !reflect.DeepEqual(got, []string{"Search Repos", "Repository Info", "Repository Tags"}) {
 		t.Fatalf("Repository = %v", got)
 	}
 }
@@ -2261,7 +2261,7 @@ func TestFilterShowsMatchesByNameAndURL(t *testing.T) {
 	a, _ := newTestApp(t)
 	click(a, 180, headerH/2) // the filter field in the sidebar header
 	a.typeText("tags")
-	rows := collection.Rows(&a.col.Folder, a.expanded)
+	rows := collection.Rows(&a.col().Folder, a.expanded)
 	_ = rows
 	got := a.visibleRows()
 	var names []string
@@ -2289,7 +2289,7 @@ func TestFilterShowsMatchesByNameAndURL(t *testing.T) {
 	}
 	a.filter.SelectAll()
 	a.step(core.Input{Edits: []core.Edit{core.EditBackspace}})
-	if got := a.visibleRows(); len(got) != len(collection.Rows(&a.col.Folder, a.expanded)) {
+	if got := a.visibleRows(); len(got) != len(collection.Rows(&a.col().Folder, a.expanded)) {
 		t.Fatal("an empty filter shows the tree as usual")
 	}
 }
@@ -2638,7 +2638,7 @@ func TestDuplicateTabAddsACopyToTheTreeAndOpensIt(t *testing.T) {
 	left, _ := a.tabX(0)
 	rightClick(a, left+20, tabStripY)
 	pickMenu(t, a, "Duplicate")
-	if got := requestNames(a.col.Folders[1]); !reflect.DeepEqual(got, []string{"Search Repos", "Search Repos copy", "Repository Info", "Repository Tags"}) {
+	if got := requestNames(a.col().Folders[1]); !reflect.DeepEqual(got, []string{"Search Repos", "Search Repos copy", "Repository Info", "Repository Tags"}) {
 		t.Fatalf("Repository = %v", got)
 	}
 	if a.cur().Req.Name != "Search Repos copy" || len(a.list.Tabs) != 2 {

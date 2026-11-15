@@ -36,7 +36,7 @@ func TestTheCursorIsAGrabWhileSomethingIsBeingDragged(t *testing.T) {
 // target is set during the frame by that row, so it is checked directly.
 func TestATreeRowIsGrabbedOnlyOnceItIsOverAnotherRow(t *testing.T) {
 	a, _ := newTestApp(t)
-	first, second := a.col.Folders[0], a.col.Folders[1]
+	first, second := a.col().Folders[0], a.col().Folders[1]
 	tests := []struct {
 		name         string
 		drag, target any

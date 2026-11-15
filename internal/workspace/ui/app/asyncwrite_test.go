@@ -39,7 +39,8 @@ func (s *gateStore) count() int {
 func TestTheAutosaveOfTheCollectionDoesNotBlockTheFrame(t *testing.T) {
 	a, _ := newTestApp(t)
 	gate := &gateStore{release: make(chan struct{})}
-	a.store, a.workspace = gate, t.TempDir()
+	a.store = gate
+	a.setWorkspace(t.TempDir())
 	now := time.Now()
 	a.now = func() time.Time { return now }
 	a.step(core.Input{})

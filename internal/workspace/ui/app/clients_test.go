@@ -28,8 +28,8 @@ func TestStartWithoutAWorkspaceOpensTheClientConfig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if app.col.Name != clientconfig.RootName || selectedName(app) != "Echo" {
-		t.Fatalf("collection %q, selected %q; want the config's tree opened on its first request", app.col.Name, selectedName(app))
+	if app.col().Name != clientconfig.RootName || selectedName(app) != "Echo" {
+		t.Fatalf("collection %q, selected %q; want the config's tree opened on its first request", app.col().Name, selectedName(app))
 	}
 }
 
@@ -38,8 +38,8 @@ func TestStartWithAnEmptyClientConfigKeepsTheSample(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if app.col.Name != collection.GitHubSample().Name || selectedName(app) != "Search Repos" {
-		t.Fatalf("collection %q, selected %q; want the sample on its search call", app.col.Name, selectedName(app))
+	if app.col().Name != collection.GitHubSample().Name || selectedName(app) != "Search Repos" {
+		t.Fatalf("collection %q, selected %q; want the sample on its search call", app.col().Name, selectedName(app))
 	}
 }
 
@@ -51,8 +51,8 @@ func TestStartWithABrokenClientConfigSaysSoAndKeepsTheSample(t *testing.T) {
 	if !strings.Contains(app.status, "Client config not loaded") || !strings.Contains(app.status, ".workshop.yaml") {
 		t.Fatalf("status = %q, want the problem and the file", app.status)
 	}
-	if app.col.Name != collection.GitHubSample().Name {
-		t.Fatalf("collection %q, want the sample kept", app.col.Name)
+	if app.col().Name != collection.GitHubSample().Name {
+		t.Fatalf("collection %q, want the sample kept", app.col().Name)
 	}
 }
 
@@ -72,8 +72,8 @@ func TestStartWithoutASampleOptionUsesTheGitHubSample(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if app.col.Name != collection.GitHubSample().Name || len(app.col.Folders) != 3 {
-		t.Fatalf("collection %q with %d folders, want the GitHub sample", app.col.Name, len(app.col.Folders))
+	if app.col().Name != collection.GitHubSample().Name || len(app.col().Folders) != 3 {
+		t.Fatalf("collection %q with %d folders, want the GitHub sample", app.col().Name, len(app.col().Folders))
 	}
 }
 

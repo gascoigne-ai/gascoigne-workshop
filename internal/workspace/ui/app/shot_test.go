@@ -276,7 +276,7 @@ func TestScreenshotOpensEveryRequestInATab(t *testing.T) {
 		}
 	}
 	var want []string
-	walkRequests(&a.col.Folder, "", func(_ string, request *model.Request) { want = append(want, request.Name) })
+	walkRequests(&a.col().Folder, "", func(_ string, request *model.Request) { want = append(want, request.Name) })
 	var got []string
 	for _, tab := range a.openTabs() {
 		got = append(got, tab.Req.Name)

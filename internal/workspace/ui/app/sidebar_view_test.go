@@ -38,7 +38,7 @@ func TestTheSidebarLaysOutAsPinned(t *testing.T) {
 		}},
 		{"drop", func(a *App) {
 			a.dragNode = findReq(a, "Repository Info")
-			a.dropTarget = a.col.Folders[1]
+			a.dropTarget = a.col().Folders[1]
 		}},
 		{"drop-self", func(a *App) {
 			info := findReq(a, "Repository Info")
@@ -142,7 +142,7 @@ func TestDraggingOverATreeRowMakesItTheDropTarget(t *testing.T) {
 		target func(a *App) any
 	}{
 		{"request", rowSearch, func(a *App) any { return findReq(a, "Search Repos") }},
-		{"folder", rowUser, func(a *App) any { return a.col.Folders[0] }},
+		{"folder", rowUser, func(a *App) any { return a.col().Folders[0] }},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

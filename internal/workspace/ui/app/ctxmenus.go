@@ -46,11 +46,18 @@ func (a *App) closeRightOf(i int) { a.updateTabs(tabs.CloseRightOf{Index: i}) }
 // tree (or into the root when it is not in the tree) and opens the copy.
 func (a *App) duplicateTab(i int) {
 	req := a.list.Tabs[i].Req
-	cp, _ := a.col.Folder.Duplicate(req).(*model.Request)
+	owner, ok := a.entryFor(req)
+	if !ok { // nothing is open: the copy is a tab of its own
+		clone := req.Clone()
+		clone.Name += " copy"
+		a.openRequest(&clone)
+		return
+	}
+	cp, _ := owner.Collection.Folder.Duplicate(req).(*model.Request)
 	if cp == nil {
 		clone := req.Clone()
 		clone.Name += " copy"
-		cp = a.col.Folder.AddRequest(clone)
+		cp = owner.Collection.Folder.AddRequest(clone)
 	}
 	a.openRequest(cp)
 }
@@ -144,10 +151,12 @@ func (a *App) SetStatus(text string) { a.status = text }
 // whether there is one.
 func (a *App) OpenRequest(path string) bool {
 	var found *model.Request
-	walkRequests(&a.col.Folder, "", func(candidate string, req *model.Request) {
-		if candidate == path {
-			found = req
-		}
+	a.eachRoot(func(root *model.Folder) {
+		walkRequests(root, "", func(candidate string, req *model.Request) {
+			if candidate == path && found == nil {
+				found = req
+			}
+		})
 	})
 	if found == nil {
 		return false

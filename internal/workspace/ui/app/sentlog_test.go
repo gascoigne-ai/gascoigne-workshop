@@ -14,7 +14,7 @@ func TestSendingARequestListsItInTheSentLogNewestFirst(t *testing.T) {
 	a := stateApp(t, filepath.Join(t.TempDir(), "state.json"))
 	server := jsonServer(t)
 	var requests []*model.Request
-	walkRequests(&a.col.Folder, "", func(_ string, req *model.Request) { requests = append(requests, req) })
+	walkRequests(&a.col().Folder, "", func(_ string, req *model.Request) { requests = append(requests, req) })
 	first, second := requests[0], requests[1]
 	for _, target := range []*model.Request{first, second} {
 		a.openRequest(target)
@@ -71,7 +71,7 @@ func TestPickingASentRowOpensItsRequest(t *testing.T) {
 	waitForResponse(t, a, tab)
 	row := a.sent.Rows(a.filter.Text)[0]
 
-	a.openRequest(a.col.Folders[0].Requests[0]) // move away
+	a.openRequest(a.col().Folders[0].Requests[0]) // move away
 	a.sent.Open(a, row)
 	if a.cur().Req != tab.Req {
 		t.Fatalf("opened %q, want %q", a.cur().Req.Name, tab.Req.Name)

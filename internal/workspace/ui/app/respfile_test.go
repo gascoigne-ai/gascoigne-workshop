@@ -199,19 +199,19 @@ func TestCapturedValuesBecomeVariablesInTheActiveScope(t *testing.T) {
 		tab.Sending, tab.Seq = true, tab.Seq+1
 		a.apply(sendResult{tab: tab, seq: tab.Seq, resp: model.Response{Status: 200, Body: []byte(body)}})
 	}
-	a.col.Vars = nil
+	a.col().Vars = nil
 	send(`{"access_token":"t1"}`)
 	if got := model.Expand("{{token}}", a.varsFor(tab.Req)); got != "t1" {
 		t.Fatalf("collection variable: %q", got)
 	}
 	send(`{"access_token":"t2"}`)
-	if len(a.col.Vars) != 1 || a.col.Vars[0].Value != "t2" {
-		t.Fatalf("an existing row is updated, not duplicated: %+v", a.col.Vars)
+	if len(a.col().Vars) != 1 || a.col().Vars[0].Value != "t2" {
+		t.Fatalf("an existing row is updated, not duplicated: %+v", a.col().Vars)
 	}
 	a.addEnv("Dev")
 	send(`{"access_token":"t3"}`)
-	if a.col.Vars[0].Value != "t2" || len(a.col.Envs[0].Vars) != 1 || a.col.Envs[0].Vars[0].Value != "t3" {
-		t.Fatalf("with an environment active the value goes there: %+v %+v", a.col.Vars, a.col.Envs[0].Vars)
+	if a.col().Vars[0].Value != "t2" || len(a.col().Envs[0].Vars) != 1 || a.col().Envs[0].Vars[0].Value != "t3" {
+		t.Fatalf("with an environment active the value goes there: %+v %+v", a.col().Vars, a.col().Envs[0].Vars)
 	}
 }
 
@@ -251,9 +251,9 @@ func TestGraphQLBodyTypeSendsAQueryAndCanLoadTheSchema(t *testing.T) {
 
 func TestADragRestingOverAClosedFolderOpensIt(t *testing.T) {
 	a, _ := newTestApp(t)
-	closed := a.col.Folders[0]
+	closed := a.col().Folders[0]
 	a.expanded[closed] = false
-	req := a.col.Folders[1].Requests[0]
+	req := a.col().Folders[1].Requests[0]
 	a.dragNode, a.dropTarget = req, closed
 	for i := 0; i < dragExpandTicks-1; i++ {
 		a.dragHover()
@@ -265,7 +265,7 @@ func TestADragRestingOverAClosedFolderOpensIt(t *testing.T) {
 	if !a.expanded[closed] {
 		t.Fatal("the folder did not open")
 	}
-	other := a.col.Folders[2]
+	other := a.col().Folders[2]
 	a.expanded[other] = false
 	a.dropTarget = other
 	a.dragHover()

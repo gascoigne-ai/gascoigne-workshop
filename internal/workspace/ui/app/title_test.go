@@ -10,7 +10,7 @@ import (
 
 func TestTitleShowsTheCollectionAndAnUnsavedMark(t *testing.T) {
 	a, _ := newTestApp(t)
-	if got := a.Title(); got != a.col.Name+" - "+appName {
+	if got := a.Title(); got != a.col().Name+" - "+appName {
 		t.Fatalf("title %q", got)
 	}
 	a.cur().Req.URL = "https://changed.test"

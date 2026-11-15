@@ -30,7 +30,7 @@ func TestHeaderTemplateMatchesTheGoView(t *testing.T) {
 	a, _ := newTestApp(t)
 	toggle := OnClick(func() { a.menu = !a.menu })
 	goView := Row(H(headerH), PadX(w.Gutter), Bg(w.Hero), Control("hero"),
-		Text(a.col.Name, Bold(), Ellipsis(), Shrink(), MinW(48), Color(w.HeroText)),
+		Text(a.col().Name, Bold(), Ellipsis(), Shrink(), MinW(48), Color(w.HeroText)),
 		Spacer(),
 		a.envChip(),
 		Spacer(W(w.Gutter)),

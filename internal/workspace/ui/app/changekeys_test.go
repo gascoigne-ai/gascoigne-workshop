@@ -13,7 +13,7 @@ import (
 // size, every frame, for ever.
 func TestIdleFramesDoNotRebuildTheChangeKeys(t *testing.T) {
 	a, _ := newTestApp(t)
-	a.workspace = t.TempDir()
+	a.setWorkspace(t.TempDir())
 	var calls int
 	a.keys.collectionOf = func(col model.Collection) string { calls++; return tree.Key(col) }
 	for range 30 {

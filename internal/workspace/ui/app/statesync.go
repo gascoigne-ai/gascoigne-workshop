@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/json"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/serial"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
 	"path/filepath"
@@ -40,15 +41,39 @@ func walkRequests(f *model.Folder, prefix string, fn func(path string, r *model.
 	}
 }
 
-// requestPath is the remembered path of req, "" when it is not in the tree.
+// requestPath is the remembered path of req in its collection, "" when it
+// is in no open collection.
 func (a *App) requestPath(req *model.Request) string {
+	owner, ok := a.open.Owner(req)
+	if !ok {
+		return ""
+	}
 	found := ""
-	walkRequests(&a.col.Folder, "", func(p string, r *model.Request) {
+	walkRequests(&owner.Collection.Folder, "", func(p string, r *model.Request) {
 		if r == req && found == "" {
 			found = p
 		}
 	})
 	return found
+}
+
+// openDirs are the folders of the open collections in tree order, "" for
+// one not saved, as state.CollectionAt takes them.
+func (a *App) openDirs() []string {
+	dirs := make([]string, len(a.open.Entries))
+	for i, entry := range a.open.Entries {
+		dirs[i] = entry.Dir
+	}
+	return dirs
+}
+
+// remembered is the open collection a state reference names, nil for none.
+func (a *App) remembered(ref string) *model.Collection {
+	at := state.CollectionAt(ref, a.openDirs())
+	if at < 0 {
+		return nil
+	}
+	return a.open.Entries[at].Collection
 }
 
 // snapshot is the state to remember.
@@ -61,15 +86,14 @@ func (a *App) snapshot() state.State {
 		SettingsW: a.prefs.Size.W,
 		SettingsH: a.prefs.Size.H,
 	}
-	walkFolders(&a.col.Folder, "", func(p string, f *model.Folder) {
-		if a.expanded[f] {
-			s.Expanded = append(s.Expanded, p)
-		}
-	})
+	for _, entry := range a.open.Entries {
+		a.snapshotExpanded(&s, entry)
+	}
 	var kept []int // tab index -> remembered index, -1 when not in the tree
 	for _, t := range a.openTabs() {
 		if p := a.requestPath(t.Req); p != "" {
-			s.Tabs = append(s.Tabs, state.Tab{Path: p, Pane: t.paneTab, Resp: t.respTab})
+			owner, _ := a.open.Owner(t.Req)
+			s.Tabs = append(s.Tabs, state.Tab{Collection: owner.Dir, Path: p, Pane: t.paneTab, Resp: t.respTab})
 			kept = append(kept, len(s.Tabs)-1)
 		} else {
 			kept = append(kept, -1)
@@ -89,6 +113,42 @@ func (a *App) snapshot() state.State {
 	return s
 }
 
+// snapshotExpanded records the open folders of entry's collection: under
+// its folder, or, for the collection that is not saved, in Expanded.
+func (a *App) snapshotExpanded(s *state.State, entry collections.Entry) {
+	var paths []string
+	walkFolders(&entry.Collection.Folder, "", func(p string, f *model.Folder) {
+		if a.expanded[f] {
+			paths = append(paths, p)
+		}
+	})
+	if len(paths) == 0 {
+		return
+	}
+	if entry.Dir == "" {
+		s.Expanded = append(s.Expanded, paths...)
+		return
+	}
+	if s.ExpandedIn == nil {
+		s.ExpandedIn = map[string][]string{}
+	}
+	s.ExpandedIn[entry.Dir] = paths
+}
+
+// expandPaths opens the folders of col at the remembered paths.
+func (a *App) expandPaths(col *model.Collection, paths []string) {
+	if col == nil {
+		return
+	}
+	for _, p := range paths {
+		walkFolders(&col.Folder, "", func(path string, f *model.Folder) {
+			if path == p {
+				a.expanded[f] = true
+			}
+		})
+	}
+}
+
 // restore applies a remembered state to a freshly built app. Anything
 // that no longer exists is skipped, and values are kept in range.
 func (a *App) restore(s state.State) {
@@ -97,30 +157,30 @@ func (a *App) restore(s state.State) {
 	if s.PaneSplit > 0 && s.PaneSplit < 1 {
 		a.paneSplit.Size = s.PaneSplit
 	}
-	for _, p := range s.Expanded {
-		walkFolders(&a.col.Folder, "", func(path string, f *model.Folder) {
-			if path == p {
-				a.expanded[f] = true
-			}
-		})
+	a.expandPaths(a.remembered(""), s.Expanded)
+	for dir, paths := range s.ExpandedIn {
+		if dir != "" {
+			a.expandPaths(a.remembered(dir), paths)
+		}
 	}
-	byPath := map[string]*model.Request{}
-	walkRequests(&a.col.Folder, "", func(p string, r *model.Request) { byPath[p] = r })
 	var saved []state.Tab
+	var requests []*model.Request
 	active := 0
 	for i, rt := range s.Tabs {
-		if byPath[rt.Path] == nil {
+		req := a.requestAt(a.remembered(rt.Collection), rt.Path)
+		if req == nil {
 			continue
 		}
 		if i == s.Active {
 			active = len(saved)
 		}
 		saved = append(saved, rt)
+		requests = append(requests, req)
 	}
 	if len(saved) > 0 {
 		a.updateTabs(tabs.Reset{})
-		for _, rt := range saved {
-			a.updateTabs(tabs.Open{Req: byPath[rt.Path]})
+		for i, rt := range saved {
+			a.updateTabs(tabs.Open{Req: requests[i]})
 			t := a.cur()
 			if rt.Pane >= 0 && rt.Pane < len(requestPanesFor(t)) {
 				t.paneTab = rt.Pane
@@ -141,6 +201,20 @@ func (a *App) restore(s state.State) {
 		}
 		a.colWidths[name] = &widget.ColumnWidths{Weights: append([]float64(nil), ws...)}
 	}
+}
+
+// requestAt is the request of col at path, nil when there is none.
+func (a *App) requestAt(col *model.Collection, path string) *model.Request {
+	if col == nil {
+		return nil
+	}
+	var found *model.Request
+	walkRequests(&col.Folder, "", func(p string, r *model.Request) {
+		if p == path && found == nil {
+			found = r
+		}
+	})
+	return found
 }
 
 // RestoredWindow is the window geometry of the last run, clamped to a

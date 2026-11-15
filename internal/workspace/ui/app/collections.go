@@ -4,13 +4,13 @@ import (
 	"path/filepath"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/collections"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // Whole collections: new, open, rename, save and delete. A collection is a
-// folder on disk and one is open at a time (a.workspace); the rules are in
-// collection/controller/collections, the I/O behind the store port.
+// folder on disk; the open ones are a.open (see openset.go). The rules are
+// in collection/controller/collections, the I/O behind the store port.
 
 // collectionsDir is the folder new collections are made in: beside the
 // default workspace, never inside it, since a folder with a folder.json
@@ -23,17 +23,20 @@ func (a *App) collectionsDir() string {
 	return filepath.Join(filepath.Dir(a.defaultWorkspace), "collections")
 }
 
-// collectionMenu is the menu of the Collections chip and of the
-// collection's own row in the tree.
-func (a *App) collectionMenu() []MenuItem {
+// collectionMenu is the menu of the Collections chip, which acts on the
+// focused collection.
+func (a *App) collectionMenu() []MenuItem { return a.collectionMenuOf(a.focusCol()) }
+
+// collectionMenuOf is the collection menu acting on col.
+func (a *App) collectionMenuOf(col *model.Collection) []MenuItem {
 	return []MenuItem{
 		{Label: "New collection...", Run: a.promptNewCollection},
 		{Label: "Open collection folder...", Run: a.promptWorkspace},
 		menuSeparator,
-		{Label: "Rename collection...", Run: a.promptRenameCollection},
-		{Label: "Save collection", Run: a.saveWorkspace},
+		{Label: "Rename collection...", Run: func() { a.promptRenameCollection(col) }},
+		{Label: "Save collection", Run: func() { a.saveCollection(col) }},
 		menuSeparator,
-		{Label: "Delete collection...", Run: a.confirmDeleteCollection},
+		{Label: "Delete collection...", Run: func() { a.confirmDeleteCollection(col) }},
 	}
 }
 
@@ -65,15 +68,15 @@ func (a *App) createCollection(text string) {
 	a.openWorkspaceAt(dir)
 }
 
-// promptRenameCollection asks for the new name of the open collection.
-func (a *App) promptRenameCollection() {
-	if !a.onDisk("rename") {
+// promptRenameCollection asks for the new name of col.
+func (a *App) promptRenameCollection(col *model.Collection) {
+	if !a.onDisk(col, "rename") {
 		return
 	}
-	a.prompt("Rename collection", a.col.Name, "Rename", a.renameCollection)
+	a.prompt("Rename collection", col.Name, "Rename", func(text string) { a.renameCollection(col, text) })
 }
 
-func (a *App) renameCollection(text string) {
+func (a *App) renameCollection(col *model.Collection, text string) {
 	name, err := collections.CleanName(text)
 	if err != nil {
 		a.toast("Cannot rename: "+err.Error(), true)
@@ -83,38 +86,53 @@ func (a *App) renameCollection(text string) {
 		a.toast("Saving the collection failed: "+err.Error(), true)
 		return
 	}
-	dir, err := a.store.Rename(a.workspace, name)
+	entry, ok := a.open.Owner(col)
+	if !ok {
+		return
+	}
+	dir, err := a.store.Rename(entry.Dir, name)
 	if err != nil {
 		a.toast("Cannot rename: "+err.Error(), true)
 		return
 	}
-	a.col.Name = name
-	a.workspace = dir
-	a.saveSettings(func(s *settings.Settings) { s.Workspace = dir })
-	a.colSave.Saved(a.collectionKeyNow())
+	col.Name = name
+	a.open = collections.Update(a.open, collections.Located{Collection: col, Dir: dir})
+	a.rememberCollections()
+	a.markSaved(col)
 	a.status = "Renamed to " + name
 }
 
-// confirmDeleteCollection asks, then deletes the open collection.
-func (a *App) confirmDeleteCollection() {
-	if !a.onDisk("delete") {
+// confirmDeleteCollection asks, then deletes col.
+func (a *App) confirmDeleteCollection(col *model.Collection) {
+	if !a.onDisk(col, "delete") {
 		return
 	}
-	title, body := collections.DeletePrompt(a.col.Name)
-	a.confirm(title, body, "Delete", a.deleteCollection)
+	title, body := collections.DeletePrompt(col.Name)
+	a.confirm(title, body, "Delete", func() { a.deleteCollection(col) })
 }
 
-// deleteCollection removes the open collection from the disk and opens the
-// next one of the collections folder, or a new empty one when none is left.
-func (a *App) deleteCollection() {
+// deleteCollection removes col from the disk and from the window. When it
+// was the only one open, the next collection of the collections folder
+// opens, or a new empty one when none is left.
+func (a *App) deleteCollection(col *model.Collection) {
 	a.commitEdit()
 	a.waitWrites() // a write still in flight would make the folder again
-	dir := a.workspace
+	entry, ok := a.open.Owner(col)
+	if !ok {
+		return
+	}
+	dir := entry.Dir
 	if err := a.store.Delete(dir); err != nil {
 		a.toast("Cannot delete the collection: "+err.Error(), true)
 		return
 	}
-	a.workspace = "" // nothing is left to flush into the deleted folder
+	// nothing is left to flush into the deleted folder
+	a.open = collections.Update(a.open, collections.Located{Collection: col, Dir: ""})
+	if len(a.open.Entries) > 1 {
+		a.closeCollection(col)
+		a.toast("Deleted "+filepath.Base(dir), false)
+		return
+	}
 	listed, _ := a.store.List(a.collectionsDir())
 	next := collections.NextAfterDelete(listed, dir)
 	if next == "" {
@@ -128,10 +146,10 @@ func (a *App) deleteCollection() {
 	a.toast("Deleted "+filepath.Base(dir), false)
 }
 
-// onDisk is true when the open collection has a folder; otherwise it tells
-// the user to save first, since there is nothing to rename or delete.
-func (a *App) onDisk(verb string) bool {
-	if a.workspace != "" {
+// onDisk is true when col has a folder; otherwise it tells the user to
+// save first, since there is nothing to rename or delete.
+func (a *App) onDisk(col *model.Collection, verb string) bool {
+	if entry, ok := a.open.Owner(col); ok && entry.Dir != "" {
 		return true
 	}
 	a.toast("The collection is not saved yet: save it first to "+verb+" it", true)

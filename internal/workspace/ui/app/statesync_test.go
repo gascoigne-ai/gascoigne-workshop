@@ -25,7 +25,7 @@ func stateApp(t *testing.T, path string) *App {
 
 func TestStateSnapshotCapturesTabsFoldersAndSizes(t *testing.T) {
 	a := stateApp(t, "")
-	a.openRequest(a.col.Folders[0].Requests[0]) // User/<first>
+	a.openRequest(a.col().Folders[0].Requests[0]) // User/<first>
 	a.cur().paneTab, a.cur().respTab = 2, 1
 	a.sidebarSplit.Size = 310
 	a.paneSplit.Size = 0.4
@@ -34,7 +34,7 @@ func TestStateSnapshotCapturesTabsFoldersAndSizes(t *testing.T) {
 	if len(s.Tabs) != 2 || s.Active != 1 {
 		t.Fatalf("tabs %+v active %d", s.Tabs, s.Active)
 	}
-	if got := s.Tabs[1]; got.Path != "User/"+a.col.Folders[0].Requests[0].Name || got.Pane != 2 || got.Resp != 1 {
+	if got := s.Tabs[1]; got.Path != "User/"+a.col().Folders[0].Requests[0].Name || got.Pane != 2 || got.Resp != 1 {
 		t.Fatalf("tab %+v", got)
 	}
 	if s.SidebarW != 310 || s.PaneSplit != 0.4 || len(s.Columns["Params"]) != 3 {
@@ -55,10 +55,10 @@ func TestStateSnapshotCapturesTabsFoldersAndSizes(t *testing.T) {
 func TestStateRestoreRoundTripsThroughTheFile(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "state.json")
 	a := stateApp(t, path)
-	a.openRequest(a.col.Folders[0].Requests[0])
+	a.openRequest(a.col().Folders[0].Requests[0])
 	a.cur().paneTab = 3
 	a.sidebarSplit.Size = 300
-	a.expanded[a.col.Folders[2]] = true
+	a.expanded[a.col().Folders[2]] = true
 	if err := a.SaveState(); err != nil {
 		t.Fatal(err)
 	}
@@ -66,10 +66,10 @@ func TestStateRestoreRoundTripsThroughTheFile(t *testing.T) {
 	if len(b.list.Tabs) != 2 || b.list.Active != 1 || b.cur().paneTab != 3 {
 		t.Fatalf("tabs %d active %d pane %d", len(b.list.Tabs), b.list.Active, b.cur().paneTab)
 	}
-	if b.cur().Req != b.col.Folders[0].Requests[0] || b.selected != b.cur().Req {
+	if b.cur().Req != b.col().Folders[0].Requests[0] || b.selected != b.cur().Req {
 		t.Fatal("the restored tab must be the request in the new tree")
 	}
-	if b.sidebarSplit.Size != 300 || !b.expanded[b.col.Folders[2]] {
+	if b.sidebarSplit.Size != 300 || !b.expanded[b.col().Folders[2]] {
 		t.Fatal("split and expanded folders restored")
 	}
 }

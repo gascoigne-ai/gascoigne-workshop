@@ -40,26 +40,27 @@ func TestEveryFailurePathIsShownToTheUser(t *testing.T) {
 		}, "", "Request failed"},
 		{"clipboard cannot be read for a cURL import", func(t *testing.T, a *App) {
 			a.ctx.Clipboard = &fakeClip{err: errors.New("no clipboard tool")}
-			a.importCurl(&a.col.Folder)
+			a.importCurl(&a.col().Folder)
 		}, "Cannot read the clipboard", ""},
 		{"clipboard is not a cURL command", func(t *testing.T, a *App) {
 			a.ctx.Clipboard = &fakeClip{text: "hello"}
-			a.importCurl(&a.col.Folder)
+			a.importCurl(&a.col().Folder)
 		}, "Not a cURL command", ""},
 		{"clipboard is not an OpenAPI document", func(t *testing.T, a *App) {
 			a.ctx.Clipboard = &fakeClip{text: "{}"}
-			a.importOpenAPI(&a.col.Folder)
+			a.importOpenAPI(&a.col().Folder)
 		}, "Not an OpenAPI document", ""},
 		{"clipboard is not a Postman collection", func(t *testing.T, a *App) {
 			a.ctx.Clipboard = &fakeClip{text: "[]"}
-			a.importPostman(&a.col.Folder)
+			a.importPostman(&a.col().Folder)
 		}, "Not a Postman collection", ""},
 		{"the collection cannot be saved", func(t *testing.T, a *App) {
-			a.workspace = blockedDir(t)
+			a.setWorkspace(blockedDir(t))
 			a.saveWorkspace()
 		}, "Saving failed", ""},
 		{"there is no folder to save to", func(t *testing.T, a *App) {
-			a.workspace, a.defaultWorkspace = "", ""
+			a.setWorkspace("")
+			a.defaultWorkspace = ""
 			a.saveWorkspace()
 		}, "No folder to save to", ""},
 		{"the settings cannot be saved", func(t *testing.T, a *App) {

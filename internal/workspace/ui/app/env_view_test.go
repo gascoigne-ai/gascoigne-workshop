@@ -168,7 +168,7 @@ func TestClickingTheEnvironmentChipOpensItsMenu(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			a, _ := newTestApp(t)
 			t.Cleanup(a.waitWrites)
-			a.col.Envs = []model.Environment{{Name: "Dev"}}
+			a.col().Envs = []model.Environment{{Name: "Dev"}}
 			if tc.active {
 				a.selectEnv(0)
 			}
@@ -199,16 +199,16 @@ func TestClickingTheEnvironmentChipOpensItsMenu(t *testing.T) {
 func TestPickingAnEnvironmentInTheChipsMenuShowsItOnTheChip(t *testing.T) {
 	a, _ := newTestApp(t)
 	t.Cleanup(a.waitWrites)
-	a.col.Envs = []model.Environment{{Name: "Dev"}, {Name: "Prod"}}
+	a.col().Envs = []model.Environment{{Name: "Dev"}, {Name: "Prod"}}
 	clickText(t, a, "No environment", 0)
 	clickText(t, a, "   Prod", 0)
-	if a.env.Index != 1 {
-		t.Fatalf("active environment %d, want 1", a.env.Index)
+	if a.envIndex() != 1 {
+		t.Fatalf("active environment %d, want 1", a.envIndex())
 	}
 	clickText(t, a, "Prod", 0)
 	clickText(t, a, "   No environment", 0)
-	if a.env.Index != -1 {
-		t.Fatalf("active environment %d, want none", a.env.Index)
+	if a.envIndex() != -1 {
+		t.Fatalf("active environment %d, want none", a.envIndex())
 	}
 	textCenter(t, a, "No environment")
 }
@@ -232,7 +232,7 @@ func TestTheChipsMenuRowsOpenTheirDialogs(t *testing.T) {
 		t.Run(tc.row, func(t *testing.T) {
 			a, _ := newTestApp(t)
 			t.Cleanup(a.waitWrites)
-			a.col.Envs = []model.Environment{{Name: "Dev"}}
+			a.col().Envs = []model.Environment{{Name: "Dev"}}
 			a.selectEnv(0)
 			clickText(t, a, "Dev", 0)
 			clickText(t, a, tc.row, 0)

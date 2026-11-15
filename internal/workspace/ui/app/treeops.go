@@ -1,6 +1,7 @@
 package app
 
 import (
+	"errors"
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/tree"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
@@ -21,7 +22,11 @@ import (
 
 // visibleRows are the tree rows shown, after the filter.
 func (a *App) visibleRows() []collection.Row {
-	return collection.FilteredRows(&a.col.Folder, a.expanded, a.filter.Text)
+	var rows []collection.Row
+	a.eachRoot(func(root *model.Folder) {
+		rows = append(rows, collection.FilteredRows(root, a.expanded, a.filter.Text)...)
+	})
+	return rows
 }
 
 // ---- selection and the rows' menus --------------------------------------
@@ -30,17 +35,23 @@ func (a *App) visibleRows() []collection.Row {
 func (a *App) selectNode(node any) { a.selected = node }
 
 // selectedFolder is where a new request goes: the selected folder, the
-// folder of the selected request, or the root.
+// folder of the selected request, or the root of the focused collection;
+// nil when nothing is open.
 func (a *App) selectedFolder() *model.Folder {
 	switch n := a.selected.(type) {
 	case *model.Folder:
 		return n
 	case *model.Request:
-		if parent, ok := a.col.Folder.Parent(n); ok {
-			return parent
+		if owner, ok := a.open.Owner(n); ok {
+			if parent, ok := owner.Collection.Folder.Parent(n); ok {
+				return parent
+			}
 		}
 	}
-	return &a.col.Folder
+	if col := a.focusCol(); col != nil {
+		return &col.Folder
+	}
+	return nil
 }
 
 // treeMenuItems are the right-click actions for a row.
@@ -68,9 +79,11 @@ func (a *App) treeMenuItems(row collection.Row) []MenuItem {
 		sep,
 		rename,
 	}
-	if row.Dir == &a.col.Folder { // the collection itself: renamed and deleted as a collection
-		create[len(create)-1] = MenuItem{Label: "Rename collection...", Run: a.promptRenameCollection}
-		return append(create, sep, MenuItem{Label: "New collection...", Run: a.promptNewCollection}, MenuItem{Label: "Delete collection...", Run: a.confirmDeleteCollection})
+	if a.isRoot(row.Dir) { // the collection itself: renamed and deleted as a collection
+		owner, _ := a.open.Owner(row.Dir)
+		col := owner.Collection
+		create[len(create)-1] = MenuItem{Label: "Rename collection...", Run: func() { a.promptRenameCollection(col) }}
+		return append(create, sep, MenuItem{Label: "New collection...", Run: a.promptNewCollection}, MenuItem{Label: "Delete collection...", Run: func() { a.confirmDeleteCollection(col) }})
 	}
 	return append(create,
 		MenuItem{Label: "Duplicate", Run: func() { a.duplicateNode(tree.Of(node)) }},
@@ -80,10 +93,57 @@ func (a *App) treeMenuItems(row collection.Row) []MenuItem {
 
 // ---- operations ----------------------------------------------------------
 
-// applyTree runs a tree message against the collection and takes over
-// what it says: the selection, the folder to open, the request to show.
+// errOtherCollection refuses a drop into another collection: requests and
+// folders are not moved across collections.
+var errOtherCollection = errors.New("it would leave its collection")
+
+// treeOwner is the collection a tree message changes: the one holding its
+// node or folder; nil when no open collection holds it. A move onto a node
+// of another collection is refused.
+func (a *App) treeOwner(msg tree.Msg) (*model.Collection, error) {
+	var subject, target any
+	switch msg := msg.(type) {
+	case tree.Rename:
+		subject = msg.Node.Any()
+	case tree.Duplicate:
+		subject = msg.Node.Any()
+	case tree.Delete:
+		subject = msg.Node.Any()
+	case tree.Move:
+		subject, target = msg.Node.Any(), msg.Target.Any()
+	case tree.NewRequest:
+		subject = tree.Node{Dir: msg.Dir}.Any() // nil, not a nil *Folder, when there is no folder
+	case tree.NewFolder:
+		subject = tree.Node{Dir: msg.Dir}.Any()
+	}
+	col := a.ownerOf(subject)
+	if col == nil {
+		return nil, nil
+	}
+	if destination := a.ownerOf(target); destination != nil && destination != col {
+		return nil, errOtherCollection
+	}
+	return col, nil
+}
+
+// ownerOf is the open collection that holds node, nil for none.
+func (a *App) ownerOf(node any) *model.Collection {
+	if node == nil {
+		return nil
+	}
+	entry, _ := a.open.Owner(node)
+	return entry.Collection
+}
+
+// applyTree runs a tree message against the collection that holds its
+// node and takes over what it says: the selection, the folder to open,
+// the request to show.
 func (a *App) applyTree(msg tree.Msg) tree.Result {
-	res := tree.Update(&a.col, tree.Of(a.selected), msg)
+	col, err := a.treeOwner(msg)
+	if col == nil || err != nil {
+		return tree.Result{Selected: tree.Of(a.selected), Err: err}
+	}
+	res := tree.Update(col, tree.Of(a.selected), msg)
 	a.selected = res.Selected.Any()
 	if res.Expand != nil {
 		a.expanded[res.Expand] = true
@@ -117,7 +177,7 @@ func (a *App) duplicateNode(node tree.Node) { a.applyTree(tree.Duplicate{Node: n
 // deleteNode asks, then removes the node and closes the tabs of
 // everything that was in it.
 func (a *App) deleteNode(node tree.Node) {
-	if node == (tree.Node{}) || node.Dir == &a.col.Folder {
+	if node == (tree.Node{}) || a.isRoot(node.Dir) {
 		return
 	}
 	title, body := tree.DeletePrompt(node)
@@ -263,8 +323,8 @@ func (a *App) importOpenAPI(dir *model.Folder) {
 	}
 	res.Folder.Name = dir.UniqueName(res.Folder.Name)
 	dir.Folders = append(dir.Folders, res.Folder)
-	if !model.Defined(openapi.BaseURLVar, a.col.Vars) {
-		a.col.Vars = append(a.col.Vars, model.KV{Name: openapi.BaseURLVar, Value: res.BaseURL, Enabled: true})
+	if col := a.ownerOf(dir); col != nil && !model.Defined(openapi.BaseURLVar, col.Vars) {
+		col.Vars = append(col.Vars, model.KV{Name: openapi.BaseURLVar, Value: res.BaseURL, Enabled: true})
 	}
 	a.expanded[dir] = true
 	a.expandAll(res.Folder)
@@ -309,9 +369,11 @@ func (a *App) importPostman(dir *model.Folder) {
 	}
 	res.Folder.Name = dir.UniqueName(res.Folder.Name)
 	dir.Folders = append(dir.Folders, res.Folder)
-	for _, v := range res.Vars {
-		if !model.Defined(v.Name, a.col.Vars) {
-			a.col.Vars = append(a.col.Vars, v)
+	if col := a.ownerOf(dir); col != nil {
+		for _, v := range res.Vars {
+			if !model.Defined(v.Name, col.Vars) {
+				col.Vars = append(col.Vars, v)
+			}
 		}
 	}
 	a.expanded[dir] = true
@@ -327,7 +389,11 @@ func (a *App) importPostman(dir *model.Folder) {
 // place for are left out and counted in the message.
 func (a *App) exportPostman(dir *model.Folder) {
 	a.commitEdit()
-	data, err := postman.Export(dir, a.col.Vars)
+	var vars []model.KV
+	if col := a.ownerOf(dir); col != nil {
+		vars = col.Vars
+	}
+	data, err := postman.Export(dir, vars)
 	if err != nil {
 		a.toast("Export failed: "+err.Error(), true)
 		return
