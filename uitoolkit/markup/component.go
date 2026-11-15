@@ -41,7 +41,7 @@
 //	Inputs      field (placeholder field-pad segments text-menu on-enter on-tab)
 //	            area (text-menu) checkbox
 //	            slider (slider-mid on-slide on-slide-end)
-//	Viewers     code image
+//	Viewers     code (wrap) image
 //	Containers  scroll hscroll split (vertical as-ratio min-first min-second)
 //	Widgets     tab-bar tabs scroll-tabs table   separator active-tab
 //	Dialogs     dialog dialog-title dialog-toolbar message-dialog resizable-dialog   focus-scope
@@ -497,6 +497,11 @@ var areaHandlers = map[string]handlerAttr{
 	"text-menu": stateHandler(widget.TextMenu),
 }
 
+// codeOptions are the attributes only a code view takes.
+var codeOptions = map[string]attributeReader{
+	"wrap": flagAttr("wrap", widget.Wrap),
+}
+
 // sliderOptions are the attributes only a slider takes.
 var sliderOptions = map[string]attributeReader{
 	"slider-mid": intAttr(widget.SliderMid),
@@ -654,8 +659,9 @@ var elements = map[string]elementSpec{
 	"list-row":  {build: listEntry, params: []param{boolParam("selected")}},
 	"form-row":  {build: formLine, params: []param{textParam("label"), wholeParam("label-width")}},
 	"check-row": {build: tickLine, params: []param{boolParam("on")}},
-	"code":      {build: stateful(widget.Code), holds: holdsNothing, params: []param{scopedState[widget.CodeView]("state")}},
-	"image":     {build: picture, holds: holdsNothing, params: []param{scoped[*ebiten.Image]("img")}},
+	"code": {build: stateful(widget.Code), holds: holdsNothing, options: codeOptions,
+		params: []param{scopedState[widget.CodeView]("state")}},
+	"image": {build: picture, holds: holdsNothing, params: []param{scoped[*ebiten.Image]("img")}},
 	"slider": {build: slider, holds: holdsNothing, options: sliderOptions, handlers: sliderHandlers,
 		params: []param{scopedState[widget.SliderState]("state"), wholeParam("min"), wholeParam("max"), wholeParam("step"), wholeParam("value")}},
 }

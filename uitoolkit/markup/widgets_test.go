@@ -267,6 +267,28 @@ func TestCodeElementSelectsInTheCodeViewOfTheScope(t *testing.T) {
 	}
 }
 
+// wrap is Go's Wrap option, which Dump does not show: its effect is read
+// from the view after an update.
+func TestCodeWrapAttributeIsTheWrapOption(t *testing.T) {
+	for _, tc := range []struct {
+		attribute string
+		want      bool
+	}{{`wrap`, true}, {`wrap="true"`, true}, {`wrap="false"`, false}, {``, false}} {
+		t.Run(tc.attribute, func(t *testing.T) {
+			code := codeLines()
+			code.Wrap = !tc.want
+			template := build(t, `<row><code state="code" grow="1" `+tc.attribute+`/></row>`, Scope{"code": code})
+			ctx := testCtx(t)
+			view.Layout(ctx, template, 400, 100)
+			view.Update(ctx, template)
+			if code.Wrap != tc.want {
+				t.Fatalf("Wrap = %v, want %v", code.Wrap, tc.want)
+			}
+		})
+	}
+	parseError(t, `<row wrap/>`, "unknown attribute")
+}
+
 func TestCodeStateMustBeACodeView(t *testing.T) {
 	err := buildError(t, `<code state="c"/>`, Scope{"c": widget.CodeView{}})
 	if err == nil || !strings.Contains(err.Error(), "*widget.CodeView") {

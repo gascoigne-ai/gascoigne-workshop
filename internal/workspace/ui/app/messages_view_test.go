@@ -155,11 +155,11 @@ func TestTheMessageLogShowsTheTabsView(t *testing.T) {
 	a, _ := newTestApp(t)
 	t.Cleanup(a.waitWrites)
 	tab := a.cur()
-	code := findWidget(a.messagesPane(wsPanes[0], tab, nil), "widget.codeB")
+	code := findWidget(a.messagesPane(wsPanes[0], tab, nil), "*widget.codeB")
 	if code == nil {
 		t.Fatal("no message log")
 	}
-	if got, want := fmt.Sprintf("%+v", code.Behavior()), fmt.Sprintf("{Base:{} view:%p}", &tab.wsView); got != want {
+	if got, want := fmt.Sprintf("%+v", code.Behavior()), fmt.Sprintf("&{Base:{} view:%p wrap:false}", &tab.wsView); got != want {
 		t.Fatalf("log %s, want %s", got, want)
 	}
 }

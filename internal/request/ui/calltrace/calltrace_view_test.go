@@ -185,7 +185,7 @@ func TestTheLogDialogsUnprintedParts(t *testing.T) {
 			t.Errorf("field %s, want %q in it", got, want)
 		}
 	}
-	code := findWidget(root, "widget.codeB")
+	code := findWidget(root, "*widget.codeB")
 	if code == nil {
 		t.Fatalf("no code view:\n%s", Dump(root))
 	}

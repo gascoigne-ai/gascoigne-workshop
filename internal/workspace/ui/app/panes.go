@@ -658,7 +658,7 @@ func (a *App) searchView(t *reqTab) {
 	matches := t.view.Find(t.find.Text)
 	t.look = viewer.Update(t.look, viewer.Searched{Matches: len(matches)})
 	if len(matches) > 0 {
-		t.view.RevealLine(matches[0].Line)
+		t.view.RevealMatch(matches[0])
 	}
 	t.view.SetMatches(matches, t.look.Match)
 }
@@ -672,7 +672,7 @@ func (a *App) findStep(t *reqTab, dir int) {
 	t.look = viewer.Update(t.look, viewer.Stepped{Dir: dir, Matches: len(matches)})
 	next := t.look.Match
 	t.view.SetMatches(matches, next)
-	t.view.RevealLine(matches[next].Line)
+	t.view.RevealMatch(matches[next])
 }
 
 // findEnter is Enter in the find field: next match, previous with Shift.
@@ -788,7 +788,7 @@ const (
     <icon-button icon="prompt" w="{{iconBtnW}}" h="{{compactH}}" on-click="copyCurl" tooltip="Copy the request as a cURL command"/>
   </row>
   <slot if="findBar" name="findBar"/>
-  <code state="view" grow="1" bg="sunken" on-right-click="openMenu"/>
+  <code state="view" grow="1" bg="sunken" wrap="{{wrap}}" on-right-click="openMenu"/>
 </col>
 `
 

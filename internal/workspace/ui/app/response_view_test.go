@@ -195,7 +195,7 @@ func TestRightClickingTheResponseBodyOpensItsMenu(t *testing.T) {
 // image: state Dump does not print, read from the widgets themselves.
 func TestTheResponseWidgetsShowTheTabsState(t *testing.T) {
 	a, tab := responseIn(t, "compact")
-	code := findWidget(a.responsePane(responsePanes[0], tab, nil), "widget.codeB")
+	code := findWidget(a.responsePane(responsePanes[0], tab, nil), "*widget.codeB")
 	if code == nil {
 		t.Fatal("the response pane has no code view")
 	}
