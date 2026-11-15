@@ -2,7 +2,6 @@ package settingsui
 
 import (
 	"bytes"
-	"embed"
 	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
@@ -182,13 +181,10 @@ type fontChoice struct {
 	Pick     func()                 // the list's rows only
 }
 
-//go:embed fontlist.vml fontrow.vml fontcontrol.vml
-var fontListTemplates embed.FS
-
 var (
-	fontControlTemplate = markup.MustLoad(fontListTemplates, "fontcontrol.vml")
-	fontListTemplate    = markup.MustLoad(fontListTemplates, "fontlist.vml")
-	fontRowTemplate     = markup.MustLoad(fontListTemplates, "fontrow.vml")
+	fontControlTemplate = markup.Must("fontcontrol.vml", fontcontrolSource)
+	fontListTemplate    = markup.Must("fontlist.vml", fontlistSource)
+	fontRowTemplate     = markup.Must("fontrow.vml", fontrowSource)
 )
 
 // fontRow is one row of the list; picking it applies the family called
@@ -197,3 +193,33 @@ func (d *SettingsDialog) fontRow(host Host, choice fontChoice, selected bool, na
 	choice.Pick = func() { d.PickFont(host, name) }
 	return fontRowTemplate.MustBuild(markup.Scope{"row": choice, "rowH": fontListRowH, "selected": selected})
 }
+
+// Templates, parsed once above.
+const (
+	fontcontrolSource = `<row h="{{rowH}}" bg="sunken" control="field" pad-x="8" gap="6" align-items="center"
+     on-click="open" tooltip="Pick an installed font">
+  <text grow="1" muted="{{current.Muted}}" ellipsis="{{current.Ellipsis}}" font-source="current.Face">{{current.Name}}</text>
+  <icon name="chevron-down" w="12"/>
+</row>
+`
+
+	fontlistSource = `<col w="{{width}}" pad="6" gap="6" bg="bg" border="border" control="menu" shadow float-at="{{x}} {{y}}" modal focus-scope on-dismiss="close">
+  <field state="search" h="28" bg="sunken" placeholder="Search fonts" on-change="searchChanged" text-menu="search"/>
+  <row if="note" h="{{rowH}}" pad-x="8">
+    <text small muted>{{note}}</text>
+  </row>
+  <scroll state="scroll" h="{{height}}">
+    <col>
+      <spacer h="{{above}}"/>
+      <slot for="row in rows" name="row"/>
+      <spacer h="{{below}}"/>
+    </col>
+  </scroll>
+</col>
+`
+
+	fontrowSource = `<list-row selected="{{selected}}" h="{{rowH}}" pad-x="8" align-items="center" on-click="row.Pick">
+  <text grow="1" muted="{{row.Muted}}" ellipsis="{{row.Ellipsis}}" font-source="row.Face">{{row.Name}}</text>
+</list-row>
+`
+)

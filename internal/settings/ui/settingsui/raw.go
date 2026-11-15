@@ -1,7 +1,6 @@
 package settingsui
 
 import (
-	"embed"
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
 
@@ -179,10 +178,7 @@ func (d *SettingsDialog) complete(host Host, quiet bool) {
 // RawFocused reports whether the raw text has the keyboard focus.
 func (d *SettingsDialog) RawFocused() bool { return d.Raw && d.RawText.Focused }
 
-//go:embed raw.vml
-var rawTemplates embed.FS
-
-var rawTemplate = markup.MustLoad(rawTemplates, "raw.vml")
+var rawTemplate = markup.Must("raw.vml", rawSource)
 
 // rawView is the dialog's page while it shows settings.json as text.
 func (d *SettingsDialog) rawView(host Host) Node {
@@ -214,3 +210,20 @@ func problemLines(problems []settings.Problem) []string {
 	}
 	return lines
 }
+
+// Templates, parsed once above.
+const (
+	rawSource = `<!-- The dialog's page while it shows settings.json as text: a status line,
+     the editor, one note per problem and how to complete. -->
+<col grow="1" gap="6">
+  <row h="{{rowH}}" gap="6">
+    <text bold>settings.json</text>
+    <spacer/>
+    <text small color="{{statusColor}}">{{status}}</text>
+  </row>
+  <area state="text" grow="1" bg="sunken" on-change="edited" text-menu="menuText"/>
+  <note for="problem in problems" tone="error">{{problem}}</note>
+  <text small muted>{{completeHint}}</text>
+</col>
+`
+)

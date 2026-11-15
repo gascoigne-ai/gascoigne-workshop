@@ -1,4 +1,0 @@
-<col>
-  <field state="input" h="{{rowH}}" bg="sunken" placeholder="Default" on-change="edited" text-menu="input"/>
-  <note if="note" tone="error">{{note}}</note>
-</col>

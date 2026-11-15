@@ -1,3 +1,0 @@
-<row h="{{rowH}}" gap="6">
-  <choice for="chip in chips" selected="{{chip.Selected}}" grow="1" on-click="chip.Pick">{{chip.Label}}</choice>
-</row>

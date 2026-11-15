@@ -8,7 +8,6 @@
 package settingsui
 
 import (
-	"embed"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
 	"strings"
@@ -171,15 +170,12 @@ func (d *SettingsDialog) View(host Host) Node {
 	return Frag(dialog, d.FontList(host)) // the font list floats over the dialog; a template has one root
 }
 
-//go:embed dialog.vml titlebar.vml toolbar.vml save-pending.vml save-idle.vml
-var dialogTemplates embed.FS
-
 var (
-	dialogTemplate      = markup.MustLoad(dialogTemplates, "dialog.vml")
-	titleBarTemplate    = markup.MustLoad(dialogTemplates, "titlebar.vml")
-	toolbarTemplate     = markup.MustLoad(dialogTemplates, "toolbar.vml")
-	savePendingTemplate = markup.MustLoad(dialogTemplates, "save-pending.vml")
-	saveIdleTemplate    = markup.MustLoad(dialogTemplates, "save-idle.vml")
+	dialogTemplate      = markup.Must("dialog.vml", dialogSource)
+	titleBarTemplate    = markup.Must("titlebar.vml", titlebarSource)
+	toolbarTemplate     = markup.Must("toolbar.vml", toolbarSource)
+	savePendingTemplate = markup.Must("save-pending.vml", savePendingSource)
+	saveIdleTemplate    = markup.Must("save-idle.vml", saveIdleSource)
 )
 
 // pageContent is the content of page id.
@@ -234,12 +230,9 @@ func (d *SettingsDialog) toolbar(host Host) Node {
 	})
 }
 
-//go:embed navitem-open.vml navitem-closed.vml
-var navItemTemplates embed.FS
-
 var (
-	navOpenTemplate   = markup.MustLoad(navItemTemplates, "navitem-open.vml")
-	navClosedTemplate = markup.MustLoad(navItemTemplates, "navitem-closed.vml")
+	navOpenTemplate   = markup.Must("navitem-open.vml", navitemOpenSource)
+	navClosedTemplate = markup.Must("navitem-closed.vml", navitemClosedSource)
 )
 
 // navItem is one page in the list: the open one is tinted and bold.
@@ -299,3 +292,62 @@ func (d *SettingsDialog) Save(host Host) {
 	d.rawPending = false
 	host.Send(prefs.Persist{})
 }
+
+// Templates, parsed once above.
+const (
+	dialogSource = `<!-- The settings dialog: the title bar, then the raw text or the list of
+     pages beside the page shown. Go sizes it to the window. -->
+<resizable-dialog state="size" min-width="{{minW}}" min-height="{{minH}}" max-width="{{maxW}}" max-height="{{maxH}}"
+                  w="{{width}}" h="{{height}}" moved="move" on-dismiss="close">
+  <slot name="titleBar"/>
+  <slot name="toolbar"/>
+  <col if="raw" grow="1" pad="16">
+    <slot name="rawView"/>
+  </col>
+  <row if="!raw" grow="1">
+    <col w="{{navW}}" pad="8" gap="2" bg="frame" round-bl="menu">
+      <slot for="item in nav" name="item"/>
+    </col>
+    <scroll state="scroll" grow="1" pad="16" border-l="border-soft">
+      <slot if="page" name="page"/>
+    </scroll>
+  </row>
+</resizable-dialog>
+`
+
+	titlebarSource = `<!-- The dialog's title bar: the name, the page shown and the close button, the
+     rest is where the user drags the dialog. The controls are in toolbar.vml. -->
+<dialog-title title="Settings" on-dismiss="close">
+  <slot name="subtitle"/>
+</dialog-title>
+`
+
+	toolbarSource = `<!-- The row under the title bar: the search field (a spacer in the raw view),
+     Save when there is something to save, and the switch between the form
+     and the text of settings.json. -->
+<dialog-toolbar>
+  <field if="!raw" state="search" h="{{rowH}}" grow="1" bg="sunken" placeholder="Search settings"
+         on-change="searched" text-menu="search"/>
+  <spacer if="raw" grow="1"/>
+  <slot if="save" name="save"/>
+  <button if="raw" w="60" h="{{compactH}}" on-click="closeRaw" tooltip="Back to the settings form">Form</button>
+  <button if="!raw" w="60" h="{{compactH}}" on-click="openRaw" tooltip="Edit settings.json as text">JSON</button>
+</dialog-toolbar>
+`
+
+	savePendingSource = `<primary-button w="60" h="{{compactH}}" on-click="save" tooltip="Write the changes to settings.json">Save</primary-button>
+`
+
+	saveIdleSource = `<button w="60" h="{{compactH}}" on-click="save" tooltip="Nothing to save yet; changes are written when you click Save">Save</button>
+`
+
+	navitemOpenSource = `<row h="{{rowH}}" pad-x="{{gutter}}" align-items="center" control="button" on-click="pick" bg="accent-soft">
+  <text bold color="accent-line" grow="1">{{label}}</text>
+</row>
+`
+
+	navitemClosedSource = `<row h="{{rowH}}" pad-x="{{gutter}}" align-items="center" control="button" on-click="pick" hover-bg="hover">
+  <text muted grow="1">{{label}}</text>
+</row>
+`
+)

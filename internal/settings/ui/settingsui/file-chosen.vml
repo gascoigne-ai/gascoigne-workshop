@@ -1,7 +1,0 @@
-<col>
-  <row h="{{rowH}}" bg="sunken" control="field" align-items="center">
-    <field state="input" h="{{rowH}}" grow="1" placeholder="No file" on-change="edited" text-menu="input"/>
-    <icon-button icon="folder" w="{{iconBtnW}}" h="{{compactH}}" on-click="choose" tooltip="Choose another file"/>
-  </row>
-  <note if="note" tone="error">{{note}}</note>
-</col>

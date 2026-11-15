@@ -1,3 +1,0 @@
-<row h="{{rowH}}" pad-x="{{gutter}}" align-items="center" control="button" on-click="pick" bg="accent-soft">
-  <text bold color="accent-line" grow="1">{{label}}</text>
-</row>

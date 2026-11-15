@@ -1,3 +1,0 @@
-<row h="{{rowH}}">
-  <button w="120" on-click="open">{{label}}</button>
-</row>

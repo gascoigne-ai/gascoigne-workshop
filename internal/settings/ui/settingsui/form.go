@@ -1,7 +1,6 @@
 package settingsui
 
 import (
-	"embed"
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
 	"strconv"
@@ -69,24 +68,19 @@ func capitalized(id string) string {
 	return strings.ToUpper(id[:1]) + id[1:]
 }
 
-//go:embed chips.vml scale.vml textcontrol.vml openpage.vml
-//go:embed file-empty.vml file-chosen.vml
-//go:embed settingrow.vml formpage.vml formcaption.vml formempty.vml
-var formTemplates embed.FS
-
 var (
-	chipsTemplate       = markup.MustLoad(formTemplates, "chips.vml")
-	scaleTemplate       = markup.MustLoad(formTemplates, "scale.vml")
-	textControlTemplate = markup.MustLoad(formTemplates, "textcontrol.vml")
-	openPageTemplate    = markup.MustLoad(formTemplates, "openpage.vml")
+	chipsTemplate       = markup.Must("chips.vml", chipsSource)
+	scaleTemplate       = markup.Must("scale.vml", scaleSource)
+	textControlTemplate = markup.Must("textcontrol.vml", textcontrolSource)
+	openPageTemplate    = markup.Must("openpage.vml", openpageSource)
 	// with no file there is no field, only a button (see fileControl)
-	emptyFileTemplate  = markup.MustLoad(formTemplates, "file-empty.vml")
-	chosenFileTemplate = markup.MustLoad(formTemplates, "file-chosen.vml")
-	settingRowTemplate = markup.MustLoad(formTemplates, "settingrow.vml")
+	emptyFileTemplate  = markup.Must("file-empty.vml", fileEmptySource)
+	chosenFileTemplate = markup.Must("file-chosen.vml", fileChosenSource)
+	settingRowTemplate = markup.Must("settingrow.vml", settingrowSource)
 	// a search lists captions between the rows, so the page walks built nodes
-	formPageTemplate    = markup.MustLoad(formTemplates, "formpage.vml")
-	formCaptionTemplate = markup.MustLoad(formTemplates, "formcaption.vml")
-	formEmptyTemplate   = markup.MustLoad(formTemplates, "formempty.vml")
+	formPageTemplate    = markup.Must("formpage.vml", formpageSource)
+	formCaptionTemplate = markup.Must("formcaption.vml", formcaptionSource)
+	formEmptyTemplate   = markup.Must("formempty.vml", formemptySource)
 )
 
 // chip is what the chips template shows of one value of a segmented
@@ -376,3 +370,72 @@ func (d *SettingsDialog) ChooseFile(host Host, key string) {
 		d.Edited(host, key)
 	}})
 }
+
+// Templates, parsed once above.
+const (
+	chipsSource = `<row h="{{rowH}}" gap="6">
+  <choice for="chip in chips" selected="{{chip.Selected}}" grow="1" on-click="chip.Pick">{{chip.Label}}</choice>
+</row>
+`
+
+	scaleSource = `<row h="{{rowH}}" gap="8">
+  <slider state="scale" min="{{min}}" max="{{max}}" step="{{step}}" value="{{value}}" slider-mid="{{mid}}"
+          on-slide="slide" on-slide-end="slideEnd"/>
+  <text w="40" color="muted">{{shown}}</text>
+</row>
+`
+
+	textcontrolSource = `<col>
+  <field state="input" h="{{rowH}}" bg="sunken" placeholder="Default" on-change="edited" text-menu="input"/>
+  <note if="note" tone="error">{{note}}</note>
+</col>
+`
+
+	openpageSource = `<row h="{{rowH}}">
+  <button w="120" on-click="open">{{label}}</button>
+</row>
+`
+
+	fileEmptySource = `<row h="{{rowH}}">
+  <row w="150" h="{{rowH}}" bg="sunken" control="button" lighten pad-x="10" gap="8" align-items="center"
+       on-click="choose" tooltip="Choose the file">
+    <icon name="folder" w="16"/>
+    <text grow="1" color="chip-text">Choose file</text>
+  </row>
+  <spacer/>
+</row>
+`
+
+	fileChosenSource = `<col>
+  <row h="{{rowH}}" bg="sunken" control="field" align-items="center">
+    <field state="input" h="{{rowH}}" grow="1" placeholder="No file" on-change="edited" text-menu="input"/>
+    <icon-button icon="folder" w="{{iconBtnW}}" h="{{compactH}}" on-click="choose" tooltip="Choose another file"/>
+  </row>
+  <note if="note" tone="error">{{note}}</note>
+</col>
+`
+
+	settingrowSource = `<col pad-y="8" border-b="border-soft">
+  <row h="{{rowH}}" gap="6">
+    <text bold>{{setting.Title}}</text>
+    <text if="setting.Changed" color="accent-line" tooltip="Changed from the default">•</text>
+    <spacer/>
+    <button if="setting.Changed" w="56" h="{{compactH}}" on-click="setting.Reset"
+            tooltip="Remove it from settings.json so the default applies">Reset</button>
+  </row>
+  <lines color="muted">{{setting.Description}}</lines>
+  <slot name="setting.Control"/>
+</col>
+`
+
+	formpageSource = `<col>
+  <slot for="row in rows" name="row"/>
+</col>
+`
+
+	formcaptionSource = `<caption h="{{labelH}}">{{category}}</caption>
+`
+
+	formemptySource = `<text muted>No settings match</text>
+`
+)

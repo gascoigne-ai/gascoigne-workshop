@@ -1,5 +1,0 @@
-<!-- The dialog's title bar: the name, the page shown and the close button, the
-     rest is where the user drags the dialog. The controls are in toolbar.vml. -->
-<dialog-title title="Settings" on-dismiss="close">
-  <slot name="subtitle"/>
-</dialog-title>
