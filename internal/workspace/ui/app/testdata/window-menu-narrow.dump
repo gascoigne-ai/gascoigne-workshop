@@ -192,6 +192,8 @@ stack rect=0,0,640,480
           textB text="Requests" grow=1 fg=muted rect=60,228,130,16
         flow h=28 padL=12 padR=12 control=button hoverBg=hover onClick=true rect=48,252,154,28
           textB text="General" grow=1 fg=muted rect=60,258,130,16
+        flow h=28 padL=12 padR=12 control=button hoverBg=hover onClick=true rect=48,282,154,28
+          textB text="System" grow=1 fg=muted rect=60,288,130,16
       scrollB padL=16 padT=16 padR=16 padB=16 grow=1 borderL=border-soft rect=210,124,390,316
         flow rect=226,140,350,984
           flow padT=8 padB=8 borderB=border-soft rect=226,140,350,94
