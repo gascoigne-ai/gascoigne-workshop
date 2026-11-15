@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -63,5 +64,28 @@ func TestWithoutADialogProgramNothingIsAvailable(t *testing.T) {
 	}
 	if _, err := Open(context.Background(), "x"); err == nil || !strings.Contains(err.Error(), "zenity or kdialog") {
 		t.Fatalf("err = %v", err)
+	}
+}
+
+func TestOnAMacTheNativePanelIsRunThroughOsascript(t *testing.T) {
+	goos = "darwin"
+	t.Cleanup(func() { goos = runtime.GOOS })
+	dir := t.TempDir()
+	script := "#!/bin/sh\nprintf '%s\\n' \"$@\" > \"$0.args\"\necho /Users/me/a.json\n"
+	if err := os.WriteFile(filepath.Join(dir, "osascript"), []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", dir)
+	got, err := Save(context.Background(), `Say "hi"`, "out.json")
+	if err != nil || got != "/Users/me/a.json" {
+		t.Fatalf("%q %v", got, err)
+	}
+	args, _ := os.ReadFile(filepath.Join(dir, "osascript.args"))
+	lines := strings.Split(strings.TrimSpace(string(args)), "\n")
+	if n := len(lines); n < 2 || lines[n-2] != `Say "hi"` || lines[n-1] != "out.json" {
+		t.Fatalf("title and name must be script arguments: %q", args)
+	}
+	if !strings.Contains(string(args), "choose file name") {
+		t.Fatalf("save must use the save panel: %q", args)
 	}
 }

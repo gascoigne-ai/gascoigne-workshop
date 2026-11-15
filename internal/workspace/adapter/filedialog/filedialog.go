@@ -1,13 +1,15 @@
 // Package filedialog asks the desktop for a file name by running the
-// dialog program the system has: zenity (GNOME and most others) or
-// kdialog (KDE). Without either, Available is false and callers fall back
-// to asking for the path as text.
+// dialog program the system has: the native panel through osascript on
+// macOS, zenity (GNOME and most others) or kdialog (KDE) elsewhere. Without
+// one, Available is false and callers fall back to asking for the path as
+// text.
 package filedialog
 
 import (
 	"context"
 	"errors"
 	"os/exec"
+	"runtime"
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
@@ -23,6 +25,26 @@ type tool struct {
 	save func(title, name string) []string
 }
 
+// goos is the operating system; tests change it.
+var goos = runtime.GOOS
+
+// osascript runs AppleScript, which is on every Mac, and shows the native
+// open and save panels. The title and the name travel as arguments of the
+// script, never inside its text. Cancelling makes it exit 1.
+var osascript = tool{"osascript",
+	func(title string) []string {
+		return []string{
+			"-e", "on run argv",
+			"-e", "POSIX path of (choose file with prompt (item 1 of argv))",
+			"-e", "end run", title}
+	},
+	func(title, name string) []string {
+		return []string{
+			"-e", "on run argv",
+			"-e", "POSIX path of (choose file name with prompt (item 1 of argv) default name (item 2 of argv))",
+			"-e", "end run", title, name}
+	}}
+
 var tools = []tool{
 	{"zenity",
 		func(title string) []string { return []string{"--file-selection", "--title=" + title} },
@@ -36,7 +58,11 @@ var tools = []tool{
 
 // find is the first dialog program on the PATH.
 func find() (tool, string, bool) {
-	for _, t := range tools {
+	list := tools
+	if goos == "darwin" {
+		list = append([]tool{osascript}, tools...)
+	}
+	for _, t := range list {
 		if p, err := exec.LookPath(t.name); err == nil {
 			return t, p, true
 		}
@@ -50,7 +76,7 @@ func Available() bool { _, _, ok := find(); return ok }
 func run(ctx context.Context, build func(tool) []string) (string, error) {
 	t, path, ok := find()
 	if !ok {
-		return "", errors.New("no file dialog program (zenity or kdialog) is installed")
+		return "", errors.New("no file dialog program (osascript, zenity or kdialog) is installed")
 	}
 	out, err := exec.CommandContext(ctx, path, build(t)...).Output()
 	if err != nil {
