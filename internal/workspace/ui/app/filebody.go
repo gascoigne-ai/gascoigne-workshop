@@ -2,7 +2,6 @@ package ui
 
 import (
 	"context"
-	"embed"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/editor"
 	"os"
 
@@ -42,10 +41,7 @@ func (a *App) pickFile(title string, save bool, name string, done func(path stri
 	return stop
 }
 
-//go:embed filebody.vml
-var fileBodyTemplates embed.FS
-
-var fileBodyTemplate = markup.MustLoad(fileBodyTemplates, "filebody.vml")
+var fileBodyTemplate = markup.Must("filebody.vml", filebodySource)
 
 // fileBody is the editor of a file body: the path, and a button to pick it.
 func (a *App) fileBody(t *reqTab) Node {
@@ -71,3 +67,17 @@ func (a *App) fileBody(t *reqTab) Node {
 		"sizeColor": sizeColor,
 	})
 }
+
+// Templates, parsed once above.
+const (
+	filebodySource = `<col grow="1" gap="8">
+  <row h="{{rowH}}" gap="6">
+    <field state="file" grow="1" placeholder="Path of the file to send" on-change="sync" text-menu="file"/>
+    <button w="90" on-click="choose">Choose...</button>
+  </row>
+  <!-- always built, even empty, so the hint keeps its place -->
+  <text small muted color="{{sizeColor}}">{{size}}</text>
+  <text small muted>The file is sent as it is, with a content type from its extension.</text>
+</col>
+`
+)

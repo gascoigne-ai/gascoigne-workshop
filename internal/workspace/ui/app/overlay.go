@@ -1,8 +1,6 @@
 package ui
 
 import (
-	"embed"
-
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/ui/mcpform"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/overlay"
 
@@ -76,12 +74,9 @@ func (a *App) dialogDefault() {
 	}
 }
 
-//go:embed dialog.vml toasts.vml
-var overlayTemplates embed.FS
-
 var (
-	dialogTemplate = markup.MustLoad(overlayTemplates, "dialog.vml")
-	toastsTemplate = markup.MustLoad(overlayTemplates, "toasts.vml")
+	dialogTemplate = markup.Must("dialog.vml", dialogSource)
+	toastsTemplate = markup.Must("toasts.vml", toastsSource)
 )
 
 // dialogView is the open dialog, nothing when none is open: a template
@@ -194,3 +189,15 @@ func (a *App) escape() {
 		closers[layer]()
 	}
 }
+
+// Templates, parsed once above.
+const (
+	dialogSource = `<!-- An MCP tool's typed form, when the dialog has one, sits between its body and its input. -->
+<message-dialog state="state" moved="move" on-dismiss="dismiss">
+  <slot if="form" name="form"/>
+</message-dialog>
+`
+
+	toastsSource = `<toasts stack="stack" width="{{width}}" height="{{height}}" bottom-inset="{{statusH}}"/>
+`
+)

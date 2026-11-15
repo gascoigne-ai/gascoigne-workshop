@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"context"
-	"embed"
 	"encoding/json"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
@@ -138,15 +137,12 @@ func newExplorerHeader(t *reqTab) explorerHeader {
 	}
 }
 
-//go:embed explorer.vml explorerlist.vml explorernone.vml explorerdetail.vml explorerresult.vml
-var explorerTemplates embed.FS
-
 var (
-	explorerTemplate       = markup.MustLoad(explorerTemplates, "explorer.vml")
-	explorerListTemplate   = markup.MustLoad(explorerTemplates, "explorerlist.vml")
-	explorerNoneTemplate   = markup.MustLoad(explorerTemplates, "explorernone.vml")
-	explorerDetailTemplate = markup.MustLoad(explorerTemplates, "explorerdetail.vml")
-	explorerResultTemplate = markup.MustLoad(explorerTemplates, "explorerresult.vml")
+	explorerTemplate       = markup.Must("explorer.vml", explorerSource)
+	explorerListTemplate   = markup.Must("explorerlist.vml", explorerlistSource)
+	explorerNoneTemplate   = markup.Must("explorernone.vml", explorernoneSource)
+	explorerDetailTemplate = markup.Must("explorerdetail.vml", explorerdetailSource)
+	explorerResultTemplate = markup.Must("explorerresult.vml", explorerresultSource)
 )
 
 // explorerEntry is what the list template shows of one entry.
@@ -258,3 +254,68 @@ func resultNode(t *reqTab) Node {
 
 // explorerResultH is the height of the answer's view.
 const explorerResultH = 240
+
+// Templates, parsed once above.
+const (
+	explorerSource = `<col grow="1">
+  <row if="!header.Known" h="{{headerH}}" pad-x="{{gutter}}" align-items="center" border-b="border">
+    <text muted>{{header.State}}: connect to see what the server offers</text>
+  </row>
+  <col if="header.Known" pad-x="{{gutter}}" pad-y="8" gap="4" border-b="border">
+    <row gap="8" align-items="baseline">
+      <text bold>{{header.Name}} {{header.Version}}</text>
+      <text small muted>protocol {{header.Protocol}}</text>
+    </row>
+    <text if="header.Offers" small muted>Offers: {{header.Offers}}</text>
+    <lines if="header.Instructions" color="muted">{{header.Instructions}}</lines>
+  </col>
+  <row grow="1">
+    <slot name="list"/>
+    <slot name="detail"/>
+  </row>
+</col>
+`
+
+	explorerlistSource = `<col w="{{listW}}" border-r="border">
+  <tab-bar>
+    <tabs items="tabs" active="{{active}}" on-select="choose"/>
+  </tab-bar>
+  <scroll state="scroll" grow="1">
+    <col if="!entries" pad="{{gutter}}">
+      <text small muted>Nothing announced</text>
+    </col>
+    <list-row for="entry in entries" selected="{{entry.Selected}}" pad-x="{{gutter}}" pad-y="6" on-click="entry.Open">
+      <col grow="1">
+        <text ellipsis>{{entry.Title}}</text>
+        <text if="entry.Detail" small muted ellipsis>{{entry.Detail}}</text>
+      </col>
+    </list-row>
+  </scroll>
+</col>
+`
+
+	explorernoneSource = `<col grow="1" pad="{{gutter}}">
+  <text muted>Pick a tool, a resource or a prompt</text>
+</col>
+`
+
+	explorerdetailSource = `<scroll state="scroll" grow="1" pad="{{gutter}}" gap="10">
+  <text bold>{{detail.Title}}</text>
+  <slot if="detail.Form" name="detail.Form"/>
+  <!-- a resource has no form; the empty column keeps the gap a form takes -->
+  <col if="!detail.Form"/>
+  <row gap="8" align-items="center">
+    <primary-button h="{{rowH}}" pad-x="{{gutter}}" on-click="detail.Call" tooltip="Send it to the server (Enter in a field)">{{detail.Label}}</primary-button>
+    <text if="detail.Disconnected" small muted>Connect first</text>
+    <text if="detail.Calling" small muted>Waiting for the server...</text>
+  </row>
+  <slot if="detail.Result" name="detail.Result"/>
+</scroll>
+`
+
+	explorerresultSource = `<col gap="4">
+  <text small bold color="{{color}}">{{heading}}</text>
+  <code state="view" h="{{resultH}}" bg="sunken"/>
+</col>
+`
+)

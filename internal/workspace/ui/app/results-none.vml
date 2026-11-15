@@ -1,4 +1,0 @@
-<!-- The response's Tests pane while the request has no assertions. -->
-<col grow="1" pad="{{gutter}}">
-  <text muted>No assertions. Write them in the request's Tests tab.</text>
-</col>

@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"embed"
 	"fmt"
 
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -10,10 +9,7 @@ import (
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
-//go:embed messagestoolbar.vml
-var messagesToolbarSource embed.FS
-
-var messagesToolbarTemplate = markup.MustLoad(messagesToolbarSource, "messagestoolbar.vml")
+var messagesToolbarTemplate = markup.Must("messagestoolbar.vml", messagestoolbarSource)
 
 // messagesToolbar is the bar above the message log: the connection state,
 // the auto-reconnect chip, the pickers an MCP server enabled, Ping and
@@ -42,3 +38,18 @@ func (a *App) messagesToolbar(t *reqTab) Node {
 		"clear":           func() { a.clearLog(t) },
 	})
 }
+
+// Templates, parsed once above.
+const (
+	messagestoolbarSource = `<row h="{{toolbarH}}" pad-x="{{gutter}}" gap="6" align-items="center" border-b="border">
+  <text small muted>{{state}}</text>
+  <spacer/>
+  <choice selected="{{reconnect}}" w="116" h="{{compactH}}" on-click="toggleReconnect">Auto-reconnect</choice>
+  <button if="hasTools" min-w="84" h="{{compactH}}" on-click="pickTool" tooltip="Pick a tool: the composer gets a call with its arguments filled in">{{toolsLabel}}</button>
+  <button if="hasResources" min-w="104" h="{{compactH}}" on-click="pickResource" tooltip="Pick a resource: the composer gets a read of it">{{resourcesLabel}}</button>
+  <button if="hasPrompts" min-w="94" h="{{compactH}}" on-click="pickPrompt" tooltip="Pick a prompt: the composer gets a request for it">{{promptsLabel}}</button>
+  <button min-w="56" h="{{compactH}}" on-click="ping" tooltip="Send a ping frame">Ping</button>
+  <button min-w="56" h="{{compactH}}" on-click="clear" tooltip="Empty the message log">Clear</button>
+</row>
+`
+)

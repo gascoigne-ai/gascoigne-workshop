@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"embed"
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/editor"
 
@@ -12,10 +11,7 @@ import (
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
-//go:embed graphql.vml
-var graphQLTemplates embed.FS
-
-var graphQLTemplate = markup.MustLoad(graphQLTemplates, "graphql.vml")
+var graphQLTemplate = markup.Must("graphql.vml", graphqlSource)
 
 // graphQLBody is the editor of a GraphQL body: the query, the variables as
 // JSON, and a button that asks the server for its schema.
@@ -90,3 +86,25 @@ func (a *App) rememberSchema(t *reqTab, resp *model.Response) {
 		t.schema = schema
 	}
 }
+
+// Templates, parsed once above.
+const (
+	graphqlSource = `<!-- The GraphQL body: the query with the schema buttons, the variables as
+     JSON with whether they parse. -->
+<col grow="1" gap="6">
+  <row h="{{rowH}}" gap="6">
+    <caption>Query</caption>
+    <spacer/>
+    <button if="hasSchema" w="104" on-click-at="openSchema" tooltip="Pick an operation: the query and variables are replaced by a starter for it">{{schemaLabel}}</button>
+    <button w="104" on-click="loadSchema" tooltip="Ask the server for its types; the answer opens in the response">Load schema</button>
+  </row>
+  <area state="query" grow="3" bg="sunken" on-change="syncQuery" text-menu="queryText"/>
+  <row h="{{labelH}}" gap="6">
+    <caption>Variables (JSON)</caption>
+    <spacer/>
+    <text if="hasVars" small color="{{statusColor}}">{{status}}</text>
+  </row>
+  <area state="vars" grow="1" bg="sunken" on-change="syncVars" text-menu="varsText"/>
+</col>
+`
+)

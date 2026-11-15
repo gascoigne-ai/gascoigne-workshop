@@ -2,7 +2,6 @@ package ui
 
 import (
 	"context"
-	"embed"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -287,10 +286,7 @@ func (a *App) logInfo(t *reqTab, text string, tok w.Token) {
 	}
 }
 
-//go:embed messagespane.vml
-var messagesPaneSource embed.FS
-
-var messagesPaneTemplate = markup.MustLoad(messagesPaneSource, "messagespane.vml")
+var messagesPaneTemplate = markup.Must("messagespane.vml", messagespaneSource)
 
 // messagesPane is the log with its toolbar and the composer.
 func (a *App) messagesPane(_ pane, t *reqTab, _ *ScrollState) Node {
@@ -427,3 +423,20 @@ func requestPanesFor(t *reqTab) []pane {
 	}
 	return requestPanes
 }
+
+// Templates, parsed once above.
+const (
+	messagespaneSource = `<col grow="1">
+  <!-- same top inset as the request pane, so first rows line up -->
+  <spacer h="{{gutter}}"/>
+  <slot name="toolbar"/>
+  <code state="log" grow="1" bg="sunken"/>
+  <!-- an event stream only receives, so it has no composer -->
+  <row if="composer" h="{{composerH}}" pad-x="{{gutter}}" pad-y="8" gap="6" border-t="border">
+    <field state="message" grow="1" placeholder="{{hint}}" on-enter="send" text-menu="message"/>
+    <button if="canFormat" min-w="40" on-click="format" tooltip="Make the message one line of JSON, or say where it is not JSON">{ }</button>
+    <primary-button min-w="70" on-click="send" tooltip="Send the message (Enter)">Send</primary-button>
+  </row>
+</col>
+`
+)

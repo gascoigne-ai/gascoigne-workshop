@@ -1,3 +1,0 @@
-<col grow="1" pad="{{gutter}}" bg="bg">
-  <lines color="{{color}}">{{message}}</lines>
-</col>

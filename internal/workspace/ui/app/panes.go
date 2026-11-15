@@ -2,7 +2,6 @@ package ui
 
 import (
 	"bytes"
-	"embed"
 	"encoding/json"
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/controller/viewer"
@@ -195,10 +194,7 @@ func (a *App) paneBody(p pane, t *reqTab, scroll *ScrollState) Node {
 	return paneBuilders[p.kind](a, p, t, scroll)
 }
 
-//go:embed messagepane.vml
-var messagePaneSource embed.FS
-
-var messagePaneTemplate = markup.MustLoad(messagePaneSource, "messagepane.vml")
+var messagePaneTemplate = markup.Must("messagepane.vml", messagepaneSource)
 
 // messagePane shows a status line ("Sending...", an error) in place of
 // the pane's content.
@@ -214,10 +210,7 @@ func (a *App) messagePane(p pane, msg string, isErr bool) Node {
 	})
 }
 
-//go:embed notepane.vml
-var notePaneSource embed.FS
-
-var notePaneTemplate = markup.MustLoad(notePaneSource, "notepane.vml")
+var notePaneTemplate = markup.Must("notepane.vml", notepaneSource)
 
 // notePane shows the pane's text, such as the response's timeline.
 func (a *App) notePane(p pane, t *reqTab, scroll *ScrollState) Node {
@@ -287,14 +280,11 @@ func (a *App) tableView(p pane, t *reqTab, scroll *ScrollState, pad int) Node {
 	return tableViewTemplate.MustBuild(scope)
 }
 
-//go:embed tableview.vml bulkview.vml
-var tableViewSources embed.FS
-
 // The table and its rows as text are two roots, so two templates; Go
 // picks one in tableView.
 var (
-	tableViewTemplate = markup.MustLoad(tableViewSources, "tableview.vml")
-	bulkViewTemplate  = markup.MustLoad(tableViewSources, "bulkview.vml")
+	tableViewTemplate = markup.Must("tableview.vml", tableviewSource)
+	bulkViewTemplate  = markup.Must("bulkview.vml", bulkviewSource)
 )
 
 // tableCaptionScope is what both templates show in the row above the
@@ -363,15 +353,12 @@ var bodyTypes = []struct {
 var formPane = pane{label: "Body", kind: paneTable, title: "Fields", editable: true,
 	rows: func(_ *App, t *reqTab) *[]model.KV { return &t.Req.Form }}
 
-//go:embed bodypane.vml bodyarea.vml bodynone.vml
-var bodyPaneSources embed.FS
-
 // The pane and its two simplest editors are templates; the editor is
 // picked in Go (bodyEditor) and enters the pane through a slot.
 var (
-	bodyPaneTemplate = markup.MustLoad(bodyPaneSources, "bodypane.vml")
-	bodyAreaTemplate = markup.MustLoad(bodyPaneSources, "bodyarea.vml")
-	bodyNoneTemplate = markup.MustLoad(bodyPaneSources, "bodynone.vml")
+	bodyPaneTemplate = markup.Must("bodypane.vml", bodypaneSource)
+	bodyAreaTemplate = markup.Must("bodyarea.vml", bodyareaSource)
+	bodyNoneTemplate = markup.Must("bodynone.vml", bodynoneSource)
 )
 
 // bodyChip is one chip of the body type row, as bodypane.vml shows it.
@@ -462,10 +449,7 @@ func jsonStyler(line string) []Span {
 	return spans
 }
 
-//go:embed settingspane.vml
-var settingsPaneSource embed.FS
-
-var settingsPaneTemplate = markup.MustLoad(settingsPaneSource, "settingspane.vml")
+var settingsPaneTemplate = markup.Must("settingspane.vml", settingspaneSource)
 
 // settingsPane holds the per-request options: timeout, redirects and
 // certificate checks.
@@ -515,14 +499,11 @@ func responseEmpty(t *reqTab) (string, bool) {
 	return "", false
 }
 
-//go:embed responsepane.vml responsepicture.vml
-var responsePaneSources embed.FS
-
 // The text view and the picture are two roots, so two templates; Go
 // picks one in responsePane.
 var (
-	responsePaneTemplate    = markup.MustLoad(responsePaneSources, "responsepane.vml")
-	responsePictureTemplate = markup.MustLoad(responsePaneSources, "responsepicture.vml")
+	responsePaneTemplate    = markup.Must("responsepane.vml", responsepaneSource)
+	responsePictureTemplate = markup.Must("responsepicture.vml", responsepictureSource)
 )
 
 // responsePane is the response body with its toolbar and find bar, or
@@ -571,10 +552,7 @@ func (a *App) viewChip(label string, selected bool, width int, onClick func()) N
 	return Choice(label, selected, W(width), H(w.CompactH), OnClick(onClick))
 }
 
-//go:embed findbar.vml
-var findBarSource embed.FS
-
-var findBarTemplate = markup.MustLoad(findBarSource, "findbar.vml")
+var findBarTemplate = markup.Must("findbar.vml", findbarSource)
 
 // findBar is the search row above the response: the query, the hit
 // counter and the previous, next and close buttons.
@@ -722,3 +700,116 @@ func (a *App) curlOf(req model.Request) string {
 	}
 	return a.curl(req)
 }
+
+// Templates, parsed once above.
+const (
+	messagepaneSource = `<col grow="1" pad="{{gutter}}" bg="bg">
+  <lines color="{{color}}">{{message}}</lines>
+</col>
+`
+
+	notepaneSource = `<scroll state="scroll" pad="{{gutter}}">
+  <lines color="text">{{note}}</lines>
+</scroll>
+`
+
+	tableviewSource = `<scroll state="scroll" pad="{{pad}}" gap="6">
+  <!-- the caption row is copied in bulkview.vml, which keeps it above the rows as text -->
+  <row if="caption" h="{{rowH}}">
+    <caption>{{caption}}</caption>
+    <spacer/>
+    <link-button if="editable" tooltip="Edit all rows as text, one per line" on-click="toggleBulk">{{bulkLabel}}</link-button>
+  </row>
+  <table spec="spec"/>
+</scroll>
+`
+
+	bulkviewSource = `<col grow="1" pad="{{pad}}" gap="6">
+  <!-- the caption row is copied from tableview.vml, so switching to text keeps the caption in place -->
+  <row if="caption" h="{{rowH}}">
+    <caption>{{caption}}</caption>
+    <spacer/>
+    <link-button if="editable" tooltip="Edit all rows as text, one per line" on-click="toggleBulk">{{bulkLabel}}</link-button>
+  </row>
+  <area state="area" grow="1" bg="sunken" text-menu="areaText"/>
+</col>
+`
+
+	bodypaneSource = `<!-- The body pane: the type chips with, for JSON, whether it parses and
+     the Format button; the editor of the chosen type below. -->
+<col grow="1" pad="{{gutter}}" gap="8">
+  <row h="{{rowH}}" gap="6">
+    <!-- the type chips scroll sideways when the pane is narrow -->
+    <hscroll state="typesX" grow="1" gap="6">
+      <choice for="chip in chips" selected="{{chip.Selected}}" w="{{chip.Width}}" keep-in-view="{{chip.Selected}}" on-click="chip.Choose">{{chip.Label}}</choice>
+    </hscroll>
+    <text if="showStatus" small color="{{statusColor}}" ellipsis optional>{{status}}</text>
+    <button if="isJSON" w="70" on-click="format">Format</button>
+  </row>
+  <slot name="editor"/>
+</col>
+`
+
+	bodyareaSource = `<area state="body" grow="1" bg="sunken" on-change="sync" text-menu="bodyText"/>
+`
+
+	bodynoneSource = `<lines color="muted">This request has no body</lines>
+`
+
+	settingspaneSource = `<scroll state="scroll" pad="{{gutter}}" gap="8">
+  <form-row label="Timeout (seconds)" label-width="160">
+    <field state="timeout" w="80" bg="sunken" on-change="timeoutEdited" text-menu="timeout"/>
+    <text small muted>{{timeoutHint}}</text>
+  </form-row>
+  <check-row on="{{followRedirects}}" on-click="toggleRedirects">
+    <text>Follow redirects</text>
+  </check-row>
+  <check-row on="{{verifyCertificate}}" on-click="toggleVerify">
+    <text>Verify the server certificate</text>
+    <text small muted>off accepts self-signed certificates</text>
+  </check-row>
+</scroll>
+`
+
+	responsepaneSource = `<col grow="1">
+  <!-- same top inset as the request pane, so first rows line up -->
+  <spacer h="{{gutter}}"/>
+  <!-- written out: markup has no toolbar element; this is widget.Toolbar, copied in responsepicture.vml -->
+  <row h="{{toolbarH}}" pad-x="{{gutter}}" gap="6" align-items="center" border-b="border">
+    <choice selected="{{compact}}" w="72" h="{{compactH}}" on-click="showCompact">Compact</choice>
+    <choice selected="{{pretty}}" w="56" h="{{compactH}}" on-click="showPretty">Pretty</choice>
+    <choice selected="{{raw}}" w="44" h="{{compactH}}" on-click="showRaw">Raw</choice>
+    <row w="{{gutter}}"/>
+    <choice selected="{{wrap}}" w="56" h="{{compactH}}" on-click="toggleWrap">Wrap</choice>
+    <spacer/>
+    <button if="history" w="66" h="{{compactH}}" on-click-at="openHistory" tooltip="Earlier responses of this request">History</button>
+    <icon-button icon="search" w="{{iconBtnW}}" h="{{compactH}}" on-click="openFind" tooltip="{{findTip}}"/>
+    <icon-button icon="copy" w="{{iconBtnW}}" h="{{compactH}}" on-click="copyBody" tooltip="Copy the response body"/>
+    <icon-button icon="prompt" w="{{iconBtnW}}" h="{{compactH}}" on-click="copyCurl" tooltip="Copy the request as a cURL command"/>
+  </row>
+  <slot if="findBar" name="findBar"/>
+  <code state="view" grow="1" bg="sunken" on-right-click="openMenu"/>
+</col>
+`
+
+	responsepictureSource = `<col grow="1">
+  <spacer h="{{gutter}}"/>
+  <!-- written out: markup has no toolbar element; this is widget.Toolbar, copied from responsepane.vml -->
+  <row h="{{toolbarH}}" pad-x="{{gutter}}" gap="6" align-items="center" border-b="border">
+    <text small muted>{{pictureInfo}}</text>
+    <spacer/>
+    <button w="56" h="{{compactH}}" on-click="save" tooltip="Save the image to a file">Save</button>
+  </row>
+  <image img="picture" grow="1" bg="sunken" tooltip="The image, scaled down to fit"/>
+</col>
+`
+
+	findbarSource = `<row h="{{rowH}}" pad-x="{{gutter}}" gap="6" border-b="border">
+  <field state="find" grow="1" placeholder="Find" on-change="search" on-enter="enter" text-menu="find"/>
+  <text small muted w="64">{{count}}</text>
+  <icon-button icon="chevron-up" w="{{iconBtnW}}" h="{{compactH}}" on-click="previous" tooltip="Previous match"/>
+  <icon-button icon="chevron-down" w="{{iconBtnW}}" h="{{compactH}}" on-click="next" tooltip="Next match"/>
+  <icon-button icon="cross" w="{{iconBtnW}}" h="{{compactH}}" on-click="close" tooltip="Close search (Esc)"/>
+</row>
+`
+)

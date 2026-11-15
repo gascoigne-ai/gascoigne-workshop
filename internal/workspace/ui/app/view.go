@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"embed"
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/textfmt"
@@ -38,10 +37,7 @@ const (
 	tabDirtyW = 12
 )
 
-//go:embed window.vml
-var windowSource embed.FS
-
-var windowTemplate = markup.MustLoad(windowSource, "window.vml")
+var windowTemplate = markup.Must("window.vml", windowSource)
 
 // view is the whole window as a function of the app state (window.vml):
 // the collections tree beside the main column (header, request tabs, URL
@@ -76,13 +72,10 @@ func (a *App) view() Node {
 
 // ── Sidebar ────────────────────────────────────────────────────────────
 
-//go:embed sidebar.vml treefolder.vml treerequest.vml
-var sidebarTemplates embed.FS
-
 var (
-	sidebarTemplate     = markup.MustLoad(sidebarTemplates, "sidebar.vml")
-	treeFolderTemplate  = markup.MustLoad(sidebarTemplates, "treefolder.vml")
-	treeRequestTemplate = markup.MustLoad(sidebarTemplates, "treerequest.vml")
+	sidebarTemplate     = markup.Must("sidebar.vml", sidebarSource)
+	treeFolderTemplate  = markup.Must("treefolder.vml", treefolderSource)
+	treeRequestTemplate = markup.Must("treerequest.vml", treerequestSource)
 )
 
 // sidebar is the header (the chip that switches between the collection
@@ -194,10 +187,7 @@ func requestBadge(protocol, method string) string {
 
 // ── Main column ────────────────────────────────────────────────────────
 
-//go:embed header.vml
-var headerSource embed.FS
-
-var headerTemplate = markup.MustLoad(headerSource, "header.vml")
+var headerTemplate = markup.Must("header.vml", headerSource)
 
 // header is the banner over the main column: the collection's name, the
 // environment chip and the settings menu button.
@@ -212,10 +202,7 @@ func (a *App) header() Node {
 	})
 }
 
-//go:embed requesttabs.vml
-var requestTabsSource embed.FS
-
-var requestTabsTemplate = markup.MustLoad(requestTabsSource, "requesttabs.vml")
+var requestTabsTemplate = markup.Must("requesttabs.vml", requesttabsSource)
 
 // tabSeparatorInset keeps the line between two tabs off the strip's
 // edges, so the tabs read as one strip and not as boxes.
@@ -286,10 +273,7 @@ func (a *App) pressTab(i int) {
 	}
 }
 
-//go:embed urlbar.vml
-var urlBarSource embed.FS
-
-var urlBarTemplate = markup.MustLoad(urlBarSource, "urlbar.vml")
+var urlBarTemplate = markup.Must("urlbar.vml", urlbarSource)
 
 // urlBar is [protocol | method | URL field ........] [Send]. The button
 // is one of three: Send, Connect or Disconnect on a socket, and Cancel
@@ -393,10 +377,7 @@ func splitVars(s string) []urlSeg {
 	return segs
 }
 
-//go:embed pane.vml
-var paneSource embed.FS
-
-var paneTemplate = markup.MustLoad(paneSource, "pane.vml")
+var paneTemplate = markup.Must("pane.vml", paneSource)
 
 // pane is one tabbed area (pane.vml): a tab strip, with extra at its
 // right end when there is one, above the body of the active tab.
@@ -413,10 +394,7 @@ func (a *App) pane(t *reqTab, panes []pane, active *int, scroll, tabsX *ScrollSt
 	})
 }
 
-//go:embed responsestatus.vml
-var responseStatusSource embed.FS
-
-var responseStatusTemplate = markup.MustLoad(responseStatusSource, "responsestatus.vml")
+var responseStatusTemplate = markup.Must("responsestatus.vml", responsestatusSource)
 
 // responseStatus is "200 OK  1.4s  156.67KB", dropped when the tabs need the room.
 func (a *App) responseStatus(t *reqTab) Node {
@@ -447,10 +425,7 @@ func statusPill(status int) (fg, bg w.Token) {
 
 // ── Status bar ─────────────────────────────────────────────────────────
 
-//go:embed statusbar.vml
-var statusBarSource embed.FS
-
-var statusBarTemplate = markup.MustLoad(statusBarSource, "statusbar.vml")
+var statusBarTemplate = markup.Must("statusbar.vml", statusbarSource)
 
 // statusBar is the line under the window: the last status, the Log
 // button and the version.
@@ -463,3 +438,157 @@ func (a *App) statusBar() Node {
 		"openLog": a.calls.Open,
 	})
 }
+
+// Templates, parsed once above.
+const (
+	windowSource = `<stack>
+  <!-- the frame: collections tree | main column, above the status bar -->
+  <col bg="frame">
+    <split state="sidebarSplit" default="{{sidebarDefault}}" grow="1" min-first="{{minSidebarW}}" min-second="{{minMainW}}">
+      <slot name="sidebar"/>
+      <!-- the main column: header, request tabs, URL bar, then request | response -->
+      <col grow="1">
+        <slot name="header"/>
+        <slot name="requestTabs"/>
+        <slot name="urlBar"/>
+        <split state="paneSplit" default="0.5" as-ratio grow="1" min-first="{{minPaneSize}}" min-second="{{minPaneSize}}" vertical="{{stacked}}">
+          <slot name="requestPane"/>
+          <slot name="responsePane"/>
+        </split>
+      </col>
+    </split>
+    <slot name="statusBar"/>
+  </col>
+  <!-- the overlays, each only while open, in z-order: the tooltip last so it is on top -->
+  <slot if="menu" name="menu"/>
+  <slot if="popupMenu" name="popupMenu"/>
+  <slot if="dialog" name="dialog"/>
+  <slot if="callLog" name="callLog"/>
+  <slot if="toasts" name="toasts"/>
+  <slot name="tooltips"/>
+</stack>
+`
+
+	sidebarSource = `<col>
+  <row h="{{headerH}}" pad-x="{{gutter}}" gap="6" bg="bg" border-b="border">
+    <button w="96" h="28" on-click="switchMode">{{mode}}</button>
+    <field state="filter" h="28" grow="1" bg="sunken" placeholder="Filter" text-menu="filter"/>
+  </row>
+  <slot if="sentList" name="sentList"/>
+  <scroll if="!showSent" state="treeScroll" bg="sunken">
+    <slot for="row in rows" name="row"/>
+  </scroll>
+</col>
+`
+
+	treefolderSource = `<list-row selected="{{row.Selected}}" border="{{row.DropBorder}}" h="{{rowH}}" pad-l="{{row.Indent}}" gap="6" on-click="row.Press" on-right-click="row.Menu" on-drag-over="row.DragOver">
+  <icon name="{{row.Triangle}}" w="12"/>
+  <!-- the name, with the part the sidebar filter matched in the accent color; treerequest.vml has the same -->
+  <text if="!row.Match" ellipsis grow="1">{{row.Name}}</text>
+  <row if="row.Match" grow="1">
+    <text>{{row.Before}}</text>
+    <text color="accent-line">{{row.Match}}</text>
+    <text ellipsis grow="1">{{row.After}}</text>
+  </row>
+</list-row>
+`
+
+	treerequestSource = `<list-row selected="{{row.Selected}}" border="{{row.DropBorder}}" h="{{rowH}}" pad-l="{{row.Indent}}" pad-r="{{gutter}}" align-items="baseline" on-click="row.Press" on-right-click="row.Menu" on-drag-over="row.DragOver">
+  <text small color="{{row.Color}}" w="{{badgeW}}">{{row.Badge}}</text>
+  <!-- the name, with the part the sidebar filter matched in the accent color; treefolder.vml has the same -->
+  <text if="!row.Match" ellipsis grow="1">{{row.Name}}</text>
+  <row if="row.Match" grow="1">
+    <text>{{row.Before}}</text>
+    <text color="accent-line">{{row.Match}}</text>
+    <text ellipsis grow="1">{{row.After}}</text>
+  </row>
+</list-row>
+`
+
+	headerSource = `<!-- In a window too narrow for everything the title gives up room first,
+     down to 48 px, then the chip, so the settings button stays inside. -->
+<row h="{{headerH}}" pad-x="{{gutter}}" bg="hero" control="hero">
+  <text bold ellipsis shrink min-w="48" color="hero-text">{{title}}</text>
+  <spacer/>
+  <slot name="env"/>
+  <spacer w="{{gutter}}"/>
+  <row w="{{headerH}}" on-click="toggleMenu" tooltip="{{settingsTip}}">
+    <icon name="dots" grow="1" color="hero-muted" hover-color="hero-text"/>
+  </row>
+</row>
+`
+
+	requesttabsSource = `<row h="{{tabsH}}" pad-t="{{tabGap}}" bg="frame" control="tabstrip" border-b="border">
+  <hscroll state="tabsScroll" grow="1">
+    <!-- inactive tabs blend into the strip; the active one joins the pane. A middle drag reorders, like a left one -->
+    <row for="tab in tabs" active-tab="{{tab.Active}}" separator="{{tab.Separator}}" on-middle-click="tab.MiddlePress" on-right-click="tab.Menu">
+      <row pad-l="14" gap="8" align-items="baseline" on-click="tab.Press" on-drag-over="tab.DragOver">
+        <text small color="{{tab.Color}}" w="{{tabBadgeW}}">{{tab.Badge}}</text>
+        <text>{{tab.Name}}</text>
+        <row w="{{tabDirtyW}}" align-self="stretch">
+          <text if="tab.Dirty" color="accent-line" grow="1">{{dirtyMark}}</text>
+        </row>
+      </row>
+      <row w="24" on-click="tab.Close" tooltip="{{closeTip}}">
+        <icon name="cross" grow="1"/>
+      </row>
+    </row>
+  </hscroll>
+  <row w="40" on-click="newRequest" tooltip="{{newTip}}">
+    <icon name="plus" grow="1"/>
+  </row>
+</row>
+`
+
+	urlbarSource = `<row h="{{urlH}}" pad-x="{{gutter}}" pad-y="8" gap="8" bg="bg">
+  <row grow="1" bg="sunken" control="field" tooltip="{{urlTip}}">
+    <row w="64" on-click="cycleProtocol" tooltip="Protocol: click to change">
+      <text text-center grow="1" color="muted">{{protocol}}</text>
+    </row>
+    <!-- a divider between the chips, none after the last one; markup has no vrule-inset, so view.VRuleInset's tree is spelled out -->
+    <row if="divided" w="1" pad-y="8">
+      <vrule/>
+    </row>
+    <row if="rest" w="84" on-click="cycleMethod" tooltip="Method: click to change">
+      <text text-center grow="1" color="{{methodColor}}">{{method}}</text>
+    </row>
+    <row if="grpc" w="{{grpcMethodW}}" on-click="pickMethod" tooltip="Method: click to list the server's methods">
+      <text ellipsis grow="1" color="{{grpcMethodColor}}">{{grpcMethod}}</text>
+    </row>
+    <row if="grpc" w="56" on-click="toggleStream" tooltip="Stream: keep the call open and show every message in the Messages pane">
+      <text text-center grow="1" color="{{streamColor}}">Stream</text>
+    </row>
+    <!-- breathing room between the divider and the URL text -->
+    <spacer w="{{urlTextGap}}"/>
+    <field state="url" grow="1" placeholder="Enter URL" segments="segments" on-change="edited" on-enter="send" text-menu="url"/>
+  </row>
+  <primary-button if="idle" min-w="80" on-click="send" tooltip="{{sendTip}}">Send</primary-button>
+  <primary-button if="socket" min-w="96" on-click="toggleConnection" tooltip="{{connectionTip}}">{{connectionLabel}}</primary-button>
+  <primary-button if="sending" w="80" on-click="cancel" tooltip="Cancel the running request">Cancel</primary-button>
+</row>
+`
+
+	paneSource = `<col grow="1" bg="bg">
+  <tab-bar>
+    <scroll-tabs state="tabsX" items="tabs" active="{{active}}" on-select="selectTab"/>
+    <slot if="extra" name="extra"/>
+  </tab-bar>
+  <slot name="body"/>
+</col>
+`
+
+	responsestatusSource = `<row gap="12" pad-r="{{gutter}}" optional align-items="center">
+  <row pad-x="10" h="20" bg="{{pillBg}}" control="pill" align-items="center">
+    <text small bold color="{{pillFg}}">{{status}}</text>
+  </row>
+  <text>{{timing}}</text>
+</row>
+`
+
+	statusbarSource = `<row h="{{statusH}}" pad-x="{{gutter}}" gap="{{gutter}}" bg="frame" control="statusbar" border-t="border">
+  <text small muted ellipsis grow="1">{{status}}</text>
+  <button w="44" h="20" on-click="openLog" tooltip="Show the log of calls">Log</button>
+  <text small muted>{{version}}</text>
+</row>
+`
+)

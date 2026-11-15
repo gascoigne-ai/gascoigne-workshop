@@ -1,8 +1,6 @@
 package ui
 
 import (
-	"embed"
-
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -98,10 +96,7 @@ func (t *reqTab) toggleSecrets() {
 	}
 }
 
-//go:embed authpane.vml
-var authTemplates embed.FS
-
-var authPaneTemplate = markup.MustLoad(authTemplates, "authpane.vml")
+var authPaneTemplate = markup.Must("authpane.vml", authpaneSource)
 
 // authChoiceChipWidth is the width of every chip of a chooser field.
 const authChoiceChipWidth = 70
@@ -170,3 +165,23 @@ func authFieldRow(tab *reqTab, field authField) authRow {
 	sync := func() { editRequest(tab, editor.AuthFieldSet{Field: field.id, Value: in.Text}) }
 	return authRow{Label: field.label, Input: in, Sync: sync}
 }
+
+// Templates, parsed once above.
+const (
+	authpaneSource = `<scroll state="scroll" pad="{{gutter}}" gap="8">
+  <row h="{{rowH}}" gap="6">
+    <choice for="chip in types" selected="{{chip.Chosen}}" w="{{chip.Width}}" on-click="chip.Pick">{{chip.Label}}</choice>
+  </row>
+  <lines if="none" color="muted">No authentication</lines>
+  <form-row for="row in fields" label="{{row.Label}}" label-width="120">
+    <row if="row.Chips" gap="6">
+      <choice for="chip in row.Chips" selected="{{chip.Chosen}}" w="{{chip.Width}}" on-click="chip.Pick">{{chip.Label}}</choice>
+    </row>
+    <field if="row.Input" state="row.Input" grow="1" bg="sunken" on-change="row.Sync" text-menu="row.Input"/>
+  </form-row>
+  <check-row if="hasSecret" on="{{showSecrets}}" on-click="toggleSecrets">
+    <text>Show secrets</text>
+  </check-row>
+</scroll>
+`
+)

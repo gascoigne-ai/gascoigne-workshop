@@ -1,8 +1,6 @@
 package ui
 
 import (
-	"embed"
-
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model/assert"
@@ -26,13 +24,10 @@ func (a *App) runTests(t *reqTab) {
 	}
 }
 
-//go:embed assertions.vml results.vml results-none.vml
-var assertTemplates embed.FS
-
 var (
-	assertionsTemplate = markup.MustLoad(assertTemplates, "assertions.vml")
-	resultsTemplate    = markup.MustLoad(assertTemplates, "results.vml")
-	noResultsTemplate  = markup.MustLoad(assertTemplates, "results-none.vml")
+	assertionsTemplate = markup.Must("assertions.vml", assertionsSource)
+	resultsTemplate    = markup.Must("results.vml", resultsSource)
+	noResultsTemplate  = markup.Must("results-none.vml", resultsNoneSource)
 )
 
 // assertionsHelp says how assertions are written; it goes through the
@@ -100,3 +95,28 @@ func (a *App) setVariable(name, value string) {
 	}
 	a.col.Vars = model.UpsertVar(a.col.Vars, name, value)
 }
+
+// Templates, parsed once above.
+const (
+	assertionsSource = `<!-- The request's Tests pane: how assertions are written, and the editor.
+     The help comes from the scope, as it shows a variable's braces. -->
+<col grow="1" pad="{{gutter}}" gap="8">
+  <lines color="muted" small>{{help}}</lines>
+  <area state="tests" grow="1" bg="sunken" on-change="sync" text-menu="testsText"/>
+</col>
+`
+
+	resultsSource = `<!-- The response's Tests pane: the summary, then one line per assertion,
+     marked and colored by whether it passed. -->
+<scroll state="scroll" pad="{{gutter}}" gap="4">
+  <text bold>{{summary}}</text>
+  <text for="row in rows" color="{{row.Color}}" mono>{{row.Text}}</text>
+</scroll>
+`
+
+	resultsNoneSource = `<!-- The response's Tests pane while the request has no assertions. -->
+<col grow="1" pad="{{gutter}}">
+  <text muted>No assertions. Write them in the request's Tests tab.</text>
+</col>
+`
+)

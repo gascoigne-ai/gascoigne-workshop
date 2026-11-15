@@ -1,8 +1,6 @@
 package ui
 
 import (
-	"embed"
-
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/environment/controller/envs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	"strings"
@@ -139,10 +137,7 @@ func (a *App) envAction(row envs.Row) func() {
 	return nil
 }
 
-//go:embed envchip.vml
-var envChipSource embed.FS
-
-var envChipTemplate = markup.MustLoad(envChipSource, "envchip.vml")
+var envChipTemplate = markup.Must("envchip.vml", envchipSource)
 
 // envChip is the environment switcher in the header.
 func (a *App) envChip() Node {
@@ -235,3 +230,15 @@ func (a *App) insertVariable(t *reqTab, name string, from int) {
 	t.url.Focused = true
 	a.urlEdited(t)
 }
+
+// Templates, parsed once above.
+const (
+	envchipSource = `<!-- The chip stops at 200 px and cuts a long name, so the settings button
+     beside it stays in a 400 px window; "No environment" (111 px) fits.
+     Narrower, it shrinks after the title, down to its padding and a few
+     pixels: a larger min-w would widen the chip of a short name. -->
+<row pad-x="10" h="{{compactH}}" max-w="200" min-w="24" shrink bg="hero-text" control="pill" align-items="center" on-click-at="openMenu" tooltip="Environment: variables that override the collection's">
+  <text small bold ellipsis grow="1" color="hero">{{label}}</text>
+</row>
+`
+)
