@@ -27,7 +27,6 @@ func (noFileDialog) Choose(context.Context, string, bool, string) (string, error
 type noFolders struct{}
 
 func (noFolders) List(string) ([]port.FolderEntry, error) { return nil, errors.New("no file system") }
-func (noFolders) Start() (string, error)                  { return "", errors.New("no file system") }
 func (noFolders) Home() (string, error)                   { return "", errors.New("no file system") }
 
 // noBrowser is the preview of an app started without a browser.

@@ -11,9 +11,7 @@ type FolderEntry struct {
 type Folders interface {
 	// List is what dir holds, in no particular order.
 	List(dir string) ([]FolderEntry, error)
-	// Start is the folder the browser opens in: the working directory, as
-	// the native dialogs do.
-	Start() (string, error)
-	// Home is the user's home folder, what a typed ~ means.
+	// Home is the user's home folder: where the browser opens, and what a
+	// typed ~ means.
 	Home() (string, error)
 }

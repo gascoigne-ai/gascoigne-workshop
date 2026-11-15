@@ -33,9 +33,6 @@ func (Disk) List(dir string) ([]port.FolderEntry, error) {
 	return listed, nil
 }
 
-// Start implements port.Folders.
-func (Disk) Start() (string, error) { return os.Getwd() }
-
 // Home implements port.Folders.
 func (Disk) Home() (string, error) { return os.UserHomeDir() }
 

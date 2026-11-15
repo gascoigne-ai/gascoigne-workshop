@@ -48,27 +48,10 @@ func TestListOfAMissingFolderIsAnError(t *testing.T) {
 	}
 }
 
-func TestStartIsTheWorkingDirectoryAndHomeTheUsers(t *testing.T) {
+func TestHomeIsTheUsers(t *testing.T) {
 	dir := t.TempDir()
-	t.Chdir(dir)
 	t.Setenv("HOME", dir)
-	start, err := Disk{}.Start()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if resolved, _ := filepath.EvalSymlinks(start); resolved != mustEval(t, dir) {
-		t.Fatalf("start %q, want %q", start, dir)
-	}
 	if home, err := (Disk{}).Home(); err != nil || home != dir {
 		t.Fatalf("home %q %v", home, err)
 	}
-}
-
-func mustEval(t *testing.T, path string) string {
-	t.Helper()
-	resolved, err := filepath.EvalSymlinks(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return resolved
 }

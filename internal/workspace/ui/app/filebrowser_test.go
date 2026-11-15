@@ -16,8 +16,8 @@ import (
 )
 
 // browsingApp is a test app without a dialog program whose file browser
-// lists the disk and starts in a temporary folder holding a folder and two
-// files.
+// lists the disk; its home is a temporary folder holding a folder and two
+// files, and its working directory another one.
 func browsingApp(t *testing.T) (*App, string) {
 	t.Helper()
 	dir := t.TempDir()
@@ -29,7 +29,8 @@ func browsingApp(t *testing.T) (*App, string) {
 	if err := os.Mkdir(filepath.Join(dir, "sub"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	t.Chdir(dir)
+	t.Setenv("HOME", dir)
+	t.Chdir(t.TempDir())
 	a, _ := newTestApp(t)
 	a.files = fakeDialog{} // no dialog program
 	a.folders = folders.Disk{}
@@ -59,7 +60,7 @@ func pressEdit(a *App, edit core.Edit, keyDown ebiten.Key, alt bool) {
 	a.step(core.Input{Edits: []core.Edit{edit}, Keys: []ebiten.Key{keyDown}, Alt: alt})
 }
 
-func TestWithoutADialogProgramTheFileBrowserOpensInTheWorkingDirectory(t *testing.T) {
+func TestWithoutADialogProgramTheFileBrowserOpensInTheHomeFolder(t *testing.T) {
 	a, dir := browsingApp(t)
 	a.pickFile("Choose the file to send", false, "", func(string) {})
 	if got := browserDir(t, a); got != evalLinks(t, dir) {
@@ -74,6 +75,21 @@ func TestWithoutADialogProgramTheFileBrowserOpensInTheWorkingDirectory(t *testin
 	}
 	if !a.overlayOpen() {
 		t.Fatal("the browser holds the keyboard like a dialog")
+	}
+}
+
+func TestTheBrowserDoesNotRememberTheLastFolder(t *testing.T) {
+	a, dir := browsingApp(t)
+	a.pickFile("Pick", false, "", func(string) {})
+	typePath(a, filepath.Join(dir, "sub")+string(filepath.Separator))
+	a.browse(filebrowser.Entered{})
+	if browserDir(t, a) != filepath.Join(evalLinks(t, dir), "sub") {
+		t.Fatalf("Enter on a typed folder opens it: %q", a.browser.model.Dir)
+	}
+	a.closeBrowser()
+	a.pickFile("Pick again", false, "", func(string) {})
+	if got := browserDir(t, a); got != evalLinks(t, dir) {
+		t.Fatalf("the next browser opens in %q, want home %q", got, dir)
 	}
 }
 

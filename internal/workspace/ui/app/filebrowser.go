@@ -70,17 +70,15 @@ type fileBrowser struct {
 	done   func(path string)
 }
 
-// browseFiles opens the in-app file browser in the working directory, as
-// the native dialogs start there.
+// browseFiles opens the in-app file browser in the home folder, every
+// time: a browser that remembered the last folder would open somewhere
+// the user no longer expects after a while.
 func (a *App) browseFiles(title string, save bool, name string, done func(path string)) (cancel func()) {
-	start, err := a.folders.Start()
-	if err != nil {
-		start = "" // the browser starts in the home folder instead
-	}
-	return a.browseIn(start, title, save, name, done)
+	return a.browseIn("", title, save, name, done)
 }
 
-// browseIn opens the in-app file browser in start.
+// browseIn opens the in-app file browser in start, or in the home folder
+// when start is "" (the root when that is unknown too).
 func (a *App) browseIn(start, title string, save bool, name string, done func(path string)) (cancel func()) {
 	home, err := a.folders.Home()
 	if err != nil {
