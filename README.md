@@ -1,33 +1,47 @@
-# gascoigne-workshop
+# Gascoigne Workshop
 
-GPU-accelerated desktop client for REST, WebSocket, SSE, MCP and gRPC calls, written in Go.
+**One fast desktop app for every API call you make.** REST, WebSocket, Server-Sent Events, MCP and
+gRPC in a single window, with your requests kept as plain files you own.
 
-Three-pane window: collections tree, request editor, response viewer. Drawn with
-[Ebitengine](https://ebitengine.org) and a small declarative widget toolkit (`uitoolkit`), so it
-starts fast and stays sharp on HiDPI screens.
+> **Beta.** The first public release is a beta: it is feature-complete for daily use, but expect
+> rough edges. Only Linux has been tested on a real machine; the macOS and Windows builds are
+> untested (see [Known limitations](#known-limitations)). Please
+> [report what you find](https://github.com/gascoigne-ai/gascoigne-workshop/issues).
 
-Start with [`.harness/overview.md`](.harness/overview.md), the 3000 ft view of the code. Rules and
-design notes live in [`.harness/`](.harness): `rules.md`, `architecture.md`, `decisions.md`.
+## Highlights
 
-## Features
+- **Five protocols, one place.** Stop switching tools: REST, WebSocket, SSE, MCP and gRPC share
+  the same tabs, variables, history and response viewer.
+- **Your requests are files.** A collection is a folder of small JSON files you can read, diff and
+  commit to git. Secrets go to a separate file that stays out of version control.
+- **Fast and sharp.** Drawn on the GPU, so it starts quickly and stays crisp on HiDPI screens.
+- **Made for the keyboard.** Send with `Ctrl+Enter`, jump to the URL with `Ctrl+L`, rebind any
+  shortcut.
+- **Works with what you have.** Paste a cURL command, an OpenAPI spec or a Postman collection and
+  start sending; export back to Postman when you need to share.
+- **No account, no cloud.** Everything stays on your machine, and the program talks only to the
+  servers you point it at.
 
-- **Protocols:** REST over `net/http` (params table kept in sync with the URL, headers, JSON, text,
-  form, multipart and file bodies, auth, assertions), WebSocket, Server-Sent Events, MCP (tools
-  explorer, streamable HTTP and stdio) and gRPC (server reflection, unary calls and streams).
-- **Collections** are folders of JSON files, one open at a time: create, rename, save and delete a
-  collection from the sidebar (right-click the *Collections* chip), and a tree of folders and
-  requests with rename, duplicate, move and delete. Secrets are kept out of the request files.
-- **Variables and environments:** `{{name}}` in URLs, headers and bodies, resolved from the
-  collection, its folders and the active environment.
-- **Response viewer:** pretty-printed, foldable and searchable JSON, raw and compact views,
-  history, timeline, a call log.
-- **Import and export:** cURL, OpenAPI and Postman (from the clipboard), export as Postman.
-- **Settings** in one `settings.json` with a form and a raw editor, a shortcut editor, dark and
-  light themes extendable with JSON theme files, and a System page showing the GPU rendering.
+## What you can do
+
+- **Call anything:** REST with params, headers, JSON, form, multipart and file bodies, auth and
+  assertions; WebSockets and SSE streams; MCP servers (tools explorer, streamable HTTP and stdio);
+  gRPC through server reflection, unary calls and streams.
+- **Organize:** folders and requests in a tree with rename, duplicate, move and delete. Create,
+  rename, save and delete whole collections from the sidebar (right-click the *Collections* chip).
+- **Reuse:** `{{name}}` variables in URLs, headers and bodies, resolved from the collection, its
+  folders and the active environment.
+- **Read responses well:** pretty-printed, foldable and searchable JSON, raw and compact views,
+  history, a timeline and a call log.
+- **Make it yours:** dark and light themes (extend them with JSON theme files), an editable
+  shortcut map, and settings in one `settings.json` with a form and a raw editor.
+
+Start with [`.harness/overview.md`](.harness/overview.md) if you want the 3000 ft view of the
+code. Rules and design notes live in [`.harness/`](.harness).
 
 ## Install
 
-Download a build from the
+Download a beta build from the
 [latest release](https://github.com/gascoigne-ai/gascoigne-workshop/releases/latest): a Linux
 tarball, a macOS arm64 app bundle or a Windows zip. Only Linux is tested so far (see
 [Known limitations](#known-limitations)). Or build from source.
