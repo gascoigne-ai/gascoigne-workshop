@@ -26,3 +26,4 @@ Acceptance: items tested, `make check` green, docs updated.
 - IME stays out of scope.
 - Item 1 (word motion) is done in 87dba94. On macOS Cmd+Left/Right and Cmd+Backspace become line edits (item 2).
 - The word keys are not listed on the Settings Shortcuts page; not part of this task unless the user asks.
+- Items 3 and 4 are done (39c2392, b962e15, c3c0762). Item 5, decided 2026-11-15: goldens are regenerated in a Docker Linux container (amd64, mirroring check.yml); the user starts the Docker daemon. The wrap response scene uses a trimmed real capture of `api.github.com/users/octocat` (one long line); one `-wrap` shot flag turns on both the response and the body Wrap; the body scene uses a `-type-body` flag.
