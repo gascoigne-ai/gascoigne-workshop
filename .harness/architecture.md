@@ -1,5 +1,7 @@
 # Architecture
 
+The short orientation is `overview.md`; this file has the detail.
+
 Status: the three-pane window with REST, WebSocket, SSE, MCP and gRPC; known gaps are under Limits.
 
 ```mermaid

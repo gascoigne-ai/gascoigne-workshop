@@ -4,6 +4,7 @@ Desktop GUI client in Go for running REST, WebSocket, MCP and other protocol cal
 
 - `make check` must pass (fmt-check + vet + `go test -race`).
 - Shared harness is the submodule `.harness/common`; read its `rules.md`, `commit-style.md` and `code-style.md`, then `.harness/rules.md` and `.harness/architecture.md`. Update architecture.md in the same commit as behavior changes.
+- Start with `.harness/overview.md` (the 3000 ft view); the package tree is `.harness/packagemap.md`.
 - Design decisions: `.harness/decisions.md`. Visual style: `.harness/style.md`.
 
 @.harness/common/rules.md

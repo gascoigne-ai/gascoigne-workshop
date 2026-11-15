@@ -42,8 +42,8 @@ make check                    # gofmt, go vet, go test -race
 make shot OUT=shot.png        # render the window once to a PNG (needs a display)
 ```
 
-Rules and design notes live in [`.harness/`](.harness): `rules.md`, `architecture.md`,
-`decisions.md`.
+Start with [`.harness/overview.md`](.harness/overview.md), the 3000 ft view. Rules and design notes
+live in [`.harness/`](.harness): `rules.md`, `architecture.md`, `decisions.md`.
 
 ## Release
 
