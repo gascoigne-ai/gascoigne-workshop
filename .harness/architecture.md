@@ -78,7 +78,7 @@ The toolkit packages are public and independent of the application (`uitoolkit/c
 | `uitoolkit/engine` | key bindings and frame pacing |
 | `internal/workspace/ui/app` | the app (package `app`): state, handlers, the window, dialogs, menus; the composition root that wires the other domains |
 | `internal/workspace/ui/appicon` | the program icon, drawn |
-| `internal/workspace/adapter/statefile`, `internal/workspace/adapter/filedialog`, `internal/workspace/adapter/systemclock` | window and tab state file; native file dialogs (osascript on macOS, zenity or kdialog elsewhere); the wall clock |
+| `internal/workspace/adapter/statefile`, `internal/workspace/adapter/filedialog`, `internal/workspace/adapter/systemclock` | window and tab state file; native file dialogs (osascript on macOS, PowerShell on Windows, zenity or kdialog elsewhere); the wall clock |
 | `internal/request/model` | `Request`, `Folder`, `Response`, environments, tree operations; MCP list parsers, the server description (`mcpserver.go`), schema skeletons and tool form fields (`mcpschema.go`, `mcpform.go`), cURL parsing, GraphQL schema parsing, `ErrCancelled` |
 | `internal/request/adapter/proto` | REST, WebSocket, SSE, MCP, gRPC, `Curl`; `Configured` builds the registry; type aliases keep the port names |
 | `internal/request/adapter/proto/ws` | the WebSocket client (handshake, frames) behind `proto.WebSocket` |
@@ -371,7 +371,7 @@ Row(H(urlH), PadX(w.Pad), PadY(8), Gap(8), Bg(w.Bg),
 
 - **Image responses**: `respview.Decode` sniffs a body for PNG, JPEG or GIF (whatever the Content-Type says); `refreshView` then builds `reqTab.picture` and the response pane shows `widget.Image` (scaled down to fit, centered, never up) with the format, size and a Save button instead of the text viewer.
 
-- **File dialogs and file bodies**: `internal/workspace/adapter/filedialog` runs the native panel through osascript on macOS, else zenity or kdialog (`Open`, `Save`, `ErrCancelled`, `Available`); `App.pickFile` uses it in a goroutine and returns the answer through the bus (a dispatched `func()` runs on the UI goroutine in the next frame), or falls back to a text prompt. The body type `File` (`model.BodyFile`, `reqTab.file`) sends a file as it is; a multipart form value `@path` sends a file part and `@@x` the literal `@x`.
+- **File dialogs and file bodies**: `internal/workspace/adapter/filedialog` runs the native panel through osascript on macOS, a PowerShell Windows Forms dialog on Windows, else zenity or kdialog (`Open`, `Save`, `ErrCancelled`, `Available`); `App.pickFile` uses it in a goroutine and returns the answer through the bus (a dispatched `func()` runs on the UI goroutine in the next frame), or falls back to a text prompt. The body type `File` (`model.BodyFile`, `reqTab.file`) sends a file as it is; a multipart form value `@path` sends a file part and `@@x` the literal `@x`.
 
 - **Request chaining and network settings**: `set name = json PATH | header Name | status` lines in a request's Tests text (`assert.Captures`) store values into the active environment, else the collection variables (`App.setVariable`), after every response. `proto.REST` also takes `CAFile`, `CertFile`, `KeyFile` (settings `caCert`, `clientCert`, `clientKey`) and a `socks5://` proxy; the tab menu `Cookies...` shows the jar's cookies for the URL.
 

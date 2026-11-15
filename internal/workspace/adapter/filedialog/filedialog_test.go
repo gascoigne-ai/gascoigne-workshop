@@ -89,3 +89,28 @@ func TestOnAMacTheNativePanelIsRunThroughOsascript(t *testing.T) {
 		t.Fatalf("save must use the save panel: %q", args)
 	}
 }
+
+func TestOnWindowsPowerShellGetsTheTitleAndNameThroughTheEnvironment(t *testing.T) {
+	goos = "windows"
+	t.Cleanup(func() { goos = runtime.GOOS })
+	dir := t.TempDir()
+	script := "#!/bin/sh\necho \"$WS_SAVE|$WS_TITLE|$WS_NAME\" > \"$0.env\"\nprintf 'C:\\\\a.json'\n"
+	if err := os.WriteFile(filepath.Join(dir, "powershell"), []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", dir)
+	if _, err := Save(context.Background(), `Say "hi"`, "out.json"); err != nil {
+		t.Fatal(err)
+	}
+	got, _ := os.ReadFile(filepath.Join(dir, "powershell.env"))
+	if strings.TrimSpace(string(got)) != `1|Say "hi"|out.json` {
+		t.Fatalf("env %q", got)
+	}
+	if _, err := Open(context.Background(), "Pick"); err != nil {
+		t.Fatal(err)
+	}
+	got, _ = os.ReadFile(filepath.Join(dir, "powershell.env"))
+	if !strings.HasPrefix(string(got), "0|Pick|") {
+		t.Fatalf("open env %q", got)
+	}
+}
