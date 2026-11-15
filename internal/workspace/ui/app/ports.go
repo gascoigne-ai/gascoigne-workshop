@@ -42,6 +42,11 @@ func (noStore) Load(string) (model.Collection, error) {
 }
 func (noStore) Save(string, model.Collection) error { return errors.New("no collection store") }
 
+func (noStore) Create(string, string) (string, error) { return "", errors.New("no collection store") }
+func (noStore) Rename(string, string) (string, error) { return "", errors.New("no collection store") }
+func (noStore) Delete(string) error                   { return errors.New("no collection store") }
+func (noStore) List(string) ([]string, error)         { return nil, errors.New("no collection store") }
+
 // noSettingFiles is the settings store of an app started without one: it
 // reads the defaults and cannot save.
 type noSettingFiles struct{}

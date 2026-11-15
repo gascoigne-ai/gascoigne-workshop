@@ -95,7 +95,7 @@ The toolkit packages are public and independent of the application (`uitoolkit/c
 | `internal/settings/controller/prefs` | what a settings page asks of the application, as typed messages sent through `Host.Send` |
 | `internal/environment/controller/envs` | which environment is active and how add, rename and delete move the choice, and the rows of the chip's menu (`envs.Menu`: labels, the tick, which rows are disabled); the App turns a row into an action (`envAction`) and keeps the prompts and the remembered name |
 | `internal/collection/model/collection`, `openapi`, `postman`, `miniyaml` | tree filtering; the importers and the Postman exporter, pure functions over bytes |
-| `internal/collection/port` | `Store`, where a collection is saved (`store.Files` implements it) |
+| `internal/collection/port` | `Store`, where collections live: `Load`, `Save`, and for whole collections `Create`, `Rename` (the folder follows the name), `Delete` (only the files the store wrote; a folder that holds no collection is refused) and `List` (`store.Files` implements it) |
 | `internal/collection/adapter/store` | the folder-of-files format |
 | `internal/collection/model/clientconfig`, `internal/collection/adapter/clientfile` | the `.workshop.{yaml,json,toml}` client config: `Parse` by extension, `Merge`, `Config.Collection`; `clientfile.Files` reads the global and the local file (`collection/port.ClientConfigs`) |
 | `internal/request/adapter/exampleserver` | `cmd/example-server`: REST, WebSocket, SSE, MCP and gRPC examples, one port each (`Listen`, `Serve`) |

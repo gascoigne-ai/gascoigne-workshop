@@ -466,4 +466,10 @@ func (Files) Load(dir string) (model.Collection, error) { return Load(dir) }
 // Save implements port.Store.
 func (Files) Save(dir string, collection model.Collection) error { return Save(dir, collection) }
 
+// Create, Rename, Delete and List are the functions of the same names.
+func (Files) Create(parent, name string) (string, error) { return Create(parent, name) }
+func (Files) Rename(dir, name string) (string, error)    { return Rename(dir, name) }
+func (Files) Delete(dir string) error                    { return Delete(dir) }
+func (Files) List(parent string) ([]string, error)       { return List(parent) }
+
 var _ port.Store = Files{}
