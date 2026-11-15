@@ -244,7 +244,6 @@ type App struct {
 	title              string                                   // the window title last set
 	jar                http.CookieJar                           // cookies the server set, kept until the app closes
 	defaultWorkspace   string                                   // beside it is the collections folder, where a first save goes
-	ignoreRemembered   bool                                     // the remembered collections are not opened at start
 	setIsRemembered    bool                                     // the open set is the remembered list (opened from it, or changed by the user since), so it is written whole
 	saves              map[*model.Collection]*autosave.Debounce // when each open collection was last written
 	writes             serial.Queue                             // the background writes in flight and waiting, by file
@@ -256,55 +255,54 @@ type App struct {
 
 // Options are the startup switches of the command line.
 type Options struct {
-	ScreenshotPath            string                                        // save a PNG of the first settled frame and exit
-	ScreenshotSet             []string                                      // key=value settings applied live before the screenshot
-	SendOnStart               bool                                          // send the first request at startup
-	ScreenshotRequest         string                                        // the name of the request to open before the screenshot
-	ScreenshotPage            string                                        // the settings page to show before the screenshot; opens the dialog
-	ScreenshotRawSettings     bool                                          // open the settings dialog on the text of settings.json before the screenshot
-	ScreenshotSentLog         bool                                          // show the log of sent requests in the sidebar before the screenshot
-	ScreenshotFind            string                                        // search the response for this text in the find bar before the screenshot
-	ScreenshotFilter          string                                        // type this text into the sidebar's filter before the screenshot
-	ScreenshotSending         bool                                          // send the open request and capture while it is in flight
-	ScreenshotOpenAll         bool                                          // open every request of the collection in its own tab before the screenshot
-	ScreenshotURL             string                                        // type this text into the open request's URL before the screenshot
-	ScreenshotPane            string                                        // the label of the request pane to show before the screenshot
-	ScreenshotBody            string                                        // the body type to choose on the open request before the screenshot (file, graphql, ...)
-	ScreenshotTypeBody        string                                        // text that replaces the open request's body before the screenshot
-	ScreenshotWrap            bool                                          // turn on Wrap for the open request's response and body before the screenshot
-	ScreenshotResponsePane    string                                        // the label of the response pane to show before the screenshot
-	ScreenshotToasts          []string                                      // texts shown as error toasts before the screenshot
-	ScreenshotDialog          string                                        // the dialog to open on the open request before the screenshot (rename, delete)
-	ScreenshotRecord          []string                                      // ACTION=KEYS recorded on the Shortcuts page before the screenshot, or ACTION left recording
-	ScreenshotCallLog         bool                                          // open the Log dialog of calls before the screenshot
-	ScreenshotBrowse          string                                        // open the in-app file browser on this folder before the screenshot
-	ScreenshotCloseAll        bool                                          // close every collection before the screenshot, so the tree shows its empty prompt
-	ScreenshotCollections     []string                                      // folders whose collections open beside the start one before the screenshot, in order
-	ScreenshotTool            string                                        // open the call form of this tool of the open MCP request before the screenshot
-	SettingsPath              string                                        // settings file; "" keeps settings in memory
-	StatePath                 string                                        // remembered UI state; "" keeps it in memory
-	ThemesDir                 string                                        // folder of user theme files (*.json); "" for none
-	ScanFonts                 bool                                          // look for installed fonts in the background, to apply the saved font families
-	Protocols                 func(reqport.ProtocolConfig) reqport.Registry // builds the protocols; nil has none
-	GRPCMethods               reqport.GRPCMethods                           // lists gRPC methods by reflection; nil cannot
-	Curl                      func(model.Request) string                    // the cURL command of a request; nil copies nothing
-	Store                     cport.Store                                   // where the collection is saved; nil saves nothing
-	States                    port.StateStore                               // where the UI state is kept; nil keeps none
-	Files                     port.FileDialog                               // the desktop file chooser; nil uses the in-app file browser
-	Folders                   port.Folders                                  // the folders the in-app file browser lists; nil lists none
-	History                   func(dir string) rport.History                // the history in a folder; nil keeps none
-	System                    sport.SystemInfo                              // the system and GPU report of the settings; nil has none
-	Display                   sport.DisplayScale                            // the desktop's display scale when the window system hides it; nil has none
-	Fonts                     sport.FontStore                               // installed fonts; nil has none
-	SettingsFiles             sport.SettingsStore                           // the settings file; nil reads the defaults and cannot save
-	Previews                  rport.BodyPreview                             // shows a response body in the browser; nil has none
-	Clock                     port.Clock                                    // the time source; nil uses the wall clock
-	OpenMenu                  bool                                          // start with the settings menu open
-	WorkspaceDir              string                                        // collection folder; "" uses the remembered one, else the client config, else the sample
-	Sample                    func() model.Collection                       // the collection shown without a workspace or client config; nil uses collection.GitHubSample
-	Clients                   cport.ClientConfigs                           // the client config a build offers without a workspace; nil has none
-	IgnoreRememberedWorkspace bool                                          // start from the sample or client config unless WorkspaceDir is given, whatever an earlier run remembered
-	DefaultWorkspace          string                                        // where saving goes when there is no workspace yet
+	ScreenshotPath         string                                        // save a PNG of the first settled frame and exit
+	ScreenshotSet          []string                                      // key=value settings applied live before the screenshot
+	SendOnStart            bool                                          // send the first request at startup
+	ScreenshotRequest      string                                        // the name of the request to open before the screenshot
+	ScreenshotPage         string                                        // the settings page to show before the screenshot; opens the dialog
+	ScreenshotRawSettings  bool                                          // open the settings dialog on the text of settings.json before the screenshot
+	ScreenshotSentLog      bool                                          // show the log of sent requests in the sidebar before the screenshot
+	ScreenshotFind         string                                        // search the response for this text in the find bar before the screenshot
+	ScreenshotFilter       string                                        // type this text into the sidebar's filter before the screenshot
+	ScreenshotSending      bool                                          // send the open request and capture while it is in flight
+	ScreenshotOpenAll      bool                                          // open every request of the collection in its own tab before the screenshot
+	ScreenshotURL          string                                        // type this text into the open request's URL before the screenshot
+	ScreenshotPane         string                                        // the label of the request pane to show before the screenshot
+	ScreenshotBody         string                                        // the body type to choose on the open request before the screenshot (file, graphql, ...)
+	ScreenshotTypeBody     string                                        // text that replaces the open request's body before the screenshot
+	ScreenshotWrap         bool                                          // turn on Wrap for the open request's response and body before the screenshot
+	ScreenshotResponsePane string                                        // the label of the response pane to show before the screenshot
+	ScreenshotToasts       []string                                      // texts shown as error toasts before the screenshot
+	ScreenshotDialog       string                                        // the dialog to open on the open request before the screenshot (rename, delete)
+	ScreenshotRecord       []string                                      // ACTION=KEYS recorded on the Shortcuts page before the screenshot, or ACTION left recording
+	ScreenshotCallLog      bool                                          // open the Log dialog of calls before the screenshot
+	ScreenshotBrowse       string                                        // open the in-app file browser on this folder before the screenshot
+	ScreenshotCloseAll     bool                                          // close every collection before the screenshot, so the tree shows its empty prompt
+	ScreenshotCollections  []string                                      // folders whose collections open beside the start one before the screenshot, in order
+	ScreenshotTool         string                                        // open the call form of this tool of the open MCP request before the screenshot
+	SettingsPath           string                                        // settings file; "" keeps settings in memory
+	StatePath              string                                        // remembered UI state; "" keeps it in memory
+	ThemesDir              string                                        // folder of user theme files (*.json); "" for none
+	ScanFonts              bool                                          // look for installed fonts in the background, to apply the saved font families
+	Protocols              func(reqport.ProtocolConfig) reqport.Registry // builds the protocols; nil has none
+	GRPCMethods            reqport.GRPCMethods                           // lists gRPC methods by reflection; nil cannot
+	Curl                   func(model.Request) string                    // the cURL command of a request; nil copies nothing
+	Store                  cport.Store                                   // where the collection is saved; nil saves nothing
+	States                 port.StateStore                               // where the UI state is kept; nil keeps none
+	Files                  port.FileDialog                               // the desktop file chooser; nil uses the in-app file browser
+	Folders                port.Folders                                  // the folders the in-app file browser lists; nil lists none
+	History                func(dir string) rport.History                // the history in a folder; nil keeps none
+	System                 sport.SystemInfo                              // the system and GPU report of the settings; nil has none
+	Display                sport.DisplayScale                            // the desktop's display scale when the window system hides it; nil has none
+	Fonts                  sport.FontStore                               // installed fonts; nil has none
+	SettingsFiles          sport.SettingsStore                           // the settings file; nil reads the defaults and cannot save
+	Previews               rport.BodyPreview                             // shows a response body in the browser; nil has none
+	Clock                  port.Clock                                    // the time source; nil uses the wall clock
+	OpenMenu               bool                                          // start with the settings menu open
+	WorkspaceDir           string                                        // collection folder; "" uses the remembered one, else the client config, else the sample
+	Sample                 func() model.Collection                       // the collection shown without a workspace or client config; nil uses collection.GitHubSample
+	Clients                cport.ClientConfigs                           // the client config a build offers without a workspace; nil has none
+	DefaultWorkspace       string                                        // where saving goes when there is no workspace yet
 }
 
 // startCollection is the collection shown before a workspace or client
@@ -340,7 +338,6 @@ func NewApp(opts Options) (*App, error) {
 		clients:          opts.Clients,
 		system:           opts.System,
 		defaultWorkspace: opts.DefaultWorkspace,
-		ignoreRemembered: opts.IgnoreRememberedWorkspace,
 		expanded:         map[*model.Folder]bool{},
 		widgets:          map[*tabs.Tab]*reqTab{},
 		bus:              bus.New(),

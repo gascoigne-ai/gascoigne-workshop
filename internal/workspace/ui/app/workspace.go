@@ -29,7 +29,7 @@ func (a *App) openWorkspace(dir string) {
 	switch {
 	case dir != "":
 		wanted = []settings.OpenCollection{{Folder: dir, Environment: a.rememberedEnv(collectionDir(dir))}}
-	case !a.ignoreRemembered:
+	default:
 		wanted = a.settings.RememberedCollections()
 		a.setIsRemembered = true
 	}

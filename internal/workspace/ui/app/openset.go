@@ -280,9 +280,9 @@ func (a *App) rememberCollections() {
 
 // rememberEnvironments writes the active environment of each open
 // collection to the settings. When the open set did not come from the
-// remembered list (a folder given at start, or the list ignored), only the
+// remembered list (a folder given at start with -workspace), only the
 // entries of the list that name an open collection change: the list is
-// what the next ordinary start opens and a debug run must not replace it.
+// what the next ordinary start opens and such a run must not replace it.
 func (a *App) rememberEnvironments() {
 	if a.setIsRemembered {
 		a.rememberCollections()

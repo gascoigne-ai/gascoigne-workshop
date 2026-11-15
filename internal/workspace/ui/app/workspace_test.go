@@ -307,9 +307,10 @@ func TestExportPostmanWritesACollectionFileThatImportsBack(t *testing.T) {
 	}
 }
 
-// A debug build run from an IDE kept showing an old collection: an
-// earlier run had saved one and remembered it, which beat the sample.
-func TestDebugStartIgnoresTheRememberedWorkspaceButNotTheFlag(t *testing.T) {
+// Every build reopens what it remembered (the dev build in its own -dev
+// directory, so it never sees the release build's list); a folder given
+// with -workspace still opens alone.
+func TestStartOpensTheRememberedWorkspaceUnlessAFolderIsGiven(t *testing.T) {
 	remembered, flagged := t.TempDir(), t.TempDir()
 	for dir, name := range map[string]string{remembered: "Last", flagged: "Asked"} {
 		c := model.Collection{Folder: model.Folder{Name: name, Requests: []*model.Request{{Name: "R", Protocol: "rest", Method: "GET"}}}}
@@ -331,9 +332,9 @@ func TestDebugStartIgnoresTheRememberedWorkspaceButNotTheFlag(t *testing.T) {
 		opts Options
 		want string
 	}{
-		{"remembered is ignored", Options{SettingsPath: sp, Sample: sample, IgnoreRememberedWorkspace: true}, "Sample"},
-		{"the flag still wins", Options{SettingsPath: sp, Sample: sample, IgnoreRememberedWorkspace: true, WorkspaceDir: flagged}, "Asked"},
-		{"remembered is used otherwise", Options{SettingsPath: sp, Sample: sample}, "Last"},
+		{"the flag wins", Options{SettingsPath: sp, Sample: sample, WorkspaceDir: flagged}, "Asked"},
+		{"remembered is opened", Options{SettingsPath: sp, Sample: sample}, "Last"},
+		{"the sample on a first start", Options{Sample: sample}, "Sample"},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

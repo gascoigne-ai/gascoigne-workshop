@@ -13,7 +13,3 @@ import (
 func clientConfigs() cport.ClientConfigs {
 	return clientfile.Files{GlobalDir: clientfile.DefaultGlobalDir(), LocalDir: "."}
 }
-
-// ignoreRememberedWorkspace is false in the release build: it reopens the
-// user's last workspace.
-const ignoreRememberedWorkspace = false
