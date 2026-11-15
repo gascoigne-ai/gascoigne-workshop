@@ -57,12 +57,14 @@
 //			markup.Scope{"status": a.status})
 //	}
 //
-// A larger view lives in a .vml file next to its Go file, embedded with
-// go:embed and parsed once with Load or MustLoad:
+// A larger view is a template string in a const at the end of its Go file,
+// parsed once at package level with Must; its name ("row.vml") is only
+// what an error message calls it:
 //
-//	//go:embed row.vml
-//	var files embed.FS
-//	var rowTemplate = markup.MustLoad(files, "row.vml")
+//	var rowTemplate = markup.Must("row.vml", rowSource)
+//
+// Load and MustLoad read a template from an fs.FS (an embed.FS or a folder)
+// for a program that keeps its templates in files.
 //
 // The result is the same *view.El tree the Go DSL makes, so both styles
 // share one runtime and can be mixed: a template can be a part of a
