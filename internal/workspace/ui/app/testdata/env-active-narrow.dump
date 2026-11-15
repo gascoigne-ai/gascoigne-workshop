@@ -5,4 +5,4 @@ flow h=44 padL=12 padR=12 bg=hero control=hero rect=0,0,280,44
     textB text="Dev" grow=1 fg=hero small=true bold=true ellipsis=true rect=180,15,22,14
   plain w=12 grow=1 rect=212,0,12,44
   flow w=44 tip=Settings (Ctrl+,) onClick=true rect=224,0,44,44
-    iconB grow=1 fg=hero-muted hoverColor=hero-text icon=dots rect=224,0,44,44
+    iconB grow=1 fg=hero-muted hoverColor=hero-text icon=gear rect=224,0,44,44

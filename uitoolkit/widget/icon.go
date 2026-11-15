@@ -290,6 +290,9 @@ func GripIcon(opts ...Option) *El { return Icon("grip", opts...) }
 // DotsIcon is the three-dot "more" glyph.
 func DotsIcon(opts ...Option) *El { return Icon("dots", opts...) }
 
+// GearIcon is a cogwheel, the settings button.
+func GearIcon(opts ...Option) *El { return Icon("gear", opts...) }
+
 // TrashIcon is a trash can, for delete buttons; it turns red under the pointer.
 func TrashIcon(opts ...Option) *El { return Icon("trash", opts...) }
 

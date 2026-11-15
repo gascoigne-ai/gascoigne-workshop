@@ -524,7 +524,7 @@ const (
   <slot name="env"/>
   <spacer w="{{gutter}}"/>
   <row w="{{headerH}}" on-click="toggleMenu" tooltip="{{settingsTip}}">
-    <icon name="dots" grow="1" color="hero-muted" hover-color="hero-text"/>
+    <icon name="gear" grow="1" color="hero-muted" hover-color="hero-text"/>
   </row>
 </row>
 `

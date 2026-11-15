@@ -209,3 +209,20 @@ func TestIconsHaveTheirNaturalWidths(t *testing.T) {
 		}
 	}
 }
+
+// GearIcon is the built-in cogwheel at its natural 18 px, and it is among
+// the registered icons.
+func TestGearIconIsTheCogwheelAt18Px(t *testing.T) {
+	if !HasIcon("gear") {
+		t.Fatalf("no gear among %v", IconNames())
+	}
+	c := testCtx(t)
+	gear := GearIcon()
+	Layout(c, Row(AlignItems(AlignCenter), gear), 100, 100)
+	if gear.Rect().W != 18 || gear.Rect().H != 18 {
+		t.Fatalf("natural size %dx%d", gear.Rect().W, gear.Rect().H)
+	}
+	if !hasIcon(gear, "gear") {
+		t.Fatal("GearIcon does not name the gear icon")
+	}
+}
