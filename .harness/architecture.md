@@ -78,7 +78,7 @@ The toolkit packages are public and independent of the application (`uitoolkit/c
 | `uitoolkit/engine` | key bindings and frame pacing |
 | `internal/workspace/ui/app` | the app (package `app`): state, handlers, the window, dialogs, menus; the composition root that wires the other domains |
 | `internal/workspace/ui/appicon` | the program icon, drawn |
-| `internal/workspace/adapter/statefile`, `internal/workspace/adapter/filedialog`, `internal/workspace/adapter/systemclock` | window and tab state file; native file dialogs (osascript on macOS, PowerShell on Windows, zenity or kdialog elsewhere); the wall clock |
+| `internal/workspace/adapter/statefile`, `internal/workspace/adapter/filedialog`, `internal/workspace/adapter/folders`, `internal/workspace/adapter/systemclock` | window and tab state file; native file dialogs (osascript on macOS, PowerShell on Windows, zenity or kdialog elsewhere); folder listings for the in-app file browser (`folders.Disk`; a link to a folder counts as a folder); the wall clock |
 | `internal/request/model` | `Request`, `Folder`, `Response`, environments, tree operations; MCP list parsers, the server description (`mcpserver.go`), schema skeletons and tool form fields (`mcpschema.go`, `mcpform.go`), cURL parsing, GraphQL schema parsing, `ErrCancelled` |
 | `internal/request/adapter/proto` | REST, WebSocket, SSE, MCP, gRPC, `Curl`; `Configured` builds the registry; type aliases keep the port names |
 | `internal/request/adapter/proto/ws` | the WebSocket client (handshake, frames) behind `proto.WebSocket` |
@@ -94,6 +94,7 @@ The toolkit packages are public and independent of the application (`uitoolkit/c
 | `internal/workspace/controller/serial` | when a file write may start: one per name at a time, the newest waiting write replaces older ones (`Queue`); no I/O |
 | `internal/workspace/controller/overlay` | which open thing Escape closes: the ordered `Layer`s (context menu, dialog, call log, font list, settings, cell edit, find bar, running request) and `Open.Top`; the App fills the set (`openLayers`) and closes the top one (`escape`, `overlay.go`) |
 | `internal/workspace/controller/bus` | the one queue goroutines report through (`Dispatch`, `Drain`, `Run` with a `Cmd`); drained once per frame |
+| `internal/workspace/controller/filebrowser` | the in-app file browser without its view (task 068): the folder shown, the path field, the selection, folders first then names ignoring case, hidden names, the typed filter (a part of a name or a pattern such as `*.json`), what Enter does (`Update` returns an `Effect`: a folder to list, or the chosen path and whether it replaces a file); no I/O |
 | `internal/settings/controller/prefs` | what a settings page asks of the application, as typed messages sent through `Host.Send` |
 | `internal/environment/controller/envs` | which environment is active and how add, rename and delete move the choice, and the rows of the chip's menu (`envs.Menu`: labels, the tick, which rows are disabled); the App turns a row into an action (`envAction`) and keeps the prompts and the remembered name |
 | `internal/collection/model/collection`, `openapi`, `postman`, `miniyaml` | tree filtering; the importers and the Postman exporter, pure functions over bytes |
@@ -105,7 +106,7 @@ The toolkit packages are public and independent of the application (`uitoolkit/c
 | `internal/response/ui/respview`, `internal/response/ui/sentlog` | response views and helpers; the sent-request list behind a `Host` |
 | `internal/response/port` | `Sent` and `SentStore`, the stored log of sent requests; `BodyPreview`, shows a body in the browser (`preview.Browser` implements it); `History` and `Entry`, the saved responses and the sent log of one folder (`history.Dir` implements it) |
 | `internal/workspace/model/state` | what is remembered between runs: window, tabs, pane sizes (`Window.Clamp`); tabs and open folders name their collection by folder (`CollectionAt`) |
-| `internal/workspace/port` | `FileDialog` and `ErrCancelled` (`filedialog.System` implements it); `StateStore` (`statefile.Files`); `Clock` (`systemclock.Clock`); `cmd/workshop` hands the adapters to the App through `Options` |
+| `internal/workspace/port` | `FileDialog` and `ErrCancelled` (`filedialog.System` implements it); `Folders` and `FolderEntry` (`folders.Disk`); `StateStore` (`statefile.Files`); `Clock` (`systemclock.Clock`); `cmd/workshop` hands the adapters to the App through `Options` |
 | `internal/response/adapter/history`, `internal/response/adapter/preview` | response history and the sent-log file (`history.SentLog` implements `SentStore`); browser preview server |
 | `internal/settings/model/settings`, `internal/settings/model/fontfamily` | the settings schema and the rules of the `settings.json` text (`Decode`, `Encode`, `Minimal`); font families and their lookup |
 | `internal/settings/port` | `FontStore`, the installed fonts (`fonts.System` implements it; `Options.Fonts` hands it to the App); `SettingsStore`, the settings file (`settingsfile.Files` implements it; `Options.SettingsFiles`) |
