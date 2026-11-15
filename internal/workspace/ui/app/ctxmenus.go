@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/collections"
 	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
@@ -147,22 +148,46 @@ func (a *App) Toast(text string, isErr bool) { a.toast(text, isErr) }
 // SetStatus replaces the status line.
 func (a *App) SetStatus(text string) { a.status = text }
 
-// OpenRequest focuses the request at path of the collection and reports
-// whether there is one.
-func (a *App) OpenRequest(path string) bool {
+// OpenRequest focuses the request at path of the collection saved in
+// folder and reports whether there is one. A row without a folder is of a
+// collection not saved, or older than the folder in a row, when the one
+// collection open was the first.
+func (a *App) OpenRequest(folder, path string) bool {
 	var found *model.Request
-	a.eachRoot(func(root *model.Folder) {
-		walkRequests(root, "", func(candidate string, req *model.Request) {
+	for _, entry := range a.sentCandidates(folder) {
+		walkRequests(&entry.Collection.Folder, "", func(candidate string, req *model.Request) {
 			if candidate == path && found == nil {
 				found = req
 			}
 		})
-	})
+	}
 	if found == nil {
 		return false
 	}
 	a.openRequest(found)
 	return true
+}
+
+// sentCandidates are the open collections a sent row of folder may name,
+// in the order they are searched.
+func (a *App) sentCandidates(folder string) []collections.Entry {
+	if folder != "" {
+		entry, ok := a.open.ByDir(folder)
+		if !ok {
+			return nil
+		}
+		return []collections.Entry{entry}
+	}
+	var candidates []collections.Entry
+	for _, entry := range a.open.Entries {
+		if entry.Dir == "" {
+			candidates = append(candidates, entry)
+		}
+	}
+	if len(a.open.Entries) > 0 {
+		candidates = append(candidates, a.open.Entries[0])
+	}
+	return candidates
 }
 
 // Badge is the method label shown before a request's name.

@@ -1,0 +1,120 @@
+package app
+
+import (
+	"path/filepath"
+	"testing"
+	"time"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/history"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/settingsfile"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
+)
+
+// Alpha and Beta both hold Nested/Inner; the history of one must not show
+// in the other, and the history written before several collections could
+// be open (keyed by the bare path) still belongs to the first.
+func TestHistoryIsKeptPerCollectionAndOldHistoryStaysWithTheFirst(t *testing.T) {
+	a, _, _ := twoCollectionsAppWith(t, Options{StatePath: filepath.Join(t.TempDir(), "state.json")})
+	alphaInner := entryNamed(t, a, "Alpha").Collection.Folders[0].Requests[0]
+	betaInner := entryNamed(t, a, "Beta").Collection.Folders[0].Requests[0]
+	old := []port.Entry{{At: time.Now(), Status: 201, Body: []byte("old")}}
+	if err := history.Save(a.historyDir(), "Nested/Inner", old); err != nil {
+		t.Fatal(err)
+	}
+	if got := a.loadHistory(alphaInner); len(got) != 1 || got[0].Resp.Status != 201 {
+		t.Fatalf("Alpha's old history %+v", got)
+	}
+	if got := a.loadHistory(betaInner); len(got) != 0 {
+		t.Fatalf("Beta reads Alpha's old history: %+v", got)
+	}
+
+	a.openRequest(betaInner)
+	tab := a.cur()
+	tab.Resp = &model.Response{Status: 200, Body: []byte("beta")}
+	a.saveHistory(tab)
+	a.waitWrites()
+	if got := a.loadHistory(betaInner); len(got) != 1 || got[0].Resp.Status != 200 {
+		t.Fatalf("Beta's history %+v", got)
+	}
+	if got := a.loadHistory(alphaInner); len(got) != 1 || got[0].Resp.Status != 201 {
+		t.Fatalf("Alpha's history after Beta's send %+v", got)
+	}
+}
+
+func TestASentRowOpensTheRequestOfItsOwnCollection(t *testing.T) {
+	a, _, betaDir := twoCollectionsAppWith(t, Options{StatePath: filepath.Join(t.TempDir(), "state.json")})
+	alphaInner := entryNamed(t, a, "Alpha").Collection.Folders[0].Requests[0]
+	betaInner := entryNamed(t, a, "Beta").Collection.Folders[0].Requests[0]
+	a.openRequest(betaInner)
+	tab := a.cur()
+	pointTabAt(tab, jsonServer(t).URL)
+	a.send(tab)
+	waitForResponse(t, a, tab)
+	row := a.sent.Rows("")[0]
+	if row.Collection != betaDir || row.Path != "Nested/Inner" {
+		t.Fatalf("row %+v", row)
+	}
+
+	a.openRequest(alphaInner)
+	a.sent.Open(a, row)
+	if a.cur().Req != betaInner {
+		t.Fatalf("opened %q of the wrong collection", a.cur().Req.Name)
+	}
+	// a row written before rows named their collection is the first one's
+	a.sent.Open(a, port.Sent{Path: "Nested/Inner"})
+	if a.cur().Req != alphaInner {
+		t.Fatal("an old row did not open the first collection's request")
+	}
+}
+
+// Started on a folder given by -workspace, the open set is not the
+// remembered list; picking an environment updates the folder's entry in
+// the list and keeps the rest instead of replacing it.
+func TestAnEnvironmentPickKeepsTheRememberedListItDidNotComeFrom(t *testing.T) {
+	alphaDir, otherDir := savedCollection(t, "Alpha"), savedCollection(t, "Other")
+	cases := []struct {
+		name       string
+		remembered []settings.OpenCollection
+		want       []settings.OpenCollection
+	}{
+		{
+			name:       "listed",
+			remembered: []settings.OpenCollection{{Folder: otherDir, Environment: "Dev"}, {Folder: alphaDir}},
+			want:       []settings.OpenCollection{{Folder: otherDir, Environment: "Dev"}, {Folder: alphaDir, Environment: "Dev"}},
+		},
+		{
+			name:       "not listed",
+			remembered: []settings.OpenCollection{{Folder: otherDir}},
+			want:       []settings.OpenCollection{{Folder: otherDir}},
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			settingsPath := filepath.Join(t.TempDir(), "settings.json")
+			start := settings.Default()
+			start.Collections = tc.remembered
+			if err := settingsfile.Save(settingsPath, start); err != nil {
+				t.Fatal(err)
+			}
+			a, err := NewApp(withAdapters(Options{SettingsPath: settingsPath, WorkspaceDir: alphaDir}))
+			if err != nil {
+				t.Fatal(err)
+			}
+			a.selectEnv(0)
+			written, err := settingsfile.Load(settingsPath)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(written.Collections) != len(tc.want) {
+				t.Fatalf("remembered %+v, want %+v", written.Collections, tc.want)
+			}
+			for i := range tc.want {
+				if written.Collections[i] != tc.want[i] {
+					t.Fatalf("remembered %+v, want %+v", written.Collections, tc.want)
+				}
+			}
+		})
+	}
+}

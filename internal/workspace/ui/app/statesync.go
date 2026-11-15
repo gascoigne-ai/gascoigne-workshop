@@ -57,6 +57,35 @@ func (a *App) requestPath(req *model.Request) string {
 	return found
 }
 
+// historyKeySep joins a collection's folder and a request path in a
+// history key. A key is never split again, and the folder is absolute, so
+// it cannot be mistaken for a bare path.
+const historyKeySep = "#"
+
+// historyKey is what req's saved responses are kept under: its
+// collection's folder and its path, since two collections can hold the
+// same path. A collection not saved yet has no folder, so its key is the
+// bare path. "" when req is in no open collection.
+func (a *App) historyKey(req *model.Request) string {
+	path := a.requestPath(req)
+	owner, ok := a.open.Owner(req)
+	if path == "" || !ok || owner.Dir == "" {
+		return path
+	}
+	return owner.Dir + historyKeySep + path
+}
+
+// legacyHistoryKey is the bare path req's responses were kept under while
+// one collection was open at a time, for a request of the first open
+// collection, which is where that one collection is now; "" otherwise.
+func (a *App) legacyHistoryKey(req *model.Request) string {
+	owner, ok := a.open.Owner(req)
+	if !ok || owner.Dir == "" || a.open.Entries[0].Collection != owner.Collection {
+		return ""
+	}
+	return a.requestPath(req)
+}
+
 // openDirs are the folders of the open collections in tree order, "" for
 // one not saved, as state.CollectionAt takes them.
 func (a *App) openDirs() []string {
@@ -303,7 +332,7 @@ func (a *App) historyStore() rport.History {
 // shown one first, so they are there after a restart. A failed write is
 // shown in the status line and nothing else changes.
 func (a *App) saveHistory(t *reqTab) {
-	store, key := a.historyStore(), a.requestPath(t.Req)
+	store, key := a.historyStore(), a.historyKey(t.Req)
 	if store == nil || key == "" {
 		return
 	}
@@ -326,11 +355,14 @@ func (a *App) saveHistory(t *reqTab) {
 
 // loadHistory is the saved responses of req, newest first.
 func (a *App) loadHistory(req *model.Request) []tabs.PastResponse {
-	store, key := a.historyStore(), a.requestPath(req)
+	store, key := a.historyStore(), a.historyKey(req)
 	if store == nil || key == "" {
 		return nil
 	}
 	saved, err := store.Load(key)
+	if legacy := a.legacyHistoryKey(req); err == nil && len(saved) == 0 && legacy != "" {
+		saved, err = store.Load(legacy)
+	}
 	if err != nil {
 		a.toast("History could not be read: "+err.Error(), true)
 		return nil

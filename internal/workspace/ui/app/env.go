@@ -111,7 +111,7 @@ func (a *App) selectEnv(i int) {
 	selection.Select(col, i)
 	a.chooseEnv(col, selection.Index)
 	a.varsFolder, a.varsCollection = nil, nil
-	a.rememberCollections()
+	a.rememberEnvironments()
 }
 
 // addEnv creates an environment in the focused collection and makes it
@@ -125,7 +125,7 @@ func (a *App) addEnv(name string) {
 	selection.Add(col, name)
 	a.chooseEnv(col, selection.Index)
 	a.varsFolder, a.varsCollection = nil, nil
-	a.rememberCollections()
+	a.rememberEnvironments()
 }
 
 func (a *App) renameEnv(i int, name string) {

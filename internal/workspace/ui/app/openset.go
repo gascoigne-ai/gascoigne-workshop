@@ -2,6 +2,7 @@ package app
 
 import (
 	"path/filepath"
+	"slices"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/tree"
@@ -196,6 +197,51 @@ func (a *App) rememberCollections() {
 		remembered = append(remembered, item)
 	}
 	a.saveSettings(func(s *settings.Settings) { s.RememberCollections(remembered) })
+	a.setIsRemembered = true
+}
+
+// rememberEnvironments writes the active environment of each open
+// collection to the settings. When the open set did not come from the
+// remembered list (a folder given at start, or the list ignored), only the
+// entries of the list that name an open collection change: the list is
+// what the next ordinary start opens and a debug run must not replace it.
+func (a *App) rememberEnvironments() {
+	if a.setIsRemembered {
+		a.rememberCollections()
+		return
+	}
+	remembered := slices.Clone(a.settings.RememberedCollections())
+	changed := false
+	for i, item := range remembered {
+		entry, ok := a.openAt(item.Folder)
+		if !ok {
+			continue
+		}
+		name := ""
+		if env := entry.Environment(); env != nil {
+			name = env.Name
+		}
+		if item.Environment != name {
+			remembered[i].Environment, changed = name, true
+		}
+	}
+	if changed {
+		a.saveSettings(func(s *settings.Settings) { s.RememberCollections(remembered) })
+	}
+}
+
+// openAt is the open collection a remembered folder names: the one saved
+// there, or for "" the one not saved.
+func (a *App) openAt(folder string) (collections.Entry, bool) {
+	if folder != "" {
+		return a.open.ByDir(collectionDir(folder))
+	}
+	for _, entry := range a.open.Entries {
+		if entry.Dir == "" {
+			return entry, true
+		}
+	}
+	return collections.Entry{}, false
 }
 
 // rememberedEnv is the environment remembered for the collection in dir.

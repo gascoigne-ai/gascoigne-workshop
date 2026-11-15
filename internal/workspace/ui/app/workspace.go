@@ -31,6 +31,7 @@ func (a *App) openWorkspace(dir string) {
 		wanted = []settings.OpenCollection{{Folder: dir, Environment: a.rememberedEnv(collectionDir(dir))}}
 	case !a.ignoreRemembered:
 		wanted = a.settings.RememberedCollections()
+		a.setIsRemembered = true
 	}
 	var failed []error
 	var sample *model.Collection

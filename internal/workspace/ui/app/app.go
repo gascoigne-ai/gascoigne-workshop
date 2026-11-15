@@ -242,6 +242,7 @@ type App struct {
 	jar                http.CookieJar                           // cookies the server set, kept until the app closes
 	defaultWorkspace   string                                   // beside it is the collections folder, where a first save goes
 	ignoreRemembered   bool                                     // the remembered collections are not opened at start
+	setIsRemembered    bool                                     // the open set is the remembered list (opened from it, or changed by the user since), so it is written whole
 	saves              map[*model.Collection]*autosave.Debounce // when each open collection was last written
 	writes             serial.Queue                             // the background writes in flight and waiting, by file
 	keys               changeKeys                               // the comparable forms of the collection and the state, recomputed only on frames where something could have changed
@@ -496,7 +497,8 @@ func (a *App) apply(r sendResult) {
 	t.Resp = &r.resp
 	a.saveHistory(t)
 	if path := a.requestPath(t.Req); path != "" {
-		a.sent.Record(a, a.now(), path, t.Req, r.resp.Status)
+		owner, _ := a.open.Owner(t.Req)
+		a.sent.Record(a, a.now(), owner.Dir, path, t.Req, r.resp.Status)
 	}
 	a.calls.Answer(a.now(), t.Req, &r.resp)
 	a.rememberSchema(t, &r.resp)

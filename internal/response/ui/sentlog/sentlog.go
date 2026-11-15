@@ -24,9 +24,10 @@ type Host interface {
 	Toast(text string, isErr bool)
 	// SetStatus replaces the status line.
 	SetStatus(text string)
-	// OpenRequest focuses the request at path of the collection and reports
-	// whether there is one.
-	OpenRequest(path string) bool
+	// OpenRequest focuses the request at path of the collection saved in
+	// folder ("" for an unsaved one or a row older than the folder) and
+	// reports whether there is one.
+	OpenRequest(folder, path string) bool
 	// Badge is the small method label shown before a request's name.
 	Badge(protocol, method string) Node
 }
@@ -38,10 +39,11 @@ type Log struct {
 	scroll ScrollState
 }
 
-// Record adds a finished send of the request at path, writes it to the state
+// Record adds a finished send of the request at path of the collection
+// saved in folder ("" when not saved), writes it to the state
 // folder, and drops the oldest past port.SentLimit.
-func (l *Log) Record(host Host, at time.Time, path string, req *model.Request, status int) {
-	sent := port.Sent{At: at, Path: path, Protocol: req.Protocol, Method: req.Method, URL: req.URL, Status: status}
+func (l *Log) Record(host Host, at time.Time, folder, path string, req *model.Request, status int) {
+	sent := port.Sent{At: at, Collection: folder, Path: path, Protocol: req.Protocol, Method: req.Method, URL: req.URL, Status: status}
 	l.rows = append([]port.Sent{sent}, l.rows...)
 	if len(l.rows) > port.SentLimit {
 		l.rows = l.rows[:port.SentLimit]
@@ -88,7 +90,7 @@ func (l *Log) Rows(filter string) []port.Sent {
 // Open opens the request an entry was sent from; one that has since been
 // deleted or renamed is reported in the status line.
 func (l *Log) Open(host Host, sent port.Sent) {
-	if !host.OpenRequest(sent.Path) {
+	if !host.OpenRequest(sent.Collection, sent.Path) {
 		host.SetStatus(fmt.Sprintf("%s is no longer in the collection", sent.Path))
 	}
 }

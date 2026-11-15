@@ -16,11 +16,12 @@ import (
 
 // fakeHost keeps what the log asks the application to do.
 type fakeHost struct {
-	dir     string
-	toasts  []string
-	status  string
-	opened  []string
-	present map[string]bool
+	dir      string
+	toasts   []string
+	status   string
+	opened   []string // the paths asked for
+	openedIn []string // the folders they were asked for in
+	present  map[string]bool
 }
 
 func (h *fakeHost) SentStore() port.SentStore {
@@ -32,8 +33,9 @@ func (h *fakeHost) SentStore() port.SentStore {
 func (h *fakeHost) Toast(text string, _ bool)   { h.toasts = append(h.toasts, text) }
 func (h *fakeHost) SetStatus(text string)       { h.status = text }
 func (h *fakeHost) Badge(_, method string) Node { return Text(method) }
-func (h *fakeHost) OpenRequest(path string) bool {
+func (h *fakeHost) OpenRequest(folder, path string) bool {
 	h.opened = append(h.opened, path)
+	h.openedIn = append(h.openedIn, folder)
 	return h.present[path]
 }
 
@@ -41,7 +43,25 @@ var clock = time.Date(2026, 11, 7, 12, 0, 0, 0, time.UTC)
 
 func send(log *Log, host Host, path, url string) {
 	req := &model.Request{Protocol: "rest", Method: "GET", URL: url}
-	log.Record(host, clock, path, req, 200)
+	log.Record(host, clock, "", path, req, 200)
+}
+
+// Two collections can hold the same path, so a row keeps the folder of its
+// collection and opens the request there.
+func TestARowRemembersAndOpensItsCollection(t *testing.T) {
+	var log Log
+	host := &fakeHost{dir: t.TempDir(), present: map[string]bool{"Users/List": true}}
+	log.Record(host, clock, "/work/beta", "Users/List", &model.Request{Protocol: "rest", Method: "GET"}, 200)
+	var reloaded Log
+	reloaded.Load(host)
+	rows := reloaded.Rows("")
+	if len(rows) != 1 || rows[0].Collection != "/work/beta" {
+		t.Fatalf("rows after a reload = %+v", rows)
+	}
+	log.Open(host, rows[0])
+	if len(host.opened) != 1 || host.opened[0] != "Users/List" || host.openedIn[0] != "/work/beta" {
+		t.Fatalf("opened %v in %v", host.opened, host.openedIn)
+	}
 }
 
 func TestRecordedSendsListNewestFirstAndFilterByPathMethodOrURL(t *testing.T) {

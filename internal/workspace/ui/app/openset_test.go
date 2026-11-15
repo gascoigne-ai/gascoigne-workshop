@@ -43,8 +43,14 @@ func savedCollection(t *testing.T, name string) string {
 // it, as the tree's Open command will.
 func twoCollectionsApp(t *testing.T) (a *App, alphaDir, betaDir string) {
 	t.Helper()
+	return twoCollectionsAppWith(t, Options{})
+}
+
+// twoCollectionsAppWith is twoCollectionsApp started with opts.
+func twoCollectionsAppWith(t *testing.T, opts Options) (a *App, alphaDir, betaDir string) {
+	t.Helper()
 	alphaDir, betaDir = savedCollection(t, "Alpha"), savedCollection(t, "Beta")
-	a = workspaceApp(t, alphaDir, Options{})
+	a = workspaceApp(t, alphaDir, opts)
 	if err := a.addCollection(betaDir); err != nil {
 		t.Fatal(err)
 	}
