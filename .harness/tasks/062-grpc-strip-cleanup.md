@@ -16,3 +16,5 @@ Scope
 4. `style.md` if the fix sets a pattern for strips.
 
 Acceptance: `make shot` of a gRPC request looked at and consistent with the other protocols; `make check` green.
+
+Status (2026-11-15): items 1, 2 and 4 are done (commit `19afb92`; `make shot` PNG looked at: dividers both sides of the method, Stream a separate chip). Item 3 is **blocked**: `cmd/workshop/testdata/golden/request-grpc.png` already shows the strip and now differs. Goldens are drawn with software GL under `xvfb-run` (decision 5), which this macOS machine does not have, and a Metal render would not match within the pixel slack. Unblock: run `xvfb-run -a go test ./cmd/workshop -run TestGoldenScenes/request-grpc -update` on Linux (or let CI), look at the PNG, commit it. Until then CI's golden test fails for `request-grpc`.
