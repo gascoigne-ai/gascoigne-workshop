@@ -33,6 +33,22 @@ func TestInputConsumeRemovesTheKeysFromEveryForm(t *testing.T) {
 	}
 }
 
+// A browser that goes up a folder on Backspace must take the Backspace
+// from the path field under it, as it takes Up and Down.
+func TestInputConsumeRemovesEveryEditingKeysEdit(t *testing.T) {
+	in := Input{
+		Edits: []Edit{EditBackspace, EditDelete, EditHome, EditPageDown, EditLeft},
+		Keys:  []ebiten.Key{ebiten.KeyBackspace},
+	}
+	in.Consume(ebiten.KeyBackspace, ebiten.KeyDelete, ebiten.KeyHome, ebiten.KeyPageDown)
+	if len(in.Edits) != 1 || in.Edits[0] != EditLeft {
+		t.Errorf("edits = %v, want only EditLeft", in.Edits)
+	}
+	if len(in.Keys) != 0 {
+		t.Errorf("keys = %v, want none", in.Keys)
+	}
+}
+
 func TestInputConsumeLeavesOtherKeys(t *testing.T) {
 	in := Input{Enter: true, Escape: true, Edits: []Edit{EditUp}, Keys: []ebiten.Key{ebiten.KeyEnter}}
 	in.Consume(ebiten.KeyEscape)

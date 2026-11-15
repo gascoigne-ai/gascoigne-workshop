@@ -45,9 +45,10 @@ func (in Input) Scaled(scale float64) Input {
 func (in Input) Pressed(key ebiten.Key) bool { return slices.Contains(in.Keys, key) }
 
 // Consume removes keys from this frame's input in every form they take
-// (the Enter, Escape and Tab flags, the Up and Down edits, the Keys list),
-// so a widget under an overlay that used them does not act on them too:
-// Enter that accepts a menu item must not type a line break.
+// (the Enter, Escape and Tab flags, the edit of an editing key such as Up
+// or Backspace, the Keys list), so a widget under an overlay that used them
+// does not act on them too: Enter that accepts a menu item must not type a
+// line break.
 func (in *Input) Consume(keys ...ebiten.Key) {
 	for _, key := range keys {
 		switch key {
@@ -57,10 +58,11 @@ func (in *Input) Consume(keys ...ebiten.Key) {
 			in.Escape = false
 		case ebiten.KeyTab:
 			in.Tab = false
-		case ebiten.KeyArrowUp:
-			in.Edits = withoutEdit(in.Edits, EditUp)
-		case ebiten.KeyArrowDown:
-			in.Edits = withoutEdit(in.Edits, EditDown)
+		}
+		for _, editKey := range editKeys {
+			if editKey.key == key {
+				in.Edits = withoutEdit(in.Edits, editKey.edit)
+			}
 		}
 	}
 	remaining := make([]ebiten.Key, 0, len(in.Keys))
