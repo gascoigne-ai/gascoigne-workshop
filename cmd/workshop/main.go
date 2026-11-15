@@ -3,6 +3,7 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"flag"
 	"fmt"
@@ -14,6 +15,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/displayscale"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/fonts"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/dockicon"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/filedialog"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/systemclock"
 	"image"
@@ -146,6 +148,10 @@ func main() {
 		}
 	}
 	ebiten.SetWindowIcon([]image.Image{appicon.Image(32), appicon.Image(64), appicon.Image(128)})
+	var dock bytes.Buffer
+	if png.Encode(&dock, appicon.Image(512)) == nil {
+		dockicon.Set(dock.Bytes()) // the Dock ignores the window icon
+	}
 	ebiten.SetWindowTitle("Gascoigne Workshop")
 	ebiten.SetWindowSizeLimits(720, 480, -1, -1) // below this the panes cannot show their controls
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
