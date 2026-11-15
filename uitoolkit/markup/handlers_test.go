@@ -22,6 +22,7 @@ func TestHandlerAttributesMatchTheGoOptions(t *testing.T) {
 		{"on-right-click", func(int, int) {}, view.OnRightClick(func(int, int) {})},
 		{"on-right-click-in", func(*core.Ctx, int, int) {}, view.OnRightClickIn(func(*core.Ctx, int, int) {})},
 		{"on-middle-click", func() {}, view.OnMiddleClick(func() {})},
+		{"on-double-click", func() {}, view.OnDoubleClick(func() {})},
 		{"on-drag-over", func() {}, view.OnDragOver(func() {})},
 		{"on-change", func() {}, view.OnChange(func() {})},
 		{"on-select", func(int) {}, view.OnSelect(func(int) {})},

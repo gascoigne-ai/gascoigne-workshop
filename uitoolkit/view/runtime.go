@@ -249,6 +249,9 @@ func (e *El) update(c *core.Ctx) bool {
 	if e.onClickAt != nil && c.In.Hit(e.rect) {
 		e.onClickAt(c.In.X, c.In.Y)
 	}
+	if e.onDouble != nil && c.In.Clicks == 2 && c.In.Hit(e.rect) {
+		e.onDouble()
+	}
 	if e.onMiddle != nil && c.In.MiddleClick && c.In.Over(e.rect) {
 		e.onMiddle()
 	}
@@ -435,7 +438,7 @@ func (e *El) coversWithControl(x, y int) bool {
 		if k.hidden || !k.rect.Contains(x, y) {
 			continue
 		}
-		if k.onClick != nil || k.onClickAt != nil || k.focusable() || k.coversWithControl(x, y) {
+		if k.onClick != nil || k.onClickAt != nil || k.onDouble != nil || k.focusable() || k.coversWithControl(x, y) {
 			return true
 		}
 	}

@@ -732,6 +732,7 @@ var handlers = map[string]handlerAttr{
 	"on-right-click":    handler(view.OnRightClick),
 	"on-right-click-in": handler(view.OnRightClickIn),
 	"on-middle-click":   handler(view.OnMiddleClick),
+	"on-double-click":   handler(view.OnDoubleClick),
 	"on-drag-over":      handler(view.OnDragOver),
 	"on-change":         handler(view.OnChange),
 	"on-select":         handler(view.OnSelect),

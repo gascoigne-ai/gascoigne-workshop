@@ -22,6 +22,7 @@ func TestDumpNamesEveryHandlerAnElementHas(t *testing.T) {
 		{"OnRightClick", view.OnRightClick(func(int, int) {}), "onRightClick=true"},
 		{"OnRightClickIn", view.OnRightClickIn(func(*core.Ctx, int, int) {}), "onRightClickIn=true"},
 		{"OnMiddleClick", view.OnMiddleClick(func() {}), "onMiddleClick=true"},
+		{"OnDoubleClick", view.OnDoubleClick(func() {}), "onDoubleClick=true"},
 		{"OnDragOver", view.OnDragOver(func() {}), "onDragOver=true"},
 		{"OnChange", view.OnChange(func() {}), "onChange=true"},
 		{"OnSelect", view.OnSelect(func(int) {}), "onSelect=true"},

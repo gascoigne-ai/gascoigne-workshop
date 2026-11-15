@@ -148,6 +148,27 @@ func TestClickReachesOnlyTheElementUnderThePointer(t *testing.T) {
 	}
 }
 
+func TestDoubleClickRunsOnTheSecondClickOverTheElement(t *testing.T) {
+	var clicks, doubles int
+	root := Row(box(W(50), OnClick(func() { clicks++ }), OnDoubleClick(func() { doubles++ })), box(W(50)))
+	c := testCtx(t)
+	Layout(c, root, 100, 20)
+	step := func(in core.Input) { c.In = in; Update(c, root) }
+
+	step(core.Input{X: 10, Y: 5, Click: true, Clicks: 1})
+	if clicks != 1 || doubles != 0 {
+		t.Fatalf("a single click: clicks %d doubles %d", clicks, doubles)
+	}
+	step(core.Input{X: 10, Y: 5, Click: true, Clicks: 2})
+	if clicks != 2 || doubles != 1 {
+		t.Fatalf("the second click is a click and a double click: clicks %d doubles %d", clicks, doubles)
+	}
+	step(core.Input{X: 70, Y: 5, Click: true, Clicks: 2})
+	if doubles != 1 {
+		t.Fatal("a double click beside the element ran it")
+	}
+}
+
 func TestModalSwallowsClicksAndDismissesOnOutsideClick(t *testing.T) {
 	var under, inside, dismissed int
 	menu := box(W(40), H(40), FloatTR(0, 0), OnClick(func() { inside++ }), Modal(), OnDismiss(func() { dismissed++ }))

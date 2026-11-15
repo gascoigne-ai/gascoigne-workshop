@@ -29,7 +29,7 @@
 //	Look       Bg Border BorderX BorderY BorderL BorderT BorderR BorderB HoverBg BorderInset Shadow Control EdgeT EdgeL EdgeR HoverColor Lighten
 //	Text       Text Caption Lines   Color Muted Bold Small Mono FontSource Ellipsis TextCenter
 //	Input      OnChange   (the text inputs, Field and its options, are in package widget)
-//	Events     OnClick OnClickAt OnRightClick OnRightClickIn OnMiddleClick OnDragOver   Tooltip KeepInView
+//	Events     OnClick OnClickAt OnRightClick OnRightClickIn OnMiddleClick OnDoubleClick OnDragOver   Tooltip KeepInView
 //	Events+    OnSelect SelectHandler DismissHandler ChangeHandler   Separator   (Button, Tabs, Menu, Dialog and the rest of the ready-made widgets are in package widget)
 //	Flow       If When For Frag
 //	Extend     Behavior Base Linear Custom Describer PreUpdater OverDrawer Scroller Focusable Focuser Linear.LayoutIn (El.Inner El.InFlow El.KeepsInView El.Behavior El.Place El.FixedSize El.ColorToken El.HoverColorToken)   a component outside this package is an element through these
@@ -96,6 +96,7 @@ type El struct {
 	onClickAt            func(x, y int)
 	onRightIn            func(c *core.Ctx, x, y int) // a right click that needs the context, as TextMenu does
 	onMiddle, onDragOver func()
+	onDouble             func()
 	onSelect             func(i int)
 
 	edgeTok                      core.Token // Edges: the color of the outline
@@ -316,6 +317,11 @@ func OnClickAt(f func(x, y int)) Option { return func(e *El) { e.onClickAt = f }
 
 // OnMiddleClick runs f when the element is middle-clicked.
 func OnMiddleClick(f func()) Option { return func(e *El) { e.onMiddle = f } }
+
+// OnDoubleClick runs f on the second click of a double click on the
+// element, after its OnClick, which runs on both clicks: a list row
+// selects on a click and opens on a double click.
+func OnDoubleClick(f func()) Option { return func(e *El) { e.onDouble = f } }
 
 // OnDragOver runs f every frame the left or middle button is held with the pointer
 // over the element, for drag and drop: the element under the dragged
