@@ -1,13 +1,15 @@
 // Package filedialog asks the desktop for a file name by running the
 // dialog program the system has: the native panel through osascript on
-// macOS, a PowerShell dialog on Windows, zenity (GNOME and most others) or
-// kdialog (KDE) elsewhere. Without one, Available is false and callers fall
-// back to the in-app file browser.
+// macOS, a PowerShell dialog on Windows, and elsewhere the first of zenity,
+// kdialog, yad, qarma and matedialog that is installed, in the order the
+// desktop prefers (detect.go). Without one, Available is false and callers
+// fall back to the in-app file browser.
 package filedialog
 
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"runtime"
@@ -28,6 +30,9 @@ type tool struct {
 	env  func(title, name string, save bool) []string
 	open func(title string) []string
 	save func(title, name string) []string
+	// cancels are the exit codes that mean the user closed the dialog
+	// rather than that the program failed.
+	cancels []int
 }
 
 // goos is the operating system; tests change it.
@@ -36,19 +41,22 @@ var goos = runtime.GOOS
 // osascript runs AppleScript, which is on every Mac, and shows the native
 // open and save panels. The title and the name travel as arguments of the
 // script, never inside its text. Cancelling makes it exit 1.
-var osascript = tool{"osascript", nil,
-	func(title string) []string {
+var osascript = tool{
+	name: "osascript",
+	open: func(title string) []string {
 		return []string{
 			"-e", "on run argv",
 			"-e", "POSIX path of (choose file with prompt (item 1 of argv))",
 			"-e", "end run", title}
 	},
-	func(title, name string) []string {
+	save: func(title, name string) []string {
 		return []string{
 			"-e", "on run argv",
 			"-e", "POSIX path of (choose file name with prompt (item 1 of argv) default name (item 2 of argv))",
 			"-e", "end run", title, name}
-	}}
+	},
+	cancels: []int{1},
+}
 
 // winScript shows a Windows Forms dialog and prints the chosen path; when
 // the user cancels it prints nothing.
@@ -59,70 +67,64 @@ if ($env:WS_SAVE -eq '1') { $d.FileName = $env:WS_NAME; $d.OverwritePrompt = $tr
 if ($d.ShowDialog() -eq 'OK') { [Console]::Out.Write($d.FileName) }`
 
 // powershell is on every Windows; -STA is needed by the dialogs.
-var powershell = tool{"powershell",
-	func(title, name string, save bool) []string {
+var powershell = tool{
+	name: "powershell",
+	env: func(title, name string, save bool) []string {
 		flag := "0"
 		if save {
 			flag = "1"
 		}
 		return []string{"WS_SAVE=" + flag, "WS_TITLE=" + title, "WS_NAME=" + name}
 	},
-	func(title string) []string {
+	open: func(title string) []string {
 		return []string{"-NoProfile", "-NonInteractive", "-STA", "-Command", winScript}
 	},
-	func(title, name string) []string {
+	save: func(title, name string) []string {
 		return []string{"-NoProfile", "-NonInteractive", "-STA", "-Command", winScript}
-	}}
-
-var tools = []tool{
-	{"zenity", nil,
-		func(title string) []string { return []string{"--file-selection", "--title=" + title} },
-		func(title, name string) []string {
-			return []string{"--file-selection", "--save", "--confirm-overwrite", "--title=" + title, "--filename=" + name}
-		}},
-	{"kdialog", nil,
-		func(title string) []string { return []string{"--title", title, "--getopenfilename", "."} },
-		func(title, name string) []string { return []string{"--title", title, "--getsavefilename", name} }},
+	},
+	cancels: []int{1},
 }
 
-// toolsBySystem are the dialog programs a system tries, in order; a system
-// not listed (Linux, the BSDs) tries tools. A Mac may have zenity from a
-// package manager, so it is tried after the native panel.
+// toolsBySystem are the dialog programs a system tries, in order, whatever
+// its desktop; a system not listed orders the Linux programs by its desktop
+// (preferred).
 var toolsBySystem = map[string][]tool{
-	"darwin":  slices.Concat([]tool{osascript}, tools),
+	"darwin":  slices.Concat([]tool{osascript}, anyDesktop.order),
 	"windows": {powershell},
 }
 
-// find is the first dialog program on the PATH.
-func find() (tool, string, bool) {
-	list, ok := toolsBySystem[goos]
-	if !ok {
-		list = tools
+// found is an installed dialog program and where it is.
+type found struct {
+	tool tool
+	path string
+}
+
+// find is the first dialog program of this system and desktop that is
+// installed.
+func find() (found, bool) {
+	list := installed(preferred(goos, os.Getenv), exec.LookPath)
+	if len(list) == 0 {
+		return found{}, false
 	}
-	for _, t := range list {
-		if p, err := exec.LookPath(t.name); err == nil {
-			return t, p, true
-		}
-	}
-	return tool{}, "", false
+	return list[0], true
 }
 
 // Available reports whether a dialog program is installed.
-func Available() bool { _, _, ok := find(); return ok }
+func Available() bool { _, ok := find(); return ok }
 
 func run(ctx context.Context, title, name string, save bool, build func(tool) []string) (string, error) {
-	t, path, ok := find()
+	program, ok := find()
 	if !ok {
-		return "", errors.New("no file dialog program (osascript, powershell, zenity or kdialog) is installed")
+		return "", noProgram()
 	}
-	cmd := exec.CommandContext(ctx, path, build(t)...)
-	if t.env != nil {
-		cmd.Env = append(os.Environ(), t.env(title, name, save)...)
+	cmd := exec.CommandContext(ctx, program.path, build(program.tool)...)
+	if program.tool.env != nil {
+		cmd.Env = append(os.Environ(), program.tool.env(title, name, save)...)
 	}
 	out, err := cmd.Output()
 	if err != nil {
 		var exit *exec.ExitError
-		if errors.As(err, &exit) && exit.ExitCode() == 1 { // both programs exit 1 when the user cancels
+		if errors.As(err, &exit) && slices.Contains(program.tool.cancels, exit.ExitCode()) {
 			return "", ErrCancelled
 		}
 		return "", err
@@ -134,14 +136,23 @@ func run(ctx context.Context, title, name string, save bool, build func(tool) []
 	return chosen, nil
 }
 
+// noProgram names the programs that were looked for.
+func noProgram() error {
+	var names []string
+	for _, each := range preferred(goos, os.Getenv) {
+		names = append(names, each.name)
+	}
+	return fmt.Errorf("no file dialog program is installed (looked for %s)", strings.Join(names, ", "))
+}
+
 // Open asks for an existing file.
 func Open(ctx context.Context, title string) (string, error) {
-	return run(ctx, title, "", false, func(t tool) []string { return t.open(title) })
+	return run(ctx, title, "", false, func(program tool) []string { return program.open(title) })
 }
 
 // Save asks for a file to write, starting from name.
 func Save(ctx context.Context, title, name string) (string, error) {
-	return run(ctx, title, name, true, func(t tool) []string { return t.save(title, name) })
+	return run(ctx, title, name, true, func(program tool) []string { return program.save(title, name) })
 }
 
 // System is the file dialog of this desktop.

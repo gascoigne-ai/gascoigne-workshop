@@ -59,10 +59,11 @@ func TestClosingTheDialogIsACancelNotAnError(t *testing.T) {
 
 func TestWithoutADialogProgramNothingIsAvailable(t *testing.T) {
 	t.Setenv("PATH", t.TempDir())
+	noDesktop(t)
 	if Available() {
 		t.Fatal("found a dialog program in an empty PATH")
 	}
-	if _, err := Open(context.Background(), "x"); err == nil || !strings.Contains(err.Error(), "zenity or kdialog") {
+	if _, err := Open(context.Background(), "x"); err == nil || !strings.Contains(err.Error(), "zenity, kdialog, yad, qarma, matedialog") {
 		t.Fatalf("err = %v", err)
 	}
 }
