@@ -72,12 +72,15 @@ func TestTakingBackAQuestionLeavesALaterBrowserOpen(t *testing.T) {
 	}
 }
 
-// fakeDialog is a file dialog that exists when choose is set.
+// fakeDialog is a file dialog that exists when choose is set; suggest is
+// the program it names for native dialogs.
 type fakeDialog struct {
-	choose func(ctx context.Context, title string, save bool, name string) (string, error)
+	choose  func(ctx context.Context, title string, save bool, name string) (string, error)
+	suggest string
 }
 
-func (dialog fakeDialog) Available() bool { return dialog.choose != nil }
+func (dialog fakeDialog) Available() bool   { return dialog.choose != nil }
+func (dialog fakeDialog) Suggested() string { return dialog.suggest }
 func (dialog fakeDialog) Choose(ctx context.Context, title string, save bool, name string) (string, error) {
 	return dialog.choose(ctx, title, save, name)
 }

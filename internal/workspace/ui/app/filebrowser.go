@@ -257,6 +257,7 @@ func (a *App) fileBrowserView() Node {
 		"below":       (len(visible) - last) * w.RowH,
 		"empty":       len(visible) == 0,
 		"problem":     model.Problem,
+		"hint":        a.browserHint(),
 		"primary":     primary,
 		"enter":       func() { a.browse(filebrowser.Entered{}) },
 		"compactH":    w.CompactH,
@@ -265,6 +266,16 @@ func (a *App) fileBrowserView() Node {
 		"gutter":      w.Gutter,
 		"browserFoot": browserFootH,
 	})
+}
+
+// browserHint names the program that would give native dialogs, so the
+// user learns that the browser is a fallback; "" when there is none to name.
+func (a *App) browserHint() string {
+	program := a.files.Suggested()
+	if program == "" {
+		return ""
+	}
+	return "For native dialogs install " + program
 }
 
 // browserTyped follows an edit of the path field; the list goes back to its
@@ -331,7 +342,8 @@ const (
     </col>
   </scroll>
   <row h="{{browserFoot}}" pad-x="16" gap="8" align-items="center" border-t="border-soft">
-    <text small color="error" ellipsis grow="1" shrink>{{problem}}</text>
+    <text if="problem" small color="error" ellipsis grow="1" shrink>{{problem}}</text>
+    <text if="!problem" small muted ellipsis grow="1" shrink>{{hint}}</text>
     <choice selected="false" min-w="80" h="{{rowH}}" on-click="close">Cancel</choice>
     <choice selected="true" min-w="80" h="{{rowH}}" on-click="enter">{{primary}}</choice>
   </row>

@@ -112,6 +112,10 @@ func find() (found, bool) {
 // Available reports whether a dialog program is installed.
 func Available() bool { _, ok := find(); return ok }
 
+// Suggested is the program to install for native dialogs on this desktop,
+// "" on a system whose dialog is always there.
+func Suggested() string { return suggested(goos, os.Getenv) }
+
 func run(ctx context.Context, title, name string, save bool, build func(tool) []string) (string, error) {
 	program, ok := find()
 	if !ok {
@@ -160,6 +164,9 @@ type System struct{}
 
 // Available implements port.FileDialog.
 func (System) Available() bool { return Available() }
+
+// Suggested implements port.FileDialog.
+func (System) Suggested() string { return Suggested() }
 
 // Choose implements port.FileDialog.
 func (System) Choose(ctx context.Context, title string, save bool, name string) (string, error) {

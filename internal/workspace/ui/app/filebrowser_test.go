@@ -32,7 +32,7 @@ func browsingApp(t *testing.T) (*App, string) {
 	t.Setenv("HOME", dir)
 	t.Chdir(t.TempDir())
 	a, _ := newTestApp(t)
-	a.files = fakeDialog{} // no dialog program
+	a.files = fakeDialog{suggest: "zenity"} // no dialog program, zenity would give one
 	a.folders = folders.Disk{}
 	return a, dir
 }
@@ -205,8 +205,29 @@ func TestAFolderThatCannotBeReadIsSaidInTheFooter(t *testing.T) {
 	if !strings.Contains(a.browser.model.Problem, "Cannot open") {
 		t.Fatalf("problem %q", a.browser.model.Problem)
 	}
-	if !strings.Contains(view.Dump(a.fileBrowserView()), "Cannot open") {
+	dump := view.Dump(a.fileBrowserView())
+	if !strings.Contains(dump, "Cannot open") {
 		t.Fatal("the footer shows the problem")
+	}
+	if strings.Contains(dump, "For native dialogs") {
+		t.Fatalf("the hint gives way to the problem:\n%s", dump)
+	}
+}
+
+func TestTheFooterSaysWhichProgramGivesNativeDialogs(t *testing.T) {
+	a, _ := browsingApp(t)
+	a.pickFile("Pick", false, "", func(string) {})
+	if dump := view.Dump(a.fileBrowserView()); !strings.Contains(dump, `"For native dialogs install zenity"`) {
+		t.Fatalf("no hint in the footer:\n%s", dump)
+	}
+}
+
+func TestNoHintWhenNoProgramIsSuggested(t *testing.T) {
+	a, _ := browsingApp(t)
+	a.files = fakeDialog{}
+	a.pickFile("Pick", false, "", func(string) {})
+	if dump := view.Dump(a.fileBrowserView()); strings.Contains(dump, "For native dialogs") {
+		t.Fatalf("a hint with no program to name:\n%s", dump)
 	}
 }
 
