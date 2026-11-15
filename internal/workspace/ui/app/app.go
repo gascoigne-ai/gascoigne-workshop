@@ -197,6 +197,8 @@ type App struct {
 	clients            cport.ClientConfigs // the build's client config; nil has none
 	states             port.StateStore
 	files              port.FileDialog                 // the desktop file chooser, replaced in tests
+	folders            port.Folders                    // what the in-app file browser lists
+	browser            *fileBrowser                    // the in-app file browser while it is open
 	cancelSettingsPick func()                          // takes back a file question the settings dialog asked
 	settingsUnsaved    bool                            // settings were changed but not written (auto-save is off)
 	prefs              settingsui.SettingsDialog       // the settings dialog
@@ -274,6 +276,7 @@ type Options struct {
 	ScreenshotDialog          string                                        // the dialog to open on the open request before the screenshot (rename, delete)
 	ScreenshotRecord          []string                                      // ACTION=KEYS recorded on the Shortcuts page before the screenshot, or ACTION left recording
 	ScreenshotCallLog         bool                                          // open the Log dialog of calls before the screenshot
+	ScreenshotBrowse          string                                        // open the in-app file browser on this folder before the screenshot
 	ScreenshotCloseAll        bool                                          // close every collection before the screenshot, so the tree shows its empty prompt
 	ScreenshotCollections     []string                                      // folders whose collections open beside the start one before the screenshot, in order
 	ScreenshotTool            string                                        // open the call form of this tool of the open MCP request before the screenshot
@@ -286,7 +289,8 @@ type Options struct {
 	Curl                      func(model.Request) string                    // the cURL command of a request; nil copies nothing
 	Store                     cport.Store                                   // where the collection is saved; nil saves nothing
 	States                    port.StateStore                               // where the UI state is kept; nil keeps none
-	Files                     port.FileDialog                               // the desktop file chooser; nil asks for paths as text
+	Files                     port.FileDialog                               // the desktop file chooser; nil uses the in-app file browser
+	Folders                   port.Folders                                  // the folders the in-app file browser lists; nil lists none
 	History                   func(dir string) rport.History                // the history in a folder; nil keeps none
 	System                    sport.SystemInfo                              // the system and GPU report of the settings; nil has none
 	Display                   sport.DisplayScale                            // the desktop's display scale when the window system hides it; nil has none
@@ -340,7 +344,7 @@ func NewApp(opts Options) (*App, error) {
 		widgets:          map[*tabs.Tab]*reqTab{},
 		bus:              bus.New(),
 		status:           "Ready",
-		shot:             screenshot{path: opts.ScreenshotPath, sendOnStart: opts.SendOnStart, set: opts.ScreenshotSet, request: opts.ScreenshotRequest, page: opts.ScreenshotPage, rawSettings: opts.ScreenshotRawSettings, sentLog: opts.ScreenshotSentLog, find: opts.ScreenshotFind, filter: opts.ScreenshotFilter, sending: opts.ScreenshotSending, openAll: opts.ScreenshotOpenAll, url: opts.ScreenshotURL, pane: opts.ScreenshotPane, body: opts.ScreenshotBody, typeBody: opts.ScreenshotTypeBody, wrap: opts.ScreenshotWrap, respPane: opts.ScreenshotResponsePane, toasts: opts.ScreenshotToasts, dialog: opts.ScreenshotDialog, record: opts.ScreenshotRecord, callLog: opts.ScreenshotCallLog, tool: opts.ScreenshotTool, closeAll: opts.ScreenshotCloseAll, collections: opts.ScreenshotCollections},
+		shot:             screenshot{path: opts.ScreenshotPath, sendOnStart: opts.SendOnStart, set: opts.ScreenshotSet, request: opts.ScreenshotRequest, page: opts.ScreenshotPage, rawSettings: opts.ScreenshotRawSettings, sentLog: opts.ScreenshotSentLog, find: opts.ScreenshotFind, filter: opts.ScreenshotFilter, sending: opts.ScreenshotSending, openAll: opts.ScreenshotOpenAll, url: opts.ScreenshotURL, pane: opts.ScreenshotPane, body: opts.ScreenshotBody, typeBody: opts.ScreenshotTypeBody, wrap: opts.ScreenshotWrap, respPane: opts.ScreenshotResponsePane, toasts: opts.ScreenshotToasts, dialog: opts.ScreenshotDialog, record: opts.ScreenshotRecord, callLog: opts.ScreenshotCallLog, browse: opts.ScreenshotBrowse, tool: opts.ScreenshotTool, closeAll: opts.ScreenshotCloseAll, collections: opts.ScreenshotCollections},
 
 		settings:     st,
 		settingFiles: settingFiles,
@@ -377,6 +381,10 @@ func NewApp(opts Options) (*App, error) {
 	}
 	if a.files == nil {
 		a.files = noFileDialog{}
+	}
+	a.folders = opts.Folders
+	if a.folders == nil {
+		a.folders = noFolders{}
 	}
 	if a.previews == nil {
 		a.previews = noBrowser{}

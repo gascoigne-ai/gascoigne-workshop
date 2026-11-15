@@ -12,6 +12,8 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/folders"
+
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -253,6 +255,21 @@ func TestScreenshotOpensTheCallLog(t *testing.T) {
 	}
 	if !a.calls.Shown() {
 		t.Error("the Log dialog should be open")
+	}
+}
+
+// With -browse the capture opens the in-app file browser on that folder,
+// as choosing a file without a dialog program does.
+func TestScreenshotOpensTheFileBrowserOnAFolder(t *testing.T) {
+	dir := t.TempDir()
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotBrowse: dir, Folders: folders.Disk{}})
+	for range setFrame {
+		if err := a.shotUpdate(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if a.browser == nil || a.browser.model.Dir != dir {
+		t.Fatalf("browser %+v, want it open on %s", a.browser, dir)
 	}
 }
 

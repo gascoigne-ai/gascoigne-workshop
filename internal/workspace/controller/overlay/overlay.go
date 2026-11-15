@@ -10,6 +10,7 @@ type Layer int
 const (
 	ContextMenu Layer = iota // a right-click or dropdown menu
 	Dialog                   // a prompt, confirmation or form
+	FileBrowser              // the in-app file browser, under the question it may ask
 	CallLog                  // the call trace window
 	FontList                 // the font list inside the settings dialog
 	Settings                 // the settings dialog

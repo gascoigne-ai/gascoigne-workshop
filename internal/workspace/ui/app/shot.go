@@ -5,6 +5,7 @@ import (
 	"image"
 	"image/png"
 	"os"
+	"path/filepath"
 	"slices"
 	"strconv"
 	"strings"
@@ -57,6 +58,7 @@ type screenshot struct {
 	dialog      string   // kind of dialog to open on the open request, a key of shotDialogs
 	record      []string // ACTION=KEYS recorded on the Shortcuts page, as a user would; a bare ACTION is left recording
 	callLog     bool     // open the Log dialog of calls, as the status bar's Log button does
+	browse      string   // open the in-app file browser on this folder, as choosing a file without a dialog program does
 	closeAll    bool     // close every collection, so the tree shows its empty prompt
 	collections []string // folders whose collections open beside the start one, in order
 	tool        string   // name of the open MCP request's tool whose call form to open, once the server announced it
@@ -333,6 +335,15 @@ func (a *App) showShotTarget() {
 	}
 	if s.callLog {
 		a.calls.Open()
+	}
+	if s.browse != "" {
+		dir, err := filepath.Abs(s.browse)
+		if err != nil {
+			s.err = fmt.Errorf("screenshot file browser folder %q: %w", s.browse, err)
+			s.captured = true
+			return
+		}
+		a.browseIn(dir, "Choose the file to send", false, "", func(string) {})
 	}
 	for s.closeAll && len(a.open.Entries) > 0 {
 		a.closeCollection(a.open.Entries[0].Collection)

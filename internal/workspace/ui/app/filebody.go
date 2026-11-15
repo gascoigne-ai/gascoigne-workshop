@@ -1,45 +1,14 @@
 package app
 
 import (
-	"context"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/editor"
 	"os"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
-
-// pickFile asks for a file: with the desktop's own dialog when there is
-// one, else with a prompt for the path. It returns a function that closes
-// the question without an answer (it kills the native dialog or closes the
-// prompt), for a caller that has to take it back, as the settings dialog does
-// when it is closed.
-func (a *App) pickFile(title string, save bool, name string, done func(path string)) (cancel func()) {
-	if !a.files.Available() {
-		a.prompt(title, name, "OK", done)
-		asked := a.dialog
-		return func() {
-			if a.dialog == asked {
-				a.closeDialog()
-			}
-		}
-	}
-	ctx, stop := context.WithCancel(context.Background())
-	go func() {
-		path, err := a.files.Choose(ctx, title, save, name)
-		switch {
-		case err == port.ErrCancelled || ctx.Err() != nil: // closed by the user, or taken back
-		case err != nil:
-			a.bus.Dispatch(func() { a.toast("File dialog failed: "+err.Error(), true) })
-		default:
-			a.bus.Dispatch(func() { done(path) })
-		}
-	}()
-	return stop
-}
 
 var fileBodyTemplate = markup.Must("filebody.vml", filebodySource)
 

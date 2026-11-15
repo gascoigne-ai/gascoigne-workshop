@@ -32,6 +32,10 @@ Everything that fills a corner of the dialog panel (the title bar, the settings 
 
 Title bar (title only), then a body padded 16 with gap 12: a muted `Lines` text, any form, the input line, then the buttons on the right (`RowH` high, gap 8, the primary one lit). Width `MessageDialogW` (380).
 
+### File browser
+
+The in-app file chooser (decision 18): width 640, height 520 at most (40 from the window's edges). Title bar: the caller's title and the count of items shown as subtitle. Toolbar: the parent-folder icon button (`chevron-up`, `IconBtnW` x `CompactH`), the path field (`RowH`, `Sunken`, grows), the Hidden files check row. The list fills the rest on `Sunken`: `ListRow`s `RowH` high, padded 12, gap 8, a muted folder icon 16 wide before a folder's name and the same room empty before a file's, the selected row on `Selected`. Footer: `RowH` buttons plus 12 above and below, padded 16, a `BorderSoft` line over it; the problem in small `Error` text takes the room on the left, then Cancel and the primary Open or Save (lit), at least 80 wide, as in message dialogs.
+
 ### Sizes and position
 
 A resizable dialog is grabbed within 6 px inside or 4 px outside its border (`edgeSlop`, `edgeOut`), grows about its center and stays inside the window with `ScreenMargin` (decision 15). Size and position are app state that outlives the dialog's rebuild.

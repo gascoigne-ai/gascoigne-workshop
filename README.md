@@ -112,7 +112,7 @@ On macOS Ctrl is Cmd. All of them can be changed in Settings, Shortcuts.
 
 ## Known limitations
 
-- File dialogs are native on macOS and Windows; Linux needs `zenity` or `kdialog`, and without them the program asks for a path.
+- File dialogs are native on macOS and Windows; Linux needs `zenity` or `kdialog` for native ones, and without them the program opens its own file browser.
 - No IME.
 - gRPC has no `.proto` file import: methods come from server reflection.
 

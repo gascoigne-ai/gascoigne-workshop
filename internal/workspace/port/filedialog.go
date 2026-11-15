@@ -13,7 +13,7 @@ var ErrCancelled = errors.New("cancelled")
 // FileDialog asks the desktop for a file name.
 type FileDialog interface {
 	// Available reports whether there is a dialog to show; without one the
-	// caller asks for the path as text.
+	// caller opens its in-app file browser.
 	Available() bool
 	// Choose shows the dialog and returns the chosen path, or ErrCancelled.
 	// Cancelling ctx closes it. save asks for a new file named name.

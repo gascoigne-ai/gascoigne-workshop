@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/state"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 
@@ -13,13 +14,21 @@ import (
 )
 
 // noFileDialog is the file chooser of an app started without one: callers
-// ask for the path as text.
+// get the in-app file browser.
 type noFileDialog struct{}
 
 func (noFileDialog) Available() bool { return false }
 func (noFileDialog) Choose(context.Context, string, bool, string) (string, error) {
 	return "", errors.New("no file dialog")
 }
+
+// noFolders is the file system of an app started without one: the file
+// browser shows no folder.
+type noFolders struct{}
+
+func (noFolders) List(string) ([]port.FolderEntry, error) { return nil, errors.New("no file system") }
+func (noFolders) Start() (string, error)                  { return "", errors.New("no file system") }
+func (noFolders) Home() (string, error)                   { return "", errors.New("no file system") }
 
 // noBrowser is the preview of an app started without a browser.
 type noBrowser struct{}

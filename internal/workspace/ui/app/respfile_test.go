@@ -63,19 +63,18 @@ func TestHistoryKeepsEarlierResponsesNewestFirstAndSwapsOnPick(t *testing.T) {
 }
 
 func TestSaveBodyWritesTheFileAndReportsFailures(t *testing.T) {
-	t.Setenv("PATH", t.TempDir()) // no dialog program: the path is asked as text
-	a, _ := newTestApp(t)
+	a, _ := newTestApp(t) // no dialog program: the in-app file browser is used
 	tab := a.cur()
 	a.saveBody(tab) // no response yet
-	if a.dialog != nil {
-		t.Fatal("no dialog without a response")
+	if a.browser != nil {
+		t.Fatal("no file browser without a response")
 	}
 	tab.Resp = &model.Response{Status: 200, Body: []byte(`{"a":1}`)}
 	a.saveBody(tab)
-	if a.dialog == nil || a.dialog.Input == nil || a.dialog.Input.Text != "response.txt" {
-		t.Fatalf("the prompt did not open with a name: %+v", a.dialog)
+	if a.browser == nil || !strings.HasSuffix(a.browser.path.Text, "response.txt") {
+		t.Fatalf("the file browser did not open with a name: %+v", a.browser)
 	}
-	a.closeDialog()
+	a.closeBrowser()
 	path := filepath.Join(t.TempDir(), "out.json")
 	a.writeBody(tab, path)
 	if b, err := os.ReadFile(path); err != nil || string(b) != `{"a":1}` {
@@ -155,8 +154,8 @@ func TestPickFileUsesTheDesktopDialogWhenThereIsOne(t *testing.T) {
 	a.files = filedialog.System{}
 	var got string
 	a.pickFile("Pick", false, "", func(p string) { got = p })
-	if a.dialog != nil {
-		t.Fatal("with a dialog program there is no text prompt")
+	if a.browser != nil {
+		t.Fatal("with a dialog program there is no in-app file browser")
 	}
 	until(t, a, "the chosen path", func() bool { return got != "" })
 	if got != "/chosen/by/dialog.bin" {
@@ -166,8 +165,8 @@ func TestPickFileUsesTheDesktopDialogWhenThereIsOne(t *testing.T) {
 	t.Setenv("PATH", t.TempDir())
 	got = ""
 	a.pickFile("Pick", false, "start.txt", func(p string) { got = p })
-	if a.dialog == nil || a.dialog.Input == nil || a.dialog.Input.Text != "start.txt" {
-		t.Fatal("without one the path is asked as text")
+	if a.browser == nil || !strings.HasSuffix(a.browser.path.Text, "start.txt") {
+		t.Fatal("without one the in-app file browser asks, with the name")
 	}
 }
 

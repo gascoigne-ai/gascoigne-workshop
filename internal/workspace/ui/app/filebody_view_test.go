@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/folders"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -108,19 +109,24 @@ func TestTypingAFilePathSetsTheBody(t *testing.T) {
 	}
 }
 
-// Without a desktop file chooser Choose... asks for the path as text, and
-// the answer becomes the field's text and the request's body.
+// Without a desktop file chooser Choose... opens the in-app file browser,
+// and the chosen file becomes the field's text and the request's body.
 func TestChooseAsksForTheFileAndSetsThePath(t *testing.T) {
 	a := openFileBody(t)
-	click(a, fileChooseX, fileBodyRowY)
-	if a.dialog == nil || a.dialog.Title != "Choose the file to send" {
-		t.Fatalf("dialog = %+v, want the path prompt", a.dialog)
+	a.folders = folders.Disk{}
+	picked := filepath.Join(t.TempDir(), "picked.bin")
+	if err := os.WriteFile(picked, nil, 0o644); err != nil {
+		t.Fatal(err)
 	}
-	a.typeText("picked.bin")
-	a.dialogDefault()
+	click(a, fileChooseX, fileBodyRowY)
+	if a.browser == nil || a.browser.title != "Choose the file to send" {
+		t.Fatalf("browser = %+v, want the file browser", a.browser)
+	}
+	typePath(a, picked)
+	a.step(core.Input{Enter: true})
 	tab := a.cur()
-	if tab.file.Text != "picked.bin" || tab.Req.Body != "picked.bin" {
-		t.Fatalf("field %q body %q, want picked.bin in both", tab.file.Text, tab.Req.Body)
+	if tab.file.Text != picked || tab.Req.Body != picked {
+		t.Fatalf("field %q body %q, want %q in both", tab.file.Text, tab.Req.Body, picked)
 	}
 }
 

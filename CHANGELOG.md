@@ -11,3 +11,4 @@ First release.
 - Settings: one `settings.json` with a form and a raw editor, shortcut editor, colors page, System page (GPU rendering), dark and light themes, JSON theme files.
 - Client configs (`.workshop.yaml`, `.json`, `.toml`) in release builds; example server for every protocol in the default build.
 - In-app movable and resizable dialogs; a gear icon for the settings button.
+- Native file dialogs on macOS, Windows and Linux (zenity or kdialog); without a dialog program, an in-app file browser for opening and saving.

@@ -2,7 +2,7 @@
 // dialog program the system has: the native panel through osascript on
 // macOS, a PowerShell dialog on Windows, zenity (GNOME and most others) or
 // kdialog (KDE) elsewhere. Without one, Available is false and callers fall
-// back to asking for the path as text.
+// back to the in-app file browser.
 package filedialog
 
 import (

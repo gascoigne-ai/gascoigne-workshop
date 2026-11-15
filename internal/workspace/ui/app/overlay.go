@@ -131,7 +131,8 @@ func (a *App) toastsView() Node {
 // ---- keyboard --------------------------------------------------------------
 
 // overlayKeys handles the keys of an open menu (Up, Down, Enter) or
-// dialog (Enter, for one without a text field, which has its own).
+// dialog (Enter, for one without a text field, which has its own), or of
+// the file browser when no question is asked over it.
 func (a *App) overlayKeys(in w.Input) {
 	enter := in.Enter || in.Pressed(ebiten.KeyEnter)
 	switch {
@@ -139,6 +140,8 @@ func (a *App) overlayKeys(in w.Input) {
 		PopupMenuKeys(a.ctx, in)
 	case a.dialog != nil && a.dialog.Input == nil && enter:
 		a.dialogDefault()
+	case a.dialog == nil && a.browser != nil:
+		a.fileBrowserKeys(in)
 	}
 }
 
@@ -149,7 +152,9 @@ func (a *App) swallowMenuKeys() {
 }
 
 // overlayOpen reports whether a menu or dialog has the keyboard.
-func (a *App) overlayOpen() bool { return MenuOpen(a.ctx) || a.dialog != nil || a.calls.Shown() }
+func (a *App) overlayOpen() bool {
+	return MenuOpen(a.ctx) || a.dialog != nil || a.browser != nil || a.calls.Shown()
+}
 
 // dialogForm is the typed form of a dialog, nothing for the others.
 func (a *App) dialogForm(d *dialog) Node {
@@ -164,6 +169,7 @@ func (a *App) openLayers() overlay.Open {
 	var open overlay.Open
 	open[overlay.ContextMenu] = MenuOpen(a.ctx)
 	open[overlay.Dialog] = a.dialog != nil
+	open[overlay.FileBrowser] = a.browser != nil
 	open[overlay.CallLog] = a.calls.Shown()
 	open[overlay.FontList] = a.prefs.FontListOpen()
 	open[overlay.Settings] = a.menu
@@ -178,6 +184,7 @@ func (a *App) escape() {
 	closers := [...]func(){
 		overlay.ContextMenu: a.closeMenu,
 		overlay.Dialog:      a.closeDialog,
+		overlay.FileBrowser: a.closeBrowser,
 		overlay.CallLog:     a.calls.Close,
 		overlay.FontList:    a.prefs.CloseFontList,
 		overlay.Settings:    a.closeSettings,

@@ -3,6 +3,8 @@ package app
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/postman"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/settingsfile"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/folders"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/filebrowser"
 	"os"
 	"path/filepath"
 	"strings"
@@ -279,16 +281,15 @@ func TestImportPostmanAddsAFolderAndItsVariables(t *testing.T) {
 }
 
 func TestExportPostmanWritesACollectionFileThatImportsBack(t *testing.T) {
-	t.Setenv("PATH", t.TempDir()) // no dialog program: the path is asked as text
-	a, _ := newTestApp(t)
+	a, _ := newTestApp(t) // no dialog program: the in-app file browser asks
+	a.folders = folders.Disk{}
 	a.exportPostman(&a.col().Folder)
-	if a.dialog == nil || a.dialog.Input == nil || !strings.HasSuffix(a.dialog.Input.Text, ".postman_collection.json") {
-		t.Fatalf("dialog %+v", a.dialog)
+	if a.browser == nil || !strings.HasSuffix(a.browser.path.Text, ".postman_collection.json") {
+		t.Fatalf("browser %+v", a.browser)
 	}
 	path := filepath.Join(t.TempDir(), "out.json")
-	a.dialog.Input.SelectAll()
-	a.dialog.Input.Insert(path)
-	a.dialog.Buttons[len(a.dialog.Buttons)-1].Run()
+	typePath(a, path)
+	a.browse(filebrowser.Entered{})
 	data, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)

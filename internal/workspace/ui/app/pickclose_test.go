@@ -8,17 +8,17 @@ import (
 
 // A file chooser opened from the settings belongs to the dialog: closing the
 // dialog closes the chooser and nothing is applied afterwards.
-func TestClosingTheSettingsClosesAFilePromptOpenedFromThem(t *testing.T) {
+func TestClosingTheSettingsClosesAFileBrowserOpenedFromThem(t *testing.T) {
 	a, _ := openSettingsMenu(t)
-	a.files = fakeDialog{} // unavailable: the path prompt is used
+	a.files = fakeDialog{} // unavailable: the in-app file browser is used
 	picked := ""
 	a.pickSettingsFile("Choose CA certificates", func(path string) { picked = path })
-	if a.dialog == nil {
-		t.Fatal("no prompt")
+	if a.browser == nil {
+		t.Fatal("no file browser")
 	}
 	a.closeSettingsNow()
-	if a.dialog != nil {
-		t.Fatal("the prompt stayed open after the settings closed")
+	if a.browser != nil {
+		t.Fatal("the file browser stayed open after the settings closed")
 	}
 	if picked != "" {
 		t.Fatalf("a path %q was applied", picked)
@@ -53,8 +53,22 @@ func TestAFileDialogOpenedElsewhereSurvivesTheSettingsClosing(t *testing.T) {
 	a.files = fakeDialog{}
 	a.pickFile("Choose the file to send", false, "", func(string) {}) // the request body's, not the settings'
 	a.closeSettingsNow()
-	if a.dialog == nil {
-		t.Fatal("closing the settings closed a prompt that is not theirs")
+	if a.browser == nil {
+		t.Fatal("closing the settings closed a file browser that is not theirs")
+	}
+}
+
+// A settings file question taken back after the user opened another
+// browser must not close that one.
+func TestTakingBackAQuestionLeavesALaterBrowserOpen(t *testing.T) {
+	a, _ := openSettingsMenu(t)
+	a.files = fakeDialog{}
+	cancel := a.pickFile("First", false, "", func(string) {})
+	a.closeBrowser()
+	a.pickFile("Second", false, "", func(string) {})
+	cancel()
+	if a.browser == nil || a.browser.title != "Second" {
+		t.Fatal("taking back the first question closed the second browser")
 	}
 }
 

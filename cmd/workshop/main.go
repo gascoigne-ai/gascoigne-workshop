@@ -17,6 +17,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/fonts"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/dockicon"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/filedialog"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/folders"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/systemclock"
 	"image"
 	"image/png"
@@ -77,6 +78,7 @@ func main() {
 	opts.IgnoreRememberedWorkspace = ignoreRememberedWorkspace
 	opts.States = statefile.Files{}
 	opts.Files = filedialog.System{}
+	opts.Folders = folders.Disk{}
 	opts.History = func(dir string) port.History { return history.Dir(dir) }
 	home, _ := os.UserHomeDir()
 	opts.Fonts = fonts.System{Home: home}
@@ -117,6 +119,7 @@ func main() {
 		return nil
 	})
 	flag.BoolVar(&opts.ScreenshotCallLog, "log", false, "open the Log dialog of calls before the screenshot, as the status bar's Log button does")
+	flag.StringVar(&opts.ScreenshotBrowse, "browse", "", "open the in-app file browser on this folder before the screenshot, as choosing a file without a dialog program does")
 	flag.StringVar(&opts.ScreenshotTool, "tool", "", "open the call form of this tool of the open MCP request before the screenshot, once its server announced it (with -send)")
 	flag.StringVar(&opts.ScreenshotFind, "find", "", "search the response for this text in the find bar before the screenshot (after -send's response)")
 	windowW, windowH := windowWidth, windowHeight
