@@ -1,0 +1,7 @@
+{
+  "name": "Get User",
+  "protocol": "rest",
+  "method": "GET",
+  "url": "{{baseUrl}}/users/octocat",
+  "auth": {}
+}

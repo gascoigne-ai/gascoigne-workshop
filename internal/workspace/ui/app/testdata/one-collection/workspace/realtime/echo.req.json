@@ -1,0 +1,6 @@
+{
+  "name": "Echo",
+  "protocol": "websocket",
+  "url": "wss://echo.example.org",
+  "auth": {}
+}

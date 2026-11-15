@@ -1,0 +1,15 @@
+{
+  "name": "GitHub REST API",
+  "vars": [
+    {
+      "name": "baseUrl",
+      "value": "https://api.github.com",
+      "enabled": true
+    }
+  ],
+  "order": [
+    "user/",
+    "repository/",
+    "realtime/"
+  ]
+}
