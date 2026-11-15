@@ -75,6 +75,7 @@ var pages = []page{
 	{"shortcuts", "Shortcuts", ""},
 	{"requests", "Requests", "Requests"},
 	{"general", "General", "General"},
+	{"experimental", "Experimental", "Experimental"},
 	{"system", "System", ""},
 }
 

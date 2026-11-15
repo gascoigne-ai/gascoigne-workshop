@@ -299,3 +299,20 @@ func (h *fakeHost) Send(msg prefs.Msg) {
 		h.Later(msg.Func)
 	}
 }
+
+// The Experimental category was in the schema but not in the dialog's page
+// list, so its settings could not be reached from the form.
+func TestEveryVisibleCategoryHasAPageInTheDialog(t *testing.T) {
+	shown := map[string]bool{}
+	for _, entry := range pages {
+		shown[entry.category] = true
+	}
+	for _, category := range settings.Categories {
+		if category == "Colors" || category == "Shortcuts" {
+			continue // host pages, not forms
+		}
+		if !shown[category] {
+			t.Errorf("category %q has no page", category)
+		}
+	}
+}

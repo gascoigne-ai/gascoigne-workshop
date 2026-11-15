@@ -193,7 +193,9 @@ stack rect=0,0,1280,800
         flow h=28 padL=12 padR=12 control=button hoverBg=hover onClick=true rect=268,332,154,28
           textB text="General" grow=1 fg=muted rect=280,338,130,16
         flow h=28 padL=12 padR=12 control=button hoverBg=hover onClick=true rect=268,362,154,28
-          textB text="System" grow=1 fg=muted rect=280,368,130,16
+          textB text="Experimental" grow=1 fg=muted rect=280,368,130,16
+        flow h=28 padL=12 padR=12 control=button hoverBg=hover onClick=true rect=268,392,154,28
+          textB text="System" grow=1 fg=muted rect=280,398,130,16
       scrollB padL=16 padT=16 padR=16 padB=16 grow=1 borderL=border-soft rect=430,204,590,476
         flow rect=446,220,550,984
           flow padT=8 padB=8 borderB=border-soft rect=446,220,550,94
