@@ -5,7 +5,6 @@
 package shortcutpage
 
 import (
-	"embed"
 	"errors"
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
@@ -262,10 +261,7 @@ func matches(action Action, keyText, query string) bool {
 	return needle == "" || strings.Contains(strings.ToLower(action.Name), needle) || strings.Contains(strings.ToLower(keyText), needle)
 }
 
-//go:embed shortcutpage.vml
-var templates embed.FS
-
-var pageTemplate = markup.MustLoad(templates, "shortcutpage.vml")
+var pageTemplate = markup.Must("shortcutpage.vml", shortcutpageSource)
 
 // actionRow is what the template shows of one action. At most one of
 // Conflict, Refusal and Warning is set: the line under the row.
@@ -344,3 +340,40 @@ func (p *Page) row(host Host, action Action) actionRow {
 	}
 	return row
 }
+
+// Templates, parsed once above.
+const (
+	shortcutpageSource = `<col>
+  <row h="{{rowH}}" gap="6">
+    <field state="search" grow="1" bg="sunken" placeholder="Search by action or key" text-menu="search"/>
+  </row>
+  <spacer h="{{gutter}}"/>
+  <col>
+    <col for="action in actions">
+      <row h="{{compactH}}" gap="6">
+        <text small grow="1" ellipsis>{{action.Name}}</text>
+        <choice selected="{{action.Recording}}" w="96" h="{{compactH}}" on-click="action.Record"
+                tooltip="Click, then press the keys">{{action.Key}}</choice>
+        <button if="action.Bound" w="44" h="{{compactH}}" on-click="action.Clear"
+                tooltip="Leave the action without a key">Clear</button>
+        <button if="action.Overridden" w="44" h="{{compactH}}" on-click="action.Reset"
+                tooltip="Back to the default key">Reset</button>
+      </row>
+      <!-- at most one of the conflict, the refusal and the warning is set -->
+      <row if="action.Conflict" h="{{compactH}}" gap="6">
+        <text small color="error" ellipsis grow="1">{{action.Conflict}}</text>
+        <button w="64" h="{{compactH}}" on-click="action.Replace" tooltip="{{action.ReplaceTip}}">Replace</button>
+      </row>
+      <note if="action.Refusal" tone="error">{{action.Refusal}}</note>
+      <note if="action.Warning" tone="muted">{{action.Warning}}</note>
+    </col>
+    <text if="noMatch" muted>No shortcut matches</text>
+  </col>
+  <caption h="{{labelH}}">Text editing</caption>
+  <row for="keys in textKeys" h="{{compactH}}" gap="6">
+    <text small grow="1" ellipsis>{{keys.Action}}</text>
+    <text small muted>{{keys.Keys}}</text>
+  </row>
+</col>
+`
+)
