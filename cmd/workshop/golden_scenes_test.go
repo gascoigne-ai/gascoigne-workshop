@@ -97,6 +97,11 @@ var goldenScenes = []goldenScene{
 	{name: "tree-empty", width: shotWidth, height: shotHeight, args: []string{"-close-all"}},
 	// the in-app file browser on a copy of the same folder
 	{name: "file-browser", width: shotWidth, height: shotHeight, browse: "github-collection", mask: []image.Rectangle{browserPath}},
+	// grpc-proto-collection names its .proto files relative to itself; the
+	// first request is answered by the example server's port without
+	// reflection, the second names a file cut off mid-message
+	{name: "grpc-proto-files", width: shotWidth, height: shotHeight, args: []string{"-request", "Health from proto file", "-pane", "Proto", "-send"}, collections: []string{"grpc-proto-collection"}, mask: []image.Rectangle{durationStacked, durationStatus}},
+	{name: "grpc-proto-error", width: shotWidth, height: shotHeight, args: []string{"-request", "Broken proto file", "-pane", "Proto"}, collections: []string{"grpc-proto-collection"}},
 }
 
 // wrapBody is a JSON body with one string longer than the body pane, so the
@@ -109,7 +114,7 @@ const wrapBody = `{
 
 func TestGoldenScenes(t *testing.T) {
 	serveExampleRoot(t) // once for all scenes: they run in parallel
-	serveExampleMCP(t)
+	serveExampleServer(t)
 	for _, scene := range goldenScenes {
 		t.Run(scene.name, func(t *testing.T) {
 			t.Parallel()
@@ -178,15 +183,17 @@ func serveExampleRoot(t *testing.T) {
 	t.Cleanup(func() { server.Close() })
 }
 
-// serveExampleMCP runs the example server's MCP endpoint at the address the
-// sample's MCP request uses, so a scene can show a connected server and the
-// tools it announces. The other protocols get free ports nobody calls.
-func serveExampleMCP(t *testing.T) {
+// serveExampleServer runs the example server's MCP endpoint and its gRPC
+// port without reflection at the addresses the requests use, so a scene
+// can show a connected server and the tools it announces, and a call made
+// from a .proto file. The other protocols get free ports nobody calls.
+func serveExampleServer(t *testing.T) {
 	t.Helper()
-	config := exampleserver.Config{Host: "127.0.0.1", MCP: exampleserver.DefaultConfig().MCP}
+	defaults := exampleserver.DefaultConfig()
+	config := exampleserver.Config{Host: "127.0.0.1", MCP: defaults.MCP, GRPCNoReflection: defaults.GRPCNoReflection}
 	endpoints, err := exampleserver.Listen(config)
 	if err != nil {
-		t.Skipf("the MCP port is in use, the scenes need it free: %v", err)
+		t.Skipf("the MCP or gRPC port is in use, the scenes need them free: %v", err)
 	}
 	ctx, stop := context.WithCancel(context.Background())
 	served := make(chan error, 1)
@@ -194,7 +201,7 @@ func serveExampleMCP(t *testing.T) {
 	t.Cleanup(func() {
 		stop()
 		if err := <-served; err != nil {
-			t.Errorf("example MCP server: %v", err)
+			t.Errorf("example server: %v", err)
 		}
 	})
 }

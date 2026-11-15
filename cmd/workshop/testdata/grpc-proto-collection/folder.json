@@ -1,0 +1,7 @@
+{
+  "name": "gRPC from proto files",
+  "order": [
+    "health-from-proto-file.req.json",
+    "broken-proto-file.req.json"
+  ]
+}

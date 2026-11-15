@@ -205,6 +205,16 @@ func (a *App) checkProtoFiles(t *reqTab) {
 	})
 }
 
+// protoReading reports whether t shows its Proto pane while the files are
+// still being read, so a capture waits for what the read finds.
+func protoReading(t *reqTab) bool {
+	panes := requestPanesFor(t)
+	if t.paneTab < 0 || t.paneTab >= len(panes) || panes[t.paneTab].kind != paneProto || len(t.Req.Proto.Files) == 0 {
+		return false
+	}
+	return t.proto.check.running || !reflect.DeepEqual(t.proto.check.source, t.Req.Proto)
+}
+
 // protoProblems are the lines that tell what is wrong with the files, each
 // located problem at its file (as the collection names it), line and
 // column.

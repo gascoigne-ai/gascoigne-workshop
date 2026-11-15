@@ -273,6 +273,32 @@ func TestScreenshotOpensTheFileBrowserOnAFolder(t *testing.T) {
 	}
 }
 
+// A capture of the Proto pane waits until its files are read, so what
+// reading them found (a problem at its line) is in the picture.
+func TestScreenshotOfTheProtoPaneWaitsForTheFilesToBeRead(t *testing.T) {
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png")})
+	tab := a.cur()
+	tab.Req.Protocol = "grpc"
+	tab.Req.Proto = model.ProtoSource{Files: []string{filepath.Join(t.TempDir(), "gone.proto")}}
+	tab.paneTab = paneIndex(t, requestPanesFor(tab), "Proto")
+	for range settleFrames {
+		a.shotUpdate()
+	}
+	tab.proto.check = protoCheck{running: true}
+	if a.shot.ready(a) {
+		t.Fatal("ready while the files are being read")
+	}
+	tab.proto.check = protoCheck{source: tab.Req.Proto, problems: []string{"gone.proto: not found"}}
+	if !a.shot.ready(a) {
+		t.Fatal("the files are read, the capture should be ready")
+	}
+	tab.paneTab = paneIndex(t, requestPanesFor(tab), "Body")
+	tab.proto.check = protoCheck{running: true}
+	if !a.shot.ready(a) {
+		t.Fatal("another pane is shown: nothing to wait for")
+	}
+}
+
 // With -tool the capture opens the call form of that tool of the open MCP
 // request, as picking it from the composer's tool menu does. The server
 // announces its tools after the connection opens, so the capture waits for
