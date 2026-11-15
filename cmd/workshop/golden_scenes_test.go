@@ -3,11 +3,14 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"image"
 	"io"
 	"net"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -78,7 +81,17 @@ var goldenScenes = []goldenScene{
 	{name: "mcp-tool-form", width: shotWidth, height: shotHeight, args: []string{"-request", "MCP Tools", "-send", "-tool", "add"}, mask: []image.Rectangle{durationStatus}},
 	{name: "mcp-connected", width: shotWidth, height: shotHeight, args: []string{"-request", "MCP Tools", "-send"}, mask: []image.Rectangle{durationStatus}},
 	{name: "response-raw", width: shotWidth, height: shotHeight, args: []string{"-send", "-set", "responseView=raw"}, mask: []image.Rectangle{durationStacked, durationStatus}},
+	{name: "response-wrap", width: shotWidth, height: shotHeight, args: []string{"-request", "Index", "-type-url", "users/octocat", "-send", "-wrap", "-set", "responseView=raw"}, mask: []image.Rectangle{durationStacked, durationStatus}},
+	{name: "request-body-wrap", width: shotWidth, height: shotHeight, args: []string{"-request", "Echo", "-pane", "Body", "-wrap", "-type-body", wrapBody}},
 }
+
+// wrapBody is a JSON body with one string longer than the body pane, so the
+// request-body-wrap scene shows where the editor breaks it.
+const wrapBody = `{
+  "name": "The Octocat",
+  "bio": "A long description that runs past the width of the body pane, so the editor has to break it before a word and keep going on the next visual row without a new line number",
+  "public_repos": 8
+}`
 
 func TestGoldenScenes(t *testing.T) {
 	serveExampleRoot(t) // once for all scenes: they run in parallel
@@ -103,9 +116,15 @@ const exampleRoot = "gascoigne example server\n/echo\n/status/{code}\n/delay/{ms
 // sends it shows a response and not "connection refused". A delay request
 // is held until its client goes away, so a scene that captures a request in
 // flight never races its answer. A busy port skips the test: another server
-// there would draw something else.
+// there would draw something else. /users/octocat answers with a captured
+// GitHub user, one long line of JSON, for the scene that wraps a response.
 func serveExampleRoot(t *testing.T) {
 	t.Helper()
+	octocat, err := os.ReadFile(filepath.Join("testdata", "octocat.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	octocat = bytes.TrimSuffix(octocat, []byte("\n")) // the file ends in a newline, the API's minified answer does not
 	listener, err := net.Listen("tcp", "127.0.0.1:8081")
 	if err != nil {
 		t.Skipf("port 8081 is in use, the scene needs it free: %v", err)
@@ -113,6 +132,11 @@ func serveExampleRoot(t *testing.T) {
 	server := &http.Server{Handler: http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		if strings.HasPrefix(request.URL.Path, "/delay/") {
 			<-request.Context().Done()
+			return
+		}
+		if request.URL.Path == "/users/octocat" {
+			writer.Header().Set("Content-Type", "application/json; charset=utf-8")
+			writer.Write(octocat)
 			return
 		}
 		writer.Header().Set("Content-Type", "text/plain; charset=utf-8")

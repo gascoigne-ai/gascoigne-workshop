@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/tree"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -49,6 +50,8 @@ type screenshot struct {
 	url         string   // text to type into the open request's URL, so its tab is marked changed
 	pane        string   // label of the request pane to show, such as Settings
 	body        string   // body type to choose on the open request, such as file
+	typeBody    string   // text that replaces the open request's body, as selecting all and typing would
+	wrap        bool     // turn on the response's and the body's Wrap, as their chips would
 	respPane    string   // label of the response pane to show, such as Tests
 	toasts      []string // texts shown as error toasts
 	dialog      string   // kind of dialog to open on the open request, a key of shotDialogs
@@ -273,6 +276,15 @@ func (a *App) showShotTarget() {
 		s.captured = true
 		return
 	}
+	if s.typeBody != "" && !a.typeShotBody(s.typeBody) {
+		s.err = fmt.Errorf("screenshot body text needs a JSON or Text body, the open request's is %q", a.cur().Req.BodyType)
+		s.captured = true
+		return
+	}
+	if s.wrap {
+		a.cur().view.Wrap = true
+		a.cur().body.Wrap = true
+	}
 	if s.dialog != "" {
 		open, ok := shotDialogs[s.dialog]
 		if !ok {
@@ -383,6 +395,21 @@ func (a *App) chooseShotBody(id string) bool {
 		return false
 	}
 	a.setBodyType(a.cur(), id)
+	a.markStale() // no input reports this edit, so the cached unsaved marks would not see it
+	return true
+}
+
+// typeShotBody replaces the open request's body text, as selecting all and
+// typing would; it reports false for a body type whose editor is not the
+// text area, where the text would not be shown.
+func (a *App) typeShotBody(text string) bool {
+	t := a.cur()
+	if t.Req.BodyType != model.BodyJSON && t.Req.BodyType != model.BodyText {
+		return false
+	}
+	t.body.SelectAll()
+	t.body.Insert(text)
+	editRequest(t, editor.BodyTyped{Text: t.body.Text})
 	a.markStale() // no input reports this edit, so the cached unsaved marks would not see it
 	return true
 }

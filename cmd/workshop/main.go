@@ -100,6 +100,8 @@ func main() {
 	flag.StringVar(&opts.ScreenshotPane, "pane", "", "show the open request's pane with this label (Params, Settings, ...) before the screenshot")
 	flag.StringVar(&opts.ScreenshotResponsePane, "response-pane", "", "show the open request's response pane with this label (Headers, Tests, ...) before the screenshot")
 	flag.StringVar(&opts.ScreenshotBody, "body", "", "choose this body type (json, text, form, multipart, graphql, file, ...) on the open request before the screenshot")
+	flag.StringVar(&opts.ScreenshotTypeBody, "type-body", "", "replace the open request's body text (JSON or Text body) with this text before the screenshot")
+	flag.BoolVar(&opts.ScreenshotWrap, "wrap", false, "turn on Wrap for the open request's response and body before the screenshot, as their Wrap chips do")
 	flag.Func("toast", "show this text as an error toast before the screenshot (repeatable)", func(text string) error {
 		opts.ScreenshotToasts = append(opts.ScreenshotToasts, text)
 		return nil

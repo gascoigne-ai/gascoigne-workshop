@@ -423,6 +423,76 @@ func TestScreenshotWithAnUnknownBodyTypeFails(t *testing.T) {
 	}
 }
 
+// With -wrap the capture turns on Wrap for the open request's response and
+// body, as their two Wrap chips would, so one scene flag covers both.
+func TestScreenshotWrapsTheResponseAndTheBody(t *testing.T) {
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotRequest: "Echo", ScreenshotWrap: true})
+	for range setFrame {
+		if err := a.shotUpdate(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := a.Err(); err != nil {
+		t.Fatal(err)
+	}
+	tab := a.cur()
+	if tab.Req.Name != "Echo" {
+		t.Fatalf("open request %q, want Echo: -wrap must apply after -request", tab.Req.Name)
+	}
+	if !tab.view.Wrap || !tab.body.Wrap {
+		t.Errorf("response wrap %v, body wrap %v, want both on", tab.view.Wrap, tab.body.Wrap)
+	}
+}
+
+// Without -wrap both stay off, the default the user decided.
+func TestScreenshotLeavesWrapOffByDefault(t *testing.T) {
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotRequest: "Echo"})
+	for range setFrame {
+		a.shotUpdate()
+	}
+	if tab := a.cur(); tab.view.Wrap || tab.body.Wrap {
+		t.Errorf("response wrap %v, body wrap %v, want both off", tab.view.Wrap, tab.body.Wrap)
+	}
+}
+
+// With -type-body the capture replaces the open request's body text, as
+// selecting all and typing would, so the request and its tab see the edit.
+// The first sample request has no body, so -body chooses JSON first.
+func TestScreenshotTypesTheBody(t *testing.T) {
+	const typed = "{\n  \"note\": \"typed\"\n}"
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotBody: model.BodyJSON, ScreenshotTypeBody: typed})
+	for range setFrame - 1 {
+		a.shotUpdate()
+	}
+	if a.tabDirty(a.cur()) {
+		t.Fatal("test setup: the tab must be unchanged before the edit")
+	}
+	a.shotUpdate()
+	if err := a.Err(); err != nil {
+		t.Fatal(err)
+	}
+	tab := a.cur()
+	if tab.body.Text != typed || tab.Req.Body != typed {
+		t.Errorf("editor %q, request %q, want both %q", tab.body.Text, tab.Req.Body, typed)
+	}
+	if !a.tabDirty(tab) {
+		t.Error("the tab should be marked as changed on the frame of the edit")
+	}
+}
+
+// A body type without a text editor (none, file, form...) would not show
+// the typed text, so -type-body there ends the run with an error rather
+// than letting a golden pass for a scene without it.
+func TestScreenshotTypingABodyWithoutATextEditorFails(t *testing.T) {
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotBody: model.BodyFile, ScreenshotTypeBody: "x"})
+	for range setFrame {
+		a.shotUpdate()
+	}
+	if a.Err() == nil || !a.shot.captured {
+		t.Fatalf("err = %v, captured = %v, want the run ended with an error", a.Err(), a.shot.captured)
+	}
+}
+
 // An unknown pane ends the run with an error: capturing the first pane
 // instead would let a golden pass for the wrong scene.
 func TestScreenshotWithAnUnknownPaneFails(t *testing.T) {
