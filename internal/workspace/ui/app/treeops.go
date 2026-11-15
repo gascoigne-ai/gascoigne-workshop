@@ -68,8 +68,9 @@ func (a *App) treeMenuItems(row collection.Row) []MenuItem {
 		sep,
 		rename,
 	}
-	if row.Dir == &a.col.Folder {
-		return create // the collection itself is not duplicated or deleted
+	if row.Dir == &a.col.Folder { // the collection itself: renamed and deleted as a collection
+		create[len(create)-1] = MenuItem{Label: "Rename collection...", Run: a.promptRenameCollection}
+		return append(create, sep, MenuItem{Label: "New collection...", Run: a.promptNewCollection}, MenuItem{Label: "Delete collection...", Run: a.confirmDeleteCollection})
 	}
 	return append(create,
 		MenuItem{Label: "Duplicate", Run: func() { a.duplicateNode(tree.Of(node)) }},

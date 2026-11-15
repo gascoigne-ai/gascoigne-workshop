@@ -95,15 +95,16 @@ func (a *App) sidebar() Node {
 		}
 	}
 	return sidebarTemplate.MustBuild(markup.Scope{
-		"mode":       label,
-		"switchMode": switchTo,
-		"filter":     &a.filter,
-		"showSent":   a.showSent,
-		"sentList":   sentList,
-		"treeScroll": &a.treeScroll,
-		"rows":       rows,
-		"headerH":    headerH,
-		"gutter":     w.Gutter,
+		"mode":           label,
+		"switchMode":     switchTo,
+		"collectionMenu": func(x, y int) { a.openMenu(x, y, a.collectionMenu()) },
+		"filter":         &a.filter,
+		"showSent":       a.showSent,
+		"sentList":       sentList,
+		"treeScroll":     &a.treeScroll,
+		"rows":           rows,
+		"headerH":        headerH,
+		"gutter":         w.Gutter,
 	})
 }
 
@@ -481,7 +482,7 @@ const (
 
 	sidebarSource = `<col>
   <row h="{{headerH}}" pad-x="{{gutter}}" gap="6" bg="bg" border-b="border">
-    <button w="96" h="28" on-click="switchMode">{{mode}}</button>
+    <button w="96" h="28" on-click="switchMode" on-right-click="collectionMenu" tooltip="Collections and sent requests. Right-click: new, open, rename, save, delete a collection">{{mode}}</button>
     <field state="filter" h="28" grow="1" bg="sunken" placeholder="Filter" text-menu="filter"/>
   </row>
   <slot if="sentList" name="sentList"/>
