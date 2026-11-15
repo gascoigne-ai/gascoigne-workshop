@@ -20,6 +20,7 @@ func fake(t *testing.T, script string) {
 }
 
 func TestOpenAndSaveReturnWhatTheDialogPrints(t *testing.T) {
+	t.Setenv("HOME", "/home/me") // the dialog starts in home, like the in-app browser
 	fake(t, `echo "$@" > "$0.args"
 echo /home/me/file.txt`)
 	if !Available() {
@@ -30,14 +31,15 @@ echo /home/me/file.txt`)
 		t.Fatalf("%q %v", got, err)
 	}
 	args, _ := os.ReadFile(filepath.Join(os.Getenv("PATH"), "zenity.args"))
-	if !strings.Contains(string(args), "--file-selection") || !strings.Contains(string(args), "--title=Pick it") {
+	if !strings.Contains(string(args), "--file-selection") || !strings.Contains(string(args), "--title=Pick it") ||
+		!strings.Contains(string(args), "--filename=/home/me/") {
 		t.Fatalf("args %q", args)
 	}
 	if _, err := Save(context.Background(), "Save it", "out.json"); err != nil {
 		t.Fatal(err)
 	}
 	args, _ = os.ReadFile(filepath.Join(os.Getenv("PATH"), "zenity.args"))
-	if !strings.Contains(string(args), "--save") || !strings.Contains(string(args), "--filename=out.json") {
+	if !strings.Contains(string(args), "--save") || !strings.Contains(string(args), "--filename=/home/me/out.json") {
 		t.Fatalf("save args %q", args)
 	}
 }

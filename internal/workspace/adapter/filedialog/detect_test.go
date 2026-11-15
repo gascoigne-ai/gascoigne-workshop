@@ -113,20 +113,47 @@ func TestMacAndWindowsIgnoreTheDesktopAndSuggestNothing(t *testing.T) {
 }
 
 func TestEachLinuxProgramGetsItsOwnCommandLine(t *testing.T) {
-	zenityOpen := []string{"--file-selection", "--title=Pick"}
-	zenitySave := []string{"--file-selection", "--save", "--confirm-overwrite", "--title=Save", "--filename=out.json"}
+	type lines struct{ open, save []string }
+	zenityHome := lines{
+		[]string{"--file-selection", "--title=Pick", "--filename=/home/me/"},
+		[]string{"--file-selection", "--save", "--confirm-overwrite", "--title=Save", "--filename=/home/me/out.json"},
+	}
+	// without a home folder the dialogs start where they did before: the
+	// program's own choice for open, the bare name for save
+	zenityNoHome := lines{
+		[]string{"--file-selection", "--title=Pick"},
+		[]string{"--file-selection", "--save", "--confirm-overwrite", "--title=Save", "--filename=out.json"},
+	}
 	cases := []struct {
-		name       string
-		open, save []string
-		cancels    []int
+		name         string
+		home, noHome lines
+		cancels      []int
 	}{
-		{"zenity", zenityOpen, zenitySave, []int{1}},
-		{"matedialog", zenityOpen, zenitySave, []int{1}},
-		{"qarma", zenityOpen, zenitySave, []int{1}},
-		{"kdialog", []string{"--title", "Pick", "--getopenfilename", "."}, []string{"--title", "Save", "--getsavefilename", "out.json"}, []int{1}},
+		// zenity and matedialog read a --filename ending in / as the folder to start in
+		{"zenity", zenityHome, zenityNoHome, []int{1}},
+		{"matedialog", zenityHome, zenityNoHome, []int{1}},
+		// qarma takes a --filename ending in /. as the folder, anything else as a file to select
+		{"qarma", lines{
+			[]string{"--file-selection", "--title=Pick", "--filename=/home/me/."},
+			zenityHome.save,
+		}, zenityNoHome, []int{1}},
+		// kdialog's start argument is a folder, or a file whose folder it opens with the name filled in
+		{"kdialog", lines{
+			[]string{"--title", "Pick", "--getopenfilename", "/home/me"},
+			[]string{"--title", "Save", "--getsavefilename", "/home/me/out.json"},
+		}, lines{
+			[]string{"--title", "Pick", "--getopenfilename", "."},
+			[]string{"--title", "Save", "--getsavefilename", "out.json"},
+		}, []int{1}},
 		// yad's file dialog is --file (its man page's --file-selection example is not an option);
 		// it exits 252 when closed with Escape or the window's button
-		{"yad", []string{"--file", "--title=Pick"}, []string{"--file", "--save", "--confirm-overwrite", "--title=Save", "--filename=out.json"}, []int{1, 252}},
+		{"yad", lines{
+			[]string{"--file", "--title=Pick", "--filename=/home/me/"},
+			[]string{"--file", "--save", "--confirm-overwrite", "--title=Save", "--filename=/home/me/out.json"},
+		}, lines{
+			[]string{"--file", "--title=Pick"},
+			[]string{"--file", "--save", "--confirm-overwrite", "--title=Save", "--filename=out.json"},
+		}, []int{1, 252}},
 	}
 	all := installed(preferred("linux", envOf(nil)), everything)
 	for _, tc := range cases {
@@ -136,16 +163,30 @@ func TestEachLinuxProgramGetsItsOwnCommandLine(t *testing.T) {
 				t.Fatalf("%s is not in the table", tc.name)
 			}
 			program := all[index].tool
-			if got := program.open("Pick"); !slices.Equal(got, tc.open) {
-				t.Errorf("open %q, want %q", got, tc.open)
-			}
-			if got := program.save("Save", "out.json"); !slices.Equal(got, tc.save) {
-				t.Errorf("save %q, want %q", got, tc.save)
+			for _, start := range []struct {
+				home string
+				want lines
+			}{{"/home/me", tc.home}, {"", tc.noHome}} {
+				if got := program.open("Pick", start.home); !slices.Equal(got, start.want.open) {
+					t.Errorf("open from %q: %q, want %q", start.home, got, start.want.open)
+				}
+				if got := program.save("Save", start.home, "out.json"); !slices.Equal(got, start.want.save) {
+					t.Errorf("save from %q: %q, want %q", start.home, got, start.want.save)
+				}
 			}
 			if !slices.Equal(program.cancels, tc.cancels) {
 				t.Errorf("cancel codes %v, want %v", program.cancels, tc.cancels)
 			}
 		})
+	}
+}
+
+func TestASaveNameThatIsAPathIsKept(t *testing.T) {
+	if got := savePath("/home/me", "/tmp/out.json"); got != "/tmp/out.json" {
+		t.Fatalf("absolute name: %q", got)
+	}
+	if got := savePath("/home/me", ""); got != "/home/me/" {
+		t.Fatalf("no name starts in the folder: %q", got)
 	}
 }
 

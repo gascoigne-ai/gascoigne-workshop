@@ -1,42 +1,81 @@
 package filedialog
 
 import (
+	"cmp"
 	"path/filepath"
 	"slices"
 	"strings"
 )
 
+// savePath is the file a save dialog starts on: name in home. The Linux
+// dialogs start in the user's home folder, like the in-app browser (task
+// 068, user's decision 2026-11-15); a bare name would start them in the
+// working directory, which for a program started from a menu is anywhere.
+// With home unknown ("") the bare name is kept, as before; a name that is
+// already a path is kept too, and no name gives home with a trailing "/",
+// which every program reads as a folder rather than a file.
+func savePath(home, name string) string {
+	switch {
+	case home == "" || filepath.IsAbs(name):
+		return name
+	case name == "":
+		return home + "/"
+	}
+	return filepath.Join(home, name)
+}
+
 // zenityLike is a program that takes zenity's command line. matedialog is
 // MATE's fork of zenity and qarma a Qt rewrite; both read the same
-// --file-selection options and exit 1 when the user cancels.
-func zenityLike(name string) tool {
+// --file-selection options and exit 1 when the user cancels. folderMark
+// ends a --filename that names a folder to start in: zenity and matedialog
+// take a trailing "/", qarma only "/." (anything else it selects as a file).
+func zenityLike(program, folderMark string) tool {
 	return tool{
-		name: name,
-		open: func(title string) []string { return []string{"--file-selection", "--title=" + title} },
-		save: func(title, name string) []string {
-			return []string{"--file-selection", "--save", "--confirm-overwrite", "--title=" + title, "--filename=" + name}
+		name: program,
+		open: func(title, home string) []string {
+			args := []string{"--file-selection", "--title=" + title}
+			if home != "" {
+				args = append(args, "--filename="+home+folderMark)
+			}
+			return args
+		},
+		save: func(title, home, name string) []string {
+			return []string{"--file-selection", "--save", "--confirm-overwrite", "--title=" + title, "--filename=" + savePath(home, name)}
 		},
 		cancels: []int{1},
 	}
 }
 
 var (
-	zenity     = zenityLike("zenity")
-	matedialog = zenityLike("matedialog")
-	qarma      = zenityLike("qarma")
-	kdialog    = tool{
-		name:    "kdialog",
-		open:    func(title string) []string { return []string{"--title", title, "--getopenfilename", "."} },
-		save:    func(title, name string) []string { return []string{"--title", title, "--getsavefilename", name} },
+	zenity     = zenityLike("zenity", "/")
+	matedialog = zenityLike("matedialog", "/")
+	qarma      = zenityLike("qarma", "/.")
+	// kdialog's start argument is a folder to open, or a file whose folder
+	// it opens with the name filled in.
+	kdialog = tool{
+		name: "kdialog",
+		open: func(title, home string) []string {
+			return []string{"--title", title, "--getopenfilename", cmp.Or(home, ".")}
+		},
+		save: func(title, home, name string) []string {
+			return []string{"--title", title, "--getsavefilename", savePath(home, name)}
+		},
 		cancels: []int{1},
 	}
 	// yad's file dialog is --file; Escape or the window's close button
-	// makes it exit 252, its Cancel button 1.
+	// makes it exit 252, its Cancel button 1. A --filename that is a folder
+	// is where it starts.
 	yad = tool{
 		name: "yad",
-		open: func(title string) []string { return []string{"--file", "--title=" + title} },
-		save: func(title, name string) []string {
-			return []string{"--file", "--save", "--confirm-overwrite", "--title=" + title, "--filename=" + name}
+		open: func(title, home string) []string {
+			args := []string{"--file", "--title=" + title}
+			if home != "" {
+				args = append(args, "--filename="+home+"/")
+			}
+			return args
+		},
+		save: func(title, home, name string) []string {
+			return []string{"--file", "--save", "--confirm-overwrite", "--title=" + title, "--filename=" + savePath(home, name)}
 		},
 		cancels: []int{1, 252},
 	}

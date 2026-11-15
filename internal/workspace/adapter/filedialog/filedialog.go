@@ -27,9 +27,12 @@ type tool struct {
 	name string
 	// env adds variables to the program's environment; the Windows script
 	// reads the title and the name from them, never from its text.
-	env  func(title, name string, save bool) []string
-	open func(title string) []string
-	save func(title, name string) []string
+	env func(title, name string, save bool) []string
+	// open and save get the user's home folder, "" when it is unknown, for
+	// the programs that start in it (detect.go); the macOS and Windows
+	// panels pick their own start folder and ignore it.
+	open func(title, home string) []string
+	save func(title, home, name string) []string
 	// cancels are the exit codes that mean the user closed the dialog
 	// rather than that the program failed.
 	cancels []int
@@ -43,13 +46,13 @@ var goos = runtime.GOOS
 // script, never inside its text. Cancelling makes it exit 1.
 var osascript = tool{
 	name: "osascript",
-	open: func(title string) []string {
+	open: func(title, _ string) []string {
 		return []string{
 			"-e", "on run argv",
 			"-e", "POSIX path of (choose file with prompt (item 1 of argv))",
 			"-e", "end run", title}
 	},
-	save: func(title, name string) []string {
+	save: func(title, _, name string) []string {
 		return []string{
 			"-e", "on run argv",
 			"-e", "POSIX path of (choose file name with prompt (item 1 of argv) default name (item 2 of argv))",
@@ -76,10 +79,10 @@ var powershell = tool{
 		}
 		return []string{"WS_SAVE=" + flag, "WS_TITLE=" + title, "WS_NAME=" + name}
 	},
-	open: func(title string) []string {
+	open: func(string, string) []string {
 		return []string{"-NoProfile", "-NonInteractive", "-STA", "-Command", winScript}
 	},
-	save: func(title, name string) []string {
+	save: func(string, string, string) []string {
 		return []string{"-NoProfile", "-NonInteractive", "-STA", "-Command", winScript}
 	},
 	cancels: []int{1},
@@ -140,6 +143,16 @@ func run(ctx context.Context, title, name string, save bool, build func(tool) []
 	return chosen, nil
 }
 
+// home is the user's home folder, "" when it is unknown; the in-app
+// browser starts from the same os.UserHomeDir (folders.Disk.Home).
+func home() string {
+	dir, err := os.UserHomeDir()
+	if err != nil {
+		return ""
+	}
+	return dir
+}
+
 // noProgram names the programs that were looked for.
 func noProgram() error {
 	var names []string
@@ -151,12 +164,12 @@ func noProgram() error {
 
 // Open asks for an existing file.
 func Open(ctx context.Context, title string) (string, error) {
-	return run(ctx, title, "", false, func(program tool) []string { return program.open(title) })
+	return run(ctx, title, "", false, func(program tool) []string { return program.open(title, home()) })
 }
 
 // Save asks for a file to write, starting from name.
 func Save(ctx context.Context, title, name string) (string, error) {
-	return run(ctx, title, name, true, func(program tool) []string { return program.save(title, name) })
+	return run(ctx, title, name, true, func(program tool) []string { return program.save(title, home(), name) })
 }
 
 // System is the file dialog of this desktop.
