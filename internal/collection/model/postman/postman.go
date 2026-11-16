@@ -198,9 +198,9 @@ func request(it item, inherited *auth) model.Request {
 	return req
 }
 
-func looksJSON(s string) bool {
-	s = strings.TrimSpace(s)
-	return (strings.HasPrefix(s, "{") || strings.HasPrefix(s, "[")) && json.Valid([]byte(s))
+func looksJSON(text string) bool {
+	text = strings.TrimSpace(text)
+	return (strings.HasPrefix(text, "{") || strings.HasPrefix(text, "[")) && json.Valid([]byte(text))
 }
 
 // parseURL reads a Postman url, a string or an object with raw and query.
@@ -252,21 +252,21 @@ func get(list []kv, key string) string {
 	return ""
 }
 
-func convertAuth(a *auth) model.Auth {
-	if a == nil {
+func convertAuth(authValue *auth) model.Auth {
+	if authValue == nil {
 		return model.Auth{}
 	}
-	switch a.Type {
+	switch authValue.Type {
 	case "bearer":
-		return model.Auth{Type: model.AuthBearer, Token: get(a.Bearer, "token")}
+		return model.Auth{Type: model.AuthBearer, Token: get(authValue.Bearer, "token")}
 	case "basic":
-		return model.Auth{Type: model.AuthBasic, User: get(a.Basic, "username"), Password: get(a.Basic, "password")}
+		return model.Auth{Type: model.AuthBasic, User: get(authValue.Basic, "username"), Password: get(authValue.Basic, "password")}
 	case "apikey":
 		in := model.KeyInHeader
-		if get(a.APIKey, "in") == "query" {
+		if get(authValue.APIKey, "in") == "query" {
 			in = model.KeyInQuery
 		}
-		return model.Auth{Type: model.AuthAPIKey, KeyName: get(a.APIKey, "key"), KeyValue: get(a.APIKey, "value"), KeyIn: in}
+		return model.Auth{Type: model.AuthAPIKey, KeyName: get(authValue.APIKey, "key"), KeyValue: get(authValue.APIKey, "value"), KeyIn: in}
 	}
 	return model.Auth{}
 }
@@ -369,12 +369,12 @@ func Skipped(root *model.Folder) int {
 	return n
 }
 
-func exportFolder(f *model.Folder) []*outItem {
+func exportFolder(folder *model.Folder) []*outItem {
 	var items []*outItem
-	for _, sub := range f.Folders {
+	for _, sub := range folder.Folders {
 		items = append(items, &outItem{Name: sub.Name, Items: exportFolder(sub)})
 	}
-	for _, r := range f.Requests {
+	for _, r := range folder.Requests {
 		if r.Protocol != "rest" {
 			continue
 		}
@@ -398,20 +398,20 @@ func outRows(rows []model.KV, files bool) []outKV {
 	return out
 }
 
-func exportRequest(r *model.Request) *outReq {
-	o := &outReq{Method: r.Method, Header: outRows(r.Headers, false), URL: outURL{Raw: r.URL}}
+func exportRequest(request *model.Request) *outReq {
+	o := &outReq{Method: request.Method, Header: outRows(request.Headers, false), URL: outURL{Raw: request.URL}}
 	if o.Header == nil {
 		o.Header = []outKV{}
 	}
-	for _, p := range r.Params {
+	for _, p := range request.Params {
 		if !model.IsPathParam(p.Name) {
 			o.URL.Query = append(o.URL.Query, outKV{Key: p.Name, Value: p.Value, Disabled: !p.Enabled})
 		}
 	}
-	switch r.BodyType {
+	switch request.BodyType {
 	case model.BodyJSON, model.BodyText:
-		b := &outBody{Mode: "raw", Raw: r.Body}
-		if r.BodyType == model.BodyJSON {
+		b := &outBody{Mode: "raw", Raw: request.Body}
+		if request.BodyType == model.BodyJSON {
 			b.Options = &struct {
 				Raw struct {
 					Language string `json:"language"`
@@ -421,21 +421,21 @@ func exportRequest(r *model.Request) *outReq {
 		}
 		o.Body = b
 	case model.BodyForm:
-		o.Body = &outBody{Mode: "urlencoded", URLEncoded: outRows(r.Form, false)}
+		o.Body = &outBody{Mode: "urlencoded", URLEncoded: outRows(request.Form, false)}
 	case model.BodyMultipart:
-		o.Body = &outBody{Mode: "formdata", FormData: outRows(r.Form, true)}
+		o.Body = &outBody{Mode: "formdata", FormData: outRows(request.Form, true)}
 	}
-	switch r.Auth.Type {
+	switch request.Auth.Type {
 	case model.AuthBearer:
-		o.Auth = &outAuth{Type: "bearer", Bearer: []outKV{{Key: "token", Value: shareable(r.Auth.Token)}}}
+		o.Auth = &outAuth{Type: "bearer", Bearer: []outKV{{Key: "token", Value: shareable(request.Auth.Token)}}}
 	case model.AuthBasic:
-		o.Auth = &outAuth{Type: "basic", Basic: []outKV{{Key: "username", Value: r.Auth.User}, {Key: "password", Value: shareable(r.Auth.Password)}}}
+		o.Auth = &outAuth{Type: "basic", Basic: []outKV{{Key: "username", Value: request.Auth.User}, {Key: "password", Value: shareable(request.Auth.Password)}}}
 	case model.AuthAPIKey:
-		in := r.Auth.KeyIn
+		in := request.Auth.KeyIn
 		if in == "" {
 			in = model.KeyInHeader
 		}
-		o.Auth = &outAuth{Type: "apikey", APIKey: []outKV{{Key: "key", Value: r.Auth.KeyName}, {Key: "value", Value: shareable(r.Auth.KeyValue)}, {Key: "in", Value: in}}}
+		o.Auth = &outAuth{Type: "apikey", APIKey: []outKV{{Key: "key", Value: request.Auth.KeyName}, {Key: "value", Value: shareable(request.Auth.KeyValue)}, {Key: "in", Value: in}}}
 	}
 	return o
 }

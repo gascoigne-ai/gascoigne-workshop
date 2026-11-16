@@ -21,8 +21,8 @@ func load(t *testing.T) Result {
 	return res
 }
 
-func find(f *model.Folder, name string) *model.Request {
-	for _, r := range f.Requests {
+func find(folder *model.Folder, name string) *model.Request {
+	for _, r := range folder.Requests {
 		if r.Name == name {
 			return r
 		}
