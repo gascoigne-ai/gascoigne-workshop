@@ -307,7 +307,13 @@ func (s *mcpSession) call(ctx context.Context, method string, params any) (json.
 	s.mu.Lock()
 	s.waiters[id] = w
 	s.mu.Unlock()
+	forget := func() { // a call that ends unanswered must not stay registered
+		s.mu.Lock()
+		delete(s.waiters, id)
+		s.mu.Unlock()
+	}
 	if err := s.write(ctx, "request", b); err != nil {
+		forget()
 		return nil, err
 	}
 	select {
@@ -320,6 +326,7 @@ func (s *mcpSession) call(ctx context.Context, method string, params any) (json.
 		}
 		return answer.result, nil
 	case <-ctx.Done():
+		forget()
 		return nil, ctx.Err()
 	}
 }

@@ -62,3 +62,35 @@ func TestClosingAnMCPSessionWhileItsEndNoteWaitsForRoomDoesNotBlock(t *testing.T
 	time.Sleep(50 * time.Millisecond)
 	closesWithinASecond(t, func() { s.Close() })
 }
+
+type failingTransport struct{ closedTransport }
+
+func (failingTransport) send(context.Context, []byte) error { return context.Canceled }
+
+// call registered its waiter before writing and left it registered when
+// the write failed or the context ended, so each failed call leaked one.
+func TestAFailedMCPCallLeavesNoWaiterBehind(t *testing.T) {
+	s := &mcpSession{tr: failingTransport{}, events: make(chan Event, 4), done: make(chan struct{}), now: time.Now, waiters: map[int64]chan rpcAnswer{}}
+	if _, err := s.call(context.Background(), "ping", nil); err == nil {
+		t.Fatal("call on a failing transport succeeded")
+	}
+	s.mu.Lock()
+	left := len(s.waiters)
+	s.mu.Unlock()
+	if left != 0 {
+		t.Errorf("%d waiters left after a failed write", left)
+	}
+
+	s.tr = closedTransport{} // writes work, nobody answers
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
+	defer cancel()
+	if _, err := s.call(ctx, "ping", nil); err == nil {
+		t.Fatal("call without an answer succeeded")
+	}
+	s.mu.Lock()
+	left = len(s.waiters)
+	s.mu.Unlock()
+	if left != 0 {
+		t.Errorf("%d waiters left after a timed-out call", left)
+	}
+}
