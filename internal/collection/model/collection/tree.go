@@ -36,14 +36,14 @@ func Rows(root *model.Folder, expanded map[*model.Folder]bool) []Row {
 	return rows
 }
 
-func appendFolder(rows []Row, f *model.Folder, depth int, expanded map[*model.Folder]bool) []Row {
-	for _, sub := range f.Folders {
+func appendFolder(rows []Row, folder *model.Folder, depth int, expanded map[*model.Folder]bool) []Row {
+	for _, sub := range folder.Folders {
 		rows = append(rows, Row{Depth: depth, Name: sub.Name, Folder: true, Open: expanded[sub], Dir: sub})
 		if expanded[sub] {
 			rows = appendFolder(rows, sub, depth+1, expanded)
 		}
 	}
-	for _, req := range f.Requests {
+	for _, req := range folder.Requests {
 		rows = append(rows, Row{Depth: depth, Name: req.Name, Req: req})
 	}
 	return rows
@@ -63,8 +63,8 @@ func FilteredRows(root *model.Folder, expanded map[*model.Folder]bool, filter st
 	return appendMatching(rows, root, 1, needle, strings.Contains(strings.ToLower(root.Name), needle))
 }
 
-func appendMatching(rows []Row, f *model.Folder, depth int, needle string, all bool) []Row {
-	for _, sub := range f.Folders {
+func appendMatching(rows []Row, folder *model.Folder, depth int, needle string, all bool) []Row {
+	for _, sub := range folder.Folders {
 		subAll := all || strings.Contains(strings.ToLower(sub.Name), needle)
 		if !subAll && !folderHasMatch(sub, needle) {
 			continue
@@ -72,7 +72,7 @@ func appendMatching(rows []Row, f *model.Folder, depth int, needle string, all b
 		rows = append(rows, Row{Depth: depth, Name: sub.Name, Folder: true, Open: true, Dir: sub})
 		rows = appendMatching(rows, sub, depth+1, needle, subAll)
 	}
-	for _, req := range f.Requests {
+	for _, req := range folder.Requests {
 		if all || requestMatches(req, needle) {
 			rows = append(rows, Row{Depth: depth, Name: req.Name, Req: req})
 		}
@@ -80,17 +80,17 @@ func appendMatching(rows []Row, f *model.Folder, depth int, needle string, all b
 	return rows
 }
 
-func requestMatches(r *model.Request, needle string) bool {
-	return strings.Contains(strings.ToLower(r.Name), needle) || strings.Contains(strings.ToLower(r.URL), needle)
+func requestMatches(request *model.Request, needle string) bool {
+	return strings.Contains(strings.ToLower(request.Name), needle) || strings.Contains(strings.ToLower(request.URL), needle)
 }
 
-func folderHasMatch(f *model.Folder, needle string) bool {
-	for _, r := range f.Requests {
+func folderHasMatch(folder *model.Folder, needle string) bool {
+	for _, r := range folder.Requests {
 		if requestMatches(r, needle) {
 			return true
 		}
 	}
-	for _, sub := range f.Folders {
+	for _, sub := range folder.Folders {
 		if strings.Contains(strings.ToLower(sub.Name), needle) || folderHasMatch(sub, needle) {
 			return true
 		}
