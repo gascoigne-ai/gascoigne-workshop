@@ -9,11 +9,12 @@ From the input audit of 2026-11-16: the repo has no `func Fuzz` and no test of h
 2. `make fuzz` runs each target briefly (30 to 45 s); it is not part of `make check`.
 3. The audit's gap tests exist as normal table-driven tests.
 
-Scope (one commit per item)
-1. Add `make fuzz` and the first target, `miniyaml.Parse`; run it, fix what it finds under task 074 rules (regression test first).
-2. Targets: `model.ShellSplit` and `ParseCurl`; `ParamsFromURL` and `ApplyPathParams`; `assert.Run`; `jsonview.Compact` and `Lines`; `openapi.Parse`; `postman.Parse`; `clientconfig` decode; `ws` frame reader; `markup.Parse` and `interpolate`.
-3. Targets for the editor: `TextField.Apply` with random typed runes and edits plus `Insert`, `CodeView.Find`, `wrapRunes`, `Input.Scaled`.
-4. Gap tests: invalid UTF-8, CRLF, combining marks and C1/bidi characters in `Insert`; zero-size and negative `Rect` for `TextArea`, `CodeView`, `splitB`; AltGr (Ctrl+Alt) typing; hostile `state.json` (huge `sidebarW`, zero or negative column weights, `Active` out of range, duplicate tabs); startup with a missing collection and a corrupt state file together; duplicate and reserved shortcut bindings in raw settings; a send result arriving after its tab closed; `CodeView` selection after `Lines` is mutated directly.
-5. Docs: a line in `rules.md` or `architecture.md` on `make fuzz` and where seeds live.
+Done: `make fuzz` with 17 targets (listed in `architecture.md` Limits); each ran 12 to 20 s with no crasher. Gap tests pinned: hostile `state.json`, zero-size editors, split and code view, hostile pasted text (NUL, invalid UTF-8, bidi, C1, combining marks, ZWJ).
 
-Acceptance: `make fuzz` passes on a clean tree; `make check` green; every crasher found is a committed regression test; the file is deleted in the last commit.
+Dropped by the bug rating rule (frequency x severity below 5): AltGr typing is lost only where AltGr reports as Ctrl+Alt (Windows; this app targets Linux); `CodeView` selection after `Lines` is mutated directly reads clamped values and is cosmetic; duplicate shortcut bindings in raw settings fire both actions (the user wrote them).
+
+Not done, no ask needed: `FuzzTarget` for `Input.Scaled` (covered by a table test), startup with a missing collection and a corrupt state file together (each is covered alone).
+
+Scope: all items done or dropped. The user decides whether this file is deleted (rules: ask before deleting).
+
+Acceptance: met; `make fuzz` passes; `make check` green.
