@@ -9,18 +9,13 @@ From the input audit of 2026-11-16 (static read of toolkit, request, collection,
 2. Numeric input (settings, markup attributes, environment) cannot produce NaN, Inf, overflow or division by zero.
 3. Importers and parsers keep a whole import alive when one item is odd, and say what they skipped.
 
+Done since (one commit each, test first): `recover` in `bus.Run` plus connect and desktop dialog through it (the font scan in `settingsui` keeps its own goroutine: that package cannot import another domain's controller); slider range normalized; markup NaN/Inf refused; `Input.Scaled` and `GDK_SCALE` guards; timeout capped at 24 h; `<include>` depth limit; cell edit past the end; `assert` header capture; cURL clustered and attached flags; MCP waiter leak; Postman numeric values and string request; OpenAPI odd paths and operations (`Result.Skipped`, toast); gRPC reflection file cap; `.proto` imports cannot leave the import paths; `miniyaml` depth limit. Checked and left alone: the schema blow-up (width cubed, pinned by a test), MCP string ids (the session only sends integers), the `split` zero-size mismatch (harmless, only divides a ratio).
+
 Scope (one commit per item, test first, regression comment above each test)
-1. `internal/workspace/ui/bus/cmd.go` (`bus.Run`), `asyncwrite.go:24`, `wsui.go:90`, `filebrowser.go:50`: `recover` in one place, turn the panic into an error event and a toast. Test: a job that panics reports an error and the bus keeps working.
-2. Slider (`widget/slider.go`): `step<=0`, `min>=max`, `Scale=0` give no NaN thumb. `markup` `realParam`/`floatAttr`: reject NaN and Inf. `core.Input.Scaled`: scale 0 or negative. `displayscale.go` `parseEnvScale`: reject Inf and NaN (`GDK_SCALE=inf`).
-3. `app.go:477` `timeoutFor`: a huge `timeoutSec` overflows `time.Duration` and expires at once; clamp. `settings.Decode` does not call `Validate`: decide in the item what a loaded out-of-range value does (clamp, or default with a status line) and ask the user if it changes what they see.
-4. `markup` `<include>`: depth limit so a self-including template is an error, not a stack overflow.
-5. `celledit.go:50-65` commit index after the table shrank. `assert.go:108-116` `set x = header X` with no headers must fail, not capture "". `widget/split.go` `Layout` and `Update` disagree at zero size (`max(total-1, 0)` vs `1`).
-6. `curlparse.go`: unknown `--flag=value` becomes a positional argument; clustered short flags (`-sSL`, `-XPOST`, `-uuser:pw`) are ignored silently. Parse them or report them.
-7. `mcp.go:235`: response ids matched only as int64; accept a string or `1.0` id. `mcp.go:307`: waiter leaks when `write` fails.
-8. Postman import: numeric variable `value` and v2.0 string `request` fail the whole import; skipped features (unsupported auth, graphql and file bodies) are counted and reported. OpenAPI: `x-` extensions at the paths level, boolean schemas, `requestBody.$ref`, one malformed operation must not abort the import; self-referencing schema blow-up (`openapi.go:149-173`, 20^6 copies) gets a size cap.
-9. `grpcreflect.go:124-138` dependency fetch loop and `grpcfiles.go:119-135` `.proto` import path (`../`): bound the loop; import outside the import path is refused (see task 076 for the trust side).
-10. Response view of a very large body (32 MiB): `RawLines`/`CodeLines`/`CompactLines` run on the UI thread. Cap or load in steps; the viewer says it is truncated. Ask the user for the limit and the wording.
-11. `miniyaml` very deep `[[[[` or `- - -` recursion: depth limit as an error with a line number. `assert` live evaluation on every keystroke (`assertpane.go:46`) re-parses the body per line: parse once per run.
-12. Docs: `architecture.md` gets each limit and the `recover` rule in the same commit as the behavior.
+1. Out-of-range settings: `settings.Decode` does not call `Validate`. Decide with the user what a loaded out-of-range value does (clamp, or default with a status line), then implement. Ask first.
+2. Postman import reports what it skips (unsupported auth types, graphql and file bodies) the way OpenAPI does (`Result.Skipped`, toast). OpenAPI `requestBody.$ref` gives no body silently: resolve it or report it.
+3. Response view of a very large body (32 MiB): `RawLines`/`CodeLines`/`CompactLines` run on the UI thread. Cap or load in steps; the viewer says it is truncated. Ask the user for the limit and the wording first.
+4. `assert` live evaluation on every keystroke (`assertpane.go:46`) re-parses the body per line: parse once per run. Test counts parses.
+5. Docs: `architecture.md` Limits gets the caps now in code (variable expansion 16 MiB, JSON depth 256, YAML depth 100, include depth 32, timeout 24 h, reflection 512 files, MCP/WS behavior), in the same commit as item 3 or as its own `docs` commit.
 
 Acceptance: every item has a test that failed before for the stated reason; `make check` green; this file lists nothing unfinished; the file is deleted in the commit of the last item.
