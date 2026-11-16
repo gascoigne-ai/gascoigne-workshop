@@ -252,3 +252,22 @@ func TestTextMenuNeverCopiesAMaskedField(t *testing.T) {
 		t.Fatalf("clipboard = %q", clipboard.text)
 	}
 }
+
+// The menu's Cut, Copy and Paste called the clipboard without checking it
+// was there, so choosing one with no clipboard panicked on a nil interface.
+func TestTextMenuDisablesClipboardRowsWithoutAClipboard(t *testing.T) {
+	field := NewTextField("hello")
+	field.SelectAll()
+	c := testCtx(t)
+	c.Clipboard = nil
+	el := Field(&field, W(200), H(28), TextMenu(&field))
+	root := Row(el)
+	Layout(c, root, 400, 100)
+	rightClick(c, el)
+	Update(c, root)
+	for _, label := range []string{"Cut", "Copy", "Paste"} {
+		if !menuItemNamed(t, c, label).Disabled {
+			t.Errorf("%s should be disabled without a clipboard", label)
+		}
+	}
+}
