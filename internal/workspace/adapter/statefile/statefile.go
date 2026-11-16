@@ -38,11 +38,11 @@ func Load(path string) (state.State, error) {
 }
 
 // Save writes s to path atomically. An empty path keeps it in memory.
-func Save(path string, s state.State) error {
+func Save(path string, saved state.State) error {
 	if path == "" {
 		return nil
 	}
-	data, err := json.MarshalIndent(s, "", "  ")
+	data, err := json.MarshalIndent(saved, "", "  ")
 	if err != nil {
 		return fmt.Errorf("encode state: %w", err)
 	}
@@ -76,6 +76,6 @@ type Files struct{}
 func (Files) Load(path string) (state.State, error) { return Load(path) }
 
 // Save implements port.StateStore.
-func (Files) Save(path string, s state.State) error { return Save(path, s) }
+func (Files) Save(path string, saved state.State) error { return Save(path, saved) }
 
 var _ port.StateStore = Files{}
