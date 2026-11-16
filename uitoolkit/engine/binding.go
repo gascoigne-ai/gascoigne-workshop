@@ -24,8 +24,8 @@ type Binding struct {
 }
 
 // IsModifierKey reports whether k is a modifier key itself.
-func IsModifierKey(k ebiten.Key) bool {
-	switch k {
+func IsModifierKey(key ebiten.Key) bool {
+	switch key {
 	case ebiten.KeyAlt, ebiten.KeyAltLeft, ebiten.KeyAltRight,
 		ebiten.KeyControl, ebiten.KeyControlLeft, ebiten.KeyControlRight,
 		ebiten.KeyShift, ebiten.KeyShiftLeft, ebiten.KeyShiftRight,
@@ -37,11 +37,11 @@ func IsModifierKey(k ebiten.Key) bool {
 
 // keyLabel is how a key is written in key strings: the friendly name
 // from KeyNames, else Ebitengine's.
-func keyLabel(k ebiten.Key) string {
-	if name, ok := KeyNames[k]; ok {
+func keyLabel(key ebiten.Key) string {
+	if name, ok := KeyNames[key]; ok {
 		return name
 	}
-	return k.String()
+	return key.String()
 }
 
 // keyByName finds a bindable key by its lower-case name, friendly or
@@ -60,12 +60,12 @@ var keyByName = func() map[string]ebiten.Key {
 
 // ParseBinding reads "Ctrl+Shift+Tab" (modifiers in any order, names
 // case-insensitive). "" is a valid, unbound Binding.
-func ParseBinding(s string) (Binding, error) {
-	s = strings.TrimSpace(s)
-	if s == "" {
+func ParseBinding(text string) (Binding, error) {
+	text = strings.TrimSpace(text)
+	if text == "" {
 		return Binding{}, nil
 	}
-	parts := strings.Split(s, "+")
+	parts := strings.Split(text, "+")
 	var b Binding
 	for _, mod := range parts[:len(parts)-1] {
 		flag := map[string]*bool{"ctrl": &b.Ctrl, "control": &b.Ctrl, "alt": &b.Alt, "shift": &b.Shift}[strings.ToLower(strings.TrimSpace(mod))]
@@ -125,7 +125,7 @@ func BindingFrom(input core.Input) (binding Binding, ok bool) {
 }
 
 // IsFunctionKey reports whether k is one of F1 to F12.
-func IsFunctionKey(k ebiten.Key) bool { return k >= ebiten.KeyF1 && k <= ebiten.KeyF12 }
+func IsFunctionKey(key ebiten.Key) bool { return key >= ebiten.KeyF1 && key <= ebiten.KeyF12 }
 
 // TypesText reports whether the Binding is a key the user also types
 // with: no Ctrl or Alt, not a function key, not Delete. Such a binding
