@@ -18,34 +18,67 @@ type Result struct {
 	Vars   []model.KV
 }
 
+// text is a JSON value read as text: a string as it is, a number or
+// boolean as written, null as empty. Postman writes variable and header
+// values of any of these types.
+type text string
+
+func (t *text) UnmarshalJSON(data []byte) error {
+	var str string
+	if json.Unmarshal(data, &str) == nil {
+		*t = text(str)
+		return nil
+	}
+	if string(data) == "null" {
+		*t = ""
+		return nil
+	}
+	*t = text(data)
+	return nil
+}
+
 type kv struct {
 	Key      string `json:"key"`
-	Value    string `json:"value"`
+	Value    text   `json:"value"`
 	Disabled bool   `json:"disabled"`
 	Type     string `json:"type"`
 	Src      any    `json:"src"`
 }
 
 type item struct {
-	Name    string `json:"name"`
-	Items   []item `json:"item"`
-	Request *struct {
-		Method string          `json:"method"`
-		Header []kv            `json:"header"`
-		URL    json.RawMessage `json:"url"`
-		Body   *struct {
-			Mode       string `json:"mode"`
-			Raw        string `json:"raw"`
-			URLEncoded []kv   `json:"urlencoded"`
-			FormData   []kv   `json:"formdata"`
-			Options    struct {
-				Raw struct {
-					Language string `json:"language"`
-				} `json:"raw"`
-			} `json:"options"`
-		} `json:"body"`
-		Auth *auth `json:"auth"`
-	} `json:"request"`
+	Name    string       `json:"name"`
+	Items   []item       `json:"item"`
+	Request *requestSpec `json:"request"`
+}
+
+// requestSpec is a request; v2.0 also allows a bare URL string.
+type requestSpec struct {
+	Method string          `json:"method"`
+	Header []kv            `json:"header"`
+	URL    json.RawMessage `json:"url"`
+	Body   *struct {
+		Mode       string `json:"mode"`
+		Raw        string `json:"raw"`
+		URLEncoded []kv   `json:"urlencoded"`
+		FormData   []kv   `json:"formdata"`
+		Options    struct {
+			Raw struct {
+				Language string `json:"language"`
+			} `json:"raw"`
+		} `json:"options"`
+	} `json:"body"`
+	Auth *auth `json:"auth"`
+}
+
+func (r *requestSpec) UnmarshalJSON(data []byte) error {
+	var url string
+	if json.Unmarshal(data, &url) == nil {
+		quoted, _ := json.Marshal(url)
+		r.URL = quoted
+		return nil
+	}
+	type plain requestSpec // without the method, so it does not recurse
+	return json.Unmarshal(data, (*plain)(r))
 }
 
 type auth struct {
@@ -86,7 +119,7 @@ func Parse(data []byte) (Result, error) {
 	res := Result{Folder: root}
 	for _, v := range c.Variable {
 		if v.Key != "" {
-			res.Vars = append(res.Vars, model.KV{Name: v.Key, Value: v.Value, Enabled: !v.Disabled})
+			res.Vars = append(res.Vars, model.KV{Name: v.Key, Value: string(v.Value), Enabled: !v.Disabled})
 		}
 	}
 	return res, nil
@@ -116,7 +149,7 @@ func request(it item, inherited *auth) model.Request {
 	}
 	req.URL, req.Params = parseURL(pr.URL)
 	for _, h := range pr.Header {
-		req.Headers = append(req.Headers, model.KV{Name: h.Key, Value: h.Value, Enabled: !h.Disabled})
+		req.Headers = append(req.Headers, model.KV{Name: h.Key, Value: string(h.Value), Enabled: !h.Disabled})
 	}
 	if b := pr.Body; b != nil {
 		switch b.Mode {
@@ -163,7 +196,7 @@ func parseURL(raw json.RawMessage) (string, []model.KV) {
 	base := o.Raw
 	var params []model.KV
 	for _, q := range o.Query {
-		params = append(params, model.KV{Name: q.Key, Value: q.Value, Enabled: !q.Disabled})
+		params = append(params, model.KV{Name: q.Key, Value: string(q.Value), Enabled: !q.Disabled})
 	}
 	if len(params) > 0 {
 		base = model.WithParams(base, params)
@@ -176,7 +209,7 @@ func parseURL(raw json.RawMessage) (string, []model.KV) {
 func rows(in []kv, files bool) []model.KV {
 	var out []model.KV
 	for _, f := range in {
-		v := f.Value
+		v := string(f.Value)
 		if files && f.Type == "file" {
 			if src, ok := f.Src.(string); ok && src != "" {
 				v = "@" + src
@@ -190,7 +223,7 @@ func rows(in []kv, files bool) []model.KV {
 func get(list []kv, key string) string {
 	for _, e := range list {
 		if e.Key == key {
-			return e.Value
+			return string(e.Value)
 		}
 	}
 	return ""

@@ -123,3 +123,32 @@ func TestExportThenParseKeepsWhatPostmanCanHold(t *testing.T) {
 		t.Fatal("a WebSocket request has no Postman form")
 	}
 }
+
+// A numeric or boolean variable value ("value": 8080) and a v2.0 request
+// written as a bare URL string failed the whole import with a JSON type
+// error, so one odd item cost the user the collection.
+func TestImportSurvivesNumericValuesAndAStringRequest(t *testing.T) {
+	res, err := Parse([]byte(`{
+	  "info": {"name": "Odd", "schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"},
+	  "variable": [{"key": "port", "value": 8080}, {"key": "debug", "value": true}, {"key": "none", "value": null}],
+	  "item": [
+	    {"name": "Short", "request": "https://api.test/short"},
+	    {"name": "Long", "request": {"method": "GET", "url": "https://api.test/long", "header": [{"key": "X-N", "value": 5}]}}
+	  ]}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]string{"port": "8080", "debug": "true", "none": ""}
+	for _, v := range res.Vars {
+		if v.Value != want[v.Name] {
+			t.Errorf("var %s = %q, want %q", v.Name, v.Value, want[v.Name])
+		}
+	}
+	short, long := find(res.Folder, "Short"), find(res.Folder, "Long")
+	if short == nil || short.URL != "https://api.test/short" || short.Method != "GET" {
+		t.Errorf("short request %+v", short)
+	}
+	if long == nil || len(long.Headers) != 1 || long.Headers[0].Value != "5" {
+		t.Errorf("long request %+v", long)
+	}
+}
