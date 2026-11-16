@@ -138,3 +138,29 @@ func dump(f *model.Folder) []string {
 	walk(f, "")
 	return out
 }
+
+// A vendor extension at the paths level ("x-internal": true) failed the
+// whole document, and one malformed operation aborted the import, so the
+// good operations were lost with it.
+func TestImportKeepsGoodOperationsAroundOddOnes(t *testing.T) {
+	res, err := Parse([]byte(`{
+	  "openapi": "3.0.0", "info": {"title": "Odd"},
+	  "paths": {
+	    "x-internal": true,
+	    "/ok": {"get": {"summary": "Fine"}, "x-note": "ignored"},
+	    "/broken": {"post": {"summary": "Bad", "parameters": "nope"}, "get": {"summary": "Also fine"}},
+	    "/ref": {"$ref": "#/components/pathItems/Other"}
+	  }}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if find(res.Folder, "Fine") == nil || find(res.Folder, "Also fine") == nil {
+		t.Errorf("good operations missing: %+v", res.Folder.Requests)
+	}
+	if find(res.Folder, "Bad") != nil {
+		t.Error("the malformed operation was imported")
+	}
+	if len(res.Skipped) != 1 || !strings.Contains(res.Skipped[0], "POST /broken") {
+		t.Errorf("Skipped = %q, want the broken operation named", res.Skipped)
+	}
+}

@@ -21,7 +21,8 @@ const BaseURLVar = "baseUrl"
 // Result is what an import produces.
 type Result struct {
 	Folder  *model.Folder
-	BaseURL string // the first server of the document, "" when it names none
+	BaseURL string   // the first server of the document, "" when it names none
+	Skipped []string // operations that could not be read, as "METHOD /path: why"
 }
 
 type doc struct {
@@ -32,7 +33,7 @@ type doc struct {
 	Servers []struct {
 		URL string `json:"url"`
 	} `json:"servers"`
-	Paths      map[string]map[string]json.RawMessage `json:"paths"`
+	Paths      map[string]json.RawMessage `json:"paths"`
 	Components struct {
 		Schemas    map[string]map[string]any `json:"schemas"`
 		Parameters map[string]param          `json:"parameters"`
@@ -93,8 +94,12 @@ func Parse(data []byte) (Result, error) {
 		paths = append(paths, p)
 	}
 	sort.Strings(paths)
+	var skipped []string
 	for _, path := range paths {
-		item := d.Paths[path]
+		var item map[string]json.RawMessage
+		if json.Unmarshal(d.Paths[path], &item) != nil { // "x-..." extensions are not path items
+			continue
+		}
 		var shared []param
 		if raw, ok := item["parameters"]; ok {
 			_ = json.Unmarshal(raw, &shared)
@@ -106,7 +111,8 @@ func Parse(data []byte) (Result, error) {
 			}
 			var op operation
 			if err := json.Unmarshal(raw, &op); err != nil {
-				return Result{}, fmt.Errorf("%s %s: %w", strings.ToUpper(method), path, err)
+				skipped = append(skipped, fmt.Sprintf("%s %s: %v", strings.ToUpper(method), path, err))
+				continue
 			}
 			req := buildRequest(&d, method, path, op, shared)
 			folder := root
@@ -122,9 +128,12 @@ func Parse(data []byte) (Result, error) {
 		}
 	}
 	if len(root.Requests)+len(root.Folders) == 0 {
+		if len(skipped) > 0 { // nothing was readable: say why
+			return Result{}, errors.New(skipped[0])
+		}
 		return Result{}, errors.New("the document has no operations")
 	}
-	res := Result{Folder: root}
+	res := Result{Folder: root, Skipped: skipped}
 	if len(d.Servers) > 0 {
 		res.BaseURL = d.Servers[0].URL
 	}

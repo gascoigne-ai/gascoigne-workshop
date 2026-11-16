@@ -353,6 +353,9 @@ func (a *App) importOpenAPI(dir *model.Folder) {
 		a.openRequest(first)
 	}
 	a.status = "Imported " + res.Folder.Name
+	if len(res.Skipped) > 0 {
+		a.toast(fmt.Sprintf("%d operations could not be read, first: %s", len(res.Skipped), res.Skipped[0]), true)
+	}
 }
 
 // dragExpandTicks is how long a drag must rest over a closed folder
