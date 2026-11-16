@@ -15,7 +15,9 @@ import (
 )
 
 // Load reads path. A missing file is not an error and yields the
-// defaults; fields missing from the file keep their defaults.
+// defaults; fields missing from the file keep their defaults. Values
+// outside their range are clamped and reported as a *settings.ClampedError
+// with the usable settings.
 func Load(path string) (settings.Settings, error) {
 	data, err := os.ReadFile(path)
 	if errors.Is(err, fs.ErrNotExist) {
@@ -27,6 +29,10 @@ func Load(path string) (settings.Settings, error) {
 	loaded, err := settings.Decode(data)
 	if err != nil {
 		return loaded, fmt.Errorf("parse settings %s: %w", filepath.Base(path), err)
+	}
+	loaded, notes := settings.Clamp(loaded)
+	if len(notes) > 0 {
+		return loaded, &settings.ClampedError{Notes: notes}
 	}
 	return loaded, nil
 }

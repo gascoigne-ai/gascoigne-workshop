@@ -1,6 +1,8 @@
 package app
 
 import (
+	"errors"
+
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/controller/viewer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
@@ -157,7 +159,11 @@ func (a *App) revertSettings() {
 		return
 	}
 	loaded, err := a.settingFiles.Load(a.settingsPath)
-	if err != nil {
+	var clamped *settings.ClampedError
+	switch {
+	case errors.As(err, &clamped): // the values are usable: applied, with a note
+		a.toast(clamped.Error(), true)
+	case err != nil:
 		a.toast("Could not read settings.json: "+err.Error(), true)
 		return
 	}

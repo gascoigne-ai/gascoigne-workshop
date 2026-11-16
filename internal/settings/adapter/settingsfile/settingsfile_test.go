@@ -1,9 +1,11 @@
 package settingsfile
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
@@ -227,5 +229,28 @@ func TestSaveDoesNotBackUpAFileThatParses(t *testing.T) {
 	}
 	if _, err := os.Stat(path + ".bak"); err == nil {
 		t.Error("a settings file that parsed must not leave a backup")
+	}
+}
+
+// A file that parses but holds a value outside the schema's range (a
+// timeout of 99999999999 s) was used as written. It is now clamped to
+// the nearest allowed value and the load reports which keys it changed.
+func TestLoadClampsOutOfRangeValuesAndSaysSo(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "settings.json")
+	if err := os.WriteFile(path, []byte(`{"timeoutSec": 99999999999, "uiScale": 5, "theme": "light"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	got, err := Load(path)
+	var clamped *settings.ClampedError
+	if !errors.As(err, &clamped) {
+		t.Fatalf("err = %v, want a ClampedError", err)
+	}
+	if got.TimeoutSec != 3600 || got.UIScalePct != settings.MinUIScalePct || got.Theme != "light" {
+		t.Errorf("settings %+v, want timeout 3600, scale %d, theme kept", got, settings.MinUIScalePct)
+	}
+	for _, key := range []string{"timeoutSec", "uiScale"} {
+		if !strings.Contains(err.Error(), key) {
+			t.Errorf("message %q does not name %s", err, key)
+		}
 	}
 }

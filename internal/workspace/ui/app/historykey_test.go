@@ -3,6 +3,7 @@ package app
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -145,5 +146,24 @@ func TestACollectionThatFailedToLoadStaysInTheRememberedList(t *testing.T) {
 	}
 	if len(written.Collections) != 2 || written.Collections[1] != (settings.OpenCollection{Folder: brokenDir, Environment: "Dev"}) {
 		t.Fatalf("remembered %+v, want the broken folder kept after %q", written.Collections, alphaDir)
+	}
+}
+
+func TestAnOutOfRangeSettingIsClampedAndNamedInTheStatusLine(t *testing.T) {
+	settingsPath := filepath.Join(t.TempDir(), "settings.json")
+	if err := os.WriteFile(settingsPath, []byte(`{"timeoutSec": 99999999999}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	a, err := NewApp(withAdapters(Options{SettingsPath: settingsPath}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if a.settings.TimeoutSec != 3600 || !strings.Contains(a.status, "timeoutSec") {
+		t.Fatalf("timeout %d, status %q", a.settings.TimeoutSec, a.status)
+	}
+	a.settings.TimeoutSec = 10
+	a.revertSettings() // reading the file again applies the clamped value too
+	if a.settings.TimeoutSec != 3600 {
+		t.Fatalf("after revert: timeout %d, want the clamped 3600", a.settings.TimeoutSec)
 	}
 }
