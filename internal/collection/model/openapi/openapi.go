@@ -37,6 +37,7 @@ type doc struct {
 	Components struct {
 		Schemas    map[string]map[string]any `json:"schemas"`
 		Parameters map[string]param          `json:"parameters"`
+		Bodies     map[string]requestBody    `json:"requestBodies"`
 	} `json:"components"`
 }
 
@@ -49,17 +50,22 @@ type param struct {
 	Example  any            `json:"example"`
 }
 
+// requestBody is a body description; Ref points into
+// components.requestBodies.
+type requestBody struct {
+	Ref     string `json:"$ref"`
+	Content map[string]struct {
+		Schema  map[string]any `json:"schema"`
+		Example any            `json:"example"`
+	} `json:"content"`
+}
+
 type operation struct {
-	Tags        []string `json:"tags"`
-	Summary     string   `json:"summary"`
-	OperationID string   `json:"operationId"`
-	Parameters  []param  `json:"parameters"`
-	RequestBody *struct {
-		Content map[string]struct {
-			Schema  map[string]any `json:"schema"`
-			Example any            `json:"example"`
-		} `json:"content"`
-	} `json:"requestBody"`
+	Tags        []string     `json:"tags"`
+	Summary     string       `json:"summary"`
+	OperationID string       `json:"operationId"`
+	Parameters  []param      `json:"parameters"`
+	RequestBody *requestBody `json:"requestBody"`
 }
 
 var methods = []string{"get", "post", "put", "patch", "delete", "head", "options"}
@@ -153,6 +159,16 @@ func (d *doc) resolve(p param) param {
 	return p
 }
 
+// resolveBody follows a request body's $ref into components.requestBodies.
+func (d *doc) resolveBody(body requestBody) requestBody {
+	if name, ok := strings.CutPrefix(body.Ref, "#/components/requestBodies/"); ok {
+		if target, found := d.Components.Bodies[name]; found {
+			return target
+		}
+	}
+	return body
+}
+
 // schema follows $ref chains into components.schemas, to a depth that
 // stops a cycle, and does the same inside properties.
 func (d *doc) schema(s map[string]any, depth int) map[string]any {
@@ -205,7 +221,8 @@ func buildRequest(d *doc, method, path string, op operation, shared []param) mod
 	req.Params = query
 	req.URL = model.WithParams(url, req.Params)
 	if op.RequestBody != nil {
-		if mt, ok := op.RequestBody.Content["application/json"]; ok {
+		body := d.resolveBody(*op.RequestBody)
+		if mt, ok := body.Content["application/json"]; ok {
 			req.BodyType = model.BodyJSON
 			switch {
 			case mt.Example != nil:

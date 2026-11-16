@@ -195,3 +195,23 @@ func TestASelfReferencingSchemaStaysCheapToExpand(t *testing.T) {
 		t.Fatal("Parse is still expanding the schema after 3s")
 	}
 }
+
+// A requestBody written as {"$ref": "#/components/requestBodies/..."},
+// which specs use for bodies shared by several operations, gave the
+// request no body at all, silently.
+func TestARequestBodyRefIsResolved(t *testing.T) {
+	res, err := Parse([]byte(`{
+	  "openapi": "3.0.0", "info": {"title": "T"},
+	  "paths": {"/pets": {"post": {"summary": "Add", "requestBody": {"$ref": "#/components/requestBodies/PetBody"}}}},
+	  "components": {
+	    "requestBodies": {"PetBody": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/Pet"}}}}},
+	    "schemas": {"Pet": {"type": "object", "required": ["name"], "properties": {"name": {"type": "string"}}}}
+	  }}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := find(res.Folder, "Add")
+	if req == nil || req.BodyType != model.BodyJSON || !strings.Contains(req.Body, `"name"`) {
+		t.Fatalf("request %+v, want a JSON body with the Pet skeleton", req)
+	}
+}
