@@ -17,7 +17,7 @@ func Curl(req model.Request) string {
 		args = append(args, "-L")
 	}
 	if m := strings.ToUpper(req.Method); m != "" && m != "GET" {
-		args = append(args, "-X", m)
+		args = append(args, "-X", quoteUnlessToken(m))
 	}
 	args = append(args, shellQuote(curlURL(req)))
 	args = append(args, curlHeaders(req)...)
@@ -97,6 +97,17 @@ func curlBody(req model.Request) []string {
 }
 
 // shellQuote wraps s in single quotes for a POSIX shell.
+// quoteUnlessToken leaves a plain word such as a method name bare and
+// quotes anything else for the shell.
+func quoteUnlessToken(s string) string {
+	for _, r := range s {
+		if !(r >= 'A' && r <= 'Z' || r >= 'a' && r <= 'z' || r >= '0' && r <= '9' || r == '-' || r == '_') {
+			return shellQuote(s)
+		}
+	}
+	return s
+}
+
 func shellQuote(s string) string {
 	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
 }

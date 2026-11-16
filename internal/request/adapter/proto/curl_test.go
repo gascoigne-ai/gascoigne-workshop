@@ -17,6 +17,10 @@ func TestCurl(t *testing.T) {
 		{"empty method is get", model.Request{URL: "https://x.test"}, `curl -L 'https://x.test'`},
 		{"other methods are named", model.Request{Method: "DELETE", URL: "https://x.test"},
 			`curl -L -X DELETE 'https://x.test'`},
+		// The method went to the command line unquoted, so a method from an
+		// imported file such as "GET; rm x" ran as a shell command when pasted.
+		{"a method with shell characters is quoted", model.Request{Method: "get; rm x", URL: "https://x.test"},
+			`curl -L -X 'GET; RM X' 'https://x.test'`},
 		{"redirects are not followed when switched off", model.Request{URL: "https://x.test", NoRedirects: true},
 			`curl 'https://x.test'`},
 		{"enabled headers only, in order", model.Request{URL: "https://x.test", Headers: []model.KV{
