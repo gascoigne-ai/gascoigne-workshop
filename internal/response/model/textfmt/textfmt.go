@@ -10,23 +10,23 @@ import (
 )
 
 // Duration renders d as "850ms" below a second, else "1.4s".
-func Duration(d time.Duration) string {
-	if d < time.Second {
-		return fmt.Sprintf("%dms", d.Milliseconds())
+func Duration(duration time.Duration) string {
+	if duration < time.Second {
+		return fmt.Sprintf("%dms", duration.Milliseconds())
 	}
-	return fmt.Sprintf("%.1fs", d.Seconds())
+	return fmt.Sprintf("%.1fs", duration.Seconds())
 }
 
 // Size renders n bytes as "512B", "1.50KB" or "2.00MB".
-func Size(n int) string {
+func Size(count int) string {
 	const kb = 1024
 	switch {
-	case n < kb:
-		return fmt.Sprintf("%dB", n)
-	case n < kb*kb:
-		return fmt.Sprintf("%.2fKB", float64(n)/kb)
+	case count < kb:
+		return fmt.Sprintf("%dB", count)
+	case count < kb*kb:
+		return fmt.Sprintf("%.2fKB", float64(count)/kb)
 	default:
-		return fmt.Sprintf("%.2fMB", float64(n)/(kb*kb))
+		return fmt.Sprintf("%.2fMB", float64(count)/(kb*kb))
 	}
 }
 
