@@ -439,3 +439,20 @@ func TestSplitOptionsAreOnlyForSplit(t *testing.T) {
 		}
 	}
 }
+
+// ParseFloat accepts "NaN" and "Inf", and the value reached layout
+// (grow, a split's default) where int(NaN) is implementation-defined.
+func TestNumberAttributesRefuseNaNAndInf(t *testing.T) {
+	for _, src := range []string{
+		`<col grow="NaN"/>`,
+		`<col grow="Inf"/>`,
+		`<col grow="-inf"/>`,
+		`<split state="list" default="NaN"/>`,
+		`<split state="list" default="+Inf"/>`,
+	} {
+		err := buildError(t, src, Scope{"list": &widget.SplitState{}})
+		if err == nil || !strings.Contains(err.Error(), "not a number") {
+			t.Errorf("%s: err = %v, want a not-a-number error", src, err)
+		}
+	}
+}

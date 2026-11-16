@@ -77,6 +77,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"reflect"
 	"slices"
 	"sort"
@@ -281,15 +282,25 @@ func scopedState[T any](name string) param {
 
 // realParam is a param that is a number, written in the template or read
 // with {{path}}.
+// finiteFloat reads a number for a size or weight. ParseFloat also takes
+// "NaN" and "Inf", which layout cannot turn into pixels.
+func finiteFloat(text string) (float64, error) {
+	number, err := strconv.ParseFloat(strings.TrimSpace(text), 64)
+	if err != nil || math.IsNaN(number) || math.IsInf(number, 0) {
+		return 0, fmt.Errorf("%q is not a number", text)
+	}
+	return number, nil
+}
+
 func realParam(name string) param {
 	return param{name: name, read: func(value string, scope Scope) (any, error) {
 		text, err := interpolate(value, scope)
 		if err != nil {
 			return nil, err
 		}
-		number, err := strconv.ParseFloat(strings.TrimSpace(text), 64)
+		number, err := finiteFloat(text)
 		if err != nil {
-			return nil, fmt.Errorf("%s: %q is not a number", name, text)
+			return nil, fmt.Errorf("%s: %w", name, err)
 		}
 		return number, nil
 	}}
@@ -823,9 +834,9 @@ func intAttr(f func(int) view.Option) func(string) (view.Option, error) {
 
 func floatAttr(f func(float64) view.Option) func(string) (view.Option, error) {
 	return func(v string) (view.Option, error) {
-		n, err := strconv.ParseFloat(strings.TrimSpace(v), 64)
+		n, err := finiteFloat(v)
 		if err != nil {
-			return nil, fmt.Errorf("%q is not a number", v)
+			return nil, err
 		}
 		return f(n), nil
 	}
