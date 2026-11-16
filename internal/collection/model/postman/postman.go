@@ -335,9 +335,24 @@ func Export(root *model.Folder, vars []model.KV) ([]byte, error) {
 	out.Info.Schema = "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	out.Items = exportFolder(root)
 	for _, v := range vars {
-		out.Variable = append(out.Variable, outKV{Key: v.Name, Value: v.Value, Disabled: !v.Enabled})
+		value := v.Value
+		if v.Secret {
+			value = shareable(value)
+		}
+		out.Variable = append(out.Variable, outKV{Key: v.Name, Value: value, Disabled: !v.Enabled})
 	}
 	return json.MarshalIndent(out, "", "  ")
+}
+
+// shareable is what of a credential goes into an exported file, which is
+// made to be shared: a {{variable}} reference stays, a literal value does
+// not.
+func shareable(value string) string {
+	name, ok := strings.CutPrefix(value, "{{")
+	if name, ok = strings.CutSuffix(name, "}}"); ok && name != "" && !strings.ContainsAny(name, "{}") {
+		return value
+	}
+	return ""
 }
 
 // Skipped counts the requests of root that Export leaves out.
@@ -412,15 +427,15 @@ func exportRequest(r *model.Request) *outReq {
 	}
 	switch r.Auth.Type {
 	case model.AuthBearer:
-		o.Auth = &outAuth{Type: "bearer", Bearer: []outKV{{Key: "token", Value: r.Auth.Token}}}
+		o.Auth = &outAuth{Type: "bearer", Bearer: []outKV{{Key: "token", Value: shareable(r.Auth.Token)}}}
 	case model.AuthBasic:
-		o.Auth = &outAuth{Type: "basic", Basic: []outKV{{Key: "username", Value: r.Auth.User}, {Key: "password", Value: r.Auth.Password}}}
+		o.Auth = &outAuth{Type: "basic", Basic: []outKV{{Key: "username", Value: r.Auth.User}, {Key: "password", Value: shareable(r.Auth.Password)}}}
 	case model.AuthAPIKey:
 		in := r.Auth.KeyIn
 		if in == "" {
 			in = model.KeyInHeader
 		}
-		o.Auth = &outAuth{Type: "apikey", APIKey: []outKV{{Key: "key", Value: r.Auth.KeyName}, {Key: "value", Value: r.Auth.KeyValue}, {Key: "in", Value: in}}}
+		o.Auth = &outAuth{Type: "apikey", APIKey: []outKV{{Key: "key", Value: r.Auth.KeyName}, {Key: "value", Value: shareable(r.Auth.KeyValue)}, {Key: "in", Value: in}}}
 	}
 	return o
 }

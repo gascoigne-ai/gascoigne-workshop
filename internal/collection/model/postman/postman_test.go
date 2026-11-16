@@ -88,6 +88,13 @@ func TestParseRejectsWhatIsNotAPostmanCollection(t *testing.T) {
 	}
 }
 
+// withoutLiteralCredentials is auth as an export leaves it: a literal
+// token, password or key value is not written; a {{variable}} is.
+func withoutLiteralCredentials(auth model.Auth) model.Auth {
+	auth.Token, auth.Password, auth.KeyValue = shareable(auth.Token), shareable(auth.Password), shareable(auth.KeyValue)
+	return auth
+}
+
 func TestExportThenParseKeepsWhatPostmanCanHold(t *testing.T) {
 	first := load(t)
 	root := first.Folder
@@ -108,7 +115,7 @@ func TestExportThenParseKeepsWhatPostmanCanHold(t *testing.T) {
 	}
 	for _, name := range []string{"Form", "Upload", "Keyed"} {
 		a, b := find(root, name), find(again.Folder, name)
-		if b == nil || a.Method != b.Method || a.URL != b.URL || a.BodyType != b.BodyType || a.Auth != b.Auth || len(a.Form) != len(b.Form) {
+		if b == nil || a.Method != b.Method || a.URL != b.URL || a.BodyType != b.BodyType || withoutLiteralCredentials(a.Auth) != b.Auth || len(a.Form) != len(b.Form) {
 			t.Errorf("%s changed:\n before %+v\n after  %+v", name, a, b)
 		}
 	}
@@ -181,4 +188,30 @@ func FuzzParse(f *testing.F) {
 	f.Fuzz(func(t *testing.T, data []byte) {
 		_, _ = Parse(data)
 	})
+}
+
+// Export wrote the value of Secret variables and every request's token,
+// password and API key into a file made to be shared. They are now left
+// empty; the structure (names, user names, key names) stays.
+func TestExportLeavesSecretsOut(t *testing.T) {
+	root := &model.Folder{Name: "API", Requests: []*model.Request{
+		{Name: "Bearer", Protocol: "rest", Method: "GET", URL: "u", Auth: model.Auth{Type: model.AuthBearer, Token: "tok-secret"}},
+		{Name: "Basic", Protocol: "rest", Method: "GET", URL: "u", Auth: model.Auth{Type: model.AuthBasic, User: "alice", Password: "pw-secret"}},
+		{Name: "Key", Protocol: "rest", Method: "GET", URL: "u", Auth: model.Auth{Type: model.AuthAPIKey, KeyName: "X-Key", KeyValue: "key-secret", KeyIn: model.KeyInHeader}},
+	}}
+	vars := []model.KV{{Name: "token", Value: "var-secret", Enabled: true, Secret: true}, {Name: "host", Value: "visible.test", Enabled: true}}
+	data, err := Export(root, vars)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, leaked := range []string{"tok-secret", "pw-secret", "key-secret", "var-secret"} {
+		if strings.Contains(string(data), leaked) {
+			t.Errorf("the export holds %q", leaked)
+		}
+	}
+	for _, kept := range []string{"alice", "X-Key", "visible.test", `"token"`} {
+		if !strings.Contains(string(data), kept) {
+			t.Errorf("the export lost %q", kept)
+		}
+	}
 }

@@ -390,7 +390,7 @@ Row(H(urlH), PadX(w.Pad), PadY(8), Gap(8), Bg(w.Bg),
 
 - **Postman import** (`internal/collection/model/postman`, `App.importPostman`): `postman.Parse` maps a v2.x collection to a folder tree and its variables; the importer adds the folder under the chosen one and the variables the collection lacks.
 
-- **Postman export**: `postman.Export(folder, vars)` writes a v2.1 collection (REST requests only; `postman.Skipped` counts the rest); `App.exportPostman` picks a file through `pickFile` and writes it.
+- **Postman export**: `postman.Export(folder, vars)` writes a v2.1 collection (REST requests only; `postman.Skipped` counts the rest; the file is made to be shared, so literal tokens, passwords, API key values and the values of secret variables are left empty, while a `{{variable}}` reference stays); import reports what it cannot carry over (`Result.Skipped`: auth types and file or graphql bodies with no equivalent); `App.exportPostman` picks a file through `pickFile` and writes it.
 
 - **Variables in the body editor** (`internal/workspace/ui/app/bodystyle.go`): `App.withVariables(base, req)` wraps the JSON or plain line styler so each `{{name}}` is split out and colored by whether `req` resolves it.
 
