@@ -29,7 +29,10 @@ FUZZ_TARGETS = \
 	./internal/request/model/assert:FuzzRun \
 	./internal/response/model/jsonview:FuzzCompact \
 	./internal/request/adapter/proto/ws:FuzzReadFrame \
-	./uitoolkit/markup:FuzzParse
+	./uitoolkit/markup:FuzzParse \
+	./uitoolkit/widget:FuzzEdit \
+	./uitoolkit/widget:FuzzFind \
+	./uitoolkit/widget:FuzzWrapRunes
 fuzz:
 	@for target in $(FUZZ_TARGETS); do \
 		package=$${target%%:*}; name=$${target##*:}; \

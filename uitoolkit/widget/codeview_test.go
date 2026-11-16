@@ -548,3 +548,24 @@ func TestCodeViewFollowStaysAtTheEndUntilTheUserScrollsUp(t *testing.T) {
 		t.Fatal("scrolling back to the end must resume following")
 	}
 }
+
+// FuzzFind: any query over any lines, then the reveal and selection
+// calls that follow a match.
+func FuzzFind(f *testing.F) {
+	f.Add("Żółw\nżółw ŻÓŁW\nplain", "żółw")
+	f.Add("a\n\n\nb", "")
+	f.Add(strings.Repeat("ab", 50), "ba")
+	f.Fuzz(func(t *testing.T, text, query string) {
+		var lines []Line
+		for _, line := range strings.Split(text, "\n") {
+			lines = append(lines, Line{Spans: []Span{{Text: line}}})
+		}
+		view := &CodeView{}
+		view.SetLines(lines)
+		matches := view.Find(query)
+		view.SetMatches(matches, 0)
+		if len(matches) > 0 {
+			view.RevealMatch(matches[len(matches)-1])
+		}
+	})
+}

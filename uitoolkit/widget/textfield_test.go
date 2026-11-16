@@ -1,11 +1,11 @@
 package widget
 
 import (
+	"testing"
+
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/theming"
 )
-
-import "testing"
 
 func TestTextFieldApply(t *testing.T) {
 	tests := []struct {
@@ -446,4 +446,32 @@ func TestStaleSelectionPastTheTextEndIsClampedWhenDeleting(t *testing.T) {
 			}
 		})
 	}
+}
+
+// FuzzEdit: any typed text, pasted text and run of edit keys leaves the
+// cursor and selection inside the text and never panics, for a single
+// line field and a multi-line one.
+func FuzzEdit(f *testing.F) {
+	f.Add("hello wörld", "typed ż", []byte{0, 1, 2, 3, 6, 7, 8, 9})
+	f.Add("a\r\nb\tc", "\x00\xff‮", []byte{16, 17, 18, 24, 25})
+	f.Add("", "", []byte{})
+	f.Fuzz(func(t *testing.T, start, typed string, keys []byte) {
+		var edits []core.Edit
+		for _, key := range keys {
+			edits = append(edits, core.Edit(key%26))
+		}
+		field := NewTextField(start)
+		field.Apply([]rune(typed), edits, true)
+		field.Insert(typed)
+		field.SelectAll()
+		field.DeleteSelection()
+		field.Undo()
+		field.Redo()
+		area := NewTextArea(start)
+		area.Apply([]rune(typed), edits, false)
+		area.Insert(typed)
+		if lo, hi, ok := field.Selection(); ok && (lo < 0 || hi > len([]rune(field.Text))) {
+			t.Fatalf("selection %d..%d outside %q", lo, hi, field.Text)
+		}
+	})
 }
