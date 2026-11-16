@@ -118,3 +118,61 @@ func TestSliderKeepsFollowingAPointerThatLeavesItsClippingContainer(t *testing.T
 		t.Fatalf("live %v, want the maximum", live)
 	}
 }
+
+// A step of 0 or less, an empty range (min >= max) or a mid outside the
+// range reached int(NaN) or int(Inf) and a 0/0 thumb position.
+func TestSliderWithADegenerateRangeStaysFinite(t *testing.T) {
+	cases := []struct {
+		name                string
+		min, max, step, mid int
+	}{
+		{"zero step", 0, 100, 0, 0},
+		{"negative step", 0, 100, -5, 0},
+		{"empty range", 50, 50, 1, 0},
+		{"reversed range", 100, 0, 1, 0},
+		{"mid at the minimum", 0, 100, 1, 0},
+		{"mid outside the range", 0, 100, 1, 500},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			state := &SliderState{}
+			var live []int
+			opts := []Option{W(200 + 2*sliderPad), H(20), OnSlide(func(v int) { live = append(live, v) })}
+			if tc.mid != 0 {
+				opts = append(opts, SliderMid(tc.mid))
+			}
+			root := Col(Slider(state, tc.min, tc.max, tc.step, tc.min, opts...))
+			c := testCtx(t)
+			Layout(c, root, 400, 100)
+			c.In = core.Input{X: sliderPad + 100, Y: 10, Click: true, Held: true}
+			Update(c, root)
+			drawn(t, c, root, 400, 100)
+			lo, hi := min(tc.min, tc.max), max(tc.min, tc.max)+1 // an empty range is widened by one
+			for _, v := range live {
+				if v < lo || v > hi {
+					t.Errorf("value %d outside %d..%d", v, lo, hi)
+				}
+			}
+		})
+	}
+}
+
+func TestSliderThumbPositionIsAFractionForADegenerateRange(t *testing.T) {
+	for _, s := range []*sliderB{
+		{min: 50, max: 50, step: 1},
+		{min: 100, max: 0, step: 1},
+		{min: 0, max: 100, step: 1, mid: 0},
+		{min: 0, max: 100, step: 1, mid: 500},
+		{min: 0, max: 100, step: 1, mid: -3},
+	} {
+		s.normalize()
+		for _, v := range []int{-10, s.min, s.max, 1000} {
+			if f := s.fracOf(v); !(f >= 0 && f <= 1) {
+				t.Errorf("%+v: fracOf(%d) = %v, want 0..1", s, v, f)
+			}
+		}
+		if v := s.valueAt(0.5); v < s.min || v > s.max || s.step < 1 {
+			t.Errorf("%+v: valueAt = %d", s, v)
+		}
+	}
+}

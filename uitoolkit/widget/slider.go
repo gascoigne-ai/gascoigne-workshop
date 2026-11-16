@@ -43,6 +43,17 @@ type sliderB struct {
 	onEnd          func(int)
 }
 
+// normalize makes a range that cannot be laid out usable: a step of at
+// least 1, a max above the min, and a mid strictly inside the range (else
+// the track is linear). Without it the thumb position divides by zero.
+func (s *sliderB) normalize() {
+	s.step = max(s.step, 1)
+	s.max = max(s.max, s.min+1)
+	if s.mid <= s.min || s.mid >= s.max {
+		s.mid = 0
+	}
+}
+
 func (s *sliderB) track(e *El) (x, w int) {
 	return e.Rect().X + sliderPad, max(e.Rect().W-2*sliderPad, 1)
 }
@@ -138,7 +149,9 @@ func (s *sliderB) Draw(e *El, c *core.Ctx, dst *ebiten.Image) {
 // seen live. In a template it is <slider state min max step value>, with
 // the state and callbacks named from the scope.
 func Slider(state *SliderState, min, max, step, value int, opts ...Option) *El {
-	return Custom(&sliderB{state: state, min: min, max: max, step: step, value: value}, with([]Item{Grow(1), H(core.CompactH)}, opts)...)
+	slider := &sliderB{state: state, min: min, max: max, step: step, value: value}
+	slider.normalize()
+	return Custom(slider, with([]Item{Grow(1), H(core.CompactH)}, opts)...)
 }
 
 // OnSlide runs with each new value of a Slider while the thumb moves.
@@ -156,6 +169,7 @@ func SliderMid(mid int) Option {
 	return func(e *El) {
 		if s, ok := e.Behavior().(*sliderB); ok {
 			s.mid = mid
+			s.normalize()
 		}
 	}
 }
