@@ -114,8 +114,8 @@ func Decode(data []byte) (Settings, error) {
 
 // Encode writes only what differs from the defaults, so the text shows
 // what the user changed and a reset leaves no trace.
-func Encode(s Settings) ([]byte, error) {
-	data, err := Minimal(s)
+func Encode(prefs Settings) ([]byte, error) {
+	data, err := Minimal(prefs)
 	if err != nil {
 		return nil, err
 	}

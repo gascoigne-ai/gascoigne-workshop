@@ -249,21 +249,21 @@ func Parse(data []byte, last Settings) (Settings, []Problem) {
 }
 
 // asMap is settings as the map its JSON form gives.
-func asMap(s Settings) map[string]any {
-	data, _ := json.Marshal(s)
+func asMap(prefs Settings) map[string]any {
+	data, _ := json.Marshal(prefs)
 	out := map[string]any{}
 	_ = json.Unmarshal(data, &out)
 	return out
 }
 
 // Changed reports whether the value of key differs from the default.
-func Changed(s Settings, key string) bool {
-	return !reflect.DeepEqual(asMap(s)[key], asMap(Default())[key])
+func Changed(prefs Settings, key string) bool {
+	return !reflect.DeepEqual(asMap(prefs)[key], asMap(Default())[key])
 }
 
 // Reset puts the default back as the value of key.
-func Reset(s *Settings, key string) {
-	current, defaults := asMap(*s), asMap(Default())
+func Reset(settingsValue *Settings, key string) {
+	current, defaults := asMap(*settingsValue), asMap(Default())
 	if value, ok := defaults[key]; ok {
 		current[key] = value
 	} else {
@@ -272,13 +272,13 @@ func Reset(s *Settings, key string) {
 	data, _ := json.Marshal(current)
 	rebuilt := Default()
 	_ = json.Unmarshal(data, &rebuilt)
-	*s = rebuilt
+	*settingsValue = rebuilt
 }
 
 // Minimal is the settings text with only what differs from the defaults,
 // grouped by section, so the file stays short and a reset leaves no trace.
-func Minimal(s Settings) ([]byte, error) {
-	current, defaults := asMap(s), asMap(Default())
+func Minimal(prefs Settings) ([]byte, error) {
+	current, defaults := asMap(prefs), asMap(Default())
 	kept := map[string]any{}
 	for key, value := range current {
 		if !reflect.DeepEqual(value, defaults[key]) {
@@ -290,8 +290,8 @@ func Minimal(s Settings) ([]byte, error) {
 
 // Value is the value of key in s as JSON gives it back (text, a float64
 // for numbers, a bool, a map), or nil when s has none.
-func Value(s Settings, key string) any {
-	value := asMap(s)[key]
+func Value(prefs Settings, key string) any {
+	value := asMap(prefs)[key]
 	if number, ok := value.(float64); ok && number == float64(int(number)) {
 		return int(number)
 	}
@@ -300,16 +300,16 @@ func Value(s Settings, key string) any {
 
 // With is s with key set to value; an unknown key or a value of the
 // wrong type leaves s as it was.
-func With(s Settings, key string, value any) Settings {
+func With(prefs Settings, key string, value any) Settings {
 	if _, known := FieldFor(key); !known {
-		return s
+		return prefs
 	}
-	current := asMap(s)
+	current := asMap(prefs)
 	current[key] = value
 	data, _ := json.Marshal(current)
 	changed := Default()
 	if err := json.Unmarshal(data, &changed); err != nil {
-		return s
+		return prefs
 	}
 	return changed
 }

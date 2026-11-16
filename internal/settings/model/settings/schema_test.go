@@ -177,10 +177,10 @@ func TestValueAndWithReadAndWriteASettingByItsKey(t *testing.T) {
 		value any
 		check func(Settings) bool
 	}{
-		{"layout", "side", func(s Settings) bool { return s.Layout == "side" }},
-		{"uiScale", 150, func(s Settings) bool { return s.UIScalePct == 150 }},
-		{"flat", true, func(s Settings) bool { return s.Flat }},
-		{"proxy", "http://localhost:8080", func(s Settings) bool { return s.Proxy == "http://localhost:8080" }},
+		{"layout", "side", func(prefs Settings) bool { return prefs.Layout == "side" }},
+		{"uiScale", 150, func(prefs Settings) bool { return prefs.UIScalePct == 150 }},
+		{"flat", true, func(prefs Settings) bool { return prefs.Flat }},
+		{"proxy", "http://localhost:8080", func(prefs Settings) bool { return prefs.Proxy == "http://localhost:8080" }},
 	}
 	for _, test := range tests {
 		got := With(s, test.key, test.value)

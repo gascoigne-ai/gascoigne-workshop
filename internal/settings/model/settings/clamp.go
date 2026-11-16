@@ -17,10 +17,10 @@ func (err *ClampedError) Error() string {
 // Clamp brings the whole-number settings inside the ranges of the schema.
 // 0 means "not set" for both and stays. notes tells what changed, one
 // entry per key.
-func Clamp(s Settings) (clamped Settings, notes []string) {
-	s.TimeoutSec, notes = clampInt(s.TimeoutSec, "timeoutSec", notes)
-	s.UIScalePct, notes = clampInt(s.UIScalePct, "uiScale", notes)
-	return s, notes
+func Clamp(prefs Settings) (clamped Settings, notes []string) {
+	prefs.TimeoutSec, notes = clampInt(prefs.TimeoutSec, "timeoutSec", notes)
+	prefs.UIScalePct, notes = clampInt(prefs.UIScalePct, "uiScale", notes)
+	return prefs, notes
 }
 
 func clampInt(value int, key string, notes []string) (int, []string) {

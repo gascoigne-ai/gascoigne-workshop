@@ -7,9 +7,9 @@ import (
 	"testing"
 )
 
-func sectioned(t *testing.T, s Settings) map[string]map[string]any {
+func sectioned(t *testing.T, prefs Settings) map[string]map[string]any {
 	t.Helper()
-	text, err := Minimal(s)
+	text, err := Minimal(prefs)
 	if err != nil {
 		t.Fatal(err)
 	}
