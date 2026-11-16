@@ -52,12 +52,12 @@ func TestCopyPutsTheWholeReportOnTheClipboard(t *testing.T) {
 	Layout(ctx, root, 600, 600)
 	var button *El
 	var find func(e *El)
-	find = func(e *El) {
-		if strings.Contains(strings.SplitN(Dump(e), "\n", 2)[0], "onClick=true") {
-			button = e
+	find = func(element *El) {
+		if strings.Contains(strings.SplitN(Dump(element), "\n", 2)[0], "onClick=true") {
+			button = element
 			return
 		}
-		for _, k := range e.Children() {
+		for _, k := range element.Children() {
 			if button == nil {
 				find(k)
 			}
