@@ -56,13 +56,15 @@ func (a *App) commitEdit() {
 	a.edit = nil
 	text := e.field.Text
 	a.applyRows(e.pane, e.tab, func(rows []model.KV) []model.KV {
-		if e.row >= len(rows) {
+		row := e.row
+		if row >= len(rows) { // the placeholder row, or rows deleted since the edit began
 			if text == "" {
 				return rows
 			}
 			rows = append(rows, model.KV{Enabled: true})
+			row = len(rows) - 1
 		}
-		*kvField(&rows[e.row], e.col) = text
+		*kvField(&rows[row], e.col) = text
 		return rows
 	})
 }

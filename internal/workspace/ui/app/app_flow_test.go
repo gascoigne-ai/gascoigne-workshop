@@ -3766,3 +3766,19 @@ func TestTimeoutIsCappedInsteadOfOverflowing(t *testing.T) {
 		}
 	}
 }
+
+// An edit of a row past the end (the table shrank while the cell was
+// open) appended one row and then indexed the row it had meant, which
+// was out of range.
+func TestCommittingACellOfARowThatNoLongerExistsAddsARow(t *testing.T) {
+	a, _ := newTestApp(t)
+	tab := a.cur()
+	before := len(tab.Req.Params)
+	a.beginEdit(paramsPane, tab, before, 0)
+	a.edit.row = before + 5 // the rows above were deleted meanwhile
+	a.edit.field = widget.NewTextField("late")
+	a.commitEdit()
+	if len(tab.Req.Params) != before+1 || tab.Req.Params[before].Name != "late" {
+		t.Fatalf("params %+v, want one new row named late", tab.Req.Params)
+	}
+}
