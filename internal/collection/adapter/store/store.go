@@ -113,6 +113,37 @@ func fromKV(rows []kvFile) []model.KV {
 	return out
 }
 
+// varsToFile is the rows of a collection or folder as saved in its
+// folder.json: the value of a secret variable goes to secrets under
+// key (the file's path) instead.
+func varsToFile(rows []model.KV, key string, secrets map[string]secret) []kvFile {
+	out := toKV(rows)
+	for i, row := range rows {
+		if !row.Secret {
+			continue
+		}
+		sec := secrets[key]
+		if sec.Vars == nil {
+			sec.Vars = map[string]string{}
+		}
+		sec.Vars[row.Name] = row.Value
+		secrets[key] = sec
+		out[i].Value = ""
+	}
+	return out
+}
+
+// varsFromFile reads rows saved by varsToFile, putting back secret values.
+func varsFromFile(rows []kvFile, sec secret) []model.KV {
+	out := fromKV(rows)
+	for i, row := range rows {
+		if value, ok := sec.Vars[row.Name]; row.Secret && ok { // an older file still holds its own value
+			out[i].Value = value
+		}
+	}
+	return out
+}
+
 // slug turns a name into a file name: lower-case letters and digits
 // joined by single dashes.
 func slug(name string) string {
@@ -149,7 +180,7 @@ func unique(base string, taken map[string]bool) string {
 // folder files of items that no longer exist.
 func Save(dir string, c model.Collection) error {
 	secrets := map[string]secret{}
-	meta := folderMeta{Name: c.Name, Vars: toKV(c.Vars)}
+	meta := folderMeta{Name: c.Name, Vars: varsToFile(c.Vars, folderFile, secrets)}
 	if err := saveFolder(absoluteDir(dir), dir, "", &c.Folder, meta, secrets); err != nil {
 		return err
 	}
@@ -188,7 +219,7 @@ func saveFolder(root, dir, rel string, f *model.Folder, meta folderMeta, secrets
 		name := unique(slug(sub.Name), taken)
 		keep[name] = true
 		meta.Order = append(meta.Order, name+"/")
-		if err := saveFolder(root, filepath.Join(dir, name), path.Join(rel, name), sub, folderMeta{Name: sub.Name, Vars: toKV(sub.Vars)}, secrets); err != nil {
+		if err := saveFolder(root, filepath.Join(dir, name), path.Join(rel, name), sub, folderMeta{Name: sub.Name, Vars: varsToFile(sub.Vars, path.Join(rel, name, folderFile), secrets)}, secrets); err != nil {
 			return err
 		}
 	}
@@ -417,7 +448,7 @@ func Load(dir string) (model.Collection, error) {
 	if err != nil {
 		return model.Collection{}, err
 	}
-	c.Vars = fromKV(meta.Vars)
+	c.Vars = varsFromFile(meta.Vars, secrets[folderFile])
 	if c.Envs, err = loadEnvs(dir, secrets); err != nil {
 		return model.Collection{}, err
 	}
@@ -443,7 +474,7 @@ func loadFolder(root, dir, rel string, f *model.Folder, secrets map[string]secre
 	}
 	f.Name = meta.Name
 	if rel != "" { // the root's variables are the collection's (Load sets them)
-		f.Vars = fromKV(meta.Vars)
+		f.Vars = varsFromFile(meta.Vars, secrets[path.Join(rel, folderFile)])
 	}
 	if f.Name == "" {
 		f.Name = filepath.Base(dir)

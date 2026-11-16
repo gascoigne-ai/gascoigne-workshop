@@ -251,3 +251,63 @@ func TestAnOldWorldReadableSecretsFileIsTightenedOnSave(t *testing.T) {
 		t.Errorf("mode %o after an unchanged save, want 600", mode)
 	}
 }
+
+// Collection and folder variables marked Secret were written with their
+// value into folder.json, which is meant to be committed; only
+// environments diverted secrets to .secrets.json.
+func TestSecretVariablesOfCollectionsAndFoldersStayOutOfFolderFiles(t *testing.T) {
+	dir := t.TempDir()
+	want := model.Collection{
+		Folder: model.Folder{
+			Name: "API",
+			Folders: []*model.Folder{{
+				Name: "Sub", Vars: []model.KV{{Name: "folderKey", Value: "folder-secret-value", Enabled: true, Secret: true}, {Name: "plain", Value: "visible", Enabled: true}},
+				Requests: []*model.Request{{Name: "R", Protocol: "rest", Method: "GET", URL: "u"}},
+			}},
+		},
+		Vars: []model.KV{{Name: "apiKey", Value: "collection-secret-value", Enabled: true, Secret: true}},
+	}
+	if err := Save(dir, want); err != nil {
+		t.Fatal(err)
+	}
+	for _, file := range []string{"folder.json", filepath.Join("sub", "folder.json")} {
+		text, err := os.ReadFile(filepath.Join(dir, file))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if strings.Contains(string(text), "-secret-value") {
+			t.Errorf("%s holds a secret value:\n%s", file, text)
+		}
+	}
+	secrets, err := os.ReadFile(filepath.Join(dir, secretsFile))
+	if err != nil || !strings.Contains(string(secrets), "collection-secret-value") || !strings.Contains(string(secrets), "folder-secret-value") {
+		t.Errorf("%s = %s, %v; want both values", secretsFile, secrets, err)
+	}
+	got, err := Load(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("round trip:\n got %+v\nwant %+v", got, want)
+	}
+}
+
+// A folder.json an older version wrote still holds the secret value; it
+// loads as it was and moves to .secrets.json on the next save.
+func TestAnOlderFolderFileWithASecretValueStillLoads(t *testing.T) {
+	dir := t.TempDir()
+	old := `{"name": "Old", "vars": [{"name": "k", "value": "legacy", "enabled": true, "secret": true}]}`
+	if err := os.WriteFile(filepath.Join(dir, "folder.json"), []byte(old), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	got, err := Load(dir)
+	if err != nil || len(got.Vars) != 1 || got.Vars[0].Value != "legacy" {
+		t.Fatalf("loaded %+v, %v; want the legacy value kept", got.Vars, err)
+	}
+	if err := Save(dir, got); err != nil {
+		t.Fatal(err)
+	}
+	if text, _ := os.ReadFile(filepath.Join(dir, "folder.json")); strings.Contains(string(text), "legacy") {
+		t.Errorf("the value stayed in folder.json:\n%s", text)
+	}
+}
