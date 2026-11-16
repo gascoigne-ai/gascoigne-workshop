@@ -9,10 +9,12 @@ Follow-up of task 070, decided by the user on 2026-11-15: 070 closed with servic
 2. The Body can be filled with a JSON skeleton of the request message (default values), on the user's action.
 3. A tab remembered on a pane after Body reopens the right pane now that Proto sits after Body (known 070 gap).
 
-Scope (to be written with the user before work starts; ask first)
-1. Decide where the schema shows (Body pane side panel, a tooltip, a tab) and what the skeleton action looks like.
-2. Implement on the descriptors both sources already give; tests with real `.proto` fixtures.
-3. Fix the remembered pane index (state file) with a test.
-4. Docs, golden scene.
+Decided by the user on 2026-11-16: the schema shows in a new read-only **Schema** pane after Proto in the gRPC request panes (a tree of fields: type, repeated, map, enum values, oneof, nesting), with a **Fill body** button that writes the JSON skeleton of the request message into Body.
 
-Acceptance: to be written with the scope.
+Scope
+1. `model` schema type and JSON skeleton (default values; nested messages expanded once, a recursive message cut off); adapter turns a method's input descriptor into it, for reflection and `.proto` files; port `GRPCSchema`. Tests with the real `health.proto`.
+2. Schema pane and Fill button (`editor` message for the body), golden scene.
+3. Remembered pane by label, so a state file written before Proto existed still opens the right pane (with a test).
+4. Docs: `architecture.md`, `packagemap.md`, template tables.
+
+Acceptance: every Objective met; `make check` green; the pane looked at in a `make shot` PNG.

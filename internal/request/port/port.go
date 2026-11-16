@@ -136,3 +136,7 @@ type ProtocolConfig struct {
 // GRPCMethods lists the methods of the gRPC server a request points at as
 // "package.Service/Method".
 type GRPCMethods func(ctx context.Context, req model.Request) ([]string, error)
+
+// GRPCSchema describes the request message of the method a gRPC request
+// names.
+type GRPCSchema func(ctx context.Context, req model.Request) (model.MessageSchema, error)
