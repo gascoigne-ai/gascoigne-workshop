@@ -42,3 +42,8 @@ Apply when adding or changing anything exported. They exist so that a guess is u
 - `internal/<domain>/<role>/<package>`; domains `request`, `collection`, `response`, `settings`, `workspace`; roles `ui` (views and input), `controller` (state and decisions), `port` (interfaces to the outside and the types that cross them), `adapter` (implementations of ports: network, files, system), `model` (plain data and rules). Decision 11 record the scheme and the package map.
 - Dependencies point inward and are enforced by `internal/layers_test.go`: model imports only model; port imports model and port; controller imports model, port and controller; ui and adapter import model, port and controller, never each other, and a ui package never imports another ui package; another domain is reached only through its model or port (`workspace`, the composition root, may also import their ui and controller). A new package goes into a domain and a role; no `utils`, `common` or `helpers`.
 - `workspace/ui/app` (the `App`) is the composition root; the layer test has no exceptions. UI-free state and decisions go to a `controller` package (decision 11); a controller never imports the toolkit.
+
+## Untrusted input
+- Anything that comes from a file, a clipboard, an import or a server is untrusted: parsers return an error, never panic, hang or grow without a bound; a new parser or importer gets a fuzz target (`FUZZ_TARGETS` in the Makefile) and a limit written into `architecture.md` Limits.
+- A request that runs a command or reads a file outside its collection goes through `App.allowed` (decision 21); a new protocol that does either extends `model.Request.Accesses`.
+- Values from a server are never expanded as variables (`model.KV.Literal`).
