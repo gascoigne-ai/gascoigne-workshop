@@ -25,50 +25,56 @@ const (
 )
 
 // AlignItems sets how a Row or Col places its children across it.
-func AlignItems(a Align) Option { return func(e *El) { e.alignItems = a } }
+func AlignItems(alignValue Align) Option {
+	return func(element *El) { element.alignItems = alignValue }
+}
 
 // AlignSelf overrides the parent's AlignItems for one child.
-func AlignSelf(a Align) Option { return func(e *El) { e.alignSelf = a } }
+func AlignSelf(alignValue Align) Option { return func(element *El) { element.alignSelf = alignValue } }
 
 // JustifyContent distributes free space along the main axis; it does
 // nothing when a child grows, since that child takes the space.
-func JustifyContent(j Justify) Option { return func(e *El) { e.justify = j } }
+func JustifyContent(justifyValue Justify) Option {
+	return func(element *El) { element.justify = justifyValue }
+}
 
 // MinW, MaxW, MinH and MaxH bound an element's size, whatever its
 // content or its share of the free space would give.
-func MinW(n int) Option { return func(e *El) { e.minW = n } }
-func MaxW(n int) Option { return func(e *El) { e.maxW = n } }
-func MinH(n int) Option { return func(e *El) { e.minH = n } }
-func MaxH(n int) Option { return func(e *El) { e.maxH = n } }
+func MinW(count int) Option { return func(element *El) { element.minW = count } }
+func MaxW(count int) Option { return func(element *El) { element.maxW = count } }
+func MinH(count int) Option { return func(element *El) { element.minH = count } }
+func MaxH(count int) Option { return func(element *El) { element.maxH = count } }
 
 // Margin is space around an element, inside its parent's layout.
-func Margin(n int) Option { return func(e *El) { e.mL, e.mT, e.mR, e.mB = n, n, n, n } }
+func Margin(count int) Option {
+	return func(element *El) { element.mL, element.mT, element.mR, element.mB = count, count, count, count }
+}
 
 // MarginL, MarginT, MarginR and MarginB are margin on one side.
-func MarginL(n int) Option { return func(e *El) { e.mL = n } }
-func MarginT(n int) Option { return func(e *El) { e.mT = n } }
-func MarginR(n int) Option { return func(e *El) { e.mR = n } }
-func MarginB(n int) Option { return func(e *El) { e.mB = n } }
+func MarginL(count int) Option { return func(element *El) { element.mL = count } }
+func MarginT(count int) Option { return func(element *El) { element.mT = count } }
+func MarginR(count int) Option { return func(element *El) { element.mR = count } }
+func MarginB(count int) Option { return func(element *El) { element.mB = count } }
 
 // MarginX is left and right margin.
-func MarginX(n int) Option { return func(e *El) { e.mL, e.mR = n, n } }
+func MarginX(count int) Option { return func(element *El) { element.mL, element.mR = count, count } }
 
 // MarginY is top and bottom margin.
-func MarginY(n int) Option { return func(e *El) { e.mT, e.mB = n, n } }
+func MarginY(count int) Option { return func(element *El) { element.mT, element.mB = count, count } }
 
 // clampSize applies MinW/MaxW/MinH/MaxH.
-func (e *El) clampSize(w, h int) (int, int) {
+func (e *El) clampSize(width, height int) (int, int) {
 	if e.minW > 0 {
-		w = max(w, e.minW)
+		width = max(width, e.minW)
 	}
 	if e.maxW > 0 {
-		w = min(w, e.maxW)
+		width = min(width, e.maxW)
 	}
 	if e.minH > 0 {
-		h = max(h, e.minH)
+		height = max(height, e.minH)
 	}
 	if e.maxH > 0 {
-		h = min(h, e.maxH)
+		height = min(height, e.maxH)
 	}
-	return w, h
+	return width, height
 }

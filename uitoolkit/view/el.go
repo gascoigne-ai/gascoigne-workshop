@@ -137,10 +137,10 @@ func (e *El) apply(parent *El) {
 // Option sets one attribute of the element it is passed to.
 type Option func(*El)
 
-func (o Option) apply(e *El) { o(e) }
+func (o Option) apply(element *El) { o(element) }
 
-func newEl(b behavior, items []Item) *El {
-	e := &El{b: b}
+func newEl(behaviorValue behavior, items []Item) *El {
+	e := &El{b: behaviorValue}
 	for _, it := range items {
 		if it != nil { // a bare nil, as opposed to a nil node from If
 			it.apply(e)
@@ -166,74 +166,74 @@ func flatten(kids []*El) []*El {
 // Size options.
 
 // W fixes the width in pixels.
-func W(n int) Option { return func(e *El) { e.w = n } }
+func W(count int) Option { return func(element *El) { element.w = count } }
 
 // H fixes the height in pixels.
-func H(n int) Option { return func(e *El) { e.h = n } }
+func H(count int) Option { return func(element *El) { element.h = count } }
 
 // Grow makes the element take a share of the free space in its row or
 // column, proportional to weight.
-func Grow(weight float64) Option { return func(e *El) { e.grow = weight } }
+func Grow(weight float64) Option { return func(element *El) { element.grow = weight } }
 
 // Optional lets a row or column drop the element when there is not
 // enough room for everything.
-func Optional() Option { return func(e *El) { e.optional = true } }
+func Optional() Option { return func(element *El) { element.optional = true } }
 
 // Shrink lets an element that does not grow give up room along its parent's
 // axis when the row or column does not fit: the overflow is taken from
 // the Shrink children first to last, each down to its MinW (MinH in a
 // column). A row that fits lays out as if no child had it.
-func Shrink() Option { return func(e *El) { e.shrink = true } }
+func Shrink() Option { return func(element *El) { element.shrink = true } }
 
 // Pad sets the same padding on all sides.
-func Pad(n int) Option {
-	return func(e *El) { e.padL, e.padT, e.padR, e.padB = n, n, n, n }
+func Pad(count int) Option {
+	return func(element *El) { element.padL, element.padT, element.padR, element.padB = count, count, count, count }
 }
 
 // PadX sets the left and right padding.
-func PadX(n int) Option { return func(e *El) { e.padL, e.padR = n, n } }
+func PadX(count int) Option { return func(element *El) { element.padL, element.padR = count, count } }
 
 // PadY sets the top and bottom padding.
-func PadY(n int) Option { return func(e *El) { e.padT, e.padB = n, n } }
+func PadY(count int) Option { return func(element *El) { element.padT, element.padB = count, count } }
 
 // PadL sets the left padding.
-func PadL(n int) Option { return func(e *El) { e.padL = n } }
+func PadL(count int) Option { return func(element *El) { element.padL = count } }
 
 // PadT sets the top padding.
-func PadT(n int) Option { return func(e *El) { e.padT = n } }
+func PadT(count int) Option { return func(element *El) { element.padT = count } }
 
 // PadR sets the right padding.
-func PadR(n int) Option { return func(e *El) { e.padR = n } }
+func PadR(count int) Option { return func(element *El) { element.padR = count } }
 
 // PadB sets the bottom padding.
-func PadB(n int) Option { return func(e *El) { e.padB = n } }
+func PadB(count int) Option { return func(element *El) { element.padB = count } }
 
 // Gap sets the space between children.
-func Gap(n int) Option { return func(e *El) { e.gap = n } }
+func Gap(count int) Option { return func(element *El) { element.gap = count } }
 
 // Appearance options.
 
 // Bg fills the element with a theme color.
-func Bg(t core.Token) Option { return func(e *El) { e.bg = t } }
+func Bg(token core.Token) Option { return func(element *El) { element.bg = token } }
 
 // Border outlines the element.
-func Border(t core.Token) Option { return func(e *El) { e.border = t } }
+func Border(token core.Token) Option { return func(element *El) { element.border = token } }
 
 // BorderT draws a hairline along the top edge.
-func BorderT(t core.Token) Option { return func(e *El) { e.borderT = t } }
+func BorderT(token core.Token) Option { return func(element *El) { element.borderT = token } }
 
 // BorderB draws a hairline along the bottom edge, under the
 // background and below the children.
 // BorderL draws a one-pixel line down the element's left edge, to
 // separate neighbours such as tabs or table columns; BorderInset shortens it.
-func BorderL(t core.Token) Option { return func(e *El) { e.borderL = t } }
+func BorderL(token core.Token) Option { return func(element *El) { element.borderL = token } }
 
 // Separator draws the soft hairline between neighbours (tabs, table
 // columns) on the element's left edge; inset keeps it off the top and
 // bottom. The first of a row has none: When(i > 0, Separator(10)); a
 // template writes separator="10" on the elements after the first.
 func Separator(inset int) Option {
-	return func(e *El) { e.borderL, e.borderInset = core.BorderSoft, inset }
+	return func(element *El) { element.borderL, element.borderInset = core.BorderSoft, inset }
 }
 
 // When applies opt only if cond holds: the option form of If, so a
@@ -246,105 +246,119 @@ func When(cond bool, opt Option) Option {
 }
 
 // BorderInset keeps the BorderL and BorderR lines this many pixels from the top and bottom.
-func BorderInset(n int) Option { return func(e *El) { e.borderInset = n } }
+func BorderInset(count int) Option { return func(element *El) { element.borderInset = count } }
 
 // BorderB draws a hairline along the bottom edge.
-func BorderB(t core.Token) Option { return func(e *El) { e.borderB = t } }
+func BorderB(token core.Token) Option { return func(element *El) { element.borderB = token } }
 
 // BorderR draws a hairline along the right edge.
-func BorderR(t core.Token) Option { return func(e *El) { e.borderR = t } }
+func BorderR(token core.Token) Option { return func(element *El) { element.borderR = token } }
 
 // BorderX draws hairlines along the left and right edges.
-func BorderX(t core.Token) Option { return func(e *El) { e.borderL, e.borderR = t, t } }
+func BorderX(token core.Token) Option {
+	return func(element *El) { element.borderL, element.borderR = token, token }
+}
 
 // BorderY draws hairlines along the top and bottom edges.
-func BorderY(t core.Token) Option { return func(e *El) { e.borderT, e.borderB = t, t } }
+func BorderY(token core.Token) Option {
+	return func(element *El) { element.borderT, element.borderB = token, token }
+}
 
 // Control names the theme style that draws this element: its corner
 // radius, gradient fill and outline come from Theme.Controls[name], so
 // every control of a kind looks the same and the theme file decides how.
-func Control(name string) Option { return func(e *El) { e.control = name } }
+func Control(name string) Option { return func(element *El) { element.control = name } }
 
 // EdgeT, EdgeL and EdgeR outline the element on that side with a
 // two-pixel line of the token's color; all three make the look of the open
 // tab, which runs into the pane below it. The color of the last one wins.
-func EdgeT(t core.Token) Option { return func(e *El) { e.edgeTok, e.edgeTop = t, true } }
+func EdgeT(token core.Token) Option {
+	return func(element *El) { element.edgeTok, element.edgeTop = token, true }
+}
 
 // EdgeL outlines the left side (see EdgeT).
-func EdgeL(t core.Token) Option { return func(e *El) { e.edgeTok, e.edgeLeft = t, true } }
+func EdgeL(token core.Token) Option {
+	return func(element *El) { element.edgeTok, element.edgeLeft = token, true }
+}
 
 // EdgeR outlines the right side (see EdgeT).
-func EdgeR(t core.Token) Option { return func(e *El) { e.edgeTok, e.edgeRight = t, true } }
+func EdgeR(token core.Token) Option {
+	return func(element *El) { element.edgeTok, element.edgeRight = token, true }
+}
 
 // Tooltip shows text near the pointer once it has rested on the element
 // for a moment. The text is only recorded in the context (TipText): the
 // window shows it by mounting widget.TooltipLayer last in its Stack.
-func Tooltip(text string) Option { return func(e *El) { e.tip = text } }
+func Tooltip(text string) Option { return func(element *El) { element.tip = text } }
 
 // HoverBg fills the element while the pointer is over it.
-func HoverBg(t core.Token) Option { return func(e *El) { e.hoverBg = t } }
+func HoverBg(token core.Token) Option { return func(element *El) { element.hoverBg = token } }
 
 // FontSource draws a Text in the font of source, at the size the text's other
 // options choose (Small, Bold), instead of the interface font. Use it to show
 // a font in its own face, as a font list does. A nil source keeps the
 // interface font. In a template, font-source names the source in the scope.
-func FontSource(source *text.GoTextFaceSource) Option { return func(e *El) { e.fontSource = source } }
+func FontSource(source *text.GoTextFaceSource) Option {
+	return func(element *El) { element.fontSource = source }
+}
 
 // HoverColor is the color an icon takes while the pointer is over it, in
 // place of the hover token of the icon itself. Use it where that token
 // does not contrast with the surface behind the icon, such as on the
 // banner.
-func HoverColor(t core.Token) Option { return func(e *El) { e.hoverColor = t } }
+func HoverColor(token core.Token) Option { return func(element *El) { element.hoverColor = token } }
 
 // Lighten brightens the background while the pointer is over it.
-func Lighten() Option { return func(e *El) { e.lighten = true } }
+func Lighten() Option { return func(element *El) { element.lighten = true } }
 
 // Shadow draws a soft offset shadow behind the element.
-func Shadow() Option { return func(e *El) { e.shadow = true } }
+func Shadow() Option { return func(element *El) { element.shadow = true } }
 
 // Clip cuts the children off at the element's edge.
-func Clip() Option { return func(e *El) { e.clip = true } }
+func Clip() Option { return func(element *El) { element.clip = true } }
 
 // Events and overlays.
 
 // OnClick runs f when the element is clicked.
-func OnClick(f func()) Option { return func(e *El) { e.onClick = f } }
+func OnClick(callback func()) Option { return func(element *El) { element.onClick = callback } }
 
 // OnClickAt is OnClick with the pointer position, for what opens at the
 // click (a menu under the cursor); the app does not read the pointer itself.
 // In a template on-click-at names a func(x, y int) of the scope.
-func OnClickAt(f func(x, y int)) Option { return func(e *El) { e.onClickAt = f } }
+func OnClickAt(callback func(x, y int)) Option {
+	return func(element *El) { element.onClickAt = callback }
+}
 
 // OnMiddleClick runs f when the element is middle-clicked.
-func OnMiddleClick(f func()) Option { return func(e *El) { e.onMiddle = f } }
+func OnMiddleClick(callback func()) Option { return func(element *El) { element.onMiddle = callback } }
 
 // OnDoubleClick runs f on the second click of a double click on the
 // element, after its OnClick, which runs on both clicks: a list row
 // selects on a click and opens on a double click.
-func OnDoubleClick(f func()) Option { return func(e *El) { e.onDouble = f } }
+func OnDoubleClick(callback func()) Option { return func(element *El) { element.onDouble = callback } }
 
 // OnDragOver runs f every frame the left or middle button is held with the pointer
 // over the element, for drag and drop: the element under the dragged
 // item learns the item is over it.
-func OnDragOver(f func()) Option { return func(e *El) { e.onDragOver = f } }
+func OnDragOver(callback func()) Option { return func(element *El) { element.onDragOver = callback } }
 
 // FloatTR takes the element out of the layout of its Stack and pins it
 // top and right, this many pixels from those edges.
 func FloatTR(top, right int) Option {
-	return func(e *El) { e.fl.on, e.fl.top, e.fl.right = true, top, right }
+	return func(element *El) { element.fl.on, element.fl.top, element.fl.right = true, top, right }
 }
 
 // Modal makes a floating element swallow every click; a click outside it
 // runs the OnDismiss handler.
-func Modal() Option { return func(e *El) { e.modal = true } }
+func Modal() Option { return func(element *El) { element.modal = true } }
 
 // OnDismiss runs when a click lands outside a Modal element.
-func OnDismiss(f func()) Option { return func(e *El) { e.onDismiss = f } }
+func OnDismiss(callback func()) Option { return func(element *El) { element.onDismiss = callback } }
 
 // If is Vue's v-if: the node when cond holds, else nothing.
-func If(cond bool, n Node) Node {
+func If(cond bool, node Node) Node {
 	if cond {
-		return n
+		return node
 	}
 	return nil
 }
@@ -371,13 +385,13 @@ func (e *El) ChangeHandler() func() { return e.onChange }
 // OnRightClickIn runs f when the element is right-clicked, with the context
 // and the pointer position. It is OnRightClick for a handler that needs
 // the context, such as one that opens a popup menu.
-func OnRightClickIn(f func(c *core.Ctx, x, y int)) Option {
-	return func(e *El) { e.onRightIn = f }
+func OnRightClickIn(callback func(c *core.Ctx, x, y int)) Option {
+	return func(element *El) { element.onRightIn = callback }
 }
 
 // OnSelect runs with the index of the item the user picked: the tab of a
 // Tabs strip, the row of a Menu.
-func OnSelect(f func(i int)) Option { return func(e *El) { e.onSelect = f } }
+func OnSelect(callback func(i int)) Option { return func(element *El) { element.onSelect = callback } }
 
 // Rect is where the last Layout put the element, in window pixels.
 func (e *El) Rect() core.Rect { return e.rect }

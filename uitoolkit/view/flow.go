@@ -12,8 +12,8 @@ type fragment struct{ plain }
 
 func (fragment) draw(*El, *core.Ctx, *ebiten.Image) {}
 
-func isFragment(e *El) bool {
-	_, ok := e.b.(fragment)
+func isFragment(element *El) bool {
+	_, ok := element.b.(fragment)
 	return ok
 }
 

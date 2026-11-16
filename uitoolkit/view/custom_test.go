@@ -27,7 +27,7 @@ func (p *probe) Draw(*view.El, *core.Ctx, *ebiten.Image)     { p.draws++ }
 // probeSize is an option of the component: it reaches the behavior through
 // the element, as a widget's own options do.
 func probeSize(size int) view.Option {
-	return func(e *view.El) { e.Behavior().(*probe).size = size }
+	return func(element *view.El) { element.Behavior().(*probe).size = size }
 }
 
 func newCtx(t *testing.T) *core.Ctx {
@@ -117,11 +117,11 @@ func TestLinearLaysCustomChildrenOutLikeColAndRow(t *testing.T) {
 // side by side, the first on the left half.
 type halves struct{ view.Base }
 
-func (halves) Layout(e *view.El, c *core.Ctx) {
-	r := e.Rect()
-	kids := e.Children()
-	kids[0].Place(c, core.Rect{X: r.X, Y: r.Y, W: r.W / 2, H: r.H})
-	kids[1].Place(c, core.Rect{X: r.X + r.W/2, Y: r.Y, W: r.W - r.W/2, H: r.H})
+func (halves) Layout(element *view.El, ctx *core.Ctx) {
+	r := element.Rect()
+	kids := element.Children()
+	kids[0].Place(ctx, core.Rect{X: r.X, Y: r.Y, W: r.W / 2, H: r.H})
+	kids[1].Place(ctx, core.Rect{X: r.X + r.W/2, Y: r.Y, W: r.W - r.W/2, H: r.H})
 }
 
 func TestPlaceSetsAChildsRectAndLaysItOut(t *testing.T) {
@@ -275,9 +275,9 @@ func TestLinearLayoutInLaysChildrenOutInAShiftedRect(t *testing.T) {
 // scroller lays its children out in a rect 40 pixels higher than its own.
 type scroller struct{ view.Linear }
 
-func (s scroller) Layout(e *view.El, c *core.Ctx) {
-	r := e.Rect()
-	s.LayoutIn(e, c, core.Rect{X: r.X, Y: r.Y - 40, W: r.W, H: r.H + 40})
+func (s scroller) Layout(element *view.El, ctx *core.Ctx) {
+	r := element.Rect()
+	s.LayoutIn(element, ctx, core.Rect{X: r.X, Y: r.Y - 40, W: r.W, H: r.H + 40})
 }
 
 // input is a focusable component written outside view: a state with a

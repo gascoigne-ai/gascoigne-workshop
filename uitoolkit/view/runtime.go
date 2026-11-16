@@ -9,18 +9,18 @@ import (
 )
 
 // Layout places the tree in a w by h window.
-func Layout(c *core.Ctx, root Node, w, h int) {
-	root.place(c, core.Rect{W: w, H: h})
+func Layout(ctx *core.Ctx, root Node, width, height int) {
+	root.place(ctx, core.Rect{W: width, H: height})
 }
 
 // Update delivers this frame's input (c.In) to the tree, top-most
 // element first. It must follow Layout on the same tree.
-func Update(c *core.Ctx, root Node) {
-	c.PointerX, c.PointerY = c.In.X, c.In.Y
-	settleFocus(c, root)
-	root.update(c)
-	cycleFocus(c, root)
-	if c.In.Tab {
+func Update(ctx *core.Ctx, root Node) {
+	ctx.PointerX, ctx.PointerY = ctx.In.X, ctx.In.Y
+	settleFocus(ctx, root)
+	root.update(ctx)
+	cycleFocus(ctx, root)
+	if ctx.In.Tab {
 		revealFocused(root)
 	}
 }
@@ -32,15 +32,15 @@ func Update(c *core.Ctx, root Node) {
 func revealFocused(root Node) {
 	var path []*El
 	var find func(e *El) bool
-	find = func(e *El) bool {
-		if e.hidden {
+	find = func(element *El) bool {
+		if element.hidden {
 			return false
 		}
-		path = append(path, e)
-		if e.focusable() && e.focused() {
+		path = append(path, element)
+		if element.focusable() && element.focused() {
 			return true
 		}
-		for _, k := range e.kids {
+		for _, k := range element.kids {
 			if find(k) {
 				return true
 			}
@@ -105,37 +105,37 @@ func blurKey(key any) {
 // owner is the focused state that was not the owner before (the last one in
 // tree order if several asked); every other state is blurred, and so is an
 // owner that left the tree.
-func settleFocus(c *core.Ctx, root Node) {
+func settleFocus(ctx *core.Ctx, root Node) {
 	list := collectFocusables(root, nil)
 	var asked any
 	for _, e := range list {
-		if key := e.focusKey(); e.focused() && key != c.FocusOwner {
+		if key := e.focusKey(); e.focused() && key != ctx.FocusOwner {
 			asked = key
 		}
 	}
 	switch {
 	case asked != nil:
-		blurKey(c.FocusOwner)
-		c.FocusOwner = asked
-	case c.FocusOwner != nil && !slices.ContainsFunc(list, func(e *El) bool { return e.focusKey() == c.FocusOwner && e.focused() }):
-		blurKey(c.FocusOwner)
-		c.FocusOwner = nil
+		blurKey(ctx.FocusOwner)
+		ctx.FocusOwner = asked
+	case ctx.FocusOwner != nil && !slices.ContainsFunc(list, func(element *El) bool { return element.focusKey() == ctx.FocusOwner && element.focused() }):
+		blurKey(ctx.FocusOwner)
+		ctx.FocusOwner = nil
 	}
 	for _, e := range list {
-		if key := e.focusKey(); key != c.FocusOwner && e.focused() {
+		if key := e.focusKey(); key != ctx.FocusOwner && e.focused() {
 			e.setFocused(false)
 		}
 	}
 }
 
-func collectFocusables(e *El, out []*El) []*El {
-	if e.hidden {
+func collectFocusables(element *El, out []*El) []*El {
+	if element.hidden {
 		return out
 	}
-	if e.focusable() {
-		out = append(out, e)
+	if element.focusable() {
+		out = append(out, element)
 	}
-	for _, k := range e.kids {
+	for _, k := range element.kids {
 		out = collectFocusables(k, out)
 	}
 	return out
@@ -144,8 +144,8 @@ func collectFocusables(e *El, out []*El) []*El {
 // cycleFocus moves focus to the next focusable element in tree order on
 // Tab, or the previous one on Shift+Tab, wrapping at the ends. A focused
 // field that handles Tab itself (a table cell editor) keeps it.
-func cycleFocus(c *core.Ctx, root Node) {
-	if !c.In.Tab || c.In.Ctrl {
+func cycleFocus(ctx *core.Ctx, root Node) {
+	if !ctx.In.Tab || ctx.In.Ctrl {
 		return
 	}
 	if scope := findScope(root); scope != nil {
@@ -166,11 +166,11 @@ func cycleFocus(c *core.Ctx, root Node) {
 	}
 	next := 0
 	switch {
-	case cur >= 0 && c.In.Shift:
+	case cur >= 0 && ctx.In.Shift:
 		next = (cur - 1 + len(list)) % len(list)
 	case cur >= 0:
 		next = (cur + 1) % len(list)
-	case c.In.Shift:
+	case ctx.In.Shift:
 		next = len(list) - 1
 	}
 	for _, e := range list {
@@ -180,22 +180,22 @@ func cycleFocus(c *core.Ctx, root Node) {
 }
 
 // Draw paints the tree. It must follow Layout on the same tree.
-func Draw(c *core.Ctx, root Node, dst *ebiten.Image) {
-	c.HoverOff = hasModal(root) // only the overlay's own elements react to the pointer
-	c.TipText = ""
-	root.draw(c, dst)
-	c.HoverOff = false
+func Draw(ctx *core.Ctx, root Node, dst *ebiten.Image) {
+	ctx.HoverOff = hasModal(root) // only the overlay's own elements react to the pointer
+	ctx.TipText = ""
+	root.draw(ctx, dst)
+	ctx.HoverOff = false
 }
 
 // hasModal reports whether any visible element is a modal overlay.
-func hasModal(e *El) bool {
-	if e.hidden {
+func hasModal(element *El) bool {
+	if element.hidden {
 		return false
 	}
-	if e.modal {
+	if element.modal {
 		return true
 	}
-	for _, k := range e.kids {
+	for _, k := range element.kids {
 		if hasModal(k) {
 			return true
 		}
@@ -210,66 +210,66 @@ type preUpdater interface {
 }
 
 // update reports whether a modal element swallowed the input.
-func (e *El) update(c *core.Ctx) bool {
+func (e *El) update(ctx *core.Ctx) bool {
 	if e.hidden {
 		return false
 	}
 	if p, ok := e.b.(preUpdater); ok {
-		p.preUpdate(e, c)
+		p.preUpdate(e, ctx)
 	}
-	saved := c.In
-	masked := e.clip && !c.In.Over(e.rect)
+	saved := ctx.In
+	masked := e.clip && !ctx.In.Over(e.rect)
 	if masked {
 		// Children of a clipping element may extend past its edge (rows
 		// scrolled out of view): they must not be hit by a pointer that
 		// is outside it. The click itself still reaches them, so a text
 		// field there can see it was clicked away from and blur.
-		c.In.X, c.In.Y, c.In.Wheel, c.In.WheelX = -1<<20, -1<<20, 0, 0
+		ctx.In.X, ctx.In.Y, ctx.In.Wheel, ctx.In.WheelX = -1<<20, -1<<20, 0, 0
 	}
 	swallowed := false
 	for i := len(e.kids) - 1; i >= 0; i-- {
-		if e.kids[i].update(c) {
+		if e.kids[i].update(ctx) {
 			swallowed = true
 			break
 		}
 	}
-	wheel, wheelX, rightClick := c.In.Wheel, c.In.WheelX, c.In.RightClick // a child may have used them
-	c.In = saved
+	wheel, wheelX, rightClick := ctx.In.Wheel, ctx.In.WheelX, ctx.In.RightClick // a child may have used them
+	ctx.In = saved
 	if !masked {
-		c.In.Wheel, c.In.WheelX, c.In.RightClick = wheel, wheelX, rightClick
+		ctx.In.Wheel, ctx.In.WheelX, ctx.In.RightClick = wheel, wheelX, rightClick
 	}
 	if swallowed {
 		return true
 	}
-	e.b.update(e, c)
-	e.dragByHandle(c)
-	if e.onClick != nil && c.In.Hit(e.rect) {
+	e.b.update(e, ctx)
+	e.dragByHandle(ctx)
+	if e.onClick != nil && ctx.In.Hit(e.rect) {
 		e.onClick()
 	}
-	if e.onClickAt != nil && c.In.Hit(e.rect) {
-		e.onClickAt(c.In.X, c.In.Y)
+	if e.onClickAt != nil && ctx.In.Hit(e.rect) {
+		e.onClickAt(ctx.In.X, ctx.In.Y)
 	}
-	if e.onDouble != nil && c.In.Clicks == 2 && c.In.Hit(e.rect) {
+	if e.onDouble != nil && ctx.In.Clicks == 2 && ctx.In.Hit(e.rect) {
 		e.onDouble()
 	}
-	if e.onMiddle != nil && c.In.MiddleClick && c.In.Over(e.rect) {
+	if e.onMiddle != nil && ctx.In.MiddleClick && ctx.In.Over(e.rect) {
 		e.onMiddle()
 	}
-	if e.onDragOver != nil && (c.In.Held || c.In.MiddleHeld) && c.In.Over(e.rect) {
+	if e.onDragOver != nil && (ctx.In.Held || ctx.In.MiddleHeld) && ctx.In.Over(e.rect) {
 		e.onDragOver()
 	}
-	if e.onRight != nil && c.In.RightClick && c.In.Over(e.rect) {
-		e.onRight(c.In.X, c.In.Y)
-		c.In.RightClick = false // one right click opens one menu: the innermost wins
+	if e.onRight != nil && ctx.In.RightClick && ctx.In.Over(e.rect) {
+		e.onRight(ctx.In.X, ctx.In.Y)
+		ctx.In.RightClick = false // one right click opens one menu: the innermost wins
 	}
-	if e.onRightIn != nil && c.In.RightClick && c.In.Over(e.rect) {
-		e.onRightIn(c, c.In.X, c.In.Y)
-		c.In.RightClick = false
+	if e.onRightIn != nil && ctx.In.RightClick && ctx.In.Over(e.rect) {
+		e.onRightIn(ctx, ctx.In.X, ctx.In.Y)
+		ctx.In.RightClick = false
 	}
 	if e.modal {
 		// A modal overlay owns the pointer: nothing under it gets clicks,
 		// wheel or hover, and a click outside it dismisses it.
-		if (c.In.Click || c.In.RightClick) && !e.rect.Contains(c.In.X, c.In.Y) && !e.nearRect(c.In.X, c.In.Y) && e.onDismiss != nil {
+		if (ctx.In.Click || ctx.In.RightClick) && !e.rect.Contains(ctx.In.X, ctx.In.Y) && !e.nearRect(ctx.In.X, ctx.In.Y) && e.onDismiss != nil {
 			e.onDismiss()
 		}
 		return true
@@ -283,97 +283,97 @@ type overDrawer interface {
 	drawOver(e *El, c *core.Ctx, dst *ebiten.Image)
 }
 
-func (e *El) draw(c *core.Ctx, dst *ebiten.Image) {
+func (e *El) draw(ctx *core.Ctx, dst *ebiten.Image) {
 	if e.hidden {
 		return
 	}
 	r := e.rect
 	if e.modal {
-		defer func(was bool) { c.HoverOff = was }(c.HoverOff)
-		c.HoverOff = false // hover works inside the overlay
+		defer func(was bool) { ctx.HoverOff = was }(ctx.HoverOff)
+		ctx.HoverOff = false // hover works inside the overlay
 	}
-	style := c.Th.Style(e.control)
+	style := ctx.Th.Style(e.control)
 	if e.shadow {
-		sh := c.Color(core.Shadow)
-		c.FillStyled(dst, core.Rect{X: r.X + 4, Y: r.Y + 4, W: r.W, H: r.H}, sh, sh, style.Radius)
+		sh := ctx.Color(core.Shadow)
+		ctx.FillStyled(dst, core.Rect{X: r.X + 4, Y: r.Y + 4, W: r.W, H: r.H}, sh, sh, style.Radius)
 	}
-	over := c.Hovered(r)
+	over := ctx.Hovered(r)
 	e.hover = over
 	if over && e.tip != "" {
-		c.TipText = e.tip // children draw later, so the innermost tooltip wins
+		ctx.TipText = e.tip // children draw later, so the innermost tooltip wins
 	}
 	if e.bg != "" {
-		clr := c.Color(e.bg)
+		clr := ctx.Color(e.bg)
 		if e.lighten && over {
 			clr = core.Lighten(clr)
 		}
 		top, bottom := core.GradientFor(clr, style)
 		if e.roundCorners != 0 {
-			c.FillStyledCorners(dst, r, top, bottom, c.Radius(e.roundCtl), e.roundCorners)
+			ctx.FillStyledCorners(dst, r, top, bottom, ctx.Radius(e.roundCtl), e.roundCorners)
 		} else {
-			c.FillStyled(dst, r, top, bottom, style.Radius)
+			ctx.FillStyled(dst, r, top, bottom, style.Radius)
 		}
 	}
 	if e.hoverBg != "" && over {
-		hv := c.Color(e.hoverBg)
-		c.FillStyled(dst, r, hv, hv, style.Radius)
+		hv := ctx.Color(e.hoverBg)
+		ctx.FillStyled(dst, r, hv, hv, style.Radius)
 	}
 	if e.borderT != "" {
-		c.HLine(dst, r.X, r.Y, r.W, c.Color(e.borderT))
+		ctx.HLine(dst, r.X, r.Y, r.W, ctx.Color(e.borderT))
 	}
 	if e.borderL != "" {
-		c.VLine(dst, r.X, r.Y+e.borderInset, r.H-2*e.borderInset, c.Color(e.borderL))
+		ctx.VLine(dst, r.X, r.Y+e.borderInset, r.H-2*e.borderInset, ctx.Color(e.borderL))
 	}
 	if e.borderR != "" {
-		c.VLine(dst, r.X+r.W-1, r.Y+e.borderInset, r.H-2*e.borderInset, c.Color(e.borderR))
+		ctx.VLine(dst, r.X+r.W-1, r.Y+e.borderInset, r.H-2*e.borderInset, ctx.Color(e.borderR))
 	}
 	if e.borderB != "" {
-		c.HLine(dst, r.X, r.Y+r.H-1, r.W, c.Color(e.borderB))
+		ctx.HLine(dst, r.X, r.Y+r.H-1, r.W, ctx.Color(e.borderB))
 	}
 
-	e.b.draw(e, c, dst)
+	e.b.draw(e, ctx, dst)
 	kidsDst := dst
 	if e.clip {
-		kidsDst = c.Clip(dst, r)
+		kidsDst = ctx.Clip(dst, r)
 	}
 	for _, k := range e.kids {
-		k.draw(c, kidsDst)
+		k.draw(ctx, kidsDst)
 	}
 	border := e.border
 	if border == "" {
 		border = style.Border
 	}
 	if border != "" { // after the children, so striped rows do not paint over it
-		c.OutlineStyled(dst, r, c.Color(border), style.Radius)
+		ctx.OutlineStyled(dst, r, ctx.Color(border), style.Radius)
 	}
 	if o, ok := e.b.(overDrawer); ok {
-		o.drawOver(e, c, dst)
+		o.drawOver(e, ctx, dst)
 	}
 
 	if e.edgeTok != "" { // the open tab's outline: top, left and right, bottom left open
-		col := c.Color(e.edgeTok)
+		col := ctx.Color(e.edgeTok)
 		if e.edgeTop {
-			c.Fill(dst, core.Rect{X: r.X, Y: r.Y, W: r.W, H: 2}, col)
+			ctx.Fill(dst, core.Rect{X: r.X, Y: r.Y, W: r.W, H: 2}, col)
 		}
 		if e.edgeLeft {
-			c.Fill(dst, core.Rect{X: r.X, Y: r.Y, W: 2, H: r.H}, col)
+			ctx.Fill(dst, core.Rect{X: r.X, Y: r.Y, W: 2, H: r.H}, col)
 		}
 		if e.edgeRight {
-			c.Fill(dst, core.Rect{X: r.X + r.W - 2, Y: r.Y, W: 2, H: r.H}, col)
+			ctx.Fill(dst, core.Rect{X: r.X + r.W - 2, Y: r.Y, W: 2, H: r.H}, col)
 		}
 	}
 }
 
 // findScope is the last FocusScope element in tree order, the one on top.
-func findScope(e *El) *El {
-	if e.hidden {
+func findScope(element *El) *El {
+	if element.hidden {
 		return nil
 	}
 	var found *El
-	if e.focusScope {
-		found = e
+	if element.focusScope {
+		found = element
 	}
-	for _, k := range e.kids {
+	for _, k := range element.kids {
 		if inner := findScope(k); inner != nil {
 			found = inner
 		}
@@ -386,45 +386,45 @@ func findScope(e *El) *El {
 // from then until the release), the offset follows the pointer
 // until the button is released, and a double click puts the element back in
 // the center.
-func (e *El) dragByHandle(c *core.Ctx) {
+func (e *El) dragByHandle(ctx *core.Ctx) {
 	m := e.fl.moved
 	if m == nil {
 		return
 	}
 	if m.active {
-		if !c.In.Held {
+		if !ctx.In.Held {
 			m.active = false
 			return
 		}
-		c.Cursor = core.CursorMove
-		m.X, m.Y = m.fromX+c.In.X-m.startX, m.fromY+c.In.Y-m.startY
+		ctx.Cursor = core.CursorMove
+		m.X, m.Y = m.fromX+ctx.In.X-m.startX, m.fromY+ctx.In.Y-m.startY
 		return
 	}
-	if !e.rect.Contains(c.In.X, c.In.Y) || e.onBorder(c.In.X, c.In.Y) || !e.onHandle(c.In.X, c.In.Y) {
+	if !e.rect.Contains(ctx.In.X, ctx.In.Y) || e.onBorder(ctx.In.X, ctx.In.Y) || !e.onHandle(ctx.In.X, ctx.In.Y) {
 		return
 	}
-	if !c.In.Click {
+	if !ctx.In.Click {
 		return
 	}
-	if c.In.Clicks >= 2 {
+	if ctx.In.Clicks >= 2 {
 		m.X, m.Y = 0, 0
 		return
 	}
-	m.active, m.startX, m.startY, m.fromX, m.fromY = true, c.In.X, c.In.Y, m.X, m.Y
-	c.Cursor = core.CursorMove // grabbed: shown from the press, not while hovering
+	m.active, m.startX, m.startY, m.fromX, m.fromY = true, ctx.In.X, ctx.In.Y, m.X, m.Y
+	ctx.Cursor = core.CursorMove // grabbed: shown from the press, not while hovering
 }
 
 // onHandle reports whether the point is on a drag handle of e that no
 // clickable or focusable element inside the handle covers.
-func (e *El) onHandle(x, y int) bool {
+func (e *El) onHandle(posX, posY int) bool {
 	if e.hidden {
 		return false
 	}
-	if e.dragHandle && e.rect.Contains(x, y) {
-		return !e.coversWithControl(x, y)
+	if e.dragHandle && e.rect.Contains(posX, posY) {
+		return !e.coversWithControl(posX, posY)
 	}
 	for _, k := range e.kids {
-		if k.onHandle(x, y) {
+		if k.onHandle(posX, posY) {
 			return true
 		}
 	}
@@ -433,12 +433,12 @@ func (e *El) onHandle(x, y int) bool {
 
 // coversWithControl reports whether a descendant that takes clicks or focus
 // is at the point.
-func (e *El) coversWithControl(x, y int) bool {
+func (e *El) coversWithControl(posX, posY int) bool {
 	for _, k := range e.kids {
-		if k.hidden || !k.rect.Contains(x, y) {
+		if k.hidden || !k.rect.Contains(posX, posY) {
 			continue
 		}
-		if k.onClick != nil || k.onClickAt != nil || k.onDouble != nil || k.focusable() || k.coversWithControl(x, y) {
+		if k.onClick != nil || k.onClickAt != nil || k.onDouble != nil || k.focusable() || k.coversWithControl(posX, posY) {
 			return true
 		}
 	}
@@ -447,13 +447,13 @@ func (e *El) coversWithControl(x, y int) bool {
 
 // nearRect reports whether the point is outside e's rect but within its
 // dismiss margin.
-func (e *El) nearRect(x, y int) bool {
+func (e *El) nearRect(posX, posY int) bool {
 	m := e.dismissMargin
-	return m > 0 && x >= e.rect.X-m && x < e.rect.X+e.rect.W+m && y >= e.rect.Y-m && y < e.rect.Y+e.rect.H+m
+	return m > 0 && posX >= e.rect.X-m && posX < e.rect.X+e.rect.W+m && posY >= e.rect.Y-m && posY < e.rect.Y+e.rect.H+m
 }
 
 // onBorder reports whether the point is within dragEdge of e's border.
-func (e *El) onBorder(x, y int) bool {
+func (e *El) onBorder(posX, posY int) bool {
 	r := e.rect
-	return x < r.X+dragEdge || x >= r.X+r.W-dragEdge || y < r.Y+dragEdge || y >= r.Y+r.H-dragEdge
+	return posX < r.X+dragEdge || posX >= r.X+r.W-dragEdge || posY < r.Y+dragEdge || posY >= r.Y+r.H-dragEdge
 }

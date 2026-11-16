@@ -8,10 +8,10 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
-func drawn(t *testing.T, c *core.Ctx, root *El, w, h int) {
+func drawn(t *testing.T, ctx *core.Ctx, root *El, width, height int) {
 	t.Helper()
-	Layout(c, root, w, h)
-	Draw(c, root, ebiten.NewImage(w, h))
+	Layout(ctx, root, width, height)
+	Draw(ctx, root, ebiten.NewImage(width, height))
 }
 
 func TestHoverIsOnForElementsUnderThePointer(t *testing.T) {

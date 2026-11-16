@@ -35,28 +35,30 @@ func (Base) Draw(*El, *core.Ctx, *ebiten.Image)     {}
 // element's own.
 type customB struct{ Behavior }
 
-func (b customB) measure(e *El, c *core.Ctx, maxW int) (int, int) { return b.Measure(e, c, maxW) }
-func (b customB) layout(e *El, c *core.Ctx)                       { b.Layout(e, c) }
-func (b customB) update(e *El, c *core.Ctx)                       { b.Update(e, c) }
-func (b customB) draw(e *El, c *core.Ctx, dst *ebiten.Image)      { b.Draw(e, c, dst) }
+func (b customB) measure(element *El, ctx *core.Ctx, maxW int) (int, int) {
+	return b.Measure(element, ctx, maxW)
+}
+func (b customB) layout(element *El, ctx *core.Ctx)                  { b.Layout(element, ctx) }
+func (b customB) update(element *El, ctx *core.Ctx)                  { b.Update(element, ctx) }
+func (b customB) draw(element *El, ctx *core.Ctx, dst *ebiten.Image) { b.Draw(element, ctx, dst) }
 
 // preUpdate and drawOver pass the runtime's optional hooks on to the
 // component when it implements them.
-func (b customB) preUpdate(e *El, c *core.Ctx) {
+func (b customB) preUpdate(element *El, ctx *core.Ctx) {
 	if hook, ok := b.Behavior.(PreUpdater); ok {
-		hook.PreUpdate(e, c)
+		hook.PreUpdate(element, ctx)
 	}
 }
 
-func (b customB) drawOver(e *El, c *core.Ctx, dst *ebiten.Image) {
+func (b customB) drawOver(element *El, ctx *core.Ctx, dst *ebiten.Image) {
 	if hook, ok := b.Behavior.(OverDrawer); ok {
-		hook.DrawOver(e, c, dst)
+		hook.DrawOver(element, ctx, dst)
 	}
 }
 
 // Custom makes an element that behaves as b. The component's options
 // configure b through Behavior.
-func Custom(b Behavior, items ...Item) *El { return newEl(customB{b}, items) }
+func Custom(behaviorValue Behavior, items ...Item) *El { return newEl(customB{behaviorValue}, items) }
 
 // Behavior is the behavior a Custom element was made with, or nil for
 // the toolkit's own kinds of element.
@@ -76,15 +78,15 @@ type Linear struct {
 	Horizontal bool
 }
 
-func (l Linear) Measure(e *El, c *core.Ctx, maxW int) (int, int) {
-	return flow{horiz: l.Horizontal}.measure(e, c, maxW)
+func (l Linear) Measure(element *El, ctx *core.Ctx, maxW int) (int, int) {
+	return flow{horiz: l.Horizontal}.measure(element, ctx, maxW)
 }
 
-func (l Linear) Layout(e *El, c *core.Ctx) { flow{horiz: l.Horizontal}.layout(e, c) }
+func (l Linear) Layout(element *El, ctx *core.Ctx) { flow{horiz: l.Horizontal}.layout(element, ctx) }
 
 // Place gives the element the rect r and lays its own children out in
 // it. A container's Layout calls it on each child.
-func (e *El) Place(c *core.Ctx, r core.Rect) { e.place(c, r) }
+func (e *El) Place(ctx *core.Ctx, rect core.Rect) { e.place(ctx, rect) }
 
 // Describer is implemented by a Behavior that has attributes worth
 // showing in Dump: Describe returns them as "name=value" pairs.
@@ -132,11 +134,11 @@ func (e *El) Inner() core.Rect { return e.inner() }
 // LayoutIn lays the children out as if the element's rect were r, and
 // leaves the element's own rect alone: a scrolling container lays its
 // children out in a rect shifted by the scroll position.
-func (l Linear) LayoutIn(e *El, c *core.Ctx, r core.Rect) {
-	own := e.rect
-	e.rect = r
-	flow{horiz: l.Horizontal}.layout(e, c)
-	e.rect = own
+func (l Linear) LayoutIn(element *El, ctx *core.Ctx, bounds core.Rect) {
+	own := element.rect
+	element.rect = bounds
+	flow{horiz: l.Horizontal}.layout(element, ctx)
+	element.rect = own
 }
 
 // KeepInView marks the child a scrolling strip must keep in view: whenever
@@ -144,7 +146,7 @@ func (l Linear) LayoutIn(e *El, c *core.Ctx, r core.Rect) {
 // it once, so a selection made elsewhere is never hidden, while the
 // user's own scrolling is left alone. It is an attribute of the child, set
 // here and read by its parent through KeepsInView.
-func KeepInView() Option { return func(e *El) { e.reveal = true } }
+func KeepInView() Option { return func(element *El) { element.reveal = true } }
 
 // Focuser is the state of a component that takes the keyboard: it holds
 // the focus flag the window and the runtime read and write.
@@ -172,4 +174,4 @@ func (e *El) ControlName() string { return e.control }
 // OnChange runs after the element's value was edited: the text of a field
 // or an area, or a checkbox that was clicked. It is an attribute of any
 // element, read by the component through ChangeHandler.
-func OnChange(f func()) Option { return func(e *El) { e.onChange = f } }
+func OnChange(callback func()) Option { return func(element *El) { element.onChange = callback } }

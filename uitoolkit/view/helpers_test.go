@@ -23,10 +23,10 @@ func testCtx(t *testing.T) *core.Ctx {
 
 func box(items ...Item) *El { return newEl(plain{}, items) }
 
-func click(c *core.Ctx, x, y int) { c.In = core.Input{X: x, Y: y, Click: true} }
+func click(ctx *core.Ctx, posX, posY int) { ctx.In = core.Input{X: posX, Y: posY, Click: true} }
 
 type memClip struct{ text string }
 
 func (m *memClip) Read() (string, error) { return m.text, nil }
 
-func (m *memClip) Write(s string) error { m.text = s; return nil }
+func (m *memClip) Write(stringValue string) error { m.text = stringValue; return nil }

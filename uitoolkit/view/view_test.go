@@ -191,8 +191,8 @@ type fakeClipboard struct {
 	readErr error
 }
 
-func (f *fakeClipboard) Read() (string, error) { return f.text, f.readErr }
-func (f *fakeClipboard) Write(s string) error  { f.text = s; return nil }
+func (f *fakeClipboard) Read() (string, error)          { return f.text, f.readErr }
+func (f *fakeClipboard) Write(stringValue string) error { f.text = stringValue; return nil }
 
 func TestSpacerAndRulesTakeTheirSizes(t *testing.T) {
 	h, v, gap := HRule(), VRule(), Spacer()
@@ -294,10 +294,10 @@ func TestMovedShiftsACenteredElementAndKeepsItInsideTheStack(t *testing.T) {
 
 // dragRig is a 100x40 centered dialog in a 400x200 stack whose top 10 rows
 // are a drag handle with a 20 px button at its left end.
-func dragRig(t *testing.T, m *MoveState, dismissed *int) (*El, *core.Ctx) {
+func dragRig(t *testing.T, moveStateValue *MoveState, dismissed *int) (*El, *core.Ctx) {
 	t.Helper()
 	handle := Row(H(20), DragHandle(), box(W(20), OnClick(func() {})))
-	dialog := Col(W(100), H(40), FloatCenter(), Moved(m), Modal(), OnDismiss(func() { *dismissed++ }), handle, box(Grow(1)))
+	dialog := Col(W(100), H(40), FloatCenter(), Moved(moveStateValue), Modal(), OnDismiss(func() { *dismissed++ }), handle, box(Grow(1)))
 	root := Stack(box(), dialog)
 	c := testCtx(t)
 	Layout(c, root, 400, 200)
@@ -386,7 +386,7 @@ func TestADragPastTheEdgeDoesNotPileUp(t *testing.T) {
 
 func TestOnRightClickGetsThePointer(t *testing.T) {
 	var gx, gy, n int
-	root := Row(box(W(100), OnRightClick(func(x, y int) { gx, gy, n = x, y, n+1 })))
+	root := Row(box(W(100), OnRightClick(func(posX, posY int) { gx, gy, n = posX, posY, n+1 })))
 	c := testCtx(t)
 	Layout(c, root, 200, 50)
 	c.In = core.Input{X: 30, Y: 20, RightClick: true}
@@ -475,7 +475,7 @@ func TestLeftClickReachesEveryAncestorInnermostFirst(t *testing.T) {
 
 func TestOnClickAtGetsThePointerOfTheClick(t *testing.T) {
 	var gx, gy, n int
-	root := Row(box(W(100), OnClickAt(func(x, y int) { gx, gy, n = x, y, n+1 })))
+	root := Row(box(W(100), OnClickAt(func(posX, posY int) { gx, gy, n = posX, posY, n+1 })))
 	c := testCtx(t)
 	Layout(c, root, 200, 50)
 	c.In = core.Input{X: 150, Y: 20, Click: true} // outside the element
