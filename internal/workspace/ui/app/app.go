@@ -48,6 +48,7 @@ const (
 
 	// defaultTimeoutSec is used when neither the request nor the settings name one.
 	defaultTimeoutSec = 60
+	maxTimeout        = 24 * time.Hour // longer would overflow time.Duration for a huge setting
 )
 
 // Cycled by clicking the protocol and method chips of the URL bar.
@@ -477,7 +478,7 @@ func (a *App) timeoutFor(req model.Request) time.Duration {
 	if sec <= 0 {
 		sec = defaultTimeoutSec
 	}
-	return time.Duration(sec) * time.Second
+	return time.Duration(min(sec, int(maxTimeout/time.Second))) * time.Second // before the multiply, which overflows
 }
 
 // timeoutText is a timeout as shown in its field; 0 (the default) is blank.

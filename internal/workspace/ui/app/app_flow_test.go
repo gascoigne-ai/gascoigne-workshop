@@ -23,6 +23,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"github.com/hajimehoshi/ebiten/v2"
 	"io"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -3752,4 +3753,16 @@ func TestAPanicInTheDesktopDialogIsShownNotFatal(t *testing.T) {
 	a.files = fakeDialog{choose: func(context.Context, string, bool, string) (string, error) { panic("dialog boom") }}
 	a.askDesktop("Open", false, "", func(string) {})
 	statusSoon(t, a, "dialog boom")
+}
+
+// A huge timeout (from a request or the settings file) overflowed
+// time.Duration to a negative value, so the request failed at once.
+func TestTimeoutIsCappedInsteadOfOverflowing(t *testing.T) {
+	a, _ := newTestApp(t)
+	for _, sec := range []int{1 << 40, math.MaxInt} {
+		got := a.timeoutFor(model.Request{TimeoutSec: sec})
+		if got <= 0 || got > maxTimeout {
+			t.Errorf("timeoutFor(%d s) = %v, want 1..%v", sec, got, maxTimeout)
+		}
+	}
 }
