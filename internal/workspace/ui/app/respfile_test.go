@@ -3,6 +3,7 @@ package app
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/filedialog"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -325,4 +326,40 @@ func TestToggleWrapSwitchesTheResponseViewAndSurvivesANewResponse(t *testing.T) 
 	if tab.view.Wrap {
 		t.Fatal("toggling again turns it off")
 	}
+}
+
+// A body of megabytes was formatted, folded and searched on the UI
+// thread, which froze the window. Over respview.ViewLimit the view shows
+// the first part as plain lines and says that the rest is not shown.
+func TestAHugeBodyIsShownAsItsFirstPartWithANote(t *testing.T) {
+	var body strings.Builder
+	for body.Len() < 3<<20 {
+		body.WriteString(`{"id": 1, "name": "row"}` + "\n")
+	}
+	a := jsonResponse(t, body.String())
+	tab := a.cur()
+	if len(tab.view.Lines) == 0 {
+		t.Fatal("the view is empty")
+	}
+	last := lineText(tab.view.Lines[len(tab.view.Lines)-1])
+	if !strings.Contains(last, "first 2.0") || !strings.Contains(last, "of 3.0") {
+		t.Errorf("last line %q does not say the body is cut", last)
+	}
+	size := 0
+	for _, line := range tab.view.Lines {
+		size += len(lineText(line))
+	}
+	if size > respview.ViewLimit+1<<10 {
+		t.Errorf("the view holds %d bytes, want at most %d", size, respview.ViewLimit)
+	}
+	a.runFind(tab) // the formatted-view paths must not read lines that were never built
+	a.closeFind(tab)
+}
+
+func lineText(line widget.Line) string {
+	var text strings.Builder
+	for _, span := range line.Spans {
+		text.WriteString(span.Text)
+	}
+	return text.String()
 }

@@ -5,11 +5,13 @@ package respview
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"strings"
 	"unicode/utf8"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/jsonview"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/textfmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
@@ -90,6 +92,25 @@ func LooksBinary(body []byte) bool {
 
 const binarySample = 8 << 10
 
+// TooBig reports whether a body is over ViewLimit and so is shown cut.
+func TooBig(body []byte) bool { return len(body) > ViewLimit }
+
+// LimitedLines is the first ViewLimit bytes of a body as plain lines,
+// ending in a line that says how much was left out. It cuts at a line end
+// when there is one near the limit, so no line is shown half.
+func LimitedLines(body []byte) []widget.Line {
+	shown := body[:ViewLimit]
+	if end := bytes.LastIndexByte(shown, '\n'); end > ViewLimit/2 {
+		shown = shown[:end]
+	}
+	for len(shown) > 0 && !utf8.Valid(shown) { // the cut may split a character
+		shown = shown[:len(shown)-1]
+	}
+	lines := RawLines(shown)
+	note := fmt.Sprintf("… showing the first %s of %s; Save body keeps all of it", textfmt.Size(len(shown)), textfmt.Size(len(body)))
+	return append(lines, widget.Line{Spans: []widget.Span{{Text: note, Style: core.Muted}}})
+}
+
 // RawLines shows a body exactly as received, one plain line per line.
 func RawLines(body []byte) []widget.Line {
 	texts := strings.Split(string(body), "\n")
@@ -99,3 +120,7 @@ func RawLines(body []byte) []widget.Line {
 	}
 	return lines
 }
+
+// ViewLimit is the most of a body the viewer formats or shows; more would
+// freeze the window while it is built on the UI thread.
+const ViewLimit = 2 << 20

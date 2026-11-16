@@ -261,6 +261,7 @@ Row(H(urlH), PadX(w.Pad), PadY(8), Gap(8), Bg(w.Bg),
 
 - The URL, the Params, Headers, Vars and form-field cells, and the JSON and text body are editable. Multipart sends text fields only (no files). Copy and paste work in the URL field and the code views; no IME.
 - Fractional scales round logical text metrics to whole pixels.
+- Input limits that keep a hostile or huge input from freezing or crashing the app: a response body over `respview.ViewLimit` (2 MiB) is shown as its first part in plain lines with a note (no formatting, folding or filtered search; Save body keeps all of it); variable expansion stops at 16 MiB (`model.maxExpanded`); JSON deeper than 256 levels shows as plain text (`jsonview.maxDepth`); YAML nests at most 100 levels (`miniyaml.maxDepth`); `<include>` nests at most 32 levels; a request timeout is at most 24 hours; gRPC reflection fetches at most 512 files per symbol.
 - Requests are not moved or copied between open collections (a drop onto another collection is refused; a later task, decision 17).
 - A folder collapsed at exit is open again at the next start: opening a collection opens every folder and the remembered open folders only add to that (as before task 071; `migration_test.go` notes it).
 

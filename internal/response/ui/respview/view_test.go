@@ -7,6 +7,7 @@ import (
 	"image/gif"
 	"image/jpeg"
 	"image/png"
+	"strings"
 	"testing"
 )
 
@@ -57,6 +58,24 @@ func TestDecodeFindsPicturesByTheirBytesAndRefusesTheRest(t *testing.T) {
 	for name, b := range map[string][]byte{"json": []byte(`{"a":1}`), "empty": nil, "short": []byte("png"), "cut png": png.Bytes()[:20]} {
 		if _, ok := Decode(b); ok {
 			t.Errorf("%s decoded as a picture", name)
+		}
+	}
+}
+
+func TestLimitedLinesCutAtALineEndKeepWholeCharactersAndSayWhatIsLeftOut(t *testing.T) {
+	if TooBig(make([]byte, ViewLimit)) || !TooBig(make([]byte, ViewLimit+1)) {
+		t.Fatal("TooBig must be true only past ViewLimit")
+	}
+	row := "żółw żółw żółw żółw\n" // multi-byte, so the byte cut can split a character
+	body := []byte(strings.Repeat(row, ViewLimit/len(row)+10))
+	lines := LimitedLines(body)
+	note := lines[len(lines)-1].Spans[0].Text
+	if !strings.HasPrefix(note, "… showing the first") {
+		t.Fatalf("note %q", note)
+	}
+	for _, line := range lines[:len(lines)-1] {
+		if got := line.Spans[0].Text; got != strings.TrimSuffix(row, "\n") {
+			t.Fatalf("a line was cut or broken: %q", got)
 		}
 	}
 }

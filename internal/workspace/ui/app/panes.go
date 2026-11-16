@@ -606,6 +606,8 @@ func (a *App) refreshView(t *reqTab) {
 	switch {
 	case t.Resp == nil || respview.LooksBinary(t.Resp.Body):
 		t.view.SetLines(nil)
+	case respview.TooBig(t.Resp.Body): // formatting megabytes would freeze the window
+		t.view.SetLines(respview.LimitedLines(t.Resp.Body))
 	case t.look.Raw():
 		t.view.SetLines(respview.RawLines(t.Resp.Body))
 	case t.look.Compact():
@@ -656,10 +658,15 @@ func (a *App) showCompact(t *reqTab) {
 	}
 }
 
+// formattable is whether t has a text body small enough to be formatted.
+func formattable(t *reqTab) bool {
+	return t.Resp != nil && !respview.LooksBinary(t.Resp.Body) && !respview.TooBig(t.Resp.Body)
+}
+
 // runFind searches for the typed text and goes to the first match. The
 // compact view is filtered to the matches first.
 func (a *App) runFind(t *reqTab) {
-	if t.look.Compact() && t.Resp != nil && !respview.LooksBinary(t.Resp.Body) {
+	if t.look.Compact() && formattable(t) {
 		a.showCompact(t)
 		return
 	}
@@ -701,7 +708,7 @@ func (a *App) closeFind(t *reqTab) {
 	t.look = viewer.Update(t.look, viewer.FindClosed{})
 	t.find.Focused = false
 	t.view.SetMatches(nil, -1)
-	if t.look.Compact() && t.Resp != nil && !respview.LooksBinary(t.Resp.Body) {
+	if t.look.Compact() && formattable(t) {
 		a.showCompact(t) // leave the filtered view
 	}
 }
