@@ -111,10 +111,10 @@ type fragments struct {
 func (c *Conn) Subprotocol() string { return c.sub }
 
 // SetReadDeadline limits the next Read; the zero time clears it.
-func (c *Conn) SetReadDeadline(t time.Time) error { return c.nc.SetReadDeadline(t) }
+func (c *Conn) SetReadDeadline(moment time.Time) error { return c.nc.SetReadDeadline(moment) }
 
 // Dial opens a connection to a ws:// or wss:// URL.
-func Dial(ctx context.Context, rawURL string, o Options) (*Conn, error) {
+func Dial(ctx context.Context, rawURL string, options Options) (*Conn, error) {
 	u, err := url.Parse(rawURL)
 	if err != nil {
 		return nil, fmt.Errorf("websocket: %w", err)
@@ -141,7 +141,7 @@ func Dial(ctx context.Context, rawURL string, o Options) (*Conn, error) {
 		return nil, fmt.Errorf("websocket: %w", err)
 	}
 	if secure {
-		cfg := o.TLS
+		cfg := options.TLS
 		if cfg == nil {
 			cfg = &tls.Config{}
 		}
@@ -157,7 +157,7 @@ func Dial(ctx context.Context, rawURL string, o Options) (*Conn, error) {
 		nc = tc
 	}
 	stop := context.AfterFunc(ctx, func() { nc.Close() })
-	c, err := clientHandshake(nc, u, o)
+	c, err := clientHandshake(nc, u, options)
 	if !stop() && err == nil { // the context fired while handshaking
 		err = ctx.Err()
 	}
@@ -168,12 +168,12 @@ func Dial(ctx context.Context, rawURL string, o Options) (*Conn, error) {
 	return c, nil
 }
 
-func clientHandshake(nc net.Conn, u *url.URL, o Options) (*Conn, error) {
+func clientHandshake(nc net.Conn, address *url.URL, options Options) (*Conn, error) {
 	keyBytes := make([]byte, 16)
 	rand.Read(keyBytes)
 	key := base64.StdEncoding.EncodeToString(keyBytes)
-	req := &http.Request{Method: http.MethodGet, URL: &url.URL{Path: u.Path, RawQuery: u.RawQuery}, Host: u.Host, Header: http.Header{}}
-	for k, vs := range o.Header {
+	req := &http.Request{Method: http.MethodGet, URL: &url.URL{Path: address.Path, RawQuery: address.RawQuery}, Host: address.Host, Header: http.Header{}}
+	for k, vs := range options.Header {
 		for _, v := range vs {
 			req.Header.Add(k, v)
 		}
@@ -182,8 +182,8 @@ func clientHandshake(nc net.Conn, u *url.URL, o Options) (*Conn, error) {
 	req.Header.Set("Connection", "Upgrade")
 	req.Header.Set("Sec-WebSocket-Key", key)
 	req.Header.Set("Sec-WebSocket-Version", "13")
-	if len(o.Subprotocols) > 0 {
-		req.Header.Set("Sec-WebSocket-Protocol", strings.Join(o.Subprotocols, ", "))
+	if len(options.Subprotocols) > 0 {
+		req.Header.Set("Sec-WebSocket-Protocol", strings.Join(options.Subprotocols, ", "))
 	}
 	if err := req.Write(nc); err != nil {
 		return nil, fmt.Errorf("websocket: %w", err)
@@ -200,7 +200,7 @@ func clientHandshake(nc net.Conn, u *url.URL, o Options) (*Conn, error) {
 	if resp.Header.Get("Sec-WebSocket-Accept") != acceptKey(key) {
 		return nil, errors.New("websocket handshake: bad Sec-WebSocket-Accept")
 	}
-	c := &Conn{nc: nc, br: br, client: true, sub: resp.Header.Get("Sec-WebSocket-Protocol"), max: o.MaxMessage}
+	c := &Conn{nc: nc, br: br, client: true, sub: resp.Header.Get("Sec-WebSocket-Protocol"), max: options.MaxMessage}
 	if c.max <= 0 {
 		c.max = DefaultMaxMessage
 	}
@@ -214,14 +214,14 @@ func acceptKey(key string) string {
 
 // Upgrade answers a client's handshake on the server side and returns
 // the connection. The first offered subprotocol is chosen.
-func Upgrade(w http.ResponseWriter, r *http.Request) (*Conn, error) {
-	if !strings.EqualFold(r.Header.Get("Upgrade"), "websocket") || r.Header.Get("Sec-WebSocket-Key") == "" {
-		http.Error(w, "not a websocket handshake", http.StatusBadRequest)
+func Upgrade(writer http.ResponseWriter, request *http.Request) (*Conn, error) {
+	if !strings.EqualFold(request.Header.Get("Upgrade"), "websocket") || request.Header.Get("Sec-WebSocket-Key") == "" {
+		http.Error(writer, "not a websocket handshake", http.StatusBadRequest)
 		return nil, errors.New("websocket: not a handshake")
 	}
-	hj, ok := w.(http.Hijacker)
+	hj, ok := writer.(http.Hijacker)
 	if !ok {
-		http.Error(w, "cannot hijack", http.StatusInternalServerError)
+		http.Error(writer, "cannot hijack", http.StatusInternalServerError)
 		return nil, errors.New("websocket: no hijacker")
 	}
 	nc, rw, err := hj.Hijack()
@@ -229,10 +229,10 @@ func Upgrade(w http.ResponseWriter, r *http.Request) (*Conn, error) {
 		return nil, err
 	}
 	sub := ""
-	if offered := r.Header.Get("Sec-WebSocket-Protocol"); offered != "" {
+	if offered := request.Header.Get("Sec-WebSocket-Protocol"); offered != "" {
 		sub = strings.TrimSpace(strings.Split(offered, ",")[0])
 	}
-	resp := "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: " + acceptKey(r.Header.Get("Sec-WebSocket-Key")) + "\r\n"
+	resp := "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: " + acceptKey(request.Header.Get("Sec-WebSocket-Key")) + "\r\n"
 	if sub != "" {
 		resp += "Sec-WebSocket-Protocol: " + sub + "\r\n"
 	}
@@ -249,17 +249,17 @@ func Upgrade(w http.ResponseWriter, r *http.Request) (*Conn, error) {
 
 // Write sends one data or control message. Use Close to end the
 // connection properly.
-func (c *Conn) Write(t Type, data []byte) error {
-	switch t {
+func (c *Conn) Write(kind Type, data []byte) error {
+	switch kind {
 	case Text, Binary:
 	case Ping, Pong:
 		if len(data) > 125 {
 			return errors.New("websocket: control message over 125 bytes")
 		}
 	default:
-		return fmt.Errorf("websocket: cannot write a %s message", t)
+		return fmt.Errorf("websocket: cannot write a %s message", kind)
 	}
-	return c.writeFrame(true, t, data)
+	return c.writeFrame(true, kind, data)
 }
 
 func (c *Conn) writeFrame(fin bool, op Type, data []byte) error {

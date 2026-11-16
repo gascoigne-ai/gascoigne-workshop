@@ -17,8 +17,8 @@ import (
 // the same message until the client closes.
 func echoServer(t *testing.T, handle func(c *Conn)) (*httptest.Server, string) {
 	t.Helper()
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		c, err := Upgrade(w, r)
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		c, err := Upgrade(writer, request)
 		if err != nil {
 			return
 		}
@@ -29,23 +29,23 @@ func echoServer(t *testing.T, handle func(c *Conn)) (*httptest.Server, string) {
 	return srv, "ws" + strings.TrimPrefix(srv.URL, "http")
 }
 
-func echo(c *Conn) {
+func echo(conn *Conn) {
 	for {
-		m, err := c.Read()
+		m, err := conn.Read()
 		if err != nil || m.Type == Close {
 			return
 		}
-		if err := c.Write(m.Type, m.Data); err != nil {
+		if err := conn.Write(m.Type, m.Data); err != nil {
 			return
 		}
 	}
 }
 
-func dial(t *testing.T, url string, o Options) *Conn {
+func dial(t *testing.T, url string, options Options) *Conn {
 	t.Helper()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	c, err := Dial(ctx, url, o)
+	c, err := Dial(ctx, url, options)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -78,9 +78,9 @@ func TestEchoTextAndBinary(t *testing.T) {
 
 func TestSubprotocolAndHeadersReachTheServer(t *testing.T) {
 	got := make(chan http.Header, 1)
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		got <- r.Header
-		c, err := Upgrade(w, r)
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		got <- request.Header
+		c, err := Upgrade(writer, request)
 		if err == nil {
 			c.Close(CloseNormal, "")
 		}
@@ -100,7 +100,7 @@ func TestSubprotocolAndHeadersReachTheServer(t *testing.T) {
 }
 
 func TestServerCloseCarriesCodeAndReason(t *testing.T) {
-	_, url := echoServer(t, func(c *Conn) { c.Close(CloseGoingAway, "bye") })
+	_, url := echoServer(t, func(conn *Conn) { conn.Close(CloseGoingAway, "bye") })
 	c := dial(t, url, Options{})
 	m, err := c.Read()
 	if err != nil || m.Type != Close || m.Code != CloseGoingAway || string(m.Data) != "bye" {
@@ -113,9 +113,9 @@ func TestServerCloseCarriesCodeAndReason(t *testing.T) {
 
 func TestPingIsAnsweredWithPong(t *testing.T) {
 	pong := make(chan []byte, 1)
-	_, url := echoServer(t, func(c *Conn) {
-		c.Write(Ping, []byte("are you there"))
-		m, err := c.Read()
+	_, url := echoServer(t, func(conn *Conn) {
+		conn.Write(Ping, []byte("are you there"))
+		m, err := conn.Read()
 		if err == nil && m.Type == Pong {
 			pong <- m.Data
 		}
@@ -136,10 +136,10 @@ func TestPingIsAnsweredWithPong(t *testing.T) {
 }
 
 func TestFragmentedMessagesAreJoined(t *testing.T) {
-	_, url := echoServer(t, func(c *Conn) {
-		c.writeFrame(false, Text, []byte("hel"))
-		c.writeFrame(false, opContinuation, []byte("lo "))
-		c.writeFrame(true, opContinuation, []byte("world"))
+	_, url := echoServer(t, func(conn *Conn) {
+		conn.writeFrame(false, Text, []byte("hel"))
+		conn.writeFrame(false, opContinuation, []byte("lo "))
+		conn.writeFrame(true, opContinuation, []byte("world"))
 	})
 	c := dial(t, url, Options{})
 	m, err := c.Read()
@@ -149,8 +149,8 @@ func TestFragmentedMessagesAreJoined(t *testing.T) {
 }
 
 func TestHandshakeFailuresAreReported(t *testing.T) {
-	plain := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.Error(w, "nope", http.StatusForbidden)
+	plain := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		http.Error(writer, "nope", http.StatusForbidden)
 	}))
 	defer plain.Close()
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
@@ -168,7 +168,7 @@ func TestHandshakeFailuresAreReported(t *testing.T) {
 }
 
 func TestOversizedMessageIsRefused(t *testing.T) {
-	_, url := echoServer(t, func(c *Conn) { c.Write(Binary, make([]byte, 5000)) })
+	_, url := echoServer(t, func(conn *Conn) { conn.Write(Binary, make([]byte, 5000)) })
 	c := dial(t, url, Options{MaxMessage: 1000})
 	if _, err := c.Read(); err == nil || !strings.Contains(err.Error(), "too large") {
 		t.Fatalf("got %v", err)
@@ -177,7 +177,7 @@ func TestOversizedMessageIsRefused(t *testing.T) {
 
 func TestClosingTheClientEndsTheServerLoop(t *testing.T) {
 	done := make(chan struct{})
-	_, url := echoServer(t, func(c *Conn) { echo(c); close(done) })
+	_, url := echoServer(t, func(conn *Conn) { echo(conn); close(done) })
 	c := dial(t, url, Options{})
 	c.Close(CloseNormal, "done")
 	select {
@@ -191,7 +191,7 @@ func TestClosingTheClientEndsTheServerLoop(t *testing.T) {
 }
 
 func TestReadStopsWhenTheContextOfDialIsNotInvolved(t *testing.T) {
-	_, url := echoServer(t, func(c *Conn) { time.Sleep(200 * time.Millisecond) })
+	_, url := echoServer(t, func(conn *Conn) { time.Sleep(200 * time.Millisecond) })
 	c := dial(t, url, Options{})
 	c.SetReadDeadline(time.Now().Add(20 * time.Millisecond))
 	if _, err := c.Read(); err == nil || err == io.EOF {
@@ -203,10 +203,10 @@ func TestReadStopsWhenTheContextOfDialIsNotInvolved(t *testing.T) {
 // it) made Read return the ping and drop the fragments read so far, so
 // the next continuation frame failed as "unexpected continuation".
 func TestAPingBetweenFragmentsKeepsTheMessage(t *testing.T) {
-	_, url := echoServer(t, func(c *Conn) {
-		c.writeFrame(false, Text, []byte("hel"))
-		c.writeFrame(true, Ping, []byte("p"))
-		c.writeFrame(true, opContinuation, []byte("lo"))
+	_, url := echoServer(t, func(conn *Conn) {
+		conn.writeFrame(false, Text, []byte("hel"))
+		conn.writeFrame(true, Ping, []byte("p"))
+		conn.writeFrame(true, opContinuation, []byte("lo"))
 	})
 	c := dial(t, url, Options{})
 	m, err := c.Read()
