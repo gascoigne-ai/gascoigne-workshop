@@ -7,6 +7,7 @@ import (
 	"io"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"google.golang.org/grpc"
@@ -93,9 +94,10 @@ type grpcSession struct {
 	method protoreflect.MethodDescriptor
 
 	sendMu sync.Mutex // SendMsg must not run concurrently
-	mu     sync.Mutex
+	stop   sync.Once  // closes done; Close must not need mu, which emit holds while it waits
+	mu     sync.Mutex // guards ended against a send on the closed events channel
 	ended  bool
-	closed bool // Close was called: the end of the stream is not news
+	closed atomic.Bool // Close was called: the end of the stream is not news
 }
 
 func (s *grpcSession) Events() <-chan Event { return s.events }
@@ -122,7 +124,7 @@ func (s *grpcSession) finish() {
 	}
 }
 
-func (s *grpcSession) isClosed() bool { s.mu.Lock(); defer s.mu.Unlock(); return s.closed }
+func (s *grpcSession) isClosed() bool { return s.closed.Load() }
 
 // receive reads messages until the stream ends, then reports how.
 func (s *grpcSession) receive(conn *grpc.ClientConn) {
@@ -195,14 +197,8 @@ func (s *grpcSession) sendMessage(text string) error {
 func (s *grpcSession) Ping() error { return errors.New("a gRPC stream has no ping") }
 
 func (s *grpcSession) Close() error {
-	s.mu.Lock()
-	s.closed = true
-	select {
-	case <-s.done:
-	default:
-		close(s.done)
-	}
-	s.mu.Unlock()
+	s.closed.Store(true)
+	s.stop.Do(func() { close(s.done) })
 	s.cancel()
 	return nil
 }

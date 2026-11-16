@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
@@ -154,14 +155,15 @@ type sseSession struct {
 	done   chan struct{}
 	cancel context.CancelFunc
 
-	mu      sync.Mutex
+	stop    sync.Once  // closes done; Close must not need mu, which emit holds while it waits
+	mu      sync.Mutex // guards ended against a send on the closed events channel
 	ended   bool
-	closing bool
+	closing atomic.Bool
 }
 
 func (s *sseSession) Events() <-chan Event { return s.events }
 
-func (s *sseSession) isClosing() bool { s.mu.Lock(); defer s.mu.Unlock(); return s.closing }
+func (s *sseSession) isClosing() bool { return s.closing.Load() }
 
 func (s *sseSession) emit(e Event) {
 	e.Time = time.Now()
@@ -189,14 +191,8 @@ func (s *sseSession) Send(string) error { return errors.New("an event stream onl
 func (s *sseSession) Ping() error       { return errors.New("an event stream has no ping") }
 
 func (s *sseSession) Close() error {
-	s.mu.Lock()
-	s.closing = true
-	select {
-	case <-s.done:
-	default:
-		close(s.done)
-	}
-	s.mu.Unlock()
+	s.closing.Store(true)
+	s.stop.Do(func() { close(s.done) })
 	s.cancel()
 	return nil
 }

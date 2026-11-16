@@ -132,7 +132,8 @@ type mcpSession struct {
 	sampler Sampler // nil: sampling is not offered
 	events  chan Event
 	done    chan struct{}
-	once    sync.Once
+	once    sync.Once // finish
+	stop    sync.Once // closes done; Close must not wait for a finish stuck in emit
 	now     func() time.Time
 
 	mu      sync.Mutex
@@ -164,7 +165,7 @@ func (s *mcpSession) finish(err error) {
 		if err != nil && !s.closing.Load() {
 			s.emit(Event{Dir: Info, Kind: "close", Code: 1006, Text: "Connection lost: " + err.Error()})
 		}
-		close(s.done)
+		s.stopSession()
 		s.mu.Lock()
 		s.ended = true
 		for id, w := range s.waiters {
@@ -415,8 +416,11 @@ func (s *mcpSession) Ping() error {
 	return err
 }
 
+func (s *mcpSession) stopSession() { s.stop.Do(func() { close(s.done) }) }
+
 func (s *mcpSession) Close() error {
 	s.closing.Store(true)
+	s.stopSession() // frees a finish that waits for room in a full channel
 	err := s.tr.close()
 	s.finish(nil)
 	return err
