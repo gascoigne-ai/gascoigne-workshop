@@ -5,13 +5,24 @@ import (
 	"strings"
 )
 
+// maxExpanded is the longest text Expand builds. A replacement that would
+// pass it is skipped: variables that hold each other can double the text
+// at every step.
+const maxExpanded = 16 << 20
+
 // Expand replaces {{name}} with the value of the enabled variable of
 // that name. Unknown names are left as written so the gap stays visible.
 func Expand(s string, vars []KV) string {
 	for _, v := range vars {
-		if v.Enabled {
-			s = strings.ReplaceAll(s, "{{"+v.Name+"}}", v.Value)
+		if !v.Enabled {
+			continue
 		}
+		token := "{{" + v.Name + "}}"
+		grown := len(s) + strings.Count(s, token)*(len(v.Value)-len(token))
+		if grown > maxExpanded {
+			continue
+		}
+		s = strings.ReplaceAll(s, token, v.Value)
 	}
 	return s
 }

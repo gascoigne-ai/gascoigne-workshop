@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -175,5 +176,23 @@ func TestPathParametersFollowTheURLAndFillIt(t *testing.T) {
 	r2 := Request{URL: "http://h/u/:id", Params: []KV{{Name: ":id", Value: "{{uid}}", Enabled: true}}}
 	if got := r2.Expanded(vars).URL; got != "http://h/u/7" {
 		t.Fatalf("a path value may use variables: %q", got)
+	}
+}
+
+// Variables that each hold two of the next ("a={{b}}{{b}}", "b={{c}}{{c}}"
+// ...) doubled the text at every step, so 30 of them, from an imported
+// collection, ate all memory. A replacement that would pass the limit is
+// skipped and its name stays visible.
+func TestExpandStopsAtASizeLimit(t *testing.T) {
+	var vars []KV
+	for i := range 40 {
+		vars = append(vars, KV{Name: fmt.Sprintf("v%d", i), Value: fmt.Sprintf("{{v%d}}{{v%d}}", i+1, i+1), Enabled: true})
+	}
+	got := Expand("{{v0}}", vars)
+	if len(got) > maxExpanded {
+		t.Fatalf("expanded to %d bytes, the limit is %d", len(got), maxExpanded)
+	}
+	if !strings.Contains(got, "{{v") {
+		t.Errorf("a skipped variable must stay visible, got %.40q", got)
 	}
 }
