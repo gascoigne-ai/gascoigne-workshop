@@ -3,10 +3,9 @@
 **One fast desktop app for every API call you make.** REST, WebSocket, Server-Sent Events, MCP and
 gRPC in a single window, with your requests kept as plain files you own.
 
-> **Beta.** The first public release is a beta: it is feature-complete for daily use, but expect
-> rough edges. Only Linux has been tested on a real machine; the macOS and Windows builds are
-> untested (see [Known limitations](#known-limitations)). Please
-> [report what you find](https://github.com/gascoigne-ai/gascoigne-workshop/issues).
+> **Alpha.** 0.1.0 alpha is the first public release: ready for daily use and still growing, so
+> details will keep improving. Your feedback shapes what comes next:
+> [tell us what you find](https://github.com/gascoigne-ai/gascoigne-workshop/issues).
 
 ## Highlights
 
@@ -42,10 +41,9 @@ code. Rules and design notes live in [`.harness/`](.harness).
 
 ## Install
 
-Download a beta build from the
+Download an alpha build from the
 [latest release](https://github.com/gascoigne-ai/gascoigne-workshop/releases/latest): a Linux
-tarball, a macOS arm64 app bundle or a Windows zip. Only Linux is tested so far (see
-[Known limitations](#known-limitations)). Or build from source.
+tarball, a macOS arm64 app bundle or a Windows zip. Or build from source.
 
 On Linux, native open and save dialogs need one of `zenity`, `kdialog`, `yad`, `qarma` or
 `matedialog` (most desktops ship one; `zenity` on GNOME and others, `kdialog` on KDE Plasma).
@@ -157,5 +155,5 @@ them as a GitHub release; running the workflow by hand (a dry run) builds them a
 workflow artifacts without a release.
 
 ```sh
-git tag v0.1.0 && git push origin v0.1.0
+git tag v0.1.0-alpha && git push origin v0.1.0-alpha
 ```
