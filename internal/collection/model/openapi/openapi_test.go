@@ -24,8 +24,8 @@ func petstore(t *testing.T) Result {
 	return res
 }
 
-func find(f *model.Folder, name string) *model.Request {
-	for _, r := range f.Requests {
+func find(folder *model.Folder, name string) *model.Request {
+	for _, r := range folder.Requests {
 		if r.Name == name {
 			return r
 		}
@@ -126,18 +126,18 @@ func TestTheYAMLFormOfTheSameDescriptionGivesTheSameCollection(t *testing.T) {
 }
 
 // dump lists a folder as "path: METHOD URL body" lines, to compare two imports.
-func dump(f *model.Folder) []string {
+func dump(folder *model.Folder) []string {
 	var out []string
 	var walk func(f *model.Folder, prefix string)
-	walk = func(f *model.Folder, prefix string) {
-		for _, r := range f.Requests {
+	walk = func(folder *model.Folder, prefix string) {
+		for _, r := range folder.Requests {
 			out = append(out, prefix+r.Name+": "+r.Method+" "+r.URL+" "+r.Body)
 		}
-		for _, s := range f.Folders {
+		for _, s := range folder.Folders {
 			walk(s, prefix+s.Name+"/")
 		}
 	}
-	walk(f, "")
+	walk(folder, "")
 	return out
 }
 

@@ -147,16 +147,16 @@ func Parse(data []byte) (Result, error) {
 }
 
 // resolve follows a parameter's $ref into components.parameters.
-func (d *doc) resolve(p param) param {
-	if p.Ref == "" {
-		return p
+func (d *doc) resolve(param param) param {
+	if param.Ref == "" {
+		return param
 	}
-	if name, ok := strings.CutPrefix(p.Ref, "#/components/parameters/"); ok {
+	if name, ok := strings.CutPrefix(param.Ref, "#/components/parameters/"); ok {
 		if r, ok := d.Components.Parameters[name]; ok {
 			return r
 		}
 	}
-	return p
+	return param
 }
 
 // resolveBody follows a request body's $ref into components.requestBodies.
@@ -171,21 +171,21 @@ func (d *doc) resolveBody(body requestBody) requestBody {
 
 // schema follows $ref chains into components.schemas, to a depth that
 // stops a cycle, and does the same inside properties.
-func (d *doc) schema(s map[string]any, depth int) map[string]any {
-	if s == nil || depth > 6 {
-		return s
+func (d *doc) schema(other map[string]any, depth int) map[string]any {
+	if other == nil || depth > 6 {
+		return other
 	}
-	if ref, ok := s["$ref"].(string); ok {
+	if ref, ok := other["$ref"].(string); ok {
 		if name, ok := strings.CutPrefix(ref, "#/components/schemas/"); ok {
 			return d.schema(d.Components.Schemas[name], depth+1)
 		}
 		return nil
 	}
 	out := map[string]any{}
-	for k, v := range s {
+	for k, v := range other {
 		out[k] = v
 	}
-	if props, ok := s["properties"].(map[string]any); ok {
+	if props, ok := other["properties"].(map[string]any); ok {
 		np := map[string]any{}
 		for name, p := range props {
 			if sub, ok := p.(map[string]any); ok {
@@ -197,7 +197,7 @@ func (d *doc) schema(s map[string]any, depth int) map[string]any {
 	return out
 }
 
-func buildRequest(d *doc, method, path string, op operation, shared []param) model.Request {
+func buildRequest(docValue *doc, method, path string, op operation, shared []param) model.Request {
 	name := op.Summary
 	if name == "" {
 		name = op.OperationID
@@ -209,7 +209,7 @@ func buildRequest(d *doc, method, path string, op operation, shared []param) mod
 	url := "{{" + BaseURLVar + "}}" + pathVars(path)
 	var query []model.KV
 	for _, raw := range append(append([]param{}, shared...), op.Parameters...) {
-		p := d.resolve(raw)
+		p := docValue.resolve(raw)
 		value := paramValue(p)
 		switch p.In {
 		case "query":
@@ -221,7 +221,7 @@ func buildRequest(d *doc, method, path string, op operation, shared []param) mod
 	req.Params = query
 	req.URL = model.WithParams(url, req.Params)
 	if op.RequestBody != nil {
-		body := d.resolveBody(*op.RequestBody)
+		body := docValue.resolveBody(*op.RequestBody)
 		if mt, ok := body.Content["application/json"]; ok {
 			req.BodyType = model.BodyJSON
 			switch {
@@ -229,7 +229,7 @@ func buildRequest(d *doc, method, path string, op operation, shared []param) mod
 				b, _ := json.MarshalIndent(mt.Example, "", "  ")
 				req.Body = string(b)
 			case mt.Schema != nil:
-				req.Body = indent(model.Skeleton(d.schema(mt.Schema, 0)))
+				req.Body = indent(model.Skeleton(docValue.schema(mt.Schema, 0)))
 			default:
 				req.Body = "{}"
 			}
@@ -256,27 +256,27 @@ func pathVars(path string) string {
 
 // paramValue is a sample value for a parameter: its example, its default,
 // or the first enum value; empty when the document gives none.
-func paramValue(p param) string {
-	if p.Example != nil {
-		return fmt.Sprint(p.Example)
+func paramValue(param param) string {
+	if param.Example != nil {
+		return fmt.Sprint(param.Example)
 	}
-	if v, ok := p.Schema["default"]; ok {
+	if v, ok := param.Schema["default"]; ok {
 		return fmt.Sprint(v)
 	}
-	if e, ok := p.Schema["enum"].([]any); ok && len(e) > 0 && p.Required {
+	if e, ok := param.Schema["enum"].([]any); ok && len(e) > 0 && param.Required {
 		return fmt.Sprint(e[0])
 	}
 	return ""
 }
 
-func indent(s string) string {
+func indent(text string) string {
 	var v any
-	if json.Unmarshal([]byte(s), &v) != nil {
-		return s
+	if json.Unmarshal([]byte(text), &v) != nil {
+		return text
 	}
 	b, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
-		return s
+		return text
 	}
 	return string(b)
 }
