@@ -103,6 +103,10 @@ func listServices(ctx context.Context, conn *grpc.ClientConn) ([]string, error) 
 	return names, nil
 }
 
+// maxReflectedFiles bounds the files fetched for one symbol; real services
+// import a few dozen, and a server that keeps naming new ones is broken.
+const maxReflectedFiles = 512
+
 // loadSymbol fetches the file that declares symbol and everything it
 // imports, and returns them as a registry. Well-known types such as
 // google/protobuf/any.proto are taken from this program's own copy when
@@ -127,6 +131,9 @@ func loadSymbol(ctx context.Context, conn *grpc.ClientConn, symbol string) (*pro
 			for _, dependency := range file.Dependency {
 				if _, have := files[dependency]; have {
 					continue
+				}
+				if len(files) >= maxReflectedFiles {
+					return nil, fmt.Errorf("find %s: the server lists too many files (over %d)", symbol, maxReflectedFiles)
 				}
 				fetched, err := fetchFile(ctx, conn, dependency)
 				if err != nil {
