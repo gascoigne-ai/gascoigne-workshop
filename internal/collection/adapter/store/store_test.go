@@ -57,13 +57,13 @@ func TestSecretsStayOutOfRequestFiles(t *testing.T) {
 	if err := Save(dir, sample()); err != nil {
 		t.Fatal(err)
 	}
-	filepath.WalkDir(dir, func(p string, d os.DirEntry, _ error) error {
-		if d.IsDir() || filepath.Base(p) == secretsFile {
+	filepath.WalkDir(dir, func(name string, entry os.DirEntry, _ error) error {
+		if entry.IsDir() || filepath.Base(name) == secretsFile {
 			return nil
 		}
-		b, _ := os.ReadFile(p)
+		b, _ := os.ReadFile(name)
 		if strings.Contains(string(b), "s3cret") { // also matches env-s3cret
-			t.Errorf("%s contains a secret", p)
+			t.Errorf("%s contains a secret", name)
 		}
 		return nil
 	})
@@ -146,10 +146,10 @@ func TestLoadReportsBrokenFiles(t *testing.T) {
 func snapshot(t *testing.T, dir string) map[string]string {
 	t.Helper()
 	m := map[string]string{}
-	filepath.WalkDir(dir, func(p string, d os.DirEntry, _ error) error {
-		if !d.IsDir() {
-			b, _ := os.ReadFile(p)
-			m[p] = string(b)
+	filepath.WalkDir(dir, func(name string, entry os.DirEntry, _ error) error {
+		if !entry.IsDir() {
+			b, _ := os.ReadFile(name)
+			m[name] = string(b)
 		}
 		return nil
 	})
