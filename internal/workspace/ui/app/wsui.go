@@ -87,7 +87,7 @@ func (a *App) connect(t *reqTab) {
 	ctx, cancel := context.WithTimeout(context.Background(), a.timeoutFor(req))
 	t.wsCancel = cancel
 	reg := a.reg // the goroutine must not read App fields the UI goroutine replaces
-	go func() {
+	a.bus.Run(context.Background(), func(context.Context) bus.Msg {
 		defer cancel()
 		s, err := reg.Connect(ctx, req) // ctx ends only the connect, not the session
 		if err != nil && errors.Is(ctx.Err(), context.DeadlineExceeded) {
@@ -105,13 +105,13 @@ func (a *App) connect(t *reqTab) {
 		}
 		a.bus.Dispatch(wsEvent{tab: t, gen: gen, sess: s, err: err})
 		if err != nil {
-			return
+			return nil
 		}
 		for e := range s.Events() {
 			a.bus.Dispatch(wsEvent{tab: t, gen: gen, ev: e, hasEv: true})
 		}
-		a.bus.Dispatch(wsEvent{tab: t, gen: gen, closed: true})
-	}()
+		return wsEvent{tab: t, gen: gen, closed: true}
+	})
 }
 
 // disconnect closes the session of t, or abandons a connect in progress.

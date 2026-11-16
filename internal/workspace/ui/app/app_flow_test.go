@@ -1,11 +1,13 @@
 package app
 
 import (
+	"context"
 	"errors"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/adapter/store"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/controller/viewer"
 	rport "github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
@@ -3709,4 +3711,45 @@ func TestAFailedCommandIsShownInTheStatusLine(t *testing.T) {
 	if !strings.Contains(a.status, "boom") {
 		t.Fatalf("status %q does not show the failure", a.status)
 	}
+}
+
+type panickingStreamer struct{}
+
+func (panickingStreamer) Send(context.Context, model.Request) (model.Response, error) {
+	return model.Response{}, nil
+}
+func (panickingStreamer) Connect(context.Context, model.Request) (reqport.Session, error) {
+	panic("connect boom")
+}
+
+// statusSoon steps the app until its status holds want.
+func statusSoon(t *testing.T, a *App, want string) {
+	t.Helper()
+	for range 400 {
+		a.step(core.Input{})
+		if strings.Contains(a.status, want) {
+			return
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	t.Fatalf("status %q never held %q", a.status, want)
+}
+
+// The connect and file dialog goroutines were started with a bare go
+// statement, so a panic in a protocol or a dialog program ended the app.
+func TestAPanicWhileConnectingIsShownNotFatal(t *testing.T) {
+	a, _ := newTestApp(t)
+	a.reg = reqport.Registry{"websocket": panickingStreamer{}}
+	tab := a.cur()
+	tab.Req.Protocol = "websocket"
+	tab.Req.URL = "ws://x.test"
+	a.connect(tab)
+	statusSoon(t, a, "connect boom")
+}
+
+func TestAPanicInTheDesktopDialogIsShownNotFatal(t *testing.T) {
+	a, _ := newTestApp(t)
+	a.files = fakeDialog{choose: func(context.Context, string, bool, string) (string, error) { panic("dialog boom") }}
+	a.askDesktop("Open", false, "", func(string) {})
+	statusSoon(t, a, "dialog boom")
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/bus"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/filebrowser"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -47,16 +48,17 @@ func (a *App) pickFile(title string, save bool, name string, done func(path stri
 // comes back through the bus.
 func (a *App) askDesktop(title string, save bool, name string, done func(path string)) (cancel func()) {
 	ctx, stop := context.WithCancel(context.Background())
-	go func() {
+	a.bus.Run(ctx, func(ctx context.Context) bus.Msg {
 		path, err := a.files.Choose(ctx, title, save, name)
 		switch {
 		case err == port.ErrCancelled || ctx.Err() != nil: // closed by the user, or taken back
+			return nil
 		case err != nil:
-			a.bus.Dispatch(func() { a.toast("File dialog failed: "+err.Error(), true) })
+			return func() { a.toast("File dialog failed: "+err.Error(), true) }
 		default:
-			a.bus.Dispatch(func() { done(path) })
+			return func() { done(path) }
 		}
-	}()
+	})
 	return stop
 }
 
