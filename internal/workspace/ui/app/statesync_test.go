@@ -208,3 +208,40 @@ func TestHostileStateValuesStillGiveAWorkingWindow(t *testing.T) {
 		t.Fatalf("tabs %d active %d", len(a.list.Tabs), a.list.Active)
 	}
 }
+
+func TestStateSnapshotNamesTheRequestPaneOfEachTab(t *testing.T) {
+	a := stateApp(t, "")
+	a.openRequest(a.col().Folders[0].Requests[0])
+	a.cur().paneTab = 1
+	s := a.snapshot()
+	if got, want := s.Tabs[1].PaneLabel, requestPanesFor(a.cur())[1].label; got != want {
+		t.Errorf("PaneLabel = %q, want %q", got, want)
+	}
+}
+
+// The index of a pane moves when a pane is added before it: Proto and then
+// Schema were put after Body, so a gRPC tab saved on Headers came back on
+// the pane that now has its number. The label says which one it was.
+func TestStateRestoreFindsTheRequestPaneByItsLabel(t *testing.T) {
+	tests := []struct {
+		name string
+		tab  state.Tab
+		want string
+	}{
+		{"label beats a stale index", state.Tab{Pane: 2, PaneLabel: "Headers"}, "Headers"},
+		{"an old file has the index only", state.Tab{Pane: 1}, "Body"},
+		{"a label the tab no longer has opens the first pane", state.Tab{Pane: 1, PaneLabel: "Gone"}, "Params"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			a := stateApp(t, "")
+			request := a.col().Folders[0].Requests[0]
+			request.Protocol = "grpc"
+			test.tab.Path = "User/" + request.Name
+			a.restore(state.State{Tabs: []state.Tab{test.tab}})
+			if got := requestPanesFor(a.cur())[a.cur().paneTab].label; got != test.want {
+				t.Errorf("restored pane = %q, want %q", got, test.want)
+			}
+		})
+	}
+}

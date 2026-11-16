@@ -123,7 +123,7 @@ func (a *App) snapshot() state.State {
 	for _, t := range a.openTabs() {
 		if p := a.requestPath(t.Req); p != "" {
 			owner, _ := a.open.Owner(t.Req)
-			s.Tabs = append(s.Tabs, state.Tab{Collection: owner.Dir, Path: p, Pane: t.paneTab, Resp: t.respTab})
+			s.Tabs = append(s.Tabs, state.Tab{Collection: owner.Dir, Path: p, Pane: t.paneTab, PaneLabel: requestPaneLabel(t), Resp: t.respTab})
 			kept = append(kept, len(s.Tabs)-1)
 		} else {
 			kept = append(kept, -1)
@@ -179,6 +179,32 @@ func (a *App) expandPaths(col *model.Collection, paths []string) {
 	}
 }
 
+// requestPaneLabel is the label of the request pane t shows, "" when its
+// index points nowhere.
+func requestPaneLabel(t *reqTab) string {
+	panes := requestPanesFor(t)
+	if t.paneTab < 0 || t.paneTab >= len(panes) {
+		return ""
+	}
+	return panes[t.paneTab].label
+}
+
+// rememberedPane is the index of the request pane a remembered tab was
+// on: found by its label, since an index moves when a pane is added before
+// it, else by the index an older file holds, else the first pane.
+func rememberedPane(t *reqTab, remembered state.Tab) int {
+	panes := requestPanesFor(t)
+	for i, p := range panes {
+		if remembered.PaneLabel != "" && p.label == remembered.PaneLabel {
+			return i
+		}
+	}
+	if remembered.PaneLabel == "" && remembered.Pane >= 0 && remembered.Pane < len(panes) {
+		return remembered.Pane
+	}
+	return t.paneTab
+}
+
 // restore applies a remembered state to a freshly built app. Anything
 // that no longer exists is skipped, and values are kept in range.
 func (a *App) restore(s state.State) {
@@ -218,9 +244,7 @@ func (a *App) restore(s state.State) {
 		for i, rt := range saved {
 			a.updateTabs(tabs.Open{Req: requests[i]})
 			t := a.cur()
-			if rt.Pane >= 0 && rt.Pane < len(requestPanesFor(t)) {
-				t.paneTab = rt.Pane
-			}
+			t.paneTab = rememberedPane(t, rt)
 			if rt.Resp >= 0 && rt.Resp < len(responsePanesFor(t)) {
 				t.respTab = rt.Resp
 			}

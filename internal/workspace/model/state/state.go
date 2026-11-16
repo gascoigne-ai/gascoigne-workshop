@@ -36,9 +36,10 @@ func (w Window) Clamp(mw, mh int) Window {
 type Tab struct {
 	// Collection is the folder of the request's collection (see CollectionAt).
 	Collection string `json:"collection,omitempty"`
-	Path       string `json:"path"`           // folder names and request name joined by "/"
-	Pane       int    `json:"pane,omitempty"` // selected request pane tab
-	Resp       int    `json:"resp,omitempty"` // selected response pane tab
+	Path       string `json:"path"`                // folder names and request name joined by "/"
+	Pane       int    `json:"pane,omitempty"`      // selected request pane tab
+	PaneLabel  string `json:"paneLabel,omitempty"` // its label, which survives a pane added before it; Pane is for older files
+	Resp       int    `json:"resp,omitempty"`      // selected response pane tab
 }
 
 // State is everything remembered.
