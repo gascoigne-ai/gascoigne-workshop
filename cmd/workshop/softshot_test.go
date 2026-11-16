@@ -36,8 +36,8 @@ var (
 	buildErr    error
 )
 
-func TestMain(m *testing.M) {
-	code := m.Run()
+func TestMain(runner *testing.M) {
+	code := runner.Run()
 	if buildDir != "" {
 		os.RemoveAll(buildDir)
 	}

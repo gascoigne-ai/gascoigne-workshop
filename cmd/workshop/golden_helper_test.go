@@ -43,8 +43,8 @@ func compareImages(want, got image.Image) imageDiff {
 		return imageDiff{SizeDiffers: true}
 	}
 	differing := 0
-	forEachPixel(want, func(x, y int) {
-		if pixelsDiffer(want.At(x, y), got.At(x, y)) {
+	forEachPixel(want, func(posX, posY int) {
+		if pixelsDiffer(want.At(posX, posY), got.At(posX, posY)) {
 			differing++
 		}
 	})
@@ -54,9 +54,9 @@ func compareImages(want, got image.Image) imageDiff {
 // diffImage has the size of want and marks the pixels that differ.
 func diffImage(want, got image.Image) *image.RGBA {
 	diff := image.NewRGBA(want.Bounds())
-	forEachPixel(want, func(x, y int) {
-		if pixelsDiffer(want.At(x, y), got.At(x, y)) {
-			diff.SetRGBA(x, y, diffMark)
+	forEachPixel(want, func(posX, posY int) {
+		if pixelsDiffer(want.At(posX, posY), got.At(posX, posY)) {
+			diff.SetRGBA(posX, posY, diffMark)
 		}
 	})
 	return diff
