@@ -68,19 +68,19 @@ func (p *Page) setNote(tok w.Token, note string) {
 // colorEdited applies the hex a user typed for c, or says why not: a
 // color that does not parse, or whose text would be unreadable on it
 // (with the ratio), is refused and nothing changes.
-func (p *Page) edited(host Host, customColorValue appearance.CustomColor) {
-	text := p.Input(host, customColorValue.Token).Text
+func (p *Page) edited(host Host, customColor appearance.CustomColor) {
+	text := p.Input(host, customColor.Token).Text
 	col, err := w.ParseHex(text)
 	if err != nil {
-		p.setNote(customColorValue.Token, "Use #rrggbb")
+		p.setNote(customColor.Token, "Use #rrggbb")
 		return
 	}
 	need := appearance.RequiredRatio(host.Settings().Contrast)
-	if ratio := w.ContrastRatio(col, host.Color(customColorValue.Text)); ratio < need {
-		p.setNote(customColorValue.Token, fmt.Sprintf("Contrast %.1f:1 is below %.1f:1", ratio, need))
+	if ratio := w.ContrastRatio(col, host.Color(customColor.Text)); ratio < need {
+		p.setNote(customColor.Token, fmt.Sprintf("Contrast %.1f:1 is below %.1f:1", ratio, need))
 		return
 	}
-	p.setNote(customColorValue.Token, "")
+	p.setNote(customColor.Token, "")
 	host.Send(prefs.Edit{Edit: func(prefs *settings.Settings) {
 		id := appearance.ThemeIDOf(prefs.Theme)
 		if prefs.Colors == nil {
@@ -89,7 +89,7 @@ func (p *Page) edited(host Host, customColorValue appearance.CustomColor) {
 		if prefs.Colors[id] == nil {
 			prefs.Colors[id] = map[string]string{}
 		}
-		prefs.Colors[id][string(customColorValue.Token)] = w.FormatHex(col)
+		prefs.Colors[id][string(customColor.Token)] = w.FormatHex(col)
 	}})
 }
 

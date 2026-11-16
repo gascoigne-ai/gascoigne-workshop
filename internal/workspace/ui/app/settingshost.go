@@ -102,13 +102,13 @@ func (a *App) CopyText(text string) { _ = a.ctx.Clipboard.Write(text) } // the c
 
 // applySettings makes s the settings in effect, with everything that
 // follows from them.
-func (a *App) applySettings(other settings.Settings) {
-	a.settings = other
-	if err := a.ctx.SetTheme(appearance.ThemeWith(other)); err != nil {
+func (a *App) applySettings(prefs settings.Settings) {
+	a.settings = prefs
+	if err := a.ctx.SetTheme(appearance.ThemeWith(prefs)); err != nil {
 		a.status = err.Error()
 	}
 	for _, t := range a.openTabs() {
-		t.look.Mode = viewer.ModeOf(other.ResponseView)
+		t.look.Mode = viewer.ModeOf(prefs.ResponseView)
 		a.refreshView(t)
 	}
 	a.colors.Forget()

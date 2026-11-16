@@ -96,8 +96,8 @@ func (f *TextField) snapshot() snapshot {
 	return snapshot{f.Text, f.Cursor, f.Anchor, f.HasSel}
 }
 
-func (f *TextField) restore(snapshotValue snapshot) {
-	f.Text, f.Cursor, f.Anchor, f.HasSel = snapshotValue.text, snapshotValue.cursor, snapshotValue.anchor, snapshotValue.hasSel
+func (f *TextField) restore(snapshot snapshot) {
+	f.Text, f.Cursor, f.Anchor, f.HasSel = snapshot.text, snapshot.cursor, snapshot.anchor, snapshot.hasSel
 	f.last = kindNone
 }
 
@@ -364,9 +364,9 @@ func (f *TextField) Apply(typed []rune, edits []core.Edit, extend bool) (changed
 	return changed
 }
 
-func (f *TextField) edit(editValue core.Edit, extend bool) (changed bool) {
+func (f *TextField) edit(edit core.Edit, extend bool) (changed bool) {
 	runes := []rune(f.Text)
-	switch editValue {
+	switch edit {
 	case core.EditBackspace:
 		return f.deleteRange(f.Cursor-1, f.Cursor, kindDelete)
 	case core.EditDelete:
@@ -406,7 +406,7 @@ func (f *TextField) edit(editValue core.Edit, extend bool) (changed bool) {
 	case core.EditDocEnd:
 		f.moveTo(len(runes), extend)
 	case core.EditUp, core.EditDown, core.EditPageUp, core.EditPageDown:
-		f.vertical(editValue, extend)
+		f.vertical(edit, extend)
 	case core.EditNewline:
 		return f.Multiline && f.newline()
 	case core.EditIndent:
@@ -418,12 +418,12 @@ func (f *TextField) edit(editValue core.Edit, extend bool) (changed bool) {
 }
 
 // vertical moves by lines in a multi-line field; single-line fields ignore it.
-func (f *TextField) vertical(editValue core.Edit, extend bool) {
+func (f *TextField) vertical(edit core.Edit, extend bool) {
 	if !f.Multiline {
 		return
 	}
 	page := max(f.ViewLines, 1)
-	dy := map[core.Edit]int{core.EditUp: -1, core.EditDown: 1, core.EditPageUp: -page, core.EditPageDown: page}[editValue]
+	dy := map[core.Edit]int{core.EditUp: -1, core.EditDown: 1, core.EditPageUp: -page, core.EditPageDown: page}[edit]
 	f.moveLines(dy, extend)
 }
 

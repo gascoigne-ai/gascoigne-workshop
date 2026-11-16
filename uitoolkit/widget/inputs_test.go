@@ -73,12 +73,12 @@ func areaBox(t *testing.T, text string) (*TextArea, *core.Ctx, *El, *int) {
 	return a, c, root, &changes
 }
 
-func focusArea(textAreaValue *TextArea, ctx *core.Ctx, root *El) {
+func focusArea(textArea *TextArea, ctx *core.Ctx, root *El) {
 	ctx.In = core.Input{X: 380, Y: 5, Click: true, Held: true, Clicks: 1}
 	Update(ctx, root)
 	ctx.In = core.Input{X: 380, Y: 5}
 	Update(ctx, root)
-	_ = textAreaValue
+	_ = textArea
 }
 
 func TestTextAreaTabIndentsAndKeepsFocus(t *testing.T) {

@@ -65,16 +65,16 @@ func (a *App) duplicateTab(index int) {
 
 // ---- table rows ---------------------------------------------------------------
 
-func (a *App) rowMenuItems(other pane, reqTabValue *reqTab, row int) []MenuItem {
-	n := len(*other.rows(a, reqTabValue))
-	a.rowSel = &rowSelection{pane: other, tab: reqTabValue, row: row}
+func (a *App) rowMenuItems(pane pane, reqTab *reqTab, row int) []MenuItem {
+	n := len(*pane.rows(a, reqTab))
+	a.rowSel = &rowSelection{pane: pane, tab: reqTab, row: row}
 	change := func(callback func(rows []model.KV) []model.KV) func() {
 		return func() {
 			a.commitEdit()
-			a.applyRows(other, reqTabValue, callback)
+			a.applyRows(pane, reqTab, callback)
 		}
 	}
-	items := append(a.copyRowItems(*other.rows(a, reqTabValue), row, false), append([]MenuItem{menuSeparator}, []MenuItem{
+	items := append(a.copyRowItems(*pane.rows(a, reqTab), row, false), append([]MenuItem{menuSeparator}, []MenuItem{
 		{Label: "Insert row above", Run: change(func(rows []model.KV) []model.KV { return model.InsertRow(rows, row, model.KV{Enabled: true}) })},
 		{Label: "Insert row below", Run: change(func(rows []model.KV) []model.KV { return model.InsertRow(rows, row+1, model.KV{Enabled: true}) })},
 		{Label: "Duplicate", Run: change(func(rows []model.KV) []model.KV { return model.DuplicateRow(rows, row) })},
@@ -86,7 +86,7 @@ func (a *App) rowMenuItems(other pane, reqTabValue *reqTab, row int) []MenuItem 
 		menuSeparator,
 		{Label: "Delete", Run: change(func(rows []model.KV) []model.KV { return model.DeleteRow(rows, row) })},
 	}...)...)
-	return append(items, a.secretItems(other, row)...)
+	return append(items, a.secretItems(pane, row)...)
 }
 
 // secretItems is the menu entry that marks a variable of the active

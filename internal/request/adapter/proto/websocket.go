@@ -184,11 +184,11 @@ func (s *wsSession) readLoop() {
 }
 
 // render shows a message as text; binary data as hex, cut at 64 bytes.
-func render(messageValue ws.Message) string {
-	if messageValue.Type == ws.Text || utf8.Valid(messageValue.Data) {
-		return string(messageValue.Data)
+func render(message ws.Message) string {
+	if message.Type == ws.Text || utf8.Valid(message.Data) {
+		return string(message.Data)
 	}
-	d := messageValue.Data
+	d := message.Data
 	suffix := ""
 	if len(d) > 64 {
 		d, suffix = d[:64], "…"

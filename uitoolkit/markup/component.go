@@ -1074,14 +1074,14 @@ func (t *Template) args(element *node, spec elementSpec, scope Scope) ([]any, er
 }
 
 // bindHandler reads the scope function an event attribute names.
-func (t *Template) bindHandler(node *node, attrValue attr, handlerAttrValue handlerAttr, sc Scope) (view.Option, error) {
-	value, err := lookup(strings.TrimSpace(attrValue.value), sc)
+func (t *Template) bindHandler(node *node, attr attr, handlerAttr handlerAttr, sc Scope) (view.Option, error) {
+	value, err := lookup(strings.TrimSpace(attr.value), sc)
 	if err != nil {
 		return nil, t.errf(node, "%v", err)
 	}
-	opt, err := handlerAttrValue.bind(value)
+	opt, err := handlerAttr.bind(value)
 	if err != nil {
-		return nil, t.errf(node, "%s=%q %v", attrValue.name, attrValue.value, err)
+		return nil, t.errf(node, "%s=%q %v", attr.name, attr.value, err)
 	}
 	return opt, nil
 }

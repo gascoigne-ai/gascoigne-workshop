@@ -120,9 +120,9 @@ func (r REST) Send(ctx context.Context, req model.Request) (model.Response, erro
 	}, nil
 }
 
-func headerRows(headerValue http.Header) []model.KV {
+func headerRows(header http.Header) []model.KV {
 	var rows []model.KV
-	for name, values := range headerValue {
+	for name, values := range header {
 		for _, v := range values {
 			rows = append(rows, model.KV{Name: name, Value: v, Enabled: true})
 		}

@@ -120,20 +120,20 @@ func Table(spec TableSpec, opts ...Option) *El {
 // headerCheck is the checkbox that enables or disables every row.
 // tableHeader is the caption row; with a Widths state it carries the
 // draggable column dividers on top.
-func tableHeader(tableSpecValue TableSpec) Node {
+func tableHeader(tableSpec TableSpec) Node {
 	header := Row(H(core.RowH), Bg(core.Panel), BorderB(core.Border),
-		If(tableSpecValue.hasGrip(), Row(W(tableGripW))),
-		If(tableSpecValue.Editable, headerCheck(tableSpecValue)),
-		For(tableSpecValue.Columns, func(index int, name string) Node {
-			return Row(Grow(tableSpecValue.weight(index)), PadX(8), When(index > 0, Separator(7)),
+		If(tableSpec.hasGrip(), Row(W(tableGripW))),
+		If(tableSpec.Editable, headerCheck(tableSpec)),
+		For(tableSpec.Columns, func(index int, name string) Node {
+			return Row(Grow(tableSpec.weight(index)), PadX(8), When(index > 0, Separator(7)),
 				Text(strings.ToUpper(name), Small(), Bold(), Muted(), Grow(1)))
 		}),
-		If(tableSpecValue.Editable, Row(W(tableActionW))),
+		If(tableSpec.Editable, Row(W(tableActionW))),
 	)
-	if tableSpecValue.Widths == nil {
+	if tableSpec.Widths == nil {
 		return header
 	}
-	return Stack(H(core.RowH), header, Custom(colHandlesB{header: header, spec: tableSpecValue}))
+	return Stack(H(core.RowH), header, Custom(colHandlesB{header: header, spec: tableSpec}))
 }
 
 // hasGrip reports whether rows have a drag handle.
@@ -147,20 +147,20 @@ func headerCheck(spec TableSpec) Node {
 	return Row(items...)
 }
 
-func tableRow(spec TableSpec, index int, tableRowValue TableRow, placeholder, last bool) Node {
+func tableRow(spec TableSpec, index int, tableRow TableRow, placeholder, last bool) Node {
 	clr := core.Text
-	if tableRowValue.Muted {
+	if tableRow.Muted {
 		clr = core.Muted
 	}
 	actions := spec.Editable && !placeholder
 	row := []Item{
 		H(core.RowH),
 		If(spec.hasGrip(), gripCell(spec, index, placeholder)),
-		If(actions, Row(W(tableActionW), JustifyContent(JustifyCenter), OnClick(func() { spec.OnToggle(index) }), Tooltip("Enable or disable this row"), Checkbox(tableRowValue.Checked))),
+		If(actions, Row(W(tableActionW), JustifyContent(JustifyCenter), OnClick(func() { spec.OnToggle(index) }), Tooltip("Enable or disable this row"), Checkbox(tableRow.Checked))),
 		If(placeholder, Row(W(tableActionW))),
-		For(tableRowValue.Cells, func(other int, text string) Node {
+		For(tableRow.Cells, func(other int, text string) Node {
 			cellClr := clr
-			if other == 0 && tableRowValue.Flagged {
+			if other == 0 && tableRow.Flagged {
 				cellClr = core.Error
 			}
 			return tableCell(spec, index, other, text, cellClr)

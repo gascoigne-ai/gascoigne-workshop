@@ -50,17 +50,17 @@ var settingControls = map[string]settingControl{
 	},
 }
 
-func sizeLabel(sizeChoiceValue appearance.SizeChoice) (string, string) {
-	return sizeChoiceValue.ID, sizeChoiceValue.Label
+func sizeLabel(sizeChoice appearance.SizeChoice) (string, string) {
+	return sizeChoice.ID, sizeChoice.Label
 }
-func cornerLabel(cornerChoiceValue appearance.CornerChoice) (string, string) {
-	return cornerChoiceValue.ID, cornerChoiceValue.Label
+func cornerLabel(cornerChoice appearance.CornerChoice) (string, string) {
+	return cornerChoice.ID, cornerChoice.Label
 }
-func contrastLabel(contrastChoiceValue appearance.ContrastChoice) (string, string) {
-	return contrastChoiceValue.ID, contrastChoiceValue.Label
+func contrastLabel(contrastChoice appearance.ContrastChoice) (string, string) {
+	return contrastChoice.ID, contrastChoice.Label
 }
-func layoutLabel(layoutChoiceValue appearance.LayoutChoice) (string, string) {
-	return layoutChoiceValue.ID, layoutChoiceValue.Label
+func layoutLabel(layoutChoice appearance.LayoutChoice) (string, string) {
+	return layoutChoice.ID, layoutChoice.Label
 }
 
 // labelsOf maps ids to the labels a table of choices gives them.

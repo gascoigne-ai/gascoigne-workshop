@@ -33,16 +33,16 @@ func kvField(kv *model.KV, col int) *string {
 
 // beginEdit starts editing a cell, committing any edit in progress.
 // The old text is selected so typing replaces it.
-func (a *App) beginEdit(other pane, reqTabValue *reqTab, row, col int) {
+func (a *App) beginEdit(pane pane, reqTab *reqTab, row, col int) {
 	a.commitEdit()
-	field := widget.NewTextField(cellText(*other.rows(a, reqTabValue), row, col))
+	field := widget.NewTextField(cellText(*pane.rows(a, reqTab), row, col))
 	if field.Text != "" {
 		field.SelectAll()
 	}
 	field.Focused = true
-	a.edit = &cellEdit{pane: other, tab: reqTabValue, row: row, col: col, field: field}
-	if row < len(*other.rows(a, reqTabValue)) {
-		a.rowSel = &rowSelection{pane: other, tab: reqTabValue, row: row}
+	a.edit = &cellEdit{pane: pane, tab: reqTab, row: row, col: col, field: field}
+	if row < len(*pane.rows(a, reqTab)) {
+		a.rowSel = &rowSelection{pane: pane, tab: reqTab, row: row}
 	}
 }
 

@@ -179,13 +179,13 @@ func unique(base string, taken map[string]bool) string {
 
 // Save writes c below dir, creating it, and removes the request and
 // folder files of items that no longer exist.
-func Save(dir string, collectionValue model.Collection) error {
+func Save(dir string, collection model.Collection) error {
 	secrets := map[string]secret{}
-	meta := folderMeta{Name: collectionValue.Name, Vars: varsToFile(collectionValue.Vars, folderFile, secrets)}
-	if err := saveFolder(absoluteDir(dir), dir, "", &collectionValue.Folder, meta, secrets); err != nil {
+	meta := folderMeta{Name: collection.Name, Vars: varsToFile(collection.Vars, folderFile, secrets)}
+	if err := saveFolder(absoluteDir(dir), dir, "", &collection.Folder, meta, secrets); err != nil {
 		return err
 	}
-	if err := saveEnvs(dir, collectionValue.Envs, secrets); err != nil {
+	if err := saveEnvs(dir, collection.Envs, secrets); err != nil {
 		return err
 	}
 	if err := writeJSON(filepath.Join(dir, secretsFile), secrets, len(secrets) == 0); err != nil {
@@ -358,15 +358,15 @@ func requestToFile(request *model.Request, root string) (requestFile, secret) {
 }
 
 // fileToRequest is the request of a file in a collection kept in root.
-func fileToRequest(requestFileValue requestFile, secretValue secret, root string) *model.Request {
+func fileToRequest(requestFile requestFile, secret secret, root string) *model.Request {
 	return &model.Request{
-		Name: requestFileValue.Name, Protocol: requestFileValue.Protocol, Method: requestFileValue.Method, URL: requestFileValue.URL,
-		Params: fromKV(requestFileValue.Params), Headers: fromKV(requestFileValue.Headers),
-		BodyType: requestFileValue.BodyType, Body: requestFileValue.Body, Form: fromKV(requestFileValue.Form),
-		Auth: model.Auth{Type: requestFileValue.Auth.Type, User: requestFileValue.Auth.User, KeyName: requestFileValue.Auth.KeyName, KeyIn: requestFileValue.Auth.KeyIn,
-			Token: secretValue.Token, Password: secretValue.Password, KeyValue: secretValue.KeyValue},
-		TimeoutSec: requestFileValue.TimeoutSec, NoRedirects: requestFileValue.NoRedirects, InsecureTLS: requestFileValue.InsecureTLS, GraphQLVars: requestFileValue.GraphQLVars, Tests: requestFileValue.Tests,
-		Proto: model.ProtoSource{Files: requestFileValue.ProtoFiles, ImportPaths: requestFileValue.ImportPaths}.Loaded(root),
+		Name: requestFile.Name, Protocol: requestFile.Protocol, Method: requestFile.Method, URL: requestFile.URL,
+		Params: fromKV(requestFile.Params), Headers: fromKV(requestFile.Headers),
+		BodyType: requestFile.BodyType, Body: requestFile.Body, Form: fromKV(requestFile.Form),
+		Auth: model.Auth{Type: requestFile.Auth.Type, User: requestFile.Auth.User, KeyName: requestFile.Auth.KeyName, KeyIn: requestFile.Auth.KeyIn,
+			Token: secret.Token, Password: secret.Password, KeyValue: secret.KeyValue},
+		TimeoutSec: requestFile.TimeoutSec, NoRedirects: requestFile.NoRedirects, InsecureTLS: requestFile.InsecureTLS, GraphQLVars: requestFile.GraphQLVars, Tests: requestFile.Tests,
+		Proto: model.ProtoSource{Files: requestFile.ProtoFiles, ImportPaths: requestFile.ImportPaths}.Loaded(root),
 	}
 }
 

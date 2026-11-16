@@ -251,8 +251,8 @@ func (c *Ctx) Clip(dst *ebiten.Image, rect Rect) *ebiten.Image {
 }
 
 // Width is the logical width of s in face.
-func (c *Ctx) Width(face *text.GoTextFace, stringValue string) int {
-	w, _ := text.Measure(stringValue, face, 0)
+func (c *Ctx) Width(face *text.GoTextFace, string string) int {
+	w, _ := text.Measure(string, face, 0)
 	return int(w/c.Scale + 0.5)
 }
 
@@ -274,11 +274,11 @@ func (c *Ctx) LineH(face *text.GoTextFace) int {
 func (c *Ctx) Ascent(face *text.GoTextFace) int { return int(face.Metrics().HAscent/c.Scale + 0.5) }
 
 // Text draws s with its top-left at x, y.
-func (c *Ctx) Text(dst *ebiten.Image, face *text.GoTextFace, stringValue string, posX, posY int, clr color.RGBA) {
+func (c *Ctx) Text(dst *ebiten.Image, face *text.GoTextFace, string string, posX, posY int, clr color.RGBA) {
 	op := &text.DrawOptions{}
 	op.GeoM.Translate(float64(posX)*c.Scale, float64(posY)*c.Scale)
 	op.ColorScale.ScaleWithColor(clr)
-	text.Draw(dst, stringValue, face, op)
+	text.Draw(dst, string, face, op)
 }
 
 // TextMid draws s starting at x, vertically centered in r.
@@ -420,8 +420,8 @@ func fillGradient(dst *ebiten.Image, path *vector.Path, y0, y1 float32, top, bot
 	span := max(y1-y0, 1)
 	for i := range verts {
 		t := min(max((verts[i].DstY-y0)/span, 0), 1)
-		mix := func(value, uint8Value uint8) float32 {
-			return (float32(value) + (float32(uint8Value)-float32(value))*t) / 255
+		mix := func(value, uint8 uint8) float32 {
+			return (float32(value) + (float32(uint8)-float32(value))*t) / 255
 		}
 		verts[i].ColorR, verts[i].ColorG, verts[i].ColorB, verts[i].ColorA = mix(top.R, bottom.R), mix(top.G, bottom.G), mix(top.B, bottom.B), mix(top.A, bottom.A)
 		verts[i].SrcX, verts[i].SrcY = 0.5, 0.5

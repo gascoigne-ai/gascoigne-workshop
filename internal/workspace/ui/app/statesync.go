@@ -145,7 +145,7 @@ func (a *App) snapshot() state.State {
 
 // snapshotExpanded records the open folders of entry's collection: under
 // its folder, or, for the collection that is not saved, in Expanded.
-func (a *App) snapshotExpanded(stateValue *state.State, entry collections.Entry) {
+func (a *App) snapshotExpanded(state *state.State, entry collections.Entry) {
 	var paths []string
 	walkFolders(&entry.Collection.Folder, "", func(name string, folder *model.Folder) {
 		if a.expanded[folder] {
@@ -156,13 +156,13 @@ func (a *App) snapshotExpanded(stateValue *state.State, entry collections.Entry)
 		return
 	}
 	if entry.Dir == "" {
-		stateValue.Expanded = append(stateValue.Expanded, paths...)
+		state.Expanded = append(state.Expanded, paths...)
 		return
 	}
-	if stateValue.ExpandedIn == nil {
-		stateValue.ExpandedIn = map[string][]string{}
+	if state.ExpandedIn == nil {
+		state.ExpandedIn = map[string][]string{}
 	}
-	stateValue.ExpandedIn[entry.Dir] = paths
+	state.ExpandedIn[entry.Dir] = paths
 }
 
 // expandPaths opens the folders of col at the remembered paths.

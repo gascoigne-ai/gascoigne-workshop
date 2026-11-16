@@ -262,8 +262,8 @@ func Changed(prefs Settings, key string) bool {
 }
 
 // Reset puts the default back as the value of key.
-func Reset(settingsValue *Settings, key string) {
-	current, defaults := asMap(*settingsValue), asMap(Default())
+func Reset(settings *Settings, key string) {
+	current, defaults := asMap(*settings), asMap(Default())
 	if value, ok := defaults[key]; ok {
 		current[key] = value
 	} else {
@@ -272,7 +272,7 @@ func Reset(settingsValue *Settings, key string) {
 	data, _ := json.Marshal(current)
 	rebuilt := Default()
 	_ = json.Unmarshal(data, &rebuilt)
-	*settingsValue = rebuilt
+	*settings = rebuilt
 }
 
 // Minimal is the settings text with only what differs from the defaults,

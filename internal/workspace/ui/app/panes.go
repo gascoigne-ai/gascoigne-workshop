@@ -231,55 +231,55 @@ func (a *App) tablePane(pane pane, tab *reqTab, scroll *ScrollState) Node {
 }
 
 // tableView is a pane's table with the given padding around it.
-func (a *App) tableView(other pane, reqTabValue *reqTab, scroll *ScrollState, pad int) Node {
-	if b := a.bulk; b != nil && b.tab == reqTabValue && b.pane.label == other.label {
-		return a.bulkView(other, reqTabValue, pad)
+func (a *App) tableView(pane pane, reqTab *reqTab, scroll *ScrollState, pad int) Node {
+	if b := a.bulk; b != nil && b.tab == reqTab && b.pane.label == pane.label {
+		return a.bulkView(pane, reqTab, pad)
 	}
-	rows := other.rows(a, reqTabValue)
+	rows := pane.rows(a, reqTab)
 	spec := TableSpec{
-		CellStyler: a.cellStyler(reqTabValue.Req),
-		Widths:     a.widthsFor(other),
+		CellStyler: a.cellStyler(reqTab.Req),
+		Widths:     a.widthsFor(pane),
 		Columns:    []string{"Name", "Value"},
 		Weights:    []float64{35, 65},
 		Rows:       kvRows(*rows, false, false),
 	}
-	if !other.editable {
+	if !pane.editable {
 		spec.OnRowMenu = func(row, posX, posY int) { a.openMenu(posX, posY, a.copyRowItems(*rows, row, true)) }
 	}
-	if other.editable {
+	if pane.editable {
 		spec.Editable = true
 		spec.Columns = []string{"Name", "Value", "Description"}
 		spec.Weights = []float64{28, 40, 32}
-		spec.Rows = kvRows(*rows, true, other.flagDuplicates)
+		spec.Rows = kvRows(*rows, true, pane.flagDuplicates)
 		spec.Placeholder = spec.Columns
 		spec.AllChecked = model.AllEnabled(*rows)
 		spec.OnToggleAll = func() {
 			a.commitEdit()
-			a.applyRows(other, reqTabValue, func(rows []model.KV) []model.KV { return model.SetAll(rows, !model.AllEnabled(rows)) })
+			a.applyRows(pane, reqTab, func(rows []model.KV) []model.KV { return model.SetAll(rows, !model.AllEnabled(rows)) })
 		}
 		spec.OnToggle = func(index int) {
 			a.commitEdit()
-			a.applyRows(other, reqTabValue, func(rows []model.KV) []model.KV {
+			a.applyRows(pane, reqTab, func(rows []model.KV) []model.KV {
 				rows[index].Enabled = !rows[index].Enabled
 				return rows
 			})
 		}
 		spec.OnDelete = func(index int) {
 			a.commitEdit()
-			a.applyRows(other, reqTabValue, func(rows []model.KV) []model.KV { return model.DeleteRow(rows, index) })
+			a.applyRows(pane, reqTab, func(rows []model.KV) []model.KV { return model.DeleteRow(rows, index) })
 		}
-		spec.OnGrabRow = func(row int) { a.grabRow(other, reqTabValue, row) }
+		spec.OnGrabRow = func(row int) { a.grabRow(pane, reqTab, row) }
 		spec.OnDragOverRow = func(row int) { a.dragRowOver(row) }
-		spec.OnEditCell = func(row, col int) { a.beginEdit(other, reqTabValue, row, col) }
-		spec.OnRowMenu = func(row, posX, posY int) { a.openMenu(posX, posY, a.rowMenuItems(other, reqTabValue, row)) }
-		if e := a.edit; e != nil && e.pane.label == other.label && e.tab == reqTabValue {
+		spec.OnEditCell = func(row, col int) { a.beginEdit(pane, reqTab, row, col) }
+		spec.OnRowMenu = func(row, posX, posY int) { a.openMenu(posX, posY, a.rowMenuItems(pane, reqTab, row)) }
+		if e := a.edit; e != nil && e.pane.label == pane.label && e.tab == reqTab {
 			spec.Editing = &TableEdit{Row: e.row, Col: e.col, Field: &e.field, OnEnter: a.commitEdit, OnTab: a.tabEdit, Options: TextMenu(&e.field)}
 		}
-		if sel := a.rowSel; sel != nil && sel.tab == reqTabValue && sel.pane.label == other.label && sel.row < len(*rows) {
+		if sel := a.rowSel; sel != nil && sel.tab == reqTab && sel.pane.label == pane.label && sel.row < len(*rows) {
 			spec.Selected = &sel.row
 		}
 	}
-	scope := a.tableCaptionScope(other, reqTabValue, pad)
+	scope := a.tableCaptionScope(pane, reqTab, pad)
 	scope["scroll"] = scroll
 	scope["spec"] = spec
 	return tableViewTemplate.MustBuild(scope)

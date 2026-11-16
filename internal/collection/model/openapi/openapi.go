@@ -197,7 +197,7 @@ func (d *doc) schema(other map[string]any, depth int) map[string]any {
 	return out
 }
 
-func buildRequest(docValue *doc, method, path string, op operation, shared []param) model.Request {
+func buildRequest(doc *doc, method, path string, op operation, shared []param) model.Request {
 	name := op.Summary
 	if name == "" {
 		name = op.OperationID
@@ -209,7 +209,7 @@ func buildRequest(docValue *doc, method, path string, op operation, shared []par
 	url := "{{" + BaseURLVar + "}}" + pathVars(path)
 	var query []model.KV
 	for _, raw := range append(append([]param{}, shared...), op.Parameters...) {
-		p := docValue.resolve(raw)
+		p := doc.resolve(raw)
 		value := paramValue(p)
 		switch p.In {
 		case "query":
@@ -221,7 +221,7 @@ func buildRequest(docValue *doc, method, path string, op operation, shared []par
 	req.Params = query
 	req.URL = model.WithParams(url, req.Params)
 	if op.RequestBody != nil {
-		body := docValue.resolveBody(*op.RequestBody)
+		body := doc.resolveBody(*op.RequestBody)
 		if mt, ok := body.Content["application/json"]; ok {
 			req.BodyType = model.BodyJSON
 			switch {
@@ -229,7 +229,7 @@ func buildRequest(docValue *doc, method, path string, op operation, shared []par
 				b, _ := json.MarshalIndent(mt.Example, "", "  ")
 				req.Body = string(b)
 			case mt.Schema != nil:
-				req.Body = indent(model.Skeleton(docValue.schema(mt.Schema, 0)))
+				req.Body = indent(model.Skeleton(doc.schema(mt.Schema, 0)))
 			default:
 				req.Body = "{}"
 			}

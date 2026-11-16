@@ -30,13 +30,13 @@ func (a *App) applyRows(pane pane, tab *reqTab, change func(rows []model.KV) []m
 }
 
 // rowsAltered runs what must follow any change of a table's rows.
-func (a *App) rowsAltered(other pane, reqTabValue *reqTab) {
-	a.rowsChanged(other, reqTabValue)
-	n := len(*other.rows(a, reqTabValue))
-	if e := a.edit; e != nil && e.pane.label == other.label && e.tab == reqTabValue && e.row > n {
+func (a *App) rowsAltered(pane pane, reqTab *reqTab) {
+	a.rowsChanged(pane, reqTab)
+	n := len(*pane.rows(a, reqTab))
+	if e := a.edit; e != nil && e.pane.label == pane.label && e.tab == reqTab && e.row > n {
 		a.edit = nil
 	}
-	if s := a.rowSel; s != nil && s.pane.label == other.label && s.tab == reqTabValue && s.row >= n {
+	if s := a.rowSel; s != nil && s.pane.label == pane.label && s.tab == reqTab && s.row >= n {
 		a.rowSel = nil
 	}
 }
@@ -85,12 +85,12 @@ func (a *App) rowTarget() (p pane, t *reqTab, row, col int, editing, ok bool) {
 }
 
 // afterRowOp puts the edit or the selection on row, in column col.
-func (a *App) afterRowOp(other pane, reqTabValue *reqTab, row, col int, editing bool) {
+func (a *App) afterRowOp(pane pane, reqTab *reqTab, row, col int, editing bool) {
 	if editing {
-		a.beginEdit(other, reqTabValue, row, col)
+		a.beginEdit(pane, reqTab, row, col)
 		return
 	}
-	a.rowSel = &rowSelection{pane: other, tab: reqTabValue, row: row}
+	a.rowSel = &rowSelection{pane: pane, tab: reqTab, row: row}
 }
 
 // insertRowBelow adds an empty enabled row under the current one and edits it.
@@ -134,10 +134,10 @@ func (a *App) moveRow(delta int) {
 
 // grabRow starts dragging a row by its grip; the row becomes the
 // selected one.
-func (a *App) grabRow(other pane, reqTabValue *reqTab, row int) {
+func (a *App) grabRow(pane pane, reqTab *reqTab, row int) {
 	a.commitEdit()
-	a.rowSel = &rowSelection{pane: other, tab: reqTabValue, row: row}
-	a.dragRow = &rowSelection{pane: other, tab: reqTabValue, row: row}
+	a.rowSel = &rowSelection{pane: pane, tab: reqTab, row: row}
+	a.dragRow = &rowSelection{pane: pane, tab: reqTab, row: row}
 }
 
 // dragRowOver moves the dragged row to the place of the row the pointer
@@ -174,13 +174,13 @@ func (a *App) deleteRow() {
 
 // ---- bulk edit -------------------------------------------------------------
 
-func (a *App) toggleBulk(other pane, reqTabValue *reqTab) {
+func (a *App) toggleBulk(pane pane, reqTab *reqTab) {
 	if a.bulk != nil {
 		a.closeBulk()
 		return
 	}
 	a.commitEdit()
-	a.bulk = &bulkEdit{pane: other, tab: reqTabValue, area: widget.NewTextArea(model.FormatBulk(*other.rows(a, reqTabValue)))}
+	a.bulk = &bulkEdit{pane: pane, tab: reqTab, area: widget.NewTextArea(model.FormatBulk(*pane.rows(a, reqTab)))}
 }
 
 // closeBulk turns the text back into rows, as one change.

@@ -157,11 +157,11 @@ func (a *App) overlayOpen() bool {
 }
 
 // dialogForm is the typed form of a dialog, nothing for the others.
-func (a *App) dialogForm(dialogValue *dialog) Node {
-	if dialogValue.form == nil {
+func (a *App) dialogForm(dialog *dialog) Node {
+	if dialog.form == nil {
 		return nil
 	}
-	return dialogValue.form.View(a)
+	return dialog.form.View(a)
 }
 
 // openLayers are the things Escape can close right now.

@@ -191,8 +191,8 @@ type fakeClipboard struct {
 	readErr error
 }
 
-func (f *fakeClipboard) Read() (string, error)          { return f.text, f.readErr }
-func (f *fakeClipboard) Write(stringValue string) error { f.text = stringValue; return nil }
+func (f *fakeClipboard) Read() (string, error)     { return f.text, f.readErr }
+func (f *fakeClipboard) Write(string string) error { f.text = string; return nil }
 
 func TestSpacerAndRulesTakeTheirSizes(t *testing.T) {
 	h, v, gap := HRule(), VRule(), Spacer()
@@ -294,10 +294,10 @@ func TestMovedShiftsACenteredElementAndKeepsItInsideTheStack(t *testing.T) {
 
 // dragRig is a 100x40 centered dialog in a 400x200 stack whose top 10 rows
 // are a drag handle with a 20 px button at its left end.
-func dragRig(t *testing.T, moveStateValue *MoveState, dismissed *int) (*El, *core.Ctx) {
+func dragRig(t *testing.T, moveState *MoveState, dismissed *int) (*El, *core.Ctx) {
 	t.Helper()
 	handle := Row(H(20), DragHandle(), box(W(20), OnClick(func() {})))
-	dialog := Col(W(100), H(40), FloatCenter(), Moved(moveStateValue), Modal(), OnDismiss(func() { *dismissed++ }), handle, box(Grow(1)))
+	dialog := Col(W(100), H(40), FloatCenter(), Moved(moveState), Modal(), OnDismiss(func() { *dismissed++ }), handle, box(Grow(1)))
 	root := Stack(box(), dialog)
 	c := testCtx(t)
 	Layout(c, root, 400, 200)

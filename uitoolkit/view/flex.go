@@ -25,17 +25,17 @@ const (
 )
 
 // AlignItems sets how a Row or Col places its children across it.
-func AlignItems(alignValue Align) Option {
-	return func(element *El) { element.alignItems = alignValue }
+func AlignItems(align Align) Option {
+	return func(element *El) { element.alignItems = align }
 }
 
 // AlignSelf overrides the parent's AlignItems for one child.
-func AlignSelf(alignValue Align) Option { return func(element *El) { element.alignSelf = alignValue } }
+func AlignSelf(align Align) Option { return func(element *El) { element.alignSelf = align } }
 
 // JustifyContent distributes free space along the main axis; it does
 // nothing when a child grows, since that child takes the space.
-func JustifyContent(justifyValue Justify) Option {
-	return func(element *El) { element.justify = justifyValue }
+func JustifyContent(justify Justify) Option {
+	return func(element *El) { element.justify = justify }
 }
 
 // MinW, MaxW, MinH and MaxH bound an element's size, whatever its

@@ -252,21 +252,21 @@ func get(list []kv, key string) string {
 	return ""
 }
 
-func convertAuth(authValue *auth) model.Auth {
-	if authValue == nil {
+func convertAuth(auth *auth) model.Auth {
+	if auth == nil {
 		return model.Auth{}
 	}
-	switch authValue.Type {
+	switch auth.Type {
 	case "bearer":
-		return model.Auth{Type: model.AuthBearer, Token: get(authValue.Bearer, "token")}
+		return model.Auth{Type: model.AuthBearer, Token: get(auth.Bearer, "token")}
 	case "basic":
-		return model.Auth{Type: model.AuthBasic, User: get(authValue.Basic, "username"), Password: get(authValue.Basic, "password")}
+		return model.Auth{Type: model.AuthBasic, User: get(auth.Basic, "username"), Password: get(auth.Basic, "password")}
 	case "apikey":
 		in := model.KeyInHeader
-		if get(authValue.APIKey, "in") == "query" {
+		if get(auth.APIKey, "in") == "query" {
 			in = model.KeyInQuery
 		}
-		return model.Auth{Type: model.AuthAPIKey, KeyName: get(authValue.APIKey, "key"), KeyValue: get(authValue.APIKey, "value"), KeyIn: in}
+		return model.Auth{Type: model.AuthAPIKey, KeyName: get(auth.APIKey, "key"), KeyValue: get(auth.APIKey, "value"), KeyIn: in}
 	}
 	return model.Auth{}
 }

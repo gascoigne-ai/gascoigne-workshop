@@ -58,7 +58,7 @@ func (b customB) drawOver(element *El, ctx *core.Ctx, dst *ebiten.Image) {
 
 // Custom makes an element that behaves as b. The component's options
 // configure b through Behavior.
-func Custom(behaviorValue Behavior, items ...Item) *El { return newEl(customB{behaviorValue}, items) }
+func Custom(behavior Behavior, items ...Item) *El { return newEl(customB{behavior}, items) }
 
 // Behavior is the behavior a Custom element was made with, or nil for
 // the toolkit's own kinds of element.

@@ -440,19 +440,19 @@ func (a *App) send(tab *reqTab) {
 // dispatch sends req on behalf of tab t: the request of the tab, or a
 // helper one such as a GraphQL schema query that uses the tab's URL and
 // credentials.
-func (a *App) dispatch(other *reqTab, source *model.Request) {
-	if !a.allowed(other, source, func() { a.dispatch(other, source) }) {
+func (a *App) dispatch(tab *reqTab, source *model.Request) {
+	if !a.allowed(tab, source, func() { a.dispatch(tab, source) }) {
 		return
 	}
-	seq, started := other.BeginSend()
+	seq, started := tab.BeginSend()
 	if !started {
 		return
 	}
 	a.status = "Sending " + source.URL
-	req := source.Expanded(a.varsFor(other.Req))
+	req := source.Expanded(a.varsFor(tab.Req))
 	a.calls.Sent(a.now(), req)
 	ctx, cancel := context.WithTimeout(context.Background(), a.timeoutFor(req))
-	other.cancel = cancel
+	tab.cancel = cancel
 	reg := a.reg // the command must not read App fields the UI goroutine replaces
 	a.bus.Run(ctx, func(ctx context.Context) bus.Msg {
 		defer cancel()
@@ -460,7 +460,7 @@ func (a *App) dispatch(other *reqTab, source *model.Request) {
 		if err != nil {
 			resp = model.Response{Err: err.Error()}
 		}
-		return sendResult{tab: other, seq: seq, resp: resp}
+		return sendResult{tab: tab, seq: seq, resp: resp}
 	})
 }
 
@@ -514,27 +514,27 @@ func (a *App) handle(msg bus.Msg) {
 	}
 }
 
-func (a *App) apply(sendResultValue sendResult) {
-	t := sendResultValue.tab
-	if !t.Accept(sendResultValue.seq) {
+func (a *App) apply(sendResult sendResult) {
+	t := sendResult.tab
+	if !t.Accept(sendResult.seq) {
 		return // the answer to a send that was cancelled or replaced
 	}
 	t.Remember(t.Resp, a.now())
-	t.Resp = &sendResultValue.resp
+	t.Resp = &sendResult.resp
 	a.saveHistory(t)
 	if path := a.requestPath(t.Req); path != "" {
 		owner, _ := a.open.Owner(t.Req)
-		a.sent.Record(a, a.now(), owner.Dir, path, t.Req, sendResultValue.resp.Status)
+		a.sent.Record(a, a.now(), owner.Dir, path, t.Req, sendResult.resp.Status)
 	}
-	a.calls.Answer(a.now(), t.Req, &sendResultValue.resp)
-	a.rememberSchema(t, &sendResultValue.resp)
+	a.calls.Answer(a.now(), t.Req, &sendResult.resp)
+	a.rememberSchema(t, &sendResult.resp)
 	a.refreshView(t)
-	if sendResultValue.resp.Err != "" {
+	if sendResult.resp.Err != "" {
 		a.status = "Request failed"
 		a.runTests(t)
 		return
 	}
-	a.status = fmt.Sprintf("%s %s: %d %s in %s", t.Req.Method, t.Req.URL, sendResultValue.resp.Status, sendResultValue.resp.StatusText, textfmt.Duration(sendResultValue.resp.Duration))
+	a.status = fmt.Sprintf("%s %s: %d %s in %s", t.Req.Method, t.Req.URL, sendResult.resp.Status, sendResult.resp.StatusText, textfmt.Duration(sendResult.resp.Duration))
 	a.runTests(t)
 }
 

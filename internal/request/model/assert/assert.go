@@ -201,20 +201,20 @@ func compareNumber(got float64, rest string) (bool, string) {
 	return false, "got " + strconv.FormatFloat(got, 'f', -1, 64)
 }
 
-func applyNumber(op string, value, float64Value float64) bool {
+func applyNumber(op string, value, float64 float64) bool {
 	switch op {
 	case "==":
-		return value == float64Value
+		return value == float64
 	case "!=":
-		return value != float64Value
+		return value != float64
 	case "<":
-		return value < float64Value
+		return value < float64
 	case "<=":
-		return value <= float64Value
+		return value <= float64
 	case ">":
-		return value > float64Value
+		return value > float64
 	}
-	return value >= float64Value
+	return value >= float64
 }
 
 func compareDuration(got time.Duration, rest string) (bool, string) {

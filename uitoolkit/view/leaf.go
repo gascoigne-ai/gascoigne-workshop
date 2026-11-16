@@ -61,9 +61,9 @@ func (textB) draw(element *El, ctx *core.Ctx, dst *ebiten.Image) {
 }
 
 // Text is one line of text, vertically centered in its box.
-func Text(stringValue string, opts ...Option) *El {
+func Text(string string, opts ...Option) *El {
 	e := newEl(textB{}, with(nil, opts))
-	e.text = stringValue
+	e.text = string
 	return e
 }
 

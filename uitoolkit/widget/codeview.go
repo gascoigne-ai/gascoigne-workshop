@@ -194,8 +194,8 @@ func (v *CodeView) textOf(lo, hi int) string {
 // textPos is a position in the text: an original line and a rune column.
 type textPos struct{ line, col int }
 
-func (p textPos) before(textPosValue textPos) bool {
-	return p.line < textPosValue.line || (p.line == textPosValue.line && p.col < textPosValue.col)
+func (p textPos) before(textPos textPos) bool {
+	return p.line < textPos.line || (p.line == textPos.line && p.col < textPos.col)
 }
 
 // lineLen is the number of runes in line i.
@@ -242,13 +242,13 @@ func (v *CodeView) SelectedText() string {
 }
 
 // SelectLines selects original lines a through b (either order), whole.
-func (v *CodeView) SelectLines(value, intValue int) {
+func (v *CodeView) SelectLines(value, int int) {
 	last := len(v.Lines) - 1
 	if last < 0 {
 		v.HasSel = false
 		return
 	}
-	lo, hi := min(max(value, 0), last), min(max(intValue, 0), last)
+	lo, hi := min(max(value, 0), last), min(max(int, 0), last)
 	if hi < lo {
 		lo, hi = hi, lo
 	}

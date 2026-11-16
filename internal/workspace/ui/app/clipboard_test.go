@@ -6,10 +6,10 @@ type fakeClip struct {
 }
 
 func (f *fakeClip) Read() (string, error) { return f.text, f.err }
-func (f *fakeClip) Write(stringValue string) error {
+func (f *fakeClip) Write(string string) error {
 	if f.err != nil {
 		return f.err
 	}
-	f.text = stringValue
+	f.text = string
 	return nil
 }

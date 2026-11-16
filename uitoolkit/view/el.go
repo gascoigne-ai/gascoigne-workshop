@@ -139,8 +139,8 @@ type Option func(*El)
 
 func (o Option) apply(element *El) { o(element) }
 
-func newEl(behaviorValue behavior, items []Item) *El {
-	e := &El{b: behaviorValue}
+func newEl(behavior behavior, items []Item) *El {
+	e := &El{b: behavior}
 	for _, it := range items {
 		if it != nil { // a bare nil, as opposed to a nil node from If
 			it.apply(e)

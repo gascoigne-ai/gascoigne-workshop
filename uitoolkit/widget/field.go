@@ -116,8 +116,8 @@ func (b *fieldB) DrawOver(element *El, ctx *core.Ctx, dst *ebiten.Image) {
 
 // Field is a single-line text input bound to f (Vue's v-model: the
 // widget edits f in place).
-func Field(textFieldValue *TextField, opts ...Option) *El {
-	return Custom(&fieldB{field: textFieldValue}, with([]Item{Control("field")}, opts)...)
+func Field(textField *TextField, opts ...Option) *El {
+	return Custom(&fieldB{field: textField}, with([]Item{Control("field")}, opts)...)
 }
 
 // Placeholder is the hint shown while the field is empty.

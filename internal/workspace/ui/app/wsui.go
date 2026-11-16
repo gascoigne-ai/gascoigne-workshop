@@ -77,18 +77,18 @@ func (a *App) toggleConnection(tab *reqTab) {
 }
 
 // connect dials in the background; the outcome arrives as a wsEvent.
-func (a *App) connect(other *reqTab) {
-	if !a.allowed(other, other.Req, func() { a.connect(other) }) {
+func (a *App) connect(tab *reqTab) {
+	if !a.allowed(tab, tab.Req, func() { a.connect(tab) }) {
 		return
 	}
-	gen := other.Begin()
-	a.status = "Connecting to " + other.Req.URL
-	req := other.Req.Expanded(a.varsFor(other.Req))
-	if other.Req.Protocol == "sse" && other.LastEventID != "" { // resume where the stream stopped
-		req.Headers = append(req.Headers, model.KV{Name: "Last-Event-ID", Value: other.LastEventID, Enabled: true})
+	gen := tab.Begin()
+	a.status = "Connecting to " + tab.Req.URL
+	req := tab.Req.Expanded(a.varsFor(tab.Req))
+	if tab.Req.Protocol == "sse" && tab.LastEventID != "" { // resume where the stream stopped
+		req.Headers = append(req.Headers, model.KV{Name: "Last-Event-ID", Value: tab.LastEventID, Enabled: true})
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), a.timeoutFor(req))
-	other.wsCancel = cancel
+	tab.wsCancel = cancel
 	reg := a.reg // the goroutine must not read App fields the UI goroutine replaces
 	a.bus.Run(context.Background(), func(context.Context) bus.Msg {
 		defer cancel()
@@ -106,14 +106,14 @@ func (a *App) connect(other *reqTab) {
 			default:
 			}
 		}
-		a.bus.Dispatch(wsEvent{tab: other, gen: gen, sess: s, err: err})
+		a.bus.Dispatch(wsEvent{tab: tab, gen: gen, sess: s, err: err})
 		if err != nil {
 			return nil
 		}
 		for e := range s.Events() {
-			a.bus.Dispatch(wsEvent{tab: other, gen: gen, ev: e, hasEv: true})
+			a.bus.Dispatch(wsEvent{tab: tab, gen: gen, ev: e, hasEv: true})
 		}
-		return wsEvent{tab: other, gen: gen, closed: true}
+		return wsEvent{tab: tab, gen: gen, closed: true}
 	})
 }
 
@@ -189,35 +189,35 @@ func (a *App) clearLog(tab *reqTab) {
 }
 
 // applyWS applies one wsEvent.
-func (a *App) applyWS(wsEventValue wsEvent) {
-	t := wsEventValue.tab
-	if !t.Current(wsEventValue.gen) {
-		if wsEventValue.sess != nil { // a connect that was abandoned meanwhile
-			_ = wsEventValue.sess.Close()
+func (a *App) applyWS(wsEvent wsEvent) {
+	t := wsEvent.tab
+	if !t.Current(wsEvent.gen) {
+		if wsEvent.sess != nil { // a connect that was abandoned meanwhile
+			_ = wsEvent.sess.Close()
 		}
 		return
 	}
 	switch {
-	case wsEventValue.retry:
+	case wsEvent.retry:
 		if t.CanRetry() {
 			a.connect(t)
 		}
-	case wsEventValue.closed:
+	case wsEvent.closed:
 		t.Closed()
 		a.calls.Info(a.now(), "Disconnected from "+t.Req.URL)
 		a.status = "Disconnected from " + t.Req.URL
 		a.scheduleRetry(t)
-	case wsEventValue.hasEv:
-		t.Received(wsEventValue.ev)
-		a.logEvent(t, wsEventValue.ev)
-	case wsEventValue.err != nil:
+	case wsEvent.hasEv:
+		t.Received(wsEvent.ev)
+		a.logEvent(t, wsEvent.ev)
+	case wsEvent.err != nil:
 		t.Failed()
-		a.calls.Error(a.now(), fmt.Sprintf("✗ %s: %s", t.Req.URL, wsEventValue.err))
-		a.logInfo(t, wsEventValue.err.Error(), w.Error)
+		a.calls.Error(a.now(), fmt.Sprintf("✗ %s: %s", t.Req.URL, wsEvent.err))
+		a.logInfo(t, wsEvent.err.Error(), w.Error)
 		a.status = "Connection failed"
 		a.scheduleRetry(t)
 	default:
-		t.Opened(wsEventValue.sess)
+		t.Opened(wsEvent.sess)
 		a.calls.Info(a.now(), "Connected to "+t.Req.URL)
 		a.status = "Connected to " + t.Req.URL
 	}
@@ -225,36 +225,36 @@ func (a *App) applyWS(wsEventValue wsEvent) {
 
 // scheduleRetry reopens a connection the user did not close, when the
 // tab asks for it.
-func (a *App) scheduleRetry(other *reqTab) {
-	if !other.RetryWanted() {
+func (a *App) scheduleRetry(tab *reqTab) {
+	if !tab.RetryWanted() {
 		return
 	}
-	a.logInfo(other, "Reconnecting in "+retryDelay.String(), w.Muted)
-	gen := other.Gen
-	time.AfterFunc(retryDelay, func() { a.bus.Dispatch(wsEvent{tab: other, gen: gen, retry: true}) })
+	a.logInfo(tab, "Reconnecting in "+retryDelay.String(), w.Muted)
+	gen := tab.Gen
+	time.AfterFunc(retryDelay, func() { a.bus.Dispatch(wsEvent{tab: tab, gen: gen, retry: true}) })
 }
 
 // logEvent appends an event to the log, one line per line of its text.
-func (a *App) logEvent(tab *reqTab, eventValue reqport.Event) {
-	if eventValue.Kind == "initialize" {
+func (a *App) logEvent(tab *reqTab, event reqport.Event) {
+	if event.Kind == "initialize" {
 		return
 	}
 	mark, tok := "•", w.Muted
-	switch eventValue.Dir {
+	switch event.Dir {
 	case reqport.Sent:
 		mark, tok = "↑", w.Info
 	case reqport.Received:
 		mark, tok = "↓", w.OK
 	}
-	text := eventValue.Text
-	if text == "" && eventValue.Kind != "text" && eventValue.Kind != "binary" {
-		text = eventValue.Kind // a ping has no payload
+	text := event.Text
+	if text == "" && event.Kind != "text" && event.Kind != "binary" {
+		text = event.Kind // a ping has no payload
 	}
-	if eventValue.Dir == reqport.Info && strings.HasPrefix(eventValue.Text, "Connection lost") {
+	if event.Dir == reqport.Info && strings.HasPrefix(event.Text, "Connection lost") {
 		tok = w.Error
 	}
-	stamp := eventValue.Time.Format("15:04:05")
-	if eventValue.Time.IsZero() {
+	stamp := event.Time.Format("15:04:05")
+	if event.Time.IsZero() {
 		stamp = time.Now().Format("15:04:05")
 	}
 	lines := tab.wsView.Lines
@@ -265,7 +265,7 @@ func (a *App) logEvent(tab *reqTab, eventValue reqport.Event) {
 		}
 		lines = append(lines, Line{Spans: []Span{
 			{Text: head, Style: w.Muted},
-			{Text: strings.TrimRight(part, "\r"), Style: textToken(eventValue.Dir, tok)},
+			{Text: strings.TrimRight(part, "\r"), Style: textToken(event.Dir, tok)},
 		}})
 	}
 	tab.wsView.SetLines(lines)
@@ -273,8 +273,8 @@ func (a *App) logEvent(tab *reqTab, eventValue reqport.Event) {
 
 // textToken is the color of a log line's text: the direction's own for
 // problems and notes, plain for messages.
-func textToken(directionValue reqport.Direction, tok w.Token) w.Token {
-	if directionValue == reqport.Info {
+func textToken(direction reqport.Direction, tok w.Token) w.Token {
+	if direction == reqport.Info {
 		return tok
 	}
 	return w.Text

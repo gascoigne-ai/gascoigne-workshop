@@ -291,7 +291,7 @@ func (f flow) rect(in core.Rect, mainPos, crossOff, mainSize, crossSize int) cor
 }
 
 // dropOptional hides optional children when everything does not fit.
-func (e *El) dropOptional(flowValue flow, sizes []int, avail int) {
+func (e *El) dropOptional(flow flow, sizes []int, avail int) {
 	total, n := 0, 0
 	for i, k := range e.kids {
 		k.hidden = false
@@ -315,15 +315,15 @@ func (e *El) dropOptional(flowValue flow, sizes []int, avail int) {
 // shrinkToFit takes what the children overflow the row by from its Shrink
 // children, first to last, each down to its minimum size along the axis.
 // A row that fits is left as it is.
-func (e *El) shrinkToFit(flowValue flow, sizes []int, avail int) {
+func (e *El) shrinkToFit(flow flow, sizes []int, avail int) {
 	used, n := 0, 0
 	for i, k := range e.kids {
 		if k.hidden || k.fl.on {
 			continue
 		}
 		n++
-		if flowValue.growing(k) {
-			used += flowValue.marginMain(k)
+		if flow.growing(k) {
+			used += flow.marginMain(k)
 			continue
 		}
 		used += sizes[i]
@@ -333,10 +333,10 @@ func (e *El) shrinkToFit(flowValue flow, sizes []int, avail int) {
 		if over <= 0 {
 			return
 		}
-		if !k.shrink || k.hidden || k.fl.on || flowValue.growing(k) {
+		if !k.shrink || k.hidden || k.fl.on || flow.growing(k) {
 			continue
 		}
-		give := min(sizes[i]-flowValue.marginMain(k)-flowValue.minMain(k), over)
+		give := min(sizes[i]-flow.marginMain(k)-flow.minMain(k), over)
 		if give > 0 {
 			sizes[i] -= give
 			over -= give
