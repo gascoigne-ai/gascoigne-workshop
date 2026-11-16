@@ -184,3 +184,27 @@ func TestTheSettingsDialogSizeIsRememberedAcrossRestarts(t *testing.T) {
 		t.Fatalf("the dialog size after a restart: %dx%d", second.prefs.Size.W, second.prefs.Size.H)
 	}
 }
+
+// Pins that a hand-edited or damaged state.json with absurd sizes, column
+// weights that are zero, negative or enormous, and duplicate or
+// out-of-range tabs still opens a window that lays out and draws.
+func TestHostileStateValuesStillGiveAWorkingWindow(t *testing.T) {
+	first := "User/" + collection.GitHubSample().Folders[0].Requests[0].Name
+	path := filepath.Join(t.TempDir(), "state.json")
+	err := statefile.Save(path, state.State{
+		SidebarW: 1 << 40, SettingsW: -5, SettingsH: 1 << 40, PaneSplit: 1e300,
+		Tabs:    []state.Tab{{Path: first}, {Path: first}, {Path: first, Pane: -1, Resp: 1 << 30}},
+		Active:  -3,
+		Columns: map[string][]float64{"params": {0, 0, 0}, "headers": {-1, 1e300, -1e300}, "form": {1}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	a := stateApp(t, path)
+	for range 5 {
+		a.step(core.Input{})
+	}
+	if len(a.list.Tabs) == 0 || a.list.Active < 0 || a.list.Active >= len(a.list.Tabs) {
+		t.Fatalf("tabs %d active %d", len(a.list.Tabs), a.list.Active)
+	}
+}

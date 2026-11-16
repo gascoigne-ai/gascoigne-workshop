@@ -3,6 +3,9 @@ package widget
 import (
 	"errors"
 	"strings"
+	"unicode/utf8"
+
+	"github.com/hajimehoshi/ebiten/v2"
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -556,5 +559,31 @@ func TestFieldSurvivesAnOnChangeThatShortensTheText(t *testing.T) {
 	drawn(t, c, root, 300, 30)
 	if f.Text != "" || f.Cursor != 0 {
 		t.Fatalf("text %q cursor %d, want the handler's empty text and a cursor inside it", f.Text, f.Cursor)
+	}
+}
+
+// Pins that editors and the split lay out, update and draw in a window of
+// no size (a minimised or collapsed pane) and with hostile pasted text.
+func TestEditorsSurviveZeroSizeAndHostileText(t *testing.T) {
+	hostile := "line\r\nwith\ttab\x00nul \xff\xfe bad utf8 ‮ bidi \u0085 c1 é combining 👨‍👩‍👧 zwj"
+	area := NewTextArea(hostile)
+	area.Focused = true
+	field := NewTextField(hostile)
+	field.Focused = true
+	var code CodeView
+	code.SetLines([]Line{{Spans: []Span{{Text: hostile}}}})
+	state := &SplitState{}
+	root := Split(state, 0.5, Area(&area, Grow(1)), Col(Field(&field), Code(&code, Grow(1))))
+	c := testCtx(t)
+	for _, size := range [][2]int{{0, 0}, {1, 1}, {0, 300}, {300, 0}, {400, 300}} {
+		Layout(c, root, size[0], size[1])
+		c.In = core.Input{X: 1, Y: 1, Click: true, Held: true, Typed: []rune(hostile), Edits: []core.Edit{core.EditDown, core.EditEnd, core.EditBackspace}}
+		Update(c, root)
+		Draw(c, root, ebiten.NewImage(400, 300)) // the image is never empty; the layout may be
+	}
+	field.Insert(hostile)
+	area.Insert(hostile)
+	if !utf8.ValidString(field.Text) || !utf8.ValidString(area.Text) {
+		t.Errorf("an edit left invalid UTF-8 in the text: %q", field.Text)
 	}
 }
