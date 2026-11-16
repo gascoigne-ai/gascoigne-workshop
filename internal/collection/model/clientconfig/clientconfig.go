@@ -83,8 +83,8 @@ func Parse(file string, data []byte) (Config, error) {
 	return Config{}, fmt.Errorf("parse %s: unsupported config format %q", file, ext)
 }
 
-func parseWith(f format, file string, data []byte) (Config, error) {
-	tree, err := f.decode(data)
+func parseWith(formatValue format, file string, data []byte) (Config, error) {
+	tree, err := formatValue.decode(data)
 	if err != nil {
 		return Config{}, fmt.Errorf("parse %s: %w", file, err)
 	}
