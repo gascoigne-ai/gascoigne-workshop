@@ -96,6 +96,15 @@ type Conn struct {
 	closeSent bool
 	rmu       sync.Mutex
 	gotClose  bool
+	partial   fragments // a message whose last fragment has not come yet
+}
+
+// fragments is the message being joined across frames. It lives on the
+// Conn because a control frame in between ends one Read call.
+type fragments struct {
+	data    []byte
+	msgType Type
+	started bool
 }
 
 // Subprotocol is the subprotocol the server chose, "" for none.
@@ -320,13 +329,9 @@ func (c *Conn) Read() (Message, error) {
 	if c.gotClose {
 		return Message{}, io.EOF
 	}
-	var (
-		buf     []byte
-		msgType Type
-		started bool
-	)
+	part := &c.partial
 	for {
-		fin, op, payload, err := c.readFrame(len(buf))
+		fin, op, payload, err := c.readFrame(len(part.data))
 		if err != nil {
 			return Message{}, err
 		}
@@ -345,20 +350,22 @@ func (c *Conn) Read() (Message, error) {
 			c.Close(code, "") // echo the status; ends the connection
 			return Message{Type: Close, Code: code, Data: reason}, nil
 		case Text, Binary:
-			if started {
+			if part.started {
 				return Message{}, errors.New("websocket: new message inside a fragmented one")
 			}
-			started, msgType = true, op
+			part.started, part.msgType = true, op
 		case opContinuation:
-			if !started {
+			if !part.started {
 				return Message{}, errors.New("websocket: unexpected continuation frame")
 			}
 		default:
 			return Message{}, fmt.Errorf("websocket: unknown opcode %d", byte(op))
 		}
-		buf = append(buf, payload...)
+		part.data = append(part.data, payload...)
 		if fin {
-			return Message{Type: msgType, Data: buf}, nil
+			message := Message{Type: part.msgType, Data: part.data}
+			*part = fragments{}
+			return message, nil
 		}
 	}
 }

@@ -196,3 +196,23 @@ func TestReadStopsWhenTheContextOfDialIsNotInvolved(t *testing.T) {
 		t.Fatalf("want a timeout, got %v", err)
 	}
 }
+
+// A control frame between the fragments of a message (RFC 6455 allows
+// it) made Read return the ping and drop the fragments read so far, so
+// the next continuation frame failed as "unexpected continuation".
+func TestAPingBetweenFragmentsKeepsTheMessage(t *testing.T) {
+	_, url := echoServer(t, func(c *Conn) {
+		c.writeFrame(false, Text, []byte("hel"))
+		c.writeFrame(true, Ping, []byte("p"))
+		c.writeFrame(true, opContinuation, []byte("lo"))
+	})
+	c := dial(t, url, Options{})
+	m, err := c.Read()
+	if err != nil || m.Type != Ping {
+		t.Fatalf("got %+v, %v; want the ping first", m, err)
+	}
+	m, err = c.Read()
+	if err != nil || m.Type != Text || string(m.Data) != "hello" {
+		t.Fatalf("got %+v, %v; want the joined text", m, err)
+	}
+}
