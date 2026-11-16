@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os/exec"
 	"strings"
 	"time"
@@ -33,6 +34,11 @@ var clipboardTools = []clipboardTool{
 
 const clipboardTimeout = 2 * time.Second
 
+// MaxPasteBytes is the most text a paste takes (1 MiB). Every edit keeps an
+// undo snapshot of the whole text, and a single-line field measures it by
+// the glyph, so more would freeze the window.
+const MaxPasteBytes = 1 << 20
+
 // SystemClipboard returns the clipboard backed by the first available
 // tool. When none is installed, every call fails with an error that
 // says what to install.
@@ -58,8 +64,21 @@ type cmdClipboard struct{ tool clipboardTool }
 func (c cmdClipboard) Read() (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), clipboardTimeout)
 	defer cancel()
-	out, err := exec.CommandContext(ctx, c.tool.read[0], c.tool.read[1:]...).Output()
+	cmd := exec.CommandContext(ctx, c.tool.read[0], c.tool.read[1:]...)
+	pipe, err := cmd.StdoutPipe()
+	if err == nil {
+		err = cmd.Start()
+	}
 	if err != nil {
+		return "", fmt.Errorf("read clipboard with %s: %w", c.tool.read[0], err)
+	}
+	out, readErr := io.ReadAll(io.LimitReader(pipe, MaxPasteBytes+1))
+	if len(out) > MaxPasteBytes { // stop the tool instead of waiting for the rest
+		cancel()
+		_ = cmd.Wait()
+		return "", fmt.Errorf("the clipboard holds more than the 1 MiB a paste takes")
+	}
+	if err := errors.Join(readErr, cmd.Wait()); err != nil {
 		return "", fmt.Errorf("read clipboard with %s: %w", c.tool.read[0], err)
 	}
 	return string(out), nil

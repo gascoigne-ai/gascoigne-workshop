@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -110,5 +111,26 @@ func TestReportClipboardStaysQuietOnASuccessfulRead(t *testing.T) {
 	clipboard := ReportClipboard(&fakeClipboard{text: "pasted"}, func(string, bool) { reported = true })
 	if text, err := clipboard.Read(); text != "pasted" || err != nil || reported {
 		t.Fatalf("read: %q, %v, reported %v", text, err, reported)
+	}
+}
+
+// A clipboard of hundreds of MB was read whole into one string and then
+// into every undo snapshot. Text over MaxPasteBytes is refused with a
+// message that names the limit.
+func TestReadRefusesClipboardTextOverTheLimit(t *testing.T) {
+	file := filepath.Join(t.TempDir(), "clip")
+	if err := os.WriteFile(file, make([]byte, MaxPasteBytes+1), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	c := cmdClipboard{tool: clipboardTool{read: []string{"cat", file}, write: []string{"tee", file}}}
+	text, err := c.Read()
+	if err == nil || text != "" || !strings.Contains(err.Error(), "1 MiB") {
+		t.Fatalf("got %d bytes, err %v; want a refusal naming 1 MiB", len(text), err)
+	}
+	if err := os.WriteFile(file, make([]byte, MaxPasteBytes), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if text, err := c.Read(); err != nil || len(text) != MaxPasteBytes {
+		t.Fatalf("text of exactly the limit: %d bytes, err %v", len(text), err)
 	}
 }
