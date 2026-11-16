@@ -3665,3 +3665,39 @@ func TestAnySettingsEditThatChangesTheResponseViewRefreshesOpenTabs(t *testing.T
 		t.Fatal("the open tab kept its old response view")
 	}
 }
+
+// Closing a tab dropped its widgets but left its request running and its
+// socket open; the result, or the events, then arrived for a tab nobody
+// could see.
+func TestClosingATabStopsItsRequest(t *testing.T) {
+	srv, _ := pathServer(t)
+	a, _ := newTestApp(t)
+	tab := a.cur()
+	pointTabAt(tab, srv.URL+"/slow")
+	click(a, sendX, urlBarY)
+	if !tab.Sending {
+		t.Fatal("test setup: the request must be running")
+	}
+	a.closeTab(a.list.Active)
+	if tab.Sending {
+		t.Error("the request of the closed tab is still running")
+	}
+}
+
+type closeTrackingSession struct {
+	recordingSession
+	closed bool
+}
+
+func (s *closeTrackingSession) Close() error { s.closed = true; return nil }
+
+func TestClosingATabClosesItsSession(t *testing.T) {
+	a, _ := newTestApp(t)
+	tab := a.cur()
+	session := &closeTrackingSession{}
+	tab.Session = session
+	a.closeTab(a.list.Active)
+	if !session.closed {
+		t.Error("the session of the closed tab is still open")
+	}
+}

@@ -128,6 +128,8 @@ func (a *App) updateTabs(msg tabs.Msg) {
 		if a.edit != nil && a.edit.tab == widgets {
 			a.cancelEdit()
 		}
+		a.cancelSend(widgets) // a closed tab keeps neither a request nor a socket
+		a.disconnect(widgets)
 		delete(a.widgets, tab)
 	}
 	for _, tab := range next.Tabs {
