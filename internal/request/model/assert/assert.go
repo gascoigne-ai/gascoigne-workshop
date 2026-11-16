@@ -201,20 +201,20 @@ func compareNumber(got float64, rest string) (bool, string) {
 	return false, "got " + strconv.FormatFloat(got, 'f', -1, 64)
 }
 
-func applyNumber(op string, a, b float64) bool {
+func applyNumber(op string, value, float64Value float64) bool {
 	switch op {
 	case "==":
-		return a == b
+		return value == float64Value
 	case "!=":
-		return a != b
+		return value != float64Value
 	case "<":
-		return a < b
+		return value < float64Value
 	case "<=":
-		return a <= b
+		return value <= float64Value
 	case ">":
-		return a > b
+		return value > float64Value
 	}
-	return a >= b
+	return value >= float64Value
 }
 
 func compareDuration(got time.Duration, rest string) (bool, string) {
@@ -384,28 +384,28 @@ func lookup(doc any, path string) (any, bool) {
 }
 
 // unquote removes one pair of double quotes around s.
-func unquote(s string) string {
-	if len(s) >= 2 && s[0] == '"' && s[len(s)-1] == '"' {
-		if u, err := strconv.Unquote(s); err == nil {
+func unquote(text string) string {
+	if len(text) >= 2 && text[0] == '"' && text[len(text)-1] == '"' {
+		if u, err := strconv.Unquote(text); err == nil {
 			return u
 		}
-		return s[1 : len(s)-1]
+		return text[1 : len(text)-1]
 	}
-	return s
+	return text
 }
 
-func abbreviate(s string) string {
-	r := []rune(s)
+func abbreviate(text string) string {
+	r := []rune(text)
 	if len(r) > 40 {
 		return strconv.Quote(string(r[:40])) + "…"
 	}
-	return strconv.Quote(s)
+	return strconv.Quote(text)
 }
 
-func abbreviateValue(s string) string {
-	r := []rune(s)
+func abbreviateValue(text string) string {
+	r := []rune(text)
 	if len(r) > 30 {
 		return string(r[:30]) + "…"
 	}
-	return s
+	return text
 }
