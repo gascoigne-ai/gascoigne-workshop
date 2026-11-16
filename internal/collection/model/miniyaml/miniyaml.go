@@ -29,11 +29,27 @@ type Error struct {
 
 func (e *Error) Error() string { return fmt.Sprintf("line %d: %s", e.Line, e.Msg) }
 
+// maxDepth bounds how deep collections nest. Nesting is recursion, and an
+// input of a few hundred KB of "[" would otherwise overflow the stack,
+// which cannot be recovered.
+const maxDepth = 100
+
 type parser struct {
 	lines []line
 	pos   int
 	raw   []string // the input lines, for block scalars
+	depth int
 }
+
+// enter goes one level deeper; the caller defers leave.
+func (p *parser) enter(no int) error {
+	if p.depth++; p.depth > maxDepth {
+		return &Error{no, "collections are nested too deep"}
+	}
+	return nil
+}
+
+func (p *parser) leave() { p.depth-- }
 
 // Parse reads one YAML document.
 func Parse(data []byte) (any, error) {
@@ -144,6 +160,10 @@ func closingQuote(s string) int {
 }
 
 func (p *parser) mapping(indent int) (any, error) {
+	if err := p.enter(p.lines[p.pos].no); err != nil {
+		return nil, err
+	}
+	defer p.leave()
 	m := map[string]any{}
 	for p.pos < len(p.lines) {
 		l := p.lines[p.pos]
@@ -174,6 +194,10 @@ func (p *parser) mapping(indent int) (any, error) {
 }
 
 func (p *parser) sequence(indent int) (any, error) {
+	if err := p.enter(p.lines[p.pos].no); err != nil {
+		return nil, err
+	}
+	defer p.leave()
 	list := []any{}
 	for p.pos < len(p.lines) {
 		l := p.lines[p.pos]
@@ -365,9 +389,10 @@ func plain(s string) any {
 
 // flow reads [a, b] and {k: v} written on one line.
 type flow struct {
-	s  string
-	i  int
-	no int
+	s     string
+	i     int
+	no    int
+	depth int
 }
 
 func (f *flow) skip() {
@@ -394,6 +419,12 @@ func (f *flow) value() (any, error) {
 	f.skip()
 	if f.i >= len(f.s) {
 		return nil, &Error{f.no, "the flow collection is not closed (it must fit on one line)"}
+	}
+	if f.s[f.i] == '[' || f.s[f.i] == '{' {
+		if f.depth++; f.depth > maxDepth {
+			return nil, &Error{f.no, "collections are nested too deep"}
+		}
+		defer func() { f.depth-- }()
 	}
 	switch f.s[f.i] {
 	case '[':

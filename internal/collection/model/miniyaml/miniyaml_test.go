@@ -157,3 +157,19 @@ func TestAStrayCloserInAFlowCollectionIsAnErrorNotALoop(t *testing.T) {
 		}
 	}
 }
+
+// Flow collections and sequences nest by recursion, so a line of a few
+// hundred KB of "[" grew the Go stack until it overflowed, which no
+// recover can catch.
+func TestDeeplyNestedInputIsAnErrorNotAStackOverflow(t *testing.T) {
+	for name, src := range map[string]string{
+		"flow list":  "a: " + strings.Repeat("[", 200000) + "\n",
+		"flow map":   "a: " + strings.Repeat("{a: ", 200000) + "\n",
+		"dash chain": strings.Repeat("- ", 200000) + "x\n",
+	} {
+		_, err := Parse([]byte(src))
+		if err == nil || !strings.Contains(err.Error(), "nested too deep") {
+			t.Errorf("%s: err = %v, want a nested-too-deep error", name, err)
+		}
+	}
+}
