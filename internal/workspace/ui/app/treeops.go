@@ -314,8 +314,8 @@ func (a *App) importCurl(dir *model.Folder) {
 }
 
 // curlName names an imported request after its method and path.
-func curlName(r model.Request) string {
-	path := r.URL
+func curlName(request model.Request) string {
+	path := request.URL
 	if _, rest, ok := strings.Cut(path, "://"); ok {
 		path = rest
 	}
@@ -325,7 +325,7 @@ func curlName(r model.Request) string {
 	} else {
 		path = "/"
 	}
-	return r.Method + " " + path
+	return request.Method + " " + path
 }
 
 // importOpenAPI adds the OpenAPI document (JSON) on the clipboard to dir as

@@ -32,13 +32,13 @@ func (session *requesterSession) Request(_ context.Context, text string) (string
 }
 
 // announce puts a server's lists into the tab, as its events would.
-func announce(a *App, tab *reqTab) {
+func announce(app *App, tab *reqTab) {
 	for _, list := range []string{
 		`{"result":{"tools":[{"name":"search","description":"Find","inputSchema":{"type":"object","properties":{"q":{"type":"string"},"limit":{"type":"integer","default":5}},"required":["q"]}},{"name":"ping"}]}}`,
 		`{"result":{"resources":[{"uri":"file:///a.txt","name":"A"}]}}`,
 		`{"result":{"prompts":[{"name":"review","arguments":[{"name":"code","required":true}]}]}}`,
 	} {
-		a.applyWS(wsEvent{tab: tab, hasEv: true, ev: reqport.Event{Dir: reqport.Received, Kind: "response", Text: list}})
+		app.applyWS(wsEvent{tab: tab, hasEv: true, ev: reqport.Event{Dir: reqport.Received, Kind: "response", Text: list}})
 	}
 }
 

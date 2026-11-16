@@ -11,9 +11,9 @@ import (
 
 // setSize records the window size and device scale and reports whether
 // either changed; a change needs a redraw.
-func (a *App) setSize(w, h int, scale float64) bool {
-	changed := w != a.w || h != a.h || (scale > 0 && scale != a.ctx.Scale)
-	a.w, a.h = w, h
+func (a *App) setSize(width, height int, scale float64) bool {
+	changed := width != a.w || height != a.h || (scale > 0 && scale != a.ctx.Scale)
+	a.w, a.h = width, height
 	if err := a.ctx.SetScale(scale); err != nil {
 		a.shot.err = err
 	}
@@ -46,11 +46,11 @@ type frame struct {
 // display's real one: they differ when the desktop scales the display
 // without telling the window (Xwayland), whose window is then in real
 // pixels. ui is the interface scale on top.
-func frameSize(w, h int, reported, actual, ui float64) frame {
+func frameSize(width, height int, reported, actual, ui float64) frame {
 	scale := actual * ui
 	return frame{
-		LW: int(float64(w)*reported/scale + 0.5), LH: int(float64(h)*reported/scale + 0.5),
-		SW: int(float64(w)*reported + 0.5), SH: int(float64(h)*reported + 0.5),
+		LW: int(float64(width)*reported/scale + 0.5), LH: int(float64(height)*reported/scale + 0.5),
+		SW: int(float64(width)*reported + 0.5), SH: int(float64(height)*reported + 0.5),
 		Scale: scale, WindowScale: scale / reported,
 	}
 }

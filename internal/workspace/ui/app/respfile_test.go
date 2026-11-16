@@ -154,7 +154,7 @@ func TestPickFileUsesTheDesktopDialogWhenThereIsOne(t *testing.T) {
 	a, _ := newTestApp(t)
 	a.files = filedialog.System{}
 	var got string
-	a.pickFile("Pick", false, "", func(p string) { got = p })
+	a.pickFile("Pick", false, "", func(name string) { got = name })
 	if a.browser != nil {
 		t.Fatal("with a dialog program there is no in-app file browser")
 	}
@@ -165,7 +165,7 @@ func TestPickFileUsesTheDesktopDialogWhenThereIsOne(t *testing.T) {
 
 	t.Setenv("PATH", t.TempDir())
 	got = ""
-	a.pickFile("Pick", false, "start.txt", func(p string) { got = p })
+	a.pickFile("Pick", false, "start.txt", func(name string) { got = name })
 	if a.browser == nil || !strings.HasSuffix(a.browser.path.Text, "start.txt") {
 		t.Fatal("without one the in-app file browser asks, with the name")
 	}
@@ -217,12 +217,12 @@ func TestCapturedValuesBecomeVariablesInTheActiveScope(t *testing.T) {
 
 func TestGraphQLBodyTypeSendsAQueryAndCanLoadTheSchema(t *testing.T) {
 	var queries []string
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		var p struct{ Query string }
-		b, _ := io.ReadAll(r.Body)
+		b, _ := io.ReadAll(request.Body)
 		json.Unmarshal(b, &p)
 		queries = append(queries, p.Query)
-		w.Write([]byte(`{"data":{"__schema":{"types":[]}}}`))
+		writer.Write([]byte(`{"data":{"__schema":{"types":[]}}}`))
 	}))
 	defer srv.Close()
 	a, _ := newTestApp(t)

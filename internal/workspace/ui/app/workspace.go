@@ -113,9 +113,9 @@ func (a *App) startCollection() (col *model.Collection, isSample bool) {
 	return &sample, true
 }
 
-func (a *App) expandAll(f *model.Folder) {
-	a.expanded[f] = true
-	for _, sub := range f.Folders {
+func (a *App) expandAll(folder *model.Folder) {
+	a.expanded[folder] = true
+	for _, sub := range folder.Folders {
 		a.expandAll(sub)
 	}
 }

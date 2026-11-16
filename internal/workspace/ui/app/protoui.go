@@ -78,8 +78,8 @@ const (
 // protoFilesShown says the pane shows the file lists: the request has
 // paths, or the user chose Proto files and has not added one yet (which
 // only the tab remembers: a request without files uses reflection).
-func protoFilesShown(t *reqTab) bool {
-	return t.proto.filesChosen || len(t.Req.Proto.Files) > 0 || len(t.Req.Proto.ImportPaths) > 0
+func protoFilesShown(tab *reqTab) bool {
+	return tab.proto.filesChosen || len(tab.Req.Proto.Files) > 0 || len(tab.Req.Proto.ImportPaths) > 0
 }
 
 // protoInput is the text field of a path row, made on first use with the
@@ -119,27 +119,27 @@ func protoPaths(source model.ProtoSource, list editor.ProtoList) []string {
 
 // protoPane is the Proto tab: the source chips, then the reflection note
 // or the lists of files and import paths with what reading them found.
-func (a *App) protoPane(_ pane, t *reqTab, scroll *ScrollState) Node {
-	entry, _ := a.entryFor(t.Req)
-	t.proto.dir = entry.Dir
-	shown := protoFilesShown(t)
+func (a *App) protoPane(_ pane, tab *reqTab, scroll *ScrollState) Node {
+	entry, _ := a.entryFor(tab.Req)
+	tab.proto.dir = entry.Dir
+	shown := protoFilesShown(tab)
 	if shown {
-		a.checkProtoFiles(t)
+		a.checkProtoFiles(tab)
 	}
 	chooseReflection := func() {
-		t.proto.filesChosen = false
-		if !reflect.DeepEqual(t.Req.Proto, model.ProtoSource{}) {
-			editRequest(t, editor.ReflectionChosen{})
+		tab.proto.filesChosen = false
+		if !reflect.DeepEqual(tab.Req.Proto, model.ProtoSource{}) {
+			editRequest(tab, editor.ReflectionChosen{})
 		}
 	}
 	sources := []protoSourceChip{
 		{Label: "Reflection", Width: reflectionChipW, Chosen: !shown, Pick: chooseReflection},
-		{Label: "Proto files", Width: protoFilesChipW, Chosen: shown, Pick: func() { t.proto.filesChosen = true }},
+		{Label: "Proto files", Width: protoFilesChipW, Chosen: shown, Pick: func() { tab.proto.filesChosen = true }},
 	}
 	lists := []protoListView{
-		a.protoList(t, editor.ProtoFiles, "Files", "Add file...", addFileButtonW, func() { a.addProtoFile(t) }),
-		a.protoList(t, editor.ImportPaths, "Import paths", "Add path", addPathButtonW, func() {
-			editRequest(t, editor.ProtoPathAdded{List: editor.ImportPaths})
+		a.protoList(tab, editor.ProtoFiles, "Files", "Add file...", addFileButtonW, func() { a.addProtoFile(tab) }),
+		a.protoList(tab, editor.ImportPaths, "Import paths", "Add path", addPathButtonW, func() {
+			editRequest(tab, editor.ProtoPathAdded{List: editor.ImportPaths})
 		}),
 	}
 	return protoPaneTemplate.MustBuild(markup.Scope{
@@ -152,29 +152,29 @@ func (a *App) protoPane(_ pane, t *reqTab, scroll *ScrollState) Node {
 		"files":      shown,
 		"reflection": !shown,
 		"lists":      lists,
-		"problems":   t.proto.check.problems,
+		"problems":   tab.proto.check.problems,
 	})
 }
 
-func (a *App) protoList(t *reqTab, list editor.ProtoList, caption, addLabel string, addWidth int, add func()) protoListView {
-	paths := protoPaths(t.Req.Proto, list)
+func (a *App) protoList(tab *reqTab, list editor.ProtoList, caption, addLabel string, addWidth int, add func()) protoListView {
+	paths := protoPaths(tab.Req.Proto, list)
 	rows := make([]protoRowView, 0, len(paths))
 	for index := range paths {
-		input := t.protoInput(list, index)
+		input := tab.protoInput(list, index)
 		sync := func() {
-			editRequest(t, editor.ProtoPathSet{List: list, Index: index, Path: pathFromText(t.proto.dir, input.Text)})
+			editRequest(tab, editor.ProtoPathSet{List: list, Index: index, Path: pathFromText(tab.proto.dir, input.Text)})
 		}
-		remove := func() { editRequest(t, editor.ProtoPathRemoved{List: list, Index: index}) }
+		remove := func() { editRequest(tab, editor.ProtoPathRemoved{List: list, Index: index}) }
 		rows = append(rows, protoRowView{Input: input, Sync: sync, Remove: remove})
 	}
 	return protoListView{Caption: caption, Rows: rows, AddLabel: addLabel, AddWidth: addWidth, Add: add}
 }
 
 // addProtoFile asks for a .proto file and adds it to the request.
-func (a *App) addProtoFile(t *reqTab) {
+func (a *App) addProtoFile(tab *reqTab) {
 	a.pickFile("Choose a .proto file", false, "", func(path string) {
-		t.proto.filesChosen = true
-		editRequest(t, editor.ProtoPathAdded{List: editor.ProtoFiles, Path: path})
+		tab.proto.filesChosen = true
+		editRequest(tab, editor.ProtoPathAdded{List: editor.ProtoFiles, Path: path})
 	})
 }
 
@@ -182,37 +182,37 @@ func (a *App) addProtoFile(t *reqTab) {
 // they changed since the last read, so a problem shows while the user edits
 // and not only at send. Answers for an older source are dropped by the
 // comparison: the next build starts a read of the current one.
-func (a *App) checkProtoFiles(t *reqTab) {
-	source := t.Req.Proto
+func (a *App) checkProtoFiles(tab *reqTab) {
+	source := tab.Req.Proto
 	if len(source.Files) == 0 {
-		t.proto.check = protoCheck{source: source}
+		tab.proto.check = protoCheck{source: source}
 		return
 	}
-	if t.proto.check.running || reflect.DeepEqual(t.proto.check.source, source) {
+	if tab.proto.check.running || reflect.DeepEqual(tab.proto.check.source, source) {
 		return
 	}
-	t.proto.check.running = true
-	req := t.Req.Clone()
-	dir := t.proto.dir
+	tab.proto.check.running = true
+	req := tab.Req.Clone()
+	dir := tab.proto.dir
 	timeout := a.timeoutFor(req) // read here: the goroutine must not touch App fields
 	a.bus.Run(context.Background(), func(ctx context.Context) bus.Msg {
 		ctx, cancel := context.WithTimeout(ctx, timeout)
 		defer cancel()
 		_, err := a.listGRPCMethods(ctx, req)
 		return func() { // runs on the UI goroutine
-			t.proto.check = protoCheck{source: req.Proto, problems: protoProblems(err, dir)}
+			tab.proto.check = protoCheck{source: req.Proto, problems: protoProblems(err, dir)}
 		}
 	})
 }
 
 // protoReading reports whether t shows its Proto pane while the files are
 // still being read, so a capture waits for what the read finds.
-func protoReading(t *reqTab) bool {
-	panes := requestPanesFor(t)
-	if t.paneTab < 0 || t.paneTab >= len(panes) || panes[t.paneTab].kind != paneProto || len(t.Req.Proto.Files) == 0 {
+func protoReading(tab *reqTab) bool {
+	panes := requestPanesFor(tab)
+	if tab.paneTab < 0 || tab.paneTab >= len(panes) || panes[tab.paneTab].kind != paneProto || len(tab.Req.Proto.Files) == 0 {
 		return false
 	}
-	return t.proto.check.running || !reflect.DeepEqual(t.proto.check.source, t.Req.Proto)
+	return tab.proto.check.running || !reflect.DeepEqual(tab.proto.check.source, tab.Req.Proto)
 }
 
 // protoProblems are the lines that tell what is wrong with the files, each

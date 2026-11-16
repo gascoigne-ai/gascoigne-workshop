@@ -50,27 +50,27 @@ type responseState struct {
 // one per view mode, wrapped lines, the find bar open, earlier responses
 // to pick from and an image body.
 var responseStates = []responseState{
-	{"compact", func(t *testing.T, a *App, tab *reqTab) { a.setView(tab, viewer.Compact) }},
-	{"pretty", func(t *testing.T, a *App, tab *reqTab) { a.setView(tab, viewer.Pretty) }},
-	{"raw", func(t *testing.T, a *App, tab *reqTab) { a.setView(tab, viewer.Raw) }},
-	{"wrap", func(t *testing.T, a *App, tab *reqTab) { a.toggleWrap(tab) }},
-	{"find", func(t *testing.T, a *App, tab *reqTab) {
-		a.openFind()
+	{"compact", func(t *testing.T, app *App, tab *reqTab) { app.setView(tab, viewer.Compact) }},
+	{"pretty", func(t *testing.T, app *App, tab *reqTab) { app.setView(tab, viewer.Pretty) }},
+	{"raw", func(t *testing.T, app *App, tab *reqTab) { app.setView(tab, viewer.Raw) }},
+	{"wrap", func(t *testing.T, app *App, tab *reqTab) { app.toggleWrap(tab) }},
+	{"find", func(t *testing.T, app *App, tab *reqTab) {
+		app.openFind()
 		tab.find.Insert("id")
-		a.runFind(tab)
+		app.runFind(tab)
 	}},
-	{"history", func(t *testing.T, a *App, tab *reqTab) {
-		answer(a, tab, model.Response{Status: 201, StatusText: "Created", Body: []byte(responseBody)})
+	{"history", func(t *testing.T, app *App, tab *reqTab) {
+		answer(app, tab, model.Response{Status: 201, StatusText: "Created", Body: []byte(responseBody)})
 	}},
-	{"picture", func(t *testing.T, a *App, tab *reqTab) {
-		answer(a, tab, model.Response{Status: 200, StatusText: "OK", Body: pngBody(t)})
+	{"picture", func(t *testing.T, app *App, tab *reqTab) {
+		answer(app, tab, model.Response{Status: 200, StatusText: "OK", Body: pngBody(t)})
 	}},
 }
 
 // answer gives tab a response as a finished send would.
-func answer(a *App, tab *reqTab, resp model.Response) {
+func answer(app *App, tab *reqTab, resp model.Response) {
 	tab.Sending, tab.Seq = true, tab.Seq+1
-	a.apply(sendResult{tab: tab, seq: tab.Seq, resp: resp})
+	app.apply(sendResult{tab: tab, seq: tab.Seq, resp: resp})
 }
 
 // pngBody is a 40x20 PNG, an image response body. It is stored uncompressed

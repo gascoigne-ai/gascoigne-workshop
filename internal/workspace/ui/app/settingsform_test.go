@@ -16,27 +16,27 @@ import (
 var rectPattern = regexp.MustCompile(`rect=(-?\d+),(-?\d+),(\d+),(\d+)`)
 
 // layoutDump is the window as text with every element's rectangle.
-func layoutDump(a *App) string {
-	root := a.view()
-	view.Layout(a.ctx, root, a.w, a.h)
+func layoutDump(app *App) string {
+	root := app.view()
+	view.Layout(app.ctx, root, app.w, app.h)
 	return view.Dump(root)
 }
 
 // clickText clicks the middle of the nth (from 0) element that shows text
 // exactly, so a test finds a control by its label and not by pixel.
-func clickText(t *testing.T, a *App, text string, nth int) {
+func clickText(t *testing.T, app *App, text string, nth int) {
 	t.Helper()
-	clickDumped(t, a, fmt.Sprintf("text=%q", text), nth)
+	clickDumped(t, app, fmt.Sprintf("text=%q", text), nth)
 }
 
 // clickDumped clicks the middle of the nth (from 0) element whose line in
 // the layout dump holds needle ("fieldB", "tip=Remove"), for controls that
 // show no text of their own.
-func clickDumped(t *testing.T, a *App, needle string, nth int) {
+func clickDumped(t *testing.T, app *App, needle string, nth int) {
 	t.Helper()
-	a.step(core.Input{X: 5000, Y: 5000})
+	app.step(core.Input{X: 5000, Y: 5000})
 	seen := 0
-	for _, line := range strings.Split(layoutDump(a), "\n") {
+	for _, line := range strings.Split(layoutDump(app), "\n") {
 		if !strings.Contains(line, needle) {
 			continue
 		}
@@ -52,13 +52,13 @@ func clickDumped(t *testing.T, a *App, needle string, nth int) {
 		fmt.Sscan(m[2], &y)
 		fmt.Sscan(m[3], &w)
 		fmt.Sscan(m[4], &h)
-		click(a, x+w/2, y+h/2)
+		click(app, x+w/2, y+h/2)
 		return
 	}
-	t.Fatalf("no element with %s (#%d) in:\n%s", needle, nth, layoutDump(a))
+	t.Fatalf("no element with %s (#%d) in:\n%s", needle, nth, layoutDump(app))
 }
 
-func settingsText(a *App) string { return view.Dump(a.menuView()) }
+func settingsText(app *App) string { return view.Dump(app.menuView()) }
 
 func TestTheSettingsFormShowsATitleADescriptionAndAControlPerSetting(t *testing.T) {
 	a, _ := openSettingsPage(t, "appearance")

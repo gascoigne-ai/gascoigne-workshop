@@ -150,10 +150,10 @@ func TestRemembersTheLastWorkspace(t *testing.T) {
 	}
 }
 
-func writeFile(p, s string) error { return os.WriteFile(p, []byte(s), 0o644) }
-func readFile(t *testing.T, p string) string {
+func writeFile(name, text string) error { return os.WriteFile(name, []byte(text), 0o644) }
+func readFile(t *testing.T, name string) string {
 	t.Helper()
-	b, err := os.ReadFile(p)
+	b, err := os.ReadFile(name)
 	if err != nil {
 		t.Fatal(err)
 	}

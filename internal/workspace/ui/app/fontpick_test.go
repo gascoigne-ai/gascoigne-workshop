@@ -33,12 +33,12 @@ func testFamilies(t *testing.T) []fontfamily.Family {
 }
 
 // monospace reports whether the interface (or code) face has equal widths.
-func monoUI(a *App) bool {
-	return a.ctx.Width(a.ctx.F.UI, "iiiiii") == a.ctx.Width(a.ctx.F.UI, "WWWWWW")
+func monoUI(app *App) bool {
+	return app.ctx.Width(app.ctx.F.UI, "iiiiii") == app.ctx.Width(app.ctx.F.UI, "WWWWWW")
 }
 
-func monoCode(a *App) bool {
-	return a.ctx.Width(a.ctx.F.Mono, "iiiiii") == a.ctx.Width(a.ctx.F.Mono, "WWWWWW")
+func monoCode(app *App) bool {
+	return app.ctx.Width(app.ctx.F.Mono, "iiiiii") == app.ctx.Width(app.ctx.F.Mono, "WWWWWW")
 }
 
 func TestPickingAnInterfaceFontChangesTheFacesAndIsSaved(t *testing.T) {

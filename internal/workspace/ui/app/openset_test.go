@@ -58,9 +58,9 @@ func twoCollectionsAppWith(t *testing.T, opts Options) (a *App, alphaDir, betaDi
 }
 
 // entryNamed is the open collection called name.
-func entryNamed(t *testing.T, a *App, name string) collections.Entry {
+func entryNamed(t *testing.T, app *App, name string) collections.Entry {
 	t.Helper()
-	for _, entry := range a.open.Entries {
+	for _, entry := range app.open.Entries {
 		if entry.Collection.Name == name {
 			return entry
 		}

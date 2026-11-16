@@ -19,9 +19,9 @@ import (
 // the dot on a tab and in the window title, so these tests check those.
 
 // tabIndex is the place in the strip of the tab showing req.
-func tabIndex(t *testing.T, a *App, req *model.Request) int {
+func tabIndex(t *testing.T, app *App, req *model.Request) int {
 	t.Helper()
-	for index, tab := range a.list.Tabs {
+	for index, tab := range app.list.Tabs {
 		if tab.Req == req {
 			return index
 		}
@@ -31,32 +31,32 @@ func tabIndex(t *testing.T, a *App, req *model.Request) int {
 }
 
 // shownTab is what the strip shows of the tab of req: its name and mark.
-func shownTab(t *testing.T, a *App, req *model.Request) requestTabItem {
+func shownTab(t *testing.T, app *App, req *model.Request) requestTabItem {
 	t.Helper()
-	index := tabIndex(t, a, req)
-	return a.requestTab(index, a.openTabs()[index])
+	index := tabIndex(t, app, req)
+	return app.requestTab(index, app.openTabs()[index])
 }
 
 // activate makes the tab of req the active one.
-func activate(t *testing.T, a *App, req *model.Request) {
+func activate(t *testing.T, app *App, req *model.Request) {
 	t.Helper()
-	a.updateTabs(tabs.Activate{Index: tabIndex(t, a, req)})
+	app.updateTabs(tabs.Activate{Index: tabIndex(t, app, req)})
 }
 
 // titleMarked reports whether the window title carries the unsaved dot.
-func titleMarked(a *App) bool { return strings.HasPrefix(a.Title(), dirtyMark+" ") }
+func titleMarked(app *App) bool { return strings.HasPrefix(app.Title(), dirtyMark+" ") }
 
 // autosaveAfterPause lets the autosave notice what changed and then the
 // pause pass, so every collection with edits is written, whichever is
 // focused, and waits for the writes.
-func autosaveAfterPause(a *App) {
+func autosaveAfterPause(app *App) {
 	now := time.Now()
-	a.now = func() time.Time { return now }
-	a.markStale() // the tests edit the model directly, with no input to mark the keys stale
-	a.step(core.Input{})
+	app.now = func() time.Time { return now }
+	app.markStale() // the tests edit the model directly, with no input to mark the keys stale
+	app.step(core.Input{})
 	now = now.Add(2 * saveDebounce)
-	a.step(core.Input{})
-	a.waitWrites()
+	app.step(core.Input{})
+	app.waitWrites()
 }
 
 // exists reports whether the file or folder at path is there.

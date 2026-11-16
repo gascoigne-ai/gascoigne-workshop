@@ -83,7 +83,7 @@ func TestCookiesDialogListsWhatTheJarHoldsForTheURL(t *testing.T) {
 func TestChangingTheProxyInTheSettingsReachesTheProtocols(t *testing.T) {
 	a, _ := newTestApp(t)
 
-	a.changeSettings(func(s *settings.Settings) { s.Proxy = "http://127.0.0.1:3128" })
+	a.changeSettings(func(prefs *settings.Settings) { prefs.Proxy = "http://127.0.0.1:3128" })
 
 	rest, ok := a.reg["rest"].(proto.REST)
 	if !ok || rest.Proxy != "http://127.0.0.1:3128" {

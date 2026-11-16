@@ -23,66 +23,66 @@ import (
 const mcpCallTimeout = 60 * time.Second
 
 // exploreChoose shows another list of the server.
-func (a *App) exploreChoose(t *reqTab, kind mcpexplorer.Kind) {
-	t.explorer.Choose(kind)
-	t.form = nil
-	t.resultView.SetLines(nil)
+func (a *App) exploreChoose(tab *reqTab, kind mcpexplorer.Kind) {
+	tab.explorer.Choose(kind)
+	tab.form = nil
+	tab.resultView.SetLines(nil)
 }
 
 // exploreOpen opens entry index of the shown list: tools and prompts get a
 // form for their arguments, a resource has nothing to fill in.
-func (a *App) exploreOpen(t *reqTab, index int) {
-	t.explorer.Select(index)
-	t.resultView.SetLines(nil)
-	t.form = nil
-	switch t.explorer.Kind {
+func (a *App) exploreOpen(tab *reqTab, index int) {
+	tab.explorer.Select(index)
+	tab.resultView.SetLines(nil)
+	tab.form = nil
+	switch tab.explorer.Kind {
 	case mcpexplorer.Tools:
-		t.form = mcpform.New(t.Tools[index])
+		tab.form = mcpform.New(tab.Tools[index])
 	case mcpexplorer.Prompts:
-		prompt := t.Prompts[index]
-		t.form = mcpform.New(model.MCPTool{Name: prompt.Name, Schema: prompt.Schema()})
+		prompt := tab.Prompts[index]
+		tab.form = mcpform.New(model.MCPTool{Name: prompt.Name, Schema: prompt.Schema()})
 	}
 }
 
 // exploreCommand is the command the open entry sends, or the error that
 // says which value of its form is wrong.
-func exploreCommand(t *reqTab) (string, error) {
-	if t.explorer.Kind == mcpexplorer.Resources {
-		return "read " + t.Resources[t.explorer.Selected].URI, nil
+func exploreCommand(tab *reqTab) (string, error) {
+	if tab.explorer.Kind == mcpexplorer.Resources {
+		return "read " + tab.Resources[tab.explorer.Selected].URI, nil
 	}
-	arguments, err := t.form.Arguments()
+	arguments, err := tab.form.Arguments()
 	if err != nil {
 		return "", err
 	}
 	verb := "call "
-	if t.explorer.Kind == mcpexplorer.Prompts {
+	if tab.explorer.Kind == mcpexplorer.Prompts {
 		verb = "prompt "
 	}
-	return verb + t.form.Tool.Name + " " + arguments, nil
+	return verb + tab.form.Tool.Name + " " + arguments, nil
 }
 
 // exploreCall sends the open entry and shows the answer when it comes.
-func (a *App) exploreCall(t *reqTab) {
-	requester, ok := t.Session.(reqport.Requester)
-	if !ok || t.explorer.Selected == mcpexplorer.None || t.explorer.Calling {
+func (a *App) exploreCall(tab *reqTab) {
+	requester, ok := tab.Session.(reqport.Requester)
+	if !ok || tab.explorer.Selected == mcpexplorer.None || tab.explorer.Calling {
 		return
 	}
-	command, err := exploreCommand(t)
+	command, err := exploreCommand(tab)
 	if err != nil {
-		t.form.Problem = err.Error() // only a form can hold a wrong value
+		tab.form.Problem = err.Error() // only a form can hold a wrong value
 		return
 	}
-	if t.form != nil {
-		t.form.Problem = ""
+	if tab.form != nil {
+		tab.form.Problem = ""
 	}
-	t.explorer.Begin()
+	tab.explorer.Begin()
 	a.bus.Run(context.Background(), func(context.Context) bus.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), mcpCallTimeout)
 		defer cancel()
 		result, err := requester.Request(ctx, command)
 		return func() { // on the UI goroutine
-			t.explorer.Finish(result, err)
-			t.resultView.SetLines(resultLines(t.explorer))
+			tab.explorer.Finish(result, err)
+			tab.resultView.SetLines(resultLines(tab.explorer))
 		}
 	})
 }
@@ -99,11 +99,11 @@ func resultLines(state mcpexplorer.State) []Line {
 // explorerPane is the MCP view: what the server says about itself, the
 // lists it offers on the left and the open entry with its form and its
 // answer on the right.
-func (a *App) explorerPane(_ pane, t *reqTab, _ *ScrollState) Node {
+func (a *App) explorerPane(_ pane, tab *reqTab, _ *ScrollState) Node {
 	return explorerTemplate.MustBuild(markup.Scope{
-		"header":  newExplorerHeader(t),
-		"list":    a.explorerList(t),
-		"detail":  a.explorerDetail(t),
+		"header":  newExplorerHeader(tab),
+		"list":    a.explorerList(tab),
+		"detail":  a.explorerDetail(tab),
 		"headerH": w.RowH + w.Gutter,
 		"gutter":  w.Gutter,
 	})
@@ -122,10 +122,10 @@ type explorerHeader struct {
 }
 
 // newExplorerHeader is the header of t's explorer.
-func newExplorerHeader(t *reqTab) explorerHeader {
-	server := t.Server
+func newExplorerHeader(tab *reqTab) explorerHeader {
+	server := tab.Server
 	if server == nil {
-		return explorerHeader{State: connState(t)}
+		return explorerHeader{State: connState(tab)}
 	}
 	return explorerHeader{
 		Known:        true,
@@ -154,23 +154,23 @@ type explorerEntry struct {
 }
 
 // explorerList is the strip of lists and the entries of the shown one.
-func (a *App) explorerList(t *reqTab) Node {
-	state := t.explorer
-	items := []TabItem{{Label: "Tools", Badge: len(t.Tools)}, {Label: "Resources", Badge: len(t.Resources)}, {Label: "Prompts", Badge: len(t.Prompts)}}
+func (a *App) explorerList(tab *reqTab) Node {
+	state := tab.explorer
+	items := []TabItem{{Label: "Tools", Badge: len(tab.Tools)}, {Label: "Resources", Badge: len(tab.Resources)}, {Label: "Prompts", Badge: len(tab.Prompts)}}
 	entries := []explorerEntry{}
-	for index, entry := range mcpexplorer.Entries(state.Kind, t.Tools, t.Resources, t.Prompts) {
+	for index, entry := range mcpexplorer.Entries(state.Kind, tab.Tools, tab.Resources, tab.Prompts) {
 		entries = append(entries, explorerEntry{
 			Title:    entry.Title,
 			Detail:   entry.Detail,
 			Selected: index == state.Selected,
-			Open:     func() { a.exploreOpen(t, index) },
+			Open:     func() { a.exploreOpen(tab, index) },
 		})
 	}
 	return explorerListTemplate.MustBuild(markup.Scope{
 		"tabs":    items,
 		"active":  int(state.Kind),
-		"choose":  func(index int) { a.exploreChoose(t, mcpexplorer.Kind(index)) },
-		"scroll":  &t.listScroll,
+		"choose":  func(index int) { a.exploreChoose(tab, mcpexplorer.Kind(index)) },
+		"scroll":  &tab.listScroll,
 		"entries": entries,
 		"listW":   explorerListW,
 		"gutter":  w.Gutter,
@@ -193,41 +193,41 @@ type openEntry struct {
 
 // explorerDetail is the open entry: its form, the button that sends it and
 // the answer.
-func (a *App) explorerDetail(t *reqTab) Node {
-	state := t.explorer
-	entries := mcpexplorer.Entries(state.Kind, t.Tools, t.Resources, t.Prompts)
+func (a *App) explorerDetail(tab *reqTab) Node {
+	state := tab.explorer
+	entries := mcpexplorer.Entries(state.Kind, tab.Tools, tab.Resources, tab.Prompts)
 	if state.Selected == mcpexplorer.None || state.Selected >= len(entries) {
 		return explorerNoneTemplate.MustBuild(markup.Scope{"gutter": w.Gutter})
 	}
 	detail := openEntry{
 		Title:        entries[state.Selected].Title,
-		Form:         formNode(a, t),
+		Form:         formNode(a, tab),
 		Label:        callLabel(state),
-		Call:         func() { a.exploreCall(t) },
-		Disconnected: !a.connected(t),
+		Call:         func() { a.exploreCall(tab) },
+		Disconnected: !a.connected(tab),
 		Calling:      state.Calling,
 	}
 	if state.Result != "" {
-		detail.Result = resultNode(t)
+		detail.Result = resultNode(tab)
 	}
 	return explorerDetailTemplate.MustBuild(markup.Scope{
 		"detail": detail,
-		"scroll": &t.detailScroll,
+		"scroll": &tab.detailScroll,
 		"gutter": w.Gutter,
 		"rowH":   w.RowH,
 	})
 }
 
 // formNode is the argument form of the open entry, nil for a resource.
-func formNode(a *App, t *reqTab) Node {
-	if t.form == nil {
+func formNode(app *App, tab *reqTab) Node {
+	if tab.form == nil {
 		return nil
 	}
-	return t.form.View(a)
+	return tab.form.View(app)
 }
 
 // connected reports whether t has a session to send to.
-func (a *App) connected(t *reqTab) bool { return t.Session != nil }
+func (a *App) connected(tab *reqTab) bool { return tab.Session != nil }
 
 // callLabel is the caption of the send button of the open entry.
 func callLabel(state mcpexplorer.State) string {
@@ -238,8 +238,8 @@ func callLabel(state mcpexplorer.State) string {
 }
 
 // resultNode is the last answer, headed by whether it succeeded.
-func resultNode(t *reqTab) Node {
-	state := t.explorer
+func resultNode(tab *reqTab) Node {
+	state := tab.explorer
 	heading, color := "Result", w.OK
 	if state.Failed {
 		heading, color = "Error", w.Error
@@ -247,7 +247,7 @@ func resultNode(t *reqTab) Node {
 	return explorerResultTemplate.MustBuild(markup.Scope{
 		"heading": heading,
 		"color":   color,
-		"view":    &t.resultView,
+		"view":    &tab.resultView,
 		"resultH": explorerResultH,
 	})
 }

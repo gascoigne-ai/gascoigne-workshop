@@ -22,20 +22,20 @@ type sampled struct {
 }
 
 // ask runs the app's sampler the way a session does, off the UI goroutine.
-func ask(a *App, ctx context.Context) chan sampled {
+func ask(app *App, ctx context.Context) chan sampled {
 	answer := make(chan sampled, 1)
 	go func() {
-		result, ok := a.sampleViaDialog(ctx, samplingAsked)
+		result, ok := app.sampleViaDialog(ctx, samplingAsked)
 		answer <- sampled{result, ok}
 	}()
 	return answer
 }
 
 // stepUntil runs frames until cond holds.
-func stepUntil(t *testing.T, a *App, what string, cond func() bool) {
+func stepUntil(t *testing.T, app *App, what string, cond func() bool) {
 	t.Helper()
 	for range 400 {
-		a.step(core.Input{})
+		app.step(core.Input{})
 		if cond() {
 			return
 		}

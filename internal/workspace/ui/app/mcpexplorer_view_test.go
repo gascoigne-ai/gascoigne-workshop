@@ -39,19 +39,19 @@ func mcpTab(t *testing.T) (*App, *reqTab) {
 
 // announceLong puts a list of many tools into the tab, the first with a
 // long name and description.
-func announceLong(a *App, tab *reqTab) {
+func announceLong(app *App, tab *reqTab) {
 	tools := []string{fmt.Sprintf(`{"name":%q,"description":%q}`, longToolName, longToolDetail)}
 	for i := range 12 {
 		tools = append(tools, fmt.Sprintf(`{"name":"tool_%d","description":"Tool number %d"}`, i, i))
 	}
 	list := `{"result":{"tools":[` + strings.Join(tools, ",") + `]}}`
-	a.applyWS(wsEvent{tab: tab, hasEv: true, ev: reqport.Event{Dir: reqport.Received, Kind: "response", Text: list}})
+	app.applyWS(wsEvent{tab: tab, hasEv: true, ev: reqport.Event{Dir: reqport.Received, Kind: "response", Text: list}})
 }
 
 // initialize delivers the server's answer to initialize, which the header
 // of the explorer shows.
-func initialize(a *App, tab *reqTab, result string) {
-	a.applyWS(wsEvent{tab: tab, hasEv: true, ev: reqport.Event{Dir: reqport.Info, Kind: "initialize", Text: result}})
+func initialize(app *App, tab *reqTab, result string) {
+	app.applyWS(wsEvent{tab: tab, hasEv: true, ev: reqport.Event{Dir: reqport.Info, Kind: "initialize", Text: result}})
 }
 
 // The laid-out explorer is pinned as text (testdata/explorer-*.dump,
@@ -64,56 +64,56 @@ func TestTheMCPExplorerLaysOutAsPinned(t *testing.T) {
 	}{
 		{"not-announced", func(*App, *reqTab) {}},
 		{"tools", announce},
-		{"tool-open-not-connected", func(a *App, tab *reqTab) {
-			announce(a, tab)
-			a.exploreOpen(tab, 0)
+		{"tool-open-not-connected", func(app *App, tab *reqTab) {
+			announce(app, tab)
+			app.exploreOpen(tab, 0)
 		}},
-		{"tool-calling", func(a *App, tab *reqTab) {
-			announce(a, tab)
+		{"tool-calling", func(app *App, tab *reqTab) {
+			announce(app, tab)
 			tab.Session = &requesterSession{}
-			a.exploreOpen(tab, 1)
+			app.exploreOpen(tab, 1)
 			tab.explorer.Begin()
 		}},
-		{"tool-result", func(a *App, tab *reqTab) {
-			announce(a, tab)
+		{"tool-result", func(app *App, tab *reqTab) {
+			announce(app, tab)
 			tab.Session = &requesterSession{}
-			a.exploreOpen(tab, 1)
+			app.exploreOpen(tab, 1)
 			tab.explorer.Finish(`{"content":[{"type":"text","text":"pong"}]}`, nil)
 			tab.resultView.SetLines(resultLines(tab.explorer))
 		}},
-		{"tool-error", func(a *App, tab *reqTab) {
-			announce(a, tab)
+		{"tool-error", func(app *App, tab *reqTab) {
+			announce(app, tab)
 			tab.Session = &requesterSession{}
-			a.exploreOpen(tab, 1)
+			app.exploreOpen(tab, 1)
 			tab.explorer.Finish("", errors.New("no such tool"))
 			tab.resultView.SetLines(resultLines(tab.explorer))
 		}},
-		{"resources-open", func(a *App, tab *reqTab) {
-			announce(a, tab)
+		{"resources-open", func(app *App, tab *reqTab) {
+			announce(app, tab)
 			tab.Session = &requesterSession{}
-			a.exploreChoose(tab, mcpexplorer.Resources)
-			a.exploreOpen(tab, 0)
+			app.exploreChoose(tab, mcpexplorer.Resources)
+			app.exploreOpen(tab, 0)
 		}},
-		{"prompts-open", func(a *App, tab *reqTab) {
-			announce(a, tab)
+		{"prompts-open", func(app *App, tab *reqTab) {
+			announce(app, tab)
 			tab.Session = &requesterSession{}
-			a.exploreChoose(tab, mcpexplorer.Prompts)
-			a.exploreOpen(tab, 0)
+			app.exploreChoose(tab, mcpexplorer.Prompts)
+			app.exploreOpen(tab, 0)
 		}},
-		{"prompts-empty", func(a *App, tab *reqTab) {
-			announceLong(a, tab)
-			a.exploreChoose(tab, mcpexplorer.Prompts)
+		{"prompts-empty", func(app *App, tab *reqTab) {
+			announceLong(app, tab)
+			app.exploreChoose(tab, mcpexplorer.Prompts)
 		}},
-		{"long-names", func(a *App, tab *reqTab) {
-			announceLong(a, tab)
-			a.exploreOpen(tab, 0)
+		{"long-names", func(app *App, tab *reqTab) {
+			announceLong(app, tab)
+			app.exploreOpen(tab, 0)
 		}},
-		{"server-full", func(a *App, tab *reqTab) {
-			initialize(a, tab, `{"protocolVersion":"2025-06-18","capabilities":{"tools":{},"resources":{}},"serverInfo":{"name":"mock","version":"1.2.0"},"instructions":"Use echo.\nThen call add with two numbers."}`)
-			announce(a, tab)
+		{"server-full", func(app *App, tab *reqTab) {
+			initialize(app, tab, `{"protocolVersion":"2025-06-18","capabilities":{"tools":{},"resources":{}},"serverInfo":{"name":"mock","version":"1.2.0"},"instructions":"Use echo.\nThen call add with two numbers."}`)
+			announce(app, tab)
 		}},
-		{"server-bare", func(a *App, tab *reqTab) {
-			initialize(a, tab, `{"protocolVersion":"2025-06-18","serverInfo":{"name":"bare"}}`)
+		{"server-bare", func(app *App, tab *reqTab) {
+			initialize(app, tab, `{"protocolVersion":"2025-06-18","serverInfo":{"name":"bare"}}`)
 		}},
 	}
 	sizes := []struct {

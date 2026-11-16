@@ -56,28 +56,28 @@ var messagesPaneStates = []struct {
 	placeholder string // the composer's hint; "" when there is no composer
 	setUp       func(a *App, tab *reqTab)
 }{
-	{"websocket-idle", "Connect to send messages", func(a *App, tab *reqTab) {
+	{"websocket-idle", "Connect to send messages", func(app *App, tab *reqTab) {
 		tab.Req.Protocol = "websocket"
 	}},
-	{"websocket-connected", "Message", func(a *App, tab *reqTab) {
+	{"websocket-connected", "Message", func(app *App, tab *reqTab) {
 		tab.Req.Protocol = "websocket"
 		tab.Session = &recordingSession{}
 		tab.Reconnect = true
 		sentAt := time.Date(2026, 11, 14, 10, 30, 0, 0, time.UTC)
-		a.logEvent(tab, reqport.Event{Time: sentAt, Dir: reqport.Sent, Kind: "text", Text: `{"op":"ping"}`})
-		a.logEvent(tab, reqport.Event{Time: sentAt, Dir: reqport.Received, Kind: "text", Text: `{"op":"ping"}`})
+		app.logEvent(tab, reqport.Event{Time: sentAt, Dir: reqport.Sent, Kind: "text", Text: `{"op":"ping"}`})
+		app.logEvent(tab, reqport.Event{Time: sentAt, Dir: reqport.Received, Kind: "text", Text: `{"op":"ping"}`})
 	}},
-	{"sse", "", func(a *App, tab *reqTab) {
+	{"sse", "", func(app *App, tab *reqTab) {
 		tab.Req.Protocol = "sse"
 	}},
-	{"mcp-connected", "call TOOL {json}  ·  read URI  ·  prompt NAME {json}  ·  method {json}  ·  or raw JSON-RPC", func(a *App, tab *reqTab) {
+	{"mcp-connected", "call TOOL {json}  ·  read URI  ·  prompt NAME {json}  ·  method {json}  ·  or raw JSON-RPC", func(app *App, tab *reqTab) {
 		tab.Req.Protocol = "mcp"
 		tab.Session = &recordingSession{}
 		tab.Tools = []model.MCPTool{{Name: "search"}}
 		tab.Resources = []model.MCPResource{{URI: "file:///a.txt"}}
 		tab.Prompts = []model.MCPPrompt{{Name: "review"}}
 	}},
-	{"grpc-stream", "Message", func(a *App, tab *reqTab) {
+	{"grpc-stream", "Message", func(app *App, tab *reqTab) {
 		tab.Req.Protocol = "grpc"
 		tab.grpcStream = true
 		tab.Session = &recordingSession{}
@@ -193,8 +193,8 @@ func TestTheComposerSendsOnEnterAndOnSend(t *testing.T) {
 		name string
 		send func(a *App)
 	}{
-		{"enter", func(a *App) { a.step(core.Input{Enter: true}) }},
-		{"send button", func(a *App) { click(a, sendButtonX, composerY) }},
+		{"enter", func(app *App) { app.step(core.Input{Enter: true}) }},
+		{"send button", func(app *App) { click(app, sendButtonX, composerY) }},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

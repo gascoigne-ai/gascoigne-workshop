@@ -39,9 +39,9 @@ type wsEvent struct {
 var retryDelay = 2 * time.Second
 
 // isSocket reports whether the tab's protocol keeps a connection open.
-func isSocket(t *reqTab) bool {
-	return t.Req.Protocol == "websocket" || t.Req.Protocol == "mcp" || t.Req.Protocol == "sse" ||
-		(t.Req.Protocol == "grpc" && t.grpcStream)
+func isSocket(tab *reqTab) bool {
+	return tab.Req.Protocol == "websocket" || tab.Req.Protocol == "mcp" || tab.Req.Protocol == "sse" ||
+		(tab.Req.Protocol == "grpc" && tab.grpcStream)
 }
 
 // wsPanes are the panes of a socket's response side.
@@ -56,11 +56,11 @@ var mcpPanes = []pane{{label: "Explorer", kind: paneExplorer}, {label: "JSON-RPC
 var responsePanesByProtocol = map[string][]pane{"mcp": mcpPanes}
 
 // responsePanesFor are the panes of the response side of t.
-func responsePanesFor(t *reqTab) []pane {
-	if panes, ok := responsePanesByProtocol[t.Req.Protocol]; ok {
+func responsePanesFor(tab *reqTab) []pane {
+	if panes, ok := responsePanesByProtocol[tab.Req.Protocol]; ok {
 		return panes
 	}
-	if isSocket(t) {
+	if isSocket(tab) {
 		return wsPanes
 	}
 	return responsePanes
@@ -68,27 +68,27 @@ func responsePanesFor(t *reqTab) []pane {
 
 // toggleConnection connects a disconnected socket tab and closes a
 // connected one.
-func (a *App) toggleConnection(t *reqTab) {
-	if t.Active() {
-		a.disconnect(t)
+func (a *App) toggleConnection(tab *reqTab) {
+	if tab.Active() {
+		a.disconnect(tab)
 		return
 	}
-	a.connect(t)
+	a.connect(tab)
 }
 
 // connect dials in the background; the outcome arrives as a wsEvent.
-func (a *App) connect(t *reqTab) {
-	if !a.allowed(t, t.Req, func() { a.connect(t) }) {
+func (a *App) connect(other *reqTab) {
+	if !a.allowed(other, other.Req, func() { a.connect(other) }) {
 		return
 	}
-	gen := t.Begin()
-	a.status = "Connecting to " + t.Req.URL
-	req := t.Req.Expanded(a.varsFor(t.Req))
-	if t.Req.Protocol == "sse" && t.LastEventID != "" { // resume where the stream stopped
-		req.Headers = append(req.Headers, model.KV{Name: "Last-Event-ID", Value: t.LastEventID, Enabled: true})
+	gen := other.Begin()
+	a.status = "Connecting to " + other.Req.URL
+	req := other.Req.Expanded(a.varsFor(other.Req))
+	if other.Req.Protocol == "sse" && other.LastEventID != "" { // resume where the stream stopped
+		req.Headers = append(req.Headers, model.KV{Name: "Last-Event-ID", Value: other.LastEventID, Enabled: true})
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), a.timeoutFor(req))
-	t.wsCancel = cancel
+	other.wsCancel = cancel
 	reg := a.reg // the goroutine must not read App fields the UI goroutine replaces
 	a.bus.Run(context.Background(), func(context.Context) bus.Msg {
 		defer cancel()
@@ -106,118 +106,118 @@ func (a *App) connect(t *reqTab) {
 			default:
 			}
 		}
-		a.bus.Dispatch(wsEvent{tab: t, gen: gen, sess: s, err: err})
+		a.bus.Dispatch(wsEvent{tab: other, gen: gen, sess: s, err: err})
 		if err != nil {
 			return nil
 		}
 		for e := range s.Events() {
-			a.bus.Dispatch(wsEvent{tab: t, gen: gen, ev: e, hasEv: true})
+			a.bus.Dispatch(wsEvent{tab: other, gen: gen, ev: e, hasEv: true})
 		}
-		return wsEvent{tab: t, gen: gen, closed: true}
+		return wsEvent{tab: other, gen: gen, closed: true}
 	})
 }
 
 // disconnect closes the session of t, or abandons a connect in progress.
-func (a *App) disconnect(t *reqTab) {
-	session, abandoned := t.Disconnect()
+func (a *App) disconnect(tab *reqTab) {
+	session, abandoned := tab.Disconnect()
 	if session != nil {
 		_ = session.Close() // the end of the event stream clears the session
 		return
 	}
 	if abandoned {
-		t.wsCancel()
+		tab.wsCancel()
 		a.status = model.ErrCancelled
 	}
 }
 
 // sendMessage sends the composer's text and empties it.
-func (a *App) sendMessage(t *reqTab) {
-	if t.Session == nil || t.msg.Text == "" {
+func (a *App) sendMessage(tab *reqTab) {
+	if tab.Session == nil || tab.msg.Text == "" {
 		return
 	}
-	send, err := composed(t.Session, t.msg.Text)
+	send, err := composed(tab.Session, tab.msg.Text)
 	if err != nil {
-		a.logInfo(t, err.Error(), w.Error)
+		a.logInfo(tab, err.Error(), w.Error)
 		return
 	}
-	a.sendInOrder(t, send)
-	t.msg = NewTextField("")
-	t.msg.Focused = true
+	a.sendInOrder(tab, send)
+	tab.msg = NewTextField("")
+	tab.msg.Focused = true
 }
 
 // sendInOrder runs send off the UI goroutine, after the sends and pings
 // already asked for on this tab: messages go out in the order they were
 // written. A failure is logged in the message log.
-func (a *App) sendInOrder(t *reqTab, send func() error) {
-	t.outbox = append(t.outbox, send)
-	if t.outboxBusy {
+func (a *App) sendInOrder(tab *reqTab, send func() error) {
+	tab.outbox = append(tab.outbox, send)
+	if tab.outboxBusy {
 		return
 	}
-	t.outboxBusy = true
-	a.runOutbox(t)
+	tab.outboxBusy = true
+	a.runOutbox(tab)
 }
 
-func (a *App) runOutbox(t *reqTab) {
-	send := t.outbox[0]
-	t.outbox = t.outbox[1:]
+func (a *App) runOutbox(tab *reqTab) {
+	send := tab.outbox[0]
+	tab.outbox = tab.outbox[1:]
 	a.bus.Run(context.Background(), func(context.Context) bus.Msg {
 		err := send()
 		return func() { // on the UI goroutine
 			if err != nil {
-				a.logInfo(t, err.Error(), w.Error)
+				a.logInfo(tab, err.Error(), w.Error)
 			}
-			if len(t.outbox) > 0 {
-				a.runOutbox(t)
+			if len(tab.outbox) > 0 {
+				a.runOutbox(tab)
 				return
 			}
-			t.outboxBusy = false
+			tab.outboxBusy = false
 		}
 	})
 }
 
 // pingSocket sends a ping.
-func (a *App) pingSocket(t *reqTab) {
-	if t.Session == nil {
+func (a *App) pingSocket(tab *reqTab) {
+	if tab.Session == nil {
 		return
 	}
-	a.sendInOrder(t, t.Session.Ping)
+	a.sendInOrder(tab, tab.Session.Ping)
 }
 
 // clearLog empties the message log.
-func (a *App) clearLog(t *reqTab) {
-	t.wsView.SetLines(nil)
+func (a *App) clearLog(tab *reqTab) {
+	tab.wsView.SetLines(nil)
 }
 
 // applyWS applies one wsEvent.
-func (a *App) applyWS(e wsEvent) {
-	t := e.tab
-	if !t.Current(e.gen) {
-		if e.sess != nil { // a connect that was abandoned meanwhile
-			_ = e.sess.Close()
+func (a *App) applyWS(wsEventValue wsEvent) {
+	t := wsEventValue.tab
+	if !t.Current(wsEventValue.gen) {
+		if wsEventValue.sess != nil { // a connect that was abandoned meanwhile
+			_ = wsEventValue.sess.Close()
 		}
 		return
 	}
 	switch {
-	case e.retry:
+	case wsEventValue.retry:
 		if t.CanRetry() {
 			a.connect(t)
 		}
-	case e.closed:
+	case wsEventValue.closed:
 		t.Closed()
 		a.calls.Info(a.now(), "Disconnected from "+t.Req.URL)
 		a.status = "Disconnected from " + t.Req.URL
 		a.scheduleRetry(t)
-	case e.hasEv:
-		t.Received(e.ev)
-		a.logEvent(t, e.ev)
-	case e.err != nil:
+	case wsEventValue.hasEv:
+		t.Received(wsEventValue.ev)
+		a.logEvent(t, wsEventValue.ev)
+	case wsEventValue.err != nil:
 		t.Failed()
-		a.calls.Error(a.now(), fmt.Sprintf("✗ %s: %s", t.Req.URL, e.err))
-		a.logInfo(t, e.err.Error(), w.Error)
+		a.calls.Error(a.now(), fmt.Sprintf("✗ %s: %s", t.Req.URL, wsEventValue.err))
+		a.logInfo(t, wsEventValue.err.Error(), w.Error)
 		a.status = "Connection failed"
 		a.scheduleRetry(t)
 	default:
-		t.Opened(e.sess)
+		t.Opened(wsEventValue.sess)
 		a.calls.Info(a.now(), "Connected to "+t.Req.URL)
 		a.status = "Connected to " + t.Req.URL
 	}
@@ -225,39 +225,39 @@ func (a *App) applyWS(e wsEvent) {
 
 // scheduleRetry reopens a connection the user did not close, when the
 // tab asks for it.
-func (a *App) scheduleRetry(t *reqTab) {
-	if !t.RetryWanted() {
+func (a *App) scheduleRetry(other *reqTab) {
+	if !other.RetryWanted() {
 		return
 	}
-	a.logInfo(t, "Reconnecting in "+retryDelay.String(), w.Muted)
-	gen := t.Gen
-	time.AfterFunc(retryDelay, func() { a.bus.Dispatch(wsEvent{tab: t, gen: gen, retry: true}) })
+	a.logInfo(other, "Reconnecting in "+retryDelay.String(), w.Muted)
+	gen := other.Gen
+	time.AfterFunc(retryDelay, func() { a.bus.Dispatch(wsEvent{tab: other, gen: gen, retry: true}) })
 }
 
 // logEvent appends an event to the log, one line per line of its text.
-func (a *App) logEvent(t *reqTab, e reqport.Event) {
-	if e.Kind == "initialize" {
+func (a *App) logEvent(tab *reqTab, eventValue reqport.Event) {
+	if eventValue.Kind == "initialize" {
 		return
 	}
 	mark, tok := "•", w.Muted
-	switch e.Dir {
+	switch eventValue.Dir {
 	case reqport.Sent:
 		mark, tok = "↑", w.Info
 	case reqport.Received:
 		mark, tok = "↓", w.OK
 	}
-	text := e.Text
-	if text == "" && e.Kind != "text" && e.Kind != "binary" {
-		text = e.Kind // a ping has no payload
+	text := eventValue.Text
+	if text == "" && eventValue.Kind != "text" && eventValue.Kind != "binary" {
+		text = eventValue.Kind // a ping has no payload
 	}
-	if e.Dir == reqport.Info && strings.HasPrefix(e.Text, "Connection lost") {
+	if eventValue.Dir == reqport.Info && strings.HasPrefix(eventValue.Text, "Connection lost") {
 		tok = w.Error
 	}
-	stamp := e.Time.Format("15:04:05")
-	if e.Time.IsZero() {
+	stamp := eventValue.Time.Format("15:04:05")
+	if eventValue.Time.IsZero() {
 		stamp = time.Now().Format("15:04:05")
 	}
-	lines := t.wsView.Lines
+	lines := tab.wsView.Lines
 	for i, part := range strings.Split(text, "\n") {
 		head := stamp + " " + mark + " "
 		if i > 0 {
@@ -265,26 +265,26 @@ func (a *App) logEvent(t *reqTab, e reqport.Event) {
 		}
 		lines = append(lines, Line{Spans: []Span{
 			{Text: head, Style: w.Muted},
-			{Text: strings.TrimRight(part, "\r"), Style: textToken(e.Dir, tok)},
+			{Text: strings.TrimRight(part, "\r"), Style: textToken(eventValue.Dir, tok)},
 		}})
 	}
-	t.wsView.SetLines(lines)
+	tab.wsView.SetLines(lines)
 }
 
 // textToken is the color of a log line's text: the direction's own for
 // problems and notes, plain for messages.
-func textToken(d reqport.Direction, tok w.Token) w.Token {
-	if d == reqport.Info {
+func textToken(directionValue reqport.Direction, tok w.Token) w.Token {
+	if directionValue == reqport.Info {
 		return tok
 	}
 	return w.Text
 }
 
 // logInfo appends a note of the UI itself to the log.
-func (a *App) logInfo(t *reqTab, text string, tok w.Token) {
-	a.logEvent(t, reqport.Event{Time: time.Now(), Dir: reqport.Info, Kind: "info", Text: text})
+func (a *App) logInfo(tab *reqTab, text string, tok w.Token) {
+	a.logEvent(tab, reqport.Event{Time: time.Now(), Dir: reqport.Info, Kind: "info", Text: text})
 	if tok == w.Error { // recolor the line just added
-		last := &t.wsView.Lines[len(t.wsView.Lines)-1]
+		last := &tab.wsView.Lines[len(tab.wsView.Lines)-1]
 		last.Spans[1].Style = w.Error
 	}
 }
@@ -292,36 +292,36 @@ func (a *App) logInfo(t *reqTab, text string, tok w.Token) {
 var messagesPaneTemplate = markup.Must("messagespane.vml", messagespaneSource)
 
 // messagesPane is the log with its toolbar and the composer.
-func (a *App) messagesPane(_ pane, t *reqTab, _ *ScrollState) Node {
+func (a *App) messagesPane(_ pane, tab *reqTab, _ *ScrollState) Node {
 	return messagesPaneTemplate.MustBuild(markup.Scope{
 		"gutter":    w.Gutter,
 		"composerH": w.RowH + 16,
-		"toolbar":   a.messagesToolbar(t),
-		"log":       &t.wsView,
-		"composer":  t.Req.Protocol != "sse",
-		"message":   &t.msg,
-		"hint":      composerHint(t, t.Session != nil),
-		"canFormat": t.Req.Protocol == "websocket",
-		"send":      func() { a.sendMessage(t) },
-		"format":    func() { a.formatMessage(t) },
+		"toolbar":   a.messagesToolbar(tab),
+		"log":       &tab.wsView,
+		"composer":  tab.Req.Protocol != "sse",
+		"message":   &tab.msg,
+		"hint":      composerHint(tab, tab.Session != nil),
+		"canFormat": tab.Req.Protocol == "websocket",
+		"send":      func() { a.sendMessage(tab) },
+		"format":    func() { a.formatMessage(tab) },
 	})
 }
 
-func connState(t *reqTab) string {
+func connState(tab *reqTab) string {
 	switch {
-	case t.Connecting:
+	case tab.Connecting:
 		return "Connecting..."
-	case t.Session != nil:
+	case tab.Session != nil:
 		return "Connected"
 	}
 	return "Not connected"
 }
 
-func composerHint(t *reqTab, connected bool) string {
+func composerHint(tab *reqTab, connected bool) string {
 	switch {
 	case !connected:
 		return "Connect to send messages"
-	case t.Req.Protocol == "mcp":
+	case tab.Req.Protocol == "mcp":
 		return "call TOOL {json}  ·  read URI  ·  prompt NAME {json}  ·  method {json}  ·  or raw JSON-RPC"
 	}
 	return "Message"
@@ -333,8 +333,8 @@ const binaryPrefix = "hex:"
 
 // sendComposed sends the composer's text: as a binary message when it
 // starts with "hex:" and the session can send binary, else as text.
-func sendComposed(s reqport.Session, text string) error {
-	send, err := composed(s, text)
+func sendComposed(session reqport.Session, text string) error {
+	send, err := composed(session, text)
 	if err != nil {
 		return err
 	}
@@ -343,11 +343,11 @@ func sendComposed(s reqport.Session, text string) error {
 
 // composed is the send of the composer's text, ready to run; a text that
 // cannot be sent (bad hex) is refused here, before anything is sent.
-func composed(s reqport.Session, text string) (func() error, error) {
+func composed(session reqport.Session, text string) (func() error, error) {
 	rest, ok := strings.CutPrefix(text, binaryPrefix)
-	bs, canBinary := s.(reqport.BinarySender)
+	bs, canBinary := session.(reqport.BinarySender)
 	if !ok || !canBinary {
-		return func() error { return s.Send(text) }, nil
+		return func() error { return session.Send(text) }, nil
 	}
 	data, err := hex.DecodeString(strings.Join(strings.Fields(rest), ""))
 	if err != nil {
@@ -359,35 +359,35 @@ func composed(s reqport.Session, text string) (func() error, error) {
 // toolMenu lists the tools the server announced; picking one puts a
 // ready-to-edit call, with the arguments the tool's schema asks for, in
 // the composer.
-func (a *App) toolMenu(t *reqTab) []MenuItem {
-	items := make([]MenuItem, 0, len(t.Tools))
-	for _, tool := range t.Tools {
-		items = append(items, MenuItem{Label: tool.Name, Run: func() { a.openToolForm(t, tool) }})
+func (a *App) toolMenu(tab *reqTab) []MenuItem {
+	items := make([]MenuItem, 0, len(tab.Tools))
+	for _, tool := range tab.Tools {
+		items = append(items, MenuItem{Label: tool.Name, Run: func() { a.openToolForm(tab, tool) }})
 	}
 	return items
 }
 
 // composeCall fills the composer with a call of tool.
-func (a *App) composeCall(t *reqTab, tool model.MCPTool) {
+func (a *App) composeCall(tab *reqTab, tool model.MCPTool) {
 	args := "{}"
 	if tool.Schema != nil {
 		args = model.Skeleton(tool.Schema)
 	}
-	t.msg = NewTextField("call " + tool.Name + " " + args)
-	t.msg.Focused = true
+	tab.msg = NewTextField("call " + tool.Name + " " + args)
+	tab.msg.Focused = true
 }
 
 // resourceMenu lists the announced resources; picking one composes a read.
-func (a *App) resourceMenu(t *reqTab) []MenuItem {
-	items := make([]MenuItem, 0, len(t.Resources))
-	for _, r := range t.Resources {
+func (a *App) resourceMenu(tab *reqTab) []MenuItem {
+	items := make([]MenuItem, 0, len(tab.Resources))
+	for _, r := range tab.Resources {
 		label := r.URI
 		if r.Name != "" {
 			label = r.Name + "  " + r.URI
 		}
 		items = append(items, MenuItem{Label: label, Run: func() {
-			t.msg = NewTextField("read " + r.URI)
-			t.msg.Focused = true
+			tab.msg = NewTextField("read " + r.URI)
+			tab.msg.Focused = true
 		}})
 	}
 	return items
@@ -395,12 +395,12 @@ func (a *App) resourceMenu(t *reqTab) []MenuItem {
 
 // promptMenu lists the announced prompts; picking one composes a request
 // with its required arguments filled in.
-func (a *App) promptMenu(t *reqTab) []MenuItem {
-	items := make([]MenuItem, 0, len(t.Prompts))
-	for _, p := range t.Prompts {
+func (a *App) promptMenu(tab *reqTab) []MenuItem {
+	items := make([]MenuItem, 0, len(tab.Prompts))
+	for _, p := range tab.Prompts {
 		items = append(items, MenuItem{Label: p.Name, Run: func() {
-			t.msg = NewTextField("prompt " + p.Name + " " + p.ArgsJSON())
-			t.msg.Focused = true
+			tab.msg = NewTextField("prompt " + p.Name + " " + p.ArgsJSON())
+			tab.msg.Focused = true
 		}})
 	}
 	return items
@@ -409,19 +409,19 @@ func (a *App) promptMenu(t *reqTab) []MenuItem {
 // formatMessage turns the composer's JSON into one line, so a pasted,
 // indented message goes out as a single frame; text that is not JSON
 // stays as typed and a toast says where it breaks.
-func (a *App) formatMessage(t *reqTab) {
-	compact, err := textfmt.CompactJSON(t.msg.Text)
+func (a *App) formatMessage(tab *reqTab) {
+	compact, err := textfmt.CompactJSON(tab.msg.Text)
 	if err != nil {
 		a.toast(err.Error(), true)
 		return
 	}
-	t.msg = NewTextField(compact)
-	t.msg.Focused = true
+	tab.msg = NewTextField(compact)
+	tab.msg.Focused = true
 }
 
 // requestPanesFor are the panes of the request side of t.
-func requestPanesFor(t *reqTab) []pane {
-	if panes, ok := requestPanesByProtocol[t.Req.Protocol]; ok {
+func requestPanesFor(tab *reqTab) []pane {
+	if panes, ok := requestPanesByProtocol[tab.Req.Protocol]; ok {
 		return panes
 	}
 	return requestPanes

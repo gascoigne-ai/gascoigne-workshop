@@ -13,13 +13,13 @@ import (
 // user; the answer is remembered (state.Trusted) per command and per file.
 // When it has to ask it returns false and runs again after the user
 // allows.
-func (a *App) allowed(t *reqTab, source *model.Request, again func()) bool {
+func (a *App) allowed(tab *reqTab, source *model.Request, again func()) bool {
 	folder := ""
-	if entry, ok := a.entryFor(t.Req); ok {
+	if entry, ok := a.entryFor(tab.Req); ok {
 		folder = entry.Dir
 	}
 	var unknown []model.Access
-	for _, access := range source.Expanded(a.varsFor(t.Req)).Accesses(folder) {
+	for _, access := range source.Expanded(a.varsFor(tab.Req)).Accesses(folder) {
 		if !a.trusted[access.Key()] {
 			unknown = append(unknown, access)
 		}

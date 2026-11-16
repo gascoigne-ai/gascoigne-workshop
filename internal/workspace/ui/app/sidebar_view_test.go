@@ -27,26 +27,26 @@ func TestTheSidebarLaysOutAsPinned(t *testing.T) {
 		name  string
 		setup func(a *App)
 	}{
-		{"tree", func(a *App) {}},
-		{"folder-selected", func(a *App) { click(a, 100, treeRowY(rowRealtime)) }},
-		{"filter-name", func(a *App) {
-			click(a, 180, headerH/2)
-			a.typeText("tags")
+		{"tree", func(app *App) {}},
+		{"folder-selected", func(app *App) { click(app, 100, treeRowY(rowRealtime)) }},
+		{"filter-name", func(app *App) {
+			click(app, 180, headerH/2)
+			app.typeText("tags")
 		}},
-		{"filter-url", func(a *App) {
-			click(a, 180, headerH/2)
-			a.typeText("search/repos")
+		{"filter-url", func(app *App) {
+			click(app, 180, headerH/2)
+			app.typeText("search/repos")
 		}},
-		{"drop", func(a *App) {
-			a.dragNode = findReq(a, "Repository Info")
-			a.dropTarget = a.col().Folders[1]
+		{"drop", func(app *App) {
+			app.dragNode = findReq(app, "Repository Info")
+			app.dropTarget = app.col().Folders[1]
 		}},
-		{"drop-self", func(a *App) {
-			info := findReq(a, "Repository Info")
-			a.dragNode, a.dropTarget = info, info
+		{"drop-self", func(app *App) {
+			info := findReq(app, "Repository Info")
+			app.dragNode, app.dropTarget = info, info
 		}},
-		{"sent", func(a *App) { a.showSent = true }},
-		{"empty", func(a *App) { a.closeCollection(a.col()) }},
+		{"sent", func(app *App) { app.showSent = true }},
+		{"empty", func(app *App) { app.closeCollection(app.col()) }},
 	}
 	sizes := []struct {
 		name  string
@@ -175,8 +175,8 @@ func TestDraggingOverATreeRowMakesItTheDropTarget(t *testing.T) {
 		row    int
 		target func(a *App) any
 	}{
-		{"request", rowSearch, func(a *App) any { return findReq(a, "Search Repos") }},
-		{"folder", rowUser, func(a *App) any { return a.col().Folders[0] }},
+		{"request", rowSearch, func(app *App) any { return findReq(app, "Search Repos") }},
+		{"folder", rowUser, func(app *App) any { return app.col().Folders[0] }},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

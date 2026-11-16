@@ -9,7 +9,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
-func traceText(a *App) string { return strings.Join(a.calls.Lines(), "\n") }
+func traceText(app *App) string { return strings.Join(app.calls.Lines(), "\n") }
 
 func TestASendIsTracedWithItsOutcome(t *testing.T) {
 	a, _ := newTestApp(t)

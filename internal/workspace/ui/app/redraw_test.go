@@ -15,10 +15,10 @@ import (
 )
 
 // settle runs idle frames and clears the dirty flag, as drawing does.
-func settle(a *App, frames int) {
+func settle(app *App, frames int) {
 	for range frames {
-		a.step(core.Input{X: a.lastIn.X, Y: a.lastIn.Y})
-		a.dirty = false
+		app.step(core.Input{X: app.lastIn.X, Y: app.lastIn.Y})
+		app.dirty = false
 	}
 }
 

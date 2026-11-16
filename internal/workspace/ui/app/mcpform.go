@@ -89,10 +89,10 @@ func (a *App) openSamplingDialog(request reqport.SamplingRequest, answer chan<- 
 
 // openToolForm shows the form of tool; a tool with no properties is
 // composed at once.
-func (a *App) openToolForm(t *reqTab, tool model.MCPTool) {
+func (a *App) openToolForm(tab *reqTab, tool model.MCPTool) {
 	form := mcpform.New(tool)
 	if form.Empty() {
-		a.composeCall(t, tool)
+		a.composeCall(tab, tool)
 		return
 	}
 	a.dialog = &dialog{
@@ -100,7 +100,7 @@ func (a *App) openToolForm(t *reqTab, tool model.MCPTool) {
 			Title: "Call " + tool.Name,
 			Buttons: []DialogButton{
 				{Label: "Cancel", Run: a.closeDialog},
-				{Label: "Fill composer", Primary: true, Run: func() { a.fillFromForm(t, form) }},
+				{Label: "Fill composer", Primary: true, Run: func() { a.fillFromForm(tab, form) }},
 			},
 		},
 		form: form,
@@ -109,15 +109,15 @@ func (a *App) openToolForm(t *reqTab, tool model.MCPTool) {
 
 // fillFromForm puts the call the form describes into the composer, or
 // keeps the form open and says what is wrong.
-func (a *App) fillFromForm(t *reqTab, form *mcpform.Form) {
+func (a *App) fillFromForm(tab *reqTab, form *mcpform.Form) {
 	command, err := form.Command()
 	if err != nil {
 		form.Problem = err.Error()
 		return
 	}
 	a.closeDialog()
-	t.msg = NewTextField(command)
-	t.msg.Focused = true
+	tab.msg = NewTextField(command)
+	tab.msg.Focused = true
 }
 
 // Submit makes the App the host of the tool form: Enter in a field of the

@@ -429,30 +429,30 @@ func (a *App) openRequest(req *model.Request) {
 
 // send runs t's request off the UI goroutine; the result comes back
 // through the bus and is applied in drain.
-func (a *App) send(t *reqTab) {
-	if isSocket(t) {
-		a.toggleConnection(t)
+func (a *App) send(tab *reqTab) {
+	if isSocket(tab) {
+		a.toggleConnection(tab)
 		return
 	}
-	a.dispatch(t, t.Req)
+	a.dispatch(tab, tab.Req)
 }
 
 // dispatch sends req on behalf of tab t: the request of the tab, or a
 // helper one such as a GraphQL schema query that uses the tab's URL and
 // credentials.
-func (a *App) dispatch(t *reqTab, source *model.Request) {
-	if !a.allowed(t, source, func() { a.dispatch(t, source) }) {
+func (a *App) dispatch(other *reqTab, source *model.Request) {
+	if !a.allowed(other, source, func() { a.dispatch(other, source) }) {
 		return
 	}
-	seq, started := t.BeginSend()
+	seq, started := other.BeginSend()
 	if !started {
 		return
 	}
 	a.status = "Sending " + source.URL
-	req := source.Expanded(a.varsFor(t.Req))
+	req := source.Expanded(a.varsFor(other.Req))
 	a.calls.Sent(a.now(), req)
 	ctx, cancel := context.WithTimeout(context.Background(), a.timeoutFor(req))
-	t.cancel = cancel
+	other.cancel = cancel
 	reg := a.reg // the command must not read App fields the UI goroutine replaces
 	a.bus.Run(ctx, func(ctx context.Context) bus.Msg {
 		defer cancel()
@@ -460,18 +460,18 @@ func (a *App) dispatch(t *reqTab, source *model.Request) {
 		if err != nil {
 			resp = model.Response{Err: err.Error()}
 		}
-		return sendResult{tab: t, seq: seq, resp: resp}
+		return sendResult{tab: other, seq: seq, resp: resp}
 	})
 }
 
 // cancelSend stops the running request of t. Its late result, which
 // arrives after this, belongs to an older send and is dropped.
-func (a *App) cancelSend(t *reqTab) {
-	if !t.Cancel() {
+func (a *App) cancelSend(tab *reqTab) {
+	if !tab.Cancel() {
 		return
 	}
-	t.cancel()
-	t.view.SetLines(nil)
+	tab.cancel()
+	tab.view.SetLines(nil)
 	a.status = model.ErrCancelled
 }
 
@@ -514,27 +514,27 @@ func (a *App) handle(msg bus.Msg) {
 	}
 }
 
-func (a *App) apply(r sendResult) {
-	t := r.tab
-	if !t.Accept(r.seq) {
+func (a *App) apply(sendResultValue sendResult) {
+	t := sendResultValue.tab
+	if !t.Accept(sendResultValue.seq) {
 		return // the answer to a send that was cancelled or replaced
 	}
 	t.Remember(t.Resp, a.now())
-	t.Resp = &r.resp
+	t.Resp = &sendResultValue.resp
 	a.saveHistory(t)
 	if path := a.requestPath(t.Req); path != "" {
 		owner, _ := a.open.Owner(t.Req)
-		a.sent.Record(a, a.now(), owner.Dir, path, t.Req, r.resp.Status)
+		a.sent.Record(a, a.now(), owner.Dir, path, t.Req, sendResultValue.resp.Status)
 	}
-	a.calls.Answer(a.now(), t.Req, &r.resp)
-	a.rememberSchema(t, &r.resp)
+	a.calls.Answer(a.now(), t.Req, &sendResultValue.resp)
+	a.rememberSchema(t, &sendResultValue.resp)
 	a.refreshView(t)
-	if r.resp.Err != "" {
+	if sendResultValue.resp.Err != "" {
 		a.status = "Request failed"
 		a.runTests(t)
 		return
 	}
-	a.status = fmt.Sprintf("%s %s: %d %s in %s", t.Req.Method, t.Req.URL, r.resp.Status, r.resp.StatusText, textfmt.Duration(r.resp.Duration))
+	a.status = fmt.Sprintf("%s %s: %d %s in %s", t.Req.Method, t.Req.URL, sendResultValue.resp.Status, sendResultValue.resp.StatusText, textfmt.Duration(sendResultValue.resp.Duration))
 	a.runTests(t)
 }
 
@@ -551,9 +551,9 @@ var cursorShapes = map[core.Cursor]ebiten.CursorShapeType{
 // Layout implements ebiten.Game. The UI is laid out in logical pixels
 // (w by h); the screen is that size times the monitor's scale factor so
 // text and lines stay sharp on HiDPI displays.
-func (a *App) Layout(w, h int) (int, int) {
+func (a *App) Layout(width, height int) (int, int) {
 	reported := ebiten.Monitor().DeviceScaleFactor()
-	f := frameSize(w, h, reported, a.displayScale(reported), a.settings.UIScale())
+	f := frameSize(width, height, reported, a.displayScale(reported), a.settings.UIScale())
 	a.windowScale = f.WindowScale
 	a.setSize(f.LW, f.LH, f.Scale)
 	return f.SW, f.SH
@@ -686,25 +686,25 @@ func (a *App) protocolsFor(current string) []string {
 	return offered
 }
 
-func (a *App) cycleProtocol(t *reqTab) {
-	a.disconnect(t) // a connection belongs to the protocol that opened it
-	editRequest(t, editor.ProtocolChosen{Protocol: next(a.protocolsFor(t.Req.Protocol), t.Req.Protocol)})
-	t.paneTab, t.respTab = 0, 0 // the indexes point into the panes of the protocol
+func (a *App) cycleProtocol(tab *reqTab) {
+	a.disconnect(tab) // a connection belongs to the protocol that opened it
+	editRequest(tab, editor.ProtocolChosen{Protocol: next(a.protocolsFor(tab.Req.Protocol), tab.Req.Protocol)})
+	tab.paneTab, tab.respTab = 0, 0 // the indexes point into the panes of the protocol
 }
 
-func (a *App) cycleMethod(t *reqTab) {
-	editRequest(t, editor.MethodChosen{Method: next(methodOrder, t.Req.Method)})
+func (a *App) cycleMethod(tab *reqTab) {
+	editRequest(tab, editor.MethodChosen{Method: next(methodOrder, tab.Req.Method)})
 }
 
 // urlEdited keeps the request and its Params table in step with the URL field.
-func (a *App) urlEdited(t *reqTab) { editRequest(t, editor.URLTyped{Text: t.url.Text}) }
+func (a *App) urlEdited(tab *reqTab) { editRequest(tab, editor.URLTyped{Text: tab.url.Text}) }
 
 // editRequest applies an edit to the request of t, which is the collection's
 // own, so the sidebar and the autosave see it at once.
-func editRequest(t *reqTab, msg editor.Msg) { *t.Req = editor.Update(*t.Req, msg) }
+func editRequest(tab *reqTab, msg editor.Msg) { *tab.Req = editor.Update(*tab.Req, msg) }
 
 // dirtyMark is shown on tabs whose request changed since it was opened.
 const dirtyMark = "\u2022"
 
 // dirty reports whether the request differs from its state when opened.
-func dirty(t *reqTab) bool { return t.Dirty() }
+func dirty(tab *reqTab) bool { return tab.Dirty() }

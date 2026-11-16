@@ -279,7 +279,7 @@ func (a *App) rememberCollections() {
 			remembered = append(remembered, item)
 		}
 	}
-	a.saveSettings(func(s *settings.Settings) { s.RememberCollections(remembered) })
+	a.saveSettings(func(prefs *settings.Settings) { prefs.RememberCollections(remembered) })
 	a.setIsRemembered = true
 }
 
@@ -309,7 +309,7 @@ func (a *App) rememberEnvironments() {
 		}
 	}
 	if changed {
-		a.saveSettings(func(s *settings.Settings) { s.RememberCollections(remembered) })
+		a.saveSettings(func(prefs *settings.Settings) { prefs.RememberCollections(remembered) })
 	}
 }
 

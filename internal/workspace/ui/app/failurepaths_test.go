@@ -32,62 +32,62 @@ func TestEveryFailurePathIsShownToTheUser(t *testing.T) {
 		wantToast string // text of an error toast; "" when only the status is checked
 		wantState string // text the status line must contain
 	}{
-		{"network failure", func(t *testing.T, a *App) {
-			tab := a.cur()
+		{"network failure", func(t *testing.T, app *App) {
+			tab := app.cur()
 			pointTabAt(tab, "http://127.0.0.1:1/")
-			a.send(tab)
-			waitForResponse(t, a, tab)
+			app.send(tab)
+			waitForResponse(t, app, tab)
 		}, "", "Request failed"},
-		{"clipboard cannot be read for a cURL import", func(t *testing.T, a *App) {
-			a.ctx.Clipboard = &fakeClip{err: errors.New("no clipboard tool")}
-			a.importCurl(&a.col().Folder)
+		{"clipboard cannot be read for a cURL import", func(t *testing.T, app *App) {
+			app.ctx.Clipboard = &fakeClip{err: errors.New("no clipboard tool")}
+			app.importCurl(&app.col().Folder)
 		}, "Cannot read the clipboard", ""},
-		{"clipboard is not a cURL command", func(t *testing.T, a *App) {
-			a.ctx.Clipboard = &fakeClip{text: "hello"}
-			a.importCurl(&a.col().Folder)
+		{"clipboard is not a cURL command", func(t *testing.T, app *App) {
+			app.ctx.Clipboard = &fakeClip{text: "hello"}
+			app.importCurl(&app.col().Folder)
 		}, "Not a cURL command", ""},
-		{"clipboard is not an OpenAPI document", func(t *testing.T, a *App) {
-			a.ctx.Clipboard = &fakeClip{text: "{}"}
-			a.importOpenAPI(&a.col().Folder)
+		{"clipboard is not an OpenAPI document", func(t *testing.T, app *App) {
+			app.ctx.Clipboard = &fakeClip{text: "{}"}
+			app.importOpenAPI(&app.col().Folder)
 		}, "Not an OpenAPI document", ""},
-		{"clipboard is not a Postman collection", func(t *testing.T, a *App) {
-			a.ctx.Clipboard = &fakeClip{text: "[]"}
-			a.importPostman(&a.col().Folder)
+		{"clipboard is not a Postman collection", func(t *testing.T, app *App) {
+			app.ctx.Clipboard = &fakeClip{text: "[]"}
+			app.importPostman(&app.col().Folder)
 		}, "Not a Postman collection", ""},
-		{"the collection cannot be saved", func(t *testing.T, a *App) {
-			a.setWorkspace(blockedDir(t))
-			a.saveWorkspace()
+		{"the collection cannot be saved", func(t *testing.T, app *App) {
+			app.setWorkspace(blockedDir(t))
+			app.saveWorkspace()
 		}, "Saving failed", ""},
-		{"there is no folder to save to", func(t *testing.T, a *App) {
-			a.setWorkspace("")
-			a.defaultWorkspace = ""
-			a.saveWorkspace()
+		{"there is no folder to save to", func(t *testing.T, app *App) {
+			app.setWorkspace("")
+			app.defaultWorkspace = ""
+			app.saveWorkspace()
 		}, "No folder to save to", ""},
-		{"the settings cannot be saved", func(t *testing.T, a *App) {
-			a.settingsPath = blockedDir(t)
-			a.saveSettings(func(*settings.Settings) {})
+		{"the settings cannot be saved", func(t *testing.T, app *App) {
+			app.settingsPath = blockedDir(t)
+			app.saveSettings(func(*settings.Settings) {})
 		}, "Could not save settings", ""},
-		{"a response body cannot be written", func(t *testing.T, a *App) {
-			tab := a.cur()
+		{"a response body cannot be written", func(t *testing.T, app *App) {
+			tab := app.cur()
 			tab.Resp = &model.Response{Status: 200, Body: []byte("x")}
-			a.writeBody(tab, blockedDir(t))
+			app.writeBody(tab, blockedDir(t))
 		}, "Saving failed", ""},
-		{"there is no response to save", func(t *testing.T, a *App) {
-			a.cur().Resp = nil
-			a.saveBody(a.cur())
+		{"there is no response to save", func(t *testing.T, app *App) {
+			app.cur().Resp = nil
+			app.saveBody(app.cur())
 		}, "There is no response to save", ""},
-		{"there is no response to open in the browser", func(t *testing.T, a *App) {
-			a.cur().Resp = nil
-			a.openInBrowser(a.cur())
+		{"there is no response to open in the browser", func(t *testing.T, app *App) {
+			app.cur().Resp = nil
+			app.openInBrowser(app.cur())
 		}, "There is no response to open", ""},
-		{"the state cannot be saved", func(t *testing.T, a *App) {
-			a.statePath = blockedDir(t)
-			a.stateTick() // notices the change
-			a.sidebarSplit.Size++
-			a.stateTick()
-			clock := a.now()
-			a.now = func() time.Time { return clock.Add(10 * time.Second) }
-			a.stateTick()
+		{"the state cannot be saved", func(t *testing.T, app *App) {
+			app.statePath = blockedDir(t)
+			app.stateTick() // notices the change
+			app.sidebarSplit.Size++
+			app.stateTick()
+			clock := app.now()
+			app.now = func() time.Time { return clock.Add(10 * time.Second) }
+			app.stateTick()
 		}, "not a directory", ""},
 	}
 	for _, test := range tests {

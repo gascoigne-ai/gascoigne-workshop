@@ -37,39 +37,39 @@ const longParamValue = "gpu-rendered-desktop-clients-written-in-go-with-custom-w
 // (no padding), a response's headers (read-only, no caption) and the
 // rows as text in bulk mode.
 var tableViewStates = []tableViewState{
-	{"params", paramsPane, core.Gutter, func(t *testing.T, a *App, tab *reqTab) {}},
-	{"params-disabled-long", paramsPane, core.Gutter, func(t *testing.T, a *App, tab *reqTab) {
+	{"params", paramsPane, core.Gutter, func(t *testing.T, app *App, tab *reqTab) {}},
+	{"params-disabled-long", paramsPane, core.Gutter, func(t *testing.T, app *App, tab *reqTab) {
 		tab.Req.Params[0].Value = longParamValue
 		tab.Req.Params[1].Enabled = false
 	}},
-	{"params-empty", paramsPane, core.Gutter, func(t *testing.T, a *App, tab *reqTab) {
+	{"params-empty", paramsPane, core.Gutter, func(t *testing.T, app *App, tab *reqTab) {
 		tab.Req.Params = nil
 	}},
-	{"params-selected", paramsPane, core.Gutter, func(t *testing.T, a *App, tab *reqTab) {
-		a.rowSel = &rowSelection{pane: paramsPane, tab: tab, row: 1}
+	{"params-selected", paramsPane, core.Gutter, func(t *testing.T, app *App, tab *reqTab) {
+		app.rowSel = &rowSelection{pane: paramsPane, tab: tab, row: 1}
 	}},
-	{"params-editing", paramsPane, core.Gutter, func(t *testing.T, a *App, tab *reqTab) {
-		a.beginEdit(paramsPane, tab, 0, 1)
+	{"params-editing", paramsPane, core.Gutter, func(t *testing.T, app *App, tab *reqTab) {
+		app.beginEdit(paramsPane, tab, 0, 1)
 	}},
-	{"headers-duplicate", headersPane, core.Gutter, func(t *testing.T, a *App, tab *reqTab) {
+	{"headers-duplicate", headersPane, core.Gutter, func(t *testing.T, app *App, tab *reqTab) {
 		tab.Req.Headers = []model.KV{
 			{Name: "X-Id", Value: "1", Enabled: true},
 			{Name: "x-id", Value: "2", Enabled: true},
 			{Name: "Accept", Value: "application/json", Enabled: true},
 		}
 	}},
-	{"vars", varsPane, core.Gutter, func(t *testing.T, a *App, tab *reqTab) {}},
-	{"form", formPane, 0, func(t *testing.T, a *App, tab *reqTab) {
+	{"vars", varsPane, core.Gutter, func(t *testing.T, app *App, tab *reqTab) {}},
+	{"form", formPane, 0, func(t *testing.T, app *App, tab *reqTab) {
 		tab.Req.Form = []model.KV{{Name: "name", Value: "gopher", Enabled: true}}
 	}},
-	{"response-headers", responsePanes[1], core.Gutter, func(t *testing.T, a *App, tab *reqTab) {
+	{"response-headers", responsePanes[1], core.Gutter, func(t *testing.T, app *App, tab *reqTab) {
 		tab.Resp = &model.Response{Headers: []model.KV{
 			{Name: "Content-Type", Value: "text/plain; charset=utf-8", Enabled: true},
 			{Name: "Content-Length", Value: "82", Enabled: true},
 		}}
 	}},
-	{"bulk", paramsPane, core.Gutter, func(t *testing.T, a *App, tab *reqTab) {
-		a.toggleBulk(paramsPane, tab)
+	{"bulk", paramsPane, core.Gutter, func(t *testing.T, app *App, tab *reqTab) {
+		app.toggleBulk(paramsPane, tab)
 	}},
 }
 

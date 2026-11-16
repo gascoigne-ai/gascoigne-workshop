@@ -95,12 +95,12 @@ func fieldText(field model.SchemaField) string {
 	return text
 }
 
-func (a *App) schemaPane(p pane, t *reqTab, scroll *ScrollState) Node {
-	if !methodChosen(t.Req) {
-		return a.messagePane(p, "Pick a method to see its request message", false)
+func (a *App) schemaPane(pane pane, tab *reqTab, scroll *ScrollState) Node {
+	if !methodChosen(tab.Req) {
+		return a.messagePane(pane, "Pick a method to see its request message", false)
 	}
-	a.loadMessageSchema(t)
-	state := t.messageSchema
+	a.loadMessageSchema(tab)
+	state := tab.messageSchema
 	rows := []schemaRowView{}
 	title := ""
 	if state.schema != nil {
@@ -121,32 +121,32 @@ func (a *App) schemaPane(p pane, t *reqTab, scroll *ScrollState) Node {
 		"error":   state.err,
 		"title":   title,
 		"rows":    rows,
-		"fill":    func() { a.fillBody(t, state.schema) },
-		"reload":  func() { t.messageSchema = messageSchemaState{} },
+		"fill":    func() { a.fillBody(tab, state.schema) },
+		"reload":  func() { tab.messageSchema = messageSchemaState{} },
 	})
 }
 
 // schemaLoading reports whether t shows its Schema pane while the message
 // is still being asked for, so a capture waits for it.
-func schemaLoading(t *reqTab) bool {
-	panes := requestPanesFor(t)
-	if t.paneTab < 0 || t.paneTab >= len(panes) || panes[t.paneTab].kind != paneSchema || !methodChosen(t.Req) {
+func schemaLoading(tab *reqTab) bool {
+	panes := requestPanesFor(tab)
+	if tab.paneTab < 0 || tab.paneTab >= len(panes) || panes[tab.paneTab].kind != paneSchema || !methodChosen(tab.Req) {
 		return false
 	}
-	return t.messageSchema.running || !reflect.DeepEqual(t.messageSchema.asked, schemaKeyOf(t.Req))
+	return tab.messageSchema.running || !reflect.DeepEqual(tab.messageSchema.asked, schemaKeyOf(tab.Req))
 }
 
 // loadMessageSchema asks for the request's message in the background when the
 // request changed since the last answer. An answer for an older request
 // is dropped by the key comparison and the next build asks again.
-func (a *App) loadMessageSchema(t *reqTab) {
-	key := schemaKeyOf(t.Req)
-	state := &t.messageSchema
+func (a *App) loadMessageSchema(tab *reqTab) {
+	key := schemaKeyOf(tab.Req)
+	state := &tab.messageSchema
 	if state.running || (state.asked.Method != "" && reflect.DeepEqual(state.asked, key)) {
 		return
 	}
 	state.running, state.asked = true, key
-	req := t.Req.Expanded(a.varsFor(t.Req))
+	req := tab.Req.Expanded(a.varsFor(tab.Req))
 	timeout := a.timeoutFor(req) // read here: the goroutine must not touch App fields
 	a.bus.Run(context.Background(), func(ctx context.Context) bus.Msg {
 		ctx, cancel := context.WithTimeout(ctx, timeout)
@@ -172,16 +172,16 @@ func (a *App) describeGRPCInput(ctx context.Context, req model.Request) (model.M
 
 // fillBody replaces the body with the skeleton of schema, as typing it
 // would (so it can be undone), and shows the Body pane.
-func (a *App) fillBody(t *reqTab, schema *model.MessageSchema) {
+func (a *App) fillBody(tab *reqTab, schema *model.MessageSchema) {
 	if schema == nil {
 		return
 	}
-	t.body.SelectAll()
-	t.body.Insert(schema.Skeleton())
-	editRequest(t, editor.BodyTyped{Text: t.body.Text})
-	for i, p := range requestPanesFor(t) {
+	tab.body.SelectAll()
+	tab.body.Insert(schema.Skeleton())
+	editRequest(tab, editor.BodyTyped{Text: tab.body.Text})
+	for i, p := range requestPanesFor(tab) {
 		if p.kind == paneBody {
-			t.paneTab = i
+			tab.paneTab = i
 		}
 	}
 }

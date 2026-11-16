@@ -22,19 +22,19 @@ var shortcuts = []shortcut{
 	{"send", "Send request", keys(ebiten.KeyEnter, true, false, false), (*App).sendCurrent},
 	{"focus-url", "Focus URL", keys(ebiten.KeyL, true, false, false), (*App).focusURL},
 	{"new-request", "New request", keys(ebiten.KeyT, true, false, false), (*App).newRequest},
-	{"close-tab", "Close tab", keys(ebiten.KeyW, true, false, false), func(a *App) { a.closeTab(a.list.Active) }},
-	{"next-tab", "Next tab", keys(ebiten.KeyTab, true, false, false), func(a *App) { a.switchTab(1) }},
-	{"prev-tab", "Previous tab", keys(ebiten.KeyTab, true, true, false), func(a *App) { a.switchTab(-1) }},
+	{"close-tab", "Close tab", keys(ebiten.KeyW, true, false, false), func(app *App) { app.closeTab(app.list.Active) }},
+	{"next-tab", "Next tab", keys(ebiten.KeyTab, true, false, false), func(app *App) { app.switchTab(1) }},
+	{"prev-tab", "Previous tab", keys(ebiten.KeyTab, true, true, false), func(app *App) { app.switchTab(-1) }},
 	{"duplicate-row", "Duplicate row", keys(ebiten.KeyD, true, false, false), (*App).duplicateRow},
-	{"move-row-up", "Move row up", keys(ebiten.KeyArrowUp, false, false, true), func(a *App) { a.moveRow(-1) }},
-	{"move-row-down", "Move row down", keys(ebiten.KeyArrowDown, false, false, true), func(a *App) { a.moveRow(1) }},
+	{"move-row-up", "Move row up", keys(ebiten.KeyArrowUp, false, false, true), func(app *App) { app.moveRow(-1) }},
+	{"move-row-down", "Move row down", keys(ebiten.KeyArrowDown, false, false, true), func(app *App) { app.moveRow(1) }},
 	{"delete-row", "Delete row", keys(ebiten.KeyDelete, false, false, false), (*App).deleteRow},
 	{"complete-variable", "Complete variable", keys(ebiten.KeySpace, true, false, false), (*App).completeVariable},
 	{"save", "Save collection", keys(ebiten.KeyS, true, false, false), (*App).saveWorkspace},
 	{"open-workspace", "Open collection folder", keys(ebiten.KeyO, true, false, false), (*App).promptWorkspace},
 	{"close-collection", "Close collection", keys(ebiten.KeyW, true, true, false), (*App).closeFocusedCollection},
 	{"find", "Find in response", keys(ebiten.KeyF, true, false, false), (*App).openFind},
-	{"settings", "Settings", keys(ebiten.KeyComma, true, false, false), func(a *App) { a.menu = true }},
+	{"settings", "Settings", keys(ebiten.KeyComma, true, false, false), func(app *App) { app.menu = true }},
 }
 
 // keys is a default binding for the shortcut table.
@@ -78,4 +78,4 @@ func (a *App) focusURL() {
 func (a *App) switchTab(dir int) { a.updateTabs(tabs.Step{By: dir}) }
 
 // closeTab closes tab i; closing the last one leaves a blank request.
-func (a *App) closeTab(i int) { a.updateTabs(tabs.Close{Index: i}) }
+func (a *App) closeTab(index int) { a.updateTabs(tabs.Close{Index: index}) }

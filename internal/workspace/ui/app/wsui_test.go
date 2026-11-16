@@ -20,8 +20,8 @@ import (
 // echoServer is a WebSocket server that sends every message back.
 func echoServer(t *testing.T) string {
 	t.Helper()
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		c, err := ws.Upgrade(w, r)
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		c, err := ws.Upgrade(writer, request)
 		if err != nil {
 			return
 		}
@@ -41,10 +41,10 @@ func echoServer(t *testing.T) string {
 }
 
 // until steps the app until cond holds.
-func until(t *testing.T, a *App, what string, cond func() bool) {
+func until(t *testing.T, app *App, what string, cond func() bool) {
 	t.Helper()
 	for range 400 {
-		a.step(core.Input{})
+		app.step(core.Input{})
 		if cond() {
 			return
 		}
@@ -123,8 +123,8 @@ func TestClearEmptiesTheMessageLog(t *testing.T) {
 func TestWebSocketReconnectsAfterTheServerClosesWhenAsked(t *testing.T) {
 	retryDelay = 10 * time.Millisecond
 	var conns atomic.Int32
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		c, err := ws.Upgrade(w, r)
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		c, err := ws.Upgrade(writer, request)
 		if err != nil {
 			return
 		}
@@ -163,8 +163,8 @@ func TestWebSocketReconnectsAfterTheServerClosesWhenAsked(t *testing.T) {
 func TestWebSocketWithoutReconnectStaysClosed(t *testing.T) {
 	retryDelay = 10 * time.Millisecond
 	var conns atomic.Int32
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if c, err := ws.Upgrade(w, r); err == nil {
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		if c, err := ws.Upgrade(writer, request); err == nil {
 			conns.Add(1)
 			c.Close(ws.CloseNormal, "")
 		}
@@ -253,9 +253,9 @@ func TestMCPResourcesAndPromptsFillTheComposer(t *testing.T) {
 }
 
 func TestSSETabListensAndShowsNoComposer(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "text/event-stream")
-		io.WriteString(w, "event: ping\ndata: hello\n\n")
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+		writer.Header().Set("Content-Type", "text/event-stream")
+		io.WriteString(writer, "event: ping\ndata: hello\n\n")
 	}))
 	defer srv.Close()
 	a, _ := newTestApp(t)
@@ -277,19 +277,19 @@ func TestSSEReconnectResumesFromTheLastEventID(t *testing.T) {
 	retryDelay = 10 * time.Millisecond
 	var mu sync.Mutex
 	var seen []string
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		mu.Lock()
-		seen = append(seen, r.Header.Get("Last-Event-ID"))
+		seen = append(seen, request.Header.Get("Last-Event-ID"))
 		n := len(seen)
 		mu.Unlock()
-		w.Header().Set("Content-Type", "text/event-stream")
+		writer.Header().Set("Content-Type", "text/event-stream")
 		if n == 1 {
-			io.WriteString(w, "id: 41\ndata: first\n\n") // then the stream ends: a drop
+			io.WriteString(writer, "id: 41\ndata: first\n\n") // then the stream ends: a drop
 			return
 		}
-		io.WriteString(w, "id: 42\ndata: second\n\n")
-		w.(http.Flusher).Flush() // the client waits for the headers of a stream that stays open
-		<-r.Context().Done()
+		io.WriteString(writer, "id: 42\ndata: second\n\n")
+		writer.(http.Flusher).Flush() // the client waits for the headers of a stream that stays open
+		<-request.Context().Done()
 	}))
 	defer func() { srv.CloseClientConnections(); srv.Close() }()
 	a, _ := newTestApp(t)

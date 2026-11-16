@@ -148,9 +148,9 @@ func (s *screenshot) sendsDone() bool {
 }
 
 // shotSend sends t's request and makes the capture wait for its outcome.
-func (a *App) shotSend(t *reqTab) {
-	a.shot.waiting = append(a.shot.waiting, t)
-	a.send(t)
+func (a *App) shotSend(tab *reqTab) {
+	a.shot.waiting = append(a.shot.waiting, tab)
+	a.send(tab)
 }
 
 // allAnswered reports whether every send of the capture has its outcome.
@@ -164,20 +164,20 @@ func (s *screenshot) allAnswered() bool {
 }
 
 // ready reports whether the frame about to be drawn should be saved.
-func (s *screenshot) ready(a *App) bool {
+func (s *screenshot) ready(app *App) bool {
 	if s.path == "" || s.captured || s.frames < settleFrames {
 		return false
 	}
 	if !s.sendsDone() && s.frames < shotTimeout {
 		return false
 	}
-	if s.sending && !a.cur().Sending && s.frames < shotTimeout {
+	if s.sending && !app.cur().Sending && s.frames < shotTimeout {
 		return false
 	}
 	if s.tool != "" && !s.toolOpened && s.frames < shotTimeout {
 		return false
 	}
-	if (protoReading(a.cur()) || schemaLoading(a.cur())) && s.frames < shotTimeout {
+	if (protoReading(app.cur()) || schemaLoading(app.cur())) && s.frames < shotTimeout {
 		return false
 	}
 	return s.find == "" || s.found || s.frames >= shotTimeout
@@ -186,17 +186,17 @@ func (s *screenshot) ready(a *App) bool {
 // answered reports whether what -send started has an outcome to show: a
 // response, or for a socket an open connection (an MCP server also has
 // said who it is) or a failed one.
-func answered(t *reqTab) bool {
-	if !isSocket(t) {
-		return t.Resp != nil && !t.Sending // a tab sent again still holds its earlier response
+func answered(tab *reqTab) bool {
+	if !isSocket(tab) {
+		return tab.Resp != nil && !tab.Sending // a tab sent again still holds its earlier response
 	}
-	if t.Connecting {
+	if tab.Connecting {
 		return false
 	}
-	if t.Session == nil {
-		return len(t.wsView.Lines) > 0 // the error is in the log
+	if tab.Session == nil {
+		return len(tab.wsView.Lines) > 0 // the error is in the log
 	}
-	return t.Req.Protocol != "mcp" || t.Server != nil
+	return tab.Req.Protocol != "mcp" || tab.Server != nil
 }
 
 func (a *App) shotDraw(screen *ebiten.Image) {
@@ -244,7 +244,7 @@ func (a *App) applyShotSetting(spec string) {
 		a.shot.err = err
 		return
 	}
-	a.changeSettings(func(s *settings.Settings) { *s = settings.With(*s, key, value) })
+	a.changeSettings(func(prefs *settings.Settings) { *prefs = settings.With(*prefs, key, value) })
 }
 
 // showShotTarget opens the request and the settings page a capture asks for,

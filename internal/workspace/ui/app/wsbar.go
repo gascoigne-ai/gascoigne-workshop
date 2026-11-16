@@ -14,28 +14,28 @@ var messagesToolbarTemplate = markup.Must("messagestoolbar.vml", messagestoolbar
 // messagesToolbar is the bar above the message log: the connection state,
 // the auto-reconnect chip, the pickers an MCP server enabled, Ping and
 // Clear.
-func (a *App) messagesToolbar(t *reqTab) Node {
+func (a *App) messagesToolbar(tab *reqTab) Node {
 	pick := func(menu func(*reqTab) []MenuItem) func() {
-		return func() { a.openMenu(a.ctx.In.X, a.ctx.In.Y, menu(t)) }
+		return func() { a.openMenu(a.ctx.In.X, a.ctx.In.Y, menu(tab)) }
 	}
 	return messagesToolbarTemplate.MustBuild(markup.Scope{
 		"toolbarH":        w.RowH + 8,
 		"gutter":          w.Gutter,
 		"compactH":        w.CompactH,
-		"state":           connState(t),
-		"reconnect":       t.Reconnect,
-		"toggleReconnect": func() { t.Reconnect = !t.Reconnect },
-		"hasTools":        len(t.Tools) > 0,
-		"toolsLabel":      fmt.Sprintf("Tools (%d)", len(t.Tools)),
+		"state":           connState(tab),
+		"reconnect":       tab.Reconnect,
+		"toggleReconnect": func() { tab.Reconnect = !tab.Reconnect },
+		"hasTools":        len(tab.Tools) > 0,
+		"toolsLabel":      fmt.Sprintf("Tools (%d)", len(tab.Tools)),
 		"pickTool":        pick(a.toolMenu),
-		"hasResources":    len(t.Resources) > 0,
-		"resourcesLabel":  fmt.Sprintf("Resources (%d)", len(t.Resources)),
+		"hasResources":    len(tab.Resources) > 0,
+		"resourcesLabel":  fmt.Sprintf("Resources (%d)", len(tab.Resources)),
 		"pickResource":    pick(a.resourceMenu),
-		"hasPrompts":      len(t.Prompts) > 0,
-		"promptsLabel":    fmt.Sprintf("Prompts (%d)", len(t.Prompts)),
+		"hasPrompts":      len(tab.Prompts) > 0,
+		"promptsLabel":    fmt.Sprintf("Prompts (%d)", len(tab.Prompts)),
 		"pickPrompt":      pick(a.promptMenu),
-		"ping":            func() { a.pingSocket(t) },
-		"clear":           func() { a.clearLog(t) },
+		"ping":            func() { a.pingSocket(tab) },
+		"clear":           func() { a.clearLog(tab) },
 	})
 }
 

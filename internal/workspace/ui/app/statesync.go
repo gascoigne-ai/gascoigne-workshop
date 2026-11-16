@@ -23,8 +23,8 @@ const stateDebounce = time.Second
 const pathSep = "/"
 
 // walkFolders calls fn for every folder below root, with its path.
-func walkFolders(f *model.Folder, prefix string, fn func(path string, f *model.Folder)) {
-	for _, sub := range f.Folders {
+func walkFolders(folder *model.Folder, prefix string, fn func(path string, f *model.Folder)) {
+	for _, sub := range folder.Folders {
 		p := prefix + sub.Name
 		fn(p, sub)
 		walkFolders(sub, p+pathSep, fn)
@@ -32,11 +32,11 @@ func walkFolders(f *model.Folder, prefix string, fn func(path string, f *model.F
 }
 
 // walkRequests calls fn for every request below root, with its path.
-func walkRequests(f *model.Folder, prefix string, fn func(path string, r *model.Request)) {
-	for _, r := range f.Requests {
+func walkRequests(folder *model.Folder, prefix string, fn func(path string, r *model.Request)) {
+	for _, r := range folder.Requests {
 		fn(prefix+r.Name, r)
 	}
-	for _, sub := range f.Folders {
+	for _, sub := range folder.Folders {
 		walkRequests(sub, prefix+sub.Name+pathSep, fn)
 	}
 }
@@ -49,9 +49,9 @@ func (a *App) requestPath(req *model.Request) string {
 		return ""
 	}
 	found := ""
-	walkRequests(&owner.Collection.Folder, "", func(p string, r *model.Request) {
-		if r == req && found == "" {
-			found = p
+	walkRequests(&owner.Collection.Folder, "", func(name string, request *model.Request) {
+		if request == req && found == "" {
+			found = name
 		}
 	})
 	return found
@@ -145,24 +145,24 @@ func (a *App) snapshot() state.State {
 
 // snapshotExpanded records the open folders of entry's collection: under
 // its folder, or, for the collection that is not saved, in Expanded.
-func (a *App) snapshotExpanded(s *state.State, entry collections.Entry) {
+func (a *App) snapshotExpanded(stateValue *state.State, entry collections.Entry) {
 	var paths []string
-	walkFolders(&entry.Collection.Folder, "", func(p string, f *model.Folder) {
-		if a.expanded[f] {
-			paths = append(paths, p)
+	walkFolders(&entry.Collection.Folder, "", func(name string, folder *model.Folder) {
+		if a.expanded[folder] {
+			paths = append(paths, name)
 		}
 	})
 	if len(paths) == 0 {
 		return
 	}
 	if entry.Dir == "" {
-		s.Expanded = append(s.Expanded, paths...)
+		stateValue.Expanded = append(stateValue.Expanded, paths...)
 		return
 	}
-	if s.ExpandedIn == nil {
-		s.ExpandedIn = map[string][]string{}
+	if stateValue.ExpandedIn == nil {
+		stateValue.ExpandedIn = map[string][]string{}
 	}
-	s.ExpandedIn[entry.Dir] = paths
+	stateValue.ExpandedIn[entry.Dir] = paths
 }
 
 // expandPaths opens the folders of col at the remembered paths.
@@ -171,9 +171,9 @@ func (a *App) expandPaths(col *model.Collection, paths []string) {
 		return
 	}
 	for _, p := range paths {
-		walkFolders(&col.Folder, "", func(path string, f *model.Folder) {
+		walkFolders(&col.Folder, "", func(path string, folder *model.Folder) {
 			if path == p {
-				a.expanded[f] = true
+				a.expanded[folder] = true
 			}
 		})
 	}
@@ -181,19 +181,19 @@ func (a *App) expandPaths(col *model.Collection, paths []string) {
 
 // requestPaneLabel is the label of the request pane t shows, "" when its
 // index points nowhere.
-func requestPaneLabel(t *reqTab) string {
-	panes := requestPanesFor(t)
-	if t.paneTab < 0 || t.paneTab >= len(panes) {
+func requestPaneLabel(tab *reqTab) string {
+	panes := requestPanesFor(tab)
+	if tab.paneTab < 0 || tab.paneTab >= len(panes) {
 		return ""
 	}
-	return panes[t.paneTab].label
+	return panes[tab.paneTab].label
 }
 
 // rememberedPane is the index of the request pane a remembered tab was
 // on: found by its label, since an index moves when a pane is added before
 // it, else by the index an older file holds, else the first pane.
-func rememberedPane(t *reqTab, remembered state.Tab) int {
-	panes := requestPanesFor(t)
+func rememberedPane(tab *reqTab, remembered state.Tab) int {
+	panes := requestPanesFor(tab)
 	for i, p := range panes {
 		if remembered.PaneLabel != "" && p.label == remembered.PaneLabel {
 			return i
@@ -202,25 +202,25 @@ func rememberedPane(t *reqTab, remembered state.Tab) int {
 	if remembered.PaneLabel == "" && remembered.Pane >= 0 && remembered.Pane < len(panes) {
 		return remembered.Pane
 	}
-	return t.paneTab
+	return tab.paneTab
 }
 
 // restore applies a remembered state to a freshly built app. Anything
 // that no longer exists is skipped, and values are kept in range.
-func (a *App) restore(s state.State) {
-	for _, key := range s.Trusted {
+func (a *App) restore(stateValue state.State) {
+	for _, key := range stateValue.Trusted {
 		if a.trusted == nil {
 			a.trusted = map[string]bool{}
 		}
 		a.trusted[key] = true
 	}
-	a.prefs.Size.W, a.prefs.Size.H = max(s.SettingsW, 0), max(s.SettingsH, 0)
-	a.sidebarSplit.Size = max(s.SidebarW, 0)
-	if s.PaneSplit > 0 && s.PaneSplit < 1 {
-		a.paneSplit.Size = s.PaneSplit
+	a.prefs.Size.W, a.prefs.Size.H = max(stateValue.SettingsW, 0), max(stateValue.SettingsH, 0)
+	a.sidebarSplit.Size = max(stateValue.SidebarW, 0)
+	if stateValue.PaneSplit > 0 && stateValue.PaneSplit < 1 {
+		a.paneSplit.Size = stateValue.PaneSplit
 	}
-	a.expandPaths(a.remembered(""), s.Expanded)
-	for dir, paths := range s.ExpandedIn {
+	a.expandPaths(a.remembered(""), stateValue.Expanded)
+	for dir, paths := range stateValue.ExpandedIn {
 		if dir != "" {
 			a.expandPaths(a.remembered(dir), paths)
 		}
@@ -228,12 +228,12 @@ func (a *App) restore(s state.State) {
 	var saved []state.Tab
 	var requests []*model.Request
 	active := 0
-	for i, rt := range s.Tabs {
+	for i, rt := range stateValue.Tabs {
 		req := a.requestAt(a.remembered(rt.Collection), rt.Path)
 		if req == nil {
 			continue
 		}
-		if i == s.Active {
+		if i == stateValue.Active {
 			active = len(saved)
 		}
 		saved = append(saved, rt)
@@ -252,7 +252,7 @@ func (a *App) restore(s state.State) {
 		a.updateTabs(tabs.Activate{Index: active})
 		a.selected = a.cur().Req
 	}
-	for name, ws := range s.Columns {
+	for name, ws := range stateValue.Columns {
 		if len(ws) == 0 {
 			continue
 		}
@@ -269,9 +269,9 @@ func (a *App) requestAt(col *model.Collection, path string) *model.Request {
 		return nil
 	}
 	var found *model.Request
-	walkRequests(&col.Folder, "", func(p string, r *model.Request) {
-		if p == path && found == nil {
-			found = r
+	walkRequests(&col.Folder, "", func(name string, request *model.Request) {
+		if name == path && found == nil {
+			found = request
 		}
 	})
 	return found
@@ -295,8 +295,8 @@ func (a *App) SaveState() error {
 	return err
 }
 
-func stateKey(s state.State) string {
-	b, _ := json.Marshal(s)
+func stateKey(saved state.State) string {
+	b, _ := json.Marshal(saved)
 	return string(b)
 }
 
@@ -362,16 +362,16 @@ func (a *App) historyStore() rport.History {
 // saveHistory writes the successful responses of the tab's request, the
 // shown one first, so they are there after a restart. A failed write is
 // shown in the status line and nothing else changes.
-func (a *App) saveHistory(t *reqTab) {
-	store, key := a.historyStore(), a.historyKey(t.Req)
+func (a *App) saveHistory(tab *reqTab) {
+	store, key := a.historyStore(), a.historyKey(tab.Req)
 	if store == nil || key == "" {
 		return
 	}
 	var entries []rport.Entry
-	if t.Resp != nil && t.Resp.Err == "" {
-		entries = append(entries, historyEntry(t.Resp, a.now()))
+	if tab.Resp != nil && tab.Resp.Err == "" {
+		entries = append(entries, historyEntry(tab.Resp, a.now()))
 	}
-	for _, earlier := range t.Earlier {
+	for _, earlier := range tab.Earlier {
 		entries = append(entries, historyEntry(earlier.Resp, earlier.At))
 	}
 	a.write("history:"+key, serial.Job{ // the entries are values; the bodies are never changed

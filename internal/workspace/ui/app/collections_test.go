@@ -176,8 +176,8 @@ func TestRenameAndDeleteNeedACollectionOnDisk(t *testing.T) {
 }
 
 // toastSays is true when a toast on the screen contains text.
-func toastSays(a *App, text string) bool {
-	for _, toast := range a.toasts {
+func toastSays(app *App, text string) bool {
+	for _, toast := range app.toasts {
 		if strings.Contains(toast.Text, text) {
 			return true
 		}

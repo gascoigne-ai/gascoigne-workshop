@@ -37,49 +37,49 @@ type urlBarState struct {
 // protocol, the gRPC chip empty and streaming, an open connection, a
 // request in flight and a URL with variables, which has a tooltip.
 var urlBarStates = []urlBarState{
-	{"rest-get", func(t *testing.T, a *App, tab *reqTab) {
+	{"rest-get", func(t *testing.T, app *App, tab *reqTab) {
 		tab.Req.Protocol, tab.Req.Method = "rest", "GET"
 		pointTabAt(tab, "https://api.example.test/users")
 	}},
-	{"rest-post-vars", func(t *testing.T, a *App, tab *reqTab) {
+	{"rest-post-vars", func(t *testing.T, app *App, tab *reqTab) {
 		tab.Req.Protocol, tab.Req.Method = "rest", "POST"
 		pointTabAt(tab, "{{base}}/users/{{id}}")
 	}},
-	{"websocket", func(t *testing.T, a *App, tab *reqTab) {
+	{"websocket", func(t *testing.T, app *App, tab *reqTab) {
 		tab.Req.Protocol = "websocket"
 		pointTabAt(tab, "ws://127.0.0.1:1/")
 	}},
-	{"websocket-connected", func(t *testing.T, a *App, tab *reqTab) {
+	{"websocket-connected", func(t *testing.T, app *App, tab *reqTab) {
 		tab.Req.Protocol = "websocket"
 		pointTabAt(tab, echoServer(t))
-		a.toggleConnection(tab)
-		t.Cleanup(func() { a.disconnect(tab) })
+		app.toggleConnection(tab)
+		t.Cleanup(func() { app.disconnect(tab) })
 	}},
-	{"sse", func(t *testing.T, a *App, tab *reqTab) {
+	{"sse", func(t *testing.T, app *App, tab *reqTab) {
 		tab.Req.Protocol = "sse"
 		pointTabAt(tab, "http://127.0.0.1:1/events")
 	}},
-	{"mcp", func(t *testing.T, a *App, tab *reqTab) {
+	{"mcp", func(t *testing.T, app *App, tab *reqTab) {
 		tab.Req.Protocol = "mcp"
 		pointTabAt(tab, "http://127.0.0.1:1/mcp")
 	}},
-	{"grpc-no-method", func(t *testing.T, a *App, tab *reqTab) {
+	{"grpc-no-method", func(t *testing.T, app *App, tab *reqTab) {
 		tab.Req.Protocol, tab.Req.Method = "grpc", ""
 		pointTabAt(tab, "grpc://127.0.0.1:1")
 	}},
-	{"grpc-method", func(t *testing.T, a *App, tab *reqTab) {
+	{"grpc-method", func(t *testing.T, app *App, tab *reqTab) {
 		tab.Req.Protocol, tab.Req.Method = "grpc", grpcMethod
 		pointTabAt(tab, "grpc://127.0.0.1:1")
 	}},
-	{"grpc-stream", func(t *testing.T, a *App, tab *reqTab) {
+	{"grpc-stream", func(t *testing.T, app *App, tab *reqTab) {
 		tab.Req.Protocol, tab.Req.Method = "grpc", grpcMethod
 		pointTabAt(tab, "grpc://127.0.0.1:1")
-		a.toggleStream(tab)
+		app.toggleStream(tab)
 	}},
-	{"sending", func(t *testing.T, a *App, tab *reqTab) {
+	{"sending", func(t *testing.T, app *App, tab *reqTab) {
 		tab.Req.Protocol, tab.Req.Method = "rest", "GET"
 		pointTabAt(tab, silentServer(t))
-		a.send(tab)
+		app.send(tab)
 	}},
 }
 

@@ -11,10 +11,10 @@ import (
 )
 
 // focusName says which text widget of the window has the keyboard focus.
-func focusName(a *App) string {
-	t := a.cur()
+func focusName(app *App) string {
+	t := app.cur()
 	switch {
-	case a.filter.Focused:
+	case app.filter.Focused:
 		return "filter"
 	case t.url.Focused:
 		return "url"

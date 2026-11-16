@@ -18,10 +18,10 @@ import (
 )
 
 // rootRow is the index of the tree row of the collection called name.
-func rootRow(t *testing.T, a *App, name string) int {
+func rootRow(t *testing.T, app *App, name string) int {
 	t.Helper()
-	for i, row := range a.visibleRows() {
-		if a.isRoot(row.Dir) && row.Name == name {
+	for i, row := range app.visibleRows() {
+		if app.isRoot(row.Dir) && row.Name == name {
 			return i
 		}
 	}
@@ -30,36 +30,36 @@ func rootRow(t *testing.T, a *App, name string) int {
 }
 
 // openNames are the names of the open collections in tree order.
-func openNames(a *App) []string {
+func openNames(app *App) []string {
 	var names []string
-	for _, entry := range a.open.Entries {
+	for _, entry := range app.open.Entries {
 		names = append(names, entry.Collection.Name)
 	}
 	return names
 }
 
 // rememberedFolders are the folders of the remembered collections, in order.
-func rememberedFolders(a *App) []string {
+func rememberedFolders(app *App) []string {
 	var folders []string
-	for _, item := range a.settings.RememberedCollections() {
+	for _, item := range app.settings.RememberedCollections() {
 		folders = append(folders, item.Folder)
 	}
 	return folders
 }
 
 // menuItem is the open menu's item called label.
-func menuItem(t *testing.T, a *App, label string) widget.MenuItem {
+func menuItem(t *testing.T, app *App, label string) widget.MenuItem {
 	t.Helper()
-	for _, item := range widget.PopupMenu(a.ctx).Items {
+	for _, item := range widget.PopupMenu(app.ctx).Items {
 		if item.Label == label {
 			return item
 		}
 	}
-	t.Fatalf("no menu item %q in %v", label, menuLabels(a))
+	t.Fatalf("no menu item %q in %v", label, menuLabels(app))
 	return widget.MenuItem{}
 }
 
-func pressCtrl(a *App, key ebiten.Key) { a.step(core.Input{Keys: []ebiten.Key{key}, Ctrl: true}) }
+func pressCtrl(app *App, key ebiten.Key) { app.step(core.Input{Keys: []ebiten.Key{key}, Ctrl: true}) }
 
 func TestCtrlOOpensAnotherCollectionBesideTheOpenOne(t *testing.T) {
 	a, alphaDir, _ := twoCollectionsApp(t)

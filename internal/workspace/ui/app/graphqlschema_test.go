@@ -14,8 +14,8 @@ import (
 // from the GraphQL specification, not captured from a server).
 func introspectionServer(t *testing.T) *httptest.Server {
 	t.Helper()
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.Write([]byte(`{"data":{"__schema":{"queryType":{"name":"Query"},"mutationType":null,"types":[
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+		writer.Write([]byte(`{"data":{"__schema":{"queryType":{"name":"Query"},"mutationType":null,"types":[
 		 {"kind":"OBJECT","name":"Query","fields":[
 		  {"name":"repo","args":[{"name":"name","type":{"kind":"NON_NULL","name":null,"ofType":{"kind":"SCALAR","name":"String","ofType":null}}}],"type":{"kind":"OBJECT","name":"Repo","ofType":null}}]},
 		 {"kind":"OBJECT","name":"Repo","fields":[{"name":"name","args":[],"type":{"kind":"SCALAR","name":"String","ofType":null}}]}]}}}`))
@@ -24,11 +24,11 @@ func introspectionServer(t *testing.T) *httptest.Server {
 	return server
 }
 
-func graphQLTab(t *testing.T, a *App, url string) *reqTab {
+func graphQLTab(t *testing.T, app *App, url string) *reqTab {
 	t.Helper()
-	tab := a.cur()
+	tab := app.cur()
 	tab.Req.URL, tab.Req.Method = url, "POST"
-	a.setBodyType(tab, model.BodyGraphQL)
+	app.setBodyType(tab, model.BodyGraphQL)
 	return tab
 }
 

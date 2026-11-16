@@ -9,9 +9,9 @@ import (
 )
 
 // settingsRect is the rect of the settings dialog in the laid out window.
-func settingsRect(t *testing.T, a *App) core.Rect {
+func settingsRect(t *testing.T, app *App) core.Rect {
 	t.Helper()
-	for _, line := range strings.Split(layoutDump(a), "\n") {
+	for _, line := range strings.Split(layoutDump(app), "\n") {
 		if !strings.Contains(line, "resizableB") {
 			continue
 		}
@@ -20,7 +20,7 @@ func settingsRect(t *testing.T, a *App) core.Rect {
 		fmt.Sscan(strings.Join(m[1:], " "), &r.X, &r.Y, &r.W, &r.H)
 		return r
 	}
-	t.Fatalf("no settings dialog in:\n%s", layoutDump(a))
+	t.Fatalf("no settings dialog in:\n%s", layoutDump(app))
 	return core.Rect{}
 }
 
@@ -33,15 +33,15 @@ func TestResizingTheSettingsDialogKeepsItOpenAndVisible(t *testing.T) {
 		x, y   func(r core.Rect) int
 		dx, dy int
 	}
-	at := func(f func(r core.Rect) int) func(core.Rect) int { return f }
-	left, right := at(func(r core.Rect) int { return r.X + 2 }), at(func(r core.Rect) int { return r.X + r.W - 3 })
-	top, bottom := at(func(r core.Rect) int { return r.Y + 2 }), at(func(r core.Rect) int { return r.Y + r.H - 3 })
-	midX, midY := at(func(r core.Rect) int { return r.X + r.W/2 }), at(func(r core.Rect) int { return r.Y + r.H/2 })
-	titleY := at(func(r core.Rect) int { return r.Y + 20 })
+	at := func(callback func(r core.Rect) int) func(core.Rect) int { return callback }
+	left, right := at(func(rect core.Rect) int { return rect.X + 2 }), at(func(rect core.Rect) int { return rect.X + rect.W - 3 })
+	top, bottom := at(func(rect core.Rect) int { return rect.Y + 2 }), at(func(rect core.Rect) int { return rect.Y + rect.H - 3 })
+	midX, midY := at(func(rect core.Rect) int { return rect.X + rect.W/2 }), at(func(rect core.Rect) int { return rect.Y + rect.H/2 })
+	titleY := at(func(rect core.Rect) int { return rect.Y + 20 })
 	grabs := []grab{
 		{"right edge", right, midY, 80, 0},
-		{"just outside the right edge", at(func(r core.Rect) int { return r.X + r.W + 2 }), midY, 60, 0},
-		{"just outside the top left corner", at(func(r core.Rect) int { return r.X - 2 }), at(func(r core.Rect) int { return r.Y - 2 }), -40, -30},
+		{"just outside the right edge", at(func(rect core.Rect) int { return rect.X + rect.W + 2 }), midY, 60, 0},
+		{"just outside the top left corner", at(func(rect core.Rect) int { return rect.X - 2 }), at(func(rect core.Rect) int { return rect.Y - 2 }), -40, -30},
 		{"right edge in the title bar", right, titleY, 80, 0},
 		{"left edge", left, midY, -80, 0},
 		{"left edge in the title bar", left, titleY, -80, 0},

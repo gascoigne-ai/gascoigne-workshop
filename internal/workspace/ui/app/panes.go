@@ -54,28 +54,28 @@ type pane struct {
 }
 
 // captionOf is the caption above the pane's table.
-func (p pane) captionOf(a *App) string {
+func (p pane) captionOf(app *App) string {
 	if p.caption != nil {
-		return p.caption(a)
+		return p.caption(app)
 	}
 	return p.title
 }
 
-func paramsChanged(t *reqTab) {
-	editRequest(t, editor.ParamsChanged{})
-	t.url = NewTextField(t.Req.URL)
+func paramsChanged(tab *reqTab) {
+	editRequest(tab, editor.ParamsChanged{})
+	tab.url = NewTextField(tab.Req.URL)
 }
 
 var (
 	paramsPane = pane{label: "Params", kind: paneTable, title: "Query", editable: true, changed: paramsChanged,
-		rows: func(_ *App, t *reqTab) *[]model.KV { return &t.Req.Params }}
+		rows: func(_ *App, tab *reqTab) *[]model.KV { return &tab.Req.Params }}
 	bodyPane    = pane{label: "Body", kind: paneBody}
 	headersPane = pane{label: "Headers", kind: paneTable, title: "Headers", editable: true, flagDuplicates: true,
-		rows: func(_ *App, t *reqTab) *[]model.KV { return &t.Req.Headers }}
+		rows: func(_ *App, tab *reqTab) *[]model.KV { return &tab.Req.Headers }}
 	authPane = pane{label: "Auth", kind: paneAuth}
 	varsPane = pane{label: "Vars", kind: paneTable, title: "Collection variables", editable: true,
 		caption: (*App).varsCaption,
-		rows:    func(a *App, _ *reqTab) *[]model.KV { return a.varsRows() }}
+		rows:    func(app *App, _ *reqTab) *[]model.KV { return app.varsRows() }}
 	testsPane    = pane{label: "Tests", kind: paneAssertions}
 	settingsPane = pane{label: "Settings", kind: paneSettings}
 )
@@ -98,14 +98,14 @@ var requestPanesByProtocol = map[string][]pane{
 	"grpc":      grpcRequestPanes,
 }
 
-func noResponse(t *reqTab) (string, bool) {
+func noResponse(tab *reqTab) (string, bool) {
 	switch {
-	case t.Sending:
+	case tab.Sending:
 		return "Sending...", false
-	case t.Resp == nil:
+	case tab.Resp == nil:
 		return "Send the request to see the response", false
-	case t.Resp.Err != "":
-		return t.Resp.Err, true
+	case tab.Resp.Err != "":
+		return tab.Resp.Err, true
 	}
 	return "", false
 }
@@ -113,23 +113,23 @@ func noResponse(t *reqTab) (string, bool) {
 var responsePanes = []pane{
 	{label: "Response", kind: paneResponse, empty: responseEmpty},
 	{label: "Headers", kind: paneTable, empty: noResponse,
-		rows: func(_ *App, t *reqTab) *[]model.KV {
-			if t.Resp == nil {
+		rows: func(_ *App, tab *reqTab) *[]model.KV {
+			if tab.Resp == nil {
 				return &[]model.KV{}
 			}
-			return &t.Resp.Headers
+			return &tab.Resp.Headers
 		}},
 	{label: "Timeline", kind: paneNote, empty: noResponse,
-		note: func(t *reqTab) string { return respview.Timeline(t.Resp) }},
+		note: func(tab *reqTab) string { return respview.Timeline(tab.Resp) }},
 	{label: "Tests", kind: paneResults},
 }
 
 // badge is the count shown on a pane's tab.
-func (p pane) badge(a *App, t *reqTab) int {
+func (p pane) badge(app *App, tab *reqTab) int {
 	switch p.kind {
 	case paneAssertions: // how many assertions are written
 		n := 0
-		for _, l := range strings.Split(t.Req.Tests, "\n") {
+		for _, l := range strings.Split(tab.Req.Tests, "\n") {
 			if l = strings.TrimSpace(l); l != "" && !strings.HasPrefix(l, "#") {
 				n++
 			}
@@ -137,7 +137,7 @@ func (p pane) badge(a *App, t *reqTab) int {
 		return n
 	case paneResults: // how many failed
 		n := 0
-		for _, r := range t.testResults {
+		for _, r := range tab.testResults {
 			if !r.OK {
 				n++
 			}
@@ -147,7 +147,7 @@ func (p pane) badge(a *App, t *reqTab) int {
 	if p.kind != paneTable {
 		return 0
 	}
-	rows := *p.rows(a, t)
+	rows := *p.rows(app, tab)
 	if !p.editable {
 		return len(rows)
 	}
@@ -160,19 +160,19 @@ func (p pane) badge(a *App, t *reqTab) int {
 	return n
 }
 
-func (a *App) tabItems(panes []pane, t *reqTab) []TabItem {
+func (a *App) tabItems(panes []pane, tab *reqTab) []TabItem {
 	items := make([]TabItem, len(panes))
 	for i, p := range panes {
-		items[i] = TabItem{Label: p.label, Badge: p.badge(a, t)}
+		items[i] = TabItem{Label: p.label, Badge: p.badge(a, tab)}
 	}
 	return items
 }
 
-func paneEmpty(p pane, t *reqTab) (string, bool) {
-	if p.empty == nil {
+func paneEmpty(pane pane, tab *reqTab) (string, bool) {
+	if pane.empty == nil {
 		return "", false
 	}
-	return p.empty(t)
+	return pane.empty(tab)
 }
 
 // paneBuilders turns a pane into its view, by kind.
@@ -192,18 +192,18 @@ var paneBuilders = map[paneKind]func(a *App, p pane, t *reqTab, scroll *ScrollSt
 }
 
 // paneBody is what fills the area under a pane's tab strip.
-func (a *App) paneBody(p pane, t *reqTab, scroll *ScrollState) Node {
-	if msg, isErr := paneEmpty(p, t); msg != "" {
-		return a.messagePane(p, msg, isErr)
+func (a *App) paneBody(pane pane, tab *reqTab, scroll *ScrollState) Node {
+	if msg, isErr := paneEmpty(pane, tab); msg != "" {
+		return a.messagePane(pane, msg, isErr)
 	}
-	return paneBuilders[p.kind](a, p, t, scroll)
+	return paneBuilders[pane.kind](a, pane, tab, scroll)
 }
 
 var messagePaneTemplate = markup.Must("messagepane.vml", messagepaneSource)
 
 // messagePane shows a status line ("Sending...", an error) in place of
 // the pane's content.
-func (a *App) messagePane(p pane, msg string, isErr bool) Node {
+func (a *App) messagePane(pane pane, msg string, isErr bool) Node {
 	color := w.Muted
 	if isErr {
 		color = w.Error
@@ -218,68 +218,68 @@ func (a *App) messagePane(p pane, msg string, isErr bool) Node {
 var notePaneTemplate = markup.Must("notepane.vml", notepaneSource)
 
 // notePane shows the pane's text, such as the response's timeline.
-func (a *App) notePane(p pane, t *reqTab, scroll *ScrollState) Node {
+func (a *App) notePane(pane pane, tab *reqTab, scroll *ScrollState) Node {
 	return notePaneTemplate.MustBuild(markup.Scope{
 		"gutter": w.Gutter,
 		"scroll": scroll,
-		"note":   p.note(t),
+		"note":   pane.note(tab),
 	})
 }
 
-func (a *App) tablePane(p pane, t *reqTab, scroll *ScrollState) Node {
-	return a.tableView(p, t, scroll, w.Gutter)
+func (a *App) tablePane(pane pane, tab *reqTab, scroll *ScrollState) Node {
+	return a.tableView(pane, tab, scroll, w.Gutter)
 }
 
 // tableView is a pane's table with the given padding around it.
-func (a *App) tableView(p pane, t *reqTab, scroll *ScrollState, pad int) Node {
-	if b := a.bulk; b != nil && b.tab == t && b.pane.label == p.label {
-		return a.bulkView(p, t, pad)
+func (a *App) tableView(other pane, reqTabValue *reqTab, scroll *ScrollState, pad int) Node {
+	if b := a.bulk; b != nil && b.tab == reqTabValue && b.pane.label == other.label {
+		return a.bulkView(other, reqTabValue, pad)
 	}
-	rows := p.rows(a, t)
+	rows := other.rows(a, reqTabValue)
 	spec := TableSpec{
-		CellStyler: a.cellStyler(t.Req),
-		Widths:     a.widthsFor(p),
+		CellStyler: a.cellStyler(reqTabValue.Req),
+		Widths:     a.widthsFor(other),
 		Columns:    []string{"Name", "Value"},
 		Weights:    []float64{35, 65},
 		Rows:       kvRows(*rows, false, false),
 	}
-	if !p.editable {
-		spec.OnRowMenu = func(row, x, y int) { a.openMenu(x, y, a.copyRowItems(*rows, row, true)) }
+	if !other.editable {
+		spec.OnRowMenu = func(row, posX, posY int) { a.openMenu(posX, posY, a.copyRowItems(*rows, row, true)) }
 	}
-	if p.editable {
+	if other.editable {
 		spec.Editable = true
 		spec.Columns = []string{"Name", "Value", "Description"}
 		spec.Weights = []float64{28, 40, 32}
-		spec.Rows = kvRows(*rows, true, p.flagDuplicates)
+		spec.Rows = kvRows(*rows, true, other.flagDuplicates)
 		spec.Placeholder = spec.Columns
 		spec.AllChecked = model.AllEnabled(*rows)
 		spec.OnToggleAll = func() {
 			a.commitEdit()
-			a.applyRows(p, t, func(r []model.KV) []model.KV { return model.SetAll(r, !model.AllEnabled(r)) })
+			a.applyRows(other, reqTabValue, func(rows []model.KV) []model.KV { return model.SetAll(rows, !model.AllEnabled(rows)) })
 		}
-		spec.OnToggle = func(i int) {
+		spec.OnToggle = func(index int) {
 			a.commitEdit()
-			a.applyRows(p, t, func(r []model.KV) []model.KV {
-				r[i].Enabled = !r[i].Enabled
-				return r
+			a.applyRows(other, reqTabValue, func(rows []model.KV) []model.KV {
+				rows[index].Enabled = !rows[index].Enabled
+				return rows
 			})
 		}
-		spec.OnDelete = func(i int) {
+		spec.OnDelete = func(index int) {
 			a.commitEdit()
-			a.applyRows(p, t, func(r []model.KV) []model.KV { return model.DeleteRow(r, i) })
+			a.applyRows(other, reqTabValue, func(rows []model.KV) []model.KV { return model.DeleteRow(rows, index) })
 		}
-		spec.OnGrabRow = func(row int) { a.grabRow(p, t, row) }
+		spec.OnGrabRow = func(row int) { a.grabRow(other, reqTabValue, row) }
 		spec.OnDragOverRow = func(row int) { a.dragRowOver(row) }
-		spec.OnEditCell = func(row, col int) { a.beginEdit(p, t, row, col) }
-		spec.OnRowMenu = func(row, x, y int) { a.openMenu(x, y, a.rowMenuItems(p, t, row)) }
-		if e := a.edit; e != nil && e.pane.label == p.label && e.tab == t {
+		spec.OnEditCell = func(row, col int) { a.beginEdit(other, reqTabValue, row, col) }
+		spec.OnRowMenu = func(row, posX, posY int) { a.openMenu(posX, posY, a.rowMenuItems(other, reqTabValue, row)) }
+		if e := a.edit; e != nil && e.pane.label == other.label && e.tab == reqTabValue {
 			spec.Editing = &TableEdit{Row: e.row, Col: e.col, Field: &e.field, OnEnter: a.commitEdit, OnTab: a.tabEdit, Options: TextMenu(&e.field)}
 		}
-		if sel := a.rowSel; sel != nil && sel.tab == t && sel.pane.label == p.label && sel.row < len(*rows) {
+		if sel := a.rowSel; sel != nil && sel.tab == reqTabValue && sel.pane.label == other.label && sel.row < len(*rows) {
 			spec.Selected = &sel.row
 		}
 	}
-	scope := a.tableCaptionScope(p, t, pad)
+	scope := a.tableCaptionScope(other, reqTabValue, pad)
 	scope["scroll"] = scroll
 	scope["spec"] = spec
 	return tableViewTemplate.MustBuild(scope)
@@ -295,14 +295,14 @@ var (
 // tableCaptionScope is what both templates show in the row above the
 // rows: the pane's title, and for editable tables the switch to bulk
 // editing. An empty title leaves the row out.
-func (a *App) tableCaptionScope(p pane, t *reqTab, pad int) markup.Scope {
+func (a *App) tableCaptionScope(pane pane, tab *reqTab, pad int) markup.Scope {
 	return markup.Scope{
 		"pad":        pad,
 		"rowH":       w.RowH,
-		"caption":    p.captionOf(a),
-		"editable":   p.editable,
+		"caption":    pane.captionOf(a),
+		"editable":   pane.editable,
 		"bulkLabel":  bulkLabel(a.bulk != nil),
-		"toggleBulk": func() { a.toggleBulk(p, t) },
+		"toggleBulk": func() { a.toggleBulk(pane, tab) },
 	}
 }
 
@@ -314,16 +314,16 @@ func bulkLabel(inBulk bool) string {
 }
 
 // bulkView shows the rows as text under the same caption.
-func (a *App) bulkView(p pane, t *reqTab, pad int) Node {
-	scope := a.tableCaptionScope(p, t, pad)
+func (a *App) bulkView(pane pane, tab *reqTab, pad int) Node {
+	scope := a.tableCaptionScope(pane, tab, pad)
 	scope["area"] = &a.bulk.area
 	scope["areaText"] = &a.bulk.area.TextField
 	return bulkViewTemplate.MustBuild(scope)
 }
 
-func (a *App) rowsChanged(p pane, t *reqTab) {
-	if p.changed != nil {
-		p.changed(t)
+func (a *App) rowsChanged(pane pane, tab *reqTab) {
+	if pane.changed != nil {
+		pane.changed(tab)
 	}
 }
 
@@ -356,7 +356,7 @@ var bodyTypes = []struct {
 
 // formPane is the table of form and multipart fields.
 var formPane = pane{label: "Body", kind: paneTable, title: "Fields", editable: true,
-	rows: func(_ *App, t *reqTab) *[]model.KV { return &t.Req.Form }}
+	rows: func(_ *App, tab *reqTab) *[]model.KV { return &tab.Req.Form }}
 
 // The pane and its two simplest editors are templates; the editor is
 // picked in Go (bodyEditor) and enters the pane through a slot.
@@ -375,11 +375,11 @@ type bodyChip struct {
 }
 
 // bodyPane is the body editor: a type chooser, then an editor that fits the type.
-func (a *App) bodyPane(p pane, t *reqTab, scroll *ScrollState) Node {
-	kind := t.Req.BodyType
+func (a *App) bodyPane(pane pane, tab *reqTab, scroll *ScrollState) Node {
+	kind := tab.Req.BodyType
 	isJSON := kind == model.BodyJSON
 	canWrap := isJSON || kind == model.BodyText // the editors that are a text area
-	status, valid := jsonStatus(t.body.Text)
+	status, valid := jsonStatus(tab.body.Text)
 	statusColor := w.Error
 	if valid {
 		statusColor = w.OK
@@ -388,46 +388,46 @@ func (a *App) bodyPane(p pane, t *reqTab, scroll *ScrollState) Node {
 	for i, bodyType := range bodyTypes {
 		id := bodyType.id
 		chips[i] = bodyChip{Label: bodyType.label, Width: bodyType.width, Selected: id == kind,
-			Choose: func() { a.setBodyType(t, id) }}
+			Choose: func() { a.setBodyType(tab, id) }}
 	}
 	return bodyPaneTemplate.MustBuild(markup.Scope{
 		"gutter":      w.Gutter,
 		"rowH":        w.RowH,
-		"typesX":      &t.bodyTypesX,
+		"typesX":      &tab.bodyTypesX,
 		"chips":       chips,
 		"showStatus":  isJSON && status != "",
 		"status":      status,
 		"statusColor": statusColor,
 		"isJSON":      isJSON,
 		"canWrap":     canWrap,
-		"wrap":        t.body.Wrap,
-		"toggleWrap":  func() { a.toggleBodyWrap(t) },
-		"format":      func() { a.formatBody(t) },
-		"editor":      a.bodyEditor(t, scroll),
+		"wrap":        tab.body.Wrap,
+		"toggleWrap":  func() { a.toggleBodyWrap(tab) },
+		"format":      func() { a.formatBody(tab) },
+		"editor":      a.bodyEditor(tab, scroll),
 	})
 }
 
 // bodyEditor is the part of the body pane under the type chooser.
-func (a *App) bodyEditor(t *reqTab, scroll *ScrollState) Node {
-	switch t.Req.BodyType {
+func (a *App) bodyEditor(tab *reqTab, scroll *ScrollState) Node {
+	switch tab.Req.BodyType {
 	case model.BodyJSON, model.BodyText:
 		base := plainStyler
-		if t.Req.BodyType == model.BodyJSON {
+		if tab.Req.BodyType == model.BodyJSON {
 			base = jsonStyler
 		}
-		t.body.Styler = a.withVariables(base, t.Req) // {{variables}} stand out, as in the URL
+		tab.body.Styler = a.withVariables(base, tab.Req) // {{variables}} stand out, as in the URL
 		return bodyAreaTemplate.MustBuild(markup.Scope{
-			"body":     &t.body,
-			"wrap":     t.body.Wrap,
-			"bodyText": &t.body.TextField,
-			"sync":     func() { editRequest(t, editor.BodyTyped{Text: t.body.Text}) },
+			"body":     &tab.body,
+			"wrap":     tab.body.Wrap,
+			"bodyText": &tab.body.TextField,
+			"sync":     func() { editRequest(tab, editor.BodyTyped{Text: tab.body.Text}) },
 		})
 	case model.BodyForm, model.BodyMultipart:
-		return a.tableView(formPane, t, scroll, 0)
+		return a.tableView(formPane, tab, scroll, 0)
 	case model.BodyFile:
-		return a.fileBody(t)
+		return a.fileBody(tab)
 	case model.BodyGraphQL:
-		return a.graphQLBody(t)
+		return a.graphQLBody(tab)
 	}
 	return bodyNoneTemplate.MustBuild(markup.Scope{})
 }
@@ -435,23 +435,23 @@ func (a *App) bodyEditor(t *reqTab, scroll *ScrollState) Node {
 // toggleBodyWrap switches the body editor between scrolling sideways and
 // breaking long lines at the width of the pane, per tab like the
 // response's Wrap.
-func (a *App) toggleBodyWrap(t *reqTab) { t.body.Wrap = !t.body.Wrap }
+func (a *App) toggleBodyWrap(tab *reqTab) { tab.body.Wrap = !tab.body.Wrap }
 
-func (a *App) setBodyType(t *reqTab, id string) {
+func (a *App) setBodyType(tab *reqTab, id string) {
 	a.commitEdit()
-	editRequest(t, editor.BodyTypeChosen{Type: id, Text: t.body.Text, FilePath: t.file.Text})
+	editRequest(tab, editor.BodyTypeChosen{Type: id, Text: tab.body.Text, FilePath: tab.file.Text})
 }
 
 // formatBody re-indents a JSON body. Invalid JSON is left alone.
-func (a *App) formatBody(t *reqTab) {
+func (a *App) formatBody(tab *reqTab) {
 	var out bytes.Buffer
-	if err := json.Indent(&out, []byte(t.body.Text), "", "  "); err != nil {
+	if err := json.Indent(&out, []byte(tab.body.Text), "", "  "); err != nil {
 		a.status = "Cannot format body: " + err.Error()
 		return
 	}
-	t.body.SelectAll()
-	t.body.Insert(out.String()) // as an edit, so it can be undone
-	editRequest(t, editor.BodyTyped{Text: t.body.Text})
+	tab.body.SelectAll()
+	tab.body.Insert(out.String()) // as an edit, so it can be undone
+	editRequest(tab, editor.BodyTyped{Text: tab.body.Text})
 }
 
 // jsonStyler colors one line of a JSON body.
@@ -468,48 +468,48 @@ var settingsPaneTemplate = markup.Must("settingspane.vml", settingspaneSource)
 
 // settingsPane holds the per-request options: timeout, redirects and
 // certificate checks.
-func (a *App) settingsPane(_ pane, t *reqTab, scroll *ScrollState) Node {
+func (a *App) settingsPane(_ pane, tab *reqTab, scroll *ScrollState) Node {
 	return settingsPaneTemplate.MustBuild(markup.Scope{
 		"gutter":            w.Gutter,
 		"rowH":              w.RowH,
 		"scroll":            scroll,
-		"timeout":           &t.timeout,
+		"timeout":           &tab.timeout,
 		"timeoutHint":       fmt.Sprintf("blank = default (%d s)", a.timeoutFor(model.Request{})/time.Second),
-		"followRedirects":   !t.Req.NoRedirects,
-		"verifyCertificate": !t.Req.InsecureTLS,
-		"timeoutEdited":     func() { a.timeoutEdited(t) },
-		"toggleRedirects":   func() { editRequest(t, editor.NoRedirectsToggled{}) },
-		"toggleVerify":      func() { editRequest(t, editor.InsecureTLSToggled{}) },
+		"followRedirects":   !tab.Req.NoRedirects,
+		"verifyCertificate": !tab.Req.InsecureTLS,
+		"timeoutEdited":     func() { a.timeoutEdited(tab) },
+		"toggleRedirects":   func() { editRequest(tab, editor.NoRedirectsToggled{}) },
+		"toggleVerify":      func() { editRequest(tab, editor.InsecureTLSToggled{}) },
 	})
 }
 
 // timeoutEdited applies the typed timeout; text that is not a whole
 // number of seconds is undone.
-func (a *App) timeoutEdited(t *reqTab) {
-	text := strings.TrimSpace(t.timeout.Text)
+func (a *App) timeoutEdited(tab *reqTab) {
+	text := strings.TrimSpace(tab.timeout.Text)
 	if text == "" {
-		editRequest(t, editor.TimeoutSet{Seconds: 0})
+		editRequest(tab, editor.TimeoutSet{Seconds: 0})
 		return
 	}
 	n, err := strconv.Atoi(text)
 	if err != nil || n < 0 {
-		t.timeout = NewTextField(timeoutText(t.Req.TimeoutSec))
-		t.timeout.Focused = true
+		tab.timeout = NewTextField(timeoutText(tab.Req.TimeoutSec))
+		tab.timeout.Focused = true
 		return
 	}
-	editRequest(t, editor.TimeoutSet{Seconds: n})
+	editRequest(tab, editor.TimeoutSet{Seconds: n})
 }
 
 // responseEmpty is noResponse plus the case of a body that is not text.
-func responseEmpty(t *reqTab) (string, bool) {
-	if msg, isErr := noResponse(t); msg != "" {
+func responseEmpty(tab *reqTab) (string, bool) {
+	if msg, isErr := noResponse(tab); msg != "" {
 		return msg, isErr
 	}
-	if t.picture != nil {
+	if tab.picture != nil {
 		return "", false
 	}
-	if respview.LooksBinary(t.Resp.Body) {
-		return fmt.Sprintf("Binary body, %s (not shown)", textfmt.Size(len(t.Resp.Body))), false
+	if respview.LooksBinary(tab.Resp.Body) {
+		return fmt.Sprintf("Binary body, %s (not shown)", textfmt.Size(len(tab.Resp.Body))), false
 	}
 	return "", false
 }
@@ -523,43 +523,43 @@ var (
 
 // responsePane is the response body with its toolbar and find bar, or
 // the picture of an image body with its size and a Save button.
-func (a *App) responsePane(_ pane, t *reqTab, _ *ScrollState) Node {
-	if t.picture != nil {
+func (a *App) responsePane(_ pane, tab *reqTab, _ *ScrollState) Node {
+	if tab.picture != nil {
 		return responsePictureTemplate.MustBuild(markup.Scope{
 			"gutter":      w.Gutter,
 			"toolbarH":    w.ToolbarH,
 			"compactH":    w.CompactH,
-			"pictureInfo": t.pictureInfo,
-			"picture":     t.picture,
-			"save":        func() { a.saveBody(t) },
+			"pictureInfo": tab.pictureInfo,
+			"picture":     tab.picture,
+			"save":        func() { a.saveBody(tab) },
 		})
 	}
 	var findBar Node // stays nil, so the slot is left out, while the bar is closed
-	if t.look.FindOpen {
-		findBar = a.findBar(t)
+	if tab.look.FindOpen {
+		findBar = a.findBar(tab)
 	}
 	return responsePaneTemplate.MustBuild(markup.Scope{
 		"gutter":      w.Gutter,
 		"toolbarH":    w.ToolbarH,
 		"compactH":    w.CompactH,
 		"iconBtnW":    w.IconBtnW,
-		"compact":     t.look.Compact(),
-		"pretty":      t.look.Mode == viewer.Pretty,
-		"raw":         t.look.Raw(),
-		"wrap":        t.view.Wrap,
-		"history":     len(t.Earlier) > 0,
+		"compact":     tab.look.Compact(),
+		"pretty":      tab.look.Mode == viewer.Pretty,
+		"raw":         tab.look.Raw(),
+		"wrap":        tab.view.Wrap,
+		"history":     len(tab.Earlier) > 0,
 		"findTip":     a.hint("Find in response", "find"),
 		"findBar":     findBar,
-		"view":        &t.view,
-		"showCompact": func() { a.setView(t, viewer.Compact) },
-		"showPretty":  func() { a.setView(t, viewer.Pretty) },
-		"showRaw":     func() { a.setView(t, viewer.Raw) },
-		"toggleWrap":  func() { a.toggleWrap(t) },
-		"openHistory": func(x, y int) { a.openMenu(x, y, a.historyMenu(t)) },
+		"view":        &tab.view,
+		"showCompact": func() { a.setView(tab, viewer.Compact) },
+		"showPretty":  func() { a.setView(tab, viewer.Pretty) },
+		"showRaw":     func() { a.setView(tab, viewer.Raw) },
+		"toggleWrap":  func() { a.toggleWrap(tab) },
+		"openHistory": func(posX, posY int) { a.openMenu(posX, posY, a.historyMenu(tab)) },
 		"openFind":    a.openFind,
-		"copyBody":    func() { a.copyBody(t) },
-		"copyCurl":    func() { a.copyCurl(t) },
-		"openMenu":    func(x, y int) { a.openMenu(x, y, a.responseMenuItems(t)) },
+		"copyBody":    func() { a.copyBody(tab) },
+		"copyCurl":    func() { a.copyCurl(tab) },
+		"openMenu":    func(posX, posY int) { a.openMenu(posX, posY, a.responseMenuItems(tab)) },
 	})
 }
 
@@ -571,67 +571,67 @@ var findBarTemplate = markup.Must("findbar.vml", findbarSource)
 
 // findBar is the search row above the response: the query, the hit
 // counter and the previous, next and close buttons.
-func (a *App) findBar(t *reqTab) Node {
+func (a *App) findBar(tab *reqTab) Node {
 	return findBarTemplate.MustBuild(markup.Scope{
-		"find":     &t.find,
-		"count":    viewer.Count(t.find.Text, len(t.view.Matches()), t.look.Match),
+		"find":     &tab.find,
+		"count":    viewer.Count(tab.find.Text, len(tab.view.Matches()), tab.look.Match),
 		"rowH":     w.RowH,
 		"gutter":   w.Gutter,
 		"iconBtnW": w.IconBtnW,
 		"compactH": w.CompactH,
-		"search":   func() { a.runFind(t) },
-		"enter":    func() { a.findEnter(t) },
-		"previous": func() { a.findStep(t, -1) },
-		"next":     func() { a.findStep(t, 1) },
-		"close":    func() { a.closeFind(t) },
+		"search":   func() { a.runFind(tab) },
+		"enter":    func() { a.findEnter(tab) },
+		"previous": func() { a.findStep(tab, -1) },
+		"next":     func() { a.findStep(tab, 1) },
+		"close":    func() { a.closeFind(tab) },
 	})
 }
 
 // setView picks the response view: pretty-printed, as received, or compact.
-func (a *App) setView(t *reqTab, mode viewer.Mode) {
-	t.look = viewer.Update(t.look, viewer.ModeChosen{Mode: mode})
-	a.refreshView(t)
+func (a *App) setView(tab *reqTab, mode viewer.Mode) {
+	tab.look = viewer.Update(tab.look, viewer.ModeChosen{Mode: mode})
+	a.refreshView(tab)
 }
 
 // refreshView rebuilds the response view for the current mode and
 // redoes an open search. Bodies that are not text are not loaded.
-func (a *App) refreshView(t *reqTab) {
-	t.picture, t.pictureInfo = nil, ""
-	if t.Resp != nil {
-		if p, ok := respview.Decode(t.Resp.Body); ok {
-			t.picture = ebiten.NewImageFromImage(p.Image)
-			t.pictureInfo = fmt.Sprintf("%s %dx%d, %s", strings.ToUpper(p.Format), p.Width, p.Height, textfmt.Size(len(t.Resp.Body)))
-			t.view.SetLines(nil)
+func (a *App) refreshView(tab *reqTab) {
+	tab.picture, tab.pictureInfo = nil, ""
+	if tab.Resp != nil {
+		if p, ok := respview.Decode(tab.Resp.Body); ok {
+			tab.picture = ebiten.NewImageFromImage(p.Image)
+			tab.pictureInfo = fmt.Sprintf("%s %dx%d, %s", strings.ToUpper(p.Format), p.Width, p.Height, textfmt.Size(len(tab.Resp.Body)))
+			tab.view.SetLines(nil)
 			return
 		}
 	}
 	switch {
-	case t.Resp == nil || respview.LooksBinary(t.Resp.Body):
-		t.view.SetLines(nil)
-	case respview.TooBig(t.Resp.Body): // formatting megabytes would freeze the window
-		t.view.SetLines(respview.LimitedLines(t.Resp.Body))
-	case t.look.Raw():
-		t.view.SetLines(respview.RawLines(t.Resp.Body))
-	case t.look.Compact():
-		t.compactAll = respview.CompactLines(t.Resp.Body)
-		a.showCompact(t)
+	case tab.Resp == nil || respview.LooksBinary(tab.Resp.Body):
+		tab.view.SetLines(nil)
+	case respview.TooBig(tab.Resp.Body): // formatting megabytes would freeze the window
+		tab.view.SetLines(respview.LimitedLines(tab.Resp.Body))
+	case tab.look.Raw():
+		tab.view.SetLines(respview.RawLines(tab.Resp.Body))
+	case tab.look.Compact():
+		tab.compactAll = respview.CompactLines(tab.Resp.Body)
+		a.showCompact(tab)
 		return // showCompact searches too
 	default:
-		t.view.SetLines(respview.CodeLines(t.Resp.Body))
+		tab.view.SetLines(respview.CodeLines(tab.Resp.Body))
 	}
-	if t.look.FindOpen {
-		a.runFind(t)
-	}
-}
-
-func (a *App) copyBody(t *reqTab) {
-	if t.Resp != nil {
-		_ = a.ctx.Clipboard.Write(string(t.Resp.Body)) // the clipboard reports its own failures
+	if tab.look.FindOpen {
+		a.runFind(tab)
 	}
 }
 
-func (a *App) copyCurl(t *reqTab) {
-	_ = a.ctx.Clipboard.Write(a.curlOf(t.Req.Expanded(a.varsFor(t.Req))))
+func (a *App) copyBody(tab *reqTab) {
+	if tab.Resp != nil {
+		_ = a.ctx.Clipboard.Write(string(tab.Resp.Body)) // the clipboard reports its own failures
+	}
+}
+
+func (a *App) copyCurl(tab *reqTab) {
+	_ = a.ctx.Clipboard.Write(a.curlOf(tab.Req.Expanded(a.varsFor(tab.Req))))
 }
 
 // openFind shows the find bar for the current response and focuses it.
@@ -648,70 +648,70 @@ func (a *App) openFind() {
 // showCompact fills the view with the compact lines: all of them with
 // the deep blocks folded, or, while a search has text, only the matching
 // lines with their children and the blocks around them (filterCompact).
-func (a *App) showCompact(t *reqTab) {
-	if t.look.FindOpen && t.find.Text != "" {
-		t.view.SetLines(respview.Filter(t.compactAll, t.find.Text))
+func (a *App) showCompact(tab *reqTab) {
+	if tab.look.FindOpen && tab.find.Text != "" {
+		tab.view.SetLines(respview.Filter(tab.compactAll, tab.find.Text))
 	} else {
-		t.view.SetLines(t.compactAll)
-		respview.FoldDeep(&t.view, respview.CompactFoldDepth)
+		tab.view.SetLines(tab.compactAll)
+		respview.FoldDeep(&tab.view, respview.CompactFoldDepth)
 	}
-	if t.look.FindOpen {
-		a.searchView(t)
+	if tab.look.FindOpen {
+		a.searchView(tab)
 	}
 }
 
 // formattable is whether t has a text body small enough to be formatted.
-func formattable(t *reqTab) bool {
-	return t.Resp != nil && !respview.LooksBinary(t.Resp.Body) && !respview.TooBig(t.Resp.Body)
+func formattable(tab *reqTab) bool {
+	return tab.Resp != nil && !respview.LooksBinary(tab.Resp.Body) && !respview.TooBig(tab.Resp.Body)
 }
 
 // runFind searches for the typed text and goes to the first match. The
 // compact view is filtered to the matches first.
-func (a *App) runFind(t *reqTab) {
-	if t.look.Compact() && formattable(t) {
-		a.showCompact(t)
+func (a *App) runFind(tab *reqTab) {
+	if tab.look.Compact() && formattable(tab) {
+		a.showCompact(tab)
 		return
 	}
-	a.searchView(t)
+	a.searchView(tab)
 }
 
 // searchView highlights the matches in the view and reveals the first.
-func (a *App) searchView(t *reqTab) {
-	matches := t.view.Find(t.find.Text)
-	t.look = viewer.Update(t.look, viewer.Searched{Matches: len(matches)})
+func (a *App) searchView(tab *reqTab) {
+	matches := tab.view.Find(tab.find.Text)
+	tab.look = viewer.Update(tab.look, viewer.Searched{Matches: len(matches)})
 	if len(matches) > 0 {
-		t.view.RevealMatch(matches[0])
+		tab.view.RevealMatch(matches[0])
 	}
-	t.view.SetMatches(matches, t.look.Match)
+	tab.view.SetMatches(matches, tab.look.Match)
 }
 
 // findStep moves to the next (dir 1) or previous (dir -1) match, wrapping.
-func (a *App) findStep(t *reqTab, dir int) {
-	matches := t.view.Matches()
+func (a *App) findStep(tab *reqTab, dir int) {
+	matches := tab.view.Matches()
 	if len(matches) == 0 {
 		return
 	}
-	t.look = viewer.Update(t.look, viewer.Stepped{Dir: dir, Matches: len(matches)})
-	next := t.look.Match
-	t.view.SetMatches(matches, next)
-	t.view.RevealMatch(matches[next])
+	tab.look = viewer.Update(tab.look, viewer.Stepped{Dir: dir, Matches: len(matches)})
+	next := tab.look.Match
+	tab.view.SetMatches(matches, next)
+	tab.view.RevealMatch(matches[next])
 }
 
 // findEnter is Enter in the find field: next match, previous with Shift.
-func (a *App) findEnter(t *reqTab) {
+func (a *App) findEnter(tab *reqTab) {
 	dir := 1
 	if a.ctx.In.Shift {
 		dir = -1
 	}
-	a.findStep(t, dir)
+	a.findStep(tab, dir)
 }
 
-func (a *App) closeFind(t *reqTab) {
-	t.look = viewer.Update(t.look, viewer.FindClosed{})
-	t.find.Focused = false
-	t.view.SetMatches(nil, -1)
-	if t.look.Compact() && formattable(t) {
-		a.showCompact(t) // leave the filtered view
+func (a *App) closeFind(tab *reqTab) {
+	tab.look = viewer.Update(tab.look, viewer.FindClosed{})
+	tab.find.Focused = false
+	tab.view.SetMatches(nil, -1)
+	if tab.look.Compact() && formattable(tab) {
+		a.showCompact(tab) // leave the filtered view
 	}
 }
 

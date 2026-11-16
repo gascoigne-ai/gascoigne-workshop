@@ -60,4 +60,4 @@ func TestOpenMenuFillsTheIconsFromTheLabels(t *testing.T) {
 	}
 }
 
-func itoa(n int) string { return strconv.Itoa(n) }
+func itoa(count int) string { return strconv.Itoa(count) }

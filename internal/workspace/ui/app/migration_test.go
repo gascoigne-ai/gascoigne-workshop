@@ -65,28 +65,28 @@ func startFrom(t *testing.T, settingsPath, statePath string) *App {
 // the folders the file lists open. User, collapsed in that session, is not
 // checked: a start opens every folder and the state only adds to that, in
 // the version that wrote the file as in this one.
-func assertOldSessionRestored(t *testing.T, a *App, dir string) {
+func assertOldSessionRestored(t *testing.T, app *App, dir string) {
 	t.Helper()
-	if len(a.open.Entries) != 1 || a.workspace() != dir || a.envName() != "Dev" {
-		t.Fatalf("open %+v, environment %q", a.open.Entries, a.envName())
+	if len(app.open.Entries) != 1 || app.workspace() != dir || app.envName() != "Dev" {
+		t.Fatalf("open %+v, environment %q", app.open.Entries, app.envName())
 	}
 	var names []string
-	for _, tab := range a.openTabs() {
+	for _, tab := range app.openTabs() {
 		names = append(names, tab.Req.Name)
 	}
 	if want := []string{"Get User", "Repository Info", "Echo"}; !reflect.DeepEqual(names, want) {
 		t.Fatalf("tabs %v, want %v", names, want)
 	}
-	if a.cur().Req.Name != "Echo" {
-		t.Fatalf("active %q, want Echo", a.cur().Req.Name)
+	if app.cur().Req.Name != "Echo" {
+		t.Fatalf("active %q, want Echo", app.cur().Req.Name)
 	}
-	col := a.col()
+	col := app.col()
 	open := map[string]bool{}
 	for _, folder := range col.Folders {
-		open[folder.Name] = a.expanded[folder]
+		open[folder.Name] = app.expanded[folder]
 	}
-	if !a.expanded[&col.Folder] || !open["Repository"] || !open["Realtime"] {
-		t.Fatalf("root open %v, folders %v", a.expanded[&col.Folder], open)
+	if !app.expanded[&col.Folder] || !open["Repository"] || !open["Realtime"] {
+		t.Fatalf("root open %v, folders %v", app.expanded[&col.Folder], open)
 	}
 }
 

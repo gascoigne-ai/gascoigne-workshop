@@ -27,9 +27,9 @@ var settingsPaneStates = []struct {
 	name  string
 	setUp func(a *App, tab *reqTab)
 }{
-	{"defaults", func(a *App, tab *reqTab) {}},
-	{"default-timeout", func(a *App, tab *reqTab) {
-		a.settings.TimeoutSec = 45
+	{"defaults", func(app *App, tab *reqTab) {}},
+	{"default-timeout", func(app *App, tab *reqTab) {
+		app.settings.TimeoutSec = 45
 	}},
 }
 

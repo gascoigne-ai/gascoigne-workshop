@@ -52,7 +52,7 @@ const (
 	menuBtnY   = headerH / 2
 )
 
-func treeRowY(i int) int { return headerH + i*core.RowH + core.RowH/2 }
+func treeRowY(index int) int { return headerH + index*core.RowH + core.RowH/2 }
 
 // newTestApp is a test app with the panes side by side, whose geometry
 // the click coordinates of most tests assume, and the pretty-printed
@@ -61,7 +61,7 @@ func treeRowY(i int) int { return headerH + i*core.RowH + core.RowH/2 }
 // response view.
 func newTestApp(t *testing.T) (*App, string) {
 	t.Helper()
-	return newTestAppWith(t, func(s *settings.Settings) { s.Layout = "side" })
+	return newTestAppWith(t, func(prefs *settings.Settings) { prefs.Layout = "side" })
 }
 
 // newSettingsTestApp is a test app whose settings are the defaults except
@@ -117,31 +117,31 @@ func withAdapters(opts Options) Options {
 }
 
 // click is a press followed by a release at the same place.
-func click(a *App, x, y int) {
-	a.step(core.Input{X: x, Y: y, Click: true, Held: true})
-	a.step(core.Input{X: x, Y: y})
+func click(app *App, posX, posY int) {
+	app.step(core.Input{X: posX, Y: posY, Click: true, Held: true})
+	app.step(core.Input{X: posX, Y: posY})
 }
 
 // jsonServer answers every request with a small JSON body.
 func jsonServer(t *testing.T) *httptest.Server {
 	t.Helper()
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		io.WriteString(w, `{"ok":true}`)
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		io.WriteString(writer, `{"ok":true}`)
 	}))
 	t.Cleanup(srv.Close)
 	return srv
 }
 
 // pointTabAt makes the open request target url, as if typed into the field.
-func pointTabAt(t *reqTab, url string) {
-	t.Req.URL = url
-	t.url = widget.NewTextField(url)
+func pointTabAt(tab *reqTab, url string) {
+	tab.Req.URL = url
+	tab.url = widget.NewTextField(url)
 }
 
-func waitForResponse(t *testing.T, a *App, tab *reqTab) {
+func waitForResponse(t *testing.T, app *App, tab *reqTab) {
 	t.Helper()
 	for range 400 {
-		a.step(core.Input{})
+		app.step(core.Input{})
 		if tab.Resp != nil {
 			return
 		}
@@ -309,7 +309,7 @@ func TestEnterInTheURLFieldSends(t *testing.T) {
 func TestSendingTwiceWhileRunningStartsOneRequest(t *testing.T) {
 	hits := make(chan struct{}, 4)
 	release := make(chan struct{})
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		hits <- struct{}{}
 		<-release
 	}))
@@ -426,7 +426,7 @@ func TestSettingsSaveFailureIsReported(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	a.changeSettings(func(s *settings.Settings) { s.Theme = "light" })
+	a.changeSettings(func(prefs *settings.Settings) { prefs.Theme = "light" })
 	if !strings.HasPrefix(a.status, "Could not save settings:") {
 		t.Fatalf("status = %q", a.status)
 	}
@@ -541,7 +541,7 @@ const (
 	headersTabIdx = 2
 )
 
-func (a *App) typeText(s string) { a.step(core.Input{Typed: []rune(s)}) }
+func (a *App) typeText(text string) { a.step(core.Input{Typed: []rune(text)}) }
 
 func TestEditingAParamValueUpdatesTheURL(t *testing.T) {
 	a, _ := newTestApp(t)
@@ -685,8 +685,8 @@ func TestResponseHeadersAreNotEditable(t *testing.T) {
 	}
 }
 
-func key(k ebiten.Key, ctrl, shift bool) core.Input {
-	return core.Input{Keys: []ebiten.Key{k}, Ctrl: ctrl, Shift: shift}
+func key(key ebiten.Key, ctrl, shift bool) core.Input {
+	return core.Input{Keys: []ebiten.Key{key}, Ctrl: ctrl, Shift: shift}
 }
 
 func TestCtrlEnterSendsTheRequest(t *testing.T) {
@@ -916,9 +916,9 @@ func TestFormBodyFieldsAreEditable(t *testing.T) {
 
 func TestSendingAFormBodyUsesTheRows(t *testing.T) {
 	got := make(chan string, 1)
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		b, _ := io.ReadAll(r.Body)
-		got <- r.Header.Get("Content-Type") + "|" + string(b)
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		b, _ := io.ReadAll(request.Body)
+		got <- request.Header.Get("Content-Type") + "|" + string(b)
 	}))
 	defer srv.Close()
 	a, _ := newTestApp(t)
@@ -955,11 +955,11 @@ func TestEachTabKeepsItsOwnBodyEditor(t *testing.T) {
 // from the layout the view uses: 14px padding, a fixed badge slot, 8px
 // gaps, the name, a fixed slot for the unsaved dot and a 24px close
 // button. Nothing but the name changes a tab's width.
-func (a *App) tabX(i int) (left, width int) {
+func (a *App) tabX(index int) (left, width int) {
 	x := 260
 	for j, t := range a.openTabs() {
 		wd := 14 + tabBadgeW + 8 + a.ctx.Width(a.ctx.F.UI, t.Req.Name) + 8 + tabDirtyW + 24
-		if j == i {
+		if j == index {
 			return x, wd
 		}
 		x += wd
@@ -1137,18 +1137,18 @@ func pathServer(t *testing.T) (srv *httptest.Server, release func()) {
 	t.Helper()
 	gate := make(chan struct{})
 	var once sync.Once
-	srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
+	srv = httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		switch request.URL.Path {
 		case "/slow":
 			select {
 			case <-gate:
-				io.WriteString(w, "slow")
-			case <-r.Context().Done():
+				io.WriteString(writer, "slow")
+			case <-request.Context().Done():
 			}
 		case "/redirect":
-			http.Redirect(w, r, "/fast", http.StatusFound)
+			http.Redirect(writer, request, "/fast", http.StatusFound)
 		default:
-			io.WriteString(w, "fast")
+			io.WriteString(writer, "fast")
 		}
 	}))
 	release = func() { once.Do(func() { close(gate) }) }
@@ -1333,11 +1333,11 @@ func recordServer(t *testing.T) (*httptest.Server, func() recorded) {
 	t.Helper()
 	var mu sync.Mutex
 	var last recorded
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		mu.Lock()
 		defer mu.Unlock()
-		last.header, last.query = r.Header.Clone(), r.URL.RawQuery
-		last.user, last.pass, last.hasAuth = r.BasicAuth()
+		last.header, last.query = request.Header.Clone(), request.URL.RawQuery
+		last.user, last.pass, last.hasAuth = request.BasicAuth()
 	}))
 	t.Cleanup(srv.Close)
 	return srv, func() recorded { mu.Lock(); defer mu.Unlock(); return last }
@@ -1364,13 +1364,13 @@ func openAuthPane(t *testing.T) *App {
 	return a
 }
 
-func sendAndWait(t *testing.T, a *App, url string) {
+func sendAndWait(t *testing.T, app *App, url string) {
 	t.Helper()
-	tab := a.cur()
+	tab := app.cur()
 	pointTabAt(tab, url)
 	tab.Resp = nil
-	a.send(tab)
-	waitForResponse(t, a, tab)
+	app.send(tab)
+	waitForResponse(t, app, tab)
 }
 
 func TestBearerAuthSendsTheToken(t *testing.T) {
@@ -1501,7 +1501,7 @@ const (
 // jsonResponse points the current tab at a server returning body and sends.
 func jsonResponse(t *testing.T, body string) *App {
 	t.Helper()
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { io.WriteString(w, body) }))
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) { io.WriteString(writer, body) }))
 	t.Cleanup(srv.Close)
 	a, _ := newTestApp(t)
 	sendAndWait(t, a, srv.URL)
@@ -1525,8 +1525,8 @@ func TestRawAndPrettyToggleTheResponseView(t *testing.T) {
 }
 
 func TestBinaryBodiesAreNotShownAsText(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte{0x89, 'P', 'N', 'G', 0, 1, 2, 0xff})
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		writer.Write([]byte{0x89, 'P', 'N', 'G', 0, 1, 2, 0xff})
 	}))
 	defer srv.Close()
 	a, _ := newTestApp(t)
@@ -1636,7 +1636,9 @@ func TestANewResponseRerunsAnOpenSearch(t *testing.T) {
 	a.step(key(ebiten.KeyF, true, false))
 	a.typeText("id")
 
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { io.WriteString(w, `{"id":1,"idx":2,"idy":3}`) }))
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		io.WriteString(writer, `{"id":1,"idx":2,"idy":3}`)
+	}))
 	defer srv.Close()
 	sendAndWait(t, a, srv.URL)
 	if got := len(tab.view.Find("id")); got != 3 {
@@ -1649,10 +1651,10 @@ func TestANewResponseRerunsAnOpenSearch(t *testing.T) {
 
 const dividerY = 400 // anywhere along the tall dividers
 
-func drag(a *App, fromX, toX, y int) {
-	a.step(core.Input{X: fromX, Y: y, Click: true, Held: true})
-	a.step(core.Input{X: toX, Y: y, Held: true})
-	a.step(core.Input{X: toX, Y: y}) // release
+func drag(app *App, fromX, toX, posY int) {
+	app.step(core.Input{X: fromX, Y: posY, Click: true, Held: true})
+	app.step(core.Input{X: toX, Y: posY, Held: true})
+	app.step(core.Input{X: toX, Y: posY}) // release
 }
 
 func TestDraggingTheSidebarDividerResizesTheSidebar(t *testing.T) {
@@ -1874,8 +1876,8 @@ const (
 
 func TestConfirmRunsOnEnterAndOnTheButton(t *testing.T) {
 	for name, act := range map[string]func(a *App){
-		"Enter":  func(a *App) { a.step(core.Input{Enter: true}) },
-		"button": func(a *App) { click(a, dialogOKX, dialogButtonY) },
+		"Enter":  func(app *App) { app.step(core.Input{Enter: true}) },
+		"button": func(app *App) { click(app, dialogOKX, dialogButtonY) },
 	} {
 		a, _ := newTestApp(t)
 		var ok int
@@ -1893,9 +1895,9 @@ func TestConfirmRunsOnEnterAndOnTheButton(t *testing.T) {
 
 func TestConfirmCancelsOnEscapeCancelButtonAndOutsideClick(t *testing.T) {
 	for name, act := range map[string]func(a *App){
-		"Escape":  func(a *App) { a.step(core.Input{Escape: true}) },
-		"Cancel":  func(a *App) { click(a, dialogCancelX, dialogButtonY) },
-		"outside": func(a *App) { click(a, 100, 700) },
+		"Escape":  func(app *App) { app.step(core.Input{Escape: true}) },
+		"Cancel":  func(app *App) { click(app, dialogCancelX, dialogButtonY) },
+		"outside": func(app *App) { click(app, 100, 700) },
 	} {
 		a, _ := newTestApp(t)
 		var ok int
@@ -1939,9 +1941,9 @@ func TestDialogTrapsFocusAndBlocksShortcuts(t *testing.T) {
 
 // Toasts stack up from above the status bar at the right: 320x36 each
 // with 6px between them; the newest is lowest.
-func toastRect(n, i int) (x, y, w, h int) {
-	total := n*36 + (n-1)*6
-	return 1280 - 12 - 320, 800 - statusH - 8 - total + i*42, 320, 36
+func toastRect(count, index int) (x, y, w, h int) {
+	total := count*36 + (count-1)*6
+	return 1280 - 12 - 320, 800 - statusH - 8 - total + index*42, 320, 36
 }
 
 func TestInfoToastsExpireAndErrorsStayUntilClicked(t *testing.T) {
@@ -2015,7 +2017,7 @@ func TestClipboardFailureBecomesAnErrorToast(t *testing.T) {
 
 // ---- collection tree: create, rename, delete, move ----------------------
 
-func rightClick(a *App, x, y int) { a.step(core.Input{X: x, Y: y, RightClick: true}) }
+func rightClick(app *App, posX, posY int) { app.step(core.Input{X: posX, Y: posY, RightClick: true}) }
 
 // Sample tree rows: 0 root, 1 User, 2 Repository, 3 Search Repos,
 // 4 Repository Info, 5 Repository Tags, 6 Realtime.
@@ -2023,18 +2025,18 @@ const (
 	rowRoot, rowUser, rowRepo, rowSearch, rowInfo, rowTags, rowRealtime = 0, 1, 2, 3, 4, 5, 6
 )
 
-func menuLabels(a *App) []string {
+func menuLabels(app *App) []string {
 	var out []string
-	for _, it := range widget.PopupMenu(a.ctx).Items {
+	for _, it := range widget.PopupMenu(app.ctx).Items {
 		out = append(out, it.Label)
 	}
 	return out
 }
 
 // pickMenu clicks the menu item with the given label.
-func pickMenu(t *testing.T, a *App, label string) {
+func pickMenu(t *testing.T, app *App, label string) {
 	t.Helper()
-	m := widget.PopupMenu(a.ctx)
+	m := widget.PopupMenu(app.ctx)
 	if m == nil {
 		t.Fatal("no menu is open")
 	}
@@ -2045,16 +2047,16 @@ func pickMenu(t *testing.T, a *App, label string) {
 			h = widget.MenuSepH
 		}
 		if it.Label == label {
-			click(a, m.X+100, y+h/2)
+			click(app, m.X+100, y+h/2)
 			return
 		}
 		y += h
 	}
-	t.Fatalf("no menu item %q in %v", label, menuLabels(a))
+	t.Fatalf("no menu item %q in %v", label, menuLabels(app))
 }
 
-func findReq(a *App, name string) *model.Request {
-	for _, r := range collection.Rows(&a.col().Folder, allOpen(a)) {
+func findReq(app *App, name string) *model.Request {
+	for _, r := range collection.Rows(&app.col().Folder, allOpen(app)) {
 		if r.Req != nil && r.Req.Name == name {
 			return r.Req
 		}
@@ -2062,16 +2064,16 @@ func findReq(a *App, name string) *model.Request {
 	return nil
 }
 
-func allOpen(a *App) map[*model.Folder]bool {
+func allOpen(app *App) map[*model.Folder]bool {
 	open := map[*model.Folder]bool{}
 	var walk func(*model.Folder)
-	walk = func(f *model.Folder) {
-		open[f] = true
-		for _, s := range f.Folders {
+	walk = func(folder *model.Folder) {
+		open[folder] = true
+		for _, s := range folder.Folders {
 			walk(s)
 		}
 	}
-	walk(&a.col().Folder)
+	walk(&app.col().Folder)
 	return open
 }
 
@@ -2364,11 +2366,11 @@ const (
 	bulkBtnX      = 715
 )
 
-func altKey(k ebiten.Key) core.Input { return core.Input{Keys: []ebiten.Key{k}, Alt: true} }
+func altKey(key ebiten.Key) core.Input { return core.Input{Keys: []ebiten.Key{key}, Alt: true} }
 
-func paramNames(a *App) []string {
+func paramNames(app *App) []string {
 	var out []string
-	for _, p := range a.cur().Req.Params {
+	for _, p := range app.cur().Req.Params {
 		out = append(out, p.Name)
 	}
 	return out
@@ -2602,10 +2604,10 @@ func TestDuplicateHeaderNamesAreFlagged(t *testing.T) {
 
 // ---- right-click menus: tabs, table rows, text, response ----------------
 
-func itemByLabel(a *App, label string) *widget.MenuItem {
-	for i := range widget.PopupMenu(a.ctx).Items {
-		if widget.PopupMenu(a.ctx).Items[i].Label == label {
-			return &widget.PopupMenu(a.ctx).Items[i]
+func itemByLabel(app *App, label string) *widget.MenuItem {
+	for i := range widget.PopupMenu(app.ctx).Items {
+		if widget.PopupMenu(app.ctx).Items[i].Label == label {
+			return &widget.PopupMenu(app.ctx).Items[i]
 		}
 	}
 	return nil
@@ -2945,11 +2947,11 @@ func openSettingsMenu(t *testing.T) (*App, string) {
 	return a, path
 }
 
-func typeColor(a *App, tok core.Token, row int, text string) {
-	in := a.colors.Input(a, tok)
-	click(a, colorFieldX, colorRow0Y+row*core.RowH)
+func typeColor(app *App, tok core.Token, row int, text string) {
+	in := app.colors.Input(app, tok)
+	click(app, colorFieldX, colorRow0Y+row*core.RowH)
 	in.SelectAll()
-	a.typeText(text)
+	app.typeText(text)
 }
 
 func TestContrastChooserStrengthensTheColorsAndIsSaved(t *testing.T) {
@@ -3086,8 +3088,8 @@ func TestShortcutLabelsReadNaturally(t *testing.T) {
 
 // ---- configurable shortcuts ---------------------------------------------------
 
-func combo(k ebiten.Key, ctrl, shift, alt bool) core.Input {
-	return core.Input{Keys: []ebiten.Key{k}, Ctrl: ctrl, Shift: shift, Alt: alt}
+func combo(key ebiten.Key, ctrl, shift, alt bool) core.Input {
+	return core.Input{Keys: []ebiten.Key{key}, Ctrl: ctrl, Shift: shift, Alt: alt}
 }
 
 func TestRecordingANewBindingRebindsTheAction(t *testing.T) {
@@ -3243,13 +3245,13 @@ func TestRequestAndResponsePanesShareTheirFirstRowBand(t *testing.T) {
 
 // openResponseRowMenu right-clicks down the response Headers table until
 // a row menu opens (the exact row height is the table's business).
-func openResponseRowMenu(t *testing.T, a *App) {
+func openResponseRowMenu(t *testing.T, app *App) {
 	t.Helper()
-	a.cur().respTab = 1 // Headers
-	a.step(core.Input{})
+	app.cur().respTab = 1 // Headers
+	app.step(core.Input{})
 	for y := 150; y < 500; y += 4 {
-		rightClick(a, 900, y)
-		if widget.PopupMenu(a.ctx) != nil {
+		rightClick(app, 900, y)
+		if widget.PopupMenu(app.ctx) != nil {
 			return
 		}
 	}
@@ -3325,15 +3327,15 @@ func TestEditableTableMenuAlsoCopiesCells(t *testing.T) {
 }
 
 // tipAt hovers (x, y) long enough and draws; it returns the tooltip shown.
-func tipAt(a *App, x, y int) string {
-	a.step(core.Input{X: x, Y: y})
+func tipAt(app *App, posX, posY int) string {
+	app.step(core.Input{X: posX, Y: posY})
 	img := ebiten.NewImage(winW, winH)
-	a.Draw(img) // the pointer comes to rest on the element
-	a.ctx.Tick += 100
-	a.dirty = true
-	a.Draw(img)
-	if a.tips.Shown() {
-		return a.ctx.TipText
+	app.Draw(img) // the pointer comes to rest on the element
+	app.ctx.Tick += 100
+	app.dirty = true
+	app.Draw(img)
+	if app.tips.Shown() {
+		return app.ctx.TipText
 	}
 	return ""
 }
@@ -3442,10 +3444,10 @@ const compactBody = `{"total":3,"items":[` +
 	`{"id":2,"name":"beta","tags":["red","green","blue","yellow","orange","purple","brown","black"],"owner":{"login":"bob","site":"https://b.example.org/very/long/path/to/bob"}},` +
 	`{"id":3,"name":"gamma","tags":["cyan","magenta","teal","olive","navy","maroon","lime","aqua"],"owner":{"login":"cy","site":"https://c.example.org/very/long/path/to/cy"}}]}`
 
-func viewText(t *reqTab) string {
+func viewText(tab *reqTab) string {
 	var sb strings.Builder
-	for _, i := range t.view.Visible() {
-		for _, sp := range t.view.Lines[i].Spans {
+	for _, i := range tab.view.Visible() {
+		for _, sp := range tab.view.Lines[i].Spans {
 			sb.WriteString(sp.Text)
 		}
 		sb.WriteString("\n")
@@ -3526,10 +3528,10 @@ func TestFindInCompactViewKeepsOnlyMatchingLeavesTheirChildrenAndTheirPath(t *te
 }
 
 // find replaces the search text, as typing would.
-func (a *App) find(t *reqTab, text string) {
-	t.find = widget.NewTextField(text)
-	t.find.Focused = true
-	a.runFind(t)
+func (a *App) find(tab *reqTab, text string) {
+	tab.find = widget.NewTextField(text)
+	tab.find.Focused = true
+	a.runFind(tab)
 }
 
 func TestNewTabsShowResponsesCompactByDefault(t *testing.T) {
@@ -3608,9 +3610,9 @@ func TestFindWorksInEveryResponseView(t *testing.T) {
 // goroutine must work from what dispatch captured before it started.
 func TestClearingCookiesWhileARequestRunsIsRaceFree(t *testing.T) {
 	release := make(chan struct{})
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
 		<-release
-		io.WriteString(w, `{"ok":true}`)
+		io.WriteString(writer, `{"ok":true}`)
 	}))
 	t.Cleanup(srv.Close)
 	a, _ := newTestApp(t)
@@ -3666,7 +3668,7 @@ func TestAnySettingsEditThatChangesTheResponseViewRefreshesOpenTabs(t *testing.T
 		t.Fatal("start: the tab should not be raw")
 	}
 
-	a.saveSettings(func(s *settings.Settings) { s.ResponseView = "raw" })
+	a.saveSettings(func(prefs *settings.Settings) { prefs.ResponseView = "raw" })
 
 	if !tab.look.Raw() {
 		t.Fatal("the open tab kept its old response view")
@@ -3727,16 +3729,16 @@ func (panickingStreamer) Connect(context.Context, model.Request) (reqport.Sessio
 }
 
 // statusSoon steps the app until its status holds want.
-func statusSoon(t *testing.T, a *App, want string) {
+func statusSoon(t *testing.T, app *App, want string) {
 	t.Helper()
 	for range 400 {
-		a.step(core.Input{})
-		if strings.Contains(a.status, want) {
+		app.step(core.Input{})
+		if strings.Contains(app.status, want) {
 			return
 		}
 		time.Sleep(5 * time.Millisecond)
 	}
-	t.Fatalf("status %q never held %q", a.status, want)
+	t.Fatalf("status %q never held %q", app.status, want)
 }
 
 // The connect and file dialog goroutines were started with a bare go

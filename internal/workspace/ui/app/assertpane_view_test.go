@@ -28,9 +28,9 @@ var assertSizes = []struct {
 
 // pinAssertDump lays root out at width and compares its Dump with the
 // file testdata/<name>.dump.
-func pinAssertDump(t *testing.T, a *App, root Node, width int, name string) {
+func pinAssertDump(t *testing.T, app *App, root Node, width int, name string) {
 	t.Helper()
-	Layout(a.ctx, root, width, settingsPaneH)
+	Layout(app.ctx, root, width, settingsPaneH)
 	want, err := os.ReadFile(filepath.Join("testdata", name+".dump"))
 	if err != nil {
 		t.Fatal(err)

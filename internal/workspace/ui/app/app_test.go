@@ -113,15 +113,15 @@ func TestRequestBadge(t *testing.T) {
 	}
 }
 
-func folderNames(f *model.Folder) (out []string) {
-	for _, s := range f.Folders {
+func folderNames(folder *model.Folder) (out []string) {
+	for _, s := range folder.Folders {
 		out = append(out, s.Name)
 	}
 	return
 }
 
-func requestNames(f *model.Folder) (out []string) {
-	for _, r := range f.Requests {
+func requestNames(folder *model.Folder) (out []string) {
+	for _, r := range folder.Requests {
 		out = append(out, r.Name)
 	}
 	return
@@ -172,15 +172,15 @@ func TestSampleCollectionIsConsistent(t *testing.T) {
 	col := collection.GitHubSample()
 	reg := proto.NewRegistry()
 	var check func(f *model.Folder, path string)
-	check = func(f *model.Folder, path string) {
+	check = func(folder *model.Folder, path string) {
 		seen := map[string]bool{}
-		for _, name := range append(folderNames(f), requestNames(f)...) {
+		for _, name := range append(folderNames(folder), requestNames(folder)...) {
 			if seen[name] {
 				t.Errorf("%s: duplicate name %q among siblings", path, name)
 			}
 			seen[name] = true
 		}
-		for _, r := range f.Requests {
+		for _, r := range folder.Requests {
 			if _, ok := reg[r.Protocol]; !ok {
 				t.Errorf("%s/%s uses unknown protocol %q", path, r.Name, r.Protocol)
 			}
@@ -188,7 +188,7 @@ func TestSampleCollectionIsConsistent(t *testing.T) {
 				t.Errorf("%s/%s is REST without a method", path, r.Name)
 			}
 		}
-		for _, sub := range f.Folders {
+		for _, sub := range folder.Folders {
 			check(sub, path+"/"+sub.Name)
 		}
 	}

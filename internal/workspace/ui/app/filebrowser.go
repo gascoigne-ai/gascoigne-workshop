@@ -26,7 +26,7 @@ type fileChooser struct {
 // own dialog when it has a program for one, else the in-app file browser
 // (decision 18), which always works.
 var fileChoosers = []fileChooser{
-	{func(a *App) bool { return a.files.Available() }, (*App).askDesktop},
+	{func(app *App) bool { return app.files.Available() }, (*App).askDesktop},
 	{func(*App) bool { return true }, (*App).browseFiles},
 }
 

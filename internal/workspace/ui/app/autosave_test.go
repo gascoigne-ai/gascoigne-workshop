@@ -19,8 +19,8 @@ func fileText(t *testing.T, path string) string {
 	return string(data)
 }
 
-func setLayout(a *App, layout string) {
-	a.changeSettings(func(s *settings.Settings) { s.Layout = layout })
+func setLayout(app *App, layout string) {
+	app.changeSettings(func(prefs *settings.Settings) { prefs.Layout = layout })
 }
 
 func TestSettingsAreSavedAutomaticallyByDefault(t *testing.T) {
@@ -36,7 +36,7 @@ func TestSettingsAreSavedAutomaticallyByDefault(t *testing.T) {
 
 func TestWithAutoSaveOffChangesApplyAtOnceButAreWrittenOnlyOnSave(t *testing.T) {
 	a, path := newSettingsTestApp(t)
-	a.changeSettings(func(s *settings.Settings) { s.AutoSave = false })
+	a.changeSettings(func(prefs *settings.Settings) { prefs.AutoSave = false })
 	if !strings.Contains(fileText(t, path), `"autoSave": false`) {
 		t.Fatalf("turning auto-save off must itself be stored, file %q", fileText(t, path))
 	}
@@ -55,9 +55,9 @@ func TestWithAutoSaveOffChangesApplyAtOnceButAreWrittenOnlyOnSave(t *testing.T) 
 
 func TestTurningAutoSaveBackOnWritesWhatWasPending(t *testing.T) {
 	a, path := newSettingsTestApp(t)
-	a.changeSettings(func(s *settings.Settings) { s.AutoSave = false })
+	a.changeSettings(func(prefs *settings.Settings) { prefs.AutoSave = false })
 	setLayout(a, "side")
-	a.changeSettings(func(s *settings.Settings) { s.AutoSave = true })
+	a.changeSettings(func(prefs *settings.Settings) { prefs.AutoSave = true })
 	if !strings.Contains(fileText(t, path), `"layout": "side"`) || a.settingsUnsaved {
 		t.Fatalf("file %q unsaved %v", fileText(t, path), a.settingsUnsaved)
 	}
@@ -66,7 +66,7 @@ func TestTurningAutoSaveBackOnWritesWhatWasPending(t *testing.T) {
 func TestClosingWithUnsavedChangesAsksWhatToDo(t *testing.T) {
 	setup := func(t *testing.T) (*App, string) {
 		a, path := openSettingsMenu(t)
-		a.changeSettings(func(s *settings.Settings) { s.AutoSave = false })
+		a.changeSettings(func(prefs *settings.Settings) { prefs.AutoSave = false })
 		setLayout(a, "side")
 		a.closeSettings()
 		if a.dialog == nil || !a.menu {
@@ -74,14 +74,14 @@ func TestClosingWithUnsavedChangesAsksWhatToDo(t *testing.T) {
 		}
 		return a, path
 	}
-	press := func(a *App, label string) {
-		for _, b := range a.dialog.Buttons {
+	press := func(app *App, label string) {
+		for _, b := range app.dialog.Buttons {
 			if b.Label == label {
 				b.Run()
 				return
 			}
 		}
-		t.Fatalf("no %q button in %+v", label, a.dialog.Buttons)
+		t.Fatalf("no %q button in %+v", label, app.dialog.Buttons)
 	}
 	t.Run("cancel keeps the dialog and the changes", func(t *testing.T) {
 		a, _ := setup(t)
@@ -116,7 +116,7 @@ func TestACleanDialogClosesWithoutAsking(t *testing.T) {
 
 func TestAnOutsideChangeOfTheFileDoesNotOverwriteUnsavedChanges(t *testing.T) {
 	a, path := newSettingsTestApp(t)
-	a.changeSettings(func(s *settings.Settings) { s.AutoSave = false })
+	a.changeSettings(func(prefs *settings.Settings) { prefs.AutoSave = false })
 	setLayout(a, "side")
 	if err := os.WriteFile(path, []byte(`{"autoSave": false, "corners": "square"}`), 0o600); err != nil {
 		t.Fatal(err)
@@ -132,7 +132,7 @@ func TestTheDialogHasASaveButtonAndTheAutoSaveSetting(t *testing.T) {
 	if dump := view.Dump(a.menuView()); strings.Contains(dump, `text="Save"`) {
 		t.Fatalf("a Save button while auto-save is on and nothing is pending:\n%.800s", dump)
 	}
-	a.changeSettings(func(s *settings.Settings) { s.AutoSave = false })
+	a.changeSettings(func(prefs *settings.Settings) { prefs.AutoSave = false })
 	if dump := view.Dump(a.menuView()); !strings.Contains(dump, `text="Save"`) {
 		t.Fatalf("no Save button in the title bar with auto-save off:\n%.800s", dump)
 	}

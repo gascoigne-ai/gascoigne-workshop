@@ -28,8 +28,8 @@ type dialog struct {
 // ---- context menu --------------------------------------------------------
 
 // openMenu shows a context menu at the pointer position x, y.
-func (a *App) openMenu(x, y int, items []MenuItem) {
-	OpenMenu(a.ctx, x, y, withIcons(items))
+func (a *App) openMenu(posX, posY int, items []MenuItem) {
+	OpenMenu(a.ctx, posX, posY, withIcons(items))
 }
 
 func (a *App) closeMenu() { CloseMenu(a.ctx) }
@@ -157,11 +157,11 @@ func (a *App) overlayOpen() bool {
 }
 
 // dialogForm is the typed form of a dialog, nothing for the others.
-func (a *App) dialogForm(d *dialog) Node {
-	if d.form == nil {
+func (a *App) dialogForm(dialogValue *dialog) Node {
+	if dialogValue.form == nil {
 		return nil
 	}
-	return d.form.View(a)
+	return dialogValue.form.View(a)
 }
 
 // openLayers are the things Escape can close right now.

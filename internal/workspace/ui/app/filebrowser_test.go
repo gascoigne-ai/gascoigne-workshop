@@ -39,12 +39,12 @@ func browsingApp(t *testing.T) (*App, string) {
 
 // browserDir is the folder the open browser shows, with links resolved, as
 // the temporary folder of macOS is behind one.
-func browserDir(t *testing.T, a *App) string {
+func browserDir(t *testing.T, app *App) string {
 	t.Helper()
-	if a.browser == nil {
+	if app.browser == nil {
 		t.Fatal("the file browser is not open")
 	}
-	return evalLinks(t, a.browser.model.Dir)
+	return evalLinks(t, app.browser.model.Dir)
 }
 
 func evalLinks(t *testing.T, path string) string {
@@ -56,8 +56,8 @@ func evalLinks(t *testing.T, path string) string {
 	return resolved
 }
 
-func pressEdit(a *App, edit core.Edit, keyDown ebiten.Key, alt bool) {
-	a.step(core.Input{Edits: []core.Edit{edit}, Keys: []ebiten.Key{keyDown}, Alt: alt})
+func pressEdit(app *App, edit core.Edit, keyDown ebiten.Key, alt bool) {
+	app.step(core.Input{Edits: []core.Edit{edit}, Keys: []ebiten.Key{keyDown}, Alt: alt})
 }
 
 func TestWithoutADialogProgramTheFileBrowserOpensInTheHomeFolder(t *testing.T) {
@@ -233,14 +233,14 @@ func TestNoHintWhenNoProgramIsSuggested(t *testing.T) {
 
 // shownCenter is the middle of the element showing text, once a frame has
 // laid the browser out.
-func shownCenter(t *testing.T, a *App, text string) (int, int) {
+func shownCenter(t *testing.T, app *App, text string) (int, int) {
 	t.Helper()
-	a.step(core.Input{X: 5000, Y: 5000})
-	return textCenter(t, a, text)
+	app.step(core.Input{X: 5000, Y: 5000})
+	return textCenter(t, app, text)
 }
 
 // typePath puts path in the browser's field as if it was typed.
-func typePath(a *App, path string) {
-	a.browser.path = widget.NewTextField(path)
-	a.browse(filebrowser.Typed{Text: path})
+func typePath(app *App, path string) {
+	app.browser.path = widget.NewTextField(path)
+	app.browse(filebrowser.Typed{Text: path})
 }

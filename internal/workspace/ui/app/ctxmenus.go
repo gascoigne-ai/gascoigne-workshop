@@ -25,28 +25,28 @@ var menuSeparator = MenuItem{Separator: true}
 
 // ---- request tabs ------------------------------------------------------------
 
-func (a *App) tabMenuItems(i int) []MenuItem {
-	t := a.widgets[a.list.Tabs[i]]
+func (a *App) tabMenuItems(index int) []MenuItem {
+	t := a.widgets[a.list.Tabs[index]]
 	return []MenuItem{
-		{Label: "Close", Run: func() { a.closeTab(i) }},
-		{Label: "Close others", Disabled: len(a.list.Tabs) == 1, Run: func() { a.closeOthers(i) }},
-		{Label: "Close tabs to the right", Disabled: i == len(a.list.Tabs)-1, Run: func() { a.closeRightOf(i) }},
+		{Label: "Close", Run: func() { a.closeTab(index) }},
+		{Label: "Close others", Disabled: len(a.list.Tabs) == 1, Run: func() { a.closeOthers(index) }},
+		{Label: "Close tabs to the right", Disabled: index == len(a.list.Tabs)-1, Run: func() { a.closeRightOf(index) }},
 		menuSeparator,
-		{Label: "Duplicate", Run: func() { a.duplicateTab(i) }},
+		{Label: "Duplicate", Run: func() { a.duplicateTab(index) }},
 		{Label: "Copy URL", Run: func() { a.copyRequestURL(t.Req) }},
 		{Label: "Cookies...", Run: func() { a.showCookies(t) }},
 	}
 }
 
 // closeOthers closes every tab but tab i, which becomes the active one.
-func (a *App) closeOthers(i int) { a.updateTabs(tabs.CloseOthers{Index: i}) }
+func (a *App) closeOthers(index int) { a.updateTabs(tabs.CloseOthers{Index: index}) }
 
-func (a *App) closeRightOf(i int) { a.updateTabs(tabs.CloseRightOf{Index: i}) }
+func (a *App) closeRightOf(index int) { a.updateTabs(tabs.CloseRightOf{Index: index}) }
 
 // duplicateTab copies the tab's request next to the original in the
 // tree (or into the root when it is not in the tree) and opens the copy.
-func (a *App) duplicateTab(i int) {
-	req := a.list.Tabs[i].Req
+func (a *App) duplicateTab(index int) {
+	req := a.list.Tabs[index].Req
 	owner, ok := a.entryFor(req)
 	if !ok { // nothing is open: the copy is a tab of its own
 		clone := req.Clone()
@@ -65,35 +65,35 @@ func (a *App) duplicateTab(i int) {
 
 // ---- table rows ---------------------------------------------------------------
 
-func (a *App) rowMenuItems(p pane, t *reqTab, row int) []MenuItem {
-	n := len(*p.rows(a, t))
-	a.rowSel = &rowSelection{pane: p, tab: t, row: row}
-	change := func(f func(rows []model.KV) []model.KV) func() {
+func (a *App) rowMenuItems(other pane, reqTabValue *reqTab, row int) []MenuItem {
+	n := len(*other.rows(a, reqTabValue))
+	a.rowSel = &rowSelection{pane: other, tab: reqTabValue, row: row}
+	change := func(callback func(rows []model.KV) []model.KV) func() {
 		return func() {
 			a.commitEdit()
-			a.applyRows(p, t, f)
+			a.applyRows(other, reqTabValue, callback)
 		}
 	}
-	items := append(a.copyRowItems(*p.rows(a, t), row, false), append([]MenuItem{menuSeparator}, []MenuItem{
-		{Label: "Insert row above", Run: change(func(r []model.KV) []model.KV { return model.InsertRow(r, row, model.KV{Enabled: true}) })},
-		{Label: "Insert row below", Run: change(func(r []model.KV) []model.KV { return model.InsertRow(r, row+1, model.KV{Enabled: true}) })},
-		{Label: "Duplicate", Run: change(func(r []model.KV) []model.KV { return model.DuplicateRow(r, row) })},
-		{Label: "Move up", Disabled: row == 0, Run: change(func(r []model.KV) []model.KV { m, _ := model.MoveRow(r, row, -1); return m })},
-		{Label: "Move down", Disabled: row >= n-1, Run: change(func(r []model.KV) []model.KV { m, _ := model.MoveRow(r, row, 1); return m })},
+	items := append(a.copyRowItems(*other.rows(a, reqTabValue), row, false), append([]MenuItem{menuSeparator}, []MenuItem{
+		{Label: "Insert row above", Run: change(func(rows []model.KV) []model.KV { return model.InsertRow(rows, row, model.KV{Enabled: true}) })},
+		{Label: "Insert row below", Run: change(func(rows []model.KV) []model.KV { return model.InsertRow(rows, row+1, model.KV{Enabled: true}) })},
+		{Label: "Duplicate", Run: change(func(rows []model.KV) []model.KV { return model.DuplicateRow(rows, row) })},
+		{Label: "Move up", Disabled: row == 0, Run: change(func(rows []model.KV) []model.KV { m, _ := model.MoveRow(rows, row, -1); return m })},
+		{Label: "Move down", Disabled: row >= n-1, Run: change(func(rows []model.KV) []model.KV { m, _ := model.MoveRow(rows, row, 1); return m })},
 		menuSeparator,
-		{Label: "Enable all", Run: change(func(r []model.KV) []model.KV { return model.SetAll(r, true) })},
-		{Label: "Disable all", Run: change(func(r []model.KV) []model.KV { return model.SetAll(r, false) })},
+		{Label: "Enable all", Run: change(func(rows []model.KV) []model.KV { return model.SetAll(rows, true) })},
+		{Label: "Disable all", Run: change(func(rows []model.KV) []model.KV { return model.SetAll(rows, false) })},
 		menuSeparator,
-		{Label: "Delete", Run: change(func(r []model.KV) []model.KV { return model.DeleteRow(r, row) })},
+		{Label: "Delete", Run: change(func(rows []model.KV) []model.KV { return model.DeleteRow(rows, row) })},
 	}...)...)
-	return append(items, a.secretItems(p, row)...)
+	return append(items, a.secretItems(other, row)...)
 }
 
 // secretItems is the menu entry that marks a variable of the active
 // environment as a secret; other tables have none.
-func (a *App) secretItems(p pane, row int) []MenuItem {
+func (a *App) secretItems(pane pane, row int) []MenuItem {
 	e := a.activeEnv()
-	if p.label != "Vars" || e == nil || row >= len(e.Vars) {
+	if pane.label != "Vars" || e == nil || row >= len(e.Vars) {
 		return nil
 	}
 	label := "Mark as secret"
@@ -105,11 +105,11 @@ func (a *App) secretItems(p pane, row int) []MenuItem {
 
 // copyRowItems copy parts of table row i to the clipboard. They are the
 // whole menu of a read-only table and lead the menu of an editable one.
-func (a *App) copyRowItems(rows []model.KV, i int, withAll bool) []MenuItem {
-	if i < 0 || i >= len(rows) {
+func (a *App) copyRowItems(rows []model.KV, index int, withAll bool) []MenuItem {
+	if index < 0 || index >= len(rows) {
 		return nil
 	}
-	r := rows[i]
+	r := rows[index]
 	copyText := func(text string) func() {
 		return func() { _ = a.ctx.Clipboard.Write(text) } // the clipboard reports its own failures
 	}
@@ -197,17 +197,17 @@ func (a *App) Badge(protocol, method string) Node {
 
 // ---- the response ------------------------------------------------------------------
 
-func (a *App) responseMenuItems(t *reqTab) []MenuItem {
+func (a *App) responseMenuItems(tab *reqTab) []MenuItem {
 	return []MenuItem{
-		{Label: "Copy", Shortcut: "Ctrl+C", Disabled: !t.view.Selected(), Run: func() {
-			_ = a.ctx.Clipboard.Write(t.view.SelectedText())
+		{Label: "Copy", Shortcut: "Ctrl+C", Disabled: !tab.view.Selected(), Run: func() {
+			_ = a.ctx.Clipboard.Write(tab.view.SelectedText())
 		}},
-		{Label: "Copy body", Run: func() { a.copyBody(t) }},
-		{Label: "Save body...", Disabled: t.Resp == nil || t.Resp.Err != "", Run: func() { a.saveBody(t) }},
-		{Label: "Open in browser", Disabled: t.Resp == nil || t.Resp.Err != "", Run: func() { a.openInBrowser(t) }},
-		{Label: "Copy as cURL", Run: func() { a.copyCurl(t) }},
+		{Label: "Copy body", Run: func() { a.copyBody(tab) }},
+		{Label: "Save body...", Disabled: tab.Resp == nil || tab.Resp.Err != "", Run: func() { a.saveBody(tab) }},
+		{Label: "Open in browser", Disabled: tab.Resp == nil || tab.Resp.Err != "", Run: func() { a.openInBrowser(tab) }},
+		{Label: "Copy as cURL", Run: func() { a.copyCurl(tab) }},
 		menuSeparator,
-		{Label: "Select all", Shortcut: "Ctrl+A", Run: func() { t.view.SelectLines(0, len(t.view.Lines)-1) }},
+		{Label: "Select all", Shortcut: "Ctrl+A", Run: func() { tab.view.SelectLines(0, len(tab.view.Lines)-1) }},
 		{Label: "Find", Shortcut: a.shortcutHint("find"), Run: a.openFind},
 	}
 }
@@ -237,8 +237,8 @@ func (a *App) newRegistry() reqport.Registry {
 
 // showCookies lists the cookies the jar holds for the request's URL and
 // offers to clear all of them.
-func (a *App) showCookies(t *reqTab) {
-	u, err := url.Parse(t.Req.Expanded(a.varsFor(t.Req)).URL)
+func (a *App) showCookies(tab *reqTab) {
+	u, err := url.Parse(tab.Req.Expanded(a.varsFor(tab.Req)).URL)
 	if err != nil || u.Host == "" {
 		a.toast("The URL has no host to look up cookies for", true)
 		return

@@ -7,8 +7,8 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
-func grpcTab(a *App) *reqTab {
-	tab := a.cur()
+func grpcTab(app *App) *reqTab {
+	tab := app.cur()
 	tab.Req.Protocol, tab.Req.Method = "grpc", "grpc.health.v1.Health/Watch"
 	return tab
 }

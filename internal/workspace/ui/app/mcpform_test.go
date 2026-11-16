@@ -22,14 +22,14 @@ func searchTool() model.MCPTool {
 	}}
 }
 
-func dialogButtonNamed(t *testing.T, a *App, label string) widget.DialogButton {
+func dialogButtonNamed(t *testing.T, app *App, label string) widget.DialogButton {
 	t.Helper()
-	for _, button := range a.dialog.Buttons {
+	for _, button := range app.dialog.Buttons {
 		if button.Label == label {
 			return button
 		}
 	}
-	t.Fatalf("no %q button in %+v", label, a.dialog.Buttons)
+	t.Fatalf("no %q button in %+v", label, app.dialog.Buttons)
 	return widget.DialogButton{}
 }
 

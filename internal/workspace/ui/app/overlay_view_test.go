@@ -25,9 +25,9 @@ var overlaySizes = []struct {
 
 // assertDumpPinned lays root out in a window of width by height and
 // compares its dump with testdata/name.dump.
-func assertDumpPinned(t *testing.T, a *App, root Node, name string, width, height int) {
+func assertDumpPinned(t *testing.T, app *App, root Node, name string, width, height int) {
 	t.Helper()
-	Layout(a.ctx, root, width, height)
+	Layout(app.ctx, root, width, height)
 	want, err := os.ReadFile(filepath.Join("testdata", name+".dump"))
 	if err != nil {
 		t.Fatal(err)
@@ -44,15 +44,15 @@ var dialogKinds = []struct {
 	name string
 	open func(a *App)
 }{
-	{"confirm", func(a *App) {
-		a.confirm("Delete Search Repos?", "This cannot be undone.", "Delete", func() {})
+	{"confirm", func(app *App) {
+		app.confirm("Delete Search Repos?", "This cannot be undone.", "Delete", func() {})
 	}},
-	{"prompt", func(a *App) {
-		a.prompt("Rename", "Search Repos", "Rename", func(string) {})
+	{"prompt", func(app *App) {
+		app.prompt("Rename", "Search Repos", "Rename", func(string) {})
 	}},
-	{"toolform", func(a *App) { a.openToolForm(a.cur(), searchTool()) }},
-	{"sampling", func(a *App) {
-		a.openSamplingDialog(samplingAsked, make(chan reqport.SamplingResult, 1), make(chan struct{}, 1))
+	{"toolform", func(app *App) { app.openToolForm(app.cur(), searchTool()) }},
+	{"sampling", func(app *App) {
+		app.openSamplingDialog(samplingAsked, make(chan reqport.SamplingResult, 1), make(chan struct{}, 1))
 	}},
 }
 

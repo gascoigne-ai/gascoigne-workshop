@@ -23,34 +23,34 @@ type rowSelection struct {
 // copy, and when the rows differ records the old ones for undo, stores
 // the new ones and runs the pane's changed hook (the URL rewrite for
 // Params). An edit or selection pointing past the new rows is dropped.
-func (a *App) applyRows(p pane, t *reqTab, change func(rows []model.KV) []model.KV) {
-	if t.History(p.label).Apply(p.rows(a, t), change) {
-		a.rowsAltered(p, t)
+func (a *App) applyRows(pane pane, tab *reqTab, change func(rows []model.KV) []model.KV) {
+	if tab.History(pane.label).Apply(pane.rows(a, tab), change) {
+		a.rowsAltered(pane, tab)
 	}
 }
 
 // rowsAltered runs what must follow any change of a table's rows.
-func (a *App) rowsAltered(p pane, t *reqTab) {
-	a.rowsChanged(p, t)
-	n := len(*p.rows(a, t))
-	if e := a.edit; e != nil && e.pane.label == p.label && e.tab == t && e.row > n {
+func (a *App) rowsAltered(other pane, reqTabValue *reqTab) {
+	a.rowsChanged(other, reqTabValue)
+	n := len(*other.rows(a, reqTabValue))
+	if e := a.edit; e != nil && e.pane.label == other.label && e.tab == reqTabValue && e.row > n {
 		a.edit = nil
 	}
-	if s := a.rowSel; s != nil && s.pane.label == p.label && s.tab == t && s.row >= n {
+	if s := a.rowSel; s != nil && s.pane.label == other.label && s.tab == reqTabValue && s.row >= n {
 		a.rowSel = nil
 	}
 }
 
 // undoRows takes back the last change of a table; redoRows reapplies it.
-func (a *App) undoRows(p pane, t *reqTab) {
-	if t.History(p.label).Undo(p.rows(a, t)) {
-		a.rowsAltered(p, t)
+func (a *App) undoRows(pane pane, tab *reqTab) {
+	if tab.History(pane.label).Undo(pane.rows(a, tab)) {
+		a.rowsAltered(pane, tab)
 	}
 }
 
-func (a *App) redoRows(p pane, t *reqTab) {
-	if t.History(p.label).Redo(p.rows(a, t)) {
-		a.rowsAltered(p, t)
+func (a *App) redoRows(pane pane, tab *reqTab) {
+	if tab.History(pane.label).Redo(pane.rows(a, tab)) {
+		a.rowsAltered(pane, tab)
 	}
 }
 
@@ -85,12 +85,12 @@ func (a *App) rowTarget() (p pane, t *reqTab, row, col int, editing, ok bool) {
 }
 
 // afterRowOp puts the edit or the selection on row, in column col.
-func (a *App) afterRowOp(p pane, t *reqTab, row, col int, editing bool) {
+func (a *App) afterRowOp(other pane, reqTabValue *reqTab, row, col int, editing bool) {
 	if editing {
-		a.beginEdit(p, t, row, col)
+		a.beginEdit(other, reqTabValue, row, col)
 		return
 	}
-	a.rowSel = &rowSelection{pane: p, tab: t, row: row}
+	a.rowSel = &rowSelection{pane: other, tab: reqTabValue, row: row}
 }
 
 // insertRowBelow adds an empty enabled row under the current one and edits it.
@@ -134,10 +134,10 @@ func (a *App) moveRow(delta int) {
 
 // grabRow starts dragging a row by its grip; the row becomes the
 // selected one.
-func (a *App) grabRow(p pane, t *reqTab, row int) {
+func (a *App) grabRow(other pane, reqTabValue *reqTab, row int) {
 	a.commitEdit()
-	a.rowSel = &rowSelection{pane: p, tab: t, row: row}
-	a.dragRow = &rowSelection{pane: p, tab: t, row: row}
+	a.rowSel = &rowSelection{pane: other, tab: reqTabValue, row: row}
+	a.dragRow = &rowSelection{pane: other, tab: reqTabValue, row: row}
 }
 
 // dragRowOver moves the dragged row to the place of the row the pointer
@@ -174,13 +174,13 @@ func (a *App) deleteRow() {
 
 // ---- bulk edit -------------------------------------------------------------
 
-func (a *App) toggleBulk(p pane, t *reqTab) {
+func (a *App) toggleBulk(other pane, reqTabValue *reqTab) {
 	if a.bulk != nil {
 		a.closeBulk()
 		return
 	}
 	a.commitEdit()
-	a.bulk = &bulkEdit{pane: p, tab: t, area: widget.NewTextArea(model.FormatBulk(*p.rows(a, t)))}
+	a.bulk = &bulkEdit{pane: other, tab: reqTabValue, area: widget.NewTextArea(model.FormatBulk(*other.rows(a, reqTabValue)))}
 }
 
 // closeBulk turns the text back into rows, as one change.

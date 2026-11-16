@@ -13,23 +13,23 @@ import (
 var fileBodyTemplate = markup.Must("filebody.vml", filebodySource)
 
 // fileBody is the editor of a file body: the path, and a button to pick it.
-func (a *App) fileBody(t *reqTab) Node {
-	sync := func() { editRequest(t, editor.BodyTyped{Text: t.file.Text}) }
+func (a *App) fileBody(tab *reqTab) Node {
+	sync := func() { editRequest(tab, editor.BodyTyped{Text: tab.file.Text}) }
 	size, sizeColor := "", w.Token("") // no color of its own: the muted text
-	if info, err := os.Stat(t.file.Text); err == nil && !info.IsDir() {
+	if info, err := os.Stat(tab.file.Text); err == nil && !info.IsDir() {
 		size = "found"
-	} else if t.file.Text != "" {
+	} else if tab.file.Text != "" {
 		size, sizeColor = "not found", w.Error
 	}
 	choose := func() {
 		a.pickFile("Choose the file to send", false, "", func(path string) {
-			t.file = NewTextField(path)
+			tab.file = NewTextField(path)
 			sync()
 		})
 	}
 	return fileBodyTemplate.MustBuild(markup.Scope{
 		"rowH":      w.RowH,
-		"file":      &t.file,
+		"file":      &tab.file,
 		"sync":      sync,
 		"choose":    choose,
 		"size":      size,

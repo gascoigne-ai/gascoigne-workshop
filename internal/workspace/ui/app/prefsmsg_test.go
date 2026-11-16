@@ -13,11 +13,11 @@ func TestSendAppliesSettingsMessages(t *testing.T) {
 	if a.settings.ResponseView != "raw" || !a.cur().look.Raw() {
 		t.Fatalf("Replace: setting %q raw %v", a.settings.ResponseView, a.cur().look.Raw())
 	}
-	a.Send(prefs.Change{Edit: func(s *settings.Settings) { s.ResponseView = "compact" }})
+	a.Send(prefs.Change{Edit: func(prefs *settings.Settings) { prefs.ResponseView = "compact" }})
 	if !a.cur().look.Compact() {
 		t.Fatal("Change edits the settings in effect")
 	}
-	a.Send(prefs.Edit{Edit: func(s *settings.Settings) { s.ResponseView = "pretty" }})
+	a.Send(prefs.Edit{Edit: func(prefs *settings.Settings) { prefs.ResponseView = "pretty" }})
 	if a.settings.ResponseView != "pretty" {
 		t.Fatalf("Edit: %q", a.settings.ResponseView)
 	}

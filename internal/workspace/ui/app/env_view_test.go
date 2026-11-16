@@ -267,10 +267,10 @@ func TestTheEnvironmentChipHasATooltip(t *testing.T) {
 
 // textCenter is the middle of the first element of the window that shows
 // text exactly.
-func textCenter(t *testing.T, a *App, text string) (x, y int) {
+func textCenter(t *testing.T, app *App, text string) (x, y int) {
 	t.Helper()
 	needle := fmt.Sprintf("text=%q", text)
-	for _, line := range strings.Split(layoutDump(a), "\n") {
+	for _, line := range strings.Split(layoutDump(app), "\n") {
 		if !strings.Contains(line, needle) {
 			continue
 		}

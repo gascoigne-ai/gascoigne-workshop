@@ -25,8 +25,8 @@ var windowSizes = []struct {
 // respondWith gives the open tab a response with the status, so the
 // response pane shows its status pill.
 func respondWith(status int, text string) func(a *App) {
-	return func(a *App) {
-		a.cur().Resp = &model.Response{Status: status, StatusText: text, Duration: 1400 * time.Millisecond, Size: 160434}
+	return func(app *App) {
+		app.cur().Resp = &model.Response{Status: status, StatusText: text, Duration: 1400 * time.Millisecond, Size: 160434}
 	}
 }
 
@@ -44,12 +44,12 @@ var windowStates = []struct {
 	{"ok-stacked", true, respondWith(200, "OK")},
 	{"redirect", false, respondWith(301, "Moved Permanently")},
 	{"not-found", false, respondWith(404, "Not Found")},
-	{"failed", false, func(a *App) { a.cur().Resp = &model.Response{Err: "connection refused"} }},
-	{"menu", false, func(a *App) { a.toggleSettings() }},
-	{"popup", false, func(a *App) { widget.OpenMenu(a.ctx, 100, 100, []widget.MenuItem{{Label: "Copy"}}) }},
-	{"dialog", false, func(a *App) { a.confirm("Delete Search Repos?", "This cannot be undone.", "Delete", func() {}) }},
-	{"call-log", false, func(a *App) { a.calls.Open() }},
-	{"toast", false, func(a *App) { a.toast("There is no response to save", true) }},
+	{"failed", false, func(app *App) { app.cur().Resp = &model.Response{Err: "connection refused"} }},
+	{"menu", false, func(app *App) { app.toggleSettings() }},
+	{"popup", false, func(app *App) { widget.OpenMenu(app.ctx, 100, 100, []widget.MenuItem{{Label: "Copy"}}) }},
+	{"dialog", false, func(app *App) { app.confirm("Delete Search Repos?", "This cannot be undone.", "Delete", func() {}) }},
+	{"call-log", false, func(app *App) { app.calls.Open() }},
+	{"toast", false, func(app *App) { app.toast("There is no response to save", true) }},
 }
 
 // The whole window is pinned in each state at both window sizes.
@@ -62,7 +62,7 @@ func TestTheWindowLaysOutAsPinned(t *testing.T) {
 				if state.stacked {
 					layout = "stacked"
 				}
-				a, _ := newTestAppWith(t, func(s *settings.Settings) { s.Layout = layout })
+				a, _ := newTestAppWith(t, func(prefs *settings.Settings) { prefs.Layout = layout })
 				t.Cleanup(a.waitWrites)
 				a.w, a.h = size.width, size.height
 				state.setUp(a)
@@ -91,7 +91,7 @@ func findWidgets(root Node, kind string) []Node {
 func TestTheWindowSplitsAreWiredToTheApp(t *testing.T) {
 	for _, layout := range []string{"side", "stacked"} {
 		t.Run(layout, func(t *testing.T) {
-			a, _ := newTestAppWith(t, func(s *settings.Settings) { s.Layout = layout })
+			a, _ := newTestAppWith(t, func(prefs *settings.Settings) { prefs.Layout = layout })
 			t.Cleanup(a.waitWrites)
 			splits := findWidgets(a.view(), "*widget.splitB")
 			if len(splits) != 2 {

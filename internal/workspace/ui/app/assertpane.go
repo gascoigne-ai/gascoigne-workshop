@@ -11,15 +11,15 @@ import (
 )
 
 // runTests checks the tab's assertions against its shown response.
-func (a *App) runTests(t *reqTab) {
-	t.testResults = assert.Run(t.Req.Tests, t.Resp)
-	for _, c := range assert.Captures(t.Req.Tests, t.Resp) {
-		a.setVariable(t.Req, c.Name, c.Value)
+func (a *App) runTests(tab *reqTab) {
+	tab.testResults = assert.Run(tab.Req.Tests, tab.Resp)
+	for _, c := range assert.Captures(tab.Req.Tests, tab.Resp) {
+		a.setVariable(tab.Req, c.Name, c.Value)
 	}
-	if len(t.testResults) == 0 {
+	if len(tab.testResults) == 0 {
 		return
 	}
-	if sum := assert.Summary(t.testResults); sum != "" && t.Resp != nil && t.Resp.Err == "" {
+	if sum := assert.Summary(tab.testResults); sum != "" && tab.Resp != nil && tab.Resp.Err == "" {
 		a.status += "  Tests: " + sum
 	}
 }
@@ -40,16 +40,16 @@ const assertionsHelp = "One assertion per line: status == 200, time < 500ms, hea
 	"as {{token}} for later requests. Lines starting with # are notes."
 
 // assertionsPane is where the assertions are written, one per line.
-func (a *App) assertionsPane(_ pane, t *reqTab, _ *ScrollState) Node {
+func (a *App) assertionsPane(_ pane, tab *reqTab, _ *ScrollState) Node {
 	sync := func() {
-		editRequest(t, editor.TestsTyped{Text: t.tests.Text})
-		t.testResults = assert.Run(t.Req.Tests, t.Resp) // live, against the response on screen
+		editRequest(tab, editor.TestsTyped{Text: tab.tests.Text})
+		tab.testResults = assert.Run(tab.Req.Tests, tab.Resp) // live, against the response on screen
 	}
 	return assertionsTemplate.MustBuild(markup.Scope{
 		"gutter":    w.Gutter,
 		"help":      assertionsHelp,
-		"tests":     &t.tests,
-		"testsText": &t.tests.TextField,
+		"tests":     &tab.tests,
+		"testsText": &tab.tests.TextField,
 		"sync":      sync,
 	})
 }
@@ -62,12 +62,12 @@ type resultRow struct {
 }
 
 // resultsPane lists what the assertions found.
-func (a *App) resultsPane(_ pane, t *reqTab, _ *ScrollState) Node {
-	if len(t.testResults) == 0 {
+func (a *App) resultsPane(_ pane, tab *reqTab, _ *ScrollState) Node {
+	if len(tab.testResults) == 0 {
 		return noResultsTemplate.MustBuild(markup.Scope{"gutter": w.Gutter})
 	}
-	rows := make([]resultRow, 0, len(t.testResults))
-	for _, r := range t.testResults {
+	rows := make([]resultRow, 0, len(tab.testResults))
+	for _, r := range tab.testResults {
 		mark, color := "\u2713 ", w.OK
 		text := r.Line
 		if !r.OK {
@@ -80,8 +80,8 @@ func (a *App) resultsPane(_ pane, t *reqTab, _ *ScrollState) Node {
 	}
 	return resultsTemplate.MustBuild(markup.Scope{
 		"gutter":  w.Gutter,
-		"scroll":  &t.respScroll,
-		"summary": assert.Summary(t.testResults),
+		"scroll":  &tab.respScroll,
+		"summary": assert.Summary(tab.testResults),
 		"rows":    rows,
 	})
 }

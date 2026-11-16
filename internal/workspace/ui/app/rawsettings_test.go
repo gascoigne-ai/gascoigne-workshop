@@ -13,10 +13,10 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
-func setRaw(a *App, text string) {
-	a.prefs.RawText.Text = text
-	a.prefs.RawText.Cursor = len([]rune(text))
-	a.prefs.RawEdited(a)
+func setRaw(app *App, text string) {
+	app.prefs.RawText.Text = text
+	app.prefs.RawText.Cursor = len([]rune(text))
+	app.prefs.RawEdited(app)
 }
 
 func TestAValidRawEditAppliesAtOnceAndIsWrittenAsTyped(t *testing.T) {
@@ -103,7 +103,7 @@ func TestAChangeOnDiskShowsUpInTheSettingsAndInTheRawView(t *testing.T) {
 
 func TestABadFileOnDiskKeepsTheSettingsAndSaysSo(t *testing.T) {
 	a, path := openSettingsPage(t, "appearance")
-	a.saveSettings(func(s *settings.Settings) { s.Corners = "round" })
+	a.saveSettings(func(prefs *settings.Settings) { prefs.Corners = "round" })
 	if err := os.WriteFile(path, []byte(`{"corners": `), 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -122,7 +122,7 @@ func TestABadFileOnDiskKeepsTheSettingsAndSaysSo(t *testing.T) {
 
 func TestOurOwnWritesAreNotReloadedAsOutsideChanges(t *testing.T) {
 	a, _ := openSettingsPage(t, "appearance")
-	a.saveSettings(func(s *settings.Settings) { s.Corners = "round" })
+	a.saveSettings(func(prefs *settings.Settings) { prefs.Corners = "round" })
 	a.settings.Corners = "square" // a change not yet saved must survive a poll
 	a.prefs.Poll(a)
 	if a.settings.Corners != "square" {

@@ -102,13 +102,13 @@ func (a *App) focusedSelection() (col *model.Collection, selection envs.Selectio
 
 // selectEnv makes environment i of the focused collection the active one
 // (-1 for none) and remembers the choice.
-func (a *App) selectEnv(i int) {
+func (a *App) selectEnv(index int) {
 	a.commitEdit()
 	col, selection, ok := a.focusedSelection()
 	if !ok {
 		return
 	}
-	selection.Select(col, i)
+	selection.Select(col, index)
 	a.chooseEnv(col, selection.Index)
 	a.varsFolder, a.varsCollection = nil, nil
 	a.rememberEnvironments()
@@ -128,23 +128,23 @@ func (a *App) addEnv(name string) {
 	a.rememberEnvironments()
 }
 
-func (a *App) renameEnv(i int, name string) {
+func (a *App) renameEnv(index int, name string) {
 	col, selection, ok := a.focusedSelection()
 	if !ok {
 		return
 	}
-	if _, changed := selection.Rename(col, i, name); changed && i == selection.Index {
-		a.selectEnv(i) // the remembered name follows
+	if _, changed := selection.Rename(col, index, name); changed && index == selection.Index {
+		a.selectEnv(index) // the remembered name follows
 	}
 }
 
-func (a *App) deleteEnv(i int) {
+func (a *App) deleteEnv(index int) {
 	a.commitEdit()
 	col, selection, ok := a.focusedSelection()
 	if !ok {
 		return
 	}
-	moved := selection.Delete(col, i)
+	moved := selection.Delete(col, index)
 	a.chooseEnv(col, selection.Index) // a delete before the active one shifts its index
 	if moved {
 		a.selectEnv(selection.Index)
@@ -153,13 +153,13 @@ func (a *App) deleteEnv(i int) {
 
 // toggleSecret marks row i of the active environment's variables as a
 // secret, whose value is kept out of the collection files, or clears it.
-func (a *App) toggleSecret(i int) {
+func (a *App) toggleSecret(index int) {
 	e := a.activeEnv()
-	if e == nil || i < 0 || i >= len(e.Vars) {
+	if e == nil || index < 0 || index >= len(e.Vars) {
 		return
 	}
 	a.commitEdit()
-	e.Vars[i].Secret = !e.Vars[i].Secret
+	e.Vars[index].Secret = !e.Vars[index].Secret
 }
 
 // envMenu is the menu of the environment chip: envs.Menu decides the rows,
@@ -210,21 +210,21 @@ func (a *App) envChip() Node {
 	return envChipTemplate.MustBuild(markup.Scope{
 		"label":    label,
 		"compactH": w.CompactH,
-		"openMenu": func(x, y int) { a.openMenu(x, y, a.envMenu()) },
+		"openMenu": func(posX, posY int) { a.openMenu(posX, posY, a.envMenu()) },
 	})
 }
 
 // urlTip is the tooltip of the URL field: what the URL resolves to with the
 // active variables, and the names that do not resolve. Empty when the URL
 // uses no variables.
-func (a *App) urlTip(t *reqTab) string {
-	names := model.VarNames(t.Req.URL)
+func (a *App) urlTip(tab *reqTab) string {
+	names := model.VarNames(tab.Req.URL)
 	if len(names) == 0 {
 		return ""
 	}
-	vars := a.varsFor(t.Req)
-	tip := "Resolves to " + model.Expand(t.Req.URL, vars)
-	if missing := model.Unresolved(t.Req.URL, vars); len(missing) > 0 {
+	vars := a.varsFor(tab.Req)
+	tip := "Resolves to " + model.Expand(tab.Req.URL, vars)
+	if missing := model.Unresolved(tab.Req.URL, vars); len(missing) > 0 {
 		tip += "\nNot defined: " + strings.Join(missing, ", ")
 	}
 	return tip
@@ -249,8 +249,8 @@ func (a *App) editVars(dir *model.Folder) {
 
 // variableCompletion is what Ctrl+Space in the URL field offers (see
 // model.VarCompletion).
-func (a *App) variableCompletion(t *reqTab) (names []string, from int) {
-	return model.VarCompletion(t.url.Text, t.url.Cursor, a.varsFor(t.Req))
+func (a *App) variableCompletion(tab *reqTab) (names []string, from int) {
+	return model.VarCompletion(tab.url.Text, tab.url.Cursor, a.varsFor(tab.Req))
 }
 
 // completeVariable opens a menu of the variables that fit at the cursor of
@@ -280,18 +280,18 @@ func (a *App) completeVariable() {
 
 // insertVariable writes {{name}} at the cursor of the URL field, replacing
 // the partly typed name that starts at rune from (-1 for none).
-func (a *App) insertVariable(t *reqTab, name string, from int) {
-	runes := []rune(t.url.Text)
-	cur := min(t.url.Cursor, len(runes))
+func (a *App) insertVariable(tab *reqTab, name string, from int) {
+	runes := []rune(tab.url.Text)
+	cur := min(tab.url.Cursor, len(runes))
 	if from < 0 || from > cur {
 		from = cur
 	}
 	text := string(runes[:from]) + "{{" + name + "}}" + string(runes[cur:])
-	t.url.Text = text
-	t.url.Cursor = from + len([]rune("{{"+name+"}}"))
-	t.url.HasSel = false
-	t.url.Focused = true
-	a.urlEdited(t)
+	tab.url.Text = text
+	tab.url.Cursor = from + len([]rune("{{"+name+"}}"))
+	tab.url.HasSel = false
+	tab.url.Focused = true
+	a.urlEdited(tab)
 }
 
 // Templates, parsed once above.

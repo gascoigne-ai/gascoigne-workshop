@@ -83,9 +83,9 @@ func TestTheStreamChipShowsItsState(t *testing.T) {
 	}
 }
 
-func layoutBar(a *App, tab *reqTab) Node {
-	root := a.urlBar(tab)
-	Layout(a.ctx, root, urlWideW, urlH)
+func layoutBar(app *App, tab *reqTab) Node {
+	root := app.urlBar(tab)
+	Layout(app.ctx, root, urlWideW, urlH)
 	return root
 }
 

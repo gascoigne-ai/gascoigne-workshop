@@ -63,19 +63,19 @@ func (a *App) freshKeys() {
 
 // tabDirty reports whether the tab's request differs from its saved copy,
 // as of the last frame that could have changed it.
-func (a *App) tabDirty(t *reqTab) bool {
+func (a *App) tabDirty(tab *reqTab) bool {
 	if a.keys.stale || !a.keys.built {
 		a.freshKeys()
 	}
-	if marked, ok := a.keys.dirty[t]; ok {
+	if marked, ok := a.keys.dirty[tab]; ok {
 		return marked
 	}
 	compare := a.keys.dirtyOf
 	if compare == nil {
 		compare = dirty
 	}
-	a.keys.dirty[t] = compare(t)
-	return a.keys.dirty[t]
+	a.keys.dirty[tab] = compare(tab)
+	return a.keys.dirty[tab]
 }
 
 // collectionKeyNow is a key of col built right now, for code that has

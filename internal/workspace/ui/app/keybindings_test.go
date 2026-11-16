@@ -71,8 +71,8 @@ func TestEffectiveBindingsLayerTheUsersOverToDefaults(t *testing.T) {
 
 func TestCheckBinding(t *testing.T) {
 	a, _ := newTestApp(t)
-	mk := func(s string) engine.Binding {
-		b, err := engine.ParseBinding(s)
+	mk := func(text string) engine.Binding {
+		b, err := engine.ParseBinding(text)
 		if err != nil {
 			t.Fatal(err)
 		}

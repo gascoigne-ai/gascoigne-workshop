@@ -28,39 +28,39 @@ type requestTabsState struct {
 // active one between others, a changed tab with a long name and other
 // badges, and more tabs than the strip has room for.
 var requestTabsStates = []requestTabsState{
-	{"one", func(t *testing.T, a *App) {}},
-	{"several", func(t *testing.T, a *App) {
-		openNamed(t, a, "Repository Info", "Echo", "List Tools")
-		a.updateTabs(tabs.Activate{Index: 1})
+	{"one", func(t *testing.T, app *App) {}},
+	{"several", func(t *testing.T, app *App) {
+		openNamed(t, app, "Repository Info", "Echo", "List Tools")
+		app.updateTabs(tabs.Activate{Index: 1})
 	}},
-	{"dirty-long", func(t *testing.T, a *App) {
-		openNamed(t, a, "Echo")
-		long := a.openTabs()[0]
+	{"dirty-long", func(t *testing.T, app *App) {
+		openNamed(t, app, "Echo")
+		long := app.openTabs()[0]
 		long.Req.Name = "Search repositories by stars, newest first, then by name"
 		long.Req.Method = "DELETE"
-		a.updateTabs(tabs.Activate{Index: 0})
-		click(a, urlFieldX, urlBarY)
-		a.typeText("&page=2")
-		if !a.tabDirty(long) {
+		app.updateTabs(tabs.Activate{Index: 0})
+		click(app, urlFieldX, urlBarY)
+		app.typeText("&page=2")
+		if !app.tabDirty(long) {
 			t.Fatal("test setup: the tab must be marked changed")
 		}
 	}},
-	{"overflow", func(t *testing.T, a *App) {
+	{"overflow", func(t *testing.T, app *App) {
 		for range 14 {
-			a.newRequest()
+			app.newRequest()
 		}
 	}},
 }
 
 // openNamed opens the sample's requests called names, each in its tab.
-func openNamed(t *testing.T, a *App, names ...string) {
+func openNamed(t *testing.T, app *App, names ...string) {
 	t.Helper()
 	for _, name := range names {
-		request := a.findRequestByName(name)
+		request := app.findRequestByName(name)
 		if request == nil {
 			t.Fatalf("no request %q in the sample", name)
 		}
-		a.openRequest(request)
+		app.openRequest(request)
 	}
 }
 

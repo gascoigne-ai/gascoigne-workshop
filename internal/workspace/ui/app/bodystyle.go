@@ -47,9 +47,9 @@ func splitSpanVars(sp Span, vars []model.KV) []Span {
 	return out
 }
 
-func containsVar(s string) bool {
-	for i := 0; i+1 < len(s); i++ {
-		if s[i] == '{' && s[i+1] == '{' {
+func containsVar(text string) bool {
+	for i := 0; i+1 < len(text); i++ {
+		if text[i] == '{' && text[i+1] == '{' {
 			return true
 		}
 	}

@@ -98,7 +98,7 @@ func (a *App) sidebar() Node {
 	return sidebarTemplate.MustBuild(markup.Scope{
 		"mode":           label,
 		"switchMode":     switchTo,
-		"collectionMenu": func(x, y int) { a.openMenu(x, y, a.collectionMenu()) },
+		"collectionMenu": func(posX, posY int) { a.openMenu(posX, posY, a.collectionMenu()) },
 		"filter":         &a.filter,
 		"showSent":       a.showSent,
 		"showTree":       !a.showSent && len(a.open.Entries) > 0,
@@ -255,20 +255,20 @@ func (a *App) requestTabs() Node {
 }
 
 // requestTab is the view model of tab i: badge, name, dirty mark and handlers.
-func (a *App) requestTab(i int, tab *reqTab) requestTabItem {
+func (a *App) requestTab(index int, tab *reqTab) requestTabItem {
 	item := requestTabItem{
 		Badge:       requestBadge(tab.Req.Protocol, tab.Req.Method),
 		Color:       appearance.MethodToken(tab.Req.Method),
 		Name:        tab.Req.Name,
 		Dirty:       a.tabDirty(tab),
-		Active:      i == a.list.Active,
-		Press:       func() { a.pressTab(i) },
-		MiddlePress: func() { a.updateTabs(tabs.DragBegin{Index: i}) },
-		DragOver:    func() { a.updateTabs(tabs.DragOver{Index: i}) },
-		Menu:        func(pointerX, pointerY int) { a.openMenu(pointerX, pointerY, a.tabMenuItems(i)) },
-		Close:       func() { a.closeTab(i) },
+		Active:      index == a.list.Active,
+		Press:       func() { a.pressTab(index) },
+		MiddlePress: func() { a.updateTabs(tabs.DragBegin{Index: index}) },
+		DragOver:    func() { a.updateTabs(tabs.DragOver{Index: index}) },
+		Menu:        func(pointerX, pointerY int) { a.openMenu(pointerX, pointerY, a.tabMenuItems(index)) },
+		Close:       func() { a.closeTab(index) },
 	}
-	if i > 0 {
+	if index > 0 {
 		item.Separator = tabSeparatorInset
 	}
 	return item
@@ -276,10 +276,10 @@ func (a *App) requestTab(i int, tab *reqTab) requestTabItem {
 
 // pressTab activates tab i and starts dragging it, unless the strip
 // overflows: a left drag then pans the strip, and the middle button reorders.
-func (a *App) pressTab(i int) {
-	a.updateTabs(tabs.Activate{Index: i})
+func (a *App) pressTab(index int) {
+	a.updateTabs(tabs.Activate{Index: index})
 	if !a.tabsScroll.Overflowing {
-		a.updateTabs(tabs.DragBegin{Index: i})
+		a.updateTabs(tabs.DragBegin{Index: index})
 	}
 }
 
@@ -288,31 +288,31 @@ var urlBarTemplate = markup.Must("urlbar.vml", urlbarSource)
 // urlBar is [protocol | method | URL field ........] [Send]. The button
 // is one of three: Send, Connect or Disconnect on a socket, and Cancel
 // while a request runs.
-func (a *App) urlBar(t *reqTab) Node {
-	isREST, isGRPC, socket := t.Req.Protocol == "rest", t.Req.Protocol == "grpc", isSocket(t)
-	sending := !socket && t.Sending
+func (a *App) urlBar(tab *reqTab) Node {
+	isREST, isGRPC, socket := tab.Req.Protocol == "rest", tab.Req.Protocol == "grpc", isSocket(tab)
+	sending := !socket && tab.Sending
 	connectionLabel, connectionHint := "Connect", "Open the connection"
-	if t.Active() {
+	if tab.Active() {
 		connectionLabel, connectionHint = "Disconnect", "Close the connection"
 	}
-	grpcMethod, grpcMethodColor := grpcMethodLabel(t)
+	grpcMethod, grpcMethodColor := grpcMethodLabel(tab)
 	return urlBarTemplate.MustBuild(markup.Scope{
 		"urlH":             urlH,
 		"gutter":           w.Gutter,
 		"urlTextGap":       w.Gutter - 4,
-		"urlTip":           a.urlTip(t),
-		"protocol":         protocolLabel[t.Req.Protocol],
+		"urlTip":           a.urlTip(tab),
+		"protocol":         protocolLabel[tab.Req.Protocol],
 		"divided":          isREST || isGRPC,
 		"rest":             isREST,
-		"method":           t.Req.Method,
-		"methodColor":      appearance.MethodToken(t.Req.Method),
+		"method":           tab.Req.Method,
+		"methodColor":      appearance.MethodToken(tab.Req.Method),
 		"grpc":             isGRPC,
 		"grpcMethodW":      grpcMethodW,
 		"grpcMethod":       grpcMethod,
 		"grpcMethodColor":  grpcMethodColor,
-		"streamColor":      streamColor(t),
-		"streamBg":         streamBg(t),
-		"url":              &t.url,
+		"streamColor":      streamColor(tab),
+		"streamBg":         streamBg(tab),
+		"url":              &tab.url,
 		"segments":         a.varSegments,
 		"idle":             !socket && !sending,
 		"socket":           socket,
@@ -320,20 +320,20 @@ func (a *App) urlBar(t *reqTab) Node {
 		"sendTip":          a.hint("Send the request", "send"),
 		"connectionLabel":  connectionLabel,
 		"connectionTip":    a.hint(connectionHint, "send"),
-		"cycleProtocol":    func() { a.cycleProtocol(t) },
-		"cycleMethod":      func() { a.cycleMethod(t) },
-		"pickMethod":       func() { a.pickGRPCMethod(t) },
-		"toggleStream":     func() { a.toggleStream(t) },
-		"edited":           func() { a.urlEdited(t) },
-		"send":             func() { a.send(t) },
-		"toggleConnection": func() { a.toggleConnection(t) },
-		"cancel":           func() { a.cancelSend(t) },
+		"cycleProtocol":    func() { a.cycleProtocol(tab) },
+		"cycleMethod":      func() { a.cycleMethod(tab) },
+		"pickMethod":       func() { a.pickGRPCMethod(tab) },
+		"toggleStream":     func() { a.toggleStream(tab) },
+		"edited":           func() { a.urlEdited(tab) },
+		"send":             func() { a.send(tab) },
+		"toggleConnection": func() { a.toggleConnection(tab) },
+		"cancel":           func() { a.cancelSend(tab) },
 	})
 }
 
 // streamColor shows the Stream chip lit while the tab streams.
-func streamColor(t *reqTab) w.Token {
-	if t.grpcStream {
+func streamColor(tab *reqTab) w.Token {
+	if tab.grpcStream {
 		return w.Accent
 	}
 	return w.Muted
@@ -341,8 +341,8 @@ func streamColor(t *reqTab) w.Token {
 
 // streamBg tints the Stream chip while the tab streams; an empty token
 // applies no background (decision 4).
-func streamBg(t *reqTab) w.Token {
-	if t.grpcStream {
+func streamBg(tab *reqTab) w.Token {
+	if tab.grpcStream {
 		return w.Selected
 	}
 	return ""
@@ -358,10 +358,10 @@ func (a *App) hint(text, shortcutID string) string {
 
 // varSegments colors {{variables}} so they stand out from the literal
 // URL: defined ones in the success color, unresolved ones as errors.
-func (a *App) varSegments(s string) []Span {
+func (a *App) varSegments(stringValue string) []Span {
 	var segs []Span
 	vars := a.varsFor(a.cur().Req)
-	for _, seg := range splitVars(s) {
+	for _, seg := range splitVars(stringValue) {
 		style := w.Text
 		if seg.isVar {
 			style = w.OK
@@ -380,19 +380,19 @@ type urlSeg struct {
 }
 
 // splitVars cuts s into literal runs and {{name}} variable runs.
-func splitVars(s string) []urlSeg {
+func splitVars(stringValue string) []urlSeg {
 	var segs []urlSeg
-	for s != "" {
-		start := strings.Index(s, "{{")
-		end := strings.Index(s, "}}")
+	for stringValue != "" {
+		start := strings.Index(stringValue, "{{")
+		end := strings.Index(stringValue, "}}")
 		if start < 0 || end < start {
-			return append(segs, urlSeg{text: s})
+			return append(segs, urlSeg{text: stringValue})
 		}
 		if start > 0 {
-			segs = append(segs, urlSeg{text: s[:start]})
+			segs = append(segs, urlSeg{text: stringValue[:start]})
 		}
-		segs = append(segs, urlSeg{text: s[start : end+2], isVar: true})
-		s = s[end+2:]
+		segs = append(segs, urlSeg{text: stringValue[start : end+2], isVar: true})
+		stringValue = stringValue[end+2:]
 	}
 	return segs
 }
@@ -401,33 +401,33 @@ var paneTemplate = markup.Must("pane.vml", paneSource)
 
 // pane is one tabbed area (pane.vml): a tab strip, with extra at its
 // right end when there is one, above the body of the active tab.
-func (a *App) pane(t *reqTab, panes []pane, active *int, scroll, tabsX *ScrollState, extra Node) Node {
-	selectTab := func(i int) { *active, scroll.Y = i, 0 }
+func (a *App) pane(tab *reqTab, panes []pane, active *int, scroll, tabsX *ScrollState, extra Node) Node {
+	selectTab := func(index int) { *active, scroll.Y = index, 0 }
 	*active = min(*active, len(panes)-1) // a socket has fewer response panes
 	return paneTemplate.MustBuild(markup.Scope{
 		"tabsX":     tabsX,
-		"tabs":      a.tabItems(panes, t),
+		"tabs":      a.tabItems(panes, tab),
 		"active":    *active,
 		"selectTab": selectTab,
 		"extra":     extra,
-		"body":      a.paneBody(panes[*active], t, scroll),
+		"body":      a.paneBody(panes[*active], tab, scroll),
 	})
 }
 
 var responseStatusTemplate = markup.Must("responsestatus.vml", responsestatusSource)
 
 // responseStatus is "200 OK  1.4s  156.67KB", dropped when the tabs need the room.
-func (a *App) responseStatus(t *reqTab) Node {
-	if t.Resp == nil || t.Resp.Err != "" {
+func (a *App) responseStatus(tab *reqTab) Node {
+	if tab.Resp == nil || tab.Resp.Err != "" {
 		return nil
 	}
-	fg, bg := statusPill(t.Resp.Status)
+	fg, bg := statusPill(tab.Resp.Status)
 	return responseStatusTemplate.MustBuild(markup.Scope{
 		"gutter": w.Gutter,
 		"pillFg": fg,
 		"pillBg": bg,
-		"status": fmt.Sprintf("%d %s", t.Resp.Status, t.Resp.StatusText),
-		"timing": fmt.Sprintf("%s  %s", textfmt.Duration(t.Resp.Duration), textfmt.Size(t.Resp.Size)),
+		"status": fmt.Sprintf("%d %s", tab.Resp.Status, tab.Resp.StatusText),
+		"timing": fmt.Sprintf("%s  %s", textfmt.Duration(tab.Resp.Duration), textfmt.Size(tab.Resp.Size)),
 	})
 }
 

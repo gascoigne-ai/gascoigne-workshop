@@ -68,12 +68,12 @@ func (a *App) cancelSettingsFilePick() {
 func (a *App) Pointer() (int, int) { return a.ctx.In.X, a.ctx.In.Y }
 
 // openMenuItems opens a menu of a page's items at a point of the window.
-func (a *App) openMenuItems(x, y int, items []prefs.MenuItem) {
+func (a *App) openMenuItems(posX, posY int, items []prefs.MenuItem) {
 	rows := make([]MenuItem, len(items))
 	for i, item := range items {
 		rows[i] = MenuItem{Label: item.Label, Hint: item.Hint, Run: item.Run}
 	}
-	a.openMenu(x, y, rows)
+	a.openMenu(posX, posY, rows)
 }
 
 // ExtraPage draws the settings pages that are tables of the application.
@@ -102,13 +102,13 @@ func (a *App) CopyText(text string) { _ = a.ctx.Clipboard.Write(text) } // the c
 
 // applySettings makes s the settings in effect, with everything that
 // follows from them.
-func (a *App) applySettings(s settings.Settings) {
-	a.settings = s
-	if err := a.ctx.SetTheme(appearance.ThemeWith(s)); err != nil {
+func (a *App) applySettings(other settings.Settings) {
+	a.settings = other
+	if err := a.ctx.SetTheme(appearance.ThemeWith(other)); err != nil {
 		a.status = err.Error()
 	}
 	for _, t := range a.openTabs() {
-		t.look.Mode = viewer.ModeOf(s.ResponseView)
+		t.look.Mode = viewer.ModeOf(other.ResponseView)
 		a.refreshView(t)
 	}
 	a.colors.Forget()
