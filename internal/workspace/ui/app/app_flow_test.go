@@ -29,8 +29,10 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -3780,5 +3782,66 @@ func TestCommittingACellOfARowThatNoLongerExistsAddsARow(t *testing.T) {
 	a.commitEdit()
 	if len(tab.Req.Params) != before+1 || tab.Req.Params[before].Name != "late" {
 		t.Fatalf("params %+v, want one new row named late", tab.Req.Params)
+	}
+}
+
+type countingStreamer struct {
+	panickingStreamer
+	connects *atomic.Int32
+}
+
+func (streamer countingStreamer) Connect(context.Context, model.Request) (reqport.Session, error) {
+	streamer.connects.Add(1)
+	return nil, errors.New("test server: no session")
+}
+
+// An imported collection could name any command as an MCP stdio server,
+// and connecting started it at once. A command now needs the user's yes,
+// once, and is remembered.
+func TestAStdioCommandAsksOnceBeforeItRuns(t *testing.T) {
+	a, _ := newTestApp(t)
+	var connects atomic.Int32
+	a.reg = reqport.Registry{"mcp": countingStreamer{connects: &connects}}
+	tab := a.cur()
+	tab.Req.Protocol, tab.Req.URL = "mcp", "stdio:/bin/true --flag"
+
+	a.connect(tab)
+	if a.dialog == nil || !strings.Contains(a.dialog.Body, "/bin/true --flag") {
+		t.Fatalf("no dialog naming the command: %+v", a.dialog)
+	}
+	time.Sleep(50 * time.Millisecond)
+	if connects.Load() != 0 {
+		t.Fatal("the command started before the user agreed")
+	}
+	a.dialogDefault() // Allow
+	for i := 0; i < 200 && connects.Load() == 0; i++ {
+		a.step(core.Input{})
+		time.Sleep(5 * time.Millisecond)
+	}
+	if connects.Load() != 1 {
+		t.Fatalf("connects after Allow = %d, want 1", connects.Load())
+	}
+	a.connect(tab)
+	if a.dialog != nil {
+		t.Fatal("an allowed command asked again")
+	}
+	if !slices.Contains(a.snapshot().Trusted, "command:/bin/true --flag") {
+		t.Fatalf("trusted %v: the answer is not remembered in the state", a.snapshot().Trusted)
+	}
+	tab.Req.URL = "stdio:/bin/true --other"
+	a.connect(tab)
+	if a.dialog == nil {
+		t.Fatal("a changed command must ask again")
+	}
+}
+
+func TestAFileOutsideTheCollectionAsksBeforeItIsSent(t *testing.T) {
+	a, _ := newTestApp(t)
+	tab := a.cur()
+	tab.Req.Method, tab.Req.URL = "POST", "http://127.0.0.1:1/x"
+	tab.Req.BodyType, tab.Req.Body = model.BodyFile, "/etc/hostname"
+	a.send(tab)
+	if a.dialog == nil || !strings.Contains(a.dialog.Body, "/etc/hostname") || tab.Sending {
+		t.Fatalf("dialog %+v sending %v: want a question and no request", a.dialog, tab.Sending)
 	}
 }

@@ -114,6 +114,7 @@ func (a *App) snapshot() state.State {
 		Active:    a.list.Active,
 		SettingsW: a.prefs.Size.W,
 		SettingsH: a.prefs.Size.H,
+		Trusted:   a.trustedKeys(),
 	}
 	for _, entry := range a.open.Entries {
 		a.snapshotExpanded(&s, entry)
@@ -181,6 +182,12 @@ func (a *App) expandPaths(col *model.Collection, paths []string) {
 // restore applies a remembered state to a freshly built app. Anything
 // that no longer exists is skipped, and values are kept in range.
 func (a *App) restore(s state.State) {
+	for _, key := range s.Trusted {
+		if a.trusted == nil {
+			a.trusted = map[string]bool{}
+		}
+		a.trusted[key] = true
+	}
 	a.prefs.Size.W, a.prefs.Size.H = max(s.SettingsW, 0), max(s.SettingsH, 0)
 	a.sidebarSplit.Size = max(s.SidebarW, 0)
 	if s.PaneSplit > 0 && s.PaneSplit < 1 {

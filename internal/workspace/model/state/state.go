@@ -57,6 +57,9 @@ type State struct {
 	Columns    map[string][]float64 `json:"columns,omitempty"`   // table column weights by table name
 	SettingsW  int                  `json:"settingsW,omitempty"` // the settings dialog size the user chose; 0 is the default
 	SettingsH  int                  `json:"settingsH,omitempty"`
+	// Trusted are the commands and files the user allowed a request to
+	// use, as model.Access keys ("command:...", "file:/abs/path").
+	Trusted []string `json:"trusted,omitempty"`
 }
 
 // CollectionAt is the index in dirs, the folders of the open collections

@@ -78,6 +78,9 @@ func (a *App) toggleConnection(t *reqTab) {
 
 // connect dials in the background; the outcome arrives as a wsEvent.
 func (a *App) connect(t *reqTab) {
+	if !a.allowed(t, t.Req, func() { a.connect(t) }) {
+		return
+	}
 	gen := t.Begin()
 	a.status = "Connecting to " + t.Req.URL
 	req := t.Req.Expanded(a.varsFor(t.Req))

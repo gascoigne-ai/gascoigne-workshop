@@ -247,6 +247,7 @@ type App struct {
 	title              string                                   // the window title last set
 	jar                http.CookieJar                           // cookies the server set, kept until the app closes
 	defaultWorkspace   string                                   // beside it is the collections folder, where a first save goes
+	trusted            map[string]bool                          // model.Access keys the user allowed; remembered in the state file
 	setIsRemembered    bool                                     // the open set is the remembered list (opened from it, or changed by the user since), so it is written whole
 	unreadable         []settings.OpenCollection                // remembered folders that failed to load; kept in the list so a mount or a fix brings them back
 	saves              map[*model.Collection]*autosave.Debounce // when each open collection was last written
@@ -437,6 +438,9 @@ func (a *App) send(t *reqTab) {
 // helper one such as a GraphQL schema query that uses the tab's URL and
 // credentials.
 func (a *App) dispatch(t *reqTab, source *model.Request) {
+	if !a.allowed(t, source, func() { a.dispatch(t, source) }) {
+		return
+	}
 	seq, started := t.BeginSend()
 	if !started {
 		return
