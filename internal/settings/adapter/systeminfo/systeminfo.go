@@ -80,7 +80,7 @@ func moduleVersion(path string) string {
 	return "unknown"
 }
 
-func megabytes(n int64) string { return fmt.Sprintf("%.1f MB", float64(n)/(1<<20)) }
+func megabytes(size int64) string { return fmt.Sprintf("%.1f MB", float64(size)/(1<<20)) }
 
 func onOff(on bool) string {
 	if on {
@@ -89,9 +89,9 @@ func onOff(on bool) string {
 	return "off"
 }
 
-func orUnknown(s string) string {
-	if s == "" {
+func orUnknown(text string) string {
+	if text == "" {
 		return "unknown"
 	}
-	return s
+	return text
 }
