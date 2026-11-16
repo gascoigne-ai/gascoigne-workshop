@@ -100,8 +100,8 @@ func EnsureContrast(bg, fg color.RGBA, min float64) color.RGBA {
 		target = RGB(0xffffff)
 	}
 	mix := func(ratio float64) color.RGBA {
-		m := func(value, uint8Value uint8) uint8 {
-			return uint8(math.Round(float64(value) + (float64(uint8Value)-float64(value))*ratio))
+		m := func(from, to uint8) uint8 {
+			return uint8(math.Round(float64(from) + (float64(to)-float64(from))*ratio))
 		}
 		return color.RGBA{R: m(bg.R, target.R), G: m(bg.G, target.G), B: m(bg.B, target.B), A: 0xff}
 	}

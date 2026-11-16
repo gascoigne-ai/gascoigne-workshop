@@ -35,8 +35,8 @@ func Image(size int) *image.RGBA {
 }
 
 func mix(rgba, other color.RGBA, ratio float64) color.RGBA {
-	f := func(value, uint8Value uint8) uint8 {
-		return uint8(math.Round(float64(value) + (float64(uint8Value)-float64(value))*ratio))
+	f := func(from, to uint8) uint8 {
+		return uint8(math.Round(float64(from) + (float64(to)-float64(from))*ratio))
 	}
 	return color.RGBA{f(rgba.R, other.R), f(rgba.G, other.G), f(rgba.B, other.B), 0xff}
 }

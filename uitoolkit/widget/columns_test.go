@@ -155,7 +155,7 @@ func TestDividerAsksForTheResizeCursorAndCellsStillClick(t *testing.T) {
 	var edits [][2]int
 	spec := editableSpec()
 	spec.Widths = &widths
-	spec.OnEditCell = func(value, intValue int) { edits = append(edits, [2]int{value, intValue}) }
+	spec.OnEditCell = func(row, column int) { edits = append(edits, [2]int{row, column}) }
 	root := Col(Table(spec))
 	c := testCtx(t)
 	Layout(c, root, 400, 400)
