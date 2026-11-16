@@ -18,8 +18,8 @@ var extensions = map[string]string{
 
 // SuggestedFileName is a name for saving the body: response.json, .html...
 // from the content type.
-func SuggestedFileName(r *model.Response) string {
-	for _, h := range r.Headers {
+func SuggestedFileName(response *model.Response) string {
+	for _, h := range response.Headers {
 		if !strings.EqualFold(h.Name, "Content-Type") {
 			continue
 		}
@@ -42,8 +42,8 @@ func SuggestedFileName(r *model.Response) string {
 
 // ContentType is the Content-Type header of the response as received,
 // "" when it has none.
-func ContentType(r *model.Response) string {
-	for _, h := range r.Headers {
+func ContentType(response *model.Response) string {
+	for _, h := range response.Headers {
 		if strings.EqualFold(h.Name, "Content-Type") {
 			return h.Value
 		}

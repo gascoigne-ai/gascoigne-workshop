@@ -5,9 +5,9 @@ import (
 	"strings"
 )
 
-func lineText(l widget.Line) string {
+func lineText(lineValue widget.Line) string {
 	var sb strings.Builder
-	for _, s := range l.Spans {
+	for _, s := range lineValue.Spans {
 		sb.WriteString(s.Text)
 	}
 	return sb.String()

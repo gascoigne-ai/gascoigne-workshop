@@ -69,10 +69,10 @@ func toSpans(src []jsonview.Span) []widget.Span {
 }
 
 // FoldDeep folds every block that opens at nesting depth or deeper.
-func FoldDeep(v *widget.CodeView, depth int) {
-	for i, l := range v.Lines {
+func FoldDeep(codeViewValue *widget.CodeView, depth int) {
+	for i, l := range codeViewValue.Lines {
 		if l.Foldable && l.Depth >= depth {
-			v.Folded[i] = true
+			codeViewValue.Folded[i] = true
 		}
 	}
 }

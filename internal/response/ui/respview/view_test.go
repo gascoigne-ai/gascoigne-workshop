@@ -11,9 +11,13 @@ import (
 	"testing"
 )
 
-func pngEncode(w *bytes.Buffer, m image.Image) error  { return png.Encode(w, m) }
-func jpegEncode(w *bytes.Buffer, m image.Image) error { return jpeg.Encode(w, m, nil) }
-func gifEncode(w *bytes.Buffer, m image.Image) error  { return gif.Encode(w, m, nil) }
+func pngEncode(buffer *bytes.Buffer, picture image.Image) error { return png.Encode(buffer, picture) }
+func jpegEncode(buffer *bytes.Buffer, picture image.Image) error {
+	return jpeg.Encode(buffer, picture, nil)
+}
+func gifEncode(buffer *bytes.Buffer, picture image.Image) error {
+	return gif.Encode(buffer, picture, nil)
+}
 
 func TestLooksBinary(t *testing.T) {
 	tests := []struct {
