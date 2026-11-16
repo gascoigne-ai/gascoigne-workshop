@@ -152,3 +152,22 @@ func TestImportSurvivesNumericValuesAndAStringRequest(t *testing.T) {
 		t.Errorf("long request %+v", long)
 	}
 }
+
+// Auth types and body modes the app has no equivalent for were dropped
+// without a word, so the user sent unauthenticated requests wondering why.
+func TestImportListsWhatItCannotCarryOver(t *testing.T) {
+	res, err := Parse([]byte(`{
+	  "info": {"name": "Skips", "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"},
+	  "item": [
+	    {"name": "OAuth call", "request": {"method": "GET", "url": "https://api.test/a", "auth": {"type": "oauth2"}}},
+	    {"name": "Upload", "request": {"method": "POST", "url": "https://api.test/b", "body": {"mode": "file"}}},
+	    {"name": "Plain", "request": {"method": "GET", "url": "https://api.test/c", "auth": {"type": "noauth"}}}
+	  ]}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.Skipped) != 2 || !strings.Contains(res.Skipped[0], "OAuth call") || !strings.Contains(res.Skipped[0], "oauth2") ||
+		!strings.Contains(res.Skipped[1], "Upload") || !strings.Contains(res.Skipped[1], "file") {
+		t.Fatalf("Skipped = %q, want the oauth2 auth and the file body, not noauth", res.Skipped)
+	}
+}

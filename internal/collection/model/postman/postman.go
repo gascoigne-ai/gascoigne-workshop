@@ -14,8 +14,9 @@ import (
 
 // Result is what an import produces.
 type Result struct {
-	Folder *model.Folder
-	Vars   []model.KV
+	Folder  *model.Folder
+	Vars    []model.KV
+	Skipped []string // what could not be carried over, as "request: what"
 }
 
 // text is a JSON value read as text: a string as it is, a number or
@@ -112,11 +113,12 @@ func Parse(data []byte) (Result, error) {
 		name = "Postman collection"
 	}
 	root := &model.Folder{Name: name}
-	fill(root, c.Items, c.Auth)
+	var skipped []string
+	fill(root, c.Items, c.Auth, &skipped)
 	if len(root.Requests)+len(root.Folders) == 0 {
 		return Result{}, errors.New("the collection has no requests")
 	}
-	res := Result{Folder: root}
+	res := Result{Folder: root, Skipped: skipped}
 	for _, v := range c.Variable {
 		if v.Key != "" {
 			res.Vars = append(res.Vars, model.KV{Name: v.Key, Value: string(v.Value), Enabled: !v.Disabled})
@@ -125,17 +127,38 @@ func Parse(data []byte) (Result, error) {
 	return res, nil
 }
 
-func fill(dir *model.Folder, items []item, inherited *auth) {
+func fill(dir *model.Folder, items []item, inherited *auth, skipped *[]string) {
 	for _, it := range items {
 		if it.Request == nil {
 			sub := dir.AddFolder(it.Name)
-			fill(sub, it.Items, inherited)
+			fill(sub, it.Items, inherited, skipped)
 			continue
+		}
+		for _, what := range notCarriedOver(it, inherited) {
+			*skipped = append(*skipped, it.Name+": "+what)
 		}
 		r := request(it, inherited)
 		r.Name = dir.UniqueName(r.Name)
 		dir.AddRequest(r)
 	}
+}
+
+// notCarriedOver lists what of a request has no equivalent here.
+func notCarriedOver(it item, inherited *auth) []string {
+	var out []string
+	a := it.Request.Auth
+	if a == nil {
+		a = inherited
+	}
+	switch {
+	case a == nil, convertAuth(a).Type != "", a.Type == "noauth", a.Type == "":
+	default:
+		out = append(out, "auth type "+a.Type+" is not imported")
+	}
+	if b := it.Request.Body; b != nil && (b.Mode == "file" || b.Mode == "graphql") {
+		out = append(out, "body mode "+b.Mode+" is not imported")
+	}
+	return out
 }
 
 func request(it item, inherited *auth) model.Request {

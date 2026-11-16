@@ -406,6 +406,9 @@ func (a *App) importPostman(dir *model.Folder) {
 		a.openRequest(first)
 	}
 	a.status = "Imported " + res.Folder.Name
+	if len(res.Skipped) > 0 {
+		a.toast(fmt.Sprintf("%d things could not be imported, first: %s", len(res.Skipped), res.Skipped[0]), true)
+	}
 }
 
 // exportPostman writes dir and everything below it as a Postman v2.1
