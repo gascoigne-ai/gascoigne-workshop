@@ -30,15 +30,15 @@ func (tab *Tab) Remember(old *model.Response, at time.Time) {
 // Recall makes the response of history entry i the shown one; the shown one
 // goes into the history in its place, so nothing is lost. It reports
 // whether there was such an entry.
-func (tab *Tab) Recall(i int, at time.Time) bool {
-	if i < 0 || i >= len(tab.Earlier) {
+func (tab *Tab) Recall(index int, at time.Time) bool {
+	if index < 0 || index >= len(tab.Earlier) {
 		return false
 	}
-	picked := tab.Earlier[i].Resp
+	picked := tab.Earlier[index].Resp
 	if tab.Resp != nil && tab.Resp.Err == "" {
-		tab.Earlier[i] = PastResponse{Resp: tab.Resp, At: at}
+		tab.Earlier[index] = PastResponse{Resp: tab.Resp, At: at}
 	} else {
-		tab.Earlier = append(tab.Earlier[:i], tab.Earlier[i+1:]...)
+		tab.Earlier = append(tab.Earlier[:index], tab.Earlier[index+1:]...)
 	}
 	tab.Resp = picked
 	return true
