@@ -73,7 +73,7 @@ func Scan(dirs ...string) []fontfamily.Family {
 		}
 		families = append(families, *family)
 	}
-	sort.Slice(families, func(i, j int) bool { return families[i].Name < families[j].Name })
+	sort.Slice(families, func(index, other int) bool { return families[index].Name < families[other].Name })
 	return families
 }
 
