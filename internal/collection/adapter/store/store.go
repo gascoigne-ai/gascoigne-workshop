@@ -6,7 +6,7 @@
 //	sub/folder.json    a nested folder
 //	environments/x.env.json   one environment (root folder only; a root folder
 //	                          named "Environments" is saved as environments-2)
-//	.secrets.json      credentials and secret variable values, by file path; listed in .gitignore
+//	.secrets.json      credentials and secret variable values, by file path; mode 0600; listed in .gitignore
 //
 // Files are written with a stable key order and indentation, so a
 // version-control diff shows only what changed. Files the store did not
@@ -354,7 +354,14 @@ func writeJSON(p string, v any, remove bool) error {
 	if err := enc.Encode(v); err != nil {
 		return err
 	}
+	perm := os.FileMode(0o644)
+	if filepath.Base(p) == secretsFile {
+		perm = 0o600 // credentials: the owner only
+	}
 	if old, err := os.ReadFile(p); err == nil && bytes.Equal(old, buf.Bytes()) {
+		if perm == 0o600 { // a file written world-readable by an older version
+			return os.Chmod(p, perm)
+		}
 		return nil
 	}
 	tmp, err := os.CreateTemp(filepath.Dir(p), ".tmp-*")
@@ -367,7 +374,7 @@ func writeJSON(p string, v any, remove bool) error {
 		os.Remove(tmp.Name())
 		return err
 	}
-	if err := os.Chmod(tmp.Name(), 0o644); err != nil {
+	if err := os.Chmod(tmp.Name(), perm); err != nil {
 		os.Remove(tmp.Name())
 		return err
 	}

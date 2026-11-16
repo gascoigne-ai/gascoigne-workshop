@@ -212,3 +212,42 @@ func TestAFolderNamedEnvironmentsSurvivesSavingEnvironments(t *testing.T) {
 		t.Fatalf("after saving twice:\n got %+v\nwant %+v", got, want)
 	}
 }
+
+// .secrets.json holds tokens and secret variable values but was written
+// world-readable (0644).
+func TestSecretsFileIsOnlyReadableByTheOwner(t *testing.T) {
+	dir := t.TempDir()
+	if err := Save(dir, sample()); err != nil {
+		t.Fatal(err)
+	}
+	info, err := os.Stat(filepath.Join(dir, secretsFile))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if mode := info.Mode().Perm(); mode != 0o600 {
+		t.Errorf("%s mode %o, want 600", secretsFile, mode)
+	}
+}
+
+// A .secrets.json an older version wrote as 0644 is tightened on the next
+// save even when its content did not change.
+func TestAnOldWorldReadableSecretsFileIsTightenedOnSave(t *testing.T) {
+	dir := t.TempDir()
+	if err := Save(dir, sample()); err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(dir, secretsFile)
+	if err := os.Chmod(path, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := Save(dir, sample()); err != nil {
+		t.Fatal(err)
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if mode := info.Mode().Perm(); mode != 0o600 {
+		t.Errorf("mode %o after an unchanged save, want 600", mode)
+	}
+}
