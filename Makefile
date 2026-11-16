@@ -78,11 +78,11 @@ example-server:
 shot:
 	go run ./cmd/workshop -screenshot $(or $(OUT),shot.png) -send
 
-# Install the program, its desktop entry and icon for the current user, no root.
+# Install the release build, its desktop entry and icon for the current user, no root.
 # System-wide: make install PREFIX=/usr/local
 PREFIX ?= $(HOME)/.local
-install: build
-	install -Dm755 bin/workshop $(DESTDIR)$(PREFIX)/bin/gascoigne-workshop
+install: release
+	install -Dm755 bin/workshop-release $(DESTDIR)$(PREFIX)/bin/gascoigne-workshop
 	install -Dm644 packaging/gascoigne-workshop.desktop $(DESTDIR)$(PREFIX)/share/applications/gascoigne-workshop.desktop
 	mkdir -p $(DESTDIR)$(PREFIX)/share/icons/hicolor/256x256/apps
-	bin/workshop -icon-png $(DESTDIR)$(PREFIX)/share/icons/hicolor/256x256/apps/gascoigne-workshop.png
+	bin/workshop-release -icon-png $(DESTDIR)$(PREFIX)/share/icons/hicolor/256x256/apps/gascoigne-workshop.png
