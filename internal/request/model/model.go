@@ -11,6 +11,7 @@ type KV struct {
 	Description string
 	Enabled     bool
 	Secret      bool // a variable whose value is kept out of the collection files
+	Literal     bool // a captured value: {{...}} inside it is text and is never expanded
 }
 
 // Request is one saved call. Protocol selects the proto implementation

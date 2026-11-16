@@ -121,14 +121,16 @@ func VarCompletion(text string, cursor int, vars []KV) (names []string, from int
 	return names, from
 }
 
-// UpsertVar sets the variable called name to value: an existing row gets
-// the value and is switched on, else a row is added. It returns the rows.
+// UpsertVar sets the variable called name to a captured value: an existing
+// row gets the value and is switched on, else a row is added. The row is
+// Literal, so {{...}} inside what a server sent is never expanded. It
+// returns the rows.
 func UpsertVar(rows []KV, name, value string) []KV {
 	for i := range rows {
 		if rows[i].Name == name {
-			rows[i].Value, rows[i].Enabled = value, true
+			rows[i].Value, rows[i].Enabled, rows[i].Literal = value, true, true
 			return rows
 		}
 	}
-	return append(rows, KV{Name: name, Value: value, Enabled: true})
+	return append(rows, KV{Name: name, Value: value, Enabled: true, Literal: true})
 }

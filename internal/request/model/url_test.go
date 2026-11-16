@@ -213,3 +213,25 @@ func FuzzURLParams(f *testing.F) {
 		_ = Expand(raw, []KV{{Name: "base", Value: raw, Enabled: true}})
 	})
 }
+
+// A value captured from a response ("set x = json x") was expanded again
+// by the variables after it, so a server reply holding {{secret}} pulled
+// the secret into the next request. A captured (Literal) value is text.
+func TestExpandNeverExpandsInsideACapturedValue(t *testing.T) {
+	vars := []KV{
+		{Name: "captured", Value: "{{secret}}", Enabled: true, Literal: true},
+		{Name: "secret", Value: "hunter2", Enabled: true},
+		{Name: "base", Value: "{{host}}/api", Enabled: true},
+		{Name: "host", Value: "x.test", Enabled: true},
+	}
+	if got := Expand("{{captured}} {{secret}} {{base}}", vars); got != "{{secret}} hunter2 x.test/api" {
+		t.Fatalf("got %q: a captured value stays literal, ordinary variables still chain", got)
+	}
+	if got := Expand("{{captured}}", UpsertVar(nil, "id", "{{secret}}")); got != "{{captured}}" {
+		t.Fatalf("got %q for a variable that does not exist", got)
+	}
+	rows := UpsertVar(nil, "id", "{{secret}}")
+	if !rows[0].Literal {
+		t.Error("UpsertVar (the capture path) must mark the row Literal")
+	}
+}

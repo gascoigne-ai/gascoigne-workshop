@@ -2,6 +2,7 @@ package model
 
 import (
 	"net/url"
+	"strconv"
 	"strings"
 )
 
@@ -12,20 +13,35 @@ const maxExpanded = 16 << 20
 
 // Expand replaces {{name}} with the value of the enabled variable of
 // that name. Unknown names are left as written so the gap stays visible.
+// A Literal (captured) value is put in last, through a placeholder, so
+// the variables after it cannot expand what is inside it.
 func Expand(s string, vars []KV) string {
+	var literals []string
 	for _, v := range vars {
 		if !v.Enabled {
 			continue
 		}
 		token := "{{" + v.Name + "}}"
-		grown := len(s) + strings.Count(s, token)*(len(v.Value)-len(token))
+		value := v.Value
+		if v.Literal && strings.Contains(s, token) {
+			literals = append(literals, value)
+			value = literalMark + strconv.Itoa(len(literals)-1) + literalMark
+		}
+		grown := len(s) + strings.Count(s, token)*(len(value)-len(token))
 		if grown > maxExpanded {
 			continue
 		}
-		s = strings.ReplaceAll(s, token, v.Value)
+		s = strings.ReplaceAll(s, token, value)
+	}
+	for i := len(literals) - 1; i >= 0; i-- {
+		s = strings.ReplaceAll(s, literalMark+strconv.Itoa(i)+literalMark, literals[i])
 	}
 	return s
 }
+
+// literalMark brackets the placeholder of a Literal value; no text a user
+// types holds it.
+const literalMark = "\x00"
 
 // ParamsFromURL lists the query parameters in raw, in order, all enabled.
 func ParamsFromURL(raw string) []KV {

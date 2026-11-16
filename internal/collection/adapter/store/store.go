@@ -43,7 +43,8 @@ type kvFile struct {
 	Value       string `json:"value"`
 	Description string `json:"description,omitempty"`
 	Enabled     bool   `json:"enabled"`
-	Secret      bool   `json:"secret,omitempty"` // the value is in .secrets.json
+	Secret      bool   `json:"secret,omitempty"`  // the value is in .secrets.json
+	Literal     bool   `json:"literal,omitempty"` // a captured value, never expanded
 }
 
 type envFile struct {
