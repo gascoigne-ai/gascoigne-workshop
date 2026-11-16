@@ -1,10 +1,12 @@
 package openapi
 
 import (
+	"fmt"
 	"os"
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 )
@@ -162,5 +164,34 @@ func TestImportKeepsGoodOperationsAroundOddOnes(t *testing.T) {
 	}
 	if len(res.Skipped) != 1 || !strings.Contains(res.Skipped[0], "POST /broken") {
 		t.Errorf("Skipped = %q, want the broken operation named", res.Skipped)
+	}
+}
+
+// Pins that a schema whose many properties all refer back to it stays
+// cheap: the depth limit bounds the expansion (width cubed, about 0.2 s
+// for 150 properties), so it needs no cycle detection.
+func TestASelfReferencingSchemaStaysCheapToExpand(t *testing.T) {
+	var props []string
+	for i := range 150 {
+		props = append(props, fmt.Sprintf(`"p%d": {"$ref": "#/components/schemas/Node"}`, i))
+	}
+	src := `{"openapi": "3.0.0", "info": {"title": "T"},
+	  "paths": {"/n": {"post": {"requestBody": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/Node"}}}}}}},
+	  "components": {"schemas": {"Node": {"type": "object", "properties": {` + strings.Join(props, ",") + `}}}}}`
+	done := make(chan Result, 1)
+	go func() {
+		res, err := Parse([]byte(src))
+		if err != nil {
+			t.Error(err)
+		}
+		done <- res
+	}()
+	select {
+	case res := <-done:
+		if r := find(res.Folder, "POST /n"); r == nil || r.BodyType != model.BodyJSON {
+			t.Errorf("request %+v, want a JSON body", r)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("Parse is still expanding the schema after 3s")
 	}
 }
