@@ -31,6 +31,7 @@ Everything that fills a corner of the dialog panel (the title bar, the settings 
 ### Message dialogs
 
 Title bar (title only), then a body padded 16 with gap 12: a muted `Lines` text, any form, the input line, then the buttons on the right (`RowH` high, gap 8, the primary one lit). Width `MessageDialogW` (380).
+- The welcome dialog is a message dialog 560 wide: the lead text, then the release notes scrolling in a column (a bold heading and bulleted muted points per section, 12 between sections, 4 inside, points wrapped by hand at 64 characters), and one primary button, Get started.
 
 ### File browser
 

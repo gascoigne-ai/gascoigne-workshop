@@ -1,6 +1,8 @@
 package app
 
 import (
+	"cmp"
+
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/ui/mcpform"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/overlay"
 
@@ -23,6 +25,11 @@ type dialog struct {
 	DialogState
 	form *mcpform.Form
 	move MoveState // where the user dragged it
+	// content builds the dialog's own body, between the lead text and the
+	// buttons; width is the panel's width, zero for a message dialog's.
+	content func() Node
+	scroll  ScrollState // scroll of that content
+	width   int
 }
 
 // ---- context menu --------------------------------------------------------
@@ -87,6 +94,7 @@ func (a *App) dialogView() Node {
 		return nil
 	}
 	return dialogTemplate.MustBuild(markup.Scope{
+		"width":   cmp.Or(d.width, MessageDialogW),
 		"state":   &d.DialogState,
 		"move":    &d.move,
 		"dismiss": a.closeDialog,
@@ -158,6 +166,9 @@ func (a *App) overlayOpen() bool {
 
 // dialogForm is the typed form of a dialog, nothing for the others.
 func (a *App) dialogForm(dialog *dialog) Node {
+	if dialog.content != nil {
+		return dialog.content()
+	}
 	if dialog.form == nil {
 		return nil
 	}
@@ -200,7 +211,7 @@ func (a *App) escape() {
 // Templates, parsed once above.
 const (
 	dialogSource = `<!-- An MCP tool's typed form, when the dialog has one, sits between its body and its input. -->
-<message-dialog state="state" moved="move" on-dismiss="dismiss">
+<message-dialog w="{{width}}" state="state" moved="move" on-dismiss="dismiss">
   <slot if="form" name="form"/>
 </message-dialog>
 `

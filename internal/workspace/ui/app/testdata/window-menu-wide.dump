@@ -166,10 +166,11 @@ stack rect=0,0,1280,800
               flow rect=782,194,486,22
                 textB text="Send the request to see the response" h=22 fg=muted rect=782,194,486,22
     flow h=28 padL=12 padR=12 gap=12 bg=frame borderT=border control=statusbar rect=0,772,1280,28
-      textB text="Ready" grow=1 fg=muted small=true ellipsis=true rect=12,772,1154,28
-      flow w=44 h=20 padL=10 padR=10 bg=sunken control=button tip=Show the log of calls lighten=true onClick=true rect=1178,776,44,20
-        textB text="Log" grow=1 fg=chip-text ellipsis=true center=true rect=1188,776,24,20
-      textB text="v0.1.0" fg=muted small=true rect=1234,772,34,28
+      textB text="Ready" grow=1 fg=muted small=true ellipsis=true rect=12,772,1117,28
+      flow w=44 h=20 padL=10 padR=10 bg=sunken control=button tip=Show the log of calls lighten=true onClick=true rect=1141,776,44,20
+        textB text="Log" grow=1 fg=chip-text ellipsis=true center=true rect=1151,776,24,20
+      flow tip=What is in this version onClick=true rect=1197,772,71,28
+        textB text="v0.1.0-alpha" fg=muted small=true rect=1197,772,71,28
   flow bg=shadow rect=0,0,1280,800
   resizableB w=760 h=560 floatMode=2 bg=bg control=menu float=true modal=true focusScope=true shadow=true onDismiss=true rect=260,120,760,560
     flow h=44 padL=16 padR=16 gap=8 bg=hero borderB=border control=hero onDismiss=true rect=260,120,760,44

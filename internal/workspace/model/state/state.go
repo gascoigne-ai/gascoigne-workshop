@@ -61,6 +61,8 @@ type State struct {
 	// Trusted are the commands and files the user allowed a request to
 	// use, as model.Access keys ("command:...", "file:/abs/path").
 	Trusted []string `json:"trusted,omitempty"`
+	// Welcomed is the version whose welcome dialog the user has seen.
+	Welcomed string `json:"welcomed,omitempty"`
 }
 
 // CollectionAt is the index in dirs, the folders of the open collections

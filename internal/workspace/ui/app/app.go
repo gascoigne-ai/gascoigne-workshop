@@ -44,7 +44,7 @@ import (
 )
 
 const (
-	version = "v0.1.0"
+	version = "v0.1.0-alpha"
 
 	// defaultTimeoutSec is used when neither the request nor the settings name one.
 	defaultTimeoutSec = 60
@@ -268,6 +268,7 @@ type App struct {
 	writes             serial.Queue                             // the background writes in flight and waiting, by file
 	keys               changeKeys                               // the comparable forms of the collection and the state, recomputed only on frames where something could have changed
 	stateSave          autosave.Debounce                        // when the remembered state was last written
+	welcomed           string                                   // the version whose welcome dialog was shown
 	initial            state.Window                             // window geometry of the last run
 	winX, winY         int                                      // window position, read each frame
 }
@@ -300,6 +301,8 @@ type Options struct {
 	ScreenshotCollections  []string                                      // folders whose collections open beside the start one before the screenshot, in order
 	ScreenshotTool         string                                        // open the call form of this tool of the open MCP request before the screenshot
 	SettingsPath           string                                        // settings file; "" keeps settings in memory
+	Welcome                bool                                          // open the welcome dialog when this version has not been welcomed yet
+	WelcomeEvery           bool                                          // with Welcome, open the dialog at every start, not once per version
 	StatePath              string                                        // remembered UI state; "" keeps it in memory
 	ThemesDir              string                                        // folder of user theme files (*.json); "" for none
 	ScanFonts              bool                                          // look for installed fonts in the background, to apply the saved font families
@@ -422,6 +425,10 @@ func NewApp(opts Options) (*App, error) {
 	stored, stateErr := a.states.Load(opts.StatePath)
 	a.initial = stored.Window
 	a.restore(stored)
+	a.welcomed = stored.Welcomed
+	if opts.Welcome && (opts.WelcomeEvery || a.welcomed != version) {
+		a.openWelcome()
+	}
 	a.sent.Load(a)
 	a.status = stateNote(a.status, stateErr)
 	if len(themeProblems) > 0 {

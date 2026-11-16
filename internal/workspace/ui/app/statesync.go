@@ -115,6 +115,7 @@ func (a *App) snapshot() state.State {
 		SettingsW: a.prefs.Size.W,
 		SettingsH: a.prefs.Size.H,
 		Trusted:   a.trustedKeys(),
+		Welcomed:  a.welcomed,
 	}
 	for _, entry := range a.open.Entries {
 		a.snapshotExpanded(&s, entry)

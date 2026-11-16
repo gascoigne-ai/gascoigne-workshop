@@ -465,11 +465,12 @@ var statusBarTemplate = markup.Must("statusbar.vml", statusbarSource)
 // button and the version.
 func (a *App) statusBar() Node {
 	return statusBarTemplate.MustBuild(markup.Scope{
-		"statusH": statusH,
-		"gutter":  w.Gutter,
-		"status":  a.status,
-		"version": version,
-		"openLog": a.calls.Open,
+		"statusH":     statusH,
+		"gutter":      w.Gutter,
+		"status":      a.status,
+		"version":     version,
+		"openLog":     a.calls.Open,
+		"openWelcome": a.openWelcome,
 	})
 }
 
@@ -634,7 +635,9 @@ const (
 	statusbarSource = `<row h="{{statusH}}" pad-x="{{gutter}}" gap="{{gutter}}" bg="frame" control="statusbar" border-t="border">
   <text small muted ellipsis grow="1">{{status}}</text>
   <button w="44" h="20" on-click="openLog" tooltip="Show the log of calls">Log</button>
-  <text small muted>{{version}}</text>
+  <row on-click="openWelcome" tooltip="What is in this version">
+    <text small muted>{{version}}</text>
+  </row>
 </row>
 `
 )

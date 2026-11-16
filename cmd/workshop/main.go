@@ -121,6 +121,7 @@ func main() {
 		opts.ScreenshotCollections = append(opts.ScreenshotCollections, dir)
 		return nil
 	})
+	flag.BoolVar(&opts.Welcome, "welcome", false, "open the welcome dialog before the screenshot; a normal run opens it once per version")
 	flag.BoolVar(&opts.ScreenshotCallLog, "log", false, "open the Log dialog of calls before the screenshot, as the status bar's Log button does")
 	flag.StringVar(&opts.ScreenshotBrowse, "browse", "", "open the in-app file browser on this folder before the screenshot, as choosing a file without a dialog program does")
 	flag.StringVar(&opts.ScreenshotTool, "tool", "", "open the call form of this tool of the open MCP request before the screenshot, once its server announced it (with -send)")
@@ -138,6 +139,12 @@ func main() {
 			log.Fatal(err)
 		}
 		return
+	}
+	// A normal run opens the welcome dialog once per version; a screenshot
+	// only when asked, so the other scenes show the window itself.
+	if opts.ScreenshotPath == "" {
+		opts.Welcome = true
+		opts.WelcomeEvery = welcomeEveryStart
 	}
 	// Screenshots must not read or write the real state or settings: -set and
 	// -record save settings, and a screenshot taken by hand would overwrite

@@ -166,8 +166,9 @@ stack rect=0,0,640,480
               flow rect=232,415,396,22
                 textB text="Send the request to see the response" h=22 fg=muted rect=232,415,396,22
     flow h=28 padL=12 padR=12 gap=12 bg=frame borderT=border control=statusbar rect=0,452,640,28
-      textB text="Ready" grow=1 fg=muted small=true ellipsis=true rect=12,452,514,28
-      flow w=44 h=20 padL=10 padR=10 bg=sunken control=button tip=Show the log of calls lighten=true onClick=true rect=538,456,44,20
-        textB text="Log" grow=1 fg=chip-text ellipsis=true center=true rect=548,456,24,20
-      textB text="v0.1.0" fg=muted small=true rect=594,452,34,28
+      textB text="Ready" grow=1 fg=muted small=true ellipsis=true rect=12,452,477,28
+      flow w=44 h=20 padL=10 padR=10 bg=sunken control=button tip=Show the log of calls lighten=true onClick=true rect=501,456,44,20
+        textB text="Log" grow=1 fg=chip-text ellipsis=true center=true rect=511,456,24,20
+      flow tip=What is in this version onClick=true rect=557,452,71,28
+        textB text="v0.1.0-alpha" fg=muted small=true rect=557,452,71,28
   tooltipB rect=0,0,640,480
