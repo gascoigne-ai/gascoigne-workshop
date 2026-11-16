@@ -34,25 +34,27 @@ func Image(size int) *image.RGBA {
 	return img
 }
 
-func mix(a, b color.RGBA, t float64) color.RGBA {
-	f := func(x, y uint8) uint8 { return uint8(math.Round(float64(x) + (float64(y)-float64(x))*t)) }
-	return color.RGBA{f(a.R, b.R), f(a.G, b.G), f(a.B, b.B), 0xff}
+func mix(rgba, other color.RGBA, ratio float64) color.RGBA {
+	f := func(value, uint8Value uint8) uint8 {
+		return uint8(math.Round(float64(value) + (float64(uint8Value)-float64(value))*ratio))
+	}
+	return color.RGBA{f(rgba.R, other.R), f(rgba.G, other.G), f(rgba.B, other.B), 0xff}
 }
 
 // roundedCoverage is how much of the pixel at x, y lies inside a square of
 // side s with the given corner radius (0 outside, 1 inside, soft at the edge).
-func roundedCoverage(x, y, s, r float64) float64 {
-	dx := math.Max(math.Abs(x-s/2)-(s/2-r), 0)
-	dy := math.Max(math.Abs(y-s/2)-(s/2-r), 0)
-	d := math.Hypot(dx, dy) - r
+func roundedCoverage(posX, posY, scale, value float64) float64 {
+	dx := math.Max(math.Abs(posX-scale/2)-(scale/2-value), 0)
+	dy := math.Max(math.Abs(posY-scale/2)-(scale/2-value), 0)
+	d := math.Hypot(dx, dy) - value
 	return clamp(0.5 - d)
 }
 
 // markCoverage draws a spanner lying on the diagonal: an open-end jaw at the
 // top right, a ring at the bottom left, a round handle between them. Every
 // part is a signed distance, so the edge is smooth at any size.
-func markCoverage(x, y, s float64) float64 {
-	px, py := x/s, y/s
+func markCoverage(posX, posY, scale float64) float64 {
+	px, py := posX/scale, posY/scale
 	const k = 0.7071067811865476 // 1/sqrt 2
 	handle := distSegment(px, py, 0.30, 0.70, 0.62, 0.38) - 0.058
 	// the jaw: a disc with a slot cut along the diagonal
@@ -65,7 +67,7 @@ func markCoverage(x, y, s float64) float64 {
 	rx, ry := px-0.285, py-0.715
 	ring := math.Hypot(rx, ry) - 0.12
 	hole := math.Hypot(rx, ry) - 0.05
-	d := math.Max(math.Min(handle, math.Min(jaw, ring)), -hole) * s
+	d := math.Max(math.Min(handle, math.Min(jaw, ring)), -hole) * scale
 	return clamp(0.5 - d)
 }
 
@@ -76,4 +78,4 @@ func distSegment(px, py, ax, ay, bx, by float64) float64 {
 	return math.Hypot(px-(ax+t*vx), py-(ay+t*vy))
 }
 
-func clamp(v float64) float64 { return math.Min(math.Max(v, 0), 1) }
+func clamp(value float64) float64 { return math.Min(math.Max(value, 0), 1) }
