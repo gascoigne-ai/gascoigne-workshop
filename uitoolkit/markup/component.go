@@ -77,6 +77,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"math"
 	"reflect"
 	"slices"
@@ -1148,7 +1149,14 @@ func (t *Template) buildOne(n *node, sc Scope) (view.Node, error) {
 				if !ok {
 					return nil, t.errf(n, "no template defined as %q; defined: %s", a.value, strings.Join(definedNames(), " "))
 				}
-				return other.Build(sc)
+				depth, _ := sc[includeDepthKey].(int)
+				if depth >= maxIncludeDepth {
+					return nil, t.errf(n, "<include> nests too deep (a template that includes itself?)")
+				}
+				inner := make(Scope, len(sc)+1)
+				maps.Copy(inner, sc)
+				inner[includeDepthKey] = depth + 1
+				return other.Build(inner)
 			}
 		}
 		return nil, t.errf(n, `<include> needs a name`)
@@ -1469,6 +1477,13 @@ func enumAttr[T any](name string, table map[string]T, f func(T) view.Option) fun
 		return f(val), nil
 	}
 }
+
+// maxIncludeDepth bounds <include> nesting; the depth travels in the scope
+// under includeDepthKey, a name no template can write.
+const (
+	maxIncludeDepth = 32
+	includeDepthKey = "\x00include-depth"
+)
 
 var defined = struct {
 	sync.Mutex

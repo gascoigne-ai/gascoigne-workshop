@@ -384,3 +384,20 @@ func TestNonEmptyColorTokenStillAppliesItsOption(t *testing.T) {
 		t.Fatal("Dump does not show the border, so the empty-token test proves nothing")
 	}
 }
+
+// A template that includes itself, directly or through another one,
+// built forever until the stack overflowed, which no recover can catch.
+func TestIncludeCyclesAreAnErrorNotAStackOverflow(t *testing.T) {
+	Define("test-cycle-a", `<row><include name="test-cycle-b"/></row>`)
+	Define("test-cycle-b", `<row><include name="test-cycle-a"/></row>`)
+	Define("test-cycle-self", `<row><include name="test-cycle-self"/></row>`)
+	for _, name := range []string{"test-cycle-a", "test-cycle-self"} {
+		template, err := Parse("t.vml", []byte(`<include name="`+name+`"/>`))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := template.Build(nil); err == nil || !strings.Contains(err.Error(), "too deep") {
+			t.Errorf("%s: err = %v, want a too-deep error", name, err)
+		}
+	}
+}
