@@ -7,20 +7,20 @@ import (
 	"testing"
 )
 
-func luminance(c color.RGBA) float64 {
-	lin := func(v uint8) float64 {
-		f := float64(v) / 255
+func luminance(rgba color.RGBA) float64 {
+	lin := func(value uint8) float64 {
+		f := float64(value) / 255
 		if f <= 0.03928 {
 			return f / 12.92
 		}
 		return math.Pow((f+0.055)/1.055, 2.4)
 	}
-	return 0.2126*lin(c.R) + 0.7152*lin(c.G) + 0.0722*lin(c.B)
+	return 0.2126*lin(rgba.R) + 0.7152*lin(rgba.G) + 0.0722*lin(rgba.B)
 }
 
 // Contrast is the WCAG contrast ratio between two colors.
-func contrast(a, b color.RGBA) float64 {
-	la, lb := luminance(a), luminance(b)
+func contrast(rgba, other color.RGBA) float64 {
+	la, lb := luminance(rgba), luminance(other)
 	return (max(la, lb) + 0.05) / (min(la, lb) + 0.05)
 }
 

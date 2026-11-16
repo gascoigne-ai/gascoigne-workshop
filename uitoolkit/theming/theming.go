@@ -212,11 +212,11 @@ func (c *Catalog) For(themeID, textSizeID string) core.Theme {
 // colors moved until their text reaches HighRatio), then the user's color
 // overrides for that theme. An override is ignored unless it parses as a
 // hex color, names a customizable token and reaches the required ratio.
-func (c *Catalog) Theme(p Prefs) core.Theme {
-	id := c.ThemeID(p.Theme)
-	th := c.For(id, p.TextSize)
-	th.RadiusScale, th.NoGradients = CornerScale(p.Corners), p.Flat
-	if p.Contrast == "high" {
+func (c *Catalog) Theme(prefsValue Prefs) core.Theme {
+	id := c.ThemeID(prefsValue.Theme)
+	th := c.For(id, prefsValue.TextSize)
+	th.RadiusScale, th.NoGradients = CornerScale(prefsValue.Corners), prefsValue.Flat
+	if prefsValue.Contrast == "high" {
 		strong := map[core.Token]color.RGBA{}
 		for _, cc := range CustomColors {
 			strong[cc.Token] = core.EnsureContrast(th.Color(cc.Token), th.Color(cc.Text), HighRatio)
@@ -224,9 +224,9 @@ func (c *Catalog) Theme(p Prefs) core.Theme {
 		th = th.With(strong)
 		th = th.With(strengthened(th))
 	}
-	need := RequiredRatio(p.Contrast)
+	need := RequiredRatio(prefsValue.Contrast)
 	overrides := map[core.Token]color.RGBA{}
-	for name, hex := range p.Colors[id] {
+	for name, hex := range prefsValue.Colors[id] {
 		cc, ok := CustomColorOf(core.Token(name))
 		if !ok {
 			continue

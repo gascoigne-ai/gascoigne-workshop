@@ -61,20 +61,20 @@ func themeExtends(data []byte) (string, error) {
 }
 
 // parseColor reads "#rrggbb" or "#rrggbbaa".
-func parseColor(s string) (color.RGBA, error) {
-	if len(s) == 9 {
-		c, err := core.ParseHex(s[:7])
+func parseColor(text string) (color.RGBA, error) {
+	if len(text) == 9 {
+		c, err := core.ParseHex(text[:7])
 		if err != nil {
 			return c, err
 		}
 		var a uint8
-		if _, err := fmt.Sscanf(s[7:], "%02x", &a); err != nil {
-			return c, fmt.Errorf("%q is not a color", s)
+		if _, err := fmt.Sscanf(text[7:], "%02x", &a); err != nil {
+			return c, fmt.Errorf("%q is not a color", text)
 		}
 		c.A = a
 		return c, nil
 	}
-	return core.ParseHex(s)
+	return core.ParseHex(text)
 }
 
 // ParseTheme reads a theme file over base (nil for none). Unknown fields
@@ -150,15 +150,15 @@ func ParseTheme(data []byte, base *core.Theme) (core.Theme, error) {
 }
 
 // resolveColor is a "$variable" or a literal color.
-func resolveColor(s string, vars map[string]color.RGBA) (color.RGBA, error) {
-	if name, ok := strings.CutPrefix(s, "$"); ok {
+func resolveColor(text string, vars map[string]color.RGBA) (color.RGBA, error) {
+	if name, ok := strings.CutPrefix(text, "$"); ok {
 		c, ok := vars[name]
 		if !ok {
 			return color.RGBA{}, fmt.Errorf("unknown variable $%s", name)
 		}
 		return c, nil
 	}
-	return parseColor(s)
+	return parseColor(text)
 }
 
 // parseGradient reads a control's gradient: absent or 0 for none, a
@@ -191,26 +191,26 @@ func parseGradient(raw json.RawMessage, vars map[string]color.RGBA, st *core.Con
 	return nil
 }
 
-func copyControls(m map[string]core.ControlStyle) map[string]core.ControlStyle {
-	out := make(map[string]core.ControlStyle, len(m))
-	for k, v := range m {
+func copyControls(other map[string]core.ControlStyle) map[string]core.ControlStyle {
+	out := make(map[string]core.ControlStyle, len(other))
+	for k, v := range other {
 		out[k] = v
 	}
 	return out
 }
 
-func sortedKeys(m map[string]string) []string {
-	keys := make([]string, 0, len(m))
-	for k := range m {
+func sortedKeys(other map[string]string) []string {
+	keys := make([]string, 0, len(other))
+	for k := range other {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
 	return keys
 }
 
-func sortedControlKeys(m map[string]controlFile) []string {
-	keys := make([]string, 0, len(m))
-	for k := range m {
+func sortedControlKeys(other map[string]controlFile) []string {
+	keys := make([]string, 0, len(other))
+	for k := range other {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
