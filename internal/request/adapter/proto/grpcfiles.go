@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -117,6 +118,9 @@ type protoFinder struct {
 
 // FindFileByPath implements protocompile.Resolver.
 func (f *protoFinder) FindFileByPath(name string) (protocompile.SearchResult, error) {
+	if cleaned := path.Clean(name); cleaned == ".." || strings.HasPrefix(cleaned, "../") || path.IsAbs(cleaned) {
+		return protocompile.SearchResult{}, fmt.Errorf("%s leaves the import paths: %w", name, fs.ErrNotExist)
+	}
 	for _, dir := range f.searchPaths {
 		path := filepath.Join(dir, filepath.FromSlash(name))
 		source, err := os.ReadFile(path)

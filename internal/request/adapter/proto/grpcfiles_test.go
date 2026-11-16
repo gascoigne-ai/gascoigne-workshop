@@ -195,3 +195,22 @@ func findCompiledService(t *testing.T, files linker.Files, name protoreflect.Ful
 	}
 	return service
 }
+
+// An import of "../outside.proto" joined onto an import path and read a
+// file outside every folder the user named.
+func TestProtoImportsCannotLeaveTheImportPaths(t *testing.T) {
+	base := t.TempDir()
+	inside := filepath.Join(base, "inside")
+	if err := os.MkdirAll(inside, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(base, "outside.proto"), []byte(`syntax = "proto3";`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	finder := &protoFinder{searchPaths: []string{inside}, found: map[string]string{}}
+	for _, name := range []string{"../outside.proto", "a/../../outside.proto", filepath.Join(base, "outside.proto")} {
+		if _, err := finder.FindFileByPath(name); err == nil {
+			t.Errorf("FindFileByPath(%q) read a file outside the import paths", name)
+		}
+	}
+}
