@@ -42,20 +42,20 @@ func (h *fakeHost) Change(edit func(*settings.Settings)) {
 }
 func (h *fakeHost) SetScaleLive(percent int)           { h.current.UIScalePct = percent }
 func (h *fakeHost) Save()                              { h.saved++ }
-func (h *fakeHost) Replace(s settings.Settings)        { h.current = s }
+func (h *fakeHost) Replace(prefs settings.Settings)    { h.current = prefs }
 func (h *fakeHost) SettingsPath() string               { return h.path }
 func (h *fakeHost) SetFonts(ui, code w.FontData) error { return nil }
 func (h *fakeHost) Toast(text string, _ bool)          { h.toasts = append(h.toasts, text) }
 func (h *fakeHost) SetStatus(string)                   {}
-func (h *fakeHost) OpenMenu(x, y int, items []prefs.MenuItem) {
+func (h *fakeHost) OpenMenu(posX, posY int, items []prefs.MenuItem) {
 	h.menus = append(h.menus, items)
-	h.menuAt = [2]int{x, y}
+	h.menuAt = [2]int{posX, posY}
 }
 func (h *fakeHost) ExtraPage(id string) Node { return Text("page " + id) }
 func (h *fakeHost) ActionIDs() []string      { return []string{"send"} }
 func (h *fakeHost) Close()                   {}
 func (h *fakeHost) MarkDirty()               {}
-func (h *fakeHost) Later(f func())           { f() }
+func (h *fakeHost) Later(callback func())    { callback() }
 
 func dump(node Node) string { return Dump(node) }
 
@@ -89,7 +89,7 @@ func TestANumberOutsideItsRangeIsExplainedAndNotApplied(t *testing.T) {
 func TestResetRemovesTheKeyFromTheFile(t *testing.T) {
 	var d SettingsDialog
 	host := newHost(t)
-	host.Change(func(s *settings.Settings) { s.Layout = "side" })
+	host.Change(func(prefs *settings.Settings) { prefs.Layout = "side" })
 	d.Reset(host, "layout")
 	if data, _ := os.ReadFile(host.path); strings.Contains(string(data), "layout") || host.current.Layout != "stacked" {
 		t.Fatalf("layout %q, file %q", host.current.Layout, data)
@@ -118,7 +118,7 @@ func TestRawTextWithProblemsChangesNothingAndGoodTextIsWrittenAsTyped(t *testing
 func TestAChangeOnDiskIsPickedUpOnceAndAnOwnWriteIsNot(t *testing.T) {
 	var d SettingsDialog
 	host := newHost(t)
-	host.Change(func(s *settings.Settings) { s.Corners = "round" })
+	host.Change(func(prefs *settings.Settings) { prefs.Corners = "round" })
 	d.Stamp(host, host.path)
 	host.current.Corners = "square" // unsaved: an own write must not reload over it
 	d.Poll(host)

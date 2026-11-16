@@ -13,13 +13,13 @@ import (
 var dialogRect = regexp.MustCompile(`resizableB w=(\d+) h=(\d+)`)
 
 // dialogSize is the size the laid out dialog has.
-func dialogSize(t *testing.T, d *SettingsDialog, host Host) (int, int) {
+func dialogSize(t *testing.T, dialog *SettingsDialog, host Host) (int, int) {
 	t.Helper()
 	ctx, err := core.NewCtx(testTheme())
 	if err != nil {
 		t.Fatal(err)
 	}
-	root := d.View(host)
+	root := dialog.View(host)
 	Layout(ctx, root, 1280, 800)
 	for _, line := range strings.Split(Dump(root), "\n") {
 		if m := dialogRect.FindStringSubmatch(line); m != nil {
@@ -75,11 +75,11 @@ func TestResizingTheDialogByAnEdgeKeepsItOpenAndInsideTheWindow(t *testing.T) {
 		at   func(r core.Rect) (int, int)
 		to   func(x, y int) (int, int)
 	}{
-		{"right edge", func(r core.Rect) (int, int) { return r.X + r.W - 2, r.Y + r.H/2 }, func(x, y int) (int, int) { return x + 120, y }},
-		{"left edge", func(r core.Rect) (int, int) { return r.X + 2, r.Y + r.H/2 }, func(x, y int) (int, int) { return x - 120, y }},
-		{"bottom edge", func(r core.Rect) (int, int) { return r.X + r.W/2, r.Y + r.H - 2 }, func(x, y int) (int, int) { return x, y + 80 }},
-		{"top edge", func(r core.Rect) (int, int) { return r.X + r.W/2, r.Y + 2 }, func(x, y int) (int, int) { return x, y - 80 }},
-		{"bottom right corner", func(r core.Rect) (int, int) { return r.X + r.W - 2, r.Y + r.H - 2 }, func(x, y int) (int, int) { return x + 90, y + 60 }},
+		{"right edge", func(rect core.Rect) (int, int) { return rect.X + rect.W - 2, rect.Y + rect.H/2 }, func(posX, posY int) (int, int) { return posX + 120, posY }},
+		{"left edge", func(rect core.Rect) (int, int) { return rect.X + 2, rect.Y + rect.H/2 }, func(posX, posY int) (int, int) { return posX - 120, posY }},
+		{"bottom edge", func(rect core.Rect) (int, int) { return rect.X + rect.W/2, rect.Y + rect.H - 2 }, func(posX, posY int) (int, int) { return posX, posY + 80 }},
+		{"top edge", func(rect core.Rect) (int, int) { return rect.X + rect.W/2, rect.Y + 2 }, func(posX, posY int) (int, int) { return posX, posY - 80 }},
+		{"bottom right corner", func(rect core.Rect) (int, int) { return rect.X + rect.W - 2, rect.Y + rect.H - 2 }, func(posX, posY int) (int, int) { return posX + 90, posY + 60 }},
 	}
 	for _, p := range presses {
 		t.Run(p.name, func(t *testing.T) {
@@ -121,11 +121,11 @@ func TestResizingTheDialogByAnEdgeKeepsItOpenAndInsideTheWindow(t *testing.T) {
 // dialogRectOf is the rect of the resizable dialog in a laid out view.
 func dialogRectOf(root Node) core.Rect {
 	var find func(e *El) (core.Rect, bool)
-	find = func(e *El) (core.Rect, bool) {
-		if strings.Contains(strings.SplitN(Dump(e), "\n", 2)[0], "resizableB") {
-			return e.Rect(), true
+	find = func(element *El) (core.Rect, bool) {
+		if strings.Contains(strings.SplitN(Dump(element), "\n", 2)[0], "resizableB") {
+			return element.Rect(), true
 		}
-		for _, k := range e.Children() {
+		for _, k := range element.Children() {
 			if r, ok := find(k); ok {
 				return r, true
 			}

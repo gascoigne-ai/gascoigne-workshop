@@ -25,29 +25,43 @@ type settingControl func(d *SettingsDialog, host Host, field settings.Field) Nod
 // their kind. Everything else is a row of chips (an enum), On / Off (a
 // boolean) or a text field (text and numbers).
 var settingControls = map[string]settingControl{
-	"theme": func(d *SettingsDialog, host Host, _ settings.Field) Node { return d.themeChips(host) },
-	"textSize": func(d *SettingsDialog, host Host, field settings.Field) Node {
-		return d.enumChips(host, field, labelsOf(appearance.TextSizeChoices, sizeLabel))
+	"theme": func(dialog *SettingsDialog, host Host, _ settings.Field) Node { return dialog.themeChips(host) },
+	"textSize": func(dialog *SettingsDialog, host Host, field settings.Field) Node {
+		return dialog.enumChips(host, field, labelsOf(appearance.TextSizeChoices, sizeLabel))
 	},
-	"corners": func(d *SettingsDialog, host Host, field settings.Field) Node {
-		return d.enumChips(host, field, labelsOf(appearance.CornerChoices, cornerLabel))
+	"corners": func(dialog *SettingsDialog, host Host, field settings.Field) Node {
+		return dialog.enumChips(host, field, labelsOf(appearance.CornerChoices, cornerLabel))
 	},
-	"contrast": func(d *SettingsDialog, host Host, field settings.Field) Node {
-		return d.enumChips(host, field, labelsOf(appearance.ContrastChoices, contrastLabel))
+	"contrast": func(dialog *SettingsDialog, host Host, field settings.Field) Node {
+		return dialog.enumChips(host, field, labelsOf(appearance.ContrastChoices, contrastLabel))
 	},
-	"layout": func(d *SettingsDialog, host Host, field settings.Field) Node {
-		return d.enumChips(host, field, labelsOf(appearance.LayoutChoices, layoutLabel))
+	"layout": func(dialog *SettingsDialog, host Host, field settings.Field) Node {
+		return dialog.enumChips(host, field, labelsOf(appearance.LayoutChoices, layoutLabel))
 	},
-	"responseView": func(d *SettingsDialog, host Host, field settings.Field) Node { return d.enumChips(host, field, nil) },
-	"uiScale":      func(d *SettingsDialog, host Host, _ settings.Field) Node { return d.scaleControl(host) },
-	"uiFont":       func(d *SettingsDialog, host Host, _ settings.Field) Node { return d.fontControl(host, FontUI) },
-	"codeFont":     func(d *SettingsDialog, host Host, _ settings.Field) Node { return d.fontControl(host, FontCode) },
+	"responseView": func(dialog *SettingsDialog, host Host, field settings.Field) Node {
+		return dialog.enumChips(host, field, nil)
+	},
+	"uiScale": func(dialog *SettingsDialog, host Host, _ settings.Field) Node { return dialog.scaleControl(host) },
+	"uiFont": func(dialog *SettingsDialog, host Host, _ settings.Field) Node {
+		return dialog.fontControl(host, FontUI)
+	},
+	"codeFont": func(dialog *SettingsDialog, host Host, _ settings.Field) Node {
+		return dialog.fontControl(host, FontCode)
+	},
 }
 
-func sizeLabel(c appearance.SizeChoice) (string, string)         { return c.ID, c.Label }
-func cornerLabel(c appearance.CornerChoice) (string, string)     { return c.ID, c.Label }
-func contrastLabel(c appearance.ContrastChoice) (string, string) { return c.ID, c.Label }
-func layoutLabel(c appearance.LayoutChoice) (string, string)     { return c.ID, c.Label }
+func sizeLabel(sizeChoiceValue appearance.SizeChoice) (string, string) {
+	return sizeChoiceValue.ID, sizeChoiceValue.Label
+}
+func cornerLabel(cornerChoiceValue appearance.CornerChoice) (string, string) {
+	return cornerChoiceValue.ID, cornerChoiceValue.Label
+}
+func contrastLabel(contrastChoiceValue appearance.ContrastChoice) (string, string) {
+	return contrastChoiceValue.ID, contrastChoiceValue.Label
+}
+func layoutLabel(layoutChoiceValue appearance.LayoutChoice) (string, string) {
+	return layoutChoiceValue.ID, layoutChoiceValue.Label
+}
 
 // labelsOf maps ids to the labels a table of choices gives them.
 func labelsOf[T any](choices []T, pick func(T) (id, label string)) map[string]string {
@@ -196,7 +210,7 @@ func (d *SettingsDialog) Edited(host Host, key string) {
 		value = number
 	}
 	d.setNote(key, "")
-	host.Send(prefs.Change{Edit: func(s *settings.Settings) { *s = settings.With(*s, key, value) }})
+	host.Send(prefs.Change{Edit: func(prefs *settings.Settings) { *prefs = settings.With(*prefs, key, value) }})
 }
 
 func (d *SettingsDialog) setNote(key, note string) {
@@ -221,7 +235,7 @@ func (d *SettingsDialog) textControl(host Host, field settings.Field) Node {
 
 // Reset puts the default back for key and drops it from the file.
 func (d *SettingsDialog) Reset(host Host, key string) {
-	host.Send(prefs.Change{Edit: func(s *settings.Settings) { settings.Reset(s, key) }})
+	host.Send(prefs.Change{Edit: func(prefs *settings.Settings) { settings.Reset(prefs, key) }})
 	d.inputs, d.notes = nil, nil
 	if key == "uiFont" || key == "codeFont" {
 		d.ApplyFonts(host)

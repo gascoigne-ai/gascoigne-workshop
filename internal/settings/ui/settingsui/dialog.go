@@ -237,7 +237,7 @@ var (
 )
 
 // navItem is one page in the list: the open one is tinted and bold.
-func (d *SettingsDialog) navItem(p page, open bool) Node {
+func (d *SettingsDialog) navItem(page page, open bool) Node {
 	template := navClosedTemplate
 	if open {
 		template = navOpenTemplate
@@ -245,8 +245,8 @@ func (d *SettingsDialog) navItem(p page, open bool) Node {
 	return template.MustBuild(markup.Scope{
 		"rowH":   w.RowH,
 		"gutter": w.Gutter,
-		"label":  p.label,
-		"pick":   func() { d.Cat, d.scroll.Y = p.id, 0 },
+		"label":  page.label,
+		"pick":   func() { d.Cat, d.scroll.Y = page.id, 0 },
 	})
 }
 
