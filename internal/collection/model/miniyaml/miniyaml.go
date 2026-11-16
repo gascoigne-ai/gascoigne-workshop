@@ -80,10 +80,10 @@ func Parse(data []byte) (any, error) {
 
 // stripComment removes a # comment that is not inside quotes and starts
 // at the beginning of the line or after a space.
-func stripComment(s string) string {
+func stripComment(text string) string {
 	var quote byte
-	for i := 0; i < len(s); i++ {
-		c := s[i]
+	for i := 0; i < len(text); i++ {
+		c := text[i]
 		switch {
 		case quote != 0:
 			if c == '\\' && quote == '"' {
@@ -92,14 +92,14 @@ func stripComment(s string) string {
 				quote = 0
 			}
 		case c == '"' || c == '\'':
-			if i == 0 || strings.ContainsRune(" [{,:-", rune(s[i-1])) {
+			if i == 0 || strings.ContainsRune(" [{,:-", rune(text[i-1])) {
 				quote = c
 			}
-		case c == '#' && (i == 0 || s[i-1] == ' '):
-			return s[:i]
+		case c == '#' && (i == 0 || text[i-1] == ' '):
+			return text[:i]
 		}
 	}
-	return s
+	return text
 }
 
 // block parses the collection that starts at the current line, whose
@@ -117,39 +117,39 @@ func (p *parser) block(indent int) (any, error) {
 }
 
 // splitKey cuts "key: value" at the first colon that ends a key.
-func splitKey(s string) (key, rest string, ok bool) {
-	if s == "" || s[0] == '[' || s[0] == '{' {
+func splitKey(text string) (key, rest string, ok bool) {
+	if text == "" || text[0] == '[' || text[0] == '{' {
 		return "", "", false
 	}
-	if s[0] == '"' || s[0] == '\'' {
-		end := closingQuote(s)
-		if end < 0 || end+1 >= len(s) || s[end+1] != ':' || (end+2 < len(s) && s[end+2] != ' ') {
+	if text[0] == '"' || text[0] == '\'' {
+		end := closingQuote(text)
+		if end < 0 || end+1 >= len(text) || text[end+1] != ':' || (end+2 < len(text) && text[end+2] != ' ') {
 			return "", "", false
 		}
-		k, err := scalar(s[:end+1], 0)
+		k, err := scalar(text[:end+1], 0)
 		ks, _ := k.(string)
 		if err != nil {
 			return "", "", false
 		}
-		return ks, strings.TrimSpace(s[end+2:]), true
+		return ks, strings.TrimSpace(text[end+2:]), true
 	}
-	for i := 0; i < len(s); i++ {
-		if s[i] == ':' && (i+1 == len(s) || s[i+1] == ' ') {
-			return strings.TrimSpace(s[:i]), strings.TrimSpace(s[i+1:]), true
+	for i := 0; i < len(text); i++ {
+		if text[i] == ':' && (i+1 == len(text) || text[i+1] == ' ') {
+			return strings.TrimSpace(text[:i]), strings.TrimSpace(text[i+1:]), true
 		}
 	}
 	return "", "", false
 }
 
-func closingQuote(s string) int {
-	q := s[0]
-	for i := 1; i < len(s); i++ {
-		if q == '"' && s[i] == '\\' {
+func closingQuote(text string) int {
+	q := text[0]
+	for i := 1; i < len(text); i++ {
+		if q == '"' && text[i] == '\\' {
 			i++
 			continue
 		}
-		if s[i] == q {
-			if q == '\'' && i+1 < len(s) && s[i+1] == '\'' {
+		if text[i] == q {
+			if q == '\'' && i+1 < len(text) && text[i+1] == '\'' {
 				i++
 				continue
 			}
@@ -332,29 +332,29 @@ func foldLines(lines []string) string {
 
 // scalar reads a one-line value: quoted text, a flow collection, null,
 // a boolean, a number or plain text.
-func scalar(s string, no int) (any, error) {
-	s = strings.TrimSpace(s)
+func scalar(text string, no int) (any, error) {
+	text = strings.TrimSpace(text)
 	switch {
-	case s == "":
+	case text == "":
 		return nil, nil
-	case s[0] == '"':
-		end := closingQuote(s)
-		if end != len(s)-1 {
+	case text[0] == '"':
+		end := closingQuote(text)
+		if end != len(text)-1 {
 			return nil, &Error{no, "text after a quoted string, or an unterminated quote"}
 		}
-		u, err := strconv.Unquote(s)
+		u, err := strconv.Unquote(text)
 		if err != nil { // YAML escapes JSON does not have, such as \/ or \e: keep the text
-			return s[1 : len(s)-1], nil
+			return text[1 : len(text)-1], nil
 		}
 		return u, nil
-	case s[0] == '\'':
-		end := closingQuote(s)
-		if end != len(s)-1 {
+	case text[0] == '\'':
+		end := closingQuote(text)
+		if end != len(text)-1 {
 			return nil, &Error{no, "text after a quoted string, or an unterminated quote"}
 		}
-		return strings.ReplaceAll(s[1:end], "''", "'"), nil
-	case s[0] == '[' || s[0] == '{':
-		fp := &flow{s: s, no: no}
+		return strings.ReplaceAll(text[1:end], "''", "'"), nil
+	case text[0] == '[' || text[0] == '{':
+		fp := &flow{s: text, no: no}
 		v, err := fp.value()
 		if err != nil {
 			return nil, err
@@ -365,12 +365,12 @@ func scalar(s string, no int) (any, error) {
 		}
 		return v, nil
 	}
-	return plain(s), nil
+	return plain(text), nil
 }
 
 // plain converts unquoted text by the YAML core schema.
-func plain(s string) any {
-	switch s {
+func plain(text string) any {
+	switch text {
 	case "null", "Null", "NULL", "~":
 		return nil
 	case "true", "True", "TRUE":
@@ -378,13 +378,13 @@ func plain(s string) any {
 	case "false", "False", "FALSE":
 		return false
 	}
-	if n, err := strconv.ParseInt(s, 10, 64); err == nil && !(len(s) > 1 && s[0] == '0') {
+	if n, err := strconv.ParseInt(text, 10, 64); err == nil && !(len(text) > 1 && text[0] == '0') {
 		return float64(n)
 	}
-	if f, err := strconv.ParseFloat(s, 64); err == nil && !strings.ContainsAny(s, "_xXnN") && (s[0] != '0' || strings.HasPrefix(s, "0.")) {
+	if f, err := strconv.ParseFloat(text, 64); err == nil && !strings.ContainsAny(text, "_xXnN") && (text[0] != '0' || strings.HasPrefix(text, "0.")) {
 		return f
 	}
-	return s
+	return text
 }
 
 // flow reads [a, b] and {k: v} written on one line.
