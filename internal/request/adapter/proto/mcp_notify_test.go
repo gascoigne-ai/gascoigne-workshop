@@ -39,41 +39,41 @@ func (server *notifyServer) streamHeaders(t *testing.T) http.Header {
 func newNotifyServer(t *testing.T, streamStatus int) *notifyServer {
 	t.Helper()
 	server := &notifyServer{streamHdr: make(chan http.Header, 1)}
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet {
-			server.streamHdr <- r.Header.Clone()
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		if request.Method == http.MethodGet {
+			server.streamHdr <- request.Header.Clone()
 			if streamStatus != http.StatusOK {
-				w.WriteHeader(streamStatus)
+				writer.WriteHeader(streamStatus)
 				return
 			}
-			w.Header().Set("Content-Type", "text/event-stream")
-			fmt.Fprint(w, "data: {\"jsonrpc\":\"2.0\",\"method\":\"notifications/tools/list_changed\"}\n\n")
-			w.(http.Flusher).Flush()
-			<-r.Context().Done() // the stream stays open until the client leaves
+			writer.Header().Set("Content-Type", "text/event-stream")
+			fmt.Fprint(writer, "data: {\"jsonrpc\":\"2.0\",\"method\":\"notifications/tools/list_changed\"}\n\n")
+			writer.(http.Flusher).Flush()
+			<-request.Context().Done() // the stream stays open until the client leaves
 			return
 		}
-		body, _ := io.ReadAll(r.Body)
+		body, _ := io.ReadAll(request.Body)
 		var message map[string]any
 		_ = json.Unmarshal(body, &message)
 		if message["method"] == "tools/list" {
 			n := server.listCalls.Add(1)
 			b, _ := json.Marshal(map[string]any{"jsonrpc": "2.0", "id": message["id"], "result": map[string]any{
 				"tools": []any{map[string]any{"name": fmt.Sprintf("tool-%d", n)}}}})
-			w.Header().Set("Content-Type", "application/json")
-			w.Write(b)
+			writer.Header().Set("Content-Type", "application/json")
+			writer.Write(b)
 			return
 		}
 		out := mcpReply(message)
 		if out == nil {
-			w.WriteHeader(http.StatusAccepted)
+			writer.WriteHeader(http.StatusAccepted)
 			return
 		}
 		if message["method"] == "initialize" {
-			w.Header().Set("Mcp-Session-Id", "sess-9")
+			writer.Header().Set("Mcp-Session-Id", "sess-9")
 		}
 		b, _ := json.Marshal(out)
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(b)
+		writer.Header().Set("Content-Type", "application/json")
+		writer.Write(b)
 	}))
 	t.Cleanup(srv.Close)
 	server.url = srv.URL

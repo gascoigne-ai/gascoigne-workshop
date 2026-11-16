@@ -27,8 +27,8 @@ func TestRegistryNames(t *testing.T) {
 }
 
 func TestRegistrySend(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		io.WriteString(w, "ok")
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+		io.WriteString(writer, "ok")
 	}))
 	defer srv.Close()
 
@@ -58,13 +58,13 @@ func TestRegistrySend(t *testing.T) {
 }
 
 func TestRESTSend(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		body, _ := io.ReadAll(r.Body)
-		w.Header().Set("X-Echo-Method", r.Method)
-		w.Header().Set("X-Echo-Auth", r.Header.Get("Authorization"))
-		w.Header().Set("X-Echo-Skipped", r.Header.Get("X-Off"))
-		w.WriteHeader(http.StatusCreated)
-		w.Write(body)
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		body, _ := io.ReadAll(request.Body)
+		writer.Header().Set("X-Echo-Method", request.Method)
+		writer.Header().Set("X-Echo-Auth", request.Header.Get("Authorization"))
+		writer.Header().Set("X-Echo-Skipped", request.Header.Get("X-Off"))
+		writer.WriteHeader(http.StatusCreated)
+		writer.Write(body)
 	}))
 	defer srv.Close()
 
@@ -135,9 +135,9 @@ type capture struct {
 func captureServer(t *testing.T) (*httptest.Server, *capture) {
 	t.Helper()
 	got := &capture{}
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		got.method, got.contentType = r.Method, r.Header.Get("Content-Type")
-		got.body, _ = io.ReadAll(r.Body)
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		got.method, got.contentType = request.Method, request.Header.Get("Content-Type")
+		got.body, _ = io.ReadAll(request.Body)
 	}))
 	t.Cleanup(srv.Close)
 	return srv, got
@@ -227,10 +227,10 @@ func TestUserContentTypeHeaderWins(t *testing.T) {
 }
 
 func TestRESTRedirects(t *testing.T) {
-	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { io.WriteString(w, "landed") }))
+	target := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) { io.WriteString(writer, "landed") }))
 	defer target.Close()
-	redirector := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, target.URL, http.StatusFound)
+	redirector := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		http.Redirect(writer, request, target.URL, http.StatusFound)
 	}))
 	defer redirector.Close()
 
@@ -266,7 +266,7 @@ func TestRESTRedirects(t *testing.T) {
 
 func TestRESTExplainsCancelAndTimeout(t *testing.T) {
 	block := make(chan struct{})
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { <-block }))
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) { <-block }))
 	defer srv.Close()
 	defer close(block)
 
@@ -307,8 +307,8 @@ func TestRESTAuthTypes(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var gotHeader http.Header
 			var gotQuery string
-			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				gotHeader, gotQuery = r.Header.Clone(), r.URL.RawQuery
+			srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+				gotHeader, gotQuery = request.Header.Clone(), request.URL.RawQuery
 			}))
 			defer srv.Close()
 			_, err := REST{}.Send(context.Background(), model.Request{URL: srv.URL + tt.path, Auth: tt.auth})
@@ -330,7 +330,7 @@ func TestRESTAuthTypes(t *testing.T) {
 
 func TestAuthOverridesAManualAuthorizationHeader(t *testing.T) {
 	var got string
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { got = r.Header.Get("Authorization") }))
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) { got = request.Header.Get("Authorization") }))
 	defer srv.Close()
 	REST{}.Send(context.Background(), model.Request{
 		URL:     srv.URL,

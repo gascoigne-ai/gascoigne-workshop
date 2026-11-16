@@ -28,8 +28,8 @@ const samplingParams = `{"messages":[{"role":"user","content":{"type":"text","te
 func newSamplingServer(t *testing.T) *samplingServer {
 	t.Helper()
 	server := &samplingServer{}
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		body, _ := io.ReadAll(r.Body)
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		body, _ := io.ReadAll(request.Body)
 		var m map[string]any
 		_ = json.Unmarshal(body, &m)
 		switch {
@@ -37,7 +37,7 @@ func newSamplingServer(t *testing.T) *samplingServer {
 			server.mu.Lock()
 			server.answer = m
 			server.mu.Unlock()
-			w.WriteHeader(http.StatusAccepted)
+			writer.WriteHeader(http.StatusAccepted)
 			return
 		case m["method"] == "initialize":
 			params, _ := m["params"].(map[string]any)
@@ -47,14 +47,14 @@ func newSamplingServer(t *testing.T) *samplingServer {
 		}
 		out := mcpReply(m)
 		if out == nil {
-			w.WriteHeader(http.StatusAccepted)
+			writer.WriteHeader(http.StatusAccepted)
 			return
 		}
 		b, _ := json.Marshal(out)
-		w.Header().Set("Content-Type", "text/event-stream")
-		io.WriteString(w, "data: "+string(b)+"\n\n")
+		writer.Header().Set("Content-Type", "text/event-stream")
+		io.WriteString(writer, "data: "+string(b)+"\n\n")
 		if m["method"] == "tools/list" {
-			io.WriteString(w, `data: {"jsonrpc":"2.0","id":"s1","method":"sampling/createMessage","params":`+samplingParams+`}`+"\n\n")
+			io.WriteString(writer, `data: {"jsonrpc":"2.0","id":"s1","method":"sampling/createMessage","params":`+samplingParams+`}`+"\n\n")
 		}
 	}))
 	t.Cleanup(srv.Close)

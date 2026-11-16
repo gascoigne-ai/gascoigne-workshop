@@ -165,15 +165,15 @@ func (s *sseSession) Events() <-chan Event { return s.events }
 
 func (s *sseSession) isClosing() bool { return s.closing.Load() }
 
-func (s *sseSession) emit(e Event) {
-	e.Time = time.Now()
+func (s *sseSession) emit(event Event) {
+	event.Time = time.Now()
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.ended {
 		return
 	}
 	select {
-	case s.events <- e:
+	case s.events <- event:
 	case <-s.done:
 	}
 }

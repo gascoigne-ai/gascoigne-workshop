@@ -20,9 +20,9 @@ func TestFileBodyIsSentAsItIsWithItsTypeFromTheExtension(t *testing.T) {
 	path := filepath.Join(dir, "data.json")
 	os.WriteFile(path, []byte(`{"a":1}`), 0o644)
 	var gotBody, gotType string
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		b, _ := io.ReadAll(r.Body)
-		gotBody, gotType = string(b), r.Header.Get("Content-Type")
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		b, _ := io.ReadAll(request.Body)
+		gotBody, gotType = string(b), request.Header.Get("Content-Type")
 	}))
 	defer srv.Close()
 	resp, _ := REST{}.Send(context.Background(), model.Request{Method: "POST", URL: srv.URL, BodyType: model.BodyFile, Body: path})

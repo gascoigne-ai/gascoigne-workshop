@@ -16,7 +16,7 @@ import (
 func TestReadEventsFollowsTheStreamFormat(t *testing.T) {
 	stream := ": comment\nid: 7\nevent: tick\ndata: one\n\ndata: a\ndata: b\n\nretry: 100\n\nevent: noData\n\ndata: last"
 	var got []sseEvent
-	readEvents(bufio.NewScanner(strings.NewReader(stream)), func(e sseEvent) { got = append(got, e) })
+	readEvents(bufio.NewScanner(strings.NewReader(stream)), func(sseEventValue sseEvent) { got = append(got, sseEventValue) })
 	want := []sseEvent{{"tick", "one", "7"}, {"", "a\nb", "7"}, {"", "last", "7"}}
 	if len(got) != len(want) {
 		t.Fatalf("%+v", got)
@@ -30,18 +30,18 @@ func TestReadEventsFollowsTheStreamFormat(t *testing.T) {
 
 func sseServer(t *testing.T, events int, hold bool) string {
 	t.Helper()
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("Accept") != "text/event-stream" {
-			http.Error(w, "wrong Accept", http.StatusBadRequest)
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		if request.Header.Get("Accept") != "text/event-stream" {
+			http.Error(writer, "wrong Accept", http.StatusBadRequest)
 			return
 		}
-		w.Header().Set("Content-Type", "text/event-stream")
+		writer.Header().Set("Content-Type", "text/event-stream")
 		for i := 1; i <= events; i++ {
-			fmt.Fprintf(w, "id: %d\nevent: n\ndata: %d\n\n", i, i)
-			w.(http.Flusher).Flush()
+			fmt.Fprintf(writer, "id: %d\nevent: n\ndata: %d\n\n", i, i)
+			writer.(http.Flusher).Flush()
 		}
 		if hold {
-			<-r.Context().Done()
+			<-request.Context().Done()
 		}
 	}))
 	t.Cleanup(srv.Close)
@@ -96,7 +96,7 @@ func TestSSEOneShotSendReturnsTheFirstEventAndErrorsAreExplained(t *testing.T) {
 	if resp.Err != "" || string(resp.Body) != "[1] 1" || resp.Status != 200 {
 		t.Fatalf("%+v", resp)
 	}
-	bad := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { http.Error(w, "no", http.StatusForbidden) }))
+	bad := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) { http.Error(writer, "no", http.StatusForbidden) }))
 	defer bad.Close()
 	if _, err := (SSE{}).Connect(context.Background(), model.Request{URL: bad.URL}); err == nil || !strings.Contains(err.Error(), "403") {
 		t.Fatalf("err = %v", err)

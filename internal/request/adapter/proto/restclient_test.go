@@ -25,11 +25,11 @@ import (
 
 func TestCookiesSetByOneRequestAreSentWithTheNext(t *testing.T) {
 	var got string
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if c, err := r.Cookie("session"); err == nil {
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		if c, err := request.Cookie("session"); err == nil {
 			got = c.Value
 		}
-		http.SetCookie(w, &http.Cookie{Name: "session", Value: "abc", Path: "/"})
+		http.SetCookie(writer, &http.Cookie{Name: "session", Value: "abc", Path: "/"})
 	}))
 	defer srv.Close()
 	jar, _ := cookiejar.New(nil)
@@ -48,7 +48,7 @@ func TestCookiesSetByOneRequestAreSentWithTheNext(t *testing.T) {
 }
 
 func TestInsecureTLSAcceptsASelfSignedServerOnlyWhenAsked(t *testing.T) {
-	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.Write([]byte("ok")) }))
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) { writer.Write([]byte("ok")) }))
 	defer srv.Close()
 	rest := REST{} // no trusted CA: the test server's certificate is unknown
 	resp, _ := rest.Send(context.Background(), model.Request{Method: "GET", URL: srv.URL})
@@ -63,9 +63,9 @@ func TestInsecureTLSAcceptsASelfSignedServerOnlyWhenAsked(t *testing.T) {
 
 func TestProxyIsUsedAndABadOneIsExplained(t *testing.T) {
 	var viaProxy atomic.Int32
-	proxy := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	proxy := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		viaProxy.Add(1)
-		w.Write([]byte("from proxy for " + r.URL.Host))
+		writer.Write([]byte("from proxy for " + request.URL.Host))
 	}))
 	defer proxy.Close()
 	resp, _ := REST{Proxy: proxy.URL}.Send(context.Background(), model.Request{Method: "GET", URL: "http://example.invalid/x"})
@@ -88,7 +88,7 @@ func writePEM(t *testing.T, name string, cert []byte) string {
 }
 
 func TestACustomCAMakesAnUnknownServerTrusted(t *testing.T) {
-	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.Write([]byte("trusted")) }))
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) { writer.Write([]byte("trusted")) }))
 	defer srv.Close()
 	if resp, _ := (REST{}).Send(context.Background(), model.Request{Method: "GET", URL: srv.URL}); resp.Err == "" {
 		t.Fatal("without the CA the certificate is unknown")
@@ -128,9 +128,9 @@ func TestClientCertificateIsPresentedToServersThatAskForOne(t *testing.T) {
 	os.WriteFile(keyFile, pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: keyDER}), 0o600)
 
 	var subject string
-	srv := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if len(r.TLS.PeerCertificates) > 0 {
-			subject = r.TLS.PeerCertificates[0].Subject.CommonName
+	srv := httptest.NewUnstartedServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		if len(request.TLS.PeerCertificates) > 0 {
+			subject = request.TLS.PeerCertificates[0].Subject.CommonName
 		}
 	}))
 	srv.TLS = &tls.Config{ClientAuth: tls.RequireAnyClientCert}

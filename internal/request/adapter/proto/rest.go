@@ -120,9 +120,9 @@ func (r REST) Send(ctx context.Context, req model.Request) (model.Response, erro
 	}, nil
 }
 
-func headerRows(h http.Header) []model.KV {
+func headerRows(headerValue http.Header) []model.KV {
 	var rows []model.KV
-	for name, values := range h {
+	for name, values := range headerValue {
 		for _, v := range values {
 			rows = append(rows, model.KV{Name: name, Value: v, Enabled: true})
 		}
@@ -134,10 +134,14 @@ func headerRows(h http.Header) []model.KV {
 // bodyEncoders turn a request into body bytes and the Content-Type to
 // send with them. "" is the legacy raw body: sent as is, with no type.
 var bodyEncoders = map[string]func(req model.Request) ([]byte, string, error){
-	"":                  func(r model.Request) ([]byte, string, error) { return []byte(r.Body), "", nil },
-	model.BodyNone:      func(model.Request) ([]byte, string, error) { return nil, "", nil },
-	model.BodyJSON:      func(r model.Request) ([]byte, string, error) { return []byte(r.Body), "application/json", nil },
-	model.BodyText:      func(r model.Request) ([]byte, string, error) { return []byte(r.Body), "text/plain; charset=utf-8", nil },
+	"":             func(request model.Request) ([]byte, string, error) { return []byte(request.Body), "", nil },
+	model.BodyNone: func(model.Request) ([]byte, string, error) { return nil, "", nil },
+	model.BodyJSON: func(request model.Request) ([]byte, string, error) {
+		return []byte(request.Body), "application/json", nil
+	},
+	model.BodyText: func(request model.Request) ([]byte, string, error) {
+		return []byte(request.Body), "text/plain; charset=utf-8", nil
+	},
 	model.BodyForm:      encodeForm,
 	model.BodyMultipart: encodeMultipart,
 	model.BodyFile:      encodeFile,
@@ -212,23 +216,23 @@ func failureText(err error) string {
 var authAppliers = map[string]func(a model.Auth, r *http.Request){
 	"":             func(model.Auth, *http.Request) {},
 	model.AuthNone: func(model.Auth, *http.Request) {},
-	model.AuthBearer: func(a model.Auth, r *http.Request) {
-		r.Header.Set("Authorization", "Bearer "+a.Token)
+	model.AuthBearer: func(auth model.Auth, request *http.Request) {
+		request.Header.Set("Authorization", "Bearer "+auth.Token)
 	},
-	model.AuthBasic: func(a model.Auth, r *http.Request) {
-		r.SetBasicAuth(a.User, a.Password)
+	model.AuthBasic: func(auth model.Auth, request *http.Request) {
+		request.SetBasicAuth(auth.User, auth.Password)
 	},
-	model.AuthAPIKey: func(a model.Auth, r *http.Request) {
-		if a.KeyName == "" {
+	model.AuthAPIKey: func(auth model.Auth, request *http.Request) {
+		if auth.KeyName == "" {
 			return
 		}
-		if a.KeyIn == model.KeyInQuery {
-			q := r.URL.Query()
-			q.Set(a.KeyName, a.KeyValue)
-			r.URL.RawQuery = q.Encode()
+		if auth.KeyIn == model.KeyInQuery {
+			q := request.URL.Query()
+			q.Set(auth.KeyName, auth.KeyValue)
+			request.URL.RawQuery = q.Encode()
 			return
 		}
-		r.Header.Set(a.KeyName, a.KeyValue)
+		request.Header.Set(auth.KeyName, auth.KeyValue)
 	},
 }
 
@@ -288,7 +292,7 @@ func fileContentType(path string) string {
 }
 
 // writeFilePart adds the file at path as a multipart part called name.
-func writeFilePart(w *multipart.Writer, name, path string) error {
+func writeFilePart(form *multipart.Writer, name, path string) error {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return fmt.Errorf("form field %q: %w", name, err)
@@ -296,7 +300,7 @@ func writeFilePart(w *multipart.Writer, name, path string) error {
 	h := make(textproto.MIMEHeader)
 	h.Set("Content-Disposition", fmt.Sprintf(`form-data; name=%q; filename=%q`, name, filepath.Base(path)))
 	h.Set("Content-Type", fileContentType(path))
-	part, err := w.CreatePart(h)
+	part, err := form.CreatePart(h)
 	if err != nil {
 		return err
 	}

@@ -15,35 +15,35 @@ import (
 
 func wsServer(t *testing.T, handle func(c *ws.Conn, r *http.Request)) string {
 	t.Helper()
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		c, err := ws.Upgrade(w, r)
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		c, err := ws.Upgrade(writer, request)
 		if err != nil {
 			return
 		}
 		defer c.Close(ws.CloseNormal, "")
-		handle(c, r)
+		handle(c, request)
 	}))
 	t.Cleanup(srv.Close)
 	return "ws" + strings.TrimPrefix(srv.URL, "http")
 }
 
-func echoHandler(c *ws.Conn, _ *http.Request) {
+func echoHandler(conn *ws.Conn, _ *http.Request) {
 	for {
-		m, err := c.Read()
+		m, err := conn.Read()
 		if err != nil || m.Type == ws.Close {
 			return
 		}
 		if m.Type == ws.Text || m.Type == ws.Binary {
-			c.Write(m.Type, m.Data)
+			conn.Write(m.Type, m.Data)
 		}
 	}
 }
 
 // next waits for the next event.
-func next(t *testing.T, s Session) Event {
+func next(t *testing.T, session Session) Event {
 	t.Helper()
 	select {
-	case e, ok := <-s.Events():
+	case e, ok := <-session.Events():
 		if !ok {
 			t.Fatal("events closed")
 		}
@@ -92,8 +92,8 @@ func TestWebSocketSessionLogsASendBeforeItsEcho(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			release := make(chan struct{})
-			url := wsServer(t, func(c *ws.Conn, _ *http.Request) {
-				message, err := c.Read()
+			url := wsServer(t, func(conn *ws.Conn, _ *http.Request) {
+				message, err := conn.Read()
 				if err != nil {
 					return
 				}
@@ -101,8 +101,8 @@ func TestWebSocketSessionLogsASendBeforeItsEcho(t *testing.T) {
 				case <-release:
 				case <-time.After(3 * time.Second):
 				}
-				c.Write(message.Type, message.Data)
-				c.Read() // until the client closes
+				conn.Write(message.Type, message.Data)
+				conn.Read() // until the client closes
 			})
 			conn, err := ws.Dial(context.Background(), url, ws.Options{})
 			if err != nil {
@@ -136,7 +136,7 @@ func TestWebSocketSessionLogsASendBeforeItsEcho(t *testing.T) {
 }
 
 func TestWebSocketSessionReportsServerCloseAndThenEnds(t *testing.T) {
-	url := wsServer(t, func(c *ws.Conn, _ *http.Request) { c.Close(ws.CloseGoingAway, "restart") })
+	url := wsServer(t, func(conn *ws.Conn, _ *http.Request) { conn.Close(ws.CloseGoingAway, "restart") })
 	s, err := WebSocket{}.Connect(context.Background(), model.Request{URL: url})
 	if err != nil {
 		t.Fatal(err)
@@ -162,7 +162,7 @@ func TestWebSocketSessionReportsServerCloseAndThenEnds(t *testing.T) {
 
 func TestWebSocketSendsHeadersAuthAndSubprotocols(t *testing.T) {
 	got := make(chan http.Header, 1)
-	url := wsServer(t, func(c *ws.Conn, r *http.Request) { got <- r.Header })
+	url := wsServer(t, func(conn *ws.Conn, request *http.Request) { got <- request.Header })
 	req := model.Request{
 		URL: url,
 		Headers: []model.KV{
@@ -194,11 +194,11 @@ func TestWebSocketConnectFailureIsAnError(t *testing.T) {
 
 func TestWebSocketSlowConsumerBlocksTheReaderInsteadOfDroppingMessages(t *testing.T) {
 	const n = 600 // more than the event buffer
-	url := wsServer(t, func(c *ws.Conn, _ *http.Request) {
+	url := wsServer(t, func(conn *ws.Conn, _ *http.Request) {
 		for i := 0; i < n; i++ {
-			c.Write(ws.Text, []byte("m"))
+			conn.Write(ws.Text, []byte("m"))
 		}
-		c.Read()
+		conn.Read()
 	})
 	s, err := WebSocket{}.Connect(context.Background(), model.Request{URL: url})
 	if err != nil {

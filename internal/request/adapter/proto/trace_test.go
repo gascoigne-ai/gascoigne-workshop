@@ -12,9 +12,9 @@ import (
 )
 
 func TestRESTReportsWhereTheTimeWent(t *testing.T) {
-	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
 		time.Sleep(20 * time.Millisecond)
-		w.Write([]byte("ok"))
+		writer.Write([]byte("ok"))
 	}))
 	defer srv.Close()
 	resp, err := REST{Client: srv.Client()}.Send(context.Background(), model.Request{Method: "GET", URL: srv.URL})
@@ -34,8 +34,8 @@ func TestRESTReportsWhereTheTimeWent(t *testing.T) {
 }
 
 func TestRESTCutsLongBodiesAndSaysSo(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.Write([]byte(strings.Repeat("x", 100)))
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+		writer.Write([]byte(strings.Repeat("x", 100)))
 	}))
 	defer srv.Close()
 	resp, _ := REST{MaxBody: 40}.Send(context.Background(), model.Request{Method: "GET", URL: srv.URL})

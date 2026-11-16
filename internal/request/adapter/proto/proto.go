@@ -30,10 +30,10 @@ func Configured(config port.ProtocolConfig) Registry {
 }
 
 func sortKV(rows []model.KV) {
-	sort.Slice(rows, func(i, j int) bool {
-		if rows[i].Name != rows[j].Name {
-			return rows[i].Name < rows[j].Name
+	sort.Slice(rows, func(index, other int) bool {
+		if rows[index].Name != rows[other].Name {
+			return rows[index].Name < rows[other].Name
 		}
-		return rows[i].Value < rows[j].Value
+		return rows[index].Value < rows[other].Value
 	})
 }

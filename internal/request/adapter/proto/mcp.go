@@ -146,15 +146,15 @@ type mcpSession struct {
 func (s *mcpSession) Events() <-chan Event { return s.events }
 
 // emit queues e unless the session is over.
-func (s *mcpSession) emit(e Event) {
-	e.Time = s.now()
+func (s *mcpSession) emit(event Event) {
+	event.Time = s.now()
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.ended {
 		return
 	}
 	select {
-	case s.events <- e:
+	case s.events <- event:
 	case <-s.done:
 	}
 }
@@ -249,10 +249,10 @@ func (s *mcpSession) deliver(msg []byte) {
 	}
 }
 
-func compactJSON(b []byte) string {
+func compactJSON(data []byte) string {
 	var out bytes.Buffer
-	if json.Compact(&out, b) != nil {
-		return string(b)
+	if json.Compact(&out, data) != nil {
+		return string(data)
 	}
 	return out.String()
 }
@@ -272,14 +272,14 @@ func (s *mcpSession) build(method string, params any) (int64, []byte, error) {
 }
 
 // write sends a message and logs it.
-func (s *mcpSession) write(ctx context.Context, kind string, b []byte) error {
+func (s *mcpSession) write(ctx context.Context, kind string, data []byte) error {
 	select {
 	case <-s.done:
 		return errors.New("the connection is closed")
 	default:
 	}
-	s.emit(Event{Dir: Sent, Kind: kind, Text: compactJSON(b), Size: len(b)}) // before the send: an answer may arrive during it
-	return s.tr.send(ctx, b)
+	s.emit(Event{Dir: Sent, Kind: kind, Text: compactJSON(data), Size: len(data)}) // before the send: an answer may arrive during it
+	return s.tr.send(ctx, data)
 }
 
 // request sends a request without waiting for the answer, which arrives
@@ -455,9 +455,9 @@ func newMCPHTTP(req model.Request, deliver func([]byte)) (*mcpHTTP, error) {
 	return &mcpHTTP{req: req, client: &http.Client{}, deliver: deliver, ctx: ctx, cancel: cancel}, nil
 }
 
-func (h *mcpHTTP) setVersion(v string) {
+func (h *mcpHTTP) setVersion(value string) {
 	h.mu.Lock()
-	h.version = v
+	h.version = value
 	h.mu.Unlock()
 }
 
@@ -570,8 +570,8 @@ func deliverJSON(body []byte, deliver func([]byte)) {
 }
 
 // readSSE reads server-sent events and delivers each event's data.
-func readSSE(r io.Reader, deliver func([]byte)) {
-	sc := bufio.NewScanner(r)
+func readSSE(reader io.Reader, deliver func([]byte)) {
+	sc := bufio.NewScanner(reader)
 	sc.Buffer(make([]byte, 64<<10), mcpMaxMessage)
 	var data []string
 	flush := func() {
@@ -689,21 +689,21 @@ func (m *mcpStdio) close() error {
 // roots/list (this client offers no roots), and refuses anything else with
 // "method not found", so a server that waits for an answer is not left
 // hanging.
-func (s *mcpSession) answerServer(m rpcMessage) {
-	reply := map[string]any{"jsonrpc": "2.0", "id": json.RawMessage(*m.ID)}
-	switch m.Method {
+func (s *mcpSession) answerServer(message rpcMessage) {
+	reply := map[string]any{"jsonrpc": "2.0", "id": json.RawMessage(*message.ID)}
+	switch message.Method {
 	case "ping":
 		reply["result"] = map[string]any{}
 	case "roots/list":
 		reply["result"] = map[string]any{"roots": []any{}}
 	case "sampling/createMessage":
 		if s.sampler == nil {
-			reply["error"] = map[string]any{"code": -32601, "message": "method not found: " + m.Method}
+			reply["error"] = map[string]any{"code": -32601, "message": "method not found: " + message.Method}
 			break
 		}
-		s.sample(m, reply)
+		s.sample(message, reply)
 	default:
-		reply["error"] = map[string]any{"code": -32601, "message": "method not found: " + m.Method}
+		reply["error"] = map[string]any{"code": -32601, "message": "method not found: " + message.Method}
 	}
 	b, err := json.Marshal(reply)
 	if err != nil {
@@ -718,7 +718,7 @@ const sampleRejected = "User rejected sampling request"
 // sample puts a sampling request to the Sampler and fills reply with its
 // answer: a text message, or an error when the request is declined or
 // cannot be read.
-func (s *mcpSession) sample(m rpcMessage, reply map[string]any) {
+func (s *mcpSession) sample(rpcMessageValue rpcMessage, reply map[string]any) {
 	var params struct {
 		Messages []struct {
 			Role    string `json:"role"`
@@ -730,7 +730,7 @@ func (s *mcpSession) sample(m rpcMessage, reply map[string]any) {
 		SystemPrompt string `json:"systemPrompt"`
 		MaxTokens    int    `json:"maxTokens"`
 	}
-	if err := json.Unmarshal(m.Params, &params); err != nil {
+	if err := json.Unmarshal(rpcMessageValue.Params, &params); err != nil {
 		reply["error"] = map[string]any{"code": -32602, "message": "invalid sampling request: " + err.Error()}
 		return
 	}

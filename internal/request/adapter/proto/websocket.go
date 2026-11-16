@@ -142,10 +142,10 @@ type wsSession struct {
 func (s *wsSession) Events() <-chan Event { return s.events }
 
 // emit queues e, waiting for a slow consumer, unless the session was closed.
-func (s *wsSession) emit(e Event) {
-	e.Time = s.now()
+func (s *wsSession) emit(event Event) {
+	event.Time = s.now()
 	select {
-	case s.events <- e:
+	case s.events <- event:
 	case <-s.done:
 	}
 }
@@ -184,11 +184,11 @@ func (s *wsSession) readLoop() {
 }
 
 // render shows a message as text; binary data as hex, cut at 64 bytes.
-func render(m ws.Message) string {
-	if m.Type == ws.Text || utf8.Valid(m.Data) {
-		return string(m.Data)
+func render(messageValue ws.Message) string {
+	if messageValue.Type == ws.Text || utf8.Valid(messageValue.Data) {
+		return string(messageValue.Data)
 	}
-	d := m.Data
+	d := messageValue.Data
 	suffix := ""
 	if len(d) > 64 {
 		d, suffix = d[:64], "…"

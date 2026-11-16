@@ -15,11 +15,11 @@ import (
 func TestGraphQLBodyCarriesQueryAndVariablesAsJSON(t *testing.T) {
 	var got map[string]any
 	var ct string
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		b, _ := io.ReadAll(r.Body)
-		ct = r.Header.Get("Content-Type")
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		b, _ := io.ReadAll(request.Body)
+		ct = request.Header.Get("Content-Type")
 		json.Unmarshal(b, &got)
-		w.Write([]byte(`{"data":{}}`))
+		writer.Write([]byte(`{"data":{}}`))
 	}))
 	defer srv.Close()
 	req := model.Request{Method: "POST", URL: srv.URL, BodyType: model.BodyGraphQL,

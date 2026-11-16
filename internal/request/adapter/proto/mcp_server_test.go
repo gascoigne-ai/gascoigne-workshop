@@ -17,30 +17,30 @@ import (
 func TestMCPAnswersRequestsTheServerSends(t *testing.T) {
 	var mu sync.Mutex
 	replies := map[string]map[string]any{}
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		body, _ := io.ReadAll(r.Body)
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		body, _ := io.ReadAll(request.Body)
 		var m map[string]any
 		json.Unmarshal(body, &m)
 		if m["method"] == nil && m["id"] != nil { // an answer to one of the server's requests
 			mu.Lock()
 			replies[string(body)[:0]+toKey(m["id"])] = m
 			mu.Unlock()
-			w.WriteHeader(http.StatusAccepted)
+			writer.WriteHeader(http.StatusAccepted)
 			return
 		}
 		out := mcpReply(m)
 		if out == nil {
-			w.WriteHeader(http.StatusAccepted)
+			writer.WriteHeader(http.StatusAccepted)
 			return
 		}
 		b, _ := json.Marshal(out)
-		w.Header().Set("Content-Type", "text/event-stream")
+		writer.Header().Set("Content-Type", "text/event-stream")
 		// the answer, then requests of the server's own on the same stream
-		io.WriteString(w, "data: "+string(b)+"\n\n")
+		io.WriteString(writer, "data: "+string(b)+"\n\n")
 		if m["method"] == "tools/list" {
-			io.WriteString(w, `data: {"jsonrpc":"2.0","id":"s1","method":"roots/list"}`+"\n\n")
-			io.WriteString(w, `data: {"jsonrpc":"2.0","id":"s2","method":"ping"}`+"\n\n")
-			io.WriteString(w, `data: {"jsonrpc":"2.0","id":"s3","method":"sampling/createMessage"}`+"\n\n")
+			io.WriteString(writer, `data: {"jsonrpc":"2.0","id":"s1","method":"roots/list"}`+"\n\n")
+			io.WriteString(writer, `data: {"jsonrpc":"2.0","id":"s2","method":"ping"}`+"\n\n")
+			io.WriteString(writer, `data: {"jsonrpc":"2.0","id":"s3","method":"sampling/createMessage"}`+"\n\n")
 		}
 	}))
 	defer srv.Close()
@@ -76,7 +76,7 @@ func TestMCPAnswersRequestsTheServerSends(t *testing.T) {
 	}
 }
 
-func toKey(v any) string {
-	s, _ := v.(string)
+func toKey(value any) string {
+	s, _ := value.(string)
 	return s
 }

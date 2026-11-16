@@ -18,11 +18,11 @@ import (
 )
 
 // mcpReply answers one JSON-RPC request the way a small server would.
-func mcpReply(m map[string]any) map[string]any {
+func mcpReply(other map[string]any) map[string]any {
 	reply := func(result any) map[string]any {
-		return map[string]any{"jsonrpc": "2.0", "id": m["id"], "result": result}
+		return map[string]any{"jsonrpc": "2.0", "id": other["id"], "result": result}
 	}
-	switch m["method"] {
+	switch other["method"] {
 	case "initialize":
 		return reply(map[string]any{"protocolVersion": mcpVersion, "serverInfo": map[string]any{"name": "mock", "version": "1"},
 			"capabilities": map[string]any{"tools": map[string]any{}, "prompts": map[string]any{}}})
@@ -31,9 +31,9 @@ func mcpReply(m map[string]any) map[string]any {
 	case "prompts/list":
 		return reply(map[string]any{"prompts": []any{}})
 	case "tools/call":
-		p, _ := m["params"].(map[string]any)
+		p, _ := other["params"].(map[string]any)
 		if p["name"] == "boom" {
-			return map[string]any{"jsonrpc": "2.0", "id": m["id"], "error": map[string]any{"code": -32602, "message": "no such tool"}}
+			return map[string]any{"jsonrpc": "2.0", "id": other["id"], "error": map[string]any{"code": -32602, "message": "no such tool"}}
 		}
 		args, _ := json.Marshal(p["arguments"])
 		return reply(map[string]any{"content": []any{map[string]any{"type": "text", "text": "echo " + string(args)}}})
@@ -49,43 +49,43 @@ func mcpHTTPServer(t *testing.T) (url string, log func() []string) {
 	t.Helper()
 	var mu sync.Mutex
 	var seen []string
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		mu.Lock()
-		seen = append(seen, r.Method+" "+r.Header.Get("Mcp-Session-Id")+" "+r.Header.Get("MCP-Protocol-Version")+" "+r.Header.Get("Authorization"))
+		seen = append(seen, request.Method+" "+request.Header.Get("Mcp-Session-Id")+" "+request.Header.Get("MCP-Protocol-Version")+" "+request.Header.Get("Authorization"))
 		mu.Unlock()
-		if r.Method == http.MethodDelete {
+		if request.Method == http.MethodDelete {
 			return
 		}
-		body, _ := io.ReadAll(r.Body)
+		body, _ := io.ReadAll(request.Body)
 		var m map[string]any
 		json.Unmarshal(body, &m)
 		out := mcpReply(m)
 		if out == nil {
-			w.WriteHeader(http.StatusAccepted)
+			writer.WriteHeader(http.StatusAccepted)
 			return
 		}
 		b, _ := json.Marshal(out)
 		if m["method"] == "initialize" {
-			w.Header().Set("Mcp-Session-Id", "sess-1")
+			writer.Header().Set("Mcp-Session-Id", "sess-1")
 		}
 		if m["method"] == "tools/call" {
-			w.Header().Set("Content-Type", "text/event-stream")
-			fmt.Fprintf(w, "event: message\ndata: %s\n\n", b)
+			writer.Header().Set("Content-Type", "text/event-stream")
+			fmt.Fprintf(writer, "event: message\ndata: %s\n\n", b)
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(b)
+		writer.Header().Set("Content-Type", "application/json")
+		writer.Write(b)
 	}))
 	t.Cleanup(srv.Close)
 	return srv.URL, func() []string { mu.Lock(); defer mu.Unlock(); return append([]string(nil), seen...) }
 }
 
 // waitFor reads events until one's text contains want.
-func waitFor(t *testing.T, s Session, want string) Event {
+func waitFor(t *testing.T, session Session, want string) Event {
 	t.Helper()
 	for {
 		select {
-		case e, ok := <-s.Events():
+		case e, ok := <-session.Events():
 			if !ok {
 				t.Fatalf("events ended while waiting for %q", want)
 			}
@@ -179,8 +179,8 @@ func TestMCPRejectsBadURLsAndFailedServers(t *testing.T) {
 	if _, err := (MCP{}).Connect(context.Background(), model.Request{URL: "ftp://x"}); err == nil {
 		t.Fatal("ftp URL accepted")
 	}
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		http.Error(w, "nope", http.StatusUnauthorized)
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+		http.Error(writer, "nope", http.StatusUnauthorized)
 	}))
 	defer srv.Close()
 	_, err := MCP{}.Connect(context.Background(), model.Request{URL: srv.URL})
@@ -194,9 +194,9 @@ func TestMCPRejectsBadURLsAndFailedServers(t *testing.T) {
 }
 
 func TestMCPConnectCanBeCancelled(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		io.Copy(io.Discard, r.Body) // reading the body lets the server notice a disconnect
-		<-r.Context().Done()        // never answers
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		io.Copy(io.Discard, request.Body) // reading the body lets the server notice a disconnect
+		<-request.Context().Done()        // never answers
 	}))
 	defer srv.Close()
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
@@ -211,7 +211,7 @@ func TestMCPConnectCanBeCancelled(t *testing.T) {
 }
 
 // The stdio server is this test binary run again with MCP_HELPER set.
-func TestMain(m *testing.M) {
+func TestMain(runner *testing.M) {
 	switch os.Getenv("MCP_HELPER") {
 	case "deaf": // never reads stdin, so closing it does not end the process
 		time.Sleep(time.Minute)
@@ -234,7 +234,7 @@ func TestMain(m *testing.M) {
 			}
 		}
 	}
-	os.Exit(m.Run())
+	os.Exit(runner.Run())
 }
 
 func TestMCPStdioSession(t *testing.T) {

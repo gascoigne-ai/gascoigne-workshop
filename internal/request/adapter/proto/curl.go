@@ -61,15 +61,15 @@ func isMultipartOrForm(req model.Request) bool {
 	return req.BodyType == model.BodyForm || req.BodyType == model.BodyMultipart
 }
 
-func curlAuthFlags(a model.Auth) []string {
-	switch a.Type {
+func curlAuthFlags(auth model.Auth) []string {
+	switch auth.Type {
 	case model.AuthBearer:
-		return []string{"-H", shellQuote("Authorization: Bearer " + a.Token)}
+		return []string{"-H", shellQuote("Authorization: Bearer " + auth.Token)}
 	case model.AuthBasic:
-		return []string{"-u", shellQuote(a.User + ":" + a.Password)}
+		return []string{"-u", shellQuote(auth.User + ":" + auth.Password)}
 	case model.AuthAPIKey:
-		if a.KeyName != "" && a.KeyIn != model.KeyInQuery {
-			return []string{"-H", shellQuote(a.KeyName + ": " + a.KeyValue)}
+		if auth.KeyName != "" && auth.KeyIn != model.KeyInQuery {
+			return []string{"-H", shellQuote(auth.KeyName + ": " + auth.KeyValue)}
 		}
 	}
 	return nil
@@ -99,15 +99,15 @@ func curlBody(req model.Request) []string {
 // shellQuote wraps s in single quotes for a POSIX shell.
 // quoteUnlessToken leaves a plain word such as a method name bare and
 // quotes anything else for the shell.
-func quoteUnlessToken(s string) string {
-	for _, r := range s {
+func quoteUnlessToken(text string) string {
+	for _, r := range text {
 		if !(r >= 'A' && r <= 'Z' || r >= 'a' && r <= 'z' || r >= '0' && r <= '9' || r == '-' || r == '_') {
-			return shellQuote(s)
+			return shellQuote(text)
 		}
 	}
-	return s
+	return text
 }
 
-func shellQuote(s string) string {
-	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
+func shellQuote(text string) string {
+	return "'" + strings.ReplaceAll(text, "'", `'\''`) + "'"
 }
