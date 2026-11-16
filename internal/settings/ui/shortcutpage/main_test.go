@@ -9,7 +9,7 @@ import (
 
 // TestMain pins the platform so shortcut text and pinned layouts read the
 // same on every machine.
-func TestMain(m *testing.M) {
+func TestMain(runner *testing.M) {
 	w.HostOS = "linux"
-	os.Exit(m.Run())
+	os.Exit(runner.Run())
 }
