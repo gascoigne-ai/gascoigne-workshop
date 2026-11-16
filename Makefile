@@ -1,4 +1,4 @@
-.PHONY: packagemap check fuzz fmt-check vet test vet-release test-release build release run example-server shot install
+.PHONY: packagemap check fuzz fmt-check vet test vet-release test-release build release run example-server shot install install-user
 
 check: fmt-check vet test vet-release test-release
 
@@ -85,3 +85,7 @@ install: build
 	install -Dm644 packaging/gascoigne-workshop.desktop $(DESTDIR)$(PREFIX)/share/applications/gascoigne-workshop.desktop
 	mkdir -p $(DESTDIR)$(PREFIX)/share/icons/hicolor/256x256/apps
 	bin/workshop -icon-png $(DESTDIR)$(PREFIX)/share/icons/hicolor/256x256/apps/gascoigne-workshop.png
+
+# Install for the current user only, no root: binary, desktop entry, icon under ~/.local
+install-user:
+	$(MAKE) install PREFIX=$(HOME)/.local

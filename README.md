@@ -60,7 +60,7 @@ Needs Go (see `go.mod`) and, on Linux, the Ebitengine dependencies
 make build                         # bin/workshop, with example endpoints
 make release                       # bin/workshop-release, reads client configs instead
 make run                           # run without installing
-make install PREFIX=$HOME/.local   # binary, desktop entry, icon
+make install-user                  # binary, desktop entry, icon under ~/.local
 make example-server                # one local server per protocol, for the example requests
 ```
 
