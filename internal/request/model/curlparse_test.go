@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -78,5 +79,54 @@ func TestParseCurlErrors(t *testing.T) {
 		if err == nil || !strings.Contains(err.Error(), want) {
 			t.Errorf("%q: err = %v, want %q", cmd, err, want)
 		}
+	}
+}
+
+// Clustered short flags (-sSL, -XPOST, -uuser:pw, -d'x') fell into the
+// default branch and were ignored, so the method, -L and the auth were
+// lost with no error, and an unknown --flag=value turned its value into
+// the URL.
+func TestParseCurlReadsClusteredAndAttachedFlags(t *testing.T) {
+	tests := []struct {
+		name, cmd string
+		check     func(Request) string
+	}{
+		{"attached method", `curl -XPOST https://api.test`, func(r Request) string { return r.Method }},
+		{"cluster with follow", `curl -sSL https://api.test`, func(r Request) string { return fmt.Sprint(r.NoRedirects) }},
+		{"attached user", `curl -ualice:pw https://api.test`, func(r Request) string { return r.Auth.User + "/" + r.Auth.Password }},
+		{"attached data", `curl -d'a=1' https://api.test`, func(r Request) string { return r.Method + " " + fmt.Sprint(r.Form) }},
+		{"cluster then value flag", `curl -sXDELETE https://api.test`, func(r Request) string { return r.Method }},
+		{"unknown long flag with a value", `curl --some-flag=https://evil.test https://api.test`, func(r Request) string { return r.URL }},
+		{"known long flag with =", `curl --request=PUT https://api.test`, func(r Request) string { return r.Method }},
+	}
+	want := map[string]string{
+		"attached method":                "POST",
+		"cluster with follow":            "false",
+		"attached user":                  "alice/pw",
+		"attached data":                  "POST [{a 1  true false}]",
+		"cluster then value flag":        "DELETE",
+		"unknown long flag with a value": "https://api.test",
+		"known long flag with =":         "PUT",
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ParseCurl(tt.cmd)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if result := tt.check(got); result != want[tt.name] {
+				t.Fatalf("got %q, want %q", result, want[tt.name])
+			}
+		})
+	}
+}
+
+func TestParseCurlKeepsAValueThatLooksLikeAFlag(t *testing.T) {
+	got, err := ParseCurl(`curl -d '-x=1' -H '-odd: v' https://api.test`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.URL != "https://api.test" || len(got.Form) != 1 || got.Form[0].Name != "-x" || got.Headers[0].Name != "-odd" {
+		t.Fatalf("%+v", got)
 	}
 }

@@ -23,6 +23,7 @@ func ParseCurl(cmd string) (Request, error) {
 	if args[0] != "curl" {
 		return Request{}, errors.New("not a curl command")
 	}
+	args = splitCurlFlags(args)
 	req := Request{Protocol: "rest", NoRedirects: true}
 	var data, forms []string
 	var user, method string
@@ -35,11 +36,6 @@ func ParseCurl(cmd string) (Request, error) {
 			}
 			i++
 			return args[i], nil
-		}
-		if strings.HasPrefix(a, "--") && strings.Contains(a, "=") {
-			k, v, _ := strings.Cut(a, "=")
-			args = append(args[:i+1], append([]string{v}, args[i+1:]...)...)
-			a = k
 		}
 		var v string
 		switch a {
@@ -278,4 +274,68 @@ func indexRune(r []rune, from int, c rune) int {
 		}
 	}
 	return -1
+}
+
+// curlValueFlags are the flags that take a value, long and short.
+var curlValueFlags = map[string]bool{
+	"-X": true, "--request": true, "-H": true, "--header": true,
+	"-d": true, "--data": true, "--data-raw": true, "--data-binary": true, "--data-ascii": true, "--data-urlencode": true,
+	"-F": true, "--form": true, "--form-string": true, "-u": true, "--user": true, "--url": true,
+	"-A": true, "--user-agent": true, "-b": true, "--cookie": true, "-e": true, "--referer": true,
+	"-m": true, "--max-time": true, "-o": true, "--output": true, "-w": true, "--write-out": true,
+	"--connect-timeout": true, "--retry": true, "-x": true, "--proxy": true, "--cacert": true,
+	"--cert": true, "--key": true, "-T": true, "--upload-file": true,
+}
+
+// splitCurlFlags writes every flag as the parser reads it: "--flag=value"
+// as two arguments, and "-XPOST", "-sSL", "-uuser:pw" as single-letter
+// flags each followed by its value when it takes one. A "--flag=value"
+// of a flag that takes no value drops the value, so it cannot become the
+// URL.
+func splitCurlFlags(args []string) []string {
+	out := []string{args[0]}
+	takesValue := false // the previous flag is still waiting for its value
+	for _, arg := range args[1:] {
+		switch {
+		case takesValue: // "-d -x" sends "-x": a value is never a flag
+			out = append(out, arg)
+			takesValue = false
+			continue
+		case strings.HasPrefix(arg, "--"):
+			name, value, hasValue := strings.Cut(arg, "=")
+			out = append(out, name)
+			if hasValue && curlValueFlags[name] {
+				out = append(out, value)
+			}
+			takesValue = !hasValue && curlValueFlags[name]
+		case len(arg) > 2 && arg[0] == '-' && arg[1] != '-':
+			var parts []string
+			parts, takesValue = splitShortCluster(arg[1:])
+			out = append(out, parts...)
+		default:
+			out = append(out, arg)
+			takesValue = curlValueFlags[arg]
+		}
+	}
+	return out
+}
+
+// splitShortCluster splits the letters after a single dash: letters up to
+// a value-taking one are flags, and the rest of the word is its value.
+// needsValue is true when the last flag takes a value that is the next
+// argument.
+func splitShortCluster(letters string) (flags []string, needsValue bool) {
+	for i, letter := range letters {
+		flag := "-" + string(letter)
+		flags = append(flags, flag)
+		if !curlValueFlags[flag] {
+			continue
+		}
+		rest := letters[i+len(string(letter)):]
+		if rest == "" {
+			return flags, true
+		}
+		return append(flags, rest), false
+	}
+	return flags, false
 }
