@@ -274,6 +274,11 @@ func (a *App) rememberCollections() {
 		}
 		remembered = append(remembered, item)
 	}
+	for _, item := range a.unreadable { // not open now, but not forgotten either
+		if _, open := a.openAt(item.Folder); !open {
+			remembered = append(remembered, item)
+		}
+	}
 	a.saveSettings(func(s *settings.Settings) { s.RememberCollections(remembered) })
 	a.setIsRemembered = true
 }

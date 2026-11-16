@@ -35,6 +35,7 @@ func (a *App) openWorkspace(dir string) {
 	}
 	var failed []error
 	var sample *model.Collection
+	a.unreadable = nil
 	for _, item := range wanted {
 		if item.Folder == "" {
 			sample = a.includeStart(item.Environment)
@@ -42,6 +43,9 @@ func (a *App) openWorkspace(dir string) {
 		}
 		if _, err := a.loadCollection(collectionDir(item.Folder), item.Environment); err != nil {
 			failed = append(failed, err)
+			if dir == "" {
+				a.unreadable = append(a.unreadable, item)
+			}
 		}
 	}
 	if len(failed) > 0 {

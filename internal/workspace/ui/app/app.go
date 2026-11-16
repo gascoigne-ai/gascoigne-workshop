@@ -245,6 +245,7 @@ type App struct {
 	jar                http.CookieJar                           // cookies the server set, kept until the app closes
 	defaultWorkspace   string                                   // beside it is the collections folder, where a first save goes
 	setIsRemembered    bool                                     // the open set is the remembered list (opened from it, or changed by the user since), so it is written whole
+	unreadable         []settings.OpenCollection                // remembered folders that failed to load; kept in the list so a mount or a fix brings them back
 	saves              map[*model.Collection]*autosave.Debounce // when each open collection was last written
 	writes             serial.Queue                             // the background writes in flight and waiting, by file
 	keys               changeKeys                               // the comparable forms of the collection and the state, recomputed only on frames where something could have changed

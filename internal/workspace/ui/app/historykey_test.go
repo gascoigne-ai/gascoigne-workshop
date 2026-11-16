@@ -1,6 +1,7 @@
 package app
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -116,5 +117,33 @@ func TestAnEnvironmentPickKeepsTheRememberedListItDidNotComeFrom(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// A remembered folder that fails to load (a drive not mounted yet, a
+// broken file) was left out of the list the next change of the open set
+// wrote, so it was forgotten for good.
+func TestACollectionThatFailedToLoadStaysInTheRememberedList(t *testing.T) {
+	alphaDir, brokenDir := savedCollection(t, "Alpha"), t.TempDir()
+	if err := os.WriteFile(filepath.Join(brokenDir, "folder.json"), []byte("{nope"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	settingsPath := filepath.Join(t.TempDir(), "settings.json")
+	start := settings.Default()
+	start.Collections = []settings.OpenCollection{{Folder: alphaDir}, {Folder: brokenDir, Environment: "Dev"}}
+	if err := settingsfile.Save(settingsPath, start); err != nil {
+		t.Fatal(err)
+	}
+	a, err := NewApp(withAdapters(Options{SettingsPath: settingsPath}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	a.rememberCollections()
+	written, err := settingsfile.Load(settingsPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(written.Collections) != 2 || written.Collections[1] != (settings.OpenCollection{Folder: brokenDir, Environment: "Dev"}) {
+		t.Fatalf("remembered %+v, want the broken folder kept after %q", written.Collections, alphaDir)
 	}
 }
