@@ -92,3 +92,25 @@ func TestCompactKeepsKeyOrderAndLargeNumbersAsWritten(t *testing.T) {
 		t.Fatalf("%q", got)
 	}
 }
+
+// preview compared bytes with previewMax but cut by runes, so a block of
+// multi-byte text (over 80 bytes, under 78 runes) was sliced past its rune
+// slice: it panicked or came back padded with NUL runes.
+func TestCompactPreviewOfMultiByteTextIsCutByRunes(t *testing.T) {
+	body := `{"a":{"k":"` + strings.Repeat("日本語", 18) + `"}}`
+	lines := Compact([]byte(body), 20)
+	var open Line
+	for _, l := range lines {
+		if len(l.Folded) > 0 {
+			open = l
+			break
+		}
+	}
+	preview := text(Line{Spans: open.Folded})
+	if preview == "" || strings.ContainsRune(preview, 0) {
+		t.Fatalf("preview %q has no text or is padded with NUL runes", preview)
+	}
+	if !strings.HasSuffix(preview, "}") {
+		t.Errorf("preview %q does not close the block", preview)
+	}
+}

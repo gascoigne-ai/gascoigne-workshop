@@ -97,11 +97,11 @@ const previewMax = 80
 
 // preview is the inline form cut at previewMax, ending in "…}" or "…]".
 func (n *node) preview() string {
-	s := n.inline()
-	if len(s) <= previewMax {
-		return s
+	runes := []rune(n.inline())
+	if len(runes) <= previewMax {
+		return string(runes)
 	}
-	cut := []rune(s)[:previewMax-2]
+	cut := runes[:previewMax-2]
 	// Do not cut inside a key/value pair's string quote more than needed.
 	return strings.TrimRight(string(cut), " ,") + ", …" + string(closer(n.open))
 }
