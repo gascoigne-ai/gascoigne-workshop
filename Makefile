@@ -32,7 +32,17 @@ FUZZ_TARGETS = \
 	./uitoolkit/markup:FuzzParse \
 	./uitoolkit/widget:FuzzEdit \
 	./uitoolkit/widget:FuzzFind \
-	./uitoolkit/widget:FuzzWrapRunes
+	./uitoolkit/widget:FuzzWrapRunes \
+	./internal/request/model:FuzzParseSchema \
+	./internal/request/model:FuzzParseMCPLists \
+	./internal/request/model:FuzzParseServerInfo \
+	./internal/collection/adapter/store:FuzzLoad \
+	./internal/workspace/adapter/statefile:FuzzLoad \
+	./internal/settings/model/settings:FuzzDecode \
+	./internal/response/adapter/history:FuzzLoad \
+	./internal/response/adapter/history:FuzzLoadSent \
+	./internal/response/ui/respview:FuzzDecode \
+	./uitoolkit/theming:FuzzParseTheme
 fuzz:
 	@for target in $(FUZZ_TARGETS); do \
 		package=$${target%%:*}; name=$${target##*:}; \
