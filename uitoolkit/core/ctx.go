@@ -306,16 +306,26 @@ func (c *Ctx) Ellipsize(face *text.GoTextFace, s string, maxW int) string {
 	return ""
 }
 
-// CursorAt maps a pixel offset into s to the nearest rune boundary.
+// CursorAt maps a pixel offset into s to the nearest rune boundary. The
+// width of a prefix grows with its length, so the boundary is found by
+// binary search: measuring every prefix would be quadratic in the length
+// of the text.
 func (c *Ctx) CursorAt(s string, x int) int {
 	runes := []rune(s)
-	best, bestDist := 0, abs(x)
-	for i := 1; i <= len(runes); i++ {
-		if d := abs(x - c.Width(c.F.UI, string(runes[:i]))); d < bestDist {
-			best, bestDist = i, d
+	widthTo := func(count int) int { return c.Width(c.F.UI, string(runes[:count])) }
+	low, high := 0, len(runes) // the first boundary whose width reaches x is in low..high
+	for low < high {
+		middle := (low + high) / 2
+		if widthTo(middle) < x {
+			low = middle + 1
+		} else {
+			high = middle
 		}
 	}
-	return best
+	if low > 0 && abs(x-widthTo(low-1)) <= abs(x-widthTo(low)) {
+		return low - 1
+	}
+	return low
 }
 
 func abs(n int) int {
