@@ -60,7 +60,7 @@ func TestSaveRoundTripCreatesDirAndLeavesNoTemp(t *testing.T) {
 	}
 }
 
-func ptr(s string) *string { return &s }
+func ptr(text string) *string { return &text }
 
 func TestDefaultPathFollowsTheUserConfigDir(t *testing.T) {
 	dir := t.TempDir()
