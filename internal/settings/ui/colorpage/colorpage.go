@@ -68,35 +68,35 @@ func (p *Page) setNote(tok w.Token, note string) {
 // colorEdited applies the hex a user typed for c, or says why not: a
 // color that does not parse, or whose text would be unreadable on it
 // (with the ratio), is refused and nothing changes.
-func (p *Page) edited(host Host, c appearance.CustomColor) {
-	text := p.Input(host, c.Token).Text
+func (p *Page) edited(host Host, customColorValue appearance.CustomColor) {
+	text := p.Input(host, customColorValue.Token).Text
 	col, err := w.ParseHex(text)
 	if err != nil {
-		p.setNote(c.Token, "Use #rrggbb")
+		p.setNote(customColorValue.Token, "Use #rrggbb")
 		return
 	}
 	need := appearance.RequiredRatio(host.Settings().Contrast)
-	if ratio := w.ContrastRatio(col, host.Color(c.Text)); ratio < need {
-		p.setNote(c.Token, fmt.Sprintf("Contrast %.1f:1 is below %.1f:1", ratio, need))
+	if ratio := w.ContrastRatio(col, host.Color(customColorValue.Text)); ratio < need {
+		p.setNote(customColorValue.Token, fmt.Sprintf("Contrast %.1f:1 is below %.1f:1", ratio, need))
 		return
 	}
-	p.setNote(c.Token, "")
-	host.Send(prefs.Edit{Edit: func(s *settings.Settings) {
-		id := appearance.ThemeIDOf(s.Theme)
-		if s.Colors == nil {
-			s.Colors = map[string]map[string]string{}
+	p.setNote(customColorValue.Token, "")
+	host.Send(prefs.Edit{Edit: func(prefs *settings.Settings) {
+		id := appearance.ThemeIDOf(prefs.Theme)
+		if prefs.Colors == nil {
+			prefs.Colors = map[string]map[string]string{}
 		}
-		if s.Colors[id] == nil {
-			s.Colors[id] = map[string]string{}
+		if prefs.Colors[id] == nil {
+			prefs.Colors[id] = map[string]string{}
 		}
-		s.Colors[id][string(c.Token)] = w.FormatHex(col)
+		prefs.Colors[id][string(customColorValue.Token)] = w.FormatHex(col)
 	}})
 }
 
 // resetColor drops the override of one color in the current theme.
 func (p *Page) reset(host Host, tok w.Token) {
-	host.Send(prefs.Edit{Edit: func(s *settings.Settings) {
-		delete(s.Colors[appearance.ThemeIDOf(s.Theme)], string(tok))
+	host.Send(prefs.Edit{Edit: func(prefs *settings.Settings) {
+		delete(prefs.Colors[appearance.ThemeIDOf(prefs.Theme)], string(tok))
 	}})
 	delete(p.inputs, tok)
 	p.setNote(tok, "")
@@ -104,7 +104,7 @@ func (p *Page) reset(host Host, tok w.Token) {
 
 // resetColors drops every color override of the current theme.
 func (p *Page) resetAll(host Host) {
-	host.Send(prefs.Edit{Edit: func(s *settings.Settings) { delete(s.Colors, appearance.ThemeIDOf(s.Theme)) }})
+	host.Send(prefs.Edit{Edit: func(prefs *settings.Settings) { delete(prefs.Colors, appearance.ThemeIDOf(prefs.Theme)) }})
 	p.Forget()
 }
 
