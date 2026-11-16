@@ -182,3 +182,33 @@ func TestDeletedEnvironmentsLeaveNoFiles(t *testing.T) {
 		t.Fatal("secret of a deleted environment kept")
 	}
 }
+
+// A folder named "Environments" got the directory the environments are
+// written to, and saving the environments pruned its subfolders: the
+// user's requests were deleted on every save.
+func TestAFolderNamedEnvironmentsSurvivesSavingEnvironments(t *testing.T) {
+	dir := t.TempDir()
+	want := model.Collection{
+		Folder: model.Folder{
+			Name: "API",
+			Folders: []*model.Folder{{
+				Name:     "Environments",
+				Requests: []*model.Request{{Name: "Top", Protocol: "rest", Method: "GET", URL: "https://x.test/top"}},
+				Folders:  []*model.Folder{{Name: "Inner", Requests: []*model.Request{{Name: "Deep", Protocol: "rest", Method: "GET", URL: "https://x.test/deep"}}}},
+			}},
+		},
+		Envs: []model.Environment{{Name: "Dev", Vars: []model.KV{{Name: "base", Value: "http://localhost", Enabled: true}}}},
+	}
+	for range 2 { // the second save is the one that pruned
+		if err := Save(dir, want); err != nil {
+			t.Fatal(err)
+		}
+	}
+	got, err := Load(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("after saving twice:\n got %+v\nwant %+v", got, want)
+	}
+}

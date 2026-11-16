@@ -4,7 +4,8 @@
 //	folder.json        {"name", "vars" (root only), "order": ["a.req.json", "sub/"]}
 //	a.req.json         one request
 //	sub/folder.json    a nested folder
-//	environments/x.env.json   one environment (root folder only)
+//	environments/x.env.json   one environment (root folder only; a root folder
+//	                          named "Environments" is saved as environments-2)
 //	.secrets.json      credentials and secret variable values, by file path; listed in .gitignore
 //
 // Files are written with a stable key order and indentation, so a
@@ -179,6 +180,9 @@ func saveFolder(root, dir, rel string, f *model.Folder, meta folderMeta, secrets
 		if err := writeJSON(filepath.Join(dir, file), rf, false); err != nil {
 			return err
 		}
+	}
+	if rel == "" {
+		taken[envDir] = true // a folder must not take the environments directory
 	}
 	for _, sub := range f.Folders {
 		name := unique(slug(sub.Name), taken)
