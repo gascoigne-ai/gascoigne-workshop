@@ -3,6 +3,7 @@ package bus
 import (
 	"context"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 )
@@ -74,5 +75,23 @@ func TestRunDispatchesNothingForACommandWithoutResult(t *testing.T) {
 
 	if got := drained(queue); len(got) != 0 {
 		t.Fatalf("got %v, want no message", got)
+	}
+}
+
+// A command that panicked killed the whole process, and every unsaved
+// edit with it. The panic is now reported as a Failed message.
+func TestRunReportsAPanickingCommandAndKeepsWorking(t *testing.T) {
+	queue := New()
+
+	queue.Run(context.Background(), func(context.Context) Msg { panic("boom") })
+
+	got := waitFor(t, queue, 1)
+	failed, ok := got[0].(Failed)
+	if len(got) != 1 || !ok || failed.Err == nil || !strings.Contains(failed.Err.Error(), "boom") {
+		t.Fatalf("got %v, want one Failed naming the panic", got)
+	}
+	queue.Run(context.Background(), func(context.Context) Msg { return "after" })
+	if got := waitFor(t, queue, 1); !slices.Equal(got, []Msg{"after"}) {
+		t.Fatalf("the bus stopped working after a panic: %v", got)
 	}
 }

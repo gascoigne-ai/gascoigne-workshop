@@ -15,6 +15,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/shortcutpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/statefile"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/bus"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/theming"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -3699,5 +3700,13 @@ func TestClosingATabClosesItsSession(t *testing.T) {
 	a.closeTab(a.list.Active)
 	if !session.closed {
 		t.Error("the session of the closed tab is still open")
+	}
+}
+
+func TestAFailedCommandIsShownInTheStatusLine(t *testing.T) {
+	a, _ := newTestApp(t)
+	a.handle(bus.Failed{Err: errors.New("a command panicked: boom")})
+	if !strings.Contains(a.status, "boom") {
+		t.Fatalf("status %q does not show the failure", a.status)
 	}
 }

@@ -501,6 +501,8 @@ func (a *App) handle(msg bus.Msg) {
 		a.applyWS(msg)
 	case func(): // something a goroutine wants done on the UI goroutine, such as a chosen file
 		msg()
+	case bus.Failed: // a background task panicked; the app lives on
+		a.status = msg.Err.Error()
 	}
 }
 
