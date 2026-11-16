@@ -93,9 +93,9 @@ func ThemeIDOf(id string) string { return catalog.ThemeID(id) }
 func ThemeFor(themeID, textSizeID string) core.Theme { return catalog.For(themeID, textSizeID) }
 
 // ThemeWith is the theme for the settings.
-func ThemeWith(s settings.Settings) core.Theme {
-	return catalog.Theme(theming.Prefs{Theme: s.Theme, TextSize: s.TextSize, Corners: s.Corners,
-		Contrast: s.Contrast, Flat: s.Flat, Colors: s.Colors})
+func ThemeWith(prefs settings.Settings) core.Theme {
+	return catalog.Theme(theming.Prefs{Theme: prefs.Theme, TextSize: prefs.TextSize, Corners: prefs.Corners,
+		Contrast: prefs.Contrast, Flat: prefs.Flat, Colors: prefs.Colors})
 }
 
 // LoadUserThemes reads the user's theme files in dir (see theming.Catalog.LoadUser).
