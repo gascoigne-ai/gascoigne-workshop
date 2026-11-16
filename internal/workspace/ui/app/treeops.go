@@ -262,6 +262,9 @@ func (a *App) treeKeys(in core.Input) {
 		return
 	}
 	rows := a.visibleRows()
+	if len(rows) == 0 {
+		return
+	}
 	current := -1
 	for i, r := range rows {
 		if r.Node() == a.selected {
