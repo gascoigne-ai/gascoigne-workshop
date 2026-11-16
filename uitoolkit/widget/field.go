@@ -73,6 +73,7 @@ func (b *fieldB) Update(e *El, c *core.Ctx) {
 	if in.Tab && b.onTab != nil {
 		b.onTab(in.Shift)
 	}
+	f.Cursor = f.clamp(f.Cursor) // OnChange may have replaced the text
 	f.Reveal(c.Width(c.F.UI, string([]rune(f.Display())[:f.Cursor])), r.W-2*b.textInset())
 }
 
@@ -98,9 +99,9 @@ func (b *fieldB) Draw(e *El, c *core.Ctx, dst *ebiten.Image) {
 		c.TextMid(dst, c.F.UI, b.placeholder, r.X+b.textInset(), r, c.Color(core.Muted))
 	}
 	if f.Focused && c.CaretVisible() {
-		shown := []rune(f.Display())
-		cx := r.X + b.textInset() - f.ScrollX + c.Width(c.F.UI, string(shown[:f.Cursor]))
-		drawBlockCaret(c, dst, c.F.UI, caretGlyph(shown, f.Cursor), cx, r)
+		shown, cursor := []rune(f.Display()), f.clamp(f.Cursor)
+		cx := r.X + b.textInset() - f.ScrollX + c.Width(c.F.UI, string(shown[:cursor]))
+		drawBlockCaret(c, dst, c.F.UI, caretGlyph(shown, cursor), cx, r)
 	}
 }
 

@@ -540,3 +540,21 @@ func TestFieldTextInsetDefaultsAndCanBeReduced(t *testing.T) {
 }
 
 var errTest = errors.New("no clipboard")
+
+// An OnChange handler that shortens the text (a numeric filter, a trim)
+// left Cursor past the end, and the same Update and the next Draw sliced
+// the text at it and panicked.
+func TestFieldSurvivesAnOnChangeThatShortensTheText(t *testing.T) {
+	f := NewTextField("")
+	f.Focused = true
+	root := Row(Field(&f, OnChange(func() { f.Text = "" })))
+	c := testCtx(t)
+	Layout(c, root, 300, 30)
+
+	c.In = core.Input{Typed: []rune("abcdefgh")}
+	Update(c, root)
+	drawn(t, c, root, 300, 30)
+	if f.Text != "" || f.Cursor != 0 {
+		t.Fatalf("text %q cursor %d, want the handler's empty text and a cursor inside it", f.Text, f.Cursor)
+	}
+}
