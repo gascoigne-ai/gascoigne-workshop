@@ -198,3 +198,34 @@ func TestStatChangesWhenTheFileIsWrittenAndIsZeroWhenMissing(t *testing.T) {
 		t.Fatalf("ReadText = %q, %v", text, err)
 	}
 }
+
+// A settings file that did not parse was replaced by defaults on the next
+// save, so one wrong key cost the user the whole file. The broken text is
+// now kept beside it as settings.json.bak.
+func TestSaveKeepsAFileThatDoesNotParseAsBackup(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "settings.json")
+	broken := `{"theme": "light", "timeoutSec": "soon"}`
+	if err := os.WriteFile(path, []byte(broken), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := Save(path, settings.Default()); err != nil {
+		t.Fatal(err)
+	}
+	got, err := os.ReadFile(path + ".bak")
+	if err != nil || string(got) != broken {
+		t.Fatalf("backup %q, %v; want the broken text", got, err)
+	}
+}
+
+func TestSaveDoesNotBackUpAFileThatParses(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "settings.json")
+	if err := os.WriteFile(path, []byte(`{"theme":"light"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := Save(path, settings.Default()); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(path + ".bak"); err == nil {
+		t.Error("a settings file that parsed must not leave a backup")
+	}
+}

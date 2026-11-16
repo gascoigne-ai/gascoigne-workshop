@@ -43,10 +43,15 @@ func Save(path string, current settings.Settings) error {
 }
 
 // WriteText replaces the settings file with data exactly as given, creating
-// its directory. The file is replaced atomically.
+// its directory. The file is replaced atomically. An existing file that
+// does not parse is first copied to path+".bak", so replacing it never
+// destroys what the user wrote.
 func WriteText(path string, data []byte) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return fmt.Errorf("create settings dir: %w", err)
+	}
+	if err := backUpBroken(path); err != nil {
+		return err
 	}
 	tmp := path + ".tmp"
 	if err := os.WriteFile(tmp, data, 0o644); err != nil {
@@ -103,3 +108,17 @@ func (Files) Stat(path string) settings.FileStamp {
 func (Files) WriteText(path string, text []byte) error { return WriteText(path, text) }
 
 var _ port.SettingsStore = Files{}
+
+func backUpBroken(path string) error {
+	old, err := os.ReadFile(path)
+	if err != nil {
+		return nil // nothing there to lose
+	}
+	if _, err := settings.Decode(old); err == nil {
+		return nil
+	}
+	if err := os.WriteFile(path+".bak", old, 0o644); err != nil {
+		return fmt.Errorf("back up broken settings: %w", err)
+	}
+	return nil
+}
