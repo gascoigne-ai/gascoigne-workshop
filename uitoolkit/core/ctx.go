@@ -198,17 +198,17 @@ func (c *Ctx) SetFonts(ui, code FontData) error {
 }
 
 // Hovered reports whether the pointer is over r and hover feedback is on.
-func (c *Ctx) Hovered(r Rect) bool { return !c.HoverOff && c.In.Over(r) }
+func (c *Ctx) Hovered(rect Rect) bool { return !c.HoverOff && c.In.Over(rect) }
 
 // Col resolves a color token in the current theme.
 func (c *Ctx) Color(tok Token) color.RGBA { return c.Th.Color(tok) }
 
-func (c *Ctx) dev(n float32) float32 { return n * float32(c.Scale) }
+func (c *Ctx) dev(value float32) float32 { return value * float32(c.Scale) }
 
 // snap is a logical coordinate as a device pixel position. Rounding the
 // edges (not the sizes) lets neighbouring rectangles share an edge at any
 // scale, with no gap or overlap.
-func (c *Ctx) snap(n int) float32 { return float32(math.Round(float64(n) * c.Scale)) }
+func (c *Ctx) snap(count int) float32 { return float32(math.Round(float64(count) * c.Scale)) }
 
 // LineWidth is the thickness in device pixels of the one-pixel lines and
 // outlines: the scale rounded, never less than one, so a line is a whole
@@ -216,43 +216,43 @@ func (c *Ctx) snap(n int) float32 { return float32(math.Round(float64(n) * c.Sca
 func (c *Ctx) LineWidth() float32 { return float32(max(1, math.Round(c.Scale))) }
 
 // Fill paints r with clr, its edges on device pixels.
-func (c *Ctx) Fill(dst *ebiten.Image, r Rect, clr color.RGBA) {
-	x0, y0 := c.snap(r.X), c.snap(r.Y)
-	vector.FillRect(dst, x0, y0, c.snap(r.X+r.W)-x0, c.snap(r.Y+r.H)-y0, clr, false)
+func (c *Ctx) Fill(dst *ebiten.Image, rect Rect, clr color.RGBA) {
+	x0, y0 := c.snap(rect.X), c.snap(rect.Y)
+	vector.FillRect(dst, x0, y0, c.snap(rect.X+rect.W)-x0, c.snap(rect.Y+rect.H)-y0, clr, false)
 }
 
 // Outline strokes a one-pixel border just inside r.
-func (c *Ctx) Outline(dst *ebiten.Image, r Rect, clr color.RGBA) {
+func (c *Ctx) Outline(dst *ebiten.Image, rect Rect, clr color.RGBA) {
 	w := c.LineWidth()
-	x0, y0 := c.snap(r.X), c.snap(r.Y)
-	vector.StrokeRect(dst, x0+w/2, y0+w/2, c.snap(r.X+r.W)-x0-w, c.snap(r.Y+r.H)-y0-w, w, clr, false)
+	x0, y0 := c.snap(rect.X), c.snap(rect.Y)
+	vector.StrokeRect(dst, x0+w/2, y0+w/2, c.snap(rect.X+rect.W)-x0-w, c.snap(rect.Y+rect.H)-y0-w, w, clr, false)
 }
 
 // HLine draws a one-pixel horizontal line.
-func (c *Ctx) HLine(dst *ebiten.Image, x, y, w int, clr color.RGBA) {
-	x0 := c.snap(x)
-	vector.FillRect(dst, x0, c.snap(y), c.snap(x+w)-x0, c.LineWidth(), clr, false)
+func (c *Ctx) HLine(dst *ebiten.Image, posX, posY, width int, clr color.RGBA) {
+	x0 := c.snap(posX)
+	vector.FillRect(dst, x0, c.snap(posY), c.snap(posX+width)-x0, c.LineWidth(), clr, false)
 }
 
 // VLine draws a one-pixel vertical line.
-func (c *Ctx) VLine(dst *ebiten.Image, x, y, h int, clr color.RGBA) {
-	y0 := c.snap(y)
-	vector.FillRect(dst, c.snap(x), y0, c.LineWidth(), c.snap(y+h)-y0, clr, false)
+func (c *Ctx) VLine(dst *ebiten.Image, posX, posY, height int, clr color.RGBA) {
+	y0 := c.snap(posY)
+	vector.FillRect(dst, c.snap(posX), y0, c.LineWidth(), c.snap(posY+height)-y0, clr, false)
 }
 
 // Clip returns dst limited to r, so drawing outside r is discarded.
-func (c *Ctx) Clip(dst *ebiten.Image, r Rect) *ebiten.Image {
+func (c *Ctx) Clip(dst *ebiten.Image, rect Rect) *ebiten.Image {
 	b := dst.Bounds()
-	x0 := max(int(c.dev(float32(r.X))), b.Min.X)
-	y0 := max(int(c.dev(float32(r.Y))), b.Min.Y)
-	x1 := min(int(c.dev(float32(r.X+r.W))+0.5), b.Max.X)
-	y1 := min(int(c.dev(float32(r.Y+r.H))+0.5), b.Max.Y)
+	x0 := max(int(c.dev(float32(rect.X))), b.Min.X)
+	y0 := max(int(c.dev(float32(rect.Y))), b.Min.Y)
+	x1 := min(int(c.dev(float32(rect.X+rect.W))+0.5), b.Max.X)
+	y1 := min(int(c.dev(float32(rect.Y+rect.H))+0.5), b.Max.Y)
 	return dst.SubImage(image.Rect(x0, y0, max(x1, x0), max(y1, y0))).(*ebiten.Image)
 }
 
 // Width is the logical width of s in face.
-func (c *Ctx) Width(face *text.GoTextFace, s string) int {
-	w, _ := text.Measure(s, face, 0)
+func (c *Ctx) Width(face *text.GoTextFace, stringValue string) int {
+	w, _ := text.Measure(stringValue, face, 0)
 	return int(w/c.Scale + 0.5)
 }
 
@@ -274,29 +274,29 @@ func (c *Ctx) LineH(face *text.GoTextFace) int {
 func (c *Ctx) Ascent(face *text.GoTextFace) int { return int(face.Metrics().HAscent/c.Scale + 0.5) }
 
 // Text draws s with its top-left at x, y.
-func (c *Ctx) Text(dst *ebiten.Image, face *text.GoTextFace, s string, x, y int, clr color.RGBA) {
+func (c *Ctx) Text(dst *ebiten.Image, face *text.GoTextFace, stringValue string, posX, posY int, clr color.RGBA) {
 	op := &text.DrawOptions{}
-	op.GeoM.Translate(float64(x)*c.Scale, float64(y)*c.Scale)
+	op.GeoM.Translate(float64(posX)*c.Scale, float64(posY)*c.Scale)
 	op.ColorScale.ScaleWithColor(clr)
-	text.Draw(dst, s, face, op)
+	text.Draw(dst, stringValue, face, op)
 }
 
 // TextMid draws s starting at x, vertically centered in r.
-func (c *Ctx) TextMid(dst *ebiten.Image, face *text.GoTextFace, s string, x int, r Rect, clr color.RGBA) {
-	c.Text(dst, face, s, x, r.Y+(r.H-c.LineH(face))/2, clr)
+func (c *Ctx) TextMid(dst *ebiten.Image, face *text.GoTextFace, text string, posX int, rect Rect, clr color.RGBA) {
+	c.Text(dst, face, text, posX, rect.Y+(rect.H-c.LineH(face))/2, clr)
 }
 
 // TextCenter draws s centered in r.
-func (c *Ctx) TextCenter(dst *ebiten.Image, face *text.GoTextFace, s string, r Rect, clr color.RGBA) {
-	c.TextMid(dst, face, s, r.X+(r.W-c.Width(face, s))/2, r, clr)
+func (c *Ctx) TextCenter(dst *ebiten.Image, face *text.GoTextFace, text string, rect Rect, clr color.RGBA) {
+	c.TextMid(dst, face, text, rect.X+(rect.W-c.Width(face, text))/2, rect, clr)
 }
 
 // Ellipsize shortens s with "..." until it fits maxW pixels.
-func (c *Ctx) Ellipsize(face *text.GoTextFace, s string, maxW int) string {
-	if c.Width(face, s) <= maxW {
-		return s
+func (c *Ctx) Ellipsize(face *text.GoTextFace, text string, maxW int) string {
+	if c.Width(face, text) <= maxW {
+		return text
 	}
-	runes := []rune(s)
+	runes := []rune(text)
 	for len(runes) > 0 {
 		runes = runes[:len(runes)-1]
 		if cand := strings.TrimRight(string(runes), " ") + "..."; c.Width(face, cand) <= maxW {
@@ -310,29 +310,29 @@ func (c *Ctx) Ellipsize(face *text.GoTextFace, s string, maxW int) string {
 // width of a prefix grows with its length, so the boundary is found by
 // binary search: measuring every prefix would be quadratic in the length
 // of the text.
-func (c *Ctx) CursorAt(s string, x int) int {
-	runes := []rune(s)
+func (c *Ctx) CursorAt(text string, posX int) int {
+	runes := []rune(text)
 	widthTo := func(count int) int { return c.Width(c.F.UI, string(runes[:count])) }
 	low, high := 0, len(runes) // the first boundary whose width reaches x is in low..high
 	for low < high {
 		middle := (low + high) / 2
-		if widthTo(middle) < x {
+		if widthTo(middle) < posX {
 			low = middle + 1
 		} else {
 			high = middle
 		}
 	}
-	if low > 0 && abs(x-widthTo(low-1)) <= abs(x-widthTo(low)) {
+	if low > 0 && abs(posX-widthTo(low-1)) <= abs(posX-widthTo(low)) {
 		return low - 1
 	}
 	return low
 }
 
-func abs(n int) int {
-	if n < 0 {
-		return -n
+func abs(count int) int {
+	if count < 0 {
+		return -count
 	}
-	return n
+	return count
 }
 
 // Triangle draws a filled arrowhead centered on cx, cy.
@@ -390,14 +390,14 @@ func (c *Ctx) Radius(control string) float64 { return c.Th.Style(control).Radius
 // FillStyled paints r the way a control style says: a flat or vertical
 // gradient fill from top to bottom, with rounded corners when the style
 // has a radius. Square flat fills stay on the crisp rectangle path.
-func (c *Ctx) FillStyled(dst *ebiten.Image, r Rect, top, bottom color.RGBA, radius float64) {
+func (c *Ctx) FillStyled(dst *ebiten.Image, rect Rect, top, bottom color.RGBA, radius float64) {
 	round := radius*c.Scale >= 1
 	if !round && top == bottom {
-		c.Fill(dst, r, top)
+		c.Fill(dst, rect, top)
 		return
 	}
-	x0, y0 := c.dev(float32(r.X)), c.dev(float32(r.Y))
-	x1, y1 := c.dev(float32(r.X+r.W)), c.dev(float32(r.Y+r.H))
+	x0, y0 := c.dev(float32(rect.X)), c.dev(float32(rect.Y))
+	x1, y1 := c.dev(float32(rect.X+rect.W)), c.dev(float32(rect.Y+rect.H))
 	var path *vector.Path
 	if round {
 		path = roundedPath(x0, y0, x1, y1, c.dev(float32(radius)))
@@ -420,7 +420,9 @@ func fillGradient(dst *ebiten.Image, path *vector.Path, y0, y1 float32, top, bot
 	span := max(y1-y0, 1)
 	for i := range verts {
 		t := min(max((verts[i].DstY-y0)/span, 0), 1)
-		mix := func(a, b uint8) float32 { return (float32(a) + (float32(b)-float32(a))*t) / 255 }
+		mix := func(value, uint8Value uint8) float32 {
+			return (float32(value) + (float32(uint8Value)-float32(value))*t) / 255
+		}
 		verts[i].ColorR, verts[i].ColorG, verts[i].ColorB, verts[i].ColorA = mix(top.R, bottom.R), mix(top.G, bottom.G), mix(top.B, bottom.B), mix(top.A, bottom.A)
 		verts[i].SrcX, verts[i].SrcY = 0.5, 0.5
 	}
@@ -445,21 +447,21 @@ const (
 // a bar or a column that sits in the corner of a rounded panel: its corner
 // follows the panel's, with anti-aliased (alpha) edges, instead of poking
 // out past it.
-func (c *Ctx) FillStyledCorners(dst *ebiten.Image, r Rect, top, bottom color.RGBA, radius float64, corners Corners) {
+func (c *Ctx) FillStyledCorners(dst *ebiten.Image, rect Rect, top, bottom color.RGBA, radius float64, corners Corners) {
 	if radius*c.Scale < 1 || corners == 0 {
-		c.FillStyled(dst, r, top, bottom, 0)
+		c.FillStyled(dst, rect, top, bottom, 0)
 		return
 	}
-	x0, y0 := c.dev(float32(r.X)), c.dev(float32(r.Y))
-	x1, y1 := c.dev(float32(r.X+r.W)), c.dev(float32(r.Y+r.H))
+	x0, y0 := c.dev(float32(rect.X)), c.dev(float32(rect.Y))
+	x1, y1 := c.dev(float32(rect.X+rect.W)), c.dev(float32(rect.Y+rect.H))
 	fillGradient(dst, cornersPath(x0, y0, x1, y1, c.dev(float32(radius)), corners), y0, y1, top, bottom, true)
 }
 
 // cornersPath is r with the corners in the set rounded by rad.
 func cornersPath(x0, y0, x1, y1, rad float32, corners Corners) *vector.Path {
 	rad = min(rad, (x1-x0)/2, (y1-y0)/2)
-	r := func(k Corners) float32 {
-		if corners&k != 0 {
+	r := func(cornersValue Corners) float32 {
+		if corners&cornersValue != 0 {
 			return rad
 		}
 		return 0
@@ -489,14 +491,14 @@ func cornersPath(x0, y0, x1, y1, rad float32, corners Corners) *vector.Path {
 
 // OutlineStyled strokes a one-pixel border just inside r, with rounded
 // corners when radius is set.
-func (c *Ctx) OutlineStyled(dst *ebiten.Image, r Rect, clr color.RGBA, radius float64) {
+func (c *Ctx) OutlineStyled(dst *ebiten.Image, rect Rect, clr color.RGBA, radius float64) {
 	if radius*c.Scale < 1 {
-		c.Outline(dst, r, clr)
+		c.Outline(dst, rect, clr)
 		return
 	}
 	w := c.dev(1)
-	x0, y0 := c.dev(float32(r.X))+w/2, c.dev(float32(r.Y))+w/2
-	x1, y1 := c.dev(float32(r.X+r.W))-w/2, c.dev(float32(r.Y+r.H))-w/2
+	x0, y0 := c.dev(float32(rect.X))+w/2, c.dev(float32(rect.Y))+w/2
+	x1, y1 := c.dev(float32(rect.X+rect.W))-w/2, c.dev(float32(rect.Y+rect.H))-w/2
 	path := roundedPath(x0, y0, x1, y1, c.dev(float32(radius))-w/2)
 	var so vector.StrokeOptions
 	so.Width = w

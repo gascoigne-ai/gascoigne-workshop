@@ -8,6 +8,6 @@ package core
 type Rect struct{ X, Y, W, H int }
 
 // Contains reports whether the point is inside r.
-func (r Rect) Contains(x, y int) bool {
-	return x >= r.X && x < r.X+r.W && y >= r.Y && y < r.Y+r.H
+func (r Rect) Contains(posX, posY int) bool {
+	return posX >= r.X && posX < r.X+r.W && posY >= r.Y && posY < r.Y+r.H
 }

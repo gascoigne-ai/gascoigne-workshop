@@ -97,10 +97,10 @@ func (in Input) RestartsCaret() bool {
 }
 
 // Hit reports whether a click landed inside r.
-func (in Input) Hit(r Rect) bool { return in.Click && r.Contains(in.X, in.Y) }
+func (in Input) Hit(rect Rect) bool { return in.Click && rect.Contains(in.X, in.Y) }
 
 // Over reports whether the pointer is inside r.
-func (in Input) Over(r Rect) bool { return r.Contains(in.X, in.Y) }
+func (in Input) Over(rect Rect) bool { return rect.Contains(in.X, in.Y) }
 
 var editKeys = []struct {
 	key  ebiten.Key
@@ -264,14 +264,14 @@ type Sampler struct {
 
 // Click registers a click at x, y at time now and returns its count
 // (1, 2 or 3; a fourth quick click starts over at 1).
-func (s *Sampler) Click(now time.Time, x, y int) int {
-	near := abs(x-s.x) <= multiClickDist && abs(y-s.y) <= multiClickDist
+func (s *Sampler) Click(now time.Time, posX, posY int) int {
+	near := abs(posX-s.x) <= multiClickDist && abs(posY-s.y) <= multiClickDist
 	if s.count > 0 && now.Sub(s.last) <= multiClickGap && near && s.count < 3 {
 		s.count++
 	} else {
 		s.count = 1
 	}
-	s.last, s.x, s.y = now, x, y
+	s.last, s.x, s.y = now, posX, posY
 	return s.count
 }
 

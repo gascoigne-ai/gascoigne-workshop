@@ -67,9 +67,9 @@ type layer struct {
 	tests   bool
 }
 
-func contains(list []string, s string) bool {
+func contains(list []string, text string) bool {
 	for _, x := range list {
-		if x == s {
+		if x == text {
 			return true
 		}
 	}

@@ -10,10 +10,10 @@ import (
 
 func TestPickClipboardUsesFirstCompleteTool(t *testing.T) {
 	have := func(names ...string) func(string) (string, error) {
-		return func(n string) (string, error) {
+		return func(name string) (string, error) {
 			for _, h := range names {
-				if h == n {
-					return "/bin/" + n, nil
+				if h == name {
+					return "/bin/" + name, nil
 				}
 			}
 			return "", errors.New("not found")
