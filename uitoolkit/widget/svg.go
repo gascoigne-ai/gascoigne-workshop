@@ -150,17 +150,17 @@ func parseSVG(name string, src []byte) (*svgIcon, error) {
 	return icon, nil
 }
 
-func parsePaint(v string) (svgPaint, error) {
-	v = strings.TrimSpace(v)
+func parsePaint(value string) (svgPaint, error) {
+	value = strings.TrimSpace(value)
 	switch {
-	case v == "none":
+	case value == "none":
 		return svgPaint{none: true}, nil
-	case v == "currentColor":
+	case value == "currentColor":
 		return svgPaint{}, nil
-	case strings.HasPrefix(v, "token(") && strings.HasSuffix(v, ")"):
-		return svgPaint{token: core.Token(strings.TrimSpace(v[6 : len(v)-1]))}, nil
+	case strings.HasPrefix(value, "token(") && strings.HasSuffix(value, ")"):
+		return svgPaint{token: core.Token(strings.TrimSpace(value[6 : len(value)-1]))}, nil
 	}
-	return svgPaint{}, fmt.Errorf("a paint is none, currentColor or token(name), not %q", v)
+	return svgPaint{}, fmt.Errorf("a paint is none, currentColor or token(name), not %q", value)
 }
 
 func applyStyle(st svgStyle, attrs map[string]string) (svgStyle, error) {
@@ -219,21 +219,21 @@ func num(attrs map[string]string, name string, def float64) (float64, error) {
 }
 
 // shapeCmds turns one shape element into path commands.
-func shapeCmds(tag string, a map[string]string) ([]svgCmd, error) {
+func shapeCmds(tag string, other map[string]string) ([]svgCmd, error) {
 	switch tag {
 	case "path":
-		return parsePathData(a["d"])
+		return parsePathData(other["d"])
 	case "line":
-		x1, e1 := num(a, "x1", 0)
-		y1, e2 := num(a, "y1", 0)
-		x2, e3 := num(a, "x2", 0)
-		y2, e4 := num(a, "y2", 0)
+		x1, e1 := num(other, "x1", 0)
+		y1, e2 := num(other, "y1", 0)
+		x2, e3 := num(other, "x2", 0)
+		y2, e4 := num(other, "y2", 0)
 		if err := errors.Join(e1, e2, e3, e4); err != nil {
 			return nil, err
 		}
 		return []svgCmd{{'M', [6]float64{x1, y1}}, {'L', [6]float64{x2, y2}}}, nil
 	case "polyline", "polygon":
-		nums, err := parseNumbers(a["points"])
+		nums, err := parseNumbers(other["points"])
 		if err != nil || len(nums) < 4 || len(nums)%2 != 0 {
 			return nil, fmt.Errorf("%s needs pairs of numbers in points", tag)
 		}
@@ -250,11 +250,11 @@ func shapeCmds(tag string, a map[string]string) ([]svgCmd, error) {
 		}
 		return cmds, nil
 	case "rect":
-		x, e1 := num(a, "x", 0)
-		y, e2 := num(a, "y", 0)
-		w, e3 := num(a, "width", 0)
-		h, e4 := num(a, "height", 0)
-		rx, e5 := num(a, "rx", 0)
+		x, e1 := num(other, "x", 0)
+		y, e2 := num(other, "y", 0)
+		w, e3 := num(other, "width", 0)
+		h, e4 := num(other, "height", 0)
+		rx, e5 := num(other, "rx", 0)
 		if err := errors.Join(e1, e2, e3, e4, e5); err != nil {
 			return nil, err
 		}
@@ -269,12 +269,12 @@ func shapeCmds(tag string, a map[string]string) ([]svgCmd, error) {
 			x+rx, y, x+w-rx, rx, rx, x+w, y+rx, y+h-rx, rx, rx, x+w-rx, y+h, x+rx, rx, rx, x, y+h-rx, y+rx, rx, rx, x+rx, y)
 		return parsePathData(d)
 	case "circle", "ellipse":
-		cx, e1 := num(a, "cx", 0)
-		cy, e2 := num(a, "cy", 0)
-		rx, e3 := num(a, "rx", 0)
-		ry, e4 := num(a, "ry", 0)
+		cx, e1 := num(other, "cx", 0)
+		cy, e2 := num(other, "cy", 0)
+		rx, e3 := num(other, "rx", 0)
+		ry, e4 := num(other, "ry", 0)
 		if tag == "circle" {
-			r, e := num(a, "r", 0)
+			r, e := num(other, "r", 0)
 			rx, ry, e3, e4 = r, r, e, nil
 		}
 		if err := errors.Join(e1, e2, e3, e4); err != nil {
@@ -289,9 +289,9 @@ func shapeCmds(tag string, a map[string]string) ([]svgCmd, error) {
 	return nil, fmt.Errorf("unknown element <%s>; icons use path, line, polyline, polygon, rect, circle, ellipse, g", tag)
 }
 
-func parseNumbers(s string) ([]float64, error) {
+func parseNumbers(text string) ([]float64, error) {
 	var out []float64
-	for _, f := range strings.FieldsFunc(s, func(r rune) bool { return r == ' ' || r == ',' || r == '\n' || r == '\t' }) {
+	for _, f := range strings.FieldsFunc(text, func(char rune) bool { return char == ' ' || char == ',' || char == '\n' || char == '\t' }) {
 		v, err := strconv.ParseFloat(f, 64)
 		if err != nil {
 			return nil, err
@@ -370,8 +370,8 @@ func (p *pathScanner) flag() (bool, error) {
 	return false, errors.New("an arc flag is 0 or 1")
 }
 
-func (p *pathScanner) numbers(n int) ([]float64, error) {
-	out := make([]float64, n)
+func (p *pathScanner) numbers(count int) ([]float64, error) {
+	out := make([]float64, count)
 	for i := range out {
 		v, err := p.number()
 		if err != nil {
@@ -383,16 +383,16 @@ func (p *pathScanner) numbers(n int) ([]float64, error) {
 }
 
 // parsePathData turns path data into absolute M, L, C and Z commands.
-func parsePathData(d string) ([]svgCmd, error) {
-	p := &pathScanner{s: d}
+func parsePathData(text string) ([]svgCmd, error) {
+	p := &pathScanner{s: text}
 	var cmds []svgCmd
 	var cx, cy, sx, sy float64 // current point and subpath start
 	var lastCx, lastCy float64 // last control point, for S and T
 	var prev byte              // previous command letter, upper case
-	cubic := func(x1, y1, x2, y2, x, y float64) {
-		cmds = append(cmds, svgCmd{'C', [6]float64{x1, y1, x2, y2, x, y}})
+	cubic := func(x1, y1, x2, y2, posX, posY float64) {
+		cmds = append(cmds, svgCmd{'C', [6]float64{x1, y1, x2, y2, posX, posY}})
 		lastCx, lastCy = x2, y2
-		cx, cy = x, y
+		cx, cy = posX, posY
 	}
 	for {
 		c, ok := p.command()
@@ -405,11 +405,11 @@ func parsePathData(d string) ([]svgCmd, error) {
 		}
 		rel := c >= 'a'
 		up := c &^ 0x20
-		off := func(x, y float64) (float64, float64) {
+		off := func(posX, posY float64) (float64, float64) {
 			if rel {
-				return cx + x, cy + y
+				return cx + posX, cy + posY
 			}
-			return x, y
+			return posX, posY
 		}
 		if up == 'Z' {
 			cmds = append(cmds, svgCmd{op: 'Z'})
@@ -581,8 +581,8 @@ func arcToCubics(x1, y1, rx, ry, rotDeg float64, large, sweep bool, x2, y2 float
 	step := dth / float64(n)
 	t := 4.0 / 3 * math.Tan(step/4)
 	var out [][6]float64
-	pt := func(a float64) (float64, float64, float64, float64) {
-		cosA, sinA := math.Cos(a), math.Sin(a)
+	pt := func(value float64) (float64, float64, float64, float64) {
+		cosA, sinA := math.Cos(value), math.Sin(value)
 		x := cosP*rx*cosA - sinP*ry*sinA + cx
 		y := sinP*rx*cosA + cosP*ry*sinA + cy
 		dxA := -cosP*rx*sinA - sinP*ry*cosA

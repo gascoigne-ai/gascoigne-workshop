@@ -21,23 +21,23 @@ func (*areaB) KeepsTab() bool { return true }
 
 func (b *areaB) wrapLines() { b.wrap = true }
 
-func (b *areaB) Update(e *El, c *core.Ctx) {
+func (b *areaB) Update(element *El, ctx *core.Ctx) {
 	b.area.Wrap = b.wrap
-	if !b.area.Update(c, e.Rect()) {
+	if !b.area.Update(ctx, element.Rect()) {
 		return
 	}
-	if onChange := e.ChangeHandler(); onChange != nil {
+	if onChange := element.ChangeHandler(); onChange != nil {
 		onChange()
 	}
 }
 
-func (b *areaB) Draw(e *El, c *core.Ctx, dst *ebiten.Image) {
+func (b *areaB) Draw(element *El, ctx *core.Ctx, dst *ebiten.Image) {
 	b.area.Wrap = b.wrap
-	b.area.Draw(c, dst, e.Rect())
+	b.area.Draw(ctx, dst, element.Rect())
 }
 
 // Area is a multi-line editor bound to a (v-model style). It keeps
 // Tab for indenting, so Escape is how focus leaves it with the keyboard.
-func Area(a *TextArea, opts ...Option) *El {
-	return Custom(&areaB{area: a}, with(nil, opts)...)
+func Area(textAreaValue *TextArea, opts ...Option) *El {
+	return Custom(&areaB{area: textAreaValue}, with(nil, opts)...)
 }

@@ -54,21 +54,21 @@ func (s *sliderB) normalize() {
 	}
 }
 
-func (s *sliderB) track(e *El) (x, w int) {
-	return e.Rect().X + sliderPad, max(e.Rect().W-2*sliderPad, 1)
+func (s *sliderB) track(element *El) (x, w int) {
+	return element.Rect().X + sliderPad, max(element.Rect().W-2*sliderPad, 1)
 }
 
 // valueAt maps a track fraction (0..1) to a stepped value. With a mid
 // value the two halves of the track are scaled separately, so the mid
 // value sits in the middle.
-func (s *sliderB) valueAt(f float64) int {
-	f = max(0, min(f, 1))
-	lo, hi, g := float64(s.min), float64(s.max), f
+func (s *sliderB) valueAt(value float64) int {
+	value = max(0, min(value, 1))
+	lo, hi, g := float64(s.min), float64(s.max), value
 	if s.mid != 0 {
-		if f < 0.5 {
-			hi, g = float64(s.mid), f*2
+		if value < 0.5 {
+			hi, g = float64(s.mid), value*2
 		} else {
-			lo, g = float64(s.mid), (f-0.5)*2
+			lo, g = float64(s.mid), (value-0.5)*2
 		}
 	}
 	v := lo + g*(hi-lo)
@@ -77,25 +77,25 @@ func (s *sliderB) valueAt(f float64) int {
 }
 
 // fracOf is the track fraction of value v.
-func (s *sliderB) fracOf(v int) float64 {
-	v = max(s.min, min(v, s.max))
+func (s *sliderB) fracOf(value int) float64 {
+	value = max(s.min, min(value, s.max))
 	if s.mid == 0 {
-		return float64(v-s.min) / float64(s.max-s.min)
+		return float64(value-s.min) / float64(s.max-s.min)
 	}
-	if v < s.mid {
-		return 0.5 * float64(v-s.min) / float64(s.mid-s.min)
+	if value < s.mid {
+		return 0.5 * float64(value-s.min) / float64(s.mid-s.min)
 	}
-	return 0.5 + 0.5*float64(v-s.mid)/float64(s.max-s.mid)
+	return 0.5 + 0.5*float64(value-s.mid)/float64(s.max-s.mid)
 }
 
 func (s *sliderB) Measure(*El, *core.Ctx, int) (int, int) { return 120, 20 }
 
-func (s *sliderB) Update(e *El, c *core.Ctx) {
-	in, st := c.In, s.state
+func (s *sliderB) Update(element *El, ctx *core.Ctx) {
+	in, st := ctx.In, s.state
 	switch {
 	case st.Dragging:
 		if in.Held {
-			f := st.startF + (float64(c.PointerX)*c.Scale-st.startDev)/st.trackDev
+			f := st.startF + (float64(ctx.PointerX)*ctx.Scale-st.startDev)/st.trackDev
 			if v := s.valueAt(f); v != st.pending {
 				st.pending = v
 				if s.onChange != nil {
@@ -108,40 +108,40 @@ func (s *sliderB) Update(e *El, c *core.Ctx) {
 		if s.onEnd != nil {
 			s.onEnd(st.pending)
 		}
-	case in.Click && in.Over(e.Rect()):
-		x, w := s.track(e)
+	case in.Click && in.Over(element.Rect()):
+		x, w := s.track(element)
 		st.Dragging = true
 		st.startF = max(0, min(float64(in.X-x)/float64(w), 1))
-		st.startDev, st.trackDev = float64(in.X)*c.Scale, float64(w)*c.Scale
+		st.startDev, st.trackDev = float64(in.X)*ctx.Scale, float64(w)*ctx.Scale
 		st.pending = s.valueAt(st.startF)
 		if st.pending != s.value && s.onChange != nil {
 			s.onChange(st.pending)
 		}
-		c.In.Click = false
+		ctx.In.Click = false
 	}
 }
 
-func (s *sliderB) Draw(e *El, c *core.Ctx, dst *ebiten.Image) {
-	r := e.Rect()
-	x, w := s.track(e)
+func (s *sliderB) Draw(element *El, ctx *core.Ctx, dst *ebiten.Image) {
+	r := element.Rect()
+	x, w := s.track(element)
 	frac := s.fracOf(s.state.Shown(s.value))
 	mid := r.Y + r.H/2
-	pill := float64(2) * min(c.Th.RadiusScale, 1) // the track is square when corners are
-	chip, accent := c.Color(core.Chip), c.Color(core.Accent)
-	c.FillStyled(dst, core.Rect{X: x, Y: mid - 2, W: w, H: 4}, chip, chip, pill)
+	pill := float64(2) * min(ctx.Th.RadiusScale, 1) // the track is square when corners are
+	chip, accent := ctx.Color(core.Chip), ctx.Color(core.Accent)
+	ctx.FillStyled(dst, core.Rect{X: x, Y: mid - 2, W: w, H: 4}, chip, chip, pill)
 	if s.mid != 0 { // a tick at the middle value
-		c.Fill(dst, core.Rect{X: x + w/2, Y: mid - 5, W: 1, H: 10}, c.Color(core.Rule))
+		ctx.Fill(dst, core.Rect{X: x + w/2, Y: mid - 5, W: 1, H: 10}, ctx.Color(core.Rule))
 	}
-	c.FillStyled(dst, core.Rect{X: x, Y: mid - 2, W: int(frac*float64(w) + 0.5), H: 4}, accent, accent, pill)
+	ctx.FillStyled(dst, core.Rect{X: x, Y: mid - 2, W: int(frac*float64(w) + 0.5), H: 4}, accent, accent, pill)
 	tx := x + int(frac*float64(w)+0.5)
 	thumb := core.Rect{X: tx - 5, Y: mid - 8, W: 10, H: 16}
 	clr := core.Accent
-	if s.state.Dragging || c.Hovered(r) {
+	if s.state.Dragging || ctx.Hovered(r) {
 		clr = core.AccentLine
 	}
-	tc := c.Color(clr)
-	c.FillStyled(dst, thumb, tc, tc, c.Radius("slider"))
-	c.OutlineStyled(dst, thumb, c.Color(core.Border), c.Radius("slider"))
+	tc := ctx.Color(clr)
+	ctx.FillStyled(dst, thumb, tc, tc, ctx.Radius("slider"))
+	ctx.OutlineStyled(dst, thumb, ctx.Color(core.Border), ctx.Radius("slider"))
 }
 
 // Slider picks an integer from min to max in steps, by dragging. OnSlide
@@ -155,10 +155,10 @@ func Slider(state *SliderState, min, max, step, value int, opts ...Option) *El {
 }
 
 // OnSlide runs with each new value of a Slider while the thumb moves.
-func OnSlide(f func(int)) Option {
-	return func(e *El) {
-		if s, ok := e.Behavior().(*sliderB); ok {
-			s.onChange = f
+func OnSlide(callback func(int)) Option {
+	return func(element *El) {
+		if s, ok := element.Behavior().(*sliderB); ok {
+			s.onChange = callback
 		}
 	}
 }
@@ -166,8 +166,8 @@ func OnSlide(f func(int)) Option {
 // SliderMid puts value mid in the middle of the slider's track, scaling
 // the two halves separately.
 func SliderMid(mid int) Option {
-	return func(e *El) {
-		if s, ok := e.Behavior().(*sliderB); ok {
+	return func(element *El) {
+		if s, ok := element.Behavior().(*sliderB); ok {
 			s.mid = mid
 			s.normalize()
 		}
@@ -175,10 +175,10 @@ func SliderMid(mid int) Option {
 }
 
 // OnSlideEnd runs with the final value when the thumb is released.
-func OnSlideEnd(f func(int)) Option {
-	return func(e *El) {
-		if s, ok := e.Behavior().(*sliderB); ok {
-			s.onEnd = f
+func OnSlideEnd(callback func(int)) Option {
+	return func(element *El) {
+		if s, ok := element.Behavior().(*sliderB); ok {
+			s.onEnd = callback
 		}
 	}
 }

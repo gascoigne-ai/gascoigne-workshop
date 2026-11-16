@@ -13,10 +13,10 @@ import (
 // Cut and Copy are disabled on a masked field. Pass the field the element
 // edits (for an Area, its TextField).
 func TextMenu(field *TextField) Option {
-	return func(e *El) {
-		OnRightClickIn(func(c *core.Ctx, x, y int) {
-			OpenMenu(c, x, y, textMenuItems(c.Clipboard, field, e.ChangeHandler()))
-		})(e)
+	return func(element *El) {
+		OnRightClickIn(func(ctx *core.Ctx, posX, posY int) {
+			OpenMenu(ctx, posX, posY, textMenuItems(ctx.Clipboard, field, element.ChangeHandler()))
+		})(element)
 	}
 }
 

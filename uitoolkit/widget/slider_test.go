@@ -17,16 +17,16 @@ type slide struct {
 
 func newSlide(t *testing.T, value int, opts ...Option) (*slide, *core.Ctx) {
 	s := &slide{st: &SliderState{}}
-	items := append([]Option{W(200 + 2*sliderPad), H(20), OnSlideEnd(func(v int) { s.ended = append(s.ended, v) })}, opts...)
-	s.root = Col(Slider(s.st, 50, 200, 5, value, append([]Option{OnSlide(func(v int) { s.live = append(s.live, v) })}, items...)...))
+	items := append([]Option{W(200 + 2*sliderPad), H(20), OnSlideEnd(func(value int) { s.ended = append(s.ended, value) })}, opts...)
+	s.root = Col(Slider(s.st, 50, 200, 5, value, append([]Option{OnSlide(func(value int) { s.live = append(s.live, value) })}, items...)...))
 	c := testCtx(t)
 	Layout(c, s.root, 400, 100)
 	return s, c
 }
 
-func (s *slide) at(c *core.Ctx, x int, held, click bool) {
-	c.In = core.Input{X: x, Y: 10, Click: click, Held: held}
-	Update(c, s.root)
+func (s *slide) at(ctx *core.Ctx, posX int, held, click bool) {
+	ctx.In = core.Input{X: posX, Y: 10, Click: click, Held: held}
+	Update(ctx, s.root)
 }
 
 func TestSliderAppliesLiveWhileDraggingAndEndsOnRelease(t *testing.T) {
@@ -106,7 +106,7 @@ func TestSliderIgnoresClicksOutside(t *testing.T) {
 func TestSliderKeepsFollowingAPointerThatLeavesItsClippingContainer(t *testing.T) {
 	st := &SliderState{}
 	var live []int
-	slider := Slider(st, 50, 200, 5, 100, OnSlide(func(v int) { live = append(live, v) }), W(200+2*sliderPad), H(20))
+	slider := Slider(st, 50, 200, 5, 100, OnSlide(func(value int) { live = append(live, value) }), W(200+2*sliderPad), H(20))
 	root := Col(Scroll(&ScrollState{}, H(20), W(216), slider)) // clips: a pointer outside is hidden from the slider
 	c := testCtx(t)
 	Layout(c, root, 400, 100)
@@ -137,7 +137,7 @@ func TestSliderWithADegenerateRangeStaysFinite(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			state := &SliderState{}
 			var live []int
-			opts := []Option{W(200 + 2*sliderPad), H(20), OnSlide(func(v int) { live = append(live, v) })}
+			opts := []Option{W(200 + 2*sliderPad), H(20), OnSlide(func(value int) { live = append(live, value) })}
 			if tc.mid != 0 {
 				opts = append(opts, SliderMid(tc.mid))
 			}

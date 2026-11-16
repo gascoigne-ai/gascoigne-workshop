@@ -41,27 +41,27 @@ type scrollB struct {
 // measure is the content's size, but no taller than MaxH, so a
 // scroller in a floating or hugging parent shrinks to its content and
 // scrolls only when the content is taller than the limit.
-func (s *scrollB) track(e *El) core.Rect {
-	r := e.Rect()
+func (s *scrollB) track(element *El) core.Rect {
+	r := element.Rect()
 	return core.Rect{X: r.X + r.W - scrollbarW, Y: r.Y, W: scrollbarW, H: r.H}
 }
 
-func (s *scrollB) Layout(e *El, c *core.Ctx) {
-	r := e.Rect()
-	_, s.content = s.Linear.Measure(e, c, e.Inner().W)
+func (s *scrollB) Layout(element *El, ctx *core.Ctx) {
+	r := element.Rect()
+	_, s.content = s.Linear.Measure(element, ctx, element.Inner().W)
 	y := clampScroll(s.state.Y, s.content, r.H) // update writes it back
 
 	width := r.W
 	if s.content > r.H {
 		width -= scrollbarW
 	}
-	s.LayoutIn(e, c, core.Rect{X: r.X, Y: r.Y - y, W: width, H: max(s.content, r.H)})
+	s.LayoutIn(element, ctx, core.Rect{X: r.X, Y: r.Y - y, W: width, H: max(s.content, r.H)})
 }
 
-func (s *scrollB) Update(e *El, c *core.Ctx) {
-	in, st, r := c.In, s.state, e.Rect()
+func (s *scrollB) Update(element *El, ctx *core.Ctx) {
+	in, st, r := ctx.In, s.state, element.Rect()
 	st.Y = clampScroll(st.Y, s.content, r.H)
-	track := s.track(e)
+	track := s.track(element)
 	if st.drag.on {
 		if st.drag.held(in) {
 			st.Y = posFromOffset(track.H, s.content, r.H, in.Y-track.Y-st.drag.off)
@@ -74,7 +74,7 @@ func (s *scrollB) Update(e *El, c *core.Ctx) {
 	}
 	if in.Wheel != 0 && in.Over(r) && s.content > r.H {
 		st.Y = clampScroll(st.Y+int(-in.Wheel*wheelStep), s.content, r.H)
-		c.In.Wheel = 0 // consumed, so an enclosing scroller does not move too
+		ctx.In.Wheel = 0 // consumed, so an enclosing scroller does not move too
 	}
 }
 
@@ -89,9 +89,9 @@ func (s *scrollB) press(track core.Rect, view, at int) {
 	}
 }
 
-func (s *scrollB) DrawOver(e *El, c *core.Ctx, dst *ebiten.Image) {
-	track := s.track(e)
-	drawScrollbar(c, dst, track, s.content, e.Rect().H, s.state.Y, s.state.drag.on || c.Hovered(track))
+func (s *scrollB) DrawOver(element *El, ctx *core.Ctx, dst *ebiten.Image) {
+	track := s.track(element)
+	drawScrollbar(ctx, dst, track, s.content, element.Rect().H, s.state.Y, s.state.drag.on || ctx.Hovered(track))
 }
 
 // Scroll is a vertically scrolling column: its children may be taller
@@ -107,8 +107,8 @@ func Scroll(state *ScrollState, items ...Item) *El {
 // ScrollTo moves the scroll position just far enough to bring target, a
 // rect from this frame's layout, inside the box: what Tab moving the
 // focus to a field out of view needs. The box shows it on the next frame.
-func (s *scrollB) ScrollTo(e *El, target core.Rect) {
-	view := e.Rect()
+func (s *scrollB) ScrollTo(element *El, target core.Rect) {
+	view := element.Rect()
 	switch {
 	case target.Y < view.Y:
 		s.state.Y = max(s.state.Y-(view.Y-target.Y), 0)

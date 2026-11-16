@@ -50,8 +50,8 @@ type MenuState struct {
 }
 
 // NewMenu is a menu at x, y with its first selectable row highlighted.
-func NewMenu(x, y int, items []MenuItem) *MenuState {
-	return &MenuState{X: x, Y: y, Items: items, Hot: NextSelectable(items, -1, 1)}
+func NewMenu(posX, posY int, items []MenuItem) *MenuState {
+	return &MenuState{X: posX, Y: posY, Items: items, Hot: NextSelectable(items, -1, 1)}
 }
 
 // NextSelectable is the index of the next enabled, non-separator row
@@ -87,7 +87,7 @@ func (menu *MenuState) Keys(input core.Input) int {
 // wide as its widest row. OnSelect runs with the index of a clicked row
 // that can be picked, OnDismiss when the user clicks outside it. The
 // context only measures text.
-func Menu(c *core.Ctx, state *MenuState, opts ...Option) *El {
+func Menu(ctx *core.Ctx, state *MenuState, opts ...Option) *El {
 	var menu *El
 	pick := func(index int) {
 		if menu.SelectHandler() != nil && state.Items[index].Selectable() {
@@ -99,7 +99,7 @@ func Menu(c *core.Ctx, state *MenuState, opts ...Option) *El {
 		rows[index] = menuRow(state, index, item, pick)
 	}
 	menu = Col(with(append([]Item{
-		W(MenuWidth(c, state.Items)), Pad(MenuPad), Bg(core.Bg), Control("menu"), Shadow(),
+		W(MenuWidth(ctx, state.Items)), Pad(MenuPad), Bg(core.Bg), Control("menu"), Shadow(),
 		FloatAt(state.X, state.Y), Modal(),
 	}, rows...), opts)...)
 	return menu
@@ -156,19 +156,19 @@ func menuHasIcons(items []MenuItem) bool {
 
 // MenuWidth is the width of a menu of items: its widest row within
 // MenuMinW and MenuMaxW.
-func MenuWidth(c *core.Ctx, items []MenuItem) int {
+func MenuWidth(ctx *core.Ctx, items []MenuItem) int {
 	widest := 0
 	icons := menuHasIcons(items)
 	for _, item := range items {
 		if item.Separator {
 			continue
 		}
-		row := c.Width(c.F.UI, item.Label)
+		row := ctx.Width(ctx.F.UI, item.Label)
 		for _, line := range strings.Split(item.Hint, "\n") {
-			row = max(row, c.Width(c.F.Small, line))
+			row = max(row, ctx.Width(ctx.F.Small, line))
 		}
 		if item.Shortcut != "" {
-			row += 16 + c.Width(c.F.Small, core.PlatformKeyText(core.HostOS, item.Shortcut))
+			row += 16 + ctx.Width(ctx.F.Small, core.PlatformKeyText(core.HostOS, item.Shortcut))
 		}
 		if icons {
 			row += menuIconW + 8
@@ -181,51 +181,51 @@ func MenuWidth(c *core.Ctx, items []MenuItem) int {
 // OpenMenu opens a popup menu at x, y; it replaces one that is open. Mount
 // PopupMenuLayer in the window's Stack to show it and call PopupMenuKeys
 // each frame for its keyboard.
-func OpenMenu(c *core.Ctx, x, y int, items []MenuItem) { c.Menu = NewMenu(x, y, items) }
+func OpenMenu(ctx *core.Ctx, posX, posY int, items []MenuItem) { ctx.Menu = NewMenu(posX, posY, items) }
 
 // CloseMenu closes the popup menu, if one is open.
-func CloseMenu(c *core.Ctx) { c.Menu = nil }
+func CloseMenu(ctx *core.Ctx) { ctx.Menu = nil }
 
 // MenuOpen reports whether a popup menu is open.
-func MenuOpen(c *core.Ctx) bool { return PopupMenu(c) != nil }
+func MenuOpen(ctx *core.Ctx) bool { return PopupMenu(ctx) != nil }
 
 // PopupMenu is the open popup menu, nil when there is none.
-func PopupMenu(c *core.Ctx) *MenuState {
-	state, _ := c.Menu.(*MenuState)
+func PopupMenu(ctx *core.Ctx) *MenuState {
+	state, _ := ctx.Menu.(*MenuState)
 	return state
 }
 
 // PopupMenuLayer is the open popup menu as an overlay, nil when none is
 // open. A pick or a click outside closes it; a pick then runs the row's
 // action, so the action may open another menu.
-func PopupMenuLayer(c *core.Ctx) Node {
-	state := PopupMenu(c)
+func PopupMenuLayer(ctx *core.Ctx) Node {
+	state := PopupMenu(ctx)
 	if state == nil {
 		return nil
 	}
-	return Menu(c, state, OnSelect(func(index int) { pickMenuRow(c, index) }), OnDismiss(func() { CloseMenu(c) }))
+	return Menu(ctx, state, OnSelect(func(index int) { pickMenuRow(ctx, index) }), OnDismiss(func() { CloseMenu(ctx) }))
 }
 
 // PopupMenuKeys drives the open popup menu with the frame's keys: Up and
 // Down move the highlight, Enter picks it. Without an open menu it does
 // nothing.
-func PopupMenuKeys(c *core.Ctx, input core.Input) {
-	state := PopupMenu(c)
+func PopupMenuKeys(ctx *core.Ctx, input core.Input) {
+	state := PopupMenu(ctx)
 	if state == nil {
 		return
 	}
 	if picked := state.Keys(input); picked >= 0 {
-		pickMenuRow(c, picked)
+		pickMenuRow(ctx, picked)
 	}
 }
 
-func pickMenuRow(c *core.Ctx, index int) {
-	state := PopupMenu(c)
+func pickMenuRow(ctx *core.Ctx, index int) {
+	state := PopupMenu(ctx)
 	if state == nil || !state.Items[index].Selectable() {
 		return
 	}
 	run := state.Items[index].Run
-	CloseMenu(c)
+	CloseMenu(ctx)
 	if run != nil {
 		run()
 	}

@@ -8,9 +8,9 @@ import (
 )
 
 // rows builds n clickable 20px rows that record their index when clicked.
-func rows(n int, hits *[]int) []Item {
+func rows(count int, hits *[]int) []Item {
 	var items []Item
-	for i := 0; i < n; i++ {
+	for i := 0; i < count; i++ {
 		i := i
 		items = append(items, Row(H(20), OnClick(func() { *hits = append(*hits, i) })))
 	}
@@ -18,12 +18,12 @@ func rows(n int, hits *[]int) []Item {
 }
 
 // scroller is a Scroll with a fixed height.
-func scroller(st *ScrollState, h int, items ...Item) *El {
-	return Scroll(st, append([]Item{H(h)}, items...)...)
+func scroller(st *ScrollState, height int, items ...Item) *El {
+	return Scroll(st, append([]Item{H(height)}, items...)...)
 }
 
-func wheel(c *core.Ctx, x, y int, dy float64) {
-	c.In = core.Input{X: x, Y: y, Wheel: dy}
+func wheel(ctx *core.Ctx, posX, posY int, dy float64) {
+	ctx.In = core.Input{X: posX, Y: posY, Wheel: dy}
 }
 
 func TestScrollWheelMovesContentAndClampsAtBothEnds(t *testing.T) {

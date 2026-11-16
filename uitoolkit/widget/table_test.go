@@ -16,8 +16,8 @@ func TestTableHeightAndEditHandlers(t *testing.T) {
 		Rows:        []TableRow{{Cells: []string{"q", "x"}, Checked: true}, {Cells: []string{"o", "y"}}},
 		Placeholder: []string{"Name", "Value"},
 		Editable:    true,
-		OnToggle:    func(i int) { toggled = append(toggled, i) },
-		OnDelete:    func(i int) { deleted = append(deleted, i) },
+		OnToggle:    func(index int) { toggled = append(toggled, index) },
+		OnDelete:    func(index int) { deleted = append(deleted, index) },
 	}
 	tbl := Table(spec)
 	root := Col(tbl)
@@ -28,7 +28,7 @@ func TestTableHeightAndEditHandlers(t *testing.T) {
 	if got, want := tbl.Rect().H, 4*core.RowH; got != want {
 		t.Fatalf("table height = %d, want %d", got, want)
 	}
-	rowY := func(i int) int { return (i+1)*core.RowH + core.RowH/2 }
+	rowY := func(index int) int { return (index+1)*core.RowH + core.RowH/2 }
 	click(c, 10, rowY(1))
 	Update(c, root)
 	click(c, 395, rowY(0))
@@ -120,7 +120,7 @@ func TestEditedCellShowsAFieldWithEnterAndTab(t *testing.T) {
 func TestTableRowRightClickReportsTheRowButNotThePlaceholder(t *testing.T) {
 	var rows []int
 	spec := editableSpec()
-	spec.OnRowMenu = func(row, x, y int) { rows = append(rows, row) }
+	spec.OnRowMenu = func(row, posX, posY int) { rows = append(rows, row) }
 	root := Col(Table(spec))
 	c := testCtx(t)
 	Layout(c, root, 400, 400)

@@ -25,16 +25,16 @@ type splitB struct {
 	minFirst, minSecond int
 }
 
-func (s *splitB) axis(e *El) (origin, total int) {
+func (s *splitB) axis(element *El) (origin, total int) {
 	if s.vertical {
-		return e.Rect().Y, e.Rect().H
+		return element.Rect().Y, element.Rect().H
 	}
-	return e.Rect().X, e.Rect().W
+	return element.Rect().X, element.Rect().W
 }
 
 // firstSize is the pixel size of the first child: the stored size or the
 // default, as pixels or a fraction, held between the two minimums.
-func (s *splitB) firstSize(e *El, avail int) int {
+func (s *splitB) firstSize(element *El, avail int) int {
 	size := s.state.Size
 	if size == 0 {
 		size = s.def
@@ -47,31 +47,31 @@ func (s *splitB) firstSize(e *El, avail int) int {
 	return min(max(px, s.minFirst), hi)
 }
 
-func (s *splitB) Layout(e *El, c *core.Ctx) {
-	if len(e.Children()) != 2 {
+func (s *splitB) Layout(element *El, ctx *core.Ctx) {
+	if len(element.Children()) != 2 {
 		return
 	}
-	r := e.Rect()
-	_, total := s.axis(e)
+	r := element.Rect()
+	_, total := s.axis(element)
 	avail := max(total-1, 0)
-	px := min(s.firstSize(e, avail), avail)
+	px := min(s.firstSize(element, avail), avail)
 	if s.vertical {
 		s.divider = core.Rect{X: r.X, Y: r.Y + px, W: r.W, H: 1}
-		e.Children()[0].Place(c, core.Rect{X: r.X, Y: r.Y, W: r.W, H: px})
-		e.Children()[1].Place(c, core.Rect{X: r.X, Y: r.Y + px + 1, W: r.W, H: avail - px})
+		element.Children()[0].Place(ctx, core.Rect{X: r.X, Y: r.Y, W: r.W, H: px})
+		element.Children()[1].Place(ctx, core.Rect{X: r.X, Y: r.Y + px + 1, W: r.W, H: avail - px})
 		return
 	}
 	s.divider = core.Rect{X: r.X + px, Y: r.Y, W: 1, H: r.H}
-	e.Children()[0].Place(c, core.Rect{X: r.X, Y: r.Y, W: px, H: r.H})
-	e.Children()[1].Place(c, core.Rect{X: r.X + px + 1, Y: r.Y, W: avail - px, H: r.H})
+	element.Children()[0].Place(ctx, core.Rect{X: r.X, Y: r.Y, W: px, H: r.H})
+	element.Children()[1].Place(ctx, core.Rect{X: r.X + px + 1, Y: r.Y, W: avail - px, H: r.H})
 }
 
-func (s *splitB) Draw(e *El, c *core.Ctx, dst *ebiten.Image) {
-	c.Fill(dst, s.divider, c.Color(core.Border))
+func (s *splitB) Draw(element *El, ctx *core.Ctx, dst *ebiten.Image) {
+	ctx.Fill(dst, s.divider, ctx.Color(core.Border))
 }
 
 // handle is the area that grabs the divider, a little wider than it.
-func (s *splitB) handle(e *El) core.Rect {
+func (s *splitB) handle(element *El) core.Rect {
 	d := s.divider
 	if s.vertical {
 		return core.Rect{X: d.X, Y: d.Y - handleSlop, W: d.W, H: 1 + 2*handleSlop}
@@ -79,23 +79,23 @@ func (s *splitB) handle(e *El) core.Rect {
 	return core.Rect{X: d.X - handleSlop, Y: d.Y, W: 1 + 2*handleSlop, H: d.H}
 }
 
-func (s *splitB) Update(e *El, c *core.Ctx) {
-	if len(e.Children()) != 2 {
+func (s *splitB) Update(element *El, ctx *core.Ctx) {
+	if len(element.Children()) != 2 {
 		return
 	}
-	in, st := c.In, s.state
+	in, st := ctx.In, s.state
 	cursor, pointer, divPos := core.CursorResizeH, in.X, s.divider.X
 	if s.vertical {
 		cursor, pointer, divPos = core.CursorResizeV, in.Y, s.divider.Y
 	}
-	origin, total := s.axis(e)
+	origin, total := s.axis(element)
 	avail := max(total-1, 1)
 
 	if st.drag.on {
 		if !st.drag.held(in) {
 			return
 		}
-		c.Cursor = cursor
+		ctx.Cursor = cursor
 		px := float64(pointer - origin - st.drag.off)
 		if s.ratio {
 			px /= float64(avail)
@@ -103,10 +103,10 @@ func (s *splitB) Update(e *El, c *core.Ctx) {
 		st.Size = max(px, 1e-6) // 0 would mean "the default"
 		return
 	}
-	if !in.Over(s.handle(e)) {
+	if !in.Over(s.handle(element)) {
 		return
 	}
-	c.Cursor = cursor
+	ctx.Cursor = cursor
 	if !in.Click {
 		return
 	}
@@ -127,13 +127,17 @@ func Split(state *SplitState, def float64, items ...Item) *El {
 }
 
 // Vertical makes a Split stack its children.
-func Vertical() Option { return func(e *El) { e.Behavior().(*splitB).vertical = true } }
+func Vertical() Option { return func(element *El) { element.Behavior().(*splitB).vertical = true } }
 
 // AsRatio makes a Split's size a fraction of the container instead of pixels.
-func AsRatio() Option { return func(e *El) { e.Behavior().(*splitB).ratio = true } }
+func AsRatio() Option { return func(element *El) { element.Behavior().(*splitB).ratio = true } }
 
 // MinFirst is the smallest size in pixels of a Split's first child.
-func MinFirst(n int) Option { return func(e *El) { e.Behavior().(*splitB).minFirst = n } }
+func MinFirst(count int) Option {
+	return func(element *El) { element.Behavior().(*splitB).minFirst = count }
+}
 
 // MinSecond is the smallest size in pixels of a Split's second child.
-func MinSecond(n int) Option { return func(e *El) { e.Behavior().(*splitB).minSecond = n } }
+func MinSecond(count int) Option {
+	return func(element *El) { element.Behavior().(*splitB).minSecond = count }
+}

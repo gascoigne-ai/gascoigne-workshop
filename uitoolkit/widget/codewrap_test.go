@@ -8,9 +8,9 @@ import (
 )
 
 // wrapCols is how many columns fit in a wrapped view's rows.
-func wrapCols(v *CodeView, c *core.Ctx, r core.Rect) int {
-	g := v.geometry(c, r)
-	return int(v.wrapWidth(g, r) / g.adv)
+func wrapCols(code *CodeView, ctx *core.Ctx, rect core.Rect) int {
+	g := code.geometry(ctx, rect)
+	return int(code.wrapWidth(g, rect) / g.adv)
 }
 
 // longLine is 200 runes: the digits 0-9 twenty times, so a column shows

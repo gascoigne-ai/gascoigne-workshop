@@ -62,7 +62,7 @@ func NewTextField(text string) TextField {
 	return TextField{Text: text, Cursor: len([]rune(text))}
 }
 
-func (f *TextField) clamp(n int) int { return min(max(n, 0), len([]rune(f.Text))) }
+func (f *TextField) clamp(count int) int { return min(max(count, 0), len([]rune(f.Text))) }
 
 // Selection returns the selected range, low to high; ok is false when
 // nothing is selected. The range is kept inside the text, since the text
@@ -96,8 +96,8 @@ func (f *TextField) snapshot() snapshot {
 	return snapshot{f.Text, f.Cursor, f.Anchor, f.HasSel}
 }
 
-func (f *TextField) restore(s snapshot) {
-	f.Text, f.Cursor, f.Anchor, f.HasSel = s.text, s.cursor, s.anchor, s.hasSel
+func (f *TextField) restore(snapshotValue snapshot) {
+	f.Text, f.Cursor, f.Anchor, f.HasSel = snapshotValue.text, snapshotValue.cursor, snapshotValue.anchor, snapshotValue.hasSel
 	f.last = kindNone
 }
 
@@ -184,24 +184,24 @@ func (f *TextField) deleteSelection() {
 // paste: its own undo step. Line breaks become spaces and other control
 // characters are dropped, since the field has one line. It reports
 // whether the text changed.
-func (f *TextField) Insert(s string) bool { return f.insert(s, kindOther) }
+func (f *TextField) Insert(text string) bool { return f.insert(text, kindOther) }
 
-func (f *TextField) insert(s string, kind editKind) bool {
+func (f *TextField) insert(text string, kind editKind) bool {
 	if f.Multiline {
-		s = strings.ReplaceAll(strings.ReplaceAll(s, "\r\n", "\n"), "\r", "\n")
+		text = strings.ReplaceAll(strings.ReplaceAll(text, "\r\n", "\n"), "\r", "\n")
 	}
-	clean := strings.Map(func(r rune) rune {
-		if f.Multiline && (r == '\n' || r == '\t') {
-			return r
+	clean := strings.Map(func(char rune) rune {
+		if f.Multiline && (char == '\n' || char == '\t') {
+			return char
 		}
-		if r == '\n' || r == '\r' || r == '\t' {
+		if char == '\n' || char == '\r' || char == '\t' {
 			return ' '
 		}
-		if r < ' ' || r == 0x7f {
+		if char < ' ' || char == 0x7f {
 			return -1
 		}
-		return r
-	}, s)
+		return char
+	}, text)
 	_, _, hasSel := f.Selection()
 	if clean == "" && !hasSel {
 		return false
@@ -293,24 +293,24 @@ func isWordRune(char rune) bool {
 }
 
 // wordLeft is the start of the word before pos (skipping separators).
-func wordLeft(r []rune, pos int) int {
-	i := min(max(pos, 0), len(r))
-	for i > 0 && !isWordRune(r[i-1]) {
+func wordLeft(runes []rune, pos int) int {
+	i := min(max(pos, 0), len(runes))
+	for i > 0 && !isWordRune(runes[i-1]) {
 		i--
 	}
-	for i > 0 && isWordRune(r[i-1]) {
+	for i > 0 && isWordRune(runes[i-1]) {
 		i--
 	}
 	return i
 }
 
 // wordRight is the end of the word after pos (skipping separators).
-func wordRight(r []rune, pos int) int {
-	i := min(max(pos, 0), len(r))
-	for i < len(r) && !isWordRune(r[i]) {
+func wordRight(runes []rune, pos int) int {
+	i := min(max(pos, 0), len(runes))
+	for i < len(runes) && !isWordRune(runes[i]) {
 		i++
 	}
-	for i < len(r) && isWordRune(r[i]) {
+	for i < len(runes) && isWordRune(runes[i]) {
 		i++
 	}
 	return i
@@ -318,17 +318,17 @@ func wordRight(r []rune, pos int) int {
 
 // wordAt is the range of the run of word characters, or of separator
 // characters, at pos (the character to its right, else to its left).
-func wordAt(r []rune, pos int) (lo, hi int) {
-	if len(r) == 0 {
+func wordAt(runes []rune, pos int) (lo, hi int) {
+	if len(runes) == 0 {
 		return 0, 0
 	}
-	at := min(pos, len(r)-1)
-	word := isWordRune(r[at])
+	at := min(pos, len(runes)-1)
+	word := isWordRune(runes[at])
 	lo, hi = at, at+1
-	for lo > 0 && isWordRune(r[lo-1]) == word {
+	for lo > 0 && isWordRune(runes[lo-1]) == word {
 		lo--
 	}
-	for hi < len(r) && isWordRune(r[hi]) == word {
+	for hi < len(runes) && isWordRune(runes[hi]) == word {
 		hi++
 	}
 	return lo, hi
@@ -364,9 +364,9 @@ func (f *TextField) Apply(typed []rune, edits []core.Edit, extend bool) (changed
 	return changed
 }
 
-func (f *TextField) edit(e core.Edit, extend bool) (changed bool) {
+func (f *TextField) edit(editValue core.Edit, extend bool) (changed bool) {
 	runes := []rune(f.Text)
-	switch e {
+	switch editValue {
 	case core.EditBackspace:
 		return f.deleteRange(f.Cursor-1, f.Cursor, kindDelete)
 	case core.EditDelete:
@@ -406,7 +406,7 @@ func (f *TextField) edit(e core.Edit, extend bool) (changed bool) {
 	case core.EditDocEnd:
 		f.moveTo(len(runes), extend)
 	case core.EditUp, core.EditDown, core.EditPageUp, core.EditPageDown:
-		f.vertical(e, extend)
+		f.vertical(editValue, extend)
 	case core.EditNewline:
 		return f.Multiline && f.newline()
 	case core.EditIndent:
@@ -418,12 +418,12 @@ func (f *TextField) edit(e core.Edit, extend bool) (changed bool) {
 }
 
 // vertical moves by lines in a multi-line field; single-line fields ignore it.
-func (f *TextField) vertical(e core.Edit, extend bool) {
+func (f *TextField) vertical(editValue core.Edit, extend bool) {
 	if !f.Multiline {
 		return
 	}
 	page := max(f.ViewLines, 1)
-	dy := map[core.Edit]int{core.EditUp: -1, core.EditDown: 1, core.EditPageUp: -page, core.EditPageDown: page}[e]
+	dy := map[core.Edit]int{core.EditUp: -1, core.EditDown: 1, core.EditPageUp: -page, core.EditPageDown: page}[editValue]
 	f.moveLines(dy, extend)
 }
 
@@ -471,16 +471,16 @@ func newMultiline(text string) TextField {
 func (f *TextField) LineCount() int { return strings.Count(f.Text, "\n") + 1 }
 
 // lineStart is the position of the start of the line containing pos.
-func lineStart(r []rune, pos int) int {
-	for pos > 0 && r[pos-1] != '\n' {
+func lineStart(runes []rune, pos int) int {
+	for pos > 0 && runes[pos-1] != '\n' {
 		pos--
 	}
 	return pos
 }
 
 // lineEnd is the position of the end of the line containing pos (before its newline).
-func lineEnd(r []rune, pos int) int {
-	for pos < len(r) && r[pos] != '\n' {
+func lineEnd(runes []rune, pos int) int {
+	for pos < len(runes) && runes[pos] != '\n' {
 		pos++
 	}
 	return pos
@@ -576,13 +576,13 @@ func (f *TextField) selectedLines() (starts []int) {
 
 // shiftPos moves p by the changes made at line starts: delta[i] runes
 // were added (positive) or removed (negative) at starts[i].
-func shiftPos(p int, starts, delta []int) int {
-	out := p
+func shiftPos(value int, starts, delta []int) int {
+	out := value
 	for i, s := range starts {
-		if s <= p {
+		if s <= value {
 			out += delta[i]
-			if delta[i] < 0 && p < s-delta[i] {
-				out = out - (p - s) // a position inside the removed run moves to the line start
+			if delta[i] < 0 && value < s-delta[i] {
+				out = out - (value - s) // a position inside the removed run moves to the line start
 				out = s + sumBefore(delta, i)
 			}
 		}
@@ -590,9 +590,9 @@ func shiftPos(p int, starts, delta []int) int {
 	return out
 }
 
-func sumBefore(delta []int, i int) int {
+func sumBefore(delta []int, index int) int {
 	n := 0
-	for _, d := range delta[:i] {
+	for _, d := range delta[:index] {
 		n += d
 	}
 	return n
@@ -615,12 +615,12 @@ func (f *TextField) indent() bool {
 // dedent removes one indent level (up to tabWidth spaces, or a tab)
 // from the start of every selected line or the cursor's line.
 func (f *TextField) dedent() bool {
-	return f.shiftLines(f.selectedLines(), func(r []rune, start int) int {
-		if start < len(r) && r[start] == '\t' {
+	return f.shiftLines(f.selectedLines(), func(runes []rune, start int) int {
+		if start < len(runes) && runes[start] == '\t' {
 			return -1
 		}
 		n := 0
-		for n < tabWidth && start+n < len(r) && r[start+n] == ' ' {
+		for n < tabWidth && start+n < len(runes) && runes[start+n] == ' ' {
 			n++
 		}
 		return -n
@@ -662,8 +662,8 @@ func (f *TextField) shiftLines(starts []int, change func(r []rune, start int) in
 // RunShortcuts runs the undo, redo, select-all, copy, cut and paste
 // shortcuts in c.In against the field and its clipboard. It reports
 // whether the text changed.
-func (f *TextField) RunShortcuts(c *core.Ctx) (changed bool) {
-	in := c.In
+func (f *TextField) RunShortcuts(ctx *core.Ctx) (changed bool) {
+	in := ctx.In
 	if in.Undo {
 		changed = f.Undo() || changed
 	}
@@ -673,19 +673,19 @@ func (f *TextField) RunShortcuts(c *core.Ctx) (changed bool) {
 	if in.SelectAll {
 		f.SelectAll()
 	}
-	if c.Clipboard == nil {
+	if ctx.Clipboard == nil {
 		return changed
 	}
 	if (in.Copy || in.Cut) && !f.Masked { // secrets never reach the clipboard
 		if sel := f.SelectedText(); sel != "" {
-			_ = c.Clipboard.Write(sel) // the clipboard reports its own failures
+			_ = ctx.Clipboard.Write(sel) // the clipboard reports its own failures
 		}
 	}
 	if in.Cut && !f.Masked {
 		changed = f.DeleteSelection() || changed
 	}
 	if in.Paste {
-		if text, err := c.Clipboard.Read(); err == nil {
+		if text, err := ctx.Clipboard.Read(); err == nil {
 			changed = f.Insert(text) || changed
 		}
 	}

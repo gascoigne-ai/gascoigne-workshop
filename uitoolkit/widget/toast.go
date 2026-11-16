@@ -65,7 +65,7 @@ func (stack *ToastStack) Prune(now time.Time) bool {
 }
 
 // Dismiss removes toast i.
-func (stack *ToastStack) Dismiss(i int) { *stack = append((*stack)[:i], (*stack)[i+1:]...) }
+func (stack *ToastStack) Dismiss(index int) { *stack = append((*stack)[:index], (*stack)[index+1:]...) }
 
 // Toasts shows the stack in the bottom-right corner of a window of
 // width by height, bottomInset above its lower edge (a status bar), oldest
@@ -77,12 +77,12 @@ func Toasts(stack *ToastStack, width, height, bottomInset int) *El {
 	total := len(*stack)*toastH + (len(*stack)-1)*toastGap
 	return Col(W(toastW), Gap(toastGap),
 		FloatAt(width-core.Gutter-toastW, height-bottomInset-toastMargin-total),
-		For(*stack, func(i int, toast Toast) Node {
+		For(*stack, func(index int, toast Toast) Node {
 			border, color := core.Border, core.Text
 			if toast.IsErr {
 				border, color = core.Error, core.Error
 			}
-			return Row(H(toastH), PadX(core.Gutter), Bg(core.Panel), Border(border), Shadow(), OnClick(func() { stack.Dismiss(i) }),
+			return Row(H(toastH), PadX(core.Gutter), Bg(core.Panel), Border(border), Shadow(), OnClick(func() { stack.Dismiss(index) }),
 				Text(toast.Text, Ellipsis(), Color(color), Grow(1)),
 			)
 		}),

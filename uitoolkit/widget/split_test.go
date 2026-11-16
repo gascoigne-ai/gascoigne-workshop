@@ -7,12 +7,12 @@ import (
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
-func splitRoot(t *testing.T, st *SplitState, w, h int, items ...Item) (*El, *El, *El, *core.Ctx) {
+func splitRoot(t *testing.T, st *SplitState, width, height int, items ...Item) (*El, *El, *El, *core.Ctx) {
 	t.Helper()
 	first, second := Row(), Row()
 	root := Split(st, 200, append(items, first, second)...)
 	c := testCtx(t)
-	Layout(c, root, w, h)
+	Layout(c, root, width, height)
 	return root, first, second, c
 }
 

@@ -50,43 +50,43 @@ func TestTextFieldSelection(t *testing.T) {
 		wantText string
 		wantSel  string
 	}{
-		{"shift+right selects forward", func(f *TextField) {
-			f.Cursor = 1
-			f.Apply(nil, []core.Edit{core.EditRight, core.EditRight}, true)
+		{"shift+right selects forward", func(field *TextField) {
+			field.Cursor = 1
+			field.Apply(nil, []core.Edit{core.EditRight, core.EditRight}, true)
 		}, "hello", "el"},
-		{"shift+home selects to start", func(f *TextField) {
-			f.Cursor = 3
-			f.Apply(nil, []core.Edit{core.EditHome}, true)
+		{"shift+home selects to start", func(field *TextField) {
+			field.Cursor = 3
+			field.Apply(nil, []core.Edit{core.EditHome}, true)
 		}, "hello", "hel"},
-		{"select all", func(f *TextField) { f.SelectAll() }, "hello", "hello"},
-		{"left collapses to the low edge", func(f *TextField) {
-			f.Cursor = 1
-			f.Apply(nil, []core.Edit{core.EditRight, core.EditRight}, true)
-			f.Apply(nil, []core.Edit{core.EditLeft}, false)
+		{"select all", func(field *TextField) { field.SelectAll() }, "hello", "hello"},
+		{"left collapses to the low edge", func(field *TextField) {
+			field.Cursor = 1
+			field.Apply(nil, []core.Edit{core.EditRight, core.EditRight}, true)
+			field.Apply(nil, []core.Edit{core.EditLeft}, false)
 		}, "hello", ""},
-		{"typing replaces the selection", func(f *TextField) {
-			f.SelectAll()
-			f.Apply([]rune("x"), nil, false)
+		{"typing replaces the selection", func(field *TextField) {
+			field.SelectAll()
+			field.Apply([]rune("x"), nil, false)
 		}, "x", ""},
-		{"backspace deletes the selection only", func(f *TextField) {
-			f.Cursor = 1
-			f.Apply(nil, []core.Edit{core.EditRight, core.EditRight}, true)
-			f.Apply(nil, []core.Edit{core.EditBackspace}, false)
+		{"backspace deletes the selection only", func(field *TextField) {
+			field.Cursor = 1
+			field.Apply(nil, []core.Edit{core.EditRight, core.EditRight}, true)
+			field.Apply(nil, []core.Edit{core.EditBackspace}, false)
 		}, "hlo", ""},
-		{"paste replaces the selection and strips line breaks", func(f *TextField) {
-			f.Cursor = 1
-			f.Apply(nil, []core.Edit{core.EditRight}, true)
-			f.Insert("A\nB\x00")
+		{"paste replaces the selection and strips line breaks", func(field *TextField) {
+			field.Cursor = 1
+			field.Apply(nil, []core.Edit{core.EditRight}, true)
+			field.Insert("A\nB\x00")
 		}, "hA Bllo", ""},
-		{"drag selects between press and pointer", func(f *TextField) {
-			f.Press(1, false)
-			f.Drag(4)
+		{"drag selects between press and pointer", func(field *TextField) {
+			field.Press(1, false)
+			field.Drag(4)
 		}, "hello", "ell"},
-		{"shift+click extends the selection", func(f *TextField) {
-			f.Cursor = 1
-			f.Press(4, true)
+		{"shift+click extends the selection", func(field *TextField) {
+			field.Cursor = 1
+			field.Press(4, true)
 		}, "hello", "ell"},
-		{"press without drag selects nothing", func(f *TextField) { f.Press(2, false) }, "hello", ""},
+		{"press without drag selects nothing", func(field *TextField) { field.Press(2, false) }, "hello", ""},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -20,13 +20,13 @@ func testCtx(t *testing.T) *core.Ctx {
 	return c
 }
 
-func drawn(t *testing.T, c *core.Ctx, root *El, w, h int) {
+func drawn(t *testing.T, ctx *core.Ctx, root *El, width, height int) {
 	t.Helper()
-	Layout(c, root, w, h)
-	Draw(c, root, ebiten.NewImage(w, h))
+	Layout(ctx, root, width, height)
+	Draw(ctx, root, ebiten.NewImage(width, height))
 }
 
-func click(c *core.Ctx, x, y int) { c.In = core.Input{X: x, Y: y, Click: true} }
+func click(ctx *core.Ctx, posX, posY int) { ctx.In = core.Input{X: posX, Y: posY, Click: true} }
 
 // props is the first line of the element's Dump: its own attributes
 // without its children, for asserting what a widget set.
@@ -87,7 +87,7 @@ type memClip struct{ text string }
 
 func (m *memClip) Read() (string, error) { return m.text, nil }
 
-func (m *memClip) Write(s string) error { m.text = s; return nil }
+func (m *memClip) Write(stringValue string) error { m.text = stringValue; return nil }
 
 // viewport is a 600x400 code view at the origin of a context with a memory clipboard.
 func viewport(t *testing.T) (*CodeView, *core.Ctx, *memClip, core.Rect) {
@@ -104,40 +104,40 @@ func viewport(t *testing.T) (*CodeView, *core.Ctx, *memClip, core.Rect) {
 }
 
 // rowY is the pixel row of the middle of visible row i.
-func rowY(c *core.Ctx, v *CodeView, r core.Rect, i int) int {
-	g := v.geometry(c, r)
-	return r.Y + i*g.lineH + g.lineH/2
+func rowY(ctx *core.Ctx, code *CodeView, rect core.Rect, index int) int {
+	g := code.geometry(ctx, rect)
+	return rect.Y + index*g.lineH + g.lineH/2
 }
 
 // colX is the pixel x of the boundary before column col of the text.
-func colX(c *core.Ctx, v *CodeView, r core.Rect, col int) int {
-	g := v.geometry(c, r)
-	return g.textX - v.ScrollX + g.colX(col)
+func colX(ctx *core.Ctx, code *CodeView, rect core.Rect, col int) int {
+	g := code.geometry(ctx, rect)
+	return g.textX - code.ScrollX + g.colX(col)
 }
 
-func press(v *CodeView, c *core.Ctx, r core.Rect, x, y, clicks int) {
-	c.In = core.Input{X: x, Y: y, Click: true, Held: true, Clicks: clicks}
-	v.Update(c, r)
+func press(code *CodeView, ctx *core.Ctx, rect core.Rect, posX, posY, clicks int) {
+	ctx.In = core.Input{X: posX, Y: posY, Click: true, Held: true, Clicks: clicks}
+	code.Update(ctx, rect)
 }
 
-func dragTo(v *CodeView, c *core.Ctx, r core.Rect, x, y int) {
-	c.In = core.Input{X: x, Y: y, Held: true}
-	v.Update(c, r)
+func dragTo(code *CodeView, ctx *core.Ctx, rect core.Rect, posX, posY int) {
+	ctx.In = core.Input{X: posX, Y: posY, Held: true}
+	code.Update(ctx, rect)
 }
 
-func release(v *CodeView, c *core.Ctx, r core.Rect, x, y int) {
-	c.In = core.Input{X: x, Y: y}
-	v.Update(c, r)
+func release(code *CodeView, ctx *core.Ctx, rect core.Rect, posX, posY int) {
+	ctx.In = core.Input{X: posX, Y: posY}
+	code.Update(ctx, rect)
 }
 
 // shiftKey sends one Shift+movement key to a view whose pointer is away.
-func shiftKey(v *CodeView, c *core.Ctx, r core.Rect, edit core.Edit) {
-	c.In = core.Input{X: 5000, Y: 5000, Shift: true, Edits: []core.Edit{edit}}
-	v.Update(c, r)
+func shiftKey(code *CodeView, ctx *core.Ctx, rect core.Rect, edit core.Edit) {
+	ctx.In = core.Input{X: 5000, Y: 5000, Shift: true, Edits: []core.Edit{edit}}
+	code.Update(ctx, rect)
 }
 
 // clickAt puts the caret before column col of line and releases.
-func clickAt(v *CodeView, c *core.Ctx, r core.Rect, line, col int) {
-	press(v, c, r, colX(c, v, r, col), rowY(c, v, r, line), 1)
-	release(v, c, r, 0, 0)
+func clickAt(code *CodeView, ctx *core.Ctx, rect core.Rect, line, col int) {
+	press(code, ctx, rect, colX(ctx, code, rect, col), rowY(ctx, code, rect, line), 1)
+	release(code, ctx, rect, 0, 0)
 }

@@ -326,8 +326,8 @@ func TestCodeViewPagingKeysWhenFocused(t *testing.T) {
 	r := core.Rect{W: 600, H: 100}
 	v.Focused = true
 	g := v.geometry(c, r)
-	pressed := func(k ebiten.Key) {
-		c.In = core.Input{X: 5000, Y: 5000, Keys: []ebiten.Key{k}}
+	pressed := func(key ebiten.Key) {
+		c.In = core.Input{X: 5000, Y: 5000, Keys: []ebiten.Key{key}}
 		v.Update(c, r)
 	}
 
@@ -352,8 +352,8 @@ func TestCodeViewPagingKeysWhenFocused(t *testing.T) {
 	}
 }
 
-func manyLines(n int) []Line {
-	lines := make([]Line, n)
+func manyLines(count int) []Line {
+	lines := make([]Line, count)
 	for i := range lines {
 		lines[i] = Line{Spans: []Span{{Text: "row"}}}
 	}

@@ -71,11 +71,11 @@ type ColumnWidths struct {
 }
 
 // weight is column i's relative width.
-func (t TableSpec) weight(i int) float64 {
+func (t TableSpec) weight(index int) float64 {
 	if t.Widths != nil && len(t.Widths.Weights) == len(t.Columns) {
-		return t.Widths.Weights[i]
+		return t.Widths.Weights[index]
 	}
-	return t.Weights[i]
+	return t.Weights[index]
 }
 
 func (t TableSpec) weights() []float64 {
@@ -103,16 +103,16 @@ const tableActionW = 36
 const tableGripW = 20
 
 // Table is a zebra-striped grid under an uppercase header with a rule.
-func Table(t TableSpec, opts ...Option) *El {
-	rows := t.Rows
-	if t.Editable {
-		rows = append(append([]TableRow{}, rows...), TableRow{Cells: t.Placeholder, Muted: true})
+func Table(spec TableSpec, opts ...Option) *El {
+	rows := spec.Rows
+	if spec.Editable {
+		rows = append(append([]TableRow{}, rows...), TableRow{Cells: spec.Placeholder, Muted: true})
 	}
 	return Col(with([]Item{
 		Bg(core.Sunken), Control("table"),
-		tableHeader(t),
-		For(rows, func(i int, r TableRow) Node {
-			return tableRow(t, i, r, t.Editable && i == len(t.Rows), i == len(rows)-1)
+		tableHeader(spec),
+		For(rows, func(index int, row TableRow) Node {
+			return tableRow(spec, index, row, spec.Editable && index == len(spec.Rows), index == len(rows)-1)
 		}),
 	}, opts)...)
 }
@@ -120,62 +120,62 @@ func Table(t TableSpec, opts ...Option) *El {
 // headerCheck is the checkbox that enables or disables every row.
 // tableHeader is the caption row; with a Widths state it carries the
 // draggable column dividers on top.
-func tableHeader(t TableSpec) Node {
+func tableHeader(tableSpecValue TableSpec) Node {
 	header := Row(H(core.RowH), Bg(core.Panel), BorderB(core.Border),
-		If(t.hasGrip(), Row(W(tableGripW))),
-		If(t.Editable, headerCheck(t)),
-		For(t.Columns, func(i int, name string) Node {
-			return Row(Grow(t.weight(i)), PadX(8), When(i > 0, Separator(7)),
+		If(tableSpecValue.hasGrip(), Row(W(tableGripW))),
+		If(tableSpecValue.Editable, headerCheck(tableSpecValue)),
+		For(tableSpecValue.Columns, func(index int, name string) Node {
+			return Row(Grow(tableSpecValue.weight(index)), PadX(8), When(index > 0, Separator(7)),
 				Text(strings.ToUpper(name), Small(), Bold(), Muted(), Grow(1)))
 		}),
-		If(t.Editable, Row(W(tableActionW))),
+		If(tableSpecValue.Editable, Row(W(tableActionW))),
 	)
-	if t.Widths == nil {
+	if tableSpecValue.Widths == nil {
 		return header
 	}
-	return Stack(H(core.RowH), header, Custom(colHandlesB{header: header, spec: t}))
+	return Stack(H(core.RowH), header, Custom(colHandlesB{header: header, spec: tableSpecValue}))
 }
 
 // hasGrip reports whether rows have a drag handle.
 func (t TableSpec) hasGrip() bool { return t.OnGrabRow != nil }
 
-func headerCheck(t TableSpec) Node {
-	items := []Item{W(tableActionW), JustifyContent(JustifyCenter), Tooltip("Enable or disable every row"), Checkbox(t.AllChecked)}
-	if t.OnToggleAll != nil {
-		items = append(items, OnClick(t.OnToggleAll))
+func headerCheck(spec TableSpec) Node {
+	items := []Item{W(tableActionW), JustifyContent(JustifyCenter), Tooltip("Enable or disable every row"), Checkbox(spec.AllChecked)}
+	if spec.OnToggleAll != nil {
+		items = append(items, OnClick(spec.OnToggleAll))
 	}
 	return Row(items...)
 }
 
-func tableRow(t TableSpec, i int, r TableRow, placeholder, last bool) Node {
+func tableRow(spec TableSpec, index int, tableRowValue TableRow, placeholder, last bool) Node {
 	clr := core.Text
-	if r.Muted {
+	if tableRowValue.Muted {
 		clr = core.Muted
 	}
-	actions := t.Editable && !placeholder
+	actions := spec.Editable && !placeholder
 	row := []Item{
 		H(core.RowH),
-		If(t.hasGrip(), gripCell(t, i, placeholder)),
-		If(actions, Row(W(tableActionW), JustifyContent(JustifyCenter), OnClick(func() { t.OnToggle(i) }), Tooltip("Enable or disable this row"), Checkbox(r.Checked))),
+		If(spec.hasGrip(), gripCell(spec, index, placeholder)),
+		If(actions, Row(W(tableActionW), JustifyContent(JustifyCenter), OnClick(func() { spec.OnToggle(index) }), Tooltip("Enable or disable this row"), Checkbox(tableRowValue.Checked))),
 		If(placeholder, Row(W(tableActionW))),
-		For(r.Cells, func(j int, s string) Node {
+		For(tableRowValue.Cells, func(other int, text string) Node {
 			cellClr := clr
-			if j == 0 && r.Flagged {
+			if other == 0 && tableRowValue.Flagged {
 				cellClr = core.Error
 			}
-			return tableCell(t, i, j, s, cellClr)
+			return tableCell(spec, index, other, text, cellClr)
 		}),
-		If(actions, Row(W(tableActionW), JustifyContent(JustifyCenter), OnClick(func() { t.OnDelete(i) }), Tooltip("Delete row"), TrashIcon())),
+		If(actions, Row(W(tableActionW), JustifyContent(JustifyCenter), OnClick(func() { spec.OnDelete(index) }), Tooltip("Delete row"), TrashIcon())),
 		If(placeholder, Row(W(tableActionW))),
 	}
-	if t.OnDragOverRow != nil && !placeholder {
-		row = append(row, OnDragOver(func() { t.OnDragOverRow(i) }))
+	if spec.OnDragOverRow != nil && !placeholder {
+		row = append(row, OnDragOver(func() { spec.OnDragOverRow(index) }))
 	}
-	if t.OnRowMenu != nil && !placeholder {
-		row = append(row, OnRightClick(func(x, y int) { t.OnRowMenu(i, x, y) }))
+	if spec.OnRowMenu != nil && !placeholder {
+		row = append(row, OnRightClick(func(posX, posY int) { spec.OnRowMenu(index, posX, posY) }))
 	}
 	switch {
-	case t.Selected != nil && *t.Selected == i && !placeholder:
+	case spec.Selected != nil && *spec.Selected == index && !placeholder:
 		row = append(row, Bg(core.Selected))
 	}
 	if !last { // hairlines between rows, as the dashboard's tables draw them
@@ -189,26 +189,26 @@ func tableRow(t TableSpec, i int, r TableRow, placeholder, last bool) Node {
 
 // gripCell is the drag handle of row i; the placeholder row keeps an
 // empty cell so the columns line up.
-func gripCell(t TableSpec, i int, placeholder bool) Node {
+func gripCell(spec TableSpec, index int, placeholder bool) Node {
 	if placeholder {
 		return Row(W(tableGripW))
 	}
 	return Row(W(tableGripW), JustifyContent(JustifyCenter), Tooltip("Drag to move the row"),
-		OnClick(func() { t.OnGrabRow(i) }), GripIcon(Muted()))
+		OnClick(func() { spec.OnGrabRow(index) }), GripIcon(Muted()))
 }
 
 // tableCell is one cell: its text, or the edit field when it is being
 // edited. In an editable table a click on it asks to edit it.
-func tableCell(t TableSpec, row, col int, text string, clr core.Token) Node {
-	if e := t.Editing; e != nil && e.Row == row && e.Col == col {
+func tableCell(spec TableSpec, row, col int, text string, clr core.Token) Node {
+	if e := spec.Editing; e != nil && e.Row == row && e.Col == col {
 		// The field is inset in its cell so its rounded outline and focus ring have room.
-		return Row(Grow(t.weight(col)), PadX(3), PadY(3), When(col > 0, Separator(0)),
+		return Row(Grow(spec.weight(col)), PadX(3), PadY(3), When(col > 0, Separator(0)),
 			Field(e.Field, Grow(1), Bg(core.Sunken), FieldPad(5) /* 3 + 5 = the 8 px of a shown cell, so the text does not move */, OnEnter(e.OnEnter), OnTab(e.OnTab), When(e.Options != nil, e.Options)),
 		)
 	}
 	var label *El = Text(text, Ellipsis(), Color(clr), Grow(1))
-	if t.CellStyler != nil {
-		if spans := t.CellStyler(text); len(spans) > 0 {
+	if spec.CellStyler != nil {
+		if spans := spec.CellStyler(text); len(spans) > 0 {
 			parts := make([]Item, 0, len(spans)+1)
 			parts = append(parts, Grow(1))
 			for _, sp := range spans {
@@ -221,9 +221,9 @@ func tableCell(t TableSpec, row, col int, text string, clr core.Token) Node {
 			label = Row(parts...)
 		}
 	}
-	items := []Item{Grow(t.weight(col)), PadX(8), Clip(), label, When(col > 0, Separator(0))}
-	if t.Editable && t.OnEditCell != nil {
-		items = append(items, OnClick(func() { t.OnEditCell(row, col) }))
+	items := []Item{Grow(spec.weight(col)), PadX(8), Clip(), label, When(col > 0, Separator(0))}
+	if spec.Editable && spec.OnEditCell != nil {
+		items = append(items, OnClick(func() { spec.OnEditCell(row, col) }))
 	}
 	return Row(items...)
 }
@@ -235,19 +235,19 @@ const MinColumnPx = 56
 // their combined weight so that column i is leftPx wide out of totalPx
 // for the pair, neither narrower than minPx. The other weights and the
 // total stay as they were. weights is not changed.
-func resizePair(weights []float64, i, leftPx, totalPx, minPx int) []float64 {
+func resizePair(weights []float64, index, leftPx, totalPx, minPx int) []float64 {
 	out := append([]float64(nil), weights...)
-	if i < 0 || i+1 >= len(out) || totalPx <= 0 {
+	if index < 0 || index+1 >= len(out) || totalPx <= 0 {
 		return out
 	}
-	pair := out[i] + out[i+1]
+	pair := out[index] + out[index+1]
 	if lo, hi := minPx, totalPx-minPx; hi < lo {
 		leftPx = totalPx / 2 // no room for two minimums: split evenly
 	} else {
 		leftPx = min(max(leftPx, lo), hi)
 	}
-	out[i] = pair * float64(leftPx) / float64(totalPx)
-	out[i+1] = pair - out[i]
+	out[index] = pair * float64(leftPx) / float64(totalPx)
+	out[index+1] = pair - out[index]
 	return out
 }
 
@@ -272,13 +272,13 @@ func (h colHandlesB) cells() []*El {
 	return h.header.Children()[off : off+len(h.spec.Columns)]
 }
 
-func (h colHandlesB) Update(e *El, c *core.Ctx) {
-	st, in, cells := h.spec.Widths, c.In, h.cells()
+func (h colHandlesB) Update(element *El, ctx *core.Ctx) {
+	st, in, cells := h.spec.Widths, ctx.In, h.cells()
 	if st.drag.on {
 		if !st.drag.held(in) {
 			return
 		}
-		c.Cursor = core.CursorResizeH
+		ctx.Cursor = core.CursorResizeH
 		left, right := cells[st.divider].Rect(), cells[st.divider+1].Rect()
 		st.Weights = resizePair(h.spec.weights(), st.divider, in.X-left.X-st.drag.off, left.W+right.W, MinColumnPx)
 		return
@@ -289,7 +289,7 @@ func (h colHandlesB) Update(e *El, c *core.Ctx) {
 		if !in.Over(grab) {
 			continue
 		}
-		c.Cursor = core.CursorResizeH
+		ctx.Cursor = core.CursorResizeH
 		if in.Click && in.Clicks >= 2 {
 			st.Weights = nil // back to the defaults
 		} else if in.Click {

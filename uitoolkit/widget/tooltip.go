@@ -43,40 +43,40 @@ type tooltipB struct {
 	state *TooltipState
 }
 
-func (b tooltipB) Draw(e *El, c *core.Ctx, dst *ebiten.Image) {
-	b.state.draw(c, dst, e.Rect())
+func (b tooltipB) Draw(element *El, ctx *core.Ctx, dst *ebiten.Image) {
+	b.state.draw(ctx, dst, element.Rect())
 }
 
 // draw updates the delay bookkeeping for the tip of the element under the
 // pointer and, once it is due, draws it inside screen.
-func (s *TooltipState) draw(c *core.Ctx, dst *ebiten.Image, screen core.Rect) {
+func (s *TooltipState) draw(ctx *core.Ctx, dst *ebiten.Image, screen core.Rect) {
 	s.shown, s.waiting = false, false
-	if c.TipText == "" {
+	if ctx.TipText == "" {
 		s.text = ""
 		return
 	}
-	if c.TipText != s.text || c.In.Click {
-		s.text, s.since = c.TipText, c.Tick // a new element, or a click: wait again
+	if ctx.TipText != s.text || ctx.In.Click {
+		s.text, s.since = ctx.TipText, ctx.Tick // a new element, or a click: wait again
 	}
-	if c.Tick-s.since < tipDelayTicks {
+	if ctx.Tick-s.since < tipDelayTicks {
 		s.waiting = true
 		return
 	}
 	s.shown = true
-	w := c.Width(c.F.Small, c.TipText) + 2*tipPadX
-	h := c.LineH(c.F.Small) + 2*tipPadY
-	x := max(screen.X, min(c.In.X+tipOffset, screen.X+screen.W-w))
-	y := c.In.Y + tipOffset
+	w := ctx.Width(ctx.F.Small, ctx.TipText) + 2*tipPadX
+	h := ctx.LineH(ctx.F.Small) + 2*tipPadY
+	x := max(screen.X, min(ctx.In.X+tipOffset, screen.X+screen.W-w))
+	y := ctx.In.Y + tipOffset
 	if y+h > screen.Y+screen.H {
-		y = c.In.Y - tipOffset - h // no room below: above the pointer
+		y = ctx.In.Y - tipOffset - h // no room below: above the pointer
 	}
 	box := core.Rect{X: x, Y: max(screen.Y, y), W: w, H: h}
-	st := c.Th.Style("tooltip")
-	c.FillStyled(dst, box, c.Color(core.Frame), c.Color(core.Frame), st.Radius)
+	st := ctx.Th.Style("tooltip")
+	ctx.FillStyled(dst, box, ctx.Color(core.Frame), ctx.Color(core.Frame), st.Radius)
 	border := st.Border
 	if border == "" {
 		border = core.Border
 	}
-	c.OutlineStyled(dst, box, c.Color(border), st.Radius)
-	c.TextMid(dst, c.F.Small, c.TipText, box.X+tipPadX, box, c.Color(core.Text))
+	ctx.OutlineStyled(dst, box, ctx.Color(border), st.Radius)
+	ctx.TextMid(dst, ctx.F.Small, ctx.TipText, box.X+tipPadX, box, ctx.Color(core.Text))
 }

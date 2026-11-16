@@ -171,8 +171,8 @@ func TestPopupMenuClickOutsideDismisses(t *testing.T) {
 
 // ---- TextMenu -------------------------------------------------------------
 
-func rightClick(c *core.Ctx, el *El) {
-	c.In = core.Input{X: el.Rect().X + 2, Y: el.Rect().Y + 2, RightClick: true}
+func rightClick(ctx *core.Ctx, el *El) {
+	ctx.In = core.Input{X: el.Rect().X + 2, Y: el.Rect().Y + 2, RightClick: true}
 }
 
 func openTextMenu(t *testing.T, field *TextField, changes *int) (*core.Ctx, *fakeClipboard) {
@@ -191,9 +191,9 @@ func openTextMenu(t *testing.T, field *TextField, changes *int) (*core.Ctx, *fak
 	return c, clipboard
 }
 
-func menuItemNamed(t *testing.T, c *core.Ctx, label string) MenuItem {
+func menuItemNamed(t *testing.T, ctx *core.Ctx, label string) MenuItem {
 	t.Helper()
-	for _, item := range PopupMenu(c).Items {
+	for _, item := range PopupMenu(ctx).Items {
 		if item.Label == label {
 			return item
 		}

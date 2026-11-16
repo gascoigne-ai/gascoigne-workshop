@@ -46,7 +46,7 @@ func posFromOffset(trackLen, contentLen, viewLen, off int) int {
 // Scrollbar draws the thumb in track for the given scroll state; the
 // track is vertical or horizontal by its shape. active brightens it
 // (hover or drag). It draws nothing when everything fits.
-func drawScrollbar(c *core.Ctx, dst *ebiten.Image, track core.Rect, contentLen, viewLen, pos int, active bool) {
+func drawScrollbar(ctx *core.Ctx, dst *ebiten.Image, track core.Rect, contentLen, viewLen, pos int, active bool) {
 	vertical := track.H >= track.W
 	trackLen := track.W
 	if vertical {
@@ -56,15 +56,15 @@ func drawScrollbar(c *core.Ctx, dst *ebiten.Image, track core.Rect, contentLen, 
 	if !ok {
 		return
 	}
-	clr := c.Color(core.Muted)
+	clr := ctx.Color(core.Muted)
 	if active {
-		clr = c.Color(core.Text)
+		clr = ctx.Color(core.Text)
 	}
 	bar := core.Rect{X: track.X + 1, Y: track.Y + off, W: track.W - 2, H: length}
 	if !vertical {
 		bar = core.Rect{X: track.X + off, Y: track.Y + 1, W: length, H: track.H - 2}
 	}
-	c.FillStyled(dst, bar, clr, clr, c.Radius("scrollbar"))
+	ctx.FillStyled(dst, bar, clr, clr, ctx.Radius("scrollbar"))
 }
 
 // pressThumb is a press at `at` in a scrollbar track for content shown

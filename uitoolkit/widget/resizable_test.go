@@ -16,9 +16,9 @@ func resizeRig(t *testing.T, st *ResizeState) (*El, *core.Ctx) {
 	return root, c
 }
 
-func resizeStep(c *core.Ctx, root *El, in core.Input) {
-	c.In = in
-	Update(c, root)
+func resizeStep(ctx *core.Ctx, root *El, in core.Input) {
+	ctx.In = in
+	Update(ctx, root)
 }
 
 func TestDraggingAnEdgeResizesTheElementAroundItsCenter(t *testing.T) {

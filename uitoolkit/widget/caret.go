@@ -18,15 +18,15 @@ func caretGlyph(runes []rune, cursor int) string {
 
 // caretBlock is the block's rectangle: w wide at x, one text line high and
 // centered in row (or the row's own height when it is shorter than a line).
-func caretBlock(row core.Rect, x, w, lineH int) core.Rect {
+func caretBlock(row core.Rect, posX, width, lineH int) core.Rect {
 	height := min(lineH, row.H)
-	return core.Rect{X: x, Y: row.Y + (row.H-height)/2, W: w, H: height}
+	return core.Rect{X: posX, Y: row.Y + (row.H-height)/2, W: width, H: height}
 }
 
 // drawBlockCaret paints a solid accent-colored block over the character at x and redraws
 // that character in the accent text color so it stays readable. row is the
 // line the text is centered in.
-func drawBlockCaret(c *core.Ctx, dst *ebiten.Image, face *text.GoTextFace, glyph string, x int, row core.Rect) {
-	c.Fill(dst, caretBlock(row, x, c.Width(face, glyph), c.LineH(face)), c.Color(core.Accent))
-	c.TextMid(dst, face, glyph, x, row, c.Color(core.AccentText))
+func drawBlockCaret(ctx *core.Ctx, dst *ebiten.Image, face *text.GoTextFace, glyph string, posX int, row core.Rect) {
+	ctx.Fill(dst, caretBlock(row, posX, ctx.Width(face, glyph), ctx.LineH(face)), ctx.Color(core.Accent))
+	ctx.TextMid(dst, face, glyph, posX, row, ctx.Color(core.AccentText))
 }

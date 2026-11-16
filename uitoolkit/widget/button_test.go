@@ -194,7 +194,7 @@ func TestActiveTabLookIsOneOption(t *testing.T) {
 
 func TestClickingATabSelectsIt(t *testing.T) {
 	sel := -1
-	tabs := Tabs([]TabItem{{Label: "Params", Badge: 3}, {Label: "Body"}}, 0, OnSelect(func(i int) { sel = i }), H(40))
+	tabs := Tabs([]TabItem{{Label: "Params", Badge: 3}, {Label: "Body"}}, 0, OnSelect(func(index int) { sel = index }), H(40))
 	root := Row(tabs)
 	c := testCtx(t)
 	Layout(c, root, 400, 40)

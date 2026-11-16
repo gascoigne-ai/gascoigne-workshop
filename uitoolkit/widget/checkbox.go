@@ -17,34 +17,34 @@ type checkB struct {
 func (checkB) Measure(*El, *core.Ctx, int) (int, int) { return 14, 14 }
 
 // update runs OnChange when the box is clicked; the caller owns the value.
-func (checkB) Update(e *El, c *core.Ctx) {
-	if onChange := e.ChangeHandler(); onChange != nil && c.In.Hit(e.Rect()) {
+func (checkB) Update(element *El, ctx *core.Ctx) {
+	if onChange := element.ChangeHandler(); onChange != nil && ctx.In.Hit(element.Rect()) {
 		onChange()
 	}
 }
 
-func (b checkB) Draw(e *El, c *core.Ctx, dst *ebiten.Image) {
-	r := e.Rect()
-	drawCheckbox(c, dst, core.Rect{X: r.X + (r.W-14)/2, Y: r.Y + (r.H-14)/2, W: 14, H: 14}, b.on, c.Hovered(r))
+func (b checkB) Draw(element *El, ctx *core.Ctx, dst *ebiten.Image) {
+	r := element.Rect()
+	drawCheckbox(ctx, dst, core.Rect{X: r.X + (r.W-14)/2, Y: r.Y + (r.H-14)/2, W: 14, H: 14}, b.on, ctx.Hovered(r))
 }
 
 // drawCheckbox draws a 14px box: an accent square with a white check
 // when on, a plain outline when off (darker under the pointer).
-func drawCheckbox(c *core.Ctx, dst *ebiten.Image, box core.Rect, on, hover bool) {
+func drawCheckbox(ctx *core.Ctx, dst *ebiten.Image, box core.Rect, on, hover bool) {
 	if !on {
 		edge := core.Rule
 		if hover {
 			edge = core.Muted
 		}
-		c.OutlineStyled(dst, box, c.Color(edge), c.Radius("checkbox"))
+		ctx.OutlineStyled(dst, box, ctx.Color(edge), ctx.Radius("checkbox"))
 		return
 	}
-	accent := c.Color(core.Accent)
-	c.FillStyled(dst, box, accent, accent, c.Radius("checkbox"))
+	accent := ctx.Color(core.Accent)
+	ctx.FillStyled(dst, box, accent, accent, ctx.Radius("checkbox"))
 	x, y := float32(box.X), float32(box.Y)
-	mark := c.Color(core.AccentText)
-	c.Line(dst, x+3.5, y+7.5, x+6, y+10, 1.8, mark)
-	c.Line(dst, x+6, y+10, x+10.5, y+4.5, 1.8, mark)
+	mark := ctx.Color(core.AccentText)
+	ctx.Line(dst, x+3.5, y+7.5, x+6, y+10, 1.8, mark)
+	ctx.Line(dst, x+6, y+10, x+10.5, y+4.5, 1.8, mark)
 }
 
 // Checkbox is a square that shows an accent fill and a check when on.

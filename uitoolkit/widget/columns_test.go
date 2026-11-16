@@ -9,8 +9,8 @@ import (
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
-func sum(w []float64) (s float64) {
-	for _, v := range w {
+func sum(values []float64) (s float64) {
+	for _, v := range values {
 		s += v
 	}
 	return
@@ -155,7 +155,7 @@ func TestDividerAsksForTheResizeCursorAndCellsStillClick(t *testing.T) {
 	var edits [][2]int
 	spec := editableSpec()
 	spec.Widths = &widths
-	spec.OnEditCell = func(r, c int) { edits = append(edits, [2]int{r, c}) }
+	spec.OnEditCell = func(value, intValue int) { edits = append(edits, [2]int{value, intValue}) }
 	root := Col(Table(spec))
 	c := testCtx(t)
 	Layout(c, root, 400, 400)

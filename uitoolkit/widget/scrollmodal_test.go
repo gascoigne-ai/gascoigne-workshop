@@ -10,9 +10,9 @@ import (
 // cursorProbe asks for a resize cursor while the pointer is over it.
 type cursorProbe struct{ Base }
 
-func (*cursorProbe) Update(e *El, c *core.Ctx) {
-	if c.In.Over(e.Rect()) {
-		c.Cursor = core.CursorResizeH
+func (*cursorProbe) Update(element *El, ctx *core.Ctx) {
+	if ctx.In.Over(element.Rect()) {
+		ctx.Cursor = core.CursorResizeH
 	}
 }
 

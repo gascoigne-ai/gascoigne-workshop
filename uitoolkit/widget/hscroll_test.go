@@ -8,9 +8,9 @@ import (
 )
 
 // strip is an HScroll 100px wide with n 40px boxes that record clicks.
-func strip(st *ScrollState, n int, hits *[]int) *El {
+func strip(st *ScrollState, count int, hits *[]int) *El {
 	var items []Item
-	for i := 0; i < n; i++ {
+	for i := 0; i < count; i++ {
 		i := i
 		items = append(items, Row(W(40), OnClick(func() { *hits = append(*hits, i) })))
 	}
@@ -231,8 +231,8 @@ func TestHScrollPansWhenDraggedWithTheLeftButton(t *testing.T) {
 	root := Col(strip(st, 5, &hits))
 	c := testCtx(t)
 	Layout(c, root, 300, 100)
-	at := func(x int, click bool) {
-		c.In = core.Input{X: x, Y: 10, Click: click, Held: true}
+	at := func(posX int, click bool) {
+		c.In = core.Input{X: posX, Y: 10, Click: click, Held: true}
 		Update(c, root)
 		Layout(c, root, 300, 100)
 	}
@@ -283,8 +283,8 @@ func TestHScrollThatFitsDoesNotPanAndReportsOverflow(t *testing.T) {
 
 // layoutAndSettle is one frame without input: Layout places, Update settles
 // the scroll state (clamp, reveal, overflow) that Layout must not write.
-func layoutAndSettle(c *core.Ctx, root Node, w, h int) {
-	Layout(c, root, w, h)
-	c.In = core.Input{}
-	Update(c, root)
+func layoutAndSettle(ctx *core.Ctx, root Node, width, height int) {
+	Layout(ctx, root, width, height)
+	ctx.In = core.Input{}
+	Update(ctx, root)
 }

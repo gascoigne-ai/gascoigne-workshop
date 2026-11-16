@@ -19,22 +19,22 @@ func (*codeB) KeepsTab() bool         { return false }
 
 func (b *codeB) wrapLines() { b.wrap = true }
 
-func (b *codeB) Update(e *El, c *core.Ctx) {
+func (b *codeB) Update(element *El, ctx *core.Ctx) {
 	b.view.Wrap = b.wrap
-	b.view.Update(c, e.Rect())
+	b.view.Update(ctx, element.Rect())
 }
 
-func (b *codeB) Draw(e *El, c *core.Ctx, dst *ebiten.Image) {
+func (b *codeB) Draw(element *El, ctx *core.Ctx, dst *ebiten.Image) {
 	b.view.Wrap = b.wrap
-	b.view.Draw(c, dst, e.Rect())
+	b.view.Draw(ctx, dst, element.Rect())
 	if b.view.Focused {
-		c.Outline(dst, e.Rect(), c.Color(core.AccentLine))
+		ctx.Outline(dst, element.Rect(), ctx.Color(core.AccentLine))
 	}
 }
 
 // Code is a scrollable, foldable code viewer; give it a Bg.
-func Code(v *CodeView, opts ...Option) *El {
-	return Custom(&codeB{view: v}, with(nil, opts)...)
+func Code(code *CodeView, opts ...Option) *El {
+	return Custom(&codeB{view: code}, with(nil, opts)...)
 }
 
 // wrapper is an element whose long lines can wrap: Code and Area.
@@ -44,4 +44,4 @@ type wrapper interface{ wrapLines() }
 // instead of scrolling sideways. Without it the element does not wrap,
 // whatever its state held, so a template switches wrap off by leaving it
 // out (wrap="{{on}}").
-func Wrap() Option { return func(e *El) { e.Behavior().(wrapper).wrapLines() } }
+func Wrap() Option { return func(element *El) { element.Behavior().(wrapper).wrapLines() } }

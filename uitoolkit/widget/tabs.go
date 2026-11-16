@@ -23,9 +23,9 @@ func Tabs(items []TabItem, active int, opts ...Option) *El {
 // selector is the click handler of the tabs of *strip: it runs the strip's
 // OnSelect, which is set only after the tabs are built.
 func selector(strip **El) func(i int) {
-	return func(i int) {
+	return func(index int) {
 		if (*strip).SelectHandler() != nil {
-			(*strip).SelectHandler()(i)
+			(*strip).SelectHandler()(index)
 		}
 	}
 }

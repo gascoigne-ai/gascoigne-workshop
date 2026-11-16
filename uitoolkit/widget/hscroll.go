@@ -34,44 +34,44 @@ type hscrollB struct {
 // different child is flagged than last time, the strip scrolls to show
 // it once, so a selection made elsewhere is never hidden, while the
 // user's own scrolling is left alone.
-func (s *hscrollB) overflow(e *El) bool { return s.content > e.Rect().W }
+func (s *hscrollB) overflow(element *El) bool { return s.content > element.Rect().W }
 
 // inset is the room kept clear at each end for the arrows, so the first
 // and last tab are not hidden under them; none when everything fits.
-func (s *hscrollB) inset(e *El) int {
-	if s.overflow(e) {
+func (s *hscrollB) inset(element *El) int {
+	if s.overflow(element) {
 		return hscrollArrowW
 	}
 	return 0
 }
 
-func (s *hscrollB) maxX(e *El) int {
-	if !s.overflow(e) {
+func (s *hscrollB) maxX(element *El) int {
+	if !s.overflow(element) {
 		return 0
 	}
-	return s.content + 2*s.inset(e) - e.Rect().W
+	return s.content + 2*s.inset(element) - element.Rect().W
 }
 
 // layout places the children for the scroll position the state holds,
 // clamped; it does not change the state (settle does, in update).
-func (s *hscrollB) Layout(e *El, c *core.Ctx) {
-	r := e.Rect()
-	s.content, _ = s.Linear.Measure(e, c, 1<<20)
-	x := max(0, min(s.state.X, s.maxX(e)))
-	s.origin = r.X - x + s.inset(e)
-	s.LayoutIn(e, c, core.Rect{X: s.origin, Y: r.Y, W: max(s.content, r.W), H: r.H})
+func (s *hscrollB) Layout(element *El, ctx *core.Ctx) {
+	r := element.Rect()
+	s.content, _ = s.Linear.Measure(element, ctx, 1<<20)
+	x := max(0, min(s.state.X, s.maxX(element)))
+	s.origin = r.X - x + s.inset(element)
+	s.LayoutIn(element, ctx, core.Rect{X: s.origin, Y: r.Y, W: max(s.content, r.W), H: r.H})
 }
 
 // settle is what the layout found, written to the state before the frame's
 // input is handled: whether the content overflows, the scroll position
 // clamped, and the position that brings the child marked KeepInView into
 // view when that child changed.
-func (s *hscrollB) settle(e *El, c *core.Ctx) {
+func (s *hscrollB) settle(element *El, ctx *core.Ctx) {
 	st := s.state
-	st.Overflowing = s.overflow(e)
+	st.Overflowing = s.overflow(element)
 	flagged := -1
 	var start, end int
-	for i, k := range e.Children() {
+	for i, k := range element.Children() {
 		if !k.InFlow() {
 			continue
 		}
@@ -87,15 +87,15 @@ func (s *hscrollB) settle(e *El, c *core.Ctx) {
 		if start < st.X { // the clear area starts one arrow in, where the content starts
 			st.X = start
 		}
-		if end+2*s.inset(e) > st.X+e.Rect().W {
-			st.X = end + 2*s.inset(e) - e.Rect().W
+		if end+2*s.inset(element) > st.X+element.Rect().W {
+			st.X = end + 2*s.inset(element) - element.Rect().W
 		}
 	}
-	st.X = max(0, min(st.X, s.maxX(e)))
+	st.X = max(0, min(st.X, s.maxX(element)))
 }
 
-func (s *hscrollB) arrows(e *El) (left, right core.Rect) {
-	r := e.Rect()
+func (s *hscrollB) arrows(element *El) (left, right core.Rect) {
+	r := element.Rect()
 	left = core.Rect{X: r.X, Y: r.Y, W: hscrollArrowW, H: r.H}
 	right = core.Rect{X: r.X + r.W - hscrollArrowW, Y: r.Y, W: hscrollArrowW, H: r.H}
 	return
@@ -103,20 +103,20 @@ func (s *hscrollB) arrows(e *El) (left, right core.Rect) {
 
 // arrowsShown reports which arrows are drawn: only those with something
 // to scroll to that way, so none when everything fits and one at an end.
-func (s *hscrollB) arrowsShown(e *El) (left, right bool) {
-	return s.overflow(e) && s.state.X > 0, s.overflow(e) && s.state.X < s.maxX(e)
+func (s *hscrollB) arrowsShown(element *El) (left, right bool) {
+	return s.overflow(element) && s.state.X > 0, s.overflow(element) && s.state.X < s.maxX(element)
 }
 
 // preUpdate takes clicks on the arrows before the children under them see them.
-func (s *hscrollB) PreUpdate(e *El, c *core.Ctx) {
-	s.settle(e, c)
-	in, st, r := c.In, s.state, e.Rect()
-	if !s.overflow(e) {
+func (s *hscrollB) PreUpdate(element *El, ctx *core.Ctx) {
+	s.settle(element, ctx)
+	in, st, r := ctx.In, s.state, element.Rect()
+	if !s.overflow(element) {
 		return
 	}
-	left, right := s.arrows(e)
-	showL, showR := s.arrowsShown(e)
-	step := func(dir, by int) { st.X = max(0, min(st.X+dir*by, s.maxX(e))) }
+	left, right := s.arrows(element)
+	showL, showR := s.arrowsShown(element)
+	step := func(dir, by int) { st.X = max(0, min(st.X+dir*by, s.maxX(element))) }
 	if !in.Held {
 		st.holdDir, st.holdN = 0, 0
 	}
@@ -128,11 +128,11 @@ func (s *hscrollB) PreUpdate(e *El, c *core.Ctx) {
 		case showL && left.Contains(in.X, in.Y):
 			st.holdDir, st.holdN = -1, 0
 			step(-1, r.W/2)
-			c.In.Click = false
+			ctx.In.Click = false
 		case showR && right.Contains(in.X, in.Y):
 			st.holdDir, st.holdN = 1, 0
 			step(1, r.W/2)
-			c.In.Click = false
+			ctx.In.Click = false
 		default:
 			if in.Over(r) { // a press on the strip itself may become a pan; the tab under it still gets the click
 				st.pressed, st.panning, st.panFrom, st.panX0 = true, false, in.X, st.X
@@ -141,10 +141,10 @@ func (s *hscrollB) PreUpdate(e *El, c *core.Ctx) {
 		return
 	}
 	if st.pressed && in.Held { // dragging the strip: the content follows the pointer
-		dx := c.PointerX - st.panFrom
+		dx := ctx.PointerX - st.panFrom
 		if st.panning || dx >= hscrollPanSlop || dx <= -hscrollPanSlop {
 			st.panning = true
-			st.X = max(0, min(st.panX0-dx, s.maxX(e)))
+			st.X = max(0, min(st.panX0-dx, s.maxX(element)))
 		}
 		return
 	}
@@ -163,24 +163,24 @@ func (s *hscrollB) PreUpdate(e *El, c *core.Ctx) {
 }
 
 // update scrolls with the wheel and with a touchpad's sideways swipe.
-func (s *hscrollB) Update(e *El, c *core.Ctx) {
-	in, st := c.In, s.state
-	if !s.overflow(e) || !in.Over(e.Rect()) {
+func (s *hscrollB) Update(element *El, ctx *core.Ctx) {
+	in, st := ctx.In, s.state
+	if !s.overflow(element) || !in.Over(element.Rect()) {
 		return
 	}
 	switch {
 	case in.WheelX != 0:
-		st.X = max(0, min(st.X+int(-in.WheelX*wheelStep), s.maxX(e)))
-		c.In.WheelX = 0
+		st.X = max(0, min(st.X+int(-in.WheelX*wheelStep), s.maxX(element)))
+		ctx.In.WheelX = 0
 	case in.Wheel != 0:
-		st.X = max(0, min(st.X+int(-in.Wheel*wheelStep), s.maxX(e)))
-		c.In.Wheel = 0
+		st.X = max(0, min(st.X+int(-in.Wheel*wheelStep), s.maxX(element)))
+		ctx.In.Wheel = 0
 	}
 }
 
-func (s *hscrollB) DrawOver(e *El, c *core.Ctx, dst *ebiten.Image) {
-	left, right := s.arrows(e)
-	showL, showR := s.arrowsShown(e)
+func (s *hscrollB) DrawOver(element *El, ctx *core.Ctx, dst *ebiten.Image) {
+	left, right := s.arrows(element)
+	showL, showR := s.arrowsShown(element)
 	for _, a := range []struct {
 		box  core.Rect
 		show bool
@@ -191,14 +191,14 @@ func (s *hscrollB) DrawOver(e *El, c *core.Ctx, dst *ebiten.Image) {
 		}
 		fill := a.box
 		fill.H-- // leave the strip's bottom line running under the arrow
-		c.Fill(dst, fill, c.Color(core.Frame))
-		clr := c.Color(core.Muted)
-		if c.Hovered(a.box) {
-			clr = c.Color(core.Text)
+		ctx.Fill(dst, fill, ctx.Color(core.Frame))
+		clr := ctx.Color(core.Muted)
+		if ctx.Hovered(a.box) {
+			clr = ctx.Color(core.Text)
 		}
 		cx, cy := float32(a.box.X+a.box.W/2), float32(a.box.Y+a.box.H/2)
-		c.Line(dst, cx-2*a.dir, cy-4, cx+2*a.dir, cy, 1.5, clr)
-		c.Line(dst, cx+2*a.dir, cy, cx-2*a.dir, cy+4, 1.5, clr)
+		ctx.Line(dst, cx-2*a.dir, cy-4, cx+2*a.dir, cy, 1.5, clr)
+		ctx.Line(dst, cx+2*a.dir, cy, cx-2*a.dir, cy+4, 1.5, clr)
 	}
 }
 

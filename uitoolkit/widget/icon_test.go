@@ -196,7 +196,7 @@ func TestIconMasksAreCachedPerSizeAndWeightAndTokenIconsAreDrawnDirectly(t *test
 
 // hasIcon reports whether the element is the icon called name, as a Dump
 // shows it.
-func hasIcon(e *El, name string) bool { return contains(props(e), "icon="+name) }
+func hasIcon(element *El, name string) bool { return contains(props(element), "icon="+name) }
 
 func TestIconsHaveTheirNaturalWidths(t *testing.T) {
 	c := testCtx(t)

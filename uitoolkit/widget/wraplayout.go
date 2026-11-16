@@ -94,8 +94,8 @@ func lastBreak(text []rune, from, to int) int {
 // where a word starts after punctuation, so a row ends with the
 // punctuation ("example." | "com") and never starts with it. The word rule
 // is the one of word-wise motion, isWordRune.
-func canBreak(text []rune, i int) bool {
-	before, after := text[i-1], text[i]
+func canBreak(text []rune, index int) bool {
+	before, after := text[index-1], text[index]
 	if unicode.IsSpace(after) {
 		return false // spaces hang at the end of the row they follow
 	}
@@ -116,8 +116,8 @@ func widthOf(text []rune, measure func(char rune) float64) float64 {
 // the line's end is on its last row.
 func (layout wrapLayout) rowOf(pos textPos) int {
 	col := max(pos.col, 0)
-	after := sort.Search(len(layout.rows), func(i int) bool {
-		row := layout.rows[i]
+	after := sort.Search(len(layout.rows), func(index int) bool {
+		row := layout.rows[index]
 		return row.line > pos.line || (row.line == pos.line && row.from > col)
 	})
 	if after == 0 || layout.rows[after-1].line != pos.line {
@@ -157,7 +157,7 @@ func (layout wrapLayout) xOf(pos textPos) (row int, x float64) {
 // hit-testing a click. A row that its line continues on ends one rune
 // early, before the hanging space or the cut, because its own end column
 // is drawn at the start of the next row (rowOf).
-func (layout wrapLayout) posAt(row int, x float64) textPos {
+func (layout wrapLayout) posAt(row int, posX float64) textPos {
 	if len(layout.rows) == 0 {
 		return textPos{}
 	}
@@ -171,7 +171,7 @@ func (layout wrapLayout) posAt(row int, x float64) textPos {
 	left := 0.0
 	for col := at.from; col < end; col++ {
 		advance := layout.measure(text[col])
-		if x < left+advance/2 {
+		if posX < left+advance/2 {
 			return textPos{at.line, col}
 		}
 		left += advance

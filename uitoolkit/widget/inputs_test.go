@@ -26,8 +26,8 @@ func TestCodeNodeForwardsInputToTheView(t *testing.T) {
 	}
 }
 
-func focusFlags(f1, f2 *TextField, v *CodeView) [3]bool {
-	return [3]bool{f1.Focused, f2.Focused, v.Focused}
+func focusFlags(f1, f2 *TextField, code *CodeView) [3]bool {
+	return [3]bool{f1.Focused, f2.Focused, code.Focused}
 }
 
 func TestTabCyclesFocusThroughFieldsAndCodeViews(t *testing.T) {
@@ -73,12 +73,12 @@ func areaBox(t *testing.T, text string) (*TextArea, *core.Ctx, *El, *int) {
 	return a, c, root, &changes
 }
 
-func focusArea(a *TextArea, c *core.Ctx, root *El) {
-	c.In = core.Input{X: 380, Y: 5, Click: true, Held: true, Clicks: 1}
-	Update(c, root)
-	c.In = core.Input{X: 380, Y: 5}
-	Update(c, root)
-	_ = a
+func focusArea(textAreaValue *TextArea, ctx *core.Ctx, root *El) {
+	ctx.In = core.Input{X: 380, Y: 5, Click: true, Held: true, Clicks: 1}
+	Update(ctx, root)
+	ctx.In = core.Input{X: 380, Y: 5}
+	Update(ctx, root)
+	_ = textAreaValue
 }
 
 func TestTextAreaTabIndentsAndKeepsFocus(t *testing.T) {

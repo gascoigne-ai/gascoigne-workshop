@@ -28,11 +28,11 @@ func (b imageB) Measure(*El, *core.Ctx, int) (int, int) {
 	return r.Dx(), r.Dy()
 }
 
-func (b imageB) Draw(e *El, c *core.Ctx, dst *ebiten.Image) {
+func (b imageB) Draw(element *El, ctx *core.Ctx, dst *ebiten.Image) {
 	if b.img == nil {
 		return
 	}
-	r := e.Rect()
+	r := element.Rect()
 	iw, ih := float64(b.img.Bounds().Dx()), float64(b.img.Bounds().Dy())
 	if iw == 0 || ih == 0 || r.W <= 0 || r.H <= 0 {
 		return
@@ -43,7 +43,7 @@ func (b imageB) Draw(e *El, c *core.Ctx, dst *ebiten.Image) {
 	oy := float64(r.Y) + (float64(r.H)-ih*k)/2
 	var op ebiten.DrawImageOptions
 	op.Filter = ebiten.FilterLinear
-	op.GeoM.Scale(k*c.Scale, k*c.Scale)
-	op.GeoM.Translate(ox*c.Scale, oy*c.Scale)
+	op.GeoM.Scale(k*ctx.Scale, k*ctx.Scale)
+	op.GeoM.Translate(ox*ctx.Scale, oy*ctx.Scale)
 	dst.DrawImage(b.img, &op)
 }

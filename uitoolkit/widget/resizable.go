@@ -45,12 +45,12 @@ func Resizable(state *ResizeState, minW, minH, maxW, maxH int, items ...Item) *E
 // edges reports which edges of r the point is on, if it is on the border.
 // The border reaches edgeOut outside r, where a modal element does not
 // dismiss either.
-func edges(r core.Rect, x, y int) (left, right, top, bottom bool) {
-	if x < r.X-edgeOut || x >= r.X+r.W+edgeOut || y < r.Y-edgeOut || y >= r.Y+r.H+edgeOut {
+func edges(rect core.Rect, posX, posY int) (left, right, top, bottom bool) {
+	if posX < rect.X-edgeOut || posX >= rect.X+rect.W+edgeOut || posY < rect.Y-edgeOut || posY >= rect.Y+rect.H+edgeOut {
 		return
 	}
-	left, right = x < r.X+edgeSlop, x >= r.X+r.W-edgeSlop
-	top, bottom = y < r.Y+edgeSlop, y >= r.Y+r.H-edgeSlop
+	left, right = posX < rect.X+edgeSlop, posX >= rect.X+rect.W-edgeSlop
+	top, bottom = posY < rect.Y+edgeSlop, posY >= rect.Y+rect.H-edgeSlop
 	return
 }
 
@@ -67,14 +67,14 @@ func cursorFor(left, right, top, bottom bool) core.Cursor {
 	return core.CursorResizeV
 }
 
-func (b *resizableB) Update(e *El, c *core.Ctx) {
-	in, st := c.In, b.state
+func (b *resizableB) Update(element *El, ctx *core.Ctx) {
+	in, st := ctx.In, b.state
 	if st.active {
 		if !in.Held {
 			st.active = false
 			return
 		}
-		c.Cursor = cursorFor(st.left, st.right, st.top, st.bottom)
+		ctx.Cursor = cursorFor(st.left, st.right, st.top, st.bottom)
 		dx, dy := in.X-st.startX, in.Y-st.startY
 		if st.left || st.right {
 			grow := 2 * dx
@@ -92,11 +92,11 @@ func (b *resizableB) Update(e *El, c *core.Ctx) {
 		}
 		return
 	}
-	left, right, top, bottom := edges(e.Rect(), in.X, in.Y)
+	left, right, top, bottom := edges(element.Rect(), in.X, in.Y)
 	if !(left || right || top || bottom) {
 		return
 	}
-	c.Cursor = cursorFor(left, right, top, bottom)
+	ctx.Cursor = cursorFor(left, right, top, bottom)
 	if !in.Click {
 		return
 	}
@@ -105,6 +105,6 @@ func (b *resizableB) Update(e *El, c *core.Ctx) {
 		return
 	}
 	st.active, st.left, st.right, st.top, st.bottom = true, left, right, top, bottom
-	st.startX, st.startY, st.startW, st.startH = in.X, in.Y, e.Rect().W, e.Rect().H
-	st.W, st.H = e.Rect().W, e.Rect().H // both are the user's size from now on, whichever edge moves
+	st.startX, st.startY, st.startW, st.startH = in.X, in.Y, element.Rect().W, element.Rect().H
+	st.W, st.H = element.Rect().W, element.Rect().H // both are the user's size from now on, whichever edge moves
 }

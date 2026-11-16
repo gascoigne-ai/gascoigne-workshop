@@ -125,26 +125,26 @@ func (b iconB) Measure(*El, *core.Ctx, int) (int, int) {
 
 // iconToken is the color token an icon is drawn in: its color, and under
 // the pointer the element's HoverColor, else the icon's own hover token.
-func iconToken(e *El, ic *svgIcon, hovered bool) core.Token {
+func iconToken(element *El, ic *svgIcon, hovered bool) core.Token {
 	if !hovered {
-		return e.ColorToken(core.Muted)
+		return element.ColorToken(core.Muted)
 	}
-	switch hover := e.HoverColorToken(); {
+	switch hover := element.HoverColorToken(); {
 	case hover != "":
 		return hover
 	case ic.hover != "none" && ic.hover != "":
 		return ic.hover
 	}
-	return e.ColorToken(core.Muted)
+	return element.ColorToken(core.Muted)
 }
 
-func (b iconB) Draw(e *El, c *core.Ctx, dst *ebiten.Image) {
+func (b iconB) Draw(element *El, ctx *core.Ctx, dst *ebiten.Image) {
 	ic, ok := lookupIcon(b.name)
 	if !ok {
 		return
 	}
-	r := e.Rect()
-	w, h := e.FixedSize()
+	r := element.Rect()
+	w, h := element.FixedSize()
 	k := 1.0
 	switch {
 	case w > 0 && h > 0:
@@ -156,34 +156,34 @@ func (b iconB) Draw(e *El, c *core.Ctx, dst *ebiten.Image) {
 	}
 	ox := float64(r.X) + (float64(r.W)-ic.w*k)/2
 	oy := float64(r.Y) + (float64(r.H)-ic.h*k)/2
-	cur := iconToken(e, ic, c.Hovered(r))
-	s := k * c.Scale
+	cur := iconToken(element, ic, ctx.Hovered(r))
+	s := k * ctx.Scale
 	weight := 1.0 // the theme can thicken or thin every icon
-	if c.Th.IconStroke > 0 {
-		weight = c.Th.IconStroke
+	if ctx.Th.IconStroke > 0 {
+		weight = ctx.Th.IconStroke
 	}
 	if ic.cacheable() {
 		// one white mask per icon, size and weight; tinted when drawn, so
 		// every use of the icon after the first is a single image draw
 		mask := iconMask(ic, s, weight)
 		var op ebiten.DrawImageOptions
-		op.GeoM.Translate(math.Round(ox*c.Scale)-iconMaskMargin, math.Round(oy*c.Scale)-iconMaskMargin)
-		op.ColorScale.ScaleWithColor(c.Color(cur))
+		op.GeoM.Translate(math.Round(ox*ctx.Scale)-iconMaskMargin, math.Round(oy*ctx.Scale)-iconMaskMargin)
+		op.ColorScale.ScaleWithColor(ctx.Color(cur))
 		dst.DrawImage(mask, &op)
 		return
 	}
-	renderShapes(dst, ic, ox*c.Scale, oy*c.Scale, s, weight, func(p svgPaint) color.RGBA { return c.Color(paintToken(p, cur)) })
+	renderShapes(dst, ic, ox*ctx.Scale, oy*ctx.Scale, s, weight, func(paint svgPaint) color.RGBA { return ctx.Color(paintToken(paint, cur)) })
 }
 
 // renderShapes draws the icon's shapes with the icon's origin at dx, dy in
 // device pixels and s device pixels per icon unit; colorOf picks the color
 // of a paint.
-func renderShapes(dst *ebiten.Image, ic *svgIcon, dx, dy, s, weight float64, colorOf func(svgPaint) color.RGBA) {
+func renderShapes(dst *ebiten.Image, ic *svgIcon, dx, dy, scale, weight float64, colorOf func(svgPaint) color.RGBA) {
 	for _, sh := range ic.shapes {
 		var p vector.Path
 		for _, cmd := range sh.cmds {
-			pt := func(i int) (float32, float32) {
-				return float32(dx + cmd.p[i]*s), float32(dy + cmd.p[i+1]*s)
+			pt := func(index int) (float32, float32) {
+				return float32(dx + cmd.p[index]*scale), float32(dy + cmd.p[index+1]*scale)
 			}
 			switch cmd.op {
 			case 'M':
@@ -209,7 +209,7 @@ func renderShapes(dst *ebiten.Image, ic *svgIcon, dx, dy, s, weight float64, col
 			var dp vector.DrawPathOptions
 			dp.AntiAlias = true
 			dp.ColorScale.ScaleWithColor(colorOf(sh.line))
-			vector.StrokePath(dst, &p, &vector.StrokeOptions{Width: float32(sh.width * s * weight), LineCap: sh.cap, LineJoin: sh.join}, &dp)
+			vector.StrokePath(dst, &p, &vector.StrokeOptions{Width: float32(sh.width * scale * weight), LineCap: sh.cap, LineJoin: sh.join}, &dp)
 		}
 	}
 }
@@ -234,8 +234,8 @@ const maskLimit = 512
 
 // iconMask is the icon drawn in white at s device pixels per unit, with a
 // margin, cached by icon, scale and stroke weight.
-func iconMask(ic *svgIcon, s, weight float64) *ebiten.Image {
-	key := maskKey{ic, s, weight}
+func iconMask(ic *svgIcon, scale, weight float64) *ebiten.Image {
+	key := maskKey{ic, scale, weight}
 	masks.Lock()
 	defer masks.Unlock()
 	if img, ok := masks.m[key]; ok {
@@ -244,10 +244,10 @@ func iconMask(ic *svgIcon, s, weight float64) *ebiten.Image {
 	if len(masks.m) >= maskLimit {
 		masks.m = map[maskKey]*ebiten.Image{}
 	}
-	w, h := int(math.Ceil(ic.w*s))+2*iconMaskMargin, int(math.Ceil(ic.h*s))+2*iconMaskMargin
+	w, h := int(math.Ceil(ic.w*scale))+2*iconMaskMargin, int(math.Ceil(ic.h*scale))+2*iconMaskMargin
 	img := ebiten.NewImage(w, h)
 	white := color.RGBA{255, 255, 255, 255}
-	renderShapes(img, ic, iconMaskMargin, iconMaskMargin, s, weight, func(svgPaint) color.RGBA { return white })
+	renderShapes(img, ic, iconMaskMargin, iconMaskMargin, scale, weight, func(svgPaint) color.RGBA { return white })
 	masks.m[key] = img
 	return img
 }
@@ -263,9 +263,9 @@ func (ic *svgIcon) cacheable() bool {
 	return true
 }
 
-func paintToken(p svgPaint, current core.Token) core.Token {
-	if p.token != "" {
-		return p.token
+func paintToken(paint svgPaint, current core.Token) core.Token {
+	if paint.token != "" {
+		return paint.token
 	}
 	return current
 }
