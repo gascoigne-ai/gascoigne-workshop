@@ -215,3 +215,15 @@ func TestARequestBodyRefIsResolved(t *testing.T) {
 		t.Fatalf("request %+v, want a JSON body with the Pet skeleton", req)
 	}
 }
+
+// FuzzParse: any document text, JSON or YAML.
+func FuzzParse(f *testing.F) {
+	if data, err := os.ReadFile("testdata/petstore.json"); err == nil {
+		f.Add(data)
+	}
+	f.Add([]byte("openapi: 3.0.0\ninfo:\n  title: T\npaths:\n  /a:\n    get:\n      summary: A\n"))
+	f.Add([]byte(`{"openapi":"3.0.0","paths":{"/a":{"get":[]}}}`))
+	f.Fuzz(func(t *testing.T, data []byte) {
+		_, _ = Parse(data)
+	})
+}

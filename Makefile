@@ -19,7 +19,15 @@ test:
 # check. A crasher lands in the package's testdata/fuzz and becomes a
 # regression test: fix it, keep the file.
 FUZZTIME ?= 30s
-FUZZ_TARGETS = ./internal/collection/model/miniyaml:FuzzParse
+FUZZ_TARGETS = \
+	./internal/collection/model/miniyaml:FuzzParse \
+	./internal/collection/model/openapi:FuzzParse \
+	./internal/collection/model/postman:FuzzParse \
+	./internal/collection/model/clientconfig:FuzzParse \
+	./internal/request/model:FuzzParseCurl \
+	./internal/request/model:FuzzURLParams \
+	./internal/request/model/assert:FuzzRun \
+	./internal/response/model/jsonview:FuzzCompact
 fuzz:
 	@for target in $(FUZZ_TARGETS); do \
 		package=$${target%%:*}; name=$${target##*:}; \

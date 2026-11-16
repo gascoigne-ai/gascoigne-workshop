@@ -131,3 +131,19 @@ func TestCapturingAHeaderFromAResponseWithoutHeadersFails(t *testing.T) {
 		t.Fatalf("%+v, want a failed line", res[0])
 	}
 }
+
+// FuzzRun: any assertion text against a JSON response.
+func FuzzRun(f *testing.F) {
+	for _, seed := range []string{
+		"status == 200\nstatus < 300\ntime < 500ms", "header Content-Type contains json\nheader X-Id exists",
+		"body contains \"ok\"", "json total_count > 0\njson items[0].name == \"alpha\"\njson items.length >= 1",
+		"set token = json access_token\nset id = header X-Id\nset code = status", "json [[[\njson a..b\njson items[99999999999]", "",
+	} {
+		f.Add(seed)
+	}
+	response := resp()
+	f.Fuzz(func(t *testing.T, text string) {
+		_ = Run(text, response)
+		_ = Captures(text, response)
+	})
+}

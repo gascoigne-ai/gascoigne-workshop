@@ -171,3 +171,14 @@ func TestImportListsWhatItCannotCarryOver(t *testing.T) {
 		t.Fatalf("Skipped = %q, want the oauth2 auth and the file body, not noauth", res.Skipped)
 	}
 }
+
+// FuzzParse: any collection text.
+func FuzzParse(f *testing.F) {
+	if data, err := os.ReadFile("testdata/collection.json"); err == nil {
+		f.Add(data)
+	}
+	f.Add([]byte(`{"info":{"name":"x","schema":"https://schema.getpostman.com/json/collection/v2.0.0/collection.json"},"item":[{"name":"a","request":"https://x.test"}]}`))
+	f.Fuzz(func(t *testing.T, data []byte) {
+		_, _ = Parse(data)
+	})
+}

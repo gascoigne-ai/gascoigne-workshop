@@ -135,3 +135,17 @@ func TestBracketsInsideStringsDoNotCountAsNesting(t *testing.T) {
 		t.Fatalf("a shallow body with bracket-heavy strings was shown plain: %d line", len(got))
 	}
 }
+
+// FuzzCompact: any body, JSON or not, at any width.
+func FuzzCompact(f *testing.F) {
+	for _, seed := range []string{
+		`{"a":1,"b":[1,2,3],"c":{"d":null}}`, `[[[[]]]]`, `{"k":"日本語日本語日本語日本語日本語日本語日本語日本語日本語日本語日本語日本語日本語日本語日本語日本語日本語日本語日本語日本語日本語日本語日本語日本語日本語日本語日本語"}`,
+		`{"a":`, `plain text`, ``, `"just a string"`, `{"a":1e999}`,
+	} {
+		f.Add([]byte(seed), 20)
+	}
+	f.Fuzz(func(t *testing.T, body []byte, width int) {
+		_ = Compact(body, width%200)
+		_ = Lines(body)
+	})
+}

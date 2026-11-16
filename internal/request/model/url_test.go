@@ -196,3 +196,20 @@ func TestExpandStopsAtASizeLimit(t *testing.T) {
 		t.Errorf("a skipped variable must stay visible, got %.40q", got)
 	}
 }
+
+// FuzzURLParams: query and path parameters of any URL text.
+func FuzzURLParams(f *testing.F) {
+	for _, seed := range []string{
+		"https://api.test/s?q=go+lang&page=2", "https://api.test/u/:id/posts/{postId}?x=%zz", "http://[::1]:80/a?b", "?", "{{base}}/p?a=1&a=2", "",
+	} {
+		f.Add(seed)
+	}
+	f.Fuzz(func(t *testing.T, raw string) {
+		params := ParamsFromURL(raw)
+		_ = WithParams(raw, params)
+		_ = ApplyPathParams(raw, params)
+		_ = PathParamNames(raw)
+		_ = VarNames(raw)
+		_ = Expand(raw, []KV{{Name: "base", Value: raw, Enabled: true}})
+	})
+}
