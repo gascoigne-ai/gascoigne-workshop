@@ -136,3 +136,19 @@ func TestAppThemesCarryMethodAndJSONColorsOverTheToolkitStyles(t *testing.T) {
 		}
 	}
 }
+
+func TestCollectionTokensCycleAndEveryThemeDefinesThem(t *testing.T) {
+	if CollectionToken(0) == CollectionToken(1) {
+		t.Fatal("neighbouring collections must differ")
+	}
+	if CollectionToken(0) != CollectionToken(CollectionColors) {
+		t.Fatal("the colors repeat after CollectionColors collections")
+	}
+	for name, theme := range map[string]core.Theme{"dark": DarkTheme(), "light": LightTheme()} {
+		for i := 0; i < CollectionColors; i++ {
+			if _, ok := theme.Colors[CollectionToken(i)]; !ok {
+				t.Fatalf("%s theme has no color for %s", name, CollectionToken(i))
+			}
+		}
+	}
+}

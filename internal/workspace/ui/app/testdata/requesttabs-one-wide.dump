@@ -1,7 +1,8 @@
 flow h=42 padT=6 bg=frame borderB=border control=tabstrip rect=0,0,1020,42
   hscrollB grow=1 rect=0,6,980,36
     flow bg=bg edge=accent-line edgeTop=true edgeLeft=true edgeRight=true onRightClick=true onMiddleClick=true rect=0,6,203,36
-      flow padL=14 gap=8 onClick=true onDragOver=true rect=0,6,179,36
+      flow w=3 bg=collection.0 rect=0,6,3,36
+      flow padL=11 gap=8 onClick=true onDragOver=true rect=3,6,176,36
         textB text="GET" w=48 fg=method.GET small=true rect=14,18,48,14
         textB text="Search Repos" rect=70,16,89,16
         flow w=12 rect=167,6,12,36

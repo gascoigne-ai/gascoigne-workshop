@@ -139,7 +139,19 @@ func (a *App) updateTabs(msg tabs.Msg) {
 			a.widgets[tab] = a.makeTab(tab)
 		}
 	}
+	was := a.activeRequest()
 	a.list = next
+	if now := a.activeRequest(); now != nil && now != was {
+		a.revealRequest(now)
+	}
+}
+
+// activeRequest is the request of the active tab, nil when none is open.
+func (a *App) activeRequest() *model.Request {
+	if a.list.Active < 0 || a.list.Active >= len(a.list.Tabs) {
+		return nil
+	}
+	return a.list.Tabs[a.list.Active].Req
 }
 
 // openTabs are the widget states of the open tabs, in the order of the strip.

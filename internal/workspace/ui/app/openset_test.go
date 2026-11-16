@@ -11,6 +11,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/tree"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/settingsfile"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/statefile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
@@ -315,5 +316,46 @@ func TestTheSingleSavedCollectionOfAnOlderVersionStillOpens(t *testing.T) {
 	st, err := settingsfile.Load(settingsPath)
 	if err != nil || st.Workspace != "" || st.Environment != "" || len(st.Collections) != 1 || st.Collections[0] != (settings.OpenCollection{Folder: dir, Environment: "Dev"}) {
 		t.Fatalf("written %+v %v", st, err)
+	}
+}
+
+func TestTabsAndRootRowsShowTheColorOfTheirCollection(t *testing.T) {
+	a, _, _ := twoCollectionsApp(t)
+	alpha, beta := entryNamed(t, a, "Alpha"), entryNamed(t, a, "Beta")
+	alphaReq, betaReq := alpha.Collection.Folder.Requests[0], beta.Collection.Folder.Requests[0]
+	a.openRequest(alphaReq)
+	if got, want := shownTab(t, a, alphaReq).Stripe, appearance.CollectionToken(0); got != want {
+		t.Fatalf("tab of Alpha stripe = %q, want %q", got, want)
+	}
+	if got, want := shownTab(t, a, betaReq).Stripe, appearance.CollectionToken(1); got != want {
+		t.Fatalf("tab of Beta stripe = %q, want %q", got, want)
+	}
+	for _, row := range a.visibleRows() {
+		if !a.isRoot(row.Dir) {
+			continue
+		}
+		owner, _ := a.open.Owner(row.Dir)
+		if got := a.treeItemOf(row).Stripe; got == "" || (owner.Collection == beta.Collection) == (got == appearance.CollectionToken(0)) {
+			t.Fatalf("root row of %s has stripe %q", owner.Collection.Name, got)
+		}
+	}
+}
+
+// Switching tabs used to leave the tree on the request last clicked, so a
+// tab of another collection was not found in it.
+func TestSwitchingTabsSelectsAndRevealsTheRequestInTheTree(t *testing.T) {
+	a, _, _ := twoCollectionsApp(t)
+	alpha := entryNamed(t, a, "Alpha")
+	req := alpha.Collection.Folder.Requests[0]
+	a.openRequest(req)
+	a.selected = nil
+	a.expanded[&alpha.Collection.Folder] = false
+	a.updateTabs(tabs.Activate{Index: tabIndex(t, a, entryNamed(t, a, "Beta").Collection.Folder.Requests[0])})
+	a.updateTabs(tabs.Activate{Index: tabIndex(t, a, req)})
+	if a.selected != any(req) {
+		t.Fatalf("selected = %v, want the request of the active tab", a.selected)
+	}
+	if !a.expanded[&alpha.Collection.Folder] {
+		t.Fatal("the collection holding the active request is not expanded")
 	}
 }

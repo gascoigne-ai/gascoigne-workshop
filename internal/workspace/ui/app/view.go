@@ -129,6 +129,7 @@ type treeItem struct {
 	Color    w.Token // the badge's color
 	// DropBorder outlines the row a drag would drop on; empty, no outline.
 	DropBorder w.Token
+	Stripe     w.Token // a collection root's color
 	Press      func()
 	Menu       func(pointerX, pointerY int)
 	DragOver   func()
@@ -137,25 +138,36 @@ type treeItem struct {
 // treeRow is one row of the tree, a folder or a request: one template
 // each, since their rows differ in padding and alignment.
 func (a *App) treeRow(row collection.Row, selected bool) Node {
+	item := a.treeItemOf(row)
+	item.Selected = selected
+	template := treeFolderTemplate
+	if !row.Folder {
+		template = treeRequestTemplate
+	}
+	return template.MustBuild(markup.Scope{"row": item, "rowH": w.RowH, "gutter": w.Gutter, "badgeW": badgeW})
+}
+
+// treeItemOf is the view model of one tree row, except whether it is selected.
+func (a *App) treeItemOf(row collection.Row) treeItem {
 	node := row.Node()
 	item := treeItem{
 		Name:     row.Name,
 		Indent:   w.Gutter + row.Depth*treeIndent,
-		Selected: selected,
 		Press:    func() { a.pressTreeRow(row) },
 		Menu:     func(pointerX, pointerY int) { a.openMenu(pointerX, pointerY, a.treeMenuItems(row)) },
 		DragOver: func() { a.dropTarget = node },
 	}
 	item.Before, item.Match, item.After = collection.SplitMatch(row.Name, a.filter.Text)
-	template := treeFolderTemplate
 	if row.Folder {
 		item.Root = a.isRoot(row.Dir)
+		if item.Root {
+			item.Stripe = a.collectionToken(row.Dir)
+		}
 		item.Triangle = "triangle-right"
 		if row.Open {
 			item.Triangle = "triangle-down"
 		}
 	} else {
-		template = treeRequestTemplate
 		item.Indent += 6
 		item.Badge = requestBadge(row.Req.Protocol, row.Req.Method)
 		item.Color = appearance.MethodToken(row.Req.Method)
@@ -163,7 +175,7 @@ func (a *App) treeRow(row collection.Row, selected bool) Node {
 	if a.dragNode != nil && a.dropTarget == node && node != a.dragNode {
 		item.DropBorder = w.AccentLine
 	}
-	return template.MustBuild(markup.Scope{"row": item, "rowH": w.RowH, "gutter": w.Gutter, "badgeW": badgeW})
+	return item
 }
 
 // pressTreeRow is a press on a row: it selects it, gives the tree the
@@ -225,6 +237,7 @@ type requestTabItem struct {
 	Name   string
 	Dirty  bool
 	Active bool
+	Stripe w.Token // the color of the tab's collection
 	// Separator is the line's inset before the tab; 0, no line (the first tab).
 	Separator   int
 	Press       func()
@@ -262,6 +275,7 @@ func (a *App) requestTab(index int, tab *reqTab) requestTabItem {
 		Name:        tab.Req.Name,
 		Dirty:       a.tabDirty(tab),
 		Active:      index == a.list.Active,
+		Stripe:      a.collectionToken(tab.Req),
 		Press:       func() { a.pressTab(index) },
 		MiddlePress: func() { a.updateTabs(tabs.DragBegin{Index: index}) },
 		DragOver:    func() { a.updateTabs(tabs.DragOver{Index: index}) },
@@ -509,6 +523,7 @@ const (
 `
 
 	treefolderSource = `<list-row selected="{{row.Selected}}" border="{{row.DropBorder}}" h="{{rowH}}" pad-l="{{row.Indent}}" gap="6" on-click="row.Press" on-right-click="row.Menu" on-drag-over="row.DragOver">
+  <row if="row.Stripe" w="3" h="14" bg="{{row.Stripe}}"/>
   <icon name="{{row.Triangle}}" w="12"/>
   <!-- the name, with the part the sidebar filter matched in the accent color; treerequest.vml has the same -->
   <text if="!row.Match" bold="{{row.Root}}" ellipsis grow="1">{{row.Name}}</text>
@@ -549,7 +564,8 @@ const (
   <hscroll state="tabsScroll" grow="1">
     <!-- inactive tabs blend into the strip; the active one joins the pane. A middle drag reorders, like a left one -->
     <row for="tab in tabs" active-tab="{{tab.Active}}" separator="{{tab.Separator}}" on-middle-click="tab.MiddlePress" on-right-click="tab.Menu">
-      <row pad-l="14" gap="8" align-items="baseline" on-click="tab.Press" on-drag-over="tab.DragOver">
+      <row w="3" align-self="stretch" bg="{{tab.Stripe}}"/>
+      <row pad-l="11" gap="8" align-items="baseline" on-click="tab.Press" on-drag-over="tab.DragOver">
         <text small color="{{tab.Color}}" w="{{tabBadgeW}}">{{tab.Badge}}</text>
         <text>{{tab.Name}}</text>
         <row w="{{tabDirtyW}}" align-self="stretch">

@@ -2,6 +2,7 @@ package appearance
 
 import (
 	"embed"
+	"strconv"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -18,6 +19,15 @@ func MethodToken(method string) core.Token {
 		return core.Muted
 	}
 	return core.Token(MethodTokenPrefix + method)
+}
+
+// CollectionColors is how many collection colors there are; more open
+// collections reuse them in turn.
+const CollectionColors = 6
+
+// CollectionToken is the color that marks the collection at index.
+func CollectionToken(index int) core.Token {
+	return core.Token("collection." + strconv.Itoa(index%CollectionColors))
 }
 
 //go:embed themes/*.json

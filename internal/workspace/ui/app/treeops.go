@@ -14,6 +14,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/openapi"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/postman"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
@@ -33,6 +34,31 @@ func (a *App) visibleRows() []collection.Row {
 
 // selectNode marks a folder or request as the one the tree acts on.
 func (a *App) selectNode(node any) { a.selected = node }
+
+// collectionToken is the color of the open collection that holds node, ""
+// for a node of none.
+func (a *App) collectionToken(node any) core.Token {
+	for index, entry := range a.open.Entries {
+		if node == any(&entry.Collection.Folder) || node == any(entry.Collection) || entry.Collection.Folder.Contains(node) {
+			return appearance.CollectionToken(index)
+		}
+	}
+	return ""
+}
+
+// revealRequest selects req in the tree and opens the folders above it.
+func (a *App) revealRequest(req *model.Request) {
+	a.selectNode(req)
+	owner, ok := a.open.Owner(req)
+	if !ok {
+		return
+	}
+	root := &owner.Collection.Folder
+	a.expanded[root] = true
+	for folder, found := root.Parent(req); found && folder != root; folder, found = root.Parent(folder) {
+		a.expanded[folder] = true
+	}
+}
 
 // selectedFolder is where a new request goes: the selected folder, the
 // folder of the selected request, or the root of the focused collection;
