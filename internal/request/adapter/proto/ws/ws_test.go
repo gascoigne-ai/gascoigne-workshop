@@ -1,9 +1,11 @@
 package ws
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -216,3 +218,28 @@ func TestAPingBetweenFragmentsKeepsTheMessage(t *testing.T) {
 		t.Fatalf("got %+v, %v; want the joined text", m, err)
 	}
 }
+
+// FuzzReadFrame: any bytes a peer could send, read as a client and as a
+// server, through the frame reader and the message reader above it.
+func FuzzReadFrame(f *testing.F) {
+	for _, seed := range [][]byte{
+		{0x81, 0x02, 'h', 'i'}, {0x01, 0x03, 'h', 'e', 'l', 0x80, 0x02, 'l', 'o'}, {0x89, 0x00}, {0x88, 0x02, 0x03, 0xe8},
+		{0x82, 0x7e, 0x00, 0x05, 1, 2, 3, 4, 5}, {0x82, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}, {0xf1, 0x00}, {},
+	} {
+		f.Add(seed, true)
+	}
+	f.Fuzz(func(t *testing.T, data []byte, client bool) {
+		conn := &Conn{br: bufio.NewReader(bytes.NewReader(data)), nc: discardConn{}, client: client, max: 1 << 16}
+		for range 8 {
+			if _, err := conn.Read(); err != nil {
+				return
+			}
+		}
+	})
+}
+
+// discardConn takes the pongs and close frames Read answers with.
+type discardConn struct{ net.Conn }
+
+func (discardConn) Write(data []byte) (int, error) { return len(data), nil }
+func (discardConn) Close() error                   { return nil }

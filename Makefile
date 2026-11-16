@@ -27,7 +27,9 @@ FUZZ_TARGETS = \
 	./internal/request/model:FuzzParseCurl \
 	./internal/request/model:FuzzURLParams \
 	./internal/request/model/assert:FuzzRun \
-	./internal/response/model/jsonview:FuzzCompact
+	./internal/response/model/jsonview:FuzzCompact \
+	./internal/request/adapter/proto/ws:FuzzReadFrame \
+	./uitoolkit/markup:FuzzParse
 fuzz:
 	@for target in $(FUZZ_TARGETS); do \
 		package=$${target%%:*}; name=$${target##*:}; \

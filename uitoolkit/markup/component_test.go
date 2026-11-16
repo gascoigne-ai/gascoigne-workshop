@@ -401,3 +401,20 @@ func TestIncludeCyclesAreAnErrorNotAStackOverflow(t *testing.T) {
 		}
 	}
 }
+
+// FuzzParse: any template text, parsed and built with a small scope.
+func FuzzParse(f *testing.F) {
+	for _, seed := range []string{
+		`<row><text small>{{label}}</text><text for="x in xs">{{x}}</text></row>`, `<col grow="1" pad="4"><field state="f"/></col>`,
+		`<include name="nope"/>`, `<row><text>{{a.b.c}}</text>`, `<text>&amp;&bogus;</text>`, `<<<>>>`, ``,
+	} {
+		f.Add(seed)
+	}
+	f.Fuzz(func(t *testing.T, src string) {
+		template, err := Parse("fuzz.vml", []byte(src))
+		if err != nil {
+			return
+		}
+		_, _ = template.Build(Scope{"label": "x", "xs": []string{"a", "b"}})
+	})
+}
