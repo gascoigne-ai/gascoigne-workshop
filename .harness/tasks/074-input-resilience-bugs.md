@@ -11,11 +11,10 @@ From the input audit of 2026-11-16 (static read of toolkit, request, collection,
 
 Done since (one commit each, test first): `recover` in `bus.Run` plus connect and desktop dialog through it (the font scan in `settingsui` keeps its own goroutine: that package cannot import another domain's controller); slider range normalized; markup NaN/Inf refused; `Input.Scaled` and `GDK_SCALE` guards; timeout capped at 24 h; `<include>` depth limit; cell edit past the end; `assert` header capture; cURL clustered and attached flags; MCP waiter leak; Postman numeric values and string request; OpenAPI odd paths and operations (`Result.Skipped`, toast); gRPC reflection file cap; `.proto` imports cannot leave the import paths; `miniyaml` depth limit. Checked and left alone: the schema blow-up (width cubed, pinned by a test), MCP string ids (the session only sends integers), the `split` zero-size mismatch (harmless, only divides a ratio).
 
-Scope (one commit per item, test first, regression comment above each test)
-1. Out-of-range settings: `settings.Decode` does not call `Validate`. Decide with the user what a loaded out-of-range value does (clamp, or default with a status line), then implement. Ask first.
-2. Postman import reports what it skips (unsupported auth types, graphql and file bodies) the way OpenAPI does (`Result.Skipped`, toast). OpenAPI `requestBody.$ref` gives no body silently: resolve it or report it.
-3. Response view of a very large body (32 MiB): `RawLines`/`CodeLines`/`CompactLines` run on the UI thread. Cap or load in steps; the viewer says it is truncated. Ask the user for the limit and the wording first.
-4. `assert` live evaluation on every keystroke (`assertpane.go:46`) re-parses the body per line: parse once per run. Test counts parses.
-5. Docs: `architecture.md` Limits gets the caps now in code (variable expansion 16 MiB, JSON depth 256, YAML depth 100, include depth 32, timeout 24 h, reflection 512 files, MCP/WS behavior), in the same commit as item 3 or as its own `docs` commit.
+Also done: out-of-range settings clamped and named on load (decided: clamp and say so); a huge response body shown as its first 2 MiB with a note (decided: raw view of the first 2 MiB); Postman import lists what it skips; OpenAPI `requestBody.$ref` resolved; limits written into `architecture.md` Limits.
 
-Acceptance: every item has a test that failed before for the stated reason; `make check` green; this file lists nothing unfinished; the file is deleted in the commit of the last item.
+Dropped by the bug rating rule (frequency x severity below 5, issue instead of code): `assert` live evaluation parses the body once per `json` line on every keystroke. Nobody has measured a slow case; revisit if a large body with many assertions feels slow.
+
+Scope: every item is done. The user decides whether this file is deleted (rules: ask before deleting).
+
+Acceptance: met; `make check` green.
