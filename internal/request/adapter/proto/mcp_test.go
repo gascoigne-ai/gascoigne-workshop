@@ -1,6 +1,7 @@
 package proto
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -211,6 +212,15 @@ func TestMCPConnectCanBeCancelled(t *testing.T) {
 
 // The stdio server is this test binary run again with MCP_HELPER set.
 func TestMain(m *testing.M) {
+	switch os.Getenv("MCP_HELPER") {
+	case "deaf": // never reads stdin, so closing it does not end the process
+		time.Sleep(time.Minute)
+		return
+	case "flood": // one line over the message limit, then silence
+		os.Stdout.Write(bytes.Repeat([]byte("a"), mcpMaxMessage+1<<20))
+		time.Sleep(time.Minute)
+		return
+	}
 	if os.Getenv("MCP_HELPER") == "1" {
 		dec := json.NewDecoder(os.Stdin)
 		for {
@@ -300,5 +310,47 @@ func TestMCPRequestReturnsTheResultOrTheServersError(t *testing.T) {
 	}
 	if _, err := requester.Request(ctx, `call`); err == nil {
 		t.Fatal("a call without a name is refused")
+	}
+}
+
+// stdioEnds starts the helper in mode and returns what finish reports.
+func stdioEnds(t *testing.T, mode string) (*mcpStdio, <-chan error) {
+	t.Helper()
+	exe, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("MCP_HELPER", mode)
+	ended := make(chan error, 1)
+	m, err := newMCPStdio(shellQuote(exe), func([]byte) {}, func(err error) { ended <- err })
+	if err != nil {
+		t.Fatal(err)
+	}
+	return m, ended
+}
+
+// close started a kill timer and stopped it with a defer in the same call,
+// so a server that ignores the end of its input was never killed.
+func TestMCPStdioCloseKillsAServerThatIgnoresItsInput(t *testing.T) {
+	m, ended := stdioEnds(t, "deaf")
+	m.close()
+	select {
+	case <-ended:
+	case <-time.After(5 * time.Second):
+		t.Fatal("the server is still running after close")
+	}
+}
+
+// A line over the message limit stopped the reader, but the process kept
+// running and cmd.Wait never returned, so the session never ended.
+func TestMCPStdioEndsWhenAServerSendsAnOversizedLine(t *testing.T) {
+	_, ended := stdioEnds(t, "flood")
+	select {
+	case err := <-ended:
+		if err == nil || !strings.Contains(err.Error(), "too long") {
+			t.Fatalf("ended with %v, want the oversized line named", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("the session does not end after an oversized line")
 	}
 }

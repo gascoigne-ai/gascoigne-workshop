@@ -605,9 +605,10 @@ func (h *mcpHTTP) close() error {
 // ---- stdio ----------------------------------------------------------------------
 
 type mcpStdio struct {
-	cmd   *exec.Cmd
-	stdin io.WriteCloser
-	mu    sync.Mutex
+	cmd    *exec.Cmd
+	stdin  io.WriteCloser
+	exited chan struct{} // closed once the process is gone
+	mu     sync.Mutex
 }
 
 func newMCPStdio(command string, deliver func([]byte), finish func(error)) (*mcpStdio, error) {
@@ -630,6 +631,7 @@ func newMCPStdio(command string, deliver func([]byte), finish func(error)) (*mcp
 	if err := cmd.Start(); err != nil {
 		return nil, err
 	}
+	exited := make(chan struct{})
 	go func() {
 		sc := bufio.NewScanner(stdout)
 		sc.Buffer(make([]byte, 64<<10), mcpMaxMessage)
@@ -638,13 +640,21 @@ func newMCPStdio(command string, deliver func([]byte), finish func(error)) (*mcp
 				deliver(append([]byte(nil), line...))
 			}
 		}
+		scanErr := sc.Err()
+		if scanErr != nil { // the reader stopped, so the process would run on unheard
+			_ = cmd.Process.Kill()
+		}
 		err := cmd.Wait()
-		if err == nil {
+		close(exited)
+		switch {
+		case scanErr != nil:
+			err = fmt.Errorf("read the server's output: %w", scanErr)
+		case err == nil:
 			err = errors.New("the server exited")
 		}
 		finish(err)
 	}()
-	return &mcpStdio{cmd: cmd, stdin: stdin}, nil
+	return &mcpStdio{cmd: cmd, stdin: stdin, exited: exited}, nil
 }
 
 func (m *mcpStdio) send(_ context.Context, msg []byte) error {
@@ -658,8 +668,13 @@ func (m *mcpStdio) setVersion(string) {}
 
 func (m *mcpStdio) close() error {
 	m.stdin.Close()
-	t := time.AfterFunc(time.Second, func() { _ = m.cmd.Process.Kill() })
-	defer t.Stop()
+	time.AfterFunc(time.Second, func() { // a server that ignores the end of its input
+		select {
+		case <-m.exited:
+		default:
+			_ = m.cmd.Process.Kill()
+		}
+	})
 	return nil
 }
 
