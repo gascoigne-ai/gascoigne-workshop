@@ -21,7 +21,7 @@ var protoPane = pane{label: "Proto", kind: paneProto}
 
 // grpcRequestPanes are the request side of gRPC: the HTTP-like panes with
 // Proto after the Body, which holds the message the files describe.
-var grpcRequestPanes = []pane{paramsPane, bodyPane, protoPane, headersPane, authPane, varsPane, testsPane, settingsPane}
+var grpcRequestPanes = []pane{paramsPane, bodyPane, protoPane, schemaPane, headersPane, authPane, varsPane, testsPane, settingsPane}
 
 // protoState is what a tab keeps for its Proto pane between frames.
 type protoState struct {

@@ -35,6 +35,7 @@ const (
 	paneResults    // the response side: what they found
 	paneExplorer   // the response side of MCP: what the server offers
 	paneProto      // the request side of gRPC: reflection or .proto files
+	paneSchema     // the request side of gRPC: the fields of the method's message
 )
 
 // pane describes one tab of the request or response area. The tables
@@ -187,6 +188,7 @@ var paneBuilders = map[paneKind]func(a *App, p pane, t *reqTab, scroll *ScrollSt
 	paneResults:    (*App).resultsPane,
 	paneTable:      (*App).tablePane,
 	paneProto:      (*App).protoPane,
+	paneSchema:     (*App).schemaPane,
 }
 
 // paneBody is what fills the area under a pane's tab strip.

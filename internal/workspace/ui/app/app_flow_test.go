@@ -108,6 +108,7 @@ func withAdapters(opts Options) Options {
 	opts.Fonts = fonts.System{}
 	opts.Protocols = proto.Configured
 	opts.GRPCMethods = proto.ListGRPCMethods
+	opts.GRPCSchema = proto.GRPCInputSchema
 	opts.Curl = proto.Curl
 	opts.Store = store.Files{}
 	opts.States = statefile.Files{}

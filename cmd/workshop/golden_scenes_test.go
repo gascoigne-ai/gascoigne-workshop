@@ -101,6 +101,7 @@ var goldenScenes = []goldenScene{
 	// first request is answered by the example server's port without
 	// reflection, the second names a file cut off mid-message
 	{name: "grpc-proto-files", width: shotWidth, height: shotHeight, args: []string{"-request", "Health from proto file", "-pane", "Proto", "-send"}, collections: []string{"grpc-proto-collection"}, mask: []image.Rectangle{durationStacked, durationStatus}},
+	{name: "grpc-schema", width: shotWidth, height: shotHeight, args: []string{"-request", "Health from proto file", "-pane", "Schema"}, collections: []string{"grpc-proto-collection"}},
 	{name: "grpc-proto-error", width: shotWidth, height: shotHeight, args: []string{"-request", "Broken proto file", "-pane", "Proto"}, collections: []string{"grpc-proto-collection"}},
 }
 

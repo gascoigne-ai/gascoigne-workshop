@@ -177,7 +177,7 @@ func (s *screenshot) ready(a *App) bool {
 	if s.tool != "" && !s.toolOpened && s.frames < shotTimeout {
 		return false
 	}
-	if protoReading(a.cur()) && s.frames < shotTimeout {
+	if (protoReading(a.cur()) || schemaLoading(a.cur())) && s.frames < shotTimeout {
 		return false
 	}
 	return s.find == "" || s.found || s.frames >= shotTimeout

@@ -101,6 +101,7 @@ type reqTab struct {
 	msg                   widget.TextField             // the message being composed
 	grpcStream            bool                         // a gRPC tab streams instead of making single calls
 	proto                 protoState                   // the Proto pane of a gRPC tab
+	messageSchema         messageSchemaState           // the Schema pane of a gRPC tab
 	schema                *model.Schema                // what a GraphQL introspection answered
 	explorer              mcpexplorer.State            // the MCP explorer: the list shown, the open entry, its answer
 	form                  *mcpform.Form                // the argument form of the open entry, nil for none
@@ -179,6 +180,7 @@ type App struct {
 	reg         reqport.Registry
 	protocols   func(reqport.ProtocolConfig) reqport.Registry // builds the registry; nil has no protocols
 	grpcMethods reqport.GRPCMethods
+	grpcSchema  reqport.GRPCSchema
 	curl        func(model.Request) string
 	open        collections.Set         // the open collections, in tree order, each with its folder and environment
 	sample      func() model.Collection // the collection shown when nothing is saved or configured
@@ -291,6 +293,7 @@ type Options struct {
 	ScanFonts              bool                                          // look for installed fonts in the background, to apply the saved font families
 	Protocols              func(reqport.ProtocolConfig) reqport.Registry // builds the protocols; nil has none
 	GRPCMethods            reqport.GRPCMethods                           // lists gRPC methods by reflection; nil cannot
+	GRPCSchema             reqport.GRPCSchema                            // describes a gRPC method's request message; nil cannot
 	Curl                   func(model.Request) string                    // the cURL command of a request; nil copies nothing
 	Store                  cport.Store                                   // where the collection is saved; nil saves nothing
 	States                 port.StateStore                               // where the UI state is kept; nil keeps none
@@ -361,7 +364,7 @@ func NewApp(opts Options) (*App, error) {
 	}
 	a.prefs.Stamp(a, a.settingsPath)
 	a.jar, _ = cookiejar.New(nil)
-	a.protocols, a.grpcMethods, a.curl = opts.Protocols, opts.GRPCMethods, opts.Curl
+	a.protocols, a.grpcMethods, a.grpcSchema, a.curl = opts.Protocols, opts.GRPCMethods, opts.GRPCSchema, opts.Curl
 	a.reg = a.newRegistry()
 	ctx.Clipboard = core.ReportClipboard(ctx.Clipboard, a.clipboardNote)
 	a.list.Drag = -1

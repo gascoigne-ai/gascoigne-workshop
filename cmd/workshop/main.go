@@ -72,6 +72,8 @@ func main() {
 	opts.ScanFonts = true
 	opts.Protocols = proto.Configured
 	opts.GRPCMethods = proto.ListGRPCMethods
+	opts.GRPCSchema = proto.GRPCInputSchema
+	opts.GRPCSchema = proto.GRPCInputSchema
 	opts.Curl = proto.Curl
 	opts.Store = store.Files{}
 	opts.Sample = collection.Sample // which sample is a build decision, see clients_*.go
