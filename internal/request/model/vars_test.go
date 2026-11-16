@@ -26,7 +26,7 @@ func TestUnresolved(t *testing.T) {
 }
 
 func TestVarsForFollowsTheResolutionOrder(t *testing.T) {
-	kv := func(n, v string) KV { return KV{Name: n, Value: v, Enabled: true} }
+	kv := func(name, value string) KV { return KV{Name: name, Value: value, Enabled: true} }
 	req := &Request{Name: "r"}
 	inner := &Folder{Name: "inner", Vars: []KV{kv("who", "inner")}, Requests: []*Request{req}}
 	outer := &Folder{Name: "outer", Vars: []KV{kv("who", "outer"), kv("only-outer", "o")}, Folders: []*Folder{inner}}

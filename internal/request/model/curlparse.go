@@ -168,26 +168,26 @@ func curlBodyOf(headers []KV, method string, head bool, data, forms []string) (m
 	return m, bodyType, body, form
 }
 
-func looksJSON(s string) bool {
-	s = strings.TrimSpace(s)
-	return strings.HasPrefix(s, "{") || strings.HasPrefix(s, "[")
+func looksJSON(text string) bool {
+	text = strings.TrimSpace(text)
+	return strings.HasPrefix(text, "{") || strings.HasPrefix(text, "[")
 }
 
-func unescapeForm(s string) string {
-	if u, err := url.QueryUnescape(s); err == nil {
+func unescapeForm(text string) string {
+	if u, err := url.QueryUnescape(text); err == nil {
 		return u
 	}
-	return s
+	return text
 }
 
 // ShellSplit splits a command line into words the way a POSIX shell
 // does: single quotes, double quotes, $'...' escapes, backslashes and
 // line continuations.
-func ShellSplit(s string) ([]string, error) {
+func ShellSplit(text string) ([]string, error) {
 	var words []string
 	var cur strings.Builder
 	inWord := false
-	r := []rune(s)
+	r := []rune(text)
 	flush := func() {
 		if inWord {
 			words = append(words, cur.String())
@@ -267,9 +267,9 @@ func ShellSplit(s string) ([]string, error) {
 	return words, nil
 }
 
-func indexRune(r []rune, from int, c rune) int {
-	for i := from; i < len(r); i++ {
-		if r[i] == c {
+func indexRune(runes []rune, from int, char rune) int {
+	for i := from; i < len(runes); i++ {
+		if runes[i] == char {
 			return i
 		}
 	}

@@ -42,9 +42,9 @@ func (f *Folder) UniqueName(base string) string {
 
 // AddRequest appends r to f under a name unique among its siblings and
 // returns the stored request.
-func (f *Folder) AddRequest(r Request) *Request {
-	r.Name = f.UniqueName(r.Name)
-	stored := &r
+func (f *Folder) AddRequest(request Request) *Request {
+	request.Name = f.UniqueName(request.Name)
+	stored := &request
 	f.Requests = append(f.Requests, stored)
 	return stored
 }
@@ -207,18 +207,18 @@ func indexOf[T comparable](items []T, item T) int {
 	return -1
 }
 
-func insertAt[T any](items []T, i int, item T) []T {
+func insertAt[T any](items []T, index int, item T) []T {
 	items = append(items, item)
-	copy(items[i+1:], items[i:])
-	items[i] = item
+	copy(items[index+1:], items[index:])
+	items[index] = item
 	return items
 }
 
-func removeAt[T any](items []T, i int) []T {
-	if i < 0 {
+func removeAt[T any](items []T, index int) []T {
+	if index < 0 {
 		return items
 	}
-	return append(items[:i], items[i+1:]...)
+	return append(items[:index], items[index+1:]...)
 }
 
 // Clone returns a deep copy of c.

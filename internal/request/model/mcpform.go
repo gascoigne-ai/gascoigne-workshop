@@ -56,11 +56,11 @@ func ToolFields(schema map[string]any) []ToolField {
 		field.Kind = fieldKind(property)
 		fields = append(fields, field)
 	}
-	sort.Slice(fields, func(i, j int) bool {
-		if fields[i].Required != fields[j].Required {
-			return fields[i].Required
+	sort.Slice(fields, func(index, other int) bool {
+		if fields[index].Required != fields[other].Required {
+			return fields[index].Required
 		}
-		return fields[i].Name < fields[j].Name
+		return fields[index].Name < fields[other].Name
 	})
 	return fields
 }

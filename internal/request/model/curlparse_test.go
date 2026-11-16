@@ -91,13 +91,15 @@ func TestParseCurlReadsClusteredAndAttachedFlags(t *testing.T) {
 		name, cmd string
 		check     func(Request) string
 	}{
-		{"attached method", `curl -XPOST https://api.test`, func(r Request) string { return r.Method }},
-		{"cluster with follow", `curl -sSL https://api.test`, func(r Request) string { return fmt.Sprint(r.NoRedirects) }},
-		{"attached user", `curl -ualice:pw https://api.test`, func(r Request) string { return r.Auth.User + "/" + r.Auth.Password }},
-		{"attached data", `curl -d'a=1' https://api.test`, func(r Request) string { return r.Method + " " + r.Form[0].Name + "=" + r.Form[0].Value }},
-		{"cluster then value flag", `curl -sXDELETE https://api.test`, func(r Request) string { return r.Method }},
-		{"unknown long flag with a value", `curl --some-flag=https://evil.test https://api.test`, func(r Request) string { return r.URL }},
-		{"known long flag with =", `curl --request=PUT https://api.test`, func(r Request) string { return r.Method }},
+		{"attached method", `curl -XPOST https://api.test`, func(request Request) string { return request.Method }},
+		{"cluster with follow", `curl -sSL https://api.test`, func(request Request) string { return fmt.Sprint(request.NoRedirects) }},
+		{"attached user", `curl -ualice:pw https://api.test`, func(request Request) string { return request.Auth.User + "/" + request.Auth.Password }},
+		{"attached data", `curl -d'a=1' https://api.test`, func(request Request) string {
+			return request.Method + " " + request.Form[0].Name + "=" + request.Form[0].Value
+		}},
+		{"cluster then value flag", `curl -sXDELETE https://api.test`, func(request Request) string { return request.Method }},
+		{"unknown long flag with a value", `curl --some-flag=https://evil.test https://api.test`, func(request Request) string { return request.URL }},
+		{"known long flag with =", `curl --request=PUT https://api.test`, func(request Request) string { return request.Method }},
 	}
 	want := map[string]string{
 		"attached method":                "POST",

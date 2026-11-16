@@ -49,17 +49,17 @@ func Skeleton(schema map[string]any) string {
 	return string(bytes.TrimSpace(buf.Bytes()))
 }
 
-func skeletonValue(s map[string]any) any {
-	if d, ok := s["default"]; ok {
+func skeletonValue(other map[string]any) any {
+	if d, ok := other["default"]; ok {
 		return d
 	}
-	if e, ok := s["enum"].([]any); ok && len(e) > 0 {
+	if e, ok := other["enum"].([]any); ok && len(e) > 0 {
 		return e[0]
 	}
-	if c, ok := s["const"]; ok {
+	if c, ok := other["const"]; ok {
 		return c
 	}
-	switch kind(s) {
+	switch kind(other) {
 	case "string":
 		return ""
 	case "integer", "number":
@@ -69,9 +69,9 @@ func skeletonValue(s map[string]any) any {
 	case "array":
 		return []any{}
 	case "object":
-		props, _ := s["properties"].(map[string]any)
+		props, _ := other["properties"].(map[string]any)
 		required := map[string]bool{}
-		if r, ok := s["required"].([]any); ok {
+		if r, ok := other["required"].([]any); ok {
 			for _, n := range r {
 				if name, ok := n.(string); ok {
 					required[name] = true
@@ -92,8 +92,8 @@ func skeletonValue(s map[string]any) any {
 }
 
 // kind is the schema's type; a type list takes its first non-null entry.
-func kind(s map[string]any) string {
-	switch t := s["type"].(type) {
+func kind(other map[string]any) string {
+	switch t := other["type"].(type) {
 	case string:
 		return t
 	case []any:
@@ -103,7 +103,7 @@ func kind(s map[string]any) string {
 			}
 		}
 	}
-	if _, ok := s["properties"]; ok {
+	if _, ok := other["properties"]; ok {
 		return "object"
 	}
 	return ""
@@ -210,9 +210,9 @@ func (p MCPPrompt) Schema() map[string]any {
 // ArgsJSON is {"name":"",...} for a prompt's required arguments.
 func (p MCPPrompt) ArgsJSON() string { return Skeleton(p.Schema()) }
 
-func toAny(s []string) []any {
-	out := make([]any, len(s))
-	for i, v := range s {
+func toAny(names []string) []any {
+	out := make([]any, len(names))
+	for i, v := range names {
 		out[i] = v
 	}
 	return out

@@ -27,24 +27,24 @@ func MergeVars(base, over []KV) []KV {
 
 // VarNames lists the names of the {{variables}} used in s, in order of
 // appearance and without repeats.
-func VarNames(s string) []string {
+func VarNames(text string) []string {
 	var names []string
 	seen := map[string]bool{}
 	for {
-		start := strings.Index(s, "{{")
+		start := strings.Index(text, "{{")
 		if start < 0 {
 			return names
 		}
-		end := strings.Index(s[start:], "}}")
+		end := strings.Index(text[start:], "}}")
 		if end < 0 {
 			return names
 		}
-		name := s[start+2 : start+end]
+		name := text[start+2 : start+end]
 		if name != "" && !seen[name] {
 			seen[name] = true
 			names = append(names, name)
 		}
-		s = s[start+end+2:]
+		text = text[start+end+2:]
 	}
 }
 
@@ -59,9 +59,9 @@ func Defined(name string, vars []KV) bool {
 }
 
 // Unresolved lists the variables used in s that vars does not define.
-func Unresolved(s string, vars []KV) []string {
+func Unresolved(text string, vars []KV) []string {
 	var out []string
-	for _, n := range VarNames(s) {
+	for _, n := range VarNames(text) {
 		if !Defined(n, vars) {
 			out = append(out, n)
 		}

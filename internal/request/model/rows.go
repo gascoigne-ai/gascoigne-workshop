@@ -13,32 +13,32 @@ func InsertRow(rows []KV, at int, kv KV) []KV {
 }
 
 // DuplicateRow returns rows with a copy of row i placed right after it.
-func DuplicateRow(rows []KV, i int) []KV {
-	if i < 0 || i >= len(rows) {
+func DuplicateRow(rows []KV, index int) []KV {
+	if index < 0 || index >= len(rows) {
 		return append([]KV(nil), rows...)
 	}
-	return InsertRow(rows, i+1, rows[i])
+	return InsertRow(rows, index+1, rows[index])
 }
 
 // DeleteRow returns rows without row i; an index out of range changes nothing.
-func DeleteRow(rows []KV, i int) []KV {
+func DeleteRow(rows []KV, index int) []KV {
 	out := append([]KV(nil), rows...)
-	if i < 0 || i >= len(out) {
+	if index < 0 || index >= len(out) {
 		return out
 	}
-	return append(out[:i], out[i+1:]...)
+	return append(out[:index], out[index+1:]...)
 }
 
 // MoveRow moves row i by delta places (negative is up), stopping at the
 // ends. It returns the new rows and the row's new index.
-func MoveRow(rows []KV, i, delta int) ([]KV, int) {
+func MoveRow(rows []KV, index, delta int) ([]KV, int) {
 	out := append([]KV(nil), rows...)
-	if i < 0 || i >= len(out) {
-		return out, i
+	if index < 0 || index >= len(out) {
+		return out, index
 	}
-	to := min(max(i+delta, 0), len(out)-1)
-	row := out[i]
-	out = append(out[:i], out[i+1:]...)
+	to := min(max(index+delta, 0), len(out)-1)
+	row := out[index]
+	out = append(out[:index], out[index+1:]...)
 	return InsertRow(out, to, row), to
 }
 

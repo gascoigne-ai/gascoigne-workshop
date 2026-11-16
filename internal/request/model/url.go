@@ -15,7 +15,7 @@ const maxExpanded = 16 << 20
 // that name. Unknown names are left as written so the gap stays visible.
 // A Literal (captured) value is put in last, through a placeholder, so
 // the variables after it cannot expand what is inside it.
-func Expand(s string, vars []KV) string {
+func Expand(text string, vars []KV) string {
 	var literals []string
 	for _, v := range vars {
 		if !v.Enabled {
@@ -23,20 +23,20 @@ func Expand(s string, vars []KV) string {
 		}
 		token := "{{" + v.Name + "}}"
 		value := v.Value
-		if v.Literal && strings.Contains(s, token) {
+		if v.Literal && strings.Contains(text, token) {
 			literals = append(literals, value)
 			value = literalMark + strconv.Itoa(len(literals)-1) + literalMark
 		}
-		grown := len(s) + strings.Count(s, token)*(len(value)-len(token))
+		grown := len(text) + strings.Count(text, token)*(len(value)-len(token))
 		if grown > maxExpanded {
 			continue
 		}
-		s = strings.ReplaceAll(s, token, value)
+		text = strings.ReplaceAll(text, token, value)
 	}
 	for i := len(literals) - 1; i >= 0; i-- {
-		s = strings.ReplaceAll(s, literalMark+strconv.Itoa(i)+literalMark, literals[i])
+		text = strings.ReplaceAll(text, literalMark+strconv.Itoa(i)+literalMark, literals[i])
 	}
-	return s
+	return text
 }
 
 // literalMark brackets the placeholder of a Literal value; no text a user
@@ -72,11 +72,11 @@ func WithParams(raw string, params []KV) string {
 	return base + "?" + strings.Join(pairs, "&")
 }
 
-func unescape(s string) string {
-	if out, err := url.QueryUnescape(s); err == nil {
+func unescape(text string) string {
+	if out, err := url.QueryUnescape(text); err == nil {
 		return out
 	}
-	return s
+	return text
 }
 
 // MergeParams rebuilds the params table after the URL was edited. The
