@@ -105,13 +105,12 @@ func capture(line string, resp *model.Response) (c Capture, ok bool, detail stri
 	case "status":
 		value = strconv.Itoa(resp.Status)
 	case "header":
+		found = false // not the result of splitting on "=" above
 		for _, h := range resp.Headers {
 			if strings.EqualFold(h.Name, arg) {
-				value = h.Value
-				found = true
+				value, found = h.Value, true
 				break
 			}
-			found = false
 		}
 		if !found {
 			return c, false, "the header is not there"

@@ -118,3 +118,16 @@ func TestSetLinesCaptureValuesForLaterRequests(t *testing.T) {
 		t.Fatal("nothing to capture without a response")
 	}
 }
+
+// "set x = header X" on a response with no headers kept the found flag
+// of the earlier "=" split, so it captured an empty value instead of
+// failing.
+func TestCapturingAHeaderFromAResponseWithoutHeadersFails(t *testing.T) {
+	r := &model.Response{Status: 200}
+	if caps := Captures("set ct = header content-type", r); len(caps) != 0 {
+		t.Fatalf("captured %+v from a response with no headers", caps)
+	}
+	if res := Run("set ct = header content-type", r); res[0].OK {
+		t.Fatalf("%+v, want a failed line", res[0])
+	}
+}
