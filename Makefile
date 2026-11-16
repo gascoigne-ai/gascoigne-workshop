@@ -1,4 +1,4 @@
-.PHONY: packagemap check fmt-check vet test vet-release test-release build release run example-server shot install
+.PHONY: packagemap check fuzz fmt-check vet test vet-release test-release build release run example-server shot install
 
 check: fmt-check vet test vet-release test-release
 
@@ -14,6 +14,18 @@ vet:
 
 test:
 	go test -race ./...
+
+# Short run of every fuzz target (package:Target pairs below); not part of
+# check. A crasher lands in the package's testdata/fuzz and becomes a
+# regression test: fix it, keep the file.
+FUZZTIME ?= 30s
+FUZZ_TARGETS = ./internal/collection/model/miniyaml:FuzzParse
+fuzz:
+	@for target in $(FUZZ_TARGETS); do \
+		package=$${target%%:*}; name=$${target##*:}; \
+		echo "fuzz $$name ($$package)"; \
+		go test $$package -run '^$$' -fuzz "^$$name$$" -fuzztime $(FUZZTIME) || exit 1; \
+	done
 
 # The release build has its own files (build tag "release"); check them too.
 vet-release:
