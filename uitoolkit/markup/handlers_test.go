@@ -41,7 +41,7 @@ func TestHandlerAttributesMatchTheGoOptions(t *testing.T) {
 
 func TestHandlerAttributeCallsTheScopeFunction(t *testing.T) {
 	var gotX, gotY int
-	node := build(t, `<row on-right-click="menu"/>`, Scope{"menu": func(x, y int) { gotX, gotY = x, y }})
+	node := build(t, `<row on-right-click="menu"/>`, Scope{"menu": func(posX, posY int) { gotX, gotY = posX, posY }})
 	c, err := core.NewCtx(theming.Dark())
 	if err != nil {
 		t.Fatal(err)
