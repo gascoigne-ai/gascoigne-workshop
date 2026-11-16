@@ -6,17 +6,17 @@ import (
 	"testing"
 )
 
-func kinds(l Line) []Kind {
+func kinds(line Line) []Kind {
 	var out []Kind
-	for _, s := range l.Spans {
+	for _, s := range line.Spans {
 		out = append(out, s.Kind)
 	}
 	return out
 }
 
-func text(l Line) string {
+func text(line Line) string {
 	var b strings.Builder
-	for _, s := range l.Spans {
+	for _, s := range line.Spans {
 		b.WriteString(s.Text)
 	}
 	return b.String()

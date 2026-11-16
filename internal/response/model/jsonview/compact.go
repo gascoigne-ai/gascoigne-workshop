@@ -57,8 +57,8 @@ func parse(dec *json.Decoder) (*node, error) {
 }
 
 // unescapeHTML undoes json.Marshal's < style escapes for < > &.
-func unescapeHTML(s string) string {
-	return strings.NewReplacer(`<`, "<", `>`, ">", `&`, "&").Replace(s)
+func unescapeHTML(text string) string {
+	return strings.NewReplacer(`<`, "<", `>`, ">", `&`, "&").Replace(text)
 }
 
 func quote(key string) string {
@@ -125,31 +125,31 @@ func Compact(body []byte, width int) []Line {
 	}
 	var lines []Line
 	var emit func(n *node, depth int, prefix, suffix string)
-	emit = func(n *node, depth int, prefix, suffix string) {
+	emit = func(node *node, depth int, prefix, suffix string) {
 		indent := strings.Repeat("  ", depth)
-		one := indent + prefix + n.inline() + suffix
-		if n.open == 0 || len(n.children) == 0 || len(one) <= width {
+		one := indent + prefix + node.inline() + suffix
+		if node.open == 0 || len(node.children) == 0 || len(one) <= width {
 			lines = append(lines, Line{Spans: tokenizeLine(one), Depth: depth})
 			return
 		}
-		open := indent + prefix + string(n.open)
+		open := indent + prefix + string(node.open)
 		lines = append(lines, Line{
 			Spans:    tokenizeLine(open),
 			Foldable: true,
 			Depth:    depth,
-			Folded:   tokenizeLine(indent + prefix + n.preview() + suffix),
+			Folded:   tokenizeLine(indent + prefix + node.preview() + suffix),
 		})
-		for i, c := range n.children {
+		for i, c := range node.children {
 			cp, cs := "", ","
-			if i == len(n.children)-1 {
+			if i == len(node.children)-1 {
 				cs = ""
 			}
-			if n.open == '{' {
-				cp = quote(n.keys[i]) + ": "
+			if node.open == '{' {
+				cp = quote(node.keys[i]) + ": "
 			}
 			emit(c, depth+1, cp, cs)
 		}
-		lines = append(lines, Line{Spans: tokenizeLine(indent + string(closer(n.open)) + suffix), Depth: depth})
+		lines = append(lines, Line{Spans: tokenizeLine(indent + string(closer(node.open)) + suffix), Depth: depth})
 	}
 	emit(root, 0, "", "")
 	return lines

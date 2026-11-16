@@ -101,41 +101,41 @@ func tokenize(text string) []Line {
 
 // tokenizeLine splits one line of json.Indent output. Strings never
 // span lines there, so a single left-to-right pass is enough.
-func tokenizeLine(l string) []Span {
+func tokenizeLine(label string) []Span {
 	var spans []Span
-	add := func(text string, k Kind) { spans = append(spans, Span{Text: text, Kind: k}) }
-	for i := 0; i < len(l); {
-		c := l[i]
+	add := func(text string, kind Kind) { spans = append(spans, Span{Text: text, Kind: kind}) }
+	for i := 0; i < len(label); {
+		c := label[i]
 		switch {
 		case c == '"':
-			end := stringEnd(l, i)
+			end := stringEnd(label, i)
 			kind := String
-			if strings.HasPrefix(strings.TrimLeft(l[end:], " "), ":") {
+			if strings.HasPrefix(strings.TrimLeft(label[end:], " "), ":") {
 				kind = Key
 			}
-			add(l[i:end], kind)
+			add(label[i:end], kind)
 			i = end
 		case strings.IndexByte("{}[],: ", c) >= 0:
 			j := i + 1
-			for j < len(l) && strings.IndexByte("{}[],: ", l[j]) >= 0 && (c == ' ') == (l[j] == ' ') {
+			for j < len(label) && strings.IndexByte("{}[],: ", label[j]) >= 0 && (c == ' ') == (label[j] == ' ') {
 				j++
 			}
 			kind := Punct
 			if c == ' ' {
 				kind = Plain
 			}
-			add(l[i:j], kind)
+			add(label[i:j], kind)
 			i = j
 		default:
 			j := i
-			for j < len(l) && strings.IndexByte("{}[],: ", l[j]) < 0 {
+			for j < len(label) && strings.IndexByte("{}[],: ", label[j]) < 0 {
 				j++
 			}
 			kind := Number
-			if w := l[i:j]; w == "true" || w == "false" || w == "null" {
+			if w := label[i:j]; w == "true" || w == "false" || w == "null" {
 				kind = Literal
 			}
-			add(l[i:j], kind)
+			add(label[i:j], kind)
 			i = j
 		}
 	}
@@ -144,16 +144,16 @@ func tokenizeLine(l string) []Span {
 
 // stringEnd returns the index just past the closing quote of the string
 // starting at l[start].
-func stringEnd(l string, start int) int {
-	for i := start + 1; i < len(l); i++ {
-		switch l[i] {
+func stringEnd(label string, start int) int {
+	for i := start + 1; i < len(label); i++ {
+		switch label[i] {
 		case '\\':
 			i++
 		case '"':
 			return i + 1
 		}
 	}
-	return len(l)
+	return len(label)
 }
 
 // Tokenize splits one line of JSON into colored spans, for editors that
