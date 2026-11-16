@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 )
 
 func parse(t *testing.T, src string) any {
@@ -133,6 +134,26 @@ func TestUnsupportedAndBrokenInputIsReportedWithALine(t *testing.T) {
 		_, err := Parse([]byte(src))
 		if err == nil || !strings.Contains(err.Error(), want) {
 			t.Errorf("Parse(%q) = %v, want %q", src, err, want)
+		}
+	}
+}
+
+// A stray closer inside a flow collection ("[}", "[1 }") never advanced the
+// reader, so the list loop appended forever until memory ran out.
+func TestAStrayCloserInAFlowCollectionIsAnErrorNotALoop(t *testing.T) {
+	for _, src := range []string{"a: [}\n", "a: [1 }\n", "a: {b: 1]\n"} {
+		done := make(chan error, 1)
+		go func() {
+			_, err := Parse([]byte(src))
+			done <- err
+		}()
+		select {
+		case err := <-done:
+			if err == nil || !strings.Contains(err.Error(), "line 1") {
+				t.Errorf("Parse(%q) = %v, want a line 1 error", src, err)
+			}
+		case <-time.After(2 * time.Second):
+			t.Fatalf("Parse(%q) does not return", src)
 		}
 	}
 }

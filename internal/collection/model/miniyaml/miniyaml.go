@@ -376,6 +376,20 @@ func (f *flow) skip() {
 	}
 }
 
+// separator consumes the comma after an element. Anything but a comma or the
+// closer is an error, so a stray character cannot stall the element loop.
+func (f *flow) separator(closer byte) error {
+	f.skip()
+	if f.i >= len(f.s) || f.s[f.i] == closer {
+		return nil
+	}
+	if f.s[f.i] != ',' {
+		return &Error{f.no, "expected , or " + string(closer) + " in the flow collection"}
+	}
+	f.i++
+	return nil
+}
+
 func (f *flow) value() (any, error) {
 	f.skip()
 	if f.i >= len(f.s) {
@@ -396,9 +410,8 @@ func (f *flow) value() (any, error) {
 				return nil, err
 			}
 			list = append(list, v)
-			f.skip()
-			if f.i < len(f.s) && f.s[f.i] == ',' {
-				f.i++
+			if err := f.separator(']'); err != nil {
+				return nil, err
 			}
 		}
 	case '{':
@@ -425,9 +438,8 @@ func (f *flow) value() (any, error) {
 			}
 			ks, _ := k.(string)
 			m[ks] = v
-			f.skip()
-			if f.i < len(f.s) && f.s[f.i] == ',' {
-				f.i++
+			if err := f.separator('}'); err != nil {
+				return nil, err
 			}
 		}
 	}
