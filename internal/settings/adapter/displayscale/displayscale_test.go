@@ -61,6 +61,7 @@ func TestParseEnvScaleReadsPositiveNumbersOnly(t *testing.T) {
 		want  float64
 	}{
 		{"2", 2}, {"1.5", 1.5}, {" 2 ", 2}, {"", 0}, {"0", 0}, {"-1", 0}, {"auto", 0},
+		{"inf", 0}, {"+Inf", 0}, {"NaN", 0}, // an infinite scale reached the window size
 	}
 	for _, c := range cases {
 		if got := parseEnvScale(c.value); got != c.want {

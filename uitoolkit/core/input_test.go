@@ -1,6 +1,7 @@
 package core
 
 import (
+	"math"
 	"testing"
 	"time"
 
@@ -117,5 +118,18 @@ func TestKeyRepeatLeftUnsetKeepsTheBuiltInTiming(t *testing.T) {
 	// The built-in timing: after 25 ticks, then every 3.
 	if !unset.Fires(25, 60) || unset.Fires(26, 60) || !unset.Fires(28, 60) {
 		t.Fatal("an unset KeyRepeat must repeat after 25 ticks and then every 3")
+	}
+}
+
+// Scaled divided by the scale, so 0 gave int(Inf) pointer positions.
+func TestScaledIgnoresAScaleThatIsNotPositive(t *testing.T) {
+	in := Input{X: 40, Y: 20}
+	for _, scale := range []float64{0, -1, math.NaN(), math.Inf(1)} {
+		if got := in.Scaled(scale); got.X != 40 || got.Y != 20 {
+			t.Errorf("Scaled(%v) = %d,%d, want 40,20", scale, got.X, got.Y)
+		}
+	}
+	if got := in.Scaled(2); got.X != 20 || got.Y != 10 {
+		t.Errorf("Scaled(2) = %d,%d, want 20,10", got.X, got.Y)
 	}
 }

@@ -10,6 +10,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"math"
 	"os"
 	"os/exec"
 	"runtime"
@@ -122,7 +123,7 @@ func envSource(getenv func(string) string, names ...string) source {
 // parseEnvScale reads a scale variable; 0 for empty or not a positive number.
 func parseEnvScale(value string) float64 {
 	scale, err := strconv.ParseFloat(strings.TrimSpace(value), 64)
-	if err != nil || scale <= 0 {
+	if err != nil || !(scale > 0) || math.IsInf(scale, 0) { // !(> 0) also drops NaN
 		return 0
 	}
 	return scale

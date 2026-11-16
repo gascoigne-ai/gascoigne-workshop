@@ -1,6 +1,7 @@
 package core
 
 import (
+	"math"
 	"slices"
 	"time"
 
@@ -36,6 +37,9 @@ type Input struct {
 
 // Scaled converts the pointer position from device to logical pixels.
 func (in Input) Scaled(scale float64) Input {
+	if !(scale > 0) || math.IsInf(scale, 0) { // int(x/0) is not a position
+		return in
+	}
 	in.X = int(float64(in.X) / scale)
 	in.Y = int(float64(in.Y) / scale)
 	return in
