@@ -62,7 +62,7 @@ func (g *hello) greet() {
 	}
 }
 
-func (g *hello) Layout(w, h int) (int, int) { g.w, g.h = w, h; return w, h }
+func (g *hello) Layout(width, height int) (int, int) { g.w, g.h = width, height; return width, height }
 
 func (g *hello) Update() error {
 	g.ctx.In = g.sampler.Read()
