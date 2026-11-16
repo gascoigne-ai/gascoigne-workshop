@@ -9,11 +9,12 @@ Decided by the user on 2026-11-16 (input audit): include the stdio trust prompt,
 2. A multipart `@path`, a `BodyFile` and a `.proto` import read only inside the collection folder, or a file the user chose.
 3. Postman export and every other export leave out the values of `Secret` variables and credentials.
 
-Scope (ask first on every point marked ask; one commit per item, test first)
-1. Trust prompt: where it shows (dialog like the confirm dialog), what is remembered (per command, in settings or the state file) and how it is forgotten. Ask the user. Tests with a fake host.
-2. File reads: `rest.go:136-196`, `postman.go:182` (`"@"+src`), `protosource.go` (`LoadedPath`, `StoredPath`), `grpcfiles.go:119-135`. A path outside the collection folder asks, or is refused with a clear error; ask which. Absolute paths the user picked in the file browser stay allowed.
-3. Secrets: `postman.go:281-283, 359-367` export, and `store.go:151,187` collection and folder variables flagged `Secret` still write `Value` to JSON (only environments divert to `.secrets.json`): divert them too, test with a round trip.
-4. Captured values re-expanded: a value captured with `set x = json x` can hold `{{secret}}`, which a later variable substitutes into the next request (`vars.go`, `assert.go:75`). Decide with the user: expand once, or never expand captured values. Ask.
-5. `decisions.md` records the answers; `architecture.md` describes the prompt and the rules.
+Done (answers in decision 21): the stdio command and outside-file prompt with remembered answers; `.proto` imports cannot leave their import paths; secret collection and folder variables kept out of `folder.json`; Postman export leaves out literal credentials and secret values; captured values are never expanded again.
 
-Acceptance: each objective has a test that failed before; `make check` green; docs updated; the file is deleted in the last commit.
+Left alone on purpose: `.proto` files given by path are not behind the prompt (they are compiled, and only compile errors can show their content); `.workshop.*` in the working directory (decided against); a user who edits a captured variable's value in the Vars pane keeps it `Literal`, so `{{...}}` they type there stays text until the row is recreated (rare; revisit if it surprises someone).
+
+Not checked by a screenshot: the prompt is the existing confirm dialog with new text, so no new look.
+
+Scope: all items done. The user decides whether this file is deleted (rules: ask before deleting).
+
+Acceptance: met; `make check` green.
