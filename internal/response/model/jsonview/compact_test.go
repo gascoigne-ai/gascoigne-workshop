@@ -114,3 +114,24 @@ func TestCompactPreviewOfMultiByteTextIsCutByRunes(t *testing.T) {
 		t.Errorf("preview %q does not close the block", preview)
 	}
 }
+
+// A body of thousands of nested brackets is valid JSON, and formatting it
+// wrote one line per level, each indented by its depth: quadratic text
+// built on the UI thread from a few KB of input. Past maxDepth the body
+// is shown as it came.
+func TestDeeplyNestedJSONIsShownAsPlainText(t *testing.T) {
+	const depth = 3000
+	body := []byte(strings.Repeat("[", depth) + strings.Repeat("]", depth))
+	for name, lines := range map[string][]Line{"Compact": Compact(body, 80), "Lines": Lines(body)} {
+		if len(lines) != 1 || text(lines[0]) != string(body) {
+			t.Errorf("%s gave %d lines, want the body as one plain line", name, len(lines))
+		}
+	}
+}
+
+func TestBracketsInsideStringsDoNotCountAsNesting(t *testing.T) {
+	body := []byte(`{"a":"` + strings.Repeat(`[\"[`, 400) + `","b":1}`)
+	if got := Compact(body, 20); len(got) < 2 {
+		t.Fatalf("a shallow body with bracket-heavy strings was shown plain: %d line", len(got))
+	}
+}

@@ -41,11 +41,40 @@ type Line struct {
 	Depth    int    // Compact: nesting level
 }
 
+// maxDepth is the deepest nesting that is formatted. Every level is a line
+// indented by its depth, so a few KB of brackets would make megabytes of
+// text; deeper bodies are shown as they came.
+const maxDepth = 256
+
+// tooDeep reports whether body nests brackets deeper than maxDepth,
+// ignoring the ones inside strings.
+func tooDeep(body []byte) bool {
+	depth, inString, escaped := 0, false, false
+	for _, c := range body {
+		switch {
+		case escaped:
+			escaped = false
+		case inString:
+			escaped = c == '\\'
+			inString = c != '"'
+		case c == '"':
+			inString = true
+		case c == '{' || c == '[':
+			if depth++; depth > maxDepth {
+				return true
+			}
+		case c == '}' || c == ']':
+			depth--
+		}
+	}
+	return false
+}
+
 // Lines pretty-prints body when it is valid JSON and splits it into
 // lines; otherwise it returns the body's own lines as Plain spans.
 func Lines(body []byte) []Line {
 	var buf bytes.Buffer
-	if json.Valid(body) && json.Indent(&buf, body, "", "  ") == nil {
+	if !tooDeep(body) && json.Valid(body) && json.Indent(&buf, body, "", "  ") == nil {
 		return tokenize(buf.String())
 	}
 	return plain(string(body))

@@ -114,6 +114,9 @@ func (n *node) preview() string {
 // folded, and every line knows its nesting Depth. A body that is not JSON
 // gives its plain lines.
 func Compact(body []byte, width int) []Line {
+	if tooDeep(body) {
+		return plain(string(body))
+	}
 	dec := json.NewDecoder(bytes.NewReader(body))
 	dec.UseNumber()
 	root, err := parse(dec)
