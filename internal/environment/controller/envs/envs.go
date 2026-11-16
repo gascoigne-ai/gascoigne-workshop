@@ -39,11 +39,11 @@ func (sel Selection) Name(col *model.Collection) string {
 
 // Select makes environment i the active one, none when i is out of range,
 // and returns the name to remember.
-func (sel *Selection) Select(col *model.Collection, i int) string {
-	if i < 0 || i >= len(col.Envs) {
-		i = -1
+func (sel *Selection) Select(col *model.Collection, index int) string {
+	if index < 0 || index >= len(col.Envs) {
+		index = -1
 	}
-	sel.Index = i
+	sel.Index = index
 	return sel.Name(col)
 }
 
@@ -87,27 +87,27 @@ func (sel *Selection) Add(col *model.Collection, name string) string {
 
 // Rename gives environment i a unique name based on name and reports it;
 // changed is false for an empty name or an unknown environment.
-func (sel Selection) Rename(col *model.Collection, i int, name string) (renamed string, changed bool) {
-	if i < 0 || i >= len(col.Envs) || name == "" {
+func (sel Selection) Rename(col *model.Collection, index int, name string) (renamed string, changed bool) {
+	if index < 0 || index >= len(col.Envs) || name == "" {
 		return "", false
 	}
-	col.Envs[i].Name = UniqueName(col.Envs, name, i)
-	return col.Envs[i].Name, true
+	col.Envs[index].Name = UniqueName(col.Envs, name, index)
+	return col.Envs[index].Name, true
 }
 
 // Delete removes environment i and keeps the selection on the same
 // environment, or on none when it was the one removed. selectionMoved
 // reports that the remembered name has to be updated.
-func (sel *Selection) Delete(col *model.Collection, i int) (selectionMoved bool) {
-	if i < 0 || i >= len(col.Envs) {
+func (sel *Selection) Delete(col *model.Collection, index int) (selectionMoved bool) {
+	if index < 0 || index >= len(col.Envs) {
 		return false
 	}
-	col.Envs = append(col.Envs[:i], col.Envs[i+1:]...)
+	col.Envs = append(col.Envs[:index], col.Envs[index+1:]...)
 	switch {
-	case sel.Index == i:
+	case sel.Index == index:
 		sel.Index = -1
 		return true
-	case sel.Index > i:
+	case sel.Index > index:
 		sel.Index--
 		return true
 	}
