@@ -11,6 +11,7 @@ import (
 const (
 	revealMargin = 12
 	historyLimit = 100
+	historyBytes = 8 << 20 // the snapshots of a large text are bounded by size too
 )
 
 // editKind groups edits for undo: consecutive edits of the same
@@ -110,8 +111,25 @@ func (f *TextField) record(kind editKind) {
 	if len(f.undo) > historyLimit {
 		f.undo = f.undo[len(f.undo)-historyLimit:]
 	}
+	f.undo = trimToBytes(f.undo, historyBytes)
 	f.redo = nil
 	f.last = kind
+}
+
+// trimToBytes drops the oldest snapshots until the text they hold is at
+// most limit bytes. The newest one stays whatever its size, so the last
+// edit can always be undone.
+func trimToBytes(history []snapshot, limit int) []snapshot {
+	total := 0
+	for _, entry := range history {
+		total += len(entry.text)
+	}
+	drop := 0
+	for total > limit && drop < len(history)-1 {
+		total -= len(history[drop].text)
+		drop++
+	}
+	return history[drop:]
 }
 
 // Undo restores the state before the last edit group; it reports

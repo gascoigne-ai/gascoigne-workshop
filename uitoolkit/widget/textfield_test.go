@@ -1,6 +1,7 @@
 package widget
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -474,4 +475,30 @@ func FuzzEdit(f *testing.F) {
 			t.Fatalf("selection %d..%d outside %q", lo, hi, field.Text)
 		}
 	})
+}
+
+// Every edit kept a snapshot of the whole text for up to 100 steps, so a
+// 1 MiB text held 100 MiB of history. The oldest snapshots go first once
+// the total passes historyBytes.
+func TestUndoHistoryIsBoundedByBytesOfLargeText(t *testing.T) {
+	big := strings.Repeat("x", 1<<20)
+	field := NewTextField(big)
+	for range 60 {
+		field.Cursor = len([]rune(field.Text))
+		field.Insert("y")
+		field.last = kindNone // each insert is its own undo step
+	}
+	total := 0
+	for _, snapshot := range field.undo {
+		total += len(snapshot.text)
+	}
+	if total > historyBytes+len(big) { // the newest snapshot may stand alone above the limit
+		t.Fatalf("undo history holds %d bytes in %d snapshots, limit %d", total, len(field.undo), historyBytes)
+	}
+	if len(field.undo) == 0 {
+		t.Fatal("the latest step must stay undoable")
+	}
+	if !field.Undo() || len(field.Text) != len(big)+59 {
+		t.Errorf("undo of the latest insert: %d bytes, want %d", len(field.Text), len(big)+59)
+	}
 }
