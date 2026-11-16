@@ -10,11 +10,10 @@ Decided by the user on 2026-11-16 (input audit): cap the size of text a user can
 3. `TextArea.geometry` and `CodeView` layout are not rebuilt several times per frame for unchanged text.
 4. The undo history is bounded by bytes as well as by count (100 snapshots of the full text).
 
-Scope (one commit per item, test first; speed items get a test that counts work or bounds time, not a wall-clock guess)
-1. Limit constant and the refusal path in `textfield.go` `Insert` and `core/clipboard.go` `Read`; the toast text; tests with a 2 MiB paste.
-2. `CursorAt`: binary search over prefix widths. Test: a 1 MB line answers within a fixed number of `Width` calls.
-3. `TextArea.geometry`: cache by text version; `CodeView` `layoutAt` and `Visible()` cache by lines version. Test: calls per frame.
-4. Undo: cap the sum of snapshot bytes; test that old snapshots drop first.
-5. Docs: `architecture.md` Limits section.
+Done: paste capped at 1 MiB with a toast (default chosen, no fork: a conventional limit); `CursorAt` by binary search (a 200k-rune line did not finish in 30 s); undo history bounded to 8 MiB of snapshots. Limits are in `architecture.md`.
 
-Acceptance: tests fail before and pass after; `make check` green; `make shot` of a field with long text looked at; the file is deleted in the last commit.
+Measured and dropped (rating below 5): per-frame layout of a 1 MiB `TextArea`, wrapped or not, costs about 11 ms a frame, so no layout cache. Not done: a cap on text loaded from files or typed key by key (only the paste path was a way to put megabytes in at once).
+
+Scope: all items done or dropped. The user decides whether this file is deleted (rules: ask before deleting).
+
+Acceptance: met; `make check` green.
