@@ -1,3 +1,9 @@
+status: todo
+kind: feature
+commit: feat(store): version every saved format
+scope: internal/*,.harness/*,testdata/*
+depends_on: 078-protocol-type
+
 # 079 Versions on saved formats
 
 From the audit: `state.json`, `folder.json`, `*.req.json`, history files, `sent.jsonl` and `settings.json` carry no version; old formats are recognised by guessing (`store/store.go`, `state/state.go`, decision 17). Rule: persisted formats are versioned and have a fixture of real output.
@@ -12,3 +18,6 @@ Scope
 5. Update `architecture.md` persistence section.
 
 Acceptance: every format writes a version and reads v0; `make check` green.
+
+## Model
+Each persisted format gets an integer version field; missing reads as v0; reader dispatch is a table keyed by version. Detail in the design note.

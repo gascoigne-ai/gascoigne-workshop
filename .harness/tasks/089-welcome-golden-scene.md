@@ -1,3 +1,9 @@
+status: todo
+kind: chore
+commit: test(app): golden scene for the welcome dialog
+scope: internal/*,.harness/*
+depends_on: 087-inject-global-state
+
 # 089 Golden scene for the welcome dialog
 
 `architecture.md:272` says the welcome dialog's golden scene is "not added yet".

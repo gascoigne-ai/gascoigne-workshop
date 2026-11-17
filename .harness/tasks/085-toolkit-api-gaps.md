@@ -1,3 +1,9 @@
+status: todo
+kind: chore
+commit: refactor(toolkit): close API rule gaps and use gap tokens
+scope: uitoolkit/*,internal/*,.harness/*
+depends_on: 084-makefile-and-ci
+
 # 085 Toolkit API gaps
 
 From the audit against Toolkit API rules 2, 9, 10 and the theme-token rule.

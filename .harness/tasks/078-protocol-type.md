@@ -1,3 +1,8 @@
+status: todo
+kind: feature
+commit: refactor(model): protocol is a typed value with a capability table
+scope: internal/*,uitoolkit/*,.harness/*,Makefile
+
 # 078 Protocol as a type with a capability table
 
 From the harness audit of 2026-11-18: `Request.Protocol`, `BodyType` and the auth type are plain strings with about 65 literal comparisons outside the registry (`model.go`, `wsui.go`, `view.go`, `editor.go`, `access.go`, `postman.go`). Decision 2 says nothing switches on a protocol.
@@ -11,3 +16,6 @@ Scope
 4. Fix the `model.go` doc comment that lists 3 of 5 protocols.
 
 Acceptance: no protocol literal outside the table rows and the format parsers (a test greps for it); decision 2 is true as written; `make check` green.
+
+## Model
+Protocol, BodyType, AuthType: named string types with constants, parsed once at the edge; capability table keyed by Protocol (one source of truth for per-protocol behavior).

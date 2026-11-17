@@ -1,3 +1,9 @@
+status: todo
+kind: feature
+commit: refactor(app): typed state instead of any and bool pairs
+scope: internal/*,.harness/*
+depends_on: 085-toolkit-api-gaps
+
 # 086 Data model cleanup
 
 From the audit: repeated and untyped state in the App.
@@ -10,3 +16,6 @@ Scope (design note with the `data-model` skill first)
 5. Typed set for `trusted` instead of `map[string]bool` (`app.go:264`).
 
 Acceptance: tests unchanged in behavior; `make check` green.
+
+## Model
+Scene step list, typed tree node, one choice type for the Vars target, MCP explorer state enum, typed trusted set. Detail in the design note.

@@ -1,3 +1,9 @@
+status: todo
+kind: bug
+commit: fix(proto): bound event-stream reads and fuzz the parsers
+scope: internal/*,Makefile,.harness/*
+depends_on: 081-file-access-ports
+
 # 082 Bounded event-stream reader and missing fuzz targets
 
 From the audit: the SSE reader (`sse.go`) and MCP reader (`mcp.go`) grow without bound when `data:` lines never end with a blank line; `readSSE` ignores the scanner error. `settings.Parse`, `engine.ParseBinding` and `model.ParseBulk` take untrusted text and have no fuzz target.
@@ -9,3 +15,5 @@ Scope
 4. Limits entries in `architecture.md`.
 
 Acceptance: `make fuzz` runs the new targets without a crasher; `make check` green.
+
+Model: unchanged

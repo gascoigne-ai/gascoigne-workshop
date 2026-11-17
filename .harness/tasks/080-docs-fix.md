@@ -1,3 +1,9 @@
+status: todo
+kind: docs
+commit: docs: fix drift in architecture, rules and decisions
+scope: *.md,.harness/*
+depends_on: 079-versioned-formats
+
 # 080 Fix docs and reset the loop
 
 From the audit: docs contradict each other or the code.

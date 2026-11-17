@@ -1,3 +1,9 @@
+status: todo
+kind: chore
+commit: refactor(app): file access goes through ports
+scope: internal/*,.harness/*
+depends_on: 080-docs-fix
+
 # 081 File access through ports
 
 From the audit: the App reads and writes files directly on the UI goroutine (`respfile.go`, `treeops.go`, `filebody.go`, `shot.go`).

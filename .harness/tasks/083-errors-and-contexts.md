@@ -1,3 +1,9 @@
+status: todo
+kind: bug
+commit: fix: log dropped errors and pass contexts to I/O
+scope: internal/*,cmd/*,.harness/*
+depends_on: 082-bounded-stream-reader
+
 # 083 Dropped errors and missing contexts
 
 From the audit: errors dropped without a debug log (`openapi.go:111`, `mcp.go:86,712`, `main.go:85`, `fonts.go:42`); a failed MCP reply write is ignored so the server waits forever; `exec.Command` in `mcp.go:629` and `preview.go:100`; `Session.Send/Ping/Close` take no context.
@@ -9,3 +15,5 @@ Scope
 4. Context first on `Session` methods and their fakes.
 
 Acceptance: no silent error drop in the listed places; `make check` green.
+
+Model: unchanged

@@ -1,3 +1,9 @@
+status: blocked
+kind: chore
+commit: test(postman): replace the fixture with a real export
+scope: internal/*,.harness/*
+depends_on: 087-inject-global-state
+
 # 088 Real Postman fixture
 
 `postman/testdata/collection.json` has an invented `_postman_id` (`...-0000-4000-8000-000000000001`). Fixtures are real captured output.
@@ -7,3 +13,5 @@ Scope
 2. Replace the fixture; adjust expectations only where real output differs.
 
 Acceptance: fixture is real; `make check` green.
+
+Blocked: needs a real Postman export from the user (trimmed, no secrets).
