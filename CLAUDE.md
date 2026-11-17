@@ -10,4 +10,7 @@ Desktop GUI client in Go for running REST, WebSocket, MCP and other protocol cal
 @.harness/common/rules.md
 @.harness/common/commit-style.md
 @.harness/common/code-style.md
+@.harness/common/architecture-style.md
 @.harness/rules.md
+
+Task queue: `.harness/tasks/`, run with `/task-loop` (verify: `make check`).
