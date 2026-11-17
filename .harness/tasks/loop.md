@@ -2,7 +2,7 @@
 
 Run with `/loop` in dynamic mode, prompt: "Follow .harness/tasks/loop.md".
 
-Order of tasks: 069, 071, 068, 070. One task is finished before the next starts (`rules.md`). The main session checks the results itself; it does not trust an agent's report. Nothing is pushed.
+Order of tasks: 078, 079, 080, 081, 082, 083, 084, 085, 086, 087, 088, 089, 090. One task is finished before the next starts (`rules.md`). The main session checks the results itself; it does not trust an agent's report. Nothing is pushed.
 
 1. Take the first task file in the order above that still exists. None left: stop the loop (`ScheduleWakeup` with `stop: true`) and report.
 2. Take its first Scope item not yet done (`git log` shows the finished ones, one commit per item).
