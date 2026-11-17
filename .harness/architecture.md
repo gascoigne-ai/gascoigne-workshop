@@ -1,6 +1,9 @@
 # Architecture
 
-The short orientation is `overview.md`; this file has the detail.
+The short orientation is `overview.md`; this file has the detail. The layout (domain x role, ports only at
+boundaries, a layer test with no exceptions) is the reference implementation of the shared
+`common/architecture-style.md`: `model` and `port` are its core, `adapter` and `ui` its adapters, the
+`App` its composition root.
 
 Status: the three-pane window with REST, WebSocket, SSE, MCP and gRPC; known gaps are under Limits.
 
