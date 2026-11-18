@@ -5,6 +5,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/transfer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/tree"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/ui/destpicker"
 	"path/filepath"
 	"strings"
 
@@ -247,6 +248,47 @@ func (a *App) finishDrag() {
 	}
 	a.transferNode(transfer.Drop(from, to, node, target, mode))
 }
+
+// transferHost is the destination picker's view of the App: where a pick
+// goes and what closes it.
+type transferHost struct {
+	*App
+	node model.Node
+	mode transfer.Mode
+}
+
+// Pick closes the picker and moves or copies the node to the destination.
+func (host transferHost) Pick(destination transfer.Destination) {
+	host.picker = nil
+	host.transferNode(transfer.Transfer{
+		Node: host.node, From: host.ownerOf(host.node),
+		To: destination.Collection, Into: destination.Folder, Mode: host.mode,
+	})
+}
+
+// Dismiss closes the picker.
+func (host transferHost) Dismiss() { host.picker = nil }
+
+// openTransferPicker asks where node goes. A collection's root and nothing
+// cannot be moved or copied, so no picker opens for them.
+func (a *App) openTransferPicker(node model.Node, mode transfer.Mode) {
+	if node.None() || a.isRoot(node.Dir) || a.ownerOf(node) == nil {
+		return
+	}
+	stripe := func(col *model.Collection) core.Token { return a.collectionToken(model.Of(&col.Folder)) }
+	a.picker = destpicker.New(node, mode, transfer.Destinations(a.open, node, mode), stripe)
+	a.pickerHost = transferHost{App: a, node: node, mode: mode}
+}
+
+// pickerKeys hands the picker the frame's keys and takes them from the
+// input, so the field under it does not act on them too.
+func (a *App) pickerKeys(in core.Input) {
+	in.Enter = in.Enter || in.Pressed(ebiten.KeyEnter)
+	a.ctx.In.Consume(ebiten.KeyEnter, ebiten.KeyArrowUp, ebiten.KeyArrowDown)
+	a.picker.Keys(in, a.pickerHost)
+}
+
+func (a *App) closePicker() { a.picker = nil }
 
 // maxNamedVars is how many missing variables a toast names before it counts
 // the rest.

@@ -3,7 +3,7 @@ package overlay
 import "testing"
 
 func TestEscapeClosesTheTopmostOpenLayerFirst(t *testing.T) {
-	order := []Layer{ContextMenu, Dialog, FileBrowser, CallLog, FontList, Settings, CellEdit, FindBar, Request}
+	order := []Layer{ContextMenu, Dialog, DestPicker, FileBrowser, CallLog, FontList, Settings, CellEdit, FindBar, Request}
 	var open Open
 	for _, layer := range order {
 		open[layer] = true

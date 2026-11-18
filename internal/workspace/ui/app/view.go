@@ -62,6 +62,7 @@ func (a *App) view() Node {
 		"responsePane":   a.pane(t, responsePanesFor(t), &t.respTab, &t.respScroll, &t.respTabsX, a.responseStatus(t)),
 		"statusBar":      a.statusBar(),
 		"menu":           a.menuView(),
+		"picker":         a.pickerView(),
 		"browser":        a.fileBrowserView(),
 		"popupMenu":      PopupMenuLayer(a.ctx),
 		"dialog":         a.dialogView(),
@@ -506,6 +507,7 @@ const (
   </col>
   <!-- the overlays, each only while open, in z-order: the tooltip last so it is on top -->
   <slot if="menu" name="menu"/>
+  <slot if="picker" name="picker"/>
   <slot if="browser" name="browser"/>
   <slot if="popupMenu" name="popupMenu"/>
   <slot if="dialog" name="dialog"/>

@@ -7,6 +7,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
 	cport "github.com/gascoigne-ai/gascoigne-workshop/internal/collection/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/ui/destpicker"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model/assert"
 	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/ui/calltrace"
@@ -219,6 +220,8 @@ type App struct {
 	files              port.FileDialog                 // the desktop file chooser, replaced in tests
 	folders            port.Folders                    // what the in-app file browser lists
 	browser            *fileBrowser                    // the in-app file browser while it is open
+	pickerHost         destpicker.Host                 // what the open picker asks of the App
+	picker             *destpicker.Picker              // the move or copy destination picker while it is open
 	cancelSettingsPick func()                          // takes back a file question the settings dialog asked
 	settingsUnsaved    bool                            // settings were changed but not written (auto-save is off)
 	prefs              settingsui.SettingsDialog       // the settings dialog

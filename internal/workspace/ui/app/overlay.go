@@ -148,6 +148,8 @@ func (a *App) overlayKeys(in w.Input) {
 		PopupMenuKeys(a.ctx, in)
 	case a.dialog != nil && a.dialog.Input == nil && enter:
 		a.dialogDefault()
+	case a.dialog == nil && a.picker != nil:
+		a.pickerKeys(in)
 	case a.dialog == nil && a.browser != nil:
 		a.fileBrowserKeys(in)
 	}
@@ -161,7 +163,15 @@ func (a *App) swallowMenuKeys() {
 
 // overlayOpen reports whether a menu or dialog has the keyboard.
 func (a *App) overlayOpen() bool {
-	return MenuOpen(a.ctx) || a.dialog != nil || a.browser != nil || a.calls.Shown()
+	return MenuOpen(a.ctx) || a.dialog != nil || a.picker != nil || a.browser != nil || a.calls.Shown()
+}
+
+// pickerView is the destination picker while it is open, nothing otherwise.
+func (a *App) pickerView() Node {
+	if a.picker == nil {
+		return nil
+	}
+	return a.picker.View(a.pickerHost)
 }
 
 // dialogForm is the typed form of a dialog, nothing for the others.
@@ -180,6 +190,7 @@ func (a *App) openLayers() overlay.Open {
 	var open overlay.Open
 	open[overlay.ContextMenu] = MenuOpen(a.ctx)
 	open[overlay.Dialog] = a.dialog != nil
+	open[overlay.DestPicker] = a.picker != nil
 	open[overlay.FileBrowser] = a.browser != nil
 	open[overlay.CallLog] = a.calls.Shown()
 	open[overlay.FontList] = a.prefs.FontListOpen()
@@ -195,6 +206,7 @@ func (a *App) escape() {
 	closers := [...]func(){
 		overlay.ContextMenu: a.closeMenu,
 		overlay.Dialog:      a.closeDialog,
+		overlay.DestPicker:  a.closePicker,
 		overlay.FileBrowser: a.closeBrowser,
 		overlay.CallLog:     a.calls.Close,
 		overlay.FontList:    a.prefs.CloseFontList,

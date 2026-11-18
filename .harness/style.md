@@ -41,6 +41,10 @@ The in-app file chooser (decision 18): width 640, height 520 at most (40 from th
 
 A resizable dialog is grabbed within 6 px inside or 4 px outside its border (`edgeSlop`, `edgeOut`), grows about its center and stays inside the window with `ScreenMargin` (decision 15). Size and position are app state that outlives the dialog's rebuild.
 
+### Destination picker
+
+The dialog of Move to... and Copy to... (decision 25): width `dialogW` (440), height 480 at most (40 from the window's edges), a message-dialog footer. Title bar: "Move to" or "Copy to", the node's name as the muted `DialogSubtitle`. The list fills the rest on `Sunken`: `ListRow`s `RowH` high, padded `Gutter` times one plus the folder's depth on the left and `Gutter` on the right, gap `TightGap`; a collection's root row is bold with its `collection.N` stripe (3 x 14) as in the tree, the other rows regular. A row that cannot be chosen is `Muted` with a small muted reason at its end ("itself", "inside itself", "current folder"). Footer: `RowH` buttons, padding 12 above and below and 16 at the sides, a `BorderSoft` line over it; a small muted hint "Variables are not changed" takes the room on the left, then Cancel and the primary "Move here" or "Copy here", at least 80 wide, lit only once a row is picked (before that it is unlit and muted and does nothing). Keys: Up and Down skip refused rows, Enter and a double click pick, Escape or a click outside closes. The dialog is movable by its bar (`MoveState`).
+
 ## Request panes
 
 ### Proto (gRPC)

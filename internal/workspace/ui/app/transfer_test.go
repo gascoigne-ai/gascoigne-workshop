@@ -7,6 +7,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/adapter/store"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/collections"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/transfer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
@@ -229,5 +230,65 @@ func TestTheDropRowShowsACopyCueWhileAltIsHeldDuringADrag(t *testing.T) {
 		if got := a.treeItemOf(row).DropBorder; got != test.want {
 			t.Fatalf("alt %v: drop border %q, want %q", test.alt, got, test.want)
 		}
+	}
+}
+
+func TestThePickerMovesTheNodeToTheRowPickedWithEnter(t *testing.T) {
+	a, _, _ := twoCollectionsApp(t)
+	alpha, beta := entryNamed(t, a, "Alpha").Collection, entryNamed(t, a, "Beta").Collection
+	req := alpha.Requests[0]
+	a.openTransferPicker(model.Of(req), transfer.Move)
+	if a.picker == nil || !a.overlayOpen() {
+		t.Fatal("the picker did not open")
+	}
+	for index, row := range a.picker.Rows() { // Beta's folder "Nested"
+		if row.Folder == beta.Folders[0] {
+			a.picker.Select(index)
+		}
+	}
+	a.step(core.Input{Enter: true})
+	if a.picker != nil || len(alpha.Requests) != 0 || !beta.Folders[0].Contains(model.Of(req)) {
+		t.Fatalf("picker %v, Alpha %d requests, moved %v", a.picker != nil, len(alpha.Requests), beta.Folders[0].Contains(model.Of(req)))
+	}
+}
+
+func TestThePickerCopiesWhenOpenedToCopy(t *testing.T) {
+	a, _, _ := twoCollectionsApp(t)
+	alpha, beta := entryNamed(t, a, "Alpha").Collection, entryNamed(t, a, "Beta").Collection
+	a.openTransferPicker(model.Of(alpha.Requests[0]), transfer.Copy)
+	a.picker.Step(1) // Alpha's own root: a copy may go to the current folder
+	for index, row := range a.picker.Rows() {
+		if row.Folder == &beta.Folder {
+			a.picker.Select(index)
+		}
+	}
+	a.step(core.Input{Enter: true})
+	if len(alpha.Requests) != 1 || len(beta.Requests) != 2 {
+		t.Fatalf("Alpha %d requests, Beta %d", len(alpha.Requests), len(beta.Requests))
+	}
+}
+
+func TestEscapeClosesAQuestionOverThePickerBeforeThePicker(t *testing.T) {
+	a, _, _ := twoCollectionsApp(t)
+	alpha := entryNamed(t, a, "Alpha").Collection
+	a.openTransferPicker(model.Of(alpha.Requests[0]), transfer.Move)
+	a.confirm("Sure?", "", "Yes", func() {})
+	a.step(core.Input{Escape: true})
+	if a.dialog != nil || a.picker == nil {
+		t.Fatalf("dialog %v picker %v after the first Escape", a.dialog != nil, a.picker != nil)
+	}
+	a.step(core.Input{Escape: true})
+	if a.picker != nil {
+		t.Fatal("the second Escape left the picker open")
+	}
+}
+
+func TestThePickerDoesNotOpenForACollectionRoot(t *testing.T) {
+	a, _, _ := twoCollectionsApp(t)
+	alpha := entryNamed(t, a, "Alpha").Collection
+	a.openTransferPicker(model.Of(&alpha.Folder), transfer.Move)
+	a.openTransferPicker(model.Node{}, transfer.Move)
+	if a.picker != nil {
+		t.Fatal("a root or nothing cannot be moved")
 	}
 }

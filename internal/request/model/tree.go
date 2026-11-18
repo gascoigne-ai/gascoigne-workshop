@@ -165,42 +165,6 @@ func (f *Folder) Delete(node any) bool {
 	return true
 }
 
-// Move takes node out of its folder and puts it into target, before the
-// sibling `before` (a request for a request, a folder for a folder), or
-// at the end when before is nil. Nothing changes when it fails.
-func (f *Folder) Move(node any, target *Folder, before any) error {
-	if any(f) == node {
-		return ErrRootMove
-	}
-	src, ok := f.Parent(node)
-	if !ok || !f.Contains(Of(target)) {
-		return ErrNotInTree
-	}
-	if sub, isFolder := node.(*Folder); isFolder && sub.Contains(Of(target)) {
-		return ErrIntoItself
-	}
-	if src != target && target.siblingNames()[*nameOf(node)] {
-		return ErrNameTaken
-	}
-	switch n := node.(type) {
-	case *Request:
-		src.Requests = removeAt(src.Requests, indexOf(src.Requests, n))
-		at := len(target.Requests)
-		if b, ok := before.(*Request); ok && indexOf(target.Requests, b) >= 0 {
-			at = indexOf(target.Requests, b)
-		}
-		target.Requests = insertAt(target.Requests, at, n)
-	case *Folder:
-		src.Folders = removeAt(src.Folders, indexOf(src.Folders, n))
-		at := len(target.Folders)
-		if b, ok := before.(*Folder); ok && indexOf(target.Folders, b) >= 0 {
-			at = indexOf(target.Folders, b)
-		}
-		target.Folders = insertAt(target.Folders, at, n)
-	}
-	return nil
-}
-
 func indexOf[T comparable](items []T, item T) int {
 	for i, it := range items {
 		if it == item {
