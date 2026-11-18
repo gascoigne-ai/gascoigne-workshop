@@ -221,7 +221,7 @@ func TestClickingTheExplorersButtonSendsTheOpenEntry(t *testing.T) {
 			}
 			a.exploreOpen(tab, index)
 			clickText(t, a, tc.button, 0)
-			until(t, a, "the answer", func() bool { return !tab.explorer.Calling })
+			until(t, a, "the answer", func() bool { return !tab.explorer.IsCalling() })
 			if len(session.asked) != 1 || session.asked[0] != tc.want {
 				t.Fatalf("asked %q, want %q", session.asked, tc.want)
 			}

@@ -52,11 +52,11 @@ func TestExplorerCallsTheOpenToolWithTheFormsArguments(t *testing.T) {
 	a.exploreOpen(tab, 0)
 	tab.form.Inputs["q"].Text = "go"
 	a.exploreCall(tab)
-	until(t, a, "the answer", func() bool { return !tab.explorer.Calling })
+	until(t, a, "the answer", func() bool { return !tab.explorer.IsCalling() })
 	if len(session.asked) != 1 || session.asked[0] != `call search {"q":"go","limit":5}` {
 		t.Fatalf("asked %q", session.asked)
 	}
-	if tab.explorer.Failed || !strings.Contains(tab.explorer.Result, "found") || len(tab.resultView.Lines) == 0 {
+	if tab.explorer.IsFailed() || !strings.Contains(tab.explorer.Result, "found") || len(tab.resultView.Lines) == 0 {
 		t.Fatalf("state %+v", tab.explorer)
 	}
 }
@@ -81,7 +81,7 @@ func TestExplorerCommandsPerKind(t *testing.T) {
 		a.exploreChoose(tab, test.kind)
 		a.exploreOpen(tab, test.index)
 		a.exploreCall(tab)
-		until(t, a, "the answer", func() bool { return !tab.explorer.Calling })
+		until(t, a, "the answer", func() bool { return !tab.explorer.IsCalling() })
 		if len(session.asked) != 1 || session.asked[0] != test.want {
 			t.Errorf("kind %v asked %q, want %q", test.kind, session.asked, test.want)
 		}
@@ -106,8 +106,8 @@ func TestExplorerShowsTheServersErrorAndAToolThatReportsOne(t *testing.T) {
 			tab.Session = test.session
 			a.exploreOpen(tab, 1)
 			a.exploreCall(tab)
-			until(t, a, "the answer", func() bool { return !tab.explorer.Calling })
-			if !tab.explorer.Failed || !strings.Contains(tab.explorer.Result, test.want) {
+			until(t, a, "the answer", func() bool { return !tab.explorer.IsCalling() })
+			if !tab.explorer.IsFailed() || !strings.Contains(tab.explorer.Result, test.want) {
 				t.Fatalf("state %+v", tab.explorer)
 			}
 		})
@@ -124,7 +124,7 @@ func TestExplorerRefusesACallWithAnInvalidValue(t *testing.T) {
 	a.exploreOpen(tab, 0)
 	tab.form.Inputs["limit"].Text = "lots"
 	a.exploreCall(tab)
-	if len(session.asked) != 0 || tab.explorer.Calling || tab.form.Problem == "" {
+	if len(session.asked) != 0 || tab.explorer.IsCalling() || tab.form.Problem == "" {
 		t.Fatalf("asked %q state %+v problem %q", session.asked, tab.explorer, tab.form.Problem)
 	}
 }
@@ -142,7 +142,7 @@ func TestExplorerAndTrafficPanesDrawWithoutPanicking(t *testing.T) {
 		a.step(core.Input{})
 		a.exploreOpen(tab, 0)
 		a.exploreCall(tab)
-		until(t, a, "the answer", func() bool { return !tab.explorer.Calling })
+		until(t, a, "the answer", func() bool { return !tab.explorer.IsCalling() })
 	}
 	tab.respTab = 1 // the JSON-RPC traffic
 	a.step(core.Input{})

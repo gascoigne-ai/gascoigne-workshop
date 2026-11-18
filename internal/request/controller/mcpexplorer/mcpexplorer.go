@@ -24,14 +24,30 @@ const None = -1
 // Entry is one line of a list: a title and a muted detail under it.
 type Entry struct{ Title, Detail string }
 
+// CallState is where the open entry's call is.
+type CallState int
+
+// The states of a call.
+const (
+	Idle     CallState = iota // nothing sent, or the answer was dropped by opening another entry
+	Calling                   // sent, waiting for the answer
+	Answered                  // the server answered and the answer is not an error
+	Failed                    // the server or the tool answered with an error
+)
+
 // State is what the explorer remembers between frames.
 type State struct {
 	Kind     Kind
-	Selected int    // index into the list, None for no entry
-	Calling  bool   // a call is waiting for its answer
+	Selected int // index into the list, None for no entry
+	Call     CallState
 	Result   string // the last answer: its JSON, or the server's error message
-	Failed   bool   // Result is an error
 }
+
+// IsCalling reports whether a call is waiting for its answer.
+func (state State) IsCalling() bool { return state.Call == Calling }
+
+// IsFailed reports whether Result is an error.
+func (state State) IsFailed() bool { return state.Call == Failed }
 
 // New is a state showing the tools with nothing open.
 func New() State { return State{Selected: None} }
@@ -41,23 +57,29 @@ func (state *State) Choose(kind Kind) {
 	*state = State{Kind: kind, Selected: None}
 }
 
-// Select opens an entry of the current list.
+// Select opens an entry of the current list and drops the last answer. A
+// call in flight stays one: its answer still lands, on the entry then open.
 func (state *State) Select(index int) {
-	state.Selected, state.Result, state.Failed = index, "", false
+	state.Selected, state.Result = index, ""
+	if state.Call != Calling {
+		state.Call = Idle
+	}
 }
 
 // Begin marks a call as sent.
-func (state *State) Begin() { state.Calling, state.Result, state.Failed = true, "", false }
+func (state *State) Begin() { state.Call, state.Result = Calling, "" }
 
 // Finish records the answer of the call. A tool that says isError in its
 // result failed as well, though the server answered.
 func (state *State) Finish(result string, err error) {
-	state.Calling = false
 	if err != nil {
-		state.Result, state.Failed = err.Error(), true
+		state.Call, state.Result = Failed, err.Error()
 		return
 	}
-	state.Result, state.Failed = result, reportsError(result)
+	state.Call, state.Result = Answered, result
+	if reportsError(result) {
+		state.Call = Failed
+	}
 }
 
 func reportsError(result string) bool {

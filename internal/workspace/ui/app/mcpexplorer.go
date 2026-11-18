@@ -64,7 +64,7 @@ func exploreCommand(tab *reqTab) (string, error) {
 // exploreCall sends the open entry and shows the answer when it comes.
 func (a *App) exploreCall(tab *reqTab) {
 	requester, ok := tab.Session.(reqport.Requester)
-	if !ok || tab.explorer.Selected == mcpexplorer.None || tab.explorer.Calling {
+	if !ok || tab.explorer.Selected == mcpexplorer.None || tab.explorer.IsCalling() {
 		return
 	}
 	command, err := exploreCommand(tab)
@@ -187,9 +187,9 @@ type openEntry struct {
 	Form         Node // the argument form, nil for a resource
 	Label        string
 	Call         func()
-	Disconnected bool
-	Calling      bool
-	Result       Node // the last answer, nil before one came
+	NotConnected string // a note while there is no session, else ""
+	Waiting      string // a note while a call is in flight, else ""
+	Result       Node   // the last answer, nil before one came
 }
 
 // explorerDetail is the open entry: its form, the button that sends it and
@@ -201,12 +201,16 @@ func (a *App) explorerDetail(tab *reqTab) Node {
 		return explorerNoneTemplate.MustBuild(markup.Scope{"gutter": w.Gutter})
 	}
 	detail := openEntry{
-		Title:        entries[state.Selected].Title,
-		Form:         formNode(a, tab),
-		Label:        callLabel(state),
-		Call:         func() { a.exploreCall(tab) },
-		Disconnected: !a.connected(tab),
-		Calling:      state.Calling,
+		Title: entries[state.Selected].Title,
+		Form:  formNode(a, tab),
+		Label: callLabel(state),
+		Call:  func() { a.exploreCall(tab) },
+	}
+	if !a.connected(tab) {
+		detail.NotConnected = "Connect first"
+	}
+	if state.IsCalling() {
+		detail.Waiting = "Waiting for the server..."
 	}
 	if state.Result != "" {
 		detail.Result = resultNode(tab)
@@ -243,7 +247,7 @@ func callLabel(state mcpexplorer.State) string {
 func resultNode(tab *reqTab) Node {
 	state := tab.explorer
 	heading, color := "Result", w.OK
-	if state.Failed {
+	if state.IsFailed() {
 		heading, color = "Error", w.Error
 	}
 	return explorerResultTemplate.MustBuild(markup.Scope{
@@ -308,8 +312,8 @@ const (
   <col if="!detail.Form"/>
   <row gap="{{looseGap}}" align-items="center">
     <primary-button h="{{rowH}}" pad-x="{{gutter}}" on-click="detail.Call" tooltip="Send it to the server (Enter in a field)">{{detail.Label}}</primary-button>
-    <text if="detail.Disconnected" small muted>Connect first</text>
-    <text if="detail.Calling" small muted>Waiting for the server...</text>
+    <text if="detail.NotConnected" small muted>{{detail.NotConnected}}</text>
+    <text if="detail.Waiting" small muted>{{detail.Waiting}}</text>
   </row>
   <slot if="detail.Result" name="detail.Result"/>
 </scroll>
