@@ -360,8 +360,8 @@ const (
                 tooltip="Click, then press the keys">{{action.Key}}</choice>
         <icon-button if="action.Bound" icon="cross" w="{{iconBtnW}}" h="{{compactH}}" on-click="action.Clear"
                 tooltip="Leave the action without a key"/>
-        <button if="action.Overridden" w="64" h="{{compactH}}" on-click="action.Reset"
-                tooltip="Back to the default key">Reset</button>
+        <icon-button if="action.Overridden" icon="replay" w="{{iconBtnW}}" h="{{compactH}}" on-click="action.Reset"
+                tooltip="Back to the default key"/>
       </row>
       <!-- at most one of the conflict, the refusal and the warning is set -->
       <row if="action.Conflict" h="{{compactH}}" gap="{{tightGap}}">

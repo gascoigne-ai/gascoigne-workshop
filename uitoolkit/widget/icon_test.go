@@ -226,3 +226,9 @@ func TestGearIconIsTheCogwheelAt18Px(t *testing.T) {
 		t.Fatal("GearIcon does not name the gear icon")
 	}
 }
+
+func TestReplayIconExists(t *testing.T) {
+	if !HasIcon("replay") {
+		t.Fatalf("no replay icon; have %v", IconNames())
+	}
+}

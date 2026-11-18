@@ -203,10 +203,10 @@ func TestARowsClearUnbindsOnlyItsAction(t *testing.T) {
 func TestAChangedRowsResetBringsItsDefaultBack(t *testing.T) {
 	driver := newDriver(t)
 	driver.host.current.Shortcuts = map[string]string{"send": "Ctrl+K"}
-	if found := findAll(driver.view(), `text="Reset"`); len(found) != 1 {
+	if found := findAll(driver.view(), "tip=Back to the default key"); len(found) != 1 {
 		t.Fatalf("%d Reset buttons, want one on the changed row", len(found))
 	}
-	driver.clickOn(0, `text="Reset"`)
+	driver.clickOn(0, "tip=Back to the default key")
 	if got := KeyText(driver.host, "send"); got != "Ctrl+Enter" {
 		t.Fatalf("send is %q, want its default back", got)
 	}
@@ -253,27 +253,20 @@ func TestTheSearchFieldHasItsPlaceholderAndTextMenu(t *testing.T) {
 	}
 }
 
-// The key buttons are one width, and so are Clear and Reset, whatever
-// their labels: the column reads as a column.
-func TestKeyAndResetButtonsShareOneSize(t *testing.T) {
+// The key buttons are one width, whatever their labels: the column reads
+// as a column.
+func TestKeyButtonsShareOneWidth(t *testing.T) {
 	var page Page
 	host := newHost()
 	page.Clear(host, "send")
 	root := page.View(host)
 	Layout(newCtx(t), root, wideW, wideH)
-	widths := map[string]map[int]bool{"key": {}, "side": {}}
-	for _, button := range findAll(root, "control=button") {
-		kind := "key"
-		if button.Rect().W < 80 {
-			kind = "side"
-		}
-		widths[kind][button.Rect().W] = true
+	widths := map[int]bool{}
+	for _, button := range append(findAll(root, "control=button"), findAll(root, "control=primary")...) {
+		widths[button.Rect().W] = true
 	}
-	for _, button := range findAll(root, "control=primary") {
-		widths["key"][button.Rect().W] = true
-	}
-	if len(widths["key"]) != 1 || len(widths["side"]) != 1 {
-		t.Fatalf("widths %v, want one width for the key buttons and one for Clear, Reset and Replace", widths)
+	if len(widths) != 1 {
+		t.Fatalf("widths %v, want one width for the key buttons", widths)
 	}
 }
 
