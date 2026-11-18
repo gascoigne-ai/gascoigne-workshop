@@ -42,7 +42,7 @@ flowchart TB
   ui & app --> toolkit["uitoolkit: core / view / widget / markup"]
 ```
 
-Dependencies point inward and `internal/layers_test.go` enforces them: a model imports only models, a port models and ports, a controller models, ports and controllers (and no toolkit), a ui or adapter models, ports and controllers but never each other. Another domain is reached only through its model or port, except that `workspace`, the composition root, may also import other domains' ui and controller (decision 11). The adapters never reach the App directly: `cmd/workshop` builds them and hands them in through `Options`, and a nil port falls back to a null one, so tests and screenshots need no desktop.
+Dependencies point inward and `internal/layers_test.go` enforces them: a model imports only models, a port models and ports, a controller models, ports and controllers (and no toolkit), a ui models, ports and controllers but no adapter and no other ui package, an adapter models, ports, controllers and the adapters of its own domain but no ui. Another domain is reached only through its model or port, except that `workspace`, the composition root, may also import other domains' ui and controller (decision 11). The adapters never reach the App directly: `cmd/workshop` builds them and hands them in through `Options`, and a nil port falls back to a null one, so tests and screenshots need no desktop.
 
 ## One request, end to end
 
