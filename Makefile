@@ -86,11 +86,18 @@ example-server:
 shot:
 	go run ./cmd/workshop -screenshot $(or $(OUT),shot.png) -send
 
-# Install the release build, its desktop entry and icon for the current user, no root.
+# Install the release build for the current user, no root; on Linux also its
+# desktop entry and icon (freedesktop paths that macOS does not read; the Mac
+# app is packaging/macos/make-app.sh). mkdir -p and install -m rather than
+# GNU install -D, so BSD install runs it too.
 # System-wide: make install PREFIX=/usr/local
 PREFIX ?= $(HOME)/.local
+UNAME := $(shell uname -s)
 install: release
-	install -Dm755 bin/workshop-release $(DESTDIR)$(PREFIX)/bin/gascoigne-workshop
-	install -Dm644 packaging/gascoigne-workshop.desktop $(DESTDIR)$(PREFIX)/share/applications/gascoigne-workshop.desktop
-	mkdir -p $(DESTDIR)$(PREFIX)/share/icons/hicolor/256x256/apps
+	mkdir -p $(DESTDIR)$(PREFIX)/bin
+	install -m 755 bin/workshop-release $(DESTDIR)$(PREFIX)/bin/gascoigne-workshop
+ifeq ($(UNAME),Linux)
+	mkdir -p $(DESTDIR)$(PREFIX)/share/applications $(DESTDIR)$(PREFIX)/share/icons/hicolor/256x256/apps
+	install -m 644 packaging/gascoigne-workshop.desktop $(DESTDIR)$(PREFIX)/share/applications/gascoigne-workshop.desktop
 	bin/workshop-release -icon-png $(DESTDIR)$(PREFIX)/share/icons/hicolor/256x256/apps/gascoigne-workshop.png
+endif

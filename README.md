@@ -58,7 +58,7 @@ Needs Go (see `go.mod`) and, on Linux, the Ebitengine dependencies
 make build                         # bin/workshop, with example endpoints
 make release                       # bin/workshop-release, reads client configs instead
 make run                           # run without installing
-make install                       # binary, desktop entry, icon under ~/.local (PREFIX=/usr/local for all users)
+make install                       # binary under ~/.local, plus desktop entry and icon on Linux (PREFIX=/usr/local for all users)
 make example-server                # one local server per protocol, for the example requests
 ```
 

@@ -27,5 +27,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
+      # Mirrors the vet and vet-release targets of make check; the release
+      # build has its own files (build tag "release").
       - name: build and vet
-        run: go build ./... && go vet ./...
+        run: go build ./... && go vet ./... && go vet -tags release ./...
