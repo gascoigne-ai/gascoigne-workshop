@@ -1,6 +1,7 @@
 package app
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/collections"
@@ -188,6 +189,7 @@ type sendResult struct {
 // App is the whole window. It implements ebiten.Game.
 type App struct {
 	ctx         *core.Ctx
+	retryDelay  time.Duration // wait before a dropped connection reopens
 	reg         reqport.Registry
 	protocols   func(reqport.ProtocolConfig) reqport.Registry // builds the registry; nil has no protocols
 	grpcMethods reqport.GRPCMethods
@@ -300,6 +302,8 @@ type Options struct {
 	SettingsFiles    sport.SettingsStore                           // the settings file; nil reads the defaults and cannot save
 	Previews         rport.BodyPreview                             // shows a response body in the browser; nil has none
 	Clock            port.Clock                                    // the time source; nil uses the wall clock
+	RetryDelay       time.Duration                                 // wait before a dropped connection reopens; 0 is two seconds
+	HostOS           string                                        // the OS shortcut text follows; "" is the running one
 	OpenMenu         bool                                          // start with the settings menu open
 	WorkspaceDir     string                                        // collection folder; "" uses the remembered one, else the client config, else the sample
 	Sample           func() model.Collection                       // the collection shown without a workspace or client config; nil uses collection.GitHubSample
@@ -367,6 +371,11 @@ func NewApp(opts Options) (*App, error) {
 	if opts.Clock != nil {
 		a.now = opts.Clock.Now
 	}
+	if opts.HostOS != "" {
+		ctx.HostOS = opts.HostOS
+	}
+	a.sampler.HostOS = ctx.HostOS
+	a.retryDelay = cmp.Or(opts.RetryDelay, defaultRetryDelay)
 	ctx.Now = func() time.Time { return a.now() } // the caret blinks by the app clock
 	a.noteReadOnly(a.settingsAccess, loadErr)
 	a.store, a.states = opts.Store, opts.States

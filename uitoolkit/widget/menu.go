@@ -96,7 +96,7 @@ func Menu(ctx *core.Ctx, state *MenuState, opts ...Option) *El {
 	}
 	rows := make([]Item, len(state.Items))
 	for index, item := range state.Items {
-		rows[index] = menuRow(state, index, item, pick)
+		rows[index] = menuRow(ctx.HostOS, state, index, item, pick)
 	}
 	menu = Col(with(append([]Item{
 		W(MenuWidth(ctx, state.Items)), Pad(MenuPad), Bg(core.Bg), Control("menu"), Shadow(),
@@ -105,7 +105,7 @@ func Menu(ctx *core.Ctx, state *MenuState, opts ...Option) *El {
 	return menu
 }
 
-func menuRow(state *MenuState, index int, item MenuItem, pick func(int)) *El {
+func menuRow(goos string, state *MenuState, index int, item MenuItem, pick func(int)) *El {
 	if item.Separator {
 		return Row(H(MenuSepH), PadX(6), HRule())
 	}
@@ -141,7 +141,7 @@ func menuRow(state *MenuState, index int, item MenuItem, pick func(int)) *El {
 	return Row(H(height), PadX(menuRowPadX), Gap(8), AlignItems(AlignCenter), Control("row"), look, OnClick(func() { pick(index) }),
 		icon,
 		label,
-		If(item.Shortcut != "", Text(core.PlatformKeyText(core.HostOS, item.Shortcut), Small(), Muted())),
+		If(item.Shortcut != "", Text(core.PlatformKeyText(goos, item.Shortcut), Small(), Muted())),
 	)
 }
 
@@ -168,7 +168,7 @@ func MenuWidth(ctx *core.Ctx, items []MenuItem) int {
 			row = max(row, ctx.Width(ctx.F.Small, line))
 		}
 		if item.Shortcut != "" {
-			row += 16 + ctx.Width(ctx.F.Small, core.PlatformKeyText(core.HostOS, item.Shortcut))
+			row += 16 + ctx.Width(ctx.F.Small, core.PlatformKeyText(ctx.HostOS, item.Shortcut))
 		}
 		if icons {
 			row += menuIconW + 8

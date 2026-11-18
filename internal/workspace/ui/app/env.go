@@ -243,7 +243,7 @@ func (a *App) completeVariable() {
 	}
 	t := a.cur()
 	if !t.url.Focused {
-		a.toast(w.PlatformKeyText(w.HostOS, "Ctrl+Space")+" completes a {{variable}} in the URL field", false)
+		a.toast(w.PlatformKeyText(a.ctx.HostOS, "Ctrl+Space")+" completes a {{variable}} in the URL field", false)
 		return
 	}
 	names, from := a.variableCompletion(t)

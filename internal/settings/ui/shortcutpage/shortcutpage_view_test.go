@@ -28,6 +28,7 @@ func newCtx(t *testing.T) *w.Ctx {
 	if err != nil {
 		t.Fatal(err)
 	}
+	ctx.HostOS = "linux" // the same shortcut text on every machine
 	return ctx
 }
 

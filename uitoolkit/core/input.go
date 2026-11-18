@@ -2,6 +2,7 @@ package core
 
 import (
 	"math"
+	"runtime"
 	"slices"
 	"time"
 
@@ -151,7 +152,7 @@ func pressed(key ebiten.Key, repeat KeyRepeat) bool {
 }
 
 // readInput samples the devices for this frame.
-func readInput(repeat KeyRepeat) Input {
+func readInput(goos string, repeat KeyRepeat) Input {
 	x, y := ebiten.CursorPosition()
 	wheelX, wheel := ebiten.Wheel()
 	in := Input{
@@ -170,7 +171,7 @@ func readInput(repeat KeyRepeat) Input {
 		Keys:        inpututil.AppendJustPressedKeys(nil),
 		Shift:       ebiten.IsKeyPressed(ebiten.KeyShift),
 		Alt:         ebiten.IsKeyPressed(ebiten.KeyAlt),
-		Ctrl:        PrimaryDown(HostOS, ebiten.IsKeyPressed(ebiten.KeyControl), ebiten.IsKeyPressed(ebiten.KeyMeta)),
+		Ctrl:        PrimaryDown(goos, ebiten.IsKeyPressed(ebiten.KeyControl), ebiten.IsKeyPressed(ebiten.KeyMeta)),
 	}
 	if in.Ctrl {
 		in.SelectAll = inpututil.IsKeyJustPressed(ebiten.KeyA)
@@ -187,7 +188,7 @@ func readInput(repeat KeyRepeat) Input {
 		if !pressed(k.key, repeat) {
 			continue
 		}
-		in.Edits = append(in.Edits, modifiedEdit(HostOS, k.edit, in.Ctrl, in.Alt))
+		in.Edits = append(in.Edits, modifiedEdit(goos, k.edit, in.Ctrl, in.Alt))
 	}
 	return in
 }
@@ -256,6 +257,9 @@ type Sampler struct {
 	Now func() time.Time
 	// Repeat is how held keys repeat; the zero value is the built-in timing.
 	Repeat KeyRepeat
+	// HostOS is the operating system the shortcut modifier follows; empty is
+	// runtime.GOOS.
+	HostOS string
 
 	last  time.Time
 	x, y  int
@@ -275,6 +279,13 @@ func (s *Sampler) Click(now time.Time, posX, posY int) int {
 	return s.count
 }
 
+func (s *Sampler) hostOS() string {
+	if s.HostOS != "" {
+		return s.HostOS
+	}
+	return runtime.GOOS
+}
+
 func (s *Sampler) now() time.Time {
 	if s.Now != nil {
 		return s.Now()
@@ -284,7 +295,7 @@ func (s *Sampler) now() time.Time {
 
 // Read samples the devices for this frame, including the click count.
 func (s *Sampler) Read() Input {
-	in := readInput(s.Repeat)
+	in := readInput(s.hostOS(), s.Repeat)
 	if in.Click {
 		in.Clicks = s.Click(s.now(), in.X, in.Y)
 	}

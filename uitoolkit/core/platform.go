@@ -1,13 +1,6 @@
 package core
 
-import (
-	"runtime"
-	"strings"
-)
-
-// HostOS is the operating system the shortcut text and modifier follow. It
-// is runtime.GOOS; tests set it to pin the text across machines.
-var HostOS = runtime.GOOS
+import "strings"
 
 // PrimaryDown reports whether the platform's shortcut modifier is held:
 // Command (or Control) on macOS, Control elsewhere. The Windows key is

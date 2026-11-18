@@ -35,8 +35,8 @@ type wsEvent struct {
 	retry  bool // the reconnect delay is over
 }
 
-// retryDelay is the wait before a dropped connection is reopened.
-var retryDelay = 2 * time.Second
+// defaultRetryDelay is the wait before a dropped connection is reopened.
+const defaultRetryDelay = 2 * time.Second
 
 // isSocket reports whether the tab's protocol keeps a connection open.
 func isSocket(tab *reqTab) bool {
@@ -226,9 +226,9 @@ func (a *App) scheduleRetry(tab *reqTab) {
 	if !tab.RetryWanted() {
 		return
 	}
-	a.logInfo(tab, "Reconnecting in "+retryDelay.String(), w.Muted)
+	a.logInfo(tab, "Reconnecting in "+a.retryDelay.String(), w.Muted)
 	gen := tab.Gen
-	time.AfterFunc(retryDelay, func() { a.bus.Dispatch(wsEvent{tab: tab, gen: gen, retry: true}) })
+	time.AfterFunc(a.retryDelay, func() { a.bus.Dispatch(wsEvent{tab: tab, gen: gen, retry: true}) })
 }
 
 // logEvent appends an event to the log, one line per line of its text.

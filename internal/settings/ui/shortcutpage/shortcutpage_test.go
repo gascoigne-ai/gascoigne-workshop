@@ -4,6 +4,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 
@@ -13,7 +14,17 @@ import (
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
-type fakeHost struct{ current settings.Settings }
+type fakeHost struct {
+	current settings.Settings
+	os      string // "" is linux
+}
+
+func (host *fakeHost) HostOS() string {
+	if host.os == "" {
+		return "linux"
+	}
+	return host.os
+}
 
 func (host *fakeHost) Settings() settings.Settings        { return host.current }
 func (host *fakeHost) Edit(edit func(*settings.Settings)) { edit(&host.current) }
@@ -55,5 +66,19 @@ func TestSearchMatchesTheActionNameOrTheKey(t *testing.T) {
 func (host *fakeHost) Send(msg prefs.Msg) {
 	if edit, ok := msg.(prefs.Edit); ok {
 		host.Edit(edit.Edit)
+	}
+}
+
+func TestKeyTextFollowsTheHostOfEachPage(t *testing.T) {
+	tests := []struct{ os, want string }{{"darwin", "Cmd+Enter"}, {"linux", "Ctrl+Enter"}}
+	for _, test := range tests {
+		t.Run(test.os, func(t *testing.T) {
+			t.Parallel()
+			time.Sleep(20 * time.Millisecond) // let both cases overlap
+			host := &fakeHost{current: settings.Default(), os: test.os}
+			if got := KeyText(host, "send"); got != test.want {
+				t.Fatalf("KeyText = %q, want %q", got, test.want)
+			}
+		})
 	}
 }

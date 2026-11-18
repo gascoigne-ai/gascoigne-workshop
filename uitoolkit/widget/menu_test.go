@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 
@@ -269,5 +270,21 @@ func TestTextMenuDisablesClipboardRowsWithoutAClipboard(t *testing.T) {
 		if !menuItemNamed(t, c, label).Disabled {
 			t.Errorf("%s should be disabled without a clipboard", label)
 		}
+	}
+}
+
+func TestMenuShortcutTextFollowsTheContextsHostOS(t *testing.T) {
+	tests := []struct{ os, want string }{{"darwin", "Cmd+V"}, {"linux", "Ctrl+V"}}
+	for _, test := range tests {
+		t.Run(test.os, func(t *testing.T) {
+			t.Parallel()
+			c := testCtx(t)
+			c.HostOS = test.os
+			time.Sleep(20 * time.Millisecond) // let both cases overlap
+			dump := Dump(Menu(c, NewMenu(0, 0, []MenuItem{{Label: "Paste", Shortcut: "Ctrl+V"}})))
+			if !strings.Contains(dump, test.want) {
+				t.Fatalf("no %q in:\n%s", test.want, dump)
+			}
+		})
 	}
 }

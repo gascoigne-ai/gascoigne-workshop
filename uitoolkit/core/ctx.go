@@ -6,6 +6,7 @@ import (
 	"image"
 	"image/color"
 	"math"
+	"runtime"
 	"strings"
 	"time"
 
@@ -107,6 +108,10 @@ type Ctx struct {
 	// host. nil when none is open.
 	Menu any
 
+	// HostOS is the operating system the shortcut text and modifier follow:
+	// runtime.GOOS from NewCtx; a test sets it to pin the text across machines.
+	HostOS string
+
 	// HoverOff turns hover feedback off for everything drawn while it is
 	// set: elements under a modal overlay must not light up.
 	HoverOff bool
@@ -134,7 +139,7 @@ func NewCtx(th Theme) (*Ctx, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Ctx{Th: th, F: fonts, Scale: 1, Clipboard: SystemClipboard()}, nil
+	return &Ctx{Th: th, F: fonts, Scale: 1, Clipboard: SystemClipboard(), HostOS: runtime.GOOS}, nil
 }
 
 // CaretHalfPeriod is how long the caret is shown, and then hidden.

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/adapter/store"
@@ -104,6 +105,8 @@ func startTestApp(t *testing.T, path string) (*App, string) {
 
 // withAdapters gives opts the real history and font adapters, as main does.
 func withAdapters(opts Options) Options {
+	opts.HostOS = cmp.Or(opts.HostOS, "linux") // the same shortcut text on every machine
+	opts.RetryDelay = cmp.Or(opts.RetryDelay, 10*time.Millisecond)
 	opts.History = func(dir string) rport.History { return history.Dir(dir) }
 	opts.Fonts = fonts.System{}
 	opts.Protocols = proto.Configured

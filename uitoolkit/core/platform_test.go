@@ -47,8 +47,12 @@ func TestKeyTextNamesThePrimaryModifierForThePlatform(t *testing.T) {
 	}
 }
 
-func TestHostOSIsTheRuntimeOSUntilATestPinsIt(t *testing.T) {
-	if HostOS != runtime.GOOS {
-		t.Fatalf("HostOS = %q, want %q", HostOS, runtime.GOOS)
+func TestANewCtxFollowsTheRunningOS(t *testing.T) {
+	ctx, err := NewCtx(Theme{FontSize: 14, SmallSize: 12, MonoSize: 13})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ctx.HostOS != runtime.GOOS {
+		t.Fatalf("HostOS = %q, want %q", ctx.HostOS, runtime.GOOS)
 	}
 }

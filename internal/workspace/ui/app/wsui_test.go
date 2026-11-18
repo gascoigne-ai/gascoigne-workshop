@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/bus"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"io"
@@ -123,7 +124,6 @@ func TestClearEmptiesTheMessageLog(t *testing.T) {
 }
 
 func TestWebSocketReconnectsAfterTheServerClosesWhenAsked(t *testing.T) {
-	retryDelay = 10 * time.Millisecond
 	var conns atomic.Int32
 	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		c, err := ws.Upgrade(writer, request)
@@ -162,8 +162,24 @@ func TestWebSocketReconnectsAfterTheServerClosesWhenAsked(t *testing.T) {
 	}
 }
 
+func TestReconnectDelayBelongsToEachApp(t *testing.T) {
+	for _, delay := range []time.Duration{10 * time.Millisecond, 20 * time.Millisecond} {
+		t.Run(delay.String(), func(t *testing.T) {
+			t.Parallel()
+			a := &App{retryDelay: delay, bus: bus.New()}
+			tab := newTab(&model.Request{})
+			tab.Reconnect = true
+			tab.WantOpen = true
+			time.Sleep(20 * time.Millisecond) // let both cases overlap
+			a.scheduleRetry(tab)
+			if want := "Reconnecting in " + delay.String(); !strings.Contains(logText(tab), want) {
+				t.Fatalf("log lacks %q:\n%s", want, logText(tab))
+			}
+		})
+	}
+}
+
 func TestWebSocketWithoutReconnectStaysClosed(t *testing.T) {
-	retryDelay = 10 * time.Millisecond
 	var conns atomic.Int32
 	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		if c, err := ws.Upgrade(writer, request); err == nil {
@@ -276,7 +292,6 @@ func TestSSETabListensAndShowsNoComposer(t *testing.T) {
 }
 
 func TestSSEReconnectResumesFromTheLastEventID(t *testing.T) {
-	retryDelay = 10 * time.Millisecond
 	var mu sync.Mutex
 	var seen []string
 	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {

@@ -35,6 +35,8 @@ type Host interface {
 	Send(msg prefs.Msg)
 	// Actions are the actions that have keys, in display order.
 	Actions() []Action
+	// HostOS is the operating system the key text follows.
+	HostOS() string
 }
 
 // PendingKey is a recorded combination that another action already has,
@@ -108,7 +110,7 @@ func KeyText(host Host, id string) string {
 			continue
 		}
 		if binding := Effective(host.Settings(), action); binding.Bound {
-			return w.PlatformKeyText(w.HostOS, binding.String())
+			return w.PlatformKeyText(host.HostOS(), binding.String())
 		}
 		return "Unbound"
 	}
@@ -285,10 +287,10 @@ type actionRow struct {
 type textKeyRow struct{ Action, Keys string }
 
 // textKeyRows are TextKeys as users of this platform read them.
-func textKeyRows() []textKeyRow {
+func textKeyRows(goos string) []textKeyRow {
 	rows := make([]textKeyRow, 0, len(TextKeys))
 	for _, keys := range TextKeys {
-		rows = append(rows, textKeyRow{Action: keys.Action, Keys: w.PlatformKeyText(w.HostOS, keys.Keys)})
+		rows = append(rows, textKeyRow{Action: keys.Action, Keys: w.PlatformKeyText(goos, keys.Keys)})
 	}
 	return rows
 }
@@ -306,7 +308,7 @@ func (p *Page) View(host Host) Node {
 		"search":   &p.search,
 		"actions":  actions,
 		"noMatch":  len(actions) == 0,
-		"textKeys": textKeyRows(),
+		"textKeys": textKeyRows(host.HostOS()),
 		"rowH":     w.RowH,
 		"compactH": w.CompactH,
 		"labelH":   w.LabelH,
@@ -332,7 +334,7 @@ func (p *Page) row(host Host, action Action) actionRow {
 		row.Key = "Press keys..."
 	}
 	if pending, ok := p.pending[action.ID]; ok {
-		row.Conflict = fmt.Sprintf("Used by %s (%s)", pending.OtherName, w.PlatformKeyText(w.HostOS, pending.Binding.String()))
+		row.Conflict = fmt.Sprintf("Used by %s (%s)", pending.OtherName, w.PlatformKeyText(host.HostOS(), pending.Binding.String()))
 		row.ReplaceTip = "Unbind " + pending.OtherName + " and use this key here"
 	} else if text := p.notes[action.ID]; text != "" {
 		row.Refusal = text

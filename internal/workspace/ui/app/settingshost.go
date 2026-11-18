@@ -248,6 +248,9 @@ func (a *App) Send(msg prefs.Msg) {
 func (a *App) Color(tok w.Token) color.RGBA { return a.ctx.Th.Color(tok) }
 
 // Actions are the shortcut actions that have keys, in display order.
+// HostOS is the operating system shortcut text follows.
+func (a *App) HostOS() string { return a.ctx.HostOS }
+
 func (a *App) Actions() []shortcutpage.Action {
 	actions := make([]shortcutpage.Action, len(shortcuts))
 	for i, s := range shortcuts {
