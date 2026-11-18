@@ -3,6 +3,7 @@
 package preview
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
@@ -92,26 +93,39 @@ func openCommand(goos, address string) []string {
 }
 
 // OpenInBrowser asks the system to open address in the default browser.
-func OpenInBrowser(address string) error {
+// Ending ctx stops an opener that has not finished.
+func OpenInBrowser(ctx context.Context, address string) error {
 	command := openCommand(runtime.GOOS, address)
 	if command == nil {
 		return fmt.Errorf("preview: no way to open a browser on %s", runtime.GOOS)
 	}
-	if err := exec.Command(command[0], command[1:]...).Start(); err != nil {
+	if _, err := launch(ctx, command); err != nil {
 		return fmt.Errorf("preview: open %s: %w", command[0], err)
 	}
 	return nil
+}
+
+// launch starts command without waiting for it; the channel gets its end,
+// which is also reaped, so no finished opener lingers.
+func launch(ctx context.Context, command []string) (<-chan error, error) {
+	cmd := exec.CommandContext(ctx, command[0], command[1:]...)
+	if err := cmd.Start(); err != nil {
+		return nil, err
+	}
+	exited := make(chan error, 1)
+	go func() { exited <- cmd.Wait() }()
+	return exited, nil
 }
 
 // Browser serves a body for Lifetime and opens it with Open, which is
 // OpenInBrowser when nil.
 type Browser struct {
 	Lifetime time.Duration
-	Open     func(address string) error
+	Open     func(ctx context.Context, address string) error
 }
 
 // Show implements port.BodyPreview.
-func (browser Browser) Show(body []byte, contentType string) error {
+func (browser Browser) Show(ctx context.Context, body []byte, contentType string) error {
 	page, err := Serve(body, contentType, browser.Lifetime)
 	if err != nil {
 		return err
@@ -120,7 +134,7 @@ func (browser Browser) Show(body []byte, contentType string) error {
 	if open == nil {
 		open = OpenInBrowser
 	}
-	if err := open(page.URL); err != nil {
+	if err := open(ctx, page.URL); err != nil {
 		page.Close()
 		return err
 	}

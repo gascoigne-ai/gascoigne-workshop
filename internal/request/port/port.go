@@ -78,18 +78,20 @@ type Event struct {
 // Session is a live, two-way connection. Events carries everything that
 // happens, including this side's own sends, in order, and is closed when
 // the session ends. A consumer that stops reading slows the connection
-// down; no event is dropped.
+// down; no event is dropped. Each method that writes takes the context
+// of that write; ending it stops the write, while the session lives on
+// until Close.
 type Session interface {
 	Events() <-chan Event
-	Send(text string) error
-	Ping() error
-	Close() error
+	Send(ctx context.Context, text string) error
+	Ping(ctx context.Context) error
+	Close(ctx context.Context) error
 }
 
 // BinarySender is implemented by sessions that can send binary messages
 // (WebSocket). Others take text only.
 type BinarySender interface {
-	SendBinary(data []byte) error
+	SendBinary(ctx context.Context, data []byte) error
 }
 
 // Requester is implemented by sessions that can send one message and hand

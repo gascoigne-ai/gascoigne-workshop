@@ -1,11 +1,13 @@
 package preview
 
 import (
+	"context"
 	"errors"
 	"io"
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -155,8 +157,8 @@ func TestOpenCommandPerSystem(t *testing.T) {
 
 func TestBrowserServesTheBodyAndHandsItsAddressToOpen(t *testing.T) {
 	var address string
-	browser := Browser{Lifetime: time.Minute, Open: func(url string) error { address = url; return nil }}
-	if err := browser.Show([]byte("hi"), "text/plain"); err != nil {
+	browser := Browser{Lifetime: time.Minute, Open: func(_ context.Context, url string) error { address = url; return nil }}
+	if err := browser.Show(context.Background(), []byte("hi"), "text/plain"); err != nil {
 		t.Fatal(err)
 	}
 	response, err := http.Get(address)
@@ -171,11 +173,41 @@ func TestBrowserServesTheBodyAndHandsItsAddressToOpen(t *testing.T) {
 
 func TestBrowserStopsServingWhenOpenFails(t *testing.T) {
 	var address string
-	browser := Browser{Lifetime: time.Minute, Open: func(url string) error { address = url; return errors.New("no browser") }}
-	if err := browser.Show([]byte("hi"), "text/plain"); err == nil {
+	browser := Browser{Lifetime: time.Minute, Open: func(_ context.Context, url string) error { address = url; return errors.New("no browser") }}
+	if err := browser.Show(context.Background(), []byte("hi"), "text/plain"); err == nil {
 		t.Fatal("the failure was swallowed")
 	}
 	if _, err := http.Get(address); err == nil {
 		t.Fatal("the page is still served")
+	}
+}
+
+// The opener that hangs is this test binary run again with
+// PREVIEW_HELPER set, so the test needs no system command.
+func TestMain(runner *testing.M) {
+	if os.Getenv("PREVIEW_HELPER") == "hang" {
+		time.Sleep(time.Minute)
+		return
+	}
+	os.Exit(runner.Run())
+}
+
+// The opener ran with exec.Command, so nothing could stop one that hung.
+func TestEndingTheContextStopsTheOpener(t *testing.T) {
+	exe, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PREVIEW_HELPER", "hang")
+	ctx, cancel := context.WithCancel(context.Background())
+	exited, err := launch(ctx, []string{exe})
+	if err != nil {
+		t.Fatal(err)
+	}
+	cancel()
+	select {
+	case <-exited:
+	case <-time.After(time.Second):
+		t.Fatal("the opener still runs after its context ended")
 	}
 }

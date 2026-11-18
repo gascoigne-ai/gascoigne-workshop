@@ -1,6 +1,8 @@
 package proto
 
 import (
+	"context"
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -39,7 +41,7 @@ func TestGRPCServerStreamShowsEveryMessageAsAnEvent(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer session.Close()
+	defer session.Close(context.Background())
 
 	if opened := nextEvent(t, session); opened.Dir != Info || opened.Kind != "open" {
 		t.Fatalf("first event = %+v, want the open note", opened)
@@ -60,7 +62,7 @@ func TestGRPCClosingTheSessionEndsTheStream(t *testing.T) {
 		t.Fatal(err)
 	}
 	nextReceived(t, session)
-	session.Close()
+	session.Close(context.Background())
 	deadline := time.After(5 * time.Second)
 	for {
 		select {
@@ -80,8 +82,8 @@ func TestGRPCBidirectionalStreamSendsComposedMessages(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer session.Close()
-	if err := session.Send(`{"listServices": ""}`); err != nil {
+	defer session.Close(context.Background())
+	if err := session.Send(context.Background(), `{"listServices": ""}`); err != nil {
 		t.Fatal(err)
 	}
 	var sent bool
@@ -103,8 +105,8 @@ func TestGRPCSendingTextThatIsNotAMessageIsAnError(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer session.Close()
-	if err := session.Send("not json"); err == nil {
+	defer session.Close(context.Background())
+	if err := session.Send(context.Background(), "not json"); err == nil {
 		t.Fatal("a message that is not JSON was accepted")
 	}
 }
@@ -122,5 +124,30 @@ func TestGRPCStreamingMethodsAreStillRefusedByTheOneShotSend(t *testing.T) {
 	response, _ := GRPC{}.Send(grpcContext(t), grpcRequest(target, "grpc.health.v1.Health/Watch", "{}"))
 	if !strings.Contains(response.Err, "streaming") {
 		t.Fatalf("err = %q", response.Err)
+	}
+}
+
+func TestGRPCSendWithAnEndedContextSendsNothing(t *testing.T) {
+	target, _ := grpcStub(t)
+	session, err := GRPC{}.Connect(grpcContext(t), grpcRequest(target, "grpc.reflection.v1.ServerReflection/ServerReflectionInfo", ""))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer session.Close(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if err := session.Send(ctx, `{"listServices": ""}`); !errors.Is(err, context.Canceled) {
+		t.Fatalf("err = %v, want the context's", err)
+	}
+	quiet := time.After(50 * time.Millisecond)
+	for {
+		select {
+		case e := <-session.Events():
+			if e.Dir == Sent {
+				t.Fatalf("logged %+v for a send that should not happen", e)
+			}
+		case <-quiet:
+			return
+		}
 	}
 }

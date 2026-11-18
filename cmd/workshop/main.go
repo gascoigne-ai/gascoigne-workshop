@@ -82,7 +82,10 @@ func main() {
 	opts.Files = filedialog.System{}
 	opts.Folders = folders.Disk{}
 	opts.History = func(dir string) port.History { return history.Dir(dir) }
-	home, _ := os.UserHomeDir()
+	home, err := os.UserHomeDir()
+	if err != nil { // the user's own font folders are then left out of the scan
+		log.Printf("fonts: no home folder, scanning the system folders only: %v", err)
+	}
 	opts.Fonts = fonts.System{Home: home}
 	opts.Display = displayscale.New()
 	opts.KeyRepeat = keyrepeat.New()

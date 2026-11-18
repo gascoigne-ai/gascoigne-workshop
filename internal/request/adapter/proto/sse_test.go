@@ -71,7 +71,7 @@ func TestSSESessionLogsEventsAndEndsWithTheStream(t *testing.T) {
 	case <-time.After(3 * time.Second):
 		t.Fatal("events not closed")
 	}
-	if s.Send("x") == nil || s.Ping() == nil {
+	if s.Send(context.Background(), "x") == nil || s.Ping(context.Background()) == nil {
 		t.Fatal("a receive-only session must refuse sends")
 	}
 }
@@ -83,7 +83,7 @@ func TestSSECloseStopsAHeldStreamWithoutALossNote(t *testing.T) {
 	}
 	next(t, s)
 	next(t, s)
-	s.Close()
+	s.Close(context.Background())
 	for e := range s.Events() {
 		if e.Kind == "close" {
 			t.Fatalf("a deliberate close reported: %+v", e)

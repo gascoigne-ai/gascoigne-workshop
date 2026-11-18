@@ -60,11 +60,11 @@ func TestWebSocketSessionLogsMessagesInBothDirections(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer s.Close()
+	defer s.Close(context.Background())
 	if e := next(t, s); e.Dir != Info || !strings.Contains(e.Text, "Connected") {
 		t.Fatalf("first event %+v", e)
 	}
-	if err := s.Send("hi there"); err != nil {
+	if err := s.Send(context.Background(), "hi there"); err != nil {
 		t.Fatal(err)
 	}
 	if e := next(t, s); e.Dir != Sent || e.Text != "hi there" || e.Size != 8 || e.Time.IsZero() {
@@ -86,8 +86,8 @@ func TestWebSocketSessionLogsASendBeforeItsEcho(t *testing.T) {
 		send func(session *wsSession) error
 		kind string
 	}{
-		{"text", func(session *wsSession) error { return session.Send("hi there") }, "text"},
-		{"binary", func(session *wsSession) error { return session.SendBinary([]byte{0xde, 0xad}) }, "binary"},
+		{"text", func(session *wsSession) error { return session.Send(context.Background(), "hi there") }, "text"},
+		{"binary", func(session *wsSession) error { return session.SendBinary(context.Background(), []byte{0xde, 0xad}) }, "binary"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -121,7 +121,7 @@ func TestWebSocketSessionLogsASendBeforeItsEcho(t *testing.T) {
 				return time.Now()
 			}
 			go session.readLoop()
-			defer session.Close()
+			defer session.Close(context.Background())
 			if err := tc.send(session); err != nil {
 				t.Fatal(err)
 			}
@@ -141,7 +141,7 @@ func TestWebSocketSessionReportsServerCloseAndThenEnds(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer s.Close()
+	defer s.Close(context.Background())
 	next(t, s) // connected
 	e := next(t, s)
 	if e.Dir != Info || e.Code != ws.CloseGoingAway || !strings.Contains(e.Text, "restart") {
@@ -155,7 +155,7 @@ func TestWebSocketSessionReportsServerCloseAndThenEnds(t *testing.T) {
 	case <-time.After(3 * time.Second):
 		t.Fatal("events not closed")
 	}
-	if err := s.Send("late"); err == nil {
+	if err := s.Send(context.Background(), "late"); err == nil {
 		t.Fatal("sending on an ended session must fail")
 	}
 }
@@ -176,7 +176,7 @@ func TestWebSocketSendsHeadersAuthAndSubprotocols(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer s.Close()
+	defer s.Close(context.Background())
 	h := <-got
 	if h.Get("X-Trace") != "1" || h.Get("X-Off") != "" || h.Get("Authorization") != "Bearer tok" || h.Get("Sec-WebSocket-Protocol") != "chat, v2" {
 		t.Fatalf("headers %v", h)
@@ -204,7 +204,7 @@ func TestWebSocketSlowConsumerBlocksTheReaderInsteadOfDroppingMessages(t *testin
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer s.Close()
+	defer s.Close(context.Background())
 	time.Sleep(100 * time.Millisecond) // let the buffer fill
 	got := 0
 	for got < n {
@@ -239,7 +239,7 @@ func TestRegistryConnectUsesTheStreamingProtocol(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s.Close()
+	s.Close(context.Background())
 	if _, err := r.Connect(context.Background(), model.Request{Protocol: "rest"}); err == nil {
 		t.Fatal("rest does not stream")
 	}

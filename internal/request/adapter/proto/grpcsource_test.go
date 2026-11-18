@@ -1,6 +1,7 @@
 package proto
 
 import (
+	"context"
 	"errors"
 	"net"
 	"os"
@@ -100,7 +101,7 @@ func TestGRPCServerStreamWorksFromAProtoFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer session.Close()
+	defer session.Close(context.Background())
 	if first := nextReceived(t, session); !strings.Contains(first.Text, `"SERVING"`) {
 		t.Fatalf("first message = %q", first.Text)
 	}

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/preview"
 	"io"
 	"net/http"
@@ -13,7 +14,7 @@ import (
 func TestOpenInBrowserServesTheBodyAndOpensItsAddress(t *testing.T) {
 	a, _ := newTestApp(t)
 	var opened string
-	a.previews = preview.Browser{Lifetime: time.Minute, Open: func(address string) error { opened = address; return nil }}
+	a.previews = preview.Browser{Lifetime: time.Minute, Open: func(_ context.Context, address string) error { opened = address; return nil }}
 	tab := a.cur()
 	tab.Resp = &model.Response{Status: 200, Body: []byte("<h1>hi</h1>"),
 		Headers: []model.KV{{Name: "Content-Type", Value: "text/html"}}}
@@ -36,14 +37,14 @@ func TestOpenInBrowserServesTheBodyAndOpensItsAddress(t *testing.T) {
 
 func TestOpenInBrowserWithoutAResponseOpensNothing(t *testing.T) {
 	a, _ := newTestApp(t)
-	a.previews = preview.Browser{Lifetime: time.Minute, Open: func(string) error { t.Fatal("a browser was opened"); return nil }}
+	a.previews = preview.Browser{Lifetime: time.Minute, Open: func(context.Context, string) error { t.Fatal("a browser was opened"); return nil }}
 	a.openInBrowser(a.cur())
 }
 
 func TestOpenInBrowserFallsBackToTextPlainWithoutAContentType(t *testing.T) {
 	a, _ := newTestApp(t)
 	var opened string
-	a.previews = preview.Browser{Lifetime: time.Minute, Open: func(address string) error { opened = address; return nil }}
+	a.previews = preview.Browser{Lifetime: time.Minute, Open: func(_ context.Context, address string) error { opened = address; return nil }}
 	tab := a.cur()
 	tab.Resp = &model.Response{Status: 200, Body: []byte("plain")}
 	a.openInBrowser(tab)

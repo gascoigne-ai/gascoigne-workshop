@@ -94,7 +94,7 @@ type reqTab struct {
 	compactAll            []widget.Line                // the unfiltered compact lines, kept while a search filters the view
 	find                  widget.TextField             // the search text
 	wsCancel              context.CancelFunc           // ends the timeout of the connect in progress
-	outbox                []func() error               // sends and pings waiting for the one in flight, in order
+	outbox                []queuedSend                 // sends and pings waiting for the one in flight, in order
 	outboxBusy            bool                         // a send is in flight
 	wsView                widget.CodeView              // the message log
 	msg                   widget.TextField             // the message being composed

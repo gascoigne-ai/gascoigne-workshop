@@ -196,7 +196,12 @@ func render(message ws.Message) string {
 	return hex.EncodeToString(d) + suffix
 }
 
-func (s *wsSession) alive() error {
+// alive reports why a write cannot happen: its context ended or the
+// connection is closed.
+func (s *wsSession) alive(ctx context.Context) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.ended {
@@ -205,8 +210,8 @@ func (s *wsSession) alive() error {
 	return nil
 }
 
-func (s *wsSession) Send(text string) error {
-	if err := s.alive(); err != nil {
+func (s *wsSession) Send(ctx context.Context, text string) error {
+	if err := s.alive(ctx); err != nil {
 		return err
 	}
 	// Logged before the write: an echo can arrive as soon as the bytes are
@@ -216,16 +221,16 @@ func (s *wsSession) Send(text string) error {
 }
 
 // SendBinary implements BinarySender. The log shows the bytes as hex.
-func (s *wsSession) SendBinary(data []byte) error {
-	if err := s.alive(); err != nil {
+func (s *wsSession) SendBinary(ctx context.Context, data []byte) error {
+	if err := s.alive(ctx); err != nil {
 		return err
 	}
 	s.emit(Event{Dir: Sent, Kind: "binary", Text: hex.EncodeToString(data), Size: len(data)}) // before the write, as in Send
 	return s.conn.Write(ws.Binary, data)
 }
 
-func (s *wsSession) Ping() error {
-	if err := s.alive(); err != nil {
+func (s *wsSession) Ping(ctx context.Context) error {
+	if err := s.alive(ctx); err != nil {
 		return err
 	}
 	if err := s.conn.Write(ws.Ping, nil); err != nil {
@@ -235,7 +240,7 @@ func (s *wsSession) Ping() error {
 	return nil
 }
 
-func (s *wsSession) Close() error {
+func (s *wsSession) Close(context.Context) error {
 	s.once.Do(func() { close(s.done) })
 	return s.conn.Close(ws.CloseNormal, "")
 }

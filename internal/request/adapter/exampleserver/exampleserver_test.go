@@ -141,8 +141,8 @@ func TestWebSocketEchoesEachMessage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer session.Close()
-	if err := session.Send("hello"); err != nil {
+	defer session.Close(context.Background())
+	if err := session.Send(context.Background(), "hello"); err != nil {
 		t.Fatal(err)
 	}
 	if event := waitFor(t, session, "hello"); event.Dir != proto.Sent {
@@ -159,7 +159,7 @@ func TestSSEStreamsTheRequestedNumberOfEvents(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer session.Close()
+	defer session.Close(context.Background())
 	waitFor(t, session, "tick 3")
 }
 
@@ -169,16 +169,16 @@ func TestMCPListsAndCallsTools(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer session.Close()
+	defer session.Close(context.Background())
 	waitFor(t, session, "Connected to")
 	waitFor(t, session, `"name":"add"`)
-	if err := session.Send(`call add {"a":2,"b":3}`); err != nil {
+	if err := session.Send(context.Background(), `call add {"a":2,"b":3}`); err != nil {
 		t.Fatal(err)
 	}
 	if event := waitFor(t, session, `"text":"5"`); event.Dir != proto.Received {
 		t.Fatalf("result %+v, want the received sum", event)
 	}
-	if err := session.Send(`call echo {"text":"hi"}`); err != nil {
+	if err := session.Send(context.Background(), `call echo {"text":"hi"}`); err != nil {
 		t.Fatal(err)
 	}
 	waitFor(t, session, `"text":"hi"`)

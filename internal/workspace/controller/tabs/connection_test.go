@@ -1,6 +1,7 @@
 package tabs
 
 import (
+	"context"
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
@@ -9,10 +10,10 @@ import (
 
 type fakeSession struct{ closed bool }
 
-func (session *fakeSession) Events() <-chan port.Event { return nil }
-func (session *fakeSession) Send(string) error         { return nil }
-func (session *fakeSession) Ping() error               { return nil }
-func (session *fakeSession) Close() error              { session.closed = true; return nil }
+func (session *fakeSession) Events() <-chan port.Event          { return nil }
+func (session *fakeSession) Send(context.Context, string) error { return nil }
+func (session *fakeSession) Ping(context.Context) error         { return nil }
+func (session *fakeSession) Close(context.Context) error        { session.closed = true; return nil }
 
 func TestBeginMakesTheConnectionWantedAndNumbersIt(t *testing.T) {
 	var conn Connection

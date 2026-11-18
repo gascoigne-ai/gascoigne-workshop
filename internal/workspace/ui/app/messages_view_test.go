@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -31,10 +32,10 @@ type recordingSession struct {
 	sent []string
 }
 
-func (s *recordingSession) Events() <-chan reqport.Event { return nil }
-func (s *recordingSession) Close() error                 { return nil }
-func (s *recordingSession) Ping() error                  { return s.Send("ping") }
-func (s *recordingSession) Send(text string) error {
+func (s *recordingSession) Events() <-chan reqport.Event   { return nil }
+func (s *recordingSession) Close(context.Context) error    { return nil }
+func (s *recordingSession) Ping(ctx context.Context) error { return s.Send(ctx, "ping") }
+func (s *recordingSession) Send(_ context.Context, text string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.sent = append(s.sent, text)

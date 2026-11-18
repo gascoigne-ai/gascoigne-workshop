@@ -22,7 +22,7 @@ const BaseURLVar = "baseUrl"
 type Result struct {
 	Folder  *model.Folder
 	BaseURL string   // the first server of the document, "" when it names none
-	Skipped []string // operations that could not be read, as "METHOD /path: why"
+	Skipped []string // what could not be read: operations as "METHOD /path: why", shared parameters as "parameters of /path: why"
 }
 
 type doc struct {
@@ -108,7 +108,9 @@ func Parse(data []byte) (Result, error) {
 		}
 		var shared []param
 		if raw, ok := item["parameters"]; ok {
-			_ = json.Unmarshal(raw, &shared)
+			if err := json.Unmarshal(raw, &shared); err != nil { // the operations still import, without them
+				skipped = append(skipped, fmt.Sprintf("parameters of %s: %v", path, err))
+			}
 		}
 		for _, method := range methods {
 			raw, ok := item[method]

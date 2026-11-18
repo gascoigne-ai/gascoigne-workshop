@@ -37,7 +37,9 @@ func (noFolders) IsFile(context.Context, string) bool { return false }
 // noBrowser is the preview of an app started without a browser.
 type noBrowser struct{}
 
-func (noBrowser) Show([]byte, string) error { return errors.New("no browser to open the preview in") }
+func (noBrowser) Show(context.Context, []byte, string) error {
+	return errors.New("no browser to open the preview in")
+}
 
 // noFonts is the font store of an app started without one: no families.
 type noFonts struct{}

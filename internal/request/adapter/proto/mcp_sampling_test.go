@@ -88,7 +88,7 @@ func TestMCPSamplingPutsTheServersRequestToTheSamplerAndSendsItsText(t *testing.
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer session.Close()
+	defer session.Close(context.Background())
 
 	answer := server.waitForAnswer(t)
 	result, _ := answer["result"].(map[string]any)
@@ -117,7 +117,7 @@ func TestMCPDecliningASamplingRequestAnswersWithAnError(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer session.Close()
+	defer session.Close(context.Background())
 	answer := server.waitForAnswer(t)
 	failure, _ := answer["error"].(map[string]any)
 	if failure == nil || failure["message"] != "User rejected sampling request" {
@@ -131,7 +131,7 @@ func TestMCPWithoutASamplerDoesNotOfferSampling(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer session.Close()
+	defer session.Close(context.Background())
 	server.waitForAnswer(t) // refused as an unknown method, as before
 	server.mu.Lock()
 	defer server.mu.Unlock()

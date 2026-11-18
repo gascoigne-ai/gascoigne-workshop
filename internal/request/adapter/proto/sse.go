@@ -97,7 +97,7 @@ func (s SSE) Send(ctx context.Context, req model.Request) (model.Response, error
 	if err != nil {
 		return model.Response{Err: stopReason(ctx, err), Duration: time.Since(start)}, nil
 	}
-	defer sess.Close()
+	defer sess.Close(context.WithoutCancel(ctx))
 	for {
 		select {
 		case e, ok := <-sess.Events():
@@ -150,10 +150,12 @@ func (s *sseSession) finish() {
 	}
 }
 
-func (s *sseSession) Send(string) error { return errors.New("an event stream only receives") }
-func (s *sseSession) Ping() error       { return errors.New("an event stream has no ping") }
+func (s *sseSession) Send(context.Context, string) error {
+	return errors.New("an event stream only receives")
+}
+func (s *sseSession) Ping(context.Context) error { return errors.New("an event stream has no ping") }
 
-func (s *sseSession) Close() error {
+func (s *sseSession) Close(context.Context) error {
 	s.closing.Store(true)
 	s.stop.Do(func() { close(s.done) })
 	s.cancel()

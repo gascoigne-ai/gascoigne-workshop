@@ -111,7 +111,7 @@ func TestMCPHTTPSessionInitializesListsAndCalls(t *testing.T) {
 	}
 	waitFor(t, s, `"prompts":[]`)
 
-	if err := s.Send(`call echo {"x":1}`); err != nil {
+	if err := s.Send(context.Background(), `call echo {"x":1}`); err != nil {
 		t.Fatal(err)
 	}
 	sent := waitFor(t, s, `"tools/call"`)
@@ -122,15 +122,15 @@ func TestMCPHTTPSessionInitializesListsAndCalls(t *testing.T) {
 		t.Fatalf("%+v", got)
 	}
 
-	s.Send(`call boom`)
+	s.Send(context.Background(), `call boom`)
 	if got := waitFor(t, s, "no such tool"); got.Kind != "error" {
 		t.Fatalf("error kind = %q", got.Kind)
 	}
-	if err := s.Ping(); err != nil {
+	if err := s.Ping(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 	waitFor(t, s, `"ping"`)
-	s.Close()
+	s.Close(context.Background())
 	for range s.Events() {
 	}
 	log := strings.Join(seen(), "\n")
@@ -148,7 +148,7 @@ func TestMCPSendShorthandsAndErrors(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer s.Close()
+	defer s.Close(context.Background())
 	for text, want := range map[string]string{
 		"":                   "nothing to send",
 		"call":               "a name is needed",
@@ -157,11 +157,11 @@ func TestMCPSendShorthandsAndErrors(t *testing.T) {
 		"tools/list {nope":   "must be JSON",
 		`{"jsonrpc": broken`: "not valid JSON",
 	} {
-		if err := s.Send(text); err == nil || !strings.Contains(err.Error(), want) {
+		if err := s.Send(context.Background(), text); err == nil || !strings.Contains(err.Error(), want) {
 			t.Errorf("Send(%q) = %v, want %q", text, err, want)
 		}
 	}
-	if err := s.Send(`{"jsonrpc":"2.0","id":99,"method":"tools/list"}`); err != nil { // raw message
+	if err := s.Send(context.Background(), `{"jsonrpc":"2.0","id":99,"method":"tools/list"}`); err != nil { // raw message
 		t.Fatal(err)
 	}
 	waitFor(t, s, `"id":99`)
@@ -249,9 +249,9 @@ func TestMCPStdioSession(t *testing.T) {
 	}
 	waitFor(t, s, "Connected to mock")
 	waitFor(t, s, `"echo"`)
-	s.Send(`call echo {"a":"b"}`)
+	s.Send(context.Background(), `call echo {"a":"b"}`)
 	waitFor(t, s, "echo {")
-	s.Close()
+	s.Close(context.Background())
 	for e := range s.Events() {
 		if strings.Contains(e.Text, "Connection lost") {
 			t.Fatalf("a deliberate close reported as a loss: %+v", e)
@@ -274,7 +274,7 @@ func TestMCPConnectAnnouncesTheServerInfoAsAnEvent(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer s.Close()
+	defer s.Close(context.Background())
 	var e Event
 	for e.Kind != "initialize" {
 		e = waitFor(t, s, `"serverInfo"`) // the response is logged too, as traffic
@@ -294,7 +294,7 @@ func TestMCPRequestReturnsTheResultOrTheServersError(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer s.Close()
+	defer s.Close(context.Background())
 	requester, ok := s.(Requester)
 	if !ok {
 		t.Fatal("an MCP session answers requests")
@@ -333,7 +333,7 @@ func stdioEnds(t *testing.T, mode string) (*mcpStdio, <-chan error) {
 // so a server that ignores the end of its input was never killed.
 func TestMCPStdioCloseKillsAServerThatIgnoresItsInput(t *testing.T) {
 	m, ended := stdioEnds(t, "deaf")
-	m.close()
+	m.close(context.Background())
 	select {
 	case <-ended:
 	case <-time.After(5 * time.Second):
@@ -352,5 +352,52 @@ func TestMCPStdioEndsWhenAServerSendsAnOversizedLine(t *testing.T) {
 		}
 	case <-time.After(5 * time.Second):
 		t.Fatal("the session does not end after an oversized line")
+	}
+}
+
+// An initialize result that was not an object was decoded with its error
+// ignored, so the session went on with no server info and no word why.
+func TestAnUnreadableInitializeResultIsLogged(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		body, _ := io.ReadAll(request.Body)
+		var m map[string]any
+		json.Unmarshal(body, &m)
+		out := mcpReply(m)
+		if m["method"] == "initialize" {
+			out["result"] = "not an object"
+		}
+		if out == nil {
+			writer.WriteHeader(http.StatusAccepted)
+			return
+		}
+		writer.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(writer).Encode(out)
+	}))
+	defer srv.Close()
+	s, err := MCP{}.Connect(context.Background(), model.Request{URL: srv.URL})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close(context.Background())
+	e := waitFor(t, s, "initialize result")
+	if e.Dir != Info || e.Kind != "error" {
+		t.Fatalf("%+v", e)
+	}
+}
+
+func TestMCPCloseWithAnEndedContextSkipsTheGoodbye(t *testing.T) {
+	url, seen := mcpHTTPServer(t)
+	s, err := MCP{}.Connect(context.Background(), model.Request{Protocol: "mcp", URL: url})
+	if err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, s, "Connected to mock")
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	s.Close(ctx)
+	for range s.Events() {
+	}
+	if log := strings.Join(seen(), "\n"); strings.Contains(log, "DELETE") {
+		t.Fatalf("a DELETE went out after its context ended:\n%s", log)
 	}
 }

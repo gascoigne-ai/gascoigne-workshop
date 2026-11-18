@@ -22,10 +22,10 @@ type requesterSession struct {
 	err    error
 }
 
-func (session *requesterSession) Events() <-chan reqport.Event { return nil }
-func (session *requesterSession) Send(string) error            { return nil }
-func (session *requesterSession) Ping() error                  { return nil }
-func (session *requesterSession) Close() error                 { return nil }
+func (session *requesterSession) Events() <-chan reqport.Event       { return nil }
+func (session *requesterSession) Send(context.Context, string) error { return nil }
+func (session *requesterSession) Ping(context.Context) error         { return nil }
+func (session *requesterSession) Close(context.Context) error        { return nil }
 func (session *requesterSession) Request(_ context.Context, text string) (string, error) {
 	session.asked = append(session.asked, text)
 	return session.result, session.err

@@ -3698,7 +3698,7 @@ type closeTrackingSession struct {
 	closed bool
 }
 
-func (s *closeTrackingSession) Close() error { s.closed = true; return nil }
+func (s *closeTrackingSession) Close(context.Context) error { s.closed = true; return nil }
 
 func TestClosingATabClosesItsSession(t *testing.T) {
 	a, _ := newTestApp(t)

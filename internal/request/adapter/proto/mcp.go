@@ -30,9 +30,10 @@ type MCP struct {
 }
 
 const (
-	mcpVersion     = "2025-06-18"
-	mcpInitTimeout = 30 * time.Second
-	mcpMaxMessage  = 16 << 20
+	mcpVersion        = "2025-06-18"
+	mcpInitTimeout    = 30 * time.Second
+	mcpGoodbyeTimeout = 2 * time.Second // the DELETE that ends an HTTP session
+	mcpMaxMessage     = 16 << 20
 )
 
 // StdioPrefix starts the URL of an MCP server that runs as a command.
@@ -43,7 +44,7 @@ const StdioPrefix = "stdio:"
 type mcpTransport interface {
 	send(ctx context.Context, msg []byte) error
 	setVersion(v string)
-	close() error
+	close(ctx context.Context) error
 }
 
 // Connect implements Streamer: it opens the transport, runs the
@@ -75,7 +76,7 @@ func (m MCP) Connect(ctx context.Context, req model.Request) (Session, error) {
 		"clientInfo":      map[string]any{"name": "gascoigne-workshop", "version": "0"},
 	})
 	if err != nil {
-		s.Close()
+		s.Close(context.WithoutCancel(ctx)) // the goodbye must not die with a timed-out connect
 		return nil, err
 	}
 	var init struct {
@@ -83,14 +84,16 @@ func (m MCP) Connect(ctx context.Context, req model.Request) (Session, error) {
 		Capabilities    map[string]any `json:"capabilities"`
 		ServerInfo      struct{ Name, Version string }
 	}
-	_ = json.Unmarshal(result, &init)
+	if err := json.Unmarshal(result, &init); err != nil { // the session works without the server's description
+		s.note(fmt.Errorf("read the initialize result: %w", err))
+	}
 	s.emit(Event{Dir: Info, Kind: "initialize", Text: string(result)}) // the UI shows what the server said about itself
 	tr.setVersion(init.ProtocolVersion)
 	if listener, ok := tr.(interface{ listen() }); ok {
 		listener.listen() // servers may push notifications on a stream of their own
 	}
 	if err := s.notify("notifications/initialized"); err != nil {
-		s.Close()
+		s.Close(context.WithoutCancel(ctx))
 		return nil, err
 	}
 	name := init.ServerInfo.Name
@@ -102,7 +105,7 @@ func (m MCP) Connect(ctx context.Context, req model.Request) (Session, error) {
 		{"tools", "tools/list"}, {"resources", "resources/list"}, {"prompts", "prompts/list"},
 	} {
 		if _, ok := init.Capabilities[list.capability]; ok {
-			if _, err := s.request(list.method, nil); err != nil {
+			if _, err := s.request(context.Background(), list.method, nil); err != nil {
 				s.emit(Event{Dir: Info, Kind: "error", Text: err.Error()})
 			}
 		}
@@ -119,7 +122,7 @@ func (m MCP) Send(ctx context.Context, req model.Request) (model.Response, error
 		return model.Response{Err: stopReason(ctx, err), Duration: time.Since(start)}, nil
 	}
 	s := sess.(*mcpSession)
-	defer s.Close()
+	defer s.Close(context.WithoutCancel(ctx))
 	result, err := s.call(ctx, "tools/list", nil)
 	if err != nil {
 		return model.Response{Err: stopReason(ctx, err), Duration: time.Since(start)}, nil
@@ -231,7 +234,7 @@ func (s *mcpSession) deliver(msg []byte) {
 	}
 	if list, ok := listChanged[m.Method]; ok {
 		go func() { // ask again, so the lists the UI shows stay current
-			if _, err := s.request(list, nil); err != nil {
+			if _, err := s.request(context.Background(), list, nil); err != nil {
 				s.emit(Event{Dir: Info, Kind: "error", Text: err.Error()})
 			}
 		}()
@@ -276,8 +279,12 @@ func (s *mcpSession) build(method string, params any) (int64, []byte, error) {
 	return id, b, err
 }
 
-// write sends a message and logs it.
+// write sends a message and logs it. A context that has ended sends
+// nothing: over HTTP it would also end the session.
 func (s *mcpSession) write(ctx context.Context, kind string, data []byte) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	select {
 	case <-s.done:
 		return errors.New("the connection is closed")
@@ -289,12 +296,12 @@ func (s *mcpSession) write(ctx context.Context, kind string, data []byte) error 
 
 // request sends a request without waiting for the answer, which arrives
 // as an event.
-func (s *mcpSession) request(method string, params any) (int64, error) {
+func (s *mcpSession) request(ctx context.Context, method string, params any) (int64, error) {
 	id, b, err := s.build(method, params)
 	if err != nil {
 		return 0, err
 	}
-	return id, s.write(context.Background(), "request", b)
+	return id, s.write(ctx, "request", b)
 }
 
 func (s *mcpSession) notify(method string) error {
@@ -373,7 +380,7 @@ func nameAndArgs(arg string) (string, any, error) {
 
 // Send implements Session. The text is a JSON-RPC message, a shorthand
 // (see shorthands) or "method {json params}".
-func (s *mcpSession) Send(text string) error {
+func (s *mcpSession) Send(ctx context.Context, text string) error {
 	text = strings.TrimSpace(text)
 	if text == "" {
 		return errors.New("nothing to send")
@@ -382,13 +389,13 @@ func (s *mcpSession) Send(text string) error {
 		if !json.Valid([]byte(text)) {
 			return errors.New("the message is not valid JSON")
 		}
-		return s.write(context.Background(), "request", []byte(text))
+		return s.write(ctx, "request", []byte(text))
 	}
 	method, params, err := parseCommand(text)
 	if err != nil {
 		return err
 	}
-	_, err = s.request(method, params)
+	_, err = s.request(ctx, method, params)
 	return err
 }
 
@@ -423,17 +430,17 @@ func (s *mcpSession) Request(ctx context.Context, text string) (string, error) {
 	return string(result), err
 }
 
-func (s *mcpSession) Ping() error {
-	_, err := s.request("ping", nil)
+func (s *mcpSession) Ping(ctx context.Context) error {
+	_, err := s.request(ctx, "ping", nil)
 	return err
 }
 
 func (s *mcpSession) stopSession() { s.stop.Do(func() { close(s.done) }) }
 
-func (s *mcpSession) Close() error {
+func (s *mcpSession) Close(ctx context.Context) error {
 	s.closing.Store(true)
 	s.stopSession() // frees a finish that waits for room in a full channel
-	err := s.tr.close()
+	err := s.tr.close(ctx)
 	s.finish(nil)
 	return err
 }
@@ -595,12 +602,12 @@ func (h *mcpHTTP) readStream(body io.Reader) error {
 	return fmt.Errorf("read the server's stream: %w", err)
 }
 
-func (h *mcpHTTP) close() error {
+func (h *mcpHTTP) close(ctx context.Context) error {
 	h.mu.Lock()
 	id := h.sessionID
 	h.mu.Unlock()
 	if id != "" { // tell the server the session is over; it may refuse, which is fine
-		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		ctx, cancel := context.WithTimeout(ctx, mcpGoodbyeTimeout)
 		defer cancel()
 		if r, err := h.newRequest(ctx, http.MethodDelete, nil); err == nil {
 			if resp, err := h.client.Do(r); err == nil {
@@ -615,10 +622,9 @@ func (h *mcpHTTP) close() error {
 // ---- stdio ----------------------------------------------------------------------
 
 type mcpStdio struct {
-	cmd    *exec.Cmd
-	stdin  io.WriteCloser
-	exited chan struct{} // closed once the process is gone
-	mu     sync.Mutex
+	stdin io.WriteCloser
+	stop  context.CancelFunc // kills the process; the session owns its life
+	mu    sync.Mutex
 }
 
 func newMCPStdio(command string, deliver func([]byte), finish func(error)) (*mcpStdio, error) {
@@ -629,19 +635,22 @@ func newMCPStdio(command string, deliver func([]byte), finish func(error)) (*mcp
 	if len(args) == 0 {
 		return nil, errors.New("stdio: needs a command")
 	}
-	cmd := exec.Command(args[0], args[1:]...)
+	ctx, stop := context.WithCancel(context.Background()) // not Connect's: that one ends with the handshake
+	cmd := exec.CommandContext(ctx, args[0], args[1:]...)
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
+		stop()
 		return nil, err
 	}
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
+		stop()
 		return nil, err
 	}
 	if err := cmd.Start(); err != nil {
+		stop()
 		return nil, err
 	}
-	exited := make(chan struct{})
 	go func() {
 		sc := bufio.NewScanner(stdout)
 		sc.Buffer(make([]byte, 64<<10), mcpMaxMessage)
@@ -652,10 +661,10 @@ func newMCPStdio(command string, deliver func([]byte), finish func(error)) (*mcp
 		}
 		scanErr := sc.Err()
 		if scanErr != nil { // the reader stopped, so the process would run on unheard
-			_ = cmd.Process.Kill()
+			stop()
 		}
 		err := cmd.Wait()
-		close(exited)
+		stop()
 		switch {
 		case scanErr != nil:
 			err = fmt.Errorf("read the server's output: %w", scanErr)
@@ -664,7 +673,7 @@ func newMCPStdio(command string, deliver func([]byte), finish func(error)) (*mcp
 		}
 		finish(err)
 	}()
-	return &mcpStdio{cmd: cmd, stdin: stdin, exited: exited}, nil
+	return &mcpStdio{stdin: stdin, stop: stop}, nil
 }
 
 func (m *mcpStdio) send(_ context.Context, msg []byte) error {
@@ -676,15 +685,9 @@ func (m *mcpStdio) send(_ context.Context, msg []byte) error {
 
 func (m *mcpStdio) setVersion(string) {}
 
-func (m *mcpStdio) close() error {
+func (m *mcpStdio) close(context.Context) error {
 	m.stdin.Close()
-	time.AfterFunc(time.Second, func() { // a server that ignores the end of its input
-		select {
-		case <-m.exited:
-		default:
-			_ = m.cmd.Process.Kill()
-		}
-	})
+	time.AfterFunc(time.Second, m.stop) // kills a server that ignores the end of its input; one that is gone is left alone
 	return nil
 }
 
@@ -709,10 +712,12 @@ func (s *mcpSession) answerServer(message rpcMessage) {
 		reply["error"] = map[string]any{"code": -32601, "message": "method not found: " + message.Method}
 	}
 	b, err := json.Marshal(reply)
-	if err != nil {
-		return
+	if err == nil {
+		err = s.write(context.Background(), "response", b)
 	}
-	_ = s.write(context.Background(), "response", b)
+	if err != nil { // the server waits for this answer, so the user must see it never left
+		s.note(fmt.Errorf("answer the server's %s: %w", message.Method, err))
+	}
 }
 
 // sampleRejected is the answer to a sampling request that was declined.

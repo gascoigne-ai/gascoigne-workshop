@@ -227,3 +227,20 @@ func FuzzParse(f *testing.F) {
 		_, _ = Parse(data)
 	})
 }
+
+// Shared parameters of a path that failed to decode were dropped without
+// a word, so its requests came in without them and nobody knew why.
+func TestUnreadableSharedParametersAreReportedAsSkipped(t *testing.T) {
+	res, err := Parse([]byte(`{
+	  "openapi": "3.0.0", "info": {"title": "Odd"},
+	  "paths": {"/pets": {"parameters": "nope", "get": {"summary": "List"}}}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if find(res.Folder, "List") == nil {
+		t.Error("the operation was lost with its shared parameters")
+	}
+	if len(res.Skipped) != 1 || !strings.Contains(res.Skipped[0], "/pets") || !strings.Contains(res.Skipped[0], "parameters") {
+		t.Errorf("Skipped = %q, want the unreadable parameters of /pets named", res.Skipped)
+	}
+}

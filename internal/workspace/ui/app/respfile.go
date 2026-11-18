@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/respview"
 	"path/filepath"
@@ -71,7 +72,7 @@ func (a *App) openInBrowser(tab *reqTab) {
 	if contentType == "" {
 		contentType = "text/plain; charset=utf-8"
 	}
-	if err := a.previews.Show(tab.Resp.Body, contentType); err != nil {
+	if err := a.previews.Show(context.Background(), tab.Resp.Body, contentType); err != nil {
 		a.toast("Preview failed: "+err.Error(), true)
 		return
 	}

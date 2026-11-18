@@ -163,7 +163,10 @@ func (s *grpcSession) reportEnd(err error) {
 
 // Send implements Session: a JSON message of the method's input type, or
 // "end" to close this side.
-func (s *grpcSession) Send(text string) error {
+func (s *grpcSession) Send(ctx context.Context, text string) error {
+	if err := ctx.Err(); err != nil { // the stream's own writes take no context
+		return err
+	}
 	if !s.method.IsStreamingClient() {
 		return errors.New("this method takes one message, sent when connecting")
 	}
@@ -194,9 +197,9 @@ func (s *grpcSession) sendMessage(text string) error {
 	return nil
 }
 
-func (s *grpcSession) Ping() error { return errors.New("a gRPC stream has no ping") }
+func (s *grpcSession) Ping(context.Context) error { return errors.New("a gRPC stream has no ping") }
 
-func (s *grpcSession) Close() error {
+func (s *grpcSession) Close(context.Context) error {
 	s.closed.Store(true)
 	s.stop.Do(func() { close(s.done) })
 	s.cancel()

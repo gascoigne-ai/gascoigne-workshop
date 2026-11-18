@@ -86,7 +86,7 @@ func TestMCPListensForServerNotificationsAndRefreshesAChangedList(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer session.Close()
+	defer session.Close(context.Background())
 
 	waitFor(t, session, "notifications/tools/list_changed") // pushed on the stream, shown in the log
 	waitFor(t, session, `"tool-2"`)                         // the list was asked for again
@@ -105,7 +105,7 @@ func TestMCPWorksWhenTheServerHasNoNotificationStream(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer session.Close()
+	defer session.Close(context.Background())
 	waitFor(t, session, "Connected to mock")
 	server.streamHeaders(t) // the client tried
 	waitFor(t, session, `"tool-1"`)

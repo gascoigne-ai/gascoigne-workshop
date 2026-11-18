@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -380,15 +381,15 @@ type slowSession struct {
 }
 
 func (s *slowSession) Events() <-chan reqport.Event { return nil }
-func (s *slowSession) Close() error                 { return nil }
-func (s *slowSession) Send(text string) error {
+func (s *slowSession) Close(context.Context) error  { return nil }
+func (s *slowSession) Send(_ context.Context, text string) error {
 	<-s.release
 	s.mu.Lock()
 	s.sent = append(s.sent, text)
 	s.mu.Unlock()
 	return nil
 }
-func (s *slowSession) Ping() error { return s.Send("ping") }
+func (s *slowSession) Ping(ctx context.Context) error { return s.Send(ctx, "ping") }
 
 func (s *slowSession) log() []string {
 	s.mu.Lock()

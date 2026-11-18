@@ -93,7 +93,7 @@ func (a *App) connect(tab *reqTab) {
 			select {
 			case <-ctx.Done(): // dialing took longer than the timeout
 				if ctx.Err() == context.DeadlineExceeded {
-					_ = s.Close()
+					_ = s.Close(context.WithoutCancel(ctx))
 					s, err = nil, context.DeadlineExceeded
 				}
 			default:
@@ -114,7 +114,7 @@ func (a *App) connect(tab *reqTab) {
 func (a *App) disconnect(tab *reqTab) {
 	session, abandoned := tab.Disconnect()
 	if session != nil {
-		_ = session.Close() // the end of the event stream clears the session
+		_ = session.Close(context.Background()) // the end of the event stream clears the session
 		return
 	}
 	if abandoned {
@@ -138,10 +138,14 @@ func (a *App) sendMessage(tab *reqTab) {
 	tab.msg.Focused = true
 }
 
+// queuedSend is a send or ping waiting in a tab's outbox; it writes with
+// the context it is run with.
+type queuedSend func(ctx context.Context) error
+
 // sendInOrder runs send off the UI goroutine, after the sends and pings
 // already asked for on this tab: messages go out in the order they were
 // written. A failure is logged in the message log.
-func (a *App) sendInOrder(tab *reqTab, send func() error) {
+func (a *App) sendInOrder(tab *reqTab, send queuedSend) {
 	tab.outbox = append(tab.outbox, send)
 	if tab.outboxBusy {
 		return
@@ -153,8 +157,8 @@ func (a *App) sendInOrder(tab *reqTab, send func() error) {
 func (a *App) runOutbox(tab *reqTab) {
 	send := tab.outbox[0]
 	tab.outbox = tab.outbox[1:]
-	a.bus.Run(context.Background(), func(context.Context) bus.Msg {
-		err := send()
+	a.bus.Run(context.Background(), func(ctx context.Context) bus.Msg {
+		err := send(ctx)
 		return func() { // on the UI goroutine
 			if err != nil {
 				a.logInfo(tab, err.Error(), w.Error)
@@ -186,7 +190,7 @@ func (a *App) applyWS(wsEvent wsEvent) {
 	t := wsEvent.tab
 	if !t.Current(wsEvent.gen) {
 		if wsEvent.sess != nil { // a connect that was abandoned meanwhile
-			_ = wsEvent.sess.Close()
+			_ = wsEvent.sess.Close(context.Background())
 		}
 		return
 	}
@@ -326,27 +330,27 @@ const binaryPrefix = "hex:"
 
 // sendComposed sends the composer's text: as a binary message when it
 // starts with "hex:" and the session can send binary, else as text.
-func sendComposed(session reqport.Session, text string) error {
+func sendComposed(ctx context.Context, session reqport.Session, text string) error {
 	send, err := composed(session, text)
 	if err != nil {
 		return err
 	}
-	return send()
+	return send(ctx)
 }
 
 // composed is the send of the composer's text, ready to run; a text that
 // cannot be sent (bad hex) is refused here, before anything is sent.
-func composed(session reqport.Session, text string) (func() error, error) {
+func composed(session reqport.Session, text string) (queuedSend, error) {
 	rest, ok := strings.CutPrefix(text, binaryPrefix)
 	bs, canBinary := session.(reqport.BinarySender)
 	if !ok || !canBinary {
-		return func() error { return session.Send(text) }, nil
+		return func(ctx context.Context) error { return session.Send(ctx, text) }, nil
 	}
 	data, err := hex.DecodeString(strings.Join(strings.Fields(rest), ""))
 	if err != nil {
 		return nil, fmt.Errorf("hex: %v", err)
 	}
-	return func() error { return bs.SendBinary(data) }, nil
+	return func(ctx context.Context) error { return bs.SendBinary(ctx, data) }, nil
 }
 
 // toolMenu lists the tools the server announced; picking one puts a

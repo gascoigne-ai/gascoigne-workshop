@@ -48,7 +48,7 @@ func TestMCPAnswersRequestsTheServerSends(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer s.Close()
+	defer s.Close(context.Background())
 	waitFor(t, s, `"sampling/createMessage"`)
 	waitFor(t, s, `method not found`) // our refusal shows in the log as a sent response
 	for i := 0; i < 200; i++ {        // the three answers go out independently
