@@ -56,7 +56,7 @@ func (m MCP) Connect(ctx context.Context, req model.Request) (Session, error) {
 	if strings.HasPrefix(req.URL, StdioPrefix) {
 		tr, err = newMCPStdio(strings.TrimSpace(strings.TrimPrefix(req.URL, StdioPrefix)), s.deliver, s.finish)
 	} else {
-		tr, err = newMCPHTTP(req, s.deliver)
+		tr, err = newMCPHTTP(req, s.deliver, s.finish, s.note)
 	}
 	if err != nil {
 		return nil, err
@@ -157,6 +157,11 @@ func (s *mcpSession) emit(event Event) {
 	case s.events <- event:
 	case <-s.done:
 	}
+}
+
+// note logs a problem that leaves the session open.
+func (s *mcpSession) note(err error) {
+	s.emit(Event{Dir: Info, Kind: "error", Text: err.Error()})
 }
 
 // finish ends the event stream, once, with a note unless the user closed it.
@@ -439,6 +444,8 @@ type mcpHTTP struct {
 	req     model.Request
 	client  *http.Client
 	deliver func([]byte)
+	finish  func(error) // ends the session when an answer stream breaks
+	note    func(error) // logs a problem that leaves the session open
 
 	mu        sync.Mutex
 	sessionID string
@@ -447,12 +454,12 @@ type mcpHTTP struct {
 	ctx       context.Context
 }
 
-func newMCPHTTP(req model.Request, deliver func([]byte)) (*mcpHTTP, error) {
+func newMCPHTTP(req model.Request, deliver func([]byte), finish, note func(error)) (*mcpHTTP, error) {
 	if !strings.HasPrefix(req.URL, "http://") && !strings.HasPrefix(req.URL, "https://") {
 		return nil, fmt.Errorf("%q is not an http or https URL, or a %s command", req.URL, StdioPrefix)
 	}
 	ctx, cancel := context.WithCancel(context.Background())
-	return &mcpHTTP{req: req, client: &http.Client{}, deliver: deliver, ctx: ctx, cancel: cancel}, nil
+	return &mcpHTTP{req: req, client: &http.Client{}, deliver: deliver, finish: finish, note: note, ctx: ctx, cancel: cancel}, nil
 }
 
 func (h *mcpHTTP) setVersion(value string) {
@@ -515,7 +522,9 @@ func (h *mcpHTTP) send(ctx context.Context, msg []byte) error {
 	case strings.HasPrefix(ct, "text/event-stream"):
 		go func() {
 			defer resp.Body.Close()
-			readSSE(resp.Body, h.deliver)
+			if err := h.readStream(resp.Body); err != nil { // the answer is cut, so the call cannot complete
+				h.finish(err)
+			}
 		}()
 	default:
 		defer resp.Body.Close()
@@ -547,7 +556,13 @@ func (h *mcpHTTP) listen() {
 		if resp.StatusCode != http.StatusOK || !strings.HasPrefix(resp.Header.Get("Content-Type"), "text/event-stream") {
 			return
 		}
-		readSSE(resp.Body, h.deliver)
+		err = h.readStream(resp.Body)
+		switch {
+		case errors.Is(err, errEventTooLarge):
+			h.finish(err)
+		case err != nil: // the stream is optional: only notifications are lost
+			h.note(err)
+		}
 	}()
 }
 
@@ -569,27 +584,15 @@ func deliverJSON(body []byte, deliver func([]byte)) {
 	deliver(body)
 }
 
-// readSSE reads server-sent events and delivers each event's data.
-func readSSE(reader io.Reader, deliver func([]byte)) {
-	sc := bufio.NewScanner(reader)
-	sc.Buffer(make([]byte, 64<<10), mcpMaxMessage)
-	var data []string
-	flush := func() {
-		if len(data) > 0 {
-			deliverJSON([]byte(strings.Join(data, "\n")), deliver)
-			data = nil
-		}
+// readStream delivers the data of each event the server streams. It
+// returns why the stream broke or went over maxEventBytes, and nil for a
+// stream that ended or was cut by close.
+func (h *mcpHTTP) readStream(body io.Reader) error {
+	err := readEventStream(body, func(event sseEvent) { deliverJSON([]byte(event.data), h.deliver) })
+	if err == nil || h.ctx.Err() != nil {
+		return nil
 	}
-	for sc.Scan() {
-		line := sc.Text()
-		switch {
-		case line == "":
-			flush()
-		case strings.HasPrefix(line, "data:"):
-			data = append(data, strings.TrimPrefix(strings.TrimPrefix(line, "data:"), " "))
-		}
-	}
-	flush()
+	return fmt.Errorf("read the server's stream: %w", err)
 }
 
 func (h *mcpHTTP) close() error {

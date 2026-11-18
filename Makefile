@@ -46,7 +46,11 @@ FUZZ_TARGETS = \
 	./internal/response/adapter/history:FuzzLoad \
 	./internal/response/adapter/history:FuzzLoadSent \
 	./internal/response/ui/respview:FuzzDecode \
-	./uitoolkit/theming:FuzzParseTheme
+	./uitoolkit/theming:FuzzParseTheme \
+	./internal/request/adapter/proto:FuzzReadEvents \
+	./internal/settings/model/settings:FuzzParse \
+	./internal/request/model:FuzzParseBulk \
+	./internal/settings/ui/shortcutpage:FuzzParseBinding
 fuzz:
 	@for target in $(FUZZ_TARGETS); do \
 		package=$${target%%:*}; name=$${target##*:}; \

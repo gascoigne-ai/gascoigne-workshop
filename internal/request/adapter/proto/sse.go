@@ -1,7 +1,6 @@
 package proto
 
 import (
-	"bufio"
 	"context"
 	"errors"
 	"fmt"
@@ -24,40 +23,6 @@ type SSE struct {
 // sseEvent is one event of the stream, by the fields of the format.
 type sseEvent struct {
 	name, data, id string
-}
-
-// readEvents parses the event-stream format from r until it ends and
-// calls emit for each event that has data. Comment lines (":") and the
-// retry field are ignored.
-func readEvents(sc *bufio.Scanner, emit func(sseEvent)) {
-	var ev sseEvent
-	var data []string
-	flush := func() {
-		if len(data) > 0 {
-			ev.data = strings.Join(data, "\n")
-			emit(ev)
-		}
-		ev, data = sseEvent{id: ev.id}, nil // the id sticks until a new one is sent
-	}
-	for sc.Scan() {
-		line := sc.Text()
-		if line == "" {
-			flush()
-			continue
-		}
-		field, value, _ := strings.Cut(line, ":")
-		value = strings.TrimPrefix(value, " ")
-		switch {
-		case strings.HasPrefix(line, ":"):
-		case field == "event":
-			ev.name = value
-		case field == "data":
-			data = append(data, value)
-		case field == "id":
-			ev.id = value
-		}
-	}
-	flush()
 }
 
 // Connect implements Streamer.
@@ -104,9 +69,7 @@ func (s SSE) Connect(ctx context.Context, req model.Request) (Session, error) {
 			resp.Body.Close()
 			se.finish()
 		}()
-		sc := bufio.NewScanner(resp.Body)
-		sc.Buffer(make([]byte, 64<<10), 16<<20)
-		readEvents(sc, func(ev sseEvent) {
+		err := readEventStream(resp.Body, func(ev sseEvent) {
 			kind := ev.name
 			if kind == "" {
 				kind = "message"
@@ -117,7 +80,7 @@ func (s SSE) Connect(ctx context.Context, req model.Request) (Session, error) {
 			}
 			se.emit(Event{Dir: Received, Kind: kind, Text: text, Size: len(ev.data), ID: ev.id})
 		})
-		if err := sc.Err(); err != nil && !se.isClosing() {
+		if err != nil && !se.isClosing() {
 			se.emit(Event{Dir: Info, Kind: "close", Code: 1006, Text: "Connection lost: " + err.Error()})
 		} else if !se.isClosing() {
 			se.emit(Event{Dir: Info, Kind: "close", Text: "The server ended the stream"})
