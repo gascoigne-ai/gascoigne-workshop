@@ -257,8 +257,7 @@ type App struct {
 	paneSplit          widget.SplitState                        // request pane share of the request/response area
 	statePath          string                                   // where the UI state is remembered
 	stateAccess        fileversion.Access                       // read-only when a newer build wrote the file (decision 22)
-	varsFolder         *model.Folder                            // the folder whose variables the Vars pane edits, nil for the environment's or the collection's
-	varsCollection     *model.Collection                        // the collection whose own variables the Vars pane edits although an environment is active; nil for none
+	varsTarget         varsTarget                               // what the Vars pane edits; the zero value is the active environment's or the collection's
 	title              string                                   // the window title last set
 	jar                http.CookieJar                           // cookies the server set, kept until the app closes
 	defaultWorkspace   string                                   // beside it is the collections folder, where a first save goes

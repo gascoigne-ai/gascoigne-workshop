@@ -61,31 +61,11 @@ func (a *App) varsFor(req *model.Request) []model.KV {
 // varsRows are the rows the Vars pane edits. With nothing open they are a
 // scratch list that is kept nowhere.
 func (a *App) varsRows() *[]model.KV {
-	if f := a.varsFolder; f != nil {
-		return &f.Vars
-	}
-	if col := a.varsCollection; col != nil {
-		return &col.Vars
-	}
-	entry, ok := a.focus()
-	if !ok {
-		return &[]model.KV{}
-	}
-	if env := entry.Environment(); env != nil {
-		return &env.Vars
-	}
-	return &entry.Collection.Vars
+	entry, _ := a.focus() // not found is the zero Entry, which has no collection
+	return a.varsTarget.rows(entry)
 }
 
-func (a *App) varsCaption() string {
-	if f := a.varsFolder; f != nil {
-		return "Folder: " + f.Name
-	}
-	if e := a.activeEnv(); e != nil && a.varsCollection == nil {
-		return "Environment: " + e.Name
-	}
-	return "Collection variables"
-}
+func (a *App) varsCaption() string { return a.varsTarget.caption(a.activeEnv()) }
 
 // chooseEnv makes environment index the active one of col, without
 // remembering it.
@@ -110,7 +90,7 @@ func (a *App) selectEnv(index int) {
 	}
 	selection.Select(col, index)
 	a.chooseEnv(col, selection.Index)
-	a.varsFolder, a.varsCollection = nil, nil
+	a.varsTarget = varsTarget{}
 	a.rememberEnvironments()
 }
 
@@ -124,7 +104,7 @@ func (a *App) addEnv(name string) {
 	}
 	selection.Add(col, name)
 	a.chooseEnv(col, selection.Index)
-	a.varsFolder, a.varsCollection = nil, nil
+	a.varsTarget = varsTarget{}
 	a.rememberEnvironments()
 }
 
@@ -236,9 +216,9 @@ func (a *App) editVars(dir *model.Folder) {
 	a.commitEdit()
 	if a.isRoot(dir) {
 		owner, _ := a.open.Owner(model.Of(dir))
-		a.varsFolder, a.varsCollection = nil, owner.Collection
+		a.varsTarget = collectionVars(owner.Collection)
 	} else {
-		a.varsFolder, a.varsCollection = dir, nil
+		a.varsTarget = folderVars(dir)
 	}
 	for i, p := range requestPanesFor(a.cur()) {
 		if p.label == "Vars" {

@@ -252,8 +252,8 @@ func (a *App) closeCollection(col *model.Collection) {
 // forget drops col from the open set and from everything that pointed
 // into it.
 func (a *App) forget(col *model.Collection) {
-	if a.varsCollection == col || (a.varsFolder != nil && col.Folder.Contains(model.Of(a.varsFolder))) {
-		a.varsFolder, a.varsCollection = nil, nil
+	if a.varsTarget.refersTo(col) {
+		a.varsTarget = varsTarget{}
 	}
 	if col.Folder.Contains(a.selected) {
 		a.selected = model.Node{}
