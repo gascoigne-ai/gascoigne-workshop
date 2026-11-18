@@ -120,6 +120,8 @@ func (form *Form) View(host Host) Node {
 		fields[i] = form.fieldRow(field)
 	}
 	return formTemplate.MustBuild(markup.Scope{
+		"looseGap":    w.LooseGap,
+		"tightGap":    w.TightGap,
 		"description": form.Tool.Description,
 		"scroll":      &form.scroll,
 		"maxH":        maxH,
@@ -193,18 +195,18 @@ const (
      its name (starred when required) with its description, then the input
      of its kind: a ticked row for a boolean, a row of choices for an enum,
      a text field for the rest. -->
-<col gap="8">
+<col gap="{{looseGap}}">
   <lines if="description" color="muted">{{description}}</lines>
-  <scroll state="scroll" max-h="{{maxH}}" gap="8">
+  <scroll state="scroll" max-h="{{maxH}}" gap="{{looseGap}}">
     <col for="field in fields" gap="2">
-      <row h="{{labelH}}" gap="8">
+      <row h="{{labelH}}" gap="{{looseGap}}">
         <text small bold>{{field.Name}}</text>
         <text if="field.Description" small muted ellipsis grow="1">{{field.Description}}</text>
       </row>
       <check-row if="field.IsBool" on="{{field.On}}" on-click="field.Toggle">
         <text small muted>{{field.Hint}}</text>
       </check-row>
-      <row if="field.IsEnum" h="{{rowH}}" gap="6">
+      <row if="field.IsEnum" h="{{rowH}}" gap="{{tightGap}}">
         <choice for="option in field.Options" selected="{{option.Selected}}" h="{{rowH}}" on-click="option.Pick">{{option.Label}}</choice>
       </row>
       <field if="field.Input" state="field.Input" h="{{rowH}}" bg="sunken" on-enter="submit" text-menu="field.Input"/>

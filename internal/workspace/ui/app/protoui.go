@@ -143,6 +143,8 @@ func (a *App) protoPane(_ pane, tab *reqTab, scroll *ScrollState) Node {
 		}),
 	}
 	return protoPaneTemplate.MustBuild(markup.Scope{
+		"looseGap":   w.LooseGap,
+		"tightGap":   w.TightGap,
 		"gutter":     w.Gutter,
 		"rowH":       w.RowH,
 		"compactH":   w.CompactH,
@@ -243,17 +245,17 @@ var protoPaneTemplate = markup.Must("protopane.vml", protopaneSource)
 
 // Templates, parsed once above.
 const (
-	protopaneSource = `<scroll state="scroll" pad="{{gutter}}" gap="8">
-  <row h="{{rowH}}" gap="6">
+	protopaneSource = `<scroll state="scroll" pad="{{gutter}}" gap="{{looseGap}}">
+  <row h="{{rowH}}" gap="{{tightGap}}">
     <choice for="chip in sources" selected="{{chip.Chosen}}" w="{{chip.Width}}" on-click="chip.Pick">{{chip.Label}}</choice>
   </row>
   <lines if="reflection" color="muted">Methods come from the server's reflection</lines>
-  <col if="files" gap="8">
-    <col for="list in lists" gap="6">
+  <col if="files" gap="{{looseGap}}">
+    <col for="list in lists" gap="{{tightGap}}">
       <row h="{{rowH}}">
         <caption>{{list.Caption}}</caption>
       </row>
-      <row for="row in list.Rows" h="{{rowH}}" gap="6" align-items="center">
+      <row for="row in list.Rows" h="{{rowH}}" gap="{{tightGap}}" align-items="center">
         <field state="row.Input" grow="1" h="{{rowH}}" bg="sunken" on-change="row.Sync" text-menu="row.Input"/>
         <icon-button icon="trash" w="{{iconBtnW}}" h="{{compactH}}" on-click="row.Remove" tooltip="Remove"/>
       </row>

@@ -135,6 +135,8 @@ func (a *App) authPane(_ pane, tab *reqTab, scroll *ScrollState) Node {
 		rows = append(rows, authFieldRow(tab, field))
 	}
 	return authPaneTemplate.MustBuild(markup.Scope{
+		"looseGap":      w.LooseGap,
+		"tightGap":      w.TightGap,
 		"gutter":        w.Gutter,
 		"rowH":          w.RowH,
 		"scroll":        scroll,
@@ -169,13 +171,13 @@ func authFieldRow(tab *reqTab, field authField) authRow {
 
 // Templates, parsed once above.
 const (
-	authpaneSource = `<scroll state="scroll" pad="{{gutter}}" gap="8">
-  <row h="{{rowH}}" gap="6">
+	authpaneSource = `<scroll state="scroll" pad="{{gutter}}" gap="{{looseGap}}">
+  <row h="{{rowH}}" gap="{{tightGap}}">
     <choice for="chip in types" selected="{{chip.Chosen}}" w="{{chip.Width}}" on-click="chip.Pick">{{chip.Label}}</choice>
   </row>
   <lines if="none" color="muted">No authentication</lines>
   <form-row for="row in fields" label="{{row.Label}}" label-width="120">
-    <row if="row.Chips" gap="6">
+    <row if="row.Chips" gap="{{tightGap}}">
       <choice for="chip in row.Chips" selected="{{chip.Chosen}}" w="{{chip.Width}}" on-click="chip.Pick">{{chip.Label}}</choice>
     </row>
     <field if="row.Input" state="row.Input" grow="1" bg="sunken" on-change="row.Sync" text-menu="row.Input"/>

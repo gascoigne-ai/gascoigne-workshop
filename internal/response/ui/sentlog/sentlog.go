@@ -127,6 +127,7 @@ type sentRow struct {
 // row is one sent request: badge, path and status above, URL and time below.
 func (l *Log) row(host Host, sent port.Sent) Node {
 	return rowTemplate.MustBuild(markup.Scope{
+		"tightGap": w.TightGap,
 		"row": sentRow{
 			Badge:  host.Badge(sent.Protocol, sent.Method),
 			Path:   sent.Path,
@@ -158,7 +159,7 @@ const (
 `
 
 	rowSource = `<col pad-x="{{gutter}}" pad-y="4" hover-bg="hover" control="row" on-click="row.Open">
-  <row gap="6" align-items="baseline">
+  <row gap="{{tightGap}}" align-items="baseline">
     <slot name="row.Badge"/>
     <text ellipsis grow="1">{{row.Path}}</text>
     <text small muted>{{row.Status}}</text>

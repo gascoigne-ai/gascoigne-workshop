@@ -96,6 +96,9 @@ func (a *App) sidebar() Node {
 		}
 	}
 	return sidebarTemplate.MustBuild(markup.Scope{
+		"looseGap":       w.LooseGap,
+		"rowH":           w.RowH,
+		"tightGap":       w.TightGap,
 		"mode":           label,
 		"switchMode":     switchTo,
 		"collectionMenu": func(posX, posY int) { a.openMenu(posX, posY, a.collectionMenu()) },
@@ -144,7 +147,7 @@ func (a *App) treeRow(row collection.Row, selected bool) Node {
 	if !row.Folder {
 		template = treeRequestTemplate
 	}
-	return template.MustBuild(markup.Scope{"row": item, "rowH": w.RowH, "gutter": w.Gutter, "badgeW": badgeW})
+	return template.MustBuild(markup.Scope{"row": item, "rowH": w.RowH, "tightGap": w.TightGap, "gutter": w.Gutter, "badgeW": badgeW})
 }
 
 // treeItemOf is the view model of one tree row, except whether it is selected.
@@ -254,6 +257,7 @@ func (a *App) requestTabs() Node {
 		items = append(items, a.requestTab(i, tab))
 	}
 	return requestTabsTemplate.MustBuild(markup.Scope{
+		"looseGap":   w.LooseGap,
 		"tabsH":      tabsH,
 		"tabGap":     w.TabGap,
 		"tabsScroll": &a.tabsScroll,
@@ -312,6 +316,7 @@ func (a *App) urlBar(tab *reqTab) Node {
 	}
 	grpcMethod, grpcMethodColor := grpcMethodLabel(tab)
 	return urlBarTemplate.MustBuild(markup.Scope{
+		"looseGap":         w.LooseGap,
 		"urlH":             urlH,
 		"gutter":           w.Gutter,
 		"urlTextGap":       w.Gutter - 4,
@@ -508,24 +513,24 @@ const (
 `
 
 	sidebarSource = `<col>
-  <row h="{{headerH}}" pad-x="{{gutter}}" gap="6" bg="bg" border-b="border">
-    <button w="96" h="28" on-click="switchMode" on-right-click="collectionMenu" tooltip="Collections and sent requests. Right-click: new, open, rename, save, close, delete a collection">{{mode}}</button>
-    <field state="filter" h="28" grow="1" bg="sunken" placeholder="Filter" text-menu="filter"/>
+  <row h="{{headerH}}" pad-x="{{gutter}}" gap="{{tightGap}}" bg="bg" border-b="border">
+    <button w="96" h="{{rowH}}" on-click="switchMode" on-right-click="collectionMenu" tooltip="Collections and sent requests. Right-click: new, open, rename, save, close, delete a collection">{{mode}}</button>
+    <field state="filter" h="{{rowH}}" grow="1" bg="sunken" placeholder="Filter" text-menu="filter"/>
   </row>
   <slot if="sentList" name="sentList"/>
   <scroll if="showTree" state="treeScroll" bg="sunken">
     <slot for="row in rows" name="row"/>
   </scroll>
   <!-- closing the last collection leaves this; nothing is made on disk until asked -->
-  <col if="noCollection" grow="1" bg="sunken" pad="{{gutter}}" gap="8">
+  <col if="noCollection" grow="1" bg="sunken" pad="{{gutter}}" gap="{{looseGap}}">
     <text muted>No collection is open</text>
-    <button h="28" on-click="openFolder">Open collection folder...</button>
-    <button h="28" on-click="newCollection">New collection...</button>
+    <button h="{{rowH}}" on-click="openFolder">Open collection folder...</button>
+    <button h="{{rowH}}" on-click="newCollection">New collection...</button>
   </col>
 </col>
 `
 
-	treefolderSource = `<list-row selected="{{row.Selected}}" border="{{row.DropBorder}}" h="{{rowH}}" pad-l="{{row.Indent}}" gap="6" on-click="row.Press" on-right-click="row.Menu" on-drag-over="row.DragOver">
+	treefolderSource = `<list-row selected="{{row.Selected}}" border="{{row.DropBorder}}" h="{{rowH}}" pad-l="{{row.Indent}}" gap="{{tightGap}}" on-click="row.Press" on-right-click="row.Menu" on-drag-over="row.DragOver">
   <row if="row.Stripe" w="3" h="14" bg="{{row.Stripe}}"/>
   <icon name="{{row.Triangle}}" w="12"/>
   <!-- the name, with the part the sidebar filter matched in the accent color; treerequest.vml has the same -->
@@ -568,7 +573,7 @@ const (
     <!-- inactive tabs blend into the strip; the active one joins the pane. A middle drag reorders, like a left one -->
     <row for="tab in tabs" active-tab="{{tab.Active}}" separator="{{tab.Separator}}" on-middle-click="tab.MiddlePress" on-right-click="tab.Menu">
       <row w="3" align-self="stretch" bg="{{tab.Stripe}}"/>
-      <row pad-l="11" gap="8" align-items="baseline" on-click="tab.Press" on-drag-over="tab.DragOver">
+      <row pad-l="11" gap="{{looseGap}}" align-items="baseline" on-click="tab.Press" on-drag-over="tab.DragOver">
         <text small color="{{tab.Color}}" w="{{tabBadgeW}}">{{tab.Badge}}</text>
         <text>{{tab.Name}}</text>
         <row w="{{tabDirtyW}}" align-self="stretch">
@@ -586,24 +591,20 @@ const (
 </row>
 `
 
-	urlbarSource = `<row h="{{urlH}}" pad-x="{{gutter}}" pad-y="8" gap="8" bg="bg">
+	urlbarSource = `<row h="{{urlH}}" pad-x="{{gutter}}" pad-y="8" gap="{{looseGap}}" bg="bg">
   <row grow="1" bg="sunken" control="field" tooltip="{{urlTip}}">
     <row w="64" on-click="cycleProtocol" tooltip="Protocol: click to change">
       <text text-center grow="1" color="muted">{{protocol}}</text>
     </row>
-    <!-- a divider between the chips, none after the last one; markup has no vrule-inset, so view.VRuleInset's tree is spelled out -->
-    <row if="divided" w="1" pad-y="8">
-      <vrule/>
-    </row>
+    <!-- a divider between the chips, none after the last one -->
+    <vrule-inset if="divided" inset="8"/>
     <row if="httpMethod" w="84" on-click="cycleMethod" tooltip="Method: click to change">
       <text text-center grow="1" color="{{methodColor}}">{{method}}</text>
     </row>
     <row if="rpcMethod" w="{{grpcMethodW}}" pad-x="10" on-click="pickMethod" tooltip="Method: click to list the server's methods">
       <text ellipsis grow="1" color="{{grpcMethodColor}}">{{grpcMethod}}</text>
     </row>
-    <row if="streamable" w="1" pad-y="8">
-      <vrule/>
-    </row>
+    <vrule-inset if="streamable" inset="8"/>
     <row if="streamable" w="56" bg="{{streamBg}}" on-click="toggleStream" tooltip="Stream: keep the call open and show every message in the Messages pane">
       <text text-center grow="1" color="{{streamColor}}">Stream</text>
     </row>

@@ -242,6 +242,7 @@ func (a *App) fileBrowserView() Node {
 		primary = "Save"
 	}
 	return browserTemplate.MustBuild(markup.Scope{
+		"looseGap":    w.LooseGap,
 		"width":       browserW,
 		"height":      height,
 		"move":        &browser.move,
@@ -306,6 +307,7 @@ func shownRows(scrollY, listH, count int) (first, last int) {
 // click opens it.
 func (a *App) fileBrowserRow(index int, entry port.FolderEntry, selected bool) Node {
 	return browserRowTemplate.MustBuild(markup.Scope{
+		"looseGap": w.LooseGap,
 		"row": browserRow{
 			Name:     entry.Name,
 			Dir:      entry.Dir,
@@ -343,7 +345,7 @@ const (
       </row>
     </col>
   </scroll>
-  <row h="{{browserFoot}}" pad-x="16" gap="8" align-items="center" border-t="border-soft">
+  <row h="{{browserFoot}}" pad-x="16" gap="{{looseGap}}" align-items="center" border-t="border-soft">
     <text if="problem" small color="error" ellipsis grow="1" shrink>{{problem}}</text>
     <text if="!problem" small muted ellipsis grow="1" shrink>{{hint}}</text>
     <choice selected="false" min-w="80" h="{{rowH}}" on-click="close">Cancel</choice>
@@ -352,7 +354,7 @@ const (
 </dialog>
 `
 
-	filebrowserrowSource = `<list-row selected="{{row.Selected}}" h="{{rowH}}" pad-x="12" gap="8" align-items="center" keep-in-view="{{row.Selected}}" on-click="row.Pick" on-double-click="row.Open">
+	filebrowserrowSource = `<list-row selected="{{row.Selected}}" h="{{rowH}}" pad-x="12" gap="{{looseGap}}" align-items="center" keep-in-view="{{row.Selected}}" on-click="row.Pick" on-double-click="row.Open">
   <icon if="row.Dir" name="folder" w="{{iconW}}" muted/>
   <spacer if="!row.Dir" w="{{iconW}}"/>
   <text ellipsis grow="1">{{row.Name}}</text>

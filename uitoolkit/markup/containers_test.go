@@ -350,6 +350,67 @@ func TestDialogElementOutsideClickRunsTheScopeDismiss(t *testing.T) {
 	}
 }
 
+// The size tokens replaced literals in the app's templates, which must
+// not move a pixel: a template using them lays out as the literal did.
+func TestSizeTokensLayOutAsTheLiteralsTheyReplaced(t *testing.T) {
+	sizes := Scope{"tightGap": core.TightGap, "looseGap": core.LooseGap, "rowH": core.RowH}
+	cases := []struct {
+		name, tokens, literal string
+	}{
+		{"tight gap", `<row gap="{{tightGap}}"><row w="10"/><row w="10"/></row>`, `<row gap="6"><row w="10"/><row w="10"/></row>`},
+		{"loose gap", `<col gap="{{looseGap}}"><row h="10"/><row h="10"/></col>`, `<col gap="8"><row h="10"/><row h="10"/></col>`},
+		{"row height", `<col><button h="{{rowH}}">Open</button></col>`, `<col><button h="28">Open</button></col>`},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			sameLayout(t, testCtx(t), build(t, tc.tokens, sizes), build(t, tc.literal, nil), 200, 100)
+		})
+	}
+}
+
+func TestRuleElementsMatchTheGoRules(t *testing.T) {
+	cases := []struct {
+		name     string
+		template string
+		goView   view.Node
+	}{
+		{"hrule", `<col h="40"><hrule margin-x="4"/></col>`, view.Col(view.H(40), view.HRule(view.MarginX(4)))},
+		{"vrule", `<row h="40"><vrule bg="accent"/></row>`, view.Row(view.H(40), view.VRule(view.Bg(core.Accent)))},
+		{"vrule-inset", `<row h="40"><vrule-inset inset="8" margin-x="2"/></row>`, view.Row(view.H(40), view.VRuleInset(8, view.MarginX(2)))},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			sameLayout(t, testCtx(t), build(t, tc.template, nil), tc.goView, 200, 100)
+		})
+	}
+}
+
+func TestDismissMarginKeepsAClickJustOutsideFromDismissing(t *testing.T) {
+	// The dialog is 200x100 in a 600x400 stack: x 200..400, y 150..250.
+	cases := []struct {
+		name      string
+		x         int
+		dismissed int
+	}{
+		{"within the margin", 197, 0},
+		{"beyond the margin", 190, 1},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := testCtx(t)
+			dismissed := 0
+			template := build(t, `<stack><row grow="1"/><dialog w="200" h="100" dismiss-margin="4" on-dismiss="close"><text>hi</text></dialog></stack>`,
+				Scope{"close": func() { dismissed++ }})
+			view.Layout(ctx, template, 600, 400)
+			ctx.In = core.Input{X: tc.x, Y: 200, Click: true}
+			view.Update(ctx, template)
+			if dismissed != tc.dismissed {
+				t.Fatalf("a click at x=%d dismissed %d times, want %d", tc.x, dismissed, tc.dismissed)
+			}
+		})
+	}
+}
+
 func TestFocusScopeAttributeMatchesTheGoOption(t *testing.T) {
 	got := view.Dump(build(t, `<col focus-scope modal/>`, nil))
 	want := view.Dump(view.Col(view.FocusScope(), view.Modal()))

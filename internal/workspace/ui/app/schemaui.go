@@ -110,19 +110,21 @@ func (a *App) schemaPane(pane pane, tab *reqTab, scroll *ScrollState) Node {
 		}
 	}
 	return schemaPaneTemplate.MustBuild(markup.Scope{
-		"gutter":  w.Gutter,
-		"rowH":    w.RowH,
-		"scroll":  scroll,
-		"fillW":   fillBodyW,
-		"reloadW": reloadButtonW,
-		"loaded":  state.schema != nil,
-		"loading": state.running && state.schema == nil,
-		"failed":  state.err != "",
-		"error":   state.err,
-		"title":   title,
-		"rows":    rows,
-		"fill":    func() { a.fillBody(tab, state.schema) },
-		"reload":  func() { tab.messageSchema = messageSchemaState{} },
+		"looseGap": w.LooseGap,
+		"tightGap": w.TightGap,
+		"gutter":   w.Gutter,
+		"rowH":     w.RowH,
+		"scroll":   scroll,
+		"fillW":    fillBodyW,
+		"reloadW":  reloadButtonW,
+		"loaded":   state.schema != nil,
+		"loading":  state.running && state.schema == nil,
+		"failed":   state.err != "",
+		"error":    state.err,
+		"title":    title,
+		"rows":     rows,
+		"fill":     func() { a.fillBody(tab, state.schema) },
+		"reload":   func() { tab.messageSchema = messageSchemaState{} },
 	})
 }
 
@@ -190,8 +192,8 @@ var schemaPaneTemplate = markup.Must("schemapane.vml", schemapaneSource)
 
 // Templates, parsed once above.
 const (
-	schemapaneSource = `<scroll state="scroll" pad="{{gutter}}" gap="8">
-  <row h="{{rowH}}" gap="6" align-items="center">
+	schemapaneSource = `<scroll state="scroll" pad="{{gutter}}" gap="{{looseGap}}">
+  <row h="{{rowH}}" gap="{{tightGap}}" align-items="center">
     <button if="loaded" w="{{fillW}}" on-click="fill">Fill body</button>
     <button w="{{reloadW}}" on-click="reload">Reload</button>
   </row>

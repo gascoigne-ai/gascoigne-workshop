@@ -302,6 +302,7 @@ func (p *Page) View(host Host) Node {
 		}
 	}
 	return pageTemplate.MustBuild(markup.Scope{
+		"tightGap": w.TightGap,
 		"search":   &p.search,
 		"actions":  actions,
 		"noMatch":  len(actions) == 0,
@@ -344,13 +345,13 @@ func (p *Page) row(host Host, action Action) actionRow {
 // Templates, parsed once above.
 const (
 	shortcutpageSource = `<col>
-  <row h="{{rowH}}" gap="6">
+  <row h="{{rowH}}" gap="{{tightGap}}">
     <field state="search" grow="1" bg="sunken" placeholder="Search by action or key" text-menu="search"/>
   </row>
   <spacer h="{{gutter}}"/>
   <col>
     <col for="action in actions">
-      <row h="{{compactH}}" gap="6">
+      <row h="{{compactH}}" gap="{{tightGap}}">
         <text small grow="1" ellipsis>{{action.Name}}</text>
         <choice selected="{{action.Recording}}" w="96" h="{{compactH}}" on-click="action.Record"
                 tooltip="Click, then press the keys">{{action.Key}}</choice>
@@ -360,7 +361,7 @@ const (
                 tooltip="Back to the default key">Reset</button>
       </row>
       <!-- at most one of the conflict, the refusal and the warning is set -->
-      <row if="action.Conflict" h="{{compactH}}" gap="6">
+      <row if="action.Conflict" h="{{compactH}}" gap="{{tightGap}}">
         <text small color="error" ellipsis grow="1">{{action.Conflict}}</text>
         <button w="64" h="{{compactH}}" on-click="action.Replace" tooltip="{{action.ReplaceTip}}">Replace</button>
       </row>
@@ -370,7 +371,7 @@ const (
     <text if="noMatch" muted>No shortcut matches</text>
   </col>
   <caption h="{{labelH}}">Text editing</caption>
-  <row for="keys in textKeys" h="{{compactH}}" gap="6">
+  <row for="keys in textKeys" h="{{compactH}}" gap="{{tightGap}}">
     <text small grow="1" ellipsis>{{keys.Action}}</text>
     <text small muted>{{keys.Keys}}</text>
   </row>

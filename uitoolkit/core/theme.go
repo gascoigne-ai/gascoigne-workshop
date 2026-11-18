@@ -54,7 +54,10 @@ const (
 // standard controls, CompactH for chips, icon buttons and inline fields
 // that sit in a row of that height, LabelH and NoteH for section captions
 // and one-line notes. Icon buttons are IconBtnW wide. Gutter is the inset
-// between a container and its content.
+// between a container and its content. Gaps between neighbours come in two
+// steps: TightGap for controls side by side (a field and its button, a row
+// of chips), LooseGap for the blocks of a pane stacked in a column and for
+// rows whose items need more air.
 const (
 	RowH           = 28
 	CompactH       = 24
@@ -67,6 +70,8 @@ const (
 	TabBarH        = 40       // a strip of tabs, with TabGap above them
 	TabGap         = 6        // space above tabs, so their outline never touches the banner or bar above
 	Gutter         = 12
+	TightGap       = 6
+	LooseGap       = 8
 )
 
 // Theme holds the colors and font sizes the widgets draw with.

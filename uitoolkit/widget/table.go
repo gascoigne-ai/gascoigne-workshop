@@ -102,7 +102,9 @@ const tableActionW = 36
 // tableGripW is the width of the drag handle column.
 const tableGripW = 20
 
-// Table is a zebra-striped grid under an uppercase header with a rule.
+// Table is a grid of rows on Sunken, a soft hairline between rows and the
+// row under the pointer lit, under an uppercase header on Panel with a
+// Border line below it.
 func Table(spec TableSpec, opts ...Option) *El {
 	rows := spec.Rows
 	if spec.Editable {

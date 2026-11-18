@@ -19,6 +19,7 @@ func (a *App) messagesToolbar(tab *reqTab) Node {
 		return func() { a.openMenu(a.ctx.In.X, a.ctx.In.Y, menu(tab)) }
 	}
 	return messagesToolbarTemplate.MustBuild(markup.Scope{
+		"tightGap":        w.TightGap,
 		"toolbarH":        w.RowH + 8,
 		"gutter":          w.Gutter,
 		"compactH":        w.CompactH,
@@ -41,7 +42,7 @@ func (a *App) messagesToolbar(tab *reqTab) Node {
 
 // Templates, parsed once above.
 const (
-	messagestoolbarSource = `<row h="{{toolbarH}}" pad-x="{{gutter}}" gap="6" align-items="center" border-b="border">
+	messagestoolbarSource = `<row h="{{toolbarH}}" pad-x="{{gutter}}" gap="{{tightGap}}" align-items="center" border-b="border">
   <text small muted>{{state}}</text>
   <spacer/>
   <choice selected="{{reconnect}}" w="116" h="{{compactH}}" on-click="toggleReconnect">Auto-reconnect</choice>

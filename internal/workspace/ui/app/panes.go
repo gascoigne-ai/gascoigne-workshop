@@ -327,6 +327,7 @@ func (a *App) tableCaptionScope(pane pane, tab *reqTab, pad int) markup.Scope {
 	return markup.Scope{
 		"pad":        pad,
 		"rowH":       w.RowH,
+		"tightGap":   w.TightGap,
 		"caption":    pane.captionOf(a),
 		"editable":   pane.editable,
 		"bulkLabel":  bulkLabel(a.bulk != nil),
@@ -423,6 +424,8 @@ func (a *App) bodyPane(pane pane, tab *reqTab, scroll *ScrollState) Node {
 			Choose: func() { a.setBodyType(tab, id) }}
 	}
 	return bodyPaneTemplate.MustBuild(markup.Scope{
+		"looseGap":    w.LooseGap,
+		"tightGap":    w.TightGap,
 		"gutter":      w.Gutter,
 		"rowH":        w.RowH,
 		"typesX":      &tab.bodyTypesX,
@@ -502,6 +505,7 @@ var settingsPaneTemplate = markup.Must("settingspane.vml", settingspaneSource)
 // certificate checks.
 func (a *App) settingsPane(_ pane, tab *reqTab, scroll *ScrollState) Node {
 	return settingsPaneTemplate.MustBuild(markup.Scope{
+		"looseGap":          w.LooseGap,
 		"gutter":            w.Gutter,
 		"rowH":              w.RowH,
 		"scroll":            scroll,
@@ -558,6 +562,7 @@ var (
 func (a *App) responsePane(_ pane, tab *reqTab, _ *ScrollState) Node {
 	if tab.picture != nil {
 		return responsePictureTemplate.MustBuild(markup.Scope{
+			"tightGap":    w.TightGap,
 			"gutter":      w.Gutter,
 			"toolbarH":    w.ToolbarH,
 			"compactH":    w.CompactH,
@@ -571,6 +576,7 @@ func (a *App) responsePane(_ pane, tab *reqTab, _ *ScrollState) Node {
 		findBar = a.findBar(tab)
 	}
 	return responsePaneTemplate.MustBuild(markup.Scope{
+		"tightGap":    w.TightGap,
 		"gutter":      w.Gutter,
 		"toolbarH":    w.ToolbarH,
 		"compactH":    w.CompactH,
@@ -605,6 +611,7 @@ var findBarTemplate = markup.Must("findbar.vml", findbarSource)
 // counter and the previous, next and close buttons.
 func (a *App) findBar(tab *reqTab) Node {
 	return findBarTemplate.MustBuild(markup.Scope{
+		"tightGap": w.TightGap,
 		"find":     &tab.find,
 		"count":    viewer.Count(tab.find.Text, len(tab.view.Matches()), tab.look.Match),
 		"rowH":     w.RowH,
@@ -767,7 +774,7 @@ const (
 </scroll>
 `
 
-	tableviewSource = `<scroll state="scroll" pad="{{pad}}" gap="6">
+	tableviewSource = `<scroll state="scroll" pad="{{pad}}" gap="{{tightGap}}">
   <!-- the caption row is copied in bulkview.vml, which keeps it above the rows as text -->
   <row if="caption" h="{{rowH}}">
     <caption>{{caption}}</caption>
@@ -778,7 +785,7 @@ const (
 </scroll>
 `
 
-	bulkviewSource = `<col grow="1" pad="{{pad}}" gap="6">
+	bulkviewSource = `<col grow="1" pad="{{pad}}" gap="{{tightGap}}">
   <!-- the caption row is copied from tableview.vml, so switching to text keeps the caption in place -->
   <row if="caption" h="{{rowH}}">
     <caption>{{caption}}</caption>
@@ -791,10 +798,10 @@ const (
 
 	bodypaneSource = `<!-- The body pane: the type chips with, for JSON, whether it parses;
      for JSON and Text the Wrap chip; for JSON the Format button; the editor of the chosen type below. -->
-<col grow="1" pad="{{gutter}}" gap="8">
-  <row h="{{rowH}}" gap="6">
+<col grow="1" pad="{{gutter}}" gap="{{looseGap}}">
+  <row h="{{rowH}}" gap="{{tightGap}}">
     <!-- the type chips scroll sideways when the pane is narrow -->
-    <hscroll state="typesX" grow="1" gap="6">
+    <hscroll state="typesX" grow="1" gap="{{tightGap}}">
       <choice for="chip in chips" selected="{{chip.Selected}}" w="{{chip.Width}}" keep-in-view="{{chip.Selected}}" on-click="chip.Choose">{{chip.Label}}</choice>
     </hscroll>
     <text if="showStatus" small color="{{statusColor}}" ellipsis optional>{{status}}</text>
@@ -811,7 +818,7 @@ const (
 	bodynoneSource = `<lines color="muted">This request has no body</lines>
 `
 
-	settingspaneSource = `<scroll state="scroll" pad="{{gutter}}" gap="8">
+	settingspaneSource = `<scroll state="scroll" pad="{{gutter}}" gap="{{looseGap}}">
   <form-row label="Timeout (seconds)" label-width="160">
     <field state="timeout" w="80" bg="sunken" on-change="timeoutEdited" text-menu="timeout"/>
     <text small muted>{{timeoutHint}}</text>
@@ -830,7 +837,7 @@ const (
   <!-- same top inset as the request pane, so first rows line up -->
   <spacer h="{{gutter}}"/>
   <!-- written out: markup has no toolbar element; this is widget.Toolbar, copied in responsepicture.vml -->
-  <row h="{{toolbarH}}" pad-x="{{gutter}}" gap="6" align-items="center" border-b="border">
+  <row h="{{toolbarH}}" pad-x="{{gutter}}" gap="{{tightGap}}" align-items="center" border-b="border">
     <choice selected="{{compact}}" w="72" h="{{compactH}}" on-click="showCompact">Compact</choice>
     <choice selected="{{pretty}}" w="56" h="{{compactH}}" on-click="showPretty">Pretty</choice>
     <choice selected="{{raw}}" w="44" h="{{compactH}}" on-click="showRaw">Raw</choice>
@@ -850,7 +857,7 @@ const (
 	responsepictureSource = `<col grow="1">
   <spacer h="{{gutter}}"/>
   <!-- written out: markup has no toolbar element; this is widget.Toolbar, copied from responsepane.vml -->
-  <row h="{{toolbarH}}" pad-x="{{gutter}}" gap="6" align-items="center" border-b="border">
+  <row h="{{toolbarH}}" pad-x="{{gutter}}" gap="{{tightGap}}" align-items="center" border-b="border">
     <text small muted>{{pictureInfo}}</text>
     <spacer/>
     <button w="56" h="{{compactH}}" on-click="save" tooltip="Save the image to a file">Save</button>
@@ -859,7 +866,7 @@ const (
 </col>
 `
 
-	findbarSource = `<row h="{{rowH}}" pad-x="{{gutter}}" gap="6" border-b="border">
+	findbarSource = `<row h="{{rowH}}" pad-x="{{gutter}}" gap="{{tightGap}}" border-b="border">
   <field state="find" grow="1" placeholder="Find" on-change="search" on-enter="enter" text-menu="find"/>
   <text small muted w="64">{{count}}</text>
   <icon-button icon="chevron-up" w="{{iconBtnW}}" h="{{compactH}}" on-click="previous" tooltip="Previous match"/>

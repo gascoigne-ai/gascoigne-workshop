@@ -13,7 +13,9 @@ type TabItem struct {
 	Badge int
 }
 
-// Tabs is a strip of labels with a gold bar under the active one.
+// Tabs is a strip of labels; the active one is in the text color and
+// outlined in the accent on top and both sides, open at the bottom
+// (ActiveTab), the others muted.
 func Tabs(items []TabItem, active int, opts ...Option) *El {
 	var strip *El
 	strip = Row(with(append([]Item{PadL(2)}, tabItems(items, active, selector(&strip))...), opts)...)

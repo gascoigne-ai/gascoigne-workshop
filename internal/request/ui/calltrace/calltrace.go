@@ -191,6 +191,7 @@ func (l *Log) titleBar(host Host) Node {
 // toolbar is the row under the title bar: the filter and Clear.
 func (l *Log) toolbar(host Host) Node {
 	return toolbarTemplate.MustBuild(markup.Scope{
+		"rowH":     w.RowH,
 		"filter":   &l.filter,
 		"clear":    l.Clear,
 		"compactH": w.CompactH,
@@ -215,7 +216,7 @@ const (
 
 	toolbarSource = `<!-- The row under the title bar: the filter and Clear. -->
 <dialog-toolbar>
-  <field state="filter" h="28" grow="1" bg="sunken" placeholder="Filter" text-menu="filter"/>
+  <field state="filter" h="{{rowH}}" grow="1" bg="sunken" placeholder="Filter" text-menu="filter"/>
   <button w="64" h="{{compactH}}" on-click="clear" tooltip="Forget the entries">Clear</button>
 </dialog-toolbar>
 `

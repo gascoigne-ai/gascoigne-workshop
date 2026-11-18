@@ -101,11 +101,12 @@ func resultLines(state mcpexplorer.State) []Line {
 // answer on the right.
 func (a *App) explorerPane(_ pane, tab *reqTab, _ *ScrollState) Node {
 	return explorerTemplate.MustBuild(markup.Scope{
-		"header":  newExplorerHeader(tab),
-		"list":    a.explorerList(tab),
-		"detail":  a.explorerDetail(tab),
-		"headerH": w.RowH + w.Gutter,
-		"gutter":  w.Gutter,
+		"looseGap": w.LooseGap,
+		"header":   newExplorerHeader(tab),
+		"list":     a.explorerList(tab),
+		"detail":   a.explorerDetail(tab),
+		"headerH":  w.RowH + w.Gutter,
+		"gutter":   w.Gutter,
 	})
 }
 
@@ -211,10 +212,11 @@ func (a *App) explorerDetail(tab *reqTab) Node {
 		detail.Result = resultNode(tab)
 	}
 	return explorerDetailTemplate.MustBuild(markup.Scope{
-		"detail": detail,
-		"scroll": &tab.detailScroll,
-		"gutter": w.Gutter,
-		"rowH":   w.RowH,
+		"looseGap": w.LooseGap,
+		"detail":   detail,
+		"scroll":   &tab.detailScroll,
+		"gutter":   w.Gutter,
+		"rowH":     w.RowH,
 	})
 }
 
@@ -262,7 +264,7 @@ const (
     <text muted>{{header.State}}: connect to see what the server offers</text>
   </row>
   <col if="header.Known" pad-x="{{gutter}}" pad-y="8" gap="4" border-b="border">
-    <row gap="8" align-items="baseline">
+    <row gap="{{looseGap}}" align-items="baseline">
       <text bold>{{header.Name}} {{header.Version}}</text>
       <text small muted>protocol {{header.Protocol}}</text>
     </row>
@@ -304,7 +306,7 @@ const (
   <slot if="detail.Form" name="detail.Form"/>
   <!-- a resource has no form; the empty column keeps the gap a form takes -->
   <col if="!detail.Form"/>
-  <row gap="8" align-items="center">
+  <row gap="{{looseGap}}" align-items="center">
     <primary-button h="{{rowH}}" pad-x="{{gutter}}" on-click="detail.Call" tooltip="Send it to the server (Enter in a field)">{{detail.Label}}</primary-button>
     <text if="detail.Disconnected" small muted>Connect first</text>
     <text if="detail.Calling" small muted>Waiting for the server...</text>

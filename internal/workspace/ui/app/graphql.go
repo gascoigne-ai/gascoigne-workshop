@@ -29,6 +29,7 @@ func (a *App) graphQLBody(tab *reqTab) Node {
 		operations = len(tab.schema.Operations)
 	}
 	return graphQLTemplate.MustBuild(markup.Scope{
+		"tightGap":    w.TightGap,
 		"rowH":        w.RowH,
 		"labelH":      w.LabelH,
 		"hasSchema":   operations > 0,
@@ -91,15 +92,15 @@ func (a *App) rememberSchema(tab *reqTab, resp *model.Response) {
 const (
 	graphqlSource = `<!-- The GraphQL body: the query with the schema buttons, the variables as
      JSON with whether they parse. -->
-<col grow="1" gap="6">
-  <row h="{{rowH}}" gap="6">
+<col grow="1" gap="{{tightGap}}">
+  <row h="{{rowH}}" gap="{{tightGap}}">
     <caption>Query</caption>
     <spacer/>
     <button if="hasSchema" w="104" on-click-at="openSchema" tooltip="Pick an operation: the query and variables are replaced by a starter for it">{{schemaLabel}}</button>
     <button w="104" on-click="loadSchema" tooltip="Ask the server for its types; the answer opens in the response">Load schema</button>
   </row>
   <area state="query" grow="3" bg="sunken" on-change="syncQuery" text-menu="queryText"/>
-  <row h="{{labelH}}" gap="6">
+  <row h="{{labelH}}" gap="{{tightGap}}">
     <caption>Variables (JSON)</caption>
     <spacer/>
     <text if="hasVars" small color="{{statusColor}}">{{status}}</text>

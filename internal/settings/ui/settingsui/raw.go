@@ -187,6 +187,7 @@ func (d *SettingsDialog) rawView(host Host) Node {
 		status, color = fmt.Sprintf("%d problem(s): the last good settings stay in effect", len(d.Problems)), w.Error
 	}
 	return rawTemplate.MustBuild(markup.Scope{
+		"tightGap":     w.TightGap,
 		"rowH":         w.RowH,
 		"status":       status,
 		"statusColor":  color,
@@ -215,8 +216,8 @@ func problemLines(problems []settings.Problem) []string {
 const (
 	rawSource = `<!-- The dialog's page while it shows settings.json as text: a status line,
      the editor, one note per problem and how to complete. -->
-<col grow="1" gap="6">
-  <row h="{{rowH}}" gap="6">
+<col grow="1" gap="{{tightGap}}">
+  <row h="{{rowH}}" gap="{{tightGap}}">
     <text bold>settings.json</text>
     <spacer/>
     <text small color="{{statusColor}}">{{status}}</text>

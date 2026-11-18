@@ -3,6 +3,7 @@ package app
 import (
 	"strings"
 
+	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -106,6 +107,7 @@ func (a *App) openWelcome() {
 	}}}
 	d.content = func() Node {
 		return welcomeTemplate.MustBuild(markup.Scope{
+			"looseGap": w.LooseGap,
 			"sections": wrapped(welcomeNotes, welcomeCols),
 			"scroll":   &d.scroll,
 			"maxH":     max(a.h-welcomeChrome, 120),
@@ -119,7 +121,7 @@ const welcomeSource = `<!-- The release notes: a heading and a bulleted list per
 <scroll state="scroll" max-h="{{maxH}}" gap="12">
   <col for="section in sections" gap="4">
     <text bold>{{section.Title}}</text>
-    <row for="item in section.Items" gap="8" align-items="start">
+    <row for="item in section.Items" gap="{{looseGap}}" align-items="start">
       <text muted>•</text>
       <lines grow="1" color="muted">{{item}}</lines>
     </row>

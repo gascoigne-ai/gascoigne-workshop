@@ -291,6 +291,7 @@ var messagesPaneTemplate = markup.Must("messagespane.vml", messagespaneSource)
 // messagesPane is the log with its toolbar and the composer.
 func (a *App) messagesPane(_ pane, tab *reqTab, _ *ScrollState) Node {
 	return messagesPaneTemplate.MustBuild(markup.Scope{
+		"tightGap":  w.TightGap,
 		"gutter":    w.Gutter,
 		"composerH": w.RowH + 16,
 		"toolbar":   a.messagesToolbar(tab),
@@ -429,7 +430,7 @@ const (
   <slot name="toolbar"/>
   <code state="log" grow="1" bg="sunken"/>
   <!-- an event stream only receives, so it has no composer -->
-  <row if="composer" h="{{composerH}}" pad-x="{{gutter}}" pad-y="8" gap="6" border-t="border">
+  <row if="composer" h="{{composerH}}" pad-x="{{gutter}}" pad-y="8" gap="{{tightGap}}" border-t="border">
     <field state="message" grow="1" placeholder="{{hint}}" on-enter="send" text-menu="message"/>
     <button if="canFormat" min-w="40" on-click="format" tooltip="Make the message one line of JSON, or say where it is not JSON">{ }</button>
     <primary-button min-w="70" on-click="send" tooltip="Send the message (Enter)">Send</primary-button>

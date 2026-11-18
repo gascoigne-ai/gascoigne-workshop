@@ -129,6 +129,7 @@ func (p *Page) View(host Host) Node {
 		colors = append(colors, p.row(host, custom))
 	}
 	return pageTemplate.MustBuild(markup.Scope{
+		"tightGap": w.TightGap,
 		"colors":   colors,
 		"resetAll": func() { p.resetAll(host) },
 		"labelH":   w.LabelH,
@@ -160,7 +161,7 @@ const (
 	colorpageSource = `<col>
   <caption h="{{labelH}}">Colors</caption>
   <col for="color in colors">
-    <row h="{{rowH}}" gap="6">
+    <row h="{{rowH}}" gap="{{tightGap}}">
       <text small w="76">{{color.Label}}</text>
       <row w="20" h="{{noteH}}" bg="{{color.Token}}" control="swatch"/>
       <field state="color.Input" w="70" h="{{compactH}}" bg="sunken" border="{{color.Border}}"

@@ -1,6 +1,6 @@
 # Visual style
 
-How the app looks, where the toolkit leaves a choice. A change to the look changes this file in the same commit; the numbers below are the tokens and constants in `uitoolkit/core/theme.go`, never literals in a view.
+How the app looks, where the toolkit leaves a choice. A change to the look changes this file in the same commit; the numbers below are the tokens and constants in `uitoolkit/core/theme.go`, never literals in a view. Neighbours are `TightGap` (6) apart when they are controls side by side and `LooseGap` (8) apart when they are the blocks of a pane.
 
 ## Dialogs
 
@@ -35,7 +35,7 @@ Title bar (title only), then a body padded 16 with gap 12: a muted `Lines` text,
 
 ### File browser
 
-The in-app file chooser (decision 18): width 640, height 520 at most (40 from the window's edges). Title bar: the caller's title and the count of items shown as subtitle. Toolbar: the parent-folder icon button (`chevron-up`, `IconBtnW` x `CompactH`), the path field (`RowH`, `Sunken`, grows), the Hidden files check row. The list fills the rest on `Sunken`: `ListRow`s `RowH` high, padded 12, gap 8, a muted folder icon 16 wide before a folder's name and the same room empty before a file's, the selected row on `Selected`. Footer: `RowH` buttons plus 12 above and below, padded 16, a `BorderSoft` line over it; the problem in small `Error` text takes the room on the left (while there is none, the same place holds a small `Muted` hint naming the program that gives native dialogs on this desktop: "For native dialogs install zenity"), then Cancel and the primary Open or Save (lit), at least 80 wide, as in message dialogs.
+The in-app file chooser (decision 18): width 640, height 520 at most (40 from the window's edges). Title bar: the caller's title and the count of items shown as subtitle. Toolbar: the parent-folder icon button (`chevron-up`, `IconBtnW` x `CompactH`), the path field (`RowH`, `Sunken`, grows), the Hidden files check row. The list fills the rest on `Sunken`: `ListRow`s `RowH` high, padded 12, gap `LooseGap` (8), a muted folder icon 16 wide before a folder's name and the same room empty before a file's, the selected row on `Selected`. Footer: `RowH` buttons plus 12 above and below, padded 16, a `BorderSoft` line over it; the problem in small `Error` text takes the room on the left (while there is none, the same place holds a small `Muted` hint naming the program that gives native dialogs on this desktop: "For native dialogs install zenity"), then Cancel and the primary Open or Save (lit), at least 80 wide, as in message dialogs.
 
 ### Sizes and position
 
@@ -45,9 +45,9 @@ A resizable dialog is grabbed within 6 px inside or 4 px outside its border (`ed
 
 ### Proto (gRPC)
 
-Padded `Gutter`, gap 8, like Auth: a `RowH` row of two choice chips, *Reflection* and *Proto files* (the chosen one lit). Reflection shows one muted line, "Methods come from the server's reflection". Proto files shows two lists, each a caption (FILES, IMPORT PATHS), its rows (a `Sunken` path field `RowH` high that grows, then a Remove icon button `IconBtnW` x `CompactH` with the trash icon, gap 6) and its add button (*Add file...*, *Add path*). Problems found in the files follow the lists, one small `Error` line each, `file:line:col: message`.
+Padded `Gutter`, gap `LooseGap` (8), like Auth: a `RowH` row of two choice chips, *Reflection* and *Proto files* (the chosen one lit). Reflection shows one muted line, "Methods come from the server's reflection". Proto files shows two lists, each a caption (FILES, IMPORT PATHS), its rows (a `Sunken` path field `RowH` high that grows, then a Remove icon button `IconBtnW` x `CompactH` with the trash icon, gap `TightGap` (6)) and its add button (*Add file...*, *Add path*). Problems found in the files follow the lists, one small `Error` line each, `file:line:col: message`.
 
 ## Sidebar
 
-- With no collection open the tree's place holds, on `Sunken` with padding `Gutter` and gap 8: a muted note "No collection is open", then the buttons *Open collection folder...* and *New collection...*, `RowH`-high (28) and as wide as the sidebar. Nothing is made on disk until one is pressed.
+- With no collection open the tree's place holds, on `Sunken` with padding `Gutter` and gap `LooseGap` (8): a muted note "No collection is open", then the buttons *Open collection folder...* and *New collection...*, `RowH`-high (28) and as wide as the sidebar. Nothing is made on disk until one is pressed.
 - A collection's root row looks like a folder row (same height, indent `Gutter`, disclosure triangle, no icon of its own and no extra spacing) except that its name is bold (`bold` on the name's texts, also on the pieces the filter splits it into), so where one collection ends and the next begins reads at a glance; several roots stand one after another at depth 0. Folder and request names stay regular.

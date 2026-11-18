@@ -46,6 +46,7 @@ func (a *App) assertionsPane(_ pane, tab *reqTab, _ *ScrollState) Node {
 		tab.testResults = assert.Run(tab.Req.Tests, tab.Resp) // live, against the response on screen
 	}
 	return assertionsTemplate.MustBuild(markup.Scope{
+		"looseGap":  w.LooseGap,
 		"gutter":    w.Gutter,
 		"help":      assertionsHelp,
 		"tests":     &tab.tests,
@@ -105,7 +106,7 @@ func (a *App) setVariable(req *model.Request, name, value string) {
 const (
 	assertionsSource = `<!-- The request's Tests pane: how assertions are written, and the editor.
      The help comes from the scope, as it shows a variable's braces. -->
-<col grow="1" pad="{{gutter}}" gap="8">
+<col grow="1" pad="{{gutter}}" gap="{{looseGap}}">
   <lines color="muted" small>{{help}}</lines>
   <area state="tests" grow="1" bg="sunken" on-change="sync" text-menu="testsText"/>
 </col>

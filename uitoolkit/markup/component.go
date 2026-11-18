@@ -34,7 +34,7 @@
 //
 // # Finding your way
 //
-//	Layout      row col stack spacer hrule vrule
+//	Layout      row col stack spacer hrule vrule vrule-inset
 //	Text        text caption icon lines note   font-source
 //	Buttons     button primary-button link-button icon-button choice
 //	Rows        list-row form-row check-row
@@ -44,7 +44,7 @@
 //	Viewers     code (wrap) image
 //	Containers  scroll hscroll split (vertical as-ratio min-first min-second)
 //	Widgets     tab-bar tabs scroll-tabs table   separator active-tab
-//	Dialogs     dialog dialog-title dialog-toolbar message-dialog resizable-dialog   focus-scope
+//	Dialogs     dialog dialog-title dialog-toolbar message-dialog resizable-dialog   focus-scope dismiss-margin
 //	Overlays    menu toasts
 //	Templates   include slot
 //
@@ -215,10 +215,9 @@ func optioned(constructor func(opts ...view.Option) *view.El) element {
 	return func(parts elementParts) (view.Node, error) { return constructor(parts.opts...), nil }
 }
 
-// bare builds an element whose constructor takes nothing, then applies the
-// options to it.
-func bare(constructor func() *view.El) element {
-	return func(parts elementParts) (view.Node, error) { return withOpts(constructor(), parts.opts), nil }
+// insetRule builds a VRuleInset from its inset.
+func insetRule(parts elementParts) (view.Node, error) {
+	return view.VRuleInset(parts.args[0].(int), parts.opts...), nil
 }
 
 // labelled builds an element whose constructor takes its text first.
@@ -629,8 +628,9 @@ var elements = map[string]elementSpec{
 	"col":            {build: container(view.Col)},
 	"stack":          {build: container(view.Stack)},
 	"spacer":         {build: optioned(view.Spacer), holds: holdsText},
-	"hrule":          {build: bare(view.HRule), holds: holdsText},
-	"vrule":          {build: bare(view.VRule), holds: holdsText},
+	"hrule":          {build: optioned(view.HRule), holds: holdsText},
+	"vrule":          {build: optioned(view.VRule), holds: holdsText},
+	"vrule-inset":    {build: insetRule, holds: holdsText, params: []param{wholeParam("inset")}},
 	"text":           {build: labelled(view.Text), holds: holdsText},
 	"primary-button": {build: labelled(widget.PrimaryButton), holds: holdsText},
 	"link-button":    {build: labelled(widget.LinkButton), holds: holdsText},
@@ -821,6 +821,7 @@ var attributes = map[string]func(v string) (view.Option, error){
 	"separator":       separatorAttr,
 	"active-tab":      flagAttr("active-tab", widget.ActiveTab),
 	"focus-scope":     flagAttr("focus-scope", view.FocusScope),
+	"dismiss-margin":  intAttr(view.DismissMargin),
 }
 
 func intAttr(callback func(int) view.Option) func(string) (view.Option, error) {

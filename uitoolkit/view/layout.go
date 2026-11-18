@@ -395,15 +395,20 @@ func Stack(items ...Item) *El { return newEl(stack{}, items) }
 // neighbours apart.
 func Spacer(opts ...Option) *El { return newEl(plain{}, with([]Item{Grow(1)}, opts)) }
 
-// HRule is a one-pixel horizontal line in the border color.
-func HRule() *El { return newEl(plain{}, []Item{H(1), Bg(core.Border)}) }
+// HRule is a one-pixel horizontal line in the border color; options
+// override that look (a margin, another color).
+func HRule(opts ...Option) *El { return newEl(plain{}, with([]Item{H(1), Bg(core.Border)}, opts)) }
 
-// VRule is a one-pixel vertical line in the border color.
-func VRule() *El { return newEl(plain{}, []Item{W(1), Bg(core.Border)}) }
+// VRule is a one-pixel vertical line in the border color; options
+// override that look.
+func VRule(opts ...Option) *El { return newEl(plain{}, with([]Item{W(1), Bg(core.Border)}, opts)) }
 
 // VRuleInset is a vertical line shortened by inset pixels at both ends,
-// for dividing the chips of a bar.
-func VRuleInset(inset int) *El { return Row(W(1), PadY(inset), VRule()) }
+// for dividing the chips of a bar. The options apply to the box that
+// holds the line.
+func VRuleInset(inset int, opts ...Option) *El {
+	return Row(with([]Item{W(1), PadY(inset), VRule()}, opts)...)
+}
 
 // with appends opts to base, so a component's defaults come first and
 // the caller's options override them.

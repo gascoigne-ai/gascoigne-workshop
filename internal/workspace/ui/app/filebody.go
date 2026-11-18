@@ -80,6 +80,8 @@ func (a *App) fileBody(tab *reqTab) Node {
 		})
 	}
 	return fileBodyTemplate.MustBuild(markup.Scope{
+		"looseGap":  w.LooseGap,
+		"tightGap":  w.TightGap,
 		"rowH":      w.RowH,
 		"file":      &tab.file,
 		"sync":      sync,
@@ -91,8 +93,8 @@ func (a *App) fileBody(tab *reqTab) Node {
 
 // Templates, parsed once above.
 const (
-	filebodySource = `<col grow="1" gap="8">
-  <row h="{{rowH}}" gap="6">
+	filebodySource = `<col grow="1" gap="{{looseGap}}">
+  <row h="{{rowH}}" gap="{{tightGap}}">
     <field state="file" grow="1" placeholder="Path of the file to send" on-change="sync" text-menu="file"/>
     <button w="90" on-click="choose">Choose...</button>
   </row>

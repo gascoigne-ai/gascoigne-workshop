@@ -194,6 +194,24 @@ type fakeClipboard struct {
 func (f *fakeClipboard) Read() (string, error)     { return f.text, f.readErr }
 func (f *fakeClipboard) Write(string string) error { f.text = string; return nil }
 
+func TestRulesTakeTheCallersOptions(t *testing.T) {
+	cases := []struct {
+		name string
+		rule *El
+	}{
+		{"HRule", HRule(Bg(core.Accent), MarginX(4))},
+		{"VRule", VRule(Bg(core.Accent), MarginX(4))},
+		{"VRuleInset", VRuleInset(8, Bg(core.Accent), MarginX(4))},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.rule.bg != core.Accent || tc.rule.mL != 4 || tc.rule.mR != 4 {
+				t.Fatalf("bg %q, margins %d %d; want accent, 4 4", tc.rule.bg, tc.rule.mL, tc.rule.mR)
+			}
+		})
+	}
+}
+
 func TestSpacerAndRulesTakeTheirSizes(t *testing.T) {
 	h, v, gap := HRule(), VRule(), Spacer()
 	inset := VRuleInset(8)

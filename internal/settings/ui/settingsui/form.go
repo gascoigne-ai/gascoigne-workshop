@@ -113,7 +113,7 @@ func choice(host Host, label string, selected bool, edit func(*settings.Settings
 
 // chipRow is a row of chips sharing its width.
 func chipRow(chips []chip) Node {
-	return chipsTemplate.MustBuild(markup.Scope{"chips": chips, "rowH": w.RowH})
+	return chipsTemplate.MustBuild(markup.Scope{"chips": chips, "rowH": w.RowH, "tightGap": w.TightGap})
 }
 
 // enumChips is a row of chips, one per allowed value; the current one is lit.
@@ -148,6 +148,7 @@ func (d *SettingsDialog) themeChips(host Host) Node {
 func (d *SettingsDialog) scaleControl(host Host) Node {
 	percent := int(host.Settings().UIScale()*100 + 0.5)
 	return scaleTemplate.MustBuild(markup.Scope{
+		"looseGap": w.LooseGap,
 		"rowH":     w.RowH,
 		"scale":    &d.scale,
 		"min":      appearance.ScaleMin,
@@ -279,6 +280,7 @@ func (d *SettingsDialog) settingRow(host Host, field settings.Field) Node {
 		control = d.textControl(host, field)
 	}
 	return settingRowTemplate.MustBuild(markup.Scope{
+		"tightGap": w.TightGap,
 		"rowH":     w.RowH,
 		"compactH": w.CompactH,
 		"setting": settingView{
@@ -359,7 +361,7 @@ func (d *SettingsDialog) fileControl(host Host, field settings.Field) Node {
 	input := d.Input(host, field.Key)
 	choose := func() { d.ChooseFile(host, field.Key) }
 	if strings.TrimSpace(input.Text) == "" && !input.Focused {
-		return emptyFileTemplate.MustBuild(markup.Scope{"rowH": w.RowH, "choose": choose})
+		return emptyFileTemplate.MustBuild(markup.Scope{"rowH": w.RowH, "looseGap": w.LooseGap, "choose": choose})
 	}
 	return chosenFileTemplate.MustBuild(markup.Scope{
 		"rowH":     w.RowH,
@@ -387,12 +389,12 @@ func (d *SettingsDialog) ChooseFile(host Host, key string) {
 
 // Templates, parsed once above.
 const (
-	chipsSource = `<row h="{{rowH}}" gap="6">
+	chipsSource = `<row h="{{rowH}}" gap="{{tightGap}}">
   <choice for="chip in chips" selected="{{chip.Selected}}" grow="1" on-click="chip.Pick">{{chip.Label}}</choice>
 </row>
 `
 
-	scaleSource = `<row h="{{rowH}}" gap="8">
+	scaleSource = `<row h="{{rowH}}" gap="{{looseGap}}">
   <slider state="scale" min="{{min}}" max="{{max}}" step="{{step}}" value="{{value}}" slider-mid="{{mid}}"
           on-slide="slide" on-slide-end="slideEnd"/>
   <text w="40" color="muted">{{shown}}</text>
@@ -411,7 +413,7 @@ const (
 `
 
 	fileEmptySource = `<row h="{{rowH}}">
-  <row w="150" h="{{rowH}}" bg="sunken" control="button" lighten pad-x="10" gap="8" align-items="center"
+  <row w="150" h="{{rowH}}" bg="sunken" control="button" lighten pad-x="10" gap="{{looseGap}}" align-items="center"
        on-click="choose" tooltip="Choose the file">
     <icon name="folder" w="16"/>
     <text grow="1" color="chip-text">Choose file</text>
@@ -430,7 +432,7 @@ const (
 `
 
 	settingrowSource = `<col pad-y="8" border-b="border-soft">
-  <row h="{{rowH}}" gap="6">
+  <row h="{{rowH}}" gap="{{tightGap}}">
     <text bold>{{setting.Title}}</text>
     <text if="setting.Changed" color="accent-line" tooltip="Changed from the default">•</text>
     <spacer/>

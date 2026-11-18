@@ -107,9 +107,10 @@ func (d *SettingsDialog) fontControl(host Host, role FontRole) Node {
 		current = fontChoice{Name: name + " (not installed)", Muted: true, Ellipsis: true}
 	}
 	return fontControlTemplate.MustBuild(markup.Scope{
-		"rowH":    w.RowH,
-		"current": current,
-		"open":    func() { d.OpenFontList(host, role) },
+		"tightGap": w.TightGap,
+		"rowH":     w.RowH,
+		"current":  current,
+		"open":     func() { d.OpenFontList(host, role) },
 	})
 }
 
@@ -155,9 +156,10 @@ func (d *SettingsDialog) FontList(host Host) Node {
 		note = "No font matches"
 	}
 	return fontListTemplate.MustBuild(markup.Scope{
+		"rowH":          w.RowH,
+		"tightGap":      w.TightGap,
 		"width":         fontListW,
 		"height":        fontListH,
-		"rowH":          fontListRowH,
 		"x":             d.list.x,
 		"y":             d.list.y,
 		"close":         d.CloseFontList,
@@ -196,15 +198,15 @@ func (d *SettingsDialog) fontRow(host Host, choice fontChoice, selected bool, na
 
 // Templates, parsed once above.
 const (
-	fontcontrolSource = `<row h="{{rowH}}" bg="sunken" control="field" pad-x="8" gap="6" align-items="center"
+	fontcontrolSource = `<row h="{{rowH}}" bg="sunken" control="field" pad-x="8" gap="{{tightGap}}" align-items="center"
      on-click="open" tooltip="Pick an installed font">
   <text grow="1" muted="{{current.Muted}}" ellipsis="{{current.Ellipsis}}" font-source="current.Face">{{current.Name}}</text>
   <icon name="chevron-down" w="12"/>
 </row>
 `
 
-	fontlistSource = `<col w="{{width}}" pad="6" gap="6" bg="bg" border="border" control="menu" shadow float-at="{{x}} {{y}}" modal focus-scope on-dismiss="close">
-  <field state="search" h="28" bg="sunken" placeholder="Search fonts" on-change="searchChanged" text-menu="search"/>
+	fontlistSource = `<col w="{{width}}" pad="6" gap="{{tightGap}}" bg="bg" border="border" control="menu" shadow float-at="{{x}} {{y}}" modal focus-scope on-dismiss="close">
+  <field state="search" h="{{rowH}}" bg="sunken" placeholder="Search fonts" on-change="searchChanged" text-menu="search"/>
   <row if="note" h="{{rowH}}" pad-x="8">
     <text small muted>{{note}}</text>
   </row>
