@@ -3,7 +3,7 @@ stack rect=0,0,1280,800
     splitB grow=1 rect=0,0,1280,772
       flow rect=0,0,259,772
         flow h=44 padL=12 padR=12 gap=6 bg=bg borderB=border rect=0,0,259,44
-          flow w=96 h=28 padL=10 padR=10 bg=sunken control=button tip=Collections and sent requests. Right-click: new, open, rename, save, close, delete a collection lighten=true onClick=true onRightClick=true rect=12,8,96,28
+          flow h=28 padL=10 padR=10 bg=sunken control=button tip=Collections and sent requests. Right-click: new, open, rename, save, close, delete a collection shrink=true lighten=true onClick=true onRightClick=true rect=12,8,96,28
             textB text="Collections" grow=1 fg=chip-text ellipsis=true center=true rect=22,8,76,28
           fieldB h=28 grow=1 bg=sunken control=field onRightClickIn=true rect=114,8,133,28
         scrollB grow=1 bg=sunken rect=0,44,259,728
@@ -167,7 +167,7 @@ stack rect=0,0,1280,800
                 textB text="Send the request to see the response" h=22 fg=muted rect=272,509,996,22
     flow h=28 padL=12 padR=12 gap=12 bg=frame borderT=border control=statusbar rect=0,772,1280,28
       textB text="Ready" grow=1 fg=muted small=true ellipsis=true rect=12,772,1117,28
-      flow w=44 h=20 padL=10 padR=10 bg=sunken control=button tip=Show the log of calls lighten=true onClick=true rect=1141,776,44,20
+      flow h=20 padL=10 padR=10 bg=sunken control=button tip=Show the log of calls shrink=true lighten=true onClick=true rect=1141,776,44,20
         textB text="Log" grow=1 fg=chip-text ellipsis=true center=true rect=1151,776,24,20
       flow tip=What is in this version onClick=true rect=1197,772,71,28
         textB text="v0.1.0-alpha" fg=muted small=true rect=1197,772,71,28

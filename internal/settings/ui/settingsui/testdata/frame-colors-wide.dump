@@ -9,7 +9,7 @@ stack rect=0,0,1280,800
         iconB grow=1 fg=hero-muted icon=cross rect=972,130,32,24
     flow h=40 padL=16 padR=16 gap=8 borderB=border-soft rect=260,164,760,40
       fieldB h=28 grow=1 bg=sunken control=field onRightClickIn=true onChange=true rect=276,170,660,28
-      flow w=60 h=24 padL=10 padR=10 bg=sunken control=button tip=Edit settings.json as text lighten=true onClick=true rect=944,172,60,24
+      flow h=24 padL=10 padR=10 bg=sunken control=button tip=Edit settings.json as text shrink=true lighten=true onClick=true rect=944,172,60,24
         textB text="JSON" grow=1 fg=chip-text ellipsis=true center=true rect=954,172,40,24
     flow grow=1 rect=260,204,760,476
       flow w=170 padL=8 padT=8 padR=8 padB=8 gap=2 bg=frame rect=260,204,170,476

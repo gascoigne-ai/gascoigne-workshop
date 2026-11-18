@@ -9,11 +9,13 @@ import (
 const buttonPadX = 10
 
 // Button is an outlined chip with a centered label; it brightens on hover.
+// A W is a minimum: the button widens to show its label when the row has
+// room, so a label is cut with an ellipsis only when there is none.
 func Button(label string, opts ...Option) *El {
 	return Row(with([]Item{
 		Bg(core.Sunken), Control("button"), Lighten(), PadX(buttonPadX),
 		Text(label, TextCenter(), Ellipsis(), Grow(1), Color(core.ChipText)),
-	}, opts)...)
+	}, fitted(opts))...)
 }
 
 // LinkButton is a quiet text button: accent-colored text on no
@@ -30,7 +32,7 @@ func PrimaryButton(label string, opts ...Option) *El {
 	return Row(with([]Item{
 		Bg(core.Accent), Control("primary"), Lighten(), PadX(buttonPadX),
 		Text(label, TextCenter(), Ellipsis(), Grow(1), Color(core.AccentText)),
-	}, opts)...)
+	}, fitted(opts))...)
 }
 
 // Choice is one chip of a segmented choice: a PrimaryButton when it is the
@@ -46,6 +48,11 @@ func Choice(label string, selected bool, opts ...Option) *El {
 // IconButton is Button with an icon in place of the label.
 func IconButton(glyph *El, opts ...Option) *El {
 	return Row(with([]Item{Bg(core.Sunken), Control("icon-button"), Lighten(), glyph}, opts)...)
+}
+
+// fitted is opts followed by FitW, so a button's W is its minimum.
+func fitted(opts []Option) []Option {
+	return append(append([]Option(nil), opts...), FitW())
 }
 
 // with appends opts to base as items.

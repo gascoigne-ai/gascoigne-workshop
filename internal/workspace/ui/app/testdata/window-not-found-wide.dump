@@ -3,7 +3,7 @@ stack rect=0,0,1280,800
     splitB grow=1 rect=0,0,1280,772
       flow rect=0,0,259,772
         flow h=44 padL=12 padR=12 gap=6 bg=bg borderB=border rect=0,0,259,44
-          flow w=96 h=28 padL=10 padR=10 bg=sunken control=button tip=Collections and sent requests. Right-click: new, open, rename, save, close, delete a collection lighten=true onClick=true onRightClick=true rect=12,8,96,28
+          flow h=28 padL=10 padR=10 bg=sunken control=button tip=Collections and sent requests. Right-click: new, open, rename, save, close, delete a collection shrink=true lighten=true onClick=true onRightClick=true rect=12,8,96,28
             textB text="Collections" grow=1 fg=chip-text ellipsis=true center=true rect=22,8,76,28
           fieldB h=28 grow=1 bg=sunken control=field onRightClickIn=true rect=114,8,133,28
         scrollB grow=1 bg=sunken rect=0,44,259,728
@@ -169,16 +169,16 @@ stack rect=0,0,1280,800
             flow grow=1 rect=770,182,510,590
               plain h=12 grow=1 rect=770,182,510,12
               flow h=36 padL=12 padR=12 gap=6 borderB=border rect=770,194,510,36
-                flow w=72 h=24 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=782,200,72,24
-                  textB text="Compact" grow=1 fg=chip-text ellipsis=true center=true rect=792,200,52,24
-                flow w=56 h=24 padL=10 padR=10 bg=accent control=primary lighten=true onClick=true rect=860,200,56,24
-                  textB text="Pretty" grow=1 fg=accent-text ellipsis=true center=true rect=870,200,36,24
-                flow w=44 h=24 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=922,200,44,24
-                  textB text="Raw" grow=1 fg=chip-text ellipsis=true center=true rect=932,200,24,24
-                flow w=12 rect=972,212,12,0
-                flow w=56 h=24 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=990,200,56,24
-                  textB text="Wrap" grow=1 fg=chip-text ellipsis=true center=true rect=1000,200,36,24
-                plain grow=1 rect=1052,212,102,0
+                flow h=24 padL=10 padR=10 bg=sunken control=button shrink=true lighten=true onClick=true rect=782,200,76,24
+                  textB text="Compact" grow=1 fg=chip-text ellipsis=true center=true rect=792,200,56,24
+                flow h=24 padL=10 padR=10 bg=accent control=primary shrink=true lighten=true onClick=true rect=864,200,57,24
+                  textB text="Pretty" grow=1 fg=accent-text ellipsis=true center=true rect=874,200,37,24
+                flow h=24 padL=10 padR=10 bg=sunken control=button shrink=true lighten=true onClick=true rect=927,200,48,24
+                  textB text="Raw" grow=1 fg=chip-text ellipsis=true center=true rect=937,200,28,24
+                flow w=12 rect=981,212,12,0
+                flow h=24 padL=10 padR=10 bg=sunken control=button shrink=true lighten=true onClick=true rect=999,200,56,24
+                  textB text="Wrap" grow=1 fg=chip-text ellipsis=true center=true rect=1009,200,36,24
+                plain grow=1 rect=1061,212,93,0
                 flow w=32 h=24 bg=sunken control=icon-button tip=Find in response (Ctrl+F) lighten=true onClick=true rect=1160,200,32,24
                   iconB grow=1 icon=search rect=1160,200,32,24
                 flow w=32 h=24 bg=sunken control=icon-button tip=Copy the response body lighten=true onClick=true rect=1198,200,32,24
@@ -188,7 +188,7 @@ stack rect=0,0,1280,800
               codeB grow=1 bg=sunken onRightClick=true rect=770,230,510,542
     flow h=28 padL=12 padR=12 gap=12 bg=frame borderT=border control=statusbar rect=0,772,1280,28
       textB text="Ready" grow=1 fg=muted small=true ellipsis=true rect=12,772,1117,28
-      flow w=44 h=20 padL=10 padR=10 bg=sunken control=button tip=Show the log of calls lighten=true onClick=true rect=1141,776,44,20
+      flow h=20 padL=10 padR=10 bg=sunken control=button tip=Show the log of calls shrink=true lighten=true onClick=true rect=1141,776,44,20
         textB text="Log" grow=1 fg=chip-text ellipsis=true center=true rect=1151,776,24,20
       flow tip=What is in this version onClick=true rect=1197,772,71,28
         textB text="v0.1.0-alpha" fg=muted small=true rect=1197,772,71,28

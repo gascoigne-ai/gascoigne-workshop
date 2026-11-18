@@ -21,9 +21,9 @@ flow rect=0,0,300,1800
     flow h=28 gap=6 rect=0,214,300,28
       textB text="CA certificates" bold=true rect=0,214,98,28
       textB text="•" fg=accent-line tip=Changed from the default rect=104,214,5,28
-      plain grow=1 rect=115,214,123,28
-      flow w=56 h=24 padL=10 padR=10 bg=sunken control=button tip=Remove it from settings.json so the default applies lighten=true onClick=true rect=244,216,56,24
-        textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=254,216,36,24
+      plain grow=1 rect=115,214,122,28
+      flow h=24 padL=10 padR=10 bg=sunken control=button tip=Remove it from settings.json so the default applies shrink=true lighten=true onClick=true rect=243,216,57,24
+        textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=253,216,37,24
     flow rect=0,242,300,22
       textB text="Path of a PEM file of extra certificate authorities to trust." h=22 fg=muted rect=0,242,300,22
     flow rect=0,264,300,28

@@ -1,22 +1,22 @@
 flow padL=12 padT=12 padR=12 padB=12 gap=8 grow=1 rect=0,0,420,300
   flow h=28 gap=6 rect=12,12,396,28
     hscrollB gap=6 grow=1 rect=12,12,258,28
-      flow w=64 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=30,12,64,28
+      flow padL=10 padR=10 bg=sunken control=button shrink=true lighten=true onClick=true rect=30,12,64,28
         textB text="None" grow=1 fg=chip-text ellipsis=true center=true rect=40,12,44,28
-      flow w=64 padL=10 padR=10 bg=accent control=primary lighten=true onClick=true rect=100,12,64,28
+      flow padL=10 padR=10 bg=accent control=primary shrink=true lighten=true onClick=true rect=100,12,64,28
         textB text="JSON" grow=1 fg=accent-text ellipsis=true center=true rect=110,12,44,28
-      flow w=64 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=170,12,64,28
+      flow padL=10 padR=10 bg=sunken control=button shrink=true lighten=true onClick=true rect=170,12,64,28
         textB text="Text" grow=1 fg=chip-text ellipsis=true center=true rect=180,12,44,28
-      flow w=64 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=240,12,64,28
+      flow padL=10 padR=10 bg=sunken control=button shrink=true lighten=true onClick=true rect=240,12,64,28
         textB text="Form" grow=1 fg=chip-text ellipsis=true center=true rect=250,12,44,28
-      flow w=84 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=310,12,84,28
+      flow padL=10 padR=10 bg=sunken control=button shrink=true lighten=true onClick=true rect=310,12,84,28
         textB text="Multipart" grow=1 fg=chip-text ellipsis=true center=true rect=320,12,64,28
-      flow w=80 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=400,12,80,28
+      flow padL=10 padR=10 bg=sunken control=button shrink=true lighten=true onClick=true rect=400,12,80,28
         textB text="GraphQL" grow=1 fg=chip-text ellipsis=true center=true rect=410,12,60,28
-      flow w=64 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=486,12,64,28
+      flow padL=10 padR=10 bg=sunken control=button shrink=true lighten=true onClick=true rect=486,12,64,28
         textB text="File" grow=1 fg=chip-text ellipsis=true center=true rect=496,12,44,28
-    flow w=56 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=276,12,56,28
+    flow padL=10 padR=10 bg=sunken control=button shrink=true lighten=true onClick=true rect=276,12,56,28
       textB text="Wrap" grow=1 fg=chip-text ellipsis=true center=true rect=286,12,36,28
-    flow w=70 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=338,12,70,28
+    flow padL=10 padR=10 bg=sunken control=button shrink=true lighten=true onClick=true rect=338,12,70,28
       textB text="Format" grow=1 fg=chip-text ellipsis=true center=true rect=348,12,50,28
   areaB grow=1 bg=sunken onRightClickIn=true onChange=true rect=12,48,396,240

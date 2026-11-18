@@ -9,7 +9,7 @@ stack rect=0,0,600,420
         iconB grow=1 fg=hero-muted icon=cross rect=512,50,32,24
     flow h=40 padL=16 padR=16 gap=8 borderB=border-soft rect=40,84,520,40
       plain grow=1 rect=56,104,420,0
-      flow w=60 h=24 padL=10 padR=10 bg=sunken control=button tip=Back to the settings form lighten=true onClick=true rect=484,92,60,24
+      flow h=24 padL=10 padR=10 bg=sunken control=button tip=Back to the settings form shrink=true lighten=true onClick=true rect=484,92,60,24
         textB text="Form" grow=1 fg=chip-text ellipsis=true center=true rect=494,92,40,24
     flow padL=16 padT=16 padR=16 padB=16 grow=1 rect=40,124,520,256
       flow gap=6 grow=1 rect=56,140,488,224

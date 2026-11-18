@@ -3,7 +3,7 @@ stack rect=0,0,640,480
     splitB grow=1 rect=0,0,640,452
       flow rect=0,0,219,452
         flow h=44 padL=12 padR=12 gap=6 bg=bg borderB=border rect=0,0,219,44
-          flow w=96 h=28 padL=10 padR=10 bg=sunken control=button tip=Collections and sent requests. Right-click: new, open, rename, save, close, delete a collection lighten=true onClick=true onRightClick=true rect=12,8,96,28
+          flow h=28 padL=10 padR=10 bg=sunken control=button tip=Collections and sent requests. Right-click: new, open, rename, save, close, delete a collection shrink=true lighten=true onClick=true onRightClick=true rect=12,8,96,28
             textB text="Collections" grow=1 fg=chip-text ellipsis=true center=true rect=22,8,76,28
           fieldB h=28 grow=1 bg=sunken control=field onRightClickIn=true rect=114,8,93,28
         scrollB grow=1 bg=sunken rect=0,44,219,408
@@ -167,7 +167,7 @@ stack rect=0,0,640,480
                 textB text="Send the request to see the response" h=22 fg=muted rect=453,194,175,22
     flow h=28 padL=12 padR=12 gap=12 bg=frame borderT=border control=statusbar rect=0,452,640,28
       textB text="Ready" grow=1 fg=muted small=true ellipsis=true rect=12,452,477,28
-      flow w=44 h=20 padL=10 padR=10 bg=sunken control=button tip=Show the log of calls lighten=true onClick=true rect=501,456,44,20
+      flow h=20 padL=10 padR=10 bg=sunken control=button tip=Show the log of calls shrink=true lighten=true onClick=true rect=501,456,44,20
         textB text="Log" grow=1 fg=chip-text ellipsis=true center=true rect=511,456,24,20
       flow tip=What is in this version onClick=true rect=557,452,71,28
         textB text="v0.1.0-alpha" fg=muted small=true rect=557,452,71,28
@@ -181,7 +181,7 @@ stack rect=0,0,640,480
         iconB grow=1 fg=hero-muted icon=cross rect=552,50,32,24
     flow h=40 padL=16 padR=16 gap=8 borderB=border-soft rect=40,84,560,40
       fieldB h=28 grow=1 bg=sunken control=field onRightClickIn=true onChange=true rect=56,90,460,28
-      flow w=60 h=24 padL=10 padR=10 bg=sunken control=button tip=Edit settings.json as text lighten=true onClick=true rect=524,92,60,24
+      flow h=24 padL=10 padR=10 bg=sunken control=button tip=Edit settings.json as text shrink=true lighten=true onClick=true rect=524,92,60,24
         textB text="JSON" grow=1 fg=chip-text ellipsis=true center=true rect=534,92,40,24
     flow grow=1 rect=40,124,560,316
       flow w=170 padL=8 padT=8 padR=8 padB=8 gap=2 bg=frame rect=40,124,170,316
@@ -293,9 +293,9 @@ stack rect=0,0,640,480
             flow h=28 gap=6 rect=226,944,350,28
               textB text="Request and response" bold=true rect=226,944,150,28
               textB text="•" fg=accent-line tip=Changed from the default rect=382,944,5,28
-              plain grow=1 rect=393,944,121,28
-              flow w=56 h=24 padL=10 padR=10 bg=sunken control=button tip=Remove it from settings.json so the default applies lighten=true onClick=true rect=520,946,56,24
-                textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=530,946,36,24
+              plain grow=1 rect=393,944,120,28
+              flow h=24 padL=10 padR=10 bg=sunken control=button tip=Remove it from settings.json so the default applies shrink=true lighten=true onClick=true rect=519,946,57,24
+                textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=529,946,37,24
             flow rect=226,972,350,22
               textB text="Place the request and response panes stacked or side by side." h=22 fg=muted rect=226,972,350,22
             flow h=28 gap=6 rect=226,994,350,28
@@ -307,9 +307,9 @@ stack rect=0,0,640,480
             flow h=28 gap=6 rect=226,1038,350,28
               textB text="Response view" bold=true rect=226,1038,101,28
               textB text="•" fg=accent-line tip=Changed from the default rect=333,1038,5,28
-              plain grow=1 rect=344,1038,170,28
-              flow w=56 h=24 padL=10 padR=10 bg=sunken control=button tip=Remove it from settings.json so the default applies lighten=true onClick=true rect=520,1040,56,24
-                textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=530,1040,36,24
+              plain grow=1 rect=344,1038,169,28
+              flow h=24 padL=10 padR=10 bg=sunken control=button tip=Remove it from settings.json so the default applies shrink=true lighten=true onClick=true rect=519,1040,57,24
+                textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=529,1040,37,24
             flow rect=226,1066,350,22
               textB text="How a response body is shown when it arrives." h=22 fg=muted rect=226,1066,350,22
             flow h=28 gap=6 rect=226,1088,350,28

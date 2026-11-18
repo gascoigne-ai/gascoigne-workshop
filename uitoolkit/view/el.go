@@ -185,6 +185,19 @@ func Optional() Option { return func(element *El) { element.optional = true } }
 // column). A row that fits lays out as if no child had it.
 func Shrink() Option { return func(element *El) { element.shrink = true } }
 
+// FitW turns the W given before it into a minimum: the element is as wide
+// as its content when that is more, and goes back to W (shrinking its
+// content) when its row is too tight. It has no template attribute: a
+// template says min-w and shrink, and buttons apply FitW themselves.
+func FitW() Option {
+	return func(element *El) {
+		if element.w == 0 {
+			return
+		}
+		element.minW, element.w, element.shrink = element.w, 0, true
+	}
+}
+
 // Pad sets the same padding on all sides.
 func Pad(count int) Option {
 	return func(element *El) { element.padL, element.padT, element.padR, element.padB = count, count, count, count }

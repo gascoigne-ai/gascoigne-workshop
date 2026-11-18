@@ -9,6 +9,6 @@ stack rect=0,0,700,500
         iconB grow=1 fg=hero-muted icon=cross rect=652,50,32,24
     flow h=40 padL=16 padR=16 gap=8 borderB=border-soft rect=0,84,700,40
       fieldB h=28 grow=1 bg=sunken control=field onRightClickIn=true rect=16,90,596,28
-      flow w=64 h=24 padL=10 padR=10 bg=sunken control=button tip=Forget the entries lighten=true onClick=true rect=620,92,64,24
+      flow h=24 padL=10 padR=10 bg=sunken control=button tip=Forget the entries shrink=true lighten=true onClick=true rect=620,92,64,24
         textB text="Clear" grow=1 fg=chip-text ellipsis=true center=true rect=630,92,44,24
     codeB grow=1 bg=sunken rect=0,124,700,336

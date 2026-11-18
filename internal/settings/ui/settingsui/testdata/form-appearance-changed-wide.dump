@@ -3,9 +3,9 @@ flow rect=0,0,560,1400
     flow h=28 gap=6 rect=0,8,560,28
       textB text="Theme" bold=true rect=0,8,45,28
       textB text="•" fg=accent-line tip=Changed from the default rect=51,8,5,28
-      plain grow=1 rect=62,8,436,28
-      flow w=56 h=24 padL=10 padR=10 bg=sunken control=button tip=Remove it from settings.json so the default applies lighten=true onClick=true rect=504,10,56,24
-        textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=514,10,36,24
+      plain grow=1 rect=62,8,435,28
+      flow h=24 padL=10 padR=10 bg=sunken control=button tip=Remove it from settings.json so the default applies shrink=true lighten=true onClick=true rect=503,10,57,24
+        textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=513,10,37,24
     flow rect=0,36,560,22
       textB text="The color theme: dark, light or the id of a theme file in the themes folder." h=22 fg=muted rect=0,36,560,22
     flow h=28 gap=6 rect=0,58,560,28
@@ -30,9 +30,9 @@ flow rect=0,0,560,1400
     flow h=28 gap=6 rect=0,196,560,28
       textB text="Interface scale" bold=true rect=0,196,100,28
       textB text="•" fg=accent-line tip=Changed from the default rect=106,196,5,28
-      plain grow=1 rect=117,196,381,28
-      flow w=56 h=24 padL=10 padR=10 bg=sunken control=button tip=Remove it from settings.json so the default applies lighten=true onClick=true rect=504,198,56,24
-        textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=514,198,36,24
+      plain grow=1 rect=117,196,380,28
+      flow h=24 padL=10 padR=10 bg=sunken control=button tip=Remove it from settings.json so the default applies shrink=true lighten=true onClick=true rect=503,198,57,24
+        textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=513,198,37,24
     flow rect=0,224,560,22
       textB text="Scale of the whole interface in percent, on top of the display's own scale." h=22 fg=muted rect=0,224,560,22
     flow h=28 gap=8 rect=0,246,560,28
@@ -42,9 +42,9 @@ flow rect=0,0,560,1400
     flow h=28 gap=6 rect=0,290,560,28
       textB text="Interface font" bold=true rect=0,290,91,28
       textB text="•" fg=accent-line tip=Changed from the default rect=97,290,5,28
-      plain grow=1 rect=108,290,390,28
-      flow w=56 h=24 padL=10 padR=10 bg=sunken control=button tip=Remove it from settings.json so the default applies lighten=true onClick=true rect=504,292,56,24
-        textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=514,292,36,24
+      plain grow=1 rect=108,290,389,28
+      flow h=24 padL=10 padR=10 bg=sunken control=button tip=Remove it from settings.json so the default applies shrink=true lighten=true onClick=true rect=503,292,57,24
+        textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=513,292,37,24
     flow rect=0,318,560,44
       textB text="Family name of an installed font for labels, buttons and fields; empty is" h=22 fg=muted rect=0,318,560,22
       textB text="the built-in font." h=22 fg=muted rect=0,340,560,22
@@ -55,9 +55,9 @@ flow rect=0,0,560,1400
     flow h=28 gap=6 rect=0,406,560,28
       textB text="Code font" bold=true rect=0,406,65,28
       textB text="•" fg=accent-line tip=Changed from the default rect=71,406,5,28
-      plain grow=1 rect=82,406,416,28
-      flow w=56 h=24 padL=10 padR=10 bg=sunken control=button tip=Remove it from settings.json so the default applies lighten=true onClick=true rect=504,408,56,24
-        textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=514,408,36,24
+      plain grow=1 rect=82,406,415,28
+      flow h=24 padL=10 padR=10 bg=sunken control=button tip=Remove it from settings.json so the default applies shrink=true lighten=true onClick=true rect=503,408,57,24
+        textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=513,408,37,24
     flow rect=0,434,560,44
       textB text="Family name of an installed font for bodies and the code views; empty is the" h=22 fg=muted rect=0,434,560,22
       textB text="built-in font." h=22 fg=muted rect=0,456,560,22
@@ -68,9 +68,9 @@ flow rect=0,0,560,1400
     flow h=28 gap=6 rect=0,522,560,28
       textB text="Corners" bold=true rect=0,522,54,28
       textB text="•" fg=accent-line tip=Changed from the default rect=60,522,5,28
-      plain grow=1 rect=71,522,427,28
-      flow w=56 h=24 padL=10 padR=10 bg=sunken control=button tip=Remove it from settings.json so the default applies lighten=true onClick=true rect=504,524,56,24
-        textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=514,524,36,24
+      plain grow=1 rect=71,522,426,28
+      flow h=24 padL=10 padR=10 bg=sunken control=button tip=Remove it from settings.json so the default applies shrink=true lighten=true onClick=true rect=503,524,57,24
+        textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=513,524,37,24
     flow rect=0,550,560,22
       textB text="How round controls are." h=22 fg=muted rect=0,550,560,22
     flow h=28 gap=6 rect=0,572,560,28
@@ -84,9 +84,9 @@ flow rect=0,0,560,1400
     flow h=28 gap=6 rect=0,616,560,28
       textB text="Flat colors" bold=true rect=0,616,71,28
       textB text="•" fg=accent-line tip=Changed from the default rect=77,616,5,28
-      plain grow=1 rect=88,616,410,28
-      flow w=56 h=24 padL=10 padR=10 bg=sunken control=button tip=Remove it from settings.json so the default applies lighten=true onClick=true rect=504,618,56,24
-        textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=514,618,36,24
+      plain grow=1 rect=88,616,409,28
+      flow h=24 padL=10 padR=10 bg=sunken control=button tip=Remove it from settings.json so the default applies shrink=true lighten=true onClick=true rect=503,618,57,24
+        textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=513,618,37,24
     flow rect=0,644,560,22
       textB text="Turn every gradient into a flat fill." h=22 fg=muted rect=0,644,560,22
     flow h=28 gap=6 rect=0,666,560,28
@@ -120,9 +120,9 @@ flow rect=0,0,560,1400
     flow h=28 gap=6 rect=0,898,560,28
       textB text="Response view" bold=true rect=0,898,101,28
       textB text="•" fg=accent-line tip=Changed from the default rect=107,898,5,28
-      plain grow=1 rect=118,898,380,28
-      flow w=56 h=24 padL=10 padR=10 bg=sunken control=button tip=Remove it from settings.json so the default applies lighten=true onClick=true rect=504,900,56,24
-        textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=514,900,36,24
+      plain grow=1 rect=118,898,379,28
+      flow h=24 padL=10 padR=10 bg=sunken control=button tip=Remove it from settings.json so the default applies shrink=true lighten=true onClick=true rect=503,900,57,24
+        textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=513,900,37,24
     flow rect=0,926,560,22
       textB text="How a response body is shown when it arrives." h=22 fg=muted rect=0,926,560,22
     flow h=28 gap=6 rect=0,948,560,28

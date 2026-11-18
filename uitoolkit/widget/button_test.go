@@ -34,9 +34,34 @@ func TestButtonLabelNeverOverflowsTheButton(t *testing.T) {
 			if test.fixed == 0 && box.W < c.Width(c.F.UI, label)+2*buttonPadX {
 				t.Errorf("%s %q: width %d leaves no inset around the label", test.name, label, box.W)
 			}
-			if test.fixed != 0 && box.W != test.fixed {
-				t.Errorf("%s %q: width %d, want the given %d", test.name, label, box.W, test.fixed)
+			want := max(test.fixed, c.Width(c.F.UI, label)+2*buttonPadX)
+			if test.fixed != 0 && box.W != want {
+				t.Errorf("%s %q: width %d, want %d: the given %d, or the label's if that is wider", test.name, label, box.W, want, test.fixed)
 			}
+		}
+	}
+}
+
+// A button's width is a minimum: with room it widens to show its whole
+// label, and in a row that is too tight it goes back to the given width and
+// shortens the label.
+func TestButtonWidthGivesWayToLabelOnlyWhenThereIsRoom(t *testing.T) {
+	c := testCtx(t)
+	const label = "Auto-reconnect (12)"
+	natural := c.Width(c.F.UI, label) + 2*buttonPadX
+	tests := []struct {
+		name     string
+		rowWidth int
+		want     int
+	}{
+		{"room", 600, natural},
+		{"tight row", 50, 50},
+	}
+	for _, test := range tests {
+		button := Button(label, W(50))
+		Layout(c, Row(H(40), button), test.rowWidth, 40)
+		if got := button.Rect().W; got != test.want {
+			t.Errorf("%s: width %d, want %d", test.name, got, test.want)
 		}
 	}
 }
@@ -84,7 +109,11 @@ func TestChoiceLightsOnlyTheSelectedOption(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			chip := Choice("JSON", test.selected, W(70), OnClick(func() {}))
-			hasProps(t, chip, test.control, "w=70", "onClick=true")
+			hasProps(t, chip, test.control, "onClick=true")
+			Layout(testCtx(t), Row(H(30), chip), 300, 30)
+			if got := chip.Rect().W; got != 70 { // "JSON" fits, so the given width holds
+				t.Errorf("width %d, want 70", got)
+			}
 		})
 	}
 }
