@@ -100,6 +100,19 @@ func (s Settings) UIScale() float64 {
 	return float64(max(MinUIScalePct, min(pct, MaxUIScalePct))) / 100
 }
 
+// baseScales is the platform's own factor under the user's scale: Linux
+// desktops draw text and controls small, the others are right as they are.
+var baseScales = map[string]float64{"linux": 1.1}
+
+// BaseScale is the interface factor the platform needs before the user's
+// UIScale; 1 for a platform not in the table.
+func BaseScale(goos string) float64 {
+	if factor, ok := baseScales[goos]; ok {
+		return factor
+	}
+	return 1
+}
+
 // Default is what a first run uses.
 func Default() Settings {
 	return Settings{AutoSave: true, Theme: "dark", TextSize: "medium", Layout: "stacked", Contrast: "normal", TimeoutSec: 60, UIScalePct: DefaultUIScalePct, Corners: "soft", ResponseView: "compact"}

@@ -15,3 +15,13 @@ func TestUIScaleDefaultsToTheDisplayScaleAndIsBounded(t *testing.T) {
 		}
 	}
 }
+
+// The Linux desktop text and controls read small, so Linux has a base
+// factor under the user's scale; the setting itself stays at 100%.
+func TestBaseScaleIsTenPercentOnLinuxOnly(t *testing.T) {
+	for goos, want := range map[string]float64{"linux": 1.1, "windows": 1, "darwin": 1, "": 1} {
+		if got := BaseScale(goos); got != want {
+			t.Errorf("%q: %v, want %v", goos, got, want)
+		}
+	}
+}

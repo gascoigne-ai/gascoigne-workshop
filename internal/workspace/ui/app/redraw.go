@@ -55,6 +55,10 @@ func frameSize(width, height int, reported, actual, ui float64) frame {
 	}
 }
 
+// uiScale is the interface scale: the user's setting times the platform's
+// base factor.
+func (a *App) uiScale() float64 { return a.settings.UIScale() * a.baseScale }
+
 // displayScale is the display's real scale: what the window system
 // reports, unless that is 1 and the desktop says otherwise (a compositor
 // that scales Xwayland windows itself).

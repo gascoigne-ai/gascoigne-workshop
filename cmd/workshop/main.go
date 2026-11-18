@@ -24,6 +24,7 @@ import (
 	"image/png"
 	"log"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -32,6 +33,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/settingsfile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/systeminfo"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/statefile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/ui/app"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/ui/appicon"
@@ -124,6 +126,12 @@ func main() {
 	}
 	if opts.ScreenshotPath != "" && !flagSet("settings") {
 		opts.SettingsPath = ""
+	}
+
+	// A screenshot is the same on every platform, so it skips the platform's
+	// base scale.
+	if opts.ScreenshotPath == "" {
+		opts.BaseScale = settings.BaseScale(runtime.GOOS)
 	}
 
 	window, err := app.NewApp(opts)

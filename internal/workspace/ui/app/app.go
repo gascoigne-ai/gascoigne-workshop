@@ -191,6 +191,7 @@ type sendResult struct {
 type App struct {
 	ctx         *core.Ctx
 	retryDelay  time.Duration // wait before a dropped connection reopens
+	baseScale   float64       // the platform's interface factor under the user's scale
 	reg         reqport.Registry
 	protocols   func(reqport.ProtocolConfig) reqport.Registry // builds the registry; nil has no protocols
 	grpcMethods reqport.GRPCMethods
@@ -307,6 +308,7 @@ type Options struct {
 	Clock            port.Clock                                    // the time source; nil uses the wall clock
 	RetryDelay       time.Duration                                 // wait before a dropped connection reopens; 0 is two seconds
 	HostOS           string                                        // the OS shortcut text follows; "" is the running one
+	BaseScale        float64                                       // the platform's interface factor under the user's scale; 0 is 1
 	OpenMenu         bool                                          // start with the settings menu open
 	WorkspaceDir     string                                        // collection folder; "" uses the remembered one, else the client config, else the sample
 	Sample           func() model.Collection                       // the collection shown without a workspace or client config; nil uses collection.GitHubSample
@@ -342,6 +344,7 @@ func NewApp(opts Options) (*App, error) {
 	}
 	a := &App{
 		ctx:              ctx,
+		baseScale:        cmp.Or(opts.BaseScale, 1),
 		sample:           opts.Sample,
 		saves:            map[*model.Collection]*autosave.Debounce{},
 		clients:          opts.Clients,
@@ -566,7 +569,7 @@ var cursorShapes = map[core.Cursor]ebiten.CursorShapeType{
 // text and lines stay sharp on HiDPI displays.
 func (a *App) Layout(width, height int) (int, int) {
 	reported := ebiten.Monitor().DeviceScaleFactor()
-	f := frameSize(width, height, reported, a.displayScale(reported), a.settings.UIScale())
+	f := frameSize(width, height, reported, a.displayScale(reported), a.uiScale())
 	a.windowScale = f.WindowScale
 	a.setSize(f.LW, f.LH, f.Scale)
 	return f.SW, f.SH

@@ -344,3 +344,17 @@ func TestRememberedWindowSizeUsesTheWindowScaleOfTheLastLayout(t *testing.T) {
 		t.Fatalf("got %d, want 2000", got)
 	}
 }
+
+// The platform's base factor multiplies the user's scale, so the slider can
+// read 100% while the interface is as big as the platform needs.
+func TestUIScaleIncludesTheBaseScale(t *testing.T) {
+	a, _ := newTestApp(t)
+	if got := a.uiScale(); got != 1 {
+		t.Fatalf("no base: %v, want 1", got)
+	}
+	a.baseScale = 1.1
+	a.settings.UIScalePct = 150
+	if got := a.uiScale(); got < 1.649 || got > 1.651 {
+		t.Fatalf("base 1.1 and 150%%: %v, want 1.65", got)
+	}
+}
