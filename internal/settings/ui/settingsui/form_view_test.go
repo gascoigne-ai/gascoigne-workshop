@@ -84,7 +84,7 @@ func TestTheSettingsFormLaysOutAsPinned(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if got := dump(root); got != string(want) {
+			if got := Dump(root); got != string(want) {
 				t.Fatalf("got:\n%s\nwant:\n%s", got, want)
 			}
 		})
@@ -242,7 +242,7 @@ func TestTheScaleSliderAppliesLiveAndSavesOnRelease(t *testing.T) {
 		want     int
 	}{
 		{"the left end is the smallest", 0, 50},
-		{"the middle is the default", 0.5, settings.DefaultUIScalePct},
+		{"the middle is the default", 0.5, 100},
 		{"the right end is the largest", 0.99, 200},
 	}
 	for _, tc := range cases {

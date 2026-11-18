@@ -83,11 +83,12 @@ type Settings struct {
 	SSE  bool `json:"sse,omitempty"`
 }
 
-// MinUIScalePct and MaxUIScalePct bound the accepted interface scale;
-// DefaultUIScalePct is per platform (default_linux.go, default_other.go).
+// DefaultUIScalePct is the display's own scale; MinUIScalePct and
+// MaxUIScalePct bound what is accepted.
 const (
-	MinUIScalePct = 50
-	MaxUIScalePct = 300
+	DefaultUIScalePct = 100
+	MinUIScalePct     = 50
+	MaxUIScalePct     = 300
 )
 
 // UIScale is the interface scale as a factor, always within bounds.

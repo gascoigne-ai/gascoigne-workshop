@@ -78,7 +78,6 @@ func newTestAppWith(t *testing.T, adjust func(*settings.Settings)) (*App, string
 	path := filepath.Join(t.TempDir(), "settings.json")
 	s := settings.Default()
 	s.ResponseView = "pretty"
-	s.UIScalePct = 100 // layouts are pinned at 100% on every platform
 	adjust(&s)
 	if err := settingsfile.Save(path, s); err != nil {
 		t.Fatal(err)
@@ -89,11 +88,7 @@ func newTestAppWith(t *testing.T, adjust func(*settings.Settings)) (*App, string
 // newCompactTestApp is a test app with the settings defaults.
 func newCompactTestApp(t *testing.T) *App {
 	t.Helper()
-	path := filepath.Join(t.TempDir(), "settings.json")
-	if err := os.WriteFile(path, []byte(`{"uiScale":100}`), 0o644); err != nil { // layouts are pinned at 100% on every platform
-		t.Fatal(err)
-	}
-	a, _ := startTestApp(t, path)
+	a, _ := startTestApp(t, filepath.Join(t.TempDir(), "settings.json"))
 	return a
 }
 

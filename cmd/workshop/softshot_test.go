@@ -11,7 +11,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"slices"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -61,16 +60,7 @@ func renderShotSized(t *testing.T, width, height int, args ...string) image.Imag
 	t.Helper()
 	sandbox := t.TempDir()
 	out := filepath.Join(sandbox, "shot.png")
-	settingsPath := ""
-	if !slices.Contains(args, "-menu") && !slices.Contains(args, "-raw-settings") {
-		// pinned at 100% so the scenes look the same on every platform; the
-		// settings scenes show the real default
-		settingsPath = filepath.Join(sandbox, "settings.json")
-		if err := os.WriteFile(settingsPath, []byte(`{"uiScale":100}`), 0o644); err != nil {
-			t.Fatal(err)
-		}
-	}
-	flags := append([]string{"-screenshot", out, "-settings", settingsPath, "-state", "", "-themes", ""}, args...)
+	flags := append([]string{"-screenshot", out, "-settings", "", "-state", "", "-themes", ""}, args...)
 	runProgram(t, sandbox, width, height, flags...)
 	return readPNG(t, out)
 }

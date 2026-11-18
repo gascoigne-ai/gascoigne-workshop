@@ -20,11 +20,11 @@ func TestLoad(t *testing.T) {
 		wantErr bool
 	}{
 		{"missing file gives defaults", nil, settings.Default(), false},
-		{"full file", ptr(`{"theme":"light","textSize":"large"}`), settings.Settings{AutoSave: true, Theme: "light", TextSize: "large", Layout: "stacked", Contrast: "normal", TimeoutSec: 60, UIScalePct: settings.DefaultUIScalePct, Corners: "soft", ResponseView: "compact"}, false},
-		{"saved layout", ptr(`{"layout":"stacked"}`), settings.Settings{AutoSave: true, Theme: "dark", TextSize: "medium", Layout: "stacked", Contrast: "normal", TimeoutSec: 60, UIScalePct: settings.DefaultUIScalePct, Corners: "soft", ResponseView: "compact"}, false},
-		{"saved timeout", ptr(`{"timeoutSec":15}`), settings.Settings{AutoSave: true, Theme: "dark", TextSize: "medium", Layout: "stacked", Contrast: "normal", TimeoutSec: 15, UIScalePct: settings.DefaultUIScalePct, Corners: "soft", ResponseView: "compact"}, false},
-		{"missing field keeps default", ptr(`{"theme":"light"}`), settings.Settings{AutoSave: true, Theme: "light", TextSize: "medium", Layout: "stacked", Contrast: "normal", TimeoutSec: 60, UIScalePct: settings.DefaultUIScalePct, Corners: "soft", ResponseView: "compact"}, false},
-		{"unknown values pass through", ptr(`{"theme":"neon"}`), settings.Settings{AutoSave: true, Theme: "neon", TextSize: "medium", Layout: "stacked", Contrast: "normal", TimeoutSec: 60, UIScalePct: settings.DefaultUIScalePct, Corners: "soft", ResponseView: "compact"}, false},
+		{"full file", ptr(`{"theme":"light","textSize":"large"}`), settings.Settings{AutoSave: true, Theme: "light", TextSize: "large", Layout: "stacked", Contrast: "normal", TimeoutSec: 60, UIScalePct: 100, Corners: "soft", ResponseView: "compact"}, false},
+		{"saved layout", ptr(`{"layout":"stacked"}`), settings.Settings{AutoSave: true, Theme: "dark", TextSize: "medium", Layout: "stacked", Contrast: "normal", TimeoutSec: 60, UIScalePct: 100, Corners: "soft", ResponseView: "compact"}, false},
+		{"saved timeout", ptr(`{"timeoutSec":15}`), settings.Settings{AutoSave: true, Theme: "dark", TextSize: "medium", Layout: "stacked", Contrast: "normal", TimeoutSec: 15, UIScalePct: 100, Corners: "soft", ResponseView: "compact"}, false},
+		{"missing field keeps default", ptr(`{"theme":"light"}`), settings.Settings{AutoSave: true, Theme: "light", TextSize: "medium", Layout: "stacked", Contrast: "normal", TimeoutSec: 60, UIScalePct: 100, Corners: "soft", ResponseView: "compact"}, false},
+		{"unknown values pass through", ptr(`{"theme":"neon"}`), settings.Settings{AutoSave: true, Theme: "neon", TextSize: "medium", Layout: "stacked", Contrast: "normal", TimeoutSec: 60, UIScalePct: 100, Corners: "soft", ResponseView: "compact"}, false},
 		{"broken json gives defaults and an error", ptr(`{"theme":`), settings.Default(), true},
 	}
 	for _, tt := range tests {
@@ -129,7 +129,7 @@ func TestUIScaleRoundTripsAndOldFilesKeepTheDefault(t *testing.T) {
 		t.Fatal(err)
 	}
 	s, err := Load(p)
-	if err != nil || s.UIScalePct != settings.DefaultUIScalePct {
+	if err != nil || s.UIScalePct != 100 {
 		t.Fatalf("old file: %+v, %v", s, err)
 	}
 	s.UIScalePct = 125

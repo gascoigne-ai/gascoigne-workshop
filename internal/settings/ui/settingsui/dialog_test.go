@@ -1,7 +1,6 @@
 package settingsui
 
 import (
-	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/fonts"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
@@ -58,11 +57,7 @@ func (h *fakeHost) Close()                   {}
 func (h *fakeHost) MarkDirty()               {}
 func (h *fakeHost) Later(callback func())    { callback() }
 
-// dump is the node's dump with the default interface scale written as 100%,
-// the value the pinned dumps hold, so they are the same on every platform.
-func dump(node Node) string {
-	return strings.ReplaceAll(Dump(node), fmt.Sprintf(`text="%d%%"`, settings.DefaultUIScalePct), `text="100%"`)
-}
+func dump(node Node) string { return Dump(node) }
 
 func TestAPageShowsItsSettingsAndTheSearchFiltersAcrossPages(t *testing.T) {
 	var d SettingsDialog

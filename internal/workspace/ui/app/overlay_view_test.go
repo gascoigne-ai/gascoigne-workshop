@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
@@ -33,9 +32,7 @@ func assertDumpPinned(t *testing.T, app *App, root Node, name string, width, hei
 	if err != nil {
 		t.Fatal(err)
 	}
-	// the default interface scale reads 100% in the pinned dumps, whatever the platform
-	got := strings.ReplaceAll(Dump(root), fmt.Sprintf(`text="%d%%"`, settings.DefaultUIScalePct), `text="100%"`)
-	if got != string(want) {
+	if got := Dump(root); got != string(want) {
 		t.Fatalf("got:\n%s\nwant:\n%s", got, want)
 	}
 }
