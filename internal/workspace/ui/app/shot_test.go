@@ -153,7 +153,7 @@ func TestScreenshotWithSendOnASocketGoesAheadAfterAFailedConnect(t *testing.T) {
 }
 
 func TestScreenshotOpensTheNamedRequest(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotRequest: "Echo"})
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{OpenRequest("Echo")}})
 	for range setFrame {
 		if err := a.shotUpdate(); err != nil {
 			t.Fatal(err)
@@ -165,7 +165,7 @@ func TestScreenshotOpensTheNamedRequest(t *testing.T) {
 }
 
 func TestScreenshotOpensTheNamedSettingsPage(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotPage: "colors"})
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{SettingsPage("colors")}})
 	for range setFrame {
 		if err := a.shotUpdate(); err != nil {
 			t.Fatal(err)
@@ -177,7 +177,7 @@ func TestScreenshotOpensTheNamedSettingsPage(t *testing.T) {
 }
 
 func TestScreenshotOpensTheSettingsAsText(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotRawSettings: true})
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{RawSettings()}})
 	for range setFrame {
 		if err := a.shotUpdate(); err != nil {
 			t.Fatal(err)
@@ -189,7 +189,7 @@ func TestScreenshotOpensTheSettingsAsText(t *testing.T) {
 }
 
 func TestScreenshotShowsTheSentLog(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotSentLog: true})
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{SentLog()}})
 	for range setFrame {
 		if err := a.shotUpdate(); err != nil {
 			t.Fatal(err)
@@ -203,7 +203,7 @@ func TestScreenshotShowsTheSentLog(t *testing.T) {
 // With -close-all the capture shows the empty tree that closing the last
 // collection leaves.
 func TestScreenshotClosesEveryCollection(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotCloseAll: true})
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{CloseAll()}})
 	for range setFrame {
 		if err := a.shotUpdate(); err != nil {
 			t.Fatal(err)
@@ -219,7 +219,7 @@ func TestScreenshotClosesEveryCollection(t *testing.T) {
 // several roots in the tree.
 func TestScreenshotAddsCollectionsBesideTheStartOne(t *testing.T) {
 	alphaDir, betaDir := savedCollection(t, "Alpha"), savedCollection(t, "Beta")
-	a := shotApp(t, withAdapters(Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotCollections: []string{alphaDir, betaDir}}))
+	a := shotApp(t, withAdapters(Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{AddCollection(alphaDir), AddCollection(betaDir)}}))
 	start := a.col().Name
 	for range setFrame {
 		if err := a.shotUpdate(); err != nil {
@@ -235,7 +235,7 @@ func TestScreenshotAddsCollectionsBesideTheStartOne(t *testing.T) {
 // would start an empty collection there, and a golden would pass for a tree
 // without the collection it was meant to show.
 func TestScreenshotWithAFolderWithoutACollectionFails(t *testing.T) {
-	a := shotApp(t, withAdapters(Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotCollections: []string{t.TempDir()}}))
+	a := shotApp(t, withAdapters(Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{AddCollection(t.TempDir())}}))
 	for range setFrame {
 		a.shotUpdate()
 	}
@@ -247,7 +247,7 @@ func TestScreenshotWithAFolderWithoutACollectionFails(t *testing.T) {
 // With -log the capture opens the Log dialog, as the status bar's Log
 // button does.
 func TestScreenshotOpensTheCallLog(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotCallLog: true})
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{CallLog()}})
 	for range setFrame {
 		if err := a.shotUpdate(); err != nil {
 			t.Fatal(err)
@@ -262,7 +262,7 @@ func TestScreenshotOpensTheCallLog(t *testing.T) {
 // as choosing a file without a dialog program does.
 func TestScreenshotOpensTheFileBrowserOnAFolder(t *testing.T) {
 	dir := t.TempDir()
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotBrowse: dir, Folders: folders.Disk{}})
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{Browse(dir)}, Folders: folders.Disk{}})
 	for range setFrame {
 		if err := a.shotUpdate(); err != nil {
 			t.Fatal(err)
@@ -304,7 +304,7 @@ func TestScreenshotOfTheProtoPaneWaitsForTheFilesToBeRead(t *testing.T) {
 // announces its tools after the connection opens, so the capture waits for
 // them.
 func TestScreenshotOpensTheFormOfTheNamedTool(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotTool: "search", SendOnStart: true})
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{ToolForm("search")}, SendOnStart: true})
 	a.shot.sent = true // pretend the connection is made; its tools come below
 	for range settleFrames {
 		a.shotUpdate()
@@ -340,7 +340,7 @@ func TestScreenshotWithAToolItCannotOpenFails(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotTool: tc.tool, SendOnStart: tc.send})
+			a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{ToolForm(tc.tool)}, SendOnStart: tc.send})
 			a.shot.sent = true // pretend the connection is made and its tools announced
 			a.cur().Tools = []model.MCPTool{{Name: "ping"}, searchTool()}
 			for range setFrame {
@@ -356,7 +356,7 @@ func TestScreenshotWithAToolItCannotOpenFails(t *testing.T) {
 // With -open-all the capture opens every request of the collection in its
 // own tab, so the strip of open requests overflows.
 func TestScreenshotOpensEveryRequestInATab(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotOpenAll: true})
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{OpenAll()}})
 	for range setFrame {
 		if err := a.shotUpdate(); err != nil {
 			t.Fatal(err)
@@ -378,7 +378,7 @@ func TestScreenshotOpensEveryRequestInATab(t *testing.T) {
 // With -type-url the capture types the text into the open request's URL,
 // so its tab shows the mark of unsaved changes.
 func TestScreenshotTypesIntoTheURL(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotURL: "?page=2"})
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{TypeURL("?page=2")}})
 	url := a.cur().Req.URL
 	for range setFrame {
 		if err := a.shotUpdate(); err != nil {
@@ -397,7 +397,7 @@ func TestScreenshotTypesIntoTheURL(t *testing.T) {
 // the frames drawn before it stayed: the golden scene showed the tab's
 // mark only when a window event happened to refresh them.
 func TestScreenshotURLEditShowsOverMarksDrawnBefore(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotURL: "?page=2"})
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{TypeURL("?page=2")}})
 	for range setFrame - 1 {
 		if err := a.shotUpdate(); err != nil {
 			t.Fatal(err)
@@ -417,15 +417,15 @@ func TestScreenshotURLEditShowsOverMarksDrawnBefore(t *testing.T) {
 // first one.
 func TestScreenshotShowsTheNamedRequestPane(t *testing.T) {
 	cases := []struct {
-		name    string
-		request string
+		name  string
+		scene []Step
 	}{
-		{"http request", ""},
-		{"socket request", "Echo"},
+		{"http request", []Step{ShowPane("Settings")}},
+		{"socket request", []Step{OpenRequest("Echo"), ShowPane("Settings")}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotRequest: tc.request, ScreenshotPane: "Settings"})
+			a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: tc.scene})
 			for range setFrame {
 				if err := a.shotUpdate(); err != nil {
 					t.Fatal(err)
@@ -446,7 +446,7 @@ func TestScreenshotShowsTheNamedRequestPane(t *testing.T) {
 // so a scene can draw the response's Tests list; -pane cannot, as both
 // sides have a Tests pane.
 func TestScreenshotShowsTheNamedResponsePane(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotResponsePane: "Tests"})
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{ShowResponsePane("Tests")}})
 	for range setFrame {
 		if err := a.shotUpdate(); err != nil {
 			t.Fatal(err)
@@ -464,7 +464,7 @@ func TestScreenshotShowsTheNamedResponsePane(t *testing.T) {
 // An unknown response pane ends the run with an error, as an unknown
 // request pane does.
 func TestScreenshotWithAnUnknownResponsePaneFails(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotResponsePane: "Nope"})
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{ShowResponsePane("Nope")}})
 	for range setFrame {
 		a.shotUpdate()
 	}
@@ -479,7 +479,7 @@ func TestScreenshotWithAnUnknownResponsePaneFails(t *testing.T) {
 func TestScreenshotChoosesTheBodyType(t *testing.T) {
 	for _, bodyType := range []model.BodyType{model.BodyFile, model.BodyGraphQL} {
 		t.Run(string(bodyType), func(t *testing.T) {
-			a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotBody: string(bodyType)})
+			a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{ChooseBody(string(bodyType))}})
 			for range setFrame {
 				if err := a.shotUpdate(); err != nil {
 					t.Fatal(err)
@@ -502,7 +502,7 @@ func TestScreenshotChoosesTheBodyType(t *testing.T) {
 // unsaved marks cached by earlier frames would hide it, as they once hid
 // the -type-url edit.
 func TestScreenshotBodyChoiceShowsOverMarksDrawnBefore(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotBody: string(model.BodyFile)})
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{ChooseBody(string(model.BodyFile))}})
 	for range setFrame - 1 {
 		if err := a.shotUpdate(); err != nil {
 			t.Fatal(err)
@@ -519,7 +519,7 @@ func TestScreenshotBodyChoiceShowsOverMarksDrawnBefore(t *testing.T) {
 
 // An unknown body type ends the run with an error, as an unknown pane does.
 func TestScreenshotWithAnUnknownBodyTypeFails(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotBody: "Nope"})
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{ChooseBody("Nope")}})
 	for range setFrame {
 		a.shotUpdate()
 	}
@@ -531,7 +531,7 @@ func TestScreenshotWithAnUnknownBodyTypeFails(t *testing.T) {
 // With -wrap the capture turns on Wrap for the open request's response and
 // body, as their two Wrap chips would, so one scene flag covers both.
 func TestScreenshotWrapsTheResponseAndTheBody(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotRequest: "Echo", ScreenshotWrap: true})
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{OpenRequest("Echo"), WrapOn()}})
 	for range setFrame {
 		if err := a.shotUpdate(); err != nil {
 			t.Fatal(err)
@@ -551,7 +551,7 @@ func TestScreenshotWrapsTheResponseAndTheBody(t *testing.T) {
 
 // Without -wrap both stay off, the default the user decided.
 func TestScreenshotLeavesWrapOffByDefault(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotRequest: "Echo"})
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{OpenRequest("Echo")}})
 	for range setFrame {
 		a.shotUpdate()
 	}
@@ -565,7 +565,7 @@ func TestScreenshotLeavesWrapOffByDefault(t *testing.T) {
 // The first sample request has no body, so -body chooses JSON first.
 func TestScreenshotTypesTheBody(t *testing.T) {
 	const typed = "{\n  \"note\": \"typed\"\n}"
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotBody: string(model.BodyJSON), ScreenshotTypeBody: typed})
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{ChooseBody(string(model.BodyJSON)), TypeBody(typed)}})
 	for range setFrame - 1 {
 		a.shotUpdate()
 	}
@@ -589,7 +589,7 @@ func TestScreenshotTypesTheBody(t *testing.T) {
 // the typed text, so -type-body there ends the run with an error rather
 // than letting a golden pass for a scene without it.
 func TestScreenshotTypingABodyWithoutATextEditorFails(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotBody: string(model.BodyFile), ScreenshotTypeBody: "x"})
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{ChooseBody(string(model.BodyFile)), TypeBody("x")}})
 	for range setFrame {
 		a.shotUpdate()
 	}
@@ -601,7 +601,7 @@ func TestScreenshotTypingABodyWithoutATextEditorFails(t *testing.T) {
 // An unknown pane ends the run with an error: capturing the first pane
 // instead would let a golden pass for the wrong scene.
 func TestScreenshotWithAnUnknownPaneFails(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotPane: "Nope"})
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{ShowPane("Nope")}})
 	for range setFrame {
 		a.shotUpdate()
 	}
@@ -614,7 +614,7 @@ func TestScreenshotWithAnUnknownPaneFails(t *testing.T) {
 // an error toast stays until it is clicked, so a slow frame cannot let it
 // fade before the capture as an info toast would.
 func TestScreenshotShowsTheToasts(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotToasts: []string{"First", "Second"}})
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{ShowToast("First"), ShowToast("Second")}})
 	for range setFrame {
 		if err := a.shotUpdate(); err != nil {
 			t.Fatal(err)
@@ -640,7 +640,7 @@ func TestScreenshotOpensTheNamedDialog(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.kind, func(t *testing.T) {
-			a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotDialog: tc.kind})
+			a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{OpenDialog(tc.kind)}})
 			for range setFrame {
 				if err := a.shotUpdate(); err != nil {
 					t.Fatal(err)
@@ -665,7 +665,7 @@ func TestScreenshotOpensTheNamedDialog(t *testing.T) {
 // An unknown dialog ends the run with an error, so a golden never passes
 // for a window without the dialog.
 func TestScreenshotWithAnUnknownDialogFails(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotDialog: "nope"})
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{OpenDialog("nope")}})
 	for range setFrame {
 		a.shotUpdate()
 	}
@@ -677,7 +677,7 @@ func TestScreenshotWithAnUnknownDialogFails(t *testing.T) {
 // With -filter the capture types the text into the sidebar's filter, so the
 // tree shows only the matches with the matched part highlighted.
 func TestScreenshotFiltersTheTree(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotFilter: "Echo"})
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{Filter("Echo")}})
 	for range setFrame {
 		if err := a.shotUpdate(); err != nil {
 			t.Fatal(err)
@@ -700,7 +700,7 @@ func TestScreenshotWithSendingCapturesTheRequestInFlight(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 	t.Cleanup(func() { close(release) })
-	a := shotApp(t, withAdapters(Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotSending: true}))
+	a := shotApp(t, withAdapters(Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{Send()}}))
 	tab := a.cur()
 	pointTabAt(tab, srv.URL)
 	for range settleFrames {
@@ -719,7 +719,7 @@ func TestScreenshotWithSendingCapturesTheRequestInFlight(t *testing.T) {
 // Without its request in flight, -sending does not capture: the picture
 // would show the Send button, not the Cancel one.
 func TestScreenshotWithSendingWaitsForTheRequestToStart(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotSending: true})
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{Send()}})
 	a.shot.frames = settleFrames
 	if a.shot.ready(a) {
 		t.Fatal("nothing is sending yet, the capture must wait")
@@ -731,7 +731,7 @@ func TestScreenshotWithSendingWaitsForTheRequestToStart(t *testing.T) {
 // rows in a fixed order.
 func TestScreenshotWithSendAndARequestSendsBothInTurn(t *testing.T) {
 	srv := jsonServer(t)
-	a := shotApp(t, withAdapters(Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), SendOnStart: true, ScreenshotRequest: "Get User"}))
+	a := shotApp(t, withAdapters(Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), SendOnStart: true, Scene: []Step{OpenRequest("Get User")}}))
 	first := a.cur().Req
 	pointTabAt(a.cur(), srv.URL)
 	named := a.findRequestByName("Get User")
@@ -757,7 +757,7 @@ func TestScreenshotWithSendAndARequestSendsBothInTurn(t *testing.T) {
 // it and types the query, so the bar shows its matches.
 func TestScreenshotFindsTheQueryInTheResponse(t *testing.T) {
 	srv := jsonServer(t)
-	a := shotApp(t, withAdapters(Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), SendOnStart: true, ScreenshotFind: "ok"}))
+	a := shotApp(t, withAdapters(Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), SendOnStart: true, Scene: []Step{Find("ok")}}))
 	tab := a.cur()
 	pointTabAt(tab, srv.URL)
 	for range 400 {
@@ -783,7 +783,7 @@ func TestScreenshotFindsTheQueryInTheResponse(t *testing.T) {
 }
 
 func TestScreenshotWithAnUnknownRequestFails(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotRequest: "No such request"})
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{OpenRequest("No such request")}})
 	for range setFrame {
 		a.shotUpdate()
 	}
@@ -796,8 +796,7 @@ func TestScreenshotWithAnUnknownRequestFails(t *testing.T) {
 // path a key press takes, so a scene draws a row's conflict, its notes and
 // its recording state.
 func TestScreenshotRecordsShortcutKeys(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotPage: "shortcuts",
-		ScreenshotRecord: []string{"close-tab=Ctrl+L", "new-request=J", "send=Ctrl+C"}})
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{SettingsPage("shortcuts"), Record("close-tab=Ctrl+L"), Record("new-request=J"), Record("send=Ctrl+C")}})
 	for range setFrame {
 		if err := a.shotUpdate(); err != nil {
 			t.Fatal(err)
@@ -819,7 +818,7 @@ func TestScreenshotRecordsShortcutKeys(t *testing.T) {
 
 // A bare action is left recording, so a scene shows "Press keys...".
 func TestScreenshotLeavesABareActionRecording(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotRecord: []string{"close-tab"}})
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{Record("close-tab")}})
 	for range setFrame {
 		if err := a.shotUpdate(); err != nil {
 			t.Fatal(err)
@@ -835,7 +834,7 @@ func TestScreenshotLeavesABareActionRecording(t *testing.T) {
 func TestScreenshotWithABadRecordFails(t *testing.T) {
 	for _, spec := range []string{"nope=Ctrl+K", "close-tab=Ctrl+Nope"} {
 		t.Run(spec, func(t *testing.T) {
-			a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotRecord: []string{spec}})
+			a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{Record(spec)}})
 			for range setFrame {
 				a.shotUpdate()
 			}
@@ -849,7 +848,7 @@ func TestScreenshotWithABadRecordFails(t *testing.T) {
 // Arrow keys on a tree with no rows (the last collection was closed while
 // the tree had the keyboard) read rows[-1] and panicked.
 func TestTreeArrowKeysDoNothingWithoutRows(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotCloseAll: true})
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{CloseAll()}})
 	for range setFrame {
 		if err := a.shotUpdate(); err != nil {
 			t.Fatal(err)

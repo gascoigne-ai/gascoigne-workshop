@@ -1,7 +1,7 @@
 status: todo
 kind: feature
 commit: refactor(app): typed state instead of any and bool pairs
-scope: internal/*,.harness/*
+scope: internal/*,cmd/*,.harness/*
 depends_on: 085-toolkit-api-gaps
 
 # 086 Data model cleanup

@@ -5,7 +5,7 @@ import "testing"
 func TestAScreenshotCanChangeSettingsLiveThroughTheSamePathAsTheDialog(t *testing.T) {
 	a, _ := newTestApp(t)
 	a.shot.path = "unused.png"
-	a.shot.set = []string{"flat=true", "contrast=high", "uiScale=120"}
+	a.shot.steps = []Step{Set("flat=true"), Set("contrast=high"), Set("uiScale=120")}
 	for range settleFrames {
 		if err := a.shotUpdate(); err != nil {
 			t.Fatal(err)

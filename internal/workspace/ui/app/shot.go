@@ -6,18 +6,12 @@ import (
 	"fmt"
 	"image"
 	"image/png"
-	"path/filepath"
 	"slices"
 	"strconv"
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/tree"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/serial"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -48,41 +42,22 @@ type screenshot struct {
 	frames      int
 	sent        bool
 	waiting     []*reqTab // tabs whose send the capture waits for
-	sendNext    *reqTab   // the tab -request opened, sent once the earlier sends are answered
+	sendNext    *reqTab   // the tab OpenRequest opened, sent once the earlier sends are answered
 	phase       shotPhase
 	err         error
-	set         []string // key=value settings applied live before the capture, as the dialog would
-	request     string   // name of the request to open before the capture
-	page        string   // settings page to show before the capture
-	rawSettings bool     // open the settings dialog on the text of settings.json
-	sentLog     bool     // show the log of sent requests in the sidebar
-	find        string   // text to search the response for in the find bar
-	found       bool     // the find bar is open with find typed in
-	filter      string   // text to type into the sidebar's filter
-	sending     bool     // send the open request and capture while it is in flight
-	openAll     bool     // open every request in its own tab, so the tab strip overflows
-	url         string   // text to type into the open request's URL, so its tab is marked changed
-	pane        string   // label of the request pane to show, such as Settings
-	body        string   // body type to choose on the open request, such as file
-	typeBody    string   // text that replaces the open request's body, as selecting all and typing would
-	wrap        bool     // turn on the response's and the body's Wrap, as their chips would
-	respPane    string   // label of the response pane to show, such as Tests
-	toasts      []string // texts shown as error toasts
-	dialog      string   // kind of dialog to open on the open request, a key of shotDialogs
-	record      []string // ACTION=KEYS recorded on the Shortcuts page, as a user would; a bare ACTION is left recording
-	callLog     bool     // open the Log dialog of calls, as the status bar's Log button does
-	browse      string   // open the in-app file browser on this folder, as choosing a file without a dialog program does
-	closeAll    bool     // close every collection, so the tree shows its empty prompt
-	collections []string // folders whose collections open beside the start one, in order
-	tool        string   // name of the open MCP request's tool whose call form to open, once the server announced it
-	toolOpened  bool     // the form of tool is open
+	steps       []Step     // the scene, run in order at setFrame
+	pending     []deferred // the scene's steps that wait for the sends to be answered
 }
 
-// shotDialogs are the dialogs -dialog opens on the open request, each
-// through the path its tree menu item takes.
-var shotDialogs = map[string]func(a *App, node tree.Node){
-	"rename": (*App).renameNode,
-	"delete": (*App).deleteNode,
+// newScreenshot builds the capture of a run; a run without a path has none.
+func newScreenshot(opts Options) screenshot {
+	shot := screenshot{path: opts.ScreenshotPath, sendOnStart: opts.SendOnStart, steps: opts.Scene}
+	for _, step := range opts.Scene {
+		if waits, ok := step.(deferred); ok {
+			shot.pending = append(shot.pending, waits)
+		}
+	}
+	return shot
 }
 
 // Err is the error of the capture, if any.
@@ -100,11 +75,8 @@ func (a *App) shotUpdate() error {
 		return nil // the frame is taken; nothing more is set up for it
 	}
 	s.frames++
-	if s.frames == setFrame {
-		for _, spec := range s.set {
-			a.applyShotSetting(spec)
-		}
-		a.showShotTarget()
+	if s.frames == setFrame && !a.showShotScene() {
+		return nil
 	}
 	if s.sendOnStart && !s.sent {
 		s.sent = true
@@ -115,47 +87,46 @@ func (a *App) shotUpdate() error {
 		s.sendNext = nil
 		a.shotSend(next)
 	}
-	if s.find != "" && !s.found && s.frames >= setFrame && s.sendsDone() { // after the response, or there is nothing to search
-		s.found = true
-		a.shotFind()
-	}
-	if s.tool != "" && !s.toolOpened && s.frames >= setFrame && s.sendsDone() {
-		a.shotToolForm()
+	if s.frames >= setFrame && s.sendsDone() { // after the response, or there is nothing to search
+		a.runPending()
 	}
 	return nil
 }
 
-// shotToolForm opens the call form of the capture's tool once the open
-// request's server announced it, as picking it from the tool menu would.
-// Once the server announced tools without it, the run ends with an error
-// rather than waiting for the timeout.
-func (a *App) shotToolForm() {
-	t := a.cur()
-	for _, tool := range t.Tools {
-		if tool.Name == a.shot.tool {
-			a.shot.toolOpened = true
-			a.openToolForm(t, tool)
+// showShotScene runs the scene's steps in order. The first step that fails
+// ends the run with its error and the rest are not run: showing a scene that
+// is not the one asked for would let a golden pass for the wrong picture. It
+// reports whether the run goes on.
+func (a *App) showShotScene() bool {
+	for _, step := range a.shot.steps {
+		if _, waits := step.(deferred); waits {
+			continue
+		}
+		if err := step.apply(a); err != nil {
+			a.failShot(err)
+			return false
+		}
+	}
+	return true
+}
+
+// runPending tries the deferred steps that are not ready yet.
+func (a *App) runPending() {
+	for _, step := range a.shot.pending {
+		if step.ready(a) {
+			continue
+		}
+		if err := step.apply(a); err != nil {
+			a.failShot(err)
 			return
 		}
 	}
-	if len(t.Tools) == 0 {
-		return // not announced yet
-	}
-	names := make([]string, len(t.Tools))
-	for i, tool := range t.Tools {
-		names[i] = tool.Name
-	}
-	a.shot.err = fmt.Errorf("screenshot tool %q is not one the server announced: %s", a.shot.tool, strings.Join(names, ", "))
-	a.shot.phase = shotOver
 }
 
-// shotFind opens the find bar on the current response and types the query,
-// as Ctrl+F and typing would.
-func (a *App) shotFind() {
-	a.openFind()
-	t := a.cur()
-	t.find.Insert(a.shot.find)
-	a.runFind(t)
+// failShot ends the capture with err.
+func (a *App) failShot(err error) {
+	a.shot.err = err
+	a.shot.phase = shotOver
 }
 
 // sendsDone reports whether every send the capture asked for has its outcome.
@@ -187,16 +158,18 @@ func (s *screenshot) ready(app *App) bool {
 	if !s.sendsDone() && s.frames < shotTimeout {
 		return false
 	}
-	if s.sending && !app.cur().Sending && s.frames < shotTimeout {
-		return false
-	}
-	if s.tool != "" && !s.toolOpened && s.frames < shotTimeout {
+	if !s.pendingReady(app) && s.frames < shotTimeout {
 		return false
 	}
 	if (protoReading(app.cur()) || schemaLoading(app.cur())) && s.frames < shotTimeout {
 		return false
 	}
-	return s.find == "" || s.found || s.frames >= shotTimeout
+	return true
+}
+
+// pendingReady reports whether every deferred step of the scene has run.
+func (s *screenshot) pendingReady(app *App) bool {
+	return !slices.ContainsFunc(s.pending, func(step deferred) bool { return !step.ready(app) })
 }
 
 // answered reports whether what -send started has an outcome to show: a
@@ -265,224 +238,6 @@ func parseSetting(spec string) (key string, value any, err error) {
 		return key, number, nil
 	}
 	return key, text, nil
-}
-
-// applyShotSetting changes one setting through the path the settings dialog
-// uses, so a screenshot shows a live change and not a start-up one.
-func (a *App) applyShotSetting(spec string) {
-	key, value, err := parseSetting(spec)
-	if err != nil {
-		a.shot.err = err
-		return
-	}
-	a.changeSettings(func(prefs *settings.Settings) { *prefs = settings.With(*prefs, key, value) })
-}
-
-// showShotTarget opens the request and the settings page a capture asks for,
-// so a scene other than the first tab can be drawn. A request that is not in
-// the collection ends the run with an error: showing the default tab instead
-// would let a golden pass for the wrong scene.
-func (a *App) showShotTarget() {
-	s := &a.shot
-	for _, dir := range s.collections {
-		if err := a.addShotCollection(dir); err != nil {
-			s.err = err
-			s.phase = shotOver
-			return
-		}
-	}
-	if s.openAll {
-		a.eachRoot(func(root *model.Folder) {
-			walkRequests(root, "", func(_ string, request *model.Request) { a.openRequest(request) })
-		})
-	}
-	if s.request != "" {
-		req := a.findRequestByName(s.request)
-		if req == nil {
-			s.err = fmt.Errorf("screenshot request %q is not in the collection", s.request)
-			s.phase = shotOver
-			return
-		}
-		a.openRequest(req)
-		if s.sendOnStart {
-			s.sendNext = a.cur()
-		}
-	}
-	if s.pane != "" && !a.showShotPane(s.pane) {
-		s.err = fmt.Errorf("screenshot pane %q is not a pane of the open request", s.pane)
-		s.phase = shotOver
-		return
-	}
-	if s.respPane != "" && !a.showShotResponsePane(s.respPane) {
-		s.err = fmt.Errorf("screenshot response pane %q is not a response pane of the open request", s.respPane)
-		s.phase = shotOver
-		return
-	}
-	if s.body != "" && !a.chooseShotBody(s.body) {
-		s.err = fmt.Errorf("screenshot body type %q is not one of the body chips", s.body)
-		s.phase = shotOver
-		return
-	}
-	if s.typeBody != "" && !a.typeShotBody(s.typeBody) {
-		s.err = fmt.Errorf("screenshot body text needs a JSON or Text body, the open request's is %q", a.cur().Req.BodyType)
-		s.phase = shotOver
-		return
-	}
-	if s.wrap {
-		a.cur().view.Wrap = true
-		a.cur().body.Wrap = true
-	}
-	if s.dialog != "" {
-		open, ok := shotDialogs[s.dialog]
-		if !ok {
-			s.err = fmt.Errorf("screenshot dialog %q is not one of rename, delete", s.dialog)
-			s.phase = shotOver
-			return
-		}
-		open(a, tree.Of(a.cur().Req))
-	}
-	if s.tool != "" && !s.sendOnStart {
-		s.err = fmt.Errorf("screenshot tool %q needs -send, which connects to the server that announces it", s.tool)
-		s.phase = shotOver
-		return
-	}
-	for _, text := range s.toasts {
-		a.toast(text, true)
-	}
-	if s.page != "" {
-		a.prefs.Cat = s.page
-		a.menu = true
-	}
-	for _, spec := range s.record {
-		if err := a.shotRecord(spec); err != nil {
-			s.err = err
-			s.phase = shotOver
-			return
-		}
-	}
-	if s.rawSettings {
-		a.prefs.OpenRaw(a)
-		a.menu = true
-	}
-	if s.sentLog {
-		a.showSent = true
-	}
-	if s.callLog {
-		a.calls.Open()
-	}
-	if s.browse != "" {
-		dir, err := filepath.Abs(s.browse)
-		if err != nil {
-			s.err = fmt.Errorf("screenshot file browser folder %q: %w", s.browse, err)
-			s.phase = shotOver
-			return
-		}
-		a.browseIn(dir, "Choose the file to send", false, "", func(string) {})
-	}
-	for s.closeAll && len(a.open.Entries) > 0 {
-		a.closeCollection(a.open.Entries[0].Collection)
-	}
-	if s.filter != "" {
-		a.filter.Insert(s.filter)
-	}
-	if s.url != "" {
-		a.cur().url.Insert(s.url)
-		a.urlEdited(a.cur())
-		a.markStale() // no input reports this edit, so the cached unsaved marks would not see it
-	}
-	if s.sending {
-		a.send(a.cur())
-	}
-}
-
-// addShotCollection opens the collection saved in dir beside the open ones,
-// as Open collection folder does. A folder with nothing in it is an error
-// here, unlike in that prompt, where it starts a new collection: a scene
-// meant to show a saved collection must not pass with an empty one.
-func (a *App) addShotCollection(dir string) error {
-	loaded, err := a.store.Load(dir)
-	if err != nil {
-		return fmt.Errorf("screenshot collection %q: %w", dir, err)
-	}
-	if len(loaded.Folders) == 0 && len(loaded.Requests) == 0 {
-		return fmt.Errorf("screenshot collection %q: the folder holds no collection", dir)
-	}
-	return a.addCollection(dir)
-}
-
-// shotRecord starts recording on the action spec names and, when spec
-// gives keys, delivers them as the frame's input the way a key press is.
-func (a *App) shotRecord(spec string) error {
-	id, keys, hasKeys := strings.Cut(spec, "=")
-	known := slices.ContainsFunc(shortcuts, func(candidate shortcut) bool { return candidate.id == id })
-	if !known {
-		return fmt.Errorf("screenshot record: %q is not a shortcut action", id)
-	}
-	a.shortcutKeys.Start(id)
-	if !hasKeys {
-		return nil
-	}
-	binding, err := engine.ParseBinding(keys)
-	if err != nil {
-		return fmt.Errorf("screenshot record %s: %w", id, err)
-	}
-	a.shortcutKeys.RecordKey(a, core.Input{Keys: []ebiten.Key{binding.Key}, Ctrl: binding.Ctrl, Shift: binding.Shift, Alt: binding.Alt})
-	return nil
-}
-
-// showShotPane selects the open request's pane with this label; it reports
-// whether the request has one.
-func (a *App) showShotPane(label string) bool {
-	tab := a.cur()
-	for i, candidate := range requestPanesFor(tab) {
-		if candidate.label == label {
-			tab.paneTab = i
-			return true
-		}
-	}
-	return false
-}
-
-// showShotResponsePane selects the open request's response pane with this
-// label; it reports whether the request has one.
-func (a *App) showShotResponsePane(label string) bool {
-	tab := a.cur()
-	for i, candidate := range responsePanesFor(tab) {
-		if candidate.label == label {
-			tab.respTab = i
-			return true
-		}
-	}
-	return false
-}
-
-// chooseShotBody chooses the body type id on the open request, as its chip
-// does; it reports whether id is one of the chips.
-func (a *App) chooseShotBody(id string) bool {
-	known := slices.ContainsFunc(bodyTypes, func(candidate bodyChoice) bool {
-		return candidate.id == model.BodyType(id)
-	})
-	if !known {
-		return false
-	}
-	a.setBodyType(a.cur(), model.BodyType(id))
-	a.markStale() // no input reports this edit, so the cached unsaved marks would not see it
-	return true
-}
-
-// typeShotBody replaces the open request's body text, as selecting all and
-// typing would; it reports false for a body type whose editor is not the
-// text area, where the text would not be shown.
-func (a *App) typeShotBody(text string) bool {
-	t := a.cur()
-	if t.Req.BodyType != model.BodyJSON && t.Req.BodyType != model.BodyText {
-		return false
-	}
-	t.body.SelectAll()
-	t.body.Insert(text)
-	editRequest(t, editor.BodyTyped{Text: t.body.Text})
-	a.markStale() // no input reports this edit, so the cached unsaved marks would not see it
-	return true
 }
 
 func (a *App) findRequestByName(name string) *model.Request {

@@ -62,10 +62,6 @@ const previewLifetime = 5 * time.Minute
 func main() {
 	var opts app.Options
 	flag.StringVar(&opts.ScreenshotPath, "screenshot", "", "save a PNG of the window to this path and exit")
-	flag.Func("set", "key=value: change a setting live before the screenshot, as the settings dialog would (repeatable, for screenshots)", func(spec string) error {
-		opts.ScreenshotSet = append(opts.ScreenshotSet, spec)
-		return nil
-	})
 	flag.BoolVar(&opts.SendOnStart, "send", false, "send the first request at startup (for screenshots)")
 	flag.StringVar(&opts.SettingsPath, "settings", settingsfile.DefaultPath(), "settings file; empty keeps settings in memory, as a screenshot does unless this flag is given")
 	flag.StringVar(&opts.StatePath, "state", statefile.DefaultPath(), "remembered window and tabs; empty keeps them in memory")
@@ -97,38 +93,7 @@ func main() {
 	flag.StringVar(&opts.WorkspaceDir, "workspace", "", "folder to load and save the collection; empty uses the last one, else the client config (release build) or the example server (default build)")
 	opts.DefaultWorkspace = settingsfile.DefaultWorkspace()
 	iconPNG := flag.String("icon-png", "", "write the program icon (256x256 PNG) to this path and exit, for packaging")
-	flag.StringVar(&opts.ScreenshotRequest, "request", "", "open the request with this name before the screenshot")
-	flag.StringVar(&opts.ScreenshotPage, "page", "", "open the settings dialog on this page (appearance, colors, shortcuts, requests, general, system) before the screenshot")
-	flag.BoolVar(&opts.ScreenshotRawSettings, "raw-settings", false, "open the settings dialog on the text of settings.json before the screenshot")
-	flag.BoolVar(&opts.ScreenshotSentLog, "sent", false, "show the log of sent requests in the sidebar before the screenshot")
-	flag.StringVar(&opts.ScreenshotFilter, "filter", "", "type this text into the sidebar's filter before the screenshot")
-	flag.BoolVar(&opts.ScreenshotSending, "sending", false, "send the open request and take the screenshot while it is in flight")
-	flag.BoolVar(&opts.ScreenshotOpenAll, "open-all", false, "open every request of the collection in its own tab before the screenshot")
-	flag.StringVar(&opts.ScreenshotURL, "type-url", "", "type this text into the open request's URL before the screenshot, so its tab shows unsaved changes")
-	flag.StringVar(&opts.ScreenshotPane, "pane", "", "show the open request's pane with this label (Params, Settings, ...) before the screenshot")
-	flag.StringVar(&opts.ScreenshotResponsePane, "response-pane", "", "show the open request's response pane with this label (Headers, Tests, ...) before the screenshot")
-	flag.StringVar(&opts.ScreenshotBody, "body", "", "choose this body type (json, text, form, multipart, graphql, file, ...) on the open request before the screenshot")
-	flag.StringVar(&opts.ScreenshotTypeBody, "type-body", "", "replace the open request's body text (JSON or Text body) with this text before the screenshot")
-	flag.BoolVar(&opts.ScreenshotWrap, "wrap", false, "turn on Wrap for the open request's response and body before the screenshot, as their Wrap chips do")
-	flag.Func("toast", "show this text as an error toast before the screenshot (repeatable)", func(text string) error {
-		opts.ScreenshotToasts = append(opts.ScreenshotToasts, text)
-		return nil
-	})
-	flag.Func("record", "ACTION=KEYS: record KEYS for the shortcut ACTION on the Shortcuts page before the screenshot; a bare ACTION is left recording (repeatable)", func(spec string) error {
-		opts.ScreenshotRecord = append(opts.ScreenshotRecord, spec)
-		return nil
-	})
-	flag.StringVar(&opts.ScreenshotDialog, "dialog", "", "open this dialog (rename, delete) on the open request before the screenshot")
-	flag.BoolVar(&opts.ScreenshotCloseAll, "close-all", false, "close every collection before the screenshot, so the tree shows its empty prompt")
-	flag.Func("add-collection", "open the collection saved in this folder beside the others before the screenshot, as Open collection folder does (repeatable)", func(dir string) error {
-		opts.ScreenshotCollections = append(opts.ScreenshotCollections, dir)
-		return nil
-	})
 	flag.BoolVar(&opts.Welcome, "welcome", false, "open the welcome dialog before the screenshot; a normal run opens it once per version")
-	flag.BoolVar(&opts.ScreenshotCallLog, "log", false, "open the Log dialog of calls before the screenshot, as the status bar's Log button does")
-	flag.StringVar(&opts.ScreenshotBrowse, "browse", "", "open the in-app file browser on this folder before the screenshot, as choosing a file without a dialog program does")
-	flag.StringVar(&opts.ScreenshotTool, "tool", "", "open the call form of this tool of the open MCP request before the screenshot, once its server announced it (with -send)")
-	flag.StringVar(&opts.ScreenshotFind, "find", "", "search the response for this text in the find bar before the screenshot (after -send's response)")
 	windowW, windowH := windowWidth, windowHeight
 	flag.Func("window", "WIDTHxHEIGHT: open the window at this size, for screenshots", func(spec string) error {
 		var err error
@@ -136,7 +101,9 @@ func main() {
 		return err
 	})
 	flag.BoolVar(&opts.OpenMenu, "menu", false, "start with the settings menu open (for screenshots)")
+	scene := newSceneFlags(flag.CommandLine)
 	flag.Parse()
+	opts.Scene = scene.steps()
 	if *iconPNG != "" {
 		if err := writeIcon(*iconPNG); err != nil {
 			log.Fatal(err)
