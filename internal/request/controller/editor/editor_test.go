@@ -49,7 +49,7 @@ func TestUpdateProtocolChosenFixesAMethodThatDoesNotFitRest(t *testing.T) {
 	cases := []struct {
 		name       string
 		method     string
-		protocol   string
+		protocol   model.Protocol
 		wantMethod string
 	}{
 		{"rest with no method gets GET", "", "rest", "GET"},
@@ -102,7 +102,7 @@ func TestUpdateBodyTypeChosenKeepsTheRightTextForEachType(t *testing.T) {
 		name       string
 		req        model.Request
 		msg        BodyTypeChosen
-		wantType   string
+		wantType   model.BodyType
 		wantBody   string
 		wantMethod string
 	}{

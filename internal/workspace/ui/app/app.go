@@ -51,16 +51,13 @@ const (
 	maxTimeout        = 24 * time.Hour // longer would overflow time.Duration for a huge setting
 )
 
-// Cycled by clicking the protocol and method chips of the URL bar.
-var (
-	protocolOrder = []string{"rest", "websocket", "mcp", "sse", "grpc"}
-	protocolLabel = map[string]string{"rest": "REST", "websocket": "WS", "mcp": "MCP", "sse": "SSE", "grpc": "gRPC"}
-	methodOrder   = []string{"GET", "POST", "PUT", "PATCH", "DELETE"}
-)
+// methodOrder is cycled by clicking the method chip of the URL bar; the
+// protocol chip cycles protocolViews.
+var methodOrder = []string{"GET", "POST", "PUT", "PATCH", "DELETE"}
 
 // next returns the entry after cur in order, wrapping; the first entry
 // when cur is not listed.
-func next(order []string, cur string) string {
+func next[T comparable](order []T, cur T) T {
 	for i, s := range order {
 		if s == cur {
 			return order[(i+1)%len(order)]
@@ -693,13 +690,11 @@ func (a *App) newRequest() { a.newRequestIn(a.selectedFolder()) }
 // protocolsFor are the protocols the chip cycles through for a request on
 // current: the experimental ones only when settings switch them on, except
 // the one the request already uses, so it never loses its protocol.
-func (a *App) protocolsFor(current string) []string {
-	enabled := map[string]bool{"sse": a.settings.SSE, "grpc": a.settings.GRPC}
-	var offered []string
-	for _, id := range protocolOrder {
-		experimental, listed := enabled[id]
-		if !listed || experimental || id == current {
-			offered = append(offered, id)
+func (a *App) protocolsFor(current model.Protocol) []model.Protocol {
+	var offered []model.Protocol
+	for _, view := range protocolViews {
+		if view.offered == nil || view.offered(a.settings) || view.protocol == current {
+			offered = append(offered, view.protocol)
 		}
 	}
 	return offered

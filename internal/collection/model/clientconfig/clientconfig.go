@@ -33,7 +33,7 @@ type Config struct {
 // protocol, a URL and credentials.
 type Server struct {
 	Name     string
-	Protocol string
+	Protocol model.Protocol
 	URL      string
 	Auth     model.Auth
 }
@@ -198,9 +198,15 @@ func (schema fileConfig) config() (Config, error) {
 		if server.Name == "" || server.Protocol == "" || server.URL == "" {
 			return Config{}, fmt.Errorf("server %q needs a name, a protocol and a url", server.Name)
 		}
-		config.Servers = append(config.Servers, Server{
-			Name: server.Name, Protocol: server.Protocol, URL: server.URL, Auth: server.Auth.model(),
-		})
+		protocol, err := model.ParseProtocol(server.Protocol)
+		if err != nil {
+			return Config{}, fmt.Errorf("server %q: %w", server.Name, err)
+		}
+		auth, err := server.Auth.model()
+		if err != nil {
+			return Config{}, fmt.Errorf("server %q: %w", server.Name, err)
+		}
+		config.Servers = append(config.Servers, Server{Name: server.Name, Protocol: protocol, URL: server.URL, Auth: auth})
 	}
 	for _, collection := range schema.Collections {
 		built, err := collection.model()
@@ -212,11 +218,18 @@ func (schema fileConfig) config() (Config, error) {
 	return config, nil
 }
 
-func (auth *fileAuth) model() model.Auth {
+func (auth *fileAuth) model() (model.Auth, error) {
 	if auth == nil {
-		return model.Auth{}
+		return model.Auth{}, nil
 	}
-	return model.Auth(*auth)
+	authType, err := model.ParseAuthType(auth.Type)
+	if err != nil {
+		return model.Auth{}, err
+	}
+	return model.Auth{
+		Type: authType, Token: auth.Token, User: auth.User, Password: auth.Password,
+		KeyName: auth.KeyName, KeyValue: auth.KeyValue, KeyIn: auth.KeyIn,
+	}, nil
 }
 
 func (collection fileCollection) model() (*model.Collection, error) {
@@ -249,18 +262,33 @@ func (folder fileFolder) model() (*model.Folder, error) {
 		if request.Name == "" {
 			return nil, fmt.Errorf("folder %q: a request needs a name", folder.Name)
 		}
-		built.Requests = append(built.Requests, request.model())
+		builtRequest, err := request.model()
+		if err != nil {
+			return nil, fmt.Errorf("folder %q: request %q: %w", folder.Name, request.Name, err)
+		}
+		built.Requests = append(built.Requests, builtRequest)
 	}
 	return built, nil
 }
 
-func (request fileRequest) model() *model.Request {
-	return &model.Request{
-		Name: request.Name, Protocol: request.Protocol, Method: request.Method, URL: request.URL,
-		Params: rows(request.Params), Headers: rows(request.Headers),
-		Body: request.Body, BodyType: request.BodyType, TimeoutSec: request.Timeout,
-		Auth: request.Auth.model(),
+func (request fileRequest) model() (*model.Request, error) {
+	protocol, err := model.ParseProtocol(request.Protocol)
+	if err != nil {
+		return nil, err
 	}
+	bodyType, err := model.ParseBodyType(request.BodyType)
+	if err != nil {
+		return nil, err
+	}
+	auth, err := request.Auth.model()
+	if err != nil {
+		return nil, err
+	}
+	return &model.Request{
+		Name: request.Name, Protocol: protocol, Method: request.Method, URL: request.URL,
+		Params: rows(request.Params), Headers: rows(request.Headers),
+		Body: request.Body, BodyType: bodyType, TimeoutSec: request.Timeout, Auth: auth,
+	}, nil
 }
 
 // rows turns a name-to-value map into enabled rows sorted by name, so the

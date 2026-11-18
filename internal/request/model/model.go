@@ -15,17 +15,18 @@ type KV struct {
 }
 
 // Request is one saved call. Protocol selects the proto implementation
-// ("rest", "websocket", "mcp"); Method is only meaningful for REST.
+// (one row of Protocols); Method matters for the protocols whose row has
+// a method (REST's HTTP method, gRPC's service method).
 type Request struct {
 	Name     string
-	Protocol string
+	Protocol Protocol
 	Method   string
 	URL      string
 	Params   []KV
 	Headers  []KV
-	Body     string // raw text of the json, text and legacy bodies
-	BodyType string // BodyNone, BodyJSON, ...; "" sends Body as is, with no Content-Type
-	Form     []KV   // fields of the form and multipart bodies
+	Body     string   // raw text of the json, text and legacy bodies
+	BodyType BodyType // BodyNone, BodyJSON, ...; BodyRaw sends Body as is, with no Content-Type
+	Form     []KV     // fields of the form and multipart bodies
 
 	Auth Auth // credentials added when the request is sent; never shown in Headers
 
@@ -37,17 +38,6 @@ type Request struct {
 
 	Proto ProtoSource // where a gRPC request finds its methods; empty is the server's reflection
 }
-
-// Body types a request can send.
-const (
-	BodyNone      = "none"
-	BodyJSON      = "json"
-	BodyText      = "text"
-	BodyForm      = "form"
-	BodyMultipart = "multipart"
-	BodyGraphQL   = "graphql" // Body is the query, GraphQLVars the variables as JSON
-	BodyFile      = "file"    // Body holds the path of the file to send as it is
-)
 
 // Folder groups requests and nested folders in a collection tree.
 // Children are pointers, so a request or folder keeps its identity when
@@ -111,14 +101,6 @@ func cloneKV(rows []KV) []KV {
 	return append([]KV(nil), rows...)
 }
 
-// Auth types. The zero value, "", is no authentication.
-const (
-	AuthNone   = "none"
-	AuthBearer = "bearer"
-	AuthBasic  = "basic"
-	AuthAPIKey = "apikey"
-)
-
 // Where an API key goes.
 const (
 	KeyInHeader = "header"
@@ -128,7 +110,7 @@ const (
 // Auth is a request's credentials. Every type has its own fields, so
 // switching type keeps what was typed for the others.
 type Auth struct {
-	Type     string
+	Type     AuthType
 	Token    string // bearer
 	User     string // basic
 	Password string // basic

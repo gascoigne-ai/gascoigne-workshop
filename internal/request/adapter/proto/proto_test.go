@@ -20,9 +20,28 @@ import (
 )
 
 func TestRegistryNames(t *testing.T) {
-	want := []string{"grpc", "mcp", "rest", "sse", "websocket"}
+	want := []model.Protocol{"grpc", "mcp", "rest", "sse", "websocket"}
 	if got := NewRegistry().Names(); !reflect.DeepEqual(got, want) {
 		t.Fatalf("Names() = %v, want %v", got, want)
+	}
+}
+
+// The registry and model.Protocols name the same protocols, and a protocol
+// whose row keeps a connection can open one.
+func TestTheRegistryHasOneImplementationPerProtocolRow(t *testing.T) {
+	registry := NewRegistry()
+	if len(registry) != len(model.Protocols) {
+		t.Fatalf("%d implementations for %d protocols", len(registry), len(model.Protocols))
+	}
+	for _, row := range model.Protocols {
+		implementation, ok := registry[row.Name]
+		if !ok {
+			t.Errorf("%s has no implementation", row.Name)
+			continue
+		}
+		if _, streams := implementation.(port.Streamer); streams != (row.Connection != model.OneShot) {
+			t.Errorf("%s streams: %v, but its row connects %v", row.Name, streams, row.Connection)
+		}
 	}
 }
 
@@ -361,7 +380,7 @@ func TestConfiguredPassesTheNetworkSettingsToRESTAndTheSamplerToMCP(t *testing.T
 	if mcp, ok := registry["mcp"].(MCP); !ok || mcp.Sampler == nil {
 		t.Fatalf("mcp = %+v", registry["mcp"])
 	}
-	for _, name := range []string{"websocket", "sse", "grpc"} {
+	for _, name := range []model.Protocol{"websocket", "sse", "grpc"} {
 		if registry[name] == nil {
 			t.Errorf("%s is missing", name)
 		}

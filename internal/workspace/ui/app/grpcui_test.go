@@ -11,6 +11,7 @@ import (
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
@@ -35,8 +36,8 @@ func TestTheProtocolChipCyclesThroughGRPCAndBackToRESTWithAMethod(t *testing.T) 
 	a, _ := newTestApp(t)
 	a.settings.GRPC, a.settings.SSE = true, true
 	tab := a.cur()
-	seen := map[string]bool{}
-	for range protocolOrder {
+	seen := map[model.Protocol]bool{}
+	for range model.Protocols {
 		a.cycleProtocol(tab)
 		seen[tab.Req.Protocol] = true
 		if tab.Req.Protocol == "grpc" {
@@ -44,7 +45,7 @@ func TestTheProtocolChipCyclesThroughGRPCAndBackToRESTWithAMethod(t *testing.T) 
 		}
 	}
 	if !seen["grpc"] {
-		t.Fatalf("the protocols are %v, gRPC is missing", protocolOrder)
+		t.Fatalf("the protocols are %v, gRPC is missing", model.Protocols)
 	}
 	if tab.Req.Protocol != "rest" || tab.Req.Method != "GET" {
 		t.Fatalf("back on %s %q: a REST request needs an HTTP method", tab.Req.Protocol, tab.Req.Method)

@@ -5,6 +5,8 @@ package collection
 import (
 	"strings"
 	"testing"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 )
 
 func TestDebugSampleIsOnlyTheExampleServer(t *testing.T) {
@@ -12,14 +14,14 @@ func TestDebugSampleIsOnlyTheExampleServer(t *testing.T) {
 	if sample.Name != ExampleServerFolder || len(sample.Folders) != 0 {
 		t.Fatalf("collection %q with %d folders, want %q with the requests at the top", sample.Name, len(sample.Folders), ExampleServerFolder)
 	}
-	protocols := map[string]bool{}
+	protocols := map[model.Protocol]bool{}
 	for _, request := range sample.Requests {
 		protocols[request.Protocol] = true
 		if !strings.Contains(request.URL, "127.0.0.1") {
 			t.Errorf("%s points at %q, not at the local example server", request.Name, request.URL)
 		}
 	}
-	for _, want := range []string{"rest", "websocket", "sse", "mcp", "grpc"} {
+	for _, want := range []model.Protocol{"rest", "websocket", "sse", "mcp", "grpc"} {
 		if !protocols[want] {
 			t.Errorf("no %s request in the example server collection", want)
 		}

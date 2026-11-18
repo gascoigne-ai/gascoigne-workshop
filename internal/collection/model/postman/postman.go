@@ -163,7 +163,7 @@ func notCarriedOver(it item, inherited *auth) []string {
 
 func request(it item, inherited *auth) model.Request {
 	pr := it.Request
-	req := model.Request{Name: it.Name, Protocol: "rest", Method: strings.ToUpper(pr.Method), BodyType: model.BodyNone}
+	req := model.Request{Name: it.Name, Protocol: model.ProtocolREST, Method: strings.ToUpper(pr.Method), BodyType: model.BodyNone}
 	if req.Method == "" {
 		req.Method = "GET"
 	}
@@ -359,7 +359,7 @@ func shareable(value string) string {
 func Skipped(root *model.Folder) int {
 	n := 0
 	for _, r := range root.Requests {
-		if r.Protocol != "rest" {
+		if !exportable(r) {
 			n++
 		}
 	}
@@ -369,13 +369,16 @@ func Skipped(root *model.Folder) int {
 	return n
 }
 
+// exportable reports whether Postman can hold r: an HTTP request.
+func exportable(r *model.Request) bool { return r.Protocol.Info().Method == model.MethodHTTP }
+
 func exportFolder(folder *model.Folder) []*outItem {
 	var items []*outItem
 	for _, sub := range folder.Folders {
 		items = append(items, &outItem{Name: sub.Name, Items: exportFolder(sub)})
 	}
 	for _, r := range folder.Requests {
-		if r.Protocol != "rest" {
+		if !exportable(r) {
 			continue
 		}
 		items = append(items, &outItem{Name: r.Name, Request: exportRequest(r)})

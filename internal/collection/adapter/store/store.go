@@ -348,26 +348,39 @@ func absoluteDir(dir string) string {
 func requestToFile(request *model.Request, root string) (requestFile, secret) {
 	proto := request.Proto.Stored(root)
 	return requestFile{
-		Name: request.Name, Protocol: request.Protocol, Method: request.Method, URL: request.URL,
+		Name: request.Name, Protocol: string(request.Protocol), Method: request.Method, URL: request.URL,
 		Params: toKV(request.Params), Headers: toKV(request.Headers),
-		BodyType: request.BodyType, Body: request.Body, Form: toKV(request.Form),
-		Auth:       authFile{Type: request.Auth.Type, User: request.Auth.User, KeyName: request.Auth.KeyName, KeyIn: request.Auth.KeyIn},
+		BodyType: string(request.BodyType), Body: request.Body, Form: toKV(request.Form),
+		Auth:       authFile{Type: string(request.Auth.Type), User: request.Auth.User, KeyName: request.Auth.KeyName, KeyIn: request.Auth.KeyIn},
 		TimeoutSec: request.TimeoutSec, NoRedirects: request.NoRedirects, InsecureTLS: request.InsecureTLS, GraphQLVars: request.GraphQLVars, Tests: request.Tests,
 		ProtoFiles: proto.Files, ImportPaths: proto.ImportPaths,
 	}, secret{Token: request.Auth.Token, Password: request.Auth.Password, KeyValue: request.Auth.KeyValue}
 }
 
-// fileToRequest is the request of a file in a collection kept in root.
-func fileToRequest(requestFile requestFile, secret secret, root string) *model.Request {
+// fileToRequest is the request of a file in a collection kept in root. A
+// protocol, body type or auth type it does not know is an error.
+func fileToRequest(requestFile requestFile, secret secret, root string) (*model.Request, error) {
+	protocol, err := model.ParseProtocol(requestFile.Protocol)
+	if err != nil {
+		return nil, err
+	}
+	bodyType, err := model.ParseBodyType(requestFile.BodyType)
+	if err != nil {
+		return nil, err
+	}
+	authType, err := model.ParseAuthType(requestFile.Auth.Type)
+	if err != nil {
+		return nil, err
+	}
 	return &model.Request{
-		Name: requestFile.Name, Protocol: requestFile.Protocol, Method: requestFile.Method, URL: requestFile.URL,
+		Name: requestFile.Name, Protocol: protocol, Method: requestFile.Method, URL: requestFile.URL,
 		Params: fromKV(requestFile.Params), Headers: fromKV(requestFile.Headers),
-		BodyType: requestFile.BodyType, Body: requestFile.Body, Form: fromKV(requestFile.Form),
-		Auth: model.Auth{Type: requestFile.Auth.Type, User: requestFile.Auth.User, KeyName: requestFile.Auth.KeyName, KeyIn: requestFile.Auth.KeyIn,
+		BodyType: bodyType, Body: requestFile.Body, Form: fromKV(requestFile.Form),
+		Auth: model.Auth{Type: authType, User: requestFile.Auth.User, KeyName: requestFile.Auth.KeyName, KeyIn: requestFile.Auth.KeyIn,
 			Token: secret.Token, Password: secret.Password, KeyValue: secret.KeyValue},
 		TimeoutSec: requestFile.TimeoutSec, NoRedirects: requestFile.NoRedirects, InsecureTLS: requestFile.InsecureTLS, GraphQLVars: requestFile.GraphQLVars, Tests: requestFile.Tests,
 		Proto: model.ProtoSource{Files: requestFile.ProtoFiles, ImportPaths: requestFile.ImportPaths}.Loaded(root),
-	}
+	}, nil
 }
 
 // writeJSON writes v atomically, and only when the content changed.
@@ -512,10 +525,15 @@ func loadFolder(root, dir, rel string, folder *model.Folder, secrets map[string]
 			continue
 		}
 		var rf requestFile
-		if err := readJSON(filepath.Join(dir, n), &rf); err != nil {
+		name := filepath.Join(dir, n)
+		if err := readJSON(name, &rf); err != nil {
 			return meta, err
 		}
-		folder.Requests = append(folder.Requests, fileToRequest(rf, secrets[path.Join(rel, n)], root))
+		request, err := fileToRequest(rf, secrets[path.Join(rel, n)], root)
+		if err != nil {
+			return meta, fmt.Errorf("%s: %w", name, err)
+		}
+		folder.Requests = append(folder.Requests, request)
 	}
 	return meta, nil
 }

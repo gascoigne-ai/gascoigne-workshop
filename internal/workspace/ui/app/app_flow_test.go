@@ -841,7 +841,7 @@ func TestBodyTypeChipsSwitchTheTypeAndKeepTheText(t *testing.T) {
 	if req.Body != "hello" {
 		t.Fatalf("the text must survive switching types, Body = %q", req.Body)
 	}
-	for chip, want := range map[int]string{noneChipX: model.BodyNone, multiChipX: model.BodyMultipart, formChipX: model.BodyForm} {
+	for chip, want := range map[int]model.BodyType{noneChipX: model.BodyNone, multiChipX: model.BodyMultipart, formChipX: model.BodyForm} {
 		click(a, chip, chipsY)
 		if req.BodyType != want {
 			t.Errorf("chip at %d gave %q, want %q", chip, req.BodyType, want)

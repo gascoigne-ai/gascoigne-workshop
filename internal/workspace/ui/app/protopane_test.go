@@ -55,7 +55,7 @@ func protoFileIn(t *testing.T, dir, name string, source []byte) string {
 }
 
 func TestOnlyAGRPCRequestHasAProtoPane(t *testing.T) {
-	for protocol, want := range map[string]bool{"grpc": true, "rest": false, "websocket": false, "sse": false, "mcp": false} {
+	for protocol, want := range map[model.Protocol]bool{"grpc": true, "rest": false, "websocket": false, "sse": false, "mcp": false} {
 		got := false
 		for _, candidate := range requestPanesFor(newReqTab(tabs.New(&model.Request{Protocol: protocol}))) {
 			got = got || candidate.label == "Proto"

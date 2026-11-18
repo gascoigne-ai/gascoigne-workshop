@@ -191,7 +191,7 @@ func (a *App) sentCandidates(folder string) []collections.Entry {
 }
 
 // Badge is the method label shown before a request's name.
-func (a *App) Badge(protocol, method string) Node {
+func (a *App) Badge(protocol model.Protocol, method string) Node {
 	return Text(requestBadge(protocol, method), Small(), Color(appearance.MethodToken(method)), W(badgeW))
 }
 

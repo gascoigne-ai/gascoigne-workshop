@@ -29,7 +29,7 @@ const stdioPrefix = "stdio:" // the URL of an MCP server that runs as a command
 // collection's own and is left out; folder "" means none is.
 func (r Request) Accesses(folder string) []Access {
 	var out []Access
-	if command, ok := strings.CutPrefix(r.URL, stdioPrefix); ok && r.Protocol == "mcp" {
+	if command, ok := strings.CutPrefix(r.URL, stdioPrefix); ok && r.Protocol.Info().RunsCommand {
 		out = append(out, Access{AccessCommand, strings.TrimSpace(command)})
 	}
 	switch r.BodyType {

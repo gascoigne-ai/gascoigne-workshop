@@ -40,8 +40,8 @@ var retryDelay = 2 * time.Second
 
 // isSocket reports whether the tab's protocol keeps a connection open.
 func isSocket(tab *reqTab) bool {
-	return tab.Req.Protocol == "websocket" || tab.Req.Protocol == "mcp" || tab.Req.Protocol == "sse" ||
-		(tab.Req.Protocol == "grpc" && tab.grpcStream)
+	connection := tab.Req.Protocol.Info().Connection
+	return connection == model.Always || (connection == model.OnStream && tab.grpcStream)
 }
 
 // wsPanes are the panes of a socket's response side.
@@ -51,17 +51,10 @@ var wsPanes = []pane{{label: "Messages", kind: paneMessages}}
 // the JSON-RPC traffic with the composer for anything else.
 var mcpPanes = []pane{{label: "Explorer", kind: paneExplorer}, {label: "JSON-RPC", kind: paneMessages}}
 
-// responsePanesByProtocol lists the protocols whose response side differs
-// from the generic socket or REST one.
-var responsePanesByProtocol = map[string][]pane{"mcp": mcpPanes}
-
 // responsePanesFor are the panes of the response side of t.
 func responsePanesFor(tab *reqTab) []pane {
-	if panes, ok := responsePanesByProtocol[tab.Req.Protocol]; ok {
-		return panes
-	}
 	if isSocket(tab) {
-		return wsPanes
+		return viewOf(tab.Req.Protocol).streamPanes
 	}
 	return responsePanes
 }
@@ -84,8 +77,8 @@ func (a *App) connect(tab *reqTab) {
 	gen := tab.Begin()
 	a.status = "Connecting to " + tab.Req.URL
 	req := tab.Req.Expanded(a.varsFor(tab.Req))
-	if tab.Req.Protocol == "sse" && tab.LastEventID != "" { // resume where the stream stopped
-		req.Headers = append(req.Headers, model.KV{Name: "Last-Event-ID", Value: tab.LastEventID, Enabled: true})
+	if header := tab.Req.Protocol.Info().ResumeHeader; header != "" && tab.LastEventID != "" { // resume where the stream stopped
+		req.Headers = append(req.Headers, model.KV{Name: header, Value: tab.LastEventID, Enabled: true})
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), a.timeoutFor(req))
 	tab.wsCancel = cancel
@@ -298,10 +291,10 @@ func (a *App) messagesPane(_ pane, tab *reqTab, _ *ScrollState) Node {
 		"composerH": w.RowH + 16,
 		"toolbar":   a.messagesToolbar(tab),
 		"log":       &tab.wsView,
-		"composer":  tab.Req.Protocol != "sse",
+		"composer":  viewOf(tab.Req.Protocol).composer,
 		"message":   &tab.msg,
 		"hint":      composerHint(tab, tab.Session != nil),
-		"canFormat": tab.Req.Protocol == "websocket",
+		"canFormat": viewOf(tab.Req.Protocol).formatsJSON,
 		"send":      func() { a.sendMessage(tab) },
 		"format":    func() { a.formatMessage(tab) },
 	})
@@ -318,11 +311,11 @@ func connState(tab *reqTab) string {
 }
 
 func composerHint(tab *reqTab, connected bool) string {
-	switch {
-	case !connected:
+	if !connected {
 		return "Connect to send messages"
-	case tab.Req.Protocol == "mcp":
-		return "call TOOL {json}  ·  read URI  ·  prompt NAME {json}  ·  method {json}  ·  or raw JSON-RPC"
+	}
+	if hint := viewOf(tab.Req.Protocol).composerHint; hint != "" {
+		return hint
 	}
 	return "Message"
 }
@@ -421,10 +414,7 @@ func (a *App) formatMessage(tab *reqTab) {
 
 // requestPanesFor are the panes of the request side of t.
 func requestPanesFor(tab *reqTab) []pane {
-	if panes, ok := requestPanesByProtocol[tab.Req.Protocol]; ok {
-		return panes
-	}
-	return requestPanes
+	return viewOf(tab.Req.Protocol).requestPanes
 }
 
 // Templates, parsed once above.

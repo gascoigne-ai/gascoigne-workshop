@@ -130,7 +130,7 @@ func fieldStates(root Node) []string {
 func TestTheShowSecretsCheckFollowsTheTab(t *testing.T) {
 	cases := []struct {
 		name        string
-		auth        string
+		auth        model.AuthType
 		showSecrets bool
 		want        []string
 	}{
@@ -182,7 +182,7 @@ func TestTheAuthTypeChipsChooseTheType(t *testing.T) {
 	cases := []struct {
 		name string
 		x    int
-		want string
+		want model.AuthType
 	}{
 		{"bearer", authBearerX, model.AuthBearer},
 		{"basic", authBasicX, model.AuthBasic},

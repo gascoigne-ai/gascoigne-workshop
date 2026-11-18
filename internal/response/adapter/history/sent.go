@@ -75,7 +75,9 @@ func LoadSent(dir string) ([]port.Sent, error) {
 	var all []port.Sent
 	for _, line := range bytes.Split(data, []byte("\n")) {
 		var sent port.Sent
-		if json.Unmarshal(line, &sent) == nil && sent.Path != "" {
+		// A protocol the workshop does not know fails to decode; one left
+		// out decodes as none. Either way the line names no request to open.
+		if json.Unmarshal(line, &sent) == nil && sent.Path != "" && sent.Protocol != "" {
 			all = append(all, sent)
 		}
 	}

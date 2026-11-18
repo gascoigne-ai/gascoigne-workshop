@@ -132,9 +132,9 @@ func headerRows(header http.Header) []model.KV {
 }
 
 // bodyEncoders turn a request into body bytes and the Content-Type to
-// send with them. "" is the legacy raw body: sent as is, with no type.
-var bodyEncoders = map[string]func(req model.Request) ([]byte, string, error){
-	"":             func(request model.Request) ([]byte, string, error) { return []byte(request.Body), "", nil },
+// send with them. BodyRaw is the legacy raw body: sent as is, with no type.
+var bodyEncoders = map[model.BodyType]func(req model.Request) ([]byte, string, error){
+	model.BodyRaw:  func(request model.Request) ([]byte, string, error) { return []byte(request.Body), "", nil },
 	model.BodyNone: func(model.Request) ([]byte, string, error) { return nil, "", nil },
 	model.BodyJSON: func(request model.Request) ([]byte, string, error) {
 		return []byte(request.Body), "application/json", nil
@@ -213,8 +213,7 @@ func failureText(err error) string {
 
 // authAppliers add credentials to a request, by auth type. The zero
 // value of the type is no authentication.
-var authAppliers = map[string]func(a model.Auth, r *http.Request){
-	"":             func(model.Auth, *http.Request) {},
+var authAppliers = map[model.AuthType]func(a model.Auth, r *http.Request){
 	model.AuthNone: func(model.Auth, *http.Request) {},
 	model.AuthBearer: func(auth model.Auth, request *http.Request) {
 		request.Header.Set("Authorization", "Bearer "+auth.Token)

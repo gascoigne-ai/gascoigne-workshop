@@ -102,7 +102,7 @@ func Update(collection *model.Collection, selected Node, msg Msg) Result {
 	case Move:
 		return move(root, selected, msg)
 	case NewRequest:
-		req := msg.Dir.AddRequest(model.Request{Name: "New Request", Protocol: "rest", Method: "GET"})
+		req := msg.Dir.AddRequest(model.Request{Name: "New Request", Protocol: model.ProtocolREST, Method: "GET"})
 		return Result{Selected: selected, Expand: msg.Dir, Open: req}
 	case NewFolder:
 		sub := msg.Dir.AddFolder("New Folder")

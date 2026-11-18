@@ -14,7 +14,7 @@ func TestNewTabInfersABodyTypeForOldRequests(t *testing.T) {
 	tests := []struct {
 		name string
 		body string
-		want string
+		want model.BodyType
 	}{
 		{"no body", "", model.BodyNone},
 		{"a body from before body types is text", "hello", model.BodyText},

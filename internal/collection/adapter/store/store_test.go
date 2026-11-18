@@ -143,6 +143,41 @@ func TestLoadReportsBrokenFiles(t *testing.T) {
 	}
 }
 
+// A request file whose protocol, body type or auth type is unknown or
+// missing stops the collection from loading, as a malformed file does,
+// and the error names the file.
+func TestLoadRejectsARequestFileWithAnUnknownProtocol(t *testing.T) {
+	tests := []struct{ name, data string }{
+		{"unknown protocol", `{"name":"x","protocol":"http","method":"GET","url":"u"}`},
+		{"no protocol", `{"name":"x","method":"GET","url":"u"}`},
+		{"unknown body type", `{"name":"x","protocol":"rest","method":"GET","url":"u","bodyType":"xml"}`},
+		{"unknown auth type", `{"name":"x","protocol":"rest","method":"GET","url":"u","auth":{"type":"oauth"}}`},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			dir := t.TempDir()
+			os.WriteFile(filepath.Join(dir, "odd.req.json"), []byte(test.data), 0o644)
+			if _, err := Load(dir); err == nil || !strings.Contains(err.Error(), "odd.req.json") {
+				t.Fatalf("err = %v, want one that names odd.req.json", err)
+			}
+		})
+	}
+}
+
+// Files saved while "none" was the stored name of no authentication
+// still load, as no authentication.
+func TestLoadReadsTheOldNoneAuthTypeAsNoAuthentication(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "old.req.json"), []byte(`{"name":"x","protocol":"rest","method":"GET","url":"u","auth":{"type":"none"}}`), 0o644)
+	collection, err := Load(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := collection.Requests[0].Auth.Type; got != model.AuthNone {
+		t.Fatalf("auth type %q, want none", got)
+	}
+}
+
 func snapshot(t *testing.T, dir string) map[string]string {
 	t.Helper()
 	m := map[string]string{}

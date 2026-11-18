@@ -157,7 +157,7 @@ func (a *App) include(col *model.Collection, dir, env string) {
 func (a *App) focusCollection(col *model.Collection) {
 	first := tree.FirstRequest(&col.Folder)
 	if first == nil {
-		first = col.AddRequest(model.Request{Name: "New Request", Protocol: "rest", Method: "GET"})
+		first = col.AddRequest(model.Request{Name: "New Request", Protocol: model.ProtocolREST, Method: "GET"})
 	}
 	a.openRequest(first)
 }

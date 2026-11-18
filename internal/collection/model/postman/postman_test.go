@@ -215,3 +215,26 @@ func TestExportLeavesSecretsOut(t *testing.T) {
 		}
 	}
 }
+
+// Postman holds HTTP requests only: every other protocol is left out of
+// the export and counted as skipped.
+func TestPostmanExportSkipsEveryProtocolButREST(t *testing.T) {
+	root := &model.Folder{Name: "c"}
+	for _, protocol := range []model.Protocol{"rest", "websocket", "mcp", "sse", "grpc"} {
+		root.AddRequest(model.Request{Name: string(protocol), Protocol: protocol, Method: "GET", URL: "u"})
+	}
+	if got := Skipped(root); got != 4 {
+		t.Errorf("Skipped = %d, want 4", got)
+	}
+	data, err := Export(root, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	again, err := Parse(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(again.Folder.Requests) != 1 || again.Folder.Requests[0].Name != "rest" {
+		t.Fatalf("exported %d requests, want only rest", len(again.Folder.Requests))
+	}
+}

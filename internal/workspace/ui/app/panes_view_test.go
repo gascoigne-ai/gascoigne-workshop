@@ -114,7 +114,9 @@ func TestTheNotePaneScrollsWithTheGivenState(t *testing.T) {
 // File is last in the chip row, so at the narrow width it pins the row
 // scrolled to keep the chosen chip in view.
 var bodyPaneStates = []struct {
-	name, bodyType, text string
+	name     string
+	bodyType model.BodyType
+	text     string
 }{
 	{"none", model.BodyNone, ""},
 	{"json-valid", model.BodyJSON, "{\n  \"hello\": \"world\"\n}"},
@@ -126,7 +128,7 @@ var bodyPaneStates = []struct {
 }
 
 // openBodyType gives the open request a body of bodyType holding text.
-func openBodyType(t *testing.T, bodyType, text string) (*App, *reqTab) {
+func openBodyType(t *testing.T, bodyType model.BodyType, text string) (*App, *reqTab) {
 	a, _ := newTestApp(t)
 	t.Cleanup(a.waitWrites)
 	tab := a.cur()
@@ -169,14 +171,14 @@ func TestTheBodyTypeChipsScrollWithTheTabsState(t *testing.T) {
 // kept in view, so choosing a type elsewhere scrolls to it.
 func TestOnlyTheChosenBodyTypeChipIsKeptInView(t *testing.T) {
 	choices := []struct {
-		bodyType string
+		bodyType model.BodyType
 		chip     int // its place in the row: None, JSON, Text, Form, Multipart, GraphQL, File
 	}{
 		{model.BodyNone, 0},
 		{model.BodyFile, 6},
 	}
 	for _, chosen := range choices {
-		t.Run(chosen.bodyType, func(t *testing.T) {
+		t.Run(string(chosen.bodyType), func(t *testing.T) {
 			a, tab := openBodyType(t, chosen.bodyType, "")
 			var scroll widget.ScrollState
 			chips := findWidget(a.paneBody(bodyPane, tab, &scroll), "*widget.hscrollB")
@@ -245,8 +247,8 @@ func TestTheBodyWrapChipWrapsTheTabsBodyEditor(t *testing.T) {
 // What Dump does not show of the text editors: JSON and Text edit the
 // tab's body area, colored by a styler of their own.
 func TestTheBodyAreaEditsTheTabsBody(t *testing.T) {
-	for _, bodyType := range []string{model.BodyJSON, model.BodyText} {
-		t.Run(bodyType, func(t *testing.T) {
+	for _, bodyType := range []model.BodyType{model.BodyJSON, model.BodyText} {
+		t.Run(string(bodyType), func(t *testing.T) {
 			a, tab := openBodyType(t, bodyType, "{}")
 			var scroll widget.ScrollState
 			areas := areaStates(a.paneBody(bodyPane, tab, &scroll))

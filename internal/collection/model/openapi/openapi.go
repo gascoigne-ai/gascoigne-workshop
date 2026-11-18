@@ -205,7 +205,7 @@ func buildRequest(doc *doc, method, path string, op operation, shared []param) m
 	if name == "" {
 		name = strings.ToUpper(method) + " " + path
 	}
-	req := model.Request{Name: name, Protocol: "rest", Method: strings.ToUpper(method), BodyType: model.BodyNone}
+	req := model.Request{Name: name, Protocol: model.ProtocolREST, Method: strings.ToUpper(method), BodyType: model.BodyNone}
 	url := "{{" + BaseURLVar + "}}" + pathVars(path)
 	var query []model.KV
 	for _, raw := range append(append([]param{}, shared...), op.Parameters...) {

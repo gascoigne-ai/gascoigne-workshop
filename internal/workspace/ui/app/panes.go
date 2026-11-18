@@ -15,6 +15,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/jsonview"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -89,13 +90,40 @@ var requestPanes = []pane{paramsPane, bodyPane, headersPane, authPane, varsPane,
 // no Params, Body or Tests tab.
 var connectionRequestPanes = []pane{headersPane, authPane, varsPane, settingsPane}
 
-// requestPanesByProtocol lists the protocols whose request side differs
-// from requestPanes.
-var requestPanesByProtocol = map[string][]pane{
-	"websocket": connectionRequestPanes,
-	"sse":       connectionRequestPanes,
-	"mcp":       connectionRequestPanes,
-	"grpc":      grpcRequestPanes,
+// protocolView is how the app shows one protocol: the UI half of its row,
+// next to the model.Protocols row that says what the protocol does.
+type protocolView struct {
+	protocol     model.Protocol
+	requestPanes []pane
+	streamPanes  []pane                       // the response side while connected
+	composer     bool                         // the Messages pane has a field to send from
+	formatsJSON  bool                         // the composer offers { } to make the message one line of JSON
+	composerHint string                       // what the composer says while connected; "" is "Message"
+	offered      func(settings.Settings) bool // whether the chip cycles to it; nil is always
+}
+
+// protocolViews has one row per row of model.Protocols, in the same order.
+var protocolViews = []protocolView{
+	{protocol: model.ProtocolREST, requestPanes: requestPanes},
+	{protocol: model.ProtocolWebSocket, requestPanes: connectionRequestPanes, streamPanes: wsPanes,
+		composer: true, formatsJSON: true},
+	{protocol: model.ProtocolMCP, requestPanes: connectionRequestPanes, streamPanes: mcpPanes, composer: true,
+		composerHint: "call TOOL {json}  ·  read URI  ·  prompt NAME {json}  ·  method {json}  ·  or raw JSON-RPC"},
+	{protocol: model.ProtocolSSE, requestPanes: connectionRequestPanes, streamPanes: wsPanes,
+		offered: func(s settings.Settings) bool { return s.SSE }},
+	{protocol: model.ProtocolGRPC, requestPanes: grpcRequestPanes, streamPanes: wsPanes, composer: true,
+		offered: func(s settings.Settings) bool { return s.GRPC }},
+}
+
+// viewOf is the protocolView of protocol. A request with no known protocol
+// (only one built in code) is shown as the first row.
+func viewOf(protocol model.Protocol) protocolView {
+	for _, view := range protocolViews {
+		if view.protocol == protocol {
+			return view
+		}
+	}
+	return protocolViews[0]
 }
 
 func noResponse(tab *reqTab) (string, bool) {
@@ -340,11 +368,15 @@ func jsonStatus(text string) (msg string, valid bool) {
 	return "Valid JSON", true
 }
 
+// bodyChoice is one choice of the body type row.
+type bodyChoice struct {
+	id    model.BodyType
+	label string
+	width int
+}
+
 // bodyTypes are the choices of the body type row.
-var bodyTypes = []struct {
-	id, label string
-	width     int
-}{
+var bodyTypes = []bodyChoice{
 	{model.BodyNone, "None", 64},
 	{model.BodyJSON, "JSON", 64},
 	{model.BodyText, "Text", 64},
@@ -437,7 +469,7 @@ func (a *App) bodyEditor(tab *reqTab, scroll *ScrollState) Node {
 // response's Wrap.
 func (a *App) toggleBodyWrap(tab *reqTab) { tab.body.Wrap = !tab.body.Wrap }
 
-func (a *App) setBodyType(tab *reqTab, id string) {
+func (a *App) setBodyType(tab *reqTab, id model.BodyType) {
 	a.commitEdit()
 	editRequest(tab, editor.BodyTypeChosen{Type: id, Text: tab.body.Text, FilePath: tab.file.Text})
 }

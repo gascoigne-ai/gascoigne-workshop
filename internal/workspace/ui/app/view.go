@@ -197,9 +197,9 @@ func (a *App) pressTreeRow(row collection.Row) {
 }
 
 // requestBadge is the short label shown before a request name.
-func requestBadge(protocol, method string) string {
-	if protocol != "" && protocol != "rest" {
-		return protocolLabel[protocol]
+func requestBadge(protocol model.Protocol, method string) string {
+	if info := protocol.Info(); info.Label != "" && info.Method != model.MethodHTTP {
+		return info.Label
 	}
 	if method == "DELETE" {
 		return "DEL"
@@ -303,7 +303,8 @@ var urlBarTemplate = markup.Must("urlbar.vml", urlbarSource)
 // is one of three: Send, Connect or Disconnect on a socket, and Cancel
 // while a request runs.
 func (a *App) urlBar(tab *reqTab) Node {
-	isREST, isGRPC, socket := tab.Req.Protocol == "rest", tab.Req.Protocol == "grpc", isSocket(tab)
+	info, socket := tab.Req.Protocol.Info(), isSocket(tab)
+	httpMethod, rpcMethod := info.Method == model.MethodHTTP, info.Method == model.MethodRPC
 	sending := !socket && tab.Sending
 	connectionLabel, connectionHint := "Connect", "Open the connection"
 	if tab.Active() {
@@ -315,12 +316,13 @@ func (a *App) urlBar(tab *reqTab) Node {
 		"gutter":           w.Gutter,
 		"urlTextGap":       w.Gutter - 4,
 		"urlTip":           a.urlTip(tab),
-		"protocol":         protocolLabel[tab.Req.Protocol],
-		"divided":          isREST || isGRPC,
-		"rest":             isREST,
+		"protocol":         info.Label,
+		"divided":          httpMethod || rpcMethod,
+		"httpMethod":       httpMethod,
 		"method":           tab.Req.Method,
 		"methodColor":      appearance.MethodToken(tab.Req.Method),
-		"grpc":             isGRPC,
+		"rpcMethod":        rpcMethod,
+		"streamable":       info.Connection == model.OnStream,
 		"grpcMethodW":      grpcMethodW,
 		"grpcMethod":       grpcMethod,
 		"grpcMethodColor":  grpcMethodColor,
@@ -593,16 +595,16 @@ const (
     <row if="divided" w="1" pad-y="8">
       <vrule/>
     </row>
-    <row if="rest" w="84" on-click="cycleMethod" tooltip="Method: click to change">
+    <row if="httpMethod" w="84" on-click="cycleMethod" tooltip="Method: click to change">
       <text text-center grow="1" color="{{methodColor}}">{{method}}</text>
     </row>
-    <row if="grpc" w="{{grpcMethodW}}" pad-x="10" on-click="pickMethod" tooltip="Method: click to list the server's methods">
+    <row if="rpcMethod" w="{{grpcMethodW}}" pad-x="10" on-click="pickMethod" tooltip="Method: click to list the server's methods">
       <text ellipsis grow="1" color="{{grpcMethodColor}}">{{grpcMethod}}</text>
     </row>
-    <row if="grpc" w="1" pad-y="8">
+    <row if="streamable" w="1" pad-y="8">
       <vrule/>
     </row>
-    <row if="grpc" w="56" bg="{{streamBg}}" on-click="toggleStream" tooltip="Stream: keep the call open and show every message in the Messages pane">
+    <row if="streamable" w="56" bg="{{streamBg}}" on-click="toggleStream" tooltip="Stream: keep the call open and show every message in the Messages pane">
       <text text-center grow="1" color="{{streamColor}}">Stream</text>
     </row>
     <!-- breathing room between the divider and the URL text -->

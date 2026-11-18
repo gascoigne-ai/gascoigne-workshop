@@ -2,7 +2,11 @@
 // store of sent requests and the types that cross it.
 package port
 
-import "time"
+import (
+	"time"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+)
 
 // SentLimit is how many sent requests the workspace log keeps.
 const SentLimit = 500
@@ -16,7 +20,7 @@ type Sent struct {
 	// which then name the first.
 	Collection string
 	Path       string // the request's path in the collection tree
-	Protocol   string
+	Protocol   model.Protocol
 	Method     string
 	URL        string
 	Status     int // 0 when no response came

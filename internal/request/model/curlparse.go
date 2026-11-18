@@ -24,7 +24,7 @@ func ParseCurl(cmd string) (Request, error) {
 		return Request{}, errors.New("not a curl command")
 	}
 	args = splitCurlFlags(args)
-	req := Request{Protocol: "rest", NoRedirects: true}
+	req := Request{Protocol: ProtocolREST, NoRedirects: true}
 	var data, forms []string
 	var user, method string
 	head := false
@@ -124,7 +124,7 @@ func curlAuth(req *Request, user string) Auth {
 }
 
 // curlBodyOf decides the method and the body kind from the data flags.
-func curlBodyOf(headers []KV, method string, head bool, data, forms []string) (m, bodyType, body string, form []KV) {
+func curlBodyOf(headers []KV, method string, head bool, data, forms []string) (m string, bodyType BodyType, body string, form []KV) {
 	contentType := ""
 	for _, h := range headers {
 		if strings.EqualFold(h.Name, "Content-Type") {

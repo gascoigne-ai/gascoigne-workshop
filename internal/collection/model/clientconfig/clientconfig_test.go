@@ -122,6 +122,32 @@ func TestParseRejectsBadInput(t *testing.T) {
 	}
 }
 
+// A protocol, body type or auth type the workshop does not know is an
+// error that names the server or request, not a request that fails later.
+func TestParseRejectsAnUnknownProtocolBodyTypeOrAuthType(t *testing.T) {
+	request := func(fields string) string {
+		return "collections:\n  - name: c\n    requests:\n      - name: Ping\n" + fields
+	}
+	tests := []struct {
+		name, data, wantErr string
+	}{
+		{"server protocol", "servers:\n  - name: Box\n    protocol: http\n    url: u\n", "Box"},
+		{"server auth type", "servers:\n  - name: Box\n    protocol: rest\n    url: u\n    auth:\n      type: oauth\n", "Box"},
+		{"request protocol", request("        protocol: REST\n        url: u\n"), "Ping"},
+		{"request without protocol", request("        url: u\n"), "Ping"},
+		{"request body type", request("        protocol: rest\n        url: u\n        body_type: xml\n"), "Ping"},
+		{"request auth type", request("        protocol: rest\n        url: u\n        auth:\n          type: oauth\n"), "Ping"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			_, err := Parse(".workshop.yaml", []byte(test.data))
+			if err == nil || !strings.Contains(err.Error(), test.wantErr) {
+				t.Fatalf("Parse error = %v, want one that names %q", err, test.wantErr)
+			}
+		})
+	}
+}
+
 func TestCollectionBuildsOneTreeFromCollectionsAndServers(t *testing.T) {
 	config := wantConfig()
 	config.Collections[0].Envs = []model.Environment{{Name: "Dev", Vars: []model.KV{{Name: "token", Value: "x", Enabled: true}}}}

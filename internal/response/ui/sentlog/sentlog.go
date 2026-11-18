@@ -29,7 +29,7 @@ type Host interface {
 	// reports whether there is one.
 	OpenRequest(folder, path string) bool
 	// Badge is the small method label shown before a request's name.
-	Badge(protocol, method string) Node
+	Badge(protocol model.Protocol, method string) Node
 }
 
 // Log holds the sent requests, newest first, and the scroll state of their

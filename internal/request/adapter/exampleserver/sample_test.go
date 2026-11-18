@@ -67,7 +67,7 @@ func sampleService(request model.Request) string {
 	if request.Protocol == "grpc" && request.Proto.Kind() == model.SourceProtoFiles {
 		return "grpc-no-reflection"
 	}
-	return request.Protocol
+	return string(request.Protocol)
 }
 
 func portOf(t *testing.T, name string, config Config) int {

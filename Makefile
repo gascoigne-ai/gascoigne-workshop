@@ -36,6 +36,9 @@ FUZZ_TARGETS = \
 	./internal/request/model:FuzzParseSchema \
 	./internal/request/model:FuzzParseMCPLists \
 	./internal/request/model:FuzzParseServerInfo \
+	./internal/request/model:FuzzParseProtocol \
+	./internal/request/model:FuzzParseBodyType \
+	./internal/request/model:FuzzParseAuthType \
 	./internal/collection/adapter/store:FuzzLoad \
 	./internal/workspace/adapter/statefile:FuzzLoad \
 	./internal/settings/model/settings:FuzzDecode \

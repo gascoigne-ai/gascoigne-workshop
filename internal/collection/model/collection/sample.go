@@ -8,7 +8,7 @@ import "github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 // tests may rely on its folder order.
 func GitHubSample() model.Collection {
 	get := func(name, url string, params ...model.KV) *model.Request {
-		return &model.Request{Name: name, Protocol: "rest", Method: "GET", URL: url, Params: params}
+		return &model.Request{Name: name, Protocol: model.ProtocolREST, Method: "GET", URL: url, Params: params}
 	}
 	kv := func(name, value, desc string) model.KV {
 		return model.KV{Name: name, Value: value, Description: desc, Enabled: true}
@@ -27,8 +27,8 @@ func GitHubSample() model.Collection {
 					get("Repository Tags", "{{baseUrl}}/repos/golang/go/tags"),
 				}},
 				&model.Folder{Name: "Realtime", Requests: []*model.Request{
-					&model.Request{Name: "Echo", Protocol: "websocket", URL: "wss://echo.example.org"},
-					&model.Request{Name: "List Tools", Protocol: "mcp", URL: "http://localhost:8080/mcp"},
+					&model.Request{Name: "Echo", Protocol: model.ProtocolWebSocket, URL: "wss://echo.example.org"},
+					&model.Request{Name: "List Tools", Protocol: model.ProtocolMCP, URL: "http://localhost:8080/mcp"},
 				}},
 			},
 		},

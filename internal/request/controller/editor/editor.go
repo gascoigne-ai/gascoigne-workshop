@@ -21,7 +21,7 @@ type ParamsChanged struct{}
 type MethodChosen struct{ Method string }
 
 // ProtocolChosen sets the protocol.
-type ProtocolChosen struct{ Protocol string }
+type ProtocolChosen struct{ Protocol model.Protocol }
 
 // TimeoutSet sets the timeout in seconds; 0 is the default.
 type TimeoutSet struct{ Seconds int }
@@ -36,13 +36,16 @@ type VarsTyped struct{ Text string }
 // BodyTypeChosen switches the body to Type. Text and FilePath are what the
 // text editor and the file field hold, since each type keeps its own in the
 // one Body.
-type BodyTypeChosen struct{ Type, Text, FilePath string }
+type BodyTypeChosen struct {
+	Type           model.BodyType
+	Text, FilePath string
+}
 
 // OperationChosen puts a starter GraphQL query and its variables in the body.
 type OperationChosen struct{ Query, Variables string }
 
 // AuthTypeChosen sets the authentication type.
-type AuthTypeChosen struct{ Type string }
+type AuthTypeChosen struct{ Type model.AuthType }
 
 // AuthFieldSet sets one credential field, named by its id: token, user,
 // password, keyname, keyvalue or keyin.
@@ -144,7 +147,7 @@ func Update(req model.Request, msg Msg) model.Request {
 		req.Method = msg.Method
 	case ProtocolChosen:
 		req.Protocol = msg.Protocol
-		if req.Protocol == "rest" && (req.Method == "" || strings.Contains(req.Method, "/")) { // "" or a gRPC method
+		if req.Protocol.Info().Method == model.MethodHTTP && (req.Method == "" || strings.Contains(req.Method, "/")) { // "" or a gRPC method
 			req.Method = "GET"
 		}
 	case TimeoutSet:
@@ -224,7 +227,7 @@ func chooseBodyType(req model.Request, msg BodyTypeChosen) model.Request {
 		req.Body = msg.FilePath
 	case model.BodyGraphQL:
 		req.Body = msg.Text
-		if req.Protocol == "rest" && (req.Method == "" || req.Method == "GET") {
+		if req.Protocol.Info().Method == model.MethodHTTP && (req.Method == "" || req.Method == "GET") {
 			req.Method = "POST" // a query goes in the body
 		}
 	}

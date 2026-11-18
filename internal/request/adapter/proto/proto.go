@@ -10,22 +10,23 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 )
 
-// NewRegistry returns the built-in protocols.
+// NewRegistry returns the built-in protocols, one per row of
+// model.Protocols.
 func NewRegistry() Registry {
 	return Registry{
-		"rest":      REST{},
-		"websocket": WebSocket{},
-		"mcp":       MCP{},
-		"sse":       SSE{},
-		"grpc":      GRPC{},
+		model.ProtocolREST:      REST{},
+		model.ProtocolWebSocket: WebSocket{},
+		model.ProtocolMCP:       MCP{},
+		model.ProtocolSSE:       SSE{},
+		model.ProtocolGRPC:      GRPC{},
 	}
 }
 
 // Configured is NewRegistry with REST and MCP made from config.
 func Configured(config port.ProtocolConfig) Registry {
 	registry := NewRegistry()
-	registry["rest"] = REST{Jar: config.Jar, Proxy: config.Proxy, CAFile: config.CACert, CertFile: config.ClientCert, KeyFile: config.ClientKey}
-	registry["mcp"] = MCP{Sampler: config.Sampler}
+	registry[model.ProtocolREST] = REST{Jar: config.Jar, Proxy: config.Proxy, CAFile: config.CACert, CertFile: config.ClientCert, KeyFile: config.ClientKey}
+	registry[model.ProtocolMCP] = MCP{Sampler: config.Sampler}
 	return registry
 }
 

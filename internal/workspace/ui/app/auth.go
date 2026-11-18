@@ -24,9 +24,10 @@ type authField struct {
 // authType is a way to authenticate and the fields it needs. The table
 // is the whole definition: the pane and the stored values follow it.
 type authType struct {
-	id, label string
-	width     int
-	fields    []authField
+	id     model.AuthType
+	label  string
+	width  int
+	fields []authField
 }
 
 var authTypes = []authType{
@@ -47,7 +48,7 @@ var authTypes = []authType{
 }
 
 // authTypeOf is the table entry for an auth type id ("" is none).
-func authTypeOf(id string) authType {
+func authTypeOf(id model.AuthType) authType {
 	for _, t := range authTypes {
 		if t.id == id {
 			return t

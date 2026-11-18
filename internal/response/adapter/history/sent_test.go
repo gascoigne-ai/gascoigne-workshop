@@ -89,6 +89,33 @@ func TestSentLogSkipsDamagedLines(t *testing.T) {
 	}
 }
 
+// A line whose protocol the workshop does not know, or that has none, is
+// left out like a damaged line; the lines around it still load.
+func TestSentLogSkipsALineWithAnUnknownProtocol(t *testing.T) {
+	dir := t.TempDir()
+	if err := AppendSent(dir, sentAt(1, "a")); err != nil {
+		t.Fatal(err)
+	}
+	file, err := os.OpenFile(filepath.Join(dir, sentFile), os.O_APPEND|os.O_WRONLY, 0o600)
+	if err != nil {
+		t.Fatal(err)
+	}
+	file.WriteString(`{"At":"2026-11-06T10:02:00Z","Path":"odd","Protocol":"gopher","Method":"GET","URL":"u","Status":200}` + "\n")
+	file.WriteString(`{"At":"2026-11-06T10:03:00Z","Path":"bare","Method":"GET","URL":"u","Status":200}` + "\n")
+	file.Close()
+	if err := AppendSent(dir, sentAt(4, "b")); err != nil {
+		t.Fatal(err)
+	}
+	got, _ := LoadSent(dir)
+	var paths []string
+	for _, sent := range got {
+		paths = append(paths, sent.Path)
+	}
+	if fmt.Sprint(paths) != "[b a]" {
+		t.Fatalf("paths = %v, want [b a]", paths)
+	}
+}
+
 func countLines(data []byte) int {
 	lines := 0
 	for _, char := range data {

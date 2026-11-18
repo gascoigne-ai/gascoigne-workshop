@@ -16,15 +16,17 @@ import (
 )
 
 func TestNext(t *testing.T) {
+	chipOrder := []model.Protocol{"rest", "websocket", "mcp", "sse", "grpc"}
 	tests := []struct {
-		name, cur, want string
+		name      string
+		cur, want model.Protocol
 	}{
 		{"advances", "rest", "websocket"},
 		{"wraps", "grpc", "rest"},
 		{"unknown starts over", "carrier-pigeon", "rest"},
 	}
 	for _, tt := range tests {
-		if got := next(protocolOrder, tt.cur); got != tt.want {
+		if got := next(chipOrder, tt.cur); got != tt.want {
 			t.Errorf("%s: next(%q) = %q, want %q", tt.name, tt.cur, got, tt.want)
 		}
 	}
@@ -102,7 +104,10 @@ func TestParamsChangedRewritesURL(t *testing.T) {
 }
 
 func TestRequestBadge(t *testing.T) {
-	tests := []struct{ protocol, method, want string }{
+	tests := []struct {
+		protocol     model.Protocol
+		method, want string
+	}{
 		{"rest", "GET", "GET"}, {"", "POST", "POST"}, {"rest", "DELETE", "DEL"},
 		{"websocket", "", "WS"}, {"mcp", "GET", "MCP"},
 	}
@@ -202,14 +207,14 @@ func TestTheProtocolChipOffersGRPCAndSSEOnlyWhenTheyAreSwitchedOn(t *testing.T) 
 	tests := []struct {
 		name      string
 		grpc, sse bool
-		current   string
-		want      []string
+		current   model.Protocol
+		want      []model.Protocol
 	}{
-		{"both off", false, false, "rest", []string{"rest", "websocket", "mcp"}},
-		{"sse on", false, true, "rest", []string{"rest", "websocket", "mcp", "sse"}},
-		{"grpc on", true, false, "rest", []string{"rest", "websocket", "mcp", "grpc"}},
-		{"both on", true, true, "rest", []string{"rest", "websocket", "mcp", "sse", "grpc"}},
-		{"a request already on grpc keeps it", false, false, "grpc", []string{"rest", "websocket", "mcp", "grpc"}},
+		{"both off", false, false, "rest", []model.Protocol{"rest", "websocket", "mcp"}},
+		{"sse on", false, true, "rest", []model.Protocol{"rest", "websocket", "mcp", "sse"}},
+		{"grpc on", true, false, "rest", []model.Protocol{"rest", "websocket", "mcp", "grpc"}},
+		{"both on", true, true, "rest", []model.Protocol{"rest", "websocket", "mcp", "sse", "grpc"}},
+		{"a request already on grpc keeps it", false, false, "grpc", []model.Protocol{"rest", "websocket", "mcp", "grpc"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

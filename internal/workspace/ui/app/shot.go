@@ -196,7 +196,8 @@ func answered(tab *reqTab) bool {
 	if tab.Session == nil {
 		return len(tab.wsView.Lines) > 0 // the error is in the log
 	}
-	return tab.Req.Protocol != "mcp" || tab.Server != nil
+	explores := slices.ContainsFunc(viewOf(tab.Req.Protocol).streamPanes, func(p pane) bool { return p.kind == paneExplorer })
+	return !explores || tab.Server != nil // an explorer waits for the server to say who it is
 }
 
 func (a *App) shotDraw(screen *ebiten.Image) {
@@ -428,16 +429,13 @@ func (a *App) showShotResponsePane(label string) bool {
 // chooseShotBody chooses the body type id on the open request, as its chip
 // does; it reports whether id is one of the chips.
 func (a *App) chooseShotBody(id string) bool {
-	known := slices.ContainsFunc(bodyTypes, func(candidate struct {
-		id, label string
-		width     int
-	}) bool {
-		return candidate.id == id
+	known := slices.ContainsFunc(bodyTypes, func(candidate bodyChoice) bool {
+		return candidate.id == model.BodyType(id)
 	})
 	if !known {
 		return false
 	}
-	a.setBodyType(a.cur(), id)
+	a.setBodyType(a.cur(), model.BodyType(id))
 	a.markStale() // no input reports this edit, so the cached unsaved marks would not see it
 	return true
 }

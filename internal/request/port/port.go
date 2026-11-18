@@ -19,17 +19,16 @@ type Protocol interface {
 	Send(ctx context.Context, req model.Request) (model.Response, error)
 }
 
-// Registry maps protocol names ("rest", "websocket", "mcp") to
-// implementations.
-type Registry map[string]Protocol
+// Registry maps each protocol of model.Protocols to its implementation.
+type Registry map[model.Protocol]Protocol
 
 // Names lists the registered protocol names in sorted order.
-func (r Registry) Names() []string {
-	names := make([]string, 0, len(r))
+func (r Registry) Names() []model.Protocol {
+	names := make([]model.Protocol, 0, len(r))
 	for name := range r {
 		names = append(names, name)
 	}
-	sort.Strings(names)
+	sort.Slice(names, func(i, j int) bool { return names[i] < names[j] })
 	return names
 }
 

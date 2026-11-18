@@ -477,9 +477,9 @@ func TestScreenshotWithAnUnknownResponsePaneFails(t *testing.T) {
 // its chip does, so a scene can draw the File or GraphQL body editor that
 // no sample request has. The tab shows its unsaved mark on that frame.
 func TestScreenshotChoosesTheBodyType(t *testing.T) {
-	for _, bodyType := range []string{model.BodyFile, model.BodyGraphQL} {
-		t.Run(bodyType, func(t *testing.T) {
-			a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotBody: bodyType})
+	for _, bodyType := range []model.BodyType{model.BodyFile, model.BodyGraphQL} {
+		t.Run(string(bodyType), func(t *testing.T) {
+			a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotBody: string(bodyType)})
 			for range setFrame {
 				if err := a.shotUpdate(); err != nil {
 					t.Fatal(err)
@@ -502,7 +502,7 @@ func TestScreenshotChoosesTheBodyType(t *testing.T) {
 // unsaved marks cached by earlier frames would hide it, as they once hid
 // the -type-url edit.
 func TestScreenshotBodyChoiceShowsOverMarksDrawnBefore(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotBody: model.BodyFile})
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotBody: string(model.BodyFile)})
 	for range setFrame - 1 {
 		if err := a.shotUpdate(); err != nil {
 			t.Fatal(err)
@@ -565,7 +565,7 @@ func TestScreenshotLeavesWrapOffByDefault(t *testing.T) {
 // The first sample request has no body, so -body chooses JSON first.
 func TestScreenshotTypesTheBody(t *testing.T) {
 	const typed = "{\n  \"note\": \"typed\"\n}"
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotBody: model.BodyJSON, ScreenshotTypeBody: typed})
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotBody: string(model.BodyJSON), ScreenshotTypeBody: typed})
 	for range setFrame - 1 {
 		a.shotUpdate()
 	}
@@ -589,7 +589,7 @@ func TestScreenshotTypesTheBody(t *testing.T) {
 // the typed text, so -type-body there ends the run with an error rather
 // than letting a golden pass for a scene without it.
 func TestScreenshotTypingABodyWithoutATextEditorFails(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotBody: model.BodyFile, ScreenshotTypeBody: "x"})
+	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), ScreenshotBody: string(model.BodyFile), ScreenshotTypeBody: "x"})
 	for range setFrame {
 		a.shotUpdate()
 	}

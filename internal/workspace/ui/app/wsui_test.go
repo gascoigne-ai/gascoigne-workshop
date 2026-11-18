@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -430,5 +431,34 @@ func TestLogSkipsTheServerInfoEvent(t *testing.T) {
 	a.logEvent(tab, reqport.Event{Dir: reqport.Info, Kind: "initialize", Text: `{"protocolVersion":"2025-06-18"}`})
 	if len(tab.wsView.Lines) != 0 {
 		t.Fatalf("log has %d lines", len(tab.wsView.Lines))
+	}
+}
+
+// Pins what differs between the composers of the protocols that connect:
+// only MCP's hint lists its commands.
+func TestOnlyTheMCPComposerShowsTheCommandHint(t *testing.T) {
+	a, _ := newTestApp(t)
+	tab := a.cur()
+	for _, protocol := range []model.Protocol{"websocket", "mcp", "sse", "grpc"} {
+		tab.Req.Protocol = protocol
+		hint := composerHint(tab, true)
+		if mcp := strings.HasPrefix(hint, "call TOOL"); mcp != (protocol == "mcp") {
+			t.Errorf("%s composer hint %q", protocol, hint)
+		}
+	}
+}
+
+// Pins what differs between the composers of the protocols that connect:
+// only WebSocket offers the { } button that makes the message one line of
+// JSON.
+func TestOnlyTheWebSocketComposerOffersFormat(t *testing.T) {
+	a, _ := newTestApp(t)
+	tab := a.cur()
+	for _, protocol := range []model.Protocol{"websocket", "mcp", "grpc"} {
+		tab.Req.Protocol = protocol
+		dump := view.Dump(a.messagesPane(wsPanes[0], tab, nil))
+		if formats := strings.Contains(dump, "{ }"); formats != (protocol == "websocket") {
+			t.Errorf("%s offers { }: %v", protocol, formats)
+		}
 	}
 }

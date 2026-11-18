@@ -118,7 +118,7 @@ func closeAt(list List, index int) List {
 	}
 	list.Tabs = slices.Delete(list.Tabs, index, index+1)
 	if len(list.Tabs) == 0 {
-		list.Tabs = append(list.Tabs, New(&model.Request{Name: "New Request", Protocol: "rest", Method: "GET"}))
+		list.Tabs = append(list.Tabs, New(&model.Request{Name: "New Request", Protocol: model.ProtocolREST, Method: "GET"}))
 	}
 	list.Active = AfterClose(list.Active, index, len(list.Tabs))
 	list.Drag = -1
