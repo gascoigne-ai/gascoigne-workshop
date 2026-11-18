@@ -266,7 +266,7 @@ func TestImportPostmanAddsAFolderAndItsVariables(t *testing.T) {
 	if len(a.col().Folders) != before+1 || a.col().Folders[before].Name != "Echo API" {
 		t.Fatalf("folders %d", len(a.col().Folders))
 	}
-	if len(a.col().Vars) != 1 || a.col().Vars[0].Value != "mine" {
+	if len(a.col().Vars) != 3 || a.col().Vars[0].Value != "mine" || a.col().Vars[1].Name != "token" || a.col().Vars[2].Name != "apiKey" {
 		t.Fatalf("an existing variable must not be overwritten: %+v", a.col().Vars)
 	}
 	if a.cur().Req.Name != "Form" { // requests of a folder come before its subfolders

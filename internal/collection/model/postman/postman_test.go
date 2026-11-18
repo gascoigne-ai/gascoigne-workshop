@@ -35,7 +35,7 @@ func TestCollectionKeepsFoldersRequestsAndVariables(t *testing.T) {
 	if res.Folder.Name != "Echo API" || len(res.Folder.Folders) != 1 || res.Folder.Folders[0].Name != "Requests" || len(res.Folder.Requests) != 3 {
 		t.Fatalf("%q folders %d requests %d", res.Folder.Name, len(res.Folder.Folders), len(res.Folder.Requests))
 	}
-	if len(res.Vars) != 1 || res.Vars[0].Name != "baseUrl" || !res.Vars[0].Enabled {
+	if len(res.Vars) != 3 || res.Vars[0].Name != "baseUrl" || !res.Vars[0].Enabled || res.Vars[1].Name != "token" || res.Vars[2].Name != "apiKey" {
 		t.Fatalf("vars %+v", res.Vars)
 	}
 }
@@ -67,11 +67,11 @@ func TestBodyModesAndOtherAuthTypes(t *testing.T) {
 		t.Fatalf("%+v", form)
 	}
 	up := find(root, "Upload")
-	if up.BodyType != model.BodyMultipart || up.Form[1].Value != "@/tmp/a.txt" || up.Auth.Type != model.AuthBasic || up.Auth.User != "u" || up.Auth.Password != "p" {
+	if up.BodyType != model.BodyMultipart || up.Form[1].Value != "@a.txt" || up.Auth.Type != model.AuthBasic || up.Auth.User != "u" || up.Auth.Password != "p" {
 		t.Fatalf("%+v", up)
 	}
 	key := find(root, "Keyed")
-	if key.Auth.Type != model.AuthAPIKey || key.Auth.KeyName != "X-Api-Key" || key.Auth.KeyValue != "secret" || key.Auth.KeyIn != model.KeyInHeader {
+	if key.Auth.Type != model.AuthAPIKey || key.Auth.KeyName != "X-Api-Key" || key.Auth.KeyValue != "{{apiKey}}" || key.Auth.KeyIn != model.KeyInHeader {
 		t.Fatalf("%+v", key.Auth)
 	}
 }
@@ -123,7 +123,7 @@ func TestExportThenParseKeepsWhatPostmanCanHold(t *testing.T) {
 	if get.URL != "{{baseUrl}}/get?foo=bar&baz=1" || len(get.Params) != 3 || get.Auth.Token != "{{token}}" || len(get.Headers) != 2 || get.Headers[1].Enabled {
 		t.Fatalf("%+v", get)
 	}
-	if len(again.Vars) != 1 || again.Vars[0].Name != "baseUrl" {
+	if len(again.Vars) != 3 || again.Vars[0].Name != "baseUrl" {
 		t.Fatalf("vars %+v", again.Vars)
 	}
 	if find(again.Folder, "Socket") != nil {
