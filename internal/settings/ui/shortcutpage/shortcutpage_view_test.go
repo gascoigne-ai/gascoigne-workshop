@@ -193,7 +193,7 @@ func TestAnUnboundActionRowHasNoWarningNote(t *testing.T) {
 // A row's Clear unbinds only that row's action.
 func TestARowsClearUnbindsOnlyItsAction(t *testing.T) {
 	driver := newDriver(t)
-	driver.clickOn(1, `text="Clear"`)
+	driver.clickOn(1, "control=icon-button")
 	if KeyText(driver.host, "send") != "Unbound" || KeyText(driver.host, "close-tab") != "Ctrl+W" {
 		t.Fatalf("close-tab %q, send %q", KeyText(driver.host, "close-tab"), KeyText(driver.host, "send"))
 	}
@@ -274,5 +274,19 @@ func TestKeyAndResetButtonsShareOneSize(t *testing.T) {
 	}
 	if len(widths["key"]) != 1 || len(widths["side"]) != 1 {
 		t.Fatalf("widths %v, want one width for the key buttons and one for Clear, Reset and Replace", widths)
+	}
+}
+
+// Clearing a key is an icon button, one per bound action, with no text label.
+func TestClearIsAnIconButton(t *testing.T) {
+	var page Page
+	host := newHost()
+	root := page.View(host)
+	Layout(newCtx(t), root, wideW, wideH)
+	if got := len(findAll(root, "control=icon-button", "tip=Leave the action without a key")); got != len(host.Actions()) {
+		t.Errorf("%d clear icon buttons, want one for each of the %d bound actions", got, len(host.Actions()))
+	}
+	if strings.Contains(Dump(root), `text="Clear"`) {
+		t.Error("a Clear text label is still there")
 	}
 }

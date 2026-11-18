@@ -313,6 +313,7 @@ func (p *Page) View(host Host) Node {
 		"compactH": w.CompactH,
 		"labelH":   w.LabelH,
 		"gutter":   w.Gutter,
+		"iconBtnW": w.IconBtnW,
 	})
 }
 
@@ -357,8 +358,8 @@ const (
         <text small grow="1" ellipsis>{{action.Name}}</text>
         <choice selected="{{action.Recording}}" w="120" h="{{compactH}}" on-click="action.Record"
                 tooltip="Click, then press the keys">{{action.Key}}</choice>
-        <button if="action.Bound" w="64" h="{{compactH}}" on-click="action.Clear"
-                tooltip="Leave the action without a key">Clear</button>
+        <icon-button if="action.Bound" icon="cross" w="{{iconBtnW}}" h="{{compactH}}" on-click="action.Clear"
+                tooltip="Leave the action without a key"/>
         <button if="action.Overridden" w="64" h="{{compactH}}" on-click="action.Reset"
                 tooltip="Back to the default key">Reset</button>
       </row>
