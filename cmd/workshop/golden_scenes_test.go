@@ -85,6 +85,7 @@ var goldenScenes = []goldenScene{
 	{name: "request-auth", width: shotWidth, height: shotHeight, args: []string{"-request", "Auth", "-pane", "Auth"}},
 	{name: "toasts", width: shotWidth, height: shotHeight, args: []string{"-toast", "There is no response to save", "-toast", "Enter the gRPC server first, for example grpc://localhost:50051"}},
 	{name: "dialog-rename", width: shotWidth, height: shotHeight, args: []string{"-dialog", "rename"}},
+	{name: "welcome", width: shotWidth, height: shotHeight, args: []string{"-welcome"}},
 	{name: "dialog-delete", width: shotWidth, height: shotHeight, args: []string{"-dialog", "delete"}},
 	{name: "call-log", width: shotWidth, height: shotHeight, args: []string{"-send", "-log"}, mask: []image.Rectangle{durationStacked, durationStatus, logStamps, logDuration}},
 	{name: "mcp-tool-form", width: shotWidth, height: shotHeight, args: []string{"-request", "MCP Tools", "-send", "-tool", "add"}, mask: []image.Rectangle{durationStatus}},
