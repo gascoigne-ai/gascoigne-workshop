@@ -6,6 +6,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/controller/viewer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fileversion"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/sysinfo"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
@@ -143,7 +144,7 @@ func (a *App) persistSettings() {
 		a.settingsUnsaved = false
 		return
 	}
-	if err := a.settingFiles.Save(a.settingsPath, a.settings); err != nil {
+	if err := a.SettingsStore().Save(a.settingsPath, a.settings); err != nil {
 		a.status = "Could not save settings: " + err.Error()
 		a.toast(a.status, true)
 		return
@@ -184,8 +185,24 @@ func (a *App) askSaveSettings() {
 	}}
 }
 
-// SettingsStore is the settings file's store.
-func (a *App) SettingsStore() port.SettingsStore { return a.settingFiles }
+// SettingsStore is the settings file's store; it refuses to write a file a
+// newer build wrote, for the whole session.
+func (a *App) SettingsStore() port.SettingsStore {
+	if a.settingsAccess == fileversion.ReadOnly {
+		return readOnlySettings{a.settingFiles}
+	}
+	return a.settingFiles
+}
+
+// errNewerSettings is every write of settings.json in a session that found
+// it written by a newer build.
+var errNewerSettings = errors.New("settings.json was written by a newer version of the workshop; it is not changed this session")
+
+// readOnlySettings reads the settings file but writes nothing.
+type readOnlySettings struct{ port.SettingsStore }
+
+func (readOnlySettings) Save(string, settings.Settings) error { return errNewerSettings }
+func (readOnlySettings) WriteText(string, []byte) error       { return errNewerSettings }
 
 // FontStore is the installed fonts of this machine.
 func (a *App) FontStore() port.FontStore { return a.fonts }

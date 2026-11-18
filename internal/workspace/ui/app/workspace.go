@@ -11,6 +11,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fileversion"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 )
 
@@ -43,6 +44,7 @@ func (a *App) openWorkspace(dir string) {
 		}
 		if _, err := a.loadCollection(collectionDir(item.Folder), item.Environment); err != nil {
 			failed = append(failed, err)
+			a.toastNewer(item.Folder, err)
 			if dir == "" {
 				a.unreadable = append(a.unreadable, item)
 			}
@@ -62,6 +64,15 @@ func (a *App) openWorkspace(dir string) {
 	}
 	for _, entry := range a.open.Entries { // a blank request added to an empty collection is not an edit
 		a.markSaved(entry.Collection)
+	}
+}
+
+// toastNewer tells, beyond the status line, that the collection in folder
+// was not opened because a newer build saved it (decision 22).
+func (a *App) toastNewer(folder string, err error) {
+	var newer *fileversion.NewerError
+	if errors.As(err, &newer) {
+		a.toast("Cannot open "+folder+": "+err.Error(), true)
 	}
 }
 

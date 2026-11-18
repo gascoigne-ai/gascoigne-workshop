@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fileversion"
 )
 
 // Kind is the type of a setting's value.
@@ -148,6 +150,12 @@ func validateObject(data []byte, base int, section string) []Problem {
 			problems = append(problems, validateObject(raw, base+valueStart, key)...)
 			continue
 		}
+		if key == fileversion.Key {
+			if message := checkVersion(raw, section); message != "" {
+				problems = append(problems, at(message))
+			}
+			continue
+		}
 		field, known := FieldFor(key)
 		switch {
 		case !known:
@@ -161,6 +169,23 @@ func validateObject(data []byte, base int, section string) []Problem {
 		}
 	}
 	return problems
+}
+
+// checkVersion is what is wrong with raw as the version of the file, or "".
+// The version is a property of the file, not a setting: it is not in the
+// schema, and only the top level holds it.
+func checkVersion(raw json.RawMessage, section string) string {
+	if section != "" {
+		return "belongs at the top level"
+	}
+	version, err := fileversion.Parse(raw)
+	if err != nil {
+		return fmt.Sprintf("must be a whole number from 0 to %d", FileVersion)
+	}
+	if version > FileVersion {
+		return (&fileversion.NewerError{Found: version, Newest: FileVersion}).Error()
+	}
+	return ""
 }
 
 // wrongSection says where a setting written in the wrong section belongs.
@@ -241,8 +266,8 @@ func Parse(data []byte, last Settings) (Settings, []Problem) {
 	if problems := Validate(data); len(problems) > 0 {
 		return last, problems
 	}
-	parsed := Default()
-	if err := unmarshalSettings(data, &parsed); err != nil {
+	parsed, _, err := fileversion.Read(data, readers)
+	if err != nil {
 		return last, []Problem{{Message: err.Error(), End: len(data)}}
 	}
 	return parsed, nil

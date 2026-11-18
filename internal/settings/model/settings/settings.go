@@ -3,7 +3,11 @@
 // Reading and writing the file is the settingsfile adapter's job.
 package settings
 
-import "time"
+import (
+	"time"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fileversion"
+)
 
 // Settings are the user preferences.
 type Settings struct {
@@ -105,11 +109,25 @@ func Default() Settings {
 // the text keep their defaults. Text that does not parse yields Default
 // and an error.
 func Decode(data []byte) (Settings, error) {
-	s := Default()
-	if err := unmarshalSettings(data, &s); err != nil {
+	decoded, _, err := fileversion.Read(data, readers)
+	if err != nil {
 		return Default(), err
 	}
-	return s, nil
+	return decoded, nil
+}
+
+// readers read settings.json by version (decision 22). Versions 0 and 1
+// share a layout: sectioned, the older flat form or a mix.
+var readers = []func([]byte) (Settings, error){decodeOverDefaults, decodeOverDefaults}
+
+// FileVersion is the version of settings.json this build writes.
+var FileVersion = len(readers) - 1
+
+// decodeOverDefaults reads settings text over the defaults.
+func decodeOverDefaults(data []byte) (Settings, error) {
+	decoded := Default()
+	err := unmarshalSettings(data, &decoded)
+	return decoded, err
 }
 
 // Encode writes only what differs from the defaults, so the text shows

@@ -35,6 +35,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/mcpexplorer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/ui/mcpform"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fileversion"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/state"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -202,12 +203,13 @@ type App struct {
 	shot        screenshot
 
 	settings           settings.Settings
-	settingsPath       string        // "" keeps settings in memory only
-	menu               bool          // settings menu is open
-	edit               *cellEdit     // the table cell being edited, if any
-	dragRow            *rowSelection // the table row being dragged by its grip, nil when none
-	bulk               *bulkEdit     // the table in bulk-edit mode, if any
-	actionIDs          []string      // the ids of the shortcut actions, for completing settings.json
+	settingsPath       string             // "" keeps settings in memory only
+	settingsAccess     fileversion.Access // read-only when a newer build wrote the file (decision 22)
+	menu               bool               // settings menu is open
+	edit               *cellEdit          // the table cell being edited, if any
+	dragRow            *rowSelection      // the table row being dragged by its grip, nil when none
+	bulk               *bulkEdit          // the table in bulk-edit mode, if any
+	actionIDs          []string           // the ids of the shortcut actions, for completing settings.json
 	store              cport.Store
 	clients            cport.ClientConfigs // the build's client config; nil has none
 	states             port.StateStore
@@ -253,6 +255,7 @@ type App struct {
 	sidebarSplit       widget.SplitState                        // width of the collections sidebar
 	paneSplit          widget.SplitState                        // request pane share of the request/response area
 	statePath          string                                   // where the UI state is remembered
+	stateAccess        fileversion.Access                       // read-only when a newer build wrote the file (decision 22)
 	varsFolder         *model.Folder                            // the folder whose variables the Vars pane edits, nil for the environment's or the collection's
 	varsCollection     *model.Collection                        // the collection whose own variables the Vars pane edits although an environment is active; nil for none
 	title              string                                   // the window title last set
@@ -365,11 +368,12 @@ func NewApp(opts Options) (*App, error) {
 		status:           "Ready",
 		shot:             screenshot{path: opts.ScreenshotPath, sendOnStart: opts.SendOnStart, set: opts.ScreenshotSet, request: opts.ScreenshotRequest, page: opts.ScreenshotPage, rawSettings: opts.ScreenshotRawSettings, sentLog: opts.ScreenshotSentLog, find: opts.ScreenshotFind, filter: opts.ScreenshotFilter, sending: opts.ScreenshotSending, openAll: opts.ScreenshotOpenAll, url: opts.ScreenshotURL, pane: opts.ScreenshotPane, body: opts.ScreenshotBody, typeBody: opts.ScreenshotTypeBody, wrap: opts.ScreenshotWrap, respPane: opts.ScreenshotResponsePane, toasts: opts.ScreenshotToasts, dialog: opts.ScreenshotDialog, record: opts.ScreenshotRecord, callLog: opts.ScreenshotCallLog, browse: opts.ScreenshotBrowse, tool: opts.ScreenshotTool, closeAll: opts.ScreenshotCloseAll, collections: opts.ScreenshotCollections},
 
-		settings:     st,
-		settingFiles: settingFiles,
-		settingsPath: opts.SettingsPath,
-		statePath:    opts.StatePath,
-		menu:         opts.OpenMenu,
+		settings:       st,
+		settingFiles:   settingFiles,
+		settingsPath:   opts.SettingsPath,
+		settingsAccess: fileversion.AccessAfter(loadErr),
+		statePath:      opts.StatePath,
+		menu:           opts.OpenMenu,
 	}
 	if loadErr != nil {
 		a.status = loadErr.Error()
@@ -386,6 +390,7 @@ func NewApp(opts Options) (*App, error) {
 		a.now = opts.Clock.Now
 	}
 	ctx.Now = func() time.Time { return a.now() } // the caret blinks by the app clock
+	a.noteReadOnly(a.settingsAccess, loadErr)
 	a.store, a.states = opts.Store, opts.States
 	if a.states == nil {
 		a.states = noStates{}
@@ -420,6 +425,8 @@ func NewApp(opts Options) (*App, error) {
 	}
 	a.openWorkspace(opts.WorkspaceDir)
 	stored, stateErr := a.states.Load(opts.StatePath)
+	a.stateAccess = fileversion.AccessAfter(stateErr)
+	a.noteReadOnly(a.stateAccess, stateErr)
 	a.initial = stored.Window
 	a.restore(stored)
 	a.welcomed = stored.Welcomed

@@ -54,11 +54,11 @@ func Rename(dir, name string) (string, error) {
 	if !isCollection(dir) {
 		return "", fmt.Errorf("%s holds no collection", dir)
 	}
-	var meta folderMeta
-	if err := readJSON(filepath.Join(dir, folderFile), &meta); err != nil {
+	meta, err := readJSON(filepath.Join(dir, folderFile), folderReaders)
+	if err != nil {
 		return "", err
 	}
-	meta.Name = name
+	meta.Version, meta.Name = folderVersion, name
 	if err := writeJSON(filepath.Join(dir, folderFile), meta, false); err != nil {
 		return "", err
 	}

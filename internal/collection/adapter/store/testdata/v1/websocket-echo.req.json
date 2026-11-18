@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "name": "WebSocket Echo",
+  "protocol": "websocket",
+  "url": "ws://127.0.0.1:8082",
+  "auth": {}
+}

@@ -1,0 +1,10 @@
+{"At":"2026-11-18T01:16:26.970068+01:00","Collection":"","Path":"Index","Protocol":"rest","Method":"GET","URL":"http://127.0.0.1:8081/","Status":200}
+{"At":"2026-11-18T01:16:27.062313+01:00","Collection":"","Path":"Echo","Protocol":"rest","Method":"POST","URL":"http://127.0.0.1:8081/echo","Status":200}
+{"At":"2026-11-18T01:16:27.639613+01:00","Collection":"","Path":"Echo","Protocol":"rest","Method":"POST","URL":"http://127.0.0.1:8081/echo","Status":200}
+{"At":"2026-11-18T01:16:27.723855+01:00","Collection":"","Path":"Status 418","Protocol":"rest","Method":"GET","URL":"http://127.0.0.1:8081/status/418","Status":418}
+{"At":"2026-11-18T01:16:28.138695+01:00","Collection":"","Path":"Status 418","Protocol":"rest","Method":"GET","URL":"http://127.0.0.1:8081/status/418","Status":418}
+{"At":"2026-11-18T01:16:34.21448+01:00","Collection":"/tmp/workshop-fixture/collection","Path":"Echo","Protocol":"rest","Method":"POST","URL":"http://127.0.0.1:8081/echo","Status":200}
+{"version":1,"At":"2026-11-18T01:32:14.139263+01:00","Collection":"","Path":"Index","Protocol":"rest","Method":"GET","URL":"http://127.0.0.1:8081/","Status":200}
+{"version":1,"At":"2026-11-18T01:32:14.228669+01:00","Collection":"","Path":"Status 418","Protocol":"rest","Method":"GET","URL":"http://127.0.0.1:8081/status/418","Status":418}
+{"version":1,"At":"2026-11-18T01:32:14.654981+01:00","Collection":"/tmp/workshop-fixture/collection","Path":"Status 418","Protocol":"rest","Method":"GET","URL":"http://127.0.0.1:8081/status/418","Status":418}
+{"version":1,"At":"2026-11-18T01:32:14.738057+01:00","Collection":"/tmp/workshop-fixture/collection","Path":"Echo","Protocol":"rest","Method":"POST","URL":"http://127.0.0.1:8081/echo","Status":200}

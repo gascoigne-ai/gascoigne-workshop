@@ -1,6 +1,7 @@
 package app
 
 import (
+	"bytes"
 	"errors"
 	"os"
 	"path/filepath"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	rport "github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 )
 
@@ -80,6 +82,23 @@ func TestEveryFailurePathIsShownToTheUser(t *testing.T) {
 			app.cur().Resp = nil
 			app.openInBrowser(app.cur())
 		}, "There is no response to open", ""},
+		{"a history was written by a newer version", func(t *testing.T, app *App) {
+			app.statePath = filepath.Join(t.TempDir(), "state.json") // history lives beside it
+			req := app.cur().Req
+			if err := app.historyStore().Save(app.historyKey(req), []rport.Entry{{Status: 200}}); err != nil {
+				t.Fatal(err)
+			}
+			files, _ := filepath.Glob(filepath.Join(app.historyDir(), "*.json"))
+			if len(files) != 1 {
+				t.Fatalf("history files %q, want one", files)
+			}
+			data, _ := os.ReadFile(files[0])
+			newer := bytes.Replace(data, []byte(`"version":1`), []byte(`"version":2`), 1) // no newer build exists to write one
+			if err := os.WriteFile(files[0], newer, 0o600); err != nil {
+				t.Fatal(err)
+			}
+			app.loadHistory(req)
+		}, "written by a newer version", ""},
 		{"the state cannot be saved", func(t *testing.T, app *App) {
 			app.statePath = blockedDir(t)
 			app.stateTick() // notices the change

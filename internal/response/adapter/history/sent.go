@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fileversion"
 	"os"
 	"path/filepath"
 	"slices"
@@ -13,11 +14,24 @@ import (
 // sentFile is the log inside the history folder: one JSON object per line.
 const sentFile = "sent.jsonl"
 
+// sentLine is one line of the log: the version is on every line, since a
+// header line would be lost when the log is trimmed.
+type sentLine struct {
+	Version int `json:"version"`
+	port.Sent
+}
+
+// sentReaders read a line by version; versions 0 and 1 share a layout.
+var sentReaders = []func([]byte) (sentLine, error){fileversion.Plain[sentLine], fileversion.Plain[sentLine]}
+
+// sentVersion is the version AppendSent writes.
+var sentVersion = len(sentReaders) - 1
+
 // AppendSent adds sent to the log in dir. The file is rewritten to the
 // newest port.SentLimit lines once it holds twice that, so it stays small
 // without a rewrite on every send.
 func AppendSent(dir string, sent port.Sent) error {
-	line, err := json.Marshal(sent)
+	line, err := json.Marshal(sentLine{Version: sentVersion, Sent: sent})
 	if err != nil {
 		return fmt.Errorf("encode sent request: %w", err)
 	}
@@ -74,10 +88,9 @@ func LoadSent(dir string) ([]port.Sent, error) {
 	}
 	var all []port.Sent
 	for _, line := range bytes.Split(data, []byte("\n")) {
-		var sent port.Sent
 		// A protocol the workshop does not know fails to decode; one left
 		// out decodes as none. Either way the line names no request to open.
-		if json.Unmarshal(line, &sent) == nil && sent.Path != "" && sent.Protocol != "" {
+		if sent, err := decodeSentLine(line); err == nil && sent.Path != "" && sent.Protocol != "" {
 			all = append(all, sent)
 		}
 	}
@@ -86,6 +99,12 @@ func LoadSent(dir string) ([]port.Sent, error) {
 		all = all[:port.SentLimit]
 	}
 	return all, nil
+}
+
+// decodeSentLine reads one line of the log with the reader of its version.
+func decodeSentLine(line []byte) (port.Sent, error) {
+	read, _, err := fileversion.Read(line, sentReaders)
+	return read.Sent, err
 }
 
 // SentLog is the sent-request log kept in the history folder Dir.

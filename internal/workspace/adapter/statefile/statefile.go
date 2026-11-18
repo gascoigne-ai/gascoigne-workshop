@@ -12,10 +12,26 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fileversion"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/userdir"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/state"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
 )
+
+// stateFile is state.json: the state behind its version.
+type stateFile struct {
+	Version int `json:"version"`
+	state.State
+}
+
+// readers read state.json by version; versions 0 and 1 share a layout.
+var readers = []func([]byte) (stateFile, error){
+	fileversion.Plain[stateFile],
+	fileversion.Plain[stateFile],
+}
+
+// current is the version Save writes.
+var current = len(readers) - 1
 
 // Load reads path. A missing file or an empty path yields the empty
 // state; a broken file yields the empty state and an error to report.
@@ -30,11 +46,11 @@ func Load(path string) (state.State, error) {
 	if err != nil {
 		return state.State{}, fmt.Errorf("read state: %w", err)
 	}
-	var s state.State
-	if err := json.Unmarshal(data, &s); err != nil {
+	saved, _, err := fileversion.Read(data, readers)
+	if err != nil {
 		return state.State{}, fmt.Errorf("parse state %s: %w", filepath.Base(path), err)
 	}
-	return s, nil
+	return saved.State, nil
 }
 
 // Save writes s to path atomically. An empty path keeps it in memory.
@@ -42,7 +58,7 @@ func Save(path string, saved state.State) error {
 	if path == "" {
 		return nil
 	}
-	data, err := json.MarshalIndent(saved, "", "  ")
+	data, err := json.MarshalIndent(stateFile{Version: current, State: saved}, "", "  ")
 	if err != nil {
 		return fmt.Errorf("encode state: %w", err)
 	}

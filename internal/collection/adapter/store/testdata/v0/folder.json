@@ -1,0 +1,17 @@
+{
+  "name": "Example Server",
+  "order": [
+    "index.req.json",
+    "echo.req.json",
+    "status-418.req.json",
+    "delay-500ms.req.json",
+    "auth.req.json",
+    "auth-without-credentials.req.json",
+    "websocket-echo.req.json",
+    "sse-ticks.req.json",
+    "mcp-tools.req.json",
+    "grpc-health.req.json",
+    "grpc-health-of-example.req.json",
+    "grpc-health-from-proto.req.json"
+  ]
+}

@@ -3,6 +3,8 @@ package settings
 import (
 	"bytes"
 	"encoding/json"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fileversion"
 )
 
 // Sections are the top-level objects of settings.json, in the order they are
@@ -81,11 +83,14 @@ func unmarshalSettings(data []byte, into *Settings) error {
 
 // sectionedText is the settings (as the flat map Minimal builds) written as
 // indented JSON grouped by section, the sections in a fixed order and the
-// keys of each in schema order.
+// keys of each in schema order, after the version of the file.
 func sectionedText(flat map[string]any) ([]byte, error) {
 	var compact bytes.Buffer
 	compact.WriteByte('{')
-	wroteSection := false
+	if err := writeMember(&compact, false, fileversion.Key, FileVersion); err != nil {
+		return nil, err
+	}
+	wroteSection := true
 	for _, section := range Sections {
 		var body bytes.Buffer
 		if objectSection(section) {

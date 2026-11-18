@@ -1,0 +1,31 @@
+{
+  "window": {
+    "w": 1280,
+    "h": 800,
+    "x": 95,
+    "y": 66
+  },
+  "tabs": [
+    {
+      "collection": "/tmp/workshop-fixture/collection",
+      "path": "Index",
+      "paneLabel": "Params"
+    },
+    {
+      "collection": "/tmp/workshop-fixture/collection",
+      "path": "Echo",
+      "paneLabel": "Params"
+    },
+    {
+      "collection": "/tmp/workshop-fixture/collection",
+      "path": "Status 418",
+      "paneLabel": "Params"
+    },
+    {
+      "collection": "/tmp/workshop-fixture/collection",
+      "path": "MCP Tools",
+      "paneLabel": "Headers"
+    }
+  ],
+  "active": 1
+}

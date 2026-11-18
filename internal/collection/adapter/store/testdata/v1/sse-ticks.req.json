@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "name": "SSE Ticks",
+  "protocol": "sse",
+  "url": "http://127.0.0.1:8083/events?count=5",
+  "auth": {}
+}

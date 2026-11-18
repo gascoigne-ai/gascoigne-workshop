@@ -1,0 +1,8 @@
+{
+  "name": "Status 418",
+  "protocol": "rest",
+  "method": "GET",
+  "url": "http://127.0.0.1:8081/status/418",
+  "bodyType": "none",
+  "auth": {}
+}

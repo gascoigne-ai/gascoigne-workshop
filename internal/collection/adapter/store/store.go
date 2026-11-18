@@ -28,6 +28,7 @@ import (
 	"unicode"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fileversion"
 )
 
 const (
@@ -48,8 +49,9 @@ type kvFile struct {
 }
 
 type envFile struct {
-	Name string   `json:"name"`
-	Vars []kvFile `json:"vars,omitempty"`
+	Version int      `json:"version"`
+	Name    string   `json:"name"`
+	Vars    []kvFile `json:"vars,omitempty"`
 }
 
 type authFile struct {
@@ -60,6 +62,7 @@ type authFile struct {
 }
 
 type requestFile struct {
+	Version     int      `json:"version"`
 	Name        string   `json:"name"`
 	Protocol    string   `json:"protocol"`
 	Method      string   `json:"method,omitempty"`
@@ -80,9 +83,10 @@ type requestFile struct {
 }
 
 type folderMeta struct {
-	Name  string   `json:"name"`
-	Vars  []kvFile `json:"vars,omitempty"`
-	Order []string `json:"order,omitempty"`
+	Version int      `json:"version"`
+	Name    string   `json:"name"`
+	Vars    []kvFile `json:"vars,omitempty"`
+	Order   []string `json:"order,omitempty"`
 }
 
 // secret holds the credentials of one request.
@@ -92,6 +96,35 @@ type secret struct {
 	KeyValue string `json:"keyValue,omitempty"`
 
 	Vars map[string]string `json:"vars,omitempty"` // secret variables of an environment, by name
+}
+
+// secretsV1 is .secrets.json from version 1: the secrets of each file, by
+// its path in the collection, behind the version. Version 0 was the bare map.
+type secretsV1 struct {
+	Version int               `json:"version"`
+	Files   map[string]secret `json:"files"`
+}
+
+// The readers of each file by version (decision 22); versions 0 and 1 of
+// folder, request and environment files share a layout.
+var (
+	folderReaders  = []func([]byte) (folderMeta, error){fileversion.Plain[folderMeta], fileversion.Plain[folderMeta]}
+	requestReaders = []func([]byte) (requestFile, error){fileversion.Plain[requestFile], fileversion.Plain[requestFile]}
+	envReaders     = []func([]byte) (envFile, error){fileversion.Plain[envFile], fileversion.Plain[envFile]}
+	secretsReaders = []func([]byte) (map[string]secret, error){fileversion.Plain[map[string]secret], readSecretsV1}
+)
+
+// The versions Save writes.
+var (
+	folderVersion  = len(folderReaders) - 1
+	requestVersion = len(requestReaders) - 1
+	envVersion     = len(envReaders) - 1
+	secretsVersion = len(secretsReaders) - 1
+)
+
+func readSecretsV1(data []byte) (map[string]secret, error) {
+	wrapped, err := fileversion.Plain[secretsV1](data)
+	return wrapped.Files, err
 }
 
 func (s secret) empty() bool {
@@ -181,14 +214,14 @@ func unique(base string, taken map[string]bool) string {
 // folder files of items that no longer exist.
 func Save(dir string, collection model.Collection) error {
 	secrets := map[string]secret{}
-	meta := folderMeta{Name: collection.Name, Vars: varsToFile(collection.Vars, folderFile, secrets)}
+	meta := folderMeta{Version: folderVersion, Name: collection.Name, Vars: varsToFile(collection.Vars, folderFile, secrets)}
 	if err := saveFolder(absoluteDir(dir), dir, "", &collection.Folder, meta, secrets); err != nil {
 		return err
 	}
 	if err := saveEnvs(dir, collection.Envs, secrets); err != nil {
 		return err
 	}
-	if err := writeJSON(filepath.Join(dir, secretsFile), secrets, len(secrets) == 0); err != nil {
+	if err := writeJSON(filepath.Join(dir, secretsFile), secretsV1{Version: secretsVersion, Files: secrets}, len(secrets) == 0); err != nil {
 		return err
 	}
 	return ensureIgnore(dir)
@@ -220,7 +253,7 @@ func saveFolder(root, dir, rel string, folder *model.Folder, meta folderMeta, se
 		name := unique(slug(sub.Name), taken)
 		keep[name] = true
 		meta.Order = append(meta.Order, name+"/")
-		if err := saveFolder(root, filepath.Join(dir, name), path.Join(rel, name), sub, folderMeta{Name: sub.Name, Vars: varsToFile(sub.Vars, path.Join(rel, name, folderFile), secrets)}, secrets); err != nil {
+		if err := saveFolder(root, filepath.Join(dir, name), path.Join(rel, name), sub, folderMeta{Version: folderVersion, Name: sub.Name, Vars: varsToFile(sub.Vars, path.Join(rel, name, folderFile), secrets)}, secrets); err != nil {
 			return err
 		}
 	}
@@ -246,7 +279,7 @@ func saveEnvs(dir string, envs []model.Environment, secrets map[string]secret) e
 	for i, e := range envs {
 		file := fmt.Sprintf("%02d-%s%s", i+1, unique(slug(e.Name), taken), envSuffix)
 		keep[file] = true
-		ef := envFile{Name: e.Name}
+		ef := envFile{Version: envVersion, Name: e.Name}
 		sec := secret{Vars: map[string]string{}}
 		for _, v := range e.Vars {
 			kf := kvFile{Name: v.Name, Value: v.Value, Description: v.Description, Enabled: v.Enabled, Secret: v.Secret}
@@ -281,8 +314,8 @@ func loadEnvs(dir string, secrets map[string]secret) ([]model.Environment, error
 		if e.IsDir() || !strings.HasSuffix(e.Name(), envSuffix) {
 			continue
 		}
-		var ef envFile
-		if err := readJSON(filepath.Join(ed, e.Name()), &ef); err != nil {
+		ef, err := readJSON(filepath.Join(ed, e.Name()), envReaders)
+		if err != nil {
 			return nil, err
 		}
 		env := model.Environment{Name: ef.Name}
@@ -348,7 +381,7 @@ func absoluteDir(dir string) string {
 func requestToFile(request *model.Request, root string) (requestFile, secret) {
 	proto := request.Proto.Stored(root)
 	return requestFile{
-		Name: request.Name, Protocol: string(request.Protocol), Method: request.Method, URL: request.URL,
+		Version: requestVersion, Name: request.Name, Protocol: string(request.Protocol), Method: request.Method, URL: request.URL,
 		Params: toKV(request.Params), Headers: toKV(request.Headers),
 		BodyType: string(request.BodyType), Body: request.Body, Form: toKV(request.Form),
 		Auth:       authFile{Type: string(request.Auth.Type), User: request.Auth.User, KeyName: request.Auth.KeyName, KeyIn: request.Auth.KeyIn},
@@ -452,9 +485,13 @@ func ensureIgnore(dir string) error {
 // empty collection.
 func Load(dir string) (model.Collection, error) {
 	secrets := map[string]secret{}
-	if b, err := os.ReadFile(filepath.Join(dir, secretsFile)); err == nil {
-		if err := json.Unmarshal(b, &secrets); err != nil {
-			return model.Collection{}, fmt.Errorf("%s: %w", secretsFile, err)
+	if _, err := os.Stat(filepath.Join(dir, secretsFile)); err == nil {
+		read, err := readJSON(filepath.Join(dir, secretsFile), secretsReaders)
+		if err != nil {
+			return model.Collection{}, err
+		}
+		if read != nil {
+			secrets = read
 		}
 	}
 	var c model.Collection
@@ -469,21 +506,24 @@ func Load(dir string) (model.Collection, error) {
 	return c, nil
 }
 
-func readJSON(name string, value any) error {
-	b, err := os.ReadFile(name)
+// readJSON reads the file name with the reader of its version.
+func readJSON[T any](name string, readers []func([]byte) (T, error)) (T, error) {
+	data, err := os.ReadFile(name)
 	if err != nil {
-		return err
+		var zero T
+		return zero, err
 	}
-	if err := json.Unmarshal(b, value); err != nil {
-		return fmt.Errorf("%s: %w", name, err)
+	value, _, err := fileversion.Read(data, readers)
+	if err != nil {
+		return value, fmt.Errorf("%s: %w", name, err)
 	}
-	return nil
+	return value, nil
 }
 
 // loadFolder reads f from dir, which is rel below the collection's root.
 func loadFolder(root, dir, rel string, folder *model.Folder, secrets map[string]secret) (folderMeta, error) {
-	var meta folderMeta
-	if err := readJSON(filepath.Join(dir, folderFile), &meta); err != nil && !errors.Is(err, fs.ErrNotExist) {
+	meta, err := readJSON(filepath.Join(dir, folderFile), folderReaders)
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return meta, err
 	}
 	folder.Name = meta.Name
@@ -524,9 +564,9 @@ func loadFolder(root, dir, rel string, folder *model.Folder, secrets map[string]
 			folder.Folders = append(folder.Folders, sub)
 			continue
 		}
-		var rf requestFile
 		name := filepath.Join(dir, n)
-		if err := readJSON(name, &rf); err != nil {
+		rf, err := readJSON(name, requestReaders)
+		if err != nil {
 			return meta, err
 		}
 		request, err := fileToRequest(rf, secrets[path.Join(rel, n)], root)

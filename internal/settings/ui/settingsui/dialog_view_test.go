@@ -160,10 +160,14 @@ func (driver *frameDriver) key(input core.Input) {
 	driver.step(func(*El) core.Input { return input })
 }
 
+// minimalText is the raw view of the default settings: only the version of
+// the file.
+const minimalText = "{\n  \"version\": 1\n}\n"
+
 func TestTheJSONButtonShowsTheFileAndFormGoesBack(t *testing.T) {
 	driver := newFrameDriver(t)
 	driver.clickOn(`text="JSON"`)
-	if !driver.dialog.Raw || driver.dialog.RawText.Text != "{}\n" {
+	if !driver.dialog.Raw || driver.dialog.RawText.Text != minimalText {
 		t.Fatalf("raw %v with %q, want the raw view of the minimal settings", driver.dialog.Raw, driver.dialog.RawText.Text)
 	}
 	driver.clickOn(`text="Form"`)
@@ -218,7 +222,7 @@ func TestTypingGoodJSONInTheRawViewAppliesIt(t *testing.T) {
 	driver.clickOn(`text="JSON"`)
 	driver.clickOn("areaB")
 	edits := []core.Edit{core.EditEnd}
-	for range 8 {
+	for range len(minimalText) {
 		edits = append(edits, core.EditBackspace)
 	}
 	driver.key(core.Input{Edits: edits})
@@ -296,7 +300,7 @@ func TestTheTextMenusEditTheirOwnText(t *testing.T) {
 	}
 	driver.dialog.OpenRaw(driver.host)
 	driver.pickFromTextMenu("Select all", "areaB")
-	if got := driver.dialog.RawText.SelectedText(); got != "{}\n" {
+	if got := driver.dialog.RawText.SelectedText(); got != minimalText {
 		t.Errorf("the raw menu selected %q, want the raw text", got)
 	}
 }

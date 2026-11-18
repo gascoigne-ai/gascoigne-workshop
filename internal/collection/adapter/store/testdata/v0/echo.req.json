@@ -1,0 +1,9 @@
+{
+  "name": "Echo",
+  "protocol": "rest",
+  "method": "POST",
+  "url": "http://127.0.0.1:8081/echo",
+  "bodyType": "json",
+  "body": "{\n  \"hello\": \"world\"\n}",
+  "auth": {}
+}

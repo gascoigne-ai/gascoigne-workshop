@@ -1,0 +1,11 @@
+{
+  "name": "gRPC Health from .proto",
+  "protocol": "grpc",
+  "method": "grpc.health.v1.Health/Check",
+  "url": "grpc://127.0.0.1:8086",
+  "body": "{\n  \"service\": \"example\"\n}",
+  "auth": {},
+  "protoFiles": [
+    "protos/health.proto"
+  ]
+}

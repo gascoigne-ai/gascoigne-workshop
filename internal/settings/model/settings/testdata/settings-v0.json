@@ -1,0 +1,8 @@
+{
+  "appearance": {
+    "theme": "light"
+  },
+  "requests": {
+    "timeoutSec": 17
+  }
+}

@@ -11,6 +11,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	rport "github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fileversion"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/state"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
@@ -284,7 +285,7 @@ func (a *App) RestoredWindow(mw, mh int) state.Window { return a.initial.Clamp(m
 
 // SaveState writes the state now; main calls it on exit.
 func (a *App) SaveState() error {
-	if a.statePath == "" {
+	if !a.stateWritable() {
 		return nil
 	}
 	a.waitWrites()
@@ -304,7 +305,7 @@ func stateKey(saved state.State) string {
 // stateTick writes the state, off the UI goroutine, once it has been
 // unchanged for stateDebounce.
 func (a *App) stateTick() {
-	if a.statePath == "" {
+	if !a.stateWritable() {
 		return
 	}
 	key := a.stateNow()
@@ -411,4 +412,18 @@ func (a *App) loadHistory(req *model.Request) []tabs.PastResponse {
 
 func historyEntry(resp *model.Response, at time.Time) rport.Entry {
 	return rport.Entry{At: at, Status: resp.Status, StatusText: resp.StatusText, Duration: resp.Duration, Headers: resp.Headers, Body: resp.Body}
+}
+
+// stateWritable reports whether the state is written to a file: it is kept
+// on disk, and no newer build wrote it.
+func (a *App) stateWritable() bool {
+	return a.statePath != "" && a.stateAccess == fileversion.Writable
+}
+
+// noteReadOnly tells once, at the start, that a file a newer build wrote is
+// left as it is for this session.
+func (a *App) noteReadOnly(access fileversion.Access, loadErr error) {
+	if access == fileversion.ReadOnly {
+		a.toast(loadErr.Error()+"; it is not changed this session", true)
+	}
 }

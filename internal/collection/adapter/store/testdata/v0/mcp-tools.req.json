@@ -1,0 +1,7 @@
+{
+  "name": "MCP Tools",
+  "protocol": "mcp",
+  "url": "http://127.0.0.1:8084/mcp",
+  "bodyType": "none",
+  "auth": {}
+}
