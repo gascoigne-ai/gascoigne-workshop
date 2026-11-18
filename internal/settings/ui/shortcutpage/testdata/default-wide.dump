@@ -5,18 +5,18 @@ flow rect=0,0,600,500
   flow rect=0,40,600,48
     flow rect=0,40,600,24
       flow h=24 gap=6 rect=0,40,600,24
-        textB text="Close tab" grow=1 small=true ellipsis=true rect=0,40,438,24
-        flow h=24 padL=10 padR=10 bg=sunken control=button tip=Click, then press the keys shrink=true lighten=true onClick=true rect=444,40,96,24
-          textB text="Ctrl+W" grow=1 fg=chip-text ellipsis=true center=true rect=454,40,76,24
-        flow h=24 padL=10 padR=10 bg=sunken control=button tip=Leave the action without a key shrink=true lighten=true onClick=true rect=546,40,54,24
-          textB text="Clear" grow=1 fg=chip-text ellipsis=true center=true rect=556,40,34,24
+        textB text="Close tab" grow=1 small=true ellipsis=true rect=0,40,404,24
+        flow h=24 padL=10 padR=10 bg=sunken control=button tip=Click, then press the keys shrink=true lighten=true onClick=true rect=410,40,120,24
+          textB text="Ctrl+W" grow=1 fg=chip-text ellipsis=true center=true rect=420,40,100,24
+        flow h=24 padL=10 padR=10 bg=sunken control=button tip=Leave the action without a key shrink=true lighten=true onClick=true rect=536,40,64,24
+          textB text="Clear" grow=1 fg=chip-text ellipsis=true center=true rect=546,40,44,24
     flow rect=0,64,600,24
       flow h=24 gap=6 rect=0,64,600,24
-        textB text="Send request" grow=1 small=true ellipsis=true rect=0,64,438,24
-        flow h=24 padL=10 padR=10 bg=sunken control=button tip=Click, then press the keys shrink=true lighten=true onClick=true rect=444,64,96,24
-          textB text="Ctrl+Enter" grow=1 fg=chip-text ellipsis=true center=true rect=454,64,76,24
-        flow h=24 padL=10 padR=10 bg=sunken control=button tip=Leave the action without a key shrink=true lighten=true onClick=true rect=546,64,54,24
-          textB text="Clear" grow=1 fg=chip-text ellipsis=true center=true rect=556,64,34,24
+        textB text="Send request" grow=1 small=true ellipsis=true rect=0,64,404,24
+        flow h=24 padL=10 padR=10 bg=sunken control=button tip=Click, then press the keys shrink=true lighten=true onClick=true rect=410,64,120,24
+          textB text="Ctrl+Enter" grow=1 fg=chip-text ellipsis=true center=true rect=420,64,100,24
+        flow h=24 padL=10 padR=10 bg=sunken control=button tip=Leave the action without a key shrink=true lighten=true onClick=true rect=536,64,64,24
+          textB text="Clear" grow=1 fg=chip-text ellipsis=true center=true rect=546,64,44,24
   textB text="TEXT EDITING" h=22 fg=muted small=true rect=0,88,600,22
   flow h=24 gap=6 rect=0,110,600,24
     textB text="Select all" grow=1 small=true ellipsis=true rect=0,110,560,24

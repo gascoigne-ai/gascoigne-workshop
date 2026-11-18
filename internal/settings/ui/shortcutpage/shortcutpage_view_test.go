@@ -252,3 +252,27 @@ func TestTheSearchFieldHasItsPlaceholderAndTextMenu(t *testing.T) {
 		}
 	}
 }
+
+// The key buttons are one width, and so are Clear and Reset, whatever
+// their labels: the column reads as a column.
+func TestKeyAndResetButtonsShareOneSize(t *testing.T) {
+	var page Page
+	host := newHost()
+	page.Clear(host, "send")
+	root := page.View(host)
+	Layout(newCtx(t), root, wideW, wideH)
+	widths := map[string]map[int]bool{"key": {}, "side": {}}
+	for _, button := range findAll(root, "control=button") {
+		kind := "key"
+		if button.Rect().W < 80 {
+			kind = "side"
+		}
+		widths[kind][button.Rect().W] = true
+	}
+	for _, button := range findAll(root, "control=primary") {
+		widths["key"][button.Rect().W] = true
+	}
+	if len(widths["key"]) != 1 || len(widths["side"]) != 1 {
+		t.Fatalf("widths %v, want one width for the key buttons and one for Clear, Reset and Replace", widths)
+	}
+}

@@ -355,11 +355,11 @@ const (
     <col for="action in actions">
       <row h="{{compactH}}" gap="{{tightGap}}">
         <text small grow="1" ellipsis>{{action.Name}}</text>
-        <choice selected="{{action.Recording}}" w="96" h="{{compactH}}" on-click="action.Record"
+        <choice selected="{{action.Recording}}" w="120" h="{{compactH}}" on-click="action.Record"
                 tooltip="Click, then press the keys">{{action.Key}}</choice>
-        <button if="action.Bound" w="44" h="{{compactH}}" on-click="action.Clear"
+        <button if="action.Bound" w="64" h="{{compactH}}" on-click="action.Clear"
                 tooltip="Leave the action without a key">Clear</button>
-        <button if="action.Overridden" w="44" h="{{compactH}}" on-click="action.Reset"
+        <button if="action.Overridden" w="64" h="{{compactH}}" on-click="action.Reset"
                 tooltip="Back to the default key">Reset</button>
       </row>
       <!-- at most one of the conflict, the refusal and the warning is set -->

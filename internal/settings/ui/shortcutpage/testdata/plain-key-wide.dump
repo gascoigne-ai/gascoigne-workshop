@@ -5,22 +5,22 @@ flow rect=0,0,600,500
   flow rect=0,40,600,66
     flow rect=0,40,600,42
       flow h=24 gap=6 rect=0,40,600,24
-        textB text="Close tab" grow=1 small=true ellipsis=true rect=0,40,375,24
-        flow h=24 padL=10 padR=10 bg=sunken control=button tip=Click, then press the keys shrink=true lighten=true onClick=true rect=381,40,96,24
-          textB text="J" grow=1 fg=chip-text ellipsis=true center=true rect=391,40,76,24
-        flow h=24 padL=10 padR=10 bg=sunken control=button tip=Leave the action without a key shrink=true lighten=true onClick=true rect=483,40,54,24
-          textB text="Clear" grow=1 fg=chip-text ellipsis=true center=true rect=493,40,34,24
-        flow h=24 padL=10 padR=10 bg=sunken control=button tip=Back to the default key shrink=true lighten=true onClick=true rect=543,40,57,24
-          textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=553,40,37,24
+        textB text="Close tab" grow=1 small=true ellipsis=true rect=0,40,334,24
+        flow h=24 padL=10 padR=10 bg=sunken control=button tip=Click, then press the keys shrink=true lighten=true onClick=true rect=340,40,120,24
+          textB text="J" grow=1 fg=chip-text ellipsis=true center=true rect=350,40,100,24
+        flow h=24 padL=10 padR=10 bg=sunken control=button tip=Leave the action without a key shrink=true lighten=true onClick=true rect=466,40,64,24
+          textB text="Clear" grow=1 fg=chip-text ellipsis=true center=true rect=476,40,44,24
+        flow h=24 padL=10 padR=10 bg=sunken control=button tip=Back to the default key shrink=true lighten=true onClick=true rect=536,40,64,24
+          textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=546,40,44,24
       flow h=18 rect=0,64,600,18
         textB text="Plain key: works only while no text field has focus" grow=1 fg=muted small=true ellipsis=true rect=0,64,600,18
     flow rect=0,82,600,24
       flow h=24 gap=6 rect=0,82,600,24
-        textB text="Send request" grow=1 small=true ellipsis=true rect=0,82,438,24
-        flow h=24 padL=10 padR=10 bg=sunken control=button tip=Click, then press the keys shrink=true lighten=true onClick=true rect=444,82,96,24
-          textB text="Ctrl+Enter" grow=1 fg=chip-text ellipsis=true center=true rect=454,82,76,24
-        flow h=24 padL=10 padR=10 bg=sunken control=button tip=Leave the action without a key shrink=true lighten=true onClick=true rect=546,82,54,24
-          textB text="Clear" grow=1 fg=chip-text ellipsis=true center=true rect=556,82,34,24
+        textB text="Send request" grow=1 small=true ellipsis=true rect=0,82,404,24
+        flow h=24 padL=10 padR=10 bg=sunken control=button tip=Click, then press the keys shrink=true lighten=true onClick=true rect=410,82,120,24
+          textB text="Ctrl+Enter" grow=1 fg=chip-text ellipsis=true center=true rect=420,82,100,24
+        flow h=24 padL=10 padR=10 bg=sunken control=button tip=Leave the action without a key shrink=true lighten=true onClick=true rect=536,82,64,24
+          textB text="Clear" grow=1 fg=chip-text ellipsis=true center=true rect=546,82,44,24
   textB text="TEXT EDITING" h=22 fg=muted small=true rect=0,106,600,22
   flow h=24 gap=6 rect=0,128,600,24
     textB text="Select all" grow=1 small=true ellipsis=true rect=0,128,560,24
