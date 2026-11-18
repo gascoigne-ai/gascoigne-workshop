@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/transfer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
@@ -37,6 +38,8 @@ type deferred interface {
 var shotDialogs = map[string]func(a *App, node model.Node){
 	"rename": (*App).renameNode,
 	"delete": (*App).deleteNode,
+	"move":   func(a *App, node model.Node) { a.openTransferPicker(node, transfer.Move) },
+	"copy":   func(a *App, node model.Node) { a.openTransferPicker(node, transfer.Copy) },
 }
 
 type openRequestStep struct{ name string }
@@ -152,14 +155,14 @@ func (wrapStep) apply(app *App) error {
 
 type openDialogStep struct{ kind string }
 
-// OpenDialog opens the dialog of this kind (rename or delete) on the open
-// request.
+// OpenDialog opens the dialog of this kind (rename, delete, or the move and
+// copy destination pickers) on the open request.
 func OpenDialog(kind string) Step { return openDialogStep{kind} }
 
 func (step openDialogStep) apply(app *App) error {
 	open, ok := shotDialogs[step.kind]
 	if !ok {
-		return fmt.Errorf("screenshot dialog %q is not one of rename, delete", step.kind)
+		return fmt.Errorf("screenshot dialog %q is not one of rename, delete, move, copy", step.kind)
 	}
 	open(app, model.Of(app.cur().Req))
 	return nil

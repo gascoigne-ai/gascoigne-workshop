@@ -95,6 +95,9 @@ var goldenScenes = []goldenScene{
 	{name: "request-body-wrap", width: shotWidth, height: shotHeight, args: []string{"-request", "Echo", "-pane", "Body", "-wrap", "-type-body", wrapBody}},
 	// github-collection is what the store wrote for the GitHub sample collection
 	{name: "tree-two-collections", width: shotWidth, height: shotHeight, collections: []string{"github-collection"}},
+	// the destination pickers over the two collections: Index is where it is, so Move shows its folder as the current one
+	{name: "dest-picker-move", width: shotWidth, height: shotHeight, args: []string{"-request", "Index", "-dialog", "move"}, collections: []string{"github-collection"}},
+	{name: "dest-picker-copy", width: shotWidth, height: shotHeight, args: []string{"-request", "Index", "-dialog", "copy"}, collections: []string{"github-collection"}},
 	{name: "tree-empty", width: shotWidth, height: shotHeight, args: []string{"-close-all"}},
 	// the in-app file browser on a copy of the same folder
 	{name: "file-browser", width: shotWidth, height: shotHeight, browse: "github-collection", mask: []image.Rectangle{browserPath}},

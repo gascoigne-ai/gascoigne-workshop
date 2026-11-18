@@ -30,7 +30,7 @@ var sceneFlagTable = []sceneFlag{
 	{name: "body", usage: "choose this body type (json, text, form, multipart, graphql, file, ...) on the open request before the screenshot", step: app.ChooseBody},
 	{name: "type-body", usage: "replace the open request's body text (JSON or Text body) with this text before the screenshot", step: app.TypeBody},
 	{name: "wrap", usage: "turn on Wrap for the open request's response and body before the screenshot, as their Wrap chips do", toggle: true, step: func(string) app.Step { return app.WrapOn() }},
-	{name: "dialog", usage: "open this dialog (rename, delete) on the open request before the screenshot", step: app.OpenDialog},
+	{name: "dialog", usage: "open this dialog (rename, delete, or the destination picker: move, copy) on the open request before the screenshot", step: app.OpenDialog},
 	{name: "toast", usage: "show this text as an error toast before the screenshot (repeatable)", repeat: true, step: app.ShowToast},
 	{name: "page", usage: "open the settings dialog on this page (appearance, colors, shortcuts, requests, general, system) before the screenshot", step: app.SettingsPage},
 	{name: "record", usage: "ACTION=KEYS: record KEYS for the shortcut ACTION on the Shortcuts page before the screenshot; a bare ACTION is left recording (repeatable)", repeat: true, step: app.Record},

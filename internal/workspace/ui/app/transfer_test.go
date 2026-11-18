@@ -292,3 +292,76 @@ func TestThePickerDoesNotOpenForACollectionRoot(t *testing.T) {
 		t.Fatal("a root or nothing cannot be moved")
 	}
 }
+
+func TestTheRowMenuHasMoveToAndCopyToForRequestsAndFoldersButNotRoots(t *testing.T) {
+	a, _, _ := twoCollectionsApp(t)
+	alpha := entryNamed(t, a, "Alpha").Collection
+	tests := []struct {
+		name string
+		node model.Node
+		want bool
+	}{
+		{"request", model.Of(alpha.Requests[0]), true},
+		{"folder", model.Of(alpha.Folders[0]), true},
+		{"root", model.Of(&alpha.Folder), false},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			row := collection.Row{Name: test.node.Name(), Req: test.node.Req, Dir: test.node.Dir, Folder: test.node.Dir != nil}
+			var labels []string
+			for _, item := range a.treeMenuItems(row) {
+				labels = append(labels, item.Label)
+			}
+			joined := strings.Join(labels, "|")
+			if got := strings.Contains(joined, "Move to...") && strings.Contains(joined, "Copy to..."); got != test.want {
+				t.Fatalf("labels %q", joined)
+			}
+		})
+	}
+}
+
+func TestPickingMoveToFromTheMenuOpensTheMovePicker(t *testing.T) {
+	a, _, _ := twoCollectionsApp(t)
+	alpha, beta := entryNamed(t, a, "Alpha").Collection, entryNamed(t, a, "Beta").Collection
+	req := alpha.Requests[0]
+	row := collection.Row{Name: req.Name, Req: req}
+	for _, test := range []struct {
+		label string
+		move  bool
+	}{{"Move to...", true}, {"Copy to...", false}} {
+		for _, item := range a.treeMenuItems(row) {
+			if item.Label == test.label {
+				item.Run()
+			}
+		}
+		if a.picker == nil {
+			t.Fatalf("%s opened no picker", test.label)
+		}
+		for index, each := range a.picker.Rows() {
+			if each.Folder == &beta.Folder {
+				a.picker.Select(index)
+			}
+		}
+		a.step(core.Input{Enter: true})
+		if moved := len(alpha.Requests) == 0; moved != test.move {
+			t.Fatalf("%s: moved %v", test.label, moved)
+		}
+		if test.move { // put it back for the next round
+			beta.Delete(req)
+			alpha.Attach(model.Of(req), model.Node{})
+		}
+	}
+}
+
+func TestAPickForANodeDeletedWhileThePickerWasOpenSaysSo(t *testing.T) {
+	a, _, _ := twoCollectionsApp(t)
+	alpha, beta := entryNamed(t, a, "Alpha").Collection, entryNamed(t, a, "Beta").Collection
+	req := alpha.Requests[0]
+	a.openTransferPicker(model.Of(req), transfer.Move)
+	alpha.Delete(req)
+	a.picker.Select(len(a.picker.Rows()) - 1)
+	a.step(core.Input{Enter: true})
+	if len(a.toasts) == 0 || !a.toasts[len(a.toasts)-1].IsErr || beta.Contains(model.Of(req)) {
+		t.Fatalf("toasts %q, in Beta %v", toastTexts(a), beta.Contains(model.Of(req)))
+	}
+}

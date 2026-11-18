@@ -634,9 +634,12 @@ func TestScreenshotOpensTheNamedDialog(t *testing.T) {
 		title     string
 		input     string
 		withInput bool
+		picker    bool // opens the destination picker, not a dialog
 	}{
 		{kind: "rename", title: "Rename", input: "Search Repos", withInput: true},
 		{kind: "delete", title: "Delete Search Repos?"},
+		{kind: "move", picker: true},
+		{kind: "copy", picker: true},
 	}
 	for _, tc := range cases {
 		t.Run(tc.kind, func(t *testing.T) {
@@ -648,6 +651,12 @@ func TestScreenshotOpensTheNamedDialog(t *testing.T) {
 			}
 			if err := a.Err(); err != nil {
 				t.Fatal(err)
+			}
+			if tc.picker {
+				if a.picker == nil || a.dialog != nil {
+					t.Fatalf("picker %v dialog %v, want the picker alone", a.picker != nil, a.dialog != nil)
+				}
+				return
 			}
 			if a.dialog == nil || a.dialog.Title != tc.title {
 				t.Fatalf("dialog %+v, want the one titled %q", a.dialog, tc.title)

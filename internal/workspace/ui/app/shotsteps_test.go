@@ -18,7 +18,7 @@ func TestAStepThatCannotRunEndsTheCaptureWithItsMessage(t *testing.T) {
 		{"unknown response pane", ShowResponsePane("Nope"), `screenshot response pane "Nope" is not a response pane of the open request`},
 		{"unknown body type", ChooseBody("Nope"), `screenshot body type "Nope" is not one of the body chips`},
 		{"unknown shortcut action", Record("nope"), `screenshot record: "nope" is not a shortcut action`},
-		{"unknown dialog", OpenDialog("nope"), `screenshot dialog "nope" is not one of rename, delete`},
+		{"unknown dialog", OpenDialog("nope"), `screenshot dialog "nope" is not one of rename, delete, move, copy`},
 		{"setting without a value", Set("nonsense"), `"nonsense" is not key=value`},
 		{"folder without a collection", AddCollection(""), ""},
 	}

@@ -18,7 +18,7 @@ func TestMenuRowsGetAnIconFromTheirLabel(t *testing.T) {
 		{"Delete", "trash"}, {"Rename...", "pencil"}, {"Rename", "pencil"},
 		{"Close others", "cross"}, {"Find", "search"},
 		{"New request", "plus"}, {"New environment...", "plus"}, {"Insert row above", "plus"},
-		{"Move up", "chevron-up"}, {"Move down", "chevron-down"},
+		{"Move to...", "folder"}, {"Copy to...", "copy"}, {"Move up", "chevron-up"}, {"Move down", "chevron-down"},
 		{"Save body...", "save"}, {"Export as Postman...", "save"},
 		{"Open in browser", "external"}, {"Undo", "undo"}, {"Redo", "redo"},
 		{"GET /users", ""}, {"", ""},

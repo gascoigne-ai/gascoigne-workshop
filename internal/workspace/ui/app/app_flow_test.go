@@ -2086,12 +2086,12 @@ func TestRightClickOnATreeRowOpensItsMenu(t *testing.T) {
 	if widget.PopupMenu(a.ctx) == nil {
 		t.Fatal("no menu")
 	}
-	if got, want := menuLabels(a), []string{"Rename", "Duplicate", "Copy URL", "", "Delete"}; !reflect.DeepEqual(got, want) {
+	if got, want := menuLabels(a), []string{"Rename", "Duplicate", "Move to...", "Copy to...", "Copy URL", "", "Delete"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("request menu = %q, want %q", got, want)
 	}
 	a.step(core.Input{Escape: true})
 	rightClick(a, 100, treeRowY(rowRepo))
-	if got, want := menuLabels(a), []string{"New request", "New folder", "Import cURL from clipboard", "Import OpenAPI from clipboard", "Import Postman from clipboard", "Export as Postman...", "Variables", "", "Rename", "Duplicate", "Delete"}; !reflect.DeepEqual(got, want) {
+	if got, want := menuLabels(a), []string{"New request", "New folder", "Import cURL from clipboard", "Import OpenAPI from clipboard", "Import Postman from clipboard", "Export as Postman...", "Variables", "", "Rename", "Duplicate", "Move to...", "Copy to...", "Delete"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("folder menu = %q, want %q", got, want)
 	}
 	a.step(core.Input{Escape: true})

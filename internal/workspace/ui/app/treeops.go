@@ -85,10 +85,12 @@ func (a *App) treeMenuItems(row collection.Row) []MenuItem {
 	node := row.Node()
 	rename := MenuItem{Label: "Rename", Run: func() { a.renameNode(node) }}
 	sep := MenuItem{Separator: true}
+	duplicate := MenuItem{Label: "Duplicate", Run: func() { a.duplicateNode(node) }}
+	moveTo := MenuItem{Label: "Move to...", Run: func() { a.openTransferPicker(node, transfer.Move) }}
+	copyTo := MenuItem{Label: "Copy to...", Run: func() { a.openTransferPicker(node, transfer.Copy) }}
 	if row.Req != nil {
 		return []MenuItem{
-			rename,
-			{Label: "Duplicate", Run: func() { a.duplicateNode(node) }},
+			rename, duplicate, moveTo, copyTo,
 			{Label: "Copy URL", Run: func() { a.copyRequestURL(row.Req) }},
 			sep,
 			{Label: "Delete", Run: func() { a.deleteNode(node) }},
@@ -108,8 +110,7 @@ func (a *App) treeMenuItems(row collection.Row) []MenuItem {
 	if a.isRoot(row.Dir) {
 		return append(create[:len(create)-1], a.rootMenuItems(row.Dir)...)
 	}
-	return append(create,
-		MenuItem{Label: "Duplicate", Run: func() { a.duplicateNode(node) }},
+	return append(create, duplicate, moveTo, copyTo,
 		MenuItem{Label: "Delete", Run: func() { a.deleteNode(node) }},
 	)
 }

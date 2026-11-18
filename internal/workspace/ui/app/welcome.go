@@ -43,7 +43,8 @@ var welcomeNotes = []welcomeSection{
 	{"Collections", []string{
 		"A collection is a folder of JSON files; secrets stay in a separate file out of version control.",
 		"Open several side by side; create, rename, save, reorder, close and delete them from the sidebar.",
-		"The tree supports rename, duplicate, move and delete; tabs and tree roots show the collection's color.",
+		"The tree supports rename, duplicate, move and delete; drag a request or folder onto another collection to move it, hold Alt to copy it, or use Move to... and Copy to... in its menu.",
+		"Tabs and tree roots show the collection's color.",
 	}},
 	{"Responses", []string{
 		"Pretty, raw and compact views, with foldable and searchable JSON.",

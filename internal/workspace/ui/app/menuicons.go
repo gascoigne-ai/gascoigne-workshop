@@ -13,7 +13,7 @@ var menuIcons = map[string]string{
 	"Cut": "scissors", "Paste": "clipboard", "Import": "clipboard",
 	"Delete": "trash", "Rename": "pencil", "Close": "cross", "Find": "search",
 	"New": "plus", "Insert": "plus",
-	"Move up": "chevron-up", "Move down": "chevron-down",
+	"Move to": "folder", "Copy to": "copy", "Move up": "chevron-up", "Move down": "chevron-down",
 	"Save": "save", "Export": "save", "Open": "external",
 	"Undo": "undo", "Redo": "redo",
 }
