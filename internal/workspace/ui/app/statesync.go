@@ -115,7 +115,7 @@ func (a *App) snapshot() state.State {
 		Active:    a.list.Active,
 		SettingsW: a.prefs.Size.W,
 		SettingsH: a.prefs.Size.H,
-		Trusted:   a.trustedKeys(),
+		Trusted:   a.trusted.Keys(),
 		Welcomed:  a.welcomed,
 	}
 	for _, entry := range a.open.Entries {
@@ -210,12 +210,7 @@ func rememberedPane(tab *reqTab, remembered state.Tab) int {
 // restore applies a remembered state to a freshly built app. Anything
 // that no longer exists is skipped, and values are kept in range.
 func (a *App) restore(stateValue state.State) {
-	for _, key := range stateValue.Trusted {
-		if a.trusted == nil {
-			a.trusted = map[string]bool{}
-		}
-		a.trusted[key] = true
-	}
+	a.trusted = model.AccessSetOf(stateValue.Trusted)
 	a.prefs.Size.W, a.prefs.Size.H = max(stateValue.SettingsW, 0), max(stateValue.SettingsH, 0)
 	a.sidebarSplit.Size = max(stateValue.SidebarW, 0)
 	if stateValue.PaneSplit > 0 && stateValue.PaneSplit < 1 {

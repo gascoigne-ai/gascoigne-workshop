@@ -1,7 +1,6 @@
 package app
 
 import (
-	"slices"
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
@@ -20,7 +19,7 @@ func (a *App) allowed(tab *reqTab, source *model.Request, again func()) bool {
 	}
 	var unknown []model.Access
 	for _, access := range source.Expanded(a.varsFor(tab.Req)).Accesses(folder) {
-		if !a.trusted[access.Key()] {
+		if !a.trusted.Has(access) {
 			unknown = append(unknown, access)
 		}
 	}
@@ -32,23 +31,10 @@ func (a *App) allowed(tab *reqTab, source *model.Request, again func()) bool {
 		lines = append(lines, access.Kind+": "+access.Subject)
 	}
 	a.confirm("Allow this request?", "It wants to use:\n"+strings.Join(lines, "\n")+"\n\nOnly allow what you recognise. The answer is remembered.", "Allow", func() {
-		if a.trusted == nil {
-			a.trusted = map[string]bool{}
-		}
 		for _, access := range unknown {
-			a.trusted[access.Key()] = true
+			a.trusted.Add(access)
 		}
 		again()
 	})
 	return false
-}
-
-// trustedKeys is the remembered answers in a stable order, for the state.
-func (a *App) trustedKeys() []string {
-	keys := make([]string, 0, len(a.trusted))
-	for key := range a.trusted {
-		keys = append(keys, key)
-	}
-	slices.Sort(keys)
-	return keys
 }
