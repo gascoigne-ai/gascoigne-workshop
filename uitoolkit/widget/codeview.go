@@ -544,8 +544,12 @@ func (v *CodeView) Draw(ctx *core.Ctx, dst *ebiten.Image, rect core.Rect) {
 		num := strconv.Itoa(v.LineNumber(idx))
 		ctx.TextMid(area, ctx.F.Mono, num, rect.X+core.Gutter+g.numW-len(num)*g.charW, cell, muted)
 		if line.Foldable {
-			cx := float32(rect.X + core.Gutter + g.numW + 4 + foldColW/2)
-			ctx.Triangle(area, cx, float32(y+g.lineH/2), 4, !v.Folded[idx], muted)
+			arrow := "triangle-down"
+			if v.Folded[idx] {
+				arrow = "triangle-right"
+			}
+			cx := rect.X + core.Gutter + g.numW + 4 + foldColW/2
+			drawIconAt(ctx, area, arrow, core.Rect{X: cx - foldColW/2, Y: y, W: foldColW, H: g.lineH}, core.Muted)
 		}
 	}
 	drawBars(ctx, dst, b, v.drag, v.contentWidth(ctx, core.Rect{W: b.viewW}), len(rows)*g.lineH, v.ScrollX, v.ScrollY)

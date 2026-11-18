@@ -156,7 +156,23 @@ func (b iconB) Draw(element *El, ctx *core.Ctx, dst *ebiten.Image) {
 	}
 	ox := float64(r.X) + (float64(r.W)-ic.w*k)/2
 	oy := float64(r.Y) + (float64(r.H)-ic.h*k)/2
-	cur := iconToken(element, ic, ctx.Hovered(r))
+	paintIcon(ctx, dst, ic, ox, oy, k, iconToken(element, ic, ctx.Hovered(r)))
+}
+
+// drawIconAt draws the named icon at its natural size, centered in rect, in
+// the color token: for widgets that paint icons inside their own drawing
+// (the checkbox's check, a code view's fold arrows).
+func drawIconAt(ctx *core.Ctx, dst *ebiten.Image, name string, rect core.Rect, token core.Token) {
+	ic, ok := lookupIcon(name)
+	if !ok {
+		return
+	}
+	paintIcon(ctx, dst, ic, float64(rect.X)+(float64(rect.W)-ic.w)/2, float64(rect.Y)+(float64(rect.H)-ic.h)/2, 1, token)
+}
+
+// paintIcon draws ic with its origin at ox, oy (logical pixels), scaled by
+// k, in the color token cur.
+func paintIcon(ctx *core.Ctx, dst *ebiten.Image, ic *svgIcon, ox, oy, k float64, cur core.Token) {
 	s := k * ctx.Scale
 	weight := 1.0 // the theme can thicken or thin every icon
 	if ctx.Th.IconStroke > 0 {

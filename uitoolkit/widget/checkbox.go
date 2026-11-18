@@ -41,10 +41,7 @@ func drawCheckbox(ctx *core.Ctx, dst *ebiten.Image, box core.Rect, on, hover boo
 	}
 	accent := ctx.Color(core.Accent)
 	ctx.FillStyled(dst, box, accent, accent, ctx.Radius("checkbox"))
-	x, y := float32(box.X), float32(box.Y)
-	mark := ctx.Color(core.AccentText)
-	ctx.Line(dst, x+3.5, y+7.5, x+6, y+10, 1.8, mark)
-	ctx.Line(dst, x+6, y+10, x+10.5, y+4.5, 1.8, mark)
+	drawIconAt(ctx, dst, "check", box, core.AccentText)
 }
 
 // Checkbox is a square that shows an accent fill and a check when on.

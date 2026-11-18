@@ -232,3 +232,30 @@ func TestReplayIconExists(t *testing.T) {
 		t.Fatalf("no replay icon; have %v", IconNames())
 	}
 }
+
+// The checkbox's check and the code view's fold arrows are SVG icons, drawn
+// as icon masks like every other icon, not paths built in the draw code.
+func TestCheckboxCheckAndFoldArrowsAreIcons(t *testing.T) {
+	masks.Lock()
+	for key := range masks.m {
+		delete(masks.m, key)
+	}
+	masks.Unlock()
+	c := testCtx(t)
+	drawn(t, c, Row(W(30), H(30), Checkbox(true)), 30, 30)
+	masks.Lock()
+	checks := len(masks.m)
+	masks.Unlock()
+	if !HasIcon("check") || checks != 1 {
+		t.Fatalf("check icon %v, %d masks after drawing a checked box, want 1", HasIcon("check"), checks)
+	}
+	var code CodeView
+	code.SetLines([]Line{{Spans: []Span{{Text: "{"}}, Foldable: true}, {Spans: []Span{{Text: "}"}}}})
+	drawn(t, c, Row(W(200), H(80), Code(&code)), 200, 80)
+	masks.Lock()
+	folds := len(masks.m)
+	masks.Unlock()
+	if folds != 2 {
+		t.Fatalf("%d masks after drawing a fold arrow, want the check and the arrow", folds)
+	}
+}

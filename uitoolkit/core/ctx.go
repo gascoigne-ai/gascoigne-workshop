@@ -340,25 +340,6 @@ func abs(count int) int {
 	return count
 }
 
-// Triangle draws a filled arrowhead centered on cx, cy.
-func (c *Ctx) Triangle(dst *ebiten.Image, cx, cy, size float32, down bool, clr color.RGBA) {
-	cx, cy, size = c.dev(cx), c.dev(cy), c.dev(size)
-	var p vector.Path
-	if down {
-		p.MoveTo(cx-size, cy-size/2)
-		p.LineTo(cx+size, cy-size/2)
-		p.LineTo(cx, cy+size/2)
-	} else {
-		p.MoveTo(cx-size/2, cy-size)
-		p.LineTo(cx+size/2, cy)
-		p.LineTo(cx-size/2, cy+size)
-	}
-	p.Close()
-	op := &vector.DrawPathOptions{}
-	op.ColorScale.ScaleWithColor(clr)
-	vector.FillPath(dst, &p, &vector.FillOptions{}, op)
-}
-
 // Line draws an antialiased segment between logical points.
 func (c *Ctx) Line(dst *ebiten.Image, x0, y0, x1, y1, width float32, clr color.RGBA) {
 	vector.StrokeLine(dst, c.dev(x0), c.dev(y0), c.dev(x1), c.dev(y1), c.dev(width), clr, true)
