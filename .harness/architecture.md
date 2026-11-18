@@ -19,7 +19,7 @@ flowchart LR
     end
     subgraph collection
       cad["adapter/store"]
-      cctl["controller/tree"]
+      cctl["controller/tree, transfer"]
       cmod["model/collection, openapi, postman, miniyaml"]
     end
     subgraph response
@@ -89,6 +89,7 @@ The toolkit packages are public and independent of the application (`uitoolkit/c
 | `internal/request/port` | `Protocol`, `Registry`, `Streamer`, `Session`, `Event`, the sampling types, `ProtocolConfig`, `GRPCMethods`, `GRPCSchema` |
 | `internal/request/model/assert` | the assertion language run against a response |
 | `internal/request/ui/calltrace`, `internal/request/ui/mcpform` | the Log dialog; the MCP tool-call form (`Form.Command` composes the call), each behind a `Host` interface |
+| `internal/collection/controller/transfer` | moving or copying a node between places, also of two open collections: `Apply(Transfer) Outcome` validates first and then mutates (refusals: none, the root, not in `From`, `Into` not in `To`, into itself or its subtree; nothing changes), a move keeps the node pointer and a copy is a deep clone, a name clash renames ("x 2"), `Missing` lists the variables the node uses that its new place does not define (folders on the new path, collection, active environment; never rewritten); `Drop` turns a drop into a `Transfer` using the target collection's root; `Destinations` is the flat pre-order picker list with the `Why` a row is refused; not wired into the App yet |
 | `internal/collection/controller/tree` | tree operations as messages (`Rename`, `Duplicate`, `Delete`, `Move`, `NewRequest`, `NewFolder`) and `Update(collection, selected, msg) Result` over typed `model.Node`s; also where a drop lands, which tabs a delete closes, the delete question, the first request, the key that notices a change; the App draws the tree, asks, and applies the `Result` (`App.applyTree`) |
 | `internal/collection/controller/collections` | the rules of whole collections, each a folder: `CleanName`, `DeletePrompt`, `NextAfterDelete`; and `Set`, the open collections in tree order, each an `Entry` (the `*model.Collection` as its identity, its folder `Dir`, "" until saved, and `Env`, the index of its own active environment, -1 none), changed by typed messages (`Open`, `Close`, `Move`, `Located`, `ChooseEnv`) through a pure `Update`: opening a collection or a folder already open changes nothing, two entries never share a folder (`Taken`), `Owner` finds the collection of a request or folder and `VarsFor` resolves a request's variables from its own collection only. The App holds a `Set` (`App.open`, see Open collections below); the store port does the I/O |
 | `internal/response/controller/viewer` | the response pane's `Model` (mode compact/pretty/raw, find bar open, active match) with typed messages (`ModeChosen`, `FindOpened`, `FindClosed`, `Searched`, `Stepped`) and a pure `Update`; each tab holds one (`reqTab.look`); also the find bar's counter and stepping. The App drives the `CodeView` and the find text field and reports the match count |
@@ -169,7 +170,7 @@ Request keys: `name`, `protocol`, `method`, `url`, `params` and `headers` (maps)
 
 ## Collection tree
 
-`model.Folder` holds `[]*Folder` and `[]*Request`, so a request keeps its identity (open tabs point at it) however siblings change. `internal/request/model/tree.go` has the operations, all pure and tested: `UniqueName` ("x", "x 2", ... across folders and requests), `AddRequest` / `AddFolder`, `Parent`, `Contains`, `Rename` (trimmed, non-empty, unique among siblings), `Duplicate` (deep copy placed after the original as "<name> copy"), `Delete` and `Move` (into another folder, before a sibling or at the end; refused into itself or its subtree, onto a name clash, or for the root, and then nothing changes). The tree view's `treeRows` works on pointers and the expanded set is keyed by folder pointer, so renaming or moving a folder does not collapse it.
+`model.Folder` holds `[]*Folder` and `[]*Request`, so a request keeps its identity (open tabs point at it) however siblings change. `internal/request/model/tree.go` has the operations, all pure and tested: `UniqueName` ("x", "x 2", ... across folders and requests), `AddRequest` / `AddFolder`, `Parent`, `Contains`, `Rename` (trimmed, non-empty, unique among siblings), `Duplicate` (deep copy placed after the original as "<name> copy"), `Attach` (puts a detached node, kept by pointer, into a folder before a sibling, renamed on a clash), `Node.Clone` (deep copy of a request or folder), `UsedVars` (the `{{variables}}` of a request's URL, enabled rows, bodies and credentials, first-use order), `Delete` and `Move` (into another folder, before a sibling or at the end; refused into itself or its subtree, onto a name clash, or for the root, and then nothing changes). The tree view's `treeRows` works on pointers and the expanded set is keyed by folder pointer, so renaming or moving a folder does not collapse it.
 
 ## JSON view
 

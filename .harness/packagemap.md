@@ -6,7 +6,7 @@ Each package is `internal/<domain>/<role>/<package>`. The composition root, doma
 
 | domain | model | port | controller | adapter | ui |
 |---|---|---|---|---|---|
-| collection | clientconfig, collection, miniyaml, openapi, postman | (root) | collections, tree | clientfile, store |  |
+| collection | clientconfig, collection, miniyaml, openapi, postman | (root) | collections, transfer, tree | clientfile, store |  |
 | environment |  |  | envs |  |  |
 | request | (root), assert | (root) | editor, mcpexplorer | exampleserver, proto, proto/ws | calltrace, mcpform |
 | response | jsonview, textfmt | (root) | viewer | history, preview | respview, sentlog |
