@@ -257,7 +257,7 @@ func TestInterfaceScaleSliderResizesLiveAndSavesOnRelease(t *testing.T) {
 func TestNewAppsStartAtTheDisplayScale(t *testing.T) {
 	a, _ := newTestApp(t)
 	if a.settings.UIScale() != 1 {
-		t.Fatalf("default scale %v", a.settings.UIScale())
+		t.Fatalf("scale %v", a.settings.UIScale())
 	}
 }
 

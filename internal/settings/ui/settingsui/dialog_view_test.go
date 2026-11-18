@@ -100,7 +100,7 @@ func TestTheSettingsDialogLaysOutAsPinned(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if got := Dump(root); got != string(want) {
+			if got := dump(root); got != string(want) {
 				t.Fatalf("got:\n%s\nwant:\n%s", got, want)
 			}
 		})

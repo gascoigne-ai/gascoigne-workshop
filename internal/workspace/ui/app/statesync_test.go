@@ -15,7 +15,11 @@ import (
 
 func stateApp(t *testing.T, path string) *App {
 	t.Helper()
-	a, err := NewApp(withAdapters(Options{StatePath: path}))
+	pinned := filepath.Join(t.TempDir(), "settings.json")
+	if err := os.WriteFile(pinned, []byte(`{"uiScale":100}`), 0o644); err != nil { // window sizes are pinned at 100% on every platform
+		t.Fatal(err)
+	}
+	a, err := NewApp(withAdapters(Options{StatePath: path, SettingsPath: pinned}))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -62,7 +62,10 @@ func TestTheWindowLaysOutAsPinned(t *testing.T) {
 				if state.stacked {
 					layout = "stacked"
 				}
-				a, _ := newTestAppWith(t, func(prefs *settings.Settings) { prefs.Layout = layout })
+				a, _ := newTestAppWith(t, func(prefs *settings.Settings) {
+					prefs.Layout = layout
+					prefs.UIScalePct = settings.DefaultUIScalePct // the settings menu shows no changed-from-default mark
+				})
 				t.Cleanup(a.waitWrites)
 				a.w, a.h = size.width, size.height
 				state.setUp(a)
