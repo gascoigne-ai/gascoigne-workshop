@@ -61,7 +61,7 @@ func TestScreenshotWaitsForTheSettleFramesThenTerminates(t *testing.T) {
 		t.Fatal("must be ready once the frames have settled")
 	}
 
-	a.shot.captured = true // what shotDraw records after writing the file
+	a.shot.phase = shotOver // what shotDraw records after writing the file
 	if err := a.shotUpdate(); !errors.Is(err, ebiten.Termination) {
 		t.Fatalf("after the capture the next update must end the game, got %v", err)
 	}
@@ -239,8 +239,8 @@ func TestScreenshotWithAFolderWithoutACollectionFails(t *testing.T) {
 	for range setFrame {
 		a.shotUpdate()
 	}
-	if a.Err() == nil || !a.shot.captured || len(a.open.Entries) != 1 {
-		t.Fatalf("err = %v, captured = %v, open %d, want the run ended with an error", a.Err(), a.shot.captured, len(a.open.Entries))
+	if a.Err() == nil || a.shot.phase != shotOver || len(a.open.Entries) != 1 {
+		t.Fatalf("err = %v, phase = %v, open %d, want the run ended with an error", a.Err(), a.shot.phase, len(a.open.Entries))
 	}
 }
 
@@ -346,8 +346,8 @@ func TestScreenshotWithAToolItCannotOpenFails(t *testing.T) {
 			for range setFrame {
 				a.shotUpdate()
 			}
-			if a.Err() == nil || !a.shot.captured {
-				t.Fatalf("err = %v, captured = %v, want the run ended with an error", a.Err(), a.shot.captured)
+			if a.Err() == nil || a.shot.phase != shotOver {
+				t.Fatalf("err = %v, phase = %v, want the run ended with an error", a.Err(), a.shot.phase)
 			}
 		})
 	}
@@ -468,8 +468,8 @@ func TestScreenshotWithAnUnknownResponsePaneFails(t *testing.T) {
 	for range setFrame {
 		a.shotUpdate()
 	}
-	if a.Err() == nil || !a.shot.captured {
-		t.Fatalf("err = %v, captured = %v, want the run ended with an error", a.Err(), a.shot.captured)
+	if a.Err() == nil || a.shot.phase != shotOver {
+		t.Fatalf("err = %v, phase = %v, want the run ended with an error", a.Err(), a.shot.phase)
 	}
 }
 
@@ -523,8 +523,8 @@ func TestScreenshotWithAnUnknownBodyTypeFails(t *testing.T) {
 	for range setFrame {
 		a.shotUpdate()
 	}
-	if a.Err() == nil || !a.shot.captured {
-		t.Fatalf("err = %v, captured = %v, want the run ended with an error", a.Err(), a.shot.captured)
+	if a.Err() == nil || a.shot.phase != shotOver {
+		t.Fatalf("err = %v, phase = %v, want the run ended with an error", a.Err(), a.shot.phase)
 	}
 }
 
@@ -593,8 +593,8 @@ func TestScreenshotTypingABodyWithoutATextEditorFails(t *testing.T) {
 	for range setFrame {
 		a.shotUpdate()
 	}
-	if a.Err() == nil || !a.shot.captured {
-		t.Fatalf("err = %v, captured = %v, want the run ended with an error", a.Err(), a.shot.captured)
+	if a.Err() == nil || a.shot.phase != shotOver {
+		t.Fatalf("err = %v, phase = %v, want the run ended with an error", a.Err(), a.shot.phase)
 	}
 }
 
@@ -605,8 +605,8 @@ func TestScreenshotWithAnUnknownPaneFails(t *testing.T) {
 	for range setFrame {
 		a.shotUpdate()
 	}
-	if a.Err() == nil || !a.shot.captured {
-		t.Fatalf("err = %v, captured = %v, want the run ended with an error", a.Err(), a.shot.captured)
+	if a.Err() == nil || a.shot.phase != shotOver {
+		t.Fatalf("err = %v, phase = %v, want the run ended with an error", a.Err(), a.shot.phase)
 	}
 }
 
@@ -669,8 +669,8 @@ func TestScreenshotWithAnUnknownDialogFails(t *testing.T) {
 	for range setFrame {
 		a.shotUpdate()
 	}
-	if a.Err() == nil || !a.shot.captured {
-		t.Fatalf("err = %v, captured = %v, want the run ended with an error", a.Err(), a.shot.captured)
+	if a.Err() == nil || a.shot.phase != shotOver {
+		t.Fatalf("err = %v, phase = %v, want the run ended with an error", a.Err(), a.shot.phase)
 	}
 }
 
@@ -839,8 +839,8 @@ func TestScreenshotWithABadRecordFails(t *testing.T) {
 			for range setFrame {
 				a.shotUpdate()
 			}
-			if a.Err() == nil || !a.shot.captured {
-				t.Fatalf("err = %v, captured = %v, want the run ended with an error", a.Err(), a.shot.captured)
+			if a.Err() == nil || a.shot.phase != shotOver {
+				t.Fatalf("err = %v, phase = %v, want the run ended with an error", a.Err(), a.shot.phase)
 			}
 		})
 	}

@@ -48,8 +48,13 @@ func TestTheFileBodyLaysOutAsPinned(t *testing.T) {
 			t.Run(name, func(t *testing.T) {
 				a, _ := newTestApp(t)
 				t.Cleanup(a.waitWrites)
+				a.folders = folders.Disk{}
 				tab := a.cur()
 				tab.file = widget.NewTextField(state.path(t))
+				a.fileBody(tab) // asks the disk about the path
+				until(t, a, "the answer about the file", func() bool {
+					return tab.file.Text == "" || tab.fileCheck.state != bodyFileUnknown
+				})
 				root := a.fileBody(tab)
 				Layout(a.ctx, root, size.width, settingsPaneH)
 				want, err := os.ReadFile(filepath.Join("testdata", name+".dump"))

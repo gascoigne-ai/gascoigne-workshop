@@ -1,8 +1,10 @@
-// Package folders reads folders from the disk for the in-app file browser
-// (port.Folders).
+// Package folders is the user's file system on the disk (port.Folders):
+// folder listings for the in-app file browser and the files the user
+// names.
 package folders
 
 import (
+	"context"
 	"fmt"
 	"io/fs"
 	"os"
@@ -35,5 +37,27 @@ func (Disk) List(dir string) ([]port.FolderEntry, error) {
 
 // Home implements port.Folders.
 func (Disk) Home() (string, error) { return os.UserHomeDir() }
+
+// userFileMode is the mode of a file the user names: readable by others,
+// as the files an editor saves.
+const userFileMode = 0o644
+
+// Write implements port.Folders.
+func (Disk) Write(ctx context.Context, path string, data []byte) error {
+	if err := ctx.Err(); err != nil {
+		return fmt.Errorf("write %s: %w", path, err)
+	}
+	return os.WriteFile(path, data, userFileMode)
+}
+
+// IsFile implements port.Folders. A path that cannot be looked at is
+// answered as no file, which is what the file body shows for it.
+func (Disk) IsFile(ctx context.Context, path string) bool {
+	if ctx.Err() != nil || path == "" {
+		return false
+	}
+	info, err := os.Stat(path)
+	return err == nil && !info.IsDir()
+}
 
 var _ port.Folders = Disk{}

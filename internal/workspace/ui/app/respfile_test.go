@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/filedialog"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/folders"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -76,12 +77,15 @@ func TestSaveBodyWritesTheFileAndReportsFailures(t *testing.T) {
 		t.Fatalf("the file browser did not open with a name: %+v", a.browser)
 	}
 	a.closeBrowser()
+	a.folders = folders.Disk{}
 	path := filepath.Join(t.TempDir(), "out.json")
 	a.writeBody(tab, path)
+	a.waitWrites() // written in the background
 	if b, err := os.ReadFile(path); err != nil || string(b) != `{"a":1}` {
 		t.Fatalf("%q %v", b, err)
 	}
 	a.writeBody(tab, filepath.Join(t.TempDir(), "no", "such", "dir", "x"))
+	a.waitWrites()
 	found := false
 	for _, ts := range a.toasts {
 		found = found || (ts.IsErr && strings.Contains(ts.Text, "Saving failed"))

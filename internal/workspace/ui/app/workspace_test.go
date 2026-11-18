@@ -290,6 +290,7 @@ func TestExportPostmanWritesACollectionFileThatImportsBack(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "out.json")
 	typePath(a, path)
 	a.browse(filebrowser.Entered{})
+	a.waitWrites() // written in the background
 	data, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)

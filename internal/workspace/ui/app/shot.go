@@ -1,10 +1,11 @@
 package app
 
 import (
+	"bytes"
+	"context"
 	"fmt"
 	"image"
 	"image/png"
-	"os"
 	"path/filepath"
 	"slices"
 	"strconv"
@@ -14,6 +15,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/serial"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
 
@@ -27,6 +29,17 @@ const (
 	setFrame     = 5    // the frame at which live settings are applied, early enough to be drawn before the capture
 )
 
+// shotPhase is how far a capture has come. It only moves forward:
+// waiting, saving, over; a capture that fails before its frame goes
+// straight to over.
+type shotPhase int
+
+const (
+	shotWaiting shotPhase = iota // the frame to capture is not drawn yet
+	shotSaving                   // the frame is taken and being written
+	shotOver                     // written or failed: the next update ends the run
+)
+
 // screenshot saves one frame to a PNG and ends the program. It exists
 // so the UI can be checked without a human at the window.
 type screenshot struct {
@@ -36,7 +49,7 @@ type screenshot struct {
 	sent        bool
 	waiting     []*reqTab // tabs whose send the capture waits for
 	sendNext    *reqTab   // the tab -request opened, sent once the earlier sends are answered
-	captured    bool
+	phase       shotPhase
 	err         error
 	set         []string // key=value settings applied live before the capture, as the dialog would
 	request     string   // name of the request to open before the capture
@@ -80,8 +93,11 @@ func (a *App) shotUpdate() error {
 	if s.path == "" {
 		return nil
 	}
-	if s.captured {
+	switch s.phase {
+	case shotOver:
 		return ebiten.Termination
+	case shotSaving:
+		return nil // the frame is taken; nothing more is set up for it
 	}
 	s.frames++
 	if s.frames == setFrame {
@@ -130,7 +146,7 @@ func (a *App) shotToolForm() {
 		names[i] = tool.Name
 	}
 	a.shot.err = fmt.Errorf("screenshot tool %q is not one the server announced: %s", a.shot.tool, strings.Join(names, ", "))
-	a.shot.captured = true
+	a.shot.phase = shotOver
 }
 
 // shotFind opens the find bar on the current response and types the query,
@@ -165,7 +181,7 @@ func (s *screenshot) allAnswered() bool {
 
 // ready reports whether the frame about to be drawn should be saved.
 func (s *screenshot) ready(app *App) bool {
-	if s.path == "" || s.captured || s.frames < settleFrames {
+	if s.path == "" || s.phase != shotWaiting || s.frames < settleFrames {
 		return false
 	}
 	if !s.sendsDone() && s.frames < shotTimeout {
@@ -205,19 +221,33 @@ func (a *App) shotDraw(screen *ebiten.Image) {
 	if !s.ready(a) {
 		return
 	}
-	s.captured = true
 	b := screen.Bounds()
 	img := &image.RGBA{Pix: make([]byte, 4*b.Dx()*b.Dy()), Stride: 4 * b.Dx(), Rect: image.Rect(0, 0, b.Dx(), b.Dy())}
 	screen.ReadPixels(img.Pix)
-	f, err := os.Create(s.path)
-	if err != nil {
-		s.err = fmt.Errorf("create screenshot: %w", err)
-		return
-	}
-	defer f.Close()
-	if err := png.Encode(f, img); err != nil {
-		s.err = fmt.Errorf("encode screenshot: %w", err)
-	}
+	a.saveShot(img)
+}
+
+// saveShot encodes the captured frame as a PNG and writes it to the
+// screenshot's path off the UI goroutine; the run ends once it is written.
+func (a *App) saveShot(img *image.RGBA) {
+	s := &a.shot
+	s.phase = shotSaving
+	files, path := a.folders, s.path
+	a.write("screenshot", serial.Job{
+		Run: func() error {
+			var encoded bytes.Buffer
+			if err := png.Encode(&encoded, img); err != nil {
+				return fmt.Errorf("encode screenshot: %w", err)
+			}
+			if err := files.Write(context.Background(), path, encoded.Bytes()); err != nil {
+				return fmt.Errorf("write screenshot: %w", err)
+			}
+			return nil
+		},
+		Done: func(err error) {
+			s.err, s.phase = err, shotOver
+		},
+	})
 }
 
 // parseSetting reads "key=value": true and false are booleans, whole numbers
@@ -257,7 +287,7 @@ func (a *App) showShotTarget() {
 	for _, dir := range s.collections {
 		if err := a.addShotCollection(dir); err != nil {
 			s.err = err
-			s.captured = true
+			s.phase = shotOver
 			return
 		}
 	}
@@ -270,7 +300,7 @@ func (a *App) showShotTarget() {
 		req := a.findRequestByName(s.request)
 		if req == nil {
 			s.err = fmt.Errorf("screenshot request %q is not in the collection", s.request)
-			s.captured = true
+			s.phase = shotOver
 			return
 		}
 		a.openRequest(req)
@@ -280,22 +310,22 @@ func (a *App) showShotTarget() {
 	}
 	if s.pane != "" && !a.showShotPane(s.pane) {
 		s.err = fmt.Errorf("screenshot pane %q is not a pane of the open request", s.pane)
-		s.captured = true
+		s.phase = shotOver
 		return
 	}
 	if s.respPane != "" && !a.showShotResponsePane(s.respPane) {
 		s.err = fmt.Errorf("screenshot response pane %q is not a response pane of the open request", s.respPane)
-		s.captured = true
+		s.phase = shotOver
 		return
 	}
 	if s.body != "" && !a.chooseShotBody(s.body) {
 		s.err = fmt.Errorf("screenshot body type %q is not one of the body chips", s.body)
-		s.captured = true
+		s.phase = shotOver
 		return
 	}
 	if s.typeBody != "" && !a.typeShotBody(s.typeBody) {
 		s.err = fmt.Errorf("screenshot body text needs a JSON or Text body, the open request's is %q", a.cur().Req.BodyType)
-		s.captured = true
+		s.phase = shotOver
 		return
 	}
 	if s.wrap {
@@ -306,14 +336,14 @@ func (a *App) showShotTarget() {
 		open, ok := shotDialogs[s.dialog]
 		if !ok {
 			s.err = fmt.Errorf("screenshot dialog %q is not one of rename, delete", s.dialog)
-			s.captured = true
+			s.phase = shotOver
 			return
 		}
 		open(a, tree.Of(a.cur().Req))
 	}
 	if s.tool != "" && !s.sendOnStart {
 		s.err = fmt.Errorf("screenshot tool %q needs -send, which connects to the server that announces it", s.tool)
-		s.captured = true
+		s.phase = shotOver
 		return
 	}
 	for _, text := range s.toasts {
@@ -326,7 +356,7 @@ func (a *App) showShotTarget() {
 	for _, spec := range s.record {
 		if err := a.shotRecord(spec); err != nil {
 			s.err = err
-			s.captured = true
+			s.phase = shotOver
 			return
 		}
 	}
@@ -344,7 +374,7 @@ func (a *App) showShotTarget() {
 		dir, err := filepath.Abs(s.browse)
 		if err != nil {
 			s.err = fmt.Errorf("screenshot file browser folder %q: %w", s.browse, err)
-			s.captured = true
+			s.phase = shotOver
 			return
 		}
 		a.browseIn(dir, "Choose the file to send", false, "", func(string) {})

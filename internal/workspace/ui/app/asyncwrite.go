@@ -20,6 +20,17 @@ func (a *App) write(name string, job serial.Job) {
 	}
 }
 
+// writeFile writes data to a file the user named through the Folders
+// port, off the UI goroutine; done gets the outcome on it. Writes are
+// queued by path, so two saves to one file never interleave.
+func (a *App) writeFile(path string, data []byte, done func(error)) {
+	files := a.folders
+	a.write("file "+path, serial.Job{
+		Run:  func() error { return files.Write(context.Background(), path, data) },
+		Done: done,
+	})
+}
+
 func (a *App) startWrite(name string, job serial.Job) {
 	a.bus.Run(context.Background(), func(context.Context) bus.Msg {
 		err := job.Run()

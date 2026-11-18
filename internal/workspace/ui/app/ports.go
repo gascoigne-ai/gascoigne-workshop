@@ -29,6 +29,10 @@ type noFolders struct{}
 
 func (noFolders) List(string) ([]port.FolderEntry, error) { return nil, errors.New("no file system") }
 func (noFolders) Home() (string, error)                   { return "", errors.New("no file system") }
+func (noFolders) Write(context.Context, string, []byte) error {
+	return errors.New("no file system")
+}
+func (noFolders) IsFile(context.Context, string) bool { return false }
 
 // noBrowser is the preview of an app started without a browser.
 type noBrowser struct{}

@@ -81,6 +81,7 @@ type reqTab struct {
 	testResults           []assert.Result              // what the assertions found in the shown response
 	gqlVars               widget.TextArea              // the variables of a GraphQL body
 	file                  widget.TextField             // the path of a file body
+	fileCheck             bodyFileCheck                // what the file system said about file's path
 	body                  widget.TextArea              // request body editor
 	reqScroll, respScroll widget.ScrollState           // scroll of the table and note panes
 	bodyTypesX            widget.ScrollState           // sideways scroll of the body type chips

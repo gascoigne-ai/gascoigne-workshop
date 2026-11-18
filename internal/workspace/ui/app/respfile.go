@@ -3,7 +3,6 @@ package app
 import (
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/respview"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -47,15 +46,18 @@ func (a *App) writeBody(tab *reqTab, path string) {
 		return
 	}
 	if rest, ok := strings.CutPrefix(path, "~/"); ok {
-		if home, err := os.UserHomeDir(); err == nil {
+		if home, err := a.folders.Home(); err == nil {
 			path = filepath.Join(home, rest)
 		}
 	}
-	if err := os.WriteFile(path, tab.Resp.Body, 0o644); err != nil {
-		a.toast("Saving failed: "+err.Error(), true)
-		return
-	}
-	a.toast(fmt.Sprintf("Saved %s to %s", textfmt.Size(len(tab.Resp.Body)), filepath.Base(path)), false)
+	body := tab.Resp.Body
+	a.writeFile(path, body, func(err error) {
+		if err != nil {
+			a.toast("Saving failed: "+err.Error(), true)
+			return
+		}
+		a.toast(fmt.Sprintf("Saved %s to %s", textfmt.Size(len(body)), filepath.Base(path)), false)
+	})
 }
 
 // openInBrowser serves the response body on a temporary loopback port

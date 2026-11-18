@@ -1,17 +1,26 @@
 package port
 
+import "context"
+
 // FolderEntry is one name in a folder.
 type FolderEntry struct {
 	Name string
 	Dir  bool // a folder, or a link to one, so the browser can open it
 }
 
-// Folders reads the file system for the in-app file browser, the file
-// chooser of a desktop without a dialog program.
+// Folders is the user's file system: the listings of the in-app file
+// browser (the file chooser of a desktop without a dialog program) and the
+// files the user names, such as a saved response body, an exported
+// collection, the file a request sends and a screenshot.
 type Folders interface {
 	// List is what dir holds, in no particular order.
 	List(dir string) ([]FolderEntry, error)
 	// Home is the user's home folder: where the browser opens, and what a
 	// typed ~ means.
 	Home() (string, error)
+	// Write replaces the file at path with data, creating it when missing.
+	Write(ctx context.Context, path string, data []byte) error
+	// IsFile reports whether path names a file that is not a folder; a
+	// path that cannot be looked at is not one.
+	IsFile(ctx context.Context, path string) bool
 }

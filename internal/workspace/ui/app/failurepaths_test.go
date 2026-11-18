@@ -12,6 +12,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	rport "github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/folders"
 )
 
 // The checklist of failures a user can meet. Each row triggers one and
@@ -70,6 +71,7 @@ func TestEveryFailurePathIsShownToTheUser(t *testing.T) {
 			app.saveSettings(func(*settings.Settings) {})
 		}, "Could not save settings", ""},
 		{"a response body cannot be written", func(t *testing.T, app *App) {
+			app.folders = folders.Disk{} // the real disk, so the blocked folder is what fails
 			tab := app.cur()
 			tab.Resp = &model.Response{Status: 200, Body: []byte("x")}
 			app.writeBody(tab, blockedDir(t))

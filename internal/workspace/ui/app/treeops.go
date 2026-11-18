@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/tree"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -457,14 +456,16 @@ func (a *App) exportPostman(dir *model.Folder) {
 		name = "collection"
 	}
 	a.pickFile("Export as Postman collection", true, name+".postman_collection.json", func(path string) {
-		if err := os.WriteFile(path, data, 0o644); err != nil {
-			a.toast("Export failed: "+err.Error(), true)
-			return
-		}
-		msg := "Exported to " + filepath.Base(path)
-		if skipped > 0 {
-			msg += fmt.Sprintf(" (%d requests of other kinds left out)", skipped)
-		}
-		a.toast(msg, false)
+		a.writeFile(path, data, func(err error) {
+			if err != nil {
+				a.toast("Export failed: "+err.Error(), true)
+				return
+			}
+			msg := "Exported to " + filepath.Base(path)
+			if skipped > 0 {
+				msg += fmt.Sprintf(" (%d requests of other kinds left out)", skipped)
+			}
+			a.toast(msg, false)
+		})
 	})
 }
