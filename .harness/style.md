@@ -51,3 +51,4 @@ Padded `Gutter`, gap `LooseGap` (8), like Auth: a `RowH` row of two choice chips
 
 - With no collection open the tree's place holds, on `Sunken` with padding `Gutter` and gap `LooseGap` (8): a muted note "No collection is open", then the buttons *Open collection folder...* and *New collection...*, `RowH`-high (28) and as wide as the sidebar. Nothing is made on disk until one is pressed.
 - A collection's root row looks like a folder row (same height, indent `Gutter`, disclosure triangle, no icon of its own and no extra spacing) except that its name is bold (`bold` on the name's texts, also on the pieces the filter splits it into), so where one collection ends and the next begins reads at a glance; several roots stand one after another at depth 0. Folder and request names stay regular.
+- Dragging a node onto a row outlines the row in `AccentLine`; while Alt is held the outline is `OK` (green), the cue that releasing copies instead of moves (decision 25).

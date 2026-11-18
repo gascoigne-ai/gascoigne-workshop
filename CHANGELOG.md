@@ -15,5 +15,6 @@ First release, an alpha: ready for daily use and still growing.
 - Native file dialogs on macOS, Windows and Linux (zenity, kdialog, yad, qarma or matedialog, ordered by the desktop); without a dialog program, an in-app file browser for opening and saving.
 - A welcome dialog with these notes opens the first time a version runs and from the version in the status bar.
 - Tabs and the root rows of the tree show their collection's color.
+- Drag a request or folder onto another open collection to move it, or hold Alt to copy it; a name already taken gets a number, and a note lists the variables the new collection does not define.
 - Every saved file now starts with a `version`; the first save after upgrading rewrites each collection file once (and wraps `.secrets.json`), so a collection in git shows a one-time diff. Files from a newer build are not overwritten.
 - `make install` installs the release build, with its desktop entry and icon, under `~/.local`.

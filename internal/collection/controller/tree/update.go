@@ -18,9 +18,6 @@ type Duplicate struct{ Node model.Node }
 // Delete removes Node and what is inside it.
 type Delete struct{ Node model.Node }
 
-// Move drops Node on Target (a folder, or a request it lands before).
-type Move struct{ Node, Target model.Node }
-
 // NewRequest adds a blank request to Dir and opens it.
 type NewRequest struct{ Dir *model.Folder }
 
@@ -30,7 +27,6 @@ type NewFolder struct{ Dir *model.Folder }
 func (Rename) treeMsg()     {}
 func (Duplicate) treeMsg()  {}
 func (Delete) treeMsg()     {}
-func (Move) treeMsg()       {}
 func (NewRequest) treeMsg() {}
 func (NewFolder) treeMsg()  {}
 
@@ -58,8 +54,6 @@ func Update(collection *model.Collection, selected model.Node, msg Msg) Result {
 		}
 	case Delete:
 		return deleteNode(root, selected, msg.Node)
-	case Move:
-		return move(root, selected, msg)
 	case NewRequest:
 		req := msg.Dir.AddRequest(model.Request{Name: "New Request", Protocol: model.ProtocolREST, Method: "GET"})
 		return Result{Selected: selected, Expand: msg.Dir, Open: req}
@@ -78,15 +72,4 @@ func deleteNode(root *model.Folder, selected, node model.Node) Result {
 		selected = model.Node{}
 	}
 	return Result{Selected: selected, Removed: node}
-}
-
-func move(root *model.Folder, selected model.Node, msg Move) Result {
-	if msg.Node.None() || msg.Target.None() || msg.Target == msg.Node {
-		return Result{Selected: selected}
-	}
-	dir, before := DropPlace(root, msg.Node, msg.Target)
-	if err := root.Move(msg.Node.Any(), dir, before.Any()); err != nil {
-		return Result{Selected: selected, Err: err}
-	}
-	return Result{Selected: selected, Expand: dir}
 }

@@ -8,7 +8,6 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/adapter/store"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/collections"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/tree"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/settingsfile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
@@ -138,17 +137,6 @@ func TestTreeEditsChangeTheCollectionThatHoldsTheNode(t *testing.T) {
 	a.duplicateNode(model.Of(alpha.Requests[0]))
 	if len(alpha.Requests) != 2 || len(beta.Requests) != 1 {
 		t.Fatalf("Alpha has %d requests, Beta %d", len(alpha.Requests), len(beta.Requests))
-	}
-}
-
-// Moving across collections is a later task: a drop onto another
-// collection is refused and changes neither.
-func TestADropOntoAnotherCollectionIsRefused(t *testing.T) {
-	a, _, _ := twoCollectionsApp(t)
-	alpha, beta := entryNamed(t, a, "Alpha").Collection, entryNamed(t, a, "Beta").Collection
-	res := a.applyTree(tree.Move{Node: model.Of(alpha.Requests[0]), Target: model.Of(beta.Folders[0])})
-	if res.Err == nil || len(alpha.Requests) != 1 || len(beta.Folders[0].Requests) != 1 {
-		t.Fatalf("err %v; Alpha %d requests, Beta's folder %d", res.Err, len(alpha.Requests), len(beta.Folders[0].Requests))
 	}
 }
 

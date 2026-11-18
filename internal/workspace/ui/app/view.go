@@ -177,6 +177,9 @@ func (a *App) treeItemOf(row collection.Row) treeItem {
 	}
 	if !a.dragNode.None() && a.dropTarget == node && node != a.dragNode {
 		item.DropBorder = w.AccentLine
+		if a.ctx.In.Alt { // released now, it copies: the outline turns green
+			item.DropBorder = w.OK
+		}
 	}
 	return item
 }

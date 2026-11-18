@@ -1,8 +1,8 @@
 package app
 
 import (
-	"errors"
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/transfer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/tree"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
 	"path/filepath"
@@ -117,8 +117,8 @@ func (a *App) treeMenuItems(row collection.Row) []MenuItem {
 
 // rootMenuItems end the menu of a collection's root row: the collection
 // itself is renamed, moved, closed and deleted as a collection, not as a
-// folder. Moving is by menu rather than by drag, since a drag in the tree
-// moves a node inside its collection.
+// folder. Reordering is by menu rather than by drag, since a drag moves or
+// copies a node into a collection.
 func (a *App) rootMenuItems(root *model.Folder) []MenuItem {
 	owner, _ := a.open.Owner(model.Of(root))
 	col := owner.Collection
@@ -136,15 +136,10 @@ func (a *App) rootMenuItems(root *model.Folder) []MenuItem {
 	}
 }
 
-// errOtherCollection refuses a drop into another collection: requests and
-// folders are not moved across collections.
-var errOtherCollection = errors.New("it would leave its collection")
-
 // treeOwner is the collection a tree message changes: the one holding its
-// node or folder; nil when no open collection holds it. A move onto a node
-// of another collection is refused.
-func (a *App) treeOwner(msg tree.Msg) (*model.Collection, error) {
-	var subject, target model.Node
+// node or folder; nil when no open collection holds it.
+func (a *App) treeOwner(msg tree.Msg) *model.Collection {
+	var subject model.Node
 	switch msg := msg.(type) {
 	case tree.Rename:
 		subject = msg.Node
@@ -152,21 +147,12 @@ func (a *App) treeOwner(msg tree.Msg) (*model.Collection, error) {
 		subject = msg.Node
 	case tree.Delete:
 		subject = msg.Node
-	case tree.Move:
-		subject, target = msg.Node, msg.Target
 	case tree.NewRequest:
 		subject = model.Of(msg.Dir) // none, not a nil *Folder, when there is no folder
 	case tree.NewFolder:
 		subject = model.Of(msg.Dir)
 	}
-	col := a.ownerOf(subject)
-	if col == nil {
-		return nil, nil
-	}
-	if destination := a.ownerOf(target); destination != nil && destination != col {
-		return nil, errOtherCollection
-	}
-	return col, nil
+	return a.ownerOf(subject)
 }
 
 // ownerOf is the open collection that holds node, nil for none.
@@ -182,9 +168,9 @@ func (a *App) ownerOf(node model.Node) *model.Collection {
 // node and takes over what it says: the selection, the folder to open,
 // the request to show.
 func (a *App) applyTree(msg tree.Msg) tree.Result {
-	col, err := a.treeOwner(msg)
-	if col == nil || err != nil {
-		return tree.Result{Selected: a.selected, Err: err}
+	col := a.treeOwner(msg)
+	if col == nil {
+		return tree.Result{Selected: a.selected}
 	}
 	res := tree.Update(col, a.selected, msg)
 	a.selected = res.Selected
@@ -242,7 +228,8 @@ func (a *App) copyRequestURL(req *model.Request) {
 
 // ---- drag and drop ---------------------------------------------------------
 
-// finishDrag drops the dragged node on the row it was released over.
+// finishDrag drops the dragged node on the row it was released over: it
+// moves there, or is copied when Alt is held at the release.
 func (a *App) finishDrag() {
 	node, target, pressed := a.dragNode, a.dropTarget, a.pressedFolder
 	a.dragNode, a.dropTarget, a.pressedFolder = model.Node{}, model.Node{}, nil
@@ -250,8 +237,87 @@ func (a *App) finishDrag() {
 		a.expanded[pressed] = !a.expanded[pressed]
 		return
 	}
-	if err := a.applyTree(tree.Move{Node: node, Target: target}).Err; err != nil {
-		a.toast("Cannot move: "+err.Error(), true)
+	from, to := a.ownerOf(node), a.ownerOf(target)
+	if from == nil || to == nil || target == node {
+		return
+	}
+	mode := transfer.Move
+	if a.ctx.In.Alt {
+		mode = transfer.Copy
+	}
+	a.transferNode(transfer.Drop(from, to, node, target, mode))
+}
+
+// maxNamedVars is how many missing variables a toast names before it counts
+// the rest.
+const maxNamedVars = 5
+
+// missingVarsText says which variables a moved or copied node uses that
+// collection does not define, naming at most maxNamedVars of them.
+func missingVarsText(missing []string, collection string) string {
+	shown := missing
+	if len(shown) > maxNamedVars {
+		shown = shown[:maxNamedVars]
+	}
+	text := "Not defined in " + collection + ": " + strings.Join(shown, ", ")
+	if rest := len(missing) - len(shown); rest > 0 {
+		text += fmt.Sprintf(" and %d more", rest)
+	}
+	return text
+}
+
+// transferNode moves or copies a node to the place t names, in this or
+// another open collection, and tells what happened: a refusal, a rename and
+// the variables the node uses that its new collection lacks. A move between
+// collections writes the target first, so a failed write never loses the
+// node from disk.
+func (a *App) transferNode(t transfer.Transfer) {
+	a.commitEdit()
+	if entry, ok := a.open.ByCollection(t.To); ok {
+		t.ToEnv = entry.Environment()
+	}
+	verb := "move"
+	if t.Mode == transfer.Copy {
+		verb = "copy"
+	}
+	out := transfer.Apply(t)
+	if out.Err != nil {
+		a.toast("Cannot "+verb+": "+out.Err.Error(), true)
+		return
+	}
+	a.selectNode(out.Node)
+	a.expanded[&t.To.Folder] = true
+	a.expanded[t.Into] = true
+	if t.Mode == transfer.Move && a.varsTarget.kind == varsFolder && !out.Node.None() && out.Node.Dir != nil && out.Node.Dir.Contains(model.Of(a.varsTarget.folder)) {
+		a.varsTarget = varsTarget{}
+	}
+	if out.Renamed {
+		a.toast("Renamed to "+out.Name+", the name was taken", false)
+	}
+	if len(out.Missing) > 0 {
+		a.toast(missingVarsText(out.Missing, t.To.Name), false)
+	}
+	if t.Mode == transfer.Move && t.From != t.To {
+		a.flushMoved(t.From, t.To)
+	}
+}
+
+// flushMoved writes the target of a move between collections, then the
+// source; when the target cannot be written the source keeps the node on
+// disk and an error says so. A target that has no folder yet is not written,
+// and then the source is not either, so the node is never on disk nowhere.
+func (a *App) flushMoved(from, to *model.Collection) {
+	target, okTarget := a.open.ByCollection(to)
+	source, okSource := a.open.ByCollection(from)
+	if !okTarget || !okSource || target.Dir == "" {
+		return
+	}
+	if err := a.flushCollection(target); err != nil {
+		a.toast("Saving "+to.Name+" failed, "+from.Name+" still has the node on disk: "+err.Error(), true)
+		return
+	}
+	if err := a.flushCollection(source); err != nil {
+		a.toast("Saving "+from.Name+" failed: "+err.Error(), true)
 	}
 }
 

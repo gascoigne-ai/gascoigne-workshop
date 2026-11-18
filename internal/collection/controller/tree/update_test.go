@@ -59,27 +59,6 @@ func TestDeleteLeavesAnotherSelectionAndRefusesTheRoot(t *testing.T) {
 	}
 }
 
-func TestMoveExpandsTheTargetFolderAndReportsARefusal(t *testing.T) {
-	col, first, second, sub := sampleCollection()
-	got := Update(col, model.Node{}, Move{Node: model.Node{Req: first}, Target: model.Node{Dir: sub}})
-	if got.Err != nil || got.Expand != sub || len(sub.Requests) != 2 {
-		t.Fatalf("%+v", got)
-	}
-	got = Update(col, model.Node{}, Move{Node: model.Node{Dir: sub}, Target: model.Node{Req: second}})
-	if !errors.Is(got.Err, model.ErrIntoItself) {
-		t.Fatalf("err %v", got.Err)
-	}
-}
-
-func TestMoveOntoItselfOrNothingDoesNothing(t *testing.T) {
-	col, first, _, _ := sampleCollection()
-	for _, msg := range []Move{{Node: model.Node{Req: first}, Target: model.Node{Req: first}}, {Node: model.Node{Req: first}}, {}} {
-		if got := Update(col, model.Node{}, msg); got != (Result{}) {
-			t.Fatalf("%+v: %+v", msg, got)
-		}
-	}
-}
-
 func TestNewRequestAndNewFolderAddToTheFolder(t *testing.T) {
 	col, _, _, sub := sampleCollection()
 	got := Update(col, model.Node{}, NewRequest{Dir: sub})

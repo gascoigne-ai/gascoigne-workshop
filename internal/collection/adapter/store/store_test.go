@@ -346,3 +346,46 @@ func TestAnOlderFolderFileWithASecretValueStillLoads(t *testing.T) {
 		t.Errorf("the value stayed in folder.json:\n%s", text)
 	}
 }
+
+// A request with a credential moved to another saved collection takes the
+// secret with it: the source's .secrets.json loses the entry, the target's
+// has it and its .gitignore lists the file.
+func TestMovingACredentialRequestMovesItsSecret(t *testing.T) {
+	sourceDir, targetDir := t.TempDir(), t.TempDir()
+	source := model.Collection{Folder: model.Folder{Name: "Source"}}
+	moved := source.AddRequest(model.Request{Name: "Call", Protocol: "rest", Method: "GET", URL: "http://x.test",
+		Auth: model.Auth{Type: model.AuthBearer, Token: "moved-s3cret"}})
+	target := model.Collection{Folder: model.Folder{Name: "Target"}}
+	if err := Save(sourceDir, source); err != nil {
+		t.Fatal(err)
+	}
+	if err := Save(targetDir, target); err != nil {
+		t.Fatal(err)
+	}
+	if b, _ := os.ReadFile(filepath.Join(sourceDir, secretsFile)); !strings.Contains(string(b), "moved-s3cret") {
+		t.Fatal("setup: the source has no secret to move")
+	}
+
+	source.Delete(moved)
+	target.Attach(model.Of(moved), model.Node{})
+	if err := Save(targetDir, target); err != nil {
+		t.Fatal(err)
+	}
+	if err := Save(sourceDir, source); err != nil {
+		t.Fatal(err)
+	}
+
+	if b, err := os.ReadFile(filepath.Join(sourceDir, secretsFile)); err == nil && strings.Contains(string(b), "moved-s3cret") {
+		t.Fatalf("the source still holds the secret: %s", b)
+	}
+	if b, err := os.ReadFile(filepath.Join(targetDir, secretsFile)); err != nil || !strings.Contains(string(b), "moved-s3cret") {
+		t.Fatalf("the target lacks the secret: %s %v", b, err)
+	}
+	if b, _ := os.ReadFile(filepath.Join(targetDir, ".gitignore")); !strings.Contains(string(b), secretsFile) {
+		t.Fatalf("the target's .gitignore %q does not list %s", b, secretsFile)
+	}
+	got, err := Load(targetDir)
+	if err != nil || got.Requests[0].Auth.Token != "moved-s3cret" {
+		t.Fatalf("target loads %+v %v", got.Requests, err)
+	}
+}
