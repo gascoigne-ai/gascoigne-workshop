@@ -1,8 +1,7 @@
-status: blocked
+status: todo
 kind: feature
 commit: feat(collection): move and copy requests between collections
 scope: internal/*,uitoolkit/*,.harness/*
-depends_on: 089-welcome-golden-scene
 
 # 090 Move and copy requests between collections
 
@@ -16,6 +15,8 @@ Scope
 Acceptance: set after the pick; `make check` green.
 
 ## Model
-To be set after the user picks an option.
+Set by the design note (data-model skill).
 
-Blocked: needs the user's pick among the 3 options.
+## Decision (user, 2026-11-18)
+Option "Best": row menu `Move to...` / `Copy to...` opens a destination picker (open collections and folders); dragging onto another collection's folder moves, Alt-drag copies; one core operation behind both. Name clashes get an automatic rename. Variables are not rewritten (a request expands with its target collection's variables); after the operation a toast lists variables the request uses that the target collection lacks. Considered and rejected: Bruno-style drag only (no menu), cut/copy/paste in the tree.
+
