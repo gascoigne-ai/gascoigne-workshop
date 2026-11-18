@@ -45,7 +45,7 @@ func walkRequests(folder *model.Folder, prefix string, fn func(path string, r *m
 // requestPath is the remembered path of req in its collection, "" when it
 // is in no open collection.
 func (a *App) requestPath(req *model.Request) string {
-	owner, ok := a.open.Owner(req)
+	owner, ok := a.open.Owner(model.Of(req))
 	if !ok {
 		return ""
 	}
@@ -69,7 +69,7 @@ const historyKeySep = "#"
 // bare path. "" when req is in no open collection.
 func (a *App) historyKey(req *model.Request) string {
 	path := a.requestPath(req)
-	owner, ok := a.open.Owner(req)
+	owner, ok := a.open.Owner(model.Of(req))
 	if path == "" || !ok || owner.Dir == "" {
 		return path
 	}
@@ -80,7 +80,7 @@ func (a *App) historyKey(req *model.Request) string {
 // one collection was open at a time, for a request of the first open
 // collection, which is where that one collection is now; "" otherwise.
 func (a *App) legacyHistoryKey(req *model.Request) string {
-	owner, ok := a.open.Owner(req)
+	owner, ok := a.open.Owner(model.Of(req))
 	if !ok || owner.Dir == "" || a.open.Entries[0].Collection != owner.Collection {
 		return ""
 	}
@@ -124,7 +124,7 @@ func (a *App) snapshot() state.State {
 	var kept []int // tab index -> remembered index, -1 when not in the tree
 	for _, t := range a.openTabs() {
 		if p := a.requestPath(t.Req); p != "" {
-			owner, _ := a.open.Owner(t.Req)
+			owner, _ := a.open.Owner(model.Of(t.Req))
 			s.Tabs = append(s.Tabs, state.Tab{Collection: owner.Dir, Path: p, Pane: t.paneTab, PaneLabel: requestPaneLabel(t), Resp: t.respTab})
 			kept = append(kept, len(s.Tabs)-1)
 		} else {
@@ -252,7 +252,7 @@ func (a *App) restore(stateValue state.State) {
 			}
 		}
 		a.updateTabs(tabs.Activate{Index: active})
-		a.selected = a.cur().Req
+		a.selected = model.Of(a.cur().Req)
 	}
 	for name, ws := range stateValue.Columns {
 		if len(ws) == 0 {

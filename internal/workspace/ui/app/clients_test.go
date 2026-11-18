@@ -78,9 +78,5 @@ func TestStartWithoutASampleOptionUsesTheGitHubSample(t *testing.T) {
 }
 
 func selectedName(app *App) string {
-	request, ok := app.selected.(*model.Request)
-	if !ok {
-		return ""
-	}
-	return request.Name
+	return app.selected.Name()
 }

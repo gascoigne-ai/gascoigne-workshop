@@ -2,6 +2,7 @@ package app
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/statefile"
 	"os"
 	"path/filepath"
@@ -66,7 +67,7 @@ func TestStateRestoreRoundTripsThroughTheFile(t *testing.T) {
 	if len(b.list.Tabs) != 2 || b.list.Active != 1 || b.cur().paneTab != 3 {
 		t.Fatalf("tabs %d active %d pane %d", len(b.list.Tabs), b.list.Active, b.cur().paneTab)
 	}
-	if b.cur().Req != b.col().Folders[0].Requests[0] || b.selected != b.cur().Req {
+	if b.cur().Req != b.col().Folders[0].Requests[0] || b.selected != model.Of(b.cur().Req) {
 		t.Fatal("the restored tab must be the request in the new tree")
 	}
 	if b.sidebarSplit.Size != 300 || !b.expanded[b.col().Folders[2]] {

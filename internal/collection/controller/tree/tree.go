@@ -12,7 +12,7 @@ import (
 // DropPlace is the folder a node dropped on target goes into and the node it
 // goes before (zero for the end). A request dropped on another request lands
 // before it; a folder is always added at the end.
-func DropPlace(root *model.Folder, node, target Node) (dir *model.Folder, before Node) {
+func DropPlace(root *model.Folder, node, target model.Node) (dir *model.Folder, before model.Node) {
 	switch {
 	case target.Dir != nil:
 		dir = target.Dir
@@ -21,22 +21,22 @@ func DropPlace(root *model.Folder, node, target Node) (dir *model.Folder, before
 		before = target
 	}
 	if node.Dir != nil {
-		before = Node{}
+		before = model.Node{}
 	}
 	return dir, before
 }
 
 // Inside reports whether req is node or lies inside the folder node.
-func Inside(node Node, req *model.Request) bool {
+func Inside(node model.Node, req *model.Request) bool {
 	if node.Dir != nil {
-		return node.Dir.Contains(req)
+		return node.Dir.Contains(model.Of(req))
 	}
 	return node.Req == req
 }
 
 // DeletePrompt is the title and the warning of the question asked before
 // node is deleted.
-func DeletePrompt(node Node) (title, body string) {
+func DeletePrompt(node model.Node) (title, body string) {
 	body = "This cannot be undone."
 	if node.Dir != nil {
 		body = "The folder and everything in it will be removed."

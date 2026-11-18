@@ -18,11 +18,11 @@ type Row struct {
 }
 
 // Node is what the row stands for: the folder or the request.
-func (r Row) Node() any {
+func (r Row) Node() model.Node {
 	if r.Folder {
-		return r.Dir
+		return model.Node{Dir: r.Dir}
 	}
-	return r.Req
+	return model.Node{Req: r.Req}
 }
 
 // Rows flattens root into the rows that are visible given which

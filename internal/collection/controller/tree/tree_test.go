@@ -16,16 +16,16 @@ func sample() (root *model.Folder, first, second *model.Request, sub *model.Fold
 
 func TestDropPlaceIsTheFolderForAFolderRow(t *testing.T) {
 	root, first, _, sub := sample()
-	dir, before := DropPlace(root, Node{Req: first}, Node{Dir: sub})
-	if dir != sub || before != (Node{}) {
+	dir, before := DropPlace(root, model.Node{Req: first}, model.Node{Dir: sub})
+	if dir != sub || before != (model.Node{}) {
 		t.Fatalf("dir %v before %v", dir, before)
 	}
 }
 
 func TestDropPlaceOnARequestLandsBeforeItInItsFolder(t *testing.T) {
 	root, first, second, sub := sample()
-	dir, before := DropPlace(root, Node{Req: first}, Node{Req: second})
-	if dir != sub || before != (Node{Req: second}) {
+	dir, before := DropPlace(root, model.Node{Req: first}, model.Node{Req: second})
+	if dir != sub || before != (model.Node{Req: second}) {
 		t.Fatalf("dir %v before %v", dir, before)
 	}
 }
@@ -33,8 +33,8 @@ func TestDropPlaceOnARequestLandsBeforeItInItsFolder(t *testing.T) {
 func TestAFolderIsNeverPlacedBeforeARequest(t *testing.T) {
 	root, _, second, sub := sample()
 	other := root.AddFolder("other")
-	dir, before := DropPlace(root, Node{Dir: other}, Node{Req: second})
-	if dir != sub || before != (Node{}) {
+	dir, before := DropPlace(root, model.Node{Dir: other}, model.Node{Req: second})
+	if dir != sub || before != (model.Node{}) {
 		t.Fatalf("dir %v before %v", dir, before)
 	}
 }
@@ -43,15 +43,15 @@ func TestInsideCoversTheRequestItselfAndAFoldersContents(t *testing.T) {
 	root, first, second, sub := sample()
 	tests := []struct {
 		name string
-		node Node
+		node model.Node
 		req  *model.Request
 		want bool
 	}{
-		{"the request itself", Node{Req: first}, first, true},
-		{"another request", Node{Req: first}, second, false},
-		{"a request in the folder", Node{Dir: sub}, second, true},
-		{"a request outside the folder", Node{Dir: sub}, first, false},
-		{"the root holds everything", Node{Dir: root}, second, true},
+		{"the request itself", model.Node{Req: first}, first, true},
+		{"another request", model.Node{Req: first}, second, false},
+		{"a request in the folder", model.Node{Dir: sub}, second, true},
+		{"a request outside the folder", model.Node{Dir: sub}, first, false},
+		{"the root holds everything", model.Node{Dir: root}, second, true},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -64,18 +64,11 @@ func TestInsideCoversTheRequestItselfAndAFoldersContents(t *testing.T) {
 
 func TestDeletePromptWarnsMoreForAFolder(t *testing.T) {
 	_, first, _, sub := sample()
-	if title, body := DeletePrompt(Node{Req: first}); title != "Delete first?" || body != "This cannot be undone." {
+	if title, body := DeletePrompt(model.Node{Req: first}); title != "Delete first?" || body != "This cannot be undone." {
 		t.Fatalf("request: %q %q", title, body)
 	}
-	if title, body := DeletePrompt(Node{Dir: sub}); title != "Delete sub?" || body != "The folder and everything in it will be removed." {
+	if title, body := DeletePrompt(model.Node{Dir: sub}); title != "Delete sub?" || body != "The folder and everything in it will be removed." {
 		t.Fatalf("folder: %q %q", title, body)
-	}
-}
-
-func TestNodeNameIsEmptyForAnUnknownNode(t *testing.T) {
-	_, first, _, sub := sample()
-	if Of(first).Name() != "first" || Of(sub).Name() != "sub" || Of(42).Name() != "" {
-		t.Fatal("Node must read requests and folders only")
 	}
 }
 

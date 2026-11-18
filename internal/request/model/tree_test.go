@@ -94,8 +94,32 @@ func TestParentAndContains(t *testing.T) {
 	if _, ok := root.Parent(&Request{Name: "stranger"}); ok {
 		t.Error("a node outside the tree has no parent")
 	}
-	if !a.Contains(x) || !a.Contains(a) || a.Contains(root) || a1f.Contains(a1) {
-		t.Error("Contains is wrong")
+}
+
+func TestContainsIsTrueForTheFolderItselfAndAnythingBelow(t *testing.T) {
+	root, a, a1f, _, a1, _, x, _, _ := fixture()
+	cases := []struct {
+		name   string
+		folder *Folder
+		node   Node
+		want   bool
+	}{
+		{"a request below", a, Of(x), true},
+		{"a request directly in it", a, Of(a1), true},
+		{"the folder itself", a, Of(a), true},
+		{"a subfolder", a, Of(a1f), true},
+		{"its parent", a, Of(root), false},
+		{"a sibling's request", a1f, Of(a1), false},
+		{"a node of no tree", a, Of(&Request{Name: "stranger"}), false},
+		{"none", a, Node{}, false},
+		{"a typed nil folder", a, Of((*Folder)(nil)), false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := tc.folder.Contains(tc.node); got != tc.want {
+				t.Errorf("Contains = %v, want %v", got, tc.want)
+			}
+		})
 	}
 }
 
@@ -181,7 +205,7 @@ func TestDelete(t *testing.T) {
 	if !root.Delete(a1) || !reflect.DeepEqual(names(a.Requests), []string{"a2"}) {
 		t.Fatalf("requests = %v", names(a.Requests))
 	}
-	if !root.Delete(a) || root.Contains(x) || !reflect.DeepEqual(folderNames(root.Folders), []string{"B"}) {
+	if !root.Delete(a) || root.Contains(Of(x)) || !reflect.DeepEqual(folderNames(root.Folders), []string{"B"}) {
 		t.Fatal("deleting a folder removes everything below it")
 	}
 	if root.Delete(root) {

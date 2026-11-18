@@ -139,7 +139,7 @@ func (a *App) saveWorkspace() { a.saveCollection(a.focusCol()) }
 // does, and the open set with it is remembered.
 func (a *App) saveCollection(col *model.Collection) {
 	a.commitEdit()
-	entry, ok := a.open.Owner(col)
+	entry, ok := a.open.ByCollection(col)
 	if !ok {
 		return
 	}
@@ -275,7 +275,7 @@ func (a *App) openWorkspaceAt(dir string) {
 		a.forget(entry.Collection)
 	}
 	a.updateTabs(tabs.Reset{})
-	a.selected = nil
+	a.selected = model.Node{}
 	a.expanded = map[*model.Folder]bool{}
 	col := &loaded
 	a.expandAll(&col.Folder)

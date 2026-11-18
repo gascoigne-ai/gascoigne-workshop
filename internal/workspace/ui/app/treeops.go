@@ -32,13 +32,13 @@ func (a *App) visibleRows() []collection.Row {
 // ---- selection and the rows' menus --------------------------------------
 
 // selectNode marks a folder or request as the one the tree acts on.
-func (a *App) selectNode(node any) { a.selected = node }
+func (a *App) selectNode(node model.Node) { a.selected = node }
 
 // collectionToken is the color of the open collection that holds node, ""
 // for a node of none.
-func (a *App) collectionToken(node any) core.Token {
+func (a *App) collectionToken(node model.Node) core.Token {
 	for index, entry := range a.open.Entries {
-		if node == any(&entry.Collection.Folder) || node == any(entry.Collection) || entry.Collection.Folder.Contains(node) {
+		if entry.Collection.Folder.Contains(node) {
 			return appearance.CollectionToken(index)
 		}
 	}
@@ -47,8 +47,8 @@ func (a *App) collectionToken(node any) core.Token {
 
 // revealRequest selects req in the tree and opens the folders above it.
 func (a *App) revealRequest(req *model.Request) {
-	a.selectNode(req)
-	owner, ok := a.open.Owner(req)
+	a.selectNode(model.Of(req))
+	owner, ok := a.open.Owner(model.Of(req))
 	if !ok {
 		return
 	}
@@ -63,12 +63,12 @@ func (a *App) revealRequest(req *model.Request) {
 // folder of the selected request, or the root of the focused collection;
 // nil when nothing is open.
 func (a *App) selectedFolder() *model.Folder {
-	switch n := a.selected.(type) {
-	case *model.Folder:
-		return n
-	case *model.Request:
-		if owner, ok := a.open.Owner(n); ok {
-			if parent, ok := owner.Collection.Folder.Parent(n); ok {
+	switch {
+	case a.selected.Dir != nil:
+		return a.selected.Dir
+	case a.selected.Req != nil:
+		if owner, ok := a.open.Owner(a.selected); ok {
+			if parent, ok := owner.Collection.Folder.Parent(a.selected.Req); ok {
 				return parent
 			}
 		}
@@ -82,15 +82,15 @@ func (a *App) selectedFolder() *model.Folder {
 // treeMenuItems are the right-click actions for a row.
 func (a *App) treeMenuItems(row collection.Row) []MenuItem {
 	node := row.Node()
-	rename := MenuItem{Label: "Rename", Run: func() { a.renameNode(tree.Of(node)) }}
+	rename := MenuItem{Label: "Rename", Run: func() { a.renameNode(node) }}
 	sep := MenuItem{Separator: true}
 	if row.Req != nil {
 		return []MenuItem{
 			rename,
-			{Label: "Duplicate", Run: func() { a.duplicateNode(tree.Of(node)) }},
+			{Label: "Duplicate", Run: func() { a.duplicateNode(node) }},
 			{Label: "Copy URL", Run: func() { a.copyRequestURL(row.Req) }},
 			sep,
-			{Label: "Delete", Run: func() { a.deleteNode(tree.Of(node)) }},
+			{Label: "Delete", Run: func() { a.deleteNode(node) }},
 		}
 	}
 	create := []MenuItem{
@@ -108,8 +108,8 @@ func (a *App) treeMenuItems(row collection.Row) []MenuItem {
 		return append(create[:len(create)-1], a.rootMenuItems(row.Dir)...)
 	}
 	return append(create,
-		MenuItem{Label: "Duplicate", Run: func() { a.duplicateNode(tree.Of(node)) }},
-		MenuItem{Label: "Delete", Run: func() { a.deleteNode(tree.Of(node)) }},
+		MenuItem{Label: "Duplicate", Run: func() { a.duplicateNode(node) }},
+		MenuItem{Label: "Delete", Run: func() { a.deleteNode(node) }},
 	)
 }
 
@@ -120,7 +120,7 @@ func (a *App) treeMenuItems(row collection.Row) []MenuItem {
 // folder. Moving is by menu rather than by drag, since a drag in the tree
 // moves a node inside its collection.
 func (a *App) rootMenuItems(root *model.Folder) []MenuItem {
-	owner, _ := a.open.Owner(root)
+	owner, _ := a.open.Owner(model.Of(root))
 	col := owner.Collection
 	at := a.openIndex(col)
 	return []MenuItem{
@@ -144,20 +144,20 @@ var errOtherCollection = errors.New("it would leave its collection")
 // node or folder; nil when no open collection holds it. A move onto a node
 // of another collection is refused.
 func (a *App) treeOwner(msg tree.Msg) (*model.Collection, error) {
-	var subject, target any
+	var subject, target model.Node
 	switch msg := msg.(type) {
 	case tree.Rename:
-		subject = msg.Node.Any()
+		subject = msg.Node
 	case tree.Duplicate:
-		subject = msg.Node.Any()
+		subject = msg.Node
 	case tree.Delete:
-		subject = msg.Node.Any()
+		subject = msg.Node
 	case tree.Move:
-		subject, target = msg.Node.Any(), msg.Target.Any()
+		subject, target = msg.Node, msg.Target
 	case tree.NewRequest:
-		subject = tree.Node{Dir: msg.Dir}.Any() // nil, not a nil *Folder, when there is no folder
+		subject = model.Of(msg.Dir) // none, not a nil *Folder, when there is no folder
 	case tree.NewFolder:
-		subject = tree.Node{Dir: msg.Dir}.Any()
+		subject = model.Of(msg.Dir)
 	}
 	col := a.ownerOf(subject)
 	if col == nil {
@@ -170,8 +170,8 @@ func (a *App) treeOwner(msg tree.Msg) (*model.Collection, error) {
 }
 
 // ownerOf is the open collection that holds node, nil for none.
-func (a *App) ownerOf(node any) *model.Collection {
-	if node == nil {
+func (a *App) ownerOf(node model.Node) *model.Collection {
+	if node.None() {
 		return nil
 	}
 	entry, _ := a.open.Owner(node)
@@ -184,17 +184,17 @@ func (a *App) ownerOf(node any) *model.Collection {
 func (a *App) applyTree(msg tree.Msg) tree.Result {
 	col, err := a.treeOwner(msg)
 	if col == nil || err != nil {
-		return tree.Result{Selected: tree.Of(a.selected), Err: err}
+		return tree.Result{Selected: a.selected, Err: err}
 	}
-	res := tree.Update(col, tree.Of(a.selected), msg)
-	a.selected = res.Selected.Any()
+	res := tree.Update(col, a.selected, msg)
+	a.selected = res.Selected
 	if res.Expand != nil {
 		a.expanded[res.Expand] = true
 	}
 	if res.Open != nil {
 		a.openRequest(res.Open)
 	}
-	if res.Removed != (tree.Node{}) {
+	if !res.Removed.None() {
 		a.closeTabsIn(res.Removed)
 	}
 	return res
@@ -207,7 +207,7 @@ func (a *App) newFolderIn(dir *model.Folder) { a.applyTree(tree.NewFolder{Dir: d
 
 // renameNode asks for a new name and applies it; a refused name is
 // explained in a toast.
-func (a *App) renameNode(node tree.Node) {
+func (a *App) renameNode(node model.Node) {
 	a.prompt("Rename", node.Name(), "Rename", func(text string) {
 		if err := a.applyTree(tree.Rename{Node: node, Name: text}).Err; err != nil {
 			a.toast("Cannot rename: "+err.Error(), true)
@@ -215,12 +215,12 @@ func (a *App) renameNode(node tree.Node) {
 	})
 }
 
-func (a *App) duplicateNode(node tree.Node) { a.applyTree(tree.Duplicate{Node: node}) }
+func (a *App) duplicateNode(node model.Node) { a.applyTree(tree.Duplicate{Node: node}) }
 
 // deleteNode asks, then removes the node and closes the tabs of
 // everything that was in it.
-func (a *App) deleteNode(node tree.Node) {
-	if node == (tree.Node{}) || a.isRoot(node.Dir) {
+func (a *App) deleteNode(node model.Node) {
+	if node.None() || a.isRoot(node.Dir) {
 		return
 	}
 	title, body := tree.DeletePrompt(node)
@@ -228,7 +228,7 @@ func (a *App) deleteNode(node tree.Node) {
 }
 
 // closeTabsIn closes the tabs whose request is node or inside it.
-func (a *App) closeTabsIn(node tree.Node) {
+func (a *App) closeTabsIn(node model.Node) {
 	for i := len(a.list.Tabs) - 1; i >= 0; i-- {
 		if tree.Inside(node, a.list.Tabs[i].Req) {
 			a.closeTab(i)
@@ -245,12 +245,12 @@ func (a *App) copyRequestURL(req *model.Request) {
 // finishDrag drops the dragged node on the row it was released over.
 func (a *App) finishDrag() {
 	node, target, pressed := a.dragNode, a.dropTarget, a.pressedFolder
-	a.dragNode, a.dropTarget, a.pressedFolder = nil, nil, nil
-	if pressed != nil && target == any(pressed) { // a click on a folder row
+	a.dragNode, a.dropTarget, a.pressedFolder = model.Node{}, model.Node{}, nil
+	if pressed != nil && target == model.Of(pressed) { // a click on a folder row
 		a.expanded[pressed] = !a.expanded[pressed]
 		return
 	}
-	if err := a.applyTree(tree.Move{Node: tree.Of(node), Target: tree.Of(target)}).Err; err != nil {
+	if err := a.applyTree(tree.Move{Node: node, Target: target}).Err; err != nil {
 		a.toast("Cannot move: "+err.Error(), true)
 	}
 }
@@ -309,11 +309,11 @@ func (a *App) treeKeys(in core.Input) {
 				a.clickTree(rows[current])
 			}
 		case ebiten.KeyF2:
-			if a.selected != nil {
-				a.renameNode(tree.Of(a.selected))
+			if !a.selected.None() {
+				a.renameNode(a.selected)
 			}
 		case ebiten.KeyDelete:
-			a.deleteNode(tree.Of(a.selected))
+			a.deleteNode(a.selected)
 		}
 	}
 }
@@ -369,7 +369,7 @@ func (a *App) importOpenAPI(dir *model.Folder) {
 	}
 	res.Folder.Name = dir.UniqueName(res.Folder.Name)
 	dir.Folders = append(dir.Folders, res.Folder)
-	if col := a.ownerOf(dir); col != nil && !model.Defined(openapi.BaseURLVar, col.Vars) {
+	if col := a.ownerOf(model.Of(dir)); col != nil && !model.Defined(openapi.BaseURLVar, col.Vars) {
 		col.Vars = append(col.Vars, model.KV{Name: openapi.BaseURLVar, Value: res.BaseURL, Enabled: true})
 	}
 	a.expanded[dir] = true
@@ -389,8 +389,8 @@ const dragExpandTicks = 30
 
 // dragHover opens the closed folder a drag rests over.
 func (a *App) dragHover() {
-	f, ok := a.dropTarget.(*model.Folder)
-	if a.dragNode == nil || !ok || a.expanded[f] || any(f) == a.dragNode {
+	f := a.dropTarget.Dir
+	if a.dragNode.None() || f == nil || a.expanded[f] || a.dragNode.Dir == f {
 		a.hoverFolder, a.hoverTicks = nil, 0
 		return
 	}
@@ -418,7 +418,7 @@ func (a *App) importPostman(dir *model.Folder) {
 	}
 	res.Folder.Name = dir.UniqueName(res.Folder.Name)
 	dir.Folders = append(dir.Folders, res.Folder)
-	if col := a.ownerOf(dir); col != nil {
+	if col := a.ownerOf(model.Of(dir)); col != nil {
 		for _, v := range res.Vars {
 			if !model.Defined(v.Name, col.Vars) {
 				col.Vars = append(col.Vars, v)
@@ -442,7 +442,7 @@ func (a *App) importPostman(dir *model.Folder) {
 func (a *App) exportPostman(dir *model.Folder) {
 	a.commitEdit()
 	var vars []model.KV
-	if col := a.ownerOf(dir); col != nil {
+	if col := a.ownerOf(model.Of(dir)); col != nil {
 		vars = col.Vars
 	}
 	data, err := postman.Export(dir, vars)

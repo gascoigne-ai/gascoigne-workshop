@@ -151,7 +151,7 @@ func TestMoveKeepsWhatAnEntryHolds(t *testing.T) {
 	set, first, _, _ := opened()
 	set = Update(set, ChooseEnv{Collection: first, Index: -1})
 	set = Update(set, Move{Collection: first})
-	entry, _ := set.Owner(&first.Folder)
+	entry, _ := set.Owner(model.Of(&first.Folder))
 	if entry.Dir != "/w/a" || entry.Collection != first {
 		t.Fatalf("moved entry = %+v", entry)
 	}
@@ -182,7 +182,7 @@ func TestLocatedRefusesAFolderAnotherCollectionHolds(t *testing.T) {
 		t.Fatal("no folder is taken")
 	}
 	set = Update(set, Located{Collection: first, Dir: "/w/b"})
-	entry, _ := set.Owner(first)
+	entry, _ := set.ByCollection(first)
 	if entry.Dir != "/w/a" {
 		t.Fatalf("a moved into b's folder: %q", entry.Dir)
 	}
@@ -219,13 +219,12 @@ func TestOwnerFindsTheCollectionOfANode(t *testing.T) {
 	req := folder.AddRequest(model.Request{Name: "deep"})
 	cases := []struct {
 		name string
-		node any
+		node model.Node
 		want *model.Collection
 	}{
-		{"the collection", first, first},
-		{"its root folder", &first.Folder, first},
-		{"a folder", folder, second},
-		{"a request in a folder", req, second},
+		{"its root folder", model.Of(&first.Folder), first},
+		{"a folder", model.Of(folder), second},
+		{"a request in a folder", model.Of(req), second},
 	}
 	for _, tc := range cases {
 		entry, ok := set.Owner(tc.node)
@@ -233,8 +232,11 @@ func TestOwnerFindsTheCollectionOfANode(t *testing.T) {
 			t.Errorf("%s: owner = %v, %v; want %q", tc.name, entry.Collection, ok, tc.want.Name)
 		}
 	}
-	if _, ok := set.Owner(&model.Request{Name: "loose"}); ok {
+	if _, ok := set.Owner(model.Of(&model.Request{Name: "loose"})); ok {
 		t.Error("a request in no open collection has an owner")
+	}
+	if _, ok := set.Owner(model.Node{}); ok {
+		t.Error("no node has an owner")
 	}
 }
 
@@ -280,5 +282,16 @@ func TestVarsForUsesOnlyTheOwnersVariables(t *testing.T) {
 	}
 	if vars, ok := set.VarsFor(&model.Request{Name: "loose"}); ok || vars != nil {
 		t.Errorf("a request of no open collection got %v, %v", vars, ok)
+	}
+}
+
+func TestByCollectionFindsTheEntryOfAnOpenCollection(t *testing.T) {
+	set, first, _, _ := opened()
+	entry, ok := set.ByCollection(first)
+	if !ok || entry.Collection != first {
+		t.Fatalf("entry %+v, %v; want the first collection's", entry, ok)
+	}
+	if _, ok := set.ByCollection(newCollection("closed")); ok {
+		t.Error("a collection that is not open has an entry")
 	}
 }

@@ -6,7 +6,6 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/tree"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
@@ -35,7 +34,7 @@ type deferred interface {
 
 // shotDialogs are the dialogs the OpenDialog step opens on the open request,
 // each through the path its tree menu item takes.
-var shotDialogs = map[string]func(a *App, node tree.Node){
+var shotDialogs = map[string]func(a *App, node model.Node){
 	"rename": (*App).renameNode,
 	"delete": (*App).deleteNode,
 }
@@ -162,7 +161,7 @@ func (step openDialogStep) apply(app *App) error {
 	if !ok {
 		return fmt.Errorf("screenshot dialog %q is not one of rename, delete", step.kind)
 	}
-	open(app, tree.Of(app.cur().Req))
+	open(app, model.Of(app.cur().Req))
 	return nil
 }
 

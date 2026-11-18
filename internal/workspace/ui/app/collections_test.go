@@ -53,7 +53,7 @@ func TestNewCollectionMakesAFolderBesideTheWorkspaceAndOpensItBesideTheOpenOne(t
 	if len(a.open.Entries) != 2 || a.workspace() != home || a.open.Entries[1].Dir != want || a.open.Entries[1].Collection.Name != "Café API" {
 		t.Fatalf("open %+v; want Home then %q", a.open.Entries, want)
 	}
-	if owner, _ := a.open.Owner(a.cur().Req); owner.Dir != want || a.cur().Req.Name != "New Request" {
+	if owner, _ := a.open.Owner(model.Of(a.cur().Req)); owner.Dir != want || a.cur().Req.Name != "New Request" {
 		t.Fatalf("an empty collection opens one blank request, shown %q of %q", a.cur().Req.Name, owner.Dir)
 	}
 	if _, err := store.Load(want); err != nil {

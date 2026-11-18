@@ -135,7 +135,7 @@ func TestTreeEditsChangeTheCollectionThatHoldsTheNode(t *testing.T) {
 	if len(beta.Folders[0].Requests) != 2 || len(alpha.Folders[0].Requests) != 1 {
 		t.Fatalf("Beta's folder has %d requests, Alpha's %d", len(beta.Folders[0].Requests), len(alpha.Folders[0].Requests))
 	}
-	a.duplicateNode(tree.Of(alpha.Requests[0]))
+	a.duplicateNode(model.Of(alpha.Requests[0]))
 	if len(alpha.Requests) != 2 || len(beta.Requests) != 1 {
 		t.Fatalf("Alpha has %d requests, Beta %d", len(alpha.Requests), len(beta.Requests))
 	}
@@ -146,7 +146,7 @@ func TestTreeEditsChangeTheCollectionThatHoldsTheNode(t *testing.T) {
 func TestADropOntoAnotherCollectionIsRefused(t *testing.T) {
 	a, _, _ := twoCollectionsApp(t)
 	alpha, beta := entryNamed(t, a, "Alpha").Collection, entryNamed(t, a, "Beta").Collection
-	res := a.applyTree(tree.Move{Node: tree.Of(alpha.Requests[0]), Target: tree.Of(beta.Folders[0])})
+	res := a.applyTree(tree.Move{Node: model.Of(alpha.Requests[0]), Target: model.Of(beta.Folders[0])})
 	if res.Err == nil || len(alpha.Requests) != 1 || len(beta.Folders[0].Requests) != 1 {
 		t.Fatalf("err %v; Alpha %d requests, Beta's folder %d", res.Err, len(alpha.Requests), len(beta.Folders[0].Requests))
 	}
@@ -205,7 +205,7 @@ func TestClosingACollectionClosesItsTabsAndTheLastLeavesAnEmptyTree(t *testing.T
 		t.Fatalf("open %+v", a.open.Entries)
 	}
 	for _, tab := range a.list.Tabs {
-		if beta.Folder.Contains(tab.Req) {
+		if beta.Folder.Contains(model.Of(tab.Req)) {
 			t.Fatalf("Beta's tab %q is still open", tab.Req.Name)
 		}
 	}
@@ -334,7 +334,7 @@ func TestTabsAndRootRowsShowTheColorOfTheirCollection(t *testing.T) {
 		if !a.isRoot(row.Dir) {
 			continue
 		}
-		owner, _ := a.open.Owner(row.Dir)
+		owner, _ := a.open.Owner(model.Of(row.Dir))
 		if got := a.treeItemOf(row).Stripe; got == "" || (owner.Collection == beta.Collection) == (got == appearance.CollectionToken(0)) {
 			t.Fatalf("root row of %s has stripe %q", owner.Collection.Name, got)
 		}
@@ -348,11 +348,11 @@ func TestSwitchingTabsSelectsAndRevealsTheRequestInTheTree(t *testing.T) {
 	alpha := entryNamed(t, a, "Alpha")
 	req := alpha.Collection.Folder.Requests[0]
 	a.openRequest(req)
-	a.selected = nil
+	a.selected = model.Node{}
 	a.expanded[&alpha.Collection.Folder] = false
 	a.updateTabs(tabs.Activate{Index: tabIndex(t, a, entryNamed(t, a, "Beta").Collection.Folder.Requests[0])})
 	a.updateTabs(tabs.Activate{Index: tabIndex(t, a, req)})
-	if a.selected != any(req) {
+	if a.selected != model.Of(req) {
 		t.Fatalf("selected = %v, want the request of the active tab", a.selected)
 	}
 	if !a.expanded[&alpha.Collection.Folder] {

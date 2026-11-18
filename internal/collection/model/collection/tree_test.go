@@ -44,7 +44,7 @@ func TestTreeRowsCarryTheNodes(t *testing.T) {
 	sub := &model.Folder{Name: "sub"}
 	root := &model.Folder{Name: "A", Folders: []*model.Folder{sub}, Requests: []*model.Request{req}}
 	rows := Rows(root, map[*model.Folder]bool{root: true})
-	if rows[0].Node() != any(root) || rows[1].Node() != any(sub) || rows[2].Node() != any(req) {
+	if rows[0].Node() != model.Of(root) || rows[1].Node() != model.Of(sub) || rows[2].Node() != model.Of(req) {
 		t.Fatal("each row must stand for its own folder or request, by pointer")
 	}
 	rows[2].Req.URL = "edited"

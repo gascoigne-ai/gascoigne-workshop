@@ -76,11 +76,14 @@ func (f *Folder) Parent(node any) (*Folder, bool) {
 }
 
 // Contains reports whether node is f itself or anywhere below it.
-func (f *Folder) Contains(node any) bool {
-	if any(f) == node {
+func (f *Folder) Contains(node Node) bool {
+	if node.None() {
+		return false
+	}
+	if node.Dir == f {
 		return true
 	}
-	_, ok := f.Parent(node)
+	_, ok := f.Parent(node.Any())
 	return ok
 }
 
@@ -97,7 +100,7 @@ func nameOf(node any) *string {
 // Rename gives node a new name, unique among its siblings.
 func (f *Folder) Rename(node any, name string) error {
 	field := nameOf(node)
-	if field == nil || !f.Contains(node) {
+	if field == nil || !f.Contains(Of(node)) {
 		return ErrNotInTree
 	}
 	name = strings.TrimSpace(name)
@@ -170,10 +173,10 @@ func (f *Folder) Move(node any, target *Folder, before any) error {
 		return ErrRootMove
 	}
 	src, ok := f.Parent(node)
-	if !ok || !f.Contains(target) {
+	if !ok || !f.Contains(Of(target)) {
 		return ErrNotInTree
 	}
-	if sub, isFolder := node.(*Folder); isFolder && sub.Contains(target) {
+	if sub, isFolder := node.(*Folder); isFolder && sub.Contains(Of(target)) {
 		return ErrIntoItself
 	}
 	if src != target && target.siblingNames()[*nameOf(node)] {

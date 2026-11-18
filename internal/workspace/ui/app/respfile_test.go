@@ -258,7 +258,7 @@ func TestADragRestingOverAClosedFolderOpensIt(t *testing.T) {
 	closed := a.col().Folders[0]
 	a.expanded[closed] = false
 	req := a.col().Folders[1].Requests[0]
-	a.dragNode, a.dropTarget = req, closed
+	a.dragNode, a.dropTarget = model.Of(req), model.Of(closed)
 	for i := 0; i < dragExpandTicks-1; i++ {
 		a.dragHover()
 	}
@@ -271,15 +271,15 @@ func TestADragRestingOverAClosedFolderOpensIt(t *testing.T) {
 	}
 	other := a.col().Folders[2]
 	a.expanded[other] = false
-	a.dropTarget = other
+	a.dropTarget = model.Of(other)
 	a.dragHover()
 	a.expanded[closed] = false
-	a.dropTarget = closed // moved away before the time was up
+	a.dropTarget = model.Of(closed) // moved away before the time was up
 	a.dragHover()
 	if a.hoverFolder != closed || a.hoverTicks != 1 {
 		t.Fatalf("the rest time must start over on a new folder: %v %d", a.hoverFolder, a.hoverTicks)
 	}
-	a.dragNode = nil
+	a.dragNode = model.Node{}
 	a.dragHover()
 	if a.hoverFolder != nil {
 		t.Fatal("without a drag nothing hovers")

@@ -25,7 +25,7 @@ import (
 // nothing is open.
 func (a *App) focus() (collections.Entry, bool) {
 	if len(a.list.Tabs) > 0 {
-		if entry, ok := a.open.Owner(a.cur().Req); ok {
+		if entry, ok := a.open.Owner(model.Of(a.cur().Req)); ok {
 			return entry, true
 		}
 	}
@@ -52,11 +52,11 @@ func (a *App) headerTitle() string {
 	return ""
 }
 
-// entryFor is the collection that holds node. A request of no collection,
+// entryFor is the collection that holds req. A request of no collection,
 // such as the blank tab left after closing the last one, goes with the
 // focused collection, as it did when one collection was open at a time.
-func (a *App) entryFor(node any) (collections.Entry, bool) {
-	if entry, ok := a.open.Owner(node); ok {
+func (a *App) entryFor(req *model.Request) (collections.Entry, bool) {
+	if entry, ok := a.open.Owner(model.Of(req)); ok {
 		return entry, true
 	}
 	return a.focus()
@@ -183,7 +183,7 @@ func (a *App) openCollectionAt(dir string) {
 // tab keeps its edits in the collection, but one without a folder keeps
 // them nowhere, so it asks the way deleting does.
 func (a *App) requestCloseCollection(col *model.Collection) {
-	entry, ok := a.open.Owner(col)
+	entry, ok := a.open.ByCollection(col)
 	if !ok {
 		return
 	}
@@ -230,7 +230,7 @@ func (a *App) openIndex(col *model.Collection) int {
 // its tabs close and the set left is remembered. Closing the last one
 // leaves an empty tree; nothing is made on disk.
 func (a *App) closeCollection(col *model.Collection) {
-	entry, ok := a.open.Owner(col)
+	entry, ok := a.open.ByCollection(col)
 	if !ok {
 		return
 	}
@@ -240,11 +240,11 @@ func (a *App) closeCollection(col *model.Collection) {
 		return
 	}
 	for _, open := range a.openTabs() {
-		if col.Folder.Contains(open.Req) { // no tab is left to close its socket later
+		if col.Folder.Contains(model.Of(open.Req)) { // no tab is left to close its socket later
 			a.disconnect(open)
 		}
 	}
-	a.closeTabsIn(tree.Node{Dir: &col.Folder})
+	a.closeTabsIn(model.Of(&col.Folder))
 	a.forget(col)
 	a.rememberCollections()
 }
@@ -252,11 +252,11 @@ func (a *App) closeCollection(col *model.Collection) {
 // forget drops col from the open set and from everything that pointed
 // into it.
 func (a *App) forget(col *model.Collection) {
-	if a.varsCollection == col || (a.varsFolder != nil && col.Folder.Contains(a.varsFolder)) {
+	if a.varsCollection == col || (a.varsFolder != nil && col.Folder.Contains(model.Of(a.varsFolder))) {
 		a.varsFolder, a.varsCollection = nil, nil
 	}
 	if col.Folder.Contains(a.selected) {
-		a.selected = nil
+		a.selected = model.Node{}
 	}
 	a.open = collections.Update(a.open, collections.Close{Collection: col})
 	delete(a.saves, col)

@@ -229,17 +229,17 @@ type App struct {
 	colors             colorpage.Page                  // the Colors page of the settings dialog
 	colWidths          map[string]*widget.ColumnWidths // the column sizes of each table, by name
 	rowSel             *rowSelection                   // the table row the keyboard acts on
-	selected           any                             // the tree node last clicked or moved to: a *Folder or *Request
+	selected           model.Node                      // the tree node last clicked or moved to
 	treeFocus          bool                            // the tree has the keyboard
 	filter             widget.TextField                // the sidebar filter
 	sent               sentlog.Log                     // requests sent in this workspace, newest first
 	calls              calltrace.Log                   // the call trace behind the Log button
 	showSent           bool                            // the sidebar lists sent requests instead of the tree
-	dragNode           any                             // the tree node being dragged, nil when none
+	dragNode           model.Node                      // the tree node being dragged, none when not dragging
 	pressedFolder      *model.Folder                   // the folder row the button went down on, toggled on release there
 	hoverFolder        *model.Folder                   // the closed folder a drag has been over
 	hoverTicks         int                             // for how many frames
-	dropTarget         any                             // the node the pointer is over while dragging
+	dropTarget         model.Node                      // the node the pointer is over while dragging
 	dialog             *dialog                         // the open dialog, if any
 	toasts             widget.ToastStack
 	now                func() time.Time               // the clock, replaced in tests
@@ -425,7 +425,7 @@ func (a *App) cur() *reqTab { return a.widgets[a.list.Tabs[a.list.Active]] }
 
 // openRequest focuses the tab of req, opening one if needed.
 func (a *App) openRequest(req *model.Request) {
-	a.selected = req
+	a.selected = model.Of(req)
 	a.updateTabs(tabs.Open{Req: req})
 }
 
@@ -525,7 +525,7 @@ func (a *App) apply(sendResult sendResult) {
 	t.Resp = &sendResult.resp
 	a.saveHistory(t)
 	if path := a.requestPath(t.Req); path != "" {
-		owner, _ := a.open.Owner(t.Req)
+		owner, _ := a.open.Owner(model.Of(t.Req))
 		a.sent.Record(a, a.now(), owner.Dir, path, t.Req, sendResult.resp.Status)
 	}
 	a.calls.Answer(a.now(), t.Req, &sendResult.resp)
@@ -600,7 +600,7 @@ func (a *App) step(in core.Input) {
 	}
 	a.lastIn = in
 	if in.Held {
-		a.dropTarget = nil // set again by the row under the pointer
+		a.dropTarget = model.Node{} // set again by the row under the pointer
 	} else {
 		a.finishDrag()
 	}

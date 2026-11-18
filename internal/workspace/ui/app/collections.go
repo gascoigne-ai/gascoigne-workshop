@@ -86,7 +86,7 @@ func (a *App) renameCollection(col *model.Collection, text string) {
 		a.toast("Saving the collection failed: "+err.Error(), true)
 		return
 	}
-	entry, ok := a.open.Owner(col)
+	entry, ok := a.open.ByCollection(col)
 	if !ok {
 		return
 	}
@@ -118,7 +118,7 @@ func (a *App) confirmDeleteCollection(col *model.Collection) {
 func (a *App) deleteCollection(col *model.Collection) {
 	a.commitEdit()
 	a.waitWrites() // a write still in flight would make the folder again
-	entry, ok := a.open.Owner(col)
+	entry, ok := a.open.ByCollection(col)
 	if !ok {
 		return
 	}
@@ -150,7 +150,7 @@ func (a *App) deleteCollection(col *model.Collection) {
 // onDisk is true when col has a folder; otherwise it tells the user to
 // save first, since there is nothing to rename or delete.
 func (a *App) onDisk(col *model.Collection, verb string) bool {
-	if entry, ok := a.open.Owner(col); ok && entry.Dir != "" {
+	if entry, ok := a.open.ByCollection(col); ok && entry.Dir != "" {
 		return true
 	}
 	a.toast("The collection is not saved yet: save it first to "+verb+" it", true)

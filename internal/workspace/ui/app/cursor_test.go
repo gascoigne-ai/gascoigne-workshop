@@ -49,12 +49,12 @@ func TestATreeRowIsGrabbedOnlyOnceItIsOverAnotherRow(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			a.dragNode, a.dropTarget = nil, nil
+			a.dragNode, a.dropTarget = model.Node{}, model.Node{}
 			if test.drag != nil {
-				a.dragNode = test.drag.(*model.Folder)
+				a.dragNode = model.Of(test.drag)
 			}
 			if test.target != nil {
-				a.dropTarget = test.target.(*model.Folder)
+				a.dropTarget = model.Of(test.target)
 			}
 			if got := a.treeDragging(); got != test.want {
 				t.Fatalf("treeDragging = %v, want %v", got, test.want)

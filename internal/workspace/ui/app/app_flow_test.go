@@ -2318,12 +2318,12 @@ func TestTreeKeyboardNavigation(t *testing.T) {
 	a, _ := newTestApp(t)
 	click(a, 100, treeRowY(rowInfo)) // focuses the tree and selects Repository Info
 	a.step(key(ebiten.KeyArrowDown, false, false))
-	if a.selected != any(findReq(a, "Repository Tags")) {
+	if a.selected != model.Of(findReq(a, "Repository Tags")) {
 		t.Fatalf("Down selects the next row, selected %v", a.selected)
 	}
 	a.step(key(ebiten.KeyArrowUp, false, false))
 	a.step(key(ebiten.KeyArrowUp, false, false))
-	if a.selected != any(findReq(a, "Search Repos")) {
+	if a.selected != model.Of(findReq(a, "Search Repos")) {
 		t.Fatal("Up moves back")
 	}
 	a.step(key(ebiten.KeyArrowDown, false, false))

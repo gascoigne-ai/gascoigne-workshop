@@ -169,21 +169,30 @@ func (set Set) Taken(dir string, except *model.Collection) bool {
 	return ok && entry.Collection != except
 }
 
-// Owner is the open collection that holds node: a *model.Collection, its
-// root folder, or a *model.Folder or *model.Request anywhere below it.
-func (set Set) Owner(node any) (Entry, bool) {
+// Owner is the open collection that holds node: its root folder, or a
+// folder or request anywhere below it.
+func (set Set) Owner(node model.Node) (Entry, bool) {
 	for _, entry := range set.Entries {
-		if node == any(entry.Collection) || entry.Collection.Folder.Contains(node) {
+		if entry.Collection.Folder.Contains(node) {
 			return entry, true
 		}
 	}
 	return Entry{}, false
 }
 
+// ByCollection is the entry of the open collection col.
+func (set Set) ByCollection(col *model.Collection) (Entry, bool) {
+	index := set.index(col)
+	if index < 0 {
+		return Entry{}, false
+	}
+	return set.Entries[index], true
+}
+
 // VarsFor are the variables req is sent with, from its own collection
 // only; a request of no open collection has none, never another's.
 func (set Set) VarsFor(req *model.Request) ([]model.KV, bool) {
-	entry, ok := set.Owner(req)
+	entry, ok := set.Owner(model.Of(req))
 	if !ok {
 		return nil, false
 	}

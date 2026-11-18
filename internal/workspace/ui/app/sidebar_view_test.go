@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
@@ -38,12 +39,12 @@ func TestTheSidebarLaysOutAsPinned(t *testing.T) {
 			app.typeText("search/repos")
 		}},
 		{"drop", func(app *App) {
-			app.dragNode = findReq(app, "Repository Info")
-			app.dropTarget = app.col().Folders[1]
+			app.dragNode = model.Of(findReq(app, "Repository Info"))
+			app.dropTarget = model.Of(app.col().Folders[1])
 		}},
 		{"drop-self", func(app *App) {
 			info := findReq(app, "Repository Info")
-			app.dragNode, app.dropTarget = info, info
+			app.dragNode, app.dropTarget = model.Of(info), model.Of(info)
 		}},
 		{"sent", func(app *App) { app.showSent = true }},
 		{"empty", func(app *App) { app.closeCollection(app.col()) }},
@@ -184,10 +185,10 @@ func TestDraggingOverATreeRowMakesItTheDropTarget(t *testing.T) {
 			t.Cleanup(a.waitWrites)
 			a.step(core.Input{X: 100, Y: treeRowY(rowInfo), Click: true, Held: true})
 			a.step(core.Input{X: 100, Y: treeRowY(tc.row), Held: true})
-			if a.dragNode != findReq(a, "Repository Info") {
+			if a.dragNode != model.Of(findReq(a, "Repository Info")) {
 				t.Fatalf("dragging %v, want Repository Info", a.dragNode)
 			}
-			if want := tc.target(a); a.dropTarget != want {
+			if want := tc.target(a); a.dropTarget != model.Of(want) {
 				t.Fatalf("drop target %v, want %v", a.dropTarget, want)
 			}
 		})

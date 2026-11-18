@@ -164,7 +164,7 @@ func (a *App) treeItemOf(row collection.Row) treeItem {
 	if row.Folder {
 		item.Root = a.isRoot(row.Dir)
 		if item.Root {
-			item.Stripe = a.collectionToken(row.Dir)
+			item.Stripe = a.collectionToken(node)
 		}
 		item.Triangle = "triangle-right"
 		if row.Open {
@@ -175,7 +175,7 @@ func (a *App) treeItemOf(row collection.Row) treeItem {
 		item.Badge = requestBadge(row.Req.Protocol, row.Req.Method)
 		item.Color = appearance.MethodToken(row.Req.Method)
 	}
-	if a.dragNode != nil && a.dropTarget == node && node != a.dragNode {
+	if !a.dragNode.None() && a.dropTarget == node && node != a.dragNode {
 		item.DropBorder = w.AccentLine
 	}
 	return item
@@ -189,7 +189,7 @@ func (a *App) pressTreeRow(row collection.Row) {
 	a.treeFocus = true
 	a.dragNode = row.Node()
 	if a.isRoot(row.Dir) {
-		a.dragNode = nil // the collection itself cannot be moved
+		a.dragNode = model.Node{} // the collection itself cannot be moved
 	}
 	if row.Folder {
 		a.selectNode(row.Node())
@@ -279,7 +279,7 @@ func (a *App) requestTab(index int, tab *reqTab) requestTabItem {
 		Name:        tab.Req.Name,
 		Dirty:       a.tabDirty(tab),
 		Active:      index == a.list.Active,
-		Stripe:      a.collectionToken(tab.Req),
+		Stripe:      a.collectionToken(model.Of(tab.Req)),
 		Press:       func() { a.pressTab(index) },
 		MiddlePress: func() { a.updateTabs(tabs.DragBegin{Index: index}) },
 		DragOver:    func() { a.updateTabs(tabs.DragOver{Index: index}) },

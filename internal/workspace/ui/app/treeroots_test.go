@@ -13,6 +13,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto/ws"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
@@ -87,7 +88,7 @@ func TestCtrlOOpensAnotherCollectionBesideTheOpenOne(t *testing.T) {
 	if got := openNames(a); len(got) != 3 {
 		t.Fatalf("open %v", got)
 	}
-	if owner, _ := a.open.Owner(a.cur().Req); owner.Dir != alphaDir {
+	if owner, _ := a.open.Owner(model.Of(a.cur().Req)); owner.Dir != alphaDir {
 		t.Fatalf("shown %q of %q, want Alpha's", a.cur().Req.Name, owner.Dir)
 	}
 }

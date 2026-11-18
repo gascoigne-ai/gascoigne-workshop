@@ -117,7 +117,7 @@ func TestRenamingARequestInOneCollectionLeavesTheSamePathInTheOther(t *testing.T
 		t.Fatalf("%d tabs, want both Inners beside the two calls", len(a.list.Tabs))
 	}
 
-	a.renameNode(tree.Of(betaInner))
+	a.renameNode(model.Of(betaInner))
 	a.typeText("Core")
 	a.step(core.Input{Enter: true})
 	if betaInner.Name != "Core" || alphaInner.Name != "Inner" {
@@ -152,7 +152,7 @@ func TestRenamingAFolderInOneCollectionLeavesTheSamePathInTheOther(t *testing.T)
 	a.openRequest(alphaInner)
 	a.openRequest(betaInner)
 
-	if err := a.applyTree(tree.Rename{Node: tree.Of(beta.Folders[0]), Name: "Shared"}).Err; err != nil {
+	if err := a.applyTree(tree.Rename{Node: model.Of(beta.Folders[0]), Name: "Shared"}).Err; err != nil {
 		t.Fatal(err)
 	}
 	if beta.Folders[0].Name != "Shared" || alpha.Folders[0].Name != "Nested" {
@@ -233,11 +233,11 @@ func TestRenamingARequestWhileAnotherCollectionsTabIsActive(t *testing.T) {
 	a, alphaDir, betaDir := twoCollectionsApp(t)
 	alpha, beta := entryNamed(t, a, "Alpha").Collection, entryNamed(t, a, "Beta").Collection
 	alphaCall, betaCall := alpha.Requests[0], beta.Requests[0]
-	if a.cur().Req != betaCall || a.selected != any(betaCall) {
+	if a.cur().Req != betaCall || a.selected != model.Of(betaCall) {
 		t.Fatalf("active %q, selected %v", a.cur().Req.Name, a.selected)
 	}
 
-	if err := a.applyTree(tree.Rename{Node: tree.Of(alphaCall), Name: "Beta call"}).Err; err != nil {
+	if err := a.applyTree(tree.Rename{Node: model.Of(alphaCall), Name: "Beta call"}).Err; err != nil {
 		t.Fatalf("a name used only in Beta is refused in Alpha: %v", err)
 	}
 	if alphaCall.Name != "Beta call" || betaCall.Name != "Beta call" {
