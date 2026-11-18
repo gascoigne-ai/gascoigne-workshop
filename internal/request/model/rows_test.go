@@ -166,3 +166,14 @@ func TestParseBulk(t *testing.T) {
 		}
 	}
 }
+
+// A line that starts with a carriage return and "#" parsed to an enabled
+// row named "#", because the comment check trimmed only spaces and tabs
+// while the name went through TrimSpace; it formatted as a disabled row
+// and read back as one.
+func TestBulkRoundTripsHashAfterCarriageReturn(t *testing.T) {
+	rows := ParseBulk("\r#", nil)
+	if again := ParseBulk(FormatBulk(rows), nil); !reflect.DeepEqual(again, rows) {
+		t.Fatalf("round trip changed %#v into %#v", rows, again)
+	}
+}

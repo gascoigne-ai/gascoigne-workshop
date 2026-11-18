@@ -1,6 +1,9 @@
 package model
 
-import "strings"
+import (
+	"strings"
+	"unicode"
+)
 
 // InsertRow returns rows with kv inserted at index at (clamped). The
 // input slice is never changed.
@@ -104,7 +107,7 @@ func ParseBulk(text string, old []KV) []KV {
 			continue
 		}
 		enabled := true
-		if trimmed := strings.TrimLeft(line, " \t"); strings.HasPrefix(trimmed, "#") {
+		if trimmed := strings.TrimLeftFunc(line, unicode.IsSpace); strings.HasPrefix(trimmed, "#") {
 			enabled = false
 			line = strings.TrimPrefix(strings.TrimPrefix(trimmed, "#"), " ")
 		}

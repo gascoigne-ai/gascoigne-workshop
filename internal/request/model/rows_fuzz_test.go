@@ -1,12 +1,13 @@
 package model
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 )
 
-// Bulk text pasted into a table parses to at most one row per line and
-// never panics.
+// Bulk text pasted into a table parses to at most one row per line, never
+// panics, and formatting the rows and parsing them again gives the same rows.
 func FuzzParseBulk(f *testing.F) {
 	f.Add("q: gioui\n# off: x\nurl: https://a.test:8080/p?x=1\npad:   two spaces\nempty: ")
 	f.Add("a: 1\r\nb: 2\r\n")
@@ -15,6 +16,9 @@ func FuzzParseBulk(f *testing.F) {
 		rows := ParseBulk(text, nil)
 		if lines := strings.Count(text, "\n") + 1; len(rows) > lines {
 			t.Fatalf("%d rows from %d lines", len(rows), lines)
+		}
+		if again := ParseBulk(FormatBulk(rows), nil); !reflect.DeepEqual(again, rows) {
+			t.Fatalf("round trip changed %#v into %#v", rows, again)
 		}
 	})
 }
