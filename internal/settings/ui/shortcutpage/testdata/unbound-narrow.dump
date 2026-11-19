@@ -9,9 +9,8 @@ flow rect=0,0,220,400
         flow h=24 padL=10 padR=10 bg=sunken control=button tip=Click, then press the keys shrink=true lighten=true onClick=true rect=24,40,120,24
           textB text="Ctrl+W" grow=1 fg=chip-text ellipsis=true center=true rect=34,40,100,24
         flow w=32 h=24 bg=sunken control=icon-button tip=Leave the action without a key lighten=true onClick=true rect=150,40,32,24
-          iconB grow=1 icon=cross rect=150,40,32,24
-        flow w=32 h=24 tip=Already the default key rect=188,40,32,24
-          iconB fg=rule icon=replay rect=197,45,14,14
+          iconB grow=1 icon=unlink rect=150,40,32,24
+        plain w=32 grow=1 rect=188,40,32,24
     flow rect=0,64,220,24
       flow h=24 gap=6 rect=0,64,220,24
         textB text="Send request" grow=1 small=true ellipsis=true rect=0,64,18,24

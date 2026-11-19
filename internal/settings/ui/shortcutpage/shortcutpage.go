@@ -272,7 +272,7 @@ type actionRow struct {
 	Key        string // the key as users read it, or what recording asks for
 	Recording  bool
 	Bound      bool // shows Clear
-	Overridden bool // the replay icon is a button; otherwise a dim mark
+	Overridden bool // shows the replay button; otherwise only its room
 	Conflict   string
 	ReplaceTip string
 	Refusal    string
@@ -358,12 +358,12 @@ const (
         <text small grow="1" ellipsis>{{action.Name}}</text>
         <choice selected="{{action.Recording}}" w="120" h="{{compactH}}" on-click="action.Record"
                 tooltip="Click, then press the keys">{{action.Key}}</choice>
-        <icon-button if="action.Bound" icon="cross" w="{{iconBtnW}}" h="{{compactH}}" on-click="action.Clear"
+        <icon-button if="action.Bound" icon="unlink" w="{{iconBtnW}}" h="{{compactH}}" on-click="action.Clear"
                 tooltip="Leave the action without a key"/>
         <spacer if="!action.Bound" w="{{iconBtnW}}"/>
         <icon-button if="action.Overridden" icon="replay" w="{{iconBtnW}}" h="{{compactH}}" on-click="action.Reset"
                 tooltip="Back to the default key"/>
-        <row if="!action.Overridden" w="{{iconBtnW}}" h="{{compactH}}" align-items="center" justify-content="center" tooltip="Already the default key"><icon name="replay" color="rule"/></row>
+        <spacer if="!action.Overridden" w="{{iconBtnW}}"/>
       </row>
       <!-- at most one of the conflict, the refusal and the warning is set -->
       <row if="action.Conflict" h="{{compactH}}" gap="{{tightGap}}">

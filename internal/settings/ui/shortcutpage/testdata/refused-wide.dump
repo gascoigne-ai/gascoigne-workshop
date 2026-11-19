@@ -9,18 +9,16 @@ flow rect=0,0,600,500
         flow h=24 padL=10 padR=10 bg=sunken control=button tip=Click, then press the keys shrink=true lighten=true onClick=true rect=404,40,120,24
           textB text="Ctrl+W" grow=1 fg=chip-text ellipsis=true center=true rect=414,40,100,24
         flow w=32 h=24 bg=sunken control=icon-button tip=Leave the action without a key lighten=true onClick=true rect=530,40,32,24
-          iconB grow=1 icon=cross rect=530,40,32,24
-        flow w=32 h=24 tip=Already the default key rect=568,40,32,24
-          iconB fg=rule icon=replay rect=577,45,14,14
+          iconB grow=1 icon=unlink rect=530,40,32,24
+        plain w=32 grow=1 rect=568,40,32,24
     flow rect=0,64,600,42
       flow h=24 gap=6 rect=0,64,600,24
         textB text="Send request" grow=1 small=true ellipsis=true rect=0,64,398,24
         flow h=24 padL=10 padR=10 bg=accent control=primary tip=Click, then press the keys shrink=true lighten=true onClick=true rect=404,64,120,24
           textB text="Press keys..." grow=1 fg=accent-text ellipsis=true center=true rect=414,64,100,24
         flow w=32 h=24 bg=sunken control=icon-button tip=Leave the action without a key lighten=true onClick=true rect=530,64,32,24
-          iconB grow=1 icon=cross rect=530,64,32,24
-        flow w=32 h=24 tip=Already the default key rect=568,64,32,24
-          iconB fg=rule icon=replay rect=577,69,14,14
+          iconB grow=1 icon=unlink rect=530,64,32,24
+        plain w=32 grow=1 rect=568,64,32,24
       flow h=18 rect=0,88,600,18
         textB text="Ctrl+C belongs to text editing" grow=1 fg=error small=true ellipsis=true rect=0,88,600,18
   textB text="TEXT EDITING" h=22 fg=muted small=true rect=0,106,600,22
