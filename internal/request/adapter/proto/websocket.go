@@ -117,11 +117,8 @@ func (w WebSocket) Send(ctx context.Context, req model.Request) (model.Response,
 // stopReason words a failure like REST does for cancelled and timed-out
 // requests.
 func stopReason(ctx context.Context, err error) string {
-	switch {
-	case errors.Is(ctx.Err(), context.DeadlineExceeded):
-		return model.ErrTimedOut
-	case errors.Is(ctx.Err(), context.Canceled):
-		return model.ErrCancelled
+	if ctxErr := ctx.Err(); ctxErr != nil {
+		return failureText(ctxErr)
 	}
 	return err.Error()
 }

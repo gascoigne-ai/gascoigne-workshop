@@ -10,6 +10,7 @@
 package miniyaml
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -102,11 +103,16 @@ func stripComment(text string) string {
 	return text
 }
 
+// isSequenceItem reports whether text is a "- item" line.
+func isSequenceItem(text string) bool {
+	return text == "-" || strings.HasPrefix(text, "- ")
+}
+
 // block parses the collection that starts at the current line, whose
 // lines are indented exactly indent.
 func (p *parser) block(indent int) (any, error) {
 	l := p.lines[p.pos]
-	if l.text == "-" || strings.HasPrefix(l.text, "- ") {
+	if isSequenceItem(l.text) {
 		return p.sequence(indent)
 	}
 	if _, _, ok := splitKey(l.text); ok {
@@ -175,7 +181,7 @@ func (p *parser) mapping(indent int) (any, error) {
 		}
 		key, rest, ok := splitKey(l.text)
 		if !ok {
-			if l.text == "-" || strings.HasPrefix(l.text, "- ") {
+			if isSequenceItem(l.text) {
 				break
 			}
 			return nil, &Error{l.no, fmt.Sprintf("expected \"key: value\", got %q", l.text)}
@@ -201,7 +207,7 @@ func (p *parser) sequence(indent int) (any, error) {
 	list := []any{}
 	for p.pos < len(p.lines) {
 		l := p.lines[p.pos]
-		if l.indent != indent || !(l.text == "-" || strings.HasPrefix(l.text, "- ")) {
+		if l.indent != indent || !isSequenceItem(l.text) {
 			break
 		}
 		rest := strings.TrimSpace(strings.TrimPrefix(l.text, "-"))
@@ -214,22 +220,8 @@ func (p *parser) sequence(indent int) (any, error) {
 			list = append(list, v)
 			continue
 		}
-		// "- - x" is a sequence inside the item
-		if rest == "-" || strings.HasPrefix(rest, "- ") {
-			offset := indent + (len(l.text) - len(rest))
-			p.lines[p.pos] = line{no: l.no, indent: offset, text: rest}
-			v, err := p.sequence(offset)
-			if err != nil {
-				return nil, err
-			}
-			list = append(list, v)
-			continue
-		}
-		// "- key: value" starts a mapping whose later keys sit under the key
-		if _, _, ok := splitKey(rest); ok && !strings.HasPrefix(rest, "[") && !strings.HasPrefix(rest, "{") {
-			offset := indent + (len(l.text) - len(rest))
-			p.lines[p.pos] = line{no: l.no, indent: offset, text: rest}
-			v, err := p.mapping(offset)
+		if _, _, isKey := splitKey(rest); isSequenceItem(rest) || isKey {
+			v, err := p.inline(indent, l, rest)
 			if err != nil {
 				return nil, err
 			}
@@ -244,6 +236,18 @@ func (p *parser) sequence(indent int) (any, error) {
 		list = append(list, v)
 	}
 	return list, nil
+}
+
+// inline parses an item whose content starts on the dash line: "- - x" is a
+// sequence inside the item, "- key: value" a mapping whose later keys sit
+// under the key. The line is rewritten as the content, at its own column.
+func (p *parser) inline(indent int, l line, rest string) (any, error) {
+	offset := indent + (len(l.text) - len(rest))
+	p.lines[p.pos] = line{no: l.no, indent: offset, text: rest}
+	if isSequenceItem(rest) {
+		return p.sequence(offset)
+	}
+	return p.mapping(offset)
 }
 
 // nested parses the block that follows a line with nothing after its
@@ -261,7 +265,7 @@ func (p *parser) value(rest string, indent, no int, isKey bool) (any, error) {
 	switch {
 	case rest == "":
 		if isKey && p.pos < len(p.lines) && p.lines[p.pos].indent == indent &&
-			(p.lines[p.pos].text == "-" || strings.HasPrefix(p.lines[p.pos].text, "- ")) {
+			(isSequenceItem(p.lines[p.pos].text)) {
 			return p.sequence(indent)
 		}
 		return p.nested(indent, no)
@@ -494,4 +498,17 @@ func (f *flow) item(stops string) (any, error) {
 		f.i++
 	}
 	return plain(strings.TrimSpace(f.s[start:f.i])), nil
+}
+
+// ToJSON reads one YAML document and writes it as JSON.
+func ToJSON(data []byte) ([]byte, error) {
+	tree, err := Parse(data)
+	if err != nil {
+		return nil, err
+	}
+	encoded, err := json.Marshal(tree)
+	if err != nil {
+		return nil, fmt.Errorf("write as JSON: %w", err)
+	}
+	return encoded, nil
 }

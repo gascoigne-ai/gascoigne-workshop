@@ -105,16 +105,11 @@ func capture(line string, resp *model.Response) (c Capture, ok bool, detail stri
 	case "status":
 		value = strconv.Itoa(resp.Status)
 	case "header":
-		found = false // not the result of splitting on "=" above
-		for _, h := range resp.Headers {
-			if strings.EqualFold(h.Name, arg) {
-				value, found = h.Value, true
-				break
-			}
+		values := header(resp, arg)
+		if len(values) == 0 {
+			return c, false, errNoHeader
 		}
-		if !found {
-			return c, false, "the header is not there"
-		}
+		value = values[0]
 	case "json":
 		var doc any
 		if err := json.Unmarshal(resp.Body, &doc); err != nil {
@@ -171,7 +166,41 @@ func check(line string, resp *model.Response) (bool, string) {
 	return false, fmt.Sprintf("unknown subject %q: use status, time, header, body or json", subject)
 }
 
-var numberOps = []string{"==", "!=", "<=", ">=", "<", ">"}
+// numberComparison is a comparison of two numbers; the order of numberOps matters,
+// because splitOp takes the first name that prefixes the text.
+type numberComparison struct {
+	name  string
+	holds func(value, want float64) bool
+}
+
+var numberOps = []numberComparison{
+	{"==", func(value, want float64) bool { return value == want }},
+	{"!=", func(value, want float64) bool { return value != want }},
+	{"<=", func(value, want float64) bool { return value <= want }},
+	{">=", func(value, want float64) bool { return value >= want }},
+	{"<", func(value, want float64) bool { return value < want }},
+	{">", func(value, want float64) bool { return value > want }},
+}
+
+// textComparison is a comparison of two strings.
+type textComparison struct {
+	name  string
+	holds func(value, want string) bool
+}
+
+var textOps = []textComparison{
+	{"contains", strings.Contains},
+	{"==", func(value, want string) bool { return value == want }},
+	{"!=", func(value, want string) bool { return value != want }},
+}
+
+func numberOpNames(ops []numberComparison) []string {
+	names := make([]string, len(ops))
+	for i, op := range ops {
+		names[i] = op.name
+	}
+	return names
+}
 
 // splitOp cuts "<op> <value>" off rest.
 func splitOp(rest string, ops []string) (op, value string, ok bool) {
@@ -186,11 +215,34 @@ func splitOp(rest string, ops []string) (op, value string, ok bool) {
 	return "", "", false
 }
 
+func applyNumber(op string, value, want float64) bool {
+	for _, candidate := range numberOps {
+		if candidate.name == op {
+			return candidate.holds(value, want)
+		}
+	}
+	return false
+}
+
+func applyText(op, value, want string) bool {
+	for _, candidate := range textOps {
+		if candidate.name == op {
+			return candidate.holds(value, want)
+		}
+	}
+	return false
+}
+
 func compareNumber(got float64, rest string) (bool, string) {
-	op, val, ok := splitOp(rest, numberOps)
+	op, val, ok := splitOp(rest, numberOpNames(numberOps))
 	if !ok {
 		return false, "expected an operator: == != < <= > >="
 	}
+	return compareNumberWith(got, op, val)
+}
+
+// compareNumberWith checks got against the number written in val.
+func compareNumberWith(got float64, op, val string) (bool, string) {
 	want, err := strconv.ParseFloat(val, 64)
 	if err != nil {
 		return false, fmt.Sprintf("%q is not a number", val)
@@ -201,24 +253,8 @@ func compareNumber(got float64, rest string) (bool, string) {
 	return false, "got " + strconv.FormatFloat(got, 'f', -1, 64)
 }
 
-func applyNumber(op string, value, want float64) bool {
-	switch op {
-	case "==":
-		return value == want
-	case "!=":
-		return value != want
-	case "<":
-		return value < want
-	case "<=":
-		return value <= want
-	case ">":
-		return value > want
-	}
-	return value >= want
-}
-
 func compareDuration(got time.Duration, rest string) (bool, string) {
-	op, val, ok := splitOp(rest, numberOps[2:]) // no == on a time
+	op, val, ok := splitOp(rest, numberOpNames(numberOps[2:])) // no == on a time
 	if !ok {
 		return false, "expected an operator: < <= > >="
 	}
@@ -233,46 +269,48 @@ func compareDuration(got time.Duration, rest string) (bool, string) {
 }
 
 func compareText(got, rest string) (bool, string) {
-	op, val, ok := splitOp(rest, []string{"contains", "==", "!="})
+	op, val, ok := splitOp(rest, textOpNames())
 	if !ok {
 		return false, "expected contains, == or !="
 	}
-	want := unquote(val)
-	var pass bool
-	switch op {
-	case "contains":
-		pass = strings.Contains(got, want)
-	case "==":
-		pass = got == want
-	default:
-		pass = got != want
-	}
-	if pass {
+	if applyText(op, got, unquote(val)) {
 		return true, ""
 	}
 	return false, "got " + abbreviate(got)
 }
 
-func checkHeader(resp *model.Response, rest string) (bool, string) {
-	name, rest, _ := strings.Cut(rest, " ")
-	rest = strings.TrimSpace(rest)
+func textOpNames() []string {
+	names := make([]string, len(textOps))
+	for i, op := range textOps {
+		names[i] = op.name
+	}
+	return names
+}
+
+const errNoHeader = "the header is not there"
+
+// header returns the values of every header called name, in order.
+func header(resp *model.Response, name string) []string {
 	var values []string
 	for _, h := range resp.Headers {
 		if strings.EqualFold(h.Name, name) {
 			values = append(values, h.Value)
 		}
 	}
-	if rest == "exists" {
-		if len(values) > 0 {
-			return true, ""
-		}
-		return false, "the header is not there"
-	}
+	return values
+}
+
+func checkHeader(resp *model.Response, rest string) (bool, string) {
+	name, rest, _ := strings.Cut(rest, " ")
+	rest = strings.TrimSpace(rest)
+	values := header(resp, name)
 	if len(values) == 0 {
-		return false, "the header is not there"
+		return false, errNoHeader
 	}
-	ok, detail := compareText(strings.Join(values, ", "), rest)
-	return ok, detail
+	if rest == "exists" {
+		return true, ""
+	}
+	return compareText(strings.Join(values, ", "), rest)
 }
 
 func checkJSON(resp *model.Response, rest string) (bool, string) {
@@ -292,7 +330,7 @@ func checkJSON(resp *model.Response, rest string) (bool, string) {
 	if !found {
 		return false, "no such path"
 	}
-	op, val, ok := splitOp(rest, append([]string{"contains"}, numberOps...))
+	op, val, ok := splitOp(rest, append([]string{"contains"}, numberOpNames(numberOps)...))
 	if !ok {
 		return false, "expected exists, contains or an operator: == != < <= > >="
 	}
@@ -301,14 +339,7 @@ func checkJSON(resp *model.Response, rest string) (bool, string) {
 		if op == "contains" {
 			return false, "contains needs a string or a list"
 		}
-		want, err := strconv.ParseFloat(val, 64)
-		if err != nil {
-			return false, fmt.Sprintf("%q is not a number", val)
-		}
-		if applyNumber(op, got, want) {
-			return true, ""
-		}
-		return false, "got " + strconv.FormatFloat(got, 'f', -1, 64)
+		return compareNumberWith(got, op, val)
 	case string:
 		return compareText(got, textOp(op, val))
 	case bool, nil:

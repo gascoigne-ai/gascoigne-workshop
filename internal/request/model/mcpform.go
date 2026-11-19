@@ -122,23 +122,17 @@ func Arguments(fields []ToolField, values map[string]string) (string, error) {
 			parsed[field.Name] = value
 		}
 	}
-	var out bytes.Buffer
-	out.WriteByte('{')
-	for i, name := range names {
-		if i > 0 {
-			out.WriteByte(',')
-		}
-		key, _ := json.Marshal(name)
+	out, err := writeObject(names, func(name string) ([]byte, error) {
 		value, err := marshalNoEscape(parsed[name])
 		if err != nil {
-			return "", fmt.Errorf("%s: %w", name, err)
+			return nil, fmt.Errorf("%s: %w", name, err)
 		}
-		out.Write(key)
-		out.WriteByte(':')
-		out.Write(value)
+		return value, nil
+	})
+	if err != nil {
+		return "", err
 	}
-	out.WriteByte('}')
-	return out.String(), nil
+	return string(out), nil
 }
 
 // marshalNoEscape is json.Marshal without turning <, > and & into escapes.

@@ -24,75 +24,29 @@ func ParseCurl(cmd string) (Request, error) {
 		return Request{}, errors.New("not a curl command")
 	}
 	args = splitCurlFlags(args)
-	req := Request{Protocol: ProtocolREST, NoRedirects: true}
-	var data, forms []string
-	var user, method string
-	head := false
+	parse := curlParse{req: Request{Protocol: ProtocolREST, NoRedirects: true}}
 	for i := 1; i < len(args); i++ {
-		a := args[i]
-		value := func() (string, error) {
+		flag, known := curlFlags[args[i]]
+		if !known {
+			if !strings.HasPrefix(args[i], "-") && parse.req.URL == "" {
+				parse.req.URL = args[i]
+			}
+			continue
+		}
+		value := ""
+		if flag.takesValue {
 			if i+1 >= len(args) {
-				return "", fmt.Errorf("%s needs a value", a)
+				return Request{}, fmt.Errorf("%s needs a value", args[i])
 			}
 			i++
-			return args[i], nil
+			value = args[i]
 		}
-		var v string
-		switch a {
-		case "-X", "--request":
-			if v, err = value(); err == nil {
-				method = strings.ToUpper(v)
-			}
-		case "-H", "--header":
-			if v, err = value(); err == nil {
-				name, val, _ := strings.Cut(v, ":")
-				req.Headers = append(req.Headers, KV{Name: strings.TrimSpace(name), Value: strings.TrimSpace(val), Enabled: true})
-			}
-		case "-d", "--data", "--data-raw", "--data-binary", "--data-ascii", "--data-urlencode":
-			if v, err = value(); err == nil {
-				data = append(data, v)
-			}
-		case "-F", "--form", "--form-string":
-			if v, err = value(); err == nil {
-				forms = append(forms, v)
-			}
-		case "-u", "--user":
-			user, err = value()
-		case "--url":
-			req.URL, err = value()
-		case "-A", "--user-agent":
-			if v, err = value(); err == nil {
-				req.Headers = append(req.Headers, KV{Name: "User-Agent", Value: v, Enabled: true})
-			}
-		case "-b", "--cookie":
-			if v, err = value(); err == nil {
-				req.Headers = append(req.Headers, KV{Name: "Cookie", Value: v, Enabled: true})
-			}
-		case "-e", "--referer":
-			if v, err = value(); err == nil {
-				req.Headers = append(req.Headers, KV{Name: "Referer", Value: v, Enabled: true})
-			}
-		case "-m", "--max-time":
-			if v, err = value(); err == nil {
-				if sec, perr := strconv.ParseFloat(v, 64); perr == nil && sec >= 1 {
-					req.TimeoutSec = int(sec)
-				}
-			}
-		case "-L", "--location":
-			req.NoRedirects = false
-		case "-I", "--head":
-			head = true
-		case "-o", "--output", "-w", "--write-out", "--connect-timeout", "--retry", "-x", "--proxy", "--cacert", "--cert", "--key", "-T", "--upload-file":
-			_, err = value() // takes a value, changes nothing here
-		default:
-			if !strings.HasPrefix(a, "-") && req.URL == "" {
-				req.URL = a
-			}
-		}
-		if err != nil {
-			return Request{}, err
+		if flag.apply != nil {
+			flag.apply(&parse, value)
 		}
 	}
+	req := parse.req
+	data, forms, user, method, head := parse.data, parse.forms, parse.user, parse.method, parse.head
 	if req.URL == "" {
 		return Request{}, errors.New("no URL in the command")
 	}
@@ -141,7 +95,7 @@ func curlBodyOf(headers []KV, method string, head bool, data, forms []string) (m
 	case len(data) > 0:
 		joined := strings.Join(data, "&")
 		switch {
-		case strings.Contains(contentType, "json") || (contentType == "" && looksJSON(joined)):
+		case strings.Contains(contentType, "json") || (contentType == "" && startsLikeJSON(joined)):
 			bodyType, body = BodyJSON, joined
 		case contentType == "" || strings.Contains(contentType, "x-www-form-urlencoded"):
 			bodyType = BodyForm
@@ -168,7 +122,9 @@ func curlBodyOf(headers []KV, method string, head bool, data, forms []string) (m
 	return m, bodyType, body, form
 }
 
-func looksJSON(text string) bool {
+// startsLikeJSON is true for text that opens with a brace or a bracket,
+// valid or not: data sent by curl is passed on as the user wrote it.
+func startsLikeJSON(text string) bool {
 	text = strings.TrimSpace(text)
 	return strings.HasPrefix(text, "{") || strings.HasPrefix(text, "[")
 }
@@ -197,74 +153,107 @@ func ShellSplit(text string) ([]string, error) {
 	}
 	for i := 0; i < len(r); i++ {
 		c := r[i]
-		switch {
-		case c == ' ' || c == '\t' || c == '\n' || c == '\r':
+		if c == ' ' || c == '\t' || c == '\n' || c == '\r' {
 			flush()
+			continue
+		}
+		var err error
+		switch {
 		case c == '\\':
-			if i+1 < len(r) {
-				i++
-				if r[i] == '\n' { // line continuation
-					continue
-				}
-				if r[i] == '\r' && i+1 < len(r) && r[i+1] == '\n' {
-					i++
-					continue
-				}
-				cur.WriteRune(r[i])
-				inWord = true
-			}
+			i, inWord = readBackslash(r, i, &cur, inWord)
 		case c == '\'':
 			inWord = true
-			end := indexRune(r, i+1, '\'')
-			if end < 0 {
-				return nil, errors.New("unterminated quote")
-			}
-			cur.WriteString(string(r[i+1 : end]))
-			i = end
+			i, err = readSingleQuoted(r, i, &cur)
 		case c == '$' && i+1 < len(r) && r[i+1] == '\'':
 			inWord = true
-			j := i + 2
-			for ; j < len(r) && r[j] != '\''; j++ {
-				if r[j] == '\\' && j+1 < len(r) {
-					j++
-					switch r[j] {
-					case 'n':
-						cur.WriteByte('\n')
-					case 't':
-						cur.WriteByte('\t')
-					case 'r':
-						cur.WriteByte('\r')
-					default:
-						cur.WriteRune(r[j])
-					}
-					continue
-				}
-				cur.WriteRune(r[j])
-			}
-			if j >= len(r) {
-				return nil, errors.New("unterminated quote")
-			}
-			i = j
+			i, err = readANSIQuoted(r, i, &cur)
 		case c == '"':
 			inWord = true
-			j := i + 1
-			for ; j < len(r) && r[j] != '"'; j++ {
-				if r[j] == '\\' && j+1 < len(r) && strings.ContainsRune("\"\\$`", r[j+1]) {
-					j++
-				}
-				cur.WriteRune(r[j])
-			}
-			if j >= len(r) {
-				return nil, errors.New("unterminated quote")
-			}
-			i = j
+			i, err = readDoubleQuoted(r, i, &cur)
 		default:
 			cur.WriteRune(c)
 			inWord = true
 		}
+		if err != nil {
+			return nil, err
+		}
 	}
 	flush()
 	return words, nil
+}
+
+var errUnterminatedQuote = errors.New("unterminated quote")
+
+// readBackslash handles the escape at r[i] and returns the index of the last
+// rune it used. A backslash before a newline is a line continuation and a
+// trailing one is dropped; neither starts a word.
+func readBackslash(r []rune, i int, cur *strings.Builder, inWord bool) (int, bool) {
+	if i+1 >= len(r) {
+		return i, inWord
+	}
+	i++
+	if r[i] == '\n' {
+		return i, inWord
+	}
+	if r[i] == '\r' && i+1 < len(r) && r[i+1] == '\n' {
+		return i + 1, inWord
+	}
+	cur.WriteRune(r[i])
+	return i, true
+}
+
+// readSingleQuoted copies what stands between the quote at r[i] and the next
+// one and returns the index of the closing quote.
+func readSingleQuoted(r []rune, i int, cur *strings.Builder) (int, error) {
+	end := indexRune(r, i+1, '\'')
+	if end < 0 {
+		return i, errUnterminatedQuote
+	}
+	cur.WriteString(string(r[i+1 : end]))
+	return end, nil
+}
+
+// readANSIQuoted reads $'...' starting at the dollar at r[i], where \n, \t
+// and \r are escapes and any other escaped rune stands for itself.
+func readANSIQuoted(r []rune, i int, cur *strings.Builder) (int, error) {
+	j := i + 2
+	for ; j < len(r) && r[j] != '\''; j++ {
+		if r[j] != '\\' || j+1 >= len(r) {
+			cur.WriteRune(r[j])
+			continue
+		}
+		j++
+		switch r[j] {
+		case 'n':
+			cur.WriteByte('\n')
+		case 't':
+			cur.WriteByte('\t')
+		case 'r':
+			cur.WriteByte('\r')
+		default:
+			cur.WriteRune(r[j])
+		}
+	}
+	if j >= len(r) {
+		return i, errUnterminatedQuote
+	}
+	return j, nil
+}
+
+// readDoubleQuoted reads "..." starting at r[i], where a backslash only
+// escapes a quote, a backslash, a dollar or a backtick.
+func readDoubleQuoted(r []rune, i int, cur *strings.Builder) (int, error) {
+	j := i + 1
+	for ; j < len(r) && r[j] != '"'; j++ {
+		if r[j] == '\\' && j+1 < len(r) && strings.ContainsRune("\"\\$`", r[j+1]) {
+			j++
+		}
+		cur.WriteRune(r[j])
+	}
+	if j >= len(r) {
+		return i, errUnterminatedQuote
+	}
+	return j, nil
 }
 
 func indexRune(runes []rune, from int, char rune) int {
@@ -276,15 +265,67 @@ func indexRune(runes []rune, from int, char rune) int {
 	return -1
 }
 
-// curlValueFlags are the flags that take a value, long and short.
-var curlValueFlags = map[string]bool{
-	"-X": true, "--request": true, "-H": true, "--header": true,
-	"-d": true, "--data": true, "--data-raw": true, "--data-binary": true, "--data-ascii": true, "--data-urlencode": true,
-	"-F": true, "--form": true, "--form-string": true, "-u": true, "--user": true, "--url": true,
-	"-A": true, "--user-agent": true, "-b": true, "--cookie": true, "-e": true, "--referer": true,
-	"-m": true, "--max-time": true, "-o": true, "--output": true, "-w": true, "--write-out": true,
-	"--connect-timeout": true, "--retry": true, "-x": true, "--proxy": true, "--cacert": true,
-	"--cert": true, "--key": true, "-T": true, "--upload-file": true,
+// curlParse is what the flags of one command line add up to.
+type curlParse struct {
+	req          Request
+	data, forms  []string
+	user, method string
+	head         bool
+}
+
+// curlFlag is one flag: whether the next argument is its value, and what it
+// does to the parse. A nil apply is a flag that is read and changes nothing.
+type curlFlag struct {
+	takesValue bool
+	apply      func(parse *curlParse, value string)
+}
+
+// curlFlagRow is a flag with all its spellings.
+type curlFlagRow struct {
+	names []string
+	curlFlag
+}
+
+// curlFlags maps every spelling of a flag, short and long, to its meaning.
+var curlFlags = curlFlagTable([]curlFlagRow{
+	{[]string{"-X", "--request"}, curlFlag{true, func(parse *curlParse, value string) { parse.method = strings.ToUpper(value) }}},
+	{[]string{"-H", "--header"}, curlFlag{true, func(parse *curlParse, value string) {
+		name, val, _ := strings.Cut(value, ":")
+		parse.addHeader(strings.TrimSpace(name), strings.TrimSpace(val))
+	}}},
+	{[]string{"-d", "--data", "--data-raw", "--data-binary", "--data-ascii", "--data-urlencode"},
+		curlFlag{true, func(parse *curlParse, value string) { parse.data = append(parse.data, value) }}},
+	{[]string{"-F", "--form", "--form-string"},
+		curlFlag{true, func(parse *curlParse, value string) { parse.forms = append(parse.forms, value) }}},
+	{[]string{"-u", "--user"}, curlFlag{true, func(parse *curlParse, value string) { parse.user = value }}},
+	{[]string{"--url"}, curlFlag{true, func(parse *curlParse, value string) { parse.req.URL = value }}},
+	{[]string{"-A", "--user-agent"}, curlFlag{true, func(parse *curlParse, value string) { parse.addHeader("User-Agent", value) }}},
+	{[]string{"-b", "--cookie"}, curlFlag{true, func(parse *curlParse, value string) { parse.addHeader("Cookie", value) }}},
+	{[]string{"-e", "--referer"}, curlFlag{true, func(parse *curlParse, value string) { parse.addHeader("Referer", value) }}},
+	{[]string{"-m", "--max-time"}, curlFlag{true, func(parse *curlParse, value string) {
+		if sec, err := strconv.ParseFloat(value, 64); err == nil && sec >= 1 {
+			parse.req.TimeoutSec = int(sec)
+		}
+	}}},
+	{[]string{"-L", "--location"}, curlFlag{false, func(parse *curlParse, _ string) { parse.req.NoRedirects = false }}},
+	{[]string{"-I", "--head"}, curlFlag{false, func(parse *curlParse, _ string) { parse.head = true }}},
+	// These take a value and change nothing here.
+	{[]string{"-o", "--output", "-w", "--write-out", "--connect-timeout", "--retry", "-x", "--proxy", "--cacert", "--cert", "--key", "-T", "--upload-file"},
+		curlFlag{takesValue: true}},
+})
+
+func curlFlagTable(rows []curlFlagRow) map[string]curlFlag {
+	table := map[string]curlFlag{}
+	for _, row := range rows {
+		for _, name := range row.names {
+			table[name] = row.curlFlag
+		}
+	}
+	return table
+}
+
+func (parse *curlParse) addHeader(name, value string) {
+	parse.req.Headers = append(parse.req.Headers, KV{Name: name, Value: value, Enabled: true})
 }
 
 // splitCurlFlags writes every flag as the parser reads it: "--flag=value"
@@ -304,17 +345,17 @@ func splitCurlFlags(args []string) []string {
 		case strings.HasPrefix(arg, "--"):
 			name, value, hasValue := strings.Cut(arg, "=")
 			out = append(out, name)
-			if hasValue && curlValueFlags[name] {
+			if hasValue && curlFlags[name].takesValue {
 				out = append(out, value)
 			}
-			takesValue = !hasValue && curlValueFlags[name]
+			takesValue = !hasValue && curlFlags[name].takesValue
 		case len(arg) > 2 && arg[0] == '-' && arg[1] != '-':
 			var parts []string
 			parts, takesValue = splitShortCluster(arg[1:])
 			out = append(out, parts...)
 		default:
 			out = append(out, arg)
-			takesValue = curlValueFlags[arg]
+			takesValue = curlFlags[arg].takesValue
 		}
 	}
 	return out
@@ -328,7 +369,7 @@ func splitShortCluster(letters string) (flags []string, needsValue bool) {
 	for i, letter := range letters {
 		flag := "-" + string(letter)
 		flags = append(flags, flag)
-		if !curlValueFlags[flag] {
+		if !curlFlags[flag].takesValue {
 			continue
 		}
 		rest := letters[i+len(string(letter)):]

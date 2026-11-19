@@ -39,27 +39,36 @@ type Server struct {
 	Auth     model.Auth
 }
 
-// format is how one file extension is read into a generic tree.
+// format is how one file extension is read into JSON, the one shape the
+// typed schema is decoded from.
 type format struct {
 	ext    string
-	decode func(data []byte) (any, error)
+	decode func(data []byte) ([]byte, error)
 }
 
 var formats = []format{
-	{".yaml", miniyaml.Parse},
-	{".yml", miniyaml.Parse},
+	{".yaml", miniyaml.ToJSON},
+	{".yml", miniyaml.ToJSON},
 	{".json", decodeJSON},
 	{".toml", decodeTOML},
 }
 
-func decodeJSON(data []byte) (any, error) {
+// decodeJSON reads the document into a tree and writes it out again: the
+// schema then sees the same normal form as for the other formats.
+func decodeJSON(data []byte) ([]byte, error) {
 	var tree any
-	return tree, json.Unmarshal(data, &tree)
+	if err := json.Unmarshal(data, &tree); err != nil {
+		return nil, err
+	}
+	return json.Marshal(tree)
 }
 
-func decodeTOML(data []byte) (any, error) {
+func decodeTOML(data []byte) ([]byte, error) {
 	var tree map[string]any
-	return tree, toml.Unmarshal(data, &tree)
+	if err := toml.Unmarshal(data, &tree); err != nil {
+		return nil, err
+	}
+	return json.Marshal(tree)
 }
 
 // FileNames lists the file names a directory may hold the config under,
@@ -85,16 +94,11 @@ func Parse(file string, data []byte) (Config, error) {
 }
 
 func parseWith(syntax format, file string, data []byte) (Config, error) {
-	tree, err := syntax.decode(data)
+	normalized, err := syntax.decode(data)
 	if err != nil {
 		return Config{}, fmt.Errorf("parse %s: %w", file, err)
 	}
-	// One typed schema for every format: re-encode the tree as JSON and
-	// decode it strictly, so a misspelled key is an error, not ignored.
-	normalized, err := json.Marshal(tree)
-	if err != nil {
-		return Config{}, fmt.Errorf("parse %s: %w", file, err)
-	}
+	// One typed schema for every format, decoded from the JSON form.
 	var schema fileConfig
 	decoder := json.NewDecoder(bytes.NewReader(normalized))
 	decoder.DisallowUnknownFields()

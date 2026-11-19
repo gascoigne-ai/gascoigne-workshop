@@ -38,12 +38,14 @@ func (t *text) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// kv is a header, variable, query or form row, read and written alike.
+// Empty fields are left out of a written file.
 type kv struct {
 	Key      string `json:"key"`
-	Value    text   `json:"value"`
-	Disabled bool   `json:"disabled"`
-	Type     string `json:"type"`
-	Src      any    `json:"src"`
+	Value    text   `json:"value,omitempty"`
+	Disabled bool   `json:"disabled,omitempty"`
+	Type     string `json:"type,omitempty"`
+	Src      any    `json:"src,omitempty"`
 }
 
 type item struct {
@@ -57,18 +59,8 @@ type requestSpec struct {
 	Method string          `json:"method"`
 	Header []kv            `json:"header"`
 	URL    json.RawMessage `json:"url"`
-	Body   *struct {
-		Mode       string `json:"mode"`
-		Raw        string `json:"raw"`
-		URLEncoded []kv   `json:"urlencoded"`
-		FormData   []kv   `json:"formdata"`
-		Options    struct {
-			Raw struct {
-				Language string `json:"language"`
-			} `json:"raw"`
-		} `json:"options"`
-	} `json:"body"`
-	Auth *auth `json:"auth"`
+	Body   *body           `json:"body"`
+	Auth   *auth           `json:"auth"`
 }
 
 func (r *requestSpec) UnmarshalJSON(data []byte) error {
@@ -82,11 +74,154 @@ func (r *requestSpec) UnmarshalJSON(data []byte) error {
 	return json.Unmarshal(data, (*plain)(r))
 }
 
+// body is a request body as Postman writes it: the mode names which of the
+// other fields is in use.
+type body struct {
+	Mode       string       `json:"mode"`
+	Raw        string       `json:"raw,omitempty"`
+	URLEncoded []kv         `json:"urlencoded,omitempty"`
+	FormData   []kv         `json:"formdata,omitempty"`
+	Options    *bodyOptions `json:"options,omitempty"`
+}
+
+type bodyOptions struct {
+	Raw struct {
+		Language string `json:"language"`
+	} `json:"raw"`
+}
+
+// bodyMode ties a Postman body mode to the body types it carries; read and
+// write are nil where a mode is not carried that way. lost marks a mode
+// the import reports as not (fully) imported.
+type bodyMode struct {
+	mode  string
+	types []model.BodyType
+	lost  bool
+	read  func(from *body, to *model.Request)
+	write func(from *model.Request) *body
+}
+
+var bodyModes = []bodyMode{
+	{mode: "raw", types: []model.BodyType{model.BodyJSON, model.BodyText}, read: readRawBody, write: writeRawBody},
+	{mode: "urlencoded", types: []model.BodyType{model.BodyForm},
+		read: func(from *body, to *model.Request) {
+			to.BodyType, to.Form = model.BodyForm, rows(from.URLEncoded, false)
+		},
+		write: func(from *model.Request) *body {
+			return &body{Mode: "urlencoded", URLEncoded: outRows(from.Form, false)}
+		}},
+	{mode: "formdata", types: []model.BodyType{model.BodyMultipart},
+		read: func(from *body, to *model.Request) {
+			to.BodyType, to.Form = model.BodyMultipart, rows(from.FormData, true)
+		},
+		write: func(from *model.Request) *body {
+			return &body{Mode: "formdata", FormData: outRows(from.Form, true)}
+		}},
+	{mode: "graphql", lost: true, read: func(_ *body, to *model.Request) { to.BodyType = model.BodyGraphQL }},
+	{mode: "file", lost: true},
+}
+
+func readRawBody(from *body, to *model.Request) {
+	to.Body = from.Raw
+	to.BodyType = model.BodyText
+	if from.Options != nil && from.Options.Raw.Language == "json" || isValidJSONObjectOrArray(from.Raw) {
+		to.BodyType = model.BodyJSON
+	}
+}
+
+func writeRawBody(from *model.Request) *body {
+	out := &body{Mode: "raw", Raw: from.Body}
+	if from.BodyType == model.BodyJSON {
+		out.Options = &bodyOptions{}
+		out.Options.Raw.Language = "json"
+	}
+	return out
+}
+
+func bodyModeNamed(mode string) *bodyMode {
+	for i := range bodyModes {
+		if bodyModes[i].mode == mode {
+			return &bodyModes[i]
+		}
+	}
+	return nil
+}
+
+func bodyModeFor(bodyType model.BodyType) *bodyMode {
+	for i := range bodyModes {
+		for _, candidate := range bodyModes[i].types {
+			if candidate == bodyType {
+				return &bodyModes[i]
+			}
+		}
+	}
+	return nil
+}
+
+// auth is an auth block: the type names which of the lists is in use.
 type auth struct {
 	Type   string `json:"type"`
-	Bearer []kv   `json:"bearer"`
-	Basic  []kv   `json:"basic"`
-	APIKey []kv   `json:"apikey"`
+	Bearer []kv   `json:"bearer,omitempty"`
+	Basic  []kv   `json:"basic,omitempty"`
+	APIKey []kv   `json:"apikey,omitempty"`
+}
+
+// authKind ties a Postman auth type to a model one.
+type authKind struct {
+	name  string
+	model model.AuthType
+	read  func(from *auth) model.Auth
+	write func(from model.Auth) *auth
+}
+
+var authKinds = []authKind{
+	{name: "bearer", model: model.AuthBearer,
+		read: func(from *auth) model.Auth {
+			return model.Auth{Type: model.AuthBearer, Token: get(from.Bearer, "token")}
+		},
+		write: func(from model.Auth) *auth {
+			return &auth{Type: "bearer", Bearer: []kv{{Key: "token", Value: text(shareable(from.Token))}}}
+		}},
+	{name: "basic", model: model.AuthBasic,
+		read: func(from *auth) model.Auth {
+			return model.Auth{Type: model.AuthBasic, User: get(from.Basic, "username"), Password: get(from.Basic, "password")}
+		},
+		write: func(from model.Auth) *auth {
+			return &auth{Type: "basic", Basic: []kv{{Key: "username", Value: text(from.User)}, {Key: "password", Value: text(shareable(from.Password))}}}
+		}},
+	{name: "apikey", model: model.AuthAPIKey,
+		read: func(from *auth) model.Auth {
+			in := model.KeyInHeader
+			if get(from.APIKey, "in") == "query" {
+				in = model.KeyInQuery
+			}
+			return model.Auth{Type: model.AuthAPIKey, KeyName: get(from.APIKey, "key"), KeyValue: get(from.APIKey, "value"), KeyIn: in}
+		},
+		write: func(from model.Auth) *auth {
+			in := from.KeyIn
+			if in == "" {
+				in = model.KeyInHeader
+			}
+			return &auth{Type: "apikey", APIKey: []kv{{Key: "key", Value: text(from.KeyName)}, {Key: "value", Value: text(shareable(from.KeyValue))}, {Key: "in", Value: text(in)}}}
+		}},
+}
+
+func authKindNamed(name string) *authKind {
+	for i := range authKinds {
+		if authKinds[i].name == name {
+			return &authKinds[i]
+		}
+	}
+	return nil
+}
+
+func authKindFor(authType model.AuthType) *authKind {
+	for i := range authKinds {
+		if authKinds[i].model == authType {
+			return &authKinds[i]
+		}
+	}
+	return nil
 }
 
 type collection struct {
@@ -134,34 +269,42 @@ func fill(dir *model.Folder, items []item, inherited *auth, skipped *[]string) {
 			fill(sub, it.Items, inherited, skipped)
 			continue
 		}
-		for _, what := range notCarriedOver(it, inherited) {
+		effective := it.Request.Auth
+		if effective == nil {
+			effective = inherited
+		}
+		for _, what := range notCarriedOver(it, effective) {
 			*skipped = append(*skipped, it.Name+": "+what)
 		}
-		r := request(it, inherited)
+		r, urlErr := request(it, effective)
+		if urlErr != nil {
+			*skipped = append(*skipped, it.Name+": url is not imported ("+urlErr.Error()+")")
+		}
 		r.Name = dir.UniqueName(r.Name)
 		dir.AddRequest(r)
 	}
 }
 
-// notCarriedOver lists what of a request has no equivalent here.
-func notCarriedOver(it item, inherited *auth) []string {
+// notCarriedOver lists what of a request has no equivalent here; effective
+// is the auth block that applies to it, its own or the inherited one.
+func notCarriedOver(it item, effective *auth) []string {
 	var out []string
-	a := it.Request.Auth
-	if a == nil {
-		a = inherited
-	}
 	switch {
-	case a == nil, convertAuth(a).Type != "", a.Type == "noauth", a.Type == "":
+	case effective == nil, effective.Type == "", effective.Type == "noauth", authKindNamed(effective.Type) != nil:
 	default:
-		out = append(out, "auth type "+a.Type+" is not imported")
+		out = append(out, "auth type "+effective.Type+" is not imported")
 	}
-	if b := it.Request.Body; b != nil && (b.Mode == "file" || b.Mode == "graphql") {
-		out = append(out, "body mode "+b.Mode+" is not imported")
+	if b := it.Request.Body; b != nil {
+		if mode := bodyModeNamed(b.Mode); mode != nil && mode.lost {
+			out = append(out, "body mode "+b.Mode+" is not imported")
+		}
 	}
 	return out
 }
 
-func request(it item, inherited *auth) model.Request {
+// request converts one item. A url that cannot be read leaves the request
+// with an empty one and comes back as the error.
+func request(it item, effective *auth) (model.Request, error) {
 	pr := it.Request
 	req := model.Request{Name: it.Name, Protocol: model.ProtocolREST, Method: strings.ToUpper(pr.Method), BodyType: model.BodyNone}
 	if req.Method == "" {
@@ -170,51 +313,43 @@ func request(it item, inherited *auth) model.Request {
 	if req.Name == "" {
 		req.Name = req.Method + " request"
 	}
-	req.URL, req.Params = parseURL(pr.URL)
+	var urlErr error
+	req.URL, req.Params, urlErr = parseURL(pr.URL)
 	for _, h := range pr.Header {
 		req.Headers = append(req.Headers, model.KV{Name: h.Key, Value: string(h.Value), Enabled: !h.Disabled})
 	}
-	if b := pr.Body; b != nil {
-		switch b.Mode {
-		case "raw":
-			req.Body = b.Raw
-			req.BodyType = model.BodyText
-			if b.Options.Raw.Language == "json" || looksJSON(b.Raw) {
-				req.BodyType = model.BodyJSON
-			}
-		case "urlencoded":
-			req.BodyType, req.Form = model.BodyForm, rows(b.URLEncoded, false)
-		case "formdata":
-			req.BodyType, req.Form = model.BodyMultipart, rows(b.FormData, true)
-		case "graphql":
-			req.BodyType = model.BodyGraphQL
+	if pr.Body != nil {
+		if mode := bodyModeNamed(pr.Body.Mode); mode != nil && mode.read != nil {
+			mode.read(pr.Body, &req)
 		}
 	}
-	a := pr.Auth
-	if a == nil {
-		a = inherited
-	}
-	req.Auth = convertAuth(a)
-	return req
+	req.Auth = convertAuth(effective)
+	return req, urlErr
 }
 
-func looksJSON(text string) bool {
+// isValidJSONObjectOrArray is true for text that is a complete JSON object
+// or list; a body that merely starts with a brace is not.
+func isValidJSONObjectOrArray(text string) bool {
 	text = strings.TrimSpace(text)
 	return (strings.HasPrefix(text, "{") || strings.HasPrefix(text, "[")) && json.Valid([]byte(text))
 }
 
 // parseURL reads a Postman url, a string or an object with raw and query.
-func parseURL(raw json.RawMessage) (string, []model.KV) {
+// A missing url is empty; one of another shape is an error.
+func parseURL(raw json.RawMessage) (string, []model.KV, error) {
+	if len(raw) == 0 {
+		return "", nil, nil
+	}
 	var s string
 	if json.Unmarshal(raw, &s) == nil {
-		return s, model.ParamsFromURL(s)
+		return s, model.ParamsFromURL(s), nil
 	}
 	var o struct {
 		Raw   string `json:"raw"`
 		Query []kv   `json:"query"`
 	}
-	if json.Unmarshal(raw, &o) != nil {
-		return "", nil
+	if err := json.Unmarshal(raw, &o); err != nil {
+		return "", nil, err
 	}
 	base := o.Raw
 	var params []model.KV
@@ -226,7 +361,7 @@ func parseURL(raw json.RawMessage) (string, []model.KV) {
 	} else {
 		params = model.ParamsFromURL(base)
 	}
-	return base, params
+	return base, params, nil
 }
 
 func rows(in []kv, files bool) []model.KV {
@@ -256,30 +391,13 @@ func convertAuth(block *auth) model.Auth {
 	if block == nil {
 		return model.Auth{}
 	}
-	switch block.Type {
-	case "bearer":
-		return model.Auth{Type: model.AuthBearer, Token: get(block.Bearer, "token")}
-	case "basic":
-		return model.Auth{Type: model.AuthBasic, User: get(block.Basic, "username"), Password: get(block.Basic, "password")}
-	case "apikey":
-		in := model.KeyInHeader
-		if get(block.APIKey, "in") == "query" {
-			in = model.KeyInQuery
-		}
-		return model.Auth{Type: model.AuthAPIKey, KeyName: get(block.APIKey, "key"), KeyValue: get(block.APIKey, "value"), KeyIn: in}
+	if kind := authKindNamed(block.Type); kind != nil {
+		return kind.read(block)
 	}
 	return model.Auth{}
 }
 
 // ---- export ------------------------------------------------------------
-
-type outKV struct {
-	Key      string `json:"key"`
-	Value    string `json:"value,omitempty"`
-	Disabled bool   `json:"disabled,omitempty"`
-	Type     string `json:"type,omitempty"`
-	Src      string `json:"src,omitempty"`
-}
 
 type outItem struct {
 	Name    string     `json:"name"`
@@ -288,35 +406,16 @@ type outItem struct {
 }
 
 type outReq struct {
-	Method string   `json:"method"`
-	Header []outKV  `json:"header"`
-	URL    outURL   `json:"url"`
-	Body   *outBody `json:"body,omitempty"`
-	Auth   *outAuth `json:"auth,omitempty"`
+	Method string `json:"method"`
+	Header []kv   `json:"header"`
+	URL    outURL `json:"url"`
+	Body   *body  `json:"body,omitempty"`
+	Auth   *auth  `json:"auth,omitempty"`
 }
 
 type outURL struct {
-	Raw   string  `json:"raw"`
-	Query []outKV `json:"query,omitempty"`
-}
-
-type outBody struct {
-	Mode       string  `json:"mode"`
-	Raw        string  `json:"raw,omitempty"`
-	URLEncoded []outKV `json:"urlencoded,omitempty"`
-	FormData   []outKV `json:"formdata,omitempty"`
-	Options    *struct {
-		Raw struct {
-			Language string `json:"language"`
-		} `json:"raw"`
-	} `json:"options,omitempty"`
-}
-
-type outAuth struct {
-	Type   string  `json:"type"`
-	Bearer []outKV `json:"bearer,omitempty"`
-	Basic  []outKV `json:"basic,omitempty"`
-	APIKey []outKV `json:"apikey,omitempty"`
+	Raw   string `json:"raw"`
+	Query []kv   `json:"query,omitempty"`
 }
 
 // Export writes the folder and the collection variables as a Postman v2.1
@@ -329,7 +428,7 @@ func Export(root *model.Folder, vars []model.KV) ([]byte, error) {
 			Schema string `json:"schema"`
 		} `json:"info"`
 		Items    []*outItem `json:"item"`
-		Variable []outKV    `json:"variable,omitempty"`
+		Variable []kv       `json:"variable,omitempty"`
 	}{}
 	out.Info.Name = root.Name
 	out.Info.Schema = "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -339,7 +438,7 @@ func Export(root *model.Folder, vars []model.KV) ([]byte, error) {
 		if v.Secret {
 			value = shareable(value)
 		}
-		out.Variable = append(out.Variable, outKV{Key: v.Name, Value: value, Disabled: !v.Enabled})
+		out.Variable = append(out.Variable, kv{Key: v.Name, Value: text(value), Disabled: !v.Enabled})
 	}
 	return json.MarshalIndent(out, "", "  ")
 }
@@ -388,10 +487,10 @@ func exportFolder(folder *model.Folder) []*outItem {
 	return items
 }
 
-func outRows(rows []model.KV, files bool) []outKV {
-	var out []outKV
+func outRows(rows []model.KV, files bool) []kv {
+	var out []kv
 	for _, r := range rows {
-		e := outKV{Key: r.Name, Value: r.Value, Disabled: !r.Enabled}
+		e := kv{Key: r.Name, Value: text(r.Value), Disabled: !r.Enabled}
 		if files {
 			e.Type = "text"
 			if path, ok := strings.CutPrefix(r.Value, "@"); ok && path != "" && !strings.HasPrefix(path, "@") {
@@ -406,41 +505,18 @@ func outRows(rows []model.KV, files bool) []outKV {
 func exportRequest(request *model.Request) *outReq {
 	o := &outReq{Method: request.Method, Header: outRows(request.Headers, false), URL: outURL{Raw: request.URL}}
 	if o.Header == nil {
-		o.Header = []outKV{}
+		o.Header = []kv{}
 	}
 	for _, p := range request.Params {
 		if !model.IsPathParam(p.Name) {
-			o.URL.Query = append(o.URL.Query, outKV{Key: p.Name, Value: p.Value, Disabled: !p.Enabled})
+			o.URL.Query = append(o.URL.Query, kv{Key: p.Name, Value: text(p.Value), Disabled: !p.Enabled})
 		}
 	}
-	switch request.BodyType {
-	case model.BodyJSON, model.BodyText:
-		b := &outBody{Mode: "raw", Raw: request.Body}
-		if request.BodyType == model.BodyJSON {
-			b.Options = &struct {
-				Raw struct {
-					Language string `json:"language"`
-				} `json:"raw"`
-			}{}
-			b.Options.Raw.Language = "json"
-		}
-		o.Body = b
-	case model.BodyForm:
-		o.Body = &outBody{Mode: "urlencoded", URLEncoded: outRows(request.Form, false)}
-	case model.BodyMultipart:
-		o.Body = &outBody{Mode: "formdata", FormData: outRows(request.Form, true)}
+	if mode := bodyModeFor(request.BodyType); mode != nil {
+		o.Body = mode.write(request)
 	}
-	switch request.Auth.Type {
-	case model.AuthBearer:
-		o.Auth = &outAuth{Type: "bearer", Bearer: []outKV{{Key: "token", Value: shareable(request.Auth.Token)}}}
-	case model.AuthBasic:
-		o.Auth = &outAuth{Type: "basic", Basic: []outKV{{Key: "username", Value: request.Auth.User}, {Key: "password", Value: shareable(request.Auth.Password)}}}
-	case model.AuthAPIKey:
-		in := request.Auth.KeyIn
-		if in == "" {
-			in = model.KeyInHeader
-		}
-		o.Auth = &outAuth{Type: "apikey", APIKey: []outKV{{Key: "key", Value: request.Auth.KeyName}, {Key: "value", Value: shareable(request.Auth.KeyValue)}, {Key: "in", Value: in}}}
+	if kind := authKindFor(request.Auth.Type); kind != nil {
+		o.Auth = kind.write(request.Auth)
 	}
 	return o
 }

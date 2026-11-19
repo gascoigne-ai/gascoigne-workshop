@@ -116,24 +116,32 @@ type orderedObject struct {
 }
 
 func (o orderedObject) MarshalJSON() ([]byte, error) {
-	var b bytes.Buffer
-	b.WriteByte('{')
-	for i, n := range o.names {
+	return writeObject(o.names, func(name string) ([]byte, error) {
+		sub, _ := o.values[name].(map[string]any)
+		return json.Marshal(skeletonValue(sub))
+	})
+}
+
+// writeObject writes a JSON object with the members in the order of names,
+// each value as encode gives it. A map would sort the keys.
+func writeObject(names []string, encode func(name string) ([]byte, error)) ([]byte, error) {
+	var out bytes.Buffer
+	out.WriteByte('{')
+	for i, name := range names {
 		if i > 0 {
-			b.WriteByte(',')
+			out.WriteByte(',')
 		}
-		key, _ := json.Marshal(n)
-		sub, _ := o.values[n].(map[string]any)
-		val, err := json.Marshal(skeletonValue(sub))
+		key, _ := json.Marshal(name)
+		value, err := encode(name)
 		if err != nil {
 			return nil, err
 		}
-		b.Write(key)
-		b.WriteByte(':')
-		b.Write(val)
+		out.Write(key)
+		out.WriteByte(':')
+		out.Write(value)
 	}
-	b.WriteByte('}')
-	return b.Bytes(), nil
+	out.WriteByte('}')
+	return out.Bytes(), nil
 }
 
 // MCPResource is a resource an MCP server announced in resources/list.
