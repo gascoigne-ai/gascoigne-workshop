@@ -23,6 +23,17 @@ Work in this order, one commit per item.
 
 Not in this task: caching the panes in an offscreen image during a drag. After items 2 to 5 the frame is cheap, and a cache can show stale content (a response arriving, the caret, a toast). Reopen it only if a measurement still shows a slow drag.
 
+## Baseline
+`go test -run '^$' -bench 'BuildTree|Layout|DrawTree|DragFrame' -benchtime 200x ./internal/workspace/ui/app` (internal/workspace/ui/app/render_bench_test.go), settings dialog open, 1280x800, headless, scale 1. The `Draw` allocations are inflated because a headless run never flushes the command queue.
+
+| Benchmark | Time | Allocs |
+|---|---|---|
+| BuildTree | 297 µs | 6894 |
+| Layout | 120 µs | 58 |
+| DrawTree | 1405 µs | 6790 |
+| DragFrame (dialog) | 2246 µs | 20616 |
+| DragFrameNoDialog | 747 µs | 8687 |
+
 ## Model
 No persisted data and no new state besides two caches: the corner mask cache, keyed by (radius, scale) and bounded, cleared when the scale changes; the per-pass text measure on `El`, dropped at the start of each `Layout`. Alternative rejected: one offscreen image per pane, because it has to know every cause of a change. Revisit if a drag frame is still over budget after item 5.
 
