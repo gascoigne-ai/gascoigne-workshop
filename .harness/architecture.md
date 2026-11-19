@@ -1292,7 +1292,7 @@ that change `App`.
   the call with its arguments as variables, a selection of the result type's first eight scalar and
   enum fields (`__typename` when there are none), and zero values for required scalar arguments
   (`null` for the rest). The schema is not saved with the tab.
--  **MCP** (`internal/request/adapter/proto/mcp.go`): `proto.MCP` is a `Streamer` over two
+-  **MCP** (`internal/request/adapter/proto/mcp.go`, with the session in `mcpsession.go`, the transports in `mcphttp.go` and `mcpstdio.go`, server requests in `mcpserver.go` and sampling in `mcpsampling.go`): `proto.MCP` is a `Streamer` over two
   transports behind `mcpTransport`: streamable HTTP (POST per message, JSON or event-stream answers,
   `Mcp-Session-Id` and `MCP-Protocol-Version` headers, user headers and auth applied, DELETE on
   close) and stdio (`stdio:` + command line, newline-delimited JSON; the process runs under
@@ -1352,7 +1352,7 @@ that change `App`.
   numbers and JSON and refuses a value that does not fit with a message naming the field (shown in
   the dialog, which stays open); the composer then holds `call NAME {json}` and Send sends it as
   typed. A tool with no properties is composed at once.
--  **MCP notifications and sampling** (`mcp.go`, `mcpform.go`): after `initialized` a streamable
+-  **MCP notifications and sampling** (`mcphttp.go`, `mcpserver.go`, `mcpsampling.go`, `mcpform.go`): after `initialized` a streamable
   HTTP session opens the server's optional GET event stream (`mcpHTTP.listen`; a 405 or any
   non-stream answer is not an error) and everything on it goes through `deliver` like POST answers.
   Both kinds of stream are read by `mcpHTTP.readStream`. A POST answer stream that breaks or sends

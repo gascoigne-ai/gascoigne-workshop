@@ -145,13 +145,6 @@ func (l Linear) LayoutIn(element *El, ctx *core.Ctx, bounds core.Rect) {
 	element.rect = own
 }
 
-// KeepInView marks the child a scrolling strip must keep in view: whenever
-// a different child is flagged than last time, an HScroll scrolls to show
-// it once, so a selection made elsewhere is never hidden, while the
-// user's own scrolling is left alone. It is an attribute of the child, set
-// here and read by its parent through KeepsInView.
-func KeepInView() Option { return func(element *El) { element.reveal = true } }
-
 // Focuser is the state of a component that takes the keyboard: it holds
 // the focus flag the window and the runtime read and write.
 type Focuser interface {
@@ -174,8 +167,3 @@ type Focusable interface {
 // ControlName is the theme control style given with Control, "" for
 // none: the name a component asks the theme for its corner radius with.
 func (e *El) ControlName() string { return e.control }
-
-// OnChange runs after the element's value was edited: the text of a field
-// or an area, or a checkbox that was clicked. It is an attribute of any
-// element, read by the component through ChangeHandler.
-func OnChange(callback func()) Option { return func(element *El) { element.onChange = callback } }

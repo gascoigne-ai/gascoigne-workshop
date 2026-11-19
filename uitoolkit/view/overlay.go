@@ -46,17 +46,6 @@ func Moved(state *MoveState) Option {
 // this one while it exists, as a dialog needs.
 func FocusScope() Option { return func(element *El) { element.focusScope = true } }
 
-// OnRightClick runs callback with the pointer position when the element is
-// right-clicked.
-func OnRightClick(callback func(posX, posY int)) Option {
-	return func(element *El) { element.onRight = callback }
-}
-
-// DismissMargin makes a click within px outside a modal element's rect
-// count as a click on it, so it does not dismiss it: a resizable dialog
-// grabs its edge there.
-func DismissMargin(px int) Option { return func(element *El) { element.dismissMargin = px } }
-
 // dragEdge is how far from the border of a Moved element, inside it, a
 // press does not start a drag: the edge is the resize grab, not the handle.
 const dragEdge = core.EdgeGrab
