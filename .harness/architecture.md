@@ -443,7 +443,14 @@ directly.
 tabs, the active one, the one being dragged) with a `reqTab` of widget state for each
 (`App.widgets`; `App.openTabs()` gives them in strip order), each pointing at the collection's
 `model.Request` (plus URL `TextField`, active pane tabs, last `Response`, two `CodeView`s), the
-expanded tree folders, settings and the status line. `window.go`, `sidebar.go`, `requesttabs.go`, `urlbar.go` and `statusbar.go` are the window as VML views
+expanded tree folders, settings and the status line. The `App` fields are grouped by concern in
+structs it embeds (`appstate.go`): `ports` (the adapters), `treeState` (sidebar selection, filter,
+drag, expanded folders, scroll), `tableState` (cell edit, row drag, bulk edit, selected row, column
+widths), `frameState` (size, redraw flag, pacing, window geometry), `persistState` (state file,
+autosave, background writes, trust) and `settingsState` (settings, their file, the dialog); a
+`reqTab` embeds `socketBlock`, `grpcBlock`, `mcpBlock` and `responseBlock` for the state only that
+protocol or the response pane uses (`tab.go`). A frame is `beginFrame`, `routeKeys`, `endFrame`
+(`game.go`). `window.go`, `sidebar.go`, `requesttabs.go`, `urlbar.go` and `statusbar.go` are the window as VML views
 (`sidebar`, `header`, `requestTabs`, `urlBar`, `pane`, `statusBar`); handlers are plain closures
 that change `App`.
 

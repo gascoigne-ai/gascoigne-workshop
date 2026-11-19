@@ -52,6 +52,14 @@ func (a *App) Update() error {
 // builds the view, lays it out and lets it react. Handlers in the view
 // change App state. Tests drive the app through step without a window.
 func (a *App) step(in core.Input) {
+	moved := a.beginFrame(in)
+	a.routeKeys(in)
+	a.endFrame(moved)
+}
+
+// beginFrame takes in the input and what goroutines reported, and reports
+// whether anything moved: input, a finished send or an expired toast.
+func (a *App) beginFrame(in core.Input) bool {
 	a.ctx.Tick++
 	a.ctx.In = in
 	a.ctx.Cursor = core.CursorDefault
@@ -75,6 +83,12 @@ func (a *App) step(in core.Input) {
 	} else {
 		a.finishDrag()
 	}
+	return active || drained || pruned
+}
+
+// routeKeys hands the keys of the frame to the overlay, the tree, the
+// shortcuts or the table undo, in that order of claim.
+func (a *App) routeKeys(in core.Input) {
 	hadOverlay := a.overlayOpen()
 	wasRecording := a.shortcutKeys.Recording() != ""
 	menuWasOpen := widget.MenuOpen(a.ctx)
@@ -102,6 +116,11 @@ func (a *App) step(in core.Input) {
 			}
 		}
 	}
+}
+
+// endFrame builds the view, lets it react and runs the per-frame upkeep;
+// moved is what beginFrame reported.
+func (a *App) endFrame(moved bool) {
 	root := a.view()
 	view.Layout(a.ctx, root, a.w, a.h)
 	view.Update(a.ctx, root)
@@ -116,8 +135,9 @@ func (a *App) step(in core.Input) {
 	a.settleBulk()
 	a.stateTick()
 	a.workspaceTick()
-	a.markFrame(active || drained || pruned || a.tips.Waiting())
-	a.pacer.NoteIdle(active || drained || pruned || a.tips.Waiting())
+	busy := moved || a.tips.Waiting()
+	a.markFrame(busy)
+	a.pacer.NoteIdle(busy)
 }
 
 // Draw implements ebiten.Game. The view is rebuilt so it shows the

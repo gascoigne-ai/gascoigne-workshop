@@ -17,6 +17,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"net/http"
 	"net/http/cookiejar"
 	"time"
 )
@@ -67,90 +68,88 @@ func startCollection(sample func() model.Collection) model.Collection {
 	return sample()
 }
 
-// NewApp builds the window state from opts: settings, user themes and the start collection.
-func NewApp(opts Options) (*App, error) {
-	settingFiles := opts.SettingsFiles
-	if settingFiles == nil {
-		settingFiles = noSettingFiles{}
+// withDefaults fills what a caller may leave out: null ports for the
+// adapters the app always calls, the retry delay and the base scale.
+func (opts Options) withDefaults() Options {
+	opts.SettingsFiles = cmp.Or[sport.SettingsStore](opts.SettingsFiles, noSettingFiles{})
+	opts.States = cmp.Or[port.StateStore](opts.States, noStates{})
+	opts.Store = cmp.Or[cport.Store](opts.Store, noStore{})
+	opts.Fonts = cmp.Or[sport.FontStore](opts.Fonts, noFonts{})
+	opts.Files = cmp.Or[port.FileDialog](opts.Files, noFileDialog{})
+	opts.Folders = cmp.Or[port.Folders](opts.Folders, noFolders{})
+	opts.Previews = cmp.Or[rport.BodyPreview](opts.Previews, noBrowser{})
+	opts.RetryDelay = cmp.Or(opts.RetryDelay, defaultRetryDelay)
+	opts.BaseScale = cmp.Or(opts.BaseScale, 1)
+	return opts
+}
+
+// wallClock is the time source when no Clock port is given.
+func (opts Options) now() func() time.Time {
+	if opts.Clock == nil {
+		return time.Now
 	}
+	return opts.Clock.Now
+}
+
+// loadSettings reads the settings file named by opts, the defaults when it
+// names none, and the user themes beside it.
+func loadSettings(opts Options) (settings.Settings, error, []string) {
 	st, loadErr := settings.Default(), error(nil)
 	if opts.SettingsPath != "" {
-		st, loadErr = settingFiles.Load(opts.SettingsPath)
+		st, loadErr = opts.SettingsFiles.Load(opts.SettingsPath)
 	}
 	themes, themeProblems := appearance.LoadUserThemes(opts.ThemesDir)
 	appearance.SetUserThemes(themes)
-	th := appearance.ThemeWith(st)
-	ctx, err := core.NewCtx(th)
+	return st, loadErr, themeProblems
+}
+
+// NewApp builds the window state from opts: settings, user themes and the start collection.
+func NewApp(opts Options) (*App, error) {
+	opts = opts.withDefaults()
+	st, loadErr, themeProblems := loadSettings(opts)
+	ctx, err := core.NewCtx(appearance.ThemeWith(st))
 	if err != nil {
 		return nil, err
 	}
 	a := &App{
-		ctx:              ctx,
-		baseScale:        cmp.Or(opts.BaseScale, 1),
-		sample:           opts.Sample,
-		saves:            map[*model.Collection]*autosave.Debounce{},
-		clients:          opts.Clients,
-		system:           opts.System,
-		defaultWorkspace: opts.DefaultWorkspace,
-		expanded:         map[*model.Folder]bool{},
-		widgets:          map[*tabs.Tab]*reqTab{},
-		bus:              bus.New(),
-		status:           "Ready",
-		shot:             newScreenshot(opts),
-
-		settings:       st,
-		settingFiles:   settingFiles,
-		settingsPath:   opts.SettingsPath,
-		settingsAccess: fileversion.AccessAfter(loadErr),
-		statePath:      opts.StatePath,
-		menu:           opts.OpenMenu,
+		ctx:        ctx,
+		baseScale:  opts.BaseScale,
+		retryDelay: opts.RetryDelay,
+		sample:     opts.Sample,
+		widgets:    map[*tabs.Tab]*reqTab{},
+		bus:        bus.New(),
+		status:     "Ready",
+		shot:       newScreenshot(opts),
+		jar:        newJar(),
+		list:       tabs.List{Drag: -1},
+		ports: ports{
+			protocols: opts.Protocols, grpcMethods: opts.GRPCMethods, grpcSchema: opts.GRPCSchema, curl: opts.Curl,
+			store: opts.Store, clients: opts.Clients, states: opts.States, files: opts.Files, folders: opts.Folders,
+			now: opts.now(), histories: opts.History, fonts: opts.Fonts, display: opts.Display, system: opts.System,
+			settingFiles: opts.SettingsFiles, previews: opts.Previews,
+		},
+		treeState:    treeState{expanded: map[*model.Folder]bool{}},
+		frameState:   frameState{dirty: true},
+		persistState: persistState{saves: map[*model.Collection]*autosave.Debounce{}, defaultWorkspace: opts.DefaultWorkspace, statePath: opts.StatePath},
+		settingsState: settingsState{
+			settings: st, settingsPath: opts.SettingsPath, settingsAccess: fileversion.AccessAfter(loadErr), menu: opts.OpenMenu,
+		},
 	}
 	if loadErr != nil {
 		a.status = loadErr.Error()
 	}
 	a.prefs.Stamp(a, a.settingsPath)
-	a.jar, _ = cookiejar.New(nil)
-	a.protocols, a.grpcMethods, a.grpcSchema, a.curl = opts.Protocols, opts.GRPCMethods, opts.GRPCSchema, opts.Curl
 	a.reg = a.newRegistry()
 	ctx.Clipboard = core.ReportClipboard(ctx.Clipboard, a.clipboardNote)
-	a.list.Drag = -1
-	a.dirty = true
-	a.now = time.Now // the fallback when no Clock port is given
-	if opts.Clock != nil {
-		a.now = opts.Clock.Now
-	}
 	if opts.HostOS != "" {
 		ctx.HostOS = opts.HostOS
 	}
 	a.sampler.HostOS = ctx.HostOS
-	a.retryDelay = cmp.Or(opts.RetryDelay, defaultRetryDelay)
 	ctx.Now = func() time.Time { return a.now() } // the caret blinks by the app clock
 	a.noteReadOnly(a.settingsAccess, loadErr)
-	a.store, a.states = opts.Store, opts.States
-	if a.states == nil {
-		a.states = noStates{}
-	}
-	if a.store == nil {
-		a.store = noStore{}
-	}
-	a.display = opts.Display
 	if opts.KeyRepeat != nil {
 		delay, interval := opts.KeyRepeat.Timing()
 		a.sampler.Repeat = core.KeyRepeat{Delay: delay, Interval: interval}
-	}
-	a.files, a.previews, a.histories, a.fonts = opts.Files, opts.Previews, opts.History, opts.Fonts
-	if a.fonts == nil {
-		a.fonts = noFonts{}
-	}
-	if a.files == nil {
-		a.files = noFileDialog{}
-	}
-	a.folders = opts.Folders
-	if a.folders == nil {
-		a.folders = noFolders{}
-	}
-	if a.previews == nil {
-		a.previews = noBrowser{}
 	}
 	for _, s := range shortcuts {
 		a.actionIDs = append(a.actionIDs, s.id)
@@ -159,12 +158,7 @@ func NewApp(opts Options) (*App, error) {
 		a.prefs.ScanFonts(a)
 	}
 	a.openWorkspace(opts.WorkspaceDir)
-	stored, stateErr := a.states.Load(opts.StatePath)
-	a.stateAccess = fileversion.AccessAfter(stateErr)
-	a.noteReadOnly(a.stateAccess, stateErr)
-	a.initial = stored.Window
-	a.restore(stored)
-	a.welcomed = stored.Welcomed
+	stateErr := a.loadState(opts.StatePath)
 	if opts.Welcome && (opts.WelcomeEvery || a.welcomed != version) {
 		a.openWelcome()
 	}
@@ -175,4 +169,22 @@ func NewApp(opts Options) (*App, error) {
 	}
 	a.stateSave = autosave.New(stateDebounce, stateKey(a.snapshot()))
 	return a, nil
+}
+
+// loadState reads the remembered state at path and applies it; the error is
+// the reason it could not be read, if any.
+func (a *App) loadState(path string) error {
+	stored, err := a.states.Load(path)
+	a.stateAccess = fileversion.AccessAfter(err)
+	a.noteReadOnly(a.stateAccess, err)
+	a.initial = stored.Window
+	a.restore(stored)
+	a.welcomed = stored.Welcomed
+	return err
+}
+
+// newJar is the cookie jar of a session; with no options it cannot fail.
+func newJar() http.CookieJar {
+	jar, _ := cookiejar.New(nil)
+	return jar
 }

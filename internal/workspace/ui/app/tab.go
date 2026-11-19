@@ -17,43 +17,65 @@ import (
 // reqTab is one open request with its editor and response state.
 type reqTab struct {
 	*tabs.Tab
-	url                   widget.TextField
-	paneTab               int
-	respTab               int
-	view                  widget.CodeView              // response body
-	bodyView              widget.CodeView              // request body, read-only
-	picture               *ebiten.Image                // the response body when it is an image
-	pictureInfo           string                       // "PNG 640x480, 12.5KB"
-	tests                 widget.TextArea              // the assertions editor
-	testResults           []assert.Result              // what the assertions found in the shown response
-	gqlVars               widget.TextArea              // the variables of a GraphQL body
-	file                  widget.TextField             // the path of a file body
-	fileCheck             bodyFileCheck                // what the file system said about file's path
-	body                  widget.TextArea              // request body editor
-	reqScroll, respScroll widget.ScrollState           // scroll of the table and note panes
-	bodyTypesX            widget.ScrollState           // sideways scroll of the body type chips
-	reqTabsX, respTabsX   widget.ScrollState           // sideways scroll of the two pane tab strips
-	timeout               widget.TextField             // the request's timeout seconds, as typed
-	cancel                context.CancelFunc           // stops the running request
-	auth                  map[string]*widget.TextField // Auth pane inputs by field id, created on first use
-	showSecrets           bool                         // show masked credential fields
-	look                  viewer.Model                 // the response mode, the find bar and its active match
-	compactAll            []widget.Line                // the unfiltered compact lines, kept while a search filters the view
-	find                  widget.TextField             // the search text
-	wsCancel              context.CancelFunc           // ends the timeout of the connect in progress
-	outbox                []queuedSend                 // sends and pings waiting for the one in flight, in order
-	outboxBusy            bool                         // a send is in flight
-	wsView                widget.CodeView              // the message log
-	msg                   widget.TextField             // the message being composed
-	grpcStream            bool                         // a gRPC tab streams instead of making single calls
-	proto                 protoState                   // the Proto pane of a gRPC tab
-	messageSchema         messageSchemaState           // the Schema pane of a gRPC tab
-	schema                *model.Schema                // what a GraphQL introspection answered
-	explorer              mcpexplorer.State            // the MCP explorer: the list shown, the open entry, its answer
-	form                  *mcpform.Form                // the argument form of the open entry, nil for none
-	resultView            widget.CodeView              // the last answer of the explorer
-	listScroll            widget.ScrollState           // scroll of the explorer's list
-	detailScroll          widget.ScrollState           // scroll of the open entry
+	socketBlock
+	grpcBlock
+	mcpBlock
+	responseBlock
+	url         widget.TextField
+	paneTab     int
+	bodyView    widget.CodeView              // request body, read-only
+	tests       widget.TextArea              // the assertions editor
+	gqlVars     widget.TextArea              // the variables of a GraphQL body
+	file        widget.TextField             // the path of a file body
+	fileCheck   bodyFileCheck                // what the file system said about file's path
+	body        widget.TextArea              // request body editor
+	reqScroll   widget.ScrollState           // scroll of the table and note panes
+	bodyTypesX  widget.ScrollState           // sideways scroll of the body type chips
+	reqTabsX    widget.ScrollState           // sideways scroll of the two pane tab strips
+	timeout     widget.TextField             // the request's timeout seconds, as typed
+	cancel      context.CancelFunc           // stops the running request
+	auth        map[string]*widget.TextField // Auth pane inputs by field id, created on first use
+	showSecrets bool                         // show masked credential fields
+	schema      *model.Schema                // what a GraphQL introspection answered
+}
+
+// socketBlock holds the state of a WebSocket tab: the message log, the message being composed and the sends waiting their turn.
+type socketBlock struct {
+	wsCancel   context.CancelFunc // ends the timeout of the connect in progress
+	outbox     []queuedSend       // sends and pings waiting for the one in flight, in order
+	outboxBusy bool               // a send is in flight
+	wsView     widget.CodeView    // the message log
+	msg        widget.TextField   // the message being composed
+}
+
+// grpcBlock holds the state of a gRPC tab: streaming and the Proto and Schema panes.
+type grpcBlock struct {
+	grpcStream    bool               // a gRPC tab streams instead of making single calls
+	proto         protoState         // the Proto pane of a gRPC tab
+	messageSchema messageSchemaState // the Schema pane of a gRPC tab
+}
+
+// mcpBlock holds the state of an MCP tab: the explorer, the form of the open entry and its answer.
+type mcpBlock struct {
+	explorer     mcpexplorer.State  // the MCP explorer: the list shown, the open entry, its answer
+	form         *mcpform.Form      // the argument form of the open entry, nil for none
+	resultView   widget.CodeView    // the last answer of the explorer
+	listScroll   widget.ScrollState // scroll of the explorer's list
+	detailScroll widget.ScrollState // scroll of the open entry
+}
+
+// responseBlock holds the state of the response pane: the body shown, the response mode and find bar, the assertion results and the pane scroll.
+type responseBlock struct {
+	respTab     int
+	view        widget.CodeView    // response body
+	picture     *ebiten.Image      // the response body when it is an image
+	pictureInfo string             // "PNG 640x480, 12.5KB"
+	testResults []assert.Result    // what the assertions found in the shown response
+	look        viewer.Model       // the response mode, the find bar and its active match
+	compactAll  []widget.Line      // the unfiltered compact lines, kept while a search filters the view
+	find        widget.TextField   // the search text
+	respScroll  widget.ScrollState // scroll of the table and note panes
+	respTabsX   widget.ScrollState // sideways scroll of the two pane tab strips
 }
 
 // makeTab is newTab with the response view the settings ask for.

@@ -331,7 +331,7 @@ func TestDisplayScaleTrustsTheWindowSystemUnlessItReportsOne(t *testing.T) {
 		{"no desktop source", 1, nil, 1},
 	}
 	for _, c := range cases {
-		app := &App{display: c.display}
+		app := &App{ports: ports{display: c.display}}
 		if got := app.displayScale(c.reported); got != c.want {
 			t.Errorf("%s: got %v, want %v", c.name, got, c.want)
 		}
@@ -339,7 +339,7 @@ func TestDisplayScaleTrustsTheWindowSystemUnlessItReportsOne(t *testing.T) {
 }
 
 func TestRememberedWindowSizeUsesTheWindowScaleOfTheLastLayout(t *testing.T) {
-	app := &App{windowScale: 2.5}
+	app := &App{frameState: frameState{windowScale: 2.5}}
 	if got := app.windowPx(800); got != 2000 {
 		t.Fatalf("got %d, want 2000", got)
 	}
