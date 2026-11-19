@@ -1,0 +1,154 @@
+package app
+
+import (
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	// The view DSL is dot-imported so views read like markup: Row(...), Text(...).
+	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+)
+
+// Sizes of the window chrome, in logical pixels.
+const (
+	sidebarW = 260
+	headerH  = 44
+	tabsH    = 42
+	urlH     = 56
+	statusH  = 28
+
+	// Smallest sizes the dividers allow.
+	minSidebarW = 160
+	minMainW    = 420
+	minPaneSize = 220
+	treeIndent  = 16
+	badgeW      = 40
+
+	// A request tab has fixed slots for the method badge and the unsaved
+	// dot, so editing a request never changes the tab's width.
+	tabBadgeW = 48
+	tabDirtyW = 12
+)
+
+var windowTemplate = markup.Must("window.vml", windowSource)
+
+// view is the whole window as a function of the app state (window.vml):
+// the collections tree beside the main column (header, request tabs, URL
+// bar, request | response) above the status bar, and the overlays over
+// them. The popup menu and the tooltip are layers that markup has no
+// element for, so they come in as slots like the views built here.
+func (a *App) view() Node {
+	t := a.cur()
+	return windowTemplate.MustBuild(markup.Scope{
+		"sidebarSplit":   &a.sidebarSplit,
+		"sidebarDefault": sidebarW - 1,
+		"minSidebarW":    minSidebarW,
+		"minMainW":       minMainW,
+		"sidebar":        a.sidebar(),
+		"header":         a.header(),
+		"requestTabs":    a.requestTabs(),
+		"urlBar":         a.urlBar(t),
+		"paneSplit":      &a.paneSplit,
+		"minPaneSize":    minPaneSize,
+		"stacked":        a.settings.Layout == "stacked",
+		"requestPane":    a.pane(t, requestPanesFor(t), &t.paneTab, &t.reqScroll, &t.reqTabsX, nil),
+		"responsePane":   a.pane(t, responsePanesFor(t), &t.respTab, &t.respScroll, &t.respTabsX, a.responseStatus(t)),
+		"statusBar":      a.statusBar(),
+		"menu":           a.menuView(),
+		"picker":         a.pickerView(),
+		"browser":        a.fileBrowserView(),
+		"popupMenu":      PopupMenuLayer(a.ctx),
+		"dialog":         a.dialogView(),
+		"callLog":        a.calls.View(a),
+		"toasts":         a.toastsView(),
+		"tooltips":       TooltipLayer(&a.tips),
+	})
+}
+
+// ── Main column ────────────────────────────────────────────────────────
+
+var headerTemplate = markup.Must("header.vml", headerSource)
+
+// header is the banner over the main column: the collection's name, the
+// environment chip and the settings menu button.
+func (a *App) header() Node {
+	return headerTemplate.MustBuild(markup.Scope{
+		"headerH":     headerH,
+		"gutter":      w.Gutter,
+		"title":       a.headerTitle(),
+		"env":         a.envChip(),
+		"toggleMenu":  a.toggleSettings,
+		"settingsTip": a.hint("Settings", "settings"),
+	})
+}
+
+var paneTemplate = markup.Must("pane.vml", paneSource)
+
+// pane is one tabbed area (pane.vml): a tab strip, with extra at its
+// right end when there is one, above the body of the active tab.
+func (a *App) pane(tab *reqTab, panes []pane, active *int, scroll, tabsX *ScrollState, extra Node) Node {
+	selectTab := func(index int) { *active, scroll.Y = index, 0 }
+	*active = min(*active, len(panes)-1) // a socket has fewer response panes
+	return paneTemplate.MustBuild(markup.Scope{
+		"tabsX":     tabsX,
+		"tabs":      a.tabItems(panes, tab),
+		"active":    *active,
+		"selectTab": selectTab,
+		"extra":     extra,
+		"body":      a.paneBody(panes[*active], tab, scroll),
+	})
+}
+
+// Templates, parsed once above.
+const (
+	windowSource = `<stack>
+  <!-- the frame: collections tree | main column, above the status bar -->
+  <col bg="frame">
+    <split state="sidebarSplit" default="{{sidebarDefault}}" grow="1" min-first="{{minSidebarW}}" min-second="{{minMainW}}">
+      <slot name="sidebar"/>
+      <!-- the main column: header, request tabs, URL bar, then request | response -->
+      <col grow="1">
+        <slot name="header"/>
+        <slot name="requestTabs"/>
+        <slot name="urlBar"/>
+        <split state="paneSplit" default="0.5" as-ratio grow="1" min-first="{{minPaneSize}}" min-second="{{minPaneSize}}" vertical="{{stacked}}">
+          <slot name="requestPane"/>
+          <slot name="responsePane"/>
+        </split>
+      </col>
+    </split>
+    <slot name="statusBar"/>
+  </col>
+  <!-- the overlays, each only while open, in z-order: the tooltip last so it is on top -->
+  <slot if="menu" name="menu"/>
+  <slot if="picker" name="picker"/>
+  <slot if="browser" name="browser"/>
+  <slot if="popupMenu" name="popupMenu"/>
+  <slot if="dialog" name="dialog"/>
+  <slot if="callLog" name="callLog"/>
+  <slot if="toasts" name="toasts"/>
+  <slot name="tooltips"/>
+</stack>
+`
+
+	headerSource = `<!-- In a window too narrow for everything the title gives up room first,
+     down to 48 px, then the chip, so the settings button stays inside. -->
+<row h="{{headerH}}" pad-x="{{gutter}}" bg="hero" control="hero">
+  <text bold ellipsis shrink min-w="48" color="hero-text">{{title}}</text>
+  <spacer/>
+  <slot name="env"/>
+  <spacer w="{{gutter}}"/>
+  <row w="{{headerH}}" on-click="toggleMenu" tooltip="{{settingsTip}}">
+    <icon name="gear" grow="1" color="hero-muted" hover-color="hero-text"/>
+  </row>
+</row>
+`
+
+	paneSource = `<col grow="1" bg="bg">
+  <tab-bar>
+    <scroll-tabs state="tabsX" items="tabs" active="{{active}}" on-select="selectTab"/>
+    <slot if="extra" name="extra"/>
+  </tab-bar>
+  <slot name="body"/>
+</col>
+`
+)

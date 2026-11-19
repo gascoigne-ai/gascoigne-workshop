@@ -427,7 +427,7 @@ directly.
 -  **Request edits** (`internal/request/controller/editor`, decision 13, task 037): an edit of the
   request in a tab is a typed message and `editor.Update(req, msg)` returns the request after it,
   never changing the one it is given. The App writes the result back into the collection's own
-  request (`editRequest` in `app.go`), so the sidebar, the autosave and the dirty dot see it at
+  request (`editRequest` in `tab.go`), so the sidebar, the autosave and the dirty dot see it at
   once. Edits: URL typed (the Params table follows), Params changed (the URL's query follows),
   method, protocol (a REST tab never keeps an empty or gRPC method), timeout, the body text (also a
   file path or a GraphQL query), the GraphQL variables and starter operation, and the body type
@@ -443,7 +443,7 @@ directly.
 tabs, the active one, the one being dragged) with a `reqTab` of widget state for each
 (`App.widgets`; `App.openTabs()` gives them in strip order), each pointing at the collection's
 `model.Request` (plus URL `TextField`, active pane tabs, last `Response`, two `CodeView`s), the
-expanded tree folders, settings and the status line. `view.go` is the window as VML views
+expanded tree folders, settings and the status line. `window.go`, `sidebar.go`, `requesttabs.go`, `urlbar.go` and `statusbar.go` are the window as VML views
 (`sidebar`, `header`, `requestTabs`, `urlBar`, `pane`, `statusBar`); handlers are plain closures
 that change `App`.
 
@@ -516,7 +516,7 @@ that change `App`.
   the parse error and a Format button (`json.Indent`, applied as an undoable edit; invalid JSON is
   left alone and reported in the status bar). Requests from before body types get a type inferred
   when their tab opens.
--  **Collection tree in the UI** (`internal/workspace/ui/app/treeops.go`): right-clicking a row
+-  **Collection tree in the UI** (`internal/workspace/ui/app/treeops.go`, with `treemenu.go`, `treedrag.go` and `import.go`): right-clicking a row
   opens its context menu: a request gets Rename, Duplicate, Move to..., Copy to..., Copy URL and
   Delete; a folder New request, New folder, Rename, Duplicate, Move to..., Copy to... and Delete
   (Move to... and Copy to... open the destination picker, `App.openTransferPicker`); the collection
@@ -540,12 +540,12 @@ that change `App`.
   the tree to requests whose name or URL contains the text and the folders that hold them, and a
   row's name shows the first match in the accent line color (`core.AccentLine`, readable on the
   sunken sidebar; `AccentText` is for text on an accent fill) (`collection.SplitMatch`). The sidebar
-  is markup (`view.go`): `sidebar.vml` holds the header and the tree's scroll, and each row is built
+  is markup (`sidebar.go`): `sidebar.vml` holds the header and the tree's scroll, and each row is built
   from `treefolder.vml` or `treerequest.vml` with a `treeItem` view model and walked through
   `<slot for>`; the drop outline is the row's `DropBorder` token, empty when the row is not the
   target (decision 4). While the tree has the keyboard (after clicking a row, and no text widget
   focused) Up/Down move the selection, Enter opens or toggles, F2 renames and Delete deletes.
--  **Right-click menus** (`internal/workspace/ui/app/ctxmenus.go`, the tree's is in `treeops.go`): a
+-  **Right-click menus** (`internal/workspace/ui/app/ctxmenus.go`, the tree's is in `treemenu.go`): a
   request tab (Close, Close others, Close tabs to the right, Duplicate, Copy URL), a table row
   (Insert row above / below, Duplicate, Move up / down, Enable all / Disable all, Delete, all
   through `applyRows` so they are undoable; the placeholder row has none), every text field and text
@@ -978,7 +978,7 @@ that change `App`.
   overflows (so no tab is hidden under an arrow), draws an arrow only at an end with somewhere to
   scroll to (the arrow takes the click before the tab under it), and scrolls with the wheel and a
   touchpad's two-finger sideways swipe (`Input.WheelX`). The request tab strip uses it too
-  (`App.tabsScroll`), keeping the active tab in view. That strip is markup (`view.go`):
+  (`App.tabsScroll`), keeping the active tab in view. That strip is markup (`requesttabs.go`):
   `requesttabs.vml` walks one `requestTabItem` view model per open request (badge and its color,
   name, dirty mark, active, handlers, and the separator's inset, 0 on the first tab so it has none;
   decision 4) inside `<hscroll>`, followed by the "+". 

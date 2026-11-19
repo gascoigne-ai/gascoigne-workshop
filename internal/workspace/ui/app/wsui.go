@@ -7,15 +7,15 @@ import (
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/bus"
-	"strings"
-	"time"
-
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/textfmt"
-	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/bus"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"strings"
+	"time"
+	// The view DSL is dot-imported so views read like markup: Row(...), Text(...).
+	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 // A WebSocket or MCP tab keeps a session open instead of making one request.
@@ -405,11 +405,6 @@ func (a *App) formatMessage(tab *reqTab) {
 		return
 	}
 	tab.setComposer(compact)
-}
-
-// requestPanesFor are the panes of the request side of tab.
-func requestPanesFor(tab *reqTab) []pane {
-	return viewOf(tab.Req.Protocol).requestPanes
 }
 
 // Templates, parsed once above.

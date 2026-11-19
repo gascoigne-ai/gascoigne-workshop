@@ -1,0 +1,184 @@
+package app
+
+import (
+	"bytes"
+	"encoding/json"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/editor"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/jsonview"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/respview"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"strings"
+	// The view DSL is dot-imported so views read like markup: Row(...), Text(...).
+	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+)
+
+// jsonStatus describes whether text is valid JSON, for the body pane.
+// An empty body has nothing to report.
+func jsonStatus(text string) (msg string, valid bool) {
+	if strings.TrimSpace(text) == "" {
+		return "", false
+	}
+	var v any
+	if err := json.Unmarshal([]byte(text), &v); err != nil {
+		return "Invalid JSON: " + err.Error(), false
+	}
+	return "Valid JSON", true
+}
+
+// bodyChoice is one choice of the body type row.
+type bodyChoice struct {
+	id    model.BodyType
+	label string
+	width int
+}
+
+// bodyTypes are the choices of the body type row.
+var bodyTypes = []bodyChoice{
+	{model.BodyNone, "None", 64},
+	{model.BodyJSON, "JSON", 64},
+	{model.BodyText, "Text", 64},
+	{model.BodyForm, "Form", 64},
+	{model.BodyMultipart, "Multipart", 84},
+	{model.BodyGraphQL, "GraphQL", 80},
+	{model.BodyFile, "File", 64},
+}
+
+// formPane is the table of form and multipart fields.
+var formPane = pane{label: "Body", kind: paneTable, title: "Fields", editable: true,
+	rows: func(_ *App, tab *reqTab) *[]model.KV { return &tab.Req.Form }}
+
+// The pane and its two simplest editors are templates; the editor is
+// picked in Go (bodyEditor) and enters the pane through a slot.
+var (
+	bodyPaneTemplate = markup.Must("bodypane.vml", bodypaneSource)
+	bodyAreaTemplate = markup.Must("bodyarea.vml", bodyareaSource)
+	bodyNoneTemplate = markup.Must("bodynone.vml", bodynoneSource)
+)
+
+// bodyChip is one chip of the body type row, as bodypane.vml shows it.
+type bodyChip struct {
+	Label    string
+	Width    int
+	Selected bool // the request's body type; also kept in view
+	Choose   func()
+}
+
+// bodyPane is the body editor: a type chooser, then an editor that fits the type.
+func (a *App) bodyPane(panel pane, tab *reqTab, scroll *ScrollState) Node {
+	kind := tab.Req.BodyType
+	isJSON := kind == model.BodyJSON
+	canWrap := isJSON || kind == model.BodyText // the editors that are a text area
+	status, valid := jsonStatus(tab.body.Text)
+	statusColor := w.Error
+	if valid {
+		statusColor = w.OK
+	}
+	chips := make([]bodyChip, len(bodyTypes))
+	for i, bodyType := range bodyTypes {
+		id := bodyType.id
+		chips[i] = bodyChip{Label: bodyType.label, Width: bodyType.width, Selected: id == kind,
+			Choose: func() { a.setBodyType(tab, id) }}
+	}
+	return bodyPaneTemplate.MustBuild(markup.Scope{
+		"looseGap":    w.LooseGap,
+		"tightGap":    w.TightGap,
+		"gutter":      w.Gutter,
+		"rowH":        w.RowH,
+		"typesX":      &tab.bodyTypesX,
+		"chips":       chips,
+		"showStatus":  isJSON && status != "",
+		"status":      status,
+		"statusColor": statusColor,
+		"isJSON":      isJSON,
+		"canWrap":     canWrap,
+		"wrap":        tab.body.Wrap,
+		"toggleWrap":  func() { a.toggleBodyWrap(tab) },
+		"format":      func() { a.formatBody(tab) },
+		"editor":      a.bodyEditor(tab, scroll),
+	})
+}
+
+// bodyEditor is the part of the body pane under the type chooser.
+func (a *App) bodyEditor(tab *reqTab, scroll *ScrollState) Node {
+	switch tab.Req.BodyType {
+	case model.BodyJSON, model.BodyText:
+		base := plainStyler
+		if tab.Req.BodyType == model.BodyJSON {
+			base = jsonStyler
+		}
+		tab.body.Styler = a.withVariables(base, tab.Req) // {{variables}} stand out, as in the URL
+		return bodyAreaTemplate.MustBuild(markup.Scope{
+			"body":     &tab.body,
+			"wrap":     tab.body.Wrap,
+			"bodyText": &tab.body.TextField,
+			"sync":     func() { editRequest(tab, editor.BodyTyped{Text: tab.body.Text}) },
+		})
+	case model.BodyForm, model.BodyMultipart:
+		return a.tableView(formPane, tab, scroll, 0)
+	case model.BodyFile:
+		return a.fileBody(tab)
+	case model.BodyGraphQL:
+		return a.graphQLBody(tab)
+	}
+	return bodyNoneTemplate.MustBuild(markup.Scope{})
+}
+
+// toggleBodyWrap switches the body editor between scrolling sideways and
+// breaking long lines at the width of the pane, per tab like the
+// response's Wrap.
+func (a *App) toggleBodyWrap(tab *reqTab) { tab.body.Wrap = !tab.body.Wrap }
+
+func (a *App) setBodyType(tab *reqTab, id model.BodyType) {
+	a.commitEdit()
+	editRequest(tab, editor.BodyTypeChosen{Type: id, Text: tab.body.Text, FilePath: tab.file.Text})
+}
+
+// formatBody re-indents a JSON body. Invalid JSON is left alone.
+func (a *App) formatBody(tab *reqTab) {
+	var out bytes.Buffer
+	if err := json.Indent(&out, []byte(tab.body.Text), "", "  "); err != nil {
+		a.status = "Cannot format body: " + err.Error()
+		return
+	}
+	tab.body.SelectAll()
+	tab.body.Insert(out.String()) // as an edit, so it can be undone
+	editRequest(tab, editor.BodyTyped{Text: tab.body.Text})
+}
+
+// jsonStyler colors one line of a JSON body.
+func jsonStyler(line string) []Span {
+	src := jsonview.Tokenize(line)
+	spans := make([]Span, len(src))
+	for i, s := range src {
+		spans[i] = Span{Text: s.Text, Style: respview.Tokens[s.Kind]}
+	}
+	return spans
+}
+
+// Templates, parsed once above.
+const (
+	bodypaneSource = `<!-- The body pane: the type chips with, for JSON, whether it parses;
+     for JSON and Text the Wrap chip; for JSON the Format button; the editor of the chosen type below. -->
+<col grow="1" pad="{{gutter}}" gap="{{looseGap}}">
+  <row h="{{rowH}}" gap="{{tightGap}}">
+    <!-- the type chips scroll sideways when the pane is narrow -->
+    <hscroll state="typesX" grow="1" gap="{{tightGap}}">
+      <choice for="chip in chips" selected="{{chip.Selected}}" w="{{chip.Width}}" keep-in-view="{{chip.Selected}}" on-click="chip.Choose">{{chip.Label}}</choice>
+    </hscroll>
+    <text if="showStatus" small color="{{statusColor}}" ellipsis optional>{{status}}</text>
+    <choice if="canWrap" selected="{{wrap}}" w="56" on-click="toggleWrap">Wrap</choice>
+    <button if="isJSON" w="70" on-click="format">Format</button>
+  </row>
+  <slot name="editor"/>
+</col>
+`
+
+	bodyareaSource = `<area state="body" grow="1" bg="sunken" wrap="{{wrap}}" on-change="sync" text-menu="bodyText"/>
+`
+
+	bodynoneSource = `<lines color="muted">This request has no body</lines>
+`
+)

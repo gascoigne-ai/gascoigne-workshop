@@ -1,25 +1,14 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/collections"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/tree"
-	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
-	"net/url"
-
-	"net/http/cookiejar"
-
-	"strings"
-
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
-	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"strings"
 )
 
 // Right-click menus for tabs, table rows, text widgets and the response.
-// The tree's own menu is in treeops.go. Every item does what its button
+// The tree's own menu is in treemenu.go. Every item does what its button
 // or shortcut does, through the same code.
 
 var menuSeparator = MenuItem{Separator: true}
@@ -133,67 +122,6 @@ func (a *App) copyRowItems(rows []model.KV, index int, withAll bool) []MenuItem 
 	return items
 }
 
-// Size is the window's size in logical pixels; with the methods below it
-// makes the App the host of the features that live in their own packages.
-func (a *App) Size() (width, height int) { return a.w, a.h }
-
-// SentStore, Toast (below), SetStatus, OpenRequest and Badge make the App
-// the host of the sent-request log.
-func (a *App) SentStore() port.SentStore {
-	store := a.historyStore()
-	if store == nil {
-		return nil
-	}
-	return store.Sent()
-}
-
-// Toast shows a message over the window.
-func (a *App) Toast(text string, isErr bool) { a.toast(text, isErr) }
-
-// SetStatus replaces the status line.
-func (a *App) SetStatus(text string) { a.status = text }
-
-// OpenRequest focuses the request at path of the collection saved in
-// folder and reports whether there is one. A row without a folder is of a
-// collection not saved, or older than the folder in a row, when the one
-// collection open was the first.
-func (a *App) OpenRequest(folder, path string) bool {
-	for _, entry := range a.sentCandidates(folder) {
-		if req := tree.At(&entry.Collection.Folder, path); req != nil {
-			a.openRequest(req)
-			return true
-		}
-	}
-	return false
-}
-
-// sentCandidates are the open collections a sent row of folder may name,
-// in the order they are searched.
-func (a *App) sentCandidates(folder string) []collections.Entry {
-	if folder != "" {
-		entry, ok := a.open.ByDir(folder)
-		if !ok {
-			return nil
-		}
-		return []collections.Entry{entry}
-	}
-	var candidates []collections.Entry
-	for _, entry := range a.open.Entries {
-		if entry.Dir == "" {
-			candidates = append(candidates, entry)
-		}
-	}
-	if len(a.open.Entries) > 0 {
-		candidates = append(candidates, a.open.Entries[0])
-	}
-	return candidates
-}
-
-// Badge is the method label shown before a request's name.
-func (a *App) Badge(protocol model.Protocol, method string) Node {
-	return Text(requestBadge(protocol, method), Small(), Color(appearance.MethodToken(method)), W(badgeW))
-}
-
 // ---- the response ------------------------------------------------------------------
 
 func (a *App) responseMenuItems(tab *reqTab) []MenuItem {
@@ -210,46 +138,4 @@ func (a *App) responseMenuItems(tab *reqTab) []MenuItem {
 		{Label: "Select all", Shortcut: "Ctrl+A", Run: func() { tab.view.SelectLines(0, len(tab.view.Lines)-1) }},
 		{Label: "Find", Shortcut: a.shortcutHint("find"), Run: a.openFind},
 	}
-}
-
-// clearCookies forgets every cookie the servers set. The jar is replaced,
-// so connections made before keep nothing.
-func (a *App) clearCookies() {
-	jar, err := cookiejar.New(nil)
-	if err != nil {
-		a.toast(err.Error(), true)
-		return
-	}
-	a.jar = jar
-	a.reg = a.newRegistry()
-	a.toast("Cookies cleared", false)
-}
-
-// newRegistry builds the protocols from the cookie jar, the network
-// settings (proxy, certificates) and the app's sampling dialog.
-func (a *App) newRegistry() reqport.Registry {
-	if a.protocols == nil {
-		return reqport.Registry{}
-	}
-	s := a.settings
-	return a.protocols(reqport.ProtocolConfig{Jar: a.jar, Proxy: s.Proxy, CACert: s.CACert, ClientCert: s.ClientCert, ClientKey: s.ClientKey, Sampler: a.sampleViaDialog})
-}
-
-// showCookies lists the cookies the jar holds for the request's URL and
-// offers to clear all of them.
-func (a *App) showCookies(tab *reqTab) {
-	u, err := url.Parse(tab.Req.Expanded(a.varsFor(tab.Req)).URL)
-	if err != nil || u.Host == "" {
-		a.toast("The URL has no host to look up cookies for", true)
-		return
-	}
-	var lines []string
-	for _, c := range a.jar.Cookies(u) {
-		lines = append(lines, c.Name+"="+c.Value)
-	}
-	body := "No cookies for " + u.Host + "."
-	if len(lines) > 0 {
-		body = "Sent to " + u.Host + ":\n" + strings.Join(lines, "\n")
-	}
-	a.confirm("Cookies", body, "Clear all cookies", a.clearCookies)
 }

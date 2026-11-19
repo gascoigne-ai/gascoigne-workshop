@@ -46,7 +46,7 @@ Dependencies point inward: what each role may import is written once, in `rules.
 
 ## One request, end to end
 
-1. The user types a URL in the URL bar (`urlbar` template in `workspace/ui/app/view.go`) and presses Send or Ctrl+Enter.
+1. The user types a URL in the URL bar (`urlbar` template in `workspace/ui/app/urlbar.go`) and presses Send or Ctrl+Enter.
 2. `App.send` calls `dispatch`: `tabs.Tab.BeginSend` numbers the send, `model.Request.Expanded` fills `{{variables}}` from the collection and the active environment, the call log records it.
 3. A command runs off the UI goroutine: `reg.Send(ctx, req)` on the protocol registry, a name-to-`Protocol` table built in `request/adapter/proto` (`rest`, `websocket`, `sse`, `mcp`, `grpc`; decision 2). Streaming protocols return a `Session` from `Connect` and report through the same bus.
 4. The result comes back as a message on the bus (`workspace/controller/bus`), drained once per frame on the UI goroutine; a late result of a cancelled send is dropped by its number.
