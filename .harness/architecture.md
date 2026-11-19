@@ -1380,8 +1380,9 @@ that change `App`.
   `SchemaType`, `Description`, `Properties` as `[]SchemaProperty` in document order with `Required`
   derived once from `required`, `Items`, `Enum`, `Default`, `Const` as `JSONValue` (the exact bytes;
   `Text()` is a string unquoted, anything else as compact JSON) and `Ref`) is decoded once by
-  `DecodeJSONSchema`, at the server answer and, once the schema users move to it, at the OpenAPI
-  import. Only these keywords are read; `anyOf`, `$defs`, `pattern`, `format` and the rest are
+  `DecodeJSONSchema` (also its `UnmarshalJSON`), once at the server answer (`MCPTool.Schema`) and
+  once at the OpenAPI import; `Skeleton`, `ToolFields`, `Arguments` and the OpenAPI importer read
+  the typed schema, with no map and no type assertion. Only these keywords are read; `anyOf`, `$defs`, `pattern`, `format` and the rest are
   ignored. A schema that is not an object (`true`, `false`, a string, `null`, an array) is the zero
   schema and no error; invalid JSON is the only error. A list of types takes the first that is not
   `null`, an unknown or non-string type is none, properties without a type make it an object, a
@@ -1397,10 +1398,12 @@ that change `App`.
   session ends), and a response whose id maps to a list method carries the payload; the same shape
   as the result of `tools/call`, in a notification or from another protocol carries none. A result
   that does not decode is an Info line of kind `error` and no payload; one bad entry is skipped and a
-  tool whose `inputSchema` is not an object keeps no schema, so neither drops the list.
+  tool whose `inputSchema` is not an object keeps the zero schema (an empty form), so neither drops
+  the list.
   `Connection.Received` fills `Tools`, `Resources` and `Prompts` from the payload only: a WebSocket
   frame never fills `Tools`, and an empty `ToolsList` (a list that changed to nothing) clears them.
-  `model.Skeleton(schema)` builds a JSON value that fits a tool's input schema. A tab keeps what the
+  `model.Skeleton(schema)` builds a JSON value that fits a tool's input schema (required properties
+  and those with a default, by name); a tool with the zero schema composes `{}`. A tab keeps what the
   server announced (`reqTab.tools`, `resources`, `prompts`, cleared when the session ends) and the
   toolbar buttons open menus whose entries compose a `call`, `read` or `prompt` line in the
   composer.
@@ -1733,8 +1736,11 @@ that change `App`.
 -  **OpenAPI import** (`internal/collection/model/openapi`, `App.importOpenAPI`): `openapi.Parse`
   reads an OpenAPI 3 document in JSON or YAML (YAML through `internal/collection/model/miniyaml`)
   into a folder (a subfolder per first tag, a request per operation), following `$ref` for
-  parameters and schemas (depth-limited), turning `{id}` into `{{id}}`, and building a JSON body
-  from the example or from `model.Skeleton` of the schema. The importer defines the `baseUrl`
+  parameters and schemas, turning `{id}` into `{{id}}`, and building a JSON body
+  from the example or from `model.Skeleton` of the schema. Schemas (`components.schemas`, parameter
+  and body schemas) are decoded into `model.JSONSchema` with the document; `resolveRefs` follows
+  `$ref` into `#/components/schemas/` (and inside properties) and a reference outside the document
+  is the zero schema. The importer defines the `baseUrl`
   collection variable from the first server when the collection has none. What cannot be read is
   listed in `Result.Skipped` instead of failing the import: an operation (`METHOD /path: why`, left
   out) or a path's shared parameters (`parameters of /path: why`, its operations imported without

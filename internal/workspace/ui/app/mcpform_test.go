@@ -10,16 +10,20 @@ import (
 )
 
 func searchTool() model.MCPTool {
-	return model.MCPTool{Name: "search", Schema: map[string]any{
-		"type":     "object",
-		"required": []any{"query"},
-		"properties": map[string]any{
-			"query": map[string]any{"type": "string", "description": "What to find"},
-			"limit": map[string]any{"type": "integer", "default": float64(10)},
-			"safe":  map[string]any{"type": "boolean"},
-			"sort":  map[string]any{"type": "string", "enum": []any{"asc", "desc"}},
-		},
-	}}
+	return model.MCPTool{Name: "search", Schema: schemaOf(`{"type":"object","required":["query"],"properties":{
+	"query":{"type":"string","description":"What to find"},
+	"limit":{"type":"integer","default":10},
+	"safe":{"type":"boolean"},
+	"sort":{"type":"string","enum":["asc","desc"]}}}`)}
+}
+
+// schemaOf decodes the JSON text of a tool's input schema.
+func schemaOf(text string) model.JSONSchema {
+	schema, err := model.DecodeJSONSchema([]byte(text))
+	if err != nil {
+		panic(err)
+	}
+	return schema
 }
 
 func dialogButtonNamed(t *testing.T, app *App, label string) widget.DialogButton {

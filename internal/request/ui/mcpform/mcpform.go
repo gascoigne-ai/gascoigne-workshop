@@ -53,7 +53,7 @@ func (form *Form) Empty() bool { return len(form.fields) == 0 }
 // out of the call).
 func initialChoice(field model.ToolField) string {
 	switch {
-	case field.Default != nil:
+	case len(field.Default) > 0:
 		return field.Initial()
 	case field.Required && field.Kind == model.FieldBoolean:
 		return "false"

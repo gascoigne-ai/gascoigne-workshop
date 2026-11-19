@@ -28,32 +28,22 @@ type ToolField struct {
 	Description string
 	Kind        FieldKind
 	Required    bool
-	Enum        []any
-	Default     any
+	Enum        []JSONValue
+	Default     JSONValue // nil when the schema gives none
 }
 
 // ToolFields lists the properties of a tool's input schema as form
 // fields: the required ones first, then the rest, each group by name.
-func ToolFields(schema map[string]any) []ToolField {
-	properties, _ := schema["properties"].(map[string]any)
-	if len(properties) == 0 {
-		return nil
-	}
-	required := map[string]bool{}
-	if list, ok := schema["required"].([]any); ok {
-		for _, entry := range list {
-			if name, ok := entry.(string); ok {
-				required[name] = true
-			}
+func ToolFields(schema JSONSchema) []ToolField {
+	fields := make([]ToolField, 0, len(schema.Properties))
+	for _, property := range schema.Properties {
+		field := ToolField{
+			Name: property.Name, Description: property.Schema.Description, Required: property.Required,
+			Kind: fieldKind(property.Schema), Enum: property.Schema.Enum, Default: property.Schema.Default,
 		}
-	}
-	fields := make([]ToolField, 0, len(properties))
-	for name, raw := range properties {
-		property, _ := raw.(map[string]any)
-		description, _ := property["description"].(string)
-		field := ToolField{Name: name, Description: description, Required: required[name], Default: property["default"]}
-		field.Enum, _ = property["enum"].([]any)
-		field.Kind = fieldKind(property)
+		if string(field.Default) == "null" { // a null default is no default
+			field.Default = nil
+		}
 		fields = append(fields, field)
 	}
 	sort.Slice(fields, func(index, other int) bool {
@@ -62,22 +52,25 @@ func ToolFields(schema map[string]any) []ToolField {
 		}
 		return fields[index].Name < fields[other].Name
 	})
+	if len(fields) == 0 {
+		return nil
+	}
 	return fields
 }
 
 // fieldKind is the form input a property gets.
-func fieldKind(property map[string]any) FieldKind {
-	if enum, ok := property["enum"].([]any); ok && len(enum) > 0 {
+func fieldKind(property JSONSchema) FieldKind {
+	if len(property.Enum) > 0 {
 		return FieldEnum
 	}
-	switch kind(property) {
-	case "string":
+	switch property.Type {
+	case SchemaString:
 		return FieldString
-	case "number":
+	case SchemaNumber:
 		return FieldNumber
-	case "integer":
+	case SchemaInteger:
 		return FieldInteger
-	case "boolean":
+	case SchemaBoolean:
 		return FieldBoolean
 	}
 	return FieldJSON
@@ -85,25 +78,13 @@ func fieldKind(property map[string]any) FieldKind {
 
 // Initial is the text a form starts the field with: its default.
 func (field ToolField) Initial() string {
-	if field.Default == nil {
+	if len(field.Default) == 0 {
 		if field.Kind == FieldBoolean {
 			return "false"
 		}
 		return ""
 	}
-	return valueText(field.Default)
-}
-
-// valueText is a JSON value as the text a user would type for it.
-func valueText(value any) string {
-	if text, ok := value.(string); ok {
-		return text
-	}
-	encoded, err := json.Marshal(value)
-	if err != nil {
-		return ""
-	}
-	return string(encoded)
+	return field.Default.Text()
 }
 
 // Arguments builds the JSON object of a tool call from the form's values
@@ -111,7 +92,7 @@ func valueText(value any) string {
 // that does not fit its field is an error naming the field.
 func Arguments(fields []ToolField, values map[string]string) (string, error) {
 	names := make([]string, 0, len(fields))
-	parsed := map[string]any{}
+	parsed := map[string]json.RawMessage{}
 	for _, field := range fields {
 		value, present, err := field.parse(values[field.Name])
 		if err != nil {
@@ -123,11 +104,7 @@ func Arguments(fields []ToolField, values map[string]string) (string, error) {
 		}
 	}
 	out, err := writeObject(names, func(name string) ([]byte, error) {
-		value, err := marshalNoEscape(parsed[name])
-		if err != nil {
-			return nil, fmt.Errorf("%s: %w", name, err)
-		}
-		return value, nil
+		return parsed[name], nil
 	})
 	if err != nil {
 		return "", err
@@ -148,9 +125,9 @@ func marshalNoEscape(value any) ([]byte, error) {
 
 // parse turns the typed text into the JSON value of the field; present
 // is false when an optional field was left empty.
-func (field ToolField) parse(text string) (value any, present bool, err error) {
+func (field ToolField) parse(text string) (value json.RawMessage, present bool, err error) {
 	if field.Kind == FieldString { // a string keeps its spaces; only an empty optional one goes
-		return text, text != "" || field.Required, nil
+		return field.encode(text, text != "" || field.Required)
 	}
 	text = strings.TrimSpace(text)
 	if text == "" {
@@ -163,7 +140,7 @@ func (field ToolField) parse(text string) (value any, present bool, err error) {
 	case FieldInteger:
 		whole, err := strconv.ParseInt(text, 10, 64)
 		if err == nil {
-			return whole, true, nil
+			return field.encode(whole, true)
 		}
 		if _, floatErr := strconv.ParseFloat(text, 64); floatErr == nil {
 			return nil, false, fmt.Errorf("%s must be a whole number", field.Name)
@@ -174,19 +151,17 @@ func (field ToolField) parse(text string) (value any, present bool, err error) {
 		if err != nil {
 			return nil, false, fmt.Errorf("%s must be a number", field.Name)
 		}
-		return number, true, nil
+		return field.encode(number, true)
 	case FieldBoolean:
 		switch text {
-		case "true":
-			return true, true, nil
-		case "false":
-			return false, true, nil
+		case "true", "false":
+			return json.RawMessage(text), true, nil
 		}
 		return nil, false, fmt.Errorf("%s must be true or false", field.Name)
 	case FieldEnum:
 		for _, option := range field.Enum {
-			if valueText(option) == text {
-				return option, true, nil
+			if option.Text() == text {
+				return field.encode(json.RawMessage(option), true)
 			}
 		}
 		return nil, false, fmt.Errorf("%s must be one of %s", field.Name, field.enumText())
@@ -195,13 +170,22 @@ func (field ToolField) parse(text string) (value any, present bool, err error) {
 	if err := json.Unmarshal([]byte(text), &raw); err != nil {
 		return nil, false, fmt.Errorf("%s is not valid JSON: %v", field.Name, err)
 	}
-	return raw, true, nil
+	return field.encode(raw, true)
+}
+
+// encode is the JSON of a typed value, or the error naming the field.
+func (field ToolField) encode(value any, present bool) (json.RawMessage, bool, error) {
+	encoded, err := marshalNoEscape(value)
+	if err != nil {
+		return nil, false, fmt.Errorf("%s: %w", field.Name, err)
+	}
+	return encoded, present, nil
 }
 
 func (field ToolField) enumText() string {
 	options := make([]string, len(field.Enum))
 	for i, option := range field.Enum {
-		options[i] = valueText(option)
+		options[i] = option.Text()
 	}
 	return strings.Join(options, ", ")
 }

@@ -11,10 +11,10 @@ func TestOrderedObjectWritersKeepTheirEscaping(t *testing.T) {
 	if err != nil || got != `{"b":"&","a":"<x>"}` {
 		t.Errorf("Arguments = %s, %v", got, err)
 	}
-	schema := map[string]any{"type": "object", "properties": map[string]any{
-		"q": map[string]any{"type": "string", "default": "<x>"},
-		"z": map[string]any{"type": "boolean", "default": true},
-	}}
+	schema, err := DecodeJSONSchema([]byte(`{"type":"object","properties":{"q":{"type":"string","default":"<x>"},"z":{"type":"boolean","default":true}}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
 	if got := Skeleton(schema); got != `{"q":"`+"\\u003cx\\u003e"+`","z":true}` {
 		t.Errorf("Skeleton = %q", got)
 	}

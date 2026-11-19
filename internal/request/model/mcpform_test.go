@@ -1,16 +1,15 @@
 package model
 
 import (
-	"encoding/json"
 	"reflect"
 	"strings"
 	"testing"
 )
 
-func schemaOf(t *testing.T, text string) map[string]any {
+func schemaOf(t *testing.T, text string) JSONSchema {
 	t.Helper()
-	var schema map[string]any
-	if err := json.Unmarshal([]byte(text), &schema); err != nil {
+	schema, err := DecodeJSONSchema([]byte(text))
+	if err != nil {
 		t.Fatal(err)
 	}
 	return schema
@@ -59,7 +58,7 @@ func TestToolFieldsOfASchemaWithoutPropertiesIsEmpty(t *testing.T) {
 			t.Errorf("%s: %+v", text, got)
 		}
 	}
-	if ToolFields(nil) != nil {
+	if ToolFields(JSONSchema{}) != nil {
 		t.Error("no schema, no fields")
 	}
 }

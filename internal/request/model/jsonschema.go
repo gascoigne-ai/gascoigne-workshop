@@ -27,6 +27,12 @@ const (
 // means the value is absent.
 type JSONValue json.RawMessage
 
+// UnmarshalJSON keeps the bytes of the value as they are.
+func (value *JSONValue) UnmarshalJSON(data []byte) error {
+	*value = append((*value)[:0], data...)
+	return nil
+}
+
 // Text is the value as a form field shows it: a string unquoted, anything
 // else as compact JSON.
 func (value JSONValue) Text() string {
@@ -77,6 +83,17 @@ func DecodeJSONSchema(data []byte) (JSONSchema, error) {
 		return JSONSchema{}, errors.New("decode JSON schema: invalid JSON")
 	}
 	return decodeSchema(data, 1)
+}
+
+// UnmarshalJSON decodes a schema inside a larger document; anything that is
+// no schema object is the zero schema.
+func (schema *JSONSchema) UnmarshalJSON(data []byte) error {
+	decoded, err := DecodeJSONSchema(data)
+	if err != nil {
+		return err
+	}
+	*schema = decoded
+	return nil
 }
 
 // rawField is one member of a JSON object whose value is not read yet.

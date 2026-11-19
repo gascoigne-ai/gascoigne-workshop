@@ -414,7 +414,7 @@ func (a *App) toolMenu(tab *reqTab) []MenuItem {
 // composeCall fills the composer with a call of tool.
 func (a *App) composeCall(tab *reqTab, tool model.MCPTool) {
 	args := "{}"
-	if tool.Schema != nil {
+	if tool.Schema.Type != "" {
 		args = model.Skeleton(tool.Schema)
 	}
 	tab.setComposer("call " + tool.Name + " " + args)

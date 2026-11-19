@@ -205,3 +205,16 @@ func TestExampleServerFixturesDecode(t *testing.T) {
 		}
 	}
 }
+
+func TestSchemaAndValuesDecodeInsideALargerDocument(t *testing.T) {
+	var document struct {
+		Schema  JSONSchema `json:"schema"`
+		Example JSONValue  `json:"example"`
+	}
+	if err := json.Unmarshal([]byte(`{"schema":{"type":"string","default":"x"},"example":{"a": [1,2]}}`), &document); err != nil {
+		t.Fatal(err)
+	}
+	if document.Schema.Type != SchemaString || document.Schema.Default.Text() != "x" || document.Example.Text() != `{"a":[1,2]}` {
+		t.Errorf("%+v", document)
+	}
+}

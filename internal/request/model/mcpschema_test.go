@@ -39,7 +39,7 @@ func TestSkeletonFitsTheSchema(t *testing.T) {
 			t.Errorf("%s: %s, want %s", tt.name, got, tt.want)
 		}
 	}
-	if got := Skeleton(map[string]any{"type": "string", "default": "<b>"}); got != `"<b>"` {
+	if got := Skeleton(JSONSchema{Type: SchemaString, Default: JSONValue(`"<b>"`)}); got != `"<b>"` {
 		t.Errorf("HTML characters must not be escaped in a skeleton: %s", got)
 	}
 }
@@ -57,5 +57,23 @@ func TestDecodeResourcesAndPrompts(t *testing.T) {
 	badPrompts, _ := DecodePrompts([]byte(`{}`))
 	if badResources != nil || badPrompts != nil {
 		t.Fatal("garbage must give nothing")
+	}
+}
+
+// One tool with an inputSchema that is no object (true, a string) keeps its
+// place in the list with no arguments, and its form is empty.
+func TestAMalformedInputSchemaLeavesAnEmptyFormAndTheOtherToolsAlone(t *testing.T) {
+	for _, bad := range []string{`true`, `"text"`, `[1]`} {
+		result := `{"tools":[{"name":"a","inputSchema":` + bad + `},{"name":"b","inputSchema":{"type":"object","properties":{"q":{"type":"string"}},"required":["q"]}}]}`
+		tools, err := DecodeTools([]byte(result))
+		if err != nil || len(tools) != 2 {
+			t.Fatalf("%s: %+v, %v", bad, tools, err)
+		}
+		if fields := ToolFields(tools[0].Schema); len(fields) != 0 {
+			t.Errorf("%s: a tool with a malformed schema has fields %+v", bad, fields)
+		}
+		if fields := ToolFields(tools[1].Schema); len(fields) != 1 || fields[0].Name != "q" || !fields[0].Required {
+			t.Errorf("%s: the other tool lost its form: %+v", bad, fields)
+		}
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"sort"
 )
 
@@ -11,91 +12,66 @@ import (
 type MCPTool struct {
 	Name        string
 	Description string
-	Schema      map[string]any // the JSON schema of the arguments
+	Schema      JSONSchema // the arguments; the zero schema when the server gave none
 }
 
 // Skeleton is a JSON value that fits schema, with the required properties
 // first, to start editing from: "" for strings, 0 for numbers, false for
 // booleans, the first value of an enum, [] and {} for the rest. Optional
 // properties are left out unless they have a default.
-func Skeleton(schema map[string]any) string {
-	var buf bytes.Buffer
-	enc := json.NewEncoder(&buf)
-	enc.SetEscapeHTML(false)
-	_ = enc.Encode(skeletonValue(schema))
-	return string(bytes.TrimSpace(buf.Bytes()))
+func Skeleton(schema JSONSchema) string {
+	encoded, err := marshalNoEscape(skeletonValue(schema))
+	if err != nil {
+		return "null"
+	}
+	return string(encoded)
 }
 
-func skeletonValue(other map[string]any) any {
-	if d, ok := other["default"]; ok {
-		return d
+func skeletonValue(schema JSONSchema) any {
+	switch {
+	case len(schema.Default) > 0:
+		return json.RawMessage(schema.Default)
+	case len(schema.Enum) > 0:
+		return json.RawMessage(schema.Enum[0])
+	case len(schema.Const) > 0:
+		return json.RawMessage(schema.Const)
 	}
-	if e, ok := other["enum"].([]any); ok && len(e) > 0 {
-		return e[0]
-	}
-	if c, ok := other["const"]; ok {
-		return c
-	}
-	switch kind(other) {
-	case "string":
+	switch schema.Type {
+	case SchemaString:
 		return ""
-	case "integer", "number":
+	case SchemaInteger, SchemaNumber:
 		return 0
-	case "boolean":
+	case SchemaBoolean:
 		return false
-	case "array":
+	case SchemaArray:
 		return []any{}
-	case "object":
-		props, _ := other["properties"].(map[string]any)
-		required := map[string]bool{}
-		if r, ok := other["required"].([]any); ok {
-			for _, n := range r {
-				if name, ok := n.(string); ok {
-					required[name] = true
-				}
-			}
-		}
-		names := make([]string, 0, len(props))
-		for n := range props {
-			sub, _ := props[n].(map[string]any)
-			if _, hasDefault := sub["default"]; required[n] || hasDefault {
-				names = append(names, n)
-			}
-		}
-		sort.Strings(names)
-		return orderedObject{names: names, values: props}
+	case SchemaObject:
+		return newSkeletonObject(schema.Properties)
 	}
 	return nil
 }
 
-// kind is the schema's type; a type list takes its first non-null entry.
-func kind(other map[string]any) string {
-	switch t := other["type"].(type) {
-	case string:
-		return t
-	case []any:
-		for _, x := range t {
-			if name, ok := x.(string); ok && name != "null" {
-				return name
-			}
+// skeletonObject keeps the properties a skeleton shows, by name.
+type skeletonObject struct {
+	names   []string
+	schemas map[string]JSONSchema
+}
+
+func newSkeletonObject(properties []SchemaProperty) skeletonObject {
+	object := skeletonObject{schemas: map[string]JSONSchema{}}
+	for _, property := range properties {
+		if property.Required || len(property.Schema.Default) > 0 {
+			object.names = append(object.names, property.Name)
+			object.schemas[property.Name] = property.Schema
 		}
 	}
-	if _, ok := other["properties"]; ok {
-		return "object"
-	}
-	return ""
+	sort.Strings(object.names)
+	return object
 }
 
-// orderedObject marshals the chosen properties in the given order.
-type orderedObject struct {
-	names  []string
-	values map[string]any
-}
-
-func (o orderedObject) MarshalJSON() ([]byte, error) {
-	return writeObject(o.names, func(name string) ([]byte, error) {
-		sub, _ := o.values[name].(map[string]any)
-		return json.Marshal(skeletonValue(sub))
+func (object skeletonObject) MarshalJSON() ([]byte, error) {
+	return writeObject(object.names, func(name string) ([]byte, error) {
+		return json.Marshal(skeletonValue(object.schemas[name])) // members keep encoding/json's escapes
 	})
 }
 
@@ -133,28 +109,20 @@ type MCPPrompt struct {
 
 // Schema is the JSON schema of the prompt's arguments: its required ones,
 // all strings.
-func (p MCPPrompt) Schema() map[string]any {
-	props := map[string]any{}
-	for _, a := range p.Args {
-		props[a] = map[string]any{"type": "string"}
+func (p MCPPrompt) Schema() JSONSchema {
+	schema := JSONSchema{Type: SchemaObject}
+	for _, name := range p.Args {
+		schema.Properties = append(schema.Properties, SchemaProperty{Name: name, Required: true, Schema: JSONSchema{Type: SchemaString}})
 	}
-	return map[string]any{"type": "object", "properties": props, "required": toAny(p.Args)}
+	return schema
 }
 
 // ArgsJSON is {"name":"",...} for a prompt's required arguments.
 func (p MCPPrompt) ArgsJSON() string { return Skeleton(p.Schema()) }
 
-func toAny(names []string) []any {
-	out := make([]any, len(names))
-	for i, v := range names {
-		out[i] = v
-	}
-	return out
-}
-
 // DecodeTools reads the tools of a tools/list result, in server order. An
 // entry that is not a tool, or has no name, is skipped; a tool whose
-// inputSchema is not an object keeps a nil Schema. The error is for a
+// inputSchema is not an object keeps the zero Schema. The error is for a
 // result that is not an object.
 func DecodeTools(result []byte) ([]MCPTool, error) {
 	entries, err := listEntries(result, "tools")
@@ -171,8 +139,10 @@ func DecodeTools(result []byte) ([]MCPTool, error) {
 		if json.Unmarshal(entry, &raw) != nil || raw.Name == "" {
 			continue
 		}
-		var schema map[string]any
-		_ = json.Unmarshal(raw.InputSchema, &schema) // true or a string is no schema: the tool keeps none
+		schema, err := DecodeJSONSchema(raw.InputSchema)
+		if err != nil && len(raw.InputSchema) > 0 { // a broken schema leaves this tool without arguments, not the list without tools
+			slog.Debug("tool schema skipped", "tool", raw.Name, "error", err)
+		}
 		tools = append(tools, MCPTool{Name: raw.Name, Description: raw.Description, Schema: schema})
 	}
 	return tools, nil

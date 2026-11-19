@@ -36,19 +36,19 @@ type doc struct {
 	} `json:"servers"`
 	Paths      map[string]json.RawMessage `json:"paths"`
 	Components struct {
-		Schemas    map[string]map[string]any `json:"schemas"`
-		Parameters map[string]param          `json:"parameters"`
-		Bodies     map[string]requestBody    `json:"requestBodies"`
+		Schemas    map[string]model.JSONSchema `json:"schemas"`
+		Parameters map[string]param            `json:"parameters"`
+		Bodies     map[string]requestBody      `json:"requestBodies"`
 	} `json:"components"`
 }
 
 type param struct {
-	Ref      string         `json:"$ref"`
-	Name     string         `json:"name"`
-	In       string         `json:"in"`
-	Required bool           `json:"required"`
-	Schema   map[string]any `json:"schema"`
-	Example  any            `json:"example"`
+	Ref      string           `json:"$ref"`
+	Name     string           `json:"name"`
+	In       string           `json:"in"`
+	Required bool             `json:"required"`
+	Schema   model.JSONSchema `json:"schema"`
+	Example  model.JSONValue  `json:"example"`
 }
 
 // requestBody is a body description; Ref points into
@@ -56,8 +56,8 @@ type param struct {
 type requestBody struct {
 	Ref     string `json:"$ref"`
 	Content map[string]struct {
-		Schema  map[string]any `json:"schema"`
-		Example any            `json:"example"`
+		Schema  model.JSONSchema `json:"schema"`
+		Example model.JSONValue  `json:"example"`
 	} `json:"content"`
 }
 
@@ -165,33 +165,31 @@ func (d *doc) resolveBody(body requestBody) requestBody {
 	return body
 }
 
-// maxRefDepth is how many nested $ref levels schema follows before it stops.
+// maxRefDepth is how many nested $ref levels resolveRefs follows before it
+// stops; it ends a cycle.
 const maxRefDepth = 6
 
-// schema follows $ref chains into components.schemas, to a depth that
-// stops a cycle, and does the same inside properties.
-func (d *doc) schema(other map[string]any, depth int) map[string]any {
-	if other == nil || depth > maxRefDepth {
-		return other
+// resolveRefs follows $ref into components.schemas, and the same inside
+// properties. A reference outside the document, or to a missing schema, is
+// the zero schema.
+func (d *doc) resolveRefs(schema model.JSONSchema, depth int) model.JSONSchema {
+	if depth > maxRefDepth {
+		return schema
 	}
-	if ref, ok := other["$ref"].(string); ok {
-		if name, ok := strings.CutPrefix(ref, "#/components/schemas/"); ok {
-			return d.schema(d.Components.Schemas[name], depth+1)
+	if schema.Ref != "" {
+		name, local := strings.CutPrefix(schema.Ref, "#/components/schemas/")
+		if !local {
+			return model.JSONSchema{}
 		}
-		return nil
+		return d.resolveRefs(d.Components.Schemas[name], depth+1)
 	}
-	out := map[string]any{}
-	maps.Copy(out, other)
-	if props, ok := other["properties"].(map[string]any); ok {
-		np := map[string]any{}
-		for name, p := range props {
-			if sub, ok := p.(map[string]any); ok {
-				np[name] = d.schema(sub, depth+1)
-			}
-		}
-		out["properties"] = np
+	properties := make([]model.SchemaProperty, len(schema.Properties))
+	for i, property := range schema.Properties {
+		properties[i] = property
+		properties[i].Schema = d.resolveRefs(property.Schema, depth+1)
 	}
-	return out
+	schema.Properties = properties
+	return schema
 }
 
 func buildRequest(spec *doc, method, path string, op operation, shared []param) model.Request {
@@ -222,11 +220,10 @@ func buildRequest(spec *doc, method, path string, op operation, shared []param) 
 		if mt, ok := body.Content["application/json"]; ok {
 			req.BodyType = model.BodyJSON
 			switch {
-			case mt.Example != nil:
-				b, _ := json.MarshalIndent(mt.Example, "", "  ")
-				req.Body = string(b)
-			case mt.Schema != nil:
-				req.Body = indent(model.Skeleton(spec.schema(mt.Schema, 0)))
+			case hasValue(mt.Example):
+				req.Body = indent(string(mt.Example))
+			case mt.Schema.Type != "" || mt.Schema.Ref != "":
+				req.Body = indent(model.Skeleton(spec.resolveRefs(mt.Schema, 0)))
 			default:
 				req.Body = "{}"
 			}
@@ -254,16 +251,20 @@ func pathVars(path string) string {
 // paramValue is a sample value for a parameter: its example, its default,
 // or the first enum value; empty when the document gives none.
 func paramValue(parameter param) string {
-	if parameter.Example != nil {
-		return fmt.Sprint(parameter.Example)
-	}
-	if v, ok := parameter.Schema["default"]; ok {
-		return fmt.Sprint(v)
-	}
-	if e, ok := parameter.Schema["enum"].([]any); ok && len(e) > 0 && parameter.Required {
-		return fmt.Sprint(e[0])
+	switch {
+	case hasValue(parameter.Example):
+		return parameter.Example.Text()
+	case hasValue(parameter.Schema.Default):
+		return parameter.Schema.Default.Text()
+	case len(parameter.Schema.Enum) > 0 && parameter.Required:
+		return parameter.Schema.Enum[0].Text()
 	}
 	return ""
+}
+
+// hasValue is false for an absent value and for null.
+func hasValue(value model.JSONValue) bool {
+	return len(value) > 0 && string(value) != "null"
 }
 
 func indent(text string) string {

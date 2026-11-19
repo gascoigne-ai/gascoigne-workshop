@@ -223,6 +223,9 @@ func FuzzParse(fuzz *testing.F) {
 	}
 	fuzz.Add([]byte("openapi: 3.0.0\ninfo:\n  title: T\npaths:\n  /a:\n    get:\n      summary: A\n"))
 	fuzz.Add([]byte(`{"openapi":"3.0.0","paths":{"/a":{"get":[]}}}`))
+	fuzz.Add([]byte(`{"openapi":"3.0.0","paths":{"/a":{"post":{"requestBody":{"content":{"application/json":{"schema":` +
+		strings.Repeat(`{"type":"object","required":["a"],"properties":{"a":`, 60) + `{"$ref":"#/components/schemas/S"}` + strings.Repeat(`}}`, 60) +
+		`}}}}}},"components":{"schemas":{"S":{"$ref":"#/components/schemas/S"}}}}`))
 	fuzz.Fuzz(func(t *testing.T, data []byte) {
 		_, _ = Parse(data)
 	})
@@ -242,5 +245,51 @@ func TestUnreadableSharedParametersAreReportedAsSkipped(t *testing.T) {
 	}
 	if len(res.Skipped) != 1 || !strings.Contains(res.Skipped[0], "/pets") || !strings.Contains(res.Skipped[0], "parameters") {
 		t.Errorf("Skipped = %q, want the unreadable parameters of /pets named", res.Skipped)
+	}
+}
+
+// What a parameter and a body get as sample values: pinned before the
+// schemas became typed.
+func TestSampleValuesComeFromExamplesDefaultsEnumsAndSchemas(t *testing.T) {
+	res, err := Parse([]byte(`{
+	  "openapi": "3.0.0", "info": {"title": "Samples"},
+	  "paths": {
+	    "/a": {"get": {"summary": "A", "parameters": [
+	      {"name": "ex", "in": "query", "example": "e1", "schema": {"type": "string", "default": "d"}},
+	      {"name": "num", "in": "query", "example": 5},
+	      {"name": "def", "in": "query", "schema": {"type": "integer", "default": 10}},
+	      {"name": "must", "in": "query", "required": true, "schema": {"enum": ["x", "y"]}},
+	      {"name": "may", "in": "query", "schema": {"enum": ["x", "y"]}}
+	    ]}},
+	    "/b": {"post": {"summary": "B", "requestBody": {"content": {"application/json": {"example": {"z": 1, "a": "x"}}}}}},
+	    "/c": {"post": {"summary": "C", "requestBody": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/Outer"}}}}}},
+	    "/d": {"post": {"summary": "D", "requestBody": {"content": {"application/json": {"schema": {"type": "object", "required": ["far"], "properties": {"far": {"$ref": "http://example.com/s.json"}}}}}}}}
+	  },
+	  "components": {"schemas": {
+	    "Outer": {"type": "object", "required": ["inner", "name"], "properties": {"inner": {"$ref": "#/components/schemas/Inner"}, "name": {"type": "string"}}},
+	    "Inner": {"type": "object", "required": ["id"], "properties": {"id": {"type": "integer"}}}
+	  }}
+	}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	a := find(res.Folder, "A")
+	values := map[string]string{}
+	for _, query := range a.Params {
+		values[query.Name] = query.Value
+	}
+	want := map[string]string{"ex": "e1", "num": "5", "def": "10", "must": "x", "may": ""}
+	if !reflect.DeepEqual(values, want) {
+		t.Errorf("parameter samples %v, want %v", values, want)
+	}
+	bodies := map[string]string{
+		"B": "{\n  \"a\": \"x\",\n  \"z\": 1\n}",
+		"C": "{\n  \"inner\": {\n    \"id\": 0\n  },\n  \"name\": \"\"\n}",
+		"D": "{\n  \"far\": null\n}",
+	}
+	for name, want := range bodies {
+		if got := find(res.Folder, name).Body; got != want {
+			t.Errorf("body of %s = %q, want %q", name, got, want)
+		}
 	}
 }

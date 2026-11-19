@@ -31,28 +31,27 @@ func newCtx(t *testing.T) *core.Ctx {
 
 // everyKind is a tool with a field of every kind, required and optional.
 func everyKind() model.MCPTool {
-	return model.MCPTool{Name: "every", Description: "A field of every kind, required and optional", Schema: map[string]any{
-		"type":     "object",
-		"required": []any{"query", "strict", "order"},
-		"properties": map[string]any{
-			"query":   map[string]any{"type": "string", "description": "What to find, a long description that a narrow form cuts"},
-			"strict":  map[string]any{"type": "boolean", "description": "Exact matches only"},
-			"order":   map[string]any{"type": "string", "enum": []any{"asc", "desc"}},
-			"limit":   map[string]any{"type": "integer", "default": float64(10)},
-			"safe":    map[string]any{"type": "boolean"},
-			"sort":    map[string]any{"type": "string", "enum": []any{"name", "date"}, "description": "Sort key"},
-			"filters": map[string]any{"type": "object"},
-		},
-	}}
+	return model.MCPTool{Name: "every", Description: "A field of every kind, required and optional", Schema: schemaOf(`{
+		"type": "object",
+		"required": ["query", "strict", "order"],
+		"properties": {
+			"query": {"type": "string", "description": "What to find, a long description that a narrow form cuts"},
+			"strict": {"type": "boolean", "description": "Exact matches only"},
+			"order": {"type": "string", "enum": ["asc", "desc"]},
+			"limit": {"type": "integer", "default": 10},
+			"safe": {"type": "boolean"},
+			"sort": {"type": "string", "enum": ["name", "date"], "description": "Sort key"},
+			"filters": {"type": "object"}
+		}}`)}
 }
 
 // manyFields is a tool with more fields than the form shows unscrolled.
 func manyFields() model.MCPTool {
-	properties := map[string]any{}
+	schema := model.JSONSchema{Type: model.SchemaObject}
 	for i := range 12 {
-		properties[fmt.Sprintf("field%02d", i)] = map[string]any{"type": "string"}
+		schema.Properties = append(schema.Properties, model.SchemaProperty{Name: fmt.Sprintf("field%02d", i), Schema: model.JSONSchema{Type: model.SchemaString}})
 	}
-	return model.MCPTool{Name: "many", Schema: map[string]any{"type": "object", "properties": properties}}
+	return model.MCPTool{Name: "many", Schema: schema}
 }
 
 // The laid-out form is pinned as text (testdata/*.dump, captured from the
@@ -73,7 +72,7 @@ func TestTheFormLaysOutAsPinned(t *testing.T) {
 			form.Choices["sort"] = "date"
 		}},
 		{"problem-narrow", narrowW, searchTool(), func(form *Form) { form.Problem = "limit must be a number, not a word like lots" }},
-		{"no-description-wide", wideW, model.MCPTool{Name: "plain", Schema: map[string]any{"type": "object", "properties": map[string]any{"text": map[string]any{"type": "string"}}}}, nil},
+		{"no-description-wide", wideW, model.MCPTool{Name: "plain", Schema: schemaOf(`{"type":"object","properties":{"text":{"type":"string"}}}`)}, nil},
 		{"many-wide", wideW, manyFields(), nil},
 	}
 	for _, tc := range cases {

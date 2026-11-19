@@ -23,6 +23,7 @@ func FuzzParseMCPLists(fuzz *testing.F) {
 		tools, _ := DecodeTools([]byte(result))
 		for _, tool := range tools {
 			_ = Skeleton(tool.Schema)
+			_ = ToolFields(tool.Schema)
 		}
 		_, _ = DecodeResources([]byte(result))
 		prompts, _ := DecodePrompts([]byte(result))
@@ -53,6 +54,8 @@ func FuzzDecodeJSONSchema(fuzz *testing.F) {
 			t.Fatalf("depth %d passed the bound", depth)
 		}
 		checkSchemaCounts(t, schema)
+		_ = Skeleton(schema)
+		_ = ToolFields(schema)
 	})
 }
 

@@ -15,16 +15,20 @@ type fakeHost struct{ submitted int }
 func (host *fakeHost) Submit() { host.submitted++ }
 
 func searchTool() model.MCPTool {
-	return model.MCPTool{Name: "search", Description: "Find things", Schema: map[string]any{
-		"type":     "object",
-		"required": []any{"query"},
-		"properties": map[string]any{
-			"query": map[string]any{"type": "string", "description": "What to find"},
-			"limit": map[string]any{"type": "integer", "default": float64(10)},
-			"safe":  map[string]any{"type": "boolean"},
-			"sort":  map[string]any{"type": "string", "enum": []any{"asc", "desc"}},
-		},
-	}}
+	return model.MCPTool{Name: "search", Description: "Find things", Schema: schemaOf(`{"type":"object","required":["query"],"properties":{
+	"query":{"type":"string","description":"What to find"},
+	"limit":{"type":"integer","default":10},
+	"safe":{"type":"boolean"},
+	"sort":{"type":"string","enum":["asc","desc"]}}}`)}
+}
+
+// schemaOf decodes the JSON text of a tool's input schema.
+func schemaOf(text string) model.JSONSchema {
+	schema, err := model.DecodeJSONSchema([]byte(text))
+	if err != nil {
+		panic(err)
+	}
+	return schema
 }
 
 func TestNewFillsDefaultsAndLeavesOptionalChoicesUnset(t *testing.T) {
@@ -92,5 +96,19 @@ func TestArgumentsAreTheJSONObjectOfTheEntries(t *testing.T) {
 	form.Inputs["limit"].Text = "lots"
 	if _, err := form.Arguments(); err == nil {
 		t.Fatal("an invalid value is refused")
+	}
+}
+
+// A tool whose inputSchema is no object (true, a string) opens an empty
+// form instead of failing, and its sibling keeps its fields.
+func TestAToolWithAMalformedSchemaHasAnEmptyForm(t *testing.T) {
+	tools, err := model.DecodeTools([]byte(`{"tools":[{"name":"odd","inputSchema":true},{"name":"also","inputSchema":"text"},{"name":"ok","inputSchema":{"type":"object","properties":{"q":{"type":"string"}}}}]}`))
+	if err != nil || len(tools) != 3 {
+		t.Fatalf("%+v, %v", tools, err)
+	}
+	for i, empty := range []bool{true, true, false} {
+		if got := New(tools[i]).Empty(); got != empty {
+			t.Errorf("%s: Empty() = %v", tools[i].Name, got)
+		}
 	}
 }
