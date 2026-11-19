@@ -39,5 +39,5 @@ func (b *areaB) Draw(element *El, ctx *core.Ctx, dst *ebiten.Image) {
 // Area is a multi-line editor bound to a (v-model style). It keeps
 // Tab for indenting, so Escape is how focus leaves it with the keyboard.
 func Area(textArea *TextArea, opts ...Option) *El {
-	return Custom(&areaB{area: textArea}, with(nil, opts)...)
+	return Custom(&areaB{area: textArea}, With(nil, opts)...)
 }

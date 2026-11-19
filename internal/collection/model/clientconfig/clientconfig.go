@@ -9,8 +9,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/BurntSushi/toml"
@@ -297,11 +298,7 @@ func rows(values map[string]string) []model.KV {
 	if len(values) == 0 {
 		return nil
 	}
-	names := make([]string, 0, len(values))
-	for name := range values {
-		names = append(names, name)
-	}
-	sort.Strings(names)
+	names := slices.Sorted(maps.Keys(values))
 	kvs := make([]model.KV, len(names))
 	for i, name := range names {
 		kvs[i] = model.KV{Name: name, Value: values[name], Enabled: true}

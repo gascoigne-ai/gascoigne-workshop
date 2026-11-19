@@ -12,7 +12,7 @@ import (
 // Image shows a picture scaled down to fit its box, centered, keeping its
 // proportions; a picture smaller than the box is not scaled up.
 func Image(img *ebiten.Image, opts ...Option) *El {
-	return Custom(imageB{img: img}, with(nil, opts)...)
+	return Custom(imageB{img: img}, With(nil, opts)...)
 }
 
 type imageB struct {

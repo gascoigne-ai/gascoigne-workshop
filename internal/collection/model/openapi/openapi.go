@@ -8,7 +8,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"sort"
+	"maps"
+	"slices"
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/miniyaml"
@@ -95,11 +96,7 @@ func Parse(data []byte) (Result, error) {
 	}
 	root := &model.Folder{Name: title}
 	byTag := map[string]*model.Folder{}
-	paths := make([]string, 0, len(d.Paths))
-	for p := range d.Paths {
-		paths = append(paths, p)
-	}
-	sort.Strings(paths)
+	paths := slices.Sorted(maps.Keys(d.Paths))
 	var skipped []string
 	for _, path := range paths {
 		var item map[string]json.RawMessage
@@ -187,9 +184,7 @@ func (d *doc) schema(other map[string]any, depth int) map[string]any {
 		return nil
 	}
 	out := map[string]any{}
-	for k, v := range other {
-		out[k] = v
-	}
+	maps.Copy(out, other)
 	if props, ok := other["properties"].(map[string]any); ok {
 		np := map[string]any{}
 		for name, p := range props {

@@ -393,26 +393,26 @@ func Stack(items ...Item) *El { return newEl(stack{}, items) }
 
 // Spacer is an empty element that takes all the free space, pushing its
 // neighbours apart.
-func Spacer(opts ...Option) *El { return newEl(plain{}, with([]Item{Grow(1)}, opts)) }
+func Spacer(opts ...Option) *El { return newEl(plain{}, With([]Item{Grow(1)}, opts)) }
 
 // HRule is a one-pixel horizontal line in the border color; options
 // override that look (a margin, another color).
-func HRule(opts ...Option) *El { return newEl(plain{}, with([]Item{H(1), Bg(core.Border)}, opts)) }
+func HRule(opts ...Option) *El { return newEl(plain{}, With([]Item{H(1), Bg(core.Border)}, opts)) }
 
 // VRule is a one-pixel vertical line in the border color; options
 // override that look.
-func VRule(opts ...Option) *El { return newEl(plain{}, with([]Item{W(1), Bg(core.Border)}, opts)) }
+func VRule(opts ...Option) *El { return newEl(plain{}, With([]Item{W(1), Bg(core.Border)}, opts)) }
 
 // VRuleInset is a vertical line shortened by inset pixels at both ends,
 // for dividing the chips of a bar. The options apply to the box that
 // holds the line.
 func VRuleInset(inset int, opts ...Option) *El {
-	return Row(with([]Item{W(1), PadY(inset), VRule()}, opts)...)
+	return Row(With([]Item{W(1), PadY(inset), VRule()}, opts)...)
 }
 
-// with appends opts to base, so a component's defaults come first and
+// With appends opts to base, so a component's defaults come first and
 // the caller's options override them.
-func with(base []Item, opts []Option) []Item {
+func With(base []Item, opts []Option) []Item {
 	for _, o := range opts {
 		base = append(base, o)
 	}

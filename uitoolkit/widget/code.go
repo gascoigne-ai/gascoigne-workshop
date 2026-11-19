@@ -34,7 +34,7 @@ func (b *codeB) Draw(element *El, ctx *core.Ctx, dst *ebiten.Image) {
 
 // Code is a scrollable, foldable code viewer; give it a Bg.
 func Code(code *CodeView, opts ...Option) *El {
-	return Custom(&codeB{view: code}, with(nil, opts)...)
+	return Custom(&codeB{view: code}, With(nil, opts)...)
 }
 
 // wrapper is an element whose long lines can wrap: Code and Area.

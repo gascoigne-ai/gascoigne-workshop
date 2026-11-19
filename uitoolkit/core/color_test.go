@@ -5,6 +5,64 @@ import (
 	"testing"
 )
 
+func TestParseHexStrictNeedsHash(t *testing.T) {
+	tests := []struct {
+		in      string
+		want    color.RGBA
+		wantErr bool
+	}{
+		{in: "#102030", want: color.RGBA{0x10, 0x20, 0x30, 0xff}},
+		{in: " #abc ", want: color.RGBA{0xaa, 0xbb, 0xcc, 0xff}},
+		{in: "102030", wantErr: true},
+		{in: "#12", wantErr: true},
+		{in: "", wantErr: true},
+	}
+	for _, tt := range tests {
+		got, err := ParseHexStrict(tt.in)
+		if (err != nil) != tt.wantErr || (err == nil && got != tt.want) {
+			t.Errorf("ParseHexStrict(%q) = %v, %v; want %v, error %v", tt.in, got, err, tt.want, tt.wantErr)
+		}
+	}
+}
+
+func TestParseHexAlphaReadsEightDigits(t *testing.T) {
+	tests := []struct {
+		in      string
+		want    color.RGBA
+		wantErr bool
+	}{
+		{in: "#10203040", want: color.RGBA{0x10, 0x20, 0x30, 0x40}},
+		{in: "#102030", want: color.RGBA{0x10, 0x20, 0x30, 0xff}},
+		{in: "#1020304", wantErr: true},
+		{in: "#102030zz", wantErr: true},
+	}
+	for _, tt := range tests {
+		got, err := ParseHexAlpha(tt.in)
+		if (err != nil) != tt.wantErr || (err == nil && got != tt.want) {
+			t.Errorf("ParseHexAlpha(%q) = %v, %v; want %v, error %v", tt.in, got, err, tt.want, tt.wantErr)
+		}
+	}
+}
+
+func TestMixBlendsEveryChannel(t *testing.T) {
+	from, to := color.RGBA{0, 100, 200, 0}, color.RGBA{100, 0, 255, 255}
+	tests := []struct {
+		name string
+		t    float64
+		want color.RGBA
+	}{
+		{"start", 0, from},
+		{"end", 1, to},
+		{"middle rounds half up", 0.5, color.RGBA{50, 50, 228, 128}},
+		{"quarter", 0.25, color.RGBA{25, 75, 214, 64}},
+	}
+	for _, tt := range tests {
+		if got := Mix(from, to, tt.t); got != tt.want {
+			t.Errorf("%s: Mix(%v) = %v, want %v", tt.name, tt.t, got, tt.want)
+		}
+	}
+}
+
 func TestShadeMovesTowardWhiteOrBlackAndKeepsAlpha(t *testing.T) {
 	c := color.RGBA{R: 100, G: 100, B: 100, A: 255}
 	up, down := Shade(c, 0.5), Shade(c, -0.5)

@@ -207,7 +207,7 @@ func parsePaint(value string, picture bool) (svgPaint, error) {
 		if strings.HasPrefix(value, "url(#") && strings.HasSuffix(value, ")") {
 			return svgPaint{gradient: value[5 : len(value)-1]}, nil
 		}
-		if rgba, err := parseHexColor(value); err == nil {
+		if rgba, err := core.ParseHexStrict(value); err == nil {
 			return svgPaint{solid: true, rgba: rgba}, nil
 		}
 	}

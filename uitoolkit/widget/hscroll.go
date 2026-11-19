@@ -49,12 +49,18 @@ func (s *hscrollB) maxX(element *El) int {
 	return s.content + 2*s.inset(element) - element.Rect().W
 }
 
+// clamp keeps a scroll position inside the content.
+func (s *hscrollB) clamp(element *El, x int) int { return max(0, min(x, s.maxX(element))) }
+
+// step moves the scroll position by delta pixels, clamped.
+func (s *hscrollB) step(element *El, delta int) { s.state.X = s.clamp(element, s.state.X+delta) }
+
 // Layout places the children for the scroll position the state holds,
 // clamped; it does not change the state (settle does, in update).
 func (s *hscrollB) Layout(element *El, ctx *core.Ctx) {
 	r := element.Rect()
 	s.content, _ = s.Linear.Measure(element, ctx, 1<<20)
-	x := max(0, min(s.state.X, s.maxX(element)))
+	x := s.clamp(element, s.state.X)
 	s.origin = r.X - x + s.inset(element)
 	s.LayoutIn(element, ctx, core.Rect{X: s.origin, Y: r.Y, W: max(s.content, r.W), H: r.H})
 }
@@ -88,7 +94,7 @@ func (s *hscrollB) settle(element *El) {
 			st.X = end + 2*s.inset(element) - element.Rect().W
 		}
 	}
-	st.X = max(0, min(st.X, s.maxX(element)))
+	st.X = s.clamp(element, st.X)
 }
 
 func (s *hscrollB) arrows(element *El) (left, right core.Rect) {
@@ -107,45 +113,60 @@ func (s *hscrollB) arrowsShown(element *El) (left, right bool) {
 // PreUpdate takes clicks on the arrows before the children under them see them.
 func (s *hscrollB) PreUpdate(element *El, ctx *core.Ctx) {
 	s.settle(element)
-	in, st, r := ctx.In, s.state, element.Rect()
 	if !s.overflow(element) {
 		return
 	}
-	left, right := s.arrows(element)
-	showL, showR := s.arrowsShown(element)
-	step := func(dir, by int) { st.X = max(0, min(st.X+dir*by, s.maxX(element))) }
+	in, st := ctx.In, s.state
 	if !in.Held {
 		st.holdDir, st.holdN = 0, 0
-	}
-	if !in.Held {
 		st.pressed, st.panning = false, false
 	}
-	if in.Click {
-		switch {
-		case showL && left.Contains(in.X, in.Y):
-			st.holdDir, st.holdN = -1, 0
-			step(-1, r.W/2)
-			ctx.In.Click = false
-		case showR && right.Contains(in.X, in.Y):
-			st.holdDir, st.holdN = 1, 0
-			step(1, r.W/2)
-			ctx.In.Click = false
-		default:
-			if in.Over(r) { // a press on the strip itself may become a pan; the tab under it still gets the click
-				st.pressed, st.panning, st.panFrom, st.panX0 = true, false, in.X, st.X
-			}
-		}
-		return
+	switch {
+	case in.Click:
+		s.pressArrows(element, ctx)
+	case st.pressed && in.Held:
+		s.pan(element, ctx)
+	default:
+		s.hold(element, ctx)
 	}
-	if st.pressed && in.Held { // dragging the strip: the content follows the pointer
-		dx := ctx.PointerX - st.panFrom
-		if st.panning || dx >= hscrollPanSlop || dx <= -hscrollPanSlop {
-			st.panning = true
-			st.X = max(0, min(st.panX0-dx, s.maxX(element)))
-		}
-		return
+}
+
+// pressArrows scrolls by half a box when an arrow is clicked, and starts a
+// possible pan when the strip itself is.
+func (s *hscrollB) pressArrows(element *El, ctx *core.Ctx) {
+	in, st, r := ctx.In, s.state, element.Rect()
+	left, right := s.arrows(element)
+	showL, showR := s.arrowsShown(element)
+	switch {
+	case showL && left.Contains(in.X, in.Y):
+		st.holdDir, st.holdN = -1, 0
+		s.step(element, -r.W/2)
+		ctx.In.Click = false
+	case showR && right.Contains(in.X, in.Y):
+		st.holdDir, st.holdN = 1, 0
+		s.step(element, r.W/2)
+		ctx.In.Click = false
+	case in.Over(r): // a press on the strip itself may become a pan; the tab under it still gets the click
+		st.pressed, st.panning, st.panFrom, st.panX0 = true, false, in.X, st.X
 	}
-	// Held on the arrow the press started on: scroll on, a little at a time.
+}
+
+// pan drags the strip: the content follows the pointer once it moved past
+// the slop.
+func (s *hscrollB) pan(element *El, ctx *core.Ctx) {
+	st := s.state
+	dx := ctx.PointerX - st.panFrom
+	if st.panning || dx >= hscrollPanSlop || dx <= -hscrollPanSlop {
+		st.panning = true
+		st.X = s.clamp(element, st.panX0-dx)
+	}
+}
+
+// hold keeps scrolling while the arrow the press started on stays held, a
+// little at a time.
+func (s *hscrollB) hold(element *El, ctx *core.Ctx) {
+	in, st := ctx.In, s.state
+	left, right := s.arrows(element)
 	arrow := left
 	if st.holdDir > 0 {
 		arrow = right
@@ -155,24 +176,24 @@ func (s *hscrollB) PreUpdate(element *El, ctx *core.Ctx) {
 	}
 	st.holdN++
 	if st.holdN >= hscrollHoldDelay && (st.holdN-hscrollHoldDelay)%hscrollHoldEvery == 0 {
-		step(st.holdDir, max(r.W/8, 1))
+		s.step(element, st.holdDir*max(element.Rect().W/8, 1))
 	}
 }
 
 // Update scrolls with the wheel and with a touchpad's sideways swipe.
 func (s *hscrollB) Update(element *El, ctx *core.Ctx) {
-	in, st := ctx.In, s.state
-	if !s.overflow(element) || !in.Over(element.Rect()) {
+	if !s.overflow(element) || !ctx.In.Over(element.Rect()) {
 		return
 	}
-	switch {
-	case in.WheelX != 0:
-		st.X = max(0, min(st.X+int(-in.WheelX*wheelStep), s.maxX(element)))
-		ctx.In.WheelX = 0
-	case in.Wheel != 0:
-		st.X = max(0, min(st.X+int(-in.Wheel*wheelStep), s.maxX(element)))
-		ctx.In.Wheel = 0
+	wheel := &ctx.In.Wheel
+	if ctx.In.WheelX != 0 {
+		wheel = &ctx.In.WheelX
 	}
+	if *wheel == 0 {
+		return
+	}
+	s.step(element, int(-*wheel*wheelStep))
+	*wheel = 0
 }
 
 func (s *hscrollB) DrawOver(element *El, ctx *core.Ctx, dst *ebiten.Image) {

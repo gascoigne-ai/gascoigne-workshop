@@ -62,7 +62,7 @@ func (textB) draw(element *El, ctx *core.Ctx, dst *ebiten.Image) {
 
 // Text is one line of text, vertically centered in its box.
 func Text(content string, opts ...Option) *El {
-	e := newEl(textB{}, with(nil, opts))
+	e := newEl(textB{}, With(nil, opts))
 	e.text = content
 	return e
 }
@@ -97,7 +97,7 @@ func TextCenter() Option { return func(element *El) { element.ctr = true } }
 // options set the column; Small among them makes every line a small text
 // NoteH high, as a Note is, so a longer help takes little room.
 func Lines(content string, clr core.Token, opts ...Option) *El {
-	col := Col(with(nil, opts)...)
+	col := Col(With(nil, opts)...)
 	lineOpts := []Option{Color(clr), H(core.LabelH)}
 	if col.small {
 		lineOpts = []Option{Color(clr), Small(), H(core.NoteH)}

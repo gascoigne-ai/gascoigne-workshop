@@ -210,6 +210,11 @@ func (c *Ctx) Color(tok Token) color.RGBA { return c.Th.Color(tok) }
 
 func (c *Ctx) dev(value float32) float32 { return value * float32(c.Scale) }
 
+// devRect is rect's corners in device pixels: left, top, right, bottom.
+func (c *Ctx) devRect(rect Rect) (x0, y0, x1, y1 float32) {
+	return c.dev(float32(rect.X)), c.dev(float32(rect.Y)), c.dev(float32(rect.X + rect.W)), c.dev(float32(rect.Y + rect.H))
+}
+
 // snap is a logical coordinate as a device pixel position. Rounding the
 // edges (not the sizes) lets neighbouring rectangles share an edge at any
 // scale, with no gap or overlap.
@@ -351,24 +356,6 @@ var gradientSrc = func() *ebiten.Image {
 	return img
 }()
 
-// roundedPath is r (device pixels) with corner radius rad, clamped to half
-// the shorter side so a large radius makes a pill.
-func roundedPath(x0, y0, x1, y1, rad float32) *vector.Path {
-	rad = min(rad, (x1-x0)/2, (y1-y0)/2)
-	var p vector.Path
-	p.MoveTo(x0+rad, y0)
-	p.LineTo(x1-rad, y0)
-	p.Arc(x1-rad, y0+rad, rad, -math.Pi/2, 0, vector.Clockwise)
-	p.LineTo(x1, y1-rad)
-	p.Arc(x1-rad, y1-rad, rad, 0, math.Pi/2, vector.Clockwise)
-	p.LineTo(x0+rad, y1)
-	p.Arc(x0+rad, y1-rad, rad, math.Pi/2, math.Pi, vector.Clockwise)
-	p.LineTo(x0, y0+rad)
-	p.Arc(x0+rad, y0+rad, rad, math.Pi, 3*math.Pi/2, vector.Clockwise)
-	p.Close()
-	return &p
-}
-
 // Radius is the corner radius of the named control in this theme, after
 // the user's corner setting: what every component draws its corners with.
 func (c *Ctx) Radius(control string) float64 { return c.Th.Style(control).Radius }
@@ -382,11 +369,10 @@ func (c *Ctx) FillStyled(dst *ebiten.Image, rect Rect, top, bottom color.RGBA, r
 		c.Fill(dst, rect, top)
 		return
 	}
-	x0, y0 := c.dev(float32(rect.X)), c.dev(float32(rect.Y))
-	x1, y1 := c.dev(float32(rect.X+rect.W)), c.dev(float32(rect.Y+rect.H))
+	x0, y0, x1, y1 := c.devRect(rect)
 	var path *vector.Path
 	if round {
-		path = roundedPath(x0, y0, x1, y1, c.dev(float32(radius)))
+		path = cornersPath(x0, y0, x1, y1, c.dev(float32(radius)), CornersAll)
 	} else {
 		path = &vector.Path{}
 		path.MoveTo(x0, y0)
@@ -427,6 +413,7 @@ const (
 
 	CornersTop    = CornerTL | CornerTR
 	CornersBottom = CornerBL | CornerBR
+	CornersAll    = CornersTop | CornersBottom
 )
 
 // FillStyledCorners is FillStyled with only the given corners rounded, for
@@ -438,8 +425,7 @@ func (c *Ctx) FillStyledCorners(dst *ebiten.Image, rect Rect, top, bottom color.
 		c.FillStyled(dst, rect, top, bottom, 0)
 		return
 	}
-	x0, y0 := c.dev(float32(rect.X)), c.dev(float32(rect.Y))
-	x1, y1 := c.dev(float32(rect.X+rect.W)), c.dev(float32(rect.Y+rect.H))
+	x0, y0, x1, y1 := c.devRect(rect)
 	fillGradient(dst, cornersPath(x0, y0, x1, y1, c.dev(float32(radius)), corners), y0, y1, top, bottom, true)
 }
 
@@ -485,7 +471,7 @@ func (c *Ctx) OutlineStyled(dst *ebiten.Image, rect Rect, clr color.RGBA, radius
 	w := c.dev(1)
 	x0, y0 := c.dev(float32(rect.X))+w/2, c.dev(float32(rect.Y))+w/2
 	x1, y1 := c.dev(float32(rect.X+rect.W))-w/2, c.dev(float32(rect.Y+rect.H))-w/2
-	path := roundedPath(x0, y0, x1, y1, c.dev(float32(radius))-w/2)
+	path := cornersPath(x0, y0, x1, y1, c.dev(float32(radius))-w/2, CornersAll)
 	var so vector.StrokeOptions
 	so.Width = w
 	var dp vector.DrawPathOptions

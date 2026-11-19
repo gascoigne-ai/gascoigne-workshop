@@ -3,6 +3,7 @@ package settings
 import (
 	"bytes"
 	"encoding/json"
+	"maps"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fileversion"
 )
@@ -67,9 +68,7 @@ func unmarshalSettings(data []byte, into *Settings) error {
 	for key, value := range top {
 		var inner map[string]json.RawMessage
 		if objectSection(key) && json.Unmarshal(value, &inner) == nil {
-			for innerKey, innerValue := range inner {
-				flat[innerKey] = innerValue
-			}
+			maps.Copy(flat, inner)
 			continue
 		}
 		flat[key] = value

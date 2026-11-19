@@ -1,6 +1,9 @@
 package core
 
-import "image/color"
+import (
+	"image/color"
+	"maps"
+)
 
 // Token names a color role. A Theme maps tokens to colors, so switching
 // theme recolors everything. Applications add their own tokens (for
@@ -117,12 +120,8 @@ func (t Theme) Color(tok Token) color.RGBA {
 // With returns a copy of t with extra tokens added or replaced.
 func (t Theme) With(extra map[Token]color.RGBA) Theme {
 	colors := make(map[Token]color.RGBA, len(t.Colors)+len(extra))
-	for k, v := range t.Colors {
-		colors[k] = v
-	}
-	for k, v := range extra {
-		colors[k] = v
-	}
+	maps.Copy(colors, t.Colors)
+	maps.Copy(colors, extra)
 	t.Colors = colors
 	return t
 }

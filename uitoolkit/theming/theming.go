@@ -11,8 +11,10 @@ package theming
 import (
 	"fmt"
 	"image/color"
+	"maps"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 
@@ -157,11 +159,7 @@ func (c *Catalog) SetUser(themes map[string]Choice) {
 // All is the built-in themes followed by the user's, sorted by id.
 func (c *Catalog) All() []Choice {
 	out := append([]Choice(nil), c.Builtin...)
-	ids := make([]string, 0, len(c.user))
-	for id := range c.user {
-		ids = append(ids, id)
-	}
-	sort.Strings(ids)
+	ids := slices.Sorted(maps.Keys(c.user))
 	for _, id := range ids {
 		out = append(out, c.user[id])
 	}

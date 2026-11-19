@@ -20,7 +20,7 @@ func ListRow(selected bool, items ...Item) *El {
 // color (core.Error for a problem, core.Muted for a hint). It is NoteH high
 // and cuts a long text with an ellipsis.
 func Note(text string, tone core.Token, opts ...Option) *El {
-	return Row(with([]Item{
+	return Row(With([]Item{
 		H(core.NoteH),
 		Text(text, Small(), Color(tone), Ellipsis(), Grow(1)),
 	}, opts)...)

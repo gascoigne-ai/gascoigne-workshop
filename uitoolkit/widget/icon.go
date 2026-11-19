@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"image/color"
 	"io/fs"
+	"maps"
 	"math"
-	"sort"
+	"slices"
 	"strings"
 	"sync"
 
@@ -80,11 +81,7 @@ func RegisterIcons(fsys fs.FS) error {
 func IconNames() []string {
 	icons.Lock()
 	defer icons.Unlock()
-	names := make([]string, 0, len(icons.byName))
-	for n := range icons.byName {
-		names = append(names, n)
-	}
-	sort.Strings(names)
+	names := slices.Sorted(maps.Keys(icons.byName))
 	return names
 }
 
@@ -106,7 +103,7 @@ func Icon(name string, opts ...Option) *El {
 	if _, ok := lookupIcon(name); !ok {
 		panic(fmt.Sprintf("widget: no icon %q; icons: %s", name, strings.Join(IconNames(), " ")))
 	}
-	return Custom(iconB{name: name}, with(nil, opts)...)
+	return Custom(iconB{name: name}, With(nil, opts)...)
 }
 
 // iconB draws a parsed SVG icon.

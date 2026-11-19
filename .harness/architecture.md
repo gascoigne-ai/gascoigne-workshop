@@ -704,7 +704,7 @@ that change `App`.
   per color, a swatch (it paints with the token, so it always shows the color in effect), a hex
   field and a Reset button, plus Reset colors; typing applies live and saves, a refused color shows
   why (`Contrast 2.1:1 is below 4.5:1` or `Use #rrggbb`) and changes nothing. Switching theme or
-  contrast rebuilds the fields from the colors then in effect. The helpers `ParseHex`, `FormatHex`,
+  contrast rebuilds the fields from the colors then in effect. The helpers `ParseHex`, `ParseHexStrict`, `ParseHexAlpha`, `FormatHex`, `Mix`,
   `ContrastRatio` and `EnsureContrast` are in `uitoolkit/core/color.go`.
 -  **Settings button**: the gear at the right of the header (and Ctrl+,) opens and closes the
   settings dialog (Settings below). Theme, text size and the other choices are tables
@@ -855,7 +855,7 @@ that change `App`.
   them yet: a half family breaks the naming rule.
 -  **Theme pipeline lives in `theming`** (task 024, option A): `core` keeps the `Theme` and `Token`
   types, the token constants, `ControlStyle`, the color math (`RGB`, `Shade`, `Lighten`,
-  `GradientFor`, `ParseHex`, `FormatHex`, `ContrastRatio`, `EnsureContrast`, all in `core/color.go`)
+  `GradientFor`, `Mix`, `ParseHex` (also `ParseHexStrict`, `ParseHexAlpha`), `FormatHex`, `ContrastRatio`, `EnsureContrast`, all in `core/color.go`)
   and the drawing `Ctx`. `uitoolkit/theming` has the JSON theme parser (`ParseTheme`,
   `ThemeExtends`, `ParseColor`), the palettes and their files (`Dark`, `Light`, `themes/*.json`) and
   the preference mechanics (`Catalog`, `Prefs`). `theming` imports `core`, never the reverse, so

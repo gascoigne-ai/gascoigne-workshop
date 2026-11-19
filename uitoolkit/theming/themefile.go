@@ -8,7 +8,8 @@ import (
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"image/color"
-	"sort"
+	"maps"
+	"slices"
 	"strings"
 )
 
@@ -58,23 +59,6 @@ func themeExtends(data []byte) (string, error) {
 		return "", fmt.Errorf("theme file: %w", err)
 	}
 	return f.Extends, nil
-}
-
-// parseColor reads "#rrggbb" or "#rrggbbaa".
-func parseColor(text string) (color.RGBA, error) {
-	if len(text) == 9 {
-		c, err := core.ParseHex(text[:7])
-		if err != nil {
-			return c, err
-		}
-		var a uint8
-		if _, err := fmt.Sscanf(text[7:], "%02x", &a); err != nil {
-			return c, fmt.Errorf("%q is not a color", text)
-		}
-		c.A = a
-		return c, nil
-	}
-	return core.ParseHex(text)
 }
 
 // ParseTheme reads a theme file over base (nil for none). Unknown fields
@@ -158,7 +142,7 @@ func resolveColor(text string, vars map[string]color.RGBA) (color.RGBA, error) {
 		}
 		return c, nil
 	}
-	return parseColor(text)
+	return core.ParseHexAlpha(text)
 }
 
 // parseGradient reads a control's gradient: absent or 0 for none, a
@@ -193,27 +177,17 @@ func parseGradient(raw json.RawMessage, vars map[string]color.RGBA, st *core.Con
 
 func copyControls(other map[string]core.ControlStyle) map[string]core.ControlStyle {
 	out := make(map[string]core.ControlStyle, len(other))
-	for k, v := range other {
-		out[k] = v
-	}
+	maps.Copy(out, other)
 	return out
 }
 
 func sortedKeys(other map[string]string) []string {
-	keys := make([]string, 0, len(other))
-	for k := range other {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
+	keys := slices.Sorted(maps.Keys(other))
 	return keys
 }
 
 func sortedControlKeys(other map[string]controlFile) []string {
-	keys := make([]string, 0, len(other))
-	for k := range other {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
+	keys := slices.Sorted(maps.Keys(other))
 	return keys
 }
 

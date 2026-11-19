@@ -151,7 +151,7 @@ func (s *sliderB) Draw(element *El, ctx *core.Ctx, dst *ebiten.Image) {
 func Slider(state *SliderState, low, high, step, value int, opts ...Option) *El {
 	slider := &sliderB{state: state, min: low, max: high, step: step, value: value}
 	slider.normalize()
-	return Custom(slider, with([]Item{Grow(1), H(core.CompactH)}, opts)...)
+	return Custom(slider, With([]Item{Grow(1), H(core.CompactH)}, opts)...)
 }
 
 // OnSlide runs with each new value of a Slider while the thumb moves.

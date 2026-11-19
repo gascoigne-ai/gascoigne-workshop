@@ -152,7 +152,7 @@ const foldedMore = " ... }"
 // block, else the line itself.
 func (v *CodeView) shownSpans(index int) []Span {
 	line := v.Lines[index]
-	if !v.Folded[index] || !line.Foldable {
+	if !v.folded(index) {
 		return line.Spans
 	}
 	if len(line.FoldedSpans) > 0 {
@@ -164,18 +164,19 @@ func (v *CodeView) shownSpans(index int) []Span {
 // lineText is the plain text of line i as it is shown, so that columns,
 // words and copied text follow what the user sees.
 func (v *CodeView) lineText(index int) string {
-	var b strings.Builder
-	for _, s := range v.shownSpans(index) {
-		b.WriteString(s.Text)
-	}
-	return b.String()
+	return spanText(v.shownSpans(index))
 }
 
 // rawText is the text of line i itself, whether or not it is folded.
 func (v *CodeView) rawText(index int) string {
+	return spanText(v.Lines[index].Spans)
+}
+
+// spanText is the plain text of spans joined.
+func spanText(spans []Span) string {
 	var b strings.Builder
-	for _, s := range v.Lines[index].Spans {
-		b.WriteString(s.Text)
+	for _, span := range spans {
+		b.WriteString(span.Text)
 	}
 	return b.String()
 }
@@ -289,7 +290,7 @@ func (v *CodeView) Visible() []int {
 	var out []int
 	for i := 0; i < len(v.Lines); i++ {
 		out = append(out, i)
-		if !v.Folded[i] || !v.Lines[i].Foldable {
+		if !v.folded(i) {
 			continue
 		}
 		indent := indentOf(v.Lines[i])
@@ -412,27 +413,13 @@ func (v *CodeView) pressText(textPosValue textPos, clicks int) {
 	runes := []rune(v.lineText(textPosValue.line))
 	switch {
 	case clicks == 2 && len(runes) > 0:
-		lo, hi := wordRange(runes, textPosValue.col)
+		lo, hi := wordAt(runes, textPosValue.col)
 		v.selA, v.selB, v.HasSel, v.dragging = textPos{textPosValue.line, lo}, textPos{textPosValue.line, hi}, true, false
 	case clicks >= 3:
 		v.selA, v.selB, v.HasSel, v.dragging = textPos{textPosValue.line, 0}, textPos{textPosValue.line, len(runes)}, true, false
 	default:
 		v.selA, v.selB, v.HasSel, v.dragging = textPosValue, textPosValue, true, true
 	}
-}
-
-// wordRange is the run of word characters, or of other characters, at col.
-func wordRange(runes []rune, col int) (lo, hi int) {
-	at := min(col, len(runes)-1)
-	word := isWordRune(runes[at])
-	lo, hi = at, at+1
-	for lo > 0 && isWordRune(runes[lo-1]) == word {
-		lo--
-	}
-	for hi < len(runes) && isWordRune(runes[hi]) == word {
-		hi++
-	}
-	return lo, hi
 }
 
 func (v *CodeView) updatePointer(ctx *core.Ctx, rect core.Rect, geometry codeGeometry, sizes bars, layout wrapLayout, over bool) {

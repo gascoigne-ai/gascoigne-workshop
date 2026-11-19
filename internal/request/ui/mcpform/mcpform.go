@@ -8,6 +8,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"maps"
 )
 
 // maxH is the tallest the form's fields grow before they scroll.
@@ -68,9 +69,7 @@ func (form *Form) values() map[string]string {
 	for name, input := range form.Inputs {
 		out[name] = input.Text
 	}
-	for name, choice := range form.Choices {
-		out[name] = choice
-	}
+	maps.Copy(out, form.Choices)
 	return out
 }
 

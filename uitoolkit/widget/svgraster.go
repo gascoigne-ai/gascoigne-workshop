@@ -7,10 +7,10 @@ import (
 	"image/color"
 	"image/draw"
 	"math"
-	"strconv"
-	"strings"
 
 	"golang.org/x/image/vector"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 // RasterizeSVG draws a small SVG picture into a size by size image without a
@@ -116,10 +116,9 @@ func stopColor(stops []svgStop, along float64) color.RGBA {
 		}
 		from, to := stops[i-1], stops[i]
 		ratio := (along - from.offset) / math.Max(to.offset-from.offset, 1e-9)
-		mix := func(alpha, b uint8) uint8 {
-			return uint8(math.Round(float64(alpha) + (float64(b)-float64(alpha))*ratio))
-		}
-		return color.RGBA{mix(from.rgba.R, to.rgba.R), mix(from.rgba.G, to.rgba.G), mix(from.rgba.B, to.rgba.B), 0xff}
+		mixed := core.Mix(from.rgba, to.rgba, ratio)
+		mixed.A = 0xff
+		return mixed
 	}
 	return stops[len(stops)-1].rgba
 }
@@ -146,25 +145,9 @@ func parseStop(attrs map[string]string) (svgStop, error) {
 	if err != nil {
 		return svgStop{}, err
 	}
-	rgba, err := parseHexColor(attrs["stop-color"])
+	rgba, err := core.ParseHexStrict(attrs["stop-color"])
 	if err != nil {
 		return svgStop{}, fmt.Errorf("stop-color: %w", err)
 	}
 	return svgStop{offset: offset, rgba: rgba}, nil
-}
-
-// parseHexColor reads #rgb or #rrggbb.
-func parseHexColor(value string) (color.RGBA, error) {
-	hex := strings.TrimPrefix(strings.TrimSpace(value), "#")
-	if len(hex) == 3 {
-		hex = string([]byte{hex[0], hex[0], hex[1], hex[1], hex[2], hex[2]})
-	}
-	if len(hex) != 6 || !strings.HasPrefix(strings.TrimSpace(value), "#") {
-		return color.RGBA{}, fmt.Errorf("%q is not #rgb or #rrggbb", value)
-	}
-	n, err := strconv.ParseUint(hex, 16, 32)
-	if err != nil {
-		return color.RGBA{}, fmt.Errorf("%q is not #rgb or #rrggbb", value)
-	}
-	return color.RGBA{uint8(n >> 16), uint8(n >> 8), uint8(n), 0xff}, nil
 }

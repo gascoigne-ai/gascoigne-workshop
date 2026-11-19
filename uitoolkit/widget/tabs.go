@@ -18,7 +18,7 @@ type TabItem struct {
 // (ActiveTab), the others muted.
 func Tabs(items []TabItem, active int, opts ...Option) *El {
 	var strip *El
-	strip = Row(with(append([]Item{PadL(2)}, tabItems(items, active, selector(&strip))...), opts)...)
+	strip = Row(With(append([]Item{PadL(2)}, tabItems(items, active, selector(&strip))...), opts)...)
 	return strip
 }
 
@@ -36,7 +36,7 @@ func selector(strip **El) func(i int) {
 // not fit, keeping the active tab in view. It grows to the free width.
 func ScrollTabs(state *ScrollState, items []TabItem, active int, opts ...Option) *El {
 	var strip *El
-	strip = HScroll(state, with(append([]Item{Grow(1), PadL(2)}, tabItems(items, active, selector(&strip))...), opts)...)
+	strip = HScroll(state, With(append([]Item{Grow(1), PadL(2)}, tabItems(items, active, selector(&strip))...), opts)...)
 	return strip
 }
 

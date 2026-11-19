@@ -27,7 +27,7 @@ type ScrollState struct {
 
 	revealed int // HScroll: index+1 of the child last brought into view, 0 for none
 
-	drag grab // the thumb being dragged
+	drag barDrag // the thumb being dragged
 }
 
 // scrollB lays its children out as a column taller than the box and
@@ -36,12 +36,6 @@ type scrollB struct {
 	Linear
 	state   *ScrollState
 	content int // height of the content, set by layout
-}
-
-// track is the strip along the right edge that holds the scrollbar.
-func (s *scrollB) track(element *El) core.Rect {
-	r := element.Rect()
-	return core.Rect{X: r.X + r.W - scrollbarW, Y: r.Y, W: scrollbarW, H: r.H}
 }
 
 // Layout places the children at their natural height, shifted up by the
@@ -61,15 +55,10 @@ func (s *scrollB) Layout(element *El, ctx *core.Ctx) {
 func (s *scrollB) Update(element *El, ctx *core.Ctx) {
 	in, st, r := ctx.In, s.state, element.Rect()
 	st.Y = clampScroll(st.Y, s.content, r.H)
-	track := s.track(element)
-	if st.drag.on {
-		if st.drag.held(in) {
-			st.Y = posFromOffset(track.H, s.content, r.H, in.Y-track.Y-st.drag.off)
-		}
-		return
-	}
-	if in.Click && track.Contains(in.X, in.Y) {
-		s.press(track, r.H, in.Y-track.Y)
+	sizes := s.bars(element)
+	wasDragging := st.drag.active()
+	st.drag.update(ctx, sizes, 0, s.content, &st.X, &st.Y)
+	if wasDragging || in.Click && sizes.vTrack.Contains(in.X, in.Y) {
 		return
 	}
 	if in.Wheel != 0 && in.Over(r) && s.content > r.H {
@@ -78,20 +67,11 @@ func (s *scrollB) Update(element *El, ctx *core.Ctx) {
 	}
 }
 
-// press starts dragging the thumb when the press is on it, else pages
-// toward the press.
-func (s *scrollB) press(track core.Rect, view, at int) {
-	st := s.state
-	grabbed, off, pos := pressThumb(track.H, s.content, view, st.Y, at)
-	st.Y = pos
-	if grabbed {
-		st.drag.begin(off)
-	}
-}
+// bars is the scrollbar layout of the box: a vertical bar along its right edge.
+func (s *scrollB) bars(element *El) bars { return layoutBars(element.Rect(), 0, s.content) }
 
 func (s *scrollB) DrawOver(element *El, ctx *core.Ctx, dst *ebiten.Image) {
-	track := s.track(element)
-	drawScrollbar(ctx, dst, track, s.content, element.Rect().H, s.state.Y, s.state.drag.on || ctx.Hovered(track))
+	drawBars(ctx, dst, s.bars(element), s.state.drag, 0, s.content, 0, s.state.Y)
 }
 
 // Scroll is a vertically scrolling column: its children may be taller

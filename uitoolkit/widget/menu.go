@@ -98,7 +98,7 @@ func Menu(ctx *core.Ctx, state *MenuState, opts ...Option) *El {
 	for index, item := range state.Items {
 		rows[index] = menuRow(ctx.HostOS, state, index, item, pick)
 	}
-	menu = Col(with(append([]Item{
+	menu = Col(With(append([]Item{
 		W(MenuWidth(ctx, state.Items)), Pad(MenuPad), Bg(core.Bg), Control("menu"), Shadow(),
 		FloatAt(state.X, state.Y), Modal(),
 	}, rows...), opts)...)

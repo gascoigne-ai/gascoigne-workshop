@@ -77,6 +77,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"math"
 	"reflect"
 	"slices"
@@ -194,11 +195,7 @@ type elementParts struct {
 // items are the options followed by the children, as a Go constructor
 // takes them.
 func (parts elementParts) items() []view.Item {
-	out := make([]view.Item, 0, len(parts.opts)+len(parts.kids))
-	for _, option := range parts.opts {
-		out = append(out, option)
-	}
-	return append(out, parts.kids...)
+	return append(view.With(make([]view.Item, 0, len(parts.opts)+len(parts.kids)), parts.opts), parts.kids...)
 }
 
 // element builds one kind of element from its parts.
@@ -1014,9 +1011,7 @@ func (t *Template) build(item *node, sc Scope) (view.Node, error) {
 	var nodes []view.Item
 	for i, it := range list {
 		child := Scope{}
-		for k, val := range sc {
-			child[k] = val
-		}
+		maps.Copy(child, sc)
 		child[name], child["$index"] = it, i
 		el, err := t.buildOne(item, child)
 		if err != nil {
@@ -1299,11 +1294,7 @@ func asList(value any) ([]any, error) {
 }
 
 func elementNames() []string {
-	names := make([]string, 0, len(elements))
-	for n := range elements {
-		names = append(names, n)
-	}
-	sort.Strings(names)
+	names := slices.Sorted(maps.Keys(elements))
 	return names
 }
 
@@ -1393,11 +1384,7 @@ func enumAttr[T any](name string, table map[string]T, callback func(T) view.Opti
 	return func(value string) (view.Option, error) {
 		val, ok := table[strings.TrimSpace(value)]
 		if !ok {
-			names := make([]string, 0, len(table))
-			for k := range table {
-				names = append(names, k)
-			}
-			sort.Strings(names)
+			names := slices.Sorted(maps.Keys(table))
 			return nil, fmt.Errorf("%s is one of %s, not %q", name, strings.Join(names, ", "), value)
 		}
 		return callback(val), nil

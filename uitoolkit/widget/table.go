@@ -110,7 +110,7 @@ func Table(spec TableSpec, opts ...Option) *El {
 	if spec.Editable {
 		rows = append(append([]TableRow{}, rows...), TableRow{Cells: spec.Placeholder, Muted: true})
 	}
-	return Col(with([]Item{
+	return Col(With([]Item{
 		Bg(core.Sunken), Control("table"),
 		tableHeader(spec),
 		For(rows, func(index int, row TableRow) Node {

@@ -47,5 +47,5 @@ func drawCheckbox(ctx *core.Ctx, dst *ebiten.Image, box core.Rect, on, hover boo
 // Checkbox is a square that shows an accent fill and a check when on.
 // OnChange runs when it is clicked; the caller flips the value it passes in.
 func Checkbox(on bool, opts ...Option) *El {
-	return Custom(checkB{on: on}, with(nil, opts)...)
+	return Custom(checkB{on: on}, With(nil, opts)...)
 }
