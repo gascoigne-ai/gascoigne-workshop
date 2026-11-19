@@ -1,6 +1,6 @@
 status: todo
 kind: feature
-commit: perf(render): rounded fills and outlines batch, the frame builds once
+commit: feat(render): rounded fills and outlines batch, the frame builds once
 scope: uitoolkit/*,internal/workspace/ui/app/*,internal/settings/*,Makefile,.harness/architecture.md,.harness/style.md
 
 # Speed up rendering
