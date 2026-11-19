@@ -32,6 +32,7 @@ FUZZ_TARGETS = \
 	./uitoolkit/markup:FuzzParse \
 	./uitoolkit/widget:FuzzEdit \
 	./uitoolkit/widget:FuzzFind \
+	./uitoolkit/widget:FuzzParseSVG \
 	./uitoolkit/widget:FuzzWrapRunes \
 	./internal/request/model:FuzzParseSchema \
 	./internal/request/model:FuzzParseMCPLists \

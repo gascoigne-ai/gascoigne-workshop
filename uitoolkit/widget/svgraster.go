@@ -21,7 +21,7 @@ import (
 // none. A fill uses the non-zero rule, so a hole is a subpath wound the
 // other way. Shapes are painted in order, over each other.
 func RasterizeSVG(name string, src []byte, size int) (*image.RGBA, error) {
-	picture, err := parseSVGAs(name, src, true)
+	picture, err := parseSVGAs(name, src, picturePaints)
 	if err != nil {
 		return nil, err
 	}

@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"image/color"
 	"io"
+	"maps"
 	"math"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -98,102 +100,152 @@ type svgError struct {
 
 func (e *svgError) Error() string { return fmt.Sprintf("%s:%d: %s", e.name, e.line, e.msg) }
 
-// parseSVG reads one icon file.
-func parseSVG(name string, src []byte) (*svgIcon, error) { return parseSVGAs(name, src, false) }
+// paintParser says which paints a file may use: icons take the theme's
+// (none, currentColor, token(name)), pictures add colors and gradients.
+type paintParser struct{ colors bool }
 
-// parseSVGAs parses an icon, or with picture set a picture whose paints may
-// be colors and gradients (RasterizeSVG).
-func parseSVGAs(name string, src []byte, picture bool) (*svgIcon, error) {
-	d := xml.NewDecoder(bytes.NewReader(src))
-	line := func() int { return 1 + bytes.Count(src[:min(int(d.InputOffset()), len(src))], []byte("\n")) }
-	fail := func(format string, args ...any) (*svgIcon, error) {
-		return nil, &svgError{name, line(), fmt.Sprintf(format, args...)}
+var (
+	iconPaints    = paintParser{}
+	picturePaints = paintParser{colors: true}
+)
+
+// parseSVG reads one icon file.
+func parseSVG(name string, src []byte) (*svgIcon, error) {
+	return parseSVGAs(name, src, iconPaints)
+}
+
+// svgParser is the state of one file while its elements stream by.
+type svgParser struct {
+	paints   paintParser
+	icon     *svgIcon
+	styles   []svgStyle // one per open element, the innermost last
+	gradient *svgGradient
+	seenRoot bool
+}
+
+// parseSVGAs parses an icon, or with picturePaints a picture whose paints
+// may be colors and gradients (RasterizeSVG).
+func parseSVGAs(name string, src []byte, paints paintParser) (*svgIcon, error) {
+	decoder := xml.NewDecoder(bytes.NewReader(src))
+	fail := func(err error) (*svgIcon, error) {
+		line := 1 + bytes.Count(src[:min(int(decoder.InputOffset()), len(src))], []byte("\n"))
+		return nil, &svgError{name, line, err.Error()}
 	}
-	icon := &svgIcon{name: name, hover: core.Text, gradients: map[string]*svgGradient{}}
-	var gradient *svgGradient
-	styles := []svgStyle{defaultSVGStyle()}
-	seenRoot := false
+	parser := &svgParser{
+		paints: paints,
+		icon:   &svgIcon{name: name, hover: core.Text, gradients: map[string]*svgGradient{}},
+		styles: []svgStyle{defaultSVGStyle()},
+	}
 	for {
-		tok, err := d.Token()
+		token, err := decoder.Token()
 		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
-			return fail("%v", err)
+			return fail(err)
 		}
-		switch t := tok.(type) {
-		case xml.StartElement:
-			st := styles[len(styles)-1]
-			attrs := map[string]string{}
-			for _, a := range t.Attr {
-				attrs[a.Name.Local] = a.Value
-			}
-			var err error
-			if st, err = applyStyle(st, attrs, picture); err != nil {
-				return fail("%v", err)
-			}
-			styles = append(styles, st)
-			tag := t.Name.Local
-			if !seenRoot {
-				if tag != "svg" {
-					return fail("an icon starts with <svg>, not <%s>", tag)
-				}
-				seenRoot = true
-				vb := strings.Fields(strings.ReplaceAll(attrs["viewBox"], ",", " "))
-				if len(vb) != 4 {
-					return fail(`svg needs viewBox="0 0 width height"`)
-				}
-				w, e1 := strconv.ParseFloat(vb[2], 64)
-				h, e2 := strconv.ParseFloat(vb[3], 64)
-				if e1 != nil || e2 != nil || w <= 0 || h <= 0 {
-					return fail("bad viewBox %q", attrs["viewBox"])
-				}
-				icon.w, icon.h = w, h
-				if v := attrs["data-hover"]; v != "" {
-					icon.hover = core.Token(v)
-				}
-				continue
-			}
-			if tag == "g" {
-				continue
-			}
-			if picture && tag == "defs" {
-				continue
-			}
-			if picture && tag == "linearGradient" {
-				if gradient, err = parseGradient(attrs); err != nil {
-					return fail("%v", err)
-				}
-				icon.gradients[attrs["id"]] = gradient
-				continue
-			}
-			if picture && tag == "stop" && gradient != nil {
-				stop, err := parseStop(attrs)
-				if err != nil {
-					return fail("%v", err)
-				}
-				gradient.stops = append(gradient.stops, stop)
-				continue
-			}
-			cmds, err := shapeCmds(tag, attrs)
-			if err != nil {
-				return fail("%v", err)
-			}
-			icon.shapes = append(icon.shapes, svgShape{cmds: cmds, fill: st.fill, line: st.stroke, width: st.width, cap: st.cap, join: st.join})
-		case xml.EndElement:
-			styles = styles[:len(styles)-1]
+		if err := parser.handle(token); err != nil {
+			return fail(err)
 		}
 	}
-	if !seenRoot {
-		return fail("the file is empty")
+	if !parser.seenRoot {
+		return fail(errors.New("the file is empty"))
 	}
-	if len(icon.shapes) == 0 {
-		return fail("the icon draws nothing")
+	if len(parser.icon.shapes) == 0 {
+		return fail(errors.New("the icon draws nothing"))
 	}
-	return icon, nil
+	return parser.icon, nil
 }
 
-func parsePaint(value string, picture bool) (svgPaint, error) {
+func (parser *svgParser) handle(token xml.Token) error {
+	switch token := token.(type) {
+	case xml.StartElement:
+		return parser.start(token)
+	case xml.EndElement:
+		parser.styles = parser.styles[:len(parser.styles)-1]
+	}
+	return nil
+}
+
+func (parser *svgParser) start(element xml.StartElement) error {
+	attrs := map[string]string{}
+	for _, attr := range element.Attr {
+		attrs[attr.Name.Local] = attr.Value
+	}
+	style, err := applyStyle(parser.styles[len(parser.styles)-1], attrs, parser.paints)
+	if err != nil {
+		return err
+	}
+	parser.styles = append(parser.styles, style)
+	tag := element.Name.Local
+	if !parser.seenRoot {
+		parser.seenRoot = true
+		return parseRoot(parser.icon, tag, attrs)
+	}
+	if tag == "g" {
+		return nil
+	}
+	handled, err := parser.pictureElement(tag, attrs)
+	if handled || err != nil {
+		return err
+	}
+	cmds, err := shapeCmds(tag, attrs)
+	if err != nil {
+		return err
+	}
+	parser.icon.shapes = append(parser.icon.shapes, svgShape{cmds: cmds, fill: style.fill, line: style.stroke, width: style.width, cap: style.cap, join: style.join})
+	return nil
+}
+
+// parseRoot reads the svg element: the viewBox size and data-hover.
+func parseRoot(icon *svgIcon, tag string, attrs map[string]string) error {
+	if tag != "svg" {
+		return fmt.Errorf("an icon starts with <svg>, not <%s>", tag)
+	}
+	box := strings.Fields(strings.ReplaceAll(attrs["viewBox"], ",", " "))
+	if len(box) != 4 {
+		return errors.New(`svg needs viewBox="0 0 width height"`)
+	}
+	width, widthErr := strconv.ParseFloat(box[2], 64)
+	height, heightErr := strconv.ParseFloat(box[3], 64)
+	if widthErr != nil || heightErr != nil || width <= 0 || height <= 0 {
+		return fmt.Errorf("bad viewBox %q", attrs["viewBox"])
+	}
+	icon.w, icon.h = width, height
+	if hover := attrs["data-hover"]; hover != "" {
+		icon.hover = core.Token(hover)
+	}
+	return nil
+}
+
+// pictureElement handles the elements only a picture has (defs and
+// gradients); handled is false for any other element.
+func (parser *svgParser) pictureElement(tag string, attrs map[string]string) (handled bool, err error) {
+	if !parser.paints.colors {
+		return false, nil
+	}
+	switch {
+	case tag == "defs":
+		return true, nil
+	case tag == "linearGradient":
+		parser.gradient, err = parseGradient(attrs)
+		if err != nil {
+			return true, err
+		}
+		parser.icon.gradients[attrs["id"]] = parser.gradient
+		return true, nil
+	case tag == "stop" && parser.gradient != nil:
+		stop, err := parseStop(attrs)
+		if err != nil {
+			return true, err
+		}
+		parser.gradient.stops = append(parser.gradient.stops, stop)
+		return true, nil
+	}
+	return false, nil
+}
+
+func (paints paintParser) parse(value string) (svgPaint, error) {
 	value = strings.TrimSpace(value)
 	switch {
 	case value == "none":
@@ -203,7 +255,7 @@ func parsePaint(value string, picture bool) (svgPaint, error) {
 	case strings.HasPrefix(value, "token(") && strings.HasSuffix(value, ")"):
 		return svgPaint{token: core.Token(strings.TrimSpace(value[6 : len(value)-1]))}, nil
 	}
-	if picture {
+	if paints.colors {
 		if strings.HasPrefix(value, "url(#") && strings.HasSuffix(value, ")") {
 			return svgPaint{gradient: value[5 : len(value)-1]}, nil
 		}
@@ -214,47 +266,59 @@ func parsePaint(value string, picture bool) (svgPaint, error) {
 	return svgPaint{}, fmt.Errorf("a paint is none, currentColor or token(name), not %q", value)
 }
 
-func applyStyle(st svgStyle, attrs map[string]string, picture bool) (svgStyle, error) {
+// lineCaps has an empty row: a present but empty stroke-linecap is butt.
+var lineCaps = map[string]vector.LineCap{
+	"":       vector.LineCapButt,
+	"butt":   vector.LineCapButt,
+	"round":  vector.LineCapRound,
+	"square": vector.LineCapSquare,
+}
+
+var lineJoins = map[string]vector.LineJoin{
+	"miter": vector.LineJoinMiter,
+	"round": vector.LineJoinRound,
+	"bevel": vector.LineJoinBevel,
+}
+
+// namedAttr is the table's value for attribute name, or current when the
+// attribute is absent.
+func namedAttr[T any](attrs map[string]string, name string, table map[string]T, current T) (T, error) {
+	value, ok := attrs[name]
+	if !ok {
+		return current, nil
+	}
+	named, ok := table[value]
+	if !ok {
+		return current, fmt.Errorf("bad %s %q", name, value)
+	}
+	return named, nil
+}
+
+func applyStyle(style svgStyle, attrs map[string]string, paints paintParser) (svgStyle, error) {
 	var err error
-	if v, ok := attrs["fill"]; ok {
-		if st.fill, err = parsePaint(v, picture); err != nil {
-			return st, err
+	if value, ok := attrs["fill"]; ok {
+		if style.fill, err = paints.parse(value); err != nil {
+			return style, err
 		}
 	}
-	if v, ok := attrs["stroke"]; ok {
-		if st.stroke, err = parsePaint(v, picture); err != nil {
-			return st, err
+	if value, ok := attrs["stroke"]; ok {
+		if style.stroke, err = paints.parse(value); err != nil {
+			return style, err
 		}
 	}
-	if v, ok := attrs["stroke-width"]; ok {
-		if st.width, err = strconv.ParseFloat(strings.TrimSpace(v), 64); err != nil || st.width < 0 {
-			return st, fmt.Errorf("bad stroke-width %q", v)
+	if value, ok := attrs["stroke-width"]; ok {
+		if style.width, err = strconv.ParseFloat(strings.TrimSpace(value), 64); err != nil || style.width < 0 {
+			return style, fmt.Errorf("bad stroke-width %q", value)
 		}
 	}
-	switch attrs["stroke-linecap"] {
-	case "", "butt":
-		if _, ok := attrs["stroke-linecap"]; ok {
-			st.cap = vector.LineCapButt
-		}
-	case "round":
-		st.cap = vector.LineCapRound
-	case "square":
-		st.cap = vector.LineCapSquare
-	default:
-		return st, fmt.Errorf("bad stroke-linecap %q", attrs["stroke-linecap"])
+	if style.cap, err = namedAttr(attrs, "stroke-linecap", lineCaps, style.cap); err != nil {
+		return style, err
 	}
-	switch attrs["stroke-linejoin"] {
-	case "":
-	case "miter":
-		st.join = vector.LineJoinMiter
-	case "round":
-		st.join = vector.LineJoinRound
-	case "bevel":
-		st.join = vector.LineJoinBevel
-	default:
-		return st, fmt.Errorf("bad stroke-linejoin %q", attrs["stroke-linejoin"])
+	if attrs["stroke-linejoin"] == "" { // present but empty keeps the inherited join
+		return style, nil
 	}
-	return st, nil
+	style.join, err = namedAttr(attrs, "stroke-linejoin", lineJoins, style.join)
+	return style, err
 }
 
 func num(attrs map[string]string, name string, def float64) (float64, error) {
@@ -269,75 +333,108 @@ func num(attrs map[string]string, name string, def float64) (float64, error) {
 	return f, nil
 }
 
+// shapeBuilder turns one shape element into path commands; tag tells
+// elements that share a builder apart.
+type shapeBuilder func(tag string, attrs map[string]string) ([]svgCmd, error)
+
+// shapes are the drawable elements; the "unknown element" error lists them.
+var shapes = map[string]shapeBuilder{
+	"path":     pathShape,
+	"line":     lineShape,
+	"polyline": polyShape,
+	"polygon":  polyShape,
+	"rect":     rectShape,
+	"circle":   ellipseShape,
+	"ellipse":  ellipseShape,
+}
+
 // shapeCmds turns one shape element into path commands.
 func shapeCmds(tag string, attrs map[string]string) ([]svgCmd, error) {
-	switch tag {
-	case "path":
-		return parsePathData(attrs["d"])
-	case "line":
-		x1, e1 := num(attrs, "x1", 0)
-		y1, e2 := num(attrs, "y1", 0)
-		x2, e3 := num(attrs, "x2", 0)
-		y2, e4 := num(attrs, "y2", 0)
-		if err := errors.Join(e1, e2, e3, e4); err != nil {
-			return nil, err
-		}
-		return []svgCmd{{'M', [6]float64{x1, y1}}, {'L', [6]float64{x2, y2}}}, nil
-	case "polyline", "polygon":
-		nums, err := parseNumbers(attrs["points"])
-		if err != nil || len(nums) < 4 || len(nums)%2 != 0 {
-			return nil, fmt.Errorf("%s needs pairs of numbers in points", tag)
-		}
-		var cmds []svgCmd
-		for i := 0; i < len(nums); i += 2 {
-			op := byte('L')
-			if i == 0 {
-				op = 'M'
-			}
-			cmds = append(cmds, svgCmd{op, [6]float64{nums[i], nums[i+1]}})
-		}
-		if tag == "polygon" {
-			cmds = append(cmds, svgCmd{op: 'Z'})
-		}
-		return cmds, nil
-	case "rect":
-		x, e1 := num(attrs, "x", 0)
-		y, e2 := num(attrs, "y", 0)
-		w, e3 := num(attrs, "width", 0)
-		h, e4 := num(attrs, "height", 0)
-		rx, e5 := num(attrs, "rx", 0)
-		if err := errors.Join(e1, e2, e3, e4, e5); err != nil {
-			return nil, err
-		}
-		if w <= 0 || h <= 0 {
-			return nil, errors.New("rect needs width and height")
-		}
-		rx = min(rx, w/2, h/2)
-		if rx <= 0 {
-			return []svgCmd{{'M', [6]float64{x, y}}, {'L', [6]float64{x + w, y}}, {'L', [6]float64{x + w, y + h}}, {'L', [6]float64{x, y + h}}, {op: 'Z'}}, nil
-		}
-		d := fmt.Sprintf("M%g %gH%gA%g %g 0 0 1 %g %gV%gA%g %g 0 0 1 %g %gH%gA%g %g 0 0 1 %g %gV%gA%g %g 0 0 1 %g %gZ",
-			x+rx, y, x+w-rx, rx, rx, x+w, y+rx, y+h-rx, rx, rx, x+w-rx, y+h, x+rx, rx, rx, x, y+h-rx, y+rx, rx, rx, x+rx, y)
-		return parsePathData(d)
-	case "circle", "ellipse":
-		cx, e1 := num(attrs, "cx", 0)
-		cy, e2 := num(attrs, "cy", 0)
-		rx, e3 := num(attrs, "rx", 0)
-		ry, e4 := num(attrs, "ry", 0)
-		if tag == "circle" {
-			r, e := num(attrs, "r", 0)
-			rx, ry, e3, e4 = r, r, e, nil
-		}
-		if err := errors.Join(e1, e2, e3, e4); err != nil {
-			return nil, err
-		}
-		if rx <= 0 || ry <= 0 {
-			return nil, fmt.Errorf("%s needs a radius", tag)
-		}
-		d := fmt.Sprintf("M%g %gA%g %g 0 1 0 %g %gA%g %g 0 1 0 %g %gZ", cx+rx, cy, rx, ry, cx-rx, cy, rx, ry, cx+rx, cy)
-		return parsePathData(d)
+	build, ok := shapes[tag]
+	if !ok {
+		known := append(slices.Sorted(maps.Keys(shapes)), "g")
+		return nil, fmt.Errorf("unknown element <%s>; icons use %s", tag, strings.Join(known, ", "))
 	}
-	return nil, fmt.Errorf("unknown element <%s>; icons use path, line, polyline, polygon, rect, circle, ellipse, g", tag)
+	return build(tag, attrs)
+}
+
+func pathShape(_ string, attrs map[string]string) ([]svgCmd, error) {
+	return parsePathData(attrs["d"])
+}
+
+func lineShape(_ string, attrs map[string]string) ([]svgCmd, error) {
+	x1, e1 := num(attrs, "x1", 0)
+	y1, e2 := num(attrs, "y1", 0)
+	x2, e3 := num(attrs, "x2", 0)
+	y2, e4 := num(attrs, "y2", 0)
+	if err := errors.Join(e1, e2, e3, e4); err != nil {
+		return nil, err
+	}
+	return []svgCmd{{'M', [6]float64{x1, y1}}, {'L', [6]float64{x2, y2}}}, nil
+}
+
+func polyShape(tag string, attrs map[string]string) ([]svgCmd, error) {
+	nums, err := parseNumbers(attrs["points"])
+	if err != nil || len(nums) < 4 || len(nums)%2 != 0 {
+		return nil, fmt.Errorf("%s needs pairs of numbers in points", tag)
+	}
+	var cmds []svgCmd
+	for i := 0; i < len(nums); i += 2 {
+		op := byte('L')
+		if i == 0 {
+			op = 'M'
+		}
+		cmds = append(cmds, svgCmd{op, [6]float64{nums[i], nums[i+1]}})
+	}
+	if tag == "polygon" {
+		cmds = append(cmds, svgCmd{op: 'Z'})
+	}
+	return cmds, nil
+}
+
+func rectShape(_ string, attrs map[string]string) ([]svgCmd, error) {
+	x, e1 := num(attrs, "x", 0)
+	y, e2 := num(attrs, "y", 0)
+	w, e3 := num(attrs, "width", 0)
+	h, e4 := num(attrs, "height", 0)
+	rx, e5 := num(attrs, "rx", 0)
+	if err := errors.Join(e1, e2, e3, e4, e5); err != nil {
+		return nil, err
+	}
+	if w <= 0 || h <= 0 {
+		return nil, errors.New("rect needs width and height")
+	}
+	rx = min(rx, w/2, h/2)
+	if rx <= 0 {
+		return []svgCmd{{'M', [6]float64{x, y}}, {'L', [6]float64{x + w, y}}, {'L', [6]float64{x + w, y + h}}, {'L', [6]float64{x, y + h}}, {op: 'Z'}}, nil
+	}
+	d := fmt.Sprintf("M%g %gH%gA%g %g 0 0 1 %g %gV%gA%g %g 0 0 1 %g %gH%gA%g %g 0 0 1 %g %gV%gA%g %g 0 0 1 %g %gZ",
+		x+rx, y, x+w-rx, rx, rx, x+w, y+rx, y+h-rx, rx, rx, x+w-rx, y+h, x+rx, rx, rx, x, y+h-rx, y+rx, rx, rx, x+rx, y)
+	return parsePathData(d)
+}
+
+// ellipseShape builds a circle (r) or an ellipse (rx and ry) from four arcs'
+// worth of two half turns.
+func ellipseShape(tag string, attrs map[string]string) ([]svgCmd, error) {
+	cx, e1 := num(attrs, "cx", 0)
+	cy, e2 := num(attrs, "cy", 0)
+	var rx, ry float64
+	var e3, e4 error
+	if tag == "circle" {
+		rx, e3 = num(attrs, "r", 0)
+		ry = rx
+	} else {
+		rx, e3 = num(attrs, "rx", 0)
+		ry, e4 = num(attrs, "ry", 0)
+	}
+	if err := errors.Join(e1, e2, e3, e4); err != nil {
+		return nil, err
+	}
+	if rx <= 0 || ry <= 0 {
+		return nil, fmt.Errorf("%s needs a radius", tag)
+	}
+	d := fmt.Sprintf("M%g %gA%g %g 0 1 0 %g %gA%g %g 0 1 0 %g %gZ", cx+rx, cy, rx, ry, cx-rx, cy, rx, ry, cx+rx, cy)
+	return parsePathData(d)
 }
 
 func parseNumbers(text string) ([]float64, error) {
@@ -411,14 +508,36 @@ func (p *pathScanner) number() (float64, error) {
 }
 
 // flag reads an arc flag, which may be written without a separator ("11").
-func (p *pathScanner) flag() (bool, error) {
+func (p *pathScanner) flag() (float64, error) {
 	p.skip()
 	if p.i < len(p.s) && (p.s[p.i] == '0' || p.s[p.i] == '1') {
-		v := p.s[p.i] == '1'
+		value := float64(p.s[p.i] - '0')
 		p.i++
-		return v, nil
+		return value, nil
 	}
-	return false, errors.New("an arc flag is 0 or 1")
+	return 0, errors.New("an arc flag is 0 or 1")
+}
+
+// arcArguments reads rx ry rotation large-flag sweep-flag x y, the flags as
+// 0 or 1.
+func (p *pathScanner) arcArguments() ([]float64, error) {
+	radii, err := p.numbers(3)
+	if err != nil {
+		return nil, err
+	}
+	large, err := p.flag()
+	if err != nil {
+		return nil, err
+	}
+	sweep, err := p.flag()
+	if err != nil {
+		return nil, err
+	}
+	end, err := p.numbers(2)
+	if err != nil {
+		return nil, err
+	}
+	return append(radii, large, sweep, end[0], end[1]), nil
 }
 
 func (p *pathScanner) numbers(count int) ([]float64, error) {
@@ -433,156 +552,163 @@ func (p *pathScanner) numbers(count int) ([]float64, error) {
 	return out, nil
 }
 
+// pathState is what path data carries from one command to the next.
+type pathState struct {
+	cmds           []svgCmd
+	cx, cy         float64 // current point
+	sx, sy         float64 // start of the subpath, where Z returns to
+	lastCx, lastCy float64 // last control point, for S and T
+	prev           byte    // previous command letter, upper case
+	rel            bool    // the running command is lower case
+}
+
+// point is an argument pair as an absolute point.
+func (state *pathState) point(x, y float64) (float64, float64) {
+	if state.rel {
+		return state.cx + x, state.cy + y
+	}
+	return x, y
+}
+
+// moveTo appends an M or L command and makes its point current.
+func (state *pathState) moveTo(op byte, x, y float64) {
+	state.cmds = append(state.cmds, svgCmd{op, [6]float64{x, y}})
+	state.cx, state.cy = x, y
+	state.lastCx, state.lastCy = x, y
+}
+
+func (state *pathState) cubic(x1, y1, x2, y2, x, y float64) {
+	state.cmds = append(state.cmds, svgCmd{'C', [6]float64{x1, y1, x2, y2, x, y}})
+	state.lastCx, state.lastCy = x2, y2
+	state.cx, state.cy = x, y
+}
+
+// quad appends the cubic that equals the quadratic through (qx, qy).
+func (state *pathState) quad(qx, qy, x, y float64) {
+	x0, y0 := state.cx, state.cy
+	state.cubic(x0+2.0/3*(qx-x0), y0+2.0/3*(qy-y0), x+2.0/3*(qx-x), y+2.0/3*(qy-y), x, y)
+	state.lastCx, state.lastCy = qx, qy
+}
+
+// reflected is the last control point mirrored through the current point
+// when the previous command is one of kinds, else the current point.
+func (state *pathState) reflected(kinds string) (float64, float64) {
+	if strings.IndexByte(kinds, state.prev) < 0 {
+		return state.cx, state.cy
+	}
+	return 2*state.cx - state.lastCx, 2*state.cy - state.lastCy
+}
+
+// pathCommand is one command letter: how many numbers it takes (read
+// replaces the plain number reader where flags are mixed in) and what it
+// does with them.
+type pathCommand struct {
+	args int
+	read func(scanner *pathScanner) ([]float64, error)
+	run  func(state *pathState, args []float64)
+}
+
+// pathCommands is keyed by the upper case letter.
+var pathCommands = map[byte]pathCommand{
+	'M': {2, nil, func(state *pathState, args []float64) {
+		x, y := state.point(args[0], args[1])
+		state.moveTo('M', x, y)
+		state.sx, state.sy = x, y
+	}},
+	'L': {2, nil, func(state *pathState, args []float64) {
+		x, y := state.point(args[0], args[1])
+		state.moveTo('L', x, y)
+	}},
+	'H': {1, nil, func(state *pathState, args []float64) {
+		x, _ := state.point(args[0], 0)
+		state.moveTo('L', x, state.cy)
+	}},
+	'V': {1, nil, func(state *pathState, args []float64) {
+		_, y := state.point(0, args[0])
+		state.moveTo('L', state.cx, y)
+	}},
+	'C': {6, nil, func(state *pathState, args []float64) {
+		x1, y1 := state.point(args[0], args[1])
+		x2, y2 := state.point(args[2], args[3])
+		x, y := state.point(args[4], args[5])
+		state.cubic(x1, y1, x2, y2, x, y)
+	}},
+	'S': {4, nil, func(state *pathState, args []float64) {
+		x1, y1 := state.reflected("CS")
+		x2, y2 := state.point(args[0], args[1])
+		x, y := state.point(args[2], args[3])
+		state.cubic(x1, y1, x2, y2, x, y)
+	}},
+	'Q': {4, nil, func(state *pathState, args []float64) {
+		qx, qy := state.point(args[0], args[1])
+		x, y := state.point(args[2], args[3])
+		state.quad(qx, qy, x, y)
+	}},
+	'T': {2, nil, func(state *pathState, args []float64) {
+		qx, qy := state.reflected("QT")
+		x, y := state.point(args[0], args[1])
+		state.quad(qx, qy, x, y)
+	}},
+	'A': {7, (*pathScanner).arcArguments, func(state *pathState, args []float64) {
+		x, y := state.point(args[5], args[6])
+		for _, segment := range arcToCubics(state.cx, state.cy, args[0], args[1], args[2], args[3] == 1, args[4] == 1, x, y) {
+			state.cmds = append(state.cmds, svgCmd{'C', segment})
+		}
+		state.cx, state.cy = x, y
+		state.lastCx, state.lastCy = x, y
+	}},
+	'Z': {0, nil, func(state *pathState, _ []float64) {
+		state.cmds = append(state.cmds, svgCmd{op: 'Z'})
+		state.cx, state.cy = state.sx, state.sy
+	}},
+}
+
+// run reads and runs one command letter and its repeated argument groups.
+func (state *pathState) run(scanner *pathScanner, letter byte) error {
+	state.rel = letter >= 'a'
+	name := letter &^ 0x20
+	for {
+		command := pathCommands[name]
+		read := command.read
+		if read == nil {
+			read = func(scanner *pathScanner) ([]float64, error) { return scanner.numbers(command.args) }
+		}
+		args, err := read(scanner)
+		if err != nil {
+			return err
+		}
+		command.run(state, args)
+		if name == 'M' { // further pairs after M are implicit L
+			name = 'L'
+		}
+		state.prev = name
+		if command.args == 0 || !scanner.more() {
+			return nil
+		}
+	}
+}
+
 // parsePathData turns path data into absolute M, L, C and Z commands.
 func parsePathData(text string) ([]svgCmd, error) {
-	p := &pathScanner{s: text}
-	var cmds []svgCmd
-	var cx, cy, sx, sy float64 // current point and subpath start
-	var lastCx, lastCy float64 // last control point, for S and T
-	var prev byte              // previous command letter, upper case
-	cubic := func(x1, y1, x2, y2, posX, posY float64) {
-		cmds = append(cmds, svgCmd{'C', [6]float64{x1, y1, x2, y2, posX, posY}})
-		lastCx, lastCy = x2, y2
-		cx, cy = posX, posY
-	}
+	scanner := &pathScanner{s: text}
+	state := &pathState{}
 	for {
-		c, ok := p.command()
+		letter, ok := scanner.command()
 		if !ok {
-			p.skip()
-			if p.i < len(p.s) {
-				return nil, fmt.Errorf("path data: unexpected %q", p.s[p.i:min(p.i+6, len(p.s))])
-			}
 			break
 		}
-		rel := c >= 'a'
-		up := c &^ 0x20
-		off := func(posX, posY float64) (float64, float64) {
-			if rel {
-				return cx + posX, cy + posY
-			}
-			return posX, posY
+		if err := state.run(scanner, letter); err != nil {
+			return nil, err
 		}
-		if up == 'Z' {
-			cmds = append(cmds, svgCmd{op: 'Z'})
-			cx, cy = sx, sy
-			prev = 'Z'
-			continue
-		}
-		first := true
-		for first || p.more() {
-			first = false
-			switch up {
-			case 'M', 'L':
-				n, err := p.numbers(2)
-				if err != nil {
-					return nil, err
-				}
-				x, y := off(n[0], n[1])
-				op := up
-				cmds = append(cmds, svgCmd{op, [6]float64{x, y}})
-				cx, cy = x, y
-				if up == 'M' && op == 'M' {
-					sx, sy = x, y
-				}
-				if up == 'M' { // further pairs after M are implicit L
-					up = 'L'
-				}
-				lastCx, lastCy = x, y
-			case 'H', 'V':
-				n, err := p.numbers(1)
-				if err != nil {
-					return nil, err
-				}
-				x, y := cx, cy
-				switch {
-				case up == 'H' && rel:
-					x += n[0]
-				case up == 'H':
-					x = n[0]
-				case rel:
-					y += n[0]
-				default:
-					y = n[0]
-				}
-				cmds = append(cmds, svgCmd{'L', [6]float64{x, y}})
-				cx, cy = x, y
-				lastCx, lastCy = x, y
-			case 'C':
-				n, err := p.numbers(6)
-				if err != nil {
-					return nil, err
-				}
-				x1, y1 := off(n[0], n[1])
-				x2, y2 := off(n[2], n[3])
-				x, y := off(n[4], n[5])
-				cubic(x1, y1, x2, y2, x, y)
-			case 'S':
-				n, err := p.numbers(4)
-				if err != nil {
-					return nil, err
-				}
-				x1, y1 := cx, cy
-				if prev == 'C' || prev == 'S' {
-					x1, y1 = 2*cx-lastCx, 2*cy-lastCy
-				}
-				x2, y2 := off(n[0], n[1])
-				x, y := off(n[2], n[3])
-				cubic(x1, y1, x2, y2, x, y)
-			case 'Q', 'T':
-				var qx, qy, x, y float64
-				if up == 'Q' {
-					n, err := p.numbers(4)
-					if err != nil {
-						return nil, err
-					}
-					qx, qy = off(n[0], n[1])
-					x, y = off(n[2], n[3])
-				} else {
-					n, err := p.numbers(2)
-					if err != nil {
-						return nil, err
-					}
-					qx, qy = cx, cy
-					if prev == 'Q' || prev == 'T' {
-						qx, qy = 2*cx-lastCx, 2*cy-lastCy
-					}
-					x, y = off(n[0], n[1])
-				}
-				x0, y0 := cx, cy
-				cubic(x0+2.0/3*(qx-x0), y0+2.0/3*(qy-y0), x+2.0/3*(qx-x), y+2.0/3*(qy-y), x, y)
-				lastCx, lastCy = qx, qy
-			case 'A':
-				n, err := p.numbers(3)
-				if err != nil {
-					return nil, err
-				}
-				large, err := p.flag()
-				if err != nil {
-					return nil, err
-				}
-				sweep, err := p.flag()
-				if err != nil {
-					return nil, err
-				}
-				e, err := p.numbers(2)
-				if err != nil {
-					return nil, err
-				}
-				x, y := off(e[0], e[1])
-				for _, seg := range arcToCubics(cx, cy, n[0], n[1], n[2], large, sweep, x, y) {
-					cmds = append(cmds, svgCmd{'C', seg})
-				}
-				cx, cy = x, y
-				lastCx, lastCy = x, y
-			}
-			prev = up
-		}
-		prev = up
 	}
-	if len(cmds) == 0 || cmds[0].op != 'M' {
+	scanner.skip()
+	if scanner.i < len(scanner.s) {
+		return nil, fmt.Errorf("path data: unexpected %q", scanner.s[scanner.i:min(scanner.i+6, len(scanner.s))])
+	}
+	if len(state.cmds) == 0 || state.cmds[0].op != 'M' {
 		return nil, errors.New("path data must start with M")
 	}
-	return cmds, nil
+	return state.cmds, nil
 }
 
 // arcToCubics converts an SVG elliptical arc to cubic segments, by the
@@ -614,10 +740,7 @@ func arcToCubics(x1, y1, rx, ry, rotDeg float64, large, sweep bool, x2, y2 float
 	}
 	cxp, cyp := coef*rx*y1p/ry, -coef*ry*x1p/rx
 	cx, cy := cosP*cxp-sinP*cyp+(x1+x2)/2, sinP*cxp+cosP*cyp+(y1+y2)/2
-	angle := func(ux, uy, vx, vy float64) float64 {
-		a := math.Atan2(ux*vy-uy*vx, ux*vx+uy*vy)
-		return a
-	}
+	angle := func(ux, uy, vx, vy float64) float64 { return math.Atan2(ux*vy-uy*vx, ux*vx+uy*vy) }
 	th1 := angle(1, 0, (x1p-cxp)/rx, (y1p-cyp)/ry)
 	dth := angle((x1p-cxp)/rx, (y1p-cyp)/ry, (-x1p-cxp)/rx, (-y1p-cyp)/ry)
 	if !sweep && dth > 0 {

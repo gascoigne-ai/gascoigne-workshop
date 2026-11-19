@@ -1965,8 +1965,9 @@ and the in-memory keys `stateKey` and `tree.Key`.
   URL parameters, assertions, the compact JSON view, the WebSocket frame reader, templates, text
   editing, find and wrapping, GraphQL schemas, MCP lists and server info, protocol, body and auth
   type names, collection folders, the saved state, settings, request history and the sent log,
-  images, theme files, the event-stream reader of SSE and MCP, settings text, bulk-edited table rows
-  and key bindings). It is not part of `make check`. A crasher is saved under the package's
+  images, theme files, the event-stream reader of SSE and MCP, settings text, bulk-edited table rows,
+  key bindings and the SVG icon parser `FuzzParseSVG`, which has no size or depth limit of its own:
+  an arc gives at most 4 segments and a number that overflows is an error). It is not part of `make check`. A crasher is saved under the package's
   `testdata/fuzz`; fix it and keep the file as a regression test.
 -  Protocol, body type and auth type names (`model.ParseProtocol`, `ParseBodyType`, `ParseAuthType`)
   are matched exactly against a fixed list: no case folding, no trimming, no length to grow;
