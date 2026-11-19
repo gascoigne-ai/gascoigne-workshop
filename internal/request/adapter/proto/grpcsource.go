@@ -35,22 +35,16 @@ var methodSources = map[string]sourceKind{
 	model.SourceProtoFiles: {open: openProtoFiles},
 }
 
-func sourceKindOf(source model.ProtoSource) (sourceKind, error) {
-	kind, ok := methodSources[source.Kind()]
-	if !ok {
-		return sourceKind{}, fmt.Errorf("no source of gRPC methods is called %q", source.Kind())
-	}
-	return kind, nil
+// sourceKindOf is the kind of a request's source; ProtoSource.Kind names
+// only kinds that methodSources holds.
+func sourceKindOf(source model.ProtoSource) sourceKind {
+	return methodSources[source.Kind()]
 }
 
 // openMethodSource opens the source of a request's methods. conn is the
 // server's connection, which reflection asks and proto files ignore.
 func openMethodSource(ctx context.Context, conn *grpc.ClientConn, source model.ProtoSource) (methodSource, error) {
-	kind, err := sourceKindOf(source)
-	if err != nil {
-		return nil, err
-	}
-	return kind.open(ctx, conn, source)
+	return sourceKindOf(source).open(ctx, conn, source)
 }
 
 // reflectionSource asks the server's reflection service.

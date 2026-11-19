@@ -17,8 +17,6 @@ import (
 // Overlays (context menu, dialog, toasts) are state on the App and are
 // built into the window's Stack after everything else, newest on top.
 
-const ()
-
 // dialog is a message dialog (the toolkit's DialogState) that may also
 // carry the typed form of an MCP tool, drawn between its body and input.
 type dialog struct {

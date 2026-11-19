@@ -63,7 +63,7 @@ func (s *hscrollB) Layout(element *El, ctx *core.Ctx) {
 // input is handled: whether the content overflows, the scroll position
 // clamped, and the position that brings the child marked KeepInView into
 // view when that child changed.
-func (s *hscrollB) settle(element *El, ctx *core.Ctx) {
+func (s *hscrollB) settle(element *El) {
 	st := s.state
 	st.Overflowing = s.overflow(element)
 	flagged := -1
@@ -106,7 +106,7 @@ func (s *hscrollB) arrowsShown(element *El) (left, right bool) {
 
 // PreUpdate takes clicks on the arrows before the children under them see them.
 func (s *hscrollB) PreUpdate(element *El, ctx *core.Ctx) {
-	s.settle(element, ctx)
+	s.settle(element)
 	in, st, r := ctx.In, s.state, element.Rect()
 	if !s.overflow(element) {
 		return

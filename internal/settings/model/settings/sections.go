@@ -90,7 +90,6 @@ func sectionedText(flat map[string]any) ([]byte, error) {
 	if err := writeMember(&compact, false, fileversion.Key, FileVersion); err != nil {
 		return nil, err
 	}
-	wroteSection := true
 	for _, section := range Sections {
 		var body bytes.Buffer
 		if objectSection(section) {
@@ -121,14 +120,11 @@ func sectionedText(flat map[string]any) ([]byte, error) {
 			}
 			body.Write(encoded)
 		}
-		if wroteSection {
-			compact.WriteByte(',')
-		}
+		compact.WriteByte(',')
 		encodedName, _ := json.Marshal(section)
 		compact.Write(encodedName)
 		compact.WriteByte(':')
 		compact.Write(body.Bytes())
-		wroteSection = true
 	}
 	compact.WriteByte('}')
 	var indented bytes.Buffer

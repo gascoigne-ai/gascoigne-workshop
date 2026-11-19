@@ -328,16 +328,6 @@ func composerHint(tab *reqTab, connected bool) string {
 // "hex: de ad be ef".
 const binaryPrefix = "hex:"
 
-// sendComposed sends the composer's text: as a binary message when it
-// starts with "hex:" and the session can send binary, else as text.
-func sendComposed(ctx context.Context, session reqport.Session, text string) error {
-	send, err := composed(session, text)
-	if err != nil {
-		return err
-	}
-	return send(ctx)
-}
-
 // composed is the send of the composer's text, ready to run; a text that
 // cannot be sent (bad hex) is refused here, before anything is sent.
 func composed(session reqport.Session, text string) (queuedSend, error) {

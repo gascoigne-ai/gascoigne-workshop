@@ -29,7 +29,6 @@ const (
 	MinWidth     = 520 // the smallest the user can make it
 	MinHeight    = 360
 	DialogNavW   = 170
-	DialogTitleH = 44
 )
 
 // Host is what the dialog needs from the application: reads, and Send for

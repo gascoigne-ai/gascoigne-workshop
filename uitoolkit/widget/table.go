@@ -261,8 +261,6 @@ type colHandlesB struct {
 	spec   TableSpec
 }
 
-func (colHandlesB) Measure(*El, *core.Ctx, int) (int, int) { return 0, 0 }
-
 func (h colHandlesB) cells() []*El {
 	off := 0
 	if h.spec.Editable {

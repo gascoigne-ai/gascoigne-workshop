@@ -34,7 +34,7 @@ func (s *splitB) axis(element *El) (origin, total int) {
 
 // firstSize is the pixel size of the first child: the stored size or the
 // default, as pixels or a fraction, held between the two minimums.
-func (s *splitB) firstSize(element *El, avail int) int {
+func (s *splitB) firstSize(avail int) int {
 	size := s.state.Size
 	if size == 0 {
 		size = s.def
@@ -54,7 +54,7 @@ func (s *splitB) Layout(element *El, ctx *core.Ctx) {
 	r := element.Rect()
 	_, total := s.axis(element)
 	avail := max(total-1, 0)
-	px := min(s.firstSize(element, avail), avail)
+	px := min(s.firstSize(avail), avail)
 	if s.vertical {
 		s.divider = core.Rect{X: r.X, Y: r.Y + px, W: r.W, H: 1}
 		element.Children()[0].Place(ctx, core.Rect{X: r.X, Y: r.Y, W: r.W, H: px})
@@ -71,7 +71,7 @@ func (s *splitB) Draw(element *El, ctx *core.Ctx, dst *ebiten.Image) {
 }
 
 // handle is the area that grabs the divider, a little wider than it.
-func (s *splitB) handle(element *El) core.Rect {
+func (s *splitB) handle() core.Rect {
 	d := s.divider
 	if s.vertical {
 		return core.Rect{X: d.X, Y: d.Y - handleSlop, W: d.W, H: 1 + 2*handleSlop}
@@ -103,7 +103,7 @@ func (s *splitB) Update(element *El, ctx *core.Ctx) {
 		st.Size = max(px, 1e-6) // 0 would mean "the default"
 		return
 	}
-	if !in.Over(s.handle(element)) {
+	if !in.Over(s.handle()) {
 		return
 	}
 	ctx.Cursor = cursor

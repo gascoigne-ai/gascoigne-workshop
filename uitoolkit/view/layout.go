@@ -138,7 +138,7 @@ func (f flow) layout(element *El, ctx *core.Ctx) {
 		w, h := k.size(ctx, in.W)
 		sizes[i], hug[i] = f.main(w, h)+f.marginMain(k), f.cross(w, h)
 	}
-	element.dropOptional(f, sizes, avail)
+	element.dropOptional(sizes, avail)
 	element.shrinkToFit(f, sizes, avail)
 
 	used, growSum, n := 0, 0.0, 0
@@ -291,7 +291,7 @@ func (f flow) rect(in core.Rect, mainPos, crossOff, mainSize, crossSize int) cor
 }
 
 // dropOptional hides optional children when everything does not fit.
-func (e *El) dropOptional(flow flow, sizes []int, avail int) {
+func (e *El) dropOptional(sizes []int, avail int) {
 	total, n := 0, 0
 	for i, k := range e.kids {
 		k.hidden = false

@@ -98,14 +98,14 @@ func TestTitleBarClosesTheLog(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	bar := log.titleBar(fakeHost{})
+	bar := log.titleBar()
 	root := Col(W(800), H(titleH), bar)
 	Layout(ctx, root, 800, titleH)
 	dump := Dump(bar)
 	if !strings.Contains(dump, "Log") || strings.Contains(dump, "fieldB") {
 		t.Errorf("title bar should name the dialog and hold no filter:\n%s", dump)
 	}
-	tools := Dump(log.toolbar(fakeHost{}))
+	tools := Dump(log.toolbar())
 	for _, want := range []string{"fieldB", "Clear"} {
 		if !strings.Contains(tools, want) {
 			t.Errorf("toolbar has no %q:\n%s", want, tools)

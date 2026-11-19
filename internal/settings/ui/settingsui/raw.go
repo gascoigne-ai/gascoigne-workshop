@@ -137,9 +137,6 @@ func (d *SettingsDialog) rawStyler(line string) []Span {
 	return spans
 }
 
-// RawStyle is how the raw view colors one line of its text.
-func (d *SettingsDialog) RawStyle(line string) []Span { return d.rawStyler(line) }
-
 // CompleteRaw opens a menu of what fits at the caret of the raw text; the
 // choice replaces the part of the word that was typed.
 func (d *SettingsDialog) CompleteRaw(host Host) { d.complete(host, false) }

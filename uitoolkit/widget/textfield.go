@@ -582,8 +582,7 @@ func shiftPos(value int, starts, delta []int) int {
 		if s <= value {
 			out += delta[i]
 			if delta[i] < 0 && value < s-delta[i] {
-				out = out - (value - s) // a position inside the removed run moves to the line start
-				out = s + sumBefore(delta, i)
+				out = s + sumBefore(delta, i) // a position inside the removed run moves to the line start
 			}
 		}
 	}

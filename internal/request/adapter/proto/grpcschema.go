@@ -12,11 +12,9 @@ import (
 // GRPCInputSchema describes the request message of the method of req, from
 // the server's reflection or the request's proto files.
 func GRPCInputSchema(ctx context.Context, req model.Request) (model.MessageSchema, error) {
-	kind, err := sourceKindOf(req.Proto)
-	if err != nil {
-		return model.MessageSchema{}, err
-	}
+	kind := sourceKindOf(req.Proto)
 	var conn *grpc.ClientConn
+	var err error
 	if kind.asksServer {
 		if conn, err = dial(req); err != nil {
 			return model.MessageSchema{}, err

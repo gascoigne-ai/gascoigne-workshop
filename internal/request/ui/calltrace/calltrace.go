@@ -172,15 +172,15 @@ func (l *Log) View(host Host) Node {
 		"height":  min(dialogMaxH, height-2*margin),
 		"close":   l.Close,
 		"move":    &l.move,
-		"title":   l.titleBar(host),
-		"toolbar": l.toolbar(host),
+		"title":   l.titleBar(),
+		"toolbar": l.toolbar(),
 		"code":    &l.code,
 	})
 }
 
 // titleBar is the dialog's title bar: the name and the close button. It is
 // its own template so its tests can lay it out alone.
-func (l *Log) titleBar(host Host) Node {
+func (l *Log) titleBar() Node {
 	count := fmt.Sprintf("%d entries", len(l.entries))
 	if len(l.entries) == 1 {
 		count = "1 entry"
@@ -189,7 +189,7 @@ func (l *Log) titleBar(host Host) Node {
 }
 
 // toolbar is the row under the title bar: the filter and Clear.
-func (l *Log) toolbar(host Host) Node {
+func (l *Log) toolbar() Node {
 	return toolbarTemplate.MustBuild(markup.Scope{
 		"rowH":     w.RowH,
 		"filter":   &l.filter,

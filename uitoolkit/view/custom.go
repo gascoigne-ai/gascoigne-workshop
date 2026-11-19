@@ -102,7 +102,7 @@ func (e *El) FixedSize() (w, h int) { return e.w, e.h }
 
 // ColorToken is the token given with Color, or fallback when there is
 // none: the color a component draws in.
-func (e *El) ColorToken(fallback core.Token) core.Token { return e.color(nil, fallback) }
+func (e *El) ColorToken(fallback core.Token) core.Token { return e.color(fallback) }
 
 // HoverColorToken is the token given with HoverColor, "" for none.
 func (e *El) HoverColorToken() core.Token { return e.hoverColor }

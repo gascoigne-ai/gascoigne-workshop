@@ -110,11 +110,9 @@ func outgoing(ctx context.Context, req model.Request) (context.Context, error) {
 // reflection (without the reflection service itself) or its .proto files,
 // which are read without a server.
 func ListGRPCMethods(ctx context.Context, req model.Request) ([]string, error) {
-	kind, err := sourceKindOf(req.Proto)
-	if err != nil {
-		return nil, err
-	}
+	kind := sourceKindOf(req.Proto)
 	var conn *grpc.ClientConn
+	var err error
 	if kind.asksServer {
 		if conn, err = dial(req); err != nil {
 			return nil, err

@@ -678,14 +678,6 @@ var elements = map[string]elementSpec{
 		params: []param{scopedState[widget.SliderState]("state"), wholeParam("min"), wholeParam("max"), wholeParam("step"), wholeParam("value")}},
 }
 
-// withOpts applies options to an element that was built without them.
-func withOpts(node view.Node, opts []view.Option) view.Node {
-	for _, option := range opts {
-		option(node)
-	}
-	return node
-}
-
 // standsIn are the elements that stand in for a node built elsewhere (a
 // slot's node, an included template): they take only name and the
 // directives, because an option on them would have nothing to apply to.

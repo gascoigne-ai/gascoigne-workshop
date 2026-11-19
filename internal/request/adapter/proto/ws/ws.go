@@ -58,13 +58,10 @@ func (t Type) String() string {
 
 // Close status codes (RFC 6455 section 7.4).
 const (
-	CloseNormal      = 1000
-	CloseGoingAway   = 1001
-	CloseProtocol    = 1002
-	CloseUnsupported = 1003
-	CloseNoStatus    = 1005
-	CloseAbnormal    = 1006
-	CloseTooBig      = 1009
+	CloseNormal    = 1000
+	CloseGoingAway = 1001
+	CloseNoStatus  = 1005
+	CloseAbnormal  = 1006
 )
 
 // DefaultMaxMessage bounds one message when Options.MaxMessage is unset.

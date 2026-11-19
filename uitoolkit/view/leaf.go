@@ -34,7 +34,7 @@ func (e *El) chosenFace(ctx *core.Ctx) *text.GoTextFace {
 	return ctx.F.UI
 }
 
-func (e *El) color(ctx *core.Ctx, def core.Token) core.Token {
+func (e *El) color(def core.Token) core.Token {
 	if e.fg != "" {
 		return e.fg
 	}
@@ -52,7 +52,7 @@ func (textB) draw(element *El, ctx *core.Ctx, dst *ebiten.Image) {
 	if element.ellipsis {
 		s = ctx.Ellipsize(face, s, element.rect.W)
 	}
-	clr := ctx.Color(element.color(ctx, core.Text))
+	clr := ctx.Color(element.color(core.Text))
 	if element.ctr {
 		ctx.TextCenter(dst, face, s, element.rect, clr)
 		return
