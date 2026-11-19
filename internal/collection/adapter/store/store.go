@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/userdir"
 	"io/fs"
 	"os"
 	"path"
@@ -212,7 +213,7 @@ func unique(base string, taken map[string]bool) string {
 
 // Save writes c below dir, creating it, and removes the request and
 // folder files of items that no longer exist.
-func Save(dir string, collection model.Collection) error {
+func (Files) Save(dir string, collection model.Collection) error {
 	secrets := map[string]secret{}
 	meta := folderMeta{Version: folderVersion, Name: collection.Name, Vars: varsToFile(collection.Vars, folderFile, secrets)}
 	if err := saveFolder(absoluteDir(dir), dir, "", &collection.Folder, meta, secrets); err != nil {
@@ -422,25 +423,7 @@ func writeJSON(name string, value any, remove bool) error {
 		}
 		return nil
 	}
-	tmp, err := os.CreateTemp(filepath.Dir(name), ".tmp-*")
-	if err != nil {
-		return err
-	}
-	_, werr := tmp.Write(buf.Bytes())
-	cerr := tmp.Close()
-	if err := errors.Join(werr, cerr); err != nil {
-		os.Remove(tmp.Name())
-		return err
-	}
-	if err := os.Chmod(tmp.Name(), perm); err != nil {
-		os.Remove(tmp.Name())
-		return err
-	}
-	if err := os.Rename(tmp.Name(), name); err != nil {
-		os.Remove(tmp.Name())
-		return err
-	}
-	return nil
+	return userdir.WriteFileAtomic(name, buf.Bytes(), perm)
 }
 
 // ensureIgnore makes sure .gitignore lists the secrets file.
@@ -463,7 +446,7 @@ func ensureIgnore(dir string) error {
 
 // Load reads the collection below dir. A directory with no files is an
 // empty collection.
-func Load(dir string) (model.Collection, error) {
+func (Files) Load(dir string) (model.Collection, error) {
 	secrets := map[string]secret{}
 	if _, err := os.Stat(filepath.Join(dir, secretsFile)); err == nil {
 		read, err := readJSON(filepath.Join(dir, secretsFile), secretsReaders)
@@ -560,17 +543,5 @@ func loadFolder(root, dir, rel string, folder *model.Folder, secrets map[string]
 
 // Files is the collection store of the file system.
 type Files struct{}
-
-// Load implements port.Store.
-func (Files) Load(dir string) (model.Collection, error) { return Load(dir) }
-
-// Save implements port.Store.
-func (Files) Save(dir string, collection model.Collection) error { return Save(dir, collection) }
-
-// Create, Rename, Delete and List are the functions of the same names.
-func (Files) Create(parent, name string) (string, error) { return Create(parent, name) }
-func (Files) Rename(dir, name string) (string, error)    { return Rename(dir, name) }
-func (Files) Delete(dir string) error                    { return Delete(dir) }
-func (Files) List(parent string) ([]string, error)       { return List(parent) }
 
 var _ port.Store = Files{}

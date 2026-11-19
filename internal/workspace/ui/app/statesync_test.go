@@ -3,7 +3,6 @@ package app
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/statefile"
 	"os"
 	"path/filepath"
 	"testing"
@@ -66,7 +65,7 @@ func TestStateRestoreRoundTripsThroughTheFile(t *testing.T) {
 
 func TestStateRestoreDropsMissingRequestsAndBadValues(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "state.json")
-	err := statefile.Save(path, state.State{
+	err := stateDisk.Save(path, state.State{
 		Tabs:     []state.Tab{{Path: "Gone/Nothing"}, {Path: "User/" + collection.GitHubSample().Folders[0].Requests[0].Name, Pane: 99, Resp: -4}},
 		Active:   7,
 		Expanded: []string{"Nowhere"},
@@ -88,7 +87,7 @@ func TestStateRestoreDropsMissingRequestsAndBadValues(t *testing.T) {
 
 func TestStateWithNoTabsOpensTheFirstRequest(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "state.json")
-	statefile.Save(path, state.State{Tabs: []state.Tab{{Path: "Gone"}}})
+	stateDisk.Save(path, state.State{Tabs: []state.Tab{{Path: "Gone"}}})
 	a := testApp(t, memorySettings(), withOptions(Options{StatePath: path}))
 	if len(a.list.Tabs) != 1 {
 		t.Fatalf("%d tabs", len(a.list.Tabs))
@@ -115,13 +114,13 @@ func TestStateIsSavedAfterAQuietSpell(t *testing.T) {
 	a.sidebarSplit.Size = 280
 	a.markStale()        // the test edits the model directly; in the app an edit comes with input, which marks the keys stale
 	a.step(core.Input{}) // change noticed, not yet written
-	if s, _ := statefile.Load(path); s.SidebarW != 0 {
+	if s, _ := stateDisk.Load(path); s.SidebarW != 0 {
 		t.Fatal("written before the debounce")
 	}
 	clock = clock.Add(2 * time.Second)
 	a.step(core.Input{})
 	a.waitWrites()
-	if s, _ := statefile.Load(path); s.SidebarW != 280 {
+	if s, _ := stateDisk.Load(path); s.SidebarW != 280 {
 		t.Fatalf("not written after the debounce: %+v", s)
 	}
 }
@@ -181,7 +180,7 @@ func TestTheSettingsDialogSizeIsRememberedAcrossRestarts(t *testing.T) {
 func TestHostileStateValuesStillGiveAWorkingWindow(t *testing.T) {
 	first := "User/" + collection.GitHubSample().Folders[0].Requests[0].Name
 	path := filepath.Join(t.TempDir(), "state.json")
-	err := statefile.Save(path, state.State{
+	err := stateDisk.Save(path, state.State{
 		SidebarW: 1 << 40, SettingsW: -5, SettingsH: 1 << 40, PaneSplit: 1e300,
 		Tabs:    []state.Tab{{Path: first}, {Path: first}, {Path: first, Pane: -1, Resp: 1 << 30}},
 		Active:  -3,

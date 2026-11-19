@@ -1,7 +1,6 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/settingsfile"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"strings"
 	"testing"
@@ -31,7 +30,7 @@ func TestSelectedEnvironmentIsRemembered(t *testing.T) {
 	a := testApp(t)
 	a.col().Envs = []model.Environment{{Name: "Dev"}, {Name: "Prod"}}
 	a.selectEnv(1)
-	st, err := settingsfile.Load(a.settingsPath)
+	st, err := settingsDisk.Load(a.settingsPath)
 	if got := st.RememberedCollections(); err != nil || len(got) != 1 || got[0].Environment != "Prod" {
 		t.Fatalf("saved %+v %v", got, err)
 	}

@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"net/http"
 	"strings"
 	"time"
@@ -52,7 +53,7 @@ func (w WebSocket) handshake(ctx context.Context, req model.Request) (ws.Options
 }
 
 // Connect implements Streamer.
-func (w WebSocket) Connect(ctx context.Context, req model.Request) (Session, error) {
+func (w WebSocket) Connect(ctx context.Context, req model.Request) (port.Session, error) {
 	o, target, err := w.handshake(ctx, req)
 	if err != nil {
 		return nil, err
@@ -66,7 +67,7 @@ func (w WebSocket) Connect(ctx context.Context, req model.Request) (Session, err
 	if p := conn.Subprotocol(); p != "" {
 		open += " (" + p + ")"
 	}
-	s.emit(Event{Dir: Info, Kind: "open", Text: open})
+	s.emit(port.Event{Dir: port.Info, Kind: "open", Text: open})
 	go s.readLoop()
 	return s, nil
 }
@@ -118,9 +119,9 @@ func (w WebSocket) Send(ctx context.Context, req model.Request) (model.Response,
 func stopReason(ctx context.Context, err error) string {
 	switch {
 	case errors.Is(ctx.Err(), context.DeadlineExceeded):
-		return ErrTimedOut
+		return model.ErrTimedOut
 	case errors.Is(ctx.Err(), context.Canceled):
-		return ErrCancelled
+		return model.ErrCancelled
 	}
 	return err.Error()
 }
@@ -136,21 +137,21 @@ func (s *wsSession) readLoop() {
 		m, err := s.conn.Read()
 		if err != nil {
 			if !s.closing() { // closed by us: no loss
-				s.emit(Event{Dir: Info, Kind: "close", Code: ws.CloseAbnormal, Text: "Connection lost: " + err.Error()})
+				s.emit(port.Event{Dir: port.Info, Kind: "close", Code: ws.CloseAbnormal, Text: "Connection lost: " + err.Error()})
 			}
 			return
 		}
 		switch m.Type {
 		case ws.Text, ws.Binary:
-			s.emit(Event{Dir: Received, Kind: m.Type.String(), Text: render(m), Size: len(m.Data)})
+			s.emit(port.Event{Dir: port.Received, Kind: m.Type.String(), Text: render(m), Size: len(m.Data)})
 		case ws.Ping, ws.Pong:
-			s.emit(Event{Dir: Received, Kind: m.Type.String(), Text: string(m.Data), Size: len(m.Data)})
+			s.emit(port.Event{Dir: port.Received, Kind: m.Type.String(), Text: string(m.Data), Size: len(m.Data)})
 		case ws.Close:
 			text := fmt.Sprintf("Closed by server: %d", m.Code)
 			if len(m.Data) > 0 {
 				text += " " + string(m.Data)
 			}
-			s.emit(Event{Dir: Info, Kind: "close", Code: m.Code, Text: text})
+			s.emit(port.Event{Dir: port.Info, Kind: "close", Code: m.Code, Text: text})
 			return
 		}
 	}
@@ -187,7 +188,7 @@ func (s *wsSession) Send(ctx context.Context, text string) error {
 	}
 	// Logged before the write: an echo can arrive as soon as the bytes are
 	// out, and the read loop would log it ahead of the message it answers.
-	s.emit(Event{Dir: Sent, Kind: "text", Text: text, Size: len(text)})
+	s.emit(port.Event{Dir: port.Sent, Kind: "text", Text: text, Size: len(text)})
 	return s.conn.Write(ws.Text, []byte(text))
 }
 
@@ -196,7 +197,7 @@ func (s *wsSession) SendBinary(ctx context.Context, data []byte) error {
 	if err := s.alive(ctx); err != nil {
 		return err
 	}
-	s.emit(Event{Dir: Sent, Kind: "binary", Text: hex.EncodeToString(data), Size: len(data)}) // before the write, as in Send
+	s.emit(port.Event{Dir: port.Sent, Kind: "binary", Text: hex.EncodeToString(data), Size: len(data)}) // before the write, as in Send
 	return s.conn.Write(ws.Binary, data)
 }
 
@@ -207,7 +208,7 @@ func (s *wsSession) Ping(ctx context.Context) error {
 	if err := s.conn.Write(ws.Ping, nil); err != nil {
 		return err
 	}
-	s.emit(Event{Dir: Sent, Kind: "ping"})
+	s.emit(port.Event{Dir: port.Sent, Kind: "ping"})
 	return nil
 }
 

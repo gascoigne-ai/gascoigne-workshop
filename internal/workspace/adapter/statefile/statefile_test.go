@@ -37,10 +37,10 @@ func sample() state.State {
 
 func TestRoundTrip(t *testing.T) {
 	p := filepath.Join(t.TempDir(), "sub", "state.json")
-	if err := Save(p, sample()); err != nil {
+	if err := disk.Save(p, sample()); err != nil {
 		t.Fatal(err)
 	}
-	got, err := Load(p)
+	got, err := disk.Load(p)
 	if err != nil || !reflect.DeepEqual(got, sample()) {
 		t.Fatalf("got %+v, %v", got, err)
 	}
@@ -50,7 +50,7 @@ func TestRoundTrip(t *testing.T) {
 }
 
 func TestMissingFileIsEmptyNotAnError(t *testing.T) {
-	got, err := Load(filepath.Join(t.TempDir(), "none.json"))
+	got, err := disk.Load(filepath.Join(t.TempDir(), "none.json"))
 	if err != nil || !reflect.DeepEqual(got, state.State{}) {
 		t.Fatalf("got %+v, %v", got, err)
 	}
@@ -59,7 +59,7 @@ func TestMissingFileIsEmptyNotAnError(t *testing.T) {
 func TestCorruptFileReportsAndYieldsEmpty(t *testing.T) {
 	p := filepath.Join(t.TempDir(), "state.json")
 	os.WriteFile(p, []byte("{not json"), 0o644)
-	got, err := Load(p)
+	got, err := disk.Load(p)
 	if err == nil || !reflect.DeepEqual(got, state.State{}) {
 		t.Fatalf("got %+v, %v", got, err)
 	}
@@ -68,17 +68,17 @@ func TestCorruptFileReportsAndYieldsEmpty(t *testing.T) {
 func TestUnknownFieldsAreIgnored(t *testing.T) {
 	p := filepath.Join(t.TempDir(), "state.json")
 	os.WriteFile(p, []byte(`{"active":2,"future":{"x":1}}`), 0o644)
-	got, err := Load(p)
+	got, err := disk.Load(p)
 	if err != nil || got.Active != 2 {
 		t.Fatalf("got %+v, %v", got, err)
 	}
 }
 
 func TestEmptyPathIsInMemory(t *testing.T) {
-	if err := Save("", sample()); err != nil {
+	if err := disk.Save("", sample()); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Load(""); err != nil {
+	if _, err := disk.Load(""); err != nil {
 		t.Fatal(err)
 	}
 }

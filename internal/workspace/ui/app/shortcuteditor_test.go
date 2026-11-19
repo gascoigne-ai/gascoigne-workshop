@@ -1,7 +1,6 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/settingsfile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/shortcutpage"
 	"strings"
 	"testing"
@@ -84,7 +83,7 @@ func TestAKeyThatTypesTextIsAWarningNotARefusal(t *testing.T) {
 
 func mustLoad(t *testing.T, path string) settings.Settings {
 	t.Helper()
-	saved, err := settingsfile.Load(path)
+	saved, err := settingsDisk.Load(path)
 	if err != nil {
 		t.Fatal(err)
 	}

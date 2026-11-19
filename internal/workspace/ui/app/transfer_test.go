@@ -5,7 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/adapter/store"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/transfer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
@@ -52,7 +51,7 @@ func TestDragOntoAnotherCollectionsFolderMovesTheRequest(t *testing.T) {
 	if a.selected != model.Of(req) || !a.expanded[beta.Folders[0]] {
 		t.Fatalf("selected %v, folder expanded %v", a.selected, a.expanded[beta.Folders[0]])
 	}
-	if got, err := store.Load(betaDir); err != nil || got.Folders[0].Requests[len(got.Folders[0].Requests)-1].URL != "http://edited.test" {
+	if got, err := storeDisk.Load(betaDir); err != nil || got.Folders[0].Requests[len(got.Folders[0].Requests)-1].URL != "http://edited.test" {
 		t.Fatalf("Beta on disk: %+v %v", got.Folders, err)
 	}
 }
@@ -169,11 +168,11 @@ func TestACrossCollectionMoveWritesTheTargetBeforeTheSource(t *testing.T) {
 	req := alpha.Requests[0]
 	release(a, model.Of(req), model.Of(&beta.Folder), false)
 	a.waitWrites()
-	gotBeta, err := store.Load(betaDir)
+	gotBeta, err := storeDisk.Load(betaDir)
 	if err != nil || gotBeta.Requests[len(gotBeta.Requests)-1].Name != req.Name {
 		t.Fatalf("Beta on disk: %+v %v", names(gotBeta.Requests), err)
 	}
-	if gotAlpha, err := store.Load(alphaDir); err != nil || len(gotAlpha.Requests) != 0 {
+	if gotAlpha, err := storeDisk.Load(alphaDir); err != nil || len(gotAlpha.Requests) != 0 {
 		t.Fatalf("Alpha on disk: %+v %v", names(gotAlpha.Requests), err)
 	}
 }
@@ -190,7 +189,7 @@ func TestAFailedTargetWriteKeepsTheSourceOnDiskAndSaysSo(t *testing.T) {
 	t.Cleanup(func() { _ = os.Chmod(betaDir, 0o700) })
 	req := alpha.Requests[0]
 	release(a, model.Of(req), model.Of(&beta.Folder), false)
-	gotAlpha, err := store.Load(alphaDir)
+	gotAlpha, err := storeDisk.Load(alphaDir)
 	if err != nil || len(gotAlpha.Requests) != 1 {
 		t.Fatalf("Alpha on disk lost the request before the target had it: %v %v", names(gotAlpha.Requests), err)
 	}

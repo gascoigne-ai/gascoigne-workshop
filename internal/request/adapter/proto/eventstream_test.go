@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -137,7 +138,7 @@ func TestMCPSessionGoesOnWhenItsNotificationStreamBreaks(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer session.Close(context.Background())
-	if event := waitFor(t, session, "read the server's stream"); event.Dir != Info || event.Kind == "close" {
+	if event := waitFor(t, session, "read the server's stream"); event.Dir != port.Info || event.Kind == "close" {
 		t.Fatalf("a broken notification stream ended the session: %+v", event)
 	}
 	if err := session.Send(context.Background(), `call echo {"x":1}`); err != nil {

@@ -10,7 +10,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/settingsfile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 )
 
@@ -22,7 +21,7 @@ func TestHistoryIsKeptPerCollectionAndOldHistoryStaysWithTheFirst(t *testing.T) 
 	alphaInner := entryNamed(t, a, "Alpha").Collection.Folders[0].Requests[0]
 	betaInner := entryNamed(t, a, "Beta").Collection.Folders[0].Requests[0]
 	old := []port.Entry{{At: time.Now(), Status: 201, Body: []byte("old")}}
-	if err := history.Save(a.historyDir(), "Nested/Inner", old); err != nil {
+	if err := history.Dir(a.historyDir()).Save("Nested/Inner", old); err != nil {
 		t.Fatal(err)
 	}
 	if got := a.loadHistory(alphaInner); len(got) != 1 || got[0].Resp.Status != 201 {
@@ -97,7 +96,7 @@ func TestAnEnvironmentPickKeepsTheRememberedListItDidNotComeFrom(t *testing.T) {
 			settingsPath := filepath.Join(t.TempDir(), "settings.json")
 			start := settings.Default()
 			start.Collections = tc.remembered
-			if err := settingsfile.Save(settingsPath, start); err != nil {
+			if err := settingsDisk.Save(settingsPath, start); err != nil {
 				t.Fatal(err)
 			}
 			a, err := NewApp(withAdapters(Options{SettingsPath: settingsPath, WorkspaceDir: alphaDir}))
@@ -105,7 +104,7 @@ func TestAnEnvironmentPickKeepsTheRememberedListItDidNotComeFrom(t *testing.T) {
 				t.Fatal(err)
 			}
 			a.selectEnv(0)
-			written, err := settingsfile.Load(settingsPath)
+			written, err := settingsDisk.Load(settingsPath)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -132,7 +131,7 @@ func TestACollectionThatFailedToLoadStaysInTheRememberedList(t *testing.T) {
 	settingsPath := filepath.Join(t.TempDir(), "settings.json")
 	start := settings.Default()
 	start.Collections = []settings.OpenCollection{{Folder: alphaDir}, {Folder: brokenDir, Environment: "Dev"}}
-	if err := settingsfile.Save(settingsPath, start); err != nil {
+	if err := settingsDisk.Save(settingsPath, start); err != nil {
 		t.Fatal(err)
 	}
 	a, err := NewApp(withAdapters(Options{SettingsPath: settingsPath}))
@@ -140,7 +139,7 @@ func TestACollectionThatFailedToLoadStaysInTheRememberedList(t *testing.T) {
 		t.Fatal(err)
 	}
 	a.rememberCollections()
-	written, err := settingsfile.Load(settingsPath)
+	written, err := settingsDisk.Load(settingsPath)
 	if err != nil {
 		t.Fatal(err)
 	}

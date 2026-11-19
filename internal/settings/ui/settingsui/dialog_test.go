@@ -38,7 +38,7 @@ func (h *fakeHost) Size() (int, int)            { return 1280, 800 }
 func (h *fakeHost) Settings() settings.Settings { return h.current }
 func (h *fakeHost) Change(edit func(*settings.Settings)) {
 	edit(&h.current)
-	_ = settingsfile.Save(h.path, h.current)
+	_ = settingsDisk.Save(h.path, h.current)
 }
 func (h *fakeHost) SetScaleLive(percent int)           { h.current.UIScalePct = percent }
 func (h *fakeHost) Save()                              { h.saved++ }
@@ -151,7 +151,7 @@ func TestCompletionOffersWhatSettingsCompleteGivesAtTheCaret(t *testing.T) {
 }
 func (h *fakeHost) Pointer() (int, int)               { return 400, 300 }
 func (h *fakeHost) Unsaved() bool                     { return h.unsaved }
-func (h *fakeHost) Persist()                          { _ = settingsfile.Save(h.path, h.current); h.unsaved = false; h.saved++ }
+func (h *fakeHost) Persist()                          { _ = settingsDisk.Save(h.path, h.current); h.unsaved = false; h.saved++ }
 func (h *fakeHost) SettingsStore() port.SettingsStore { return settingsfile.Files{} }
 func (h *fakeHost) MarkUnsaved()                      { h.unsaved = true }
 func (h *fakeHost) MarkSaved()                        { h.unsaved = false }
@@ -316,3 +316,6 @@ func TestEveryVisibleCategoryHasAPageInTheDialog(t *testing.T) {
 		}
 	}
 }
+
+// settingsDisk is the settings store the dialog tests write files through.
+var settingsDisk settingsfile.Files

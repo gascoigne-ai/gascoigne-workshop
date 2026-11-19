@@ -24,11 +24,7 @@ type Files struct {
 // DefaultGlobalDir is the settings directory in the user config directory,
 // or "" when the system has none.
 func DefaultGlobalDir() string {
-	dir, err := os.UserConfigDir()
-	if err != nil {
-		return ""
-	}
-	return filepath.Join(dir, userdir.Name)
+	return userdir.Path("")
 }
 
 // Load returns the global config merged with the local one, which wins for

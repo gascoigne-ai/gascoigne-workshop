@@ -35,7 +35,7 @@ func TestLoad(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			got, err := Load(path)
+			got, err := disk.Load(path)
 			if (err != nil) != tt.wantErr || !reflect.DeepEqual(got, tt.want) {
 				t.Fatalf("got %+v err %v; want %+v wantErr %v", got, err, tt.want, tt.wantErr)
 			}
@@ -47,10 +47,10 @@ func TestSaveRoundTripCreatesDirAndLeavesNoTemp(t *testing.T) {
 	dir := filepath.Join(t.TempDir(), "nested", "cfg")
 	path := filepath.Join(dir, "settings.json")
 	want := settings.Settings{AutoSave: true, Theme: "light", TextSize: "small"}
-	if err := Save(path, want); err != nil {
+	if err := disk.Save(path, want); err != nil {
 		t.Fatal(err)
 	}
-	got, err := Load(path)
+	got, err := disk.Load(path)
 	if err != nil || !reflect.DeepEqual(got, want) {
 		t.Fatalf("got %+v err %v, want %+v", got, err, want)
 	}
@@ -82,17 +82,21 @@ func TestSaveFailuresAreReported(t *testing.T) {
 		if err := os.WriteFile(blocker, nil, 0o644); err != nil {
 			t.Fatal(err)
 		}
-		if err := Save(filepath.Join(blocker, "settings.json"), settings.Default()); err == nil {
+		if err := disk.Save(filepath.Join(blocker, "settings.json"), settings.Default()); err == nil {
 			t.Fatal("want an error when a file sits where the directory must go")
 		}
 	})
-	t.Run("temp file cannot be written", func(t *testing.T) {
-		path := filepath.Join(t.TempDir(), "settings.json")
-		if err := os.Mkdir(path+".tmp", 0o755); err != nil {
+	t.Run("temp file cannot be created", func(t *testing.T) {
+		dir := t.TempDir()
+		if err := os.Chmod(dir, 0o500); err != nil {
 			t.Fatal(err)
 		}
-		if err := Save(path, settings.Default()); err == nil {
-			t.Fatal("want an error when the temp path is a directory")
+		defer os.Chmod(dir, 0o700)
+		if os.Getuid() == 0 {
+			t.Skip("root writes into a read-only directory")
+		}
+		if err := disk.Save(filepath.Join(dir, "settings.json"), settings.Default()); err == nil {
+			t.Fatal("want an error when the directory cannot be written")
 		}
 	})
 	t.Run("target cannot be replaced", func(t *testing.T) {
@@ -100,7 +104,7 @@ func TestSaveFailuresAreReported(t *testing.T) {
 		if err := os.MkdirAll(filepath.Join(path, "inside"), 0o755); err != nil {
 			t.Fatal(err)
 		}
-		if err := Save(path, settings.Default()); err == nil {
+		if err := disk.Save(path, settings.Default()); err == nil {
 			t.Fatal("want an error when the target is a non-empty directory")
 		}
 	})
@@ -111,10 +115,10 @@ func TestColorsAndContrastRoundTrip(t *testing.T) {
 	want := settings.Default()
 	want.Contrast = "high"
 	want.Colors = map[string]map[string]string{"dark": {"selection": "#336699"}, "light": {"accent": "#ffcc00"}}
-	if err := Save(path, want); err != nil {
+	if err := disk.Save(path, want); err != nil {
 		t.Fatal(err)
 	}
-	got, err := Load(path)
+	got, err := disk.Load(path)
 	if err != nil || !reflect.DeepEqual(got, want) {
 		t.Fatalf("got %+v err %v", got, err)
 	}
@@ -128,15 +132,15 @@ func TestUIScaleRoundTripsAndOldFilesKeepTheDefault(t *testing.T) {
 	if err := os.WriteFile(p, []byte(`{"theme":"light"}`), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	s, err := Load(p)
+	s, err := disk.Load(p)
 	if err != nil || s.UIScalePct != 100 {
 		t.Fatalf("old file: %+v, %v", s, err)
 	}
 	s.UIScalePct = 125
-	if err := Save(p, s); err != nil {
+	if err := disk.Save(p, s); err != nil {
 		t.Fatal(err)
 	}
-	if got, _ := Load(p); got.UIScalePct != 125 {
+	if got, _ := disk.Load(p); got.UIScalePct != 125 {
 		t.Fatalf("round trip: %+v", got)
 	}
 }
@@ -146,15 +150,15 @@ func TestCornersAndFlatRoundTripAndOldFilesKeepTheDashboardLook(t *testing.T) {
 	if err := os.WriteFile(p, []byte(`{"theme":"light"}`), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	s, err := Load(p)
+	s, err := disk.Load(p)
 	if err != nil || s.Corners != "soft" || s.Flat {
 		t.Fatalf("old file: %+v, %v", s, err)
 	}
 	s.Corners, s.Flat = "round", true
-	if err := Save(p, s); err != nil {
+	if err := disk.Save(p, s); err != nil {
 		t.Fatal(err)
 	}
-	if got, _ := Load(p); got.Corners != "round" || !got.Flat {
+	if got, _ := disk.Load(p); got.Corners != "round" || !got.Flat {
 		t.Fatalf("round trip: %+v", got)
 	}
 }
@@ -164,15 +168,15 @@ func TestResponseViewDefaultsToCompactAndRoundTrips(t *testing.T) {
 	if err := os.WriteFile(p, []byte(`{"theme":"light"}`), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	s, err := Load(p)
+	s, err := disk.Load(p)
 	if err != nil || s.ResponseView != "compact" {
 		t.Fatalf("old file: %+v, %v", s, err)
 	}
 	s.ResponseView = "raw"
-	if err := Save(p, s); err != nil {
+	if err := disk.Save(p, s); err != nil {
 		t.Fatal(err)
 	}
-	if got, _ := Load(p); got.ResponseView != "raw" {
+	if got, _ := disk.Load(p); got.ResponseView != "raw" {
 		t.Fatalf("round trip: %+v", got)
 	}
 }
@@ -210,7 +214,7 @@ func TestSaveKeepsAFileThatDoesNotParseAsBackup(t *testing.T) {
 	if err := os.WriteFile(path, []byte(broken), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if err := Save(path, settings.Default()); err != nil {
+	if err := disk.Save(path, settings.Default()); err != nil {
 		t.Fatal(err)
 	}
 	got, err := os.ReadFile(path + ".bak")
@@ -224,7 +228,7 @@ func TestSaveDoesNotBackUpAFileThatParses(t *testing.T) {
 	if err := os.WriteFile(path, []byte(`{"theme":"light"}`), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if err := Save(path, settings.Default()); err != nil {
+	if err := disk.Save(path, settings.Default()); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := os.Stat(path + ".bak"); err == nil {
@@ -240,7 +244,7 @@ func TestLoadClampsOutOfRangeValuesAndSaysSo(t *testing.T) {
 	if err := os.WriteFile(path, []byte(`{"timeoutSec": 99999999999, "uiScale": 5, "theme": "light"}`), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	got, err := Load(path)
+	got, err := disk.Load(path)
 	var clamped *settings.ClampedError
 	if !errors.As(err, &clamped) {
 		t.Fatalf("err = %v, want a ClampedError", err)
@@ -254,3 +258,6 @@ func TestLoadClampsOutOfRangeValuesAndSaysSo(t *testing.T) {
 		}
 	}
 }
+
+// disk is the store under test.
+var disk Files

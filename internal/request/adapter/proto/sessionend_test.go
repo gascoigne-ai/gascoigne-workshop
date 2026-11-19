@@ -2,6 +2,7 @@ package proto
 
 import (
 	"context"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"net/http"
 	"strings"
 	"testing"
@@ -13,10 +14,10 @@ import (
 
 // floodedSessions opens one session of every streaming protocol whose
 // event queue is full and unread, so an emit is waiting for room.
-func floodedSessions(t *testing.T) map[string]Session {
+func floodedSessions(t *testing.T) map[string]port.Session {
 	t.Helper()
 	const flood = 3 * eventBuffer
-	sessions := map[string]Session{}
+	sessions := map[string]port.Session{}
 
 	socketURL := wsServer(t, func(conn *ws.Conn, _ *http.Request) {
 		for range flood {

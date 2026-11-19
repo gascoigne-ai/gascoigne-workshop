@@ -3,6 +3,7 @@ package proto
 import (
 	"context"
 	"encoding/json"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"strings"
 	"testing"
 	"time"
@@ -39,20 +40,20 @@ func waitsForRoom(emit func()) {
 // events plus Close on the UI thread hung the app.
 func TestClosingAnSSESessionWithAFullEventChannelDoesNotBlock(t *testing.T) {
 	s := &sseSession{eventLog: newTestLog(1), cancel: func() {}}
-	waitsForRoom(func() { s.emit(Event{}) })
+	waitsForRoom(func() { s.emit(port.Event{}) })
 	closesWithinASecond(t, func() { s.Close(context.Background()) })
 }
 
 func TestClosingAGRPCSessionWithAFullEventChannelDoesNotBlock(t *testing.T) {
 	s := &grpcSession{eventLog: newTestLog(1), cancel: func() {}}
-	waitsForRoom(func() { s.emit(Event{}) })
+	waitsForRoom(func() { s.emit(port.Event{}) })
 	closesWithinASecond(t, func() { s.Close(context.Background()) })
 }
 
 // newTestLog is an event log with a queue of size events.
 func newTestLog(size int) *eventLog {
 	log := newEventLog()
-	log.events = make(chan Event, size)
+	log.events = make(chan port.Event, size)
 	return log
 }
 
@@ -66,7 +67,7 @@ func (closedTransport) close(context.Context) error        { return nil }
 // while nobody read the events, so Close waited on that once forever.
 func TestClosingAnMCPSessionWhileItsEndNoteWaitsForRoomDoesNotBlock(t *testing.T) {
 	s := &mcpSession{eventLog: newTestLog(1), tr: closedTransport{}, waiters: map[int64]chan rpcAnswer{}}
-	s.events <- Event{} // the channel is full
+	s.events <- port.Event{} // the channel is full
 	go s.finish(context.DeadlineExceeded)
 	time.Sleep(50 * time.Millisecond)
 	closesWithinASecond(t, func() { s.Close(context.Background()) })
@@ -114,7 +115,7 @@ func TestAFailedReplyToTheServerIsLogged(t *testing.T) {
 	var kinds []string
 	for e := range s.events {
 		kinds = append(kinds, e.Kind)
-		if e.Dir == Info && e.Kind == "error" && strings.Contains(e.Text, "ping") {
+		if e.Dir == port.Info && e.Kind == "error" && strings.Contains(e.Text, "ping") {
 			return
 		}
 	}

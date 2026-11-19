@@ -25,6 +25,6 @@ func FuzzLoad(fuzz *testing.F) {
 				t.Skip()
 			}
 		}
-		_, _ = Load(dir)
+		_, _ = disk.Load(dir)
 	})
 }

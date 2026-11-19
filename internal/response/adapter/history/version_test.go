@@ -55,7 +55,7 @@ func TestLoadReadsHistoryFixtures(t *testing.T) {
 func checkFixtureHistory(t *testing.T, file string, count int) {
 	t.Helper()
 	dir := placeFixture(t, file, fixtureKey, unchanged)
-	entries, err := Load(dir, fixtureKey)
+	entries, err := Dir(dir).Load(fixtureKey)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -76,7 +76,7 @@ func checkFixtureHistory(t *testing.T, file string, count int) {
 
 func TestSaveWritesVersion(t *testing.T) {
 	dir := t.TempDir()
-	if err := Save(dir, "a", []port.Entry{entry(200, "ok")}); err != nil {
+	if err := Dir(dir).Save("a", []port.Entry{entry(200, "ok")}); err != nil {
 		t.Fatal(err)
 	}
 	data, err := os.ReadFile(path(dir, "a"))
@@ -94,11 +94,11 @@ func TestSaveLoadRoundTripsV1(t *testing.T) {
 		t.Fatal(err)
 	}
 	dir := placeFixture(t, "history-v1.json", fixtureKey, unchanged)
-	entries, err := Load(dir, fixtureKey)
+	entries, err := Dir(dir).Load(fixtureKey)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := Save(dir, fixtureKey, entries); err != nil {
+	if err := Dir(dir).Save(fixtureKey, entries); err != nil {
 		t.Fatal(err)
 	}
 	if saved, _ := os.ReadFile(path(dir, fixtureKey)); !bytes.Equal(saved, fixture) {
@@ -137,7 +137,7 @@ func TestLoadRejectsBadVersions(t *testing.T) {
 			if err := os.WriteFile(path(dir, test.key), withVersion(test.version)(data), 0o600); err != nil {
 				t.Fatal(err)
 			}
-			entries, err := Load(dir, test.key)
+			entries, err := Dir(dir).Load(test.key)
 			if err == nil || entries != nil {
 				t.Fatalf("Load = %d entries, %v; want none and an error", len(entries), err)
 			}
@@ -202,7 +202,7 @@ func TestLoadSentReadsMixedVersionLog(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, sentFile), data, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	got, err := LoadSent(dir)
+	got, err := Dir(dir).Sent().Load()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -223,7 +223,7 @@ func TestLoadSentSkipsNewerLines(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, sentFile), append(bytes.Join(lines, []byte("\n")), '\n'), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	got, err := LoadSent(dir)
+	got, err := Dir(dir).Sent().Load()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -235,7 +235,7 @@ func TestLoadSentSkipsNewerLines(t *testing.T) {
 func TestAppendSentWritesVersionOnEveryLine(t *testing.T) {
 	dir := t.TempDir()
 	for minute, path := range []string{"a", "b"} {
-		if err := AppendSent(dir, sentAt(minute, path)); err != nil {
+		if err := Dir(dir).Sent().Append(sentAt(minute, path)); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -263,7 +263,7 @@ func TestTrimSentKeepsNewerLines(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, sentFile), log.Bytes(), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := AppendSent(dir, sentAt(0, "y")); err != nil { // one past the limit: trims
+	if err := Dir(dir).Sent().Append(sentAt(0, "y")); err != nil { // one past the limit: trims
 		t.Fatal(err)
 	}
 	data, err := os.ReadFile(filepath.Join(dir, sentFile))

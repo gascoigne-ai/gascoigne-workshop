@@ -19,7 +19,7 @@ func TestProtoPathsAreSavedRelativeInsideTheCollectionAndAbsoluteOutside(t *test
 	collection := model.Collection{Folder: model.Folder{Name: "gRPC", Requests: []*model.Request{
 		{Name: "Check", Protocol: "grpc", Method: "grpc.health.v1.Health/Check", URL: "grpc://localhost:8085", Proto: source},
 	}}}
-	if err := Save(dir, collection); err != nil {
+	if err := disk.Save(dir, collection); err != nil {
 		t.Fatal(err)
 	}
 
@@ -39,7 +39,7 @@ func TestProtoPathsAreSavedRelativeInsideTheCollectionAndAbsoluteOutside(t *test
 		t.Errorf("saved %+v, want files %v and import paths [protos %s]", saved, wantFiles, elsewhere)
 	}
 
-	loaded, err := Load(dir)
+	loaded, err := disk.Load(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,7 +58,7 @@ func TestProtoPathsAreRelativeWhenTheCollectionFolderIsGivenRelative(t *testing.
 	collection := model.Collection{Folder: model.Folder{Name: "gRPC", Requests: []*model.Request{
 		{Name: "Check", Protocol: "grpc", Proto: model.ProtoSource{Files: []string{inside}}},
 	}}}
-	if err := Save("api", collection); err != nil {
+	if err := disk.Save("api", collection); err != nil {
 		t.Fatal(err)
 	}
 	raw, err := os.ReadFile(filepath.Join(parent, "api", "check"+reqSuffix))
@@ -74,7 +74,7 @@ func TestProtoPathsAreRelativeWhenTheCollectionFolderIsGivenRelative(t *testing.
 	if !reflect.DeepEqual(saved.ProtoFiles, []string{"health.proto"}) {
 		t.Errorf("saved %v, want [health.proto]", saved.ProtoFiles)
 	}
-	loaded, err := Load("api")
+	loaded, err := disk.Load("api")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -88,7 +88,7 @@ func TestAReflectionRequestSavesNoProtoKeys(t *testing.T) {
 	collection := model.Collection{Folder: model.Folder{Name: "gRPC", Requests: []*model.Request{
 		{Name: "Check", Protocol: "grpc", URL: "grpc://localhost:8085"},
 	}}}
-	if err := Save(dir, collection); err != nil {
+	if err := disk.Save(dir, collection); err != nil {
 		t.Fatal(err)
 	}
 	raw, err := os.ReadFile(filepath.Join(dir, "check"+reqSuffix))

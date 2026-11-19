@@ -10,6 +10,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 )
 
 // start serves every protocol on random ports and returns the endpoint
@@ -117,7 +118,7 @@ func TestRESTAuthNeedsCredentials(t *testing.T) {
 }
 
 // waitFor reads events until one's text contains want.
-func waitFor(t *testing.T, session interface{ Events() <-chan proto.Event }, want string) proto.Event {
+func waitFor(t *testing.T, session interface{ Events() <-chan port.Event }, want string) port.Event {
 	t.Helper()
 	timeout := time.After(5 * time.Second)
 	for {
@@ -145,10 +146,10 @@ func TestWebSocketEchoesEachMessage(t *testing.T) {
 	if err := session.Send(context.Background(), "hello"); err != nil {
 		t.Fatal(err)
 	}
-	if event := waitFor(t, session, "hello"); event.Dir != proto.Sent {
+	if event := waitFor(t, session, "hello"); event.Dir != port.Sent {
 		t.Fatalf("first match is %+v, want the sent message", event)
 	}
-	if event := waitFor(t, session, "hello"); event.Dir != proto.Received {
+	if event := waitFor(t, session, "hello"); event.Dir != port.Received {
 		t.Fatalf("second match is %+v, want the echo", event)
 	}
 }
@@ -175,7 +176,7 @@ func TestMCPListsAndCallsTools(t *testing.T) {
 	if err := session.Send(context.Background(), `call add {"a":2,"b":3}`); err != nil {
 		t.Fatal(err)
 	}
-	if event := waitFor(t, session, `"text":"5"`); event.Dir != proto.Received {
+	if event := waitFor(t, session, `"text":"5"`); event.Dir != port.Received {
 		t.Fatalf("result %+v, want the received sum", event)
 	}
 	if err := session.Send(context.Background(), `call echo {"text":"hi"}`); err != nil {

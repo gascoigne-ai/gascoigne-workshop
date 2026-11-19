@@ -12,8 +12,8 @@ import (
 
 // NewRegistry returns the built-in protocols, one per row of
 // model.Protocols.
-func NewRegistry() Registry {
-	return Registry{
+func NewRegistry() port.Registry {
+	return port.Registry{
 		model.ProtocolREST:      REST{},
 		model.ProtocolWebSocket: WebSocket{},
 		model.ProtocolMCP:       MCP{},
@@ -24,7 +24,7 @@ func NewRegistry() Registry {
 
 // Configured is NewRegistry with the HTTP-based protocols made from config.
 // WebSocket takes the TLS part only: its dialer has no proxy or cookie jar.
-func Configured(config port.ProtocolConfig) Registry {
+func Configured(config port.ProtocolConfig) port.Registry {
 	registry := NewRegistry()
 	network := Network{Jar: config.Jar, Proxy: config.Proxy, CAFile: config.CACert, CertFile: config.ClientCert, KeyFile: config.ClientKey}
 	registry[model.ProtocolREST] = REST{Jar: network.Jar, Proxy: network.Proxy, CAFile: network.CAFile, CertFile: network.CertFile, KeyFile: network.KeyFile}

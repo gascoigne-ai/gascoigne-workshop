@@ -1,7 +1,6 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/settingsfile"
 	sport "github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"path/filepath"
@@ -246,11 +245,11 @@ func TestInterfaceScaleSliderResizesLiveAndSavesOnRelease(t *testing.T) {
 	if a.settings.UIScalePct != 200 {
 		t.Fatalf("not applied while dragging: %d", a.settings.UIScalePct)
 	}
-	if got, _ := settingsfile.Load(path); got.UIScalePct == 200 {
+	if got, _ := settingsDisk.Load(path); got.UIScalePct == 200 {
 		t.Fatal("saved before the release")
 	}
 	a.step(core.Input{X: scaleTrackX1 + 400, Y: scaleRowY})
-	if got, _ := settingsfile.Load(path); got.UIScalePct != 200 {
+	if got, _ := settingsDisk.Load(path); got.UIScalePct != 200 {
 		t.Fatalf("not saved after the release: %+v", got)
 	}
 }

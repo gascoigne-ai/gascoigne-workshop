@@ -2,7 +2,6 @@ package app
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/postman"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/settingsfile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/folders"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/filebrowser"
 	"os"
@@ -11,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/adapter/store"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -20,7 +18,7 @@ import (
 func TestStartsFromTheWorkspaceFolder(t *testing.T) {
 	dir := t.TempDir()
 	c := model.Collection{Folder: model.Folder{Name: "Mine", Requests: []*model.Request{{Name: "One", Protocol: "rest", Method: "GET", URL: "u"}}}}
-	if err := store.Save(dir, c); err != nil {
+	if err := storeDisk.Save(dir, c); err != nil {
 		t.Fatal(err)
 	}
 	a := testApp(t, untouchedSettings(), inWorkspace(dir), withOptions(Options{}))
@@ -65,7 +63,7 @@ func TestSaveWritesTheWorkspaceAndClearsTheDirtyMark(t *testing.T) {
 	if dirty(tab) {
 		t.Fatal("still dirty after saving")
 	}
-	got, err := store.Load(dir)
+	got, err := storeDisk.Load(dir)
 	if err != nil || got.Requests[0].URL != "https://changed.test" {
 		t.Fatalf("%+v %v", got, err)
 	}
@@ -80,13 +78,13 @@ func TestEditsAreSavedAfterAPause(t *testing.T) {
 	a.cur().Req.Name = "Renamed"
 	a.markStale() // the test edits the model directly; in the app an edit comes with input, which marks the keys stale
 	a.step(core.Input{})
-	if got, _ := store.Load(dir); len(got.Requests) > 0 && got.Requests[0].Name == "Renamed" {
+	if got, _ := storeDisk.Load(dir); len(got.Requests) > 0 && got.Requests[0].Name == "Renamed" {
 		t.Fatal("saved before the pause")
 	}
 	now = now.Add(2 * time.Second)
 	a.step(core.Input{})
 	a.waitWrites()
-	got, err := store.Load(dir)
+	got, err := storeDisk.Load(dir)
 	if err != nil || got.Requests[0].Name != "Renamed" {
 		t.Fatalf("%+v %v", got, err)
 	}
@@ -106,11 +104,11 @@ func TestTheFirstSaveMakesTheCollectionAFolderAndRemembersIt(t *testing.T) {
 	if a.workspace() != want {
 		t.Fatalf("workspace %q, want %q", a.workspace(), want)
 	}
-	got, err := store.Load(want)
+	got, err := storeDisk.Load(want)
 	if err != nil || len(got.Folders) == 0 {
 		t.Fatalf("%+v %v", got, err)
 	}
-	st, err := settingsfile.Load(a.settingsPath)
+	st, err := settingsDisk.Load(a.settingsPath)
 	if remembered := st.RememberedCollections(); err != nil || len(remembered) != 1 || remembered[0].Folder != want {
 		t.Fatalf("remembered %+v %v", remembered, err)
 	}
@@ -118,13 +116,13 @@ func TestTheFirstSaveMakesTheCollectionAFolderAndRemembersIt(t *testing.T) {
 
 func TestRemembersTheLastWorkspace(t *testing.T) {
 	dir := t.TempDir()
-	if err := store.Save(dir, model.Collection{Folder: model.Folder{Name: "Last", Requests: []*model.Request{{Name: "R", Protocol: "rest", Method: "GET"}}}}); err != nil {
+	if err := storeDisk.Save(dir, model.Collection{Folder: model.Folder{Name: "Last", Requests: []*model.Request{{Name: "R", Protocol: "rest", Method: "GET"}}}}); err != nil {
 		t.Fatal(err)
 	}
 	sp := filepath.Join(t.TempDir(), "settings.json")
 	s := settings.Default()
 	s.Workspace = dir
-	if err := settingsfile.Save(sp, s); err != nil {
+	if err := settingsDisk.Save(sp, s); err != nil {
 		t.Fatal(err)
 	}
 	a, err := NewApp(withAdapters(Options{SettingsPath: sp}))
@@ -162,7 +160,7 @@ func TestFlushWorkspaceSavesPendingEditsAtExit(t *testing.T) {
 	if err := a.FlushWorkspace(); err != nil {
 		t.Fatal(err)
 	}
-	got, err := store.Load(dir)
+	got, err := storeDisk.Load(dir)
 	if err != nil || got.Requests[0].URL != "https://edited-just-now.test" {
 		t.Fatalf("%+v %v", got, err)
 	}
@@ -173,7 +171,7 @@ func TestFlushWorkspaceSavesPendingEditsAtExit(t *testing.T) {
 
 func TestOpenWorkspaceAtSwitchesCollectionsAndSavesTheOldOne(t *testing.T) {
 	first, second := t.TempDir(), t.TempDir()
-	if err := store.Save(second, model.Collection{Folder: model.Folder{Name: "Second", Requests: []*model.Request{{Name: "Two", Protocol: "rest", Method: "GET", URL: "u2"}}}}); err != nil {
+	if err := storeDisk.Save(second, model.Collection{Folder: model.Folder{Name: "Second", Requests: []*model.Request{{Name: "Two", Protocol: "rest", Method: "GET", URL: "u2"}}}}); err != nil {
 		t.Fatal(err)
 	}
 	a := testApp(t, untouchedSettings(), inWorkspace(first), withOptions(Options{}))
@@ -182,10 +180,10 @@ func TestOpenWorkspaceAtSwitchesCollectionsAndSavesTheOldOne(t *testing.T) {
 	if a.col().Name != "Second" || len(a.list.Tabs) != 1 || a.cur().Req.Name != "Two" || a.workspace() != second {
 		t.Fatalf("col %q tabs %d workspace %q", a.col().Name, len(a.list.Tabs), a.workspace())
 	}
-	if old, err := store.Load(first); err != nil || old.Requests[0].URL != "https://unsaved.test" {
+	if old, err := storeDisk.Load(first); err != nil || old.Requests[0].URL != "https://unsaved.test" {
 		t.Fatalf("the old collection lost its edit: %+v %v", old, err)
 	}
-	st, err := settingsfile.Load(a.settingsPath)
+	st, err := settingsDisk.Load(a.settingsPath)
 	if remembered := st.RememberedCollections(); err != nil || len(remembered) != 1 || remembered[0].Folder != second {
 		t.Fatalf("remembered %+v %v", remembered, err)
 	}
@@ -290,7 +288,7 @@ func TestStartOpensTheRememberedWorkspaceUnlessAFolderIsGiven(t *testing.T) {
 	remembered, flagged := t.TempDir(), t.TempDir()
 	for dir, name := range map[string]string{remembered: "Last", flagged: "Asked"} {
 		c := model.Collection{Folder: model.Folder{Name: name, Requests: []*model.Request{{Name: "R", Protocol: "rest", Method: "GET"}}}}
-		if err := store.Save(dir, c); err != nil {
+		if err := storeDisk.Save(dir, c); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -300,7 +298,7 @@ func TestStartOpensTheRememberedWorkspaceUnlessAFolderIsGiven(t *testing.T) {
 	sp := filepath.Join(t.TempDir(), "settings.json")
 	s := settings.Default()
 	s.Workspace = remembered
-	if err := settingsfile.Save(sp, s); err != nil {
+	if err := settingsDisk.Save(sp, s); err != nil {
 		t.Fatal(err)
 	}
 	tests := []struct {

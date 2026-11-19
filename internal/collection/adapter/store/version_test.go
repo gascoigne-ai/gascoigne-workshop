@@ -56,7 +56,7 @@ func TestLoadReadsCollectionFixtures(t *testing.T) {
 // is the sample that was saved.
 func checkFixtureCollection(t *testing.T, dir string) {
 	t.Helper()
-	got, err := Load(dir)
+	got, err := disk.Load(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -107,12 +107,12 @@ func savedFiles(t *testing.T, dir string) map[string][]byte {
 }
 
 func TestSaveWritesVersionInEveryFile(t *testing.T) {
-	loaded, err := Load(filepath.Join("testdata", "v0"))
+	loaded, err := disk.Load(filepath.Join("testdata", "v0"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	dir := t.TempDir()
-	if err := Save(dir, loaded); err != nil {
+	if err := disk.Save(dir, loaded); err != nil {
 		t.Fatal(err)
 	}
 	files := savedFiles(t, dir)
@@ -129,12 +129,12 @@ func TestSaveWritesVersionInEveryFile(t *testing.T) {
 }
 
 func TestSaveWrapsSecretsWithVersion(t *testing.T) {
-	loaded, err := Load(filepath.Join("testdata", "v0"))
+	loaded, err := disk.Load(filepath.Join("testdata", "v0"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	dir := t.TempDir()
-	if err := Save(dir, loaded); err != nil {
+	if err := disk.Save(dir, loaded); err != nil {
 		t.Fatal(err)
 	}
 	data, err := os.ReadFile(filepath.Join(dir, secretsFile))
@@ -151,7 +151,7 @@ func TestSaveWrapsSecretsWithVersion(t *testing.T) {
 	if wrapped.Version != 1 || wrapped.Files["auth.req.json"]["token"] != "example-token" {
 		t.Fatalf("%s = %s, want version 1 and the secrets under files", secretsFile, data)
 	}
-	again, err := Load(dir)
+	again, err := disk.Load(dir)
 	if err != nil || again.Requests[4].Auth.Token != "example-token" {
 		t.Fatalf("reloaded token = %q, %v", again.Requests[4].Auth.Token, err)
 	}
@@ -166,11 +166,11 @@ func withVersion(data []byte, raw string) []byte {
 func TestSaveLoadRoundTripsV1Fixture(t *testing.T) {
 	fixture := filepath.Join("testdata", "v1")
 	dir := copyTree(t, fixture) // saved in place: proto paths stay relative to the folder
-	loaded, err := Load(dir)
+	loaded, err := disk.Load(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := Save(dir, loaded); err != nil {
+	if err := disk.Save(dir, loaded); err != nil {
 		t.Fatal(err)
 	}
 	want, got := savedFiles(t, fixture), savedFiles(t, dir)
@@ -206,7 +206,7 @@ func TestLoadRejectsBadVersionNamingFile(t *testing.T) {
 				if err := os.WriteFile(path, withVersion(data, version.raw), 0o600); err != nil {
 					t.Fatal(err)
 				}
-				_, err = Load(dir)
+				_, err = disk.Load(dir)
 				if err == nil {
 					t.Fatal("Load gave no error")
 				}
@@ -224,7 +224,7 @@ func TestLoadRejectsBadVersionNamingFile(t *testing.T) {
 
 func TestRenameWritesTheCurrentVersion(t *testing.T) {
 	dir := copyTree(t, filepath.Join("testdata", "v0"))
-	moved, err := Rename(dir, "Renamed")
+	moved, err := disk.Rename(dir, "Renamed")
 	if err != nil {
 		t.Fatal(err)
 	}

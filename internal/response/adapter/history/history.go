@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/userdir"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -57,10 +58,13 @@ func path(dir, key string) string {
 	return filepath.Join(dir, hex.EncodeToString(sum[:8])+".json")
 }
 
+// Dir is the history kept in one folder.
+type Dir string
+
 // Load reads the entries saved for key (a request's path), newest first.
 // Nothing saved is no entries and no error.
-func Load(dir, key string) ([]port.Entry, error) {
-	data, err := os.ReadFile(path(dir, key))
+func (dir Dir) Load(key string) ([]port.Entry, error) {
+	data, err := os.ReadFile(path(string(dir), key))
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil, nil
 	}
@@ -84,14 +88,14 @@ func Load(dir, key string) ([]port.Entry, error) {
 // Save replaces the entries of key with the first Limit of entries whose
 // body is at most MaxBody; none removes the file. The file is written
 // whole and renamed into place, so a crash leaves the old one.
-func Save(dir, key string, entries []port.Entry) error {
+func (dir Dir) Save(key string, entries []port.Entry) error {
 	var keep []entryFile
 	for _, entry := range entries {
 		if len(entry.Body) <= MaxBody && len(keep) < Limit {
 			keep = append(keep, entryFile(entry))
 		}
 	}
-	target := path(dir, key)
+	target := path(string(dir), key)
 	if len(keep) == 0 {
 		if err := os.Remove(target); err != nil && !errors.Is(err, fs.ErrNotExist) {
 			return fmt.Errorf("remove history of %s: %w", key, err)
@@ -102,27 +106,14 @@ func Save(dir, key string, entries []port.Entry) error {
 	if err != nil {
 		return fmt.Errorf("encode history of %s: %w", key, err)
 	}
-	if err := os.MkdirAll(dir, 0o700); err != nil {
+	if err := os.MkdirAll(string(dir), 0o700); err != nil {
 		return fmt.Errorf("create %s: %w", dir, err)
 	}
-	temp := target + ".tmp"
-	if err := os.WriteFile(temp, data, 0o600); err != nil {
+	if err := userdir.WriteFileAtomic(target, data, 0o600); err != nil {
 		return fmt.Errorf("write history of %s: %w", key, err)
-	}
-	if err := os.Rename(temp, target); err != nil {
-		return fmt.Errorf("replace history of %s: %w", key, err)
 	}
 	return nil
 }
-
-// Dir is the history kept in one folder.
-type Dir string
-
-// Load implements port.History.
-func (dir Dir) Load(key string) ([]port.Entry, error) { return Load(string(dir), key) }
-
-// Save implements port.History.
-func (dir Dir) Save(key string, entries []port.Entry) error { return Save(string(dir), key, entries) }
 
 // Sent implements port.History.
 func (dir Dir) Sent() port.SentStore { return SentLog{Dir: string(dir)} }

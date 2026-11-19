@@ -13,7 +13,7 @@ func FuzzLoad(fuzz *testing.F) {
 		if err := os.WriteFile(path(dir, "a"), data, 0o600); err != nil {
 			t.Skip()
 		}
-		_, _ = Load(dir, "a")
+		_, _ = Dir(dir).Load("a")
 	})
 }
 
@@ -24,6 +24,6 @@ func FuzzLoadSent(fuzz *testing.F) {
 		if err := os.WriteFile(filepath.Join(dir, sentFile), data, 0o600); err != nil {
 			t.Skip()
 		}
-		_, _ = LoadSent(dir)
+		_, _ = Dir(dir).Sent().Load()
 	})
 }

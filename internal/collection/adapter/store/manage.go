@@ -35,13 +35,13 @@ func isCollection(dir string) bool { return fileExists(filepath.Join(dir, folder
 
 // Create makes an empty collection called name in a new folder below
 // parent, named after the name and made unique, and returns the folder.
-func Create(parent, name string) (string, error) {
+func (files Files) Create(parent, name string) (string, error) {
 	taken, err := siblings(parent, "")
 	if err != nil {
 		return "", err
 	}
 	dir := filepath.Join(parent, unique(slug(name), taken))
-	if err := Save(dir, model.Collection{Folder: model.Folder{Name: name}}); err != nil {
+	if err := files.Save(dir, model.Collection{Folder: model.Folder{Name: name}}); err != nil {
 		return "", err
 	}
 	return dir, nil
@@ -50,7 +50,7 @@ func Create(parent, name string) (string, error) {
 // Rename gives the collection in dir a new name and moves it to a folder
 // named after it, which is made unique among its neighbors; the folder it
 // ends up in is returned. A folder that is not a collection is not touched.
-func Rename(dir, name string) (string, error) {
+func (Files) Rename(dir, name string) (string, error) {
 	if !isCollection(dir) {
 		return "", fmt.Errorf("%s holds no collection", dir)
 	}
@@ -82,7 +82,7 @@ func Rename(dir, name string) (string, error) {
 // Save removes them, then the folder itself when nothing else is in it.
 // Files of the user's own stay, and so does the folder with them. A folder
 // that is not a collection is refused.
-func Delete(dir string) error {
+func (Files) Delete(dir string) error {
 	if !isCollection(dir) {
 		return fmt.Errorf("%s holds no collection", dir)
 	}
@@ -116,7 +116,7 @@ func isNotEmpty(err error) bool {
 }
 
 // List is the folders below parent that hold a collection, by name.
-func List(parent string) ([]string, error) {
+func (Files) List(parent string) ([]string, error) {
 	entries, err := os.ReadDir(parent)
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil, nil

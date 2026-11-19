@@ -7,9 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/adapter/store"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/settingsfile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/state"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -49,7 +47,7 @@ func TestNewerSettingsAreNotWrittenThisSession(t *testing.T) {
 	a.persistSettings()                                                      // the Save button
 	_ = a.SettingsStore().WriteText(path, []byte(`{"version": 1}`))          // the raw editor
 	other := t.TempDir()
-	if err := store.Save(other, model.Collection{Folder: model.Folder{Name: "Other"}}); err != nil {
+	if err := storeDisk.Save(other, model.Collection{Folder: model.Folder{Name: "Other"}}); err != nil {
 		t.Fatal(err)
 	}
 	a.openCollectionAt(other) // remembers the open collections in the settings
@@ -86,7 +84,7 @@ func TestNewerStateIsNotWrittenThisSession(t *testing.T) {
 
 func TestNewerCollectionIsNotOpened(t *testing.T) {
 	dir := t.TempDir()
-	if err := store.Save(dir, model.Collection{Folder: model.Folder{Name: "Newer", Requests: []*model.Request{{Name: "A", Protocol: model.ProtocolREST, URL: "http://x.test"}}}}); err != nil {
+	if err := storeDisk.Save(dir, model.Collection{Folder: model.Folder{Name: "Newer", Requests: []*model.Request{{Name: "A", Protocol: model.ProtocolREST, URL: "http://x.test"}}}}); err != nil {
 		t.Fatal(err)
 	}
 	folderFile := filepath.Join(dir, "folder.json")
@@ -112,7 +110,7 @@ func TestNewerCollectionIsNotOpened(t *testing.T) {
 // opened, a toast says why, and it stays remembered.
 func TestNewerRememberedCollectionIsToastedAtStart(t *testing.T) {
 	dir := t.TempDir()
-	if err := store.Save(dir, model.Collection{Folder: model.Folder{Name: "Newer"}}); err != nil {
+	if err := storeDisk.Save(dir, model.Collection{Folder: model.Folder{Name: "Newer"}}); err != nil {
 		t.Fatal(err)
 	}
 	newer := `{"version": 2, "name": "Newer"}`
@@ -122,7 +120,7 @@ func TestNewerRememberedCollectionIsToastedAtStart(t *testing.T) {
 	prefs := settings.Default()
 	prefs.RememberCollections([]settings.OpenCollection{{Folder: dir}})
 	settingsPath := filepath.Join(t.TempDir(), "settings.json")
-	if err := settingsfile.Save(settingsPath, prefs); err != nil {
+	if err := settingsDisk.Save(settingsPath, prefs); err != nil {
 		t.Fatal(err)
 	}
 	a := testApp(t, settingsAt(settingsPath), withOptions(Options{StatePath: ""}))

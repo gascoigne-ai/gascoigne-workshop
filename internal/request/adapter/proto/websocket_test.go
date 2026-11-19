@@ -2,6 +2,7 @@ package proto
 
 import (
 	"context"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -40,7 +41,7 @@ func echoHandler(conn *ws.Conn, _ *http.Request) {
 }
 
 // next waits for the next event.
-func next(t *testing.T, session Session) Event {
+func next(t *testing.T, session port.Session) port.Event {
 	t.Helper()
 	select {
 	case e, ok := <-session.Events():
@@ -51,7 +52,7 @@ func next(t *testing.T, session Session) Event {
 	case <-time.After(3 * time.Second):
 		t.Fatal("no event")
 	}
-	return Event{}
+	return port.Event{}
 }
 
 func TestWebSocketSessionLogsMessagesInBothDirections(t *testing.T) {
@@ -61,16 +62,16 @@ func TestWebSocketSessionLogsMessagesInBothDirections(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer s.Close(context.Background())
-	if e := next(t, s); e.Dir != Info || !strings.Contains(e.Text, "Connected") {
+	if e := next(t, s); e.Dir != port.Info || !strings.Contains(e.Text, "Connected") {
 		t.Fatalf("first event %+v", e)
 	}
 	if err := s.Send(context.Background(), "hi there"); err != nil {
 		t.Fatal(err)
 	}
-	if e := next(t, s); e.Dir != Sent || e.Text != "hi there" || e.Size != 8 || e.Time.IsZero() {
+	if e := next(t, s); e.Dir != port.Sent || e.Text != "hi there" || e.Size != 8 || e.Time.IsZero() {
 		t.Fatalf("sent %+v", e)
 	}
-	if e := next(t, s); e.Dir != Received || e.Text != "hi there" || e.Kind != "text" {
+	if e := next(t, s); e.Dir != port.Received || e.Text != "hi there" || e.Kind != "text" {
 		t.Fatalf("received %+v", e)
 	}
 }
@@ -125,10 +126,10 @@ func TestWebSocketSessionLogsASendBeforeItsEcho(t *testing.T) {
 			if err := tc.send(session); err != nil {
 				t.Fatal(err)
 			}
-			if e := next(t, session); e.Dir != Sent || e.Kind != tc.kind {
+			if e := next(t, session); e.Dir != port.Sent || e.Kind != tc.kind {
 				t.Fatalf("first event %+v, want the %s send", e, tc.kind)
 			}
-			if e := next(t, session); e.Dir != Received || e.Kind != tc.kind {
+			if e := next(t, session); e.Dir != port.Received || e.Kind != tc.kind {
 				t.Fatalf("second event %+v, want the %s echo", e, tc.kind)
 			}
 		})
@@ -144,7 +145,7 @@ func TestWebSocketSessionReportsServerCloseAndThenEnds(t *testing.T) {
 	defer s.Close(context.Background())
 	next(t, s) // connected
 	e := next(t, s)
-	if e.Dir != Info || e.Code != ws.CloseGoingAway || !strings.Contains(e.Text, "restart") {
+	if e.Dir != port.Info || e.Code != ws.CloseGoingAway || !strings.Contains(e.Text, "restart") {
 		t.Fatalf("close event %+v", e)
 	}
 	select {
@@ -208,7 +209,7 @@ func TestWebSocketSlowConsumerBlocksTheReaderInsteadOfDroppingMessages(t *testin
 	time.Sleep(100 * time.Millisecond) // let the buffer fill
 	got := 0
 	for got < n {
-		if e := next(t, s); e.Dir == Received {
+		if e := next(t, s); e.Dir == port.Received {
 			got++
 		}
 	}

@@ -6,7 +6,6 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/settingsfile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -22,7 +21,7 @@ func newBenchApp(b *testing.B, dialog bool) *App {
 	prefs := settings.Default()
 	prefs.Layout = "side"
 	path := filepath.Join(b.TempDir(), "settings.json")
-	if err := settingsfile.Save(path, prefs); err != nil {
+	if err := settingsDisk.Save(path, prefs); err != nil {
 		b.Fatal(err)
 	}
 	a, err := NewApp(withAdapters(Options{SettingsPath: path}))

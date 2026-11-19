@@ -284,15 +284,15 @@ func TestRESTExplainsCancelAndTimeout(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	resp, _ := REST{}.Send(ctx, model.Request{URL: srv.URL})
-	if resp.Err != ErrCancelled {
-		t.Errorf("cancelled: Err = %q, want %q", resp.Err, ErrCancelled)
+	if resp.Err != model.ErrCancelled {
+		t.Errorf("cancelled: Err = %q, want %q", resp.Err, model.ErrCancelled)
 	}
 
 	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Millisecond)
 	defer cancel()
 	resp, _ = REST{}.Send(ctx, model.Request{URL: srv.URL})
-	if resp.Err != ErrTimedOut {
-		t.Errorf("timeout: Err = %q, want %q", resp.Err, ErrTimedOut)
+	if resp.Err != model.ErrTimedOut {
+		t.Errorf("timeout: Err = %q, want %q", resp.Err, model.ErrTimedOut)
 	}
 }
 

@@ -1,6 +1,7 @@
 package proto
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -9,7 +10,7 @@ import (
 // eventLog is the queue of events a streaming session shows: one writer
 // side that waits for room, and a close that never waits.
 type eventLog struct {
-	events chan Event
+	events chan port.Event
 	done   chan struct{} // closed by close: frees an emit that waits for room
 	now    func() time.Time
 
@@ -20,15 +21,15 @@ type eventLog struct {
 }
 
 func newEventLog() *eventLog {
-	return &eventLog{events: make(chan Event, eventBuffer), done: make(chan struct{}), now: time.Now}
+	return &eventLog{events: make(chan port.Event, eventBuffer), done: make(chan struct{}), now: time.Now}
 }
 
 // Events implements Session.
-func (log *eventLog) Events() <-chan Event { return log.events }
+func (log *eventLog) Events() <-chan port.Event { return log.events }
 
 // emit queues event, waiting for a slow consumer, unless the log was
 // closed or has ended.
-func (log *eventLog) emit(event Event) {
+func (log *eventLog) emit(event port.Event) {
 	event.Time = log.now()
 	log.gate.Lock()
 	defer log.gate.Unlock()

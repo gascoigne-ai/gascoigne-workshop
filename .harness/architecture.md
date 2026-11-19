@@ -122,7 +122,9 @@ depend on where the program was started, and it reads no config file (`clientCon
 `cmd/workshop/clients_*.go`, tested for both builds). It reopens what it remembered, like the
 release build, from its own `gascoigne-workshop-dev` directory (`userdir.Name`, decision 20), so a
 run from an IDE never touches the release build's data and the example server is what a first start
-shows; `-workspace` still opens a folder. Screenshot runs and the golden scenes keep settings and
+shows; `-workspace` still opens a folder. `userdir.Path(name)` is a file inside that directory ("" without a
+config directory) and `userdir.WriteFileAtomic` the one temp-file-then-rename write every file adapter
+uses (decision 26). Screenshot runs and the golden scenes keep settings and
 state in memory, so they always start from the sample. `make release` builds `bin/workshop-release`
 with `-tags release`, and `make install` installs that binary (no example servers; collections and
 servers come from the client config in `~/.config/gascoigne-workshop/`): `Sample()` is empty and
@@ -1226,8 +1228,8 @@ that change `App`.
 
 ## Protocols
 
--  **Streaming and WebSocket** (`Streamer` and `Session` in `internal/request/port`, aliased in
-  `proto/aliases.go`; `proto/websocket.go`, `proto/ws/`): `Registry.Connect` opens a `Session` with
+-  **Streaming and WebSocket** (`Streamer` and `Session` in `internal/request/port`;
+  `proto/websocket.go`, `proto/ws/`): `Registry.Connect` opens a `Session` with
   a protocol that implements `Streamer`. `WebSocket.Send` is the one-shot form (connect, send the
   body, return the first reply as a `Response` with status 101). Headers, Auth pane credentials and
   a `Sec-WebSocket-Protocol` header (split into subprotocols) go into the handshake. A session logs
@@ -1240,7 +1242,7 @@ that change `App`.
   after a timed-out connect use `context.WithoutCancel` so the goodbye still goes out. The tab that
   shows a session is WebSocket tabs below.
 -  **WebSocket tabs** (`internal/workspace/ui/app/wsui.go`): a tab whose protocol keeps a connection
-  (`isSocket`: `Connection` is `Always`, or `OnStream` while gRPC streams) keeps a `proto.Session`.
+  (`isSocket`: `Connection` is `Always`, or `OnStream` while gRPC streams) keeps a `port.Session`.
   The URL bar button reads Connect / Disconnect (`toggleConnection`); dialing runs in a goroutine
   and its answer, every session `Event` and the end of the stream come back through `App.wsEvents`
   as `wsEvent`s (numbered by `reqTab.wsGen`, so an abandoned connect is ignored and its session
@@ -1508,7 +1510,7 @@ that change `App`.
   holds the key, so a file that belongs to another request is never shown. A new tab for the request
   loads them into its History menu; the shown response itself starts empty. No state path (tests,
   `-state ""`), no files. Failed writes and unreadable files go to the status line.
--  **Sent log** (`history.AppendSent` / `LoadSent`, `internal/response/ui/sentlog`): every finished
+-  **Sent log** (`history.SentLog` `Append` / `Load`, `internal/response/ui/sentlog`): every finished
   send of a request that is in the collection tree appends one line (time, the folder of the
   request's collection, request path, protocol, method, URL, status; 0 = failed) to
   `history/sent.jsonl` next to the state file. The newest 500 are kept; the file is cut back when it
@@ -1545,7 +1547,7 @@ that change `App`.
 ## Collections and environments
 
 -  **Workspace on disk** (`internal/collection/adapter/store`,
-  `internal/workspace/ui/app/workspace.go`): `store.Save/Load` write and read a collection tree
+  `internal/workspace/ui/app/workspace.go`): `store.Files` `Save`/`Load` write and read a collection tree
   (format in decision 7; atomic writes, unchanged files are not rewritten). A gRPC request's proto
   files and import paths are `protoFiles` and `importPaths` in its file, left out when empty
   (reflection); in memory they are absolute, in the file relative to the collection's folder when

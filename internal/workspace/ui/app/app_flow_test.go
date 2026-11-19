@@ -331,7 +331,7 @@ func TestSettingsMenuOpensChangesThemeAndSaves(t *testing.T) {
 	if a.ctx.Th.Color(core.Bg) != theming.Light().Color(core.Bg) {
 		t.Fatal("the live theme did not change")
 	}
-	saved, err := settingsfile.Load(path)
+	saved, err := settingsDisk.Load(path)
 	if err != nil || saved.Theme != "light" {
 		t.Fatalf("saved %+v err %v", saved, err)
 	}
@@ -341,7 +341,7 @@ func TestSettingsMenuOpensChangesThemeAndSaves(t *testing.T) {
 	if a.ctx.Th.FontSize != 16 {
 		t.Fatalf("font size = %v, want 16", a.ctx.Th.FontSize)
 	}
-	if saved, _ := settingsfile.Load(path); saved.TextSize != "large" || saved.Theme != "light" {
+	if saved, _ := settingsDisk.Load(path); saved.TextSize != "large" || saved.Theme != "light" {
 		t.Fatalf("saved %+v", saved)
 	}
 }
@@ -405,7 +405,7 @@ func TestBrokenSettingsFileFallsBackAndSaysSo(t *testing.T) {
 
 func TestSettingsStartFromTheSavedChoice(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "settings.json")
-	if err := settingsfile.Save(path, settings.Settings{Theme: "light", TextSize: "small"}); err != nil {
+	if err := settingsDisk.Save(path, settings.Settings{Theme: "light", TextSize: "small"}); err != nil {
 		t.Fatal(err)
 	}
 	a, err := NewApp(withAdapters(Options{SettingsPath: path, OpenMenu: true}))
@@ -1680,7 +1680,7 @@ func TestLayoutSettingStacksThePanesAndIsSaved(t *testing.T) {
 	if a.settings.Layout != "stacked" {
 		t.Fatalf("Layout = %q", a.settings.Layout)
 	}
-	if saved, _ := settingsfile.Load(path); saved.Layout != "stacked" {
+	if saved, _ := settingsDisk.Load(path); saved.Layout != "stacked" {
 		t.Fatalf("saved %+v", saved)
 	}
 	click(a, 100, 700) // close the menu
@@ -2907,7 +2907,7 @@ func TestContrastChooserStrengthensTheColorsAndIsSaved(t *testing.T) {
 	if after < appearance.HighRatio-0.01 || after <= before {
 		t.Fatalf("selection contrast %.2f -> %.2f", before, after)
 	}
-	if saved, _ := settingsfile.Load(path); saved.Contrast != "high" {
+	if saved, _ := settingsDisk.Load(path); saved.Contrast != "high" {
 		t.Fatalf("saved %+v", saved)
 	}
 	clickText(t, a, "Normal", 0)
@@ -2922,7 +2922,7 @@ func TestTypingAColorAppliesItLiveAndSavesIt(t *testing.T) {
 	if got := a.ctx.Th.Color(core.Selection); got != core.RGB(0x223344) {
 		t.Fatalf("live color = %v", got)
 	}
-	saved, _ := settingsfile.Load(path)
+	saved, _ := settingsDisk.Load(path)
 	if saved.Colors["dark"]["selection"] != "#223344" {
 		t.Fatalf("saved %+v", saved.Colors)
 	}
@@ -2942,7 +2942,7 @@ func TestAnUnreadableColorIsRefusedWithItsRatio(t *testing.T) {
 	if a.ctx.Th.Color(core.FindMatch) != def {
 		t.Fatal("a refused color must not apply")
 	}
-	if saved, _ := settingsfile.Load(path); len(saved.Colors["dark"]) != 0 {
+	if saved, _ := settingsDisk.Load(path); len(saved.Colors["dark"]) != 0 {
 		t.Fatalf("a refused color must not be saved: %+v", saved.Colors)
 	}
 	typeColor(a, core.FindMatch, 1, "zzz")
@@ -2971,7 +2971,7 @@ func TestResetButtonsRestoreTheDefaults(t *testing.T) {
 	if a.ctx.Th.Color(core.FindMatch) == core.RGB(0x334455) {
 		t.Fatal("Reset colors drops every override")
 	}
-	if saved, _ := settingsfile.Load(path); len(saved.Colors["dark"]) != 0 {
+	if saved, _ := settingsDisk.Load(path); len(saved.Colors["dark"]) != 0 {
 		t.Fatalf("saved %+v", saved.Colors)
 	}
 }
@@ -2999,7 +2999,7 @@ func TestColorsAreRestoredAtStart(t *testing.T) {
 	s := settings.Default()
 	s.Contrast = "high"
 	s.Colors = map[string]map[string]string{"dark": {"accent": "#aaccee"}}
-	if err := settingsfile.Save(path, s); err != nil {
+	if err := settingsDisk.Save(path, s); err != nil {
 		t.Fatal(err)
 	}
 	a, err := NewApp(withAdapters(Options{SettingsPath: path}))
@@ -3041,7 +3041,7 @@ func TestRecordingANewBindingRebindsTheAction(t *testing.T) {
 	if a.shortcutKeys.Recording() != "" || a.settings.Shortcuts["close-tab"] != "Ctrl+Q" {
 		t.Fatalf("recording %q shortcuts %v", a.shortcutKeys.Recording(), a.settings.Shortcuts)
 	}
-	if saved, _ := settingsfile.Load(path); saved.Shortcuts["close-tab"] != "Ctrl+Q" {
+	if saved, _ := settingsDisk.Load(path); saved.Shortcuts["close-tab"] != "Ctrl+Q" {
 		t.Fatalf("saved %+v", saved.Shortcuts)
 	}
 	a.step(combo(ebiten.KeyW, true, false, false)) // the old key does nothing now
@@ -3127,7 +3127,7 @@ func TestSavedBindingsApplyFromTheStart(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "settings.json")
 	s := settings.Default()
 	s.Shortcuts = map[string]string{"new-request": "Ctrl+N", "teleport": "Ctrl+J"}
-	if err := settingsfile.Save(path, s); err != nil {
+	if err := settingsDisk.Save(path, s); err != nil {
 		t.Fatal(err)
 	}
 	a, err := NewApp(withAdapters(Options{SettingsPath: path}))
@@ -3510,7 +3510,7 @@ func TestResponseViewSettingAppliesToOpenTabsAndIsSaved(t *testing.T) {
 	if !a.cur().look.Compact() || a.settings.ResponseView != "compact" {
 		t.Fatalf("compact %v setting %q", a.cur().look.Compact(), a.settings.ResponseView)
 	}
-	if saved, _ := settingsfile.Load(path); saved.ResponseView != "compact" {
+	if saved, _ := settingsDisk.Load(path); saved.ResponseView != "compact" {
 		t.Fatalf("saved %+v", saved)
 	}
 	clickText(t, a, "Pretty", 0)

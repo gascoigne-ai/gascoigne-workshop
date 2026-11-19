@@ -184,9 +184,9 @@ func encodeMultipart(req model.Request) ([]byte, string, error) {
 func failureText(err error) string {
 	switch {
 	case errors.Is(err, context.Canceled):
-		return ErrCancelled
+		return model.ErrCancelled
 	case errors.Is(err, context.DeadlineExceeded):
-		return ErrTimedOut
+		return model.ErrTimedOut
 	}
 	return err.Error()
 }

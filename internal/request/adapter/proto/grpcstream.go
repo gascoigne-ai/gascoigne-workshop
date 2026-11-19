@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"io"
 	"strings"
 	"sync"
@@ -27,7 +28,7 @@ const grpcEndText = "end"
 // is an empty one for a server stream, none for the other kinds); a server
 // stream is then closed on this side, the others take further messages
 // through Session.Send. A unary method is refused.
-func (GRPC) Connect(ctx context.Context, req model.Request) (Session, error) {
+func (GRPC) Connect(ctx context.Context, req model.Request) (port.Session, error) {
 	conn, err := dial(req)
 	if err != nil {
 		return nil, err
@@ -64,7 +65,7 @@ func (GRPC) Connect(ctx context.Context, req model.Request) (Session, error) {
 		eventLog: newEventLog(), cancel: cancel,
 		stream: stream, method: method,
 	}
-	session.emit(Event{Dir: Info, Kind: "open", Text: fmt.Sprintf("Streaming %s on %s", req.Method, req.URL)})
+	session.emit(port.Event{Dir: port.Info, Kind: "open", Text: fmt.Sprintf("Streaming %s on %s", req.Method, req.URL)})
 	first := strings.TrimSpace(req.Body)
 	if first != "" || !method.IsStreamingClient() {
 		if first == "" {
@@ -108,10 +109,10 @@ func (s *grpcSession) receive(conn *grpc.ClientConn) {
 		}
 		text, err := protojson.Marshal(message)
 		if err != nil {
-			s.emit(Event{Dir: Info, Kind: "close", Text: "A message cannot be shown as JSON: " + err.Error()})
+			s.emit(port.Event{Dir: port.Info, Kind: "close", Text: "A message cannot be shown as JSON: " + err.Error()})
 			return
 		}
-		s.emit(Event{Dir: Received, Kind: "message", Text: compactJSON(text), Size: len(text)})
+		s.emit(port.Event{Dir: port.Received, Kind: "message", Text: compactJSON(text), Size: len(text)})
 	}
 }
 
@@ -121,11 +122,11 @@ func (s *grpcSession) reportEnd(err error) {
 		return
 	}
 	if errors.Is(err, io.EOF) {
-		s.emit(Event{Dir: Info, Kind: "close", Text: "The server ended the stream"})
+		s.emit(port.Event{Dir: port.Info, Kind: "close", Text: "The server ended the stream"})
 		return
 	}
 	st, _ := status.FromError(err)
-	s.emit(Event{Dir: Info, Kind: "close", Code: int(st.Code()), Text: fmt.Sprintf("Stream ended: %s: %s", st.Code(), st.Message())})
+	s.emit(port.Event{Dir: port.Info, Kind: "close", Code: int(st.Code()), Text: fmt.Sprintf("Stream ended: %s: %s", st.Code(), st.Message())})
 }
 
 // Send implements Session: a JSON message of the method's input type, or
@@ -144,7 +145,7 @@ func (s *grpcSession) Send(ctx context.Context, text string) error {
 		if err := s.stream.CloseSend(); err != nil {
 			return err
 		}
-		s.emit(Event{Dir: Info, Kind: "end", Text: "This side of the stream is closed"})
+		s.emit(port.Event{Dir: port.Info, Kind: "end", Text: "This side of the stream is closed"})
 		return nil
 	}
 	return s.sendMessage(text)
@@ -155,7 +156,7 @@ func (s *grpcSession) sendMessage(text string) error {
 	if err := protojson.Unmarshal([]byte(text), message); err != nil {
 		return fmt.Errorf("the message is not valid %s JSON: %w", s.method.Input().FullName(), err)
 	}
-	s.emit(Event{Dir: Sent, Kind: "message", Text: compactJSON([]byte(text)), Size: len(text)}) // before the send: an answer may arrive during it
+	s.emit(port.Event{Dir: port.Sent, Kind: "message", Text: compactJSON([]byte(text)), Size: len(text)}) // before the send: an answer may arrive during it
 	s.sendMu.Lock()
 	defer s.sendMu.Unlock()
 	if err := s.stream.SendMsg(message); err != nil {

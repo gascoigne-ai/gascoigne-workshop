@@ -13,7 +13,6 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 
 	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/settingsfile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -91,7 +90,7 @@ func testApp(t *testing.T, options ...appOption) *App {
 		build.path = filepath.Join(t.TempDir(), "settings.json")
 	}
 	if build.written {
-		if err := settingsfile.Save(build.path, build.prefs); err != nil {
+		if err := settingsDisk.Save(build.path, build.prefs); err != nil {
 			t.Fatal(err)
 		}
 	}

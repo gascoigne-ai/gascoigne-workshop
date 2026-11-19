@@ -36,7 +36,7 @@ func TestLoadReadsStateFixtures(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.file, func(t *testing.T) {
-			got, err := Load(filepath.Join("testdata", test.file))
+			got, err := disk.Load(filepath.Join("testdata", test.file))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -52,12 +52,12 @@ func TestSaveLoadRoundTripsV1Fixture(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	loaded, err := Load(filepath.Join("testdata", "state-v1.json"))
+	loaded, err := disk.Load(filepath.Join("testdata", "state-v1.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	path := filepath.Join(t.TempDir(), "state.json")
-	if err := Save(path, loaded); err != nil {
+	if err := disk.Save(path, loaded); err != nil {
 		t.Fatal(err)
 	}
 	if saved, _ := os.ReadFile(path); !bytes.Equal(saved, fixture) {
@@ -67,7 +67,7 @@ func TestSaveLoadRoundTripsV1Fixture(t *testing.T) {
 
 func TestSaveWritesCurrentVersionFirst(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "state.json")
-	if err := Save(path, sample()); err != nil {
+	if err := disk.Save(path, sample()); err != nil {
 		t.Fatal(err)
 	}
 	data, err := os.ReadFile(path)
@@ -109,7 +109,7 @@ func TestLoadRejectsBadVersions(t *testing.T) {
 			if err := os.WriteFile(path, withVersion(t, test.version), 0o644); err != nil {
 				t.Fatal(err)
 			}
-			got, err := Load(path)
+			got, err := disk.Load(path)
 			if err == nil || !reflect.DeepEqual(got, state.State{}) {
 				t.Fatalf("Load = %+v, %v; want the empty state and an error", got, err)
 			}

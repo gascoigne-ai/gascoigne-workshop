@@ -3,6 +3,7 @@ package proto
 import (
 	"context"
 	"errors"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"strings"
 	"testing"
 	"time"
@@ -11,7 +12,7 @@ import (
 )
 
 // nextEvent waits for the next event of session or fails.
-func nextEvent(t *testing.T, session Session) Event {
+func nextEvent(t *testing.T, session port.Session) port.Event {
 	t.Helper()
 	select {
 	case event, ok := <-session.Events():
@@ -22,14 +23,14 @@ func nextEvent(t *testing.T, session Session) Event {
 	case <-time.After(5 * time.Second):
 		t.Fatal("no event in 5 seconds")
 	}
-	return Event{}
+	return port.Event{}
 }
 
 // nextReceived skips events until a message from the server arrives.
-func nextReceived(t *testing.T, session Session) Event {
+func nextReceived(t *testing.T, session port.Session) port.Event {
 	t.Helper()
 	for {
-		if event := nextEvent(t, session); event.Dir == Received {
+		if event := nextEvent(t, session); event.Dir == port.Received {
 			return event
 		}
 	}
@@ -43,7 +44,7 @@ func TestGRPCServerStreamShowsEveryMessageAsAnEvent(t *testing.T) {
 	}
 	defer session.Close(context.Background())
 
-	if opened := nextEvent(t, session); opened.Dir != Info || opened.Kind != "open" {
+	if opened := nextEvent(t, session); opened.Dir != port.Info || opened.Kind != "open" {
 		t.Fatalf("first event = %+v, want the open note", opened)
 	}
 	if first := nextReceived(t, session); !strings.Contains(first.Text, `"SERVING"`) {
@@ -89,8 +90,8 @@ func TestGRPCBidirectionalStreamSendsComposedMessages(t *testing.T) {
 	var sent bool
 	for {
 		event := nextEvent(t, session)
-		sent = sent || (event.Dir == Sent && strings.Contains(event.Text, "listServices"))
-		if event.Dir == Received {
+		sent = sent || (event.Dir == port.Sent && strings.Contains(event.Text, "listServices"))
+		if event.Dir == port.Received {
 			if !sent || !strings.Contains(event.Text, "grpc.health.v1.Health") {
 				t.Fatalf("sent=%v, answer %q", sent, event.Text)
 			}
@@ -143,7 +144,7 @@ func TestGRPCSendWithAnEndedContextSendsNothing(t *testing.T) {
 	for {
 		select {
 		case e := <-session.Events():
-			if e.Dir == Sent {
+			if e.Dir == port.Sent {
 				t.Fatalf("logged %+v for a send that should not happen", e)
 			}
 		case <-quiet:

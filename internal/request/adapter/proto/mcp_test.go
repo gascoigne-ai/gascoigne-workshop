@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -81,7 +82,7 @@ func mcpHTTPServer(t *testing.T) (url string, log func() []string) {
 }
 
 // waitFor reads events until one's text contains want.
-func waitFor(t *testing.T, session Session, want string) Event {
+func waitFor(t *testing.T, session port.Session, want string) port.Event {
 	t.Helper()
 	for {
 		select {
@@ -106,7 +107,7 @@ func TestMCPHTTPSessionInitializesListsAndCalls(t *testing.T) {
 	}
 	waitFor(t, s, "Connected to mock")
 	e := waitFor(t, s, `"tools":[`)
-	if e.Dir != Received || e.Kind != "response" {
+	if e.Dir != port.Received || e.Kind != "response" {
 		t.Fatalf("%+v", e)
 	}
 	waitFor(t, s, `"prompts":[]`)
@@ -115,10 +116,10 @@ func TestMCPHTTPSessionInitializesListsAndCalls(t *testing.T) {
 		t.Fatal(err)
 	}
 	sent := waitFor(t, s, `"tools/call"`)
-	if sent.Dir != Sent {
+	if sent.Dir != port.Sent {
 		t.Fatalf("sent event %+v", sent)
 	}
-	if got := waitFor(t, s, "echo {"); got.Dir != Received || !strings.Contains(got.Text, `{\"x\":1}`) {
+	if got := waitFor(t, s, "echo {"); got.Dir != port.Received || !strings.Contains(got.Text, `{\"x\":1}`) {
 		t.Fatalf("%+v", got)
 	}
 
@@ -275,11 +276,11 @@ func TestMCPConnectAnnouncesTheServerInfoAsAnEvent(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer s.Close(context.Background())
-	var e Event
+	var e port.Event
 	for e.Kind != "initialize" {
 		e = waitFor(t, s, `"serverInfo"`) // the response is logged too, as traffic
 	}
-	if e.Dir != Info {
+	if e.Dir != port.Info {
 		t.Fatalf("%+v", e)
 	}
 	server, ok := model.ParseServerInfo(e.Text)
@@ -295,7 +296,7 @@ func TestMCPRequestReturnsTheResultOrTheServersError(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer s.Close(context.Background())
-	requester, ok := s.(Requester)
+	requester, ok := s.(port.Requester)
 	if !ok {
 		t.Fatal("an MCP session answers requests")
 	}
@@ -380,7 +381,7 @@ func TestAnUnreadableInitializeResultIsLogged(t *testing.T) {
 	}
 	defer s.Close(context.Background())
 	e := waitFor(t, s, "initialize result")
-	if e.Dir != Info || e.Kind != "error" {
+	if e.Dir != port.Info || e.Kind != "error" {
 		t.Fatalf("%+v", e)
 	}
 }

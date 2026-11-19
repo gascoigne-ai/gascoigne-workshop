@@ -35,7 +35,7 @@ var current = len(readers) - 1
 
 // Load reads path. A missing file or an empty path yields the empty
 // state; a broken file yields the empty state and an error to report.
-func Load(path string) (state.State, error) {
+func (Files) Load(path string) (state.State, error) {
 	if path == "" {
 		return state.State{}, nil
 	}
@@ -54,7 +54,7 @@ func Load(path string) (state.State, error) {
 }
 
 // Save writes s to path atomically. An empty path keeps it in memory.
-func Save(path string, saved state.State) error {
+func (Files) Save(path string, saved state.State) error {
 	if path == "" {
 		return nil
 	}
@@ -65,12 +65,8 @@ func Save(path string, saved state.State) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return fmt.Errorf("create state dir: %w", err)
 	}
-	tmp := path + ".tmp"
-	if err := os.WriteFile(tmp, append(data, '\n'), 0o644); err != nil {
+	if err := userdir.WriteFileAtomic(path, append(data, '\n'), 0o644); err != nil {
 		return fmt.Errorf("write state: %w", err)
-	}
-	if err := os.Rename(tmp, path); err != nil {
-		return fmt.Errorf("replace state: %w", err)
 	}
 	return nil
 }
@@ -78,20 +74,10 @@ func Save(path string, saved state.State) error {
 // DefaultPath is where state lives for this user, or "" when there is
 // no config directory.
 func DefaultPath() string {
-	dir, err := os.UserConfigDir()
-	if err != nil {
-		return ""
-	}
-	return filepath.Join(dir, userdir.Name, "state.json")
+	return userdir.Path("state.json")
 }
 
 // Files is the state store of the file system.
 type Files struct{}
-
-// Load implements port.StateStore.
-func (Files) Load(path string) (state.State, error) { return Load(path) }
-
-// Save implements port.StateStore.
-func (Files) Save(path string, saved state.State) error { return Save(path, saved) }
 
 var _ port.StateStore = Files{}

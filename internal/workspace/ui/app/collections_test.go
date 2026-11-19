@@ -7,7 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/adapter/store"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
@@ -19,7 +18,7 @@ func collectionsApp(t *testing.T) (*App, string) {
 	base := t.TempDir()
 	home := filepath.Join(base, "workspace")
 	c := model.Collection{Folder: model.Folder{Name: "Home", Requests: []*model.Request{{Name: "One", Protocol: "rest", Method: "GET", URL: "u"}}}}
-	if err := store.Save(home, c); err != nil {
+	if err := storeDisk.Save(home, c); err != nil {
 		t.Fatal(err)
 	}
 	return testApp(t, untouchedSettings(), inWorkspace(home), withOptions(Options{DefaultWorkspace: home})), base
@@ -56,7 +55,7 @@ func TestNewCollectionMakesAFolderBesideTheWorkspaceAndOpensItBesideTheOpenOne(t
 	if owner, _ := a.open.Owner(model.Of(a.cur().Req)); owner.Dir != want || a.cur().Req.Name != "New Request" {
 		t.Fatalf("an empty collection opens one blank request, shown %q of %q", a.cur().Req.Name, owner.Dir)
 	}
-	if _, err := store.Load(want); err != nil {
+	if _, err := storeDisk.Load(want); err != nil {
 		t.Fatal(err)
 	}
 	if got := a.settings.RememberedCollections(); len(got) != 2 || got[0].Folder != home || got[1].Folder != want {
@@ -98,7 +97,7 @@ func TestRenameCollectionRenamesTheFolderAndKeepsTheContent(t *testing.T) {
 	if a.workspace() != want || a.col().Name != "Office" {
 		t.Fatalf("workspace %q, name %q", a.workspace(), a.col().Name)
 	}
-	got, err := store.Load(want)
+	got, err := storeDisk.Load(want)
 	if err != nil || got.Name != "Office" || len(got.Requests) != 1 {
 		t.Fatalf("loaded %+v, %v", got.Name, err)
 	}
@@ -117,7 +116,7 @@ func TestSaveCollectionWritesTheEditsNow(t *testing.T) {
 	a.cur().Req.URL = "https://changed.test"
 	a.saveWorkspace()
 	a.waitWrites()
-	got, err := store.Load(a.workspace())
+	got, err := storeDisk.Load(a.workspace())
 	if err != nil || got.Requests[0].URL != "https://changed.test" {
 		t.Fatalf("loaded %+v, %v", got.Requests, err)
 	}

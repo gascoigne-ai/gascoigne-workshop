@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -53,10 +54,10 @@ func TestSSESessionLogsEventsAndEndsWithTheStream(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if e := next(t, s); e.Dir != Info || !strings.Contains(e.Text, "Connected") {
+	if e := next(t, s); e.Dir != port.Info || !strings.Contains(e.Text, "Connected") {
 		t.Fatalf("%+v", e)
 	}
-	if e := next(t, s); e.Dir != Received || e.Kind != "n" || e.Text != "[1] 1" {
+	if e := next(t, s); e.Dir != port.Received || e.Kind != "n" || e.Text != "[1] 1" {
 		t.Fatalf("%+v", e)
 	}
 	next(t, s)

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"io"
 	"net/http"
 	"os/exec"
@@ -26,7 +27,7 @@ type MCP struct {
 	// Sampler, when set, answers the sampling requests a server sends
 	// (it asks the client to produce a model reply); without one the
 	// client does not offer sampling and refuses such requests.
-	Sampler Sampler
+	Sampler port.Sampler
 
 	// Network is the cookie jar, proxy and TLS setting of an HTTP server.
 	Network Network
@@ -53,7 +54,7 @@ type mcpTransport interface {
 // Connect implements Streamer: it opens the transport, runs the
 // initialize handshake and asks for the server's tools, resources and
 // prompts. Everything is logged as events.
-func (m MCP) Connect(ctx context.Context, req model.Request) (Session, error) {
+func (m MCP) Connect(ctx context.Context, req model.Request) (port.Session, error) {
 	s := &mcpSession{eventLog: newEventLog(), sampler: m.Sampler, waiters: map[int64]chan rpcAnswer{}}
 	var tr mcpTransport
 	var err error
@@ -66,7 +67,7 @@ func (m MCP) Connect(ctx context.Context, req model.Request) (Session, error) {
 		return nil, err
 	}
 	s.tr = tr
-	s.emit(Event{Dir: Info, Kind: "open", Text: "Connecting to " + req.URL})
+	s.emit(port.Event{Dir: port.Info, Kind: "open", Text: "Connecting to " + req.URL})
 	ictx, cancel := context.WithTimeout(ctx, mcpInitTimeout)
 	defer cancel()
 	capabilities := map[string]any{}
@@ -90,7 +91,7 @@ func (m MCP) Connect(ctx context.Context, req model.Request) (Session, error) {
 	if err := json.Unmarshal(result, &init); err != nil { // the session works without the server's description
 		s.note(fmt.Errorf("read the initialize result: %w", err))
 	}
-	s.emit(Event{Dir: Info, Kind: "initialize", Text: string(result)}) // the UI shows what the server said about itself
+	s.emit(port.Event{Dir: port.Info, Kind: "initialize", Text: string(result)}) // the UI shows what the server said about itself
 	tr.setVersion(init.ProtocolVersion)
 	if listener, ok := tr.(interface{ listen() }); ok {
 		listener.listen() // servers may push notifications on a stream of their own
@@ -103,13 +104,13 @@ func (m MCP) Connect(ctx context.Context, req model.Request) (Session, error) {
 	if name == "" {
 		name = req.URL
 	}
-	s.emit(Event{Dir: Info, Kind: "open", Text: "Connected to " + name})
+	s.emit(port.Event{Dir: port.Info, Kind: "open", Text: "Connected to " + name})
 	for _, list := range []struct{ capability, method string }{
 		{"tools", "tools/list"}, {"resources", "resources/list"}, {"prompts", "prompts/list"},
 	} {
 		if _, ok := init.Capabilities[list.capability]; ok {
 			if _, err := s.request(context.Background(), list.method, nil); err != nil {
-				s.emit(Event{Dir: Info, Kind: "error", Text: err.Error()})
+				s.emit(port.Event{Dir: port.Info, Kind: "error", Text: err.Error()})
 			}
 		}
 	}
@@ -136,8 +137,8 @@ func (m MCP) Send(ctx context.Context, req model.Request) (model.Response, error
 type mcpSession struct {
 	*eventLog
 	tr      mcpTransport
-	sampler Sampler   // nil: sampling is not offered
-	once    sync.Once // finish
+	sampler port.Sampler // nil: sampling is not offered
+	once    sync.Once    // finish
 
 	mu      sync.Mutex // guards nextID and waiters
 	nextID  int64
@@ -146,14 +147,14 @@ type mcpSession struct {
 
 // note logs a problem that leaves the session open.
 func (s *mcpSession) note(err error) {
-	s.emit(Event{Dir: Info, Kind: "error", Text: err.Error()})
+	s.emit(port.Event{Dir: port.Info, Kind: "error", Text: err.Error()})
 }
 
 // finish ends the event stream, once, with a note unless the user closed it.
 func (s *mcpSession) finish(err error) {
 	s.once.Do(func() {
 		if err != nil && !s.closing() {
-			s.emit(Event{Dir: Info, Kind: "close", Code: ws.CloseAbnormal, Text: "Connection lost: " + err.Error()})
+			s.emit(port.Event{Dir: port.Info, Kind: "close", Code: ws.CloseAbnormal, Text: "Connection lost: " + err.Error()})
 		}
 		s.stopWaiting()
 		s.mu.Lock()
@@ -196,7 +197,7 @@ var listChanged = map[string]string{
 func (s *mcpSession) deliver(msg []byte) {
 	var m rpcMessage
 	if err := json.Unmarshal(msg, &m); err != nil {
-		s.emit(Event{Dir: Received, Kind: "invalid", Text: string(msg), Size: len(msg)})
+		s.emit(port.Event{Dir: port.Received, Kind: "invalid", Text: string(msg), Size: len(msg)})
 		return
 	}
 	kind := "notification"
@@ -208,7 +209,7 @@ func (s *mcpSession) deliver(msg []byte) {
 	case m.ID != nil:
 		kind = "request"
 	}
-	s.emit(Event{Dir: Received, Kind: kind, Text: compactJSON(msg), Size: len(msg)})
+	s.emit(port.Event{Dir: port.Received, Kind: kind, Text: compactJSON(msg), Size: len(msg)})
 	if kind == "request" {
 		go s.answerServer(m)
 		return
@@ -216,7 +217,7 @@ func (s *mcpSession) deliver(msg []byte) {
 	if list, ok := listChanged[m.Method]; ok {
 		go func() { // ask again, so the lists the UI shows stay current
 			if _, err := s.request(context.Background(), list, nil); err != nil {
-				s.emit(Event{Dir: Info, Kind: "error", Text: err.Error()})
+				s.emit(port.Event{Dir: port.Info, Kind: "error", Text: err.Error()})
 			}
 		}()
 	}
@@ -271,7 +272,7 @@ func (s *mcpSession) write(ctx context.Context, kind string, data []byte) error 
 		return errors.New("the connection is closed")
 	default:
 	}
-	s.emit(Event{Dir: Sent, Kind: kind, Text: compactJSON(data), Size: len(data)}) // before the send: an answer may arrive during it
+	s.emit(port.Event{Dir: port.Sent, Kind: kind, Text: compactJSON(data), Size: len(data)}) // before the send: an answer may arrive during it
 	return s.tr.send(ctx, data)
 }
 
@@ -719,13 +720,13 @@ func (s *mcpSession) sample(message rpcMessage, reply map[string]any) {
 		reply["error"] = map[string]any{"code": -32602, "message": "invalid sampling request: " + err.Error()}
 		return
 	}
-	request := SamplingRequest{SystemPrompt: params.SystemPrompt, MaxTokens: params.MaxTokens}
+	request := port.SamplingRequest{SystemPrompt: params.SystemPrompt, MaxTokens: params.MaxTokens}
 	for _, message := range params.Messages {
 		text := message.Content.Text
 		if message.Content.Type != "text" {
 			text = "[" + message.Content.Type + " content]"
 		}
-		request.Messages = append(request.Messages, SamplingMessage{Role: message.Role, Text: text})
+		request.Messages = append(request.Messages, port.SamplingMessage{Role: message.Role, Text: text})
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

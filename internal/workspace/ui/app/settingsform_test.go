@@ -2,7 +2,6 @@ package app
 
 import (
 	"fmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/settingsfile"
 	"os"
 	"regexp"
 	"strings"
@@ -118,7 +117,7 @@ func TestTextSettingsApplyAsTheyAreTyped(t *testing.T) {
 	if a.settings.Proxy != "http://localhost:8080" {
 		t.Fatalf("Proxy = %q", a.settings.Proxy)
 	}
-	if saved, _ := settingsfile.Load(path); saved.Proxy != "http://localhost:8080" {
+	if saved, _ := settingsDisk.Load(path); saved.Proxy != "http://localhost:8080" {
 		t.Fatalf("saved %+v", saved)
 	}
 }

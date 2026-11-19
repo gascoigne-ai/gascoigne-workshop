@@ -23,10 +23,10 @@ func entry(status int, body string) port.Entry {
 func TestSavedEntriesComeBackAsTheyWere(t *testing.T) {
 	dir := t.TempDir()
 	want := []port.Entry{entry(200, `{"a":1}`), entry(404, "not found\x00binary")}
-	if err := Save(dir, "API/Users/List", want); err != nil {
+	if err := Dir(dir).Save("API/Users/List", want); err != nil {
 		t.Fatal(err)
 	}
-	got, err := Load(dir, "API/Users/List")
+	got, err := Dir(dir).Load("API/Users/List")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -36,7 +36,7 @@ func TestSavedEntriesComeBackAsTheyWere(t *testing.T) {
 }
 
 func TestLoadingWhatWasNeverSavedIsEmptyNotAnError(t *testing.T) {
-	got, err := Load(t.TempDir(), "API/Nothing")
+	got, err := Dir(t.TempDir()).Load("API/Nothing")
 	if err != nil || len(got) != 0 {
 		t.Fatalf("got %v, %v", got, err)
 	}
@@ -44,14 +44,14 @@ func TestLoadingWhatWasNeverSavedIsEmptyNotAnError(t *testing.T) {
 
 func TestRequestsKeepSeparateHistories(t *testing.T) {
 	dir := t.TempDir()
-	if err := Save(dir, "A/one", []port.Entry{entry(200, "one")}); err != nil {
+	if err := Dir(dir).Save("A/one", []port.Entry{entry(200, "one")}); err != nil {
 		t.Fatal(err)
 	}
-	if err := Save(dir, "A/two", []port.Entry{entry(201, "two")}); err != nil {
+	if err := Dir(dir).Save("A/two", []port.Entry{entry(201, "two")}); err != nil {
 		t.Fatal(err)
 	}
-	one, _ := Load(dir, "A/one")
-	two, _ := Load(dir, "A/two")
+	one, _ := Dir(dir).Load("A/one")
+	two, _ := Dir(dir).Load("A/two")
 	if len(one) != 1 || string(one[0].Body) != "one" || len(two) != 1 || string(two[0].Body) != "two" {
 		t.Fatalf("one %v two %v", one, two)
 	}
@@ -64,10 +64,10 @@ func TestSaveKeepsOnlyTheNewestEntriesThatAreNotTooBig(t *testing.T) {
 		entries = append(entries, entry(200, "small"))
 	}
 	entries[0] = entry(200, strings.Repeat("x", MaxBody+1)) // newest, but too big to keep
-	if err := Save(dir, "API/Big", entries); err != nil {
+	if err := Dir(dir).Save("API/Big", entries); err != nil {
 		t.Fatal(err)
 	}
-	got, _ := Load(dir, "API/Big")
+	got, _ := Dir(dir).Load("API/Big")
 	if len(got) != Limit {
 		t.Fatalf("kept %d entries, want %d", len(got), Limit)
 	}
@@ -80,8 +80,8 @@ func TestSaveKeepsOnlyTheNewestEntriesThatAreNotTooBig(t *testing.T) {
 
 func TestSavingNothingRemovesTheFile(t *testing.T) {
 	dir := t.TempDir()
-	_ = Save(dir, "API/x", []port.Entry{entry(200, "x")})
-	if err := Save(dir, "API/x", nil); err != nil {
+	_ = Dir(dir).Save("API/x", []port.Entry{entry(200, "x")})
+	if err := Dir(dir).Save("API/x", nil); err != nil {
 		t.Fatal(err)
 	}
 	if files, _ := filepath.Glob(filepath.Join(dir, "*")); len(files) != 0 {
@@ -91,12 +91,12 @@ func TestSavingNothingRemovesTheFile(t *testing.T) {
 
 func TestABrokenFileIsAnErrorTheCallerCanReport(t *testing.T) {
 	dir := t.TempDir()
-	_ = Save(dir, "API/x", []port.Entry{entry(200, "x")})
+	_ = Dir(dir).Save("API/x", []port.Entry{entry(200, "x")})
 	files, _ := filepath.Glob(filepath.Join(dir, "*"))
 	if err := os.WriteFile(files[0], []byte("{broken"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	got, err := Load(dir, "API/x")
+	got, err := Dir(dir).Load("API/x")
 	if err == nil || len(got) != 0 {
 		t.Fatalf("got %v, %v", got, err)
 	}
@@ -104,7 +104,7 @@ func TestABrokenFileIsAnErrorTheCallerCanReport(t *testing.T) {
 
 func TestAFileOfAnotherRequestIsNotShown(t *testing.T) {
 	dir := t.TempDir()
-	_ = Save(dir, "API/x", []port.Entry{entry(200, "x")})
+	_ = Dir(dir).Save("API/x", []port.Entry{entry(200, "x")})
 	files, _ := filepath.Glob(filepath.Join(dir, "*"))
 	data, _ := os.ReadFile(files[0])
 	// Two keys that hash to the same name cannot be built, so the key
@@ -113,7 +113,7 @@ func TestAFileOfAnotherRequestIsNotShown(t *testing.T) {
 	if err := os.WriteFile(files[0], data, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if got, _ := Load(dir, "API/x"); len(got) != 0 {
+	if got, _ := Dir(dir).Load("API/x"); len(got) != 0 {
 		t.Fatalf("showed %v", got)
 	}
 }

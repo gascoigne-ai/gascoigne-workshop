@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"net/http"
 	"strings"
 	"time"
@@ -28,7 +29,7 @@ type sseEvent struct {
 }
 
 // Connect implements Streamer.
-func (s SSE) Connect(ctx context.Context, req model.Request) (Session, error) {
+func (s SSE) Connect(ctx context.Context, req model.Request) (port.Session, error) {
 	if !strings.HasPrefix(req.URL, "http://") && !strings.HasPrefix(req.URL, "https://") {
 		return nil, fmt.Errorf("%q is not an http or https URL", req.URL)
 	}
@@ -61,7 +62,7 @@ func (s SSE) Connect(ctx context.Context, req model.Request) (Session, error) {
 		return nil, fmt.Errorf("%s", resp.Status)
 	}
 	se := &sseSession{eventLog: newEventLog(), cancel: cancel}
-	se.emit(Event{Dir: Info, Kind: "open", Text: "Connected to " + req.URL})
+	se.emit(port.Event{Dir: port.Info, Kind: "open", Text: "Connected to " + req.URL})
 	go func() {
 		defer func() {
 			resp.Body.Close()
@@ -76,12 +77,12 @@ func (s SSE) Connect(ctx context.Context, req model.Request) (Session, error) {
 			if ev.id != "" {
 				text = fmt.Sprintf("[%s] %s", ev.id, ev.data)
 			}
-			se.emit(Event{Dir: Received, Kind: kind, Text: text, Size: len(ev.data), ID: ev.id})
+			se.emit(port.Event{Dir: port.Received, Kind: kind, Text: text, Size: len(ev.data), ID: ev.id})
 		})
 		if err != nil && !se.closing() {
-			se.emit(Event{Dir: Info, Kind: "close", Code: ws.CloseAbnormal, Text: "Connection lost: " + err.Error()})
+			se.emit(port.Event{Dir: port.Info, Kind: "close", Code: ws.CloseAbnormal, Text: "Connection lost: " + err.Error()})
 		} else if !se.closing() {
-			se.emit(Event{Dir: Info, Kind: "close", Text: "The server ended the stream"})
+			se.emit(port.Event{Dir: port.Info, Kind: "close", Text: "The server ended the stream"})
 		}
 	}()
 	return se, nil
@@ -102,7 +103,7 @@ func (s SSE) Send(ctx context.Context, req model.Request) (model.Response, error
 			if !ok {
 				return model.Response{Err: "the stream ended before an event", Duration: time.Since(start)}, nil
 			}
-			if e.Dir == Received {
+			if e.Dir == port.Received {
 				return model.Response{Status: http.StatusOK, StatusText: "OK", Duration: time.Since(start), Size: e.Size, Body: []byte(e.Text)}, nil
 			}
 		case <-ctx.Done():

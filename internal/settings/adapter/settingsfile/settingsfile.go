@@ -18,7 +18,7 @@ import (
 // defaults; fields missing from the file keep their defaults. Values
 // outside their range are clamped and reported as a *settings.ClampedError
 // with the usable settings.
-func Load(path string) (settings.Settings, error) {
+func (Files) Load(path string) (settings.Settings, error) {
 	data, err := os.ReadFile(path)
 	if errors.Is(err, fs.ErrNotExist) {
 		return settings.Default(), nil
@@ -40,31 +40,27 @@ func Load(path string) (settings.Settings, error) {
 // Save writes current to path, creating its directory. Only what differs
 // from the defaults is written. The file is replaced atomically so a crash
 // cannot leave half a file behind.
-func Save(path string, current settings.Settings) error {
+func (files Files) Save(path string, current settings.Settings) error {
 	data, err := settings.Encode(current)
 	if err != nil {
 		return fmt.Errorf("encode settings: %w", err)
 	}
-	return WriteText(path, data)
+	return files.WriteText(path, data)
 }
 
 // WriteText replaces the settings file with data exactly as given, creating
 // its directory. The file is replaced atomically. An existing file that
 // does not parse is first copied to path+".bak", so replacing it never
 // destroys what the user wrote.
-func WriteText(path string, data []byte) error {
+func (Files) WriteText(path string, data []byte) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return fmt.Errorf("create settings dir: %w", err)
 	}
 	if err := backUpBroken(path); err != nil {
 		return err
 	}
-	tmp := path + ".tmp"
-	if err := os.WriteFile(tmp, data, 0o644); err != nil {
+	if err := userdir.WriteFileAtomic(path, data, 0o644); err != nil {
 		return fmt.Errorf("write settings: %w", err)
-	}
-	if err := os.Rename(tmp, path); err != nil {
-		return fmt.Errorf("replace settings: %w", err)
 	}
 	return nil
 }
@@ -82,21 +78,11 @@ func DefaultWorkspace() string { return inConfigDir("workspace") }
 func DefaultPath() string { return inConfigDir("settings.json") }
 
 func inConfigDir(name string) string {
-	dir, err := os.UserConfigDir()
-	if err != nil {
-		return ""
-	}
-	return filepath.Join(dir, userdir.Name, name)
+	return userdir.Path(name)
 }
 
 // Files is the settings store of the file system.
 type Files struct{}
-
-// Load implements port.SettingsStore.
-func (Files) Load(path string) (settings.Settings, error) { return Load(path) }
-
-// Save implements port.SettingsStore.
-func (Files) Save(path string, current settings.Settings) error { return Save(path, current) }
 
 // ReadText implements port.SettingsStore.
 func (Files) ReadText(path string) ([]byte, error) { return os.ReadFile(path) }
@@ -109,9 +95,6 @@ func (Files) Stat(path string) settings.FileStamp {
 	}
 	return settings.FileStamp{Modified: info.ModTime(), Size: info.Size(), Exists: true}
 }
-
-// WriteText implements port.SettingsStore.
-func (Files) WriteText(path string, text []byte) error { return WriteText(path, text) }
 
 var _ port.SettingsStore = Files{}
 

@@ -229,9 +229,9 @@ func metadataRows(header, trailer metadata.MD) []model.KV {
 func grpcErrText(ctx context.Context, err error) string {
 	switch {
 	case errors.Is(ctx.Err(), context.DeadlineExceeded) || status.Code(err) == codes.DeadlineExceeded:
-		return ErrTimedOut
+		return model.ErrTimedOut
 	case errors.Is(ctx.Err(), context.Canceled) || status.Code(err) == codes.Canceled:
-		return ErrCancelled
+		return model.ErrCancelled
 	}
 	return err.Error()
 }

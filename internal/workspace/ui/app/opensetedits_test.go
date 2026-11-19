@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/adapter/store"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/tree"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
@@ -100,7 +99,7 @@ func TestTheUnsavedMarksFollowTheCollectionOfEachTab(t *testing.T) {
 	if titleMarked(a) {
 		t.Fatalf("Beta is saved, title %q", a.Title())
 	}
-	if got, err := store.Load(alphaDir); err != nil || got.Requests[0].URL != "http://{{host}}/Alpha" {
+	if got, err := storeDisk.Load(alphaDir); err != nil || got.Requests[0].URL != "http://{{host}}/Alpha" {
 		t.Fatalf("saving Beta wrote Alpha: %+v %v", got.Requests, err)
 	}
 }
@@ -169,7 +168,7 @@ func TestRenamingAFolderInOneCollectionLeavesTheSamePathInTheOther(t *testing.T)
 	if !exists(filepath.Join(alphaDir, "nested", "inner.req.json")) || exists(filepath.Join(alphaDir, "shared")) {
 		t.Fatal("Alpha's folder changed on disk")
 	}
-	if got, err := store.Load(betaDir); err != nil || got.Folders[0].Name != "Shared" || got.Folders[0].Requests[0].Name != "Inner" {
+	if got, err := storeDisk.Load(betaDir); err != nil || got.Folders[0].Name != "Shared" || got.Folders[0].Requests[0].Name != "Inner" {
 		t.Fatalf("Beta on disk: %+v %v", got.Folders, err)
 	}
 }
@@ -201,7 +200,7 @@ func TestRenamingACollectionMovesOnlyItsFolderAndClearsWhatItSaved(t *testing.T)
 	if exists(betaDir) {
 		t.Fatal("Beta's old folder is still there")
 	}
-	if got, err := store.Load(alphaDir); err != nil || got.Name != "Alpha" || got.Requests[0].URL != "http://alpha.pending" {
+	if got, err := storeDisk.Load(alphaDir); err != nil || got.Name != "Alpha" || got.Requests[0].URL != "http://alpha.pending" {
 		t.Fatalf("Alpha on disk: %+v %v", got, err)
 	}
 	if shownTab(t, a, alphaCall).Dirty {
@@ -218,7 +217,7 @@ func TestRenamingACollectionMovesOnlyItsFolderAndClearsWhatItSaved(t *testing.T)
 
 	betaCall.URL = "http://gamma.edited"
 	autosaveAfterPause(a)
-	if got, err := store.Load(gammaDir); err != nil || got.Requests[0].URL != "http://gamma.edited" {
+	if got, err := storeDisk.Load(gammaDir); err != nil || got.Requests[0].URL != "http://gamma.edited" {
 		t.Fatalf("Gamma on disk: %+v %v", got.Requests, err)
 	}
 	if exists(betaDir) {
@@ -260,7 +259,7 @@ func TestRenamingARequestWhileAnotherCollectionsTabIsActive(t *testing.T) {
 	if !exists(filepath.Join(betaDir, "beta-call.req.json")) {
 		t.Fatal("Beta's request file is gone")
 	}
-	if got, err := store.Load(betaDir); err != nil || got.Requests[0].URL != "http://{{host}}/Beta" {
+	if got, err := storeDisk.Load(betaDir); err != nil || got.Requests[0].URL != "http://{{host}}/Beta" {
 		t.Fatalf("Beta on disk: %+v %v", got.Requests, err)
 	}
 	if shownTab(t, a, alphaCall).Dirty {

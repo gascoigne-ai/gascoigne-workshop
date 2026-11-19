@@ -40,10 +40,10 @@ func sample() model.Collection {
 func TestSaveThenLoadRoundTrips(t *testing.T) {
 	dir := t.TempDir()
 	want := sample()
-	if err := Save(dir, want); err != nil {
+	if err := disk.Save(dir, want); err != nil {
 		t.Fatal(err)
 	}
-	got, err := Load(dir)
+	got, err := disk.Load(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,7 +54,7 @@ func TestSaveThenLoadRoundTrips(t *testing.T) {
 
 func TestSecretsStayOutOfRequestFiles(t *testing.T) {
 	dir := t.TempDir()
-	if err := Save(dir, sample()); err != nil {
+	if err := disk.Save(dir, sample()); err != nil {
 		t.Fatal(err)
 	}
 	filepath.WalkDir(dir, func(name string, entry os.DirEntry, _ error) error {
@@ -76,11 +76,11 @@ func TestSecretsStayOutOfRequestFiles(t *testing.T) {
 func TestSaveIsStableAndRemovesDeletedRequests(t *testing.T) {
 	dir := t.TempDir()
 	c := sample()
-	if err := Save(dir, c); err != nil {
+	if err := disk.Save(dir, c); err != nil {
 		t.Fatal(err)
 	}
 	first := snapshot(t, dir)
-	if err := Save(dir, c); err != nil {
+	if err := disk.Save(dir, c); err != nil {
 		t.Fatal(err)
 	}
 	if !reflect.DeepEqual(first, snapshot(t, dir)) {
@@ -88,10 +88,10 @@ func TestSaveIsStableAndRemovesDeletedRequests(t *testing.T) {
 	}
 	c.Folders[0].Requests = c.Folders[0].Requests[:1]
 	c.Folders = c.Folders[:1] // drops Empty and the weird folder
-	if err := Save(dir, c); err != nil {
+	if err := disk.Save(dir, c); err != nil {
 		t.Fatal(err)
 	}
-	got, err := Load(dir)
+	got, err := disk.Load(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -104,7 +104,7 @@ func TestSaveKeepsFilesItDoesNotOwn(t *testing.T) {
 	dir := t.TempDir()
 	note := filepath.Join(dir, "README.md")
 	os.WriteFile(note, []byte("mine"), 0o644)
-	if err := Save(dir, sample()); err != nil {
+	if err := disk.Save(dir, sample()); err != nil {
 		t.Fatal(err)
 	}
 	if b, _ := os.ReadFile(note); string(b) != "mine" {
@@ -113,7 +113,7 @@ func TestSaveKeepsFilesItDoesNotOwn(t *testing.T) {
 }
 
 func TestLoadOfAnEmptyDirectoryIsAnEmptyCollection(t *testing.T) {
-	c, err := Load(t.TempDir())
+	c, err := disk.Load(t.TempDir())
 	if err != nil || len(c.Requests) != 0 || len(c.Folders) != 0 {
 		t.Fatalf("%+v %v", c, err)
 	}
@@ -121,11 +121,11 @@ func TestLoadOfAnEmptyDirectoryIsAnEmptyCollection(t *testing.T) {
 
 func TestLoadKeepsRequestsWhoseOrderEntryIsMissing(t *testing.T) {
 	dir := t.TempDir()
-	if err := Save(dir, sample()); err != nil {
+	if err := disk.Save(dir, sample()); err != nil {
 		t.Fatal(err)
 	}
 	os.WriteFile(filepath.Join(dir, "added-by-hand.req.json"), []byte(`{"name":"Hand","protocol":"rest","method":"GET","url":"u"}`), 0o644)
-	c, err := Load(dir)
+	c, err := disk.Load(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -138,7 +138,7 @@ func TestLoadKeepsRequestsWhoseOrderEntryIsMissing(t *testing.T) {
 func TestLoadReportsBrokenFiles(t *testing.T) {
 	dir := t.TempDir()
 	os.WriteFile(filepath.Join(dir, "bad.req.json"), []byte("{nope"), 0o644)
-	if _, err := Load(dir); err == nil || !strings.Contains(err.Error(), "bad.req.json") {
+	if _, err := disk.Load(dir); err == nil || !strings.Contains(err.Error(), "bad.req.json") {
 		t.Fatalf("err = %v", err)
 	}
 }
@@ -157,7 +157,7 @@ func TestLoadRejectsARequestFileWithAnUnknownProtocol(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			dir := t.TempDir()
 			os.WriteFile(filepath.Join(dir, "odd.req.json"), []byte(test.data), 0o644)
-			if _, err := Load(dir); err == nil || !strings.Contains(err.Error(), "odd.req.json") {
+			if _, err := disk.Load(dir); err == nil || !strings.Contains(err.Error(), "odd.req.json") {
 				t.Fatalf("err = %v, want one that names odd.req.json", err)
 			}
 		})
@@ -169,7 +169,7 @@ func TestLoadRejectsARequestFileWithAnUnknownProtocol(t *testing.T) {
 func TestLoadReadsTheOldNoneAuthTypeAsNoAuthentication(t *testing.T) {
 	dir := t.TempDir()
 	os.WriteFile(filepath.Join(dir, "old.req.json"), []byte(`{"name":"x","protocol":"rest","method":"GET","url":"u","auth":{"type":"none"}}`), 0o644)
-	collection, err := Load(dir)
+	collection, err := disk.Load(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -194,19 +194,19 @@ func snapshot(t *testing.T, dir string) map[string]string {
 func TestDeletedEnvironmentsLeaveNoFiles(t *testing.T) {
 	dir := t.TempDir()
 	c := sample()
-	if err := Save(dir, c); err != nil {
+	if err := disk.Save(dir, c); err != nil {
 		t.Fatal(err)
 	}
 	c.Envs = c.Envs[1:] // drop Dev
-	if err := Save(dir, c); err != nil {
+	if err := disk.Save(dir, c); err != nil {
 		t.Fatal(err)
 	}
-	got, err := Load(dir)
+	got, err := disk.Load(dir)
 	if err != nil || !reflect.DeepEqual(got.Envs, c.Envs) {
 		t.Fatalf("%+v %v", got.Envs, err)
 	}
 	c.Envs = nil
-	if err := Save(dir, c); err != nil {
+	if err := disk.Save(dir, c); err != nil {
 		t.Fatal(err)
 	}
 	entries, _ := os.ReadDir(filepath.Join(dir, envDir))
@@ -235,11 +235,11 @@ func TestAFolderNamedEnvironmentsSurvivesSavingEnvironments(t *testing.T) {
 		Envs: []model.Environment{{Name: "Dev", Vars: []model.KV{{Name: "base", Value: "http://localhost", Enabled: true}}}},
 	}
 	for range 2 { // the second save is the one that pruned
-		if err := Save(dir, want); err != nil {
+		if err := disk.Save(dir, want); err != nil {
 			t.Fatal(err)
 		}
 	}
-	got, err := Load(dir)
+	got, err := disk.Load(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -252,7 +252,7 @@ func TestAFolderNamedEnvironmentsSurvivesSavingEnvironments(t *testing.T) {
 // world-readable (0644).
 func TestSecretsFileIsOnlyReadableByTheOwner(t *testing.T) {
 	dir := t.TempDir()
-	if err := Save(dir, sample()); err != nil {
+	if err := disk.Save(dir, sample()); err != nil {
 		t.Fatal(err)
 	}
 	info, err := os.Stat(filepath.Join(dir, secretsFile))
@@ -268,14 +268,14 @@ func TestSecretsFileIsOnlyReadableByTheOwner(t *testing.T) {
 // save even when its content did not change.
 func TestAnOldWorldReadableSecretsFileIsTightenedOnSave(t *testing.T) {
 	dir := t.TempDir()
-	if err := Save(dir, sample()); err != nil {
+	if err := disk.Save(dir, sample()); err != nil {
 		t.Fatal(err)
 	}
 	path := filepath.Join(dir, secretsFile)
 	if err := os.Chmod(path, 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if err := Save(dir, sample()); err != nil {
+	if err := disk.Save(dir, sample()); err != nil {
 		t.Fatal(err)
 	}
 	info, err := os.Stat(path)
@@ -302,7 +302,7 @@ func TestSecretVariablesOfCollectionsAndFoldersStayOutOfFolderFiles(t *testing.T
 		},
 		Vars: []model.KV{{Name: "apiKey", Value: "collection-secret-value", Enabled: true, Secret: true}},
 	}
-	if err := Save(dir, want); err != nil {
+	if err := disk.Save(dir, want); err != nil {
 		t.Fatal(err)
 	}
 	for _, file := range []string{"folder.json", filepath.Join("sub", "folder.json")} {
@@ -318,7 +318,7 @@ func TestSecretVariablesOfCollectionsAndFoldersStayOutOfFolderFiles(t *testing.T
 	if err != nil || !strings.Contains(string(secrets), "collection-secret-value") || !strings.Contains(string(secrets), "folder-secret-value") {
 		t.Errorf("%s = %s, %v; want both values", secretsFile, secrets, err)
 	}
-	got, err := Load(dir)
+	got, err := disk.Load(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -335,11 +335,11 @@ func TestAnOlderFolderFileWithASecretValueStillLoads(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "folder.json"), []byte(old), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	got, err := Load(dir)
+	got, err := disk.Load(dir)
 	if err != nil || len(got.Vars) != 1 || got.Vars[0].Value != "legacy" {
 		t.Fatalf("loaded %+v, %v; want the legacy value kept", got.Vars, err)
 	}
-	if err := Save(dir, got); err != nil {
+	if err := disk.Save(dir, got); err != nil {
 		t.Fatal(err)
 	}
 	if text, _ := os.ReadFile(filepath.Join(dir, "folder.json")); strings.Contains(string(text), "legacy") {
@@ -356,10 +356,10 @@ func TestMovingACredentialRequestMovesItsSecret(t *testing.T) {
 	moved := source.AddRequest(model.Request{Name: "Call", Protocol: "rest", Method: "GET", URL: "http://x.test",
 		Auth: model.Auth{Type: model.AuthBearer, Token: "moved-s3cret"}})
 	target := model.Collection{Folder: model.Folder{Name: "Target"}}
-	if err := Save(sourceDir, source); err != nil {
+	if err := disk.Save(sourceDir, source); err != nil {
 		t.Fatal(err)
 	}
-	if err := Save(targetDir, target); err != nil {
+	if err := disk.Save(targetDir, target); err != nil {
 		t.Fatal(err)
 	}
 	if b, _ := os.ReadFile(filepath.Join(sourceDir, secretsFile)); !strings.Contains(string(b), "moved-s3cret") {
@@ -368,10 +368,10 @@ func TestMovingACredentialRequestMovesItsSecret(t *testing.T) {
 
 	source.Delete(moved)
 	target.Attach(model.Of(moved), model.Node{})
-	if err := Save(targetDir, target); err != nil {
+	if err := disk.Save(targetDir, target); err != nil {
 		t.Fatal(err)
 	}
-	if err := Save(sourceDir, source); err != nil {
+	if err := disk.Save(sourceDir, source); err != nil {
 		t.Fatal(err)
 	}
 
@@ -384,7 +384,7 @@ func TestMovingACredentialRequestMovesItsSecret(t *testing.T) {
 	if b, _ := os.ReadFile(filepath.Join(targetDir, ".gitignore")); !strings.Contains(string(b), secretsFile) {
 		t.Fatalf("the target's .gitignore %q does not list %s", b, secretsFile)
 	}
-	got, err := Load(targetDir)
+	got, err := disk.Load(targetDir)
 	if err != nil || got.Requests[0].Auth.Token != "moved-s3cret" {
 		t.Fatalf("target loads %+v %v", got.Requests, err)
 	}
@@ -400,10 +400,10 @@ func TestCapturedEnvironmentValuesStayLiteralAfterReload(t *testing.T) {
 		{Name: "token", Value: "{{secret}}", Enabled: true, Literal: true},
 		{Name: "key", Value: "s3", Enabled: true, Secret: true, Literal: true},
 	}}}
-	if err := Save(dir, c); err != nil {
+	if err := disk.Save(dir, c); err != nil {
 		t.Fatal(err)
 	}
-	got, err := Load(dir)
+	got, err := disk.Load(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -411,3 +411,6 @@ func TestCapturedEnvironmentValuesStayLiteralAfterReload(t *testing.T) {
 		t.Fatalf("environments changed by a save and load:\n got %+v\nwant %+v", got.Envs, c.Envs)
 	}
 }
+
+// disk is the store under test; its methods are the only form of the API.
+var disk Files

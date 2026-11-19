@@ -16,11 +16,11 @@ func sentAt(minute int, path string) port.Sent {
 func TestSentLogListsNewestFirstAfterReload(t *testing.T) {
 	dir := t.TempDir()
 	for minute, path := range []string{"a", "b", "c"} {
-		if err := AppendSent(dir, sentAt(minute, path)); err != nil {
+		if err := Dir(dir).Sent().Append(sentAt(minute, path)); err != nil {
 			t.Fatal(err)
 		}
 	}
-	got, err := LoadSent(dir)
+	got, err := Dir(dir).Sent().Load()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,7 +37,7 @@ func TestSentLogListsNewestFirstAfterReload(t *testing.T) {
 }
 
 func TestSentLogWithoutFileIsEmpty(t *testing.T) {
-	got, err := LoadSent(t.TempDir())
+	got, err := Dir(t.TempDir()).Sent().Load()
 	if err != nil || len(got) != 0 {
 		t.Fatalf("got %v, %v; want nothing", got, err)
 	}
@@ -46,11 +46,11 @@ func TestSentLogWithoutFileIsEmpty(t *testing.T) {
 func TestSentLogKeepsOnlyTheNewestSentLimit(t *testing.T) {
 	dir := t.TempDir()
 	for minute := 0; minute < port.SentLimit+port.SentLimit/2; minute++ {
-		if err := AppendSent(dir, sentAt(0, fmt.Sprint(minute))); err != nil {
+		if err := Dir(dir).Sent().Append(sentAt(0, fmt.Sprint(minute))); err != nil {
 			t.Fatal(err)
 		}
 	}
-	got, err := LoadSent(dir)
+	got, err := Dir(dir).Sent().Load()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -71,7 +71,7 @@ func TestSentLogKeepsOnlyTheNewestSentLimit(t *testing.T) {
 
 func TestSentLogSkipsDamagedLines(t *testing.T) {
 	dir := t.TempDir()
-	if err := AppendSent(dir, sentAt(1, "a")); err != nil {
+	if err := Dir(dir).Sent().Append(sentAt(1, "a")); err != nil {
 		t.Fatal(err)
 	}
 	file, err := os.OpenFile(filepath.Join(dir, sentFile), os.O_APPEND|os.O_WRONLY, 0o600)
@@ -80,10 +80,10 @@ func TestSentLogSkipsDamagedLines(t *testing.T) {
 	}
 	file.WriteString("{not json\n")
 	file.Close()
-	if err := AppendSent(dir, sentAt(2, "b")); err != nil {
+	if err := Dir(dir).Sent().Append(sentAt(2, "b")); err != nil {
 		t.Fatal(err)
 	}
-	got, _ := LoadSent(dir)
+	got, _ := Dir(dir).Sent().Load()
 	if len(got) != 2 {
 		t.Fatalf("len = %d, want 2", len(got))
 	}
@@ -93,7 +93,7 @@ func TestSentLogSkipsDamagedLines(t *testing.T) {
 // left out like a damaged line; the lines around it still load.
 func TestSentLogSkipsALineWithAnUnknownProtocol(t *testing.T) {
 	dir := t.TempDir()
-	if err := AppendSent(dir, sentAt(1, "a")); err != nil {
+	if err := Dir(dir).Sent().Append(sentAt(1, "a")); err != nil {
 		t.Fatal(err)
 	}
 	file, err := os.OpenFile(filepath.Join(dir, sentFile), os.O_APPEND|os.O_WRONLY, 0o600)
@@ -103,10 +103,10 @@ func TestSentLogSkipsALineWithAnUnknownProtocol(t *testing.T) {
 	file.WriteString(`{"At":"2026-11-06T10:02:00Z","Path":"odd","Protocol":"gopher","Method":"GET","URL":"u","Status":200}` + "\n")
 	file.WriteString(`{"At":"2026-11-06T10:03:00Z","Path":"bare","Method":"GET","URL":"u","Status":200}` + "\n")
 	file.Close()
-	if err := AppendSent(dir, sentAt(4, "b")); err != nil {
+	if err := Dir(dir).Sent().Append(sentAt(4, "b")); err != nil {
 		t.Fatal(err)
 	}
-	got, _ := LoadSent(dir)
+	got, _ := Dir(dir).Sent().Load()
 	var paths []string
 	for _, sent := range got {
 		paths = append(paths, sent.Path)

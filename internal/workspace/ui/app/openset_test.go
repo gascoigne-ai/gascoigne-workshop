@@ -6,10 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/adapter/store"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/settingsfile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/statefile"
@@ -33,7 +31,7 @@ func savedCollection(t *testing.T, name string) string {
 		Vars: []model.KV{{Name: "only" + name, Value: name, Enabled: true}},
 		Envs: []model.Environment{{Name: "Dev", Vars: []model.KV{{Name: "host", Value: name + ".dev", Enabled: true}}}},
 	}
-	if err := store.Save(dir, col); err != nil {
+	if err := storeDisk.Save(dir, col); err != nil {
 		t.Fatal(err)
 	}
 	return dir
@@ -97,10 +95,10 @@ func TestSavingWritesTheCollectionOfTheActiveTabToItsFolder(t *testing.T) {
 	a.cur().Req.URL = "http://beta.edited"
 	a.saveWorkspace()
 	a.waitWrites()
-	if got, err := store.Load(betaDir); err != nil || got.Requests[0].URL != "http://beta.edited" {
+	if got, err := storeDisk.Load(betaDir); err != nil || got.Requests[0].URL != "http://beta.edited" {
 		t.Fatalf("Beta on disk: %+v %v", got.Requests, err)
 	}
-	if got, err := store.Load(alphaDir); err != nil || got.Requests[0].URL != "http://{{host}}/Alpha" {
+	if got, err := storeDisk.Load(alphaDir); err != nil || got.Requests[0].URL != "http://{{host}}/Alpha" {
 		t.Fatalf("Alpha on disk: %+v %v", got.Requests, err)
 	}
 }
@@ -117,11 +115,11 @@ func TestEachCollectionIsSavedToItsOwnFolderAfterAPause(t *testing.T) {
 	now = now.Add(2 * time.Second)
 	a.step(core.Input{})
 	a.waitWrites()
-	alpha, err := store.Load(alphaDir)
+	alpha, err := storeDisk.Load(alphaDir)
 	if err != nil || alpha.Requests[0].Name != "Alpha renamed" || alpha.Folders[0].Name != "Nested" {
 		t.Fatalf("Alpha on disk: %+v %v", alpha, err)
 	}
-	beta, err := store.Load(betaDir)
+	beta, err := storeDisk.Load(betaDir)
 	if err != nil || beta.Folders[0].Name != "Beta folder" || beta.Requests[0].Name != "Beta call" {
 		t.Fatalf("Beta on disk: %+v %v", beta, err)
 	}
@@ -205,7 +203,7 @@ func TestClosingACollectionClosesItsTabsAndTheLastLeavesAnEmptyTree(t *testing.T
 		t.Fatalf("open %d, rows %d, title %q", len(a.open.Entries), len(a.visibleRows()), a.Title())
 	}
 	a.step(core.Input{}) // the window still draws with nothing open
-	st, err := settingsfile.Load(a.settingsPath)
+	st, err := settingsDisk.Load(a.settingsPath)
 	if err != nil || len(st.Collections) != 0 || st.Workspace != "" {
 		t.Fatalf("remembered %+v %q %v", st.Collections, st.Workspace, err)
 	}
@@ -282,7 +280,7 @@ func TestTheSingleSavedCollectionOfAnOlderVersionStillOpens(t *testing.T) {
 	settingsPath := filepath.Join(t.TempDir(), "settings.json")
 	old := settings.Default()
 	old.Workspace, old.Environment = dir, "Dev"
-	if err := settingsfile.Save(settingsPath, old); err != nil {
+	if err := settingsDisk.Save(settingsPath, old); err != nil {
 		t.Fatal(err)
 	}
 	statePath := filepath.Join(t.TempDir(), "state.json")
@@ -301,7 +299,7 @@ func TestTheSingleSavedCollectionOfAnOlderVersionStillOpens(t *testing.T) {
 	}
 	a.selectEnv(-1)
 	a.selectEnv(0)
-	st, err := settingsfile.Load(settingsPath)
+	st, err := settingsDisk.Load(settingsPath)
 	if err != nil || st.Workspace != "" || st.Environment != "" || len(st.Collections) != 1 || st.Collections[0] != (settings.OpenCollection{Folder: dir, Environment: "Dev"}) {
 		t.Fatalf("written %+v %v", st, err)
 	}

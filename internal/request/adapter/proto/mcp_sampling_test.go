@@ -3,6 +3,7 @@ package proto
 import (
 	"context"
 	"encoding/json"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -79,10 +80,10 @@ func (server *samplingServer) waitForAnswer(t *testing.T) map[string]any {
 
 func TestMCPSamplingPutsTheServersRequestToTheSamplerAndSendsItsText(t *testing.T) {
 	server := newSamplingServer(t)
-	var asked SamplingRequest
-	sampler := func(_ context.Context, request SamplingRequest) (SamplingResult, bool) {
+	var asked port.SamplingRequest
+	sampler := func(_ context.Context, request port.SamplingRequest) (port.SamplingResult, bool) {
 		asked = request
-		return SamplingResult{Text: "Hello!", Model: "the user"}, true
+		return port.SamplingResult{Text: "Hello!", Model: "the user"}, true
 	}
 	session, err := MCP{Sampler: sampler}.Connect(context.Background(), model.Request{URL: server.url})
 	if err != nil {
@@ -100,7 +101,7 @@ func TestMCPSamplingPutsTheServersRequestToTheSamplerAndSendsItsText(t *testing.
 		t.Errorf("stopReason = %v", result["stopReason"])
 	}
 	if asked.SystemPrompt != "Be brief" || asked.MaxTokens != 50 || len(asked.Messages) != 2 ||
-		asked.Messages[0] != (SamplingMessage{Role: "user", Text: "Say hi"}) || asked.Messages[1].Role != "assistant" {
+		asked.Messages[0] != (port.SamplingMessage{Role: "user", Text: "Say hi"}) || asked.Messages[1].Role != "assistant" {
 		t.Errorf("the sampler was given %+v", asked)
 	}
 	server.mu.Lock()
@@ -112,7 +113,9 @@ func TestMCPSamplingPutsTheServersRequestToTheSamplerAndSendsItsText(t *testing.
 
 func TestMCPDecliningASamplingRequestAnswersWithAnError(t *testing.T) {
 	server := newSamplingServer(t)
-	sampler := func(context.Context, SamplingRequest) (SamplingResult, bool) { return SamplingResult{}, false }
+	sampler := func(context.Context, port.SamplingRequest) (port.SamplingResult, bool) {
+		return port.SamplingResult{}, false
+	}
 	session, err := MCP{Sampler: sampler}.Connect(context.Background(), model.Request{URL: server.url})
 	if err != nil {
 		t.Fatal(err)
