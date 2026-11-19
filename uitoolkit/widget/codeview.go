@@ -64,19 +64,7 @@ var noReveal = textPos{line: -1}
 // wrapWidth is the room in pixels for the text of a row, 0 when the view
 // does not wrap.
 func (v *CodeView) wrapWidth(geometry codeGeometry, rect core.Rect) float64 {
-	return widthFor(v.Wrap, geometry, rect)
-}
-
-// widthFor is wrapWidth for a view that does or does not wrap.
-func widthFor(wrap bool, geometry codeGeometry, rect core.Rect) float64 {
-	if !wrap {
-		return 0
-	}
-	// The vertical bar is assumed present, so the rows do not change when
-	// wrapping makes the content long enough to need it. At least one pixel,
-	// since a width of 0 would mean no wrap.
-	room := rect.W - scrollbarW - (geometry.textX - rect.X) - core.Gutter
-	return float64(max(room, 1))
+	return geometry.wrapWidth(v.Wrap, rect)
 }
 
 // layout is the visual rows of the visible lines. A folded line is one row
@@ -104,12 +92,9 @@ func (v *CodeView) keepTopLine(geometry codeGeometry, rect core.Rect) {
 	if v.Wrap == v.laidWrap {
 		return
 	}
-	before := v.layoutAt(widthFor(v.laidWrap, geometry, rect), geometry)
-	top := before.rowStart(v.ScrollY / geometry.lineH)
+	before := v.layoutAt(geometry.wrapWidth(v.laidWrap, rect), geometry)
 	v.laidWrap = v.Wrap
-	if row := v.layout(geometry, rect).rowOf(top); row >= 0 {
-		v.ScrollY = row * geometry.lineH
-	}
+	v.ScrollY = geometry.keepTop(v.ScrollY, before, v.layout(geometry, rect))
 }
 
 // cutSpans is the part of spans from rune from to rune to.
@@ -323,20 +308,12 @@ const foldColW = 18
 
 // codeGeometry is the pixel layout of a CodeView in r.
 type codeGeometry struct {
-	lineH, charW, numW, textX int
-	adv                       float64 // the exact advance of one character
+	monoGrid
+	numW int
 }
 
-// colX is the pixel offset of column col from the start of the text, by the
-// exact advance, so the caret, selection and matches line up with the text
-// however long the line.
-func (g codeGeometry) colX(col int) int { return int(float64(col)*g.adv + 0.5) }
-
-// colAt is the column nearest to offset x from the start of the text.
-func (g codeGeometry) colAt(posX int) int { return int((float64(posX) + g.adv/2) / g.adv) }
-
 func (v *CodeView) geometry(ctx *core.Ctx, rect core.Rect) codeGeometry {
-	g := codeGeometry{lineH: ctx.LineH(ctx.F.Mono) + 4, charW: ctx.Width(ctx.F.Mono, "0"), adv: ctx.Advance(ctx.F.Mono)}
+	g := codeGeometry{monoGrid: newMonoGrid(ctx)}
 	g.numW = g.charW * v.numberDigits()
 	g.textX = rect.X + core.Gutter + g.numW + foldColW + 8
 	return g
@@ -437,9 +414,9 @@ func (v *CodeView) updatePointer(ctx *core.Ctx, rect core.Rect, geometry codeGeo
 	}
 	if in.Wheel != 0 {
 		if in.Shift {
-			v.ScrollX = clampScroll(v.ScrollX+int(-in.Wheel*float64(geometry.charW)*6), v.contentWidth(ctx, rect), sizes.viewW)
+			v.ScrollX = clampScroll(v.ScrollX+geometry.wheelDX(in.Wheel), v.contentWidth(ctx, rect), sizes.viewW)
 		} else {
-			v.ScrollBy(int(-in.Wheel*float64(geometry.lineH)*3), rowCount*geometry.lineH, sizes.viewH)
+			v.ScrollBy(geometry.wheelDY(in.Wheel), rowCount*geometry.lineH, sizes.viewH)
 		}
 		ctx.In.Wheel = 0 // consumed, so an enclosing scroller does not move too
 	}
@@ -519,16 +496,7 @@ func (v *CodeView) Draw(ctx *core.Ctx, dst *ebiten.Image, rect core.Rect) {
 		if row.from > 0 || row.to < v.lineLen(idx) {
 			spans = cutSpans(spans, row.from, row.to)
 		}
-		col := 0 // spans are placed by column, so rounding does not add up along the line
-		for _, sp := range spans {
-			spanX, spanCols := g.textX-v.ScrollX+g.colX(col), len([]rune(sp.Text))
-			if sp.Icon != "" {
-				drawIconAt(ctx, text, sp.Icon, core.Rect{X: spanX, Y: cell.Y, W: g.colX(col+spanCols) - g.colX(col), H: cell.H}, sp.Style)
-			} else {
-				ctx.TextMid(text, ctx.F.Mono, sp.Text, spanX, cell, ctx.Color(sp.Style))
-			}
-			col += spanCols
-		}
+		g.drawSpans(ctx, text, v.ScrollX, cell, spans)
 
 		if row.from > 0 { // a continuation row has no number and no fold arrow
 			continue
@@ -580,9 +548,7 @@ func (v *CodeView) drawSelection(ctx *core.Ctx, dst *ebiten.Image, geometry code
 	if to < from {
 		return
 	}
-	x0 := geometry.textX - v.ScrollX + geometry.colX(from-row.from)
-	x1 := geometry.textX - v.ScrollX + geometry.colX(to-row.from)
-	ctx.Fill(dst, core.Rect{X: x0, Y: cell.Y, W: max(x1-x0, 0), H: cell.H}, ctx.Color(core.Selection))
+	ctx.Fill(dst, geometry.selectionRect(v.ScrollX, from-row.from, to-row.from, cell.Y, cell.H), ctx.Color(core.Selection))
 }
 
 // Match is one search hit: an original line, a rune column and a length.

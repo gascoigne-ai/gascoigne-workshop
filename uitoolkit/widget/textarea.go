@@ -41,17 +41,16 @@ func NewTextArea(text string) TextArea {
 
 // areaGeometry is the pixel layout of an area in r.
 type areaGeometry struct {
-	lineH, charW, textX int
-	adv                 float64 // the exact advance of one character
-	lines               []string
-	starts              []int // rune offset of each line
-	longest             int   // runes in the longest line
-	wrapped             bool
-	layout              wrapLayout // the visual rows of the lines
+	monoGrid
+	lines   []string
+	starts  []int // rune offset of each line
+	longest int   // runes in the longest line
+	wrapped bool
+	layout  wrapLayout // the visual rows of the lines
 }
 
 func (a *TextArea) geometry(ctx *core.Ctx, rect core.Rect) areaGeometry {
-	g := areaGeometry{lineH: ctx.LineH(ctx.F.Mono) + 4, charW: ctx.Width(ctx.F.Mono, "0"), adv: ctx.Advance(ctx.F.Mono)}
+	g := areaGeometry{monoGrid: newMonoGrid(ctx)}
 	g.lines = strings.Split(a.Text, "\n")
 	off := 0
 	for _, l := range g.lines {
@@ -79,18 +78,7 @@ func areaLayout(wrap bool, geometry areaGeometry, rect core.Rect) wrapLayout {
 	for i, text := range geometry.lines {
 		lines[i] = wrapLine{line: i, text: []rune(text)}
 	}
-	return layoutWrap(lines, areaWrapWidth(wrap, geometry, rect), func(rune) float64 { return geometry.adv })
-}
-
-// areaWrapWidth is the room in pixels for the text of a row, 0 for an
-// editor that does not wrap. The vertical bar is assumed present, so the
-// rows do not change when wrapping makes it appear; at least one pixel,
-// since 0 would mean no wrap.
-func areaWrapWidth(wrap bool, geometry areaGeometry, rect core.Rect) float64 {
-	if !wrap {
-		return 0
-	}
-	return float64(max(rect.W-scrollbarW-(geometry.textX-rect.X)-core.Gutter, 1))
+	return layoutWrap(lines, geometry.wrapWidth(wrap, rect), func(rune) float64 { return geometry.adv })
 }
 
 // contentW is the width of the widest line plus the gutter; wrapped text
@@ -102,13 +90,8 @@ func (g areaGeometry) contentW(rect core.Rect) int {
 	return g.textX - rect.X + g.colX(g.longest) + core.Gutter
 }
 
-// colX is the pixel offset of the start of column col from the start of the
-// text, by the exact advance.
-func (g areaGeometry) colX(col int) int { return int(float64(col)*g.adv + 0.5) }
-
-// colAt is the column whose cell contains offset x from the start of the
-// text (the nearest boundary), never negative.
-func (g areaGeometry) colAt(posX int) int { return max(int((float64(posX)+g.adv/2)/g.adv), 0) }
+// colAt is monoGrid.colAt, never negative.
+func (g areaGeometry) colAt(posX int) int { return max(g.monoGrid.colAt(posX), 0) }
 
 func (g areaGeometry) contentH() int { return len(g.layout.rows) * g.lineH }
 
@@ -133,11 +116,9 @@ func (a *TextArea) keepTopLine(geometry areaGeometry, rect core.Rect) {
 	if a.Wrap == a.laidWrap {
 		return
 	}
-	top := areaLayout(a.laidWrap, geometry, rect).rowStart(a.ScrollY / geometry.lineH)
+	before := areaLayout(a.laidWrap, geometry, rect)
 	a.laidWrap = a.Wrap
-	if row := geometry.layout.rowOf(top); row >= 0 {
-		a.ScrollY = row * geometry.lineH
-	}
+	a.ScrollY = geometry.keepTop(a.ScrollY, before, geometry.layout)
 }
 
 // Update handles the pointer and, while focused, the keyboard inside r.
@@ -185,9 +166,9 @@ func (a *TextArea) updatePointer(ctx *core.Ctx, rect core.Rect, geometry areaGeo
 	}
 	if over && in.Wheel != 0 {
 		if in.Shift {
-			a.ScrollX = clampScroll(a.ScrollX+int(-in.Wheel*float64(geometry.charW)*6), geometry.contentW(core.Rect{W: sizes.viewW}), sizes.viewW)
+			a.ScrollX = clampScroll(a.ScrollX+geometry.wheelDX(in.Wheel), geometry.contentW(core.Rect{W: sizes.viewW}), sizes.viewW)
 		} else {
-			a.ScrollY = clampScroll(a.ScrollY+int(-in.Wheel*float64(geometry.lineH)*3), geometry.contentH(), sizes.viewH)
+			a.ScrollY = clampScroll(a.ScrollY+geometry.wheelDY(in.Wheel), geometry.contentH(), sizes.viewH)
 		}
 		ctx.In.Wheel = 0 // consumed, so an enclosing scroller does not move too
 	}
@@ -365,9 +346,7 @@ func (a *TextArea) drawSelection(ctx *core.Ctx, dst *ebiten.Image, geometry area
 		return
 	}
 	from, to := max(lo, start)-start, min(hi, end)-start
-	x0 := geometry.textX - a.ScrollX + geometry.colX(from)
-	x1 := geometry.textX - a.ScrollX + geometry.colX(to)
-	ctx.Fill(dst, core.Rect{X: x0, Y: posY, W: max(x1-x0, 0), H: geometry.lineH}, ctx.Color(core.Selection))
+	ctx.Fill(dst, geometry.selectionRect(a.ScrollX, from, to, posY, geometry.lineH), ctx.Color(core.Selection))
 }
 
 // CaretAt is where the caret is on screen as of the last Update: the left

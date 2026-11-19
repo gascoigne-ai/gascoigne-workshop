@@ -1047,7 +1047,7 @@ that change `App`.
   clipboard keys restart the phase so the caret is solid while editing; a moving pointer does not.
   The 10 FPS drawing floor (`engine.MinFPS`) guarantees a frame at least every 100 ms, so a phase
   change is drawn within that.
--  **Monospace columns** (`core.Ctx.Advance`, `codeGeometry.colX/colAt`, `areaGeometry.colX/colAt`):
+-  **Monospace columns** (`core.Ctx.Advance`, `monoGrid.colX/colAt`, shared by `codeGeometry` and `areaGeometry`):
   the code view and the text area place column `n` at `round(n * advance)` with the exact advance of
   one character, and draw each span at the column it starts in. `Width` is rounded to whole pixels,
   so `n * Width("0")` would let the caret, selection, matches and clicks drift a fraction of a pixel
