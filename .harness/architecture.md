@@ -1370,7 +1370,10 @@ that change `App`.
   instructions); the log does not show that event; a result that is not an object is noted as an
   Info `error` event and the session goes on without server info. A reply to a request the server
   sent (ping, `roots/list`, sampling) that cannot be written is an Info `error` event naming the
-  method, since the server waits for it. `port.Requester` (an MCP session implements it) sends a
+  method, since the server waits for it. The messages the client writes are structs
+  (`mcprpc.go`: `rpcRequest`, `rpcReply`, `rpcError`, `initializeParams`) with named error codes
+  (`rpcMethodNotFound`, `rpcInvalidParams`, `rpcRejected`), and their JSON keys are in
+  alphabetical order, as the maps they replaced marshaled; a test pins the bytes. `port.Requester` (an MCP session implements it) sends a
   command like the composer does and returns the answer: the result JSON, or the server's error
   message.
 -  **MCP pickers** (`internal/request/model/mcpschema.go`, `internal/workspace/ui/app/wsui.go`):

@@ -57,10 +57,7 @@ type rpcMessage struct {
 	Method string           `json:"method"`
 	Params json.RawMessage  `json:"params"`
 	Result json.RawMessage  `json:"result"`
-	Error  *struct {
-		Code    int    `json:"code"`
-		Message string `json:"message"`
-	} `json:"error"`
+	Error  *rpcError        `json:"error"`
 }
 
 // listChanged maps the notifications that say a list changed to the
@@ -132,11 +129,7 @@ func (s *mcpSession) build(method string, params any) (int64, []byte, error) {
 	s.nextID++
 	id := s.nextID
 	s.mu.Unlock()
-	msg := map[string]any{"jsonrpc": "2.0", "id": id, "method": method}
-	if params != nil {
-		msg["params"] = params
-	}
-	b, err := json.Marshal(msg)
+	b, err := json.Marshal(rpcRequest{ID: &id, JSONRPC: rpcVersion, Method: method, Params: params})
 	return id, b, err
 }
 
@@ -166,7 +159,10 @@ func (s *mcpSession) request(ctx context.Context, method string, params any) (in
 }
 
 func (s *mcpSession) notify(method string) error {
-	b, _ := json.Marshal(map[string]any{"jsonrpc": "2.0", "method": method})
+	b, err := json.Marshal(rpcRequest{JSONRPC: rpcVersion, Method: method})
+	if err != nil {
+		return err
+	}
 	return s.write(context.Background(), port.KindNotification, b)
 }
 

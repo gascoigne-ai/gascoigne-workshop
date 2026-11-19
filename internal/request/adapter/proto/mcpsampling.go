@@ -10,10 +10,10 @@ import (
 // sampleRejected is the answer to a sampling request that was declined.
 const sampleRejected = "User rejected sampling request"
 
-// sample puts a sampling request to the Sampler and fills reply with its
-// answer: a text message, or an error when the request is declined or
-// cannot be read.
-func (s *mcpSession) sample(message rpcMessage, reply map[string]any) {
+// sample puts a sampling request to the Sampler and answers with its
+// text message, or with an error when the request is declined or cannot
+// be read.
+func (s *mcpSession) sample(message rpcMessage) rpcReply {
 	var params struct {
 		Messages []struct {
 			Role    string `json:"role"`
@@ -26,8 +26,7 @@ func (s *mcpSession) sample(message rpcMessage, reply map[string]any) {
 		MaxTokens    int    `json:"maxTokens"`
 	}
 	if err := json.Unmarshal(message.Params, &params); err != nil {
-		reply["error"] = map[string]any{"code": -32602, "message": "invalid sampling request: " + err.Error()}
-		return
+		return errorReply(*message.ID, rpcInvalidParams, "invalid sampling request: "+err.Error())
 	}
 	request := port.SamplingRequest{SystemPrompt: params.SystemPrompt, MaxTokens: params.MaxTokens}
 	for _, message := range params.Messages {
@@ -48,11 +47,10 @@ func (s *mcpSession) sample(message rpcMessage, reply map[string]any) {
 	}()
 	result, ok := s.sampler(ctx, request)
 	if !ok {
-		reply["error"] = map[string]any{"code": -1, "message": sampleRejected}
-		return
+		return errorReply(*message.ID, rpcRejected, sampleRejected)
 	}
-	reply["result"] = map[string]any{
-		"role": "assistant", "content": map[string]any{"type": "text", "text": result.Text},
-		"model": result.Model, "stopReason": "endTurn",
-	}
+	return resultReply(*message.ID, samplingResult{
+		Content: samplingContent{Type: "text", Text: result.Text},
+		Model:   result.Model, Role: "assistant", StopReason: "endTurn",
+	})
 }

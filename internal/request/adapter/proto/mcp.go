@@ -45,6 +45,15 @@ type mcpTransport interface {
 // initialize handshake and asks for the server's tools, resources and
 // prompts. Everything is logged as events.
 func (m MCP) Connect(ctx context.Context, req model.Request) (port.Session, error) {
+	s, err := m.connect(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
+// connect is Connect with the concrete session, which Send needs.
+func (m MCP) connect(ctx context.Context, req model.Request) (*mcpSession, error) {
 	s := &mcpSession{eventLog: newEventLog(), sampler: m.Sampler, waiters: map[int64]chan rpcAnswer{}}
 	tr, err := openTransport(req, m.Network, s)
 	if err != nil {
@@ -85,8 +94,8 @@ func openTransport(req model.Request, network Network, s *mcpSession) (mcpTransp
 
 // mcpInitResult is what the server answers to initialize.
 type mcpInitResult struct {
-	ProtocolVersion string         `json:"protocolVersion"`
-	Capabilities    map[string]any `json:"capabilities"`
+	ProtocolVersion string                     `json:"protocolVersion"`
+	Capabilities    map[string]json.RawMessage `json:"capabilities"`
 	ServerInfo      struct{ Name, Version string }
 }
 
@@ -95,15 +104,11 @@ type mcpInitResult struct {
 func (m MCP) initialize(ctx context.Context, s *mcpSession) (mcpInitResult, error) {
 	ictx, cancel := context.WithTimeout(ctx, mcpInitTimeout)
 	defer cancel()
-	capabilities := map[string]any{}
+	params := initializeParams{ProtocolVersion: mcpVersion, ClientInfo: clientInfo{Name: "gascoigne-workshop", Version: "0"}}
 	if m.Sampler != nil {
-		capabilities["sampling"] = map[string]any{}
+		params.Capabilities.Sampling = &struct{}{}
 	}
-	result, err := s.call(ictx, "initialize", map[string]any{
-		"protocolVersion": mcpVersion,
-		"capabilities":    capabilities,
-		"clientInfo":      map[string]any{"name": "gascoigne-workshop", "version": "0"},
-	})
+	result, err := s.call(ictx, "initialize", params)
 	if err != nil {
 		return mcpInitResult{}, err
 	}
@@ -116,7 +121,7 @@ func (m MCP) initialize(ctx context.Context, s *mcpSession) (mcpInitResult, erro
 }
 
 // requestLists asks for the lists the server's capabilities announce.
-func (s *mcpSession) requestLists(capabilities map[string]any) {
+func (s *mcpSession) requestLists(capabilities map[string]json.RawMessage) {
 	for _, list := range []struct{ capability, method string }{
 		{"tools", "tools/list"}, {"resources", "resources/list"}, {"prompts", "prompts/list"},
 	} {
@@ -132,11 +137,10 @@ func (s *mcpSession) requestLists(capabilities map[string]any) {
 // tools and return that answer as the body.
 func (m MCP) Send(ctx context.Context, req model.Request) (model.Response, error) {
 	start := time.Now()
-	sess, err := m.Connect(ctx, req)
+	s, err := m.connect(ctx, req)
 	if err != nil {
 		return model.Response{Err: stopReason(ctx, err), Duration: time.Since(start)}, nil
 	}
-	s := sess.(*mcpSession)
 	defer s.Close(context.WithoutCancel(ctx))
 	result, err := s.call(ctx, "tools/list", nil)
 	if err != nil {
