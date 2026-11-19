@@ -30,7 +30,7 @@ func TestAnSSEEventNamedInitializeIsLogged(t *testing.T) {
 
 	before := len(tab.wsView.Lines)
 	result := `{"protocolVersion":"2025-06-18","serverInfo":{"name":"mock","version":"1"}}`
-	a.applyWS(wsEvent{tab: tab, hasEv: true, ev: reqport.Event{Dir: reqport.Info, Kind: reqport.KindInitialize, Text: result}})
+	a.applyWS(wsReceived{wsTarget{tab: tab}, reqport.Event{Dir: reqport.Info, Kind: reqport.KindInitialize, Text: result}})
 	if len(tab.wsView.Lines) != before {
 		t.Errorf("the MCP initialize note was logged")
 	}

@@ -6,14 +6,15 @@ import (
 )
 
 // Connection is the state of a tab that keeps a connection open (WebSocket,
-// SSE, MCP): whether it is wanted, being made or up, and what the server
-// announced over it.
+// SSE, MCP): where it is in its life (ConnState), and what the server
+// announced over it. Its state and session are private: they move only
+// through the events below, by the table in connstate.go. The session is
+// there exactly while the connection is open or closing.
 type Connection struct {
-	Session     port.Session // the open connection, nil when there is none
-	Connecting  bool         // a connect is in progress
+	state       ConnState
+	session     port.Session // the open connection, nil unless open or closing
 	Gen         int          // numbers the connects, so a late answer of an old one is ignored
-	WantOpen    bool         // the user wants the connection open, so a drop is retried
-	Reconnect   bool         // reopen a dropped connection
+	Reconnect   bool         // reopen a dropped connection; the user's policy, read when one drops
 	LastEventID string       // the last id an SSE stream sent, offered again when it reconnects
 
 	Resources []model.MCPResource // the resources an MCP server announced
@@ -22,63 +23,91 @@ type Connection struct {
 	Server    *model.MCPServer    // what an MCP server said about itself, nil before it did
 }
 
-// Active reports whether the connection is up, being made or wanted, so the
-// next click on its button disconnects instead of connecting.
-func (conn *Connection) Active() bool { return conn.Session != nil || conn.Connecting || conn.WantOpen }
+// State is where the connection is in its life.
+func (conn *Connection) State() ConnState { return conn.state }
 
-// Begin starts a connect and returns its number.
-func (conn *Connection) Begin() int {
-	conn.WantOpen = true
+// Session is the open connection, nil when there is none.
+func (conn *Connection) Session() port.Session { return conn.session }
+
+// Active reports whether the connection is up, being made or due to be
+// retried, so the next click on its button disconnects instead of connecting.
+func (conn *Connection) Active() bool { return conn.state != ConnIdle }
+
+// Retrying reports whether a dropped connection waits to be reopened.
+func (conn *Connection) Retrying() bool { return conn.state == ConnRetrying }
+
+// step moves the connection by event and reports whether the table allows
+// it; a refused event changes nothing. A drop that the tab does not want
+// retried ends idle.
+func (conn *Connection) step(event connEvent) bool {
+	to, ok := transition(conn.state, event)
+	if !ok {
+		return false
+	}
+	if to == ConnRetrying && !conn.Reconnect {
+		to = ConnIdle
+	}
+	conn.state = to
+	if to != ConnOpen && to != ConnClosing {
+		conn.session = nil
+	}
+	return true
+}
+
+// Begin starts a connect and returns its number. It is refused while the
+// connection is open or closing.
+func (conn *Connection) Begin() (gen int, ok bool) {
+	if !conn.step(connBegin) {
+		return 0, false
+	}
 	conn.Gen++
-	conn.Connecting = true
-	return conn.Gen
+	return conn.Gen, true
 }
 
 // Current reports whether gen is the latest connect; an answer of an older
 // one is dropped.
 func (conn *Connection) Current(gen int) bool { return gen == conn.Gen }
 
-// Opened records the session a connect produced.
-func (conn *Connection) Opened(session port.Session) {
-	conn.Session, conn.Connecting = session, false
+// Opened records the session a connect produced. It reports false, and the
+// caller closes the session, when no connect was in progress.
+func (conn *Connection) Opened(session port.Session) bool {
+	if !conn.step(connOpened) {
+		return false
+	}
+	conn.session = session
+	return true
 }
 
 // Failed records that a connect did not succeed. Without a reconnect asked
 // for the connection is no longer wanted, so the tab offers Connect again
 // instead of a Disconnect that closes nothing.
-func (conn *Connection) Failed() {
-	conn.Connecting = false
-	if !conn.Reconnect {
-		conn.WantOpen = false
-	}
-}
+func (conn *Connection) Failed() bool { return conn.step(connFailed) }
 
 // Closed records that the session ended: nothing is open and what the
-// server announced no longer holds. Without a reconnect asked for, the
-// connection is no longer wanted, as in Failed.
-func (conn *Connection) Closed() {
-	conn.Session, conn.Connecting = nil, false
-	if !conn.Reconnect {
-		conn.WantOpen = false
+// server announced no longer holds. Without a reconnect asked for, or after
+// a Disconnect, the connection is no longer wanted, as in Failed.
+func (conn *Connection) Closed() bool {
+	if !conn.step(connClosed) {
+		return false
 	}
 	conn.Tools, conn.Resources, conn.Prompts, conn.Server = nil, nil, nil, nil
+	return true
 }
 
 // Disconnect records that the user no longer wants the connection. It
 // returns the open session, which the caller closes, or reports that a
 // connect in progress was abandoned, whose answer is dropped from now on.
 func (conn *Connection) Disconnect() (session port.Session, abandoned bool) {
-	conn.WantOpen = false
 	conn.LastEventID = "" // a deliberate disconnect starts the stream over next time
-	if conn.Session != nil {
-		return conn.Session, false
+	wasConnecting := conn.state == ConnConnecting
+	session = conn.session
+	if !conn.step(connDisconnect) {
+		return nil, false
 	}
-	if conn.Connecting {
+	if wasConnecting {
 		conn.Gen++
-		conn.Connecting = false
-		return nil, true
 	}
-	return nil, false
+	return session, wasConnecting
 }
 
 // Received takes what a received event announces: the server's own
@@ -106,12 +135,3 @@ func (conn *Connection) Received(event port.Event) {
 		conn.Prompts = prompts
 	}
 }
-
-// CanRetry reports whether a retry should open the connection now: the user
-// still wants it and nothing is open or being made.
-func (conn *Connection) CanRetry() bool {
-	return conn.WantOpen && conn.Session == nil && !conn.Connecting
-}
-
-// RetryWanted reports whether a dropped connection is to be reopened.
-func (conn *Connection) RetryWanted() bool { return conn.Reconnect && conn.WantOpen }

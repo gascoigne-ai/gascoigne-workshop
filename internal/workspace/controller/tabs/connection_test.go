@@ -20,9 +20,9 @@ func TestBeginMakesTheConnectionWantedAndNumbersIt(t *testing.T) {
 	if conn.Active() {
 		t.Fatal("a new connection is not active")
 	}
-	first := conn.Begin()
-	second := conn.Begin()
-	if !conn.Active() || !conn.Connecting || !conn.WantOpen || second != first+1 {
+	first, _ := conn.Begin()
+	second, ok := conn.Begin()
+	if !conn.Active() || conn.State() != ConnConnecting || !ok || second != first+1 {
 		t.Fatalf("conn %+v first %d second %d", conn, first, second)
 	}
 	if !conn.Current(second) || conn.Current(first) {
@@ -32,10 +32,10 @@ func TestBeginMakesTheConnectionWantedAndNumbersIt(t *testing.T) {
 
 func TestDisconnectAbandonsAConnectInProgressAndDropsItsAnswer(t *testing.T) {
 	var conn Connection
-	gen := conn.Begin()
+	gen, _ := conn.Begin()
 	conn.LastEventID = "7"
 	session, abandoned := conn.Disconnect()
-	if session != nil || !abandoned || conn.Connecting || conn.WantOpen || conn.LastEventID != "" {
+	if session != nil || !abandoned || conn.State() != ConnIdle || conn.Active() || conn.LastEventID != "" {
 		t.Fatalf("session %v abandoned %v conn %+v", session, abandoned, conn)
 	}
 	if conn.Current(gen) {
@@ -70,7 +70,7 @@ func TestFailedConnectIsNotActiveUnlessAReconnectIsAsked(t *testing.T) {
 			conn := Connection{Reconnect: test.reconnect}
 			conn.Begin()
 			conn.Failed()
-			if conn.Connecting || conn.Active() != test.active {
+			if conn.State() == ConnConnecting || conn.Active() != test.active {
 				t.Fatalf("conn %+v Active = %v, want %v", conn, conn.Active(), test.active)
 			}
 		})
@@ -85,21 +85,21 @@ func TestClosedClearsTheSessionAndWhatTheServerAnnounced(t *testing.T) {
 	conn.Resources = []model.MCPResource{{Name: "r"}}
 	conn.Prompts = []model.MCPPrompt{{Name: "p"}}
 	conn.Closed()
-	if conn.Session != nil || conn.Connecting || conn.Tools != nil || conn.Resources != nil || conn.Prompts != nil {
+	if conn.Session() != nil || conn.State() == ConnConnecting || conn.Tools != nil || conn.Resources != nil || conn.Prompts != nil {
 		t.Fatalf("conn %+v", conn)
 	}
 }
 
 // Regression: after the server closed an open session with reconnect off,
-// WantOpen stayed set, so Active() was true, the URL bar read "Disconnect"
-// with nothing open and CanRetry() offered a retry nobody asked for.
+// the connection stayed wanted, so the button read Disconnect and a retry
+// was offered although nothing asked for one.
 func TestClosedByTheServerWithoutReconnectEndsInactive(t *testing.T) {
 	var conn Connection
 	conn.Begin()
 	conn.Opened(&fakeSession{})
 	conn.Closed()
-	if conn.Active() || conn.CanRetry() {
-		t.Fatalf("Active = %v, CanRetry = %v, want both false: %+v", conn.Active(), conn.CanRetry(), conn)
+	if conn.Active() || conn.Retrying() {
+		t.Fatalf("Active = %v, Retrying = %v, want both false: %+v", conn.Active(), conn.Retrying(), conn)
 	}
 }
 
@@ -108,7 +108,7 @@ func TestClosedWithReconnectKeepsTheRetryPending(t *testing.T) {
 	conn.Begin()
 	conn.Opened(&fakeSession{})
 	conn.Closed()
-	if !conn.Active() || !conn.CanRetry() {
+	if !conn.Active() || !conn.Retrying() {
 		t.Fatalf("conn %+v", conn)
 	}
 }
@@ -125,30 +125,139 @@ func TestReceivedRemembersTheEventIDOfAReceivedEventOnly(t *testing.T) {
 	}
 }
 
-func TestRetryNeedsAWantedConnectionThatIsDown(t *testing.T) {
+func TestRetryingIsTheDroppedConnectionTheUserStillWants(t *testing.T) {
 	tests := []struct {
 		name  string
 		setup func(*Connection)
 		retry bool
-		due   bool
 	}{
-		{"closed by the server and wanted", func(conn *Connection) { conn.Reconnect = true; conn.WantOpen = true }, true, true},
-		// Changed: a server close with reconnect off now clears WantOpen, so CanRetry is false (was true, the bug).
-		{"reconnect is off", func(conn *Connection) { conn.Begin(); conn.Opened(&fakeSession{}); conn.Closed() }, false, false},
-		{"the user disconnected", func(conn *Connection) { conn.Reconnect = true }, false, false},
-		{"already connected again", func(conn *Connection) { conn.Reconnect, conn.WantOpen, conn.Session = true, true, &fakeSession{} }, false, true},
+		{"closed by the server and reconnect on", func(conn *Connection) {
+			conn.Reconnect = true
+			conn.Begin()
+			conn.Opened(&fakeSession{})
+			conn.Closed()
+		}, true},
+		{"reconnect is off", func(conn *Connection) { conn.Begin(); conn.Opened(&fakeSession{}); conn.Closed() }, false},
+		{"the user disconnected while retrying", func(conn *Connection) {
+			conn.Reconnect = true
+			conn.Begin()
+			conn.Failed()
+			conn.Disconnect()
+		}, false},
+		{"already connecting again", func(conn *Connection) {
+			conn.Reconnect = true
+			conn.Begin()
+			conn.Failed()
+			conn.Begin()
+		}, false},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			var conn Connection
 			test.setup(&conn)
-			if got := conn.CanRetry(); got != test.retry {
-				t.Errorf("CanRetry = %v, want %v", got, test.retry)
-			}
-			if got := conn.RetryWanted(); got != test.due {
-				t.Errorf("RetryWanted = %v, want %v", got, test.due)
+			if got := conn.Retrying(); got != test.retry {
+				t.Errorf("Retrying = %v, want %v", got, test.retry)
 			}
 		})
+	}
+}
+
+// connIn is a connection brought to state by the events that lead there.
+func connIn(t *testing.T, state ConnState) Connection {
+	t.Helper()
+	conn := Connection{Reconnect: true}
+	steps := map[ConnState]func(){
+		ConnIdle:       func() {},
+		ConnConnecting: func() { conn.Begin() },
+		ConnOpen:       func() { conn.Begin(); conn.Opened(&fakeSession{}) },
+		ConnClosing:    func() { conn.Begin(); conn.Opened(&fakeSession{}); conn.Disconnect() },
+		ConnRetrying:   func() { conn.Begin(); conn.Failed() },
+	}
+	steps[state]()
+	if conn.State() != state {
+		t.Fatalf("setup reached %d, want %d", conn.State(), state)
+	}
+	return conn
+}
+
+func TestARefusedEventChangesNothing(t *testing.T) {
+	tests := []struct {
+		name  string
+		state ConnState
+		do    func(*Connection) bool
+	}{
+		{"Opened on idle", ConnIdle, func(conn *Connection) bool { return conn.Opened(&fakeSession{}) }},
+		{"Failed on idle", ConnIdle, func(conn *Connection) bool { return conn.Failed() }},
+		{"Closed on idle", ConnIdle, func(conn *Connection) bool { return conn.Closed() }},
+		{"Closed on connecting", ConnConnecting, func(conn *Connection) bool { return conn.Closed() }},
+		{"Begin on open", ConnOpen, func(conn *Connection) bool { _, ok := conn.Begin(); return ok }},
+		{"Opened on open", ConnOpen, func(conn *Connection) bool { return conn.Opened(&fakeSession{}) }},
+		{"Failed on open", ConnOpen, func(conn *Connection) bool { return conn.Failed() }},
+		{"Begin on closing", ConnClosing, func(conn *Connection) bool { _, ok := conn.Begin(); return ok }},
+		{"Failed on closing", ConnClosing, func(conn *Connection) bool { return conn.Failed() }},
+		{"Closed on retrying", ConnRetrying, func(conn *Connection) bool { return conn.Closed() }},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			conn := connIn(t, test.state)
+			gen, session := conn.Gen, conn.Session()
+			conn.Tools = []model.MCPTool{{Name: "t"}}
+			if test.do(&conn) {
+				t.Fatal("the event was accepted")
+			}
+			if conn.State() != test.state || conn.Gen != gen || conn.Session() != session || conn.Tools == nil {
+				t.Fatalf("state %d gen %d: conn %+v", test.state, gen, conn)
+			}
+		})
+	}
+}
+
+// The session is there exactly while the connection is open or closing.
+func TestTheSessionExistsExactlyInOpenAndClosing(t *testing.T) {
+	events := map[string]func(*Connection){
+		"begin":      func(conn *Connection) { conn.Begin() },
+		"opened":     func(conn *Connection) { conn.Opened(&fakeSession{}) },
+		"failed":     func(conn *Connection) { conn.Failed() },
+		"closed":     func(conn *Connection) { conn.Closed() },
+		"disconnect": func(conn *Connection) { conn.Disconnect() },
+	}
+	for state := ConnIdle; state < connStateCount; state++ {
+		for name, event := range events {
+			for _, reconnect := range []bool{false, true} {
+				conn := connIn(t, state)
+				conn.Reconnect = reconnect
+				event(&conn)
+				hasSession := conn.Session() != nil
+				wantSession := conn.State() == ConnOpen || conn.State() == ConnClosing
+				if hasSession != wantSession {
+					t.Errorf("%s from state %d (reconnect %v): state %d, session %v", name, state, reconnect, conn.State(), hasSession)
+				}
+			}
+		}
+	}
+}
+
+func TestADropWithoutReconnectGoesIdleNotRetrying(t *testing.T) {
+	for _, state := range []ConnState{ConnConnecting, ConnOpen} {
+		conn := connIn(t, state)
+		conn.Reconnect = false
+		if state == ConnConnecting {
+			conn.Failed()
+		} else {
+			conn.Closed()
+		}
+		if conn.State() != ConnIdle {
+			t.Errorf("from state %d: state %d, want idle", state, conn.State())
+		}
+	}
+}
+
+// A closing connection ends idle even with reconnect on: the user closed it.
+func TestAClosedConnectionTheUserEndedDoesNotRetry(t *testing.T) {
+	conn := connIn(t, ConnClosing)
+	conn.Closed()
+	if conn.State() != ConnIdle {
+		t.Fatalf("state %d", conn.State())
 	}
 }
 
@@ -158,6 +267,8 @@ func TestReceivedKeepsTheServerInfoUntilTheSessionEnds(t *testing.T) {
 	if conn.Server == nil || conn.Server.Name != "mock" {
 		t.Fatalf("Server = %+v", conn.Server)
 	}
+	conn.Begin()
+	conn.Opened(&fakeSession{})
 	conn.Closed()
 	if conn.Server != nil {
 		t.Fatalf("Server after close = %+v", conn.Server)

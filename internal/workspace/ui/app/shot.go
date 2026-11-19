@@ -13,6 +13,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/serial"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -178,12 +179,12 @@ func (s *screenshot) pendingReady(app *App) bool {
 // said who it is) or a failed one.
 func answered(tab *reqTab) bool {
 	if !isSocket(tab) {
-		return tab.Resp != nil && !tab.Sending // a tab sent again still holds its earlier response
+		return tab.Resp != nil && !tab.Sending() // a tab sent again still holds its earlier response
 	}
-	if tab.Connecting {
+	if tab.State() == tabs.ConnConnecting {
 		return false
 	}
-	if tab.Session == nil {
+	if tab.Session() == nil {
 		return len(tab.wsView.Lines) > 0 // the error is in the log
 	}
 	explores := slices.ContainsFunc(viewOf(tab.Req.Protocol).streamPanes, func(panel pane) bool { return panel.kind == paneExplorer })

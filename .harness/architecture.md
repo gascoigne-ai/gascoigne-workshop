@@ -419,7 +419,8 @@ directly.
   starts a `Cmd`, a function built on the UI goroutine with what it needs captured, on its own
   goroutine and dispatches the message it returns. One-shot send results travel this way (`dispatch`
   builds the `Cmd`, `sendResult` is the message). A connection emits many events, so its goroutine
-  dispatches each `wsEvent` itself (a `Cmd` returns one message); retries dispatch from a timer. A
+  dispatches `wsOpened` or `wsFailed`, then one `wsReceived` per event, itself and returns `wsClosed`
+  (a `Cmd` returns one message); retries dispatch a `wsRetry` from a timer. A
   dispatched `func()` runs on the UI goroutine (`App.handle`): file dialog answers, the gRPC method
   menu, MCP sampling dialogs and `settingsui.Host.Later` use it. The window has no other channel
   from goroutines to the UI; goroutines read only fields that never change after `NewApp` (the bus,
@@ -1257,9 +1258,12 @@ that change `App`.
 -  **WebSocket tabs** (`internal/workspace/ui/app/wsui.go`): a tab whose protocol keeps a connection
   (`isSocket`: `Connection` is `Always`, or `OnStream` while gRPC streams) keeps a `port.Session`.
   The URL bar button reads Connect / Disconnect (`toggleConnection`); dialing runs in a goroutine
-  and its answer, every session `Event` and the end of the stream come back through `App.wsEvents`
-  as `wsEvent`s (numbered by `reqTab.wsGen`, so an abandoned connect is ignored and its session
-  closed), applied in `drain`. The response side is the row's `streamPanes` (`responsePanesFor`),
+  and its answer, every session `Event` and the end of the stream come back as five message types,
+  `wsOpened`, `wsFailed`, `wsReceived`, `wsClosed` and `wsRetry`, each carrying one `wsTarget` (the
+  tab and its `Connection.Gen`). `App.handle` drops a message whose generation is no longer the
+  tab's (an abandoned or replaced connect) and closes the session of a stale `wsOpened`; the rest
+  go to `applyWS`, a type switch with one arm per message. A `wsOpened` the connection refuses
+  (the tab is no longer connecting) closes its session the same way. The response side is the row's `streamPanes` (`responsePanesFor`),
   for WebSocket the single `Messages` pane: a `CodeView` log with `Follow` set (pinned to the end
   while new lines arrive, paused when the user scrolls up, resumed at the end), Ping / Clear buttons
   and a composer field. The pane is the template `messagespane.vml`: Go hands it the toolbar
@@ -1268,12 +1272,45 @@ that change `App`.
   of an event stream (`composer`) and the `{ }` button outside WebSocket (`formatsJSON`); the hint
   while connected is the row's `composerHint`, "Message" when it has none. Changing the protocol
   disconnects.
--  **WebSocket auto-reconnect**: the `Auto-reconnect` chip in the Messages toolbar sets
-  `reqTab.reconnect` (per tab, not persisted). `wantOpen` records that the user wants the connection
-  (set by `connect`, cleared by `disconnect`); when the session ends or a connect fails while both
-  are set, `scheduleRetry` logs it and a timer sends a `retry` wsEvent after `retryDelay`. While
-  retrying the button reads Disconnect, which stops it. A failed connect without auto-reconnect
-  clears `wantOpen` at once, so the button returns to Connect; so does a session the server closes.
+-  **WebSocket auto-reconnect**: the connection of a tab is the machine `tabs.ConnState`
+  (`controller/tabs/connstate.go`): idle, connecting, open, closing, retrying. `Connection` keeps
+  the state and the session private (the session exists exactly in open and closing); the events
+  are `Begin`, `Opened`, `Failed`, `Closed` and `Disconnect`, and a transition table
+  `[state][event]` decides them: 12 cells are legal, the 13 others are refused and change nothing
+  (the app ignores a refused event, or closes the delivered session of a refused `Opened`). The
+  `Auto-reconnect` chip sets `Connection.Reconnect` (per tab, not persisted), read when a connect
+  fails or an open session ends: with it a move into retrying happens, without it the connection
+  goes idle at once, so the button returns to Connect. `Active` is any state but idle, so while
+  retrying the button reads Disconnect, which stops it. A session the user closed ends idle, never
+  retrying. In retrying `scheduleRetry` logs it and a timer sends a `wsRetry` after `retryDelay`,
+  which reconnects only if the tab is still retrying; the timer is not an event of the machine.
+  Structure: the access pattern is one lookup per event on a handful of states, so an array table
+  of cells (zero cell = refused); a map or a switch was rejected because the array makes the
+  refused cells visible and a test walks all 25 of them; revisit when states or events double.
+
+  ```mermaid
+  stateDiagram-v2
+    [*] --> idle
+    idle --> connecting: Begin
+    connecting --> connecting: Begin (newer connect)
+    connecting --> open: Opened
+    connecting --> retrying: Failed (Reconnect on)
+    connecting --> idle: Failed (Reconnect off)
+    connecting --> idle: Disconnect (abandoned)
+    open --> retrying: Closed (Reconnect on)
+    open --> idle: Closed (Reconnect off)
+    open --> closing: Disconnect
+    closing --> closing: Disconnect
+    closing --> idle: Closed
+    retrying --> connecting: Begin
+    retrying --> idle: Disconnect
+  ```
+-  **Sending state** (`controller/tabs/sendstate.go`): whether a request is in flight is a second,
+  separate machine, `SendState` (idle, sending) with its own table and events `BeginSend`,
+  `Accept` and `Cancel`; `Seq` numbers the sends inside it so the late result of a cancelled or
+  replaced send is dropped. It is not merged into `ConnState` because the two are independent: a
+  gRPC tab can have a unary call in flight and then switch Stream on, which one merged machine
+  would forbid (`TestASendInFlightDoesNotForbidAConnect` pins it).
 -  **JSON composer for WebSocket** (`App.formatMessage`, `textfmt.CompactJSON`): the `{ }` button
   next to Send in a WebSocket tab turns the composer text into one line of JSON (key order and
   number text kept) or, when it is not JSON, leaves it and toasts where it breaks (a decoder reports

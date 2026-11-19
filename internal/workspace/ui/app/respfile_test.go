@@ -27,7 +27,7 @@ func TestHistoryKeepsEarlierResponsesNewestFirstAndSwapsOnPick(t *testing.T) {
 	a := testApp(t)
 	tab := a.cur()
 	send := func(status int) {
-		tab.Sending, tab.Seq = true, tab.Seq+1
+		tab.BeginSend()
 		a.apply(sendResult{tab: tab, seq: tab.Seq, resp: model.Response{Status: status, StatusText: "S", Body: []byte("{}")}})
 	}
 	send(200)
@@ -53,11 +53,11 @@ func TestHistoryKeepsEarlierResponsesNewestFirstAndSwapsOnPick(t *testing.T) {
 	if len(tab.Earlier) != tabs.PastLimit {
 		t.Fatalf("history grew to %d", len(tab.Earlier))
 	}
-	tab.Sending, tab.Seq = true, tab.Seq+1
+	tab.BeginSend()
 	n := len(tab.Earlier)
 	a.apply(sendResult{tab: tab, seq: tab.Seq, resp: model.Response{Err: "boom"}})
 	a.apply(sendResult{tab: tab, seq: tab.Seq + 1, resp: model.Response{Status: 200}}) // stale: ignored
-	tab.Sending, tab.Seq = true, tab.Seq+1
+	tab.BeginSend()
 	a.apply(sendResult{tab: tab, seq: tab.Seq, resp: model.Response{Status: 204}})
 	if len(tab.Earlier) != n {
 		t.Fatalf("a failed response must not enter the history: %d -> %d", n, len(tab.Earlier))
@@ -99,7 +99,7 @@ func TestAssertionsRunWhenAResponseArrivesAndAfterEdits(t *testing.T) {
 	a := testApp(t)
 	tab := a.cur()
 	tab.Req.Tests = "status == 200\njson ok == true\nstatus == 404"
-	tab.Sending, tab.Seq = true, tab.Seq+1
+	tab.BeginSend()
 	a.apply(sendResult{tab: tab, seq: tab.Seq, resp: model.Response{Status: 200, StatusText: "OK", Body: []byte(`{"ok":true}`)}})
 	if len(tab.testResults) != 3 || !tab.testResults[0].OK || !tab.testResults[1].OK || tab.testResults[2].OK {
 		t.Fatalf("%+v", tab.testResults)
@@ -132,7 +132,7 @@ func TestAnImageResponseIsShownAsAPicture(t *testing.T) {
 	}
 	a := testApp(t)
 	tab := a.cur()
-	tab.Sending, tab.Seq = true, tab.Seq+1
+	tab.BeginSend()
 	a.apply(sendResult{tab: tab, seq: tab.Seq, resp: model.Response{Status: 200, StatusText: "OK", Body: buf.Bytes(),
 		Headers: []model.KV{{Name: "Content-Type", Value: "text/plain", Enabled: true}}}}) // mislabeled on purpose
 	if tab.picture == nil || !strings.HasPrefix(tab.pictureInfo, "PNG 40x20") {
@@ -144,7 +144,7 @@ func TestAnImageResponseIsShownAsAPicture(t *testing.T) {
 	if d := view.Dump(a.responsePane(responsePanes[0], tab, nil)); !strings.Contains(d, "PNG 40x20") || !strings.Contains(d, "Save") {
 		t.Fatalf("pane:\n%s", d)
 	}
-	tab.Sending, tab.Seq = true, tab.Seq+1
+	tab.BeginSend()
 	a.apply(sendResult{tab: tab, seq: tab.Seq, resp: model.Response{Status: 200, Body: []byte(`{"a":1}`)}})
 	if tab.picture != nil {
 		t.Fatal("the next, non-image response must clear the picture")
@@ -200,7 +200,7 @@ func TestCapturedValuesBecomeVariablesInTheActiveScope(t *testing.T) {
 	tab := a.cur()
 	tab.Req.Tests = "set token = json access_token"
 	send := func(body string) {
-		tab.Sending, tab.Seq = true, tab.Seq+1
+		tab.BeginSend()
 		a.apply(sendResult{tab: tab, seq: tab.Seq, resp: model.Response{Status: 200, Body: []byte(body)}})
 	}
 	a.col().Vars = nil

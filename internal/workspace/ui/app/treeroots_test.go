@@ -255,7 +255,7 @@ func TestClosingACollectionDisconnectsItsSockets(t *testing.T) {
 	tab.Req.URL = "ws" + strings.TrimPrefix(srv.URL, "http")
 	tab.url = widget.NewTextField(tab.Req.URL)
 	a.send(tab)
-	until(t, a, "connection", func() bool { return tab.Session != nil })
+	until(t, a, "connection", func() bool { return tab.Session() != nil })
 	a.closeCollection(beta)
 	select {
 	case <-closed:

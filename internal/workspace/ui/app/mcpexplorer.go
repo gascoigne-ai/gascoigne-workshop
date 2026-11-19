@@ -63,7 +63,7 @@ func exploreCommand(tab *reqTab) (string, error) {
 
 // exploreCall sends the open entry and shows the answer when it comes.
 func (a *App) exploreCall(tab *reqTab) {
-	requester, ok := tab.Session.(reqport.Requester)
+	requester, ok := tab.Session().(reqport.Requester)
 	if !ok || tab.explorer.Selected == mcpexplorer.None || tab.explorer.IsCalling() {
 		return
 	}
@@ -233,7 +233,7 @@ func formNode(app *App, tab *reqTab) Node {
 }
 
 // connected reports whether t has a session to send to.
-func (a *App) connected(tab *reqTab) bool { return tab.Session != nil }
+func (a *App) connected(tab *reqTab) bool { return tab.Session() != nil }
 
 // callLabel is the caption of the send button of the open entry.
 func callLabel(state mcpexplorer.State) string {

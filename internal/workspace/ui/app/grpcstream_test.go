@@ -52,9 +52,9 @@ func TestTurningStreamOffEndsTheOpenStream(t *testing.T) {
 	a := testApp(t)
 	tab := grpcTab(a)
 	a.toggleStream(tab)
-	tab.WantOpen = true // a connection that is being opened
+	tab.Begin() // a connection that is being opened
 	a.toggleStream(tab)
-	if tab.WantOpen || tab.Connecting || tab.Session != nil {
+	if tab.Active() {
 		t.Fatal("the stream stayed open after Stream was turned off")
 	}
 }

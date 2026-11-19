@@ -69,7 +69,7 @@ var responseStates = []responseState{
 
 // answer gives tab a response as a finished send would.
 func answer(app *App, tab *reqTab, resp model.Response) {
-	tab.Sending, tab.Seq = true, tab.Seq+1
+	tab.BeginSend()
 	app.apply(sendResult{tab: tab, seq: tab.Seq, resp: resp})
 }
 

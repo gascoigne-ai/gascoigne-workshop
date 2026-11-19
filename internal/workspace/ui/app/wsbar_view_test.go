@@ -30,7 +30,7 @@ func TestTheMessagesToolbarWhileConnectingLaysOutAsPinned(t *testing.T) {
 			t.Cleanup(a.waitWrites)
 			tab := a.cur()
 			tab.Req.Protocol = "websocket"
-			tab.Connecting = true
+			tab.Begin()
 			root := Col(a.messagesToolbar(tab))
 			Layout(a.ctx, root, size.width, messagesPaneH)
 			want, err := os.ReadFile(filepath.Join("testdata", name+".dump"))

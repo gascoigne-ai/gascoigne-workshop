@@ -734,3 +734,25 @@ func (a *App) find(tab *reqTab, text string) {
 	tab.find.Focused = true
 	a.runFind(tab)
 }
+
+// openSession puts tab in the open state with session, as a finished
+// connect would; an open tab is closed first.
+func openSession(tab *reqTab, session reqport.Session) {
+	if tab.Session() != nil {
+		tab.Disconnect()
+		tab.Closed()
+	}
+	tab.Begin()
+	tab.Opened(session)
+}
+
+// setSending puts tab in the sending or the idle state, as a send or its
+// answer would.
+func setSending(tab *reqTab, sending bool) {
+	switch {
+	case sending && !tab.Sending():
+		tab.BeginSend()
+	case !sending && tab.Sending():
+		tab.Accept(tab.Seq)
+	}
+}

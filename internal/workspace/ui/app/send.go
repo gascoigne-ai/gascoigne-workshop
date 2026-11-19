@@ -78,8 +78,8 @@ func (a *App) handle(msg bus.Msg) {
 	switch msg := msg.(type) {
 	case sendResult:
 		a.apply(msg)
-	case wsEvent:
-		a.applyWS(msg)
+	case wsMessage:
+		a.handleWS(msg)
 	case func(): // something a goroutine wants done on the UI goroutine, such as a chosen file
 		msg()
 	case bus.Failed: // a background task panicked; the app lives on

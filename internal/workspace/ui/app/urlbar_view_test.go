@@ -219,9 +219,9 @@ func TestTheURLBarsButtonFollowsItsLabel(t *testing.T) {
 		state string
 		check func(tab *reqTab) bool
 	}{
-		{"send", "rest-get", func(tab *reqTab) bool { return tab.Sending }},
-		{"cancel", "sending", func(tab *reqTab) bool { return !tab.Sending }},
-		{"connect", "websocket", func(tab *reqTab) bool { return tab.WantOpen }},
+		{"send", "rest-get", func(tab *reqTab) bool { return tab.Sending() }},
+		{"cancel", "sending", func(tab *reqTab) bool { return !tab.Sending() }},
+		{"connect", "websocket", func(tab *reqTab) bool { return tab.Active() }},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -231,7 +231,7 @@ func TestTheURLBarsButtonFollowsItsLabel(t *testing.T) {
 			stateNamed(t, tc.state).setUp(t, a, tab)
 			click(a, sendX, urlBarY)
 			if !tc.check(tab) {
-				t.Fatalf("after the click: sending %v, connection wanted %v", tab.Sending, tab.WantOpen)
+				t.Fatalf("after the click: sending %v, connection active %v", tab.Sending(), tab.Active())
 			}
 			a.cancelSend(tab)
 			a.disconnect(tab)
@@ -252,7 +252,7 @@ func TestTypingAURLEditsTheRequestAndEnterSendsIt(t *testing.T) {
 		t.Fatalf("URL %q", tab.Req.URL)
 	}
 	a.step(core.Input{Keys: []ebiten.Key{ebiten.KeyEnter}, Enter: true})
-	if !tab.Sending {
+	if !tab.Sending() {
 		t.Fatal("Enter in the URL field should send the request")
 	}
 	a.cancelSend(tab)

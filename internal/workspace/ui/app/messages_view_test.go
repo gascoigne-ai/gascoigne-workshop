@@ -37,7 +37,7 @@ var messagesPaneStates = []struct {
 	}},
 	{"websocket-connected", "Message", func(app *App, tab *reqTab) {
 		tab.Req.Protocol = "websocket"
-		tab.Session = &fakeSession{}
+		openSession(tab, &fakeSession{})
 		tab.Reconnect = true
 		sentAt := time.Date(2026, 11, 14, 10, 30, 0, 0, time.UTC)
 		app.logEvent(tab, reqport.Event{Time: sentAt, Dir: reqport.Sent, Kind: reqport.KindText, Text: `{"op":"ping"}`})
@@ -48,7 +48,7 @@ var messagesPaneStates = []struct {
 	}},
 	{"mcp-connected", "call TOOL {json}  ·  read URI  ·  prompt NAME {json}  ·  method {json}  ·  or raw JSON-RPC", func(app *App, tab *reqTab) {
 		tab.Req.Protocol = "mcp"
-		tab.Session = &fakeSession{}
+		openSession(tab, &fakeSession{})
 		tab.Tools = []model.MCPTool{{Name: "search"}}
 		tab.Resources = []model.MCPResource{{URI: "file:///a.txt"}}
 		tab.Prompts = []model.MCPPrompt{{Name: "review"}}
@@ -56,7 +56,7 @@ var messagesPaneStates = []struct {
 	{"grpc-stream", "Message", func(app *App, tab *reqTab) {
 		tab.Req.Protocol = "grpc"
 		tab.grpcStream = true
-		tab.Session = &fakeSession{}
+		openSession(tab, &fakeSession{})
 	}},
 }
 
@@ -157,7 +157,7 @@ func openConnectedEcho(t *testing.T) (*App, *fakeSession) {
 	t.Cleanup(a.waitWrites)
 	openNamed(t, a, "Echo")
 	session := &fakeSession{}
-	a.cur().Session = session
+	openSession(a.cur(), session)
 	a.step(core.Input{})
 	return a, session
 }

@@ -46,7 +46,8 @@ func TestTheMessagePaneLaysOutAsPinned(t *testing.T) {
 				a := testApp(t)
 				t.Cleanup(a.waitWrites)
 				tab := a.cur()
-				tab.Resp, tab.Sending = state.resp, state.send
+				tab.Resp = state.resp
+				setSending(tab, state.send)
 				var scroll widget.ScrollState
 				assertDumpPinned(t, a, a.paneBody(responsePanes[0], tab, &scroll), name, size.width, settingsPaneH)
 			})

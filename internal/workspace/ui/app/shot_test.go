@@ -2,6 +2,7 @@ package app
 
 import (
 	"errors"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -99,7 +100,7 @@ func TestScreenshotWithSendWaitsForTheResponse(t *testing.T) {
 	if a.shot.ready(a) && tab.Resp == nil {
 		t.Fatal("with -send the capture must wait for the response")
 	}
-	if !tab.Sending && tab.Resp == nil {
+	if !tab.Sending() && tab.Resp == nil {
 		t.Fatal("-send must start the request on the first frame")
 	}
 
@@ -145,10 +146,10 @@ func TestScreenshotWithSendOnASocketWaitsForTheConnection(t *testing.T) {
 	for range settleFrames + 2 {
 		a.shotUpdate()
 	}
-	if a.shot.ready(a) && tab.Session == nil {
+	if a.shot.ready(a) && tab.Session() == nil {
 		t.Fatal("with -send the capture must wait for the connection")
 	}
-	until(t, a, "the connection", func() bool { return tab.Session != nil })
+	until(t, a, "the connection", func() bool { return tab.Session() != nil })
 	if !a.shot.ready(a) {
 		t.Fatal("ready once connected")
 	}
@@ -163,7 +164,9 @@ func TestScreenshotWithSendOnASocketGoesAheadAfterAFailedConnect(t *testing.T) {
 	for range settleFrames + 2 {
 		a.shotUpdate()
 	}
-	until(t, a, "the failure", func() bool { return !tab.Connecting && tab.Session == nil && len(tab.wsView.Lines) > 0 })
+	until(t, a, "the failure", func() bool {
+		return tab.State() != tabs.ConnConnecting && tab.Session() == nil && len(tab.wsView.Lines) > 0
+	})
 	if !a.shot.ready(a) {
 		t.Fatal("the error is what the shot should show")
 	}
@@ -447,7 +450,7 @@ func TestScreenshotWithSendingCapturesTheRequestInFlight(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if !tab.Sending {
+	if !tab.Sending() {
 		t.Fatal("-sending must start the request")
 	}
 	if !a.shot.ready(a) {

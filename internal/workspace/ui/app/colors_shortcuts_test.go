@@ -146,7 +146,7 @@ func TestShortcutsNeedTheirModifiers(t *testing.T) {
 	for _, k := range []ebiten.Key{ebiten.KeyT, ebiten.KeyW, ebiten.KeyL, ebiten.KeyEnter, ebiten.KeyComma, ebiten.KeyTab} {
 		a.step(combo(k, false, false, false)) // plain letters must never trigger anything
 	}
-	if len(a.list.Tabs) != 1 || a.menu || a.cur().Sending {
+	if len(a.list.Tabs) != 1 || a.menu || a.cur().Sending() {
 		t.Fatalf("plain keys changed state: %d tabs, menu %v", len(a.list.Tabs), a.menu)
 	}
 }

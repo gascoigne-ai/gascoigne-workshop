@@ -61,7 +61,7 @@ var urlBarTemplate = markup.Must("urlbar.vml", urlbarSource)
 func (a *App) urlBar(tab *reqTab) Node {
 	info, socket := tab.Req.Protocol.Info(), isSocket(tab)
 	httpMethod, rpcMethod := info.Method == model.MethodHTTP, info.Method == model.MethodRPC
-	sending := !socket && tab.Sending
+	sending := !socket && tab.Sending()
 	connectionLabel, connectionHint := "Connect", "Open the connection"
 	if tab.Active() {
 		connectionLabel, connectionHint = "Disconnect", "Close the connection"

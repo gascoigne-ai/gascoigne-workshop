@@ -119,7 +119,7 @@ func viewOf(protocol model.Protocol) protocolView {
 
 func noResponse(tab *reqTab) (string, bool) {
 	switch {
-	case tab.Sending:
+	case tab.Sending():
 		return "Sending...", false
 	case tab.Resp == nil:
 		return "Send the request to see the response", false

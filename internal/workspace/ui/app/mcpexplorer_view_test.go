@@ -45,13 +45,13 @@ func announceLong(app *App, tab *reqTab) {
 		tools = append(tools, fmt.Sprintf(`{"name":"tool_%d","description":"Tool number %d"}`, i, i))
 	}
 	list := `{"result":{"tools":[` + strings.Join(tools, ",") + `]}}`
-	app.applyWS(wsEvent{tab: tab, hasEv: true, ev: reqport.Event{Dir: reqport.Received, Kind: reqport.KindResponse, Text: list}})
+	app.applyWS(wsReceived{wsTarget{tab: tab}, reqport.Event{Dir: reqport.Received, Kind: reqport.KindResponse, Text: list}})
 }
 
 // initialize delivers the server's answer to initialize, which the header
 // of the explorer shows.
 func initialize(app *App, tab *reqTab, result string) {
-	app.applyWS(wsEvent{tab: tab, hasEv: true, ev: reqport.Event{Dir: reqport.Info, Kind: reqport.KindInitialize, Text: result}})
+	app.applyWS(wsReceived{wsTarget{tab: tab}, reqport.Event{Dir: reqport.Info, Kind: reqport.KindInitialize, Text: result}})
 }
 
 // The laid-out explorer is pinned as text (testdata/explorer-*.dump,
@@ -70,33 +70,33 @@ func TestTheMCPExplorerLaysOutAsPinned(t *testing.T) {
 		}},
 		{"tool-calling", func(app *App, tab *reqTab) {
 			announce(app, tab)
-			tab.Session = &fakeSession{}
+			openSession(tab, &fakeSession{})
 			app.exploreOpen(tab, 1)
 			tab.explorer.Begin()
 		}},
 		{"tool-result", func(app *App, tab *reqTab) {
 			announce(app, tab)
-			tab.Session = &fakeSession{}
+			openSession(tab, &fakeSession{})
 			app.exploreOpen(tab, 1)
 			tab.explorer.Finish(`{"content":[{"type":"text","text":"pong"}]}`, nil)
 			tab.resultView.SetLines(resultLines(tab.explorer))
 		}},
 		{"tool-error", func(app *App, tab *reqTab) {
 			announce(app, tab)
-			tab.Session = &fakeSession{}
+			openSession(tab, &fakeSession{})
 			app.exploreOpen(tab, 1)
 			tab.explorer.Finish("", errors.New("no such tool"))
 			tab.resultView.SetLines(resultLines(tab.explorer))
 		}},
 		{"resources-open", func(app *App, tab *reqTab) {
 			announce(app, tab)
-			tab.Session = &fakeSession{}
+			openSession(tab, &fakeSession{})
 			app.exploreChoose(tab, mcpexplorer.Resources)
 			app.exploreOpen(tab, 0)
 		}},
 		{"prompts-open", func(app *App, tab *reqTab) {
 			announce(app, tab)
-			tab.Session = &fakeSession{}
+			openSession(tab, &fakeSession{})
 			app.exploreChoose(tab, mcpexplorer.Prompts)
 			app.exploreOpen(tab, 0)
 		}},
@@ -213,7 +213,7 @@ func TestClickingTheExplorersButtonSendsTheOpenEntry(t *testing.T) {
 			a, tab := mcpTab(t)
 			announce(a, tab)
 			session := &fakeSession{result: `{}`}
-			tab.Session = session
+			openSession(tab, session)
 			a.exploreChoose(tab, tc.kind)
 			index := 0
 			if tc.kind == mcpexplorer.Tools {

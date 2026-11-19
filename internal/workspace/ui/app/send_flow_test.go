@@ -63,14 +63,14 @@ func TestSendShowsTheResponse(t *testing.T) {
 	pointTabAt(tab, srv.URL)
 
 	click(a, sendX, urlBarY)
-	if !tab.Sending {
+	if !tab.Sending() {
 		t.Fatal("a click on Send must start a request")
 	}
 	close(release)
 	waitForResponse(t, a, tab)
 
-	if tab.Sending || tab.Resp.Status != 200 || tab.Resp.Err != "" {
-		t.Fatalf("sending %v resp %+v", tab.Sending, tab.Resp)
+	if tab.Sending() || tab.Resp.Status != 200 || tab.Resp.Err != "" {
+		t.Fatalf("sending %v resp %+v", tab.Sending(), tab.Resp)
 	}
 	if len(tab.view.Lines) != 3 { // pretty-printed {"ok":true}
 		t.Fatalf("response view has %d lines", len(tab.view.Lines))
@@ -139,8 +139,10 @@ func TestOtherProtocolsAnswerThroughTheSameUI(t *testing.T) {
 	tab := a.cur()
 	click(a, 300, urlBarY)   // rest -> websocket
 	click(a, sendX, urlBarY) // connect: an https URL is no WebSocket address
-	until(t, a, "failed connect", func() bool { return !tab.Connecting && strings.Contains(logText(tab), "not ws or wss") })
-	if tab.Session != nil {
+	until(t, a, "failed connect", func() bool {
+		return tab.State() != tabs.ConnConnecting && strings.Contains(logText(tab), "not ws or wss")
+	})
+	if tab.Session() != nil {
 		t.Fatal("connected to an https URL")
 	}
 	click(a, 300, urlBarY) // websocket -> mcp
@@ -149,7 +151,9 @@ func TestOtherProtocolsAnswerThroughTheSameUI(t *testing.T) {
 	}
 	tab.Req.URL = "ftp://nowhere.test" // no network in tests
 	click(a, sendX, urlBarY)
-	until(t, a, "failed connect", func() bool { return !tab.Connecting && strings.Contains(logText(tab), "not an http or https URL") })
+	until(t, a, "failed connect", func() bool {
+		return tab.State() != tabs.ConnConnecting && strings.Contains(logText(tab), "not an http or https URL")
+	})
 }
 
 // Every pane of both areas, with and without a response, must build and
@@ -160,11 +164,11 @@ func TestEveryPaneBuildsInEveryResponseState(t *testing.T) {
 	tab := a.cur()
 
 	states := map[string]func(){
-		"no response": func() { tab.Resp, tab.Sending = nil, false },
-		"sending":     func() { tab.Resp, tab.Sending = nil, true },
-		"error":       func() { tab.Resp, tab.Sending = &respErr, false },
+		"no response": func() { tab.Resp = nil; setSending(tab, false) },
+		"sending":     func() { tab.Resp = nil; setSending(tab, true) },
+		"error":       func() { tab.Resp = &respErr; setSending(tab, false) },
 		"ok": func() {
-			tab.Sending = false
+			setSending(tab, false)
 			pointTabAt(tab, srv.URL)
 			a.send(tab)
 			waitForResponse(t, a, tab)
@@ -181,6 +185,12 @@ func TestEveryPaneBuildsInEveryResponseState(t *testing.T) {
 	}
 }
 
+func sendingTab() *tabs.Tab {
+	tab := &tabs.Tab{}
+	tab.BeginSend()
+	return tab
+}
+
 func TestNoResponseStates(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -188,7 +198,7 @@ func TestNoResponseStates(t *testing.T) {
 		wantMsg string
 		wantErr bool
 	}{
-		{"sending", reqTab{Tab: &tabs.Tab{Sending: true}}, "Sending...", false},
+		{"sending", reqTab{Tab: sendingTab()}, "Sending...", false},
 		{"not sent", reqTab{Tab: &tabs.Tab{}}, "Send the request to see the response", false},
 		{"failed", reqTab{Tab: &tabs.Tab{Resp: &respErr}}, "boom", true},
 		{"ok", reqTab{Tab: &tabs.Tab{Resp: &respOK}}, "", false},
@@ -348,12 +358,12 @@ func TestSendingTurnsIntoCancelAndStopsTheRequest(t *testing.T) {
 	pointTabAt(tab, srv.URL+"/slow")
 
 	click(a, sendX, urlBarY)
-	if !tab.Sending {
+	if !tab.Sending() {
 		t.Fatal("test setup: the request must be running")
 	}
 	click(a, sendX, urlBarY) // the same button now cancels
-	if tab.Sending || tab.Resp == nil || tab.Resp.Err != "Cancelled" {
-		t.Fatalf("sending %v resp %+v", tab.Sending, tab.Resp)
+	if tab.Sending() || tab.Resp == nil || tab.Resp.Err != "Cancelled" {
+		t.Fatalf("sending %v resp %+v", tab.Sending(), tab.Resp)
 	}
 	if a.status != "Cancelled" {
 		t.Fatalf("status = %q", a.status)
@@ -369,12 +379,12 @@ func TestEscapeCancelsARunningRequestButClosesTheMenuFirst(t *testing.T) {
 
 	a.menu = true
 	a.step(core.Input{Escape: true})
-	if a.menu || !tab.Sending {
-		t.Fatalf("the first Escape closes the menu only: menu %v sending %v", a.menu, tab.Sending)
+	if a.menu || !tab.Sending() {
+		t.Fatalf("the first Escape closes the menu only: menu %v sending %v", a.menu, tab.Sending())
 	}
 	a.step(core.Input{Escape: true})
-	if tab.Sending || tab.Resp == nil || tab.Resp.Err != "Cancelled" {
-		t.Fatalf("the second Escape cancels: sending %v resp %+v", tab.Sending, tab.Resp)
+	if tab.Sending() || tab.Resp == nil || tab.Resp.Err != "Cancelled" {
+		t.Fatalf("the second Escape cancels: sending %v resp %+v", tab.Sending(), tab.Resp)
 	}
 }
 

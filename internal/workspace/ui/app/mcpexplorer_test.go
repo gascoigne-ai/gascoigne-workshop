@@ -20,7 +20,7 @@ func announce(app *App, tab *reqTab) {
 		`{"result":{"resources":[{"uri":"file:///a.txt","name":"A"}]}}`,
 		`{"result":{"prompts":[{"name":"review","arguments":[{"name":"code","required":true}]}]}}`,
 	} {
-		app.applyWS(wsEvent{tab: tab, hasEv: true, ev: reqport.Event{Dir: reqport.Received, Kind: reqport.KindResponse, Text: list}})
+		app.applyWS(wsReceived{wsTarget{tab: tab}, reqport.Event{Dir: reqport.Received, Kind: reqport.KindResponse, Text: list}})
 	}
 }
 
@@ -30,7 +30,7 @@ func TestExplorerCallsTheOpenToolWithTheFormsArguments(t *testing.T) {
 	tab.Req.Protocol = "mcp"
 	announce(a, tab)
 	session := &fakeSession{result: `{"content":[{"type":"text","text":"found"}]}`}
-	tab.Session = session
+	openSession(tab, session)
 	a.exploreOpen(tab, 0)
 	tab.form.Inputs["q"].Text = "go"
 	a.exploreCall(tab)
@@ -59,7 +59,7 @@ func TestExplorerCommandsPerKind(t *testing.T) {
 		tab.Req.Protocol = "mcp"
 		announce(a, tab)
 		session := &fakeSession{result: `{}`}
-		tab.Session = session
+		openSession(tab, session)
 		a.exploreChoose(tab, test.kind)
 		a.exploreOpen(tab, test.index)
 		a.exploreCall(tab)
@@ -85,7 +85,7 @@ func TestExplorerShowsTheServersErrorAndAToolThatReportsOne(t *testing.T) {
 			tab := a.cur()
 			tab.Req.Protocol = "mcp"
 			announce(a, tab)
-			tab.Session = test.session
+			openSession(tab, test.session)
 			a.exploreOpen(tab, 1)
 			a.exploreCall(tab)
 			until(t, a, "the answer", func() bool { return !tab.explorer.IsCalling() })
@@ -102,7 +102,7 @@ func TestExplorerRefusesACallWithAnInvalidValue(t *testing.T) {
 	tab.Req.Protocol = "mcp"
 	announce(a, tab)
 	session := &fakeSession{result: `{}`}
-	tab.Session = session
+	openSession(tab, session)
 	a.exploreOpen(tab, 0)
 	tab.form.Inputs["limit"].Text = "lots"
 	a.exploreCall(tab)
@@ -116,9 +116,9 @@ func TestExplorerAndTrafficPanesDrawWithoutPanicking(t *testing.T) {
 	tab := a.cur()
 	tab.Req.Protocol = "mcp"
 	a.step(core.Input{}) // no server yet
-	a.applyWS(wsEvent{tab: tab, hasEv: true, ev: reqport.Event{Dir: reqport.Info, Kind: reqport.KindInitialize, Text: `{"protocolVersion":"2025-06-18","capabilities":{"tools":{}},"serverInfo":{"name":"mock","version":"1"},"instructions":"Use echo."}`}})
+	a.applyWS(wsReceived{wsTarget{tab: tab}, reqport.Event{Dir: reqport.Info, Kind: reqport.KindInitialize, Text: `{"protocolVersion":"2025-06-18","capabilities":{"tools":{}},"serverInfo":{"name":"mock","version":"1"},"instructions":"Use echo."}`}})
 	announce(a, tab)
-	tab.Session = &fakeSession{result: `{"content":[]}`}
+	openSession(tab, &fakeSession{result: `{"content":[]}`})
 	for _, kind := range []mcpexplorer.Kind{mcpexplorer.Tools, mcpexplorer.Resources, mcpexplorer.Prompts} {
 		a.exploreChoose(tab, kind)
 		a.step(core.Input{})

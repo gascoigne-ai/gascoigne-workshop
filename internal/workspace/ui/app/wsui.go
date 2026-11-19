@@ -8,6 +8,7 @@ import (
 	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/textfmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/bus"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -21,18 +22,37 @@ import (
 // The Send button becomes Connect / Disconnect, the response side shows
 // the message log, and the composer under the log sends messages.
 
-// wsEvent is something a session's goroutines tell the UI: a finished
-// connect (sess or err), a logged event, or the end of the session.
-type wsEvent struct {
-	tab    *reqTab
-	gen    int // which connect of the tab this belongs to
-	sess   reqport.Session
-	err    error
-	ev     reqport.Event
-	hasEv  bool
-	closed bool
-	retry  bool // the reconnect delay is over
+// wsTarget says which connect of which tab a message belongs to, so a
+// message of a connect that was abandoned or replaced is dropped.
+type wsTarget struct {
+	tab *reqTab
+	gen int
 }
+
+func (target wsTarget) target() wsTarget { return target }
+
+// wsMessage is what a session's goroutines tell the UI; all five carry a wsTarget.
+type wsMessage interface{ target() wsTarget }
+
+// What a session's goroutines tell the UI, one type each: a connect that
+// produced a session, a connect that failed, an event of the session, the
+// end of the session, and the end of the reconnect delay.
+type (
+	wsOpened struct {
+		wsTarget
+		session reqport.Session
+	}
+	wsFailed struct {
+		wsTarget
+		err error
+	}
+	wsReceived struct {
+		wsTarget
+		event reqport.Event
+	}
+	wsClosed struct{ wsTarget }
+	wsRetry  struct{ wsTarget }
+)
 
 // defaultRetryDelay is the wait before a dropped connection is reopened.
 const defaultRetryDelay = 2 * time.Second
@@ -68,12 +88,15 @@ func (a *App) toggleConnection(tab *reqTab) {
 	a.connect(tab)
 }
 
-// connect dials in the background; the outcome arrives as a wsEvent.
+// connect dials in the background; the outcome arrives as a wsOpened or wsFailed.
 func (a *App) connect(tab *reqTab) {
 	if !a.allowed(tab, tab.Req, func() { a.connect(tab) }) {
 		return
 	}
-	gen := tab.Begin()
+	gen, ok := tab.Begin()
+	if !ok {
+		return
+	}
 	a.status = "Connecting to " + tab.Req.URL
 	req := tab.Req.Expanded(a.varsFor(tab.Req))
 	if header := tab.Req.Protocol.Info().ResumeHeader; header != "" && tab.LastEventID != "" { // resume where the stream stopped
@@ -98,14 +121,16 @@ func (a *App) connect(tab *reqTab) {
 			default:
 			}
 		}
-		a.bus.Dispatch(wsEvent{tab: tab, gen: gen, sess: s, err: err})
+		target := wsTarget{tab: tab, gen: gen}
 		if err != nil {
+			a.bus.Dispatch(wsFailed{target, err})
 			return nil
 		}
-		for e := range s.Events() {
-			a.bus.Dispatch(wsEvent{tab: tab, gen: gen, ev: e, hasEv: true})
+		a.bus.Dispatch(wsOpened{target, s})
+		for event := range s.Events() {
+			a.bus.Dispatch(wsReceived{target, event})
 		}
-		return wsEvent{tab: tab, gen: gen, closed: true}
+		return wsClosed{target}
 	})
 }
 
@@ -130,10 +155,10 @@ func (tab *reqTab) setComposer(text string) {
 
 // sendMessage sends the composer's text and empties it.
 func (a *App) sendMessage(tab *reqTab) {
-	if tab.Session == nil || tab.msg.Text == "" {
+	if tab.Session() == nil || tab.msg.Text == "" {
 		return
 	}
-	send, err := composed(tab.Session, tab.msg.Text)
+	send, err := composed(tab.Session(), tab.msg.Text)
 	if err != nil {
 		a.logInfo(tab, err.Error(), w.Error)
 		return
@@ -178,10 +203,10 @@ func (a *App) runOutbox(tab *reqTab) {
 
 // pingSocket sends a ping.
 func (a *App) pingSocket(tab *reqTab) {
-	if tab.Session == nil {
+	if tab.Session() == nil {
 		return
 	}
-	a.sendInOrder(tab, tab.Session.Ping)
+	a.sendInOrder(tab, tab.Session().Ping)
 }
 
 // clearLog empties the message log.
@@ -189,50 +214,78 @@ func (a *App) clearLog(tab *reqTab) {
 	tab.wsView.SetLines(nil)
 }
 
-// applyWS applies one wsEvent.
-func (a *App) applyWS(event wsEvent) {
-	t := event.tab
-	if !t.Current(event.gen) {
-		if event.sess != nil { // a connect that was abandoned meanwhile
-			_ = event.sess.Close(context.Background())
-		}
+// handleWS drops a message of a connect that is no longer the tab's
+// current one, closing the session of a stale wsOpened; it applies the rest.
+func (a *App) handleWS(msg wsMessage) {
+	target := msg.target()
+	if target.tab.Current(target.gen) {
+		a.applyWS(msg)
 		return
 	}
-	switch {
-	case event.retry:
-		if t.CanRetry() {
-			a.connect(t)
-		}
-	case event.closed:
-		t.Closed()
-		a.calls.Info(a.now(), "Disconnected from "+t.Req.URL)
-		a.status = "Disconnected from " + t.Req.URL
-		a.scheduleRetry(t)
-	case event.hasEv:
-		t.Received(event.ev)
-		a.logEvent(t, event.ev)
-	case event.err != nil:
-		t.Failed()
-		a.calls.Error(a.now(), fmt.Sprintf("✗ %s: %s", t.Req.URL, event.err))
-		a.logInfo(t, event.err.Error(), w.Error)
-		a.status = "Connection failed"
-		a.scheduleRetry(t)
-	default:
-		t.Opened(event.sess)
-		a.calls.Info(a.now(), "Connected to "+t.Req.URL)
-		a.status = "Connected to " + t.Req.URL
+	if opened, ok := msg.(wsOpened); ok { // a connect that was abandoned meanwhile
+		_ = opened.session.Close(context.Background())
 	}
+}
+
+// applyWS applies one message of a session's goroutines.
+func (a *App) applyWS(msg wsMessage) {
+	switch msg := msg.(type) {
+	case wsOpened:
+		a.applyOpened(msg)
+	case wsFailed:
+		a.applyFailed(msg)
+	case wsReceived:
+		msg.tab.Received(msg.event)
+		a.logEvent(msg.tab, msg.event)
+	case wsClosed:
+		a.applyClosed(msg)
+	case wsRetry:
+		if msg.tab.Retrying() {
+			a.connect(msg.tab)
+		}
+	}
+}
+
+func (a *App) applyOpened(msg wsOpened) {
+	tab := msg.tab
+	if !tab.Opened(msg.session) { // the tab is no longer connecting
+		_ = msg.session.Close(context.Background())
+		return
+	}
+	a.calls.Info(a.now(), "Connected to "+tab.Req.URL)
+	a.status = "Connected to " + tab.Req.URL
+}
+
+func (a *App) applyFailed(msg wsFailed) {
+	tab := msg.tab
+	if !tab.Failed() {
+		return
+	}
+	a.calls.Error(a.now(), fmt.Sprintf("✗ %s: %s", tab.Req.URL, msg.err))
+	a.logInfo(tab, msg.err.Error(), w.Error)
+	a.status = "Connection failed"
+	a.scheduleRetry(tab)
+}
+
+func (a *App) applyClosed(msg wsClosed) {
+	tab := msg.tab
+	if !tab.Closed() {
+		return
+	}
+	a.calls.Info(a.now(), "Disconnected from "+tab.Req.URL)
+	a.status = "Disconnected from " + tab.Req.URL
+	a.scheduleRetry(tab)
 }
 
 // scheduleRetry reopens a connection the user did not close, when the
 // tab asks for it.
 func (a *App) scheduleRetry(tab *reqTab) {
-	if !tab.RetryWanted() {
+	if !tab.Retrying() {
 		return
 	}
 	a.logInfo(tab, "Reconnecting in "+a.retryDelay.String(), w.Muted)
 	gen := tab.Gen
-	time.AfterFunc(a.retryDelay, func() { a.bus.Dispatch(wsEvent{tab: tab, gen: gen, retry: true}) })
+	time.AfterFunc(a.retryDelay, func() { a.bus.Dispatch(wsRetry{wsTarget{tab: tab, gen: gen}}) })
 }
 
 // logEvent appends an event to the log, one line per line of its text.
@@ -301,22 +354,23 @@ func (a *App) messagesPane(_ pane, tab *reqTab, _ *ScrollState) Node {
 		"log":       &tab.wsView,
 		"composer":  viewOf(tab.Req.Protocol).composer,
 		"message":   &tab.msg,
-		"hint":      composerHint(tab, tab.Session != nil),
+		"hint":      composerHint(tab, tab.Session() != nil),
 		"canFormat": viewOf(tab.Req.Protocol).formatsJSON,
 		"send":      func() { a.sendMessage(tab) },
 		"format":    func() { a.formatMessage(tab) },
 	})
 }
 
-func connState(tab *reqTab) string {
-	switch {
-	case tab.Connecting:
-		return "Connecting..."
-	case tab.Session != nil:
-		return "Connected"
-	}
-	return "Not connected"
+// connLabels is what the connection bar says in each state.
+var connLabels = [...]string{
+	tabs.ConnIdle:       "Not connected",
+	tabs.ConnConnecting: "Connecting...",
+	tabs.ConnOpen:       "Connected",
+	tabs.ConnClosing:    "Connected",
+	tabs.ConnRetrying:   "Not connected",
 }
+
+func connState(tab *reqTab) string { return connLabels[tab.State()] }
 
 func composerHint(tab *reqTab, connected bool) string {
 	if !connected {

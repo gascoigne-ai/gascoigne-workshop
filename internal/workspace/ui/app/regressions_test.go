@@ -99,11 +99,11 @@ func TestClosingATabStopsItsRequest(t *testing.T) {
 	tab := a.cur()
 	pointTabAt(tab, srv.URL+"/slow")
 	click(a, sendX, urlBarY)
-	if !tab.Sending {
+	if !tab.Sending() {
 		t.Fatal("test setup: the request must be running")
 	}
 	a.closeTab(a.list.Active)
-	if tab.Sending {
+	if tab.Sending() {
 		t.Error("the request of the closed tab is still running")
 	}
 }
@@ -112,7 +112,7 @@ func TestClosingATabClosesItsSession(t *testing.T) {
 	a := testApp(t)
 	tab := a.cur()
 	session := &fakeSession{}
-	tab.Session = session
+	openSession(tab, session)
 	a.closeTab(a.list.Active)
 	if !session.closed {
 		t.Error("the session of the closed tab is still open")
@@ -240,7 +240,7 @@ func TestAFileOutsideTheCollectionAsksBeforeItIsSent(t *testing.T) {
 	tab.Req.Method, tab.Req.URL = "POST", "http://127.0.0.1:1/x"
 	tab.Req.BodyType, tab.Req.Body = model.BodyFile, "/etc/hostname"
 	a.send(tab)
-	if a.dialog == nil || !strings.Contains(a.dialog.Body, "/etc/hostname") || tab.Sending {
-		t.Fatalf("dialog %+v sending %v: want a question and no request", a.dialog, tab.Sending)
+	if a.dialog == nil || !strings.Contains(a.dialog.Body, "/etc/hostname") || tab.Sending() {
+		t.Fatalf("dialog %+v sending %v: want a question and no request", a.dialog, tab.Sending())
 	}
 }

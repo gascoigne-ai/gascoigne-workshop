@@ -49,7 +49,8 @@ func TestConnectionEventsAreTraced(t *testing.T) {
 	a := testApp(t)
 	tab := a.cur()
 	tab.Req.URL = "ws://example.test/socket"
-	a.applyWS(wsEvent{tab: tab, gen: tab.Gen, err: fmt.Errorf("dial refused")})
+	gen, _ := tab.Begin()
+	a.applyWS(wsFailed{wsTarget{tab: tab, gen: gen}, fmt.Errorf("dial refused")})
 	if text := traceText(a); !strings.Contains(text, "dial refused") || !strings.Contains(text, "ws://example.test/socket") {
 		t.Fatalf("trace:\n%s", text)
 	}

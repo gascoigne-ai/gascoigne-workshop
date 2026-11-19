@@ -48,21 +48,21 @@ func TestDirtyFollowsEditsAndMarkSaved(t *testing.T) {
 func TestOnlyTheLatestSendIsAccepted(t *testing.T) {
 	tab := New(newRequest())
 	first, ok := tab.BeginSend()
-	if !ok || !tab.Sending {
+	if !ok || !tab.Sending() {
 		t.Fatal("the first send starts")
 	}
 	if _, again := tab.BeginSend(); again {
 		t.Fatal("a send while sending must not start another")
 	}
 	tab.Cancel()
-	if tab.Sending || tab.Resp == nil || tab.Resp.Err != model.ErrCancelled {
-		t.Fatalf("cancel: sending %v resp %+v", tab.Sending, tab.Resp)
+	if tab.Sending() || tab.Resp == nil || tab.Resp.Err != model.ErrCancelled {
+		t.Fatalf("cancel: sending %v resp %+v", tab.Sending(), tab.Resp)
 	}
 	if tab.Accept(first) {
 		t.Fatal("the late answer of a cancelled send is dropped")
 	}
 	second, _ := tab.BeginSend()
-	if !tab.Accept(second) || tab.Sending {
+	if !tab.Accept(second) || tab.Sending() {
 		t.Fatal("the current send is accepted and ends sending")
 	}
 }
@@ -133,5 +133,20 @@ func TestAfterMoveFollowsTheActiveTab(t *testing.T) {
 				t.Fatalf("AfterMove(%d, %d, %d) = %d, want %d", test.active, test.from, test.to, got, test.want)
 			}
 		})
+	}
+}
+
+// A gRPC tab can have a unary call in flight and then switch Stream on, so
+// sending and connecting are two machines, not one.
+func TestASendInFlightDoesNotForbidAConnect(t *testing.T) {
+	tab := New(&model.Request{})
+	if _, started := tab.BeginSend(); !started {
+		t.Fatal("send not started")
+	}
+	if _, ok := tab.Begin(); !ok {
+		t.Fatal("a connect is refused while a send is in flight")
+	}
+	if !tab.Sending() || tab.State() != ConnConnecting {
+		t.Fatalf("sending %v, connection %d", tab.Sending(), tab.State())
 	}
 }
