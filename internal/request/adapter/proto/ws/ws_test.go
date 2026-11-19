@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -216,15 +215,6 @@ func TestClosingTheClientEndsTheServerLoop(t *testing.T) {
 	}
 	if err := c.Write(Text, []byte("x")); err == nil {
 		t.Fatal("writing after close must fail")
-	}
-}
-
-func TestReadStopsWhenTheContextOfDialIsNotInvolved(t *testing.T) {
-	_, url := echoServer(t, func(conn *Conn) { time.Sleep(200 * time.Millisecond) })
-	c := dial(t, url, Options{})
-	c.SetReadDeadline(time.Now().Add(20 * time.Millisecond))
-	if _, err := c.Read(); err == nil || err == io.EOF {
-		t.Fatalf("want a timeout, got %v", err)
 	}
 }
 

@@ -192,17 +192,6 @@ func TestWrapLayoutMapsScrollRowsToLinesAndBack(t *testing.T) {
 			t.Fatalf("rowStart(%d) = %v, want %v", tt.row, got, tt.want)
 		}
 	}
-	// A view that keeps its top line when wrap turns on asks for the line's
-	// first row, which is where that line starts again.
-	for _, line := range []int{0, 2, 3} {
-		row := layout.firstRow(line)
-		if got := layout.rowStart(row); got != (textPos{line, 0}) {
-			t.Fatalf("firstRow(%d) = %d, which starts at %v", line, row, got)
-		}
-	}
-	if got := layout.firstRow(1); got != -1 {
-		t.Fatalf("firstRow of a folded-away line = %d, want -1", got)
-	}
 }
 
 func TestWrapLayoutOfNoLinesAnswersWithoutRows(t *testing.T) {

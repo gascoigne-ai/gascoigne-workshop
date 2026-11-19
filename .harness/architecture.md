@@ -833,8 +833,7 @@ that change `App`.
   as the style; every package has a package doc, the tested examples of `view`, `widget`, `markup`
   and `theming` are one package, `uitoolkit/examples` (they use the exported API only, and
   `core/layers_test.go` checks its imports), and the `view` doc has a family index of the option
-  names. Template errors name the file and line, suggest the nearest name and list the valid ones;
-  `markup.Reference()` prints the elements and attributes from the same tables the parser uses.
+  names. Template errors name the file and line, suggest the nearest name and list the valid ones.
   `Ctx.PointerX/PointerY` are the pointer position that containers do not hide (drags); the slider
   measures drags in device pixels because its value can rescale the UI mid-drag.
 -  **Every side the same way** (`view`): padding, margin and border follow one rule. All sides:
@@ -944,12 +943,11 @@ that change `App`.
   path `x`, which is how a template contains another template's tree (the header's environment
   chip), a hand-built element or a `view.Custom` component, whose measure, layout and input run as
   in a Go tree (`custom_test.go`). The name is a path like `{{path}}`, so inside a `for` each item
-  brings its own node (`<slot name="row.Knob"/>`). `<slot>` and `<include>` take only `name`, `if`
+  brings its own node (`<slot name="row.Knob"/>`). `<slot>` takes only `name`, `if`
   and `for`; any other attribute is a parse error, because there is no element of theirs to apply it
   to. `App.header` and `App.statusBar` are the embedded `header.vml` and `statusbar.vml`, their
   sizes from the scope; both are tested against the Go views they replaced.
--  **Template includes and layout attributes**: `markup.Define(name, src)` registers a template for
-  `<include name="name"/>` (built with the includer's scope); templates may set `align-items`,
+-  **Layout attributes**: templates may set `align-items`,
   `align-self` (default, start, center, end, stretch, baseline) and `justify-content` (start,
   center, end, between, around) and use `<primary-button>` and `<link-button>`.
   `App.messagesToolbar` (`internal/workspace/ui/app/wsbar.go`, the embedded `messagestoolbar.vml`
@@ -1463,7 +1461,7 @@ that change `App`.
   line, which is how an unwrapped view lays out too. Its `wrapLayout` maps a position to its row and
   pixel offset (`rowOf`, `xOf`: a column at a break belongs to the row it starts), a pixel on a row
   back to a position (`posAt`, which stops one rune before a break so a hit stays on its row) and
-  rows to lines for scrolling (`firstRow`, `rowStart`). The code view measures every rune as one
+  rows to lines for scrolling (`rowStart`). The code view measures every rune as one
   advance, as drawing places text by column, and leaves room for the vertical bar, so the rows do
   not change when the bar appears. Everything that counted lines counts rows: content height and
   scrollbars, hit testing, reveal (`RevealMatch` scrolls to the row of a find hit, which on a
@@ -1963,7 +1961,7 @@ and the in-memory keys `stateKey` and `tree.Key`.
   over `respview.ViewLimit` (2 MiB) is shown as its first part in plain lines with a note (no
   formatting, folding or filtered search; Save body keeps all of it); variable expansion stops at 16
   MiB (`model.maxExpanded`); JSON deeper than 256 levels shows as plain text (`jsonview.maxDepth`);
-  YAML nests at most 100 levels (`miniyaml.maxDepth`); `<include>` nests at most 32 levels; a
+  YAML nests at most 100 levels (`miniyaml.maxDepth`); a
   request timeout is at most 24 hours; gRPC reflection fetches at most 512 files per symbol; a gRPC
   message schema expands at most 500 messages (`maxSchemaMessages`); one line or one event of an
   event stream (SSE and MCP over HTTP) is at most 16 MiB (`proto.maxEventBytes`): a larger one ends

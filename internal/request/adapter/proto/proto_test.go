@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
-	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -18,13 +17,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 )
-
-func TestRegistryNames(t *testing.T) {
-	want := []model.Protocol{"grpc", "mcp", "rest", "sse", "websocket"}
-	if got := NewRegistry().Names(); !reflect.DeepEqual(got, want) {
-		t.Fatalf("Names() = %v, want %v", got, want)
-	}
-}
 
 // The registry and model.Protocols name the same protocols, and a protocol
 // whose row keeps a connection can open one.

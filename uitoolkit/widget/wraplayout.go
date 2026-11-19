@@ -126,10 +126,6 @@ func (layout wrapLayout) rowOf(pos textPos) int {
 	return after - 1
 }
 
-// firstRow is the row a line starts on, -1 when it has none, so a view can
-// keep its top line in place when the rows change.
-func (layout wrapLayout) firstRow(line int) int { return layout.rowOf(textPos{line, 0}) }
-
 // rowStart is the position at the start of a row (clamped to the rows),
 // the line and column a view scrolled to that row shows first.
 func (layout wrapLayout) rowStart(row int) textPos {

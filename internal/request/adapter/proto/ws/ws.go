@@ -20,7 +20,6 @@ import (
 	"net/url"
 	"strings"
 	"sync"
-	"time"
 )
 
 // maxHandshakeBytes bounds the server's handshake response (status line and
@@ -111,9 +110,6 @@ type fragments struct {
 
 // Subprotocol is the subprotocol the server chose, "" for none.
 func (c *Conn) Subprotocol() string { return c.sub }
-
-// SetReadDeadline limits the next Read; the zero time clears it.
-func (c *Conn) SetReadDeadline(moment time.Time) error { return c.nc.SetReadDeadline(moment) }
 
 // Dial opens a connection to a ws:// or wss:// URL.
 func Dial(ctx context.Context, rawURL string, options Options) (*Conn, error) {

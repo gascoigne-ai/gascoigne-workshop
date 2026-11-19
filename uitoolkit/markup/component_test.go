@@ -199,35 +199,6 @@ func TestErrorsSuggestAndListTheValidNames(t *testing.T) {
 	}
 }
 
-func TestReferenceListsEveryElementAndAttribute(t *testing.T) {
-	ref := Reference()
-	for n, spec := range elements {
-		if !strings.Contains(ref, "<"+n+">") {
-			t.Errorf("reference misses element %s", n)
-		}
-		for _, name := range spec.ownNames() {
-			if !strings.Contains(ref, " "+name) {
-				t.Errorf("reference misses %s of <%s>", name, n)
-			}
-		}
-	}
-	for n := range attributes {
-		if !strings.Contains(ref, "  "+n+"\n") {
-			t.Errorf("reference misses attribute %s", n)
-		}
-	}
-	for n := range directives {
-		if !strings.Contains(ref, "  "+n+"\n") {
-			t.Errorf("reference misses directive %s", n)
-		}
-	}
-	for n := range handlers {
-		if !strings.Contains(ref, "  "+n+"\n") {
-			t.Errorf("reference misses handler %s", n)
-		}
-	}
-}
-
 // Template attributes are the Go options in kebab-case, for every side.
 func TestSideAttributesMatchTheGoOptions(t *testing.T) {
 	got := view.Dump(build(t, `<row border-r="a" border-x="b" border-y="c" margin-l="1" margin-y="2" pad-b="3"/>`, nil))
@@ -304,26 +275,6 @@ func TestAlignmentAttributesAndButtonsMatchTheGoOptions(t *testing.T) {
 	}
 }
 
-func TestIncludeBuildsAnotherDefinedTemplateWithTheSameScope(t *testing.T) {
-	Define("test-badge", `<text small>{{label}}!</text>`)
-	got := view.Dump(build(t, `<row><include name="test-badge"/><text for="x in xs">{{x}}</text></row>`, Scope{"label": "hi", "xs": []string{"a"}}))
-	want := view.Dump(view.Row(view.Text("hi!", view.Small()), view.Text("a")))
-	if got != want {
-		t.Fatalf("template:\n%s\nGo:\n%s", got, want)
-	}
-	tp, _ := Parse("t.vml", []byte(`<include name="nope"/>`))
-	if _, err := tp.Build(nil); err == nil || !strings.Contains(err.Error(), "test-badge") {
-		t.Fatalf("an unknown include lists the defined names: %v", err)
-	}
-	if _, err := Parse("t.vml", []byte(`<include/>`)); err != nil {
-		t.Fatal(err)
-	}
-	tp2, _ := Parse("t.vml", []byte(`<include/>`))
-	if _, err := tp2.Build(nil); err == nil {
-		t.Fatal("an include without a name must fail")
-	}
-}
-
 func TestIconHoverColorAttributeMirrorsTheGoOption(t *testing.T) {
 	got := view.Dump(build(t, `<icon name="dots" color="hero-muted" hover-color="hero-text"/>`, nil))
 	want := view.Dump(widget.Icon("dots", view.Color("hero-muted"), view.HoverColor("hero-text")))
@@ -382,23 +333,6 @@ func TestNonEmptyColorTokenStillAppliesItsOption(t *testing.T) {
 	}
 	if got == view.Dump(view.Row()) {
 		t.Fatal("Dump does not show the border, so the empty-token test proves nothing")
-	}
-}
-
-// A template that includes itself, directly or through another one,
-// built forever until the stack overflowed, which no recover can catch.
-func TestIncludeCyclesAreAnErrorNotAStackOverflow(t *testing.T) {
-	Define("test-cycle-a", `<row><include name="test-cycle-b"/></row>`)
-	Define("test-cycle-b", `<row><include name="test-cycle-a"/></row>`)
-	Define("test-cycle-self", `<row><include name="test-cycle-self"/></row>`)
-	for _, name := range []string{"test-cycle-a", "test-cycle-self"} {
-		template, err := Parse("t.vml", []byte(`<include name="`+name+`"/>`))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if _, err := template.Build(nil); err == nil || !strings.Contains(err.Error(), "too deep") {
-			t.Errorf("%s: err = %v, want a too-deep error", name, err)
-		}
 	}
 }
 

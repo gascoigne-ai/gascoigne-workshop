@@ -70,12 +70,12 @@ func TestSlotKeepsACustomNodesLayoutAndInput(t *testing.T) {
 	}
 }
 
-// A slot or include used to accept look and handler attributes at parse
+// A slot used to accept look and handler attributes at parse
 // and then drop them at build, so `<slot name="x" grow="1"/>` built a node
 // that did not grow and said nothing. They are a parse error now; name,
 // if and for, which both honor, are still accepted.
-func TestSlotAndIncludeRejectAttributesTheyWouldDrop(t *testing.T) {
-	for _, tag := range []string{"slot", "include"} {
+func TestSlotRejectsAttributesItWouldDrop(t *testing.T) {
+	for _, tag := range []string{"slot"} {
 		for _, attribute := range []string{`grow="1"`, `bg="panel"`, `on-click="act"`} {
 			_, err := Parse("t.vml", []byte(`<row><`+tag+` name="x" `+attribute+`/></row>`))
 			if err == nil || !strings.Contains(err.Error(), "on <"+tag+">") {

@@ -46,7 +46,7 @@
 //	Widgets     tab-bar tabs scroll-tabs table   separator active-tab
 //	Dialogs     dialog dialog-title dialog-toolbar message-dialog resizable-dialog   focus-scope dismiss-margin
 //	Overlays    menu toasts
-//	Templates   include slot
+//	Templates   slot
 //
 // The usual form is an inline template in the method that feeds it, as
 // with a Vue component's `template` option:
@@ -77,7 +77,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"maps"
 	"math"
 	"reflect"
 	"slices"
@@ -547,13 +546,6 @@ const (
 	holdsNothing          // a widget made from its arguments alone: tabs, table
 )
 
-// kinds describe each holding in the Reference.
-var kinds = map[holding]string{
-	holdsChildren: "container",
-	holdsText:     "text and no children",
-	holdsNothing:  "no children and no text",
-}
-
 // elementSpec is one row of the elements table. options and handlers
 // are attributes only this element takes; a handler's value names a
 // scope entry.
@@ -634,7 +626,6 @@ var elements = map[string]elementSpec{
 	"text":           {build: labelled(view.Text), holds: holdsText},
 	"primary-button": {build: labelled(widget.PrimaryButton), holds: holdsText},
 	"link-button":    {build: labelled(widget.LinkButton), holds: holdsText},
-	"include":        {build: placeholder, holds: holdsText},
 	"icon":           {build: labelled(widget.Icon), holds: holdsText},
 	"slot":           {build: placeholder, holds: holdsText},
 	"caption":        {build: labelled(view.Caption), holds: holdsText},
@@ -679,9 +670,9 @@ var elements = map[string]elementSpec{
 }
 
 // standsIn are the elements that stand in for a node built elsewhere (a
-// slot's node, an included template): they take only name and the
-// directives, because an option on them would have nothing to apply to.
-var standsIn = map[string]bool{"slot": true, "include": true}
+// slot's node): they take only name and the directives, because an option
+// on them would have nothing to apply to.
+var standsIn = map[string]bool{"slot": true}
 
 // directives are attributes that control building, not looks.
 var directives = map[string]bool{"if": true, "for": true}
@@ -929,7 +920,7 @@ func Parse(name string, src []byte) (*Template, error) {
 				}
 				_, isParam := spec.param(a.Name.Local)
 				_, isHandler := spec.handler(a.Name.Local)
-				if _, ok := spec.option(a.Name.Local); !ok && !isParam && !directives[a.Name.Local] && !isHandler && !(a.Name.Local == "name" && (n.tag == "icon" || n.tag == "slot" || n.tag == "include")) {
+				if _, ok := spec.option(a.Name.Local); !ok && !isParam && !directives[a.Name.Local] && !isHandler && !(a.Name.Local == "name" && (n.tag == "icon" || n.tag == "slot")) {
 					return fail(l, "unknown attribute %q on <%s>%s", a.Name.Local, n.tag, hint(a.Name.Local, append(attributeNames(), spec.ownNames()...), "attributes"))
 				}
 				n.attrs = append(n.attrs, attr{a.Name.Local, a.Value, l})
@@ -1132,27 +1123,6 @@ func (t *Template) buildOne(nodeValue *node, sc Scope) (view.Node, error) {
 	text, err := interpolate(nodeValue.text, sc)
 	if err != nil {
 		return nil, t.errf(nodeValue, "%v", err)
-	}
-	if nodeValue.tag == "include" { // another defined template, built with this scope
-		for _, a := range nodeValue.attrs {
-			if a.name == "name" {
-				defined.Lock()
-				other, ok := defined.m[a.value]
-				defined.Unlock()
-				if !ok {
-					return nil, t.errf(nodeValue, "no template defined as %q; defined: %s", a.value, strings.Join(definedNames(), " "))
-				}
-				depth, _ := sc[includeDepthKey].(int)
-				if depth >= maxIncludeDepth {
-					return nil, t.errf(nodeValue, "<include> nests too deep (a template that includes itself?)")
-				}
-				inner := make(Scope, len(sc)+1)
-				maps.Copy(inner, sc)
-				inner[includeDepthKey] = depth + 1
-				return other.Build(inner)
-			}
-		}
-		return nil, t.errf(nodeValue, `<include> needs a name`)
 	}
 	if nodeValue.tag == "slot" { // a node the caller made, as a Vue slot
 		for _, a := range nodeValue.attrs {
@@ -1389,43 +1359,6 @@ func distance(first, second string) int {
 	return prev[len(second)]
 }
 
-// Reference describes every element and attribute a template may use, as
-// text. It is built from the same tables the parser checks against, so
-// it cannot be out of date.
-func Reference() string {
-	var sb strings.Builder
-	sb.WriteString("Elements:\n")
-	for _, n := range elementNames() {
-		fmt.Fprintf(&sb, "  <%s>  %s", n, kinds[elements[n].holds])
-		if params := elements[n].paramNames(); len(params) > 0 {
-			fmt.Fprintf(&sb, "; takes %s", strings.Join(params, " "))
-		}
-		if own := elements[n].optionNames(); len(own) > 0 {
-			fmt.Fprintf(&sb, "; options %s", strings.Join(own, " "))
-		}
-		sb.WriteByte('\n')
-	}
-	sb.WriteString("Attributes (Go option in kebab-case):\n")
-	for _, n := range attributeNames() {
-		fmt.Fprintf(&sb, "  %s\n", n)
-	}
-	sb.WriteString("<include name=\"x\"/> builds the template registered with markup.Define(\"x\", ...) with this scope.\n")
-	sb.WriteString("<slot name=\"x\"/> puts the view.Node the scope holds under the path x here (row.Knob in a for), a view.Custom one included.\n")
-	sb.WriteString("<include> and <slot> take only name, if and for.\n")
-	sb.WriteString("<icon name=\"trash\"/> draws a built-in or registered icon (widget.IconNames).\n")
-	sb.WriteString("<icon-button icon=\"search\"/> is widget.IconButton around that icon, grown to fill the chip.\n")
-	sb.WriteString("<choice selected=\"{{chosen}}\">Raw</choice> is widget.Choice: a primary-button when selected is true, a button otherwise.\n")
-	sb.WriteString("<form-row label=\"Timeout\" label-width=\"160\">...</form-row> is widget.FormRow: the label in a column that wide, then the children.\n")
-	sb.WriteString("<check-row on=\"{{x}}\" on-click=\"toggle\"><text>Label</text></check-row> is widget.CheckRow: a checkbox, then the children; on-click makes the whole row the target.\n")
-	sb.WriteString("<lines color=\"muted\">{{text}}</lines> is view.Lines, one text per line of the scope's text (literal text has its whitespace collapsed); color is its required argument; small makes every line a small text NoteH high.\n")
-	sb.WriteString("<tab-bar><scroll-tabs .../><slot name=\"extra\"/></tab-bar> is widget.TabBar: the strip under tabs or scroll-tabs and anything beside them, TabBarH high with TabGap above the tabs and a line under it.\n")
-	sb.WriteString("<note tone=\"error\">{{why}}</note> is widget.Note, a one-line small message under a control, cut with an ellipsis.\n")
-	sb.WriteString("Text and attribute values may use {{path}}, each step a map key or an exported struct field; if=\"name\" or \"!name\"; for=\"item in list\" over any slice, with {{$index}}; on-click=\"handler\" (and the other on-* events, each a func of the scope).\n")
-	sb.WriteString("A color attribute (bg, border*, edge-*, hover-*, color) given an empty token applies no option; so does separator=\"0\".\n")
-	sb.WriteString("What an element takes (state=\"x\", ...) are its Go constructor's arguments, all required; state and specs name a scope entry of the Go type.\n")
-	return sb.String()
-}
-
 // intsAttr reads exactly n whole numbers separated by spaces.
 func intsAttr(name string, count int, callback func([]int) view.Option) func(string) (view.Option, error) {
 	return func(value string) (view.Option, error) {
@@ -1469,36 +1402,4 @@ func enumAttr[T any](name string, table map[string]T, callback func(T) view.Opti
 		}
 		return callback(val), nil
 	}
-}
-
-// maxIncludeDepth bounds <include> nesting; the depth travels in the scope
-// under includeDepthKey, a name no template can write.
-const (
-	maxIncludeDepth = 32
-	includeDepthKey = "\x00include-depth"
-)
-
-var defined = struct {
-	sync.Mutex
-	m map[string]*Template
-}{m: map[string]*Template{}}
-
-// Define registers a template under a name, for <include name="..."/> in
-// other templates. A syntax error panics: it is a mistake in the program.
-func Define(name, src string) {
-	t := Must(name, src)
-	defined.Lock()
-	defined.m[name] = t
-	defined.Unlock()
-}
-
-func definedNames() []string {
-	defined.Lock()
-	defer defined.Unlock()
-	names := make([]string, 0, len(defined.m))
-	for n := range defined.m {
-		names = append(names, n)
-	}
-	sort.Strings(names)
-	return names
 }
