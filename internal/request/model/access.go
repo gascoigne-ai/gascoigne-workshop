@@ -21,7 +21,8 @@ const (
 // Key is how a trust list remembers the access.
 func (access Access) Key() string { return access.Kind + ":" + access.Subject }
 
-const stdioPrefix = "stdio:" // the URL of an MCP server that runs as a command
+// StdioPrefix starts the URL of an MCP server that runs as a command.
+const StdioPrefix = "stdio:"
 
 // Accesses lists what sending or connecting req (already expanded) does on
 // this machine: the command of a stdio MCP server, and the files a
@@ -29,7 +30,7 @@ const stdioPrefix = "stdio:" // the URL of an MCP server that runs as a command
 // collection's own and is left out; folder "" means none is.
 func (r Request) Accesses(folder string) []Access {
 	var out []Access
-	if command, ok := strings.CutPrefix(r.URL, stdioPrefix); ok && r.Protocol.Info().RunsCommand {
+	if command, ok := strings.CutPrefix(r.URL, StdioPrefix); ok && r.Protocol.Info().RunsCommand {
 		out = append(out, Access{AccessCommand, strings.TrimSpace(command)})
 	}
 	switch r.BodyType {
@@ -42,7 +43,7 @@ func (r Request) Accesses(folder string) []Access {
 			if !field.Enabled {
 				continue
 			}
-			if path, ok := strings.CutPrefix(field.Value, "@"); ok && path != "" && !strings.HasPrefix(path, "@") {
+			if path, ok := FormFile(field.Value); ok {
 				out = appendFile(out, path, folder)
 			}
 		}

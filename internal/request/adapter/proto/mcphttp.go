@@ -30,7 +30,7 @@ type mcpHTTP struct {
 
 func newMCPHTTP(req model.Request, network Network, deliver func([]byte), finish, note func(error)) (*mcpHTTP, error) {
 	if !strings.HasPrefix(req.URL, "http://") && !strings.HasPrefix(req.URL, "https://") {
-		return nil, fmt.Errorf("%q is not an http or https URL, or a %s command", req.URL, StdioPrefix)
+		return nil, fmt.Errorf("%q is not an http or https URL, or a %s command", req.URL, model.StdioPrefix)
 	}
 	if err := checkAuth(req.Auth); err != nil {
 		return nil, err

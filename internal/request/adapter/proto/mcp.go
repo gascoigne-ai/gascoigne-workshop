@@ -33,9 +33,6 @@ const (
 	mcpMaxMessage     = 16 << 20
 )
 
-// StdioPrefix starts the URL of an MCP server that runs as a command.
-const StdioPrefix = "stdio:"
-
 // mcpTransport moves JSON-RPC messages to and from a server. Messages
 // from the server go to the deliver function the transport was built with.
 type mcpTransport interface {
@@ -80,8 +77,8 @@ func (m MCP) Connect(ctx context.Context, req model.Request) (port.Session, erro
 // openTransport builds the stdio transport for a "stdio:" URL and the
 // streamable HTTP one for any other.
 func openTransport(req model.Request, network Network, s *mcpSession) (mcpTransport, error) {
-	if strings.HasPrefix(req.URL, StdioPrefix) {
-		return newMCPStdio(strings.TrimSpace(strings.TrimPrefix(req.URL, StdioPrefix)), s.deliver, s.finish)
+	if strings.HasPrefix(req.URL, model.StdioPrefix) {
+		return newMCPStdio(strings.TrimSpace(strings.TrimPrefix(req.URL, model.StdioPrefix)), s.deliver, s.finish)
 	}
 	return newMCPHTTP(req, network, s.deliver, s.finish, s.note)
 }

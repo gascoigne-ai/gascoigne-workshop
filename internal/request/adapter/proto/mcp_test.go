@@ -244,7 +244,7 @@ func TestMCPStdioSession(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Setenv("MCP_HELPER", "1")
-	s, err := MCP{}.Connect(context.Background(), model.Request{URL: StdioPrefix + shellQuote(exe)})
+	s, err := MCP{}.Connect(context.Background(), model.Request{URL: model.StdioPrefix + shellQuote(exe)})
 	if err != nil {
 		t.Fatal(err)
 	}

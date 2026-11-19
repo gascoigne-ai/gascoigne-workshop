@@ -493,7 +493,7 @@ func outRows(rows []model.KV, files bool) []kv {
 		e := kv{Key: r.Name, Value: text(r.Value), Disabled: !r.Enabled}
 		if files {
 			e.Type = "text"
-			if path, ok := strings.CutPrefix(r.Value, "@"); ok && path != "" && !strings.HasPrefix(path, "@") {
+			if path, ok := model.FormFile(r.Value); ok {
 				e.Type, e.Value, e.Src = "file", "", path
 			}
 		}

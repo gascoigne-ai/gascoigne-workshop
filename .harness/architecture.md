@@ -85,7 +85,7 @@ disabled header rows. The request body is encoded by a table keyed by `Request.B
 `json`, `text`, `form`, `multipart`, `graphql`, `file`; `BodyRaw`, stored as "", sends `Body` as is
 with no Content-Type) which also gives the automatic Content-Type; an enabled `Content-Type` header
 of the user replaces it. Form and multipart bodies use the enabled, named rows of `Request.Form`; a
-multipart value `@path` sends that file as a file part (named by its base name) and `@@x` sends the
+multipart value `@path` (one rule, `model.FormFile`, shared by the encoder, the access check and the Postman export) sends that file as a file part (named by its base name) and `@@x` sends the
 text `@x`. `websocket`, `sse`, `mcp` and `grpc` are streaming or call clients of their own (decision
 2).
 

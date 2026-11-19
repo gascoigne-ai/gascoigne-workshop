@@ -159,7 +159,7 @@ func encodeMultipart(req model.Request) ([]byte, string, error) {
 	var buf bytes.Buffer
 	w := multipart.NewWriter(&buf)
 	for _, f := range formFields(req) {
-		if path, ok := strings.CutPrefix(f.Value, "@"); ok && path != "" && !strings.HasPrefix(path, "@") {
+		if path, ok := model.FormFile(f.Value); ok {
 			if err := writeFilePart(w, f.Name, path); err != nil {
 				return nil, "", err
 			}
