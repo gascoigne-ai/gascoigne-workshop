@@ -2,6 +2,7 @@ package app
 
 import (
 	"cmp"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/ui/mcpform"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/overlay"
@@ -102,10 +103,17 @@ func (a *App) dialogView() Node {
 
 // ---- toasts ----------------------------------------------------------------
 
+// toastKinds is how each severity looks as a toast; the toolkit does not
+// know severity.
+var toastKinds = map[severity.Level]ToastKind{
+	severity.Info:  ToastInfo,
+	severity.Error: ToastError,
+}
+
 // toast shows a message: an info one fades after a few seconds, an
 // error stays until it is clicked.
-func (a *App) toast(text string, isErr bool) {
-	if a.toasts.Show(text, isErr, a.now()) {
+func (a *App) toast(text string, level severity.Level) {
+	if a.toasts.Show(text, toastKinds[level], a.now()) {
 		a.dirty = true
 	}
 }
@@ -117,7 +125,7 @@ func (a *App) pruneToasts() bool { return a.toasts.Prune(a.now()) }
 // toasts, a successful copy is a status line.
 func (a *App) clipboardNote(msg string, isErr bool) {
 	if isErr {
-		a.toast(msg, true)
+		a.toast(msg, severity.Error)
 		return
 	}
 	a.status = msg

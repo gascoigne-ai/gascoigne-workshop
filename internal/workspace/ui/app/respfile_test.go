@@ -88,7 +88,7 @@ func TestSaveBodyWritesTheFileAndReportsFailures(t *testing.T) {
 	a.waitWrites()
 	found := false
 	for _, ts := range a.toasts {
-		found = found || (ts.IsErr && strings.Contains(ts.Text, "Saving failed"))
+		found = found || (ts.Kind == widget.ToastError && strings.Contains(ts.Text, "Saving failed"))
 	}
 	if !found {
 		t.Fatal("a failed save must be reported")

@@ -3,6 +3,7 @@ package app
 import (
 	"bytes"
 	"errors"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"os"
 	"path/filepath"
 	"strings"
@@ -120,7 +121,7 @@ func TestEveryFailurePathIsShownToTheUser(t *testing.T) {
 			if test.wantToast != "" {
 				found := false
 				for _, toast := range a.toasts {
-					found = found || (toast.IsErr && strings.Contains(toast.Text, test.wantToast))
+					found = found || (toast.Kind == widget.ToastError && strings.Contains(toast.Text, test.wantToast))
 				}
 				if !found {
 					t.Fatalf("no error toast containing %q; toasts %+v, status %q", test.wantToast, a.toasts, a.status)
@@ -151,7 +152,7 @@ func TestAHistoryThatCannotBeWrittenIsReportedByAToast(t *testing.T) {
 
 	found := false
 	for _, toast := range a.toasts {
-		found = found || (toast.IsErr && strings.Contains(toast.Text, "history"))
+		found = found || (toast.Kind == widget.ToastError && strings.Contains(toast.Text, "history"))
 	}
 	if !found {
 		t.Fatalf("no toast about the history; toasts %+v, status %q", a.toasts, a.status)

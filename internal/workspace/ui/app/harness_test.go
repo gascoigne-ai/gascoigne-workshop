@@ -269,7 +269,7 @@ func toastSays(app *App, text string) bool { return len(toastsWith(app, text)) >
 // toastWith is true when a toast of the kind isErr contains text.
 func toastWith(app *App, text string, isErr bool) bool {
 	for _, toast := range toastsWith(app, text) {
-		if toast.IsErr == isErr {
+		if (toast.Kind == widget.ToastError) == isErr {
 			return true
 		}
 	}
@@ -280,7 +280,7 @@ func toastWith(app *App, text string, isErr bool) bool {
 func errorToasts(app *App, part string) []string {
 	var found []string
 	for _, toast := range toastsWith(app, part) {
-		if toast.IsErr {
+		if toast.Kind == widget.ToastError {
 			found = append(found, toast.Text)
 		}
 	}

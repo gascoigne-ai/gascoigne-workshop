@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
 	"strings"
 	"testing"
 	"time"
@@ -48,7 +49,7 @@ var windowStates = []struct {
 	{"popup", false, func(app *App) { widget.OpenMenu(app.ctx, 100, 100, []widget.MenuItem{{Label: "Copy"}}) }},
 	{"dialog", false, func(app *App) { app.confirm("Delete Search Repos?", "This cannot be undone.", "Delete", func() {}) }},
 	{"call-log", false, func(app *App) { app.calls.Open() }},
-	{"toast", false, func(app *App) { app.toast("There is no response to save", true) }},
+	{"toast", false, func(app *App) { app.toast("There is no response to save", severity.Error) }},
 }
 
 // The whole window is pinned in each state at both window sizes.

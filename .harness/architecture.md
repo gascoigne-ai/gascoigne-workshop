@@ -683,7 +683,7 @@ that change `App`.
   form entering through a slot) whose Enter runs the primary button, Escape or a click outside
   cancels, and whose text field (prompt) starts focused with its text selected; Tab stays inside it.
   While a menu, dialog or the file browser is open the global shortcuts are off.
-  `App.toast(text, isErr)` shows a message above the status bar: info toasts fade after 3 s (the
+  `App.toast(text, level)` (a `severity.Level` of `workspace/model/severity`, mapped once to `widget.ToastKind`; prefs `Toast`, `sentlog.Host.Toast` and `calltrace.Entry` carry it too) shows a message above the status bar: info toasts fade after 3 s (the
   clock is `App.now`, replaced in tests), errors stay until clicked, at most five are kept;
   `App.toastsView` is `toasts.vml`. Clipboard failures and settings save failures are error toasts;
   a successful copy is still a status line. The settings dialog has a read-only **System** page

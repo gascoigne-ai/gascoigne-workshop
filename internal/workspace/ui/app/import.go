@@ -6,6 +6,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/openapi"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/postman"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
 	"path/filepath"
 )
 
@@ -57,18 +58,18 @@ var (
 func (a *App) importFolder(dir *model.Folder, kind importKind) {
 	text, err := a.ctx.Clipboard.Read()
 	if err != nil {
-		a.toast("Cannot read the clipboard: "+err.Error(), true)
+		a.toast("Cannot read the clipboard: "+err.Error(), severity.Error)
 		return
 	}
 	got, err := kind.parse(text)
 	if err != nil {
-		a.toast(kind.refusal+err.Error(), true)
+		a.toast(kind.refusal+err.Error(), severity.Error)
 		return
 	}
 	name := a.attachImport(dir, got)
 	a.status = "Imported " + name
 	if len(got.skipped) > 0 {
-		a.toast(fmt.Sprintf("%d %s, first: %s", len(got.skipped), kind.skippedWhat, got.skipped[0]), true)
+		a.toast(fmt.Sprintf("%d %s, first: %s", len(got.skipped), kind.skippedWhat, got.skipped[0]), severity.Error)
 	}
 }
 
@@ -107,7 +108,7 @@ func (a *App) exportPostman(dir *model.Folder) {
 	}
 	data, err := postman.Export(dir, vars)
 	if err != nil {
-		a.toast("Export failed: "+err.Error(), true)
+		a.toast("Export failed: "+err.Error(), severity.Error)
 		return
 	}
 	skipped := postman.Skipped(dir)
@@ -118,14 +119,14 @@ func (a *App) exportPostman(dir *model.Folder) {
 	a.pickFile("Export as Postman collection", true, name+".postman_collection.json", func(path string) {
 		a.writeFile(path, data, func(err error) {
 			if err != nil {
-				a.toast("Export failed: "+err.Error(), true)
+				a.toast("Export failed: "+err.Error(), severity.Error)
 				return
 			}
 			msg := "Exported to " + filepath.Base(path)
 			if skipped > 0 {
 				msg += fmt.Sprintf(" (%d requests of other kinds left out)", skipped)
 			}
-			a.toast(msg, false)
+			a.toast(msg, severity.Info)
 		})
 	})
 }

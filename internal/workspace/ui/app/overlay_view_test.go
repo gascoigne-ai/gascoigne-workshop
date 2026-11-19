@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
 	"strings"
 	"testing"
 
@@ -91,8 +92,8 @@ func TestTheToastsLayOutAsPinned(t *testing.T) {
 			a := testApp(t)
 			t.Cleanup(a.waitWrites)
 			a.w, a.h = size.width, size.height
-			a.toast("Cookies cleared", false)
-			a.toast("Enter the gRPC server first, for example grpc://localhost:50051", true)
+			a.toast("Cookies cleared", severity.Info)
+			a.toast("Enter the gRPC server first, for example grpc://localhost:50051", severity.Error)
 			assertDumpPinned(t, a, Stack(a.toastsView()), name, size.width, size.height)
 		})
 	}
@@ -114,7 +115,7 @@ func TestNoToastsNoToastsView(t *testing.T) {
 func TestToastsAndDialogAnswerInput(t *testing.T) {
 	a := testApp(t)
 	t.Cleanup(a.waitWrites)
-	a.toast("There is no response to save", true)
+	a.toast("There is no response to save", severity.Error)
 	a.step(core.Input{})
 	clickText(t, a, "There is no response to save", 0)
 	if len(a.toasts) != 0 {
@@ -126,5 +127,24 @@ func TestToastsAndDialogAnswerInput(t *testing.T) {
 	clickText(t, a, "Delete", 0)
 	if ran != 1 || a.dialog != nil {
 		t.Fatalf("Delete ran %d times, dialog open %v", ran, a.dialog != nil)
+	}
+}
+
+// A new severity level must get a toast kind: the table may not miss one,
+// or the toast would silently look like an info message.
+func TestEveryLevelMapsToAToastKind(t *testing.T) {
+	for _, level := range severity.All() {
+		kind, ok := toastKinds[level]
+		if !ok {
+			t.Fatalf("level %v has no toast kind", level)
+		}
+		a := testApp(t)
+		a.toast("message", level)
+		if len(a.toasts) != 1 || a.toasts[0].Kind != kind {
+			t.Errorf("level %v: toasts %+v, want kind %v", level, a.toasts, kind)
+		}
+	}
+	if toastKinds[severity.Info] == toastKinds[severity.Error] {
+		t.Error("info and error look the same")
 	}
 }

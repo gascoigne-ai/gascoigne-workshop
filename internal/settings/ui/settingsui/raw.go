@@ -3,6 +3,7 @@ package settingsui
 import (
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/jsonview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
@@ -39,7 +40,7 @@ func (d *SettingsDialog) Poll(host Host) {
 	d.stamp = now
 	data, err := host.SettingsStore().ReadText(path)
 	if err != nil {
-		host.Send(prefs.Toast{Text: "Cannot read settings.json: " + err.Error(), IsErr: true})
+		host.Send(prefs.Toast{Text: "Cannot read settings.json: " + err.Error(), Level: severity.Error})
 		return
 	}
 	parsed, problems := settings.Parse(data, host.Settings())
@@ -49,7 +50,7 @@ func (d *SettingsDialog) Poll(host Host) {
 		d.Problems = problems
 	}
 	if len(problems) > 0 {
-		host.Send(prefs.Toast{Text: "settings.json has problems and was not applied: " + problems[0].Message, IsErr: true})
+		host.Send(prefs.Toast{Text: "settings.json has problems and was not applied: " + problems[0].Message, Level: severity.Error})
 		return
 	}
 	host.Send(prefs.Replace{Settings: parsed})
@@ -110,7 +111,7 @@ func (d *SettingsDialog) RawEdited(host Host) {
 	}
 	d.rawPending = false
 	if err := host.SettingsStore().WriteText(path, []byte(text)); err != nil {
-		host.Send(prefs.Toast{Text: "Could not save settings: " + err.Error(), IsErr: true})
+		host.Send(prefs.Toast{Text: "Could not save settings: " + err.Error(), Level: severity.Error})
 		return
 	}
 	d.Stamp(host, path)
@@ -150,7 +151,7 @@ func (d *SettingsDialog) complete(host Host, quiet bool) {
 	suggestions := settings.Complete(text, len(string(runes[:caret])), host.ActionIDs())
 	if len(suggestions) == 0 {
 		if !quiet {
-			host.Send(prefs.Toast{Text: "Nothing to complete here", IsErr: false})
+			host.Send(prefs.Toast{Text: "Nothing to complete here", Level: severity.Info})
 		}
 		return
 	}

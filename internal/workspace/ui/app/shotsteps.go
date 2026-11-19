@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/tree"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -176,7 +177,7 @@ type toastStep struct{ text string }
 func ShowToast(text string) Step { return toastStep{text} }
 
 func (step toastStep) apply(app *App) error {
-	app.toast(step.text, true)
+	app.toast(step.text, severity.Error)
 	return nil
 }
 

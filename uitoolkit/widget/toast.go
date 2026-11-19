@@ -19,10 +19,20 @@ const (
 	toastMargin = 8 // between the stack and the bottom inset
 )
 
+// ToastKind says how a toast behaves and looks: an info toast fades, an
+// error toast stays until clicked. The zero value is ToastInfo.
+type ToastKind uint8
+
+// The kinds of toast.
+const (
+	ToastInfo ToastKind = iota
+	ToastError
+)
+
 // Toast is a short message over the window.
 type Toast struct {
 	Text    string
-	IsErr   bool
+	Kind    ToastKind
 	Expires time.Time // zero: stays until clicked
 }
 
@@ -33,11 +43,11 @@ type ToastStack []Toast
 // until it is dismissed. It reports whether anything was added; an error
 // with the text of one already shown is not, since the same failure on
 // every frame or send is one message.
-func (stack *ToastStack) Show(text string, isErr bool, now time.Time) bool {
-	toast := Toast{Text: text, IsErr: isErr}
-	if isErr {
+func (stack *ToastStack) Show(text string, kind ToastKind, now time.Time) bool {
+	toast := Toast{Text: text, Kind: kind}
+	if kind == ToastError {
 		for _, shown := range *stack {
-			if shown.IsErr && shown.Text == text {
+			if shown.Kind == ToastError && shown.Text == text {
 				return false
 			}
 		}
@@ -79,7 +89,7 @@ func Toasts(stack *ToastStack, width, height, bottomInset int) *El {
 		FloatAt(width-core.Gutter-toastW, height-bottomInset-toastMargin-total),
 		For(*stack, func(index int, toast Toast) Node {
 			border, color := core.Border, core.Text
-			if toast.IsErr {
+			if toast.Kind == ToastError {
 				border, color = core.Error, core.Error
 			}
 			return Row(H(toastH), PadX(core.Gutter), Bg(core.Panel), Border(border), Shadow(), OnClick(func() { stack.Dismiss(index) }),

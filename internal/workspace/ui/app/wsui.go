@@ -9,6 +9,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/textfmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/bus"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -452,7 +453,7 @@ func (a *App) promptMenu(tab *reqTab) []MenuItem {
 func (a *App) formatMessage(tab *reqTab) {
 	compact, err := textfmt.CompactJSON(tab.msg.Text)
 	if err != nil {
-		a.toast(err.Error(), true)
+		a.toast(err.Error(), severity.Error)
 		return
 	}
 	tab.setComposer(compact)

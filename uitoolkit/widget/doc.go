@@ -13,7 +13,7 @@
 //	Tabs       Tabs ScrollTabs TabBar ActiveTab   (state: TabItem)
 //	Menus      Menu OpenMenu CloseMenu MenuOpen PopupMenu PopupMenuLayer PopupMenuKeys NewMenu NextSelectable MenuWidth TextMenu   (state: MenuItem MenuState)
 //	Dialogs    Dialog ResizableDialog DialogTitle DialogSubtitle DialogToolbar MessageDialog   (state: DialogState DialogButton)
-//	Toasts     Toasts   (state: ToastStack Toast)
+//	Toasts     Toasts   (state: ToastStack Toast ToastKind)
 //	Pictures   Image RasterizeSVG
 //	Inputs     Field Area Code   (state: TextField TextArea CodeView Line Match Span; NewTextField NewTextArea)   Placeholder FieldPad Segments Wrap OnEnter OnTab   (OnChange is view's)
 //	Tooltips   TooltipLayer   (state: TooltipState)   (the Tooltip option is view's)

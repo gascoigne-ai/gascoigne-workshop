@@ -3,6 +3,7 @@ package app
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/environment/controller/envs"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	"strings"
 
@@ -246,12 +247,12 @@ func (a *App) completeVariable() {
 	}
 	t := a.cur()
 	if !t.url.Focused {
-		a.toast(w.PlatformKeyText(a.ctx.HostOS, "Ctrl+Space")+" completes a {{variable}} in the URL field", false)
+		a.toast(w.PlatformKeyText(a.ctx.HostOS, "Ctrl+Space")+" completes a {{variable}} in the URL field", severity.Info)
 		return
 	}
 	names, from := a.variableCompletion(t)
 	if len(names) == 0 {
-		a.toast("No variable fits here", false)
+		a.toast("No variable fits here", severity.Info)
 		return
 	}
 	items := make([]MenuItem, len(names))

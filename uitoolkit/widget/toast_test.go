@@ -13,12 +13,12 @@ var toastStart = time.Date(2026, 11, 10, 9, 0, 0, 0, time.UTC)
 
 func TestAnInfoToastFadesAnErrorStays(t *testing.T) {
 	var stack ToastStack
-	stack.Show("saved", false, toastStart)
-	stack.Show("failed", true, toastStart)
+	stack.Show("saved", ToastInfo, toastStart)
+	stack.Show("failed", ToastError, toastStart)
 	if stack.Prune(toastStart.Add(ToastInfoFor - time.Millisecond)) {
 		t.Fatal("nothing has expired yet")
 	}
-	if !stack.Prune(toastStart.Add(ToastInfoFor)) || len(stack) != 1 || !stack[0].IsErr {
+	if !stack.Prune(toastStart.Add(ToastInfoFor)) || len(stack) != 1 || stack[0].Kind != ToastError {
 		t.Fatalf("after the time only the error is left: %+v", stack)
 	}
 	if stack.Prune(toastStart.Add(time.Hour)) {
@@ -28,13 +28,13 @@ func TestAnInfoToastFadesAnErrorStays(t *testing.T) {
 
 func TestTheSameErrorIsShownOnce(t *testing.T) {
 	var stack ToastStack
-	if !stack.Show("boom", true, toastStart) {
+	if !stack.Show("boom", ToastError, toastStart) {
 		t.Fatal("the first one is shown")
 	}
-	if stack.Show("boom", true, toastStart) || len(stack) != 1 {
+	if stack.Show("boom", ToastError, toastStart) || len(stack) != 1 {
 		t.Fatalf("a repeated failure is one message: %+v", stack)
 	}
-	if !stack.Show("boom", false, toastStart) {
+	if !stack.Show("boom", ToastInfo, toastStart) {
 		t.Fatal("an info toast with the same text is a different message")
 	}
 }
@@ -42,7 +42,7 @@ func TestTheSameErrorIsShownOnce(t *testing.T) {
 func TestOlderToastsAreDroppedBeyondTheMaximum(t *testing.T) {
 	var stack ToastStack
 	for i := range ToastMax + 3 {
-		stack.Show(strconv.Itoa(i), true, toastStart)
+		stack.Show(strconv.Itoa(i), ToastError, toastStart)
 	}
 	if len(stack) != ToastMax || stack[0].Text != "3" || stack[ToastMax-1].Text != strconv.Itoa(ToastMax+2) {
 		t.Fatalf("stack = %+v", stack)
@@ -51,8 +51,8 @@ func TestOlderToastsAreDroppedBeyondTheMaximum(t *testing.T) {
 
 func TestDismissRemovesOneToast(t *testing.T) {
 	var stack ToastStack
-	stack.Show("a", true, toastStart)
-	stack.Show("b", true, toastStart)
+	stack.Show("a", ToastError, toastStart)
+	stack.Show("b", ToastError, toastStart)
 	stack.Dismiss(0)
 	if len(stack) != 1 || stack[0].Text != "b" {
 		t.Fatalf("stack = %+v", stack)
@@ -64,8 +64,8 @@ func TestDismissRemovesOneToast(t *testing.T) {
 func TestToastsStackAboveTheInsetAndAClickDismissesOne(t *testing.T) {
 	c := testCtx(t)
 	var stack ToastStack
-	stack.Show("saved", false, toastStart)
-	stack.Show("boom", true, toastStart)
+	stack.Show("saved", ToastInfo, toastStart)
+	stack.Show("boom", ToastError, toastStart)
 	view := Toasts(&stack, 800, 600, 28)
 	root := Stack(view)
 	Layout(c, root, 800, 600)

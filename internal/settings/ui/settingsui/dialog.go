@@ -10,6 +10,7 @@ package settingsui
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fontfamily"
@@ -281,7 +282,7 @@ func (d *SettingsDialog) saveButton(host Host) Node {
 func (d *SettingsDialog) Save(host Host) {
 	if d.rawPending && d.Raw && len(d.Problems) == 0 && host.SettingsPath() != "" {
 		if err := host.SettingsStore().WriteText(host.SettingsPath(), []byte(d.RawText.Text)); err != nil {
-			host.Send(prefs.Toast{Text: "Could not save settings: " + err.Error(), IsErr: true})
+			host.Send(prefs.Toast{Text: "Could not save settings: " + err.Error(), Level: severity.Error})
 			return
 		}
 		d.Stamp(host, host.SettingsPath())

@@ -3,6 +3,7 @@ package app
 import (
 	"errors"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"github.com/hajimehoshi/ebiten/v2"
@@ -225,8 +226,8 @@ func TestInfoToastsExpireAndErrorsStayUntilClicked(t *testing.T) {
 	a := testApp(t)
 	clock := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
 	a.now = func() time.Time { return clock }
-	a.toast("Saved", false)
-	a.toast("Disk full", true)
+	a.toast("Saved", severity.Info)
+	a.toast("Disk full", severity.Error)
 	a.step(core.Input{})
 	if len(a.toasts) != 2 {
 		t.Fatalf("toasts = %d", len(a.toasts))
@@ -239,7 +240,7 @@ func TestInfoToastsExpireAndErrorsStayUntilClicked(t *testing.T) {
 	}
 	clock = clock.Add(2 * time.Second)
 	a.step(core.Input{})
-	if len(a.toasts) != 1 || !a.toasts[0].IsErr {
+	if len(a.toasts) != 1 || a.toasts[0].Kind != widget.ToastError {
 		t.Fatalf("after 4s only the error is left: %+v", a.toasts)
 	}
 	clock = clock.Add(10 * time.Minute)
@@ -256,8 +257,8 @@ func TestInfoToastsExpireAndErrorsStayUntilClicked(t *testing.T) {
 
 func TestClickingOneToastDismissesOnlyThatOne(t *testing.T) {
 	a := testApp(t)
-	a.toast("first", true)
-	a.toast("second", true)
+	a.toast("first", severity.Error)
+	a.toast("second", severity.Error)
 	a.step(core.Input{})
 	x, y, w, h := toastRect(2, 0)
 	click(a, x+w/2, y+h/2)
@@ -269,7 +270,7 @@ func TestClickingOneToastDismissesOnlyThatOne(t *testing.T) {
 func TestOnlyTheNewestToastsAreKept(t *testing.T) {
 	a := testApp(t)
 	for i := 0; i < 8; i++ {
-		a.toast(strings.Repeat("x", i+1), true)
+		a.toast(strings.Repeat("x", i+1), severity.Error)
 	}
 	if len(a.toasts) != widget.ToastMax || len(a.toasts[len(a.toasts)-1].Text) != 8 {
 		t.Fatalf("%d toasts, newest %q", len(a.toasts), a.toasts[len(a.toasts)-1].Text)
@@ -280,7 +281,7 @@ func TestClipboardFailureBecomesAnErrorToast(t *testing.T) {
 	a := testApp(t)
 	a.ctx.Clipboard = core.ReportClipboard(&fakeClip{err: errors.New("no clipboard tool found")}, a.clipboardNote)
 	a.ctx.Clipboard.Write("x")
-	if len(a.toasts) != 1 || !a.toasts[0].IsErr || !strings.Contains(a.toasts[0].Text, "no clipboard tool") {
+	if len(a.toasts) != 1 || a.toasts[0].Kind != widget.ToastError || !strings.Contains(a.toasts[0].Text, "no clipboard tool") {
 		t.Fatalf("toasts = %+v", a.toasts)
 	}
 	a.ctx.Clipboard = core.ReportClipboard(&fakeClip{}, a.clipboardNote)

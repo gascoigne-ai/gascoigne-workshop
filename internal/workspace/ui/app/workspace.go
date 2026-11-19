@@ -3,6 +3,7 @@ package app
 import (
 	"errors"
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
 	"strings"
 	"time"
 
@@ -73,7 +74,7 @@ func (a *App) openWorkspace(dir string) {
 func (a *App) toastNewer(folder string, err error) {
 	var newer *fileversion.NewerError
 	if errors.As(err, &newer) {
-		a.toast("Cannot open "+folder+": "+err.Error(), true)
+		a.toast("Cannot open "+folder+": "+err.Error(), severity.Error)
 	}
 }
 
@@ -147,7 +148,7 @@ func (a *App) saveCollection(col *model.Collection) {
 		Run: func() error { return a.store.Save(dir, snapshot) },
 		Done: func(err error) {
 			if err != nil {
-				a.toast("Saving failed: "+err.Error(), true)
+				a.toast("Saving failed: "+err.Error(), severity.Error)
 				return
 			}
 			a.status = fmt.Sprintf("Saved %s", snapshot.Name)
@@ -160,7 +161,7 @@ func (a *App) saveCollection(col *model.Collection) {
 func (a *App) locate(col *model.Collection) string {
 	parent := a.collectionsDir()
 	if parent == "" {
-		a.toast("No folder to save to", true)
+		a.toast("No folder to save to", severity.Error)
 		return ""
 	}
 	name, err := collections.CleanName(col.Name)
@@ -169,7 +170,7 @@ func (a *App) locate(col *model.Collection) string {
 	}
 	dir, err := a.store.Create(parent, name)
 	if err != nil {
-		a.toast("Saving failed: "+err.Error(), true)
+		a.toast("Saving failed: "+err.Error(), severity.Error)
 		return ""
 	}
 	a.open = collections.Update(a.open, collections.Located{Collection: col, Dir: dir})
@@ -246,12 +247,12 @@ func (a *App) openWorkspaceAt(dir string) {
 	}
 	dir = collections.AbsDir(dir)
 	if err := a.FlushWorkspace(); err != nil {
-		a.toast("Saving the current collection failed: "+err.Error(), true)
+		a.toast("Saving the current collection failed: "+err.Error(), severity.Error)
 		return
 	}
 	loaded, err := a.store.Load(dir)
 	if err != nil {
-		a.toast("Cannot open "+dir+": "+err.Error(), true)
+		a.toast("Cannot open "+dir+": "+err.Error(), severity.Error)
 		return
 	}
 	env := a.rememberedEnv(dir)

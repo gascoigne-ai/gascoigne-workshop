@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"os"
 	"strings"
 	"testing"
@@ -108,7 +109,7 @@ func TestDropInTheSameCollectionRenamesOnAClashWithAnInfoToast(t *testing.T) {
 	if req.Name != "Alpha call 2" || !alpha.Folders[0].Contains(model.Of(req)) {
 		t.Fatalf("name %q", req.Name)
 	}
-	if text := toastTexts(a); !strings.Contains(text, "Alpha call 2") || a.toasts[len(a.toasts)-1].IsErr {
+	if text := toastTexts(a); !strings.Contains(text, "Alpha call 2") || a.toasts[len(a.toasts)-1].Kind == widget.ToastError {
 		t.Fatalf("toasts %q", text)
 	}
 }
@@ -170,7 +171,7 @@ func TestAFailedTargetWriteKeepsTheSourceOnDiskAndSaysSo(t *testing.T) {
 	if err != nil || len(gotAlpha.Requests) != 1 {
 		t.Fatalf("Alpha on disk lost the request before the target had it: %v %v", names(gotAlpha.Requests), err)
 	}
-	if len(a.toasts) == 0 || !a.toasts[len(a.toasts)-1].IsErr {
+	if len(a.toasts) == 0 || a.toasts[len(a.toasts)-1].Kind != widget.ToastError {
 		t.Fatalf("toasts %q, want an error", toastTexts(a))
 	}
 }
@@ -329,7 +330,7 @@ func TestAPickForANodeDeletedWhileThePickerWasOpenSaysSo(t *testing.T) {
 	alpha.Delete(req)
 	a.picker.Select(len(a.picker.Rows()) - 1)
 	a.step(core.Input{Enter: true})
-	if len(a.toasts) == 0 || !a.toasts[len(a.toasts)-1].IsErr || beta.Contains(model.Of(req)) {
+	if len(a.toasts) == 0 || a.toasts[len(a.toasts)-1].Kind != widget.ToastError || beta.Contains(model.Of(req)) {
 		t.Fatalf("toasts %q, in Beta %v", toastTexts(a), beta.Contains(model.Of(req)))
 	}
 }

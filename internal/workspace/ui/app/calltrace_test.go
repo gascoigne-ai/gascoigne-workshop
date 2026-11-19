@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
 	"strings"
 	"testing"
 
@@ -36,7 +37,7 @@ func TestAFailedSendIsTracedAsAnError(t *testing.T) {
 
 	var errors int
 	for _, entry := range a.calls.Entries() {
-		if entry.IsErr {
+		if entry.Level == severity.Error {
 			errors++
 		}
 	}

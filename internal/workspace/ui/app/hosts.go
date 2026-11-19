@@ -6,6 +6,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
@@ -24,7 +25,7 @@ func (a *App) SentStore() port.SentStore {
 }
 
 // Toast shows a message over the window.
-func (a *App) Toast(text string, isErr bool) { a.toast(text, isErr) }
+func (a *App) Toast(text string, level severity.Level) { a.toast(text, level) }
 
 // SetStatus replaces the status line.
 func (a *App) SetStatus(text string) { a.status = text }

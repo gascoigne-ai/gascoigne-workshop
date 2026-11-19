@@ -2,6 +2,7 @@ package app
 
 import (
 	"errors"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/controller/viewer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
@@ -146,7 +147,7 @@ func (a *App) persistSettings() {
 	}
 	if err := a.SettingsStore().Save(a.settingsPath, a.settings); err != nil {
 		a.status = "Could not save settings: " + err.Error()
-		a.toast(a.status, true)
+		a.toast(a.status, severity.Error)
 		return
 	}
 	a.prefs.Stamp(a, a.settingsPath)
@@ -163,9 +164,9 @@ func (a *App) revertSettings() {
 	var clamped *settings.ClampedError
 	switch {
 	case errors.As(err, &clamped): // the values are usable: applied, with a note
-		a.toast(clamped.Error(), true)
+		a.toast(clamped.Error(), severity.Error)
 	case err != nil:
-		a.toast("Could not read settings.json: "+err.Error(), true)
+		a.toast("Could not read settings.json: "+err.Error(), severity.Error)
 		return
 	}
 	a.applySettings(loaded)
@@ -228,7 +229,7 @@ func (a *App) Send(msg prefs.Msg) {
 	case prefs.MarkSaved:
 		a.settingsUnsaved = false
 	case prefs.Toast:
-		a.toast(msg.Text, msg.IsErr)
+		a.toast(msg.Text, msg.Level)
 	case prefs.SetStatus:
 		a.status = msg.Text
 	case prefs.OpenMenu:

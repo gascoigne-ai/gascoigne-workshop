@@ -5,6 +5,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -130,7 +131,7 @@ func (a *App) newFolderIn(dir *model.Folder) { a.applyTree(tree.NewFolder{Dir: d
 func (a *App) renameNode(node model.Node) {
 	a.prompt("Rename", node.Name(), "Rename", func(text string) {
 		if err := a.applyTree(tree.Rename{Node: node, Name: text}).Err; err != nil {
-			a.toast("Cannot rename: "+err.Error(), true)
+			a.toast("Cannot rename: "+err.Error(), severity.Error)
 		}
 	})
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/tree"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/serial"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
 	"path/filepath"
 	"strings"
 	"time"
@@ -279,7 +280,7 @@ func (a *App) stateTick() {
 		Run: func() error { return a.states.Save(path, snapshot) },
 		Done: func(err error) {
 			if err != nil {
-				a.toast(err.Error(), true)
+				a.toast(err.Error(), severity.Error)
 			}
 		},
 	})
@@ -341,7 +342,7 @@ func (a *App) saveHistory(tab *reqTab) {
 		Run: func() error { return store.Save(key, entries) },
 		Done: func(err error) {
 			if err != nil {
-				a.toast("History is not being saved: "+err.Error(), true)
+				a.toast("History is not being saved: "+err.Error(), severity.Error)
 			}
 		},
 	})
@@ -358,7 +359,7 @@ func (a *App) loadHistory(req *model.Request) []tabs.PastResponse {
 		saved, err = store.Load(legacy)
 	}
 	if err != nil {
-		a.toast("History could not be read: "+err.Error(), true)
+		a.toast("History could not be read: "+err.Error(), severity.Error)
 		return nil
 	}
 	entries := make([]tabs.PastResponse, 0, len(saved))
@@ -385,6 +386,6 @@ func (a *App) stateWritable() bool {
 // left as it is for this session.
 func (a *App) noteReadOnly(access fileversion.Access, loadErr error) {
 	if access == fileversion.ReadOnly {
-		a.toast(loadErr.Error()+"; it is not changed this session", true)
+		a.toast(loadErr.Error()+"; it is not changed this session", severity.Error)
 	}
 }

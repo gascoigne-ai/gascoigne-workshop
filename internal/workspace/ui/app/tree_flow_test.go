@@ -114,7 +114,7 @@ func TestRenameToATakenNameIsRefusedWithAToast(t *testing.T) {
 	pickMenu(t, a, "Rename")
 	a.typeText("Repository Tags")
 	a.step(core.Input{Enter: true})
-	if info.Name != "Repository Info" || len(a.toasts) != 1 || !a.toasts[0].IsErr {
+	if info.Name != "Repository Info" || len(a.toasts) != 1 || a.toasts[0].Kind != widget.ToastError {
 		t.Fatalf("name %q toasts %+v", info.Name, a.toasts)
 	}
 }
@@ -243,7 +243,7 @@ func TestADropThatIsNotAllowedChangesNothingAndSaysWhy(t *testing.T) {
 	if len(a.col().Folders) != 3 || len(a.col().Folders[1].Requests) != 3 {
 		t.Fatal("a refused move changes nothing")
 	}
-	if len(a.toasts) != 1 || !a.toasts[0].IsErr {
+	if len(a.toasts) != 1 || a.toasts[0].Kind != widget.ToastError {
 		t.Fatalf("toasts = %+v", a.toasts)
 	}
 }

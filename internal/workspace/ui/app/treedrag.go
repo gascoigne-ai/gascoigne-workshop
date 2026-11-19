@@ -4,6 +4,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/transfer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/ui/destpicker"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -87,7 +88,7 @@ func (a *App) transferNode(t transfer.Transfer) {
 	}
 	out := transfer.Apply(t)
 	if out.Err != nil {
-		a.toast("Cannot "+verb+": "+out.Err.Error(), true)
+		a.toast("Cannot "+verb+": "+out.Err.Error(), severity.Error)
 		return
 	}
 	a.selectNode(out.Node)
@@ -97,10 +98,10 @@ func (a *App) transferNode(t transfer.Transfer) {
 		a.varsTarget = varsTarget{}
 	}
 	if out.Renamed {
-		a.toast("Renamed to "+out.Name+", the name was taken", false)
+		a.toast("Renamed to "+out.Name+", the name was taken", severity.Info)
 	}
 	if len(out.Missing) > 0 {
-		a.toast(transfer.MissingText(out.Missing, t.To.Name), false)
+		a.toast(transfer.MissingText(out.Missing, t.To.Name), severity.Info)
 	}
 	if t.Mode == transfer.Move && t.From != t.To {
 		a.flushMoved(t.From, t.To)
@@ -118,11 +119,11 @@ func (a *App) flushMoved(from, to *model.Collection) {
 		return
 	}
 	if err := a.flushCollection(target); err != nil {
-		a.toast("Saving "+to.Name+" failed, "+from.Name+" still has the node on disk: "+err.Error(), true)
+		a.toast("Saving "+to.Name+" failed, "+from.Name+" still has the node on disk: "+err.Error(), severity.Error)
 		return
 	}
 	if err := a.flushCollection(source); err != nil {
-		a.toast("Saving "+from.Name+" failed: "+err.Error(), true)
+		a.toast("Saving "+from.Name+" failed: "+err.Error(), severity.Error)
 	}
 }
 

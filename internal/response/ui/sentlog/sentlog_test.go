@@ -2,6 +2,7 @@ package sentlog
 
 import (
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
 	"image/color"
 	"strings"
 	"testing"
@@ -30,7 +31,7 @@ func (h *fakeHost) SentStore() port.SentStore {
 	}
 	return history.SentLog{Dir: h.dir}
 }
-func (h *fakeHost) Toast(text string, _ bool)                  { h.toasts = append(h.toasts, text) }
+func (h *fakeHost) Toast(text string, _ severity.Level)        { h.toasts = append(h.toasts, text) }
 func (h *fakeHost) SetStatus(text string)                      { h.status = text }
 func (h *fakeHost) Badge(_ model.Protocol, method string) Node { return Text(method) }
 func (h *fakeHost) OpenRequest(folder, path string) bool {

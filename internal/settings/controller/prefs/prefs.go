@@ -3,7 +3,10 @@
 // application applies it; the host's other methods are only reads.
 package prefs
 
-import "github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
+import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
+)
 
 // Msg is one thing a settings page asks for.
 type Msg interface{ prefsMsg() }
@@ -46,7 +49,7 @@ type (
 // Toast shows a message over the window.
 type Toast struct {
 	Text  string
-	IsErr bool
+	Level severity.Level
 }
 
 // SetStatus replaces the status line.

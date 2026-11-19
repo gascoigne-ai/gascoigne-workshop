@@ -2,6 +2,7 @@ package calltrace
 
 import (
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
 	"image/color"
 	"strings"
 	"testing"
@@ -52,7 +53,7 @@ func TestErrorsAreMarkedAsFailures(t *testing.T) {
 	log.Info(clock, "fine")
 	log.Error(clock, "broken")
 	entries := log.Entries()
-	if entries[0].IsErr || !entries[1].IsErr {
+	if entries[0].Level == severity.Error || entries[1].Level != severity.Error {
 		t.Fatalf("entries = %+v", entries)
 	}
 }

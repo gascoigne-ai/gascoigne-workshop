@@ -2,6 +2,7 @@ package app
 
 import (
 	sport "github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"path/filepath"
 	"testing"
@@ -121,7 +122,7 @@ func TestToastsRequestRedrawsWhenShownAndWhenTheyExpire(t *testing.T) {
 	clock := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 	a.now = func() time.Time { return clock }
 	settle(a, 2)
-	a.toast("hello", false)
+	a.toast("hello", severity.Info)
 	if !a.dirty {
 		t.Fatal("showing a toast needs a draw")
 	}

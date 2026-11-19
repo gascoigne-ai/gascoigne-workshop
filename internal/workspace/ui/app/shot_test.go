@@ -663,7 +663,7 @@ func TestScreenshotScenesApplyTheirSteps(t *testing.T) {
 		// first: an error toast stays until it is clicked, so a slow frame
 		// cannot let it fade before the capture as an info toast would.
 		{"show the toasts", Options{}, []Step{ShowToast("First"), ShowToast("Second")}, func(t *testing.T, a *App) {
-			want := widget.ToastStack{{Text: "First", IsErr: true}, {Text: "Second", IsErr: true}}
+			want := widget.ToastStack{{Text: "First", Kind: widget.ToastError}, {Text: "Second", Kind: widget.ToastError}}
 			if !slices.Equal(a.toasts, want) {
 				t.Fatalf("toasts %+v, want %+v", a.toasts, want)
 			}

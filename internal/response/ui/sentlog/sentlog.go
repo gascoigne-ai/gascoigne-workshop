@@ -5,6 +5,7 @@ package sentlog
 
 import (
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
 	"strings"
 	"time"
 
@@ -21,7 +22,7 @@ type Host interface {
 	// SentStore keeps the log between runs, nil when nothing is saved.
 	SentStore() port.SentStore
 	// Toast shows a message over the window.
-	Toast(text string, isErr bool)
+	Toast(text string, level severity.Level)
 	// SetStatus replaces the status line.
 	SetStatus(text string)
 	// OpenRequest focuses the request at path of the collection saved in
@@ -53,7 +54,7 @@ func (l *Log) Record(host Host, at time.Time, folder, path string, req *model.Re
 		return
 	}
 	if err := store.Append(sent); err != nil {
-		host.Toast("History is not being saved: "+err.Error(), true)
+		host.Toast("History is not being saved: "+err.Error(), severity.Error)
 	}
 }
 
@@ -65,7 +66,7 @@ func (l *Log) Load(host Host) {
 	}
 	rows, err := store.Load()
 	if err != nil {
-		host.Toast("History could not be read: "+err.Error(), true)
+		host.Toast("History could not be read: "+err.Error(), severity.Error)
 		return
 	}
 	l.rows = rows
