@@ -17,8 +17,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-      - name: Ebitengine build dependencies
-        run: sudo apt-get update && sudo apt-get install -y libc6-dev libgl1-mesa-dev libxcursor-dev libxi-dev libxinerama-dev libxrandr-dev libxxf86vm-dev libasound2-dev pkg-config xvfb
+      - uses: ./.github/actions/ebitengine-deps
       - name: Build tarball
         run: |
           name=gascoigne-workshop-${GITHUB_REF_NAME}-linux-amd64
@@ -40,8 +39,11 @@ jobs:
       - name: Build the app bundle
         run: |
           name=gascoigne-workshop-${GITHUB_REF_NAME}-macos-arm64
-          go build -tags release -o bin/workshop ./cmd/workshop
-          packaging/macos/make-app.sh "${GITHUB_REF_NAME#v}" bin/workshop dist
+          # make release, not make install: install adds the Linux-only desktop
+          # entry and puts the binary in a prefix, while the bundle script
+          # takes the built binary itself.
+          make release
+          packaging/macos/make-app.sh "${GITHUB_REF_NAME#v}" bin/workshop-release dist
           ditto -c -k --keepParent "dist/Gascoigne Workshop.app" "$name.zip"
       - uses: actions/upload-artifact@v4
         with:
@@ -71,8 +73,7 @@ jobs:
           name=gascoigne-workshop-${GITHUB_REF_NAME}-windows-amd64
           mkdir -p "dist/$name"
           go build -tags release -ldflags "-H=windowsgui" -o "dist/$name/gascoigne-workshop.exe" ./cmd/workshop
-          go build -tags release -o bin/workshop.exe ./cmd/workshop
-          bin/workshop.exe -icon-png "dist/$name/icon.png"
+          cp bin/icon.png "dist/$name/icon.png"
           cd dist && 7z a -tzip "../$name.zip" "$name"
       - uses: actions/upload-artifact@v4
         with:

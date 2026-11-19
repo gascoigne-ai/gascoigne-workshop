@@ -1,0 +1,7 @@
+name: Ebitengine build dependencies
+description: Installs the apt packages Ebitengine needs to build and run on Linux, plus xvfb for the golden scenes. The one list; .harness/release.md links here.
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: sudo apt-get update && sudo apt-get install -y libc6-dev libgl1-mesa-dev libxcursor-dev libxi-dev libxinerama-dev libxrandr-dev libxxf86vm-dev libasound2-dev pkg-config xvfb

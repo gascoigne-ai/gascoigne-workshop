@@ -10,8 +10,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-      - name: Ebitengine build dependencies
-        run: sudo apt-get update && sudo apt-get install -y libc6-dev libgl1-mesa-dev libxcursor-dev libxi-dev libxinerama-dev libxrandr-dev libxxf86vm-dev libasound2-dev pkg-config xvfb
+      - uses: ./.github/actions/ebitengine-deps
       - name: make check
         run: xvfb-run -a make check
   build:
@@ -27,7 +26,6 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-      # Mirrors the vet and vet-release targets of make check; the release
-      # build has its own files (build tag "release").
+      # The release build has its own files (build tag "release"), hence both vets.
       - name: build and vet
-        run: go build ./... && go vet ./... && go vet -tags release ./...
+        run: go build ./... && make vet vet-release
