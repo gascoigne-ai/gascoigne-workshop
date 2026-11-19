@@ -96,8 +96,8 @@ func (f *TextField) snapshot() snapshot {
 	return snapshot{f.Text, f.Cursor, f.Anchor, f.HasSel}
 }
 
-func (f *TextField) restore(snapshot snapshot) {
-	f.Text, f.Cursor, f.Anchor, f.HasSel = snapshot.text, snapshot.cursor, snapshot.anchor, snapshot.hasSel
+func (f *TextField) restore(saved snapshot) {
+	f.Text, f.Cursor, f.Anchor, f.HasSel = saved.text, saved.cursor, saved.anchor, saved.hasSel
 	f.last = kindNone
 }
 
@@ -629,7 +629,7 @@ func (f *TextField) dedent() bool {
 // shiftLines applies change(r, lineStart) to each line start: positive
 // adds that many spaces, negative removes that many runes. The cursor
 // and the selection follow the text.
-func (f *TextField) shiftLines(starts []int, change func(r []rune, start int) int) bool {
+func (f *TextField) shiftLines(starts []int, change func(runes []rune, start int) int) bool {
 	r := []rune(f.Text)
 	delta := make([]int, len(starts))
 	any := false

@@ -98,9 +98,9 @@ func nameBelow(dirs []string, file string) (string, bool) {
 	return "", false
 }
 
-func containsPath(paths []string, path string) bool {
+func containsPath(paths []string, wanted string) bool {
 	for _, candidate := range paths {
-		if candidate == path {
+		if candidate == wanted {
 			return true
 		}
 	}

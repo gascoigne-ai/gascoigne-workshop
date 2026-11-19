@@ -65,16 +65,16 @@ func (a *App) duplicateTab(index int) {
 
 // ---- table rows ---------------------------------------------------------------
 
-func (a *App) rowMenuItems(pane pane, reqTab *reqTab, row int) []MenuItem {
-	n := len(*pane.rows(a, reqTab))
-	a.rowSel = &rowSelection{pane: pane, tab: reqTab, row: row}
+func (a *App) rowMenuItems(panel pane, tab *reqTab, row int) []MenuItem {
+	n := len(*panel.rows(a, tab))
+	a.rowSel = &rowSelection{pane: panel, tab: tab, row: row}
 	change := func(callback func(rows []model.KV) []model.KV) func() {
 		return func() {
 			a.commitEdit()
-			a.applyRows(pane, reqTab, callback)
+			a.applyRows(panel, tab, callback)
 		}
 	}
-	items := append(a.copyRowItems(*pane.rows(a, reqTab), row, false), append([]MenuItem{menuSeparator}, []MenuItem{
+	items := append(a.copyRowItems(*panel.rows(a, tab), row, false), append([]MenuItem{menuSeparator}, []MenuItem{
 		{Label: "Insert row above", Run: change(func(rows []model.KV) []model.KV { return model.InsertRow(rows, row, model.KV{Enabled: true}) })},
 		{Label: "Insert row below", Run: change(func(rows []model.KV) []model.KV { return model.InsertRow(rows, row+1, model.KV{Enabled: true}) })},
 		{Label: "Duplicate", Run: change(func(rows []model.KV) []model.KV { return model.DuplicateRow(rows, row) })},
@@ -86,14 +86,14 @@ func (a *App) rowMenuItems(pane pane, reqTab *reqTab, row int) []MenuItem {
 		menuSeparator,
 		{Label: "Delete", Run: change(func(rows []model.KV) []model.KV { return model.DeleteRow(rows, row) })},
 	}...)...)
-	return append(items, a.secretItems(pane, row)...)
+	return append(items, a.secretItems(panel, row)...)
 }
 
 // secretItems is the menu entry that marks a variable of the active
 // environment as a secret; other tables have none.
-func (a *App) secretItems(pane pane, row int) []MenuItem {
+func (a *App) secretItems(panel pane, row int) []MenuItem {
 	e := a.activeEnv()
-	if pane.label != "Vars" || e == nil || row >= len(e.Vars) {
+	if panel.label != "Vars" || e == nil || row >= len(e.Vars) {
 		return nil
 	}
 	label := "Mark as secret"

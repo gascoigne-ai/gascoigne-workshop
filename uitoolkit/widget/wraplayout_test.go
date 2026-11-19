@@ -210,11 +210,11 @@ func TestWrapLayoutOfNoLinesAnswersWithoutRows(t *testing.T) {
 // FuzzWrapRunes: any text at any width, including zero and negative, with
 // a measure that gives every rune a width; it must terminate and keep
 // every rune in some row.
-func FuzzWrapRunes(f *testing.F) {
-	f.Add("hello world, wrapped", 40.0, 8.0)
-	f.Add("żółw", 0.0, 8.0)
-	f.Add("a b", -5.0, 0.0)
-	f.Fuzz(func(t *testing.T, text string, width, advance float64) {
+func FuzzWrapRunes(fuzz *testing.F) {
+	fuzz.Add("hello world, wrapped", 40.0, 8.0)
+	fuzz.Add("żółw", 0.0, 8.0)
+	fuzz.Add("a b", -5.0, 0.0)
+	fuzz.Fuzz(func(t *testing.T, text string, width, advance float64) {
 		rows := wrapRunes(0, []rune(text), width, func(rune) float64 { return advance })
 		covered := 0
 		for _, row := range rows {

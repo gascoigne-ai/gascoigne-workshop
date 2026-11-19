@@ -191,8 +191,8 @@ type fakeClipboard struct {
 	readErr error
 }
 
-func (f *fakeClipboard) Read() (string, error)     { return f.text, f.readErr }
-func (f *fakeClipboard) Write(string string) error { f.text = string; return nil }
+func (f *fakeClipboard) Read() (string, error)      { return f.text, f.readErr }
+func (f *fakeClipboard) Write(content string) error { f.text = content; return nil }
 
 func TestRulesTakeTheCallersOptions(t *testing.T) {
 	cases := []struct {

@@ -24,7 +24,7 @@ var windowSizes = []struct {
 
 // respondWith gives the open tab a response with the status, so the
 // response pane shows its status pill.
-func respondWith(status int, text string) func(a *App) {
+func respondWith(status int, text string) func(app *App) {
 	return func(app *App) {
 		app.cur().Resp = &model.Response{Status: status, StatusText: text, Duration: 1400 * time.Millisecond, Size: 160434}
 	}
@@ -36,7 +36,7 @@ func respondWith(status int, text string) func(a *App) {
 var windowStates = []struct {
 	name    string
 	stacked bool
-	setUp   func(a *App)
+	setUp   func(app *App)
 }{
 	{"empty", false, func(*App) {}},
 	{"empty-stacked", true, func(*App) {}},

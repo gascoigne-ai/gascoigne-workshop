@@ -43,7 +43,7 @@ const (
 // the open tab that look.
 type responseState struct {
 	name  string
-	setUp func(t *testing.T, a *App, tab *reqTab)
+	setUp func(t *testing.T, app *App, tab *reqTab)
 }
 
 // responseStates put the open tab in each look the response pane has:

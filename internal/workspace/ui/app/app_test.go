@@ -176,7 +176,7 @@ func TestJSONStatus(t *testing.T) {
 func TestSampleCollectionIsConsistent(t *testing.T) {
 	col := collection.GitHubSample()
 	reg := proto.NewRegistry()
-	var check func(f *model.Folder, path string)
+	var check func(folder *model.Folder, path string)
 	check = func(folder *model.Folder, path string) {
 		seen := map[string]bool{}
 		for _, name := range append(folderNames(folder), requestNames(folder)...) {

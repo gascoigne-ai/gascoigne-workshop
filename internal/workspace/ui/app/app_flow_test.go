@@ -1878,7 +1878,7 @@ const (
 )
 
 func TestConfirmRunsOnEnterAndOnTheButton(t *testing.T) {
-	for name, act := range map[string]func(a *App){
+	for name, act := range map[string]func(app *App){
 		"Enter":  func(app *App) { app.step(core.Input{Enter: true}) },
 		"button": func(app *App) { click(app, dialogOKX, dialogButtonY) },
 	} {
@@ -1897,7 +1897,7 @@ func TestConfirmRunsOnEnterAndOnTheButton(t *testing.T) {
 }
 
 func TestConfirmCancelsOnEscapeCancelButtonAndOutsideClick(t *testing.T) {
-	for name, act := range map[string]func(a *App){
+	for name, act := range map[string]func(app *App){
 		"Escape":  func(app *App) { app.step(core.Input{Escape: true}) },
 		"Cancel":  func(app *App) { click(app, dialogCancelX, dialogButtonY) },
 		"outside": func(app *App) { click(app, 100, 700) },

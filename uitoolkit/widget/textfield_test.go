@@ -46,7 +46,7 @@ func TestTextFieldApply(t *testing.T) {
 func TestTextFieldSelection(t *testing.T) {
 	tests := []struct {
 		name     string
-		run      func(f *TextField)
+		run      func(field *TextField)
 		wantText string
 		wantSel  string
 	}{
@@ -452,11 +452,11 @@ func TestStaleSelectionPastTheTextEndIsClampedWhenDeleting(t *testing.T) {
 // FuzzEdit: any typed text, pasted text and run of edit keys leaves the
 // cursor and selection inside the text and never panics, for a single
 // line field and a multi-line one.
-func FuzzEdit(f *testing.F) {
-	f.Add("hello wörld", "typed ż", []byte{0, 1, 2, 3, 6, 7, 8, 9})
-	f.Add("a\r\nb\tc", "\x00\xff‮", []byte{16, 17, 18, 24, 25})
-	f.Add("", "", []byte{})
-	f.Fuzz(func(t *testing.T, start, typed string, keys []byte) {
+func FuzzEdit(fuzz *testing.F) {
+	fuzz.Add("hello wörld", "typed ż", []byte{0, 1, 2, 3, 6, 7, 8, 9})
+	fuzz.Add("a\r\nb\tc", "\x00\xff‮", []byte{16, 17, 18, 24, 25})
+	fuzz.Add("", "", []byte{})
+	fuzz.Fuzz(func(t *testing.T, start, typed string, keys []byte) {
 		var edits []core.Edit
 		for _, key := range keys {
 			edits = append(edits, core.Edit(key%26))

@@ -43,7 +43,7 @@ const StdioPrefix = "stdio:"
 // from the server go to the deliver function the transport was built with.
 type mcpTransport interface {
 	send(ctx context.Context, msg []byte) error
-	setVersion(v string)
+	setVersion(value string)
 	close(ctx context.Context) error
 }
 
@@ -726,7 +726,7 @@ const sampleRejected = "User rejected sampling request"
 // sample puts a sampling request to the Sampler and fills reply with its
 // answer: a text message, or an error when the request is declined or
 // cannot be read.
-func (s *mcpSession) sample(rpcMessage rpcMessage, reply map[string]any) {
+func (s *mcpSession) sample(message rpcMessage, reply map[string]any) {
 	var params struct {
 		Messages []struct {
 			Role    string `json:"role"`
@@ -738,7 +738,7 @@ func (s *mcpSession) sample(rpcMessage rpcMessage, reply map[string]any) {
 		SystemPrompt string `json:"systemPrompt"`
 		MaxTokens    int    `json:"maxTokens"`
 	}
-	if err := json.Unmarshal(rpcMessage.Params, &params); err != nil {
+	if err := json.Unmarshal(message.Params, &params); err != nil {
 		reply["error"] = map[string]any{"code": -32602, "message": "invalid sampling request: " + err.Error()}
 		return
 	}

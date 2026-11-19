@@ -16,21 +16,21 @@ import (
 
 // release is a drag of node that ends on target with the pointer released,
 // holding Alt when alt is set.
-func release(a *App, node, target model.Node, alt bool) {
-	a.dragNode, a.dropTarget = node, target
-	a.step(core.Input{Alt: alt})
+func release(app *App, node, target model.Node, alt bool) {
+	app.dragNode, app.dropTarget = node, target
+	app.step(core.Input{Alt: alt})
 }
 
-func toastTexts(a *App) string {
+func toastTexts(app *App) string {
 	var texts []string
-	for _, toast := range a.toasts {
+	for _, toast := range app.toasts {
 		texts = append(texts, toast.Text)
 	}
 	return strings.Join(texts, "\n")
 }
 
-func tabOf(a *App, req *model.Request) bool {
-	for _, tab := range a.list.Tabs {
+func tabOf(app *App, req *model.Request) bool {
+	for _, tab := range app.list.Tabs {
 		if tab.Req == req {
 			return true
 		}

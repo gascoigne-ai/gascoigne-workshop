@@ -60,7 +60,7 @@ func initialize(app *App, tab *reqTab, result string) {
 func TestTheMCPExplorerLaysOutAsPinned(t *testing.T) {
 	cases := []struct {
 		name    string
-		prepare func(a *App, tab *reqTab)
+		prepare func(app *App, tab *reqTab)
 	}{
 		{"not-announced", func(*App, *reqTab) {}},
 		{"tools", announce},

@@ -15,8 +15,8 @@ type bars struct {
 	vOK, hOK     bool
 }
 
-func btoi(bool bool) int {
-	if bool {
+func btoi(flag bool) int {
+	if flag {
 		return 1
 	}
 	return 0
@@ -89,11 +89,11 @@ func (d *barDrag) press(bar, track, content, view, at int, scroll *int) {
 }
 
 // drawBars draws the scrollbars of b for content scrolled to sx, sy.
-func drawBars(ctx *core.Ctx, dst *ebiten.Image, sizes bars, barDrag barDrag, contentW, contentH, sx, sy int) {
+func drawBars(ctx *core.Ctx, dst *ebiten.Image, sizes bars, drag barDrag, contentW, contentH, sx, sy int) {
 	if sizes.vOK {
-		drawScrollbar(ctx, dst, sizes.vTrack, contentH, sizes.viewH, sy, barDrag.bar == barV || ctx.Hovered(sizes.vTrack))
+		drawScrollbar(ctx, dst, sizes.vTrack, contentH, sizes.viewH, sy, drag.bar == barV || ctx.Hovered(sizes.vTrack))
 	}
 	if sizes.hOK {
-		drawScrollbar(ctx, dst, sizes.hTrack, contentW, sizes.viewW, sx, barDrag.bar == barH || ctx.Hovered(sizes.hTrack))
+		drawScrollbar(ctx, dst, sizes.hTrack, contentW, sizes.viewW, sx, drag.bar == barH || ctx.Hovered(sizes.hTrack))
 	}
 }

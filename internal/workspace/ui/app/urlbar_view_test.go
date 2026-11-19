@@ -30,7 +30,7 @@ const grpcMethod = "grpc.health.v1.Health/Check"
 // tab that look.
 type urlBarState struct {
 	name  string
-	setUp func(t *testing.T, a *App, tab *reqTab)
+	setUp func(t *testing.T, app *App, tab *reqTab)
 }
 
 // urlBarStates put the open tab in each look the URL bar has: one per

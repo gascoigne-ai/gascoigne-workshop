@@ -198,13 +198,13 @@ func TestExpandStopsAtASizeLimit(t *testing.T) {
 }
 
 // FuzzURLParams: query and path parameters of any URL text.
-func FuzzURLParams(f *testing.F) {
+func FuzzURLParams(fuzz *testing.F) {
 	for _, seed := range []string{
 		"https://api.test/s?q=go+lang&page=2", "https://api.test/u/:id/posts/{postId}?x=%zz", "http://[::1]:80/a?b", "?", "{{base}}/p?a=1&a=2", "",
 	} {
-		f.Add(seed)
+		fuzz.Add(seed)
 	}
-	f.Fuzz(func(t *testing.T, raw string) {
+	fuzz.Fuzz(func(t *testing.T, raw string) {
 		params := ParamsFromURL(raw)
 		_ = WithParams(raw, params)
 		_ = ApplyPathParams(raw, params)

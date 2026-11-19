@@ -2,13 +2,13 @@ package settings
 
 import "testing"
 
-func FuzzDecode(f *testing.F) {
+func FuzzDecode(fuzz *testing.F) {
 	encoded, err := Encode(Default())
 	if err == nil {
-		f.Add(encoded)
+		fuzz.Add(encoded)
 	}
-	f.Add([]byte(`{"theme":"dark","unknown":1}`))
-	f.Fuzz(func(t *testing.T, data []byte) {
+	fuzz.Add([]byte(`{"theme":"dark","unknown":1}`))
+	fuzz.Fuzz(func(t *testing.T, data []byte) {
 		_, _ = Decode(data)
 	})
 }

@@ -14,7 +14,7 @@ import (
 type shortcut struct {
 	id, name string         // id names the action in the settings file
 	def      engine.Binding // the binding until the user rebinds it
-	run      func(a *App)
+	run      func(app *App)
 }
 
 // shortcuts is the whole key map; the settings menu lists it.

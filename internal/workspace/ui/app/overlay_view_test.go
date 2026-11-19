@@ -42,7 +42,7 @@ func assertDumpPinned(t *testing.T, app *App, root Node, name string, width, hei
 // sampling request (a long body and an input).
 var dialogKinds = []struct {
 	name string
-	open func(a *App)
+	open func(app *App)
 }{
 	{"confirm", func(app *App) {
 		app.confirm("Delete Search Repos?", "This cannot be undone.", "Delete", func() {})

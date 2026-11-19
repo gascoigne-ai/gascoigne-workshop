@@ -40,39 +40,39 @@ func JustifyContent(justify Justify) Option {
 
 // MinW, MaxW, MinH and MaxH bound an element's size, whatever its
 // content or its share of the free space would give.
-func MinW(count int) Option { return func(element *El) { element.minW = count } }
+func MinW(pixels int) Option { return func(element *El) { element.minW = pixels } }
 
 // MaxW is the widest the element may be.
-func MaxW(count int) Option { return func(element *El) { element.maxW = count } }
+func MaxW(pixels int) Option { return func(element *El) { element.maxW = pixels } }
 
 // MinH is the least height the element may have.
-func MinH(count int) Option { return func(element *El) { element.minH = count } }
+func MinH(pixels int) Option { return func(element *El) { element.minH = pixels } }
 
 // MaxH is the tallest the element may be.
-func MaxH(count int) Option { return func(element *El) { element.maxH = count } }
+func MaxH(pixels int) Option { return func(element *El) { element.maxH = pixels } }
 
 // Margin is space around an element, inside its parent's layout.
-func Margin(count int) Option {
-	return func(element *El) { element.mL, element.mT, element.mR, element.mB = count, count, count, count }
+func Margin(pixels int) Option {
+	return func(element *El) { element.mL, element.mT, element.mR, element.mB = pixels, pixels, pixels, pixels }
 }
 
 // MarginL is margin on the left side.
-func MarginL(count int) Option { return func(element *El) { element.mL = count } }
+func MarginL(pixels int) Option { return func(element *El) { element.mL = pixels } }
 
 // MarginT is margin on the top side.
-func MarginT(count int) Option { return func(element *El) { element.mT = count } }
+func MarginT(pixels int) Option { return func(element *El) { element.mT = pixels } }
 
 // MarginR is margin on the right side.
-func MarginR(count int) Option { return func(element *El) { element.mR = count } }
+func MarginR(pixels int) Option { return func(element *El) { element.mR = pixels } }
 
 // MarginB is margin on the bottom side.
-func MarginB(count int) Option { return func(element *El) { element.mB = count } }
+func MarginB(pixels int) Option { return func(element *El) { element.mB = pixels } }
 
 // MarginX is left and right margin.
-func MarginX(count int) Option { return func(element *El) { element.mL, element.mR = count, count } }
+func MarginX(pixels int) Option { return func(element *El) { element.mL, element.mR = pixels, pixels } }
 
 // MarginY is top and bottom margin.
-func MarginY(count int) Option { return func(element *El) { element.mT, element.mB = count, count } }
+func MarginY(pixels int) Option { return func(element *El) { element.mT, element.mB = pixels, pixels } }
 
 // clampSize applies MinW/MaxW/MinH/MaxH.
 func (e *El) clampSize(width, height int) (int, int) {

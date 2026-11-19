@@ -18,8 +18,8 @@ import (
 // fileChooser is one way to ask the user for a file. ask returns a
 // function that takes the question back.
 type fileChooser struct {
-	usable func(a *App) bool
-	ask    func(a *App, title string, save bool, name string, done func(path string)) (cancel func())
+	usable func(app *App) bool
+	ask    func(app *App, title string, save bool, name string, done func(path string)) (cancel func())
 }
 
 // fileChoosers are the ways to ask for a file, best first: the desktop's

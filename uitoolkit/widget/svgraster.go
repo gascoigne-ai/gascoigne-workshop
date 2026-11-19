@@ -93,10 +93,10 @@ func (gradientImage) Bounds() image.Rectangle {
 	return image.Rect(math.MinInt32, math.MinInt32, math.MaxInt32, math.MaxInt32)
 }
 
-func (g gradientImage) At(x, y int) color.Color {
+func (g gradientImage) At(posX, posY int) color.Color {
 	grad := g.gradient
 	dx, dy := grad.x2-grad.x1, grad.y2-grad.y1
-	px, py := (float64(x)+0.5)/g.scale-grad.x1, (float64(y)+0.5)/g.scale-grad.y1
+	px, py := (float64(posX)+0.5)/g.scale-grad.x1, (float64(posY)+0.5)/g.scale-grad.y1
 	along := 0.0
 	if length := dx*dx + dy*dy; length > 0 {
 		along = (px*dx + py*dy) / length
@@ -116,7 +116,9 @@ func stopColor(stops []svgStop, along float64) color.RGBA {
 		}
 		from, to := stops[i-1], stops[i]
 		ratio := (along - from.offset) / math.Max(to.offset-from.offset, 1e-9)
-		mix := func(a, b uint8) uint8 { return uint8(math.Round(float64(a) + (float64(b)-float64(a))*ratio)) }
+		mix := func(alpha, b uint8) uint8 {
+			return uint8(math.Round(float64(alpha) + (float64(b)-float64(alpha))*ratio))
+		}
 		return color.RGBA{mix(from.rgba.R, to.rgba.R), mix(from.rgba.G, to.rgba.G), mix(from.rgba.B, to.rgba.B), 0xff}
 	}
 	return stops[len(stops)-1].rgba

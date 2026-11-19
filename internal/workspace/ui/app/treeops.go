@@ -297,12 +297,12 @@ const maxNamedVars = 5
 
 // missingVarsText says which variables a moved or copied node uses that
 // collection does not define, naming at most maxNamedVars of them.
-func missingVarsText(missing []string, collection string) string {
+func missingVarsText(missing []string, name string) string {
 	shown := missing
 	if len(shown) > maxNamedVars {
 		shown = shown[:maxNamedVars]
 	}
-	text := "Not defined in " + collection + ": " + strings.Join(shown, ", ")
+	text := "Not defined in " + name + ": " + strings.Join(shown, ", ")
 	if rest := len(missing) - len(shown); rest > 0 {
 		text += fmt.Sprintf(" and %d more", rest)
 	}

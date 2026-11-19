@@ -20,9 +20,9 @@ import (
 const newerSettings = `{"version": 2, "appearance": {"theme": "light"}}`
 
 // errorToasts are the texts of the error toasts that contain part.
-func errorToasts(a *App, part string) []string {
+func errorToasts(app *App, part string) []string {
 	var found []string
-	for _, toast := range a.toasts {
+	for _, toast := range app.toasts {
 		if toast.IsErr && strings.Contains(toast.Text, part) {
 			found = append(found, toast.Text)
 		}

@@ -213,7 +213,7 @@ func (c *Ctx) dev(value float32) float32 { return value * float32(c.Scale) }
 // snap is a logical coordinate as a device pixel position. Rounding the
 // edges (not the sizes) lets neighbouring rectangles share an edge at any
 // scale, with no gap or overlap.
-func (c *Ctx) snap(count int) float32 { return float32(math.Round(float64(count) * c.Scale)) }
+func (c *Ctx) snap(pixels int) float32 { return float32(math.Round(float64(pixels) * c.Scale)) }
 
 // LineWidth is the thickness in device pixels of the one-pixel lines and
 // outlines: the scale rounded, never less than one, so a line is a whole
@@ -256,8 +256,8 @@ func (c *Ctx) Clip(dst *ebiten.Image, rect Rect) *ebiten.Image {
 }
 
 // Width is the logical width of s in face.
-func (c *Ctx) Width(face *text.GoTextFace, string string) int {
-	w, _ := text.Measure(string, face, 0)
+func (c *Ctx) Width(face *text.GoTextFace, content string) int {
+	w, _ := text.Measure(content, face, 0)
 	return int(w/c.Scale + 0.5)
 }
 
@@ -279,29 +279,29 @@ func (c *Ctx) LineH(face *text.GoTextFace) int {
 func (c *Ctx) Ascent(face *text.GoTextFace) int { return int(face.Metrics().HAscent/c.Scale + 0.5) }
 
 // Text draws s with its top-left at x, y.
-func (c *Ctx) Text(dst *ebiten.Image, face *text.GoTextFace, string string, posX, posY int, clr color.RGBA) {
+func (c *Ctx) Text(dst *ebiten.Image, face *text.GoTextFace, content string, posX, posY int, clr color.RGBA) {
 	op := &text.DrawOptions{}
 	op.GeoM.Translate(float64(posX)*c.Scale, float64(posY)*c.Scale)
 	op.ColorScale.ScaleWithColor(clr)
-	text.Draw(dst, string, face, op)
+	text.Draw(dst, content, face, op)
 }
 
 // TextMid draws s starting at x, vertically centered in r.
-func (c *Ctx) TextMid(dst *ebiten.Image, face *text.GoTextFace, text string, posX int, rect Rect, clr color.RGBA) {
-	c.Text(dst, face, text, posX, rect.Y+(rect.H-c.LineH(face))/2, clr)
+func (c *Ctx) TextMid(dst *ebiten.Image, face *text.GoTextFace, content string, posX int, rect Rect, clr color.RGBA) {
+	c.Text(dst, face, content, posX, rect.Y+(rect.H-c.LineH(face))/2, clr)
 }
 
 // TextCenter draws s centered in r.
-func (c *Ctx) TextCenter(dst *ebiten.Image, face *text.GoTextFace, text string, rect Rect, clr color.RGBA) {
-	c.TextMid(dst, face, text, rect.X+(rect.W-c.Width(face, text))/2, rect, clr)
+func (c *Ctx) TextCenter(dst *ebiten.Image, face *text.GoTextFace, content string, rect Rect, clr color.RGBA) {
+	c.TextMid(dst, face, content, rect.X+(rect.W-c.Width(face, content))/2, rect, clr)
 }
 
 // Ellipsize shortens s with "..." until it fits maxW pixels.
-func (c *Ctx) Ellipsize(face *text.GoTextFace, text string, maxW int) string {
-	if c.Width(face, text) <= maxW {
-		return text
+func (c *Ctx) Ellipsize(face *text.GoTextFace, content string, maxW int) string {
+	if c.Width(face, content) <= maxW {
+		return content
 	}
-	runes := []rune(text)
+	runes := []rune(content)
 	for len(runes) > 0 {
 		runes = runes[:len(runes)-1]
 		if cand := strings.TrimRight(string(runes), " ") + "..."; c.Width(face, cand) <= maxW {
@@ -315,8 +315,8 @@ func (c *Ctx) Ellipsize(face *text.GoTextFace, text string, maxW int) string {
 // width of a prefix grows with its length, so the boundary is found by
 // binary search: measuring every prefix would be quadratic in the length
 // of the text.
-func (c *Ctx) CursorAt(text string, posX int) int {
-	runes := []rune(text)
+func (c *Ctx) CursorAt(content string, posX int) int {
+	runes := []rune(content)
 	widthTo := func(count int) int { return c.Width(c.F.UI, string(runes[:count])) }
 	low, high := 0, len(runes) // the first boundary whose width reaches x is in low..high
 	for low < high {
@@ -406,8 +406,8 @@ func fillGradient(dst *ebiten.Image, path *vector.Path, y0, y1 float32, top, bot
 	span := max(y1-y0, 1)
 	for i := range verts {
 		t := min(max((verts[i].DstY-y0)/span, 0), 1)
-		mix := func(value, uint8 uint8) float32 {
-			return (float32(value) + (float32(uint8)-float32(value))*t) / 255
+		mix := func(value, target uint8) float32 {
+			return (float32(value) + (float32(target)-float32(value))*t) / 255
 		}
 		verts[i].ColorR, verts[i].ColorG, verts[i].ColorB, verts[i].ColorA = mix(top.R, bottom.R), mix(top.G, bottom.G), mix(top.B, bottom.B), mix(top.A, bottom.A)
 		verts[i].SrcX, verts[i].SrcY = 0.5, 0.5

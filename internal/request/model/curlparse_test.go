@@ -134,15 +134,15 @@ func TestParseCurlKeepsAValueThatLooksLikeAFlag(t *testing.T) {
 }
 
 // FuzzParseCurl: any command line may be refused, none may panic.
-func FuzzParseCurl(f *testing.F) {
+func FuzzParseCurl(fuzz *testing.F) {
 	for _, seed := range []string{
 		`curl https://api.test/users`, `curl -X POST 'https://api.test/u' -H 'Content-Type: application/json' --data-raw '{"a":1}'`,
 		`curl -sSL -u alice:pw https://api.test`, `curl -XPOST -d'a=1' https://api.test`, `curl -F 'file=@a.txt' https://api.test/up`,
 		"curl \\\n  --url https://api.test \\\n  --request DELETE", `curl https://api.test -d $'{"a":"x\ny"}'`, `curl '`, ``,
 	} {
-		f.Add(seed)
+		fuzz.Add(seed)
 	}
-	f.Fuzz(func(t *testing.T, command string) {
+	fuzz.Fuzz(func(t *testing.T, command string) {
 		_, _ = ParseCurl(command)
 	})
 }

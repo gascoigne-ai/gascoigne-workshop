@@ -45,13 +45,13 @@ type pane struct {
 	label          string
 	kind           paneKind
 	title          string                                   // caption above a table
-	rows           func(a *App, t *reqTab) *[]model.KV      // paneTable
+	rows           func(app *App, t *reqTab) *[]model.KV    // paneTable
 	editable       bool                                     // table rows can be toggled and deleted
 	changed        func(t *reqTab)                          // runs after an edit
 	flagDuplicates bool                                     // mark rows that repeat a name
 	note           func(t *reqTab) string                   // paneNote
 	empty          func(t *reqTab) (msg string, isErr bool) // shown instead of the content
-	caption        func(a *App) string                      // the caption when it depends on the app state
+	caption        func(app *App) string                    // the caption when it depends on the app state
 }
 
 // captionOf is the caption above the pane's table.
@@ -110,9 +110,9 @@ var protocolViews = []protocolView{
 	{protocol: model.ProtocolMCP, requestPanes: connectionRequestPanes, streamPanes: mcpPanes, composer: true,
 		composerHint: "call TOOL {json}  ·  read URI  ·  prompt NAME {json}  ·  method {json}  ·  or raw JSON-RPC"},
 	{protocol: model.ProtocolSSE, requestPanes: connectionRequestPanes, streamPanes: wsPanes,
-		offered: func(s settings.Settings) bool { return s.SSE }},
+		offered: func(current settings.Settings) bool { return current.SSE }},
 	{protocol: model.ProtocolGRPC, requestPanes: grpcRequestPanes, streamPanes: wsPanes, composer: true,
-		offered: func(s settings.Settings) bool { return s.GRPC }},
+		offered: func(current settings.Settings) bool { return current.GRPC }},
 }
 
 // viewOf is the protocolView of protocol. A request with no known protocol
@@ -196,15 +196,15 @@ func (a *App) tabItems(panes []pane, tab *reqTab) []TabItem {
 	return items
 }
 
-func paneEmpty(pane pane, tab *reqTab) (string, bool) {
-	if pane.empty == nil {
+func paneEmpty(panel pane, tab *reqTab) (string, bool) {
+	if panel.empty == nil {
 		return "", false
 	}
-	return pane.empty(tab)
+	return panel.empty(tab)
 }
 
 // paneBuilders turns a pane into its view, by kind.
-var paneBuilders = map[paneKind]func(a *App, p pane, t *reqTab, scroll *ScrollState) Node{
+var paneBuilders = map[paneKind]func(app *App, panel pane, t *reqTab, scroll *ScrollState) Node{
 	paneNote:       (*App).notePane,
 	paneBody:       (*App).bodyPane,
 	paneSettings:   (*App).settingsPane,
@@ -220,18 +220,18 @@ var paneBuilders = map[paneKind]func(a *App, p pane, t *reqTab, scroll *ScrollSt
 }
 
 // paneBody is what fills the area under a pane's tab strip.
-func (a *App) paneBody(pane pane, tab *reqTab, scroll *ScrollState) Node {
-	if msg, isErr := paneEmpty(pane, tab); msg != "" {
-		return a.messagePane(pane, msg, isErr)
+func (a *App) paneBody(panel pane, tab *reqTab, scroll *ScrollState) Node {
+	if msg, isErr := paneEmpty(panel, tab); msg != "" {
+		return a.messagePane(panel, msg, isErr)
 	}
-	return paneBuilders[pane.kind](a, pane, tab, scroll)
+	return paneBuilders[panel.kind](a, panel, tab, scroll)
 }
 
 var messagePaneTemplate = markup.Must("messagepane.vml", messagepaneSource)
 
 // messagePane shows a status line ("Sending...", an error) in place of
 // the pane's content.
-func (a *App) messagePane(pane pane, msg string, isErr bool) Node {
+func (a *App) messagePane(panel pane, msg string, isErr bool) Node {
 	color := w.Muted
 	if isErr {
 		color = w.Error
@@ -246,68 +246,68 @@ func (a *App) messagePane(pane pane, msg string, isErr bool) Node {
 var notePaneTemplate = markup.Must("notepane.vml", notepaneSource)
 
 // notePane shows the pane's text, such as the response's timeline.
-func (a *App) notePane(pane pane, tab *reqTab, scroll *ScrollState) Node {
+func (a *App) notePane(panel pane, tab *reqTab, scroll *ScrollState) Node {
 	return notePaneTemplate.MustBuild(markup.Scope{
 		"gutter": w.Gutter,
 		"scroll": scroll,
-		"note":   pane.note(tab),
+		"note":   panel.note(tab),
 	})
 }
 
-func (a *App) tablePane(pane pane, tab *reqTab, scroll *ScrollState) Node {
-	return a.tableView(pane, tab, scroll, w.Gutter)
+func (a *App) tablePane(panel pane, tab *reqTab, scroll *ScrollState) Node {
+	return a.tableView(panel, tab, scroll, w.Gutter)
 }
 
 // tableView is a pane's table with the given padding around it.
-func (a *App) tableView(pane pane, reqTab *reqTab, scroll *ScrollState, pad int) Node {
-	if b := a.bulk; b != nil && b.tab == reqTab && b.pane.label == pane.label {
-		return a.bulkView(pane, reqTab, pad)
+func (a *App) tableView(panel pane, tab *reqTab, scroll *ScrollState, pad int) Node {
+	if b := a.bulk; b != nil && b.tab == tab && b.pane.label == panel.label {
+		return a.bulkView(panel, tab, pad)
 	}
-	rows := pane.rows(a, reqTab)
+	rows := panel.rows(a, tab)
 	spec := TableSpec{
-		CellStyler: a.cellStyler(reqTab.Req),
-		Widths:     a.widthsFor(pane),
+		CellStyler: a.cellStyler(tab.Req),
+		Widths:     a.widthsFor(panel),
 		Columns:    []string{"Name", "Value"},
 		Weights:    []float64{35, 65},
 		Rows:       kvRows(*rows, false, false),
 	}
-	if !pane.editable {
+	if !panel.editable {
 		spec.OnRowMenu = func(row, posX, posY int) { a.openMenu(posX, posY, a.copyRowItems(*rows, row, true)) }
 	}
-	if pane.editable {
+	if panel.editable {
 		spec.Editable = true
 		spec.Columns = []string{"Name", "Value", "Description"}
 		spec.Weights = []float64{28, 40, 32}
-		spec.Rows = kvRows(*rows, true, pane.flagDuplicates)
+		spec.Rows = kvRows(*rows, true, panel.flagDuplicates)
 		spec.Placeholder = spec.Columns
 		spec.AllChecked = model.AllEnabled(*rows)
 		spec.OnToggleAll = func() {
 			a.commitEdit()
-			a.applyRows(pane, reqTab, func(rows []model.KV) []model.KV { return model.SetAll(rows, !model.AllEnabled(rows)) })
+			a.applyRows(panel, tab, func(rows []model.KV) []model.KV { return model.SetAll(rows, !model.AllEnabled(rows)) })
 		}
 		spec.OnToggle = func(index int) {
 			a.commitEdit()
-			a.applyRows(pane, reqTab, func(rows []model.KV) []model.KV {
+			a.applyRows(panel, tab, func(rows []model.KV) []model.KV {
 				rows[index].Enabled = !rows[index].Enabled
 				return rows
 			})
 		}
 		spec.OnDelete = func(index int) {
 			a.commitEdit()
-			a.applyRows(pane, reqTab, func(rows []model.KV) []model.KV { return model.DeleteRow(rows, index) })
+			a.applyRows(panel, tab, func(rows []model.KV) []model.KV { return model.DeleteRow(rows, index) })
 		}
-		spec.OnGrabRow = func(row int) { a.grabRow(pane, reqTab, row) }
+		spec.OnGrabRow = func(row int) { a.grabRow(panel, tab, row) }
 		spec.OnDragOverRow = func(row int) { a.dragRowOver(row) }
-		spec.OnEditCell = func(row, col int) { a.beginEdit(pane, reqTab, row, col) }
-		spec.OnRowMenu = func(row, posX, posY int) { a.openMenu(posX, posY, a.rowMenuItems(pane, reqTab, row)) }
-		if e := a.edit; e != nil && e.pane.label == pane.label && e.tab == reqTab {
+		spec.OnEditCell = func(row, col int) { a.beginEdit(panel, tab, row, col) }
+		spec.OnRowMenu = func(row, posX, posY int) { a.openMenu(posX, posY, a.rowMenuItems(panel, tab, row)) }
+		if e := a.edit; e != nil && e.pane.label == panel.label && e.tab == tab {
 			spec.Editing = &TableEdit{Row: e.row, Col: e.col, Field: &e.field, OnEnter: a.commitEdit, OnTab: a.tabEdit, Options: TextMenu(&e.field)}
 		}
-		if sel := a.rowSel; sel != nil && sel.tab == reqTab && sel.pane.label == pane.label && sel.row < len(*rows) {
+		if sel := a.rowSel; sel != nil && sel.tab == tab && sel.pane.label == panel.label && sel.row < len(*rows) {
 			spec.Selected = &sel.row
 		}
 	}
-	scope := a.tableCaptionScope(pane, reqTab, pad)
+	scope := a.tableCaptionScope(panel, tab, pad)
 	scope["scroll"] = scroll
 	scope["spec"] = spec
 	return tableViewTemplate.MustBuild(scope)
@@ -323,15 +323,15 @@ var (
 // tableCaptionScope is what both templates show in the row above the
 // rows: the pane's title, and for editable tables the switch to bulk
 // editing. An empty title leaves the row out.
-func (a *App) tableCaptionScope(pane pane, tab *reqTab, pad int) markup.Scope {
+func (a *App) tableCaptionScope(panel pane, tab *reqTab, pad int) markup.Scope {
 	return markup.Scope{
 		"pad":        pad,
 		"rowH":       w.RowH,
 		"tightGap":   w.TightGap,
-		"caption":    pane.captionOf(a),
-		"editable":   pane.editable,
+		"caption":    panel.captionOf(a),
+		"editable":   panel.editable,
 		"bulkLabel":  bulkLabel(a.bulk != nil),
-		"toggleBulk": func() { a.toggleBulk(pane, tab) },
+		"toggleBulk": func() { a.toggleBulk(panel, tab) },
 	}
 }
 
@@ -343,16 +343,16 @@ func bulkLabel(inBulk bool) string {
 }
 
 // bulkView shows the rows as text under the same caption.
-func (a *App) bulkView(pane pane, tab *reqTab, pad int) Node {
-	scope := a.tableCaptionScope(pane, tab, pad)
+func (a *App) bulkView(panel pane, tab *reqTab, pad int) Node {
+	scope := a.tableCaptionScope(panel, tab, pad)
 	scope["area"] = &a.bulk.area
 	scope["areaText"] = &a.bulk.area.TextField
 	return bulkViewTemplate.MustBuild(scope)
 }
 
-func (a *App) rowsChanged(pane pane, tab *reqTab) {
-	if pane.changed != nil {
-		pane.changed(tab)
+func (a *App) rowsChanged(panel pane, tab *reqTab) {
+	if panel.changed != nil {
+		panel.changed(tab)
 	}
 }
 
@@ -408,7 +408,7 @@ type bodyChip struct {
 }
 
 // bodyPane is the body editor: a type chooser, then an editor that fits the type.
-func (a *App) bodyPane(pane pane, tab *reqTab, scroll *ScrollState) Node {
+func (a *App) bodyPane(panel pane, tab *reqTab, scroll *ScrollState) Node {
 	kind := tab.Req.BodyType
 	isJSON := kind == model.BodyJSON
 	canWrap := isJSON || kind == model.BodyText // the editors that are a text area

@@ -91,8 +91,8 @@ func ContrastRatio(rgba, other color.RGBA) float64 {
 // black and white contrasts more with it, just far enough that the
 // contrast ratio reaches min. A color that already meets it is returned
 // unchanged; when min cannot be reached the extreme is returned.
-func EnsureContrast(bg, fg color.RGBA, min float64) color.RGBA {
-	if ContrastRatio(bg, fg) >= min {
+func EnsureContrast(bg, fg color.RGBA, floor float64) color.RGBA {
+	if ContrastRatio(bg, fg) >= floor {
 		return bg
 	}
 	target := color.RGBA{A: 0xff}
@@ -106,7 +106,7 @@ func EnsureContrast(bg, fg color.RGBA, min float64) color.RGBA {
 		return color.RGBA{R: m(bg.R, target.R), G: m(bg.G, target.G), B: m(bg.B, target.B), A: 0xff}
 	}
 	for step := 1; step <= 255; step++ {
-		if c := mix(float64(step) / 255); ContrastRatio(c, fg) >= min {
+		if c := mix(float64(step) / 255); ContrastRatio(c, fg) >= floor {
 			return c
 		}
 	}

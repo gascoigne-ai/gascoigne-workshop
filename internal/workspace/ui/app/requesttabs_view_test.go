@@ -21,7 +21,7 @@ const (
 // to give the app that look.
 type requestTabsState struct {
 	name  string
-	setUp func(t *testing.T, a *App)
+	setUp func(t *testing.T, app *App)
 }
 
 // requestTabsStates are the looks of the strip: one tab, several with the

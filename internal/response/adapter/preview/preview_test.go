@@ -157,7 +157,7 @@ func TestOpenCommandPerSystem(t *testing.T) {
 
 func TestBrowserServesTheBodyAndHandsItsAddressToOpen(t *testing.T) {
 	var address string
-	browser := Browser{Lifetime: time.Minute, Open: func(_ context.Context, url string) error { address = url; return nil }}
+	browser := Browser{Lifetime: time.Minute, Open: func(_ context.Context, target string) error { address = target; return nil }}
 	if err := browser.Show(context.Background(), []byte("hi"), "text/plain"); err != nil {
 		t.Fatal(err)
 	}
@@ -173,7 +173,7 @@ func TestBrowserServesTheBodyAndHandsItsAddressToOpen(t *testing.T) {
 
 func TestBrowserStopsServingWhenOpenFails(t *testing.T) {
 	var address string
-	browser := Browser{Lifetime: time.Minute, Open: func(_ context.Context, url string) error { address = url; return errors.New("no browser") }}
+	browser := Browser{Lifetime: time.Minute, Open: func(_ context.Context, target string) error { address = target; return errors.New("no browser") }}
 	if err := browser.Show(context.Background(), []byte("hi"), "text/plain"); err == nil {
 		t.Fatal("the failure was swallowed")
 	}

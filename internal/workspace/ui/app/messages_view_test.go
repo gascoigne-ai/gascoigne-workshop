@@ -55,7 +55,7 @@ func (s *recordingSession) log() []string {
 var messagesPaneStates = []struct {
 	name        string
 	placeholder string // the composer's hint; "" when there is no composer
-	setUp       func(a *App, tab *reqTab)
+	setUp       func(app *App, tab *reqTab)
 }{
 	{"websocket-idle", "Connect to send messages", func(app *App, tab *reqTab) {
 		tab.Req.Protocol = "websocket"
@@ -192,7 +192,7 @@ func openConnectedEcho(t *testing.T) (*App, *recordingSession) {
 func TestTheComposerSendsOnEnterAndOnSend(t *testing.T) {
 	cases := []struct {
 		name string
-		send func(a *App)
+		send func(app *App)
 	}{
 		{"enter", func(app *App) { app.step(core.Input{Enter: true}) }},
 		{"send button", func(app *App) { click(app, sendButtonX, composerY) }},

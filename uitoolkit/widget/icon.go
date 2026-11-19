@@ -172,8 +172,8 @@ func drawIconAt(ctx *core.Ctx, dst *ebiten.Image, name string, rect core.Rect, t
 
 // paintIcon draws ic with its origin at ox, oy (logical pixels), scaled by
 // k, in the color token cur.
-func paintIcon(ctx *core.Ctx, dst *ebiten.Image, ic *svgIcon, ox, oy, k float64, cur core.Token) {
-	s := k * ctx.Scale
+func paintIcon(ctx *core.Ctx, dst *ebiten.Image, ic *svgIcon, ox, oy, scale float64, cur core.Token) {
+	s := scale * ctx.Scale
 	weight := 1.0 // the theme can thicken or thin every icon
 	if ctx.Th.IconStroke > 0 {
 		weight = ctx.Th.IconStroke

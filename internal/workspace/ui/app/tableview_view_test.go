@@ -25,7 +25,7 @@ type tableViewState struct {
 	name  string
 	pane  pane
 	pad   int
-	setUp func(t *testing.T, a *App, tab *reqTab)
+	setUp func(t *testing.T, app *App, tab *reqTab)
 }
 
 // longParamValue does not fit its cell at either width.

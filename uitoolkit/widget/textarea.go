@@ -194,7 +194,7 @@ func (a *TextArea) updatePointer(ctx *core.Ctx, rect core.Rect, geometry areaGeo
 }
 
 // updateKeys applies the keyboard to the text and scrolls the cursor into view.
-func (a *TextArea) updateKeys(ctx *core.Ctx, rect core.Rect, areaGeometry areaGeometry, sizes bars) (changed bool) {
+func (a *TextArea) updateKeys(ctx *core.Ctx, rect core.Rect, geometry areaGeometry, sizes bars) (changed bool) {
 	in := ctx.In
 	if in.Escape {
 		a.Focused = false

@@ -270,21 +270,21 @@ func num(attrs map[string]string, name string, def float64) (float64, error) {
 }
 
 // shapeCmds turns one shape element into path commands.
-func shapeCmds(tag string, other map[string]string) ([]svgCmd, error) {
+func shapeCmds(tag string, attrs map[string]string) ([]svgCmd, error) {
 	switch tag {
 	case "path":
-		return parsePathData(other["d"])
+		return parsePathData(attrs["d"])
 	case "line":
-		x1, e1 := num(other, "x1", 0)
-		y1, e2 := num(other, "y1", 0)
-		x2, e3 := num(other, "x2", 0)
-		y2, e4 := num(other, "y2", 0)
+		x1, e1 := num(attrs, "x1", 0)
+		y1, e2 := num(attrs, "y1", 0)
+		x2, e3 := num(attrs, "x2", 0)
+		y2, e4 := num(attrs, "y2", 0)
 		if err := errors.Join(e1, e2, e3, e4); err != nil {
 			return nil, err
 		}
 		return []svgCmd{{'M', [6]float64{x1, y1}}, {'L', [6]float64{x2, y2}}}, nil
 	case "polyline", "polygon":
-		nums, err := parseNumbers(other["points"])
+		nums, err := parseNumbers(attrs["points"])
 		if err != nil || len(nums) < 4 || len(nums)%2 != 0 {
 			return nil, fmt.Errorf("%s needs pairs of numbers in points", tag)
 		}
@@ -301,11 +301,11 @@ func shapeCmds(tag string, other map[string]string) ([]svgCmd, error) {
 		}
 		return cmds, nil
 	case "rect":
-		x, e1 := num(other, "x", 0)
-		y, e2 := num(other, "y", 0)
-		w, e3 := num(other, "width", 0)
-		h, e4 := num(other, "height", 0)
-		rx, e5 := num(other, "rx", 0)
+		x, e1 := num(attrs, "x", 0)
+		y, e2 := num(attrs, "y", 0)
+		w, e3 := num(attrs, "width", 0)
+		h, e4 := num(attrs, "height", 0)
+		rx, e5 := num(attrs, "rx", 0)
 		if err := errors.Join(e1, e2, e3, e4, e5); err != nil {
 			return nil, err
 		}
@@ -320,12 +320,12 @@ func shapeCmds(tag string, other map[string]string) ([]svgCmd, error) {
 			x+rx, y, x+w-rx, rx, rx, x+w, y+rx, y+h-rx, rx, rx, x+w-rx, y+h, x+rx, rx, rx, x, y+h-rx, y+rx, rx, rx, x+rx, y)
 		return parsePathData(d)
 	case "circle", "ellipse":
-		cx, e1 := num(other, "cx", 0)
-		cy, e2 := num(other, "cy", 0)
-		rx, e3 := num(other, "rx", 0)
-		ry, e4 := num(other, "ry", 0)
+		cx, e1 := num(attrs, "cx", 0)
+		cy, e2 := num(attrs, "cy", 0)
+		rx, e3 := num(attrs, "rx", 0)
+		ry, e4 := num(attrs, "ry", 0)
 		if tag == "circle" {
-			r, e := num(other, "r", 0)
+			r, e := num(attrs, "r", 0)
 			rx, ry, e3, e4 = r, r, e, nil
 		}
 		if err := errors.Join(e1, e2, e3, e4); err != nil {

@@ -60,10 +60,10 @@ type Node = *El
 // and how it reacts to input. Kinds are values of this interface, not
 // switch cases.
 type behavior interface {
-	measure(e *El, c *core.Ctx, maxW int) (w, h int)
-	layout(e *El, c *core.Ctx)
-	draw(e *El, c *core.Ctx, dst *ebiten.Image)
-	update(e *El, c *core.Ctx)
+	measure(element *El, ctx *core.Ctx, maxW int) (w, h int)
+	layout(element *El, ctx *core.Ctx)
+	draw(element *El, ctx *core.Ctx, dst *ebiten.Image)
+	update(element *El, ctx *core.Ctx)
 }
 
 // El is one element: a behavior plus the attributes shared by all.
@@ -93,8 +93,8 @@ type El struct {
 	small, mono, bold, ellipsis, ctr bool
 
 	onClick, onChange    func()
-	onClickAt            func(x, y int)
-	onRightIn            func(c *core.Ctx, x, y int) // a right click that needs the context, as TextMenu does
+	onClickAt            func(posX, posY int)
+	onRightIn            func(ctx *core.Ctx, posX, posY int) // a right click that needs the context, as TextMenu does
 	onMiddle, onDragOver func()
 	onDouble             func()
 	onSelect             func(i int)
@@ -116,7 +116,7 @@ type El struct {
 	roundCtl      string    // set by RoundT, RoundB and RoundBL: the control whose radius the corners take
 	roundCorners  core.Corners
 	focusScope    bool
-	onRight       func(x, y int)
+	onRight       func(posX, posY int)
 	modal         bool
 	onDismiss     func()
 }
@@ -139,8 +139,8 @@ type Option func(*El)
 
 func (o Option) apply(element *El) { o(element) }
 
-func newEl(behavior behavior, items []Item) *El {
-	e := &El{b: behavior}
+func newEl(kind behavior, items []Item) *El {
+	e := &El{b: kind}
 	for _, it := range items {
 		if it != nil { // a bare nil, as opposed to a nil node from If
 			it.apply(e)
@@ -166,10 +166,10 @@ func flatten(kids []*El) []*El {
 // Size options.
 
 // W fixes the width in pixels.
-func W(count int) Option { return func(element *El) { element.w = count } }
+func W(pixels int) Option { return func(element *El) { element.w = pixels } }
 
 // H fixes the height in pixels.
-func H(count int) Option { return func(element *El) { element.h = count } }
+func H(pixels int) Option { return func(element *El) { element.h = pixels } }
 
 // Grow makes the element take a share of the free space in its row or
 // column, proportional to weight.
@@ -199,30 +199,36 @@ func FitW() Option {
 }
 
 // Pad sets the same padding on all sides.
-func Pad(count int) Option {
-	return func(element *El) { element.padL, element.padT, element.padR, element.padB = count, count, count, count }
+func Pad(pixels int) Option {
+	return func(element *El) {
+		element.padL, element.padT, element.padR, element.padB = pixels, pixels, pixels, pixels
+	}
 }
 
 // PadX sets the left and right padding.
-func PadX(count int) Option { return func(element *El) { element.padL, element.padR = count, count } }
+func PadX(pixels int) Option {
+	return func(element *El) { element.padL, element.padR = pixels, pixels }
+}
 
 // PadY sets the top and bottom padding.
-func PadY(count int) Option { return func(element *El) { element.padT, element.padB = count, count } }
+func PadY(pixels int) Option {
+	return func(element *El) { element.padT, element.padB = pixels, pixels }
+}
 
 // PadL sets the left padding.
-func PadL(count int) Option { return func(element *El) { element.padL = count } }
+func PadL(pixels int) Option { return func(element *El) { element.padL = pixels } }
 
 // PadT sets the top padding.
-func PadT(count int) Option { return func(element *El) { element.padT = count } }
+func PadT(pixels int) Option { return func(element *El) { element.padT = pixels } }
 
 // PadR sets the right padding.
-func PadR(count int) Option { return func(element *El) { element.padR = count } }
+func PadR(pixels int) Option { return func(element *El) { element.padR = pixels } }
 
 // PadB sets the bottom padding.
-func PadB(count int) Option { return func(element *El) { element.padB = count } }
+func PadB(pixels int) Option { return func(element *El) { element.padB = pixels } }
 
 // Gap sets the space between children.
-func Gap(count int) Option { return func(element *El) { element.gap = count } }
+func Gap(pixels int) Option { return func(element *El) { element.gap = pixels } }
 
 // Appearance options.
 
@@ -257,7 +263,7 @@ func When(cond bool, opt Option) Option {
 }
 
 // BorderInset keeps the BorderL and BorderR lines this many pixels from the top and bottom.
-func BorderInset(count int) Option { return func(element *El) { element.borderInset = count } }
+func BorderInset(pixels int) Option { return func(element *El) { element.borderInset = pixels } }
 
 // BorderB draws a hairline along the bottom edge, under the
 // background and below the children.
@@ -301,7 +307,7 @@ func EdgeR(token core.Token) Option {
 // Tooltip shows text near the pointer once it has rested on the element
 // for a moment. The text is only recorded in the context (TipText): the
 // window shows it by mounting widget.TooltipLayer last in its Stack.
-func Tooltip(text string) Option { return func(element *El) { element.tip = text } }
+func Tooltip(content string) Option { return func(element *El) { element.tip = content } }
 
 // HoverBg fills the element while the pointer is over it.
 func HoverBg(token core.Token) Option { return func(element *El) { element.hoverBg = token } }
@@ -337,7 +343,7 @@ func OnClick(callback func()) Option { return func(element *El) { element.onClic
 // OnClickAt is OnClick with the pointer position, for what opens at the
 // click (a menu under the cursor); the app does not read the pointer itself.
 // In a template on-click-at names a func(x, y int) of the scope.
-func OnClickAt(callback func(x, y int)) Option {
+func OnClickAt(callback func(posX, posY int)) Option {
 	return func(element *El) { element.onClickAt = callback }
 }
 
@@ -397,7 +403,7 @@ func (e *El) ChangeHandler() func() { return e.onChange }
 // OnRightClickIn runs callback when the element is right-clicked, with the context
 // and the pointer position. It is OnRightClick for a handler that needs
 // the context, such as one that opens a popup menu.
-func OnRightClickIn(callback func(c *core.Ctx, x, y int)) Option {
+func OnRightClickIn(callback func(ctx *core.Ctx, posX, posY int)) Option {
 	return func(element *El) { element.onRightIn = callback }
 }
 

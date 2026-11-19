@@ -112,29 +112,29 @@ func TestApplyRefusalsChangeNothing(t *testing.T) {
 	otherFolder := &model.Folder{Name: "elsewhere"}
 	tests := []struct {
 		name string
-		make func(w world) Transfer
+		make func(fixture world) Transfer
 		want error
 	}{
-		{"the root", func(w world) Transfer {
-			return Transfer{Node: model.Of(&w.src.Folder), From: w.src, To: w.dst, Into: w.folder}
+		{"the root", func(fixture world) Transfer {
+			return Transfer{Node: model.Of(&fixture.src.Folder), From: fixture.src, To: fixture.dst, Into: fixture.folder}
 		}, model.ErrRootMove},
-		{"into itself", func(w world) Transfer {
-			return Transfer{Node: model.Of(w.dir), From: w.src, To: w.src, Into: w.dir}
+		{"into itself", func(fixture world) Transfer {
+			return Transfer{Node: model.Of(fixture.dir), From: fixture.src, To: fixture.src, Into: fixture.dir}
 		}, model.ErrIntoItself},
-		{"into its subtree", func(w world) Transfer {
-			return Transfer{Node: model.Of(w.dir), From: w.src, To: w.src, Into: w.sub, Mode: Copy}
+		{"into its subtree", func(fixture world) Transfer {
+			return Transfer{Node: model.Of(fixture.dir), From: fixture.src, To: fixture.src, Into: fixture.sub, Mode: Copy}
 		}, model.ErrIntoItself},
-		{"node not in From", func(w world) Transfer {
-			return Transfer{Node: model.Of(stranger), From: w.src, To: w.dst, Into: w.folder}
+		{"node not in From", func(fixture world) Transfer {
+			return Transfer{Node: model.Of(stranger), From: fixture.src, To: fixture.dst, Into: fixture.folder}
 		}, model.ErrNotInTree},
-		{"into not in To", func(w world) Transfer {
-			return Transfer{Node: model.Of(w.x), From: w.src, To: w.dst, Into: otherFolder}
+		{"into not in To", func(fixture world) Transfer {
+			return Transfer{Node: model.Of(fixture.x), From: fixture.src, To: fixture.dst, Into: otherFolder}
 		}, model.ErrNotInTree},
-		{"into none", func(w world) Transfer {
-			return Transfer{Node: model.Of(w.x), From: w.src, To: w.dst}
+		{"into none", func(fixture world) Transfer {
+			return Transfer{Node: model.Of(fixture.x), From: fixture.src, To: fixture.dst}
 		}, model.ErrNotInTree},
-		{"node none", func(w world) Transfer {
-			return Transfer{From: w.src, To: w.dst, Into: w.folder}
+		{"node none", func(fixture world) Transfer {
+			return Transfer{From: fixture.src, To: fixture.dst, Into: fixture.folder}
 		}, model.ErrNotInTree},
 	}
 	for _, test := range tests {
@@ -156,46 +156,46 @@ func TestMissingVariables(t *testing.T) {
 	envs := []model.Environment{{Name: "dev", Vars: []model.KV{{Name: "fromenv", Value: "1", Enabled: true}}}}
 	tests := []struct {
 		name  string
-		setup func(w world) Transfer
+		setup func(fixture world) Transfer
 		want  []string
 	}{
-		{"collection var found", func(w world) Transfer {
-			w.dst.Vars = []model.KV{{Name: "host", Enabled: true}}
-			return Transfer{Node: model.Of(w.x), From: w.src, To: w.dst, Into: &w.dst.Folder}
+		{"collection var found", func(fixture world) Transfer {
+			fixture.dst.Vars = []model.KV{{Name: "host", Enabled: true}}
+			return Transfer{Node: model.Of(fixture.x), From: fixture.src, To: fixture.dst, Into: &fixture.dst.Folder}
 		}, nil},
-		{"destination folder var found", func(w world) Transfer {
-			w.folder.Vars = []model.KV{{Name: "host", Enabled: true}}
-			return Transfer{Node: model.Of(w.x), From: w.src, To: w.dst, Into: w.folder}
+		{"destination folder var found", func(fixture world) Transfer {
+			fixture.folder.Vars = []model.KV{{Name: "host", Enabled: true}}
+			return Transfer{Node: model.Of(fixture.x), From: fixture.src, To: fixture.dst, Into: fixture.folder}
 		}, nil},
-		{"active env var found", func(w world) Transfer {
-			w.dst.Envs = envs
-			w.x.URL = "{{fromenv}}"
-			return Transfer{Node: model.Of(w.x), From: w.src, To: w.dst, Into: &w.dst.Folder, ToEnv: &w.dst.Envs[0]}
+		{"active env var found", func(fixture world) Transfer {
+			fixture.dst.Envs = envs
+			fixture.x.URL = "{{fromenv}}"
+			return Transfer{Node: model.Of(fixture.x), From: fixture.src, To: fixture.dst, Into: &fixture.dst.Folder, ToEnv: &fixture.dst.Envs[0]}
 		}, nil},
-		{"env var missing without the env", func(w world) Transfer {
-			w.dst.Envs = envs
-			w.x.URL = "{{fromenv}}"
-			return Transfer{Node: model.Of(w.x), From: w.src, To: w.dst, Into: &w.dst.Folder}
+		{"env var missing without the env", func(fixture world) Transfer {
+			fixture.dst.Envs = envs
+			fixture.x.URL = "{{fromenv}}"
+			return Transfer{Node: model.Of(fixture.x), From: fixture.src, To: fixture.dst, Into: &fixture.dst.Folder}
 		}, []string{"fromenv"}},
-		{"disabled row defines nothing", func(w world) Transfer {
-			w.dst.Vars = []model.KV{{Name: "host"}}
-			return Transfer{Node: model.Of(w.x), From: w.src, To: w.dst, Into: &w.dst.Folder}
+		{"disabled row defines nothing", func(fixture world) Transfer {
+			fixture.dst.Vars = []model.KV{{Name: "host"}}
+			return Transfer{Node: model.Of(fixture.x), From: fixture.src, To: fixture.dst, Into: &fixture.dst.Folder}
 		}, []string{"host"}},
-		{"secret row defines", func(w world) Transfer {
-			w.dst.Vars = []model.KV{{Name: "host", Enabled: true, Secret: true}}
-			return Transfer{Node: model.Of(w.x), From: w.src, To: w.dst, Into: &w.dst.Folder}
+		{"secret row defines", func(fixture world) Transfer {
+			fixture.dst.Vars = []model.KV{{Name: "host", Enabled: true, Secret: true}}
+			return Transfer{Node: model.Of(fixture.x), From: fixture.src, To: fixture.dst, Into: &fixture.dst.Folder}
 		}, nil},
-		{"source folder var is lost by a move out", func(w world) Transfer {
-			return Transfer{Node: model.Of(w.inner), From: w.src, To: w.dst, Into: &w.dst.Folder}
+		{"source folder var is lost by a move out", func(fixture world) Transfer {
+			return Transfer{Node: model.Of(fixture.inner), From: fixture.src, To: fixture.dst, Into: &fixture.dst.Folder}
 		}, []string{"dirvar"}},
-		{"a folder carries its own vars", func(w world) Transfer {
-			w.dst.Vars = []model.KV{{Name: "host", Enabled: true}}
-			return Transfer{Node: model.Of(w.dir), From: w.src, To: w.dst, Into: &w.dst.Folder}
+		{"a folder carries its own vars", func(fixture world) Transfer {
+			fixture.dst.Vars = []model.KV{{Name: "host", Enabled: true}}
+			return Transfer{Node: model.Of(fixture.dir), From: fixture.src, To: fixture.dst, Into: &fixture.dst.Folder}
 		}, nil},
-		{"a folder is the union in first-use order", func(w world) Transfer {
-			w.inner.URL = "{{b}} {{a}}"
-			w.deep.URL = "{{a}} {{c}}"
-			return Transfer{Node: model.Of(w.dir), From: w.src, To: w.dst, Into: &w.dst.Folder, Mode: Copy}
+		{"a folder is the union in first-use order", func(fixture world) Transfer {
+			fixture.inner.URL = "{{b}} {{a}}"
+			fixture.deep.URL = "{{a}} {{c}}"
+			return Transfer{Node: model.Of(fixture.dir), From: fixture.src, To: fixture.dst, Into: &fixture.dst.Folder, Mode: Copy}
 		}, []string{"b", "a", "c"}},
 	}
 	for _, test := range tests {

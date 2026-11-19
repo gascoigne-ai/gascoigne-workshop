@@ -62,7 +62,7 @@ func diffImage(want, got image.Image) *image.RGBA {
 	return diff
 }
 
-func forEachPixel(img image.Image, visit func(x, y int)) {
+func forEachPixel(img image.Image, visit func(posX, posY int)) {
 	bounds := img.Bounds()
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {

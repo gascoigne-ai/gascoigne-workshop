@@ -133,11 +133,11 @@ func Vertical() Option { return func(element *El) { element.Behavior().(*splitB)
 func AsRatio() Option { return func(element *El) { element.Behavior().(*splitB).ratio = true } }
 
 // MinFirst is the smallest size in pixels of a Split's first child.
-func MinFirst(count int) Option {
-	return func(element *El) { element.Behavior().(*splitB).minFirst = count }
+func MinFirst(pixels int) Option {
+	return func(element *El) { element.Behavior().(*splitB).minFirst = pixels }
 }
 
 // MinSecond is the smallest size in pixels of a Split's second child.
-func MinSecond(count int) Option {
-	return func(element *El) { element.Behavior().(*splitB).minSecond = count }
+func MinSecond(pixels int) Option {
+	return func(element *El) { element.Behavior().(*splitB).minSecond = pixels }
 }

@@ -149,16 +149,16 @@ func Parse(data []byte) (Result, error) {
 }
 
 // resolve follows a parameter's $ref into components.parameters.
-func (d *doc) resolve(param param) param {
-	if param.Ref == "" {
-		return param
+func (d *doc) resolve(parameter param) param {
+	if parameter.Ref == "" {
+		return parameter
 	}
-	if name, ok := strings.CutPrefix(param.Ref, "#/components/parameters/"); ok {
+	if name, ok := strings.CutPrefix(parameter.Ref, "#/components/parameters/"); ok {
 		if r, ok := d.Components.Parameters[name]; ok {
 			return r
 		}
 	}
-	return param
+	return parameter
 }
 
 // resolveBody follows a request body's $ref into components.requestBodies.
@@ -202,7 +202,7 @@ func (d *doc) schema(other map[string]any, depth int) map[string]any {
 	return out
 }
 
-func buildRequest(doc *doc, method, path string, op operation, shared []param) model.Request {
+func buildRequest(spec *doc, method, path string, op operation, shared []param) model.Request {
 	name := op.Summary
 	if name == "" {
 		name = op.OperationID
@@ -214,7 +214,7 @@ func buildRequest(doc *doc, method, path string, op operation, shared []param) m
 	url := "{{" + BaseURLVar + "}}" + pathVars(path)
 	var query []model.KV
 	for _, raw := range append(append([]param{}, shared...), op.Parameters...) {
-		p := doc.resolve(raw)
+		p := spec.resolve(raw)
 		value := paramValue(p)
 		switch p.In {
 		case "query":
@@ -226,7 +226,7 @@ func buildRequest(doc *doc, method, path string, op operation, shared []param) m
 	req.Params = query
 	req.URL = model.WithParams(url, req.Params)
 	if op.RequestBody != nil {
-		body := doc.resolveBody(*op.RequestBody)
+		body := spec.resolveBody(*op.RequestBody)
 		if mt, ok := body.Content["application/json"]; ok {
 			req.BodyType = model.BodyJSON
 			switch {
@@ -234,7 +234,7 @@ func buildRequest(doc *doc, method, path string, op operation, shared []param) m
 				b, _ := json.MarshalIndent(mt.Example, "", "  ")
 				req.Body = string(b)
 			case mt.Schema != nil:
-				req.Body = indent(model.Skeleton(doc.schema(mt.Schema, 0)))
+				req.Body = indent(model.Skeleton(spec.schema(mt.Schema, 0)))
 			default:
 				req.Body = "{}"
 			}
@@ -261,14 +261,14 @@ func pathVars(path string) string {
 
 // paramValue is a sample value for a parameter: its example, its default,
 // or the first enum value; empty when the document gives none.
-func paramValue(param param) string {
-	if param.Example != nil {
-		return fmt.Sprint(param.Example)
+func paramValue(parameter param) string {
+	if parameter.Example != nil {
+		return fmt.Sprint(parameter.Example)
 	}
-	if v, ok := param.Schema["default"]; ok {
+	if v, ok := parameter.Schema["default"]; ok {
 		return fmt.Sprint(v)
 	}
-	if e, ok := param.Schema["enum"].([]any); ok && len(e) > 0 && param.Required {
+	if e, ok := parameter.Schema["enum"].([]any); ok && len(e) > 0 && parameter.Required {
 		return fmt.Sprint(e[0])
 	}
 	return ""

@@ -738,7 +738,7 @@ var handlers = map[string]handlerAttr{
 // attributes turn an attribute value (already interpolated) into an
 // option. A flag is written bare (`small`) or `small="true"`; "false" is
 // off. An option may be nil, meaning nothing to apply.
-var attributes = map[string]func(v string) (view.Option, error){
+var attributes = map[string]func(value string) (view.Option, error){
 	"w":               intAttr(view.W),
 	"h":               intAttr(view.H),
 	"gap":             intAttr(view.Gap),
@@ -983,33 +983,33 @@ func (t *Template) Build(sc Scope) (view.Node, error) {
 	return n, nil
 }
 
-func (t *Template) errf(node *node, format string, args ...any) error {
-	return &Error{Name: t.name, Line: node.line, Msg: fmt.Sprintf(format, args...)}
+func (t *Template) errf(item *node, format string, args ...any) error {
+	return &Error{Name: t.name, Line: item.line, Msg: fmt.Sprintf(format, args...)}
 }
 
 // build makes the element of n, or a fragment for a `for`.
-func (t *Template) build(node *node, sc Scope) (view.Node, error) {
+func (t *Template) build(item *node, sc Scope) (view.Node, error) {
 	var forAttr *attr
-	for i := range node.attrs {
-		if node.attrs[i].name == "for" {
-			forAttr = &node.attrs[i]
+	for i := range item.attrs {
+		if item.attrs[i].name == "for" {
+			forAttr = &item.attrs[i]
 		}
 	}
 	if forAttr == nil {
-		return t.buildOne(node, sc)
+		return t.buildOne(item, sc)
 	}
 	name, listExpr, ok := strings.Cut(forAttr.value, " in ")
 	name = strings.TrimSpace(name)
 	if !ok || name == "" {
-		return nil, t.errf(node, `for must read "item in list", not %q`, forAttr.value)
+		return nil, t.errf(item, `for must read "item in list", not %q`, forAttr.value)
 	}
 	v, err := lookup(strings.TrimSpace(listExpr), sc)
 	if err != nil {
-		return nil, t.errf(node, "%v", err)
+		return nil, t.errf(item, "%v", err)
 	}
 	list, err := asList(v)
 	if err != nil {
-		return nil, t.errf(node, "%s: %v", strings.TrimSpace(listExpr), err)
+		return nil, t.errf(item, "%s: %v", strings.TrimSpace(listExpr), err)
 	}
 	var nodes []view.Item
 	for i, it := range list {
@@ -1018,7 +1018,7 @@ func (t *Template) build(node *node, sc Scope) (view.Node, error) {
 			child[k] = val
 		}
 		child[name], child["$index"] = it, i
-		el, err := t.buildOne(node, child)
+		el, err := t.buildOne(item, child)
 		if err != nil {
 			return nil, err
 		}
@@ -1058,14 +1058,14 @@ func (t *Template) args(element *node, spec elementSpec, scope Scope) ([]any, er
 }
 
 // bindHandler reads the scope function an event attribute names.
-func (t *Template) bindHandler(node *node, attr attr, handlerAttr handlerAttr, sc Scope) (view.Option, error) {
-	value, err := lookup(strings.TrimSpace(attr.value), sc)
+func (t *Template) bindHandler(item *node, attribute attr, handler handlerAttr, sc Scope) (view.Option, error) {
+	value, err := lookup(strings.TrimSpace(attribute.value), sc)
 	if err != nil {
-		return nil, t.errf(node, "%v", err)
+		return nil, t.errf(item, "%v", err)
 	}
-	opt, err := handlerAttr.bind(value)
+	opt, err := handler.bind(value)
 	if err != nil {
-		return nil, t.errf(node, "%s=%q %v", attr.name, attr.value, err)
+		return nil, t.errf(item, "%s=%q %v", attribute.name, attribute.value, err)
 	}
 	return opt, nil
 }

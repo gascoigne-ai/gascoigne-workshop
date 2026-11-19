@@ -12,8 +12,8 @@ func (s shortcut) action() shortcutpage.Action {
 
 // bindingOf is the effective binding of a shortcut: the user's override
 // when it is valid, else the default.
-func (a *App) bindingOf(shortcut shortcut) engine.Binding {
-	return shortcutpage.Effective(a.settings, shortcut.action())
+func (a *App) bindingOf(action shortcut) engine.Binding {
+	return shortcutpage.Effective(a.settings, action.action())
 }
 
 // shortcutHint is the key of an action for a menu item: nothing when unbound.

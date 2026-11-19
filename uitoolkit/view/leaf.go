@@ -61,15 +61,15 @@ func (textB) draw(element *El, ctx *core.Ctx, dst *ebiten.Image) {
 }
 
 // Text is one line of text, vertically centered in its box.
-func Text(string string, opts ...Option) *El {
+func Text(content string, opts ...Option) *El {
 	e := newEl(textB{}, with(nil, opts))
-	e.text = string
+	e.text = content
 	return e
 }
 
 // Caption is a small uppercase muted label.
-func Caption(text string, opts ...Option) *El {
-	return Text(strings.ToUpper(text), append([]Option{Small(), Muted()}, opts...)...)
+func Caption(content string, opts ...Option) *El {
+	return Text(strings.ToUpper(content), append([]Option{Small(), Muted()}, opts...)...)
 }
 
 // Color sets the text (or icon) color.
@@ -96,13 +96,13 @@ func TextCenter() Option { return func(element *El) { element.ctr = true } }
 // Lines stacks the lines of text, one Text each, in the given color. The
 // options set the column; Small among them makes every line a small text
 // NoteH high, as a Note is, so a longer help takes little room.
-func Lines(text string, clr core.Token, opts ...Option) *El {
+func Lines(content string, clr core.Token, opts ...Option) *El {
 	col := Col(with(nil, opts)...)
 	lineOpts := []Option{Color(clr), H(core.LabelH)}
 	if col.small {
 		lineOpts = []Option{Color(clr), Small(), H(core.NoteH)}
 	}
-	for _, line := range strings.Split(text, "\n") {
+	for _, line := range strings.Split(content, "\n") {
 		col.kids = append(col.kids, Text(line, lineOpts...))
 	}
 	return col

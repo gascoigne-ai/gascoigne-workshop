@@ -42,7 +42,7 @@ func (h *fakeHost) Change(edit func(*settings.Settings)) {
 }
 func (h *fakeHost) SetScaleLive(percent int)           { h.current.UIScalePct = percent }
 func (h *fakeHost) Save()                              { h.saved++ }
-func (h *fakeHost) Replace(prefs settings.Settings)    { h.current = prefs }
+func (h *fakeHost) Replace(current settings.Settings)  { h.current = current }
 func (h *fakeHost) SettingsPath() string               { return h.path }
 func (h *fakeHost) SetFonts(ui, code w.FontData) error { return nil }
 func (h *fakeHost) Toast(text string, _ bool)          { h.toasts = append(h.toasts, text) }
@@ -89,7 +89,7 @@ func TestANumberOutsideItsRangeIsExplainedAndNotApplied(t *testing.T) {
 func TestResetRemovesTheKeyFromTheFile(t *testing.T) {
 	var d SettingsDialog
 	host := newHost(t)
-	host.Change(func(prefs *settings.Settings) { prefs.Layout = "side" })
+	host.Change(func(current *settings.Settings) { current.Layout = "side" })
 	d.Reset(host, "layout")
 	if data, _ := os.ReadFile(host.path); strings.Contains(string(data), "layout") || host.current.Layout != "stacked" {
 		t.Fatalf("layout %q, file %q", host.current.Layout, data)
@@ -118,7 +118,7 @@ func TestRawTextWithProblemsChangesNothingAndGoodTextIsWrittenAsTyped(t *testing
 func TestAChangeOnDiskIsPickedUpOnceAndAnOwnWriteIsNot(t *testing.T) {
 	var d SettingsDialog
 	host := newHost(t)
-	host.Change(func(prefs *settings.Settings) { prefs.Corners = "round" })
+	host.Change(func(current *settings.Settings) { current.Corners = "round" })
 	d.Stamp(host, host.path)
 	host.current.Corners = "square" // unsaved: an own write must not reload over it
 	d.Poll(host)

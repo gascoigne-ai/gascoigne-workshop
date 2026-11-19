@@ -180,12 +180,12 @@ func TestImportListsWhatItCannotCarryOver(t *testing.T) {
 }
 
 // FuzzParse: any collection text.
-func FuzzParse(f *testing.F) {
+func FuzzParse(fuzz *testing.F) {
 	if data, err := os.ReadFile("testdata/collection.json"); err == nil {
-		f.Add(data)
+		fuzz.Add(data)
 	}
-	f.Add([]byte(`{"info":{"name":"x","schema":"https://schema.getpostman.com/json/collection/v2.0.0/collection.json"},"item":[{"name":"a","request":"https://x.test"}]}`))
-	f.Fuzz(func(t *testing.T, data []byte) {
+	fuzz.Add([]byte(`{"info":{"name":"x","schema":"https://schema.getpostman.com/json/collection/v2.0.0/collection.json"},"item":[{"name":"a","request":"https://x.test"}]}`))
+	fuzz.Fuzz(func(t *testing.T, data []byte) {
 		_, _ = Parse(data)
 	})
 }

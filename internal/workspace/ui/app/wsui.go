@@ -186,35 +186,35 @@ func (a *App) clearLog(tab *reqTab) {
 }
 
 // applyWS applies one wsEvent.
-func (a *App) applyWS(wsEvent wsEvent) {
-	t := wsEvent.tab
-	if !t.Current(wsEvent.gen) {
-		if wsEvent.sess != nil { // a connect that was abandoned meanwhile
-			_ = wsEvent.sess.Close(context.Background())
+func (a *App) applyWS(event wsEvent) {
+	t := event.tab
+	if !t.Current(event.gen) {
+		if event.sess != nil { // a connect that was abandoned meanwhile
+			_ = event.sess.Close(context.Background())
 		}
 		return
 	}
 	switch {
-	case wsEvent.retry:
+	case event.retry:
 		if t.CanRetry() {
 			a.connect(t)
 		}
-	case wsEvent.closed:
+	case event.closed:
 		t.Closed()
 		a.calls.Info(a.now(), "Disconnected from "+t.Req.URL)
 		a.status = "Disconnected from " + t.Req.URL
 		a.scheduleRetry(t)
-	case wsEvent.hasEv:
-		t.Received(wsEvent.ev)
-		a.logEvent(t, wsEvent.ev)
-	case wsEvent.err != nil:
+	case event.hasEv:
+		t.Received(event.ev)
+		a.logEvent(t, event.ev)
+	case event.err != nil:
 		t.Failed()
-		a.calls.Error(a.now(), fmt.Sprintf("✗ %s: %s", t.Req.URL, wsEvent.err))
-		a.logInfo(t, wsEvent.err.Error(), w.Error)
+		a.calls.Error(a.now(), fmt.Sprintf("✗ %s: %s", t.Req.URL, event.err))
+		a.logInfo(t, event.err.Error(), w.Error)
 		a.status = "Connection failed"
 		a.scheduleRetry(t)
 	default:
-		t.Opened(wsEvent.sess)
+		t.Opened(event.sess)
 		a.calls.Info(a.now(), "Connected to "+t.Req.URL)
 		a.status = "Connected to " + t.Req.URL
 	}

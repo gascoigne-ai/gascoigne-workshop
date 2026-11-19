@@ -315,15 +315,15 @@ func (e *El) dropOptional(sizes []int, avail int) {
 // shrinkToFit takes what the children overflow the row by from its Shrink
 // children, first to last, each down to its minimum size along the axis.
 // A row that fits is left as it is.
-func (e *El) shrinkToFit(flow flow, sizes []int, avail int) {
+func (e *El) shrinkToFit(axis flow, sizes []int, avail int) {
 	used, n := 0, 0
 	for i, k := range e.kids {
 		if k.hidden || k.fl.on {
 			continue
 		}
 		n++
-		if flow.growing(k) {
-			used += flow.marginMain(k)
+		if axis.growing(k) {
+			used += axis.marginMain(k)
 			continue
 		}
 		used += sizes[i]
@@ -333,10 +333,10 @@ func (e *El) shrinkToFit(flow flow, sizes []int, avail int) {
 		if over <= 0 {
 			return
 		}
-		if !k.shrink || k.hidden || k.fl.on || flow.growing(k) {
+		if !k.shrink || k.hidden || k.fl.on || axis.growing(k) {
 			continue
 		}
-		give := min(sizes[i]-flow.marginMain(k)-flow.minMain(k), over)
+		give := min(sizes[i]-axis.marginMain(k)-axis.minMain(k), over)
 		if give > 0 {
 			sizes[i] -= give
 			over -= give

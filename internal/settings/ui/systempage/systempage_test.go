@@ -51,7 +51,7 @@ func TestCopyPutsTheWholeReportOnTheClipboard(t *testing.T) {
 	ctx := newCtx(t)
 	Layout(ctx, root, 600, 600)
 	var button *El
-	var find func(e *El)
+	var find func(element *El)
 	find = func(element *El) {
 		if strings.Contains(strings.SplitN(Dump(element), "\n", 2)[0], "onClick=true") {
 			button = element

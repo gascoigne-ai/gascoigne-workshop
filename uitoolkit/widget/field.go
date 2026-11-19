@@ -11,8 +11,8 @@ const fieldPad = 10
 
 // FieldPad sets a field's inner padding, for fields inset in a box that
 // already has padding of its own, so text lines up with its neighbours.
-func FieldPad(count int) Option {
-	return func(element *El) { element.Behavior().(*fieldB).inset = count }
+func FieldPad(pixels int) Option {
+	return func(element *El) { element.Behavior().(*fieldB).inset = pixels }
 }
 
 // fieldB is a single-line text input editing a TextField.

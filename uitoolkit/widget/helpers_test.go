@@ -87,7 +87,7 @@ type memClip struct{ text string }
 
 func (m *memClip) Read() (string, error) { return m.text, nil }
 
-func (m *memClip) Write(string string) error { m.text = string; return nil }
+func (m *memClip) Write(content string) error { m.text = content; return nil }
 
 // viewport is a 600x400 code view at the origin of a context with a memory clipboard.
 func viewport(t *testing.T) (*CodeView, *core.Ctx, *memClip, core.Rect) {

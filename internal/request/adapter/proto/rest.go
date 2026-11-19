@@ -213,7 +213,7 @@ func failureText(err error) string {
 
 // authAppliers add credentials to a request, by auth type. The zero
 // value of the type is no authentication.
-var authAppliers = map[model.AuthType]func(a model.Auth, r *http.Request){
+var authAppliers = map[model.AuthType]func(auth model.Auth, request *http.Request){
 	model.AuthNone: func(model.Auth, *http.Request) {},
 	model.AuthBearer: func(auth model.Auth, request *http.Request) {
 		request.Header.Set("Authorization", "Bearer "+auth.Token)

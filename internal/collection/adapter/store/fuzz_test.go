@@ -6,9 +6,9 @@ import (
 	"testing"
 )
 
-func FuzzLoad(f *testing.F) {
-	f.Add([]byte(`{"name":"a","order":["a.req.json"]}`), []byte(`{"method":"GET","url":"https://x.test"}`), []byte(`{}`))
-	f.Fuzz(func(t *testing.T, folder, request, secrets []byte) {
+func FuzzLoad(fuzz *testing.F) {
+	fuzz.Add([]byte(`{"name":"a","order":["a.req.json"]}`), []byte(`{"method":"GET","url":"https://x.test"}`), []byte(`{}`))
+	fuzz.Fuzz(func(t *testing.T, folder, request, secrets []byte) {
 		dir := t.TempDir()
 		files := map[string][]byte{
 			folderFile:                      folder,

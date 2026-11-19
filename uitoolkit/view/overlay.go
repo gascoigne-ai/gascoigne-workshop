@@ -48,7 +48,7 @@ func FocusScope() Option { return func(element *El) { element.focusScope = true 
 
 // OnRightClick runs callback with the pointer position when the element is
 // right-clicked.
-func OnRightClick(callback func(x, y int)) Option {
+func OnRightClick(callback func(posX, posY int)) Option {
 	return func(element *El) { element.onRight = callback }
 }
 

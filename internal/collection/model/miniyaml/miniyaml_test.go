@@ -177,14 +177,14 @@ func TestDeeplyNestedInputIsAnErrorNotAStackOverflow(t *testing.T) {
 // FuzzParse feeds Parse text it was never written for: it may return an
 // error but must not panic, hang or overflow the stack. The seeds are the
 // inputs the tests above already use.
-func FuzzParse(f *testing.F) {
+func FuzzParse(fuzz *testing.F) {
 	for _, seed := range []string{
 		"a: 1\nb:\n  - x\n  - y: 2\n", "a: [1, 2, {b: c}]\n", "a: |\n  text\n  more\n", "- - x\n- y\n",
 		"a: &x 1\n", "a: [}\n", "\ta: 1\n", "a: \"open\n", "a: 1\na: 2\n", "",
 	} {
-		f.Add(seed)
+		fuzz.Add(seed)
 	}
-	f.Fuzz(func(t *testing.T, src string) {
+	fuzz.Fuzz(func(t *testing.T, src string) {
 		_, _ = Parse([]byte(src))
 	})
 }

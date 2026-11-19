@@ -2,19 +2,19 @@ package model
 
 import "testing"
 
-func FuzzParseSchema(f *testing.F) {
-	f.Add([]byte(introspectionAnswer))
-	f.Add([]byte(`{"data":{"__schema":{"types":[]}}}`))
-	f.Fuzz(func(t *testing.T, body []byte) {
+func FuzzParseSchema(fuzz *testing.F) {
+	fuzz.Add([]byte(introspectionAnswer))
+	fuzz.Add([]byte(`{"data":{"__schema":{"types":[]}}}`))
+	fuzz.Fuzz(func(t *testing.T, body []byte) {
 		_, _ = ParseSchema(body)
 	})
 }
 
-func FuzzParseMCPLists(f *testing.F) {
-	f.Add(`{"result":{"tools":[{"name":"a","inputSchema":{"type":"object","properties":{"x":{"type":"string"}}}}]}}`)
-	f.Add(`{"result":{"resources":[{"uri":"file:///a","name":"a"}]}}`)
-	f.Add(`{"result":{"prompts":[{"name":"p","arguments":[{"name":"x","required":true}]}]}}`)
-	f.Fuzz(func(t *testing.T, message string) {
+func FuzzParseMCPLists(fuzz *testing.F) {
+	fuzz.Add(`{"result":{"tools":[{"name":"a","inputSchema":{"type":"object","properties":{"x":{"type":"string"}}}}]}}`)
+	fuzz.Add(`{"result":{"resources":[{"uri":"file:///a","name":"a"}]}}`)
+	fuzz.Add(`{"result":{"prompts":[{"name":"p","arguments":[{"name":"x","required":true}]}]}}`)
+	fuzz.Fuzz(func(t *testing.T, message string) {
 		for _, tool := range ParseTools(message) {
 			_ = Skeleton(tool.Schema)
 		}
@@ -25,20 +25,20 @@ func FuzzParseMCPLists(f *testing.F) {
 	})
 }
 
-func FuzzParseServerInfo(f *testing.F) {
-	f.Add(`{"protocolVersion":"2025-03-26","capabilities":{"tools":{}},"serverInfo":{"name":"s","version":"1"}}`)
-	f.Fuzz(func(t *testing.T, result string) {
+func FuzzParseServerInfo(fuzz *testing.F) {
+	fuzz.Add(`{"protocolVersion":"2025-03-26","capabilities":{"tools":{}},"serverInfo":{"name":"s","version":"1"}}`)
+	fuzz.Fuzz(func(t *testing.T, result string) {
 		_, _ = ParseServerInfo(result)
 	})
 }
 
 // A protocol, body type or auth type parsed from any text is one of the
 // known values and parses again to itself.
-func FuzzParseProtocol(f *testing.F) {
-	f.Add("rest")
-	f.Add("ws ")
-	f.Add("")
-	f.Fuzz(func(t *testing.T, text string) {
+func FuzzParseProtocol(fuzz *testing.F) {
+	fuzz.Add("rest")
+	fuzz.Add("ws ")
+	fuzz.Add("")
+	fuzz.Fuzz(func(t *testing.T, text string) {
 		protocol, err := ParseProtocol(text)
 		if err != nil {
 			return
@@ -49,11 +49,11 @@ func FuzzParseProtocol(f *testing.F) {
 	})
 }
 
-func FuzzParseBodyType(f *testing.F) {
-	f.Add("json")
-	f.Add("")
-	f.Add("xml")
-	f.Fuzz(func(t *testing.T, text string) {
+func FuzzParseBodyType(fuzz *testing.F) {
+	fuzz.Add("json")
+	fuzz.Add("")
+	fuzz.Add("xml")
+	fuzz.Fuzz(func(t *testing.T, text string) {
 		bodyType, err := ParseBodyType(text)
 		if err != nil {
 			return
@@ -64,11 +64,11 @@ func FuzzParseBodyType(f *testing.F) {
 	})
 }
 
-func FuzzParseAuthType(f *testing.F) {
-	f.Add("bearer")
-	f.Add("none")
-	f.Add("")
-	f.Fuzz(func(t *testing.T, text string) {
+func FuzzParseAuthType(fuzz *testing.F) {
+	fuzz.Add("bearer")
+	fuzz.Add("none")
+	fuzz.Add("")
+	fuzz.Fuzz(func(t *testing.T, text string) {
 		authType, err := ParseAuthType(text)
 		if err != nil {
 			return

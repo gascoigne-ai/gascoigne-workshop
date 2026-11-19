@@ -61,14 +61,14 @@ func (s *sliderB) track(element *El) (x, w int) {
 // valueAt maps a track fraction (0..1) to a stepped value. With a mid
 // value the two halves of the track are scaled separately, so the mid
 // value sits in the middle.
-func (s *sliderB) valueAt(value float64) int {
-	value = max(0, min(value, 1))
-	lo, hi, g := float64(s.min), float64(s.max), value
+func (s *sliderB) valueAt(fraction float64) int {
+	fraction = max(0, min(fraction, 1))
+	lo, hi, g := float64(s.min), float64(s.max), fraction
 	if s.mid != 0 {
-		if value < 0.5 {
-			hi, g = float64(s.mid), value*2
+		if fraction < 0.5 {
+			hi, g = float64(s.mid), fraction*2
 		} else {
-			lo, g = float64(s.mid), (value-0.5)*2
+			lo, g = float64(s.mid), (fraction-0.5)*2
 		}
 	}
 	v := lo + g*(hi-lo)
@@ -148,8 +148,8 @@ func (s *sliderB) Draw(element *El, ctx *core.Ctx, dst *ebiten.Image) {
 // runs with each new value while the thumb moves, so the effect can be
 // seen live. In a template it is <slider state min max step value>, with
 // the state and callbacks named from the scope.
-func Slider(state *SliderState, min, max, step, value int, opts ...Option) *El {
-	slider := &sliderB{state: state, min: min, max: max, step: step, value: value}
+func Slider(state *SliderState, low, high, step, value int, opts ...Option) *El {
+	slider := &sliderB{state: state, min: low, max: high, step: step, value: value}
 	slider.normalize()
 	return Custom(slider, with([]Item{Grow(1), H(core.CompactH)}, opts)...)
 }

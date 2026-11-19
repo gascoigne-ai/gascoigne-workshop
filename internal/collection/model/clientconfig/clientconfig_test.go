@@ -197,11 +197,11 @@ func TestMergeLetsTheOverrideReplaceEntriesOfTheSameName(t *testing.T) {
 }
 
 // FuzzParse: any config text in each of the three formats.
-func FuzzParse(f *testing.F) {
-	f.Add(yamlConfig)
-	f.Add(`{"servers":[{"name":"a","protocol":"rest","url":"http://x"}]}`)
-	f.Add("[[servers]]\nname = \"a\"\nprotocol = \"rest\"\nurl = \"http://x\"\n")
-	f.Fuzz(func(t *testing.T, text string) {
+func FuzzParse(fuzz *testing.F) {
+	fuzz.Add(yamlConfig)
+	fuzz.Add(`{"servers":[{"name":"a","protocol":"rest","url":"http://x"}]}`)
+	fuzz.Add("[[servers]]\nname = \"a\"\nprotocol = \"rest\"\nurl = \"http://x\"\n")
+	fuzz.Fuzz(func(t *testing.T, text string) {
 		for _, file := range []string{"c.yaml", "c.json", "c.toml"} {
 			_, _ = Parse(file, []byte(text))
 		}

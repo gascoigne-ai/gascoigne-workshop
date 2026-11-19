@@ -81,22 +81,22 @@ func (p *Page) edited(host Host, customColor appearance.CustomColor) {
 		return
 	}
 	p.setNote(customColor.Token, "")
-	host.Send(prefs.Edit{Edit: func(prefs *settings.Settings) {
-		id := appearance.ThemeIDOf(prefs.Theme)
-		if prefs.Colors == nil {
-			prefs.Colors = map[string]map[string]string{}
+	host.Send(prefs.Edit{Edit: func(current *settings.Settings) {
+		id := appearance.ThemeIDOf(current.Theme)
+		if current.Colors == nil {
+			current.Colors = map[string]map[string]string{}
 		}
-		if prefs.Colors[id] == nil {
-			prefs.Colors[id] = map[string]string{}
+		if current.Colors[id] == nil {
+			current.Colors[id] = map[string]string{}
 		}
-		prefs.Colors[id][string(customColor.Token)] = w.FormatHex(col)
+		current.Colors[id][string(customColor.Token)] = w.FormatHex(col)
 	}})
 }
 
 // resetColor drops the override of one color in the current theme.
 func (p *Page) reset(host Host, tok w.Token) {
-	host.Send(prefs.Edit{Edit: func(prefs *settings.Settings) {
-		delete(prefs.Colors[appearance.ThemeIDOf(prefs.Theme)], string(tok))
+	host.Send(prefs.Edit{Edit: func(current *settings.Settings) {
+		delete(current.Colors[appearance.ThemeIDOf(current.Theme)], string(tok))
 	}})
 	delete(p.inputs, tok)
 	p.setNote(tok, "")
@@ -104,7 +104,7 @@ func (p *Page) reset(host Host, tok w.Token) {
 
 // resetColors drops every color override of the current theme.
 func (p *Page) resetAll(host Host) {
-	host.Send(prefs.Edit{Edit: func(prefs *settings.Settings) { delete(prefs.Colors, appearance.ThemeIDOf(prefs.Theme)) }})
+	host.Send(prefs.Edit{Edit: func(current *settings.Settings) { delete(current.Colors, appearance.ThemeIDOf(current.Theme)) }})
 	p.Forget()
 }
 

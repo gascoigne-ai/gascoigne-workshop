@@ -19,7 +19,7 @@ const (
 // navList is the list of pages as the dialog shows it with page open
 // open.
 func navList(dialog *SettingsDialog, open string) *El {
-	return Col(For(pages, func(_ int, page page) Node { return dialog.navItem(page, page.id == open) }))
+	return Col(For(pages, func(_ int, entry page) Node { return dialog.navItem(entry, entry.id == open) }))
 }
 
 // The list of pages, one open and the rest closed, is pinned at both

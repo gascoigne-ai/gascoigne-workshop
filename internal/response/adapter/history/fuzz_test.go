@@ -6,9 +6,9 @@ import (
 	"testing"
 )
 
-func FuzzLoad(f *testing.F) {
-	f.Add([]byte(`{"key":"a","entries":[{"status":200}]}`))
-	f.Fuzz(func(t *testing.T, data []byte) {
+func FuzzLoad(fuzz *testing.F) {
+	fuzz.Add([]byte(`{"key":"a","entries":[{"status":200}]}`))
+	fuzz.Fuzz(func(t *testing.T, data []byte) {
 		dir := t.TempDir()
 		if err := os.WriteFile(path(dir, "a"), data, 0o600); err != nil {
 			t.Skip()
@@ -17,9 +17,9 @@ func FuzzLoad(f *testing.F) {
 	})
 }
 
-func FuzzLoadSent(f *testing.F) {
-	f.Add([]byte("{\"path\":\"a\"}\nnot json\n{\"path\":\"b\"}\n"))
-	f.Fuzz(func(t *testing.T, data []byte) {
+func FuzzLoadSent(fuzz *testing.F) {
+	fuzz.Add([]byte("{\"path\":\"a\"}\nnot json\n{\"path\":\"b\"}\n"))
+	fuzz.Fuzz(func(t *testing.T, data []byte) {
 		dir := t.TempDir()
 		if err := os.WriteFile(filepath.Join(dir, sentFile), data, 0o600); err != nil {
 			t.Skip()

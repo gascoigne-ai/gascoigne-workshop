@@ -31,7 +31,7 @@ func Update(ctx *core.Ctx, root Node) {
 // shows the new position on the next frame.
 func revealFocused(root Node) {
 	var path []*El
-	var find func(e *El) bool
+	var find func(element *El) bool
 	find = func(element *El) bool {
 		if element.hidden {
 			return false
@@ -206,7 +206,7 @@ func hasModal(element *El) bool {
 // preUpdater is implemented by behaviors that must see the input before
 // their children do, to take a click away from them.
 type preUpdater interface {
-	preUpdate(e *El, c *core.Ctx)
+	preUpdate(element *El, ctx *core.Ctx)
 }
 
 // update reports whether a modal element swallowed the input.
@@ -280,7 +280,7 @@ func (e *El) update(ctx *core.Ctx) bool {
 // overDrawer is implemented by behaviors that paint over their children,
 // such as a scrollbar.
 type overDrawer interface {
-	drawOver(e *El, c *core.Ctx, dst *ebiten.Image)
+	drawOver(element *El, ctx *core.Ctx, dst *ebiten.Image)
 }
 
 func (e *El) draw(ctx *core.Ctx, dst *ebiten.Image) {

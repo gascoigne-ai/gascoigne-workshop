@@ -124,32 +124,32 @@ func Compact(body []byte, width int) []Line {
 		return plain(string(body))
 	}
 	var lines []Line
-	var emit func(n *node, depth int, prefix, suffix string)
-	emit = func(node *node, depth int, prefix, suffix string) {
+	var emit func(item *node, depth int, prefix, suffix string)
+	emit = func(item *node, depth int, prefix, suffix string) {
 		indent := strings.Repeat("  ", depth)
-		one := indent + prefix + node.inline() + suffix
-		if node.open == 0 || len(node.children) == 0 || len(one) <= width {
+		one := indent + prefix + item.inline() + suffix
+		if item.open == 0 || len(item.children) == 0 || len(one) <= width {
 			lines = append(lines, Line{Spans: tokenizeLine(one), Depth: depth})
 			return
 		}
-		open := indent + prefix + string(node.open)
+		open := indent + prefix + string(item.open)
 		lines = append(lines, Line{
 			Spans:    tokenizeLine(open),
 			Foldable: true,
 			Depth:    depth,
-			Folded:   tokenizeLine(indent + prefix + node.preview() + suffix),
+			Folded:   tokenizeLine(indent + prefix + item.preview() + suffix),
 		})
-		for i, c := range node.children {
+		for i, c := range item.children {
 			cp, cs := "", ","
-			if i == len(node.children)-1 {
+			if i == len(item.children)-1 {
 				cs = ""
 			}
-			if node.open == '{' {
-				cp = quote(node.keys[i]) + ": "
+			if item.open == '{' {
+				cp = quote(item.keys[i]) + ": "
 			}
 			emit(c, depth+1, cp, cs)
 		}
-		lines = append(lines, Line{Spans: tokenizeLine(indent + string(closer(node.open)) + suffix), Depth: depth})
+		lines = append(lines, Line{Spans: tokenizeLine(indent + string(closer(item.open)) + suffix), Depth: depth})
 	}
 	emit(root, 0, "", "")
 	return lines

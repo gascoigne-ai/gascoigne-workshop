@@ -20,11 +20,11 @@ const (
 )
 
 // savedFont is the family name stored for role.
-func savedFont(prefs settings.Settings, role FontRole) string {
+func savedFont(current settings.Settings, role FontRole) string {
 	if role == FontCode {
-		return prefs.CodeFont
+		return current.CodeFont
 	}
-	return prefs.UIFont
+	return current.UIFont
 }
 
 // SetFont picks the family called name for role, applies it and saves the
@@ -40,11 +40,11 @@ func (d *SettingsDialog) SetFont(host Host, role FontRole, name string) {
 		}
 		name = family.Name
 	}
-	host.Send(prefs.Change{Edit: func(prefs *settings.Settings) {
+	host.Send(prefs.Change{Edit: func(current *settings.Settings) {
 		if role == FontCode {
-			prefs.CodeFont = name
+			current.CodeFont = name
 		} else {
-			prefs.UIFont = name
+			current.UIFont = name
 		}
 	}})
 	d.ApplyFonts(host)

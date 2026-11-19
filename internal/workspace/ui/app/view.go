@@ -383,10 +383,10 @@ func (a *App) hint(text, shortcutID string) string {
 
 // varSegments colors {{variables}} so they stand out from the literal
 // URL: defined ones in the success color, unresolved ones as errors.
-func (a *App) varSegments(string string) []Span {
+func (a *App) varSegments(raw string) []Span {
 	var segs []Span
 	vars := a.varsFor(a.cur().Req)
-	for _, seg := range splitVars(string) {
+	for _, seg := range splitVars(raw) {
 		style := w.Text
 		if seg.isVar {
 			style = w.OK
@@ -405,19 +405,19 @@ type urlSeg struct {
 }
 
 // splitVars cuts s into literal runs and {{name}} variable runs.
-func splitVars(string string) []urlSeg {
+func splitVars(raw string) []urlSeg {
 	var segs []urlSeg
-	for string != "" {
-		start := strings.Index(string, "{{")
-		end := strings.Index(string, "}}")
+	for raw != "" {
+		start := strings.Index(raw, "{{")
+		end := strings.Index(raw, "}}")
 		if start < 0 || end < start {
-			return append(segs, urlSeg{text: string})
+			return append(segs, urlSeg{text: raw})
 		}
 		if start > 0 {
-			segs = append(segs, urlSeg{text: string[:start]})
+			segs = append(segs, urlSeg{text: raw[:start]})
 		}
-		segs = append(segs, urlSeg{text: string[start : end+2], isVar: true})
-		string = string[end+2:]
+		segs = append(segs, urlSeg{text: raw[start : end+2], isVar: true})
+		raw = raw[end+2:]
 	}
 	return segs
 }

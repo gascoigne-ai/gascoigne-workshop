@@ -13,13 +13,13 @@ import (
 // component does not need.
 type Behavior interface {
 	// Measure is the size the element wants when at most maxW wide.
-	Measure(e *El, c *core.Ctx, maxW int) (w, h int)
+	Measure(element *El, ctx *core.Ctx, maxW int) (w, h int)
 	// Layout runs after the element's rect is set.
-	Layout(e *El, c *core.Ctx)
+	Layout(element *El, ctx *core.Ctx)
 	// Update handles the frame's input, children first.
-	Update(e *El, c *core.Ctx)
+	Update(element *El, ctx *core.Ctx)
 	// Draw paints the element; its children are drawn after it.
-	Draw(e *El, c *core.Ctx, dst *ebiten.Image)
+	Draw(element *El, ctx *core.Ctx, dst *ebiten.Image)
 }
 
 // Base is a Behavior that measures nothing, lays nothing out, ignores
@@ -110,19 +110,19 @@ func (e *El) HoverColorToken() core.Token { return e.hoverColor }
 // PreUpdater is implemented by a Behavior that must see the input before
 // its children do, to take a click away from them.
 type PreUpdater interface {
-	PreUpdate(e *El, c *core.Ctx)
+	PreUpdate(element *El, ctx *core.Ctx)
 }
 
 // OverDrawer is implemented by a Behavior that paints over its children.
 type OverDrawer interface {
-	DrawOver(e *El, c *core.Ctx, dst *ebiten.Image)
+	DrawOver(element *El, ctx *core.Ctx, dst *ebiten.Image)
 }
 
 // Scroller is implemented by a Behavior that scrolls its children. When
 // Tab moves the focus, the runtime asks every Scroller above the focused
 // element to bring the element's rect into view.
 type Scroller interface {
-	ScrollTo(e *El, target core.Rect)
+	ScrollTo(element *El, target core.Rect)
 }
 
 // InFlow reports whether the element takes part in its parent's layout:

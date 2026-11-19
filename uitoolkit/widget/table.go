@@ -44,7 +44,7 @@ type TableSpec struct {
 	CellStyler func(text string) []Span
 
 	// OnRowMenu runs when a data row is right-clicked, with the pointer position.
-	OnRowMenu func(row, x, y int)
+	OnRowMenu func(row, posX, posY int)
 
 	// OnGrabRow and OnDragOverRow add a drag handle at the start of every
 	// data row: pressing it runs OnGrabRow, and while the button is held

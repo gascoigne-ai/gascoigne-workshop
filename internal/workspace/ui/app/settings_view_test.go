@@ -25,7 +25,7 @@ const (
 // not in Dump; TestTheSettingsChecksFollowTheRequest pins it.
 var settingsPaneStates = []struct {
 	name  string
-	setUp func(a *App, tab *reqTab)
+	setUp func(app *App, tab *reqTab)
 }{
 	{"defaults", func(app *App, tab *reqTab) {}},
 	{"default-timeout", func(app *App, tab *reqTab) {

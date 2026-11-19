@@ -11,7 +11,7 @@ import (
 func TestTheCursorIsAGrabWhileSomethingIsBeingDragged(t *testing.T) {
 	tests := []struct {
 		name  string
-		setup func(a *App)
+		setup func(app *App)
 		held  bool
 		want  core.Cursor
 	}{

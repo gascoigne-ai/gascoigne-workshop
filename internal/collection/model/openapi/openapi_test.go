@@ -128,7 +128,7 @@ func TestTheYAMLFormOfTheSameDescriptionGivesTheSameCollection(t *testing.T) {
 // dump lists a folder as "path: METHOD URL body" lines, to compare two imports.
 func dump(folder *model.Folder) []string {
 	var out []string
-	var walk func(f *model.Folder, prefix string)
+	var walk func(folder *model.Folder, prefix string)
 	walk = func(folder *model.Folder, prefix string) {
 		for _, r := range folder.Requests {
 			out = append(out, prefix+r.Name+": "+r.Method+" "+r.URL+" "+r.Body)
@@ -217,13 +217,13 @@ func TestARequestBodyRefIsResolved(t *testing.T) {
 }
 
 // FuzzParse: any document text, JSON or YAML.
-func FuzzParse(f *testing.F) {
+func FuzzParse(fuzz *testing.F) {
 	if data, err := os.ReadFile("testdata/petstore.json"); err == nil {
-		f.Add(data)
+		fuzz.Add(data)
 	}
-	f.Add([]byte("openapi: 3.0.0\ninfo:\n  title: T\npaths:\n  /a:\n    get:\n      summary: A\n"))
-	f.Add([]byte(`{"openapi":"3.0.0","paths":{"/a":{"get":[]}}}`))
-	f.Fuzz(func(t *testing.T, data []byte) {
+	fuzz.Add([]byte("openapi: 3.0.0\ninfo:\n  title: T\npaths:\n  /a:\n    get:\n      summary: A\n"))
+	fuzz.Add([]byte(`{"openapi":"3.0.0","paths":{"/a":{"get":[]}}}`))
+	fuzz.Fuzz(func(t *testing.T, data []byte) {
 		_, _ = Parse(data)
 	})
 }

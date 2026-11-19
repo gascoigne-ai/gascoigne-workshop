@@ -372,27 +372,27 @@ func requestToFile(request *model.Request, root string) (requestFile, secret) {
 
 // fileToRequest is the request of a file in a collection kept in root. A
 // protocol, body type or auth type it does not know is an error.
-func fileToRequest(requestFile requestFile, secret secret, root string) (*model.Request, error) {
-	protocol, err := model.ParseProtocol(requestFile.Protocol)
+func fileToRequest(file requestFile, secrets secret, root string) (*model.Request, error) {
+	protocol, err := model.ParseProtocol(file.Protocol)
 	if err != nil {
 		return nil, err
 	}
-	bodyType, err := model.ParseBodyType(requestFile.BodyType)
+	bodyType, err := model.ParseBodyType(file.BodyType)
 	if err != nil {
 		return nil, err
 	}
-	authType, err := model.ParseAuthType(requestFile.Auth.Type)
+	authType, err := model.ParseAuthType(file.Auth.Type)
 	if err != nil {
 		return nil, err
 	}
 	return &model.Request{
-		Name: requestFile.Name, Protocol: protocol, Method: requestFile.Method, URL: requestFile.URL,
-		Params: fromKV(requestFile.Params), Headers: fromKV(requestFile.Headers),
-		BodyType: bodyType, Body: requestFile.Body, Form: fromKV(requestFile.Form),
-		Auth: model.Auth{Type: authType, User: requestFile.Auth.User, KeyName: requestFile.Auth.KeyName, KeyIn: requestFile.Auth.KeyIn,
-			Token: secret.Token, Password: secret.Password, KeyValue: secret.KeyValue},
-		TimeoutSec: requestFile.TimeoutSec, NoRedirects: requestFile.NoRedirects, InsecureTLS: requestFile.InsecureTLS, GraphQLVars: requestFile.GraphQLVars, Tests: requestFile.Tests,
-		Proto: model.ProtoSource{Files: requestFile.ProtoFiles, ImportPaths: requestFile.ImportPaths}.Loaded(root),
+		Name: file.Name, Protocol: protocol, Method: file.Method, URL: file.URL,
+		Params: fromKV(file.Params), Headers: fromKV(file.Headers),
+		BodyType: bodyType, Body: file.Body, Form: fromKV(file.Form),
+		Auth: model.Auth{Type: authType, User: file.Auth.User, KeyName: file.Auth.KeyName, KeyIn: file.Auth.KeyIn,
+			Token: secrets.Token, Password: secrets.Password, KeyValue: secrets.KeyValue},
+		TimeoutSec: file.TimeoutSec, NoRedirects: file.NoRedirects, InsecureTLS: file.InsecureTLS, GraphQLVars: file.GraphQLVars, Tests: file.Tests,
+		Proto: model.ProtoSource{Files: file.ProtoFiles, ImportPaths: file.ImportPaths}.Loaded(root),
 	}, nil
 }
 

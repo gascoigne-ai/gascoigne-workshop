@@ -13,7 +13,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 )
 
-func wsServer(t *testing.T, handle func(c *ws.Conn, r *http.Request)) string {
+func wsServer(t *testing.T, handle func(conn *ws.Conn, request *http.Request)) string {
 	t.Helper()
 	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		c, err := ws.Upgrade(writer, request)

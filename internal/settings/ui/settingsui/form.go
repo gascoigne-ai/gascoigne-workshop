@@ -19,7 +19,7 @@ import (
 const descriptionCols = 76
 
 // settingControl draws the control of one setting.
-type settingControl func(d *SettingsDialog, host Host, field settings.Field) Node
+type settingControl func(dialog *SettingsDialog, host Host, field settings.Field) Node
 
 // settingControls are the settings whose control is not the plain one for
 // their kind. Everything else is a row of chips (an enum), On / Off (a
@@ -211,7 +211,7 @@ func (d *SettingsDialog) Edited(host Host, key string) {
 		value = number
 	}
 	d.setNote(key, "")
-	host.Send(prefs.Change{Edit: func(prefs *settings.Settings) { *prefs = settings.With(*prefs, key, value) }})
+	host.Send(prefs.Change{Edit: func(current *settings.Settings) { *current = settings.With(*current, key, value) }})
 }
 
 func (d *SettingsDialog) setNote(key, note string) {
@@ -236,7 +236,7 @@ func (d *SettingsDialog) textControl(host Host, field settings.Field) Node {
 
 // Reset puts the default back for key and drops it from the file.
 func (d *SettingsDialog) Reset(host Host, key string) {
-	host.Send(prefs.Change{Edit: func(prefs *settings.Settings) { settings.Reset(prefs, key) }})
+	host.Send(prefs.Change{Edit: func(current *settings.Settings) { settings.Reset(current, key) }})
 	d.inputs, d.notes = nil, nil
 	if key == "uiFont" || key == "codeFont" {
 		d.ApplyFonts(host)

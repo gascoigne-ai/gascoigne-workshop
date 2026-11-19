@@ -30,10 +30,10 @@ func settingsRect(t *testing.T, app *App) core.Rect {
 func TestResizingTheSettingsDialogKeepsItOpenAndVisible(t *testing.T) {
 	type grab struct {
 		name   string
-		x, y   func(r core.Rect) int
+		x, y   func(rect core.Rect) int
 		dx, dy int
 	}
-	at := func(callback func(r core.Rect) int) func(core.Rect) int { return callback }
+	at := func(callback func(rect core.Rect) int) func(core.Rect) int { return callback }
 	left, right := at(func(rect core.Rect) int { return rect.X + 2 }), at(func(rect core.Rect) int { return rect.X + rect.W - 3 })
 	top, bottom := at(func(rect core.Rect) int { return rect.Y + 2 }), at(func(rect core.Rect) int { return rect.Y + rect.H - 3 })
 	midX, midY := at(func(rect core.Rect) int { return rect.X + rect.W/2 }), at(func(rect core.Rect) int { return rect.Y + rect.H/2 })

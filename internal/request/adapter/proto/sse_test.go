@@ -16,7 +16,7 @@ import (
 func TestReadEventsFollowsTheStreamFormat(t *testing.T) {
 	stream := ": comment\nid: 7\nevent: tick\ndata: one\n\ndata: a\ndata: b\n\nretry: 100\n\nevent: noData\n\ndata: last"
 	var got []sseEvent
-	readEvents(bufio.NewScanner(strings.NewReader(stream)), func(sseEvent sseEvent) { got = append(got, sseEvent) })
+	readEvents(bufio.NewScanner(strings.NewReader(stream)), func(event sseEvent) { got = append(got, event) })
 	want := []sseEvent{{"tick", "one", "7"}, {"", "a\nb", "7"}, {"", "last", "7"}}
 	if len(got) != len(want) {
 		t.Fatalf("%+v", got)

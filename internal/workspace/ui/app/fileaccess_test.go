@@ -83,8 +83,8 @@ func (f *fakeFolders) checks(path string) int {
 	return n
 }
 
-func toastWith(a *App, text string, isErr bool) bool {
-	for _, toast := range a.toasts {
+func toastWith(app *App, text string, isErr bool) bool {
+	for _, toast := range app.toasts {
 		if toast.IsErr == isErr && strings.Contains(toast.Text, text) {
 			return true
 		}

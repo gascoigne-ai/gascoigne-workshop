@@ -35,11 +35,11 @@ type deferred interface {
 
 // shotDialogs are the dialogs the OpenDialog step opens on the open request,
 // each through the path its tree menu item takes.
-var shotDialogs = map[string]func(a *App, node model.Node){
+var shotDialogs = map[string]func(app *App, node model.Node){
 	"rename": (*App).renameNode,
 	"delete": (*App).deleteNode,
-	"move":   func(a *App, node model.Node) { a.openTransferPicker(node, transfer.Move) },
-	"copy":   func(a *App, node model.Node) { a.openTransferPicker(node, transfer.Copy) },
+	"move":   func(app *App, node model.Node) { app.openTransferPicker(node, transfer.Move) },
+	"copy":   func(app *App, node model.Node) { app.openTransferPicker(node, transfer.Copy) },
 }
 
 type openRequestStep struct{ name string }

@@ -72,8 +72,8 @@ func TestAFreshDialogKeepsTheSizeTheUserChose(t *testing.T) {
 func TestResizingTheDialogByAnEdgeKeepsItOpenAndInsideTheWindow(t *testing.T) {
 	presses := []struct {
 		name string
-		at   func(r core.Rect) (int, int)
-		to   func(x, y int) (int, int)
+		at   func(rect core.Rect) (int, int)
+		to   func(posX, posY int) (int, int)
 	}{
 		{"right edge", func(rect core.Rect) (int, int) { return rect.X + rect.W - 2, rect.Y + rect.H/2 }, func(posX, posY int) (int, int) { return posX + 120, posY }},
 		{"left edge", func(rect core.Rect) (int, int) { return rect.X + 2, rect.Y + rect.H/2 }, func(posX, posY int) (int, int) { return posX - 120, posY }},
@@ -120,7 +120,7 @@ func TestResizingTheDialogByAnEdgeKeepsItOpenAndInsideTheWindow(t *testing.T) {
 
 // dialogRectOf is the rect of the resizable dialog in a laid out view.
 func dialogRectOf(root Node) core.Rect {
-	var find func(e *El) (core.Rect, bool)
+	var find func(element *El) (core.Rect, bool)
 	find = func(element *El) (core.Rect, bool) {
 		if strings.Contains(strings.SplitN(Dump(element), "\n", 2)[0], "resizableB") {
 			return element.Rect(), true

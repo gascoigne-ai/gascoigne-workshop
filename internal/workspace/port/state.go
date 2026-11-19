@@ -8,5 +8,5 @@ type StateStore interface {
 	// empty state.
 	Load(path string) (state.State, error)
 	// Save writes the state to path; an empty path keeps it in memory.
-	Save(path string, s state.State) error
+	Save(path string, current state.State) error
 }

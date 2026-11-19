@@ -530,27 +530,27 @@ func (a *App) handle(msg bus.Msg) {
 	}
 }
 
-func (a *App) apply(sendResult sendResult) {
-	t := sendResult.tab
-	if !t.Accept(sendResult.seq) {
+func (a *App) apply(result sendResult) {
+	t := result.tab
+	if !t.Accept(result.seq) {
 		return // the answer to a send that was cancelled or replaced
 	}
 	t.Remember(t.Resp, a.now())
-	t.Resp = &sendResult.resp
+	t.Resp = &result.resp
 	a.saveHistory(t)
 	if path := a.requestPath(t.Req); path != "" {
 		owner, _ := a.open.Owner(model.Of(t.Req))
-		a.sent.Record(a, a.now(), owner.Dir, path, t.Req, sendResult.resp.Status)
+		a.sent.Record(a, a.now(), owner.Dir, path, t.Req, result.resp.Status)
 	}
-	a.calls.Answer(a.now(), t.Req, &sendResult.resp)
-	a.rememberSchema(t, &sendResult.resp)
+	a.calls.Answer(a.now(), t.Req, &result.resp)
+	a.rememberSchema(t, &result.resp)
 	a.refreshView(t)
-	if sendResult.resp.Err != "" {
+	if result.resp.Err != "" {
 		a.status = "Request failed"
 		a.runTests(t)
 		return
 	}
-	a.status = fmt.Sprintf("%s %s: %d %s in %s", t.Req.Method, t.Req.URL, sendResult.resp.Status, sendResult.resp.StatusText, textfmt.Duration(sendResult.resp.Duration))
+	a.status = fmt.Sprintf("%s %s: %d %s in %s", t.Req.Method, t.Req.URL, result.resp.Status, result.resp.StatusText, textfmt.Duration(result.resp.Duration))
 	a.runTests(t)
 }
 

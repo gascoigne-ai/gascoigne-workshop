@@ -47,7 +47,7 @@ func parseError(t *testing.T, src string, parts ...string) {
 
 func TestFieldElementMatchesTheGoField(t *testing.T) {
 	url := widget.NewTextField("https://{{host}}/")
-	paint := func(text string) []widget.Span { return []widget.Span{{Text: text, Style: core.Accent}} }
+	paint := func(content string) []widget.Span { return []widget.Span{{Text: content, Style: core.Accent}} }
 	edited, send, tab := func() {}, func() {}, func(bool) {}
 	template := build(t, `
 		<row>

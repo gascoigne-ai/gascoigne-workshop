@@ -26,7 +26,7 @@ const sidebarPinH = 480
 func TestTheSidebarLaysOutAsPinned(t *testing.T) {
 	cases := []struct {
 		name  string
-		setup func(a *App)
+		setup func(app *App)
 	}{
 		{"tree", func(app *App) {}},
 		{"folder-selected", func(app *App) { click(app, 100, treeRowY(rowRealtime)) }},
@@ -174,7 +174,7 @@ func TestDraggingOverATreeRowMakesItTheDropTarget(t *testing.T) {
 	cases := []struct {
 		name   string
 		row    int
-		target func(a *App) any
+		target func(app *App) any
 	}{
 		{"request", rowSearch, func(app *App) any { return findReq(app, "Search Repos") }},
 		{"folder", rowUser, func(app *App) any { return app.col().Folders[0] }},

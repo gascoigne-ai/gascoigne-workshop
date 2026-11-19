@@ -24,7 +24,7 @@ const stateDebounce = time.Second
 const pathSep = "/"
 
 // walkFolders calls fn for every folder below root, with its path.
-func walkFolders(folder *model.Folder, prefix string, fn func(path string, f *model.Folder)) {
+func walkFolders(folder *model.Folder, prefix string, fn func(path string, folder *model.Folder)) {
 	for _, sub := range folder.Folders {
 		p := prefix + sub.Name
 		fn(p, sub)
@@ -33,7 +33,7 @@ func walkFolders(folder *model.Folder, prefix string, fn func(path string, f *mo
 }
 
 // walkRequests calls fn for every request below root, with its path.
-func walkRequests(folder *model.Folder, prefix string, fn func(path string, r *model.Request)) {
+func walkRequests(folder *model.Folder, prefix string, fn func(path string, request *model.Request)) {
 	for _, r := range folder.Requests {
 		fn(prefix+r.Name, r)
 	}
@@ -147,7 +147,7 @@ func (a *App) snapshot() state.State {
 
 // snapshotExpanded records the open folders of entry's collection: under
 // its folder, or, for the collection that is not saved, in Expanded.
-func (a *App) snapshotExpanded(state *state.State, entry collections.Entry) {
+func (a *App) snapshotExpanded(saved *state.State, entry collections.Entry) {
 	var paths []string
 	walkFolders(&entry.Collection.Folder, "", func(name string, folder *model.Folder) {
 		if a.expanded[folder] {
@@ -158,13 +158,13 @@ func (a *App) snapshotExpanded(state *state.State, entry collections.Entry) {
 		return
 	}
 	if entry.Dir == "" {
-		state.Expanded = append(state.Expanded, paths...)
+		saved.Expanded = append(saved.Expanded, paths...)
 		return
 	}
-	if state.ExpandedIn == nil {
-		state.ExpandedIn = map[string][]string{}
+	if saved.ExpandedIn == nil {
+		saved.ExpandedIn = map[string][]string{}
 	}
-	state.ExpandedIn[entry.Dir] = paths
+	saved.ExpandedIn[entry.Dir] = paths
 }
 
 // expandPaths opens the folders of col at the remembered paths.

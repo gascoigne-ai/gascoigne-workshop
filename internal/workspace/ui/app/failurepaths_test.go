@@ -31,7 +31,7 @@ func TestEveryFailurePathIsShownToTheUser(t *testing.T) {
 	}
 	tests := []struct {
 		name      string
-		trigger   func(t *testing.T, a *App)
+		trigger   func(t *testing.T, app *App)
 		wantToast string // text of an error toast; "" when only the status is checked
 		wantState string // text the status line must contain
 	}{

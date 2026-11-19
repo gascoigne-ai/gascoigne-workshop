@@ -170,7 +170,7 @@ func main() {
 // flagSet reports whether the flag was given on the command line.
 func flagSet(name string) bool {
 	set := false
-	flag.Visit(func(flag *flag.Flag) { set = set || flag.Name == name })
+	flag.Visit(func(visited *flag.Flag) { set = set || visited.Name == name })
 	return set
 }
 

@@ -173,14 +173,14 @@ func (a *App) pickerView() Node {
 }
 
 // dialogForm is the typed form of a dialog, nothing for the others.
-func (a *App) dialogForm(dialog *dialog) Node {
-	if dialog.content != nil {
-		return dialog.content()
+func (a *App) dialogForm(open *dialog) Node {
+	if open.content != nil {
+		return open.content()
 	}
-	if dialog.form == nil {
+	if open.form == nil {
 		return nil
 	}
-	return dialog.form.View(a)
+	return open.form.View(a)
 }
 
 // openLayers are the things Escape can close right now.

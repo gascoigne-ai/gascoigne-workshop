@@ -95,9 +95,9 @@ func fieldText(field model.SchemaField) string {
 	return text
 }
 
-func (a *App) schemaPane(pane pane, tab *reqTab, scroll *ScrollState) Node {
+func (a *App) schemaPane(panel pane, tab *reqTab, scroll *ScrollState) Node {
 	if !methodChosen(tab.Req) {
-		return a.messagePane(pane, "Pick a method to see its request message", false)
+		return a.messagePane(panel, "Pick a method to see its request message", false)
 	}
 	a.loadMessageSchema(tab)
 	state := tab.messageSchema

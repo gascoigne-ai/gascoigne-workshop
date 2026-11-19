@@ -8,10 +8,10 @@ import (
 // Each table keeps its own; request tables are named by their pane,
 // response tables get a prefix because the request and response panes
 // both have a Headers table.
-func (a *App) widthsFor(pane pane) *widget.ColumnWidths {
-	key := pane.label
-	if !pane.editable {
-		key = "response " + pane.label
+func (a *App) widthsFor(panel pane) *widget.ColumnWidths {
+	key := panel.label
+	if !panel.editable {
+		key = "response " + panel.label
 	}
 	if w, ok := a.colWidths[key]; ok {
 		return w

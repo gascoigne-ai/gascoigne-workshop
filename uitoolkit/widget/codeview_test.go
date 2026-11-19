@@ -551,11 +551,11 @@ func TestCodeViewFollowStaysAtTheEndUntilTheUserScrollsUp(t *testing.T) {
 
 // FuzzFind: any query over any lines, then the reveal and selection
 // calls that follow a match.
-func FuzzFind(f *testing.F) {
-	f.Add("Żółw\nżółw ŻÓŁW\nplain", "żółw")
-	f.Add("a\n\n\nb", "")
-	f.Add(strings.Repeat("ab", 50), "ba")
-	f.Fuzz(func(t *testing.T, text, query string) {
+func FuzzFind(fuzz *testing.F) {
+	fuzz.Add("Żółw\nżółw ŻÓŁW\nplain", "żółw")
+	fuzz.Add("a\n\n\nb", "")
+	fuzz.Add(strings.Repeat("ab", 50), "ba")
+	fuzz.Fuzz(func(t *testing.T, text, query string) {
 		var lines []Line
 		for _, line := range strings.Split(text, "\n") {
 			lines = append(lines, Line{Spans: []Span{{Text: line}}})

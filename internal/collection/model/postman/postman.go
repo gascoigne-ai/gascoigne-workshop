@@ -252,21 +252,21 @@ func get(list []kv, key string) string {
 	return ""
 }
 
-func convertAuth(auth *auth) model.Auth {
-	if auth == nil {
+func convertAuth(block *auth) model.Auth {
+	if block == nil {
 		return model.Auth{}
 	}
-	switch auth.Type {
+	switch block.Type {
 	case "bearer":
-		return model.Auth{Type: model.AuthBearer, Token: get(auth.Bearer, "token")}
+		return model.Auth{Type: model.AuthBearer, Token: get(block.Bearer, "token")}
 	case "basic":
-		return model.Auth{Type: model.AuthBasic, User: get(auth.Basic, "username"), Password: get(auth.Basic, "password")}
+		return model.Auth{Type: model.AuthBasic, User: get(block.Basic, "username"), Password: get(block.Basic, "password")}
 	case "apikey":
 		in := model.KeyInHeader
-		if get(auth.APIKey, "in") == "query" {
+		if get(block.APIKey, "in") == "query" {
 			in = model.KeyInQuery
 		}
-		return model.Auth{Type: model.AuthAPIKey, KeyName: get(auth.APIKey, "key"), KeyValue: get(auth.APIKey, "value"), KeyIn: in}
+		return model.Auth{Type: model.AuthAPIKey, KeyName: get(block.APIKey, "key"), KeyValue: get(block.APIKey, "value"), KeyIn: in}
 	}
 	return model.Auth{}
 }
@@ -370,7 +370,9 @@ func Skipped(root *model.Folder) int {
 }
 
 // exportable reports whether Postman can hold r: an HTTP request.
-func exportable(r *model.Request) bool { return r.Protocol.Info().Method == model.MethodHTTP }
+func exportable(request *model.Request) bool {
+	return request.Protocol.Info().Method == model.MethodHTTP
+}
 
 func exportFolder(folder *model.Folder) []*outItem {
 	var items []*outItem
