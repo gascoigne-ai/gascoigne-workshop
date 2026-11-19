@@ -17,6 +17,20 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+
+	"cmp"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/adapter/store"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/history"
+	rport "github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/fonts"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/settingsfile"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/statefile"
+	"io"
+	"net/http"
+	"net/http/httptest"
 )
 
 // The helpers shared by the app tests live here; a test file holds only
@@ -358,4 +372,365 @@ func (session *fakeSession) log() []string {
 	session.mu.Lock()
 	defer session.mu.Unlock()
 	return append([]string(nil), session.sent...)
+}
+
+// These tests drive the whole window without a GPU: step() builds the
+// view, lays it out and delivers synthetic input exactly as Update does.
+// Coordinates follow the layout of a 1280x800 window: sidebar 260 wide,
+// header 44, request tabs 42, URL bar 56 (centre y 112), tree rows 28.
+const (
+	winW, winH = 1280, 800
+	urlBarY    = headerH + tabsH + urlH/2
+	sendX      = winW - 12 - 40
+	menuBtnX   = winW - 12 - headerH/2
+	menuBtnY   = headerH / 2
+)
+
+func treeRowY(index int) int { return headerH + index*core.RowH + core.RowH/2 }
+
+// withAdapters gives opts the real history and font adapters, as main does.
+func withAdapters(opts Options) Options {
+	opts.HostOS = cmp.Or(opts.HostOS, "linux") // the same shortcut text on every machine
+	opts.RetryDelay = cmp.Or(opts.RetryDelay, 10*time.Millisecond)
+	opts.History = func(dir string) rport.History { return history.Dir(dir) }
+	opts.Fonts = fonts.System{}
+	opts.Protocols = proto.Configured
+	opts.GRPCMethods = proto.ListGRPCMethods
+	opts.GRPCSchema = proto.GRPCInputSchema
+	opts.Curl = proto.Curl
+	opts.Store = store.Files{}
+	opts.States = statefile.Files{}
+	opts.SettingsFiles = settingsfile.Files{}
+	return opts
+}
+
+// click is a press followed by a release at the same place.
+func click(app *App, posX, posY int) {
+	app.step(core.Input{X: posX, Y: posY, Click: true, Held: true})
+	app.step(core.Input{X: posX, Y: posY})
+}
+
+// jsonServer answers every request with a small JSON body.
+func jsonServer(t *testing.T) *httptest.Server {
+	t.Helper()
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		io.WriteString(writer, `{"ok":true}`)
+	}))
+	t.Cleanup(srv.Close)
+	return srv
+}
+
+// pointTabAt makes the open request target url, as if typed into the field.
+func pointTabAt(tab *reqTab, url string) {
+	tab.Req.URL = url
+	tab.url = widget.NewTextField(url)
+}
+
+// Cells of the Params table at 1280x800: request pane starts at x=260,
+// the table at x=272, columns: grip 20, actions 36, name 110, value 157, description 126.
+const (
+	paramsRow0Y   = 264
+	paramsRow3Y   = 348 // the placeholder row below the three params
+	nameCellX     = 365
+	valueCellX    = 500
+	descCellX     = 650
+	farAwayX      = 900
+	farAwayY      = 600
+	headersTabIdx = 2
+)
+
+func (a *App) typeText(text string) { a.step(core.Input{Typed: []rune(text)}) }
+
+// Body pane at 1280x800: type chips at y=206 (None, JSON, Text, Form,
+// Multipart from x=272), the Format button at the right end of that
+// row, the editor below y=228, a form table's placeholder row at y=270.
+const (
+	bodyTabIdx = 1
+	chipsY     = 208
+	noneChipX  = 300
+	jsonChipX  = 374
+	textChipX  = 444
+	formChipX  = 514
+	multiChipX = 600
+	formatX    = 722
+	editorX    = 500
+	editorY    = 320
+	formRow0Y  = 304
+)
+
+func openBodyPane(t *testing.T) *App {
+	a := testApp(t)
+	a.cur().paneTab = bodyTabIdx
+	a.step(core.Input{})
+	return a
+}
+
+// tabX is the left edge and width of tab i in the request-tab strip,
+// from the layout the view uses: 14px padding, a fixed badge slot, 8px
+// gaps, the name, a fixed slot for the unsaved dot and a 24px close
+// button. Nothing but the name changes a tab's width.
+func (a *App) tabX(index int) (left, width int) {
+	x := 260
+	for j, t := range a.openTabs() {
+		wd := 14 + tabBadgeW + 8 + a.ctx.Width(a.ctx.F.UI, t.Req.Name) + 8 + tabDirtyW + 24
+		if j == index {
+			return x, wd
+		}
+		x += wd
+	}
+	return x, 0
+}
+
+const tabStripY = headerH + tabsH/2
+
+func twoTabs(t *testing.T) *App {
+	a := testApp(t)
+	click(a, 100, treeRowY(4)) // opens "Repository Info" as the second tab
+	if len(a.list.Tabs) != 2 {
+		t.Fatal("test setup: want two tabs")
+	}
+	return a
+}
+
+// pathServer serves /fast at once and /slow only when released (or when
+// the client gives up), so tests control which request finishes when.
+func pathServer(t *testing.T) (srv *httptest.Server, release func()) {
+	t.Helper()
+	gate := make(chan struct{})
+	var once sync.Once
+	srv = httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		switch request.URL.Path {
+		case "/slow":
+			select {
+			case <-gate:
+				io.WriteString(writer, "slow")
+			case <-request.Context().Done():
+			}
+		case "/redirect":
+			http.Redirect(writer, request, "/fast", http.StatusFound)
+		default:
+			io.WriteString(writer, "fast")
+		}
+	}))
+	release = func() { once.Do(func() { close(gate) }) }
+	t.Cleanup(func() { release(); srv.Close() })
+	return srv, release
+}
+
+// Settings pane (the sixth request tab): the timeout field at y=206 and
+// the follow-redirects row below it.
+const (
+	settingsTabIdx = 6
+	timeoutFieldX  = 480
+	followRowY     = 242
+	followRowX     = 290
+)
+
+func openSettingsPane(t *testing.T) *App {
+	a := testApp(t)
+	a.cur().paneTab = settingsTabIdx
+	a.step(core.Input{})
+	return a
+}
+
+// Auth pane (the fourth request tab): type chips at y=206 (None, Bearer,
+// Basic, API key), field rows at y=242, 278, 314, then the show-secrets row.
+const (
+	authTabIdx  = 3
+	authNoneX   = 304
+	authBearerX = 378
+	authBasicX  = 452
+	authKeyX    = 530
+	authFieldX  = 700
+	authRow1Y   = 242
+	authRow2Y   = 278
+	authRow3Y   = 314
+)
+
+func openAuthPane(t *testing.T) *App {
+	a := testApp(t)
+	a.cur().paneTab = authTabIdx
+	a.step(core.Input{})
+	return a
+}
+
+func sendAndWait(t *testing.T, app *App, url string) {
+	t.Helper()
+	tab := app.cur()
+	pointTabAt(tab, url)
+	tab.Resp = nil
+	app.send(tab)
+	waitForResponse(t, app, tab)
+}
+
+// Response pane toolbar at 1280x800 (y=194): Pretty, Raw on the left;
+// Find, Copy, cURL on the right. The find bar is the row below it.
+const (
+	toolbarY   = chipsY // the response toolbar shares a band with the request pane's first row
+	compactX   = 818    // the response toolbar's chips: Compact, Pretty, Raw
+	prettyX    = 888
+	rawX       = 944
+	findBtnX   = 1176
+	copyBtnX   = 1214
+	curlBtnX   = 1252
+	findBarY   = chipsY + core.RowH // the find bar is the row below the toolbar
+	findFieldX = 900
+	findPrevX  = 1176
+	findNextX  = 1214
+	findCloseX = 1252
+)
+
+// jsonResponse points the current tab at a server returning body and sends.
+func jsonResponse(t *testing.T, body string) *App {
+	t.Helper()
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) { io.WriteString(writer, body) }))
+	t.Cleanup(srv.Close)
+	a := testApp(t)
+	sendAndWait(t, a, srv.URL)
+	return a
+}
+
+func drag(app *App, fromX, toX, posY int) {
+	app.step(core.Input{X: fromX, Y: posY, Click: true, Held: true})
+	app.step(core.Input{X: toX, Y: posY, Held: true})
+	app.step(core.Input{X: toX, Y: posY}) // release
+}
+
+type ran struct{ log []string }
+
+func (r *ran) item(label string) widget.MenuItem {
+	return widget.MenuItem{Label: label, Run: func() { r.log = append(r.log, label) }}
+}
+
+func rightClick(app *App, posX, posY int) { app.step(core.Input{X: posX, Y: posY, RightClick: true}) }
+
+// Sample tree rows: 0 root, 1 User, 2 Repository, 3 Search Repos,
+// 4 Repository Info, 5 Repository Tags, 6 Realtime.
+const (
+	rowRoot, rowUser, rowRepo, rowSearch, rowInfo, rowTags, rowRealtime = 0, 1, 2, 3, 4, 5, 6
+)
+
+func menuLabels(app *App) []string {
+	var out []string
+	for _, it := range widget.PopupMenu(app.ctx).Items {
+		out = append(out, it.Label)
+	}
+	return out
+}
+
+// pickMenu clicks the menu item with the given label.
+func pickMenu(t *testing.T, app *App, label string) {
+	t.Helper()
+	m := widget.PopupMenu(app.ctx)
+	if m == nil {
+		t.Fatal("no menu is open")
+	}
+	y := m.Y + widget.MenuPad
+	for _, it := range m.Items {
+		h := widget.MenuRowH
+		if it.Separator {
+			h = widget.MenuSepH
+		}
+		if it.Label == label {
+			click(app, m.X+100, y+h/2)
+			return
+		}
+		y += h
+	}
+	t.Fatalf("no menu item %q in %v", label, menuLabels(app))
+}
+
+func findReq(app *App, name string) *model.Request {
+	for _, r := range collection.Rows(&app.col().Folder, allOpen(app)) {
+		if r.Req != nil && r.Req.Name == name {
+			return r.Req
+		}
+	}
+	return nil
+}
+
+func allOpen(app *App) map[*model.Folder]bool {
+	open := map[*model.Folder]bool{}
+	var walk func(*model.Folder)
+	walk = func(folder *model.Folder) {
+		open[folder] = true
+		for _, s := range folder.Folders {
+			walk(s)
+		}
+	}
+	walk(&app.col().Folder)
+	return open
+}
+
+// Params table at 1280x800: header cells at y=244 (the action cell at
+// x=310), rows at y=272, 300, 328 and the placeholder at 356.
+const (
+	paramsHeaderY = 236
+	checkAllX     = 310
+	row1Y         = 292
+	row2Y         = 320
+	bulkBtnX      = 715
+)
+
+// The settings dialog at 1280x800: 760x560 at (260, 120), a 44px title
+// bar, a 170px list of pages on the left and the page's content from
+// x=446, y=180. Appearance sections are 62px apart: Theme, Text size,
+// Interface scale, Corners, Gradients, Request / response, Contrast.
+const ()
+
+// openSettingsPage opens the settings dialog on the page with the given id.
+func openSettingsPage(t *testing.T, id string) (*App, string) {
+	a, path := openSettingsMenu(t)
+	a.prefs.Cat = id
+	a.step(core.Input{})
+	return a, path
+}
+
+func openSettingsMenu(t *testing.T) (*App, string) {
+	a := testApp(t, withSettings(defaultLayout))
+	path := a.SettingsPath()
+	click(a, menuBtnX, menuBtnY)
+	if !a.menu {
+		t.Fatal("test setup")
+	}
+	return a, path
+}
+
+// tipAt hovers (x, y) long enough and draws; it returns the tooltip shown.
+func tipAt(app *App, posX, posY int) string {
+	app.step(core.Input{X: posX, Y: posY})
+	img := ebiten.NewImage(winW, winH)
+	app.Draw(img) // the pointer comes to rest on the element
+	app.ctx.Tick += 100
+	app.dirty = true
+	app.Draw(img)
+	if app.tips.Shown() {
+		return app.ctx.TipText
+	}
+	return ""
+}
+
+// A response with nested blocks: one match deep inside one item, one at
+// the top, and plenty of siblings that must disappear while searching.
+const compactBody = `{"total":3,"items":[` +
+	`{"id":1,"name":"alpha","tags":["red","green","blue","yellow","orange","purple","brown","black"],"owner":{"login":"ann","site":"https://a.example.org/very/long/path/to/ann"}},` +
+	`{"id":2,"name":"beta","tags":["red","green","blue","yellow","orange","purple","brown","black"],"owner":{"login":"bob","site":"https://b.example.org/very/long/path/to/bob"}},` +
+	`{"id":3,"name":"gamma","tags":["cyan","magenta","teal","olive","navy","maroon","lime","aqua"],"owner":{"login":"cy","site":"https://c.example.org/very/long/path/to/cy"}}]}`
+
+func viewText(tab *reqTab) string {
+	var sb strings.Builder
+	for _, i := range tab.view.Visible() {
+		for _, sp := range tab.view.Lines[i].Spans {
+			sb.WriteString(sp.Text)
+		}
+		sb.WriteString("\n")
+	}
+	return sb.String()
+}
+
+// find replaces the search text, as typing would.
+func (a *App) find(tab *reqTab, text string) {
+	tab.find = widget.NewTextField(text)
+	tab.find.Focused = true
+	a.runFind(tab)
 }

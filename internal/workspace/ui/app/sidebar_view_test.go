@@ -110,7 +110,7 @@ func TestTheFilterMatchInATreeRowIsDrawnInTheAccentLine(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			a := testApp(t)
 			t.Cleanup(a.waitWrites)
-			click(a, 180, headerH/2)
+			clickDumped(t, a, "control=field", 0) // the filter field, the first field of the window
 			a.typeText(tc.filter)
 			root := a.sidebar()
 			Layout(a.ctx, root, sidebarW-1, sidebarPinH)

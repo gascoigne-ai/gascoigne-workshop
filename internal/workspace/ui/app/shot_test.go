@@ -30,6 +30,23 @@ func shotApp(t *testing.T, opts Options) *App {
 	return a
 }
 
+// runScene builds an app that captures the scene made of steps, runs the
+// frames up to the one that applies the scene and returns the app. A frame
+// that ends the run with an error fails the test; a step that fails ends the
+// capture through a.Err instead, which the caller checks.
+func runScene(t *testing.T, opts Options, steps ...Step) *App {
+	t.Helper()
+	opts.ScreenshotPath = filepath.Join(t.TempDir(), "x.png")
+	opts.Scene = steps
+	a := shotApp(t, opts)
+	for range setFrame {
+		if err := a.shotUpdate(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return a
+}
+
 func TestScreenshotIsOffByDefault(t *testing.T) {
 	a := shotApp(t, Options{})
 	for range 50 {
@@ -152,68 +169,6 @@ func TestScreenshotWithSendOnASocketGoesAheadAfterAFailedConnect(t *testing.T) {
 	}
 }
 
-func TestScreenshotOpensTheNamedRequest(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{OpenRequest("Echo")}})
-	for range setFrame {
-		if err := a.shotUpdate(); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if got := a.cur().Req.Name; got != "Echo" {
-		t.Errorf("open request = %q, want Echo", got)
-	}
-}
-
-func TestScreenshotOpensTheNamedSettingsPage(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{SettingsPage("colors")}})
-	for range setFrame {
-		if err := a.shotUpdate(); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if !a.menu || a.prefs.Cat != "colors" {
-		t.Errorf("settings open = %v, page = %q, want the dialog on colors", a.menu, a.prefs.Cat)
-	}
-}
-
-func TestScreenshotOpensTheSettingsAsText(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{RawSettings()}})
-	for range setFrame {
-		if err := a.shotUpdate(); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if !a.menu || !a.prefs.Raw {
-		t.Errorf("settings open = %v, raw = %v, want the dialog showing settings.json", a.menu, a.prefs.Raw)
-	}
-}
-
-func TestScreenshotShowsTheSentLog(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{SentLog()}})
-	for range setFrame {
-		if err := a.shotUpdate(); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if !a.showSent {
-		t.Error("the sidebar should list the sent requests")
-	}
-}
-
-// With -close-all the capture shows the empty tree that closing the last
-// collection leaves.
-func TestScreenshotClosesEveryCollection(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{CloseAll()}})
-	for range setFrame {
-		if err := a.shotUpdate(); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if len(a.open.Entries) != 0 {
-		t.Errorf("%d collections still open", len(a.open.Entries))
-	}
-}
-
 // With -add-collection the capture opens each folder's collection beside
 // the start one, in order, as Open collection folder does, so a scene shows
 // several roots in the tree.
@@ -241,35 +196,6 @@ func TestScreenshotWithAFolderWithoutACollectionFails(t *testing.T) {
 	}
 	if a.Err() == nil || a.shot.phase != shotOver || len(a.open.Entries) != 1 {
 		t.Fatalf("err = %v, phase = %v, open %d, want the run ended with an error", a.Err(), a.shot.phase, len(a.open.Entries))
-	}
-}
-
-// With -log the capture opens the Log dialog, as the status bar's Log
-// button does.
-func TestScreenshotOpensTheCallLog(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{CallLog()}})
-	for range setFrame {
-		if err := a.shotUpdate(); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if !a.calls.Shown() {
-		t.Error("the Log dialog should be open")
-	}
-}
-
-// With -browse the capture opens the in-app file browser on that folder,
-// as choosing a file without a dialog program does.
-func TestScreenshotOpensTheFileBrowserOnAFolder(t *testing.T) {
-	dir := t.TempDir()
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{Browse(dir)}, Folders: folders.Disk{}})
-	for range setFrame {
-		if err := a.shotUpdate(); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if a.browser == nil || a.browser.model.Dir != dir {
-		t.Fatalf("browser %+v, want it open on %s", a.browser, dir)
 	}
 }
 
@@ -412,92 +338,6 @@ func TestScreenshotURLEditShowsOverMarksDrawnBefore(t *testing.T) {
 	}
 }
 
-// With -pane the capture shows the request pane with that label, after
-// -request has opened its request, so a scene can draw a tab other than the
-// first one.
-func TestScreenshotShowsTheNamedRequestPane(t *testing.T) {
-	cases := []struct {
-		name  string
-		scene []Step
-	}{
-		{"http request", []Step{ShowPane("Settings")}},
-		{"socket request", []Step{OpenRequest("Echo"), ShowPane("Settings")}},
-	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: tc.scene})
-			for range setFrame {
-				if err := a.shotUpdate(); err != nil {
-					t.Fatal(err)
-				}
-			}
-			if err := a.Err(); err != nil {
-				t.Fatal(err)
-			}
-			tab := a.cur()
-			if got := requestPanesFor(tab)[tab.paneTab].label; got != "Settings" {
-				t.Errorf("request pane %q, want Settings", got)
-			}
-		})
-	}
-}
-
-// With -response-pane the capture shows the response pane with that label,
-// so a scene can draw the response's Tests list; -pane cannot, as both
-// sides have a Tests pane.
-func TestScreenshotShowsTheNamedResponsePane(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{ShowResponsePane("Tests")}})
-	for range setFrame {
-		if err := a.shotUpdate(); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if err := a.Err(); err != nil {
-		t.Fatal(err)
-	}
-	tab := a.cur()
-	if got := responsePanesFor(tab)[tab.respTab].label; got != "Tests" {
-		t.Errorf("response pane %q, want Tests", got)
-	}
-}
-
-// An unknown response pane ends the run with an error, as an unknown
-// request pane does.
-func TestScreenshotWithAnUnknownResponsePaneFails(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{ShowResponsePane("Nope")}})
-	for range setFrame {
-		a.shotUpdate()
-	}
-	if a.Err() == nil || a.shot.phase != shotOver {
-		t.Fatalf("err = %v, phase = %v, want the run ended with an error", a.Err(), a.shot.phase)
-	}
-}
-
-// With -body the capture chooses that body type on the open request, as
-// its chip does, so a scene can draw the File or GraphQL body editor that
-// no sample request has. The tab shows its unsaved mark on that frame.
-func TestScreenshotChoosesTheBodyType(t *testing.T) {
-	for _, bodyType := range []model.BodyType{model.BodyFile, model.BodyGraphQL} {
-		t.Run(string(bodyType), func(t *testing.T) {
-			a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{ChooseBody(string(bodyType))}})
-			for range setFrame {
-				if err := a.shotUpdate(); err != nil {
-					t.Fatal(err)
-				}
-			}
-			if err := a.Err(); err != nil {
-				t.Fatal(err)
-			}
-			if got := a.cur().Req.BodyType; got != bodyType {
-				t.Errorf("body type %q, want %q", got, bodyType)
-			}
-			if !a.tabDirty(a.cur()) {
-				t.Error("the tab should be marked as changed on the frame of the choice")
-			}
-		})
-	}
-}
-
 // The -body choice comes from no input, so without a stale mark the
 // unsaved marks cached by earlier frames would hide it, as they once hid
 // the -type-url edit.
@@ -514,49 +354,6 @@ func TestScreenshotBodyChoiceShowsOverMarksDrawnBefore(t *testing.T) {
 	a.shotUpdate()
 	if !a.tabDirty(a.cur()) {
 		t.Error("the tab should be marked as changed on the frame of the choice")
-	}
-}
-
-// An unknown body type ends the run with an error, as an unknown pane does.
-func TestScreenshotWithAnUnknownBodyTypeFails(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{ChooseBody("Nope")}})
-	for range setFrame {
-		a.shotUpdate()
-	}
-	if a.Err() == nil || a.shot.phase != shotOver {
-		t.Fatalf("err = %v, phase = %v, want the run ended with an error", a.Err(), a.shot.phase)
-	}
-}
-
-// With -wrap the capture turns on Wrap for the open request's response and
-// body, as their two Wrap chips would, so one scene flag covers both.
-func TestScreenshotWrapsTheResponseAndTheBody(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{OpenRequest("Echo"), WrapOn()}})
-	for range setFrame {
-		if err := a.shotUpdate(); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if err := a.Err(); err != nil {
-		t.Fatal(err)
-	}
-	tab := a.cur()
-	if tab.Req.Name != "Echo" {
-		t.Fatalf("open request %q, want Echo: -wrap must apply after -request", tab.Req.Name)
-	}
-	if !tab.view.Wrap || !tab.body.Wrap {
-		t.Errorf("response wrap %v, body wrap %v, want both on", tab.view.Wrap, tab.body.Wrap)
-	}
-}
-
-// Without -wrap both stay off, the default the user decided.
-func TestScreenshotLeavesWrapOffByDefault(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{OpenRequest("Echo")}})
-	for range setFrame {
-		a.shotUpdate()
-	}
-	if tab := a.cur(); tab.view.Wrap || tab.body.Wrap {
-		t.Errorf("response wrap %v, body wrap %v, want both off", tab.view.Wrap, tab.body.Wrap)
 	}
 }
 
@@ -582,47 +379,6 @@ func TestScreenshotTypesTheBody(t *testing.T) {
 	}
 	if !a.tabDirty(tab) {
 		t.Error("the tab should be marked as changed on the frame of the edit")
-	}
-}
-
-// A body type without a text editor (none, file, form...) would not show
-// the typed text, so -type-body there ends the run with an error rather
-// than letting a golden pass for a scene without it.
-func TestScreenshotTypingABodyWithoutATextEditorFails(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{ChooseBody(string(model.BodyFile)), TypeBody("x")}})
-	for range setFrame {
-		a.shotUpdate()
-	}
-	if a.Err() == nil || a.shot.phase != shotOver {
-		t.Fatalf("err = %v, phase = %v, want the run ended with an error", a.Err(), a.shot.phase)
-	}
-}
-
-// An unknown pane ends the run with an error: capturing the first pane
-// instead would let a golden pass for the wrong scene.
-func TestScreenshotWithAnUnknownPaneFails(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{ShowPane("Nope")}})
-	for range setFrame {
-		a.shotUpdate()
-	}
-	if a.Err() == nil || a.shot.phase != shotOver {
-		t.Fatalf("err = %v, phase = %v, want the run ended with an error", a.Err(), a.shot.phase)
-	}
-}
-
-// With -toast the capture shows each text as an error toast, oldest first:
-// an error toast stays until it is clicked, so a slow frame cannot let it
-// fade before the capture as an info toast would.
-func TestScreenshotShowsTheToasts(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{ShowToast("First"), ShowToast("Second")}})
-	for range setFrame {
-		if err := a.shotUpdate(); err != nil {
-			t.Fatal(err)
-		}
-	}
-	want := widget.ToastStack{{Text: "First", IsErr: true}, {Text: "Second", IsErr: true}}
-	if !slices.Equal(a.toasts, want) {
-		t.Fatalf("toasts %+v, want %+v", a.toasts, want)
 	}
 }
 
@@ -668,32 +424,6 @@ func TestScreenshotOpensTheNamedDialog(t *testing.T) {
 				t.Errorf("input %q, want %q", a.dialog.Input.Text, tc.input)
 			}
 		})
-	}
-}
-
-// An unknown dialog ends the run with an error, so a golden never passes
-// for a window without the dialog.
-func TestScreenshotWithAnUnknownDialogFails(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{OpenDialog("nope")}})
-	for range setFrame {
-		a.shotUpdate()
-	}
-	if a.Err() == nil || a.shot.phase != shotOver {
-		t.Fatalf("err = %v, phase = %v, want the run ended with an error", a.Err(), a.shot.phase)
-	}
-}
-
-// With -filter the capture types the text into the sidebar's filter, so the
-// tree shows only the matches with the matched part highlighted.
-func TestScreenshotFiltersTheTree(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{Filter("Echo")}})
-	for range setFrame {
-		if err := a.shotUpdate(); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if a.filter.Text != "Echo" {
-		t.Fatalf("filter %q, want %q", a.filter.Text, "Echo")
 	}
 }
 
@@ -838,33 +568,173 @@ func TestScreenshotLeavesABareActionRecording(t *testing.T) {
 	}
 }
 
-// An unknown action or keys that do not parse end the run with an error, so
-// a golden never passes for a page that shows nothing recorded.
-func TestScreenshotWithABadRecordFails(t *testing.T) {
-	for _, spec := range []string{"nope=Ctrl+K", "close-tab=Ctrl+Nope"} {
-		t.Run(spec, func(t *testing.T) {
-			a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{Record(spec)}})
-			for range setFrame {
-				a.shotUpdate()
+// Scenes whose steps apply: each row runs the scene up to the frame that
+// shows it and checks what the step changed in the app.
+func TestScreenshotScenesApplyTheirSteps(t *testing.T) {
+	browseDir := t.TempDir()
+	cases := []struct {
+		name  string
+		opts  Options
+		scene []Step
+		check func(t *testing.T, a *App)
+	}{
+		{"open the named request", Options{}, []Step{OpenRequest("Echo")}, func(t *testing.T, a *App) {
+			if got := a.cur().Req.Name; got != "Echo" {
+				t.Errorf("open request = %q, want Echo", got)
 			}
-			if a.Err() == nil || a.shot.phase != shotOver {
-				t.Fatalf("err = %v, phase = %v, want the run ended with an error", a.Err(), a.shot.phase)
+		}},
+		{"open the named settings page", Options{}, []Step{SettingsPage("colors")}, func(t *testing.T, a *App) {
+			if !a.menu || a.prefs.Cat != "colors" {
+				t.Errorf("settings open = %v, page = %q, want the dialog on colors", a.menu, a.prefs.Cat)
 			}
+		}},
+		{"open the settings as text", Options{}, []Step{RawSettings()}, func(t *testing.T, a *App) {
+			if !a.menu || !a.prefs.Raw {
+				t.Errorf("settings open = %v, raw = %v, want the dialog showing settings.json", a.menu, a.prefs.Raw)
+			}
+		}},
+		{"show the sent log", Options{}, []Step{SentLog()}, func(t *testing.T, a *App) {
+			if !a.showSent {
+				t.Error("the sidebar should list the sent requests")
+			}
+		}},
+		// With -close-all the capture shows the empty tree that closing the
+		// last collection leaves.
+		{"close every collection", Options{}, []Step{CloseAll()}, func(t *testing.T, a *App) {
+			if len(a.open.Entries) != 0 {
+				t.Errorf("%d collections still open", len(a.open.Entries))
+			}
+		}},
+		// With -log the capture opens the Log dialog, as the status bar's Log
+		// button does.
+		{"open the call log", Options{}, []Step{CallLog()}, func(t *testing.T, a *App) {
+			if !a.calls.Shown() {
+				t.Error("the Log dialog should be open")
+			}
+		}},
+		// With -browse the capture opens the in-app file browser on that
+		// folder, as choosing a file without a dialog program does.
+		{"open the file browser on a folder", Options{Folders: folders.Disk{}}, []Step{Browse(browseDir)}, func(t *testing.T, a *App) {
+			if a.browser == nil || a.browser.model.Dir != browseDir {
+				t.Fatalf("browser %+v, want it open on %s", a.browser, browseDir)
+			}
+		}},
+		{"show the named request pane of an http request", Options{}, []Step{ShowPane("Settings")}, requestPaneIsSettings},
+		{"show the named request pane of a socket request", Options{}, []Step{OpenRequest("Echo"), ShowPane("Settings")}, requestPaneIsSettings},
+		// With -response-pane the capture shows the response pane with that
+		// label, so a scene can draw the response's Tests list; -pane cannot,
+		// as both sides have a Tests pane.
+		{"show the named response pane", Options{}, []Step{ShowResponsePane("Tests")}, func(t *testing.T, a *App) {
+			if err := a.Err(); err != nil {
+				t.Fatal(err)
+			}
+			tab := a.cur()
+			if got := responsePanesFor(tab)[tab.respTab].label; got != "Tests" {
+				t.Errorf("response pane %q, want Tests", got)
+			}
+		}},
+		{"choose the file body type", Options{}, []Step{ChooseBody(string(model.BodyFile))}, bodyTypeIs(model.BodyFile)},
+		{"choose the graphql body type", Options{}, []Step{ChooseBody(string(model.BodyGraphQL))}, bodyTypeIs(model.BodyGraphQL)},
+		// With -wrap the capture turns on Wrap for the open request's
+		// response and body, as their two Wrap chips would, so one scene flag
+		// covers both.
+		{"wrap the response and the body", Options{}, []Step{OpenRequest("Echo"), WrapOn()}, func(t *testing.T, a *App) {
+			if err := a.Err(); err != nil {
+				t.Fatal(err)
+			}
+			tab := a.cur()
+			if tab.Req.Name != "Echo" {
+				t.Fatalf("open request %q, want Echo: -wrap must apply after -request", tab.Req.Name)
+			}
+			if !tab.view.Wrap || !tab.body.Wrap {
+				t.Errorf("response wrap %v, body wrap %v, want both on", tab.view.Wrap, tab.body.Wrap)
+			}
+		}},
+		// Without -wrap both stay off, the default the user decided.
+		{"leave wrap off by default", Options{}, []Step{OpenRequest("Echo")}, func(t *testing.T, a *App) {
+			if tab := a.cur(); tab.view.Wrap || tab.body.Wrap {
+				t.Errorf("response wrap %v, body wrap %v, want both off", tab.view.Wrap, tab.body.Wrap)
+			}
+		}},
+		// With -toast the capture shows each text as an error toast, oldest
+		// first: an error toast stays until it is clicked, so a slow frame
+		// cannot let it fade before the capture as an info toast would.
+		{"show the toasts", Options{}, []Step{ShowToast("First"), ShowToast("Second")}, func(t *testing.T, a *App) {
+			want := widget.ToastStack{{Text: "First", IsErr: true}, {Text: "Second", IsErr: true}}
+			if !slices.Equal(a.toasts, want) {
+				t.Fatalf("toasts %+v, want %+v", a.toasts, want)
+			}
+		}},
+		// With -filter the capture types the text into the sidebar's filter,
+		// so the tree shows only the matches with the matched part
+		// highlighted.
+		{"filter the tree", Options{}, []Step{Filter("Echo")}, func(t *testing.T, a *App) {
+			if a.filter.Text != "Echo" {
+				t.Fatalf("filter %q, want %q", a.filter.Text, "Echo")
+			}
+		}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			tc.check(t, runScene(t, tc.opts, tc.scene...))
 		})
 	}
 }
 
-// Arrow keys on a tree with no rows (the last collection was closed while
-// the tree had the keyboard) read rows[-1] and panicked.
-func TestTreeArrowKeysDoNothingWithoutRows(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{CloseAll()}})
-	for range setFrame {
-		if err := a.shotUpdate(); err != nil {
+// With -pane the capture shows the request pane with that label, after
+// -request has opened its request, so a scene can draw a tab other than the
+// first one.
+func requestPaneIsSettings(t *testing.T, a *App) {
+	if err := a.Err(); err != nil {
+		t.Fatal(err)
+	}
+	tab := a.cur()
+	if got := requestPanesFor(tab)[tab.paneTab].label; got != "Settings" {
+		t.Errorf("request pane %q, want Settings", got)
+	}
+}
+
+// With -body the capture chooses that body type on the open request, as its
+// chip does, so a scene can draw the File or GraphQL body editor that no
+// sample request has. The tab shows its unsaved mark on that frame.
+func bodyTypeIs(want model.BodyType) func(t *testing.T, a *App) {
+	return func(t *testing.T, a *App) {
+		if err := a.Err(); err != nil {
 			t.Fatal(err)
 		}
+		if got := a.cur().Req.BodyType; got != want {
+			t.Errorf("body type %q, want %q", got, want)
+		}
+		if !a.tabDirty(a.cur()) {
+			t.Error("the tab should be marked as changed on the frame of the choice")
+		}
 	}
-	for _, k := range []ebiten.Key{ebiten.KeyArrowDown, ebiten.KeyArrowUp, ebiten.KeyEnter, ebiten.KeyF2, ebiten.KeyDelete} {
-		a.treeFocus = true
-		a.treeKeys(core.Input{Keys: []ebiten.Key{k}})
+}
+
+// Scenes whose step cannot apply end the run with an error instead of
+// capturing the first pane, dialog or body type in its place: a golden would
+// pass for the wrong picture.
+func TestScreenshotScenesThatCannotApplyEndTheRunWithAnError(t *testing.T) {
+	cases := []struct {
+		name  string
+		scene []Step
+	}{
+		{"unknown response pane", []Step{ShowResponsePane("Nope")}},
+		{"unknown request pane", []Step{ShowPane("Nope")}},
+		{"unknown body type", []Step{ChooseBody("Nope")}},
+		// A body type without a text editor (none, file, form...) would not
+		// show the typed text.
+		{"typing a body without a text editor", []Step{ChooseBody(string(model.BodyFile)), TypeBody("x")}},
+		{"unknown dialog", []Step{OpenDialog("nope")}},
+		{"record of an unknown action", []Step{Record("nope=Ctrl+K")}},
+		{"record of keys that do not parse", []Step{Record("close-tab=Ctrl+Nope")}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			a := runScene(t, Options{}, tc.scene...)
+			if a.Err() == nil || a.shot.phase != shotOver {
+				t.Fatalf("err = %v, phase = %v, want the run ended with an error", a.Err(), a.shot.phase)
+			}
+		})
 	}
 }
