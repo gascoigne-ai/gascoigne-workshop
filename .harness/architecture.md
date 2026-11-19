@@ -904,6 +904,8 @@ that change `App`.
   element's table row lists (`params`), all required, so a missing one is a parse error; state and
   specs name a scope entry of their Go type, and a wrong type is an error naming it, as is a nil
   state pointer, which would otherwise panic at layout, and a nil `text-menu` field (decision 4).
+  Only `text`, `caption`, `button`, `primary-button`, `link-button`, `lines`, `note` and `choice` hold text (the
+  table's `holds`): text inside `<spacer>`, a rule, `<slot>` or `<icon>` is a parse error, not dropped.
   The containers are `<scroll state>` and `<hscroll state>` (a child marked `keep-in-view` is
   scrolled to), `<split state default>` with the options only it takes, `vertical`, `as-ratio`,
   `min-first` and `min-second`, `<tabs items active>` and `<scroll-tabs state items active>` (no

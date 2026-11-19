@@ -3,6 +3,7 @@ package markup
 import (
 	"fmt"
 	"math"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -20,8 +21,7 @@ type param struct {
 // way handlers bind functions: state and specs that a widget writes back
 // to, which no string can stand for.
 func scoped[T any](name string) param {
-	var zero T
-	want := fmt.Sprintf("%T", zero)
+	want := reflect.TypeFor[T]().String() // %T of a nil interface says "<nil>"
 	return param{name: name, read: func(value string, scope Scope) (any, error) {
 		found, err := lookup(strings.TrimSpace(value), scope)
 		if err != nil {
@@ -63,55 +63,53 @@ func finiteFloat(text string) (float64, error) {
 	return number, nil
 }
 
-// realParam is a param that is a number, written in the template or read
-// with {{path}}.
-func realParam(name string) param {
+// wholeNumber reads a whole number, in a param or an attribute.
+func wholeNumber(text string) (int, error) {
+	number, err := strconv.Atoi(strings.TrimSpace(text))
+	if err != nil {
+		return 0, fmt.Errorf("%q is not a whole number", text)
+	}
+	return number, nil
+}
+
+// truth reads true or false, in a param or an attribute.
+func truth(text string) (bool, error) {
+	switch strings.TrimSpace(text) {
+	case "true":
+		return true, nil
+	case "false":
+		return false, nil
+	}
+	return false, fmt.Errorf("%q is not true or false", text)
+}
+
+// interpolated is a param whose value is text, open to {{path}}, that
+// parse turns into the Go argument. parse's error is named after the param.
+func interpolated[T any](name string, parse func(text string) (T, error)) param {
 	return param{name: name, read: func(value string, scope Scope) (any, error) {
 		text, err := interpolate(value, scope)
 		if err != nil {
 			return nil, err
 		}
-		number, err := finiteFloat(text)
+		parsed, err := parse(text)
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", name, err)
 		}
-		return number, nil
+		return parsed, nil
 	}}
 }
+
+// realParam is a param that is a number, written in the template or read
+// with {{path}}.
+func realParam(name string) param { return interpolated(name, finiteFloat) }
 
 // wholeParam is a param that is a whole number, written in the template or
 // read with {{path}}.
-func wholeParam(name string) param {
-	return param{name: name, read: func(value string, scope Scope) (any, error) {
-		text, err := interpolate(value, scope)
-		if err != nil {
-			return nil, err
-		}
-		number, err := strconv.Atoi(strings.TrimSpace(text))
-		if err != nil {
-			return nil, fmt.Errorf("%s: %q is not a whole number", name, text)
-		}
-		return number, nil
-	}}
-}
+func wholeParam(name string) param { return interpolated(name, wholeNumber) }
 
 // boolParam is a param that is true or false, written in the template or
 // read with {{path}}.
-func boolParam(name string) param {
-	return param{name: name, read: func(value string, scope Scope) (any, error) {
-		text, err := interpolate(value, scope)
-		if err != nil {
-			return nil, err
-		}
-		switch strings.TrimSpace(text) {
-		case "true":
-			return true, nil
-		case "false":
-			return false, nil
-		}
-		return nil, fmt.Errorf("%s: %q is not true or false", name, text)
-	}}
-}
+func boolParam(name string) param { return interpolated(name, truth) }
 
 // tokenParam is a param that is a theme color, written in the template or
 // read with {{path}}. Unlike a color attribute it is required, as the Go
@@ -132,5 +130,5 @@ func tokenParam(name string) param {
 
 // textParam is a param that is text, open to {{path}}.
 func textParam(name string) param {
-	return param{name: name, read: func(value string, scope Scope) (any, error) { return interpolate(value, scope) }}
+	return interpolated(name, func(text string) (string, error) { return text, nil })
 }

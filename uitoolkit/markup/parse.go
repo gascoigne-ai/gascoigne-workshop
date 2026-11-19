@@ -166,88 +166,138 @@ func (t *Template) MustBuild(sc Scope) view.Node {
 // Name is the name the template was parsed with.
 func (t *Template) Name() string { return t.name }
 
+// parser is the state of one Parse: the open elements and the root.
+type parser struct {
+	name    string
+	src     []byte
+	decoder *xml.Decoder
+	stack   []*node
+	root    *node
+}
+
+// line is the line the decoder has read up to.
+func (p *parser) line() int {
+	return 1 + bytes.Count(p.src[:min(int(p.decoder.InputOffset()), len(p.src))], []byte("\n"))
+}
+
+func (p *parser) fail(line int, format string, args ...any) error {
+	return &Error{Name: p.name, Line: line, Msg: fmt.Sprintf(format, args...)}
+}
+
 // Parse reads a template. name is used in error messages.
 func Parse(name string, src []byte) (*Template, error) {
-	d := xml.NewDecoder(bytes.NewReader(src))
-	d.Strict = false
-	d.Entity = xml.HTMLEntity
-	line := func() int { return 1 + bytes.Count(src[:min(int(d.InputOffset()), len(src))], []byte("\n")) }
-	fail := func(value int, format string, args ...any) (*Template, error) {
-		return nil, &Error{Name: name, Line: value, Msg: fmt.Sprintf(format, args...)}
-	}
-	var stack []*node
-	var root *node
+	decoder := xml.NewDecoder(bytes.NewReader(src))
+	decoder.Strict = false
+	decoder.Entity = xml.HTMLEntity
+	p := &parser{name: name, src: src, decoder: decoder}
 	for {
-		tok, err := d.Token()
+		token, err := decoder.Token()
 		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
-			return fail(line(), "%v", err)
+			return nil, p.fail(p.line(), "%v", err)
 		}
-		switch t := tok.(type) {
-		case xml.StartElement:
-			l := line()
-			if _, ok := elements[t.Name.Local]; !ok {
-				return fail(l, "unknown element <%s>%s", t.Name.Local, hint(t.Name.Local, elementNames(), "elements"))
-			}
-			n := &node{tag: t.Name.Local, line: l}
-			spec := elements[n.tag]
-			for _, a := range t.Attr {
-				if standsIn[n.tag] && a.Name.Local != "name" && !directives[a.Name.Local] {
-					return fail(l, "unknown attribute %q on <%s>: it takes only name, if and for", a.Name.Local, n.tag)
-				}
-				_, isParam := spec.param(a.Name.Local)
-				_, isHandler := spec.handler(a.Name.Local)
-				if _, ok := spec.option(a.Name.Local); !ok && !isParam && !directives[a.Name.Local] && !isHandler && !(a.Name.Local == "name" && (n.tag == "icon" || n.tag == "slot")) {
-					return fail(l, "unknown attribute %q on <%s>%s", a.Name.Local, n.tag, hint(a.Name.Local, append(attributeNames(), spec.ownNames()...), "attributes"))
-				}
-				n.attrs = append(n.attrs, attr{a.Name.Local, a.Value, l})
-			}
-			if missing := n.missingParam(spec); missing != "" {
-				return fail(l, "<%s> needs a %s attribute", n.tag, missing)
-			}
-			if len(stack) > 0 {
-				parent := stack[len(stack)-1]
-				if elements[parent.tag].holds != holdsChildren {
-					return fail(l, "<%s> cannot contain <%s>", parent.tag, n.tag)
-				}
-				parent.children = append(parent.children, n)
-			} else {
-				if root != nil {
-					return fail(l, "a template has one root element")
-				}
-				root = n
-			}
-			stack = append(stack, n)
-		case xml.EndElement:
-			if len(stack) == 0 {
-				return fail(line(), "unexpected </%s>", t.Name.Local)
-			}
-			stack = stack[:len(stack)-1]
-		case xml.CharData:
-			s := strings.TrimSpace(string(t))
-			if s == "" {
-				continue
-			}
-			if len(stack) == 0 {
-				return fail(line(), "text outside the root element")
-			}
-			parent := stack[len(stack)-1]
-			if elements[parent.tag].holds != holdsText {
-				return fail(line(), "text is only allowed inside <text>, <caption> and <button>, not <%s>", parent.tag)
-			}
-			if parent.text != "" {
-				parent.text += " "
-			}
-			parent.text += strings.Join(strings.Fields(s), " ")
+		if err := p.token(token); err != nil {
+			return nil, err
 		}
 	}
-	if root == nil {
-		return fail(1, "the template is empty")
+	if p.root == nil {
+		return nil, p.fail(1, "the template is empty")
 	}
-	if len(stack) > 0 {
-		return fail(line(), "<%s> is not closed", stack[len(stack)-1].tag)
+	if len(p.stack) > 0 {
+		return nil, p.fail(p.line(), "<%s> is not closed", p.stack[len(p.stack)-1].tag)
 	}
-	return &Template{name: name, root: root}, nil
+	return &Template{name: name, root: p.root}, nil
+}
+
+// token adds one token of the template to the tree.
+func (p *parser) token(token xml.Token) error {
+	switch typed := token.(type) {
+	case xml.StartElement:
+		return p.startElement(typed)
+	case xml.EndElement:
+		if len(p.stack) == 0 {
+			return p.fail(p.line(), "unexpected </%s>", typed.Name.Local)
+		}
+		p.stack = p.stack[:len(p.stack)-1]
+	case xml.CharData:
+		return p.charData(string(typed))
+	}
+	return nil
+}
+
+// startElement opens an element: its tag and attributes are checked
+// against the table and it is put into its parent, or made the root.
+func (p *parser) startElement(start xml.StartElement) error {
+	line := p.line()
+	tag := start.Name.Local
+	spec, known := elements[tag]
+	if !known {
+		return p.fail(line, "unknown element <%s>%s", tag, hint(tag, elementNames(), "elements"))
+	}
+	item := &node{tag: tag, line: line}
+	for _, set := range start.Attr {
+		if err := p.checkAttr(item, spec, set.Name.Local, line); err != nil {
+			return err
+		}
+		item.attrs = append(item.attrs, attr{set.Name.Local, set.Value, line})
+	}
+	if missing := item.missingParam(spec); missing != "" {
+		return p.fail(line, "<%s> needs a %s attribute", tag, missing)
+	}
+	if err := p.attach(item, line); err != nil {
+		return err
+	}
+	p.stack = append(p.stack, item)
+	return nil
+}
+
+// checkAttr is an error when the element does not take the attribute.
+func (p *parser) checkAttr(item *node, spec elementSpec, name string, line int) error {
+	if spec.takes(name) {
+		return nil
+	}
+	if spec.plain {
+		return p.fail(line, "unknown attribute %q on <%s>: it takes only %s, if and for", name, item.tag, strings.Join(spec.paramNames(), ", "))
+	}
+	return p.fail(line, "unknown attribute %q on <%s>%s", name, item.tag, hint(name, append(attributeNames(), spec.ownNames()...), "attributes"))
+}
+
+// attach puts item into the open element, or makes it the root.
+func (p *parser) attach(item *node, line int) error {
+	if len(p.stack) == 0 {
+		if p.root != nil {
+			return p.fail(line, "a template has one root element")
+		}
+		p.root = item
+		return nil
+	}
+	parent := p.stack[len(p.stack)-1]
+	if elements[parent.tag].holds != holdsChildren {
+		return p.fail(line, "<%s> cannot contain <%s>", parent.tag, item.tag)
+	}
+	parent.children = append(parent.children, item)
+	return nil
+}
+
+// charData adds the text between tags to the open element, which must hold
+// text. Whitespace between elements is dropped.
+func (p *parser) charData(data string) error {
+	text := strings.TrimSpace(data)
+	if text == "" {
+		return nil
+	}
+	if len(p.stack) == 0 {
+		return p.fail(p.line(), "text outside the root element")
+	}
+	parent := p.stack[len(p.stack)-1]
+	if elements[parent.tag].holds != holdsText {
+		return p.fail(p.line(), "text is only allowed inside <text>, <caption> and <button>, not <%s>", parent.tag)
+	}
+	if parent.text != "" {
+		parent.text += " "
+	}
+	parent.text += strings.Join(strings.Fields(text), " ")
+	return nil
 }

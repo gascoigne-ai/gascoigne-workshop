@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"maps"
 	"slices"
-	"strconv"
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -196,11 +195,11 @@ var attributes = map[string]func(value string) (view.Option, error){
 
 func intAttr(callback func(int) view.Option) func(string) (view.Option, error) {
 	return func(value string) (view.Option, error) {
-		n, err := strconv.Atoi(strings.TrimSpace(value))
+		number, err := wholeNumber(value)
 		if err != nil {
-			return nil, fmt.Errorf("%q is not a whole number", value)
+			return nil, err
 		}
-		return callback(n), nil
+		return callback(number), nil
 	}
 }
 
@@ -229,13 +228,14 @@ func tokenAttr(callback func(core.Token) view.Option) func(string) (view.Option,
 
 func flagAttr(name string, callback func() view.Option) func(string) (view.Option, error) {
 	return func(value string) (view.Option, error) {
-		switch strings.TrimSpace(value) {
-		case "", "true", name: // a bare attribute reads as its own name
+		if bare := strings.TrimSpace(value); bare == "" || bare == name { // a bare attribute reads as its own name
 			return callback(), nil
-		case "false":
-			return nil, nil
 		}
-		return nil, fmt.Errorf("%q is not true or false", value)
+		on, err := truth(value)
+		if err != nil || !on {
+			return nil, err
+		}
+		return callback(), nil
 	}
 }
 
@@ -243,9 +243,9 @@ func flagAttr(name string, callback func() view.Option) func(string) (view.Optio
 // separator="{{inset}}" on every tab and gives the first 0. Go's
 // Separator(0) still draws a full-height line.
 func separatorAttr(value string) (view.Option, error) {
-	inset, err := strconv.Atoi(strings.TrimSpace(value))
+	inset, err := wholeNumber(value)
 	if err != nil {
-		return nil, fmt.Errorf("%q is not a whole number", value)
+		return nil, err
 	}
 	if inset == 0 {
 		return nil, nil
@@ -258,11 +258,11 @@ func padAttr(value string) (view.Option, error) {
 	f := strings.Fields(value)
 	nums := make([]int, len(f))
 	for i, s := range f {
-		n, err := strconv.Atoi(s)
+		number, err := wholeNumber(s)
 		if err != nil {
-			return nil, fmt.Errorf("%q is not a whole number", s)
+			return nil, err
 		}
-		nums[i] = n
+		nums[i] = number
 	}
 	switch len(nums) {
 	case 1:
@@ -283,11 +283,11 @@ func intsAttr(name string, count int, callback func([]int) view.Option) func(str
 		}
 		nums := make([]int, count)
 		for i, s := range fields {
-			x, err := strconv.Atoi(s)
+			number, err := wholeNumber(s)
 			if err != nil {
-				return nil, fmt.Errorf("%q is not a whole number", s)
+				return nil, err
 			}
-			nums[i] = x
+			nums[i] = number
 		}
 		return callback(nums), nil
 	}

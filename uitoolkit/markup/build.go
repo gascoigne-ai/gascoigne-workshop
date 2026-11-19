@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // Build makes the view tree for scope. A root whose `if` is false gives a
@@ -105,96 +104,78 @@ func (t *Template) bindHandler(item *node, attribute attr, handler handlerAttr, 
 	return opt, nil
 }
 
-// buildOne makes the element of n once, honoring `if`.
-func (t *Template) buildOne(nodeValue *node, sc Scope) (view.Node, error) {
-	var opts []view.Option
-	for _, a := range nodeValue.attrs {
-		switch a.name {
-		case "for":
-		case "if":
-			ok, err := truthy(a.value, sc)
-			if err != nil {
-				return nil, t.errf(nodeValue, "%v", err)
-			}
-			if !ok {
-				return nil, nil
-			}
-		case "name": // the icon's name, which is its text
-			continue
-		default:
-			if _, isParam := elements[nodeValue.tag].param(a.name); isParam {
-				continue // read by args
-			}
-			if h, ok := elements[nodeValue.tag].handler(a.name); ok {
-				opt, err := t.bindHandler(nodeValue, a, h, sc)
-				if err != nil {
-					return nil, err
-				}
-				opts = append(opts, opt)
-				continue
-			}
-			val, err := interpolate(a.value, sc)
-			if err != nil {
-				return nil, t.errf(nodeValue, "%v", err)
-			}
-			read, _ := elements[nodeValue.tag].option(a.name) // Parse checked it exists
-			opt, err := read(val)
-			if err != nil {
-				return nil, t.errf(nodeValue, "%s: %v", a.name, err)
-			}
-			if opt != nil {
-				opts = append(opts, opt)
-			}
-		}
+// buildOne makes the element of item once, honoring `if`.
+func (t *Template) buildOne(item *node, sc Scope) (view.Node, error) {
+	spec := elements[item.tag]
+	opts, shown, err := t.options(item, spec, sc)
+	if err != nil || !shown {
+		return nil, err
 	}
 	var kids []view.Item
-	for _, c := range nodeValue.children {
-		k, err := t.build(c, sc)
+	for _, child := range item.children {
+		built, err := t.build(child, sc)
 		if err != nil {
 			return nil, err
 		}
-		kids = append(kids, k)
+		kids = append(kids, built)
 	}
-	text, err := interpolate(nodeValue.text, sc)
+	text, err := interpolate(item.text, sc)
 	if err != nil {
-		return nil, t.errf(nodeValue, "%v", err)
+		return nil, t.errf(item, "%v", err)
 	}
-	if nodeValue.tag == "slot" { // a node the caller made, as a Vue slot
-		for _, a := range nodeValue.attrs {
-			if a.name == "name" {
-				// a path, so each item of a for can bring its own node
-				v, err := lookup(strings.TrimSpace(a.value), sc)
-				if err != nil {
-					return nil, t.errf(nodeValue, "slot: %v", err)
-				}
-				node, ok := v.(view.Node)
-				if !ok {
-					return nil, t.errf(nodeValue, "slot %q is not a view.Node", a.value)
-				}
-				return node, nil
-			}
-		}
-		return nil, t.errf(nodeValue, `<slot> needs a name`)
-	}
-	if nodeValue.tag == "icon" {
-		for _, a := range nodeValue.attrs {
-			if a.name == "name" {
-				if text, err = interpolate(a.value, sc); err != nil {
-					return nil, t.errf(nodeValue, "%v", err)
-				}
-			}
-		}
-		if !widget.HasIcon(text) {
-			return nil, t.errf(nodeValue, "no icon %q; icons: %s", text, strings.Join(widget.IconNames(), " "))
-		}
-	}
-	args, err := t.args(nodeValue, elements[nodeValue.tag], sc)
+	args, err := t.args(item, spec, sc)
 	if err != nil {
 		return nil, err
 	}
-	built, err := elements[nodeValue.tag].build(elementParts{args: args, opts: opts, kids: kids, text: text})
+	built, err := spec.build(elementParts{args: args, opts: opts, kids: kids, text: text})
 	if err != nil {
-		return nil, t.errf(nodeValue, "%v", err)
+		return nil, t.errf(item, "%v", err)
 	}
 	return built, nil
+}
+
+// options reads the attributes of item that are options or handlers. It
+// reports false when `if` hides the element.
+func (t *Template) options(item *node, spec elementSpec, sc Scope) (opts []view.Option, shown bool, err error) {
+	for _, set := range item.attrs {
+		if set.name == "if" {
+			show, err := truthy(set.value, sc)
+			if err != nil {
+				return nil, false, t.errf(item, "%v", err)
+			}
+			if !show {
+				return nil, false, nil
+			}
+			continue
+		}
+		opt, err := t.option(item, spec, set, sc)
+		if err != nil {
+			return nil, false, err
+		}
+		if opt != nil {
+			opts = append(opts, opt)
+		}
+	}
+	return opts, true, nil
+}
+
+// option is the option an attribute makes: nil for a directive, a param
+// (read by args) or an option that is switched off.
+func (t *Template) option(item *node, spec elementSpec, set attr, sc Scope) (view.Option, error) {
+	if _, isParam := spec.param(set.name); isParam || directives[set.name] {
+		return nil, nil
+	}
+	if bind, ok := spec.handler(set.name); ok {
+		return t.bindHandler(item, set, bind, sc)
+	}
+	value, err := interpolate(set.value, sc)
+	if err != nil {
+		return nil, t.errf(item, "%v", err)
+	}
+	read, _ := spec.option(set.name) // Parse checked it exists
+	opt, err := read(value)
+	if err != nil {
+		return nil, t.errf(item, "%s: %v", set.name, err)
+	}
+	return opt, nil
 }
