@@ -54,9 +54,13 @@ func (conn *Connection) Failed() {
 }
 
 // Closed records that the session ended: nothing is open and what the
-// server announced no longer holds.
+// server announced no longer holds. Without a reconnect asked for, the
+// connection is no longer wanted, as in Failed.
 func (conn *Connection) Closed() {
 	conn.Session, conn.Connecting = nil, false
+	if !conn.Reconnect {
+		conn.WantOpen = false
+	}
 	conn.Tools, conn.Resources, conn.Prompts, conn.Server = nil, nil, nil, nil
 }
 

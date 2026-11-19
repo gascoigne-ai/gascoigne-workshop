@@ -90,6 +90,29 @@ func TestClosedClearsTheSessionAndWhatTheServerAnnounced(t *testing.T) {
 	}
 }
 
+// Regression: after the server closed an open session with reconnect off,
+// WantOpen stayed set, so Active() was true, the URL bar read "Disconnect"
+// with nothing open and CanRetry() offered a retry nobody asked for.
+func TestClosedByTheServerWithoutReconnectEndsInactive(t *testing.T) {
+	var conn Connection
+	conn.Begin()
+	conn.Opened(&fakeSession{})
+	conn.Closed()
+	if conn.Active() || conn.CanRetry() {
+		t.Fatalf("Active = %v, CanRetry = %v, want both false: %+v", conn.Active(), conn.CanRetry(), conn)
+	}
+}
+
+func TestClosedWithReconnectKeepsTheRetryPending(t *testing.T) {
+	conn := Connection{Reconnect: true}
+	conn.Begin()
+	conn.Opened(&fakeSession{})
+	conn.Closed()
+	if !conn.Active() || !conn.CanRetry() {
+		t.Fatalf("conn %+v", conn)
+	}
+}
+
 func TestReceivedRemembersTheEventIDOfAReceivedEventOnly(t *testing.T) {
 	var conn Connection
 	conn.Received(port.Event{Dir: port.Sent, ID: "1"})
@@ -110,7 +133,8 @@ func TestRetryNeedsAWantedConnectionThatIsDown(t *testing.T) {
 		due   bool
 	}{
 		{"closed by the server and wanted", func(conn *Connection) { conn.Reconnect = true; conn.WantOpen = true }, true, true},
-		{"reconnect is off", func(conn *Connection) { conn.WantOpen = true }, true, false},
+		// Changed: a server close with reconnect off now clears WantOpen, so CanRetry is false (was true, the bug).
+		{"reconnect is off", func(conn *Connection) { conn.Begin(); conn.Opened(&fakeSession{}); conn.Closed() }, false, false},
 		{"the user disconnected", func(conn *Connection) { conn.Reconnect = true }, false, false},
 		{"already connected again", func(conn *Connection) { conn.Reconnect, conn.WantOpen, conn.Session = true, true, &fakeSession{} }, false, true},
 	}

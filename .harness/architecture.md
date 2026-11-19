@@ -1273,7 +1273,7 @@ that change `App`.
   (set by `connect`, cleared by `disconnect`); when the session ends or a connect fails while both
   are set, `scheduleRetry` logs it and a timer sends a `retry` wsEvent after `retryDelay`. While
   retrying the button reads Disconnect, which stops it. A failed connect without auto-reconnect
-  clears `wantOpen` at once, so the button returns to Connect.
+  clears `wantOpen` at once, so the button returns to Connect; so does a session the server closes.
 -  **JSON composer for WebSocket** (`App.formatMessage`, `textfmt.CompactJSON`): the `{ }` button
   next to Send in a WebSocket tab turns the composer text into one line of JSON (key order and
   number text kept) or, when it is not JSON, leaves it and toasts where it breaks (a decoder reports
