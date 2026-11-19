@@ -10,7 +10,8 @@ flow rect=0,0,220,400
           textB text="Ctrl+W" grow=1 fg=chip-text ellipsis=true center=true rect=34,40,100,24
         flow w=32 h=24 bg=sunken control=icon-button tip=Leave the action without a key lighten=true onClick=true rect=150,40,32,24
           iconB grow=1 icon=cross rect=150,40,32,24
-        plain w=32 grow=1 rect=188,40,32,24
+        flow w=32 h=24 tip=Already the default key rect=188,40,32,24
+          iconB fg=rule icon=replay rect=197,45,14,14
       flow h=24 gap=6 rect=0,64,220,24
         textB text="Used by Send request (Ctrl+Enter)" grow=1 fg=error small=true ellipsis=true rect=0,64,142,24
         flow h=24 padL=10 padR=10 bg=sunken control=button tip=Unbind Send request and use this key here shrink=true lighten=true onClick=true rect=148,64,72,24
@@ -22,7 +23,8 @@ flow rect=0,0,220,400
           textB text="Ctrl+Enter" grow=1 fg=chip-text ellipsis=true center=true rect=34,88,100,24
         flow w=32 h=24 bg=sunken control=icon-button tip=Leave the action without a key lighten=true onClick=true rect=150,88,32,24
           iconB grow=1 icon=cross rect=150,88,32,24
-        plain w=32 grow=1 rect=188,88,32,24
+        flow w=32 h=24 tip=Already the default key rect=188,88,32,24
+          iconB fg=rule icon=replay rect=197,93,14,14
   textB text="TEXT EDITING" h=22 fg=muted small=true rect=0,112,220,22
   flow h=24 gap=6 rect=0,134,220,24
     textB text="Select all" grow=1 small=true ellipsis=true rect=0,134,180,24

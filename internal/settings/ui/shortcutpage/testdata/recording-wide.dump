@@ -10,7 +10,8 @@ flow rect=0,0,600,500
           textB text="Ctrl+W" grow=1 fg=chip-text ellipsis=true center=true rect=414,40,100,24
         flow w=32 h=24 bg=sunken control=icon-button tip=Leave the action without a key lighten=true onClick=true rect=530,40,32,24
           iconB grow=1 icon=cross rect=530,40,32,24
-        plain w=32 grow=1 rect=568,40,32,24
+        flow w=32 h=24 tip=Already the default key rect=568,40,32,24
+          iconB fg=rule icon=replay rect=577,45,14,14
     flow rect=0,64,600,24
       flow h=24 gap=6 rect=0,64,600,24
         textB text="Send request" grow=1 small=true ellipsis=true rect=0,64,398,24
@@ -18,7 +19,8 @@ flow rect=0,0,600,500
           textB text="Press keys..." grow=1 fg=accent-text ellipsis=true center=true rect=414,64,100,24
         flow w=32 h=24 bg=sunken control=icon-button tip=Leave the action without a key lighten=true onClick=true rect=530,64,32,24
           iconB grow=1 icon=cross rect=530,64,32,24
-        plain w=32 grow=1 rect=568,64,32,24
+        flow w=32 h=24 tip=Already the default key rect=568,64,32,24
+          iconB fg=rule icon=replay rect=577,69,14,14
   textB text="TEXT EDITING" h=22 fg=muted small=true rect=0,88,600,22
   flow h=24 gap=6 rect=0,110,600,24
     textB text="Select all" grow=1 small=true ellipsis=true rect=0,110,560,24

@@ -21,7 +21,8 @@ flow rect=0,0,600,500
           textB text="Ctrl+Enter" grow=1 fg=chip-text ellipsis=true center=true rect=414,82,100,24
         flow w=32 h=24 bg=sunken control=icon-button tip=Leave the action without a key lighten=true onClick=true rect=530,82,32,24
           iconB grow=1 icon=cross rect=530,82,32,24
-        plain w=32 grow=1 rect=568,82,32,24
+        flow w=32 h=24 tip=Already the default key rect=568,82,32,24
+          iconB fg=rule icon=replay rect=577,87,14,14
   textB text="TEXT EDITING" h=22 fg=muted small=true rect=0,106,600,22
   flow h=24 gap=6 rect=0,128,600,24
     textB text="Select all" grow=1 small=true ellipsis=true rect=0,128,560,24

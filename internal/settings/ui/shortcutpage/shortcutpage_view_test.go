@@ -301,3 +301,19 @@ func TestKeyButtonsStayInOneColumnWhateverTheRowShows(t *testing.T) {
 		t.Fatalf("key buttons start at x %v, want one column", columns)
 	}
 }
+
+// Every row shows the replay icon; it is a button only where the key was
+// changed, and a dim mark where it already is the default.
+func TestEveryRowShowsTheReplayIcon(t *testing.T) {
+	var page Page
+	host := newHost()
+	host.current.Shortcuts = map[string]string{"send": "Ctrl+K"}
+	root := page.View(host)
+	Layout(newCtx(t), root, wideW, wideH)
+	if got, want := len(findAll(root, "icon=replay")), len(host.Actions()); got != want {
+		t.Errorf("%d replay icons, want one for each of the %d rows", got, want)
+	}
+	if got := len(findAll(root, "control=icon-button", "tip=Back to the default key")); got != 1 {
+		t.Errorf("%d replay buttons, want one on the changed row", got)
+	}
+}
