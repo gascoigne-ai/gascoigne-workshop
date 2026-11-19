@@ -2,7 +2,7 @@
 
 Desktop GUI client in Go for running REST, WebSocket, MCP and other protocol calls. GPU-rendered with Ebitengine and custom widgets; layout is a three-pane window: collections tree, request editor, response viewer.
 
-- `make check` must pass (fmt-check + vet + `go test -race`, then the same vet and tests with `-tags release`).
+- `make check` must pass (fmt-check + vet + `go test -race`, then vet with `-tags release` on everything, a check that every release-tagged file is covered, and `go test -race -tags release` on the packages that link the release-tagged ones).
 - Shared harness is the submodule `.harness/common`; read its `rules.md`, `commit-style.md` and `code-style.md`, then `.harness/rules.md` and `.harness/architecture.md`. Update architecture.md in the same commit as behavior changes.
 - Start with `.harness/overview.md` (the 3000 ft view); the package tree is `.harness/packagemap.md`.
 - Design decisions: `.harness/decisions.md`. Visual style: `.harness/style.md`.

@@ -1,6 +1,6 @@
-.PHONY: packagemap check fuzz fmt-check vet test vet-release test-release build release run example-server shot install
+.PHONY: packagemap check fuzz fmt-check vet test vet-release release-packages check-release-scope test-release build release run example-server shot install
 
-check: fmt-check vet test vet-release test-release
+check: fmt-check vet test vet-release check-release-scope test-release
 
 # Rewrite .harness/packagemap.md from the package tree.
 packagemap:
@@ -62,8 +62,31 @@ fuzz:
 vet-release:
 	go vet -tags release ./...
 
+# Directories that hold a file with a release build tag.
+RELEASE_BASE = cmd/workshop internal/collection/model/collection internal/settings/model/userdir
+
+# The release test run covers RELEASE_BASE and every package whose build or
+# test binary links one of them: the rest compile the same under both tags.
+# Prints import paths, computed from the import graph so it cannot drift.
+release-packages:
+	@module=$$(go list -m); base=""; for dir in $(RELEASE_BASE); do base="$$base $$module/$$dir"; done; \
+	go list -tags release -test -f '{{.ImportPath}} {{join .Deps " "}}' ./... | \
+	awk -v base="$$base" 'BEGIN { count = split(base, names, " "); for (i = 1; i <= count; i++) isbase[names[i]] = 1 } \
+		{ path = $$1; sub(/\.test$$/, "", path); hit = (path in isbase); \
+		  for (i = 2; i <= NF; i++) if ($$i in isbase) hit = 1; \
+		  if (hit) print path }' | sort -u
+
+# Fails when a file with a release build tag sits in a package that
+# test-release does not run: add its directory to RELEASE_BASE.
+check-release-scope:
+	@module=$$(go list -m); covered=$$($(MAKE) -s release-packages); status=0; \
+	for dir in $$(grep -rlE '^//go:build (.* )?release\b' --include='*.go' . | xargs -n1 dirname | sort -u); do \
+		path=$$module/$${dir#./}; \
+		echo "$$covered" | grep -qxF "$$path" || { echo "release-tagged file in $$dir is outside the test-release set; add it to RELEASE_BASE"; status=1; }; \
+	done; exit $$status
+
 test-release:
-	go test -race -tags release ./...
+	go test -race -tags release $$($(MAKE) -s release-packages)
 
 build:
 	go build -o bin/workshop ./cmd/workshop

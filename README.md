@@ -138,7 +138,7 @@ On macOS Ctrl is Cmd. All of them can be changed in Settings, Shortcuts.
 ## Develop
 
 ```sh
-make check                    # gofmt, go vet, go test -race, also with -tags release
+make check                    # gofmt, go vet, go test -race, vet and the affected tests with -tags release
 make shot OUT=shot.png        # render the window once to a PNG (needs a display)
 make packagemap               # rewrite .harness/packagemap.md after adding a package
 ```
