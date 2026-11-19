@@ -126,7 +126,7 @@ func tableHeader(tableSpec TableSpec) Node {
 		If(tableSpec.hasGrip(), Row(W(tableGripW))),
 		If(tableSpec.Editable, headerCheck(tableSpec)),
 		For(tableSpec.Columns, func(index int, name string) Node {
-			return Row(Grow(tableSpec.weight(index)), PadX(8), When(index > 0, Separator(7)),
+			return Row(Grow(tableSpec.weight(index)), PadX(core.CellPad), When(index > 0, Separator(7)),
 				Text(strings.ToUpper(name), Small(), Bold(), Muted(), Grow(1)))
 		}),
 		If(tableSpec.Editable, Row(W(tableActionW))),
@@ -223,7 +223,7 @@ func tableCell(spec TableSpec, row, col int, text string, clr core.Token) Node {
 			label = Row(parts...)
 		}
 	}
-	items := []Item{Grow(spec.weight(col)), PadX(8), Clip(), label, When(col > 0, Separator(0))}
+	items := []Item{Grow(spec.weight(col)), PadX(core.CellPad), Clip(), label, When(col > 0, Separator(0))}
 	if spec.Editable && spec.OnEditCell != nil {
 		items = append(items, OnClick(func() { spec.OnEditCell(row, col) }))
 	}

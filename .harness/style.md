@@ -10,7 +10,7 @@ Every dialog is a modal floating panel over a dimmed scrim (`widget.Dialog`, `Re
 
 ### Title bar
 
-- Height `DialogTitleH` (44), side padding 16, gap 8, items centered vertically, flush with the panel's edges (the panel itself has no padding).
+- Height `DialogTitleH` (44), side padding `DialogPad` (16), gap `LooseGap` (8), items centered vertically, flush with the panel's edges (the panel itself has no padding).
 - The bar is drawn like the window's header, which is the app's identity: `Hero` with the `hero` gradient control (`Control("hero")`), so it differs from the body in every theme, its two top corners rounded to the panel's radius (`RoundT("menu")`, anti-aliased with alpha, so the bar follows the panel's outline instead of poking out of the corners), with a `Border` line under it (the toolbar's line is the soft `BorderSoft`). Text on it is `HeroText`, icons and the subtitle `HeroMuted`; never `Text`/`Muted`, which are for the body.
 - Content from the left: the **title** (bold, `HeroText`; a short noun: "Settings", "Log", "Rename"), an optional **subtitle** (`widget.DialogSubtitle`: `HeroMuted`, small, ellipsized, gives way first; the page shown, a count, the file; never a sentence or an action), free room, then the **close button** (32 x `CompactH`, no chip, `CrossIcon` in `HeroMuted`, darkened under the pointer with `Shadow` (alpha) in the `row` control's corners, so it follows the Corners setting like the bar, tooltip "Close (Esc)").
 - No controls in the bar: no fields, no buttons except close. Those go in the toolbar.
@@ -38,6 +38,8 @@ Title bar (title only), then a body padded 16 with gap 12: a muted `Lines` text,
 The in-app file chooser (decision 18): width 640, height 520 at most (40 from the window's edges). Title bar: the caller's title and the count of items shown as subtitle. Toolbar: the parent-folder icon button (`chevron-up`, `IconBtnW` x `CompactH`), the path field (`RowH`, `Sunken`, grows), the Hidden files check row. The list fills the rest on `Sunken`: `ListRow`s `RowH` high, padded 12, gap `LooseGap` (8), a muted folder icon 16 wide before a folder's name and the same room empty before a file's, the selected row on `Selected`. Footer: `RowH` buttons plus 12 above and below, padded 16, a `BorderSoft` line over it; the problem in small `Error` text takes the room on the left (while there is none, the same place holds a small `Muted` hint naming the program that gives native dialogs on this desktop: "For native dialogs install zenity"), then Cancel and the primary Open or Save (lit), at least 80 wide, as in message dialogs.
 
 ### Sizes and position
+
+Dialog sizes are tokens: `DialogMargin` (40) kept free around a dialog, `DialogMaxH` (560) its tallest default height, `EdgeGrab` (6) the edge grab inside the border.
 
 A resizable dialog is grabbed within 6 px inside or 4 px outside its border (`edgeSlop`, `edgeOut`), grows about its center and stays inside the window with `ScreenMargin` (decision 15). Size and position are app state that outlives the dialog's rebuild.
 

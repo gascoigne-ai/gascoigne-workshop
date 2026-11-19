@@ -14,7 +14,7 @@ type checkB struct {
 	on bool
 }
 
-func (checkB) Measure(*El, *core.Ctx, int) (int, int) { return 14, 14 }
+func (checkB) Measure(*El, *core.Ctx, int) (int, int) { return core.CheckboxSize, core.CheckboxSize }
 
 // Update runs OnChange when the box is clicked; the caller owns the value.
 func (checkB) Update(element *El, ctx *core.Ctx) {
@@ -25,7 +25,7 @@ func (checkB) Update(element *El, ctx *core.Ctx) {
 
 func (b checkB) Draw(element *El, ctx *core.Ctx, dst *ebiten.Image) {
 	r := element.Rect()
-	drawCheckbox(ctx, dst, core.Rect{X: r.X + (r.W-14)/2, Y: r.Y + (r.H-14)/2, W: 14, H: 14}, b.on, ctx.Hovered(r))
+	drawCheckbox(ctx, dst, core.Rect{X: r.X + (r.W-core.CheckboxSize)/2, Y: r.Y + (r.H-core.CheckboxSize)/2, W: core.CheckboxSize, H: core.CheckboxSize}, b.on, ctx.Hovered(r))
 }
 
 // drawCheckbox draws a 14px box: an accent square with a white check

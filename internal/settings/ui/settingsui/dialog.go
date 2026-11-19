@@ -24,9 +24,9 @@ import (
 // page on the right.
 const (
 	DialogWidth  = 760
-	DialogMaxH   = 560
-	ScreenMargin = 40  // kept free around the dialog in a small window
-	MinWidth     = 520 // the smallest the user can make it
+	DialogMaxH   = w.DialogMaxH
+	ScreenMargin = w.DialogMargin // kept free around the dialog in a small window
+	MinWidth     = 520            // the smallest the user can make it
 	MinHeight    = 360
 	DialogNavW   = 170
 )

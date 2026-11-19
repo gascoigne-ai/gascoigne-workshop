@@ -295,7 +295,7 @@ func (e *El) draw(ctx *core.Ctx, dst *ebiten.Image) {
 	style := ctx.Th.Style(e.control)
 	if e.shadow {
 		sh := ctx.Color(core.Shadow)
-		ctx.FillStyled(dst, core.Rect{X: r.X + 4, Y: r.Y + 4, W: r.W, H: r.H}, sh, sh, style.Radius)
+		ctx.FillStyled(dst, core.Rect{X: r.X + core.ShadowOffset, Y: r.Y + core.ShadowOffset, W: r.W, H: r.H}, sh, sh, style.Radius)
 	}
 	over := ctx.Hovered(r)
 	e.hover = over
@@ -353,13 +353,13 @@ func (e *El) draw(ctx *core.Ctx, dst *ebiten.Image) {
 	if e.edgeTok != "" { // the open tab's outline: top, left and right, bottom left open
 		col := ctx.Color(e.edgeTok)
 		if e.edgeTop {
-			ctx.Fill(dst, core.Rect{X: r.X, Y: r.Y, W: r.W, H: 2}, col)
+			ctx.Fill(dst, core.Rect{X: r.X, Y: r.Y, W: r.W, H: core.EdgeW}, col)
 		}
 		if e.edgeLeft {
-			ctx.Fill(dst, core.Rect{X: r.X, Y: r.Y, W: 2, H: r.H}, col)
+			ctx.Fill(dst, core.Rect{X: r.X, Y: r.Y, W: core.EdgeW, H: r.H}, col)
 		}
 		if e.edgeRight {
-			ctx.Fill(dst, core.Rect{X: r.X + r.W - 2, Y: r.Y, W: 2, H: r.H}, col)
+			ctx.Fill(dst, core.Rect{X: r.X + r.W - core.EdgeW, Y: r.Y, W: core.EdgeW, H: r.H}, col)
 		}
 	}
 }

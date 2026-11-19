@@ -23,9 +23,9 @@ const Limit = 500
 // The size of the dialog, like the other dialogs.
 const (
 	dialogW    = 820
-	dialogMaxH = 560
-	margin     = 40
-	titleH     = 44
+	dialogMaxH = w.DialogMaxH
+	margin     = w.DialogMargin
+	titleH     = w.DialogTitleH
 )
 
 // Host is what the dialog needs from the application that shows it.

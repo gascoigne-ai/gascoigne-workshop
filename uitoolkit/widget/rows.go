@@ -27,7 +27,7 @@ func Note(text string, tone core.Token, opts ...Option) *El {
 }
 
 // formLabelGap is the space between a form row's label and its controls.
-const formLabelGap = 12
+const formLabelGap = core.Gutter
 
 // FormRow is a settings-style row: a label in a column of labelWidth, then
 // the controls. Rows with the same labelWidth line their controls up.
@@ -38,14 +38,14 @@ func FormRow(label string, labelWidth int, items ...Item) *El {
 // CheckRow is a checkbox followed by its items (usually a Text label and a
 // muted hint). Give it OnClick: the whole row is the click target.
 func CheckRow(on bool, items ...Item) *El {
-	return Row(append([]Item{H(core.RowH), Gap(8), Checkbox(on)}, items...)...)
+	return Row(append([]Item{H(core.RowH), Gap(core.LooseGap), Checkbox(on)}, items...)...)
 }
 
 // Toolbar is a bar of controls over a pane: ToolbarH high, inset by the
 // gutter, centered vertically, with a line under it.
 func Toolbar(items ...Item) *El {
 	return Row(append([]Item{
-		H(core.ToolbarH), PadX(core.Gutter), Gap(6), AlignItems(AlignCenter), BorderB(core.Border),
+		H(core.ToolbarH), PadX(core.Gutter), Gap(core.TightGap), AlignItems(AlignCenter), BorderB(core.Border),
 	}, items...)...)
 }
 

@@ -6,7 +6,7 @@ import (
 )
 
 // edgeSlop is how far from the border, inside it, a press grabs the edge.
-const edgeSlop = 6
+const edgeSlop = core.EdgeGrab
 
 // edgeOut is how far outside the border a press still grabs the edge; the
 // element does not dismiss there (view.DismissMargin).

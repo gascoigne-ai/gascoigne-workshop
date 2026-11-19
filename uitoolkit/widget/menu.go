@@ -18,7 +18,7 @@ const (
 	// MenuRowH, MenuSepH and MenuPad are the height of a plain row, of a
 	// separator and the inset around the rows, for callers that position
 	// things by the rows of a menu.
-	MenuRowH = 24
+	MenuRowH = core.CompactH
 	MenuSepH = 9
 	MenuPad  = 4
 

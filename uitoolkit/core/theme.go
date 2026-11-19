@@ -72,6 +72,14 @@ const (
 	Gutter         = 12
 	TightGap       = 6
 	LooseGap       = 8
+	DialogPad      = 16  // the inset of a dialog's title bar, toolbar and message body
+	DialogMargin   = 40  // kept free between a dialog and the window's edge
+	DialogMaxH     = 560 // the tallest a dialog grows by itself
+	CheckboxSize   = 14  // the side of a checkbox
+	CellPad        = 8   // the inset of a table cell and of a header cell
+	EdgeGrab       = 6   // how far inside its border a press grabs an edge (resize, or no drag)
+	ShadowOffset   = 4   // how far a shadow is shifted down and right
+	EdgeW          = 2   // the width of an open tab's outline
 )
 
 // Theme holds the colors and font sizes the widgets draw with.

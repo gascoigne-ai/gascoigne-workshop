@@ -18,8 +18,8 @@ import (
 const (
 	dialogW    = 440
 	dialogMaxH = 480
-	margin     = 40
-	footPad    = 12
+	margin     = w.DialogMargin
+	footPad    = w.Gutter
 	footH      = w.RowH + 2*footPad // the footer's buttons and its padding
 	stripeW    = 3
 	stripeH    = 14

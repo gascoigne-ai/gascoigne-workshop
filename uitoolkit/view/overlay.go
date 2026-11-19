@@ -59,7 +59,7 @@ func DismissMargin(px int) Option { return func(element *El) { element.dismissMa
 
 // dragEdge is how far from the border of a Moved element, inside it, a
 // press does not start a drag: the edge is the resize grab, not the handle.
-const dragEdge = 6
+const dragEdge = core.EdgeGrab
 
 // RoundT rounds the top corners of the element's background to the corner
 // radius of the named control (the panel it sits at the top of, such as

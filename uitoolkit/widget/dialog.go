@@ -32,7 +32,7 @@ func ResizableDialog(state *ResizeState, minW, minH, maxW, maxH int, items ...It
 // not in the bar. OnDismiss is what the close button does.
 func DialogTitle(title string, items ...Item) *El {
 	var bar *El
-	closeButton := Row(W(32), H(core.CompactH), Control("row"), HoverBg(core.Shadow), Tooltip("Close (Esc)"),
+	closeButton := Row(W(core.IconBtnW), H(core.CompactH), Control("row"), HoverBg(core.Shadow), Tooltip("Close (Esc)"),
 		OnClick(func() {
 			if bar.DismissHandler() != nil {
 				bar.DismissHandler()()
@@ -41,7 +41,7 @@ func DialogTitle(title string, items ...Item) *El {
 		CrossIcon(Grow(1), Color(core.HeroMuted)),
 	)
 	bar = Row(append(append([]Item{
-		H(core.DialogTitleH), DragHandle(), PadX(16), Gap(8), AlignItems(AlignCenter),
+		H(core.DialogTitleH), DragHandle(), PadX(core.DialogPad), Gap(core.LooseGap), AlignItems(AlignCenter),
 		Bg(core.Hero), Control("hero"), RoundT("menu"), BorderB(core.Border), Text(title, Bold(), Color(core.HeroText)),
 	}, append(items, Spacer())...), closeButton)...)
 	return bar
@@ -59,7 +59,7 @@ func DialogSubtitle(text string) *El {
 // field, Save, a switch. Give it the controls; fields that should take the
 // free room get Grow(1).
 func DialogToolbar(items ...Item) *El {
-	return Row(append([]Item{H(core.DialogToolbarH), PadX(16), Gap(8), AlignItems(AlignCenter), BorderB(core.BorderSoft)}, items...)...)
+	return Row(append([]Item{H(core.DialogToolbarH), PadX(core.DialogPad), Gap(core.LooseGap), AlignItems(AlignCenter), BorderB(core.BorderSoft)}, items...)...)
 }
 
 // DialogButton is a button of a message dialog; the primary one is lit and
@@ -114,11 +114,11 @@ func MessageDialog(state *DialogState, items ...Item) *El {
 		}
 	}
 	body := Col(append(append([]Item{
-		Pad(16), Gap(12),
+		Pad(core.DialogPad), Gap(core.Gutter),
 		If(state.Body != "", Lines(state.Body, core.Muted)),
 	}, content...),
 		If(state.Input != nil, Field(state.Input, H(core.RowH), Bg(core.Sunken), OnEnter(state.Default), TextMenu(state.Input))),
-		Row(H(core.RowH), Gap(8),
+		Row(H(core.RowH), Gap(core.LooseGap),
 			Spacer(),
 			For(state.Buttons, func(_ int, button DialogButton) Node {
 				return Choice(button.Label, button.Primary, MinW(80), OnClick(button.Run))
