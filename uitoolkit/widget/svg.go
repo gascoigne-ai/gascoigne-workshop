@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"image/color"
 	"io"
 	"math"
 	"strconv"
@@ -41,6 +42,23 @@ type svgCmd struct {
 type svgPaint struct {
 	none  bool
 	token core.Token // "" means currentColor
+	// solid and gradient are for pictures drawn by RasterizeSVG, whose
+	// colors are their own; icon files cannot use them.
+	solid    bool
+	rgba     color.RGBA
+	gradient string // the id of a linearGradient
+}
+
+// svgGradient is a linear gradient in viewBox units, from (x1, y1) to
+// (x2, y2).
+type svgGradient struct {
+	x1, y1, x2, y2 float64
+	stops          []svgStop
+}
+
+type svgStop struct {
+	offset float64
+	rgba   color.RGBA
 }
 
 type svgShape struct {
@@ -57,6 +75,8 @@ type svgIcon struct {
 	w, h   float64 // the viewBox size, which is the icon's natural size in pixels
 	hover  core.Token
 	shapes []svgShape
+	// gradients are the picture's linearGradient elements by id.
+	gradients map[string]*svgGradient
 }
 
 type svgStyle struct {
@@ -79,13 +99,18 @@ type svgError struct {
 func (e *svgError) Error() string { return fmt.Sprintf("%s:%d: %s", e.name, e.line, e.msg) }
 
 // parseSVG reads one icon file.
-func parseSVG(name string, src []byte) (*svgIcon, error) {
+func parseSVG(name string, src []byte) (*svgIcon, error) { return parseSVGAs(name, src, false) }
+
+// parseSVGAs parses an icon, or with picture set a picture whose paints may
+// be colors and gradients (RasterizeSVG).
+func parseSVGAs(name string, src []byte, picture bool) (*svgIcon, error) {
 	d := xml.NewDecoder(bytes.NewReader(src))
 	line := func() int { return 1 + bytes.Count(src[:min(int(d.InputOffset()), len(src))], []byte("\n")) }
 	fail := func(format string, args ...any) (*svgIcon, error) {
 		return nil, &svgError{name, line(), fmt.Sprintf(format, args...)}
 	}
-	icon := &svgIcon{name: name, hover: core.Text}
+	icon := &svgIcon{name: name, hover: core.Text, gradients: map[string]*svgGradient{}}
+	var gradient *svgGradient
 	styles := []svgStyle{defaultSVGStyle()}
 	seenRoot := false
 	for {
@@ -104,7 +129,7 @@ func parseSVG(name string, src []byte) (*svgIcon, error) {
 				attrs[a.Name.Local] = a.Value
 			}
 			var err error
-			if st, err = applyStyle(st, attrs); err != nil {
+			if st, err = applyStyle(st, attrs, picture); err != nil {
 				return fail("%v", err)
 			}
 			styles = append(styles, st)
@@ -132,6 +157,24 @@ func parseSVG(name string, src []byte) (*svgIcon, error) {
 			if tag == "g" {
 				continue
 			}
+			if picture && tag == "defs" {
+				continue
+			}
+			if picture && tag == "linearGradient" {
+				if gradient, err = parseGradient(attrs); err != nil {
+					return fail("%v", err)
+				}
+				icon.gradients[attrs["id"]] = gradient
+				continue
+			}
+			if picture && tag == "stop" && gradient != nil {
+				stop, err := parseStop(attrs)
+				if err != nil {
+					return fail("%v", err)
+				}
+				gradient.stops = append(gradient.stops, stop)
+				continue
+			}
 			cmds, err := shapeCmds(tag, attrs)
 			if err != nil {
 				return fail("%v", err)
@@ -150,7 +193,7 @@ func parseSVG(name string, src []byte) (*svgIcon, error) {
 	return icon, nil
 }
 
-func parsePaint(value string) (svgPaint, error) {
+func parsePaint(value string, picture bool) (svgPaint, error) {
 	value = strings.TrimSpace(value)
 	switch {
 	case value == "none":
@@ -160,18 +203,26 @@ func parsePaint(value string) (svgPaint, error) {
 	case strings.HasPrefix(value, "token(") && strings.HasSuffix(value, ")"):
 		return svgPaint{token: core.Token(strings.TrimSpace(value[6 : len(value)-1]))}, nil
 	}
+	if picture {
+		if strings.HasPrefix(value, "url(#") && strings.HasSuffix(value, ")") {
+			return svgPaint{gradient: value[5 : len(value)-1]}, nil
+		}
+		if rgba, err := parseHexColor(value); err == nil {
+			return svgPaint{solid: true, rgba: rgba}, nil
+		}
+	}
 	return svgPaint{}, fmt.Errorf("a paint is none, currentColor or token(name), not %q", value)
 }
 
-func applyStyle(st svgStyle, attrs map[string]string) (svgStyle, error) {
+func applyStyle(st svgStyle, attrs map[string]string, picture bool) (svgStyle, error) {
 	var err error
 	if v, ok := attrs["fill"]; ok {
-		if st.fill, err = parsePaint(v); err != nil {
+		if st.fill, err = parsePaint(v, picture); err != nil {
 			return st, err
 		}
 	}
 	if v, ok := attrs["stroke"]; ok {
-		if st.stroke, err = parsePaint(v); err != nil {
+		if st.stroke, err = parsePaint(v, picture); err != nil {
 			return st, err
 		}
 	}
