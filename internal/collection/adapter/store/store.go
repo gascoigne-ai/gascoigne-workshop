@@ -365,14 +365,15 @@ func requestToFile(request *model.Request, root string) (requestFile, secret) {
 		Version: requestVersion, Name: request.Name, Protocol: string(request.Protocol), Method: request.Method, URL: request.URL,
 		Params: toKV(request.Params), Headers: toKV(request.Headers),
 		BodyType: string(request.BodyType), Body: request.Body, Form: toKV(request.Form),
-		Auth:       authFile{Type: string(request.Auth.Type), User: request.Auth.User, KeyName: request.Auth.KeyName, KeyIn: request.Auth.KeyIn},
+		Auth:       authFile{Type: string(request.Auth.Type), User: request.Auth.User, KeyName: request.Auth.KeyName, KeyIn: string(request.Auth.KeyIn)},
 		TimeoutSec: request.TimeoutSec, NoRedirects: request.NoRedirects, InsecureTLS: request.InsecureTLS, GraphQLVars: request.GraphQLVars, Tests: request.Tests,
 		ProtoFiles: proto.Files, ImportPaths: proto.ImportPaths,
 	}, secret{Token: request.Auth.Token, Password: request.Auth.Password, KeyValue: request.Auth.KeyValue}
 }
 
 // fileToRequest is the request of a file in a collection kept in root. A
-// protocol, body type or auth type it does not know is an error.
+// protocol, body type, auth type or key location it does not know is an
+// error.
 func fileToRequest(file requestFile, secrets secret, root string) (*model.Request, error) {
 	protocol, err := model.ParseProtocol(file.Protocol)
 	if err != nil {
@@ -386,11 +387,15 @@ func fileToRequest(file requestFile, secrets secret, root string) (*model.Reques
 	if err != nil {
 		return nil, err
 	}
+	keyIn, err := model.ParseKeyIn(file.Auth.KeyIn)
+	if err != nil {
+		return nil, err
+	}
 	return &model.Request{
 		Name: file.Name, Protocol: protocol, Method: file.Method, URL: file.URL,
 		Params: fromKV(file.Params), Headers: fromKV(file.Headers),
 		BodyType: bodyType, Body: file.Body, Form: fromKV(file.Form),
-		Auth: model.Auth{Type: authType, User: file.Auth.User, KeyName: file.Auth.KeyName, KeyIn: file.Auth.KeyIn,
+		Auth: model.Auth{Type: authType, User: file.Auth.User, KeyName: file.Auth.KeyName, KeyIn: keyIn,
 			Token: secrets.Token, Password: secrets.Password, KeyValue: secrets.KeyValue},
 		TimeoutSec: file.TimeoutSec, NoRedirects: file.NoRedirects, InsecureTLS: file.InsecureTLS, GraphQLVars: file.GraphQLVars, Tests: file.Tests,
 		Proto: model.ProtoSource{Files: file.ProtoFiles, ImportPaths: file.ImportPaths}.Loaded(root),

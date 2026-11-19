@@ -192,7 +192,7 @@ var authKinds = []authKind{
 	{name: "apikey", model: model.AuthAPIKey,
 		read: func(from *auth) model.Auth {
 			in := model.KeyInHeader
-			if get(from.APIKey, "in") == "query" {
+			if get(from.APIKey, "in") == string(model.KeyInQuery) { // lenient: anything else is a header
 				in = model.KeyInQuery
 			}
 			return model.Auth{Type: model.AuthAPIKey, KeyName: get(from.APIKey, "key"), KeyValue: get(from.APIKey, "value"), KeyIn: in}
@@ -202,7 +202,7 @@ var authKinds = []authKind{
 			if in == "" {
 				in = model.KeyInHeader
 			}
-			return &auth{Type: "apikey", APIKey: []kv{{Key: "key", Value: text(from.KeyName)}, {Key: "value", Value: text(shareable(from.KeyValue))}, {Key: "in", Value: text(in)}}}
+			return &auth{Type: "apikey", APIKey: []kv{{Key: "key", Value: text(from.KeyName)}, {Key: "value", Value: text(shareable(from.KeyValue))}, {Key: "in", Value: text(string(in))}}}
 		}},
 }
 

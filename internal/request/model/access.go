@@ -8,18 +8,23 @@ import (
 // Access is something a request does on this machine that its author
 // may not have meant the user to allow: run a command or read a file.
 type Access struct {
-	Kind    string // AccessCommand or AccessFile
+	Kind    AccessKind
 	Subject string // the command line, or the absolute path
 }
 
+// AccessKind says what an Access does. It is stored only inside
+// Access.Key, in the trust list, which the app writes itself, so there is
+// no parser: a key that matches no access is never asked for.
+type AccessKind string
+
 // The kinds of Access.
 const (
-	AccessCommand = "command"
-	AccessFile    = "file"
+	AccessCommand AccessKind = "command"
+	AccessFile    AccessKind = "file"
 )
 
 // Key is how a trust list remembers the access.
-func (access Access) Key() string { return access.Kind + ":" + access.Subject }
+func (access Access) Key() string { return string(access.Kind) + ":" + access.Subject }
 
 // StdioPrefix starts the URL of an MCP server that runs as a command.
 const StdioPrefix = "stdio:"

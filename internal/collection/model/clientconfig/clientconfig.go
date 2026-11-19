@@ -231,9 +231,13 @@ func (auth *fileAuth) model() (model.Auth, error) {
 	if err != nil {
 		return model.Auth{}, err
 	}
+	keyIn, err := model.ParseKeyIn(auth.KeyIn)
+	if err != nil {
+		return model.Auth{}, err
+	}
 	return model.Auth{
 		Type: authType, Token: auth.Token, User: auth.User, Password: auth.Password,
-		KeyName: auth.KeyName, KeyValue: auth.KeyValue, KeyIn: auth.KeyIn,
+		KeyName: auth.KeyName, KeyValue: auth.KeyValue, KeyIn: keyIn,
 	}, nil
 }
 

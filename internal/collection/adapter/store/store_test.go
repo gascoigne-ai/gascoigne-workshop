@@ -152,6 +152,7 @@ func TestLoadRejectsARequestFileWithAnUnknownProtocol(t *testing.T) {
 		{"no protocol", `{"name":"x","method":"GET","url":"u"}`},
 		{"unknown body type", `{"name":"x","protocol":"rest","method":"GET","url":"u","bodyType":"xml"}`},
 		{"unknown auth type", `{"name":"x","protocol":"rest","method":"GET","url":"u","auth":{"type":"oauth"}}`},
+		{"unknown key location", `{"name":"x","protocol":"rest","method":"GET","url":"u","auth":{"type":"apikey","keyName":"k","keyIn":"cookie"}}`},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -175,6 +176,32 @@ func TestLoadReadsTheOldNoneAuthTypeAsNoAuthentication(t *testing.T) {
 	}
 	if got := collection.Requests[0].Auth.Type; got != model.AuthNone {
 		t.Fatalf("auth type %q, want none", got)
+	}
+}
+
+// The stored key location loads as the same place; no location stays the zero value, which the readers treat as a header.
+func TestLoadReadsTheKeyLocation(t *testing.T) {
+	tests := []struct {
+		name, auth string
+		want       model.KeyIn
+	}{
+		{"query", `"keyIn":"query"`, model.KeyInQuery},
+		{"header", `"keyIn":"header"`, model.KeyInHeader},
+		{"none stored", `"keyName":"k"`, ""},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			dir := t.TempDir()
+			data := `{"name":"x","protocol":"rest","method":"GET","url":"u","auth":{"type":"apikey",` + test.auth + `}}`
+			os.WriteFile(filepath.Join(dir, "k.req.json"), []byte(data), 0o644)
+			collection, err := disk.Load(dir)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := collection.Requests[0].Auth.KeyIn; got != test.want {
+				t.Fatalf("KeyIn = %q, want %q", got, test.want)
+			}
+		})
 	}
 }
 

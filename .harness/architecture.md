@@ -61,7 +61,8 @@ port are handed to those views through the host (`Host.SentStore`, `Host.FontSto
 REST (an HTTP method) and gRPC (a service method). `Protocol`, `BodyType` and `Auth.Type` are named
 string types (`model.Protocol`, `model.BodyType`, `model.AuthType`) with constants; stored text
 becomes one of them once, at the edge, with `ParseProtocol`, `ParseBodyType` and `ParseAuthType` (an
-unknown or empty protocol, an unknown body or auth type is an error: a collection request file fails
+unknown or empty protocol, an unknown body or auth type or API key location (`model.KeyIn`,
+`ParseKeyIn`; `""` stays the zero value, read as a header) is an error: a collection request file fails
 the load naming the file, a client config names the server or request, a sent-log line is skipped).
 What differs per protocol is a row of `model.Protocols` (`ProtocolInfo`: name, chip label,
 `Connection` (`OneShot`, `Always`, `OnStream` for gRPC while its Stream chip is on), `Method`
@@ -433,7 +434,7 @@ directly.
   method, protocol (a REST tab never keeps an empty or gRPC method), timeout, the body text (also a
   file path or a GraphQL query), the GraphQL variables and starter operation, and the body type
   (which keeps one `Body` for text and file paths, and turns a GET into a POST for GraphQL), the
-  auth type and credential fields (`editor.AuthValue` reads one by id, the `authTypes` table in
+  auth type and credential fields (`editor.AuthValue` reads one text field by `editor.AuthField`; the API key location is its own message, `editor.AuthKeyInChosen`, the `authTypes` table in
   `auth.go` keeps labels and secrecy), the assertions text, and the redirect and certificate
   toggles. Table rows change in `App.applyRows` with pure row functions and the undo history of the
   `tabs` controller. No code outside `editor` assigns to a field of a tab's request; the gRPC stream
@@ -1232,7 +1233,7 @@ that change `App`.
   `App.allowed` lists what the request does on this machine (`model.Request.Accesses`: the command
   of an MCP `stdio:` server, a file a multipart field or file body reads outside the collection
   folder). Anything not in `a.trusted` opens a confirm dialog naming it; Allow adds it to
-  `App.trusted`, a `model.AccessSet` (`accessset.go`: a set of accesses kept by `Access.Key`, usable
+  `App.trusted`, a `model.AccessSet` (`accessset.go`; `Access.Kind` is a `model.AccessKind`, stored only inside the key: a set of accesses kept by `Access.Key`, usable
   as its zero value, `Keys()` sorted for the state file; `AccessSetOf` reads the list back) (saved
   as `trusted` in `state.json`) and runs the send or connect again.
 -  **Captured values**: a variable set by a `set name = ...` assertion is `Literal`
@@ -1431,7 +1432,7 @@ that change `App`.
   open and takes the question off the screen when the session ends.
 -  **gRPC** (`internal/request/adapter/proto/grpc.go`, `grpcreflect.go`, decision 2): `proto.GRPC`
   is a registry row; `Send` makes one unary call. It finds the method in the request's source of
-  methods (`grpcsource.go`): `methodSources` is a table keyed by `model.ProtoSource.Kind`, with two
+  methods (`grpcsource.go`): `methodSources` is a table keyed by `model.SourceKind` (`ProtoSource.Kind`), with two
   rows behind one `methodSource` interface (service names, a service's descriptor). `reflection`,
   for a request without proto files, asks the server's reflection (v1, then v1alpha on
   `Unimplemented`) for the service's file and its imports (well-known types come from the program's
@@ -2030,7 +2031,7 @@ and the in-memory keys `stateKey` and `tree.Key`.
   key bindings and the SVG icon parser `FuzzParseSVG`, which has no size or depth limit of its own:
   an arc gives at most 4 segments and a number that overflows is an error). It is not part of `make check`. A crasher is saved under the package's
   `testdata/fuzz`; fix it and keep the file as a regression test.
--  Protocol, body type and auth type names (`model.ParseProtocol`, `ParseBodyType`, `ParseAuthType`)
+-  Protocol, body type and auth type names (`model.ParseProtocol`, `ParseBodyType`, `ParseAuthType`, `ParseKeyIn`)
   are matched exactly against a fixed list: no case folding, no trimming, no length to grow;
   anything else is an error. No authentication is stored as an absent auth `type`; the older
   `"none"` still reads as none, and saving rewrites it.

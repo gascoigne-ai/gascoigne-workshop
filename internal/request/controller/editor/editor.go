@@ -47,9 +47,26 @@ type OperationChosen struct{ Query, Variables string }
 // AuthTypeChosen sets the authentication type.
 type AuthTypeChosen struct{ Type model.AuthType }
 
-// AuthFieldSet sets one credential field, named by its id: token, user,
-// password, keyname, keyvalue or keyin.
-type AuthFieldSet struct{ Field, Value string }
+// AuthField names one text credential field of model.Auth.
+type AuthField string
+
+// The credential fields AuthFieldSet sets.
+const (
+	AuthToken    AuthField = "token"
+	AuthUser     AuthField = "user"
+	AuthPassword AuthField = "password"
+	AuthKeyName  AuthField = "keyname"
+	AuthKeyValue AuthField = "keyvalue"
+)
+
+// AuthFieldSet sets one credential field.
+type AuthFieldSet struct {
+	Field AuthField
+	Value string
+}
+
+// AuthKeyInChosen sets where the API key goes.
+type AuthKeyInChosen struct{ In model.KeyIn }
 
 // TestsTyped is the assertions text changed.
 type TestsTyped struct{ Text string }
@@ -107,32 +124,32 @@ func (BodyTypeChosen) editMsg()     {}
 func (OperationChosen) editMsg()    {}
 func (AuthTypeChosen) editMsg()     {}
 func (AuthFieldSet) editMsg()       {}
+func (AuthKeyInChosen) editMsg()    {}
 func (TestsTyped) editMsg()         {}
 func (NoRedirectsToggled) editMsg() {}
 func (InsecureTLSToggled) editMsg() {}
 
 // authFields is where each credential field named in AuthFieldSet lives.
-var authFields = map[string]func(*model.Auth) *string{
-	"token":    func(auth *model.Auth) *string { return &auth.Token },
-	"user":     func(auth *model.Auth) *string { return &auth.User },
-	"password": func(auth *model.Auth) *string { return &auth.Password },
-	"keyname":  func(auth *model.Auth) *string { return &auth.KeyName },
-	"keyvalue": func(auth *model.Auth) *string { return &auth.KeyValue },
-	"keyin":    func(auth *model.Auth) *string { return &auth.KeyIn },
+var authFields = map[AuthField]func(*model.Auth) *string{
+	AuthToken:    func(auth *model.Auth) *string { return &auth.Token },
+	AuthUser:     func(auth *model.Auth) *string { return &auth.User },
+	AuthPassword: func(auth *model.Auth) *string { return &auth.Password },
+	AuthKeyName:  func(auth *model.Auth) *string { return &auth.KeyName },
+	AuthKeyValue: func(auth *model.Auth) *string { return &auth.KeyValue },
 }
 
-// authField is the place of the credential field called id. An unknown id
-// is a mistake in the caller's table, not user input, so it panics.
-func authField(auth *model.Auth, id string) *string {
-	place, ok := authFields[id]
+// authField is the place of a credential field. An unknown field is a
+// mistake in the caller's table, not user input, so it panics.
+func authField(auth *model.Auth, field AuthField) *string {
+	place, ok := authFields[field]
 	if !ok {
-		panic("editor: unknown auth field " + id)
+		panic("editor: unknown auth field " + string(field))
 	}
 	return place(auth)
 }
 
-// AuthValue is the credential field of auth named by id.
-func AuthValue(auth model.Auth, field string) string { return *authField(&auth, field) }
+// AuthValue is the credential field of auth.
+func AuthValue(auth model.Auth, field AuthField) string { return *authField(&auth, field) }
 
 // Update returns req after msg. The request it is given is not changed: a
 // slice or map an edit changes is replaced, not written into.
@@ -164,6 +181,8 @@ func Update(req model.Request, msg Msg) model.Request {
 		req.Auth.Type = msg.Type
 	case AuthFieldSet:
 		*authField(&req.Auth, msg.Field) = msg.Value // req is a copy, and Auth holds only strings
+	case AuthKeyInChosen:
+		req.Auth.KeyIn = msg.In
 	case TestsTyped:
 		req.Tests = msg.Text
 	case NoRedirectsToggled:

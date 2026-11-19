@@ -5,6 +5,21 @@ import (
 	"testing"
 )
 
+func TestAccessKeyIsKindColonSubject(t *testing.T) {
+	cases := []struct {
+		access Access
+		want   string
+	}{
+		{Access{AccessCommand, "x"}, "command:x"},
+		{Access{AccessFile, "/p"}, "file:/p"},
+	}
+	for _, c := range cases {
+		if got := c.access.Key(); got != c.want {
+			t.Errorf("Key() = %q, want %q", got, c.want)
+		}
+	}
+}
+
 func TestAccessesListWhatARequestDoesOnThisMachine(t *testing.T) {
 	tests := []struct {
 		name   string

@@ -17,7 +17,7 @@ func TestAnEmptyProtoSourceIsTheServersReflection(t *testing.T) {
 	cases := []struct {
 		name   string
 		source ProtoSource
-		want   string
+		want   SourceKind
 	}{
 		{"nothing", ProtoSource{}, SourceReflection},
 		{"import paths alone", ProtoSource{ImportPaths: []string{"/protos"}}, SourceReflection},

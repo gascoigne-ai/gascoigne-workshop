@@ -155,7 +155,7 @@ func TestUpdateOperationChosenFillsQueryAndVariables(t *testing.T) {
 
 func TestUpdateAuthTypeAndFieldsAreSetOneAtATime(t *testing.T) {
 	cases := []struct {
-		field string
+		field AuthField
 		read  func(model.Auth) string
 	}{
 		{"token", func(auth model.Auth) string { return auth.Token }},
@@ -163,16 +163,15 @@ func TestUpdateAuthTypeAndFieldsAreSetOneAtATime(t *testing.T) {
 		{"password", func(auth model.Auth) string { return auth.Password }},
 		{"keyname", func(auth model.Auth) string { return auth.KeyName }},
 		{"keyvalue", func(auth model.Auth) string { return auth.KeyValue }},
-		{"keyin", func(auth model.Auth) string { return auth.KeyIn }},
 	}
 	for _, c := range cases {
-		t.Run(c.field, func(t *testing.T) {
+		t.Run(string(c.field), func(t *testing.T) {
 			got := Update(model.Request{}, AuthFieldSet{Field: c.field, Value: "v"})
 
 			if c.read(got.Auth) != "v" || AuthValue(got.Auth, c.field) != "v" {
 				t.Fatalf("%s not set: %+v", c.field, got.Auth)
 			}
-			other := model.Auth{Token: "t", User: "u", Password: "p", KeyName: "n", KeyValue: "kv", KeyIn: "i"}
+			other := model.Auth{Token: "t", User: "u", Password: "p", KeyName: "n", KeyValue: "kv", KeyIn: model.KeyInQuery}
 			after := Update(model.Request{Auth: other}, AuthFieldSet{Field: c.field, Value: "v"}).Auth
 			if before := AuthValue(other, c.field); before == "v" || after == other {
 				t.Fatalf("setting %s changed nothing, or changed the others: %+v", c.field, after)
@@ -183,6 +182,19 @@ func TestUpdateAuthTypeAndFieldsAreSetOneAtATime(t *testing.T) {
 	got := Update(model.Request{}, AuthTypeChosen{Type: model.AuthBearer})
 	if got.Auth.Type != model.AuthBearer {
 		t.Fatalf("auth type %q", got.Auth.Type)
+	}
+}
+
+func TestUpdateAuthKeyInChosenSetsWhereTheKeyGoes(t *testing.T) {
+	before := model.Request{Auth: model.Auth{KeyName: "k", KeyIn: model.KeyInHeader}}
+
+	got := Update(before, AuthKeyInChosen{In: model.KeyInQuery})
+
+	if got.Auth.KeyIn != model.KeyInQuery || got.Auth.KeyName != "k" {
+		t.Fatalf("auth = %+v", got.Auth)
+	}
+	if before.Auth.KeyIn != model.KeyInHeader {
+		t.Fatalf("Update changed its input: %+v", before.Auth)
 	}
 }
 

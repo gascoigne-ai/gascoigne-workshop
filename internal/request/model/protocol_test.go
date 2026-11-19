@@ -66,6 +66,28 @@ func TestParseAuthTypeRejectsAnUnknownName(t *testing.T) {
 	}
 }
 
+func TestParseKeyIn(t *testing.T) {
+	cases := []struct {
+		text    string
+		want    KeyIn
+		wantErr bool
+	}{
+		{"", "", false}, // the zero value stays, so a saved file keeps its bytes
+		{"header", KeyInHeader, false},
+		{"query", KeyInQuery, false},
+		{"cookie", "", true},
+		{"Header", "", true},
+	}
+	for _, c := range cases {
+		t.Run(c.text, func(t *testing.T) {
+			got, err := ParseKeyIn(c.text)
+			if got != c.want || (err != nil) != c.wantErr {
+				t.Fatalf("ParseKeyIn(%q) = %q, %v; want %q, error %v", c.text, got, err, c.want, c.wantErr)
+			}
+		})
+	}
+}
+
 func TestProtocolsListEachProtocolOnceInChipOrder(t *testing.T) {
 	want := []struct {
 		name  Protocol

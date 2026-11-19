@@ -28,7 +28,7 @@ func (a *App) allowed(tab *reqTab, source *model.Request, again func()) bool {
 	}
 	var lines []string
 	for _, access := range unknown {
-		lines = append(lines, access.Kind+": "+access.Subject)
+		lines = append(lines, string(access.Kind)+": "+access.Subject)
 	}
 	a.confirm("Allow this request?", "It wants to use:\n"+strings.Join(lines, "\n")+"\n\nOnly allow what you recognise. The answer is remembered.", "Allow", func() {
 		for _, access := range unknown {

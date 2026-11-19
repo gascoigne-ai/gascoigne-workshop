@@ -9,16 +9,21 @@ import (
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
-// authChoice is one option of a chooser field.
-type authChoice struct{ id, label string }
+// authChoice is one option of the key location chooser.
+type authChoice struct {
+	id    model.KeyIn
+	label string
+}
 
-// authField is one input of an auth type: a text field, or a chooser
-// when choices are given. id names the field's place in the request's Auth,
-// which the editor package knows.
+// authField is one input of an auth type: a text field, or the key
+// location chooser when choices are given (it has no id: it is not text).
+// id names the text field's place in the request's Auth, which the editor
+// package knows.
 type authField struct {
-	id, label string
-	secret    bool
-	choices   []authChoice
+	id      editor.AuthField
+	label   string
+	secret  bool
+	choices []authChoice
 }
 
 // authType is a way to authenticate and the fields it needs. The table
@@ -33,16 +38,16 @@ type authType struct {
 var authTypes = []authType{
 	{id: model.AuthNone, label: "None", width: 64},
 	{id: model.AuthBearer, label: "Bearer", width: 72, fields: []authField{
-		{id: "token", label: "Token", secret: true},
+		{id: editor.AuthToken, label: "Token", secret: true},
 	}},
 	{id: model.AuthBasic, label: "Basic", width: 64, fields: []authField{
-		{id: "user", label: "User"},
-		{id: "password", label: "Password", secret: true},
+		{id: editor.AuthUser, label: "User"},
+		{id: editor.AuthPassword, label: "Password", secret: true},
 	}},
 	{id: model.AuthAPIKey, label: "API key", width: 80, fields: []authField{
-		{id: "keyname", label: "Name"},
-		{id: "keyvalue", label: "Value", secret: true},
-		{id: "keyin", label: "Add to",
+		{id: editor.AuthKeyName, label: "Name"},
+		{id: editor.AuthKeyValue, label: "Value", secret: true},
+		{label: "Add to",
 			choices: []authChoice{{model.KeyInHeader, "Header"}, {model.KeyInQuery, "Query"}}},
 	}},
 }
@@ -58,7 +63,7 @@ func authTypeOf(id model.AuthType) authType {
 }
 
 // authFieldByID finds a field in any type.
-func authFieldByID(id string) (authField, bool) {
+func authFieldByID(id editor.AuthField) (authField, bool) {
 	for _, t := range authTypes {
 		for _, f := range t.fields {
 			if f.id == id {
@@ -71,7 +76,7 @@ func authFieldByID(id string) (authField, bool) {
 
 // authInput is the text field of an Auth pane field, created on first
 // use from the request's stored value. Secret fields start masked.
-func (t *reqTab) authInput(id string) *TextField {
+func (t *reqTab) authInput(id editor.AuthField) *TextField {
 	if in, ok := t.auth[id]; ok {
 		return in
 	}
@@ -82,7 +87,7 @@ func (t *reqTab) authInput(id string) *TextField {
 	}
 	in.Masked = f.secret && !t.showSecrets
 	if t.auth == nil {
-		t.auth = map[string]*TextField{}
+		t.auth = map[editor.AuthField]*TextField{}
 	}
 	t.auth[id] = in
 	return in
@@ -154,11 +159,11 @@ func (a *App) authPane(_ pane, tab *reqTab, scroll *ScrollState) Node {
 // while it is secret and the secrets are hidden.
 func authFieldRow(tab *reqTab, field authField) authRow {
 	if field.choices != nil {
-		stored := editor.AuthValue(tab.Req.Auth, field.id)
+		stored := tab.Req.Auth.KeyIn
 		chips := make([]authChip, 0, len(field.choices))
 		for _, c := range field.choices {
-			pick := func() { editRequest(tab, editor.AuthFieldSet{Field: field.id, Value: c.id}) }
-			lit := stored == c.id || (stored == "" && c.id == field.choices[0].id)
+			pick := func() { editRequest(tab, editor.AuthKeyInChosen{In: c.id}) }
+			lit := stored == c.id || (stored == "" && c.id == model.KeyInHeader)
 			chips = append(chips, authChip{Label: c.label, Width: authChoiceChipWidth, Chosen: lit, Pick: pick})
 		}
 		return authRow{Label: field.label, Chips: chips}

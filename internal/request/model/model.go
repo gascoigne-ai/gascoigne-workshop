@@ -2,7 +2,10 @@
 // collections of requests and the responses they produce.
 package model
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 // KV is one row of a params, headers or vars table.
 type KV struct {
@@ -101,11 +104,25 @@ func cloneKV(rows []KV) []KV {
 	return append([]KV(nil), rows...)
 }
 
+// KeyIn says where an API key goes. The zero value is read as KeyInHeader.
+type KeyIn string
+
 // Where an API key goes.
 const (
-	KeyInHeader = "header"
-	KeyInQuery  = "query"
+	KeyInHeader KeyIn = "header"
+	KeyInQuery  KeyIn = "query"
 )
+
+// ParseKeyIn returns the place named by text. "" is the zero KeyIn, kept
+// as it is so a saved file keeps its bytes; readers treat it as a header.
+func ParseKeyIn(text string) (KeyIn, error) {
+	for _, known := range []KeyIn{"", KeyInHeader, KeyInQuery} {
+		if text == string(known) {
+			return known, nil
+		}
+	}
+	return "", fmt.Errorf("unknown key location %q", text)
+}
 
 // Auth is a request's credentials. Every type has its own fields, so
 // switching type keeps what was typed for the others.
@@ -116,7 +133,7 @@ type Auth struct {
 	Password string // basic
 	KeyName  string // api key
 	KeyValue string // api key
-	KeyIn    string // KeyInHeader (default) or KeyInQuery
+	KeyIn    KeyIn  // the zero value is KeyInHeader
 }
 
 // Expanded returns a copy of r with {{name}} replaced from vars in the

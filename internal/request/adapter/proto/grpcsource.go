@@ -30,7 +30,7 @@ type sourceKind struct {
 }
 
 // methodSources opens a request's source, by model.ProtoSource.Kind.
-var methodSources = map[string]sourceKind{
+var methodSources = map[model.SourceKind]sourceKind{
 	model.SourceReflection: {open: openReflection, asksServer: true},
 	model.SourceProtoFiles: {open: openProtoFiles},
 }

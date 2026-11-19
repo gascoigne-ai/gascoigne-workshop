@@ -16,15 +16,19 @@ type ProtoSource struct {
 	ImportPaths []string
 }
 
+// SourceKind says where a ProtoSource's services come from. It is derived
+// from the files and never stored.
+type SourceKind string
+
 // Kinds of ProtoSource, the keys of the gRPC adapter's table of sources.
 const (
-	SourceReflection = "reflection"
-	SourceProtoFiles = "proto files"
+	SourceReflection SourceKind = "reflection"
+	SourceProtoFiles SourceKind = "proto files"
 )
 
 // Kind says where the services come from. Import paths alone change
 // nothing: they only serve the files.
-func (s ProtoSource) Kind() string {
+func (s ProtoSource) Kind() SourceKind {
 	if len(s.Files) == 0 {
 		return SourceReflection
 	}

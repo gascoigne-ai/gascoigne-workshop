@@ -23,20 +23,20 @@ type reqTab struct {
 	responseBlock
 	url         widget.TextField
 	paneTab     int
-	bodyView    widget.CodeView              // request body, read-only
-	tests       widget.TextArea              // the assertions editor
-	gqlVars     widget.TextArea              // the variables of a GraphQL body
-	file        widget.TextField             // the path of a file body
-	fileCheck   bodyFileCheck                // what the file system said about file's path
-	body        widget.TextArea              // request body editor
-	reqScroll   widget.ScrollState           // scroll of the table and note panes
-	bodyTypesX  widget.ScrollState           // sideways scroll of the body type chips
-	reqTabsX    widget.ScrollState           // sideways scroll of the two pane tab strips
-	timeout     widget.TextField             // the request's timeout seconds, as typed
-	cancel      context.CancelFunc           // stops the running request
-	auth        map[string]*widget.TextField // Auth pane inputs by field id, created on first use
-	showSecrets bool                         // show masked credential fields
-	schema      *model.Schema                // what a GraphQL introspection answered
+	bodyView    widget.CodeView                        // request body, read-only
+	tests       widget.TextArea                        // the assertions editor
+	gqlVars     widget.TextArea                        // the variables of a GraphQL body
+	file        widget.TextField                       // the path of a file body
+	fileCheck   bodyFileCheck                          // what the file system said about file's path
+	body        widget.TextArea                        // request body editor
+	reqScroll   widget.ScrollState                     // scroll of the table and note panes
+	bodyTypesX  widget.ScrollState                     // sideways scroll of the body type chips
+	reqTabsX    widget.ScrollState                     // sideways scroll of the two pane tab strips
+	timeout     widget.TextField                       // the request's timeout seconds, as typed
+	cancel      context.CancelFunc                     // stops the running request
+	auth        map[editor.AuthField]*widget.TextField // Auth pane inputs by field id, created on first use
+	showSecrets bool                                   // show masked credential fields
+	schema      *model.Schema                          // what a GraphQL introspection answered
 }
 
 // socketBlock holds the state of a WebSocket tab: the message log, the message being composed and the sends waiting their turn.
