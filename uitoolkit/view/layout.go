@@ -418,7 +418,7 @@ func With(base []Item, opts []Option) []Item {
 func floatRect(element *El, in core.Rect, width, height int) core.Rect {
 	switch element.fl.mode {
 	case floatPoint:
-		x, y := in.X+element.fl.right, in.Y+element.fl.top // floatRight holds x, floatTop holds y
+		x, y := in.X+element.fl.x, in.Y+element.fl.y
 		if x+width > in.X+in.W {
 			x = in.X + in.W - width
 		}

@@ -36,15 +36,18 @@ func layoutBars(rect core.Rect, contentW, contentH int) bars {
 	return b
 }
 
+// barKind is which scrollbar a drag holds.
+type barKind uint8
+
 const (
-	barNone = iota
+	barNone barKind = iota
 	barV
 	barH
 )
 
 // barDrag tracks a scrollbar thumb being dragged: which bar, and the grab.
 type barDrag struct {
-	bar  int // barNone, barV or barH
+	bar  barKind
 	grab grab
 }
 
@@ -79,7 +82,7 @@ func (d *barDrag) update(ctx *core.Ctx, sizes bars, contentW, contentH int, sx, 
 
 // press grabs the thumb of bar when the press is on it, else pages toward
 // the press.
-func (d *barDrag) press(bar, track, content, view, at int, scroll *int) {
+func (d *barDrag) press(bar barKind, track, content, view, at int, scroll *int) {
 	grabbed, off, pos := pressThumb(track, content, view, *scroll, at)
 	*scroll = pos
 	if grabbed {

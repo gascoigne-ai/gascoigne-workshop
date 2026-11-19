@@ -2,11 +2,13 @@ package view
 
 import "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 
-// How a floating element is placed in its Stack.
+// floatMode is how a floating element is placed in its Stack.
+type floatMode uint8
+
 const (
-	floatCorner = iota // top right, offset by Float
-	floatPoint         // top-left at a point, kept inside (FloatAt)
-	floatMiddle        // centered (FloatCenter)
+	floatCorner floatMode = iota // top right, offset by FloatTR
+	floatPoint                   // top-left at a point, kept inside (FloatAt)
+	floatMiddle                  // centered (FloatCenter)
 )
 
 // FloatAt takes the element out of its Stack's layout and puts its
@@ -15,7 +17,7 @@ const (
 // would stick out at the bottom.
 func FloatAt(posX, posY int) Option {
 	return func(element *El) {
-		element.fl.on, element.fl.mode, element.fl.top, element.fl.right = true, floatPoint, posY, posX
+		element.fl.on, element.fl.mode, element.fl.x, element.fl.y = true, floatPoint, posX, posY
 	}
 }
 

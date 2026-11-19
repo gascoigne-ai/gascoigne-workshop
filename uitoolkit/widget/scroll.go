@@ -20,14 +20,20 @@ type ScrollState struct {
 	// the box. The app uses it to tell panning from reordering.
 	Overflowing bool
 
-	pressed, panning bool // HScroll: the left button went down on the strip; it moved far enough to pan
-	panFrom, panX0   int  // pointer x and X at that press
-
-	holdDir, holdN int // HScroll: the arrow held down (-1 left, 1 right) and for how many frames
-
-	revealed int // HScroll: index+1 of the child last brought into view, 0 for none
+	hscrollState
 
 	drag barDrag // the thumb being dragged
+}
+
+// hscrollState is what only HScroll keeps between frames; embedded so
+// the zero ScrollState stays valid.
+type hscrollState struct {
+	pressed, panning bool // the left button went down on the strip; it moved far enough to pan
+	panFrom, panX0   int  // pointer x and X at that press
+
+	holdDir, holdN int // the arrow held down (-1 left, 1 right) and for how many frames
+
+	revealed int // index+1 of the child last brought into view, 0 for none
 }
 
 // scrollB lays its children out as a column taller than the box and

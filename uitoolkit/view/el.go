@@ -154,9 +154,26 @@ func flatten(kids []*El) []*El {
 // floatOpts are the settings of a floating element.
 type floatOpts struct {
 	on         bool
-	top, right int
-	mode       int // floatCorner, floatPoint or floatMiddle
+	mode       floatMode
+	top, right int // floatCorner: the distance from the top and right edges
+	x, y       int // floatPoint: the top-left point
 	moved      *MoveState
+}
+
+// dumpTop and dumpRight are the two offsets Dump has always shown: the
+// corner offsets, or for a point the y and the x.
+func (f floatOpts) dumpTop() int {
+	if f.mode == floatPoint {
+		return f.y
+	}
+	return f.top
+}
+
+func (f floatOpts) dumpRight() int {
+	if f.mode == floatPoint {
+		return f.x
+	}
+	return f.right
 }
 
 // Rect is where the last Layout put the element, in window pixels.
