@@ -3,8 +3,6 @@ package proto
 import (
 	"bytes"
 	"context"
-	"crypto/tls"
-	"crypto/x509"
 	"errors"
 	"fmt"
 	"io"
@@ -16,7 +14,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 	"time"
 
@@ -60,27 +57,10 @@ func (r REST) Send(ctx context.Context, req model.Request) (model.Response, erro
 	if err != nil {
 		return model.Response{}, fmt.Errorf("encode body: %w", err)
 	}
-	httpReq, err := http.NewRequestWithContext(ctx, method, req.URL, bytes.NewReader(body))
+	httpReq, err := newHTTPRequest(ctx, method, req, body, contentType)
 	if err != nil {
-		return model.Response{}, fmt.Errorf("build request: %w", err)
+		return model.Response{}, err
 	}
-	if contentType != "" {
-		httpReq.Header.Set("Content-Type", contentType)
-	}
-	for _, h := range req.Headers {
-		if h.Enabled && h.Name != "" {
-			if strings.EqualFold(h.Name, "Content-Type") {
-				httpReq.Header.Del("Content-Type") // the user's header replaces the automatic one
-			}
-			httpReq.Header.Add(h.Name, h.Value)
-		}
-	}
-
-	apply, ok := authAppliers[req.Auth.Type]
-	if !ok {
-		return model.Response{}, fmt.Errorf("unknown auth type %q", req.Auth.Type)
-	}
-	apply(req.Auth, httpReq) // after the headers, so the Auth pane wins over one typed by hand
 
 	client, err := r.client(req)
 	if err != nil {
@@ -235,51 +215,11 @@ var authAppliers = map[model.AuthType]func(auth model.Auth, request *http.Reques
 	},
 }
 
-// client is the http.Client for req: the configured one, with the cookie
-// jar, the proxy, the certificate check and the redirect rule of the
-// request applied to a copy.
+// client is the http.Client for req, built by newHTTPClient from the
+// flat fields. REST keeps them flat (rather than a Network) because
+// callers and tests write them that way; the other protocols take a Network.
 func (r REST) client(req model.Request) (*http.Client, error) {
-	c := &http.Client{}
-	if r.Client != nil {
-		cp := *r.Client
-		c = &cp
-	}
-	if c.Jar == nil {
-		c.Jar = r.Jar
-	}
-	if req.NoRedirects {
-		c.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
-	}
-	if r.Proxy == "" && !req.InsecureTLS && r.CAFile == "" && r.CertFile == "" {
-		return c, nil
-	}
-	var base *http.Transport
-	switch t := c.Transport.(type) {
-	case nil:
-		base = http.DefaultTransport.(*http.Transport).Clone()
-	case *http.Transport:
-		base = t.Clone()
-	default:
-		return c, nil // a custom round tripper is left alone
-	}
-	if r.Proxy != "" {
-		u, err := url.Parse(r.Proxy)
-		if err != nil || u.Host == "" || !slices.Contains([]string{"http", "https", "socks5", "socks5h"}, u.Scheme) {
-			return nil, fmt.Errorf("the proxy %q is not a URL like http://host:port or socks5://host:port", r.Proxy)
-		}
-		base.Proxy = http.ProxyURL(u)
-	}
-	if base.TLSClientConfig == nil {
-		base.TLSClientConfig = &tls.Config{}
-	}
-	if err := r.trust(base.TLSClientConfig); err != nil {
-		return nil, err
-	}
-	if req.InsecureTLS {
-		base.TLSClientConfig.InsecureSkipVerify = true //nolint: the request asked for it
-	}
-	c.Transport = base
-	return c, nil
+	return newHTTPClient(r.Client, Network{Jar: r.Jar, Proxy: r.Proxy, CAFile: r.CAFile, CertFile: r.CertFile, KeyFile: r.KeyFile}, req)
 }
 
 // fileContentType is the Content-Type of a file by its extension.
@@ -318,32 +258,4 @@ func encodeFile(req model.Request) ([]byte, string, error) {
 		return nil, "", fmt.Errorf("body file: %w", err)
 	}
 	return data, fileContentType(path), nil
-}
-
-// trust adds the configured authorities and client certificate to cfg.
-func (r REST) trust(cfg *tls.Config) error {
-	if r.CAFile != "" {
-		pem, err := os.ReadFile(r.CAFile)
-		if err != nil {
-			return fmt.Errorf("CA file: %w", err)
-		}
-		pool := cfg.RootCAs
-		if pool == nil {
-			if pool, _ = x509.SystemCertPool(); pool == nil {
-				pool = x509.NewCertPool()
-			}
-		}
-		if !pool.AppendCertsFromPEM(pem) {
-			return fmt.Errorf("CA file %s holds no PEM certificate", filepath.Base(r.CAFile))
-		}
-		cfg.RootCAs = pool
-	}
-	if r.CertFile != "" {
-		cert, err := tls.LoadX509KeyPair(r.CertFile, r.KeyFile)
-		if err != nil {
-			return fmt.Errorf("client certificate: %w", err)
-		}
-		cfg.Certificates = []tls.Certificate{cert}
-	}
-	return nil
 }

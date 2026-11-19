@@ -89,6 +89,17 @@ multipart value `@path` sends that file as a file part (named by its base name) 
 text `@x`. `websocket`, `sse`, `mcp` and `grpc` are streaming or call clients of their own (decision
 2).
 
+`rest`, `sse`, the HTTP transport of `mcp` and the `websocket` handshake share one request builder
+and one client factory (`proto/httpclient.go`). `newHTTPRequest` adds every enabled, named header
+with `Add` (same names are all sent) and applies the Auth pane last, so it wins over a header typed
+by hand; `newHTTPClient` applies the cookie jar, the `Network` proxy and certificates and the
+request's `NoRedirects` and `InsecureTLS`; `applyTLS` is the TLS part, also used by `websocket`
+(`ws.Options.TLS`). An unknown auth type is an error in all four (`unknown auth type "x"`; SSE and
+MCP fail at connect, before any request). `Configured` builds one `Network` from the protocol config
+and gives the jar, proxy, CA file and client certificate to `rest`, `sse` and `mcp`, and only the
+TLS setting to `websocket`. SSE sets `Accept` and `Cache-Control` only when the user did not type
+them. An API key sent in the query reaches the WebSocket server in the dialed URL.
+
 ## Example server and client config
 
 Decision 10. `make example-server` runs `cmd/example-server`
@@ -1932,6 +1943,8 @@ and the in-memory keys `stateKey` and `tree.Key`.
 
 ## Limits
 
+-  WebSocket dials directly (`ws.Dial` has no proxy support), so the proxy setting does not apply to
+  `ws` and `wss`; the CA file, client certificate and Insecure TLS do.
 -  Windows and macOS: the CI `build` job compiles and vets for them, but nothing has been run there
   (decision 12; Platforms).
 -  IME: text arrives composed, but the composition in progress (preedit text, candidate window

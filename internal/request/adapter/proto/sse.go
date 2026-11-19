@@ -17,6 +17,9 @@ import (
 type SSE struct {
 	// Client is used when set.
 	Client *http.Client
+
+	// Network is the cookie jar, proxy and TLS setting of the connection.
+	Network Network
 }
 
 // sseEvent is one event of the stream, by the fields of the format.
@@ -30,26 +33,22 @@ func (s SSE) Connect(ctx context.Context, req model.Request) (Session, error) {
 		return nil, fmt.Errorf("%q is not an http or https URL", req.URL)
 	}
 	cctx, cancel := context.WithCancel(context.Background())
-	httpReq, err := http.NewRequestWithContext(cctx, http.MethodGet, req.URL, nil)
+	httpReq, err := newHTTPRequest(cctx, http.MethodGet, req, nil, "")
 	if err != nil {
 		cancel()
 		return nil, err
 	}
-	httpReq.Header.Set("Accept", "text/event-stream")
-	httpReq.Header.Set("Cache-Control", "no-cache")
-	for _, h := range req.Headers {
-		if h.Enabled && h.Name != "" {
-			httpReq.Header.Set(h.Name, h.Value)
+	for name, value := range map[string]string{"Accept": "text/event-stream", "Cache-Control": "no-cache"} {
+		if httpReq.Header.Get(name) == "" { // a header typed by the user wins
+			httpReq.Header.Set(name, value)
 		}
 	}
-	if apply, ok := authAppliers[req.Auth.Type]; ok {
-		apply(req.Auth, httpReq)
+	client, err := newHTTPClient(s.Client, s.Network, req)
+	if err != nil {
+		cancel()
+		return nil, err
 	}
 	stop := context.AfterFunc(ctx, cancel) // the connect timeout ends only the connect
-	client := s.Client
-	if client == nil {
-		client = &http.Client{}
-	}
 	resp, err := client.Do(httpReq)
 	stop()
 	if err != nil {

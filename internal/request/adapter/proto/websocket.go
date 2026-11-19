@@ -2,6 +2,7 @@ package proto
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -19,47 +20,44 @@ import (
 const eventBuffer = 256
 
 // WebSocket talks WebSocket with the ws package.
-type WebSocket struct{}
+type WebSocket struct {
+	// Network supplies the TLS setting; Jar and Proxy do not apply.
+	Network Network
+}
 
-// handshake builds the dial options from the request: enabled headers,
-// the Auth pane's credentials, and the subprotocols the user listed in a
-// Sec-WebSocket-Protocol header.
-func (WebSocket) handshake(req model.Request) (ws.Options, error) {
-	probe, err := http.NewRequest(http.MethodGet, "http://probe.invalid/", nil)
+// handshake builds the dial options and the URL to dial from the request:
+// enabled headers, the credentials of the Auth pane (an API key in the query
+// lands in the URL), the subprotocols and the TLS setting. Proxy is not
+// applied: ws.Dial has no proxy support.
+func (w WebSocket) handshake(ctx context.Context, req model.Request) (ws.Options, string, error) {
+	built, err := newHTTPRequest(ctx, http.MethodGet, req, nil, "")
 	if err != nil {
-		return ws.Options{}, err
+		return ws.Options{}, "", err
 	}
 	var o ws.Options
-	for _, h := range req.Headers {
-		if !h.Enabled || h.Name == "" {
-			continue
-		}
-		if strings.EqualFold(h.Name, "Sec-WebSocket-Protocol") {
-			for _, p := range strings.Split(h.Value, ",") {
-				if p = strings.TrimSpace(p); p != "" {
-					o.Subprotocols = append(o.Subprotocols, p)
-				}
+	for _, value := range built.Header.Values("Sec-WebSocket-Protocol") {
+		for _, p := range strings.Split(value, ",") {
+			if p = strings.TrimSpace(p); p != "" {
+				o.Subprotocols = append(o.Subprotocols, p)
 			}
-			continue
 		}
-		probe.Header.Add(h.Name, h.Value)
 	}
-	apply, ok := authAppliers[req.Auth.Type]
-	if !ok {
-		return ws.Options{}, fmt.Errorf("unknown auth type %q", req.Auth.Type)
+	built.Header.Del("Sec-WebSocket-Protocol") // ws.Dial sends the subprotocols itself
+	o.Header = built.Header
+	o.TLS = &tls.Config{}
+	if err := applyTLS(o.TLS, w.Network, req); err != nil {
+		return ws.Options{}, "", err
 	}
-	apply(req.Auth, probe)
-	o.Header = probe.Header
-	return o, nil
+	return o, built.URL.String(), nil
 }
 
 // Connect implements Streamer.
 func (w WebSocket) Connect(ctx context.Context, req model.Request) (Session, error) {
-	o, err := w.handshake(req)
+	o, target, err := w.handshake(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	conn, err := ws.Dial(ctx, req.URL, o)
+	conn, err := ws.Dial(ctx, target, o)
 	if err != nil {
 		return nil, err
 	}
@@ -76,11 +74,11 @@ func (w WebSocket) Connect(ctx context.Context, req model.Request) (Session, err
 // Send implements Protocol as the one-shot form.
 func (w WebSocket) Send(ctx context.Context, req model.Request) (model.Response, error) {
 	start := time.Now()
-	o, err := w.handshake(req)
+	o, target, err := w.handshake(ctx, req)
 	if err != nil {
 		return model.Response{}, err
 	}
-	conn, err := ws.Dial(ctx, req.URL, o)
+	conn, err := ws.Dial(ctx, target, o)
 	if err != nil {
 		return model.Response{Err: stopReason(ctx, err), Duration: time.Since(start)}, nil
 	}

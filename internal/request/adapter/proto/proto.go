@@ -22,11 +22,15 @@ func NewRegistry() Registry {
 	}
 }
 
-// Configured is NewRegistry with REST and MCP made from config.
+// Configured is NewRegistry with the HTTP-based protocols made from config.
+// WebSocket takes the TLS part only: its dialer has no proxy or cookie jar.
 func Configured(config port.ProtocolConfig) Registry {
 	registry := NewRegistry()
-	registry[model.ProtocolREST] = REST{Jar: config.Jar, Proxy: config.Proxy, CAFile: config.CACert, CertFile: config.ClientCert, KeyFile: config.ClientKey}
-	registry[model.ProtocolMCP] = MCP{Sampler: config.Sampler}
+	network := Network{Jar: config.Jar, Proxy: config.Proxy, CAFile: config.CACert, CertFile: config.ClientCert, KeyFile: config.ClientKey}
+	registry[model.ProtocolREST] = REST{Jar: network.Jar, Proxy: network.Proxy, CAFile: network.CAFile, CertFile: network.CertFile, KeyFile: network.KeyFile}
+	registry[model.ProtocolSSE] = SSE{Network: network}
+	registry[model.ProtocolMCP] = MCP{Sampler: config.Sampler, Network: network}
+	registry[model.ProtocolWebSocket] = WebSocket{Network: network}
 	return registry
 }
 

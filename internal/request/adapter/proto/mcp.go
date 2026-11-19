@@ -27,6 +27,9 @@ type MCP struct {
 	// (it asks the client to produce a model reply); without one the
 	// client does not offer sampling and refuses such requests.
 	Sampler Sampler
+
+	// Network is the cookie jar, proxy and TLS setting of an HTTP server.
+	Network Network
 }
 
 const (
@@ -57,7 +60,7 @@ func (m MCP) Connect(ctx context.Context, req model.Request) (Session, error) {
 	if strings.HasPrefix(req.URL, StdioPrefix) {
 		tr, err = newMCPStdio(strings.TrimSpace(strings.TrimPrefix(req.URL, StdioPrefix)), s.deliver, s.finish)
 	} else {
-		tr, err = newMCPHTTP(req, s.deliver, s.finish, s.note)
+		tr, err = newMCPHTTP(req, m.Network, s.deliver, s.finish, s.note)
 	}
 	if err != nil {
 		return nil, err
@@ -436,12 +439,19 @@ type mcpHTTP struct {
 	ctx       context.Context
 }
 
-func newMCPHTTP(req model.Request, deliver func([]byte), finish, note func(error)) (*mcpHTTP, error) {
+func newMCPHTTP(req model.Request, network Network, deliver func([]byte), finish, note func(error)) (*mcpHTTP, error) {
 	if !strings.HasPrefix(req.URL, "http://") && !strings.HasPrefix(req.URL, "https://") {
 		return nil, fmt.Errorf("%q is not an http or https URL, or a %s command", req.URL, StdioPrefix)
 	}
+	if err := checkAuth(req.Auth); err != nil {
+		return nil, err
+	}
+	client, err := newHTTPClient(nil, network, req)
+	if err != nil {
+		return nil, err
+	}
 	ctx, cancel := context.WithCancel(context.Background())
-	return &mcpHTTP{req: req, client: &http.Client{}, deliver: deliver, finish: finish, note: note, ctx: ctx, cancel: cancel}, nil
+	return &mcpHTTP{req: req, client: client, deliver: deliver, finish: finish, note: note, ctx: ctx, cancel: cancel}, nil
 }
 
 func (h *mcpHTTP) setVersion(value string) {
@@ -451,17 +461,9 @@ func (h *mcpHTTP) setVersion(value string) {
 }
 
 func (h *mcpHTTP) newRequest(ctx context.Context, method string, body []byte) (*http.Request, error) {
-	r, err := http.NewRequestWithContext(ctx, method, h.req.URL, bytes.NewReader(body))
+	r, err := newHTTPRequest(ctx, method, h.req, body, "")
 	if err != nil {
 		return nil, err
-	}
-	for _, kv := range h.req.Headers {
-		if kv.Enabled && kv.Name != "" {
-			r.Header.Add(kv.Name, kv.Value)
-		}
-	}
-	if apply, ok := authAppliers[h.req.Auth.Type]; ok {
-		apply(h.req.Auth, r)
 	}
 	h.mu.Lock()
 	defer h.mu.Unlock()
