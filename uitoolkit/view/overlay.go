@@ -10,7 +10,7 @@ const (
 )
 
 // FloatAt takes the element out of its Stack's layout and puts its
-// top-left corner at x, y inside the Stack, shifted to stay inside it:
+// top-left corner at posX, posY inside the Stack, shifted to stay inside it:
 // left of the edge when it would stick out on the right, above y when it
 // would stick out at the bottom.
 func FloatAt(posX, posY int) Option {
@@ -46,7 +46,7 @@ func Moved(state *MoveState) Option {
 // this one while it exists, as a dialog needs.
 func FocusScope() Option { return func(element *El) { element.focusScope = true } }
 
-// OnRightClick runs f with the pointer position when the element is
+// OnRightClick runs callback with the pointer position when the element is
 // right-clicked.
 func OnRightClick(callback func(x, y int)) Option {
 	return func(element *El) { element.onRight = callback }

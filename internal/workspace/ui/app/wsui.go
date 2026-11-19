@@ -51,7 +51,7 @@ var wsPanes = []pane{{label: "Messages", kind: paneMessages}}
 // the JSON-RPC traffic with the composer for anything else.
 var mcpPanes = []pane{{label: "Explorer", kind: paneExplorer}, {label: "JSON-RPC", kind: paneMessages}}
 
-// responsePanesFor are the panes of the response side of t.
+// responsePanesFor are the panes of the response side of tab.
 func responsePanesFor(tab *reqTab) []pane {
 	if isSocket(tab) {
 		return viewOf(tab.Req.Protocol).streamPanes
@@ -110,7 +110,7 @@ func (a *App) connect(tab *reqTab) {
 	})
 }
 
-// disconnect closes the session of t, or abandons a connect in progress.
+// disconnect closes the session of tab, or abandons a connect in progress.
 func (a *App) disconnect(tab *reqTab) {
 	session, abandoned := tab.Disconnect()
 	if session != nil {
@@ -416,7 +416,7 @@ func (a *App) formatMessage(tab *reqTab) {
 	tab.msg.Focused = true
 }
 
-// requestPanesFor are the panes of the request side of t.
+// requestPanesFor are the panes of the request side of tab.
 func requestPanesFor(tab *reqTab) []pane {
 	return viewOf(tab.Req.Protocol).requestPanes
 }

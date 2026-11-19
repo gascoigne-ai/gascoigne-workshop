@@ -38,7 +38,7 @@ func (a *App) tabMenuItems(index int) []MenuItem {
 	}
 }
 
-// closeOthers closes every tab but tab i, which becomes the active one.
+// closeOthers closes every tab but the tab at index, which becomes the active one.
 func (a *App) closeOthers(index int) { a.updateTabs(tabs.CloseOthers{Index: index}) }
 
 func (a *App) closeRightOf(index int) { a.updateTabs(tabs.CloseRightOf{Index: index}) }
@@ -103,7 +103,7 @@ func (a *App) secretItems(pane pane, row int) []MenuItem {
 	return []MenuItem{menuSeparator, {Label: label, Run: func() { a.toggleSecret(row) }}}
 }
 
-// copyRowItems copy parts of table row i to the clipboard. They are the
+// copyRowItems copy parts of table row index to the clipboard. They are the
 // whole menu of a read-only table and lead the menu of an editable one.
 func (a *App) copyRowItems(rows []model.KV, index int, withAll bool) []MenuItem {
 	if index < 0 || index >= len(rows) {

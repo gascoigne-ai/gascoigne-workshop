@@ -1,4 +1,4 @@
-// Package state stores what the app remembers between runs (window
+// Package statefile stores what the app remembers between runs (window
 // geometry, open tabs, pane sizes) as a small JSON file next to the
 // settings. Settings are preferences users edit; state is bookkeeping.
 // A missing or broken file is never fatal: the app starts fresh.

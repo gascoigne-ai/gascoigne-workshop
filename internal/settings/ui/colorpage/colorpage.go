@@ -65,7 +65,7 @@ func (p *Page) setNote(tok w.Token, note string) {
 	p.notes[tok] = note
 }
 
-// colorEdited applies the hex a user typed for c, or says why not: a
+// edited applies the hex a user typed for customColor, or says why not: a
 // color that does not parse, or whose text would be unreadable on it
 // (with the ratio), is refused and nothing changes.
 func (p *Page) edited(host Host, customColor appearance.CustomColor) {

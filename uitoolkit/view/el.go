@@ -23,7 +23,7 @@
 //
 // The names follow a few rules, so a guess is usually right:
 //
-//	Size       W H MinW MaxW MinH MaxH Grow Shrink Optional Clip
+//	Size       W H FitW MinW MaxW MinH MaxH Grow Shrink Optional Clip
 //	Spacing    Pad PadX PadY PadL PadT PadR PadB   Margin MarginX MarginY MarginL MarginT MarginR MarginB   Gap
 //	Layout     Row Col Stack Spacer HRule VRule VRuleInset   AlignItems AlignSelf JustifyContent
 //	Look       Bg Border BorderX BorderY BorderL BorderT BorderR BorderB HoverBg BorderInset Shadow Control EdgeT EdgeL EdgeR HoverColor Lighten
@@ -127,7 +127,7 @@ type El struct {
 // element is reads before what it contains.
 type Item interface{ apply(parent *El) }
 
-// apply makes e a child of parent; a nil node (a false If) adds nothing.
+// apply makes the element a child of parent; a nil node (a false If) adds nothing.
 func (e *El) apply(parent *El) {
 	if e != nil {
 		parent.kids = append(parent.kids, e)
@@ -235,8 +235,6 @@ func Border(token core.Token) Option { return func(element *El) { element.border
 // BorderT draws a hairline along the top edge.
 func BorderT(token core.Token) Option { return func(element *El) { element.borderT = token } }
 
-// BorderB draws a hairline along the bottom edge, under the
-// background and below the children.
 // BorderL draws a one-pixel line down the element's left edge, to
 // separate neighbours such as tabs or table columns; BorderInset shortens it.
 func BorderL(token core.Token) Option { return func(element *El) { element.borderL = token } }
@@ -261,7 +259,8 @@ func When(cond bool, opt Option) Option {
 // BorderInset keeps the BorderL and BorderR lines this many pixels from the top and bottom.
 func BorderInset(count int) Option { return func(element *El) { element.borderInset = count } }
 
-// BorderB draws a hairline along the bottom edge.
+// BorderB draws a hairline along the bottom edge, under the
+// background and below the children.
 func BorderB(token core.Token) Option { return func(element *El) { element.borderB = token } }
 
 // BorderR draws a hairline along the right edge.
@@ -332,7 +331,7 @@ func Clip() Option { return func(element *El) { element.clip = true } }
 
 // Events and overlays.
 
-// OnClick runs f when the element is clicked.
+// OnClick runs callback when the element is clicked.
 func OnClick(callback func()) Option { return func(element *El) { element.onClick = callback } }
 
 // OnClickAt is OnClick with the pointer position, for what opens at the
@@ -342,15 +341,15 @@ func OnClickAt(callback func(x, y int)) Option {
 	return func(element *El) { element.onClickAt = callback }
 }
 
-// OnMiddleClick runs f when the element is middle-clicked.
+// OnMiddleClick runs callback when the element is middle-clicked.
 func OnMiddleClick(callback func()) Option { return func(element *El) { element.onMiddle = callback } }
 
-// OnDoubleClick runs f on the second click of a double click on the
+// OnDoubleClick runs callback on the second click of a double click on the
 // element, after its OnClick, which runs on both clicks: a list row
 // selects on a click and opens on a double click.
 func OnDoubleClick(callback func()) Option { return func(element *El) { element.onDouble = callback } }
 
-// OnDragOver runs f every frame the left or middle button is held with the pointer
+// OnDragOver runs callback every frame the left or middle button is held with the pointer
 // over the element, for drag and drop: the element under the dragged
 // item learns the item is over it.
 func OnDragOver(callback func()) Option { return func(element *El) { element.onDragOver = callback } }
@@ -395,7 +394,7 @@ func (e *El) DismissHandler() func() { return e.onDismiss }
 // ChangeHandler is the function given with OnChange, nil for none.
 func (e *El) ChangeHandler() func() { return e.onChange }
 
-// OnRightClickIn runs f when the element is right-clicked, with the context
+// OnRightClickIn runs callback when the element is right-clicked, with the context
 // and the pointer position. It is OnRightClick for a handler that needs
 // the context, such as one that opens a popup menu.
 func OnRightClickIn(callback func(c *core.Ctx, x, y int)) Option {

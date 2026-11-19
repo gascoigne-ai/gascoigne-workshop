@@ -280,8 +280,6 @@ func scopedState[T any](name string) param {
 	}}
 }
 
-// realParam is a param that is a number, written in the template or read
-// with {{path}}.
 // finiteFloat reads a number for a size or weight. ParseFloat also takes
 // "NaN" and "Inf", which layout cannot turn into pixels.
 func finiteFloat(text string) (float64, error) {
@@ -292,6 +290,8 @@ func finiteFloat(text string) (float64, error) {
 	return number, nil
 }
 
+// realParam is a param that is a number, written in the template or read
+// with {{path}}.
 func realParam(name string) param {
 	return param{name: name, read: func(value string, scope Scope) (any, error) {
 		text, err := interpolate(value, scope)

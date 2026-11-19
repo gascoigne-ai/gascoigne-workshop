@@ -30,10 +30,7 @@ type hscrollB struct {
 	origin  int // x of the shifted rect the children were laid out in
 }
 
-// KeepInView marks the child an HScroll must keep in view: whenever a
-// different child is flagged than last time, the strip scrolls to show
-// it once, so a selection made elsewhere is never hidden, while the
-// user's own scrolling is left alone.
+// overflow reports whether the children are wider than the box.
 func (s *hscrollB) overflow(element *El) bool { return s.content > element.Rect().W }
 
 // inset is the room kept clear at each end for the arrows, so the first
@@ -52,7 +49,7 @@ func (s *hscrollB) maxX(element *El) int {
 	return s.content + 2*s.inset(element) - element.Rect().W
 }
 
-// layout places the children for the scroll position the state holds,
+// Layout places the children for the scroll position the state holds,
 // clamped; it does not change the state (settle does, in update).
 func (s *hscrollB) Layout(element *El, ctx *core.Ctx) {
 	r := element.Rect()
@@ -107,7 +104,7 @@ func (s *hscrollB) arrowsShown(element *El) (left, right bool) {
 	return s.overflow(element) && s.state.X > 0, s.overflow(element) && s.state.X < s.maxX(element)
 }
 
-// preUpdate takes clicks on the arrows before the children under them see them.
+// PreUpdate takes clicks on the arrows before the children under them see them.
 func (s *hscrollB) PreUpdate(element *El, ctx *core.Ctx) {
 	s.settle(element, ctx)
 	in, st, r := ctx.In, s.state, element.Rect()
@@ -162,7 +159,7 @@ func (s *hscrollB) PreUpdate(element *El, ctx *core.Ctx) {
 	}
 }
 
-// update scrolls with the wheel and with a touchpad's sideways swipe.
+// Update scrolls with the wheel and with a touchpad's sideways swipe.
 func (s *hscrollB) Update(element *El, ctx *core.Ctx) {
 	in, st := ctx.In, s.state
 	if !s.overflow(element) || !in.Over(element.Rect()) {
@@ -205,7 +202,7 @@ func (s *hscrollB) DrawOver(element *El, ctx *core.Ctx, dst *ebiten.Image) {
 // HScroll is a horizontally scrolling row: its children keep their
 // natural width and may be wider than the box, which clips them and
 // shows arrows at the ends that have more to scroll to. Mark the child to
-// keep in view with Reveal.
+// keep in view with KeepInView.
 func HScroll(state *ScrollState, items ...Item) *El {
 	return Custom(&hscrollB{Linear: Linear{Horizontal: true}, state: state}, append([]Item{Clip()}, items...)...)
 }

@@ -38,14 +38,14 @@ type scrollB struct {
 	content int // height of the content, set by layout
 }
 
-// measure is the content's size, but no taller than MaxH, so a
-// scroller in a floating or hugging parent shrinks to its content and
-// scrolls only when the content is taller than the limit.
+// track is the strip along the right edge that holds the scrollbar.
 func (s *scrollB) track(element *El) core.Rect {
 	r := element.Rect()
 	return core.Rect{X: r.X + r.W - scrollbarW, Y: r.Y, W: scrollbarW, H: r.H}
 }
 
+// Layout places the children at their natural height, shifted up by the
+// scroll position the state holds, clamped to the content.
 func (s *scrollB) Layout(element *El, ctx *core.Ctx) {
 	r := element.Rect()
 	_, s.content = s.Linear.Measure(element, ctx, element.Inner().W)

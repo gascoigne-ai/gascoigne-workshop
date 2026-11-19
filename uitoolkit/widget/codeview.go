@@ -112,7 +112,7 @@ func (v *CodeView) keepTopLine(geometry codeGeometry, rect core.Rect) {
 	}
 }
 
-// cut is the part of spans from rune from to rune to.
+// cutSpans is the part of spans from rune from to rune to.
 func cutSpans(spans []Span, from, to int) []Span {
 	var out []Span
 	pos := 0
@@ -796,5 +796,8 @@ func (v *CodeView) wordRightFrom(pos textPos, row int, visible []int) textPos {
 	}
 }
 
-func (v *CodeView) HasFocus() bool   { return v.Focused }
+// HasFocus reports whether the view has the keyboard focus.
+func (v *CodeView) HasFocus() bool { return v.Focused }
+
+// SetFocus gives or takes the keyboard focus.
 func (v *CodeView) SetFocus(on bool) { v.Focused = on }

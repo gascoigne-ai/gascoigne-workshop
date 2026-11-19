@@ -96,7 +96,6 @@ func curlBody(req model.Request) []string {
 	return args
 }
 
-// shellQuote wraps s in single quotes for a POSIX shell.
 // quoteUnlessToken leaves a plain word such as a method name bare and
 // quotes anything else for the shell.
 func quoteUnlessToken(text string) string {
@@ -108,6 +107,7 @@ func quoteUnlessToken(text string) string {
 	return text
 }
 
+// shellQuote wraps text in single quotes for a POSIX shell.
 func shellQuote(text string) string {
 	return "'" + strings.ReplaceAll(text, "'", `'\''`) + "'"
 }

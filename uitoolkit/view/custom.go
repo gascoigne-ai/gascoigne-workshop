@@ -9,7 +9,7 @@ import (
 // Behavior is what a component outside this package supplies to be an
 // element: how big it wants to be, what it does when its rect is set,
 // how it reacts to the frame's input and how it draws. Read the rect and
-// the children through e (Rect, Children); embed Base for the methods a
+// the children through element (Rect, Children); embed Base for the methods a
 // component does not need.
 type Behavior interface {
 	// Measure is the size the element wants when at most maxW wide.
@@ -56,8 +56,8 @@ func (b customB) drawOver(element *El, ctx *core.Ctx, dst *ebiten.Image) {
 	}
 }
 
-// Custom makes an element that behaves as b. The component's options
-// configure b through Behavior.
+// Custom makes an element that behaves as behavior. The component's options
+// configure behavior through Behavior.
 func Custom(behavior Behavior, items ...Item) *El { return newEl(customB{behavior}, items) }
 
 // Behavior is the behavior a Custom element was made with, or nil for
@@ -78,13 +78,17 @@ type Linear struct {
 	Horizontal bool
 }
 
+// Measure is the size of the children stacked along the axis, laid out
+// within maxW.
 func (l Linear) Measure(element *El, ctx *core.Ctx, maxW int) (int, int) {
 	return flow{horiz: l.Horizontal}.measure(element, ctx, maxW)
 }
 
+// Layout places the children one after another along the axis, sharing
+// the free space as Grow, Gap, AlignItems and JustifyContent say.
 func (l Linear) Layout(element *El, ctx *core.Ctx) { flow{horiz: l.Horizontal}.layout(element, ctx) }
 
-// Place gives the element the rect r and lays its own children out in
+// Place gives the element the given rect and lays its own children out in
 // it. A container's Layout calls it on each child.
 func (e *El) Place(ctx *core.Ctx, rect core.Rect) { e.place(ctx, rect) }
 
@@ -131,7 +135,7 @@ func (e *El) KeepsInView() bool { return e.reveal }
 // Inner is the element's rect inside its padding.
 func (e *El) Inner() core.Rect { return e.inner() }
 
-// LayoutIn lays the children out as if the element's rect were r, and
+// LayoutIn lays the children out as if the element's rect were bounds, and
 // leaves the element's own rect alone: a scrolling container lays its
 // children out in a rect shifted by the scroll position.
 func (l Linear) LayoutIn(element *El, ctx *core.Ctx, bounds core.Rect) {

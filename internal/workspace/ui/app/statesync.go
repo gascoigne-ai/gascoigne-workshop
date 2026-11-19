@@ -181,7 +181,7 @@ func (a *App) expandPaths(col *model.Collection, paths []string) {
 	}
 }
 
-// requestPaneLabel is the label of the request pane t shows, "" when its
+// requestPaneLabel is the label of the request pane tab shows, "" when its
 // index points nowhere.
 func requestPaneLabel(tab *reqTab) string {
 	panes := requestPanesFor(tab)

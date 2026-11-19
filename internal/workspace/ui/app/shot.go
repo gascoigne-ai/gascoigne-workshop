@@ -134,7 +134,7 @@ func (s *screenshot) sendsDone() bool {
 	return !s.sendOnStart || (s.sent && s.sendNext == nil && s.allAnswered())
 }
 
-// shotSend sends t's request and makes the capture wait for its outcome.
+// shotSend sends tab's request and makes the capture wait for its outcome.
 func (a *App) shotSend(tab *reqTab) {
 	a.shot.waiting = append(a.shot.waiting, tab)
 	a.send(tab)

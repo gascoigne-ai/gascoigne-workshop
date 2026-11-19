@@ -43,7 +43,7 @@ func posFromOffset(trackLen, contentLen, viewLen, off int) int {
 	return off * (contentLen - viewLen) / maxOff
 }
 
-// Scrollbar draws the thumb in track for the given scroll state; the
+// drawScrollbar draws the thumb in track for the given scroll state; the
 // track is vertical or horizontal by its shape. active brightens it
 // (hover or drag). It draws nothing when everything fits.
 func drawScrollbar(ctx *core.Ctx, dst *ebiten.Image, track core.Rect, contentLen, viewLen, pos int, active bool) {

@@ -41,8 +41,14 @@ func JustifyContent(justify Justify) Option {
 // MinW, MaxW, MinH and MaxH bound an element's size, whatever its
 // content or its share of the free space would give.
 func MinW(count int) Option { return func(element *El) { element.minW = count } }
+
+// MaxW is the widest the element may be.
 func MaxW(count int) Option { return func(element *El) { element.maxW = count } }
+
+// MinH is the least height the element may have.
 func MinH(count int) Option { return func(element *El) { element.minH = count } }
+
+// MaxH is the tallest the element may be.
 func MaxH(count int) Option { return func(element *El) { element.maxH = count } }
 
 // Margin is space around an element, inside its parent's layout.
@@ -50,10 +56,16 @@ func Margin(count int) Option {
 	return func(element *El) { element.mL, element.mT, element.mR, element.mB = count, count, count, count }
 }
 
-// MarginL, MarginT, MarginR and MarginB are margin on one side.
+// MarginL is margin on the left side.
 func MarginL(count int) Option { return func(element *El) { element.mL = count } }
+
+// MarginT is margin on the top side.
 func MarginT(count int) Option { return func(element *El) { element.mT = count } }
+
+// MarginR is margin on the right side.
 func MarginR(count int) Option { return func(element *El) { element.mR = count } }
+
+// MarginB is margin on the bottom side.
 func MarginB(count int) Option { return func(element *El) { element.mB = count } }
 
 // MarginX is left and right margin.

@@ -699,7 +699,7 @@ func (a *App) showCompact(tab *reqTab) {
 	}
 }
 
-// formattable is whether t has a text body small enough to be formatted.
+// formattable is whether tab has a text body small enough to be formatted.
 func formattable(tab *reqTab) bool {
 	return tab.Resp != nil && !respview.LooksBinary(tab.Resp.Body) && !respview.TooBig(tab.Resp.Body)
 }

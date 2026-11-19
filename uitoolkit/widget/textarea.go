@@ -375,5 +375,8 @@ func (a *TextArea) drawSelection(ctx *core.Ctx, dst *ebiten.Image, geometry area
 // text opens. ok is false before the editor was first updated.
 func (a *TextArea) CaretAt() (x, y int, ok bool) { return a.caretX, a.caretY, a.caretKnown }
 
-func (a *TextArea) HasFocus() bool   { return a.Focused }
+// HasFocus reports whether the editor has the keyboard focus.
+func (a *TextArea) HasFocus() bool { return a.Focused }
+
+// SetFocus gives or takes the keyboard focus.
 func (a *TextArea) SetFocus(on bool) { a.Focused = on }

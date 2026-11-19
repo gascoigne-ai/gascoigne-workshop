@@ -8,7 +8,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
-// Layout places the tree in a w by h window.
+// Layout places the tree in a width by height window.
 func Layout(ctx *core.Ctx, root Node, width, height int) {
 	root.place(ctx, core.Rect{W: width, H: height})
 }
@@ -59,7 +59,7 @@ func revealFocused(root Node) {
 	}
 }
 
-// state is what e edits and focuses, nil for an element that is not
+// state is what the element edits and focuses, nil for an element that is not
 // focusable. It is also what identifies the focus owner.
 func (e *El) state() Focuser {
 	if focusable, ok := e.Behavior().(Focusable); ok {
@@ -414,7 +414,7 @@ func (e *El) dragByHandle(ctx *core.Ctx) {
 	ctx.Cursor = core.CursorMove // grabbed: shown from the press, not while hovering
 }
 
-// onHandle reports whether the point is on a drag handle of e that no
+// onHandle reports whether the point is on a drag handle of the element that no
 // clickable or focusable element inside the handle covers.
 func (e *El) onHandle(posX, posY int) bool {
 	if e.hidden {

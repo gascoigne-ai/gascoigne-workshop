@@ -119,7 +119,6 @@ func Table(spec TableSpec, opts ...Option) *El {
 	}, opts)...)
 }
 
-// headerCheck is the checkbox that enables or disables every row.
 // tableHeader is the caption row; with a Widths state it carries the
 // draggable column dividers on top.
 func tableHeader(tableSpec TableSpec) Node {
@@ -141,6 +140,7 @@ func tableHeader(tableSpec TableSpec) Node {
 // hasGrip reports whether rows have a drag handle.
 func (t TableSpec) hasGrip() bool { return t.OnGrabRow != nil }
 
+// headerCheck is the checkbox that enables or disables every row.
 func headerCheck(spec TableSpec) Node {
 	items := []Item{W(tableActionW), JustifyContent(JustifyCenter), Tooltip("Enable or disable every row"), Checkbox(spec.AllChecked)}
 	if spec.OnToggleAll != nil {

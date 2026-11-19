@@ -18,7 +18,7 @@ import (
 	"golang.org/x/image/font/gofont/goregular"
 )
 
-// Fonts are the three faces the toolkit draws with.
+// Fonts are the faces the toolkit draws with: UI and Small text, Mono for code, and bold forms of UI and Small.
 type Fonts struct{ UI, Small, Mono, Bold, SmallBold *text.GoTextFace }
 
 // FontData is the content of a regular and a bold font file. The zero
@@ -103,7 +103,7 @@ type Ctx struct {
 	// view.Draw for widget.TooltipLayer to show.
 	TipText string
 
-	// Menu is the open popup menu; view owns its type (*widget.MenuState) and
+	// Menu is the open popup menu; widget owns its type (*widget.MenuState) and
 	// core only carries it, so that any element can open a menu without a
 	// host. nil when none is open.
 	Menu any
@@ -205,7 +205,7 @@ func (c *Ctx) SetFonts(ui, code FontData) error {
 // Hovered reports whether the pointer is over r and hover feedback is on.
 func (c *Ctx) Hovered(rect Rect) bool { return !c.HoverOff && c.In.Over(rect) }
 
-// Col resolves a color token in the current theme.
+// Color resolves a color token in the current theme.
 func (c *Ctx) Color(tok Token) color.RGBA { return c.Th.Color(tok) }
 
 func (c *Ctx) dev(value float32) float32 { return value * float32(c.Scale) }

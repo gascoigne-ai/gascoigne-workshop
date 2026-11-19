@@ -325,7 +325,7 @@ func startCollection(sample func() model.Collection) model.Collection {
 	return sample()
 }
 
-// NewApp builds the window state around the sample collection.
+// NewApp builds the window state from opts: settings, user themes and the start collection.
 func NewApp(opts Options) (*App, error) {
 	settingFiles := opts.SettingsFiles
 	if settingFiles == nil {
@@ -453,7 +453,7 @@ func (a *App) send(tab *reqTab) {
 	a.dispatch(tab, tab.Req)
 }
 
-// dispatch sends req on behalf of tab t: the request of the tab, or a
+// dispatch sends req on behalf of tab: the request of the tab, or a
 // helper one such as a GraphQL schema query that uses the tab's URL and
 // credentials.
 func (a *App) dispatch(tab *reqTab, source *model.Request) {
@@ -480,7 +480,7 @@ func (a *App) dispatch(tab *reqTab, source *model.Request) {
 	})
 }
 
-// cancelSend stops the running request of t. Its late result, which
+// cancelSend stops the running request of tab. Its late result, which
 // arrives after this, belongs to an older send and is dropped.
 func (a *App) cancelSend(tab *reqTab) {
 	if !tab.Cancel() {
@@ -565,7 +565,7 @@ var cursorShapes = map[core.Cursor]ebiten.CursorShapeType{
 }
 
 // Layout implements ebiten.Game. The UI is laid out in logical pixels
-// (w by h); the screen is that size times the monitor's scale factor so
+// (width by height); the screen is that size times the monitor's scale factor so
 // text and lines stay sharp on HiDPI displays.
 func (a *App) Layout(width, height int) (int, int) {
 	reported := ebiten.Monitor().DeviceScaleFactor()
@@ -713,7 +713,7 @@ func (a *App) cycleMethod(tab *reqTab) {
 // urlEdited keeps the request and its Params table in step with the URL field.
 func (a *App) urlEdited(tab *reqTab) { editRequest(tab, editor.URLTyped{Text: tab.url.Text}) }
 
-// editRequest applies an edit to the request of t, which is the collection's
+// editRequest applies an edit to the request of tab, which is the collection's
 // own, so the sidebar and the autosave see it at once.
 func editRequest(tab *reqTab, msg editor.Msg) { *tab.Req = editor.Update(*tab.Req, msg) }
 

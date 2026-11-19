@@ -327,6 +327,8 @@ func PlusIcon(opts ...Option) *El { return Icon("plus", opts...) }
 // PromptIcon is a terminal prompt, ">_".
 func PromptIcon(opts ...Option) *El { return Icon("prompt", opts...) }
 
-// ChevronUpIcon and ChevronDownIcon are small arrows for stepping through a list.
-func ChevronUpIcon(opts ...Option) *El   { return Icon("chevron-up", opts...) }
+// ChevronUpIcon is a small arrow up, for stepping back through a list.
+func ChevronUpIcon(opts ...Option) *El { return Icon("chevron-up", opts...) }
+
+// ChevronDownIcon is a small arrow down, for stepping forward through a list.
 func ChevronDownIcon(opts ...Option) *El { return Icon("chevron-down", opts...) }

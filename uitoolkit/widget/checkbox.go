@@ -16,7 +16,7 @@ type checkB struct {
 
 func (checkB) Measure(*El, *core.Ctx, int) (int, int) { return 14, 14 }
 
-// update runs OnChange when the box is clicked; the caller owns the value.
+// Update runs OnChange when the box is clicked; the caller owns the value.
 func (checkB) Update(element *El, ctx *core.Ctx) {
 	if onChange := element.ChangeHandler(); onChange != nil && ctx.In.Hit(element.Rect()) {
 		onChange()

@@ -93,7 +93,7 @@ func Ellipsis() Option { return func(element *El) { element.ellipsis = true } }
 // TextCenter centers text horizontally in its box.
 func TextCenter() Option { return func(element *El) { element.ctr = true } }
 
-// Lines stacks the lines of s, one Text each, in the given color. The
+// Lines stacks the lines of text, one Text each, in the given color. The
 // options set the column; Small among them makes every line a small text
 // NoteH high, as a Note is, so a longer help takes little room.
 func Lines(text string, clr core.Token, opts ...Option) *El {

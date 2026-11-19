@@ -700,11 +700,16 @@ func (f *TextField) Display() string {
 	return f.Text
 }
 
-// CanUndo and CanRedo report whether there is anything to undo or redo.
+// CanUndo reports whether there is anything to undo.
 func (f *TextField) CanUndo() bool { return len(f.undo) > 0 }
+
+// CanRedo reports whether there is anything to redo.
 func (f *TextField) CanRedo() bool { return len(f.redo) > 0 }
 
+// HasFocus reports whether the field has the keyboard focus.
 func (f *TextField) HasFocus() bool { return f.Focused }
+
+// SetFocus gives or takes the keyboard focus; gaining it selects all the text.
 func (f *TextField) SetFocus(on bool) {
 	f.Focused = on
 	if on {

@@ -69,7 +69,7 @@ type svgShape struct {
 	join       vector.LineJoin
 }
 
-// Icon is a parsed SVG icon.
+// svgIcon is a parsed SVG icon.
 type svgIcon struct {
 	name   string
 	w, h   float64 // the viewBox size, which is the icon's natural size in pixels
