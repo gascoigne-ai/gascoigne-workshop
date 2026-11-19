@@ -19,7 +19,7 @@ type noFileDialog struct{}
 
 func (noFileDialog) Available() bool   { return false }
 func (noFileDialog) Suggested() string { return "" }
-func (noFileDialog) Choose(context.Context, string, bool, string) (string, error) {
+func (noFileDialog) Choose(context.Context, string, port.FileMode, string) (string, error) {
 	return "", errors.New("no file dialog")
 }
 

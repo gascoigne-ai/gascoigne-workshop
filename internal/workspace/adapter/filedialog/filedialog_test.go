@@ -7,6 +7,8 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
 )
 
 // fake puts a script called zenity first on the PATH.
@@ -41,6 +43,32 @@ echo /home/me/file.txt`)
 	args, _ = os.ReadFile(filepath.Join(os.Getenv("PATH"), "zenity.args"))
 	if !strings.Contains(string(args), "--save") || !strings.Contains(string(args), "--filename=/home/me/out.json") {
 		t.Fatalf("save args %q", args)
+	}
+}
+
+// Choose with SaveFile runs the program's save command line, with OpenFile
+// its open one.
+func TestChooseRunsTheCommandLineOfItsMode(t *testing.T) {
+	t.Setenv("HOME", "/home/me")
+	tests := map[string]struct {
+		mode port.FileMode
+		want string
+	}{
+		"save": {port.SaveFile, "--save"},
+		"open": {port.OpenFile, "--file-selection"},
+	}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			fake(t, `echo "$@" > "$0.args"
+echo /home/me/file.txt`)
+			if _, err := (System{}).Choose(context.Background(), "T", test.mode, "out.json"); err != nil {
+				t.Fatal(err)
+			}
+			args, _ := os.ReadFile(filepath.Join(os.Getenv("PATH"), "zenity.args"))
+			if got := strings.Contains(string(args), "--save"); got != (test.mode == port.SaveFile) {
+				t.Fatalf("mode %v ran %q", test.mode, args)
+			}
+		})
 	}
 }
 

@@ -287,7 +287,7 @@ func (d *SettingsDialog) Save(host Host) {
 		}
 		d.Stamp(host, host.SettingsPath())
 		d.rawPending = false
-		host.Send(prefs.MarkSaved{})
+		host.Send(prefs.FileMarked{Saved: true})
 		return
 	}
 	d.rawPending = false

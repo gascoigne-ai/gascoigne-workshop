@@ -7,6 +7,7 @@ import (
 	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/bus"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"io"
@@ -151,8 +152,8 @@ func TestAPanicWhileConnectingIsShownNotFatal(t *testing.T) {
 
 func TestAPanicInTheDesktopDialogIsShownNotFatal(t *testing.T) {
 	a := testApp(t)
-	a.files = fakeDialog{choose: func(context.Context, string, bool, string) (string, error) { panic("dialog boom") }}
-	a.askDesktop("Open", false, "", func(string) {})
+	a.files = fakeDialog{choose: func(context.Context, string, port.FileMode, string) (string, error) { panic("dialog boom") }}
+	a.askDesktop("Open", port.OpenFile, "", func(string) {})
 	statusSoon(t, a, "dialog boom")
 }
 

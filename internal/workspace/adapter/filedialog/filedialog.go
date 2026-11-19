@@ -27,7 +27,7 @@ type tool struct {
 	name string
 	// env adds variables to the program's environment; the Windows script
 	// reads the title and the name from them, never from its text.
-	env func(title, name string, save bool) []string
+	env func(title, name string, mode port.FileMode) []string
 	// open and save get the user's home folder, "" when it is unknown, for
 	// the programs that start in it (detect.go); the macOS and Windows
 	// panels pick their own start folder and ignore it.
@@ -69,15 +69,14 @@ $d.Title = $env:WS_TITLE
 if ($env:WS_SAVE -eq '1') { $d.FileName = $env:WS_NAME; $d.OverwritePrompt = $true }
 if ($d.ShowDialog() -eq 'OK') { [Console]::Out.Write($d.FileName) }`
 
+// winSaveFlag is the WS_SAVE value winScript reads for each mode.
+var winSaveFlag = map[port.FileMode]string{port.OpenFile: "0", port.SaveFile: "1"}
+
 // powershell is on every Windows; -STA is needed by the dialogs.
 var powershell = tool{
 	name: "powershell",
-	env: func(title, name string, save bool) []string {
-		flag := "0"
-		if save {
-			flag = "1"
-		}
-		return []string{"WS_SAVE=" + flag, "WS_TITLE=" + title, "WS_NAME=" + name}
+	env: func(title, name string, mode port.FileMode) []string {
+		return []string{"WS_SAVE=" + winSaveFlag[mode], "WS_TITLE=" + title, "WS_NAME=" + name}
 	},
 	open: func(string, string) []string {
 		return []string{"-NoProfile", "-NonInteractive", "-STA", "-Command", winScript}
@@ -119,14 +118,14 @@ func Available() bool { _, ok := find(); return ok }
 // "" on a system whose dialog is always there.
 func Suggested() string { return suggested(goos, os.Getenv) }
 
-func run(ctx context.Context, title, name string, save bool, build func(tool) []string) (string, error) {
+func run(ctx context.Context, title, name string, mode port.FileMode, build func(tool) []string) (string, error) {
 	program, ok := find()
 	if !ok {
 		return "", noProgram()
 	}
 	cmd := exec.CommandContext(ctx, program.path, build(program.tool)...)
 	if program.tool.env != nil {
-		cmd.Env = append(os.Environ(), program.tool.env(title, name, save)...)
+		cmd.Env = append(os.Environ(), program.tool.env(title, name, mode)...)
 	}
 	out, err := cmd.Output()
 	if err != nil {
@@ -164,12 +163,18 @@ func noProgram() error {
 
 // Open asks for an existing file.
 func Open(ctx context.Context, title string) (string, error) {
-	return run(ctx, title, "", false, func(program tool) []string { return program.open(title, home()) })
+	return run(ctx, title, "", port.OpenFile, func(program tool) []string { return program.open(title, home()) })
 }
 
 // Save asks for a file to write, starting from name.
 func Save(ctx context.Context, title, name string) (string, error) {
-	return run(ctx, title, name, true, func(program tool) []string { return program.save(title, home(), name) })
+	return run(ctx, title, name, port.SaveFile, func(program tool) []string { return program.save(title, home(), name) })
+}
+
+// chooseBy asks for a file the way each mode needs.
+var chooseBy = map[port.FileMode]func(ctx context.Context, title, name string) (string, error){
+	port.OpenFile: func(ctx context.Context, title, _ string) (string, error) { return Open(ctx, title) },
+	port.SaveFile: Save,
 }
 
 // System is the file dialog of this desktop.
@@ -182,11 +187,8 @@ func (System) Available() bool { return Available() }
 func (System) Suggested() string { return Suggested() }
 
 // Choose implements port.FileDialog.
-func (System) Choose(ctx context.Context, title string, save bool, name string) (string, error) {
-	if save {
-		return Save(ctx, title, name)
-	}
-	return Open(ctx, title)
+func (System) Choose(ctx context.Context, title string, mode port.FileMode, name string) (string, error) {
+	return chooseBy[mode](ctx, title, name)
 }
 
 var _ port.FileDialog = System{}

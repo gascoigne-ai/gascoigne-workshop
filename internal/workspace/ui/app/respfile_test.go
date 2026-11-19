@@ -7,6 +7,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/filedialog"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/folders"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -158,7 +159,7 @@ func TestPickFileUsesTheDesktopDialogWhenThereIsOne(t *testing.T) {
 	a := testApp(t)
 	a.files = filedialog.System{}
 	var got string
-	a.pickFile("Pick", false, "", func(name string) { got = name })
+	a.pickFile("Pick", port.OpenFile, "", func(name string) { got = name })
 	if a.browser != nil {
 		t.Fatal("with a dialog program there is no in-app file browser")
 	}
@@ -169,7 +170,7 @@ func TestPickFileUsesTheDesktopDialogWhenThereIsOne(t *testing.T) {
 
 	t.Setenv("PATH", t.TempDir())
 	got = ""
-	a.pickFile("Pick", false, "start.txt", func(name string) { got = name })
+	a.pickFile("Pick", port.OpenFile, "start.txt", func(name string) { got = name })
 	if a.browser == nil || !strings.HasSuffix(a.browser.path.Text, "start.txt") {
 		t.Fatal("without one the in-app file browser asks, with the name")
 	}

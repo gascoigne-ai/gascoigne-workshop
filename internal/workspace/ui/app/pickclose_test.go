@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
 	"testing"
 	"time"
 )
@@ -28,7 +29,7 @@ func TestClosingTheSettingsClosesAFileBrowserOpenedFromThem(t *testing.T) {
 func TestClosingTheSettingsCancelsTheNativeFileDialogAndIgnoresItsAnswer(t *testing.T) {
 	a, _ := openSettingsMenu(t)
 	finished := make(chan struct{})
-	a.files = fakeDialog{choose: func(ctx context.Context, _ string, _ bool, _ string) (string, error) {
+	a.files = fakeDialog{choose: func(ctx context.Context, _ string, _ port.FileMode, _ string) (string, error) {
 		<-ctx.Done() // the dialog stays open until it is cancelled
 		close(finished)
 		return "", ctx.Err()
@@ -51,7 +52,7 @@ func TestClosingTheSettingsCancelsTheNativeFileDialogAndIgnoresItsAnswer(t *test
 func TestAFileDialogOpenedElsewhereSurvivesTheSettingsClosing(t *testing.T) {
 	a, _ := openSettingsMenu(t)
 	a.files = fakeDialog{}
-	a.pickFile("Choose the file to send", false, "", func(string) {}) // the request body's, not the settings'
+	a.pickFile("Choose the file to send", port.OpenFile, "", func(string) {}) // the request body's, not the settings'
 	a.closeSettingsNow()
 	if a.browser == nil {
 		t.Fatal("closing the settings closed a file browser that is not theirs")
@@ -63,9 +64,9 @@ func TestAFileDialogOpenedElsewhereSurvivesTheSettingsClosing(t *testing.T) {
 func TestTakingBackAQuestionLeavesALaterBrowserOpen(t *testing.T) {
 	a, _ := openSettingsMenu(t)
 	a.files = fakeDialog{}
-	cancel := a.pickFile("First", false, "", func(string) {})
+	cancel := a.pickFile("First", port.OpenFile, "", func(string) {})
 	a.closeBrowser()
-	a.pickFile("Second", false, "", func(string) {})
+	a.pickFile("Second", port.OpenFile, "", func(string) {})
 	cancel()
 	if a.browser == nil || a.browser.title != "Second" {
 		t.Fatal("taking back the first question closed the second browser")
@@ -75,12 +76,33 @@ func TestTakingBackAQuestionLeavesALaterBrowserOpen(t *testing.T) {
 // fakeDialog is a file dialog that exists when choose is set; suggest is
 // the program it names for native dialogs.
 type fakeDialog struct {
-	choose  func(ctx context.Context, title string, save bool, name string) (string, error)
+	choose  func(ctx context.Context, title string, mode port.FileMode, name string) (string, error)
 	suggest string
 }
 
 func (dialog fakeDialog) Available() bool   { return dialog.choose != nil }
 func (dialog fakeDialog) Suggested() string { return dialog.suggest }
-func (dialog fakeDialog) Choose(ctx context.Context, title string, save bool, name string) (string, error) {
-	return dialog.choose(ctx, title, save, name)
+func (dialog fakeDialog) Choose(ctx context.Context, title string, mode port.FileMode, name string) (string, error) {
+	return dialog.choose(ctx, title, mode, name)
+}
+
+// The desktop dialog is asked in the mode the caller picked.
+func TestPickFileAsksTheDesktopDialogInTheCallersMode(t *testing.T) {
+	for _, mode := range []port.FileMode{port.OpenFile, port.SaveFile} {
+		a := testApp(t)
+		asked := make(chan port.FileMode, 1)
+		a.files = fakeDialog{choose: func(_ context.Context, _ string, got port.FileMode, _ string) (string, error) {
+			asked <- got
+			return "", port.ErrCancelled
+		}}
+		a.pickFile("Pick", mode, "x.json", func(string) {})
+		select {
+		case got := <-asked:
+			if got != mode {
+				t.Fatalf("asked in mode %v, want %v", got, mode)
+			}
+		case <-time.After(2 * time.Second):
+			t.Fatal("the desktop dialog was not asked")
+		}
+	}
 }

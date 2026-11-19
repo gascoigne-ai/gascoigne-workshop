@@ -20,7 +20,7 @@ import (
 // function that takes the question back.
 type fileChooser struct {
 	usable func(app *App) bool
-	ask    func(app *App, title string, save bool, name string, done func(path string)) (cancel func())
+	ask    func(app *App, title string, mode port.FileMode, name string, done func(path string)) (cancel func())
 }
 
 // fileChoosers are the ways to ask for a file, best first: the desktop's
@@ -36,10 +36,10 @@ var fileChoosers = []fileChooser{
 // without an answer (it kills the native dialog or closes the browser), for
 // a caller that has to take it back, as the settings dialog does when it is
 // closed.
-func (a *App) pickFile(title string, save bool, name string, done func(path string)) (cancel func()) {
+func (a *App) pickFile(title string, mode port.FileMode, name string, done func(path string)) (cancel func()) {
 	for _, chooser := range fileChoosers {
 		if chooser.usable(a) {
-			return chooser.ask(a, title, save, name, done)
+			return chooser.ask(a, title, mode, name, done)
 		}
 	}
 	return func() {}
@@ -47,10 +47,10 @@ func (a *App) pickFile(title string, save bool, name string, done func(path stri
 
 // askDesktop runs the desktop's dialog off the UI goroutine; its answer
 // comes back through the bus.
-func (a *App) askDesktop(title string, save bool, name string, done func(path string)) (cancel func()) {
+func (a *App) askDesktop(title string, mode port.FileMode, name string, done func(path string)) (cancel func()) {
 	ctx, stop := context.WithCancel(context.Background())
 	a.bus.Run(ctx, func(ctx context.Context) bus.Msg {
-		path, err := a.files.Choose(ctx, title, save, name)
+		path, err := a.files.Choose(ctx, title, mode, name)
 		switch {
 		case err == port.ErrCancelled || ctx.Err() != nil: // closed by the user, or taken back
 			return nil
@@ -76,22 +76,24 @@ type fileBrowser struct {
 // browseFiles opens the in-app file browser in the home folder, every
 // time: a browser that remembered the last folder would open somewhere
 // the user no longer expects after a while.
-func (a *App) browseFiles(title string, save bool, name string, done func(path string)) (cancel func()) {
-	return a.browseIn("", title, save, name, done)
+func (a *App) browseFiles(title string, mode port.FileMode, name string, done func(path string)) (cancel func()) {
+	return a.browseIn("", title, mode, name, done)
+}
+
+// browserModes maps what a caller asks for to what the in-app browser shows.
+var browserModes = map[port.FileMode]filebrowser.Mode{
+	port.OpenFile: filebrowser.Open,
+	port.SaveFile: filebrowser.Save,
 }
 
 // browseIn opens the in-app file browser in start, or in the home folder
 // when start is "" (the root when that is unknown too).
-func (a *App) browseIn(start, title string, save bool, name string, done func(path string)) (cancel func()) {
+func (a *App) browseIn(start, title string, mode port.FileMode, name string, done func(path string)) (cancel func()) {
 	home, err := a.folders.Home()
 	if err != nil {
 		home = "" // ~ is then typed as a name, and the root is the last start
 	}
-	mode := filebrowser.Open
-	if save {
-		mode = filebrowser.Save
-	}
-	model, effect := filebrowser.New(mode, start, home, name)
+	model, effect := filebrowser.New(browserModes[mode], start, home, name)
 	browser := &fileBrowser{model: model, title: title, done: done}
 	a.browser = browser
 	a.followBrowser(effect)

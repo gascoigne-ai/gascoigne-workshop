@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/tree"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -260,7 +261,7 @@ func (step browseStep) apply(app *App) error {
 	if err != nil {
 		return fmt.Errorf("screenshot file browser folder %q: %w", step.dir, err)
 	}
-	app.browseIn(dir, "Choose the file to send", false, "", func(string) {})
+	app.browseIn(dir, "Choose the file to send", port.OpenFile, "", func(string) {})
 	return nil
 }
 

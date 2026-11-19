@@ -106,7 +106,7 @@ func (d *SettingsDialog) RawEdited(host Host) {
 	}
 	if !parsed.AutoSave { // held back until the user saves
 		d.rawPending = true
-		host.Send(prefs.MarkUnsaved{})
+		host.Send(prefs.FileMarked{Saved: false})
 		return
 	}
 	d.rawPending = false

@@ -18,13 +18,16 @@ type MenuItem struct {
 	Run   func()
 }
 
+// EditFunc changes the settings a page edited; Change and Edit carry it.
+type EditFunc func(*settings.Settings)
+
 // Change edits the settings from the form, applies them, saves the file as
 // the user has chosen and rebuilds the Colors page.
-type Change struct{ Edit func(*settings.Settings) }
+type Change struct{ Edit EditFunc }
 
 // Edit is Change from the Colors and Shortcuts pages, which keep their own
 // fields and notes.
-type Edit struct{ Edit func(*settings.Settings) }
+type Edit struct{ Edit EditFunc }
 
 // ScaleLive applies an interface scale while its slider is dragged,
 // without saving; Save writes the file when the drag ends.
@@ -40,11 +43,9 @@ type Replace struct{ Settings settings.Settings }
 // Persist writes the settings in effect to the file now.
 type Persist struct{}
 
-// MarkUnsaved and MarkSaved record what the dialog did with the file itself.
-type (
-	MarkUnsaved struct{}
-	MarkSaved   struct{}
-)
+// FileMarked records what the dialog did with the file itself: Saved is
+// true once it was written, false when an edit left it behind.
+type FileMarked struct{ Saved bool }
 
 // Toast shows a message over the window.
 type Toast struct {
@@ -76,18 +77,17 @@ type MarkDirty struct{}
 // Later runs Func on the UI goroutine.
 type Later struct{ Func func() }
 
-func (Change) prefsMsg()      {}
-func (Edit) prefsMsg()        {}
-func (ScaleLive) prefsMsg()   {}
-func (Save) prefsMsg()        {}
-func (Replace) prefsMsg()     {}
-func (Persist) prefsMsg()     {}
-func (MarkUnsaved) prefsMsg() {}
-func (MarkSaved) prefsMsg()   {}
-func (Toast) prefsMsg()       {}
-func (SetStatus) prefsMsg()   {}
-func (OpenMenu) prefsMsg()    {}
-func (PickFile) prefsMsg()    {}
-func (Close) prefsMsg()       {}
-func (MarkDirty) prefsMsg()   {}
-func (Later) prefsMsg()       {}
+func (Change) prefsMsg()     {}
+func (Edit) prefsMsg()       {}
+func (ScaleLive) prefsMsg()  {}
+func (Save) prefsMsg()       {}
+func (Replace) prefsMsg()    {}
+func (Persist) prefsMsg()    {}
+func (FileMarked) prefsMsg() {}
+func (Toast) prefsMsg()      {}
+func (SetStatus) prefsMsg()  {}
+func (OpenMenu) prefsMsg()   {}
+func (PickFile) prefsMsg()   {}
+func (Close) prefsMsg()      {}
+func (MarkDirty) prefsMsg()  {}
+func (Later) prefsMsg()      {}

@@ -154,8 +154,6 @@ func (h *fakeHost) Pointer() (int, int)               { return 400, 300 }
 func (h *fakeHost) Unsaved() bool                     { return h.unsaved }
 func (h *fakeHost) Persist()                          { _ = settingsDisk.Save(h.path, h.current); h.unsaved = false; h.saved++ }
 func (h *fakeHost) SettingsStore() port.SettingsStore { return settingsfile.Files{} }
-func (h *fakeHost) MarkUnsaved()                      { h.unsaved = true }
-func (h *fakeHost) MarkSaved()                        { h.unsaved = false }
 
 func TestAFileSettingHasAFolderButtonInsideItsFieldThatFillsIt(t *testing.T) {
 	var d SettingsDialog
@@ -280,10 +278,8 @@ func (h *fakeHost) Send(msg prefs.Msg) {
 		h.Replace(msg.Settings)
 	case prefs.Persist:
 		h.Persist()
-	case prefs.MarkUnsaved:
-		h.MarkUnsaved()
-	case prefs.MarkSaved:
-		h.MarkSaved()
+	case prefs.FileMarked:
+		h.unsaved = !msg.Saved
 	case prefs.Toast:
 		h.Toast(msg.Text, msg.Level)
 	case prefs.SetStatus:

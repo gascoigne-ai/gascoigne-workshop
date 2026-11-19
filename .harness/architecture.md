@@ -1743,9 +1743,9 @@ that change `App`.
 -  **Settings dialog** (`internal/settings/ui/settingsui`; `settingsui.Dialog` is `App.prefs` and
   the App is its `settingsui.Host`: the host's methods only read, and everything a page asks for is
   a `prefs` message (`internal/settings/controller/prefs`: `Change`, `Edit`, `ScaleLive`, `Save`,
-  `Replace`, `Persist`, `Toast`, `OpenMenu`, `PickFile`, `Close`, ...) sent with `Host.Send` and
+  `Replace`, `Persist`, `FileMarked{Saved}`, `Toast`, `OpenMenu`, `PickFile`, `Close`, ...) sent with `Host.Send` and
   applied by `App.Send` in `settingshost.go`; `Change` from the form also rebuilds the Colors page,
-  `Edit` from the Colors and Shortcuts pages does not; `SetFonts` stays a method because its error
+  `Edit` from the Colors and Shortcuts pages does not (both carry a `prefs.EditFunc`); `SetFonts` stays a method because its error
   is the answer): a 760x560 modal dialog over a dimmed window that the user can resize by dragging
   any edge or corner (`widget.Resizable`: the size changes by twice the pointer's movement so the
   edge follows it; 520x360 at least, the window less a 40 px margin at most; a double click on an
@@ -1888,7 +1888,7 @@ that change `App`.
   `savePath`), which each opens on that folder with the name filled in. With no home folder they
   start without a folder (no `--filename` on open, kdialog `.`, the bare name on save, which the
   programs read against the working directory). The macOS and Windows panels choose their own start
-  folder. `App.pickFile` takes the first usable row of `fileChoosers`: the desktop's dialog
+  folder. `App.pickFile(title, mode, name, done)` takes a `port.FileMode` (`OpenFile` or `SaveFile`, which `port.FileDialog.Choose` and the in-app browser's mode table both read) and the first usable row of `fileChoosers`: the desktop's dialog
   (`askDesktop`, in a goroutine, the answer through the bus: a dispatched `func()` runs on the UI
   goroutine in the next frame), else the in-app file browser (decision 18). The body type `File`
   (`model.BodyFile`, `reqTab.file`) sends a file as it is; its editor says "found" or "not found"

@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"errors"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
 	"reflect"
 	"strings"
 
@@ -174,7 +175,7 @@ func (a *App) protoList(tab *reqTab, list editor.ProtoList, caption, addLabel st
 
 // addProtoFile asks for a .proto file and adds it to the request.
 func (a *App) addProtoFile(tab *reqTab) {
-	a.pickFile("Choose a .proto file", false, "", func(path string) {
+	a.pickFile("Choose a .proto file", port.OpenFile, "", func(path string) {
 		tab.proto.filesChosen = true
 		editRequest(tab, editor.ProtoPathAdded{List: editor.ProtoFiles, Path: path})
 	})

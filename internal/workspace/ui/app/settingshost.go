@@ -3,6 +3,7 @@ package app
 import (
 	"errors"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/controller/viewer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
@@ -10,7 +11,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fileversion"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/sysinfo"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
+	sport "github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/shortcutpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/systempage"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -54,7 +55,7 @@ func (a *App) closeSettingsNow() {
 // pickSettingsFile asks for a file and calls done with its path.
 func (a *App) pickSettingsFile(title string, done func(path string)) {
 	a.cancelSettingsFilePick()
-	a.cancelSettingsPick = a.pickFile(title, false, "", done)
+	a.cancelSettingsPick = a.pickFile(title, port.OpenFile, "", done)
 }
 
 // cancelSettingsFilePick takes back the file question the settings dialog
@@ -188,7 +189,7 @@ func (a *App) askSaveSettings() {
 
 // SettingsStore is the settings file's store; it refuses to write a file a
 // newer build wrote, for the whole session.
-func (a *App) SettingsStore() port.SettingsStore {
+func (a *App) SettingsStore() sport.SettingsStore {
 	if a.settingsAccess == fileversion.ReadOnly {
 		return readOnlySettings{a.settingFiles}
 	}
@@ -200,13 +201,13 @@ func (a *App) SettingsStore() port.SettingsStore {
 var errNewerSettings = errors.New("settings.json was written by a newer version of the workshop; it is not changed this session")
 
 // readOnlySettings reads the settings file but writes nothing.
-type readOnlySettings struct{ port.SettingsStore }
+type readOnlySettings struct{ sport.SettingsStore }
 
 func (readOnlySettings) Save(string, settings.Settings) error { return errNewerSettings }
 func (readOnlySettings) WriteText(string, []byte) error       { return errNewerSettings }
 
 // FontStore is the installed fonts of this machine.
-func (a *App) FontStore() port.FontStore { return a.fonts }
+func (a *App) FontStore() sport.FontStore { return a.fonts }
 
 // Send applies a message of a settings page. The page's host is the App:
 // its other methods only read.
@@ -224,10 +225,8 @@ func (a *App) Send(msg prefs.Msg) {
 		a.applySettings(msg.Settings)
 	case prefs.Persist:
 		a.persistSettings()
-	case prefs.MarkUnsaved:
-		a.settingsUnsaved = true
-	case prefs.MarkSaved:
-		a.settingsUnsaved = false
+	case prefs.FileMarked:
+		a.settingsUnsaved = !msg.Saved
 	case prefs.Toast:
 		a.toast(msg.Text, msg.Level)
 	case prefs.SetStatus:

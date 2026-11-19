@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
 	"path/filepath"
 	"strings"
 
@@ -36,7 +37,7 @@ func (a *App) saveBody(tab *reqTab) {
 		a.toast("There is no response to save", severity.Error)
 		return
 	}
-	a.pickFile("Save response body", true, respview.SuggestedFileName(tab.Resp), func(path string) { a.writeBody(tab, path) })
+	a.pickFile("Save response body", port.SaveFile, respview.SuggestedFileName(tab.Resp), func(path string) { a.writeBody(tab, path) })
 }
 
 // writeBody saves the body to path (a leading ~ is the home folder); an
