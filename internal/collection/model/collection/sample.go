@@ -35,3 +35,13 @@ func GitHubSample() model.Collection {
 		Vars: []model.KV{kv("baseUrl", "https://api.github.com", "")},
 	}
 }
+
+// SampleStart is the folder and request a sample opens on, its search call:
+// the first request of its second folder. ok is false for a collection
+// without them, which then opens as any other.
+func SampleStart(col *model.Collection) (folder *model.Folder, request *model.Request, ok bool) {
+	if len(col.Folders) < 2 || len(col.Folders[1].Requests) == 0 {
+		return nil, nil, false
+	}
+	return col.Folders[1], col.Folders[1].Requests[0], true
+}

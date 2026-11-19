@@ -538,8 +538,7 @@ func (a *App) apply(result sendResult) {
 	t.Remember(t.Resp, a.now())
 	t.Resp = &result.resp
 	a.saveHistory(t)
-	if path := a.requestPath(t.Req); path != "" {
-		owner, _ := a.open.Owner(model.Of(t.Req))
+	if owner, path, _ := a.holderOf(t.Req); path != "" {
 		a.sent.Record(a, a.now(), owner.Dir, path, t.Req, result.resp.Status)
 	}
 	a.calls.Answer(a.now(), t.Req, &result.resp)

@@ -161,7 +161,7 @@ func (a *App) swallowMenuKeys() {
 
 // overlayOpen reports whether a menu or dialog has the keyboard.
 func (a *App) overlayOpen() bool {
-	return MenuOpen(a.ctx) || a.dialog != nil || a.picker != nil || a.browser != nil || a.calls.Shown()
+	return a.openLayers().HoldsKeyboard()
 }
 
 // pickerView is the destination picker while it is open, nothing otherwise.

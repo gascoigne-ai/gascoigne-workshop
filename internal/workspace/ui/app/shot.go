@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/tree"
 	"image"
 	"image/png"
 	"slices"
@@ -243,7 +244,7 @@ func parseSetting(spec string) (key string, value any, err error) {
 func (a *App) findRequestByName(name string) *model.Request {
 	var found *model.Request
 	a.eachRoot(func(root *model.Folder) {
-		walkRequests(root, "", func(_ string, req *model.Request) {
+		tree.WalkRequests(root, "", func(_ string, req *model.Request) {
 			if found == nil && req.Name == name {
 				found = req
 			}

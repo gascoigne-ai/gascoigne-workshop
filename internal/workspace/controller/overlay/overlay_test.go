@@ -19,3 +19,17 @@ func TestEscapeClosesTheTopmostOpenLayerFirst(t *testing.T) {
 		t.Fatal("nothing is open")
 	}
 }
+
+func TestOnlyMenusDialogsPickersAndTheCallLogHoldTheKeyboard(t *testing.T) {
+	holders := map[Layer]bool{ContextMenu: true, Dialog: true, DestPicker: true, FileBrowser: true, CallLog: true}
+	for layer := Layer(0); layer < layers; layer++ {
+		var open Open
+		open[layer] = true
+		if got := open.HoldsKeyboard(); got != holders[layer] {
+			t.Errorf("layer %d: HoldsKeyboard = %v, want %v", layer, got, holders[layer])
+		}
+	}
+	if (Open{}).HoldsKeyboard() {
+		t.Error("nothing open holds the keyboard")
+	}
+}

@@ -2,6 +2,7 @@ package app
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/collections"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/tree"
 	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
@@ -49,18 +50,22 @@ func (a *App) duplicateTab(index int) {
 	req := a.list.Tabs[index].Req
 	owner, ok := a.entryFor(req)
 	if !ok { // nothing is open: the copy is a tab of its own
-		clone := req.Clone()
-		clone.Name += " copy"
+		clone := copyOf(req)
 		a.openRequest(&clone)
 		return
 	}
 	cp, _ := owner.Collection.Folder.Duplicate(req).(*model.Request)
 	if cp == nil {
-		clone := req.Clone()
-		clone.Name += " copy"
-		cp = owner.Collection.Folder.AddRequest(clone)
+		cp = owner.Collection.Folder.AddRequest(copyOf(req))
 	}
 	a.openRequest(cp)
+}
+
+// copyOf is a clone of req named as a copy.
+func copyOf(req *model.Request) model.Request {
+	clone := req.Clone()
+	clone.Name += " copy"
+	return clone
 }
 
 // ---- table rows ---------------------------------------------------------------
@@ -153,19 +158,13 @@ func (a *App) SetStatus(text string) { a.status = text }
 // collection not saved, or older than the folder in a row, when the one
 // collection open was the first.
 func (a *App) OpenRequest(folder, path string) bool {
-	var found *model.Request
 	for _, entry := range a.sentCandidates(folder) {
-		walkRequests(&entry.Collection.Folder, "", func(candidate string, req *model.Request) {
-			if candidate == path && found == nil {
-				found = req
-			}
-		})
+		if req := tree.At(&entry.Collection.Folder, path); req != nil {
+			a.openRequest(req)
+			return true
+		}
 	}
-	if found == nil {
-		return false
-	}
-	a.openRequest(found)
-	return true
+	return false
 }
 
 // sentCandidates are the open collections a sent row of folder may name,
@@ -198,13 +197,14 @@ func (a *App) Badge(protocol model.Protocol, method string) Node {
 // ---- the response ------------------------------------------------------------------
 
 func (a *App) responseMenuItems(tab *reqTab) []MenuItem {
+	noBody := tab.Resp == nil || tab.Resp.Err != ""
 	return []MenuItem{
 		{Label: "Copy", Shortcut: "Ctrl+C", Disabled: !tab.view.Selected(), Run: func() {
 			_ = a.ctx.Clipboard.Write(tab.view.SelectedText())
 		}},
 		{Label: "Copy body", Run: func() { a.copyBody(tab) }},
-		{Label: "Save body...", Disabled: tab.Resp == nil || tab.Resp.Err != "", Run: func() { a.saveBody(tab) }},
-		{Label: "Open in browser", Disabled: tab.Resp == nil || tab.Resp.Err != "", Run: func() { a.openInBrowser(tab) }},
+		{Label: "Save body...", Disabled: noBody, Run: func() { a.saveBody(tab) }},
+		{Label: "Open in browser", Disabled: noBody, Run: func() { a.openInBrowser(tab) }},
 		{Label: "Copy as cURL", Run: func() { a.copyCurl(tab) }},
 		menuSeparator,
 		{Label: "Select all", Shortcut: "Ctrl+A", Run: func() { tab.view.SelectLines(0, len(tab.view.Lines)-1) }},

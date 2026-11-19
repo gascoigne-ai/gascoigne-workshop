@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/collections"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/serial"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
 
@@ -57,8 +58,8 @@ func (a *App) openWorkspace(dir string) {
 		sample = a.includeStart(a.rememberedEnv(""))
 	}
 	first := a.open.Entries[0].Collection
-	if first == sample && len(first.Folders) > 1 { // the sample opens on its search call
-		a.openRequest(first.Folders[1].Requests[0])
+	if _, start, ok := collection.SampleStart(first); ok && first == sample { // the sample opens on its search call
+		a.openRequest(start)
 	} else {
 		a.focusCollection(first)
 	}
@@ -81,13 +82,13 @@ func (a *App) toastNewer(folder string, err error) {
 // (nil for the config's). Only one is opened, however often a settings
 // file names it.
 func (a *App) includeStart(env string) (sample *model.Collection) {
-	if a.startOpen() {
+	if _, open := a.openAt(""); open {
 		return nil
 	}
 	col, isSample := a.startCollection()
-	if isSample && len(col.Folders) > 1 { // the sample opens on its search call
+	if folder, _, ok := collection.SampleStart(col); ok && isSample { // the sample opens on its search call
 		a.expanded[&col.Folder] = true
-		a.expanded[col.Folders[1]] = true
+		a.expanded[folder] = true
 	} else {
 		a.expandAll(&col.Folder)
 	}
@@ -96,16 +97,6 @@ func (a *App) includeStart(env string) (sample *model.Collection) {
 		return col
 	}
 	return nil
-}
-
-// startOpen reports whether a collection that is not saved is open.
-func (a *App) startOpen() bool {
-	for _, entry := range a.open.Entries {
-		if entry.Dir == "" {
-			return true
-		}
-	}
-	return false
 }
 
 // startCollection is the client config's tree, or the sample when there is
@@ -277,12 +268,7 @@ func (a *App) openWorkspaceAt(dir string) {
 	a.updateTabs(tabs.Reset{})
 	a.selected = model.Node{}
 	a.expanded = map[*model.Folder]bool{}
-	col := &loaded
-	a.expandAll(&col.Folder)
-	a.include(col, dir, env)
-	a.focusCollection(col)
-	a.markSaved(col)
-	a.rememberCollections()
+	a.showOpened(a.openLoaded(loaded, dir, env))
 	a.status = "Opened " + dir
 }
 

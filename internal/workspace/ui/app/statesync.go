@@ -3,6 +3,7 @@ package app
 import (
 	"encoding/json"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/collections"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/tree"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/serial"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
 	"path/filepath"
@@ -20,42 +21,21 @@ import (
 // before it is written, so a drag does not write on every frame.
 const stateDebounce = time.Second
 
-// pathSep joins folder and request names in remembered paths.
-const pathSep = "/"
-
-// walkFolders calls fn for every folder below root, with its path.
-func walkFolders(folder *model.Folder, prefix string, fn func(path string, folder *model.Folder)) {
-	for _, sub := range folder.Folders {
-		p := prefix + sub.Name
-		fn(p, sub)
-		walkFolders(sub, p+pathSep, fn)
+// holderOf is the open collection that holds req and req's remembered path in
+// it; ok is false when it is in no open collection.
+func (a *App) holderOf(req *model.Request) (entry collections.Entry, path string, ok bool) {
+	entry, ok = a.open.Owner(model.Of(req))
+	if !ok {
+		return collections.Entry{}, "", false
 	}
-}
-
-// walkRequests calls fn for every request below root, with its path.
-func walkRequests(folder *model.Folder, prefix string, fn func(path string, request *model.Request)) {
-	for _, r := range folder.Requests {
-		fn(prefix+r.Name, r)
-	}
-	for _, sub := range folder.Folders {
-		walkRequests(sub, prefix+sub.Name+pathSep, fn)
-	}
+	return entry, tree.PathOf(&entry.Collection.Folder, req), true
 }
 
 // requestPath is the remembered path of req in its collection, "" when it
 // is in no open collection.
 func (a *App) requestPath(req *model.Request) string {
-	owner, ok := a.open.Owner(model.Of(req))
-	if !ok {
-		return ""
-	}
-	found := ""
-	walkRequests(&owner.Collection.Folder, "", func(name string, request *model.Request) {
-		if request == req && found == "" {
-			found = name
-		}
-	})
-	return found
+	_, path, _ := a.holderOf(req)
+	return path
 }
 
 // historyKeySep joins a collection's folder and a request path in a
@@ -68,8 +48,7 @@ const historyKeySep = "#"
 // same path. A collection not saved yet has no folder, so its key is the
 // bare path. "" when req is in no open collection.
 func (a *App) historyKey(req *model.Request) string {
-	path := a.requestPath(req)
-	owner, ok := a.open.Owner(model.Of(req))
+	owner, path, ok := a.holderOf(req)
 	if path == "" || !ok || owner.Dir == "" {
 		return path
 	}
@@ -123,8 +102,7 @@ func (a *App) snapshot() state.State {
 	}
 	var kept []int // tab index -> remembered index, -1 when not in the tree
 	for _, t := range a.openTabs() {
-		if p := a.requestPath(t.Req); p != "" {
-			owner, _ := a.open.Owner(model.Of(t.Req))
+		if owner, p, _ := a.holderOf(t.Req); p != "" {
 			s.Tabs = append(s.Tabs, state.Tab{Collection: owner.Dir, Path: p, Pane: t.paneTab, PaneLabel: requestPaneLabel(t), Resp: t.respTab})
 			kept = append(kept, len(s.Tabs)-1)
 		} else {
@@ -149,7 +127,7 @@ func (a *App) snapshot() state.State {
 // its folder, or, for the collection that is not saved, in Expanded.
 func (a *App) snapshotExpanded(saved *state.State, entry collections.Entry) {
 	var paths []string
-	walkFolders(&entry.Collection.Folder, "", func(name string, folder *model.Folder) {
+	tree.WalkFolders(&entry.Collection.Folder, "", func(name string, folder *model.Folder) {
 		if a.expanded[folder] {
 			paths = append(paths, name)
 		}
@@ -173,7 +151,7 @@ func (a *App) expandPaths(col *model.Collection, paths []string) {
 		return
 	}
 	for _, p := range paths {
-		walkFolders(&col.Folder, "", func(path string, folder *model.Folder) {
+		tree.WalkFolders(&col.Folder, "", func(path string, folder *model.Folder) {
 			if path == p {
 				a.expanded[folder] = true
 			}
@@ -265,13 +243,7 @@ func (a *App) requestAt(col *model.Collection, path string) *model.Request {
 	if col == nil {
 		return nil
 	}
-	var found *model.Request
-	walkRequests(&col.Folder, "", func(name string, request *model.Request) {
-		if name == path && found == nil {
-			found = request
-		}
-	})
-	return found
+	return tree.At(&col.Folder, path)
 }
 
 // RestoredWindow is the window geometry of the last run, clamped to a

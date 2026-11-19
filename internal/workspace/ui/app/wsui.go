@@ -123,6 +123,12 @@ func (a *App) disconnect(tab *reqTab) {
 	}
 }
 
+// setComposer replaces the composer's text with text and focuses it.
+func (tab *reqTab) setComposer(text string) {
+	tab.msg = NewTextField(text)
+	tab.msg.Focused = true
+}
+
 // sendMessage sends the composer's text and empties it.
 func (a *App) sendMessage(tab *reqTab) {
 	if tab.Session == nil || tab.msg.Text == "" {
@@ -134,8 +140,7 @@ func (a *App) sendMessage(tab *reqTab) {
 		return
 	}
 	a.sendInOrder(tab, send)
-	tab.msg = NewTextField("")
-	tab.msg.Focused = true
+	tab.setComposer("")
 }
 
 // queuedSend is a send or ping waiting in a tab's outbox; it writes with
@@ -360,8 +365,7 @@ func (a *App) composeCall(tab *reqTab, tool model.MCPTool) {
 	if tool.Schema != nil {
 		args = model.Skeleton(tool.Schema)
 	}
-	tab.msg = NewTextField("call " + tool.Name + " " + args)
-	tab.msg.Focused = true
+	tab.setComposer("call " + tool.Name + " " + args)
 }
 
 // resourceMenu lists the announced resources; picking one composes a read.
@@ -373,8 +377,7 @@ func (a *App) resourceMenu(tab *reqTab) []MenuItem {
 			label = r.Name + "  " + r.URI
 		}
 		items = append(items, MenuItem{Label: label, Run: func() {
-			tab.msg = NewTextField("read " + r.URI)
-			tab.msg.Focused = true
+			tab.setComposer("read " + r.URI)
 		}})
 	}
 	return items
@@ -386,8 +389,7 @@ func (a *App) promptMenu(tab *reqTab) []MenuItem {
 	items := make([]MenuItem, 0, len(tab.Prompts))
 	for _, p := range tab.Prompts {
 		items = append(items, MenuItem{Label: p.Name, Run: func() {
-			tab.msg = NewTextField("prompt " + p.Name + " " + p.ArgsJSON())
-			tab.msg.Focused = true
+			tab.setComposer("prompt " + p.Name + " " + p.ArgsJSON())
 		}})
 	}
 	return items
@@ -402,8 +404,7 @@ func (a *App) formatMessage(tab *reqTab) {
 		a.toast(err.Error(), true)
 		return
 	}
-	tab.msg = NewTextField(compact)
-	tab.msg.Focused = true
+	tab.setComposer(compact)
 }
 
 // requestPanesFor are the panes of the request side of tab.

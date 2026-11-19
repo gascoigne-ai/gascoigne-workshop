@@ -33,3 +33,14 @@ func (open Open) Top() (Layer, bool) {
 	}
 	return 0, false
 }
+
+// HoldsKeyboard reports whether a menu, dialog, picker, browser or the call
+// log is open: the layers whose keys the text under them must not act on.
+func (open Open) HoldsKeyboard() bool {
+	for layer := ContextMenu; layer <= CallLog; layer++ {
+		if open[layer] {
+			return true
+		}
+	}
+	return false
+}

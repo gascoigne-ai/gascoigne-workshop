@@ -99,9 +99,9 @@ func (a *App) treeMenuItems(row collection.Row) []MenuItem {
 	create := []MenuItem{
 		{Label: "New request", Run: func() { a.newRequestIn(row.Dir) }},
 		{Label: "New folder", Run: func() { a.newFolderIn(row.Dir) }},
-		{Label: "Import cURL from clipboard", Run: func() { a.importCurl(row.Dir) }},
-		{Label: "Import OpenAPI from clipboard", Run: func() { a.importOpenAPI(row.Dir) }},
-		{Label: "Import Postman from clipboard", Run: func() { a.importPostman(row.Dir) }},
+		{Label: "Import cURL from clipboard", Run: func() { a.importFolder(row.Dir, curlKind) }},
+		{Label: "Import OpenAPI from clipboard", Run: func() { a.importFolder(row.Dir, openAPIKind) }},
+		{Label: "Import Postman from clipboard", Run: func() { a.importFolder(row.Dir, postmanKind) }},
 		{Label: "Export as Postman...", Run: func() { a.exportPostman(row.Dir) }},
 		{Label: "Variables", Run: func() { a.editVars(row.Dir) }},
 		sep,
@@ -427,24 +427,91 @@ func (a *App) treeKeys(in core.Input) {
 	}
 }
 
-// importCurl adds the cURL command on the clipboard to dir as a new
-// request and opens it.
-func (a *App) importCurl(dir *model.Folder) {
+// imported is what a clipboard importer read: a folder or a single request,
+// the collection variables it brings and the parts it left out.
+type imported struct {
+	folder  *model.Folder
+	request *model.Request
+	vars    []model.KV
+	skipped []string
+}
+
+// importKind is one row of the importers: how a clipboard text is read and
+// how a refusal and the parts left out are worded.
+type importKind struct {
+	refusal     string // starts the toast of a text that is not of this kind
+	skippedWhat string // what the parts left out could not be ("parts could not be read")
+	parse       func(text string) (imported, error)
+}
+
+var (
+	curlKind = importKind{"Not a cURL command: ", "", func(text string) (imported, error) {
+		req, err := model.ParseCurl(text)
+		if err != nil {
+			return imported{}, err
+		}
+		req.Name = curlName(req)
+		return imported{request: &req}, nil
+	}}
+	openAPIKind = importKind{"Not an OpenAPI document: ", "parts could not be read", func(text string) (imported, error) {
+		res, err := openapi.Parse([]byte(text))
+		if err != nil {
+			return imported{}, err
+		}
+		baseURL := model.KV{Name: openapi.BaseURLVar, Value: res.BaseURL, Enabled: true}
+		return imported{folder: res.Folder, vars: []model.KV{baseURL}, skipped: res.Skipped}, nil
+	}}
+	postmanKind = importKind{"Not a Postman collection: ", "things could not be imported", func(text string) (imported, error) {
+		res, err := postman.Parse([]byte(text))
+		if err != nil {
+			return imported{}, err
+		}
+		return imported{folder: res.Folder, vars: res.Vars, skipped: res.Skipped}, nil
+	}}
+)
+
+// importFolder adds what the clipboard holds, read as kind, to dir and
+// opens it; a text of another kind is explained in a toast.
+func (a *App) importFolder(dir *model.Folder, kind importKind) {
 	text, err := a.ctx.Clipboard.Read()
 	if err != nil {
 		a.toast("Cannot read the clipboard: "+err.Error(), true)
 		return
 	}
-	req, err := model.ParseCurl(text)
+	got, err := kind.parse(text)
 	if err != nil {
-		a.toast("Not a cURL command: "+err.Error(), true)
+		a.toast(kind.refusal+err.Error(), true)
 		return
 	}
-	req.Name = dir.UniqueName(curlName(req))
-	added := dir.AddRequest(req)
+	name := a.attachImport(dir, got)
+	a.status = "Imported " + name
+	if len(got.skipped) > 0 {
+		a.toast(fmt.Sprintf("%d %s, first: %s", len(got.skipped), kind.skippedWhat, got.skipped[0]), true)
+	}
+}
+
+// attachImport puts got into dir under a name free there and returns it.
+func (a *App) attachImport(dir *model.Folder, got imported) string {
 	a.expanded[dir] = true
-	a.openRequest(added)
-	a.status = "Imported " + added.Name
+	if got.request != nil {
+		got.request.Name = dir.UniqueName(got.request.Name)
+		a.openRequest(dir.AddRequest(*got.request))
+		return got.request.Name
+	}
+	got.folder.Name = dir.UniqueName(got.folder.Name)
+	dir.Folders = append(dir.Folders, got.folder)
+	if col := a.ownerOf(model.Of(dir)); col != nil {
+		for _, v := range got.vars {
+			if !model.Defined(v.Name, col.Vars) {
+				col.Vars = append(col.Vars, v)
+			}
+		}
+	}
+	a.expandAll(got.folder)
+	if first := tree.FirstRequest(got.folder); first != nil {
+		a.openRequest(first)
+	}
+	return got.folder.Name
 }
 
 // curlName names an imported request after its method and path.
@@ -460,36 +527,6 @@ func curlName(request model.Request) string {
 		path = "/"
 	}
 	return request.Method + " " + path
-}
-
-// importOpenAPI adds the OpenAPI document (JSON) on the clipboard to dir as
-// a folder of requests, and defines the baseUrl variable if the
-// collection has none.
-func (a *App) importOpenAPI(dir *model.Folder) {
-	text, err := a.ctx.Clipboard.Read()
-	if err != nil {
-		a.toast("Cannot read the clipboard: "+err.Error(), true)
-		return
-	}
-	res, err := openapi.Parse([]byte(text))
-	if err != nil {
-		a.toast("Not an OpenAPI document: "+err.Error(), true)
-		return
-	}
-	res.Folder.Name = dir.UniqueName(res.Folder.Name)
-	dir.Folders = append(dir.Folders, res.Folder)
-	if col := a.ownerOf(model.Of(dir)); col != nil && !model.Defined(openapi.BaseURLVar, col.Vars) {
-		col.Vars = append(col.Vars, model.KV{Name: openapi.BaseURLVar, Value: res.BaseURL, Enabled: true})
-	}
-	a.expanded[dir] = true
-	a.expandAll(res.Folder)
-	if first := tree.FirstRequest(res.Folder); first != nil {
-		a.openRequest(first)
-	}
-	a.status = "Imported " + res.Folder.Name
-	if len(res.Skipped) > 0 {
-		a.toast(fmt.Sprintf("%d parts could not be read, first: %s", len(res.Skipped), res.Skipped[0]), true)
-	}
 }
 
 // dragExpandTicks is how long a drag must rest over a closed folder
@@ -509,39 +546,6 @@ func (a *App) dragHover() {
 	if a.hoverTicks++; a.hoverTicks >= dragExpandTicks {
 		a.expanded[f] = true
 		a.hoverFolder, a.hoverTicks = nil, 0
-	}
-}
-
-// importPostman adds the Postman collection (JSON) on the clipboard to dir
-// as a folder, and adds its variables that the collection does not have.
-func (a *App) importPostman(dir *model.Folder) {
-	text, err := a.ctx.Clipboard.Read()
-	if err != nil {
-		a.toast("Cannot read the clipboard: "+err.Error(), true)
-		return
-	}
-	res, err := postman.Parse([]byte(text))
-	if err != nil {
-		a.toast("Not a Postman collection: "+err.Error(), true)
-		return
-	}
-	res.Folder.Name = dir.UniqueName(res.Folder.Name)
-	dir.Folders = append(dir.Folders, res.Folder)
-	if col := a.ownerOf(model.Of(dir)); col != nil {
-		for _, v := range res.Vars {
-			if !model.Defined(v.Name, col.Vars) {
-				col.Vars = append(col.Vars, v)
-			}
-		}
-	}
-	a.expanded[dir] = true
-	a.expandAll(res.Folder)
-	if first := tree.FirstRequest(res.Folder); first != nil {
-		a.openRequest(first)
-	}
-	a.status = "Imported " + res.Folder.Name
-	if len(res.Skipped) > 0 {
-		a.toast(fmt.Sprintf("%d things could not be imported, first: %s", len(res.Skipped), res.Skipped[0]), true)
 	}
 }
 

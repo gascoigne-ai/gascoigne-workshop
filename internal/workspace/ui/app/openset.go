@@ -120,10 +120,15 @@ func (a *App) addCollection(dir string) error {
 	if err != nil {
 		return err
 	}
+	a.showOpened(col)
+	return nil
+}
+
+// showOpened focuses a collection just opened and remembers the open set.
+func (a *App) showOpened(col *model.Collection) {
 	a.focusCollection(col)
 	a.markSaved(col) // a blank request added to an empty collection is not an edit
 	a.rememberCollections()
-	return nil
 }
 
 // loadCollection opens the collection in dir with the environment called
@@ -136,10 +141,15 @@ func (a *App) loadCollection(dir, env string) (*model.Collection, error) {
 	if err != nil {
 		return nil, err
 	}
+	return a.openLoaded(loaded, dir, env), nil
+}
+
+// openLoaded opens a collection read from dir, with its folders expanded.
+func (a *App) openLoaded(loaded model.Collection, dir, env string) *model.Collection {
 	col := &loaded
 	a.expandAll(&col.Folder)
 	a.include(col, dir, env)
-	return col, nil
+	return col
 }
 
 // include puts col, saved in dir ("" for not saved), into the open set

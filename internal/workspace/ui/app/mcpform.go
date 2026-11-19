@@ -116,8 +116,7 @@ func (a *App) fillFromForm(tab *reqTab, form *mcpform.Form) {
 		return
 	}
 	a.closeDialog()
-	tab.msg = NewTextField(command)
-	tab.msg.Focused = true
+	tab.setComposer(command)
 }
 
 // Submit makes the App the host of the tool form: Enter in a field of the

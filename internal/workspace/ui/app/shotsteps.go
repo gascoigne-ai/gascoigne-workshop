@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/tree"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -301,7 +302,7 @@ func OpenAll() Step { return openAllStep{} }
 
 func (openAllStep) apply(app *App) error {
 	app.eachRoot(func(root *model.Folder) {
-		walkRequests(root, "", func(_ string, request *model.Request) { app.openRequest(request) })
+		tree.WalkRequests(root, "", func(_ string, request *model.Request) { app.openRequest(request) })
 	})
 	return nil
 }
