@@ -43,7 +43,7 @@ func TestTheMessagePaneLaysOutAsPinned(t *testing.T) {
 		for _, size := range paneSizes {
 			name := "messagepane-" + state.name + "-" + size.name
 			t.Run(name, func(t *testing.T) {
-				a, _ := newTestApp(t)
+				a := testApp(t)
 				t.Cleanup(a.waitWrites)
 				tab := a.cur()
 				tab.Resp, tab.Sending = state.resp, state.send
@@ -81,7 +81,7 @@ func TestTheNotePaneLaysOutAsPinned(t *testing.T) {
 		for _, size := range paneSizes {
 			name := "notepane-" + state.name + "-" + size.name
 			t.Run(name, func(t *testing.T) {
-				a, _ := newTestApp(t)
+				a := testApp(t)
 				t.Cleanup(a.waitWrites)
 				tab := a.cur()
 				tab.Resp = pinnedTimeline(state.truncated)
@@ -95,7 +95,7 @@ func TestTheNotePaneLaysOutAsPinned(t *testing.T) {
 // What Dump does not show of the note pane: it scrolls with the scroll
 // state the pane is given.
 func TestTheNotePaneScrollsWithTheGivenState(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	t.Cleanup(a.waitWrites)
 	tab := a.cur()
 	tab.Resp = pinnedTimeline(false)
@@ -129,7 +129,7 @@ var bodyPaneStates = []struct {
 
 // openBodyType gives the open request a body of bodyType holding text.
 func openBodyType(t *testing.T, bodyType model.BodyType, text string) (*App, *reqTab) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	t.Cleanup(a.waitWrites)
 	tab := a.cur()
 	tab.body = widget.NewTextArea(text)
@@ -251,7 +251,7 @@ func TestTheBodyAreaEditsTheTabsBody(t *testing.T) {
 		t.Run(string(bodyType), func(t *testing.T) {
 			a, tab := openBodyType(t, bodyType, "{}")
 			var scroll widget.ScrollState
-			areas := areaStates(a.paneBody(bodyPane, tab, &scroll))
+			areas := behaviorStates(a.paneBody(bodyPane, tab, &scroll), "*widget.areaB")
 			if len(areas) != 1 {
 				t.Fatalf("%d areas, want 1: %q", len(areas), areas)
 			}

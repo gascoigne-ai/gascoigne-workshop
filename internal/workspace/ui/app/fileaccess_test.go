@@ -83,17 +83,8 @@ func (f *fakeFolders) checks(path string) int {
 	return n
 }
 
-func toastWith(app *App, text string, isErr bool) bool {
-	for _, toast := range app.toasts {
-		if toast.IsErr == isErr && strings.Contains(toast.Text, text) {
-			return true
-		}
-	}
-	return false
-}
-
 func TestASavedBodyIsWrittenThroughTheFileSystemWithTildeAsHome(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	files := newFakeFolders()
 	a.folders = files
 	tab := a.cur()
@@ -109,7 +100,7 @@ func TestASavedBodyIsWrittenThroughTheFileSystemWithTildeAsHome(t *testing.T) {
 }
 
 func TestASavedBodyThatCannotBeWrittenIsReported(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	files := newFakeFolders()
 	files.writeErr = errors.New("disk full")
 	a.folders = files
@@ -122,7 +113,7 @@ func TestASavedBodyThatCannotBeWrittenIsReported(t *testing.T) {
 // A write to a slow disk must not hold the window: the frame goes on while
 // the file is written, and the toast comes when it is done.
 func TestSavingABodyDoesNotWaitForTheDisk(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	files := newFakeFolders()
 	files.release = make(chan struct{})
 	a.folders = files
@@ -137,7 +128,7 @@ func TestSavingABodyDoesNotWaitForTheDisk(t *testing.T) {
 }
 
 func TestAPostmanExportIsWrittenThroughTheFileSystem(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	files := newFakeFolders()
 	a.folders = files
 	a.exportPostman(&a.col().Folder)
@@ -154,7 +145,7 @@ func TestAPostmanExportIsWrittenThroughTheFileSystem(t *testing.T) {
 }
 
 func TestAPostmanExportThatCannotBeWrittenIsReported(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	files := newFakeFolders()
 	files.writeErr = errors.New("disk full")
 	a.folders = files

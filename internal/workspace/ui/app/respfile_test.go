@@ -24,7 +24,7 @@ import (
 )
 
 func TestHistoryKeepsEarlierResponsesNewestFirstAndSwapsOnPick(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	send := func(status int) {
 		tab.Sending, tab.Seq = true, tab.Seq+1
@@ -65,7 +65,7 @@ func TestHistoryKeepsEarlierResponsesNewestFirstAndSwapsOnPick(t *testing.T) {
 }
 
 func TestSaveBodyWritesTheFileAndReportsFailures(t *testing.T) {
-	a, _ := newTestApp(t) // no dialog program: the in-app file browser is used
+	a := testApp(t) // no dialog program: the in-app file browser is used
 	tab := a.cur()
 	a.saveBody(tab) // no response yet
 	if a.browser != nil {
@@ -96,7 +96,7 @@ func TestSaveBodyWritesTheFileAndReportsFailures(t *testing.T) {
 }
 
 func TestAssertionsRunWhenAResponseArrivesAndAfterEdits(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	tab.Req.Tests = "status == 200\njson ok == true\nstatus == 404"
 	tab.Sending, tab.Seq = true, tab.Seq+1
@@ -130,7 +130,7 @@ func TestAnImageResponseIsShownAsAPicture(t *testing.T) {
 	if err := png.Encode(&buf, img); err != nil {
 		t.Fatal(err)
 	}
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	tab.Sending, tab.Seq = true, tab.Seq+1
 	a.apply(sendResult{tab: tab, seq: tab.Seq, resp: model.Response{Status: 200, StatusText: "OK", Body: buf.Bytes(),
@@ -155,7 +155,7 @@ func TestPickFileUsesTheDesktopDialogWhenThereIsOne(t *testing.T) {
 	dir := t.TempDir()
 	os.WriteFile(filepath.Join(dir, "zenity"), []byte("#!/bin/sh\necho /chosen/by/dialog.bin\n"), 0o755)
 	t.Setenv("PATH", dir)
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.files = filedialog.System{}
 	var got string
 	a.pickFile("Pick", false, "", func(name string) { got = name })
@@ -176,7 +176,7 @@ func TestPickFileUsesTheDesktopDialogWhenThereIsOne(t *testing.T) {
 }
 
 func TestFileBodyTypeKeepsItsPathSeparateFromTheTextBody(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	tab.body = widget.NewTextArea("typed text")
 	tab.Req.Body = "typed text"
@@ -196,7 +196,7 @@ func TestFileBodyTypeKeepsItsPathSeparateFromTheTextBody(t *testing.T) {
 }
 
 func TestCapturedValuesBecomeVariablesInTheActiveScope(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	tab.Req.Tests = "set token = json access_token"
 	send := func(body string) {
@@ -229,7 +229,7 @@ func TestGraphQLBodyTypeSendsAQueryAndCanLoadTheSchema(t *testing.T) {
 		writer.Write([]byte(`{"data":{"__schema":{"types":[]}}}`))
 	}))
 	defer srv.Close()
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	tab.Req.URL, tab.Req.Method = srv.URL, "GET"
 	tab.body = widget.NewTextArea("{ repos { name } }")
@@ -254,7 +254,7 @@ func TestGraphQLBodyTypeSendsAQueryAndCanLoadTheSchema(t *testing.T) {
 }
 
 func TestADragRestingOverAClosedFolderOpensIt(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	closed := a.col().Folders[0]
 	a.expanded[closed] = false
 	req := a.col().Folders[1].Requests[0]
@@ -287,7 +287,7 @@ func TestADragRestingOverAClosedFolderOpensIt(t *testing.T) {
 }
 
 func TestFormFieldsCanBeEditedAsText(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	tab.Req.BodyType = model.BodyForm
 	tab.Req.Form = []model.KV{{Name: "user", Value: "ann", Enabled: true}}

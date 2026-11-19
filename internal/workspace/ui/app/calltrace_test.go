@@ -12,7 +12,7 @@ import (
 func traceText(app *App) string { return strings.Join(app.calls.Lines(), "\n") }
 
 func TestASendIsTracedWithItsOutcome(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	server := jsonServer(t)
 	pointTabAt(tab, server.URL)
@@ -28,7 +28,7 @@ func TestASendIsTracedWithItsOutcome(t *testing.T) {
 }
 
 func TestAFailedSendIsTracedAsAnError(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	pointTabAt(tab, "http://127.0.0.1:1/")
 	a.send(tab)
@@ -46,7 +46,7 @@ func TestAFailedSendIsTracedAsAnError(t *testing.T) {
 }
 
 func TestConnectionEventsAreTraced(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	tab.Req.URL = "ws://example.test/socket"
 	a.applyWS(wsEvent{tab: tab, gen: tab.Gen, err: fmt.Errorf("dial refused")})
@@ -56,7 +56,7 @@ func TestConnectionEventsAreTraced(t *testing.T) {
 }
 
 func TestTheStatusBarLogButtonOpensTheTraceView(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.calls.Info(a.now(), "→ GET https://one.test")
 	if dump := view.Dump(a.statusBar()); !strings.Contains(dump, `"Log"`) {
 		t.Fatalf("no Log button in the status bar:\n%s", dump)
@@ -76,7 +76,7 @@ func TestTheStatusBarLogButtonOpensTheTraceView(t *testing.T) {
 }
 
 func TestEscapeClosesTheTraceView(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.calls.Open()
 	a.step(core.Input{X: 5000, Y: 5000, Escape: true})
 	if a.calls.Shown() {

@@ -8,7 +8,7 @@ import (
 )
 
 func TestBodyEditorColorsVariablesByWhetherTheyResolve(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.col().Vars = []model.KV{{Name: "known", Value: "1", Enabled: true}}
 	style := a.withVariables(jsonStyler, a.cur().Req)
 	spans := style(`{"a": "{{known}}", "b": "{{missing}}"}`)
@@ -43,7 +43,7 @@ func TestBodyEditorColorsVariablesByWhetherTheyResolve(t *testing.T) {
 }
 
 func TestTableCellsColorVariablesLikeTheURLField(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.col().Vars = []model.KV{{Name: "known", Value: "1", Enabled: true}}
 	style := a.cellStyler(a.cur().Req)
 	if style("plain text") != nil {

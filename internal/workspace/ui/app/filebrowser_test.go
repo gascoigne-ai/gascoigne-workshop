@@ -31,7 +31,7 @@ func browsingApp(t *testing.T) (*App, string) {
 	}
 	t.Setenv("HOME", dir)
 	t.Chdir(t.TempDir())
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.files = fakeDialog{suggest: "zenity"} // no dialog program, zenity would give one
 	a.folders = folders.Disk{}
 	return a, dir

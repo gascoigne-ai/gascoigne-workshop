@@ -26,7 +26,7 @@ func TestRequestPanesFollowTheProtocol(t *testing.T) {
 		{"sse", []string{"Params", "Body", "Tests"}, []string{"Headers", "Auth", "Vars", "Settings"}},
 		{"mcp", []string{"Params", "Body", "Tests"}, []string{"Headers", "Auth", "Vars", "Settings"}},
 	}
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	for _, test := range tests {
 		t.Run(string(test.protocol), func(t *testing.T) {
@@ -53,7 +53,7 @@ func TestRequestPanesFollowTheProtocol(t *testing.T) {
 // choosing another protocol must not leave it past the end or on a
 // different tab than the user was looking at.
 func TestChoosingAProtocolShowsItsFirstRequestPane(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	tab.Req.Protocol = "rest"
 	tab.paneTab = len(requestPanes) - 1

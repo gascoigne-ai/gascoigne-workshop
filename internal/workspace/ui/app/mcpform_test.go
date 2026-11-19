@@ -34,7 +34,7 @@ func dialogButtonNamed(t *testing.T, app *App, label string) widget.DialogButton
 }
 
 func TestPickingAToolWithPropertiesOpensAFormWithTheDefaults(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.openToolForm(a.cur(), searchTool())
 	if a.dialog == nil || a.dialog.form == nil {
 		t.Fatal("no form opened")
@@ -52,7 +52,7 @@ func TestPickingAToolWithPropertiesOpensAFormWithTheDefaults(t *testing.T) {
 }
 
 func TestFillingTheFormComposesATypedCall(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	a.openToolForm(tab, searchTool())
 	form := a.dialog.form
@@ -70,7 +70,7 @@ func TestFillingTheFormComposesATypedCall(t *testing.T) {
 }
 
 func TestAFormWithAnInvalidValueStaysOpenAndSaysWhich(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	tab.msg.Text = "unchanged"
 	a.openToolForm(tab, searchTool())
@@ -87,7 +87,7 @@ func TestAFormWithAnInvalidValueStaysOpenAndSaysWhich(t *testing.T) {
 }
 
 func TestPickingAToolWithoutPropertiesComposesItRightAway(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	a.openToolForm(tab, model.MCPTool{Name: "ping"})
 	if a.dialog != nil {
@@ -99,7 +99,7 @@ func TestPickingAToolWithoutPropertiesComposesItRightAway(t *testing.T) {
 }
 
 func TestDialogsWithAndWithoutAFormDrawWithoutPanicking(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.prompt("Name", "x", "OK", func(string) {})
 	a.step(core.Input{})
 	a.closeDialog()

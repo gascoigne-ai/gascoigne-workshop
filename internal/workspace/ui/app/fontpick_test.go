@@ -42,7 +42,7 @@ func monoCode(app *App) bool {
 }
 
 func TestPickingAnInterfaceFontChangesTheFacesAndIsSaved(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.settingsPath = filepath.Join(t.TempDir(), "settings.json")
 	a.prefs.Families = testFamilies(t)
 
@@ -60,7 +60,7 @@ func TestPickingAnInterfaceFontChangesTheFacesAndIsSaved(t *testing.T) {
 }
 
 func TestPickingACodeFontOnlyChangesTheCodeFace(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.prefs.Families = testFamilies(t)
 	a.prefs.SetFont(a, settingsui.FontCode, "Go")
 	if monoCode(a) || a.settings.CodeFont != "Go" {
@@ -72,7 +72,7 @@ func TestPickingACodeFontOnlyChangesTheCodeFace(t *testing.T) {
 }
 
 func TestSavedFontsApplyOnceTheScanFinishes(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.settings.UIFont, a.settings.CodeFont = "Go Mono", "Go"
 	a.prefs.FontsScanned(a, testFamilies(t))
 	if !monoUI(a) || monoCode(a) {
@@ -81,7 +81,7 @@ func TestSavedFontsApplyOnceTheScanFinishes(t *testing.T) {
 }
 
 func TestASavedFontThatIsGoneFallsBackToTheBuiltInOne(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.settings.UIFont = "Removed Font"
 	a.prefs.FontsScanned(a, testFamilies(t))
 	if monoUI(a) {
@@ -93,7 +93,7 @@ func TestASavedFontThatIsGoneFallsBackToTheBuiltInOne(t *testing.T) {
 }
 
 func TestTheAppearancePageHasFontControlsShowingTheCurrentFamily(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.prefs.Families = testFamilies(t)
 	a.settings.UIFont = "Go Mono"
 	dump := Dump(a.prefs.FormPage(a, "Appearance"))

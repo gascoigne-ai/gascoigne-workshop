@@ -1,7 +1,6 @@
 package app
 
 import (
-	"context"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/bus"
@@ -43,19 +42,6 @@ func echoServer(t *testing.T) string {
 	return "ws" + strings.TrimPrefix(srv.URL, "http")
 }
 
-// until steps the app until cond holds.
-func until(t *testing.T, app *App, what string, cond func() bool) {
-	t.Helper()
-	for range 400 {
-		app.step(core.Input{})
-		if cond() {
-			return
-		}
-		time.Sleep(5 * time.Millisecond)
-	}
-	t.Fatalf("timed out waiting for %s", what)
-}
-
 func logText(tab *reqTab) string {
 	var b strings.Builder
 	for _, l := range tab.wsView.Lines {
@@ -68,7 +54,7 @@ func logText(tab *reqTab) string {
 }
 
 func TestWebSocketTabConnectsSendsAndDisconnects(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	tab.Req.Protocol = "websocket"
 	tab.Req.URL = echoServer(t)
@@ -95,7 +81,7 @@ func TestWebSocketTabConnectsSendsAndDisconnects(t *testing.T) {
 }
 
 func TestWebSocketConnectFailureShowsInTheLog(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	tab.Req.Protocol = "websocket"
 	tab.Req.URL = "ws://127.0.0.1:1/"
@@ -110,7 +96,7 @@ func TestWebSocketConnectFailureShowsInTheLog(t *testing.T) {
 }
 
 func TestClearEmptiesTheMessageLog(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	tab.Req.Protocol = "websocket"
 	tab.Req.URL = echoServer(t)
@@ -142,7 +128,7 @@ func TestWebSocketReconnectsAfterTheServerClosesWhenAsked(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	tab.Req.Protocol = "websocket"
 	tab.Req.URL = "ws" + strings.TrimPrefix(srv.URL, "http")
@@ -188,7 +174,7 @@ func TestWebSocketWithoutReconnectStaysClosed(t *testing.T) {
 		}
 	}))
 	t.Cleanup(srv.Close)
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	tab.Req.Protocol = "websocket"
 	tab.Req.URL = "ws" + strings.TrimPrefix(srv.URL, "http")
@@ -202,7 +188,7 @@ func TestWebSocketWithoutReconnectStaysClosed(t *testing.T) {
 }
 
 func TestComposerSendsHexAsABinaryMessage(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	tab.Req.Protocol = "websocket"
 	tab.Req.URL = echoServer(t)
@@ -220,7 +206,7 @@ func TestComposerSendsHexAsABinaryMessage(t *testing.T) {
 }
 
 func TestMCPToolsFillTheComposerFromTheirSchemas(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	tab.Req.Protocol = "mcp"
 	list := `{"jsonrpc":"2.0","id":2,"result":{"tools":[{"name":"search","inputSchema":{"type":"object","properties":{"q":{"type":"string"},"limit":{"type":"integer","default":5}},"required":["q"]}},{"name":"ping"}]}}`
@@ -255,7 +241,7 @@ func TestMCPToolsFillTheComposerFromTheirSchemas(t *testing.T) {
 }
 
 func TestMCPResourcesAndPromptsFillTheComposer(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	tab.Req.Protocol = "mcp"
 	a.applyWS(wsEvent{tab: tab, hasEv: true, ev: reqport.Event{Dir: reqport.Received, Kind: "response", Text: `{"result":{"resources":[{"uri":"file:///a.txt","name":"A"}]}}`}})
@@ -276,7 +262,7 @@ func TestSSETabListensAndShowsNoComposer(t *testing.T) {
 		io.WriteString(writer, "event: ping\ndata: hello\n\n")
 	}))
 	defer srv.Close()
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	tab.Req.Protocol = "sse"
 	tab.Req.URL = srv.URL
@@ -309,7 +295,7 @@ func TestSSEReconnectResumesFromTheLastEventID(t *testing.T) {
 		<-request.Context().Done()
 	}))
 	defer func() { srv.CloseClientConnections(); srv.Close() }()
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	tab.Req.Protocol, tab.Req.URL, tab.Reconnect = "sse", srv.URL, true
 	defer func() {
@@ -335,7 +321,7 @@ func TestSSEReconnectResumesFromTheLastEventID(t *testing.T) {
 }
 
 func TestFormatMessageMakesTheComposerOneLineOfJSON(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	tab.msg = widget.NewTextField("{\n  \"op\": \"ping\",\n  \"n\": 1\n}")
 	a.formatMessage(tab)
@@ -345,7 +331,7 @@ func TestFormatMessageMakesTheComposerOneLineOfJSON(t *testing.T) {
 }
 
 func TestFormatMessageLeavesBrokenTextAloneAndSaysWhy(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	tab.msg = widget.NewTextField(`{"op": }`)
 	before := len(a.toasts)
@@ -367,7 +353,7 @@ func TestWebSocketConnectGivesUpWhenTheServerNeverAnswersTheHandshake(t *testing
 	srv := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { <-release }))
 	t.Cleanup(srv.Close)
 	t.Cleanup(func() { close(release) }) // runs before srv.Close, which waits for the handler
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	tab.Req.Protocol = "websocket"
 	tab.Req.URL = "ws" + strings.TrimPrefix(srv.URL, "http")
@@ -387,35 +373,10 @@ func TestWebSocketConnectGivesUpWhenTheServerNeverAnswersTheHandshake(t *testing
 	}
 }
 
-// slowSession is a session whose Send and Ping wait to be released and
-// record the order they were asked in.
-type slowSession struct {
-	release chan struct{}
-	mu      sync.Mutex
-	sent    []string
-}
-
-func (s *slowSession) Events() <-chan reqport.Event { return nil }
-func (s *slowSession) Close(context.Context) error  { return nil }
-func (s *slowSession) Send(_ context.Context, text string) error {
-	<-s.release
-	s.mu.Lock()
-	s.sent = append(s.sent, text)
-	s.mu.Unlock()
-	return nil
-}
-func (s *slowSession) Ping(ctx context.Context) error { return s.Send(ctx, "ping") }
-
-func (s *slowSession) log() []string {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return append([]string(nil), s.sent...)
-}
-
 func TestSendingAndPingingDoNotBlockTheFrameAndKeepTheirOrder(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
-	session := &slowSession{release: make(chan struct{})}
+	session := &fakeSession{release: make(chan struct{})}
 	tab.Session = session
 
 	done := make(chan struct{})
@@ -442,7 +403,7 @@ func TestSendingAndPingingDoNotBlockTheFrameAndKeepTheirOrder(t *testing.T) {
 // The initialize result is already in the log as the response to the
 // initialize request; the copy that feeds the server info is not a line.
 func TestLogSkipsTheServerInfoEvent(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	a.logEvent(tab, reqport.Event{Dir: reqport.Info, Kind: "initialize", Text: `{"protocolVersion":"2025-06-18"}`})
 	if len(tab.wsView.Lines) != 0 {
@@ -453,7 +414,7 @@ func TestLogSkipsTheServerInfoEvent(t *testing.T) {
 // Pins what differs between the composers of the protocols that connect:
 // only MCP's hint lists its commands.
 func TestOnlyTheMCPComposerShowsTheCommandHint(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	for _, protocol := range []model.Protocol{"websocket", "mcp", "sse", "grpc"} {
 		tab.Req.Protocol = protocol
@@ -468,7 +429,7 @@ func TestOnlyTheMCPComposerShowsTheCommandHint(t *testing.T) {
 // only WebSocket offers the { } button that makes the message one line of
 // JSON.
 func TestOnlyTheWebSocketComposerOffersFormat(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	for _, protocol := range []model.Protocol{"websocket", "mcp", "grpc"} {
 		tab.Req.Protocol = protocol
@@ -492,7 +453,7 @@ func TestLogLineDirectionMarksAreIcons(t *testing.T) {
 		{reqport.Info, "dot", "•"},
 	}
 	for _, tc := range cases {
-		a, _ := newTestApp(t)
+		a := testApp(t)
 		tab := a.cur()
 		a.logEvent(tab, reqport.Event{Dir: tc.dir, Kind: "text", Text: "x"})
 		lines := tab.wsView.Lines

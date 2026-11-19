@@ -33,7 +33,7 @@ func graphQLTab(t *testing.T, app *App, url string) *reqTab {
 }
 
 func TestLoadingTheSchemaOffersItsOperationsInAMenu(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := graphQLTab(t, a, introspectionServer(t).URL)
 	if strings.Contains(view.Dump(a.graphQLBody(tab)), "Schema (") {
 		t.Fatal("a schema button before the schema is loaded")
@@ -51,7 +51,7 @@ func TestLoadingTheSchemaOffersItsOperationsInAMenu(t *testing.T) {
 }
 
 func TestPickingAnOperationFillsTheQueryAndVariablesOfTheTab(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := graphQLTab(t, a, introspectionServer(t).URL)
 	a.loadSchema(tab)
 	waitForResponse(t, a, tab)

@@ -33,7 +33,7 @@ func grpcServer(t *testing.T) string {
 }
 
 func TestTheProtocolChipCyclesThroughGRPCAndBackToRESTWithAMethod(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.settings.GRPC, a.settings.SSE = true, true
 	tab := a.cur()
 	seen := map[model.Protocol]bool{}
@@ -53,7 +53,7 @@ func TestTheProtocolChipCyclesThroughGRPCAndBackToRESTWithAMethod(t *testing.T) 
 }
 
 func TestPickingAGRPCMethodListsTheServersMethodsAndSetsIt(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	tab.Req.Protocol, tab.Req.URL = "grpc", grpcServer(t)
 
@@ -71,14 +71,14 @@ func TestPickingAGRPCMethodListsTheServersMethodsAndSetsIt(t *testing.T) {
 	if !strings.Contains(strings.Join(menuLabels(a), " "), "grpc.health.v1.Health/Check") {
 		t.Fatalf("methods = %v", menuLabels(a))
 	}
-	itemByLabel(a, "grpc.health.v1.Health/Check").Run()
+	itemByLabel(t, a, "grpc.health.v1.Health/Check").Run()
 	if tab.Req.Method != "grpc.health.v1.Health/Check" {
 		t.Fatalf("Method = %q", tab.Req.Method)
 	}
 }
 
 func TestSendingAGRPCTabShowsTheAnswerAsAResponse(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	tab.Req.Protocol, tab.Req.URL, tab.Req.Method, tab.Req.Body = "grpc", grpcServer(t), "grpc.health.v1.Health/Check", `{}`
 	tab.Resp = nil
@@ -90,7 +90,7 @@ func TestSendingAGRPCTabShowsTheAnswerAsAResponse(t *testing.T) {
 }
 
 func TestAGRPCPickerWithoutAServerSaysSo(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	tab.Req.Protocol, tab.Req.URL = "grpc", ""
 	a.pickGRPCMethod(tab)

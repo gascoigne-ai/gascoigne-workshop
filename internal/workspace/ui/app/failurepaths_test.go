@@ -113,7 +113,7 @@ func TestEveryFailurePathIsShownToTheUser(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			a, _ := newTestApp(t)
+			a := testApp(t)
 			before := a.status
 			test.trigger(t, a)
 			a.waitWrites() // saves run in the background
@@ -141,7 +141,7 @@ func TestAHistoryThatCannotBeWrittenIsReportedByAToast(t *testing.T) {
 	if err := os.WriteFile(file, []byte("x"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.statePath = filepath.Join(file, "state.json") // history lives beside it, below a file
 	tab := a.cur()
 	pointTabAt(tab, jsonServer(t).URL)

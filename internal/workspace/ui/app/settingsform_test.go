@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
@@ -27,35 +26,6 @@ func layoutDump(app *App) string {
 func clickText(t *testing.T, app *App, text string, nth int) {
 	t.Helper()
 	clickDumped(t, app, fmt.Sprintf("text=%q", text), nth)
-}
-
-// clickDumped clicks the middle of the nth (from 0) element whose line in
-// the layout dump holds needle ("fieldB", "tip=Remove"), for controls that
-// show no text of their own.
-func clickDumped(t *testing.T, app *App, needle string, nth int) {
-	t.Helper()
-	app.step(core.Input{X: 5000, Y: 5000})
-	seen := 0
-	for _, line := range strings.Split(layoutDump(app), "\n") {
-		if !strings.Contains(line, needle) {
-			continue
-		}
-		if seen++; seen-1 != nth {
-			continue
-		}
-		m := rectPattern.FindStringSubmatch(line)
-		if m == nil {
-			t.Fatalf("no rectangle on %q", line)
-		}
-		var x, y, w, h int
-		fmt.Sscan(m[1], &x)
-		fmt.Sscan(m[2], &y)
-		fmt.Sscan(m[3], &w)
-		fmt.Sscan(m[4], &h)
-		click(app, x+w/2, y+h/2)
-		return
-	}
-	t.Fatalf("no element with %s (#%d) in:\n%s", needle, nth, layoutDump(app))
 }
 
 func settingsText(app *App) string { return view.Dump(app.menuView()) }

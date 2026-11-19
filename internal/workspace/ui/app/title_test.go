@@ -9,7 +9,7 @@ import (
 )
 
 func TestTitleShowsTheCollectionAndAnUnsavedMark(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	if got := a.Title(); got != a.col().Name+" - "+appName {
 		t.Fatalf("title %q", got)
 	}
@@ -20,7 +20,7 @@ func TestTitleShowsTheCollectionAndAnUnsavedMark(t *testing.T) {
 	}
 
 	dir := t.TempDir()
-	w := workspaceApp(t, dir, Options{})
+	w := testApp(t, untouchedSettings(), inWorkspace(dir), withOptions(Options{}))
 	now := time.Now()
 	w.now = func() time.Time { return now }
 	if strings.HasPrefix(w.Title(), dirtyMark) {

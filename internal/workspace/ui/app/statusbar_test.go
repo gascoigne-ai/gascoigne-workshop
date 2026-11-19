@@ -10,7 +10,7 @@ import (
 
 // The inline status bar template renders exactly what the Go view it replaced did.
 func TestStatusBarTemplateMatchesTheGoView(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.status = "Sent 200 OK in 120ms"
 	goView := Row(H(statusH), PadX(w.Gutter), Gap(w.Gutter), Bg(w.Frame), Control("statusbar"), BorderT(w.Border),
 		Text(a.status, Small(), Muted(), Ellipsis(), Grow(1)),
@@ -29,7 +29,7 @@ func TestStatusBarTemplateMatchesTheGoView(t *testing.T) {
 
 // The header template renders exactly what the Go view it replaced did.
 func TestHeaderTemplateMatchesTheGoView(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	toggle := OnClick(func() { a.menu = !a.menu })
 	goView := Row(H(headerH), PadX(w.Gutter), Bg(w.Hero), Control("hero"),
 		Text(a.col().Name, Bold(), Ellipsis(), Shrink(), MinW(48), Color(w.HeroText)),

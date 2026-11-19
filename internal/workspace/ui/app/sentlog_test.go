@@ -11,7 +11,7 @@ import (
 )
 
 func TestSendingARequestListsItInTheSentLogNewestFirst(t *testing.T) {
-	a := stateApp(t, filepath.Join(t.TempDir(), "state.json"))
+	a := testApp(t, memorySettings(), withOptions(Options{StatePath: filepath.Join(t.TempDir(), "state.json")}))
 	server := jsonServer(t)
 	var requests []*model.Request
 	walkRequests(&a.col().Folder, "", func(_ string, req *model.Request) { requests = append(requests, req) })
@@ -34,20 +34,20 @@ func TestSendingARequestListsItInTheSentLogNewestFirst(t *testing.T) {
 
 func TestTheSentLogComesBackAfterARestart(t *testing.T) {
 	statePath := filepath.Join(t.TempDir(), "state.json")
-	first := stateApp(t, statePath)
+	first := testApp(t, memorySettings(), withOptions(Options{StatePath: statePath}))
 	tab := first.cur()
 	pointTabAt(tab, jsonServer(t).URL)
 	first.send(tab)
 	waitForResponse(t, first, tab)
 
-	second := stateApp(t, statePath)
+	second := testApp(t, memorySettings(), withOptions(Options{StatePath: statePath}))
 	if rows := second.sent.Rows(second.filter.Text); len(rows) != 1 || rows[0].Status != 200 {
 		t.Fatalf("sent rows after a restart = %+v", rows)
 	}
 }
 
 func TestTheSidebarFilterNarrowsTheSentLog(t *testing.T) {
-	a := stateApp(t, filepath.Join(t.TempDir(), "state.json"))
+	a := testApp(t, memorySettings(), withOptions(Options{StatePath: filepath.Join(t.TempDir(), "state.json")}))
 	tab := a.cur()
 	pointTabAt(tab, jsonServer(t).URL)
 	a.send(tab)
@@ -64,7 +64,7 @@ func TestTheSidebarFilterNarrowsTheSentLog(t *testing.T) {
 }
 
 func TestPickingASentRowOpensItsRequest(t *testing.T) {
-	a := stateApp(t, filepath.Join(t.TempDir(), "state.json"))
+	a := testApp(t, memorySettings(), withOptions(Options{StatePath: filepath.Join(t.TempDir(), "state.json")}))
 	tab := a.cur()
 	pointTabAt(tab, jsonServer(t).URL)
 	a.send(tab)
@@ -79,7 +79,7 @@ func TestPickingASentRowOpensItsRequest(t *testing.T) {
 }
 
 func TestPickingASentRowOfADeletedRequestSaysSo(t *testing.T) {
-	a := stateApp(t, "")
+	a := testApp(t, memorySettings(), withOptions(Options{StatePath: ""}))
 	a.sent.Open(a, port.Sent{Path: "Gone/Request"})
 	if a.status == "Ready" {
 		t.Fatal("no note for a request that is gone")
@@ -87,7 +87,7 @@ func TestPickingASentRowOfADeletedRequestSaysSo(t *testing.T) {
 }
 
 func TestTheSidebarCanShowTheSentLogAndTheEmptyNote(t *testing.T) {
-	a := stateApp(t, filepath.Join(t.TempDir(), "state.json"))
+	a := testApp(t, memorySettings(), withOptions(Options{StatePath: filepath.Join(t.TempDir(), "state.json")}))
 	a.showSent = true
 	a.step(core.Input{}) // empty log
 	tab := a.cur()

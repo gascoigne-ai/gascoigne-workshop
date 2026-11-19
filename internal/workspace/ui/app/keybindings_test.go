@@ -41,7 +41,7 @@ func byID(id string) shortcut {
 }
 
 func TestEffectiveBindingsLayerTheUsersOverToDefaults(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	closeTab := byID("close-tab")
 	def := a.bindingOf(closeTab)
 	if def.String() != "Ctrl+W" {
@@ -70,7 +70,7 @@ func TestEffectiveBindingsLayerTheUsersOverToDefaults(t *testing.T) {
 }
 
 func TestCheckBinding(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	mk := func(text string) engine.Binding {
 		b, err := engine.ParseBinding(text)
 		if err != nil {
@@ -144,7 +144,7 @@ func TestBindingWarningNamesPlainKeysOnly(t *testing.T) {
 }
 
 func TestAPlainKeyBindingFiresOnlyWhileNoTextFieldHasFocus(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.settings.Shortcuts = map[string]string{"close-tab": "Q"}
 	a.newRequest() // closing the only tab opens a fresh one, which would hide the effect
 	tabs := len(a.list.Tabs)

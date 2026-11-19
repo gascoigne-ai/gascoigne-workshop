@@ -21,7 +21,7 @@ func TestTheCursorIsAGrabWhileSomethingIsBeingDragged(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			a, _ := newTestApp(t)
+			a := testApp(t)
 			a.step(core.Input{X: 5000, Y: 5000, Held: test.held}) // settle the first frame
 			test.setup(a)
 			a.step(core.Input{X: 5000, Y: 5000, Held: test.held})
@@ -35,7 +35,7 @@ func TestTheCursorIsAGrabWhileSomethingIsBeingDragged(t *testing.T) {
 // A tree row is grabbed once the pointer is over another row; the drop
 // target is set during the frame by that row, so it is checked directly.
 func TestATreeRowIsGrabbedOnlyOnceItIsOverAnotherRow(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	first, second := a.col().Folders[0], a.col().Folders[1]
 	tests := []struct {
 		name         string

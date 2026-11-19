@@ -98,7 +98,7 @@ func TestTheURLBarLaysOutAsPinned(t *testing.T) {
 		for _, size := range sizes {
 			name := "urlbar-" + state.name + "-" + size.name
 			t.Run(name, func(t *testing.T) {
-				a, _ := newTestApp(t)
+				a := testApp(t)
 				t.Cleanup(a.waitWrites)
 				tab := a.cur()
 				state.setUp(t, a, tab)
@@ -146,7 +146,7 @@ func TestTheURLBarsPartsHaveTooltips(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			a, _ := newTestApp(t)
+			a := testApp(t)
 			t.Cleanup(a.waitWrites)
 			stateNamed(t, tc.state).setUp(t, a, a.cur())
 			if got := tipAt(a, tc.x, urlBarY); got != tc.tip {
@@ -199,7 +199,7 @@ func TestClickingTheURLBarsChipsChangesTheRequest(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			a, _ := newTestApp(t)
+			a := testApp(t)
 			t.Cleanup(a.waitWrites)
 			tab := a.cur()
 			stateNamed(t, tc.state).setUp(t, a, tab)
@@ -225,7 +225,7 @@ func TestTheURLBarsButtonFollowsItsLabel(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			a, _ := newTestApp(t)
+			a := testApp(t)
 			t.Cleanup(a.waitWrites)
 			tab := a.cur()
 			stateNamed(t, tc.state).setUp(t, a, tab)
@@ -242,7 +242,7 @@ func TestTheURLBarsButtonFollowsItsLabel(t *testing.T) {
 // Typing into the URL field edits the request, which Dump does not show,
 // and Enter sends it.
 func TestTypingAURLEditsTheRequestAndEnterSendsIt(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	t.Cleanup(a.waitWrites)
 	tab := a.cur()
 	stateNamed(t, "rest-get").setUp(t, a, tab)
@@ -262,7 +262,7 @@ func TestTypingAURLEditsTheRequestAndEnterSendsIt(t *testing.T) {
 // colors its variables and sends on Enter: settings Dump does not print,
 // read from the field's own widget.
 func TestTheURLFieldIsWiredToTheTab(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	t.Cleanup(a.waitWrites)
 	tab := a.cur()
 	field := findWidget(a.urlBar(tab), "*widget.fieldB")
@@ -282,23 +282,9 @@ func TestTheURLFieldIsWiredToTheTab(t *testing.T) {
 	}
 }
 
-// findWidget is the first element under root whose behavior has the Go
-// type kind.
-func findWidget(root Node, kind string) Node {
-	if fmt.Sprintf("%T", root.Behavior()) == kind {
-		return root
-	}
-	for _, child := range root.Children() {
-		if found := findWidget(child, kind); found != nil {
-			return found
-		}
-	}
-	return nil
-}
-
 // Right-clicking the URL field opens the text menu.
 func TestTheURLFieldHasTheTextMenu(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	t.Cleanup(a.waitWrites)
 	rightClick(a, urlFieldX, urlBarY)
 	if widget.PopupMenu(a.ctx) == nil || menuLabels(a)[0] != "Undo" {

@@ -23,7 +23,7 @@ func settle(app *App, frames int) {
 }
 
 func TestAFreshAppNeedsADrawAndAnIdleOneIsDrawnOnlyAtTheFloorRate(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	if !a.dirty {
 		t.Fatal("the first frame must be drawn")
 	}
@@ -51,7 +51,7 @@ func TestAFreshAppNeedsADrawAndAnIdleOneIsDrawnOnlyAtTheFloorRate(t *testing.T) 
 }
 
 func TestInputMakesTheNextFrameDirtyOnlyWhenItChangesSomething(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	settle(a, 3)
 	still := core.Input{X: 10, Y: 10}
 	a.step(still)
@@ -88,7 +88,7 @@ func TestInputMakesTheNextFrameDirtyOnlyWhenItChangesSomething(t *testing.T) {
 }
 
 func TestReleasingTheButtonIsActivity(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.step(core.Input{X: 5, Y: 5, Held: true})
 	a.dirty = false
 	a.step(core.Input{X: 5, Y: 5}) // released, nothing else changed
@@ -99,7 +99,7 @@ func TestReleasingTheButtonIsActivity(t *testing.T) {
 
 func TestAnArrivingResponseRequestsARedraw(t *testing.T) {
 	srv := jsonServer(t)
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	pointTabAt(tab, srv.URL)
 	a.send(tab)
@@ -118,7 +118,7 @@ func TestAnArrivingResponseRequestsARedraw(t *testing.T) {
 }
 
 func TestToastsRequestRedrawsWhenShownAndWhenTheyExpire(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	clock := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 	a.now = func() time.Time { return clock }
 	settle(a, 2)
@@ -138,7 +138,7 @@ func TestToastsRequestRedrawsWhenShownAndWhenTheyExpire(t *testing.T) {
 // drawn, so it keeps blinking with or without a focused field and needs no
 // special redraw of its own.
 func TestTheFloorRateKeepsRedrawingWithAndWithoutAFocusedField(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	settle(a, 3)
 	draws := func(frames int) (n int) {
 		for range frames {
@@ -159,7 +159,7 @@ func TestTheFloorRateKeepsRedrawingWithAndWithoutAFocusedField(t *testing.T) {
 }
 
 func TestResizingOrChangingScaleRequestsARedraw(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	settle(a, 2)
 	if a.setSize(winW, winH, a.ctx.Scale) || a.dirty {
 		t.Fatal("the same size is not a change")
@@ -184,7 +184,7 @@ func TestScreenshotModeAlwaysDraws(t *testing.T) {
 }
 
 func TestUpdateRateDropsAfterIdleAndReturnsWithActivity(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	if a.pacer.TPS() != engine.ActiveTPS {
 		t.Fatalf("start at %d", a.pacer.TPS())
 	}
@@ -201,7 +201,7 @@ func TestUpdateRateDropsAfterIdleAndReturnsWithActivity(t *testing.T) {
 }
 
 func TestDrawingClearsTheDirtyFlagAndAnIdleDrawDoesNothing(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	img := ebiten.NewImage(winW, winH)
 	a.dirty = true
 	a.Draw(img)
@@ -236,7 +236,8 @@ func TestFrameSizeAppliesTheInterfaceScaleOnTopOfTheDisplayScale(t *testing.T) {
 }
 
 func TestInterfaceScaleSliderResizesLiveAndSavesOnRelease(t *testing.T) {
-	a, path := newTestApp(t)
+	a := testApp(t)
+	path := a.SettingsPath()
 	click(a, menuBtnX, menuBtnY)
 	a.prefs.Search = widget.NewTextField("interface scale")
 	a.step(core.Input{})
@@ -255,7 +256,7 @@ func TestInterfaceScaleSliderResizesLiveAndSavesOnRelease(t *testing.T) {
 }
 
 func TestNewAppsStartAtTheDisplayScale(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	if a.settings.UIScale() != 1 {
 		t.Fatalf("default scale %v", a.settings.UIScale())
 	}
@@ -273,7 +274,7 @@ const (
 // when idle, which used to halve the blink rate. Input restarts the blink
 // so the caret is solid while typing.
 func TestInputRestartsTheCaretBlinkOnTheAppClock(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	clock := time.Date(2026, 11, 7, 12, 0, 0, 0, time.UTC)
 	a.now = func() time.Time { return clock }
 	a.step(core.Input{X: 5000, Y: 5000, Typed: []rune("a")})
@@ -291,7 +292,7 @@ func TestInputRestartsTheCaretBlinkOnTheAppClock(t *testing.T) {
 }
 
 func TestAMovingPointerDoesNotRestartTheCaretBlink(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	clock := time.Date(2026, 11, 7, 12, 0, 0, 0, time.UTC)
 	a.now = func() time.Time { return clock }
 	a.step(core.Input{X: 5000, Y: 5000, Typed: []rune("a")})
@@ -348,7 +349,7 @@ func TestRememberedWindowSizeUsesTheWindowScaleOfTheLastLayout(t *testing.T) {
 // The platform's base factor multiplies the user's scale, so the slider can
 // read 100% while the interface is as big as the platform needs.
 func TestUIScaleIncludesTheBaseScale(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	if got := a.uiScale(); got != 1 {
 		t.Fatalf("no base: %v, want 1", got)
 	}

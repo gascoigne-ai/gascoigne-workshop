@@ -46,7 +46,7 @@ func TestTheFileBodyLaysOutAsPinned(t *testing.T) {
 		for _, size := range sizes {
 			name := "filebody-" + state.name + "-" + size.name
 			t.Run(name, func(t *testing.T) {
-				a, _ := newTestApp(t)
+				a := testApp(t)
 				t.Cleanup(a.waitWrites)
 				a.folders = folders.Disk{}
 				tab := a.cur()
@@ -72,10 +72,10 @@ func TestTheFileBodyLaysOutAsPinned(t *testing.T) {
 // What Dump does not show of the path field: it edits the tab's own file
 // field, shows its placeholder and does nothing on Enter.
 func TestTheFileBodyFieldEditsTheTabsPath(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	t.Cleanup(a.waitWrites)
 	tab := a.cur()
-	fields := fieldStates(a.fileBody(tab))
+	fields := behaviorStates(a.fileBody(tab), "*widget.fieldB")
 	if len(fields) != 1 {
 		t.Fatalf("%d fields, want 1: %q", len(fields), fields)
 	}

@@ -31,21 +31,8 @@ func ask(app *App, ctx context.Context) chan sampled {
 	return answer
 }
 
-// stepUntil runs frames until cond holds.
-func stepUntil(t *testing.T, app *App, what string, cond func() bool) {
-	t.Helper()
-	for range 400 {
-		app.step(core.Input{})
-		if cond() {
-			return
-		}
-		time.Sleep(5 * time.Millisecond)
-	}
-	t.Fatalf("timed out waiting for %s", what)
-}
-
 func TestTheAppOffersSamplingToMCPServers(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	mcp, ok := a.reg["mcp"].(proto.MCP)
 	if !ok || mcp.Sampler == nil {
 		t.Fatalf("the mcp protocol is %#v, it must have a Sampler", a.reg["mcp"])
@@ -53,9 +40,9 @@ func TestTheAppOffersSamplingToMCPServers(t *testing.T) {
 }
 
 func TestASamplingRequestOpensADialogAndTheTypedReplyIsTheAnswer(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	answer := ask(a, context.Background())
-	stepUntil(t, a, "the sampling dialog", func() bool { return a.dialog != nil })
+	until(t, a, "the sampling dialog", func() bool { return a.dialog != nil })
 	if !strings.Contains(a.dialog.Body, "Say hi") || !strings.Contains(a.dialog.Body, "Be brief") {
 		t.Fatalf("the dialog must show the request, body = %q", a.dialog.Body)
 	}
@@ -71,9 +58,9 @@ func TestASamplingRequestOpensADialogAndTheTypedReplyIsTheAnswer(t *testing.T) {
 }
 
 func TestDecliningASamplingRequestAnswersNo(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	answer := ask(a, context.Background())
-	stepUntil(t, a, "the sampling dialog", func() bool { return a.dialog != nil })
+	until(t, a, "the sampling dialog", func() bool { return a.dialog != nil })
 	dialogButtonNamed(t, a, "Decline").Run()
 	if got := <-answer; got.ok {
 		t.Fatalf("answer = %+v", got)
@@ -81,19 +68,19 @@ func TestDecliningASamplingRequestAnswersNo(t *testing.T) {
 }
 
 func TestAnAbandonedSamplingRequestClosesItsDialog(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	answer := ask(a, ctx)
-	stepUntil(t, a, "the sampling dialog", func() bool { return a.dialog != nil })
+	until(t, a, "the sampling dialog", func() bool { return a.dialog != nil })
 	cancel()
 	if got := <-answer; got.ok {
 		t.Fatalf("answer = %+v", got)
 	}
-	stepUntil(t, a, "the dialog to close", func() bool { return a.dialog == nil })
+	until(t, a, "the dialog to close", func() bool { return a.dialog == nil })
 }
 
 func TestASamplingRequestWaitsForTheDialogThatIsOpen(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.prompt("Something else", "", "OK", func(string) {})
 	answer := ask(a, context.Background())
 	for range 20 {
@@ -104,7 +91,7 @@ func TestASamplingRequestWaitsForTheDialogThatIsOpen(t *testing.T) {
 		t.Fatalf("the sampling request replaced the open dialog: %q", a.dialog.Title)
 	}
 	a.closeDialog()
-	stepUntil(t, a, "the sampling dialog after the other closed", func() bool { return a.dialog != nil && a.dialog.Title != "Something else" })
+	until(t, a, "the sampling dialog after the other closed", func() bool { return a.dialog != nil && a.dialog.Title != "Something else" })
 	dialogButtonNamed(t, a, "Decline").Run()
 	<-answer
 }

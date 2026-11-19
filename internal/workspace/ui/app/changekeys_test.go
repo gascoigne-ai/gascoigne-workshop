@@ -12,7 +12,7 @@ import (
 // the JSON form of the collection: that costs time in proportion to its
 // size, every frame, for ever.
 func TestIdleFramesDoNotRebuildTheChangeKeys(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.setWorkspace(t.TempDir())
 	var calls int
 	a.keys.collectionOf = func(col model.Collection) string { calls++; return tree.Key(col) }
@@ -32,7 +32,7 @@ func TestIdleFramesDoNotRebuildTheChangeKeys(t *testing.T) {
 // The dirty mark of a tab compares its request with the saved copy, which
 // clones and walks the request: not for every tab on every frame.
 func TestIdleFramesDoNotRecompareTheTabsWithTheirSavedCopies(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	var calls int
 	a.keys.dirtyOf = func(tab *reqTab) bool { calls++; return dirty(tab) }
 	a.step(core.Input{})

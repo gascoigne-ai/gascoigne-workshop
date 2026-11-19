@@ -79,7 +79,7 @@ func TestTheRequestTabsLayOutAsPinned(t *testing.T) {
 		for _, size := range sizes {
 			name := "requesttabs-" + state.name + "-" + size.name
 			t.Run(name, func(t *testing.T) {
-				a, _ := newTestApp(t)
+				a := testApp(t)
 				t.Cleanup(a.waitWrites)
 				state.setUp(t, a)
 				root := a.requestTabs()
@@ -121,7 +121,7 @@ func TestTheRequestTabsButtonsHaveTooltips(t *testing.T) {
 
 // Clicking the "+" opens a new request in a new, active tab.
 func TestClickingThePlusOpensANewRequestTab(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	t.Cleanup(a.waitWrites)
 	before := len(a.list.Tabs)
 	click(a, newRequestX, tabStripY)

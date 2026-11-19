@@ -26,7 +26,7 @@ func TestTheMessagesToolbarWhileConnectingLaysOutAsPinned(t *testing.T) {
 	for _, size := range sizes {
 		name := "messagestoolbar-connecting-" + size.name
 		t.Run(name, func(t *testing.T) {
-			a, _ := newTestApp(t)
+			a := testApp(t)
 			t.Cleanup(a.waitWrites)
 			tab := a.cur()
 			tab.Req.Protocol = "websocket"

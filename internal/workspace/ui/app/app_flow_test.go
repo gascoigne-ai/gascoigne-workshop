@@ -44,7 +44,7 @@ import (
 // These tests drive the whole window without a GPU: step() builds the
 // view, lays it out and delivers synthetic input exactly as Update does.
 // Coordinates follow the layout of a 1280x800 window: sidebar 260 wide,
-// header 44, request tabs 40, URL bar 56 (centre y 112), tree rows 28.
+// header 44, request tabs 42, URL bar 56 (centre y 112), tree rows 28.
 const (
 	winW, winH = 1280, 800
 	urlBarY    = headerH + tabsH + urlH/2
@@ -54,54 +54,6 @@ const (
 )
 
 func treeRowY(index int) int { return headerH + index*core.RowH + core.RowH/2 }
-
-// newTestApp is a test app with the panes side by side, whose geometry
-// the click coordinates of most tests assume, and the pretty-printed
-// response, which most tests were written against. The defaults have their
-// own tests: newSettingsTestApp for the layout, newCompactTestApp for the
-// response view.
-func newTestApp(t *testing.T) (*App, string) {
-	t.Helper()
-	return newTestAppWith(t, func(prefs *settings.Settings) { prefs.Layout = "side" })
-}
-
-// newSettingsTestApp is a test app whose settings are the defaults except
-// the pretty-printed response, so a test can change a setting from its
-// default and see it written to the file.
-func newSettingsTestApp(t *testing.T) (*App, string) {
-	t.Helper()
-	return newTestAppWith(t, func(*settings.Settings) {})
-}
-
-func newTestAppWith(t *testing.T, adjust func(*settings.Settings)) (*App, string) {
-	t.Helper()
-	path := filepath.Join(t.TempDir(), "settings.json")
-	s := settings.Default()
-	s.ResponseView = "pretty"
-	adjust(&s)
-	if err := settingsfile.Save(path, s); err != nil {
-		t.Fatal(err)
-	}
-	return startTestApp(t, path)
-}
-
-// newCompactTestApp is a test app with the settings defaults.
-func newCompactTestApp(t *testing.T) *App {
-	t.Helper()
-	a, _ := startTestApp(t, filepath.Join(t.TempDir(), "settings.json"))
-	return a
-}
-
-func startTestApp(t *testing.T, path string) (*App, string) {
-	t.Helper()
-	a, err := NewApp(withAdapters(Options{SettingsPath: path}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	a.w, a.h = winW, winH
-	a.step(core.Input{}) // first frame: lay everything out once
-	return a, path
-}
 
 // withAdapters gives opts the real history and font adapters, as main does.
 func withAdapters(opts Options) Options {
@@ -141,20 +93,8 @@ func pointTabAt(tab *reqTab, url string) {
 	tab.url = widget.NewTextField(url)
 }
 
-func waitForResponse(t *testing.T, app *App, tab *reqTab) {
-	t.Helper()
-	for range 400 {
-		app.step(core.Input{})
-		if tab.Resp != nil {
-			return
-		}
-		time.Sleep(5 * time.Millisecond)
-	}
-	t.Fatal("no response arrived")
-}
-
 func TestClickingARequestInTheTreeOpensItsTab(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	if len(a.list.Tabs) != 1 || a.cur().Req.Name != "Search Repos" {
 		t.Fatalf("start: %d tabs, current %q", len(a.list.Tabs), a.cur().Req.Name)
 	}
@@ -171,7 +111,7 @@ func TestClickingARequestInTheTreeOpensItsTab(t *testing.T) {
 }
 
 func TestClickingAFolderTogglesIt(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	before := len(collection.Rows(&a.col().Folder, a.expanded))
 	click(a, 100, treeRowY(1)) // User folder, collapsed at start
 	if got := len(collection.Rows(&a.col().Folder, a.expanded)); got != before+1 {
@@ -184,7 +124,7 @@ func TestClickingAFolderTogglesIt(t *testing.T) {
 }
 
 func TestNewRequestAndSwitchingTabs(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.newRequest()
 	if len(a.list.Tabs) != 2 || a.list.Active != 1 || a.cur().Req.Name != "New Request" {
 		t.Fatalf("tabs %d active %d", len(a.list.Tabs), a.list.Active)
@@ -196,7 +136,7 @@ func TestNewRequestAndSwitchingTabs(t *testing.T) {
 }
 
 func TestProtocolAndMethodChipsCycle(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.settings.GRPC, a.settings.SSE = true, true // the full cycle takes both experimental protocols
 	req := a.cur().Req
 
@@ -218,7 +158,7 @@ func TestProtocolAndMethodChipsCycle(t *testing.T) {
 }
 
 func TestSwitchingToRESTRestoresAMethod(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	req := a.cur().Req
 	req.Protocol, req.Method = "grpc", ""
 	a.cycleProtocol(a.cur())
@@ -228,7 +168,7 @@ func TestSwitchingToRESTRestoresAMethod(t *testing.T) {
 }
 
 func TestTypingInTheURLFieldUpdatesParams(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	req := a.cur().Req
 	click(a, 1100, urlBarY) // inside the field, past the end of the text: cursor at the end
 	a.step(core.Input{Typed: []rune("&page=2")})
@@ -246,7 +186,7 @@ func TestTypingInTheURLFieldUpdatesParams(t *testing.T) {
 }
 
 func TestTogglingAParamRewritesTheURL(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	req := a.cur().Req
 	click(a, 310, paramsRow0Y) // checkbox of the first Params row (q)
 	if req.Params[0].Enabled || strings.Contains(req.URL, "q=") {
@@ -262,7 +202,7 @@ func TestTogglingAParamRewritesTheURL(t *testing.T) {
 }
 
 func TestDeletingAParamRewritesTheURL(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	req := a.cur().Req
 	click(a, 739, paramsRow0Y) // delete button of the first Params row
 	if len(req.Params) != 2 || req.Params[0].Name != "order" || strings.Contains(req.URL, "q=") {
@@ -281,7 +221,7 @@ func TestSendShowsTheResponse(t *testing.T) {
 		io.WriteString(writer, `{"ok":true}`)
 	}))
 	defer srv.Close()
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	pointTabAt(tab, srv.URL)
 
@@ -305,7 +245,7 @@ func TestSendShowsTheResponse(t *testing.T) {
 
 func TestEnterInTheURLFieldSends(t *testing.T) {
 	srv := jsonServer(t)
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	pointTabAt(tab, srv.URL)
 
@@ -327,13 +267,13 @@ func TestSendingTwiceWhileRunningStartsOneRequest(t *testing.T) {
 		<-release
 	}))
 	defer srv.Close()
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	pointTabAt(tab, srv.URL)
 
 	click(a, sendX, urlBarY)
-	a.step(key(ebiten.KeyEnter, true, false))
-	a.step(key(ebiten.KeyEnter, true, false))
+	a.step(combo(ebiten.KeyEnter, true, false, false))
+	a.step(combo(ebiten.KeyEnter, true, false, false))
 	<-hits
 	close(release)
 	waitForResponse(t, a, tab)
@@ -346,7 +286,7 @@ func TestFailedSendShowsTheError(t *testing.T) {
 	srv := jsonServer(t)
 	url := srv.URL
 	srv.Close() // nothing listens any more
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	pointTabAt(tab, url)
 
@@ -358,7 +298,7 @@ func TestFailedSendShowsTheError(t *testing.T) {
 }
 
 func TestOtherProtocolsAnswerThroughTheSameUI(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	click(a, 300, urlBarY)   // rest -> websocket
 	click(a, sendX, urlBarY) // connect: an https URL is no WebSocket address
@@ -376,7 +316,8 @@ func TestOtherProtocolsAnswerThroughTheSameUI(t *testing.T) {
 }
 
 func TestSettingsMenuOpensChangesThemeAndSaves(t *testing.T) {
-	a, path := newTestApp(t)
+	a := testApp(t)
+	path := a.SettingsPath()
 	click(a, menuBtnX, menuBtnY)
 	if !a.menu {
 		t.Fatal("the three-dot button must open the menu")
@@ -406,7 +347,7 @@ func TestSettingsMenuOpensChangesThemeAndSaves(t *testing.T) {
 }
 
 func TestMenuClosesOnEscapeAndOnOutsideClick(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	click(a, menuBtnX, menuBtnY)
 	a.step(core.Input{Escape: true})
 	if a.menu {
@@ -480,7 +421,7 @@ func TestSettingsStartFromTheSavedChoice(t *testing.T) {
 // lay out; a pane that reads a nil response would panic here.
 func TestEveryPaneBuildsInEveryResponseState(t *testing.T) {
 	srv := jsonServer(t)
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 
 	states := map[string]func(){
@@ -506,7 +447,7 @@ func TestEveryPaneBuildsInEveryResponseState(t *testing.T) {
 }
 
 func TestTabItemsCountEnabledRowsAndHeaders(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	items := a.tabItems(requestPanes, tab)
 	want := map[string]int{"Params": 3, "Body": 0, "Headers": 0, "Auth": 0, "Vars": 1}
@@ -557,7 +498,7 @@ const (
 func (a *App) typeText(text string) { a.step(core.Input{Typed: []rune(text)}) }
 
 func TestEditingAParamValueUpdatesTheURL(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	click(a, valueCellX, paramsRow0Y)
 	if a.edit == nil || a.edit.row != 0 || a.edit.col != 1 {
 		t.Fatalf("edit = %+v", a.edit)
@@ -575,7 +516,7 @@ func TestEditingAParamValueUpdatesTheURL(t *testing.T) {
 }
 
 func TestEditingAParamNameAndDescription(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	click(a, nameCellX, paramsRow0Y)
 	a.typeText("search")
 	a.step(core.Input{Enter: true})
@@ -590,7 +531,7 @@ func TestEditingAParamNameAndDescription(t *testing.T) {
 }
 
 func TestEscapeCancelsACellEdit(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	click(a, valueCellX, paramsRow0Y)
 	a.typeText("zzz")
 	a.step(core.Input{Escape: true})
@@ -600,7 +541,7 @@ func TestEscapeCancelsACellEdit(t *testing.T) {
 }
 
 func TestClickingElsewhereCommitsACellEdit(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	click(a, valueCellX, paramsRow0Y)
 	a.typeText("go")
 	click(a, farAwayX, farAwayY)
@@ -611,7 +552,7 @@ func TestClickingElsewhereCommitsACellEdit(t *testing.T) {
 }
 
 func TestClickingAnotherCellCommitsAndMovesTheEdit(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	click(a, valueCellX, paramsRow0Y)
 	a.typeText("go")
 	click(a, valueCellX, paramsRow0Y+core.RowH) // the order row
@@ -621,7 +562,7 @@ func TestClickingAnotherCellCommitsAndMovesTheEdit(t *testing.T) {
 }
 
 func TestTabMovesToTheNextCellAndShiftTabBack(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	click(a, nameCellX, paramsRow0Y)
 	a.typeText("k")
 	a.step(core.Input{Tab: true})
@@ -640,7 +581,7 @@ func TestTabMovesToTheNextCellAndShiftTabBack(t *testing.T) {
 }
 
 func TestTypingInThePlaceholderRowAddsARow(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	click(a, nameCellX, paramsRow3Y)
 	a.typeText("page")
 	a.step(core.Input{Tab: true})
@@ -660,7 +601,7 @@ func TestTypingInThePlaceholderRowAddsARow(t *testing.T) {
 }
 
 func TestLeavingThePlaceholderRowEmptyAddsNothing(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	click(a, nameCellX, paramsRow3Y)
 	a.step(core.Input{Enter: true})
 	if len(a.cur().Req.Params) != 3 || a.edit != nil {
@@ -669,7 +610,7 @@ func TestLeavingThePlaceholderRowEmptyAddsNothing(t *testing.T) {
 }
 
 func TestHeadersTableIsEditableToo(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.cur().paneTab = headersTabIdx
 	a.step(core.Input{})
 	click(a, nameCellX, paramsRow0Y) // headers have no rows: the placeholder is the first row
@@ -685,7 +626,7 @@ func TestHeadersTableIsEditableToo(t *testing.T) {
 
 func TestResponseHeadersAreNotEditable(t *testing.T) {
 	srv := jsonServer(t)
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	pointTabAt(tab, srv.URL)
 	a.send(tab)
@@ -698,16 +639,12 @@ func TestResponseHeadersAreNotEditable(t *testing.T) {
 	}
 }
 
-func key(key ebiten.Key, ctrl, shift bool) core.Input {
-	return core.Input{Keys: []ebiten.Key{key}, Ctrl: ctrl, Shift: shift}
-}
-
 func TestCtrlEnterSendsTheRequest(t *testing.T) {
 	srv := jsonServer(t)
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	pointTabAt(tab, srv.URL)
-	a.step(key(ebiten.KeyEnter, true, false))
+	a.step(combo(ebiten.KeyEnter, true, false, false))
 	waitForResponse(t, a, tab)
 	if tab.Resp.Status != 200 {
 		t.Fatalf("resp = %+v", tab.Resp)
@@ -715,9 +652,9 @@ func TestCtrlEnterSendsTheRequest(t *testing.T) {
 }
 
 func TestCtrlLFocusesAndSelectsTheURL(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	click(a, 1100, 600) // click on empty space so nothing is focused
-	a.step(key(ebiten.KeyL, true, false))
+	a.step(combo(ebiten.KeyL, true, false, false))
 	url := &a.cur().url
 	if !url.Focused || url.SelectedText() != url.Text {
 		t.Fatalf("focused %v selection %q", url.Focused, url.SelectedText())
@@ -725,47 +662,47 @@ func TestCtrlLFocusesAndSelectsTheURL(t *testing.T) {
 }
 
 func TestCtrlTOpensAndCtrlWClosesTabs(t *testing.T) {
-	a, _ := newTestApp(t)
-	a.step(key(ebiten.KeyT, true, false))
+	a := testApp(t)
+	a.step(combo(ebiten.KeyT, true, false, false))
 	if len(a.list.Tabs) != 2 || a.list.Active != 1 {
 		t.Fatalf("Ctrl+T: %d tabs, active %d", len(a.list.Tabs), a.list.Active)
 	}
-	a.step(key(ebiten.KeyW, true, false))
+	a.step(combo(ebiten.KeyW, true, false, false))
 	if len(a.list.Tabs) != 1 || a.list.Active != 0 || a.cur().Req.Name != "Search Repos" {
 		t.Fatalf("Ctrl+W: %d tabs, active %d (%s)", len(a.list.Tabs), a.list.Active, a.cur().Req.Name)
 	}
-	a.step(key(ebiten.KeyW, true, false))
+	a.step(combo(ebiten.KeyW, true, false, false))
 	if len(a.list.Tabs) != 1 || a.cur().Req.Name != "New Request" {
 		t.Fatalf("closing the last tab must leave a blank request, got %d tabs (%s)", len(a.list.Tabs), a.cur().Req.Name)
 	}
 }
 
 func TestCtrlTabSwitchesTabsAndWraps(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.newRequest()
 	a.newRequest() // three tabs, the last active
-	a.step(key(ebiten.KeyTab, true, false))
+	a.step(combo(ebiten.KeyTab, true, false, false))
 	if a.list.Active != 0 {
 		t.Fatalf("Ctrl+Tab from the last tab must wrap to the first, active %d", a.list.Active)
 	}
-	a.step(key(ebiten.KeyTab, true, true))
+	a.step(combo(ebiten.KeyTab, true, true, false))
 	if a.list.Active != 2 {
 		t.Fatalf("Ctrl+Shift+Tab must go back and wrap, active %d", a.list.Active)
 	}
 }
 
 func TestCtrlCommaOpensTheSettingsMenu(t *testing.T) {
-	a, _ := newTestApp(t)
-	a.step(key(ebiten.KeyComma, true, false))
+	a := testApp(t)
+	a.step(combo(ebiten.KeyComma, true, false, false))
 	if !a.menu {
 		t.Fatal("Ctrl+, must open the settings menu")
 	}
 }
 
 func TestShortcutsNeedTheirModifiers(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	for _, k := range []ebiten.Key{ebiten.KeyT, ebiten.KeyW, ebiten.KeyL, ebiten.KeyEnter, ebiten.KeyComma, ebiten.KeyTab} {
-		a.step(key(k, false, false)) // plain letters must never trigger anything
+		a.step(combo(k, false, false, false)) // plain letters must never trigger anything
 	}
 	if len(a.list.Tabs) != 1 || a.menu || a.cur().Sending {
 		t.Fatalf("plain keys changed state: %d tabs, menu %v", len(a.list.Tabs), a.menu)
@@ -787,7 +724,7 @@ func TestShortcutTableHasUniqueBindingsAndLabels(t *testing.T) {
 }
 
 func TestTreeScrollsWhenItDoesNotFit(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.h = 200                       // the tree area is about 128px: five rows
 	for _, i := range []int{0, 2} { // User and Realtime
 		a.expanded[a.col().Folders[i]] = true
@@ -830,7 +767,7 @@ const (
 )
 
 func openBodyPane(t *testing.T) *App {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.cur().paneTab = bodyTabIdx
 	a.step(core.Input{})
 	return a
@@ -934,7 +871,7 @@ func TestSendingAFormBodyUsesTheRows(t *testing.T) {
 		got <- request.Header.Get("Content-Type") + "|" + string(b)
 	}))
 	defer srv.Close()
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	tab.Req.Method, tab.Req.BodyType = "POST", model.BodyForm
 	tab.Req.Form = []model.KV{{Name: "q", Value: "go lang", Enabled: true}}
@@ -983,7 +920,7 @@ func (a *App) tabX(index int) (left, width int) {
 const tabStripY = headerH + tabsH/2
 
 func twoTabs(t *testing.T) *App {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	click(a, 100, treeRowY(4)) // opens "Repository Info" as the second tab
 	if len(a.list.Tabs) != 2 {
 		t.Fatal("test setup: want two tabs")
@@ -1051,7 +988,7 @@ func TestClosingATabBeforeTheActiveOneKeepsTheSameTabActive(t *testing.T) {
 }
 
 func TestDirtyFollowsEditsAndUndoingThemByHand(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	if dirty(tab) {
 		t.Fatal("a freshly opened request is clean")
@@ -1171,7 +1108,7 @@ func pathServer(t *testing.T) (srv *httptest.Server, release func()) {
 
 func TestSendingTurnsIntoCancelAndStopsTheRequest(t *testing.T) {
 	srv, _ := pathServer(t)
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	pointTabAt(tab, srv.URL+"/slow")
 
@@ -1190,7 +1127,7 @@ func TestSendingTurnsIntoCancelAndStopsTheRequest(t *testing.T) {
 
 func TestEscapeCancelsARunningRequestButClosesTheMenuFirst(t *testing.T) {
 	srv, _ := pathServer(t)
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	pointTabAt(tab, srv.URL+"/slow")
 	click(a, sendX, urlBarY)
@@ -1207,7 +1144,7 @@ func TestEscapeCancelsARunningRequestButClosesTheMenuFirst(t *testing.T) {
 }
 
 func TestEscapeWithNothingRunningDoesNothing(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.step(core.Input{Escape: true})
 	if a.cur().Resp != nil {
 		t.Fatal("Escape must not invent a response")
@@ -1216,7 +1153,7 @@ func TestEscapeWithNothingRunningDoesNothing(t *testing.T) {
 
 func TestALateResultFromACancelledRequestIsIgnored(t *testing.T) {
 	srv, release := pathServer(t)
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 
 	pointTabAt(tab, srv.URL+"/slow")
@@ -1242,7 +1179,7 @@ func TestALateResultFromACancelledRequestIsIgnored(t *testing.T) {
 
 func TestRequestTimeoutStopsASlowRequest(t *testing.T) {
 	srv, _ := pathServer(t)
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	pointTabAt(tab, srv.URL+"/slow")
 	tab.Req.TimeoutSec = 1
@@ -1256,7 +1193,7 @@ func TestRequestTimeoutStopsASlowRequest(t *testing.T) {
 }
 
 func TestTimeoutFallsBackToTheSettingsDefault(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tests := []struct {
 		name         string
 		req, setting int
@@ -1285,7 +1222,7 @@ const (
 )
 
 func openSettingsPane(t *testing.T) *App {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.cur().paneTab = settingsTabIdx
 	a.step(core.Input{})
 	return a
@@ -1371,7 +1308,7 @@ const (
 )
 
 func openAuthPane(t *testing.T) *App {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.cur().paneTab = authTabIdx
 	a.step(core.Input{})
 	return a
@@ -1516,7 +1453,7 @@ func jsonResponse(t *testing.T, body string) *App {
 	t.Helper()
 	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) { io.WriteString(writer, body) }))
 	t.Cleanup(srv.Close)
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	sendAndWait(t, a, srv.URL)
 	return a
 }
@@ -1542,7 +1479,7 @@ func TestBinaryBodiesAreNotShownAsText(t *testing.T) {
 		writer.Write([]byte{0x89, 'P', 'N', 'G', 0, 1, 2, 0xff})
 	}))
 	defer srv.Close()
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	sendAndWait(t, a, srv.URL)
 	msg, isErr := paneEmpty(responsePanes[0], a.cur())
 	if !strings.Contains(msg, "Binary body") || !strings.Contains(msg, "8B") || isErr {
@@ -1569,7 +1506,7 @@ func TestCopyBodyAndCopyAsCurl(t *testing.T) {
 }
 
 func TestCurlCopyExpandsVariables(t *testing.T) {
-	a, _ := newTestApp(t) // the sample request uses {{baseUrl}}
+	a := testApp(t) // the sample request uses {{baseUrl}}
 	a.cur().Resp = &model.Response{Status: 200, Body: []byte("{}")}
 	a.cur().view.SetLines(respview.CodeLines([]byte("{}")))
 	clip := &fakeClip{}
@@ -1584,7 +1521,7 @@ func TestCurlCopyExpandsVariables(t *testing.T) {
 func TestCtrlFOpensFindAndTypingSearches(t *testing.T) {
 	a := jsonResponse(t, `{"id":1,"name":"x","ids":[1,2]}`)
 	tab := a.cur()
-	a.step(key(ebiten.KeyF, true, false))
+	a.step(combo(ebiten.KeyF, true, false, false))
 	if !tab.look.FindOpen || !tab.find.Focused {
 		t.Fatalf("findOpen %v focused %v", tab.look.FindOpen, tab.find.Focused)
 	}
@@ -1632,7 +1569,7 @@ func TestFindButtonsAndClose(t *testing.T) {
 func TestEscapeClosesFindBeforeAnythingElse(t *testing.T) {
 	a := jsonResponse(t, `{"id":1}`)
 	tab := a.cur()
-	a.step(key(ebiten.KeyF, true, false))
+	a.step(combo(ebiten.KeyF, true, false, false))
 	a.typeText("id")
 	a.step(core.Input{Escape: true})
 	if tab.look.FindOpen || len(tab.view.Find("")) != 0 {
@@ -1646,7 +1583,7 @@ func TestEscapeClosesFindBeforeAnythingElse(t *testing.T) {
 func TestANewResponseRerunsAnOpenSearch(t *testing.T) {
 	a := jsonResponse(t, `{"id":1}`)
 	tab := a.cur()
-	a.step(key(ebiten.KeyF, true, false))
+	a.step(combo(ebiten.KeyF, true, false, false))
 	a.typeText("id")
 
 	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
@@ -1671,7 +1608,7 @@ func drag(app *App, fromX, toX, posY int) {
 }
 
 func TestDraggingTheSidebarDividerResizesTheSidebar(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	drag(a, 259, 400, dividerY)
 	if a.sidebarSplit.Size < 390 {
 		t.Fatalf("sidebar size = %v", a.sidebarSplit.Size)
@@ -1683,7 +1620,7 @@ func TestDraggingTheSidebarDividerResizesTheSidebar(t *testing.T) {
 }
 
 func TestSidebarKeepsAMinimumWidthAndDoubleClickResets(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	drag(a, 259, 5, dividerY)
 	click(a, 150, treeRowY(4)) // the minimum is 160px wide
 	if a.cur().Req.Name != "Repository Info" {
@@ -1706,7 +1643,7 @@ func TestSidebarKeepsAMinimumWidthAndDoubleClickResets(t *testing.T) {
 }
 
 func TestDraggingThePaneDividerChangesTheShare(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	drag(a, 769, 600, dividerY)
 	if s := a.paneSplit.Size; s <= 0.25 || s >= 0.4 {
 		t.Fatalf("share = %v, want about 0.33 (the request pane is now narrower)", s)
@@ -1714,7 +1651,7 @@ func TestDraggingThePaneDividerChangesTheShare(t *testing.T) {
 }
 
 func TestResizeCursorOverTheDividers(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	for _, tt := range []struct {
 		name string
 		x, y int
@@ -1735,7 +1672,8 @@ func TestResizeCursorOverTheDividers(t *testing.T) {
 const ()
 
 func TestLayoutSettingStacksThePanesAndIsSaved(t *testing.T) {
-	a, path := newTestApp(t)
+	a := testApp(t)
+	path := a.SettingsPath()
 	click(a, menuBtnX, menuBtnY)
 	a.prefs.Search = widget.NewTextField("request and response")
 	clickText(t, a, "Stacked", 0)
@@ -1778,7 +1716,7 @@ func (r *ran) item(label string) widget.MenuItem {
 // separator is 9px: Copy 304..328, separator, Paste 337..361, Delete 361..385.
 func openTestMenu(t *testing.T) (*App, *ran) {
 	t.Helper()
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	r := &ran{}
 	paste := r.item("Paste")
 	paste.Disabled = true
@@ -1826,8 +1764,8 @@ func TestClickingOutsideClosesTheMenuWithoutReachingWhatIsBelow(t *testing.T) {
 
 func TestMenuKeyboardNavigationSkipsSeparatorsAndDisabledRows(t *testing.T) {
 	a, r := openTestMenu(t)
-	down := func() { a.step(key(ebiten.KeyArrowDown, false, false)) }
-	up := func() { a.step(key(ebiten.KeyArrowUp, false, false)) }
+	down := func() { a.step(combo(ebiten.KeyArrowDown, false, false, false)) }
+	up := func() { a.step(combo(ebiten.KeyArrowUp, false, false, false)) }
 	if widget.PopupMenu(a.ctx).Hot != 0 {
 		t.Fatalf("the first enabled row starts highlighted, hot = %d", widget.PopupMenu(a.ctx).Hot)
 	}
@@ -1843,7 +1781,7 @@ func TestMenuKeyboardNavigationSkipsSeparatorsAndDisabledRows(t *testing.T) {
 	if widget.PopupMenu(a.ctx).Hot != 3 {
 		t.Fatalf("Up wraps backwards: hot = %d", widget.PopupMenu(a.ctx).Hot)
 	}
-	a.step(key(ebiten.KeyEnter, false, false))
+	a.step(combo(ebiten.KeyEnter, false, false, false))
 	if len(r.log) != 1 || r.log[0] != "Delete" || widget.PopupMenu(a.ctx) != nil {
 		t.Fatalf("Enter runs the highlighted row: ran %v", r.log)
 	}
@@ -1859,7 +1797,7 @@ func TestEscapeClosesTheMenuFirst(t *testing.T) {
 }
 
 func TestMenuNearTheWindowEdgeStaysOnScreen(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	r := &ran{}
 	a.openMenu(1270, 790, []widget.MenuItem{r.item("Copy"), {Separator: true}, r.item("Paste"), r.item("Delete")})
 	a.step(core.Input{})
@@ -1873,7 +1811,7 @@ func TestMenuNearTheWindowEdgeStaysOnScreen(t *testing.T) {
 
 func TestShortcutsAreIgnoredWhileAMenuIsOpen(t *testing.T) {
 	a, _ := openTestMenu(t)
-	a.step(key(ebiten.KeyT, true, false))
+	a.step(combo(ebiten.KeyT, true, false, false))
 	if len(a.list.Tabs) != 1 {
 		t.Fatal("Ctrl+T must not open a tab behind a menu")
 	}
@@ -1892,7 +1830,7 @@ func TestConfirmRunsOnEnterAndOnTheButton(t *testing.T) {
 		"Enter":  func(app *App) { app.step(core.Input{Enter: true}) },
 		"button": func(app *App) { click(app, dialogOKX, dialogButtonY) },
 	} {
-		a, _ := newTestApp(t)
+		a := testApp(t)
 		var ok int
 		a.confirm("Delete request?", "This cannot be undone.", "Delete", func() { ok++ })
 		a.step(core.Input{})
@@ -1912,7 +1850,7 @@ func TestConfirmCancelsOnEscapeCancelButtonAndOutsideClick(t *testing.T) {
 		"Cancel":  func(app *App) { click(app, dialogCancelX, dialogButtonY) },
 		"outside": func(app *App) { click(app, 100, 700) },
 	} {
-		a, _ := newTestApp(t)
+		a := testApp(t)
 		var ok int
 		a.confirm("Delete request?", "This cannot be undone.", "Delete", func() { ok++ })
 		a.step(core.Input{})
@@ -1924,7 +1862,7 @@ func TestConfirmCancelsOnEscapeCancelButtonAndOutsideClick(t *testing.T) {
 }
 
 func TestPromptReturnsTheTypedText(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	var got string
 	a.prompt("Rename", "Old name", "Rename", func(text string) { got = text })
 	a.step(core.Input{})
@@ -1939,14 +1877,14 @@ func TestPromptReturnsTheTypedText(t *testing.T) {
 }
 
 func TestDialogTrapsFocusAndBlocksShortcuts(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.prompt("Rename", "x", "Rename", func(string) {})
 	a.step(core.Input{})
 	a.step(core.Input{Tab: true})
 	if !a.dialog.Input.Focused || a.cur().url.Focused {
 		t.Fatal("Tab must stay inside the dialog")
 	}
-	a.step(key(ebiten.KeyT, true, false))
+	a.step(combo(ebiten.KeyT, true, false, false))
 	if len(a.list.Tabs) != 1 {
 		t.Fatal("global shortcuts are off while a dialog is open")
 	}
@@ -1960,7 +1898,7 @@ func toastRect(count, index int) (x, y, w, h int) {
 }
 
 func TestInfoToastsExpireAndErrorsStayUntilClicked(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	clock := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
 	a.now = func() time.Time { return clock }
 	a.toast("Saved", false)
@@ -1993,7 +1931,7 @@ func TestInfoToastsExpireAndErrorsStayUntilClicked(t *testing.T) {
 }
 
 func TestClickingOneToastDismissesOnlyThatOne(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.toast("first", true)
 	a.toast("second", true)
 	a.step(core.Input{})
@@ -2005,7 +1943,7 @@ func TestClickingOneToastDismissesOnlyThatOne(t *testing.T) {
 }
 
 func TestOnlyTheNewestToastsAreKept(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	for i := 0; i < 8; i++ {
 		a.toast(strings.Repeat("x", i+1), true)
 	}
@@ -2015,7 +1953,7 @@ func TestOnlyTheNewestToastsAreKept(t *testing.T) {
 }
 
 func TestClipboardFailureBecomesAnErrorToast(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.ctx.Clipboard = core.ReportClipboard(&fakeClip{err: errors.New("no clipboard tool found")}, a.clipboardNote)
 	a.ctx.Clipboard.Write("x")
 	if len(a.toasts) != 1 || !a.toasts[0].IsErr || !strings.Contains(a.toasts[0].Text, "no clipboard tool") {
@@ -2091,7 +2029,7 @@ func allOpen(app *App) map[*model.Folder]bool {
 }
 
 func TestRightClickOnATreeRowOpensItsMenu(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	rightClick(a, 100, treeRowY(rowInfo))
 	if widget.PopupMenu(a.ctx) == nil {
 		t.Fatal("no menu")
@@ -2112,7 +2050,7 @@ func TestRightClickOnATreeRowOpensItsMenu(t *testing.T) {
 }
 
 func TestRenameThroughTheMenuUpdatesTheTreeAndTheTab(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	info := findReq(a, "Repository Info")
 	rightClick(a, 100, treeRowY(rowInfo))
 	pickMenu(t, a, "Rename")
@@ -2131,7 +2069,7 @@ func TestRenameThroughTheMenuUpdatesTheTreeAndTheTab(t *testing.T) {
 }
 
 func TestRenameToATakenNameIsRefusedWithAToast(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	info := findReq(a, "Repository Info")
 	rightClick(a, 100, treeRowY(rowInfo))
 	pickMenu(t, a, "Rename")
@@ -2143,7 +2081,7 @@ func TestRenameToATakenNameIsRefusedWithAToast(t *testing.T) {
 }
 
 func TestDuplicateAddsACopyRightAfter(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	before := len(collection.Rows(&a.col().Folder, a.expanded))
 	rightClick(a, 100, treeRowY(rowInfo))
 	pickMenu(t, a, "Duplicate")
@@ -2154,7 +2092,7 @@ func TestDuplicateAddsACopyRightAfter(t *testing.T) {
 }
 
 func TestDeleteAsksFirstAndClosesTheRequestsTab(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	click(a, 100, treeRowY(rowInfo)) // opens it in a tab
 	info := a.cur().Req
 	rightClick(a, 100, treeRowY(rowInfo))
@@ -2181,7 +2119,7 @@ func TestDeleteAsksFirstAndClosesTheRequestsTab(t *testing.T) {
 }
 
 func TestDeletingAFolderClosesTheTabsOfEverythingInIt(t *testing.T) {
-	a, _ := newTestApp(t) // Search Repos (inside Repository) is open
+	a := testApp(t) // Search Repos (inside Repository) is open
 	rightClick(a, 100, treeRowY(rowRepo))
 	pickMenu(t, a, "Delete")
 	a.step(core.Input{Enter: true})
@@ -2194,7 +2132,7 @@ func TestDeletingAFolderClosesTheTabsOfEverythingInIt(t *testing.T) {
 }
 
 func TestCopyURLPutsTheExpandedURLOnTheClipboard(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	clip := &fakeClip{}
 	a.ctx.Clipboard = clip
 	rightClick(a, 100, treeRowY(rowInfo))
@@ -2205,7 +2143,7 @@ func TestCopyURLPutsTheExpandedURLOnTheClipboard(t *testing.T) {
 }
 
 func TestNewRequestAndNewFolderFromTheFolderMenu(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	repo := a.col().Folders[1]
 	rightClick(a, 100, treeRowY(rowRepo))
 	pickMenu(t, a, "New request")
@@ -2220,17 +2158,17 @@ func TestNewRequestAndNewFolderFromTheFolderMenu(t *testing.T) {
 }
 
 func TestPlusCreatesTheRequestInTheSelectedFolder(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	user := a.col().Folders[0]
 	click(a, 100, treeRowY(rowUser)) // selects (and expands) the User folder
-	a.step(key(ebiten.KeyT, true, false))
+	a.step(combo(ebiten.KeyT, true, false, false))
 	if len(user.Requests) != 2 || a.cur().Req != user.Requests[1] {
 		t.Fatalf("User now has %v", requestNames(user))
 	}
 }
 
 func TestDraggingARequestOntoAFolderMovesIt(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tags := findReq(a, "Repository Tags")
 	user := a.col().Folders[0]
 	a.step(core.Input{X: 100, Y: treeRowY(rowTags), Click: true, Held: true})
@@ -2245,7 +2183,7 @@ func TestDraggingARequestOntoAFolderMovesIt(t *testing.T) {
 }
 
 func TestDraggingARequestOntoARequestInsertsBeforeIt(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	repo := a.col().Folders[1]
 	a.step(core.Input{X: 100, Y: treeRowY(rowTags), Click: true, Held: true})
 	a.step(core.Input{X: 100, Y: treeRowY(rowSearch), Held: true})
@@ -2256,7 +2194,7 @@ func TestDraggingARequestOntoARequestInsertsBeforeIt(t *testing.T) {
 }
 
 func TestADropThatIsNotAllowedChangesNothingAndSaysWhy(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.expanded[a.col().Folders[1]] = true
 	// drag the Repository folder onto its own request: that is moving it into itself's parent, fine;
 	// drag it onto a request inside itself is the refused case
@@ -2272,7 +2210,7 @@ func TestADropThatIsNotAllowedChangesNothingAndSaysWhy(t *testing.T) {
 }
 
 func TestReleasingOnTheSameRowIsJustAClick(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.step(core.Input{X: 100, Y: treeRowY(rowInfo), Click: true, Held: true})
 	a.step(core.Input{X: 100, Y: treeRowY(rowInfo)})
 	if got := requestNames(a.col().Folders[1]); !reflect.DeepEqual(got, []string{"Search Repos", "Repository Info", "Repository Tags"}) {
@@ -2281,7 +2219,7 @@ func TestReleasingOnTheSameRowIsJustAClick(t *testing.T) {
 }
 
 func TestFilterShowsMatchesByNameAndURL(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	click(a, 180, headerH/2) // the filter field in the sidebar header
 	a.typeText("tags")
 	rows := collection.Rows(&a.col().Folder, a.expanded)
@@ -2318,7 +2256,7 @@ func TestFilterShowsMatchesByNameAndURL(t *testing.T) {
 }
 
 func TestFilteredRowsStillOpenTheRightRequest(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	click(a, 180, headerH/2)
 	a.typeText("tags")
 	click(a, 100, treeRowY(2)) // third visible row: Repository Tags
@@ -2328,40 +2266,40 @@ func TestFilteredRowsStillOpenTheRightRequest(t *testing.T) {
 }
 
 func TestTreeKeyboardNavigation(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	click(a, 100, treeRowY(rowInfo)) // focuses the tree and selects Repository Info
-	a.step(key(ebiten.KeyArrowDown, false, false))
+	a.step(combo(ebiten.KeyArrowDown, false, false, false))
 	if a.selected != model.Of(findReq(a, "Repository Tags")) {
 		t.Fatalf("Down selects the next row, selected %v", a.selected)
 	}
-	a.step(key(ebiten.KeyArrowUp, false, false))
-	a.step(key(ebiten.KeyArrowUp, false, false))
+	a.step(combo(ebiten.KeyArrowUp, false, false, false))
+	a.step(combo(ebiten.KeyArrowUp, false, false, false))
 	if a.selected != model.Of(findReq(a, "Search Repos")) {
 		t.Fatal("Up moves back")
 	}
-	a.step(key(ebiten.KeyArrowDown, false, false))
-	a.step(key(ebiten.KeyEnter, false, false))
+	a.step(combo(ebiten.KeyArrowDown, false, false, false))
+	a.step(combo(ebiten.KeyEnter, false, false, false))
 	if a.cur().Req.Name != "Repository Info" {
 		t.Fatalf("Enter opens the selected request, got %q", a.cur().Req.Name)
 	}
 
-	a.step(key(ebiten.KeyF2, false, false))
+	a.step(combo(ebiten.KeyF2, false, false, false))
 	if a.dialog == nil || a.dialog.Input.Text != "Repository Info" {
 		t.Fatal("F2 renames the selection")
 	}
 	a.step(core.Input{Escape: true})
-	a.step(key(ebiten.KeyDelete, false, false))
+	a.step(combo(ebiten.KeyDelete, false, false, false))
 	if a.dialog == nil {
 		t.Fatal("Delete asks before deleting the selection")
 	}
 }
 
 func TestTreeKeysDoNothingWhileTyping(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	click(a, 100, treeRowY(rowInfo))
 	click(a, 1100, urlBarY) // now the URL field has the keyboard
-	a.step(key(ebiten.KeyDelete, false, false))
-	a.step(key(ebiten.KeyF2, false, false))
+	a.step(combo(ebiten.KeyDelete, false, false, false))
+	a.step(combo(ebiten.KeyF2, false, false, false))
 	if a.dialog != nil {
 		t.Fatal("Delete and F2 belong to the text field, not the tree")
 	}
@@ -2379,8 +2317,6 @@ const (
 	bulkBtnX      = 715
 )
 
-func altKey(key ebiten.Key) core.Input { return core.Input{Keys: []ebiten.Key{key}, Alt: true} }
-
 func paramNames(app *App) []string {
 	var out []string
 	for _, p := range app.cur().Req.Params {
@@ -2390,9 +2326,9 @@ func paramNames(app *App) []string {
 }
 
 func TestCtrlEnterWhileEditingInsertsARowBelowAndEditsIt(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	click(a, valueCellX, paramsRow0Y)
-	a.step(key(ebiten.KeyEnter, true, false))
+	a.step(combo(ebiten.KeyEnter, true, false, false))
 	req := a.cur().Req
 	if len(req.Params) != 4 || req.Params[1].Name != "" || !req.Params[1].Enabled || req.Params[0].Name != "q" {
 		t.Fatalf("params = %+v", req.Params)
@@ -2406,9 +2342,9 @@ func TestCtrlEnterWhileEditingInsertsARowBelowAndEditsIt(t *testing.T) {
 }
 
 func TestCtrlDDuplicatesTheEditedRow(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	click(a, valueCellX, paramsRow0Y)
-	a.step(key(ebiten.KeyD, true, false))
+	a.step(combo(ebiten.KeyD, true, false, false))
 	p := a.cur().Req.Params
 	if len(p) != 4 || p[1] != p[0] || p[1].Name != "q" {
 		t.Fatalf("params = %+v", p)
@@ -2419,10 +2355,10 @@ func TestCtrlDDuplicatesTheEditedRow(t *testing.T) {
 }
 
 func TestAltArrowsMoveTheRowAndTheEditFollows(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	click(a, valueCellX, paramsRow0Y)
 	a.typeText("rust") // an uncommitted edit travels with the row
-	a.step(altKey(ebiten.KeyArrowDown))
+	a.step(combo(ebiten.KeyArrowDown, false, false, true))
 	if got := paramNames(a); !reflect.DeepEqual(got, []string{"order", "q", "sort"}) {
 		t.Fatalf("params = %v", got)
 	}
@@ -2432,8 +2368,8 @@ func TestAltArrowsMoveTheRowAndTheEditFollows(t *testing.T) {
 	if !strings.Contains(a.cur().Req.URL, "order=desc&q=rust&sort=stars") {
 		t.Fatalf("the URL follows the order: %q", a.cur().Req.URL)
 	}
-	a.step(altKey(ebiten.KeyArrowUp))
-	a.step(altKey(ebiten.KeyArrowUp)) // already at the top: stays
+	a.step(combo(ebiten.KeyArrowUp, false, false, true))
+	a.step(combo(ebiten.KeyArrowUp, false, false, true)) // already at the top: stays
 	if got := paramNames(a); !reflect.DeepEqual(got, []string{"q", "order", "sort"}) {
 		t.Fatalf("params = %v", got)
 	}
@@ -2443,7 +2379,7 @@ func TestAltArrowsMoveTheRowAndTheEditFollows(t *testing.T) {
 const gripCellX = 282
 
 func TestDraggingARowByItsGripMovesItAndAFurtherDragKeepsMovingIt(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	rowY := func(row int) int { return paramsRow0Y + row*core.RowH }
 	a.step(core.Input{X: gripCellX, Y: rowY(0), Click: true, Held: true}) // press the first row's grip
 	a.step(core.Input{X: gripCellX, Y: rowY(1), Held: true})
@@ -2465,34 +2401,34 @@ func TestDraggingARowByItsGripMovesItAndAFurtherDragKeepsMovingIt(t *testing.T) 
 }
 
 func TestDeleteRemovesTheSelectedRowWhenNothingIsBeingTyped(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	click(a, valueCellX, paramsRow0Y)
 	a.step(core.Input{Enter: true}) // commit; the row stays selected
-	a.step(key(ebiten.KeyDelete, false, false))
+	a.step(combo(ebiten.KeyDelete, false, false, false))
 	if got := paramNames(a); !reflect.DeepEqual(got, []string{"order", "sort"}) || strings.Contains(a.cur().Req.URL, "q=") {
 		t.Fatalf("params %v url %q", got, a.cur().Req.URL)
 	}
-	a.step(key(ebiten.KeyDelete, false, false)) // the selection moved on: a second Delete removes the next row
+	a.step(combo(ebiten.KeyDelete, false, false, false)) // the selection moved on: a second Delete removes the next row
 	if len(a.cur().Req.Params) > 2 {
 		t.Fatal("unreachable")
 	}
 }
 
 func TestDeleteDoesNothingWithoutASelectedRowOrWhileTyping(t *testing.T) {
-	a, _ := newTestApp(t)
-	a.step(key(ebiten.KeyDelete, false, false))
+	a := testApp(t)
+	a.step(combo(ebiten.KeyDelete, false, false, false))
 	if len(a.cur().Req.Params) != 3 {
 		t.Fatal("no row is selected")
 	}
 	click(a, valueCellX, paramsRow0Y) // editing: Delete is a text key
-	a.step(key(ebiten.KeyDelete, false, false))
+	a.step(combo(ebiten.KeyDelete, false, false, false))
 	if len(a.cur().Req.Params) != 3 {
 		t.Fatal("while a cell is edited Delete belongs to the text")
 	}
 }
 
 func TestHeaderCheckboxEnablesOrDisablesEveryRow(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	req := a.cur().Req
 	click(a, checkAllX, paramsHeaderY)
 	for _, p := range req.Params {
@@ -2510,7 +2446,7 @@ func TestHeaderCheckboxEnablesOrDisablesEveryRow(t *testing.T) {
 }
 
 func TestUndoAndRedoOfTableChanges(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	req := a.cur().Req
 	click(a, 739, paramsRow0Y) // delete the first row
 	if len(req.Params) != 2 {
@@ -2539,7 +2475,7 @@ func TestUndoAndRedoOfTableChanges(t *testing.T) {
 }
 
 func TestUndoGoesToTheCellTextWhileACellIsEdited(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	click(a, 739, paramsRow0Y) // a table change to undo
 	click(a, valueCellX, paramsRow0Y)
 	a.typeText("zz")
@@ -2550,7 +2486,7 @@ func TestUndoGoesToTheCellTextWhileACellIsEdited(t *testing.T) {
 }
 
 func TestEveryTableChangeGoesThroughOnePlace(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	click(a, valueCellX, paramsRow0Y+2*core.RowH) // edit row 2
 	if a.edit == nil || a.edit.row != 2 {
 		t.Fatal("test setup")
@@ -2565,7 +2501,7 @@ func TestEveryTableChangeGoesThroughOnePlace(t *testing.T) {
 }
 
 func TestBulkEditShowsLinesAndAppliesThemBack(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	req := a.cur().Req
 	req.Params[1].Enabled = false
 	click(a, bulkBtnX, chipsY)
@@ -2593,7 +2529,7 @@ func TestBulkEditShowsLinesAndAppliesThemBack(t *testing.T) {
 }
 
 func TestLeavingTheTabWhileBulkEditingAppliesTheText(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	click(a, bulkBtnX, chipsY)
 	a.bulk.area.SelectAll()
 	a.bulk.area.Insert("only: one")
@@ -2617,15 +2553,6 @@ func TestDuplicateHeaderNamesAreFlagged(t *testing.T) {
 
 // ---- right-click menus: tabs, table rows, text, response ----------------
 
-func itemByLabel(app *App, label string) *widget.MenuItem {
-	for i := range widget.PopupMenu(app.ctx).Items {
-		if widget.PopupMenu(app.ctx).Items[i].Label == label {
-			return &widget.PopupMenu(app.ctx).Items[i]
-		}
-	}
-	return nil
-}
-
 func TestTabMenu(t *testing.T) {
 	a := twoTabs(t)
 	left, _ := a.tabX(0)
@@ -2639,7 +2566,7 @@ func TestTabMenu(t *testing.T) {
 		t.Fatalf("%d tabs, current %q", len(a.list.Tabs), a.cur().Req.Name)
 	}
 	rightClick(a, left+20, tabStripY)
-	if !itemByLabel(a, "Close others").Disabled || !itemByLabel(a, "Close tabs to the right").Disabled {
+	if !itemByLabel(t, a, "Close others").Disabled || !itemByLabel(t, a, "Close tabs to the right").Disabled {
 		t.Fatal("with one tab there is nothing else to close")
 	}
 }
@@ -2657,7 +2584,7 @@ func TestCloseOthersKeepsOnlyThatTab(t *testing.T) {
 }
 
 func TestDuplicateTabAddsACopyToTheTreeAndOpensIt(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	left, _ := a.tabX(0)
 	rightClick(a, left+20, tabStripY)
 	pickMenu(t, a, "Duplicate")
@@ -2670,7 +2597,7 @@ func TestDuplicateTabAddsACopyToTheTreeAndOpensIt(t *testing.T) {
 }
 
 func TestTabMenuCopyURL(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	clip := &fakeClip{}
 	a.ctx.Clipboard = clip
 	left, _ := a.tabX(0)
@@ -2682,13 +2609,13 @@ func TestTabMenuCopyURL(t *testing.T) {
 }
 
 func TestTableRowMenu(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	rightClick(a, 400, paramsRow0Y)
 	want := []string{"Copy value", "Copy name", "Copy as Name: Value", "", "Insert row above", "Insert row below", "Duplicate", "Move up", "Move down", "", "Enable all", "Disable all", "", "Delete"}
 	if got := menuLabels(a); !reflect.DeepEqual(got, want) {
 		t.Fatalf("row menu = %q", got)
 	}
-	if !itemByLabel(a, "Move up").Disabled || itemByLabel(a, "Move down").Disabled {
+	if !itemByLabel(t, a, "Move up").Disabled || itemByLabel(t, a, "Move down").Disabled {
 		t.Fatal("the first row cannot move up, but can move down")
 	}
 	pickMenu(t, a, "Insert row above")
@@ -2699,7 +2626,7 @@ func TestTableRowMenu(t *testing.T) {
 }
 
 func TestTableRowMenuActionsUseTheSameUndoableChanges(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	req := a.cur().Req
 	rightClick(a, 400, row1Y) // the "order" row
 	pickMenu(t, a, "Duplicate")
@@ -2727,7 +2654,7 @@ func TestTableRowMenuActionsUseTheSameUndoableChanges(t *testing.T) {
 }
 
 func TestPlaceholderRowHasNoMenu(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	rightClick(a, 400, paramsRow3Y)
 	if widget.PopupMenu(a.ctx) != nil {
 		t.Fatal("the empty placeholder row has no row menu")
@@ -2735,7 +2662,7 @@ func TestPlaceholderRowHasNoMenu(t *testing.T) {
 }
 
 func TestTextFieldMenuStatesAndActions(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	clip := &fakeClip{text: "PASTED"}
 	a.ctx.Clipboard = clip
 	rightClick(a, 1100, urlBarY)
@@ -2744,15 +2671,15 @@ func TestTextFieldMenuStatesAndActions(t *testing.T) {
 		t.Fatalf("text menu = %q", got)
 	}
 	for _, l := range []string{"Undo", "Redo", "Cut", "Copy"} {
-		if !itemByLabel(a, l).Disabled {
+		if !itemByLabel(t, a, l).Disabled {
 			t.Errorf("%s must be disabled with nothing to undo or selected", l)
 		}
 	}
-	if itemByLabel(a, "Paste").Disabled || itemByLabel(a, "Select all").Disabled {
+	if itemByLabel(t, a, "Paste").Disabled || itemByLabel(t, a, "Select all").Disabled {
 		t.Fatal("Paste and Select all are available")
 	}
-	if itemByLabel(a, "Copy").Shortcut != "Ctrl+C" {
-		t.Fatalf("shortcut text = %q", itemByLabel(a, "Copy").Shortcut)
+	if itemByLabel(t, a, "Copy").Shortcut != "Ctrl+C" {
+		t.Fatalf("shortcut text = %q", itemByLabel(t, a, "Copy").Shortcut)
 	}
 
 	pickMenu(t, a, "Select all")
@@ -2764,7 +2691,7 @@ func TestTextFieldMenuStatesAndActions(t *testing.T) {
 	if url.SelectedText() != url.Text {
 		t.Fatal("a right click must not clear the selection")
 	}
-	if itemByLabel(a, "Copy").Disabled || itemByLabel(a, "Cut").Disabled {
+	if itemByLabel(t, a, "Copy").Disabled || itemByLabel(t, a, "Cut").Disabled {
 		t.Fatal("Cut and Copy are available with a selection")
 	}
 	original := url.Text
@@ -2797,16 +2724,16 @@ func TestSecretFieldsCannotBeCutOrCopiedFromTheMenu(t *testing.T) {
 	a.typeText("s3cret")
 	a.cur().authInput("token").SelectAll()
 	rightClick(a, authFieldX, authRow1Y)
-	if !itemByLabel(a, "Cut").Disabled || !itemByLabel(a, "Copy").Disabled {
+	if !itemByLabel(t, a, "Cut").Disabled || !itemByLabel(t, a, "Copy").Disabled {
 		t.Fatal("a masked field must not offer Cut or Copy")
 	}
-	if itemByLabel(a, "Paste").Disabled {
+	if itemByLabel(t, a, "Paste").Disabled {
 		t.Fatal("pasting a secret in is fine")
 	}
 }
 
 func TestCellEditFieldGetsTheTextMenuNotTheRowMenu(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	click(a, valueCellX, paramsRow0Y) // editing
 	rightClick(a, valueCellX, paramsRow0Y)
 	if widget.PopupMenu(a.ctx) == nil || menuLabels(a)[0] != "Undo" {
@@ -2835,7 +2762,7 @@ func TestResponseMenu(t *testing.T) {
 	if got := menuLabels(a); !reflect.DeepEqual(got, want) {
 		t.Fatalf("response menu = %q", got)
 	}
-	if !itemByLabel(a, "Copy").Disabled {
+	if !itemByLabel(t, a, "Copy").Disabled {
 		t.Fatal("Copy needs a selection")
 	}
 	pickMenu(t, a, "Copy body")
@@ -2848,7 +2775,7 @@ func TestResponseMenu(t *testing.T) {
 		t.Fatal("Select all")
 	}
 	rightClick(a, 1000, 400)
-	if itemByLabel(a, "Copy").Disabled {
+	if itemByLabel(t, a, "Copy").Disabled {
 		t.Fatal("Copy works with a selection")
 	}
 	pickMenu(t, a, "Copy as cURL")
@@ -2872,7 +2799,7 @@ const (
 )
 
 func TestDraggingAParamsDividerResizesItsColumns(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	drag(a, nameValueDividerX, 480, paramsHeaderY)
 	w := a.widthsFor(requestPanes[0])
 	if w == nil || len(w.Weights) != 3 || w.Weights[0] <= 28 || w.Weights[1] >= 40 {
@@ -2888,7 +2815,7 @@ func TestDraggingAParamsDividerResizesItsColumns(t *testing.T) {
 }
 
 func TestEachTableKeepsItsOwnColumnWidths(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	drag(a, nameValueDividerX, 480, paramsHeaderY)
 	if a.widthsFor(requestPanes[0]).Weights == nil {
 		t.Fatal("test setup")
@@ -2905,7 +2832,7 @@ func TestEachTableKeepsItsOwnColumnWidths(t *testing.T) {
 }
 
 func TestDoubleClickOnAParamsDividerResetsIt(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	drag(a, nameValueDividerX, 480, paramsHeaderY)
 	a.step(core.Input{X: 480, Y: paramsHeaderY, Click: true, Held: true, Clicks: 2})
 	a.step(core.Input{})
@@ -2915,7 +2842,7 @@ func TestDoubleClickOnAParamsDividerResetsIt(t *testing.T) {
 }
 
 func TestNarrowColumnsKeepAMinimum(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	drag(a, nameValueDividerX, 300, paramsHeaderY) // far left
 	w := a.widthsFor(requestPanes[0])
 	// the name column is at least MinColumnPx of the 393px of columns
@@ -2952,7 +2879,8 @@ func openSettingsPage(t *testing.T, id string) (*App, string) {
 }
 
 func openSettingsMenu(t *testing.T) (*App, string) {
-	a, path := newSettingsTestApp(t)
+	a := testApp(t, withSettings(defaultLayout))
+	path := a.SettingsPath()
 	click(a, menuBtnX, menuBtnY)
 	if !a.menu {
 		t.Fatal("test setup")
@@ -3101,12 +3029,9 @@ func TestShortcutLabelsReadNaturally(t *testing.T) {
 
 // ---- configurable shortcuts ---------------------------------------------------
 
-func combo(key ebiten.Key, ctrl, shift, alt bool) core.Input {
-	return core.Input{Keys: []ebiten.Key{key}, Ctrl: ctrl, Shift: shift, Alt: alt}
-}
-
 func TestRecordingANewBindingRebindsTheAction(t *testing.T) {
-	a, path := newTestApp(t)
+	a := testApp(t)
+	path := a.SettingsPath()
 	a.newRequest() // two tabs
 	a.shortcutKeys.Start("close-tab")
 	if a.shortcutKeys.Recording() != "close-tab" {
@@ -3119,11 +3044,11 @@ func TestRecordingANewBindingRebindsTheAction(t *testing.T) {
 	if saved, _ := settingsfile.Load(path); saved.Shortcuts["close-tab"] != "Ctrl+Q" {
 		t.Fatalf("saved %+v", saved.Shortcuts)
 	}
-	a.step(key(ebiten.KeyW, true, false)) // the old key does nothing now
+	a.step(combo(ebiten.KeyW, true, false, false)) // the old key does nothing now
 	if len(a.list.Tabs) != 2 {
 		t.Fatal("Ctrl+W must no longer close a tab")
 	}
-	a.step(key(ebiten.KeyQ, true, false))
+	a.step(combo(ebiten.KeyQ, true, false, false))
 	if len(a.list.Tabs) != 1 {
 		t.Fatal("Ctrl+Q closes a tab")
 	}
@@ -3133,7 +3058,7 @@ func TestRecordingANewBindingRebindsTheAction(t *testing.T) {
 }
 
 func TestEscapeCancelsRecordingAndBackspaceUnbinds(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.shortcutKeys.Start("close-tab")
 	a.step(core.Input{Escape: true})
 	if a.shortcutKeys.Recording() != "" || len(a.settings.Shortcuts) != 0 || a.menu {
@@ -3146,7 +3071,7 @@ func TestEscapeCancelsRecordingAndBackspaceUnbinds(t *testing.T) {
 	if v, ok := a.settings.Shortcuts["close-tab"]; !ok || v != "" {
 		t.Fatalf("shortcuts = %v: Backspace stores an empty (unbound) binding", a.settings.Shortcuts)
 	}
-	a.step(key(ebiten.KeyW, true, false))
+	a.step(combo(ebiten.KeyW, true, false, false))
 	if len(a.list.Tabs) != 2 {
 		t.Fatal("an unbound action fires nothing")
 	}
@@ -3159,7 +3084,7 @@ func TestEscapeCancelsRecordingAndBackspaceUnbinds(t *testing.T) {
 // another action uses is not refused but offered with a Replace button (see
 // shortcuteditor_test.go).
 func TestRecordingRefusesKeysThatBelongToTextEditingAndKeepsListening(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.shortcutKeys.Start("close-tab")
 	a.step(combo(ebiten.KeyC, true, false, false))
 	if !strings.Contains(a.shortcutKeys.Note("close-tab"), "text") || a.shortcutKeys.Recording() != "close-tab" {
@@ -3175,7 +3100,7 @@ func TestRecordingRefusesKeysThatBelongToTextEditingAndKeepsListening(t *testing
 }
 
 func TestAModifierKeyAloneDoesNotEndRecording(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.shortcutKeys.Start("close-tab")
 	a.step(core.Input{Keys: []ebiten.Key{ebiten.KeyControlLeft}, Ctrl: true})
 	if a.shortcutKeys.Recording() != "close-tab" || len(a.settings.Shortcuts) != 0 {
@@ -3184,7 +3109,7 @@ func TestAModifierKeyAloneDoesNotEndRecording(t *testing.T) {
 }
 
 func TestRebindingToTheDefaultStoresNothingAndResetRestoresIt(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.shortcutKeys.Start("close-tab")
 	a.step(combo(ebiten.KeyQ, true, false, false))
 	a.shortcutKeys.Reset(a, "close-tab")
@@ -3210,11 +3135,11 @@ func TestSavedBindingsApplyFromTheStart(t *testing.T) {
 		t.Fatal(err)
 	}
 	a.w, a.h = winW, winH
-	a.step(key(ebiten.KeyN, true, false))
+	a.step(combo(ebiten.KeyN, true, false, false))
 	if len(a.list.Tabs) != 2 {
 		t.Fatal("the saved binding must work")
 	}
-	a.step(key(ebiten.KeyT, true, false))
+	a.step(combo(ebiten.KeyT, true, false, false))
 	if len(a.list.Tabs) != 2 {
 		t.Fatal("the replaced default must not")
 	}
@@ -3225,7 +3150,7 @@ func TestMenusShowTheConfiguredKey(t *testing.T) {
 	a.shortcutKeys.Start("find")
 	a.step(combo(ebiten.KeyG, true, false, false))
 	rightClick(a, 1000, 400)
-	if got := itemByLabel(a, "Find").Shortcut; got != "Ctrl+G" {
+	if got := itemByLabel(t, a, "Find").Shortcut; got != "Ctrl+G" {
 		t.Fatalf("the Find item shows %q", got)
 	}
 }
@@ -3321,7 +3246,7 @@ func TestResponseHeaderMenuCopiesNameValueAndAll(t *testing.T) {
 }
 
 func TestEditableTableMenuAlsoCopiesCells(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.cur().Req.Params = []model.KV{{Name: "q", Value: "giou", Enabled: true}}
 	clip := &fakeClip{}
 	a.ctx.Clipboard = clip
@@ -3372,7 +3297,7 @@ func TestToolbarAndTabButtonsHaveTooltipsWithTheirShortcuts(t *testing.T) {
 }
 
 func TestDeleteButtonIsATrashCanWithATooltip(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	found := false
 	for x := 300; x < 900 && !found; x += 2 {
 		found = tipAt(a, x, paramsRow0Y) == "Delete row"
@@ -3383,7 +3308,7 @@ func TestDeleteButtonIsATrashCanWithATooltip(t *testing.T) {
 }
 
 func TestTooltipKeepsFramesComingWhileItWaits(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.step(core.Input{X: sendX, Y: urlBarY})
 	a.Draw(ebiten.NewImage(winW, winH))
 	if !a.tips.Waiting() {
@@ -3397,7 +3322,7 @@ func TestTooltipKeepsFramesComingWhileItWaits(t *testing.T) {
 }
 
 func TestManyTabsScrollTheStripAndKeepTheActiveTabInView(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	for range 14 {
 		a.newRequest()
 	}
@@ -3426,7 +3351,7 @@ func TestManyTabsScrollTheStripAndKeepTheActiveTabInView(t *testing.T) {
 }
 
 func TestLeftDragOnAnOverflowingTabStripPansItInsteadOfReorderingTabs(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	for range 14 {
 		a.newRequest()
 	}
@@ -3548,7 +3473,7 @@ func (a *App) find(tab *reqTab, text string) {
 }
 
 func TestNewTabsShowResponsesCompactByDefault(t *testing.T) {
-	a := newCompactTestApp(t)
+	a := testApp(t, untouchedSettings())
 	if !a.cur().look.Compact() || a.cur().look.Raw() {
 		t.Fatalf("compact %v raw %v", a.cur().look.Compact(), a.cur().look.Raw())
 	}
@@ -3628,7 +3553,7 @@ func TestClearingCookiesWhileARequestRunsIsRaceFree(t *testing.T) {
 		io.WriteString(writer, `{"ok":true}`)
 	}))
 	t.Cleanup(srv.Close)
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	pointTabAt(tab, srv.URL)
 
@@ -3659,7 +3584,7 @@ func TestTextFocusedCoversEveryEditorOfTheTab(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			a, _ := newTestApp(t)
+			a := testApp(t)
 			if a.textFocused() {
 				t.Fatal("nothing is focused at the start")
 			}
@@ -3675,7 +3600,7 @@ func TestTextFocusedCoversEveryEditorOfTheTab(t *testing.T) {
 // response view setting changed; an edit through saveSettings (the colour
 // and shortcut pages, the environment chip) left them on the old view.
 func TestAnySettingsEditThatChangesTheResponseViewRefreshesOpenTabs(t *testing.T) {
-	a, _ := newTestApp(t) // starts on "pretty"
+	a := testApp(t) // starts on "pretty"
 	tab := a.cur()
 	if tab.look.Raw() {
 		t.Fatal("start: the tab should not be raw")
@@ -3693,7 +3618,7 @@ func TestAnySettingsEditThatChangesTheResponseViewRefreshesOpenTabs(t *testing.T
 // could see.
 func TestClosingATabStopsItsRequest(t *testing.T) {
 	srv, _ := pathServer(t)
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	pointTabAt(tab, srv.URL+"/slow")
 	click(a, sendX, urlBarY)
@@ -3706,17 +3631,10 @@ func TestClosingATabStopsItsRequest(t *testing.T) {
 	}
 }
 
-type closeTrackingSession struct {
-	recordingSession
-	closed bool
-}
-
-func (s *closeTrackingSession) Close(context.Context) error { s.closed = true; return nil }
-
 func TestClosingATabClosesItsSession(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
-	session := &closeTrackingSession{}
+	session := &fakeSession{}
 	tab.Session = session
 	a.closeTab(a.list.Active)
 	if !session.closed {
@@ -3725,7 +3643,7 @@ func TestClosingATabClosesItsSession(t *testing.T) {
 }
 
 func TestAFailedCommandIsShownInTheStatusLine(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.handle(bus.Failed{Err: errors.New("a command panicked: boom")})
 	if !strings.Contains(a.status, "boom") {
 		t.Fatalf("status %q does not show the failure", a.status)
@@ -3741,23 +3659,10 @@ func (panickingStreamer) Connect(context.Context, model.Request) (reqport.Sessio
 	panic("connect boom")
 }
 
-// statusSoon steps the app until its status holds want.
-func statusSoon(t *testing.T, app *App, want string) {
-	t.Helper()
-	for range 400 {
-		app.step(core.Input{})
-		if strings.Contains(app.status, want) {
-			return
-		}
-		time.Sleep(5 * time.Millisecond)
-	}
-	t.Fatalf("status %q never held %q", app.status, want)
-}
-
 // The connect and file dialog goroutines were started with a bare go
 // statement, so a panic in a protocol or a dialog program ended the app.
 func TestAPanicWhileConnectingIsShownNotFatal(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.reg = reqport.Registry{"websocket": panickingStreamer{}}
 	tab := a.cur()
 	tab.Req.Protocol = "websocket"
@@ -3767,7 +3672,7 @@ func TestAPanicWhileConnectingIsShownNotFatal(t *testing.T) {
 }
 
 func TestAPanicInTheDesktopDialogIsShownNotFatal(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.files = fakeDialog{choose: func(context.Context, string, bool, string) (string, error) { panic("dialog boom") }}
 	a.askDesktop("Open", false, "", func(string) {})
 	statusSoon(t, a, "dialog boom")
@@ -3776,7 +3681,7 @@ func TestAPanicInTheDesktopDialogIsShownNotFatal(t *testing.T) {
 // A huge timeout (from a request or the settings file) overflowed
 // time.Duration to a negative value, so the request failed at once.
 func TestTimeoutIsCappedInsteadOfOverflowing(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	for _, sec := range []int{1 << 40, math.MaxInt} {
 		got := a.timeoutFor(model.Request{TimeoutSec: sec})
 		if got <= 0 || got > maxTimeout {
@@ -3789,7 +3694,7 @@ func TestTimeoutIsCappedInsteadOfOverflowing(t *testing.T) {
 // open) appended one row and then indexed the row it had meant, which
 // was out of range.
 func TestCommittingACellOfARowThatNoLongerExistsAddsARow(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	before := len(tab.Req.Params)
 	a.beginEdit(paramsPane, tab, before, 0)
@@ -3815,7 +3720,7 @@ func (streamer countingStreamer) Connect(context.Context, model.Request) (reqpor
 // and connecting started it at once. A command now needs the user's yes,
 // once, and is remembered.
 func TestAStdioCommandAsksOnceBeforeItRuns(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	var connects atomic.Int32
 	a.reg = reqport.Registry{"mcp": countingStreamer{connects: &connects}}
 	tab := a.cur()
@@ -3852,7 +3757,7 @@ func TestAStdioCommandAsksOnceBeforeItRuns(t *testing.T) {
 }
 
 func TestAFileOutsideTheCollectionAsksBeforeItIsSent(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	tab.Req.Method, tab.Req.URL = "POST", "http://127.0.0.1:1/x"
 	tab.Req.BodyType, tab.Req.Body = model.BodyFile, "/etc/hostname"

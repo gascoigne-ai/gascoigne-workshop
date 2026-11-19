@@ -60,7 +60,7 @@ func TestTheSidebarLaysOutAsPinned(t *testing.T) {
 		for _, size := range sizes {
 			name := "sidebar-" + tc.name + "-" + size.name
 			t.Run(name, func(t *testing.T) {
-				a, _ := newTestApp(t)
+				a := testApp(t)
 				t.Cleanup(a.waitWrites)
 				tc.setup(a)
 				root := a.sidebar()
@@ -80,7 +80,7 @@ func TestTheSidebarLaysOutAsPinned(t *testing.T) {
 // The chip in the sidebar's header switches between the tree and the log
 // of sent requests, and its label names what is shown.
 func TestTheSidebarChipSwitchesBetweenTreeAndSentLog(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	t.Cleanup(a.waitWrites)
 	clickText(t, a, "Collections", 0)
 	if !a.showSent {
@@ -108,7 +108,7 @@ func TestTheFilterMatchInATreeRowIsDrawnInTheAccentLine(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			a, _ := newTestApp(t)
+			a := testApp(t)
 			t.Cleanup(a.waitWrites)
 			click(a, 180, headerH/2)
 			a.typeText(tc.filter)
@@ -181,7 +181,7 @@ func TestDraggingOverATreeRowMakesItTheDropTarget(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			a, _ := newTestApp(t)
+			a := testApp(t)
 			t.Cleanup(a.waitWrites)
 			a.step(core.Input{X: 100, Y: treeRowY(rowInfo), Click: true, Held: true})
 			a.step(core.Input{X: 100, Y: treeRowY(tc.row), Held: true})

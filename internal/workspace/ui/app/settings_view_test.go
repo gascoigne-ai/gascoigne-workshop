@@ -48,7 +48,7 @@ func TestTheRequestSettingsPaneLaysOutAsPinned(t *testing.T) {
 		for _, size := range sizes {
 			name := "settingspane-" + state.name + "-" + size.name
 			t.Run(name, func(t *testing.T) {
-				a, _ := newTestApp(t)
+				a := testApp(t)
 				t.Cleanup(a.waitWrites)
 				tab := a.cur()
 				state.setUp(a, tab)
@@ -69,7 +69,7 @@ func TestTheRequestSettingsPaneLaysOutAsPinned(t *testing.T) {
 // What Dump does not show of the timeout field: it edits the tab's timeout,
 // has no placeholder and does nothing on Enter.
 func TestTheTimeoutFieldEditsTheTabsTimeout(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	t.Cleanup(a.waitWrites)
 	tab := a.cur()
 	root := a.settingsPane(settingsPane, tab, &widget.ScrollState{})
@@ -123,28 +123,16 @@ func TestTheSettingsChecksFollowTheRequest(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			a, _ := newTestApp(t)
+			a := testApp(t)
 			t.Cleanup(a.waitWrites)
 			tab := a.cur()
 			tab.Req.NoRedirects, tab.Req.InsecureTLS = tc.noRedirects, tc.insecureTLS
-			got := checkStates(a.settingsPane(settingsPane, tab, &widget.ScrollState{}))
+			got := behaviorStates(a.settingsPane(settingsPane, tab, &widget.ScrollState{}), "widget.checkB")
 			if !slices.Equal(got, tc.want) {
 				t.Fatalf("checkboxes %q, want %q", got, tc.want)
 			}
 		})
 	}
-}
-
-// checkStates prints the behavior of every checkbox under root, in order.
-func checkStates(root Node) []string {
-	var states []string
-	if fmt.Sprintf("%T", root.Behavior()) == "widget.checkB" {
-		states = append(states, fmt.Sprintf("%+v", root.Behavior()))
-	}
-	for _, child := range root.Children() {
-		states = append(states, checkStates(child)...)
-	}
-	return states
 }
 
 // The certificate row is one row and the pane's gap below the redirects row.

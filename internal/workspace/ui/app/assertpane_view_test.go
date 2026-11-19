@@ -2,8 +2,6 @@ package app
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -26,30 +24,16 @@ var assertSizes = []struct {
 	{"narrow", settingsNarrowW},
 }
 
-// pinAssertDump lays root out at width and compares its Dump with the
-// file testdata/<name>.dump.
-func pinAssertDump(t *testing.T, app *App, root Node, width int, name string) {
-	t.Helper()
-	Layout(app.ctx, root, width, settingsPaneH)
-	want, err := os.ReadFile(filepath.Join("testdata", name+".dump"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got := Dump(root); got != string(want) {
-		t.Fatalf("got:\n%s\nwant:\n%s", got, want)
-	}
-}
-
 // The request's Tests pane is pinned as text (element kinds, options,
 // rects) at two widths, so moving it to a template cannot change it unseen.
 func TestTheAssertionsPaneLaysOutAsPinned(t *testing.T) {
 	for _, size := range assertSizes {
 		name := "assertions-" + size.name
 		t.Run(name, func(t *testing.T) {
-			a, _ := newTestApp(t)
+			a := testApp(t)
 			t.Cleanup(a.waitWrites)
 			tab := a.cur()
-			pinAssertDump(t, a, a.assertionsPane(testsPane, tab, &widget.ScrollState{}), size.width, name)
+			assertDumpPinned(t, a, a.assertionsPane(testsPane, tab, &widget.ScrollState{}), name, size.width, settingsPaneH)
 		})
 	}
 }
@@ -57,10 +41,10 @@ func TestTheAssertionsPaneLaysOutAsPinned(t *testing.T) {
 // What Dump does not show of the assertions area: it edits the tab's own
 // tests area.
 func TestTheAssertionsAreaEditsTheTabsTests(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	t.Cleanup(a.waitWrites)
 	tab := a.cur()
-	areas := areaStates(a.assertionsPane(testsPane, tab, &widget.ScrollState{}))
+	areas := behaviorStates(a.assertionsPane(testsPane, tab, &widget.ScrollState{}), "*widget.areaB")
 	if len(areas) != 1 || !strings.Contains(areas[0], fmt.Sprintf("%p", &tab.tests)) {
 		t.Fatalf("areas %q, want one editing %p", areas, &tab.tests)
 	}
@@ -72,7 +56,7 @@ var dumpedText = regexp.MustCompile(`text=("(?:[^"\\]|\\.)*")`)
 // The help above the assertions used to be one line cut off at the pane's
 // edge; in the narrowest pane it now takes several lines that all fit.
 func TestTheAssertionsHelpWrapsInsideANarrowPane(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	t.Cleanup(a.waitWrites)
 	root := a.assertionsPane(testsPane, a.cur(), &widget.ScrollState{})
 	Layout(a.ctx, root, settingsNarrowW, settingsPaneH)
@@ -112,7 +96,7 @@ func TestTheAssertionsHelpWrapsInsideANarrowPane(t *testing.T) {
 // its 254 px in the narrowest pane; small lines give most of it back.
 func TestTheAssertionsHelpLeavesTheEditorMostOfTheNarrowPane(t *testing.T) {
 	const minEditorH = 190
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	t.Cleanup(a.waitWrites)
 	root := a.assertionsPane(testsPane, a.cur(), &widget.ScrollState{})
 	Layout(a.ctx, root, settingsNarrowW, settingsPaneH)
@@ -145,11 +129,11 @@ func TestTheResultsPaneLaysOutAsPinned(t *testing.T) {
 		for _, size := range assertSizes {
 			name := "results-" + state.name + "-" + size.name
 			t.Run(name, func(t *testing.T) {
-				a, _ := newTestApp(t)
+				a := testApp(t)
 				t.Cleanup(a.waitWrites)
 				tab := a.cur()
 				tab.testResults = assert.Run(state.tests, pinnedResponse)
-				pinAssertDump(t, a, a.resultsPane(responsePanes[3], tab, nil), size.width, name)
+				assertDumpPinned(t, a, a.resultsPane(responsePanes[3], tab, nil), name, size.width, settingsPaneH)
 			})
 		}
 	}
@@ -158,7 +142,7 @@ func TestTheResultsPaneLaysOutAsPinned(t *testing.T) {
 // What Dump does not show of the results list: it scrolls with the tab's
 // response scroll, not the one it is handed.
 func TestTheResultsListScrollsWithTheTabsResponseScroll(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	t.Cleanup(a.waitWrites)
 	tab := a.cur()
 	tab.testResults = assert.Run("status == 200", pinnedResponse)
@@ -178,7 +162,7 @@ const (
 // openTestsPane shows the request's Tests pane of the open request, with
 // a response to check the assertions against.
 func openTestsPane(t *testing.T) *App {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	t.Cleanup(a.waitWrites)
 	a.cur().paneTab = testsPaneTabIdx
 	a.cur().Resp = pinnedResponse

@@ -55,7 +55,7 @@ func TestResizingTheSettingsDialogKeepsItOpenAndVisible(t *testing.T) {
 	}
 	for _, g := range grabs {
 		t.Run(g.name, func(t *testing.T) {
-			a, _ := newTestApp(t)
+			a := testApp(t)
 			a.menu = true
 			a.step(core.Input{X: 5000, Y: 5000})
 			r := settingsRect(t, a)

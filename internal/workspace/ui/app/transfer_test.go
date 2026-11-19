@@ -21,14 +21,6 @@ func release(app *App, node, target model.Node, alt bool) {
 	app.step(core.Input{Alt: alt})
 }
 
-func toastTexts(app *App) string {
-	var texts []string
-	for _, toast := range app.toasts {
-		texts = append(texts, toast.Text)
-	}
-	return strings.Join(texts, "\n")
-}
-
 func tabOf(app *App, req *model.Request) bool {
 	for _, tab := range app.list.Tabs {
 		if tab.Req == req {

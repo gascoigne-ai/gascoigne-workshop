@@ -12,7 +12,7 @@ import (
 )
 
 func TestOpenInBrowserServesTheBodyAndOpensItsAddress(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	var opened string
 	a.previews = preview.Browser{Lifetime: time.Minute, Open: func(_ context.Context, address string) error { opened = address; return nil }}
 	tab := a.cur()
@@ -36,13 +36,13 @@ func TestOpenInBrowserServesTheBodyAndOpensItsAddress(t *testing.T) {
 }
 
 func TestOpenInBrowserWithoutAResponseOpensNothing(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.previews = preview.Browser{Lifetime: time.Minute, Open: func(context.Context, string) error { t.Fatal("a browser was opened"); return nil }}
 	a.openInBrowser(a.cur())
 }
 
 func TestOpenInBrowserFallsBackToTextPlainWithoutAContentType(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	var opened string
 	a.previews = preview.Browser{Lifetime: time.Minute, Open: func(_ context.Context, address string) error { opened = address; return nil }}
 	tab := a.cur()

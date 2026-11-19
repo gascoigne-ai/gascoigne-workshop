@@ -218,7 +218,7 @@ func TestTheProtocolChipOffersGRPCAndSSEOnlyWhenTheyAreSwitchedOn(t *testing.T) 
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			a, _ := newTestApp(t)
+			a := testApp(t)
 			a.settings.GRPC, a.settings.SSE = tt.grpc, tt.sse
 			if got := a.protocolsFor(tt.current); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("protocolsFor(%q) = %v, want %v", tt.current, got, tt.want)

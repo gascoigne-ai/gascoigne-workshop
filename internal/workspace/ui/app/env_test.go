@@ -11,7 +11,7 @@ import (
 )
 
 func TestActiveEnvironmentOverridesCollectionVariables(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.col().Vars = []model.KV{{Name: "host", Value: "prod.test", Enabled: true}, {Name: "k", Value: "1", Enabled: true}}
 	a.col().Envs = []model.Environment{{Name: "Dev", Vars: []model.KV{{Name: "host", Value: "dev.test", Enabled: true}}}}
 	if got := model.Expand("{{host}} {{k}}", a.vars()); got != "prod.test 1" {
@@ -28,7 +28,7 @@ func TestActiveEnvironmentOverridesCollectionVariables(t *testing.T) {
 }
 
 func TestSelectedEnvironmentIsRemembered(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.col().Envs = []model.Environment{{Name: "Dev"}, {Name: "Prod"}}
 	a.selectEnv(1)
 	st, err := settingsfile.Load(a.settingsPath)
@@ -41,7 +41,7 @@ func TestSelectedEnvironmentIsRemembered(t *testing.T) {
 }
 
 func TestEnvironmentLifecycle(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.addEnv("Dev")
 	a.addEnv("Dev") // a clashing name gets a suffix
 	if len(a.col().Envs) != 2 || a.col().Envs[1].Name == "Dev" || a.envIndex() != 1 {
@@ -63,7 +63,7 @@ func TestEnvironmentLifecycle(t *testing.T) {
 }
 
 func TestVarsPaneEditsTheActiveEnvironment(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	pane := requestPanes[4]
 	if pane.label != "Vars" {
 		t.Fatal("Vars pane moved")
@@ -81,7 +81,7 @@ func TestVarsPaneEditsTheActiveEnvironment(t *testing.T) {
 }
 
 func TestUnresolvedVariablesAreFlagged(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.col().Vars = []model.KV{{Name: "known", Value: "1", Enabled: true}}
 	segs := a.varSegments("{{known}}/{{missing}}/x")
 	want := []w.Token{w.OK, w.Text, w.Error, w.Text}
@@ -109,7 +109,7 @@ func TestSecretValuesAreMaskedInTheTable(t *testing.T) {
 }
 
 func TestToggleSecretOnAnEnvironmentRow(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.addEnv("Dev")
 	a.col().Envs[0].Vars = []model.KV{{Name: "token", Value: "x", Enabled: true}}
 	a.toggleSecret(0)
@@ -123,7 +123,7 @@ func TestToggleSecretOnAnEnvironmentRow(t *testing.T) {
 }
 
 func TestURLTooltipShowsTheResolvedURLAndWhatIsMissing(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	tab.Req.URL = "https://plain.test/x"
 	if a.urlTip(tab) != "" {
@@ -138,7 +138,7 @@ func TestURLTooltipShowsTheResolvedURLAndWhatIsMissing(t *testing.T) {
 }
 
 func TestFolderVariablesAreEditedInTheVarsPaneAndResolveForTheirRequests(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	folder := a.col().Folders[1] // holds the open request
 	req := a.cur().Req
 	a.col().Vars = []model.KV{{Name: "host", Value: "collection.test", Enabled: true}}
@@ -162,7 +162,7 @@ func TestFolderVariablesAreEditedInTheVarsPaneAndResolveForTheirRequests(t *test
 }
 
 func TestCtrlSpaceCompletesVariablesInTheURLField(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	a.col().Vars = []model.KV{
 		{Name: "host", Value: "h", Enabled: true}, {Name: "hostname", Value: "n", Enabled: true},

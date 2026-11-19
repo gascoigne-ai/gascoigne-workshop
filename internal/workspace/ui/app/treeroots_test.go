@@ -48,24 +48,10 @@ func rememberedFolders(app *App) []string {
 	return folders
 }
 
-// menuItem is the open menu's item called label.
-func menuItem(t *testing.T, app *App, label string) widget.MenuItem {
-	t.Helper()
-	for _, item := range widget.PopupMenu(app.ctx).Items {
-		if item.Label == label {
-			return item
-		}
-	}
-	t.Fatalf("no menu item %q in %v", label, menuLabels(app))
-	return widget.MenuItem{}
-}
-
-func pressCtrl(app *App, key ebiten.Key) { app.step(core.Input{Keys: []ebiten.Key{key}, Ctrl: true}) }
-
 func TestCtrlOOpensAnotherCollectionBesideTheOpenOne(t *testing.T) {
 	a, alphaDir, _ := twoCollectionsApp(t)
 	gammaDir := savedCollection(t, "Gamma")
-	pressCtrl(a, ebiten.KeyO)
+	a.step(combo(ebiten.KeyO, true, false, false))
 	if a.dialog == nil {
 		t.Fatal("no prompt for the folder")
 	}
@@ -82,7 +68,7 @@ func TestCtrlOOpensAnotherCollectionBesideTheOpenOne(t *testing.T) {
 	}
 
 	// an open folder is focused, not opened twice
-	pressCtrl(a, ebiten.KeyO)
+	a.step(combo(ebiten.KeyO, true, false, false))
 	a.typeText(alphaDir)
 	a.step(core.Input{Enter: true})
 	if got := openNames(a); len(got) != 3 {
@@ -111,7 +97,7 @@ func TestOpeningAFolderThatCannotBeReadKeepsTheOpenOnes(t *testing.T) {
 func TestTheRootRowMenuMovesAndClosesItsCollection(t *testing.T) {
 	a, alphaDir, betaDir := twoCollectionsApp(t)
 	rightClick(a, 100, treeRowY(rootRow(t, a, "Beta")))
-	if !menuItem(t, a, "Move down").Disabled || menuItem(t, a, "Move up").Disabled {
+	if !itemByLabel(t, a, "Move down").Disabled || itemByLabel(t, a, "Move up").Disabled {
 		t.Fatal("the last collection moves up only")
 	}
 	pickMenu(t, a, "Move up")
@@ -126,7 +112,7 @@ func TestTheRootRowMenuMovesAndClosesItsCollection(t *testing.T) {
 	}
 
 	rightClick(a, 100, treeRowY(rootRow(t, a, "Beta")))
-	if menuItem(t, a, "Move down").Disabled || !menuItem(t, a, "Move up").Disabled {
+	if itemByLabel(t, a, "Move down").Disabled || !itemByLabel(t, a, "Move up").Disabled {
 		t.Fatal("the first collection moves down only")
 	}
 	pickMenu(t, a, "Move down")
@@ -167,7 +153,7 @@ func TestCtrlShiftWClosesTheFocusedCollectionAndCtrlWOnlyTheTab(t *testing.T) {
 	a, _, _ := twoCollectionsApp(t)
 	a.openRequest(entryNamed(t, a, "Beta").Collection.Folders[0].Requests[0])
 	tabCount := len(a.list.Tabs)
-	pressCtrl(a, ebiten.KeyW)
+	a.step(combo(ebiten.KeyW, true, false, false))
 	if got := openNames(a); len(got) != 2 || len(a.list.Tabs) != tabCount-1 {
 		t.Fatalf("Ctrl+W: open %v, %d tabs, want both open and %d tabs", got, len(a.list.Tabs), tabCount-1)
 	}
@@ -180,7 +166,7 @@ func TestCtrlShiftWClosesTheFocusedCollectionAndCtrlWOnlyTheTab(t *testing.T) {
 // A collection without a folder has nowhere to keep its edits, so closing
 // it asks first, as deleting does; one with a folder is saved and closed.
 func TestClosingAnEditedUnsavedCollectionAsksFirst(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	t.Cleanup(a.waitWrites)
 	a.cur().Req.URL = "https://edited.test"
 	a.requestCloseCollection(a.col())
@@ -212,8 +198,8 @@ func TestTheEmptyTreeOffersOpenAndNew(t *testing.T) {
 	a.closeCollection(a.col())
 	a.step(core.Input{})
 	textCenter(t, a, "No collection is open")
-	pressCtrl(a, ebiten.KeyS)
-	pressCtrl(a, ebiten.KeyT)
+	a.step(combo(ebiten.KeyS, true, false, false))
+	a.step(combo(ebiten.KeyT, true, false, false))
 	if _, err := os.Stat(filepath.Join(base, "collections")); !os.IsNotExist(err) {
 		t.Fatalf("something was written: %v", err)
 	}

@@ -88,7 +88,7 @@ func TestTheKeyValueTableLaysOutAsPinned(t *testing.T) {
 		for _, size := range sizes {
 			name := "tableview-" + state.name + "-" + size.name
 			t.Run(name, func(t *testing.T) {
-				a, _ := newTestApp(t)
+				a := testApp(t)
 				t.Cleanup(a.waitWrites)
 				tab := a.cur()
 				state.setUp(t, a, tab)
@@ -109,7 +109,7 @@ func TestTheKeyValueTableLaysOutAsPinned(t *testing.T) {
 // Right-clicking the text of bulk mode opens the text menu, as in every
 // other text area.
 func TestTheBulkTextHasTheTextMenu(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	t.Cleanup(a.waitWrites)
 	click(a, bulkBtnX, chipsY)
 	if a.bulk == nil {

@@ -37,7 +37,7 @@ func (s *gateStore) count() int {
 }
 
 func TestTheAutosaveOfTheCollectionDoesNotBlockTheFrame(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	gate := &gateStore{release: make(chan struct{})}
 	a.store = gate
 	a.setWorkspace(t.TempDir())
@@ -77,7 +77,7 @@ func (h *gateHistory) Save(key string, _ []rport.Entry) error {
 }
 
 func TestSavingTheResponseHistoryDoesNotBlockTheFrame(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	gate := &gateHistory{release: make(chan struct{}), saves: make(chan string, 4)}
 	a.statePath = filepath.Join(t.TempDir(), "state.json")
 	a.histories = func(string) rport.History { return gate }

@@ -50,7 +50,7 @@ func twoCollectionsApp(t *testing.T) (a *App, alphaDir, betaDir string) {
 func twoCollectionsAppWith(t *testing.T, opts Options) (a *App, alphaDir, betaDir string) {
 	t.Helper()
 	alphaDir, betaDir = savedCollection(t, "Alpha"), savedCollection(t, "Beta")
-	a = workspaceApp(t, alphaDir, opts)
+	a = testApp(t, untouchedSettings(), inWorkspace(alphaDir), withOptions(opts))
 	if err := a.addCollection(betaDir); err != nil {
 		t.Fatal(err)
 	}

@@ -13,7 +13,7 @@ import (
 )
 
 func TestRecordingATakenKeyOffersReplaceAndSavesNothingYet(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.shortcutKeys.Start("close-tab")
 	a.step(combo(ebiten.KeyT, true, false, false)) // Ctrl+T is "New request"
 	if a.shortcutKeys.Recording() != "" {
@@ -32,7 +32,8 @@ func TestRecordingATakenKeyOffersReplaceAndSavesNothingYet(t *testing.T) {
 }
 
 func TestReplaceGivesTheKeyToThisActionAndUnbindsTheOther(t *testing.T) {
-	a, path := newTestApp(t)
+	a := testApp(t)
+	path := a.SettingsPath()
 	a.shortcutKeys.Start("close-tab")
 	a.step(combo(ebiten.KeyT, true, false, false))
 	a.shortcutKeys.Replace(a, "close-tab")
@@ -48,7 +49,7 @@ func TestReplaceGivesTheKeyToThisActionAndUnbindsTheOther(t *testing.T) {
 }
 
 func TestRecordingAgainDropsAPendingReplace(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.shortcutKeys.Start("close-tab")
 	a.step(combo(ebiten.KeyT, true, false, false))
 	a.shortcutKeys.Start("close-tab")
@@ -58,7 +59,7 @@ func TestRecordingAgainDropsAPendingReplace(t *testing.T) {
 }
 
 func TestClearUnbindsAnActionAndResetBringsTheDefaultBack(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.shortcutKeys.Clear(a, "close-tab")
 	if shortcutpage.KeyText(a, "close-tab") != "Unbound" {
 		t.Fatalf("text = %q", shortcutpage.KeyText(a, "close-tab"))
@@ -70,7 +71,7 @@ func TestClearUnbindsAnActionAndResetBringsTheDefaultBack(t *testing.T) {
 }
 
 func TestAKeyThatTypesTextIsAWarningNotARefusal(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.shortcutKeys.Start("close-tab")
 	a.step(combo(ebiten.KeyJ, false, false, false)) // a plain letter types text
 	if a.settings.Shortcuts["close-tab"] != "J" {

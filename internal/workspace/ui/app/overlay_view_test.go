@@ -2,8 +2,6 @@ package app
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -21,20 +19,6 @@ var overlaySizes = []struct {
 }{
 	{"wide", winW, winH},
 	{"narrow", 480, 360},
-}
-
-// assertDumpPinned lays root out in a window of width by height and
-// compares its dump with testdata/name.dump.
-func assertDumpPinned(t *testing.T, app *App, root Node, name string, width, height int) {
-	t.Helper()
-	Layout(app.ctx, root, width, height)
-	want, err := os.ReadFile(filepath.Join("testdata", name+".dump"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got := Dump(root); got != string(want) {
-		t.Fatalf("got:\n%s\nwant:\n%s", got, want)
-	}
 }
 
 // dialogKinds open each kind of dialog the app shows: a confirm (body and
@@ -63,7 +47,7 @@ func TestTheDialogLaysOutAsPinned(t *testing.T) {
 		for _, size := range overlaySizes {
 			name := "dialog-" + kind.name + "-" + size.name
 			t.Run(name, func(t *testing.T) {
-				a, _ := newTestApp(t)
+				a := testApp(t)
 				t.Cleanup(a.waitWrites)
 				kind.open(a)
 				assertDumpPinned(t, a, Stack(a.dialogView()), name, size.width, size.height)
@@ -75,7 +59,7 @@ func TestTheDialogLaysOutAsPinned(t *testing.T) {
 // The prompt's field edits the dialog's own input, which the dump does not
 // print.
 func TestThePromptFieldEditsTheDialogInput(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	t.Cleanup(a.waitWrites)
 	a.prompt("Rename", "Search Repos", "Rename", func(string) {})
 	root := a.dialogView()
@@ -91,7 +75,7 @@ func TestThePromptFieldEditsTheDialogInput(t *testing.T) {
 
 // No dialog, no view.
 func TestNoDialogNoDialogView(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	t.Cleanup(a.waitWrites)
 	if root := a.dialogView(); root != nil {
 		t.Fatalf("dialog view %v with no dialog open", root)
@@ -104,7 +88,7 @@ func TestTheToastsLayOutAsPinned(t *testing.T) {
 	for _, size := range overlaySizes {
 		name := "toasts-" + size.name
 		t.Run(name, func(t *testing.T) {
-			a, _ := newTestApp(t)
+			a := testApp(t)
 			t.Cleanup(a.waitWrites)
 			a.w, a.h = size.width, size.height
 			a.toast("Cookies cleared", false)
@@ -116,7 +100,7 @@ func TestTheToastsLayOutAsPinned(t *testing.T) {
 
 // With nothing to show the toasts add nothing to the window.
 func TestNoToastsNoToastsView(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	t.Cleanup(a.waitWrites)
 	root := Stack(a.toastsView())
 	Layout(a.ctx, root, winW, winH)
@@ -128,7 +112,7 @@ func TestNoToastsNoToastsView(t *testing.T) {
 // Clicking a toast's text dismisses it, and Enter in an open confirm runs
 // its primary button, through the whole window.
 func TestToastsAndDialogAnswerInput(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	t.Cleanup(a.waitWrites)
 	a.toast("There is no response to save", true)
 	a.step(core.Input{})

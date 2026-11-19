@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -46,7 +45,7 @@ func TestTheEnvironmentChipLaysOutAsPinned(t *testing.T) {
 		for _, size := range sizes {
 			name := "env-" + tc.name + "-" + size.name
 			t.Run(name, func(t *testing.T) {
-				a, _ := newTestApp(t)
+				a := testApp(t)
 				t.Cleanup(a.waitWrites)
 				for _, env := range tc.envs {
 					a.addEnv(env)
@@ -73,7 +72,7 @@ const envFitW = 400
 // push the settings button off screen; the chip now stops at a maximum
 // width and cuts its name with an ellipsis.
 func TestALongEnvironmentNameKeepsTheSettingsButtonInTheWindow(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	t.Cleanup(a.waitWrites)
 	a.addEnv(longEnvName)
 	root := a.header()
@@ -113,7 +112,7 @@ func TestANarrowWindowKeepsTheSettingsButtonInside(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			a, _ := newTestApp(t)
+			a := testApp(t)
 			t.Cleanup(a.waitWrites)
 			for _, env := range tc.envs {
 				a.addEnv(env)
@@ -166,7 +165,7 @@ func TestClickingTheEnvironmentChipOpensItsMenu(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			a, _ := newTestApp(t)
+			a := testApp(t)
 			t.Cleanup(a.waitWrites)
 			a.col().Envs = []model.Environment{{Name: "Dev"}}
 			if tc.active {
@@ -197,7 +196,7 @@ func TestClickingTheEnvironmentChipOpensItsMenu(t *testing.T) {
 // Picking an environment in the chip's menu makes it active, and the chip
 // shows its name; picking "No environment" goes back.
 func TestPickingAnEnvironmentInTheChipsMenuShowsItOnTheChip(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	t.Cleanup(a.waitWrites)
 	a.col().Envs = []model.Environment{{Name: "Dev"}, {Name: "Prod"}}
 	clickText(t, a, "No environment", 0)
@@ -230,7 +229,7 @@ func TestTheChipsMenuRowsOpenTheirDialogs(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.row, func(t *testing.T) {
-			a, _ := newTestApp(t)
+			a := testApp(t)
 			t.Cleanup(a.waitWrites)
 			a.col().Envs = []model.Environment{{Name: "Dev"}}
 			a.selectEnv(0)
@@ -257,34 +256,10 @@ func TestTheChipsMenuRowsOpenTheirDialogs(t *testing.T) {
 
 // Hovering the chip says what an environment is.
 func TestTheEnvironmentChipHasATooltip(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	t.Cleanup(a.waitWrites)
 	x, y := textCenter(t, a, "No environment")
 	if got, want := tipAt(a, x, y), "Environment: variables that override the collection's"; got != want {
 		t.Fatalf("tooltip %q, want %q", got, want)
 	}
-}
-
-// textCenter is the middle of the first element of the window that shows
-// text exactly.
-func textCenter(t *testing.T, app *App, text string) (x, y int) {
-	t.Helper()
-	needle := fmt.Sprintf("text=%q", text)
-	for _, line := range strings.Split(layoutDump(app), "\n") {
-		if !strings.Contains(line, needle) {
-			continue
-		}
-		match := rectPattern.FindStringSubmatch(line)
-		if match == nil {
-			t.Fatalf("no rectangle on %q", line)
-		}
-		var left, top, width, height int
-		fmt.Sscan(match[1], &left)
-		fmt.Sscan(match[2], &top)
-		fmt.Sscan(match[3], &width)
-		fmt.Sscan(match[4], &height)
-		return left + width/2, top + height/2
-	}
-	t.Fatalf("no element with text %q", text)
-	return 0, 0
 }

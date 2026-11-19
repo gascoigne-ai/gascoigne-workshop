@@ -48,7 +48,7 @@ func TestTheGraphQLBodyLaysOutAsPinned(t *testing.T) {
 		for _, size := range sizes {
 			name := "graphql-" + state.name + "-" + size.name
 			t.Run(name, func(t *testing.T) {
-				a, _ := newTestApp(t)
+				a := testApp(t)
 				t.Cleanup(a.waitWrites)
 				tab := a.cur()
 				a.setBodyType(tab, model.BodyGraphQL)
@@ -67,27 +67,15 @@ func TestTheGraphQLBodyLaysOutAsPinned(t *testing.T) {
 	}
 }
 
-// areaStates prints the behavior of every text area under root, in order.
-func areaStates(root Node) []string {
-	var states []string
-	if fmt.Sprintf("%T", root.Behavior()) == "*widget.areaB" {
-		states = append(states, fmt.Sprintf("%+v", root.Behavior()))
-	}
-	for _, child := range root.Children() {
-		states = append(states, areaStates(child)...)
-	}
-	return states
-}
-
 // What Dump does not show of the two areas: the query edits the tab's
 // body and the variables its own area. The query is drawn without the
 // JSON styler a JSON body leaves on the shared body area.
 func TestTheGraphQLAreasEditTheTabsTexts(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	t.Cleanup(a.waitWrites)
 	tab := a.cur()
 	tab.body.Styler = jsonStyler
-	areas := areaStates(a.graphQLBody(tab))
+	areas := behaviorStates(a.graphQLBody(tab), "*widget.areaB")
 	if len(areas) != 2 {
 		t.Fatalf("%d areas, want 2: %q", len(areas), areas)
 	}

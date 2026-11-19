@@ -29,7 +29,7 @@ func focusName(app *App) string {
 }
 
 func TestTabVisitsTheWindowInReadingOrderAndCycles(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	pointTabAt(tab, jsonServer(t).URL)
 	a.send(tab)
@@ -66,7 +66,7 @@ func iconOnlyWithoutHint(dump string) []string {
 }
 
 func TestEveryIconOnlyControlHasATooltip(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.step(core.Input{X: 5000, Y: 5000})
 	root := a.view()
 	view.Layout(a.ctx, root, a.w, a.h)

@@ -13,19 +13,8 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
-func stateApp(t *testing.T, path string) *App {
-	t.Helper()
-	a, err := NewApp(withAdapters(Options{StatePath: path}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	a.w, a.h = winW, winH
-	a.step(core.Input{})
-	return a
-}
-
 func TestStateSnapshotCapturesTabsFoldersAndSizes(t *testing.T) {
-	a := stateApp(t, "")
+	a := testApp(t, memorySettings(), withOptions(Options{StatePath: ""}))
 	a.openRequest(a.col().Folders[0].Requests[0]) // User/<first>
 	a.cur().paneTab, a.cur().respTab = 2, 1
 	a.sidebarSplit.Size = 310
@@ -55,7 +44,7 @@ func TestStateSnapshotCapturesTabsFoldersAndSizes(t *testing.T) {
 
 func TestStateRestoreRoundTripsThroughTheFile(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "state.json")
-	a := stateApp(t, path)
+	a := testApp(t, memorySettings(), withOptions(Options{StatePath: path}))
 	a.openRequest(a.col().Folders[0].Requests[0])
 	a.cur().paneTab = 3
 	a.sidebarSplit.Size = 300
@@ -63,7 +52,7 @@ func TestStateRestoreRoundTripsThroughTheFile(t *testing.T) {
 	if err := a.SaveState(); err != nil {
 		t.Fatal(err)
 	}
-	b := stateApp(t, path)
+	b := testApp(t, memorySettings(), withOptions(Options{StatePath: path}))
 	if len(b.list.Tabs) != 2 || b.list.Active != 1 || b.cur().paneTab != 3 {
 		t.Fatalf("tabs %d active %d pane %d", len(b.list.Tabs), b.list.Active, b.cur().paneTab)
 	}
@@ -85,7 +74,7 @@ func TestStateRestoreDropsMissingRequestsAndBadValues(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	a := stateApp(t, path)
+	a := testApp(t, memorySettings(), withOptions(Options{StatePath: path}))
 	if len(a.list.Tabs) != 1 || a.list.Active != 0 {
 		t.Fatalf("tabs %d active %d", len(a.list.Tabs), a.list.Active)
 	}
@@ -100,7 +89,7 @@ func TestStateRestoreDropsMissingRequestsAndBadValues(t *testing.T) {
 func TestStateWithNoTabsOpensTheFirstRequest(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "state.json")
 	statefile.Save(path, state.State{Tabs: []state.Tab{{Path: "Gone"}}})
-	a := stateApp(t, path)
+	a := testApp(t, memorySettings(), withOptions(Options{StatePath: path}))
 	if len(a.list.Tabs) != 1 {
 		t.Fatalf("%d tabs", len(a.list.Tabs))
 	}
@@ -111,7 +100,7 @@ func TestStateCorruptFileStartsFreshWithAStatusNote(t *testing.T) {
 	if err := os.WriteFile(path, []byte("{broken"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	a := stateApp(t, path)
+	a := testApp(t, memorySettings(), withOptions(Options{StatePath: path}))
 	if len(a.list.Tabs) != 1 || a.status == "Ready" {
 		t.Fatalf("tabs %d status %q", len(a.list.Tabs), a.status)
 	}
@@ -119,7 +108,7 @@ func TestStateCorruptFileStartsFreshWithAStatusNote(t *testing.T) {
 
 func TestStateIsSavedAfterAQuietSpell(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "state.json")
-	a := stateApp(t, path)
+	a := testApp(t, memorySettings(), withOptions(Options{StatePath: path}))
 	clock := time.Unix(1000, 0)
 	a.now = func() time.Time { return clock }
 	a.step(core.Input{})
@@ -138,7 +127,7 @@ func TestStateIsSavedAfterAQuietSpell(t *testing.T) {
 }
 
 func TestEmptyStatePathWritesNothing(t *testing.T) {
-	a := stateApp(t, "")
+	a := testApp(t, memorySettings(), withOptions(Options{StatePath: ""}))
 	if err := a.SaveState(); err != nil {
 		t.Fatal(err)
 	}
@@ -146,13 +135,13 @@ func TestEmptyStatePathWritesNothing(t *testing.T) {
 
 func TestResponsesOfARequestComeBackAfterARestart(t *testing.T) {
 	statePath := filepath.Join(t.TempDir(), "state.json")
-	first := stateApp(t, statePath)
+	first := testApp(t, memorySettings(), withOptions(Options{StatePath: statePath}))
 	tab := first.cur()
 	pointTabAt(tab, jsonServer(t).URL)
 	first.send(tab)
 	waitForResponse(t, first, tab)
 
-	second := stateApp(t, statePath)
+	second := testApp(t, memorySettings(), withOptions(Options{StatePath: statePath}))
 	got := second.cur()
 	if got.Req.Name != tab.Req.Name {
 		t.Fatalf("the restored tab is %q, expected %q", got.Req.Name, tab.Req.Name)
@@ -163,7 +152,7 @@ func TestResponsesOfARequestComeBackAfterARestart(t *testing.T) {
 }
 
 func TestAnAppWithoutAStateFileKeepsNoHistoryOnDisk(t *testing.T) {
-	a := stateApp(t, "")
+	a := testApp(t, memorySettings(), withOptions(Options{StatePath: ""}))
 	tab := a.cur()
 	pointTabAt(tab, jsonServer(t).URL)
 	a.send(tab)
@@ -175,12 +164,12 @@ func TestAnAppWithoutAStateFileKeepsNoHistoryOnDisk(t *testing.T) {
 
 func TestTheSettingsDialogSizeIsRememberedAcrossRestarts(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "state.json")
-	first := stateApp(t, path)
+	first := testApp(t, memorySettings(), withOptions(Options{StatePath: path}))
 	first.prefs.Size.W, first.prefs.Size.H = 900, 480
 	if err := first.SaveState(); err != nil {
 		t.Fatal(err)
 	}
-	second := stateApp(t, path)
+	second := testApp(t, memorySettings(), withOptions(Options{StatePath: path}))
 	if second.prefs.Size.W != 900 || second.prefs.Size.H != 480 {
 		t.Fatalf("the dialog size after a restart: %dx%d", second.prefs.Size.W, second.prefs.Size.H)
 	}
@@ -201,7 +190,7 @@ func TestHostileStateValuesStillGiveAWorkingWindow(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	a := stateApp(t, path)
+	a := testApp(t, memorySettings(), withOptions(Options{StatePath: path}))
 	for range 5 {
 		a.step(core.Input{})
 	}
@@ -211,7 +200,7 @@ func TestHostileStateValuesStillGiveAWorkingWindow(t *testing.T) {
 }
 
 func TestStateSnapshotNamesTheRequestPaneOfEachTab(t *testing.T) {
-	a := stateApp(t, "")
+	a := testApp(t, memorySettings(), withOptions(Options{StatePath: ""}))
 	a.openRequest(a.col().Folders[0].Requests[0])
 	a.cur().paneTab = 1
 	s := a.snapshot()
@@ -235,7 +224,7 @@ func TestStateRestoreFindsTheRequestPaneByItsLabel(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			a := stateApp(t, "")
+			a := testApp(t, memorySettings(), withOptions(Options{StatePath: ""}))
 			request := a.col().Folders[0].Requests[0]
 			request.Protocol = "grpc"
 			test.tab.Path = "User/" + request.Name

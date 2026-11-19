@@ -10,34 +10,15 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
-// welcomeApp is a test app that shows the welcome dialog when this
-// version has not been welcomed in the state file at statePath.
-func welcomeApp(t *testing.T, statePath string) *App {
-	t.Helper()
-	return welcomeAppWith(t, Options{StatePath: statePath, Welcome: true})
-}
-
-func welcomeAppWith(t *testing.T, opts Options) *App {
-	t.Helper()
-	opts.SettingsPath = filepath.Join(t.TempDir(), "settings.json")
-	a, err := NewApp(withAdapters(opts))
-	if err != nil {
-		t.Fatal(err)
-	}
-	a.w, a.h = winW, winH
-	a.step(core.Input{})
-	return a
-}
-
 func TestWelcomeOpensTheFirstTimeAVersionRuns(t *testing.T) {
-	a := welcomeApp(t, filepath.Join(t.TempDir(), "state.json"))
+	a := testApp(t, untouchedSettings(), withOptions(Options{StatePath: filepath.Join(t.TempDir(), "state.json"), Welcome: true}))
 	if a.dialog == nil || !strings.Contains(a.dialog.Title, "0.1.0 alpha") {
 		t.Fatalf("dialog = %+v, want the welcome dialog of 0.1.0 alpha", a.dialog)
 	}
 }
 
 func TestWelcomeStaysClosedWhenNotAskedFor(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	if a.dialog != nil {
 		t.Fatalf("dialog = %+v, want none", a.dialog)
 	}
@@ -45,7 +26,7 @@ func TestWelcomeStaysClosedWhenNotAskedFor(t *testing.T) {
 
 func TestWelcomeIsRememberedOnceClosed(t *testing.T) {
 	statePath := filepath.Join(t.TempDir(), "state.json")
-	a := welcomeApp(t, statePath)
+	a := testApp(t, untouchedSettings(), withOptions(Options{StatePath: statePath, Welcome: true}))
 	a.step(core.Input{Escape: true})
 	if a.dialog != nil {
 		t.Fatal("Escape left the welcome dialog open")
@@ -53,7 +34,7 @@ func TestWelcomeIsRememberedOnceClosed(t *testing.T) {
 	if err := a.SaveState(); err != nil {
 		t.Fatal(err)
 	}
-	again := welcomeApp(t, statePath)
+	again := testApp(t, untouchedSettings(), withOptions(Options{StatePath: statePath, Welcome: true}))
 	if again.dialog != nil {
 		t.Fatalf("welcome shown again for the same version: %+v", again.dialog)
 	}
@@ -64,14 +45,14 @@ func TestWelcomeShowsAgainForANewVersion(t *testing.T) {
 	if err := (statefile.Files{}).Save(statePath, state.State{Welcomed: "v0.0.9"}); err != nil {
 		t.Fatal(err)
 	}
-	a := welcomeApp(t, statePath)
+	a := testApp(t, untouchedSettings(), withOptions(Options{StatePath: statePath, Welcome: true}))
 	if a.dialog == nil {
 		t.Fatal("welcome stayed closed for a version that was not welcomed yet")
 	}
 }
 
 func TestClickingTheVersionOpensWelcome(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	click(a, a.w-30, a.h-statusH/2)
 	if a.dialog == nil || !strings.Contains(a.dialog.Title, "0.1.0 alpha") {
 		t.Fatalf("dialog = %+v, want the welcome dialog", a.dialog)
@@ -119,10 +100,10 @@ func TestWelcomeEveryOpensEvenWhenSeen(t *testing.T) {
 	if err := (statefile.Files{}).Save(statePath, state.State{Welcomed: version}); err != nil {
 		t.Fatal(err)
 	}
-	if a := welcomeAppWith(t, Options{StatePath: statePath, Welcome: true}); a.dialog != nil {
+	if a := testApp(t, untouchedSettings(), withOptions(Options{StatePath: statePath, Welcome: true})); a.dialog != nil {
 		t.Fatal("welcome opened for a version already seen")
 	}
-	if a := welcomeAppWith(t, Options{StatePath: statePath, Welcome: true, WelcomeEvery: true}); a.dialog == nil {
+	if a := testApp(t, untouchedSettings(), withOptions(Options{StatePath: statePath, Welcome: true, WelcomeEvery: true})); a.dialog == nil {
 		t.Fatal("WelcomeEvery left the dialog closed")
 	}
 }

@@ -48,7 +48,7 @@ func TestTheFindBarLaysOutAsPinned(t *testing.T) {
 			t.Run(name, func(t *testing.T) {
 				a := jsonResponse(t, findBody)
 				tab := a.cur()
-				a.step(key(ebiten.KeyF, true, false))
+				a.step(combo(ebiten.KeyF, true, false, false))
 				a.typeText(tc.query)
 				for range tc.steps {
 					a.step(core.Input{Enter: true})
@@ -71,7 +71,7 @@ func TestTheFindBarLaysOutAsPinned(t *testing.T) {
 // empty query, the active hit of all hits, or that there is none.
 func TestTheFindCounterFollowsTheQuery(t *testing.T) {
 	a := jsonResponse(t, findBody)
-	a.step(key(ebiten.KeyF, true, false))
+	a.step(combo(ebiten.KeyF, true, false, false))
 	a.typeText("id")
 	textCenter(t, a, "1/2")
 	a.step(core.Input{Enter: true})

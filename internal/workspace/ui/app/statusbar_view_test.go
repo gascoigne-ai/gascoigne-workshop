@@ -28,7 +28,7 @@ func TestTheStatusBarLaysOutAsPinned(t *testing.T) {
 	for _, size := range sizes {
 		name := "statusbar-long-" + size.name
 		t.Run(name, func(t *testing.T) {
-			a, _ := newTestApp(t)
+			a := testApp(t)
 			t.Cleanup(a.waitWrites)
 			a.status = "Sent 200 OK in 120ms to https://api.github.com/repos/golang/go/issues"
 			root := a.statusBar()
@@ -46,7 +46,7 @@ func TestTheStatusBarLaysOutAsPinned(t *testing.T) {
 
 // Clicking Log in the status bar opens the log of calls.
 func TestClickingLogInTheStatusBarOpensTheCallLog(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	if a.calls.Shown() {
 		t.Fatal("the call log is open before the click")
 	}

@@ -17,37 +17,20 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
-func workspaceApp(t *testing.T, dir string, opts Options) *App {
-	t.Helper()
-	opts.SettingsPath = filepath.Join(t.TempDir(), "settings.json")
-	opts.WorkspaceDir = dir
-	a, err := NewApp(withAdapters(opts))
-	if err != nil {
-		t.Fatal(err)
-	}
-	a.w, a.h = winW, winH
-	a.step(core.Input{})
-	// A save is written in the background and the tabs read as saved at once,
-	// so a test can end while the file is still being written, and its
-	// temporary folder then cannot be removed ("directory not empty").
-	t.Cleanup(a.waitWrites)
-	return a
-}
-
 func TestStartsFromTheWorkspaceFolder(t *testing.T) {
 	dir := t.TempDir()
 	c := model.Collection{Folder: model.Folder{Name: "Mine", Requests: []*model.Request{{Name: "One", Protocol: "rest", Method: "GET", URL: "u"}}}}
 	if err := store.Save(dir, c); err != nil {
 		t.Fatal(err)
 	}
-	a := workspaceApp(t, dir, Options{})
+	a := testApp(t, untouchedSettings(), inWorkspace(dir), withOptions(Options{}))
 	if a.col().Name != "Mine" || a.cur().Req.Name != "One" {
 		t.Fatalf("collection %q, tab %q", a.col().Name, a.cur().Req.Name)
 	}
 }
 
 func TestEmptyWorkspaceStartsWithOneBlankRequest(t *testing.T) {
-	a := workspaceApp(t, t.TempDir(), Options{})
+	a := testApp(t, untouchedSettings(), inWorkspace(t.TempDir()), withOptions(Options{}))
 	if len(a.list.Tabs) != 1 || a.cur().Req.Name != "New Request" {
 		t.Fatalf("tabs %d", len(a.list.Tabs))
 	}
@@ -59,19 +42,19 @@ func TestBrokenWorkspaceFallsBackWithoutOverwriting(t *testing.T) {
 	if err := writeFile(bad, "{nope"); err != nil {
 		t.Fatal(err)
 	}
-	a := workspaceApp(t, dir, Options{})
+	a := testApp(t, untouchedSettings(), inWorkspace(dir), withOptions(Options{}))
 	if a.workspace() != "" || a.status == "Ready" {
 		t.Fatalf("workspace %q status %q", a.workspace(), a.status)
 	}
 	a.saveWorkspace() // with no workspace and no default this must not write into dir
-	if b := readFile(t, bad); b != "{nope" {
+	if b := fileText(t, bad); b != "{nope" {
 		t.Fatalf("broken file changed: %q", b)
 	}
 }
 
 func TestSaveWritesTheWorkspaceAndClearsTheDirtyMark(t *testing.T) {
 	dir := t.TempDir()
-	a := workspaceApp(t, dir, Options{})
+	a := testApp(t, untouchedSettings(), inWorkspace(dir), withOptions(Options{}))
 	tab := a.cur()
 	tab.Req.URL = "https://changed.test"
 	if !dirty(tab) {
@@ -90,7 +73,7 @@ func TestSaveWritesTheWorkspaceAndClearsTheDirtyMark(t *testing.T) {
 
 func TestEditsAreSavedAfterAPause(t *testing.T) {
 	dir := t.TempDir()
-	a := workspaceApp(t, dir, Options{})
+	a := testApp(t, untouchedSettings(), inWorkspace(dir), withOptions(Options{}))
 	now := time.Now()
 	a.now = func() time.Time { return now }
 	a.step(core.Input{})
@@ -113,7 +96,7 @@ func TestEditsAreSavedAfterAPause(t *testing.T) {
 // collections folder, named after it, as New collection does.
 func TestTheFirstSaveMakesTheCollectionAFolderAndRemembersIt(t *testing.T) {
 	base := t.TempDir()
-	a := workspaceApp(t, "", Options{DefaultWorkspace: filepath.Join(base, "ws")})
+	a := testApp(t, untouchedSettings(), inWorkspace(""), withOptions(Options{DefaultWorkspace: filepath.Join(base, "ws")}))
 	if a.workspace() != "" {
 		t.Fatal("workspace without being asked")
 	}
@@ -151,17 +134,9 @@ func TestRemembersTheLastWorkspace(t *testing.T) {
 }
 
 func writeFile(name, text string) error { return os.WriteFile(name, []byte(text), 0o644) }
-func readFile(t *testing.T, name string) string {
-	t.Helper()
-	b, err := os.ReadFile(name)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return string(b)
-}
 
 func TestImportCurlAddsARequestFromTheClipboard(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	clip := &fakeClip{text: `curl -X POST 'https://api.test/v1/users?x=1' -H 'Content-Type: application/json' -d '{"a":1}'`}
 	a.ctx.Clipboard = clip
 	a.importCurl(&a.col().Folder)
@@ -182,7 +157,7 @@ func TestImportCurlAddsARequestFromTheClipboard(t *testing.T) {
 
 func TestFlushWorkspaceSavesPendingEditsAtExit(t *testing.T) {
 	dir := t.TempDir()
-	a := workspaceApp(t, dir, Options{})
+	a := testApp(t, untouchedSettings(), inWorkspace(dir), withOptions(Options{}))
 	a.cur().Req.URL = "https://edited-just-now.test" // the autosave pause has not passed
 	if err := a.FlushWorkspace(); err != nil {
 		t.Fatal(err)
@@ -191,7 +166,7 @@ func TestFlushWorkspaceSavesPendingEditsAtExit(t *testing.T) {
 	if err != nil || got.Requests[0].URL != "https://edited-just-now.test" {
 		t.Fatalf("%+v %v", got, err)
 	}
-	if err := workspaceApp(t, "", Options{}).FlushWorkspace(); err != nil {
+	if err := testApp(t, untouchedSettings(), inWorkspace(""), withOptions(Options{})).FlushWorkspace(); err != nil {
 		t.Fatalf("no workspace is no error: %v", err)
 	}
 }
@@ -201,7 +176,7 @@ func TestOpenWorkspaceAtSwitchesCollectionsAndSavesTheOldOne(t *testing.T) {
 	if err := store.Save(second, model.Collection{Folder: model.Folder{Name: "Second", Requests: []*model.Request{{Name: "Two", Protocol: "rest", Method: "GET", URL: "u2"}}}}); err != nil {
 		t.Fatal(err)
 	}
-	a := workspaceApp(t, first, Options{})
+	a := testApp(t, untouchedSettings(), inWorkspace(first), withOptions(Options{}))
 	a.cur().Req.URL = "https://unsaved.test"
 	a.openWorkspaceAt(second)
 	if a.col().Name != "Second" || len(a.list.Tabs) != 1 || a.cur().Req.Name != "Two" || a.workspace() != second {
@@ -231,7 +206,7 @@ func TestImportOpenAPIAddsAFolderOfRequestsAndTheBaseURL(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.col().Vars = nil
 	a.ctx.Clipboard = &fakeClip{text: string(data)}
 	before := len(a.col().Folders)
@@ -258,7 +233,7 @@ func TestImportPostmanAddsAFolderAndItsVariables(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.col().Vars = []model.KV{{Name: "baseUrl", Value: "mine", Enabled: true}}
 	a.ctx.Clipboard = &fakeClip{text: string(data)}
 	before := len(a.col().Folders)
@@ -281,7 +256,7 @@ func TestImportPostmanAddsAFolderAndItsVariables(t *testing.T) {
 }
 
 func TestExportPostmanWritesACollectionFileThatImportsBack(t *testing.T) {
-	a, _ := newTestApp(t) // no dialog program: the in-app file browser asks
+	a := testApp(t) // no dialog program: the in-app file browser asks
 	a.folders = folders.Disk{}
 	a.exportPostman(&a.col().Folder)
 	if a.browser == nil || !strings.HasSuffix(a.browser.path.Text, ".postman_collection.json") {

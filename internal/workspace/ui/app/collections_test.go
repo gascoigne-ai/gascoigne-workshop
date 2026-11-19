@@ -22,7 +22,7 @@ func collectionsApp(t *testing.T) (*App, string) {
 	if err := store.Save(home, c); err != nil {
 		t.Fatal(err)
 	}
-	return workspaceApp(t, home, Options{DefaultWorkspace: home}), base
+	return testApp(t, untouchedSettings(), inWorkspace(home), withOptions(Options{DefaultWorkspace: home})), base
 }
 
 func TestTheCollectionMenuListsTheCollectionActions(t *testing.T) {
@@ -173,14 +173,4 @@ func TestRenameAndDeleteNeedACollectionOnDisk(t *testing.T) {
 	if a.dialog != nil {
 		t.Fatal("a dialog opened for a collection that is not on disk")
 	}
-}
-
-// toastSays is true when a toast on the screen contains text.
-func toastSays(app *App, text string) bool {
-	for _, toast := range app.toasts {
-		if strings.Contains(toast.Text, text) {
-			return true
-		}
-	}
-	return false
 }

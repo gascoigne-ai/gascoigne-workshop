@@ -30,7 +30,7 @@ const (
 // shown on the response side.
 func mcpTab(t *testing.T) (*App, *reqTab) {
 	t.Helper()
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	tab.Req.Protocol = "mcp"
 	tab.respTab = 0
@@ -70,33 +70,33 @@ func TestTheMCPExplorerLaysOutAsPinned(t *testing.T) {
 		}},
 		{"tool-calling", func(app *App, tab *reqTab) {
 			announce(app, tab)
-			tab.Session = &requesterSession{}
+			tab.Session = &fakeSession{}
 			app.exploreOpen(tab, 1)
 			tab.explorer.Begin()
 		}},
 		{"tool-result", func(app *App, tab *reqTab) {
 			announce(app, tab)
-			tab.Session = &requesterSession{}
+			tab.Session = &fakeSession{}
 			app.exploreOpen(tab, 1)
 			tab.explorer.Finish(`{"content":[{"type":"text","text":"pong"}]}`, nil)
 			tab.resultView.SetLines(resultLines(tab.explorer))
 		}},
 		{"tool-error", func(app *App, tab *reqTab) {
 			announce(app, tab)
-			tab.Session = &requesterSession{}
+			tab.Session = &fakeSession{}
 			app.exploreOpen(tab, 1)
 			tab.explorer.Finish("", errors.New("no such tool"))
 			tab.resultView.SetLines(resultLines(tab.explorer))
 		}},
 		{"resources-open", func(app *App, tab *reqTab) {
 			announce(app, tab)
-			tab.Session = &requesterSession{}
+			tab.Session = &fakeSession{}
 			app.exploreChoose(tab, mcpexplorer.Resources)
 			app.exploreOpen(tab, 0)
 		}},
 		{"prompts-open", func(app *App, tab *reqTab) {
 			announce(app, tab)
-			tab.Session = &requesterSession{}
+			tab.Session = &fakeSession{}
 			app.exploreChoose(tab, mcpexplorer.Prompts)
 			app.exploreOpen(tab, 0)
 		}},
@@ -212,7 +212,7 @@ func TestClickingTheExplorersButtonSendsTheOpenEntry(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			a, tab := mcpTab(t)
 			announce(a, tab)
-			session := &requesterSession{result: `{}`}
+			session := &fakeSession{result: `{}`}
 			tab.Session = session
 			a.exploreChoose(tab, tc.kind)
 			index := 0

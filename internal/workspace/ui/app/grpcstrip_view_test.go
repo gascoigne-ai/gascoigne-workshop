@@ -43,7 +43,7 @@ func textX(t *testing.T, dump, text string) int {
 func TestTheGRPCStripSeparatesItsChips(t *testing.T) {
 	for _, state := range []string{"grpc-method", "grpc-stream", "grpc-no-method"} {
 		t.Run(state, func(t *testing.T) {
-			a, _ := newTestApp(t)
+			a := testApp(t)
 			t.Cleanup(a.waitWrites)
 			tab := a.cur()
 			stateNamed(t, state).setUp(t, a, tab)
@@ -68,7 +68,7 @@ func TestTheGRPCStripSeparatesItsChips(t *testing.T) {
 // Stream shows whether it is on: a tinted chip while the tab streams, a
 // plain one otherwise.
 func TestTheStreamChipShowsItsState(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	t.Cleanup(a.waitWrites)
 	tab := a.cur()
 	stateNamed(t, "grpc-method").setUp(t, a, tab)

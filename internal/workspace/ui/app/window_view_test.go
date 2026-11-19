@@ -8,7 +8,6 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
-	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
@@ -62,7 +61,7 @@ func TestTheWindowLaysOutAsPinned(t *testing.T) {
 				if state.stacked {
 					layout = "stacked"
 				}
-				a, _ := newTestAppWith(t, func(prefs *settings.Settings) { prefs.Layout = layout })
+				a := testApp(t, withSettings(func(prefs *settings.Settings) { prefs.Layout = layout }))
 				t.Cleanup(a.waitWrites)
 				a.w, a.h = size.width, size.height
 				state.setUp(a)
@@ -72,26 +71,13 @@ func TestTheWindowLaysOutAsPinned(t *testing.T) {
 	}
 }
 
-// findWidgets is every node under root whose behavior has the type kind,
-// in tree order.
-func findWidgets(root Node, kind string) []Node {
-	var found []Node
-	if fmt.Sprintf("%T", root.Behavior()) == kind {
-		found = append(found, root)
-	}
-	for _, child := range root.Children() {
-		found = append(found, findWidgets(child, kind)...)
-	}
-	return found
-}
-
 // The dump does not show a split's settings: the sidebar split keeps its
 // width in pixels between its minimums, the pane split shares the room
 // by ratio, stacked or side by side as the layout setting says.
 func TestTheWindowSplitsAreWiredToTheApp(t *testing.T) {
 	for _, layout := range []string{"side", "stacked"} {
 		t.Run(layout, func(t *testing.T) {
-			a, _ := newTestAppWith(t, func(prefs *settings.Settings) { prefs.Layout = layout })
+			a := testApp(t, withSettings(func(prefs *settings.Settings) { prefs.Layout = layout }))
 			t.Cleanup(a.waitWrites)
 			splits := findWidgets(a.view(), "*widget.splitB")
 			if len(splits) != 2 {

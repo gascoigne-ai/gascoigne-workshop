@@ -1,7 +1,6 @@
 package app
 
 import (
-	"context"
 	"errors"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"regexp"
@@ -13,23 +12,6 @@ import (
 	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
-
-// requesterSession answers every command with a fixed result and records
-// what it was asked.
-type requesterSession struct {
-	asked  []string
-	result string
-	err    error
-}
-
-func (session *requesterSession) Events() <-chan reqport.Event       { return nil }
-func (session *requesterSession) Send(context.Context, string) error { return nil }
-func (session *requesterSession) Ping(context.Context) error         { return nil }
-func (session *requesterSession) Close(context.Context) error        { return nil }
-func (session *requesterSession) Request(_ context.Context, text string) (string, error) {
-	session.asked = append(session.asked, text)
-	return session.result, session.err
-}
 
 // announce puts a server's lists into the tab, as its events would.
 func announce(app *App, tab *reqTab) {
@@ -43,11 +25,11 @@ func announce(app *App, tab *reqTab) {
 }
 
 func TestExplorerCallsTheOpenToolWithTheFormsArguments(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	tab.Req.Protocol = "mcp"
 	announce(a, tab)
-	session := &requesterSession{result: `{"content":[{"type":"text","text":"found"}]}`}
+	session := &fakeSession{result: `{"content":[{"type":"text","text":"found"}]}`}
 	tab.Session = session
 	a.exploreOpen(tab, 0)
 	tab.form.Inputs["q"].Text = "go"
@@ -72,11 +54,11 @@ func TestExplorerCommandsPerKind(t *testing.T) {
 		{mcpexplorer.Prompts, 0, `prompt review {"code":""}`},
 	}
 	for _, test := range tests {
-		a, _ := newTestApp(t)
+		a := testApp(t)
 		tab := a.cur()
 		tab.Req.Protocol = "mcp"
 		announce(a, tab)
-		session := &requesterSession{result: `{}`}
+		session := &fakeSession{result: `{}`}
 		tab.Session = session
 		a.exploreChoose(tab, test.kind)
 		a.exploreOpen(tab, test.index)
@@ -91,15 +73,15 @@ func TestExplorerCommandsPerKind(t *testing.T) {
 func TestExplorerShowsTheServersErrorAndAToolThatReportsOne(t *testing.T) {
 	tests := []struct {
 		name    string
-		session *requesterSession
+		session *fakeSession
 		want    string
 	}{
-		{"server error", &requesterSession{err: errors.New("no such tool")}, "no such tool"},
-		{"isError result", &requesterSession{result: `{"isError":true,"content":[]}`}, "isError"},
+		{"server error", &fakeSession{err: errors.New("no such tool")}, "no such tool"},
+		{"isError result", &fakeSession{result: `{"isError":true,"content":[]}`}, "isError"},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			a, _ := newTestApp(t)
+			a := testApp(t)
 			tab := a.cur()
 			tab.Req.Protocol = "mcp"
 			announce(a, tab)
@@ -115,11 +97,11 @@ func TestExplorerShowsTheServersErrorAndAToolThatReportsOne(t *testing.T) {
 }
 
 func TestExplorerRefusesACallWithAnInvalidValue(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	tab.Req.Protocol = "mcp"
 	announce(a, tab)
-	session := &requesterSession{result: `{}`}
+	session := &fakeSession{result: `{}`}
 	tab.Session = session
 	a.exploreOpen(tab, 0)
 	tab.form.Inputs["limit"].Text = "lots"
@@ -130,13 +112,13 @@ func TestExplorerRefusesACallWithAnInvalidValue(t *testing.T) {
 }
 
 func TestExplorerAndTrafficPanesDrawWithoutPanicking(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	tab.Req.Protocol = "mcp"
 	a.step(core.Input{}) // no server yet
 	a.applyWS(wsEvent{tab: tab, hasEv: true, ev: reqport.Event{Dir: reqport.Info, Kind: "initialize", Text: `{"protocolVersion":"2025-06-18","capabilities":{"tools":{}},"serverInfo":{"name":"mock","version":"1"},"instructions":"Use echo."}`}})
 	announce(a, tab)
-	tab.Session = &requesterSession{result: `{"content":[]}`}
+	tab.Session = &fakeSession{result: `{"content":[]}`}
 	for _, kind := range []mcpexplorer.Kind{mcpexplorer.Tools, mcpexplorer.Resources, mcpexplorer.Prompts} {
 		a.exploreChoose(tab, kind)
 		a.step(core.Input{})
@@ -154,7 +136,7 @@ func TestExplorerAndTrafficPanesDrawWithoutPanicking(t *testing.T) {
 // Choosing another protocol while the second response pane of MCP is open
 // must not leave the tab past the end of the shorter list.
 func TestLeavingMCPShowsTheFirstResponsePane(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	tab.Req.Protocol = "mcp"
 	tab.respTab = 1
@@ -168,7 +150,7 @@ func TestLeavingMCPShowsTheFirstResponsePane(t *testing.T) {
 // The empty list's note sat flush against the edge of the list and the
 // tab strip had no line under it, unlike every other tab strip.
 func TestExplorerListInsetsItsNoteAndRulesTheTabStrip(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	tab.Req.Protocol = "mcp"
 	list := a.explorerList(tab)

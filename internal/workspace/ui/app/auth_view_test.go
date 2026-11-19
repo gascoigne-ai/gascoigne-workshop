@@ -53,7 +53,7 @@ func TestTheAuthPaneLaysOutAsPinned(t *testing.T) {
 		for _, size := range sizes {
 			name := "authpane-" + state.name + "-" + size.name
 			t.Run(name, func(t *testing.T) {
-				a, _ := newTestApp(t)
+				a := testApp(t)
 				t.Cleanup(a.waitWrites)
 				tab := a.cur()
 				state.setUp(tab)
@@ -90,11 +90,11 @@ func TestTheAuthFieldsEditTheTabsInputs(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			a, _ := newTestApp(t)
+			a := testApp(t)
 			t.Cleanup(a.waitWrites)
 			tab := a.cur()
 			tab.Req.Auth, tab.showSecrets = tc.auth, tc.showSecrets
-			fields := fieldStates(a.authPane(authPane, tab, &widget.ScrollState{}))
+			fields := behaviorStates(a.authPane(authPane, tab, &widget.ScrollState{}), "*widget.fieldB")
 			if len(fields) != len(tc.ids) {
 				t.Fatalf("%d fields, want %d: %q", len(fields), len(tc.ids), fields)
 			}
@@ -113,18 +113,6 @@ func TestTheAuthFieldsEditTheTabsInputs(t *testing.T) {
 	}
 }
 
-// fieldStates prints the behavior of every text field under root, in order.
-func fieldStates(root Node) []string {
-	var states []string
-	if fmt.Sprintf("%T", root.Behavior()) == "*widget.fieldB" {
-		states = append(states, fmt.Sprintf("%+v", root.Behavior()))
-	}
-	for _, child := range root.Children() {
-		states = append(states, fieldStates(child)...)
-	}
-	return states
-}
-
 // Dump does not show whether a checkbox is ticked: Show secrets is ticked
 // while the secrets are shown, and a type without secrets has no checkbox.
 func TestTheShowSecretsCheckFollowsTheTab(t *testing.T) {
@@ -140,11 +128,11 @@ func TestTheShowSecretsCheckFollowsTheTab(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			a, _ := newTestApp(t)
+			a := testApp(t)
 			t.Cleanup(a.waitWrites)
 			tab := a.cur()
 			tab.Req.Auth.Type, tab.showSecrets = tc.auth, tc.showSecrets
-			got := checkStates(a.authPane(authPane, tab, &widget.ScrollState{}))
+			got := behaviorStates(a.authPane(authPane, tab, &widget.ScrollState{}), "widget.checkB")
 			if !slices.Equal(got, tc.want) {
 				t.Fatalf("checkboxes %q, want %q", got, tc.want)
 			}

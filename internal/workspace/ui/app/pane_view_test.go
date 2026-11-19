@@ -12,7 +12,7 @@ import (
 // A tab can point past the panes of its protocol (a socket has fewer
 // response panes than HTTP): building the view shows the last pane instead.
 func TestThePaneClampsItsActiveTabToItsPanes(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	t.Cleanup(a.waitWrites)
 	tab := a.cur()
 	tab.paneTab, tab.respTab = 99, 99
@@ -50,7 +50,7 @@ func TestClickingAPaneTabShowsThatPane(t *testing.T) {
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
-			a, _ := newTestApp(t)
+			a := testApp(t)
 			t.Cleanup(a.waitWrites)
 			tab := a.cur()
 			respondWith(200, "OK")(a)
@@ -84,7 +84,7 @@ func TestThePaneTabStripsSelectFromTheTopWithTheirOwnState(t *testing.T) {
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
-			a, _ := newTestApp(t)
+			a := testApp(t)
 			t.Cleanup(a.waitWrites)
 			tab := a.cur()
 			want := fmt.Sprintf("state:%p", test.strip(tab))

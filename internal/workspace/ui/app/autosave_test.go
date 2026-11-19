@@ -10,21 +10,13 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
-func fileText(t *testing.T, path string) string {
-	t.Helper()
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return ""
-	}
-	return string(data)
-}
-
 func setLayout(app *App, layout string) {
 	app.changeSettings(func(prefs *settings.Settings) { prefs.Layout = layout })
 }
 
 func TestSettingsAreSavedAutomaticallyByDefault(t *testing.T) {
-	a, path := newSettingsTestApp(t)
+	a := testApp(t, withSettings(defaultLayout))
+	path := a.SettingsPath()
 	if !a.settings.AutoSave {
 		t.Fatal("auto-save is off by default")
 	}
@@ -35,7 +27,8 @@ func TestSettingsAreSavedAutomaticallyByDefault(t *testing.T) {
 }
 
 func TestWithAutoSaveOffChangesApplyAtOnceButAreWrittenOnlyOnSave(t *testing.T) {
-	a, path := newSettingsTestApp(t)
+	a := testApp(t, withSettings(defaultLayout))
+	path := a.SettingsPath()
 	a.changeSettings(func(prefs *settings.Settings) { prefs.AutoSave = false })
 	if !strings.Contains(fileText(t, path), `"autoSave": false`) {
 		t.Fatalf("turning auto-save off must itself be stored, file %q", fileText(t, path))
@@ -54,7 +47,8 @@ func TestWithAutoSaveOffChangesApplyAtOnceButAreWrittenOnlyOnSave(t *testing.T) 
 }
 
 func TestTurningAutoSaveBackOnWritesWhatWasPending(t *testing.T) {
-	a, path := newSettingsTestApp(t)
+	a := testApp(t, withSettings(defaultLayout))
+	path := a.SettingsPath()
 	a.changeSettings(func(prefs *settings.Settings) { prefs.AutoSave = false })
 	setLayout(a, "side")
 	a.changeSettings(func(prefs *settings.Settings) { prefs.AutoSave = true })
@@ -115,7 +109,8 @@ func TestACleanDialogClosesWithoutAsking(t *testing.T) {
 }
 
 func TestAnOutsideChangeOfTheFileDoesNotOverwriteUnsavedChanges(t *testing.T) {
-	a, path := newSettingsTestApp(t)
+	a := testApp(t, withSettings(defaultLayout))
+	path := a.SettingsPath()
 	a.changeSettings(func(prefs *settings.Settings) { prefs.AutoSave = false })
 	setLayout(a, "side")
 	if err := os.WriteFile(path, []byte(`{"autoSave": false, "corners": "square"}`), 0o600); err != nil {

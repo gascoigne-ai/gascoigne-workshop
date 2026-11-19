@@ -47,7 +47,7 @@ func TestEveryMenuIconInTheTableExists(t *testing.T) {
 }
 
 func TestOpenMenuFillsTheIconsFromTheLabels(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.openMenu(10, 10, []widget.MenuItem{{Label: "Copy"}, {Label: "GET /users"}})
 	if got := widget.PopupMenu(a.ctx).Items[0].Icon; got != "copy" {
 		t.Fatalf("Copy row icon = %q, want copy", got)

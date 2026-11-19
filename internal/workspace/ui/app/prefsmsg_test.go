@@ -8,7 +8,7 @@ import (
 )
 
 func TestSendAppliesSettingsMessages(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.Send(prefs.Replace{Settings: settings.Settings{ResponseView: "raw", UIScalePct: 100}})
 	if a.settings.ResponseView != "raw" || !a.cur().look.Raw() {
 		t.Fatalf("Replace: setting %q raw %v", a.settings.ResponseView, a.cur().look.Raw())
@@ -28,7 +28,7 @@ func TestSendAppliesSettingsMessages(t *testing.T) {
 }
 
 func TestSendRecordsFileStateAndStatus(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.Send(prefs.MarkUnsaved{})
 	if !a.Unsaved() {
 		t.Fatal("MarkUnsaved")

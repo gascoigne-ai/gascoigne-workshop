@@ -23,7 +23,7 @@ var healthProtoSource = filepath.Join("..", "..", "..", "request", "adapter", "e
 // with its Proto pane shown, in a collection kept in dir.
 func grpcTabOnProtoPane(t *testing.T) (a *App, tab *reqTab, dir string) {
 	t.Helper()
-	a, _ = newTestApp(t)
+	a = testApp(t)
 	t.Cleanup(a.waitWrites)
 	dir = t.TempDir()
 	a.setWorkspace(dir)
@@ -111,7 +111,7 @@ func TestAddFileListsTheChosenFileRelativeToTheCollection(t *testing.T) {
 	}}
 	clickText(t, a, "Proto files", 0)
 	clickText(t, a, "Add file...", 0)
-	stepUntil(t, a, "the chosen file", func() bool { return len(tab.Req.Proto.Files) > 0 })
+	until(t, a, "the chosen file", func() bool { return len(tab.Req.Proto.Files) > 0 })
 	if asked == "" {
 		t.Error("no file dialog was asked")
 	}
@@ -182,7 +182,7 @@ func TestAParseErrorShowsWithFileLineAndColumn(t *testing.T) {
 	broken := protoFileIn(t, dir, "broken.proto", []byte(strings.Join(lines[:33], "")))
 	editRequest(tab, editor.ProtoPathAdded{List: editor.ProtoFiles, Path: broken})
 	want := `text="protos/broken.proto:34:`
-	stepUntil(t, a, "the parse error", func() bool { return strings.Contains(layoutDump(a), want) })
+	until(t, a, "the parse error", func() bool { return strings.Contains(layoutDump(a), want) })
 	for _, line := range strings.Split(layoutDump(a), "\n") {
 		if strings.Contains(line, want) && !strings.Contains(line, "fg=error") {
 			t.Errorf("the problem is not in the error color: %s", line)
@@ -233,7 +233,7 @@ func TestAServerWithoutReflectionIsCalledFromTheProtoFileAddedInThePane(t *testi
 	a.files = fakeDialog{choose: func(context.Context, string, bool, string) (string, error) { return health, nil }}
 	clickText(t, a, "Proto files", 0)
 	clickText(t, a, "Add file...", 0)
-	stepUntil(t, a, "the chosen file", func() bool { return len(tab.Req.Proto.Files) > 0 })
+	until(t, a, "the chosen file", func() bool { return len(tab.Req.Proto.Files) > 0 })
 	tab.Resp = nil
 	a.send(tab)
 	waitForResponse(t, a, tab)
@@ -271,7 +271,7 @@ func TestPickingAMethodFromProtoFilesNeedsNoServer(t *testing.T) {
 	tab.Req.URL = ""
 	editRequest(tab, editor.ProtoPathAdded{List: editor.ProtoFiles, Path: protoFileIn(t, dir, "health.proto", nil)})
 	a.pickGRPCMethod(tab)
-	stepUntil(t, a, "the menu of methods", func() bool { return widget.PopupMenu(a.ctx) != nil })
+	until(t, a, "the menu of methods", func() bool { return widget.PopupMenu(a.ctx) != nil })
 	if got := strings.Join(menuLabels(a), " "); !strings.Contains(got, "grpc.health.v1.Health/Check") {
 		t.Fatalf("methods = %s", got)
 	}

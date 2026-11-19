@@ -13,7 +13,7 @@ import (
 )
 
 func TestRequestsShareACookieJarThatClearCookiesEmpties(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	first := a.jar
 	if first == nil {
 		t.Fatal("no cookie jar")
@@ -30,7 +30,7 @@ func TestRequestsShareACookieJarThatClearCookiesEmpties(t *testing.T) {
 }
 
 func TestTypingAColonSegmentAddsAPathParameterRowThatFillsTheSentURL(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	tab.url = widget.NewTextField("https://api.test/users/:id")
 	a.urlEdited(tab)
@@ -50,7 +50,7 @@ func TestTypingAColonSegmentAddsAPathParameterRowThatFillsTheSentURL(t *testing.
 }
 
 func TestCookiesDialogListsWhatTheJarHoldsForTheURL(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	tab := a.cur()
 	tab.Req.URL = "https://api.test/x"
 	a.showCookies(tab)
@@ -81,7 +81,7 @@ func TestCookiesDialogListsWhatTheJarHoldsForTheURL(t *testing.T) {
 // were cleared, so a proxy or certificate chosen in the settings did
 // nothing until the next restart.
 func TestChangingTheProxyInTheSettingsReachesTheProtocols(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 
 	a.changeSettings(func(prefs *settings.Settings) { prefs.Proxy = "http://127.0.0.1:3128" })
 

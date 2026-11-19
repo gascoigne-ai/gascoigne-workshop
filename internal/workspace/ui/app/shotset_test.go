@@ -3,7 +3,7 @@ package app
 import "testing"
 
 func TestAScreenshotCanChangeSettingsLiveThroughTheSamePathAsTheDialog(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	a.shot.path = "unused.png"
 	a.shot.steps = []Step{Set("flat=true"), Set("contrast=high"), Set("uiScale=120")}
 	for range settleFrames {

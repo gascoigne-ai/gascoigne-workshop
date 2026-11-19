@@ -1,12 +1,10 @@
 package app
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
@@ -25,29 +23,6 @@ const (
 	messagesPaneH   = 300
 )
 
-// recordingSession is an open session that records what it is asked to
-// send, so a test can see what the composer sent.
-type recordingSession struct {
-	mu   sync.Mutex
-	sent []string
-}
-
-func (s *recordingSession) Events() <-chan reqport.Event   { return nil }
-func (s *recordingSession) Close(context.Context) error    { return nil }
-func (s *recordingSession) Ping(ctx context.Context) error { return s.Send(ctx, "ping") }
-func (s *recordingSession) Send(_ context.Context, text string) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.sent = append(s.sent, text)
-	return nil
-}
-
-func (s *recordingSession) log() []string {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return append([]string(nil), s.sent...)
-}
-
 // messagesPaneStates are the looks of the Messages pane: a WebSocket before
 // and after connecting (with a message in the log), an event stream, which
 // has no composer, an MCP server with its pickers, and a gRPC stream, whose
@@ -62,7 +37,7 @@ var messagesPaneStates = []struct {
 	}},
 	{"websocket-connected", "Message", func(app *App, tab *reqTab) {
 		tab.Req.Protocol = "websocket"
-		tab.Session = &recordingSession{}
+		tab.Session = &fakeSession{}
 		tab.Reconnect = true
 		sentAt := time.Date(2026, 11, 14, 10, 30, 0, 0, time.UTC)
 		app.logEvent(tab, reqport.Event{Time: sentAt, Dir: reqport.Sent, Kind: "text", Text: `{"op":"ping"}`})
@@ -73,7 +48,7 @@ var messagesPaneStates = []struct {
 	}},
 	{"mcp-connected", "call TOOL {json}  ·  read URI  ·  prompt NAME {json}  ·  method {json}  ·  or raw JSON-RPC", func(app *App, tab *reqTab) {
 		tab.Req.Protocol = "mcp"
-		tab.Session = &recordingSession{}
+		tab.Session = &fakeSession{}
 		tab.Tools = []model.MCPTool{{Name: "search"}}
 		tab.Resources = []model.MCPResource{{URI: "file:///a.txt"}}
 		tab.Prompts = []model.MCPPrompt{{Name: "review"}}
@@ -81,7 +56,7 @@ var messagesPaneStates = []struct {
 	{"grpc-stream", "Message", func(app *App, tab *reqTab) {
 		tab.Req.Protocol = "grpc"
 		tab.grpcStream = true
-		tab.Session = &recordingSession{}
+		tab.Session = &fakeSession{}
 	}},
 }
 
@@ -100,7 +75,7 @@ func TestTheMessagesPaneLaysOutAsPinned(t *testing.T) {
 		for _, size := range sizes {
 			name := "messagespane-" + state.name + "-" + size.name
 			t.Run(name, func(t *testing.T) {
-				a, _ := newTestApp(t)
+				a := testApp(t)
 				t.Cleanup(a.waitWrites)
 				tab := a.cur()
 				state.setUp(a, tab)
@@ -124,7 +99,7 @@ func TestTheMessagesPaneLaysOutAsPinned(t *testing.T) {
 func TestTheComposerEditsTheTabsMessage(t *testing.T) {
 	for _, state := range messagesPaneStates {
 		t.Run(state.name, func(t *testing.T) {
-			a, _ := newTestApp(t)
+			a := testApp(t)
 			t.Cleanup(a.waitWrites)
 			tab := a.cur()
 			state.setUp(a, tab)
@@ -153,7 +128,7 @@ func TestTheComposerEditsTheTabsMessage(t *testing.T) {
 
 // What Dump does not show of the log: it draws the tab's own message view.
 func TestTheMessageLogShowsTheTabsView(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	t.Cleanup(a.waitWrites)
 	tab := a.cur()
 	code := findWidget(a.messagesPane(wsPanes[0], tab, nil), "*widget.codeB")
@@ -176,12 +151,12 @@ const (
 
 // openConnectedEcho shows the WebSocket sample with an open session that
 // records what is sent.
-func openConnectedEcho(t *testing.T) (*App, *recordingSession) {
+func openConnectedEcho(t *testing.T) (*App, *fakeSession) {
 	t.Helper()
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	t.Cleanup(a.waitWrites)
 	openNamed(t, a, "Echo")
-	session := &recordingSession{}
+	session := &fakeSession{}
 	a.cur().Session = session
 	a.step(core.Input{})
 	return a, session

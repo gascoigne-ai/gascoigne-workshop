@@ -13,7 +13,7 @@ import (
 // The toolbar template renders exactly what the Go view it replaced did,
 // with and without the MCP pickers.
 func TestMessagesToolbarTemplateMatchesTheGoView(t *testing.T) {
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	for _, mcp := range []bool{false, true} {
 		tab := a.cur()
 		tab.Tools, tab.Resources, tab.Prompts = nil, nil, nil

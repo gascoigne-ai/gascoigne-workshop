@@ -8,8 +8,6 @@ import (
 	"reflect"
 	"slices"
 	"testing"
-
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 // testdata/one-collection holds what the version with one open collection
@@ -45,19 +43,6 @@ func oldInstall(t *testing.T) (settingsPath, statePath, dir string) {
 		t.Fatal(err)
 	}
 	return settingsPath, statePath, dir
-}
-
-// startFrom starts an App on the given settings and state files.
-func startFrom(t *testing.T, settingsPath, statePath string) *App {
-	t.Helper()
-	a, err := NewApp(withAdapters(Options{SettingsPath: settingsPath, StatePath: statePath}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(a.waitWrites)
-	a.w, a.h = winW, winH
-	a.step(core.Input{})
-	return a
 }
 
 // assertOldSessionRestored checks what the captured session had open: the
@@ -107,7 +92,7 @@ type writtenState struct {
 // environment write the new form, which opens the same again.
 func TestFilesOfTheOneCollectionVersionOpenAsASetOfOneAndAreRewritten(t *testing.T) {
 	settingsPath, statePath, dir := oldInstall(t)
-	a := startFrom(t, settingsPath, statePath)
+	a := testApp(t, settingsAt(settingsPath), withOptions(Options{StatePath: statePath}))
 	assertOldSessionRestored(t, a, dir)
 
 	if err := a.SaveState(); err != nil {
@@ -141,7 +126,7 @@ func TestFilesOfTheOneCollectionVersionOpenAsASetOfOneAndAreRewritten(t *testing
 		t.Fatalf("collections written as %s (%v)", written.General["collections"], err)
 	}
 
-	assertOldSessionRestored(t, startFrom(t, settingsPath, statePath), dir)
+	assertOldSessionRestored(t, testApp(t, settingsAt(settingsPath), withOptions(Options{StatePath: statePath})), dir)
 }
 
 // containsAll says whether list holds every one of wanted.

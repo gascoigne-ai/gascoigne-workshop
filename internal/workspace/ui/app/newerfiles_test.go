@@ -19,17 +19,6 @@ import (
 // Not a fixture, since no such build exists yet.
 const newerSettings = `{"version": 2, "appearance": {"theme": "light"}}`
 
-// errorToasts are the texts of the error toasts that contain part.
-func errorToasts(app *App, part string) []string {
-	var found []string
-	for _, toast := range app.toasts {
-		if toast.IsErr && strings.Contains(toast.Text, part) {
-			found = append(found, toast.Text)
-		}
-	}
-	return found
-}
-
 // unchangedFile fails when path no longer holds want, or a backup appeared.
 func unchangedFile(t *testing.T, path, want string) {
 	t.Helper()
@@ -48,7 +37,7 @@ func TestNewerSettingsAreNotWrittenThisSession(t *testing.T) {
 	if err := os.WriteFile(path, []byte(newerSettings), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	a, _ := startTestApp(t, path)
+	a := testApp(t, settingsAt(path))
 	if a.settings.Theme != settings.Default().Theme {
 		t.Fatalf("theme %q, want the defaults for this session", a.settings.Theme)
 	}
@@ -74,7 +63,7 @@ func TestNewerStateIsNotWrittenThisSession(t *testing.T) {
 	if err := os.WriteFile(path, []byte(newer), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	a := stateApp(t, path)
+	a := testApp(t, memorySettings(), withOptions(Options{StatePath: path}))
 	if toasts := errorToasts(a, "newer version"); len(toasts) != 1 || !strings.Contains(toasts[0], "state.json") {
 		t.Fatalf("toasts %q, want one naming state.json and the newer version", toasts)
 	}
@@ -105,7 +94,7 @@ func TestNewerCollectionIsNotOpened(t *testing.T) {
 	if err := os.WriteFile(folderFile, []byte(newer), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	a, _ := newTestApp(t)
+	a := testApp(t)
 	before := len(a.open.Entries)
 	a.openCollectionAt(dir)
 	a.waitWrites()
@@ -136,7 +125,7 @@ func TestNewerRememberedCollectionIsToastedAtStart(t *testing.T) {
 	if err := settingsfile.Save(settingsPath, prefs); err != nil {
 		t.Fatal(err)
 	}
-	a := startFrom(t, settingsPath, "")
+	a := testApp(t, settingsAt(settingsPath), withOptions(Options{StatePath: ""}))
 	toasts := errorToasts(a, "folder.json")
 	if len(toasts) != 1 || !strings.Contains(toasts[0], "format 2, this build reads up to 1") {
 		t.Fatalf("toasts %q, want one naming folder.json and both versions", toasts)
