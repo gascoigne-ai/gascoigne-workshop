@@ -25,9 +25,9 @@ func openSessions(t *testing.T) map[string]Session {
 	if err != nil {
 		t.Fatal(err)
 	}
-	socket := &wsSession{conn: conn, events: make(chan Event, eventBuffer), done: make(chan struct{}), now: time.Now}
+	socket := &wsSession{eventLog: newEventLog(), conn: conn}
 	go socket.readLoop()
-	mcp := &mcpSession{tr: closedTransport{}, events: make(chan Event, eventBuffer), done: make(chan struct{}), now: time.Now, waiters: map[int64]chan rpcAnswer{}}
+	mcp := &mcpSession{eventLog: newEventLog(), tr: closedTransport{}, waiters: map[int64]chan rpcAnswer{}}
 	sessions := map[string]Session{"websocket": socket, "mcp": mcp}
 	t.Cleanup(func() {
 		for _, session := range sessions {

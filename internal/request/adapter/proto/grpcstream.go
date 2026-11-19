@@ -7,8 +7,6 @@ import (
 	"io"
 	"strings"
 	"sync"
-	"sync/atomic"
-	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
@@ -63,7 +61,7 @@ func (GRPC) Connect(ctx context.Context, req model.Request) (Session, error) {
 		return nil, errors.New(grpcErrText(ctx, err))
 	}
 	session := &grpcSession{
-		events: make(chan Event, eventBuffer), done: make(chan struct{}), cancel: cancel,
+		eventLog: newEventLog(), cancel: cancel,
 		stream: stream, method: method,
 	}
 	session.emit(Event{Dir: Info, Kind: "open", Text: fmt.Sprintf("Streaming %s on %s", req.Method, req.URL)})
@@ -87,44 +85,13 @@ func (GRPC) Connect(ctx context.Context, req model.Request) (Session, error) {
 
 // grpcSession is a live gRPC stream shown as a log of events.
 type grpcSession struct {
-	events chan Event
-	done   chan struct{}
+	*eventLog
 	cancel context.CancelFunc
 	stream grpc.ClientStream
 	method protoreflect.MethodDescriptor
 
 	sendMu sync.Mutex // SendMsg must not run concurrently
-	stop   sync.Once  // closes done; Close must not need mu, which emit holds while it waits
-	mu     sync.Mutex // guards ended against a send on the closed events channel
-	ended  bool
-	closed atomic.Bool // Close was called: the end of the stream is not news
 }
-
-func (s *grpcSession) Events() <-chan Event { return s.events }
-
-func (s *grpcSession) emit(event Event) {
-	event.Time = time.Now()
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.ended {
-		return
-	}
-	select {
-	case s.events <- event:
-	case <-s.done:
-	}
-}
-
-func (s *grpcSession) finish() {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if !s.ended {
-		s.ended = true
-		close(s.events)
-	}
-}
-
-func (s *grpcSession) isClosed() bool { return s.closed.Load() }
 
 // receive reads messages until the stream ends, then reports how.
 func (s *grpcSession) receive(conn *grpc.ClientConn) {
@@ -150,7 +117,7 @@ func (s *grpcSession) receive(conn *grpc.ClientConn) {
 
 // reportEnd logs why the stream ended, unless the user closed it.
 func (s *grpcSession) reportEnd(err error) {
-	if s.isClosed() {
+	if s.closing() {
 		return
 	}
 	if errors.Is(err, io.EOF) {
@@ -200,8 +167,7 @@ func (s *grpcSession) sendMessage(text string) error {
 func (s *grpcSession) Ping(context.Context) error { return errors.New("a gRPC stream has no ping") }
 
 func (s *grpcSession) Close(context.Context) error {
-	s.closed.Store(true)
-	s.stop.Do(func() { close(s.done) })
+	s.close()
 	s.cancel()
 	return nil
 }

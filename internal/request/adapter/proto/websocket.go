@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"sync"
 	"time"
 	"unicode/utf8"
 
@@ -64,7 +63,7 @@ func (w WebSocket) Connect(ctx context.Context, req model.Request) (Session, err
 	if err != nil {
 		return nil, err
 	}
-	s := &wsSession{conn: conn, events: make(chan Event, eventBuffer), done: make(chan struct{}), now: time.Now}
+	s := &wsSession{eventLog: newEventLog(), conn: conn}
 	open := "Connected to " + req.URL
 	if p := conn.Subprotocol(); p != "" {
 		open += " (" + p + ")"
@@ -129,40 +128,16 @@ func stopReason(ctx context.Context, err error) string {
 }
 
 type wsSession struct {
-	conn   *ws.Conn
-	events chan Event
-	done   chan struct{} // closed by Close
-	once   sync.Once
-	now    func() time.Time
-
-	mu    sync.Mutex
-	ended bool // the read loop has finished
-}
-
-func (s *wsSession) Events() <-chan Event { return s.events }
-
-// emit queues e, waiting for a slow consumer, unless the session was closed.
-func (s *wsSession) emit(event Event) {
-	event.Time = s.now()
-	select {
-	case s.events <- event:
-	case <-s.done:
-	}
+	*eventLog
+	conn *ws.Conn
 }
 
 func (s *wsSession) readLoop() {
-	defer func() {
-		s.mu.Lock()
-		s.ended = true
-		s.mu.Unlock()
-		close(s.events)
-	}()
+	defer s.finish()
 	for {
 		m, err := s.conn.Read()
 		if err != nil {
-			select {
-			case <-s.done: // we closed it ourselves
-			default:
+			if !s.closing() { // closed by us: no loss
 				s.emit(Event{Dir: Info, Kind: "close", Code: ws.CloseAbnormal, Text: "Connection lost: " + err.Error()})
 			}
 			return
@@ -202,9 +177,7 @@ func (s *wsSession) alive(ctx context.Context) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.ended {
+	if s.ended.Load() {
 		return errors.New("the connection is closed")
 	}
 	return nil
@@ -241,6 +214,6 @@ func (s *wsSession) Ping(ctx context.Context) error {
 }
 
 func (s *wsSession) Close(context.Context) error {
-	s.once.Do(func() { close(s.done) })
+	s.close()
 	return s.conn.Close(ws.CloseNormal, "")
 }

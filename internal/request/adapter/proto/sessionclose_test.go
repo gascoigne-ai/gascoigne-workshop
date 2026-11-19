@@ -38,15 +38,22 @@ func waitsForRoom(emit func()) {
 // channel, and Close needed that lock to signal done, so a flood of
 // events plus Close on the UI thread hung the app.
 func TestClosingAnSSESessionWithAFullEventChannelDoesNotBlock(t *testing.T) {
-	s := &sseSession{events: make(chan Event, 1), done: make(chan struct{}), cancel: func() {}}
+	s := &sseSession{eventLog: newTestLog(1), cancel: func() {}}
 	waitsForRoom(func() { s.emit(Event{}) })
 	closesWithinASecond(t, func() { s.Close(context.Background()) })
 }
 
 func TestClosingAGRPCSessionWithAFullEventChannelDoesNotBlock(t *testing.T) {
-	s := &grpcSession{events: make(chan Event, 1), done: make(chan struct{}), cancel: func() {}}
+	s := &grpcSession{eventLog: newTestLog(1), cancel: func() {}}
 	waitsForRoom(func() { s.emit(Event{}) })
 	closesWithinASecond(t, func() { s.Close(context.Background()) })
+}
+
+// newTestLog is an event log with a queue of size events.
+func newTestLog(size int) *eventLog {
+	log := newEventLog()
+	log.events = make(chan Event, size)
+	return log
 }
 
 type closedTransport struct{}
@@ -58,7 +65,7 @@ func (closedTransport) close(context.Context) error        { return nil }
 // finish emitted its "connection lost" note under the once and the lock
 // while nobody read the events, so Close waited on that once forever.
 func TestClosingAnMCPSessionWhileItsEndNoteWaitsForRoomDoesNotBlock(t *testing.T) {
-	s := &mcpSession{tr: closedTransport{}, events: make(chan Event, 1), done: make(chan struct{}), now: time.Now, waiters: map[int64]chan rpcAnswer{}}
+	s := &mcpSession{eventLog: newTestLog(1), tr: closedTransport{}, waiters: map[int64]chan rpcAnswer{}}
 	s.events <- Event{} // the channel is full
 	go s.finish(context.DeadlineExceeded)
 	time.Sleep(50 * time.Millisecond)
@@ -72,7 +79,7 @@ func (failingTransport) send(context.Context, []byte) error { return context.Can
 // call registered its waiter before writing and left it registered when
 // the write failed or the context ended, so each failed call leaked one.
 func TestAFailedMCPCallLeavesNoWaiterBehind(t *testing.T) {
-	s := &mcpSession{tr: failingTransport{}, events: make(chan Event, 4), done: make(chan struct{}), now: time.Now, waiters: map[int64]chan rpcAnswer{}}
+	s := &mcpSession{eventLog: newTestLog(4), tr: failingTransport{}, waiters: map[int64]chan rpcAnswer{}}
 	if _, err := s.call(context.Background(), "ping", nil); err == nil {
 		t.Fatal("call on a failing transport succeeded")
 	}
@@ -100,7 +107,7 @@ func TestAFailedMCPCallLeavesNoWaiterBehind(t *testing.T) {
 // answerServer dropped the error of writing its reply, so a reply that
 // never left was invisible and the server waited for it forever.
 func TestAFailedReplyToTheServerIsLogged(t *testing.T) {
-	s := &mcpSession{tr: failingTransport{}, events: make(chan Event, 4), done: make(chan struct{}), now: time.Now, waiters: map[int64]chan rpcAnswer{}}
+	s := &mcpSession{eventLog: newTestLog(4), tr: failingTransport{}, waiters: map[int64]chan rpcAnswer{}}
 	id := json.RawMessage(`7`)
 	s.answerServer(rpcMessage{ID: &id, Method: "ping"})
 	close(s.events)

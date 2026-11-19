@@ -108,7 +108,7 @@ func TestWebSocketSessionLogsASendBeforeItsEcho(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			session := &wsSession{conn: conn, events: make(chan Event, eventBuffer), done: make(chan struct{})}
+			session := &wsSession{eventLog: newEventLog(), conn: conn}
 			var logging atomic.Bool
 			session.now = func() time.Time {
 				if logging.CompareAndSwap(false, true) { // the first event logged is the send

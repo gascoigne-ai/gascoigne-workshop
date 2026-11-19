@@ -6,10 +6,9 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"sync"
-	"sync/atomic"
 	"time"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto/ws"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 )
 
@@ -62,7 +61,7 @@ func (s SSE) Connect(ctx context.Context, req model.Request) (Session, error) {
 		cancel()
 		return nil, fmt.Errorf("%s", resp.Status)
 	}
-	se := &sseSession{events: make(chan Event, eventBuffer), done: make(chan struct{}), cancel: cancel}
+	se := &sseSession{eventLog: newEventLog(), cancel: cancel}
 	se.emit(Event{Dir: Info, Kind: "open", Text: "Connected to " + req.URL})
 	go func() {
 		defer func() {
@@ -80,9 +79,9 @@ func (s SSE) Connect(ctx context.Context, req model.Request) (Session, error) {
 			}
 			se.emit(Event{Dir: Received, Kind: kind, Text: text, Size: len(ev.data), ID: ev.id})
 		})
-		if err != nil && !se.isClosing() {
-			se.emit(Event{Dir: Info, Kind: "close", Code: 1006, Text: "Connection lost: " + err.Error()})
-		} else if !se.isClosing() {
+		if err != nil && !se.closing() {
+			se.emit(Event{Dir: Info, Kind: "close", Code: ws.CloseAbnormal, Text: "Connection lost: " + err.Error()})
+		} else if !se.closing() {
 			se.emit(Event{Dir: Info, Kind: "close", Text: "The server ended the stream"})
 		}
 	}()
@@ -114,40 +113,8 @@ func (s SSE) Send(ctx context.Context, req model.Request) (model.Response, error
 }
 
 type sseSession struct {
-	events chan Event
-	done   chan struct{}
+	*eventLog
 	cancel context.CancelFunc
-
-	stop    sync.Once  // closes done; Close must not need mu, which emit holds while it waits
-	mu      sync.Mutex // guards ended against a send on the closed events channel
-	ended   bool
-	closing atomic.Bool
-}
-
-func (s *sseSession) Events() <-chan Event { return s.events }
-
-func (s *sseSession) isClosing() bool { return s.closing.Load() }
-
-func (s *sseSession) emit(event Event) {
-	event.Time = time.Now()
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.ended {
-		return
-	}
-	select {
-	case s.events <- event:
-	case <-s.done:
-	}
-}
-
-func (s *sseSession) finish() {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if !s.ended {
-		s.ended = true
-		close(s.events)
-	}
 }
 
 func (s *sseSession) Send(context.Context, string) error {
@@ -156,8 +123,7 @@ func (s *sseSession) Send(context.Context, string) error {
 func (s *sseSession) Ping(context.Context) error { return errors.New("an event stream has no ping") }
 
 func (s *sseSession) Close(context.Context) error {
-	s.closing.Store(true)
-	s.stop.Do(func() { close(s.done) })
+	s.close()
 	s.cancel()
 	return nil
 }

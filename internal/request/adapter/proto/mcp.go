@@ -12,9 +12,9 @@ import (
 	"os/exec"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto/ws"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 )
 
@@ -51,7 +51,7 @@ type mcpTransport interface {
 // initialize handshake and asks for the server's tools, resources and
 // prompts. Everything is logged as events.
 func (m MCP) Connect(ctx context.Context, req model.Request) (Session, error) {
-	s := &mcpSession{sampler: m.Sampler, events: make(chan Event, eventBuffer), done: make(chan struct{}), now: time.Now, waiters: map[int64]chan rpcAnswer{}}
+	s := &mcpSession{eventLog: newEventLog(), sampler: m.Sampler, waiters: map[int64]chan rpcAnswer{}}
 	var tr mcpTransport
 	var err error
 	if strings.HasPrefix(req.URL, StdioPrefix) {
@@ -131,35 +131,14 @@ func (m MCP) Send(ctx context.Context, req model.Request) (model.Response, error
 }
 
 type mcpSession struct {
+	*eventLog
 	tr      mcpTransport
-	sampler Sampler // nil: sampling is not offered
-	events  chan Event
-	done    chan struct{}
+	sampler Sampler   // nil: sampling is not offered
 	once    sync.Once // finish
-	stop    sync.Once // closes done; Close must not wait for a finish stuck in emit
-	now     func() time.Time
 
-	mu      sync.Mutex
-	ended   bool
-	closing atomic.Bool // the user closed the session, so the end is no loss
+	mu      sync.Mutex // guards nextID and waiters
 	nextID  int64
 	waiters map[int64]chan rpcAnswer
-}
-
-func (s *mcpSession) Events() <-chan Event { return s.events }
-
-// emit queues e unless the session is over.
-func (s *mcpSession) emit(event Event) {
-	event.Time = s.now()
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.ended {
-		return
-	}
-	select {
-	case s.events <- event:
-	case <-s.done:
-	}
 }
 
 // note logs a problem that leaves the session open.
@@ -170,18 +149,17 @@ func (s *mcpSession) note(err error) {
 // finish ends the event stream, once, with a note unless the user closed it.
 func (s *mcpSession) finish(err error) {
 	s.once.Do(func() {
-		if err != nil && !s.closing.Load() {
-			s.emit(Event{Dir: Info, Kind: "close", Code: 1006, Text: "Connection lost: " + err.Error()})
+		if err != nil && !s.closing() {
+			s.emit(Event{Dir: Info, Kind: "close", Code: ws.CloseAbnormal, Text: "Connection lost: " + err.Error()})
 		}
-		s.stopSession()
+		s.stopWaiting()
 		s.mu.Lock()
-		s.ended = true
 		for id, w := range s.waiters {
 			close(w)
 			delete(s.waiters, id)
 		}
-		close(s.events)
 		s.mu.Unlock()
+		s.eventLog.finish()
 	})
 }
 
@@ -435,11 +413,8 @@ func (s *mcpSession) Ping(ctx context.Context) error {
 	return err
 }
 
-func (s *mcpSession) stopSession() { s.stop.Do(func() { close(s.done) }) }
-
 func (s *mcpSession) Close(ctx context.Context) error {
-	s.closing.Store(true)
-	s.stopSession() // frees a finish that waits for room in a full channel
+	s.close() // frees a finish that waits for room in a full channel
 	err := s.tr.close(ctx)
 	s.finish(nil)
 	return err
