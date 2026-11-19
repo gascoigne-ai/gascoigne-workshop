@@ -1377,7 +1377,16 @@ that change `App`.
   command like the composer does and returns the answer: the result JSON, or the server's error
   message.
 -  **MCP pickers** (`internal/request/model/mcpschema.go`, `internal/workspace/ui/app/wsui.go`):
-  `model.ParseTools`, `ParseResources` and `ParsePrompts` read the list answers from the event log;
+  `model.DecodeTools`, `DecodeResources` and `DecodePrompts` read the result of a list answer once,
+  in the MCP session, which sends it as `Event.Payload` (`port.ToolsList`, `ResourcesList`,
+  `PromptsList`; nil for every other event). The session keeps `pending`, the method of each request
+  it sent by id (also a raw JSON message typed in the composer; at most 1024, cleared when the
+  session ends), and a response whose id maps to a list method carries the payload; the same shape
+  as the result of `tools/call`, in a notification or from another protocol carries none. A result
+  that does not decode is an Info line of kind `error` and no payload; one bad entry is skipped and a
+  tool whose `inputSchema` is not an object keeps no schema, so neither drops the list.
+  `Connection.Received` fills `Tools`, `Resources` and `Prompts` from the payload only: a WebSocket
+  frame never fills `Tools`, and an empty `ToolsList` (a list that changed to nothing) clears them.
   `model.Skeleton(schema)` builds a JSON value that fits a tool's input schema. A tab keeps what the
   server announced (`reqTab.tools`, `resources`, `prompts`, cleared when the session ends) and the
   toolbar buttons open menus whose entries compose a `call`, `read` or `prompt` line in the

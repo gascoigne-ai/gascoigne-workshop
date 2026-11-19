@@ -289,3 +289,31 @@ func TestReceivedTakesServerInfoOnlyFromTheInitializeNote(t *testing.T) {
 		t.Fatal("the initialize note did not set Server")
 	}
 }
+
+// A WebSocket echo shaped like a tools list used to fill Tools, because
+// Received parsed the text of every event of every protocol.
+func TestAWebSocketEchoShapedLikeAToolsListLeavesToolsAlone(t *testing.T) {
+	var conn Connection
+	conn.Received(port.Event{Dir: port.Received, Kind: port.KindText, Text: `{"result":{"tools":[{"name":"echo"}]}}`})
+	if conn.Tools != nil {
+		t.Fatalf("Tools = %+v", conn.Tools)
+	}
+}
+
+func TestReceivedTakesTheListsOfThePayload(t *testing.T) {
+	var conn Connection
+	conn.Received(port.Event{Dir: port.Received, Payload: port.ToolsList{Tools: []model.MCPTool{{Name: "a"}}}})
+	conn.Received(port.Event{Dir: port.Received, Payload: port.ResourcesList{Resources: []model.MCPResource{{URI: "file:///a"}}}})
+	conn.Received(port.Event{Dir: port.Received, Payload: port.PromptsList{Prompts: []model.MCPPrompt{{Name: "p"}}}})
+	if len(conn.Tools) != 1 || len(conn.Resources) != 1 || len(conn.Prompts) != 1 {
+		t.Fatalf("conn %+v", conn)
+	}
+}
+
+func TestAnEmptyToolsListClearsTheTools(t *testing.T) {
+	conn := Connection{Tools: []model.MCPTool{{Name: "a"}}}
+	conn.Received(port.Event{Dir: port.Received, Payload: port.ToolsList{}})
+	if len(conn.Tools) != 0 {
+		t.Fatalf("Tools = %+v", conn.Tools)
+	}
+}

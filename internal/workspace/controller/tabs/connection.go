@@ -122,16 +122,15 @@ func (conn *Connection) Received(event port.Event) {
 	if event.Dir != port.Received {
 		return
 	}
-	if tools := model.ParseTools(event.Text); tools != nil {
-		conn.Tools = tools
-	}
 	if event.ID != "" {
 		conn.LastEventID = event.ID
 	}
-	if resources := model.ParseResources(event.Text); resources != nil {
-		conn.Resources = resources
-	}
-	if prompts := model.ParsePrompts(event.Text); prompts != nil {
-		conn.Prompts = prompts
+	switch payload := event.Payload.(type) {
+	case port.ToolsList:
+		conn.Tools = payload.Tools
+	case port.ResourcesList:
+		conn.Resources = payload.Resources
+	case port.PromptsList:
+		conn.Prompts = payload.Prompts
 	}
 }

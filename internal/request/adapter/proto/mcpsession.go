@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto/ws"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 )
 
@@ -19,10 +20,14 @@ type mcpSession struct {
 	sampler port.Sampler // nil: sampling is not offered
 	once    sync.Once    // finish
 
-	mu      sync.Mutex // guards nextID and waiters
+	mu      sync.Mutex // guards nextID, waiters and pending
 	nextID  int64
 	waiters map[int64]chan rpcAnswer
+	pending map[int64]string // request id -> method, for the answers that carry a typed payload
 }
+
+// maxPending bounds pending: a server that never answers cannot grow it.
+const maxPending = 1024
 
 // note logs a problem that leaves the session open.
 func (s *mcpSession) note(err error) {
@@ -41,6 +46,7 @@ func (s *mcpSession) finish(err error) {
 			close(w)
 			delete(s.waiters, id)
 		}
+		clear(s.pending)
 		s.mu.Unlock()
 		s.eventLog.finish()
 	})
@@ -85,7 +91,11 @@ func (s *mcpSession) deliver(msg []byte) {
 	case m.ID != nil:
 		kind = port.KindRequest
 	}
-	s.emit(port.Event{Dir: port.Received, Kind: kind, Text: compactJSON(msg), Size: len(msg)})
+	event := port.Event{Dir: port.Received, Kind: kind, Text: compactJSON(msg), Size: len(msg)}
+	if m.Method == "" && m.Error == nil && m.ID != nil {
+		event.Payload = s.listPayload(*m.ID, m.Result)
+	}
+	s.emit(event)
 	if kind == port.KindRequest {
 		go s.answerServer(m)
 		return
@@ -113,6 +123,67 @@ func (s *mcpSession) deliver(msg []byte) {
 			}
 		}
 	}
+}
+
+// listDecoders turn the result of a list request into its payload.
+var listDecoders = map[string]func(result []byte) (port.Payload, error){
+	"tools/list": func(result []byte) (port.Payload, error) {
+		tools, err := model.DecodeTools(result)
+		return port.ToolsList{Tools: tools}, err
+	},
+	"resources/list": func(result []byte) (port.Payload, error) {
+		resources, err := model.DecodeResources(result)
+		return port.ResourcesList{Resources: resources}, err
+	},
+	"prompts/list": func(result []byte) (port.Payload, error) {
+		prompts, err := model.DecodePrompts(result)
+		return port.PromptsList{Prompts: prompts}, err
+	},
+}
+
+// listPayload takes the request that id answers off pending and, when it
+// was a list request, decodes the result once. A result that does not
+// decode is noted and carries no payload.
+func (s *mcpSession) listPayload(rawID json.RawMessage, result json.RawMessage) port.Payload {
+	var id int64
+	if json.Unmarshal(rawID, &id) != nil {
+		return nil
+	}
+	s.mu.Lock()
+	method, ok := s.pending[id]
+	delete(s.pending, id)
+	s.mu.Unlock()
+	decode, isList := listDecoders[method]
+	if !ok || !isList {
+		return nil
+	}
+	payload, err := decode(result)
+	if err != nil {
+		s.note(fmt.Errorf("%s: %w", method, err))
+		return nil
+	}
+	return payload
+}
+
+// remember records the method of a request that was sent, to know what
+// its answer is. Only requests with a numeric id can be answered.
+func (s *mcpSession) remember(data []byte) {
+	var sent struct {
+		ID     *int64 `json:"id"`
+		Method string `json:"method"`
+	}
+	if json.Unmarshal(data, &sent) != nil || sent.ID == nil || sent.Method == "" {
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.pending == nil {
+		s.pending = map[int64]string{}
+	}
+	if len(s.pending) >= maxPending {
+		return
+	}
+	s.pending[*sent.ID] = sent.Method
 }
 
 func compactJSON(data []byte) string {
@@ -144,6 +215,7 @@ func (s *mcpSession) write(ctx context.Context, kind port.EventKind, data []byte
 		return errors.New("the connection is closed")
 	default:
 	}
+	s.remember(data)
 	s.emit(port.Event{Dir: port.Sent, Kind: kind, Text: compactJSON(data), Size: len(data)}) // before the send: an answer may arrive during it
 	return s.tr.send(ctx, data)
 }

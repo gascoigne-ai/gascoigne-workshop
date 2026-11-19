@@ -45,7 +45,7 @@ func announceLong(app *App, tab *reqTab) {
 		tools = append(tools, fmt.Sprintf(`{"name":"tool_%d","description":"Tool number %d"}`, i, i))
 	}
 	list := `{"result":{"tools":[` + strings.Join(tools, ",") + `]}}`
-	app.applyWS(wsReceived{wsTarget{tab: tab}, reqport.Event{Dir: reqport.Received, Kind: reqport.KindResponse, Text: list}})
+	app.applyWS(wsReceived{wsTarget{tab: tab}, listEvent(list)})
 }
 
 // initialize delivers the server's answer to initialize, which the header

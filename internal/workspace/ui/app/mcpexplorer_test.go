@@ -20,7 +20,7 @@ func announce(app *App, tab *reqTab) {
 		`{"result":{"resources":[{"uri":"file:///a.txt","name":"A"}]}}`,
 		`{"result":{"prompts":[{"name":"review","arguments":[{"name":"code","required":true}]}]}}`,
 	} {
-		app.applyWS(wsReceived{wsTarget{tab: tab}, reqport.Event{Dir: reqport.Received, Kind: reqport.KindResponse, Text: list}})
+		app.applyWS(wsReceived{wsTarget{tab: tab}, listEvent(list)})
 	}
 }
 

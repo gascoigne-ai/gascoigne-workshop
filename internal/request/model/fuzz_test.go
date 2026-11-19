@@ -11,15 +11,17 @@ func FuzzParseSchema(fuzz *testing.F) {
 }
 
 func FuzzParseMCPLists(fuzz *testing.F) {
-	fuzz.Add(`{"result":{"tools":[{"name":"a","inputSchema":{"type":"object","properties":{"x":{"type":"string"}}}}]}}`)
-	fuzz.Add(`{"result":{"resources":[{"uri":"file:///a","name":"a"}]}}`)
-	fuzz.Add(`{"result":{"prompts":[{"name":"p","arguments":[{"name":"x","required":true}]}]}}`)
-	fuzz.Fuzz(func(t *testing.T, message string) {
-		for _, tool := range ParseTools(message) {
+	fuzz.Add(`{"tools":[{"name":"a","inputSchema":{"type":"object","properties":{"x":{"type":"string"}}}}]}`)
+	fuzz.Add(`{"resources":[{"uri":"file:///a","name":"a"}]}`)
+	fuzz.Add(`{"prompts":[{"name":"p","arguments":[{"name":"x","required":true}]}]}`)
+	fuzz.Fuzz(func(t *testing.T, result string) {
+		tools, _ := DecodeTools([]byte(result))
+		for _, tool := range tools {
 			_ = Skeleton(tool.Schema)
 		}
-		_ = ParseResources(message)
-		for _, prompt := range ParsePrompts(message) {
+		_, _ = DecodeResources([]byte(result))
+		prompts, _ := DecodePrompts([]byte(result))
+		for _, prompt := range prompts {
 			_ = prompt.ArgsJSON()
 		}
 	})

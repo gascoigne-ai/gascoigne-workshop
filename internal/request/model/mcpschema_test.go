@@ -4,15 +4,15 @@ import (
 	"testing"
 )
 
-func TestParseToolsReadsAToolsListResponse(t *testing.T) {
-	msg := `{"jsonrpc":"2.0","id":2,"result":{"tools":[{"name":"echo","description":"Echo it","inputSchema":{"type":"object","properties":{"text":{"type":"string"}},"required":["text"]}},{"name":"ping"}]}}`
-	tools := ParseTools(msg)
+func TestDecodeToolsReadsAToolsListResult(t *testing.T) {
+	msg := `{"tools":[{"name":"echo","description":"Echo it","inputSchema":{"type":"object","properties":{"text":{"type":"string"}},"required":["text"]}},{"name":"ping"}]}`
+	tools, _ := DecodeTools([]byte(msg))
 	if len(tools) != 2 || tools[0].Name != "echo" || tools[0].Description != "Echo it" || tools[1].Name != "ping" {
 		t.Fatalf("%+v", tools)
 	}
-	for _, bad := range []string{"", "not json", `{"result":{}}`, `{"result":{"tools":[{"description":"no name"}]}}`} {
-		if got := ParseTools(bad); got != nil {
-			t.Errorf("ParseTools(%q) = %+v", bad, got)
+	for _, bad := range []string{"", "not json", `{}`, `{"tools":[{"description":"no name"}]}`} {
+		if got, _ := DecodeTools([]byte(bad)); got != nil {
+			t.Errorf("DecodeTools(%q) = %+v", bad, got)
 		}
 	}
 }
@@ -31,7 +31,7 @@ func TestSkeletonFitsTheSchema(t *testing.T) {
 		{"no schema at all", `{}`, `null`},
 	}
 	for _, tt := range tests {
-		tools := ParseTools(`{"result":{"tools":[{"name":"t","inputSchema":` + tt.schema + `}]}}`)
+		tools, _ := DecodeTools([]byte(`{"tools":[{"name":"t","inputSchema":` + tt.schema + `}]}`))
 		if len(tools) != 1 {
 			t.Fatalf("%s: %v", tt.name, tools)
 		}
@@ -44,16 +44,18 @@ func TestSkeletonFitsTheSchema(t *testing.T) {
 	}
 }
 
-func TestParseResourcesAndPrompts(t *testing.T) {
-	res := ParseResources(`{"result":{"resources":[{"uri":"file:///a.txt","name":"A"},{"name":"no uri"}]}}`)
+func TestDecodeResourcesAndPrompts(t *testing.T) {
+	res, _ := DecodeResources([]byte(`{"resources":[{"uri":"file:///a.txt","name":"A"},{"name":"no uri"}]}`))
 	if len(res) != 1 || res[0].URI != "file:///a.txt" || res[0].Name != "A" {
 		t.Fatalf("%+v", res)
 	}
-	prompts := ParsePrompts(`{"result":{"prompts":[{"name":"review","arguments":[{"name":"code","required":true},{"name":"style"}]},{"name":"hello"}]}}`)
+	prompts, _ := DecodePrompts([]byte(`{"prompts":[{"name":"review","arguments":[{"name":"code","required":true},{"name":"style"}]},{"name":"hello"}]}`))
 	if len(prompts) != 2 || prompts[0].Name != "review" || len(prompts[0].Args) != 1 || prompts[0].ArgsJSON() != `{"code":""}` || prompts[1].ArgsJSON() != `{}` {
 		t.Fatalf("%+v", prompts)
 	}
-	if ParseResources("x") != nil || ParsePrompts(`{"result":{}}`) != nil {
+	badResources, _ := DecodeResources([]byte("x"))
+	badPrompts, _ := DecodePrompts([]byte(`{}`))
+	if badResources != nil || badPrompts != nil {
 		t.Fatal("garbage must give nothing")
 	}
 }

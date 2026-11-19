@@ -3,6 +3,7 @@ package model
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"sort"
 )
 
@@ -11,30 +12,6 @@ type MCPTool struct {
 	Name        string
 	Description string
 	Schema      map[string]any // the JSON schema of the arguments
-}
-
-// ParseTools reads the tools of a tools/list response (the whole JSON-RPC
-// message, as the event log has it). It returns nil for anything else.
-func ParseTools(message string) []MCPTool {
-	var m struct {
-		Result struct {
-			Tools []struct {
-				Name        string         `json:"name"`
-				Description string         `json:"description"`
-				InputSchema map[string]any `json:"inputSchema"`
-			} `json:"tools"`
-		} `json:"result"`
-	}
-	if json.Unmarshal([]byte(message), &m) != nil {
-		return nil
-	}
-	var out []MCPTool
-	for _, t := range m.Result.Tools {
-		if t.Name != "" {
-			out = append(out, MCPTool{Name: t.Name, Description: t.Description, Schema: t.InputSchema})
-		}
-	}
-	return out
 }
 
 // Skeleton is a JSON value that fits schema, with the required properties
@@ -154,57 +131,6 @@ type MCPPrompt struct {
 	Args []string
 }
 
-// ParseResources reads the resources of a resources/list response.
-func ParseResources(message string) []MCPResource {
-	var m struct {
-		Result struct {
-			Resources []struct{ URI, Name string } `json:"resources"`
-		} `json:"result"`
-	}
-	if json.Unmarshal([]byte(message), &m) != nil {
-		return nil
-	}
-	var out []MCPResource
-	for _, r := range m.Result.Resources {
-		if r.URI != "" {
-			out = append(out, MCPResource{URI: r.URI, Name: r.Name})
-		}
-	}
-	return out
-}
-
-// ParsePrompts reads the prompts of a prompts/list response.
-func ParsePrompts(message string) []MCPPrompt {
-	var m struct {
-		Result struct {
-			Prompts []struct {
-				Name      string `json:"name"`
-				Arguments []struct {
-					Name     string `json:"name"`
-					Required bool   `json:"required"`
-				} `json:"arguments"`
-			} `json:"prompts"`
-		} `json:"result"`
-	}
-	if json.Unmarshal([]byte(message), &m) != nil {
-		return nil
-	}
-	var out []MCPPrompt
-	for _, p := range m.Result.Prompts {
-		if p.Name == "" {
-			continue
-		}
-		pr := MCPPrompt{Name: p.Name}
-		for _, a := range p.Arguments {
-			if a.Required {
-				pr.Args = append(pr.Args, a.Name)
-			}
-		}
-		out = append(out, pr)
-	}
-	return out
-}
-
 // Schema is the JSON schema of the prompt's arguments: its required ones,
 // all strings.
 func (p MCPPrompt) Schema() map[string]any {
@@ -224,4 +150,92 @@ func toAny(names []string) []any {
 		out[i] = v
 	}
 	return out
+}
+
+// DecodeTools reads the tools of a tools/list result, in server order. An
+// entry that is not a tool, or has no name, is skipped; a tool whose
+// inputSchema is not an object keeps a nil Schema. The error is for a
+// result that is not an object.
+func DecodeTools(result []byte) ([]MCPTool, error) {
+	entries, err := listEntries(result, "tools")
+	if err != nil {
+		return nil, err
+	}
+	var tools []MCPTool
+	for _, entry := range entries {
+		var raw struct {
+			Name        string          `json:"name"`
+			Description string          `json:"description"`
+			InputSchema json.RawMessage `json:"inputSchema"`
+		}
+		if json.Unmarshal(entry, &raw) != nil || raw.Name == "" {
+			continue
+		}
+		var schema map[string]any
+		_ = json.Unmarshal(raw.InputSchema, &schema) // true or a string is no schema: the tool keeps none
+		tools = append(tools, MCPTool{Name: raw.Name, Description: raw.Description, Schema: schema})
+	}
+	return tools, nil
+}
+
+// DecodeResources reads the resources of a resources/list result; an
+// entry without a uri is skipped.
+func DecodeResources(result []byte) ([]MCPResource, error) {
+	entries, err := listEntries(result, "resources")
+	if err != nil {
+		return nil, err
+	}
+	var resources []MCPResource
+	for _, entry := range entries {
+		var raw struct{ URI, Name string }
+		if json.Unmarshal(entry, &raw) != nil || raw.URI == "" {
+			continue
+		}
+		resources = append(resources, MCPResource{URI: raw.URI, Name: raw.Name})
+	}
+	return resources, nil
+}
+
+// DecodePrompts reads the prompts of a prompts/list result; an entry
+// without a name is skipped.
+func DecodePrompts(result []byte) ([]MCPPrompt, error) {
+	entries, err := listEntries(result, "prompts")
+	if err != nil {
+		return nil, err
+	}
+	var prompts []MCPPrompt
+	for _, entry := range entries {
+		var raw struct {
+			Name      string `json:"name"`
+			Arguments []struct {
+				Name     string `json:"name"`
+				Required bool   `json:"required"`
+			} `json:"arguments"`
+		}
+		if json.Unmarshal(entry, &raw) != nil || raw.Name == "" {
+			continue
+		}
+		prompt := MCPPrompt{Name: raw.Name}
+		for _, argument := range raw.Arguments {
+			if argument.Required {
+				prompt.Args = append(prompt.Args, argument.Name)
+			}
+		}
+		prompts = append(prompts, prompt)
+	}
+	return prompts, nil
+}
+
+// listEntries splits a list result into its entries under key, each
+// left undecoded so one bad entry cannot drop the others.
+func listEntries(result []byte, key string) ([]json.RawMessage, error) {
+	var members map[string]json.RawMessage
+	if err := json.Unmarshal(result, &members); err != nil {
+		return nil, fmt.Errorf("the %s result is not an object: %w", key, err)
+	}
+	var entries []json.RawMessage
+	if err := json.Unmarshal(members[key], &entries); err != nil && members[key] != nil {
+		return nil, fmt.Errorf("%s is not a list: %w", key, err)
+	}
+	return entries, nil
 }

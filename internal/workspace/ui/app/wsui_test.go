@@ -214,7 +214,7 @@ func TestMCPToolsFillTheComposerFromTheirSchemas(t *testing.T) {
 	tab := a.cur()
 	tab.Req.Protocol = "mcp"
 	list := `{"jsonrpc":"2.0","id":2,"result":{"tools":[{"name":"search","inputSchema":{"type":"object","properties":{"q":{"type":"string"},"limit":{"type":"integer","default":5}},"required":["q"]}},{"name":"ping"}]}}`
-	a.applyWS(wsReceived{wsTarget{tab: tab}, reqport.Event{Dir: reqport.Received, Kind: reqport.KindResponse, Text: list}})
+	a.applyWS(wsReceived{wsTarget{tab: tab}, listEvent(list)})
 	if len(tab.Tools) != 2 {
 		t.Fatalf("tools %+v", tab.Tools)
 	}
@@ -249,8 +249,8 @@ func TestMCPResourcesAndPromptsFillTheComposer(t *testing.T) {
 	a := testApp(t)
 	tab := a.cur()
 	tab.Req.Protocol = "mcp"
-	a.applyWS(wsReceived{wsTarget{tab: tab}, reqport.Event{Dir: reqport.Received, Kind: reqport.KindResponse, Text: `{"result":{"resources":[{"uri":"file:///a.txt","name":"A"}]}}`}})
-	a.applyWS(wsReceived{wsTarget{tab: tab}, reqport.Event{Dir: reqport.Received, Kind: reqport.KindResponse, Text: `{"result":{"prompts":[{"name":"review","arguments":[{"name":"code","required":true}]}]}}`}})
+	a.applyWS(wsReceived{wsTarget{tab: tab}, listEvent(`{"result":{"resources":[{"uri":"file:///a.txt","name":"A"}]}}`)})
+	a.applyWS(wsReceived{wsTarget{tab: tab}, listEvent(`{"result":{"prompts":[{"name":"review","arguments":[{"name":"code","required":true}]}]}}`)})
 	a.resourceMenu(tab)[0].Run()
 	if tab.msg.Text != "read file:///a.txt" {
 		t.Fatalf("composer %q", tab.msg.Text)

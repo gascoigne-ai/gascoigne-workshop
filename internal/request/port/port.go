@@ -94,7 +94,30 @@ type Event struct {
 	Size int       // bytes of the message
 	Code int       // close status code, for KindClose
 	ID   string    // the id of a server-sent event, for resuming after a reconnect
+
+	// Payload is what the session parsed out of Text, nil when it parsed
+	// nothing. Only the MCP session sets it, and only on the answer to a
+	// list request.
+	Payload Payload
 }
+
+// Payload is a typed message a session announces next to the text of its
+// event: ToolsList, ResourcesList or PromptsList. The set is closed.
+type Payload interface{ payload() }
+
+// ToolsList is the answer to tools/list. An empty list is an answer: the
+// server has no tools now.
+type ToolsList struct{ Tools []model.MCPTool }
+
+// ResourcesList is the answer to resources/list.
+type ResourcesList struct{ Resources []model.MCPResource }
+
+// PromptsList is the answer to prompts/list.
+type PromptsList struct{ Prompts []model.MCPPrompt }
+
+func (ToolsList) payload()     {}
+func (ResourcesList) payload() {}
+func (PromptsList) payload()   {}
 
 // Label names the event for a line that has no text: the peer's name for
 // a message that has one, the kind otherwise.
