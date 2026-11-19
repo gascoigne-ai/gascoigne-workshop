@@ -389,3 +389,25 @@ func TestMovingACredentialRequestMovesItsSecret(t *testing.T) {
 		t.Fatalf("target loads %+v %v", got.Requests, err)
 	}
 }
+
+// A value captured from a server (Literal) lost its mark in an
+// environment file, so after a reload "{{secret}}" in it was expanded
+// into the next request.
+func TestCapturedEnvironmentValuesStayLiteralAfterReload(t *testing.T) {
+	dir := t.TempDir()
+	c := sample()
+	c.Envs = []model.Environment{{Name: "Dev", Vars: []model.KV{
+		{Name: "token", Value: "{{secret}}", Enabled: true, Literal: true},
+		{Name: "key", Value: "s3", Enabled: true, Secret: true, Literal: true},
+	}}}
+	if err := Save(dir, c); err != nil {
+		t.Fatal(err)
+	}
+	got, err := Load(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(got.Envs, c.Envs) {
+		t.Fatalf("environments changed by a save and load:\n got %+v\nwant %+v", got.Envs, c.Envs)
+	}
+}

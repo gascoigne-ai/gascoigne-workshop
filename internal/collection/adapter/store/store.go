@@ -279,19 +279,7 @@ func saveEnvs(dir string, envs []model.Environment, secrets map[string]secret) e
 	for i, e := range envs {
 		file := fmt.Sprintf("%02d-%s%s", i+1, unique(slug(e.Name), taken), envSuffix)
 		keep[file] = true
-		ef := envFile{Version: envVersion, Name: e.Name}
-		sec := secret{Vars: map[string]string{}}
-		for _, v := range e.Vars {
-			kf := kvFile{Name: v.Name, Value: v.Value, Description: v.Description, Enabled: v.Enabled, Secret: v.Secret}
-			if v.Secret {
-				sec.Vars[v.Name] = v.Value
-				kf.Value = ""
-			}
-			ef.Vars = append(ef.Vars, kf)
-		}
-		if len(sec.Vars) > 0 {
-			secrets[path.Join(envDir, file)] = sec
-		}
+		ef := envFile{Version: envVersion, Name: e.Name, Vars: varsToFile(e.Vars, path.Join(envDir, file), secrets)}
 		if err := writeJSON(filepath.Join(ed, file), ef, false); err != nil {
 			return err
 		}
@@ -318,15 +306,7 @@ func loadEnvs(dir string, secrets map[string]secret) ([]model.Environment, error
 		if err != nil {
 			return nil, err
 		}
-		env := model.Environment{Name: ef.Name}
-		sec := secrets[path.Join(envDir, e.Name())]
-		for _, kf := range ef.Vars {
-			v := model.KV{Name: kf.Name, Value: kf.Value, Description: kf.Description, Enabled: kf.Enabled, Secret: kf.Secret}
-			if kf.Secret {
-				v.Value = sec.Vars[kf.Name]
-			}
-			env.Vars = append(env.Vars, v)
-		}
+		env := model.Environment{Name: ef.Name, Vars: varsFromFile(ef.Vars, secrets[path.Join(envDir, e.Name())])}
 		envs = append(envs, env)
 	}
 	return envs, nil
