@@ -153,6 +153,9 @@ func (a *App) envMenu() []MenuItem {
 	items := make([]MenuItem, len(rows))
 	for i, row := range rows {
 		items[i] = MenuItem{Label: row.Label, Disabled: row.Disabled, Run: a.envAction(row)}
+		if row.Checked {
+			items[i].Icon = "check"
+		}
 		if row.Action == envs.Separator {
 			items[i] = menuSeparator
 		}

@@ -439,3 +439,13 @@ func TestTheFontControlReadsAnInstalledFamilyOnce(t *testing.T) {
 		t.Fatalf("%d font files read, want the interface font's only", driver.dialog.loadedFaces())
 	}
 }
+
+// A changed setting is marked with the dot icon, not a bullet character.
+func TestAChangedSettingIsMarkedByTheDotIcon(t *testing.T) {
+	driver := newFormDriver(t, "Appearance")
+	driver.host.current.Theme = "light"
+	dump := driver.view()
+	if !strings.Contains(dump, "icon=dot") || strings.Contains(dump, `text="•"`) {
+		t.Fatal("a changed setting has no dot icon, or still has the bullet character")
+	}
+}

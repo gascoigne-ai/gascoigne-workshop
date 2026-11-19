@@ -120,7 +120,7 @@ func cutSpans(spans []Span, from, to int) []Span {
 		runes := []rune(sp.Text)
 		lo, hi := max(from-pos, 0), min(to-pos, len(runes))
 		if lo < hi {
-			out = append(out, Span{Text: string(runes[lo:hi]), Style: sp.Style})
+			out = append(out, Span{Text: string(runes[lo:hi]), Style: sp.Style, Icon: sp.Icon})
 		}
 		pos += len(runes)
 	}
@@ -534,8 +534,13 @@ func (v *CodeView) Draw(ctx *core.Ctx, dst *ebiten.Image, rect core.Rect) {
 		}
 		col := 0 // spans are placed by column, so rounding does not add up along the line
 		for _, sp := range spans {
-			ctx.TextMid(text, ctx.F.Mono, sp.Text, g.textX-v.ScrollX+g.colX(col), cell, ctx.Color(sp.Style))
-			col += len([]rune(sp.Text))
+			spanX, spanCols := g.textX-v.ScrollX+g.colX(col), len([]rune(sp.Text))
+			if sp.Icon != "" {
+				drawIconAt(ctx, text, sp.Icon, core.Rect{X: spanX, Y: cell.Y, W: g.colX(col+spanCols) - g.colX(col), H: cell.H}, sp.Style)
+			} else {
+				ctx.TextMid(text, ctx.F.Mono, sp.Text, spanX, cell, ctx.Color(sp.Style))
+			}
+			col += spanCols
 		}
 
 		if row.from > 0 { // a continuation row has no number and no fold arrow

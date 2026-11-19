@@ -434,7 +434,7 @@ const (
 	settingrowSource = `<col pad-y="8" border-b="border-soft">
   <row h="{{rowH}}" gap="{{tightGap}}">
     <text bold>{{setting.Title}}</text>
-    <text if="setting.Changed" color="accent-line" tooltip="Changed from the default">•</text>
+    <icon if="setting.Changed" name="dot" color="accent-line" tooltip="Changed from the default"/>
     <spacer/>
     <button if="setting.Changed" w="56" h="{{compactH}}" on-click="setting.Reset"
             tooltip="Remove it from settings.json so the default applies">Reset</button>

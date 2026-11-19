@@ -478,3 +478,27 @@ func TestOnlyTheWebSocketComposerOffersFormat(t *testing.T) {
 		}
 	}
 }
+
+// A log line's direction mark is an icon span: an arrow up for sent, an
+// arrow down for received and a dot for a note, with the character kept
+// as its text for copy.
+func TestLogLineDirectionMarksAreIcons(t *testing.T) {
+	cases := []struct {
+		dir        reqport.Direction
+		icon, text string
+	}{
+		{reqport.Sent, "arrow-up", "↑"},
+		{reqport.Received, "arrow-down", "↓"},
+		{reqport.Info, "dot", "•"},
+	}
+	for _, tc := range cases {
+		a, _ := newTestApp(t)
+		tab := a.cur()
+		a.logEvent(tab, reqport.Event{Dir: tc.dir, Kind: "text", Text: "x"})
+		lines := tab.wsView.Lines
+		mark := lines[len(lines)-1].Spans[1]
+		if mark.Icon != tc.icon || mark.Text != tc.text {
+			t.Errorf("%v: mark %+v, want icon %q and text %q", tc.dir, mark, tc.icon, tc.text)
+		}
+	}
+}

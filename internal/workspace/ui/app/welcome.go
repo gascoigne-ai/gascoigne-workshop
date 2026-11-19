@@ -123,7 +123,7 @@ const welcomeSource = `<!-- The release notes: a heading and a bulleted list per
   <col for="section in sections" gap="4">
     <text bold>{{section.Title}}</text>
     <row for="item in section.Items" gap="{{looseGap}}" align-items="start">
-      <text muted>•</text>
+      <icon name="dot" color="muted" margin-t="8"/>
       <lines grow="1" color="muted">{{item}}</lines>
     </row>
   </col>

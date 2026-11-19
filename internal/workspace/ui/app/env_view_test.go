@@ -148,16 +148,16 @@ func TestClickingTheEnvironmentChipOpensItsMenu(t *testing.T) {
 		want   []widget.MenuItem
 	}{
 		{"none", false, "No environment", []widget.MenuItem{
-			{Label: "✓ No environment"},
-			{Label: "   Dev"},
+			{Label: "No environment", Icon: "check"},
+			{Label: "Dev"},
 			{Separator: true},
 			{Label: "New environment..."},
 			{Label: "Rename...", Disabled: true},
 			{Label: "Delete", Disabled: true},
 		}},
 		{"active", true, "Dev", []widget.MenuItem{
-			{Label: "   No environment"},
-			{Label: "✓ Dev"},
+			{Label: "No environment"},
+			{Label: "Dev", Icon: "check"},
 			{Separator: true},
 			{Label: "New environment..."},
 			{Label: "Rename..."},
@@ -185,7 +185,7 @@ func TestClickingTheEnvironmentChipOpensItsMenu(t *testing.T) {
 			}
 			for i, want := range tc.want {
 				got := menu.Items[i]
-				if got.Label != want.Label || got.Disabled != want.Disabled || got.Separator != want.Separator {
+				if got.Label != want.Label || (got.Icon == "check") != (want.Icon == "check") || got.Disabled != want.Disabled || got.Separator != want.Separator {
 					t.Errorf("row %d: %q disabled=%v separator=%v, want %q disabled=%v separator=%v",
 						i, got.Label, got.Disabled, got.Separator, want.Label, want.Disabled, want.Separator)
 				}
@@ -201,12 +201,12 @@ func TestPickingAnEnvironmentInTheChipsMenuShowsItOnTheChip(t *testing.T) {
 	t.Cleanup(a.waitWrites)
 	a.col().Envs = []model.Environment{{Name: "Dev"}, {Name: "Prod"}}
 	clickText(t, a, "No environment", 0)
-	clickText(t, a, "   Prod", 0)
+	clickText(t, a, "Prod", 0)
 	if a.envIndex() != 1 {
 		t.Fatalf("active environment %d, want 1", a.envIndex())
 	}
 	clickText(t, a, "Prod", 0)
-	clickText(t, a, "   No environment", 0)
+	clickText(t, a, "No environment", 0)
 	if a.envIndex() != -1 {
 		t.Fatalf("active environment %d, want none", a.envIndex())
 	}

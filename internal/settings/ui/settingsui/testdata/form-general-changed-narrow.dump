@@ -2,8 +2,8 @@ flow rect=0,0,300,1800
   flow padT=8 padB=8 borderB=border-soft rect=0,0,300,116
     flow h=28 gap=6 rect=0,8,300,28
       textB text="Save changes automatically" bold=true rect=0,8,187,28
-      textB text="•" fg=accent-line tip=Changed from the default rect=193,8,5,28
-      plain grow=1 rect=204,8,33,28
+      iconB fg=accent-line tip=Changed from the default icon=dot rect=193,8,6,28
+      plain grow=1 rect=205,8,32,28
       flow h=24 padL=10 padR=10 bg=sunken control=button tip=Remove it from settings.json so the default applies shrink=true lighten=true onClick=true rect=243,10,57,24
         textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=253,10,37,24
     flow rect=0,36,300,44

@@ -2,8 +2,8 @@ flow rect=0,0,300,1800
   flow padT=8 padB=8 borderB=border-soft rect=0,0,300,94
     flow h=28 gap=6 rect=0,8,300,28
       textB text="Theme" bold=true rect=0,8,45,28
-      textB text="•" fg=accent-line tip=Changed from the default rect=51,8,5,28
-      plain grow=1 rect=62,8,175,28
+      iconB fg=accent-line tip=Changed from the default icon=dot rect=51,8,6,28
+      plain grow=1 rect=63,8,174,28
       flow h=24 padL=10 padR=10 bg=sunken control=button tip=Remove it from settings.json so the default applies shrink=true lighten=true onClick=true rect=243,10,57,24
         textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=253,10,37,24
     flow rect=0,36,300,22
@@ -29,8 +29,8 @@ flow rect=0,0,300,1800
   flow padT=8 padB=8 borderB=border-soft rect=0,188,300,94
     flow h=28 gap=6 rect=0,196,300,28
       textB text="Interface scale" bold=true rect=0,196,100,28
-      textB text="•" fg=accent-line tip=Changed from the default rect=106,196,5,28
-      plain grow=1 rect=117,196,120,28
+      iconB fg=accent-line tip=Changed from the default icon=dot rect=106,196,6,28
+      plain grow=1 rect=118,196,119,28
       flow h=24 padL=10 padR=10 bg=sunken control=button tip=Remove it from settings.json so the default applies shrink=true lighten=true onClick=true rect=243,198,57,24
         textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=253,198,37,24
     flow rect=0,224,300,22
@@ -41,8 +41,8 @@ flow rect=0,0,300,1800
   flow padT=8 padB=8 borderB=border-soft rect=0,282,300,116
     flow h=28 gap=6 rect=0,290,300,28
       textB text="Interface font" bold=true rect=0,290,91,28
-      textB text="•" fg=accent-line tip=Changed from the default rect=97,290,5,28
-      plain grow=1 rect=108,290,129,28
+      iconB fg=accent-line tip=Changed from the default icon=dot rect=97,290,6,28
+      plain grow=1 rect=109,290,128,28
       flow h=24 padL=10 padR=10 bg=sunken control=button tip=Remove it from settings.json so the default applies shrink=true lighten=true onClick=true rect=243,292,57,24
         textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=253,292,37,24
     flow rect=0,318,300,44
@@ -54,8 +54,8 @@ flow rect=0,0,300,1800
   flow padT=8 padB=8 borderB=border-soft rect=0,398,300,116
     flow h=28 gap=6 rect=0,406,300,28
       textB text="Code font" bold=true rect=0,406,65,28
-      textB text="•" fg=accent-line tip=Changed from the default rect=71,406,5,28
-      plain grow=1 rect=82,406,155,28
+      iconB fg=accent-line tip=Changed from the default icon=dot rect=71,406,6,28
+      plain grow=1 rect=83,406,154,28
       flow h=24 padL=10 padR=10 bg=sunken control=button tip=Remove it from settings.json so the default applies shrink=true lighten=true onClick=true rect=243,408,57,24
         textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=253,408,37,24
     flow rect=0,434,300,44
@@ -67,8 +67,8 @@ flow rect=0,0,300,1800
   flow padT=8 padB=8 borderB=border-soft rect=0,514,300,94
     flow h=28 gap=6 rect=0,522,300,28
       textB text="Corners" bold=true rect=0,522,54,28
-      textB text="•" fg=accent-line tip=Changed from the default rect=60,522,5,28
-      plain grow=1 rect=71,522,166,28
+      iconB fg=accent-line tip=Changed from the default icon=dot rect=60,522,6,28
+      plain grow=1 rect=72,522,165,28
       flow h=24 padL=10 padR=10 bg=sunken control=button tip=Remove it from settings.json so the default applies shrink=true lighten=true onClick=true rect=243,524,57,24
         textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=253,524,37,24
     flow rect=0,550,300,22
@@ -83,8 +83,8 @@ flow rect=0,0,300,1800
   flow padT=8 padB=8 borderB=border-soft rect=0,608,300,94
     flow h=28 gap=6 rect=0,616,300,28
       textB text="Flat colors" bold=true rect=0,616,71,28
-      textB text="•" fg=accent-line tip=Changed from the default rect=77,616,5,28
-      plain grow=1 rect=88,616,149,28
+      iconB fg=accent-line tip=Changed from the default icon=dot rect=77,616,6,28
+      plain grow=1 rect=89,616,148,28
       flow h=24 padL=10 padR=10 bg=sunken control=button tip=Remove it from settings.json so the default applies shrink=true lighten=true onClick=true rect=243,618,57,24
         textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=253,618,37,24
     flow rect=0,644,300,22
@@ -119,8 +119,8 @@ flow rect=0,0,300,1800
   flow padT=8 padB=8 borderB=border-soft rect=0,890,300,94
     flow h=28 gap=6 rect=0,898,300,28
       textB text="Response view" bold=true rect=0,898,101,28
-      textB text="•" fg=accent-line tip=Changed from the default rect=107,898,5,28
-      plain grow=1 rect=118,898,119,28
+      iconB fg=accent-line tip=Changed from the default icon=dot rect=107,898,6,28
+      plain grow=1 rect=119,898,118,28
       flow h=24 padL=10 padR=10 bg=sunken control=button tip=Remove it from settings.json so the default applies shrink=true lighten=true onClick=true rect=243,900,57,24
         textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=253,900,37,24
     flow rect=0,926,300,22

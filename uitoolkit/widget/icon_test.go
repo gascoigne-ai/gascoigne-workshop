@@ -259,3 +259,25 @@ func TestCheckboxCheckAndFoldArrowsAreIcons(t *testing.T) {
 		t.Fatalf("%d masks after drawing a fold arrow, want the check and the arrow", folds)
 	}
 }
+
+// A code view span with an Icon is painted as that icon in the span's
+// cell; its Text stays what search and copy see.
+func TestCodeViewSpanWithAnIconDrawsTheIconNotItsText(t *testing.T) {
+	masks.Lock()
+	for key := range masks.m {
+		delete(masks.m, key)
+	}
+	masks.Unlock()
+	var code CodeView
+	code.SetLines([]Line{{Spans: []Span{{Text: "↑", Icon: "arrow-up", Style: core.Info}, {Text: " sent"}}}})
+	drawn(t, testCtx(t), Row(W(200), H(40), Code(&code)), 200, 40)
+	masks.Lock()
+	count := len(masks.m)
+	masks.Unlock()
+	if count != 1 {
+		t.Fatalf("%d icon masks, want the arrow's", count)
+	}
+	if got := code.Lines[0].Spans[0].Text; got != "↑" {
+		t.Fatalf("text %q, want it kept for copy and search", got)
+	}
+}

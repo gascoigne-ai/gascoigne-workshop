@@ -20,21 +20,16 @@ type Row struct {
 	Action   Action
 	Env      int
 	Disabled bool
+	Checked  bool // the active environment; the view marks it
 }
 
 // Menu is the rows of the chip's menu for the collection: the choices
-// (the selected one ticked), then New, Rename and Delete, which need an
+// (the selected one checked), then New, Rename and Delete, which need an
 // environment to be selected.
 func Menu(sel Selection, col *model.Collection) []Row {
-	mark := func(on bool, label string) string {
-		if on {
-			return "✓ " + label
-		}
-		return "   " + label
-	}
-	rows := []Row{{Label: mark(sel.Index < 0, "No environment"), Action: Select, Env: -1}}
+	rows := []Row{{Label: "No environment", Checked: sel.Index < 0, Action: Select, Env: -1}}
 	for i, env := range col.Envs {
-		rows = append(rows, Row{Label: mark(i == sel.Index, env.Name), Action: Select, Env: i})
+		rows = append(rows, Row{Label: env.Name, Checked: i == sel.Index, Action: Select, Env: i})
 	}
 	return append(rows,
 		Row{Action: Separator},

@@ -236,12 +236,12 @@ func (a *App) logEvent(tab *reqTab, event reqport.Event) {
 	if event.Kind == "initialize" {
 		return
 	}
-	mark, tok := "•", w.Muted
+	mark, tok := Span{Text: "•", Icon: "dot"}, w.Muted
 	switch event.Dir {
 	case reqport.Sent:
-		mark, tok = "↑", w.Info
+		mark, tok = Span{Text: "↑", Icon: "arrow-up"}, w.Info
 	case reqport.Received:
-		mark, tok = "↓", w.OK
+		mark, tok = Span{Text: "↓", Icon: "arrow-down"}, w.OK
 	}
 	text := event.Text
 	if text == "" && event.Kind != "text" && event.Kind != "binary" {
@@ -250,20 +250,19 @@ func (a *App) logEvent(tab *reqTab, event reqport.Event) {
 	if event.Dir == reqport.Info && strings.HasPrefix(event.Text, "Connection lost") {
 		tok = w.Error
 	}
+	mark.Style = w.Muted // as the stamp, so the picture is the same as when the mark was a character
 	stamp := event.Time.Format("15:04:05")
 	if event.Time.IsZero() {
 		stamp = time.Now().Format("15:04:05")
 	}
 	lines := tab.wsView.Lines
 	for i, part := range strings.Split(text, "\n") {
-		head := stamp + " " + mark + " "
+		spans := []Span{{Text: stamp + " ", Style: w.Muted}, mark, {Text: " ", Style: w.Muted}}
 		if i > 0 {
-			head = strings.Repeat(" ", len(stamp)) + "   "
+			spans = []Span{{Text: strings.Repeat(" ", len(stamp)) + "   ", Style: w.Muted}}
 		}
-		lines = append(lines, Line{Spans: []Span{
-			{Text: head, Style: w.Muted},
-			{Text: strings.TrimRight(part, "\r"), Style: textToken(event.Dir, tok)},
-		}})
+		spans = append(spans, Span{Text: strings.TrimRight(part, "\r"), Style: textToken(event.Dir, tok)})
+		lines = append(lines, Line{Spans: spans})
 	}
 	tab.wsView.SetLines(lines)
 }
