@@ -1,0 +1,1 @@
+{"tools":[{"description":"Returns its text argument","inputSchema":{"properties":{"text":{"type":"string"}},"required":["text"],"type":"object"},"name":"echo"},{"description":"Adds two numbers","inputSchema":{"properties":{"a":{"type":"number"},"b":{"type":"number"}},"required":["a","b"],"type":"object"},"name":"add"}]}

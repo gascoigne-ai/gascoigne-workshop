@@ -1,6 +1,11 @@
 package model
 
-import "testing"
+import (
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+)
 
 func FuzzParseSchema(fuzz *testing.F) {
 	fuzz.Add([]byte(introspectionAnswer))
@@ -25,6 +30,48 @@ func FuzzParseMCPLists(fuzz *testing.F) {
 			_ = prompt.ArgsJSON()
 		}
 	})
+}
+
+// A schema decodes within the bounds of the decoder, or to an error, and
+// never panics.
+func FuzzDecodeJSONSchema(fuzz *testing.F) {
+	fuzz.Add(`{"type":"object","description":"d","properties":{"a":{"type":["null","string"]}},"required":["a","b"],"items":{"type":"number"},"enum":["x",1],"default":"x","const":2,"$ref":"#/c/s"}`)
+	fuzz.Add(`true`)
+	fuzz.Add(`{"properties":{"a":true,"a":{"properties":{"b":{}}}}}`)
+	fuzz.Add(`{"enum":[null,{"a":[1,2]},"s"]}`)
+	fuzz.Add(strings.Repeat(`{"properties":{"a":`, 40) + `{}` + strings.Repeat(`}}`, 40))
+	fuzz.Add(strings.Repeat(`{"items":`, 40) + `{}` + strings.Repeat(`}`, 40))
+	if fixture, err := os.ReadFile(filepath.Join("testdata", "mcp", "tools-list-result.json")); err == nil {
+		fuzz.Add(string(fixture))
+	}
+	fuzz.Fuzz(func(t *testing.T, text string) {
+		schema, err := DecodeJSONSchema([]byte(text))
+		if err != nil {
+			return
+		}
+		if depth := schemaDepth(schema); depth > maxSchemaDepth {
+			t.Fatalf("depth %d passed the bound", depth)
+		}
+		checkSchemaCounts(t, schema)
+	})
+}
+
+func checkSchemaCounts(t *testing.T, schema JSONSchema) {
+	t.Helper()
+	if len(schema.Properties) > maxSchemaProperties || len(schema.Enum) > maxSchemaEnum {
+		t.Fatalf("%d properties and %d enum entries passed the bound", len(schema.Properties), len(schema.Enum))
+	}
+	seen := map[string]bool{}
+	for _, property := range schema.Properties {
+		if seen[property.Name] {
+			t.Fatalf("property %q twice", property.Name)
+		}
+		seen[property.Name] = true
+		checkSchemaCounts(t, property.Schema)
+	}
+	if schema.Items != nil {
+		checkSchemaCounts(t, *schema.Items)
+	}
 }
 
 func FuzzParseServerInfo(fuzz *testing.F) {

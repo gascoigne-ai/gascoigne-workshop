@@ -25,10 +25,12 @@ FUZZ_TARGETS = \
 	./internal/collection/model/postman:FuzzParse \
 	./internal/collection/model/clientconfig:FuzzParse \
 	./internal/request/model:FuzzParseCurl \
+	./internal/request/model:FuzzDecodeJSONSchema \
 	./internal/request/model:FuzzURLParams \
 	./internal/request/model/assert:FuzzRun \
 	./internal/response/model/jsonview:FuzzCompact \
 	./internal/request/adapter/proto/ws:FuzzReadFrame \
+	./internal/request/adapter/proto:FuzzMCPDeliver \
 	./uitoolkit/markup:FuzzParse \
 	./uitoolkit/widget:FuzzEdit \
 	./uitoolkit/widget:FuzzFind \

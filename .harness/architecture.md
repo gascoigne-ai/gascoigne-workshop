@@ -1376,6 +1376,19 @@ that change `App`.
   alphabetical order, as the maps they replaced marshaled; a test pins the bytes. `port.Requester` (an MCP session implements it) sends a
   command like the composer does and returns the answer: the result JSON, or the server's error
   message.
+-  **JSON Schema model** (`internal/request/model/jsonschema.go`): `model.JSONSchema` (`Type` a
+  `SchemaType`, `Description`, `Properties` as `[]SchemaProperty` in document order with `Required`
+  derived once from `required`, `Items`, `Enum`, `Default`, `Const` as `JSONValue` (the exact bytes;
+  `Text()` is a string unquoted, anything else as compact JSON) and `Ref`) is decoded once by
+  `DecodeJSONSchema`, at the server answer and, once the schema users move to it, at the OpenAPI
+  import. Only these keywords are read; `anyOf`, `$defs`, `pattern`, `format` and the rest are
+  ignored. A schema that is not an object (`true`, `false`, a string, `null`, an array) is the zero
+  schema and no error; invalid JSON is the only error. A list of types takes the first that is not
+  `null`, an unknown or non-string type is none, properties without a type make it an object, a
+  `required` name without a property is dropped and a duplicate property key keeps the later value.
+  Parts beyond the bounds under Limits are left out and logged at debug. Fuzz targets:
+  `FuzzDecodeJSONSchema`, and `FuzzMCPDeliver` for what an MCP server sends. Real captures of the
+  example server are under `internal/request/model/testdata/mcp`.
 -  **MCP pickers** (`internal/request/model/mcpschema.go`, `internal/workspace/ui/app/wsui.go`):
   `model.DecodeTools`, `DecodeResources` and `DecodePrompts` read the result of a list answer once,
   in the MCP session, which sends it as `Event.Payload` (`port.ToolsList`, `ResourcesList`,
@@ -2037,7 +2050,7 @@ and the in-memory keys `stateKey` and `tree.Key`.
 -  Fuzzing: `make fuzz` runs every native fuzz target for 30 s each (`FUZZTIME`; the list is
   `FUZZ_TARGETS` in the Makefile: the YAML, OpenAPI, Postman and client config readers, cURL import,
   URL parameters, assertions, the compact JSON view, the WebSocket frame reader, templates, text
-  editing, find and wrapping, GraphQL schemas, MCP lists and server info, protocol, body and auth
+  editing, find and wrapping, GraphQL schemas, JSON Schemas, MCP lists, MCP messages and server info, protocol, body and auth
   type names, collection folders, the saved state, settings, request history and the sent log,
   images, theme files, the event-stream reader of SSE and MCP, settings text, bulk-edited table rows,
   key bindings and the SVG icon parser `FuzzParseSVG`, which has no size or depth limit of its own:
@@ -2064,7 +2077,10 @@ and the in-memory keys `stateKey` and `tree.Key`.
   headers) is at most 64 KiB (`ws.maxHandshakeBytes`), a larger one fails the connect with
   `response too large`; an image is decoded only up to 64 Mi pixels width times height
   (`respview.maxImagePixels`); an OpenAPI schema follows `$ref` at most 6 levels deep
-  (`openapi.maxRefDepth`).
+  (`openapi.maxRefDepth`); a decoded JSON Schema nests at most 32 levels
+  (`model.maxSchemaDepth`), keeps at most 1000 properties per object (`maxSchemaProperties`) and
+  1000 enum entries (`maxSchemaEnum`), and what is beyond is left out; the schema sits inside an MCP
+  message of at most 16 MiB.
 -  Postman, cURL and client config parsers (`postman.Parse`, `model.ParseCurl`, the `.workshop.*`
   reader) take bytes already in memory and set no size limit of their own: the caller bounds the
   input. cURL text comes from the clipboard; Postman and client config files are read whole with no
