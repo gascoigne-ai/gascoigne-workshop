@@ -3,12 +3,12 @@ package app
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model/assert"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
-	"strings"
 	// The view DSL is dot-imported so views read like markup: Row(...), Text(...).
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
@@ -147,13 +147,7 @@ var responsePanes = []pane{
 func (p pane) badge(app *App, tab *reqTab) int {
 	switch p.kind {
 	case paneAssertions: // how many assertions are written
-		n := 0
-		for _, l := range strings.Split(tab.Req.Tests, "\n") {
-			if l = strings.TrimSpace(l); l != "" && !strings.HasPrefix(l, "#") {
-				n++
-			}
-		}
-		return n
+		return assert.Count(tab.Req.Tests)
 	case paneResults: // how many failed
 		n := 0
 		for _, r := range tab.testResults {

@@ -16,10 +16,6 @@ import (
 
 const (
 	version = "v0.1.0-alpha"
-
-	// defaultTimeoutSec is used when neither the request nor the settings name one.
-	defaultTimeoutSec = 60
-	maxTimeout        = 24 * time.Hour // longer would overflow time.Duration for a huge setting
 )
 
 // App is the whole window. It implements ebiten.Game.

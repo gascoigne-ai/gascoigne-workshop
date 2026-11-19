@@ -34,15 +34,15 @@ func splitSpanVars(sp Span, vars []model.KV) []Span {
 		return []Span{sp}
 	}
 	var out []Span
-	for _, seg := range splitVars(sp.Text) {
+	for _, seg := range model.SplitVars(sp.Text) {
 		style := sp.Style
-		if seg.isVar {
+		if seg.IsVar {
 			style = w.OK
-			if !model.Defined(varName(seg.text), vars) {
+			if !model.Defined(varName(seg.Text), vars) {
 				style = w.Error
 			}
 		}
-		out = append(out, Span{Text: seg.text, Style: style})
+		out = append(out, Span{Text: seg.Text, Style: style})
 	}
 	return out
 }
@@ -74,11 +74,11 @@ func (a *App) cellStyler(req *model.Request) func(string) []Span {
 			return nil
 		}
 		var out []Span
-		for _, seg := range splitVars(text) {
-			sp := Span{Text: seg.text}
-			if seg.isVar {
+		for _, seg := range model.SplitVars(text) {
+			sp := Span{Text: seg.Text}
+			if seg.IsVar {
 				sp.Style = w.OK
-				if !model.Defined(varName(seg.text), vars) {
+				if !model.Defined(varName(seg.Text), vars) {
 					sp.Style = w.Error
 				}
 			}

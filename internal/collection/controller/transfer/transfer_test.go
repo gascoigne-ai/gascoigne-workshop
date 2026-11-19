@@ -274,3 +274,22 @@ func TestDestinationsAreAFlatPreOrderWithDepthAndReasons(t *testing.T) {
 		t.Fatalf("a collection root must name its collection: %+v", dest)
 	}
 }
+
+func TestMissingTextNamesAtMostFive(t *testing.T) {
+	tests := []struct {
+		name    string
+		missing []string
+		want    string
+	}{
+		{"one", []string{"a"}, "Not defined in Beta: a"},
+		{"five", []string{"a", "b", "c", "d", "e"}, "Not defined in Beta: a, b, c, d, e"},
+		{"seven", []string{"a", "b", "c", "d", "e", "f", "g"}, "Not defined in Beta: a, b, c, d, e and 2 more"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got := MissingText(test.missing, "Beta"); got != test.want {
+				t.Fatalf("got %q, want %q", got, test.want)
+			}
+		})
+	}
+}

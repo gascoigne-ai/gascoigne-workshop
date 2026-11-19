@@ -380,3 +380,19 @@ func splitShortCluster(letters string) (flags []string, needsValue bool) {
 	}
 	return flags, false
 }
+
+// ImportedName names a request imported from a command after its method and
+// the path of its URL: "GET /users".
+func ImportedName(request Request) string {
+	path := request.URL
+	if _, rest, ok := strings.Cut(path, "://"); ok {
+		path = rest
+	}
+	path, _, _ = strings.Cut(path, "?")
+	if i := strings.Index(path, "/"); i >= 0 {
+		path = path[i:]
+	} else {
+		path = "/"
+	}
+	return request.Method + " " + path
+}

@@ -5,6 +5,9 @@
 package transfer
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/tree"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
@@ -177,4 +180,22 @@ func reason(folder *model.Folder, node model.Node, parent *model.Folder, mode Mo
 		return WhySameParent
 	}
 	return WhyNone
+}
+
+// maxNamedVars is how many missing variables MissingText names before it
+// counts the rest.
+const maxNamedVars = 5
+
+// MissingText says which variables a moved or copied node uses that the
+// collection called name does not define, naming at most maxNamedVars.
+func MissingText(missing []string, name string) string {
+	shown := missing
+	if len(shown) > maxNamedVars {
+		shown = shown[:maxNamedVars]
+	}
+	text := "Not defined in " + name + ": " + strings.Join(shown, ", ")
+	if rest := len(missing) - len(shown); rest > 0 {
+		text += fmt.Sprintf(" and %d more", rest)
+	}
+	return text
 }

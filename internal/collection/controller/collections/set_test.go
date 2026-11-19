@@ -147,6 +147,30 @@ func TestMove(t *testing.T) {
 	}
 }
 
+func TestShift(t *testing.T) {
+	set, first, second, third := opened()
+	cases := []struct {
+		name  string
+		moved *model.Collection
+		by    int
+		want  []string
+	}{
+		{"middle up", second, -1, []string{"b", "a", "c"}},
+		{"middle down", second, 1, []string{"a", "c", "b"}},
+		{"first down", first, 1, []string{"b", "a", "c"}},
+		{"last up", third, -1, []string{"a", "c", "b"}},
+		{"first up stays", first, -1, []string{"a", "b", "c"}},
+		{"last down stays", third, 1, []string{"a", "b", "c"}},
+		{"one not open stays", newCollection("z"), -1, []string{"a", "b", "c"}},
+	}
+	for _, tc := range cases {
+		got := names(Update(set, Shift{Collection: tc.moved, By: tc.by}))
+		if !sameNames(got, tc.want) {
+			t.Errorf("%s: got %v, want %v", tc.name, got, tc.want)
+		}
+	}
+}
+
 func TestMoveKeepsWhatAnEntryHolds(t *testing.T) {
 	set, first, _, _ := opened()
 	set = Update(set, ChooseEnv{Collection: first, Index: -1})

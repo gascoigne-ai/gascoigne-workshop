@@ -146,3 +146,24 @@ func FuzzParseCurl(fuzz *testing.F) {
 		_, _ = ParseCurl(command)
 	})
 }
+
+func TestImportedNameIsMethodAndPath(t *testing.T) {
+	tests := []struct {
+		name, method, url, want string
+	}{
+		{"path", "GET", "https://api.example.com/users/1", "GET /users/1"},
+		{"query dropped", "POST", "https://api.example.com/users?page=2", "POST /users"},
+		{"no path", "GET", "https://api.example.com", "GET /"},
+		{"no path with query", "GET", "https://api.example.com?x=1", "GET /"},
+		{"no scheme", "DELETE", "localhost:8080/a/b", "DELETE /a/b"},
+		{"variable host", "PUT", "{{baseUrl}}/items", "PUT /items"},
+		{"empty", "GET", "", "GET /"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got := ImportedName(Request{Method: test.method, URL: test.url}); got != test.want {
+				t.Fatalf("got %q, want %q", got, test.want)
+			}
+		})
+	}
+}

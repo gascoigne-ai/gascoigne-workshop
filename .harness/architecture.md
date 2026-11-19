@@ -539,7 +539,7 @@ that change `App`.
   folder opens, an open tab keeps its request (a move keeps the pointer, a copy is a new request
   that has no tab), the Vars pane is reset when it edited a moved folder, and an info toast names up
   to five variables the node uses that its new collection does not define and "and N more"
-  (`missingVarsText`; variables are never rewritten). A move between collections writes the target
+  (`transfer.MissingText`; variables are never rewritten). A move between collections writes the target
   first and then the source (`flushMoved`); a failed target write leaves the source on disk and
   shows an error toast; a target with no folder yet is allowed, then nothing is written for either
   until it is saved; a request opens on press, while a folder toggles when the button is released on
@@ -1607,7 +1607,7 @@ that change `App`.
   muted note and Open collection folder / New collection buttons (`noCollection` in `sidebar.vml`),
   and the chip menu's Rename, Save, Close and Delete are disabled. The root row's menu
   (`rootMenuItems`) has Rename collection, Move up and Move down (disabled at the ends;
-  `moveCollection` sends `collections.Move` and rewrites the remembered list), New, Open, Close and
+  `moveCollection` sends `collections.Shift`, which finds the place, and rewrites the remembered list), New, Open, Close and
   Delete; reordering is by menu, not by drag, because a drag in the tree moves or copies a node and
   a root row does not drag. Deleting the last open collection still opens the next one in
   `collections/` (or a new one), through `openWorkspaceAt`, which replaces the set. The screenshot
@@ -1621,7 +1621,7 @@ that change `App`.
   environment pick rewrites the list too when the open set came from it or the user changed the set
   since; when it did not (a folder given with `-workspace`), only the list's entries that name an
   open collection take the new environment, so such a run does not replace what the next ordinary
-  start opens (`rememberEnvironments`).
+  start opens (`rememberEnvironments`, with the list built by `collections.Remembered` and `collections.WithEnvironments`).
 -  **Folder variables and opening collections**: `model.Folder.Vars` (saved in each folder's
   `folder.json`) and `Collection.VarsFor(req, env)` give the resolution order collection <
   environment < folders (outermost first, nearest wins); every send, cURL copy, WebSocket connect,

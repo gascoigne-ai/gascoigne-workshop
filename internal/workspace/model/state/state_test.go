@@ -45,3 +45,26 @@ func TestClampKeepsTheWindowOnTheMonitor(t *testing.T) {
 		}
 	}
 }
+
+func TestTabPaneIn(t *testing.T) {
+	labels := []string{"Params", "Headers", "Body"}
+	tests := []struct {
+		name string
+		tab  Tab
+		want int
+	}{
+		{"found by its label", Tab{PaneLabel: "Body", Pane: 0}, 2},
+		{"the label wins over the index", Tab{PaneLabel: "Headers", Pane: 2}, 1},
+		{"a label no longer there keeps the fallback", Tab{PaneLabel: "Gone", Pane: 1}, 9},
+		{"an older file: the index", Tab{Pane: 1}, 1},
+		{"an index past the end keeps the fallback", Tab{Pane: 3}, 9},
+		{"a negative index keeps the fallback", Tab{Pane: -1}, 9},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got := test.tab.PaneIn(labels, 9); got != test.want {
+				t.Fatalf("got %d, want %d", got, test.want)
+			}
+		})
+	}
+}

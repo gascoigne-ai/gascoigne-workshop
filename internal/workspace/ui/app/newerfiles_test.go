@@ -128,7 +128,7 @@ func TestNewerRememberedCollectionIsToastedAtStart(t *testing.T) {
 	if len(toasts) != 1 || !strings.Contains(toasts[0], "format 2, this build reads up to 1") {
 		t.Fatalf("toasts %q, want one naming folder.json and both versions", toasts)
 	}
-	if _, open := a.openAt(dir); open || len(a.unreadable) != 1 {
+	if _, open := a.open.At(dir); open || len(a.unreadable) != 1 {
 		t.Fatalf("open %v, unreadable %+v; want it closed and still remembered", open, a.unreadable)
 	}
 	unchangedFile(t, filepath.Join(dir, "folder.json"), newer)

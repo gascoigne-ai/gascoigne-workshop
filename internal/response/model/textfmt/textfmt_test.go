@@ -59,3 +59,35 @@ func TestCompactJSON(t *testing.T) {
 		}
 	}
 }
+
+func TestJSONStatus(t *testing.T) {
+	tests := []struct {
+		name, in  string
+		wantValid bool
+		wantMsg   string // substring; "" means no message at all
+	}{
+		{"empty body has nothing to report", "", false, ""},
+		{"whitespace only too", "  \n", false, ""},
+		{"valid object", `{"a": [1, 2]}`, true, "Valid JSON"},
+		{"valid scalar", `42`, true, "Valid JSON"},
+		{"invalid", `{"a": }`, false, "Invalid JSON"},
+		{"truncated", `{"a": 1`, false, "Invalid JSON"},
+	}
+	for _, test := range tests {
+		msg, valid := JSONStatus(test.in)
+		if valid != test.wantValid || (test.wantMsg == "") != (msg == "") || !strings.Contains(msg, test.wantMsg) {
+			t.Errorf("%s: got %q %v; want %q %v", test.name, msg, valid, test.wantMsg, test.wantValid)
+		}
+	}
+}
+
+func TestIndentJSON(t *testing.T) {
+	got, err := IndentJSON(`{"a":[1,2],"b":{}}`)
+	want := "{\n  \"a\": [\n    1,\n    2\n  ],\n  \"b\": {}\n}"
+	if err != nil || got != want {
+		t.Fatalf("got %q, %v; want %q", got, err, want)
+	}
+	if _, err := IndentJSON(`{"a": }`); err == nil {
+		t.Fatal("invalid JSON must be an error")
+	}
+}

@@ -7,7 +7,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/postman"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"path/filepath"
-	"strings"
 )
 
 // imported is what a clipboard importer read: a folder or a single request,
@@ -33,7 +32,7 @@ var (
 		if err != nil {
 			return imported{}, err
 		}
-		req.Name = curlName(req)
+		req.Name = model.ImportedName(req)
 		return imported{request: &req}, nil
 	}}
 	openAPIKind = importKind{"Not an OpenAPI document: ", "parts could not be read", func(text string) (imported, error) {
@@ -95,21 +94,6 @@ func (a *App) attachImport(dir *model.Folder, got imported) string {
 		a.openRequest(first)
 	}
 	return got.folder.Name
-}
-
-// curlName names an imported request after its method and path.
-func curlName(request model.Request) string {
-	path := request.URL
-	if _, rest, ok := strings.Cut(path, "://"); ok {
-		path = rest
-	}
-	path, _, _ = strings.Cut(path, "?")
-	if i := strings.Index(path, "/"); i >= 0 {
-		path = path[i:]
-	} else {
-		path = "/"
-	}
-	return request.Method + " " + path
 }
 
 // exportPostman writes dir and everything below it as a Postman v2.1

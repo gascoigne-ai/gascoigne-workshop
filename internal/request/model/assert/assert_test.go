@@ -147,3 +147,24 @@ func FuzzRun(fuzz *testing.F) {
 		_ = Captures(text, response)
 	})
 }
+
+func TestCountSkipsBlankLinesAndComments(t *testing.T) {
+	tests := []struct {
+		name string
+		text string
+		want int
+	}{
+		{"empty", "", 0},
+		{"blank lines", "\n  \n", 0},
+		{"comment only", "# note", 0},
+		{"indented comment", "   # note", 0},
+		{"three lines", "status == 200\n\n# why\n  json ok == true  \nstatus < 300", 3},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got := Count(test.text); got != test.want {
+				t.Fatalf("Count(%q) = %d, want %d", test.text, got, test.want)
+			}
+		})
+	}
+}

@@ -57,3 +57,26 @@ func CompactJSON(text string) (string, error) {
 	}
 	return out.String(), nil
 }
+
+// JSONStatus describes whether text is valid JSON, for the body pane. An
+// empty text has nothing to report.
+func JSONStatus(text string) (msg string, valid bool) {
+	if strings.TrimSpace(text) == "" {
+		return "", false
+	}
+	var value any
+	if err := json.Unmarshal([]byte(text), &value); err != nil {
+		return "Invalid JSON: " + err.Error(), false
+	}
+	return "Valid JSON", true
+}
+
+// IndentJSON is text re-indented with two spaces; an error says why the
+// text is not JSON.
+func IndentJSON(text string) (string, error) {
+	var out bytes.Buffer
+	if err := json.Indent(&out, []byte(text), "", "  "); err != nil {
+		return "", err
+	}
+	return out.String(), nil
+}

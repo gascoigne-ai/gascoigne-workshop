@@ -169,20 +169,14 @@ func requestPaneLabel(tab *reqTab) string {
 	return panes[tab.paneTab].label
 }
 
-// rememberedPane is the index of the request pane a remembered tab was
-// on: found by its label, since an index moves when a pane is added before
-// it, else by the index an older file holds, else the first pane.
+// rememberedPane is the index of the request pane a remembered tab was on.
 func rememberedPane(tab *reqTab, remembered state.Tab) int {
 	panes := requestPanesFor(tab)
+	labels := make([]string, len(panes))
 	for i, p := range panes {
-		if remembered.PaneLabel != "" && p.label == remembered.PaneLabel {
-			return i
-		}
+		labels[i] = p.label
 	}
-	if remembered.PaneLabel == "" && remembered.Pane >= 0 && remembered.Pane < len(panes) {
-		return remembered.Pane
-	}
-	return tab.paneTab
+	return remembered.PaneIn(labels, tab.paneTab)
 }
 
 // restore applies a remembered state to a freshly built app. Anything

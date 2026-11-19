@@ -8,7 +8,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto"
@@ -28,24 +27,6 @@ func TestNext(t *testing.T) {
 	for _, tt := range tests {
 		if got := next(chipOrder, tt.cur); got != tt.want {
 			t.Errorf("%s: next(%q) = %q, want %q", tt.name, tt.cur, got, tt.want)
-		}
-	}
-}
-
-func TestSplitVars(t *testing.T) {
-	tests := []struct {
-		in   string
-		want []urlSeg
-	}{
-		{"", nil},
-		{"http://x", []urlSeg{{text: "http://x"}}},
-		{"{{baseUrl}}/a", []urlSeg{{text: "{{baseUrl}}", isVar: true}, {text: "/a"}}},
-		{"a{{x}}b{{y}}", []urlSeg{{text: "a"}, {text: "{{x}}", isVar: true}, {text: "b"}, {text: "{{y}}", isVar: true}}},
-		{"half {{open", []urlSeg{{text: "half {{open"}}},
-	}
-	for _, tt := range tests {
-		if got := splitVars(tt.in); !reflect.DeepEqual(got, tt.want) {
-			t.Errorf("splitVars(%q) = %+v, want %+v", tt.in, got, tt.want)
 		}
 	}
 }
@@ -151,27 +132,6 @@ var (
 	respErr = model.Response{Err: "boom"}
 	respOK  = model.Response{Status: 200, StatusText: "OK"}
 )
-
-func TestJSONStatus(t *testing.T) {
-	tests := []struct {
-		name, in  string
-		wantValid bool
-		wantMsg   string // substring; "" means no message at all
-	}{
-		{"empty body has nothing to report", "", false, ""},
-		{"whitespace only too", "  \n", false, ""},
-		{"valid object", `{"a": [1, 2]}`, true, "Valid JSON"},
-		{"valid scalar", `42`, true, "Valid JSON"},
-		{"invalid", `{"a": }`, false, "Invalid JSON"},
-		{"truncated", `{"a": 1`, false, "Invalid JSON"},
-	}
-	for _, tt := range tests {
-		msg, valid := jsonStatus(tt.in)
-		if valid != tt.wantValid || (tt.wantMsg == "") != (msg == "") || !strings.Contains(msg, tt.wantMsg) {
-			t.Errorf("%s: got %q %v; want %q %v", tt.name, msg, valid, tt.wantMsg, tt.wantValid)
-		}
-	}
-}
 
 func TestSampleCollectionIsConsistent(t *testing.T) {
 	col := collection.GitHubSample()

@@ -30,7 +30,7 @@ func (a *App) openWorkspace(dir string) {
 	var wanted []settings.OpenCollection
 	switch {
 	case dir != "":
-		wanted = []settings.OpenCollection{{Folder: dir, Environment: a.rememberedEnv(collectionDir(dir))}}
+		wanted = []settings.OpenCollection{{Folder: dir, Environment: a.rememberedEnv(collections.AbsDir(dir))}}
 	default:
 		wanted = a.settings.RememberedCollections()
 		a.setIsRemembered = true
@@ -43,7 +43,7 @@ func (a *App) openWorkspace(dir string) {
 			sample = a.includeStart(item.Environment)
 			continue
 		}
-		if _, err := a.loadCollection(collectionDir(item.Folder), item.Environment); err != nil {
+		if _, err := a.loadCollection(collections.AbsDir(item.Folder), item.Environment); err != nil {
 			failed = append(failed, err)
 			a.toastNewer(item.Folder, err)
 			if dir == "" {
@@ -82,7 +82,7 @@ func (a *App) toastNewer(folder string, err error) {
 // (nil for the config's). Only one is opened, however often a settings
 // file names it.
 func (a *App) includeStart(env string) (sample *model.Collection) {
-	if _, open := a.openAt(""); open {
+	if _, open := a.open.At(""); open {
 		return nil
 	}
 	col, isSample := a.startCollection()
@@ -244,7 +244,7 @@ func (a *App) openWorkspaceAt(dir string) {
 	if dir == "" {
 		return
 	}
-	dir = collectionDir(dir)
+	dir = collections.AbsDir(dir)
 	if err := a.FlushWorkspace(); err != nil {
 		a.toast("Saving the current collection failed: "+err.Error(), true)
 		return

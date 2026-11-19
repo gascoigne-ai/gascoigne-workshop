@@ -168,3 +168,29 @@ func ApplyPathParams(raw string, params []KV) string {
 	}
 	return raw[:start] + strings.Join(segs, "/") + raw[end:]
 }
+
+// VarSegment is a run of text that is either literal or a {{name}} variable
+// reference, written with its braces.
+type VarSegment struct {
+	Text  string
+	IsVar bool
+}
+
+// SplitVars cuts text into literal runs and {{name}} variable runs. An
+// unclosed {{ stays in a literal run.
+func SplitVars(text string) []VarSegment {
+	var segments []VarSegment
+	for text != "" {
+		start := strings.Index(text, "{{")
+		end := strings.Index(text, "}}")
+		if start < 0 || end < start {
+			return append(segments, VarSegment{Text: text})
+		}
+		if start > 0 {
+			segments = append(segments, VarSegment{Text: text[:start]})
+		}
+		segments = append(segments, VarSegment{Text: text[start : end+2], IsVar: true})
+		text = text[end+2:]
+	}
+	return segments
+}

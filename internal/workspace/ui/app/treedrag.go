@@ -1,13 +1,11 @@
 package app
 
 import (
-	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/transfer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/ui/destpicker"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/hajimehoshi/ebiten/v2"
-	"strings"
 )
 
 // ---- drag and drop ---------------------------------------------------------
@@ -73,24 +71,6 @@ func (a *App) pickerKeys(in core.Input) {
 
 func (a *App) closePicker() { a.picker = nil }
 
-// maxNamedVars is how many missing variables a toast names before it counts
-// the rest.
-const maxNamedVars = 5
-
-// missingVarsText says which variables a moved or copied node uses that
-// collection does not define, naming at most maxNamedVars of them.
-func missingVarsText(missing []string, name string) string {
-	shown := missing
-	if len(shown) > maxNamedVars {
-		shown = shown[:maxNamedVars]
-	}
-	text := "Not defined in " + name + ": " + strings.Join(shown, ", ")
-	if rest := len(missing) - len(shown); rest > 0 {
-		text += fmt.Sprintf(" and %d more", rest)
-	}
-	return text
-}
-
 // transferNode moves or copies a node to the place t names, in this or
 // another open collection, and tells what happened: a refusal, a rename and
 // the variables the node uses that its new collection lacks. A move between
@@ -120,7 +100,7 @@ func (a *App) transferNode(t transfer.Transfer) {
 		a.toast("Renamed to "+out.Name+", the name was taken", false)
 	}
 	if len(out.Missing) > 0 {
-		a.toast(missingVarsText(out.Missing, t.To.Name), false)
+		a.toast(transfer.MissingText(out.Missing, t.To.Name), false)
 	}
 	if t.Mode == transfer.Move && t.From != t.To {
 		a.flushMoved(t.From, t.To)

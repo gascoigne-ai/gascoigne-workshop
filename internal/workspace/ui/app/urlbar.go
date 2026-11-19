@@ -134,38 +134,15 @@ func (a *App) hint(text, shortcutID string) string {
 func (a *App) varSegments(raw string) []Span {
 	var segs []Span
 	vars := a.varsFor(a.cur().Req)
-	for _, seg := range splitVars(raw) {
+	for _, seg := range model.SplitVars(raw) {
 		style := w.Text
-		if seg.isVar {
+		if seg.IsVar {
 			style = w.OK
-			if !model.Defined(strings.TrimSuffix(strings.TrimPrefix(seg.text, "{{"), "}}"), vars) {
+			if !model.Defined(strings.TrimSuffix(strings.TrimPrefix(seg.Text, "{{"), "}}"), vars) {
 				style = w.Error
 			}
 		}
-		segs = append(segs, Span{Text: seg.text, Style: style})
-	}
-	return segs
-}
-
-type urlSeg struct {
-	text  string
-	isVar bool
-}
-
-// splitVars cuts s into literal runs and {{name}} variable runs.
-func splitVars(raw string) []urlSeg {
-	var segs []urlSeg
-	for raw != "" {
-		start := strings.Index(raw, "{{")
-		end := strings.Index(raw, "}}")
-		if start < 0 || end < start {
-			return append(segs, urlSeg{text: raw})
-		}
-		if start > 0 {
-			segs = append(segs, urlSeg{text: raw[:start]})
-		}
-		segs = append(segs, urlSeg{text: raw[start : end+2], isVar: true})
-		raw = raw[end+2:]
+		segs = append(segs, Span{Text: seg.Text, Style: style})
 	}
 	return segs
 }

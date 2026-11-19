@@ -113,29 +113,6 @@ func TestDropInTheSameCollectionRenamesOnAClashWithAnInfoToast(t *testing.T) {
 	}
 }
 
-func TestMissingVariablesToastNamesAtMostFive(t *testing.T) {
-	tests := []struct {
-		name    string
-		missing []string
-		want    string
-	}{
-		{"one", []string{"a"}, "a"},
-		{"five", []string{"a", "b", "c", "d", "e"}, "a, b, c, d, e"},
-		{"seven", []string{"a", "b", "c", "d", "e", "f", "g"}, "a, b, c, d, e and 2 more"},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			got := missingVarsText(test.missing, "Beta")
-			if !strings.Contains(got, test.want) || !strings.Contains(got, "Beta") || strings.Contains(got, "{{") {
-				t.Fatalf("text %q, want it to hold %q", got, test.want)
-			}
-			if test.name != "seven" && strings.Contains(got, "more") {
-				t.Fatalf("text %q must not be capped", got)
-			}
-		})
-	}
-}
-
 func TestMovingAFolderAwayFromItsVariablesToastsWhatIsMissing(t *testing.T) {
 	a, _, _ := twoCollectionsApp(t)
 	alpha, beta := entryNamed(t, a, "Alpha").Collection, entryNamed(t, a, "Beta").Collection

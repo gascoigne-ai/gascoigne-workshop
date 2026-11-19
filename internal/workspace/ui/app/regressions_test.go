@@ -162,8 +162,8 @@ func TestTimeoutIsCappedInsteadOfOverflowing(t *testing.T) {
 	a := testApp(t)
 	for _, sec := range []int{1 << 40, math.MaxInt} {
 		got := a.timeoutFor(model.Request{TimeoutSec: sec})
-		if got <= 0 || got > maxTimeout {
-			t.Errorf("timeoutFor(%d s) = %v, want 1..%v", sec, got, maxTimeout)
+		if got <= 0 || got > settings.MaxTimeout {
+			t.Errorf("timeoutFor(%d s) = %v, want 1..%v", sec, got, settings.MaxTimeout)
 		}
 	}
 }

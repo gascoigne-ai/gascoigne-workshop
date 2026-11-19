@@ -1,32 +1,17 @@
 package app
 
 import (
-	"bytes"
-	"encoding/json"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/jsonview"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/textfmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
-	"strings"
 	// The view DSL is dot-imported so views read like markup: Row(...), Text(...).
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
-
-// jsonStatus describes whether text is valid JSON, for the body pane.
-// An empty body has nothing to report.
-func jsonStatus(text string) (msg string, valid bool) {
-	if strings.TrimSpace(text) == "" {
-		return "", false
-	}
-	var v any
-	if err := json.Unmarshal([]byte(text), &v); err != nil {
-		return "Invalid JSON: " + err.Error(), false
-	}
-	return "Valid JSON", true
-}
 
 // bodyChoice is one choice of the body type row.
 type bodyChoice struct {
@@ -71,7 +56,7 @@ func (a *App) bodyPane(panel pane, tab *reqTab, scroll *ScrollState) Node {
 	kind := tab.Req.BodyType
 	isJSON := kind == model.BodyJSON
 	canWrap := isJSON || kind == model.BodyText // the editors that are a text area
-	status, valid := jsonStatus(tab.body.Text)
+	status, valid := textfmt.JSONStatus(tab.body.Text)
 	statusColor := w.Error
 	if valid {
 		statusColor = w.OK
@@ -138,13 +123,13 @@ func (a *App) setBodyType(tab *reqTab, id model.BodyType) {
 
 // formatBody re-indents a JSON body. Invalid JSON is left alone.
 func (a *App) formatBody(tab *reqTab) {
-	var out bytes.Buffer
-	if err := json.Indent(&out, []byte(tab.body.Text), "", "  "); err != nil {
+	out, err := textfmt.IndentJSON(tab.body.Text)
+	if err != nil {
 		a.status = "Cannot format body: " + err.Error()
 		return
 	}
 	tab.body.SelectAll()
-	tab.body.Insert(out.String()) // as an edit, so it can be undone
+	tab.body.Insert(out) // as an edit, so it can be undone
 	editRequest(tab, editor.BodyTyped{Text: tab.body.Text})
 }
 

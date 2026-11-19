@@ -235,3 +235,21 @@ func TestExpandNeverExpandsInsideACapturedValue(t *testing.T) {
 		t.Error("UpsertVar (the capture path) must mark the row Literal")
 	}
 }
+
+func TestSplitVars(t *testing.T) {
+	tests := []struct {
+		in   string
+		want []VarSegment
+	}{
+		{"", nil},
+		{"http://x", []VarSegment{{Text: "http://x"}}},
+		{"{{baseUrl}}/a", []VarSegment{{Text: "{{baseUrl}}", IsVar: true}, {Text: "/a"}}},
+		{"a{{x}}b{{y}}", []VarSegment{{Text: "a"}, {Text: "{{x}}", IsVar: true}, {Text: "b"}, {Text: "{{y}}", IsVar: true}}},
+		{"half {{open", []VarSegment{{Text: "half {{open"}}},
+	}
+	for _, tt := range tests {
+		if got := SplitVars(tt.in); !reflect.DeepEqual(got, tt.want) {
+			t.Errorf("SplitVars(%q) = %+v, want %+v", tt.in, got, tt.want)
+		}
+	}
+}

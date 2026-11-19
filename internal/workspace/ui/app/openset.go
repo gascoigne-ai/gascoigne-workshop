@@ -1,7 +1,6 @@
 package app
 
 import (
-	"path/filepath"
 	"slices"
 	"strings"
 
@@ -95,21 +94,12 @@ func (a *App) saveOf(col *model.Collection) *autosave.Debounce {
 // markSaved records that col is on disk as it is now.
 func (a *App) markSaved(col *model.Collection) { a.saveOf(col).Saved(a.collectionKeyNow(col)) }
 
-// collectionDir is the folder a collection is identified by: absolute, so
-// one folder typed two ways is still one open collection.
-func collectionDir(dir string) string {
-	if abs, err := filepath.Abs(dir); err == nil {
-		return abs
-	}
-	return dir
-}
-
 // addCollection opens the collection saved in dir after the open ones. A
 // folder already open changes nothing and is focused; one that cannot be
 // read is not opened. The new one gets the environment remembered for its
 // folder.
 func (a *App) addCollection(dir string) error {
-	dir = collectionDir(dir)
+	dir = collections.AbsDir(dir)
 	if entry, ok := a.open.ByDir(dir); ok {
 		// its edits stay pending, and the remembered list stays as it is,
 		// since the set did not change
@@ -185,7 +175,7 @@ func (a *App) openCollectionAt(dir string) {
 		a.toast("Cannot open "+dir+": "+err.Error(), true)
 		return
 	}
-	a.status = "Opened " + collectionDir(dir)
+	a.status = "Opened " + collections.AbsDir(dir)
 }
 
 // requestCloseCollection closes col, first asking when closing would lose
@@ -215,19 +205,11 @@ func (a *App) closeFocusedCollection() {
 // moveCollection moves col one place up the tree (by -1) or down (by 1);
 // at an end it stays.
 func (a *App) moveCollection(col *model.Collection, by int) {
-	at := a.openIndex(col)
-	to := at + by
-	if at < 0 || to < 0 || to >= len(a.open.Entries) {
+	moved := collections.Update(a.open, collections.Shift{Collection: col, By: by})
+	if slices.Equal(moved.Entries, a.open.Entries) {
 		return
 	}
-	var before *model.Collection // nil puts it last
-	switch {
-	case by < 0:
-		before = a.open.Entries[to].Collection
-	case to+1 < len(a.open.Entries):
-		before = a.open.Entries[to+1].Collection
-	}
-	a.open = collections.Update(a.open, collections.Move{Collection: col, Before: before})
+	a.open = moved
 	a.rememberCollections()
 }
 
@@ -276,19 +258,7 @@ func (a *App) forget(col *model.Collection) {
 // rememberCollections writes the open set to the settings, which then no
 // longer carry the older single workspace and environment.
 func (a *App) rememberCollections() {
-	remembered := make([]settings.OpenCollection, 0, len(a.open.Entries))
-	for _, entry := range a.open.Entries {
-		item := settings.OpenCollection{Folder: entry.Dir}
-		if env := entry.Environment(); env != nil {
-			item.Environment = env.Name
-		}
-		remembered = append(remembered, item)
-	}
-	for _, item := range a.unreadable { // not open now, but not forgotten either
-		if _, open := a.openAt(item.Folder); !open {
-			remembered = append(remembered, item)
-		}
-	}
+	remembered := collections.Remembered(a.open, a.unreadable)
 	a.saveSettings(func(prefs *settings.Settings) { prefs.RememberCollections(remembered) })
 	a.setIsRemembered = true
 }
@@ -303,44 +273,16 @@ func (a *App) rememberEnvironments() {
 		a.rememberCollections()
 		return
 	}
-	remembered := slices.Clone(a.settings.RememberedCollections())
-	changed := false
-	for i, item := range remembered {
-		entry, ok := a.openAt(item.Folder)
-		if !ok {
-			continue
-		}
-		name := ""
-		if env := entry.Environment(); env != nil {
-			name = env.Name
-		}
-		if item.Environment != name {
-			remembered[i].Environment, changed = name, true
-		}
-	}
+	remembered, changed := collections.WithEnvironments(a.open, a.settings.RememberedCollections())
 	if changed {
 		a.saveSettings(func(prefs *settings.Settings) { prefs.RememberCollections(remembered) })
 	}
 }
 
-// openAt is the open collection a remembered folder names: the one saved
-// there, or for "" the one not saved.
-func (a *App) openAt(folder string) (collections.Entry, bool) {
-	if folder != "" {
-		return a.open.ByDir(collectionDir(folder))
-	}
-	for _, entry := range a.open.Entries {
-		if entry.Dir == "" {
-			return entry, true
-		}
-	}
-	return collections.Entry{}, false
-}
-
 // rememberedEnv is the environment remembered for the collection in dir.
 func (a *App) rememberedEnv(dir string) string {
 	for _, item := range a.settings.RememberedCollections() {
-		if item.Folder == dir || (item.Folder != "" && collectionDir(item.Folder) == dir) {
+		if item.Folder == dir || (item.Folder != "" && collections.AbsDir(item.Folder) == dir) {
 			return item.Environment
 		}
 	}

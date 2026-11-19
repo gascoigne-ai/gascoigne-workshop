@@ -61,6 +61,13 @@ type Close struct{ Collection *model.Collection }
 // Move puts Collection before Before, at the end when Before is nil.
 type Move struct{ Collection, Before *model.Collection }
 
+// Shift moves Collection By places up the set (negative) or down
+// (positive); at an end it stays.
+type Shift struct {
+	Collection *model.Collection
+	By         int
+}
+
 // Located records that Collection is now saved in Dir, after its first
 // save or a rename. A folder another open collection holds is refused.
 type Located struct {
@@ -78,6 +85,7 @@ type ChooseEnv struct {
 func (Open) setMsg()      {}
 func (Close) setMsg()     {}
 func (Move) setMsg()      {}
+func (Shift) setMsg()     {}
 func (Located) setMsg()   {}
 func (ChooseEnv) setMsg() {}
 
@@ -95,6 +103,8 @@ func Update(set Set, msg Msg) Set {
 		}
 	case Move:
 		return move(set, msg.Collection, msg.Before)
+	case Shift:
+		return shift(set, msg.Collection, msg.By)
 	case Located:
 		dir := cleanDir(msg.Dir)
 		if at := set.index(msg.Collection); at >= 0 && !set.Taken(dir, msg.Collection) {
@@ -129,6 +139,22 @@ func move(set Set, col, before *model.Collection) Set {
 	}
 	set.Entries = slices.Insert(set.Entries, to, entry)
 	return set
+}
+
+func shift(set Set, col *model.Collection, by int) Set {
+	from := set.index(col)
+	to := from + by
+	if from < 0 || to < 0 || to >= len(set.Entries) {
+		return set
+	}
+	var before *model.Collection // nil puts it last
+	switch {
+	case by < 0:
+		before = set.Entries[to].Collection
+	case to+1 < len(set.Entries):
+		before = set.Entries[to+1].Collection
+	}
+	return move(set, col, before)
 }
 
 func envIndex(col *model.Collection, index int) int {

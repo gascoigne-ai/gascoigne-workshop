@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
@@ -329,23 +328,21 @@ func composerHint(tab *reqTab, connected bool) string {
 	return "Message"
 }
 
-// binaryPrefix starts a composer line that is sent as a binary message:
-// "hex: de ad be ef".
-const binaryPrefix = "hex:"
-
 // composed is the send of the composer's text, ready to run; a text that
 // cannot be sent (bad hex) is refused here, before anything is sent.
 func composed(session reqport.Session, text string) (queuedSend, error) {
-	rest, ok := strings.CutPrefix(text, binaryPrefix)
-	bs, canBinary := session.(reqport.BinarySender)
-	if !ok || !canBinary {
+	binarySender, canBinary := session.(reqport.BinarySender)
+	if !canBinary {
 		return func(ctx context.Context) error { return session.Send(ctx, text) }, nil
 	}
-	data, err := hex.DecodeString(strings.Join(strings.Fields(rest), ""))
+	data, binary, err := model.BinaryMessage(text)
 	if err != nil {
-		return nil, fmt.Errorf("hex: %v", err)
+		return nil, err
 	}
-	return func(ctx context.Context) error { return bs.SendBinary(ctx, data) }, nil
+	if !binary {
+		return func(ctx context.Context) error { return session.Send(ctx, text) }, nil
+	}
+	return func(ctx context.Context) error { return binarySender.SendBinary(ctx, data) }, nil
 }
 
 // toolMenu lists the tools the server announced; picking one puts a

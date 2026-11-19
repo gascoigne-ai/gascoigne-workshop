@@ -440,3 +440,15 @@ func abbreviateValue(text string) string {
 	}
 	return text
 }
+
+// Count is how many assertions text holds: the lines that are neither empty
+// nor comments.
+func Count(text string) int {
+	count := 0
+	for _, line := range strings.Split(text, "\n") {
+		if line = strings.TrimSpace(line); line != "" && !strings.HasPrefix(line, "#") {
+			count++
+		}
+	}
+	return count
+}

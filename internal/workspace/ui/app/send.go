@@ -66,14 +66,7 @@ func (a *App) cancelSend(tab *reqTab) {
 // timeoutFor is how long a request may run: its own setting, else the
 // default from the settings, else a minute.
 func (a *App) timeoutFor(req model.Request) time.Duration {
-	sec := req.TimeoutSec
-	if sec <= 0 {
-		sec = a.settings.TimeoutSec
-	}
-	if sec <= 0 {
-		sec = defaultTimeoutSec
-	}
-	return time.Duration(min(sec, int(maxTimeout/time.Second))) * time.Second // before the multiply, which overflows
+	return a.settings.TimeoutFor(req.TimeoutSec)
 }
 
 // drain applies what other goroutines reported and reports whether there was

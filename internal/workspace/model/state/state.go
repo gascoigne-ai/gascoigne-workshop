@@ -3,6 +3,8 @@
 // adapter's job.
 package state
 
+import "slices"
+
 // Smallest window the app restores.
 const (
 	MinWindowW = 640
@@ -40,6 +42,22 @@ type Tab struct {
 	Pane       int    `json:"pane,omitempty"`      // selected request pane tab
 	PaneLabel  string `json:"paneLabel,omitempty"` // its label, which survives a pane added before it; Pane is for older files
 	Resp       int    `json:"resp,omitempty"`      // selected response pane tab
+}
+
+// PaneIn is the index among labels of the request pane the tab was on:
+// found by its label, since an index moves when a pane is added before it,
+// else by the index an older file holds, else fallback.
+func (tab Tab) PaneIn(labels []string, fallback int) int {
+	if tab.PaneLabel != "" {
+		if at := slices.Index(labels, tab.PaneLabel); at >= 0 {
+			return at
+		}
+		return fallback
+	}
+	if tab.Pane >= 0 && tab.Pane < len(labels) {
+		return tab.Pane
+	}
+	return fallback
 }
 
 // State is everything remembered.
