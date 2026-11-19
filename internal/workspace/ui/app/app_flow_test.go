@@ -270,8 +270,17 @@ func TestDeletingAParamRewritesTheURL(t *testing.T) {
 	}
 }
 
+// The server holds its answer until the test has seen the request
+// running. Without the hold, a fast answer could be applied by the
+// second step of the click, so "Sending" was already false and the
+// test failed when the machine was busy.
 func TestSendShowsTheResponse(t *testing.T) {
-	srv := jsonServer(t)
+	release := make(chan struct{})
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		<-release
+		io.WriteString(writer, `{"ok":true}`)
+	}))
+	defer srv.Close()
 	a, _ := newTestApp(t)
 	tab := a.cur()
 	pointTabAt(tab, srv.URL)
@@ -280,6 +289,7 @@ func TestSendShowsTheResponse(t *testing.T) {
 	if !tab.Sending {
 		t.Fatal("a click on Send must start a request")
 	}
+	close(release)
 	waitForResponse(t, a, tab)
 
 	if tab.Sending || tab.Resp.Status != 200 || tab.Resp.Err != "" {
