@@ -210,7 +210,7 @@ func TestMCPToolsFillTheComposerFromTheirSchemas(t *testing.T) {
 	tab := a.cur()
 	tab.Req.Protocol = "mcp"
 	list := `{"jsonrpc":"2.0","id":2,"result":{"tools":[{"name":"search","inputSchema":{"type":"object","properties":{"q":{"type":"string"},"limit":{"type":"integer","default":5}},"required":["q"]}},{"name":"ping"}]}}`
-	a.applyWS(wsEvent{tab: tab, ev: reqport.Event{Dir: reqport.Received, Kind: "response", Text: list}, hasEv: true})
+	a.applyWS(wsEvent{tab: tab, ev: reqport.Event{Dir: reqport.Received, Kind: reqport.KindResponse, Text: list}, hasEv: true})
 	if len(tab.Tools) != 2 {
 		t.Fatalf("tools %+v", tab.Tools)
 	}
@@ -244,8 +244,8 @@ func TestMCPResourcesAndPromptsFillTheComposer(t *testing.T) {
 	a := testApp(t)
 	tab := a.cur()
 	tab.Req.Protocol = "mcp"
-	a.applyWS(wsEvent{tab: tab, hasEv: true, ev: reqport.Event{Dir: reqport.Received, Kind: "response", Text: `{"result":{"resources":[{"uri":"file:///a.txt","name":"A"}]}}`}})
-	a.applyWS(wsEvent{tab: tab, hasEv: true, ev: reqport.Event{Dir: reqport.Received, Kind: "response", Text: `{"result":{"prompts":[{"name":"review","arguments":[{"name":"code","required":true}]}]}}`}})
+	a.applyWS(wsEvent{tab: tab, hasEv: true, ev: reqport.Event{Dir: reqport.Received, Kind: reqport.KindResponse, Text: `{"result":{"resources":[{"uri":"file:///a.txt","name":"A"}]}}`}})
+	a.applyWS(wsEvent{tab: tab, hasEv: true, ev: reqport.Event{Dir: reqport.Received, Kind: reqport.KindResponse, Text: `{"result":{"prompts":[{"name":"review","arguments":[{"name":"code","required":true}]}]}}`}})
 	a.resourceMenu(tab)[0].Run()
 	if tab.msg.Text != "read file:///a.txt" {
 		t.Fatalf("composer %q", tab.msg.Text)
@@ -405,7 +405,7 @@ func TestSendingAndPingingDoNotBlockTheFrameAndKeepTheirOrder(t *testing.T) {
 func TestLogSkipsTheServerInfoEvent(t *testing.T) {
 	a := testApp(t)
 	tab := a.cur()
-	a.logEvent(tab, reqport.Event{Dir: reqport.Info, Kind: "initialize", Text: `{"protocolVersion":"2025-06-18"}`})
+	a.logEvent(tab, reqport.Event{Dir: reqport.Info, Kind: reqport.KindInitialize, Text: `{"protocolVersion":"2025-06-18"}`})
 	if len(tab.wsView.Lines) != 0 {
 		t.Fatalf("log has %d lines", len(tab.wsView.Lines))
 	}
@@ -455,7 +455,7 @@ func TestLogLineDirectionMarksAreIcons(t *testing.T) {
 	for _, tc := range cases {
 		a := testApp(t)
 		tab := a.cur()
-		a.logEvent(tab, reqport.Event{Dir: tc.dir, Kind: "text", Text: "x"})
+		a.logEvent(tab, reqport.Event{Dir: tc.dir, Kind: reqport.KindText, Text: "x"})
 		lines := tab.wsView.Lines
 		mark := lines[len(lines)-1].Spans[1]
 		if mark.Icon != tc.icon || mark.Text != tc.text {

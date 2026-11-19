@@ -53,15 +53,56 @@ const (
 	Received                  // a message from the peer
 )
 
+// EventKind says what a session reports an Event to be. It is what this
+// side decided, never text a peer chose: the name a server gives an event
+// is Event.Name.
+type EventKind string
+
+// Event kinds.
+const (
+	KindOpen         EventKind = "open"         // the connection is up
+	KindClose        EventKind = "close"        // the connection ended
+	KindEnd          EventKind = "end"          // this side of a stream is closed
+	KindInitialize   EventKind = "initialize"   // an MCP server's description of itself (Info)
+	KindInfo         EventKind = "info"         // a note of the UI itself
+	KindError        EventKind = "error"        // a problem (Info) or a JSON-RPC error response (Received)
+	KindText         EventKind = "text"         // a WebSocket text frame
+	KindBinary       EventKind = "binary"       // a WebSocket binary frame
+	KindPing         EventKind = "ping"         // a WebSocket ping
+	KindPong         EventKind = "pong"         // a WebSocket pong
+	KindMessage      EventKind = "message"      // a gRPC message or a server-sent event
+	KindRequest      EventKind = "request"      // a JSON-RPC request
+	KindResponse     EventKind = "response"     // a JSON-RPC result
+	KindNotification EventKind = "notification" // a JSON-RPC notification
+	KindInvalid      EventKind = "invalid"      // a message that is not JSON-RPC
+)
+
+// String is the kind as shown.
+func (kind EventKind) String() string { return string(kind) }
+
+// CarriesPayload reports whether an empty Text of this kind is an empty
+// message and not a control event that has nothing to say.
+func (kind EventKind) CarriesPayload() bool { return kind == KindText || kind == KindBinary }
+
 // Event is one line of a streaming protocol's log.
 type Event struct {
 	Time time.Time
 	Dir  Direction
-	Kind string // "text", "binary", "ping", "pong", "close", "open"
-	Text string // the message, or the description for Info events
-	Size int    // bytes of the message
-	Code int    // close status code, for "close"
-	ID   string // the id of a server-sent event, for resuming after a reconnect
+	Kind EventKind // what the session says this is; code compares it
+	Name string    // what the peer called it (a server-sent event's name); empty otherwise, never compared
+	Text string    // the message, or the description for Info events
+	Size int       // bytes of the message
+	Code int       // close status code, for KindClose
+	ID   string    // the id of a server-sent event, for resuming after a reconnect
+}
+
+// Label names the event for a line that has no text: the peer's name for
+// a message that has one, the kind otherwise.
+func (event Event) Label() string {
+	if event.Kind == KindMessage && event.Name != "" {
+		return event.Name
+	}
+	return event.Kind.String()
 }
 
 // Session is a live, two-way connection. Events carries everything that

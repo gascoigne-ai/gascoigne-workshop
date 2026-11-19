@@ -71,7 +71,7 @@ func TestWebSocketSessionLogsMessagesInBothDirections(t *testing.T) {
 	if e := next(t, s); e.Dir != port.Sent || e.Text != "hi there" || e.Size != 8 || e.Time.IsZero() {
 		t.Fatalf("sent %+v", e)
 	}
-	if e := next(t, s); e.Dir != port.Received || e.Text != "hi there" || e.Kind != "text" {
+	if e := next(t, s); e.Dir != port.Received || e.Text != "hi there" || e.Kind != port.KindText {
 		t.Fatalf("received %+v", e)
 	}
 }
@@ -85,10 +85,10 @@ func TestWebSocketSessionLogsASendBeforeItsEcho(t *testing.T) {
 	cases := []struct {
 		name string
 		send func(session *wsSession) error
-		kind string
+		kind port.EventKind
 	}{
-		{"text", func(session *wsSession) error { return session.Send(context.Background(), "hi there") }, "text"},
-		{"binary", func(session *wsSession) error { return session.SendBinary(context.Background(), []byte{0xde, 0xad}) }, "binary"},
+		{"text", func(session *wsSession) error { return session.Send(context.Background(), "hi there") }, port.KindText},
+		{"binary", func(session *wsSession) error { return session.SendBinary(context.Background(), []byte{0xde, 0xad}) }, port.KindBinary},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

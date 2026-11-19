@@ -20,7 +20,7 @@ func announce(app *App, tab *reqTab) {
 		`{"result":{"resources":[{"uri":"file:///a.txt","name":"A"}]}}`,
 		`{"result":{"prompts":[{"name":"review","arguments":[{"name":"code","required":true}]}]}}`,
 	} {
-		app.applyWS(wsEvent{tab: tab, hasEv: true, ev: reqport.Event{Dir: reqport.Received, Kind: "response", Text: list}})
+		app.applyWS(wsEvent{tab: tab, hasEv: true, ev: reqport.Event{Dir: reqport.Received, Kind: reqport.KindResponse, Text: list}})
 	}
 }
 
@@ -116,7 +116,7 @@ func TestExplorerAndTrafficPanesDrawWithoutPanicking(t *testing.T) {
 	tab := a.cur()
 	tab.Req.Protocol = "mcp"
 	a.step(core.Input{}) // no server yet
-	a.applyWS(wsEvent{tab: tab, hasEv: true, ev: reqport.Event{Dir: reqport.Info, Kind: "initialize", Text: `{"protocolVersion":"2025-06-18","capabilities":{"tools":{}},"serverInfo":{"name":"mock","version":"1"},"instructions":"Use echo."}`}})
+	a.applyWS(wsEvent{tab: tab, hasEv: true, ev: reqport.Event{Dir: reqport.Info, Kind: reqport.KindInitialize, Text: `{"protocolVersion":"2025-06-18","capabilities":{"tools":{}},"serverInfo":{"name":"mock","version":"1"},"instructions":"Use echo."}`}})
 	announce(a, tab)
 	tab.Session = &fakeSession{result: `{"content":[]}`}
 	for _, kind := range []mcpexplorer.Kind{mcpexplorer.Tools, mcpexplorer.Resources, mcpexplorer.Prompts} {

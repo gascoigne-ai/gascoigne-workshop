@@ -54,7 +54,7 @@ func (m MCP) Connect(ctx context.Context, req model.Request) (port.Session, erro
 		return nil, err
 	}
 	s.tr = tr
-	s.emit(port.Event{Dir: port.Info, Kind: "open", Text: "Connecting to " + req.URL})
+	s.emit(port.Event{Dir: port.Info, Kind: port.KindOpen, Text: "Connecting to " + req.URL})
 	init, err := m.initialize(ctx, s)
 	if err != nil {
 		s.Close(context.WithoutCancel(ctx)) // the goodbye must not die with a timed-out connect
@@ -72,7 +72,7 @@ func (m MCP) Connect(ctx context.Context, req model.Request) (port.Session, erro
 	if name == "" {
 		name = req.URL
 	}
-	s.emit(port.Event{Dir: port.Info, Kind: "open", Text: "Connected to " + name})
+	s.emit(port.Event{Dir: port.Info, Kind: port.KindOpen, Text: "Connected to " + name})
 	s.requestLists(init.Capabilities)
 	return s, nil
 }
@@ -114,7 +114,7 @@ func (m MCP) initialize(ctx context.Context, s *mcpSession) (mcpInitResult, erro
 	if err := json.Unmarshal(result, &init); err != nil { // the session works without the server's description
 		s.note(fmt.Errorf("read the initialize result: %w", err))
 	}
-	s.emit(port.Event{Dir: port.Info, Kind: "initialize", Text: string(result)}) // the UI shows what the server said about itself
+	s.emit(port.Event{Dir: port.Info, Kind: port.KindInitialize, Text: string(result)}) // the UI shows what the server said about itself
 	return init, nil
 }
 
@@ -125,7 +125,7 @@ func (s *mcpSession) requestLists(capabilities map[string]any) {
 	} {
 		if _, ok := capabilities[list.capability]; ok {
 			if _, err := s.request(context.Background(), list.method, nil); err != nil {
-				s.emit(port.Event{Dir: port.Info, Kind: "error", Text: err.Error()})
+				s.emit(port.Event{Dir: port.Info, Kind: port.KindError, Text: err.Error()})
 			}
 		}
 	}

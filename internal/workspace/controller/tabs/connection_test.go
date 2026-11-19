@@ -130,12 +130,27 @@ func TestRetryNeedsAWantedConnectionThatIsDown(t *testing.T) {
 
 func TestReceivedKeepsTheServerInfoUntilTheSessionEnds(t *testing.T) {
 	var conn Connection
-	conn.Received(port.Event{Dir: port.Info, Kind: "initialize", Text: `{"protocolVersion":"2025-06-18","serverInfo":{"name":"mock","version":"1"}}`})
+	conn.Received(port.Event{Dir: port.Info, Kind: port.KindInitialize, Text: `{"protocolVersion":"2025-06-18","serverInfo":{"name":"mock","version":"1"}}`})
 	if conn.Server == nil || conn.Server.Name != "mock" {
 		t.Fatalf("Server = %+v", conn.Server)
 	}
 	conn.Closed()
 	if conn.Server != nil {
 		t.Fatalf("Server after close = %+v", conn.Server)
+	}
+}
+
+// Pins that only the session's own initialize note describes the server:
+// a server-sent event that carries that name and JSON does not.
+func TestReceivedTakesServerInfoOnlyFromTheInitializeNote(t *testing.T) {
+	text := `{"protocolVersion":"2025-06-18","serverInfo":{"name":"mock","version":"1"}}`
+	var conn Connection
+	conn.Received(port.Event{Dir: port.Received, Kind: port.KindMessage, Name: "initialize", Text: text})
+	if conn.Server != nil {
+		t.Fatalf("an event named initialize set Server = %+v", conn.Server)
+	}
+	conn.Received(port.Event{Dir: port.Info, Kind: port.KindInitialize, Text: text})
+	if conn.Server == nil {
+		t.Fatal("the initialize note did not set Server")
 	}
 }

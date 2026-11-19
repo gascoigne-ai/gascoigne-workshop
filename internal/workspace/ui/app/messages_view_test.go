@@ -40,8 +40,8 @@ var messagesPaneStates = []struct {
 		tab.Session = &fakeSession{}
 		tab.Reconnect = true
 		sentAt := time.Date(2026, 11, 14, 10, 30, 0, 0, time.UTC)
-		app.logEvent(tab, reqport.Event{Time: sentAt, Dir: reqport.Sent, Kind: "text", Text: `{"op":"ping"}`})
-		app.logEvent(tab, reqport.Event{Time: sentAt, Dir: reqport.Received, Kind: "text", Text: `{"op":"ping"}`})
+		app.logEvent(tab, reqport.Event{Time: sentAt, Dir: reqport.Sent, Kind: reqport.KindText, Text: `{"op":"ping"}`})
+		app.logEvent(tab, reqport.Event{Time: sentAt, Dir: reqport.Received, Kind: reqport.KindText, Text: `{"op":"ping"}`})
 	}},
 	{"sse", "", func(app *App, tab *reqTab) {
 		tab.Req.Protocol = "sse"

@@ -57,11 +57,11 @@ func TestSSESessionLogsEventsAndEndsWithTheStream(t *testing.T) {
 	if e := next(t, s); e.Dir != port.Info || !strings.Contains(e.Text, "Connected") {
 		t.Fatalf("%+v", e)
 	}
-	if e := next(t, s); e.Dir != port.Received || e.Kind != "n" || e.Text != "[1] 1" {
+	if e := next(t, s); e.Dir != port.Received || e.Kind != port.KindMessage || e.Name != "n" || e.Text != "[1] 1" {
 		t.Fatalf("%+v", e)
 	}
 	next(t, s)
-	if e := next(t, s); e.Kind != "close" || !strings.Contains(e.Text, "ended") {
+	if e := next(t, s); e.Kind != port.KindClose || !strings.Contains(e.Text, "ended") {
 		t.Fatalf("%+v", e)
 	}
 	select {
@@ -86,7 +86,7 @@ func TestSSECloseStopsAHeldStreamWithoutALossNote(t *testing.T) {
 	next(t, s)
 	s.Close(context.Background())
 	for e := range s.Events() {
-		if e.Kind == "close" {
+		if e.Kind == port.KindClose {
 			t.Fatalf("a deliberate close reported: %+v", e)
 		}
 	}

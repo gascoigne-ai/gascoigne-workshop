@@ -62,27 +62,23 @@ func (s SSE) Connect(ctx context.Context, req model.Request) (port.Session, erro
 		return nil, fmt.Errorf("%s", resp.Status)
 	}
 	se := &sseSession{eventLog: newEventLog(), cancel: cancel}
-	se.emit(port.Event{Dir: port.Info, Kind: "open", Text: "Connected to " + req.URL})
+	se.emit(port.Event{Dir: port.Info, Kind: port.KindOpen, Text: "Connected to " + req.URL})
 	go func() {
 		defer func() {
 			resp.Body.Close()
 			se.finish()
 		}()
 		err := readEventStream(resp.Body, func(ev sseEvent) {
-			kind := ev.name
-			if kind == "" {
-				kind = "message"
-			}
 			text := ev.data
 			if ev.id != "" {
 				text = fmt.Sprintf("[%s] %s", ev.id, ev.data)
 			}
-			se.emit(port.Event{Dir: port.Received, Kind: kind, Text: text, Size: len(ev.data), ID: ev.id})
+			se.emit(port.Event{Dir: port.Received, Kind: port.KindMessage, Name: ev.name, Text: text, Size: len(ev.data), ID: ev.id})
 		})
 		if err != nil && !se.closing() {
-			se.emit(port.Event{Dir: port.Info, Kind: "close", Code: ws.CloseAbnormal, Text: "Connection lost: " + err.Error()})
+			se.emit(port.Event{Dir: port.Info, Kind: port.KindClose, Code: ws.CloseAbnormal, Text: "Connection lost: " + err.Error()})
 		} else if !se.closing() {
-			se.emit(port.Event{Dir: port.Info, Kind: "close", Text: "The server ended the stream"})
+			se.emit(port.Event{Dir: port.Info, Kind: port.KindClose, Text: "The server ended the stream"})
 		}
 	}()
 	return se, nil

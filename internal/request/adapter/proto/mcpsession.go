@@ -26,14 +26,14 @@ type mcpSession struct {
 
 // note logs a problem that leaves the session open.
 func (s *mcpSession) note(err error) {
-	s.emit(port.Event{Dir: port.Info, Kind: "error", Text: err.Error()})
+	s.emit(port.Event{Dir: port.Info, Kind: port.KindError, Text: err.Error()})
 }
 
 // finish ends the event stream, once, with a note unless the user closed it.
 func (s *mcpSession) finish(err error) {
 	s.once.Do(func() {
 		if err != nil && !s.closing() {
-			s.emit(port.Event{Dir: port.Info, Kind: "close", Code: ws.CloseAbnormal, Text: "Connection lost: " + err.Error()})
+			s.emit(port.Event{Dir: port.Info, Kind: port.KindClose, Code: ws.CloseAbnormal, Text: "Connection lost: " + err.Error()})
 		}
 		s.stopWaiting()
 		s.mu.Lock()
@@ -76,27 +76,27 @@ var listChanged = map[string]string{
 func (s *mcpSession) deliver(msg []byte) {
 	var m rpcMessage
 	if err := json.Unmarshal(msg, &m); err != nil {
-		s.emit(port.Event{Dir: port.Received, Kind: "invalid", Text: string(msg), Size: len(msg)})
+		s.emit(port.Event{Dir: port.Received, Kind: port.KindInvalid, Text: string(msg), Size: len(msg)})
 		return
 	}
-	kind := "notification"
+	kind := port.KindNotification
 	switch {
 	case m.Method == "" && m.Error != nil:
-		kind = "error"
+		kind = port.KindError
 	case m.Method == "":
-		kind = "response"
+		kind = port.KindResponse
 	case m.ID != nil:
-		kind = "request"
+		kind = port.KindRequest
 	}
 	s.emit(port.Event{Dir: port.Received, Kind: kind, Text: compactJSON(msg), Size: len(msg)})
-	if kind == "request" {
+	if kind == port.KindRequest {
 		go s.answerServer(m)
 		return
 	}
 	if list, ok := listChanged[m.Method]; ok {
 		go func() { // ask again, so the lists the UI shows stay current
 			if _, err := s.request(context.Background(), list, nil); err != nil {
-				s.emit(port.Event{Dir: port.Info, Kind: "error", Text: err.Error()})
+				s.emit(port.Event{Dir: port.Info, Kind: port.KindError, Text: err.Error()})
 			}
 		}()
 	}
@@ -142,7 +142,7 @@ func (s *mcpSession) build(method string, params any) (int64, []byte, error) {
 
 // write sends a message and logs it. A context that has ended sends
 // nothing: over HTTP it would also end the session.
-func (s *mcpSession) write(ctx context.Context, kind string, data []byte) error {
+func (s *mcpSession) write(ctx context.Context, kind port.EventKind, data []byte) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -162,12 +162,12 @@ func (s *mcpSession) request(ctx context.Context, method string, params any) (in
 	if err != nil {
 		return 0, err
 	}
-	return id, s.write(ctx, "request", b)
+	return id, s.write(ctx, port.KindRequest, b)
 }
 
 func (s *mcpSession) notify(method string) error {
 	b, _ := json.Marshal(map[string]any{"jsonrpc": "2.0", "method": method})
-	return s.write(context.Background(), "notification", b)
+	return s.write(context.Background(), port.KindNotification, b)
 }
 
 // call sends a request and waits for its result.
@@ -185,7 +185,7 @@ func (s *mcpSession) call(ctx context.Context, method string, params any) (json.
 		delete(s.waiters, id)
 		s.mu.Unlock()
 	}
-	if err := s.write(ctx, "request", b); err != nil {
+	if err := s.write(ctx, port.KindRequest, b); err != nil {
 		forget()
 		return nil, err
 	}
@@ -250,7 +250,7 @@ func (s *mcpSession) Send(ctx context.Context, text string) error {
 		if !json.Valid([]byte(text)) {
 			return errors.New("the message is not valid JSON")
 		}
-		return s.write(ctx, "request", []byte(text))
+		return s.write(ctx, port.KindRequest, []byte(text))
 	}
 	method, params, err := parseCommand(text)
 	if err != nil {

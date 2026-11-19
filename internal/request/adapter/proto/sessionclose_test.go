@@ -112,10 +112,10 @@ func TestAFailedReplyToTheServerIsLogged(t *testing.T) {
 	id := json.RawMessage(`7`)
 	s.answerServer(rpcMessage{ID: &id, Method: "ping"})
 	close(s.events)
-	var kinds []string
+	var kinds []port.EventKind
 	for e := range s.events {
 		kinds = append(kinds, e.Kind)
-		if e.Dir == port.Info && e.Kind == "error" && strings.Contains(e.Text, "ping") {
+		if e.Dir == port.Info && e.Kind == port.KindError && strings.Contains(e.Text, "ping") {
 			return
 		}
 	}

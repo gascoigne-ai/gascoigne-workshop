@@ -107,7 +107,7 @@ func TestMCPHTTPSessionInitializesListsAndCalls(t *testing.T) {
 	}
 	waitFor(t, s, "Connected to mock")
 	e := waitFor(t, s, `"tools":[`)
-	if e.Dir != port.Received || e.Kind != "response" {
+	if e.Dir != port.Received || e.Kind != port.KindResponse {
 		t.Fatalf("%+v", e)
 	}
 	waitFor(t, s, `"prompts":[]`)
@@ -124,7 +124,7 @@ func TestMCPHTTPSessionInitializesListsAndCalls(t *testing.T) {
 	}
 
 	s.Send(context.Background(), `call boom`)
-	if got := waitFor(t, s, "no such tool"); got.Kind != "error" {
+	if got := waitFor(t, s, "no such tool"); got.Kind != port.KindError {
 		t.Fatalf("error kind = %q", got.Kind)
 	}
 	if err := s.Ping(context.Background()); err != nil {
@@ -277,7 +277,7 @@ func TestMCPConnectAnnouncesTheServerInfoAsAnEvent(t *testing.T) {
 	}
 	defer s.Close(context.Background())
 	var e port.Event
-	for e.Kind != "initialize" {
+	for e.Kind != port.KindInitialize {
 		e = waitFor(t, s, `"serverInfo"`) // the response is logged too, as traffic
 	}
 	if e.Dir != port.Info {
@@ -381,7 +381,7 @@ func TestAnUnreadableInitializeResultIsLogged(t *testing.T) {
 	}
 	defer s.Close(context.Background())
 	e := waitFor(t, s, "initialize result")
-	if e.Dir != port.Info || e.Kind != "error" {
+	if e.Dir != port.Info || e.Kind != port.KindError {
 		t.Fatalf("%+v", e)
 	}
 }

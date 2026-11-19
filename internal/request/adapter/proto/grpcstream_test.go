@@ -44,7 +44,7 @@ func TestGRPCServerStreamShowsEveryMessageAsAnEvent(t *testing.T) {
 	}
 	defer session.Close(context.Background())
 
-	if opened := nextEvent(t, session); opened.Dir != port.Info || opened.Kind != "open" {
+	if opened := nextEvent(t, session); opened.Dir != port.Info || opened.Kind != port.KindOpen {
 		t.Fatalf("first event = %+v, want the open note", opened)
 	}
 	if first := nextReceived(t, session); !strings.Contains(first.Text, `"SERVING"`) {

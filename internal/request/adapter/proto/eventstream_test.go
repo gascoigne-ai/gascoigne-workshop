@@ -78,7 +78,7 @@ func TestSSESessionReportsAnEventOverTheLimit(t *testing.T) {
 	}
 	defer session.Close(context.Background())
 	next(t, session) // connected
-	if event := next(t, session); event.Kind != "close" || !strings.Contains(event.Text, "Connection lost") {
+	if event := next(t, session); event.Kind != port.KindClose || !strings.Contains(event.Text, "Connection lost") {
 		t.Fatalf("got %s %q, want the stream to end with the reason", event.Kind, event.Text[:min(len(event.Text), 80)])
 	}
 }
@@ -138,7 +138,7 @@ func TestMCPSessionGoesOnWhenItsNotificationStreamBreaks(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer session.Close(context.Background())
-	if event := waitFor(t, session, "read the server's stream"); event.Dir != port.Info || event.Kind == "close" {
+	if event := waitFor(t, session, "read the server's stream"); event.Dir != port.Info || event.Kind == port.KindClose {
 		t.Fatalf("a broken notification stream ended the session: %+v", event)
 	}
 	if err := session.Send(context.Background(), `call echo {"x":1}`); err != nil {

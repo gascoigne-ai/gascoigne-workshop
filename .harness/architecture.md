@@ -1288,9 +1288,20 @@ that change `App`.
   with `Accept: text/event-stream`; `readEventStream` (`eventstream.go`, shared with the MCP HTTP
   transport's streams) parses the event-stream format (event, data lines joined with newlines, id,
   comments and retry ignored) and stops with an error at a read failure or an event over
-  `maxEventBytes` (Limits). Events arrive as `Received` `Event`s (kind = event name, `message` by
-  default), the end of the stream as an info line; the session refuses `Send` and `Ping`. The UI
+  `maxEventBytes` (Limits). Events arrive as `Received` `Event`s (kind `message`, the server's event name in `Event.Name`), the end of the stream as an info line; the session refuses `Send` and `Ping`. The UI
   treats it as a socket tab (`isSocket`) without the composer row.
+-  **Session events** (`internal/request/port/port.go`): every line of a socket log is a
+  `port.Event` whose `Kind` is a `port.EventKind`, one of `KindOpen` (connection up), `KindClose`
+  (ended), `KindEnd` (this side of a stream closed), `KindInitialize` (an MCP server's description
+  of itself, Info), `KindInfo` (a note of the UI), `KindError` (a problem when Info, a JSON-RPC
+  error response when Received), `KindText` and `KindBinary` (WebSocket data frames), `KindPing`
+  and `KindPong`, `KindMessage` (a gRPC message or a server-sent event), `KindRequest`,
+  `KindResponse`, `KindNotification` and `KindInvalid` (JSON-RPC). `Event.Name` is what the peer
+  called the event (the SSE `event:` field), empty otherwise. Consumers compare the constants
+  (`Connection.Received`, `App.logEvent`) and never `Name`; an SSE name never reaches `Kind`, so a
+  server cannot pose as an error or as the initialize note. `Event.Label` (the name of a
+  `KindMessage` that has one, else the kind) is shown only when an event has no text. The name is
+  untrusted text: a label, never expanded as a variable. Events are not persisted or serialized.
 -  **GraphQL** (`internal/request/adapter/proto/graphql.go`,
   `internal/workspace/ui/app/graphql.go`): body type `graphql` encodes `{"query", "variables"}` as
   JSON (`encodeGraphQL`; bad variables and an empty query are errors); choosing it on a GET request

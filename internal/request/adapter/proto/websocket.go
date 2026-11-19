@@ -67,7 +67,7 @@ func (w WebSocket) Connect(ctx context.Context, req model.Request) (port.Session
 	if p := conn.Subprotocol(); p != "" {
 		open += " (" + p + ")"
 	}
-	s.emit(port.Event{Dir: port.Info, Kind: "open", Text: open})
+	s.emit(port.Event{Dir: port.Info, Kind: port.KindOpen, Text: open})
 	go s.readLoop()
 	return s, nil
 }
@@ -134,24 +134,30 @@ func (s *wsSession) readLoop() {
 		m, err := s.conn.Read()
 		if err != nil {
 			if !s.closing() { // closed by us: no loss
-				s.emit(port.Event{Dir: port.Info, Kind: "close", Code: ws.CloseAbnormal, Text: "Connection lost: " + err.Error()})
+				s.emit(port.Event{Dir: port.Info, Kind: port.KindClose, Code: ws.CloseAbnormal, Text: "Connection lost: " + err.Error()})
 			}
 			return
 		}
 		switch m.Type {
 		case ws.Text, ws.Binary:
-			s.emit(port.Event{Dir: port.Received, Kind: m.Type.String(), Text: render(m), Size: len(m.Data)})
+			s.emit(port.Event{Dir: port.Received, Kind: frameKinds[m.Type], Text: render(m), Size: len(m.Data)})
 		case ws.Ping, ws.Pong:
-			s.emit(port.Event{Dir: port.Received, Kind: m.Type.String(), Text: string(m.Data), Size: len(m.Data)})
+			s.emit(port.Event{Dir: port.Received, Kind: frameKinds[m.Type], Text: string(m.Data), Size: len(m.Data)})
 		case ws.Close:
 			text := fmt.Sprintf("Closed by server: %d", m.Code)
 			if len(m.Data) > 0 {
 				text += " " + string(m.Data)
 			}
-			s.emit(port.Event{Dir: port.Info, Kind: "close", Code: m.Code, Text: text})
+			s.emit(port.Event{Dir: port.Info, Kind: port.KindClose, Code: m.Code, Text: text})
 			return
 		}
 	}
+}
+
+// frameKinds names the event kind of each data or control frame that is
+// logged; ws.Type.String has a fallback that must not become a kind.
+var frameKinds = map[ws.Type]port.EventKind{
+	ws.Text: port.KindText, ws.Binary: port.KindBinary, ws.Ping: port.KindPing, ws.Pong: port.KindPong,
 }
 
 // render shows a message as text; binary data as hex, cut at 64 bytes.
@@ -185,7 +191,7 @@ func (s *wsSession) Send(ctx context.Context, text string) error {
 	}
 	// Logged before the write: an echo can arrive as soon as the bytes are
 	// out, and the read loop would log it ahead of the message it answers.
-	s.emit(port.Event{Dir: port.Sent, Kind: "text", Text: text, Size: len(text)})
+	s.emit(port.Event{Dir: port.Sent, Kind: port.KindText, Text: text, Size: len(text)})
 	return s.conn.Write(ws.Text, []byte(text))
 }
 
@@ -194,7 +200,7 @@ func (s *wsSession) SendBinary(ctx context.Context, data []byte) error {
 	if err := s.alive(ctx); err != nil {
 		return err
 	}
-	s.emit(port.Event{Dir: port.Sent, Kind: "binary", Text: hex.EncodeToString(data), Size: len(data)}) // before the write, as in Send
+	s.emit(port.Event{Dir: port.Sent, Kind: port.KindBinary, Text: hex.EncodeToString(data), Size: len(data)}) // before the write, as in Send
 	return s.conn.Write(ws.Binary, data)
 }
 
@@ -205,7 +211,7 @@ func (s *wsSession) Ping(ctx context.Context) error {
 	if err := s.conn.Write(ws.Ping, nil); err != nil {
 		return err
 	}
-	s.emit(port.Event{Dir: port.Sent, Kind: "ping"})
+	s.emit(port.Event{Dir: port.Sent, Kind: port.KindPing})
 	return nil
 }
 

@@ -45,13 +45,13 @@ func announceLong(app *App, tab *reqTab) {
 		tools = append(tools, fmt.Sprintf(`{"name":"tool_%d","description":"Tool number %d"}`, i, i))
 	}
 	list := `{"result":{"tools":[` + strings.Join(tools, ",") + `]}}`
-	app.applyWS(wsEvent{tab: tab, hasEv: true, ev: reqport.Event{Dir: reqport.Received, Kind: "response", Text: list}})
+	app.applyWS(wsEvent{tab: tab, hasEv: true, ev: reqport.Event{Dir: reqport.Received, Kind: reqport.KindResponse, Text: list}})
 }
 
 // initialize delivers the server's answer to initialize, which the header
 // of the explorer shows.
 func initialize(app *App, tab *reqTab, result string) {
-	app.applyWS(wsEvent{tab: tab, hasEv: true, ev: reqport.Event{Dir: reqport.Info, Kind: "initialize", Text: result}})
+	app.applyWS(wsEvent{tab: tab, hasEv: true, ev: reqport.Event{Dir: reqport.Info, Kind: reqport.KindInitialize, Text: result}})
 }
 
 // The laid-out explorer is pinned as text (testdata/explorer-*.dump,

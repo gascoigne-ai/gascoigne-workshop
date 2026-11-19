@@ -237,7 +237,7 @@ func (a *App) scheduleRetry(tab *reqTab) {
 
 // logEvent appends an event to the log, one line per line of its text.
 func (a *App) logEvent(tab *reqTab, event reqport.Event) {
-	if event.Kind == "initialize" {
+	if event.Dir == reqport.Info && event.Kind == reqport.KindInitialize {
 		return
 	}
 	mark, tok := Span{Text: "•", Icon: "dot"}, w.Muted
@@ -248,8 +248,8 @@ func (a *App) logEvent(tab *reqTab, event reqport.Event) {
 		mark, tok = Span{Text: "↓", Icon: "arrow-down"}, w.OK
 	}
 	text := event.Text
-	if text == "" && event.Kind != "text" && event.Kind != "binary" {
-		text = event.Kind // a ping has no payload
+	if text == "" && !event.Kind.CarriesPayload() {
+		text = event.Label() // a ping has no payload
 	}
 	if event.Dir == reqport.Info && strings.HasPrefix(event.Text, "Connection lost") {
 		tok = w.Error
@@ -282,7 +282,7 @@ func textToken(direction reqport.Direction, tok w.Token) w.Token {
 
 // logInfo appends a note of the UI itself to the log.
 func (a *App) logInfo(tab *reqTab, text string, tok w.Token) {
-	a.logEvent(tab, reqport.Event{Time: time.Now(), Dir: reqport.Info, Kind: "info", Text: text})
+	a.logEvent(tab, reqport.Event{Time: time.Now(), Dir: reqport.Info, Kind: reqport.KindInfo, Text: text})
 	if tok == w.Error { // recolor the line just added
 		last := &tab.wsView.Lines[len(tab.wsView.Lines)-1]
 		last.Spans[1].Style = w.Error

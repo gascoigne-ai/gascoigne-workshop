@@ -58,7 +58,7 @@ func TestTheToolbarPingSendsAPing(t *testing.T) {
 func TestTheToolbarClearEmptiesTheLog(t *testing.T) {
 	a, _ := openConnectedEcho(t)
 	tab := a.cur()
-	a.logEvent(tab, reqport.Event{Time: time.Date(2026, 11, 14, 10, 30, 0, 0, time.UTC), Dir: reqport.Received, Kind: "text", Text: "hi"})
+	a.logEvent(tab, reqport.Event{Time: time.Date(2026, 11, 14, 10, 30, 0, 0, time.UTC), Dir: reqport.Received, Kind: reqport.KindText, Text: "hi"})
 	if len(tab.wsView.Lines) == 0 {
 		t.Fatal("the log is empty before Clear")
 	}

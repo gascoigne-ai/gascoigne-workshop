@@ -80,7 +80,7 @@ func (conn *Connection) Disconnect() (session port.Session, abandoned bool) {
 // Received takes what a received event announces: the server's own
 // description, its tools, resources and prompts, and the id to resume an event stream from.
 func (conn *Connection) Received(event port.Event) {
-	if event.Dir == port.Info && event.Kind == "initialize" {
+	if event.Dir == port.Info && event.Kind == port.KindInitialize {
 		if server, ok := model.ParseServerInfo(event.Text); ok {
 			conn.Server = &server
 		}

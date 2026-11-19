@@ -80,7 +80,7 @@ func TestClosingASessionWithAFullQueueEndsItsEventsWithoutALossNote(t *testing.T
 					if !ok {
 						return
 					}
-					if event.Kind == "close" && strings.Contains(event.Text, "lost") {
+					if event.Kind == port.KindClose && strings.Contains(event.Text, "lost") {
 						t.Fatalf("a closed session reported a loss: %+v", event)
 					}
 				case <-deadline:
