@@ -283,3 +283,21 @@ func TestClearIsAnIconButton(t *testing.T) {
 		t.Error("a Clear text label is still there")
 	}
 }
+
+// A row without a key or without an override keeps the room of the Clear
+// and the replay buttons, so the key buttons stay in one column.
+func TestKeyButtonsStayInOneColumnWhateverTheRowShows(t *testing.T) {
+	var page Page
+	host := newHost()
+	host.current.Shortcuts = map[string]string{"send": "Ctrl+K"} // changed: replay shows
+	page.Clear(host, "close-tab")                                // unbound: no cross
+	root := page.View(host)
+	Layout(newCtx(t), root, wideW, wideH)
+	columns := map[int]bool{}
+	for _, button := range append(findAll(root, "control=button"), findAll(root, "control=primary")...) {
+		columns[button.Rect().X] = true
+	}
+	if len(columns) != 1 {
+		t.Fatalf("key buttons start at x %v, want one column", columns)
+	}
+}
