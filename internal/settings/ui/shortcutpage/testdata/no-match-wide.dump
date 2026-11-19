@@ -1,6 +1,6 @@
 flow rect=0,0,600,500
   flow h=28 gap=6 rect=0,0,600,28
-    fieldB grow=1 bg=sunken control=field onRightClickIn=true rect=0,0,600,28
+    fieldB grow=1 bg=sunken control=field onRightClick=true rect=0,0,600,28
   plain h=12 grow=1 rect=0,28,600,12
   flow rect=0,40,600,16
     textB text="No shortcut matches" fg=muted rect=0,40,600,16

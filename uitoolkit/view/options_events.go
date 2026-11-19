@@ -4,14 +4,18 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
-// OnClick runs callback when the element is clicked.
-func OnClick(callback func()) Option { return func(element *El) { element.onClick = callback } }
+// OnClick runs callback when the element is clicked. It sets the same
+// handler as OnClickAt: the later of the two options wins.
+func OnClick(callback func()) Option {
+	return func(element *El) { element.onClick = func(int, int) { callback() } }
+}
 
 // OnClickAt is OnClick with the pointer position, for what opens at the
 // click (a menu under the cursor); the app does not read the pointer itself.
-// In a template on-click-at names a func(x, y int) of the scope.
+// In a template on-click-at names a func(x, y int) of the scope. Like
+// OnClick it sets the element's one click handler: the later option wins.
 func OnClickAt(callback func(posX, posY int)) Option {
-	return func(element *El) { element.onClickAt = callback }
+	return func(element *El) { element.onClick = callback }
 }
 
 // OnMiddleClick runs callback when the element is middle-clicked.
@@ -58,9 +62,10 @@ func When(cond bool, opt Option) Option {
 }
 
 // OnRightClick runs callback with the pointer position when the element is
-// right-clicked.
+// right-clicked. It sets the same handler as OnRightClickIn: the later of
+// the two options wins.
 func OnRightClick(callback func(posX, posY int)) Option {
-	return func(element *El) { element.onRight = callback }
+	return func(element *El) { element.onRight = func(_ *core.Ctx, posX, posY int) { callback(posX, posY) } }
 }
 
 // DismissMargin makes a click within px outside a modal element's rect
@@ -93,9 +98,10 @@ func (e *El) ChangeHandler() func() { return e.onChange }
 
 // OnRightClickIn runs callback when the element is right-clicked, with the context
 // and the pointer position. It is OnRightClick for a handler that needs
-// the context, such as one that opens a popup menu.
+// the context, such as one that opens a popup menu. The later of it and
+// OnRightClick wins.
 func OnRightClickIn(callback func(ctx *core.Ctx, posX, posY int)) Option {
-	return func(element *El) { element.onRightIn = callback }
+	return func(element *El) { element.onRight = callback }
 }
 
 // OnSelect runs with the index of the item the user picked: the tab of a

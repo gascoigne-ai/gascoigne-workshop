@@ -3,10 +3,10 @@ stack rect=0,0,1280,800
     splitB grow=1 rect=0,0,1280,772
       flow rect=0,0,259,772
         flow h=44 padL=12 padR=12 gap=6 bg=bg borderB=border rect=0,0,259,44
-          flow h=28 padL=10 padR=10 bg=sunken control=button tip=Collections and sent requests. Right-click: new, open, rename, save, close, delete a collection shrink=true lighten=true onClick=true onRightClick=true rect=12,8,96,28
+          flow h=28 padL=10 padR=10 minW=96 bg=sunken control=button tip=Collections and sent requests. Right-click: new, open, rename, save, close, delete a collection shrink=true lighten=true onClick=true onRightClick=true rect=12,8,96,28
             textB text="Collections" grow=1 fg=chip-text ellipsis=true center=true rect=22,8,76,28
-          fieldB h=28 grow=1 bg=sunken control=field onRightClickIn=true rect=114,8,133,28
-        scrollB grow=1 bg=sunken rect=0,44,259,728
+          fieldB h=28 grow=1 bg=sunken control=field onRightClick=true rect=114,8,133,28
+        scrollB grow=1 bg=sunken clip=true rect=0,44,259,728
           flow h=28 padL=12 gap=6 control=row hoverBg=hover onClick=true onRightClick=true onDragOver=true rect=0,44,259,28
             flow w=3 h=14 bg=collection.0 rect=12,51,3,14
             iconB w=12 icon=triangle-down rect=21,44,12,28
@@ -17,13 +17,13 @@ stack rect=0,0,1280,800
           flow h=28 padL=28 gap=6 control=row hoverBg=hover onClick=true onRightClick=true onDragOver=true rect=0,100,259,28
             iconB w=12 icon=triangle-down rect=28,100,12,28
             textB text="Repository" grow=1 ellipsis=true rect=46,100,213,28
-          flow h=28 padL=50 padR=12 bg=selected control=row onClick=true onRightClick=true onDragOver=true rect=0,128,259,28
+          flow h=28 padL=50 padR=12 bg=selected control=row alignItems=5 onClick=true onRightClick=true onDragOver=true rect=0,128,259,28
             textB text="GET" w=40 fg=method.GET small=true rect=50,136,40,14
             textB text="Search Repos" grow=1 ellipsis=true rect=90,134,157,16
-          flow h=28 padL=50 padR=12 control=row hoverBg=hover onClick=true onRightClick=true onDragOver=true rect=0,156,259,28
+          flow h=28 padL=50 padR=12 control=row hoverBg=hover alignItems=5 onClick=true onRightClick=true onDragOver=true rect=0,156,259,28
             textB text="GET" w=40 fg=method.GET small=true rect=50,164,40,14
             textB text="Repository Info" grow=1 ellipsis=true rect=90,162,157,16
-          flow h=28 padL=50 padR=12 control=row hoverBg=hover onClick=true onRightClick=true onDragOver=true rect=0,184,259,28
+          flow h=28 padL=50 padR=12 control=row hoverBg=hover alignItems=5 onClick=true onRightClick=true onDragOver=true rect=0,184,259,28
             textB text="GET" w=40 fg=method.GET small=true rect=50,192,40,14
             textB text="Repository Tags" grow=1 ellipsis=true rect=90,190,157,16
           flow h=28 padL=28 gap=6 control=row hoverBg=hover onClick=true onRightClick=true onDragOver=true rect=0,212,259,28
@@ -31,21 +31,21 @@ stack rect=0,0,1280,800
             textB text="Realtime" grow=1 ellipsis=true rect=46,212,213,28
       flow grow=1 rect=260,0,1020,772
         flow h=44 padL=12 padR=12 bg=hero control=hero rect=260,0,1020,44
-          textB text="GitHub REST API" fg=hero-text bold=true ellipsis=true shrink=true rect=272,0,118,44
+          textB text="GitHub REST API" minW=48 fg=hero-text bold=true ellipsis=true shrink=true rect=272,0,118,44
           plain grow=1 rect=390,0,711,44
-          flow h=24 padL=10 padR=10 bg=hero-text control=pill tip=Environment: variables that override the collection's shrink=true onClickAt=true rect=1101,10,111,24
+          flow h=24 padL=10 padR=10 minW=24 maxW=200 bg=hero-text control=pill tip=Environment: variables that override the collection's alignItems=2 shrink=true onClick=true rect=1101,10,111,24
             textB text="No environment" grow=1 fg=hero small=true bold=true ellipsis=true rect=1111,15,91,14
           plain w=12 grow=1 rect=1212,0,12,44
           flow w=44 tip=Settings (Ctrl+,) onClick=true rect=1224,0,44,44
             iconB grow=1 fg=hero-muted hoverColor=hero-text icon=gear rect=1224,0,44,44
         flow h=42 padT=6 bg=frame borderB=border control=tabstrip rect=260,44,1020,42
-          hscrollB grow=1 rect=260,50,980,36
-            flow bg=bg edge=accent-line edgeTop=true edgeLeft=true edgeRight=true onRightClick=true onMiddleClick=true rect=260,50,203,36
-              flow w=3 bg=collection.0 rect=260,50,3,36
-              flow padL=11 gap=8 onClick=true onDragOver=true rect=263,50,176,36
+          hscrollB grow=1 clip=true rect=260,50,980,36
+            flow bg=bg edge=accent-line edgeTop=true edgeLeft=true edgeRight=true onRightClick=true onMiddleClick=true reveal=true rect=260,50,203,36
+              flow w=3 bg=collection.0 alignSelf=4 rect=260,50,3,36
+              flow padL=11 gap=8 alignItems=5 onClick=true onDragOver=true rect=263,50,176,36
                 textB text="GET" w=48 fg=method.GET small=true rect=274,62,48,14
                 textB text="Search Repos" rect=330,60,89,16
-                flow w=12 rect=427,50,12,36
+                flow w=12 alignSelf=4 rect=427,50,12,36
               flow w=24 tip=Close tab (Ctrl+W) onClick=true rect=439,50,24,36
                 iconB grow=1 icon=cross rect=439,50,24,36
           flow w=40 tip=New request (Ctrl+T) onClick=true rect=1240,50,40,36
@@ -59,30 +59,30 @@ stack rect=0,0,1280,800
             flow w=84 tip=Method: click to change onClick=true rect=337,94,84,40
               textB text="GET" grow=1 fg=method.GET center=true rect=337,94,84,40
             plain w=8 grow=1 rect=421,94,8,40
-            fieldB grow=1 control=field onRightClickIn=true onChange=true rect=429,94,751,40
-          flow padL=10 padR=10 bg=accent control=primary tip=Send the request (Ctrl+Enter) lighten=true onClick=true rect=1188,94,80,40
+            fieldB grow=1 control=field onRightClick=true onChange=true rect=429,94,751,40
+          flow padL=10 padR=10 minW=80 bg=accent control=primary tip=Send the request (Ctrl+Enter) lighten=true onClick=true rect=1188,94,80,40
             textB text="Send" grow=1 fg=accent-text ellipsis=true center=true rect=1198,94,60,40
         splitB grow=1 rect=260,142,1020,630
           flow grow=1 bg=bg rect=260,142,1020,314
             flow h=40 padT=6 borderB=border rect=260,142,1020,40
-              hscrollB padL=2 grow=1 onSelect=true rect=260,148,1020,34
-                flow padL=10 padR=10 gap=4 bg=bg edge=accent-line edgeTop=true edgeLeft=true edgeRight=true onClick=true rect=262,148,79,34
+              hscrollB padL=2 grow=1 onSelect=true clip=true rect=260,148,1020,34
+                flow padL=10 padR=10 gap=4 bg=bg edge=accent-line alignItems=5 edgeTop=true edgeLeft=true edgeRight=true onClick=true reveal=true rect=262,148,79,34
                   textB text="Params" fg=text rect=272,157,48,16
                   textB text="3" fg=muted small=true rect=324,159,7,14
-                flow padL=10 padR=10 borderInset=10 gap=4 borderL=border-soft onClick=true rect=341,148,52,34
+                flow padL=10 padR=10 borderInset=10 gap=4 borderL=border-soft alignItems=5 onClick=true rect=341,148,52,34
                   textB text="Body" fg=muted rect=351,157,32,16
-                flow padL=10 padR=10 borderInset=10 gap=4 borderL=border-soft onClick=true rect=393,148,73,34
+                flow padL=10 padR=10 borderInset=10 gap=4 borderL=border-soft alignItems=5 onClick=true rect=393,148,73,34
                   textB text="Headers" fg=muted rect=403,157,53,16
-                flow padL=10 padR=10 borderInset=10 gap=4 borderL=border-soft onClick=true rect=466,148,49,34
+                flow padL=10 padR=10 borderInset=10 gap=4 borderL=border-soft alignItems=5 onClick=true rect=466,148,49,34
                   textB text="Auth" fg=muted rect=476,157,29,16
-                flow padL=10 padR=10 borderInset=10 gap=4 borderL=border-soft onClick=true rect=515,148,60,34
+                flow padL=10 padR=10 borderInset=10 gap=4 borderL=border-soft alignItems=5 onClick=true rect=515,148,60,34
                   textB text="Vars" fg=muted rect=525,157,29,16
                   textB text="1" fg=muted small=true rect=558,159,7,14
-                flow padL=10 padR=10 borderInset=10 gap=4 borderL=border-soft onClick=true rect=575,148,54,34
+                flow padL=10 padR=10 borderInset=10 gap=4 borderL=border-soft alignItems=5 onClick=true rect=575,148,54,34
                   textB text="Tests" fg=muted rect=585,157,34,16
-                flow padL=10 padR=10 borderInset=10 gap=4 borderL=border-soft onClick=true rect=629,148,71,34
+                flow padL=10 padR=10 borderInset=10 gap=4 borderL=border-soft alignItems=5 onClick=true rect=629,148,71,34
                   textB text="Settings" fg=muted rect=639,157,51,16
-            scrollB padL=12 padT=12 padR=12 padB=12 gap=6 grow=1 rect=260,182,1020,274
+            scrollB padL=12 padT=12 padR=12 padB=12 gap=6 grow=1 clip=true rect=260,182,1020,274
               flow h=28 rect=272,194,996,28
                 textB text="QUERY" fg=muted small=true rect=272,194,43,28
                 plain grow=1 rect=315,194,882,28
@@ -92,7 +92,7 @@ stack rect=0,0,1280,800
                 stack h=28 rect=272,228,996,28
                   flow h=28 bg=panel borderB=border rect=272,228,996,28
                     flow w=20 rect=272,228,20,28
-                    flow w=36 tip=Enable or disable every row onClick=true rect=292,228,36,28
+                    flow w=36 tip=Enable or disable every row justify=1 onClick=true rect=292,228,36,28
                       checkB rect=303,228,14,28
                     flow padL=8 padR=8 grow=28 rect=328,228,253,28
                       textB text="NAME" grow=1 fg=muted small=true bold=true rect=336,228,237,28
@@ -103,71 +103,71 @@ stack rect=0,0,1280,800
                     flow w=36 rect=1232,228,36,28
                   colHandlesB rect=272,228,996,28
                 flow h=28 borderB=border-soft hoverBg=hover onRightClick=true onDragOver=true rect=272,256,996,28
-                  flow w=20 tip=Drag to move the row onClick=true rect=272,256,20,28
+                  flow w=20 tip=Drag to move the row justify=1 onClick=true rect=272,256,20,28
                     iconB fg=muted icon=grip rect=277,256,10,28
-                  flow w=36 tip=Enable or disable this row onClick=true rect=292,256,36,28
+                  flow w=36 tip=Enable or disable this row justify=1 onClick=true rect=292,256,36,28
                     checkB rect=303,256,14,28
-                  flow padL=8 padR=8 grow=28 onClick=true rect=328,256,253,28
+                  flow padL=8 padR=8 grow=28 onClick=true clip=true rect=328,256,253,28
                     textB text="q" grow=1 fg=text ellipsis=true rect=336,256,237,28
-                  flow padL=8 padR=8 grow=40 borderL=border-soft onClick=true rect=581,256,361,28
+                  flow padL=8 padR=8 grow=40 borderL=border-soft onClick=true clip=true rect=581,256,361,28
                     textB text="gioui" grow=1 fg=text ellipsis=true rect=589,256,345,28
-                  flow padL=8 padR=8 grow=32 borderL=border-soft onClick=true rect=942,256,290,28
+                  flow padL=8 padR=8 grow=32 borderL=border-soft onClick=true clip=true rect=942,256,290,28
                     textB text="repo name" grow=1 fg=text ellipsis=true rect=950,256,274,28
-                  flow w=36 tip=Delete row onClick=true rect=1232,256,36,28
+                  flow w=36 tip=Delete row justify=1 onClick=true rect=1232,256,36,28
                     iconB icon=trash rect=1243,256,14,28
                 flow h=28 borderB=border-soft hoverBg=hover onRightClick=true onDragOver=true rect=272,284,996,28
-                  flow w=20 tip=Drag to move the row onClick=true rect=272,284,20,28
+                  flow w=20 tip=Drag to move the row justify=1 onClick=true rect=272,284,20,28
                     iconB fg=muted icon=grip rect=277,284,10,28
-                  flow w=36 tip=Enable or disable this row onClick=true rect=292,284,36,28
+                  flow w=36 tip=Enable or disable this row justify=1 onClick=true rect=292,284,36,28
                     checkB rect=303,284,14,28
-                  flow padL=8 padR=8 grow=28 onClick=true rect=328,284,253,28
+                  flow padL=8 padR=8 grow=28 onClick=true clip=true rect=328,284,253,28
                     textB text="order" grow=1 fg=text ellipsis=true rect=336,284,237,28
-                  flow padL=8 padR=8 grow=40 borderL=border-soft onClick=true rect=581,284,361,28
+                  flow padL=8 padR=8 grow=40 borderL=border-soft onClick=true clip=true rect=581,284,361,28
                     textB text="desc" grow=1 fg=text ellipsis=true rect=589,284,345,28
-                  flow padL=8 padR=8 grow=32 borderL=border-soft onClick=true rect=942,284,290,28
+                  flow padL=8 padR=8 grow=32 borderL=border-soft onClick=true clip=true rect=942,284,290,28
                     textB grow=1 fg=text ellipsis=true rect=950,284,274,28
-                  flow w=36 tip=Delete row onClick=true rect=1232,284,36,28
+                  flow w=36 tip=Delete row justify=1 onClick=true rect=1232,284,36,28
                     iconB icon=trash rect=1243,284,14,28
                 flow h=28 borderB=border-soft hoverBg=hover onRightClick=true onDragOver=true rect=272,312,996,28
-                  flow w=20 tip=Drag to move the row onClick=true rect=272,312,20,28
+                  flow w=20 tip=Drag to move the row justify=1 onClick=true rect=272,312,20,28
                     iconB fg=muted icon=grip rect=277,312,10,28
-                  flow w=36 tip=Enable or disable this row onClick=true rect=292,312,36,28
+                  flow w=36 tip=Enable or disable this row justify=1 onClick=true rect=292,312,36,28
                     checkB rect=303,312,14,28
-                  flow padL=8 padR=8 grow=28 onClick=true rect=328,312,253,28
+                  flow padL=8 padR=8 grow=28 onClick=true clip=true rect=328,312,253,28
                     textB text="sort" grow=1 fg=text ellipsis=true rect=336,312,237,28
-                  flow padL=8 padR=8 grow=40 borderL=border-soft onClick=true rect=581,312,361,28
+                  flow padL=8 padR=8 grow=40 borderL=border-soft onClick=true clip=true rect=581,312,361,28
                     textB text="stars" grow=1 fg=text ellipsis=true rect=589,312,345,28
-                  flow padL=8 padR=8 grow=32 borderL=border-soft onClick=true rect=942,312,290,28
+                  flow padL=8 padR=8 grow=32 borderL=border-soft onClick=true clip=true rect=942,312,290,28
                     textB text="metric" grow=1 fg=text ellipsis=true rect=950,312,274,28
-                  flow w=36 tip=Delete row onClick=true rect=1232,312,36,28
+                  flow w=36 tip=Delete row justify=1 onClick=true rect=1232,312,36,28
                     iconB icon=trash rect=1243,312,14,28
                 flow h=28 rect=272,340,996,28
                   flow w=20 rect=272,340,20,28
                   flow w=36 rect=292,340,36,28
-                  flow padL=8 padR=8 grow=28 onClick=true rect=328,340,253,28
+                  flow padL=8 padR=8 grow=28 onClick=true clip=true rect=328,340,253,28
                     textB text="Name" grow=1 fg=muted ellipsis=true rect=336,340,237,28
-                  flow padL=8 padR=8 grow=40 borderL=border-soft onClick=true rect=581,340,361,28
+                  flow padL=8 padR=8 grow=40 borderL=border-soft onClick=true clip=true rect=581,340,361,28
                     textB text="Value" grow=1 fg=muted ellipsis=true rect=589,340,345,28
-                  flow padL=8 padR=8 grow=32 borderL=border-soft onClick=true rect=942,340,290,28
+                  flow padL=8 padR=8 grow=32 borderL=border-soft onClick=true clip=true rect=942,340,290,28
                     textB text="Description" grow=1 fg=muted ellipsis=true rect=950,340,274,28
                   flow w=36 rect=1232,340,36,28
           flow grow=1 bg=bg rect=260,457,1020,315
             flow h=40 padT=6 borderB=border rect=260,457,1020,40
-              hscrollB padL=2 grow=1 onSelect=true rect=260,463,1020,34
-                flow padL=10 padR=10 gap=4 bg=bg edge=accent-line edgeTop=true edgeLeft=true edgeRight=true onClick=true rect=262,463,83,34
+              hscrollB padL=2 grow=1 onSelect=true clip=true rect=260,463,1020,34
+                flow padL=10 padR=10 gap=4 bg=bg edge=accent-line alignItems=5 edgeTop=true edgeLeft=true edgeRight=true onClick=true reveal=true rect=262,463,83,34
                   textB text="Response" fg=text rect=272,472,63,16
-                flow padL=10 padR=10 borderInset=10 gap=4 borderL=border-soft onClick=true rect=345,463,73,34
+                flow padL=10 padR=10 borderInset=10 gap=4 borderL=border-soft alignItems=5 onClick=true rect=345,463,73,34
                   textB text="Headers" fg=muted rect=355,472,53,16
-                flow padL=10 padR=10 borderInset=10 gap=4 borderL=border-soft onClick=true rect=418,463,74,34
+                flow padL=10 padR=10 borderInset=10 gap=4 borderL=border-soft alignItems=5 onClick=true rect=418,463,74,34
                   textB text="Timeline" fg=muted rect=428,472,54,16
-                flow padL=10 padR=10 borderInset=10 gap=4 borderL=border-soft onClick=true rect=492,463,54,34
+                flow padL=10 padR=10 borderInset=10 gap=4 borderL=border-soft alignItems=5 onClick=true rect=492,463,54,34
                   textB text="Tests" fg=muted rect=502,472,34,16
             flow padL=12 padT=12 padR=12 padB=12 grow=1 bg=bg rect=260,497,1020,275
               flow rect=272,509,996,22
                 textB text="Send the request to see the response" h=22 fg=muted rect=272,509,996,22
     flow h=28 padL=12 padR=12 gap=12 bg=frame borderT=border control=statusbar rect=0,772,1280,28
       textB text="Ready" grow=1 fg=muted small=true ellipsis=true rect=12,772,1117,28
-      flow h=20 padL=10 padR=10 bg=sunken control=button tip=Show the log of calls shrink=true lighten=true onClick=true rect=1141,776,44,20
+      flow h=20 padL=10 padR=10 minW=44 bg=sunken control=button tip=Show the log of calls shrink=true lighten=true onClick=true rect=1141,776,44,20
         textB text="Log" grow=1 fg=chip-text ellipsis=true center=true rect=1151,776,24,20
       flow tip=What is in this version onClick=true rect=1197,772,71,28
         textB text="v0.1.0-alpha" fg=muted small=true rect=1197,772,71,28

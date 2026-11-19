@@ -1,4 +1,4 @@
-scrollB padL=12 padT=12 padR=12 padB=12 gap=4 grow=1 rect=0,0,420,300
+scrollB padL=12 padT=12 padR=12 padB=12 gap=4 grow=1 clip=true rect=0,0,420,300
   textB text="1/4 passed" bold=true rect=12,12,396,16
   textB text="✓ status == 200" fg=ok mono=true rect=12,32,396,15
   textB text="✗ status == 404  —  got 200" fg=error mono=true rect=12,51,396,15

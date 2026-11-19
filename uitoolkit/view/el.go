@@ -45,7 +45,6 @@
 package view
 
 import (
-	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -55,23 +54,13 @@ import (
 // attributes chain.
 type Node = *El
 
-// behavior is what makes one kind of element different from another:
-// how big it wants to be, how it places its children, what it paints
-// and how it reacts to input. Kinds are values of this interface, not
-// switch cases.
-type behavior interface {
-	measure(element *El, ctx *core.Ctx, maxW int) (w, h int)
-	layout(element *El, ctx *core.Ctx)
-	draw(element *El, ctx *core.Ctx, dst *ebiten.Image)
-	update(element *El, ctx *core.Ctx)
-}
-
-// El is one element: a behavior plus the attributes shared by all.
+// El is one element: a Behavior plus the attributes shared by all.
 type El struct {
-	b     behavior
-	kids  []*El
-	rect  core.Rect // set by layout
-	hover bool      // the pointer was over this element at the last draw, and hover was not blocked
+	b      Behavior
+	custom bool // b was supplied by Custom, not one of the toolkit's own kinds
+	kids   []*El
+	rect   core.Rect // set by layout
+	hover  bool      // the pointer was over this element at the last draw, and hover was not blocked
 
 	w, h             int // fixed size; 0 = content size
 	grow             float64
@@ -92,9 +81,9 @@ type El struct {
 	fg                               core.Token
 	small, mono, bold, ellipsis, ctr bool
 
-	onClick, onChange    func()
-	onClickAt            func(posX, posY int)
-	onRightIn            func(ctx *core.Ctx, posX, posY int) // a right click that needs the context, as TextMenu does
+	onChange             func()
+	onClick              func(posX, posY int)                // OnClick and OnClickAt set it; the later wins
+	onRight              func(ctx *core.Ctx, posX, posY int) // OnRightClick and OnRightClickIn set it; the later wins
 	onMiddle, onDragOver func()
 	onDouble             func()
 	onSelect             func(i int)
@@ -116,7 +105,6 @@ type El struct {
 	roundCtl      string    // set by RoundT, RoundB and RoundBL: the control whose radius the corners take
 	roundCorners  core.Corners
 	focusScope    bool
-	onRight       func(posX, posY int)
 	modal         bool
 	onDismiss     func()
 }
@@ -139,7 +127,7 @@ type Option func(*El)
 
 func (o Option) apply(element *El) { o(element) }
 
-func newEl(kind behavior, items []Item) *El {
+func newEl(kind Behavior, items []Item) *El {
 	e := &El{b: kind}
 	for _, it := range items {
 		if it != nil { // a bare nil, as opposed to a nil node from If

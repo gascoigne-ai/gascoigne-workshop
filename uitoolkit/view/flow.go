@@ -2,7 +2,7 @@ package view
 
 // fragment groups children without adding a box, so For can return many
 // nodes where one is expected. Parents splice it away.
-type fragment struct{ plain }
+type fragment struct{ Base }
 
 func isFragment(element *El) bool {
 	_, ok := element.b.(fragment)

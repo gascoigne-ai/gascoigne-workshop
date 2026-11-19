@@ -1,12 +1,12 @@
 flow rect=0,0,600,500
   flow h=28 gap=6 rect=0,0,600,28
-    fieldB grow=1 bg=sunken control=field onRightClickIn=true rect=0,0,600,28
+    fieldB grow=1 bg=sunken control=field onRightClick=true rect=0,0,600,28
   plain h=12 grow=1 rect=0,28,600,12
   flow rect=0,40,600,66
     flow rect=0,40,600,42
       flow h=24 gap=6 rect=0,40,600,24
         textB text="Close tab" grow=1 small=true ellipsis=true rect=0,40,398,24
-        flow h=24 padL=10 padR=10 bg=sunken control=button tip=Click, then press the keys shrink=true lighten=true onClick=true rect=404,40,120,24
+        flow h=24 padL=10 padR=10 minW=120 bg=sunken control=button tip=Click, then press the keys shrink=true lighten=true onClick=true rect=404,40,120,24
           textB text="J" grow=1 fg=chip-text ellipsis=true center=true rect=414,40,100,24
         flow w=32 h=24 bg=sunken control=icon-button tip=Leave the action without a key lighten=true onClick=true rect=530,40,32,24
           iconB grow=1 icon=unlink rect=530,40,32,24
@@ -17,7 +17,7 @@ flow rect=0,0,600,500
     flow rect=0,82,600,24
       flow h=24 gap=6 rect=0,82,600,24
         textB text="Send request" grow=1 small=true ellipsis=true rect=0,82,398,24
-        flow h=24 padL=10 padR=10 bg=sunken control=button tip=Click, then press the keys shrink=true lighten=true onClick=true rect=404,82,120,24
+        flow h=24 padL=10 padR=10 minW=120 bg=sunken control=button tip=Click, then press the keys shrink=true lighten=true onClick=true rect=404,82,120,24
           textB text="Ctrl+Enter" grow=1 fg=chip-text ellipsis=true center=true rect=414,82,100,24
         flow w=32 h=24 bg=sunken control=icon-button tip=Leave the action without a key lighten=true onClick=true rect=530,82,32,24
           iconB grow=1 icon=unlink rect=530,82,32,24

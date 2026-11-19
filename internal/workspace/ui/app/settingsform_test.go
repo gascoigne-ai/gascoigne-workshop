@@ -58,12 +58,12 @@ func TestSearchFiltersSettingsAcrossCategories(t *testing.T) {
 		want    []string
 		notWant []string
 	}{
-		{"proxy", []string{"Proxy"}, []string{"Corners", "Request and response"}},
+		{"proxy", []string{"Proxy"}, []string{`text="Corners"`, "Request and response"}},
 		{"CORNERS", []string{"Corners"}, []string{"Proxy"}},
-		{"gradient", []string{"Flat colors"}, []string{"Proxy", "Corners"}},         // matches the description
-		{"stacked", []string{"Request and response"}, []string{"Proxy", "Corners"}}, // matches an allowed value
-		{"timeoutSec", []string{"Request timeout"}, []string{"Corners"}},            // matches the key
-		{"zzzz", []string{"No settings match"}, []string{"Proxy", "Corners"}},
+		{"gradient", []string{"Flat colors"}, []string{"Proxy", `text="Corners"`}},         // matches the description
+		{"stacked", []string{"Request and response"}, []string{"Proxy", `text="Corners"`}}, // matches an allowed value
+		{"timeoutSec", []string{"Request timeout"}, []string{`text="Corners"`}},            // matches the key
+		{"zzzz", []string{"No settings match"}, []string{"Proxy", `text="Corners"`}},
 	}
 	for _, test := range tests {
 		t.Run(test.query, func(t *testing.T) {

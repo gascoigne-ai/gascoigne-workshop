@@ -8,6 +8,6 @@ Not defined: base, id rect=12,8,908,40
     flow w=84 tip=Method: click to change onClick=true rect=77,8,84,40
       textB text="POST" grow=1 fg=method.POST center=true rect=77,8,84,40
     plain w=8 grow=1 rect=161,8,8,40
-    fieldB grow=1 control=field onRightClickIn=true onChange=true rect=169,8,751,40
-  flow padL=10 padR=10 bg=accent control=primary tip=Send the request (Ctrl+Enter) lighten=true onClick=true rect=928,8,80,40
+    fieldB grow=1 control=field onRightClick=true onChange=true rect=169,8,751,40
+  flow padL=10 padR=10 minW=80 bg=accent control=primary tip=Send the request (Ctrl+Enter) lighten=true onClick=true rect=928,8,80,40
     textB text="Send" grow=1 fg=accent-text ellipsis=true center=true rect=938,8,60,40

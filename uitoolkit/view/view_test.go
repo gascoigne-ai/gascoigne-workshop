@@ -1,6 +1,7 @@
 package view
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -502,5 +503,43 @@ func TestOnClickAtGetsThePointerOfTheClick(t *testing.T) {
 	Update(c, root)
 	if n != 1 || gx != 30 || gy != 20 {
 		t.Fatalf("calls %d at %d,%d", n, gx, gy)
+	}
+}
+
+// OnClick and OnClickAt set the same handler, and so do OnRightClick and
+// OnRightClickIn: the later option wins, so an element never runs two
+// click handlers by accident.
+func TestTheLaterClickOptionReplacesTheEarlierOne(t *testing.T) {
+	tests := []struct {
+		name  string
+		input core.Input
+		opts  func(calls *[]string) []Item
+		want  []string
+	}{
+		{"OnClickAt after OnClick", core.Input{X: 30, Y: 20, Click: true}, func(calls *[]string) []Item {
+			return []Item{OnClick(func() { *calls = append(*calls, "plain") }), OnClickAt(func(int, int) { *calls = append(*calls, "at") })}
+		}, []string{"at"}},
+		{"OnClick after OnClickAt", core.Input{X: 30, Y: 20, Click: true}, func(calls *[]string) []Item {
+			return []Item{OnClickAt(func(int, int) { *calls = append(*calls, "at") }), OnClick(func() { *calls = append(*calls, "plain") })}
+		}, []string{"plain"}},
+		{"OnRightClickIn after OnRightClick", core.Input{X: 30, Y: 20, RightClick: true}, func(calls *[]string) []Item {
+			return []Item{OnRightClick(func(int, int) { *calls = append(*calls, "plain") }), OnRightClickIn(func(*core.Ctx, int, int) { *calls = append(*calls, "in") })}
+		}, []string{"in"}},
+		{"OnRightClick after OnRightClickIn", core.Input{X: 30, Y: 20, RightClick: true}, func(calls *[]string) []Item {
+			return []Item{OnRightClickIn(func(*core.Ctx, int, int) { *calls = append(*calls, "in") }), OnRightClick(func(int, int) { *calls = append(*calls, "plain") })}
+		}, []string{"plain"}},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var calls []string
+			root := Row(box(append([]Item{W(100)}, test.opts(&calls)...)...))
+			c := testCtx(t)
+			Layout(c, root, 200, 50)
+			c.In = test.input
+			Update(c, root)
+			if !slices.Equal(calls, test.want) {
+				t.Fatalf("calls %v, want %v", calls, test.want)
+			}
+		})
 	}
 }

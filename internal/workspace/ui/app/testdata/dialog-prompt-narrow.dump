@@ -1,16 +1,16 @@
 stack rect=0,0,480,360
   flow bg=shadow rect=0,0,480,360
-  flow w=380 floatMode=2 bg=bg control=menu float=true modal=true focusScope=true shadow=true onDismiss=true rect=50,108,380,144
-    flow h=44 padL=16 padR=16 gap=8 bg=hero borderB=border control=hero onDismiss=true rect=50,108,380,44
+  flow w=380 floatMode=2 bg=bg control=menu float=true modal=true focusScope=true shadow=true onDismiss=true moved=true rect=50,108,380,144
+    flow h=44 padL=16 padR=16 gap=8 bg=hero borderB=border control=hero roundCtl=menu roundCorners=3 alignItems=2 onDismiss=true dragHandle=true rect=50,108,380,44
       textB text="Rename" fg=hero-text bold=true rect=66,122,54,16
       plain grow=1 rect=128,130,246,0
       flow w=32 h=24 control=row tip=Close (Esc) hoverBg=shadow onClick=true rect=382,118,32,24
         iconB grow=1 fg=hero-muted icon=cross rect=382,118,32,24
     flow padL=16 padT=16 padR=16 padB=16 gap=12 rect=50,152,380,100
-      fieldB h=28 bg=sunken control=field onRightClickIn=true rect=66,168,348,28
+      fieldB h=28 bg=sunken control=field onRightClick=true rect=66,168,348,28
       flow h=28 gap=8 rect=66,208,348,28
         plain grow=1 rect=66,208,172,28
-        flow padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=246,208,80,28
+        flow padL=10 padR=10 minW=80 bg=sunken control=button lighten=true onClick=true rect=246,208,80,28
           textB text="Cancel" grow=1 fg=chip-text ellipsis=true center=true rect=256,208,60,28
-        flow padL=10 padR=10 bg=accent control=primary lighten=true onClick=true rect=334,208,80,28
+        flow padL=10 padR=10 minW=80 bg=accent control=primary lighten=true onClick=true rect=334,208,80,28
           textB text="Rename" grow=1 fg=accent-text ellipsis=true center=true rect=344,208,60,28

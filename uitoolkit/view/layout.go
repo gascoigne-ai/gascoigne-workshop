@@ -1,18 +1,12 @@
 package view
 
 import (
-	"github.com/hajimehoshi/ebiten/v2"
-
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
-// plain is a behavior with no content of its own.
-type plain struct{}
-
-func (plain) measure(*El, *core.Ctx, int) (int, int) { return 0, 0 }
-func (plain) layout(*El, *core.Ctx)                  {}
-func (plain) draw(*El, *core.Ctx, *ebiten.Image)     {}
-func (plain) update(*El, *core.Ctx)                  {}
+// plain is a behavior with no content of its own; its name is what Dump
+// prints for a Spacer or a rule.
+type plain struct{ Base }
 
 // inner is the rect inside the padding.
 func (e *El) inner() core.Rect {
@@ -26,7 +20,7 @@ func (e *El) inner() core.Rect {
 // size is the element's wanted size: its fixed size where set, else
 // what its behavior measures.
 func (e *El) size(ctx *core.Ctx, maxW int) (w, h int) {
-	w, h = e.b.measure(e, ctx, maxW)
+	w, h = e.b.Measure(e, ctx, maxW)
 	if e.w > 0 {
 		w = e.w
 	}
@@ -38,53 +32,50 @@ func (e *El) size(ctx *core.Ctx, maxW int) (w, h int) {
 
 func (e *El) place(ctx *core.Ctx, bounds core.Rect) {
 	e.rect = bounds
-	e.b.layout(e, ctx)
+	e.b.Layout(e, ctx)
 }
 
 // flow lays children out along one axis: a Row (horizontal) or a Col.
-type flow struct {
-	plain
-	horiz bool
-}
+type flow struct{ Linear }
 
-func (f flow) main(width, height int) int {
-	if f.horiz {
+func (l Linear) main(width, height int) int {
+	if l.Horizontal {
 		return width
 	}
 	return height
 }
 
-func (f flow) cross(width, height int) int {
-	if f.horiz {
+func (l Linear) cross(width, height int) int {
+	if l.Horizontal {
 		return height
 	}
 	return width
 }
 
 // Margins along the main axis (total and leading) and across it.
-func (f flow) marginMain(element *El) int {
-	if f.horiz {
+func (l Linear) marginMain(element *El) int {
+	if l.Horizontal {
 		return element.mL + element.mR
 	}
 	return element.mT + element.mB
 }
 
-func (f flow) marginLead(element *El) int {
-	if f.horiz {
+func (l Linear) marginLead(element *El) int {
+	if l.Horizontal {
 		return element.mL
 	}
 	return element.mT
 }
 
-func (f flow) marginCross(element *El) int {
-	if f.horiz {
+func (l Linear) marginCross(element *El) int {
+	if l.Horizontal {
 		return element.mT + element.mB
 	}
 	return element.mL + element.mR
 }
 
-func (f flow) marginCrossLead(element *El) int {
-	if f.horiz {
+func (l Linear) marginCrossLead(element *El) int {
+	if l.Horizontal {
 		return element.mT
 	}
 	return element.mL
@@ -92,14 +83,16 @@ func (f flow) marginCrossLead(element *El) int {
 
 // baseline is the distance from a child's top to its text baseline; a
 // child that is not text has its bottom edge as baseline.
-func (f flow) baseline(element *El, ctx *core.Ctx, hugCross int) int {
+func (l Linear) baseline(element *El, ctx *core.Ctx, hugCross int) int {
 	if _, isText := element.b.(textB); isText {
 		return ctx.Ascent(element.face(ctx))
 	}
 	return hugCross
 }
 
-func (f flow) measure(element *El, ctx *core.Ctx, maxW int) (int, int) {
+// Measure is the size of the children stacked along the axis, laid out
+// within maxW.
+func (l Linear) Measure(element *El, ctx *core.Ctx, maxW int) (int, int) {
 	inW := max(maxW-element.padL-element.padR, 0)
 	var main, cross, n, above, below int
 	for _, k := range element.kids {
@@ -107,10 +100,10 @@ func (f flow) measure(element *El, ctx *core.Ctx, maxW int) (int, int) {
 			continue
 		}
 		w, h := k.size(ctx, inW)
-		main += f.main(w, h) + f.marginMain(k)
-		cross = max(cross, f.cross(w, h)+f.marginCross(k))
-		if element.alignItems == AlignBaseline && f.horiz {
-			base := f.baseline(k, ctx, h)
+		main += l.main(w, h) + l.marginMain(k)
+		cross = max(cross, l.cross(w, h)+l.marginCross(k))
+		if element.alignItems == AlignBaseline && l.Horizontal {
+			base := l.baseline(k, ctx, h)
 			above, below = max(above, base), max(below, h-base)
 		}
 		n++
@@ -121,25 +114,27 @@ func (f flow) measure(element *El, ctx *core.Ctx, maxW int) (int, int) {
 	if n > 1 {
 		main += (n - 1) * element.gap
 	}
-	if f.horiz {
+	if l.Horizontal {
 		return main + element.padL + element.padR, cross + element.padT + element.padB
 	}
 	return cross + element.padL + element.padR, main + element.padT + element.padB
 }
 
-func (f flow) layout(element *El, ctx *core.Ctx) {
+// Layout places the children one after another along the axis, sharing
+// the free space as Grow, Gap, AlignItems and JustifyContent say.
+func (l Linear) Layout(element *El, ctx *core.Ctx) {
 	in := element.inner()
-	avail, crossAvail := f.main(in.W, in.H), f.cross(in.W, in.H)
+	avail, crossAvail := l.main(in.W, in.H), l.cross(in.W, in.H)
 
 	// Fixed and content-sized children take their size first (margins
 	// included); the rest is shared by the growing ones.
 	sizes, hug := make([]int, len(element.kids)), make([]int, len(element.kids))
 	for i, k := range element.kids {
 		w, h := k.size(ctx, in.W)
-		sizes[i], hug[i] = f.main(w, h)+f.marginMain(k), f.cross(w, h)
+		sizes[i], hug[i] = l.main(w, h)+l.marginMain(k), l.cross(w, h)
 	}
 	element.dropOptional(sizes, avail)
-	element.shrinkToFit(f, sizes, avail)
+	element.shrinkToFit(l, sizes, avail)
 
 	used, growSum, n := 0, 0.0, 0
 	for i, k := range element.kids {
@@ -147,24 +142,24 @@ func (f flow) layout(element *El, ctx *core.Ctx) {
 			continue
 		}
 		n++
-		if f.growing(k) {
+		if l.growing(k) {
 			growSum += k.grow
-			used += f.marginMain(k)
+			used += l.marginMain(k)
 			continue
 		}
 		used += sizes[i]
 	}
 	free := max(avail-used-max(n-1, 0)*element.gap, 0)
 
-	pos, extra := f.main(in.X, in.Y), 0
+	pos, extra := l.main(in.X, in.Y), 0
 	if growSum == 0 {
-		pos, extra = f.justified(element, pos, free, n)
+		pos, extra = l.justified(element, pos, free, n)
 	}
 	baseMax, baseBelow := 0, 0 // the line of baseline-aligned children: above and below the baseline
-	if element.alignItems == AlignBaseline && f.horiz {
+	if element.alignItems == AlignBaseline && l.Horizontal {
 		for i, k := range element.kids {
 			if !k.hidden && !k.fl.on {
-				base := f.baseline(k, ctx, hug[i])
+				base := l.baseline(k, ctx, hug[i])
 				baseMax, baseBelow = max(baseMax, base), max(baseBelow, hug[i]-base)
 			}
 		}
@@ -173,7 +168,7 @@ func (f flow) layout(element *El, ctx *core.Ctx) {
 
 	lastGrow, given := -1, 0
 	for i, k := range element.kids {
-		if !k.hidden && !k.fl.on && f.growing(k) {
+		if !k.hidden && !k.fl.on && l.growing(k) {
 			lastGrow = i
 		}
 	}
@@ -183,33 +178,33 @@ func (f flow) layout(element *El, ctx *core.Ctx) {
 			continue
 		}
 		outer := sizes[i]
-		size := outer - f.marginMain(k)
-		if f.growing(k) {
+		size := outer - l.marginMain(k)
+		if l.growing(k) {
 			size = int(float64(free) * k.grow / growSum)
 			given += size
 			if i == lastGrow {
 				size += free - given // rounding remainder
 			}
-			size = f.clampMain(k, size)
-			outer = size + f.marginMain(k)
+			size = l.clampMain(k, size)
+			outer = size + l.marginMain(k)
 		}
-		crossSize, crossOff := f.crossPlacement(element, k, ctx, crossAvail, hug[i], baseMax, lineTop)
-		k.place(ctx, f.rect(in, pos+f.marginLead(k), crossOff, size, crossSize))
+		crossSize, crossOff := l.crossPlacement(element, k, ctx, crossAvail, hug[i], baseMax, lineTop)
+		k.place(ctx, l.rect(in, pos+l.marginLead(k), crossOff, size, crossSize))
 		pos += outer + element.gap + extra
 	}
 }
 
 // growing reports whether a child takes a share of the free space.
-func (f flow) growing(element *El) bool {
+func (l Linear) growing(element *El) bool {
 	fixed := element.h
-	if f.horiz {
+	if l.Horizontal {
 		fixed = element.w
 	}
 	return fixed == 0 && element.grow > 0
 }
 
-func (f flow) clampMain(element *El, size int) int {
-	if f.horiz {
+func (l Linear) clampMain(element *El, size int) int {
+	if l.Horizontal {
 		w, _ := element.clampSize(size, 0)
 		return w
 	}
@@ -219,7 +214,7 @@ func (f flow) clampMain(element *El, size int) int {
 
 // justified returns the start position and the extra space after each
 // child for the container's JustifyContent.
-func (f flow) justified(element *El, pos, free, count int) (start, extra int) {
+func (l Linear) justified(element *El, pos, free, count int) (start, extra int) {
 	switch element.justify {
 	case JustifyCenter:
 		return pos + free/2, 0
@@ -240,10 +235,10 @@ func (f flow) justified(element *El, pos, free, count int) (start, extra int) {
 // crossPlacement is a child's size across the axis and its offset from
 // the start of the container's inner area, margins excluded from the
 // size and included in the offset by the caller.
-func (f flow) crossPlacement(element *El, child *El, ctx *core.Ctx, crossAvail, hug, baseMax, lineTop int) (size, off int) {
-	avail := max(crossAvail-f.marginCross(child), 0)
+func (l Linear) crossPlacement(element *El, child *El, ctx *core.Ctx, crossAvail, hug, baseMax, lineTop int) (size, off int) {
+	avail := max(crossAvail-l.marginCross(child), 0)
 	fixed := child.w
-	if f.horiz {
+	if l.Horizontal {
 		fixed = child.h
 	}
 	align := child.alignSelf
@@ -251,7 +246,7 @@ func (f flow) crossPlacement(element *El, child *El, ctx *core.Ctx, crossAvail, 
 		align = element.alignItems
 	}
 	clamp := func(count int) int {
-		if f.horiz {
+		if l.Horizontal {
 			_, h := child.clampSize(0, count)
 			return h
 		}
@@ -266,7 +261,7 @@ func (f flow) crossPlacement(element *El, child *El, ctx *core.Ctx, crossAvail, 
 	case AlignEnd:
 		off = avail - size
 	case AlignBaseline:
-		off = lineTop + baseMax - f.baseline(child, ctx, hug)
+		off = lineTop + baseMax - l.baseline(child, ctx, hug)
 	case AlignStretch:
 		if fixed == 0 {
 			size = clamp(avail)
@@ -274,17 +269,17 @@ func (f flow) crossPlacement(element *El, child *El, ctx *core.Ctx, crossAvail, 
 	default: // AlignDefault: stretch; a fixed size is centered in a Row, left in a Col
 		if fixed == 0 {
 			size = clamp(avail)
-		} else if f.horiz {
+		} else if l.Horizontal {
 			off = (avail - size) / 2
 		}
 	}
-	return size, f.marginCrossLead(child) + off
+	return size, l.marginCrossLead(child) + off
 }
 
 // rect builds a child's rect from its main-axis start and size and its
 // cross-axis offset and size.
-func (f flow) rect(in core.Rect, mainPos, crossOff, mainSize, crossSize int) core.Rect {
-	if f.horiz {
+func (l Linear) rect(in core.Rect, mainPos, crossOff, mainSize, crossSize int) core.Rect {
+	if l.Horizontal {
 		return core.Rect{X: mainPos, Y: in.Y + crossOff, W: mainSize, H: crossSize}
 	}
 	return core.Rect{X: in.X + crossOff, Y: mainPos, W: crossSize, H: mainSize}
@@ -315,7 +310,7 @@ func (e *El) dropOptional(sizes []int, avail int) {
 // shrinkToFit takes what the children overflow the row by from its Shrink
 // children, first to last, each down to its minimum size along the axis.
 // A row that fits is left as it is.
-func (e *El) shrinkToFit(axis flow, sizes []int, avail int) {
+func (e *El) shrinkToFit(axis Linear, sizes []int, avail int) {
 	used, n := 0, 0
 	for i, k := range e.kids {
 		if k.hidden || k.fl.on {
@@ -345,8 +340,8 @@ func (e *El) shrinkToFit(axis flow, sizes []int, avail int) {
 }
 
 // minMain is a child's MinW in a Row, its MinH in a Col.
-func (f flow) minMain(element *El) int {
-	if f.horiz {
+func (l Linear) minMain(element *El) int {
+	if l.Horizontal {
 		return element.minW
 	}
 	return element.minH
@@ -354,9 +349,9 @@ func (f flow) minMain(element *El) int {
 
 // stack layers its children over each other, each filling the element
 // unless it floats.
-type stack struct{ plain }
+type stack struct{ Base }
 
-func (stack) measure(element *El, ctx *core.Ctx, maxW int) (int, int) {
+func (stack) Measure(element *El, ctx *core.Ctx, maxW int) (int, int) {
 	var w, h int
 	for _, k := range element.kids {
 		if k.fl.on {
@@ -368,7 +363,7 @@ func (stack) measure(element *El, ctx *core.Ctx, maxW int) (int, int) {
 	return w + element.padL + element.padR, h + element.padT + element.padB
 }
 
-func (stack) layout(element *El, ctx *core.Ctx) {
+func (stack) Layout(element *El, ctx *core.Ctx) {
 	in := element.inner()
 	for _, k := range element.kids {
 		if !k.fl.on {
@@ -382,7 +377,7 @@ func (stack) layout(element *El, ctx *core.Ctx) {
 }
 
 // Row lays its children out left to right.
-func Row(items ...Item) *El { return newEl(flow{horiz: true}, items) }
+func Row(items ...Item) *El { return newEl(flow{Linear{Horizontal: true}}, items) }
 
 // Col lays its children out top to bottom.
 func Col(items ...Item) *El { return newEl(flow{}, items) }

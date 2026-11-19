@@ -31,40 +31,20 @@ func (Base) Layout(*El, *core.Ctx)                  {}
 func (Base) Update(*El, *core.Ctx)                  {}
 func (Base) Draw(*El, *core.Ctx, *ebiten.Image)     {}
 
-// customB runs a Behavior supplied from outside the package as the
-// element's own.
-type customB struct{ Behavior }
-
-func (b customB) measure(element *El, ctx *core.Ctx, maxW int) (int, int) {
-	return b.Measure(element, ctx, maxW)
-}
-func (b customB) layout(element *El, ctx *core.Ctx)                  { b.Layout(element, ctx) }
-func (b customB) update(element *El, ctx *core.Ctx)                  { b.Update(element, ctx) }
-func (b customB) draw(element *El, ctx *core.Ctx, dst *ebiten.Image) { b.Draw(element, ctx, dst) }
-
-// preUpdate and drawOver pass the runtime's optional hooks on to the
-// component when it implements them.
-func (b customB) preUpdate(element *El, ctx *core.Ctx) {
-	if hook, ok := b.Behavior.(PreUpdater); ok {
-		hook.PreUpdate(element, ctx)
-	}
-}
-
-func (b customB) drawOver(element *El, ctx *core.Ctx, dst *ebiten.Image) {
-	if hook, ok := b.Behavior.(OverDrawer); ok {
-		hook.DrawOver(element, ctx, dst)
-	}
-}
-
 // Custom makes an element that behaves as behavior. The component's options
 // configure behavior through Behavior.
-func Custom(behavior Behavior, items ...Item) *El { return newEl(customB{behavior}, items) }
+func Custom(behavior Behavior, items ...Item) *El {
+	// The mark goes first: the component's options read the behavior back
+	// through El.Behavior while the element is built.
+	markCustom := Option(func(element *El) { element.custom = true })
+	return newEl(behavior, append([]Item{markCustom}, items...))
+}
 
 // Behavior is the behavior a Custom element was made with, or nil for
 // the toolkit's own kinds of element.
 func (e *El) Behavior() Behavior {
-	if custom, ok := e.b.(customB); ok {
-		return custom.Behavior
+	if e.custom {
+		return e.b
 	}
 	return nil
 }
@@ -77,16 +57,6 @@ type Linear struct {
 	Base
 	Horizontal bool
 }
-
-// Measure is the size of the children stacked along the axis, laid out
-// within maxW.
-func (l Linear) Measure(element *El, ctx *core.Ctx, maxW int) (int, int) {
-	return flow{horiz: l.Horizontal}.measure(element, ctx, maxW)
-}
-
-// Layout places the children one after another along the axis, sharing
-// the free space as Grow, Gap, AlignItems and JustifyContent say.
-func (l Linear) Layout(element *El, ctx *core.Ctx) { flow{horiz: l.Horizontal}.layout(element, ctx) }
 
 // Place gives the element the given rect and lays its own children out in
 // it. A container's Layout calls it on each child.
@@ -141,7 +111,7 @@ func (e *El) Inner() core.Rect { return e.inner() }
 func (l Linear) LayoutIn(element *El, ctx *core.Ctx, bounds core.Rect) {
 	own := element.rect
 	element.rect = bounds
-	flow{horiz: l.Horizontal}.layout(element, ctx)
+	l.Layout(element, ctx)
 	element.rect = own
 }
 

@@ -39,7 +39,7 @@ flow rect=0,0,560,1400
     flow rect=0,318,560,44
       textB text="Family name of an installed font for labels, buttons and fields; empty is" h=22 fg=muted rect=0,318,560,22
       textB text="the built-in font." h=22 fg=muted rect=0,340,560,22
-    flow h=28 padL=8 padR=8 gap=6 bg=sunken control=field tip=Pick an installed font onClick=true rect=0,362,560,28
+    flow h=28 padL=8 padR=8 gap=6 bg=sunken control=field tip=Pick an installed font alignItems=2 onClick=true rect=0,362,560,28
       textB text="Built-in" grow=1 fg=muted rect=8,368,526,16
       iconB w=12 icon=chevron-down rect=540,372,12,8
   flow padT=8 padB=8 borderB=border-soft rect=0,398,560,116
@@ -49,7 +49,7 @@ flow rect=0,0,560,1400
     flow rect=0,434,560,44
       textB text="Family name of an installed font for bodies and the code views; empty is the" h=22 fg=muted rect=0,434,560,22
       textB text="built-in font." h=22 fg=muted rect=0,456,560,22
-    flow h=28 padL=8 padR=8 gap=6 bg=sunken control=field tip=Pick an installed font onClick=true rect=0,478,560,28
+    flow h=28 padL=8 padR=8 gap=6 bg=sunken control=field tip=Pick an installed font alignItems=2 onClick=true rect=0,478,560,28
       textB text="Built-in" grow=1 fg=muted rect=8,484,526,16
       iconB w=12 icon=chevron-down rect=540,488,12,8
   flow padT=8 padB=8 borderB=border-soft rect=0,514,560,94

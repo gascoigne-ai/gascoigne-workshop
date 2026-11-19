@@ -959,8 +959,12 @@ that change `App`.
   (`border="{{row.DropBorder}}"`); a non-empty token is not checked at build, and an unknown one
   draws in the text color; `separator="0"` likewise applies none, so a tab strip gives its first tab
   0 (Go's `Separator(0)` is still a full-height line). Rules of the format are in decision 4 and the
-  package doc. `view.Dump` prints a laid-out tree; pinned dumps are how a view is kept from
-  changing.
+  package doc. `view.Dump` prints a laid-out tree with every attribute that is not its zero value (one table
+  of name and getter, `dumpedAttributes`, covers every look attribute of an element); pinned dumps
+  are how a view is kept from changing. An element has one click and one right-click handler:
+  `OnClick`/`OnClickAt` and `OnRightClick`/`OnRightClickIn` set the same one, the later option
+  wins, and the dump names them `onClick` and `onRightClick`. The extension point of `view` is the
+  public `Behavior`; the toolkit's own kinds (`flow`, `stack`, `textB`) implement it as well.
 -  **Slots**: `<slot name="x"/>` in a template inserts the `view.Node` the scope holds under the
   path `x`, which is how a template contains another template's tree (the header's environment
   chip), a hand-built element or a `view.Custom` component, whose measure, layout and input run as

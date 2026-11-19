@@ -1,23 +1,23 @@
 stack rect=0,0,1280,800
   flow bg=shadow rect=0,0,1280,800
-  flow w=380 floatMode=2 bg=bg control=menu float=true modal=true focusScope=true shadow=true onDismiss=true rect=450,226,380,348
-    flow h=44 padL=16 padR=16 gap=8 bg=hero borderB=border control=hero onDismiss=true rect=450,226,380,44
+  flow w=380 floatMode=2 bg=bg control=menu float=true modal=true focusScope=true shadow=true onDismiss=true moved=true rect=450,226,380,348
+    flow h=44 padL=16 padR=16 gap=8 bg=hero borderB=border control=hero roundCtl=menu roundCorners=3 alignItems=2 onDismiss=true dragHandle=true rect=450,226,380,44
       textB text="Call search" fg=hero-text bold=true rect=466,240,75,16
       plain grow=1 rect=549,248,225,0
       flow w=32 h=24 control=row tip=Close (Esc) hoverBg=shadow onClick=true rect=782,236,32,24
         iconB grow=1 fg=hero-muted icon=cross rect=782,236,32,24
     flow padL=16 padT=16 padR=16 padB=16 gap=12 rect=450,270,380,304
       flow gap=8 rect=466,286,348,232
-        scrollB gap=8 grow=1 rect=466,286,348,232
+        scrollB gap=8 maxH=360 grow=1 clip=true rect=466,286,348,232
           flow gap=2 rect=466,286,348,52
             flow h=22 gap=8 rect=466,286,348,22
               textB text="query *" small=true bold=true rect=466,286,43,22
               textB text="What to find" grow=1 fg=muted small=true ellipsis=true rect=517,286,297,22
-            fieldB h=28 bg=sunken control=field onRightClickIn=true rect=466,310,348,28
+            fieldB h=28 bg=sunken control=field onRightClick=true rect=466,310,348,28
           flow gap=2 rect=466,346,348,52
             flow h=22 gap=8 rect=466,346,348,22
               textB text="limit" small=true bold=true rect=466,346,25,22
-            fieldB h=28 bg=sunken control=field onRightClickIn=true rect=466,370,348,28
+            fieldB h=28 bg=sunken control=field onRightClick=true rect=466,370,348,28
           flow gap=2 rect=466,406,348,52
             flow h=22 gap=8 rect=466,406,348,22
               textB text="safe" small=true bold=true rect=466,406,24,22
@@ -36,7 +36,7 @@ stack rect=0,0,1280,800
                 textB text="desc" grow=1 fg=chip-text ellipsis=true center=true rect=581,490,30,28
       flow h=28 gap=8 rect=466,530,348,28
         plain grow=1 rect=466,530,147,28
-        flow padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=621,530,80,28
+        flow padL=10 padR=10 minW=80 bg=sunken control=button lighten=true onClick=true rect=621,530,80,28
           textB text="Cancel" grow=1 fg=chip-text ellipsis=true center=true rect=631,530,60,28
-        flow padL=10 padR=10 bg=accent control=primary lighten=true onClick=true rect=709,530,105,28
+        flow padL=10 padR=10 minW=80 bg=accent control=primary lighten=true onClick=true rect=709,530,105,28
           textB text="Fill composer" grow=1 fg=accent-text ellipsis=true center=true rect=719,530,85,28

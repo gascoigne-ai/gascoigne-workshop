@@ -1,14 +1,14 @@
 flow grow=1 rect=0,0,640,400
   plain h=12 grow=1 rect=0,0,640,12
-  flow h=36 padL=12 padR=12 gap=6 borderB=border rect=0,12,640,36
-    flow h=24 padL=10 padR=10 bg=sunken control=button shrink=true lighten=true onClick=true rect=12,18,76,24
+  flow h=36 padL=12 padR=12 gap=6 borderB=border alignItems=2 rect=0,12,640,36
+    flow h=24 padL=10 padR=10 minW=72 bg=sunken control=button shrink=true lighten=true onClick=true rect=12,18,76,24
       textB text="Compact" grow=1 fg=chip-text ellipsis=true center=true rect=22,18,56,24
-    flow h=24 padL=10 padR=10 bg=accent control=primary shrink=true lighten=true onClick=true rect=94,18,57,24
+    flow h=24 padL=10 padR=10 minW=56 bg=accent control=primary shrink=true lighten=true onClick=true rect=94,18,57,24
       textB text="Pretty" grow=1 fg=accent-text ellipsis=true center=true rect=104,18,37,24
-    flow h=24 padL=10 padR=10 bg=sunken control=button shrink=true lighten=true onClick=true rect=157,18,48,24
+    flow h=24 padL=10 padR=10 minW=44 bg=sunken control=button shrink=true lighten=true onClick=true rect=157,18,48,24
       textB text="Raw" grow=1 fg=chip-text ellipsis=true center=true rect=167,18,28,24
     flow w=12 rect=211,30,12,0
-    flow h=24 padL=10 padR=10 bg=sunken control=button shrink=true lighten=true onClick=true rect=229,18,56,24
+    flow h=24 padL=10 padR=10 minW=56 bg=sunken control=button shrink=true lighten=true onClick=true rect=229,18,56,24
       textB text="Wrap" grow=1 fg=chip-text ellipsis=true center=true rect=239,18,36,24
     plain grow=1 rect=291,30,223,0
     flow w=32 h=24 bg=sunken control=icon-button tip=Find in response (Ctrl+F) lighten=true onClick=true rect=520,18,32,24
@@ -18,7 +18,7 @@ flow grow=1 rect=0,0,640,400
     flow w=32 h=24 bg=sunken control=icon-button tip=Copy the request as a cURL command lighten=true onClick=true rect=596,18,32,24
       iconB grow=1 icon=prompt rect=596,18,32,24
   flow h=28 padL=12 padR=12 gap=6 borderB=border rect=0,48,640,28
-    fieldB grow=1 control=field onRightClickIn=true onChange=true rect=12,48,432,28
+    fieldB grow=1 control=field onRightClick=true onChange=true rect=12,48,432,28
     textB text="1/2" w=64 fg=muted small=true rect=450,48,64,28
     flow w=32 h=24 bg=sunken control=icon-button tip=Previous match lighten=true onClick=true rect=520,50,32,24
       iconB grow=1 icon=chevron-up rect=520,50,32,24

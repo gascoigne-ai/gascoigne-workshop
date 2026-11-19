@@ -6,7 +6,7 @@ flow rect=0,0,300,1800
     flow rect=0,36,300,22
       textB text="How long a request may run, in seconds." h=22 fg=muted rect=0,36,300,22
     flow rect=0,58,300,46
-      fieldB h=28 bg=sunken control=field onRightClickIn=true onChange=true rect=0,58,300,28
+      fieldB h=28 bg=sunken control=field onRightClick=true onChange=true rect=0,58,300,28
       flow h=18 rect=0,86,300,18
         textB text="Enter a whole number between 1 and 3600" grow=1 fg=error small=true ellipsis=true rect=0,86,300,18
   flow padT=8 padB=8 borderB=border-soft rect=0,112,300,94
@@ -16,19 +16,19 @@ flow rect=0,0,300,1800
     flow rect=0,148,300,22
       textB text="URL of an HTTP proxy for every REST request; empty uses the environment's." h=22 fg=muted rect=0,148,300,22
     flow rect=0,170,300,28
-      fieldB h=28 bg=sunken control=field onRightClickIn=true onChange=true rect=0,170,300,28
+      fieldB h=28 bg=sunken control=field onRightClick=true onChange=true rect=0,170,300,28
   flow padT=8 padB=8 borderB=border-soft rect=0,206,300,94
     flow h=28 gap=6 rect=0,214,300,28
       textB text="CA certificates" bold=true rect=0,214,98,28
       iconB fg=accent-line tip=Changed from the default icon=dot rect=104,214,6,28
       plain grow=1 rect=116,214,121,28
-      flow h=24 padL=10 padR=10 bg=sunken control=button tip=Remove it from settings.json so the default applies shrink=true lighten=true onClick=true rect=243,216,57,24
+      flow h=24 padL=10 padR=10 minW=56 bg=sunken control=button tip=Remove it from settings.json so the default applies shrink=true lighten=true onClick=true rect=243,216,57,24
         textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=253,216,37,24
     flow rect=0,242,300,22
       textB text="Path of a PEM file of extra certificate authorities to trust." h=22 fg=muted rect=0,242,300,22
     flow rect=0,264,300,28
-      flow h=28 bg=sunken control=field rect=0,264,300,28
-        fieldB h=28 grow=1 control=field onRightClickIn=true onChange=true rect=0,264,268,28
+      flow h=28 bg=sunken control=field alignItems=2 rect=0,264,300,28
+        fieldB h=28 grow=1 control=field onRightClick=true onChange=true rect=0,264,268,28
         flow w=32 h=24 bg=sunken control=icon-button tip=Choose another file lighten=true onClick=true rect=268,266,32,24
           iconB grow=1 icon=folder rect=268,266,32,24
   flow padT=8 padB=8 borderB=border-soft rect=0,300,300,94
@@ -38,7 +38,7 @@ flow rect=0,0,300,1800
     flow rect=0,336,300,22
       textB text="Path of a client certificate for servers that ask for one." h=22 fg=muted rect=0,336,300,22
     flow h=28 rect=0,358,300,28
-      flow w=150 h=28 padL=10 padR=10 gap=8 bg=sunken control=button tip=Choose the file lighten=true onClick=true rect=0,358,150,28
+      flow w=150 h=28 padL=10 padR=10 gap=8 bg=sunken control=button tip=Choose the file alignItems=2 lighten=true onClick=true rect=0,358,150,28
         iconB w=16 icon=folder rect=10,365,16,14
         textB text="Choose file" grow=1 fg=chip-text rect=34,364,106,16
       plain grow=1 rect=150,358,150,28
@@ -49,7 +49,7 @@ flow rect=0,0,300,1800
     flow rect=0,430,300,22
       textB text="Path of the private key of the client certificate." h=22 fg=muted rect=0,430,300,22
     flow h=28 rect=0,452,300,28
-      flow w=150 h=28 padL=10 padR=10 gap=8 bg=sunken control=button tip=Choose the file lighten=true onClick=true rect=0,452,150,28
+      flow w=150 h=28 padL=10 padR=10 gap=8 bg=sunken control=button tip=Choose the file alignItems=2 lighten=true onClick=true rect=0,452,150,28
         iconB w=16 icon=folder rect=10,459,16,14
         textB text="Choose file" grow=1 fg=chip-text rect=34,458,106,16
       plain grow=1 rect=150,452,150,28

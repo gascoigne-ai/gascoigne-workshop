@@ -7,7 +7,7 @@ flow rect=0,0,560,1400
     flow rect=0,58,560,22
       textB text="Your colors, by theme id and token name, as #rrggbb." h=22 fg=muted rect=0,58,560,22
     flow h=28 rect=0,80,560,28
-      flow padL=10 padR=10 bg=sunken control=button shrink=true lighten=true onClick=true rect=0,80,120,28
+      flow padL=10 padR=10 minW=120 bg=sunken control=button shrink=true lighten=true onClick=true rect=0,80,120,28
         textB text="Open colors" grow=1 fg=chip-text ellipsis=true center=true rect=10,80,100,28
   textB text="SHORTCUTS" h=22 fg=muted small=true rect=0,116,560,22
   flow padT=8 padB=8 borderB=border-soft rect=0,138,560,116
@@ -18,5 +18,5 @@ flow rect=0,0,560,1400
       textB text="Your key bindings by action id, such as \"Ctrl+Shift+Tab\"; empty text" h=22 fg=muted rect=0,174,560,22
       textB text="unbinds." h=22 fg=muted rect=0,196,560,22
     flow h=28 rect=0,218,560,28
-      flow padL=10 padR=10 bg=sunken control=button shrink=true lighten=true onClick=true rect=0,218,120,28
+      flow padL=10 padR=10 minW=120 bg=sunken control=button shrink=true lighten=true onClick=true rect=0,218,120,28
         textB text="Open shortcuts" grow=1 fg=chip-text ellipsis=true center=true rect=10,218,100,28

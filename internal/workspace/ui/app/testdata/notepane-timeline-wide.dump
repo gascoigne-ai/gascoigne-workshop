@@ -1,4 +1,4 @@
-scrollB padL=12 padT=12 padR=12 padB=12 grow=1 rect=0,0,1020,300
+scrollB padL=12 padT=12 padR=12 padB=12 grow=1 clip=true rect=0,0,1020,300
   flow rect=12,12,996,154
     textB text="Total      412ms" h=22 fg=text rect=12,12,996,22
     textB text="DNS        3ms" h=22 fg=text rect=12,34,996,22

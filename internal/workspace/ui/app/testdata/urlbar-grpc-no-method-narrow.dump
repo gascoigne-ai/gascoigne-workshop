@@ -11,6 +11,6 @@ flow h=56 padL=12 padT=8 padR=12 padB=8 gap=8 bg=bg rect=0,0,420,56
     flow w=56 tip=Stream: keep the call open and show every message in the Messages pane onClick=true rect=278,8,56,40
       textB text="Stream" grow=1 fg=muted center=true rect=278,8,56,40
     plain w=8 grow=1 rect=334,8,8,40
-    fieldB grow=1 control=field onRightClickIn=true onChange=true rect=342,8,0,40
-  flow padL=10 padR=10 bg=accent control=primary tip=Send the request (Ctrl+Enter) lighten=true onClick=true rect=328,8,80,40
+    fieldB grow=1 control=field onRightClick=true onChange=true rect=342,8,0,40
+  flow padL=10 padR=10 minW=80 bg=accent control=primary tip=Send the request (Ctrl+Enter) lighten=true onClick=true rect=328,8,80,40
     textB text="Send" grow=1 fg=accent-text ellipsis=true center=true rect=338,8,60,40

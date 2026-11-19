@@ -10,7 +10,7 @@ import (
 )
 
 // text draws one line.
-type textB struct{ plain }
+type textB struct{ Base }
 
 func (e *El) face(ctx *core.Ctx) *text.GoTextFace {
 	face := e.chosenFace(ctx)
@@ -41,12 +41,12 @@ func (e *El) color(def core.Token) core.Token {
 	return def
 }
 
-func (textB) measure(element *El, ctx *core.Ctx, _ int) (int, int) {
+func (textB) Measure(element *El, ctx *core.Ctx, _ int) (int, int) {
 	face := element.face(ctx)
 	return ctx.Width(face, element.text), ctx.LineH(face)
 }
 
-func (textB) draw(element *El, ctx *core.Ctx, dst *ebiten.Image) {
+func (textB) Draw(element *El, ctx *core.Ctx, dst *ebiten.Image) {
 	face := element.face(ctx)
 	s := element.text
 	if element.ellipsis {

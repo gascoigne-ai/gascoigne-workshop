@@ -1,32 +1,32 @@
 stack rect=0,0,1000,800
   flow bg=shadow rect=0,0,1000,800
-  flow w=440 h=480 floatMode=2 bg=bg control=menu float=true modal=true focusScope=true shadow=true onDismiss=true rect=280,160,440,480
-    flow h=44 padL=16 padR=16 gap=8 bg=hero borderB=border control=hero onDismiss=true rect=280,160,440,44
+  flow w=440 h=480 floatMode=2 bg=bg control=menu float=true modal=true focusScope=true shadow=true onDismiss=true moved=true rect=280,160,440,480
+    flow h=44 padL=16 padR=16 gap=8 bg=hero borderB=border control=hero roundCtl=menu roundCorners=3 alignItems=2 onDismiss=true dragHandle=true rect=280,160,440,44
       textB text="Move to" fg=hero-text bold=true rect=296,174,53,16
       textB text="x" fg=hero-muted small=true ellipsis=true shrink=true rect=357,175,6,14
       plain grow=1 rect=371,182,293,0
       flow w=32 h=24 control=row tip=Close (Esc) hoverBg=shadow onClick=true rect=672,170,32,24
         iconB grow=1 fg=hero-muted icon=cross rect=672,170,32,24
-    scrollB grow=1 bg=sunken rect=280,204,440,384
+    scrollB grow=1 bg=sunken clip=true rect=280,204,440,384
       flow rect=280,204,440,140
         plain grow=1 rect=280,204,440,0
-        flow h=28 padL=12 padR=12 gap=6 control=row hoverBg=hover onClick=true onDoubleClick=true rect=280,204,440,28
+        flow h=28 padL=12 padR=12 gap=6 control=row hoverBg=hover alignItems=2 onClick=true onDoubleClick=true rect=280,204,440,28
           flow w=3 h=14 bg=collection.1 rect=292,211,3,14
           textB text="Source" grow=1 fg=muted bold=true ellipsis=true rect=301,210,330,16
           textB text="current folder" fg=muted small=true rect=637,211,71,14
-        flow h=28 padL=24 padR=12 gap=6 control=row hoverBg=hover onClick=true onDoubleClick=true rect=280,232,440,28
+        flow h=28 padL=24 padR=12 gap=6 control=row hoverBg=hover alignItems=2 onClick=true onDoubleClick=true rect=280,232,440,28
           textB text="dir" grow=1 ellipsis=true rect=304,238,404,16
-        flow h=28 padL=36 padR=12 gap=6 control=row hoverBg=hover onClick=true onDoubleClick=true rect=280,260,440,28
+        flow h=28 padL=36 padR=12 gap=6 control=row hoverBg=hover alignItems=2 onClick=true onDoubleClick=true rect=280,260,440,28
           textB text="sub" grow=1 ellipsis=true rect=316,266,392,16
-        flow h=28 padL=12 padR=12 gap=6 control=row hoverBg=hover onClick=true onDoubleClick=true rect=280,288,440,28
+        flow h=28 padL=12 padR=12 gap=6 control=row hoverBg=hover alignItems=2 onClick=true onDoubleClick=true rect=280,288,440,28
           flow w=3 h=14 bg=collection.2 rect=292,295,3,14
           textB text="Target" grow=1 bold=true ellipsis=true rect=301,294,407,16
-        flow h=28 padL=24 padR=12 gap=6 control=row hoverBg=hover onClick=true onDoubleClick=true rect=280,316,440,28
+        flow h=28 padL=24 padR=12 gap=6 control=row hoverBg=hover alignItems=2 onClick=true onDoubleClick=true rect=280,316,440,28
           textB text="folder" grow=1 ellipsis=true rect=304,322,404,16
         plain grow=1 rect=280,344,440,0
-    flow h=52 padL=16 padR=16 gap=8 borderT=border-soft rect=280,588,440,52
+    flow h=52 padL=16 padR=16 gap=8 borderT=border-soft alignItems=2 rect=280,588,440,52
       textB text="Variables are not changed" grow=1 fg=muted small=true ellipsis=true shrink=true rect=296,607,226,14
-      flow h=28 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=530,600,80,28
+      flow h=28 padL=10 padR=10 minW=80 bg=sunken control=button lighten=true onClick=true rect=530,600,80,28
         textB text="Cancel" grow=1 fg=chip-text ellipsis=true center=true rect=540,600,60,28
-      flow h=28 padL=10 padR=10 bg=sunken fg=muted control=button lighten=true rect=618,600,86,28
+      flow h=28 padL=10 padR=10 minW=80 bg=sunken fg=muted control=button lighten=true rect=618,600,86,28
         textB text="Move here" grow=1 fg=chip-text ellipsis=true center=true rect=628,600,66,28

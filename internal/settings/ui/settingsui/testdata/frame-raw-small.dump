@@ -1,15 +1,15 @@
 stack rect=0,0,600,420
   flow bg=shadow rect=0,0,600,420
-  resizableB w=520 h=340 floatMode=2 bg=bg control=menu float=true modal=true focusScope=true shadow=true onDismiss=true rect=40,40,520,340
-    flow h=44 padL=16 padR=16 gap=8 bg=hero borderB=border control=hero onDismiss=true rect=40,40,520,44
+  resizableB w=520 h=340 floatMode=2 dismissMargin=4 bg=bg control=menu float=true modal=true focusScope=true shadow=true onDismiss=true moved=true rect=40,40,520,340
+    flow h=44 padL=16 padR=16 gap=8 bg=hero borderB=border control=hero roundCtl=menu roundCorners=3 alignItems=2 onDismiss=true dragHandle=true rect=40,40,520,44
       textB text="Settings" fg=hero-text bold=true rect=56,54,55,16
       textB text="settings.json" fg=hero-muted small=true ellipsis=true shrink=true rect=119,55,68,14
       plain grow=1 rect=195,62,309,0
       flow w=32 h=24 control=row tip=Close (Esc) hoverBg=shadow onClick=true rect=512,50,32,24
         iconB grow=1 fg=hero-muted icon=cross rect=512,50,32,24
-    flow h=40 padL=16 padR=16 gap=8 borderB=border-soft rect=40,84,520,40
+    flow h=40 padL=16 padR=16 gap=8 borderB=border-soft alignItems=2 rect=40,84,520,40
       plain grow=1 rect=56,104,420,0
-      flow h=24 padL=10 padR=10 bg=sunken control=button tip=Back to the settings form shrink=true lighten=true onClick=true rect=484,92,60,24
+      flow h=24 padL=10 padR=10 minW=60 bg=sunken control=button tip=Back to the settings form shrink=true lighten=true onClick=true rect=484,92,60,24
         textB text="Form" grow=1 fg=chip-text ellipsis=true center=true rect=494,92,40,24
     flow padL=16 padT=16 padR=16 padB=16 grow=1 rect=40,124,520,256
       flow gap=6 grow=1 rect=56,140,488,224
@@ -17,5 +17,5 @@ stack rect=0,0,600,420
           textB text="settings.json" bold=true rect=56,140,87,28
           plain grow=1 rect=149,140,290,28
           textB text="Saved as you type" fg=muted small=true rect=445,140,99,28
-        areaB grow=1 bg=sunken onRightClickIn=true onChange=true rect=56,174,488,170
+        areaB grow=1 bg=sunken onRightClick=true onChange=true rect=56,174,488,170
         textB text="Ctrl+Space completes keys and values" fg=muted small=true rect=56,350,488,14

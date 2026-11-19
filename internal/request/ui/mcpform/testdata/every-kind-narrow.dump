@@ -1,7 +1,7 @@
 flow gap=8 rect=0,0,240,600
   flow rect=0,0,240,22
     textB text="A field of every kind, required and optional" h=22 fg=muted rect=0,0,240,22
-  scrollB gap=8 grow=1 rect=0,30,240,360
+  scrollB gap=8 maxH=360 grow=1 clip=true rect=0,30,240,360
     flow gap=2 rect=0,30,232,52
       flow h=22 gap=8 rect=0,30,232,22
         textB text="order *" small=true bold=true rect=0,30,41,22
@@ -14,7 +14,7 @@ flow gap=8 rect=0,0,240,600
       flow h=22 gap=8 rect=0,90,232,22
         textB text="query *" small=true bold=true rect=0,90,43,22
         textB text="What to find, a long description that a narrow form cuts" grow=1 fg=muted small=true ellipsis=true rect=51,90,181,22
-      fieldB h=28 bg=sunken control=field onRightClickIn=true rect=0,114,232,28
+      fieldB h=28 bg=sunken control=field onRightClick=true rect=0,114,232,28
     flow gap=2 rect=0,150,232,52
       flow h=22 gap=8 rect=0,150,232,22
         textB text="strict *" small=true bold=true rect=0,150,40,22
@@ -25,11 +25,11 @@ flow gap=8 rect=0,0,240,600
     flow gap=2 rect=0,210,232,52
       flow h=22 gap=8 rect=0,210,232,22
         textB text="filters" small=true bold=true rect=0,210,33,22
-      fieldB h=28 bg=sunken control=field onRightClickIn=true rect=0,234,232,28
+      fieldB h=28 bg=sunken control=field onRightClick=true rect=0,234,232,28
     flow gap=2 rect=0,270,232,52
       flow h=22 gap=8 rect=0,270,232,22
         textB text="limit" small=true bold=true rect=0,270,25,22
-      fieldB h=28 bg=sunken control=field onRightClickIn=true rect=0,294,232,28
+      fieldB h=28 bg=sunken control=field onRightClick=true rect=0,294,232,28
     flow gap=2 rect=0,330,232,52
       flow h=22 gap=8 rect=0,330,232,22
         textB text="safe" small=true bold=true rect=0,330,24,22

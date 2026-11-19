@@ -2,11 +2,11 @@ flow gap=6 grow=1 rect=0,0,1020,300
   flow h=28 gap=6 rect=0,0,1020,28
     textB text="QUERY" fg=muted small=true rect=0,0,43,28
     plain grow=1 rect=49,0,861,28
-    flow padL=10 padR=10 bg=sunken control=button tip=Ask the server for its types; the answer opens in the response shrink=true lighten=true onClick=true rect=916,0,104,28
+    flow padL=10 padR=10 minW=104 bg=sunken control=button tip=Ask the server for its types; the answer opens in the response shrink=true lighten=true onClick=true rect=916,0,104,28
       textB text="Load schema" grow=1 fg=chip-text ellipsis=true center=true rect=926,0,84,28
-  areaB grow=3 bg=sunken onRightClickIn=true onChange=true rect=0,34,1020,174
+  areaB grow=3 bg=sunken onRightClick=true onChange=true rect=0,34,1020,174
   flow h=22 gap=6 rect=0,214,1020,22
     textB text="VARIABLES (JSON)" fg=muted small=true rect=0,214,111,22
     plain grow=1 rect=117,214,834,22
     textB text="Valid JSON" fg=ok small=true rect=957,214,63,22
-  areaB grow=1 bg=sunken onRightClickIn=true onChange=true rect=0,242,1020,58
+  areaB grow=1 bg=sunken onRightClick=true onChange=true rect=0,242,1020,58

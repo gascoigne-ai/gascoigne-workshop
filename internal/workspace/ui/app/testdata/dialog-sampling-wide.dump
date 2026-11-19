@@ -1,7 +1,7 @@
 stack rect=0,0,1280,800
   flow bg=shadow rect=0,0,1280,800
-  flow w=380 floatMode=2 bg=bg control=menu float=true modal=true focusScope=true shadow=true onDismiss=true rect=450,267,380,266
-    flow h=44 padL=16 padR=16 gap=8 bg=hero borderB=border control=hero onDismiss=true rect=450,267,380,44
+  flow w=380 floatMode=2 bg=bg control=menu float=true modal=true focusScope=true shadow=true onDismiss=true moved=true rect=450,267,380,266
+    flow h=44 padL=16 padR=16 gap=8 bg=hero borderB=border control=hero roundCtl=menu roundCorners=3 alignItems=2 onDismiss=true dragHandle=true rect=450,267,380,44
       textB text="Sampling request" fg=hero-text bold=true rect=466,281,118,16
       plain grow=1 rect=592,289,182,0
       flow w=32 h=24 control=row tip=Close (Esc) hoverBg=shadow onClick=true rect=782,277,32,24
@@ -13,10 +13,10 @@ stack rect=0,0,1280,800
         textB text="System: Be brief" h=22 fg=muted rect=466,371,348,22
         textB h=22 fg=muted rect=466,393,348,22
         textB text="user: Say hi" h=22 fg=muted rect=466,415,348,22
-      fieldB h=28 bg=sunken control=field onRightClickIn=true rect=466,449,348,28
+      fieldB h=28 bg=sunken control=field onRightClick=true rect=466,449,348,28
       flow h=28 gap=8 rect=466,489,348,28
         plain grow=1 rect=466,489,164,28
-        flow padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=638,489,80,28
+        flow padL=10 padR=10 minW=80 bg=sunken control=button lighten=true onClick=true rect=638,489,80,28
           textB text="Decline" grow=1 fg=chip-text ellipsis=true center=true rect=648,489,60,28
-        flow padL=10 padR=10 bg=accent control=primary lighten=true onClick=true rect=726,489,88,28
+        flow padL=10 padR=10 minW=80 bg=accent control=primary lighten=true onClick=true rect=726,489,88,28
           textB text="Send reply" grow=1 fg=accent-text ellipsis=true center=true rect=736,489,68,28

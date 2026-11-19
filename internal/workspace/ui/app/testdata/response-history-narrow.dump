@@ -1,17 +1,17 @@
 flow grow=1 rect=0,0,300,400
   plain h=12 grow=1 rect=0,0,300,12
-  flow h=36 padL=12 padR=12 gap=6 borderB=border rect=0,12,300,36
-    flow h=24 padL=10 padR=10 bg=sunken control=button shrink=true lighten=true onClick=true rect=12,18,72,24
+  flow h=36 padL=12 padR=12 gap=6 borderB=border alignItems=2 rect=0,12,300,36
+    flow h=24 padL=10 padR=10 minW=72 bg=sunken control=button shrink=true lighten=true onClick=true rect=12,18,72,24
       textB text="Compact" grow=1 fg=chip-text ellipsis=true center=true rect=22,18,52,24
-    flow h=24 padL=10 padR=10 bg=accent control=primary shrink=true lighten=true onClick=true rect=90,18,56,24
+    flow h=24 padL=10 padR=10 minW=56 bg=accent control=primary shrink=true lighten=true onClick=true rect=90,18,56,24
       textB text="Pretty" grow=1 fg=accent-text ellipsis=true center=true rect=100,18,36,24
-    flow h=24 padL=10 padR=10 bg=sunken control=button shrink=true lighten=true onClick=true rect=152,18,44,24
+    flow h=24 padL=10 padR=10 minW=44 bg=sunken control=button shrink=true lighten=true onClick=true rect=152,18,44,24
       textB text="Raw" grow=1 fg=chip-text ellipsis=true center=true rect=162,18,24,24
     flow w=12 rect=202,30,12,0
-    flow h=24 padL=10 padR=10 bg=sunken control=button shrink=true lighten=true onClick=true rect=220,18,56,24
+    flow h=24 padL=10 padR=10 minW=56 bg=sunken control=button shrink=true lighten=true onClick=true rect=220,18,56,24
       textB text="Wrap" grow=1 fg=chip-text ellipsis=true center=true rect=230,18,36,24
     plain grow=1
-    flow h=24 padL=10 padR=10 bg=sunken control=button tip=Earlier responses of this request shrink=true lighten=true onClickAt=true rect=288,18,66,24
+    flow h=24 padL=10 padR=10 minW=66 bg=sunken control=button tip=Earlier responses of this request shrink=true lighten=true onClick=true rect=288,18,66,24
       textB text="History" grow=1 fg=chip-text ellipsis=true center=true rect=298,18,46,24
     flow w=32 h=24 bg=sunken control=icon-button tip=Find in response (Ctrl+F) lighten=true onClick=true rect=360,18,32,24
       iconB grow=1 icon=search rect=360,18,32,24

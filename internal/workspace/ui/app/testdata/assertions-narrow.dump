@@ -4,4 +4,4 @@ flow padL=12 padT=12 padR=12 padB=12 gap=8 grow=1 rect=0,0,420,300
     textB text="Content-Type contains json, body contains \"ok\", json items.length > 0," h=18 fg=muted small=true rect=12,30,396,18
     textB text="json items[0].name == \"a\". set token = json access_token keeps a value" h=18 fg=muted small=true rect=12,48,396,18
     textB text="as {{token}} for later requests. Lines starting with # are notes." h=18 fg=muted small=true rect=12,66,396,18
-  areaB grow=1 bg=sunken onRightClickIn=true onChange=true rect=12,92,396,196
+  areaB grow=1 bg=sunken onRightClick=true onChange=true rect=12,92,396,196

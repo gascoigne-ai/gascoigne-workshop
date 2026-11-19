@@ -203,19 +203,13 @@ func hasModal(element *El) bool {
 	return false
 }
 
-// preUpdater is implemented by behaviors that must see the input before
-// their children do, to take a click away from them.
-type preUpdater interface {
-	preUpdate(element *El, ctx *core.Ctx)
-}
-
 // update reports whether a modal element swallowed the input.
 func (e *El) update(ctx *core.Ctx) bool {
 	if e.hidden {
 		return false
 	}
-	if p, ok := e.b.(preUpdater); ok {
-		p.preUpdate(e, ctx)
+	if p, ok := e.b.(PreUpdater); ok {
+		p.PreUpdate(e, ctx)
 	}
 	saved := ctx.In
 	masked := e.clip && !ctx.In.Over(e.rect)
@@ -241,13 +235,10 @@ func (e *El) update(ctx *core.Ctx) bool {
 	if swallowed {
 		return true
 	}
-	e.b.update(e, ctx)
+	e.b.Update(e, ctx)
 	e.dragByHandle(ctx)
 	if e.onClick != nil && ctx.In.Hit(e.rect) {
-		e.onClick()
-	}
-	if e.onClickAt != nil && ctx.In.Hit(e.rect) {
-		e.onClickAt(ctx.In.X, ctx.In.Y)
+		e.onClick(ctx.In.X, ctx.In.Y)
 	}
 	if e.onDouble != nil && ctx.In.Clicks == 2 && ctx.In.Hit(e.rect) {
 		e.onDouble()
@@ -259,12 +250,8 @@ func (e *El) update(ctx *core.Ctx) bool {
 		e.onDragOver()
 	}
 	if e.onRight != nil && ctx.In.RightClick && ctx.In.Over(e.rect) {
-		e.onRight(ctx.In.X, ctx.In.Y)
+		e.onRight(ctx, ctx.In.X, ctx.In.Y)
 		ctx.In.RightClick = false // one right click opens one menu: the innermost wins
-	}
-	if e.onRightIn != nil && ctx.In.RightClick && ctx.In.Over(e.rect) {
-		e.onRightIn(ctx, ctx.In.X, ctx.In.Y)
-		ctx.In.RightClick = false
 	}
 	if e.modal {
 		// A modal overlay owns the pointer: nothing under it gets clicks,
@@ -275,12 +262,6 @@ func (e *El) update(ctx *core.Ctx) bool {
 		return true
 	}
 	return false
-}
-
-// overDrawer is implemented by behaviors that paint over their children,
-// such as a scrollbar.
-type overDrawer interface {
-	drawOver(element *El, ctx *core.Ctx, dst *ebiten.Image)
 }
 
 func (e *El) draw(ctx *core.Ctx, dst *ebiten.Image) {
@@ -331,7 +312,7 @@ func (e *El) draw(ctx *core.Ctx, dst *ebiten.Image) {
 		ctx.HLine(dst, r.X, r.Y+r.H-1, r.W, ctx.Color(e.borderB))
 	}
 
-	e.b.draw(e, ctx, dst)
+	e.b.Draw(e, ctx, dst)
 	kidsDst := dst
 	if e.clip {
 		kidsDst = ctx.Clip(dst, r)
@@ -346,8 +327,8 @@ func (e *El) draw(ctx *core.Ctx, dst *ebiten.Image) {
 	if border != "" { // after the children, so striped rows do not paint over it
 		ctx.OutlineStyled(dst, r, ctx.Color(border), style.Radius)
 	}
-	if o, ok := e.b.(overDrawer); ok {
-		o.drawOver(e, ctx, dst)
+	if o, ok := e.b.(OverDrawer); ok {
+		o.DrawOver(e, ctx, dst)
 	}
 
 	if e.edgeTok != "" { // the open tab's outline: top, left and right, bottom left open
@@ -438,7 +419,7 @@ func (e *El) coversWithControl(posX, posY int) bool {
 		if k.hidden || !k.rect.Contains(posX, posY) {
 			continue
 		}
-		if k.onClick != nil || k.onClickAt != nil || k.onDouble != nil || k.focusable() || k.coversWithControl(posX, posY) {
+		if k.onClick != nil || k.onDouble != nil || k.focusable() || k.coversWithControl(posX, posY) {
 			return true
 		}
 	}

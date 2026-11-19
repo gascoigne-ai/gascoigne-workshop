@@ -7,6 +7,6 @@ flow h=56 padL=12 padT=8 padR=12 padB=8 gap=8 bg=bg rect=0,0,1020,56
     flow w=84 tip=Method: click to change onClick=true rect=77,8,84,40
       textB text="GET" grow=1 fg=method.GET center=true rect=77,8,84,40
     plain w=8 grow=1 rect=161,8,8,40
-    fieldB grow=1 control=field onRightClickIn=true onChange=true rect=169,8,751,40
-  flow padL=10 padR=10 bg=accent control=primary tip=Cancel the running request shrink=true lighten=true onClick=true rect=928,8,80,40
+    fieldB grow=1 control=field onRightClick=true onChange=true rect=169,8,751,40
+  flow padL=10 padR=10 minW=80 bg=accent control=primary tip=Cancel the running request shrink=true lighten=true onClick=true rect=928,8,80,40
     textB text="Cancel" grow=1 fg=accent-text ellipsis=true center=true rect=938,8,60,40

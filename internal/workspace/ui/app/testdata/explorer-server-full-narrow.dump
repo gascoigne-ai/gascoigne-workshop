@@ -1,6 +1,6 @@
 flow grow=1 rect=0,0,400,160
   flow padL=12 padT=8 padR=12 padB=8 gap=4 borderB=border rect=0,0,400,98
-    flow gap=8 rect=12,8,376,16
+    flow gap=8 alignItems=5 rect=12,8,376,16
       textB text="mock 1.2.0" bold=true rect=12,8,72,16
       textB text="protocol 2025-06-18" fg=muted small=true rect=92,10,114,14
     textB text="Offers: resources · tools" fg=muted small=true rect=12,28,376,14
@@ -11,16 +11,16 @@ flow grow=1 rect=0,0,400,160
     flow w=260 borderR=border rect=0,98,260,62
       flow h=40 padT=6 borderB=border rect=0,98,260,40
         flow padL=2 onSelect=true rect=0,104,249,34
-          flow padL=10 padR=10 gap=4 bg=bg edge=accent-line edgeTop=true edgeLeft=true edgeRight=true onClick=true rect=2,104,66,34
+          flow padL=10 padR=10 gap=4 bg=bg edge=accent-line alignItems=5 edgeTop=true edgeLeft=true edgeRight=true onClick=true reveal=true rect=2,104,66,34
             textB text="Tools" fg=text rect=12,113,35,16
             textB text="2" fg=muted small=true rect=51,115,7,14
-          flow padL=10 padR=10 borderInset=10 gap=4 borderL=border-soft onClick=true rect=68,104,98,34
+          flow padL=10 padR=10 borderInset=10 gap=4 borderL=border-soft alignItems=5 onClick=true rect=68,104,98,34
             textB text="Resources" fg=muted rect=78,113,67,16
             textB text="1" fg=muted small=true rect=149,115,7,14
-          flow padL=10 padR=10 borderInset=10 gap=4 borderL=border-soft onClick=true rect=166,104,83,34
+          flow padL=10 padR=10 borderInset=10 gap=4 borderL=border-soft alignItems=5 onClick=true rect=166,104,83,34
             textB text="Prompts" fg=muted rect=176,113,52,16
             textB text="1" fg=muted small=true rect=232,115,7,14
-      scrollB grow=1 rect=0,138,260,22
+      scrollB grow=1 clip=true rect=0,138,260,22
         flow padL=12 padT=6 padR=12 padB=6 control=row hoverBg=hover onClick=true rect=0,138,252,42
           flow grow=1 rect=12,144,228,30
             textB text="search" ellipsis=true rect=12,144,228,16
