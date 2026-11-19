@@ -8,6 +8,9 @@ import (
 	_ "image/png"
 )
 
+// maxImagePixels is the largest image (width times height) Decode reads.
+const maxImagePixels = 64 << 20
+
 // Picture is a response body that is an image.
 type Picture struct {
 	Image         image.Image
@@ -23,7 +26,7 @@ func Decode(body []byte) (Picture, bool) {
 		return Picture{}, false
 	}
 	cfg, format, err := image.DecodeConfig(bytes.NewReader(body))
-	if err != nil || cfg.Width <= 0 || cfg.Height <= 0 || cfg.Width*cfg.Height > 64<<20 {
+	if err != nil || cfg.Width <= 0 || cfg.Height <= 0 || cfg.Width*cfg.Height > maxImagePixels {
 		return Picture{}, false
 	}
 	img, _, err := image.Decode(bytes.NewReader(body))

@@ -167,6 +167,35 @@ func TestHandshakeFailuresAreReported(t *testing.T) {
 	}
 }
 
+func TestOversizedHandshakeResponseIsRefused(t *testing.T) {
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer listener.Close()
+	go func() {
+		conn, err := listener.Accept()
+		if err != nil {
+			return
+		}
+		defer conn.Close()
+		bufio.NewReader(conn).ReadString('\n')
+		conn.Write([]byte("HTTP/1.1 101 Switching Protocols\r\n"))
+		line := "X-Filler: " + strings.Repeat("a", 1000) + "\r\n"
+		for range 300 { // 300 KB of headers, far over the bound
+			if _, err := conn.Write([]byte(line)); err != nil {
+				return
+			}
+		}
+	}()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	_, err = Dial(ctx, "ws://"+listener.Addr().String(), Options{})
+	if err == nil || !strings.Contains(err.Error(), "too large") {
+		t.Fatalf("got %v", err)
+	}
+}
+
 func TestOversizedMessageIsRefused(t *testing.T) {
 	_, url := echoServer(t, func(conn *Conn) { conn.Write(Binary, make([]byte, 5000)) })
 	c := dial(t, url, Options{MaxMessage: 1000})

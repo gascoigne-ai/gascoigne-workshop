@@ -1970,6 +1970,16 @@ and the in-memory keys `stateKey` and `tree.Key`.
   the stream with the reason (`Connection lost: ...`; an MCP session ends), and a broken stream
   reports its read error instead of looking closed by the server; an image over 64 million pixels is
   not decoded (`respview.Decode`); a paste is at most 1 MiB (`core.MaxPasteBytes`, refused with a
-  toast); a text field keeps at most 100 undo steps and 8 MiB of snapshots.
+  toast); a text field keeps at most 100 undo steps and 8 MiB of snapshots. More bounds: a WebSocket
+  message is at most 16 MiB (`ws.DefaultMaxMessage`, `Options.MaxMessage` overrides); an MCP message
+  is at most 16 MiB (`proto.mcpMaxMessage`); the WebSocket handshake response (status line and
+  headers) is at most 64 KiB (`ws.maxHandshakeBytes`), a larger one fails the connect with
+  `response too large`; an image is decoded only up to 64 Mi pixels width times height
+  (`respview.maxImagePixels`); an OpenAPI schema follows `$ref` at most 6 levels deep
+  (`openapi.maxRefDepth`).
+-  Postman, cURL and client config parsers (`postman.Parse`, `model.ParseCurl`, the `.workshop.*`
+  reader) take bytes already in memory and set no size limit of their own: the caller bounds the
+  input. cURL text comes from the clipboard; Postman and client config files are read whole with no
+  size cap, so a huge file costs memory but is parsed without panic or hang (fuzz targets).
 -  A folder collapsed at exit is open again at the next start: opening a collection opens every
   folder and the remembered open folders only add to that (`migration_test.go` notes it).

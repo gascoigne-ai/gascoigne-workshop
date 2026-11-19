@@ -171,10 +171,13 @@ func (d *doc) resolveBody(body requestBody) requestBody {
 	return body
 }
 
+// maxRefDepth is how many nested $ref levels schema follows before it stops.
+const maxRefDepth = 6
+
 // schema follows $ref chains into components.schemas, to a depth that
 // stops a cycle, and does the same inside properties.
 func (d *doc) schema(other map[string]any, depth int) map[string]any {
-	if other == nil || depth > 6 {
+	if other == nil || depth > maxRefDepth {
 		return other
 	}
 	if ref, ok := other["$ref"].(string); ok {

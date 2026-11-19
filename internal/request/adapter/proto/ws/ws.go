@@ -14,6 +14,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net"
 	"net/http"
 	"net/url"
@@ -21,6 +22,10 @@ import (
 	"sync"
 	"time"
 )
+
+// maxHandshakeBytes bounds the server's handshake response (status line and
+// headers); a larger one is refused instead of read without end.
+const maxHandshakeBytes = 64 << 10
 
 // Type is a frame kind.
 type Type byte
@@ -188,11 +193,16 @@ func clientHandshake(nc net.Conn, address *url.URL, options Options) (*Conn, err
 	if err := req.Write(nc); err != nil {
 		return nil, fmt.Errorf("websocket: %w", err)
 	}
-	br := bufio.NewReader(nc)
+	budget := &io.LimitedReader{R: nc, N: maxHandshakeBytes}
+	br := bufio.NewReader(budget)
 	resp, err := http.ReadResponse(br, req)
+	if budget.N <= 0 {
+		return nil, errors.New("websocket handshake: response too large")
+	}
 	if err != nil {
 		return nil, fmt.Errorf("websocket handshake: %w", err)
 	}
+	budget.N = math.MaxInt64 // the bound is for the handshake only, not for frames
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusSwitchingProtocols {
 		return nil, fmt.Errorf("websocket handshake: %s", resp.Status)
