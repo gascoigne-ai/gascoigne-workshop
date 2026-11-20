@@ -28,41 +28,20 @@ type Host interface {
 
 // Page holds the hex fields of the colors and why a typed one was refused.
 type Page struct {
-	inputs map[w.Token]*TextField
-	notes  map[w.Token]string
+	fields NotedFields[w.Token]
 }
 
 // Forget drops the fields and notes, so they are rebuilt from the colors in
 // effect.
-func (p *Page) Forget() { p.inputs, p.notes = nil, nil }
+func (p *Page) Forget() { p.fields.Forget() }
 
 // Note is why the color typed for tok was refused, "" when it was not.
-func (p *Page) Note(tok w.Token) string { return p.notes[tok] }
+func (p *Page) Note(tok w.Token) string { return p.fields.Note(tok) }
 
 // Input is the hex field of a custom color, created on first use from the
 // color in effect.
 func (p *Page) Input(host Host, tok w.Token) *TextField {
-	if in, ok := p.inputs[tok]; ok {
-		return in
-	}
-	if p.inputs == nil {
-		p.inputs = map[w.Token]*TextField{}
-	}
-	in := new(TextField)
-	*in = NewTextField(w.FormatHex(host.Color(tok)))
-	p.inputs[tok] = in
-	return in
-}
-
-func (p *Page) setNote(tok w.Token, note string) {
-	if p.notes == nil {
-		p.notes = map[w.Token]string{}
-	}
-	if note == "" {
-		delete(p.notes, tok)
-		return
-	}
-	p.notes[tok] = note
+	return p.fields.Input(tok, func() string { return w.FormatHex(host.Color(tok)) })
 }
 
 // edited applies the hex a user typed for customColor, or says why not: a
@@ -72,15 +51,15 @@ func (p *Page) edited(host Host, customColor appearance.CustomColor) {
 	text := p.Input(host, customColor.Token).Text
 	col, err := w.ParseHex(text)
 	if err != nil {
-		p.setNote(customColor.Token, "Use #rrggbb")
+		p.fields.SetNote(customColor.Token, "Use #rrggbb")
 		return
 	}
 	need := appearance.RequiredRatio(host.Settings().Contrast)
 	if ratio := w.ContrastRatio(col, host.Color(customColor.Text)); ratio < need {
-		p.setNote(customColor.Token, fmt.Sprintf("Contrast %.1f:1 is below %.1f:1", ratio, need))
+		p.fields.SetNote(customColor.Token, fmt.Sprintf("Contrast %.1f:1 is below %.1f:1", ratio, need))
 		return
 	}
-	p.setNote(customColor.Token, "")
+	p.fields.SetNote(customColor.Token, "")
 	host.Send(prefs.Edit{Edit: func(current *settings.Settings) {
 		id := appearance.ThemeIDOf(current.Theme)
 		if current.Colors == nil {
@@ -98,8 +77,8 @@ func (p *Page) reset(host Host, tok w.Token) {
 	host.Send(prefs.Edit{Edit: func(current *settings.Settings) {
 		delete(current.Colors[appearance.ThemeIDOf(current.Theme)], string(tok))
 	}})
-	delete(p.inputs, tok)
-	p.setNote(tok, "")
+	p.fields.DropInput(tok)
+	p.fields.SetNote(tok, "")
 }
 
 // resetColors drops every color override of the current theme.
@@ -140,7 +119,7 @@ func (p *Page) View(host Host) Node {
 }
 
 func (p *Page) row(host Host, custom appearance.CustomColor) colorRow {
-	note := p.notes[custom.Token]
+	note := p.fields.Note(custom.Token)
 	border := w.Border
 	if note != "" {
 		border = w.Error

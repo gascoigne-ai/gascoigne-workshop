@@ -159,16 +159,3 @@ func TestAPlainKeyBindingFiresOnlyWhileNoTextFieldHasFocus(t *testing.T) {
 		t.Fatal("Q with no text field focused closes the tab")
 	}
 }
-
-func TestTextKeysListEveryReservedCombination(t *testing.T) {
-	var listed []string
-	for _, row := range shortcutpage.TextKeys {
-		listed = append(listed, row.Keys)
-	}
-	all := strings.Join(listed, " ")
-	for _, combo := range shortcutpage.ReservedForText {
-		if !strings.Contains(all, combo) {
-			t.Errorf("%s is reserved for text but not listed in the settings: %v", combo, listed)
-		}
-	}
-}

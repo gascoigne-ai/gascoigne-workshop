@@ -15,7 +15,7 @@
 //	Dialogs    Dialog ResizableDialog DialogTitle DialogSubtitle DialogToolbar MessageDialog   (state: DialogState DialogButton)
 //	Toasts     Toasts   (state: ToastStack Toast ToastKind)
 //	Pictures   Image RasterizeSVG
-//	Inputs     Field Area Code   (state: TextField TextArea CodeView Line Match Span; NewTextField NewTextArea)   Placeholder FieldPad Segments Wrap OnEnter OnTab   (OnChange is view's)
+//	Inputs     Field Area Code   (state: TextField TextArea CodeView Line Match Span; NewTextField NewTextArea)   Placeholder FieldPad Segments Wrap OnEnter OnTab   (OnChange is view's)   NotedFields (the fields and refusal notes of a form)
 //	Tooltips   TooltipLayer   (state: TooltipState)   (the Tooltip option is view's)
 //	Icons      Icon RegisterIcons IconNames HasIcon   CrossIcon TriangleIcon GripIcon DotsIcon GearIcon TrashIcon PlusIcon CopyIcon FolderIcon SearchIcon PromptIcon ChevronUpIcon ChevronDownIcon
 //	Checkboxes Checkbox

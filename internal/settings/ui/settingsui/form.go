@@ -195,23 +195,16 @@ func (d *SettingsDialog) boolChips(host Host, field settings.Field) Node {
 // Input is the text field of a text or number setting, filled from the
 // setting the first time it is needed.
 func (d *SettingsDialog) Input(host Host, key string) *TextField {
-	if d.inputs == nil {
-		d.inputs = map[string]*TextField{}
-	}
-	if input, ok := d.inputs[key]; ok {
-		return input
-	}
-	text := ""
-	value, _ := settings.Get(host.Settings(), key)
-	switch value := value.(type) {
-	case settings.Text:
-		text = string(value)
-	case settings.Number:
-		text = strconv.Itoa(int(value))
-	}
-	input := NewTextField(text)
-	d.inputs[key] = &input
-	return &input
+	return d.fields.Input(key, func() string {
+		value, _ := settings.Get(host.Settings(), key)
+		switch value := value.(type) {
+		case settings.Text:
+			return string(value)
+		case settings.Number:
+			return strconv.Itoa(int(value))
+		}
+		return ""
+	})
 }
 
 // Edited applies the text typed into the field of key. A number that is not
@@ -227,31 +220,24 @@ func (d *SettingsDialog) Edited(host Host, key string) {
 	if field.Kind == settings.Int {
 		number, err := strconv.Atoi(text)
 		if err != nil || number < field.Min || number > field.Max {
-			d.setNote(key, fmt.Sprintf("Enter a whole number between %d and %d", field.Min, field.Max))
+			d.fields.SetNote(key, fmt.Sprintf("Enter a whole number between %d and %d", field.Min, field.Max))
 			return
 		}
 		value = settings.Number(number)
 	}
-	d.setNote(key, "")
+	d.fields.SetNote(key, "")
 	host.Send(prefs.Change{Edit: setKey(host, key, value)})
 }
 
-func (d *SettingsDialog) setNote(key, note string) {
-	if d.notes == nil {
-		d.notes = map[string]string{}
-	}
-	d.notes[key] = note
-}
-
 // Note is why the value typed for key was refused, "" when it was not.
-func (d *SettingsDialog) Note(key string) string { return d.notes[key] }
+func (d *SettingsDialog) Note(key string) string { return d.fields.Note(key) }
 
 // textControl is the field of a text or number setting.
 func (d *SettingsDialog) textControl(host Host, field settings.Field) Node {
 	return textControlTemplate.MustBuild(markup.Scope{
 		"rowH":   w.RowH,
 		"input":  d.Input(host, field.Key),
-		"note":   d.notes[field.Key],
+		"note":   d.fields.Note(field.Key),
 		"edited": func() { d.Edited(host, field.Key) },
 	})
 }
@@ -259,7 +245,7 @@ func (d *SettingsDialog) textControl(host Host, field settings.Field) Node {
 // Reset puts the default back for key and drops it from the file.
 func (d *SettingsDialog) Reset(host Host, key string) {
 	host.Send(prefs.Change{Edit: func(current *settings.Settings) { resetKey(host, current, key) }})
-	d.inputs, d.notes = nil, nil
+	d.fields.Forget()
 	if key == "uiFont" || key == "codeFont" {
 		d.ApplyFonts(host)
 	}
@@ -390,7 +376,7 @@ func (d *SettingsDialog) fileControl(host Host, field settings.Field) Node {
 		"compactH": w.CompactH,
 		"iconBtnW": w.IconBtnW,
 		"input":    input,
-		"note":     d.notes[field.Key],
+		"note":     d.fields.Note(field.Key),
 		"edited":   func() { d.Edited(host, field.Key) },
 		"choose":   choose,
 	})

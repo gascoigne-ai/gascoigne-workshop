@@ -60,8 +60,8 @@ func TestResetAllForgetsOverridesNotesAndFields(t *testing.T) {
 	page.Input(host, custom.Token).Text = "teal"
 	page.edited(host, custom)
 	page.resetAll(host)
-	if len(host.current.Colors) != 0 || page.Note(custom.Token) != "" || len(page.inputs) != 0 {
-		t.Fatalf("colors %+v note %q inputs %d", host.current.Colors, page.Note(custom.Token), len(page.inputs))
+	if len(host.current.Colors) != 0 || page.Note(custom.Token) != "" || page.Input(host, custom.Token).Text == "teal" {
+		t.Fatalf("colors %+v note %q field text %q", host.current.Colors, page.Note(custom.Token), page.Input(host, custom.Token).Text)
 	}
 }
 

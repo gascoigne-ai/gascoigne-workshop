@@ -51,22 +51,25 @@ type PendingKey struct {
 type Page struct {
 	search    TextField
 	recording string
-	notes     map[string]string // why a recorded key was refused, by action id
+	notes     NotedFields[string] // why a recorded key was refused, by action id
 	pending   map[string]PendingKey
 }
 
-// ReservedForText are the combinations the text widgets answer.
-var ReservedForText = []string{"Ctrl+A", "Ctrl+C", "Ctrl+V", "Ctrl+X", "Ctrl+Z", "Ctrl+Y", "Ctrl+Shift+Z"}
+// textKey is a text editing action and the combinations the text widgets
+// answer for it. The table is both what Refuse keeps from other actions and
+// what the page lists read-only next to the shortcuts.
+type textKey struct {
+	action string
+	keys   []string
+}
 
-// TextKeys are the keys the text widgets answer, listed read-only next to
-// the shortcuts.
-var TextKeys = []struct{ Action, Keys string }{
-	{"Select all", "Ctrl+A"},
-	{"Copy", "Ctrl+C"},
-	{"Cut", "Ctrl+X"},
-	{"Paste", "Ctrl+V"},
-	{"Undo", "Ctrl+Z"},
-	{"Redo", "Ctrl+Y or Ctrl+Shift+Z"},
+var textKeys = []textKey{
+	{"Select all", []string{"Ctrl+A"}},
+	{"Copy", []string{"Ctrl+C"}},
+	{"Cut", []string{"Ctrl+X"}},
+	{"Paste", []string{"Ctrl+V"}},
+	{"Undo", []string{"Ctrl+Z"}},
+	{"Redo", []string{"Ctrl+Y", "Ctrl+Shift+Z"}},
 }
 
 // Effective is the binding of an action: the user's override when it is
@@ -83,9 +86,11 @@ func Effective(current settings.Settings, action Action) engine.Binding {
 // Refuse says why a combination cannot be given to any action: the text
 // widgets or the overlays need it.
 func Refuse(binding engine.Binding) error {
-	for _, reserved := range ReservedForText {
-		if parsed, _ := engine.ParseBinding(reserved); parsed == binding {
-			return fmt.Errorf("%s belongs to text editing", binding)
+	for _, entry := range textKeys {
+		for _, keys := range entry.keys {
+			if parsed, _ := engine.ParseBinding(keys); parsed == binding {
+				return fmt.Errorf("%s belongs to text editing", binding)
+			}
 		}
 	}
 	if binding.Key == ebiten.KeyEscape && !binding.Ctrl && !binding.Alt {
@@ -129,7 +134,7 @@ func Hint(host Host, id string) string {
 func (p *Page) Recording() string { return p.recording }
 
 // Note is why the last recorded key for action id was refused.
-func (p *Page) Note(id string) string { return p.notes[id] }
+func (p *Page) Note(id string) string { return p.notes.Note(id) }
 
 // Pending is the recorded key another action has, waiting for a choice.
 func (p *Page) Pending(id string) (PendingKey, bool) {
@@ -143,14 +148,14 @@ func (p *Page) PendingCount() int { return len(p.pending) }
 // Start makes the next key combination the binding of action id.
 func (p *Page) Start(id string) {
 	p.recording = id
-	delete(p.notes, id)
+	p.notes.SetNote(id, "")
 	delete(p.pending, id)
 }
 
 // Clear leaves the action without a key.
 func (p *Page) Clear(host Host, id string) {
 	p.set(host, id, engine.Binding{})
-	delete(p.notes, id)
+	p.notes.SetNote(id, "")
 	delete(p.pending, id)
 }
 
@@ -169,7 +174,7 @@ func (p *Page) Replace(host Host, id string) {
 // Reset gives the action its default key back.
 func (p *Page) Reset(host Host, id string) {
 	host.Send(prefs.Edit{Edit: func(current *settings.Settings) { delete(current.Shortcuts, id) }})
-	delete(p.notes, id)
+	p.notes.SetNote(id, "")
 }
 
 // conflict is the other action that has combination binding, if any.
@@ -213,16 +218,13 @@ func (p *Page) record(host Host, id string, binding engine.Binding) {
 	switch {
 	case plain && binding.Key == ebiten.KeyEscape:
 		p.recording = ""
-		delete(p.notes, id)
+		p.notes.SetNote(id, "")
 		return
 	case plain && binding.Key == ebiten.KeyBackspace:
 		p.set(host, id, engine.Binding{})
 	default:
 		if err := Refuse(binding); err != nil {
-			if p.notes == nil {
-				p.notes = map[string]string{}
-			}
-			p.notes[id] = err.Error()
+			p.notes.SetNote(id, err.Error())
 			return
 		}
 		if other, taken := conflict(host, id, binding); taken {
@@ -231,13 +233,13 @@ func (p *Page) record(host Host, id string, binding engine.Binding) {
 			}
 			p.pending[id] = PendingKey{Binding: binding, OtherID: other.ID, OtherName: other.Name}
 			p.recording = ""
-			delete(p.notes, id)
+			p.notes.SetNote(id, "")
 			return
 		}
 		p.set(host, id, binding)
 	}
 	p.recording = ""
-	delete(p.notes, id)
+	p.notes.SetNote(id, "")
 }
 
 // set stores a binding; one equal to the default is not stored.
@@ -286,11 +288,11 @@ type actionRow struct {
 // textKeyRow is one read-only line of the text editing keys.
 type textKeyRow struct{ Action, Keys string }
 
-// textKeyRows are TextKeys as users of this platform read them.
+// textKeyRows are textKeys as users of this platform read them.
 func textKeyRows(goos string) []textKeyRow {
-	rows := make([]textKeyRow, 0, len(TextKeys))
-	for _, keys := range TextKeys {
-		rows = append(rows, textKeyRow{Action: keys.Action, Keys: w.PlatformKeyText(goos, keys.Keys)})
+	rows := make([]textKeyRow, 0, len(textKeys))
+	for _, entry := range textKeys {
+		rows = append(rows, textKeyRow{Action: entry.action, Keys: w.PlatformKeyText(goos, strings.Join(entry.keys, " or "))})
 	}
 	return rows
 }
@@ -337,7 +339,7 @@ func (p *Page) row(host Host, action Action) actionRow {
 	if pending, ok := p.pending[action.ID]; ok {
 		row.Conflict = fmt.Sprintf("Used by %s (%s)", pending.OtherName, w.PlatformKeyText(host.HostOS(), pending.Binding.String()))
 		row.ReplaceTip = "Unbind " + pending.OtherName + " and use this key here"
-	} else if text := p.notes[action.ID]; text != "" {
+	} else if text := p.notes.Note(action.ID); text != "" {
 		row.Refusal = text
 	} else {
 		row.Warning = Warning(binding)

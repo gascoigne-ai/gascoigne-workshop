@@ -10,7 +10,6 @@ package settingsui
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fontfamily"
@@ -87,8 +86,7 @@ type SettingsDialog struct {
 	Search TextField   // filters the settings across pages
 	scroll ScrollState
 
-	inputs map[string]*TextField // fields of the text and number settings
-	notes  map[string]string     // why a typed value was refused
+	fields NotedFields[string] // fields of the text and number settings, and why a typed value was refused
 	scale  SliderState
 
 	Families   []fontfamily.Family // installed font families, once scanned
@@ -119,7 +117,7 @@ func (d *SettingsDialog) pageID() string {
 func (d *SettingsDialog) Fresh() {
 	d.Cat, d.Search = "", NewTextField("")
 	d.scroll = ScrollState{} // the size the user chose stays
-	d.inputs, d.notes = nil, nil
+	d.fields.Forget()
 	d.Raw, d.RawText, d.Problems, d.rawBefore = false, TextArea{}, nil, ""
 	d.FontSearch = NewTextField("")
 	d.list = fontList{faces: d.list.faces}
@@ -253,7 +251,7 @@ func (d *SettingsDialog) navItem(entry page, open bool) Node {
 // Reload resets what depends on the settings in effect: typed text and
 // notes, and the fonts. The host calls it after it replaced the settings.
 func (d *SettingsDialog) Reload(host Host) {
-	d.inputs, d.notes = nil, nil
+	d.fields.Forget()
 	d.ApplyFonts(host)
 }
 
@@ -281,11 +279,9 @@ func (d *SettingsDialog) saveButton(host Host) Node {
 // that is what was held back, else the settings in effect.
 func (d *SettingsDialog) Save(host Host) {
 	if d.rawPending && d.Raw && len(d.Problems) == 0 && host.SettingsPath() != "" {
-		if err := host.SettingsStore().WriteText(host.SettingsPath(), []byte(d.RawText.Text)); err != nil {
-			host.Send(prefs.Toast{Text: "Could not save settings: " + err.Error(), Level: severity.Error})
+		if !d.writeText(host, host.SettingsPath(), d.RawText.Text) {
 			return
 		}
-		d.Stamp(host, host.SettingsPath())
 		d.rawPending = false
 		host.Send(prefs.FileMarked{Saved: true})
 		return

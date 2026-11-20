@@ -1814,7 +1814,10 @@ that change `App`.
   search puts `formcaption.vml` captions between them (`formempty.vml` when nothing matches). The
   search field filters the settings of every category by title, description, key and allowed values
   and lists them grouped by category; the Colors and Shortcuts settings are tables and show an
-  `Open` button. A number outside its range is explained under its field and not applied.
+  `Open` button. A number outside its range is explained under its field and not applied. The text
+  fields and refusal notes of the form, the Colors page and the Shortcuts page are one
+  `widget.NotedFields[K]` each (a field is created once per key, a note of `""` is no note); the
+  form sends its edits through `setKey`, which toasts a refusal of `settings.Set`.
   `settings.json` holds only what differs from the defaults (`settings.Minimal`), grouped by section
   (below). Esc, the close button or a click outside close it. New settings are one row of
   `settings.Schema` (and one entry of `settingControls` if the plain control does not fit).
@@ -1891,7 +1894,9 @@ that change `App`.
   recording goes on. A combination another action has is not saved: the row says `Used by X (key)`
   with a `Replace` button, which unbinds X and gives the key to this action (`replaceBinding`);
   recording again drops the pending choice. A key that types text (a plain letter) is saved with a
-  muted warning. Only overrides are stored, in `shortcuts` of settings.json.
+  muted warning. Only overrides are stored, in `shortcuts` of settings.json. The text editing keys
+  are one unexported table (`textKeys`: action and its combinations); what `Refuse` keeps from other
+  actions is derived from it, and a row shows its combinations joined with `or`.
 
 ## Files, state and platforms
 

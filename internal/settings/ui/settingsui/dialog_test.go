@@ -29,6 +29,8 @@ type fakeHost struct {
 	pickTitle string
 	pickDone  func(path string)
 	saved     int
+	store     port.SettingsStore // replaces the real files when a test sets it
+	changes   int                // how many Change messages the dialog sent
 }
 
 func newHost(t *testing.T) *fakeHost {
@@ -38,6 +40,7 @@ func newHost(t *testing.T) *fakeHost {
 func (h *fakeHost) Size() (int, int)            { return 1280, 800 }
 func (h *fakeHost) Settings() settings.Settings { return h.current }
 func (h *fakeHost) Change(edit func(*settings.Settings)) {
+	h.changes++
 	edit(&h.current)
 	_ = settingsDisk.Save(h.path, h.current)
 }
@@ -150,10 +153,15 @@ func TestCompletionOffersWhatSettingsCompleteGivesAtTheCaret(t *testing.T) {
 		t.Fatalf("text = %q", d.RawText.Text)
 	}
 }
-func (h *fakeHost) Pointer() (int, int)               { return 400, 300 }
-func (h *fakeHost) Unsaved() bool                     { return h.unsaved }
-func (h *fakeHost) Persist()                          { _ = settingsDisk.Save(h.path, h.current); h.unsaved = false; h.saved++ }
-func (h *fakeHost) SettingsStore() port.SettingsStore { return settingsfile.Files{} }
+func (h *fakeHost) Pointer() (int, int) { return 400, 300 }
+func (h *fakeHost) Unsaved() bool       { return h.unsaved }
+func (h *fakeHost) Persist()            { _ = settingsDisk.Save(h.path, h.current); h.unsaved = false; h.saved++ }
+func (h *fakeHost) SettingsStore() port.SettingsStore {
+	if h.store != nil {
+		return h.store
+	}
+	return settingsfile.Files{}
+}
 
 func TestAFileSettingHasAFolderButtonInsideItsFieldThatFillsIt(t *testing.T) {
 	var d SettingsDialog

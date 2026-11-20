@@ -110,11 +110,18 @@ func (d *SettingsDialog) RawEdited(host Host) {
 		return
 	}
 	d.rawPending = false
+	d.writeText(host, path, text)
+}
+
+// writeText stores the raw text as given and stamps the file; a failure is
+// shown as a toast and leaves the stamp alone.
+func (d *SettingsDialog) writeText(host Host, path, text string) bool {
 	if err := host.SettingsStore().WriteText(path, []byte(text)); err != nil {
 		host.Send(prefs.Toast{Text: "Could not save settings: " + err.Error(), Level: severity.Error})
-		return
+		return false
 	}
 	d.Stamp(host, path)
+	return true
 }
 
 // rawStyler colors one line of the text as JSON, and the keys that have a
