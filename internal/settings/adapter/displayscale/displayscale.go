@@ -16,6 +16,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -32,9 +33,12 @@ type source func() float64
 type System struct {
 	sources []source
 	now     func() int64 // nanoseconds, a fake in tests
-	last    int64
-	scale   float64
-	asked   bool
+
+	mu       sync.Mutex // guards the fields below
+	last     int64      // when the last refresh started
+	scale    float64    // the last answer, 0 until the first one lands
+	asked    bool
+	inFlight bool // a refresh runs; at most one at a time
 }
 
 // New returns a System for the current desktop; elsewhere than Linux it
@@ -51,20 +55,33 @@ func New() *System {
 	return system
 }
 
-// Factor is the scale, 0 when unknown. It asks the desktop at most once
-// per refresh interval and is for the UI goroutine only.
+// Factor is the last scale the desktop gave, 0 while unknown (before the
+// first answer lands). It never runs a command itself: when the answer
+// is older than the refresh interval it starts one background refresh
+// (never two at once) and returns the cached value. Safe from any goroutine.
 func (system *System) Factor() float64 {
+	system.mu.Lock()
+	defer system.mu.Unlock()
 	now := system.now()
-	if system.asked && now-system.last < refreshNanos {
-		return system.scale
+	if !system.inFlight && (!system.asked || now-system.last >= refreshNanos) {
+		system.asked, system.inFlight, system.last = true, true, now
+		go system.refresh()
 	}
-	system.asked, system.last, system.scale = true, now, 0
+	return system.scale
+}
+
+// refresh asks the sources off the caller's goroutine: a hung compositor
+// command must not stall the frame loop that calls Factor.
+func (system *System) refresh() {
+	var scale float64
 	for _, known := range system.sources {
-		if system.scale = known(); system.scale > 0 {
+		if scale = known(); scale > 0 {
 			break
 		}
 	}
-	return system.scale
+	system.mu.Lock()
+	system.scale, system.inFlight = scale, false
+	system.mu.Unlock()
 }
 
 type monitor struct {

@@ -1190,8 +1190,10 @@ that change `App`.
   stored in window pixels (logical size times the window scale) so they restore the same window.
   **Display scale on Linux**: Ebitengine reports 1 for an Xwayland window on a scaled monitor, so
   when it reports 1 `App.displayScale` asks the `settings/port.DisplayScale` port (adapter
-  `settings/adapter/displayscale`; sources tried in order, refreshed every 2 s so a changed desktop
-  scale applies live): `hyprctl monitors -j`, `swaymsg -t get_outputs -r` (focused monitor's scale),
+  `settings/adapter/displayscale`; sources tried in order; `Factor` runs on the frame loop, so it
+  never runs a command itself: it returns the cached scale, 0 until the first answer lands, and
+  starts one background refresh when the answer is older than 2 s, so a changed desktop scale
+  applies live and a hung compositor command cannot stall a frame): `hyprctl monitors -j`, `swaymsg -t get_outputs -r` (focused monitor's scale),
   then `GDK_SCALE` and `QT_SCALE_FACTOR`. `frameSize` then lays out in window pixels divided by the
   real scale and keeps the screen at window size (no supersampling); Windows and macOS use
   Ebitengine's own factor.
