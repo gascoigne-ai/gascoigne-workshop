@@ -355,7 +355,13 @@ Row(H(urlH), PadX(w.Pad), PadY(8), Gap(8), Bg(w.Bg),
   survives the per-frame rebuild. A clipping element (`Clip`, `Scroll`) masks the pointer position
   for its children while the pointer is outside it, so rows scrolled out of view cannot be hit; the
   click flag still passes so fields can blur. A scroller that uses the wheel zeroes it, so the
-  innermost scroller wins. The tree and the table and note panes use it; the code view scrolls
+  innermost scroller wins. Drawing skips a child whose device rect, grown by the shadow offset, a
+  `drawOverflow` of 4 px and one pixel, does not meet the bounds of the image it draws into (the
+  active clip, or the screen), so a long scrolled list costs the rows in view (`reaches` in
+  `view/reach.go`; 2000 rows draw 65 elements, `BenchmarkLongList`). A skipped child runs neither
+  its `Draw` nor its `DrawOver` and sets no hover flag or tooltip text; a `Behavior` must not keep
+  state that only its `Draw` writes and its next `Update` reads (the code view and text area clamp
+  their scroll in `Update` too). The tree and the table and note panes use it; the code view scrolls
   itself.
 -  **`Split(&state, default, first, second)`**: two children around a one-pixel divider that is
   dragged with the pointer (a few pixels either side grab it, and the drag keeps the offset where it

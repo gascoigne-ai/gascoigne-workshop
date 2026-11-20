@@ -2,6 +2,7 @@ package app
 
 import (
 	"path/filepath"
+	"strconv"
 	"testing"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -9,6 +10,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // The benchmarks time the parts of a frame in the scene that costs the most:
@@ -99,4 +101,25 @@ func BenchmarkDrawStats(b *testing.B) {
 	b.ReportMetric(float64(a.ctx.Stats.MaskFills), "maskfills/frame")
 	b.ReportMetric(float64(a.ctx.Stats.RingFills), "ringfills/frame")
 	b.ReportMetric(float64(a.ctx.Stats.Widths), "widths/frame")
+}
+
+// BenchmarkLongList draws a scrolled list of 2000 rows in a box that shows
+// about 30 of them: the frame pays only for the rows in view once children
+// outside the clip are skipped. It reports the elements drawn per frame.
+func BenchmarkLongList(b *testing.B) {
+	a := newBenchApp(b, false)
+	rows := make([]view.Item, 2000)
+	for i := range rows {
+		rows[i] = view.Row(view.H(24), view.Bg(core.Panel), view.Border(core.Rule), view.Text("row "+strconv.Itoa(i)))
+	}
+	root := view.Row(view.AlignItems(view.AlignStart), view.Col(view.W(600), view.H(700), widget.Scroll(&widget.ScrollState{Y: 24 * 1000}, rows...)))
+	view.Layout(a.ctx, root, a.w, a.h)
+	screen := ebiten.NewImage(winW, winH)
+	a.ctx.Stats = &core.DrawStats{}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		a.ctx.Stats = &core.DrawStats{}
+		view.Draw(a.ctx, root, screen)
+	}
+	b.ReportMetric(float64(a.ctx.Stats.Elements), "elements/frame")
 }

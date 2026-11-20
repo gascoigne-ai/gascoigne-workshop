@@ -488,6 +488,7 @@ type DrawStats struct {
 	MaskFills int // rounded fills drawn from the corner mask, one DrawTriangles each
 	RingFills int // rounded outlines drawn from the ring mask, one DrawTriangles each
 	Widths    int // Ctx.Width measurements
+	Elements  int // elements the view runtime drew; one skipped outside its clip is not counted
 }
 
 // Corners is a set of rectangle corners.

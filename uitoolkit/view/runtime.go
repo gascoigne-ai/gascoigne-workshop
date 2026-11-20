@@ -278,6 +278,9 @@ func (e *El) draw(ctx *core.Ctx, dst *ebiten.Image) {
 	if e.hidden {
 		return
 	}
+	if ctx.Stats != nil {
+		ctx.Stats.Elements++
+	}
 	r := e.rect
 	if e.modal {
 		defer func(was bool) { ctx.HoverOff = was }(ctx.HoverOff)
@@ -327,8 +330,11 @@ func (e *El) draw(ctx *core.Ctx, dst *ebiten.Image) {
 	if e.clip {
 		kidsDst = ctx.Clip(dst, r)
 	}
+	reach := drawReach(ctx.Scale)
 	for _, k := range e.kids {
-		k.draw(ctx, kidsDst)
+		if reaches(kidsDst.Bounds(), k.rect, ctx.Scale, reach) {
+			k.draw(ctx, kidsDst)
+		}
 	}
 	border := e.border
 	if border == "" {
