@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto/ws"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
@@ -20,14 +21,33 @@ type mcpSession struct {
 	sampler port.Sampler // nil: sampling is not offered
 	once    sync.Once    // finish
 
+	work     slotSet // the server messages being answered
+	sampling slotSet // the sampling prompts open
+
+	refused    chan rpcMessage // requests refused as busy, answered by one goroutine so the reader never waits
+	refusedOne sync.Once       // starts that goroutine
+
 	mu      sync.Mutex // guards nextID, waiters and pending
 	nextID  int64
 	waiters map[int64]chan rpcAnswer
 	pending map[int64]string // request id -> method, for the answers that carry a typed payload
+
+	refreshing map[string]refreshState // list method -> its refresh, see refreshList
+	lastBusy   time.Time               // when the busy note was last emitted
+	busyCount  int                     // requests refused since then
 }
 
 // maxPending bounds pending: a server that never answers cannot grow it.
 const maxPending = 1024
+
+// maxServerWork bounds the server messages answered at once: a server
+// that floods requests or list_changed notifications cannot start more
+// goroutines than this; the rest is refused.
+const maxServerWork = 16
+
+// maxSamplePrompts bounds the sampling prompts open at once: the user
+// answers one question at a time.
+const maxSamplePrompts = 1
 
 // note logs a problem that leaves the session open.
 func (s *mcpSession) note(err error) {
@@ -97,15 +117,11 @@ func (s *mcpSession) deliver(msg []byte) {
 	}
 	s.emit(event)
 	if kind == port.KindRequest {
-		go s.answerServer(m)
+		s.serve(m)
 		return
 	}
 	if list, ok := listChanged[m.Method]; ok {
-		go func() { // ask again, so the lists the UI shows stay current
-			if _, err := s.request(context.Background(), list, nil); err != nil {
-				s.emit(port.Event{Dir: port.Info, Kind: port.KindError, Text: err.Error()})
-			}
-		}()
+		s.refreshList(list) // ask again, so the lists the UI shows stay current
 	}
 	if m.Method == "" && m.ID != nil {
 		var id int64

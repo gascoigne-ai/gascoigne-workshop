@@ -25,11 +25,17 @@ func (s *mcpSession) answerServer(message rpcMessage) {
 	default:
 		reply = methodNotFound(id, message.Method)
 	}
+	s.reply(message.Method, reply)
+}
+
+// reply sends the answer to a server request; the user sees it when it
+// never left, because the server waits for it.
+func (s *mcpSession) reply(method string, reply rpcReply) {
 	b, err := json.Marshal(reply)
 	if err == nil {
 		err = s.write(context.Background(), port.KindResponse, b)
 	}
-	if err != nil { // the server waits for this answer, so the user must see it never left
-		s.note(fmt.Errorf("answer the server's %s: %w", message.Method, err))
+	if err != nil {
+		s.note(fmt.Errorf("answer the server's %s: %w", method, err))
 	}
 }

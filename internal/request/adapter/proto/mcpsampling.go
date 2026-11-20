@@ -10,10 +10,18 @@ import (
 // sampleRejected is the answer to a sampling request that was declined.
 const sampleRejected = "User rejected sampling request"
 
+// sampleBusy is the answer to a sampling request that comes while the user
+// has another one open.
+const sampleBusy = "another sampling request is open"
+
 // sample puts a sampling request to the Sampler and answers with its
 // text message, or with an error when the request is declined or cannot
 // be read.
 func (s *mcpSession) sample(message rpcMessage) rpcReply {
+	if !s.sampling.tryTake(maxSamplePrompts) {
+		return errorReply(*message.ID, rpcRejected, sampleBusy)
+	}
+	defer s.sampling.release()
 	var params struct {
 		Messages []struct {
 			Role    string `json:"role"`

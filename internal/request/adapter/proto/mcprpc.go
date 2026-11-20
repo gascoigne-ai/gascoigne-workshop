@@ -6,7 +6,8 @@ import "encoding/json"
 const (
 	rpcMethodNotFound = -32601
 	rpcInvalidParams  = -32602
-	rpcRejected       = -1 // the user declined a sampling request
+	rpcRejected       = -1     // the user declined a sampling request
+	rpcBusy           = -32000 // the client has no free worker for the request
 )
 
 const rpcVersion = "2.0"

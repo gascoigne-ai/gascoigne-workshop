@@ -1469,11 +1469,13 @@ that change `App`.
   unexpected EOF) is an Info line of kind `error` and the session goes on without notifications. A
   stream cut by `Close` reports nothing. `notifications/{tools,resources,prompts}/list_changed` make
   the session ask for that list again (`listChanged`), so the toolbar counts and menus follow the
-  server. `proto.MCP.Sampler` (nil: sampling is neither offered in `initialize` nor answered) puts a
+  server; one refresh of a list runs at a time and a notification that comes meanwhile makes it run
+  once more (`refreshList`). `proto.MCP.Sampler` (nil: sampling is neither offered in `initialize` nor answered) puts a
   server's `sampling/createMessage` to a function; the app's `sampleViaDialog` shows the system
   prompt and messages in a dialog where the person types the reply (`Send reply`, model name `user`)
-  or declines (the standard "User rejected sampling request" error). It runs on the session
-  goroutine, opens the dialog on the UI goroutine through `App.later`, waits while another dialog is
+  or declines (the standard "User rejected sampling request" error). It runs on a session
+  worker, only one prompt at a time (`maxSamplePrompts`): a second `sampling/createMessage` while
+  one is open gets `User rejected`-code (-1) error "another sampling request is open" at once. It opens the dialog on the UI goroutine through `App.later`, waits while another dialog is
   open and takes the question off the screen when the session ends.
 -  **gRPC** (`internal/request/adapter/proto/grpc.go`, `grpcreflect.go`, decision 2): `proto.GRPC`
   is a registry row; `Send` makes one unary call. It finds the method in the request's source of
@@ -2060,6 +2062,12 @@ and the in-memory keys `stateKey` and `tree.Key`.
 
 ## Limits
 
+-  MCP server work: answers to server requests and list refreshes run on at most `maxServerWork` =
+  16 workers (`mcpSession.spawn`, a counting semaphore). A request that finds none free is answered
+  with the JSON-RPC error -32000 `client busy`, written by one goroutine behind a queue of
+  `maxPending` (1024) so the reader of the stream never waits for a slow send; a full queue drops
+  the reply. A refresh that finds no worker is dropped. Either logs one `client busy: refused N ...`
+  note per second, not one per message. Sampling prompts open at once: `maxSamplePrompts` = 1.
 -  WebSocket dials directly (`ws.Dial` has no proxy support), so the proxy setting does not apply to
   `ws` and `wss`; the CA file, client certificate and Insecure TLS do.
 -  Windows and macOS: the CI `build` job compiles and vets for them, but nothing has been run there
