@@ -1,11 +1,11 @@
 # gascoigne-workshop
 
-Desktop GUI client in Go for running REST, WebSocket, MCP and other protocol calls. GPU-rendered with Ebitengine and custom widgets; layout is a three-pane window: collections tree, request editor, response viewer.
+Desktop GUI client in Go for REST, WebSocket, MCP and other protocol calls: Ebitengine, own widget toolkit, three panes (collections tree, request editor, response viewer).
 
-- `make check` must pass (fmt-check + vet + `go test -race`, then vet with `-tags release` on everything, a check that every release-tagged file is covered, and `go test -race -tags release` on the packages that link the release-tagged ones).
-- Shared harness is the submodule `.harness/common`; read its `rules.md`, `commit-style.md` and `code-style.md`, then `.harness/rules.md` and `.harness/architecture.md`. Update architecture.md in the same commit as behavior changes.
-- Start with `.harness/overview.md` (the 3000 ft view); the package tree is `.harness/packagemap.md`.
-- Design decisions: `.harness/decisions.md`. Visual style: `.harness/style.md`.
+- `make check` must pass before work is called done.
+- Start with `.harness/overview.md`. Read only the part of `.harness/architecture.md` (index at its top; one file per area in `.harness/architecture/`) for the area you touch. Reasons are in `decisions.md`, the look in `style.md`, the package tree in `packagemap.md`.
+- Docs: behavior in `architecture`, the look in `style.md`, choices in `decisions.md`; each changes in the same commit as the behavior.
+- Shared harness is the submodule `.harness/common`.
 
 @.harness/common/rules.md
 @.harness/common/commit-style.md
@@ -13,4 +13,4 @@ Desktop GUI client in Go for running REST, WebSocket, MCP and other protocol cal
 @.harness/common/architecture-style.md
 @.harness/rules.md
 
-Task queue: `.harness/tasks/`, run with `/task-loop` (verify: `make check`).
+Task queue: `.harness/tasks/`, run with `/task-loop`.

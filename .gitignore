@@ -1,7 +1,6 @@
 bin/
 *.test
 *.out
-.harness/logs/
 .claude/settings.local.json
 shot.png
 

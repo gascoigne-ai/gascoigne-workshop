@@ -67,7 +67,5 @@ Every frame the whole window tree is rebuilt from the App state (decision 4): no
 
 ## How the project is run
 
-- `make check` is the gate: gofmt, `go vet`, `go test -race`, `go vet -tags release` on everything, and `go test -race -tags release` only on the packages that link a file behind the `release` tag (`make release-packages` computes them from the import graph; `make check-release-scope` fails when a release-tagged file sits outside that set, then add its directory to `RELEASE_BASE` in the Makefile). `make fuzz` runs the native fuzz targets for 30 s each (not part of the gate; `architecture.md` Limits lists them and the input limits). `make packagemap` rewrites `packagemap.md`. `make shot OUT=x.png` renders the window once; golden scenes (`cmd/workshop/testdata/golden`) are compared under software GL with `xvfb-run` on Linux (decision 5).
-- Work is tasks: a file `.harness/tasks/NNN-title.md` with a goal, a scope in order (one commit per item) and an acceptance; the file is deleted in the commit that finishes it. One task is finished before the next starts.
-- A change to behavior updates `architecture.md` in the same commit; a design choice is a numbered entry in `decisions.md` with its date and why; a change to the look updates `style.md`.
-- Shared rules (commit style, code style) are in the submodule `.harness/common`.
+- `make check` is the gate (flags and release-tag scope are commented in the Makefile). `make fuzz` runs the fuzz targets (`architecture/limits.md`), `make packagemap` rewrites `packagemap.md`, `make shot OUT=x.png` renders the window once; golden scenes are compared under software GL (decision 5).
+- Work is tasks (`.harness/tasks/NNN-title.md`, run by `/task-loop`); shared rules are in the submodule `.harness/common`.
