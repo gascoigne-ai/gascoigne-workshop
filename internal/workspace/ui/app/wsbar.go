@@ -45,7 +45,7 @@ const (
 	messagestoolbarSource = `<row h="{{toolbarH}}" pad-x="{{gutter}}" gap="{{tightGap}}" align-items="center" border-b="border">
   <text small muted>{{state}}</text>
   <spacer/>
-  <choice selected="{{reconnect}}" w="116" h="{{compactH}}" on-click="toggleReconnect">Auto-reconnect</choice>
+  <segment-chip selected="{{reconnect}}" w="116" h="{{compactH}}" on-click="toggleReconnect">Auto-reconnect</segment-chip>
   <button if="hasTools" min-w="84" h="{{compactH}}" on-click="pickTool" tooltip="Pick a tool: the composer gets a call with its arguments filled in">{{toolsLabel}}</button>
   <button if="hasResources" min-w="104" h="{{compactH}}" on-click="pickResource" tooltip="Pick a resource: the composer gets a read of it">{{resourcesLabel}}</button>
   <button if="hasPrompts" min-w="94" h="{{compactH}}" on-click="pickPrompt" tooltip="Pick a prompt: the composer gets a request for it">{{promptsLabel}}</button>

@@ -38,10 +38,10 @@ type TableSpec struct {
 	OnToggleAll func()
 	Selected    *int
 
-	// CellStyler, when set, may color parts of a cell's text: it returns
+	// Styler, when set, may color parts of a cell's text: it returns
 	// the text cut into spans (an empty Style keeps the cell's own color),
 	// or nil to draw the cell as plain text.
-	CellStyler func(text string) []Span
+	Styler Styler
 
 	// OnRowMenu runs when a data row is right-clicked, with the pointer position.
 	OnRowMenu func(row, posX, posY int)
@@ -54,16 +54,16 @@ type TableSpec struct {
 	OnGrabRow     func(row int)
 	OnDragOverRow func(row int)
 
-	// Widths, when set, makes the column dividers draggable. It is owned
+	// State, when set, makes the column dividers draggable. It is owned
 	// by the app, so the sizes and a drag in progress survive the view
 	// being rebuilt every frame.
-	Widths *ColumnWidths
+	State *TableState
 }
 
-// ColumnWidths is the state of a resizable table: the column weights
+// TableState is the state of a resizable table: the column weights
 // once the user has resized them (nil until then, so the spec's Weights
 // apply) and the divider being dragged.
-type ColumnWidths struct {
+type TableState struct {
 	Weights []float64
 
 	drag    grab
@@ -72,8 +72,8 @@ type ColumnWidths struct {
 
 // weight is column i's relative width.
 func (t TableSpec) weight(index int) float64 {
-	if t.Widths != nil && len(t.Widths.Weights) == len(t.Columns) {
-		return t.Widths.Weights[index]
+	if t.State != nil && len(t.State.Weights) == len(t.Columns) {
+		return t.State.Weights[index]
 	}
 	return t.Weights[index]
 }
@@ -119,7 +119,7 @@ func Table(spec TableSpec, opts ...Option) *El {
 	}, opts)...)
 }
 
-// tableHeader is the caption row; with a Widths state it carries the
+// tableHeader is the caption row; with a State it carries the
 // draggable column dividers on top.
 func tableHeader(tableSpec TableSpec) Node {
 	header := Row(H(core.RowH), Bg(core.Panel), BorderB(core.Border),
@@ -131,7 +131,7 @@ func tableHeader(tableSpec TableSpec) Node {
 		}),
 		If(tableSpec.Editable, Row(W(tableActionW))),
 	)
-	if tableSpec.Widths == nil {
+	if tableSpec.State == nil {
 		return header
 	}
 	return Stack(H(core.RowH), header, Custom(colHandlesB{header: header, spec: tableSpec}))
@@ -209,8 +209,8 @@ func tableCell(spec TableSpec, row, col int, text string, clr core.Token) Node {
 		)
 	}
 	var label *El = Text(text, Ellipsis(), Color(clr), Grow(1))
-	if spec.CellStyler != nil {
-		if spans := spec.CellStyler(text); len(spans) > 0 {
+	if spec.Styler != nil {
+		if spans := spec.Styler(text); len(spans) > 0 {
 			parts := make([]Item, 0, len(spans)+1)
 			parts = append(parts, Grow(1))
 			for _, sp := range spans {
@@ -273,7 +273,7 @@ func (h colHandlesB) cells() []*El {
 }
 
 func (h colHandlesB) Update(element *El, ctx *core.Ctx) {
-	st, in, cells := h.spec.Widths, ctx.In, h.cells()
+	st, in, cells := h.spec.State, ctx.In, h.cells()
 	if st.drag.on {
 		if !st.drag.held(in) {
 			return

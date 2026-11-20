@@ -398,7 +398,7 @@ func (d *SettingsDialog) ChooseFile(host Host, key string) {
 // Templates, parsed once above.
 const (
 	chipsSource = `<row h="{{rowH}}" gap="{{tightGap}}">
-  <choice for="chip in chips" selected="{{chip.Selected}}" grow="1" on-click="chip.Pick">{{chip.Label}}</choice>
+  <segment-chip for="chip in chips" selected="{{chip.Selected}}" grow="1" on-click="chip.Pick">{{chip.Label}}</segment-chip>
 </row>
 `
 

@@ -16,8 +16,9 @@ type TextArea struct {
 	TextField
 	ScrollY int
 
-	// Styler colors a line; nil draws plain text.
-	Styler func(line string) []Span
+	// Styler colors one line at a time (its text is a single line, never
+	// the whole content); nil draws plain text.
+	Styler Styler
 
 	// Wrap breaks long lines before a word at the width of the editor
 	// instead of scrolling sideways; Up and Down then move by visual row.

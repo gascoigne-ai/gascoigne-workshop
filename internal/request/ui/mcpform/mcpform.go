@@ -206,7 +206,7 @@ const (
         <text small muted>{{field.Hint}}</text>
       </check-row>
       <row if="field.IsEnum" h="{{rowH}}" gap="{{tightGap}}">
-        <choice for="option in field.Options" selected="{{option.Selected}}" h="{{rowH}}" on-click="option.Pick">{{option.Label}}</choice>
+        <segment-chip for="option in field.Options" selected="{{option.Selected}}" h="{{rowH}}" on-click="option.Pick">{{option.Label}}</segment-chip>
       </row>
       <field if="field.Input" state="field.Input" h="{{rowH}}" bg="sunken" on-enter="submit" text-menu="field.Input"/>
     </col>

@@ -227,9 +227,9 @@ func (a *App) restore(stateValue state.State) {
 			continue
 		}
 		if a.colWidths == nil {
-			a.colWidths = map[string]*widget.ColumnWidths{}
+			a.colWidths = map[string]*widget.TableState{}
 		}
-		a.colWidths[name] = &widget.ColumnWidths{Weights: append([]float64(nil), ws...)}
+		a.colWidths[name] = &widget.TableState{Weights: append([]float64(nil), ws...)}
 	}
 }
 

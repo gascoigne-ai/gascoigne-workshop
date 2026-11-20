@@ -81,7 +81,7 @@ func (a *App) responsePane(_ pane, tab *reqTab, _ *ScrollState) Node {
 }
 
 func (a *App) viewChip(label string, selected bool, width int, onClick func()) Node {
-	return Choice(label, selected, W(width), H(w.CompactH), OnClick(onClick))
+	return SegmentChip(label, selected, W(width), H(w.CompactH), OnClick(onClick))
 }
 
 var findBarTemplate = markup.Must("findbar.vml", findbarSource)
@@ -248,11 +248,11 @@ const (
   <spacer h="{{gutter}}"/>
   <!-- written out: markup has no toolbar element; this is widget.Toolbar, copied in responsepicture.vml -->
   <row h="{{toolbarH}}" pad-x="{{gutter}}" gap="{{tightGap}}" align-items="center" border-b="border">
-    <choice selected="{{compact}}" w="72" h="{{compactH}}" on-click="showCompact">Compact</choice>
-    <choice selected="{{pretty}}" w="56" h="{{compactH}}" on-click="showPretty">Pretty</choice>
-    <choice selected="{{raw}}" w="44" h="{{compactH}}" on-click="showRaw">Raw</choice>
+    <segment-chip selected="{{compact}}" w="72" h="{{compactH}}" on-click="showCompact">Compact</segment-chip>
+    <segment-chip selected="{{pretty}}" w="56" h="{{compactH}}" on-click="showPretty">Pretty</segment-chip>
+    <segment-chip selected="{{raw}}" w="44" h="{{compactH}}" on-click="showRaw">Raw</segment-chip>
     <row w="{{gutter}}"/>
-    <choice selected="{{wrap}}" w="56" h="{{compactH}}" on-click="toggleWrap">Wrap</choice>
+    <segment-chip selected="{{wrap}}" w="56" h="{{compactH}}" on-click="toggleWrap">Wrap</segment-chip>
     <spacer/>
     <button if="history" w="66" h="{{compactH}}" on-click-at="openHistory" tooltip="Earlier responses of this request">History</button>
     <icon-button icon="search" w="{{iconBtnW}}" h="{{compactH}}" on-click="openFind" tooltip="{{findTip}}"/>

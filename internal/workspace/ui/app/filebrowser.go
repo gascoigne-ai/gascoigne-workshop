@@ -351,8 +351,8 @@ const (
   <row h="{{browserFoot}}" pad-x="16" gap="{{looseGap}}" align-items="center" border-t="border-soft">
     <text if="problem" small color="error" ellipsis grow="1" shrink>{{problem}}</text>
     <text if="!problem" small muted ellipsis grow="1" shrink>{{hint}}</text>
-    <choice selected="false" min-w="80" h="{{rowH}}" on-click="close">Cancel</choice>
-    <choice selected="true" min-w="80" h="{{rowH}}" on-click="enter">{{primary}}</choice>
+    <segment-chip selected="false" min-w="80" h="{{rowH}}" on-click="close">Cancel</segment-chip>
+    <segment-chip selected="true" min-w="80" h="{{rowH}}" on-click="enter">{{primary}}</segment-chip>
   </row>
 </dialog>
 `

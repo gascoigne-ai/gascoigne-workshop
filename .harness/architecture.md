@@ -242,7 +242,7 @@ Plain values; everything except the drawing calls is tested without a GPU.
   (paste: line breaks become spaces, control characters are dropped), `DeleteSelection`,
   `SelectedText`, `Undo`, `Redo`.
 -  **`TextArea`** (in `widget`): the multi-line editor, a `TextField` in multiline mode plus view
-  state (`ScrollY`, optional `Styler` for syntax colors). It keeps line breaks (CRLF and CR become
+  state (`ScrollY`, optional per-line `Styler` for syntax colors). It keeps line breaks (CRLF and CR become
   LF), moves by line with a remembered goal column (Up/Down/PageUp/PageDown; past the first or last
   line goes to the start or end), Home/End by line and Ctrl+Home/End by document, Enter inserts a
   line break plus the current indentation, Tab inserts spaces to the next stop (every selected line
@@ -306,7 +306,7 @@ Row(H(urlH), PadX(w.Pad), PadY(8), Gap(8), Bg(w.Bg),
   `VRuleInset` (one-pixel lines in `Border`, the last shortened at both ends, each taking options
   like the rest), `Text`, `Caption`, `Lines`, `Field`, `TextArea` (`Area`), `Code`, icons
   (`Checkbox`, `Cross`, `Triangle`, `Dots`) and the widgets of `uitoolkit/widget` (`Button`,
-  `PrimaryButton`, `Choice` (a primary button when selected, else a plain one), `ListRow` (selection
+  `PrimaryButton`, `SegmentChip` (a primary button when selected, else a plain one), `ListRow` (selection
   background or hover tint), `FormRow` and `CheckRow` (label column and checkbox rows), `ActiveTab`
   (the open tab's look, shared by `Tabs` and the request strip), `Menu`, `Dialog`, `ResizableDialog`
   and `DialogTitle` (dimmed scrim, centered modal panel, title bar with a close button that runs
@@ -505,7 +505,7 @@ that change `App`.
   with their fields; the pane, the stored `model.Auth` values and the masking all follow it, and
   each type keeps its own values when you switch. The pane is the template `authpane.vml`: Go hands
   it the type chips and one `authRow` per field (a chooser's chips, or the field's `TextField` and
-  its handler); each chip is an `authChip` the template shows as a `<choice>`, lit when chosen, and
+  its handler); each chip is an `authChip` the template shows as a `<segment-chip>`, lit when chosen, and
   the fields are `<form-row>`s with a `<check-row>` for showing secrets. Secret fields are masked
   (`TextField.Masked`: bullets on screen, and copy and cut are refused) until the Show secrets row
   is ticked. `proto.REST` applies credentials from a table keyed by type after the headers, so they
@@ -605,13 +605,13 @@ that change `App`.
   space after the first colon dropped, descriptions carried over by name) in a text area and applies
   it as a single undoable change when you switch back, change pane or tab. Duplicate enabled header
   names are drawn in the error color; rows with an empty name stay in the table but are never sent.
--  **Resizable table columns**: a `TableSpec` with a `Widths *widget.ColumnWidths` (owned by the
+-  **Resizable table columns**: a `TableSpec` with a `State *widget.TableState` (owned by the
   app, like a scroll or split state) gets draggable dividers over its header: dragging the boundary
   between two columns moves weight between those two only (`resizePair` (in `widget`), neither
   narrower than `MinColumnPx` = 56, the total unchanged, evenly split when the pair is too small for
   two minimums), double click on a divider clears the sizes back to the spec's defaults, and the
   resize cursor shows over a divider. Sizes are weights, so they keep their proportions when the
-  window resizes. The app keeps one `ColumnWidths` per table (`widthsFor`: request tables by pane
+  window resizes. The app keeps one `TableState` per table (`widthsFor`: request tables by pane
   name, response tables prefixed), so Params, Headers, Vars, form fields and the response headers
   are independent. The weights are remembered in `state.json` (Remembered state).
 -  **Cell editing**: clicking a cell of an editable table starts an edit (`App.beginEdit`): the
@@ -937,8 +937,8 @@ that change `App`.
   `<toasts stack width height bottom-inset>` (a `*widget.ToastStack`; it takes no options, and an
   empty stack builds nothing). `<hrule>`, `<vrule>` and `<vrule-inset inset>` are the rules of
   `view`, the last one's inset a required param. Widget elements take their edit state the same way:
-  `<field state>` edits a `*widget.TextField`, with `placeholder`, `field-pad`, `segments` (a
-  `func(string) []widget.Span`), `text-menu` (the `*widget.TextField` its right-click menu edits),
+  `<field state>` edits a `*widget.TextField`, with `placeholder`, `field-pad`, `styled` (a
+  `widget.Styler`, the whole text), `text-menu` (the `*widget.TextField` its right-click menu edits),
   `on-enter` and `on-tab` (a `func(back bool)`), and `<area state>` edits a `*widget.TextArea`, with
   `text-menu` naming its `&area.TextField`, and `<checkbox on>` (`true` or `false`, open to
   `{{path}}`; `on-change` runs on a click), and `<list-row selected>` is `widget.ListRow`
@@ -946,7 +946,7 @@ that change `App`.
   widget's, so a template gives only size, content and `on-click`), and `<icon-button icon>` is
   `widget.IconButton` around the named icon, grown to fill the chip (no children; size, `tooltip`
   and `on-click` are the generic attributes; an unknown icon is a build error naming the line), and
-  `<choice selected>` is `widget.Choice`, one chip of a segmented choice (its text the label,
+  `<segment-chip selected>` is `widget.SegmentChip`, one chip of a segmented choice (its text the label,
   `selected` `true` or `false` like `list-row`'s; a primary button when selected, a plain one
   otherwise, with the same size and `on-click`), and `<form-row label label-width>` is
   `widget.FormRow`, a settings-style row whose children are the controls after the label column
@@ -992,7 +992,7 @@ that change `App`.
   `align-self` (default, start, center, end, stretch, baseline) and `justify-content` (start,
   center, end, between, around) and use `<primary-button>` and `<link-button>`.
   `App.messagesToolbar` (`internal/workspace/ui/app/wsbar.go`, the embedded `messagestoolbar.vml`
-  with its sizes from the theme through the scope and the auto-reconnect chip a `<choice>`) is the
+  with its sizes from the theme through the scope and the auto-reconnect chip a `<segment-chip>`) is the
   first multi-handler template and is compared with its Go original in `wsbar_test.go`.
 
 ## Toolkit: widgets and drawing
@@ -1204,7 +1204,7 @@ that change `App`.
 -  **Variables in the body editor** (`internal/workspace/ui/app/bodystyle.go`):
   `App.withVariables(base, req)` wraps the JSON or plain line styler so each `{{name}}` is split out
   and colored by whether `req` resolves it.
--  **Variables in table cells**: `widget.TableSpec.CellStyler` may cut a cell's text into colored
+-  **Variables in table cells**: `widget.TableSpec.Styler` may cut a cell's text into colored
   `Span`s (an empty style keeps the cell's own color); `App.cellStyler(req)` colors `{{variables}}`
   green when the request resolves them and red when not, so Params, Headers, Vars and form tables
   match the URL field and the body editor.
@@ -1808,7 +1808,7 @@ that change `App`.
   numbers; `settingControls` holds the few special ones: theme, scale slider, font pickers), a dot
   and a `Reset` button while it differs from the default (reset removes the key from the file). The
   form is markup (`form.go`): each setting is `settingrow.vml` over a `settingView`, with the
-  control built by its kind's template and slotted in (`chips.vml`, a `<choice>` per value, the
+  control built by its kind's template and slotted in (`chips.vml`, a `<segment-chip>` per value, the
   current one lit; `scale.vml`; `textcontrol.vml`; `file-empty.vml` or `file-chosen.vml`;
   `openpage.vml`; `fontcontrol.vml`), and the page is `formpage.vml` over the built rows, since a
   search puts `formcaption.vml` captions between them (`formempty.vml` when nothing matches). The

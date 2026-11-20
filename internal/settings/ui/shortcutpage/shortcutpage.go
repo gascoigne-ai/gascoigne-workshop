@@ -358,8 +358,8 @@ const (
     <col for="action in actions">
       <row h="{{compactH}}" gap="{{tightGap}}">
         <text small grow="1" ellipsis>{{action.Name}}</text>
-        <choice selected="{{action.Recording}}" w="120" h="{{compactH}}" on-click="action.Record"
-                tooltip="Click, then press the keys">{{action.Key}}</choice>
+        <segment-chip selected="{{action.Recording}}" w="120" h="{{compactH}}" on-click="action.Record"
+                tooltip="Click, then press the keys">{{action.Key}}</segment-chip>
         <icon-button if="action.Bound" icon="unlink" w="{{iconBtnW}}" h="{{compactH}}" on-click="action.Clear"
                 tooltip="Leave the action without a key"/>
         <spacer if="!action.Bound" w="{{iconBtnW}}"/>

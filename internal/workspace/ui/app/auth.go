@@ -178,12 +178,12 @@ func authFieldRow(tab *reqTab, field authField) authRow {
 const (
 	authpaneSource = `<scroll state="scroll" pad="{{gutter}}" gap="{{looseGap}}">
   <row h="{{rowH}}" gap="{{tightGap}}">
-    <choice for="chip in types" selected="{{chip.Chosen}}" w="{{chip.Width}}" on-click="chip.Pick">{{chip.Label}}</choice>
+    <segment-chip for="chip in types" selected="{{chip.Chosen}}" w="{{chip.Width}}" on-click="chip.Pick">{{chip.Label}}</segment-chip>
   </row>
   <lines if="none" color="muted">No authentication</lines>
   <form-row for="row in fields" label="{{row.Label}}" label-width="120">
     <row if="row.Chips" gap="{{tightGap}}">
-      <choice for="chip in row.Chips" selected="{{chip.Chosen}}" w="{{chip.Width}}" on-click="chip.Pick">{{chip.Label}}</choice>
+      <segment-chip for="chip in row.Chips" selected="{{chip.Chosen}}" w="{{chip.Width}}" on-click="chip.Pick">{{chip.Label}}</segment-chip>
     </row>
     <field if="row.Input" state="row.Input" grow="1" bg="sunken" on-change="row.Sync" text-menu="row.Input"/>
   </form-row>

@@ -52,10 +52,10 @@ func TestFieldElementMatchesTheGoField(t *testing.T) {
 	template := build(t, `
 		<row>
 		  <field state="url" grow="1" bg="sunken" placeholder="Enter URL" field-pad="5"
-		    segments="paint" text-menu="url" on-change="edited" on-enter="send" on-tab="tab"/>
+		    styled="paint" text-menu="url" on-change="edited" on-enter="send" on-tab="tab"/>
 		</row>`, Scope{"url": &url, "paint": paint, "edited": edited, "send": send, "tab": tab})
 	goView := view.Row(widget.Field(&url, view.Grow(1), view.Bg(core.Sunken), widget.Placeholder("Enter URL"), widget.FieldPad(5),
-		widget.Segments(paint), widget.TextMenu(&url), view.OnChange(edited), widget.OnEnter(send), widget.OnTab(tab)))
+		widget.Styled(paint), widget.TextMenu(&url), view.OnChange(edited), widget.OnEnter(send), widget.OnTab(tab)))
 	sameWidget(t, template, goView, 400, 30)
 }
 
@@ -130,7 +130,7 @@ func TestTextMenuOfANilTextFieldIsABuildErrorNamingTheEntry(t *testing.T) {
 // field-pad were generic attributes, so <row placeholder> parsed and then
 // panicked at build.
 func TestFieldOptionsAreOnlyForField(t *testing.T) {
-	for _, attribute := range []string{`placeholder="x"`, `field-pad="4"`, `segments="f"`, `text-menu="f"`, `on-enter="f"`, `on-tab="f"`} {
+	for _, attribute := range []string{`placeholder="x"`, `field-pad="4"`, `styled="f"`, `text-menu="f"`, `on-enter="f"`, `on-tab="f"`} {
 		t.Run(attribute, func(t *testing.T) {
 			parseError(t, `<row `+attribute+`/>`, "unknown attribute")
 		})
@@ -509,28 +509,28 @@ func TestIconButtonNeedsAKnownIconAndHoldsNothing(t *testing.T) {
 	}
 }
 
-// choiceTemplate is a 72px chip of a segmented choice, the chosen one when
+// segmentChipTemplate is a 72px chip of a segmented choice, the chosen one when
 // the scope says.
-const choiceTemplate = `
+const segmentChipTemplate = `
 	<row>
-	  <choice selected="{{chosen}}" w="72" h="24" on-click="pick" tooltip="Compact view">Compact</choice>
+	  <segment-chip selected="{{chosen}}" w="72" h="24" on-click="pick" tooltip="Compact view">Compact</segment-chip>
 	</row>`
 
-func TestChoiceElementMatchesTheGoChoice(t *testing.T) {
+func TestSegmentChipElementMatchesTheGoSegmentChip(t *testing.T) {
 	pick := func() {}
 	for _, selected := range []bool{true, false} {
 		t.Run(fmt.Sprint(selected), func(t *testing.T) {
-			template := build(t, choiceTemplate, Scope{"chosen": selected, "pick": pick})
-			goView := view.Row(widget.Choice("Compact", selected, view.W(72), view.H(24), view.OnClick(pick), view.Tooltip("Compact view")))
+			template := build(t, segmentChipTemplate, Scope{"chosen": selected, "pick": pick})
+			goView := view.Row(widget.SegmentChip("Compact", selected, view.W(72), view.H(24), view.OnClick(pick), view.Tooltip("Compact view")))
 			sameLayout(t, testCtx(t), template, goView, 200, 30)
 		})
 	}
 }
 
-func TestChoiceElementClickRunsTheScopeHandler(t *testing.T) {
+func TestSegmentChipElementClickRunsTheScopeHandler(t *testing.T) {
 	ctx := testCtx(t)
 	picks := 0
-	template := build(t, choiceTemplate, Scope{"chosen": true, "pick": func() { picks++ }})
+	template := build(t, segmentChipTemplate, Scope{"chosen": true, "pick": func() { picks++ }})
 	view.Layout(ctx, template, 200, 30)
 	chip := template.Children()[0].Rect()
 	ctx.In = core.Input{X: chip.X + chip.W/2, Y: chip.Y + chip.H/2, Click: true}
@@ -540,10 +540,10 @@ func TestChoiceElementClickRunsTheScopeHandler(t *testing.T) {
 	}
 }
 
-func TestChoiceSelectedMustBeTrueOrFalse(t *testing.T) {
-	parseError(t, `<choice>Raw</choice>`, "<choice> needs a selected")
-	parseError(t, `<choice selected="true"><row/></choice>`, "<choice> cannot contain <row>")
-	err := buildError(t, `<choice selected="yes">Raw</choice>`, nil)
+func TestSegmentChipSelectedMustBeTrueOrFalse(t *testing.T) {
+	parseError(t, `<segment-chip>Raw</segment-chip>`, "<segment-chip> needs a selected")
+	parseError(t, `<segment-chip selected="true"><row/></segment-chip>`, "<segment-chip> cannot contain <row>")
+	err := buildError(t, `<segment-chip selected="yes">Raw</segment-chip>`, nil)
 	if err == nil || !strings.Contains(err.Error(), "true or false") {
 		t.Errorf("error = %v, want it to say selected is not true or false", err)
 	}
@@ -675,4 +675,10 @@ func TestCheckboxOnMustBeTrueOrFalse(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "true or false") {
 		t.Errorf("error = %v, want it to say on is not true or false", err)
 	}
+}
+
+// <choice> was renamed <segment-chip>: the old tag is an unknown element
+// that the error names.
+func TestTheOldChoiceTagIsAnUnknownElement(t *testing.T) {
+	parseError(t, `<choice selected="true">Raw</choice>`, "unknown element <choice>")
 }

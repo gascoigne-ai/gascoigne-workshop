@@ -35,10 +35,10 @@ func PrimaryButton(label string, opts ...Option) *El {
 	}, fitted(opts))...)
 }
 
-// Choice is one chip of a segmented choice: a PrimaryButton when it is the
-// selected one, a Button otherwise. Options (W, H, OnClick, KeepInView)
-// apply to both.
-func Choice(label string, selected bool, opts ...Option) *El {
+// SegmentChip is one chip of a segmented choice (template tag
+// segment-chip): a PrimaryButton when it is the selected one, a Button
+// otherwise. Options (W, H, OnClick, KeepInView) apply to both.
+func SegmentChip(label string, selected bool, opts ...Option) *El {
 	if selected {
 		return PrimaryButton(label, opts...)
 	}

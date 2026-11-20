@@ -151,10 +151,10 @@ const (
   <row h="{{rowH}}" gap="{{tightGap}}">
     <!-- the type chips scroll sideways when the pane is narrow -->
     <hscroll state="typesX" grow="1" gap="{{tightGap}}">
-      <choice for="chip in chips" selected="{{chip.Selected}}" w="{{chip.Width}}" keep-in-view="{{chip.Selected}}" on-click="chip.Choose">{{chip.Label}}</choice>
+      <segment-chip for="chip in chips" selected="{{chip.Selected}}" w="{{chip.Width}}" keep-in-view="{{chip.Selected}}" on-click="chip.Choose">{{chip.Label}}</segment-chip>
     </hscroll>
     <text if="showStatus" small color="{{statusColor}}" ellipsis optional>{{status}}</text>
-    <choice if="canWrap" selected="{{wrap}}" w="56" on-click="toggleWrap">Wrap</choice>
+    <segment-chip if="canWrap" selected="{{wrap}}" w="56" on-click="toggleWrap">Wrap</segment-chip>
     <button if="isJSON" w="70" on-click="format">Format</button>
   </row>
   <slot name="editor"/>

@@ -31,12 +31,12 @@ var fieldOptions = map[string]attributeReader{
 }
 
 // fieldHandlers are the field's own attributes that name a scope entry:
-// its key handlers, the function that colors its text and the TextField
+// its key handlers, the function that colors its text (styled) and the TextField
 // its right-click menu edits.
 var fieldHandlers = map[string]handlerAttr{
 	"on-enter":  handler(widget.OnEnter),
 	"on-tab":    handler(widget.OnTab),
-	"segments":  handler(widget.Segments),
+	"styled":    handler(styledOption),
 	"text-menu": stateHandler(widget.TextMenu),
 }
 
@@ -313,4 +313,10 @@ func enumAttr[T any](name string, table map[string]T, callback func(T) view.Opti
 		}
 		return callback(val), nil
 	}
+}
+
+// styledOption reads the styled attribute's scope function, a plain
+// func(string) []widget.Span.
+func styledOption(styler func(text string) []widget.Span) view.Option {
+	return widget.Styled(styler)
 }

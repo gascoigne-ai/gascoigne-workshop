@@ -8,18 +8,18 @@
 //
 // # Finding your way
 //
-//	Buttons    Button PrimaryButton LinkButton IconButton Choice
+//	Buttons    Button PrimaryButton LinkButton IconButton SegmentChip
 //	Rows       ListRow FormRow CheckRow Note Toolbar
 //	Tabs       Tabs ScrollTabs TabBar ActiveTab   (state: TabItem)
 //	Menus      Menu OpenMenu CloseMenu MenuOpen PopupMenu PopupMenuLayer PopupMenuKeys NewMenu NextSelectable MenuWidth TextMenu   (state: MenuItem MenuState)
 //	Dialogs    Dialog ResizableDialog DialogTitle DialogSubtitle DialogToolbar MessageDialog   (state: DialogState DialogButton)
 //	Toasts     Toasts   (state: ToastStack Toast ToastKind)
 //	Pictures   Image RasterizeSVG
-//	Inputs     Field Area Code   (state: TextField TextArea CodeView Line Match Span; NewTextField NewTextArea)   Placeholder FieldPad Segments Wrap OnEnter OnTab   (OnChange is view's)   NotedFields (the fields and refusal notes of a form)
+//	Inputs     Field Area Code   (state: TextField TextArea CodeView Line Match Span; NewTextField NewTextArea)   Placeholder FieldPad Styled Wrap OnEnter OnTab   (OnChange is view's)   NotedFields (the fields and refusal notes of a form)
 //	Tooltips   TooltipLayer   (state: TooltipState)   (the Tooltip option is view's)
 //	Icons      Icon RegisterIcons IconNames HasIcon   CrossIcon TriangleIcon GripIcon DotsIcon GearIcon TrashIcon PlusIcon CopyIcon FolderIcon SearchIcon PromptIcon ChevronUpIcon ChevronDownIcon
 //	Checkboxes Checkbox
-//	Tables     Table   (state: TableSpec TableRow TableEdit ColumnWidths)   MinColumnPx
+//	Tables     Table   (state: TableSpec TableRow TableEdit TableState Styler)   MinColumnPx
 //	Resizing   Resizable   (state: ResizeState)
 //	Scrolling  Scroll HScroll   (state: ScrollState)   (the KeepInView option is view's)
 //	Splitting  Split Vertical AsRatio MinFirst MinSecond   (state: SplitState)

@@ -60,11 +60,11 @@ type treeState struct {
 
 // tableState holds the key-value tables: the cell edit, the row drag, bulk edit, the selected row and the column widths.
 type tableState struct {
-	edit      *cellEdit                       // the table cell being edited, if any
-	dragRow   *rowSelection                   // the table row being dragged by its grip, nil when none
-	bulk      *bulkEdit                       // the table in bulk-edit mode, if any
-	rowSel    *rowSelection                   // the table row the keyboard acts on
-	colWidths map[string]*widget.ColumnWidths // the column sizes of each table, by name
+	edit      *cellEdit                     // the table cell being edited, if any
+	dragRow   *rowSelection                 // the table row being dragged by its grip, nil when none
+	bulk      *bulkEdit                     // the table in bulk-edit mode, if any
+	rowSel    *rowSelection                 // the table row the keyboard acts on
+	colWidths map[string]*widget.TableState // the column sizes of each table, by name
 }
 
 // frameState holds what one frame reads and decides: size, redraw flag, update rate, input, pacing, window geometry and the widgets that outlive a frame.

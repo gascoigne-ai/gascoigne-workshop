@@ -55,7 +55,7 @@ func LightTheme() core.Theme { return appTheme("light", theming.Light()) }
 // the user's theme folder) are the toolkit's, in uitoolkit/theming. This
 // package supplies the app's own themes and maps its settings onto them.
 type (
-	ThemeChoice    = theming.Choice
+	ThemeChoice    = theming.ThemeChoice
 	SizeChoice     = theming.SizeChoice
 	CornerChoice   = theming.CornerChoice
 	ContrastChoice = theming.ContrastChoice

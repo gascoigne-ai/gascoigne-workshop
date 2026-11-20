@@ -133,11 +133,11 @@ func TestTableRowRightClickReportsTheRowButNotThePlaceholder(t *testing.T) {
 	}
 }
 
-func TestTableCellStylerSplitsACellIntoColoredParts(t *testing.T) {
+func TestTableStylerSplitsACellIntoColoredParts(t *testing.T) {
 	spec := TableSpec{
 		Columns: []string{"Name", "Value"}, Weights: []float64{1, 1},
 		Rows: []TableRow{{Cells: []string{"k", "a{{v}}b"}}},
-		CellStyler: func(text string) []Span {
+		Styler: func(text string) []Span {
 			if text != "a{{v}}b" {
 				return nil
 			}

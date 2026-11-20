@@ -95,9 +95,9 @@ func TestIconButtonIsAnOutlinedChipAroundTheGlyph(t *testing.T) {
 	}
 }
 
-// Choice shows the selected option as a primary button and the others as
+// SegmentChip shows the selected option as a primary button and the others as
 // plain ones, and keeps the options it was given (width, click).
-func TestChoiceLightsOnlyTheSelectedOption(t *testing.T) {
+func TestSegmentChipLightsOnlyTheSelectedOption(t *testing.T) {
 	tests := []struct {
 		name     string
 		selected bool
@@ -108,7 +108,7 @@ func TestChoiceLightsOnlyTheSelectedOption(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			chip := Choice("JSON", test.selected, W(70), OnClick(func() {}))
+			chip := SegmentChip("JSON", test.selected, W(70), OnClick(func() {}))
 			hasProps(t, chip, test.control, "onClick=true")
 			Layout(testCtx(t), Row(H(30), chip), 300, 30)
 			if got := chip.Rect().W; got != 70 { // "JSON" fits, so the given width holds

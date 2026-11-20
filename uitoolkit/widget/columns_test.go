@@ -59,12 +59,12 @@ func TestResizingTwoColumnsMovesWeightBetweenThemOnly(t *testing.T) {
 type tableRig struct {
 	t        *testing.T
 	c        *core.Ctx
-	widths   *ColumnWidths
+	widths   *TableState
 	editable bool
 	root     *El
 }
 
-func newRig(t *testing.T, widths *ColumnWidths, editable bool) *tableRig {
+func newRig(t *testing.T, widths *TableState, editable bool) *tableRig {
 	r := &tableRig{t: t, c: testCtx(t), widths: widths, editable: editable}
 	r.rebuild()
 	return r
@@ -73,7 +73,7 @@ func newRig(t *testing.T, widths *ColumnWidths, editable bool) *tableRig {
 func (r *tableRig) rebuild() {
 	spec := editableSpec()
 	spec.Editable = r.editable
-	spec.Widths = r.widths
+	spec.State = r.widths
 	r.root = Col(Table(spec))
 	Layout(r.c, r.root, 400, 400)
 }
@@ -95,7 +95,7 @@ func (r *tableRig) columnWidths() (first, second int) {
 }
 
 func TestDraggingAHeaderDividerResizesTheColumns(t *testing.T) {
-	var widths ColumnWidths
+	var widths TableState
 	r := newRig(t, &widths, true)
 	if a, b := r.columnWidths(); a != 164 || b != 164 {
 		t.Fatalf("default widths %d %d", a, b)
@@ -116,7 +116,7 @@ func TestDraggingAHeaderDividerResizesTheColumns(t *testing.T) {
 }
 
 func TestDividerDragStopsAtTheMinimumWidth(t *testing.T) {
-	var widths ColumnWidths
+	var widths TableState
 	r := newRig(t, &widths, true)
 	r.input(core.Input{X: 200, Y: 14, Click: true, Held: true})
 	r.input(core.Input{X: 36, Y: 14, Held: true}) // all the way left
@@ -126,7 +126,7 @@ func TestDividerDragStopsAtTheMinimumWidth(t *testing.T) {
 }
 
 func TestDoubleClickOnADividerResetsTheWidths(t *testing.T) {
-	widths := ColumnWidths{Weights: []float64{3, 1}}
+	widths := TableState{Weights: []float64{3, 1}}
 	r := newRig(t, &widths, true)
 	if a, _ := r.columnWidths(); a != 246 {
 		t.Fatalf("test setup: %d", a)
@@ -141,7 +141,7 @@ func TestDoubleClickOnADividerResetsTheWidths(t *testing.T) {
 }
 
 func TestReadOnlyTablesCanBeResizedToo(t *testing.T) {
-	var widths ColumnWidths
+	var widths TableState
 	r := newRig(t, &widths, false) // columns start at x=0: 200 each
 	r.input(core.Input{X: 200, Y: 14, Click: true, Held: true})
 	r.input(core.Input{X: 300, Y: 14, Held: true})
@@ -151,10 +151,10 @@ func TestReadOnlyTablesCanBeResizedToo(t *testing.T) {
 }
 
 func TestDividerAsksForTheResizeCursorAndCellsStillClick(t *testing.T) {
-	var widths ColumnWidths
+	var widths TableState
 	var edits [][2]int
 	spec := editableSpec()
-	spec.Widths = &widths
+	spec.State = &widths
 	spec.OnEditCell = func(row, column int) { edits = append(edits, [2]int{row, column}) }
 	root := Col(Table(spec))
 	c := testCtx(t)
@@ -178,14 +178,14 @@ func TestDividerAsksForTheResizeCursorAndCellsStillClick(t *testing.T) {
 	}
 }
 
-func TestTablesWithoutWidthsStateHaveNoDividers(t *testing.T) {
-	spec := editableSpec() // Widths is nil: not resizable
+func TestTablesWithoutTableStateHaveNoDividers(t *testing.T) {
+	spec := editableSpec() // State is nil: not resizable
 	root := Col(Table(spec))
 	c := testCtx(t)
 	Layout(c, root, 400, 400)
 	c.In = core.Input{X: 200, Y: 14, Click: true, Held: true}
 	Update(c, root)
 	if c.Cursor != core.CursorDefault {
-		t.Fatal("no divider without a Widths state")
+		t.Fatal("no divider without a table state")
 	}
 }

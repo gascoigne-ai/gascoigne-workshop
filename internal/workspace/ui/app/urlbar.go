@@ -168,7 +168,7 @@ const (
     </row>
     <!-- breathing room between the divider and the URL text -->
     <spacer w="{{urlTextGap}}"/>
-    <field state="url" grow="1" placeholder="Enter URL" segments="segments" on-change="edited" on-enter="send" text-menu="url"/>
+    <field state="url" grow="1" placeholder="Enter URL" styled="segments" on-change="edited" on-enter="send" text-menu="url"/>
   </row>
   <primary-button if="idle" min-w="80" on-click="send" tooltip="{{sendTip}}">Send</primary-button>
   <primary-button if="socket" min-w="96" on-click="toggleConnection" tooltip="{{connectionTip}}">{{connectionLabel}}</primary-button>

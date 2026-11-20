@@ -105,7 +105,7 @@ func itemArgs5[A, B, C, D, E any](constructor func(first A, second B, third C, f
 }
 
 // textArgs1 builds an element from a constructor that takes the text, one
-// argument and options (Choice, Note, Lines).
+// argument and options (SegmentChip, Note, Lines).
 func textArgs1[A any](constructor func(text string, first A, opts ...view.Option) *view.El) element {
 	return func(parts elementParts) (view.Node, error) {
 		return constructor(parts.text, parts.args[0].(A), parts.opts...), nil
@@ -276,7 +276,7 @@ var elements = map[string]elementSpec{
 	"lines":          {build: textArgs1(view.Lines), holds: holdsText, params: []param{tokenParam("color")}},
 	"note":           {build: textArgs1(widget.Note), holds: holdsText, params: []param{tokenParam("tone")}},
 	"button":         {build: labelled(widget.Button), holds: holdsText},
-	"choice":         {build: textArgs1(widget.Choice), holds: holdsText, params: []param{boolParam("selected")}},
+	"segment-chip":   {build: textArgs1(widget.SegmentChip), holds: holdsText, params: []param{boolParam("selected")}},
 	"icon-button":    {build: iconButton, holds: holdsNothing, params: []param{textParam("icon")}},
 	"scroll":         {build: itemArgs1(widget.Scroll), params: []param{scopedState[widget.ScrollState]("state")}},
 	"hscroll":        {build: itemArgs1(widget.HScroll), params: []param{scopedState[widget.ScrollState]("state")}},

@@ -8,7 +8,7 @@ import (
 // Each table keeps its own; request tables are named by their pane,
 // response tables get a prefix because the request and response panes
 // both have a Headers table.
-func (a *App) widthsFor(panel pane) *widget.ColumnWidths {
+func (a *App) widthsFor(panel pane) *widget.TableState {
 	key := panel.label
 	if !panel.editable {
 		key = "response " + panel.label
@@ -17,9 +17,9 @@ func (a *App) widthsFor(panel pane) *widget.ColumnWidths {
 		return w
 	}
 	if a.colWidths == nil {
-		a.colWidths = map[string]*widget.ColumnWidths{}
+		a.colWidths = map[string]*widget.TableState{}
 	}
-	w := &widget.ColumnWidths{}
+	w := &widget.TableState{}
 	a.colWidths[key] = w
 	return w
 }

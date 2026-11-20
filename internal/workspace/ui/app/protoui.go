@@ -248,7 +248,7 @@ var protoPaneTemplate = markup.Must("protopane.vml", protopaneSource)
 const (
 	protopaneSource = `<scroll state="scroll" pad="{{gutter}}" gap="{{looseGap}}">
   <row h="{{rowH}}" gap="{{tightGap}}">
-    <choice for="chip in sources" selected="{{chip.Chosen}}" w="{{chip.Width}}" on-click="chip.Pick">{{chip.Label}}</choice>
+    <segment-chip for="chip in sources" selected="{{chip.Chosen}}" w="{{chip.Width}}" on-click="chip.Pick">{{chip.Label}}</segment-chip>
   </row>
   <lines if="reflection" color="muted">Methods come from the server's reflection</lines>
   <col if="files" gap="{{looseGap}}">

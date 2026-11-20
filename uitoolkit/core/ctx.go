@@ -39,7 +39,7 @@ func (d FontData) withDefault(regular, bold []byte) FontData {
 // newFonts builds the faces from the chosen fonts (the embedded Go fonts
 // where none was chosen), sized for a display with the given device scale
 // factor.
-func newFonts(th Theme, scale float64, chosen Choice) (Fonts, error) {
+func newFonts(th Theme, scale float64, chosen FontChoice) (Fonts, error) {
 	ui := chosen.UI.withDefault(goregular.TTF, gobold.TTF)
 	code := chosen.Code.withDefault(gomono.TTF, gobold.TTF)
 	regular, err := text.NewGoTextFaceSource(bytes.NewReader(ui.Regular))
@@ -63,8 +63,8 @@ func newFonts(th Theme, scale float64, chosen Choice) (Fonts, error) {
 	}, nil
 }
 
-// Choice is the fonts picked for the interface and for code.
-type Choice struct{ UI, Code FontData }
+// FontChoice is the fonts picked for the interface and for code.
+type FontChoice struct{ UI, Code FontData }
 
 // Ctx is what widgets draw and hit-test with: theme, fonts and this
 // frame's input. Widgets work in logical pixels; Scale is the number of
@@ -74,7 +74,7 @@ type Ctx struct {
 	F  Fonts
 	// Chosen are the fonts picked by the user; the zero value is the
 	// embedded ones. They survive theme and scale changes.
-	Chosen Choice
+	Chosen FontChoice
 	In     Input
 	// PointerX and PointerY are the pointer position in logical pixels as
 	// sampled, set by view.Update before any container hides it from its
@@ -135,7 +135,7 @@ const (
 
 // NewCtx returns a context at scale 1.
 func NewCtx(th Theme) (*Ctx, error) {
-	fonts, err := newFonts(th, 1, Choice{})
+	fonts, err := newFonts(th, 1, FontChoice{})
 	if err != nil {
 		return nil, err
 	}
@@ -193,7 +193,7 @@ func (c *Ctx) SetTheme(th Theme) error {
 // SetFonts switches the interface and code fonts; empty data is the
 // embedded font. Fonts that cannot be read change nothing.
 func (c *Ctx) SetFonts(ui, code FontData) error {
-	chosen := Choice{UI: ui, Code: code}
+	chosen := FontChoice{UI: ui, Code: code}
 	fonts, err := newFonts(c.Th, c.Scale, chosen)
 	if err != nil {
 		return err

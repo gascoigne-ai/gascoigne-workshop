@@ -21,8 +21,8 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
-// Choice is one selectable theme.
-type Choice struct {
+// ThemeChoice is one selectable theme.
+type ThemeChoice struct {
 	ID, Label string
 	Build     func() core.Theme
 }
@@ -129,8 +129,8 @@ type Prefs struct {
 }
 
 // Builtins are the toolkit's own dark and light themes.
-func Builtins() []Choice {
-	return []Choice{
+func Builtins() []ThemeChoice {
+	return []ThemeChoice{
 		{"dark", "Dark", Dark},
 		{"light", "Light", Light},
 	}
@@ -139,26 +139,26 @@ func Builtins() []Choice {
 // Catalog is the set of themes an application offers: its built-in
 // choices, the first of which is the fallback, then the user's.
 type Catalog struct {
-	Builtin []Choice
-	user    map[string]Choice
+	Builtin []ThemeChoice
+	user    map[string]ThemeChoice
 }
 
 // NewCatalog makes a catalog of the given built-in choices.
-func NewCatalog(builtin []Choice) *Catalog {
-	return &Catalog{Builtin: builtin, user: map[string]Choice{}}
+func NewCatalog(builtin []ThemeChoice) *Catalog {
+	return &Catalog{Builtin: builtin, user: map[string]ThemeChoice{}}
 }
 
 // SetUser sets the user's themes, as LoadUser returned them.
-func (c *Catalog) SetUser(themes map[string]Choice) {
+func (c *Catalog) SetUser(themes map[string]ThemeChoice) {
 	if themes == nil {
-		themes = map[string]Choice{}
+		themes = map[string]ThemeChoice{}
 	}
 	c.user = themes
 }
 
 // All is the built-in themes followed by the user's, sorted by id.
-func (c *Catalog) All() []Choice {
-	out := append([]Choice(nil), c.Builtin...)
+func (c *Catalog) All() []ThemeChoice {
+	out := append([]ThemeChoice(nil), c.Builtin...)
 	ids := slices.Sorted(maps.Keys(c.user))
 	for _, id := range ids {
 		out = append(out, c.user[id])
@@ -293,8 +293,8 @@ func strengthened(th core.Theme) map[core.Token]color.RGBA {
 // built-in theme it extends (the first built-in when it says nothing). A
 // file that does not parse is skipped and described in problems; a
 // missing folder is no problem at all.
-func (c *Catalog) LoadUser(dir string) (themes map[string]Choice, problems []string) {
-	themes = map[string]Choice{}
+func (c *Catalog) LoadUser(dir string) (themes map[string]ThemeChoice, problems []string) {
+	themes = map[string]ThemeChoice{}
 	if dir == "" {
 		return themes, nil
 	}
@@ -333,7 +333,7 @@ func (c *Catalog) LoadUser(dir string) (themes map[string]Choice, problems []str
 			label = id
 		}
 		built := th
-		themes[id] = Choice{ID: id, Label: label, Build: func() core.Theme { return built }}
+		themes[id] = ThemeChoice{ID: id, Label: label, Build: func() core.Theme { return built }}
 	}
 	return themes, problems
 }

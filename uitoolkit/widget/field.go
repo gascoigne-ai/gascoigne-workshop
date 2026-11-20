@@ -20,7 +20,7 @@ type fieldB struct {
 	Base
 	field       *TextField
 	placeholder string
-	segments    func(string) []Span
+	segments    Styler
 	onEnter     func()
 	onTab       func(back bool)
 	inset       int // FieldPad, 0 for the default
@@ -125,9 +125,10 @@ func Placeholder(text string) Option {
 	return func(element *El) { element.Behavior().(*fieldB).placeholder = text }
 }
 
-// Segments colors parts of the field's text.
-func Segments(callback func(text string) []Span) Option {
-	return func(element *El) { element.Behavior().(*fieldB).segments = callback }
+// Styled colors parts of the field's text with styler, which gets the
+// whole text.
+func Styled(styler Styler) Option {
+	return func(element *El) { element.Behavior().(*fieldB).segments = styler }
 }
 
 // OnTab runs when Tab is pressed in the focused field; back is true with Shift.

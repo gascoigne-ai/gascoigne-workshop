@@ -121,7 +121,7 @@ func MessageDialog(state *DialogState, items ...Item) *El {
 		Row(H(core.RowH), Gap(core.LooseGap),
 			Spacer(),
 			For(state.Buttons, func(_ int, button DialogButton) Node {
-				return Choice(button.Label, button.Primary, MinW(80), OnClick(button.Run))
+				return SegmentChip(button.Label, button.Primary, MinW(80), OnClick(button.Run))
 			}),
 		),
 	)...)

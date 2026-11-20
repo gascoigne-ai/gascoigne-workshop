@@ -229,9 +229,9 @@ const (
   </scroll>
   <row h="{{foot}}" pad-x="16" gap="{{looseGap}}" align-items="center" border-t="border-soft">
     <text small muted ellipsis grow="1" shrink>Variables are not changed</text>
-    <choice selected="false" min-w="80" h="{{rowH}}" on-click="dismiss">Cancel</choice>
-    <choice if="canPick" selected="true" min-w="80" h="{{rowH}}" on-click="pick">{{primary}}</choice>
-    <choice if="!canPick" selected="false" min-w="80" h="{{rowH}}" muted>{{primary}}</choice>
+    <segment-chip selected="false" min-w="80" h="{{rowH}}" on-click="dismiss">Cancel</segment-chip>
+    <segment-chip if="canPick" selected="true" min-w="80" h="{{rowH}}" on-click="pick">{{primary}}</segment-chip>
+    <segment-chip if="!canPick" selected="false" min-w="80" h="{{rowH}}" muted>{{primary}}</segment-chip>
   </row>
 </dialog>
 `
