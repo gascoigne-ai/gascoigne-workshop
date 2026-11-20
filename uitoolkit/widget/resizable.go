@@ -90,6 +90,7 @@ func (b *resizableB) Update(element *El, ctx *core.Ctx) {
 			}
 			st.H = min(max(st.startH+grow, b.minH), b.maxH)
 		}
+		ctx.Fired++ // the app builds the dialog at its state's size
 		return
 	}
 	left, right, top, bottom := edges(element.Rect(), in.X, in.Y)
@@ -102,9 +103,11 @@ func (b *resizableB) Update(element *El, ctx *core.Ctx) {
 	}
 	if in.Clicks >= 2 {
 		st.W, st.H = 0, 0
+		ctx.Fired++
 		return
 	}
 	st.active, st.left, st.right, st.top, st.bottom = true, left, right, top, bottom
 	st.startX, st.startY, st.startW, st.startH = in.X, in.Y, element.Rect().W, element.Rect().H
 	st.W, st.H = element.Rect().W, element.Rect().H // both are the user's size from now on, whichever edge moves
+	ctx.Fired++
 }

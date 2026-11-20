@@ -113,6 +113,7 @@ var toastKinds = map[severity.Level]ToastKind{
 // toast shows a message: an info one fades after a few seconds, an
 // error stays until it is clicked.
 func (a *App) toast(text string, level severity.Level) {
+	a.treeStale = true
 	if a.toasts.Show(text, toastKinds[level], a.now()) {
 		a.dirty = true
 	}

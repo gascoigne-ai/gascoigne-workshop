@@ -118,16 +118,24 @@ func (a *App) routeKeys(in core.Input) {
 	}
 }
 
-// endFrame builds the view, lets it react and runs the per-frame upkeep;
-// moved is what beginFrame reported.
+// endFrame builds the view once, lets it react and runs the per-frame
+// upkeep; moved is what beginFrame reported. Draw paints the tree built here
+// unless treeStale says that a handler or a step below changed what it shows.
 func (a *App) endFrame(moved bool) {
-	root := a.view()
+	root := a.buildTree()
 	view.Layout(a.ctx, root, a.w, a.h)
+	fired := a.ctx.Fired
 	view.Update(a.ctx, root)
+	a.drawTree, a.treeStale = root, a.ctx.Fired != fired
+	// The steps below run after the tree was built. Each one that changes
+	// what the view shows sets a.treeStale itself (commitEdit, closeBulk,
+	// dragHover, saveCollection and the settings Poll do); the others only
+	// read state or touch the cursor, the clock or a write queue.
 	if a.edit != nil && !a.edit.field.Focused { // a click elsewhere ends the edit
 		a.commitEdit()
 	}
 	if a.ctx.Tick%settingsui.PollTicks == 0 {
+		a.treeStale = true // an outside change of settings.json replaces settings and the raw text
 		a.prefs.Poll(a)
 	}
 	a.dragHover()
@@ -140,20 +148,36 @@ func (a *App) endFrame(moved bool) {
 	a.pacer.NoteIdle(busy)
 }
 
-// Draw implements ebiten.Game. The view is rebuilt so it shows the
-// state the handlers just changed.
+// Draw implements ebiten.Game. It paints the tree of the last step, built
+// again only when something changed after that tree was built.
 func (a *App) Draw(screen *ebiten.Image) {
 	if !a.dirty && !a.alwaysDraw() {
 		return // nothing changed: the screen keeps what it has and the GPU stays idle
 	}
-	root := a.view()
-	view.Layout(a.ctx, root, a.w, a.h)
-	view.Draw(a.ctx, root, screen)
+	view.Draw(a.ctx, a.frameTree(), screen)
 	a.dirty = false
 	a.shotDraw(screen)
 }
 
 // ---- keyboard ---------------------------------------------------------------
+
+// buildTree builds the window's view; the count is for tests.
+func (a *App) buildTree() *view.El {
+	a.builds++
+	return a.view()
+}
+
+// frameTree is the laid out tree Draw paints: the one endFrame built when
+// nothing it shows changed since, else a fresh build. A screenshot run
+// changes the scene after the step, so it always builds fresh.
+func (a *App) frameTree() *view.El {
+	root := a.drawTree
+	if root == nil || a.treeStale || a.shot.path != "" {
+		root = a.buildTree()
+	}
+	view.Layout(a.ctx, root, a.w, a.h)
+	return root
+}
 
 // textFocused reports whether a text widget has the keyboard.
 func (a *App) textFocused() bool {

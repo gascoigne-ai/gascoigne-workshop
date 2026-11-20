@@ -65,12 +65,15 @@ func (b *fieldB) Update(element *El, ctx *core.Ctx) {
 		typed = nil // Ctrl+letter is a shortcut, not text
 	}
 	if f.Apply(typed, in.Edits, in.Shift) || changed {
+		ctx.Fired++
 		element.Changed()
 	}
 	if in.Enter && !in.Ctrl && b.onEnter != nil { // Ctrl+Enter is a shortcut of the app
+		ctx.Fired++
 		b.onEnter()
 	}
 	if in.Tab && b.onTab != nil {
+		ctx.Fired++
 		b.onTab(in.Shift)
 	}
 	f.Cursor = f.clamp(f.Cursor) // OnChange may have replaced the text

@@ -18,6 +18,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"time"
 )
@@ -72,6 +73,9 @@ type frameState struct {
 	w            int
 	h            int
 	dirty        bool         // something changed since the last draw
+	drawTree     *view.El     // the tree the last step built and updated; Draw paints it
+	treeStale    bool         // a handler or a step after the build changed what drawTree shows
+	builds       int          // view trees built, so tests can count them
 	tps          int          // the update rate last set
 	lastIn       core.Input   // the previous frame's input
 	pacer        engine.Pacer // update rate from idle time

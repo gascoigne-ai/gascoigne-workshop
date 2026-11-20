@@ -19,6 +19,7 @@ func (checkB) Measure(*El, *core.Ctx, int) (int, int) { return core.CheckboxSize
 // Update runs OnChange when the box is clicked; the caller owns the value.
 func (checkB) Update(element *El, ctx *core.Ctx) {
 	if ctx.In.Hit(element.Rect()) {
+		ctx.Fired++
 		element.Changed()
 	}
 }

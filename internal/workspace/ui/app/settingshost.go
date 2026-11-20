@@ -212,6 +212,7 @@ func (a *App) FontStore() sport.FontStore { return a.fonts }
 // Send applies a message of a settings page. The page's host is the App:
 // its other methods only read.
 func (a *App) Send(msg prefs.Msg) {
+	a.treeStale = true // a message changes settings or a page's state, which the built tree shows
 	switch msg := msg.(type) {
 	case prefs.Change:
 		a.changeSettings(msg.Edit)

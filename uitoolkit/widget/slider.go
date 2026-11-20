@@ -99,6 +99,7 @@ func (s *sliderB) Update(element *El, ctx *core.Ctx) {
 			if v := s.valueAt(f); v != st.pending {
 				st.pending = v
 				if s.onChange != nil {
+					ctx.Fired++
 					s.onChange(v)
 				}
 			}
@@ -106,6 +107,7 @@ func (s *sliderB) Update(element *El, ctx *core.Ctx) {
 		}
 		st.Dragging = false
 		if s.onEnd != nil {
+			ctx.Fired++
 			s.onEnd(st.pending)
 		}
 	case in.Click && in.Over(element.Rect()):
@@ -115,6 +117,7 @@ func (s *sliderB) Update(element *El, ctx *core.Ctx) {
 		st.startDev, st.trackDev = float64(in.X)*ctx.Scale, float64(w)*ctx.Scale
 		st.pending = s.valueAt(st.startF)
 		if st.pending != s.value && s.onChange != nil {
+			ctx.Fired++
 			s.onChange(st.pending)
 		}
 		ctx.In.Click = false

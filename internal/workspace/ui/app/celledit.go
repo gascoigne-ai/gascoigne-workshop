@@ -54,6 +54,7 @@ func (a *App) commitEdit() {
 		return
 	}
 	a.edit = nil
+	a.treeStale = true
 	text := e.field.Text
 	a.applyRows(e.pane, e.tab, func(rows []model.KV) []model.KV {
 		row := e.row

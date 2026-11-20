@@ -190,6 +190,7 @@ func (a *App) closeBulk() {
 		return
 	}
 	a.bulk = nil
+	a.treeStale = true
 	text := b.area.Text
 	a.applyRows(b.pane, b.tab, func(rows []model.KV) []model.KV { return model.ParseBulk(text, rows) })
 }

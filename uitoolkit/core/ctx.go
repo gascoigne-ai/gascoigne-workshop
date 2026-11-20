@@ -107,6 +107,12 @@ type Ctx struct {
 	// longer in the tree, is blurred.
 	FocusOwner Focuser
 
+	// Fired counts the handlers (OnClick, OnSelect, OnEnter, ...) that ran
+	// since the app began counting. A handler changes app state, so the app
+	// compares it before and after view.Update to know whether the tree it
+	// built still shows that state. A widget that calls a handler adds one.
+	Fired int
+
 	// Stats counts the draw calls of the frame when a benchmark or test sets
 	// it; nil in the app, where counting costs one nil check.
 	Stats *DrawStats

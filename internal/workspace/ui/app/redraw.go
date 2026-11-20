@@ -19,6 +19,7 @@ func (a *App) setSize(width, height int, scale float64) bool {
 	}
 	if changed {
 		a.dirty = true
+		a.drawTree = nil // built for the old size and scale
 	}
 	return changed
 }

@@ -238,18 +238,23 @@ func (e *El) update(ctx *core.Ctx) bool {
 	e.b.Update(e, ctx)
 	e.dragByHandle(ctx)
 	if e.onClick != nil && ctx.In.Hit(e.rect) {
+		ctx.Fired++
 		e.onClick(ctx.In.X, ctx.In.Y)
 	}
 	if e.onDouble != nil && ctx.In.Clicks == 2 && ctx.In.Hit(e.rect) {
+		ctx.Fired++
 		e.onDouble()
 	}
 	if e.onMiddle != nil && ctx.In.MiddleClick && ctx.In.Over(e.rect) {
+		ctx.Fired++
 		e.onMiddle()
 	}
 	if e.onDragOver != nil && (ctx.In.Held || ctx.In.MiddleHeld) && ctx.In.Over(e.rect) {
+		ctx.Fired++
 		e.onDragOver()
 	}
 	if e.onRight != nil && ctx.In.RightClick && ctx.In.Over(e.rect) {
+		ctx.Fired++
 		e.onRight(ctx, ctx.In.X, ctx.In.Y)
 		ctx.In.RightClick = false // one right click opens one menu: the innermost wins
 	}
@@ -257,6 +262,7 @@ func (e *El) update(ctx *core.Ctx) bool {
 		// A modal overlay owns the pointer: nothing under it gets clicks,
 		// wheel or hover, and a click outside it dismisses it.
 		if (ctx.In.Click || ctx.In.RightClick) && !e.rect.Contains(ctx.In.X, ctx.In.Y) && !e.nearRect(ctx.In.X, ctx.In.Y) && e.onDismiss != nil {
+			ctx.Fired++
 			e.onDismiss()
 		}
 		return true

@@ -143,6 +143,7 @@ func (a *App) dragHover() {
 	}
 	if a.hoverTicks++; a.hoverTicks >= dragExpandTicks {
 		a.expanded[f] = true
+		a.treeStale = true
 		a.hoverFolder, a.hoverTicks = nil, 0
 	}
 }

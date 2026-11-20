@@ -26,6 +26,7 @@ func (b *areaB) Update(element *El, ctx *core.Ctx) {
 	if !b.area.Update(ctx, element.Rect()) {
 		return
 	}
+	ctx.Fired++
 	element.Changed()
 }
 

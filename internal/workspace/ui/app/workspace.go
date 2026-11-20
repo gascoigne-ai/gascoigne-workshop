@@ -141,6 +141,7 @@ func (a *App) saveCollection(col *model.Collection) {
 			return
 		}
 	}
+	a.treeStale = true      // the tabs of col are marked saved
 	snapshot := col.Clone() // written off the UI goroutine while the UI goes on editing
 	a.markSaved(col)        // an error is reported once, not retried every frame
 	a.markTabsSaved(col)

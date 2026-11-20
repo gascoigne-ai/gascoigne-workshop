@@ -281,6 +281,7 @@ func (h colHandlesB) Update(element *El, ctx *core.Ctx) {
 		ctx.Cursor = core.CursorResizeH
 		left, right := cells[st.divider].Rect(), cells[st.divider+1].Rect()
 		st.Weights = resizePair(h.spec.weights(), st.divider, in.X-left.X-st.drag.off, left.W+right.W, MinColumnPx)
+		ctx.Fired++ // the cells took their widths from Weights when they were built
 		return
 	}
 	for i := 0; i < len(cells)-1; i++ {
@@ -292,6 +293,7 @@ func (h colHandlesB) Update(element *El, ctx *core.Ctx) {
 		ctx.Cursor = core.CursorResizeH
 		if in.Click && in.Clicks >= 2 {
 			st.Weights = nil // back to the defaults
+			ctx.Fired++
 		} else if in.Click {
 			st.drag.begin(in.X - x)
 			st.divider = i

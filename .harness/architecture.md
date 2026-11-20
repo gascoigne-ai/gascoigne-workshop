@@ -284,6 +284,34 @@ tooltips named below live in `widget` and are used through the same dot-import.
 A view is a Go function from state to a tree of nodes, rebuilt every frame, so the tree is always a
 pure function of the state: no diffing and no reactive system.
 
+**The frame builds the view once.** `endFrame` builds the tree, lays it out and runs `view.Update` on
+it, and keeps it as `App.drawTree`; `Draw` paints that tree (running `Layout` again, which moves
+dragged and scrolled parts) and builds a fresh one only when `App.treeStale` says that something it
+shows changed after it was built: an idle frame and a drag frame build once, a frame in which a
+handler ran build twice, as before. The flag is set by explicit signals, not by a revision counter
+(one missed bump would show old content):
+
+- `Ctx.Fired` counts the handlers that ran: `view` adds one at each `OnClick`, `OnDoubleClick`,
+  `OnMiddleClick`, `OnDragOver`, `OnRightClick` and `OnDismiss` call, and a widget adds one where it
+  calls a handler itself (`Field` change, `OnEnter`, `OnTab`, `Area`, `Checkbox`, `Slider`) or changes
+  state that the app reads when it builds (the width of a table column, the size of a `Resizable`).
+  `endFrame` compares the count before and after `view.Update`.
+- The steps after `Update` that change what the view shows set the flag themselves: `commitEdit`
+  (writes the cell), `closeBulk` (and so `settleBulk`), `dragHover` (opens a folder),
+  `saveCollection` (marks the tabs saved, so `workspaceTick`), `App.Send` (a settings message),
+  `App.toast`, and the settings `Poll` (an outside change of `settings.json`; the frame that polls is
+  always stale). The others do not change the tree: `showGrab` sets the cursor, `stateTick` snapshots
+  the state and queues a write whose result comes back through the bus before the next build, and
+  `shotUpdate` runs only in a screenshot run, where `Draw` builds fresh every time.
+- `setSize` (a new window size or scale) drops `drawTree`; the next `Draw` builds for the new size.
+
+Anything that changes state before the build of the next frame (the bus drain, input keys, settings
+loaded) is covered by that build. `frametree_test.go` pins it: a script of frames (tab switch, filter
+typing, menus, cell edit, folder drag, dividers, column drag, toast expiry, a response on the bus, the
+settings dialog dragged, resized and clicked, window resize) asserts after every step that the tree
+`Draw` would paint dumps the same as a fresh build. A path that fails it must set the flag; the test
+is never relaxed.
+
 Every constructor takes **attributes first, children after**, so what an element is reads before
 what it contains. App view files dot-import `view` (and alias `core` as `w`) so views read like
 markup:
