@@ -83,3 +83,20 @@ func BenchmarkDragFrameNoDialog(b *testing.B) {
 		a.Draw(screen)
 	}
 }
+
+// BenchmarkDrawStats reports what one drag frame asks the GPU for, as
+// metrics per frame: the counts the batching items bring down.
+func BenchmarkDrawStats(b *testing.B) {
+	a := newBenchApp(b, true)
+	screen := ebiten.NewImage(winW, winH)
+	a.ctx.Stats = &core.DrawStats{}
+	for i := 0; i < b.N; i++ {
+		a.step(core.Input{X: 600 + i%40, Y: 300 + i%20})
+		a.dirty = true
+		a.ctx.Stats = &core.DrawStats{}
+		a.Draw(screen)
+	}
+	b.ReportMetric(float64(a.ctx.Stats.AAFills), "aafills/frame")
+	b.ReportMetric(float64(a.ctx.Stats.StrokePaths), "strokepaths/frame")
+	b.ReportMetric(float64(a.ctx.Stats.Widths), "widths/frame")
+}

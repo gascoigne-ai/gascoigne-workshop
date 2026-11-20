@@ -107,6 +107,10 @@ type Ctx struct {
 	// longer in the tree, is blurred.
 	FocusOwner Focuser
 
+	// Stats counts the draw calls of the frame when a benchmark or test sets
+	// it; nil in the app, where counting costs one nil check.
+	Stats *DrawStats
+
 	// TipText is the tooltip text of the element under the pointer, set by
 	// view.Draw for widget.TooltipLayer to show.
 	TipText string
@@ -271,6 +275,9 @@ func (c *Ctx) Clip(dst *ebiten.Image, rect Rect) *ebiten.Image {
 
 // Width is the logical width of s in face.
 func (c *Ctx) Width(face *text.GoTextFace, content string) int {
+	if c.Stats != nil {
+		c.Stats.Widths++
+	}
 	w, _ := text.Measure(content, face, 0)
 	return int(w/c.Scale + 0.5)
 }
@@ -390,14 +397,17 @@ func (c *Ctx) FillStyled(dst *ebiten.Image, rect Rect, top, bottom color.RGBA, r
 		path.LineTo(x0, y1)
 		path.Close()
 	}
-	fillGradient(dst, path, y0, y1, top, bottom, round)
+	c.fillGradient(dst, path, x0, y0, x1, y1, top, bottom, round)
 }
 
-// fillGradient fills path, which spans y0 to y1 (device pixels), from top to
+// fillGradient fills path, which spans x0,y0 to x1,y1 (device pixels), from top to
 // bottom; anti-aliased edges blend with alpha, so rounded corners have no
 // jagged steps.
-func fillGradient(dst *ebiten.Image, path *vector.Path, y0, y1 float32, top, bottom color.RGBA, antiAlias bool) {
+func (c *Ctx) fillGradient(dst *ebiten.Image, path *vector.Path, x0, y0, x1, y1 float32, top, bottom color.RGBA, antiAlias bool) {
 	verts, idx := path.AppendVerticesAndIndicesForFilling(nil, nil)
+	if len(verts) == 0 {
+		return
+	}
 	span := max(y1-y0, 1)
 	for i := range verts {
 		t := min(max((verts[i].DstY-y0)/span, 0), 1)
@@ -407,7 +417,37 @@ func fillGradient(dst *ebiten.Image, path *vector.Path, y0, y1 float32, top, bot
 		verts[i].ColorR, verts[i].ColorG, verts[i].ColorB, verts[i].ColorA = mix(top.R, bottom.R), mix(top.G, bottom.G), mix(top.B, bottom.B), mix(top.A, bottom.A)
 		verts[i].SrcX, verts[i].SrcY = 0.5, 0.5
 	}
-	dst.DrawTriangles(verts, idx, gradientSrc, &ebiten.DrawTrianglesOptions{AntiAlias: antiAlias})
+	if !antiAlias {
+		dst.DrawTriangles(verts, idx, gradientSrc, &ebiten.DrawTrianglesOptions{})
+		return
+	}
+	// Anti-aliasing blends through an offscreen the size of the target; a
+	// sub-image of the shape's bounds keeps that offscreen small.
+	bounds := fillBounds(x0, y0, x1, y1, dst.Bounds())
+	if bounds.Empty() {
+		return
+	}
+	if c.Stats != nil {
+		c.Stats.AAFills++
+	}
+	dst.SubImage(bounds).(*ebiten.Image).DrawTriangles(verts, idx, gradientSrc, &ebiten.DrawTrianglesOptions{AntiAlias: true})
+}
+
+// DrawStats counts what one frame asks the GPU for, to pin and measure the
+// batching of rounded shapes. Set Ctx.Stats to collect; the caller zeroes it
+// between frames.
+type DrawStats struct {
+	AAFills     int // DrawTriangles calls with AntiAlias (rounded fills)
+	StrokePaths int // vector.StrokePath calls (rounded outlines)
+	Widths      int // Ctx.Width measurements
+}
+
+// fillBounds is the device-pixel region a fill of the given path bounds can
+// touch: the bounds grown to whole pixels plus one for anti-aliasing,
+// clipped to limit. Empty when the fill is outside limit.
+func fillBounds(x0, y0, x1, y1 float32, limit image.Rectangle) image.Rectangle {
+	grown := image.Rect(int(math.Floor(float64(x0)))-1, int(math.Floor(float64(y0)))-1, int(math.Ceil(float64(x1)))+1, int(math.Ceil(float64(y1)))+1)
+	return grown.Intersect(limit)
 }
 
 // Corners is a set of rectangle corners.
@@ -435,7 +475,7 @@ func (c *Ctx) FillStyledCorners(dst *ebiten.Image, rect Rect, top, bottom color.
 		return
 	}
 	x0, y0, x1, y1 := c.devRect(rect)
-	fillGradient(dst, cornersPath(x0, y0, x1, y1, c.dev(float32(radius)), corners), y0, y1, top, bottom, true)
+	c.fillGradient(dst, cornersPath(x0, y0, x1, y1, c.dev(float32(radius)), corners), x0, y0, x1, y1, top, bottom, true)
 }
 
 // cornersPath is r with the corners in the set rounded by rad.
@@ -476,6 +516,9 @@ func (c *Ctx) OutlineStyled(dst *ebiten.Image, rect Rect, clr color.RGBA, radius
 	if radius*c.Scale < 1 {
 		c.Outline(dst, rect, clr)
 		return
+	}
+	if c.Stats != nil {
+		c.Stats.StrokePaths++
 	}
 	w := c.dev(1)
 	x0, y0 := c.dev(float32(rect.X))+w/2, c.dev(float32(rect.Y))+w/2

@@ -1075,6 +1075,11 @@ that change `App`.
   pixels with `Ctx.snap` (rounded per edge, so neighbours share an edge with no gap) and draw lines
   `Ctx.LineWidth()` thick, the scale rounded to whole pixels and at least one, so borders stay sharp
   at fractional scales.
+-  **Rounded fills** (`Ctx.FillStyled`, `FillStyledCorners`) draw anti-aliased into a sub-image of
+  the shape's bounds plus one pixel (`fillBounds`, clipped to the target; an empty region skips the
+  call), because Ebitengine blends an anti-aliased draw through an offscreen as large as its target.
+  `Ctx.Stats` (a `*core.DrawStats`, nil in the app) counts anti-aliased fills, stroked paths and
+  `Width` calls per frame; `BenchmarkDrawStats` in `internal/workspace/ui/app` reports them.
 -  **Caret blink** (`core.Ctx.CaretVisible`, `RestartCaret`): the block caret is shown for 500 ms
   and hidden for 500 ms by the clock (`Ctx.Now`, the app's `now`), not by ticks, so the rate does
   not change when the update rate drops from 60 to 30 when idle. Typing, editing keys, clicks and
