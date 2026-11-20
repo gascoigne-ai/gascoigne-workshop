@@ -75,6 +75,11 @@ func perSecond(rate float64) time.Duration {
 	return time.Duration(float64(time.Second) / rate)
 }
 
+// maxSetting is the largest count (milliseconds, ticks or presses a second)
+// read from a desktop: a real setting is far below it, and a larger number
+// would overflow time.Duration into a negative timing.
+const maxSetting = 1_000_000
+
 func milliseconds(count int) time.Duration { return time.Duration(count) * time.Millisecond }
 
 // --- Hyprland -------------------------------------------------------------
@@ -103,7 +108,7 @@ func hyprlandInt(text string) (int, bool) {
 	var option struct {
 		Int int `json:"int"`
 	}
-	if err := json.Unmarshal([]byte(text), &option); err != nil || option.Int <= 0 {
+	if err := json.Unmarshal([]byte(text), &option); err != nil || option.Int <= 0 || option.Int > maxSetting {
 		return 0, false
 	}
 	return option.Int, true
@@ -138,7 +143,7 @@ func lastInt(text string) (int, bool) {
 		return 0, false
 	}
 	count, err := strconv.Atoi(fields[len(fields)-1])
-	return count, err == nil && count > 0
+	return count, err == nil && count > 0 && count <= maxSetting
 }
 
 // --- X11 ------------------------------------------------------------------
@@ -160,8 +165,11 @@ func parseXset(text string) (time.Duration, time.Duration) {
 	if found == nil {
 		return 0, 0
 	}
-	delayMs, _ := strconv.Atoi(found[1])
-	rate, _ := strconv.Atoi(found[2])
+	delayMs, delayErr := strconv.Atoi(found[1])
+	rate, rateErr := strconv.Atoi(found[2])
+	if delayErr != nil || rateErr != nil || delayMs > maxSetting || rate <= 0 || rate > maxSetting {
+		return 0, 0
+	}
 	return milliseconds(delayMs), perSecond(float64(rate))
 }
 

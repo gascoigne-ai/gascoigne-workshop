@@ -2065,6 +2065,7 @@ and the in-memory keys `stateKey` and `tree.Key`.
 
 ## Limits
 
+-  Key repeat output (`keyrepeat`): a count above `maxSetting` = 1,000,000 (milliseconds, ticks or presses a second) is unknown, as is an `xset` repeat rate of 0, so a desktop's output cannot overflow `time.Duration` into a negative timing.
 -  MCP server work: answers to server requests and list refreshes run on at most `maxServerWork` =
   16 workers (`mcpSession.spawn`, a counting semaphore). A request that finds none free is answered
   with the JSON-RPC error -32000 `client busy`, written by one goroutine behind a queue of
