@@ -97,6 +97,6 @@ func BenchmarkDrawStats(b *testing.B) {
 		a.Draw(screen)
 	}
 	b.ReportMetric(float64(a.ctx.Stats.MaskFills), "maskfills/frame")
-	b.ReportMetric(float64(a.ctx.Stats.StrokePaths), "strokepaths/frame")
+	b.ReportMetric(float64(a.ctx.Stats.RingFills), "ringfills/frame")
 	b.ReportMetric(float64(a.ctx.Stats.Widths), "widths/frame")
 }

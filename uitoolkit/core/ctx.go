@@ -115,6 +115,7 @@ type Ctx struct {
 	// and is nil in the app (a test sets it to need no GPU).
 	masks     *cornerMasks
 	maskMaker func(radius int) *ebiten.Image
+	ringMaker func(radius, width int) *ebiten.Image
 
 	// TipText is the tooltip text of the element under the pointer, set by
 	// view.Draw for widget.TooltipLayer to show.
@@ -461,9 +462,9 @@ func rectPath(x0, y0, x1, y1 float32) *vector.Path {
 // batching of rounded shapes. Set Ctx.Stats to collect; the caller zeroes it
 // between frames.
 type DrawStats struct {
-	MaskFills   int // rounded fills drawn from the corner mask, one DrawTriangles each
-	StrokePaths int // vector.StrokePath calls (rounded outlines)
-	Widths      int // Ctx.Width measurements
+	MaskFills int // rounded fills drawn from the corner mask, one DrawTriangles each
+	RingFills int // rounded outlines drawn from the ring mask, one DrawTriangles each
+	Widths    int // Ctx.Width measurements
 }
 
 // Corners is a set of rectangle corners.
@@ -525,37 +526,63 @@ func cornersPath(x0, y0, x1, y1, rad float32, corners Corners) *vector.Path {
 	return &p
 }
 
-// OutlineStyled strokes a one-pixel border just inside r, with rounded
-// corners when radius is set.
+// OutlineStyled strokes a border just inside r, LineWidth thick, with
+// rounded corners when radius is set. The edges snap to device pixels as
+// Outline's do, and the rounded outline is one DrawTriangles from the cached
+// ring mask. The width is LineWidth (the unrounded scale a stroke used to
+// take would blur on a fractional scale and not match Outline's lines).
 func (c *Ctx) OutlineStyled(dst *ebiten.Image, rect Rect, clr color.RGBA, radius float64) {
 	if radius*c.Scale < 1 {
 		c.Outline(dst, rect, clr)
 		return
 	}
-	if c.Stats != nil {
-		c.Stats.StrokePaths++
+	x0, y0 := c.snap(rect.X), c.snap(rect.Y)
+	x1, y1 := c.snap(rect.X+rect.W), c.snap(rect.Y+rect.H)
+	r := min(float32(max(1, math.Round(float64(c.dev(float32(radius)))))), float32(math.Floor(float64(min(x1-x0, y1-y0))/2)))
+	if r < 1 {
+		c.Outline(dst, rect, clr)
+		return
 	}
-	w := c.dev(1)
-	x0, y0 := c.dev(float32(rect.X))+w/2, c.dev(float32(rect.Y))+w/2
-	x1, y1 := c.dev(float32(rect.X+rect.W))-w/2, c.dev(float32(rect.Y+rect.H))-w/2
-	path := cornersPath(x0, y0, x1, y1, c.dev(float32(radius))-w/2, CornersAll)
-	var so vector.StrokeOptions
-	so.Width = w
-	var dp vector.DrawPathOptions
-	dp.AntiAlias = true
-	dp.ColorScale.ScaleWithColor(clr)
-	vector.StrokePath(dst, path, &so, &dp)
+	width := min(c.LineWidth(), r)
+	mask := c.ringMask(int(r), int(width))
+	quads := ringQuads(x0, y0, x1, y1, r, width)
+	red, green, blue, alpha := float32(clr.R)/255, float32(clr.G)/255, float32(clr.B)/255, float32(clr.A)/255
+	verts := make([]ebiten.Vertex, 0, 4*len(quads))
+	idx := make([]uint16, 0, 6*len(quads))
+	for _, q := range quads {
+		base := uint16(len(verts))
+		for _, corner := range [4][4]float32{
+			{q.dst.x0, q.dst.y0, q.src.x0, q.src.y0}, {q.dst.x1, q.dst.y0, q.src.x1, q.src.y0},
+			{q.dst.x1, q.dst.y1, q.src.x1, q.src.y1}, {q.dst.x0, q.dst.y1, q.src.x0, q.src.y1},
+		} {
+			verts = append(verts, ebiten.Vertex{DstX: corner[0], DstY: corner[1], SrcX: corner[2], SrcY: corner[3], ColorR: red, ColorG: green, ColorB: blue, ColorA: alpha})
+		}
+		idx = append(idx, base, base+1, base+2, base, base+2, base+3)
+	}
+	if c.Stats != nil {
+		c.Stats.RingFills++
+	}
+	dst.DrawTriangles(verts, idx, mask, &ebiten.DrawTrianglesOptions{})
 }
 
 // cornerMask is the cached white mask for corners of radius device pixels.
-func (c *Ctx) cornerMask(radius int) *ebiten.Image {
+func (c *Ctx) cornerMask(radius int) *ebiten.Image { return c.maskCache().get(radius) }
+
+// ringMask is the cached white ring mask for corners of radius device pixels
+// and a line width in device pixels.
+func (c *Ctx) ringMask(radius, width int) *ebiten.Image { return c.maskCache().getRing(radius, width) }
+
+func (c *Ctx) maskCache() *cornerMasks {
 	if c.masks == nil {
-		c.masks = &cornerMasks{make: buildCornerMask}
+		c.masks = &cornerMasks{make: buildCornerMask, makeRing: buildRingMask}
 	}
 	if c.maskMaker != nil {
 		c.masks.make = c.maskMaker
 	}
-	return c.masks.get(radius)
+	if c.ringMaker != nil {
+		c.masks.makeRing = c.ringMaker
+	}
+	return c.masks
 }
 
 func (c *Ctx) resetMasks() {

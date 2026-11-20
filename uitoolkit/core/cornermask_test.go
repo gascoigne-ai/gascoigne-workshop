@@ -173,3 +173,114 @@ func TestScaleAndThemeChangesDropTheMasks(t *testing.T) {
 		t.Fatalf("built %d masks, want 3 (one per scale or theme)", built)
 	}
 }
+
+func TestRingQuads(t *testing.T) {
+	tests := []struct {
+		name           string
+		x0, y0, x1, y1 float32
+		r, width       float32
+		count          int
+	}{
+		{"corners and four edges", 0, 0, 20, 12, 4, 1, 8},
+		{"wider line", 0, 0, 20, 12, 4, 2, 8},
+		{"line as wide as the radius", 0, 0, 20, 12, 4, 4, 8},
+		{"width below 2r drops the empty edge", 0, 0, 8, 12, 4, 1, 6},
+		{"square of 2r is four corners", 0, 0, 8, 8, 4, 1, 4},
+		{"fractional origin", 3, 5, 23, 17, 4, 1, 8},
+		{"one pixel radius", 0, 0, 2, 2, 1, 1, 4},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			quads := ringQuads(tc.x0, tc.y0, tc.x1, tc.y1, tc.r, tc.width)
+			if len(quads) != tc.count {
+				t.Fatalf("got %d quads, want %d: %v", len(quads), tc.count, quads)
+			}
+			assertRingCoverage(t, quads, frect{tc.x0, tc.y0, tc.x1, tc.y1}, tc.r, tc.width)
+		})
+	}
+}
+
+// assertRingCoverage checks that the quads never overlap, stay inside rect and
+// leave the inner rect (rect minus the line width on each side) uncovered
+// except for the corner squares, which are covered whole (the mask is clear
+// there).
+func assertRingCoverage(t *testing.T, quads []quad, rect frect, r, width float32) {
+	t.Helper()
+	inner := frect{rect.x0 + width, rect.y0 + width, rect.x1 - width, rect.y1 - width}
+	r = min(r, (rect.x1-rect.x0)/2, (rect.y1-rect.y0)/2)
+	for y := rect.y0; y < rect.y1; y++ {
+		for x := rect.x0; x < rect.x1; x++ {
+			covers := 0
+			for _, q := range quads {
+				if x >= q.dst.x0 && x < q.dst.x1 && y >= q.dst.y0 && y < q.dst.y1 {
+					covers++
+				}
+			}
+			inInner := x >= inner.x0 && x < inner.x1 && y >= inner.y0 && y < inner.y1
+			inCorner := (x < rect.x0+r || x >= rect.x1-r) && (y < rect.y0+r || y >= rect.y1-r)
+			want := 1
+			if inInner && !inCorner {
+				want = 0
+			}
+			if covers != want {
+				t.Fatalf("pixel %v,%v covered %d times, want %d (quads %v)", x, y, covers, want, quads)
+			}
+		}
+	}
+}
+
+func TestRingQuadsSamplesTheMask(t *testing.T) {
+	quads := ringQuads(0, 0, 20, 12, 4, 2)
+	// Corners first (TL, TR, BR, BL), each its own quarter of the 8x8 ring.
+	want := []frect{{0, 0, 4, 4}, {4, 0, 8, 4}, {4, 4, 8, 8}, {0, 4, 4, 8}}
+	for i, src := range want {
+		if len(quads) < 8 || quads[i].src != src {
+			t.Fatalf("corner %d samples %v, want %v", i, quads, src)
+		}
+	}
+	// The edges are the line width thick and sample the solid texel.
+	for _, q := range quads[4:] {
+		if q.src.x1 != q.src.x0 || q.src.y1 != q.src.y0 {
+			t.Fatalf("edge %v samples more than the solid texel", q)
+		}
+	}
+}
+
+func TestRingMasksAreKeyedByWidth(t *testing.T) {
+	built := 0
+	masks := &cornerMasks{makeRing: func(int, int) *ebiten.Image { built++; return nil }, make: func(int) *ebiten.Image { built++; return nil }}
+	masks.getRing(4, 1)
+	masks.getRing(4, 1)
+	masks.getRing(4, 2)
+	masks.get(4)
+	if built != 3 {
+		t.Fatalf("built %d masks, want 3 (ring w1, ring w2, fill)", built)
+	}
+}
+
+func TestRoundedOutlineIsOneRingDraw(t *testing.T) {
+	ctx, err := NewCtx(testTheme())
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx.Stats = &DrawStats{}
+	img := ebiten.NewImage(20, 20)
+	ctx.OutlineStyled(img, Rect{X: 2, Y: 2, W: 16, H: 16}, color.RGBA{255, 0, 0, 255}, 4)
+	if ctx.Stats.RingFills != 1 {
+		t.Fatalf("RingFills = %d, want 1", ctx.Stats.RingFills)
+	}
+}
+
+// A radius that rounds below one device pixel is a square outline, as before.
+func TestOutlineStyledWithTinyRadiusIsTheSquareOutline(t *testing.T) {
+	ctx, err := NewCtx(testTheme())
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx.Stats = &DrawStats{}
+	img := ebiten.NewImage(20, 20)
+	ctx.OutlineStyled(img, Rect{X: 2, Y: 2, W: 16, H: 16}, color.RGBA{255, 0, 0, 255}, 0.5)
+	if ctx.Stats.RingFills != 0 {
+		t.Fatalf("RingFills = %d, want 0", ctx.Stats.RingFills)
+	}
+}

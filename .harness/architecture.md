@@ -1084,7 +1084,13 @@ that change `App`.
   rides on the vertex colors (`gradientAt`). The mask (`cornerMasks`, owned by the `Ctx`, keyed by
   radius, built by filling a `2r` square with rounded corners, so a corner is the same pixels the
   anti-aliased fill gave) is dropped by `SetScale` and `SetTheme`, and when `maskLimit` (64) masks
-  are held. `Ctx.Stats` (a `*core.DrawStats`, nil in the app) counts mask fills, stroked paths and
+  are held. `Ctx.OutlineStyled` draws a rounded border the same way: `ringQuads` (pure) cuts it into
+  four corner squares sampling a quarter of the ring mask and four edge strips `LineWidth` thick
+  (the solid texel), in one `DrawTriangles` with the color as vertex color; the ring mask is in the
+  same cache, keyed by radius and line width, built by stroking the rounded path in a `2r` square
+  (so a corner is the pixels the stroked outline gave); the outer edge snaps like `Fill`'s, and a
+  radius below one device pixel is still the square `Outline`. `Ctx.Stats` (a `*core.DrawStats`, nil
+  in the app) counts mask fills, ring fills and
   `Width` calls per frame; `BenchmarkDrawStats` in `internal/workspace/ui/app` reports them.
 -  **Caret blink** (`core.Ctx.CaretVisible`, `RestartCaret`): the block caret is shown for 500 ms
   and hidden for 500 ms by the clock (`Ctx.Now`, the app's `now`), not by ticks, so the rate does
