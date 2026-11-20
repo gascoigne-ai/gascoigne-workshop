@@ -345,8 +345,21 @@ func (step setSettingStep) apply(app *App) error {
 	if err != nil {
 		return err
 	}
-	app.changeSettings(func(prefs *settings.Settings) { *prefs = settings.With(*prefs, key, value) })
-	return nil
+	typed := settingValue(value)
+	var setErr error
+	app.changeSettings(func(prefs *settings.Settings) { setErr = settings.Set(prefs, key, typed) })
+	return setErr
+}
+
+// settingValue is what parseSetting read as the typed value of a setting.
+func settingValue(parsed any) settings.Value {
+	switch value := parsed.(type) {
+	case bool:
+		return settings.Flag(value)
+	case int:
+		return settings.Number(value)
+	}
+	return settings.Text(fmt.Sprint(parsed))
 }
 
 type findStep struct {

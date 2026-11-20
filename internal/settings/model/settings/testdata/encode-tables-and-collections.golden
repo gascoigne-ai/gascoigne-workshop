@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "colors": {
+    "dark": {
+      "accent": "#00ff00"
+    },
+    "light": {
+      "accent": "#ff0000",
+      "bg": "#ffffff"
+    }
+  },
+  "shortcuts": {
+    "find": "",
+    "send": "Ctrl+Enter"
+  },
+  "general": {
+    "collections": [
+      {
+        "environment": "prod",
+        "folder": "/work/a"
+      },
+      {
+        "environment": "dev"
+      }
+    ]
+  }
+}

@@ -80,10 +80,10 @@ func unmarshalSettings(data []byte, into *Settings) error {
 	return json.Unmarshal(merged, into)
 }
 
-// sectionedText is the settings (as the flat map Minimal builds) written as
+// sectionedText is the settings (the typed values Minimal keeps, by key) written as
 // indented JSON grouped by section, the sections in a fixed order and the
 // keys of each in schema order, after the version of the file.
-func sectionedText(flat map[string]any) ([]byte, error) {
+func sectionedText(flat map[string]Value) ([]byte, error) {
 	var compact bytes.Buffer
 	compact.WriteByte('{')
 	if err := writeMember(&compact, false, fileversion.Key, FileVersion); err != nil {

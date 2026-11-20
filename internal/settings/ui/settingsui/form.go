@@ -8,6 +8,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -111,6 +112,23 @@ func choice(host Host, label string, selected bool, edit func(*settings.Settings
 	return chip{Label: label, Selected: selected, Pick: pick}
 }
 
+// setKey is the edit that sets key to value; a refusal is shown as a toast,
+// not dropped.
+func setKey(host Host, key string, value settings.Value) func(*settings.Settings) {
+	return func(edited *settings.Settings) {
+		if err := settings.Set(edited, key, value); err != nil {
+			host.Send(prefs.Toast{Text: "Could not change the setting: " + err.Error(), Level: severity.Error})
+		}
+	}
+}
+
+// resetKey puts the default back for key; a refusal is shown as a toast.
+func resetKey(host Host, edited *settings.Settings, key string) {
+	if err := settings.Reset(edited, key); err != nil {
+		host.Send(prefs.Toast{Text: "Could not reset the setting: " + err.Error(), Level: severity.Error})
+	}
+}
+
 // chipRow is a row of chips sharing its width.
 func chipRow(chips []chip) Node {
 	return chipsTemplate.MustBuild(markup.Scope{"chips": chips, "rowH": w.RowH, "tightGap": w.TightGap})
@@ -118,7 +136,9 @@ func chipRow(chips []chip) Node {
 
 // enumChips is a row of chips, one per allowed value; the current one is lit.
 func (d *SettingsDialog) enumChips(host Host, field settings.Field, labels map[string]string) Node {
-	current, _ := settings.Value(host.Settings(), field.Key).(string)
+	value, _ := settings.Get(host.Settings(), field.Key)
+	text, _ := value.(settings.Text)
+	current := string(text)
 	if field.Key == "corners" {
 		current = appearance.CornerIDOf(current)
 	}
@@ -128,7 +148,7 @@ func (d *SettingsDialog) enumChips(host Host, field settings.Field, labels map[s
 		if label == "" {
 			label = capitalized(id)
 		}
-		edit := func(edited *settings.Settings) { *edited = settings.With(*edited, field.Key, id) }
+		edit := setKey(host, field.Key, settings.Text(id))
 		chips = append(chips, choice(host, label, id == current, edit))
 	}
 	return chipRow(chips)
@@ -164,11 +184,12 @@ func (d *SettingsDialog) scaleControl(host Host) Node {
 
 // boolChips is Off and On for a true-or-false setting.
 func (d *SettingsDialog) boolChips(host Host, field settings.Field) Node {
-	on, _ := settings.Value(host.Settings(), field.Key).(bool)
-	set := func(value bool) func(*settings.Settings) {
-		return func(edited *settings.Settings) { *edited = settings.With(*edited, field.Key, value) }
-	}
-	return chipRow([]chip{choice(host, "Off", !on, set(false)), choice(host, "On", on, set(true))})
+	value, _ := settings.Get(host.Settings(), field.Key)
+	on, _ := value.(settings.Flag)
+	return chipRow([]chip{
+		choice(host, "Off", !bool(on), setKey(host, field.Key, settings.Flag(false))),
+		choice(host, "On", bool(on), setKey(host, field.Key, settings.Flag(true))),
+	})
 }
 
 // Input is the text field of a text or number setting, filled from the
@@ -181,11 +202,12 @@ func (d *SettingsDialog) Input(host Host, key string) *TextField {
 		return input
 	}
 	text := ""
-	switch value := settings.Value(host.Settings(), key).(type) {
-	case string:
-		text = value
-	case int:
-		text = strconv.Itoa(value)
+	value, _ := settings.Get(host.Settings(), key)
+	switch value := value.(type) {
+	case settings.Text:
+		text = string(value)
+	case settings.Number:
+		text = strconv.Itoa(int(value))
 	}
 	input := NewTextField(text)
 	d.inputs[key] = &input
@@ -201,17 +223,17 @@ func (d *SettingsDialog) Edited(host Host, key string) {
 		return
 	}
 	text := strings.TrimSpace(d.Input(host, key).Text)
-	var value any = text
+	var value settings.Value = settings.Text(text)
 	if field.Kind == settings.Int {
 		number, err := strconv.Atoi(text)
 		if err != nil || number < field.Min || number > field.Max {
 			d.setNote(key, fmt.Sprintf("Enter a whole number between %d and %d", field.Min, field.Max))
 			return
 		}
-		value = number
+		value = settings.Number(number)
 	}
 	d.setNote(key, "")
-	host.Send(prefs.Change{Edit: func(current *settings.Settings) { *current = settings.With(*current, key, value) }})
+	host.Send(prefs.Change{Edit: setKey(host, key, value)})
 }
 
 func (d *SettingsDialog) setNote(key, note string) {
@@ -236,7 +258,7 @@ func (d *SettingsDialog) textControl(host Host, field settings.Field) Node {
 
 // Reset puts the default back for key and drops it from the file.
 func (d *SettingsDialog) Reset(host Host, key string) {
-	host.Send(prefs.Change{Edit: func(current *settings.Settings) { settings.Reset(current, key) }})
+	host.Send(prefs.Change{Edit: func(current *settings.Settings) { resetKey(host, current, key) }})
 	d.inputs, d.notes = nil, nil
 	if key == "uiFont" || key == "codeFont" {
 		d.ApplyFonts(host)

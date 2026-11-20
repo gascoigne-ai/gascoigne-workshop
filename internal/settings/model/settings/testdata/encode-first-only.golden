@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "requests": {
+    "proxy": "http://localhost:8080"
+  }
+}

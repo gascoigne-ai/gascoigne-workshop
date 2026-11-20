@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"reflect"
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fileversion"
@@ -42,32 +41,37 @@ type Field struct {
 // Categories are the pages of the form, in order.
 var Categories = []string{"Appearance", "Colors", "Shortcuts", "Requests", "General", "Experimental"}
 
-// Schema lists every key of settings.json.
-var Schema = []Field{
-	{Key: "theme", Title: "Theme", Description: "The color theme: dark, light or the id of a theme file in the themes folder.", Category: "Appearance", Kind: Enum, Allowed: []string{"dark", "light"}, Open: true},
-	{Key: "textSize", Title: "Text size", Description: "The size of the interface text.", Category: "Appearance", Kind: Enum, Allowed: []string{"small", "medium", "large"}},
-	{Key: "uiScale", Title: "Interface scale", Description: "Scale of the whole interface in percent, on top of the display's own scale.", Category: "Appearance", Kind: Int, Min: MinUIScalePct, Max: MaxUIScalePct},
-	{Key: "uiFont", Title: "Interface font", Description: "Family name of an installed font for labels, buttons and fields; empty is the built-in font.", Category: "Appearance", Kind: String},
-	{Key: "codeFont", Title: "Code font", Description: "Family name of an installed font for bodies and the code views; empty is the built-in font.", Category: "Appearance", Kind: String},
-	{Key: "corners", Title: "Corners", Description: "How round controls are.", Category: "Appearance", Kind: Enum, Allowed: []string{"square", "soft", "round"}},
-	{Key: "flat", Title: "Flat colors", Description: "Turn every gradient into a flat fill.", Category: "Appearance", Kind: Bool},
-	{Key: "contrast", Title: "Contrast", Description: "High strengthens the selection, find and accent colors.", Category: "Appearance", Kind: Enum, Allowed: []string{"normal", "high"}},
-	{Key: "layout", Title: "Request and response", Description: "Place the request and response panes stacked or side by side.", Category: "Appearance", Kind: Enum, Allowed: []string{"stacked", "side"}},
-	{Key: "responseView", Title: "Response view", Description: "How a response body is shown when it arrives.", Category: "Appearance", Kind: Enum, Allowed: []string{"compact", "pretty", "raw"}},
-	{Key: "autoSave", Title: "Save changes automatically", Description: "On: every change is written to settings.json at once. Off: changes apply now but are written only when you click Save.", Category: "General", Kind: Bool},
-	{Key: "colors", Title: "Color overrides", Description: "Your colors, by theme id and token name, as #rrggbb.", Category: "Colors", Kind: Colors},
-	{Key: "shortcuts", Title: "Shortcut overrides", Description: "Your key bindings by action id, such as \"Ctrl+Shift+Tab\"; empty text unbinds.", Category: "Shortcuts", Kind: Shortcuts},
-	{Key: "timeoutSec", Title: "Request timeout", Description: "How long a request may run, in seconds.", Category: "Requests", Kind: Int, Min: 1, Max: 3600},
-	{Key: "proxy", Title: "Proxy", Description: "URL of an HTTP proxy for every REST request; empty uses the environment's.", Category: "Requests", Kind: String},
-	{Key: "caCert", Title: "CA certificates", Description: "Path of a PEM file of extra certificate authorities to trust.", Category: "Requests", Kind: File},
-	{Key: "clientCert", Title: "Client certificate", Description: "Path of a client certificate for servers that ask for one.", Category: "Requests", Kind: File},
-	{Key: "clientKey", Title: "Client key", Description: "Path of the private key of the client certificate.", Category: "Requests", Kind: File},
-	{Key: "grpc", Title: "gRPC", Description: "Experimental: offer gRPC as a request protocol.", Category: "Experimental", Kind: Bool},
-	{Key: "sse", Title: "Server-Sent Events", Description: "Experimental: offer SSE as a request protocol.", Category: "Experimental", Kind: Bool},
-	{Key: "collections", Title: "Open collections", Description: "The collections open in the window, in tree order: the folder of each and the name of its active environment; one without a folder is the built-in or configured collection.", Category: "General", Kind: CollectionList, Hidden: true},
-	{Key: "workspace", Title: "Collection folder", Description: "The one open collection of an older settings file; read only when collections is absent.", Category: "General", Kind: String, Hidden: true},
-	{Key: "environment", Title: "Active environment", Description: "The active environment of an older settings file; read only when collections is absent.", Category: "General", Kind: String, Hidden: true},
+// rows are the settings, in the order of the form, the file and Schema.
+// They stay in this file: the keys grpc and sse are the one allowed use of
+// those protocol words (internal/protocol_literals_test.go).
+var rows = []row{
+	enumRow(Field{Key: "theme", Title: "Theme", Description: "The color theme: dark, light or the id of a theme file in the themes folder.", Category: "Appearance", Allowed: []string{"dark", "light"}, Open: true}, func(prefs *Settings) *string { return &prefs.Theme }),
+	enumRow(Field{Key: "textSize", Title: "Text size", Description: "The size of the interface text.", Category: "Appearance", Allowed: []string{"small", "medium", "large"}}, func(prefs *Settings) *string { return &prefs.TextSize }),
+	intRow(Field{Key: "uiScale", Title: "Interface scale", Description: "Scale of the whole interface in percent, on top of the display's own scale.", Category: "Appearance", Min: MinUIScalePct, Max: MaxUIScalePct}, func(prefs *Settings) *int { return &prefs.UIScalePct }),
+	textRow(Field{Key: "uiFont", Title: "Interface font", Description: "Family name of an installed font for labels, buttons and fields; empty is the built-in font.", Category: "Appearance"}, func(prefs *Settings) *string { return &prefs.UIFont }),
+	textRow(Field{Key: "codeFont", Title: "Code font", Description: "Family name of an installed font for bodies and the code views; empty is the built-in font.", Category: "Appearance"}, func(prefs *Settings) *string { return &prefs.CodeFont }),
+	enumRow(Field{Key: "corners", Title: "Corners", Description: "How round controls are.", Category: "Appearance", Allowed: []string{"square", "soft", "round"}}, func(prefs *Settings) *string { return &prefs.Corners }),
+	flagRow(Field{Key: "flat", Title: "Flat colors", Description: "Turn every gradient into a flat fill.", Category: "Appearance"}, func(prefs *Settings) *bool { return &prefs.Flat }),
+	enumRow(Field{Key: "contrast", Title: "Contrast", Description: "High strengthens the selection, find and accent colors.", Category: "Appearance", Allowed: []string{"normal", "high"}}, func(prefs *Settings) *string { return &prefs.Contrast }),
+	enumRow(Field{Key: "layout", Title: "Request and response", Description: "Place the request and response panes stacked or side by side.", Category: "Appearance", Allowed: []string{"stacked", "side"}}, func(prefs *Settings) *string { return &prefs.Layout }),
+	enumRow(Field{Key: "responseView", Title: "Response view", Description: "How a response body is shown when it arrives.", Category: "Appearance", Allowed: []string{"compact", "pretty", "raw"}}, func(prefs *Settings) *string { return &prefs.ResponseView }),
+	flagRow(Field{Key: "autoSave", Title: "Save changes automatically", Description: "On: every change is written to settings.json at once. Off: changes apply now but are written only when you click Save.", Category: "General"}, func(prefs *Settings) *bool { return &prefs.AutoSave }),
+	colorsRow(Field{Key: "colors", Title: "Color overrides", Description: "Your colors, by theme id and token name, as #rrggbb.", Category: "Colors"}, func(prefs *Settings) *map[string]map[string]string { return &prefs.Colors }),
+	shortcutsRow(Field{Key: "shortcuts", Title: "Shortcut overrides", Description: "Your key bindings by action id, such as \"Ctrl+Shift+Tab\"; empty text unbinds.", Category: "Shortcuts"}, func(prefs *Settings) *map[string]string { return &prefs.Shortcuts }),
+	intRow(Field{Key: "timeoutSec", Title: "Request timeout", Description: "How long a request may run, in seconds.", Category: "Requests", Min: 1, Max: 3600}, func(prefs *Settings) *int { return &prefs.TimeoutSec }),
+	textRow(Field{Key: "proxy", Title: "Proxy", Description: "URL of an HTTP proxy for every REST request; empty uses the environment's.", Category: "Requests"}, func(prefs *Settings) *string { return &prefs.Proxy }),
+	fileRow(Field{Key: "caCert", Title: "CA certificates", Description: "Path of a PEM file of extra certificate authorities to trust.", Category: "Requests"}, func(prefs *Settings) *string { return &prefs.CACert }),
+	fileRow(Field{Key: "clientCert", Title: "Client certificate", Description: "Path of a client certificate for servers that ask for one.", Category: "Requests"}, func(prefs *Settings) *string { return &prefs.ClientCert }),
+	fileRow(Field{Key: "clientKey", Title: "Client key", Description: "Path of the private key of the client certificate.", Category: "Requests"}, func(prefs *Settings) *string { return &prefs.ClientKey }),
+	flagRow(Field{Key: "grpc", Title: "gRPC", Description: "Experimental: offer gRPC as a request protocol.", Category: "Experimental"}, func(prefs *Settings) *bool { return &prefs.GRPC }),
+	flagRow(Field{Key: "sse", Title: "Server-Sent Events", Description: "Experimental: offer SSE as a request protocol.", Category: "Experimental"}, func(prefs *Settings) *bool { return &prefs.SSE }),
+	collectionsRow(Field{Key: "collections", Title: "Open collections", Description: "The collections open in the window, in tree order: the folder of each and the name of its active environment; one without a folder is the built-in or configured collection.", Category: "General", Hidden: true}, func(prefs *Settings) *[]OpenCollection { return &prefs.Collections }),
+	textRow(Field{Key: "workspace", Title: "Collection folder", Description: "The one open collection of an older settings file; read only when collections is absent.", Category: "General", Hidden: true}, func(prefs *Settings) *string { return &prefs.Workspace }),
+	textRow(Field{Key: "environment", Title: "Active environment", Description: "The active environment of an older settings file; read only when collections is absent.", Category: "General", Hidden: true}, func(prefs *Settings) *string { return &prefs.Environment }),
 }
+
+// Schema lists every key of settings.json, in the order of its rows.
+var Schema = fieldsOfRows(rows)
 
 // FieldFor is the schema entry of key.
 func FieldFor(key string) (Field, bool) {
@@ -271,72 +275,6 @@ func Parse(data []byte, last Settings) (Settings, []Problem) {
 		return last, []Problem{{Message: err.Error(), End: len(data)}}
 	}
 	return parsed, nil
-}
-
-// asMap is settings as the map its JSON form gives.
-func asMap(prefs Settings) map[string]any {
-	data, _ := json.Marshal(prefs)
-	out := map[string]any{}
-	_ = json.Unmarshal(data, &out)
-	return out
-}
-
-// Changed reports whether the value of key differs from the default.
-func Changed(prefs Settings, key string) bool {
-	return !reflect.DeepEqual(asMap(prefs)[key], asMap(Default())[key])
-}
-
-// Reset puts the default back as the value of key.
-func Reset(settings *Settings, key string) {
-	current, defaults := asMap(*settings), asMap(Default())
-	if value, ok := defaults[key]; ok {
-		current[key] = value
-	} else {
-		delete(current, key)
-	}
-	data, _ := json.Marshal(current)
-	rebuilt := Default()
-	_ = json.Unmarshal(data, &rebuilt)
-	*settings = rebuilt
-}
-
-// Minimal is the settings text with only what differs from the defaults,
-// grouped by section, so the file stays short and a reset leaves no trace.
-func Minimal(prefs Settings) ([]byte, error) {
-	current, defaults := asMap(prefs), asMap(Default())
-	kept := map[string]any{}
-	for key, value := range current {
-		if !reflect.DeepEqual(value, defaults[key]) {
-			kept[key] = value
-		}
-	}
-	return sectionedText(kept)
-}
-
-// Value is the value of key in s as JSON gives it back (text, a float64
-// for numbers, a bool, a map), or nil when s has none.
-func Value(prefs Settings, key string) any {
-	value := asMap(prefs)[key]
-	if number, ok := value.(float64); ok && number == float64(int(number)) {
-		return int(number)
-	}
-	return value
-}
-
-// With is s with key set to value; an unknown key or a value of the
-// wrong type leaves s as it was.
-func With(prefs Settings, key string, value any) Settings {
-	if _, known := FieldFor(key); !known {
-		return prefs
-	}
-	current := asMap(prefs)
-	current[key] = value
-	data, _ := json.Marshal(current)
-	changed := Default()
-	if err := json.Unmarshal(data, &changed); err != nil {
-		return prefs
-	}
-	return changed
 }
 
 // Expectation says in words what value a setting takes: "one of side,

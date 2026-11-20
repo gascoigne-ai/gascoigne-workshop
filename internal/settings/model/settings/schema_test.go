@@ -142,8 +142,11 @@ func TestChangedAndResetUseTheDefaults(t *testing.T) {
 	if !Changed(s, "layout") || !Changed(s, "shortcuts") {
 		t.Fatal("a changed value is not marked")
 	}
-	Reset(&s, "layout")
-	Reset(&s, "shortcuts")
+	for _, key := range []string{"layout", "shortcuts"} {
+		if err := Reset(&s, key); err != nil {
+			t.Fatal(err)
+		}
+	}
 	if s.Layout != Default().Layout || s.Shortcuts != nil || Changed(s, "layout") || Changed(s, "shortcuts") {
 		t.Fatalf("after reset: %+v", s)
 	}
@@ -174,27 +177,27 @@ func TestValueAndWithReadAndWriteASettingByItsKey(t *testing.T) {
 	s := Default()
 	tests := []struct {
 		key   string
-		value any
+		value Value
 		check func(Settings) bool
 	}{
-		{"layout", "side", func(prefs Settings) bool { return prefs.Layout == "side" }},
-		{"uiScale", 150, func(prefs Settings) bool { return prefs.UIScalePct == 150 }},
-		{"flat", true, func(prefs Settings) bool { return prefs.Flat }},
-		{"proxy", "http://localhost:8080", func(prefs Settings) bool { return prefs.Proxy == "http://localhost:8080" }},
+		{"layout", Text("side"), func(prefs Settings) bool { return prefs.Layout == "side" }},
+		{"uiScale", Number(150), func(prefs Settings) bool { return prefs.UIScalePct == 150 }},
+		{"flat", Flag(true), func(prefs Settings) bool { return prefs.Flat }},
+		{"proxy", Text("http://localhost:8080"), func(prefs Settings) bool { return prefs.Proxy == "http://localhost:8080" }},
 	}
 	for _, test := range tests {
-		got := With(s, test.key, test.value)
-		if !test.check(got) {
-			t.Errorf("With(%s, %v) = %+v", test.key, test.value, got)
+		got, err := With(s, test.key, test.value)
+		if err != nil || !test.check(got) {
+			t.Errorf("With(%s, %v) = %+v, %v", test.key, test.value, got, err)
 		}
-		if Value(got, test.key) != test.value {
-			t.Errorf("Value(%s) = %v, want %v", test.key, Value(got, test.key), test.value)
+		if value, _ := Get(got, test.key); value != test.value {
+			t.Errorf("Get(%s) = %v, want %v", test.key, value, test.value)
 		}
 	}
-	if Value(s, "nope") != nil {
+	if _, ok := Get(s, "nope"); ok {
 		t.Error("an unknown key has a value")
 	}
-	if got := With(s, "nope", 1); !reflect.DeepEqual(got, s) {
+	if got, _ := With(s, "nope", Number(1)); !reflect.DeepEqual(got, s) {
 		t.Error("an unknown key changed the settings")
 	}
 }

@@ -735,6 +735,19 @@ that change `App`.
   `settings.json` in the user directory (`userdir.Name`); `-settings PATH` overrides the file and an
   empty path keeps settings in memory. Unknown theme or text size ids in the file fall back to the
   first built-in theme and the medium size (`theming.Catalog.ThemeID`).
+-  **Settings schema** (`internal/settings/model/settings/rows.go`): every key of `settings.json` is one
+  `row` (name, kind, limits, text, plus a getter and a setter), built by one constructor per kind
+  (`textRow`, `fileRow`, `enumRow`, `flagRow`, `intRow`, `shortcutsRow`, `colorsRow`,
+  `collectionsRow`) from the one accessor of its `Settings` field, so the kind and the type of the
+  value cannot disagree. `rows` is the order of the form, of `Schema` and of the keys in the file.
+  A value is a `settings.Value`: `Text`, `Flag`, `Number`, `ShortcutTable`, `ColorTable` or
+  `Collections` (sealed; `Same` compares, and an empty table is the same as a missing one, as in
+  the file). `Get(s, key)`, `Set(&s, key, v)`, `With(s, key, v)`, `Changed` and `Reset` read and write
+  one field and marshal nothing; an unknown key is `ErrUnknownKey` and a value of another type
+  `ErrWrongValue`, and a refused `Set` leaves the settings as they were. The form shows a refusal
+  as an error toast. `Minimal` keeps the rows that differ from `Default()`, in row order, and
+  `settings.json` (version 1) stays byte for byte what it was (`testdata/encode-*.golden`;
+  `Collections` writes `environment` before `folder`).
 -  **Welcome dialog**: `welcome.go` holds the release notes of the version as a table
   (`welcomeNotes`: sections of a title and points) and `App.openWelcome`, which opens a wide message
   dialog (`welcomeW`) whose body is `welcome.vml`, a scrolling list of bulleted points that

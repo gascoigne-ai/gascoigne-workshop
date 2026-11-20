@@ -122,7 +122,7 @@ func TestVersionIsNotASetting(t *testing.T) {
 	if _, known := FieldFor(fileversion.Key); known {
 		t.Fatal("version is in the schema")
 	}
-	if got := With(Default(), fileversion.Key, 5); !reflect.DeepEqual(got, Default()) {
+	if got, _ := With(Default(), fileversion.Key, Number(5)); !reflect.DeepEqual(got, Default()) {
 		t.Fatalf("With(version) changed the settings: %+v", got)
 	}
 	for _, completion := range Complete(`{"`, 2, nil) {

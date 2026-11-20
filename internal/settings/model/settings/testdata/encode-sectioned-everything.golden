@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "appearance": {
+    "theme": "mine",
+    "textSize": "large",
+    "uiFont": "Inter",
+    "codeFont": "Fira Code",
+    "corners": "round",
+    "contrast": "high",
+    "responseView": "raw"
+  },
+  "colors": {
+    "dark": {
+      "accent": "#00ff00"
+    },
+    "light": {
+      "accent": "#ff0000",
+      "bg": "#ffffff"
+    }
+  },
+  "shortcuts": {
+    "find": "",
+    "send": "Ctrl+Enter"
+  },
+  "requests": {
+    "proxy": "http://p:1",
+    "caCert": "/c/ca.pem",
+    "clientCert": "/c/cert.pem",
+    "clientKey": "/c/key.pem"
+  },
+  "general": {
+    "autoSave": false,
+    "collections": [
+      {
+        "environment": "prod",
+        "folder": "/work/a"
+      },
+      {
+        "environment": "dev"
+      }
+    ],
+    "workspace": "/old",
+    "environment": "stage"
+  },
+  "experimental": {
+    "grpc": true,
+    "sse": true
+  }
+}
