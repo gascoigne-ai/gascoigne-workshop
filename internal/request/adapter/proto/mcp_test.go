@@ -217,6 +217,14 @@ func TestMain(runner *testing.M) {
 	case "deaf": // never reads stdin, so closing it does not end the process
 		time.Sleep(time.Minute)
 		return
+	case "stderr-lines": // fifty numbered lines on stderr, then a failure
+		for i := 1; i <= 50; i++ {
+			fmt.Fprintf(os.Stderr, "line %d\n", i)
+		}
+		os.Exit(1)
+	case "stderr-huge": // one megabyte on stderr without a newline, then a failure
+		os.Stderr.Write(bytes.Repeat([]byte("x"), 1<<20))
+		os.Exit(1)
 	case "flood": // one line over the message limit, then silence
 		os.Stdout.Write(bytes.Repeat([]byte("a"), mcpMaxMessage+1<<20))
 		time.Sleep(time.Minute)

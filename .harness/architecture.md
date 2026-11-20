@@ -1377,7 +1377,9 @@ that change `App`.
   close) and stdio (`stdio:` + command line, newline-delimited JSON; the process runs under
   `exec.CommandContext` with a context the session owns, not Connect's, which ends with the
   handshake: closing ends its input and cancels that context a second later, so a server that
-  ignores the end of its input is killed). `Connect` runs `initialize`, sends
+  ignores the end of its input is killed; its stderr is kept in a `tailLines` ring, the last 20
+  lines of at most 512 bytes each, and shown only when the process ends, as `the server exited:
+  <err>` then `stderr:` and the lines). `Connect` runs `initialize`, sends
   `notifications/initialized` and lists tools, resources and prompts the server announces; every
   message in both directions is an `Event` (kind request / response / error / notification), so the
   MCP tab reuses the WebSocket message-log pane (`isSocket`). The composer takes `call NAME {json}`,
@@ -1763,7 +1765,8 @@ that change `App`.
   collection variable from the first server when the collection has none. What cannot be read is
   listed in `Result.Skipped` instead of failing the import: an operation (`METHOD /path: why`, left
   out) or a path's shared parameters (`parameters of /path: why`, its operations imported without
-  them).
+  them). A path item that is not an object (an `x-` extension key excepted) is dropped and named in
+  `Result.Warnings`; the importer shows warnings with the skipped parts in its toast.
 -  **Postman import** (`internal/collection/model/postman`, `App.importPostman`): `postman.Parse`
   maps a v2.x collection to a folder tree and its variables; the importer adds the folder under the
   chosen one and the variables the collection lacks.
@@ -2116,7 +2119,13 @@ and the in-memory keys `stateKey` and `tree.Key`.
   (`openapi.maxRefDepth`); a decoded JSON Schema nests at most 32 levels
   (`model.maxSchemaDepth`), keeps at most 1000 properties per object (`maxSchemaProperties`) and
   1000 enum entries (`maxSchemaEnum`), and what is beyond is left out; the schema sits inside an MCP
-  message of at most 16 MiB.
+  message of at most 16 MiB; the kept stderr of an MCP stdio server is at most 20 lines of 512
+  bytes (`mcpStderrLines`, `mcpStderrLine`; the rest of a longer line is dropped).
+- **Debug logs**: a failure nobody can act on is logged at debug level with its reason through
+  `slog.Debug`, never dropped: the WebSocket close frame and pong writes (`ws.Options.OnError`
+  replaces the log), the MCP HTTP `listen` errors and its normal "no server stream" answer (405 and
+  the like, never a note), the session `DELETE`, and the stdio input close. Adapters take the sink
+  as a `debugFunc` field set to `slog.Debug`, so a test records it without a global logger.
 -  Postman, cURL and client config parsers (`postman.Parse`, `model.ParseCurl`, the `.workshop.*`
   reader) take bytes already in memory and set no size limit of their own: the caller bounds the
   input. cURL text comes from the clipboard; Postman and client config files are read whole with no

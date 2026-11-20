@@ -293,3 +293,20 @@ func TestSampleValuesComeFromExamplesDefaultsEnumsAndSchemas(t *testing.T) {
 		}
 	}
 }
+
+// A path whose value is not an object was dropped without a word. Keys
+// that start with "x-" are extensions, not paths, and stay quiet.
+func TestDroppedPathItemsAreWarnedAbout(t *testing.T) {
+	res, err := Parse([]byte(`{
+	  "openapi": "3.0.0", "info": {"title": "Odd"},
+	  "paths": {"/ok": {"get": {"summary": "List"}}, "/bad": "nope", "x-internal": "note"}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.Warnings) != 1 || !strings.Contains(res.Warnings[0], "/bad") {
+		t.Errorf("Warnings = %q, want only /bad named", res.Warnings)
+	}
+	if len(res.Skipped) != 0 {
+		t.Errorf("Skipped = %q, want none: a dropped path is a warning", res.Skipped)
+	}
+}

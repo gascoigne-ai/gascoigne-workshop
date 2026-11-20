@@ -22,8 +22,11 @@ const BaseURLVar = "baseUrl"
 // Result is what an import produces.
 type Result struct {
 	Folder  *model.Folder
-	BaseURL string   // the first server of the document, "" when it names none
-	Skipped []string // what could not be read: operations as "METHOD /path: why", shared parameters as "parameters of /path: why"
+	BaseURL string // the first server of the document, "" when it names none
+	// Warnings name path items left out because they are not objects; an
+	// "x-" extension is not one. They never fail the import.
+	Warnings []string
+	Skipped  []string // what could not be read: operations as "METHOD /path: why", shared parameters as "parameters of /path: why"
 }
 
 type doc struct {
@@ -94,10 +97,13 @@ func Parse(data []byte) (Result, error) {
 	root := &model.Folder{Name: title}
 	byTag := map[string]*model.Folder{}
 	paths := slices.Sorted(maps.Keys(d.Paths))
-	var skipped []string
+	var skipped, warnings []string
 	for _, path := range paths {
 		var item map[string]json.RawMessage
-		if json.Unmarshal(d.Paths[path], &item) != nil { // "x-..." extensions are not path items
+		if err := json.Unmarshal(d.Paths[path], &item); err != nil {
+			if !strings.HasPrefix(path, "x-") { // extensions are not path items
+				warnings = append(warnings, fmt.Sprintf("path %s dropped: %v", path, err))
+			}
 			continue
 		}
 		var shared []param
@@ -135,7 +141,7 @@ func Parse(data []byte) (Result, error) {
 		}
 		return Result{}, errors.New("the document has no operations")
 	}
-	res := Result{Folder: root, Skipped: skipped}
+	res := Result{Folder: root, Skipped: skipped, Warnings: warnings}
 	if len(d.Servers) > 0 {
 		res.BaseURL = d.Servers[0].URL
 	}

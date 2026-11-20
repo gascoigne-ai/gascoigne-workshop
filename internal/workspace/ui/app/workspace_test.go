@@ -319,3 +319,17 @@ func TestStartOpensTheRememberedWorkspaceUnlessAFolderIsGiven(t *testing.T) {
 		})
 	}
 }
+
+// An OpenAPI path item that is not an object was dropped without a word;
+// the import now says so in a toast.
+func TestImportOpenAPIWarnsAboutDroppedPathItems(t *testing.T) {
+	a := testApp(t)
+	a.ctx.Clipboard = &fakeClip{text: `{"openapi":"3.0.0","info":{"title":"Odd"},"paths":{"/ok":{"get":{"summary":"List"}},"/bad":"nope"}}`}
+	a.importOpenAPI(&a.col().Folder)
+	for _, toast := range a.toasts {
+		if strings.Contains(toast.Text, "/bad") {
+			return
+		}
+	}
+	t.Fatalf("no toast names the dropped path; toasts %+v", a.toasts)
+}

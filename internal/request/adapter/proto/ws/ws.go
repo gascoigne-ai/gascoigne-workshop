@@ -14,6 +14,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"math"
 	"net"
 	"net/http"
@@ -82,6 +83,11 @@ type Options struct {
 	Subprotocols []string    // offered, in order of preference
 	MaxMessage   int         // largest accepted message; 0 for DefaultMaxMessage
 	TLS          *tls.Config // for wss; nil for the defaults
+
+	// OnError receives the errors of writes nobody waits for: the pong that
+	// answers a ping and the close frame of Close. nil sends them to slog at
+	// debug level. It may be called from the goroutine that calls Read or Close.
+	OnError func(error)
 }
 
 // Conn is one WebSocket connection. Read must be called from one
@@ -92,6 +98,8 @@ type Conn struct {
 	client bool
 	sub    string
 	max    int
+
+	onError func(error) // never nil on a Conn made by Dial or Upgrade
 
 	wmu       sync.Mutex
 	closeSent bool
@@ -203,7 +211,7 @@ func clientHandshake(nc net.Conn, address *url.URL, options Options) (*Conn, err
 	if resp.Header.Get("Sec-WebSocket-Accept") != acceptKey(key) {
 		return nil, errors.New("websocket handshake: bad Sec-WebSocket-Accept")
 	}
-	c := &Conn{nc: nc, br: br, client: true, sub: resp.Header.Get("Sec-WebSocket-Protocol"), max: options.MaxMessage}
+	c := &Conn{nc: nc, br: br, client: true, sub: resp.Header.Get("Sec-WebSocket-Protocol"), max: options.MaxMessage, onError: options.OnError}
 	if c.max <= 0 {
 		c.max = DefaultMaxMessage
 	}
@@ -306,6 +314,15 @@ func (c *Conn) writeLocked(fin bool, op Type, data []byte) error {
 	return err
 }
 
+// report hands over an error of a write nobody waits for.
+func (c *Conn) report(err error) {
+	if c.onError == nil {
+		slog.Debug("websocket write failed", "error", err)
+		return
+	}
+	c.onError(err)
+}
+
 // Close sends a close frame with code and reason, then drops the
 // connection without waiting for the peer's answer. Calling it again,
 // or after the peer closed, is harmless.
@@ -317,7 +334,9 @@ func (c *Conn) Close(code int, reason string) error {
 		if len(reason) > 123 {
 			reason = reason[:123]
 		}
-		c.writeLocked(true, Close, append(body, reason...))
+		if err := c.writeLocked(true, Close, append(body, reason...)); err != nil {
+			c.report(fmt.Errorf("websocket: send the close frame: %w", err))
+		}
 	}
 	c.wmu.Unlock()
 	return c.nc.Close()
@@ -340,7 +359,9 @@ func (c *Conn) Read() (Message, error) {
 		}
 		switch op {
 		case Ping:
-			c.writeFrame(true, Pong, payload)
+			if err := c.writeFrame(true, Pong, payload); err != nil {
+				c.report(fmt.Errorf("websocket: answer a ping: %w", err))
+			}
 			return Message{Type: Ping, Data: payload}, nil
 		case Pong:
 			return Message{Type: Pong, Data: payload}, nil

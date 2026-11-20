@@ -43,7 +43,7 @@ var (
 			return imported{}, err
 		}
 		baseURL := model.KV{Name: openapi.BaseURLVar, Value: res.BaseURL, Enabled: true}
-		return imported{folder: res.Folder, vars: []model.KV{baseURL}, skipped: res.Skipped}, nil
+		return imported{folder: res.Folder, vars: []model.KV{baseURL}, skipped: append(res.Skipped, res.Warnings...)}, nil
 	}}
 	postmanKind = importKind{"Not a Postman collection: ", "things could not be imported", func(text string) (imported, error) {
 		res, err := postman.Parse([]byte(text))

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"strings"
 	"sync"
@@ -20,6 +21,7 @@ type mcpHTTP struct {
 	deliver func([]byte)
 	finish  func(error) // ends the session when an answer stream breaks
 	note    func(error) // logs a problem that leaves the session open
+	debug   debugFunc   // logs what is normal or harmless, with its reason
 
 	mu        sync.Mutex
 	sessionID string
@@ -40,7 +42,13 @@ func newMCPHTTP(req model.Request, network Network, deliver func([]byte), finish
 		return nil, err
 	}
 	ctx, cancel := context.WithCancel(context.Background())
-	return &mcpHTTP{req: req, client: client, deliver: deliver, finish: finish, note: note, ctx: ctx, cancel: cancel}, nil
+	return &mcpHTTP{req: req, client: client, deliver: deliver, finish: finish, note: note, debug: slog.Debug, ctx: ctx, cancel: cancel}, nil
+}
+
+func (h *mcpHTTP) setSession(id string) {
+	h.mu.Lock()
+	h.sessionID = id
+	h.mu.Unlock()
 }
 
 func (h *mcpHTTP) setVersion(value string) {
@@ -118,15 +126,18 @@ func (h *mcpHTTP) listen() {
 	go func() {
 		r, err := h.newRequest(h.ctx, http.MethodGet, nil)
 		if err != nil {
+			h.debug("mcp http: listen: build the request", "error", err)
 			return
 		}
 		r.Header.Set("Accept", "text/event-stream")
 		resp, err := h.client.Do(r)
 		if err != nil {
+			h.debug("mcp http: listen: connect", "error", err)
 			return
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != http.StatusOK || !strings.HasPrefix(resp.Header.Get("Content-Type"), "text/event-stream") {
+			h.debug("mcp http: listen: no server stream", "status", resp.Status) // the usual answer of a server that never pushes
 			return
 		}
 		err = h.readStream(resp.Body)
@@ -168,6 +179,22 @@ func (h *mcpHTTP) readStream(body io.Reader) error {
 	return fmt.Errorf("read the server's stream: %w", err)
 }
 
+// goodbye tells the server the session is over; a failure is only logged
+// because the session ends either way.
+func (h *mcpHTTP) goodbye(ctx context.Context) {
+	r, err := h.newRequest(ctx, http.MethodDelete, nil)
+	if err != nil {
+		h.debug("mcp http: end the session: build the request", "error", err)
+		return
+	}
+	resp, err := h.client.Do(r)
+	if err != nil {
+		h.debug("mcp http: end the session", "error", err)
+		return
+	}
+	resp.Body.Close()
+}
+
 func (h *mcpHTTP) close(ctx context.Context) error {
 	h.mu.Lock()
 	id := h.sessionID
@@ -175,11 +202,7 @@ func (h *mcpHTTP) close(ctx context.Context) error {
 	if id != "" { // tell the server the session is over; it may refuse, which is fine
 		ctx, cancel := context.WithTimeout(ctx, mcpGoodbyeTimeout)
 		defer cancel()
-		if r, err := h.newRequest(ctx, http.MethodDelete, nil); err == nil {
-			if resp, err := h.client.Do(r); err == nil {
-				resp.Body.Close()
-			}
-		}
+		h.goodbye(ctx)
 	}
 	h.cancel()
 	return nil
