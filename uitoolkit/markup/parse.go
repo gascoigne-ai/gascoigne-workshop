@@ -92,17 +92,57 @@ type Error struct {
 
 func (e *Error) Error() string { return fmt.Sprintf("%s:%d: %s", e.Name, e.Line, e.Msg) }
 
+// attrKind says what the build does with an attribute, decided at Parse.
+type attrKind int
+
+const (
+	attrInert   attrKind = iota // a param (read by args) or `for`: no option
+	attrIf                      // the `if` directive
+	attrHandler                 // names a scope entry that becomes an option
+	attrOption                  // a value that becomes an option
+)
+
 type attr struct {
 	name, value string
 	line        int
+
+	kind   attrKind
+	parts  interp          // attrOption: the value, read at Parse
+	read   attributeReader // attrOption: its option reader
+	static bool            // attrOption: the value has no {{path}} and opt is its option, made at Parse
+	opt    view.Option     // the static option; nil when the attribute switches itself off
+	bind   handlerAttr     // attrHandler
+	path   []string        // attrHandler and attrIf: the scope entry, split
+	negate bool            // attrIf: `!name`
+}
+
+// forLoop is the `for` of an element, read at Parse: "name in list".
+type forLoop struct {
+	value    string // the attribute, for the error
+	name     string
+	listExpr string
+	path     []string
+	valid    bool
+}
+
+// paramBinding is a param the element sets: the place of its value in the
+// constructor's arguments and the attribute that gives it.
+type paramBinding struct {
+	index int
+	param param
+	set   *attr
 }
 
 type node struct {
-	tag      string
-	attrs    []attr
-	children []*node
-	text     string // the text between the tags, for elements that hold text
-	line     int
+	tag       string
+	spec      *elementSpec
+	attrs     []attr
+	forLoop   *forLoop
+	params    []paramBinding
+	children  []*node
+	text      string // the text between the tags, for elements that hold text
+	textParts interp
+	line      int
 }
 
 // Template is a parsed template file.
@@ -208,6 +248,7 @@ func Parse(name string, src []byte) (*Template, error) {
 	if len(p.stack) > 0 {
 		return nil, p.fail(p.line(), "<%s> is not closed", p.stack[len(p.stack)-1].tag)
 	}
+	p.root.readTexts()
 	return &Template{name: name, root: p.root}, nil
 }
 
@@ -241,8 +282,9 @@ func (p *parser) startElement(start xml.StartElement) error {
 		if err := p.checkAttr(item, spec, set.Name.Local, line); err != nil {
 			return err
 		}
-		item.attrs = append(item.attrs, attr{set.Name.Local, set.Value, line})
+		item.attrs = append(item.attrs, attr{name: set.Name.Local, value: set.Value, line: line})
 	}
+	item.prepare(&spec)
 	if missing := item.missingParam(spec); missing != "" {
 		return p.fail(line, "<%s> needs a %s attribute", tag, missing)
 	}
@@ -300,4 +342,77 @@ func (p *parser) charData(data string) error {
 	}
 	parent.text += strings.Join(strings.Fields(text), " ")
 	return nil
+}
+
+// readTexts reads the text of the element and of its children.
+func (item *node) readTexts() {
+	item.textParts = parseInterp(item.text)
+	for _, child := range item.children {
+		child.readTexts()
+	}
+}
+
+// prepare decides, once, what a build does with each attribute of item:
+// everything that does not depend on the scope is read here. A static
+// attribute whose value is bad is left to the build, which reports it with
+// its line, and only when the element is shown. The options an attribute
+// reader makes hold only the values they were made from and are applied to
+// an element without changing themselves, so one option serves every build.
+func (item *node) prepare(spec *elementSpec) {
+	item.spec = spec
+	for i := range item.attrs {
+		set := &item.attrs[i]
+		switch {
+		case set.name == "for":
+			item.forLoop = readFor(set.value)
+		case set.name == "if":
+			set.kind = attrIf
+			set.negate, set.path = splitCondition(set.value)
+		case isParam(spec, set.name) || directives[set.name]:
+			set.kind = attrInert
+		default:
+			set.kind = attrOption
+			set.prepareOption(spec)
+		}
+		item.bindParam(set)
+	}
+}
+
+// bindParam notes that set gives the value of a param, if it is one.
+func (item *node) bindParam(set *attr) {
+	for index, wanted := range item.spec.params {
+		if wanted.name == set.name {
+			item.params = append(item.params, paramBinding{index: index, param: wanted, set: set})
+		}
+	}
+}
+
+func isParam(spec *elementSpec, name string) bool {
+	_, found := spec.param(name)
+	return found
+}
+
+// prepareOption reads a handler or an option attribute.
+func (set *attr) prepareOption(spec *elementSpec) {
+	if bind, ok := spec.handler(set.name); ok {
+		set.kind, set.bind, set.path = attrHandler, bind, splitPath(set.value)
+		return
+	}
+	set.read, _ = spec.option(set.name) // Parse checked it exists
+	set.parts = parseInterp(set.value)
+	if !set.parts.isLiteral() {
+		return
+	}
+	opt, err := set.read(set.value)
+	if err != nil {
+		return
+	}
+	set.static, set.opt = true, opt
+}
+
+// readFor reads `item in list`; an invalid one is reported by the build.
+func readFor(value string) *forLoop {
+	name, listExpr, ok := strings.Cut(value, " in ")
+	name = strings.TrimSpace(name)
+	return &forLoop{value: value, name: name, listExpr: strings.TrimSpace(listExpr), path: splitPath(listExpr), valid: ok && name != ""}
 }

@@ -948,6 +948,14 @@ that change `App`.
   the end of its Go file, parsed once at package level with `markup.Must("name.vml", nameSource)`
   (decision 4; the name is only what an error calls it; a template has one root, so a view that
   shows a note or a list is two templates and Go picks); a syntax error names the file and line.
+  Parse does the work that does not depend on the scope, so a build does only the rest: each node
+  keeps its element spec, its `for` and its params, every `{{path}}` text is split into literals and
+  dotted paths once, and the option of an attribute with no `{{` is made once and reused by every
+  build (the attribute readers capture only values and an option only sets fields of the element it
+  is applied to, so it is safe to share). A static attribute whose value is bad is not an error at
+  Parse: the build reports it with its line, and not at all while an earlier `if` hides the element,
+  as before. Handlers, `if`, `for`, params and `{{...}}` attributes are read from the scope on every
+  build. Building the app's view allocates about 4400 times instead of 6000.
   Event attributes are the `handlers` table: `on-click`, `on-click-at`, `on-right-click`,
   `on-right-click-in`, `on-middle-click`, `on-drag-over`, `on-change`, `on-select`, `on-dismiss`,
   each a scope function typed like the Go option's argument (`moved` is the same table's state
