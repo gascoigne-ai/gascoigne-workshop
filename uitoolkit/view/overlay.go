@@ -57,6 +57,10 @@ const dragEdge = core.EdgeGrab
 // "menu"), with anti-aliased edges, so a bar across the top of a rounded
 // panel does not poke out past the panel's corners. It follows the user's
 // corner setting like the panel does.
+//
+// The Round family is not the per-side family of rule 1: it holds only the
+// corner masks some panel needed (top, bottom, bottom left), and a new mask
+// is added with the panel that needs it (decision 27).
 func RoundT(control string) Option { return roundCorners(control, core.CornersTop) }
 
 // RoundB is RoundT for the bottom corners: a pane across the bottom of a

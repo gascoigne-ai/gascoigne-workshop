@@ -52,9 +52,9 @@ func BorderY(token core.Token) Option {
 // every control of a kind looks the same and the theme file decides how.
 func Control(name string) Option { return func(element *El) { element.control = name } }
 
-// EdgeT, EdgeL and EdgeR outline the element on that side with a
-// two-pixel line of the token's color; all three make the look of the open
-// tab, which runs into the pane below it. The color of the last one wins.
+// EdgeT, EdgeL, EdgeR and EdgeB outline the element on that side with a
+// two-pixel line of the token's color; the first three make the look of the
+// open tab, which runs into the pane below it. The color of the last one wins.
 func EdgeT(token core.Token) Option {
 	return func(element *El) { element.edgeTok, element.edgeTop = token, true }
 }
@@ -67,6 +67,11 @@ func EdgeL(token core.Token) Option {
 // EdgeR outlines the right side (see EdgeT).
 func EdgeR(token core.Token) Option {
 	return func(element *El) { element.edgeTok, element.edgeRight = token, true }
+}
+
+// EdgeB outlines the bottom side (see EdgeT).
+func EdgeB(token core.Token) Option {
+	return func(element *El) { element.edgeTok, element.edgeBottom = token, true }
 }
 
 // Tooltip shows text near the pointer once it has rested on the element

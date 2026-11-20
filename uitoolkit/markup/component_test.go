@@ -209,8 +209,8 @@ func TestSideAttributesMatchTheGoOptions(t *testing.T) {
 }
 
 func TestRemainingAttributesMatchTheGoOptions(t *testing.T) {
-	got := view.Dump(build(t, `<stack hover-bg="hover" border-inset="3" float-tr="4 5" edge-t="accent-line" edge-l="accent-line"/>`, nil))
-	want := view.Dump(view.Stack(view.HoverBg("hover"), view.BorderInset(3), view.FloatTR(4, 5), view.EdgeT("accent-line"), view.EdgeL("accent-line")))
+	got := view.Dump(build(t, `<stack hover-bg="hover" border-inset="3" float-tr="4 5" edge-t="accent-line" edge-l="accent-line" edge-r="accent-line" edge-b="accent-line"/>`, nil))
+	want := view.Dump(view.Stack(view.HoverBg("hover"), view.BorderInset(3), view.FloatTR(4, 5), view.EdgeT("accent-line"), view.EdgeL("accent-line"), view.EdgeR("accent-line"), view.EdgeB("accent-line")))
 	if got != want {
 		t.Fatalf("template:\n%s\nGo:\n%s", got, want)
 	}

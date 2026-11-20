@@ -68,10 +68,10 @@ const (
 )
 
 var (
-	TextSizeChoices = theming.SizeChoices
-	CornerChoices   = theming.CornerChoices
-	ContrastChoices = theming.ContrastChoices
-	CustomColors    = theming.CustomColors
+	TextSizeChoices = theming.SizeChoices()
+	CornerChoices   = theming.CornerChoices()
+	ContrastChoices = theming.ContrastChoices()
+	CustomColors    = theming.CustomColors()
 	CustomColorOf   = theming.CustomColorOf
 	RequiredRatio   = theming.RequiredRatio
 	CornerScale     = theming.CornerScale

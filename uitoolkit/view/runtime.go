@@ -86,7 +86,7 @@ func (e *El) keepsTab() bool {
 }
 
 // focusKey identifies the focus owner: the state's pointer.
-func (e *El) focusKey() any {
+func (e *El) focusKey() Focuser {
 	if state := e.state(); state != nil {
 		return state
 	}
@@ -94,9 +94,9 @@ func (e *El) focusKey() any {
 }
 
 // blurKey takes the keyboard from a state that may no longer be in the tree.
-func blurKey(key any) {
-	if state, ok := key.(Focuser); ok {
-		state.SetFocus(false)
+func blurKey(key Focuser) {
+	if key != nil {
+		key.SetFocus(false)
 	}
 }
 
@@ -107,7 +107,7 @@ func blurKey(key any) {
 // owner that left the tree.
 func settleFocus(ctx *core.Ctx, root Node) {
 	list := collectFocusables(root, nil)
-	var asked any
+	var asked Focuser
 	for _, e := range list {
 		if key := e.focusKey(); e.focused() && key != ctx.FocusOwner {
 			asked = key
@@ -331,7 +331,7 @@ func (e *El) draw(ctx *core.Ctx, dst *ebiten.Image) {
 		o.DrawOver(e, ctx, dst)
 	}
 
-	if e.edgeTok != "" { // the open tab's outline: top, left and right, bottom left open
+	if e.edgeTok != "" { // the open tab's outline: top, left and right, bottom left open unless EdgeB asks
 		col := ctx.Color(e.edgeTok)
 		if e.edgeTop {
 			ctx.Fill(dst, core.Rect{X: r.X, Y: r.Y, W: r.W, H: core.EdgeW}, col)
@@ -341,6 +341,9 @@ func (e *El) draw(ctx *core.Ctx, dst *ebiten.Image) {
 		}
 		if e.edgeRight {
 			ctx.Fill(dst, core.Rect{X: r.X + r.W - core.EdgeW, Y: r.Y, W: core.EdgeW, H: r.H}, col)
+		}
+		if e.edgeBottom {
+			ctx.Fill(dst, core.Rect{X: r.X, Y: r.Y + r.H - core.EdgeW, W: r.W, H: core.EdgeW}, col)
 		}
 	}
 }

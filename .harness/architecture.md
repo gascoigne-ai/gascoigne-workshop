@@ -656,7 +656,7 @@ that change `App`.
   `proto.Registry.Send` as a `Cmd` with the timeout above; the result (`sendResult`) comes back
   through the bus and is applied in `Update`, so UI state is only touched from the game goroutine.
 -  **Focus and shortcuts**: text fields and code views are the focusable elements.
-  `core.Ctx.FocusOwner` is the one state that has the keyboard: the app asks for focus by setting a
+  `core.Ctx.FocusOwner` (a `core.Focuser`, the interface `view.Focuser` aliases) is the one state that has the keyboard: the app asks for focus by setting a
   state's `Focused`, and `view.Update` (`settleFocus`) makes the last asker the owner, blurs every
   other state and any owner that left the tree (a closed find bar), so code never clears the old
   owner by hand. Tab / Shift+Tab (`view.Update`) move focus through them in tree order, wrapping; a
@@ -669,7 +669,7 @@ that change `App`.
 -  **Overlays**: the window's Stack ends with, from bottom to top, the settings dialog, the in-app
   file browser, a context menu, a dialog (with a dimmed scrim) and the toasts.
   `App.openMenu(x, y, items)` shows a context menu, which is the toolkit's popup menu: its state is
-  `core.Ctx.Menu` (a `*widget.MenuState`), any element opens one with `widget.OpenMenu(c, ...)`, the
+  `core.Ctx.Menu` (an `any` holding the `*widget.MenuState` that `widget.OpenMenu` makes from the `widget.NewMenu` value; decision 27), any element opens one with `widget.OpenMenu(c, ...)`, the
   app mounts `widget.PopupMenuLayer(c)` in its Stack once and calls `widget.PopupMenuKeys` each
   frame (rows `widget.MenuItem`, state rows `widget.MenuItem`: label, shortcut text, hint, icon,
   disabled, separator, action; `widget.NextSelectable` and `MenuState.Keys` do the highlight and
@@ -720,7 +720,7 @@ that change `App`.
   text size, then, when Contrast is High, the selection, find-match, active-match and accent colors
   moved (by `core.EnsureContrast`, toward black or white) until their text reaches a 7:1 ratio, then
   the user's overrides for that theme. An override is ignored unless it parses as `#rrggbb`/`#rgb`,
-  names one of the four customizable tokens (`theming.CustomColors`: token, label, the text drawn on
+  names one of the four customizable tokens (`theming.CustomColors()`: token, label, the text drawn on
   it) and reaches the required ratio (4.5:1, 7:1 in High); each theme keeps its own overrides in
   `settings.Colors[theme][token]`. The Appearance page has the Contrast chooser and the Colors page,
   per color, a swatch (it paints with the token, so it always shows the color in effect), a hex
@@ -730,7 +730,7 @@ that change `App`.
   `ContrastRatio` and `EnsureContrast` are in `uitoolkit/core/color.go`.
 -  **Settings button**: the gear at the right of the header (and Ctrl+,) opens and closes the
   settings dialog (Settings below). Theme, text size and the other choices are tables
-  (`theming.SizeChoices`, `CornerChoices`, `ContrastChoices`, the catalog's themes), so a new theme
+  (`theming.SizeChoices()`, `CornerChoices()`, `ContrastChoices()`, the catalog's themes), so a new theme
   is one row. A change calls `Ctx.SetTheme` and saves the settings through `settingsfile` to
   `settings.json` in the user directory (`userdir.Name`); `-settings PATH` overrides the file and an
   empty path keeps settings in memory. Unknown theme or text size ids in the file fall back to the
@@ -875,7 +875,7 @@ that change `App`.
   `Pad`, `Margin`, `Border` (an outline); an axis: `PadX`/`PadY`, `MarginX`/`MarginY`,
   `BorderX`/`BorderY`; one side: a letter suffix L, T, R or B (`PadL`, `MarginT`, `BorderR`). Border
   lines are one-pixel hairlines in a theme token, `BorderInset` keeps the left and right lines off
-  the corners, and `EdgeT`, `EdgeL` and `EdgeR` draw the separate two-pixel open-tab outline.
+  the corners, and `EdgeT`, `EdgeL`, `EdgeR` and `EdgeB` draw the separate two-pixel open-tab outline. The `Round` family is only the corner masks a panel needed (`RoundT`, `RoundB`, `RoundBL`; decision 27).
   Templates use the same names in kebab-case (`border-t`, `margin-x`, `pad-b`).
 -  **Toolkit names**: the rules are in `rules.md` (Toolkit API rules). Icons end in `Icon`; the
   drawing color is `Ctx.Color` (`Col` is a layout); the inset constant is `core.Gutter` (`Pad` is an
@@ -902,7 +902,7 @@ that change `App`.
 -  **Theming mechanics are toolkit code** (`uitoolkit/theming`): `Catalog` (the built-in choices,
   the user's theme folder via `LoadUser`/`SetUser`, `For`, `ThemeID`), `Prefs` (theme, text size,
   corners, contrast, flat, color overrides) and `Catalog.Theme(Prefs)`, plus the choice tables
-  (`SizeChoices`, `CornerChoices`, `ContrastChoices`, `CustomColors`) and contrast rules.
+  (`SizeChoices()`, `CornerChoices()`, `ContrastChoices()`, `CustomColors()`, each a copy of an unexported table) and contrast rules.
   `internal/settings/model/appearance` is only the app's part: its embedded overlay themes (HTTP
   method and JSON colors), `MethodToken`, `LayoutChoices`, and thin wrappers that map
   `settings.Settings` to `theming.Prefs`.
@@ -1120,7 +1120,7 @@ that change `App`.
   `Ctx.FillStyled` fills a (rounded) path with per-vertex gradient colors and `Ctx.OutlineStyled`
   strokes it; outlines are drawn after an element's children, and a field's focus ring over its
   outline. Two settings act on every style: `corners` (square / soft / round scale the radii 0 / 1 /
-  1.5, `theming.CornerChoices`) and `flat` (every gradient becomes a flat fill), both on the
+  1.5, `theming.CornerChoices()`) and `flat` (every gradient becomes a flat fill), both on the
   Appearance page. A control a theme does not list is plain, so a theme file can restyle or flatten
   any control without code.
 -  **Surfaces and type** (after the CLI dashboard): the page (`Frame`: #140f12 / #f6f3f4) with

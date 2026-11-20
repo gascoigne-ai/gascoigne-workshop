@@ -34,12 +34,16 @@ type SizeChoice struct {
 	Font, Small, Mono float64
 }
 
-// SizeChoices are the text sizes; the second one (medium) is the default.
-var SizeChoices = []SizeChoice{
+// sizeChoices are the text sizes; the second one (medium) is the default.
+var sizeChoices = []SizeChoice{
 	{"small", "Small", 13, 11, 12},
 	{"medium", "Medium", 14, 12, 13},
 	{"large", "Large", 16, 13, 15},
 }
+
+// SizeChoices are the text sizes; the second one (medium) is the default.
+// The slice is a copy: changing it changes nothing here.
+func SizeChoices() []SizeChoice { return slices.Clone(sizeChoices) }
 
 // CornerChoice is a roundness: the factor applied to every control's radius.
 type CornerChoice struct {
@@ -47,19 +51,26 @@ type CornerChoice struct {
 	Scale     float64
 }
 
-// CornerChoices are the roundness levels; "soft" (the theme's own radii) is the default.
-var CornerChoices = []CornerChoice{
+// cornerChoices are the roundness levels; "soft" (the theme's own radii) is the default.
+var cornerChoices = []CornerChoice{
 	{"square", "Square", 0},
 	{"soft", "Soft", 1},
 	{"round", "Round", 1.5},
 }
 
+// CornerChoices are the roundness levels; "soft" (the theme's own radii)
+// is the default. The slice is a copy.
+func CornerChoices() []CornerChoice { return slices.Clone(cornerChoices) }
+
 // ContrastChoice is a contrast level.
 type ContrastChoice struct{ ID, Label string }
 
-// ContrastChoices are "normal" and "high"; high strengthens the
+// contrastChoices are "normal" and "high"; high strengthens the
 // customizable colors until their text reaches HighRatio.
-var ContrastChoices = []ContrastChoice{{"normal", "Normal"}, {"high", "High"}}
+var contrastChoices = []ContrastChoice{{"normal", "Normal"}, {"high", "High"}}
+
+// ContrastChoices are "normal" and "high". The slice is a copy.
+func ContrastChoices() []ContrastChoice { return slices.Clone(contrastChoices) }
 
 // Contrast ratios the customizable colors must reach against their text.
 const (
@@ -75,17 +86,20 @@ type CustomColor struct {
 	Text  core.Token // the text color drawn on it
 }
 
-// CustomColors are the tokens users may override.
-var CustomColors = []CustomColor{
+// customColors are the tokens users may override.
+var customColors = []CustomColor{
 	{core.Selection, "Selection", core.Text},
 	{core.FindMatch, "Find match", core.Text},
 	{core.FindActive, "Active match", core.Text},
 	{core.Accent, "Accent / focus", core.AccentText},
 }
 
+// CustomColors are the tokens users may override. The slice is a copy.
+func CustomColors() []CustomColor { return slices.Clone(customColors) }
+
 // CustomColorOf finds the customizable color of a token.
 func CustomColorOf(tok core.Token) (CustomColor, bool) {
-	for _, c := range CustomColors {
+	for _, c := range customColors {
 		if c.Token == tok {
 			return c, true
 		}
@@ -104,7 +118,7 @@ func RequiredRatio(contrast string) float64 {
 
 // CornerScale is the radius factor of a corner id; unknown ids are soft.
 func CornerScale(id string) float64 {
-	for _, c := range CornerChoices {
+	for _, c := range cornerChoices {
 		if c.ID == id {
 			return c.Scale
 		}
@@ -114,7 +128,7 @@ func CornerScale(id string) float64 {
 
 // CornerIDOf is the corner id in effect: unknown ids are soft.
 func CornerIDOf(id string) string {
-	for _, c := range CornerChoices {
+	for _, c := range cornerChoices {
 		if c.ID == id {
 			return id
 		}
@@ -197,8 +211,8 @@ func (c *Catalog) For(themeID, textSizeID string) core.Theme {
 			th = ch.Build()
 		}
 	}
-	size := SizeChoices[1]
-	for _, s := range SizeChoices {
+	size := sizeChoices[1]
+	for _, s := range sizeChoices {
 		if s.ID == textSizeID {
 			size = s
 		}
@@ -217,7 +231,7 @@ func (c *Catalog) Theme(prefs Prefs) core.Theme {
 	th.RadiusScale, th.NoGradients = CornerScale(prefs.Corners), prefs.Flat
 	if prefs.Contrast == "high" {
 		strong := map[core.Token]color.RGBA{}
-		for _, cc := range CustomColors {
+		for _, cc := range customColors {
 			strong[cc.Token] = core.EnsureContrast(th.Color(cc.Token), th.Color(cc.Text), HighRatio)
 		}
 		th = th.With(strong)

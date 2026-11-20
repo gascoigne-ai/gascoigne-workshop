@@ -72,7 +72,8 @@ func TestMenuWidthFitsItsContentWithinLimits(t *testing.T) {
 	if narrow >= wide || narrow < MenuMinW || wide > MenuMaxW {
 		t.Fatalf("widths %d and %d, want a short menu narrower than a long one within %d..%d", narrow, wide, MenuMinW, MenuMaxW)
 	}
-	if menu := Menu(c, NewMenu(0, 0, []MenuItem{{Label: "ab"}})); !contains(props(menu), fmt.Sprintf("w=%d", narrow)) {
+	state := NewMenu(0, 0, []MenuItem{{Label: "ab"}})
+	if menu := Menu(c, &state); !contains(props(menu), fmt.Sprintf("w=%d", narrow)) {
 		t.Fatalf("the menu is not as wide as MenuWidth says: %s", props(menu))
 	}
 	if width(MenuItem{Label: "Copy"}, MenuItem{Label: "Paste", Shortcut: "Ctrl+V"}) < width(MenuItem{Label: "Paste"}) {
@@ -82,11 +83,13 @@ func TestMenuWidthFitsItsContentWithinLimits(t *testing.T) {
 
 func TestMenuRowsReserveAnIconColumnOnlyWhenSomeRowHasAnIcon(t *testing.T) {
 	c := testCtx(t)
-	plain := Dump(Menu(c, NewMenu(0, 0, []MenuItem{{Label: "GET /users"}, {Label: "POST /orders"}})))
+	plainState := NewMenu(0, 0, []MenuItem{{Label: "GET /users"}, {Label: "POST /orders"}})
+	plain := Dump(Menu(c, &plainState))
 	if strings.Contains(plain, "w=14") {
 		t.Fatalf("a menu with no icons keeps an empty icon column:\n%s", plain)
 	}
-	iconed := Dump(Menu(c, NewMenu(0, 0, []MenuItem{{Label: "Copy", Icon: "copy"}, {Label: "Other"}})))
+	iconedState := NewMenu(0, 0, []MenuItem{{Label: "Copy", Icon: "copy"}, {Label: "Other"}})
+	iconed := Dump(Menu(c, &iconedState))
 	if strings.Count(iconed, "w=14") != 2 {
 		t.Fatalf("both rows keep the icon column so the labels line up:\n%s", iconed)
 	}
@@ -94,7 +97,8 @@ func TestMenuRowsReserveAnIconColumnOnlyWhenSomeRowHasAnIcon(t *testing.T) {
 
 func TestMenuItemWithAHintShowsItUnderItsLabel(t *testing.T) {
 	c := testCtx(t)
-	dump := Dump(Menu(c, NewMenu(0, 0, []MenuItem{{Label: "layout", Hint: "Place the panes.\nExpects: one of side, stacked"}, {Label: "theme"}})))
+	state := NewMenu(0, 0, []MenuItem{{Label: "layout", Hint: "Place the panes.\nExpects: one of side, stacked"}, {Label: "theme"}})
+	dump := Dump(Menu(c, &state))
 	if !strings.Contains(dump, "Expects: one of side, stacked") || !strings.Contains(dump, "Place the panes.") {
 		t.Fatalf("the hint lines are not shown:\n%s", dump)
 	}
@@ -103,7 +107,8 @@ func TestMenuItemWithAHintShowsItUnderItsLabel(t *testing.T) {
 func TestMenuRowClickPicksOnlyEnabledRows(t *testing.T) {
 	c := testCtx(t)
 	var picked []int
-	menu := Menu(c, NewMenu(5, 5, []MenuItem{{Label: "a"}, {Separator: true}, {Label: "b", Disabled: true}, {Label: "c"}}),
+	state := NewMenu(5, 5, []MenuItem{{Label: "a"}, {Separator: true}, {Label: "b", Disabled: true}, {Label: "c"}})
+	menu := Menu(c, &state,
 		OnSelect(func(index int) { picked = append(picked, index) }))
 	root := Stack(menu)
 	Layout(c, root, 400, 300)
@@ -281,10 +286,23 @@ func TestMenuShortcutTextFollowsTheContextsHostOS(t *testing.T) {
 			c := testCtx(t)
 			c.HostOS = test.os
 			time.Sleep(20 * time.Millisecond) // let both cases overlap
-			dump := Dump(Menu(c, NewMenu(0, 0, []MenuItem{{Label: "Paste", Shortcut: "Ctrl+V"}})))
+			state := NewMenu(0, 0, []MenuItem{{Label: "Paste", Shortcut: "Ctrl+V"}})
+			dump := Dump(Menu(c, &state))
 			if !strings.Contains(dump, test.want) {
 				t.Fatalf("no %q in:\n%s", test.want, dump)
 			}
 		})
+	}
+}
+
+// NewMenu returns a MenuState value like the other New* constructors of
+// state types; the context stores a pointer to its own copy.
+func TestOpenMenuKeepsItsOwnCopyOfTheState(t *testing.T) {
+	c := testCtx(t)
+	state := NewMenu(3, 4, []MenuItem{{Label: "a"}, {Label: "b"}})
+	OpenMenu(c, state.X, state.Y, state.Items)
+	PopupMenu(c).Keys(core.Input{Keys: []ebiten.Key{ebiten.KeyArrowDown}})
+	if PopupMenu(c).Hot != 1 || state.Hot != 0 {
+		t.Fatalf("open menu hot %d, constructed value hot %d, want 1 and 0", PopupMenu(c).Hot, state.Hot)
 	}
 }

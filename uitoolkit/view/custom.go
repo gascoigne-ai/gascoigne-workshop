@@ -116,11 +116,9 @@ func (l Linear) LayoutIn(element *El, ctx *core.Ctx, bounds core.Rect) {
 }
 
 // Focuser is the state of a component that takes the keyboard: it holds
-// the focus flag the window and the runtime read and write.
-type Focuser interface {
-	HasFocus() bool
-	SetFocus(on bool)
-}
+// the focus flag the window and the runtime read and write. It is
+// core.Focuser, which core.Ctx names its focus owner by.
+type Focuser = core.Focuser
 
 // Focusable is implemented by a Behavior that takes keyboard focus. The
 // runtime moves focus between the Focusables in tree order on Tab, keeps

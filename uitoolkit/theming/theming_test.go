@@ -42,7 +42,7 @@ func TestOverridesNeedContrastAndHighContrastRaisesTheBar(t *testing.T) {
 		t.Fatal("a bad hex was applied")
 	}
 	high := c.Theme(Prefs{Theme: "dark", Contrast: "high"})
-	for _, cc := range CustomColors {
+	for _, cc := range CustomColors() {
 		if r := core.ContrastRatio(high.Color(cc.Token), high.Color(cc.Text)); r < HighRatio-0.01 {
 			t.Errorf("%s: %.2f:1 under high contrast", cc.Label, r)
 		}
@@ -89,5 +89,50 @@ func TestLoadUserLogsAnUnreadableFolderPattern(t *testing.T) {
 	}
 	if !strings.Contains(logs.String(), filepath.ErrBadPattern.Error()) {
 		t.Errorf("log %q does not give the reason %q", logs.String(), filepath.ErrBadPattern)
+	}
+}
+
+func TestForFallsBackToMediumForAnUnknownTextSize(t *testing.T) {
+	c := NewCatalog(Builtins())
+	medium := c.For("dark", "medium")
+	if got := c.For("dark", "gone"); got.FontSize != medium.FontSize {
+		t.Fatalf("unknown size gave %v, medium is %v", got.FontSize, medium.FontSize)
+	}
+	if c.For("dark", "large").FontSize == medium.FontSize {
+		t.Fatal("large is not medium")
+	}
+}
+
+func TestCornerScaleOfEachIDAndOfAnUnknownOne(t *testing.T) {
+	tests := []struct {
+		id   string
+		want float64
+	}{{"square", 0}, {"soft", 1}, {"round", 1.5}, {"gone", 1}, {"", 1}}
+	for _, test := range tests {
+		if got := CornerScale(test.id); got != test.want {
+			t.Errorf("CornerScale(%q) = %v, want %v", test.id, got, test.want)
+		}
+	}
+}
+
+func TestAnOverrideBelowTheRequiredContrastIsIgnored(t *testing.T) {
+	c := NewCatalog(Builtins())
+	base := c.Theme(Prefs{Theme: "dark"})
+	sameAsText := core.FormatHex(base.Color(core.Text))
+	got := c.Theme(Prefs{Theme: "dark", Colors: map[string]map[string]string{"dark": {string(core.Selection): sameAsText}}})
+	if got.Color(core.Selection) != base.Color(core.Selection) {
+		t.Fatal("an override as dark as its text was applied")
+	}
+}
+
+// The choice tables are shared by every caller: a caller that changes the
+// slice it got must not change what the next one sees.
+func TestChoiceTablesAreCopies(t *testing.T) {
+	SizeChoices()[0].ID = "mutated"
+	CornerChoices()[0].ID = "mutated"
+	ContrastChoices()[0].ID = "mutated"
+	CustomColors()[0].Label = "mutated"
+	if SizeChoices()[0].ID == "mutated" || CornerChoices()[0].ID == "mutated" || ContrastChoices()[0].ID == "mutated" || CustomColors()[0].Label == "mutated" {
+		t.Fatal("a returned table is the shared one")
 	}
 }

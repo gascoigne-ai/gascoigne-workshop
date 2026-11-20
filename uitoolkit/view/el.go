@@ -26,7 +26,7 @@
 //	Size       W H FitW MinW MaxW MinH MaxH Grow Shrink Optional Clip
 //	Spacing    Pad PadX PadY PadL PadT PadR PadB   Margin MarginX MarginY MarginL MarginT MarginR MarginB   Gap
 //	Layout     Row Col Stack Spacer HRule VRule VRuleInset   AlignItems AlignSelf JustifyContent
-//	Look       Bg Border BorderX BorderY BorderL BorderT BorderR BorderB HoverBg BorderInset Shadow Control EdgeT EdgeL EdgeR HoverColor Lighten
+//	Look       Bg Border BorderX BorderY BorderL BorderT BorderR BorderB HoverBg BorderInset Shadow Control EdgeT EdgeL EdgeR EdgeB HoverColor Lighten
 //	Text       Text Caption Lines   Color Muted Bold Small Mono FontSource Ellipsis TextCenter
 //	Input      OnChange   (the text inputs, Field and its options, are in package widget)
 //	Events     OnClick OnClickAt OnRightClick OnRightClickIn OnMiddleClick OnDoubleClick OnDragOver   Tooltip KeepInView
@@ -88,11 +88,11 @@ type El struct {
 	onDouble             func()
 	onSelect             func(i int)
 
-	edgeTok                      core.Token // Edges: the color of the outline
-	edgeTop, edgeLeft, edgeRight bool
-	control                      string // the theme control style that shapes and shades this element
-	tip                          string // tooltip text, shown after the pointer rests on the element
-	reveal                       bool   // an HScroll keeps this child in view when it becomes the flagged one
+	edgeTok                                  core.Token // Edges: the color of the outline
+	edgeTop, edgeLeft, edgeRight, edgeBottom bool
+	control                                  string // the theme control style that shapes and shades this element
+	tip                                      string // tooltip text, shown after the pointer rests on the element
+	reveal                                   bool   // an HScroll keeps this child in view when it becomes the flagged one
 
 	alignItems, alignSelf  Align
 	justify                Justify

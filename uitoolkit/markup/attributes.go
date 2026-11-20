@@ -168,6 +168,7 @@ var attributes = map[string]func(value string) (view.Option, error){
 	"edge-t":          tokenAttr(view.EdgeT),
 	"edge-l":          tokenAttr(view.EdgeL),
 	"edge-r":          tokenAttr(view.EdgeR),
+	"edge-b":          tokenAttr(view.EdgeB),
 	"border-r":        tokenAttr(view.BorderR),
 	"border-x":        tokenAttr(view.BorderX),
 	"border-y":        tokenAttr(view.BorderY),

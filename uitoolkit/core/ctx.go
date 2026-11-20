@@ -66,6 +66,14 @@ func newFonts(th Theme, scale float64, chosen FontChoice) (Fonts, error) {
 // FontChoice is the fonts picked for the interface and for code.
 type FontChoice struct{ UI, Code FontData }
 
+// Focuser is the state of a component that takes the keyboard: it holds
+// the focus flag the window and the runtime read and write. It lives here
+// so Ctx can name the focus owner by it; view.Focuser is the same type.
+type Focuser interface {
+	HasFocus() bool
+	SetFocus(on bool)
+}
+
 // Ctx is what widgets draw and hit-test with: theme, fonts and this
 // frame's input. Widgets work in logical pixels; Scale is the number of
 // device pixels per logical pixel, applied only when drawing.
@@ -97,7 +105,7 @@ type Ctx struct {
 	// the app asks for focus by setting a state's Focused, and the owner
 	// is whoever asked last; any other focused state, and one that is no
 	// longer in the tree, is blurred.
-	FocusOwner any
+	FocusOwner Focuser
 
 	// TipText is the tooltip text of the element under the pointer, set by
 	// view.Draw for widget.TooltipLayer to show.
@@ -105,7 +113,8 @@ type Ctx struct {
 
 	// Menu is the open popup menu; widget owns its type (*widget.MenuState) and
 	// core only carries it, so that any element can open a menu without a
-	// host. nil when none is open.
+	// host. nil when none is open. It is any on purpose (decision 27): core
+	// cannot import widget, and a typed field would need a widget type here.
 	Menu any
 
 	// HostOS is the operating system the shortcut text and modifier follow:

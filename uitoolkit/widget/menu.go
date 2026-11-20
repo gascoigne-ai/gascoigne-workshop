@@ -50,8 +50,8 @@ type MenuState struct {
 }
 
 // NewMenu is a menu at x, y with its first selectable row highlighted.
-func NewMenu(posX, posY int, items []MenuItem) *MenuState {
-	return &MenuState{X: posX, Y: posY, Items: items, Hot: NextSelectable(items, -1, 1)}
+func NewMenu(posX, posY int, items []MenuItem) MenuState {
+	return MenuState{X: posX, Y: posY, Items: items, Hot: NextSelectable(items, -1, 1)}
 }
 
 // NextSelectable is the index of the next enabled, non-separator row
@@ -181,7 +181,10 @@ func MenuWidth(ctx *core.Ctx, items []MenuItem) int {
 // OpenMenu opens a popup menu at x, y; it replaces one that is open. Mount
 // PopupMenuLayer in the window's Stack to show it and call PopupMenuKeys
 // each frame for its keyboard.
-func OpenMenu(ctx *core.Ctx, posX, posY int, items []MenuItem) { ctx.Menu = NewMenu(posX, posY, items) }
+func OpenMenu(ctx *core.Ctx, posX, posY int, items []MenuItem) {
+	state := NewMenu(posX, posY, items)
+	ctx.Menu = &state
+}
 
 // CloseMenu closes the popup menu, if one is open.
 func CloseMenu(ctx *core.Ctx) { ctx.Menu = nil }

@@ -11,7 +11,7 @@
 //	Buttons    Button PrimaryButton LinkButton IconButton SegmentChip
 //	Rows       ListRow FormRow CheckRow Note Toolbar
 //	Tabs       Tabs ScrollTabs TabBar ActiveTab   (state: TabItem)
-//	Menus      Menu OpenMenu CloseMenu MenuOpen PopupMenu PopupMenuLayer PopupMenuKeys NewMenu NextSelectable MenuWidth TextMenu   (state: MenuItem MenuState)
+//	Menus      Menu OpenMenu CloseMenu MenuOpen PopupMenu PopupMenuLayer PopupMenuKeys NewMenu (a MenuState value) NextSelectable MenuWidth TextMenu   (state: MenuItem MenuState)
 //	Dialogs    Dialog ResizableDialog DialogTitle DialogSubtitle DialogToolbar MessageDialog   (state: DialogState DialogButton)
 //	Toasts     Toasts   (state: ToastStack Toast ToastKind)
 //	Pictures   Image RasterizeSVG

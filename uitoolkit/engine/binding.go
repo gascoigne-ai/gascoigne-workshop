@@ -9,8 +9,9 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
-// KeyNames spells keys whose ebiten name is not what users read.
-var KeyNames = map[ebiten.Key]string{
+// keyNames spells keys whose ebiten name is not what users read. It has no
+// reader outside this package, so it is not exported.
+var keyNames = map[ebiten.Key]string{
 	ebiten.KeyComma:     ",",
 	ebiten.KeyArrowUp:   "Up",
 	ebiten.KeyArrowDown: "Down",
@@ -36,9 +37,9 @@ func IsModifierKey(key ebiten.Key) bool {
 }
 
 // keyLabel is how a key is written in key strings: the friendly name
-// from KeyNames, else Ebitengine's.
+// from keyNames, else Ebitengine's.
 func keyLabel(key ebiten.Key) string {
-	if name, ok := KeyNames[key]; ok {
+	if name, ok := keyNames[key]; ok {
 		return name
 	}
 	return key.String()

@@ -420,9 +420,10 @@ func TestFocusScopeAttributeMatchesTheGoOption(t *testing.T) {
 }
 
 func menuState() *widget.MenuState {
-	return widget.NewMenu(20, 30, []widget.MenuItem{
+	state := widget.NewMenu(20, 30, []widget.MenuItem{
 		{Label: "Rename", Shortcut: "F2", Icon: "plus"}, {Separator: true}, {Label: "Locked", Disabled: true}, {Label: "Delete", Hint: "removes it"},
 	})
+	return &state
 }
 
 func TestMenuElementMatchesTheGoMenu(t *testing.T) {

@@ -55,3 +55,18 @@ func TestBlurringTheOwnerClearsTheOwner(t *testing.T) {
 		t.Fatalf("owner %v", c.FocusOwner)
 	}
 }
+
+// The context holds the focus owner as the interface the runtime uses on
+// it, not as any, so a wrong kind of owner cannot be stored.
+func TestTheFocusOwnerIsTypedAsACoreFocuser(t *testing.T) {
+	a := NewTextField("a")
+	root := Col(Field(&a, H(30)))
+	c := testCtx(t)
+	Layout(c, root, 200, 100)
+	a.Focused = true
+	Update(c, root)
+	var owner core.Focuser = c.FocusOwner
+	if owner != core.Focuser(&a) {
+		t.Fatalf("owner %v, want the field's state", owner)
+	}
+}

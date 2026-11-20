@@ -118,6 +118,7 @@ var dumpedAttributes = []dumpAttribute{
 	flagAttribute("edgeTop", func(element *El) bool { return element.edgeTop }),
 	flagAttribute("edgeLeft", func(element *El) bool { return element.edgeLeft }),
 	flagAttribute("edgeRight", func(element *El) bool { return element.edgeRight }),
+	flagAttribute("edgeBottom", func(element *El) bool { return element.edgeBottom }),
 	flagAttribute("lighten", func(element *El) bool { return element.lighten }),
 	flagAttribute("onClick", func(element *El) bool { return element.onClick != nil }),
 	flagAttribute("onRightClick", func(element *El) bool { return element.onRight != nil }),
