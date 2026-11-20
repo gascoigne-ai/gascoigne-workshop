@@ -169,7 +169,11 @@ func (a *App) buildTree() *view.El {
 
 // frameTree is the laid out tree Draw paints: the one endFrame built when
 // nothing it shows changed since, else a fresh build. A screenshot run
-// changes the scene after the step, so it always builds fresh.
+// changes the scene after the step, so it always builds fresh. A revision
+// counter bumped by every change was rejected: one missed bump loses an
+// edit on screen; a test that compares the reused tree with a fresh build
+// catches a missed treeStale instead
+// (TestTheDrawnTreeMatchesAFreshBuildAcrossASession).
 func (a *App) frameTree() *view.El {
 	root := a.drawTree
 	if root == nil || a.treeStale || a.shot.path != "" {

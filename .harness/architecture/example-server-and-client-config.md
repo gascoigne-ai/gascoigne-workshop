@@ -1,6 +1,7 @@
 ## Example server and client config
 
-Decision 10. `make example-server` runs `cmd/example-server`, one port per service on `127.0.0.1`
+The default build carries example endpoints and a release build reads client configs instead
+(the user's choice). `make example-server` runs `cmd/example-server`, one port per service on `127.0.0.1`
 (flags change host and ports; port 0 picks a free one):
 
 | Port | Service |
@@ -16,7 +17,7 @@ Builds:
 
 - Default build: `collection.Sample()` is the `Example Server` collection, one request per endpoint
   (tests in `exampleserver` fail when one is missing). It reads no client config and keeps its data
-  in its own directory (`userdir`, decision 20), so a run from an IDE never touches the release
+  in its own directory (`userdir`; why in its package doc), so a run from an IDE never touches the release
   build's data. Screenshot runs and golden scenes keep settings and state in memory.
 - Release build (`make release`, `-tags release`, installed by `make install`): no example server,
   `Sample()` is empty, and with no workspace the App opens the client config's tree. An unreadable
@@ -27,7 +28,8 @@ Client config:
 - `.workshop.yaml` (or `.yml`, `.json`, `.toml`) in the settings directory (global) and in the
   working directory (local). A local entry replaces a global one of the same name; two files in one
   directory are an error.
-- All three formats become one generic tree, decoded strictly: a misspelled key is an error.
+- TOML is read with `github.com/BurntSushi/toml` (approved by the user), YAML with the `miniyaml`
+  subset reader. All three formats become one generic tree, decoded strictly: a misspelled key is an error.
 - It opens as one collection: each configured collection is a folder (variables on the folder,
   environments on the root), servers are requests in a `Servers` folder.
 

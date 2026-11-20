@@ -136,8 +136,10 @@ type Ctx struct {
 
 	// Menu is the open popup menu; widget owns its type (*widget.MenuState) and
 	// core only carries it, so that any element can open a menu without a
-	// host. nil when none is open. It is any on purpose (decision 27): core
-	// cannot import widget, and a typed field would need a widget type here.
+	// host. nil when none is open. It is any on purpose, an accepted exception
+	// to toolkit rule 11: core cannot import widget, and a typed field would
+	// need a widget type here. FocusOwner is typed because its interface
+	// (Focuser) uses no widget type.
 	Menu any
 
 	// HostOS is the operating system the shortcut text and modifier follow:

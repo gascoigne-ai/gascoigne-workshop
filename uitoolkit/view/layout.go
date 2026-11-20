@@ -429,6 +429,8 @@ func floatRect(element *El, in core.Rect, width, height int) core.Rect {
 	case floatMiddle:
 		r := core.Rect{X: in.X + (in.W-width)/2, Y: in.Y + (in.H-height)/2, W: width, H: height}
 		if p := element.fl.moved; p != nil {
+			// The one place layout writes state: the offset kept inside the
+			// Stack goes back to the MoveState (see widget.Dialog).
 			x, y := min(max(r.X+p.X, in.X), in.X+in.W-width), min(max(r.Y+p.Y, in.Y), in.Y+in.H-height)
 			p.X, p.Y = x-r.X, y-r.Y
 			r.X, r.Y = x, y

@@ -12,5 +12,5 @@ only adds what is particular to this repo.
   files change only where the task changes the look.
 - Ambiguity: when a task can be read in more than one way or a choice changes behavior the user
   would notice, stop and ask the user with a recommendation first, record the answer in the task
-  file or `decisions.md`, then continue. Never decide silently. The decisions already made are in
+  file (and, when it outlives the task, in the doc comment of the code it shapes), then continue. Never decide silently. The decisions already made are in
   each task file.

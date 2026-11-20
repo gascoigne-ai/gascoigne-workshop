@@ -94,7 +94,8 @@ func lookup(path string, sc Scope) (any, error) {
 
 // lookupPath finds a path, split at its dots, in the scope. Each step reads
 // a key of a map or an exported field of a struct (through pointers), so a
-// view model reaches the template as its own Go type (decision 4).
+// view model reaches the template as its own Go type (no methods: see the
+// package doc).
 func lookupPath(parts []string, sc Scope) (any, error) {
 	if len(parts) == 1 && parts[0] == "" {
 		return nil, errors.New("an empty name")

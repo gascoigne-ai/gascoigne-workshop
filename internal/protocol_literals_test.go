@@ -17,7 +17,8 @@ import (
 
 // protocolLiteralFiles may name a protocol, each for a reason. Every other
 // file reaches what differs per protocol through its row of
-// model.Protocols or of the app's protocolViews (decision 2). Paths are
+// model.Protocols or of the app's protocolViews (see the Protocols doc).
+// Paths are
 // relative to internal/.
 var protocolLiteralFiles = map[string]string{
 	"request/model/protocol.go":                      "the rows of model.Protocols and the parser",

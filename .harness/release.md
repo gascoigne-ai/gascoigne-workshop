@@ -14,7 +14,7 @@ Run before a tag `vX.Y.Z`. Tick a line with the date and what was seen; a line t
 - [x] Golden `file-browser` added (the in-app file browser with its footer hint, path field masked), 2026-11-15, in a container like CI; the PNG looked at, no other PNG changed, the whole set green and identical over three runs.
 - [x] Golden PNGs regenerated for the sample's new gRPC request (every scene that shows the sample tree, and the Proto tab in `request-grpc` and `request-tabs`), and `grpc-proto-files` and `grpc-proto-error` added (task 070), 2026-11-15, in a container like CI; the new and changed PNGs looked at, `sent-log` kept (only masked times differed), the whole set green and identical over three runs.
 - [ ] **Blocked: run the dry run on GitHub.** Needs the branch pushed; the program never pushes. Unblock: push, Actions, release, Run workflow; download the three artifacts.
-- [ ] **Blocked: run the program on Windows and macOS** (decision 12): window, HiDPI, clipboard, file dialogs, browser opener, fonts, shortcuts. Unblock: a machine or a CI runner with a display.
+- [ ] **Blocked: run the program on Windows and macOS** (the user closed task 031 unrun on 2026-11-07, so both stay untested until this is done): window, HiDPI, clipboard, file dialogs, browser opener, fonts, shortcuts. Unblock: a machine or a CI runner with a display.
 - [x] Welcome dialog (`-welcome` screenshot) looked at, 2026-11-16, Linux; its golden scene is not added yet: goldens are drawn in a container like CI (see below).
 - [ ] Tag and push `v0.1.0-alpha` (the user's step).
 

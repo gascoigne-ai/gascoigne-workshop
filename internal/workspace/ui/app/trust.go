@@ -12,6 +12,12 @@ import (
 // user; the answer is remembered (state.Trusted) per command and per file.
 // When it has to ask it returns false and runs again after the user
 // allows.
+//
+// It asks rather than refuses (the user's decision), because the file
+// browser stores absolute paths and refusing them would break attaching a
+// file. Not asked about: a .workshop.* config in the working directory (the
+// user's decision) and .proto imports, which cannot leave their import
+// paths.
 func (a *App) allowed(tab *reqTab, source *model.Request, again func()) bool {
 	folder := ""
 	if entry, ok := a.entryFor(tab.Req); ok {

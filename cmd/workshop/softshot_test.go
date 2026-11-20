@@ -48,6 +48,10 @@ func TestMain(runner *testing.M) {
 // rasterizer, as `make shot` does on a desktop, and returns the PNG it
 // writes. args are extra flags (-set, -menu...). Without Xvfb the test is
 // skipped, except in CI where a missing backend is a failure.
+//
+// Ebitengine draws only through a GL context, so the real program runs on
+// Mesa's llvmpipe under Xvfb, which gives byte-identical PNGs run to run.
+// The user chose this over a Go rasterizer and over Xwayland.
 func renderShot(t *testing.T, args ...string) image.Image {
 	t.Helper()
 	return renderShotSized(t, shotWidth, shotHeight, args...)

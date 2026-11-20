@@ -17,7 +17,10 @@ import (
 )
 
 // protoPane is the Proto tab of a gRPC request: where its methods come
-// from, the server's reflection or .proto files (decision 19).
+// from, the server's reflection or .proto files (the user's choice of a tab
+// of its own). Files are picked with the file dialog; import paths are
+// typed, since the dialogs pick files only and a folder mode would touch
+// every dialog program.
 var protoPane = pane{label: "Proto", kind: paneProto}
 
 // grpcRequestPanes are the request side of gRPC: the HTTP-like panes with

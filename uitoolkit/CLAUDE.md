@@ -6,7 +6,7 @@ Loaded when you work under `uitoolkit/`. Adds to `.harness/rules.md`.
 
 ## Toolkit API rules
 
-Apply when adding or changing anything exported. They exist so that a guess is usually right; a change that needs an exception records it in `decisions.md`.
+Apply when adding or changing anything exported. They exist so that a guess is usually right; a change that needs an exception says so in the doc comment of what breaks the rule and adds it to the exceptions in `.harness/architecture/toolkit-api.md`.
 
 1. **Sides and axes.** One setting that can differ per side comes as the full family: all sides (`Pad`), an axis (`PadX`, `PadY`) and one side by letter suffix L, T, R, B (`PadL`...). This holds for padding, margin and border (`Border`, `BorderX`, `BorderY`, `BorderL`...). Never `Top`, `Bottom`, `Left` or `Right` words in option names, and never a half family.
 2. **Elements and options.** A constructor makes an element (`Row`, `Field`, `Button`); an option sets an attribute of it (`Gap`, `Bg`, `OnClick`). Constructors take their required data positionally and everything else as `opts ...Option`; containers take `items ...Item`. Options may stand anywhere and a later one wins; style puts them first.
@@ -18,5 +18,5 @@ Apply when adding or changing anything exported. They exist so that a guess is u
 8. **One data shape, one type.** Two types with the same fields are one type (`widget.Span` is used by `CodeView` and by `Field`'s segments).
 9. **Templates mirror Go.** Every option that can sensibly be written in markup has a template attribute that is its Go name in kebab-case (`BorderT` is `border-t`, `PadX` is `pad-x`); an option without one says why in its doc comment.
 10. **A new option or element comes with** a doc comment that starts with its name, a test of what it does, a line in the package doc index (`view` or `widget`), and its row in the template tables where rule 9 applies.
-11. **Packages.** `core` holds primitives: tokens, colors and color math, geometry, input, clipboard, fonts and the `Ctx` drawing calls, with no layout and no widget state; `view` is the framework: the element tree, layout, runtime, the generic options and the extension point (`Behavior`, `Custom`); `widget` is every component that has its own drawing, input or state (decision 3); `markup` builds both from templates; `engine`, `widget`, `markup` and `theming` depend downward only.
+11. **Packages.** `core` holds primitives: tokens, colors and color math, geometry, input, clipboard, fonts and the `Ctx` drawing calls, with no layout and no widget state; `view` is the framework: the element tree, layout, runtime, the generic options and the extension point (`Behavior`, `Custom`); `widget` is every component that has its own drawing, input or state (why: `doc.go`); `markup` builds both from templates; `engine`, `widget`, `markup` and `theming` depend downward only.
 

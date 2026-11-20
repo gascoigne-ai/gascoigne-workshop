@@ -6,6 +6,13 @@
 // (a Catalog of built-in choices), keeps its own settings and maps them
 // to Prefs; the toolkit's dark and light palettes are Builtins.
 // Runnable examples: package uitoolkit/examples.
+//
+// Themes are data, per control: colors, radii, gradients and outlines live
+// in embedded JSON theme files (themes/*.json), and an element names a
+// control style (core.ControlStyle) rather than a gradient, so the look
+// changes without touching a widget. The format is our own small JSON,
+// because it carries radii and gradients and its parser stays in the
+// standard library.
 package theming
 
 import (

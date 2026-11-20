@@ -113,7 +113,7 @@ func streamColor(tab *reqTab) w.Token {
 }
 
 // streamBg tints the Stream chip while the tab streams; an empty token
-// applies no background (decision 4).
+// applies no background (see the markup package doc).
 func streamBg(tab *reqTab) w.Token {
 	if tab.grpcStream {
 		return w.Selected

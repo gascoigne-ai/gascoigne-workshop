@@ -1,6 +1,6 @@
 ## Protocols
 
-Each protocol is a client of its own in `request/adapter/proto` (decision 2). A protocol that keeps a
+Each protocol is a client of its own in `request/adapter/proto` (its package doc says which are hand-written and why). A protocol that keeps a
 connection implements `port.Streamer`; `Registry.Connect` opens a `port.Session`, and its one-shot
 `Send` connects, sends and returns the first reply.
 
@@ -55,7 +55,7 @@ stateDiagram-v2
   POST. `App.dispatch` is the one place a tab sends, so a schema load reuses the tab's URL, headers
   and credentials. An introspection answer gives the `Schema (n)` menu of starters; the schema is
   not saved.
-- **gRPC** (decision 2, decision 19): `Send` makes one unary call and refuses streaming methods. Methods
+- **gRPC**: `Send` makes one unary call and refuses streaming methods. Methods
   come from a table of sources keyed by `model.SourceKind` (`grpcsource.go`):
   - reflection asks v1, then v1alpha on `Unimplemented`;
   - proto files are compiled with protocompile and list only the services those files declare. A

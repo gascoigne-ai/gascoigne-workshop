@@ -9,7 +9,7 @@
   sent-log line.
 - The URL bar and the Params table stay in sync through `model.WithParams`, `ParamsFromURL` and
   `MergeParams`; the caller expands `{{variables}}` and folds the params in before sending.
-- `proto.Registry` maps each row of `model.Protocols` to a `port.Protocol` (decision 2); a test
+- `proto.Registry` maps each row of `model.Protocols` to a `port.Protocol` (why the table is split: the `model.Protocols` doc); a test
   checks both directions and that a connected row is a `Streamer`. `Send` errors only on misuse;
   transport failures arrive in `Response.Err`, so the UI always has a value to render.
 - `rest`, `sse`, the HTTP transport of `mcp` and the `websocket` handshake share one request
@@ -18,4 +18,4 @@
 - `Configured` gives the cookie jar, proxy, CA file and client certificate to `rest`, `sse` and
   `mcp`, and only the TLS settings to `websocket` (Limits).
 - A multipart value `@path` sends a file; one rule, `model.FormFile`, serves the encoder, the access
-  check (decision 21) and the Postman export.
+  check (`App.allowed`) and the Postman export.

@@ -70,7 +70,7 @@ func (a *App) openWorkspace(dir string) {
 }
 
 // toastNewer tells, beyond the status line, that the collection in folder
-// was not opened because a newer build saved it (decision 22).
+// was not opened because a newer build saved it.
 func (a *App) toastNewer(folder string, err error) {
 	var newer *fileversion.NewerError
 	if errors.As(err, &newer) {

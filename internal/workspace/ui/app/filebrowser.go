@@ -24,8 +24,9 @@ type fileChooser struct {
 }
 
 // fileChoosers are the ways to ask for a file, best first: the desktop's
-// own dialog when it has a program for one, else the in-app file browser
-// (decision 18), which always works.
+// own dialog when it has a program for one, else the in-app file browser,
+// which always works and keeps the FileDialog contract (why not a D-Bus
+// portal: the filedialog package doc).
 var fileChoosers = []fileChooser{
 	{func(app *App) bool { return app.files.Available() }, (*App).askDesktop},
 	{func(*App) bool { return true }, (*App).browseFiles},

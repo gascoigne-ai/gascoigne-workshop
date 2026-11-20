@@ -22,6 +22,12 @@
 //   - theming: everything that makes a core.Theme: the JSON theme files, the
 //     dark and light palettes, color math, and appearance preferences.
 //
+// core, view and widget are three layers, as in Qt, GTK and Flutter: the
+// base holds no component. view cannot import widget, so a component moves
+// out of view only when nothing there uses it, and what the runtime calls
+// on a component goes through an interface (Behavior, Focuser). The
+// examples are one package because go vet forces the Example_xxx form.
+//
 // Applications import the toolkit packages directly; nothing under this
 // directory may import the application's internal packages
 // (see core/layers_test.go).

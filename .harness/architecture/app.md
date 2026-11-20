@@ -7,8 +7,13 @@ fields are grouped by concern in embedded structs (`appstate.go`); the per-tab w
 
 ### State changes
 
-Decision 13: a domain with a controller changes its state through Model, Msg, Update and Cmd; the
-`App` changes the rest directly in its handlers.
+A domain with a controller changes its state through Model, Msg, Update and Cmd (the user's
+choice); the `App` changes the rest directly in its handlers. `Update` is pure: no I/O, goroutine or
+clock. A UI handler applies its message at once, because the next line needs the new state; the bus
+carries only what goroutines report. `Update` may type-switch on its message, the one place where
+"table over switch" yields. `prefs` messages may carry functions: the page decides what changes, the
+App owns the settings. Accepted gaps: settings `Persist` and image decoding stay on the UI
+goroutine. Rejected: signals, React-style diffing, more controllers behind closures.
 
 ```mermaid
 flowchart LR
@@ -17,7 +22,7 @@ flowchart LR
   goroutines["goroutines: sends, sockets, file dialogs"] -- "bus.Dispatch" --> busq["bus"]
   busq -- "Drain, once per frame" --> handle["App.handle"]
   handle --> update
-  appstate --> tree["view tree, rebuilt (decision 4)"]
+  appstate --> tree["view tree, rebuilt every frame"]
 ```
 
 - **Bus** (`workspace/controller/bus`): the only path from a goroutine to the UI. Goroutines read
@@ -62,7 +67,7 @@ The window is VML views (`window.go`, `sidebar.go`, `requesttabs.go`, `urlbar.go
 
 `treeops.go`, `treemenu.go`, `treedrag.go`. Context menus and drag act on `App.selected`. A drop
 builds a `transfer.Drop` and `App.transferNode` applies it, in one collection or across two; Alt
-copies (decision 25). Across collections:
+copies (the user's choices and what was rejected: the `transfer` package doc). Across collections:
 
 - the target is written before the source (`flushMoved`); a failed target write leaves the source
   on disk and shows an error toast;
@@ -70,7 +75,7 @@ copies (decision 25). Across collections:
   (`transfer.MissingText`);
 - a moved request keeps its tab (same pointer); a copy is a new request without a tab.
 
-The drop outline is the row's `DropBorder` token, empty when not the target (decision 4).
+The drop outline is the row's `DropBorder` token, empty when not the target.
 
 ### Keyboard, focus and overlays
 
@@ -88,13 +93,13 @@ The drop outline is the row's `DropBorder` token, empty when not the target (dec
   `settings/ui/shortcutpage` (Settings).
 - **Overlays**, bottom to top: settings dialog, in-app file browser, context menu, dialog (with a
   scrim), toasts. While one has the keyboard the global shortcuts are off. The context menu is the
-  toolkit's popup menu, its state in `core.Ctx.Menu` (decision 27); the app only fills a missing
+  toolkit's popup menu, its state in `core.Ctx.Menu` (typed `any`, see its doc); the app only fills a missing
   icon from the label (`menuIcons`). Every dialog has its own title bar and moves by it
-  (decision 15). The right-click handler of the innermost element wins, so a cell editor shows the
+  (`widget.Dialog` says why). The right-click handler of the innermost element wins, so a cell editor shows the
   text menu, not the row menu.
 - **Toasts** carry a `severity.Level` (`workspace/model/severity`), mapped once to the toolkit's
   kind; the settings, the sent log and the call trace use the same type. Info fades, errors stay.
-- The settings dialog's System page (`settings/ui/systempage`, decision 16) reports
+- The settings dialog's System page (`settings/ui/systempage`) reports
   `port.SystemInfo`.
 
 ### Drawing only when something changed
@@ -119,7 +124,7 @@ at every start in the dev build. The notes are kept in step with `CHANGELOG.md` 
   `-set` and `-record` never write the user's files. `-set key=value` changes a setting live,
   through the same path the settings dialog uses.
 - `TestGoldenScenes` (`cmd/workshop/golden_scenes_test.go`, runner in `softshot_test.go`) draws
-  each scene under Xvfb with Mesa's software rasterizer (decision 5), with `HOME` and `XDG_*`
+  each scene under Xvfb with Mesa's software rasterizer (why: `renderShot`), with `HOME` and `XDG_*`
   sandboxed. Two runs there give byte-identical PNGs, which is what makes goldens comparable; the
   small slack (`shotTolerance`, `maxDifferingPixels`) absorbs driver noise. A stub answers the sample request on `127.0.0.1:8081`; MCP and gRPC scenes use the
   example server's ports (`exampleserver.Config`). Testdata folders are copied to temp dirs first, so

@@ -1,6 +1,19 @@
 // Package proto sends a model.Request over one protocol and reports the
 // outcome as a model.Response. Protocols are looked up by name in a
 // Registry; nothing here knows about the UI.
+//
+// WebSocket, SSE and MCP are written by hand on net/http: the part the
+// workshop needs is small, the rules allow no new dependency, and the raw
+// message log the UI shows is what such a client already handles. gRPC
+// uses google.golang.org/grpc and protobuf (the user's choice), since
+// HTTP/2 and protobuf are not a small part; there is no code generation,
+// messages are built at run time from descriptors. The descriptors come
+// from the server's reflection or from .proto files compiled with
+// protocompile (the user's choice), which gives the same descriptors as
+// reflection, so both sources share one code path. Rejected for .proto
+// files: a hand-written parser on protoreflect (a parser and linker to
+// keep up with the language) and an external protoc (a program to install,
+// output to read back).
 package proto
 
 import (

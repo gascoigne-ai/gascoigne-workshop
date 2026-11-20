@@ -8,7 +8,7 @@ tested examples, which use the exported API only.
   exported even where the app uses part of it, since a half family breaks rule 1; helpers only the
   toolkit uses are unexported. Borders are one-pixel hairlines in a token; `EdgeT/L/R/B` are the
   separate two-pixel open-tab outline. The `Round` family is only the corner masks a panel needed
-  (`RoundT`, `RoundB`, `RoundBL`; decision 27).
+  (`RoundT`, `RoundB`, `RoundBL`; see Exceptions).
 - **Mistakes fail loudly.** A component option on the wrong kind of element panics, naming the
   option and the element's control (`behaviorOf`). A template error names the file and line,
   suggests the nearest name and lists the valid ones.
@@ -19,7 +19,7 @@ tested examples, which use the exported API only.
   `core`'s tests build a small `testTheme`. `internal/settings/model/appearance` is only the app's
   part: its overlay themes (HTTP method and JSON colors), `MethodToken`, `LayoutChoices`, and the
   mapping from settings to `theming.Prefs`.
-- **Templates** (`markup`; format in its package doc and decision 4). The app writes each view as a
+- **Templates** (`markup`; format and why in its package doc). The app writes each view as a
   template in a `const` at the end of its Go file, parsed once with `markup.Must`. A template has
   one root, so a view that shows one of two things is two templates and Go picks. Parse does all
   the work that does not depend on the scope (element specs, `for`, params, `{{path}}` splits, the
@@ -34,3 +34,17 @@ tested examples, which use the exported API only.
 - **Dumps pin views.** `view.Dump` prints a laid-out tree with every non-zero attribute (one
   name-and-getter table, `dumpedAttributes`). Pinned dumps keep a view from changing, and tests
   compare a template with its Go form this way.
+
+### Exceptions to the toolkit API rules
+
+Each is also said in the doc comment of what breaks the rule; a new exception adds a row here.
+
+- Rule 1: `Round` is not a per-side family but the corner masks a panel needed (`RoundT`, `RoundB`,
+  `RoundBL`); a mask is added with the panel that needs it, not ahead.
+- Rule 7: state types are values (`NewTextField`, `NewTextArea`, `NewMenu`); `OpenMenu` stores a
+  pointer to its own copy.
+- Rule 11: `core.Ctx.Menu` is `any`, because `widget` owns `MenuState` and `core` cannot name it;
+  that is the price of any element opening a menu without a host. `core.Ctx.FocusOwner` is typed,
+  since its interface (`core.Focuser`, aliased by `view.Focuser`) uses no widget type.
+- Exported mutable tables are copies (`theming.SizeChoices` and the other choice lists);
+  `engine.keyNames` is unexported, since nothing outside `engine` reads it.

@@ -1,7 +1,9 @@
 // Package systempage is the System page of the settings dialog: what the
 // program runs on, the display and the GPU rendering, read-only, with a
 // button that copies the report as text. The numbers are read when the page
-// is built, so they are as fresh as the last redraw.
+// is built, so they are as fresh as the last redraw. The page was the
+// user's request. The Ebitengine side comes in through port.SystemInfo, so
+// tests need no display.
 package systempage
 
 import (

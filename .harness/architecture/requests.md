@@ -15,7 +15,7 @@
 - **cURL import** (`model.ParseCurl`, the reverse of `proto.Curl`): POSIX-shell splitting, the
   common flags mapped to a REST request, others skipped. Redirects are followed only with `-L`, as
   in curl.
-- **Trust** (decision 21): before a send or connect, `App.allowed` lists what the request does on
+- **Trust**: before a send or connect, `App.allowed` lists what the request does on
   this machine (`model.Request.Accesses`: an MCP `stdio:` command, a file read outside the
   collection folder). Anything not yet trusted opens a confirm dialog; Allow adds it to a
   `model.AccessSet`, saved as `trusted` in `state.json`, and retries.

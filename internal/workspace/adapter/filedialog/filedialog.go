@@ -4,6 +4,13 @@
 // kdialog, yad, qarma and matedialog that is installed, in the order the
 // desktop prefers (detect.go). Without one, Available is false and callers
 // fall back to the in-app file browser.
+//
+// Shelling out needs no widget and no dependency. The desktop is read from
+// environment variables, not D-Bus (the user's choice). A D-Bus file
+// chooser portal was rejected: it needs a client library or a hand-written
+// protocol and a running portal service, while the in-app browser needs
+// nothing installed. Detection was widened instead, so the browser is
+// rarely needed.
 package filedialog
 
 import (

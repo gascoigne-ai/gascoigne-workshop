@@ -2,10 +2,10 @@
 
 ### On disk
 
-- `collection/adapter/store` writes a collection as a folder of small JSON files (format: decision 7
-  and the package doc). Writes are atomic; unchanged files are not rewritten.
+- `collection/adapter/store` writes a collection as a folder of small JSON files (format and why: its package
+  doc). Writes are atomic; unchanged files are not rewritten.
 - A gRPC request's proto paths are relative to the collection's folder when inside it, written with
-  `/`, absolute otherwise (`ProtoSource.Stored`, `Loaded`; decision 19). Renaming a collection moves
+  `/`, absolute otherwise (`ProtoSource.Stored`, `Loaded`), so the folder can move. Renaming a collection moves
   the paths that were inside its folder.
 - Secret values (credentials, variables marked secret) go to `.secrets.json`, never to a request,
   `folder.json` or environment file. An older file that still holds one loads as is and moves on
@@ -13,8 +13,9 @@
 
 ### Open collections
 
-Decision 17: several collections are open at once, each a root of the tree with its own folder
-(`""` until the first save) and active environment. `App.open` is a `collections.Set`
+Several collections are open at once (the user's decisions), each a root of the tree with its own
+folder (`""` until the first save) and active environment, so nothing leaks between them; a
+collection is known by its folder. `App.open` is a `collections.Set`
 (`collection/controller/collections`).
 
 - **Ownership**: tabs, saving, rename, delete, find, sending and captured values go to the collection

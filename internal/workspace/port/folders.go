@@ -12,6 +12,12 @@ type FolderEntry struct {
 // browser (the file chooser of a desktop without a dialog program) and the
 // files the user names, such as a saved response body, an exported
 // collection, the file a request sends and a screenshot.
+//
+// The App reaches the user's files only through it, off the UI goroutine.
+// It was widened rather than a second port added: it is already the user's
+// file system at the same boundary and already wired, and a second port
+// would be a second adapter over the same disk. Revisit when it outgrows
+// the browser and named files (then split it by caller).
 type Folders interface {
 	// List is what dir holds, in no particular order.
 	List(dir string) ([]FolderEntry, error)

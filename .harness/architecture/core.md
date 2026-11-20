@@ -15,7 +15,7 @@ is tested without a GPU.
   clicks. `modifiedEdit` is the per-platform table that turns modifiers into word and line edits.
 - **Clipboard.** `SystemClipboard` runs the platform's clipboard tools: Ebitengine has no clipboard
   API, and no dependency is added for it.
-- **Text editors live in `widget`** (decision 3): `TextField` (one line, undo), `TextArea` (a
+- **Text editors live in `widget`** (`uitoolkit/doc.go`): `TextField` (one line, undo), `TextArea` (a
   `TextField` in multiline mode plus view state) and `CodeView` (read-only spans, folds, selection).
   They share the word rule (`isWordRune`), the scrollbar math and drag (`widget/scrollbar.go`,
   `barDrag`) and the monospace geometry (`monoGrid`), so the three agree on words, caret and clicks.

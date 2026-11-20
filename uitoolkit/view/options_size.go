@@ -18,6 +18,10 @@ func Optional() Option { return func(element *El) { element.optional = true } }
 // axis when the row or column does not fit: the overflow is taken from
 // the Shrink children first to last, each down to its MinW (MinH in a
 // column). A row that fits lays out as if no child had it.
+//
+// Shrink is explicit rather than read from Ellipsis, because the child that
+// gives room is often a container (the user's choice over a lower cap on
+// chip width).
 func Shrink() Option { return func(element *El) { element.shrink = true } }
 
 // FitW turns the W given before it into a minimum: the element is as wide

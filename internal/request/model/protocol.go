@@ -49,6 +49,13 @@ type ProtocolInfo struct {
 }
 
 // Protocols is every protocol, in the order the protocol chip cycles.
+//
+// The table has two more halves, one row per row here: the implementations
+// (proto.NewRegistry) and the UI (the app's protocolViews, its panes and
+// composer). It is split because packages that may not import the UI or
+// proto, such as the stores, the sent log and the access check, need this
+// half. An unknown or empty protocol text is a parse error at the edge
+// (the user's answer), never a fallback to REST.
 var Protocols = []ProtocolInfo{
 	{Name: ProtocolREST, Label: "REST", Connection: OneShot, Method: MethodHTTP},
 	{Name: ProtocolWebSocket, Label: "WS", Connection: Always},

@@ -2,6 +2,13 @@
 // the same or another open collection: what is allowed, what a name clash
 // does and which variables the node uses that its new place does not define.
 // The tree and the picker draw it and ask the questions.
+//
+// The user's decisions: a drag moves and Alt at release copies; since a
+// window manager may take Alt, the row menu also has Move to... and Copy
+// to.... A clashing name is renamed ("x 2"), within one collection too.
+// Variables are never rewritten and history is not moved; an unsaved
+// target is allowed. Rejected: drag only, without a menu, and cut, copy
+// and paste in the tree.
 package transfer
 
 import (

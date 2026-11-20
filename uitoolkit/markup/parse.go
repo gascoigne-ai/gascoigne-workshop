@@ -69,6 +69,12 @@
 // The result is the same *view.El tree the Go DSL makes, so both styles
 // share one runtime and can be mixed: a template can be a part of a
 // hand-built view and the other way round.
+//
+// A template holds no expressions: bindings are lookups and the only
+// directives are if and for, so logic stays in Go and a template stays
+// checkable. Methods are not reachable from a scope, since a name would then
+// mean two things. Moving a view from Go to a template must not change a
+// pixel; golden scenes and pinned view.Dump output are the check.
 package markup
 
 import (

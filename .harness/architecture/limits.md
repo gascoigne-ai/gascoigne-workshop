@@ -28,7 +28,7 @@ is cut, refused or shown plainly, never a panic.
 | gRPC reflection files per symbol | 512 | error | `proto.maxReflectedFiles` |
 | gRPC message schema | 500 messages | the rest not expanded | `proto.maxSchemaMessages` |
 | Key repeat output | 1,000,000 (ms, ticks or presses a second); an `xset` rate of 0 | unknown, so a timing never overflows `time.Duration` | `keyrepeat.maxSetting` |
-| Saved file version | 0 to the newest the build reads | error naming the file; higher is `fileversion.NewerError` (decision 22) | `fileversion.Read` |
+| Saved file version | 0 to the newest the build reads | error naming the file; higher is `fileversion.NewerError` (Persistence) | `fileversion.Read` |
 | Protocol, body type, auth type, key location names | exact match of a fixed list | error; the older auth `"none"` reads as none and is rewritten as absent | `model.Parse*` |
 
 - The Postman, cURL, client config and SVG icon parsers set no size limit of their own: a huge
@@ -45,7 +45,7 @@ under the package's `testdata/fuzz`: fix it and keep the file as a regression te
 
 - WebSocket dials directly (`ws.Dial` has no proxy support): the proxy setting does not apply; the
   CA file, client certificate and Insecure TLS do.
-- Windows and macOS are compiled and vetted in CI but never run (decision 12; Platforms).
+- Windows and macOS are compiled and vetted in CI but never run (`release.md`; Platforms).
 - IME: the composition in progress is not drawn; Ebitengine does not report it (IME and dead keys).
 - No screen reader: Ebitengine has no accessibility tree (Accessibility).
 - Look: the CLI dashboard's outlined primary button and segmented pill groups, blurred shadows, 2 px

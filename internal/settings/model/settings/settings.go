@@ -129,7 +129,8 @@ func Decode(data []byte) (Settings, error) {
 	return decoded, nil
 }
 
-// readers read settings.json by version (decision 22). Versions 0 and 1
+// readers read settings.json by version (the fileversion package doc).
+// Versions 0 and 1
 // share a layout: sectioned, the older flat form or a mix.
 var readers = []func([]byte) (Settings, error){decodeOverDefaults, decodeOverDefaults}
 

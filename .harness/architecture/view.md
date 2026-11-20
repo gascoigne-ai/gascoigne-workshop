@@ -34,7 +34,7 @@ state: no diffing and no reactive system. Elements and options are indexed in th
   (`Ctx.LayoutGen`, `Ctx.Laying`).
 - **Layout is a flexbox subset** (`flex.go`). When a row overflows, `Optional` children drop
   first, then `Shrink` children give up the rest, first to last, down to their minimum; a row that
-  fits lays out as if none had it (decision 14).
+  fits lays out as if none had it (why explicit: the `Shrink` doc).
 - **Cursor.** Widgets ask for a shape in `Ctx.Cursor`, reset every frame and applied by the app.
   `App.showGrab` asks for `core.CursorMove` while a row, tab or tree row is dragged, unless a
   resize shape was asked for.
@@ -51,7 +51,7 @@ App facts kept here for now; they belong with the app.
   outcome returns on the bus. Files the user names (saved body, Postman export, screenshot) go the
   same way through `port.Folders.Write`. `FlushWorkspace`, `SaveState` and `openWorkspaceAt` call
   `waitWrites`, then write synchronously. The App does no file I/O of its own
-  (`TestTheAppDoesNoFileAccessOfItsOwn`, decision 24).
+  (`TestTheAppDoesNoFileAccessOfItsOwn`; why one port: the `port.Folders` doc).
 - **Socket sends** (`wsui.go`): messages and pings go through `App.sendInOrder`, a per-tab outbox
   run by a Cmd, so a slow network never stops a frame and messages keep their order.
 - **Change keys** (`changekeys.go`): autosave and the window title compare JSON forms. `changeKeys`

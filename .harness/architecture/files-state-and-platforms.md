@@ -24,13 +24,13 @@ flowchart LR
 ```
 
 - `App.pickFile` takes the first usable row of `fileChoosers`: the desktop's dialog, else the in-app
-  file browser (decision 18). It returns a cancel function, which the settings dialog uses to take
+  file browser (why not a D-Bus portal: the `filedialog` package doc). It returns a cancel function, which the settings dialog uses to take
   its question back when it closes.
 - `workspace/adapter/filedialog` picks the program order per desktop from a table (`detect.go`);
   that choice is pure and tested per desktop without a display. Both choosers start in the user's
   home folder every time (user's decision 2026-11-15).
-- The in-app browser (rules in `workspace/controller/filebrowser`, listing through `port.Folders`,
-  decision 18) is a fallback: its footer names the program to install for native dialogs
+- The in-app browser (rules in `workspace/controller/filebrowser`, listing through `port.Folders`)
+  is a fallback: its footer names the program to install for native dialogs
   (`port.FileDialog.Suggested`).
 - A `File` body sends a file as it is; whether the path exists is asked in the background and an
   answer for an older path is dropped. A multipart value `@path` sends a file part.

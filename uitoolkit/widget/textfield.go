@@ -56,6 +56,9 @@ type TextField struct {
 }
 
 // NewTextField returns a field holding text with the cursor at its end.
+// Like NewTextArea and NewMenu it returns a value: state types are values,
+// an accepted exception to toolkit rule 7 (OpenMenu stores a pointer to its
+// own copy).
 func NewTextField(text string) TextField {
 	return TextField{Text: text, Cursor: len([]rune(text))}
 }

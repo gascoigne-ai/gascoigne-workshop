@@ -94,7 +94,7 @@ type frameState struct {
 // persistState holds what is remembered between runs and written in the background: the state file, the collections' autosave and the trust list.
 type persistState struct {
 	statePath        string                                   // where the UI state is remembered
-	stateAccess      fileversion.Access                       // read-only when a newer build wrote the file (decision 22)
+	stateAccess      fileversion.Access                       // read-only when a newer build wrote the file
 	saves            map[*model.Collection]*autosave.Debounce // when each open collection was last written
 	writes           serial.Queue                             // the background writes in flight and waiting, by file
 	keys             changeKeys                               // the comparable forms of the collection and the state, recomputed only on frames where something could have changed
@@ -111,7 +111,7 @@ type persistState struct {
 type settingsState struct {
 	settings           settings.Settings
 	settingsPath       string                    // "" keeps settings in memory only
-	settingsAccess     fileversion.Access        // read-only when a newer build wrote the file (decision 22)
+	settingsAccess     fileversion.Access        // read-only when a newer build wrote the file
 	menu               bool                      // settings menu is open
 	actionIDs          []string                  // the ids of the shortcut actions, for completing settings.json
 	cancelSettingsPick func()                    // takes back a file question the settings dialog asked

@@ -10,7 +10,13 @@
 //
 // Files are written with a stable key order and indentation, so a
 // version-control diff shows only what changed. Files the store did not
-// write are never touched.
+// write are never touched: saving and Delete remove only files it wrote.
+// File names are slugs made unique with -2, -3; the real names live
+// inside the files.
+//
+// A tree of small files rather than one collection file keeps the diff of
+// an edit to the request it touched. Credentials stay out of the request
+// files so the tree can be committed.
 package store
 
 import (
@@ -106,7 +112,8 @@ type secretsV1 struct {
 	Files   map[string]secret `json:"files"`
 }
 
-// The readers of each file by version (decision 22); versions 0 and 1 of
+// The readers of each file by version (see the fileversion package doc and
+// architecture/persistence.md); versions 0 and 1 of
 // folder, request and environment files share a layout.
 var (
 	folderReaders  = []func([]byte) (folderMeta, error){fileversion.Plain[folderMeta], fileversion.Plain[folderMeta]}

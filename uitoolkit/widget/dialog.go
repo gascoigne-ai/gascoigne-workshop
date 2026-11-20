@@ -13,6 +13,10 @@ var dialogLook = []Item{Bg(core.Bg), Control("menu"), Shadow(), FloatCenter(), F
 // Dialog is a modal panel centered in the window over a dimmed scrim. Give
 // it its size (W, H), layout options and content, and OnDismiss for what
 // an outside click does. Mount it in the window's Stack while it is open.
+//
+// Dialogs are floating panels inside the one window, each with a title bar
+// of its own (DialogTitle), because Ebitengine has one OS window per
+// process. Their look is in .harness/style.md.
 func Dialog(items ...Item) *El {
 	return Frag(Row(Bg(core.Shadow)), Col(append(append([]Item{}, dialogLook...), items...)...))
 }

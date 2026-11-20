@@ -24,7 +24,7 @@ flowchart LR
 
 ## Package layout
 
-- Packages are `internal/<domain>/<role>/<package>` (decision 11). The tree is `packagemap.md`;
+- Packages are `internal/<domain>/<role>/<package>` (the user's choice). The tree is `packagemap.md`;
   the import rules are in `rules.md` and enforced by `internal/layers_test.go` and
   `uitoolkit/core/layers_test.go`, with no exceptions.
 - `workspace/ui/app` is one package: Go cannot declare a method in another package, and everything
