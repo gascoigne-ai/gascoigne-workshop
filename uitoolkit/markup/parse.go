@@ -43,8 +43,8 @@
 //	            slider (slider-mid on-slide on-slide-end)
 //	Viewers     code (wrap) image
 //	Containers  scroll hscroll split (vertical as-ratio min-first min-second)
-//	Widgets     tab-bar tabs scroll-tabs table   separator active-tab
-//	Dialogs     dialog dialog-title dialog-toolbar message-dialog resizable-dialog   focus-scope dismiss-margin
+//	Widgets     toolbar tab-bar tabs scroll-tabs table   separator active-tab
+//	Dialogs     dialog dialog-title dialog-subtitle dialog-toolbar message-dialog resizable-dialog   focus-scope dismiss-margin
 //	Overlays    menu toasts
 //	Templates   slot
 //

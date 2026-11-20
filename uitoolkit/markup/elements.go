@@ -47,6 +47,18 @@ func labelled(constructor func(label string, opts ...view.Option) *view.El) elem
 	return func(parts elementParts) (view.Node, error) { return constructor(parts.text, parts.opts...), nil }
 }
 
+// plainText builds an element from a constructor that takes the text and
+// no options (DialogSubtitle); an attribute on it would be dropped, so it
+// is an error.
+func plainText(constructor func(text string) *view.El) element {
+	return func(parts elementParts) (view.Node, error) {
+		if len(parts.opts) > 0 {
+			return nil, fmt.Errorf("this element takes no options, only its text")
+		}
+		return constructor(parts.text), nil
+	}
+}
+
 // The arity helpers build an element from a Go constructor by reading its
 // params, in order, as the constructor's leading arguments. args<N> are the
 // constructors that end in options, itemArgs<N> those that end in items
@@ -282,16 +294,18 @@ var elements = map[string]elementSpec{
 	"hscroll":        {build: itemArgs1(widget.HScroll), params: []param{scopedState[widget.ScrollState]("state")}},
 	"split": {build: itemArgs2(widget.Split), options: splitOptions,
 		params: []param{scopedState[widget.SplitState]("state"), realParam("default")}},
+	"toolbar": {build: container(widget.Toolbar)},
 	"tab-bar": {build: container(widget.TabBar)},
 	"tabs": {build: args2(widget.Tabs), holds: holdsNothing,
 		params: []param{scoped[[]widget.TabItem]("items"), wholeParam("active")}},
 	"scroll-tabs": {build: args3(widget.ScrollTabs), holds: holdsNothing,
 		params: []param{scopedState[widget.ScrollState]("state"), scoped[[]widget.TabItem]("items"), wholeParam("active")}},
-	"table":          {build: args1(widget.Table), holds: holdsNothing, params: []param{scoped[widget.TableSpec]("spec")}},
-	"dialog":         {build: container(widget.Dialog)},
-	"dialog-title":   {build: itemArgs1(widget.DialogTitle), params: []param{textParam("title")}},
-	"dialog-toolbar": {build: container(widget.DialogToolbar)},
-	"message-dialog": {build: itemArgs1(widget.MessageDialog), params: []param{scopedState[widget.DialogState]("state")}},
+	"table":           {build: args1(widget.Table), holds: holdsNothing, params: []param{scoped[widget.TableSpec]("spec")}},
+	"dialog":          {build: container(widget.Dialog)},
+	"dialog-title":    {build: itemArgs1(widget.DialogTitle), params: []param{textParam("title")}},
+	"dialog-subtitle": {build: plainText(widget.DialogSubtitle), holds: holdsText},
+	"dialog-toolbar":  {build: container(widget.DialogToolbar)},
+	"message-dialog":  {build: itemArgs1(widget.MessageDialog), params: []param{scopedState[widget.DialogState]("state")}},
 	"resizable-dialog": {build: itemArgs5(widget.ResizableDialog), params: []param{scopedState[widget.ResizeState]("state"),
 		wholeParam("min-width"), wholeParam("min-height"), wholeParam("max-width"), wholeParam("max-height")}},
 	"menu": {build: args2(widget.Menu), holds: holdsNothing,

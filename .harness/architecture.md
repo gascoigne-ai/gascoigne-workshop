@@ -919,15 +919,15 @@ that change `App`.
   element's table row lists (`params`), all required, so a missing one is a parse error; state and
   specs name a scope entry of their Go type, and a wrong type is an error naming it, as is a nil
   state pointer, which would otherwise panic at layout, and a nil `text-menu` field (decision 4).
-  Only `text`, `caption`, `button`, `primary-button`, `link-button`, `lines`, `note` and `choice` hold text (the
+  Only `text`, `dialog-subtitle`, `caption`, `button`, `primary-button`, `link-button`, `lines`, `note` and `choice` hold text (the
   table's `holds`): text inside `<spacer>`, a rule, `<slot>` or `<icon>` is a parse error, not dropped.
   The containers are `<scroll state>` and `<hscroll state>` (a child marked `keep-in-view` is
   scrolled to), `<split state default>` with the options only it takes, `vertical`, `as-ratio`,
   `min-first` and `min-second`, `<tabs items active>` and `<scroll-tabs state items active>` (no
-  children; `on-select` gets the index), `<tab-bar>` (`widget.TabBar`, the strip that holds them and
+  children; `on-select` gets the index), `<toolbar>` (`widget.Toolbar`, the bar's own row), `<tab-bar>` (`widget.TabBar`, the strip that holds them and
   anything beside them, its height, room above the tabs and line under them the widget's), with
   `separator` and `active-tab` for a hand-made strip, `<table spec>` (a `widget.TableSpec`,
-  callbacks and edit state included), `<dialog>`, `<dialog-title title>` and
+  callbacks and edit state included), `<dialog>`, `<dialog-title title>` (its `<dialog-subtitle>` is the muted note, text only), `<dialog-toolbar>` and
   `<message-dialog state>` (a `*widget.DialogState`) and
   `<resizable-dialog state min-width min-height max-width max-height>` (a `*widget.ResizeState` and
   the size bounds, in the Go order), with `on-dismiss` for an outside click or the close button,

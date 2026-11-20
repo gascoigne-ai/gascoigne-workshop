@@ -517,3 +517,15 @@ func TestNumberAttributesRefuseNaNAndInf(t *testing.T) {
 		}
 	}
 }
+
+func TestDialogSubtitleElementMatchesTheGoDialogSubtitle(t *testing.T) {
+	template := build(t, `<dialog-title title="T"><dialog-subtitle>x</dialog-subtitle></dialog-title>`, Scope{})
+	goView := widget.DialogTitle("T", widget.DialogSubtitle("x"))
+	sameLayout(t, testCtx(t), template, goView, 600, 400)
+}
+
+func TestToolbarElementMatchesTheGoToolbar(t *testing.T) {
+	template := build(t, `<toolbar><text>a</text><button>Go</button></toolbar>`, Scope{})
+	goView := widget.Toolbar(view.Text("a"), widget.Button("Go"))
+	sameLayout(t, testCtx(t), template, goView, 600, 400)
+}
