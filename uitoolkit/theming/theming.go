@@ -11,6 +11,7 @@ package theming
 import (
 	"fmt"
 	"image/color"
+	"log/slog"
 	"maps"
 	"os"
 	"path/filepath"
@@ -300,6 +301,7 @@ func (c *Catalog) LoadUser(dir string) (themes map[string]ThemeChoice, problems 
 	}
 	files, err := filepath.Glob(filepath.Join(dir, "*.json"))
 	if err != nil {
+		slog.Debug("skip user themes: folder name is not a valid glob pattern", "dir", dir, "err", err)
 		return themes, nil
 	}
 	sort.Strings(files)

@@ -44,4 +44,4 @@ type wrapper interface{ wrapLines() }
 // instead of scrolling sideways. Without it the element does not wrap,
 // whatever its state held, so a template switches wrap off by leaving it
 // out (wrap="{{on}}").
-func Wrap() Option { return func(element *El) { element.Behavior().(wrapper).wrapLines() } }
+func Wrap() Option { return func(element *El) { behaviorOf[wrapper](element, "Wrap").wrapLines() } }

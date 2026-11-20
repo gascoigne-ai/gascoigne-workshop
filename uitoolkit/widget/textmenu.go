@@ -15,7 +15,7 @@ import (
 func TextMenu(field *TextField) Option {
 	return func(element *El) {
 		OnRightClickIn(func(ctx *core.Ctx, posX, posY int) {
-			OpenMenu(ctx, posX, posY, textMenuItems(ctx.Clipboard, field, element.ChangeHandler()))
+			OpenMenu(ctx, posX, posY, textMenuItems(ctx.Clipboard, field, element.Changed))
 		})(element)
 	}
 }

@@ -26,9 +26,7 @@ func Tabs(items []TabItem, active int, opts ...Option) *El {
 // OnSelect, which is set only after the tabs are built.
 func selector(strip **El) func(i int) {
 	return func(index int) {
-		if (*strip).SelectHandler() != nil {
-			(*strip).SelectHandler()(index)
-		}
+		(*strip).Select(index)
 	}
 }
 

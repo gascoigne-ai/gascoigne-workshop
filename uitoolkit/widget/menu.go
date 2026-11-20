@@ -90,8 +90,8 @@ func (menu *MenuState) Keys(input core.Input) int {
 func Menu(ctx *core.Ctx, state *MenuState, opts ...Option) *El {
 	var menu *El
 	pick := func(index int) {
-		if menu.SelectHandler() != nil && state.Items[index].Selectable() {
-			menu.SelectHandler()(index)
+		if state.Items[index].Selectable() {
+			menu.Select(index)
 		}
 	}
 	rows := make([]Item, len(state.Items))

@@ -12,7 +12,7 @@ const fieldPad = 10
 // FieldPad sets a field's inner padding, for fields inset in a box that
 // already has padding of its own, so text lines up with its neighbours.
 func FieldPad(pixels int) Option {
-	return func(element *El) { element.Behavior().(*fieldB).inset = pixels }
+	return func(element *El) { behaviorOf[*fieldB](element, "FieldPad").inset = pixels }
 }
 
 // fieldB is a single-line text input editing a TextField.
@@ -65,9 +65,7 @@ func (b *fieldB) Update(element *El, ctx *core.Ctx) {
 		typed = nil // Ctrl+letter is a shortcut, not text
 	}
 	if f.Apply(typed, in.Edits, in.Shift) || changed {
-		if onChange := element.ChangeHandler(); onChange != nil {
-			onChange()
-		}
+		element.Changed()
 	}
 	if in.Enter && !in.Ctrl && b.onEnter != nil { // Ctrl+Enter is a shortcut of the app
 		b.onEnter()
@@ -122,21 +120,21 @@ func Field(textField *TextField, opts ...Option) *El {
 
 // Placeholder is the hint shown while the field is empty.
 func Placeholder(text string) Option {
-	return func(element *El) { element.Behavior().(*fieldB).placeholder = text }
+	return func(element *El) { behaviorOf[*fieldB](element, "Placeholder").placeholder = text }
 }
 
 // Styled colors parts of the field's text with styler, which gets the
 // whole text.
 func Styled(styler Styler) Option {
-	return func(element *El) { element.Behavior().(*fieldB).segments = styler }
+	return func(element *El) { behaviorOf[*fieldB](element, "Styled").segments = styler }
 }
 
 // OnTab runs when Tab is pressed in the focused field; back is true with Shift.
 func OnTab(callback func(back bool)) Option {
-	return func(element *El) { element.Behavior().(*fieldB).onTab = callback }
+	return func(element *El) { behaviorOf[*fieldB](element, "OnTab").onTab = callback }
 }
 
 // OnEnter runs when Enter is pressed in the focused field.
 func OnEnter(callback func()) Option {
-	return func(element *El) { element.Behavior().(*fieldB).onEnter = callback }
+	return func(element *El) { behaviorOf[*fieldB](element, "OnEnter").onEnter = callback }
 }

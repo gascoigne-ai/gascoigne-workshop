@@ -127,17 +127,21 @@ func Split(state *SplitState, def float64, items ...Item) *El {
 }
 
 // Vertical makes a Split stack its children.
-func Vertical() Option { return func(element *El) { element.Behavior().(*splitB).vertical = true } }
+func Vertical() Option {
+	return func(element *El) { behaviorOf[*splitB](element, "Vertical").vertical = true }
+}
 
 // AsRatio makes a Split's size a fraction of the container instead of pixels.
-func AsRatio() Option { return func(element *El) { element.Behavior().(*splitB).ratio = true } }
+func AsRatio() Option {
+	return func(element *El) { behaviorOf[*splitB](element, "AsRatio").ratio = true }
+}
 
 // MinFirst is the smallest size in pixels of a Split's first child.
 func MinFirst(pixels int) Option {
-	return func(element *El) { element.Behavior().(*splitB).minFirst = pixels }
+	return func(element *El) { behaviorOf[*splitB](element, "MinFirst").minFirst = pixels }
 }
 
 // MinSecond is the smallest size in pixels of a Split's second child.
 func MinSecond(pixels int) Option {
-	return func(element *El) { element.Behavior().(*splitB).minSecond = pixels }
+	return func(element *El) { behaviorOf[*splitB](element, "MinSecond").minSecond = pixels }
 }

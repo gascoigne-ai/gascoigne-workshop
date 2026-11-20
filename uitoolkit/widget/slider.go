@@ -157,9 +157,8 @@ func Slider(state *SliderState, low, high, step, value int, opts ...Option) *El 
 // OnSlide runs with each new value of a Slider while the thumb moves.
 func OnSlide(callback func(int)) Option {
 	return func(element *El) {
-		if s, ok := element.Behavior().(*sliderB); ok {
-			s.onChange = callback
-		}
+		slider := behaviorOf[*sliderB](element, "OnSlide")
+		slider.onChange = callback
 	}
 }
 
@@ -167,18 +166,16 @@ func OnSlide(callback func(int)) Option {
 // the two halves separately.
 func SliderMid(mid int) Option {
 	return func(element *El) {
-		if s, ok := element.Behavior().(*sliderB); ok {
-			s.mid = mid
-			s.normalize()
-		}
+		slider := behaviorOf[*sliderB](element, "SliderMid")
+		slider.mid = mid
+		slider.normalize()
 	}
 }
 
 // OnSlideEnd runs with the final value when the thumb is released.
 func OnSlideEnd(callback func(int)) Option {
 	return func(element *El) {
-		if s, ok := element.Behavior().(*sliderB); ok {
-			s.onEnd = callback
-		}
+		slider := behaviorOf[*sliderB](element, "OnSlideEnd")
+		slider.onEnd = callback
 	}
 }

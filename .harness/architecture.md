@@ -882,7 +882,11 @@ that change `App`.
   option); `widget.Span` is the one colored-run type; callbacks are options (`Modal()` +
   `OnDismiss(f)`, `OnSlide(f)` on `Slider`, `OnSelect(f)` on `Tabs` and `ScrollTabs`, `OnDragOver`);
   conditions are `If` and `When(cond, opt)`; `NewTextArea` returns a value; `Separator(inset)`,
-  `TextCenter`, `KeepInView`, `FloatTR`, `CodeView.ScrollBy`.
+  `TextCenter`, `KeepInView`, `FloatTR`, `CodeView.ScrollBy`. A component runs a handler through
+  `El.Select(i)`, `El.Dismiss()` and `El.Changed()` (nothing happens without one). A component
+  option put on the wrong kind of element panics with the option name and the element's control
+  (`behaviorOf`), also on `Slider`'s options. `LoadUser` logs at debug why it skipped a theme
+  folder whose name is no valid glob pattern.
 -  **Toolkit surface trimmed**: helpers only the toolkit itself uses are unexported (`clampScroll`,
   `posFromOffset`, `tabWidth`, `tipDelayTicks`, `resizePair`, `newMultiline`, `blinkTicks`,
   `keyLabel`, `gradientEnds`, `newFonts`, `readInput`, `parseColor`, `themeExtends`). Option

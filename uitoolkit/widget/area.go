@@ -26,9 +26,7 @@ func (b *areaB) Update(element *El, ctx *core.Ctx) {
 	if !b.area.Update(ctx, element.Rect()) {
 		return
 	}
-	if onChange := element.ChangeHandler(); onChange != nil {
-		onChange()
-	}
+	element.Changed()
 }
 
 func (b *areaB) Draw(element *El, ctx *core.Ctx, dst *ebiten.Image) {

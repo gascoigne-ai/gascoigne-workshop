@@ -1,8 +1,11 @@
 package theming
 
 import (
+	"bytes"
+	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -69,5 +72,22 @@ func TestUserThemesExtendBuiltinsAndAreListed(t *testing.T) {
 	c.SetUser(nil)
 	if len(c.All()) != 2 {
 		t.Fatal("user themes not cleared")
+	}
+}
+
+// A folder name with a glob metacharacter made Glob fail and every user
+// theme vanish without a trace; the reason is logged at debug now.
+func TestLoadUserLogsAnUnreadableFolderPattern(t *testing.T) {
+	var logs bytes.Buffer
+	previous := slog.Default()
+	slog.SetDefault(slog.New(slog.NewTextHandler(&logs, &slog.HandlerOptions{Level: slog.LevelDebug})))
+	defer slog.SetDefault(previous)
+
+	themes, problems := NewCatalog(Builtins()).LoadUser(filepath.Join(t.TempDir(), "themes[")) // an unclosed [ is ErrBadPattern
+	if len(themes) != 0 || len(problems) != 0 {
+		t.Errorf("themes %v problems %v, want none", themes, problems)
+	}
+	if !strings.Contains(logs.String(), filepath.ErrBadPattern.Error()) {
+		t.Errorf("log %q does not give the reason %q", logs.String(), filepath.ErrBadPattern)
 	}
 }

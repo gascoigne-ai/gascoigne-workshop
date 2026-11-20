@@ -85,7 +85,8 @@ func OnChange(callback func()) Option { return func(element *El) { element.onCha
 // here and read by its parent through KeepsInView.
 func KeepInView() Option { return func(element *El) { element.reveal = true } }
 
-// SelectHandler is the function given with OnSelect, nil for none. Widgets
+// SelectHandler is the function given with OnSelect, nil for none (Select
+// runs it without a nil check). Widgets
 // built on view read it when the user picks something, because the option
 // is applied after they build their children.
 func (e *El) SelectHandler() func(index int) { return e.onSelect }
@@ -95,6 +96,27 @@ func (e *El) DismissHandler() func() { return e.onDismiss }
 
 // ChangeHandler is the function given with OnChange, nil for none.
 func (e *El) ChangeHandler() func() { return e.onChange }
+
+// Select runs the OnSelect function with index, if there is one.
+func (e *El) Select(index int) {
+	if e.onSelect != nil {
+		e.onSelect(index)
+	}
+}
+
+// Dismiss runs the OnDismiss function, if there is one.
+func (e *El) Dismiss() {
+	if e.onDismiss != nil {
+		e.onDismiss()
+	}
+}
+
+// Changed runs the OnChange function, if there is one.
+func (e *El) Changed() {
+	if e.onChange != nil {
+		e.onChange()
+	}
+}
 
 // OnRightClickIn runs callback when the element is right-clicked, with the context
 // and the pointer position. It is OnRightClick for a handler that needs

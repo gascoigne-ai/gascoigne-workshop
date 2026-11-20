@@ -34,9 +34,7 @@ func DialogTitle(title string, items ...Item) *El {
 	var bar *El
 	closeButton := Row(W(core.IconBtnW), H(core.CompactH), Control("row"), HoverBg(core.Shadow), Tooltip("Close (Esc)"),
 		OnClick(func() {
-			if bar.DismissHandler() != nil {
-				bar.DismissHandler()()
-			}
+			bar.Dismiss()
 		}),
 		CrossIcon(Grow(1), Color(core.HeroMuted)),
 	)
@@ -109,9 +107,7 @@ func MessageDialog(state *DialogState, items ...Item) *El {
 	}
 	var frag *El
 	dismiss := func() {
-		if panel := frag.Children()[1]; panel.DismissHandler() != nil {
-			panel.DismissHandler()()
-		}
+		frag.Children()[1].Dismiss()
 	}
 	body := Col(append(append([]Item{
 		Pad(core.DialogPad), Gap(core.Gutter),
