@@ -111,6 +111,11 @@ type Ctx struct {
 	// it; nil in the app, where counting costs one nil check.
 	Stats *DrawStats
 
+	// masks caches the corner masks of rounded fills; maskMaker builds one
+	// and is nil in the app (a test sets it to need no GPU).
+	masks     *cornerMasks
+	maskMaker func(radius int) *ebiten.Image
+
 	// TipText is the tooltip text of the element under the pointer, set by
 	// view.Draw for widget.TooltipLayer to show.
 	TipText string
@@ -190,6 +195,7 @@ func (c *Ctx) SetScale(scale float64) error {
 		return err
 	}
 	c.F, c.Scale = fonts, scale
+	c.resetMasks()
 	return nil
 }
 
@@ -200,6 +206,7 @@ func (c *Ctx) SetTheme(th Theme) error {
 		return err
 	}
 	c.Th, c.F = th, fonts
+	c.resetMasks()
 	return nil
 }
 
@@ -380,74 +387,83 @@ func (c *Ctx) Radius(control string) float64 { return c.Th.Style(control).Radius
 // gradient fill from top to bottom, with rounded corners when the style
 // has a radius. Square flat fills stay on the crisp rectangle path.
 func (c *Ctx) FillStyled(dst *ebiten.Image, rect Rect, top, bottom color.RGBA, radius float64) {
-	round := radius*c.Scale >= 1
-	if !round && top == bottom {
+	if radius*c.Scale >= 1 {
+		c.fillRounded(dst, rect, top, bottom, radius, CornersAll)
+		return
+	}
+	if top == bottom {
 		c.Fill(dst, rect, top)
 		return
 	}
 	x0, y0, x1, y1 := c.devRect(rect)
-	var path *vector.Path
-	if round {
-		path = cornersPath(x0, y0, x1, y1, c.dev(float32(radius)), CornersAll)
-	} else {
-		path = &vector.Path{}
-		path.MoveTo(x0, y0)
-		path.LineTo(x1, y0)
-		path.LineTo(x1, y1)
-		path.LineTo(x0, y1)
-		path.Close()
-	}
-	c.fillGradient(dst, path, x0, y0, x1, y1, top, bottom, round)
+	c.fillGradient(dst, rectPath(x0, y0, x1, y1), y0, y1, top, bottom)
 }
 
-// fillGradient fills path, which spans x0,y0 to x1,y1 (device pixels), from top to
-// bottom; anti-aliased edges blend with alpha, so rounded corners have no
-// jagged steps.
-func (c *Ctx) fillGradient(dst *ebiten.Image, path *vector.Path, x0, y0, x1, y1 float32, top, bottom color.RGBA, antiAlias bool) {
+// fillGradient fills the square-cornered path, which spans y0 to y1 (device
+// pixels), from top to bottom.
+func (c *Ctx) fillGradient(dst *ebiten.Image, path *vector.Path, y0, y1 float32, top, bottom color.RGBA) {
 	verts, idx := path.AppendVerticesAndIndicesForFilling(nil, nil)
+	for i := range verts {
+		verts[i].ColorR, verts[i].ColorG, verts[i].ColorB, verts[i].ColorA = gradientAt(top, bottom, y0, y1, verts[i].DstY)
+		verts[i].SrcX, verts[i].SrcY = 0.5, 0.5
+	}
 	if len(verts) == 0 {
 		return
 	}
-	span := max(y1-y0, 1)
-	for i := range verts {
-		t := min(max((verts[i].DstY-y0)/span, 0), 1)
-		mix := func(value, target uint8) float32 {
-			return (float32(value) + (float32(target)-float32(value))*t) / 255
+	dst.DrawTriangles(verts, idx, gradientSrc, &ebiten.DrawTrianglesOptions{})
+}
+
+// fillRounded paints rect with the corners in the set rounded: the edges
+// snap to device pixels as Fill's do, and the corners are quarters of a
+// cached anti-aliased disc, so the whole fill is one DrawTriangles with no
+// offscreen. The gradient rides on the vertex colors.
+func (c *Ctx) fillRounded(dst *ebiten.Image, rect Rect, top, bottom color.RGBA, radius float64, corners Corners) {
+	x0, y0 := c.snap(rect.X), c.snap(rect.Y)
+	x1, y1 := c.snap(rect.X+rect.W), c.snap(rect.Y+rect.H)
+	r := min(float32(max(1, math.Round(float64(c.dev(float32(radius)))))), float32(math.Floor(float64(min(x1-x0, y1-y0))/2)))
+	if r < 1 || corners == 0 {
+		c.fillGradient(dst, rectPath(x0, y0, x1, y1), y0, y1, top, bottom)
+		return
+	}
+	mask := c.cornerMask(int(r))
+	quads := sliceQuads(x0, y0, x1, y1, r, corners)
+	verts := make([]ebiten.Vertex, 0, 4*len(quads))
+	idx := make([]uint16, 0, 6*len(quads))
+	for _, q := range quads {
+		base := uint16(len(verts))
+		for _, corner := range [4][4]float32{
+			{q.dst.x0, q.dst.y0, q.src.x0, q.src.y0}, {q.dst.x1, q.dst.y0, q.src.x1, q.src.y0},
+			{q.dst.x1, q.dst.y1, q.src.x1, q.src.y1}, {q.dst.x0, q.dst.y1, q.src.x0, q.src.y1},
+		} {
+			red, green, blue, alpha := gradientAt(top, bottom, y0, y1, corner[1])
+			verts = append(verts, ebiten.Vertex{DstX: corner[0], DstY: corner[1], SrcX: corner[2], SrcY: corner[3], ColorR: red, ColorG: green, ColorB: blue, ColorA: alpha})
 		}
-		verts[i].ColorR, verts[i].ColorG, verts[i].ColorB, verts[i].ColorA = mix(top.R, bottom.R), mix(top.G, bottom.G), mix(top.B, bottom.B), mix(top.A, bottom.A)
-		verts[i].SrcX, verts[i].SrcY = 0.5, 0.5
-	}
-	if !antiAlias {
-		dst.DrawTriangles(verts, idx, gradientSrc, &ebiten.DrawTrianglesOptions{})
-		return
-	}
-	// Anti-aliasing blends through an offscreen the size of the target; a
-	// sub-image of the shape's bounds keeps that offscreen small.
-	bounds := fillBounds(x0, y0, x1, y1, dst.Bounds())
-	if bounds.Empty() {
-		return
+		idx = append(idx, base, base+1, base+2, base, base+2, base+3)
 	}
 	if c.Stats != nil {
-		c.Stats.AAFills++
+		c.Stats.MaskFills++
 	}
-	dst.SubImage(bounds).(*ebiten.Image).DrawTriangles(verts, idx, gradientSrc, &ebiten.DrawTrianglesOptions{AntiAlias: true})
+	dst.DrawTriangles(verts, idx, mask, &ebiten.DrawTrianglesOptions{})
+}
+
+// rectPath is the square-cornered rectangle as a path.
+func rectPath(x0, y0, x1, y1 float32) *vector.Path {
+	var path vector.Path
+	path.MoveTo(x0, y0)
+	path.LineTo(x1, y0)
+	path.LineTo(x1, y1)
+	path.LineTo(x0, y1)
+	path.Close()
+	return &path
 }
 
 // DrawStats counts what one frame asks the GPU for, to pin and measure the
 // batching of rounded shapes. Set Ctx.Stats to collect; the caller zeroes it
 // between frames.
 type DrawStats struct {
-	AAFills     int // DrawTriangles calls with AntiAlias (rounded fills)
+	MaskFills   int // rounded fills drawn from the corner mask, one DrawTriangles each
 	StrokePaths int // vector.StrokePath calls (rounded outlines)
 	Widths      int // Ctx.Width measurements
-}
-
-// fillBounds is the device-pixel region a fill of the given path bounds can
-// touch: the bounds grown to whole pixels plus one for anti-aliasing,
-// clipped to limit. Empty when the fill is outside limit.
-func fillBounds(x0, y0, x1, y1 float32, limit image.Rectangle) image.Rectangle {
-	grown := image.Rect(int(math.Floor(float64(x0)))-1, int(math.Floor(float64(y0)))-1, int(math.Ceil(float64(x1)))+1, int(math.Ceil(float64(y1)))+1)
-	return grown.Intersect(limit)
 }
 
 // Corners is a set of rectangle corners.
@@ -474,8 +490,7 @@ func (c *Ctx) FillStyledCorners(dst *ebiten.Image, rect Rect, top, bottom color.
 		c.FillStyled(dst, rect, top, bottom, 0)
 		return
 	}
-	x0, y0, x1, y1 := c.devRect(rect)
-	c.fillGradient(dst, cornersPath(x0, y0, x1, y1, c.dev(float32(radius)), corners), x0, y0, x1, y1, top, bottom, true)
+	c.fillRounded(dst, rect, top, bottom, radius, corners)
 }
 
 // cornersPath is r with the corners in the set rounded by rad.
@@ -530,4 +545,21 @@ func (c *Ctx) OutlineStyled(dst *ebiten.Image, rect Rect, clr color.RGBA, radius
 	dp.AntiAlias = true
 	dp.ColorScale.ScaleWithColor(clr)
 	vector.StrokePath(dst, path, &so, &dp)
+}
+
+// cornerMask is the cached white mask for corners of radius device pixels.
+func (c *Ctx) cornerMask(radius int) *ebiten.Image {
+	if c.masks == nil {
+		c.masks = &cornerMasks{make: buildCornerMask}
+	}
+	if c.maskMaker != nil {
+		c.masks.make = c.maskMaker
+	}
+	return c.masks.get(radius)
+}
+
+func (c *Ctx) resetMasks() {
+	if c.masks != nil {
+		c.masks.reset()
+	}
 }
