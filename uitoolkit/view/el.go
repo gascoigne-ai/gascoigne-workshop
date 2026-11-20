@@ -59,8 +59,9 @@ type El struct {
 	b      Behavior
 	custom bool // b was supplied by Custom, not one of the toolkit's own kinds
 	kids   []*El
-	rect   core.Rect // set by layout
-	hover  bool      // the pointer was over this element at the last draw, and hover was not blocked
+	rect   core.Rect   // set by layout
+	memo   measureMemo // what the behavior measured in the current Layout pass
+	hover  bool        // the pointer was over this element at the last draw, and hover was not blocked
 
 	w, h             int // fixed size; 0 = content size
 	grow             float64
@@ -182,3 +183,41 @@ func (e *El) Rect() core.Rect { return e.rect }
 // Children are the element's child elements in tree order. It is for
 // code that looks at a laid-out tree, such as tests of widgets.
 func (e *El) Children() []*El { return e.kids }
+
+// memoSlots is how many widths one element remembers: a parent measures a
+// child at its own width and lays it out at the inner one, so two or three
+// differ at most.
+const memoSlots = 3
+
+// measureMemo holds the sizes a behavior measured for some maxW during the
+// Layout pass numbered gen. A later pass starts empty.
+type measureMemo struct {
+	gen   int
+	count int
+	slots [memoSlots]struct{ maxW, w, h int }
+}
+
+// measure is the behavior's size at maxW, asked once per Layout pass.
+// Outside a pass nothing is remembered.
+func (e *El) measure(ctx *core.Ctx, maxW int) (w, h int) {
+	if !ctx.Laying {
+		return e.b.Measure(e, ctx, maxW)
+	}
+	if e.memo.gen != ctx.LayoutGen {
+		e.memo = measureMemo{gen: ctx.LayoutGen}
+	}
+	if _, isText := e.b.(textB); isText {
+		maxW = 0 // a line of text is as wide as it is whatever room it has: one entry serves every width
+	}
+	for i := 0; i < e.memo.count; i++ {
+		if slot := e.memo.slots[i]; slot.maxW == maxW {
+			return slot.w, slot.h
+		}
+	}
+	w, h = e.b.Measure(e, ctx, maxW)
+	if e.memo.count < memoSlots {
+		e.memo.slots[e.memo.count] = struct{ maxW, w, h int }{maxW, w, h}
+		e.memo.count++
+	}
+	return w, h
+}

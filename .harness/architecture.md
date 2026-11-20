@@ -431,6 +431,12 @@ Row(H(urlH), PadX(w.Pad), PadY(8), Gap(8), Bg(w.Bg),
   laid out as if none had it (decision 14). `Stack` layers children; a `FloatTR(top, right)` child
   is pinned top-right and `Modal` makes it swallow clicks and report an outside click (the toolkit
   offers it; the app's overlays are centered dialogs and menus at a point).
+-  **Measure memo**: within one `view.Layout` pass an element's behavior is measured once per
+  `maxW` (a text once, whatever its room): `El.size` consults a three-entry memo valid for the pass
+  (`Ctx.LayoutGen` advances at every `Layout`, so a reused tree is measured again each frame, and
+  a size asked for outside a pass, `Ctx.Laying` false, is never remembered). Fixed-size and clamp
+  logic run after the memo. `Ctx.Ellipsize` finds the longest fitting prefix by binary search on
+  the rune count.
 -  **Frame cycle**: `view.Layout`, then `view.Update` (input goes to the top-most element first and
   runs handlers) or `view.Draw`. `App.Update` and `App.Draw` each build the view, so what is drawn
   already reflects what the handlers just changed.

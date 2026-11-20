@@ -113,6 +113,13 @@ type Ctx struct {
 	// built still shows that state. A widget that calls a handler adds one.
 	Fired int
 
+	// LayoutGen counts the passes of view.Layout and Laying is true inside
+	// one: an element's measured size is remembered for one pass only, and
+	// outside a pass (a size asked for by an Update handler) it is never
+	// remembered, because the content may have changed since.
+	LayoutGen int
+	Laying    bool
+
 	// Stats counts the draw calls of the frame when a benchmark or test sets
 	// it; nil in the app, where counting costs one nil check.
 	Stats *DrawStats
@@ -331,19 +338,29 @@ func (c *Ctx) TextCenter(dst *ebiten.Image, face *text.GoTextFace, content strin
 	c.TextMid(dst, face, content, rect.X+(rect.W-c.Width(face, content))/2, rect, clr)
 }
 
-// Ellipsize shortens s with "..." until it fits maxW pixels.
+// Ellipsize shortens s with "..." until it fits maxW pixels. The longest
+// prefix whose trimmed form plus the dots fits is found by binary search on
+// the rune count, as CursorAt does, not by measuring every prefix.
 func (c *Ctx) Ellipsize(face *text.GoTextFace, content string, maxW int) string {
 	if c.Width(face, content) <= maxW {
 		return content
 	}
 	runes := []rune(content)
-	for len(runes) > 0 {
-		runes = runes[:len(runes)-1]
-		if cand := strings.TrimRight(string(runes), " ") + "..."; c.Width(face, cand) <= maxW {
-			return cand
+	candidate := func(count int) string { return strings.TrimRight(string(runes[:count]), " ") + "..." }
+	fits := func(count int) bool { return c.Width(face, candidate(count)) <= maxW }
+	low, high := 0, len(runes)-1 // the longest count that fits is in low-1..high
+	for low < high {
+		middle := (low + high + 1) / 2
+		if fits(middle) {
+			low = middle
+		} else {
+			high = middle - 1
 		}
 	}
-	return ""
+	if !fits(low) {
+		return ""
+	}
+	return candidate(low)
 }
 
 // CursorAt maps a pixel offset into s to the nearest rune boundary. The

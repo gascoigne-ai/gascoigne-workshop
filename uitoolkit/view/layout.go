@@ -20,7 +20,7 @@ func (e *El) inner() core.Rect {
 // size is the element's wanted size: its fixed size where set, else
 // what its behavior measures.
 func (e *El) size(ctx *core.Ctx, maxW int) (w, h int) {
-	w, h = e.b.Measure(e, ctx, maxW)
+	w, h = e.measure(ctx, maxW)
 	if e.w > 0 {
 		w = e.w
 	}

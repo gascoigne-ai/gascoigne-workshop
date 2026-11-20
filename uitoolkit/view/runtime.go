@@ -8,8 +8,12 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
-// Layout places the tree in a width by height window.
+// Layout places the tree in a width by height window. Each element is
+// measured once per width during the pass; the next pass measures again.
 func Layout(ctx *core.Ctx, root Node, width, height int) {
+	ctx.LayoutGen++
+	ctx.Laying = true
+	defer func() { ctx.Laying = false }()
 	root.place(ctx, core.Rect{W: width, H: height})
 }
 
