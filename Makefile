@@ -53,7 +53,19 @@ FUZZ_TARGETS = \
 	./internal/request/adapter/proto:FuzzReadEvents \
 	./internal/settings/model/settings:FuzzParse \
 	./internal/request/model:FuzzParseBulk \
-	./internal/settings/ui/shortcutpage:FuzzParseBinding
+	./internal/settings/ui/shortcutpage:FuzzParseBinding \
+	./internal/request/adapter/proto:FuzzDeliverJSON \
+	./internal/request/adapter/proto:FuzzAnswerServer \
+	./internal/request/adapter/proto:FuzzSample \
+	./internal/request/model:FuzzToolFields \
+	./internal/request/model:FuzzArguments \
+	./internal/response/model/jsonview:FuzzLines \
+	./internal/settings/adapter/displayscale:FuzzParseMonitors \
+	./internal/settings/adapter/keyrepeat:FuzzParseHyprland \
+	./internal/settings/adapter/keyrepeat:FuzzParseGSettings \
+	./internal/settings/adapter/keyrepeat:FuzzParseXset \
+	./internal/settings/adapter/keyrepeat:FuzzParseMac \
+	./internal/settings/adapter/keyrepeat:FuzzParseWindows
 fuzz:
 	@for target in $(FUZZ_TARGETS); do \
 		package=$${target%%:*}; name=$${target##*:}; \
