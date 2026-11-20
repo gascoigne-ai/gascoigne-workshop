@@ -1,3 +1,10 @@
+// Package app is the window: the App that owns the state, wires the
+// adapters it is given to the controllers and builds the view from VML
+// templates every frame.
+//
+// Only the UI goroutine touches App state. A goroutine reads only fields
+// that never change after NewApp (the bus, the ports) and reports back
+// through the bus, which the frame drains in beginFrame.
 package app
 
 import (

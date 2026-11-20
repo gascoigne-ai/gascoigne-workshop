@@ -38,7 +38,8 @@ func sendTransition(state SendState, event sendEvent) (SendState, bool) {
 
 // Send is the sending of a tab's request: whether one is in flight and
 // which one is current. It is a machine of its own, apart from Connection:
-// a gRPC tab can have a unary call in flight and then switch Stream on.
+// a gRPC tab can have a unary call in flight and then switch Stream on, which
+// one merged machine would forbid (TestASendInFlightDoesNotForbidAConnect).
 type Send struct {
 	state SendState
 	Seq   int // numbers the sends, so a late result of an old one is ignored

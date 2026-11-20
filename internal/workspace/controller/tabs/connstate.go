@@ -35,6 +35,10 @@ type connCell struct {
 // connTransitions is the whole machine, a row per state and a column per
 // event; a cell left out is refused. A move into ConnRetrying becomes a move
 // into ConnIdle when the tab does not ask for a reconnect (see Connection.step).
+//
+// The access pattern is one lookup per event over a handful of states, so an
+// array of cells: unlike a map or a switch it shows the refused cells, and a
+// test walks all of them. Revisit when states or events double.
 var connTransitions = [connStateCount][connEventCount]connCell{
 	ConnIdle: {
 		connBegin:      {ConnConnecting, true},

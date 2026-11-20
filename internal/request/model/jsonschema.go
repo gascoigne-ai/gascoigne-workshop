@@ -77,7 +77,11 @@ const (
 
 // DecodeJSONSchema reads a JSON Schema. Only invalid JSON is an error; a
 // value that is not an object (true, a string) is the zero schema. Parts
-// beyond the bounds above are left out and logged at debug.
+// beyond the bounds above are left out and logged at debug. Keywords without
+// a field here (anyOf, $defs, pattern, format...) are ignored. A list of types
+// takes the first that is not null, an unknown or non-string type is none, properties
+// without a type make it an object, a required name without a property is
+// dropped and a duplicate property keeps the later value.
 func DecodeJSONSchema(data []byte) (JSONSchema, error) {
 	if !json.Valid(data) {
 		return JSONSchema{}, errors.New("decode JSON schema: invalid JSON")

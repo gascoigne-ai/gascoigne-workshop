@@ -84,7 +84,10 @@ func (kind EventKind) String() string { return string(kind) }
 // message and not a control event that has nothing to say.
 func (kind EventKind) CarriesPayload() bool { return kind == KindText || kind == KindBinary }
 
-// Event is one line of a streaming protocol's log.
+// Event is one line of a streaming protocol's log. Kind is set by the
+// session and Name is the peer's untrusted text, so a server cannot pose as
+// an error or as the initialize note by naming its event. Events are not
+// persisted.
 type Event struct {
 	Time time.Time
 	Dir  Direction
@@ -133,7 +136,8 @@ func (event Event) Label() string {
 // the session ends. A consumer that stops reading slows the connection
 // down; no event is dropped. Each method that writes takes the context
 // of that write; ending it stops the write, while the session lives on
-// until Close.
+// until Close. A context that has already ended sends and logs nothing, and
+// Close with one skips the goodbye (the MCP DELETE).
 type Session interface {
 	Events() <-chan Event
 	Send(ctx context.Context, text string) error

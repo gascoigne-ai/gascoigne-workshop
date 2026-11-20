@@ -10,6 +10,9 @@ import (
 
 // Layout places the tree in a width by height window. Each element is
 // measured once per width during the pass; the next pass measures again.
+// Layout writes no widget state: a scroller places its children for the
+// position it finds, clamped locally, and Update settles the state. So a
+// tree can be laid out again before Draw without changing what it shows.
 func Layout(ctx *core.Ctx, root Node, width, height int) {
 	ctx.LayoutGen++
 	ctx.Laying = true
@@ -183,7 +186,11 @@ func cycleFocus(ctx *core.Ctx, root Node) {
 	list[next].setFocused(true)
 }
 
-// Draw paints the tree. It must follow Layout on the same tree.
+// Draw paints the tree. It must follow Layout on the same tree. A child
+// whose rect, grown by its draw reach, misses the image it would draw into
+// (the active clip or the screen) is skipped with its subtree: no Draw, no
+// DrawOver, no hover flag or tooltip. A long scrolled list so costs only
+// the rows in view.
 func Draw(ctx *core.Ctx, root Node, dst *ebiten.Image) {
 	ctx.HoverOff = hasModal(root) // only the overlay's own elements react to the pointer
 	ctx.TipText = ""

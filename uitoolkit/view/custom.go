@@ -18,7 +18,9 @@ type Behavior interface {
 	Layout(element *El, ctx *core.Ctx)
 	// Update handles the frame's input, children first.
 	Update(element *El, ctx *core.Ctx)
-	// Draw paints the element; its children are drawn after it.
+	// Draw paints the element; its children are drawn after it. Draw is
+	// skipped for an element that cannot reach the target image (see Draw),
+	// so it must not write state that the next Update reads.
 	Draw(element *El, ctx *core.Ctx, dst *ebiten.Image)
 }
 

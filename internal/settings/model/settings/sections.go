@@ -9,9 +9,10 @@ import (
 )
 
 // Sections are the top-level objects of settings.json, in the order they are
-// written. appearance, requests and general hold the settings of that page
-// of the dialog; colors and shortcuts are tables and are the section
-// themselves.
+// written. appearance, requests, general and experimental hold the settings
+// of that page of the dialog; colors and shortcuts are tables and are the
+// section themselves. Only the text is sectioned: Settings stays flat, and
+// the hidden workspace, environment and collections keys are in general.
 var Sections = []string{"appearance", "colors", "shortcuts", "requests", "general", "experimental"}
 
 // sectionDescriptions say what each section holds, for completion.

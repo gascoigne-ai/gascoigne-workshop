@@ -11,7 +11,7 @@ func OnClick(callback func()) Option {
 }
 
 // OnClickAt is OnClick with the pointer position, for what opens at the
-// click (a menu under the cursor); the app does not read the pointer itself.
+// click (a menu under the cursor), so the handler need not read the pointer.
 // In a template on-click-at names a func(x, y int) of the scope. Like
 // OnClick it sets the element's one click handler: the later option wins.
 func OnClickAt(callback func(posX, posY int)) Option {

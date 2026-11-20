@@ -30,7 +30,8 @@ func newMonoGrid(ctx *core.Ctx) monoGrid {
 
 // colX is the pixel offset of the start of column col from the start of the
 // text, by the exact advance, so the caret, selection and matches line up
-// with the text however long the line.
+// with the text however long the line. Not col*charW: Width rounds to whole
+// pixels, and that error would add up along the line.
 func (g monoGrid) colX(col int) int { return int(float64(col)*g.adv + 0.5) }
 
 // colAt is the column nearest to offset x from the start of the text. It
