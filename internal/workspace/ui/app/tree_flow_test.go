@@ -213,7 +213,7 @@ func TestDraggingARequestOntoAFolderMovesIt(t *testing.T) {
 	a.step(core.Input{X: 100, Y: treeRowY(rowTags), Click: true, Held: true})
 	a.step(core.Input{X: 100, Y: treeRowY(rowUser), Held: true})
 	a.step(core.Input{X: 100, Y: treeRowY(rowUser)}) // release over the User folder
-	if got, ok := a.col().Folder.Parent(tags); !ok || got != user {
+	if got, ok := a.col().Folder.Parent(model.Of(tags)); !ok || got != user {
 		t.Fatalf("Tags is in %v", got)
 	}
 	if a.cur().Req != tags {

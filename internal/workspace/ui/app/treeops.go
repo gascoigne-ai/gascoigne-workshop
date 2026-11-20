@@ -39,14 +39,14 @@ func (a *App) collectionToken(node model.Node) core.Token {
 
 // revealRequest selects req in the tree and opens the folders above it.
 func (a *App) revealRequest(req *model.Request) {
-	a.selectNode(model.Of(req))
-	owner, ok := a.open.Owner(model.Of(req))
+	a.selectNode(model.Node{Req: req})
+	owner, ok := a.open.Owner(model.Node{Req: req})
 	if !ok {
 		return
 	}
 	root := &owner.Collection.Folder
 	a.expanded[root] = true
-	for folder, found := root.Parent(req); found && folder != root; folder, found = root.Parent(folder) {
+	for folder, found := root.Parent(model.Node{Req: req}); found && folder != root; folder, found = root.Parent(model.Node{Dir: folder}) {
 		a.expanded[folder] = true
 	}
 }
@@ -60,7 +60,7 @@ func (a *App) selectedFolder() *model.Folder {
 		return a.selected.Dir
 	case a.selected.Req != nil:
 		if owner, ok := a.open.Owner(a.selected); ok {
-			if parent, ok := owner.Collection.Folder.Parent(a.selected.Req); ok {
+			if parent, ok := owner.Collection.Folder.Parent(a.selected); ok {
 				return parent
 			}
 		}
@@ -83,9 +83,9 @@ func (a *App) treeOwner(msg tree.Msg) *model.Collection {
 	case tree.Delete:
 		subject = msg.Node
 	case tree.NewRequest:
-		subject = model.Of(msg.Dir) // none, not a nil *Folder, when there is no folder
+		subject = model.Node{Dir: msg.Dir} // none, not a nil *Folder, when there is no folder
 	case tree.NewFolder:
-		subject = model.Of(msg.Dir)
+		subject = model.Node{Dir: msg.Dir}
 	}
 	return a.ownerOf(subject)
 }

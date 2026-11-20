@@ -25,7 +25,7 @@ import (
 // nothing is open.
 func (a *App) focus() (collections.Entry, bool) {
 	if len(a.list.Tabs) > 0 {
-		if entry, ok := a.open.Owner(model.Of(a.cur().Req)); ok {
+		if entry, ok := a.open.Owner(model.Node{Req: a.cur().Req}); ok {
 			return entry, true
 		}
 	}
@@ -56,7 +56,7 @@ func (a *App) headerTitle() string {
 // such as the blank tab left after closing the last one, goes with the
 // focused collection, as it did when one collection was open at a time.
 func (a *App) entryFor(req *model.Request) (collections.Entry, bool) {
-	if entry, ok := a.open.Owner(model.Of(req)); ok {
+	if entry, ok := a.open.Owner(model.Node{Req: req}); ok {
 		return entry, true
 	}
 	return a.focus()
@@ -233,11 +233,11 @@ func (a *App) closeCollection(col *model.Collection) {
 		return
 	}
 	for _, open := range a.openTabs() {
-		if col.Folder.Contains(model.Of(open.Req)) { // no tab is left to close its socket later
+		if col.Folder.Contains(model.Node{Req: open.Req}) { // no tab is left to close its socket later
 			a.disconnect(open)
 		}
 	}
-	a.closeTabsIn(model.Of(&col.Folder))
+	a.closeTabsIn(model.Node{Dir: &col.Folder})
 	a.forget(col)
 	a.rememberCollections()
 }

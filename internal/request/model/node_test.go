@@ -32,17 +32,16 @@ func TestANodeKnowsItsNameAndWhetherItIsNone(t *testing.T) {
 		node     Node
 		wantName string
 		wantNone bool
-		wantAny  any
 	}{
-		{"request", Of(request), "r", false, request},
-		{"folder", Of(folder), "f", false, folder},
-		{"none", Node{}, "", true, nil},
-		{"typed nil", Of((*Folder)(nil)), "", true, nil},
+		{"request", Of(request), "r", false},
+		{"folder", Of(folder), "f", false},
+		{"none", Node{}, "", true},
+		{"typed nil", Of((*Folder)(nil)), "", true},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			if tc.node.Name() != tc.wantName || tc.node.None() != tc.wantNone || tc.node.Any() != tc.wantAny {
-				t.Errorf("name %q none %v any %v, want %q %v %v", tc.node.Name(), tc.node.None(), tc.node.Any(), tc.wantName, tc.wantNone, tc.wantAny)
+			if tc.node.Name() != tc.wantName || tc.node.None() != tc.wantNone {
+				t.Errorf("name %q none %v, want %q %v", tc.node.Name(), tc.node.None(), tc.wantName, tc.wantNone)
 			}
 		})
 	}

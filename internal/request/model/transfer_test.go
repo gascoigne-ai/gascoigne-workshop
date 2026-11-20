@@ -80,7 +80,7 @@ func TestAttachKeepsPointerAndRenames(t *testing.T) {
 
 func TestAttachSameFolderReorderKeepsName(t *testing.T) {
 	root, a, _, _, a1, a2, _, _, _ := fixture()
-	if !root.Delete(a2) {
+	if !root.Delete(Of(a2)) {
 		t.Fatal("detach failed")
 	}
 	if renamed := a.Attach(Of(a2), Of(a1)); renamed || a2.Name != "a2" {

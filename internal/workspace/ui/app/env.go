@@ -219,7 +219,7 @@ func (a *App) urlTip(tab *reqTab) string {
 func (a *App) editVars(dir *model.Folder) {
 	a.commitEdit()
 	if a.isRoot(dir) {
-		owner, _ := a.open.Owner(model.Of(dir))
+		owner, _ := a.open.Owner(model.Node{Dir: dir})
 		a.varsTarget = collectionVars(owner.Collection)
 	} else {
 		a.varsTarget = folderVars(dir)

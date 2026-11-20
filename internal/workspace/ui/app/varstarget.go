@@ -66,7 +66,7 @@ func (target varsTarget) caption(env *model.Environment) string {
 func (target varsTarget) refersTo(col *model.Collection) bool {
 	switch target.kind {
 	case varsFolder:
-		return col.Folder.Contains(model.Of(target.folder))
+		return col.Folder.Contains(model.Node{Dir: target.folder})
 	case varsCollection:
 		return target.collection == col
 	}

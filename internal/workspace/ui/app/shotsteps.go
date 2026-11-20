@@ -167,7 +167,7 @@ func (step openDialogStep) apply(app *App) error {
 	if !ok {
 		return fmt.Errorf("screenshot dialog %q is not one of rename, delete, move, copy", step.kind)
 	}
-	open(app, model.Of(app.cur().Req))
+	open(app, model.Node{Req: app.cur().Req})
 	return nil
 }
 

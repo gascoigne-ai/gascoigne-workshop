@@ -316,7 +316,7 @@ func TestPickingMoveToFromTheMenuOpensTheMovePicker(t *testing.T) {
 			t.Fatalf("%s: moved %v", test.label, moved)
 		}
 		if test.move { // put it back for the next round
-			beta.Delete(req)
+			beta.Delete(model.Of(req))
 			alpha.Attach(model.Of(req), model.Node{})
 		}
 	}
@@ -327,7 +327,7 @@ func TestAPickForANodeDeletedWhileThePickerWasOpenSaysSo(t *testing.T) {
 	alpha, beta := entryNamed(t, a, "Alpha").Collection, entryNamed(t, a, "Beta").Collection
 	req := alpha.Requests[0]
 	a.openTransferPicker(model.Of(req), transfer.Move)
-	alpha.Delete(req)
+	alpha.Delete(model.Of(req))
 	a.picker.Select(len(a.picker.Rows()) - 1)
 	a.step(core.Input{Enter: true})
 	if len(a.toasts) == 0 || a.toasts[len(a.toasts)-1].Kind != widget.ToastError || beta.Contains(model.Of(req)) {

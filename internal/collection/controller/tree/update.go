@@ -47,9 +47,9 @@ func Update(collection *model.Collection, selected model.Node, msg Msg) Result {
 	root := &collection.Folder
 	switch msg := msg.(type) {
 	case Rename:
-		return Result{Selected: selected, Err: root.Rename(msg.Node.Any(), msg.Name)}
+		return Result{Selected: selected, Err: root.Rename(msg.Node, msg.Name)}
 	case Duplicate:
-		if cp := model.Of(root.Duplicate(msg.Node.Any())); !cp.None() {
+		if cp := root.Duplicate(msg.Node); !cp.None() {
 			return Result{Selected: cp}
 		}
 	case Delete:
@@ -65,7 +65,7 @@ func Update(collection *model.Collection, selected model.Node, msg Msg) Result {
 }
 
 func deleteNode(root *model.Folder, selected, node model.Node) Result {
-	if node.None() || node.Dir == root || !root.Delete(node.Any()) {
+	if node.None() || node.Dir == root || !root.Delete(node) {
 		return Result{Selected: selected}
 	}
 	if selected == node {

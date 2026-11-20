@@ -80,14 +80,14 @@ func (c *Collection) VarsFor(req *Request, env *Environment) []KV {
 		vars = MergeVars(vars, env.Vars)
 	}
 	var chain []*Folder // from the request's folder up to, not including, the root
-	var node any = req
+	node := Node{Req: req}
 	for {
 		parent, ok := c.Folder.Parent(node)
 		if !ok || parent == &c.Folder {
 			break
 		}
 		chain = append(chain, parent)
-		node = parent
+		node = Node{Dir: parent}
 	}
 	for i := len(chain) - 1; i >= 0; i-- {
 		vars = MergeVars(vars, chain[i].Vars)

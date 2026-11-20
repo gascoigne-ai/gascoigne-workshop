@@ -218,7 +218,7 @@ func (set Set) ByCollection(col *model.Collection) (Entry, bool) {
 // VarsFor are the variables req is sent with, from its own collection
 // only; a request of no open collection has none, never another's.
 func (set Set) VarsFor(req *model.Request) ([]model.KV, bool) {
-	entry, ok := set.Owner(model.Of(req))
+	entry, ok := set.Owner(model.Node{Req: req})
 	if !ok {
 		return nil, false
 	}

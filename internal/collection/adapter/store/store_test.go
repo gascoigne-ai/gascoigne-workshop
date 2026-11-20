@@ -393,7 +393,7 @@ func TestMovingACredentialRequestMovesItsSecret(t *testing.T) {
 		t.Fatal("setup: the source has no secret to move")
 	}
 
-	source.Delete(moved)
+	source.Delete(model.Of(moved))
 	target.Attach(model.Of(moved), model.Node{})
 	if err := disk.Save(targetDir, target); err != nil {
 		t.Fatal(err)

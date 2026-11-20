@@ -7,7 +7,7 @@ package model
 // ("x 2"); the result reports whether that renamed node. Detach first, so a
 // reorder inside one folder keeps its name.
 func (f *Folder) Attach(node, before Node) (renamed bool) {
-	field := nameOf(node.Any())
+	field := nameOf(node)
 	if field == nil {
 		return false
 	}

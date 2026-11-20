@@ -62,7 +62,7 @@ func Apply(transfer Transfer) Outcome {
 	if transfer.Mode == Copy {
 		node = node.Clone()
 	} else {
-		transfer.From.Delete(node.Any())
+		transfer.From.Delete(node)
 	}
 	renamed := transfer.Into.Attach(node, transfer.Before)
 	return outcome(transfer, node, renamed)
@@ -75,9 +75,9 @@ func validate(transfer Transfer) error {
 		return model.ErrNotInTree
 	case node.Dir == &from.Folder:
 		return model.ErrRootMove
-	case !from.Contains(node) || !to.Contains(model.Of(transfer.Into)):
+	case !from.Contains(node) || !to.Contains(model.Node{Dir: transfer.Into}):
 		return model.ErrNotInTree
-	case node.Dir != nil && node.Dir.Contains(model.Of(transfer.Into)):
+	case node.Dir != nil && node.Dir.Contains(model.Node{Dir: transfer.Into}):
 		return model.ErrIntoItself
 	}
 	return nil
@@ -151,7 +151,7 @@ type Destination struct {
 func Destinations(set collections.Set, node model.Node, mode Mode) []Destination {
 	var parent *model.Folder
 	if owner, ok := set.Owner(node); ok {
-		parent, _ = owner.Collection.Parent(node.Any())
+		parent, _ = owner.Collection.Parent(node)
 	}
 	var out []Destination
 	for _, entry := range set.Entries {
@@ -174,7 +174,7 @@ func reason(folder *model.Folder, node model.Node, parent *model.Folder, mode Mo
 	switch {
 	case node.Dir == folder:
 		return WhyItself
-	case node.Dir != nil && node.Dir.Contains(model.Of(folder)):
+	case node.Dir != nil && node.Dir.Contains(model.Node{Dir: folder}):
 		return WhyInside
 	case mode == Move && parent == folder:
 		return WhySameParent

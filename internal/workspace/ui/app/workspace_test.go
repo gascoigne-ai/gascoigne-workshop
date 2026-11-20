@@ -142,7 +142,7 @@ func TestImportCurlAddsARequestFromTheClipboard(t *testing.T) {
 	if r.Name != "POST /v1/users" || r.Method != "POST" || r.Body != `{"a":1}` {
 		t.Fatalf("%+v", r)
 	}
-	if _, ok := a.col().Folder.Parent(r); !ok {
+	if _, ok := a.col().Folder.Parent(model.Of(r)); !ok {
 		t.Fatal("request not in the collection")
 	}
 	n := len(a.list.Tabs)

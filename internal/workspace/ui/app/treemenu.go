@@ -49,7 +49,7 @@ func (a *App) treeMenuItems(row collection.Row) []MenuItem {
 // folder. Reordering is by menu rather than by drag, since a drag moves or
 // copies a node into a collection.
 func (a *App) rootMenuItems(root *model.Folder) []MenuItem {
-	owner, _ := a.open.Owner(model.Of(root))
+	owner, _ := a.open.Owner(model.Node{Dir: root})
 	col := owner.Collection
 	at := a.openIndex(col)
 	return []MenuItem{

@@ -84,7 +84,7 @@ func (a *App) attachImport(dir *model.Folder, got imported) string {
 	}
 	got.folder.Name = dir.UniqueName(got.folder.Name)
 	dir.Folders = append(dir.Folders, got.folder)
-	if col := a.ownerOf(model.Of(dir)); col != nil {
+	if col := a.ownerOf(model.Node{Dir: dir}); col != nil {
 		for _, v := range got.vars {
 			if !model.Defined(v.Name, col.Vars) {
 				col.Vars = append(col.Vars, v)
@@ -104,7 +104,7 @@ func (a *App) attachImport(dir *model.Folder, got imported) string {
 func (a *App) exportPostman(dir *model.Folder) {
 	a.commitEdit()
 	var vars []model.KV
-	if col := a.ownerOf(model.Of(dir)); col != nil {
+	if col := a.ownerOf(model.Node{Dir: dir}); col != nil {
 		vars = col.Vars
 	}
 	data, err := postman.Export(dir, vars)

@@ -16,7 +16,7 @@ import (
 func (a *App) finishDrag() {
 	node, target, pressed := a.dragNode, a.dropTarget, a.pressedFolder
 	a.dragNode, a.dropTarget, a.pressedFolder = model.Node{}, model.Node{}, nil
-	if pressed != nil && target == model.Of(pressed) { // a click on a folder row
+	if pressed != nil && target == (model.Node{Dir: pressed}) { // a click on a folder row
 		a.expanded[pressed] = !a.expanded[pressed]
 		return
 	}
@@ -57,7 +57,7 @@ func (a *App) openTransferPicker(node model.Node, mode transfer.Mode) {
 	if node.None() || a.isRoot(node.Dir) || a.ownerOf(node) == nil {
 		return
 	}
-	stripe := func(col *model.Collection) core.Token { return a.collectionToken(model.Of(&col.Folder)) }
+	stripe := func(col *model.Collection) core.Token { return a.collectionToken(model.Node{Dir: &col.Folder}) }
 	a.picker = destpicker.New(node, mode, transfer.Destinations(a.open, node, mode), stripe)
 	a.pickerHost = transferHost{App: a, node: node, mode: mode}
 }
@@ -94,7 +94,7 @@ func (a *App) transferNode(t transfer.Transfer) {
 	a.selectNode(out.Node)
 	a.expanded[&t.To.Folder] = true
 	a.expanded[t.Into] = true
-	if t.Mode == transfer.Move && a.varsTarget.kind == varsFolder && !out.Node.None() && out.Node.Dir != nil && out.Node.Dir.Contains(model.Of(a.varsTarget.folder)) {
+	if t.Mode == transfer.Move && a.varsTarget.kind == varsFolder && !out.Node.None() && out.Node.Dir != nil && out.Node.Dir.Contains(model.Node{Dir: a.varsTarget.folder}) {
 		a.varsTarget = varsTarget{}
 	}
 	if out.Renamed {

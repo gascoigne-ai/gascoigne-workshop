@@ -25,7 +25,7 @@ const stateDebounce = time.Second
 // holderOf is the open collection that holds req and req's remembered path in
 // it; ok is false when it is in no open collection.
 func (a *App) holderOf(req *model.Request) (entry collections.Entry, path string, ok bool) {
-	entry, ok = a.open.Owner(model.Of(req))
+	entry, ok = a.open.Owner(model.Node{Req: req})
 	if !ok {
 		return collections.Entry{}, "", false
 	}
@@ -60,7 +60,7 @@ func (a *App) historyKey(req *model.Request) string {
 // one collection was open at a time, for a request of the first open
 // collection, which is where that one collection is now; "" otherwise.
 func (a *App) legacyHistoryKey(req *model.Request) string {
-	owner, ok := a.open.Owner(model.Of(req))
+	owner, ok := a.open.Owner(model.Node{Req: req})
 	if !ok || owner.Dir == "" || a.open.Entries[0].Collection != owner.Collection {
 		return ""
 	}
@@ -220,7 +220,7 @@ func (a *App) restore(stateValue state.State) {
 			}
 		}
 		a.updateTabs(tabs.Activate{Index: active})
-		a.selected = model.Of(a.cur().Req)
+		a.selected = model.Node{Req: a.cur().Req}
 	}
 	for name, ws := range stateValue.Columns {
 		if len(ws) == 0 {

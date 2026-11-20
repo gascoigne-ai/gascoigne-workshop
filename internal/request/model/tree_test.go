@@ -81,17 +81,17 @@ func TestAddKeepsEarlierPointersValid(t *testing.T) {
 func TestParentAndContains(t *testing.T) {
 	root, a, a1f, _, a1, _, x, _, _ := fixture()
 	for _, tt := range []struct {
-		node any
+		node Node
 		want *Folder
-	}{{a1, a}, {x, a1f}, {a1f, a}, {a, root}} {
+	}{{Of(a1), a}, {Of(x), a1f}, {Of(a1f), a}, {Of(a), root}} {
 		if got, ok := root.Parent(tt.node); !ok || got != tt.want {
 			t.Errorf("Parent(%v) = %v %v", tt.node, got, ok)
 		}
 	}
-	if _, ok := root.Parent(root); ok {
+	if _, ok := root.Parent(Of(root)); ok {
 		t.Error("the root has no parent")
 	}
-	if _, ok := root.Parent(&Request{Name: "stranger"}); ok {
+	if _, ok := root.Parent(Of(&Request{Name: "stranger"})); ok {
 		t.Error("a node outside the tree has no parent")
 	}
 }
@@ -127,20 +127,20 @@ func TestRename(t *testing.T) {
 	root, a, _, _, a1, _, _, _, _ := fixture()
 	tests := []struct {
 		name string
-		node any
+		node Node
 		to   string
 		want error
 		got  string
 	}{
-		{"plain", a1, "renamed", nil, "renamed"},
-		{"trimmed", a1, "  spaced  ", nil, "spaced"},
-		{"same name is fine", a1, "a1", nil, "a1"},
-		{"empty", a1, "   ", ErrEmptyName, "a1"},
-		{"taken by a request", a1, "a2", ErrNameTaken, "a1"},
-		{"taken by a folder", a1, "A1", ErrNameTaken, "a1"},
-		{"a folder", a, "Alpha", nil, "Alpha"},
-		{"a folder onto a sibling", a, "B", ErrNameTaken, "A"},
-		{"the root", root, "Collection", nil, "Collection"},
+		{"plain", Of(a1), "renamed", nil, "renamed"},
+		{"trimmed", Of(a1), "  spaced  ", nil, "spaced"},
+		{"same name is fine", Of(a1), "a1", nil, "a1"},
+		{"empty", Of(a1), "   ", ErrEmptyName, "a1"},
+		{"taken by a request", Of(a1), "a2", ErrNameTaken, "a1"},
+		{"taken by a folder", Of(a1), "A1", ErrNameTaken, "a1"},
+		{"a folder", Of(a), "Alpha", nil, "Alpha"},
+		{"a folder onto a sibling", Of(a), "B", ErrNameTaken, "A"},
+		{"the root", Of(root), "Collection", nil, "Collection"},
 	}
 	for _, tt := range tests {
 		err := root.Rename(tt.node, tt.to)
@@ -148,19 +148,19 @@ func TestRename(t *testing.T) {
 			t.Errorf("%s: err = %v, want %v", tt.name, err, tt.want)
 		}
 		got := ""
-		switch n := tt.node.(type) {
-		case *Request:
-			got = n.Name
-		case *Folder:
-			got = n.Name
+		switch {
+		case tt.node.Req != nil:
+			got = tt.node.Req.Name
+		case tt.node.Dir != nil:
+			got = tt.node.Dir.Name
 		}
 		if got != tt.got {
 			t.Errorf("%s: name = %q, want %q", tt.name, got, tt.got)
 		}
-		if tt.node == any(a1) {
+		if tt.node == Of(a1) {
 			a1.Name = "a1"
 		}
-		if tt.node == any(a) {
+		if tt.node == Of(a) {
 			a.Name = "A"
 		}
 	}
@@ -169,7 +169,7 @@ func TestRename(t *testing.T) {
 func TestDuplicateRequestInsertsACopyAfterTheOriginal(t *testing.T) {
 	root, a, _, _, a1, a2, _, _, _ := fixture()
 	a1.Params = []KV{{Name: "q", Value: "1"}}
-	cp := root.Duplicate(a1).(*Request)
+	cp := root.Duplicate(Of(a1)).Req
 	if got := names(a.Requests); !reflect.DeepEqual(got, []string{"a1", "a1 copy", "a2"}) {
 		t.Fatalf("requests = %v", got)
 	}
@@ -180,7 +180,7 @@ func TestDuplicateRequestInsertsACopyAfterTheOriginal(t *testing.T) {
 	if cp == a1 || a.Requests[0] != a1 || a.Requests[2] != a2 {
 		t.Fatal("pointers of the originals must stay")
 	}
-	again := root.Duplicate(a1).(*Request)
+	again := root.Duplicate(Of(a1)).Req
 	if again.Name != "a1 copy 2" {
 		t.Fatalf("second copy: %q", again.Name)
 	}
@@ -188,30 +188,70 @@ func TestDuplicateRequestInsertsACopyAfterTheOriginal(t *testing.T) {
 
 func TestDuplicateFolderCopiesEverythingInIt(t *testing.T) {
 	root, _, a1f, _, _, _, x, _, _ := fixture()
-	cp := root.Duplicate(root.Folders[0]).(*Folder)
+	cp := root.Duplicate(Of(root.Folders[0])).Dir
 	if got := folderNames(root.Folders); !reflect.DeepEqual(got, []string{"A", "A copy", "B"}) {
 		t.Fatalf("folders = %v", got)
 	}
 	if len(cp.Folders) != 1 || cp.Folders[0] == a1f || cp.Folders[0].Requests[0] == x || cp.Folders[0].Requests[0].Name != "x" {
 		t.Fatal("a folder copy is deep")
 	}
-	if root.Duplicate(root) != nil {
+	if !root.Duplicate(Of(root)).None() {
 		t.Fatal("the root cannot be duplicated")
 	}
 }
 
 func TestDelete(t *testing.T) {
 	root, a, _, _, a1, _, x, _, _ := fixture()
-	if !root.Delete(a1) || !reflect.DeepEqual(names(a.Requests), []string{"a2"}) {
+	if !root.Delete(Of(a1)) || !reflect.DeepEqual(names(a.Requests), []string{"a2"}) {
 		t.Fatalf("requests = %v", names(a.Requests))
 	}
-	if !root.Delete(a) || root.Contains(Of(x)) || !reflect.DeepEqual(folderNames(root.Folders), []string{"B"}) {
+	if !root.Delete(Of(a)) || root.Contains(Of(x)) || !reflect.DeepEqual(folderNames(root.Folders), []string{"B"}) {
 		t.Fatal("deleting a folder removes everything below it")
 	}
-	if root.Delete(root) {
+	if root.Delete(Of(root)) {
 		t.Fatal("the root cannot be deleted")
 	}
-	if root.Delete(&Request{Name: "stranger"}) {
+	if root.Delete(Of(&Request{Name: "stranger"})) {
 		t.Fatal("deleting something that is not in the tree reports false")
+	}
+}
+
+func TestZeroNodeIsNotFoundByEveryTreeOperation(t *testing.T) {
+	root, _, _, _, _, _, _, _, _ := fixture()
+	if parent, ok := root.Parent(Node{}); ok || parent != nil {
+		t.Errorf("Parent of the zero Node = %v %v", parent, ok)
+	}
+	if err := root.Rename(Node{}, "x"); !errors.Is(err, ErrNotInTree) {
+		t.Errorf("Rename of the zero Node: err = %v, want ErrNotInTree", err)
+	}
+	if got := root.Duplicate(Node{}); !got.None() {
+		t.Errorf("Duplicate of the zero Node = %+v", got)
+	}
+	if root.Delete(Node{}) {
+		t.Error("Delete of the zero Node reports true")
+	}
+}
+
+func TestATypedNilThroughOfIsTheZeroNode(t *testing.T) {
+	root, _, _, _, _, _, _, _, _ := fixture()
+	for name, node := range map[string]Node{"request": Of((*Request)(nil)), "folder": Of((*Folder)(nil))} {
+		if node != (Node{}) {
+			t.Errorf("%s: Of(typed nil) = %+v, want the zero Node", name, node)
+		}
+		if _, ok := root.Parent(node); ok {
+			t.Errorf("%s: a typed nil has a parent", name)
+		}
+	}
+}
+
+func TestDuplicateReturnsTheCopyAsANode(t *testing.T) {
+	root, a, _, _, a1, _, _, _, _ := fixture()
+	request := root.Duplicate(Of(a1))
+	if request.Req == nil || request.Dir != nil || request.Req.Name != "a1 copy" {
+		t.Errorf("request copy = %+v", request)
+	}
+	folder := root.Duplicate(Of(a))
+	if folder.Dir == nil || folder.Req != nil || folder.Dir.Name != "A copy" {
+		t.Errorf("folder copy = %+v", folder)
 	}
 }

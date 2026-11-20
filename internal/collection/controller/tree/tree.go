@@ -17,7 +17,7 @@ func DropPlace(root *model.Folder, node, target model.Node) (dir *model.Folder, 
 	case target.Dir != nil:
 		dir = target.Dir
 	case target.Req != nil:
-		dir, _ = root.Parent(target.Req)
+		dir, _ = root.Parent(target)
 		before = target
 	}
 	if node.Dir != nil {
@@ -29,7 +29,7 @@ func DropPlace(root *model.Folder, node, target model.Node) (dir *model.Folder, 
 // Inside reports whether req is node or lies inside the folder node.
 func Inside(node model.Node, req *model.Request) bool {
 	if node.Dir != nil {
-		return node.Dir.Contains(model.Of(req))
+		return node.Dir.Contains(model.Node{Req: req})
 	}
 	return node.Req == req
 }

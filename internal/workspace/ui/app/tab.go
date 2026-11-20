@@ -152,7 +152,7 @@ func (a *App) cur() *reqTab { return a.widgets[a.list.Tabs[a.list.Active]] }
 
 // openRequest focuses the tab of req, opening one if needed.
 func (a *App) openRequest(req *model.Request) {
-	a.selected = model.Of(req)
+	a.selected = model.Node{Req: req}
 	a.updateTabs(tabs.Open{Req: req})
 }
 

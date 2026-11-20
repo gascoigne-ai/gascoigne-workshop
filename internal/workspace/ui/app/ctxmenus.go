@@ -43,7 +43,7 @@ func (a *App) duplicateTab(index int) {
 		a.openRequest(&clone)
 		return
 	}
-	cp, _ := owner.Collection.Folder.Duplicate(req).(*model.Request)
+	cp := owner.Collection.Folder.Duplicate(model.Node{Req: req}).Req
 	if cp == nil {
 		cp = owner.Collection.Folder.AddRequest(copyOf(req))
 	}

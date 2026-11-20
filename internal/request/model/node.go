@@ -8,7 +8,9 @@ type Node struct {
 }
 
 // Of is the Node for a *Request or *Folder, the zero Node for anything else.
-// It is the one place that looks at the dynamic type of a tree node.
+// It is the one place that looks at the dynamic type of a tree node, for a
+// payload that crosses a generic boundary; code that holds a *Request or a
+// *Folder writes Node{Req: ...} or Node{Dir: ...}.
 func Of(node any) Node {
 	switch n := node.(type) {
 	case *Request:
@@ -17,17 +19,6 @@ func Of(node any) Node {
 		return Node{Dir: n}
 	}
 	return Node{}
-}
-
-// Any is the node as the tree operations take it, nil for none.
-func (n Node) Any() any {
-	switch {
-	case n.Req != nil:
-		return n.Req
-	case n.Dir != nil:
-		return n.Dir
-	}
-	return nil
 }
 
 // Name is the name of the request or folder, "" for none.
