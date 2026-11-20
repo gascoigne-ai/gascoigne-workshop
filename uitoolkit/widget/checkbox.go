@@ -29,8 +29,8 @@ func (b checkB) Draw(element *El, ctx *core.Ctx, dst *ebiten.Image) {
 	drawCheckbox(ctx, dst, core.Rect{X: r.X + (r.W-core.CheckboxSize)/2, Y: r.Y + (r.H-core.CheckboxSize)/2, W: core.CheckboxSize, H: core.CheckboxSize}, b.on, ctx.Hovered(r))
 }
 
-// drawCheckbox draws a 14px box: an accent square with a white check
-// when on, a plain outline when off (darker under the pointer).
+// drawCheckbox draws a 14px box: an accent square with a check in
+// AccentText when on, a plain outline when off (darker under the pointer).
 func drawCheckbox(ctx *core.Ctx, dst *ebiten.Image, box core.Rect, on, hover bool) {
 	if !on {
 		edge := core.Rule

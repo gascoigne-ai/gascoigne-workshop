@@ -28,7 +28,7 @@ func ResizableDialog(state *ResizeState, minW, minH, maxW, maxH int, items ...It
 }
 
 // DialogTitle is the title bar of a dialog, drawn like the window's header:
-// the hero banner (so it differs from the body in every theme) with a strong
+// the hero banner (so it differs from the body in every theme) with a Border
 // line under it. It holds the title, any items you give (a DialogSubtitle),
 // free room and a close button at the end. The user drags the dialog by the
 // bar (the room between the title and the buttons); the grab cursor shows

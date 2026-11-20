@@ -46,9 +46,8 @@ flowchart LR
 - **IME and dead keys**: text widgets take the composed text Ebitengine reports, so accents, CJK
   and emoji arrive whole. Ebitengine does not report the composition in progress, so no preedit is
   drawn and the candidate window may sit away from the caret. This is a toolkit limit.
-- **Accessibility**: palette tests hold colors to contrast ratios (`theming/palette_test.go`); Tab
-  cycles through the text widgets and code views; every icon-only control has a tooltip
-  (`focusorder_test.go`). Buttons are reached by pointer or shortcut, not Tab. No screen reader:
+- **Accessibility**: contrast and tooltip rules are in `style.md`, Rules; Tab cycles through the
+  text widgets and code views (`focusorder_test.go`). Buttons are reached by pointer or shortcut, not Tab. No screen reader:
   Ebitengine has no accessibility tree to publish.
 
 ### Icon and packaging

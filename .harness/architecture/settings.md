@@ -34,11 +34,7 @@ flowchart LR
 - **Auto-save** (`autoSave`, on by default): a change applies at once either way; with auto-save off
   it is only marked unsaved until Save. Turning it off writes that choice once; turning it on
   writes what was pending. Closing with unsaved changes asks Cancel, Discard or Save.
-- **Theme**: `appearance.ThemeWith(settings)` applies, in order, the chosen theme and text size, the
-  High contrast shift (selection, find and accent colors moved to 7:1), then the user's color
-  overrides for that theme. An override that does not parse or misses the required ratio
-  (`theming.RequiredRatio`) is ignored. Unknown theme or size ids fall back to the first theme and
-  the medium size.
+- **Theme**: how settings become a theme (`appearance.ThemeWith`) is in `style.md`, Theming pipeline.
 - **Fonts** (`settings/adapter/fonts`): the scan runs in a goroutine at start and its result is
   applied on the UI goroutine. A saved family that is not installed stays saved, shows as
   `(not installed)` and draws in the built-in Go font. The font list builds only the rows in view,

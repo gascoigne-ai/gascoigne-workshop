@@ -49,7 +49,6 @@ One file per area in `architecture/`; read the one you touch.
 | `architecture/app.md` | workspace/ui/app: the app |
 | `architecture/toolkit-api.md` | Toolkit: API and templates |
 | `architecture/toolkit-widgets.md` | Toolkit: widgets and drawing |
-| `architecture/look.md` | Look |
 | `architecture/requests.md` | Requests |
 | `architecture/protocols.md` | Protocols |
 | `architecture/responses.md` | Responses |

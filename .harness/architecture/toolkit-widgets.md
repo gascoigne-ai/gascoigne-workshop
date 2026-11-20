@@ -8,14 +8,10 @@
   tab strips (`ScrollTabs`) use it too.
 - **Tooltips.** `view.Tooltip(text)` on any element; `view.Draw` records the innermost hovered tip
   in `Ctx.TipText`, and `widget.TooltipLayer`, mounted last in the window's Stack, shows it after a
-  rest. While a tip waits the app keeps drawing (`TooltipState.Waiting`). Buttons and tabs show
-  their shortcut in the tip (`App.hint`).
-- **Icons are SVG files** (`widget/icons/*.svg`; the subset is in `svg.go`). `widget.Icon(name)`
-  draws one as vector paths in the element's `Color`; `RegisterIcons(fs)` adds or replaces icons
-  from a folder. Glyphs inside widgets are icons too: the checkbox check, the fold arrows, a
-  `Span.Icon` in a code view. The icons are the toolkit's own; icons from an open set (Lucide is
-  ISC, Tabler is MIT) go in with their license file. One-color icons are cached as white masks and
-  tinted (`iconMask`). A theme's `iconStroke` scales every stroke, so icon weight is a theme choice.
+  rest. While a tip waits the app keeps drawing (`TooltipState.Waiting`). Their look is in `style.md`.
+- **Icons** (look and sources: `style.md`, Icons). The SVG subset is in `svg.go`; `RegisterIcons(fs)`
+  adds or replaces icons from a folder; one-color icons are cached as white masks and tinted
+  (`iconMask`).
 - **Sharp edges.** `Ctx.Fill`, `Outline`, `HLine` and `VLine` snap each logical edge to device
   pixels (`Ctx.snap`), so neighbours share an edge, and draw lines `Ctx.LineWidth()` thick. Rounded
   fills and outlines (`FillStyled`, `OutlineStyled`) snap the same way and draw from cached corner

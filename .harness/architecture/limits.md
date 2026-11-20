@@ -48,10 +48,7 @@ under the package's `testdata/fuzz`: fix it and keep the file as a regression te
 - Windows and macOS are compiled and vetted in CI but never run (`release.md`; Platforms).
 - IME: the composition in progress is not drawn; Ebitengine does not report it (IME and dead keys).
 - No screen reader: Ebitengine has no accessibility tree (Accessibility).
-- Look: the CLI dashboard's outlined primary button and segmented pill groups, blurred shadows, 2 px
-  focus rings, a medium font weight and letter-spacing, 36 px table rows, a selected-row accent bar
-  and floating cards need a renderer or layout change or an approval; changing `border`, `selected`
-  or the scrollbar thumb color would break `TestNonTextElementsAreVisible`.
+- Look: what the CLI dashboard has and the window does not is in `style.md`, Decisions (Not done).
 - Fractional scales round logical text metrics to whole pixels.
 - A folder collapsed at exit is open again at the next start: opening a collection opens every
   folder (`migration_test.go` notes it).

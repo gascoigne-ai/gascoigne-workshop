@@ -1,60 +1,224 @@
 # Visual style
 
-How the app looks, where the toolkit leaves a choice. A change to the look changes this file in the same commit; the numbers below are the tokens and constants in `uitoolkit/core/theme.go`, never literals in a view. Neighbours are `TightGap` (6) apart when they are controls side by side and `LooseGap` (8) apart when they are the blocks of a pane.
+The one document for how the UI looks: the rules a view follows, the visual language, the theme pipeline, the reasons behind the look and how a UI change is checked. Every number here is a token or constant in code (`uitoolkit/core/theme.go` unless named otherwise); code doc comments hold the mechanics.
 
-## Dialogs
+## 1. Rules
 
-Every dialog is a modal floating panel over a dimmed scrim (`widget.Dialog`, `ResizableDialog`, `MessageDialog`), centered until the user drags it, built in this order from the top:
+These are hard rules (`rules.md` makes them part of the repo's rules).
 
-1. **Title bar** (`widget.DialogTitle`), then optionally 2. **toolbar** (`widget.DialogToolbar`), then 3. the **body**.
+- **Tokens, never literals.** Colors, spacing, sizes and font sizes in a view or widget come from the color tokens and size constants of `uitoolkit/core/theme.go`; the app adds its own tokens (`method.*`, `json.*`, `collection.*`) in `internal/settings/model/appearance/themes/*.json`. Markup has no constants, so a template reads them from its scope (`{{rowH}}`, `{{gutter}}`).
+- **Corners through the theme.** A component takes its radius from `view.Control(name)` or `Ctx.Radius(name)`, so the Corners setting reaches it. A square fill in a rounded panel is a bug. Tabs are square by choice (section 4); toasts do not follow this yet (Not done).
+- **Icon-only controls have a tooltip**, and buttons and tabs name their shortcut in it (`App.hint`; `focusorder_test.go` holds it).
+- **Contrast is tested.** The palettes hold their ratios in `theming/palette_test.go`; `TestNonTextElementsAreVisible` holds the floors for borders, rules, icons and row states. A color change that breaks them is a change of these rules, not of a test.
+- **The look changes here first.** A change to the look updates this file in the same commit.
+- **Verify by looking.** A UI change is checked with `make shot` and the PNG looked at (section 5); layout and widget logic still get unit tests. Golden files change only where the task changes the look.
 
-### Title bar
+### Sizes
 
-- Height `DialogTitleH` (44), side padding `DialogPad` (16), gap `LooseGap` (8), items centered vertically, flush with the panel's edges (the panel itself has no padding).
-- The bar is drawn like the window's header, which is the app's identity: `Hero` with the `hero` gradient control (`Control("hero")`), so it differs from the body in every theme, its two top corners rounded to the panel's radius (`RoundT("menu")`, anti-aliased with alpha, so the bar follows the panel's outline instead of poking out of the corners), with a `Border` line under it (the toolbar's line is the soft `BorderSoft`). Text on it is `HeroText`, icons and the subtitle `HeroMuted`; never `Text`/`Muted`, which are for the body.
-- Content from the left: the **title** (bold, `HeroText`; a short noun: "Settings", "Log", "Rename"), an optional **subtitle** (`widget.DialogSubtitle`: `HeroMuted`, small, ellipsized, gives way first; the page shown, a count, the file; never a sentence or an action), free room, then the **close button** (32 x `CompactH`, no chip, `CrossIcon` in `HeroMuted`, darkened under the pointer with `Shadow` (alpha) in the `row` control's corners, so it follows the Corners setting like the bar, tooltip "Close (Esc)").
-- No controls in the bar: no fields, no buttons except close. Those go in the toolbar.
-- The close button, Escape and a click outside all run the dialog's `OnDismiss`, so they cancel alike. A dialog that must not be cancelled by an outside click still has the button.
-- The bar is the drag handle (`DragHandle`): a press on the free part (not the border, not the close button) drags the dialog, a double click centers it. The grab cursor (`CursorMove`) shows only from the press until the release, never while hovering, so an idle bar looks like a title and not like a control. The dialog stays inside the window (`Moved`, `MoveState`).
-- Not done: an icon before the title. The bar lays out title, then items, then room, then close, so an icon would have to be an item placed after the title; add it only with a place for it in `DialogTitle`.
+Logical pixels; the interface scale multiplies them at draw time.
 
-### Toolbar
+| Constant | Value | Use |
+|---|---|---|
+| `RowH` | 28 | list and table rows, standard controls, dialog buttons |
+| `CompactH` | 24 | chips, icon buttons, inline fields in a row, menu rows (`MenuRowH`) |
+| `LabelH`, `NoteH` | 22, 18 | section captions, one-line notes |
+| `IconBtnW` | 32 | icon button width |
+| `Gutter` | 12 | inset between a container and its content |
+| `TightGap` | 6 | controls side by side (a field and its button, a row of chips) |
+| `LooseGap` | 8 | blocks of a pane stacked in a column; rows whose items need air |
+| `ToolbarH` | 36 | a bar of controls over a pane (`RowH` + 8) |
+| `TabBarH`, `TabGap` | 40, 6 | a pane tab strip and the space above its tabs |
+| `DialogTitleH`, `DialogToolbarH` | 44, 40 | dialog title bar and toolbar |
+| `DialogPad` | 16 | inset of a dialog's title bar, toolbar and message body |
+| `DialogMargin`, `DialogMaxH` | 40, 560 | room kept around a dialog; tallest default dialog height |
+| `CellPad` | 8 | inset of a table cell and header cell |
+| `CheckboxSize` | 14 | checkbox side |
+| `EdgeGrab` | 6 | edge grab inside a border (resize) |
+| `ShadowOffset` | 4 | shadow shift, down and right |
+| `EdgeW` | 2 | open tab outline |
 
-- Height `DialogToolbarH` (40), side padding 16, gap 8, `BorderSoft` line under it; controls are `CompactH` high (fields `RowH`), a field that takes the room has `Grow(1)`.
-- Holds what acts on the whole dialog: a search or filter field, Save, Clear, a mode switch. Settings: search, Save, JSON/Form. Log: filter, Clear.
-- A dialog with no such control has no toolbar (message dialogs).
+Window chrome (`workspace/ui/app/window.go`): header 44, request tab row `tabsH` 42, URL bar 56, status bar 28, sidebar 260 by default.
 
-### Corners
+### Scale
 
-Everything that fills a corner of the dialog panel (the title bar, the settings page list, the Log text) rounds that corner to the panel's radius with `RoundT`, `RoundB` or `RoundBL` (`round-t`, `round-b`, `round-bl` in templates; the argument is the panel's control, `menu`), drawn with alpha at the edge. The radius is the control's after the user's Corners setting (`Ctx.Radius`), so square, soft and round all fit; a square fill in a rounded panel is a bug.
+- Widgets, layout and hit tests work in logical pixels; `Ctx` multiplies by `Scale` when it draws, so HiDPI stays sharp (`architecture/core.md`).
+- **Interface scale** (`settings.UIScalePct`, slider 50 to 200 % in steps of 5, `appearance.ScaleMin/Max/Step`) multiplies the display factor and the platform base (`settings.BaseScale`: 1.1 on Linux, 1 elsewhere), so 100 % is the platform's normal size. Screenshots skip it. The slider resizes live, saves on release and follows the pointer in device pixels from the press, so the resizing UI never feeds back into the value. Remembered window sizes are in window pixels.
+- **Display scale on Linux.** Ebitengine reports 1 for an Xwayland window on a scaled monitor, so the App asks the `settings/port.DisplayScale` port (adapter `settings/adapter/displayscale`); `frameSize` then lays the UI out in window pixels over the real scale, with no supersampling. `Factor` returns a cached value and refreshes it in the background, so a hung compositor command never stalls a frame. Windows and macOS use Ebitengine's factor.
+- Fractional scales round text metrics to whole pixels (`architecture/limits.md`).
 
-### Message dialogs
+### States
 
-Title bar (title only), then a body padded 16 with gap 12: a muted `Lines` text, any form, the input line, then the buttons on the right (`RowH` high, gap 8, the primary one lit). Width `MessageDialogW` (380).
+| State | Look |
+|---|---|
+| Rest | Click targets are outlined, drawn after the children: buttons, icon buttons, fields and menus in `BorderStrong`, tables in `BorderSoft`, primary buttons in `AccentLine` (the control's `border` in the theme file). |
+| Hover | Buttons brighten their fill (`Lighten`); rows and menu items fill with `Hover` (`HoverBg`); the dialog close button darkens with `Shadow`; an unchecked checkbox outline goes from `Rule` to `Muted`; a scrollbar thumb goes from `Muted` to `Text`. |
+| Selected | `Selected` fill (list, tree and menu rows); the open tab as in Tabs below; a segment chip as a primary button. |
+| Focus | A focused field draws its outline again in `AccentLine` over the resting one (`fieldB.DrawOver`), at line width. |
+| Disabled | Text in `Muted` and no hover: menu items (`MenuItem.Disabled`), muted table rows (the editable table's placeholder row), rows a picker refuses. A disabled button is built by the view as an unlit, muted button that does nothing (the destination picker); the toolkit has no disabled option. |
+| Drag | `CursorMove` only from press to release (`App.showGrab`); a drop target row is outlined in `AccentLine`, in `OK` while Alt makes the drop a copy. |
+
+High contrast changes colors, not states: see the pipeline (section 3).
+
+## 2. Visual language
+
+The look follows the gascoigne CLI dashboard (`theming.Dark`/`Light` doc, `TestPalettesFollowTheCLIDashboard`): burgundy accent, warm near-black or cream surfaces, outlined controls, flat fills, one gradient.
+
+### Palette roles
+
+| Role | Tokens |
+|---|---|
+| Surfaces, back to front | `Frame` (window chrome, status bar), `Bg` (raised panes, dialogs, menus, the open tab), `Panel` (table headers, toasts), `Sunken` (lists, code, fields, buttons' fill) |
+| Row states | `Hover`, `Selected`; `Alt` exists for zebra rows but nothing draws it |
+| Lines | `Border` (bars, dividers, `HRule`/`VRule`), `BorderStrong` (control outlines), `BorderSoft` (hairlines between table rows, `Separator` lines, dialog toolbar and footer lines), `Rule` (an idle checkbox's outline, the slider's middle tick) |
+| Text | `Text`, `Muted`, `Faint` (the quietest), `ChipText` (on a button) |
+| Accent | `Accent` (primary fill, checkbox, slider), `AccentLine` (focus, open tab, links, outlines), `AccentText` (on the accent), `AccentSoft` |
+| Status | `OK`, `Warn`, `Error`, `Info`, each with a pale `*Soft` background for pills |
+| Header | `Hero` (flat fallback of the `hero` gradient), `HeroText`, `HeroMuted` |
+| Find and selection | `Selection`, `FindMatch`, `FindActive` |
+| Other | `Shadow` (scrim and drop shadows, with alpha), `Chip`, `Track` (empty part of a bar) |
+| App | `method.GET`... (HTTP method), `json.*` (JSON view), `collection.0`-`.5` (collection stripes, reused in turn) |
+
+An unknown token draws in `Text`, so a typo stays visible.
+
+### Type
+
+- The interface font is the embedded Go font, code the Go Mono font; the user may pick installed families (Settings, `settings/adapter/fonts`). A saved family that is not installed draws in the Go font.
+- Three faces from the Text size setting (`theming.SizeChoices`): small 13/11/12, medium 14/12/13 (default), large 16/13/15 for interface/small/mono. The size setting overrides the sizes a theme file states.
+- Bold marks names that structure the window: dialog titles, a collection's root row, table headers. Folder, request and tab names stay regular.
+- Table headers are small, bold, muted and upper case. Secondary text (badges, shortcuts, hints, subtitles) is small and muted.
+
+### Shapes and lines
+
+| Control | Radius (soft) | Outline |
+|---|---|---|
+| `button`, `icon-button`, `field` | 4 | `border-strong` |
+| `primary` | 4 | `accent-line` |
+| `tooltip` | 4 | `border-strong` |
+| `row`, `slider` | 4 | none |
+| `table` | 6 | `border-soft` |
+| `menu` (dialogs, menus, file and picker panels) | 8 | `border-strong` |
+| `scrollbar` | 5 | none |
+| `checkbox`, `swatch` | 3 | none, `border-strong` |
+| `match` | 2 | none |
+| `pill` | 999 | none |
+| `hero` | 0 | none; gradient `hero-top` to `hero-bottom` |
+| `tabstrip`, `statusbar` | 0 | none |
+
+- The Corners setting scales every radius: square 0, soft 1 (the theme's own), round 1.5. Flat turns the one gradient into its flat `Hero` fill.
+- Tabs and toasts have no control, so they stay square under every Corners setting.
+- Borders are one-pixel hairlines in a token; edges snap to device pixels so neighbours share an edge (`architecture/toolkit-widgets.md`). The open tab's outline is the separate 2 px `Edge` family.
+- Bars are separated by `Border`, never `Rule`.
+- Something that fills a corner of a rounded panel rounds that corner to the panel's radius with `RoundT`, `RoundB` or `RoundBL` (`round-t`... in templates, argument `menu`), anti-aliased with alpha.
+- Floating panels (dialogs, menus, toasts) cast a `Shadow` shifted `ShadowOffset`, not blurred.
+
+### Icons
+
+- Icons are SVG files (`widget/icons/*.svg`), drawn as vector paths in the element's `Color`. Glyphs inside widgets are icons too: the checkbox check, fold arrows, a `Span.Icon` in a code view.
+- They are the toolkit's own; an icon from an open set (Lucide is ISC, Tabler MIT) goes in with its license file.
+- A theme's `iconStroke` scales every stroke (0.8 thin, 1.3 bold), so icon weight is a theme choice.
+- Muted by default where they decorate (folder icons, the dialog close cross on `HeroMuted`); a menu reserves a 14 px icon column when any item has an icon, so labels line up.
+
+### Components
+
+**Window.** The header (44) is the app's identity: `Hero` with the `hero` gradient, the title bold in `HeroText`, icons in `HeroMuted` lit to `HeroText` on hover, the environment as a `HeroText` pill. Every pane starts its first row one `Gutter` below its tabs, so rows line up across the divider (`TestRequestAndResponsePanesShareTheirFirstRowBand`). The status bar (28) is `Frame` with a `Border` line on top, small muted text; the response status is a small bold pill, `OK`/`Warn`/`Error` on its `*Soft` color, then the timing.
+
+**Tabs.** The request tab row is `tabsH` (42), a pane tab row `TabBarH` (40), each with `TabGap` above. The strip draws one bottom `Border` line under transparent inactive tabs (label `Muted`); the open tab has the pane color `Bg`, its label in `Text` and a square 2 px `AccentLine` outline on top, left and right, open at the bottom so it runs into the pane. No tab name is bold. A strip that does not fit scrolls sideways with an arrow only at an end that can still scroll.
+
+**Buttons.** `Button`: `Sunken` fill, `ChipText` label, outlined, brightens on hover, label padded 10, ellipsized only when the row has no room. `PrimaryButton`: `Accent` fill, `AccentText` label, `AccentLine` outline. `SegmentChip`: a primary button when chosen, a button otherwise. `LinkButton`: `AccentLine` text on no fill, `Hover` under the pointer. Dialog buttons are `RowH` high and at least 80 wide.
+
+**Fields.** `Sunken`, `RowH` high (`CompactH` inline), `BorderStrong` outline, `AccentLine` when focused; variables in a field are green when resolved and red when not (`architecture/requests.md`).
+
+**Menus.** `Bg` panel, `menu` control, shadow, inset `MenuPad` (4), 120 to 420 wide; rows `MenuRowH` (24) padded 10, the hot row `Selected`, others `Hover` on hover; shortcut and hint lines small and muted; separators 9 high.
+
+**Tables.** Rows on `Sunken`, a `BorderSoft` hairline between rows, the row under the pointer lit, no zebra stripes; the header is `RowH` on `Panel` with a `Border` line under it; cells padded `CellPad`; columns at least `MinColumnPx` (56).
+
+**Scrollbars.** An 8 px track with no fill; the thumb `Muted`, `Text` while hovered or dragged, at least 24 long, rounded by `scrollbar`; drawn only when the content overflows.
+
+**Tooltips.** After the pointer rests half a second (30 ticks), a `Frame` box with a `BorderStrong` outline and small `Text`, 16 below and right of the pointer, kept inside the window.
+
+**Toasts.** Bottom right, above the status bar, 320 x 36, 6 apart, at most 5, oldest on top: `Panel` with a shadow, `Border` and `Text` for info (fades after 3 s), `Error` border and text for errors (stay until clicked).
+
+**Checkbox and slider.** A 14 px checkbox: an outline in `Rule` when off, an `Accent` square with the check in `AccentText` when on. A slider thumb in `Chip`, outlined in `Border`, with a `Rule` tick at the middle.
+
+**Splits.** Dividers are `Border` lines, dragged with a resize cursor.
+
+**Resizing.** A resizable dialog is grabbed within `EdgeGrab` (6) inside or 4 outside its border (`edgeSlop`, `edgeOut`), grows about its center and stays inside the window (`ScreenMargin` = `DialogMargin` in the settings dialog). Size and position outlive the dialog's rebuild; the settings dialog keeps its size in `state.json`.
+
+### Dialogs
+
+Every dialog is a modal floating panel over a dimmed scrim (`widget.Dialog`, `ResizableDialog`, `MessageDialog`), centered until the user drags it, built from the top: the **title bar** (`DialogTitle`), optionally the **toolbar** (`DialogToolbar`), then the **body**.
+
+**Title bar.**
+- Height `DialogTitleH` (44), side padding `DialogPad` (16), gap `LooseGap` (8), items centered vertically, flush with the panel's edges (the panel has no padding).
+- Drawn like the window's header: `Hero` with the `hero` gradient (`Control("hero")`), so it differs from the body in every theme, its top corners rounded to the panel's radius (`RoundT("menu")`), a `Border` line under it. Text on it is `HeroText`, icons and the subtitle `HeroMuted`; never `Text`/`Muted`, which are for the body.
+- From the left: the **title** (bold; a short noun: "Settings", "Log", "Rename"), an optional **subtitle** (`DialogSubtitle`: small, ellipsized, gives way first; the page shown, a count, the file; never a sentence or an action), free room, then the **close button** (`IconBtnW` x `CompactH`, no chip, `CrossIcon` in `HeroMuted`, darkened under the pointer with `Shadow` in the `row` control's corners, tooltip "Close (Esc)").
+- No controls in the bar besides close; they go in the toolbar.
+- The close button, Escape and a click outside all run `OnDismiss`, so they cancel alike. A dialog that ignores an outside click still has the button.
+- The bar is the drag handle (`DragHandle`): a press on its free part drags the dialog, a double click centers it. The grab cursor shows only from press to release, so an idle bar reads as a title, not a control. The dialog stays inside the window (`Moved`, `MoveState`).
+
+**Toolbar.** Height `DialogToolbarH` (40), side padding 16, gap 8, `BorderSoft` line under it; controls `CompactH` (fields `RowH`), a field that takes the room has `Grow(1)`. It holds what acts on the whole dialog: Settings has search, Save, JSON/Form; Log has filter, Clear. A dialog with no such control has no toolbar.
+
+**Message dialogs.** Title bar (title only), then a body padded 16 with gap 12: a muted `Lines` text, any form, the input line, then the buttons on the right (gap 8, the primary one lit). Width `MessageDialogW` (380).
 - The welcome dialog is a message dialog 560 wide: the lead text, then the release notes scrolling in a column (a bold heading and bulleted muted points per section, 12 between sections, 4 inside, points wrapped by hand at 64 characters), and one primary button, Get started.
 
-### File browser
+**File browser** (the in-app chooser, used when the desktop has no dialog program). Width 640, height 520 at most (40 from the window's edges). Title bar: the caller's title, the count of items as subtitle. Toolbar: the parent-folder icon button (`chevron-up`), the path field (`RowH`, `Sunken`, grows), the Hidden files check row. The list fills the rest on `Sunken`: `ListRow`s `RowH` high, padded 12, gap 8, a muted folder icon before a folder's name and the same room empty before a file's, the selected row `Selected`. Footer: `RowH` buttons with 12 above and below, padded 16, a `BorderSoft` line over it; the problem in small `Error` text on the left (with no problem, a small muted hint naming the program that gives native dialogs: "For native dialogs install zenity"), then Cancel and the primary Open or Save.
 
-The in-app file chooser (the fallback when the desktop has no dialog program): width 640, height 520 at most (40 from the window's edges). Title bar: the caller's title and the count of items shown as subtitle. Toolbar: the parent-folder icon button (`chevron-up`, `IconBtnW` x `CompactH`), the path field (`RowH`, `Sunken`, grows), the Hidden files check row. The list fills the rest on `Sunken`: `ListRow`s `RowH` high, padded 12, gap `LooseGap` (8), a muted folder icon 16 wide before a folder's name and the same room empty before a file's, the selected row on `Selected`. Footer: `RowH` buttons plus 12 above and below, padded 16, a `BorderSoft` line over it; the problem in small `Error` text takes the room on the left (while there is none, the same place holds a small `Muted` hint naming the program that gives native dialogs on this desktop: "For native dialogs install zenity"), then Cancel and the primary Open or Save (lit), at least 80 wide, as in message dialogs.
+**Destination picker** (Move to... and Copy to..., `collection/ui/destpicker`). Width 440, height 480 at most, a message-dialog footer. Title bar: "Move to" or "Copy to", the node's name as subtitle. The list on `Sunken`: `ListRow`s `RowH` high, padded `Gutter` times one plus the depth on the left and `Gutter` on the right, gap `TightGap`; a collection's root row is bold with its `collection.N` stripe (3 x 14) as in the tree. A row that cannot be chosen is `Muted` with a small muted reason at its end ("itself", "inside itself", "current folder"). Footer: a small muted hint "Variables are not changed" on the left, then Cancel and the primary "Move here" or "Copy here", unlit, muted and inert until a row is picked. Up and Down skip refused rows, Enter and a double click pick, Escape or a click outside closes; movable by its bar.
 
-### Sizes and position
+### Panes
 
-Dialog sizes are tokens: `DialogMargin` (40) kept free around a dialog, `DialogMaxH` (560) its tallest default height, `EdgeGrab` (6) the edge grab inside the border.
+**Proto (gRPC).** Padded `Gutter`, gap 8, like Auth: a `RowH` row of two choice chips, *Reflection* and *Proto files*. Reflection shows one muted line, "Methods come from the server's reflection". Proto files shows two lists, each a caption (FILES, IMPORT PATHS), its rows (a `Sunken` path field `RowH` high that grows, then a Remove icon button `IconBtnW` x `CompactH` with the trash icon, gap `TightGap`) and its add button (*Add file...*, *Add path*). Problems found in the files follow, one small `Error` line each, `file:line:col: message`.
 
-A resizable dialog is grabbed within 6 px inside or 4 px outside its border (`edgeSlop`, `edgeOut`), grows about its center and stays inside the window with `ScreenMargin`. Size and position are app state that outlives the dialog's rebuild.
+**Sidebar.**
+- With no collection open, the tree's place holds, on `Sunken` padded `Gutter` with gap 8: a muted note "No collection is open", then *Open collection folder...* and *New collection...*, `RowH` high and as wide as the sidebar. Nothing is made on disk until one is pressed.
+- A collection's root row looks like a folder row (same height, indent, disclosure triangle, no icon of its own) except that its name is bold, also in the pieces the filter splits it into, so where one collection ends and the next begins reads at a glance. Folder and request names stay regular.
+- Dragging a node onto a row outlines the row in `AccentLine`; while Alt is held the outline is `OK`, the cue that releasing copies.
 
-### Destination picker
+## 3. Theming pipeline
 
-The dialog of Move to... and Copy to... (`collection/controller/transfer`): width `dialogW` (440), height 480 at most (40 from the window's edges), a message-dialog footer. Title bar: "Move to" or "Copy to", the node's name as the muted `DialogSubtitle`. The list fills the rest on `Sunken`: `ListRow`s `RowH` high, padded `Gutter` times one plus the folder's depth on the left and `Gutter` on the right, gap `TightGap`; a collection's root row is bold with its `collection.N` stripe (3 x 14) as in the tree, the other rows regular. A row that cannot be chosen is `Muted` with a small muted reason at its end ("itself", "inside itself", "current folder"). Footer: `RowH` buttons, padding 12 above and below and 16 at the sides, a `BorderSoft` line over it; a small muted hint "Variables are not changed" takes the room on the left, then Cancel and the primary "Move here" or "Copy here", at least 80 wide, lit only once a row is picked (before that it is unlit and muted and does nothing). Keys: Up and Down skip refused rows, Enter and a double click pick, Escape or a click outside closes. The dialog is movable by its bar (`MoveState`).
+```mermaid
+flowchart LR
+  builtin["theming/themes/*.json: dark, light"] --> base["toolkit theme"]
+  base --> appth["appearance/themes/*.json: method, json, collection colors"]
+  user["user themes folder: *.json, extends dark or light"] --> catalog["theming.Catalog"]
+  appth --> catalog
+  settings["settings.json: theme, text size, corners, contrast, flat, colors"] --> prefs["appearance.ThemeWith"]
+  catalog --> prefs
+  prefs --> ctx["Ctx.SetTheme: fonts rebuilt, masks dropped"]
+```
 
-## Request panes
+- **Theme files** (format in `theming/themefile.go`): `name`, `extends`, `variables`, a flat `colors` table, `iconStroke` and per-control styles (`radius`, `gradient`, `border`). `ParseTheme` merges a file over a base and rejects unknown fields, variables and tokens. The toolkit's palettes are `theming/themes`; the app lays its HTTP-method, JSON and collection colors over them from `internal/settings/model/appearance/themes`.
+- **Controls draw from their style.** `view.Control(name)` takes fill gradient, radius and outline from `Theme.Style(name)`; a control a theme does not list is plain, so a theme restyles any control without code.
+- **Custom themes.** Every `*.json` in the themes folder (`-themes DIR`, default `settingsfile.ThemesDir()`) is a theme: the file name is its id, `name` its label, `extends` `dark` (default) or `light`. It may set any token, `method.*` and `json.*` included, and controls. It is listed beside the built-ins; color overrides are kept per theme id. A file that does not parse or extends an unknown theme is skipped and reported in the status bar; no folder is fine.
+- **From settings** (`appearance.ThemeWith`, `theming.Catalog.Theme`), in order: the chosen theme (unknown ids fall back to the first) and text size (unknown: medium); the Corners factor and Flat; with High contrast, the customizable colors moved to 7:1 against their text and the `highBars` table (text, muted, error, ok, accent line, borders, rules, row states, chips) moved in their own hue until each reaches its ratio on every surface it is drawn on, surfaces unchanged; then the user's color overrides for that theme (Selection, Find match, Active match, Accent), each ignored when it does not parse or misses `theming.RequiredRatio` (4.5, or 7 with high contrast).
+- Packages: `core` owns `Theme`, `Token`, `ControlStyle`, color math and `Ctx`; `theming` the parser, palettes and preferences and imports `core`, never the reverse; `appearance` is only the app's part (its overlay themes, `MethodToken`, `CollectionToken`, the mapping from settings to `theming.Prefs`).
 
-### Proto (gRPC)
+## 4. Decisions
 
-Padded `Gutter`, gap `LooseGap` (8), like Auth: a `RowH` row of two choice chips, *Reflection* and *Proto files* (the chosen one lit). Reflection shows one muted line, "Methods come from the server's reflection". Proto files shows two lists, each a caption (FILES, IMPORT PATHS), its rows (a `Sunken` path field `RowH` high that grows, then a Remove icon button `IconBtnW` x `CompactH` with the trash icon, gap `TightGap` (6)) and its add button (*Add file...*, *Add path*). Problems found in the files follow the lists, one small `Error` line each, `file:line:col: message`.
+Still-true choices of the look. Where a reason is code-specific, the doc comment named holds it in full. An empty cell is one no source records.
 
-## Sidebar
+| Choice | Why | Rejected | Revisit when |
+|---|---|---|---|
+| Dialogs are panels inside the window, each with its own title bar (`widget.Dialog`) | Ebitengine has one OS window per process | | Ebitengine offers more than one window |
+| The dialog title bar looks like the window header | it differs from the body in every theme | | |
+| The grab cursor shows only while a bar is pressed | an idle bar should read as a title, not a control | a move cursor on hover | |
+| Follow the CLI dashboard: palette, surfaces, type, outlines, radii (`theming.Dark` doc) | | | the dashboard changes its look |
+| Borders stronger than the dashboard's web borders | a native window's edges must show (`TestNonTextElementsAreVisible`) | the web values as they are | |
+| Themes are data per control, in our own small JSON (`theming` package doc) | it carries radii and gradients, and its parser stays in the standard library | | |
+| High contrast ratios sit above WCAG's (`highBars`) | both palettes already meet WCAG, so the switch would change nothing visible | WCAG ratios | |
+| Linux gets a base scale of 1.1 (`settings.BaseScale`) | Linux desktops draw text and controls small | | |
+| Xwayland scale from the compositor, no supersampling (`displayscale` package doc) | Ebitengine reports 1 there | | Ebitengine reports the Xwayland scale |
+| Icons are our own SVGs; an open-set icon only with its license file | the license travels with the file | | |
+| Goldens are drawn by Mesa's llvmpipe under Xvfb (`renderShot` doc) | byte-identical PNGs run to run, which makes goldens comparable | a Go rasterizer, Xwayland | |
+| Flat fills and one gradient, `hero`, behind the window title | follows the dashboard | | |
+| Square tab outline, open at the bottom | the open tab runs into its pane | | |
 
-- With no collection open the tree's place holds, on `Sunken` with padding `Gutter` and gap `LooseGap` (8): a muted note "No collection is open", then the buttons *Open collection folder...* and *New collection...*, `RowH`-high (28) and as wide as the sidebar. Nothing is made on disk until one is pressed.
-- A collection's root row looks like a folder row (same height, indent `Gutter`, disclosure triangle, no icon of its own and no extra spacing) except that its name is bold (`bold` on the name's texts, also on the pieces the filter splits it into), so where one collection ends and the next begins reads at a glance; several roots stand one after another at depth 0. Folder and request names stay regular.
-- Dragging a node onto a row outlines the row in `AccentLine`; while Alt is held the outline is `OK` (green), the cue that releasing copies instead of moves.
+**Not done.** From the dashboard, these need a renderer or layout change, or an approval: the outlined primary button and segmented pill groups, blurred shadows, 2 px focus rings, a medium font weight and letter-spacing, 36 px table rows, a selected-row accent bar and floating cards. Changing `border`, `selected` or the scrollbar thumb color would break `TestNonTextElementsAreVisible`. Toasts take no control, so they ignore the Corners setting. An icon before a dialog title needs a place for it in `DialogTitle` first, since the bar lays out title, items, room, close.
+
+## 5. Verifying a UI change
+
+1. `make shot OUT=x.png` renders the window once (`workshop -screenshot`); scene flags pick what is shown (`cmd/workshop/scene.go`, `-set key=value`, menus, dialogs). Look at the PNG: tokens in both themes, alignment of rows across panes, corners of rounded panels, text cut by an ellipsis, contrast in the light theme.
+2. Golden scenes (`TestGoldenScenes`, `cmd/workshop/testdata/golden/*.png`: default, light theme, flat high contrast, large text, narrow, side by side, dialogs, settings pages, tree, toasts and the request and response panes) run in `make check` when Xvfb is there; without it they are skipped, except in CI where that fails. They are regenerated with `go test ./cmd/workshop -update` on Linux in a container like CI, never on the desktop (`release.md`). Look at every changed PNG; only the scenes the task changes may change.
+3. A failing scene writes `<name>.got.png` and `<name>.diff.png` beside the golden to look at (ignored by git).
+
+The mechanics (scene steps, sandboxing, tolerance) are in `architecture/app.md`, Screenshots and golden scenes.

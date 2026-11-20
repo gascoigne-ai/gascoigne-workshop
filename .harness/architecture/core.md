@@ -6,11 +6,7 @@ is tested without a GPU.
 - **Logical pixels.** Widgets, layout and hit tests work in logical pixels. `Ctx` drawing calls
   multiply by `Scale`, text measures divide by it, and `Input.Scaled` maps the pointer back.
   `SetScale` and `SetTheme` rebuild the fonts and drop cached masks. This keeps HiDPI sharp.
-- **Theme and tokens.** A `Theme` maps color `Token`s to colors; an unknown token draws in the text
-  color. The app adds its own tokens with `Theme.With` (`method.GET`, `json.key`).
-  `theming.Dark()` and `Light()` follow the gascoigne CLI dashboard (`TestPalettesFollowTheCLIDashboard`),
-  with borders stronger than the web's so a native window's edges show
-  (`TestNonTextElementsAreVisible` holds the floors for borders, rules, icons and row states).
+- **Theme and tokens**: the look, the tokens and the theme pipeline are in `style.md`.
 - **Input.** `Sampler.Read` samples the frame's pointer, wheel, runes and edit keys and counts
   clicks. `modifiedEdit` is the per-platform table that turns modifiers into word and line edits.
 - **Clipboard.** `SystemClipboard` runs the platform's clipboard tools: Ebitengine has no clipboard

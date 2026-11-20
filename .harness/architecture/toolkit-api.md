@@ -12,13 +12,8 @@ tested examples, which use the exported API only.
 - **Mistakes fail loudly.** A component option on the wrong kind of element panics, naming the
   option and the element's control (`behaviorOf`). A template error names the file and line,
   suggests the nearest name and lists the valid ones.
-- **Theme pipeline.** `core` has the `Theme` and `Token` types and constants, `ControlStyle`, the
-  color math (`core/color.go`) and `Ctx`. `theming` has the JSON parser (`ParseTheme`,
-  `ThemeExtends`), the palettes and their files, and the preferences (`Catalog`, `Prefs`,
-  `Catalog.Theme(Prefs)`, the choice tables). `theming` imports `core`, never the reverse, so
-  `core`'s tests build a small `testTheme`. `internal/settings/model/appearance` is only the app's
-  part: its overlay themes (HTTP method and JSON colors), `MethodToken`, `LayoutChoices`, and the
-  mapping from settings to `theming.Prefs`.
+- **Theme pipeline**: in `style.md`, Theming pipeline. `core`'s tests build a small `testTheme`,
+  since `theming` imports `core` and never the reverse.
 - **Templates** (`markup`; format and why in its package doc). The app writes each view as a
   template in a `const` at the end of its Go file, parsed once with `markup.Must`. A template has
   one root, so a view that shows one of two things is two templates and Go picks. Parse does all
