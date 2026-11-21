@@ -73,3 +73,18 @@ func (s Sizes) Scope() map[string]any {
 		"gutter": Gutter, "dialogPad": DialogPad,
 	}
 }
+
+// Size roles: one function per field of Sizes, so a view names the size it
+// wants (view.HOf(core.RowOf)) and Layout reads it from the context.
+func RowOf(sizes Sizes) int           { return sizes.Row }
+func CompactOf(sizes Sizes) int       { return sizes.Compact }
+func SlimOf(sizes Sizes) int          { return sizes.Slim }
+func LabelOf(sizes Sizes) int         { return sizes.Label }
+func NoteOf(sizes Sizes) int          { return sizes.Note }
+func ToolbarOf(sizes Sizes) int       { return sizes.Toolbar }
+func TabBarOf(sizes Sizes) int        { return sizes.TabBar }
+func DialogTitleOf(sizes Sizes) int   { return sizes.DialogTitle }
+func DialogToolbarOf(sizes Sizes) int { return sizes.DialogToolbar }
+func IconBtnOf(sizes Sizes) int       { return sizes.IconBtnW }
+func WordBtnOf(sizes Sizes) int       { return sizes.WordBtnW }
+func CheckboxOf(sizes Sizes) int      { return sizes.Checkbox }

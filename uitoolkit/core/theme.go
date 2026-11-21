@@ -125,6 +125,12 @@ const (
 	CheckboxSize   = BaseSmallLine         // the side of a checkbox: one small line
 )
 
+// Dialog widths, counted in Units and steps like every other size.
+const (
+	DialogW          = 190 * Unit     // a message dialog: wide enough for a sentence and two buttons
+	DialogButtonMinW = 5 * StepDialog // the least width of a dialog button, so Yes and No match
+)
+
 // Fixed geometry: limits on how a dialog sits in the window, not sizes of
 // content, so they follow no line or step.
 const (

@@ -18,7 +18,7 @@ const (
 	// MenuRowH, MenuSepH and MenuPad are the height of a plain row, of a
 	// separator and the inset around the rows, for callers that position
 	// things by the rows of a menu.
-	MenuRowH = core.CompactH
+	MenuRowH = core.CompactH // the default face's value; MenuRowHeight follows the context
 	MenuSepH = 9
 	MenuPad  = 4
 
@@ -96,7 +96,7 @@ func Menu(ctx *core.Ctx, state *MenuState, opts ...Option) *El {
 	}
 	rows := make([]Item, len(state.Items))
 	for index, item := range state.Items {
-		rows[index] = menuRow(ctx.HostOS, state, index, item, pick)
+		rows[index] = menuRow(ctx, state, index, item, pick)
 	}
 	menu = Col(With(append([]Item{
 		W(MenuWidth(ctx, state.Items)), Pad(MenuPad), Bg(core.Bg), Control("menu"), Shadow(),
@@ -105,7 +105,7 @@ func Menu(ctx *core.Ctx, state *MenuState, opts ...Option) *El {
 	return menu
 }
 
-func menuRow(goos string, state *MenuState, index int, item MenuItem, pick func(int)) *El {
+func menuRow(ctx *core.Ctx, state *MenuState, index int, item MenuItem, pick func(int)) *El {
 	if item.Separator {
 		return Row(H(MenuSepH), PadX(core.RuleInset), HRule())
 	}
@@ -128,7 +128,7 @@ func menuRow(goos string, state *MenuState, index int, item MenuItem, pick func(
 		}
 	}
 	label := Item(Text(item.Label, Color(color), Grow(1)))
-	height := MenuRowH
+	height := MenuRowHeight(ctx)
 	if item.Hint != "" {
 		lines := strings.Split(item.Hint, "\n")
 		parts := []Item{Grow(1), Text(item.Label, Color(color))}
@@ -141,7 +141,7 @@ func menuRow(goos string, state *MenuState, index int, item MenuItem, pick func(
 	return Row(H(height), PadX(menuRowPadX), Gap(core.LooseGap), AlignItems(AlignCenter), Control("row"), look, OnClick(func() { pick(index) }),
 		icon,
 		label,
-		If(item.Shortcut != "", Text(core.PlatformKeyText(goos, item.Shortcut), Small(), Muted())),
+		If(item.Shortcut != "", Text(core.PlatformKeyText(ctx.HostOS, item.Shortcut), Small(), Muted())),
 	)
 }
 
@@ -153,6 +153,10 @@ func menuHasIcons(items []MenuItem) bool {
 	}
 	return false
 }
+
+// MenuRowHeight is the height of a plain row of a menu drawn with ctx: the
+// compact height of its text size. Positioning code uses it, not MenuRowH.
+func MenuRowHeight(ctx *core.Ctx) int { return ctx.Sizes.Compact }
 
 // MenuWidth is the width of a menu of items: its widest row within
 // MenuMinW and MenuMaxW.

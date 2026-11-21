@@ -36,14 +36,14 @@ func ResizableDialog(state *ResizeState, minW, minH, maxW, maxH int, items ...It
 // not in the bar. OnDismiss is what the close button does.
 func DialogTitle(title string, items ...Item) *El {
 	var bar *El
-	closeButton := Row(W(core.IconBtnW), H(core.CompactH), Control("row"), HoverBg(core.Shadow), Tooltip("Close (Esc)"),
+	closeButton := Row(WOf(core.IconBtnOf), HOf(core.CompactOf), Control("row"), HoverBg(core.Shadow), Tooltip("Close (Esc)"),
 		OnClick(func() {
 			bar.Dismiss()
 		}),
 		CrossIcon(Grow(1), Color(core.HeroMuted)),
 	)
 	bar = Row(append(append([]Item{
-		H(core.DialogTitleH), DragHandle(), PadX(core.DialogPad), Gap(core.LooseGap), AlignItems(AlignCenter),
+		HOf(core.DialogTitleOf), DragHandle(), PadX(core.DialogPad), Gap(core.LooseGap), AlignItems(AlignCenter),
 		Bg(core.Hero), Control("hero"), RoundT("menu"), BorderB(core.Border), Text(title, Bold(), Color(core.HeroText)),
 	}, append(items, Spacer())...), closeButton)...)
 	return bar
@@ -61,7 +61,7 @@ func DialogSubtitle(text string) *El {
 // field, Save, a switch. Give it the controls; fields that should take the
 // free room get Grow(1).
 func DialogToolbar(items ...Item) *El {
-	return Row(append([]Item{H(core.DialogToolbarH), PadX(core.DialogPad), Gap(core.LooseGap), AlignItems(AlignCenter), BorderB(core.BorderSoft)}, items...)...)
+	return Row(append([]Item{HOf(core.DialogToolbarOf), PadX(core.DialogPad), Gap(core.LooseGap), AlignItems(AlignCenter), BorderB(core.BorderSoft)}, items...)...)
 }
 
 // DialogButton is a button of a message dialog; the primary one is lit and
@@ -92,7 +92,7 @@ func (state *DialogState) Default() {
 }
 
 // MessageDialogW is the width of a message dialog.
-const MessageDialogW = 380
+const MessageDialogW = core.DialogW
 
 // MessageDialog shows state as a Dialog: a title bar with a close button,
 // then the body, any content items you add (a form, between the body and
@@ -117,11 +117,11 @@ func MessageDialog(state *DialogState, items ...Item) *El {
 		Pad(core.DialogPad), Gap(core.Gutter),
 		If(state.Body != "", Lines(state.Body, core.Muted)),
 	}, content...),
-		If(state.Input != nil, Field(state.Input, H(core.RowH), Bg(core.Sunken), OnEnter(state.Default), TextMenu(state.Input))),
-		Row(H(core.RowH), Gap(core.LooseGap),
+		If(state.Input != nil, Field(state.Input, HOf(core.RowOf), Bg(core.Sunken), OnEnter(state.Default), TextMenu(state.Input))),
+		Row(HOf(core.RowOf), Gap(core.LooseGap),
 			Spacer(),
 			For(state.Buttons, func(_ int, button DialogButton) Node {
-				return SegmentChip(button.Label, button.Primary, MinW(80), OnClick(button.Run))
+				return SegmentChip(button.Label, button.Primary, MinW(core.DialogButtonMinW), OnClick(button.Run))
 			}),
 		),
 	)...)

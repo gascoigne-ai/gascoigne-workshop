@@ -21,7 +21,7 @@ func ListRow(selected bool, items ...Item) *El {
 // and cuts a long text with an ellipsis.
 func Note(text string, tone core.Token, opts ...Option) *El {
 	return Row(With([]Item{
-		H(core.NoteH),
+		HOf(core.NoteOf),
 		Text(text, Small(), Color(tone), Ellipsis(), Grow(1)),
 	}, opts)...)
 }
@@ -32,20 +32,20 @@ const formLabelGap = core.Gutter
 // FormRow is a settings-style row: a label in a column of labelWidth, then
 // the controls. Rows with the same labelWidth line their controls up.
 func FormRow(label string, labelWidth int, items ...Item) *El {
-	return Row(append([]Item{H(core.RowH), Gap(formLabelGap), Text(label, W(labelWidth))}, items...)...)
+	return Row(append([]Item{HOf(core.RowOf), Gap(formLabelGap), Text(label, W(labelWidth))}, items...)...)
 }
 
 // CheckRow is a checkbox followed by its items (usually a Text label and a
 // muted hint). Give it OnClick: the whole row is the click target.
 func CheckRow(on bool, items ...Item) *El {
-	return Row(append([]Item{H(core.RowH), Gap(core.LooseGap), Checkbox(on)}, items...)...)
+	return Row(append([]Item{HOf(core.RowOf), Gap(core.LooseGap), Checkbox(on)}, items...)...)
 }
 
 // Toolbar is a bar of controls over a pane: ToolbarH high, inset by the
 // gutter, centered vertically, with a line under it.
 func Toolbar(items ...Item) *El {
 	return Row(append([]Item{
-		H(core.ToolbarH), PadX(core.Gutter), Gap(core.TightGap), AlignItems(AlignCenter), BorderB(core.Border),
+		HOf(core.ToolbarOf), PadX(core.Gutter), Gap(core.TightGap), AlignItems(AlignCenter), BorderB(core.Border),
 	}, items...)...)
 }
 
@@ -53,5 +53,5 @@ func Toolbar(items ...Item) *El {
 // them): TabBarH high, TabGap of room above the tabs, a line under the
 // inactive ones.
 func TabBar(items ...Item) *El {
-	return Row(append([]Item{H(core.TabBarH), PadT(core.TabGap), BorderB(core.Border)}, items...)...)
+	return Row(append([]Item{HOf(core.TabBarOf), PadT(core.TabGap), BorderB(core.Border)}, items...)...)
 }

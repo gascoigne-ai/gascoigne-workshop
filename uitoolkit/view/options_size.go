@@ -1,10 +1,12 @@
 package view
 
+import "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+
 // W fixes the width in pixels.
-func W(pixels int) Option { return func(element *El) { element.w = pixels } }
+func W(pixels int) Option { return func(element *El) { element.w, element.wOf = pixels, nil } }
 
 // H fixes the height in pixels.
-func H(pixels int) Option { return func(element *El) { element.h = pixels } }
+func H(pixels int) Option { return func(element *El) { element.h, element.hOf = pixels, nil } }
 
 // Grow makes the element take a share of the free space in its row or
 // column, proportional to weight.
@@ -68,3 +70,18 @@ func PadB(pixels int) Option { return func(element *El) { element.padB = pixels 
 
 // Gap sets the space between children.
 func Gap(pixels int) Option { return func(element *El) { element.gap = pixels } }
+
+// HOf is H for a height that follows the context's Sizes: HOf(core.RowOf).
+// Layout resolves it on every pass, so a row built once stays right when the
+// text size changes; before a pass the default faces' size stands. A later
+// H replaces it, as a later H replaces an H. A template has no attribute
+// for it: it writes h="{{rowH}}" from the scope of Sizes.Scope.
+func HOf(height func(sizes core.Sizes) int) Option {
+	return func(element *El) { element.hOf, element.h = height, height(core.DefaultSizes()) }
+}
+
+// WOf is W for a width that follows the context's Sizes, as HOf is for a
+// height: WOf(core.IconBtnOf).
+func WOf(width func(sizes core.Sizes) int) Option {
+	return func(element *El) { element.wOf, element.w = width, width(core.DefaultSizes()) }
+}

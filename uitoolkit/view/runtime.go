@@ -15,6 +15,7 @@ import (
 // tree can be laid out again before Draw without changing what it shows.
 func Layout(ctx *core.Ctx, root Node, width, height int) {
 	ctx.LayoutGen++
+	applySized(root, ctx.Sizes)
 	ctx.Laying = true
 	defer func() { ctx.Laying = false }()
 	root.place(ctx, core.Rect{W: width, H: height})
@@ -463,4 +464,21 @@ func (e *El) nearRect(posX, posY int) bool {
 func (e *El) onBorder(posX, posY int) bool {
 	r := e.rect
 	return posX < r.X+dragEdge || posX >= r.X+r.W-dragEdge || posY < r.Y+dragEdge || posY >= r.Y+r.H-dragEdge
+}
+
+// applySized resolves the size roles of the tree (HOf, WOf, SeparatorOf)
+// against sizes, before anything is measured.
+func applySized(element *El, sizes core.Sizes) {
+	if element.hOf != nil {
+		element.h = element.hOf(sizes)
+	}
+	if element.wOf != nil {
+		element.w = element.wOf(sizes)
+	}
+	if element.insetOf != nil {
+		element.borderInset = element.insetOf(sizes)
+	}
+	for _, kid := range element.kids {
+		applySized(kid, sizes)
+	}
 }

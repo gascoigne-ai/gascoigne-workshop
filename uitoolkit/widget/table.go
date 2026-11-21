@@ -99,6 +99,18 @@ type TableEdit struct {
 
 const tableActionW = 36
 
+// An edit field is inset in its cell by cellFieldInset, with cellFieldPad
+// inside the field, so the two add up to CellPad, the inset of a shown
+// cell, and the text does not move when editing starts.
+const (
+	cellFieldInset = core.TightGap / 2
+	cellFieldPad   = core.CellPad - cellFieldInset
+)
+
+// headerSeparatorInset keeps the line between header cells to the height of
+// the small caption: half of what a row has above and below it.
+func headerSeparatorInset(sizes core.Sizes) int { return (sizes.Row - sizes.SmallLine) / 2 }
+
 // tableGripW is the width of the drag handle column.
 const tableGripW = 20
 
@@ -122,11 +134,11 @@ func Table(spec TableSpec, opts ...Option) *El {
 // tableHeader is the caption row; with a State it carries the
 // draggable column dividers on top.
 func tableHeader(tableSpec TableSpec) Node {
-	header := Row(H(core.RowH), Bg(core.Panel), BorderB(core.Border),
+	header := Row(HOf(core.RowOf), Bg(core.Panel), BorderB(core.Border),
 		If(tableSpec.hasGrip(), Row(W(tableGripW))),
 		If(tableSpec.Editable, headerCheck(tableSpec)),
 		For(tableSpec.Columns, func(index int, name string) Node {
-			return Row(Grow(tableSpec.weight(index)), PadX(core.CellPad), When(index > 0, Separator(7)),
+			return Row(Grow(tableSpec.weight(index)), PadX(core.CellPad), When(index > 0, SeparatorOf(headerSeparatorInset)),
 				Text(strings.ToUpper(name), Small(), Bold(), Muted(), Grow(1)))
 		}),
 		If(tableSpec.Editable, Row(W(tableActionW))),
@@ -134,7 +146,7 @@ func tableHeader(tableSpec TableSpec) Node {
 	if tableSpec.State == nil {
 		return header
 	}
-	return Stack(H(core.RowH), header, Custom(colHandlesB{header: header, spec: tableSpec}))
+	return Stack(HOf(core.RowOf), header, Custom(colHandlesB{header: header, spec: tableSpec}))
 }
 
 // hasGrip reports whether rows have a drag handle.
@@ -156,7 +168,7 @@ func tableRow(spec TableSpec, index int, tableRow TableRow, placeholder, last bo
 	}
 	actions := spec.Editable && !placeholder
 	row := []Item{
-		H(core.RowH),
+		HOf(core.RowOf),
 		If(spec.hasGrip(), gripCell(spec, index, placeholder)),
 		If(actions, Row(W(tableActionW), JustifyContent(JustifyCenter), OnClick(func() { spec.OnToggle(index) }), Tooltip("Enable or disable this row"), Checkbox(tableRow.Checked))),
 		If(placeholder, Row(W(tableActionW))),
@@ -204,8 +216,8 @@ func gripCell(spec TableSpec, index int, placeholder bool) Node {
 func tableCell(spec TableSpec, row, col int, text string, clr core.Token) Node {
 	if e := spec.Editing; e != nil && e.Row == row && e.Col == col {
 		// The field is inset in its cell so its rounded outline and focus ring have room.
-		return Row(Grow(spec.weight(col)), PadX(3), PadY(3), When(col > 0, Separator(0)),
-			Field(e.Field, Grow(1), Bg(core.Sunken), FieldPad(5) /* 3 + 5 = the 8 px of a shown cell, so the text does not move */, OnEnter(e.OnEnter), OnTab(e.OnTab), When(e.Options != nil, e.Options)),
+		return Row(Grow(spec.weight(col)), PadX(cellFieldInset), PadY(cellFieldInset), When(col > 0, Separator(0)),
+			Field(e.Field, Grow(1), Bg(core.Sunken), FieldPad(cellFieldPad), OnEnter(e.OnEnter), OnTab(e.OnTab), When(e.Options != nil, e.Options)),
 		)
 	}
 	var label *El = Text(text, Ellipsis(), Color(clr), Grow(1))

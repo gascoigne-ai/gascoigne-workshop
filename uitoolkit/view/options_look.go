@@ -24,11 +24,22 @@ func BorderL(token core.Token) Option { return func(element *El) { element.borde
 // bottom. The first of a row has none: When(i > 0, Separator(10)); a
 // template writes separator="10" on the elements after the first.
 func Separator(inset int) Option {
-	return func(element *El) { element.borderL, element.borderInset = core.BorderSoft, inset }
+	return func(element *El) { element.borderL, element.borderInset, element.insetOf = core.BorderSoft, inset, nil }
+}
+
+// SeparatorOf is Separator with an inset that follows the context's Sizes,
+// as HOf does for a height.
+func SeparatorOf(inset func(sizes core.Sizes) int) Option {
+	return func(element *El) {
+		element.borderL, element.insetOf = core.BorderSoft, inset
+		element.borderInset = inset(core.DefaultSizes())
+	}
 }
 
 // BorderInset keeps the BorderL and BorderR lines this many pixels from the top and bottom.
-func BorderInset(pixels int) Option { return func(element *El) { element.borderInset = pixels } }
+func BorderInset(pixels int) Option {
+	return func(element *El) { element.borderInset, element.insetOf = pixels, nil }
+}
 
 // BorderB draws a hairline along the bottom edge, under the
 // background and below the children.

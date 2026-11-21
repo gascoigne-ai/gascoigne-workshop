@@ -98,9 +98,9 @@ func TextCenter() Option { return func(element *El) { element.ctr = true } }
 // NoteH high, as a Note is, so a longer help takes little room.
 func Lines(content string, clr core.Token, opts ...Option) *El {
 	col := Col(With(nil, opts)...)
-	lineOpts := []Option{Color(clr), H(core.LabelH)}
+	lineOpts := []Option{Color(clr), HOf(core.LabelOf)}
 	if col.small {
-		lineOpts = []Option{Color(clr), Small(), H(core.NoteH)}
+		lineOpts = []Option{Color(clr), Small(), HOf(core.NoteOf)}
 	}
 	for _, line := range strings.Split(content, "\n") {
 		col.kids = append(col.kids, Text(line, lineOpts...))

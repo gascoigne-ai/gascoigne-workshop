@@ -29,7 +29,7 @@ type hello struct {
 func (g *hello) view() Node {
 	return Col(Grow(1), Pad(core.Gutter), Gap(8), Bg(core.Bg),
 		Text("Hello, toolkit", Bold()),
-		Row(H(core.RowH), Gap(6),
+		Row(HOf(core.RowOf), Gap(6),
 			Field(&g.name, Grow(1), Placeholder("Your name"), OnEnter(g.greet)),
 			PrimaryButton("Greet", W(80), OnClick(g.greet)),
 		),
