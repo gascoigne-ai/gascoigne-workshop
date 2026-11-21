@@ -19,7 +19,7 @@ func TestThemeWithDefaultsEqualsThemeFor(t *testing.T) {
 	for _, tc := range ThemeChoices {
 		s := settings.Default()
 		s.Theme = tc.ID
-		want, got := ThemeFor(tc.ID, s.TextSize), ThemeWith(s)
+		want, got := ThemeFor(tc.ID, s.FontSize), ThemeWith(s)
 		for _, c := range CustomColors {
 			if want.Color(c.Token) != got.Color(c.Token) {
 				t.Errorf("%s: %s differs without overrides", tc.ID, c.Token)
@@ -37,13 +37,13 @@ func TestAnOverrideAppliesToItsThemeOnly(t *testing.T) {
 		t.Fatalf("dark selection = %v", got)
 	}
 	s.Theme = "light" // the override belongs to dark
-	if got := ThemeWith(s).Color(core.Selection); got != ThemeFor("light", "medium").Color(core.Selection) {
+	if got := ThemeWith(s).Color(core.Selection); got != ThemeFor("light", settings.DefaultFontSize).Color(core.Selection) {
 		t.Fatalf("light selection = %v, want the light default", got)
 	}
 }
 
 func TestBadOverridesAreIgnored(t *testing.T) {
-	def := ThemeFor("dark", "medium")
+	def := ThemeFor("dark", settings.DefaultFontSize)
 	s := withColors("dark", map[string]string{
 		"selection":   "not a color",
 		"find-match":  "#ffffff", // white under light text: unreadable
@@ -73,7 +73,7 @@ func TestHighContrastMakesTheListedColorsReadableInEveryTheme(t *testing.T) {
 				t.Errorf("%s: %s has contrast %.2f, want at least %.1f", tc.ID, c.Token, r, HighRatio)
 			}
 		}
-		normal := ThemeFor(tc.ID, s.TextSize)
+		normal := ThemeFor(tc.ID, s.FontSize)
 		// the surfaces stay; the text and lines drawn on them are what get stronger
 		// (see theming/highcontrast_test.go)
 		if th.Color(core.Bg) != normal.Color(core.Bg) || th.Color(core.Frame) != normal.Color(core.Frame) || th.Color(core.Sunken) != normal.Color(core.Sunken) {
@@ -88,7 +88,7 @@ func TestHighContrastRaisesTheBarForOverrides(t *testing.T) {
 	hs := settings.Default()
 	hs.Contrast = "high"
 	highText := ThemeWith(hs).Color(core.Text)
-	normalText := ThemeFor("dark", "medium").Color(core.Text)
+	normalText := ThemeFor("dark", settings.DefaultFontSize).Color(core.Text)
 	var hex string
 	var c color.RGBA
 	for v := uint8(0x30); v < 0xa0 && hex == ""; v += 2 {

@@ -4,6 +4,8 @@
 package settings
 
 import (
+	"encoding/json"
+	"strconv"
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fileversion"
@@ -11,8 +13,11 @@ import (
 
 // Settings are the user preferences.
 type Settings struct {
-	Theme    string `json:"theme"`    // "dark" or "light"
-	TextSize string `json:"textSize"` // "small", "medium" or "large"
+	Theme string `json:"theme"` // "dark" or "light"
+
+	// FontSize is the size of the interface text in pixels, MinFontSize to
+	// MaxFontSize; the small and mono faces derive from it (uitoolkit/theming).
+	FontSize int `json:"fontSize"`
 
 	// Layout places the request and response panes: "stacked" (the default) or "side" by side.
 	Layout string `json:"layout"`
@@ -83,6 +88,16 @@ type Settings struct {
 	SSE  bool `json:"sse,omitempty"`
 }
 
+// DefaultFontSize is the interface text size in pixels a first run uses;
+// MinFontSize and MaxFontSize bound it. They are stated again in
+// uitoolkit/theming, which this package may not import;
+// appearance's TestFontSizeRangeMatchesToolkit pins the two together.
+const (
+	DefaultFontSize = 14
+	MinFontSize     = 10
+	MaxFontSize     = 24
+)
+
 // DefaultUIScalePct is the display's own scale; MinUIScalePct and
 // MaxUIScalePct bound what is accepted.
 const (
@@ -115,7 +130,7 @@ func BaseScale(goos string) float64 {
 
 // Default is what a first run uses.
 func Default() Settings {
-	return Settings{AutoSave: true, Theme: "dark", TextSize: "medium", Layout: "stacked", Contrast: "normal", TimeoutSec: 60, UIScalePct: DefaultUIScalePct, Corners: "soft", ResponseView: "compact"}
+	return Settings{AutoSave: true, Theme: "dark", FontSize: DefaultFontSize, Layout: "stacked", Contrast: "normal", TimeoutSec: 60, UIScalePct: DefaultUIScalePct, Corners: "soft", ResponseView: "compact"}
 }
 
 // Decode reads settings text over the defaults, so fields missing from
@@ -130,18 +145,56 @@ func Decode(data []byte) (Settings, error) {
 }
 
 // readers read settings.json by version (the fileversion package doc).
-// Versions 0 and 1
-// share a layout: sectioned, the older flat form or a mix.
-var readers = []func([]byte) (Settings, error){decodeOverDefaults, decodeOverDefaults}
+// Versions 0 and 1 share a layout, sectioned, the older flat form or a mix,
+// and both carry the text size as "textSize": small, medium or large, so
+// both read it through decodeLegacyTextSize into FontSize. Version 2 writes
+// the pixel size itself. The legacy table is looked up once per load and is
+// closed: no later build writes another word, so it needs no extension point.
+var readers = []func([]byte) (Settings, error){decodeLegacyTextSize, decodeLegacyTextSize, decodeOverDefaults}
 
 // FileVersion is the version of settings.json this build writes.
 var FileVersion = len(readers) - 1
 
+// legacyFontSizes are the pixel sizes of the words "textSize" held before
+// version 2.
+var legacyFontSizes = map[string]int{"small": 13, "medium": 14, "large": 16}
+
 // decodeOverDefaults reads settings text over the defaults.
 func decodeOverDefaults(data []byte) (Settings, error) {
-	decoded := Default()
-	err := unmarshalSettings(data, &decoded)
-	return decoded, err
+	flat, err := flatten(data)
+	if err != nil {
+		return Default(), err
+	}
+	return unmarshalFlat(flat)
+}
+
+// decodeLegacyTextSize reads a version 0 or 1 file: "textSize" becomes
+// FontSize unless the file also states fontSize, which wins. A word the table
+// does not know, a value that is not text, or no key at all means the default.
+func decodeLegacyTextSize(data []byte) (Settings, error) {
+	flat, err := flatten(data)
+	if err != nil {
+		return Default(), err
+	}
+	legacy, hasLegacy := flat[legacySizeKey]
+	delete(flat, legacySizeKey)
+	if _, hasFontSize := flat["fontSize"]; hasLegacy && !hasFontSize {
+		flat["fontSize"] = json.RawMessage(strconv.Itoa(legacyFontSize(legacy)))
+	}
+	return unmarshalFlat(flat)
+}
+
+const legacySizeKey = "textSize"
+
+func legacyFontSize(raw json.RawMessage) int {
+	var word string
+	if json.Unmarshal(raw, &word) != nil {
+		return DefaultFontSize
+	}
+	if size, ok := legacyFontSizes[word]; ok {
+		return size
+	}
+	return DefaultFontSize
 }
 
 // Encode writes only what differs from the defaults, so the text shows

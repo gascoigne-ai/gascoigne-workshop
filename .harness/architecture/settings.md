@@ -26,6 +26,14 @@ flowchart LR
   sections (`sections.go`) after its `version`; the Go struct stays flat. The older flat form is
   read too and regrouped on the next write. The written bytes are pinned by
   `testdata/encode-*.golden`.
+- **Text size** is a number row (`fontSize`, an `Int` field of 10 to 24 px, default 14), shown in the
+  form as a minus button, a field and a plus button (`SettingsDialog.stepControl`): a step starts
+  from the setting, does nothing at an end of the range and refreshes the field; a typed number
+  outside the range shows a note and keeps the last good value. The file versions 0 and 1 wrote it
+  as `textSize`: small, medium or large; their reader (`decodeLegacyTextSize`) maps those to 13, 14
+  and 16 (anything else to 14, `fontSize` wins when both are present), and `Validate` accepts the
+  old key only below version 2 (at 2: "replaced by fontSize"). The faces derive from it in
+  `uitoolkit/theming` (`TextSizesFor`).
 - **Raw view**: text with problems (`settings.Validate`) changes nothing and lists them; text
   without is applied and written as typed. `settings.Complete` offers keys and values at the caret.
 - **Reload**: the dialog polls the file's time and size and applies an outside change; a file with

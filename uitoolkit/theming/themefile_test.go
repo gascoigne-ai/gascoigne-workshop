@@ -1,15 +1,17 @@
 package theming
 
 import (
+	"bytes"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"image/color"
+	"log/slog"
 	"strings"
 	"testing"
 )
 
 func TestParseThemeResolvesVariablesAlphaAndControls(t *testing.T) {
 	th, err := ParseTheme([]byte(`{
-		"name": "t", "fontSize": 16,
+		"name": "t",
 		"variables": {"rose": "#e88aa6", "deep": "#10203040"},
 		"colors": {"accent": "$rose", "shadow": "$deep", "border": "#445566"},
 		"controls": {
@@ -20,7 +22,7 @@ func TestParseThemeResolvesVariablesAlphaAndControls(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if th.Name != "t" || th.FontSize != 16 || th.RadiusScale != 1 {
+	if th.Name != "t" || th.RadiusScale != 1 {
 		t.Fatalf("header: %+v", th)
 	}
 	if th.Color(core.Accent) != core.RGB(0xe88aa6) || th.Color(core.Shadow) != (color.RGBA{R: 0x10, G: 0x20, B: 0x30, A: 0x40}) {
@@ -147,5 +149,50 @@ func TestIconStrokeComesFromThemeFiles(t *testing.T) {
 	same, err := ParseTheme([]byte(`{}`), &th)
 	if err != nil || same.IconStroke != 1.4 {
 		t.Fatalf("a file that does not say keeps the base: %v %v", same.IconStroke, err)
+	}
+}
+
+func TestParseThemeWithoutBaseHasDefaultSizes(t *testing.T) {
+	th, err := ParseTheme([]byte(`{"name": "t"}`), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if th.FontSize != 14 || th.SmallSize != 12 || th.MonoSize != 13 {
+		t.Fatalf("sizes = %v, %v, %v; want 14, 12, 13", th.FontSize, th.SmallSize, th.MonoSize)
+	}
+}
+
+// The Text size setting decides the sizes, so a theme file written when
+// files stated them keeps loading, and its sizes change nothing.
+func TestParseThemeIgnoresSizeKeys(t *testing.T) {
+	var logs bytes.Buffer
+	previous := slog.Default()
+	slog.SetDefault(slog.New(slog.NewTextHandler(&logs, &slog.HandlerOptions{Level: slog.LevelDebug})))
+	t.Cleanup(func() { slog.SetDefault(previous) })
+
+	base := Dark().WithTextSize(18, 16, 17)
+	th, err := ParseTheme([]byte(`{"name": "t", "fontSize": 20, "smallSize": 7, "monoSize": 9}`), &base)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if th.FontSize != 18 || th.SmallSize != 16 || th.MonoSize != 17 {
+		t.Fatalf("sizes = %v, %v, %v; want the base's 18, 16, 17", th.FontSize, th.SmallSize, th.MonoSize)
+	}
+	if !strings.Contains(logs.String(), "Text size") {
+		t.Fatalf("log %q does not say the Text size setting decides", logs.String())
+	}
+}
+
+func TestBuiltinThemeFilesDoNotStateSizes(t *testing.T) {
+	for _, name := range []string{"dark", "light"} {
+		data, err := builtinThemes.ReadFile("themes/" + name + ".json")
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, key := range []string{"fontSize", "smallSize", "monoSize"} {
+			if strings.Contains(string(data), `"`+key+`"`) {
+				t.Errorf("%s.json states %s", name, key)
+			}
+		}
 	}
 }

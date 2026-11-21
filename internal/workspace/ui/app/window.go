@@ -29,6 +29,25 @@ const (
 	tabDirtyW = 12
 )
 
+// badgeLabels are the method and protocol badges the tree and the tabs show.
+var badgeLabels = []string{"GET", "POST", "PUT", "PATCH", "DEL", "WS", "SSE", "MCP", "gRPC"}
+
+const badgeOverhang = 1
+
+// badgeSlot is the width of a badge slot: base, or the widest badge in the
+// small face when a large text size makes that wider, so no size clips a
+// badge. It is one width for every row, so a changed method moves nothing.
+// A badge may overhang its slot by badgeOverhang px, as PATCH does in the
+// tree at the default size, where the gap to the name absorbs it; that keeps
+// the default size as it was.
+func badgeSlot(ctx *w.Ctx, base int) int {
+	widest := base
+	for _, label := range badgeLabels {
+		widest = max(widest, ctx.Width(ctx.F.Small, label)-badgeOverhang)
+	}
+	return widest
+}
+
 var windowTemplate = markup.Must("window.vml", windowSource)
 
 // view is the whole window as a function of the app state (window.vml):

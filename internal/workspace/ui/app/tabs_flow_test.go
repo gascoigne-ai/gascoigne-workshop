@@ -3,6 +3,7 @@ package app
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"reflect"
 	"strings"
@@ -121,18 +122,24 @@ func TestTabWidthDoesNotChangeWhenTheRequestChanges(t *testing.T) {
 }
 
 func TestTheTabSlotsFitTheirContentAtEveryTextSize(t *testing.T) {
-	for _, size := range appearance.TextSizeChoices {
-		ctx, err := core.NewCtx(appearance.ThemeFor("dark", size.ID))
+	for size := settings.MinFontSize; size <= settings.MaxFontSize; size++ {
+		ctx, err := core.NewCtx(appearance.ThemeFor("dark", size))
 		if err != nil {
 			t.Fatal(err)
 		}
-		for _, badge := range []string{"GET", "POST", "PUT", "PATCH", "DEL", "WS", "MCP"} {
-			if got := ctx.Width(ctx.F.Small, badge); got > tabBadgeW {
-				t.Errorf("%s: %q is %dpx wide, the badge slot is %dpx", size.ID, badge, got, tabBadgeW)
+		for _, badge := range badgeLabels {
+			if got := ctx.Width(ctx.F.Small, badge); got-badgeOverhang > badgeSlot(ctx, tabBadgeW)+badgeOverhang {
+				t.Errorf("%d: %q is %dpx wide, the tab badge slot is %dpx", size, badge, got, badgeSlot(ctx, tabBadgeW))
+			}
+			if got := ctx.Width(ctx.F.Small, badge); got-badgeOverhang > badgeSlot(ctx, badgeW)+badgeOverhang {
+				t.Errorf("%d: %q is %dpx wide, the tree badge slot is %dpx", size, badge, got, badgeSlot(ctx, badgeW))
 			}
 		}
+		if size == settings.DefaultFontSize && (badgeSlot(ctx, tabBadgeW) != tabBadgeW || badgeSlot(ctx, badgeW) != badgeW) {
+			t.Errorf("at the default size the slots must stay %d and %d", tabBadgeW, badgeW)
+		}
 		if got := ctx.Width(ctx.F.UI, dirtyMark); got > tabDirtyW {
-			t.Errorf("%s: the dirty mark is %dpx wide, the slot is %dpx", size.ID, got, tabDirtyW)
+			t.Errorf("%d: the dirty mark is %dpx wide, the slot is %dpx", size, got, tabDirtyW)
 		}
 	}
 }

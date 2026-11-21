@@ -20,7 +20,17 @@ func (err *ClampedError) Error() string {
 func Clamp(prefs Settings) (clamped Settings, notes []string) {
 	prefs.TimeoutSec, notes = clampInt(prefs.TimeoutSec, "timeoutSec", notes)
 	prefs.UIScalePct, notes = clampInt(prefs.UIScalePct, "uiScale", notes)
+	prefs.FontSize, notes = clampFontSize(prefs.FontSize, notes)
 	return prefs, notes
+}
+
+// clampFontSize is clampInt for fontSize, except that 0, which no file
+// writes, is the default rather than "unset".
+func clampFontSize(size int, notes []string) (int, []string) {
+	if size == 0 {
+		return DefaultFontSize, append(notes, fmt.Sprintf("fontSize 0 is outside %d to %d, using %d", MinFontSize, MaxFontSize, DefaultFontSize))
+	}
+	return clampInt(size, "fontSize", notes)
 }
 
 func clampInt(value int, key string, notes []string) (int, []string) {

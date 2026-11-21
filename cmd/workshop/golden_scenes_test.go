@@ -5,6 +5,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"image"
 	"io"
 	"net"
@@ -15,6 +16,7 @@ import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/exampleserver"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 )
 
 // goldenScene is one picture the program must keep drawing: the flags that
@@ -57,7 +59,11 @@ var goldenScenes = []goldenScene{
 	{name: "light-theme", width: shotWidth, height: shotHeight, args: []string{"-set", "theme=light"}},
 	{name: "flat-high-contrast", width: shotWidth, height: shotHeight, args: []string{"-set", "flat=true", "-set", "contrast=high"}},
 	{name: "side-by-side", width: shotWidth, height: shotHeight, args: []string{"-send", "-set", "layout=side"}, mask: []image.Rectangle{durationSide, durationStatus}},
-	{name: "large-text", width: shotWidth, height: shotHeight, args: []string{"-set", "textSize=large"}},
+	{name: "large-text", width: shotWidth, height: shotHeight, args: []string{"-set", "fontSize=16"}},
+	{name: "small-text", width: shotWidth, height: shotHeight, args: []string{"-set", "fontSize=13"}},
+	// the two ends of the Text size range, where a fixed height would clip
+	{name: "text-min", width: shotWidth, height: shotHeight, args: []string{"-set", fmt.Sprintf("fontSize=%d", settings.MinFontSize)}},
+	{name: "text-max", width: shotWidth, height: shotHeight, args: []string{"-set", fmt.Sprintf("fontSize=%d", settings.MaxFontSize)}},
 	{name: "request-post", width: shotWidth, height: shotHeight, args: []string{"-request", "Echo"}},
 	{name: "request-websocket", width: shotWidth, height: shotHeight, args: []string{"-request", "WebSocket Echo"}},
 	{name: "request-sse", width: shotWidth, height: shotHeight, args: []string{"-request", "SSE Ticks"}},
@@ -209,4 +215,23 @@ func serveExampleServer(t *testing.T) {
 			t.Errorf("example server: %v", err)
 		}
 	})
+}
+
+// The scenes at the ends of the Text size range really are at the ends: a
+// range that moved without them would leave the clipping check unchecked.
+func TestTextSizeScenesCoverTheRange(t *testing.T) {
+	want := map[string]int{"small-text": 13, "large-text": 16, "text-min": settings.MinFontSize, "text-max": settings.MaxFontSize}
+	for _, scene := range goldenScenes {
+		size, ok := want[scene.name]
+		if !ok {
+			continue
+		}
+		if len(scene.args) != 2 || scene.args[0] != "-set" || scene.args[1] != fmt.Sprintf("fontSize=%d", size) {
+			t.Errorf("scene %s runs with %q, want -set fontSize=%d", scene.name, scene.args, size)
+		}
+		delete(want, scene.name)
+	}
+	for name := range want {
+		t.Errorf("no scene %s", name)
+	}
 }

@@ -15,14 +15,15 @@ flow rect=0,0,560,1400
       textB text="Text size" bold=true rect=0,102,59,28
       plain grow=1 rect=65,102,495,28
     flow rect=0,130,560,22
-      textB text="The size of the interface text." h=22 fg=muted rect=0,130,560,22
-    flow h=28 gap=6 rect=0,152,560,28
-      flow padL=10 padR=10 grow=1 bg=sunken control=button lighten=true onClick=true rect=0,152,182,28
-        textB text="Small" grow=1 fg=chip-text ellipsis=true center=true rect=10,152,162,28
-      flow padL=10 padR=10 grow=1 bg=accent control=primary lighten=true onClick=true rect=188,152,182,28
-        textB text="Medium" grow=1 fg=accent-text ellipsis=true center=true rect=198,152,162,28
-      flow padL=10 padR=10 grow=1 bg=sunken control=button lighten=true onClick=true rect=376,152,184,28
-        textB text="Large" grow=1 fg=chip-text ellipsis=true center=true rect=386,152,164,28
+      textB text="The size of the interface text in pixels, 10 to 24." h=22 fg=muted rect=0,130,560,22
+    flow rect=0,152,560,28
+      flow h=28 gap=6 alignItems=2 rect=0,152,560,28
+        flow h=24 padL=10 padR=10 minW=32 bg=sunken control=button tip=Smaller shrink=true lighten=true onClick=true rect=0,154,32,24
+          textB text="-" grow=1 fg=chip-text ellipsis=true center=true rect=10,154,12,24
+        fieldB w=56 h=28 bg=sunken control=field onRightClick=true onChange=true rect=38,152,56,28
+        flow h=24 padL=10 padR=10 minW=32 bg=sunken control=button tip=Larger shrink=true lighten=true onClick=true rect=100,154,32,24
+          textB text="+" grow=1 fg=chip-text ellipsis=true center=true rect=110,154,12,24
+        plain grow=1 rect=138,166,422,0
   flow padT=8 padB=8 borderB=border-soft rect=0,188,560,94
     flow h=28 gap=6 rect=0,196,560,28
       textB text="Interface scale" bold=true rect=0,196,100,28

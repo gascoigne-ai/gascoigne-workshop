@@ -46,7 +46,7 @@ var Categories = []string{"Appearance", "Colors", "Shortcuts", "Requests", "Gene
 // those protocol words (internal/protocol_literals_test.go).
 var rows = []row{
 	enumRow(Field{Key: "theme", Title: "Theme", Description: "The color theme: dark, light or the id of a theme file in the themes folder.", Category: "Appearance", Allowed: []string{"dark", "light"}, Open: true}, func(prefs *Settings) *string { return &prefs.Theme }),
-	enumRow(Field{Key: "textSize", Title: "Text size", Description: "The size of the interface text.", Category: "Appearance", Allowed: []string{"small", "medium", "large"}}, func(prefs *Settings) *string { return &prefs.TextSize }),
+	intRow(Field{Key: "fontSize", Title: "Text size", Description: "The size of the interface text in pixels, 10 to 24.", Category: "Appearance", Min: MinFontSize, Max: MaxFontSize}, func(prefs *Settings) *int { return &prefs.FontSize }),
 	intRow(Field{Key: "uiScale", Title: "Interface scale", Description: "Scale of the whole interface in percent, on top of the display's own scale.", Category: "Appearance", Min: MinUIScalePct, Max: MaxUIScalePct}, func(prefs *Settings) *int { return &prefs.UIScalePct }),
 	textRow(Field{Key: "uiFont", Title: "Interface font", Description: "Family name of an installed font for labels, buttons and fields; empty is the built-in font.", Category: "Appearance"}, func(prefs *Settings) *string { return &prefs.UIFont }),
 	textRow(Field{Key: "codeFont", Title: "Code font", Description: "Family name of an installed font for bodies and the code views; empty is the built-in font.", Category: "Appearance"}, func(prefs *Settings) *string { return &prefs.CodeFont }),
@@ -72,6 +72,25 @@ var rows = []row{
 
 // Schema lists every key of settings.json, in the order of its rows.
 var Schema = fieldsOfRows(rows)
+
+// legacyKeys are keys that files of version 0 and 1 may still carry and that
+// the readers translate; they are not in Schema, so the form, completion and
+// reset never see them.
+var legacyKeys = map[string]legacyKey{
+	legacySizeKey: {
+		Field:       Field{Key: legacySizeKey, Category: "Appearance", Kind: Enum, Allowed: []string{"small", "medium", "large"}},
+		replacement: "fontSize",
+	},
+}
+
+// legacyKey is how an old key is checked and which setting replaced it.
+type legacyKey struct {
+	Field
+	replacement string
+}
+
+// firstVersionWithoutLegacyKeys is the file version that replaced them.
+const firstVersionWithoutLegacyKeys = 2
 
 // FieldFor is the schema entry of key.
 func FieldFor(key string) (Field, bool) {
@@ -106,7 +125,8 @@ func Validate(data []byte) []Problem {
 	if _, ok := syntax.(map[string]any); !ok {
 		return []Problem{{Message: "settings must be a JSON object", End: len(data)}}
 	}
-	return validateKeys(data)
+	version, _ := fileversion.Of(data) // a bad version is reported by checkVersion
+	return validateObject(data, 0, "", version)
 }
 
 // lineColumn spells an offset as "line 2, column 5".
@@ -117,14 +137,11 @@ func lineColumn(data []byte, offset int) string {
 	return fmt.Sprintf("line %d, column %d", line, column)
 }
 
-// validateKeys checks the settings object of valid JSON text: its sections
-// and, for the older flat form, its keys.
-func validateKeys(data []byte) []Problem { return validateObject(data, 0, "") }
-
 // validateObject walks one object of the text, which starts at byte base:
 // the top level (section "") or the body of a section. Offsets in the
-// problems are in the whole text.
-func validateObject(data []byte, base int, section string) []Problem {
+// problems are in the whole text. version is the version of the file, which
+// decides whether a legacy key is still a setting.
+func validateObject(data []byte, base int, section string, version int) []Problem {
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	if _, err := decoder.Token(); err != nil { // the opening brace
 		return nil
@@ -151,7 +168,7 @@ func validateObject(data []byte, base int, section string) []Problem {
 				continue
 			}
 			valueStart := int(decoder.InputOffset()) - len(raw)
-			problems = append(problems, validateObject(raw, base+valueStart, key)...)
+			problems = append(problems, validateObject(raw, base+valueStart, key, version)...)
 			continue
 		}
 		if key == fileversion.Key {
@@ -161,6 +178,13 @@ func validateObject(data []byte, base int, section string) []Problem {
 			continue
 		}
 		field, known := FieldFor(key)
+		if legacy, isLegacy := legacyKeys[key]; isLegacy {
+			if version >= firstVersionWithoutLegacyKeys {
+				problems = append(problems, at("replaced by "+legacy.replacement))
+				continue
+			}
+			field, known = legacy.Field, true
+		}
 		switch {
 		case !known:
 			problems = append(problems, at("unknown setting"))

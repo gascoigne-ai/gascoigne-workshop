@@ -1,8 +1,5 @@
 {
   "name": "light",
-  "fontSize": 14,
-  "smallSize": 12,
-  "monoSize": 13,
   "variables": {
     "hero-top": "#2a0d18",
     "hero-bottom": "#6e1f3c"

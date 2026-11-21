@@ -9,7 +9,7 @@ import (
 // sampleFor is a value of the row's kind that differs from the default.
 var samples = map[string]Value{
 	"theme":        Text("light"),
-	"textSize":     Text("large"),
+	"fontSize":     Number(16),
 	"uiScale":      Number(150),
 	"uiFont":       Text("Inter"),
 	"codeFont":     Text("Fira Code"),

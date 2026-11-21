@@ -35,22 +35,30 @@ type ThemeChoice struct {
 	Build     func() core.Theme
 }
 
-// SizeChoice is a text size: the font sizes of the UI, small and mono faces.
-type SizeChoice struct {
-	ID, Label         string
-	Font, Small, Mono float64
-}
+// The text size range in pixels and its default. internal/settings states
+// the same range (it may not import this package); appearance's
+// TestFontSizeRangeMatchesToolkit pins the two together.
+const (
+	MinFontSize     = 10
+	MaxFontSize     = 24
+	DefaultFontSize = 14
 
-// sizeChoices are the text sizes; the second one (medium) is the default.
-var sizeChoices = []SizeChoice{
-	{"small", "Small", 13, 11, 12},
-	{"medium", "Medium", 14, 12, 13},
-	{"large", "Large", 16, 13, 15},
-}
+	// MinSmallSize is the smallest the small face gets, so captions stay readable at the low end.
+	MinSmallSize = 9
+)
 
-// SizeChoices are the text sizes; the second one (medium) is the default.
-// The slice is a copy: changing it changes nothing here.
-func SizeChoices() []SizeChoice { return slices.Clone(sizeChoices) }
+// TextSizesFor derives the three face sizes in pixels from the UI font size:
+// small is two below it but not under MinSmallSize, mono is one below. A font
+// outside the range is brought into it; 0 means DefaultFontSize. The numbers
+// are plain arithmetic rather than a table of presets so every whole size
+// from MinFontSize to MaxFontSize is a real choice.
+func TextSizesFor(font int) (ui, small, mono float64) {
+	if font == 0 {
+		font = DefaultFontSize
+	}
+	font = min(max(font, MinFontSize), MaxFontSize)
+	return float64(font), float64(max(font-2, MinSmallSize)), float64(font - 1)
+}
 
 // CornerChoice is a roundness: the factor applied to every control's radius.
 type CornerChoice struct {
@@ -145,9 +153,10 @@ func CornerIDOf(id string) string {
 
 // Prefs are the appearance preferences, as an application stores them.
 type Prefs struct {
-	Theme, TextSize, Corners, Contrast string
-	Flat                               bool                         // no gradients
-	Colors                             map[string]map[string]string // theme id, token name, "#rrggbb"
+	Theme, Corners, Contrast string
+	FontSize                 int                          // pixels, see TextSizesFor; 0 is the default
+	Flat                     bool                         // no gradients
+	Colors                   map[string]map[string]string // theme id, token name, "#rrggbb"
 }
 
 // Builtins are the toolkit's own dark and light themes.
@@ -209,22 +218,16 @@ func (c *Catalog) builtinNamed(id string) (core.Theme, bool) {
 	return core.Theme{}, false
 }
 
-// For builds the theme for a theme id and a text size id. Unknown ids
-// fall back to the first built-in theme and the medium text size.
-func (c *Catalog) For(themeID, textSizeID string) core.Theme {
+// For builds the theme for a theme id and a UI font size. An unknown id
+// falls back to the first built-in theme; the size goes through TextSizesFor.
+func (c *Catalog) For(themeID string, fontSize int) core.Theme {
 	th := c.Builtin[0].Build()
 	for _, ch := range c.All() {
 		if ch.ID == themeID {
 			th = ch.Build()
 		}
 	}
-	size := sizeChoices[1]
-	for _, s := range sizeChoices {
-		if s.ID == textSizeID {
-			size = s
-		}
-	}
-	return th.WithTextSize(size.Font, size.Small, size.Mono)
+	return th.WithTextSize(TextSizesFor(fontSize))
 }
 
 // Theme is the theme for the preferences: the chosen theme and text size,
@@ -234,7 +237,7 @@ func (c *Catalog) For(themeID, textSizeID string) core.Theme {
 // hex color, names a customizable token and reaches the required ratio.
 func (c *Catalog) Theme(prefs Prefs) core.Theme {
 	id := c.ThemeID(prefs.Theme)
-	th := c.For(id, prefs.TextSize)
+	th := c.For(id, prefs.FontSize)
 	th.RadiusScale, th.NoGradients = CornerScale(prefs.Corners), prefs.Flat
 	if prefs.Contrast == "high" {
 		strong := map[core.Token]color.RGBA{}

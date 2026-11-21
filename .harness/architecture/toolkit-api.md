@@ -41,5 +41,5 @@ Each is also said in the doc comment of what breaks the rule; a new exception ad
 - Rule 11: `core.Ctx.Menu` is `any`, because `widget` owns `MenuState` and `core` cannot name it;
   that is the price of any element opening a menu without a host. `core.Ctx.FocusOwner` is typed,
   since its interface (`core.Focuser`, aliased by `view.Focuser`) uses no widget type.
-- Exported mutable tables are copies (`theming.SizeChoices` and the other choice lists);
+- Exported mutable tables are copies (`theming.CornerChoices` and the other choice lists);
   `engine.keyNames` is unexported, since nothing outside `engine` reads it.

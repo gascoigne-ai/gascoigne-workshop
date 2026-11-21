@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -92,14 +93,46 @@ func TestLoadUserLogsAnUnreadableFolderPattern(t *testing.T) {
 	}
 }
 
-func TestForFallsBackToMediumForAnUnknownTextSize(t *testing.T) {
-	c := NewCatalog(Builtins())
-	medium := c.For("dark", "medium")
-	if got := c.For("dark", "gone"); got.FontSize != medium.FontSize {
-		t.Fatalf("unknown size gave %v, medium is %v", got.FontSize, medium.FontSize)
+func TestTextSizesFor(t *testing.T) {
+	tests := []struct {
+		font                        int
+		wantUI, wantSmall, wantMono float64
+	}{
+		{0, 14, 12, 13},
+		{9, 10, 9, 9},
+		{10, 10, 9, 9},
+		{11, 11, 9, 10},
+		{13, 13, 11, 12},
+		{14, 14, 12, 13},
+		{16, 16, 14, 15},
+		{24, 24, 22, 23},
+		{99, 24, 22, 23},
 	}
-	if c.For("dark", "large").FontSize == medium.FontSize {
-		t.Fatal("large is not medium")
+	for _, test := range tests {
+		ui, small, mono := TextSizesFor(test.font)
+		if ui != test.wantUI || small != test.wantSmall || mono != test.wantMono {
+			t.Errorf("TextSizesFor(%d) = %v, %v, %v; want %v, %v, %v", test.font, ui, small, mono, test.wantUI, test.wantSmall, test.wantMono)
+		}
+	}
+}
+
+func TestCatalogThemeUsesFontSize(t *testing.T) {
+	catalog := NewCatalog(Builtins())
+	for _, test := range []struct {
+		prefs                       Prefs
+		wantUI, wantSmall, wantMono float64
+	}{
+		{Prefs{Theme: "dark", FontSize: 18}, 18, 16, 17},
+		{Prefs{Theme: "dark"}, 14, 12, 13},
+		{Prefs{Theme: "light", FontSize: 10}, 10, 9, 9},
+	} {
+		th := catalog.Theme(test.prefs)
+		if th.FontSize != test.wantUI || th.SmallSize != test.wantSmall || th.MonoSize != test.wantMono {
+			t.Errorf("Theme(%+v) sizes = %v, %v, %v; want %v, %v, %v", test.prefs, th.FontSize, th.SmallSize, th.MonoSize, test.wantUI, test.wantSmall, test.wantMono)
+		}
+	}
+	if got := catalog.For("dark", 20); got.FontSize != 20 || got.SmallSize != 18 {
+		t.Errorf("For(dark, 20) = %v, %v", got.FontSize, got.SmallSize)
 	}
 }
 
@@ -128,11 +161,10 @@ func TestAnOverrideBelowTheRequiredContrastIsIgnored(t *testing.T) {
 // The choice tables are shared by every caller: a caller that changes the
 // slice it got must not change what the next one sees.
 func TestChoiceTablesAreCopies(t *testing.T) {
-	SizeChoices()[0].ID = "mutated"
 	CornerChoices()[0].ID = "mutated"
 	ContrastChoices()[0].ID = "mutated"
 	CustomColors()[0].Label = "mutated"
-	if SizeChoices()[0].ID == "mutated" || CornerChoices()[0].ID == "mutated" || ContrastChoices()[0].ID == "mutated" || CustomColors()[0].Label == "mutated" {
+	if CornerChoices()[0].ID == "mutated" || ContrastChoices()[0].ID == "mutated" || CustomColors()[0].Label == "mutated" {
 		t.Fatal("a returned table is the shared one")
 	}
 }
@@ -154,11 +186,11 @@ func TestBaseLineIsTheDefaultFaceLineHeight(t *testing.T) {
 	}
 }
 
-// Every text size choice gives rows that hold its own text.
-func TestSizeChoicesGiveSaneSizes(t *testing.T) {
-	for _, choice := range SizeChoices() {
-		t.Run(choice.ID, func(t *testing.T) {
-			th := NewCatalog(Builtins()).For("dark", choice.ID)
+// Every text size of the range gives rows that hold its own text.
+func TestEveryFontSizeGivesSaneSizes(t *testing.T) {
+	for font := MinFontSize; font <= MaxFontSize; font++ {
+		t.Run(strconv.Itoa(font), func(t *testing.T) {
+			th := NewCatalog(Builtins()).For("dark", font)
 			ctx, err := core.NewCtx(th)
 			if err != nil {
 				t.Fatal(err)

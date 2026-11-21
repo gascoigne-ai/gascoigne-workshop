@@ -58,14 +58,15 @@ func TestEveryJSONKindHasAToken(t *testing.T) {
 
 func TestThemeFor(t *testing.T) {
 	tests := []struct {
-		name, theme, size string
-		wantBg            color.RGBA
-		wantFont          float64
+		name, theme string
+		size        int
+		wantBg      color.RGBA
+		wantFont    float64
 	}{
-		{"dark medium", "dark", "medium", theming.Dark().Color(core.Bg), 14},
-		{"light large", "light", "large", theming.Light().Color(core.Bg), 16},
-		{"unknown theme falls back to dark", "neon", "small", theming.Dark().Color(core.Bg), 13},
-		{"unknown size falls back to medium", "light", "huge", theming.Light().Color(core.Bg), 14},
+		{"dark default", "dark", 14, theming.Dark().Color(core.Bg), 14},
+		{"light sixteen", "light", 16, theming.Light().Color(core.Bg), 16},
+		{"unknown theme falls back to dark", "neon", 13, theming.Dark().Color(core.Bg), 13},
+		{"zero size is the default", "light", 0, theming.Light().Color(core.Bg), 14},
 	}
 	for _, tt := range tests {
 		th := ThemeFor(tt.theme, tt.size)
@@ -76,7 +77,7 @@ func TestThemeFor(t *testing.T) {
 }
 
 func TestUnknownMethodFallsBackToTheTextColor(t *testing.T) {
-	th := ThemeFor("dark", "medium")
+	th := ThemeFor("dark", settings.DefaultFontSize)
 	if th.Color(MethodToken("PROPFIND")) != th.Color(core.Text) {
 		t.Fatal("unknown method must resolve to the text color")
 	}
@@ -127,7 +128,7 @@ func TestThemeWithAppliesCornersAndTheFlatSwitch(t *testing.T) {
 
 func TestAppThemesCarryMethodAndJSONColorsOverTheToolkitStyles(t *testing.T) {
 	for _, id := range []string{"dark", "light"} {
-		th := ThemeFor(id, "medium")
+		th := ThemeFor(id, settings.DefaultFontSize)
 		if th.Color(MethodToken("GET")) == th.Color(core.Text) || th.Color(respview.Tokens[jsonview.Key]) == (color.RGBA{}) {
 			t.Errorf("%s: app colors missing", id)
 		}
@@ -150,5 +151,27 @@ func TestCollectionTokensCycleAndEveryThemeDefinesThem(t *testing.T) {
 				t.Fatalf("%s theme has no color for %s", name, CollectionToken(i))
 			}
 		}
+	}
+}
+
+func TestThemeWithFollowsFontSize(t *testing.T) {
+	for _, font := range []int{10, 14, 16, 24} {
+		prefs := settings.Default()
+		prefs.FontSize = font
+		th := ThemeWith(prefs)
+		wantUI, wantSmall, wantMono := theming.TextSizesFor(font)
+		if th.FontSize != wantUI || th.SmallSize != wantSmall || th.MonoSize != wantMono {
+			t.Errorf("ThemeWith(font %d) sizes = %v, %v, %v; want %v, %v, %v", font, th.FontSize, th.SmallSize, th.MonoSize, wantUI, wantSmall, wantMono)
+		}
+	}
+}
+
+// settings may not import the toolkit, so both state the range; this keeps
+// the two from drifting apart.
+func TestFontSizeRangeMatchesToolkit(t *testing.T) {
+	if settings.MinFontSize != theming.MinFontSize || settings.MaxFontSize != theming.MaxFontSize || settings.DefaultFontSize != theming.DefaultFontSize {
+		t.Fatalf("settings %d..%d (default %d) and theming %d..%d (default %d) disagree",
+			settings.MinFontSize, settings.MaxFontSize, settings.DefaultFontSize,
+			theming.MinFontSize, theming.MaxFontSize, theming.DefaultFontSize)
 	}
 }

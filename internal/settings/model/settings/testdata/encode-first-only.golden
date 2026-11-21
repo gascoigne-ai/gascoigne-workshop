@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "requests": {
     "proxy": "http://localhost:8080"
   }

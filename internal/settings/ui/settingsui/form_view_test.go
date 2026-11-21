@@ -181,7 +181,6 @@ func TestClickingAChipAppliesItsValue(t *testing.T) {
 		want  any
 	}{
 		{"theme", `text="Light"`, 0, func(current settings.Settings) any { return current.Theme }, "light"},
-		{"text size with its own label", `text="Large"`, 0, func(current settings.Settings) any { return current.TextSize }, "large"},
 		{"corners", `text="Round"`, 0, func(current settings.Settings) any { return current.Corners }, "round"},
 		{"a value without a label is capitalized", `text="Pretty"`, 0, func(current settings.Settings) any { return current.ResponseView }, "pretty"},
 		{"layout", `text="Side by side"`, 0, func(current settings.Settings) any { return current.Layout }, "side"},

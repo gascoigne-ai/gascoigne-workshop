@@ -90,7 +90,7 @@ func (a *App) treeRow(row collection.Row, selected bool) Node {
 	if !row.Folder {
 		template = treeRequestTemplate
 	}
-	return template.MustBuild(a.scope(markup.Scope{"row": item, "badgeW": badgeW}))
+	return template.MustBuild(a.scope(markup.Scope{"row": item, "badgeW": badgeSlot(a.ctx, badgeW)}))
 }
 
 // treeItemOf is the view model of one tree row, except whether it is selected.

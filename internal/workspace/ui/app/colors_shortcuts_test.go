@@ -37,11 +37,12 @@ func TestSettingsMenuOpensChangesThemeAndSaves(t *testing.T) {
 	}
 
 	a.prefs.Search = widget.NewTextField("text size")
-	clickText(t, a, "Large", 0)
+	clickText(t, a, "+", 0)
+	clickText(t, a, "+", 0)
 	if a.ctx.Th.FontSize != 16 {
 		t.Fatalf("font size = %v, want 16", a.ctx.Th.FontSize)
 	}
-	if saved, _ := settingsDisk.Load(path); saved.TextSize != "large" || saved.Theme != "light" {
+	if saved, _ := settingsDisk.Load(path); saved.FontSize != 16 || saved.Theme != "light" {
 		t.Fatalf("saved %+v", saved)
 	}
 }
@@ -81,7 +82,7 @@ func TestBrokenSettingsFileFallsBackAndSaysSo(t *testing.T) {
 
 func TestSettingsStartFromTheSavedChoice(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "settings.json")
-	if err := settingsDisk.Save(path, settings.Settings{Theme: "light", TextSize: "small"}); err != nil {
+	if err := settingsDisk.Save(path, settings.Settings{Theme: "light", FontSize: 13}); err != nil {
 		t.Fatal(err)
 	}
 	a, err := NewApp(withAdapters(Options{SettingsPath: path, OpenMenu: true}))
@@ -270,10 +271,10 @@ func TestSwitchingThemeShowsThatThemesColorsAndKeepsEachThemesOverrides(t *testi
 	a.prefs.Cat, a.prefs.Search = "appearance", widget.NewTextField("theme")
 	a.step(core.Input{})
 	clickText(t, a, "Light", 0)
-	if a.ctx.Th.Color(core.Selection) != appearance.ThemeFor("light", "medium").Color(core.Selection) {
+	if a.ctx.Th.Color(core.Selection) != appearance.ThemeFor("light", settings.DefaultFontSize).Color(core.Selection) {
 		t.Fatal("the dark override must not leak into the light theme")
 	}
-	if a.colors.Input(a, core.Selection).Text != core.FormatHex(appearance.ThemeFor("light", "medium").Color(core.Selection)) {
+	if a.colors.Input(a, core.Selection).Text != core.FormatHex(appearance.ThemeFor("light", settings.DefaultFontSize).Color(core.Selection)) {
 		t.Fatalf("the field must show the light theme's color, got %q", a.colors.Input(a, core.Selection).Text)
 	}
 	clickText(t, a, "Dark", 0) // back to Dark

@@ -45,7 +45,7 @@ func (a *App) requestTabs() Node {
 		"tabGap":     w.TabGap,
 		"tabsScroll": &a.tabsScroll,
 		"tabs":       items,
-		"tabBadgeW":  tabBadgeW,
+		"tabBadgeW":  badgeSlot(a.ctx, tabBadgeW),
 		"tabDirtyW":  tabDirtyW,
 		"dirtyMark":  dirtyMark,
 		"closeTip":   a.hint("Close tab", "close-tab"),

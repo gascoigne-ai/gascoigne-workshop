@@ -17,4 +17,5 @@ First release, an alpha: ready for daily use and still growing.
 - Tabs and the root rows of the tree show their collection's color.
 - Drag a request or folder onto another open collection to move it, or hold Alt to copy it; a name already taken gets a number, and a note lists the variables the new collection does not define. The row menu has Move to... and Copy to... for the same, with a picker of every open collection and folder.
 - Every saved file now starts with a `version`; the first save after upgrading rewrites each collection file once (and wraps `.secrets.json`), so a collection in git shows a one-time diff. Files from a newer build are not overwritten.
+- Text size is now a number of pixels (10 to 24, default 14) with a minus and a plus button; the old small, medium and large become 13, 14 and 16.
 - `make install` installs the release build, with its desktop entry and icon, under `~/.local`.

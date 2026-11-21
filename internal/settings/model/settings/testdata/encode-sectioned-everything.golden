@@ -1,8 +1,8 @@
 {
-  "version": 1,
+  "version": 2,
   "appearance": {
     "theme": "mine",
-    "textSize": "large",
+    "fontSize": 16,
     "uiFont": "Inter",
     "codeFont": "Fira Code",
     "corners": "round",

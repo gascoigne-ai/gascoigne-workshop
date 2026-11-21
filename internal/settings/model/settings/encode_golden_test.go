@@ -34,7 +34,7 @@ func goldenCases() []struct {
 	tables.Collections = []OpenCollection{{Folder: "/work/a", Environment: "prod"}, {Environment: "dev"}}
 
 	everything := Default()
-	everything.Theme, everything.TextSize, everything.Corners = "mine", "large", "round"
+	everything.Theme, everything.FontSize, everything.Corners = "mine", 16, "round"
 	everything.UIFont, everything.CodeFont = "Inter", "Fira Code"
 	everything.Contrast, everything.ResponseView, everything.AutoSave = "high", "raw", false
 	everything.Proxy, everything.CACert = "http://p:1", "/c/ca.pem"

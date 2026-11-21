@@ -15,7 +15,7 @@ import (
 
 // A file a newer build wrote: its version is above what this build reads.
 // Not a fixture, since no such build exists yet.
-const newerSettings = `{"version": 2, "appearance": {"theme": "light"}}`
+const newerSettings = `{"version": 3, "appearance": {"theme": "light"}}`
 
 // unchangedFile fails when path no longer holds want, or a backup appeared.
 func unchangedFile(t *testing.T, path, want string) {

@@ -17,8 +17,8 @@ func sectioned(t *testing.T, prefs Settings) map[string]map[string]any {
 	if err := json.Unmarshal(text, &top); err != nil {
 		t.Fatalf("not an object: %v\n%s", err, text)
 	}
-	if version := string(top["version"]); version != "1" { // the file's own key, beside the sections
-		t.Fatalf("version %q, want 1:\n%s", version, text)
+	if version := string(top["version"]); version != "2" { // the file's own key, beside the sections
+		t.Fatalf("version %q, want 2:\n%s", version, text)
 	}
 	delete(top, "version")
 	got := map[string]map[string]any{}
@@ -89,7 +89,7 @@ func TestSectionedAndLegacyFlatFilesReadAlike(t *testing.T) {
 
 func TestEverySettingSurvivesAWriteAndARead(t *testing.T) {
 	s := Default()
-	s.Theme, s.TextSize, s.UIScalePct, s.UIFont, s.CodeFont = "light", "large", 130, "Go", "Go Mono"
+	s.Theme, s.FontSize, s.UIScalePct, s.UIFont, s.CodeFont = "light", 16, 130, "Go", "Go Mono"
 	s.Corners, s.Flat, s.Contrast, s.Layout, s.ResponseView = "round", true, "high", "side", "raw"
 	s.Proxy, s.CACert, s.ClientCert, s.ClientKey, s.TimeoutSec = "http://p", "/a", "/b", "/c", 9
 	s.AutoSave, s.Workspace, s.Environment = false, "/w", "Dev"

@@ -24,7 +24,7 @@ type Sizes struct {
 // The UI line height is limited so a huge font cannot blow up every row.
 const (
 	MinLine = 13
-	MaxLine = 22
+	MaxLine = 28
 )
 
 // SizesFor applies the size rules to a UI line height, clamped to

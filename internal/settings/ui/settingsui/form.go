@@ -29,8 +29,8 @@ var settingControls = map[string]settingControl{
 	"theme": func(ctx *w.Ctx, dialog *SettingsDialog, host Host, _ settings.Field) Node {
 		return dialog.themeChips(ctx, host)
 	},
-	"textSize": func(ctx *w.Ctx, dialog *SettingsDialog, host Host, field settings.Field) Node {
-		return dialog.enumChips(ctx, host, field, labelsOf(appearance.TextSizeChoices, sizeLabel))
+	"fontSize": func(ctx *w.Ctx, dialog *SettingsDialog, host Host, field settings.Field) Node {
+		return dialog.stepControl(ctx, host, field)
 	},
 	"corners": func(ctx *w.Ctx, dialog *SettingsDialog, host Host, field settings.Field) Node {
 		return dialog.enumChips(ctx, host, field, labelsOf(appearance.CornerChoices, cornerLabel))
@@ -55,9 +55,6 @@ var settingControls = map[string]settingControl{
 	},
 }
 
-func sizeLabel(sizeChoice appearance.SizeChoice) (string, string) {
-	return sizeChoice.ID, sizeChoice.Label
-}
 func cornerLabel(cornerChoice appearance.CornerChoice) (string, string) {
 	return cornerChoice.ID, cornerChoice.Label
 }
@@ -90,6 +87,7 @@ func capitalized(id string) string {
 var (
 	chipsTemplate       = markup.Must("chips.vml", chipsSource)
 	scaleTemplate       = markup.Must("scale.vml", scaleSource)
+	stepTemplate        = markup.Must("step.vml", stepSource)
 	textControlTemplate = markup.Must("textcontrol.vml", textcontrolSource)
 	openPageTemplate    = markup.Must("openpage.vml", openpageSource)
 	// with no file there is no field, only a button (see fileControl)
@@ -109,6 +107,7 @@ const (
 	openPageW   = 120 // the button from a search result to its page
 	chooseFileW = 150 // the Choose file button of an empty file setting
 	folderIconW = 16  // the folder icon in that button
+	stepFieldW  = 56  // the number between the minus and plus buttons of a stepped setting
 )
 
 // chip is what the chips template shows of one value of a segmented
@@ -251,6 +250,34 @@ func (d *SettingsDialog) textControl(ctx *w.Ctx, host Host, field settings.Field
 		"note":   d.fields.Note(field.Key),
 		"edited": func() { d.Edited(host, field.Key) },
 	}))
+}
+
+// stepControl is the control of a whole-number setting that is changed in
+// small steps: a minus button, the number as a field and a plus button. A
+// step starts from the setting, not from the text, so it recovers from an
+// entry that was refused; at the end of the range it does nothing.
+func (d *SettingsDialog) stepControl(ctx *w.Ctx, host Host, field settings.Field) Node {
+	return stepTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
+		"input":  d.Input(host, field.Key),
+		"note":   d.fields.Note(field.Key),
+		"edited": func() { d.Edited(host, field.Key) },
+		"less":   func() { d.Step(host, field, -1) },
+		"more":   func() { d.Step(host, field, 1) },
+		"fieldW": stepFieldW,
+	}))
+}
+
+// Step moves the number setting of field by delta, within its range, and
+// shows the new value in its field; at an end of the range nothing changes.
+func (d *SettingsDialog) Step(host Host, field settings.Field, delta int) {
+	value, _ := settings.Get(host.Settings(), field.Key)
+	number, _ := value.(settings.Number)
+	stepped := int(number) + delta
+	if stepped < field.Min || stepped > field.Max {
+		return
+	}
+	*d.Input(host, field.Key) = NewTextField(strconv.Itoa(stepped))
+	d.Edited(host, field.Key)
 }
 
 // Reset puts the default back for key and drops it from the file.
@@ -413,6 +440,17 @@ const (
           on-slide="slide" on-slide-end="slideEnd"/>
   <text w="{{shownW}}" color="muted">{{shown}}</text>
 </row>
+`
+
+	stepSource = `<col>
+  <row h="{{rowH}}" gap="{{tightGap}}" align-items="center">
+    <button w="{{iconBtnW}}" h="{{compactH}}" on-click="less" tooltip="Smaller">-</button>
+    <field state="input" w="{{fieldW}}" h="{{rowH}}" bg="sunken" on-change="edited" text-menu="input"/>
+    <button w="{{iconBtnW}}" h="{{compactH}}" on-click="more" tooltip="Larger">+</button>
+    <spacer/>
+  </row>
+  <note if="note" tone="error">{{note}}</note>
+</col>
 `
 
 	textcontrolSource = `<col>

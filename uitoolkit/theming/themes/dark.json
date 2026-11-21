@@ -1,8 +1,5 @@
 {
   "name": "dark",
-  "fontSize": 14,
-  "smallSize": 12,
-  "monoSize": 13,
   "variables": {
     "hero-top": "#1f0a13",
     "hero-bottom": "#571a33"

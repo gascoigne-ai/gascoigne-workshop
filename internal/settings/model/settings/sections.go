@@ -58,12 +58,12 @@ func fieldsOf(section string) []Field {
 	return fields
 }
 
-// unmarshalSettings reads settings text, sectioned or in the older flat
-// form (or a mix), over *into.
-func unmarshalSettings(data []byte, into *Settings) error {
+// flatten reads settings text, sectioned or in the older flat form (or a
+// mix), as one object of key to raw value.
+func flatten(data []byte) (map[string]json.RawMessage, error) {
 	var top map[string]json.RawMessage
 	if err := json.Unmarshal(data, &top); err != nil {
-		return err
+		return nil, err
 	}
 	flat := map[string]json.RawMessage{}
 	for key, value := range top {
@@ -74,11 +74,20 @@ func unmarshalSettings(data []byte, into *Settings) error {
 		}
 		flat[key] = value
 	}
+	return flat, nil
+}
+
+// unmarshalFlat reads the flat object over the defaults.
+func unmarshalFlat(flat map[string]json.RawMessage) (Settings, error) {
 	merged, err := json.Marshal(flat)
 	if err != nil {
-		return err
+		return Default(), err
 	}
-	return json.Unmarshal(merged, into)
+	decoded := Default()
+	if err := json.Unmarshal(merged, &decoded); err != nil {
+		return Default(), err
+	}
+	return decoded, nil
 }
 
 // sectionedText is the settings (the typed values Minimal keeps, by key) written as

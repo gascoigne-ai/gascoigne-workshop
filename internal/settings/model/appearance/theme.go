@@ -56,7 +56,6 @@ func LightTheme() core.Theme { return appTheme("light", theming.Light()) }
 // package supplies the app's own themes and maps its settings onto them.
 type (
 	ThemeChoice    = theming.ThemeChoice
-	SizeChoice     = theming.SizeChoice
 	CornerChoice   = theming.CornerChoice
 	ContrastChoice = theming.ContrastChoice
 	CustomColor    = theming.CustomColor
@@ -68,7 +67,6 @@ const (
 )
 
 var (
-	TextSizeChoices = theming.SizeChoices()
 	CornerChoices   = theming.CornerChoices()
 	ContrastChoices = theming.ContrastChoices()
 	CustomColors    = theming.CustomColors()
@@ -99,12 +97,12 @@ func AllThemeChoices() []ThemeChoice { return catalog.All() }
 // ThemeIDOf is the id of the theme a settings value resolves to.
 func ThemeIDOf(id string) string { return catalog.ThemeID(id) }
 
-// ThemeFor builds the theme for a theme id and a text size id.
-func ThemeFor(themeID, textSizeID string) core.Theme { return catalog.For(themeID, textSizeID) }
+// ThemeFor builds the theme for a theme id and a UI font size in pixels.
+func ThemeFor(themeID string, fontSize int) core.Theme { return catalog.For(themeID, fontSize) }
 
 // ThemeWith is the theme for the settings.
 func ThemeWith(prefs settings.Settings) core.Theme {
-	return catalog.Theme(theming.Prefs{Theme: prefs.Theme, TextSize: prefs.TextSize, Corners: prefs.Corners,
+	return catalog.Theme(theming.Prefs{Theme: prefs.Theme, FontSize: prefs.FontSize, Corners: prefs.Corners,
 		Contrast: prefs.Contrast, Flat: prefs.Flat, Colors: prefs.Colors})
 }
 

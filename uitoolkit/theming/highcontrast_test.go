@@ -43,7 +43,7 @@ func TestHighContrastChangesTheThemeAndNormalLeavesItAlone(t *testing.T) {
 	c := NewCatalog(Builtins())
 	for _, theme := range []string{"dark", "light"} {
 		normal := c.Theme(Prefs{Theme: theme, Contrast: "normal"})
-		base := c.For(theme, "medium")
+		base := c.For(theme, DefaultFontSize)
 		high := c.Theme(Prefs{Theme: theme, Contrast: "high"})
 		changed := 0
 		for _, token := range []core.Token{core.Text, core.Muted, core.Border, core.Rule, core.AccentLine, core.Error, core.OK} {

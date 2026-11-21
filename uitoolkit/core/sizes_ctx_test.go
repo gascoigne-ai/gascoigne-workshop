@@ -8,6 +8,8 @@ import (
 	"golang.org/x/image/font/gofont/gomonobold"
 )
 
+// A 24 px font has a line height near 27: the largest text size must not be
+// cut down to a smaller line than its own face.
 func TestSizesForTable(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -18,7 +20,8 @@ func TestSizesForTable(t *testing.T) {
 		{"small text", 13, 11, Sizes{13, 11, 25, 21, 17, 19, 15, 33, 37, 41, 37, 29, 41, 11}},
 		{"line 15", 15, 13, Sizes{15, 13, 27, 23, 19, 21, 17, 35, 39, 43, 39, 31, 43, 13}},
 		{"line 19", 19, 15, Sizes{19, 15, 31, 27, 23, 25, 19, 39, 43, 47, 43, 35, 47, 15}},
-		{"line clamped high", 30, 20, Sizes{22, 20, 34, 30, 26, 28, 24, 42, 46, 50, 46, 38, 50, 20}},
+		{"a large line is not clamped", 27, 25, Sizes{27, 25, 39, 35, 31, 33, 29, 47, 51, 55, 51, 43, 55, 25}},
+		{"line clamped high", 40, 20, Sizes{28, 20, 40, 36, 32, 34, 24, 48, 52, 56, 52, 44, 56, 20}},
 		{"line clamped low, small clamped to line", 5, 4, Sizes{13, 4, 25, 21, 17, 19, 8, 33, 37, 41, 37, 29, 41, 4}},
 		{"small clamped to line", 14, 30, Sizes{14, 14, 26, 22, 18, 20, 18, 34, 38, 42, 38, 30, 42, 14}},
 	}
