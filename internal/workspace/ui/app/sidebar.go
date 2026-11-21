@@ -36,7 +36,7 @@ func (a *App) sidebar() Node {
 	var sentList Node
 	var rows []Node
 	if a.showSent {
-		sentList = a.sent.List(a, a.filter.Text)
+		sentList = a.sent.List(a.ctx, a, a.filter.Text)
 	} else {
 		for _, row := range a.visibleRows() {
 			rows = append(rows, a.treeRow(row, row.Node() == a.selected))

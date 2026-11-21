@@ -19,7 +19,7 @@ func dialogSize(t *testing.T, dialog *SettingsDialog, host Host) (int, int) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	root := dialog.View(host)
+	root := dialog.View(testCtx(t), host)
 	Layout(ctx, root, 1280, 800)
 	for _, line := range strings.Split(Dump(root), "\n") {
 		if m := dialogRect.FindStringSubmatch(line); m != nil {
@@ -91,7 +91,7 @@ func TestResizingTheDialogByAnEdgeKeepsItOpenAndInsideTheWindow(t *testing.T) {
 			}
 			var root Node
 			frame := func(in core.Input) {
-				root = Stack(Row(), d.View(host)) // the window's Stack, which places the floating dialog
+				root = Stack(Row(), d.View(testCtx(t), host)) // the window's Stack, which places the floating dialog
 				Layout(ctx, root, 1280, 800)
 				ctx.In = in
 				Update(ctx, root)

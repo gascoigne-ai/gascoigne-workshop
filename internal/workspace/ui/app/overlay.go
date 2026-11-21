@@ -178,7 +178,7 @@ func (a *App) pickerView() Node {
 	if a.picker == nil {
 		return nil
 	}
-	return a.picker.View(a.pickerHost)
+	return a.picker.View(a.ctx, a.pickerHost)
 }
 
 // dialogForm is the typed form of a dialog, nothing for the others.
@@ -189,7 +189,7 @@ func (a *App) dialogForm(open *dialog) Node {
 	if open.form == nil {
 		return nil
 	}
-	return open.form.View(a)
+	return open.form.View(a.ctx, a)
 }
 
 // openLayers are the things Escape can close right now.

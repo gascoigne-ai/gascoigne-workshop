@@ -63,16 +63,16 @@ func TestTheStatusBarLogButtonOpensTheTraceView(t *testing.T) {
 	if dump := view.Dump(a.statusBar()); !strings.Contains(dump, `"Log"`) {
 		t.Fatalf("no Log button in the status bar:\n%s", dump)
 	}
-	if a.calls.View(a) != nil {
+	if a.calls.View(a.ctx, a) != nil {
 		t.Fatal("the trace view is shown while closed")
 	}
 	a.calls.Open()
 	a.step(core.Input{X: 5000, Y: 5000})
-	if dump := view.Dump(a.calls.View(a)); !strings.Contains(dump, "Log") {
+	if dump := view.Dump(a.calls.View(a.ctx, a)); !strings.Contains(dump, "Log") {
 		t.Fatalf("trace view:\n%s", dump)
 	}
 	a.calls.Close()
-	if a.calls.View(a) != nil {
+	if a.calls.View(a.ctx, a) != nil {
 		t.Fatal("the trace view stayed after close")
 	}
 }

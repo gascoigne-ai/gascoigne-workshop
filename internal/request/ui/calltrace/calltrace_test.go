@@ -60,16 +60,16 @@ func TestErrorsAreMarkedAsFailures(t *testing.T) {
 
 func TestTheDialogShowsOnlyWhileOpenAndListsTheEntries(t *testing.T) {
 	var log Log
-	log.Info(clock, "→ GET https://one.test")
-	if log.View(fakeHost{}) != nil {
-		t.Fatal("the dialog is shown while closed")
-	}
-	log.Open()
 	ctx, err := core.NewCtx(testTheme())
 	if err != nil {
 		t.Fatal(err)
 	}
-	root := log.View(fakeHost{})
+	log.Info(clock, "→ GET https://one.test")
+	if log.View(ctx, fakeHost{}) != nil {
+		t.Fatal("the dialog is shown while closed")
+	}
+	log.Open()
+	root := log.View(ctx, fakeHost{})
 	Layout(ctx, root, 1000, 800)
 	if dump := Dump(root); !strings.Contains(dump, "Log") || !strings.Contains(dump, "Clear") {
 		t.Fatalf("dialog:\n%s", dump)
@@ -78,7 +78,7 @@ func TestTheDialogShowsOnlyWhileOpenAndListsTheEntries(t *testing.T) {
 		t.Fatal("Shown is false while open")
 	}
 	log.Close()
-	if log.View(fakeHost{}) != nil || log.Shown() {
+	if log.View(ctx, fakeHost{}) != nil || log.Shown() {
 		t.Fatal("the dialog stayed after Close")
 	}
 }
@@ -100,13 +100,14 @@ func TestTitleBarClosesTheLog(t *testing.T) {
 		t.Fatal(err)
 	}
 	bar := log.titleBar()
+	titleH := ctx.Sizes.DialogTitle
 	root := Col(W(800), H(titleH), bar)
 	Layout(ctx, root, 800, titleH)
 	dump := Dump(bar)
 	if !strings.Contains(dump, "Log") || strings.Contains(dump, "fieldB") {
 		t.Errorf("title bar should name the dialog and hold no filter:\n%s", dump)
 	}
-	tools := Dump(log.toolbar())
+	tools := Dump(log.toolbar(ctx.Sizes))
 	for _, want := range []string{"fieldB", "Clear"} {
 		if !strings.Contains(tools, want) {
 			t.Errorf("toolbar has no %q:\n%s", want, tools)

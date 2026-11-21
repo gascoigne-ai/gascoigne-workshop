@@ -14,6 +14,9 @@ import (
 // maxH is the tallest the form's fields grow before they scroll.
 const maxH = 360
 
+// fieldGap is the gap between the name row of a field and its input.
+const fieldGap = w.StepHair
+
 // Form is the dialog content of a tool call: one input per property.
 type Form struct {
 	Tool    model.MCPTool
@@ -112,24 +115,31 @@ type optionRow struct {
 	Pick     func()
 }
 
+// scope is the sizes of the faces the context draws with plus the view's own
+// entries, so a template holds no size as a number.
+func scope(sizes w.Sizes, own markup.Scope) markup.Scope {
+	merged := sizes.Scope()
+	for name, value := range own {
+		merged[name] = value
+	}
+	return merged
+}
+
 // View is the fields of the form, scrolling when there are many.
-func (form *Form) View(host Host) Node {
+func (form *Form) View(ctx *w.Ctx, host Host) Node {
 	fields := make([]fieldRow, len(form.fields))
 	for i, field := range form.fields {
 		fields[i] = form.fieldRow(field)
 	}
-	return formTemplate.MustBuild(markup.Scope{
-		"looseGap":    w.LooseGap,
-		"tightGap":    w.TightGap,
+	return formTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
+		"fieldGap":    fieldGap,
 		"description": form.Tool.Description,
 		"scroll":      &form.scroll,
 		"maxH":        maxH,
 		"fields":      fields,
 		"problem":     form.Problem,
 		"submit":      host.Submit,
-		"labelH":      w.LabelH,
-		"rowH":        w.RowH,
-	})
+	}))
 }
 
 // fieldRow is one field: its name (starred when required), the
@@ -197,7 +207,7 @@ const (
 <col gap="{{looseGap}}">
   <lines if="description" color="muted">{{description}}</lines>
   <scroll state="scroll" max-h="{{maxH}}" gap="{{looseGap}}">
-    <col for="field in fields" gap="2">
+    <col for="field in fields" gap="{{fieldGap}}">
       <row h="{{labelH}}" gap="{{looseGap}}">
         <text small bold>{{field.Name}}</text>
         <text if="field.Description" small muted ellipsis grow="1">{{field.Description}}</text>

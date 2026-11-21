@@ -59,8 +59,9 @@ func TestTheColorPageLaysOutAsPinned(t *testing.T) {
 			if tc.prepare != nil {
 				tc.prepare(&page, host)
 			}
-			root := page.View(host)
-			Layout(newCtx(t), root, tc.width, tc.height)
+			ctx := newCtx(t)
+			root := page.View(ctx, host)
+			Layout(ctx, root, tc.width, tc.height)
 			want, err := os.ReadFile(filepath.Join("testdata", tc.name+".dump"))
 			if err != nil {
 				t.Fatal(err)
@@ -105,7 +106,7 @@ func newDriver(t *testing.T) *pageDriver {
 
 // step runs one frame; input is built from the frame's laid-out view.
 func (driver *pageDriver) step(input func(root *El) w.Input) {
-	root := driver.page.View(driver.host)
+	root := driver.page.View(driver.ctx, driver.host)
 	Layout(driver.ctx, root, wideW, wideH)
 	driver.ctx.In = input(root)
 	Update(driver.ctx, root)
@@ -171,7 +172,7 @@ func TestTypingARefusedHexShowsItsNoteUnderThatRow(t *testing.T) {
 			if len(driver.saved()) != 0 {
 				t.Fatalf("a refused color was saved: %+v", driver.saved())
 			}
-			root := driver.page.View(driver.host)
+			root := driver.page.View(driver.ctx, driver.host)
 			Layout(driver.ctx, root, wideW, wideH)
 			if bordered := findAll(root, "fieldB", "border=error"); len(bordered) != 1 || bordered[0] != findAll(root, "fieldB")[1] {
 				t.Fatalf("only the second field should have the error border:\n%s", Dump(root))

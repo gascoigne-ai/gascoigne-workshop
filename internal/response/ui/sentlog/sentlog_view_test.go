@@ -75,8 +75,9 @@ func TestTheSentListLaysOutAsPinned(t *testing.T) {
 			if tc.prepare != nil {
 				tc.prepare(&log, host)
 			}
-			root := log.List(host, tc.filter)
-			Layout(newCtx(t), root, tc.width, tc.height)
+			ctx := newCtx(t)
+			root := log.List(ctx, host, tc.filter)
+			Layout(ctx, root, tc.width, tc.height)
 			want, err := os.ReadFile(filepath.Join("testdata", tc.name+".dump"))
 			if err != nil {
 				t.Fatal(err)
@@ -122,7 +123,7 @@ func newDriver(t *testing.T) *listDriver {
 
 // step runs one frame; input is built from the frame's laid-out view.
 func (driver *listDriver) step(input func(root *El) core.Input) {
-	root := driver.log.List(driver.host, driver.filter)
+	root := driver.log.List(driver.ctx, driver.host, driver.filter)
 	Layout(driver.ctx, root, wideW, narrowH)
 	driver.ctx.In = input(root)
 	Update(driver.ctx, root)
@@ -181,8 +182,9 @@ func TestAFailedSendShowsFailedAsItsStatus(t *testing.T) {
 	var log Log
 	host := &fakeHost{}
 	threeSends(&log, host)
-	root := log.List(host, "orders")
-	Layout(newCtx(t), root, wideW, wideH)
+	ctx := newCtx(t)
+	root := log.List(ctx, host, "orders")
+	Layout(ctx, root, wideW, wideH)
 	if found := findAll(root, `text="failed"`); len(found) != 1 {
 		t.Fatalf("%d failed labels:\n%s", len(found), Dump(root))
 	}

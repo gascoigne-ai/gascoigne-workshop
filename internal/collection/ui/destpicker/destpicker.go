@@ -19,11 +19,22 @@ const (
 	dialogW    = 440
 	dialogMaxH = 480
 	margin     = w.DialogMargin
-	footPad    = w.Gutter
-	footH      = w.RowH + 2*footPad // the footer's buttons and its padding
 	stripeW    = 3
 	stripeH    = 14
 )
+
+// footH is the height of the footer: its buttons and the padding around them.
+func footH(sizes w.Sizes) int { return sizes.Row + 2*w.Gutter }
+
+// scope is the sizes of the faces the context draws with plus the view's own
+// entries, so a template holds no size as a number.
+func scope(sizes w.Sizes, own markup.Scope) markup.Scope {
+	merged := sizes.Scope()
+	for name, value := range own {
+		merged[name] = value
+	}
+	return merged
+}
 
 // Host is what the dialog needs from the application that shows it.
 type Host interface {
@@ -155,36 +166,36 @@ type rowItem struct {
 }
 
 // View is the dialog.
-func (picker *Picker) View(host Host) Node {
+func (picker *Picker) View(ctx *w.Ctx, host Host) Node {
+	sizes := ctx.Sizes
 	_, windowH := host.Size()
 	height := min(dialogMaxH, windowH-2*margin)
-	listH := height - w.DialogTitleH - footH
-	first, last := shownRows(picker.scroll.Y, listH, len(picker.entries))
+	listH := height - sizes.DialogTitle - footH(sizes)
+	first, last := shownRows(picker.scroll.Y, listH, sizes.Row, len(picker.entries))
 	rows := make([]Node, 0, last-first)
 	for index := first; index < last; index++ {
-		rows = append(rows, picker.row(index, host))
+		rows = append(rows, picker.row(sizes, index, host))
 	}
-	return dialogTemplate.MustBuild(markup.Scope{
-		"width":    dialogW,
-		"height":   height,
-		"move":     &picker.move,
-		"dismiss":  host.Dismiss,
-		"title":    picker.mode.title,
-		"subtitle": DialogSubtitle(picker.node),
-		"scroll":   &picker.scroll,
-		"above":    first * w.RowH,
-		"rows":     rows,
-		"below":    (len(picker.entries) - last) * w.RowH,
-		"foot":     footH,
-		"looseGap": w.LooseGap,
-		"rowH":     w.RowH,
-		"canPick":  picker.selected >= 0,
-		"primary":  picker.mode.primary,
-		"pick":     func() { picker.choose(host) },
-	})
+	return dialogTemplate.MustBuild(scope(sizes, markup.Scope{
+		"width":      dialogW,
+		"height":     height,
+		"move":       &picker.move,
+		"dismiss":    host.Dismiss,
+		"title":      picker.mode.title,
+		"subtitle":   DialogSubtitle(picker.node),
+		"scroll":     &picker.scroll,
+		"above":      first * sizes.Row,
+		"rows":       rows,
+		"below":      (len(picker.entries) - last) * sizes.Row,
+		"foot":       footH(sizes),
+		"canPick":    picker.selected >= 0,
+		"primary":    picker.mode.primary,
+		"pick":       func() { picker.choose(host) },
+		"buttonMinW": w.DialogButtonMinW,
+	}))
 }
 
-func (picker *Picker) row(index int, host Host) Node {
+func (picker *Picker) row(sizes w.Sizes, index int, host Host) Node {
 	entry := picker.entries[index]
 	item := rowItem{
 		Name:     entry.Name,
@@ -200,15 +211,15 @@ func (picker *Picker) row(index int, host Host) Node {
 			}
 		},
 	}
-	return rowTemplate.MustBuild(markup.Scope{"row": item, "rowH": w.RowH, "gutter": w.Gutter, "tightGap": w.TightGap, "stripeW": stripeW, "stripeH": stripeH})
+	return rowTemplate.MustBuild(scope(sizes, markup.Scope{"row": item, "stripeW": stripeW, "stripeH": stripeH}))
 }
 
 // shownRows are the rows built for a list scrolled to scrollY: those in
 // view and one more at each end, so Up and Down can bring the next row into
 // view.
-func shownRows(scrollY, listH, count int) (first, last int) {
-	first = min(max(scrollY/w.RowH-1, 0), count)
-	last = min(first+listH/w.RowH+3, count)
+func shownRows(scrollY, listH, rowH, count int) (first, last int) {
+	first = min(max(scrollY/rowH-1, 0), count)
+	last = min(first+listH/rowH+3, count)
 	return first, last
 }
 
@@ -227,11 +238,11 @@ const (
       <spacer h="{{below}}"/>
     </col>
   </scroll>
-  <row h="{{foot}}" pad-x="16" gap="{{looseGap}}" align-items="center" border-t="border-soft">
+  <row h="{{foot}}" pad-x="{{dialogPad}}" gap="{{looseGap}}" align-items="center" border-t="border-soft">
     <text small muted ellipsis grow="1" shrink>Variables are not changed</text>
-    <segment-chip selected="false" min-w="80" h="{{rowH}}" on-click="dismiss">Cancel</segment-chip>
-    <segment-chip if="canPick" selected="true" min-w="80" h="{{rowH}}" on-click="pick">{{primary}}</segment-chip>
-    <segment-chip if="!canPick" selected="false" min-w="80" h="{{rowH}}" muted>{{primary}}</segment-chip>
+    <segment-chip selected="false" min-w="{{buttonMinW}}" h="{{rowH}}" on-click="dismiss">Cancel</segment-chip>
+    <segment-chip if="canPick" selected="true" min-w="{{buttonMinW}}" h="{{rowH}}" on-click="pick">{{primary}}</segment-chip>
+    <segment-chip if="!canPick" selected="false" min-w="{{buttonMinW}}" h="{{rowH}}" muted>{{primary}}</segment-chip>
   </row>
 </dialog>
 `

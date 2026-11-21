@@ -31,6 +31,22 @@ const (
 	DialogNavW   = 170
 )
 
+// toolbarBtnW is the width of Form, JSON and Save in the dialog's toolbar.
+const toolbarBtnW = 60
+
+// navGap is the gap between two pages in the list beside the form.
+const navGap = w.StepHair
+
+// scope is the sizes of the faces the context draws with plus the view's own
+// entries, so a template holds no size as a number.
+func scope(sizes w.Sizes, own markup.Scope) markup.Scope {
+	merged := sizes.Scope()
+	for name, value := range own {
+		merged[name] = value
+	}
+	return merged
+}
+
 // Host is what the dialog needs from the application: reads, and Send for
 // everything it asks to be done.
 type Host interface {
@@ -127,7 +143,7 @@ func (d *SettingsDialog) Fresh() {
 func (d *SettingsDialog) ResetScroll() { d.scroll.Y = 0 }
 
 // View is the dialog, centered over a dimmed window.
-func (d *SettingsDialog) View(host Host) Node {
+func (d *SettingsDialog) View(ctx *w.Ctx, host Host) Node {
 	width, height := host.Size()
 	maxW, maxH := max(width-2*ScreenMargin, 1), max(height-2*ScreenMargin, 1)
 	dw, dh := d.Size.W, d.Size.H
@@ -141,13 +157,13 @@ func (d *SettingsDialog) View(host Host) Node {
 	cur := d.pageID()
 	nav := make([]Node, len(pages))
 	for i, p := range pages {
-		nav[i] = d.navItem(p, p.id == cur)
+		nav[i] = d.navItem(ctx, p, p.id == cur)
 	}
 	var raw Node
 	if d.Raw {
-		raw = d.rawView(host)
+		raw = d.rawView(ctx, host)
 	}
-	dialog := dialogTemplate.MustBuild(markup.Scope{
+	dialog := dialogTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
 		"size":     &d.Size,
 		"move":     &d.Move,
 		"minW":     min(MinWidth, maxW),
@@ -158,15 +174,16 @@ func (d *SettingsDialog) View(host Host) Node {
 		"height":   dh,
 		"close":    func() { host.Send(prefs.Close{}) },
 		"titleBar": d.titleBar(host),
-		"toolbar":  d.toolbar(host),
+		"toolbar":  d.toolbar(ctx, host),
 		"raw":      d.Raw,
 		"rawView":  raw,
 		"navW":     DialogNavW,
+		"navGap":   navGap,
 		"nav":      nav,
 		"scroll":   &d.scroll,
-		"page":     d.pageContent(host, cur),
-	})
-	return Frag(dialog, d.FontList(host)) // the font list floats over the dialog; a template has one root
+		"page":     d.pageContent(ctx, host, cur),
+	}))
+	return Frag(dialog, d.FontList(ctx, host)) // the font list floats over the dialog; a template has one root
 }
 
 var (
@@ -178,13 +195,13 @@ var (
 )
 
 // pageContent is the content of page id.
-func (d *SettingsDialog) pageContent(host Host, id string) Node {
+func (d *SettingsDialog) pageContent(ctx *w.Ctx, host Host, id string) Node {
 	for _, p := range pages {
 		if p.id != id {
 			continue
 		}
 		if p.category != "" {
-			return d.FormPage(host, p.category)
+			return d.FormPage(ctx, host, p.category)
 		}
 		return host.ExtraPage(id)
 	}
@@ -216,17 +233,16 @@ func (d *SettingsDialog) subtitle() string {
 
 // toolbar is the row under the title bar: the search field (a spacer in the
 // raw view), Save and the switch between the form and the raw text.
-func (d *SettingsDialog) toolbar(host Host) Node {
-	return toolbarTemplate.MustBuild(markup.Scope{
+func (d *SettingsDialog) toolbar(ctx *w.Ctx, host Host) Node {
+	return toolbarTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
 		"raw":      d.Raw,
 		"search":   &d.Search,
 		"searched": d.ResetScroll,
-		"save":     d.saveButton(host),
-		"compactH": w.CompactH,
-		"rowH":     w.RowH,
+		"save":     d.saveButton(ctx, host),
 		"closeRaw": d.CloseRaw,
 		"openRaw":  func() { d.OpenRaw(host) },
-	})
+		"btnW":     toolbarBtnW,
+	}))
 }
 
 var (
@@ -235,17 +251,15 @@ var (
 )
 
 // navItem is one page in the list: the open one is tinted and bold.
-func (d *SettingsDialog) navItem(entry page, open bool) Node {
+func (d *SettingsDialog) navItem(ctx *w.Ctx, entry page, open bool) Node {
 	template := navClosedTemplate
 	if open {
 		template = navOpenTemplate
 	}
-	return template.MustBuild(markup.Scope{
-		"rowH":   w.RowH,
-		"gutter": w.Gutter,
-		"label":  entry.label,
-		"pick":   func() { d.Cat, d.scroll.Y = entry.id, 0 },
-	})
+	return template.MustBuild(scope(ctx.Sizes, markup.Scope{
+		"label": entry.label,
+		"pick":  func() { d.Cat, d.scroll.Y = entry.id, 0 },
+	}))
 }
 
 // Reload resets what depends on the settings in effect: typed text and
@@ -261,7 +275,7 @@ func (d *SettingsDialog) Searching() bool { return strings.TrimSpace(d.Search.Te
 // saveButton writes the changes that were applied but not stored; it is lit
 // while there are some. With auto-save on and nothing pending there is
 // nothing to save and there is no button.
-func (d *SettingsDialog) saveButton(host Host) Node {
+func (d *SettingsDialog) saveButton(ctx *w.Ctx, host Host) Node {
 	template := saveIdleTemplate
 	switch {
 	case host.Unsaved():
@@ -269,10 +283,10 @@ func (d *SettingsDialog) saveButton(host Host) Node {
 	case host.Settings().AutoSave:
 		return nil
 	}
-	return template.MustBuild(markup.Scope{
-		"compactH": w.CompactH,
-		"save":     func() { d.Save(host) },
-	})
+	return template.MustBuild(scope(ctx.Sizes, markup.Scope{
+		"save": func() { d.Save(host) },
+		"btnW": toolbarBtnW,
+	}))
 }
 
 // Save writes what is applied but not stored: the raw text as typed when
@@ -298,14 +312,14 @@ const (
                   w="{{width}}" h="{{height}}" moved="move" on-dismiss="close">
   <slot name="titleBar"/>
   <slot name="toolbar"/>
-  <col if="raw" grow="1" pad="16">
+  <col if="raw" grow="1" pad="{{dialogPad}}">
     <slot name="rawView"/>
   </col>
   <row if="!raw" grow="1">
-    <col w="{{navW}}" pad="8" gap="2" bg="frame" round-bl="menu">
+    <col w="{{navW}}" pad="{{looseGap}}" gap="{{navGap}}" bg="frame" round-bl="menu">
       <slot for="item in nav" name="item"/>
     </col>
-    <scroll state="scroll" grow="1" pad="16" border-l="border-soft">
+    <scroll state="scroll" grow="1" pad="{{dialogPad}}" border-l="border-soft">
       <slot if="page" name="page"/>
     </scroll>
   </row>
@@ -327,15 +341,15 @@ const (
          on-change="searched" text-menu="search"/>
   <spacer if="raw" grow="1"/>
   <slot if="save" name="save"/>
-  <button if="raw" w="60" h="{{compactH}}" on-click="closeRaw" tooltip="Back to the settings form">Form</button>
-  <button if="!raw" w="60" h="{{compactH}}" on-click="openRaw" tooltip="Edit settings.json as text">JSON</button>
+  <button if="raw" w="{{btnW}}" h="{{compactH}}" on-click="closeRaw" tooltip="Back to the settings form">Form</button>
+  <button if="!raw" w="{{btnW}}" h="{{compactH}}" on-click="openRaw" tooltip="Edit settings.json as text">JSON</button>
 </dialog-toolbar>
 `
 
-	savePendingSource = `<primary-button w="60" h="{{compactH}}" on-click="save" tooltip="Write the changes to settings.json">Save</primary-button>
+	savePendingSource = `<primary-button w="{{btnW}}" h="{{compactH}}" on-click="save" tooltip="Write the changes to settings.json">Save</primary-button>
 `
 
-	saveIdleSource = `<button w="60" h="{{compactH}}" on-click="save" tooltip="Nothing to save yet; changes are written when you click Save">Save</button>
+	saveIdleSource = `<button w="{{btnW}}" h="{{compactH}}" on-click="save" tooltip="Nothing to save yet; changes are written when you click Save">Save</button>
 `
 
 	navitemOpenSource = `<row h="{{rowH}}" pad-x="{{gutter}}" align-items="center" control="button" on-click="pick" bg="accent-soft">

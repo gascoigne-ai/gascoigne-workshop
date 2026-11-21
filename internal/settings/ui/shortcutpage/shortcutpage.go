@@ -297,26 +297,37 @@ func textKeyRows(goos string) []textKeyRow {
 	return rows
 }
 
+// scope is the sizes of the faces the context draws with plus the page's own
+// entries, so a template holds no size as a number.
+func scope(sizes w.Sizes, own markup.Scope) markup.Scope {
+	merged := sizes.Scope()
+	for name, value := range own {
+		merged[name] = value
+	}
+	return merged
+}
+
+// Widths of the buttons of an action row, by role.
+const (
+	keyChipW    = 120 // the chip that shows and records the key
+	replaceBtnW = 64  // the Replace button of a conflict
+)
+
 // View is the page: a search field and a table of actions.
-func (p *Page) View(host Host) Node {
+func (p *Page) View(ctx *w.Ctx, host Host) Node {
 	var actions []actionRow
 	for _, action := range host.Actions() {
 		if matches(action, KeyText(host, action.ID), p.search.Text) {
 			actions = append(actions, p.row(host, action))
 		}
 	}
-	return pageTemplate.MustBuild(markup.Scope{
-		"tightGap": w.TightGap,
+	return pageTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
 		"search":   &p.search,
 		"actions":  actions,
 		"noMatch":  len(actions) == 0,
 		"textKeys": textKeyRows(host.HostOS()),
-		"rowH":     w.RowH,
-		"compactH": w.CompactH,
-		"labelH":   w.LabelH,
-		"gutter":   w.Gutter,
-		"iconBtnW": w.IconBtnW,
-	})
+		"keyChipW": keyChipW, "replaceBtnW": replaceBtnW,
+	}))
 }
 
 func (p *Page) row(host Host, action Action) actionRow {
@@ -358,7 +369,7 @@ const (
     <col for="action in actions">
       <row h="{{compactH}}" gap="{{tightGap}}">
         <text small grow="1" ellipsis>{{action.Name}}</text>
-        <segment-chip selected="{{action.Recording}}" w="120" h="{{compactH}}" on-click="action.Record"
+        <segment-chip selected="{{action.Recording}}" w="{{keyChipW}}" h="{{compactH}}" on-click="action.Record"
                 tooltip="Click, then press the keys">{{action.Key}}</segment-chip>
         <icon-button if="action.Bound" icon="unlink" w="{{iconBtnW}}" h="{{compactH}}" on-click="action.Clear"
                 tooltip="Leave the action without a key"/>
@@ -370,7 +381,7 @@ const (
       <!-- at most one of the conflict, the refusal and the warning is set -->
       <row if="action.Conflict" h="{{compactH}}" gap="{{tightGap}}">
         <text small color="error" ellipsis grow="1">{{action.Conflict}}</text>
-        <button w="64" h="{{compactH}}" on-click="action.Replace" tooltip="{{action.ReplaceTip}}">Replace</button>
+        <button w="{{replaceBtnW}}" h="{{compactH}}" on-click="action.Replace" tooltip="{{action.ReplaceTip}}">Replace</button>
       </row>
       <note if="action.Refusal" tone="error">{{action.Refusal}}</note>
       <note if="action.Warning" tone="muted">{{action.Warning}}</note>

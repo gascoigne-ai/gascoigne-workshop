@@ -96,7 +96,7 @@ func TestTheAppearancePageHasFontControlsShowingTheCurrentFamily(t *testing.T) {
 	a := testApp(t)
 	a.prefs.Families = testFamilies(t)
 	a.settings.UIFont = "Go Mono"
-	dump := Dump(a.prefs.FormPage(a, "Appearance"))
+	dump := Dump(a.prefs.FormPage(a.ctx, a, "Appearance"))
 	for _, want := range []string{"Interface font", "Code font", `text="Go Mono"`} {
 		if !strings.Contains(dump, want) {
 			t.Errorf("appearance page lacks %q", want)
@@ -110,7 +110,7 @@ func TestTheAppearancePageHasFontControlsShowingTheCurrentFamily(t *testing.T) {
 func TestEscapeClosesTheFontListBeforeTheDialog(t *testing.T) {
 	a, _ := openSettingsPage(t, "appearance")
 	a.prefs.Families = testFamilies(t)
-	a.prefs.OpenFontList(a, settingsui.FontUI)
+	a.prefs.OpenFontList(a.ctx, a, settingsui.FontUI)
 	a.step(core.Input{X: 5000, Y: 5000, Escape: true})
 	if a.prefs.FontListOpen() || !a.menu {
 		t.Fatalf("after the first Escape: list open %v, dialog open %v; want the list closed and the dialog open", a.prefs.FontListOpen(), a.menu)
@@ -124,7 +124,7 @@ func TestEscapeClosesTheFontListBeforeTheDialog(t *testing.T) {
 func TestReopeningTheSettingsStartsWithTheFontListClosedAndWorking(t *testing.T) {
 	a, _ := openSettingsPage(t, "appearance")
 	a.prefs.Families = testFamilies(t)
-	a.prefs.OpenFontList(a, settingsui.FontUI)
+	a.prefs.OpenFontList(a.ctx, a, settingsui.FontUI)
 	a.closeSettings() // the dialog's own close button
 	if a.prefs.FontListOpen() {
 		t.Fatal("the list stayed open behind a closed dialog")
@@ -134,7 +134,7 @@ func TestReopeningTheSettingsStartsWithTheFontListClosedAndWorking(t *testing.T)
 	if a.prefs.FontListOpen() {
 		t.Fatal("the reopened dialog shows the old list")
 	}
-	a.prefs.OpenFontList(a, settingsui.FontUI)
+	a.prefs.OpenFontList(a.ctx, a, settingsui.FontUI)
 	if !a.prefs.FontListOpen() {
 		t.Fatal("the list cannot be opened again")
 	}
@@ -144,7 +144,7 @@ func TestReopeningTheSettingsStartsWithTheFontListClosedAndWorking(t *testing.T)
 // next click reaches the dialog.
 func TestAClickOutsideTheFontListClosesOnlyTheList(t *testing.T) {
 	a, _ := openSettingsPage(t, "appearance")
-	a.prefs.OpenFontList(a, settingsui.FontUI)
+	a.prefs.OpenFontList(a.ctx, a, settingsui.FontUI)
 	click(a, menuBtnX, menuBtnY)
 	if !a.menu || a.prefs.FontListOpen() {
 		t.Fatalf("dialog open %v, list open %v; want the list closed and the dialog open", a.menu, a.prefs.FontListOpen())

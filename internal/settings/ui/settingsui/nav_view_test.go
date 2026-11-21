@@ -18,8 +18,8 @@ const (
 
 // navList is the list of pages as the dialog shows it with page open
 // open.
-func navList(dialog *SettingsDialog, open string) *El {
-	return Col(For(pages, func(_ int, entry page) Node { return dialog.navItem(entry, entry.id == open) }))
+func navList(t *testing.T, dialog *SettingsDialog, open string) *El {
+	return Col(For(pages, func(_ int, entry page) Node { return dialog.navItem(testCtx(t), entry, entry.id == open) }))
 }
 
 // The list of pages, one open and the rest closed, is pinned at both
@@ -36,7 +36,7 @@ func TestTheSettingsNavLaysOutAsPinned(t *testing.T) {
 		name := "nav-colors-open-" + size.name
 		t.Run(name, func(t *testing.T) {
 			var dialog SettingsDialog
-			root := navList(&dialog, "colors")
+			root := navList(t, &dialog, "colors")
 			ctx, err := core.NewCtx(testTheme())
 			if err != nil {
 				t.Fatal(err)
@@ -61,7 +61,7 @@ func TestClickingAPageInTheNavOpensItAtTheTop(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	root := navList(&dialog, dialog.Cat)
+	root := navList(t, &dialog, dialog.Cat)
 	Layout(ctx, root, navWideW, len(pages)*core.RowH)
 	found := findAll(root, `text="Requests"`)
 	if len(found) != 1 {

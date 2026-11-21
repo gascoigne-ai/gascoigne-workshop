@@ -26,8 +26,10 @@ const (
 	dialogW    = 820
 	dialogMaxH = w.DialogMaxH
 	margin     = w.DialogMargin
-	titleH     = w.DialogTitleH
 )
+
+// clearBtnW is the width of the Clear button.
+const clearBtnW = 64
 
 // Host is what the dialog needs from the application that shows it.
 type Host interface {
@@ -163,8 +165,18 @@ var (
 	toolbarTemplate = markup.Must("toolbar.vml", toolbarSource)
 )
 
+// scope is the sizes of the faces the context draws with plus the view's own
+// entries, so a template holds no size as a number.
+func scope(sizes w.Sizes, own markup.Scope) markup.Scope {
+	merged := sizes.Scope()
+	for name, value := range own {
+		merged[name] = value
+	}
+	return merged
+}
+
 // View is the dialog while it is open, nothing otherwise.
-func (l *Log) View(host Host) Node {
+func (l *Log) View(ctx *w.Ctx, host Host) Node {
 	if !l.shown {
 		return nil
 	}
@@ -176,7 +188,7 @@ func (l *Log) View(host Host) Node {
 		"close":   l.Close,
 		"move":    &l.move,
 		"title":   l.titleBar(),
-		"toolbar": l.toolbar(),
+		"toolbar": l.toolbar(ctx.Sizes),
 		"code":    &l.code,
 	})
 }
@@ -192,13 +204,12 @@ func (l *Log) titleBar() Node {
 }
 
 // toolbar is the row under the title bar: the filter and Clear.
-func (l *Log) toolbar() Node {
-	return toolbarTemplate.MustBuild(markup.Scope{
-		"rowH":     w.RowH,
-		"filter":   &l.filter,
-		"clear":    l.Clear,
-		"compactH": w.CompactH,
-	})
+func (l *Log) toolbar(sizes w.Sizes) Node {
+	return toolbarTemplate.MustBuild(scope(sizes, markup.Scope{
+		"filter": &l.filter,
+		"clear":  l.Clear,
+		"clearW": clearBtnW,
+	}))
 }
 
 // Templates, parsed once above.
@@ -220,7 +231,7 @@ const (
 	toolbarSource = `<!-- The row under the title bar: the filter and Clear. -->
 <dialog-toolbar>
   <field state="filter" h="{{rowH}}" grow="1" bg="sunken" placeholder="Filter" text-menu="filter"/>
-  <button w="64" h="{{compactH}}" on-click="clear" tooltip="Forget the entries">Clear</button>
+  <button w="{{clearW}}" h="{{compactH}}" on-click="clear" tooltip="Forget the entries">Clear</button>
 </dialog-toolbar>
 `
 )

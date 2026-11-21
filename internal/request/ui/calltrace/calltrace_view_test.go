@@ -46,7 +46,7 @@ func withEntries() *Log {
 // host's size; the dialog floats, so a Stack stands for the window.
 func layOut(t *testing.T, ctx *core.Ctx, log *Log, host sizedHost) *El {
 	t.Helper()
-	root := Stack(log.View(host))
+	root := Stack(log.View(ctx, host))
 	Layout(ctx, root, host.width, host.height)
 	return root
 }

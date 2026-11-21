@@ -35,7 +35,7 @@ func TestTheFontControlShowsTheCurrentFamilyInItsOwnFont(t *testing.T) {
 	host := newHost(t)
 	d.Families = testFamilies(t)
 	host.current.UIFont = "Go Mono"
-	page := dump(d.FormPage(host, "Appearance"))
+	page := dump(d.FormPage(testCtx(t), host, "Appearance"))
 	if !strings.Contains(page, `text="Go Mono"`) || !strings.Contains(page, "font=custom") {
 		t.Fatalf("the interface font control does not show its family in that font:\n%s", page)
 	}
@@ -45,11 +45,11 @@ func TestTheFontListOpensWithEveryFamilyEachInItsOwnFont(t *testing.T) {
 	var d SettingsDialog
 	host := newHost(t)
 	d.Families = testFamilies(t)
-	if d.FontList(host) != nil {
+	if d.FontList(testCtx(t), host) != nil {
 		t.Fatal("the list is shown while closed")
 	}
-	d.OpenFontList(host, FontUI)
-	list := dump(d.FontList(host))
+	d.OpenFontList(testCtx(t), host, FontUI)
+	list := dump(d.FontList(testCtx(t), host))
 	for _, want := range []string{`text="Built-in"`, `text="Go"`, `text="Go Mono"`} {
 		if !strings.Contains(list, want) {
 			t.Errorf("the list lacks %s:\n%s", want, list)
@@ -64,12 +64,12 @@ func TestPickingAFamilyAppliesItAndClosesTheList(t *testing.T) {
 	var d SettingsDialog
 	host := newHost(t)
 	d.Families = testFamilies(t)
-	d.OpenFontList(host, FontCode)
+	d.OpenFontList(testCtx(t), host, FontCode)
 	d.PickFont(host, "Go")
 	if host.current.CodeFont != "Go" || d.FontListOpen() {
 		t.Fatalf("CodeFont %q, open %v", host.current.CodeFont, d.FontListOpen())
 	}
-	d.OpenFontList(host, FontCode)
+	d.OpenFontList(testCtx(t), host, FontCode)
 	d.PickFont(host, "") // Built-in
 	if host.current.CodeFont != "" {
 		t.Fatalf("CodeFont %q after choosing Built-in", host.current.CodeFont)
@@ -80,9 +80,9 @@ func TestTheFontListSearchNarrowsTheFamilies(t *testing.T) {
 	var d SettingsDialog
 	host := newHost(t)
 	d.Families = testFamilies(t)
-	d.OpenFontList(host, FontUI)
+	d.OpenFontList(testCtx(t), host, FontUI)
 	d.FontSearch = NewTextField("mono")
-	list := dump(d.FontList(host))
+	list := dump(d.FontList(testCtx(t), host))
 	if !strings.Contains(list, `text="Go Mono"`) || strings.Contains(list, `text="Go"`) {
 		t.Fatalf("search results:\n%s", list)
 	}
@@ -97,8 +97,8 @@ func TestOnlyTheVisibleRowsLoadTheirFonts(t *testing.T) {
 	for i := range 300 {
 		d.Families = append(d.Families, fontfamily.Family{Name: fmt.Sprintf("Family %03d", i), Regular: fmt.Sprintf("%s#%d", base.Regular, i)})
 	}
-	d.OpenFontList(host, FontUI)
-	_ = d.FontList(host)
+	d.OpenFontList(testCtx(t), host, FontUI)
+	_ = d.FontList(testCtx(t), host)
 	if got := d.loadedFaces(); got > 14 {
 		t.Fatalf("%d fonts loaded for the first screen of a 300-family list", got)
 	}
@@ -107,9 +107,9 @@ func TestOnlyTheVisibleRowsLoadTheirFonts(t *testing.T) {
 func TestEscapingOrClickingOutsideClosesTheList(t *testing.T) {
 	var d SettingsDialog
 	host := newHost(t)
-	d.OpenFontList(host, FontUI)
+	d.OpenFontList(testCtx(t), host, FontUI)
 	d.CloseFontList()
-	if d.FontListOpen() || d.FontList(host) != nil {
+	if d.FontListOpen() || d.FontList(testCtx(t), host) != nil {
 		t.Fatal("the list stayed open")
 	}
 }
@@ -123,8 +123,8 @@ func TestTheFontListOpensScrolledToTheSelectedFamily(t *testing.T) {
 		d.Families = append(d.Families, fontfamily.Family{Name: fmt.Sprintf("Family %03d", i), Regular: fmt.Sprintf("none#%d", i)})
 	}
 	host.current.UIFont = "Family 200"
-	d.OpenFontList(host, FontUI)
-	list := dump(d.FontList(host))
+	d.OpenFontList(testCtx(t), host, FontUI)
+	list := dump(d.FontList(testCtx(t), host))
 	if !strings.Contains(list, `text="Family 200"`) {
 		t.Fatalf("the selected family is not in the rows built on open:\n%.600s", list)
 	}
@@ -132,8 +132,8 @@ func TestTheFontListOpensScrolledToTheSelectedFamily(t *testing.T) {
 		t.Fatal("the list opened at the top instead of at the selection")
 	}
 	// the selected row sits inside the visible part of the list
-	row := d.selectedRow(host)
-	if y := row*fontListRowH - d.list.scroll.Y; y < 0 || y+fontListRowH > fontListH {
+	row, rowH := d.selectedRow(host), testCtx(t).Sizes.Row
+	if y := row*rowH - d.list.scroll.Y; y < 0 || y+rowH > fontListH {
 		t.Fatalf("row %d at y=%d is outside the %dpx viewport", row, y, fontListH)
 	}
 }
@@ -142,7 +142,7 @@ func TestTheFontListOpensAtTheTopWhenNothingIsSelected(t *testing.T) {
 	var d SettingsDialog
 	host := newHost(t)
 	d.Families = testFamilies(t)
-	d.OpenFontList(host, FontCode) // Built-in is in use
+	d.OpenFontList(testCtx(t), host, FontCode) // Built-in is in use
 	if d.list.scroll.Y != 0 {
 		t.Fatalf("scroll = %d, want the top", d.list.scroll.Y)
 	}

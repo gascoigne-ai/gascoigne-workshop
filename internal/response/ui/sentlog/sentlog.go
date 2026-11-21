@@ -102,18 +102,28 @@ var (
 	rowTemplate   = markup.Must("row.vml", rowSource)
 )
 
+// scope is the sizes of the faces the context draws with plus the view's own
+// entries, so a template holds no size as a number.
+func scope(sizes w.Sizes, own markup.Scope) markup.Scope {
+	merged := sizes.Scope()
+	for name, value := range own {
+		merged[name] = value
+	}
+	return merged
+}
+
 // List is the sidebar body while it shows the log instead of the tree:
 // the rows, or a note while none match.
-func (l *Log) List(host Host, filter string) Node {
+func (l *Log) List(ctx *w.Ctx, host Host, filter string) Node {
 	sent := l.Rows(filter)
 	if len(sent) == 0 { // a template has one root, so the note is its own
-		return emptyTemplate.MustBuild(markup.Scope{"gutter": w.Gutter})
+		return emptyTemplate.MustBuild(scope(ctx.Sizes, nil))
 	}
 	rows := make([]Node, 0, len(sent))
 	for _, entry := range sent {
-		rows = append(rows, l.row(host, entry))
+		rows = append(rows, l.row(ctx.Sizes, host, entry))
 	}
-	return listTemplate.MustBuild(markup.Scope{"scroll": &l.scroll, "rows": rows})
+	return listTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{"scroll": &l.scroll, "rows": rows}))
 }
 
 // sentRow is what the row template shows of one sent request.
@@ -126,9 +136,8 @@ type sentRow struct {
 }
 
 // row is one sent request: badge, path and status above, URL and time below.
-func (l *Log) row(host Host, sent port.Sent) Node {
-	return rowTemplate.MustBuild(markup.Scope{
-		"tightGap": w.TightGap,
+func (l *Log) row(sizes w.Sizes, host Host, sent port.Sent) Node {
+	return rowTemplate.MustBuild(scope(sizes, markup.Scope{
 		"row": sentRow{
 			Badge:  host.Badge(sent.Protocol, sent.Method),
 			Path:   sent.Path,
@@ -136,8 +145,7 @@ func (l *Log) row(host Host, sent port.Sent) Node {
 			When:   sent.URL + "  " + sent.At.Format("15:04:05"),
 			Open:   func() { l.Open(host, sent) },
 		},
-		"gutter": w.Gutter,
-	})
+	}))
 }
 
 func status(code int) string {
@@ -159,7 +167,7 @@ const (
 </col>
 `
 
-	rowSource = `<col pad-x="{{gutter}}" pad-y="4" hover-bg="hover" control="row" on-click="row.Open">
+	rowSource = `<col pad-x="{{gutter}}" pad-y="{{nearGap}}" hover-bg="hover" control="row" on-click="row.Open">
   <row gap="{{tightGap}}" align-items="baseline">
     <slot name="row.Badge"/>
     <text ellipsis grow="1">{{row.Path}}</text>

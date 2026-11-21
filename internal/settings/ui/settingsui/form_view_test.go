@@ -74,7 +74,7 @@ func TestTheSettingsFormLaysOutAsPinned(t *testing.T) {
 			if tc.prepare != nil {
 				tc.prepare(t, &dialog, host)
 			}
-			root := dialog.FormPage(host, tc.category)
+			root := dialog.FormPage(testCtx(t), host, tc.category)
 			ctx, err := core.NewCtx(testTheme())
 			if err != nil {
 				t.Fatal(err)
@@ -114,7 +114,7 @@ func newFormDriver(t *testing.T, category string) *formDriver {
 
 // step runs one frame; input is built from the frame's laid-out view.
 func (driver *formDriver) step(input func(root *El) core.Input) {
-	root := driver.dialog.FormPage(driver.host, driver.category)
+	root := driver.dialog.FormPage(driver.ctx, driver.host, driver.category)
 	Layout(driver.ctx, root, formWideW, formWideH)
 	driver.ctx.In = input(root)
 	Update(driver.ctx, root)
@@ -167,7 +167,7 @@ func (driver *formDriver) retype(text string) {
 
 // view is the page as the next frame draws it, laid out.
 func (driver *formDriver) view() string {
-	root := driver.dialog.FormPage(driver.host, driver.category)
+	root := driver.dialog.FormPage(driver.ctx, driver.host, driver.category)
 	Layout(driver.ctx, root, formWideW, formWideH)
 	return Dump(root)
 }

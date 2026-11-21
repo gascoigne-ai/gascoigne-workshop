@@ -66,11 +66,11 @@ func dump(node Node) string { return Dump(node) }
 func TestAPageShowsItsSettingsAndTheSearchFiltersAcrossPages(t *testing.T) {
 	var d SettingsDialog
 	host := newHost(t)
-	if text := dump(d.FormPage(host, "Requests")); !strings.Contains(text, "Proxy") || strings.Contains(text, "Corners") {
+	if text := dump(d.FormPage(testCtx(t), host, "Requests")); !strings.Contains(text, "Proxy") || strings.Contains(text, "Corners") {
 		t.Fatalf("Requests page:\n%s", text)
 	}
 	d.Search = NewTextField("corners")
-	if text := dump(d.FormPage(host, "Requests")); !strings.Contains(text, "Corners") || strings.Contains(text, "Proxy") {
+	if text := dump(d.FormPage(testCtx(t), host, "Requests")); !strings.Contains(text, "Corners") || strings.Contains(text, "Proxy") {
 		t.Fatalf("search results:\n%s", text)
 	}
 }
@@ -166,7 +166,7 @@ func (h *fakeHost) SettingsStore() port.SettingsStore {
 func TestAFileSettingHasAFolderButtonInsideItsFieldThatFillsIt(t *testing.T) {
 	var d SettingsDialog
 	host := newHost(t)
-	page := dump(d.FormPage(host, "Requests"))
+	page := dump(d.FormPage(testCtx(t), host, "Requests"))
 	if strings.Count(page, "icon=folder") != 3 {
 		t.Fatalf("each of the three certificate settings needs a folder button:\n%s", page)
 	}
@@ -186,16 +186,16 @@ func (h *fakeHost) PickFile(title string, done func(path string)) {
 func TestTheSaveButtonIsHiddenWhileAutoSaveIsOnAndNothingIsPending(t *testing.T) {
 	var d SettingsDialog
 	host := newHost(t)
-	if d.saveButton(host) != nil {
+	if d.saveButton(testCtx(t), host) != nil {
 		t.Fatal("with auto-save on and nothing pending there is nothing to save, so no button")
 	}
 	host.current.AutoSave = false
-	if !strings.Contains(dump(d.saveButton(host)), "onClick=true") {
-		t.Fatalf("with auto-save off the Save button must work:\n%s", dump(d.saveButton(host)))
+	if !strings.Contains(dump(d.saveButton(testCtx(t), host)), "onClick=true") {
+		t.Fatalf("with auto-save off the Save button must work:\n%s", dump(d.saveButton(testCtx(t), host)))
 	}
 	host.unsaved = true
 	host.current.AutoSave = true // changes pending even though the option is back on: Save stays available
-	if !strings.Contains(dump(d.saveButton(host)), "onClick=true") {
+	if !strings.Contains(dump(d.saveButton(testCtx(t), host)), "onClick=true") {
 		t.Fatal("Save is hidden although changes are pending")
 	}
 }
@@ -203,13 +203,13 @@ func TestTheSaveButtonIsHiddenWhileAutoSaveIsOnAndNothingIsPending(t *testing.T)
 func TestAnEmptyFileSettingIsOnlyAButtonAndAFilledOneShowsItsPath(t *testing.T) {
 	var d SettingsDialog
 	host := newHost(t)
-	empty := dump(d.fileControl(host, mustField(t, "caCert")))
+	empty := dump(d.fileControl(testCtx(t), host, mustField(t, "caCert")))
 	if strings.Contains(empty, "fieldB") || !strings.Contains(empty, "icon=folder") || !strings.Contains(empty, "Choose file") {
 		t.Fatalf("an empty file setting should be one button with the folder icon and a label, no field:\n%s", empty)
 	}
 	host.current.CACert = "/etc/ssl/ca.pem"
 	d = SettingsDialog{}
-	filled := dump(d.fileControl(host, mustField(t, "caCert")))
+	filled := dump(d.fileControl(testCtx(t), host, mustField(t, "caCert")))
 	if !strings.Contains(filled, "fieldB") || !strings.Contains(filled, "icon=folder") {
 		t.Fatalf("a set file shows its path with a folder button:\n%s", filled)
 	}
@@ -229,7 +229,7 @@ func mustField(t *testing.T, key string) settings.Field {
 func TestToolbarHasTheSearchFieldOnlyOutsideTheRawView(t *testing.T) {
 	for _, raw := range []bool{false, true} {
 		d := SettingsDialog{Raw: raw}
-		bar := d.toolbar(newHost(t))
+		bar := d.toolbar(testCtx(t), newHost(t))
 		ctx, err := w.NewCtx(w.Theme{Colors: map[w.Token]color.RGBA{w.Text: w.RGB(0xffffff)}, FontSize: 14, SmallSize: 12, MonoSize: 13})
 		if err != nil {
 			t.Fatal(err)
@@ -254,7 +254,7 @@ func TestNavItemTemplateMatchesTheGoView(t *testing.T) {
 		if open {
 			goView = Row(append(items, Bg(w.AccentSoft), Text(p.label, Bold(), Color(w.AccentLine), Grow(1)))...)
 		}
-		assertSameDump(t, d.navItem(p, open), goView, 170, w.RowH)
+		assertSameDump(t, d.navItem(testCtx(t), p, open), goView, 170, w.RowH)
 	}
 }
 

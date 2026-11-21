@@ -83,11 +83,11 @@ func (a *App) openMenuItems(posX, posY int, items []prefs.MenuItem) {
 func (a *App) ExtraPage(id string) Node {
 	switch id {
 	case "colors":
-		return a.colors.View(a)
+		return a.colors.View(a.ctx, a)
 	case "shortcuts":
-		return a.shortcutKeys.View(a)
+		return a.shortcutKeys.View(a.ctx, a)
 	case "system":
-		return systempage.View(a)
+		return systempage.View(a.ctx, a)
 	}
 	return nil
 }
@@ -124,7 +124,7 @@ func (a *App) menuView() Node {
 	if !a.menu {
 		return nil
 	}
-	return a.prefs.View(a)
+	return a.prefs.View(a.ctx, a)
 }
 
 // toggleSettings is the header button: it opens the dialog or closes it.

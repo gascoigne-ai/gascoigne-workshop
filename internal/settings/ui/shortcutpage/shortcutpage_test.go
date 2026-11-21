@@ -50,7 +50,7 @@ func TestSearchMatchesTheActionNameOrTheKey(t *testing.T) {
 		t.Run(test.query, func(t *testing.T) {
 			var page Page
 			page.search = NewTextField(test.query)
-			dump := Dump(page.View(&fakeHost{current: settings.Default()}))
+			dump := Dump(page.View(newCtx(t), &fakeHost{current: settings.Default()}))
 			if !strings.Contains(dump, test.want) || strings.Contains(dump, test.notWant) {
 				t.Fatalf("search %q:\n%s", test.query, dump)
 			}
@@ -58,7 +58,7 @@ func TestSearchMatchesTheActionNameOrTheKey(t *testing.T) {
 	}
 	var page Page
 	page.search = NewTextField("zzzz")
-	if !strings.Contains(Dump(page.View(&fakeHost{current: settings.Default()})), "No shortcut matches") {
+	if !strings.Contains(Dump(page.View(newCtx(t), &fakeHost{current: settings.Default()})), "No shortcut matches") {
 		t.Fatal("no empty-result note")
 	}
 }

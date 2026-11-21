@@ -75,7 +75,7 @@ func newCtx(t *testing.T) *core.Ctx {
 
 func layOut(t *testing.T, ctx *core.Ctx, picker *Picker, host Host) *El {
 	t.Helper()
-	root := Stack(picker.View(host))
+	root := Stack(picker.View(ctx, host))
 	Layout(ctx, root, 1000, 800)
 	return root
 }

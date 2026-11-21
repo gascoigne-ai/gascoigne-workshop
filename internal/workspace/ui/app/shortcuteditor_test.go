@@ -25,7 +25,7 @@ func TestRecordingATakenKeyOffersReplaceAndSavesNothingYet(t *testing.T) {
 	if len(a.settings.Shortcuts) != 0 {
 		t.Fatalf("shortcuts = %v, want nothing saved before the user replaces", a.settings.Shortcuts)
 	}
-	if dump := view.Dump(a.shortcutKeys.View(a)); !strings.Contains(dump, "Used by New request") || !strings.Contains(dump, "Replace") {
+	if dump := view.Dump(a.shortcutKeys.View(a.ctx, a)); !strings.Contains(dump, "Used by New request") || !strings.Contains(dump, "Replace") {
 		t.Fatalf("the row shows no conflict:\n%s", dump)
 	}
 }
@@ -76,7 +76,7 @@ func TestAKeyThatTypesTextIsAWarningNotARefusal(t *testing.T) {
 	if a.settings.Shortcuts["close-tab"] != "J" {
 		t.Fatalf("shortcuts = %v", a.settings.Shortcuts)
 	}
-	if !strings.Contains(view.Dump(a.shortcutKeys.View(a)), "text") {
+	if !strings.Contains(view.Dump(a.shortcutKeys.View(a.ctx, a)), "text") {
 		t.Fatal("no warning on the row")
 	}
 }

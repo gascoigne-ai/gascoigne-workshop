@@ -94,7 +94,7 @@ func TestTheSettingsDialogLaysOutAsPinned(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			root := Stack(dialog.View(host)) // the dialog floats: a plain root would be the window
+			root := Stack(dialog.View(testCtx(t), host)) // the dialog floats: a plain root would be the window
 			Layout(ctx, root, tc.width, tc.height)
 			want, err := os.ReadFile(filepath.Join("testdata", "frame-"+tc.name+".dump"))
 			if err != nil {
@@ -129,7 +129,7 @@ func newFrameDriver(t *testing.T) *frameDriver {
 
 // root is the dialog as the next frame draws it, laid out.
 func (driver *frameDriver) root() *El {
-	root := Stack(driver.dialog.View(driver.host))
+	root := Stack(driver.dialog.View(driver.ctx, driver.host))
 	Layout(driver.ctx, root, frameWideW, frameWideH)
 	return root
 }

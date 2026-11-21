@@ -21,19 +21,34 @@ type Host interface {
 	CopyText(text string)
 }
 
+// Widths of the page, by role.
+const (
+	labelColW = 150 // the label column of the report table
+	copyBtnW  = 110 // the Copy report button
+)
+
 var pageTemplate = markup.Must("systempage.vml", systempageSource)
+
+// scope is the sizes of the faces the context draws with plus the page's own
+// entries, so a template holds no size as a number.
+func scope(sizes w.Sizes, own markup.Scope) markup.Scope {
+	merged := sizes.Scope()
+	for name, value := range own {
+		merged[name] = value
+	}
+	return merged
+}
 
 // View is the page: a table of labelled values for each section of the
 // report, then Copy report.
-func View(host Host) Node {
+func View(ctx *w.Ctx, host Host) Node {
 	report := host.System()
-	return pageTemplate.MustBuild(markup.Scope{
-		"looseGap": w.LooseGap,
-		"sections": report.Sections,
-		"copy":     func() { host.CopyText(report.Text()) },
-		"labelH":   w.LabelH,
-		"rowH":     w.RowH,
-	})
+	return pageTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
+		"sections":  report.Sections,
+		"copy":      func() { host.CopyText(report.Text()) },
+		"labelColW": labelColW,
+		"copyBtnW":  copyBtnW,
+	}))
 }
 
 // Templates, parsed once above.
@@ -44,11 +59,11 @@ const (
   <col for="section in sections">
     <caption h="{{labelH}}">{{section.Title}}</caption>
     <row for="row in section.Rows" h="{{rowH}}" gap="{{looseGap}}">
-      <text small w="150" color="muted">{{row.Label}}</text>
+      <text small w="{{labelColW}}" color="muted">{{row.Label}}</text>
       <text small ellipsis grow="1">{{row.Value}}</text>
     </row>
   </col>
-  <row h="{{rowH}}"><button w="110" on-click="copy">Copy report</button></row>
+  <row h="{{rowH}}"><button w="{{copyBtnW}}" on-click="copy">Copy report</button></row>
 </col>
 `
 )

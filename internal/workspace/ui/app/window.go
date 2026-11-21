@@ -58,7 +58,7 @@ func (a *App) view() Node {
 		"browser":        a.fileBrowserView(),
 		"popupMenu":      PopupMenuLayer(a.ctx),
 		"dialog":         a.dialogView(),
-		"callLog":        a.calls.View(a),
+		"callLog":        a.calls.View(a.ctx, a),
 		"toasts":         a.toastsView(),
 		"tooltips":       TooltipLayer(&a.tips),
 	})

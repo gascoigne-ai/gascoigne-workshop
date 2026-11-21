@@ -73,7 +73,7 @@ func TestTheShortcutPageLaysOutAsPinned(t *testing.T) {
 			if tc.prepare != nil {
 				tc.prepare(&page, host)
 			}
-			root := page.View(host)
+			root := page.View(newCtx(t), host)
 			Layout(newCtx(t), root, tc.width, tc.height)
 			want, err := os.ReadFile(filepath.Join("testdata", tc.name+".dump"))
 			if err != nil {
@@ -133,7 +133,7 @@ func newDriver(t *testing.T) *pageDriver {
 
 // view is the page as the next frame lays it out.
 func (driver *pageDriver) view() *El {
-	root := driver.page.View(driver.host)
+	root := driver.page.View(driver.ctx, driver.host)
 	Layout(driver.ctx, root, wideW, wideH)
 	return root
 }
@@ -240,7 +240,7 @@ func TestTypingIntoTheSearchNarrowsTheRows(t *testing.T) {
 // menu and the state it edits.
 func TestTheSearchFieldHasItsPlaceholderAndTextMenu(t *testing.T) {
 	var page Page
-	root := page.View(newHost())
+	root := page.View(newCtx(t), newHost())
 	field := findWidget(root, "*widget.fieldB")
 	if field == nil {
 		t.Fatalf("no field:\n%s", Dump(root))
@@ -259,7 +259,7 @@ func TestKeyButtonsShareOneWidth(t *testing.T) {
 	var page Page
 	host := newHost()
 	page.Clear(host, "send")
-	root := page.View(host)
+	root := page.View(newCtx(t), host)
 	Layout(newCtx(t), root, wideW, wideH)
 	widths := map[int]bool{}
 	for _, button := range append(findAll(root, "control=button"), findAll(root, "control=primary")...) {
@@ -274,7 +274,7 @@ func TestKeyButtonsShareOneWidth(t *testing.T) {
 func TestClearIsAnIconButton(t *testing.T) {
 	var page Page
 	host := newHost()
-	root := page.View(host)
+	root := page.View(newCtx(t), host)
 	Layout(newCtx(t), root, wideW, wideH)
 	if got := len(findAll(root, "control=icon-button", "tip=Leave the action without a key")); got != len(host.Actions()) {
 		t.Errorf("%d clear icon buttons, want one for each of the %d bound actions", got, len(host.Actions()))
@@ -294,7 +294,7 @@ func TestKeyButtonsStayInOneColumnWhateverTheRowShows(t *testing.T) {
 	host := newHost()
 	host.current.Shortcuts = map[string]string{"send": "Ctrl+K"} // changed: replay shows
 	page.Clear(host, "close-tab")                                // unbound: no cross
-	root := page.View(host)
+	root := page.View(newCtx(t), host)
 	Layout(newCtx(t), root, wideW, wideH)
 	columns := map[int]bool{}
 	for _, button := range append(findAll(root, "control=button"), findAll(root, "control=primary")...) {
@@ -311,7 +311,7 @@ func TestReplayButtonShowsOnlyOnAChangedRow(t *testing.T) {
 	var page Page
 	host := newHost()
 	host.current.Shortcuts = map[string]string{"send": "Ctrl+K"}
-	root := page.View(host)
+	root := page.View(newCtx(t), host)
 	Layout(newCtx(t), root, wideW, wideH)
 	if got := len(findAll(root, "icon=replay")); got != 1 {
 		t.Errorf("%d replay icons, want one on the changed row", got)

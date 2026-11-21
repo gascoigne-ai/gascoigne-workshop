@@ -226,7 +226,7 @@ func formNode(app *App, tab *reqTab) Node {
 	if tab.form == nil {
 		return nil
 	}
-	return tab.form.View(app)
+	return tab.form.View(app.ctx, app)
 }
 
 // connected reports whether t has a session to send to.

@@ -35,8 +35,9 @@ func newCtx(t *testing.T) *w.Ctx {
 }
 
 func TestThePageShowsEverySectionWithItsRows(t *testing.T) {
-	root := View(newHost())
-	Layout(newCtx(t), root, 600, 600)
+	ctx := newCtx(t)
+	root := View(ctx, newHost())
+	Layout(ctx, root, 600, 600)
 	dump := Dump(root)
 	for _, want := range []string{"Rendering", "Graphics library", "Metal", "Vsync", "System", "OS", "darwin/arm64", "Copy report"} {
 		if !strings.Contains(strings.ToLower(dump), strings.ToLower(want)) { // captions are shown in capitals
@@ -47,8 +48,8 @@ func TestThePageShowsEverySectionWithItsRows(t *testing.T) {
 
 func TestCopyPutsTheWholeReportOnTheClipboard(t *testing.T) {
 	host := newHost()
-	root := View(host)
 	ctx := newCtx(t)
+	root := View(ctx, host)
 	Layout(ctx, root, 600, 600)
 	var button *El
 	var find func(element *El)

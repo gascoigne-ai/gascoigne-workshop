@@ -81,8 +81,9 @@ func TestTheFormLaysOutAsPinned(t *testing.T) {
 			if tc.prepare != nil {
 				tc.prepare(form)
 			}
-			root := form.View(&fakeHost{})
-			Layout(newCtx(t), root, tc.width, formH)
+			ctx := newCtx(t)
+			root := form.View(ctx, &fakeHost{})
+			Layout(ctx, root, tc.width, formH)
 			got := Dump(root)
 			want, err := os.ReadFile(filepath.Join("testdata", tc.name+".dump"))
 			if err != nil {
@@ -128,7 +129,7 @@ func newDriver(t *testing.T, tool model.MCPTool) *formDriver {
 
 // view is the form as the next frame lays it out.
 func (driver *formDriver) view() *El {
-	root := driver.form.View(driver.host)
+	root := driver.form.View(driver.ctx, driver.host)
 	Layout(driver.ctx, root, wideW, formH)
 	return root
 }
@@ -209,7 +210,7 @@ func TestTheFormsUnprintedParts(t *testing.T) {
 	form := New(everyKind())
 	form.Choices["strict"] = "true"
 	form.Choices["safe"] = "false"
-	root := form.View(&fakeHost{})
+	root := form.View(newCtx(t), &fakeHost{})
 	var fields, boxes []string
 	var walk func(node *El)
 	walk = func(node *El) {

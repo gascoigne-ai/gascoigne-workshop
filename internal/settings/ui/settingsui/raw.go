@@ -186,14 +186,12 @@ func (d *SettingsDialog) RawFocused() bool { return d.Raw && d.RawText.Focused }
 var rawTemplate = markup.Must("raw.vml", rawSource)
 
 // rawView is the dialog's page while it shows settings.json as text.
-func (d *SettingsDialog) rawView(host Host) Node {
+func (d *SettingsDialog) rawView(ctx *w.Ctx, host Host) Node {
 	status, color := "Saved as you type", w.Muted
 	if len(d.Problems) > 0 {
 		status, color = fmt.Sprintf("%d problem(s): the last good settings stay in effect", len(d.Problems)), w.Error
 	}
-	return rawTemplate.MustBuild(markup.Scope{
-		"tightGap":     w.TightGap,
-		"rowH":         w.RowH,
+	return rawTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
 		"status":       status,
 		"statusColor":  color,
 		"text":         &d.RawText,
@@ -201,7 +199,7 @@ func (d *SettingsDialog) rawView(host Host) Node {
 		"edited":       func() { d.RawChanged(host) },
 		"problems":     problemLines(d.Problems),
 		"completeHint": w.PlatformKeyText("linux", "Ctrl+Space") + " completes keys and values",
-	})
+	}))
 }
 
 // problemLines are the problems as the raw view lists them, each led by

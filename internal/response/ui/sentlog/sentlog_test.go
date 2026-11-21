@@ -123,11 +123,12 @@ func TestOpeningARowOfARequestThatIsGoneSaysSoInTheStatusLine(t *testing.T) {
 func TestTheListShowsAnEmptyNoteAndTheRows(t *testing.T) {
 	var log Log
 	host := &fakeHost{}
-	if dump := Dump(log.List(host, "")); !strings.Contains(dump, "Nothing sent yet") {
+	ctx := newCtx(t)
+	if dump := Dump(log.List(ctx, host, "")); !strings.Contains(dump, "Nothing sent yet") {
 		t.Fatalf("empty list:\n%s", dump)
 	}
 	send(&log, host, "Users/List", "https://one.test")
-	if dump := Dump(log.List(host, "")); !strings.Contains(dump, "Users/List") || !strings.Contains(dump, "200") {
+	if dump := Dump(log.List(ctx, host, "")); !strings.Contains(dump, "Users/List") || !strings.Contains(dump, "200") {
 		t.Fatalf("list:\n%s", dump)
 	}
 }
@@ -149,7 +150,7 @@ func TestRowTemplateMatchesTheGoView(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	tplView := log.row(host, sent)
+	tplView := log.row(ctx.Sizes, host, sent)
 	Layout(ctx, goView, 300, 60)
 	Layout(ctx, tplView, 300, 60)
 	if got, want := Dump(tplView), Dump(goView); got != want {

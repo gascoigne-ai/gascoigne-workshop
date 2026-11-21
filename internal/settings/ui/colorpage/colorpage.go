@@ -100,22 +100,38 @@ type colorRow struct {
 	Reset  func()
 }
 
+// Widths of the controls of a color row, by role.
+const (
+	labelColW = 76  // the label column
+	swatchW   = 20  // the color swatch
+	hexFieldW = 70  // the hex field
+	resetBtnW = 44  // the Reset button of a row
+	resetAllW = 110 // the Reset colors button
+)
+
+// scope is the sizes of the faces the context draws with plus the page's own
+// entries, so a template holds no size as a number.
+func scope(sizes w.Sizes, own markup.Scope) markup.Scope {
+	merged := sizes.Scope()
+	for name, value := range own {
+		merged[name] = value
+	}
+	return merged
+}
+
 // View is the Colors section of the settings menu: one row per
 // customizable color with a swatch, its hex and a reset button.
-func (p *Page) View(host Host) Node {
+func (p *Page) View(ctx *w.Ctx, host Host) Node {
 	colors := make([]colorRow, 0, len(appearance.CustomColors))
 	for _, custom := range appearance.CustomColors {
 		colors = append(colors, p.row(host, custom))
 	}
-	return pageTemplate.MustBuild(markup.Scope{
-		"tightGap": w.TightGap,
-		"colors":   colors,
-		"resetAll": func() { p.resetAll(host) },
-		"labelH":   w.LabelH,
-		"rowH":     w.RowH,
-		"noteH":    w.NoteH,
-		"compactH": w.CompactH,
-	})
+	return pageTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
+		"colors":    colors,
+		"resetAll":  func() { p.resetAll(host) },
+		"labelColW": labelColW, "swatchW": swatchW, "hexFieldW": hexFieldW,
+		"resetBtnW": resetBtnW, "resetAllW": resetAllW,
+	}))
 }
 
 func (p *Page) row(host Host, custom appearance.CustomColor) colorRow {
@@ -141,15 +157,15 @@ const (
   <caption h="{{labelH}}">Colors</caption>
   <col for="color in colors">
     <row h="{{rowH}}" gap="{{tightGap}}">
-      <text small w="76">{{color.Label}}</text>
-      <row w="20" h="{{noteH}}" bg="{{color.Token}}" control="swatch"/>
-      <field state="color.Input" w="70" h="{{compactH}}" bg="sunken" border="{{color.Border}}"
+      <text small w="{{labelColW}}">{{color.Label}}</text>
+      <row w="{{swatchW}}" h="{{noteH}}" bg="{{color.Token}}" control="swatch"/>
+      <field state="color.Input" w="{{hexFieldW}}" h="{{compactH}}" bg="sunken" border="{{color.Border}}"
              on-change="color.Edited" text-menu="color.Input"/>
-      <button w="44" h="{{compactH}}" on-click="color.Reset">Reset</button>
+      <button w="{{resetBtnW}}" h="{{compactH}}" on-click="color.Reset">Reset</button>
     </row>
     <note if="color.Note" tone="error">{{color.Note}}</note>
   </col>
-  <row h="{{rowH}}"><button w="110" on-click="resetAll">Reset colors</button></row>
+  <row h="{{rowH}}"><button w="{{resetAllW}}" on-click="resetAll">Reset colors</button></row>
 </col>
 `
 )

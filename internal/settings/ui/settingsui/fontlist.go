@@ -14,12 +14,12 @@ import (
 )
 
 // The size of the font list: its width, the height of the scrolling part
-// and of a row.
+// the chevron of the font control; a row is one Row high.
 const (
-	fontListW    = 320
-	fontListH    = 240
-	fontListRowH = 28
-	fontListGap  = 8 // kept free between the list and the window edge
+	fontListW   = 320
+	fontListH   = 240
+	chevronW    = 12 // the chevron of the font control
+	fontListGap = 8  // kept free between the list and the window edge
 )
 
 // builtIn is the name the list shows for the embedded font.
@@ -35,18 +35,19 @@ type fontList struct {
 }
 
 // OpenFontList opens the dropdown for role below the pointer.
-func (d *SettingsDialog) OpenFontList(host Host, role FontRole) {
+func (d *SettingsDialog) OpenFontList(ctx *w.Ctx, host Host, role FontRole) {
+	rowH := ctx.Sizes.Row
 	px, py := host.Pointer()
 	width, height := host.Size()
 	d.list.open, d.list.role = true, role
 	d.list.x = min(max(px-fontListW/2, fontListGap), width-fontListW-fontListGap)
-	d.list.y = min(py+16, height-fontListH-fontListRowH-fontListGap)
+	d.list.y = min(py+16, height-fontListH-rowH-fontListGap)
 	d.FontSearch = NewTextField("")
 	d.FontSearch.Focused = true
 	// open on the family in use, centered, so it is in view at once
 	rows := len(d.Families) + 1 // Built-in comes first
-	centered := d.selectedRow(host)*fontListRowH - (fontListH-fontListRowH)/2
-	d.list.scroll.Y = min(max(centered, 0), max(rows*fontListRowH-fontListH, 0))
+	centered := d.selectedRow(host)*rowH - (fontListH-rowH)/2
+	d.list.scroll.Y = min(max(centered, 0), max(rows*rowH-fontListH, 0))
 }
 
 // selectedRow is the index of the family in use among the unfiltered rows:
@@ -96,7 +97,7 @@ func (d *SettingsDialog) face(host Host, family fontfamily.Family) *text.GoTextF
 
 // fontControl is the control of a font setting: the current family, drawn
 // in its font, and a chevron; clicking opens the dropdown.
-func (d *SettingsDialog) fontControl(host Host, role FontRole) Node {
+func (d *SettingsDialog) fontControl(ctx *w.Ctx, host Host, role FontRole) Node {
 	name := savedFont(host.Settings(), role)
 	family, found := fontfamily.Find(d.Families, name)
 	current := fontChoice{Name: builtIn, Muted: true}
@@ -106,12 +107,11 @@ func (d *SettingsDialog) fontControl(host Host, role FontRole) Node {
 	case name != "":
 		current = fontChoice{Name: name + " (not installed)", Muted: true, Ellipsis: true}
 	}
-	return fontControlTemplate.MustBuild(markup.Scope{
-		"tightGap": w.TightGap,
-		"rowH":     w.RowH,
+	return fontControlTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
 		"current":  current,
-		"open":     func() { d.OpenFontList(host, role) },
-	})
+		"open":     func() { d.OpenFontList(ctx, host, role) },
+		"chevronW": chevronW,
+	}))
 }
 
 // matchingFamilies are the families whose name contains the search text.
@@ -122,10 +122,11 @@ func (d *SettingsDialog) matchingFamilies() []fontfamily.Family {
 // FontList is the dropdown while it is open: a search field and the
 // families, each in its own font. Only the rows in view are built, so only
 // their fonts are read.
-func (d *SettingsDialog) FontList(host Host) Node {
+func (d *SettingsDialog) FontList(ctx *w.Ctx, host Host) Node {
 	if !d.list.open {
 		return nil
 	}
+	rowH := ctx.Sizes.Row
 	current := savedFont(host.Settings(), d.list.role)
 	families := d.matchingFamilies()
 	showBuiltIn := strings.TrimSpace(d.FontSearch.Text) == ""
@@ -133,12 +134,12 @@ func (d *SettingsDialog) FontList(host Host) Node {
 	if showBuiltIn {
 		count++
 	}
-	first := min(max(d.list.scroll.Y/fontListRowH, 0), max(count-1, 0))
-	last := min(first+fontListH/fontListRowH+2, count)
+	first := min(max(d.list.scroll.Y/rowH, 0), max(count-1, 0))
+	last := min(first+fontListH/rowH+2, count)
 	rows := make([]Node, 0, last-first)
 	for i := first; i < last; i++ {
 		if showBuiltIn && i == 0 {
-			rows = append(rows, d.fontRow(host, fontChoice{Name: builtIn, Muted: true}, current == "", ""))
+			rows = append(rows, d.fontRow(ctx, host, fontChoice{Name: builtIn, Muted: true}, current == "", ""))
 			continue
 		}
 		index := i
@@ -147,7 +148,7 @@ func (d *SettingsDialog) FontList(host Host) Node {
 		}
 		family := families[index]
 		choice := fontChoice{Name: family.Name, Face: d.face(host, family), Ellipsis: true}
-		rows = append(rows, d.fontRow(host, choice, strings.EqualFold(family.Name, current), family.Name))
+		rows = append(rows, d.fontRow(ctx, host, choice, strings.EqualFold(family.Name, current), family.Name))
 	}
 	note := ""
 	if len(d.Families) == 0 {
@@ -155,9 +156,7 @@ func (d *SettingsDialog) FontList(host Host) Node {
 	} else if count == 0 {
 		note = "No font matches"
 	}
-	return fontListTemplate.MustBuild(markup.Scope{
-		"rowH":          w.RowH,
-		"tightGap":      w.TightGap,
+	return fontListTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
 		"width":         fontListW,
 		"height":        fontListH,
 		"x":             d.list.x,
@@ -167,10 +166,10 @@ func (d *SettingsDialog) FontList(host Host) Node {
 		"searchChanged": func() { d.list.scroll.Y = 0 },
 		"note":          note,
 		"scroll":        &d.list.scroll,
-		"above":         first * fontListRowH,
+		"above":         first * rowH,
 		"rows":          rows,
-		"below":         (count - last) * fontListRowH,
-	})
+		"below":         (count - last) * rowH,
+	}))
 }
 
 // fontChoice is what a template shows of one family: a row of the list, or
@@ -191,23 +190,23 @@ var (
 
 // fontRow is one row of the list; picking it applies the family called
 // name, "" for Built-in.
-func (d *SettingsDialog) fontRow(host Host, choice fontChoice, selected bool, name string) Node {
+func (d *SettingsDialog) fontRow(ctx *w.Ctx, host Host, choice fontChoice, selected bool, name string) Node {
 	choice.Pick = func() { d.PickFont(host, name) }
-	return fontRowTemplate.MustBuild(markup.Scope{"row": choice, "rowH": fontListRowH, "selected": selected})
+	return fontRowTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{"row": choice, "selected": selected}))
 }
 
 // Templates, parsed once above.
 const (
-	fontcontrolSource = `<row h="{{rowH}}" bg="sunken" control="field" pad-x="8" gap="{{tightGap}}" align-items="center"
+	fontcontrolSource = `<row h="{{rowH}}" bg="sunken" control="field" pad-x="{{looseGap}}" gap="{{tightGap}}" align-items="center"
      on-click="open" tooltip="Pick an installed font">
   <text grow="1" muted="{{current.Muted}}" ellipsis="{{current.Ellipsis}}" font-source="current.Face">{{current.Name}}</text>
-  <icon name="chevron-down" w="12"/>
+  <icon name="chevron-down" w="{{chevronW}}"/>
 </row>
 `
 
-	fontlistSource = `<col w="{{width}}" pad="6" gap="{{tightGap}}" bg="bg" border="border" control="menu" shadow float-at="{{x}} {{y}}" modal focus-scope on-dismiss="close">
+	fontlistSource = `<col w="{{width}}" pad="{{tightGap}}" gap="{{tightGap}}" bg="bg" border="border" control="menu" shadow float-at="{{x}} {{y}}" modal focus-scope on-dismiss="close">
   <field state="search" h="{{rowH}}" bg="sunken" placeholder="Search fonts" on-change="searchChanged" text-menu="search"/>
-  <row if="note" h="{{rowH}}" pad-x="8">
+  <row if="note" h="{{rowH}}" pad-x="{{looseGap}}">
     <text small muted>{{note}}</text>
   </row>
   <scroll state="scroll" h="{{height}}">
@@ -220,7 +219,7 @@ const (
 </col>
 `
 
-	fontrowSource = `<list-row selected="{{selected}}" h="{{rowH}}" pad-x="8" align-items="center" on-click="row.Pick">
+	fontrowSource = `<list-row selected="{{selected}}" h="{{rowH}}" pad-x="{{looseGap}}" align-items="center" on-click="row.Pick">
   <text grow="1" muted="{{row.Muted}}" ellipsis="{{row.Ellipsis}}" font-source="row.Face">{{row.Name}}</text>
 </list-row>
 `

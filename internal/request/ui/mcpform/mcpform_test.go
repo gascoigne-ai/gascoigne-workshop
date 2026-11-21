@@ -75,7 +75,7 @@ func TestViewListsEveryFieldAndTheProblem(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	root := form.View(&fakeHost{})
+	root := form.View(ctx, &fakeHost{})
 	Layout(ctx, root, 500, 600)
 	dump := Dump(root)
 	for _, want := range []string{"Find things", "query *", "limit", "safe", "sort", "limit must be a number"} {
