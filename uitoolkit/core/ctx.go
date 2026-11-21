@@ -322,12 +322,39 @@ func (c *Ctx) LineH(face *text.GoTextFace) int {
 // Ascent is the logical distance from the top of a line of face to its baseline.
 func (c *Ctx) Ascent(face *text.GoTextFace) int { return int(face.Metrics().HAscent/c.Scale + 0.5) }
 
+// StemBoost is how much heavier text is drawn than its plain coverage:
+// Ctx.Text draws a second pass of the same glyphs at this alpha, so a
+// partly covered edge pixel at coverage a ends at a + StemBoost*a*(1-a)
+// while empty and full pixels stay as they are. It stands in for the stem
+// darkening of macOS text: the Go fonts drawn unhinted with plain linear
+// coverage look thin and grey, most of all light text on a dark panel.
+// 0.5 lifts a half covered pixel to 0.625: slightly heavier, not bold
+// (style.md, Typography).
+const StemBoost = 0.5
+
+// textPasses is the alpha of each pass Text draws the glyphs with, for a
+// stem boost of strength: a full pass, then the same glyphs again at
+// strength, which source-over blending turns into the coverage curve
+// a + strength*a*(1-a).
+func textPasses(strength float32) []float32 { return []float32{1, strength} }
+
 // Text draws s with its top-left at x, y.
+//
+// Glyphs are unhinted outlines placed at fractional x positions (text/v2
+// keeps up to 8 subpixel variants per glyph; y snaps to a whole device
+// pixel), drawn twice at the same place so partly covered edge pixels get
+// heavier by StemBoost, like the stem darkening of macOS text. Why a
+// second pass rather than a coverage shader or a wider outline: the pass
+// changes only partial pixels, never the outline or the advances, so Width,
+// Advance and LineH measure exactly what is drawn (style.md, Typography).
 func (c *Ctx) Text(dst *ebiten.Image, face *text.GoTextFace, content string, posX, posY int, clr color.RGBA) {
-	op := &text.DrawOptions{}
-	op.GeoM.Translate(float64(posX)*c.Scale, float64(posY)*c.Scale)
-	op.ColorScale.ScaleWithColor(clr)
-	text.Draw(dst, content, face, op)
+	for _, alpha := range textPasses(StemBoost) {
+		op := &text.DrawOptions{}
+		op.GeoM.Translate(float64(posX)*c.Scale, float64(posY)*c.Scale)
+		op.ColorScale.ScaleWithColor(clr)
+		op.ColorScale.ScaleAlpha(alpha)
+		text.Draw(dst, content, face, op)
+	}
 }
 
 // TextMid draws s starting at x, vertically centered in r.

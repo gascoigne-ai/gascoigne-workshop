@@ -109,6 +109,7 @@ An unknown token draws in `Text`, so a typo stays visible.
 - Three faces from the Text size setting (`theming.SizeChoices`): small 13/11/12, medium 14/12/13 (default), large 16/13/15 for interface/small/mono. The size setting overrides the sizes a theme file states.
 - Bold marks names that structure the window: dialog titles, a collection's root row, table headers. Folder, request and tab names stay regular.
 - Table headers are small, bold, muted and upper case. Secondary text (badges, shortcuts, hints, subtitles) is small and muted.
+- Text is rendered the macOS way: unhinted glyph outlines at fractional x positions (text/v2 keeps up to 8 subpixel variants per glyph; the baseline snaps to a whole device pixel), with a light stem boost. `Ctx.Text` draws the glyphs a second time at alpha `core.StemBoost` (0.5), so a partly covered edge pixel at coverage a ends at a + 0.5·a·(1−a): a half covered pixel at 0.625, empty and full pixels unchanged. Plain linear coverage made the Go fonts thin and grey, most of all light text on a dark panel; the boost stands in for CoreText's stem darkening. It touches no outline or advance, so `Width`, `Advance` and `LineH` measure exactly what is drawn and `BaseLine`/`BaseSmallLine` hold.
 
 ### Shapes and lines
 
@@ -232,6 +233,7 @@ Still-true choices of the look. Where a reason is code-specific, the doc comment
 | Linux gets a base scale of 1.1 (`settings.BaseScale`) | Linux desktops draw text and controls small | | |
 | Xwayland scale from the compositor, no supersampling (`displayscale` package doc) | Ebitengine reports 1 there | | Ebitengine reports the Xwayland scale |
 | Icons are our own SVGs; an open-set icon only with its license file | the license travels with the file | | |
+| Text drawn unhinted, fractionally placed, with a second pass at `StemBoost` (`Ctx.Text` doc) | macOS-like weight with no new dependency and no new font; coverage only, so measurement stays exact | changing the typeface; a new rasterizer dependency (hinting or gamma-aware); a coverage shader or a wider outline (more code, or advances drift) | the boost looks too heavy or too light on a hi-dpi screen (scale 2), where stems cover whole pixels and the boost shows least |
 | Goldens are drawn by Mesa's llvmpipe under Xvfb (`renderShot` doc) | byte-identical PNGs run to run, which makes goldens comparable | a Go rasterizer, Xwayland | |
 | Flat fills and one gradient, `hero`, behind the window title | follows the dashboard | | |
 | Square tab outline, open at the bottom | the open tab runs into its pane | | |
