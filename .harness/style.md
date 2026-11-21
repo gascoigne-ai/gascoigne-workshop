@@ -15,33 +15,50 @@ These are hard rules (`rules.md` makes them part of the repo's rules).
 
 ### Sizes
 
-Logical pixels; the interface scale multiplies them at draw time.
+Logical pixels; the interface scale multiplies them at draw time. Every size is a rule over three bases, never a free number (`TestEverySizeConstantIsARuleOrDocumentedFixed` holds it):
 
-| Constant | Value | Use |
+| Base | Value | What it is |
 |---|---|---|
-| `RowH` | 28 | list and table rows, standard controls, dialog buttons |
-| `CompactH` | 24 | chips, icon buttons, inline fields in a row, menu rows (`MenuRowH`) |
-| `LabelH`, `NoteH` | 22, 18 | section captions, one-line notes |
-| `SlimH` | 20 | pills, and buttons in the status bar |
-| `IconBtnW` | 32 | icon button width |
-| `WordBtnW` | 44 | a button that holds one short word (Log, Raw, Reset) |
-| `LabelPad` | 10 | side inset of the label of a pill or a tab, as of a button |
-| `Gutter` | 12 | inset between a container and its content; gap between its sections |
-| `NearGap` | 4 | items that read as one (a label and its count, a heading and its lines) |
-| `TightGap` | 6 | controls side by side (a field and its button, a row of chips) |
-| `LooseGap` | 8 | blocks of a pane stacked in a column; rows whose items need air |
-| `ToolbarH` | 36 | a bar of controls over a pane (`RowH` + 8) |
-| `TabBarH`, `TabGap` | 40, 6 | a pane tab strip and the space above its tabs |
-| `TabLead`, `TabSepInset` | 2, 10 | room before the first tab; how far the line between tabs stays off top and bottom |
-| `DialogTitleH`, `DialogToolbarH` | 44, 40 | dialog title bar and toolbar |
-| `DialogPad` | 16 | inset of a dialog's title bar, toolbar, footer and message body |
-| `DialogMargin`, `DialogMaxH` | 40, 560 | room kept around a dialog; tallest default dialog height |
-| `CellPad` | 8 | inset of a table cell and header cell |
-| `CheckboxSize` | 14 | checkbox side |
-| `EdgeGrab` | 6 | edge grab inside a border (resize) |
-| `ShadowOffset` | 4 | shadow shift, down and right |
-| `EdgeW` | 2 | open tab outline |
-| `RuleInset` | 6 | menu separator line, off the menu's sides |
+| `BaseLine` | 16 | line height of the default UI face (`TestBaseLineIsTheDefaultFaceLineHeight`) |
+| `BaseSmallLine` | 14 | line height of the default small face |
+| `Unit` | 2 | the grid every padding and gap sits on |
+
+**Height classes** are a line plus padding on both sides, so text centers on whole pixels:
+
+| Class | Rule | Value | Use |
+|---|---|---|---|
+| `RowH` | `BaseLine` + 6U | 28 | list and table rows, standard controls, dialog buttons |
+| `CompactH` | `BaseLine` + 4U | 24 | chips, icon buttons, inline fields in a row, menu rows (`MenuRowH`) |
+| `LabelH` | `BaseLine` + 3U | 22 | section captions |
+| `SlimH` | `BaseLine` + 2U | 20 | pills, and buttons in the status bar |
+| `NoteH` | `BaseSmallLine` + 2U | 18 | one-line notes |
+
+**Spacing steps** are named multiples of `Unit`; each role constant is one step:
+
+| Step | Units | Value | Roles |
+|---|---|---|---|
+| `StepHair` | 1 | 2 | `TabLead` (room before the first tab), `EdgeW` (open tab outline) |
+| `StepNear` | 2 | 4 | `NearGap` (items that read as one), `ShadowOffset` |
+| `StepTight` | 3 | 6 | `TightGap` (controls side by side), `TabGap` (above tabs), `RuleInset` (menu separator), `EdgeGrab` (resize grab inside a border) |
+| `StepLoose` | 4 | 8 | `LooseGap` (blocks of a pane in a column, rows that need air), `CellPad` (table and header cells) |
+| `StepLabel` | 5 | 10 | `LabelPad` (side inset of a pill, tab or button label), `TabSepInset` (line between tabs, off top and bottom) |
+| `StepGutter` | 6 | 12 | `Gutter` (inset between a container and its content; gap between its sections) |
+| `StepDialog` | 8 | 16 | `DialogPad` (inset of a dialog's title bar, toolbar, footer and body) |
+
+**Bars and fixed shapes** are a class plus a step:
+
+| Constant | Rule | Value |
+|---|---|---|
+| `ToolbarH` | `RowH` + 2 `NearGap` | 36 |
+| `DialogToolbarH`, `TabBarH` | `RowH` + 2 `TightGap` | 40 |
+| `DialogTitleH` | `RowH` + 2 `LooseGap` | 44 |
+| `IconBtnW` | `CompactH` + 2 `NearGap` | 32 |
+| `WordBtnW` | `IconBtnW` + `StepGutter` | 44 (one short word: Log, Raw, Reset) |
+| `CheckboxSize` | `BaseSmallLine` | 14 |
+
+**Fixed geometry**, not content, so it follows no line or step: `DialogMargin` 40 (room kept around a dialog), `DialogMaxH` 560 (tallest default dialog height).
+
+**Adding a component**: pick a height class and a spacing step, never a number. A size no class or step fits is a new rule in `theme.go` and a row here, or a fixed number listed in this paragraph and in `sizeAxioms` with the reason.
 
 Window chrome (`workspace/ui/app/window.go`): header 44, request tab row `tabsH` 42, URL bar 56, status bar 28, sidebar 260 by default.
 

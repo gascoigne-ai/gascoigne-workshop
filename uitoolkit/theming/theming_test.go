@@ -136,3 +136,20 @@ func TestChoiceTablesAreCopies(t *testing.T) {
 		t.Fatal("a returned table is the shared one")
 	}
 }
+
+// The size bases are the line heights of the default faces: the medium
+// text size in the default fonts. If the default size or font changes,
+// the bases (and every height built on them) must move with it.
+func TestBaseLineIsTheDefaultFaceLineHeight(t *testing.T) {
+	th := NewCatalog(Builtins()).Theme(Prefs{})
+	ctx, err := core.NewCtx(th)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := ctx.LineH(ctx.F.UI); got != core.BaseLine {
+		t.Errorf("UI face line height = %d, BaseLine = %d", got, core.BaseLine)
+	}
+	if got := ctx.LineH(ctx.F.Small); got != core.BaseSmallLine {
+		t.Errorf("small face line height = %d, BaseSmallLine = %d", got, core.BaseSmallLine)
+	}
+}
