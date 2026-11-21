@@ -109,6 +109,8 @@ func (a *App) openWelcome() {
 	d.content = func() Node {
 		return welcomeTemplate.MustBuild(markup.Scope{
 			"looseGap": w.LooseGap,
+			"gutter":   w.Gutter,
+			"nearGap":  w.NearGap,
 			"sections": wrapped(welcomeNotes, welcomeCols),
 			"scroll":   &d.scroll,
 			"maxH":     max(a.h-welcomeChrome, 120),
@@ -119,8 +121,8 @@ func (a *App) openWelcome() {
 
 // Templates, parsed once above.
 const welcomeSource = `<!-- The release notes: a heading and a bulleted list per section, scrolling in a short window. -->
-<scroll state="scroll" max-h="{{maxH}}" gap="12">
-  <col for="section in sections" gap="4">
+<scroll state="scroll" max-h="{{maxH}}" gap="{{gutter}}">
+  <col for="section in sections" gap="{{nearGap}}">
     <text bold>{{section.Title}}</text>
     <row for="item in section.Items" gap="{{looseGap}}" align-items="start">
       <icon name="dot" color="muted" margin-t="8"/>

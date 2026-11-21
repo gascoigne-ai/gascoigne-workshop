@@ -57,8 +57,9 @@ const (
 // standard controls, CompactH for chips, icon buttons and inline fields
 // that sit in a row of that height, LabelH and NoteH for section captions
 // and one-line notes. Icon buttons are IconBtnW wide. Gutter is the inset
-// between a container and its content. Gaps between neighbours come in two
-// steps: TightGap for controls side by side (a field and its button, a row
+// between a container and its content, and the gap between its sections.
+// Gaps between neighbours come in three steps: NearGap for items that read
+// as one, TightGap for controls side by side (a field and its button, a row
 // of chips), LooseGap for the blocks of a pane stacked in a column and for
 // rows whose items need more air.
 const (
@@ -66,16 +67,22 @@ const (
 	CompactH       = 24
 	LabelH         = 22
 	NoteH          = 18
+	SlimH          = 20 // a pill, and a button in the status bar: the step below CompactH
 	IconBtnW       = 32
+	WordBtnW       = 44       // a button that holds one short word (Log, Raw, Reset)
+	LabelPad       = 10       // the side inset of the label of a pill or a tab, as of a button
 	DialogTitleH   = 44       // the title bar of a dialog
 	DialogToolbarH = 40       // the row of controls under it
 	ToolbarH       = RowH + 8 // a bar of controls over a pane
 	TabBarH        = 40       // a strip of tabs, with TabGap above them
 	TabGap         = 6        // space above tabs, so their outline never touches the banner or bar above
+	TabLead        = 2        // room before the first tab of a strip
+	TabSepInset    = 10       // how far the line between two tabs stays off the strip's top and bottom
 	Gutter         = 12
 	TightGap       = 6
 	LooseGap       = 8
-	DialogPad      = 16  // the inset of a dialog's title bar, toolbar and message body
+	NearGap        = 4   // between items that read as one: a label and its count, a heading and its lines
+	DialogPad      = 16  // the inset of a dialog's title bar, toolbar, footer and message body
 	DialogMargin   = 40  // kept free between a dialog and the window's edge
 	DialogMaxH     = 560 // the tallest a dialog grows by itself
 	CheckboxSize   = 14  // the side of a checkbox
@@ -83,6 +90,7 @@ const (
 	EdgeGrab       = 6   // how far inside its border a press grabs an edge (resize, or no drag)
 	ShadowOffset   = 4   // how far a shadow is shifted down and right
 	EdgeW          = 2   // the width of an open tab's outline
+	RuleInset      = 6   // how far a menu's separator line stays off the menu's sides
 )
 
 // Theme holds the colors and font sizes the widgets draw with.

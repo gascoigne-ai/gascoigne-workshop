@@ -107,7 +107,7 @@ func Menu(ctx *core.Ctx, state *MenuState, opts ...Option) *El {
 
 func menuRow(goos string, state *MenuState, index int, item MenuItem, pick func(int)) *El {
 	if item.Separator {
-		return Row(H(MenuSepH), PadX(6), HRule())
+		return Row(H(MenuSepH), PadX(core.RuleInset), HRule())
 	}
 	color := core.Text
 	if item.Disabled {
@@ -138,7 +138,7 @@ func menuRow(goos string, state *MenuState, index int, item MenuItem, pick func(
 		label = Col(parts...)
 		height += menuHintH * len(lines)
 	}
-	return Row(H(height), PadX(menuRowPadX), Gap(8), AlignItems(AlignCenter), Control("row"), look, OnClick(func() { pick(index) }),
+	return Row(H(height), PadX(menuRowPadX), Gap(core.LooseGap), AlignItems(AlignCenter), Control("row"), look, OnClick(func() { pick(index) }),
 		icon,
 		label,
 		If(item.Shortcut != "", Text(core.PlatformKeyText(goos, item.Shortcut), Small(), Muted())),

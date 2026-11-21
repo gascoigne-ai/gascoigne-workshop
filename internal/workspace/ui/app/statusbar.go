@@ -18,11 +18,13 @@ func (a *App) responseStatus(tab *reqTab) Node {
 	}
 	fg, bg := statusPill(tab.Resp.Status)
 	return responseStatusTemplate.MustBuild(markup.Scope{
-		"gutter": w.Gutter,
-		"pillFg": fg,
-		"pillBg": bg,
-		"status": fmt.Sprintf("%d %s", tab.Resp.Status, tab.Resp.StatusText),
-		"timing": fmt.Sprintf("%s  %s", textfmt.Duration(tab.Resp.Duration), textfmt.Size(tab.Resp.Size)),
+		"gutter":   w.Gutter,
+		"labelPad": w.LabelPad,
+		"slimH":    w.SlimH,
+		"pillFg":   fg,
+		"pillBg":   bg,
+		"status":   fmt.Sprintf("%d %s", tab.Resp.Status, tab.Resp.StatusText),
+		"timing":   fmt.Sprintf("%s  %s", textfmt.Duration(tab.Resp.Duration), textfmt.Size(tab.Resp.Size)),
 	})
 }
 
@@ -48,6 +50,8 @@ func (a *App) statusBar() Node {
 	return statusBarTemplate.MustBuild(markup.Scope{
 		"statusH":     statusH,
 		"gutter":      w.Gutter,
+		"slimH":       w.SlimH,
+		"wordBtnW":    w.WordBtnW,
 		"status":      a.status,
 		"version":     version,
 		"openLog":     a.calls.Open,
@@ -57,8 +61,8 @@ func (a *App) statusBar() Node {
 
 // Templates, parsed once above.
 const (
-	responsestatusSource = `<row gap="12" pad-r="{{gutter}}" optional align-items="center">
-  <row pad-x="10" h="20" bg="{{pillBg}}" control="pill" align-items="center">
+	responsestatusSource = `<row gap="{{gutter}}" pad-r="{{gutter}}" optional align-items="center">
+  <row pad-x="{{labelPad}}" h="{{slimH}}" bg="{{pillBg}}" control="pill" align-items="center">
     <text small bold color="{{pillFg}}">{{status}}</text>
   </row>
   <text>{{timing}}</text>
@@ -67,7 +71,7 @@ const (
 
 	statusbarSource = `<row h="{{statusH}}" pad-x="{{gutter}}" gap="{{gutter}}" bg="frame" control="statusbar" border-t="border">
   <text small muted ellipsis grow="1">{{status}}</text>
-  <button w="44" h="20" on-click="openLog" tooltip="Show the log of calls">Log</button>
+  <button w="{{wordBtnW}}" h="{{slimH}}" on-click="openLog" tooltip="Show the log of calls">Log</button>
   <row on-click="openWelcome" tooltip="What is in this version">
     <text small muted>{{version}}</text>
   </row>

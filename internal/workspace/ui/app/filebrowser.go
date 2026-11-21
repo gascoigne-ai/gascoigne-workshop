@@ -206,7 +206,7 @@ const (
 	browserMaxH   = 520
 	browserMargin = 40
 	browserIconW  = 16
-	browserFootH  = w.RowH + 2*12 // the footer's buttons and its padding
+	browserFootH  = w.RowH + 2*w.Gutter // the footer's buttons and its padding
 )
 
 var (
@@ -271,6 +271,7 @@ func (a *App) fileBrowserView() Node {
 		"rowH":        w.RowH,
 		"iconBtnW":    w.IconBtnW,
 		"gutter":      w.Gutter,
+		"dialogPad":   w.DialogPad,
 		"browserFoot": browserFootH,
 	})
 }
@@ -319,8 +320,9 @@ func (a *App) fileBrowserRow(index int, entry port.FolderEntry, selected bool) N
 			Pick:     func() { a.browse(filebrowser.Picked{Index: index}) },
 			Open:     func() { a.openBrowserRow(index) },
 		},
-		"rowH":  w.RowH,
-		"iconW": browserIconW,
+		"rowH":   w.RowH,
+		"gutter": w.Gutter,
+		"iconW":  browserIconW,
 	})
 }
 
@@ -349,7 +351,7 @@ const (
       </row>
     </col>
   </scroll>
-  <row h="{{browserFoot}}" pad-x="16" gap="{{looseGap}}" align-items="center" border-t="border-soft">
+  <row h="{{browserFoot}}" pad-x="{{dialogPad}}" gap="{{looseGap}}" align-items="center" border-t="border-soft">
     <text if="problem" small color="error" ellipsis grow="1" shrink>{{problem}}</text>
     <text if="!problem" small muted ellipsis grow="1" shrink>{{hint}}</text>
     <segment-chip selected="false" min-w="80" h="{{rowH}}" on-click="close">Cancel</segment-chip>
@@ -358,7 +360,7 @@ const (
 </dialog>
 `
 
-	filebrowserrowSource = `<list-row selected="{{row.Selected}}" h="{{rowH}}" pad-x="12" gap="{{looseGap}}" align-items="center" keep-in-view="{{row.Selected}}" on-click="row.Pick" on-double-click="row.Open">
+	filebrowserrowSource = `<list-row selected="{{row.Selected}}" h="{{rowH}}" pad-x="{{gutter}}" gap="{{looseGap}}" align-items="center" keep-in-view="{{row.Selected}}" on-click="row.Pick" on-double-click="row.Open">
   <icon if="row.Dir" name="folder" w="{{iconW}}" muted/>
   <spacer if="!row.Dir" w="{{iconW}}"/>
   <text ellipsis grow="1">{{row.Name}}</text>

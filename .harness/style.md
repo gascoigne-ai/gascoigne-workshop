@@ -22,20 +22,26 @@ Logical pixels; the interface scale multiplies them at draw time.
 | `RowH` | 28 | list and table rows, standard controls, dialog buttons |
 | `CompactH` | 24 | chips, icon buttons, inline fields in a row, menu rows (`MenuRowH`) |
 | `LabelH`, `NoteH` | 22, 18 | section captions, one-line notes |
+| `SlimH` | 20 | pills, and buttons in the status bar |
 | `IconBtnW` | 32 | icon button width |
-| `Gutter` | 12 | inset between a container and its content |
+| `WordBtnW` | 44 | a button that holds one short word (Log, Raw, Reset) |
+| `LabelPad` | 10 | side inset of the label of a pill or a tab, as of a button |
+| `Gutter` | 12 | inset between a container and its content; gap between its sections |
+| `NearGap` | 4 | items that read as one (a label and its count, a heading and its lines) |
 | `TightGap` | 6 | controls side by side (a field and its button, a row of chips) |
 | `LooseGap` | 8 | blocks of a pane stacked in a column; rows whose items need air |
 | `ToolbarH` | 36 | a bar of controls over a pane (`RowH` + 8) |
 | `TabBarH`, `TabGap` | 40, 6 | a pane tab strip and the space above its tabs |
+| `TabLead`, `TabSepInset` | 2, 10 | room before the first tab; how far the line between tabs stays off top and bottom |
 | `DialogTitleH`, `DialogToolbarH` | 44, 40 | dialog title bar and toolbar |
-| `DialogPad` | 16 | inset of a dialog's title bar, toolbar and message body |
+| `DialogPad` | 16 | inset of a dialog's title bar, toolbar, footer and message body |
 | `DialogMargin`, `DialogMaxH` | 40, 560 | room kept around a dialog; tallest default dialog height |
 | `CellPad` | 8 | inset of a table cell and header cell |
 | `CheckboxSize` | 14 | checkbox side |
 | `EdgeGrab` | 6 | edge grab inside a border (resize) |
 | `ShadowOffset` | 4 | shadow shift, down and right |
 | `EdgeW` | 2 | open tab outline |
+| `RuleInset` | 6 | menu separator line, off the menu's sides |
 
 Window chrome (`workspace/ui/app/window.go`): header 44, request tab row `tabsH` 42, URL bar 56, status bar 28, sidebar 260 by default.
 

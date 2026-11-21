@@ -18,7 +18,7 @@ type TabItem struct {
 // (ActiveTab), the others muted.
 func Tabs(items []TabItem, active int, opts ...Option) *El {
 	var strip *El
-	strip = Row(With(append([]Item{PadL(2)}, tabItems(items, active, selector(&strip))...), opts)...)
+	strip = Row(With(append([]Item{PadL(core.TabLead)}, tabItems(items, active, selector(&strip))...), opts)...)
 	return strip
 }
 
@@ -34,7 +34,7 @@ func selector(strip **El) func(i int) {
 // not fit, keeping the active tab in view. It grows to the free width.
 func ScrollTabs(state *ScrollState, items []TabItem, active int, opts ...Option) *El {
 	var strip *El
-	strip = HScroll(state, With(append([]Item{Grow(1), PadL(2)}, tabItems(items, active, selector(&strip))...), opts)...)
+	strip = HScroll(state, With(append([]Item{Grow(1), PadL(core.TabLead)}, tabItems(items, active, selector(&strip))...), opts)...)
 	return strip
 }
 
@@ -43,9 +43,9 @@ func tabItems(items []TabItem, active int, onSelect func(i int)) []Item {
 	for i, it := range items {
 		i, it := i, it
 		tab := []Item{
-			Gap(4), PadX(10), AlignItems(AlignBaseline),
+			Gap(core.NearGap), PadX(core.LabelPad), AlignItems(AlignBaseline),
 			OnClick(func() { onSelect(i) }),
-			When(i > 0, Separator(10)),
+			When(i > 0, Separator(core.TabSepInset)),
 			Text(it.Label, Color(tabColor(i == active))),
 			If(it.Badge > 0, Text(strconv.Itoa(it.Badge), Small(), Muted())),
 		}
