@@ -67,11 +67,7 @@ func (a *App) bodyPane(panel pane, tab *reqTab, scroll *ScrollState) Node {
 		chips[i] = bodyChip{Label: bodyType.label, Width: bodyType.width, Selected: id == kind,
 			Choose: func() { a.setBodyType(tab, id) }}
 	}
-	return bodyPaneTemplate.MustBuild(markup.Scope{
-		"looseGap":    w.LooseGap,
-		"tightGap":    w.TightGap,
-		"gutter":      w.Gutter,
-		"rowH":        w.RowH,
+	return bodyPaneTemplate.MustBuild(a.scope(markup.Scope{
 		"typesX":      &tab.bodyTypesX,
 		"chips":       chips,
 		"showStatus":  isJSON && status != "",
@@ -83,7 +79,7 @@ func (a *App) bodyPane(panel pane, tab *reqTab, scroll *ScrollState) Node {
 		"toggleWrap":  func() { a.toggleBodyWrap(tab) },
 		"format":      func() { a.formatBody(tab) },
 		"editor":      a.bodyEditor(tab, scroll),
-	})
+	}))
 }
 
 // bodyEditor is the part of the body pane under the type chooser.
@@ -154,8 +150,8 @@ const (
       <segment-chip for="chip in chips" selected="{{chip.Selected}}" w="{{chip.Width}}" keep-in-view="{{chip.Selected}}" on-click="chip.Choose">{{chip.Label}}</segment-chip>
     </hscroll>
     <text if="showStatus" small color="{{statusColor}}" ellipsis optional>{{status}}</text>
-    <segment-chip if="canWrap" selected="{{wrap}}" w="56" on-click="toggleWrap">Wrap</segment-chip>
-    <button if="isJSON" w="70" on-click="format">Format</button>
+    <segment-chip if="canWrap" selected="{{wrap}}" w="{{wrapChipW}}" on-click="toggleWrap">Wrap</segment-chip>
+    <button if="isJSON" w="{{formatBtnW}}" on-click="format">Format</button>
   </row>
   <slot name="editor"/>
 </col>

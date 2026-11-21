@@ -40,26 +40,17 @@ var (
 // the picture of an image body with its size and a Save button.
 func (a *App) responsePane(_ pane, tab *reqTab, _ *ScrollState) Node {
 	if tab.picture != nil {
-		return responsePictureTemplate.MustBuild(markup.Scope{
-			"tightGap":    w.TightGap,
-			"gutter":      w.Gutter,
-			"toolbarH":    w.ToolbarH,
-			"compactH":    w.CompactH,
+		return responsePictureTemplate.MustBuild(a.scope(markup.Scope{
 			"pictureInfo": tab.pictureInfo,
 			"picture":     tab.picture,
 			"save":        func() { a.saveBody(tab) },
-		})
+		}))
 	}
 	var findBar Node // stays nil, so the slot is left out, while the bar is closed
 	if tab.look.FindOpen {
 		findBar = a.findBar(tab)
 	}
-	return responsePaneTemplate.MustBuild(markup.Scope{
-		"tightGap":    w.TightGap,
-		"gutter":      w.Gutter,
-		"toolbarH":    w.ToolbarH,
-		"compactH":    w.CompactH,
-		"iconBtnW":    w.IconBtnW,
+	return responsePaneTemplate.MustBuild(a.scope(markup.Scope{
 		"compact":     tab.look.Compact(),
 		"pretty":      tab.look.Mode == viewer.Pretty,
 		"raw":         tab.look.Raw(),
@@ -77,11 +68,11 @@ func (a *App) responsePane(_ pane, tab *reqTab, _ *ScrollState) Node {
 		"copyBody":    func() { a.copyBody(tab) },
 		"copyCurl":    func() { a.copyCurl(tab) },
 		"openMenu":    func(posX, posY int) { a.openMenu(posX, posY, a.responseMenuItems(tab)) },
-	})
+	}))
 }
 
 func (a *App) viewChip(label string, selected bool, width int, onClick func()) Node {
-	return SegmentChip(label, selected, W(width), H(w.CompactH), OnClick(onClick))
+	return SegmentChip(label, selected, W(width), HOf(w.CompactOf), OnClick(onClick))
 }
 
 var findBarTemplate = markup.Must("findbar.vml", findbarSource)
@@ -89,20 +80,15 @@ var findBarTemplate = markup.Must("findbar.vml", findbarSource)
 // findBar is the search row above the response: the query, the hit
 // counter and the previous, next and close buttons.
 func (a *App) findBar(tab *reqTab) Node {
-	return findBarTemplate.MustBuild(markup.Scope{
-		"tightGap": w.TightGap,
+	return findBarTemplate.MustBuild(a.scope(markup.Scope{
 		"find":     &tab.find,
 		"count":    viewer.Count(tab.find.Text, len(tab.view.Matches()), tab.look.Match),
-		"rowH":     w.RowH,
-		"gutter":   w.Gutter,
-		"iconBtnW": w.IconBtnW,
-		"compactH": w.CompactH,
 		"search":   func() { a.runFind(tab) },
 		"enter":    func() { a.findEnter(tab) },
 		"previous": func() { a.findStep(tab, -1) },
 		"next":     func() { a.findStep(tab, 1) },
 		"close":    func() { a.closeFind(tab) },
-	})
+	}))
 }
 
 // setView picks the response view: pretty-printed, as received, or compact.
@@ -248,13 +234,13 @@ const (
   <spacer h="{{gutter}}"/>
   <!-- written out: markup has no toolbar element; this is widget.Toolbar, copied in responsepicture.vml -->
   <row h="{{toolbarH}}" pad-x="{{gutter}}" gap="{{tightGap}}" align-items="center" border-b="border">
-    <segment-chip selected="{{compact}}" w="72" h="{{compactH}}" on-click="showCompact">Compact</segment-chip>
-    <segment-chip selected="{{pretty}}" w="56" h="{{compactH}}" on-click="showPretty">Pretty</segment-chip>
-    <segment-chip selected="{{raw}}" w="44" h="{{compactH}}" on-click="showRaw">Raw</segment-chip>
+    <segment-chip selected="{{compact}}" w="{{compactChipW}}" h="{{compactH}}" on-click="showCompact">Compact</segment-chip>
+    <segment-chip selected="{{pretty}}" w="{{prettyChipW}}" h="{{compactH}}" on-click="showPretty">Pretty</segment-chip>
+    <segment-chip selected="{{raw}}" w="{{rawChipW}}" h="{{compactH}}" on-click="showRaw">Raw</segment-chip>
     <row w="{{gutter}}"/>
-    <segment-chip selected="{{wrap}}" w="56" h="{{compactH}}" on-click="toggleWrap">Wrap</segment-chip>
+    <segment-chip selected="{{wrap}}" w="{{wrapChipW}}" h="{{compactH}}" on-click="toggleWrap">Wrap</segment-chip>
     <spacer/>
-    <button if="history" w="66" h="{{compactH}}" on-click-at="openHistory" tooltip="Earlier responses of this request">History</button>
+    <button if="history" w="{{historyBtnW}}" h="{{compactH}}" on-click-at="openHistory" tooltip="Earlier responses of this request">History</button>
     <icon-button icon="search" w="{{iconBtnW}}" h="{{compactH}}" on-click="openFind" tooltip="{{findTip}}"/>
     <icon-button icon="copy" w="{{iconBtnW}}" h="{{compactH}}" on-click="copyBody" tooltip="Copy the response body"/>
     <icon-button icon="prompt" w="{{iconBtnW}}" h="{{compactH}}" on-click="copyCurl" tooltip="Copy the request as a cURL command"/>
@@ -270,7 +256,7 @@ const (
   <row h="{{toolbarH}}" pad-x="{{gutter}}" gap="{{tightGap}}" align-items="center" border-b="border">
     <text small muted>{{pictureInfo}}</text>
     <spacer/>
-    <button w="56" h="{{compactH}}" on-click="save" tooltip="Save the image to a file">Save</button>
+    <button w="{{saveBtnW}}" h="{{compactH}}" on-click="save" tooltip="Save the image to a file">Save</button>
   </row>
   <image img="picture" grow="1" bg="sunken" tooltip="The image, scaled down to fit"/>
 </col>
@@ -278,7 +264,7 @@ const (
 
 	findbarSource = `<row h="{{rowH}}" pad-x="{{gutter}}" gap="{{tightGap}}" border-b="border">
   <field state="find" grow="1" placeholder="Find" on-change="search" on-enter="enter" text-menu="find"/>
-  <text small muted w="64">{{count}}</text>
+  <text small muted w="{{countW}}">{{count}}</text>
   <icon-button icon="chevron-up" w="{{iconBtnW}}" h="{{compactH}}" on-click="previous" tooltip="Previous match"/>
   <icon-button icon="chevron-down" w="{{iconBtnW}}" h="{{compactH}}" on-click="next" tooltip="Next match"/>
   <icon-button icon="cross" w="{{iconBtnW}}" h="{{compactH}}" on-click="close" tooltip="Close search (Esc)"/>

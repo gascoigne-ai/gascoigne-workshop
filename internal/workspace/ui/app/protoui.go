@@ -10,7 +10,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/bus"
-	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -146,20 +145,14 @@ func (a *App) protoPane(_ pane, tab *reqTab, scroll *ScrollState) Node {
 			editRequest(tab, editor.ProtoPathAdded{List: editor.ImportPaths})
 		}),
 	}
-	return protoPaneTemplate.MustBuild(markup.Scope{
-		"looseGap":   w.LooseGap,
-		"tightGap":   w.TightGap,
-		"gutter":     w.Gutter,
-		"rowH":       w.RowH,
-		"compactH":   w.CompactH,
-		"iconBtnW":   w.IconBtnW,
+	return protoPaneTemplate.MustBuild(a.scope(markup.Scope{
 		"scroll":     scroll,
 		"sources":    sources,
 		"files":      shown,
 		"reflection": !shown,
 		"lists":      lists,
 		"problems":   tab.proto.check.problems,
-	})
+	}))
 }
 
 func (a *App) protoList(tab *reqTab, list editor.ProtoList, caption, addLabel string, addWidth int, add func()) protoListView {

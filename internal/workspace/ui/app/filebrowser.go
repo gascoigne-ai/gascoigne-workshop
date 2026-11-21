@@ -206,8 +206,10 @@ const (
 	browserMaxH   = 520
 	browserMargin = 40
 	browserIconW  = 16
-	browserFootH  = w.RowH + 2*w.Gutter // the footer's buttons and its padding
 )
+
+// browserFootH is the footer's buttons and its padding.
+func browserFootH(sizes w.Sizes) int { return sizes.Row + 2*w.Gutter }
 
 var (
 	browserTemplate    = markup.Must("filebrowser.vml", filebrowserSource)
@@ -234,9 +236,10 @@ func (a *App) fileBrowserView() Node {
 	}
 	model := browser.model
 	height := min(browserMaxH, a.h-2*browserMargin)
-	listH := height - w.DialogTitleH - w.DialogToolbarH - browserFootH
+	sizes := a.ctx.Sizes
+	listH := height - sizes.DialogTitle - sizes.DialogToolbar - browserFootH(sizes)
 	visible := model.Visible()
-	first, last := shownRows(browser.scroll.Y, listH, len(visible))
+	first, last := shownRows(browser.scroll.Y, listH, sizes.Row, len(visible))
 	rows := make([]Node, 0, last-first)
 	for i := first; i < last; i++ {
 		rows = append(rows, a.fileBrowserRow(i, visible[i], i == model.Selected))
@@ -245,8 +248,7 @@ func (a *App) fileBrowserView() Node {
 	if model.Mode == filebrowser.Save {
 		primary = "Save"
 	}
-	return browserTemplate.MustBuild(markup.Scope{
-		"looseGap":    w.LooseGap,
+	return browserTemplate.MustBuild(a.scope(markup.Scope{
 		"width":       browserW,
 		"height":      height,
 		"move":        &browser.move,
@@ -259,21 +261,16 @@ func (a *App) fileBrowserView() Node {
 		"hidden":      model.ShowHidden,
 		"toggle":      func() { a.browse(filebrowser.HiddenToggled{}) },
 		"scroll":      &browser.scroll,
-		"above":       first * w.RowH,
+		"above":       first * sizes.Row,
 		"rows":        rows,
-		"below":       (len(visible) - last) * w.RowH,
+		"below":       (len(visible) - last) * sizes.Row,
 		"empty":       len(visible) == 0,
 		"problem":     model.Problem,
 		"hint":        a.browserHint(),
 		"primary":     primary,
 		"enter":       func() { a.browse(filebrowser.Entered{}) },
-		"compactH":    w.CompactH,
-		"rowH":        w.RowH,
-		"iconBtnW":    w.IconBtnW,
-		"gutter":      w.Gutter,
-		"dialogPad":   w.DialogPad,
-		"browserFoot": browserFootH,
-	})
+		"browserFoot": browserFootH(sizes),
+	}))
 }
 
 // browserHint names the program that would give native dialogs, so the
@@ -302,17 +299,16 @@ func (a *App) openBrowserRow(index int) {
 // shownRows are the rows built for a list scrolled to scrollY: those in
 // view and one more at each end, so Up and Down can bring the next row into
 // view. Only these are built, since a folder may hold thousands of names.
-func shownRows(scrollY, listH, count int) (first, last int) {
-	first = min(max(scrollY/w.RowH-1, 0), count)
-	last = min(first+listH/w.RowH+3, count)
+func shownRows(scrollY, listH, rowH, count int) (first, last int) {
+	first = min(max(scrollY/rowH-1, 0), count)
+	last = min(first+listH/rowH+3, count)
 	return first, last
 }
 
 // fileBrowserRow is one entry of the list: a click selects it, a double
 // click opens it.
 func (a *App) fileBrowserRow(index int, entry port.FolderEntry, selected bool) Node {
-	return browserRowTemplate.MustBuild(markup.Scope{
-		"looseGap": w.LooseGap,
+	return browserRowTemplate.MustBuild(a.scope(markup.Scope{
 		"row": browserRow{
 			Name:     entry.Name,
 			Dir:      entry.Dir,
@@ -320,10 +316,8 @@ func (a *App) fileBrowserRow(index int, entry port.FolderEntry, selected bool) N
 			Pick:     func() { a.browse(filebrowser.Picked{Index: index}) },
 			Open:     func() { a.openBrowserRow(index) },
 		},
-		"rowH":   w.RowH,
-		"gutter": w.Gutter,
-		"iconW":  browserIconW,
-	})
+		"iconW": browserIconW,
+	}))
 }
 
 // Templates, parsed once above.
@@ -354,8 +348,8 @@ const (
   <row h="{{browserFoot}}" pad-x="{{dialogPad}}" gap="{{looseGap}}" align-items="center" border-t="border-soft">
     <text if="problem" small color="error" ellipsis grow="1" shrink>{{problem}}</text>
     <text if="!problem" small muted ellipsis grow="1" shrink>{{hint}}</text>
-    <segment-chip selected="false" min-w="80" h="{{rowH}}" on-click="close">Cancel</segment-chip>
-    <segment-chip selected="true" min-w="80" h="{{rowH}}" on-click="enter">{{primary}}</segment-chip>
+    <segment-chip selected="false" min-w="{{dialogButtonMinW}}" h="{{rowH}}" on-click="close">Cancel</segment-chip>
+    <segment-chip selected="true" min-w="{{dialogButtonMinW}}" h="{{rowH}}" on-click="enter">{{primary}}</segment-chip>
   </row>
 </dialog>
 `

@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 	// The view DSL is dot-imported so views read like markup: Row(...), Text(...).
-	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 // timeoutText is a timeout as shown in its field; 0 (the default) is blank.
@@ -27,10 +26,7 @@ var settingsPaneTemplate = markup.Must("settingspane.vml", settingspaneSource)
 // settingsPane holds the per-request options: timeout, redirects and
 // certificate checks.
 func (a *App) settingsPane(_ pane, tab *reqTab, scroll *ScrollState) Node {
-	return settingsPaneTemplate.MustBuild(markup.Scope{
-		"looseGap":          w.LooseGap,
-		"gutter":            w.Gutter,
-		"rowH":              w.RowH,
+	return settingsPaneTemplate.MustBuild(a.scope(markup.Scope{
 		"scroll":            scroll,
 		"timeout":           &tab.timeout,
 		"timeoutHint":       fmt.Sprintf("blank = default (%d s)", a.timeoutFor(model.Request{})/time.Second),
@@ -39,7 +35,7 @@ func (a *App) settingsPane(_ pane, tab *reqTab, scroll *ScrollState) Node {
 		"timeoutEdited":     func() { a.timeoutEdited(tab) },
 		"toggleRedirects":   func() { editRequest(tab, editor.NoRedirectsToggled{}) },
 		"toggleVerify":      func() { editRequest(tab, editor.InsecureTLSToggled{}) },
-	})
+	}))
 }
 
 // timeoutEdited applies the typed timeout; text that is not a whole
@@ -63,7 +59,7 @@ func (a *App) timeoutEdited(tab *reqTab) {
 const (
 	settingspaneSource = `<scroll state="scroll" pad="{{gutter}}" gap="{{looseGap}}">
   <form-row label="Timeout (seconds)" label-width="160">
-    <field state="timeout" w="80" bg="sunken" on-change="timeoutEdited" text-menu="timeout"/>
+    <field state="timeout" w="{{timeoutW}}" bg="sunken" on-change="timeoutEdited" text-menu="timeout"/>
     <text small muted>{{timeoutHint}}</text>
   </form-row>
   <check-row on="{{followRedirects}}" on-click="toggleRedirects">

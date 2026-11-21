@@ -79,12 +79,12 @@ func (a *App) resultsPane(_ pane, tab *reqTab, _ *ScrollState) Node {
 		}
 		rows = append(rows, resultRow{Text: mark + text, Color: color})
 	}
-	return resultsTemplate.MustBuild(markup.Scope{
+	return resultsTemplate.MustBuild(a.scope(markup.Scope{
 		"gutter":  w.Gutter,
 		"scroll":  &tab.respScroll,
 		"summary": assert.Summary(tab.testResults),
 		"rows":    rows,
-	})
+	}))
 }
 
 // setVariable stores a value captured from the response to req in the
@@ -114,7 +114,7 @@ const (
 
 	resultsSource = `<!-- The response's Tests pane: the summary, then one line per assertion,
      marked and colored by whether it passed. -->
-<scroll state="scroll" pad="{{gutter}}" gap="4">
+<scroll state="scroll" pad="{{gutter}}" gap="{{nearGap}}">
   <text bold>{{summary}}</text>
   <text for="row in rows" color="{{row.Color}}" mono>{{row.Text}}</text>
 </scroll>

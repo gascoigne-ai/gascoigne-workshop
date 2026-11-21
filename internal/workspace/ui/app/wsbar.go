@@ -18,11 +18,8 @@ func (a *App) messagesToolbar(tab *reqTab) Node {
 	pick := func(menu func(*reqTab) []MenuItem) func() {
 		return func() { a.openMenu(a.ctx.In.X, a.ctx.In.Y, menu(tab)) }
 	}
-	return messagesToolbarTemplate.MustBuild(markup.Scope{
-		"tightGap":        w.TightGap,
-		"toolbarH":        w.RowH + 8,
-		"gutter":          w.Gutter,
-		"compactH":        w.CompactH,
+	return messagesToolbarTemplate.MustBuild(a.scope(markup.Scope{
+		"toolbarH":        a.ctx.Sizes.Row + w.LooseGap,
 		"state":           connState(tab),
 		"reconnect":       tab.Reconnect,
 		"toggleReconnect": func() { tab.Reconnect = !tab.Reconnect },
@@ -37,7 +34,7 @@ func (a *App) messagesToolbar(tab *reqTab) Node {
 		"pickPrompt":      pick(a.promptMenu),
 		"ping":            func() { a.pingSocket(tab) },
 		"clear":           func() { a.clearLog(tab) },
-	})
+	}))
 }
 
 // Templates, parsed once above.
@@ -45,12 +42,12 @@ const (
 	messagestoolbarSource = `<row h="{{toolbarH}}" pad-x="{{gutter}}" gap="{{tightGap}}" align-items="center" border-b="border">
   <text small muted>{{state}}</text>
   <spacer/>
-  <segment-chip selected="{{reconnect}}" w="116" h="{{compactH}}" on-click="toggleReconnect">Auto-reconnect</segment-chip>
-  <button if="hasTools" min-w="84" h="{{compactH}}" on-click="pickTool" tooltip="Pick a tool: the composer gets a call with its arguments filled in">{{toolsLabel}}</button>
-  <button if="hasResources" min-w="104" h="{{compactH}}" on-click="pickResource" tooltip="Pick a resource: the composer gets a read of it">{{resourcesLabel}}</button>
-  <button if="hasPrompts" min-w="94" h="{{compactH}}" on-click="pickPrompt" tooltip="Pick a prompt: the composer gets a request for it">{{promptsLabel}}</button>
-  <button min-w="56" h="{{compactH}}" on-click="ping" tooltip="Send a ping frame">Ping</button>
-  <button min-w="56" h="{{compactH}}" on-click="clear" tooltip="Empty the message log">Clear</button>
+  <segment-chip selected="{{reconnect}}" w="{{reconnectChipW}}" h="{{compactH}}" on-click="toggleReconnect">Auto-reconnect</segment-chip>
+  <button if="hasTools" min-w="{{toolsBtnMinW}}" h="{{compactH}}" on-click="pickTool" tooltip="Pick a tool: the composer gets a call with its arguments filled in">{{toolsLabel}}</button>
+  <button if="hasResources" min-w="{{resourcesMinW}}" h="{{compactH}}" on-click="pickResource" tooltip="Pick a resource: the composer gets a read of it">{{resourcesLabel}}</button>
+  <button if="hasPrompts" min-w="{{promptsBtnMinW}}" h="{{compactH}}" on-click="pickPrompt" tooltip="Pick a prompt: the composer gets a request for it">{{promptsLabel}}</button>
+  <button min-w="{{smallBtnMinW}}" h="{{compactH}}" on-click="ping" tooltip="Send a ping frame">Ping</button>
+  <button min-w="{{smallBtnMinW}}" h="{{compactH}}" on-click="clear" tooltip="Empty the message log">Clear</button>
 </row>
 `
 )

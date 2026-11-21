@@ -1,70 +1,143 @@
 package app
 
 import (
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
 )
 
-// sizeAttribute finds a size, padding or gap attribute in a template whose
-// value is a raw number instead of a constant read from the scope.
-var sizeAttribute = regexp.MustCompile(`\s(w|h|gap|pad|pad-[xylrtb])="\d+"`)
+// sizeAttribute finds a size, padding, gap or margin attribute in a template
+// whose value is a raw non-zero number instead of a name read from the scope.
+var sizeAttribute = regexp.MustCompile(`\s((?:min-|max-)?[wh]|gap|pad|pad-[xylrtb]|margin|margin-[xylrtb])="([1-9]\d*)"`)
 
-// The status bar, file browser and welcome views take their sizes from the
-// theme's size constants, so a template holds no raw numeric size and the
-// browser's footer height is built from constants alone.
-func TestViewSizesComeFromThemeConstants(t *testing.T) {
-	for _, file := range []string{"statusbar.go", "filebrowser.go", "welcome.go"} {
-		t.Run(file, func(t *testing.T) {
-			source, err := os.ReadFile(file)
-			if err != nil {
-				t.Fatal(err)
-			}
-			for _, match := range sizeAttribute.FindAllString(string(source), -1) {
-				t.Errorf("raw size attribute %s", strings.TrimSpace(match))
-			}
-		})
-	}
-	t.Run("browserFootH", func(t *testing.T) {
-		for _, literal := range constLiterals(t, "filebrowser.go", "browserFootH") {
-			if literal != "2" {
-				t.Errorf("browserFootH holds the raw size %s", literal)
-			}
-		}
-	})
+// sizeOptions are the view options whose argument is a size in pixels.
+var sizeOptions = map[string]bool{
+	"W": true, "H": true, "MinW": true, "MaxW": true, "MinH": true, "MaxH": true,
+	"Gap": true, "Pad": true, "PadX": true, "PadY": true, "PadL": true, "PadT": true, "PadR": true, "PadB": true,
+	"Margin": true, "MarginX": true, "MarginY": true, "MarginL": true, "MarginT": true, "MarginR": true, "MarginB": true,
 }
 
-// constLiterals lists the number literals in the value of the named constant.
-func constLiterals(t *testing.T, file, name string) []string {
-	t.Helper()
-	parsed, err := parser.ParseFile(token.NewFileSet(), file, nil, 0)
+// heightConstants are the default-face constants that ctx.Sizes replaces: a
+// view reads the size of the face it draws with, not the default's.
+var heightConstants = map[string]bool{
+	"RowH": true, "CompactH": true, "SlimH": true, "LabelH": true, "NoteH": true, "ToolbarH": true,
+	"DialogToolbarH": true, "TabBarH": true, "DialogTitleH": true, "IconBtnW": true, "WordBtnW": true,
+	"CheckboxSize": true, "MenuRowH": true, "MessageDialogW": true,
+}
+
+// scopeSizeKey names the scope entries that hold a size.
+var scopeSizeKey = regexp.MustCompile(`(H|W|Gap|Pad|Size)$`)
+
+// sizeLiteralAllowed lists "file: finding" strings that may stay; it only
+// shrinks. Test files keep the default-face constants because their
+// coordinates are those of the default scene.
+var sizeLiteralAllowed = map[string]bool{}
+
+// A view takes its sizes from Ctx.Sizes and the named roles, so no file of
+// the app holds a raw size in a template or a size option, and none names a
+// default-face height constant.
+func TestViewSizesComeFromCtxSizes(t *testing.T) {
+	files, err := filepath.Glob("*.go")
 	if err != nil {
 		t.Fatal(err)
 	}
-	var literals []string
-	found := false
-	ast.Inspect(parsed, func(node ast.Node) bool {
-		spec, ok := node.(*ast.ValueSpec)
-		if !ok || len(spec.Names) != 1 || spec.Names[0].Name != name {
-			return true
+	for _, file := range files {
+		if strings.HasSuffix(file, "_test.go") && file != "harness_test.go" {
+			continue
 		}
-		found = true
-		for _, value := range spec.Values {
-			ast.Inspect(value, func(inner ast.Node) bool {
-				if literal, ok := inner.(*ast.BasicLit); ok && literal.Kind == token.INT {
-					literals = append(literals, literal.Value)
+		t.Run(file, func(t *testing.T) {
+			for _, finding := range sizeFindings(t, file) {
+				if !sizeLiteralAllowed[file+": "+finding] {
+					t.Error(finding)
 				}
-				return true
-			})
-		}
-		return false
-	})
-	if !found {
-		t.Fatalf("%s: no constant %s", file, name)
+			}
+		})
 	}
-	return literals
+}
+
+// sizeFindings lists the raw sizes and old constants in one file.
+func sizeFindings(t *testing.T, file string) []string {
+	t.Helper()
+	source, err := os.ReadFile(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fset := token.NewFileSet()
+	parsed, err := parser.ParseFile(fset, file, source, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var findings []string
+	where := func(node ast.Node) string { return fmt.Sprintf("line %d", fset.Position(node.Pos()).Line) }
+	test := strings.HasSuffix(file, "_test.go")
+	if !test {
+		for _, match := range sizeAttribute.FindAllStringSubmatch(string(source), -1) {
+			findings = append(findings, fmt.Sprintf("raw size attribute %s=%q", match[1], match[2]))
+		}
+	}
+	ast.Inspect(parsed, func(node ast.Node) bool {
+		switch node := node.(type) {
+		case *ast.SelectorExpr:
+			if heightConstants[node.Sel.Name] && (!test || node.Sel.Name == "MenuRowH" || node.Sel.Name == "MessageDialogW") {
+				findings = append(findings, fmt.Sprintf("%s: old constant %s", where(node), node.Sel.Name))
+			}
+		case *ast.Ident: // a name dot-imported from the widget package
+			if node.Name == "MenuRowH" || node.Name == "MessageDialogW" {
+				findings = append(findings, fmt.Sprintf("%s: old constant %s", where(node), node.Name))
+			}
+		case *ast.CallExpr:
+			name := calleeName(node)
+			if !sizeOptions[name] || test {
+				return true
+			}
+			for _, argument := range node.Args {
+				if hasAddedLiteral(argument) {
+					findings = append(findings, fmt.Sprintf("%s: raw size in %s()", where(node), name))
+				}
+			}
+		case *ast.KeyValueExpr:
+			key, ok := node.Key.(*ast.BasicLit)
+			if !ok || key.Kind != token.STRING || test {
+				return true
+			}
+			if scopeSizeKey.MatchString(strings.Trim(key.Value, `"`)) && hasAddedLiteral(node.Value) {
+				findings = append(findings, fmt.Sprintf("%s: raw size in scope entry %s", where(node), key.Value))
+			}
+		}
+		return true
+	})
+	return findings
+}
+
+// calleeName is the function name of a call, with its package dropped.
+func calleeName(call *ast.CallExpr) string {
+	switch function := call.Fun.(type) {
+	case *ast.Ident:
+		return function.Name
+	case *ast.SelectorExpr:
+		return function.Sel.Name
+	}
+	return ""
+}
+
+// hasAddedLiteral reports a non-zero number that stands alone or is added or
+// subtracted; a factor (2*w.Gutter) is a rule over a constant, not a size.
+func hasAddedLiteral(expr ast.Expr) bool {
+	switch expr := expr.(type) {
+	case *ast.BasicLit:
+		return expr.Kind == token.INT && expr.Value != "0"
+	case *ast.ParenExpr:
+		return hasAddedLiteral(expr.X)
+	case *ast.BinaryExpr:
+		if expr.Op == token.ADD || expr.Op == token.SUB {
+			return hasAddedLiteral(expr.X) || hasAddedLiteral(expr.Y)
+		}
+	}
+	return false
 }

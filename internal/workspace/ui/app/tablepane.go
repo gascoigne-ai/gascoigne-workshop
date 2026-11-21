@@ -79,15 +79,13 @@ var (
 // rows: the pane's title, and for editable tables the switch to bulk
 // editing. An empty title leaves the row out.
 func (a *App) tableCaptionScope(panel pane, tab *reqTab, pad int) markup.Scope {
-	return markup.Scope{
+	return a.scope(markup.Scope{
 		"pad":        pad,
-		"rowH":       w.RowH,
-		"tightGap":   w.TightGap,
 		"caption":    panel.captionOf(a),
 		"editable":   panel.editable,
 		"bulkLabel":  bulkLabel(a.bulk != nil),
 		"toggleBulk": func() { a.toggleBulk(panel, tab) },
-	}
+	})
 }
 
 func bulkLabel(inBulk bool) string {

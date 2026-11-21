@@ -93,7 +93,7 @@ func (a *App) dialogView() Node {
 		return nil
 	}
 	return dialogTemplate.MustBuild(markup.Scope{
-		"width":   cmp.Or(d.width, MessageDialogW),
+		"width":   cmp.Or(d.width, w.DialogW),
 		"state":   &d.DialogState,
 		"move":    &d.move,
 		"dismiss": a.closeDialog,

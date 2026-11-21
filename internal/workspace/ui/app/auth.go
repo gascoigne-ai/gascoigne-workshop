@@ -3,7 +3,6 @@ package app
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -139,11 +138,7 @@ func (a *App) authPane(_ pane, tab *reqTab, scroll *ScrollState) Node {
 		hasSecret = hasSecret || field.secret
 		rows = append(rows, authFieldRow(tab, field))
 	}
-	return authPaneTemplate.MustBuild(markup.Scope{
-		"looseGap":      w.LooseGap,
-		"tightGap":      w.TightGap,
-		"gutter":        w.Gutter,
-		"rowH":          w.RowH,
+	return authPaneTemplate.MustBuild(a.scope(markup.Scope{
 		"scroll":        scroll,
 		"types":         types,
 		"none":          len(current.fields) == 0,
@@ -151,7 +146,7 @@ func (a *App) authPane(_ pane, tab *reqTab, scroll *ScrollState) Node {
 		"hasSecret":     hasSecret,
 		"showSecrets":   tab.showSecrets,
 		"toggleSecrets": tab.toggleSecrets,
-	})
+	}))
 }
 
 // authFieldRow is the view model of one field: a chooser lights the stored

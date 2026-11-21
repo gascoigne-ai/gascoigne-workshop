@@ -10,11 +10,11 @@ import (
 
 // Sizes of the window chrome, in logical pixels.
 const (
-	sidebarW = 260
-	headerH  = 44
-	tabsH    = 42
-	urlH     = 56
-	statusH  = 28
+	sidebarW = 260 // the collections tree's default width
+	headerH  = 44  // the banner: title, environment chip, settings
+	tabsH    = 42  // the request tab row: a tab's height plus the room above it
+	urlH     = 56  // the URL bar: its controls plus padding above and below
+	statusH  = 28  // the status bar
 
 	// Smallest sizes the dividers allow.
 	minSidebarW = 160
@@ -71,14 +71,14 @@ var headerTemplate = markup.Must("header.vml", headerSource)
 // header is the banner over the main column: the collection's name, the
 // environment chip and the settings menu button.
 func (a *App) header() Node {
-	return headerTemplate.MustBuild(markup.Scope{
+	return headerTemplate.MustBuild(a.scope(markup.Scope{
 		"headerH":     headerH,
 		"gutter":      w.Gutter,
 		"title":       a.headerTitle(),
 		"env":         a.envChip(),
 		"toggleMenu":  a.toggleSettings,
 		"settingsTip": a.hint("Settings", "settings"),
-	})
+	}))
 }
 
 var paneTemplate = markup.Must("pane.vml", paneSource)
@@ -133,7 +133,7 @@ const (
 	headerSource = `<!-- In a window too narrow for everything the title gives up room first,
      down to 48 px, then the chip, so the settings button stays inside. -->
 <row h="{{headerH}}" pad-x="{{gutter}}" bg="hero" control="hero">
-  <text bold ellipsis shrink min-w="48" color="hero-text">{{title}}</text>
+  <text bold ellipsis shrink min-w="{{titleMinW}}" color="hero-text">{{title}}</text>
   <spacer/>
   <slot name="env"/>
   <spacer w="{{gutter}}"/>

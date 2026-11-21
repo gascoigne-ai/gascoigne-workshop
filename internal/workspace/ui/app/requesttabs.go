@@ -39,7 +39,7 @@ func (a *App) requestTabs() Node {
 	for i, tab := range a.openTabs() {
 		items = append(items, a.requestTab(i, tab))
 	}
-	return requestTabsTemplate.MustBuild(markup.Scope{
+	return requestTabsTemplate.MustBuild(a.scope(markup.Scope{
 		"looseGap":   w.LooseGap,
 		"tabsH":      tabsH,
 		"tabGap":     w.TabGap,
@@ -51,7 +51,7 @@ func (a *App) requestTabs() Node {
 		"closeTip":   a.hint("Close tab", "close-tab"),
 		"newRequest": a.newRequest,
 		"newTip":     a.hint("New request", "new-request"),
-	})
+	}))
 }
 
 // requestTab is the view model of tab i: badge, name, dirty mark and handlers.
@@ -90,20 +90,20 @@ const (
   <hscroll state="tabsScroll" grow="1">
     <!-- inactive tabs blend into the strip; the active one joins the pane. A middle drag reorders, like a left one -->
     <row for="tab in tabs" active-tab="{{tab.Active}}" separator="{{tab.Separator}}" on-middle-click="tab.MiddlePress" on-right-click="tab.Menu">
-      <row w="3" align-self="stretch" bg="{{tab.Stripe}}"/>
-      <row pad-l="11" gap="{{looseGap}}" align-items="baseline" on-click="tab.Press" on-drag-over="tab.DragOver">
+      <row w="{{tabStripeW}}" align-self="stretch" bg="{{tab.Stripe}}"/>
+      <row pad-l="{{tabLabelInset}}" gap="{{looseGap}}" align-items="baseline" on-click="tab.Press" on-drag-over="tab.DragOver">
         <text small color="{{tab.Color}}" w="{{tabBadgeW}}">{{tab.Badge}}</text>
         <text>{{tab.Name}}</text>
         <row w="{{tabDirtyW}}" align-self="stretch">
           <text if="tab.Dirty" color="accent-line" grow="1">{{dirtyMark}}</text>
         </row>
       </row>
-      <row w="24" on-click="tab.Close" tooltip="{{closeTip}}">
+      <row w="{{tabCloseW}}" on-click="tab.Close" tooltip="{{closeTip}}">
         <icon name="cross" grow="1"/>
       </row>
     </row>
   </hscroll>
-  <row w="40" on-click="newRequest" tooltip="{{newTip}}">
+  <row w="{{newTabW}}" on-click="newRequest" tooltip="{{newTip}}">
     <icon name="plus" grow="1"/>
   </row>
 </row>

@@ -627,7 +627,7 @@ func pickMenu(t *testing.T, app *App, label string) {
 	}
 	y := m.Y + widget.MenuPad
 	for _, it := range m.Items {
-		h := widget.MenuRowH
+		h := widget.MenuRowHeight(app.ctx)
 		if it.Separator {
 			h = widget.MenuSepH
 		}

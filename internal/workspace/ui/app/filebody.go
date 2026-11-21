@@ -80,16 +80,13 @@ func (a *App) fileBody(tab *reqTab) Node {
 			sync()
 		})
 	}
-	return fileBodyTemplate.MustBuild(markup.Scope{
-		"looseGap":  w.LooseGap,
-		"tightGap":  w.TightGap,
-		"rowH":      w.RowH,
+	return fileBodyTemplate.MustBuild(a.scope(markup.Scope{
 		"file":      &tab.file,
 		"sync":      sync,
 		"choose":    choose,
 		"size":      size,
 		"sizeColor": sizeColor,
-	})
+	}))
 }
 
 // Templates, parsed once above.
@@ -97,7 +94,7 @@ const (
 	filebodySource = `<col grow="1" gap="{{looseGap}}">
   <row h="{{rowH}}" gap="{{tightGap}}">
     <field state="file" grow="1" placeholder="Path of the file to send" on-change="sync" text-menu="file"/>
-    <button w="90" on-click="choose">Choose...</button>
+    <button w="{{chooseBtnW}}" on-click="choose">Choose...</button>
   </row>
   <!-- always built, even empty, so the hint keeps its place -->
   <text small muted color="{{sizeColor}}">{{size}}</text>

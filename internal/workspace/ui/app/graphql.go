@@ -29,10 +29,7 @@ func (a *App) graphQLBody(tab *reqTab) Node {
 	if tab.schema != nil {
 		operations = len(tab.schema.Operations)
 	}
-	return graphQLTemplate.MustBuild(markup.Scope{
-		"tightGap":    w.TightGap,
-		"rowH":        w.RowH,
-		"labelH":      w.LabelH,
+	return graphQLTemplate.MustBuild(a.scope(markup.Scope{
 		"hasSchema":   operations > 0,
 		"schemaLabel": fmt.Sprintf("Schema (%d)", operations),
 		"openSchema":  func(posX, posY int) { a.openMenu(posX, posY, a.schemaMenu(tab)) },
@@ -46,7 +43,7 @@ func (a *App) graphQLBody(tab *reqTab) Node {
 		"vars":        &tab.gqlVars,
 		"varsText":    &tab.gqlVars.TextField,
 		"syncVars":    syncVars,
-	})
+	}))
 }
 
 // loadSchema sends the introspection query to the tab's URL, with its
@@ -97,8 +94,8 @@ const (
   <row h="{{rowH}}" gap="{{tightGap}}">
     <caption>Query</caption>
     <spacer/>
-    <button if="hasSchema" w="104" on-click-at="openSchema" tooltip="Pick an operation: the query and variables are replaced by a starter for it">{{schemaLabel}}</button>
-    <button w="104" on-click="loadSchema" tooltip="Ask the server for its types; the answer opens in the response">Load schema</button>
+    <button if="hasSchema" w="{{schemaBtnW}}" on-click-at="openSchema" tooltip="Pick an operation: the query and variables are replaced by a starter for it">{{schemaLabel}}</button>
+    <button w="{{schemaBtnW}}" on-click="loadSchema" tooltip="Ask the server for its types; the answer opens in the response">Load schema</button>
   </row>
   <area state="query" grow="3" bg="sunken" on-change="syncQuery" text-menu="queryText"/>
   <row h="{{labelH}}" gap="{{tightGap}}">

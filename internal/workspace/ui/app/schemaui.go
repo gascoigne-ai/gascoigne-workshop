@@ -9,7 +9,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/bus"
-	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -109,23 +108,19 @@ func (a *App) schemaPane(panel pane, tab *reqTab, scroll *ScrollState) Node {
 			rows = append(rows, schemaRowView{Pad: row.Depth * schemaIndent, Text: row.Text})
 		}
 	}
-	return schemaPaneTemplate.MustBuild(markup.Scope{
-		"looseGap": w.LooseGap,
-		"tightGap": w.TightGap,
-		"gutter":   w.Gutter,
-		"rowH":     w.RowH,
-		"scroll":   scroll,
-		"fillW":    fillBodyW,
-		"reloadW":  reloadButtonW,
-		"loaded":   state.schema != nil,
-		"loading":  state.running && state.schema == nil,
-		"failed":   state.err != "",
-		"error":    state.err,
-		"title":    title,
-		"rows":     rows,
-		"fill":     func() { a.fillBody(tab, state.schema) },
-		"reload":   func() { tab.messageSchema = messageSchemaState{} },
-	})
+	return schemaPaneTemplate.MustBuild(a.scope(markup.Scope{
+		"scroll":  scroll,
+		"fillW":   fillBodyW,
+		"reloadW": reloadButtonW,
+		"loaded":  state.schema != nil,
+		"loading": state.running && state.schema == nil,
+		"failed":  state.err != "",
+		"error":   state.err,
+		"title":   title,
+		"rows":    rows,
+		"fill":    func() { a.fillBody(tab, state.schema) },
+		"reload":  func() { tab.messageSchema = messageSchemaState{} },
+	}))
 }
 
 // schemaLoading reports whether t shows its Schema pane while the message

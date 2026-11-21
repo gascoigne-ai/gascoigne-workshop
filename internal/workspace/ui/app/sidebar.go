@@ -42,10 +42,7 @@ func (a *App) sidebar() Node {
 			rows = append(rows, a.treeRow(row, row.Node() == a.selected))
 		}
 	}
-	return sidebarTemplate.MustBuild(markup.Scope{
-		"looseGap":       w.LooseGap,
-		"rowH":           w.RowH,
-		"tightGap":       w.TightGap,
+	return sidebarTemplate.MustBuild(a.scope(markup.Scope{
 		"mode":           label,
 		"switchMode":     switchTo,
 		"collectionMenu": func(posX, posY int) { a.openMenu(posX, posY, a.collectionMenu()) },
@@ -59,8 +56,7 @@ func (a *App) sidebar() Node {
 		"treeScroll":     &a.treeScroll,
 		"rows":           rows,
 		"headerH":        headerH,
-		"gutter":         w.Gutter,
-	})
+	}))
 }
 
 // treeItem is what a tree row's template shows of one row.
@@ -94,7 +90,7 @@ func (a *App) treeRow(row collection.Row, selected bool) Node {
 	if !row.Folder {
 		template = treeRequestTemplate
 	}
-	return template.MustBuild(markup.Scope{"row": item, "rowH": w.RowH, "tightGap": w.TightGap, "gutter": w.Gutter, "badgeW": badgeW})
+	return template.MustBuild(a.scope(markup.Scope{"row": item, "badgeW": badgeW}))
 }
 
 // treeItemOf is the view model of one tree row, except whether it is selected.
@@ -164,7 +160,7 @@ func requestBadge(protocol model.Protocol, method string) string {
 const (
 	sidebarSource = `<col>
   <row h="{{headerH}}" pad-x="{{gutter}}" gap="{{tightGap}}" bg="bg" border-b="border">
-    <button w="96" h="{{rowH}}" on-click="switchMode" on-right-click="collectionMenu" tooltip="Collections and sent requests. Right-click: new, open, rename, save, close, delete a collection">{{mode}}</button>
+    <button w="{{modeBtnW}}" h="{{rowH}}" on-click="switchMode" on-right-click="collectionMenu" tooltip="Collections and sent requests. Right-click: new, open, rename, save, close, delete a collection">{{mode}}</button>
     <field state="filter" h="{{rowH}}" grow="1" bg="sunken" placeholder="Filter" text-menu="filter"/>
   </row>
   <slot if="sentList" name="sentList"/>
@@ -181,8 +177,8 @@ const (
 `
 
 	treefolderSource = `<list-row selected="{{row.Selected}}" border="{{row.DropBorder}}" h="{{rowH}}" pad-l="{{row.Indent}}" gap="{{tightGap}}" on-click="row.Press" on-right-click="row.Menu" on-drag-over="row.DragOver">
-  <row if="row.Stripe" w="3" h="14" bg="{{row.Stripe}}"/>
-  <icon name="{{row.Triangle}}" w="12"/>
+  <row if="row.Stripe" w="{{treeStripeW}}" h="{{treeStripeH}}" bg="{{row.Stripe}}"/>
+  <icon name="{{row.Triangle}}" w="{{treeTriangleW}}"/>
   <!-- the name, with the part the sidebar filter matched in the accent color; treerequest.vml has the same -->
   <text if="!row.Match" bold="{{row.Root}}" ellipsis grow="1">{{row.Name}}</text>
   <row if="row.Match" grow="1">

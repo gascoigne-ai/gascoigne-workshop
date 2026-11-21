@@ -100,14 +100,14 @@ func resultLines(state mcpexplorer.State) []Line {
 // lists it offers on the left and the open entry with its form and its
 // answer on the right.
 func (a *App) explorerPane(_ pane, tab *reqTab, _ *ScrollState) Node {
-	return explorerTemplate.MustBuild(markup.Scope{
+	return explorerTemplate.MustBuild(a.scope(markup.Scope{
 		"looseGap": w.LooseGap,
 		"header":   newExplorerHeader(tab),
 		"list":     a.explorerList(tab),
 		"detail":   a.explorerDetail(tab),
-		"headerH":  w.RowH + w.Gutter,
+		"headerH":  a.ctx.Sizes.Row + w.Gutter,
 		"gutter":   w.Gutter,
-	})
+	}))
 }
 
 // explorerHeader is what the explorer template shows of the server: its
@@ -167,7 +167,7 @@ func (a *App) explorerList(tab *reqTab) Node {
 			Open:     func() { a.exploreOpen(tab, index) },
 		})
 	}
-	return explorerListTemplate.MustBuild(markup.Scope{
+	return explorerListTemplate.MustBuild(a.scope(markup.Scope{
 		"tabs":    items,
 		"active":  int(state.Kind),
 		"choose":  func(index int) { a.exploreChoose(tab, mcpexplorer.Kind(index)) },
@@ -175,7 +175,7 @@ func (a *App) explorerList(tab *reqTab) Node {
 		"entries": entries,
 		"listW":   explorerListW,
 		"gutter":  w.Gutter,
-	})
+	}))
 }
 
 // explorerListW is the width of the list next to the open entry.
@@ -213,15 +213,12 @@ func (a *App) explorerDetail(tab *reqTab) Node {
 		detail.Waiting = "Waiting for the server..."
 	}
 	if state.Result != "" {
-		detail.Result = resultNode(tab)
+		detail.Result = a.resultNode(tab)
 	}
-	return explorerDetailTemplate.MustBuild(markup.Scope{
-		"looseGap": w.LooseGap,
-		"detail":   detail,
-		"scroll":   &tab.detailScroll,
-		"gutter":   w.Gutter,
-		"rowH":     w.RowH,
-	})
+	return explorerDetailTemplate.MustBuild(a.scope(markup.Scope{
+		"detail": detail,
+		"scroll": &tab.detailScroll,
+	}))
 }
 
 // formNode is the argument form of the open entry, nil for a resource.
@@ -244,18 +241,18 @@ func callLabel(state mcpexplorer.State) string {
 }
 
 // resultNode is the last answer, headed by whether it succeeded.
-func resultNode(tab *reqTab) Node {
+func (a *App) resultNode(tab *reqTab) Node {
 	state := tab.explorer
 	heading, color := "Result", w.OK
 	if state.IsFailed() {
 		heading, color = "Error", w.Error
 	}
-	return explorerResultTemplate.MustBuild(markup.Scope{
+	return explorerResultTemplate.MustBuild(a.scope(markup.Scope{
 		"heading": heading,
 		"color":   color,
 		"view":    &tab.resultView,
 		"resultH": explorerResultH,
-	})
+	}))
 }
 
 // explorerResultH is the height of the answer's view.
@@ -267,7 +264,7 @@ const (
   <row if="!header.Known" h="{{headerH}}" pad-x="{{gutter}}" align-items="center" border-b="border">
     <text muted>{{header.State}}: connect to see what the server offers</text>
   </row>
-  <col if="header.Known" pad-x="{{gutter}}" pad-y="8" gap="4" border-b="border">
+  <col if="header.Known" pad-x="{{gutter}}" pad-y="{{looseGap}}" gap="{{nearGap}}" border-b="border">
     <row gap="{{looseGap}}" align-items="baseline">
       <text bold>{{header.Name}} {{header.Version}}</text>
       <text small muted>protocol {{header.Protocol}}</text>
@@ -290,7 +287,7 @@ const (
     <col if="!entries" pad="{{gutter}}">
       <text small muted>Nothing announced</text>
     </col>
-    <list-row for="entry in entries" selected="{{entry.Selected}}" pad-x="{{gutter}}" pad-y="6" on-click="entry.Open">
+    <list-row for="entry in entries" selected="{{entry.Selected}}" pad-x="{{gutter}}" pad-y="{{tightGap}}" on-click="entry.Open">
       <col grow="1">
         <text ellipsis>{{entry.Title}}</text>
         <text if="entry.Detail" small muted ellipsis>{{entry.Detail}}</text>
@@ -305,7 +302,7 @@ const (
 </col>
 `
 
-	explorerdetailSource = `<scroll state="scroll" grow="1" pad="{{gutter}}" gap="10">
+	explorerdetailSource = `<scroll state="scroll" grow="1" pad="{{gutter}}" gap="{{detailGap}}">
   <text bold>{{detail.Title}}</text>
   <slot if="detail.Form" name="detail.Form"/>
   <!-- a resource has no form; the empty column keeps the gap a form takes -->
@@ -319,7 +316,7 @@ const (
 </scroll>
 `
 
-	explorerresultSource = `<col gap="4">
+	explorerresultSource = `<col gap="{{nearGap}}">
   <text small bold color="{{color}}">{{heading}}</text>
   <code state="view" h="{{resultH}}" bg="sunken"/>
 </col>

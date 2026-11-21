@@ -191,11 +191,10 @@ func (a *App) envChip() Node {
 	if n := a.envName(); n != "" {
 		label = n
 	}
-	return envChipTemplate.MustBuild(markup.Scope{
+	return envChipTemplate.MustBuild(a.scope(markup.Scope{
 		"label":    label,
-		"compactH": w.CompactH,
 		"openMenu": func(posX, posY int) { a.openMenu(posX, posY, a.envMenu()) },
-	})
+	}))
 }
 
 // urlTip is the tooltip of the URL field: what the URL resolves to with the
@@ -259,7 +258,7 @@ func (a *App) completeVariable() {
 	for i, name := range names {
 		items[i] = MenuItem{Label: name, Run: func() { a.insertVariable(t, name, from) }}
 	}
-	a.openMenu(sidebarW+120, headerH+tabsH+urlH-8, items)
+	a.openMenu(sidebarW+120, headerH+tabsH+urlH-w.LooseGap, items)
 }
 
 // insertVariable writes {{name}} at the cursor of the URL field, replacing
@@ -284,7 +283,7 @@ const (
      beside it stays in a 400 px window; "No environment" (111 px) fits.
      Narrower, it shrinks after the title, down to its padding and a few
      pixels: a larger min-w would widen the chip of a short name. -->
-<row pad-x="10" h="{{compactH}}" max-w="200" min-w="24" shrink bg="hero-text" control="pill" align-items="center" on-click-at="openMenu" tooltip="Environment: variables that override the collection's">
+<row pad-x="{{labelPad}}" h="{{compactH}}" max-w="{{envMaxW}}" min-w="{{envMinW}}" shrink bg="hero-text" control="pill" align-items="center" on-click-at="openMenu" tooltip="Environment: variables that override the collection's">
   <text small bold ellipsis grow="1" color="hero">{{label}}</text>
 </row>
 `

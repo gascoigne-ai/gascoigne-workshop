@@ -17,15 +17,12 @@ func (a *App) responseStatus(tab *reqTab) Node {
 		return nil
 	}
 	fg, bg := statusPill(tab.Resp.Status)
-	return responseStatusTemplate.MustBuild(markup.Scope{
-		"gutter":   w.Gutter,
-		"labelPad": w.LabelPad,
-		"slimH":    w.SlimH,
-		"pillFg":   fg,
-		"pillBg":   bg,
-		"status":   fmt.Sprintf("%d %s", tab.Resp.Status, tab.Resp.StatusText),
-		"timing":   fmt.Sprintf("%s  %s", textfmt.Duration(tab.Resp.Duration), textfmt.Size(tab.Resp.Size)),
-	})
+	return responseStatusTemplate.MustBuild(a.scope(markup.Scope{
+		"pillFg": fg,
+		"pillBg": bg,
+		"status": fmt.Sprintf("%d %s", tab.Resp.Status, tab.Resp.StatusText),
+		"timing": fmt.Sprintf("%s  %s", textfmt.Duration(tab.Resp.Duration), textfmt.Size(tab.Resp.Size)),
+	}))
 }
 
 // statusPill is the text and background colors of a response status:
@@ -47,16 +44,13 @@ var statusBarTemplate = markup.Must("statusbar.vml", statusbarSource)
 // statusBar is the line under the window: the last status, the Log
 // button and the version.
 func (a *App) statusBar() Node {
-	return statusBarTemplate.MustBuild(markup.Scope{
+	return statusBarTemplate.MustBuild(a.scope(markup.Scope{
 		"statusH":     statusH,
-		"gutter":      w.Gutter,
-		"slimH":       w.SlimH,
-		"wordBtnW":    w.WordBtnW,
 		"status":      a.status,
 		"version":     version,
 		"openLog":     a.calls.Open,
 		"openWelcome": a.openWelcome,
-	})
+	}))
 }
 
 // Templates, parsed once above.
