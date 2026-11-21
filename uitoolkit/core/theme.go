@@ -58,9 +58,10 @@ const (
 // both sides, line + 2*pad, so text centers on whole pixels. Spacing comes
 // in named steps, whole multiples of Unit.
 //
-// Why fixed bases rather than sizes that follow the text size at runtime:
-// the bases are the line heights of the default faces, and a Sizes value on
-// Ctx that grows with the text is a separate, later decision.
+// The constants below are the sizes of the default faces. The sizes that
+// follow the faces really in use are Ctx.Sizes (SizesFor); the constants
+// stay as the documented default until every consumer reads Ctx.Sizes,
+// and TestDefaultSizesEqualConstants keeps the two equal.
 const (
 	BaseLine      = 16 // line height of the default UI face (Go regular at 14 px)
 	BaseSmallLine = 14 // line height of the default small face (Go regular at 12 px)

@@ -39,28 +39,39 @@ func (d FontData) withDefault(regular, bold []byte) FontData {
 // newFonts builds the faces from the chosen fonts (the embedded Go fonts
 // where none was chosen), sized for a display with the given device scale
 // factor.
-func newFonts(th Theme, scale float64, chosen FontChoice) (Fonts, error) {
+func newFonts(th Theme, scale float64, chosen FontChoice) (Fonts, Sizes, error) {
 	ui := chosen.UI.withDefault(goregular.TTF, gobold.TTF)
 	code := chosen.Code.withDefault(gomono.TTF, gobold.TTF)
 	regular, err := text.NewGoTextFaceSource(bytes.NewReader(ui.Regular))
 	if err != nil {
-		return Fonts{}, fmt.Errorf("load regular font: %w", err)
+		return Fonts{}, Sizes{}, fmt.Errorf("load regular font: %w", err)
 	}
 	bold, err := text.NewGoTextFaceSource(bytes.NewReader(ui.Bold))
 	if err != nil {
-		return Fonts{}, fmt.Errorf("load bold font: %w", err)
+		return Fonts{}, Sizes{}, fmt.Errorf("load bold font: %w", err)
 	}
 	mono, err := text.NewGoTextFaceSource(bytes.NewReader(code.Regular))
 	if err != nil {
-		return Fonts{}, fmt.Errorf("load mono font: %w", err)
+		return Fonts{}, Sizes{}, fmt.Errorf("load mono font: %w", err)
 	}
-	return Fonts{
+	fonts := Fonts{
 		UI:        &text.GoTextFace{Source: regular, Size: th.FontSize * scale},
 		Small:     &text.GoTextFace{Source: regular, Size: th.SmallSize * scale},
 		Mono:      &text.GoTextFace{Source: mono, Size: th.MonoSize * scale},
 		Bold:      &text.GoTextFace{Source: bold, Size: th.FontSize * scale},
 		SmallBold: &text.GoTextFace{Source: bold, Size: th.SmallSize * scale},
-	}, nil
+	}
+	return fonts, sizesOf(th, regular), nil
+}
+
+// sizesOf measures the line heights of the theme's UI and small faces at
+// scale 1, as LineH does, so the sizes never depend on the device scale.
+func sizesOf(th Theme, regular *text.GoTextFaceSource) Sizes {
+	line := func(size float64) int {
+		metrics := (&text.GoTextFace{Source: regular, Size: size}).Metrics()
+		return int(metrics.HAscent + metrics.HDescent + 0.5)
+	}
+	return SizesFor(line(th.FontSize), line(th.SmallSize))
 }
 
 // FontChoice is the fonts picked for the interface and for code.
@@ -80,6 +91,9 @@ type Focuser interface {
 type Ctx struct {
 	Th Theme
 	F  Fonts
+	// Sizes follow the line heights of F: set by NewCtx, SetTheme and
+	// SetFonts, never by SetScale, since the scale multiplies at draw time.
+	Sizes Sizes
 	// Chosen are the fonts picked by the user; the zero value is the
 	// embedded ones. They survive theme and scale changes.
 	Chosen FontChoice
@@ -169,11 +183,11 @@ const (
 
 // NewCtx returns a context at scale 1.
 func NewCtx(th Theme) (*Ctx, error) {
-	fonts, err := newFonts(th, 1, FontChoice{})
+	fonts, sizes, err := newFonts(th, 1, FontChoice{})
 	if err != nil {
 		return nil, err
 	}
-	return &Ctx{Th: th, F: fonts, Scale: 1, Clipboard: SystemClipboard(), HostOS: runtime.GOOS}, nil
+	return &Ctx{Th: th, F: fonts, Sizes: sizes, Scale: 1, Clipboard: SystemClipboard(), HostOS: runtime.GOOS}, nil
 }
 
 // CaretHalfPeriod is how long the caret is shown, and then hidden.
@@ -206,7 +220,7 @@ func (c *Ctx) SetScale(scale float64) error {
 	if scale <= 0 || scale == c.Scale {
 		return nil
 	}
-	fonts, err := newFonts(c.Th, scale, c.Chosen)
+	fonts, _, err := newFonts(c.Th, scale, c.Chosen)
 	if err != nil {
 		return err
 	}
@@ -217,11 +231,11 @@ func (c *Ctx) SetScale(scale float64) error {
 
 // SetTheme switches theme and rebuilds the fonts, whose sizes the theme sets.
 func (c *Ctx) SetTheme(th Theme) error {
-	fonts, err := newFonts(th, c.Scale, c.Chosen)
+	fonts, sizes, err := newFonts(th, c.Scale, c.Chosen)
 	if err != nil {
 		return err
 	}
-	c.Th, c.F = th, fonts
+	c.Th, c.F, c.Sizes = th, fonts, sizes
 	c.resetMasks()
 	return nil
 }
@@ -230,11 +244,11 @@ func (c *Ctx) SetTheme(th Theme) error {
 // embedded font. Fonts that cannot be read change nothing.
 func (c *Ctx) SetFonts(ui, code FontData) error {
 	chosen := FontChoice{UI: ui, Code: code}
-	fonts, err := newFonts(c.Th, c.Scale, chosen)
+	fonts, sizes, err := newFonts(c.Th, c.Scale, chosen)
 	if err != nil {
 		return err
 	}
-	c.Chosen, c.F = chosen, fonts
+	c.Chosen, c.F, c.Sizes = chosen, fonts, sizes
 	return nil
 }
 

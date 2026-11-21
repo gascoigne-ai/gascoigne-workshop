@@ -33,6 +33,8 @@ Logical pixels; the interface scale multiplies them at draw time. Every size is 
 | `SlimH` | `BaseLine` + 2U | 20 | pills, and buttons in the status bar |
 | `NoteH` | `BaseSmallLine` + 2U | 18 | one-line notes |
 
+**Sizes follow the faces.** `Ctx.Sizes` (`SizesFor(line, small)`) applies these rules to the line heights of the faces the context really draws with, so a larger text size never clips a row. It is recomputed in `NewCtx`, `SetTheme` and `SetFonts`, never in `SetScale` (the scale multiplies at draw time). The UI line is clamped to 13..22 and the small line to 1..line; spacings never move. The constants in the tables are the same rules for the default faces (`DefaultSizes()` equals them) and stay until every consumer reads `Ctx.Sizes`. `Sizes.Scope()` names them for templates (`rowH`, `compactH`, `gutter`, ...).
+
 **Spacing steps** are named multiples of `Unit`; each role constant is one step:
 
 | Step | Units | Value | Roles |

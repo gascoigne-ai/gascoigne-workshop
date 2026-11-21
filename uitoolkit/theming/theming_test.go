@@ -153,3 +153,29 @@ func TestBaseLineIsTheDefaultFaceLineHeight(t *testing.T) {
 		t.Errorf("small face line height = %d, BaseSmallLine = %d", got, core.BaseSmallLine)
 	}
 }
+
+// Every text size choice gives rows that hold its own text.
+func TestSizeChoicesGiveSaneSizes(t *testing.T) {
+	for _, choice := range SizeChoices() {
+		t.Run(choice.ID, func(t *testing.T) {
+			th := NewCatalog(Builtins()).For("dark", choice.ID)
+			ctx, err := core.NewCtx(th)
+			if err != nil {
+				t.Fatal(err)
+			}
+			sizes := ctx.Sizes
+			if sizes.Line < core.MinLine || sizes.Line > core.MaxLine {
+				t.Errorf("Line %d outside %d..%d", sizes.Line, core.MinLine, core.MaxLine)
+			}
+			if sizes.Row < sizes.Line || sizes.Compact < sizes.Line || sizes.Slim < sizes.Line {
+				t.Errorf("a height is below the line: %+v", sizes)
+			}
+			if !(sizes.Row > sizes.Compact && sizes.Compact > sizes.Slim) {
+				t.Errorf("want Row > Compact > Slim: %+v", sizes)
+			}
+			if sizes.Note < sizes.SmallLine {
+				t.Errorf("Note %d below small line %d", sizes.Note, sizes.SmallLine)
+			}
+		})
+	}
+}
