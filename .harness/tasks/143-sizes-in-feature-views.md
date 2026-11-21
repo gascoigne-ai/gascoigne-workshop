@@ -1,7 +1,7 @@
 status: todo
 kind: refactor
 commit: refactor(ui): feature views read sizes from Ctx.Sizes
-scope: internal/*/ui/**, !internal/workspace/ui/**, .harness/style.md
+scope: internal/collection/ui/**, internal/request/ui/**, internal/response/ui/**, internal/settings/ui/**, .harness/style.md
 not_before: 2026-01-01
 depends_on: 141-sizes-in-toolkit
 
