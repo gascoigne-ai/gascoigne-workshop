@@ -38,8 +38,8 @@ type controlFile struct {
 type themeFile struct {
 	Name    string `json:"name"`
 	Extends string `json:"extends"`
-	// FontSize, SmallSize and MonoSize are read and ignored: the Text size
-	// setting decides the sizes (TextSizesFor), and files written when a theme
+	// FontSize, SmallSize and MonoSize are read and ignored: the font size
+	// settings decide the sizes (FontSizes.Resolved), and files written when a theme
 	// stated them keep loading because the parser rejects unknown keys.
 	FontSize  float64 `json:"fontSize"`
 	SmallSize float64 `json:"smallSize"`
@@ -79,7 +79,7 @@ func ParseTheme(data []byte, base *core.Theme) (core.Theme, error) {
 		th = base.With(nil)
 		th.Controls = copyControls(base.Controls)
 	} else {
-		th = core.Theme{Colors: map[core.Token]color.RGBA{}, Controls: map[string]core.ControlStyle{}, RadiusScale: 1}.WithTextSize(TextSizesFor(DefaultFontSize))
+		th = core.Theme{Colors: map[core.Token]color.RGBA{}, Controls: map[string]core.ControlStyle{}, RadiusScale: 1}.WithTextSize(FontSizes{}.Resolved())
 	}
 	if th.Controls == nil {
 		th.Controls = map[string]core.ControlStyle{}
@@ -91,7 +91,7 @@ func ParseTheme(data []byte, base *core.Theme) (core.Theme, error) {
 		th.Name = f.Name
 	}
 	if f.FontSize != 0 || f.SmallSize != 0 || f.MonoSize != 0 {
-		slog.Debug("theme file states text sizes; ignored, the Text size setting decides", "theme", f.Name)
+		slog.Debug("theme file states text sizes; ignored, the font size settings decide", "theme", f.Name)
 	}
 	if f.IconStroke > 0 {
 		th.IconStroke = f.IconStroke

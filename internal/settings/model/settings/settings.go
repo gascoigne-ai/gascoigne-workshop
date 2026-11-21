@@ -15,9 +15,18 @@ import (
 type Settings struct {
 	Theme string `json:"theme"` // "dark" or "light"
 
-	// FontSize is the size of the interface text in pixels, MinFontSize to
-	// MaxFontSize; the small and mono faces derive from it (uitoolkit/theming).
+	// FontSize is the size of the interface face (labels, buttons, fields,
+	// bold text) in pixels, MinFontSize to MaxFontSize. Control heights follow it.
 	FontSize int `json:"fontSize"`
+
+	// SmallFontSize is the size of the small face (captions, hints, table
+	// headers) in pixels, MinSmallFontSize to MaxSmallFontSize. It may be larger
+	// than FontSize; the toolkit keeps it inside the line height.
+	SmallFontSize int `json:"smallFontSize"`
+
+	// CodeFontSize is the size of the code face (bodies and code views) in
+	// pixels, MinCodeFontSize to MaxCodeFontSize.
+	CodeFontSize int `json:"codeFontSize"`
 
 	// Layout places the request and response panes: "stacked" (the default) or "side" by side.
 	Layout string `json:"layout"`
@@ -88,14 +97,22 @@ type Settings struct {
 	SSE  bool `json:"sse,omitempty"`
 }
 
-// DefaultFontSize is the interface text size in pixels a first run uses;
-// MinFontSize and MaxFontSize bound it. They are stated again in
+// The size of each face in pixels: what a first run uses and the range that
+// is accepted (the interface, small and code faces). They are stated again in
 // uitoolkit/theming, which this package may not import;
 // appearance's TestFontSizeRangeMatchesToolkit pins the two together.
 const (
 	DefaultFontSize = 14
 	MinFontSize     = 10
 	MaxFontSize     = 24
+
+	DefaultSmallFontSize = 12
+	MinSmallFontSize     = 8
+	MaxSmallFontSize     = 24
+
+	DefaultCodeFontSize = 13
+	MinCodeFontSize     = 8
+	MaxCodeFontSize     = 32
 )
 
 // DefaultUIScalePct is the display's own scale; MinUIScalePct and
@@ -130,7 +147,7 @@ func BaseScale(goos string) float64 {
 
 // Default is what a first run uses.
 func Default() Settings {
-	return Settings{AutoSave: true, Theme: "dark", FontSize: DefaultFontSize, Layout: "stacked", Contrast: "normal", TimeoutSec: 60, UIScalePct: DefaultUIScalePct, Corners: "soft", ResponseView: "compact"}
+	return Settings{AutoSave: true, Theme: "dark", FontSize: DefaultFontSize, SmallFontSize: DefaultSmallFontSize, CodeFontSize: DefaultCodeFontSize, Layout: "stacked", Contrast: "normal", TimeoutSec: 60, UIScalePct: DefaultUIScalePct, Corners: "soft", ResponseView: "compact"}
 }
 
 // Decode reads settings text over the defaults, so fields missing from
@@ -144,13 +161,24 @@ func Decode(data []byte) (Settings, error) {
 	return decoded, nil
 }
 
-// readers read settings.json by version (the fileversion package doc).
-// Versions 0 and 1 share a layout, sectioned, the older flat form or a mix,
-// and both carry the text size as "textSize": small, medium or large, so
-// both read it through decodeLegacyTextSize into FontSize. Version 2 writes
-// the pixel size itself. The legacy table is looked up once per load and is
-// closed: no later build writes another word, so it needs no extension point.
-var readers = []func([]byte) (Settings, error){decodeLegacyTextSize, decodeLegacyTextSize, decodeOverDefaults}
+// readers read settings.json by version (the fileversion package doc). Each
+// is a chain of small steps over the flat key map, so a later version's
+// reader is the earlier one's plus one step:
+//   - versions 0 and 1 share a layout, sectioned, the older flat form or a
+//     mix, and carry the text size as "textSize": small, medium or large
+//     (upgradeTextSize turns it into fontSize);
+//   - versions 0 to 2 carry one fontSize and no sizes for the small and code
+//     faces (deriveFaceSizes gives them the sizes the old rule drew);
+//   - version 3 states all three sizes and is read as it is.
+//
+// The legacy table is looked up once per load and is closed: no later build
+// writes another word, so it needs no extension point.
+var readers = []func([]byte) (Settings, error){
+	decodeSteps(upgradeTextSize, deriveFaceSizes),
+	decodeSteps(upgradeTextSize, deriveFaceSizes),
+	decodeSteps(deriveFaceSizes),
+	decodeOverDefaults,
+}
 
 // FileVersion is the version of settings.json this build writes.
 var FileVersion = len(readers) - 1
@@ -161,30 +189,36 @@ var legacyFontSizes = map[string]int{"small": 13, "medium": 14, "large": 16}
 
 // decodeOverDefaults reads settings text over the defaults.
 func decodeOverDefaults(data []byte) (Settings, error) {
-	flat, err := flatten(data)
-	if err != nil {
-		return Default(), err
-	}
-	return unmarshalFlat(flat)
+	return decodeSteps()(data)
 }
 
-// decodeLegacyTextSize reads a version 0 or 1 file: "textSize" becomes
-// FontSize unless the file also states fontSize, which wins. A word the table
-// does not know, a value that is not text, or no key at all means the default.
-func decodeLegacyTextSize(data []byte) (Settings, error) {
-	flat, err := flatten(data)
-	if err != nil {
-		return Default(), err
+// decodeSteps is the reader that flattens the text, applies each step in
+// order and reads the result over the defaults.
+func decodeSteps(steps ...func(map[string]json.RawMessage)) func([]byte) (Settings, error) {
+	return func(data []byte) (Settings, error) {
+		flat, err := flatten(data)
+		if err != nil {
+			return Default(), err
+		}
+		for _, step := range steps {
+			step(flat)
+		}
+		return unmarshalFlat(flat)
 	}
+}
+
+const legacySizeKey = "textSize"
+
+// upgradeTextSize turns "textSize" into fontSize unless the file also states
+// fontSize, which wins. A word the table does not know, a value that is not
+// text, or no key at all means the default.
+func upgradeTextSize(flat map[string]json.RawMessage) {
 	legacy, hasLegacy := flat[legacySizeKey]
 	delete(flat, legacySizeKey)
 	if _, hasFontSize := flat["fontSize"]; hasLegacy && !hasFontSize {
 		flat["fontSize"] = json.RawMessage(strconv.Itoa(legacyFontSize(legacy)))
 	}
-	return unmarshalFlat(flat)
 }
-
-const legacySizeKey = "textSize"
 
 func legacyFontSize(raw json.RawMessage) int {
 	var word string
@@ -195,6 +229,40 @@ func legacyFontSize(raw json.RawMessage) int {
 		return size
 	}
 	return DefaultFontSize
+}
+
+// deriveFaceSizes gives a file older than version 3 the small and code sizes
+// its one fontSize implied, for each of the two it does not state. A file
+// with no fontSize, or one that is not a number (the unmarshal then reports
+// it), keeps the defaults.
+func deriveFaceSizes(flat map[string]json.RawMessage) {
+	var font int
+	if raw, ok := flat["fontSize"]; !ok || json.Unmarshal(raw, &font) != nil {
+		return
+	}
+	small, code := derivedFaceSizes(font)
+	if _, ok := flat["smallFontSize"]; !ok {
+		flat["smallFontSize"] = json.RawMessage(strconv.Itoa(small))
+	}
+	if _, ok := flat["codeFontSize"]; !ok {
+		flat["codeFontSize"] = json.RawMessage(strconv.Itoa(code))
+	}
+}
+
+// legacySmallFloor is the smallest small size the version 2 rule gave, so
+// captions stayed readable at the low end.
+const legacySmallFloor = 9
+
+// derivedFaceSizes are the small and code sizes of version 2, where both
+// followed the interface size: small two below it (not under
+// legacySmallFloor), code one below. 0 means the default; a size outside
+// MinFontSize to MaxFontSize counts as the nearest end.
+func derivedFaceSizes(font int) (small, code int) {
+	if font == 0 {
+		font = DefaultFontSize
+	}
+	font = min(max(font, MinFontSize), MaxFontSize)
+	return max(font-2, legacySmallFloor), font - 1
 }
 
 // Encode writes only what differs from the defaults, so the text shows

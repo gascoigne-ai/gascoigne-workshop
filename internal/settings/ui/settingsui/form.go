@@ -26,11 +26,11 @@ type settingControl func(ctx *w.Ctx, dialog *SettingsDialog, host Host, field se
 // their kind. Everything else is a row of chips (an enum), On / Off (a
 // boolean) or a text field (text and numbers).
 var settingControls = map[string]settingControl{
+	"fontSize":      stepControlOf,
+	"smallFontSize": stepControlOf,
+	"codeFontSize":  stepControlOf,
 	"theme": func(ctx *w.Ctx, dialog *SettingsDialog, host Host, _ settings.Field) Node {
 		return dialog.themeChips(ctx, host)
-	},
-	"fontSize": func(ctx *w.Ctx, dialog *SettingsDialog, host Host, field settings.Field) Node {
-		return dialog.stepControl(ctx, host, field)
 	},
 	"corners": func(ctx *w.Ctx, dialog *SettingsDialog, host Host, field settings.Field) Node {
 		return dialog.enumChips(ctx, host, field, labelsOf(appearance.CornerChoices, cornerLabel))
@@ -53,6 +53,11 @@ var settingControls = map[string]settingControl{
 	"codeFont": func(ctx *w.Ctx, dialog *SettingsDialog, host Host, _ settings.Field) Node {
 		return dialog.fontControl(ctx, host, FontCode)
 	},
+}
+
+// stepControlOf is the control of a size: a number field with a stepper.
+func stepControlOf(ctx *w.Ctx, dialog *SettingsDialog, host Host, field settings.Field) Node {
+	return dialog.stepControl(ctx, host, field)
 }
 
 func cornerLabel(cornerChoice appearance.CornerChoice) (string, string) {

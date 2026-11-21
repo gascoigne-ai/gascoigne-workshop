@@ -59,6 +59,7 @@ type (
 	CornerChoice   = theming.CornerChoice
 	ContrastChoice = theming.ContrastChoice
 	CustomColor    = theming.CustomColor
+	FontSizes      = theming.FontSizes
 )
 
 const (
@@ -97,12 +98,12 @@ func AllThemeChoices() []ThemeChoice { return catalog.All() }
 // ThemeIDOf is the id of the theme a settings value resolves to.
 func ThemeIDOf(id string) string { return catalog.ThemeID(id) }
 
-// ThemeFor builds the theme for a theme id and a UI font size in pixels.
-func ThemeFor(themeID string, fontSize int) core.Theme { return catalog.For(themeID, fontSize) }
+// ThemeFor builds the theme for a theme id and the three face sizes in pixels.
+func ThemeFor(themeID string, sizes FontSizes) core.Theme { return catalog.For(themeID, sizes) }
 
 // ThemeWith is the theme for the settings.
 func ThemeWith(prefs settings.Settings) core.Theme {
-	return catalog.Theme(theming.Prefs{Theme: prefs.Theme, FontSize: prefs.FontSize, Corners: prefs.Corners,
+	return catalog.Theme(theming.Prefs{Theme: prefs.Theme, Fonts: FontSizes{UI: prefs.FontSize, Small: prefs.SmallFontSize, Code: prefs.CodeFontSize}, Corners: prefs.Corners,
 		Contrast: prefs.Contrast, Flat: prefs.Flat, Colors: prefs.Colors})
 }
 

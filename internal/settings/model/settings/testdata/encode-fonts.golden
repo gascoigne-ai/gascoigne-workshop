@@ -1,0 +1,10 @@
+{
+  "version": 3,
+  "appearance": {
+    "uiFont": "Inter",
+    "fontSize": 16,
+    "smallFontSize": 8,
+    "codeFont": "Fira Code",
+    "codeFontSize": 32
+  }
+}

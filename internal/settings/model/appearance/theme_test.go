@@ -69,7 +69,7 @@ func TestThemeFor(t *testing.T) {
 		{"zero size is the default", "light", 0, theming.Light().Color(core.Bg), 14},
 	}
 	for _, tt := range tests {
-		th := ThemeFor(tt.theme, tt.size)
+		th := ThemeFor(tt.theme, FontSizes{UI: tt.size})
 		if th.Color(core.Bg) != tt.wantBg || th.FontSize != tt.wantFont {
 			t.Errorf("%s: bg %v font %v", tt.name, th.Color(core.Bg), th.FontSize)
 		}
@@ -77,7 +77,7 @@ func TestThemeFor(t *testing.T) {
 }
 
 func TestUnknownMethodFallsBackToTheTextColor(t *testing.T) {
-	th := ThemeFor("dark", settings.DefaultFontSize)
+	th := ThemeFor("dark", FontSizes{})
 	if th.Color(MethodToken("PROPFIND")) != th.Color(core.Text) {
 		t.Fatal("unknown method must resolve to the text color")
 	}
@@ -128,7 +128,7 @@ func TestThemeWithAppliesCornersAndTheFlatSwitch(t *testing.T) {
 
 func TestAppThemesCarryMethodAndJSONColorsOverTheToolkitStyles(t *testing.T) {
 	for _, id := range []string{"dark", "light"} {
-		th := ThemeFor(id, settings.DefaultFontSize)
+		th := ThemeFor(id, FontSizes{})
 		if th.Color(MethodToken("GET")) == th.Color(core.Text) || th.Color(respview.Tokens[jsonview.Key]) == (color.RGBA{}) {
 			t.Errorf("%s: app colors missing", id)
 		}
@@ -154,24 +154,43 @@ func TestCollectionTokensCycleAndEveryThemeDefinesThem(t *testing.T) {
 	}
 }
 
-func TestThemeWithFollowsFontSize(t *testing.T) {
-	for _, font := range []int{10, 14, 16, 24} {
+func TestThemeWithFollowsTheThreeFontSizes(t *testing.T) {
+	for _, test := range []struct{ ui, small, code int }{{10, 8, 8}, {14, 12, 13}, {16, 24, 32}, {24, 8, 8}} {
 		prefs := settings.Default()
-		prefs.FontSize = font
+		prefs.FontSize, prefs.SmallFontSize, prefs.CodeFontSize = test.ui, test.small, test.code
 		th := ThemeWith(prefs)
-		wantUI, wantSmall, wantMono := theming.TextSizesFor(font)
-		if th.FontSize != wantUI || th.SmallSize != wantSmall || th.MonoSize != wantMono {
-			t.Errorf("ThemeWith(font %d) sizes = %v, %v, %v; want %v, %v, %v", font, th.FontSize, th.SmallSize, th.MonoSize, wantUI, wantSmall, wantMono)
+		if th.FontSize != float64(test.ui) || th.SmallSize != float64(test.small) || th.MonoSize != float64(test.code) {
+			t.Errorf("ThemeWith(%+v) sizes = %v, %v, %v", test, th.FontSize, th.SmallSize, th.MonoSize)
 		}
 	}
 }
 
-// settings may not import the toolkit, so both state the range; this keeps
+// ThemeWith(Default()) is the theme every default screen has.
+func TestThemeWithDefaultsHasTheDefaultSizes(t *testing.T) {
+	th := ThemeWith(settings.Default())
+	if th.FontSize != 14 || th.SmallSize != 12 || th.MonoSize != 13 {
+		t.Fatalf("sizes = %v, %v, %v; want 14, 12, 13", th.FontSize, th.SmallSize, th.MonoSize)
+	}
+}
+
+// settings may not import the toolkit, so both state the ranges; this keeps
 // the two from drifting apart.
 func TestFontSizeRangeMatchesToolkit(t *testing.T) {
-	if settings.MinFontSize != theming.MinFontSize || settings.MaxFontSize != theming.MaxFontSize || settings.DefaultFontSize != theming.DefaultFontSize {
-		t.Fatalf("settings %d..%d (default %d) and theming %d..%d (default %d) disagree",
-			settings.MinFontSize, settings.MaxFontSize, settings.DefaultFontSize,
-			theming.MinFontSize, theming.MaxFontSize, theming.DefaultFontSize)
+	faces := []struct {
+		name                     string
+		settingsMin, settingsMax int
+		settingsDefault          int
+		toolkitMin, toolkitMax   int
+		toolkitDefault           int
+	}{
+		{"interface", settings.MinFontSize, settings.MaxFontSize, settings.DefaultFontSize, theming.MinFontSize, theming.MaxFontSize, theming.DefaultFontSize},
+		{"small", settings.MinSmallFontSize, settings.MaxSmallFontSize, settings.DefaultSmallFontSize, theming.MinSmallSize, theming.MaxSmallSize, theming.DefaultSmallSize},
+		{"code", settings.MinCodeFontSize, settings.MaxCodeFontSize, settings.DefaultCodeFontSize, theming.MinCodeSize, theming.MaxCodeSize, theming.DefaultCodeSize},
+	}
+	for _, face := range faces {
+		if face.settingsMin != face.toolkitMin || face.settingsMax != face.toolkitMax || face.settingsDefault != face.toolkitDefault {
+			t.Errorf("%s: settings %d..%d (default %d) and theming %d..%d (default %d) disagree", face.name,
+				face.settingsMin, face.settingsMax, face.settingsDefault, face.toolkitMin, face.toolkitMax, face.toolkitDefault)
+		}
 	}
 }

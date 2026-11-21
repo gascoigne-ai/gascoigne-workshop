@@ -162,7 +162,7 @@ func (driver *frameDriver) key(input core.Input) {
 
 // minimalText is the raw view of the default settings: only the version of
 // the file.
-const minimalText = "{\n  \"version\": 2\n}\n"
+const minimalText = "{\n  \"version\": 3\n}\n"
 
 func TestTheJSONButtonShowsTheFileAndFormGoesBack(t *testing.T) {
 	driver := newFrameDriver(t)

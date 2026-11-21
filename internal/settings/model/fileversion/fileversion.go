@@ -38,10 +38,9 @@ func (err *NewerError) Error() string {
 // The readers are a slice indexed by version because a version is a small
 // dense integer read once per file and every version up to the newest has a
 // reader: a map adds nothing and a switch per format is the sprawl the table
-// replaces. Each reader decodes its whole version rather than chaining
-// upgrades from version 0, since no layout has changed yet. Revisit at
-// version 2: the old reader then decodes its own wire type and converts it,
-// and a chain of upgrade steps pays off from three layouts on.
+// replaces. How a reader reaches the current model is its owner's choice: a
+// reader may decode its own wire type and convert it, or, where versions
+// differ by a few keys, compose small steps over a flat map (settings does).
 func Read[T any](data []byte, readers []func([]byte) (T, error)) (T, int, error) {
 	var zero T
 	version, err := Of(data)

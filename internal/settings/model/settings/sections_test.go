@@ -17,8 +17,8 @@ func sectioned(t *testing.T, prefs Settings) map[string]map[string]any {
 	if err := json.Unmarshal(text, &top); err != nil {
 		t.Fatalf("not an object: %v\n%s", err, text)
 	}
-	if version := string(top["version"]); version != "2" { // the file's own key, beside the sections
-		t.Fatalf("version %q, want 2:\n%s", version, text)
+	if version := string(top["version"]); version != "3" { // the file's own key, beside the sections
+		t.Fatalf("version %q, want 3:\n%s", version, text)
 	}
 	delete(top, "version")
 	got := map[string]map[string]any{}

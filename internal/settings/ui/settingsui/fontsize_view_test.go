@@ -11,86 +11,133 @@ import (
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
-func TestFontSizeControlSteps(t *testing.T) {
-	cases := []struct {
-		name   string
-		start  int
-		button string
-		want   int
-	}{
-		{"plus steps up", 14, `text="+"`, 15},
-		{"minus steps down", 14, `text="-"`, 13},
-		{"plus at the top does nothing", settings.MaxFontSize, `text="+"`, settings.MaxFontSize},
-		{"minus at the bottom does nothing", settings.MinFontSize, `text="-"`, settings.MinFontSize},
-	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			driver := newFormDriver(t, "Appearance")
-			driver.host.current.FontSize = tc.start
-			changes := driver.host.changes
-			driver.clickOn(0, tc.button)
-			if driver.host.current.FontSize != tc.want {
-				t.Fatalf("font size %d after the click, want %d", driver.host.current.FontSize, tc.want)
-			}
-			if tc.start == tc.want && driver.host.changes != changes {
-				t.Fatal("a step at the end of the range changed a setting")
-			}
-			if got := driver.dialog.Input(driver.host, "fontSize").Text; got != fmt.Sprint(tc.want) {
-				t.Fatalf("field shows %q, want %d", got, tc.want)
-			}
-		})
+// faceSizeRow is one of the three size rows of the Appearance page: each is
+// a number field with a stepper, in the order of the page.
+type faceSizeRow struct {
+	key        string
+	title      string
+	min, max   int
+	field      int // which fieldB of the page it is
+	value      func(*settings.Settings) *int
+	defaultVal int
+}
+
+var faceSizeRows = []faceSizeRow{
+	{"fontSize", "Interface font size", settings.MinFontSize, settings.MaxFontSize, 0, func(prefs *settings.Settings) *int { return &prefs.FontSize }, settings.DefaultFontSize},
+	{"smallFontSize", "Small text size", settings.MinSmallFontSize, settings.MaxSmallFontSize, 1, func(prefs *settings.Settings) *int { return &prefs.SmallFontSize }, settings.DefaultSmallFontSize},
+	{"codeFontSize", "Code font size", settings.MinCodeFontSize, settings.MaxCodeFontSize, 2, func(prefs *settings.Settings) *int { return &prefs.CodeFontSize }, settings.DefaultCodeFontSize},
+}
+
+func rangeNote(row faceSizeRow) string {
+	return fmt.Sprintf("Enter a whole number between %d and %d", row.min, row.max)
+}
+
+func TestFaceSizeControlSteps(t *testing.T) {
+	for _, row := range faceSizeRows {
+		cases := []struct {
+			name   string
+			start  int
+			button string
+			want   int
+		}{
+			{"plus steps up", row.defaultVal, `text="+"`, row.defaultVal + 1},
+			{"minus steps down", row.defaultVal, `text="-"`, row.defaultVal - 1},
+			{"plus at the top does nothing", row.max, `text="+"`, row.max},
+			{"minus at the bottom does nothing", row.min, `text="-"`, row.min},
+		}
+		for _, tc := range cases {
+			t.Run(row.key+"/"+tc.name, func(t *testing.T) {
+				driver := newFormDriver(t, "Appearance")
+				*row.value(&driver.host.current) = tc.start
+				changes := driver.host.changes
+				driver.clickOn(row.field, tc.button)
+				if got := *row.value(&driver.host.current); got != tc.want {
+					t.Fatalf("%s %d after the click, want %d", row.key, got, tc.want)
+				}
+				if tc.start == tc.want && driver.host.changes != changes {
+					t.Fatal("a step at the end of the range changed a setting")
+				}
+				if got := driver.dialog.Input(driver.host, row.key).Text; got != fmt.Sprint(tc.want) {
+					t.Fatalf("field shows %q, want %d", got, tc.want)
+				}
+			})
+		}
 	}
 }
 
-func TestFontSizeFieldAppliesTypedNumbersOrKeepsTheLastGoodOne(t *testing.T) {
-	cases := []struct {
-		name  string
-		typed string
-		want  int
-		note  string
-	}{
-		{"in range", "18", 18, ""},
-		{"too big", "30", 14, "Enter a whole number between 10 and 24"},
-		{"too small", "9", 14, "Enter a whole number between 10 and 24"},
-		{"not a number", "big", 14, "Enter a whole number between 10 and 24"},
-	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			driver := newFormDriver(t, "Appearance")
-			driver.clickOn(0, "fieldB") // the text size is the first field of the page
-			driver.retype(tc.typed)
-			if driver.host.current.FontSize != tc.want || driver.dialog.Note("fontSize") != tc.note {
-				t.Fatalf("font size %d note %q, want %d %q", driver.host.current.FontSize, driver.dialog.Note("fontSize"), tc.want, tc.note)
-			}
-			if tc.note != "" && !strings.Contains(driver.view(), `text="`+tc.note+`"`) {
-				t.Fatalf("the note is not under the field:\n%s", driver.view())
-			}
-		})
+func TestFaceSizeFieldAppliesTypedNumbersOrKeepsTheLastGoodOne(t *testing.T) {
+	for _, row := range faceSizeRows {
+		cases := []struct {
+			name  string
+			typed string
+			want  int
+			note  string
+		}{
+			{"in range", fmt.Sprint(row.min + 1), row.min + 1, ""},
+			{"too big", fmt.Sprint(row.max + 1), row.defaultVal, rangeNote(row)},
+			{"too small", fmt.Sprint(row.min - 1), row.defaultVal, rangeNote(row)},
+			{"not a number", "big", row.defaultVal, rangeNote(row)},
+		}
+		for _, tc := range cases {
+			t.Run(row.key+"/"+tc.name, func(t *testing.T) {
+				driver := newFormDriver(t, "Appearance")
+				driver.clickOn(row.field, "fieldB")
+				driver.retype(tc.typed)
+				if got := *row.value(&driver.host.current); got != tc.want || driver.dialog.Note(row.key) != tc.note {
+					t.Fatalf("%s %d note %q, want %d %q", row.key, got, driver.dialog.Note(row.key), tc.want, tc.note)
+				}
+				if tc.note != "" && !strings.Contains(driver.view(), `text="`+tc.note+`"`) {
+					t.Fatalf("the note is not under the field:\n%s", driver.view())
+				}
+			})
+		}
 	}
 }
 
 // A step after a refused entry goes from the setting, not from the text.
-func TestFontSizeStepAfterARefusedEntryStartsFromTheSetting(t *testing.T) {
-	driver := newFormDriver(t, "Appearance")
-	driver.clickOn(0, "fieldB")
-	driver.retype("30")
-	driver.clickOn(0, `text="+"`)
-	if driver.host.current.FontSize != 15 || driver.dialog.Note("fontSize") != "" {
-		t.Fatalf("font size %d note %q, want 15 and no note", driver.host.current.FontSize, driver.dialog.Note("fontSize"))
+func TestFaceSizeStepAfterARefusedEntryStartsFromTheSetting(t *testing.T) {
+	for _, row := range faceSizeRows {
+		t.Run(row.key, func(t *testing.T) {
+			driver := newFormDriver(t, "Appearance")
+			driver.clickOn(row.field, "fieldB")
+			driver.retype(fmt.Sprint(row.max + 1))
+			driver.clickOn(row.field, `text="+"`)
+			if got := *row.value(&driver.host.current); got != row.defaultVal+1 || driver.dialog.Note(row.key) != "" {
+				t.Fatalf("%s %d note %q, want %d and no note", row.key, got, driver.dialog.Note(row.key), row.defaultVal+1)
+			}
+		})
 	}
 }
 
-func TestResetPutsTheDefaultFontSizeBackIntoTheField(t *testing.T) {
-	driver := newFormDriver(t, "Appearance")
-	driver.host.current.FontSize = 20
-	driver.step(func(*El) core.Input { return core.Input{} })
-	driver.clickOn(0, `text="Reset"`)
-	driver.step(func(*El) core.Input { return core.Input{} })
-	if driver.host.current.FontSize != settings.DefaultFontSize {
-		t.Fatalf("font size %d after Reset", driver.host.current.FontSize)
+func TestResetPutsTheDefaultFaceSizeBackIntoTheField(t *testing.T) {
+	for _, row := range faceSizeRows {
+		t.Run(row.key, func(t *testing.T) {
+			driver := newFormDriver(t, "Appearance")
+			*row.value(&driver.host.current) = row.max
+			driver.step(func(*El) core.Input { return core.Input{} })
+			driver.clickOn(0, `text="Reset"`) // the only changed row
+			driver.step(func(*El) core.Input { return core.Input{} })
+			if got := *row.value(&driver.host.current); got != row.defaultVal {
+				t.Fatalf("%s %d after Reset", row.key, got)
+			}
+			if got := driver.dialog.Input(driver.host, row.key).Text; got != fmt.Sprint(row.defaultVal) {
+				t.Fatalf("field shows %q after Reset, want %d", got, row.defaultVal)
+			}
+		})
 	}
-	if got := driver.dialog.Input(driver.host, "fontSize").Text; got != "14" {
-		t.Fatalf("field shows %q after Reset, want 14", got)
+}
+
+// Each size sits right after the font it sizes (the interface size after the
+// interface font, the code size after the code font), the scale after both.
+func TestSizeRowsSitNextToTheirFonts(t *testing.T) {
+	page := newFormDriver(t, "Appearance").view()
+	last := -1
+	for _, title := range []string{"Interface font", "Interface font size", "Small text size", "Code font", "Code font size", "Interface scale"} {
+		at := strings.Index(page, `text="`+title+`"`)
+		if at < 0 || at < last {
+			t.Fatalf("row %q is missing or out of order in the page:\n%s", title, page)
+		}
+		last = at
 	}
 }
 
@@ -104,8 +151,8 @@ func TestSettingControlsHaveNoTextSizeChips(t *testing.T) {
 			t.Errorf("a %s chip is still on the page", label)
 		}
 	}
-	if !strings.Contains(page, `text="Text size"`) {
-		t.Error("the Text size row is gone")
+	if strings.Contains(page, `text="Text size"`) {
+		t.Error("the old Text size title is still on the page")
 	}
 }
 
@@ -113,7 +160,7 @@ func TestSettingControlsHaveNoTextSizeChips(t *testing.T) {
 func ctxAtFont(t *testing.T, font int) *core.Ctx {
 	t.Helper()
 	theme := testTheme()
-	theme.FontSize, theme.SmallSize, theme.MonoSize = theming.TextSizesFor(font)
+	theme = theme.WithTextSize(theming.FontSizes{UI: font, Small: max(font-2, 9), Code: font - 1}.Resolved())
 	ctx, err := core.NewCtx(theme)
 	if err != nil {
 		t.Fatal(err)

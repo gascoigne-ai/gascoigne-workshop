@@ -162,7 +162,7 @@ func TestParseThemeWithoutBaseHasDefaultSizes(t *testing.T) {
 	}
 }
 
-// The Text size setting decides the sizes, so a theme file written when
+// The font size settings decide the sizes, so a theme file written when
 // files stated them keeps loading, and its sizes change nothing.
 func TestParseThemeIgnoresSizeKeys(t *testing.T) {
 	var logs bytes.Buffer
@@ -178,8 +178,8 @@ func TestParseThemeIgnoresSizeKeys(t *testing.T) {
 	if th.FontSize != 18 || th.SmallSize != 16 || th.MonoSize != 17 {
 		t.Fatalf("sizes = %v, %v, %v; want the base's 18, 16, 17", th.FontSize, th.SmallSize, th.MonoSize)
 	}
-	if !strings.Contains(logs.String(), "Text size") {
-		t.Fatalf("log %q does not say the Text size setting decides", logs.String())
+	if !strings.Contains(logs.String(), "font size settings") {
+		t.Fatalf("log %q does not say the font size settings decide", logs.String())
 	}
 }
 

@@ -33,6 +33,10 @@ func goldenCases() []struct {
 	tables.Shortcuts = map[string]string{"send": "Ctrl+Enter", "find": ""}
 	tables.Collections = []OpenCollection{{Folder: "/work/a", Environment: "prod"}, {Environment: "dev"}}
 
+	fonts := Default()
+	fonts.UIFont, fonts.CodeFont = "Inter", "Fira Code"
+	fonts.FontSize, fonts.SmallFontSize, fonts.CodeFontSize = 16, 8, 32
+
 	everything := Default()
 	everything.Theme, everything.FontSize, everything.Corners = "mine", 16, "round"
 	everything.UIFont, everything.CodeFont = "Inter", "Fira Code"
@@ -53,6 +57,7 @@ func goldenCases() []struct {
 		{"first-only", alone},
 		{"changed", changed},
 		{"tables-and-collections", tables},
+		{"fonts", fonts},
 		{"sectioned-everything", everything},
 	}
 }

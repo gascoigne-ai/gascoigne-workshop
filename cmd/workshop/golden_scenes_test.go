@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -59,11 +60,13 @@ var goldenScenes = []goldenScene{
 	{name: "light-theme", width: shotWidth, height: shotHeight, args: []string{"-set", "theme=light"}},
 	{name: "flat-high-contrast", width: shotWidth, height: shotHeight, args: []string{"-set", "flat=true", "-set", "contrast=high"}},
 	{name: "side-by-side", width: shotWidth, height: shotHeight, args: []string{"-send", "-set", "layout=side"}, mask: []image.Rectangle{durationSide, durationStatus}},
-	{name: "large-text", width: shotWidth, height: shotHeight, args: []string{"-set", "fontSize=16"}},
-	{name: "small-text", width: shotWidth, height: shotHeight, args: []string{"-set", "fontSize=13"}},
-	// the two ends of the Text size range, where a fixed height would clip
-	{name: "text-min", width: shotWidth, height: shotHeight, args: []string{"-set", fmt.Sprintf("fontSize=%d", settings.MinFontSize)}},
-	{name: "text-max", width: shotWidth, height: shotHeight, args: []string{"-set", fmt.Sprintf("fontSize=%d", settings.MaxFontSize)}},
+	{name: "large-text", width: shotWidth, height: shotHeight, args: []string{"-set", "fontSize=16", "-set", "smallFontSize=14", "-set", "codeFontSize=15"}},
+	{name: "small-text", width: shotWidth, height: shotHeight, args: []string{"-set", "fontSize=13", "-set", "smallFontSize=11", "-set", "codeFontSize=12"}},
+	// the two ends of the size ranges, where a fixed height would clip
+	{name: "text-min", width: shotWidth, height: shotHeight, args: []string{"-set", fmt.Sprintf("fontSize=%d", settings.MinFontSize), "-set", "smallFontSize=9", "-set", "codeFontSize=9"}},
+	{name: "text-max", width: shotWidth, height: shotHeight, args: []string{"-set", fmt.Sprintf("fontSize=%d", settings.MaxFontSize), "-set", "smallFontSize=22", "-set", "codeFontSize=23"}},
+	{name: "small-text-min", width: shotWidth, height: shotHeight, args: []string{"-set", fmt.Sprintf("smallFontSize=%d", settings.MinSmallFontSize)}},
+	{name: "code-text-max", width: shotWidth, height: shotHeight, args: []string{"-request", "Echo", "-pane", "Body", "-set", fmt.Sprintf("codeFontSize=%d", settings.MaxCodeFontSize)}},
 	{name: "request-post", width: shotWidth, height: shotHeight, args: []string{"-request", "Echo"}},
 	{name: "request-websocket", width: shotWidth, height: shotHeight, args: []string{"-request", "WebSocket Echo"}},
 	{name: "request-sse", width: shotWidth, height: shotHeight, args: []string{"-request", "SSE Ticks"}},
@@ -217,17 +220,26 @@ func serveExampleServer(t *testing.T) {
 	})
 }
 
-// The scenes at the ends of the Text size range really are at the ends: a
-// range that moved without them would leave the clipping check unchecked.
+// The size scenes really are at the ends of each range: a range that moved
+// without them would leave the clipping check unchecked. The four text scenes
+// state all three sizes, derived as the old single size drew them, so their
+// pictures stay as they were.
 func TestTextSizeScenesCoverTheRange(t *testing.T) {
-	want := map[string]int{"small-text": 13, "large-text": 16, "text-min": settings.MinFontSize, "text-max": settings.MaxFontSize}
+	want := map[string][]string{
+		"small-text":     {"-set", "fontSize=13", "-set", "smallFontSize=11", "-set", "codeFontSize=12"},
+		"large-text":     {"-set", "fontSize=16", "-set", "smallFontSize=14", "-set", "codeFontSize=15"},
+		"text-min":       {"-set", fmt.Sprintf("fontSize=%d", settings.MinFontSize), "-set", "smallFontSize=9", "-set", "codeFontSize=9"},
+		"text-max":       {"-set", fmt.Sprintf("fontSize=%d", settings.MaxFontSize), "-set", "smallFontSize=22", "-set", "codeFontSize=23"},
+		"small-text-min": {"-set", fmt.Sprintf("smallFontSize=%d", settings.MinSmallFontSize)},
+		"code-text-max":  {"-request", "Echo", "-pane", "Body", "-set", fmt.Sprintf("codeFontSize=%d", settings.MaxCodeFontSize)},
+	}
 	for _, scene := range goldenScenes {
-		size, ok := want[scene.name]
+		args, ok := want[scene.name]
 		if !ok {
 			continue
 		}
-		if len(scene.args) != 2 || scene.args[0] != "-set" || scene.args[1] != fmt.Sprintf("fontSize=%d", size) {
-			t.Errorf("scene %s runs with %q, want -set fontSize=%d", scene.name, scene.args, size)
+		if !slices.Equal(scene.args, args) {
+			t.Errorf("scene %s runs with %q, want %q", scene.name, scene.args, args)
 		}
 		delete(want, scene.name)
 	}

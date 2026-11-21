@@ -39,7 +39,7 @@ func TestEncodeWritesOnlyWhatDiffersAndRoundTrips(t *testing.T) {
 	if got, err := Decode(text); err != nil || !reflect.DeepEqual(got, changed) {
 		t.Fatalf("round trip: %+v, %v", got, err)
 	}
-	if empty, _ := Encode(Default()); string(empty) != "{\n  \"version\": 2\n}\n" { // the version only
+	if empty, _ := Encode(Default()); string(empty) != "{\n  \"version\": 3\n}\n" { // the version only
 		t.Fatalf("defaults encode as %q, want only what differs", empty)
 	}
 }

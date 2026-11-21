@@ -123,7 +123,7 @@ func TestTabWidthDoesNotChangeWhenTheRequestChanges(t *testing.T) {
 
 func TestTheTabSlotsFitTheirContentAtEveryTextSize(t *testing.T) {
 	for size := settings.MinFontSize; size <= settings.MaxFontSize; size++ {
-		ctx, err := core.NewCtx(appearance.ThemeFor("dark", size))
+		ctx, err := core.NewCtx(appearance.ThemeFor("dark", appearance.FontSizes{UI: size, Small: max(size-2, 9), Code: size - 1}))
 		if err != nil {
 			t.Fatal(err)
 		}

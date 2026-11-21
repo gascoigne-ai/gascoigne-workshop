@@ -199,6 +199,7 @@ func TestTheDrawnTreeMatchesAFreshBuildAcrossASession(t *testing.T) {
 		s.step("resize the dialog", core.Input{X: edge.X + edge.W - 3 + 15*i, Y: edge.Y + edge.H/2, Held: true})
 	}
 	s.step("release the dialog edge", core.Input{X: edge.X + edge.W + 60, Y: edge.Y + edge.H/2})
+	s.step("scroll the settings to the top", core.Input{X: edge.X + 200, Y: edge.Y + 200, Wheel: 50}) // pressing the edge may have landed on the scrollbar
 	s.clickText("Light", 0)
 	s.clickText("+", 0)
 	s.clickText("Dark", 0)

@@ -99,7 +99,7 @@ func Example_markupParseErrors() {
 // theme; high contrast and color overrides are checked for readability.
 func Example_theming() {
 	catalog := theming.NewCatalog(theming.Builtins())
-	th := catalog.Theme(theming.Prefs{Theme: "light", FontSize: 16, Corners: "round", Contrast: "high"})
+	th := catalog.Theme(theming.Prefs{Theme: "light", Fonts: theming.FontSizes{UI: 16, Small: 14, Code: 15}, Corners: "round", Contrast: "high"})
 	fmt.Println(th.Name, th.RadiusScale)
 	fmt.Println(catalog.ThemeID("no-such-theme"))
 	for _, c := range catalog.All() {

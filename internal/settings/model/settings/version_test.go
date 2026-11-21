@@ -39,8 +39,8 @@ func TestMinimalAlwaysWritesVersionFirst(t *testing.T) {
 		prefs Settings
 		want  string
 	}{
-		{"defaults", Default(), "{\n  \"version\": 2\n}"},
-		{"a changed setting", changed, "{\n  \"version\": 2,\n  \"appearance\": {\n    \"theme\": \"light\"\n  }\n}"},
+		{"defaults", Default(), "{\n  \"version\": 3\n}"},
+		{"a changed setting", changed, "{\n  \"version\": 3,\n  \"appearance\": {\n    \"theme\": \"light\"\n  }\n}"},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -58,14 +58,15 @@ func TestValidateVersion(t *testing.T) {
 		text        string
 		wantMessage string // "" for no problem
 	}{
-		{"current", `{"version": 2}`, ""},
+		{"current", `{"version": 3}`, ""},
+		{"v2", `{"version": 2}`, ""},
 		{"v1", `{"version": 1}`, ""},
 		{"v0", `{"version": 0}`, ""},
-		{"newer", `{"version": 3}`, "written by a newer version of the workshop (format 3, this build reads up to 2)"},
-		{"negative", `{"version": -1}`, "must be a whole number from 0 to 2"},
-		{"fractional", `{"version": 1.5}`, "must be a whole number from 0 to 2"},
-		{"text", `{"version": "2"}`, "must be a whole number from 0 to 2"},
-		{"inside a section", `{"general": {"version": 2}}`, "belongs at the top level"},
+		{"newer", `{"version": 4}`, "written by a newer version of the workshop (format 4, this build reads up to 3)"},
+		{"negative", `{"version": -1}`, "must be a whole number from 0 to 3"},
+		{"fractional", `{"version": 1.5}`, "must be a whole number from 0 to 3"},
+		{"text", `{"version": "2"}`, "must be a whole number from 0 to 3"},
+		{"inside a section", `{"general": {"version": 3}}`, "belongs at the top level"},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -89,14 +90,14 @@ func TestValidateVersion(t *testing.T) {
 func TestParseKeepsLastOnNewerVersion(t *testing.T) {
 	last := Default()
 	last.Theme = "light"
-	got, problems := Parse([]byte(`{"version": 3, "appearance": {"theme": "dark"}}`), last)
+	got, problems := Parse([]byte(`{"version": 4, "appearance": {"theme": "dark"}}`), last)
 	if len(problems) == 0 || !reflect.DeepEqual(got, last) {
 		t.Fatalf("Parse = %+v, %+v; want the last settings and a problem", got, problems)
 	}
 }
 
 func TestDecodeRejectsNewerVersion(t *testing.T) {
-	got, err := Decode([]byte(`{"version": 3, "appearance": {"theme": "light"}}`))
+	got, err := Decode([]byte(`{"version": 4, "appearance": {"theme": "light"}}`))
 	var newer *fileversion.NewerError
 	if !errors.As(err, &newer) || !reflect.DeepEqual(got, Default()) {
 		t.Fatalf("Decode = %+v, %v; want the defaults and a NewerError", got, err)
@@ -173,13 +174,10 @@ func TestDecodeReadsFontSizeV2(t *testing.T) {
 	if err != nil || got.FontSize != 16 {
 		t.Fatalf("Decode(v2).FontSize = %d, %v; want 16", got.FontSize, err)
 	}
-	if encoded, err := Encode(got); err != nil || string(encoded) != string(data) {
-		t.Fatalf("Encode = %s, %v\nwant the fixture\n%s", encoded, err, data)
-	}
 }
 
 // A file of an older version re-encodes as the newest version.
-func TestDecodeRoundTripsOlderFixturesAsV2(t *testing.T) {
+func TestDecodeRoundTripsOlderFixturesAsV3(t *testing.T) {
 	for _, file := range []string{"settings-v0.json", "settings-v1.json", "settings-v0-textsize.json", "settings-v1-textsize.json"} {
 		t.Run(file, func(t *testing.T) {
 			data, err := os.ReadFile(filepath.Join("testdata", file))
@@ -191,8 +189,8 @@ func TestDecodeRoundTripsOlderFixturesAsV2(t *testing.T) {
 				t.Fatal(err)
 			}
 			encoded, err := Encode(decoded)
-			if err != nil || !strings.HasPrefix(string(encoded), "{\n  \"version\": 2") {
-				t.Fatalf("Encode = %s, %v; want version 2 first", encoded, err)
+			if err != nil || !strings.HasPrefix(string(encoded), "{\n  \"version\": 3") {
+				t.Fatalf("Encode = %s, %v; want version 3 first", encoded, err)
 			}
 			again, err := Decode(encoded)
 			if err != nil || !reflect.DeepEqual(again, decoded) {

@@ -1,9 +1,9 @@
 {
-  "version": 2,
+  "version": 3,
   "appearance": {
     "theme": "mine",
-    "fontSize": 16,
     "uiFont": "Inter",
+    "fontSize": 16,
     "codeFont": "Fira Code",
     "corners": "round",
     "contrast": "high",

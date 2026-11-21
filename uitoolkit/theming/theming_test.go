@@ -93,46 +93,49 @@ func TestLoadUserLogsAnUnreadableFolderPattern(t *testing.T) {
 	}
 }
 
-func TestTextSizesFor(t *testing.T) {
+// Each face is brought into its own range; 0 is the face's default.
+func TestFontSizesResolved(t *testing.T) {
 	tests := []struct {
-		font                        int
+		name                        string
+		sizes                       FontSizes
 		wantUI, wantSmall, wantMono float64
 	}{
-		{0, 14, 12, 13},
-		{9, 10, 9, 9},
-		{10, 10, 9, 9},
-		{11, 11, 9, 10},
-		{13, 13, 11, 12},
-		{14, 14, 12, 13},
-		{16, 16, 14, 15},
-		{24, 24, 22, 23},
-		{99, 24, 22, 23},
+		{"zero is every default", FontSizes{}, 14, 12, 13},
+		{"inside", FontSizes{UI: 16, Small: 14, Code: 15}, 16, 14, 15},
+		{"independent", FontSizes{UI: 10, Small: 24, Code: 8}, 10, 24, 8},
+		{"lowest", FontSizes{UI: MinFontSize, Small: MinSmallSize, Code: MinCodeSize}, 10, 8, 8},
+		{"highest", FontSizes{UI: MaxFontSize, Small: MaxSmallSize, Code: MaxCodeSize}, 24, 24, 32},
+		{"below", FontSizes{UI: 9, Small: 7, Code: 7}, 10, 8, 8},
+		{"above", FontSizes{UI: 99, Small: 99, Code: 99}, 24, 24, 32},
+		{"negative", FontSizes{UI: -1, Small: -1, Code: -1}, 10, 8, 8},
 	}
 	for _, test := range tests {
-		ui, small, mono := TextSizesFor(test.font)
-		if ui != test.wantUI || small != test.wantSmall || mono != test.wantMono {
-			t.Errorf("TextSizesFor(%d) = %v, %v, %v; want %v, %v, %v", test.font, ui, small, mono, test.wantUI, test.wantSmall, test.wantMono)
-		}
+		t.Run(test.name, func(t *testing.T) {
+			ui, small, mono := test.sizes.Resolved()
+			if ui != test.wantUI || small != test.wantSmall || mono != test.wantMono {
+				t.Errorf("%+v.Resolved() = %v, %v, %v; want %v, %v, %v", test.sizes, ui, small, mono, test.wantUI, test.wantSmall, test.wantMono)
+			}
+		})
 	}
 }
 
-func TestCatalogThemeUsesFontSize(t *testing.T) {
+func TestCatalogThemeUsesTheThreeSizes(t *testing.T) {
 	catalog := NewCatalog(Builtins())
 	for _, test := range []struct {
 		prefs                       Prefs
 		wantUI, wantSmall, wantMono float64
 	}{
-		{Prefs{Theme: "dark", FontSize: 18}, 18, 16, 17},
+		{Prefs{Theme: "dark", Fonts: FontSizes{UI: 18, Small: 11, Code: 20}}, 18, 11, 20},
 		{Prefs{Theme: "dark"}, 14, 12, 13},
-		{Prefs{Theme: "light", FontSize: 10}, 10, 9, 9},
+		{Prefs{Theme: "light", Fonts: FontSizes{UI: 10}}, 10, 12, 13},
 	} {
 		th := catalog.Theme(test.prefs)
 		if th.FontSize != test.wantUI || th.SmallSize != test.wantSmall || th.MonoSize != test.wantMono {
 			t.Errorf("Theme(%+v) sizes = %v, %v, %v; want %v, %v, %v", test.prefs, th.FontSize, th.SmallSize, th.MonoSize, test.wantUI, test.wantSmall, test.wantMono)
 		}
 	}
-	if got := catalog.For("dark", 20); got.FontSize != 20 || got.SmallSize != 18 {
-		t.Errorf("For(dark, 20) = %v, %v", got.FontSize, got.SmallSize)
+	if got := catalog.For("dark", FontSizes{UI: 20, Small: 9, Code: 30}); got.FontSize != 20 || got.SmallSize != 9 || got.MonoSize != 30 {
+		t.Errorf("For(dark, 20/9/30) = %v, %v, %v", got.FontSize, got.SmallSize, got.MonoSize)
 	}
 }
 
@@ -190,7 +193,7 @@ func TestBaseLineIsTheDefaultFaceLineHeight(t *testing.T) {
 func TestEveryFontSizeGivesSaneSizes(t *testing.T) {
 	for font := MinFontSize; font <= MaxFontSize; font++ {
 		t.Run(strconv.Itoa(font), func(t *testing.T) {
-			th := NewCatalog(Builtins()).For("dark", font)
+			th := NewCatalog(Builtins()).For("dark", FontSizes{UI: font, Small: MaxSmallSize, Code: MaxCodeSize})
 			ctx, err := core.NewCtx(th)
 			if err != nil {
 				t.Fatal(err)

@@ -15,22 +15,26 @@ func (err *ClampedError) Error() string {
 }
 
 // Clamp brings the whole-number settings inside the ranges of the schema.
-// 0 means "not set" for both and stays. notes tells what changed, one
+// 0 means "not set" for the timeout and the scale and stays; for a font size
+// it is the default, which no file writes. notes tells what changed, one
 // entry per key.
 func Clamp(prefs Settings) (clamped Settings, notes []string) {
 	prefs.TimeoutSec, notes = clampInt(prefs.TimeoutSec, "timeoutSec", notes)
 	prefs.UIScalePct, notes = clampInt(prefs.UIScalePct, "uiScale", notes)
-	prefs.FontSize, notes = clampFontSize(prefs.FontSize, notes)
+	prefs.FontSize, notes = clampFace(prefs.FontSize, "fontSize", DefaultFontSize, notes)
+	prefs.SmallFontSize, notes = clampFace(prefs.SmallFontSize, "smallFontSize", DefaultSmallFontSize, notes)
+	prefs.CodeFontSize, notes = clampFace(prefs.CodeFontSize, "codeFontSize", DefaultCodeFontSize, notes)
 	return prefs, notes
 }
 
-// clampFontSize is clampInt for fontSize, except that 0, which no file
-// writes, is the default rather than "unset".
-func clampFontSize(size int, notes []string) (int, []string) {
+// clampFace is clampInt for a font size, except that 0 is the face's default
+// rather than "unset".
+func clampFace(size int, key string, fallback int, notes []string) (int, []string) {
 	if size == 0 {
-		return DefaultFontSize, append(notes, fmt.Sprintf("fontSize 0 is outside %d to %d, using %d", MinFontSize, MaxFontSize, DefaultFontSize))
+		field, _ := FieldFor(key)
+		return fallback, append(notes, fmt.Sprintf("%s 0 is outside %d to %d, using %d", key, field.Min, field.Max, fallback))
 	}
-	return clampInt(size, "fontSize", notes)
+	return clampInt(size, key, notes)
 }
 
 func clampInt(value int, key string, notes []string) (int, []string) {
