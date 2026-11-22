@@ -188,11 +188,8 @@ func TestCheckLayersRejects(t *testing.T) {
 		pkg  listedPackage
 	}{
 		{"kernel imports a feature", synthetic("internal/kernel/request", "internal/feature/send")},
-		{"kernel imports platform", synthetic("internal/kernel/request", "internal/platform/fonts")},
 		{"feature root imports another feature root", synthetic("internal/feature/send", "internal/feature/history")},
 		{"controller external test imports another feature", xtest},
-		{"platform imports a non-owner feature", synthetic("internal/platform/fonts", "internal/feature/workspace")},
-		{"feature imports platform", synthetic("internal/feature/send", "internal/platform/fonts")},
 		{"ui imports an adapter", synthetic("internal/feature/send/ui/respview", "internal/feature/send/adapter/preview")},
 		{"ui imports another ui", synthetic("internal/feature/send/ui/respview", "internal/feature/send/ui/calltrace")},
 		{"controller imports a toolkit widget", synthetic("internal/feature/send/editor", "uitoolkit/widget")},
@@ -220,7 +217,7 @@ func TestCheckLayersAllows(t *testing.T) {
 	}{
 		{"exampleserver imports ws", synthetic("internal/exampleserver", "internal/feature/send/proto/ws")},
 		{"theme imports toolkit core and theming", synthetic("internal/feature/settings/theme", "uitoolkit/core", "uitoolkit/theming")},
-		{"app imports anything", synthetic("internal/app", "internal/feature/send", "internal/platform/fonts", "uitoolkit/widget", "internal/feature/send/ui/respview")},
+		{"app imports anything", synthetic("internal/app", "internal/feature/send", "uitoolkit/widget", "internal/feature/send/ui/respview")},
 		{"cmd is not checked", synthetic("cmd/workshop", "internal/app", "internal/feature/send")},
 		{"e2e is not checked", synthetic("e2e", "internal/feature/send")},
 		{"standard library and ebiten are ignored", listedPackage{ImportPath: testModule + "/internal/kernel/request", Imports: []string{"fmt", "github.com/hajimehoshi/ebiten/v2"}}},
@@ -261,7 +258,7 @@ func TestZoneOf(t *testing.T) {
 		{"internal/feature/send/ui/respview", zoneUI, "send"},
 		{"internal/feature/send/adapter/preview", zoneAdapter, "send"},
 		{"internal/feature/send/proto/ws", zoneController, "send"},
-		{"internal/platform/fonts", zonePlatform, ""},
+		{"internal/platform/fonts", zoneUnclassified, ""}, // the platform layer is gone: a new package goes into a feature or the toolkit
 		{"internal/app", zoneApp, ""},
 		{"internal/exampleserver", zoneExampleServer, ""},
 		{"uitoolkit/core", zoneToolkit, ""},
@@ -308,7 +305,7 @@ func TestNoUnclassifiedPackage(t *testing.T) {
 	module := moduleName(t)
 	for _, pkg := range listPackages(t, "") {
 		if got, _ := zoneOf(relativeTo(module, pkg.ImportPath)); got == zoneUnclassified {
-			t.Errorf("%s is in no zone: put it in the kernel, a feature or platform (internal/CLAUDE.md)", pkg.ImportPath)
+			t.Errorf("%s is in no zone: put it in the kernel or a feature (internal/CLAUDE.md)", pkg.ImportPath)
 		}
 	}
 }

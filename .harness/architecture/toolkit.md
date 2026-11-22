@@ -20,14 +20,15 @@ is tested without a GPU.
 
 `uitoolkit/desktop` holds what a window needs from the OS and Ebitengine does not give: the Dock
 icon (`SetDockIcon`), the display scale (`displayscale`), the key repeat timing (`keyrepeat`) and the
-system file chooser (`filedialog`) and the system report the settings show (`systeminfo`). Each is split per OS (build tags or a table keyed by OS) and its
+system file chooser (`filedialog`) and the system report the settings show (`systeminfo`) and the installed fonts (`fonts`). Each is split per OS (build tags or a table keyed by OS) and its
 parsing is pure and tested without a display. It imports nothing of the toolkit or the app.
 
 - **Why in the toolkit.** Every program with a window needs the same few things, and they are about the
-  window and the desktop, not about requests. The first layout put them in `internal/platform`
+  window and the desktop, not about requests. An `internal/platform` layer once held them
   behind ports owned by `settings` and `workspace`, but no feature code used those ports: only
-  `app` and a view did. The ports now live in `internal/app/ports.go`, where the fakes of the tests are.
-- **Sub-packages.** `displayscale`, `keyrepeat` and `filedialog` each have their own `source`,
+  `app` and a view did, so the layer is gone. The ports live where they are used: `internal/app/ports.go`
+  and `settings/ui/formpage` (fonts), next to the fakes of the tests.
+- **Sub-packages.** `displayscale`, `keyrepeat`, `filedialog`, `systeminfo` and `fonts` each have their own `source`,
   `System` and `run`; one flat package would need prefixes on all of them.
 - **Rejected.** A D-Bus file chooser portal (see the `filedialog` package doc). Revisit when a
   client library is already a dependency.

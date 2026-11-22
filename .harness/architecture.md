@@ -44,8 +44,8 @@ domain directory under `internal/` (root, controllers, `ui/`, `adapter/`) or the
 | `internal/feature/collections/FEATURE.md` | `internal/feature/collections` | open set, tree, importers, transfer, store, client config, sample and example server |
 | `internal/feature/environments/FEATURE.md` | `internal/feature/environments` | environments, variables resolution, the chip's menu |
 | `internal/feature/history/FEATURE.md` | `internal/feature/history` | responses kept per request, sent log |
-| `internal/feature/settings/FEATURE.md` | `internal/feature/settings`, `internal/platform` | schema, prefs, theme, settings dialog and its pages; the OS adapters for display scale, fonts, key repeat and system info |
-| `internal/feature/workspace/FEATURE.md` | `internal/feature/workspace`, `internal/platform` | tabs, remembered state, bus, file browser, autosave, overlays, app icon; the OS adapters for file dialog, user's files, clock and Dock icon |
+| `internal/feature/settings/FEATURE.md` | `internal/feature/settings` | schema, prefs, theme, settings dialog and its pages |
+| `internal/feature/workspace/FEATURE.md` | `internal/feature/workspace` | tabs, remembered state, bus, file browser, autosave, overlays, app icon, user's files |
 | `internal/kernel` (see `internal/CLAUDE.md`) | `internal/kernel` | shared leaves: `severity`, `fileversion`, `userdir`, `textfmt`, `jsonview`, `openset`; documented in their package docs and in the module files that use them |
 | `architecture/app.md` | `internal/app` | composition root: the `App`, its handlers and window |
 | `architecture/toolkit.md` | `uitoolkit` | core, view, widgets, markup API and drawing |
@@ -70,5 +70,5 @@ other one, except the `exampleserver` dev tool. `e2e/layers_test.go` checks it i
 - `internal/exampleserver` imports `feature/send/proto/ws`; the one written exception in `internal/CLAUDE.md`.
 - Six test-only rows in `e2e/layers_rules_test.go` let tests import real adapters as fixtures:
   `exampleserver` (`feature/collections`, `feature/send/proto`), `history/ui/sentlog` (`history/adapter`),
-  `settings/ui/formpage` (`platform/fonts`, `settings/adapter/settingsfile`), `settings/ui/settingsui`
+  `settings/ui/formpage` (`uitoolkit/desktop/fonts`, `settings/adapter/settingsfile`), `settings/ui/settingsui`
   (`settings/adapter/settingsfile`). Follow-up: replace the real adapters with fakes and delete the rows.

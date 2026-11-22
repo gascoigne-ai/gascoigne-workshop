@@ -16,7 +16,6 @@ const (
 	zoneController
 	zoneUI
 	zoneAdapter
-	zonePlatform
 	zoneApp
 	zoneExampleServer
 	zoneToolkit
@@ -26,7 +25,7 @@ func (z zone) String() string {
 	names := map[zone]string{
 		zoneUnclassified: "unclassified", zoneUnchecked: "unchecked", zoneKernel: "kernel",
 		zoneFeatureRoot: "feature root", zoneController: "controller", zoneUI: "ui",
-		zoneAdapter: "adapter", zonePlatform: "platform", zoneApp: "app",
+		zoneAdapter: "adapter", zoneApp: "app",
 		zoneExampleServer: "exampleserver", zoneToolkit: "toolkit",
 	}
 	return names[z]
@@ -34,7 +33,6 @@ func (z zone) String() string {
 
 const (
 	featurePrefix = "internal/feature/"
-	platformDir   = "internal/platform/"
 )
 
 // zoneOf classifies a module-relative package path. The feature is the
@@ -49,8 +47,6 @@ func zoneOf(relPath string) (zone, string) {
 		return zoneExampleServer, ""
 	case strings.HasPrefix(relPath, "internal/kernel/"):
 		return zoneKernel, ""
-	case strings.HasPrefix(relPath, platformDir):
-		return zonePlatform, ""
 	case strings.HasPrefix(relPath, featurePrefix):
 		return featureZone(strings.TrimPrefix(relPath, featurePrefix))
 	case strings.HasPrefix(relPath, "internal/"):
@@ -92,10 +88,6 @@ type layerRule struct {
 	Reason   string
 }
 
-var (
-	settingsPlatform = []string{"internal/platform/fonts"}
-)
-
 // layerRules is the data form of internal/CLAUDE.md, Imports. The rows after
 // the zone rules are the written exceptions, each with its reason.
 var layerRules = []layerRule{
@@ -107,7 +99,6 @@ var layerRules = []layerRule{
 	{"ui -> own root, controllers", selector{Zones: []zone{zoneUI}}, selector{Zones: []zone{zoneFeatureRoot, zoneController}}, true, false, "views sit behind their feature's types"},
 	{"adapter -> kernel", selector{Zones: []zone{zoneAdapter}}, selector{Zones: []zone{zoneKernel}}, false, false, "a feature builds on the shared model"},
 	{"adapter -> own root, controllers, adapters", selector{Zones: []zone{zoneAdapter}}, selector{Zones: []zone{zoneFeatureRoot, zoneController, zoneAdapter}}, true, false, "adapters implement their feature's ports"},
-	{"platform -> settings root", selector{Paths: settingsPlatform}, selector{Paths: []string{"internal/feature/settings"}}, false, false, "the platform adapter implements a port settings owns, so it imports the port types"},
 	{"app -> everything", selector{Zones: []zone{zoneApp}}, selector{Zones: allZones()}, false, false, "the composition root knows both sides"},
 	{"toolkit -> toolkit", selector{Zones: []zone{zoneToolkit}}, selector{Zones: []zone{zoneToolkit}}, false, false, "the toolkit knows nothing of the app"},
 	{"exampleserver -> kernel", selector{Zones: []zone{zoneExampleServer}}, selector{Zones: []zone{zoneKernel}}, false, false, "a dev tool uses the shared model"},
@@ -116,11 +107,10 @@ var layerRules = []layerRule{
 	{"test only: exampleserver -> collections", selector{Paths: []string{"internal/exampleserver"}}, selector{Paths: []string{"internal/feature/collections"}}, false, true, "test fixture: the dev server tests load the real sample collection"},
 	{"test only: exampleserver -> proto", selector{Paths: []string{"internal/exampleserver"}}, selector{Paths: []string{"internal/feature/send/proto"}}, false, true, "test fixture: the dev server tests drive the real protocol registry"},
 	{"test only: history/ui/sentlog -> adapter", selector{Paths: []string{"internal/feature/history/ui/sentlog"}}, selector{Paths: []string{"internal/feature/history/adapter"}}, false, true, "test fixture: the view test uses the real history adapter"},
-	{"test only: settings/ui/formpage -> fonts", selector{Paths: []string{"internal/feature/settings/ui/formpage"}}, selector{Paths: []string{"internal/platform/fonts"}}, false, true, "test fixture: the view test uses the real font store"},
 	{"test only: settings/ui/formpage -> settingsfile", selector{Paths: []string{"internal/feature/settings/ui/formpage"}}, selector{Paths: []string{"internal/feature/settings/adapter/settingsfile"}}, false, true, "test fixture: the view test uses the real settings file adapter"},
 	{"test only: settings/ui/settingsui -> settingsfile", selector{Paths: []string{"internal/feature/settings/ui/settingsui"}}, selector{Paths: []string{"internal/feature/settings/adapter/settingsfile"}}, false, true, "test fixture: the dialog tests use the real settings file adapter"},
 }
 
 func allZones() []zone {
-	return []zone{zoneUnclassified, zoneUnchecked, zoneKernel, zoneFeatureRoot, zoneController, zoneUI, zoneAdapter, zonePlatform, zoneApp, zoneExampleServer, zoneToolkit}
+	return []zone{zoneUnclassified, zoneUnchecked, zoneKernel, zoneFeatureRoot, zoneController, zoneUI, zoneAdapter, zoneApp, zoneExampleServer, zoneToolkit}
 }
