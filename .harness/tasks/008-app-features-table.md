@@ -7,16 +7,18 @@ depends_on: 003-feature-history, 004-feature-settings, 005-feature-collections, 
 
 # App: a Features table
 
-Goal: `internal/app` is 9.4k source lines and about 406 methods on one `App` (Go cannot declare a
+Goal: `internal/app` is about 9.4k source lines and 406 methods on one `App` (Go cannot declare a
 method in another package, so one `App` stays). Add a `Features` table (name, constructor, the
-`Host` it needs) so a new feature is a table row, not a branch in `App`; move the feature logic the
-`App` still holds (`protocol_wsui.go` 476, `statesync.go` 391, `window_filebrowser.go` 362) into its
-feature behind a `Host` of at most about 5 methods, tested with a fake host.
+`Host` it needs) so a new feature is a table row, not a branch in `App`, and register the six
+features through it (history, settings, collections, environments, send, workspace).
 
-OPEN QUESTION (ask the user): one commit per feature moved? Recommended yes, websocket view first.
+User's answer (one area per task): this task moves one area only, the websocket view
+(`protocol_wsui.go`, 476 lines), into `internal/feature/send` behind a `Host` of at most about 5
+methods, tested with a fake host. Further areas (`statesync.go` 391, `window_filebrowser.go` 362)
+are separate follow-up tasks, queued after this one, each re-measured first.
 
 ## Model
-Per feature: the `Host` interface, who owns the state, what persists.
+The `Host` interface of the websocket view, who owns its state, what persists (unchanged).
 
 ## Acceptance
 - Test first for each `Host` seam: a fake host test states the behavior.
