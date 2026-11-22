@@ -1,8 +1,8 @@
 package settingsui
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/prefs"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/severity"
 	"image/color"
 	"os"
 	"path/filepath"

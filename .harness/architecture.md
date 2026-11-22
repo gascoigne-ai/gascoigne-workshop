@@ -46,7 +46,7 @@ domain directory under `internal/` (root, controllers, `ui/`, `adapter/`) or the
 | `internal/feature/history/FEATURE.md` | `internal/feature/history` | responses kept per request, sent log |
 | `internal/feature/settings/FEATURE.md` | `internal/feature/settings` | schema, prefs, theme, settings dialog and its pages |
 | `internal/feature/workspace/FEATURE.md` | `internal/feature/workspace` | tabs, remembered state, bus, file browser, autosave, overlays, app icon, user's files |
-| `internal/kernel` (see `internal/CLAUDE.md`) | `internal/kernel` | shared leaves: `severity`, `fileversion`, `userdir`, `textfmt`, `jsonview`; documented in their package docs and in the module files that use them |
+| `internal/kernel` (see `internal/CLAUDE.md`) | `internal/kernel` | shared leaves: `fileversion`, `userdir`, `textfmt`, `jsonview`; documented in their package docs and in the module files that use them |
 | `architecture/app.md` | `internal/app` | composition root: the `App`, its handlers and window |
 | `architecture/toolkit.md` | `uitoolkit` | core, view, widgets, markup API and drawing |
 | `architecture/persistence.md` | shared | formats and versions of every persisted file |

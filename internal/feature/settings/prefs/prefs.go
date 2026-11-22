@@ -4,8 +4,8 @@
 package prefs
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/severity"
 )
 
 // Msg is one thing a settings page asks for.

@@ -297,7 +297,8 @@ func TestZoneOf(t *testing.T) {
 		wantZone    zone
 		wantFeature string
 	}{
-		{"internal/kernel/severity", zoneKernel, ""},
+		{"internal/kernel/jsonview", zoneKernel, ""},
+		{"internal/feature/request/severity", zoneBase, ""},
 		{"internal/feature/send", zoneFeatureRoot, "send"},
 		{"internal/feature/send/ui/respview", zoneFeatureUI, "send"},
 		{"internal/feature/send/adapter/preview", zoneAdapter, "send"},
@@ -379,6 +380,20 @@ func TestRequestModelIsTheBaseFeature(t *testing.T) {
 		if listed[gone] {
 			t.Errorf("%s still exists: it moved to internal/feature/request", gone)
 		}
+	}
+}
+
+func TestSeverityIsABaseFeatureLeaf(t *testing.T) {
+	module := moduleName(t)
+	listed := map[string]bool{}
+	for _, pkg := range listPackages(t, "") {
+		listed[relativeTo(module, pkg.ImportPath)] = true
+	}
+	if !listed["internal/feature/request/severity"] {
+		t.Error("internal/feature/request/severity is not in the tree")
+	}
+	if listed["internal/kernel/severity"] {
+		t.Error("internal/kernel/severity still exists: it moved under the base feature")
 	}
 }
 

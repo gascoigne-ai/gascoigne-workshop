@@ -2,7 +2,7 @@ package severity
 
 import "fmt"
 
-// Level is how serious a message for the user is. It lives in the kernel
+// Level is how serious a message for the user is. It is a leaf of the base feature
 // package so the settings, history and trace views and the app share one word
 // for it; the app maps it to the look of a toast. The zero value is Info.
 type Level uint8

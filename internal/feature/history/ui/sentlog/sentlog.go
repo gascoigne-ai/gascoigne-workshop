@@ -5,7 +5,7 @@ package sentlog
 
 import (
 	"fmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/severity"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request/severity"
 	"strings"
 	"time"
 

@@ -2,7 +2,7 @@ package app
 
 import (
 	"cmp"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/severity"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request/severity"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/ui/mcpform"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/overlay"

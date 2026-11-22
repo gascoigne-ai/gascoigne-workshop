@@ -8,7 +8,7 @@ Sending a request and reading the answer: the protocol clients, the request edit
 - `assert`: the assertion language of `Request.Tests`. `editor`: the request edits of a tab. `mcpexplorer`: the UI-free state of the MCP explorer. `viewer`: the response viewer's model (mode, find state). `outbox`: the order of a connection's sends and pings, one in flight at a time.
 - `adapter/preview`: serves a body on a loopback address for "Open in browser".
 - `ui/respview` (response views), `ui/calltrace` (the call trace), `ui/mcpform` (the form for an MCP tool's arguments); each behind a `Host` interface the `App` implements.
-- Imports: the kernel and the base feature (`feature/request`; kernel: `kernel/jsonview`, `kernel/severity`, `kernel/textfmt`) plus the toolkit for the views. `go list` (tests included) shows no other feature. `internal/exampleserver` imports `proto/ws`: the one written exception (`internal/CLAUDE.md`); `workspace/tabs` imports this package's root for `MCPServer` parsing.
+- Imports: the kernel and the base feature (`feature/request`; kernel: `kernel/jsonview`, `kernel/textfmt`; base: `feature/request/severity`) plus the toolkit for the views. `go list` (tests included) shows no other feature. `internal/exampleserver` imports `proto/ws`: the one written exception (`internal/CLAUDE.md`); `workspace/tabs` imports this package's root for `MCPServer` parsing.
 
 ## Model and protocols
 
