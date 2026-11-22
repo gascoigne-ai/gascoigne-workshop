@@ -6,7 +6,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fontfamily"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -80,7 +80,7 @@ func (d *SettingsDialog) loadedFaces() int { return len(d.list.faces) }
 
 // face is the font of family, read the first time it is asked for; nil
 // when the file cannot be read, which draws the name in the interface font.
-func (d *SettingsDialog) face(host Host, family fontfamily.Family) *text.GoTextFaceSource {
+func (d *SettingsDialog) face(host Host, family settings.Family) *text.GoTextFaceSource {
 	if source, seen := d.list.faces[family.Regular]; seen {
 		return source
 	}
@@ -88,7 +88,7 @@ func (d *SettingsDialog) face(host Host, family fontfamily.Family) *text.GoTextF
 		d.list.faces = map[string]*text.GoTextFaceSource{}
 	}
 	var source *text.GoTextFaceSource
-	if regular, _, err := host.FontStore().Load(fontfamily.Family{Name: family.Name, Regular: family.Regular}); err == nil {
+	if regular, _, err := host.FontStore().Load(settings.Family{Name: family.Name, Regular: family.Regular}); err == nil {
 		source, _ = text.NewGoTextFaceSource(bytes.NewReader(regular))
 	}
 	d.list.faces[family.Regular] = source
@@ -99,7 +99,7 @@ func (d *SettingsDialog) face(host Host, family fontfamily.Family) *text.GoTextF
 // in its font, and a chevron; clicking opens the dropdown.
 func (d *SettingsDialog) fontControl(ctx *w.Ctx, host Host, role FontRole) Node {
 	name := savedFont(host.Settings(), role)
-	family, found := fontfamily.Find(d.Families, name)
+	family, found := settings.Find(d.Families, name)
 	current := fontChoice{Name: builtIn, Muted: true}
 	switch {
 	case found:
@@ -115,8 +115,8 @@ func (d *SettingsDialog) fontControl(ctx *w.Ctx, host Host, role FontRole) Node 
 }
 
 // matchingFamilies are the families whose name contains the search text.
-func (d *SettingsDialog) matchingFamilies() []fontfamily.Family {
-	return fontfamily.Matching(d.Families, d.FontSearch.Text, len(d.Families))
+func (d *SettingsDialog) matchingFamilies() []settings.Family {
+	return settings.Matching(d.Families, d.FontSearch.Text, len(d.Families))
 }
 
 // FontList is the dropdown while it is open: a search field and the

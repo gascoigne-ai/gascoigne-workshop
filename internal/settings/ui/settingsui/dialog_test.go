@@ -3,7 +3,7 @@ package settingsui
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/fonts"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/prefs"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/severity"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 	"image/color"
 	"os"
 	"path/filepath"
@@ -44,13 +44,13 @@ func (h *fakeHost) Change(edit func(*settings.Settings)) {
 	edit(&h.current)
 	_ = settingsDisk.Save(h.path, h.current)
 }
-func (h *fakeHost) SetScaleLive(percent int)            { h.current.UIScalePct = percent }
-func (h *fakeHost) Save()                               { h.saved++ }
-func (h *fakeHost) Replace(current settings.Settings)   { h.current = current }
-func (h *fakeHost) SettingsPath() string                { return h.path }
-func (h *fakeHost) SetFonts(ui, code w.FontData) error  { h.fontsSet++; return nil }
-func (h *fakeHost) Toast(text string, _ severity.Level) { h.toasts = append(h.toasts, text) }
-func (h *fakeHost) SetStatus(string)                    {}
+func (h *fakeHost) SetScaleLive(percent int)             { h.current.UIScalePct = percent }
+func (h *fakeHost) Save()                                { h.saved++ }
+func (h *fakeHost) Replace(current settings.Settings)    { h.current = current }
+func (h *fakeHost) SettingsPath() string                 { return h.path }
+func (h *fakeHost) SetFonts(ui, code w.FontData) error   { h.fontsSet++; return nil }
+func (h *fakeHost) Toast(text string, _ workspace.Level) { h.toasts = append(h.toasts, text) }
+func (h *fakeHost) SetStatus(string)                     {}
 func (h *fakeHost) OpenMenu(posX, posY int, items []prefs.MenuItem) {
 	h.menus = append(h.menus, items)
 	h.menuAt = [2]int{posX, posY}

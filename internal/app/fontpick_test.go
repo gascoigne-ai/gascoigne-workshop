@@ -15,13 +15,13 @@ import (
 	"golang.org/x/image/font/gofont/gomonobold"
 	"golang.org/x/image/font/gofont/goregular"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/fonts"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fontfamily"
 )
 
 // testFamilies are real font files (the Go fonts) written to a folder
 // and scanned: "Go" is proportional, "Go Mono" is monospace.
-func testFamilies(t *testing.T) []fontfamily.Family {
+func testFamilies(t *testing.T) []settings.Family {
 	t.Helper()
 	dir := t.TempDir()
 	for name, data := range map[string][]byte{"r.ttf": goregular.TTF, "b.ttf": gobold.TTF, "m.ttf": gomono.TTF, "mb.ttf": gomonobold.TTF} {

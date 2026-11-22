@@ -8,7 +8,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/theme"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/severity"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -161,7 +161,7 @@ func choice(host Host, label string, selected bool, edit func(*settings.Settings
 func setKey(host Host, key string, value settings.Value) func(*settings.Settings) {
 	return func(edited *settings.Settings) {
 		if err := settings.Set(edited, key, value); err != nil {
-			host.Send(prefs.Toast{Text: "Could not change the setting: " + err.Error(), Level: severity.Error})
+			host.Send(prefs.Toast{Text: "Could not change the setting: " + err.Error(), Level: workspace.Error})
 		}
 	}
 }
@@ -169,7 +169,7 @@ func setKey(host Host, key string, value settings.Value) func(*settings.Settings
 // resetKey puts the default back for key; a refusal is shown as a toast.
 func resetKey(host Host, edited *settings.Settings, key string) {
 	if err := settings.Reset(edited, key); err != nil {
-		host.Send(prefs.Toast{Text: "Could not reset the setting: " + err.Error(), Level: severity.Error})
+		host.Send(prefs.Toast{Text: "Could not reset the setting: " + err.Error(), Level: workspace.Error})
 	}
 }
 

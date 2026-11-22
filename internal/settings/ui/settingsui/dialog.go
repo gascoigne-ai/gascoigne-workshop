@@ -14,7 +14,6 @@ import (
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fontfamily"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -110,8 +109,8 @@ type SettingsDialog struct {
 	fields NotedFields[string] // fields of the text and number settings, and why a typed value was refused
 	scale  SliderState
 
-	Families   []fontfamily.Family // installed font families, once scanned
-	FontSearch TextField           // narrows the font dropdown
+	Families   []settings.Family // installed font families, once scanned
+	FontSearch TextField         // narrows the font dropdown
 	list       fontList
 
 	Raw        bool               // the dialog shows settings.json as text

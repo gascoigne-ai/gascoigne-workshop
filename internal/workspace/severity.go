@@ -1,11 +1,10 @@
-// Package severity is how serious a message for the user is. It lives in
-// the workspace model so the settings, history and trace views and the app
-// share one word for it; the app maps it to the look of a toast.
-package severity
+package workspace
 
 import "fmt"
 
-// Level is how serious a message is. The zero value is Info.
+// Level is how serious a message for the user is. It lives in the workspace
+// package so the settings, history and trace views and the app share one word
+// for it; the app maps it to the look of a toast. The zero value is Info.
 type Level uint8
 
 // The levels, least serious first.

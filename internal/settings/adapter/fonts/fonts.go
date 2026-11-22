@@ -13,7 +13,6 @@ import (
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fontfamily"
 	"golang.org/x/image/font/sfnt"
 )
 
@@ -35,8 +34,8 @@ func SystemDirs(goos, home string) []string {
 // Scan reads the .ttf and .otf files under dirs and groups them by the
 // family name inside each file, sorted by name. Folders that do not exist,
 // files that cannot be read and collections (.ttc) are skipped.
-func Scan(dirs ...string) []fontfamily.Family {
-	byName := map[string]*fontfamily.Family{}
+func Scan(dirs ...string) []settings.Family {
+	byName := map[string]*settings.Family{}
 	seen := 0
 	for _, dir := range dirs {
 		_ = filepath.WalkDir(dir, func(path string, entry fs.DirEntry, err error) error {
@@ -54,7 +53,7 @@ func Scan(dirs ...string) []fontfamily.Family {
 			}
 			entryFor := byName[family]
 			if entryFor == nil {
-				entryFor = &fontfamily.Family{Name: family}
+				entryFor = &settings.Family{Name: family}
 				byName[family] = entryFor
 			}
 			switch style {
@@ -66,7 +65,7 @@ func Scan(dirs ...string) []fontfamily.Family {
 			return nil
 		})
 	}
-	families := make([]fontfamily.Family, 0, len(byName))
+	families := make([]settings.Family, 0, len(byName))
 	for _, family := range byName {
 		if family.Regular == "" {
 			continue // italic-only or exotic styles are not offered
@@ -105,7 +104,7 @@ func identify(path string) (family, style string, ok bool) {
 
 // Load reads the regular and bold files of family. A family with no bold
 // file uses its regular one for both.
-func Load(family fontfamily.Family) (regular, bold []byte, err error) {
+func Load(family settings.Family) (regular, bold []byte, err error) {
 	if family.Regular == "" {
 		return nil, nil, errors.New("the family has no regular file")
 	}
@@ -140,11 +139,11 @@ func hasLetters(font *sfnt.Font, buf *sfnt.Buffer) bool {
 type System struct{ Home string }
 
 // Scan implements settings.FontStore.
-func (system System) Scan() []fontfamily.Family {
+func (system System) Scan() []settings.Family {
 	return Scan(SystemDirs(runtime.GOOS, system.Home)...)
 }
 
 // Load implements settings.FontStore.
-func (System) Load(family fontfamily.Family) (regular, bold []byte, err error) { return Load(family) }
+func (System) Load(family settings.Family) (regular, bold []byte, err error) { return Load(family) }
 
 var _ settings.FontStore = System{}

@@ -1,6 +1,4 @@
-// Package fontfamily is a typeface by name and the rules to find one in a
-// list; reading the files is the font adapter's job.
-package fontfamily
+package settings
 
 import "strings"
 

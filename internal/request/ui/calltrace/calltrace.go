@@ -6,7 +6,7 @@ package calltrace
 
 import (
 	"fmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/severity"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 	"strings"
 	"time"
 
@@ -42,7 +42,7 @@ type Host interface {
 type Entry struct {
 	At    time.Time
 	Text  string
-	Level severity.Level
+	Level workspace.Level
 }
 
 // Log is the call trace and the state of its dialog. The zero value is an
@@ -61,7 +61,7 @@ func (l *Log) Info(at time.Time, text string) { l.add(Entry{At: at, Text: text})
 
 // Error adds an entry that is shown as a failure.
 func (l *Log) Error(at time.Time, text string) {
-	l.add(Entry{At: at, Text: text, Level: severity.Error})
+	l.add(Entry{At: at, Text: text, Level: workspace.Error})
 }
 
 func (l *Log) add(entry Entry) {
@@ -141,7 +141,7 @@ func (l *Log) refresh() {
 	lines := make([]Line, len(entries))
 	for i, entry := range entries {
 		style := w.Text
-		if entry.Level == severity.Error {
+		if entry.Level == workspace.Error {
 			style = w.Error
 		}
 		lines[i] = Line{Spans: []Span{{Text: stamp(entry.At) + "  ", Style: w.Muted}, {Text: entry.Text, Style: style}}}

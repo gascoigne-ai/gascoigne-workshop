@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/severity"
 	"path/filepath"
 	"strings"
 
@@ -34,7 +33,7 @@ func (a *App) showHistory(tab *reqTab, index int) {
 // saveBody asks for a path and writes the response body there.
 func (a *App) saveBody(tab *reqTab) {
 	if tab.Resp == nil || tab.Resp.Err != "" {
-		a.toast("There is no response to save", severity.Error)
+		a.toast("There is no response to save", workspace.Error)
 		return
 	}
 	a.pickFile("Save response body", workspace.SaveFile, respview.SuggestedFileName(tab.Resp), func(path string) { a.writeBody(tab, path) })
@@ -56,10 +55,10 @@ func (a *App) writeBody(tab *reqTab, path string) {
 	body := tab.Resp.Body
 	a.writeFile(path, body, func(err error) {
 		if err != nil {
-			a.toast("Saving failed: "+err.Error(), severity.Error)
+			a.toast("Saving failed: "+err.Error(), workspace.Error)
 			return
 		}
-		a.toast(fmt.Sprintf("Saved %s to %s", textfmt.Size(len(body)), filepath.Base(path)), severity.Info)
+		a.toast(fmt.Sprintf("Saved %s to %s", textfmt.Size(len(body)), filepath.Base(path)), workspace.Info)
 	})
 }
 
@@ -67,7 +66,7 @@ func (a *App) writeBody(tab *reqTab, path string) {
 // and opens it in the user's browser, which renders what this app cannot.
 func (a *App) openInBrowser(tab *reqTab) {
 	if tab.Resp == nil || tab.Resp.Err != "" {
-		a.toast("There is no response to open", severity.Error)
+		a.toast("There is no response to open", workspace.Error)
 		return
 	}
 	contentType := respview.ContentType(tab.Resp)
@@ -75,10 +74,10 @@ func (a *App) openInBrowser(tab *reqTab) {
 		contentType = "text/plain; charset=utf-8"
 	}
 	if err := a.previews.Show(context.Background(), tab.Resp.Body, contentType); err != nil {
-		a.toast("Preview failed: "+err.Error(), severity.Error)
+		a.toast("Preview failed: "+err.Error(), workspace.Error)
 		return
 	}
-	a.toast("Opened in the browser for 5 minutes", severity.Info)
+	a.toast("Opened in the browser for 5 minutes", workspace.Info)
 }
 
 // toggleWrap switches the response body between scrolling sideways and

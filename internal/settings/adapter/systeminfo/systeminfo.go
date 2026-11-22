@@ -9,7 +9,7 @@ import (
 	"runtime"
 	"runtime/debug"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/sysinfo"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 )
 
 // Graphics is what the running window system and GPU tell.
@@ -33,10 +33,10 @@ type Info struct {
 }
 
 // Read is the report as it is now.
-func (i Info) Read() sysinfo.Report {
+func (i Info) Read() settings.Report {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
-	system := sysinfo.Section{Title: "System", Rows: []sysinfo.Row{
+	system := settings.Section{Title: "System", Rows: []settings.Row{
 		{Label: "OS", Value: runtime.GOOS + "/" + runtime.GOARCH},
 		{Label: "CPUs", Value: fmt.Sprint(runtime.NumCPU())},
 		{Label: "Go", Value: runtime.Version()},
@@ -44,26 +44,26 @@ func (i Info) Read() sysinfo.Report {
 		{Label: "Memory in use", Value: megabytes(int64(m.Alloc))},
 	}}
 	if i.Version != "" {
-		system.Rows = append([]sysinfo.Row{{Label: "Program", Value: i.Version}}, system.Rows...)
+		system.Rows = append([]settings.Row{{Label: "Program", Value: i.Version}}, system.Rows...)
 	}
 	if i.Graphics == nil {
-		return sysinfo.Report{Sections: []sysinfo.Section{system}}
+		return settings.Report{Sections: []settings.Section{system}}
 	}
 	g := i.Graphics()
-	rendering := sysinfo.Section{Title: "Rendering", Rows: []sysinfo.Row{
+	rendering := settings.Section{Title: "Rendering", Rows: []settings.Row{
 		{Label: "Graphics library", Value: orUnknown(g.Library)},
 		{Label: "GPU image memory", Value: megabytes(g.GPUImageBytes)},
 		{Label: "Vsync", Value: onOff(g.Vsync)},
 		{Label: "Frames per second", Value: fmt.Sprintf("%.0f", g.FPS)},
 		{Label: "Ticks per second", Value: fmt.Sprintf("%.0f", g.TPS)},
 	}}
-	display := sysinfo.Section{Title: "Display", Rows: []sysinfo.Row{
+	display := settings.Section{Title: "Display", Rows: []settings.Row{
 		{Label: "Monitor", Value: orUnknown(g.Monitor)},
 		{Label: "Monitor size", Value: fmt.Sprintf("%d x %d", g.MonitorW, g.MonitorH)},
 		{Label: "Device scale", Value: fmt.Sprintf("%.2f", g.DeviceScale)},
 		{Label: "Window size", Value: fmt.Sprintf("%d x %d", g.WindowW, g.WindowH)},
 	}}
-	return sysinfo.Report{Sections: []sysinfo.Section{rendering, display, system}}
+	return settings.Report{Sections: []settings.Section{rendering, display, system}}
 }
 
 // moduleVersion is the version of a module the program was built with.

@@ -3,7 +3,7 @@ package settingsui
 import (
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/prefs"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/severity"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/jsonview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
@@ -40,7 +40,7 @@ func (d *SettingsDialog) Poll(host Host) {
 	d.stamp = now
 	data, err := host.SettingsStore().ReadText(path)
 	if err != nil {
-		host.Send(prefs.Toast{Text: "Cannot read settings.json: " + err.Error(), Level: severity.Error})
+		host.Send(prefs.Toast{Text: "Cannot read settings.json: " + err.Error(), Level: workspace.Error})
 		return
 	}
 	parsed, problems := settings.Parse(data, host.Settings())
@@ -50,7 +50,7 @@ func (d *SettingsDialog) Poll(host Host) {
 		d.Problems = problems
 	}
 	if len(problems) > 0 {
-		host.Send(prefs.Toast{Text: "settings.json has problems and was not applied: " + problems[0].Message, Level: severity.Error})
+		host.Send(prefs.Toast{Text: "settings.json has problems and was not applied: " + problems[0].Message, Level: workspace.Error})
 		return
 	}
 	host.Send(prefs.Replace{Settings: parsed})
@@ -117,7 +117,7 @@ func (d *SettingsDialog) RawEdited(host Host) {
 // shown as a toast and leaves the stamp alone.
 func (d *SettingsDialog) writeText(host Host, path, text string) bool {
 	if err := host.SettingsStore().WriteText(path, []byte(text)); err != nil {
-		host.Send(prefs.Toast{Text: "Could not save settings: " + err.Error(), Level: severity.Error})
+		host.Send(prefs.Toast{Text: "Could not save settings: " + err.Error(), Level: workspace.Error})
 		return false
 	}
 	d.Stamp(host, path)
@@ -158,7 +158,7 @@ func (d *SettingsDialog) complete(host Host, quiet bool) {
 	suggestions := settings.Complete(text, len(string(runes[:caret])), host.ActionIDs())
 	if len(suggestions) == 0 {
 		if !quiet {
-			host.Send(prefs.Toast{Text: "Nothing to complete here", Level: severity.Info})
+			host.Send(prefs.Toast{Text: "Nothing to complete here", Level: workspace.Info})
 		}
 		return
 	}

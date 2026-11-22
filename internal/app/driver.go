@@ -12,7 +12,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
@@ -135,7 +134,7 @@ func (d *Driver) OpenDialog(kind string) error {
 
 // ShowToast shows text as an error toast, which stays until clicked, so a slow
 // frame cannot let it fade before a capture.
-func (d *Driver) ShowToast(text string) { d.app.toast(text, severity.Error) }
+func (d *Driver) ShowToast(text string) { d.app.toast(text, workspace.Error) }
 
 // OpenSettingsMenu opens the settings dialog.
 func (d *Driver) OpenSettingsMenu() { d.app.menu = true }

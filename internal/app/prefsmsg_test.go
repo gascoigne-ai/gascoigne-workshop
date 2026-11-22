@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/severity"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
@@ -72,7 +72,7 @@ func TestSendRecordsFileStateAndStatus(t *testing.T) {
 	if a.status != "hello" {
 		t.Fatalf("status %q", a.status)
 	}
-	a.Send(prefs.Toast{Text: "oops", Level: severity.Error})
+	a.Send(prefs.Toast{Text: "oops", Level: workspace.Error})
 	if len(a.toasts) != 1 || a.toasts[0].Text != "oops" {
 		t.Fatal("Toast")
 	}

@@ -1,6 +1,4 @@
-// Package sysinfo is the report of what the program runs on: the system,
-// the display and the GPU rendering, as sections of labelled values.
-package sysinfo
+package settings
 
 import "strings"
 

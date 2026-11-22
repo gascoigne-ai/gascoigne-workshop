@@ -1,11 +1,9 @@
 package settings
 
-import "github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fontfamily"
-
 // FontStore finds installed fonts and reads their files.
 type FontStore interface {
 	// Scan lists the installed families, sorted by name.
-	Scan() []fontfamily.Family
+	Scan() []Family
 	// Load reads the regular and bold files of family.
-	Load(family fontfamily.Family) (regular, bold []byte, err error)
+	Load(family Family) (regular, bold []byte, err error)
 }

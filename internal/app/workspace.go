@@ -3,7 +3,7 @@ package app
 import (
 	"errors"
 	"fmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/severity"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 	"strings"
 	"time"
 
@@ -74,7 +74,7 @@ func (a *App) openWorkspace(dir string) {
 func (a *App) toastNewer(folder string, err error) {
 	var newer *fileversion.NewerError
 	if errors.As(err, &newer) {
-		a.toast("Cannot open "+folder+": "+err.Error(), severity.Error)
+		a.toast("Cannot open "+folder+": "+err.Error(), workspace.Error)
 	}
 }
 
@@ -149,7 +149,7 @@ func (a *App) saveCollection(col *request.Collection) {
 		Run: func() error { return a.store.Save(dir, snapshot) },
 		Done: func(err error) {
 			if err != nil {
-				a.toast("Saving failed: "+err.Error(), severity.Error)
+				a.toast("Saving failed: "+err.Error(), workspace.Error)
 				return
 			}
 			a.status = fmt.Sprintf("Saved %s", snapshot.Name)
@@ -162,7 +162,7 @@ func (a *App) saveCollection(col *request.Collection) {
 func (a *App) locate(col *request.Collection) string {
 	parent := a.collectionsDir()
 	if parent == "" {
-		a.toast("No folder to save to", severity.Error)
+		a.toast("No folder to save to", workspace.Error)
 		return ""
 	}
 	name, err := collections.CleanName(col.Name)
@@ -171,7 +171,7 @@ func (a *App) locate(col *request.Collection) string {
 	}
 	dir, err := a.store.Create(parent, name)
 	if err != nil {
-		a.toast("Saving failed: "+err.Error(), severity.Error)
+		a.toast("Saving failed: "+err.Error(), workspace.Error)
 		return ""
 	}
 	a.open = collections.Update(a.open, collections.Located{Collection: col, Dir: dir})
@@ -248,12 +248,12 @@ func (a *App) openWorkspaceAt(dir string) {
 	}
 	dir = collections.AbsDir(dir)
 	if err := a.FlushWorkspace(); err != nil {
-		a.toast("Saving the current collection failed: "+err.Error(), severity.Error)
+		a.toast("Saving the current collection failed: "+err.Error(), workspace.Error)
 		return
 	}
 	loaded, err := a.store.Load(dir)
 	if err != nil {
-		a.toast("Cannot open "+dir+": "+err.Error(), severity.Error)
+		a.toast("Cannot open "+dir+": "+err.Error(), workspace.Error)
 		return
 	}
 	env := a.rememberedEnv(dir)

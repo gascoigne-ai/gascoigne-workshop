@@ -5,23 +5,23 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/sysinfo"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 type fakeHost struct {
-	report sysinfo.Report
+	report settings.Report
 	copied string
 }
 
-func (h *fakeHost) System() sysinfo.Report { return h.report }
-func (h *fakeHost) CopyText(text string)   { h.copied = text }
+func (h *fakeHost) System() settings.Report { return h.report }
+func (h *fakeHost) CopyText(text string)    { h.copied = text }
 
 func newHost() *fakeHost {
-	return &fakeHost{report: sysinfo.Report{Sections: []sysinfo.Section{
-		{Title: "Rendering", Rows: []sysinfo.Row{{Label: "Graphics library", Value: "Metal"}, {Label: "Vsync", Value: "on"}}},
-		{Title: "System", Rows: []sysinfo.Row{{Label: "OS", Value: "darwin/arm64"}}},
+	return &fakeHost{report: settings.Report{Sections: []settings.Section{
+		{Title: "Rendering", Rows: []settings.Row{{Label: "Graphics library", Value: "Metal"}, {Label: "Vsync", Value: "on"}}},
+		{Title: "System", Rows: []settings.Row{{Label: "OS", Value: "darwin/arm64"}}},
 	}}}
 }
 

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fontfamily"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	core "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -22,10 +22,10 @@ const (
 
 // manyFamilies are 300 families whose files cannot be read, so every row
 // shows its name in the interface font.
-func manyFamilies() []fontfamily.Family {
-	var families []fontfamily.Family
+func manyFamilies() []settings.Family {
+	var families []settings.Family
 	for i := range 300 {
-		families = append(families, fontfamily.Family{Name: fmt.Sprintf("Family %03d", i), Regular: fmt.Sprintf("none#%d", i)})
+		families = append(families, settings.Family{Name: fmt.Sprintf("Family %03d", i), Regular: fmt.Sprintf("none#%d", i)})
 	}
 	return families
 }
@@ -40,14 +40,14 @@ func TestTheFontListLaysOutAsPinned(t *testing.T) {
 		role          FontRole
 		current       string // the family in use for role
 		search        string
-		families      func(t *testing.T) []fontfamily.Family
+		families      func(t *testing.T) []settings.Family
 	}{
 		{"builtin-selected-wide", listWideW, listWideH, FontCode, "", "", testFamilies},
 		{"family-selected-narrow", listNarrowW, listNarrowH, FontUI, "Go Mono", "", testFamilies},
 		{"searched-wide", listWideW, listWideH, FontUI, "Go", "mono", testFamilies},
 		{"no-match-wide", listWideW, listWideH, FontUI, "", "nothing like it", testFamilies},
-		{"no-families-narrow", listNarrowW, listNarrowH, FontUI, "", "", func(*testing.T) []fontfamily.Family { return nil }},
-		{"many-scrolled-wide", listWideW, listWideH, FontUI, "Family 150", "", func(*testing.T) []fontfamily.Family { return manyFamilies() }},
+		{"no-families-narrow", listNarrowW, listNarrowH, FontUI, "", "", func(*testing.T) []settings.Family { return nil }},
+		{"many-scrolled-wide", listWideW, listWideH, FontUI, "Family 150", "", func(*testing.T) []settings.Family { return manyFamilies() }},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -91,7 +91,7 @@ type listDriver struct {
 	host   *fakeHost
 }
 
-func newListDriver(t *testing.T, families []fontfamily.Family) *listDriver {
+func newListDriver(t *testing.T, families []settings.Family) *listDriver {
 	t.Helper()
 	ctx, err := core.NewCtx(testTheme())
 	if err != nil {

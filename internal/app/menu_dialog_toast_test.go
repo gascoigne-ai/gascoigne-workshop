@@ -3,7 +3,7 @@ package app
 import (
 	"errors"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/severity"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"github.com/hajimehoshi/ebiten/v2"
@@ -226,8 +226,8 @@ func TestInfoToastsExpireAndErrorsStayUntilClicked(t *testing.T) {
 	a := testApp(t)
 	clock := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
 	a.now = func() time.Time { return clock }
-	a.toast("Saved", severity.Info)
-	a.toast("Disk full", severity.Error)
+	a.toast("Saved", workspace.Info)
+	a.toast("Disk full", workspace.Error)
 	a.step(core.Input{})
 	if len(a.toasts) != 2 {
 		t.Fatalf("toasts = %d", len(a.toasts))
@@ -257,8 +257,8 @@ func TestInfoToastsExpireAndErrorsStayUntilClicked(t *testing.T) {
 
 func TestClickingOneToastDismissesOnlyThatOne(t *testing.T) {
 	a := testApp(t)
-	a.toast("first", severity.Error)
-	a.toast("second", severity.Error)
+	a.toast("first", workspace.Error)
+	a.toast("second", workspace.Error)
 	a.step(core.Input{})
 	x, y, w, h := toastRect(2, 0)
 	click(a, x+w/2, y+h/2)
@@ -270,7 +270,7 @@ func TestClickingOneToastDismissesOnlyThatOne(t *testing.T) {
 func TestOnlyTheNewestToastsAreKept(t *testing.T) {
 	a := testApp(t)
 	for i := 0; i < 8; i++ {
-		a.toast(strings.Repeat("x", i+1), severity.Error)
+		a.toast(strings.Repeat("x", i+1), workspace.Error)
 	}
 	if len(a.toasts) != widget.ToastMax || len(a.toasts[len(a.toasts)-1].Text) != 8 {
 		t.Fatalf("%d toasts, newest %q", len(a.toasts), a.toasts[len(a.toasts)-1].Text)

@@ -2,7 +2,7 @@ package app
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/severity"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 	"net/http/cookiejar"
 	"net/url"
 	"strings"
@@ -13,12 +13,12 @@ import (
 func (a *App) clearCookies() {
 	jar, err := cookiejar.New(nil)
 	if err != nil {
-		a.toast(err.Error(), severity.Error)
+		a.toast(err.Error(), workspace.Error)
 		return
 	}
 	a.jar = jar
 	a.reg = a.newRegistry()
-	a.toast("Cookies cleared", severity.Info)
+	a.toast("Cookies cleared", workspace.Info)
 }
 
 // newRegistry builds the protocols from the cookie jar, the network
@@ -36,7 +36,7 @@ func (a *App) newRegistry() request.Registry {
 func (a *App) showCookies(tab *reqTab) {
 	u, err := url.Parse(tab.Req.Expanded(a.varsFor(tab.Req)).URL)
 	if err != nil || u.Host == "" {
-		a.toast("The URL has no host to look up cookies for", severity.Error)
+		a.toast("The URL has no host to look up cookies for", workspace.Error)
 		return
 	}
 	var lines []string

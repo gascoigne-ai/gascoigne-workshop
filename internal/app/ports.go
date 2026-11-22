@@ -10,7 +10,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fontfamily"
 )
 
 // noFileDialog is the file chooser of an app started without one: callers
@@ -46,8 +45,8 @@ func (noBrowser) Show(context.Context, []byte, string) error {
 // noFonts is the font store of an app started without one: no families.
 type noFonts struct{}
 
-func (noFonts) Scan() []fontfamily.Family { return nil }
-func (noFonts) Load(fontfamily.Family) ([]byte, []byte, error) {
+func (noFonts) Scan() []settings.Family { return nil }
+func (noFonts) Load(settings.Family) ([]byte, []byte, error) {
 	return nil, nil, errors.New("no font store")
 }
 

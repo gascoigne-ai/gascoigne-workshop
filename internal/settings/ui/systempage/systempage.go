@@ -7,7 +7,7 @@
 package systempage
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/sysinfo"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -16,7 +16,7 @@ import (
 // Host is what the page needs of the application.
 type Host interface {
 	// System is the report as it is now.
-	System() sysinfo.Report
+	System() settings.Report
 	// CopyText puts text on the clipboard.
 	CopyText(text string)
 }

@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/severity"
 	"path/filepath"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -56,7 +55,7 @@ func (a *App) askDesktop(title string, mode workspace.FileMode, name string, don
 		case err == workspace.ErrCancelled || ctx.Err() != nil: // closed by the user, or taken back
 			return nil
 		case err != nil:
-			return func() { a.toast("File dialog failed: "+err.Error(), severity.Error) }
+			return func() { a.toast("File dialog failed: "+err.Error(), workspace.Error) }
 		default:
 			return func() { done(path) }
 		}
