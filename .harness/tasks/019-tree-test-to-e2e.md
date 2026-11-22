@@ -3,7 +3,7 @@ kind: refactor
 commit: refactor(e2e): whole-app guard tests move to e2e
 scope: internal/app/**, e2e/**, .harness/architecture/app.md
 not_before: 2026-01-01
-depends_on: 018-driver-to-drive
+depends_on: 017-apptest-seam
 
 # First whole-app tests move to e2e
 
