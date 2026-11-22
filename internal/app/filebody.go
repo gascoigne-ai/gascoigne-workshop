@@ -4,8 +4,8 @@ import (
 	"context"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/editor"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/bus"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/editor"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/bus"
 
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"

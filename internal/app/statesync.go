@@ -2,11 +2,11 @@ package app
 
 import (
 	"encoding/json"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/collections"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/tree"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/serial"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/collections"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/tree"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/serial"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/tabs"
 	"path/filepath"
 	"strings"
 	"time"

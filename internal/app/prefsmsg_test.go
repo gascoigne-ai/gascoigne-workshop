@@ -4,8 +4,8 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/prefs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/theme"
 )
 

@@ -45,7 +45,7 @@ state: no diffing and no reactive system. Elements and options are indexed in th
 
 App facts kept here for now; they belong with the app.
 
-- **Background writes** (`app/asyncwrite.go`, `workspace/controller/serial`): autosave clones what
+- **Background writes** (`app/asyncwrite.go`, `workspace/serial`): autosave clones what
   it writes on the UI goroutine and runs the write as a Cmd. `serial.Queue` runs one write per file
   and keeps only the newest waiting one, so an older write never lands after a newer one; the
   outcome returns on the bus. Files the user names (saved body, Postman export, screenshot) go the

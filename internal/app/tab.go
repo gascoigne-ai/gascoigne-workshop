@@ -2,13 +2,13 @@ package app
 
 import (
 	"context"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/editor"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/mcpexplorer"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/editor"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/mcpexplorer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model/assert"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/ui/mcpform"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/controller/viewer"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/viewer"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"github.com/hajimehoshi/ebiten/v2"
 	"slices"

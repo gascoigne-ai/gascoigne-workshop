@@ -9,12 +9,12 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/mcpexplorer"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/mcpexplorer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/ui/mcpform"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/respview"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/bus"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/bus"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )

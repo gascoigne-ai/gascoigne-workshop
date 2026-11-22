@@ -3,7 +3,7 @@ package app
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/postman"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/folders"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/filebrowser"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/filebrowser"
 	"os"
 	"path/filepath"
 	"strings"

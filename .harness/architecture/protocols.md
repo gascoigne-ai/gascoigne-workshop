@@ -16,7 +16,7 @@ connection implements `port.Streamer`; `Registry.Connect` opens a `port.Session`
 - Every log line is a `port.Event`; code compares its `Kind`, never the peer's `Name` (see the
   `port.Event` doc).
 - The connection is the machine `tabs.ConnState`; its table and the reason for it are in
-  `controller/tabs/connstate.go`. `Auto-reconnect` (per tab, not saved) turns a move into retrying
+  `workspace/tabs/connstate.go`. `Auto-reconnect` (per tab, not saved) turns a move into retrying
   into a move to idle when off. While retrying, a timer sends `wsRetry` after `retryDelay`; the timer
   is not an event of the machine. Whether a request is in flight is a second machine, `SendState`
   (`sendstate.go` says why it is separate).
@@ -92,7 +92,7 @@ stateDiagram-v2
 - Sampling: with `MCP.Sampler` nil it is neither offered nor answered. The app shows one prompt at a
   time; a second gets the user-rejected error (-1) at once.
 - The explorer calls through `port.Requester` on the bus, so the answer matches its request; its
-  UI-free state is `request/controller/mcpexplorer`. A tool result with `isError` shows as an error.
+  UI-free state is `request/mcpexplorer`. A tool result with `isError` shows as an error.
 - `model.JSONSchema` is decoded once, at the MCP answer and at the OpenAPI import, and read typed
   afterwards. Only the keywords it has fields for are read. Real captures of the example server are
   under `internal/request/model/testdata/mcp`.

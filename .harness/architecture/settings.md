@@ -22,7 +22,7 @@ flowchart LR
   title row.
 - **Dialog and host** (`settings/ui/settingsui`): `settingsui.SettingsDialog` is `App.prefs` and
   the `App` is its `Host`. Host methods only read; everything a page asks for is a
-  `settings/controller/prefs` message applied by `App.Send`. `SetFonts` stays a method because its
+  `settings/prefs` message applied by `App.Send`. `SetFonts` stays a method because its
   error is the answer. The Colors, Shortcuts and System pages are separate `ui` packages that the
   App draws through `Host.ExtraPage`.
 - **Closing forgets.** Closing the dialog drops page, search, raw view and typed text

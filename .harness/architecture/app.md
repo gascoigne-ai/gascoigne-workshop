@@ -25,17 +25,17 @@ flowchart LR
   appstate --> tree["view tree, rebuilt every frame"]
 ```
 
-- **Bus** (`workspace/controller/bus`): the only path from a goroutine to the UI. Goroutines read
+- **Bus** (`workspace/bus`): the only path from a goroutine to the UI. Goroutines read
   only fields that never change after `NewApp` (the bus, the ports). A one-shot send is a `Cmd` run
   by `Bus.Run` whose result (`sendResult`) comes back as a message. A connection emits many events,
   so its goroutine dispatches `wsOpened`/`wsFailed` and each `wsReceived` itself and returns
   `wsClosed` as its `Cmd` result; a retry dispatches `wsRetry` from a timer. A dispatched `func()` runs on the UI goroutine (file dialog answers, the
   gRPC method menu, MCP sampling dialogs, `prefs.Later`).
-- **Request edits** (`request/controller/editor`): no code outside `editor` assigns to a field of a
+- **Request edits** (`request/editor`): no code outside `editor` assigns to a field of a
   tab's request. `editRequest` writes the result into the collection's own request, so the
   sidebar, the autosave and the dirty dot see it at once. The gRPC stream flag is tab state, not
   part of the request. Renames and moves are tree operations (`tree.Update`, `treeops.go`).
-- **Tab list** (`workspace/controller/tabs`): changes only through `tabs.Update`; `App.updateTabs`
+- **Tab list** (`workspace/tabs`): changes only through `tabs.Update`; `App.updateTabs`
   then creates or drops the widget state of tabs that appeared or went. Any tab change selects its
   request in the tree and opens the folders above it (`App.revealRequest`).
 - **Table rows**: every change goes through `App.applyRows`, which keeps the undo history
@@ -84,7 +84,7 @@ The drop outline is the row's `DropBorder` token, empty when not the target.
   no code clears the old owner by hand.
 - **Keys**: `routeKeys` (`game.go`) gives the frame's keys to the overlay, the tree, the shortcuts
   or the table undo, in that order of claim. Escape closes one layer per press, the topmost in
-  `workspace/controller/overlay`'s order, ending with cancelling a running request.
+  `workspace/overlay`'s order, ending with cancelling a running request.
 - **Shortcuts**: the `shortcuts` table (`shortcuts.go`) holds each action with a stable `id` and its
   default. A user binding is `settings.Shortcuts[id]`, stored only when it differs from the default.
   `App.bindingOf` is the one place a binding is resolved; the shortcut runner, menus' shortcut

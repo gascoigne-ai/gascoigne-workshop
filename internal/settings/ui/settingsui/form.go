@@ -2,7 +2,7 @@ package settingsui
 
 import (
 	"fmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/prefs"
 	"strconv"
 	"strings"
 

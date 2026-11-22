@@ -1,7 +1,7 @@
 package shortcutpage
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/prefs"
 	"strings"
 	"testing"
 	"time"

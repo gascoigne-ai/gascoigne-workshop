@@ -4,14 +4,14 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
 	"path/filepath"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/collections"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // Whole collections: new, open, rename, save, close, move and delete. A collection is a
 // folder on disk; the open ones are a.open (see openset.go). The rules are
-// in collection/controller/collections, the I/O behind the store port.
+// in collection/collections, the I/O behind the store port.
 
 // collectionsDir is the folder new collections are made in: beside the
 // default workspace, never inside it, since a folder with a folder.json

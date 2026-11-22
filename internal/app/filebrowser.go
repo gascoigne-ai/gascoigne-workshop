@@ -7,8 +7,8 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/bus"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/filebrowser"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/bus"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/filebrowser"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"

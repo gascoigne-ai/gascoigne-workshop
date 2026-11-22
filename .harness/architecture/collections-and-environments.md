@@ -16,7 +16,7 @@
 Several collections are open at once (the user's decisions), each a root of the tree with its own
 folder (`""` until the first save) and active environment, so nothing leaks between them; a
 collection is known by its folder. `App.open` is a `collections.Set`
-(`collection/controller/collections`).
+(`collection/collections`).
 
 - **Ownership**: tabs, saving, rename, delete, find, sending and captured values go to the collection
   that owns the request (`Set.Owner`). A request of none, such as the blank tab, goes with the
