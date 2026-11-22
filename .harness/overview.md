@@ -48,7 +48,7 @@ flowchart TB
   ui & app --> toolkit["uitoolkit: core / view / widget / markup"]
 ```
 
-Dependencies point inward: what each package may import is written once, in `internal/CLAUDE.md`; no test checks it. The adapters never reach the App directly: `cmd/workshop` builds them and hands them in through `Options`, and a nil port falls back to a null one, so tests and screenshots need no desktop.
+Dependencies point inward: what each package may import is written once, in `internal/CLAUDE.md`; `e2e/layers_test.go` checks it in `make check`. The adapters never reach the App directly: `cmd/workshop` builds them and hands them in through `Options`, and a nil port falls back to a null one, so tests and screenshots need no desktop.
 
 ## One request, end to end
 

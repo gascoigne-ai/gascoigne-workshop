@@ -25,7 +25,7 @@ Layout C, feature slices. Every domain has moved; `internal/workspace` is gone.
 - Written exception: `feature/settings/theme` imports `uitoolkit/core` and `uitoolkit/theming`, because theme data is toolkit-bound. Its package doc says why.
 - A new package goes into the kernel, a domain, or its `ui` or `adapter` zone. No `utils`, `common` or `helpers`.
 
-No test checks these rules. The import-layer check was removed in commit 7d856abc and is not restored (the user's choice), so a review keeps them.
+`make check` enforces these rules: `e2e/layers_test.go` reads the compiler's direct imports (`go list`, both tag sets, test files included) and checks them against the default-deny rule table in `e2e/layers_rules_test.go`. Every written exception is a row there with its reason. Six test-only rows let a test file import a real adapter or package as a fixture (`exampleserver` tests, `history/ui/sentlog`, `settings/ui/formpage`, `settings/ui/settingsui`); a production import never matches them. A new exception is a new row, with the user's approval.
 
 ## Names
 

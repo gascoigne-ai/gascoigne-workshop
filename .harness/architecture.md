@@ -62,11 +62,13 @@ flowchart LR
 ```
 
 Every edge between features is a kernel package (the request model included); `go list` shows no
-other one, except the `exampleserver` dev tool. Nothing checks it in `make check` yet.
+other one, except the `exampleserver` dev tool. `e2e/layers_test.go` checks it in `make check`.
 
 ## Known layer gaps
 
 - A domain root imports a sub-package of its own domain: `feature/workspace` imports `feature/workspace/state`.
 - `internal/exampleserver` imports `feature/send/proto/ws`; the one written exception in `internal/CLAUDE.md`.
-- No layer check runs in `make check`; `common/scripts/check-layers.sh` exists and is not wired
-  (it needs a `.harness/layers.txt`).
+- Six test-only rows in `e2e/layers_rules_test.go` let tests import real adapters as fixtures:
+  `exampleserver` (`feature/collections`, `feature/send/proto`), `history/ui/sentlog` (`history/adapter`),
+  `settings/ui/formpage` (`platform/fonts`, `settings/adapter/settingsfile`), `settings/ui/settingsui`
+  (`settings/adapter/settingsfile`). Follow-up: replace the real adapters with fakes and delete the rows.
