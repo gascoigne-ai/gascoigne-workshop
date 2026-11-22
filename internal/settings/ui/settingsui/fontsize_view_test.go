@@ -127,12 +127,12 @@ func TestResetPutsTheDefaultFaceSizeBackIntoTheField(t *testing.T) {
 	}
 }
 
-// Each size sits right after the font it sizes (the interface size after the
-// interface font, the code size after the code font), the scale after both.
+// Each size sits on the line of the font it sizes; Small text size follows the
+// interface line, the scale comes after both.
 func TestSizeRowsSitNextToTheirFonts(t *testing.T) {
 	page := newFormDriver(t, "Appearance").view()
 	last := -1
-	for _, title := range []string{"Interface font", "Interface font size", "Small text size", "Code font", "Code font size", "Interface scale"} {
+	for _, title := range []string{"Interface font", "Small text size", "Code font", "Interface scale"} {
 		at := strings.Index(page, `text="`+title+`"`)
 		if at < 0 || at < last {
 			t.Fatalf("row %q is missing or out of order in the page:\n%s", title, page)

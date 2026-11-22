@@ -2,7 +2,7 @@
 // with the search field on top, a title row over every page, the pages
 // generated from the settings schema (a row per setting: title, description
 // and a control beside or under them, a reset icon when it differs from the
-// default; a bool is a switch), the font pickers, and the text of
+// default; a bool is a switch; a font and its size share one row), the font pickers, and the text of
 // settings.json with live validation and completion. The application
 // supplies the pages that are tables (colors, shortcuts) and does what a
 // change of settings implies; the dialog reaches it through Host.

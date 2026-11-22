@@ -16,7 +16,7 @@ flowchart LR
 - **Rows and controls.** A row is the title block (title, reset icon while changed, description) and
   one control. `placementOf` puts the control beside the block or under it from the setting's
   `Kind` (a bool, a stepped number and an enum of at most three values go right) with a table
-  (`customPlacement`) for the custom controls; a bool is a `widget.Switch`. The reset icon, the
+  (`customPlacement`) for the custom controls; a bool is a `widget.Switch`. A font and its size are one row (`fontFaces`, `face.go`): the title block is the font's (its description ends with the size's range, read from the size row), the control line holds the font drop-down and the stepper with its own Reset; `FormPage` skips the size row, and a search lists the line once whichever of the two settings it names. The reset icon, the
   category heading (search results only), the page title row and the search field in the page list
   follow `style.md` (Settings row). The Colors, Shortcuts and System pages stay tables and get only the
   title row.
@@ -33,7 +33,7 @@ flowchart LR
   sections (`sections.go`) after its `version`; the Go struct stays flat. The older flat form is
   read too and regrouped on the next write. The written bytes are pinned by
   `testdata/encode-*.golden`.
-- **Font sizes** are three number rows, each next to the font it sizes: `fontSize` (interface,
+- **Font sizes** are three number settings; the interface and code sizes sit on the line of their font, Small text size is a row of its own: `fontSize` (interface,
   10 to 24 px, default 14), `smallFontSize` (captions, hints, table headers; 8 to 24, default 12)
   and `codeFontSize` (bodies and code views; 8 to 32, default 13). Each is an `Int` field shown in
   the form as a minus button, a field and a plus button (`SettingsDialog.stepControl`): a step

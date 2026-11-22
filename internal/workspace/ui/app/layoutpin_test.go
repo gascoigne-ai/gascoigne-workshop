@@ -16,7 +16,7 @@ import (
 // every rect) of the settings dialog scene laid out at 1280x800. Layout
 // work such as measure caching must not move a rect; a deliberate change
 // of the scene updates the digest (the test prints the new one).
-const settingsDialogRects = "54736c9ecf0dc76a8fed7a838b33387a3102ab468bb6338d884cac0b3ebb455d"
+const settingsDialogRects = "ebccda590db8eb0f6dfc7acd3c9af401c581accd881afe3889701b5a5871ded9"
 
 func TestSettingsDialogLaysOutToTheSameRects(t *testing.T) {
 	prefs := settings.Default()

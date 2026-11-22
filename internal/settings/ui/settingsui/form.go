@@ -32,13 +32,9 @@ const (
 // settingControls and is not chosen by Kind alone: a stepper is short, the
 // rest of them need the width. A key that is not here goes by Kind.
 var customPlacement = map[string]placement{
-	"fontSize":      placeRight,
 	"smallFontSize": placeRight,
-	"codeFontSize":  placeRight,
 	"theme":         placeBelow, // one chip per installed theme
 	"uiScale":       placeBelow, // a slider wants a long track
-	"uiFont":        placeBelow, // a dropdown field with a family name
-	"codeFont":      placeBelow,
 }
 
 // shortChoices is how many values an enum may have for its chips to sit
@@ -66,9 +62,7 @@ func placementOf(field settings.Field) placement {
 // their kind. Everything else is a row of chips (an enum), On / Off (a
 // boolean) or a text field (text and numbers).
 var settingControls = map[string]settingControl{
-	"fontSize":      stepControlOf,
 	"smallFontSize": stepControlOf,
-	"codeFontSize":  stepControlOf,
 	"theme": func(ctx *w.Ctx, dialog *SettingsDialog, host Host, _ settings.Field) Node {
 		return dialog.themeChips(ctx, host)
 	},
@@ -86,12 +80,6 @@ var settingControls = map[string]settingControl{
 	},
 	"uiScale": func(ctx *w.Ctx, dialog *SettingsDialog, host Host, _ settings.Field) Node {
 		return dialog.scaleControl(ctx, host)
-	},
-	"uiFont": func(ctx *w.Ctx, dialog *SettingsDialog, host Host, _ settings.Field) Node {
-		return dialog.fontControl(ctx, host, FontUI)
-	},
-	"codeFont": func(ctx *w.Ctx, dialog *SettingsDialog, host Host, _ settings.Field) Node {
-		return dialog.fontControl(ctx, host, FontCode)
 	},
 }
 
@@ -404,6 +392,15 @@ func settingMatches(field settings.Field, query string) bool {
 	return strings.Contains(haystack, needle)
 }
 
+// formListsFor reports whether the search text lists field: a font through
+// its face, so the line shows whichever of its two settings the text names.
+func formListsFor(field settings.Field, face fontFace, isFont bool, query string) bool {
+	if isFont {
+		return faceMatches(face, query)
+	}
+	return settingMatches(field, query)
+}
+
 // FormPage is the settings of one category, or, while a search text is
 // typed, those of every category that match it.
 func (d *SettingsDialog) FormPage(ctx *w.Ctx, host Host, category string) Node {
@@ -411,12 +408,17 @@ func (d *SettingsDialog) FormPage(ctx *w.Ctx, host Host, category string) Node {
 	var rows []Node
 	last := ""
 	for _, field := range settings.Schema {
-		if field.Hidden || !settingMatches(field, d.Search.Text) || (!searching && field.Category != category) {
+		face, isFont := faceOfFont(field.Key)
+		if field.Hidden || isFaceSize(field.Key) || !formListsFor(field, face, isFont, d.Search.Text) || (!searching && field.Category != category) {
 			continue
 		}
 		if searching && field.Category != last {
 			last = field.Category
 			rows = append(rows, formCaptionTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{"category": field.Category})))
+		}
+		if isFont {
+			rows = append(rows, d.faceRow(ctx, host, face))
+			continue
 		}
 		rows = append(rows, d.settingRow(ctx, host, field))
 	}

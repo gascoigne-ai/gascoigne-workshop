@@ -130,7 +130,7 @@ func TestThePlacementOfAControlFollowsItsKind(t *testing.T) {
 	}{
 		{"enum of three", "Appearance", "Response view", `text="Compact"`, true},
 		{"enum of two", "Appearance", "Contrast", `text="Normal"`, true},
-		{"stepped number", "Appearance", "Interface font size", `text="+"`, true},
+		{"stepped number", "Appearance", "Small text size", `text="+"`, true},
 		{"theme chips", "Appearance", "Theme", `text="Light"`, false},
 		{"scale slider", "Appearance", "Interface scale", "sliderB", false},
 		{"font dropdown", "Appearance", "Interface font", "fieldB", false},

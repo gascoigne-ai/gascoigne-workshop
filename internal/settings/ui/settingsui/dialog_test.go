@@ -29,6 +29,7 @@ type fakeHost struct {
 	pickTitle string
 	pickDone  func(path string)
 	saved     int
+	fontsSet  int                // how many times the dialog applied the fonts
 	store     port.SettingsStore // replaces the real files when a test sets it
 	changes   int                // how many Change messages the dialog sent
 }
@@ -48,7 +49,7 @@ func (h *fakeHost) SetScaleLive(percent int)            { h.current.UIScalePct =
 func (h *fakeHost) Save()                               { h.saved++ }
 func (h *fakeHost) Replace(current settings.Settings)   { h.current = current }
 func (h *fakeHost) SettingsPath() string                { return h.path }
-func (h *fakeHost) SetFonts(ui, code w.FontData) error  { return nil }
+func (h *fakeHost) SetFonts(ui, code w.FontData) error  { h.fontsSet++; return nil }
 func (h *fakeHost) Toast(text string, _ severity.Level) { h.toasts = append(h.toasts, text) }
 func (h *fakeHost) SetStatus(string)                    {}
 func (h *fakeHost) OpenMenu(posX, posY int, items []prefs.MenuItem) {
