@@ -16,9 +16,16 @@ import (
 
 	"github.com/BurntSushi/toml"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/miniyaml"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/importers/miniyaml"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 )
+
+// Source reads the client config: the collections and servers a build offers
+// when no workspace is open. It lives here, beside Config, so the feature
+// root imports no sub-package.
+type Source interface {
+	Load() (Config, error)
+}
 
 // ServersName is the name of the folder that holds one request per
 // configured server.

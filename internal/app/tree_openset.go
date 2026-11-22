@@ -5,9 +5,9 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/collections"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/envs"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/tree"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/collections"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/tree"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/environments"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/autosave"
@@ -15,7 +15,7 @@ import (
 
 // The open collections: a.open holds them in tree order, each with the
 // folder it is saved in and its own active environment (the rules are in
-// collection/collections). Whatever acts on a request, a folder
+// feature/collections/collections). Whatever acts on a request, a folder
 // or a tab acts on the collection that holds it; what has no node of its
 // own (the header, the environment chip, Ctrl+S) acts on the focused one.
 

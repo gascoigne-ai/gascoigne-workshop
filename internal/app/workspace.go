@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/collections"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/serial"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/tabs"
 

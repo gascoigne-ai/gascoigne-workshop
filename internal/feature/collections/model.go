@@ -1,10 +1,11 @@
-// Package collection holds the collection domain's types and the ports at its
-// boundary: where a collection is saved and where the client config is read
-// from.
+// Package collection is the root of the collections feature: the sample
+// collections a build starts from, the collection tree rows and the Store
+// port, where a collection is saved. The package is named collection, not
+// collections, because the sub-package collections (the open set) already
+// owns that name and every caller reads collection.Sample().
 package collection
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/clientconfig"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 )
 
@@ -25,10 +26,4 @@ type Store interface {
 	Delete(dir string) error
 	// List is the folders below parent that hold a collection.
 	List(parent string) ([]string, error)
-}
-
-// ClientConfigs reads the client config: the collections and servers a
-// build offers when no workspace is open.
-type ClientConfigs interface {
-	Load() (clientconfig.Config, error)
 }

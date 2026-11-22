@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/clientconfig"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/clientconfig"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/userdir"
 )
 

@@ -1,12 +1,12 @@
 // Package destpicker is the dialog that asks where a request or folder goes
 // when it is moved or copied: every folder of every open collection in a
 // list, some of them refused with a reason. The rules (which rows are
-// refused) come from collection/transfer; this package holds the selection
+// refused) come from feature/collections/transfer; this package holds the selection
 // and draws the list.
 package destpicker
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/transfer"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/transfer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"

@@ -3,7 +3,8 @@ package app
 import (
 	"cmp"
 	"fmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/clientconfig"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/theme"
@@ -50,7 +51,7 @@ type Options struct {
 	BaseScale        float64                                       // the platform's interface factor under the user's scale; 0 is 1
 	WorkspaceDir     string                                        // collection folder; "" uses the remembered one, else the client config, else the sample
 	Sample           func() request.Collection                     // the collection shown without a workspace or client config; nil uses collection.GitHubSample
-	Clients          collection.ClientConfigs                      // the client config a build offers without a workspace; nil has none
+	Clients          clientconfig.Source                           // the client config a build offers without a workspace; nil has none
 	DefaultWorkspace string                                        // where saving goes when there is no workspace yet
 }
 

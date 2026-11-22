@@ -58,6 +58,6 @@ func exampleHealthProto() string {
 	if !ok || !filepath.IsAbs(source) {
 		return relative
 	}
-	root := filepath.Join(filepath.Dir(source), "..", "..")
+	root := filepath.Join(filepath.Dir(source), "..", "..", "..")
 	return filepath.Join(root, relative)
 }

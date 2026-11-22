@@ -18,8 +18,8 @@ import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/app"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/adapter/store"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/adapter/store"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
 	historyadapter "github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history/adapter"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/adapter/settingsfile"

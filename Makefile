@@ -16,10 +16,10 @@ test:
 # regression test: fix it, keep the file.
 FUZZTIME ?= 30s
 FUZZ_TARGETS = \
-	./internal/collection/miniyaml:FuzzParse \
-	./internal/collection/openapi:FuzzParse \
-	./internal/collection/postman:FuzzParse \
-	./internal/collection/clientconfig:FuzzParse \
+	./internal/feature/collections/importers/miniyaml:FuzzParse \
+	./internal/feature/collections/importers/openapi:FuzzParse \
+	./internal/feature/collections/importers/postman:FuzzParse \
+	./internal/feature/collections/clientconfig:FuzzParse \
 	./internal/request:FuzzParseCurl \
 	./internal/kernel/request:FuzzDecodeJSONSchema \
 	./internal/kernel/request:FuzzURLParams \
@@ -38,7 +38,7 @@ FUZZ_TARGETS = \
 	./internal/kernel/request:FuzzParseProtocol \
 	./internal/kernel/request:FuzzParseBodyType \
 	./internal/kernel/request:FuzzParseAuthType \
-	./internal/collection/adapter/store:FuzzLoad \
+	./internal/feature/collections/adapter/store:FuzzLoad \
 	./internal/workspace/adapter/statefile:FuzzLoad \
 	./internal/feature/settings:FuzzDecode \
 	./internal/kernel/fileversion:FuzzRead \
@@ -74,7 +74,7 @@ vet-release:
 	go vet -tags release ./...
 
 # Directories that hold a file with a release build tag.
-RELEASE_BASE = cmd/workshop internal/collection internal/kernel/userdir
+RELEASE_BASE = cmd/workshop internal/feature/collections internal/kernel/userdir
 
 # The release test run covers RELEASE_BASE and every package whose build or
 # test binary links one of them: the rest compile the same under both tags.

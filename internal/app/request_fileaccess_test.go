@@ -12,7 +12,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/postman"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/importers/postman"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/filebrowser"

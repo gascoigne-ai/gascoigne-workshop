@@ -2,9 +2,9 @@ package app
 
 import (
 	"fmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/openapi"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/postman"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/tree"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/importers/openapi"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/importers/postman"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/tree"
 	kernelrequest "github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"

@@ -41,7 +41,8 @@ domain directory under `internal/` (root, controllers, `ui/`, `adapter/`) or the
 | File | Module | Owns |
 |---|---|---|
 | `architecture/request.md` | `internal/kernel/request`, `internal/request` | model, ports, protocols (rest, websocket, sse, mcp, grpc), assert, editor, calltrace, mcpform |
-| `architecture/collection.md` | `internal/collection` | tree, environments, importers, transfer, store, client config, example server |
+| `internal/feature/collections/FEATURE.md` | `internal/feature/collections` | open set, tree, importers, transfer, store, client config, sample and example server |
+| `internal/feature/environments/FEATURE.md` | `internal/feature/environments` | environments, variables resolution, the chip's menu |
 | `architecture/response.md` | `internal/response` | viewer, preview |
 | `internal/feature/history/FEATURE.md` | `internal/feature/history` | responses kept per request, sent log |
 | `internal/feature/settings/FEATURE.md` | `internal/feature/settings`, `internal/platform` | schema, prefs, theme, settings dialog and its pages; the OS adapters for display scale, fonts, key repeat and system info |
@@ -56,12 +57,12 @@ domain directory under `internal/` (root, controllers, `ui/`, `adapter/`) or the
 
 ```mermaid
 flowchart LR
-  app["app"] --> request & collection & response & settings & workspace
+  app["app"] --> request & collections & environments & response & settings & workspace
   app --> toolkit["uitoolkit"]
-  collection --> request
+  collections & environments --> request
   response --> request
   workspace --> request
-  collection & response & settings & workspace --> kernel["kernel (shared leaves)"]
+  collections & environments & response & settings & workspace --> kernel["kernel (shared leaves)"]
   request --> kernel
 ```
 
@@ -70,8 +71,7 @@ other one. Nothing checks it in `make check` yet.
 
 ## Known layer gaps
 
-- A domain root imports a sub-package of its own domain: `collection` imports `collection/clientconfig`,
-  `workspace` imports `workspace/state`. 
+- A domain root imports a sub-package of its own domain: `workspace` imports `workspace/state`. 
 - `internal/exampleserver` imports `request/adapter/proto/ws`; no rule covers it.
 - No layer check runs in `make check`; `common/scripts/check-layers.sh` exists and is not wired
   (it needs a `.harness/layers.txt`).

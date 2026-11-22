@@ -1,8 +1,22 @@
-## Collections and environments
+# Feature: collections
+
+Collections on disk and in the window: the open set, the tree, move and copy, import and export, the sample collections, and the client config a release build reads. Environments are a separate feature (`internal/feature/environments`).
+
+## Layout
+- `internal/feature/collections`: the root, package `collection` (not `collections`: the sub-package `collections` owns that name and callers read `collection.Sample()`). Holds `model.go` (the `Store` port), the tree rows (`tree.go`: `Row`, `Rows`) and the sample collections (`sample.go`, `sample_debug.go`, `sample_release.go`).
+- `collections`: the open set (`Set`), its remembered list and ownership rules.
+- `tree`: the pure tree operations (lookup, update).
+- `transfer`: move and copy of a node, validated before anything changes.
+- `clientconfig`: the client config parser and the `Source` port (`Load() (Config, error)`); it lives here so the root imports no sub-package.
+- `importers/{postman,openapi,miniyaml}`: pure readers and writers; the App only picks the file and adds the result.
+- `adapter/store` (package `store`, the disk `Store`) and `adapter/clientfile` (the `Source` that reads `.workshop` files).
+- `ui/destpicker`: the Move to and Copy to dialog (look in `.harness/style.md`).
+- Imports: the kernel only (`kernel/request`, `kernel/openset`, `kernel/fileversion`, `kernel/userdir`) plus the toolkit for `ui`. Inside the feature the usual direction holds: adapters and controllers import the root and the sub-packages, `clientconfig` imports `importers/miniyaml`.
+
+## Behavior
 
 ### On disk
-
-- `collection/adapter/store` writes a collection as a folder of small JSON files (format and why: its package
+- `adapter/store` writes a collection as a folder of small JSON files (format and why: its package
   doc). Writes are atomic; unchanged files are not rewritten.
 - A gRPC request's proto paths are relative to the collection's folder when inside it, written with
   `/`, absolute otherwise (`ProtoSource.Stored`, `Loaded`), so the folder can move. Renaming a collection moves
@@ -12,11 +26,10 @@
   the next save.
 
 ### Open collections
-
 Several collections are open at once (the user's decisions), each a root of the tree with its own
 folder (`""` until the first save) and active environment, so nothing leaks between them; a
 collection is known by its folder. `App.open` is a `collections.Set`
-(`collection/collections`).
+(`collections` sub-package).
 
 - **Ownership**: tabs, saving, rename, delete, find, sending and captured values go to the collection
   that owns the request (`Set.Owner`). A request of none, such as the blank tab, goes with the
@@ -42,19 +55,8 @@ collection is known by its folder. `App.open` is a `collections.Set`
 - Roots reorder by menu, not by drag: a drag in the tree moves or copies a node, and a root does not
   drag.
 
-### Variables and environments
-
-- Resolution order (`Collection.VarsFor`): collection < active environment < folders, outermost
-  first, nearest wins. A request expands only with its own collection's variables. Every send,
-  cURL copy, connect, URL tooltip and highlight uses `App.varsFor`.
-- Each open collection has its own active environment, remembered by name in its
-  `settings.collections` entry. The header chip and the Vars pane act on the focused collection.
-- The Vars pane edits the active environment, else the collection variables, unless a `varsTarget`
-  (`env_varstarget.go`) points it at a folder or at the collection's own variables.
-
 ### Import and export
-
-All importers are pure leaf packages of `collection`; the App only picks the file and adds the result.
+All importers are pure packages under `importers/`; the App only picks the file and adds the result.
 
 - **OpenAPI 3** (`openapi`, JSON or YAML): a subfolder per first tag, a request per operation,
   `{id}` becomes `{{id}}`, bodies from the example or a schema skeleton. What cannot be read is
@@ -66,16 +68,14 @@ All importers are pure leaf packages of `collection`; the App only picks the fil
 - **YAML** (`miniyaml`): a hand-written subset reader, no YAML dependency, for the same reason as
   the other hand-written parsers. What it refuses fails with a line number.
 
-## Collection tree
-
+### Collection tree
 - `request.Folder` holds pointers (`[]*Folder`, `[]*Request`), so a request keeps its identity (open
-  tabs point at it) however its siblings change. The tree rows (`collection.Rows`) key the
+  tabs point at it) however its siblings change. The tree rows (`collection.Rows`, root package) key the
   expanded set by folder pointer, so a renamed or moved folder stays open.
 - The tree operations are pure functions in `internal/kernel/request/tree.go`; a move or copy is
-  `collection/transfer`, which validates before it changes anything.
+  `transfer`, which validates before it changes anything.
 
-## Example server and client config
-
+### Example server and client config
 The default build carries example endpoints and a release build reads client configs instead
 (the user's choice). `make example-server` runs `cmd/example-server`, one port per service on `127.0.0.1`
 (flags change host and ports; port 0 picks a free one):
@@ -138,3 +138,13 @@ Request keys: `name`, `protocol`, `method`, `url`, `params` and `headers` (maps)
 `body_type`, `timeout` (seconds), `auth` (`type`, `token`, `user`, `password`, `key_name`,
 `key_value`, `key_in`). A missing or unknown `protocol`, or an unknown `body_type` or auth `type`, is
 an error that names the server or request.
+
+## Limits
+Importers and the store are untrusted-input parsers and have fuzz targets (`FUZZ_TARGETS` in the Makefile: `miniyaml`, `openapi`, `postman`, `clientconfig`, `store`); their limits are in `.harness/architecture/limits.md`.
+
+## Files
+Formats and versions of `folder.json`, `*.req.json`, `environments/*.env.json` and `.secrets.json` are in `.harness/architecture/persistence.md`; fixtures in `adapter/store/testdata` (v0 and v1). Unchanged.
+
+## Known gaps
+- The root package is named `collection`, its directory `collections`.
+- Collections and environments do not import each other. The environment files are written by `adapter/store` (`environments/*.env.json`) from `request.Environment` in the kernel, so the store needs no import of `feature/environments`; the App wires `envs.Selection` to each open collection's entry.

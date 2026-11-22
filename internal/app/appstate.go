@@ -1,7 +1,8 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/clientconfig"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history/ui/sentlog"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
@@ -30,7 +31,7 @@ type ports struct {
 	grpcSchema   request.GRPCSchema
 	curl         func(request.Request) string
 	store        collection.Store
-	clients      collection.ClientConfigs // the build's client config; nil has none
+	clients      clientconfig.Source // the build's client config; nil has none
 	states       workspace.StateStore
 	files        workspace.FileDialog             // the desktop file chooser, replaced in tests
 	folders      workspace.Folders                // what the in-app file browser lists

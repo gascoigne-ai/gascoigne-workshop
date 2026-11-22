@@ -12,7 +12,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/miniyaml"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/importers/miniyaml"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 )
 
@@ -75,7 +75,7 @@ type operation struct {
 var methods = []string{"get", "post", "put", "patch", "delete", "head", "options"}
 
 // Parse reads an OpenAPI 3 document in JSON or YAML (the subset of YAML
-// that internal/collection/miniyaml reads, which covers the documents API tools write).
+// that internal/feature/collections/importers/miniyaml reads, which covers the documents API tools write).
 func Parse(data []byte) (Result, error) {
 	var d doc
 	if trimmed := bytes.TrimSpace(data); len(trimmed) > 0 && trimmed[0] != '{' {

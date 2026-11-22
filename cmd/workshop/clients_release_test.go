@@ -5,7 +5,7 @@ package main
 import (
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections"
 )
 
 // A release build ships no example endpoints: it starts empty and loads

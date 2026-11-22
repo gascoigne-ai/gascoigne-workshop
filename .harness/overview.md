@@ -4,7 +4,7 @@ The 3000 ft view. Details are in `architecture.md`, the reasons for a choice in 
 
 ## What it is
 
-A desktop client in Go for REST, WebSocket, SSE, MCP and gRPC calls. One window, three panes: the collection tree (left), the request editor (top right), the response viewer (bottom right). It is drawn with Ebitengine (GPU 2D) and its own widget toolkit, so every widget, text input and scroll area is ours. Ebitengine was the user's choice: pure-Go GPU 2D drawing on Wayland and X11, one nearly static binary, at the cost of writing every widget. A collection is a folder of JSON files (the `collection/adapter/store` package doc); several can be open, each a root of the tree known by its folder, with its own variables and environment, and the set is reopened at the next start (`architecture/collection.md`).
+A desktop client in Go for REST, WebSocket, SSE, MCP and gRPC calls. One window, three panes: the collection tree (left), the request editor (top right), the response viewer (bottom right). It is drawn with Ebitengine (GPU 2D) and its own widget toolkit, so every widget, text input and scroll area is ours. Ebitengine was the user's choice: pure-Go GPU 2D drawing on Wayland and X11, one nearly static binary, at the cost of writing every widget. A collection is a folder of JSON files (the `feature/collections/adapter/store` package doc); several can be open, each a root of the tree known by its folder, with its own variables and environment, and the set is reopened at the next start (`feature/collections/FEATURE.md`).
 
 ## Where things are
 
@@ -57,7 +57,7 @@ Dependencies point inward: what each package may import is written once, in `int
 2. `App.send` calls `dispatch`: `tabs.Tab.BeginSend` numbers the send, `request.Request.Expanded` fills `{{variables}}` from the collection and the active environment, the call log records it.
 3. A command runs off the UI goroutine: `reg.Send(ctx, req)` on the protocol registry, a name-to-`Protocol` table built in `request/adapter/proto` (`rest`, `websocket`, `sse`, `mcp`, `grpc`; its package doc says which are hand-written and why). Streaming protocols return a `Session` from `Connect` and report through the same bus.
 4. The result comes back as a message on the bus (`workspace/bus`), drained once per frame on the UI goroutine; a late result of a cancelled send is dropped by its number.
-5. The tab keeps the response; the response pane (`response/ui/respview`, and `response/viewer` for its mode and find state) draws it. The sent request and response are written to the history (`feature/history`) by an adapter behind a port, the collection by `collection/adapter/store`.
+5. The tab keeps the response; the response pane (`response/ui/respview`, and `response/viewer` for its mode and find state) draws it. The sent request and response are written to the history (`feature/history`) by an adapter behind a port, the collection by `feature/collections/adapter/store`.
 
 Every frame the whole window tree is rebuilt from the App state (why: the `markup` package doc): no diffing, no reactive graph. Widgets that need identity across frames (a text field, a code view) take a pointer to state the App owns.
 

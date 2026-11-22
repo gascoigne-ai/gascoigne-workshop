@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/postman"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/importers/postman"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/folders"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/filebrowser"
 	"os"
@@ -200,7 +200,7 @@ func TestOpenWorkspaceAtSwitchesCollectionsAndSavesTheOldOne(t *testing.T) {
 }
 
 func TestImportOpenAPIAddsAFolderOfRequestsAndTheBaseURL(t *testing.T) {
-	data, err := os.ReadFile("../collection/openapi/testdata/petstore.json")
+	data, err := os.ReadFile("../feature/collections/importers/openapi/testdata/petstore.json")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -227,7 +227,7 @@ func TestImportOpenAPIAddsAFolderOfRequestsAndTheBaseURL(t *testing.T) {
 }
 
 func TestImportPostmanAddsAFolderAndItsVariables(t *testing.T) {
-	data, err := os.ReadFile("../collection/postman/testdata/collection.json")
+	data, err := os.ReadFile("../feature/collections/importers/postman/testdata/collection.json")
 	if err != nil {
 		t.Fatal(err)
 	}
