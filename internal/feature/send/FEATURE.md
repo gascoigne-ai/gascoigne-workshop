@@ -182,5 +182,4 @@ Invalid JSON and other text come back as plain lines, so the response pane rende
 
 ## Known gaps
 - `proto` is one package for every protocol and the registry; only `proto/ws` is split out, so the protocols share the request builder, the event stream and the session helpers.
-- `theme/theme_test.go` and `ui/settingsui/rawcolor_test.go` of `feature/settings` import `ui/respview` (a test-only dependency from settings on this feature); see the settings `FEATURE.md`.
 - `ui/*` import the toolkit (`uitoolkit/...`), as every `ui` does.

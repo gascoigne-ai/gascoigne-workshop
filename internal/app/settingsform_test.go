@@ -111,9 +111,9 @@ func TestAChangedSettingIsMarkedAndResetRemovesItFromTheFile(t *testing.T) {
 
 func TestTextSettingsApplyAsTheyAreTyped(t *testing.T) {
 	a, path := openSettingsPage(t, "requests")
-	input := a.prefs.Input(a, "proxy")
+	input := a.form.Input(a, "proxy")
 	*input = widget.NewTextField("http://localhost:8080")
-	a.prefs.Edited(a, "proxy")
+	a.form.Edited(a, "proxy")
 	if a.settings.Proxy != "http://localhost:8080" {
 		t.Fatalf("Proxy = %q", a.settings.Proxy)
 	}
@@ -124,7 +124,7 @@ func TestTextSettingsApplyAsTheyAreTyped(t *testing.T) {
 
 func TestANumberSettingNeedsAWholeNumberInRange(t *testing.T) {
 	a, _ := openSettingsPage(t, "requests")
-	input := a.prefs.Input(a, "timeoutSec")
+	input := a.form.Input(a, "timeoutSec")
 	for _, test := range []struct {
 		text     string
 		want     int
@@ -137,9 +137,9 @@ func TestANumberSettingNeedsAWholeNumberInRange(t *testing.T) {
 		{"90", 90, false},
 	} {
 		*input = widget.NewTextField(test.text)
-		a.prefs.Edited(a, "timeoutSec")
-		if a.settings.TimeoutSec != test.want || (a.prefs.Note("timeoutSec") != "") != test.wantNote {
-			t.Errorf("%q: TimeoutSec = %d (want %d), note %q", test.text, a.settings.TimeoutSec, test.want, a.prefs.Note("timeoutSec"))
+		a.form.Edited(a, "timeoutSec")
+		if a.settings.TimeoutSec != test.want || (a.form.Note("timeoutSec") != "") != test.wantNote {
+			t.Errorf("%q: TimeoutSec = %d (want %d), note %q", test.text, a.settings.TimeoutSec, test.want, a.form.Note("timeoutSec"))
 		}
 	}
 }
@@ -148,13 +148,13 @@ func TestClosingTheSettingsAlwaysOpensThemFresh(t *testing.T) {
 	a, _ := openSettingsPage(t, "requests")
 	a.prefs.Search = widget.NewTextField("proxy")
 	a.prefs.OpenRaw(a)
-	*a.prefs.Input(a, "proxy") = widget.NewTextField("typed but not entered")
+	*a.form.Input(a, "proxy") = widget.NewTextField("typed but not entered")
 	a.closeSettings()
 	a.menu = true
-	if a.prefs.Cat != "" || a.prefs.Search.Text != "" || a.prefs.Raw || a.prefs.FontListOpen() {
+	if a.prefs.Cat != "" || a.prefs.Search.Text != "" || a.prefs.Raw || a.form.FontListOpen() {
 		t.Fatalf("page %q search %q raw %v: the reopened dialog is not fresh", a.prefs.Cat, a.prefs.Search.Text, a.prefs.Raw)
 	}
-	if got := a.prefs.Input(a, "proxy").Text; got != a.settings.Proxy {
+	if got := a.form.Input(a, "proxy").Text; got != a.settings.Proxy {
 		t.Fatalf("a field kept text typed before the dialog was closed: %q", got)
 	}
 	if a.prefs.Searching() {

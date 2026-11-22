@@ -5,22 +5,22 @@ The settings the user can change: the schema, the settings file, the theme built
 ## Layout
 - `internal/feature/settings`: the model (`Settings`, `Schema`, the codec, `Minimal`, `Validate`, `Complete`) in `model.go` and its neighbours, and the ports it needs (`DisplayScale`, `FontStore`, `KeyRepeat`, `SystemInfo`).
 - `prefs`: the messages a page sends; `theme`: how settings become a theme.
-- `adapter/settingsfile`: `settings.json` on disk.
-- `ui/settingsui`, `ui/colorpage`, `ui/shortcutpage`, `ui/systempage`: the dialog behind its `Host` and the three table pages the App draws through `Host.ExtraPage`.
+- `form`: a controller, the state of the settings form and what a user's action on it means: a `Model` (the refusal note of each setting), typed messages (`Typed`, `Stepped`, `Reset`, `Choose`, `Picked`) and a pure `Update(model, settings, msg)` that returns the next model and the effects the view carries out (`Apply`, `Restore`, `Fill`, `ForgetTexts`, `ApplyFonts`, `AskFile`). It also holds the pure facts of the form: where a row puts its control (`PlaceOf`), the font and size pairs (`Faces`), the search match (`Matches`, `Lists`). It imports the settings root only, so it runs without a window. The typed text stays a `TextField` in the view (toolkit state); the values stay in `Settings`.- `adapter/settingsfile`: `settings.json` on disk.
+- `ui/settingsui`: the dialog shell (title bar, list of pages, search field, raw JSON view, Save) behind its `Host`. `ui/formpage`: the form view and the font drop-down, on top of `form`. `ui/colorpage`, `ui/shortcutpage`, `ui/systempage`: the three table pages. No `ui` package imports another, so the App draws the form through `Host.FormPage` and the tables through `Host.ExtraPage`, and composes the font list over the dialog (`menuView`).
 - OS adapters of the ports are in `internal/platform/{displayscale,fonts,keyrepeat,systeminfo}`. They import this package for the port types; this package never imports them (the app wires them).
 - Imports: the kernel only (`kernel/fileversion`, `kernel/openset`, `kernel/userdir`, `kernel/severity`, `kernel/jsonview`) plus the toolkit for the views and `theme`.
 
 ## Known gaps
-- `ui/settingsui` is one package of about 1600 lines: the generic form (`form.go`, `face.go`) is not yet split from the dialog shell, because both are methods of `SettingsDialog` and their tests reach each other's unexported names.
-- Two test files import another feature's package: `theme/theme_test.go` and `ui/settingsui/rawcolor_test.go` use `feature/send/ui/respview` to check that every JSON token has a color. Non-test code imports no other feature.
+- `ui/formpage` is about 900 lines because the font drop-down (`fontlist.go`, `fonts.go`) sits in it: the form row draws the font control from the drop-down's state, and a `ui` package cannot import another. It splits when the toolkit has a drop-down widget for a long list of rows.
 
 ```mermaid
 flowchart LR
-  schema["settings.Schema rows (settings)"] --> form["settingsui: form, raw JSON, search"]
-  form -- "prefs messages" --> app["App.Send (settingshost.go)"]
+  schema["settings.Schema rows (settings)"] --> formpage["formpage: rows and controls"]
+  formpage -- "form.Update" --> form["form: Model, messages, effects"]
+  formpage -- "prefs messages" --> app["App.Send (settingshost.go)"]
   app --> theme["theme.ThemeWith, Ctx.SetTheme"]
   app --> file["settingsfile: settings.json"]
-  file -- "Poll every PollTicks frames" --> form
+  file -- "Poll every PollTicks frames" --> shell["settingsui: dialog, raw JSON, search"]
 ```
 
 - **One row per setting.** `settings.Schema` (`schema.go`) is the form, the raw
@@ -28,19 +28,19 @@ flowchart LR
   built from the accessor of its `Settings` field, so its kind and its value type cannot disagree.
   A new setting is one row, plus an entry of `settingControls` when the plain control does not fit.
 - **Rows and controls.** A row is the title block (title, reset icon while changed, description) and
-  one control. `placementOf` puts the control beside the block or under it from the setting's
+  one control. `form.PlaceOf` puts the control beside the block or under it from the setting's
   `Kind` (a bool, a stepped number and an enum of at most three values go right) with a table
-  (`customPlacement`) for the custom controls; a bool is a `widget.Switch`. A font and its size are one row (`fontFaces`, `face.go`): the title block is the font's (its description ends with the size's range, read from the size row), the control line holds the font drop-down and the stepper with its own Reset; `FormPage` skips the size row, and a search lists the line once whichever of the two settings it names. The reset icon, the
+  (`form.PlaceOf`, `customPlace`) for the custom controls; a bool is a `widget.Switch`. A font and its size are one row (`form.Faces`, `ui/formpage/face.go`): the title block is the font's (its description ends with the size's range, read from the size row), the control line holds the font drop-down and the stepper with its own Reset; `formpage.Page.View` skips the size row, and a search lists the line once whichever of the two settings it names. The reset icon, the
   category heading (search results only), the page title row and the search field in the page list
   follow `style.md` (Settings row). The Colors, Shortcuts and System pages stay tables and get only the
   title row.
-- **Dialog and host** (`ui/settingsui`): `settingsui.SettingsDialog` is `App.prefs` and
-  the `App` is its `Host`. Host methods only read; everything a page asks for is a
+- **Dialog and host** (`ui/settingsui`, `ui/formpage`): `settingsui.SettingsDialog` is `App.prefs`, `formpage.Page` is `App.form`, and
+  the `App` is the `Host` of both. Host methods only read; everything a page asks for is a
   `prefs` message applied by `App.Send`. `SetFonts` stays a method because its
   error is the answer. The Colors, Shortcuts and System pages are separate `ui` packages that the
   App draws through `Host.ExtraPage`.
 - **Closing forgets.** Closing the dialog drops page, search, raw view and typed text
-  (`SettingsDialog.Fresh`); only its size (resized by any edge, `widget.Resizable`) stays, in
+  (`SettingsDialog.Fresh` and `formpage.Page.Fresh`); only its size (resized by any edge, `widget.Resizable`) stays, in
   `state.json`. A file chooser it opened is
   taken back when it closes (`App.pickFile` returns the cancel).
 - **settings.json** holds only what differs from the defaults (`settings.Minimal`), grouped in
@@ -50,7 +50,7 @@ flowchart LR
 - **Font sizes** are three number settings; the interface and code sizes sit on the line of their font, Small text size is a row of its own: `fontSize` (interface,
   10 to 24 px, default 14), `smallFontSize` (captions, hints, table headers; 8 to 24, default 12)
   and `codeFontSize` (bodies and code views; 8 to 32, default 13). Each is an `Int` field shown in
-  the form as a minus button, a field and a plus button (`SettingsDialog.stepControl`): a step
+  the form as a minus button, a field and a plus button (`formpage.Page.stepControl`; the rule is `form.Update`): a step
   starts from the setting, does nothing at an end of the range and refreshes the field; a typed
   number outside the range shows a note and keeps the last good value. `Clamp` brings a loaded
   value into the range its schema row states (0 is the face's default). The sizes are independent

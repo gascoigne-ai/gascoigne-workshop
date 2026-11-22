@@ -1,4 +1,4 @@
-package settingsui
+package formpage
 
 import (
 	"fmt"
@@ -57,7 +57,7 @@ func TestFaceSizeControlSteps(t *testing.T) {
 				if tc.start == tc.want && driver.host.changes != changes {
 					t.Fatal("a step at the end of the range changed a setting")
 				}
-				if got := driver.dialog.Input(driver.host, row.key).Text; got != fmt.Sprint(tc.want) {
+				if got := driver.page.Input(driver.host, row.key).Text; got != fmt.Sprint(tc.want) {
 					t.Fatalf("field shows %q, want %d", got, tc.want)
 				}
 			})
@@ -83,8 +83,8 @@ func TestFaceSizeFieldAppliesTypedNumbersOrKeepsTheLastGoodOne(t *testing.T) {
 				driver := newFormDriver(t, "Appearance")
 				driver.clickOn(row.field, "fieldB")
 				driver.retype(tc.typed)
-				if got := *row.value(&driver.host.current); got != tc.want || driver.dialog.Note(row.key) != tc.note {
-					t.Fatalf("%s %d note %q, want %d %q", row.key, got, driver.dialog.Note(row.key), tc.want, tc.note)
+				if got := *row.value(&driver.host.current); got != tc.want || driver.page.Note(row.key) != tc.note {
+					t.Fatalf("%s %d note %q, want %d %q", row.key, got, driver.page.Note(row.key), tc.want, tc.note)
 				}
 				if tc.note != "" && !strings.Contains(driver.view(), `text="`+tc.note+`"`) {
 					t.Fatalf("the note is not under the field:\n%s", driver.view())
@@ -102,8 +102,8 @@ func TestFaceSizeStepAfterARefusedEntryStartsFromTheSetting(t *testing.T) {
 			driver.clickOn(row.field, "fieldB")
 			driver.retype(fmt.Sprint(row.max + 1))
 			driver.clickOn(row.field, `text="+"`)
-			if got := *row.value(&driver.host.current); got != row.defaultVal+1 || driver.dialog.Note(row.key) != "" {
-				t.Fatalf("%s %d note %q, want %d and no note", row.key, got, driver.dialog.Note(row.key), row.defaultVal+1)
+			if got := *row.value(&driver.host.current); got != row.defaultVal+1 || driver.page.Note(row.key) != "" {
+				t.Fatalf("%s %d note %q, want %d and no note", row.key, got, driver.page.Note(row.key), row.defaultVal+1)
 			}
 		})
 	}
@@ -120,7 +120,7 @@ func TestResetPutsTheDefaultFaceSizeBackIntoTheField(t *testing.T) {
 			if got := *row.value(&driver.host.current); got != row.defaultVal {
 				t.Fatalf("%s %d after Reset", row.key, got)
 			}
-			if got := driver.dialog.Input(driver.host, row.key).Text; got != fmt.Sprint(row.defaultVal) {
+			if got := driver.page.Input(driver.host, row.key).Text; got != fmt.Sprint(row.defaultVal) {
 				t.Fatalf("field shows %q after Reset, want %d", got, row.defaultVal)
 			}
 		})
@@ -210,12 +210,12 @@ func TestControlsFitAtFontRangeEnds(t *testing.T) {
 		for _, category := range settings.Categories {
 			t.Run(fmt.Sprintf("%d/%s", font, category), func(t *testing.T) {
 				ctx := ctxAtFont(t, font)
-				var dialog SettingsDialog
-				dialog.Families = testFamilies(t)
+				var page Page
+				page.Families = testFamilies(t)
 				host := newHost(t)
 				host.current.FontSize = font
 				host.current.CACert = "/etc/ssl/ca.pem"
-				root := dialog.FormPage(ctx, host, category)
+				root := page.View(ctx, host, category, "")
 				Layout(ctx, root, formWideW, formWideH)
 				controlsFit(t, ctx, root)
 			})

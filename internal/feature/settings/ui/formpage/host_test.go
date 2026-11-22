@@ -1,0 +1,182 @@
+package formpage
+
+import (
+	"image/color"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/adapter/settingsfile"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/prefs"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/platform/fonts"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+)
+
+// settingsDisk is the settings store the form tests write files through.
+var settingsDisk settingsfile.Files
+
+// fakeHost keeps the settings in memory and records what the form asked.
+type fakeHost struct {
+	current   settings.Settings
+	path      string
+	toasts    []string
+	pickTitle string
+	pickDone  func(path string)
+	opened    string // the page the form asked the dialog to show
+	saved     int
+	fontsSet  int // how many times the form applied the fonts
+	changes   int // how many Change messages the form sent
+}
+
+func newHost(t *testing.T) *fakeHost {
+	return &fakeHost{current: settings.Default(), path: filepath.Join(t.TempDir(), "settings.json")}
+}
+
+func (h *fakeHost) Size() (int, int)                   { return 1280, 800 }
+func (h *fakeHost) Settings() settings.Settings        { return h.current }
+func (h *fakeHost) Pointer() (int, int)                { return 400, 300 }
+func (h *fakeHost) OpenPage(id string)                 { h.opened = id }
+func (h *fakeHost) FontStore() settings.FontStore      { return fonts.System{} }
+func (h *fakeHost) SetFonts(ui, code w.FontData) error { h.fontsSet++; return nil }
+
+// Send routes a message to the fake's own recorder of it.
+func (h *fakeHost) Send(msg prefs.Msg) {
+	switch msg := msg.(type) {
+	case prefs.Change:
+		h.changes++
+		msg.Edit(&h.current)
+		_ = settingsDisk.Save(h.path, h.current)
+	case prefs.ScaleLive:
+		h.current.UIScalePct = msg.Percent
+	case prefs.Save:
+		h.saved++
+	case prefs.Toast:
+		h.toasts = append(h.toasts, msg.Text)
+	case prefs.PickFile:
+		h.pickTitle, h.pickDone = msg.Title, msg.Done
+	case prefs.Later:
+		msg.Func()
+	}
+}
+
+func dump(node Node) string { return Dump(node) }
+
+// testTheme is the theme the views are built with in tests.
+func testTheme() core.Theme {
+	return core.Theme{
+		Colors:   map[core.Token]color.RGBA{core.Text: core.RGB(0xffffff), core.Bg: core.RGB(0x101010)},
+		FontSize: 14, SmallSize: 12, MonoSize: 13,
+	}
+}
+
+// testCtx is the context the views are built with in tests: the default
+// faces, so the sizes are the default ones.
+func testCtx(t *testing.T) *core.Ctx {
+	t.Helper()
+	ctx, err := core.NewCtx(testTheme())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return ctx
+}
+
+func mustField(t *testing.T, key string) settings.Field {
+	t.Helper()
+	field, ok := settings.FieldFor(key)
+	if !ok {
+		t.Fatalf("no setting %s", key)
+	}
+	return field
+}
+
+func TestAPageShowsItsSettingsAndTheSearchFiltersAcrossPages(t *testing.T) {
+	var d Page
+	host := newHost(t)
+	if text := dump(d.View(testCtx(t), host, "Requests", "")); !strings.Contains(text, "Proxy") || strings.Contains(text, "Corners") {
+		t.Fatalf("Requests page:\n%s", text)
+	}
+	if text := dump(d.View(testCtx(t), host, "Requests", "corners")); !strings.Contains(text, "Corners") || strings.Contains(text, "Proxy") {
+		t.Fatalf("search results:\n%s", text)
+	}
+}
+
+func TestANumberOutsideItsRangeIsExplainedAndNotApplied(t *testing.T) {
+	var d Page
+	host := newHost(t)
+	*d.Input(host, "timeoutSec") = NewTextField("0")
+	d.Edited(host, "timeoutSec")
+	if host.current.TimeoutSec != 60 || d.Note("timeoutSec") == "" {
+		t.Fatalf("timeout %d note %q", host.current.TimeoutSec, d.Note("timeoutSec"))
+	}
+	*d.Input(host, "timeoutSec") = NewTextField("20")
+	d.Edited(host, "timeoutSec")
+	if host.current.TimeoutSec != 20 || d.Note("timeoutSec") != "" {
+		t.Fatalf("timeout %d note %q", host.current.TimeoutSec, d.Note("timeoutSec"))
+	}
+}
+
+func TestANumberOutsideItsRangeSendsNoChange(t *testing.T) {
+	var d Page
+	host := newHost(t)
+	*d.Input(host, "timeoutSec") = NewTextField("0")
+	d.Edited(host, "timeoutSec")
+	if host.changes != 0 || d.Note("timeoutSec") == "" {
+		t.Fatalf("changes %d note %q", host.changes, d.Note("timeoutSec"))
+	}
+	*d.Input(host, "timeoutSec") = NewTextField("20")
+	d.Edited(host, "timeoutSec")
+	if host.changes != 1 || host.current.TimeoutSec != 20 {
+		t.Fatalf("changes %d timeout %d", host.changes, host.current.TimeoutSec)
+	}
+}
+
+func TestResetRemovesTheKeyFromTheFile(t *testing.T) {
+	var d Page
+	host := newHost(t)
+	host.Send(prefs.Change{Edit: func(current *settings.Settings) { current.Layout = "side" }})
+	d.Reset(host, "layout")
+	if data, _ := os.ReadFile(host.path); strings.Contains(string(data), "layout") || host.current.Layout != "stacked" {
+		t.Fatalf("layout %q, file %q", host.current.Layout, data)
+	}
+}
+
+func TestAFileSettingHasAFolderButtonInsideItsFieldThatFillsIt(t *testing.T) {
+	var d Page
+	host := newHost(t)
+	page := dump(d.View(testCtx(t), host, "Requests", ""))
+	if strings.Count(page, "icon=folder") != 3 {
+		t.Fatalf("each of the three certificate settings needs a folder button:\n%s", page)
+	}
+	d.ChooseFile(host, "caCert")
+	if host.pickTitle == "" || !strings.Contains(host.pickTitle, "CA certificates") {
+		t.Fatalf("the picker title is %q", host.pickTitle)
+	}
+	host.pickDone("/etc/ssl/ca.pem")
+	if host.current.CACert != "/etc/ssl/ca.pem" || d.Input(host, "caCert").Text != "/etc/ssl/ca.pem" {
+		t.Fatalf("CACert %q, field %q", host.current.CACert, d.Input(host, "caCert").Text)
+	}
+}
+
+func TestAnEmptyFileSettingIsOnlyAButtonAndAFilledOneShowsItsPath(t *testing.T) {
+	var d Page
+	host := newHost(t)
+	empty := dump(d.fileControl(testCtx(t), host, mustField(t, "caCert")))
+	if strings.Contains(empty, "fieldB") || !strings.Contains(empty, "icon=folder") || !strings.Contains(empty, "Choose file") {
+		t.Fatalf("an empty file setting should be one button with the folder icon and a label, no field:\n%s", empty)
+	}
+	host.current.CACert = "/etc/ssl/ca.pem"
+	d = Page{}
+	filled := dump(d.fileControl(testCtx(t), host, mustField(t, "caCert")))
+	if !strings.Contains(filled, "fieldB") || !strings.Contains(filled, "icon=folder") {
+		t.Fatalf("a set file shows its path with a folder button:\n%s", filled)
+	}
+}
+
+// dialogPageW is the width of the page in the dialog at its default size: its
+// width of 760 less the list of pages of 170 (package settingsui).
+const dialogPageW = 760 - 170

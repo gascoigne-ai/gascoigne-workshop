@@ -48,6 +48,7 @@ func (a *App) closeSettingsNow() {
 	a.cancelSettingsFilePick()
 	a.menu = false
 	a.prefs.Fresh()
+	a.form.Fresh()
 }
 
 // pickSettingsFile asks for a file and calls done with its path.
@@ -76,6 +77,16 @@ func (a *App) openMenuItems(posX, posY int, items []prefs.MenuItem) {
 	}
 	a.openMenu(posX, posY, rows)
 }
+
+// FormPage draws the form of the settings of a category, or of every category
+// that matches the search text.
+func (a *App) FormPage(category, query string) Node {
+	return a.form.View(a.ctx, a, category, query)
+}
+
+// OpenPage shows a page of the settings dialog, as a click on a search result
+// that leads to it does.
+func (a *App) OpenPage(id string) { a.prefs.OpenPage(id) }
 
 // ExtraPage draws the settings pages that are tables of the application.
 func (a *App) ExtraPage(id string) Node {
@@ -113,7 +124,7 @@ func (a *App) applySettings(current settings.Settings) {
 		a.refreshView(t)
 	}
 	a.colors.Forget()
-	a.prefs.Reload(a)
+	a.form.Reload(a)
 	a.dirty = true
 }
 
@@ -122,7 +133,7 @@ func (a *App) menuView() Node {
 	if !a.menu {
 		return nil
 	}
-	return a.prefs.View(a.ctx, a)
+	return Frag(a.prefs.View(a.ctx, a), a.form.FontList(a.ctx, a)) // the font list floats over the dialog
 }
 
 // toggleSettings is the header button: it opens the dialog or closes it.

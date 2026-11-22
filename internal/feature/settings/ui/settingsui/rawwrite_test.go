@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/adapter/settingsfile"
-	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // failingStore is the real files with a write that always fails.
@@ -62,20 +61,5 @@ func TestASuccessfulSaveOfRawTextStampsAndClearsPending(t *testing.T) {
 	d.Save(host)
 	if d.rawPending || host.unsaved || !d.stamp.Exists || len(host.toasts) != 0 {
 		t.Fatalf("pending %v unsaved %v stamp %+v toasts %q", d.rawPending, host.unsaved, d.stamp, host.toasts)
-	}
-}
-
-func TestANumberOutsideItsRangeSendsNoChange(t *testing.T) {
-	var d SettingsDialog
-	host := newHost(t)
-	*d.Input(host, "timeoutSec") = NewTextField("0")
-	d.Edited(host, "timeoutSec")
-	if host.changes != 0 || d.Note("timeoutSec") == "" {
-		t.Fatalf("changes %d note %q", host.changes, d.Note("timeoutSec"))
-	}
-	*d.Input(host, "timeoutSec") = NewTextField("20")
-	d.Edited(host, "timeoutSec")
-	if host.changes != 1 || host.current.TimeoutSec != 20 {
-		t.Fatalf("changes %d timeout %d", host.changes, host.current.TimeoutSec)
 	}
 }

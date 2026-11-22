@@ -1,6 +1,7 @@
-package settingsui
+package formpage
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/form"
 	"os"
 	"path/filepath"
 	"strings"
@@ -26,12 +27,12 @@ type formCase struct {
 	width, height int
 	category      string
 	search        string
-	prepare       func(t *testing.T, dialog *SettingsDialog, host *fakeHost)
+	prepare       func(t *testing.T, page *Page, host *fakeHost)
 }
 
 // changeAppearance moves several Appearance settings off their defaults:
 // the interface font is installed, the code font is not.
-func changeAppearance(t *testing.T, dialog *SettingsDialog, host *fakeHost) {
+func changeAppearance(t *testing.T, page *Page, host *fakeHost) {
 	host.current.Theme = "light"
 	host.current.UIFont = "Go Mono"
 	host.current.CodeFont = "Missing Sans"
@@ -42,10 +43,10 @@ func changeAppearance(t *testing.T, dialog *SettingsDialog, host *fakeHost) {
 }
 
 // editRequests fills a certificate and refuses a typed timeout.
-func editRequests(t *testing.T, dialog *SettingsDialog, host *fakeHost) {
+func editRequests(t *testing.T, page *Page, host *fakeHost) {
 	host.current.CACert = "/etc/ssl/ca.pem"
-	*dialog.Input(host, "timeoutSec") = NewTextField("0")
-	dialog.Edited(host, "timeoutSec")
+	*page.Input(host, "timeoutSec") = NewTextField("0")
+	page.Edited(host, "timeoutSec")
 }
 
 // The laid-out form is pinned as text (testdata/form-*.dump, captured from
@@ -60,21 +61,20 @@ func TestTheSettingsFormLaysOutAsPinned(t *testing.T) {
 		{"requests-default-wide", formWideW, formWideH, "Requests", "", nil},
 		{"requests-edited-narrow", formNarrowW, formNarrowH, "Requests", "", editRequests},
 		{"general-default-wide", formWideW, formWideH, "General", "", nil},
-		{"general-changed-narrow", formNarrowW, formNarrowH, "General", "", func(_ *testing.T, _ *SettingsDialog, host *fakeHost) { host.current.AutoSave = false }},
+		{"general-changed-narrow", formNarrowW, formNarrowH, "General", "", func(_ *testing.T, _ *Page, host *fakeHost) { host.current.AutoSave = false }},
 		{"search-overrides-wide", formWideW, formWideH, "Appearance", "overrides", nil},
 		{"search-across-narrow", formNarrowW, formNarrowH, "Appearance", "file", nil},
 		{"search-none-wide", formWideW, formWideH, "Appearance", "nothing like it", nil},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			var dialog SettingsDialog
+			var page Page
 			host := newHost(t)
-			dialog.Families = testFamilies(t)
-			dialog.Search = NewTextField(tc.search)
+			page.Families = testFamilies(t)
 			if tc.prepare != nil {
-				tc.prepare(t, &dialog, host)
+				tc.prepare(t, &page, host)
 			}
-			root := dialog.FormPage(testCtx(t), host, tc.category)
+			root := page.View(testCtx(t), host, tc.category, tc.search)
 			ctx, err := core.NewCtx(testTheme())
 			if err != nil {
 				t.Fatal(err)
@@ -96,7 +96,8 @@ func TestTheSettingsFormLaysOutAsPinned(t *testing.T) {
 type formDriver struct {
 	t        *testing.T
 	ctx      *core.Ctx
-	dialog   SettingsDialog
+	page     Page
+	query    string // the search text
 	host     *fakeHost
 	category string
 }
@@ -108,13 +109,13 @@ func newFormDriver(t *testing.T, category string) *formDriver {
 		t.Fatal(err)
 	}
 	driver := &formDriver{t: t, ctx: ctx, host: newHost(t), category: category}
-	driver.dialog.Families = testFamilies(t)
+	driver.page.Families = testFamilies(t)
 	return driver
 }
 
 // step runs one frame; input is built from the frame's laid-out view.
 func (driver *formDriver) step(input func(root *El) core.Input) {
-	root := driver.dialog.FormPage(driver.ctx, driver.host, driver.category)
+	root := driver.page.View(driver.ctx, driver.host, driver.category, driver.query)
 	Layout(driver.ctx, root, formWideW, formWideH)
 	driver.ctx.In = input(root)
 	Update(driver.ctx, root)
@@ -167,7 +168,7 @@ func (driver *formDriver) retype(text string) {
 
 // view is the page as the next frame draws it, laid out.
 func (driver *formDriver) view() string {
-	root := driver.dialog.FormPage(driver.ctx, driver.host, driver.category)
+	root := driver.page.View(driver.ctx, driver.host, driver.category, driver.query)
 	Layout(driver.ctx, root, formWideW, formWideH)
 	return Dump(root)
 }
@@ -278,8 +279,8 @@ func TestTypingANumberAppliesItOrExplainsWhyNot(t *testing.T) {
 			driver := newFormDriver(t, "Requests")
 			driver.clickOn(0, "fieldB") // the timeout comes first
 			driver.retype(tc.typed)
-			if driver.host.current.TimeoutSec != tc.timeout || driver.dialog.Note("timeoutSec") != tc.note {
-				t.Fatalf("timeout %d note %q", driver.host.current.TimeoutSec, driver.dialog.Note("timeoutSec"))
+			if driver.host.current.TimeoutSec != tc.timeout || driver.page.Note("timeoutSec") != tc.note {
+				t.Fatalf("timeout %d note %q", driver.host.current.TimeoutSec, driver.page.Note("timeoutSec"))
 			}
 			if tc.note != "" && !strings.Contains(driver.view(), `text="`+tc.note+`"`) {
 				t.Fatalf("the note is not under the field:\n%s", driver.view())
@@ -293,7 +294,7 @@ func TestATextFieldStartsWithTheSettingAndAppliesWhatIsTyped(t *testing.T) {
 	driver := newFormDriver(t, "Requests")
 	driver.host.current.Proxy = "http://proxy:3128"
 	driver.step(func(*El) core.Input { return core.Input{} })
-	if got := driver.dialog.Input(driver.host, "proxy").Text; got != "http://proxy:3128" {
+	if got := driver.page.Input(driver.host, "proxy").Text; got != "http://proxy:3128" {
 		t.Fatalf("proxy field %q", got)
 	}
 	driver.clickOn(1, "fieldB")
@@ -364,11 +365,10 @@ func TestOpenGoesToThePageOfATableSetting(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.page, func(t *testing.T) {
 			driver := newFormDriver(t, "Appearance")
-			driver.dialog.Search = NewTextField("overrides")
-			driver.dialog.scroll.Y = 300
+			driver.query = "overrides"
 			driver.clickOn(0, tc.label)
-			if driver.dialog.Cat != tc.page || driver.dialog.Searching() || driver.dialog.scroll.Y != 0 {
-				t.Fatalf("page %q search %q scroll %d", driver.dialog.Cat, driver.dialog.Search.Text, driver.dialog.scroll.Y)
+			if driver.host.opened != tc.page {
+				t.Fatalf("opened page %q, want %q", driver.host.opened, tc.page)
 			}
 		})
 	}
@@ -401,17 +401,17 @@ func TestClickingAFontControlOpensTheListForItsRole(t *testing.T) {
 	cases := []struct {
 		name  string
 		index int
-		role  FontRole
+		role  form.FontRole
 	}{
-		{"interface", 0, FontUI},
-		{"code", 1, FontCode},
+		{"interface", 0, form.FontUI},
+		{"code", 1, form.FontCode},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			driver := newFormDriver(t, "Appearance")
 			driver.clickOn(tc.index, "control=field", "onClick=true")
-			if !driver.dialog.FontListOpen() || driver.dialog.list.role != tc.role {
-				t.Fatalf("open %v role %v, want the list open for %v", driver.dialog.FontListOpen(), driver.dialog.list.role, tc.role)
+			if !driver.page.FontListOpen() || driver.page.list.role != tc.role {
+				t.Fatalf("open %v role %v, want the list open for %v", driver.page.FontListOpen(), driver.page.list.role, tc.role)
 			}
 		})
 	}
@@ -425,7 +425,7 @@ func TestTheFontControlReadsAnInstalledFamilyOnce(t *testing.T) {
 	driver.host.current.CodeFont = "Missing Sans"
 	driver.view()
 	driver.view()
-	if driver.dialog.loadedFaces() != 1 {
-		t.Fatalf("%d font files read, want the interface font's only", driver.dialog.loadedFaces())
+	if driver.page.loadedFaces() != 1 {
+		t.Fatalf("%d font files read, want the interface font's only", driver.page.loadedFaces())
 	}
 }

@@ -1,7 +1,6 @@
-package settingsui
+package formpage
 
 import (
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -17,7 +16,7 @@ var rowWidths = []int{560, 320}
 // rowPage is the form page of category laid out at width.
 func rowPage(t *testing.T, driver *formDriver, width int) *El {
 	t.Helper()
-	root := driver.dialog.FormPage(driver.ctx, driver.host, driver.category)
+	root := driver.page.View(driver.ctx, driver.host, driver.category, driver.query)
 	Layout(driver.ctx, root, width, 2400)
 	return root
 }
@@ -215,7 +214,7 @@ func TestACategoryHeadingShowsInSearchResultsOnly(t *testing.T) {
 	if strings.Contains(driver.view(), `text="APPEARANCE"`) {
 		t.Fatal("a single page shows a category heading")
 	}
-	driver.dialog.Search = NewTextField("file")
+	driver.query = "file"
 	root := rowPage(t, driver, 560)
 	heading := findAll(root, `text="REQUESTS"`)
 	if len(heading) != 1 {
@@ -245,8 +244,8 @@ func firstLineAround(root, child *El) string {
 // A refused number is explained under its row; the setting keeps its value.
 func TestARefusalNoteShowsUnderTheRow(t *testing.T) {
 	driver := newFormDriver(t, "Requests")
-	*driver.dialog.Input(driver.host, "timeoutSec") = NewTextField("0")
-	driver.dialog.Edited(driver.host, "timeoutSec")
+	*driver.page.Input(driver.host, "timeoutSec") = NewTextField("0")
+	driver.page.Edited(driver.host, "timeoutSec")
 	root := rowPage(t, driver, 560)
 	note := findAll(root, "Enter a whole number")
 	if len(note) != 1 {
@@ -255,67 +254,5 @@ func TestARefusalNoteShowsUnderTheRow(t *testing.T) {
 	title := titleOf(t, root, "Request timeout").Rect()
 	if note[0].Rect().Y < title.Y+title.H {
 		t.Fatalf("the note at y=%d is not under the title row", note[0].Rect().Y)
-	}
-}
-
-// The page title row names the page and the file; the file shows by its
-// base name, the full path is a tooltip only.
-func TestThePageTitleRowShowsThePageAndTheFileName(t *testing.T) {
-	driver := newFrameDriver(t)
-	driver.dialog.Cat = "appearance"
-	dump := Dump(driver.root())
-	path := driver.host.path
-	if !strings.Contains(dump, `text="settings.json"`) {
-		t.Fatalf("no file name in the title row:\n%s", dump)
-	}
-	if strings.Contains(dump, `text="`+path+`"`) || strings.Contains(dump, `text="`+filepath.Dir(path)) {
-		t.Fatalf("the full path is shown as text:\n%s", dump)
-	}
-	if !strings.Contains(dump, `text="Edit in settings.json"`) {
-		t.Fatalf("no Edit in settings.json button:\n%s", dump)
-	}
-}
-
-// Every page gets the title row, tables included.
-func TestEveryPageShowsTheTitleRowWithTheEditButton(t *testing.T) {
-	for _, id := range []string{"appearance", "colors", "shortcuts", "requests", "general", "experimental", "system"} {
-		driver := newFrameDriver(t)
-		driver.dialog.Cat = id
-		if !strings.Contains(Dump(driver.root()), `text="Edit in settings.json"`) {
-			t.Errorf("page %s has no Edit in settings.json button", id)
-		}
-	}
-}
-
-func TestEditInSettingsJSONOpensTheRawViewAndBackReturns(t *testing.T) {
-	driver := newFrameDriver(t)
-	driver.clickOn(`text="Edit in settings.json"`)
-	if !driver.dialog.Raw {
-		t.Fatal("Edit in settings.json did not open the raw view")
-	}
-	if !strings.Contains(Dump(driver.root()), `text="Back to the form"`) {
-		t.Fatal("the raw view has no Back to the form button")
-	}
-	driver.clickOn(`text="Back to the form"`)
-	if driver.dialog.Raw {
-		t.Fatal("Back to the form left the raw view open")
-	}
-}
-
-// The search field is the first thing in the navigation column.
-func TestTheSearchFieldSitsAboveThePageList(t *testing.T) {
-	driver := newFrameDriver(t)
-	root := driver.root()
-	field := findAll(root, "fieldB")
-	first := findAll(root, `text="Colors"`)
-	if len(field) == 0 || len(first) == 0 {
-		t.Fatalf("no search field or no first page:\n%s", Dump(root))
-	}
-	search, page := field[0].Rect(), first[0].Rect()
-	if search.Y+search.H > page.Y {
-		t.Errorf("search field %v is not above the first page %v", search, page)
-	}
-	if search.X+search.W > page.X+DialogNavW {
-		t.Errorf("search field %v is not in the navigation column of the first page %v", search, page)
 	}
 }

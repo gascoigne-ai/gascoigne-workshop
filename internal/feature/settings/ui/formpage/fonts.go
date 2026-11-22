@@ -1,4 +1,4 @@
-package settingsui
+package formpage
 
 import (
 	"fmt"
@@ -7,33 +7,17 @@ import (
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/form"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
-
-// FontRole is which text a font is for.
-type FontRole int
-
-// The two roles a font can be picked for.
-const (
-	FontUI   FontRole = iota // labels, buttons, fields
-	FontCode                 // bodies, headers, the code views
-)
-
-// savedFont is the family name stored for role.
-func savedFont(current settings.Settings, role FontRole) string {
-	if role == FontCode {
-		return current.CodeFont
-	}
-	return current.UIFont
-}
 
 // SetFont picks the family called name for role, applies it and saves the
 // choice. An empty name goes back to the built-in font; a name that no
 // installed family has is explained next to the field and changes nothing.
-func (d *SettingsDialog) SetFont(host Host, role FontRole, name string) {
+func (p *Page) SetFont(host Host, role form.FontRole, name string) {
 	name = strings.TrimSpace(name)
 	if name != "" {
-		family, ok := settings.Find(d.Families, name)
+		family, ok := settings.Find(p.Families, name)
 		if !ok {
 			host.Send(prefs.Toast{Text: fmt.Sprintf("No installed font is called %q", name), Level: severity.Error})
 			return
@@ -41,30 +25,30 @@ func (d *SettingsDialog) SetFont(host Host, role FontRole, name string) {
 		name = family.Name
 	}
 	host.Send(prefs.Change{Edit: func(current *settings.Settings) {
-		if role == FontCode {
+		if role == form.FontCode {
 			current.CodeFont = name
 		} else {
 			current.UIFont = name
 		}
 	}})
-	d.ApplyFonts(host)
+	p.ApplyFonts(host)
 }
 
 // FontsScanned receives the installed families and applies the saved
 // choices, which could not be resolved before.
-func (d *SettingsDialog) FontsScanned(host Host, families []settings.Family) {
-	d.Families = families
-	d.ApplyFonts(host)
+func (p *Page) FontsScanned(host Host, families []settings.Family) {
+	p.Families = families
+	p.ApplyFonts(host)
 }
 
 // ApplyFonts loads the saved families for both roles. A name that is not
 // installed (any more) uses the built-in font and stays saved, so the font
 // returns when it is installed again.
-func (d *SettingsDialog) ApplyFonts(host Host) {
+func (p *Page) ApplyFonts(host Host) {
 	current := host.Settings()
 	var chosen [2]w.FontData
-	for _, role := range []FontRole{FontUI, FontCode} {
-		family, ok := settings.Find(d.Families, savedFont(current, role))
+	for _, role := range []form.FontRole{form.FontUI, form.FontCode} {
+		family, ok := settings.Find(p.Families, form.SavedFont(current, role))
 		if !ok {
 			continue
 		}
@@ -75,7 +59,7 @@ func (d *SettingsDialog) ApplyFonts(host Host) {
 		}
 		chosen[role] = w.FontData{Regular: regular, Bold: bold}
 	}
-	if err := host.SetFonts(chosen[FontUI], chosen[FontCode]); err != nil {
+	if err := host.SetFonts(chosen[form.FontUI], chosen[form.FontCode]); err != nil {
 		host.Send(prefs.SetStatus{Text: "Font not usable: " + err.Error()})
 		_ = host.SetFonts(w.FontData{}, w.FontData{}) // the built-in fonts always load
 	}
@@ -84,10 +68,10 @@ func (d *SettingsDialog) ApplyFonts(host Host) {
 
 // ScanFonts reads the installed fonts in the background and hands them to
 // the UI goroutine.
-func (d *SettingsDialog) ScanFonts(host Host) {
+func (p *Page) ScanFonts(host Host) {
 	store := host.FontStore()
 	go func() {
 		families := store.Scan()
-		host.Send(prefs.Later{Func: func() { d.FontsScanned(host, families) }})
+		host.Send(prefs.Later{Func: func() { p.FontsScanned(host, families) }})
 	}()
 }

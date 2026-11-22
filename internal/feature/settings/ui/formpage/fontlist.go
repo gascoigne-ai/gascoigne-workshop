@@ -1,4 +1,4 @@
-package settingsui
+package formpage
 
 import (
 	"bytes"
@@ -7,6 +7,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/form"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -28,33 +29,33 @@ const builtIn = "Built-in"
 // fontList is the state of the open font dropdown.
 type fontList struct {
 	open   bool
-	role   FontRole
+	role   form.FontRole
 	x, y   int
 	scroll ScrollState
 	faces  map[string]*text.GoTextFaceSource // by file; nil when the file could not be read
 }
 
 // OpenFontList opens the dropdown for role below the pointer.
-func (d *SettingsDialog) OpenFontList(ctx *w.Ctx, host Host, role FontRole) {
+func (p *Page) OpenFontList(ctx *w.Ctx, host Host, role form.FontRole) {
 	rowH := ctx.Sizes.Row
 	px, py := host.Pointer()
 	width, height := host.Size()
-	d.list.open, d.list.role = true, role
-	d.list.x = min(max(px-fontListW/2, fontListGap), width-fontListW-fontListGap)
-	d.list.y = min(py+16, height-fontListH-rowH-fontListGap)
-	d.FontSearch = NewTextField("")
-	d.FontSearch.Focused = true
+	p.list.open, p.list.role = true, role
+	p.list.x = min(max(px-fontListW/2, fontListGap), width-fontListW-fontListGap)
+	p.list.y = min(py+16, height-fontListH-rowH-fontListGap)
+	p.FontSearch = NewTextField("")
+	p.FontSearch.Focused = true
 	// open on the family in use, centered, so it is in view at once
-	rows := len(d.Families) + 1 // Built-in comes first
-	centered := d.selectedRow(host)*rowH - (fontListH-rowH)/2
-	d.list.scroll.Y = min(max(centered, 0), max(rows*rowH-fontListH, 0))
+	rows := len(p.Families) + 1 // Built-in comes first
+	centered := p.selectedRow(host)*rowH - (fontListH-rowH)/2
+	p.list.scroll.Y = min(max(centered, 0), max(rows*rowH-fontListH, 0))
 }
 
 // selectedRow is the index of the family in use among the unfiltered rows:
 // 0 for Built-in, or for a name that is not installed.
-func (d *SettingsDialog) selectedRow(host Host) int {
-	current := savedFont(host.Settings(), d.list.role)
-	for i, family := range d.Families {
+func (p *Page) selectedRow(host Host) int {
+	current := form.SavedFont(host.Settings(), p.list.role)
+	for i, family := range p.Families {
 		if strings.EqualFold(family.Name, current) {
 			return i + 1
 		}
@@ -63,83 +64,83 @@ func (d *SettingsDialog) selectedRow(host Host) int {
 }
 
 // CloseFontList closes the dropdown.
-func (d *SettingsDialog) CloseFontList() { d.list.open = false }
+func (p *Page) CloseFontList() { p.list.open = false }
 
 // FontListOpen reports whether the dropdown is open.
-func (d *SettingsDialog) FontListOpen() bool { return d.list.open }
+func (p *Page) FontListOpen() bool { return p.list.open }
 
 // PickFont applies the family called name, "" for the built-in font, for
 // the role the dropdown was opened for, and closes it.
-func (d *SettingsDialog) PickFont(host Host, name string) {
-	d.CloseFontList()
-	d.SetFont(host, d.list.role, name)
+func (p *Page) PickFont(host Host, name string) {
+	p.CloseFontList()
+	p.SetFont(host, p.list.role, name)
 }
 
 // loadedFaces is how many font files the list has tried to read.
-func (d *SettingsDialog) loadedFaces() int { return len(d.list.faces) }
+func (p *Page) loadedFaces() int { return len(p.list.faces) }
 
 // face is the font of family, read the first time it is asked for; nil
 // when the file cannot be read, which draws the name in the interface font.
-func (d *SettingsDialog) face(host Host, family settings.Family) *text.GoTextFaceSource {
-	if source, seen := d.list.faces[family.Regular]; seen {
+func (p *Page) face(host Host, family settings.Family) *text.GoTextFaceSource {
+	if source, seen := p.list.faces[family.Regular]; seen {
 		return source
 	}
-	if d.list.faces == nil {
-		d.list.faces = map[string]*text.GoTextFaceSource{}
+	if p.list.faces == nil {
+		p.list.faces = map[string]*text.GoTextFaceSource{}
 	}
 	var source *text.GoTextFaceSource
 	if regular, _, err := host.FontStore().Load(settings.Family{Name: family.Name, Regular: family.Regular}); err == nil {
 		source, _ = text.NewGoTextFaceSource(bytes.NewReader(regular))
 	}
-	d.list.faces[family.Regular] = source
+	p.list.faces[family.Regular] = source
 	return source
 }
 
 // fontControl is the control of a font setting: the current family, drawn
 // in its font, and a chevron; clicking opens the dropdown.
-func (d *SettingsDialog) fontControl(ctx *w.Ctx, host Host, role FontRole) Node {
-	name := savedFont(host.Settings(), role)
-	family, found := settings.Find(d.Families, name)
+func (p *Page) fontControl(ctx *w.Ctx, host Host, role form.FontRole) Node {
+	name := form.SavedFont(host.Settings(), role)
+	family, found := settings.Find(p.Families, name)
 	current := fontChoice{Name: builtIn, Muted: true}
 	switch {
 	case found:
-		current = fontChoice{Name: family.Name, Face: d.face(host, family), Ellipsis: true}
+		current = fontChoice{Name: family.Name, Face: p.face(host, family), Ellipsis: true}
 	case name != "":
 		current = fontChoice{Name: name + " (not installed)", Muted: true, Ellipsis: true}
 	}
 	return fontControlTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
 		"current":  current,
-		"open":     func() { d.OpenFontList(ctx, host, role) },
+		"open":     func() { p.OpenFontList(ctx, host, role) },
 		"chevronW": chevronW,
 	}))
 }
 
 // matchingFamilies are the families whose name contains the search text.
-func (d *SettingsDialog) matchingFamilies() []settings.Family {
-	return settings.Matching(d.Families, d.FontSearch.Text, len(d.Families))
+func (p *Page) matchingFamilies() []settings.Family {
+	return settings.Matching(p.Families, p.FontSearch.Text, len(p.Families))
 }
 
 // FontList is the dropdown while it is open: a search field and the
 // families, each in its own font. Only the rows in view are built, so only
 // their fonts are read.
-func (d *SettingsDialog) FontList(ctx *w.Ctx, host Host) Node {
-	if !d.list.open {
+func (p *Page) FontList(ctx *w.Ctx, host Host) Node {
+	if !p.list.open {
 		return nil
 	}
 	rowH := ctx.Sizes.Row
-	current := savedFont(host.Settings(), d.list.role)
-	families := d.matchingFamilies()
-	showBuiltIn := strings.TrimSpace(d.FontSearch.Text) == ""
+	current := form.SavedFont(host.Settings(), p.list.role)
+	families := p.matchingFamilies()
+	showBuiltIn := strings.TrimSpace(p.FontSearch.Text) == ""
 	count := len(families)
 	if showBuiltIn {
 		count++
 	}
-	first := min(max(d.list.scroll.Y/rowH, 0), max(count-1, 0))
+	first := min(max(p.list.scroll.Y/rowH, 0), max(count-1, 0))
 	last := min(first+fontListH/rowH+2, count)
 	rows := make([]Node, 0, last-first)
 	for i := first; i < last; i++ {
 		if showBuiltIn && i == 0 {
-			rows = append(rows, d.fontRow(ctx, host, fontChoice{Name: builtIn, Muted: true}, current == "", ""))
+			rows = append(rows, p.fontRow(ctx, host, fontChoice{Name: builtIn, Muted: true}, current == "", ""))
 			continue
 		}
 		index := i
@@ -147,11 +148,11 @@ func (d *SettingsDialog) FontList(ctx *w.Ctx, host Host) Node {
 			index = i - 1 // the first row is Built-in
 		}
 		family := families[index]
-		choice := fontChoice{Name: family.Name, Face: d.face(host, family), Ellipsis: true}
-		rows = append(rows, d.fontRow(ctx, host, choice, strings.EqualFold(family.Name, current), family.Name))
+		choice := fontChoice{Name: family.Name, Face: p.face(host, family), Ellipsis: true}
+		rows = append(rows, p.fontRow(ctx, host, choice, strings.EqualFold(family.Name, current), family.Name))
 	}
 	note := ""
-	if len(d.Families) == 0 {
+	if len(p.Families) == 0 {
 		note = "Looking for installed fonts..."
 	} else if count == 0 {
 		note = "No font matches"
@@ -159,13 +160,13 @@ func (d *SettingsDialog) FontList(ctx *w.Ctx, host Host) Node {
 	return fontListTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
 		"width":         fontListW,
 		"height":        fontListH,
-		"x":             d.list.x,
-		"y":             d.list.y,
-		"close":         d.CloseFontList,
-		"search":        &d.FontSearch,
-		"searchChanged": func() { d.list.scroll.Y = 0 },
+		"x":             p.list.x,
+		"y":             p.list.y,
+		"close":         p.CloseFontList,
+		"search":        &p.FontSearch,
+		"searchChanged": func() { p.list.scroll.Y = 0 },
 		"note":          note,
-		"scroll":        &d.list.scroll,
+		"scroll":        &p.list.scroll,
 		"above":         first * rowH,
 		"rows":          rows,
 		"below":         (count - last) * rowH,
@@ -190,8 +191,8 @@ var (
 
 // fontRow is one row of the list; picking it applies the family called
 // name, "" for Built-in.
-func (d *SettingsDialog) fontRow(ctx *w.Ctx, host Host, choice fontChoice, selected bool, name string) Node {
-	choice.Pick = func() { d.PickFont(host, name) }
+func (p *Page) fontRow(ctx *w.Ctx, host Host, choice fontChoice, selected bool, name string) Node {
+	choice.Pick = func() { p.PickFont(host, name) }
 	return fontRowTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{"row": choice, "selected": selected}))
 }
 

@@ -85,7 +85,6 @@ func TestTheSettingsDialogLaysOutAsPinned(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			var dialog SettingsDialog
 			host := &windowHost{fakeHost: newHost(t), width: tc.width, height: tc.height}
-			dialog.Families = testFamilies(t)
 			dialog.Cat = tc.page
 			if tc.prepare != nil {
 				tc.prepare(t, &dialog, host)
@@ -124,7 +123,6 @@ func newFrameDriver(t *testing.T) *frameDriver {
 		t.Fatal(err)
 	}
 	driver := &frameDriver{t: t, ctx: ctx, host: &windowHost{fakeHost: newHost(t), width: frameWideW, height: frameWideH}}
-	driver.dialog.Families = testFamilies(t)
 	return driver
 }
 

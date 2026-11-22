@@ -200,7 +200,7 @@ func (a *App) openLayers() overlay.Open {
 	open[overlay.DestPicker] = a.picker != nil
 	open[overlay.FileBrowser] = a.browser != nil
 	open[overlay.CallLog] = a.calls.Shown()
-	open[overlay.FontList] = a.prefs.FontListOpen()
+	open[overlay.FontList] = a.form.FontListOpen()
 	open[overlay.Settings] = a.menu
 	open[overlay.CellEdit] = a.edit != nil
 	open[overlay.FindBar] = a.cur().look.FindOpen
@@ -216,7 +216,7 @@ func (a *App) escape() {
 		overlay.DestPicker:  a.closePicker,
 		overlay.FileBrowser: a.closeBrowser,
 		overlay.CallLog:     a.calls.Close,
-		overlay.FontList:    a.prefs.CloseFontList,
+		overlay.FontList:    a.form.CloseFontList,
 		overlay.Settings:    a.closeSettings,
 		overlay.CellEdit:    a.cancelEdit,
 		overlay.FindBar:     func() { a.closeFind(a.cur()) },

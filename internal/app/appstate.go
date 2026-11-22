@@ -8,6 +8,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/ui/colorpage"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/ui/formpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/ui/settingsui"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/ui/shortcutpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace"
@@ -119,6 +120,7 @@ type settingsState struct {
 	cancelSettingsPick func()                    // takes back a file question the settings dialog asked
 	settingsUnsaved    bool                      // settings were changed but not written (auto-save is off)
 	prefs              settingsui.SettingsDialog // the settings dialog
+	form               formpage.Page             // the form of the settings dialog
 	shortcutKeys       shortcutpage.Page         // the Shortcuts page of the settings dialog
 	colors             colorpage.Page            // the Colors page of the settings dialog
 }

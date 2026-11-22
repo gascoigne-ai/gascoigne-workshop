@@ -151,7 +151,7 @@ func NewApp(opts Options) (*App, error) {
 		a.actionIDs = append(a.actionIDs, s.id)
 	}
 	if opts.ScanFonts {
-		a.prefs.ScanFonts(a)
+		a.form.ScanFonts(a)
 	}
 	a.openWorkspace(opts.WorkspaceDir)
 	stateErr := a.loadState(opts.StatePath)

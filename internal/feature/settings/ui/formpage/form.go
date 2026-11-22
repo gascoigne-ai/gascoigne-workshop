@@ -1,12 +1,12 @@
-package settingsui
+package formpage
 
 import (
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/prefs"
-	"strconv"
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/form"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/severity"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -16,76 +16,36 @@ import (
 )
 
 // settingControl draws the control of one setting.
-type settingControl func(ctx *w.Ctx, dialog *SettingsDialog, host Host, field settings.Field) Node
-
-// placement is where a row puts its control: beside the title block, or
-// under it when the control needs the width of the row.
-type placement int
-
-const (
-	placeByKind placement = iota // from the Kind of the setting (see placementOf)
-	placeRight
-	placeBelow
-)
-
-// customPlacement is the placement of a setting whose control is in
-// settingControls and is not chosen by Kind alone: a stepper is short, the
-// rest of them need the width. A key that is not here goes by Kind.
-var customPlacement = map[string]placement{
-	"smallFontSize": placeRight,
-	"theme":         placeBelow, // one chip per installed theme
-	"uiScale":       placeBelow, // a slider wants a long track
-}
-
-// shortChoices is how many values an enum may have for its chips to sit
-// beside the title; more of them go under it, as a long row of chips would
-// squeeze the description.
-const shortChoices = 3
-
-// placementOf is where the control of field goes. Why by Kind and not a
-// per-key table: a new boolean or short enum lands right without a row here
-// (revisit when a kind needs both places).
-func placementOf(field settings.Field) placement {
-	if place, ok := customPlacement[field.Key]; ok {
-		return place
-	}
-	switch {
-	case field.Kind == settings.Bool:
-		return placeRight
-	case field.Kind == settings.Enum && !field.Open && len(field.Allowed) <= shortChoices:
-		return placeRight
-	}
-	return placeBelow
-}
+type settingControl func(ctx *w.Ctx, page *Page, host Host, field settings.Field) Node
 
 // settingControls are the settings whose control is not the plain one for
 // their kind. Everything else is a row of chips (an enum), On / Off (a
 // boolean) or a text field (text and numbers).
 var settingControls = map[string]settingControl{
 	"smallFontSize": stepControlOf,
-	"theme": func(ctx *w.Ctx, dialog *SettingsDialog, host Host, _ settings.Field) Node {
-		return dialog.themeChips(ctx, host)
+	"theme": func(ctx *w.Ctx, page *Page, host Host, _ settings.Field) Node {
+		return page.themeChips(ctx, host)
 	},
-	"corners": func(ctx *w.Ctx, dialog *SettingsDialog, host Host, field settings.Field) Node {
-		return dialog.enumChips(ctx, host, field, labelsOf(theme.CornerChoices, cornerLabel))
+	"corners": func(ctx *w.Ctx, page *Page, host Host, field settings.Field) Node {
+		return page.enumChips(ctx, host, field, labelsOf(theme.CornerChoices, cornerLabel))
 	},
-	"contrast": func(ctx *w.Ctx, dialog *SettingsDialog, host Host, field settings.Field) Node {
-		return dialog.enumChips(ctx, host, field, labelsOf(theme.ContrastChoices, contrastLabel))
+	"contrast": func(ctx *w.Ctx, page *Page, host Host, field settings.Field) Node {
+		return page.enumChips(ctx, host, field, labelsOf(theme.ContrastChoices, contrastLabel))
 	},
-	"layout": func(ctx *w.Ctx, dialog *SettingsDialog, host Host, field settings.Field) Node {
-		return dialog.enumChips(ctx, host, field, labelsOf(settings.LayoutChoices, layoutLabel))
+	"layout": func(ctx *w.Ctx, page *Page, host Host, field settings.Field) Node {
+		return page.enumChips(ctx, host, field, labelsOf(settings.LayoutChoices, layoutLabel))
 	},
-	"responseView": func(ctx *w.Ctx, dialog *SettingsDialog, host Host, field settings.Field) Node {
-		return dialog.enumChips(ctx, host, field, nil)
+	"responseView": func(ctx *w.Ctx, page *Page, host Host, field settings.Field) Node {
+		return page.enumChips(ctx, host, field, nil)
 	},
-	"uiScale": func(ctx *w.Ctx, dialog *SettingsDialog, host Host, _ settings.Field) Node {
-		return dialog.scaleControl(ctx, host)
+	"uiScale": func(ctx *w.Ctx, page *Page, host Host, _ settings.Field) Node {
+		return page.scaleControl(ctx, host)
 	},
 }
 
 // stepControlOf is the control of a size: a number field with a stepper.
-func stepControlOf(ctx *w.Ctx, dialog *SettingsDialog, host Host, field settings.Field) Node {
-	return dialog.stepControl(ctx, host, field)
+func stepControlOf(ctx *w.Ctx, page *Page, host Host, field settings.Field) Node {
+	return page.stepControl(ctx, host, field)
 }
 
 func cornerLabel(cornerChoice theme.CornerChoice) (string, string) {
@@ -179,7 +139,7 @@ func chipRow(ctx *w.Ctx, chips []chip) Node {
 }
 
 // enumChips is a row of chips, one per allowed value; the current one is lit.
-func (d *SettingsDialog) enumChips(ctx *w.Ctx, host Host, field settings.Field, labels map[string]string) Node {
+func (p *Page) enumChips(ctx *w.Ctx, host Host, field settings.Field, labels map[string]string) Node {
 	value, _ := settings.Get(host.Settings(), field.Key)
 	text, _ := value.(settings.Text)
 	current := string(text)
@@ -198,7 +158,7 @@ func (d *SettingsDialog) enumChips(ctx *w.Ctx, host Host, field settings.Field, 
 	return chipRow(ctx, chips)
 }
 
-func (d *SettingsDialog) themeChips(ctx *w.Ctx, host Host) Node {
+func (p *Page) themeChips(ctx *w.Ctx, host Host) Node {
 	current := host.Settings().Theme
 	themes := theme.AllThemeChoices()
 	chips := make([]chip, 0, len(themes))
@@ -209,10 +169,10 @@ func (d *SettingsDialog) themeChips(ctx *w.Ctx, host Host) Node {
 	return chipRow(ctx, chips)
 }
 
-func (d *SettingsDialog) scaleControl(ctx *w.Ctx, host Host) Node {
+func (p *Page) scaleControl(ctx *w.Ctx, host Host) Node {
 	percent := int(host.Settings().UIScale()*100 + 0.5)
 	return scaleTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
-		"scale":    &d.scale,
+		"scale":    &p.scale,
 		"min":      settings.ScaleSliderMin,
 		"max":      settings.ScaleSliderMax,
 		"step":     settings.ScaleSliderStep,
@@ -220,13 +180,13 @@ func (d *SettingsDialog) scaleControl(ctx *w.Ctx, host Host) Node {
 		"value":    percent,
 		"slide":    func(percent int) { host.Send(prefs.ScaleLive{Percent: percent}) }, // live: the UI resizes while dragging
 		"slideEnd": func(int) { host.Send(prefs.Save{}) },
-		"shown":    fmt.Sprintf("%d%%", d.scale.Shown(percent)),
+		"shown":    fmt.Sprintf("%d%%", p.scale.Shown(percent)),
 		"shownW":   scaleShownW,
 	}))
 }
 
 // boolSwitch is the toggle of a true-or-false setting.
-func (d *SettingsDialog) boolSwitch(host Host, field settings.Field) Node {
+func (p *Page) boolSwitch(host Host, field settings.Field) Node {
 	value, _ := settings.Get(host.Settings(), field.Key)
 	on, _ := value.(settings.Flag)
 	flip := func() { host.Send(prefs.Change{Edit: setKey(host, field.Key, settings.Flag(!on))}) }
@@ -235,49 +195,59 @@ func (d *SettingsDialog) boolSwitch(host Host, field settings.Field) Node {
 
 // Input is the text field of a text or number setting, filled from the
 // setting the first time it is needed.
-func (d *SettingsDialog) Input(host Host, key string) *TextField {
-	return d.fields.Input(key, func() string {
-		value, _ := settings.Get(host.Settings(), key)
-		switch value := value.(type) {
-		case settings.Text:
-			return string(value)
-		case settings.Number:
-			return strconv.Itoa(int(value))
-		}
-		return ""
-	})
+func (p *Page) Input(host Host, key string) *TextField {
+	if input, ok := p.inputs[key]; ok {
+		return input
+	}
+	if p.inputs == nil {
+		p.inputs = map[string]*TextField{}
+	}
+	input := new(TextField)
+	*input = NewTextField(form.TextOf(host.Settings(), key))
+	p.inputs[key] = input
+	return input
 }
 
 // Edited applies the text typed into the field of key. A number that is not
-// a whole number in range is explained under the field, and the setting
-// keeps its last good value.
-func (d *SettingsDialog) Edited(host Host, key string) {
-	field, ok := settings.FieldFor(key)
-	if !ok {
-		return
-	}
-	text := strings.TrimSpace(d.Input(host, key).Text)
-	var value settings.Value = settings.Text(text)
-	if field.Kind == settings.Int {
-		number, err := strconv.Atoi(text)
-		if err != nil || number < field.Min || number > field.Max {
-			d.fields.SetNote(key, fmt.Sprintf("Enter a whole number between %d and %d", field.Min, field.Max))
-			return
-		}
-		value = settings.Number(number)
-	}
-	d.fields.SetNote(key, "")
-	host.Send(prefs.Change{Edit: setKey(host, key, value)})
+// whole or outside its range is refused and explained under the row.
+func (p *Page) Edited(host Host, key string) {
+	p.update(host, form.Typed{Key: key, Text: p.Input(host, key).Text})
 }
 
 // Note is why the value typed for key was refused, "" when it was not.
-func (d *SettingsDialog) Note(key string) string { return d.fields.Note(key) }
+func (p *Page) Note(key string) string { return p.model.Note(key) }
+
+// update runs msg through the form model and carries out what it asks.
+func (p *Page) update(host Host, msg form.Msg) {
+	model, effects := form.Update(p.model, host.Settings(), msg)
+	p.model = model
+	for _, effect := range effects {
+		p.carryOut(host, effect)
+	}
+}
+
+func (p *Page) carryOut(host Host, effect form.Effect) {
+	switch effect := effect.(type) {
+	case form.Apply:
+		host.Send(prefs.Change{Edit: setKey(host, effect.Key, effect.Value)})
+	case form.Restore:
+		host.Send(prefs.Change{Edit: func(current *settings.Settings) { resetKey(host, current, effect.Key) }})
+	case form.Fill:
+		*p.Input(host, effect.Key) = NewTextField(effect.Text)
+	case form.ForgetTexts:
+		p.inputs = nil
+	case form.ApplyFonts:
+		p.ApplyFonts(host)
+	case form.AskFile:
+		host.Send(prefs.PickFile{Title: effect.Title, Done: func(path string) { p.update(host, form.Picked{Key: effect.Key, Path: path}) }})
+	}
+}
 
 // textControl is the field of a text or number setting.
-func (d *SettingsDialog) textControl(ctx *w.Ctx, host Host, field settings.Field) Node {
+func (p *Page) textControl(ctx *w.Ctx, host Host, field settings.Field) Node {
 	return textControlTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
-		"input":  d.Input(host, field.Key),
-		"edited": func() { d.Edited(host, field.Key) },
+		"input":  p.Input(host, field.Key),
+		"edited": func() { p.Edited(host, field.Key) },
 	}))
 }
 
@@ -285,66 +255,57 @@ func (d *SettingsDialog) textControl(ctx *w.Ctx, host Host, field settings.Field
 // small steps: a minus button, the number as a field and a plus button. A
 // step starts from the setting, not from the text, so it recovers from an
 // entry that was refused; at the end of the range it does nothing.
-func (d *SettingsDialog) stepControl(ctx *w.Ctx, host Host, field settings.Field) Node {
+func (p *Page) stepControl(ctx *w.Ctx, host Host, field settings.Field) Node {
 	return stepTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
-		"input":  d.Input(host, field.Key),
-		"edited": func() { d.Edited(host, field.Key) },
-		"less":   func() { d.Step(host, field, -1) },
-		"more":   func() { d.Step(host, field, 1) },
+		"input":  p.Input(host, field.Key),
+		"edited": func() { p.Edited(host, field.Key) },
+		"less":   func() { p.Step(host, field, -1) },
+		"more":   func() { p.Step(host, field, 1) },
 		"fieldW": stepFieldW,
 	}))
 }
 
 // Step moves the number setting of field by delta, within its range, and
-// shows the new value in its field; at an end of the range nothing changes.
-func (d *SettingsDialog) Step(host Host, field settings.Field, delta int) {
-	value, _ := settings.Get(host.Settings(), field.Key)
-	number, _ := value.(settings.Number)
-	stepped := int(number) + delta
-	if stepped < field.Min || stepped > field.Max {
-		return
-	}
-	*d.Input(host, field.Key) = NewTextField(strconv.Itoa(stepped))
-	d.Edited(host, field.Key)
+// refreshes its field; at an end of the range nothing happens.
+func (p *Page) Step(host Host, field settings.Field, delta int) {
+	p.update(host, form.Stepped{Key: field.Key, Delta: delta})
 }
 
 // Reset puts the default back for key and drops it from the file.
-func (d *SettingsDialog) Reset(host Host, key string) {
-	host.Send(prefs.Change{Edit: func(current *settings.Settings) { resetKey(host, current, key) }})
-	d.fields.Forget()
-	if key == "uiFont" || key == "codeFont" {
-		d.ApplyFonts(host)
-	}
-}
+func (p *Page) Reset(host Host, key string) { p.update(host, form.Reset{Key: key}) }
+
+// Forget drops the typed text and the notes, so the fields are rebuilt from
+// the settings in effect.
+func (p *Page) Forget() { p.model, p.inputs = form.Model{}, nil }
 
 // settingRow is one setting: the title block (the title with a reset icon
 // when it differs from the default, the description under it) and its
-// control, beside the block or under it as placementOf says. A refused
+// control, beside the block or under it as form.PlaceOf says. A refused
 // value is explained under the whole row.
-func (d *SettingsDialog) settingRow(ctx *w.Ctx, host Host, field settings.Field) Node {
+func (p *Page) settingRow(ctx *w.Ctx, host Host, field settings.Field) Node {
 	var control Node
 	switch custom, ok := settingControls[field.Key]; {
 	case ok:
-		control = custom(ctx, d, host, field)
+		control = custom(ctx, p, host, field)
 	case field.Kind == settings.Enum:
-		control = d.enumChips(ctx, host, field, nil)
+		control = p.enumChips(ctx, host, field, nil)
 	case field.Kind == settings.Bool:
-		control = d.boolSwitch(host, field)
+		control = p.boolSwitch(host, field)
 	case field.Kind == settings.Shortcuts || field.Kind == settings.Colors:
-		control = d.openPageButton(ctx, field)
+		control = p.openPageButton(ctx, host, field)
 	case field.Kind == settings.File:
-		control = d.fileControl(ctx, host, field)
+		control = p.fileControl(ctx, host, field)
 	default:
-		control = d.textControl(ctx, host, field)
+		control = p.textControl(ctx, host, field)
 	}
 	view := settingView{
 		Title:       field.Title,
 		Changed:     settings.Changed(host.Settings(), field.Key),
-		Reset:       func() { d.Reset(host, field.Key) },
+		Reset:       func() { p.Reset(host, field.Key) },
 		Description: Paragraph(field.Description),
-		Note:        d.fields.Note(field.Key),
+		Note:        p.model.Note(field.Key),
 	}
-	if placementOf(field) == placeRight {
+	if form.PlaceOf(field) == form.PlaceRight {
 		view.Side = control
 	} else {
 		view.Below = control
@@ -365,15 +326,12 @@ type settingView struct {
 
 // openPageButton leads from a search result to the page that edits the
 // setting, which is a table and not a single control.
-func (d *SettingsDialog) openPageButton(ctx *w.Ctx, field settings.Field) Node {
+func (p *Page) openPageButton(ctx *w.Ctx, host Host, field settings.Field) Node {
 	page := "colors"
 	if field.Kind == settings.Shortcuts {
 		page = "shortcuts"
 	}
-	open := func() {
-		d.Cat, d.Search = page, NewTextField("")
-		d.scroll.Y = 0
-	}
+	open := func() { host.OpenPage(page) }
 	return openPageTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
 		"label":     "Open " + strings.ToLower(field.Category),
 		"open":      open,
@@ -381,35 +339,15 @@ func (d *SettingsDialog) openPageButton(ctx *w.Ctx, field settings.Field) Node {
 	}))
 }
 
-// settingMatches reports whether field fits the search text: its title,
-// description, key or one of its allowed values contains it.
-func settingMatches(field settings.Field, query string) bool {
-	needle := strings.ToLower(strings.TrimSpace(query))
-	if needle == "" {
-		return true
-	}
-	haystack := strings.ToLower(field.Title + " " + field.Description + " " + field.Key + " " + strings.Join(field.Allowed, " "))
-	return strings.Contains(haystack, needle)
-}
-
-// formListsFor reports whether the search text lists field: a font through
-// its face, so the line shows whichever of its two settings the text names.
-func formListsFor(field settings.Field, face fontFace, isFont bool, query string) bool {
-	if isFont {
-		return faceMatches(face, query)
-	}
-	return settingMatches(field, query)
-}
-
-// FormPage is the settings of one category, or, while a search text is
-// typed, those of every category that match it.
-func (d *SettingsDialog) FormPage(ctx *w.Ctx, host Host, category string) Node {
-	searching := d.Searching()
+// View is the settings of one category, or, while a search text is typed,
+// those of every category that match it.
+func (p *Page) View(ctx *w.Ctx, host Host, category, query string) Node {
+	searching := strings.TrimSpace(query) != ""
 	var rows []Node
 	last := ""
 	for _, field := range settings.Schema {
-		face, isFont := faceOfFont(field.Key)
-		if field.Hidden || isFaceSize(field.Key) || !formListsFor(field, face, isFont, d.Search.Text) || (!searching && field.Category != category) {
+		face, isFont := form.FaceOfFont(field.Key)
+		if field.Hidden || form.IsFaceSize(field.Key) || !form.Lists(field, face, isFont, query) || (!searching && field.Category != category) {
 			continue
 		}
 		if searching && field.Category != last {
@@ -417,10 +355,10 @@ func (d *SettingsDialog) FormPage(ctx *w.Ctx, host Host, category string) Node {
 			rows = append(rows, formCaptionTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{"category": field.Category})))
 		}
 		if isFont {
-			rows = append(rows, d.faceRow(ctx, host, face))
+			rows = append(rows, p.faceRow(ctx, host, face))
 			continue
 		}
-		rows = append(rows, d.settingRow(ctx, host, field))
+		rows = append(rows, p.settingRow(ctx, host, field))
 	}
 	if len(rows) == 0 {
 		return formEmptyTemplate.MustBuild(nil)
@@ -432,31 +370,22 @@ func (d *SettingsDialog) FormPage(ctx *w.Ctx, host Host, category string) Node {
 // button, a folder icon and "Choose file", since an empty field has nothing
 // to show; with a file it is a field with the path and a folder button inside
 // it at the right, which chooses another.
-func (d *SettingsDialog) fileControl(ctx *w.Ctx, host Host, field settings.Field) Node {
-	input := d.Input(host, field.Key)
-	choose := func() { d.ChooseFile(host, field.Key) }
+func (p *Page) fileControl(ctx *w.Ctx, host Host, field settings.Field) Node {
+	input := p.Input(host, field.Key)
+	choose := func() { p.ChooseFile(host, field.Key) }
 	if strings.TrimSpace(input.Text) == "" && !input.Focused {
 		return emptyFileTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{"choose": choose, "chooseW": chooseFileW, "folderIconW": folderIconW}))
 	}
 	return chosenFileTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
 		"input":  input,
-		"edited": func() { d.Edited(host, field.Key) },
+		"edited": func() { p.Edited(host, field.Key) },
 		"choose": choose,
 	}))
 }
 
 // ChooseFile asks for a file for the setting key and puts its path in the
 // setting.
-func (d *SettingsDialog) ChooseFile(host Host, key string) {
-	field, ok := settings.FieldFor(key)
-	if !ok {
-		return
-	}
-	host.Send(prefs.PickFile{Title: "Choose " + field.Title, Done: func(path string) {
-		*d.Input(host, key) = NewTextField(path)
-		d.Edited(host, key)
-	}})
-}
+func (p *Page) ChooseFile(host Host, key string) { p.update(host, form.Choose{Key: key}) }
 
 // Templates, parsed once above.
 const (

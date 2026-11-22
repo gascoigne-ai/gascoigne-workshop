@@ -30,7 +30,7 @@ flowchart LR
   that reads or writes the one `App` struct needs its methods. Adapters come in through `Options`.
 - A feature that needs little of the `App` is its own `ui` package behind a `Host` interface the
   `App` implements, tested with a fake host: `calltrace` (`feature/send/ui/calltrace`), `mcpform` (`feature/send/ui/mcpform`), `sentlog` (`feature/history/ui/sentlog`), `settingsui`,
-  `colorpage`, `shortcutpage`, `systempage`, `destpicker`. Adapters reach those views through the
+  `formpage`, `colorpage`, `shortcutpage`, `systempage`, `destpicker`. Adapters reach those views through the
   host (`Host.SentStore`, `Host.FontStore`).
 
 ## Modules

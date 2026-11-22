@@ -1,14 +1,14 @@
-package settingsui
+package formpage
 
 import (
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/form"
 	"strings"
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	core "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
-	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // schemaField is the row of key in the schema.
@@ -39,14 +39,14 @@ func rowOf(t *testing.T, root *El, title string) *El {
 }
 
 func TestEveryFontFaceNamesRowsOfTheSchema(t *testing.T) {
-	for _, face := range fontFaces {
+	for _, face := range form.Faces {
 		font, size := schemaField(t, face.Font), schemaField(t, face.Size)
 		if font.Category != size.Category || size.Kind != settings.Int || font.Hidden {
 			t.Errorf("face %v: font %+v and size %+v do not pair", face, font, size)
 		}
 	}
-	if len(fontFaces) != 2 {
-		t.Errorf("%d faces, want the interface and the code face", len(fontFaces))
+	if len(form.Faces) != 2 {
+		t.Errorf("%d faces, want the interface and the code face", len(form.Faces))
 	}
 }
 
@@ -86,7 +86,7 @@ func faceLineOf(t *testing.T, row *El) faceLine {
 // The font and the stepper of a face share one line, side by side, inside the
 // row, and the font keeps its minimum width.
 func TestAFontAndItsSizeShareOneLine(t *testing.T) {
-	for _, width := range []int{DialogWidth - DialogNavW, 560, rowWidths[1]} {
+	for _, width := range []int{dialogPageW, 560, rowWidths[1]} {
 		for _, title := range faceTitles {
 			t.Run(fmt.Sprintf("%s/%d", title, width), func(t *testing.T) {
 				driver := newFormDriver(t, "Appearance")
@@ -154,7 +154,7 @@ func TestSearchFindsAFaceLineOnceThroughEitherSetting(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.query, func(t *testing.T) {
 			driver := newFormDriver(t, "Appearance")
-			driver.dialog.Search = NewTextField(tc.query)
+			driver.query = tc.query
 			root := rowPage(t, driver, 560)
 			for _, title := range tc.want {
 				if n := len(findAll(root, `text="`+title+`"`, "bold=true")); n != 1 {
@@ -217,7 +217,7 @@ func TestARefusedFaceSizeShowsItsNoteInsideTheRow(t *testing.T) {
 // schema row.
 func TestAFaceDescriptionStatesTheSizeRangeFromTheSchema(t *testing.T) {
 	root := rowPage(t, newFormDriver(t, "Appearance"), 560)
-	for _, face := range fontFaces {
+	for _, face := range form.Faces {
 		size := schemaField(t, face.Size)
 		want := fmt.Sprintf("%d to %d", size.Min, size.Max)
 		paragraphs := findAll(rowOf(t, root, faceTitles[face.Font]), "paragraphB")

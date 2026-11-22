@@ -1,7 +1,6 @@
 package theme
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/ui/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/theming"
 	"image/color"
 	"math"
@@ -11,6 +10,14 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/jsonview"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
+
+// jsonKinds are the kinds of span a JSON view colors.
+var jsonKinds = []jsonview.Kind{jsonview.Plain, jsonview.Punct, jsonview.Key, jsonview.String, jsonview.Number, jsonview.Literal}
+
+// jsonToken is the color token of a kind of JSON span: the name the kernel
+// gives its style. The response view takes its tokens from the same name, so
+// no feature is imported to check them.
+func jsonToken(kind jsonview.Kind) core.Token { return core.Token(kind.Style()) }
 
 func luminance(rgba color.RGBA) float64 {
 	lin := func(value uint8) float64 {
@@ -39,8 +46,8 @@ func TestAppColorsAreReadableOnLists(t *testing.T) {
 				t.Errorf("%s: method %s contrast %.2f", tc.ID, m, got)
 			}
 		}
-		for kind, tok := range respview.Tokens {
-			if got := contrast(th.Color(tok), bg); got < 3.5 {
+		for _, kind := range jsonKinds {
+			if got := contrast(th.Color(jsonToken(kind)), bg); got < 3.5 {
 				t.Errorf("%s: json kind %d contrast %.2f", tc.ID, kind, got)
 			}
 		}
@@ -48,9 +55,8 @@ func TestAppColorsAreReadableOnLists(t *testing.T) {
 }
 
 func TestEveryJSONKindHasAToken(t *testing.T) {
-	kinds := []jsonview.Kind{jsonview.Plain, jsonview.Punct, jsonview.Key, jsonview.String, jsonview.Number, jsonview.Literal}
-	for _, k := range kinds {
-		if respview.Tokens[k] == "" {
+	for _, k := range jsonKinds {
+		if jsonToken(k) == "" {
 			t.Errorf("no token for json kind %d", k)
 		}
 	}
@@ -80,20 +86,6 @@ func TestUnknownMethodFallsBackToTheTextColor(t *testing.T) {
 	th := ThemeFor("dark", FontSizes{})
 	if th.Color(MethodToken("PROPFIND")) != th.Color(core.Text) {
 		t.Fatal("unknown method must resolve to the text color")
-	}
-}
-
-func TestCodeLinesKeepsStructureAndColors(t *testing.T) {
-	lines := respview.CodeLines([]byte(`{"a":1}`))
-	if len(lines) != 3 || !lines[0].Foldable || lines[1].Foldable {
-		t.Fatalf("lines = %+v", lines)
-	}
-	var styles []core.Token
-	for _, s := range lines[1].Spans {
-		styles = append(styles, s.Style)
-	}
-	if styles[1] != respview.Tokens[jsonview.Key] || styles[len(styles)-1] != respview.Tokens[jsonview.Number] {
-		t.Fatalf("styles = %v", styles)
 	}
 }
 
@@ -129,7 +121,7 @@ func TestThemeWithAppliesCornersAndTheFlatSwitch(t *testing.T) {
 func TestAppThemesCarryMethodAndJSONColorsOverTheToolkitStyles(t *testing.T) {
 	for _, id := range []string{"dark", "light"} {
 		th := ThemeFor(id, FontSizes{})
-		if th.Color(MethodToken("GET")) == th.Color(core.Text) || th.Color(respview.Tokens[jsonview.Key]) == (color.RGBA{}) {
+		if th.Color(MethodToken("GET")) == th.Color(core.Text) || th.Color(jsonToken(jsonview.Key)) == (color.RGBA{}) {
 			t.Errorf("%s: app colors missing", id)
 		}
 		if th.Style("primary").Radius <= 0 {

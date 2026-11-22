@@ -1,11 +1,10 @@
-// Package settingsui is the settings dialog: a title bar, a list of pages
-// with the search field on top, a title row over every page, the pages
-// generated from the settings schema (a row per setting: title, description
-// and a control beside or under them, a reset icon when it differs from the
-// default; a bool is a switch; a font and its size share one row), the font pickers, and the text of
-// settings.json with live validation and completion. The application
-// supplies the pages that are tables (colors, shortcuts) and does what a
-// change of settings implies; the dialog reaches it through Host.
+// Package settingsui is the settings dialog shell: a title bar, a list of
+// pages with the search field on top, a title row over every page, and the
+// text of settings.json with live validation and completion. The pages are
+// drawn by the application through Host: the form of a category from the
+// settings schema (package formpage) and the tables (colors, shortcuts,
+// system). The dialog imports no other ui package; it reaches the
+// application through Host.
 package settingsui
 
 import (
@@ -64,11 +63,10 @@ type Host interface {
 	SettingsPath() string
 	// SettingsStore reads, stats and writes the settings file.
 	SettingsStore() settings.SettingsStore
-	// FontStore finds installed fonts and reads their files.
-	FontStore() settings.FontStore
-	// SetFonts switches the interface and code fonts; the error says why
-	// they were refused, which is why this is not a message.
-	SetFonts(ui, code w.FontData) error
+	// FormPage is the form of the settings of a category, or of every
+	// category that matches the search text. The application draws it
+	// (package formpage) because this package imports no other ui package.
+	FormPage(category, query string) Node
 	// ExtraPage is the content of a page the application draws itself, nil
 	// for an id it does not know.
 	ExtraPage(id string) Node
@@ -106,13 +104,6 @@ type SettingsDialog struct {
 	Search TextField   // filters the settings across pages
 	scroll ScrollState
 
-	fields NotedFields[string] // fields of the text and number settings, and why a typed value was refused
-	scale  SliderState
-
-	Families   []settings.Family // installed font families, once scanned
-	FontSearch TextField         // narrows the font dropdown
-	list       fontList
-
 	Raw        bool               // the dialog shows settings.json as text
 	RawText    TextArea           // that text
 	Problems   []settings.Problem // what is wrong with it
@@ -137,10 +128,7 @@ func (d *SettingsDialog) pageID() string {
 func (d *SettingsDialog) Fresh() {
 	d.Cat, d.Search = "", NewTextField("")
 	d.scroll = ScrollState{} // the size the user chose stays
-	d.fields.Forget()
 	d.Raw, d.RawText, d.Problems, d.rawBefore = false, TextArea{}, nil, ""
-	d.FontSearch = NewTextField("")
-	d.list = fontList{faces: d.list.faces}
 }
 
 // ResetScroll puts the page back at its top.
@@ -167,7 +155,7 @@ func (d *SettingsDialog) View(ctx *w.Ctx, host Host) Node {
 	if d.Raw {
 		raw = d.rawView(ctx, host)
 	}
-	dialog := dialogTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
+	return dialogTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
 		"size":     &d.Size,
 		"move":     &d.Move,
 		"minW":     min(MinWidth, maxW),
@@ -190,7 +178,6 @@ func (d *SettingsDialog) View(ctx *w.Ctx, host Host) Node {
 		"scroll":   &d.scroll,
 		"page":     d.pageContent(ctx, host, cur),
 	}))
-	return Frag(dialog, d.FontList(ctx, host)) // the font list floats over the dialog; a template has one root
 }
 
 var (
@@ -209,7 +196,7 @@ func (d *SettingsDialog) pageContent(ctx *w.Ctx, host Host, id string) Node {
 			continue
 		}
 		if p.category != "" {
-			return d.FormPage(ctx, host, p.category)
+			return host.FormPage(p.category, d.Search.Text)
 		}
 		return host.ExtraPage(id)
 	}
@@ -295,11 +282,11 @@ func (d *SettingsDialog) navItem(ctx *w.Ctx, entry page, open bool) Node {
 	}))
 }
 
-// Reload resets what depends on the settings in effect: typed text and
-// notes, and the fonts. The host calls it after it replaced the settings.
-func (d *SettingsDialog) Reload(host Host) {
-	d.fields.Forget()
-	d.ApplyFonts(host)
+// OpenPage shows the page with the given id at its top and clears the
+// search, as a click on its entry in the list does.
+func (d *SettingsDialog) OpenPage(id string) {
+	d.Cat, d.Search = id, NewTextField("")
+	d.scroll.Y = 0
 }
 
 // Searching reports whether a search text is typed.

@@ -3,7 +3,6 @@ package settingsui
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/prefs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/severity"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/platform/fonts"
 	"image/color"
 	"os"
 	"path/filepath"
@@ -48,7 +47,6 @@ func (h *fakeHost) SetScaleLive(percent int)            { h.current.UIScalePct =
 func (h *fakeHost) Save()                               { h.saved++ }
 func (h *fakeHost) Replace(current settings.Settings)   { h.current = current }
 func (h *fakeHost) SettingsPath() string                { return h.path }
-func (h *fakeHost) SetFonts(ui, code w.FontData) error  { h.fontsSet++; return nil }
 func (h *fakeHost) Toast(text string, _ severity.Level) { h.toasts = append(h.toasts, text) }
 func (h *fakeHost) SetStatus(string)                    {}
 func (h *fakeHost) OpenMenu(posX, posY int, items []prefs.MenuItem) {
@@ -56,49 +54,17 @@ func (h *fakeHost) OpenMenu(posX, posY int, items []prefs.MenuItem) {
 	h.menuAt = [2]int{posX, posY}
 }
 func (h *fakeHost) ExtraPage(id string) Node { return Text("page " + id) }
-func (h *fakeHost) ActionIDs() []string      { return []string{"send"} }
-func (h *fakeHost) Close()                   {}
-func (h *fakeHost) MarkDirty()               {}
-func (h *fakeHost) Later(callback func())    { callback() }
+
+// FormPage stands for the form the application draws (package formpage).
+func (h *fakeHost) FormPage(category, query string) Node {
+	return Text("form " + category + " " + query)
+}
+func (h *fakeHost) ActionIDs() []string   { return []string{"send"} }
+func (h *fakeHost) Close()                {}
+func (h *fakeHost) MarkDirty()            {}
+func (h *fakeHost) Later(callback func()) { callback() }
 
 func dump(node Node) string { return Dump(node) }
-
-func TestAPageShowsItsSettingsAndTheSearchFiltersAcrossPages(t *testing.T) {
-	var d SettingsDialog
-	host := newHost(t)
-	if text := dump(d.FormPage(testCtx(t), host, "Requests")); !strings.Contains(text, "Proxy") || strings.Contains(text, "Corners") {
-		t.Fatalf("Requests page:\n%s", text)
-	}
-	d.Search = NewTextField("corners")
-	if text := dump(d.FormPage(testCtx(t), host, "Requests")); !strings.Contains(text, "Corners") || strings.Contains(text, "Proxy") {
-		t.Fatalf("search results:\n%s", text)
-	}
-}
-
-func TestANumberOutsideItsRangeIsExplainedAndNotApplied(t *testing.T) {
-	var d SettingsDialog
-	host := newHost(t)
-	*d.Input(host, "timeoutSec") = NewTextField("0")
-	d.Edited(host, "timeoutSec")
-	if host.current.TimeoutSec != 60 || d.Note("timeoutSec") == "" {
-		t.Fatalf("timeout %d note %q", host.current.TimeoutSec, d.Note("timeoutSec"))
-	}
-	*d.Input(host, "timeoutSec") = NewTextField("20")
-	d.Edited(host, "timeoutSec")
-	if host.current.TimeoutSec != 20 || d.Note("timeoutSec") != "" {
-		t.Fatalf("timeout %d note %q", host.current.TimeoutSec, d.Note("timeoutSec"))
-	}
-}
-
-func TestResetRemovesTheKeyFromTheFile(t *testing.T) {
-	var d SettingsDialog
-	host := newHost(t)
-	host.Change(func(current *settings.Settings) { current.Layout = "side" })
-	d.Reset(host, "layout")
-	if data, _ := os.ReadFile(host.path); strings.Contains(string(data), "layout") || host.current.Layout != "stacked" {
-		t.Fatalf("layout %q, file %q", host.current.Layout, data)
-	}
-}
 
 func TestRawTextWithProblemsChangesNothingAndGoodTextIsWrittenAsTyped(t *testing.T) {
 	var d SettingsDialog
@@ -163,22 +129,6 @@ func (h *fakeHost) SettingsStore() settings.SettingsStore {
 	return settingsfile.Files{}
 }
 
-func TestAFileSettingHasAFolderButtonInsideItsFieldThatFillsIt(t *testing.T) {
-	var d SettingsDialog
-	host := newHost(t)
-	page := dump(d.FormPage(testCtx(t), host, "Requests"))
-	if strings.Count(page, "icon=folder") != 3 {
-		t.Fatalf("each of the three certificate settings needs a folder button:\n%s", page)
-	}
-	d.ChooseFile(host, "caCert")
-	if host.pickTitle == "" || !strings.Contains(host.pickTitle, "CA certificates") {
-		t.Fatalf("the picker title is %q", host.pickTitle)
-	}
-	host.pickDone("/etc/ssl/ca.pem")
-	if host.current.CACert != "/etc/ssl/ca.pem" || d.Input(host, "caCert").Text != "/etc/ssl/ca.pem" {
-		t.Fatalf("CACert %q, field %q", host.current.CACert, d.Input(host, "caCert").Text)
-	}
-}
 func (h *fakeHost) PickFile(title string, done func(path string)) {
 	h.pickTitle, h.pickDone = title, done
 }
@@ -197,21 +147,6 @@ func TestTheSaveButtonIsHiddenWhileAutoSaveIsOnAndNothingIsPending(t *testing.T)
 	host.current.AutoSave = true // changes pending even though the option is back on: Save stays available
 	if !strings.Contains(dump(d.saveButton(testCtx(t), host)), "onClick=true") {
 		t.Fatal("Save is hidden although changes are pending")
-	}
-}
-
-func TestAnEmptyFileSettingIsOnlyAButtonAndAFilledOneShowsItsPath(t *testing.T) {
-	var d SettingsDialog
-	host := newHost(t)
-	empty := dump(d.fileControl(testCtx(t), host, mustField(t, "caCert")))
-	if strings.Contains(empty, "fieldB") || !strings.Contains(empty, "icon=folder") || !strings.Contains(empty, "Choose file") {
-		t.Fatalf("an empty file setting should be one button with the folder icon and a label, no field:\n%s", empty)
-	}
-	host.current.CACert = "/etc/ssl/ca.pem"
-	d = SettingsDialog{}
-	filled := dump(d.fileControl(testCtx(t), host, mustField(t, "caCert")))
-	if !strings.Contains(filled, "fieldB") || !strings.Contains(filled, "icon=folder") {
-		t.Fatalf("a set file shows its path with a folder button:\n%s", filled)
 	}
 }
 
@@ -272,8 +207,6 @@ func assertSameDump(t *testing.T, tplView, goView Node, width, height int) {
 		t.Fatalf("template:\n%s\nGo:\n%s", got, want)
 	}
 }
-
-func (h *fakeHost) FontStore() settings.FontStore { return fonts.System{} }
 
 // Send routes a message to the fake's own recorder of it.
 func (h *fakeHost) Send(msg prefs.Msg) {
