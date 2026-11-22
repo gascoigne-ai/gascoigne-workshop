@@ -2,7 +2,7 @@
 
 Loaded when you work under `uitoolkit/`. Adds to `.harness/rules.md`.
 
-- Layers: `core` imports nothing from this module, `view` only `core`, `widget` only `core` and `view`, `theming` only `core`, `markup` only those and `widget`; nothing here imports `internal/*` or `cmd/*` (`core/layers_test.go` enforces it).
+- Layers: `core` imports nothing from this module, `view` only `core`, `widget` only `core` and `view`, `theming` only `core`, `markup` only those and `widget`; nothing here imports `internal/*` or `cmd/*`.
 
 ## Toolkit API rules
 

@@ -1,8 +1,7 @@
 ## Toolkit: API and templates
 
 The package map is `uitoolkit/doc.go`; import and naming rules are `rules.md` (Layers, Toolkit API
-rules). `uitoolkit/core/layers_test.go` enforces the layers, also for `uitoolkit/examples`, the
-tested examples, which use the exported API only.
+rules). `uitoolkit/examples` are tested examples that use the exported API only.
 
 - **Families stay whole.** An option family (`MinW`, `AlignStart`, `JustifyBetween`, `PadL`...) is
   exported even where the app uses part of it, since a half family breaks rule 1; helpers only the

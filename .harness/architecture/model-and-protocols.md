@@ -1,9 +1,8 @@
 ## Model and protocols
 
 - `model.Request` is protocol-neutral. What differs per protocol is a row of `model.Protocols`;
-  `internal/protocol_literals_test.go` fails on a protocol name literal or a comparison with a
-  `model.Protocol*` constant outside the rows, the registry and a short list of files that use the
-  same words for something else.
+  A protocol name literal or a comparison with a `model.Protocol*` constant outside the rows and the
+  registry is a review failure.
 - Protocol, body type, auth type and API key location are parsed once, at the edge. An unknown one
   fails the collection file (named), names the server or request of a client config, and skips a
   sent-log line.

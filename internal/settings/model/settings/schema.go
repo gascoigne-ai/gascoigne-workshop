@@ -43,7 +43,7 @@ var Categories = []string{"Appearance", "Colors", "Shortcuts", "Requests", "Gene
 
 // rows are the settings, in the order of the form, the file and Schema.
 // They stay in this file: the keys grpc and sse are the one allowed use of
-// those protocol words (internal/protocol_literals_test.go).
+// those protocol words.
 var rows = []row{
 	enumRow(Field{Key: "theme", Title: "Theme", Description: "The color theme: dark, light or the id of a theme file in the themes folder.", Category: "Appearance", Allowed: []string{"dark", "light"}, Open: true}, func(prefs *Settings) *string { return &prefs.Theme }),
 	textRow(Field{Key: "uiFont", Title: "Interface font", Description: "Family name of an installed font for labels, buttons and fields; empty is the built-in font.", Category: "Appearance"}, func(prefs *Settings) *string { return &prefs.UIFont }),

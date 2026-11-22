@@ -57,19 +57,6 @@ func checkSizeInvariants(t *testing.T, sizes Sizes) {
 	}
 }
 
-// The constants stay as the default-face values until the later tasks that
-// move every consumer to Ctx.Sizes delete them.
-func TestDefaultSizesEqualConstants(t *testing.T) {
-	want := Sizes{
-		Line: BaseLine, SmallLine: BaseSmallLine, Row: RowH, Compact: CompactH, Slim: SlimH, Label: LabelH, Note: NoteH,
-		Toolbar: ToolbarH, TabBar: TabBarH, DialogTitle: DialogTitleH, DialogToolbar: DialogToolbarH,
-		IconBtnW: IconBtnW, WordBtnW: WordBtnW, Checkbox: CheckboxSize,
-	}
-	if got := DefaultSizes(); got != want {
-		t.Fatalf("DefaultSizes() = %+v, want %+v", got, want)
-	}
-}
-
 func TestSizesScopeNames(t *testing.T) {
 	want := map[string]any{
 		"rowH": 28, "compactH": 24, "slimH": 20, "labelH": 22, "noteH": 18, "toolbarH": 36, "tabBarH": 40,

@@ -45,7 +45,7 @@ func (a *App) Update() error {
 		ebiten.SetTPS(tps)
 		a.tps = tps
 	}
-	return a.shotUpdate()
+	return nil
 }
 
 // step runs one frame with the given input: it applies finished sends,
@@ -165,7 +165,6 @@ func (a *App) Draw(screen *ebiten.Image) {
 	}
 	view.Draw(a.ctx, a.frameTree(), screen)
 	a.dirty = false
-	a.shotDraw(screen)
 }
 
 // ---- keyboard ---------------------------------------------------------------
@@ -177,15 +176,16 @@ func (a *App) buildTree() *view.El {
 }
 
 // frameTree is the laid out tree Draw paints: the one endFrame built when
-// nothing it shows changed since, else a fresh build. A screenshot run
-// changes the scene after the step, so it always builds fresh. A revision
+// nothing it shows changed since, else a fresh build. A capture
+// (Options.DrawEveryFrame) changes the scene after the step, so it always
+// builds fresh. A revision
 // counter bumped by every change was rejected: one missed bump loses an
 // edit on screen; a test that compares the reused tree with a fresh build
 // catches a missed treeStale instead
 // (TestTheDrawnTreeMatchesAFreshBuildAcrossASession).
 func (a *App) frameTree() *view.El {
 	root := a.drawTree
-	if root == nil || a.treeStale || a.shot.path != "" {
+	if root == nil || a.treeStale || a.drawEveryFrame {
 		root = a.buildTree()
 	}
 	view.Layout(a.ctx, root, a.w, a.h)

@@ -6,15 +6,11 @@ import (
 	"errors"
 	"go/parser"
 	"go/token"
-	"image"
-	"image/png"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
 	"testing"
-
-	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/postman"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
@@ -183,48 +179,6 @@ func TestTheFileBodyAsksAboutEachPathOnce(t *testing.T) {
 				t.Fatalf("asked %d times about %s, want once", n, test.path)
 			}
 		})
-	}
-}
-
-func TestTheScreenshotIsWrittenThroughTheFileSystemThenTheRunEnds(t *testing.T) {
-	files := newFakeFolders()
-	files.release = make(chan struct{})
-	a := shotApp(t, Options{ScreenshotPath: "/shots/x.png", Folders: files})
-	a.shot.frames = settleFrames
-	a.saveShot(image.NewRGBA(image.Rect(0, 0, 3, 2)))
-	if a.shot.ready(a) {
-		t.Fatal("a frame being written is not captured again")
-	}
-	if err := a.shotUpdate(); err != nil {
-		t.Fatalf("the run ended before the screenshot was written: %v", err)
-	}
-	close(files.release)
-	until(t, a, "the screenshot file", func() bool {
-		_, ok := files.file("/shots/x.png")
-		return ok
-	})
-	a.drain() // the outcome of the write
-	if err := a.shotUpdate(); !errors.Is(err, ebiten.Termination) {
-		t.Fatalf("after the write the run must end, got %v", err)
-	}
-	data, _ := files.file("/shots/x.png")
-	img, err := png.Decode(bytes.NewReader(data))
-	if err != nil || img.Bounds().Dx() != 3 || img.Bounds().Dy() != 2 {
-		t.Fatalf("decoded %v %v", img, err)
-	}
-	if a.Err() != nil {
-		t.Fatalf("Err = %v", a.Err())
-	}
-}
-
-func TestAScreenshotThatCannotBeWrittenEndsTheRunWithTheError(t *testing.T) {
-	files := newFakeFolders()
-	files.writeErr = errors.New("disk full")
-	a := shotApp(t, Options{ScreenshotPath: "/shots/x.png", Folders: files})
-	a.saveShot(image.NewRGBA(image.Rect(0, 0, 1, 1)))
-	until(t, a, "the end of the run", func() bool { return errors.Is(a.shotUpdate(), ebiten.Termination) })
-	if a.Err() == nil || !strings.Contains(a.Err().Error(), "disk full") {
-		t.Fatalf("Err = %v", a.Err())
 	}
 }
 

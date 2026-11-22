@@ -1,6 +1,6 @@
 //go:build !release
 
-package main
+package e2e
 
 import (
 	"errors"

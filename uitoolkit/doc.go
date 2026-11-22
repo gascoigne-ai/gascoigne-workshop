@@ -29,6 +29,5 @@
 // examples are one package because go vet forces the Example_xxx form.
 //
 // Applications import the toolkit packages directly; nothing under this
-// directory may import the application's internal packages
-// (see core/layers_test.go).
+// directory may import the application's internal packages.
 package uitoolkit

@@ -22,7 +22,7 @@ Run before a tag `vX.Y.Z`. Tick a line with the date and what was seen; a line t
 
 - [ ] `make check` green, on Linux under `xvfb-run -a` so the golden scenes run.
 
-Goldens are drawn under software GL, so they are regenerated on Linux like CI, not on macOS: an `ubuntu:24.04` image with the apt packages of `.github/actions/ebitengine-deps/action.yml` (`xvfb` included) and Go from `go.mod`, run `--platform linux/amd64` with the repo mounted, then `xvfb-run -a go test ./cmd/workshop -run TestGoldenScenes -update`.
+Goldens are drawn under software GL, so they are regenerated on Linux like CI, not on macOS: an `ubuntu:24.04` image with the apt packages of `.github/actions/ebitengine-deps/action.yml` (`xvfb` included) and Go from `go.mod`, run `--platform linux/amd64` with the repo mounted, then `xvfb-run -a go test ./e2e -run TestGoldenScenes -update`.
 Look at every changed PNG, then run the set three times without `-update`: all green.
 - [ ] `version` in `internal/workspace/ui/app/app.go` is the tag.
 - [ ] `CHANGELOG.md` and the README's feature list match what the program does.

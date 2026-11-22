@@ -1,6 +1,6 @@
 # Overview
 
-The 3000 ft view. Details are in `architecture.md`, the reasons for a choice in the doc comment of the code it shapes (else in the matching `architecture/*.md`), the rules in `rules.md`, the look in `style.md`, the tree of packages in `packagemap.md`.
+The 3000 ft view. Details are in `architecture.md`, the reasons for a choice in the doc comment of the code it shapes (else in the matching `architecture/*.md`), the rules in `rules.md`, the look in `style.md`.
 
 ## What it is
 
@@ -18,7 +18,7 @@ uitoolkit/           the GPU toolkit; knows nothing of requests (`uitoolkit/doc.
   markup             templates (HTML-like) that build the same trees
   theming, engine    palettes and theme files; key bindings and frame pacing
 internal/<domain>/<role>/<package>
-                     the application, see packagemap.md
+                     the application
 packaging/           desktop entry, macOS bundle
 .harness/            rules, architecture, style, tasks
 ```
@@ -42,7 +42,7 @@ flowchart TB
   ui & app --> toolkit["uitoolkit: core / view / widget / markup"]
 ```
 
-Dependencies point inward: what each role may import is written once, in `rules.md` (Layout of `internal/`) and in the generated `packagemap.md`, and `internal/layers_test.go` enforces it. The adapters never reach the App directly: `cmd/workshop` builds them and hands them in through `Options`, and a nil port falls back to a null one, so tests and screenshots need no desktop.
+Dependencies point inward: what each role may import is written once, in `rules.md` (Layout of `internal/`). The adapters never reach the App directly: `cmd/workshop` builds them and hands them in through `Options`, and a nil port falls back to a null one, so tests and screenshots need no desktop.
 
 ## One request, end to end
 
@@ -67,5 +67,5 @@ Every frame the whole window tree is rebuilt from the App state (why: the `marku
 
 ## How the project is run
 
-- `make check` is the gate (flags and release-tag scope are commented in the Makefile). `make fuzz` runs the fuzz targets (`architecture/limits.md`), `make packagemap` rewrites `packagemap.md`, `make shot OUT=x.png` renders the window once; golden scenes are compared under software GL (why: `cmd/workshop/softshot_test.go`).
+- `make check` is the gate (flags and release-tag scope are commented in the Makefile). `make fuzz` runs the fuzz targets (`architecture/limits.md`), `make shot OUT=x.png` renders the window once; golden scenes are compared under software GL (why: `e2e/softshot_test.go`).
 - Work is tasks (`.harness/tasks/NNN-title.md`, run by `/task-loop`); shared rules are in the submodule `.harness/common`.

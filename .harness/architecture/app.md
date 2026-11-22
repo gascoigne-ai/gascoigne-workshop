@@ -117,16 +117,21 @@ at every start in the dev build. The notes are kept in step with `CHANGELOG.md` 
 
 ### Screenshots and golden scenes
 
-- `workshop -screenshot out.png` renders, writes the PNG and exits (`make shot`). Scene flags
-  become a list of `app.Step`s, run in the order of `sceneFlagTable` (`cmd/workshop/scene.go`)
-  whatever the command line order; `deferred` steps wait for the sends to be answered.
+- The shipped `workshop` has no screenshot code. `e2e/cmd/shot -screenshot out.png` renders,
+  writes the PNG and exits (`make shot`). It wires the app like `cmd/workshop`, wraps it in a
+  `capture` (`ebiten.Game`: frame count, settle wait, `ReadPixels`, PNG write) and sets
+  `Options.DrawEveryFrame`. Scene flags become a list of steps, run in the order of
+  `sceneFlagTable` (`e2e/cmd/shot/scene.go`) whatever the command line order; `deferred` steps
+  wait for the sends to be answered. Every step calls `app.Driver` (`driver.go`), the one place
+  where the app exposes what a scene needs, each action the same path as the user action it is
+  named after; the driver lives in the app because the views own the state it reaches.
 - A screenshot run keeps settings and state in memory unless `-settings` or `-state` is given, so
   `-set` and `-record` never write the user's files. `-set key=value` changes a setting live,
   through the same path the settings dialog uses.
-- `TestGoldenScenes` (`cmd/workshop/golden_scenes_test.go`, runner in `softshot_test.go`) draws
+- `TestGoldenScenes` (`e2e/golden_scenes_test.go`, runner in `softshot_test.go`) draws
   each scene under Xvfb with Mesa's software rasterizer (why: `renderShot`), with `HOME` and `XDG_*`
   sandboxed. Two runs there give byte-identical PNGs, which is what makes goldens comparable; the
   small slack (`shotTolerance`, `maxDifferingPixels`) absorbs driver noise. A stub answers the sample request on `127.0.0.1:8081`; MCP and gRPC scenes use the
   example server's ports (`exampleserver.Config`). Testdata folders are copied to temp dirs first, so
-  nothing the program writes lands in `testdata`. `go test ./cmd/workshop -update` rewrites the
+  nothing the program writes lands in `testdata`. `go test ./e2e -update` rewrites the
   goldens; look at the PNG before committing.

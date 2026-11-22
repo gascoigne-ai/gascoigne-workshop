@@ -1,0 +1,338 @@
+package app
+
+import (
+	"fmt"
+	"path/filepath"
+	"slices"
+	"strings"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/transfer"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/tree"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/editor"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
+
+	"github.com/hajimehoshi/ebiten/v2"
+)
+
+// Driver is the way a program outside the app puts the window into a state
+// without a user's input: the end-to-end screenshots (e2e/cmd/shot) call
+// its actions, each the same path as the user action it is named after, and
+// then capture a frame. It lives in this package because every action
+// reaches the state the views own; a driver outside would have to export
+// all of it. Its one piece of state is the sends it started, which a
+// capture waits for.
+type Driver struct {
+	app      *App
+	waiting  []*reqTab // tabs whose send the driver started
+	sendNext *reqTab   // the tab OpenRequest opened, sent once the earlier sends are answered
+}
+
+// Driver returns the driver of this window.
+func (a *App) Driver() *Driver { return &a.driver }
+
+// dialogOpeners are the dialogs OpenDialog opens on the open request, by the
+// name a scene gives them.
+var dialogOpeners = map[string]func(app *App, node model.Node){
+	"rename": (*App).renameNode,
+	"delete": (*App).deleteNode,
+	"move":   func(app *App, node model.Node) { app.openTransferPicker(node, transfer.Move) },
+	"copy":   func(app *App, node model.Node) { app.openTransferPicker(node, transfer.Copy) },
+}
+
+// OpenRequest opens the request with this name. A name that is not in the
+// collection is an error: showing the default tab instead would let a golden
+// pass for the wrong scene.
+func (d *Driver) OpenRequest(name string) error {
+	request := d.app.findRequestByName(name)
+	if request == nil {
+		return fmt.Errorf("request %q is not in the collection", name)
+	}
+	d.app.openRequest(request)
+	return nil
+}
+
+// ShowRequestPane shows the open request's pane with this label.
+func (d *Driver) ShowRequestPane(label string) error {
+	tab := d.app.cur()
+	for i, candidate := range requestPanesFor(tab) {
+		if candidate.label == label {
+			tab.paneTab = i
+			return nil
+		}
+	}
+	return fmt.Errorf("pane %q is not a pane of the open request", label)
+}
+
+// ShowResponsePane shows the open request's response pane with this label.
+func (d *Driver) ShowResponsePane(label string) error {
+	tab := d.app.cur()
+	for i, candidate := range responsePanesFor(tab) {
+		if candidate.label == label {
+			tab.respTab = i
+			return nil
+		}
+	}
+	return fmt.Errorf("response pane %q is not a response pane of the open request", label)
+}
+
+// ChooseBodyType chooses the body type id on the open request, as its chip does.
+func (d *Driver) ChooseBodyType(id string) error {
+	known := slices.ContainsFunc(bodyTypes, func(candidate bodyChoice) bool {
+		return candidate.id == model.BodyType(id)
+	})
+	if !known {
+		return fmt.Errorf("body type %q is not one of the body chips", id)
+	}
+	d.app.setBodyType(d.app.cur(), model.BodyType(id))
+	d.app.markStale() // no input reports this edit, so the cached unsaved marks would not see it
+	return nil
+}
+
+// TypeBody replaces the open request's body text, as selecting all and
+// typing would. It needs a JSON or Text body.
+func (d *Driver) TypeBody(text string) error {
+	tab := d.app.cur()
+	if tab.Req.BodyType != model.BodyJSON && tab.Req.BodyType != model.BodyText {
+		return fmt.Errorf("body text needs a JSON or Text body, the open request's is %q", tab.Req.BodyType)
+	}
+	tab.body.SelectAll()
+	tab.body.Insert(text)
+	editRequest(tab, editor.BodyTyped{Text: tab.body.Text})
+	d.app.markStale() // no input reports this edit, so the cached unsaved marks would not see it
+	return nil
+}
+
+// TypeURL types text into the open request's URL, so its tab is marked changed.
+func (d *Driver) TypeURL(text string) {
+	d.app.cur().url.Insert(text)
+	d.app.urlEdited(d.app.cur())
+	d.app.markStale() // no input reports this edit, so the cached unsaved marks would not see it
+}
+
+// WrapOn turns on Wrap for the open request's response and body, as their two
+// Wrap chips would.
+func (d *Driver) WrapOn() {
+	d.app.cur().view.Wrap = true
+	d.app.cur().body.Wrap = true
+}
+
+// OpenDialog opens the dialog of this kind (rename, delete, or the move and
+// copy destination pickers) on the open request.
+func (d *Driver) OpenDialog(kind string) error {
+	open, ok := dialogOpeners[kind]
+	if !ok {
+		return fmt.Errorf("dialog %q is not one of rename, delete, move, copy", kind)
+	}
+	open(d.app, model.Node{Req: d.app.cur().Req})
+	return nil
+}
+
+// ShowToast shows text as an error toast, which stays until clicked, so a slow
+// frame cannot let it fade before a capture.
+func (d *Driver) ShowToast(text string) { d.app.toast(text, severity.Error) }
+
+// OpenSettingsMenu opens the settings dialog.
+func (d *Driver) OpenSettingsMenu() { d.app.menu = true }
+
+// OpenSettingsPage opens the settings dialog on the page with this name.
+func (d *Driver) OpenSettingsPage(name string) {
+	d.app.prefs.Cat = name
+	d.app.menu = true
+}
+
+// OpenRawSettings opens the settings dialog on the text of settings.json, as
+// its JSON button does.
+func (d *Driver) OpenRawSettings() {
+	d.app.prefs.OpenRaw(d.app)
+	d.app.menu = true
+}
+
+// RecordShortcut starts recording on the shortcut action spec names
+// ("ACTION") and, when spec is "ACTION=KEYS", delivers the keys as a key
+// press would.
+func (d *Driver) RecordShortcut(spec string) error {
+	id, keys, hasKeys := strings.Cut(spec, "=")
+	known := slices.ContainsFunc(shortcuts, func(candidate shortcut) bool { return candidate.id == id })
+	if !known {
+		return fmt.Errorf("record: %q is not a shortcut action", id)
+	}
+	d.app.shortcutKeys.Start(id)
+	if !hasKeys {
+		return nil
+	}
+	binding, err := engine.ParseBinding(keys)
+	if err != nil {
+		return fmt.Errorf("record %s: %w", id, err)
+	}
+	d.app.shortcutKeys.RecordKey(d.app, core.Input{Keys: []ebiten.Key{binding.Key}, Ctrl: binding.Ctrl, Shift: binding.Shift, Alt: binding.Alt})
+	return nil
+}
+
+// ShowSentLog shows the log of sent requests in the sidebar.
+func (d *Driver) ShowSentLog() { d.app.showSent = true }
+
+// OpenCallLog opens the Log dialog of calls, as the status bar's Log button does.
+func (d *Driver) OpenCallLog() { d.app.calls.Open() }
+
+// BrowseFiles opens the in-app file browser on dir (made absolute) with the
+// title of the request body's file chooser, as choosing a file without a
+// dialog program does.
+func (d *Driver) BrowseFiles(dir string) error {
+	absolute, err := filepath.Abs(dir)
+	if err != nil {
+		return fmt.Errorf("file browser folder %q: %w", dir, err)
+	}
+	d.app.browseIn(absolute, "Choose the file to send", port.OpenFile, "", func(string) {})
+	return nil
+}
+
+// CloseAllCollections closes every collection, so the tree shows its empty prompt.
+func (d *Driver) CloseAllCollections() {
+	for len(d.app.open.Entries) > 0 {
+		d.app.closeCollection(d.app.open.Entries[0].Collection)
+	}
+}
+
+// AddCollection opens the collection saved in dir beside the open ones, as
+// Open collection folder does. A folder with nothing in it is an error here,
+// unlike in that prompt, where it starts a new collection: a scene meant to
+// show a saved collection must not pass with an empty one.
+func (d *Driver) AddCollection(dir string) error {
+	loaded, err := d.app.store.Load(dir)
+	if err != nil {
+		return fmt.Errorf("collection %q: %w", dir, err)
+	}
+	if len(loaded.Folders) == 0 && len(loaded.Requests) == 0 {
+		return fmt.Errorf("collection %q: the folder holds no collection", dir)
+	}
+	return d.app.addCollection(dir)
+}
+
+// OpenAllRequests opens every request of the collection in its own tab, so
+// the tab strip overflows.
+func (d *Driver) OpenAllRequests() {
+	d.app.eachRoot(func(root *model.Folder) {
+		tree.WalkRequests(root, "", func(_ string, request *model.Request) { d.app.openRequest(request) })
+	})
+}
+
+// FilterTree types text into the sidebar's filter.
+func (d *Driver) FilterTree(text string) { d.app.filter.Insert(text) }
+
+// ChangeSetting changes a setting through the path the settings dialog takes,
+// so the window reacts as it does to a click there.
+func (d *Driver) ChangeSetting(key string, value settings.Value) error {
+	var setErr error
+	d.app.changeSettings(func(prefs *settings.Settings) { setErr = settings.Set(prefs, key, value) })
+	return setErr
+}
+
+// Find opens the find bar on the current response and types text into it, as
+// Ctrl+F and typing would.
+func (d *Driver) Find(text string) {
+	d.app.openFind()
+	tab := d.app.cur()
+	tab.find.Insert(text)
+	d.app.runFind(tab)
+}
+
+// OpenToolForm opens the call form of the named tool of the open MCP request.
+// It reports false, with no error, while the server has announced no tools
+// yet; a tool missing from the announced ones is an error.
+func (d *Driver) OpenToolForm(name string) (opened bool, err error) {
+	tab := d.app.cur()
+	for _, tool := range tab.Tools {
+		if tool.Name == name {
+			d.app.openToolForm(tab, tool)
+			return true, nil
+		}
+	}
+	if len(tab.Tools) == 0 {
+		return false, nil
+	}
+	names := make([]string, len(tab.Tools))
+	for i, tool := range tab.Tools {
+		names[i] = tool.Name
+	}
+	return false, fmt.Errorf("tool %q is not one the server announced: %s", name, strings.Join(names, ", "))
+}
+
+// Send sends the open request, as the Send button does, and remembers it so
+// AllAnswered can tell when its outcome is in.
+func (d *Driver) Send() {
+	tab := d.app.cur()
+	d.waiting = append(d.waiting, tab)
+	d.app.send(tab)
+}
+
+// SendAfterAnswers marks the open request to be sent by ServeSends once every
+// earlier send is answered, so the sent log keeps its order.
+func (d *Driver) SendAfterAnswers() { d.sendNext = d.app.cur() }
+
+// ServeSends sends the request SendAfterAnswers marked, if the earlier sends
+// are answered. Call it once per frame.
+func (d *Driver) ServeSends() {
+	if d.sendNext == nil || !d.AllAnswered() {
+		return
+	}
+	tab := d.sendNext
+	d.sendNext = nil
+	d.waiting = append(d.waiting, tab)
+	d.app.send(tab)
+}
+
+// SendsPending reports whether a send marked by SendAfterAnswers has not
+// gone out yet.
+func (d *Driver) SendsPending() bool { return d.sendNext != nil }
+
+// AllAnswered reports whether every send the driver started has its outcome.
+func (d *Driver) AllAnswered() bool {
+	return !slices.ContainsFunc(d.waiting, func(tab *reqTab) bool { return !answered(tab) })
+}
+
+// Settled reports whether the open request shows nothing still loading: its
+// Proto pane waits for the files to be read and its Schema pane for the
+// message schema.
+func (d *Driver) Settled() bool {
+	tab := d.app.cur()
+	return !protoReading(tab) && !schemaLoading(tab)
+}
+
+// SendWithoutWaiting sends the open request and does not wait for its
+// outcome, so a capture shows it in flight.
+func (d *Driver) SendWithoutWaiting() { d.app.send(d.app.cur()) }
+
+// answered reports whether what a driver sent has an outcome to show: a
+// response, or for a socket an open connection (an MCP server also has
+// said who it is) or a failed one.
+func answered(tab *reqTab) bool {
+	if !isSocket(tab) {
+		return tab.Resp != nil && !tab.Sending() // a tab sent again still holds its earlier response
+	}
+	if tab.State() == tabs.ConnConnecting {
+		return false
+	}
+	if tab.Session() == nil {
+		return len(tab.wsView.Lines) > 0 // the error is in the log
+	}
+	explores := slices.ContainsFunc(viewOf(tab.Req.Protocol).streamPanes, func(panel pane) bool { return panel.kind == paneExplorer })
+	return !explores || tab.Server != nil // an explorer waits for the server to say who it is
+}
+
+func (a *App) findRequestByName(name string) *model.Request {
+	var found *model.Request
+	a.eachRoot(func(root *model.Folder) {
+		tree.WalkRequests(root, "", func(_ string, req *model.Request) {
+			if found == nil && req.Name == name {
+				found = req
+			}
+		})
+	})
+	return found
+}

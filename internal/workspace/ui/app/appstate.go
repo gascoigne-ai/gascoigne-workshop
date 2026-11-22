@@ -70,25 +70,26 @@ type tableState struct {
 
 // frameState holds what one frame reads and decides: size, redraw flag, update rate, input, pacing, window geometry and the widgets that outlive a frame.
 type frameState struct {
-	w            int
-	h            int
-	dirty        bool         // something changed since the last draw
-	drawTree     *view.El     // the tree the last step built and updated; Draw paints it
-	treeStale    bool         // a handler or a step after the build changed what drawTree shows
-	builds       int          // view trees built, so tests can count them
-	tps          int          // the update rate last set
-	lastIn       core.Input   // the previous frame's input
-	pacer        engine.Pacer // update rate from idle time
-	windowScale  float64      // window units per logical pixel, set by Layout
-	winX         int
-	winY         int    // window position, read each frame
-	title        string // the window title last set
-	tips         widget.TooltipState
-	sampler      core.Sampler
-	sidebarSplit widget.SplitState  // width of the collections sidebar
-	paneSplit    widget.SplitState  // request pane share of the request/response area
-	tabsScroll   widget.ScrollState // sideways scroll of the request tab strip
-	toasts       widget.ToastStack
+	w              int
+	h              int
+	dirty          bool         // something changed since the last draw
+	drawEveryFrame bool         // every frame is built and drawn, as a capture needs (Options.DrawEveryFrame)
+	drawTree       *view.El     // the tree the last step built and updated; Draw paints it
+	treeStale      bool         // a handler or a step after the build changed what drawTree shows
+	builds         int          // view trees built, so tests can count them
+	tps            int          // the update rate last set
+	lastIn         core.Input   // the previous frame's input
+	pacer          engine.Pacer // update rate from idle time
+	windowScale    float64      // window units per logical pixel, set by Layout
+	winX           int
+	winY           int    // window position, read each frame
+	title          string // the window title last set
+	tips           widget.TooltipState
+	sampler        core.Sampler
+	sidebarSplit   widget.SplitState  // width of the collections sidebar
+	paneSplit      widget.SplitState  // request pane share of the request/response area
+	tabsScroll     widget.ScrollState // sideways scroll of the request tab strip
+	toasts         widget.ToastStack
 }
 
 // persistState holds what is remembered between runs and written in the background: the state file, the collections' autosave and the trust list.

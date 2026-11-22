@@ -1,10 +1,6 @@
-.PHONY: packagemap check fuzz fmt-check vet test vet-release release-packages check-release-scope test-release build release run example-server shot install
+.PHONY: check fuzz fmt-check vet test vet-release release-packages check-release-scope test-release build release run example-server shot install
 
 check: fmt-check vet test vet-release check-release-scope test-release
-
-# Rewrite .harness/packagemap.md from the package tree.
-packagemap:
-	go test ./internal -run TestThePackageMapIsCurrent -update
 
 fmt-check:
 	@test -z "$$(gofmt -l .)" || { gofmt -l .; exit 1; }
@@ -122,7 +118,7 @@ example-server:
 
 # Render the window once to a PNG (needs a display): make shot OUT=shot.png
 shot:
-	go run ./cmd/workshop -screenshot $(or $(OUT),shot.png) -send
+	go run ./e2e/cmd/shot -screenshot $(or $(OUT),shot.png) -send
 
 # Install the release build for the current user, no root; on Linux also its
 # desktop entry and icon (freedesktop paths that macOS does not read; the Mac

@@ -1,6 +1,6 @@
 //go:build !release
 
-package main
+package e2e
 
 import (
 	"context"
@@ -123,7 +123,7 @@ func buildProgram(t *testing.T) string {
 			return
 		}
 		builtBinary = filepath.Join(buildDir, "workshop")
-		if output, err := exec.Command("go", "build", "-o", builtBinary, ".").CombinedOutput(); err != nil {
+		if output, err := exec.Command("go", "build", "-o", builtBinary, "./cmd/shot").CombinedOutput(); err != nil {
 			buildErr = fmt.Errorf("go build: %w\n%s", err, output)
 		}
 	})

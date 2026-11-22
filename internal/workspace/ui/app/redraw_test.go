@@ -4,7 +4,6 @@ import (
 	sport "github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -173,13 +172,12 @@ func TestResizingOrChangingScaleRequestsARedraw(t *testing.T) {
 	}
 }
 
-func TestScreenshotModeAlwaysDraws(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png")})
+func TestDrawEveryFrameOptionAlwaysDraws(t *testing.T) {
+	a := driverApp(t, Options{DrawEveryFrame: true})
 	settle(a, 2)
 	a.step(core.Input{})
-	a.shotUpdate()
 	if !a.dirty && !a.alwaysDraw() {
-		t.Fatal("a screenshot needs every frame")
+		t.Fatal("a capture needs every frame")
 	}
 }
 

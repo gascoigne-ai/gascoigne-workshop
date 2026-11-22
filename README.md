@@ -140,12 +140,11 @@ On macOS Ctrl is Cmd. All of them can be changed in Settings, Shortcuts.
 ```sh
 make check                    # gofmt, go vet, go test -race, vet and the affected tests with -tags release
 make shot OUT=shot.png        # render the window once to a PNG (needs a display)
-make packagemap               # rewrite .harness/packagemap.md after adding a package
 ```
 
-Golden screenshots (`cmd/workshop/testdata/golden`) are compared under software GL: on Linux run
+Golden screenshots (`e2e/testdata/golden`) are compared under software GL: on Linux run
 `xvfb-run -a make check`; update them with
-`xvfb-run -a go test ./cmd/workshop -run TestGoldenScenes -update`.
+`xvfb-run -a go test ./e2e -run TestGoldenScenes -update`.
 
 ## Release
 

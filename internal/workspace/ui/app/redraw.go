@@ -15,7 +15,7 @@ func (a *App) setSize(width, height int, scale float64) bool {
 	changed := width != a.w || height != a.h || (scale > 0 && scale != a.ctx.Scale)
 	a.w, a.h = width, height
 	if err := a.ctx.SetScale(scale); err != nil {
-		a.shot.err = err
+		a.err = err
 	}
 	if changed {
 		a.dirty = true
@@ -31,8 +31,8 @@ func (a *App) markFrame(active bool) {
 	}
 }
 
-// alwaysDraw reports whether every frame must be drawn (screenshots).
-func (a *App) alwaysDraw() bool { return a.shot.path != "" }
+// alwaysDraw reports whether every frame must be drawn (a capture, Options.DrawEveryFrame).
+func (a *App) alwaysDraw() bool { return a.drawEveryFrame }
 
 // frame is what Layout works out from the window size.
 type frame struct {

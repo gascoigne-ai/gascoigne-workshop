@@ -44,7 +44,8 @@ type App struct {
 	widgets    map[*tabs.Tab]*reqTab   // the widget state of each open tab
 	bus        *bus.Bus                // what goroutines report back, drained once per frame
 	status     string
-	shot       screenshot
+	driver     Driver             // what the end-to-end screenshots drive the window with
+	err        error              // a failure that ends the run, reported by Err
 	browser    *fileBrowser       // the in-app file browser while it is open
 	pickerHost destpicker.Host    // what the open picker asks of the App
 	picker     *destpicker.Picker // the move or copy destination picker while it is open
@@ -64,3 +65,6 @@ func (a *App) clickTree(row collection.Row) {
 }
 
 func (a *App) newRequest() { a.newRequestIn(a.selectedFolder()) }
+
+// Err is the error that ended the run, if any.
+func (a *App) Err() error { return a.err }

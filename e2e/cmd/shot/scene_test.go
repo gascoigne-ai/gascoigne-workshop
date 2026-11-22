@@ -1,3 +1,5 @@
+//go:build !release
+
 package main
 
 import (
@@ -19,7 +21,7 @@ func sceneOf(t *testing.T, args ...string) []string {
 	}
 	var kinds []string
 	for _, step := range scene.steps() {
-		kinds = append(kinds, strings.TrimPrefix(strings.TrimPrefix(fmt.Sprintf("%T", step), "*"), "app."))
+		kinds = append(kinds, strings.TrimPrefix(strings.TrimPrefix(fmt.Sprintf("%T", step), "*"), "main."))
 	}
 	return kinds
 }

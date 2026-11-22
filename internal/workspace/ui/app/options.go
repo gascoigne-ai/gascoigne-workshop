@@ -24,9 +24,7 @@ import (
 
 // Options are the startup switches of the command line.
 type Options struct {
-	ScreenshotPath   string                                        // save a PNG of the first settled frame and exit
-	Scene            []Step                                        // what the screenshot does to the window before the capture, in order
-	SendOnStart      bool                                          // send the first request at startup
+	DrawEveryFrame   bool                                          // build and draw every frame, even an idle one: a capture reads the frame it just drew
 	SettingsPath     string                                        // settings file; "" keeps settings in memory
 	Welcome          bool                                          // open the welcome dialog when this version has not been welcomed yet
 	WelcomeEvery     bool                                          // with Welcome, open the dialog at every start, not once per version
@@ -52,7 +50,6 @@ type Options struct {
 	RetryDelay       time.Duration                                 // wait before a dropped connection reopens; 0 is two seconds
 	HostOS           string                                        // the OS shortcut text follows; "" is the running one
 	BaseScale        float64                                       // the platform's interface factor under the user's scale; 0 is 1
-	OpenMenu         bool                                          // start with the settings menu open
 	WorkspaceDir     string                                        // collection folder; "" uses the remembered one, else the client config, else the sample
 	Sample           func() model.Collection                       // the collection shown without a workspace or client config; nil uses collection.GitHubSample
 	Clients          cport.ClientConfigs                           // the client config a build offers without a workspace; nil has none
@@ -119,7 +116,6 @@ func NewApp(opts Options) (*App, error) {
 		widgets:    map[*tabs.Tab]*reqTab{},
 		bus:        bus.New(),
 		status:     "Ready",
-		shot:       newScreenshot(opts),
 		jar:        newJar(),
 		list:       tabs.List{Drag: -1},
 		ports: ports{
@@ -129,12 +125,13 @@ func NewApp(opts Options) (*App, error) {
 			settingFiles: opts.SettingsFiles, previews: opts.Previews,
 		},
 		treeState:    treeState{expanded: map[*model.Folder]bool{}},
-		frameState:   frameState{dirty: true},
+		frameState:   frameState{dirty: true, drawEveryFrame: opts.DrawEveryFrame},
 		persistState: persistState{saves: map[*model.Collection]*autosave.Debounce{}, defaultWorkspace: opts.DefaultWorkspace, statePath: opts.StatePath},
 		settingsState: settingsState{
-			settings: st, settingsPath: opts.SettingsPath, settingsAccess: fileversion.AccessAfter(loadErr), menu: opts.OpenMenu,
+			settings: st, settingsPath: opts.SettingsPath, settingsAccess: fileversion.AccessAfter(loadErr),
 		},
 	}
+	a.driver.app = a
 	if loadErr != nil {
 		a.status = loadErr.Error()
 	}

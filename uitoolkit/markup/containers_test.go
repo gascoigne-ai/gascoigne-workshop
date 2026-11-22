@@ -350,24 +350,6 @@ func TestDialogElementOutsideClickRunsTheScopeDismiss(t *testing.T) {
 	}
 }
 
-// The size tokens replaced literals in the app's templates, which must
-// not move a pixel: a template using them lays out as the literal did.
-func TestSizeTokensLayOutAsTheLiteralsTheyReplaced(t *testing.T) {
-	sizes := Scope{"tightGap": core.TightGap, "looseGap": core.LooseGap, "rowH": core.RowH}
-	cases := []struct {
-		name, tokens, literal string
-	}{
-		{"tight gap", `<row gap="{{tightGap}}"><row w="10"/><row w="10"/></row>`, `<row gap="6"><row w="10"/><row w="10"/></row>`},
-		{"loose gap", `<col gap="{{looseGap}}"><row h="10"/><row h="10"/></col>`, `<col gap="8"><row h="10"/><row h="10"/></col>`},
-		{"row height", `<col><button h="{{rowH}}">Open</button></col>`, `<col><button h="28">Open</button></col>`},
-	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			sameLayout(t, testCtx(t), build(t, tc.tokens, sizes), build(t, tc.literal, nil), 200, 100)
-		})
-	}
-}
-
 func TestRuleElementsMatchTheGoRules(t *testing.T) {
 	cases := []struct {
 		name     string

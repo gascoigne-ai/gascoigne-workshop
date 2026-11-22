@@ -4,8 +4,8 @@ bin/
 .claude/settings.local.json
 shot.png
 
-cmd/workshop/testdata/golden/*.got.png
-cmd/workshop/testdata/golden/*.diff.png
+e2e/testdata/golden/*.got.png
+e2e/testdata/golden/*.diff.png
 
 # made by the release workflow (go-winres), never committed
 *.syso

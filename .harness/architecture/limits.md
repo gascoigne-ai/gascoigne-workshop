@@ -37,7 +37,7 @@ is cut, refused or shown plainly, never a panic.
 ### Fuzzing
 
 `make fuzz` runs every target in `FUZZ_TARGETS` in the Makefile for `FUZZTIME` (30 s) each; it is not
-part of `make check`. `TestEveryFuzzTargetIsInTheMakefile` (`internal/fuzztargets_test.go`) fails on
+part of `make check`. `TestEveryFuzzTargetIsInTheMakefile` (`e2e/fuzztargets_test.go`) fails on
 a `Fuzz` function without a row, a row without a function, or a duplicate row. A crasher is saved
 under the package's `testdata/fuzz`: fix it and keep the file as a regression test.
 

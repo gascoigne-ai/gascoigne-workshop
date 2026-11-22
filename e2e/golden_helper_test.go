@@ -1,6 +1,6 @@
 //go:build !release
 
-package main
+package e2e
 
 import (
 	"flag"
@@ -97,7 +97,7 @@ func maskImage(img image.Image, rects []image.Rectangle) image.Image {
 
 // assertGolden compares img with testdata/golden/<name>.png. On a mismatch it
 // writes <name>.got.png and <name>.diff.png next to the golden for a look;
-// `go test ./cmd/workshop -update` rewrites the golden.
+// `go test ./e2e -update` rewrites the golden.
 func assertGolden(t *testing.T, name string, img image.Image, mask ...image.Rectangle) {
 	t.Helper()
 	path := filepath.Join(goldenDir, name+".png")

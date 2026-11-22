@@ -85,10 +85,11 @@ func TestSettingsStartFromTheSavedChoice(t *testing.T) {
 	if err := settingsDisk.Save(path, settings.Settings{Theme: "light", FontSize: 13}); err != nil {
 		t.Fatal(err)
 	}
-	a, err := NewApp(withAdapters(Options{SettingsPath: path, OpenMenu: true}))
+	a, err := NewApp(withAdapters(Options{SettingsPath: path}))
 	if err != nil {
 		t.Fatal(err)
 	}
+	a.Driver().OpenSettingsMenu()
 	if a.ctx.Th.Color(core.Bg) != theming.Light().Color(core.Bg) || a.ctx.Th.FontSize != 13 || !a.menu {
 		t.Fatalf("theme/size/menu not restored: font %v menu %v", a.ctx.Th.FontSize, a.menu)
 	}

@@ -6,7 +6,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"github.com/hajimehoshi/ebiten/v2"
-	"path/filepath"
 	"reflect"
 	"testing"
 )
@@ -347,12 +346,8 @@ func TestTreeKeysDoNothingWhileTyping(t *testing.T) {
 // Arrow keys on a tree with no rows (the last collection was closed while
 // the tree had the keyboard) read rows[-1] and panicked.
 func TestTreeArrowKeysDoNothingWithoutRows(t *testing.T) {
-	a := shotApp(t, Options{ScreenshotPath: filepath.Join(t.TempDir(), "x.png"), Scene: []Step{CloseAll()}})
-	for range setFrame {
-		if err := a.shotUpdate(); err != nil {
-			t.Fatal(err)
-		}
-	}
+	a := driverApp(t, Options{})
+	a.Driver().CloseAllCollections()
 	for _, k := range []ebiten.Key{ebiten.KeyArrowDown, ebiten.KeyArrowUp, ebiten.KeyEnter, ebiten.KeyF2, ebiten.KeyDelete} {
 		a.treeFocus = true
 		a.treeKeys(core.Input{Keys: []ebiten.Key{k}})
