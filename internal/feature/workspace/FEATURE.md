@@ -3,10 +3,10 @@
 Tabs, remembered state, the bus, the file browser, autosave, overlays, and the files, state and platform behavior around them.
 
 ## Layout
-- `internal/feature/workspace`: the model (root package `workspace`) with the ports `Clock`, `FileDialog`, `Folders` and `StateStore`.
+- `internal/feature/workspace`: the model (root package `workspace`) with the ports `Clock`, `Folders` and `StateStore`.
 - Controllers as sub-packages: `tabs` (tab list, send and connection state), `state` (the remembered-state record), `filebrowser`, `autosave`, `bus`, `overlay`, `serial`.
 - `adapter/statefile`: the `state.json` store. `ui/appicon`: the application icon.
-- The OS adapters sit in `internal/platform`: `filedialog`, `folders`, `systemclock`. `filedialog` and `folders` import `feature/workspace` for the port types they implement, a written exception for platform (as `internal/CLAUDE.md` says for `feature/settings`).
+- The OS adapters sit in `internal/platform`: `folders`, `systemclock`. `folders` imports `feature/workspace` for the port types it implements, a written exception for platform (as `internal/CLAUDE.md` says for `feature/settings`).
 - Imports: the kernel only (`kernel/request` for the MCP server info a connection keeps) plus the toolkit for the icon. The root imports its own `state` sub-package.
 
 ## Files, state and platforms
@@ -37,12 +37,12 @@ flowchart LR
 - `App.pickFile` takes the first usable row of `fileChoosers`: the desktop's dialog, else the in-app
   file browser (why not a D-Bus portal: the `filedialog` package doc). It returns a cancel function, which the settings dialog uses to take
   its question back when it closes.
-- `platform/filedialog` picks the program order per desktop from a table (`detect.go`);
+- `uitoolkit/desktop/filedialog` (the app's `FileDialog` port) picks the program order per desktop from a table (`detect.go`);
   that choice is pure and tested per desktop without a display. Both choosers start in the user's
   home folder every time (user's decision 2026-11-15).
 - The in-app browser (rules in `workspace/filebrowser`, listing through `workspace.Folders`)
   is a fallback: its footer names the program to install for native dialogs
-  (`workspace.FileDialog.Suggested`).
+  (`FileDialog.Suggested`).
 - A `File` body sends a file as it is; whether the path exists is asked in the background and an
   answer for an older path is dropped. A multipart value `@path` sends a file part.
 

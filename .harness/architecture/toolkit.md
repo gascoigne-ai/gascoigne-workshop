@@ -16,6 +16,22 @@ is tested without a GPU.
   They share the word rule (`isWordRune`), the scrollbar math and drag (`widget/scrollbar.go`,
   `barDrag`) and the monospace geometry (`monoGrid`), so the three agree on words, caret and clicks.
 
+## desktop: the OS the window runs on
+
+`uitoolkit/desktop` holds what a window needs from the OS and Ebitengine does not give: the Dock
+icon (`SetDockIcon`), the display scale (`displayscale`), the key repeat timing (`keyrepeat`) and the
+system file chooser (`filedialog`). Each is split per OS (build tags or a table keyed by OS) and its
+parsing is pure and tested without a display. It imports nothing of the toolkit or the app.
+
+- **Why in the toolkit.** Every program with a window needs the same four, and they are about the
+  window and the desktop, not about requests. The first layout put them in `internal/platform`
+  behind ports owned by `settings` and `workspace`, but no feature used those ports: only `app`
+  did. The ports now live in `internal/app/ports.go`, where the fakes of the tests are.
+- **Sub-packages.** `displayscale`, `keyrepeat` and `filedialog` each have their own `source`,
+  `System` and `run`; one flat package would need prefixes on all of them.
+- **Rejected.** A D-Bus file chooser portal (see the `filedialog` package doc). Revisit when a
+  client library is already a dependency.
+
 ## view: the view DSL
 
 A view is a Go function from state to a tree of elements, so the tree is a pure function of the

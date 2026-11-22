@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/filedialog"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -10,7 +11,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/tree"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/severity"
@@ -188,7 +188,7 @@ func (d *Driver) BrowseFiles(dir string) error {
 	if err != nil {
 		return fmt.Errorf("file browser folder %q: %w", dir, err)
 	}
-	d.app.browseIn(absolute, "Choose the file to send", workspace.OpenFile, "", func(string) {})
+	d.app.browseIn(absolute, "Choose the file to send", filedialog.OpenFile, "", func(string) {})
 	return nil
 }
 

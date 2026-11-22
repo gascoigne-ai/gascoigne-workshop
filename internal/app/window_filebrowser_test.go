@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/filedialog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -63,7 +63,7 @@ func pressEdit(app *App, edit core.Edit, keyDown ebiten.Key, alt bool) {
 
 func TestWithoutADialogProgramTheFileBrowserOpensInTheHomeFolder(t *testing.T) {
 	a, dir := browsingApp(t)
-	a.pickFile("Choose the file to send", workspace.OpenFile, "", func(string) {})
+	a.pickFile("Choose the file to send", filedialog.OpenFile, "", func(string) {})
 	if got := browserDir(t, a); got != evalLinks(t, dir) {
 		t.Fatalf("dir %q, want %q", got, dir)
 	}
@@ -81,14 +81,14 @@ func TestWithoutADialogProgramTheFileBrowserOpensInTheHomeFolder(t *testing.T) {
 
 func TestTheBrowserDoesNotRememberTheLastFolder(t *testing.T) {
 	a, dir := browsingApp(t)
-	a.pickFile("Pick", workspace.OpenFile, "", func(string) {})
+	a.pickFile("Pick", filedialog.OpenFile, "", func(string) {})
 	typePath(a, filepath.Join(dir, "sub")+string(filepath.Separator))
 	a.browse(filebrowser.Entered{})
 	if browserDir(t, a) != filepath.Join(evalLinks(t, dir), "sub") {
 		t.Fatalf("Enter on a typed folder opens it: %q", a.browser.model.Dir)
 	}
 	a.closeBrowser()
-	a.pickFile("Pick again", workspace.OpenFile, "", func(string) {})
+	a.pickFile("Pick again", filedialog.OpenFile, "", func(string) {})
 	if got := browserDir(t, a); got != evalLinks(t, dir) {
 		t.Fatalf("the next browser opens in %q, want home %q", got, dir)
 	}
@@ -97,7 +97,7 @@ func TestTheBrowserDoesNotRememberTheLastFolder(t *testing.T) {
 func TestTheBrowserIsDrivenByTheKeyboard(t *testing.T) {
 	a, dir := browsingApp(t)
 	var got string
-	a.pickFile("Pick", workspace.OpenFile, "", func(path string) { got = path })
+	a.pickFile("Pick", filedialog.OpenFile, "", func(path string) { got = path })
 	a.step(core.Input{})
 	pressEdit(a, core.EditDown, ebiten.KeyArrowDown, false) // sub
 	a.step(core.Input{Enter: true, Keys: []ebiten.Key{ebiten.KeyEnter}})
@@ -137,7 +137,7 @@ func TestTheBrowserIsDrivenByTheKeyboard(t *testing.T) {
 func TestEscapeClosesTheBrowserWithoutAnAnswer(t *testing.T) {
 	a, _ := browsingApp(t)
 	called := false
-	a.pickFile("Pick", workspace.OpenFile, "", func(string) { called = true })
+	a.pickFile("Pick", filedialog.OpenFile, "", func(string) { called = true })
 	a.step(core.Input{Escape: true})
 	if a.browser != nil || called {
 		t.Fatalf("browser %v called %v", a.browser != nil, called)
@@ -147,7 +147,7 @@ func TestEscapeClosesTheBrowserWithoutAnAnswer(t *testing.T) {
 func TestSavingOverAFileAsksFirst(t *testing.T) {
 	a, dir := browsingApp(t)
 	var got string
-	a.pickFile("Save response body", workspace.SaveFile, "api.json", func(path string) { got = path })
+	a.pickFile("Save response body", filedialog.SaveFile, "api.json", func(path string) { got = path })
 	if !strings.HasSuffix(a.browser.path.Text, "api.json") {
 		t.Fatalf("the save name follows the folder: %q", a.browser.path.Text)
 	}
@@ -169,7 +169,7 @@ func TestSavingOverAFileAsksFirst(t *testing.T) {
 func TestADoubleClickOpensARow(t *testing.T) {
 	a, dir := browsingApp(t)
 	var got string
-	a.pickFile("Pick", workspace.OpenFile, "", func(path string) { got = path })
+	a.pickFile("Pick", filedialog.OpenFile, "", func(path string) { got = path })
 	x, y := shownCenter(t, a, "api.json")
 	a.step(core.Input{X: x, Y: y, Click: true, Held: true, Clicks: 1})
 	a.step(core.Input{X: x, Y: y})
@@ -187,7 +187,7 @@ func TestTheHiddenFilesToggleShowsDotNames(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, ".env"), nil, 0o644); err != nil {
 		t.Fatal(err)
 	}
-	a.pickFile("Pick", workspace.OpenFile, "", func(string) {})
+	a.pickFile("Pick", filedialog.OpenFile, "", func(string) {})
 	if strings.Contains(view.Dump(a.fileBrowserView()), `".env"`) {
 		t.Fatal("hidden names are left out at first")
 	}
@@ -200,7 +200,7 @@ func TestTheHiddenFilesToggleShowsDotNames(t *testing.T) {
 
 func TestAFolderThatCannotBeReadIsSaidInTheFooter(t *testing.T) {
 	a, dir := browsingApp(t)
-	a.pickFile("Pick", workspace.OpenFile, "", func(string) {})
+	a.pickFile("Pick", filedialog.OpenFile, "", func(string) {})
 	typePath(a, filepath.Join(dir, "gone")+string(filepath.Separator))
 	a.browse(filebrowser.Entered{})
 	if !strings.Contains(a.browser.model.Problem, "Cannot open") {
@@ -217,7 +217,7 @@ func TestAFolderThatCannotBeReadIsSaidInTheFooter(t *testing.T) {
 
 func TestTheFooterSaysWhichProgramGivesNativeDialogs(t *testing.T) {
 	a, _ := browsingApp(t)
-	a.pickFile("Pick", workspace.OpenFile, "", func(string) {})
+	a.pickFile("Pick", filedialog.OpenFile, "", func(string) {})
 	if dump := view.Dump(a.fileBrowserView()); !strings.Contains(dump, `"For native dialogs install zenity"`) {
 		t.Fatalf("no hint in the footer:\n%s", dump)
 	}
@@ -226,7 +226,7 @@ func TestTheFooterSaysWhichProgramGivesNativeDialogs(t *testing.T) {
 func TestNoHintWhenNoProgramIsSuggested(t *testing.T) {
 	a, _ := browsingApp(t)
 	a.files = fakeDialog{}
-	a.pickFile("Pick", workspace.OpenFile, "", func(string) {})
+	a.pickFile("Pick", filedialog.OpenFile, "", func(string) {})
 	if dump := view.Dump(a.fileBrowserView()); strings.Contains(dump, "For native dialogs") {
 		t.Fatalf("a hint with no program to name:\n%s", dump)
 	}

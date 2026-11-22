@@ -2,7 +2,7 @@
 
 Loaded when you work under `uitoolkit/`. Adds to `.harness/rules.md`.
 
-- Layers: `core` imports nothing from this module, `view` only `core`, `widget` only `core` and `view`, `theming` only `core`, `markup` only those and `widget`; nothing here imports `internal/*` or `cmd/*`.
+- Layers: `core` imports nothing from this module, `view` only `core`, `widget` only `core` and `view`, `theming` only `core`, `desktop` nothing of this module, `markup` only those and `widget`; nothing here imports `internal/*` or `cmd/*`.
 
 ## Toolkit API rules
 
@@ -18,5 +18,5 @@ Apply when adding or changing anything exported. They exist so that a guess is u
 8. **One data shape, one type.** Two types with the same fields are one type (`widget.Span` is used by `CodeView` and by `Field`'s segments).
 9. **Templates mirror Go.** Every option that can sensibly be written in markup has a template attribute that is its Go name in kebab-case (`BorderT` is `border-t`, `PadX` is `pad-x`); an option without one says why in its doc comment.
 10. **A new option or element comes with** a doc comment that starts with its name, a test of what it does, a line in the package doc index (`view` or `widget`), and its row in the template tables where rule 9 applies.
-11. **Packages.** `core` holds primitives: tokens, colors and color math, geometry, input, clipboard, fonts and the `Ctx` drawing calls, with no layout and no widget state; `view` is the framework: the element tree, layout, runtime, the generic options and the extension point (`Behavior`, `Custom`); `widget` is every component that has its own drawing, input or state (why: `doc.go`); `markup` builds both from templates; `engine`, `widget`, `markup` and `theming` depend downward only.
+11. **Packages.** `core` holds primitives: tokens, colors and color math, geometry, input, clipboard, fonts and the `Ctx` drawing calls, with no layout and no widget state; `view` is the framework: the element tree, layout, runtime, the generic options and the extension point (`Behavior`, `Custom`); `widget` is every component that has its own drawing, input or state (why: `doc.go`); `desktop` reaches the OS the window runs on (Dock icon, display scale, key repeat, file chooser) and knows nothing of widgets or `core`; `markup` builds both from templates; `engine`, `widget`, `markup` and `theming` depend downward only.
 

@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/filedialog"
 	"path/filepath"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -20,7 +21,7 @@ import (
 // function that takes the question back.
 type fileChooser struct {
 	usable func(app *App) bool
-	ask    func(app *App, title string, mode workspace.FileMode, name string, done func(path string)) (cancel func())
+	ask    func(app *App, title string, mode filedialog.Mode, name string, done func(path string)) (cancel func())
 }
 
 // fileChoosers are the ways to ask for a file, best first: the desktop's
@@ -37,7 +38,7 @@ var fileChoosers = []fileChooser{
 // without an answer (it kills the native dialog or closes the browser), for
 // a caller that has to take it back, as the settings dialog does when it is
 // closed.
-func (a *App) pickFile(title string, mode workspace.FileMode, name string, done func(path string)) (cancel func()) {
+func (a *App) pickFile(title string, mode filedialog.Mode, name string, done func(path string)) (cancel func()) {
 	for _, chooser := range fileChoosers {
 		if chooser.usable(a) {
 			return chooser.ask(a, title, mode, name, done)
@@ -48,12 +49,12 @@ func (a *App) pickFile(title string, mode workspace.FileMode, name string, done 
 
 // askDesktop runs the desktop's dialog off the UI goroutine; its answer
 // comes back through the bus.
-func (a *App) askDesktop(title string, mode workspace.FileMode, name string, done func(path string)) (cancel func()) {
+func (a *App) askDesktop(title string, mode filedialog.Mode, name string, done func(path string)) (cancel func()) {
 	ctx, stop := context.WithCancel(context.Background())
 	a.bus.Run(ctx, func(ctx context.Context) bus.Msg {
 		path, err := a.files.Choose(ctx, title, mode, name)
 		switch {
-		case err == workspace.ErrCancelled || ctx.Err() != nil: // closed by the user, or taken back
+		case err == filedialog.ErrCancelled || ctx.Err() != nil: // closed by the user, or taken back
 			return nil
 		case err != nil:
 			return func() { a.toast("File dialog failed: "+err.Error(), severity.Error) }
@@ -77,19 +78,19 @@ type fileBrowser struct {
 // browseFiles opens the in-app file browser in the home folder, every
 // time: a browser that remembered the last folder would open somewhere
 // the user no longer expects after a while.
-func (a *App) browseFiles(title string, mode workspace.FileMode, name string, done func(path string)) (cancel func()) {
+func (a *App) browseFiles(title string, mode filedialog.Mode, name string, done func(path string)) (cancel func()) {
 	return a.browseIn("", title, mode, name, done)
 }
 
 // browserModes maps what a caller asks for to what the in-app browser shows.
-var browserModes = map[workspace.FileMode]filebrowser.Mode{
-	workspace.OpenFile: filebrowser.Open,
-	workspace.SaveFile: filebrowser.Save,
+var browserModes = map[filedialog.Mode]filebrowser.Mode{
+	filedialog.OpenFile: filebrowser.Open,
+	filedialog.SaveFile: filebrowser.Save,
 }
 
 // browseIn opens the in-app file browser in start, or in the home folder
 // when start is "" (the root when that is unknown too).
-func (a *App) browseIn(start, title string, mode workspace.FileMode, name string, done func(path string)) (cancel func()) {
+func (a *App) browseIn(start, title string, mode filedialog.Mode, name string, done func(path string)) (cancel func()) {
 	home, err := a.folders.Home()
 	if err != nil {
 		home = "" // ~ is then typed as a name, and the root is the last start

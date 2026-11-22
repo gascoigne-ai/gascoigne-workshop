@@ -6,9 +6,9 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/importers/postman"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/tree"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace"
 	request "github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/severity"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/filedialog"
 	"path/filepath"
 )
 
@@ -118,7 +118,7 @@ func (a *App) exportPostman(dir *request.Folder) {
 	if name == "" {
 		name = "collection"
 	}
-	a.pickFile("Export as Postman collection", workspace.SaveFile, name+".postman_collection.json", func(path string) {
+	a.pickFile("Export as Postman collection", filedialog.SaveFile, name+".postman_collection.json", func(path string) {
 		a.writeFile(path, data, func(err error) {
 			if err != nil {
 				a.toast("Export failed: "+err.Error(), severity.Error)

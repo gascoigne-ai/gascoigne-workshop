@@ -93,8 +93,8 @@ type layerRule struct {
 }
 
 var (
-	settingsPlatform  = []string{"internal/platform/displayscale", "internal/platform/fonts", "internal/platform/keyrepeat", "internal/platform/systeminfo"}
-	workspacePlatform = []string{"internal/platform/filedialog", "internal/platform/folders", "internal/platform/systemclock"}
+	settingsPlatform  = []string{"internal/platform/fonts", "internal/platform/systeminfo"}
+	workspacePlatform = []string{"internal/platform/folders", "internal/platform/systemclock"}
 )
 
 // layerRules is the data form of internal/CLAUDE.md, Imports. The rows after

@@ -2,7 +2,7 @@ package app
 
 import (
 	"context"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/filedialog"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -106,7 +106,7 @@ func TestAddFileListsTheChosenFileRelativeToTheCollection(t *testing.T) {
 	a, tab, dir := grpcTabOnProtoPane(t)
 	health := protoFileIn(t, dir, "health.proto", nil)
 	asked := ""
-	a.files = fakeDialog{choose: func(_ context.Context, title string, _ workspace.FileMode, _ string) (string, error) {
+	a.files = fakeDialog{choose: func(_ context.Context, title string, _ filedialog.Mode, _ string) (string, error) {
 		asked = title
 		return health, nil
 	}}
@@ -231,7 +231,7 @@ func TestAServerWithoutReflectionIsCalledFromTheProtoFileAddedInThePane(t *testi
 	}
 
 	health := protoFileIn(t, dir, "health.proto", nil)
-	a.files = fakeDialog{choose: func(context.Context, string, workspace.FileMode, string) (string, error) { return health, nil }}
+	a.files = fakeDialog{choose: func(context.Context, string, filedialog.Mode, string) (string, error) { return health, nil }}
 	clickText(t, a, "Proto files", 0)
 	clickText(t, a, "Add file...", 0)
 	until(t, a, "the chosen file", func() bool { return len(tab.Req.Proto.Files) > 0 })

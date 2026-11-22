@@ -1,7 +1,6 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"testing"
@@ -320,7 +319,7 @@ func TestDisplayScaleTrustsTheWindowSystemUnlessItReportsOne(t *testing.T) {
 	cases := []struct {
 		name     string
 		reported float64
-		display  settings.DisplayScale
+		display  DisplayScale
 		want     float64
 	}{
 		{"reported wins when above one", 2, fakeDisplay(1.5), 2},

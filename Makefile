@@ -56,12 +56,12 @@ FUZZ_TARGETS = \
 	./internal/kernel/request:FuzzToolFields \
 	./internal/kernel/request:FuzzArguments \
 	./internal/kernel/jsonview:FuzzLines \
-	./internal/platform/displayscale:FuzzParseMonitors \
-	./internal/platform/keyrepeat:FuzzParseHyprland \
-	./internal/platform/keyrepeat:FuzzParseGSettings \
-	./internal/platform/keyrepeat:FuzzParseXset \
-	./internal/platform/keyrepeat:FuzzParseMac \
-	./internal/platform/keyrepeat:FuzzParseWindows
+	./uitoolkit/desktop/displayscale:FuzzParseMonitors \
+	./uitoolkit/desktop/keyrepeat:FuzzParseHyprland \
+	./uitoolkit/desktop/keyrepeat:FuzzParseGSettings \
+	./uitoolkit/desktop/keyrepeat:FuzzParseXset \
+	./uitoolkit/desktop/keyrepeat:FuzzParseMac \
+	./uitoolkit/desktop/keyrepeat:FuzzParseWindows
 fuzz:
 	@for target in $(FUZZ_TARGETS); do \
 		package=$${target%%:*}; name=$${target##*:}; \

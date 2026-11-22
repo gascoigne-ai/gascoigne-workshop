@@ -2,7 +2,7 @@ package app
 
 import (
 	"context"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/filedialog"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
@@ -75,7 +75,7 @@ func (a *App) fileBody(tab *reqTab) Node {
 	}
 	size, sizeColor := look.text, look.color
 	choose := func() {
-		a.pickFile("Choose the file to send", workspace.OpenFile, "", func(path string) {
+		a.pickFile("Choose the file to send", filedialog.OpenFile, "", func(path string) {
 			tab.file = NewTextField(path)
 			sync()
 		})

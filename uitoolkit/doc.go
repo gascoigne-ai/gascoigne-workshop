@@ -19,6 +19,9 @@
 //   - markup: HTML-style templates that build the same view trees.
 //   - examples: runnable examples, tested with their output (hello is a
 //     small program with a window).
+//   - desktop: what the OS offers a window that Ebitengine does not: the
+//     Dock icon, the display scale, the key repeat timing and the system
+//     file chooser, per OS.
 //   - theming: everything that makes a core.Theme: the JSON theme files, the
 //     dark and light palettes, color math, and appearance preferences.
 //

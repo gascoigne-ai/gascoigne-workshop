@@ -34,12 +34,12 @@ type ports struct {
 	store        collection.Store
 	clients      clientconfig.Source // the build's client config; nil has none
 	states       workspace.StateStore
-	files        workspace.FileDialog             // the desktop file chooser, replaced in tests
+	files        FileDialog                       // the desktop file chooser, replaced in tests
 	folders      workspace.Folders                // what the in-app file browser lists
 	now          func() time.Time                 // the clock, replaced in tests
 	histories    func(dir string) history.History // nil keeps no history
 	fonts        settings.FontStore
-	display      settings.DisplayScale
+	display      DisplayScale
 	system       settings.SystemInfo // what the System page of the settings shows; nil has no report
 	settingFiles settings.SettingsStore
 	previews     send.BodyPreview // shows a response body in the browser, replaced in tests

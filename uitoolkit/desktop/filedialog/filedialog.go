@@ -22,19 +22,26 @@ import (
 	"runtime"
 	"slices"
 	"strings"
-
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace"
 )
 
 // ErrCancelled is returned when the user closed the dialog.
-var ErrCancelled = workspace.ErrCancelled
+var ErrCancelled = errors.New("cancelled")
+
+// Mode is what the dialog asks for.
+type Mode uint8
+
+// The modes of the dialog.
+const (
+	OpenFile Mode = iota // an existing file
+	SaveFile             // a new file, named by the caller's suggestion
+)
 
 // tool describes how to run one dialog program.
 type tool struct {
 	name string
 	// env adds variables to the program's environment; the Windows script
 	// reads the title and the name from them, never from its text.
-	env func(title, name string, mode workspace.FileMode) []string
+	env func(title, name string, mode Mode) []string
 	// open and save get the user's home folder, "" when it is unknown, for
 	// the programs that start in it (detect.go); the macOS and Windows
 	// panels pick their own start folder and ignore it.
@@ -77,12 +84,12 @@ if ($env:WS_SAVE -eq '1') { $d.FileName = $env:WS_NAME; $d.OverwritePrompt = $tr
 if ($d.ShowDialog() -eq 'OK') { [Console]::Out.Write($d.FileName) }`
 
 // winSaveFlag is the WS_SAVE value winScript reads for each mode.
-var winSaveFlag = map[workspace.FileMode]string{workspace.OpenFile: "0", workspace.SaveFile: "1"}
+var winSaveFlag = map[Mode]string{OpenFile: "0", SaveFile: "1"}
 
 // powershell is on every Windows; -STA is needed by the dialogs.
 var powershell = tool{
 	name: "powershell",
-	env: func(title, name string, mode workspace.FileMode) []string {
+	env: func(title, name string, mode Mode) []string {
 		return []string{"WS_SAVE=" + winSaveFlag[mode], "WS_TITLE=" + title, "WS_NAME=" + name}
 	},
 	open: func(string, string) []string {
@@ -125,7 +132,7 @@ func Available() bool { _, ok := find(); return ok }
 // "" on a system whose dialog is always there.
 func Suggested() string { return suggested(goos, os.Getenv) }
 
-func run(ctx context.Context, title, name string, mode workspace.FileMode, build func(tool) []string) (string, error) {
+func run(ctx context.Context, title, name string, mode Mode, build func(tool) []string) (string, error) {
 	program, ok := find()
 	if !ok {
 		return "", noProgram()
@@ -170,32 +177,30 @@ func noProgram() error {
 
 // Open asks for an existing file.
 func Open(ctx context.Context, title string) (string, error) {
-	return run(ctx, title, "", workspace.OpenFile, func(program tool) []string { return program.open(title, home()) })
+	return run(ctx, title, "", OpenFile, func(program tool) []string { return program.open(title, home()) })
 }
 
 // Save asks for a file to write, starting from name.
 func Save(ctx context.Context, title, name string) (string, error) {
-	return run(ctx, title, name, workspace.SaveFile, func(program tool) []string { return program.save(title, home(), name) })
+	return run(ctx, title, name, SaveFile, func(program tool) []string { return program.save(title, home(), name) })
 }
 
 // chooseBy asks for a file the way each mode needs.
-var chooseBy = map[workspace.FileMode]func(ctx context.Context, title, name string) (string, error){
-	workspace.OpenFile: func(ctx context.Context, title, _ string) (string, error) { return Open(ctx, title) },
-	workspace.SaveFile: Save,
+var chooseBy = map[Mode]func(ctx context.Context, title, name string) (string, error){
+	OpenFile: func(ctx context.Context, title, _ string) (string, error) { return Open(ctx, title) },
+	SaveFile: Save,
 }
 
 // System is the file dialog of this desktop.
 type System struct{}
 
-// Available implements workspace.FileDialog.
+// Available is the package function of that name, for a caller that holds a value.
 func (System) Available() bool { return Available() }
 
-// Suggested implements workspace.FileDialog.
+// Suggested is the package function of that name, for a caller that holds a value.
 func (System) Suggested() string { return Suggested() }
 
-// Choose implements workspace.FileDialog.
-func (System) Choose(ctx context.Context, title string, mode workspace.FileMode, name string) (string, error) {
+// Choose is the package function of that name, for a caller that holds a value.
+func (System) Choose(ctx context.Context, title string, mode Mode, name string) (string, error) {
 	return chooseBy[mode](ctx, title, name)
 }
-
-var _ workspace.FileDialog = System{}

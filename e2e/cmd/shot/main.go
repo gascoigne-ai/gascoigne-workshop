@@ -26,13 +26,13 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/adapter/settingsfile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/adapter/statefile"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/platform/displayscale"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/platform/filedialog"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/platform/folders"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/platform/fonts"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/platform/keyrepeat"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/platform/systemclock"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/platform/systeminfo"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/displayscale"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/filedialog"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/keyrepeat"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
