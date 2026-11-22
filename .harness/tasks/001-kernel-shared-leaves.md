@@ -1,7 +1,7 @@
 status: todo
 kind: refactor
 commit: refactor(kernel): shared leaf packages live in internal/kernel
-scope: internal/**, .harness/architecture.md, internal/CLAUDE.md
+scope: internal/**, cmd/**, e2e/**, .harness/architecture.md, .harness/architecture/**, .harness/overview.md, uitoolkit/CLAUDE.md
 not_before: 2026-01-01
 depends_on:
 

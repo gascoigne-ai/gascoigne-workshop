@@ -1,7 +1,7 @@
 status: todo
 kind: feature
 commit: test(layout): make check fails on a layer violation
-scope: Makefile, e2e/**, internal/CLAUDE.md, uitoolkit/CLAUDE.md
+scope: Makefile, e2e/**, internal/CLAUDE.md, uitoolkit/CLAUDE.md, .harness/architecture.md, .harness/overview.md
 not_before: 2026-01-01
 depends_on: 008-app-features-table
 

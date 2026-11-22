@@ -1,7 +1,7 @@
 status: todo
 kind: refactor
 commit: refactor(workspace): workspace feature and platform adapters
-scope: internal/workspace/**, internal/feature/workspace/**, internal/platform/**
+scope: internal/**, cmd/**, e2e/**, .harness/architecture.md, .harness/architecture/**, .harness/overview.md, uitoolkit/CLAUDE.md
 not_before: 2026-01-01
 depends_on: 004-feature-settings, 005-feature-collections
 

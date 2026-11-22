@@ -1,7 +1,7 @@
 status: todo
 kind: refactor
 commit: refactor(kernel): request model moves to kernel, sheds feature logic
-scope: internal/request/**, internal/kernel/**
+scope: internal/**, cmd/**, e2e/**, .harness/architecture.md, .harness/architecture/**, .harness/overview.md, uitoolkit/CLAUDE.md
 not_before: 2026-01-01
 depends_on: 001-kernel-shared-leaves
 

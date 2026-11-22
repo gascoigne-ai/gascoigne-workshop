@@ -1,7 +1,7 @@
 status: todo
 kind: refactor
 commit: refactor(app): features register through a table
-scope: internal/app/**, internal/feature/**
+scope: internal/**, cmd/**, e2e/**, .harness/architecture.md, .harness/architecture/**, .harness/overview.md, uitoolkit/CLAUDE.md
 not_before: 2026-01-01
 depends_on: 003-feature-history, 004-feature-settings, 005-feature-collections, 006-feature-send, 007-feature-workspace-and-platform
 

@@ -1,7 +1,7 @@
 status: todo
 kind: refactor
 commit: refactor(history): history is one feature package tree
-scope: internal/response/adapter/history/**, internal/response/ui/sentlog/**, internal/feature/history/**
+scope: internal/**, cmd/**, e2e/**, .harness/architecture.md, .harness/architecture/**, .harness/overview.md, uitoolkit/CLAUDE.md
 not_before: 2026-01-01
 depends_on: 001-kernel-shared-leaves, 002-kernel-model
 
