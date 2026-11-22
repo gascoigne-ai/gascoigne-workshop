@@ -1,6 +1,6 @@
 //go:build darwin && cgo
 
-package dockicon
+package desktop
 
 /*
 #cgo darwin LDFLAGS: -framework Cocoa
@@ -10,9 +10,9 @@ import "C"
 
 import "unsafe"
 
-// Set shows the PNG as the Dock icon. It runs on the main thread, once the
+// SetDockIcon shows the PNG as the Dock icon. It runs on the main thread, once the
 // event loop is going, so it may be called before the window opens.
-func Set(png []byte) {
+func SetDockIcon(png []byte) {
 	if len(png) == 0 {
 		return
 	}

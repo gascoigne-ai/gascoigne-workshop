@@ -6,7 +6,7 @@ Tabs, remembered state, the bus, the file browser, autosave, overlays, and the f
 - `internal/feature/workspace`: the model (root package `workspace`) with the ports `Clock`, `FileDialog`, `Folders` and `StateStore`.
 - Controllers as sub-packages: `tabs` (tab list, send and connection state), `state` (the remembered-state record), `filebrowser`, `autosave`, `bus`, `overlay`, `serial`.
 - `adapter/statefile`: the `state.json` store. `ui/appicon`: the application icon.
-- The OS adapters sit in `internal/platform`: `dockicon`, `filedialog`, `folders`, `systemclock`. `filedialog` and `folders` import `feature/workspace` for the port types they implement, a written exception for platform (as `internal/CLAUDE.md` says for `feature/settings`).
+- The OS adapters sit in `internal/platform`: `filedialog`, `folders`, `systemclock`. `filedialog` and `folders` import `feature/workspace` for the port types they implement, a written exception for platform (as `internal/CLAUDE.md` says for `feature/settings`).
 - Imports: the kernel only (`kernel/request` for the MCP server info a connection keeps) plus the toolkit for the icon. The root imports its own `state` sub-package.
 
 ## Files, state and platforms
@@ -64,7 +64,7 @@ flowchart LR
 ### Icon and packaging
 
 - `workspace/ui/appicon` (under `internal/feature/`) rasterizes `appicon.svg` in software, so the icon exists before any window.
-  `main` sets it as the window icon, `platform/dockicon` as the macOS Dock icon, and
+  `main` sets it as the window icon, `desktop.SetDockIcon` (toolkit) as the macOS Dock icon, and
   `-icon-png FILE` writes it for packaging.
 - `make install` installs the binary and, on Linux, `packaging/gascoigne-workshop.desktop` and the
   icon. `check.yml` runs `make check` under xvfb.

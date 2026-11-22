@@ -13,12 +13,12 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/adapter/preview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/platform/displayscale"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/platform/dockicon"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/platform/filedialog"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/platform/folders"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/platform/fonts"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/platform/keyrepeat"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/platform/systemclock"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop"
 	"image"
 	"image/png"
 	"log"
@@ -137,7 +137,7 @@ func openWindow(window *app.App, width, height int) error {
 	ebiten.SetWindowIcon([]image.Image{appicon.Image(32), appicon.Image(64), appicon.Image(128)})
 	var dock bytes.Buffer
 	if png.Encode(&dock, appicon.Image(512)) == nil {
-		dockicon.Set(dock.Bytes()) // the Dock ignores the window icon
+		desktop.SetDockIcon(dock.Bytes()) // the Dock ignores the window icon
 	}
 	ebiten.SetWindowTitle("Gascoigne Workshop")
 	ebiten.SetWindowSizeLimits(720, 480, -1, -1) // below this the panes cannot show their controls
