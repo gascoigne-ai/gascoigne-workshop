@@ -7,9 +7,9 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/bus"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/filebrowser"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -20,7 +20,7 @@ import (
 // function that takes the question back.
 type fileChooser struct {
 	usable func(app *App) bool
-	ask    func(app *App, title string, mode port.FileMode, name string, done func(path string)) (cancel func())
+	ask    func(app *App, title string, mode workspace.FileMode, name string, done func(path string)) (cancel func())
 }
 
 // fileChoosers are the ways to ask for a file, best first: the desktop's
@@ -37,7 +37,7 @@ var fileChoosers = []fileChooser{
 // without an answer (it kills the native dialog or closes the browser), for
 // a caller that has to take it back, as the settings dialog does when it is
 // closed.
-func (a *App) pickFile(title string, mode port.FileMode, name string, done func(path string)) (cancel func()) {
+func (a *App) pickFile(title string, mode workspace.FileMode, name string, done func(path string)) (cancel func()) {
 	for _, chooser := range fileChoosers {
 		if chooser.usable(a) {
 			return chooser.ask(a, title, mode, name, done)
@@ -48,12 +48,12 @@ func (a *App) pickFile(title string, mode port.FileMode, name string, done func(
 
 // askDesktop runs the desktop's dialog off the UI goroutine; its answer
 // comes back through the bus.
-func (a *App) askDesktop(title string, mode port.FileMode, name string, done func(path string)) (cancel func()) {
+func (a *App) askDesktop(title string, mode workspace.FileMode, name string, done func(path string)) (cancel func()) {
 	ctx, stop := context.WithCancel(context.Background())
 	a.bus.Run(ctx, func(ctx context.Context) bus.Msg {
 		path, err := a.files.Choose(ctx, title, mode, name)
 		switch {
-		case err == port.ErrCancelled || ctx.Err() != nil: // closed by the user, or taken back
+		case err == workspace.ErrCancelled || ctx.Err() != nil: // closed by the user, or taken back
 			return nil
 		case err != nil:
 			return func() { a.toast("File dialog failed: "+err.Error(), severity.Error) }
@@ -77,19 +77,19 @@ type fileBrowser struct {
 // browseFiles opens the in-app file browser in the home folder, every
 // time: a browser that remembered the last folder would open somewhere
 // the user no longer expects after a while.
-func (a *App) browseFiles(title string, mode port.FileMode, name string, done func(path string)) (cancel func()) {
+func (a *App) browseFiles(title string, mode workspace.FileMode, name string, done func(path string)) (cancel func()) {
 	return a.browseIn("", title, mode, name, done)
 }
 
 // browserModes maps what a caller asks for to what the in-app browser shows.
-var browserModes = map[port.FileMode]filebrowser.Mode{
-	port.OpenFile: filebrowser.Open,
-	port.SaveFile: filebrowser.Save,
+var browserModes = map[workspace.FileMode]filebrowser.Mode{
+	workspace.OpenFile: filebrowser.Open,
+	workspace.SaveFile: filebrowser.Save,
 }
 
 // browseIn opens the in-app file browser in start, or in the home folder
 // when start is "" (the root when that is unknown too).
-func (a *App) browseIn(start, title string, mode port.FileMode, name string, done func(path string)) (cancel func()) {
+func (a *App) browseIn(start, title string, mode workspace.FileMode, name string, done func(path string)) (cancel func()) {
 	home, err := a.folders.Home()
 	if err != nil {
 		home = "" // ~ is then typed as a name, and the root is the last start
@@ -307,7 +307,7 @@ func shownRows(scrollY, listH, rowH, count int) (first, last int) {
 
 // fileBrowserRow is one entry of the list: a click selects it, a double
 // click opens it.
-func (a *App) fileBrowserRow(index int, entry port.FolderEntry, selected bool) Node {
+func (a *App) fileBrowserRow(index int, entry workspace.FolderEntry, selected bool) Node {
 	return browserRowTemplate.MustBuild(a.scope(markup.Scope{
 		"row": browserRow{
 			Name:     entry.Name,

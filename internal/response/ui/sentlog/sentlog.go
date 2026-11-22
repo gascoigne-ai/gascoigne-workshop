@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -20,7 +20,7 @@ import (
 // Host is what the log needs from the application.
 type Host interface {
 	// SentStore keeps the log between runs, nil when nothing is saved.
-	SentStore() port.SentStore
+	SentStore() response.SentStore
 	// Toast shows a message over the window.
 	Toast(text string, level severity.Level)
 	// SetStatus replaces the status line.
@@ -36,18 +36,18 @@ type Host interface {
 // Log holds the sent requests, newest first, and the scroll state of their
 // list. The zero value is an empty log.
 type Log struct {
-	rows   []port.Sent
+	rows   []response.Sent
 	scroll ScrollState
 }
 
 // Record adds a finished send of the request at path of the collection
 // saved in folder ("" when not saved), writes it to the state
-// folder, and drops the oldest past port.SentLimit.
+// folder, and drops the oldest past response.SentLimit.
 func (l *Log) Record(host Host, at time.Time, folder, path string, req *model.Request, status int) {
-	sent := port.Sent{At: at, Collection: folder, Path: path, Protocol: req.Protocol, Method: req.Method, URL: req.URL, Status: status}
-	l.rows = append([]port.Sent{sent}, l.rows...)
-	if len(l.rows) > port.SentLimit {
-		l.rows = l.rows[:port.SentLimit]
+	sent := response.Sent{At: at, Collection: folder, Path: path, Protocol: req.Protocol, Method: req.Method, URL: req.URL, Status: status}
+	l.rows = append([]response.Sent{sent}, l.rows...)
+	if len(l.rows) > response.SentLimit {
+		l.rows = l.rows[:response.SentLimit]
 	}
 	store := host.SentStore()
 	if store == nil {
@@ -74,12 +74,12 @@ func (l *Log) Load(host Host) {
 
 // Rows are the entries whose path, method or URL contains filter, ignoring
 // case, newest first; an empty filter keeps all.
-func (l *Log) Rows(filter string) []port.Sent {
+func (l *Log) Rows(filter string) []response.Sent {
 	needle := strings.ToLower(filter)
 	if needle == "" {
 		return l.rows
 	}
-	var kept []port.Sent
+	var kept []response.Sent
 	for _, sent := range l.rows {
 		if strings.Contains(strings.ToLower(sent.Path+" "+sent.Method+" "+sent.URL), needle) {
 			kept = append(kept, sent)
@@ -90,7 +90,7 @@ func (l *Log) Rows(filter string) []port.Sent {
 
 // Open opens the request an entry was sent from; one that has since been
 // deleted or renamed is reported in the status line.
-func (l *Log) Open(host Host, sent port.Sent) {
+func (l *Log) Open(host Host, sent response.Sent) {
 	if !host.OpenRequest(sent.Collection, sent.Path) {
 		host.SetStatus(fmt.Sprintf("%s is no longer in the collection", sent.Path))
 	}
@@ -136,7 +136,7 @@ type sentRow struct {
 }
 
 // row is one sent request: badge, path and status above, URL and time below.
-func (l *Log) row(sizes w.Sizes, host Host, sent port.Sent) Node {
+func (l *Log) row(sizes w.Sizes, host Host, sent response.Sent) Node {
 	return rowTemplate.MustBuild(scope(sizes, markup.Scope{
 		"row": sentRow{
 			Badge:  host.Badge(sent.Protocol, sent.Method),

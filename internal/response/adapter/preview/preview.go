@@ -1,5 +1,5 @@
 // Package preview shows a response body in the user's browser: it
-// serves the bytes for a short time on a loopback port.
+// serves the bytes for a short time on a loopback response.
 package preview
 
 import (
@@ -14,7 +14,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response"
 )
 
 // secretBytes is the length of the random path that guards a page.
@@ -124,7 +124,7 @@ type Browser struct {
 	Open     func(ctx context.Context, address string) error
 }
 
-// Show implements port.BodyPreview.
+// Show implements response.BodyPreview.
 func (browser Browser) Show(ctx context.Context, body []byte, contentType string) error {
 	page, err := Serve(body, contentType, browser.Lifetime)
 	if err != nil {
@@ -141,4 +141,4 @@ func (browser Browser) Show(ctx context.Context, body []byte, contentType string
 	return nil
 }
 
-var _ port.BodyPreview = Browser{}
+var _ response.BodyPreview = Browser{}

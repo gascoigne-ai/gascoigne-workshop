@@ -9,9 +9,9 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/adapter/store"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/preview"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/displayscale"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/fonts"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/keyrepeat"
@@ -96,7 +96,7 @@ func defineFlags(set *flag.FlagSet) *launch {
 	return run
 }
 
-// adapters gives opts the real implementation of every port.
+// adapters gives opts the real implementation of every response.
 func adapters(opts *app.Options) {
 	opts.ScanFonts = true
 	opts.Protocols = proto.Configured
@@ -109,7 +109,7 @@ func adapters(opts *app.Options) {
 	opts.States = statefile.Files{}
 	opts.Files = filedialog.System{}
 	opts.Folders = folders.Disk{}
-	opts.History = func(dir string) port.History { return history.Dir(dir) }
+	opts.History = func(dir string) response.History { return history.Dir(dir) }
 	home, err := os.UserHomeDir()
 	if err != nil { // the user's own font folders are then left out of the scan
 		log.Printf("fonts: no home folder, scanning the system folders only: %v", err)

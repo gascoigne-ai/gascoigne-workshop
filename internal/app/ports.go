@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/state"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
@@ -19,7 +19,7 @@ type noFileDialog struct{}
 
 func (noFileDialog) Available() bool   { return false }
 func (noFileDialog) Suggested() string { return "" }
-func (noFileDialog) Choose(context.Context, string, port.FileMode, string) (string, error) {
+func (noFileDialog) Choose(context.Context, string, workspace.FileMode, string) (string, error) {
 	return "", errors.New("no file dialog")
 }
 
@@ -27,8 +27,10 @@ func (noFileDialog) Choose(context.Context, string, port.FileMode, string) (stri
 // browser shows no folder.
 type noFolders struct{}
 
-func (noFolders) List(string) ([]port.FolderEntry, error) { return nil, errors.New("no file system") }
-func (noFolders) Home() (string, error)                   { return "", errors.New("no file system") }
+func (noFolders) List(string) ([]workspace.FolderEntry, error) {
+	return nil, errors.New("no file system")
+}
+func (noFolders) Home() (string, error) { return "", errors.New("no file system") }
 func (noFolders) Write(context.Context, string, []byte) error {
 	return errors.New("no file system")
 }

@@ -9,7 +9,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 )
 
 func TestListTellsFoldersFromFilesAndFollowsLinks(t *testing.T) {
@@ -33,13 +33,13 @@ func TestListTellsFoldersFromFilesAndFollowsLinks(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	slices.SortFunc(got, func(left, right port.FolderEntry) int {
+	slices.SortFunc(got, func(left, right workspace.FolderEntry) int {
 		if left.Name < right.Name {
 			return -1
 		}
 		return 1
 	})
-	want := []port.FolderEntry{{Name: "a.json"}, {Name: "broken"}, {Name: "link", Dir: true}, {Name: "sub", Dir: true}}
+	want := []workspace.FolderEntry{{Name: "a.json"}, {Name: "broken"}, {Name: "link", Dir: true}, {Name: "sub", Dir: true}}
 	if !slices.Equal(got, want) {
 		t.Fatalf("got %+v, want %+v", got, want)
 	}

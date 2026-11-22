@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 )
 
 // fake puts a script called zenity first on the PATH.
@@ -51,11 +51,11 @@ echo /home/me/file.txt`)
 func TestChooseRunsTheCommandLineOfItsMode(t *testing.T) {
 	t.Setenv("HOME", "/home/me")
 	tests := map[string]struct {
-		mode port.FileMode
+		mode workspace.FileMode
 		want string
 	}{
-		"save": {port.SaveFile, "--save"},
-		"open": {port.OpenFile, "--file-selection"},
+		"save": {workspace.SaveFile, "--save"},
+		"open": {workspace.OpenFile, "--file-selection"},
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -65,7 +65,7 @@ echo /home/me/file.txt`)
 				t.Fatal(err)
 			}
 			args, _ := os.ReadFile(filepath.Join(os.Getenv("PATH"), "zenity.args"))
-			if got := strings.Contains(string(args), "--save"); got != (test.mode == port.SaveFile) {
+			if got := strings.Contains(string(args), "--save"); got != (test.mode == workspace.SaveFile) {
 				t.Fatalf("mode %v ran %q", test.mode, args)
 			}
 		})

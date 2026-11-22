@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fileversion"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/userdir"
 	"os"
@@ -19,7 +19,7 @@ const sentFile = "sent.jsonl"
 // header line would be lost when the log is trimmed.
 type sentLine struct {
 	Version int `json:"version"`
-	port.Sent
+	response.Sent
 }
 
 // sentReaders read a line by version; versions 0 and 1 share a layout.
@@ -32,9 +32,9 @@ var sentVersion = len(sentReaders) - 1
 type SentLog struct{ Dir string }
 
 // Append adds sent to the log. The file is rewritten to the
-// newest port.SentLimit lines once it holds twice that, so it stays small
+// newest response.SentLimit lines once it holds twice that, so it stays small
 // without a rewrite on every send.
-func (log SentLog) Append(sent port.Sent) error {
+func (log SentLog) Append(sent response.Sent) error {
 	line, err := json.Marshal(sentLine{Version: sentVersion, Sent: sent})
 	if err != nil {
 		return fmt.Errorf("encode sent request: %w", err)
@@ -57,7 +57,7 @@ func (log SentLog) Append(sent port.Sent) error {
 	return trimSent(target)
 }
 
-// trimSent rewrites the log to its newest port.SentLimit entries when it has
+// trimSent rewrites the log to its newest response.SentLimit entries when it has
 // grown past twice that.
 func trimSent(target string) error {
 	data, err := os.ReadFile(target)
@@ -65,20 +65,20 @@ func trimSent(target string) error {
 		return fmt.Errorf("read sent log: %w", err)
 	}
 	lines := bytes.Split(bytes.TrimSpace(data), []byte("\n"))
-	if len(lines) <= 2*port.SentLimit {
+	if len(lines) <= 2*response.SentLimit {
 		return nil
 	}
-	kept := bytes.Join(lines[len(lines)-port.SentLimit:], []byte("\n"))
+	kept := bytes.Join(lines[len(lines)-response.SentLimit:], []byte("\n"))
 	if err := userdir.WriteFileAtomic(target, append(kept, '\n'), 0o600); err != nil {
 		return fmt.Errorf("write sent log: %w", err)
 	}
 	return nil
 }
 
-// Load reads the log, newest first, at most port.SentLimit entries.
+// Load reads the log, newest first, at most response.SentLimit entries.
 // A missing log is no entries; a damaged line is skipped, so one bad write
 // does not hide the rest.
-func (log SentLog) Load() ([]port.Sent, error) {
+func (log SentLog) Load() ([]response.Sent, error) {
 	data, err := os.ReadFile(filepath.Join(log.Dir, sentFile))
 	if os.IsNotExist(err) {
 		return nil, nil
@@ -86,7 +86,7 @@ func (log SentLog) Load() ([]port.Sent, error) {
 	if err != nil {
 		return nil, fmt.Errorf("read sent log: %w", err)
 	}
-	var all []port.Sent
+	var all []response.Sent
 	for _, line := range bytes.Split(data, []byte("\n")) {
 		// A protocol the workshop does not know fails to decode; one left
 		// out decodes as none. Either way the line names no request to open.
@@ -95,16 +95,16 @@ func (log SentLog) Load() ([]port.Sent, error) {
 		}
 	}
 	slices.Reverse(all)
-	if len(all) > port.SentLimit {
-		all = all[:port.SentLimit]
+	if len(all) > response.SentLimit {
+		all = all[:response.SentLimit]
 	}
 	return all, nil
 }
 
 // decodeSentLine reads one line of the log with the reader of its version.
-func decodeSentLine(line []byte) (port.Sent, error) {
+func decodeSentLine(line []byte) (response.Sent, error) {
 	read, _, err := fileversion.Read(line, sentReaders)
 	return read.Sent, err
 }
 
-var _ port.SentStore = SentLog{}
+var _ response.SentStore = SentLog{}

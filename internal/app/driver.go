@@ -11,7 +11,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -188,7 +188,7 @@ func (d *Driver) BrowseFiles(dir string) error {
 	if err != nil {
 		return fmt.Errorf("file browser folder %q: %w", dir, err)
 	}
-	d.app.browseIn(absolute, "Choose the file to send", port.OpenFile, "", func(string) {})
+	d.app.browseIn(absolute, "Choose the file to send", workspace.OpenFile, "", func(string) {})
 	return nil
 }
 

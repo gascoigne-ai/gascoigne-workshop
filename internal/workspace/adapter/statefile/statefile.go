@@ -14,7 +14,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fileversion"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/userdir"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/state"
 )
 
@@ -80,4 +80,4 @@ func DefaultPath() string {
 // Files is the state store of the file system.
 type Files struct{}
 
-var _ port.StateStore = Files{}
+var _ workspace.StateStore = Files{}

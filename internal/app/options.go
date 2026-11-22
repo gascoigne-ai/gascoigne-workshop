@@ -7,14 +7,14 @@ import (
 	cport "github.com/gascoigne-ai/gascoigne-workshop/internal/collection/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
-	rport "github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fileversion"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	sport "github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/theme"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/autosave"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/bus"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"net/http"
@@ -36,17 +36,17 @@ type Options struct {
 	GRPCSchema       reqport.GRPCSchema                            // describes a gRPC method's request message; nil cannot
 	Curl             func(model.Request) string                    // the cURL command of a request; nil copies nothing
 	Store            cport.Store                                   // where the collection is saved; nil saves nothing
-	States           port.StateStore                               // where the UI state is kept; nil keeps none
-	Files            port.FileDialog                               // the desktop file chooser; nil uses the in-app file browser
-	Folders          port.Folders                                  // the folders the in-app file browser lists; nil lists none
-	History          func(dir string) rport.History                // the history in a folder; nil keeps none
+	States           workspace.StateStore                          // where the UI state is kept; nil keeps none
+	Files            workspace.FileDialog                          // the desktop file chooser; nil uses the in-app file browser
+	Folders          workspace.Folders                             // the folders the in-app file browser lists; nil lists none
+	History          func(dir string) response.History             // the history in a folder; nil keeps none
 	System           sport.SystemInfo                              // the system and GPU report of the settings; nil has none
 	KeyRepeat        sport.KeyRepeat                               // the desktop's key repeat timing; nil keeps the built-in one
 	Display          sport.DisplayScale                            // the desktop's display scale when the window system hides it; nil has none
 	Fonts            sport.FontStore                               // installed fonts; nil has none
 	SettingsFiles    sport.SettingsStore                           // the settings file; nil reads the defaults and cannot save
-	Previews         rport.BodyPreview                             // shows a response body in the browser; nil has none
-	Clock            port.Clock                                    // the time source; nil uses the wall clock
+	Previews         response.BodyPreview                          // shows a response body in the browser; nil has none
+	Clock            workspace.Clock                               // the time source; nil uses the wall clock
 	RetryDelay       time.Duration                                 // wait before a dropped connection reopens; 0 is two seconds
 	HostOS           string                                        // the OS shortcut text follows; "" is the running one
 	BaseScale        float64                                       // the platform's interface factor under the user's scale; 0 is 1
@@ -69,12 +69,12 @@ func startCollection(sample func() model.Collection) model.Collection {
 // adapters the app always calls, the retry delay and the base scale.
 func (opts Options) withDefaults() Options {
 	opts.SettingsFiles = cmp.Or[sport.SettingsStore](opts.SettingsFiles, noSettingFiles{})
-	opts.States = cmp.Or[port.StateStore](opts.States, noStates{})
+	opts.States = cmp.Or[workspace.StateStore](opts.States, noStates{})
 	opts.Store = cmp.Or[cport.Store](opts.Store, noStore{})
 	opts.Fonts = cmp.Or[sport.FontStore](opts.Fonts, noFonts{})
-	opts.Files = cmp.Or[port.FileDialog](opts.Files, noFileDialog{})
-	opts.Folders = cmp.Or[port.Folders](opts.Folders, noFolders{})
-	opts.Previews = cmp.Or[rport.BodyPreview](opts.Previews, noBrowser{})
+	opts.Files = cmp.Or[workspace.FileDialog](opts.Files, noFileDialog{})
+	opts.Folders = cmp.Or[workspace.Folders](opts.Folders, noFolders{})
+	opts.Previews = cmp.Or[response.BodyPreview](opts.Previews, noBrowser{})
 	opts.RetryDelay = cmp.Or(opts.RetryDelay, defaultRetryDelay)
 	opts.BaseScale = cmp.Or(opts.BaseScale, 1)
 	return opts

@@ -5,12 +5,12 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 )
 
 // home is a folder listing like a real one: folders and files, hidden
 // ones, and names that differ only in case.
-var home = []port.FolderEntry{
+var home = []workspace.FolderEntry{
 	{Name: "notes.txt"},
 	{Name: "Projects", Dir: true},
 	{Name: ".config", Dir: true},
@@ -31,7 +31,7 @@ func shown(t *testing.T, mode Mode, name string) Model {
 	return model
 }
 
-func names(entries []port.FolderEntry) []string {
+func names(entries []workspace.FolderEntry) []string {
 	out := make([]string, len(entries))
 	for i, entry := range entries {
 		out[i] = entry.Name
@@ -106,7 +106,7 @@ func TestTypingSelectsTheExactNameElseTheFirstMatch(t *testing.T) {
 	// The exact name wins over a longer one listed before it, so Enter
 	// opens what was typed.
 	model, _ := New(Open, "/d", "", "")
-	model, _ = Update(model, Listed{Dir: "/d", Entries: []port.FolderEntry{{Name: "a.json"}, {Name: "a.json.d", Dir: true}}})
+	model, _ = Update(model, Listed{Dir: "/d", Entries: []workspace.FolderEntry{{Name: "a.json"}, {Name: "a.json.d", Dir: true}}})
 	model, _ = Update(model, Typed{Text: "/d/a.json"})
 	if visible := model.Visible(); model.Selected < 0 || visible[model.Selected].Name != "a.json" {
 		t.Fatalf("selected %d of %q", model.Selected, names(visible))
@@ -202,7 +202,7 @@ func TestAPathElsewhereIsChosenOnceItsFolderIsListed(t *testing.T) {
 	if effect.List != "/etc" {
 		t.Fatalf("effect %+v", effect)
 	}
-	model, effect = Update(model, Listed{Dir: "/etc", Entries: []port.FolderEntry{{Name: "hosts"}, {Name: "ssl", Dir: true}}})
+	model, effect = Update(model, Listed{Dir: "/etc", Entries: []workspace.FolderEntry{{Name: "hosts"}, {Name: "ssl", Dir: true}}})
 	if effect.Chosen != "/etc/hosts" {
 		t.Fatalf("the Enter goes on in the listed folder: %+v", effect)
 	}
@@ -246,7 +246,7 @@ func TestOpeningClearsTheFilterWhenTheFolderChanges(t *testing.T) {
 
 func TestGoingUpStopsAtTheRoot(t *testing.T) {
 	model, _ := New(Open, "/", "/root", "")
-	model, _ = Update(model, Listed{Dir: "/", Entries: []port.FolderEntry{{Name: "etc", Dir: true}}})
+	model, _ = Update(model, Listed{Dir: "/", Entries: []workspace.FolderEntry{{Name: "etc", Dir: true}}})
 	if model.Text != "/" {
 		t.Fatalf("text %q", model.Text)
 	}

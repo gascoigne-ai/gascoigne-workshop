@@ -1,6 +1,6 @@
-// Package port holds what the response domain needs from the outside: the
-// store of sent requests and the types that cross it.
-package port
+// Package response holds the response domain's types and the ports at its
+// boundary: the store of sent requests and the types that cross it.
+package response
 
 import (
 	"time"

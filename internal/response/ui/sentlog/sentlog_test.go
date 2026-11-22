@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/history"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
 	core "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
@@ -25,7 +25,7 @@ type fakeHost struct {
 	present  map[string]bool
 }
 
-func (h *fakeHost) SentStore() port.SentStore {
+func (h *fakeHost) SentStore() response.SentStore {
 	if h.dir == "" {
 		return nil
 	}
@@ -88,10 +88,10 @@ func TestRecordedSendsListNewestFirstAndFilterByPathMethodOrURL(t *testing.T) {
 func TestTheLogKeepsOnlyTheNewestSentLimitEntries(t *testing.T) {
 	var log Log
 	host := &fakeHost{}
-	for i := range port.SentLimit + 5 {
+	for i := range response.SentLimit + 5 {
 		send(&log, host, fmt.Sprintf("R%d", i), "https://x.test")
 	}
-	if rows := log.Rows(""); len(rows) != port.SentLimit || rows[0].Path != fmt.Sprintf("R%d", port.SentLimit+4) {
+	if rows := log.Rows(""); len(rows) != response.SentLimit || rows[0].Path != fmt.Sprintf("R%d", response.SentLimit+4) {
 		t.Fatalf("%d rows, first %q", len(rows), rows[0].Path)
 	}
 }
@@ -110,11 +110,11 @@ func TestEntriesSurviveAReloadFromTheStateFolder(t *testing.T) {
 func TestOpeningARowOfARequestThatIsGoneSaysSoInTheStatusLine(t *testing.T) {
 	var log Log
 	host := &fakeHost{present: map[string]bool{"Here": true}}
-	log.Open(host, port.Sent{Path: "Here"})
+	log.Open(host, response.Sent{Path: "Here"})
 	if host.status != "" || len(host.opened) != 1 {
 		t.Fatalf("status %q opened %v", host.status, host.opened)
 	}
-	log.Open(host, port.Sent{Path: "Gone"})
+	log.Open(host, response.Sent{Path: "Gone"})
 	if !strings.Contains(host.status, "Gone") {
 		t.Fatalf("status %q", host.status)
 	}
@@ -137,7 +137,7 @@ func TestTheListShowsAnEmptyNoteAndTheRows(t *testing.T) {
 func TestRowTemplateMatchesTheGoView(t *testing.T) {
 	var log Log
 	host := &fakeHost{}
-	sent := port.Sent{Path: "Users/List", URL: "https://one.test", Protocol: "rest", Method: "GET", Status: 200, At: clock}
+	sent := response.Sent{Path: "Users/List", URL: "https://one.test", Protocol: "rest", Method: "GET", Status: 200, At: clock}
 	goView := Col(PadX(core.Gutter), PadY(4), HoverBg(core.Hover), Control("row"), OnClick(func() { log.Open(host, sent) }),
 		Row(Gap(6), AlignItems(AlignBaseline),
 			host.Badge(sent.Protocol, sent.Method),

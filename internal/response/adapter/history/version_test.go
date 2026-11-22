@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fileversion"
 )
 
@@ -76,7 +76,7 @@ func checkFixtureHistory(t *testing.T, file string, count int) {
 
 func TestSaveWritesVersion(t *testing.T) {
 	dir := t.TempDir()
-	if err := Dir(dir).Save("a", []port.Entry{entry(200, "ok")}); err != nil {
+	if err := Dir(dir).Save("a", []response.Entry{entry(200, "ok")}); err != nil {
 		t.Fatal(err)
 	}
 	data, err := os.ReadFile(path(dir, "a"))
@@ -255,7 +255,7 @@ func TestAppendSentWritesVersionOnEveryLine(t *testing.T) {
 func TestTrimSentKeepsNewerLines(t *testing.T) {
 	dir := t.TempDir()
 	var log bytes.Buffer
-	for range 2*port.SentLimit - 1 {
+	for range 2*response.SentLimit - 1 {
 		log.WriteString(`{"version":1,"At":"2026-11-06T10:00:00Z","Path":"x","Protocol":"rest"}` + "\n")
 	}
 	newer := `{"version":2,"Path":"from a newer build"}`
@@ -270,8 +270,8 @@ func TestTrimSentKeepsNewerLines(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if lines := countLines(data); lines != port.SentLimit {
-		t.Fatalf("the log has %d lines, want it trimmed to %d", lines, port.SentLimit)
+	if lines := countLines(data); lines != response.SentLimit {
+		t.Fatalf("the log has %d lines, want it trimmed to %d", lines, response.SentLimit)
 	}
 	if !strings.Contains(string(data), newer+"\n") {
 		t.Fatalf("the trim dropped the newer line")

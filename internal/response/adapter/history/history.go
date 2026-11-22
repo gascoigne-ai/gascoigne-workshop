@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fileversion"
 )
 
@@ -35,7 +35,7 @@ type file struct {
 }
 
 // entryFile is one saved response. Its keys are spelled out so a rename in
-// port.Entry cannot change the file.
+// response.Entry cannot change the file.
 type entryFile struct {
 	At         time.Time     `json:"At"`
 	Status     int           `json:"Status"`
@@ -63,7 +63,7 @@ type Dir string
 
 // Load reads the entries saved for key (a request's path), newest first.
 // Nothing saved is no entries and no error.
-func (dir Dir) Load(key string) ([]port.Entry, error) {
+func (dir Dir) Load(key string) ([]response.Entry, error) {
 	data, err := os.ReadFile(path(string(dir), key))
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil, nil
@@ -78,9 +78,9 @@ func (dir Dir) Load(key string) ([]port.Entry, error) {
 	if saved.Key != key {
 		return nil, nil
 	}
-	entries := make([]port.Entry, len(saved.Entries))
+	entries := make([]response.Entry, len(saved.Entries))
 	for i, entry := range saved.Entries {
-		entries[i] = port.Entry(entry)
+		entries[i] = response.Entry(entry)
 	}
 	return entries, nil
 }
@@ -88,7 +88,7 @@ func (dir Dir) Load(key string) ([]port.Entry, error) {
 // Save replaces the entries of key with the first Limit of entries whose
 // body is at most MaxBody; none removes the file. The file is written
 // whole and renamed into place, so a crash leaves the old one.
-func (dir Dir) Save(key string, entries []port.Entry) error {
+func (dir Dir) Save(key string, entries []response.Entry) error {
 	var keep []entryFile
 	for _, entry := range entries {
 		if len(entry.Body) <= MaxBody && len(keep) < Limit {
@@ -115,7 +115,7 @@ func (dir Dir) Save(key string, entries []port.Entry) error {
 	return nil
 }
 
-// Sent implements port.History.
-func (dir Dir) Sent() port.SentStore { return SentLog{Dir: string(dir)} }
+// Sent implements response.History.
+func (dir Dir) Sent() response.SentStore { return SentLog{Dir: string(dir)} }
 
-var _ port.History = Dir("")
+var _ response.History = Dir("")

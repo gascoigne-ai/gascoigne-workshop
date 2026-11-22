@@ -23,8 +23,8 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/history"
-	rport "github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/fonts"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/settingsfile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/statefile"
@@ -395,7 +395,7 @@ func treeRowY(index int) int { return headerH + index*core.RowH + core.RowH/2 }
 func withAdapters(opts Options) Options {
 	opts.HostOS = cmp.Or(opts.HostOS, "linux") // the same shortcut text on every machine
 	opts.RetryDelay = cmp.Or(opts.RetryDelay, 10*time.Millisecond)
-	opts.History = func(dir string) rport.History { return history.Dir(dir) }
+	opts.History = func(dir string) response.History { return history.Dir(dir) }
 	opts.Fonts = fonts.System{}
 	opts.Protocols = proto.Configured
 	opts.GRPCMethods = proto.ListGRPCMethods

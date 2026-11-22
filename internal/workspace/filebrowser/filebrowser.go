@@ -12,7 +12,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 )
 
 // Mode is what the browser asks for.
@@ -29,14 +29,14 @@ const maxName = 255
 // Model is the browser's state.
 type Model struct {
 	Mode       Mode
-	Dir        string             // the folder shown, absolute and clean; "" until the first listing
-	ShowHidden bool               // names that start with a dot are listed
-	Text       string             // the path field: the folder, a separator and the typed name
-	Selected   int                // the selected row of Visible, -1 for none
-	Problem    string             // why the last Enter did nothing, "" when it did
-	Home       string             // what a typed ~ means
-	entries    []port.FolderEntry // what Dir holds, folders first
-	next       pending            // what the asked listing is for
+	Dir        string                  // the folder shown, absolute and clean; "" until the first listing
+	ShowHidden bool                    // names that start with a dot are listed
+	Text       string                  // the path field: the folder, a separator and the typed name
+	Selected   int                     // the selected row of Visible, -1 for none
+	Problem    string                  // why the last Enter did nothing, "" when it did
+	Home       string                  // what a typed ~ means
+	entries    []workspace.FolderEntry // what Dir holds, folders first
+	next       pending                 // what the asked listing is for
 }
 
 // pending is what happens once an asked folder is listed.
@@ -77,7 +77,7 @@ type Msg interface{ browserMsg() }
 // Listed answers an Effect's List: what dir holds, or why it could not be read.
 type Listed struct {
 	Dir     string
-	Entries []port.FolderEntry
+	Entries []workspace.FolderEntry
 	Err     error
 }
 
@@ -159,9 +159,9 @@ func unwrapped(err error) error {
 }
 
 // sorted is entries with folders first, then by name ignoring case.
-func sorted(entries []port.FolderEntry) []port.FolderEntry {
+func sorted(entries []workspace.FolderEntry) []workspace.FolderEntry {
 	out := slices.Clone(entries)
-	slices.SortStableFunc(out, func(left, right port.FolderEntry) int {
+	slices.SortStableFunc(out, func(left, right workspace.FolderEntry) int {
 		if left.Dir != right.Dir {
 			if left.Dir {
 				return -1
@@ -216,10 +216,10 @@ func (model Model) filter() string {
 // Visible are the rows shown: the folder's entries without hidden ones
 // (unless shown, or a dot is typed) and narrowed to the typed name, a
 // part of it or a pattern such as *.json, ignoring case.
-func (model Model) Visible() []port.FolderEntry {
+func (model Model) Visible() []workspace.FolderEntry {
 	filter := strings.ToLower(model.filter())
 	hidden := model.ShowHidden || strings.HasPrefix(filter, ".")
-	var out []port.FolderEntry
+	var out []workspace.FolderEntry
 	for _, entry := range model.entries {
 		if !hidden && strings.HasPrefix(entry.Name, ".") {
 			continue
@@ -324,7 +324,7 @@ func (model Model) enter() (Model, Effect) {
 
 // take opens a folder or chooses a file; an existing file is replaced only
 // after asking.
-func (model Model) take(entry port.FolderEntry) (Model, Effect) {
+func (model Model) take(entry workspace.FolderEntry) (Model, Effect) {
 	path := filepath.Join(model.Dir, entry.Name)
 	if entry.Dir {
 		return model.list(path, pending{name: model.keptName(entry.Name)})
@@ -357,13 +357,13 @@ func (model Model) list(dir string, next pending) (Model, Effect) {
 }
 
 // lookup finds an entry by its exact name, hidden or not.
-func (model Model) lookup(name string) (port.FolderEntry, bool) {
+func (model Model) lookup(name string) (workspace.FolderEntry, bool) {
 	for _, entry := range model.entries {
 		if entry.Name == name {
 			return entry, true
 		}
 	}
-	return port.FolderEntry{}, false
+	return workspace.FolderEntry{}, false
 }
 
 // nameProblem is why name cannot be a file name, "" when it can.

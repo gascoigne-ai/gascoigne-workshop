@@ -14,8 +14,8 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/postman"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/filebrowser"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -36,8 +36,8 @@ func newFakeFolders() *fakeFolders {
 	return &fakeFolders{home: "/home/user", files: map[string][]byte{}}
 }
 
-func (f *fakeFolders) List(string) ([]port.FolderEntry, error) { return nil, nil }
-func (f *fakeFolders) Home() (string, error)                   { return f.home, nil }
+func (f *fakeFolders) List(string) ([]workspace.FolderEntry, error) { return nil, nil }
+func (f *fakeFolders) Home() (string, error)                        { return f.home, nil }
 
 func (f *fakeFolders) Write(_ context.Context, path string, data []byte) error {
 	if f.release != nil {
@@ -199,7 +199,7 @@ func TestTheAppDoesNoFileAccessOfItsOwn(t *testing.T) {
 		}
 		for _, imported := range file.Imports {
 			if path, _ := strconv.Unquote(imported.Path.Value); path == "os" {
-				t.Errorf("%s imports os; reach files through a port (port.Folders)", source)
+				t.Errorf("%s imports os; reach files through a port (workspace.Folders)", source)
 			}
 		}
 	}

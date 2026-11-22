@@ -1,4 +1,4 @@
-package port
+package workspace
 
 import "github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/state"
 

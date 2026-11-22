@@ -1,6 +1,6 @@
-// Package port holds what the workspace needs from the desktop: the file
-// chooser.
-package port
+// Package workspace holds the workspace domain's types and the ports at its
+// boundary: what it needs from the desktop, such as the file chooser.
+package workspace
 
 import (
 	"context"

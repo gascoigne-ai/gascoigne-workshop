@@ -2,15 +2,15 @@ package history
 
 import (
 	"fmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
 )
 
-func sentAt(minute int, path string) port.Sent {
-	return port.Sent{At: time.Date(2026, 11, 6, 10, minute, 0, 0, time.UTC), Path: path, Protocol: "rest", Method: "GET", URL: "https://example.test/" + path, Status: 200}
+func sentAt(minute int, path string) response.Sent {
+	return response.Sent{At: time.Date(2026, 11, 6, 10, minute, 0, 0, time.UTC), Path: path, Protocol: "rest", Method: "GET", URL: "https://example.test/" + path, Status: 200}
 }
 
 func TestSentLogListsNewestFirstAfterReload(t *testing.T) {
@@ -45,7 +45,7 @@ func TestSentLogWithoutFileIsEmpty(t *testing.T) {
 
 func TestSentLogKeepsOnlyTheNewestSentLimit(t *testing.T) {
 	dir := t.TempDir()
-	for minute := 0; minute < port.SentLimit+port.SentLimit/2; minute++ {
+	for minute := 0; minute < response.SentLimit+response.SentLimit/2; minute++ {
 		if err := Dir(dir).Sent().Append(sentAt(0, fmt.Sprint(minute))); err != nil {
 			t.Fatal(err)
 		}
@@ -54,17 +54,17 @@ func TestSentLogKeepsOnlyTheNewestSentLimit(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got) != port.SentLimit {
-		t.Fatalf("len = %d, want %d", len(got), port.SentLimit)
+	if len(got) != response.SentLimit {
+		t.Fatalf("len = %d, want %d", len(got), response.SentLimit)
 	}
-	if want := fmt.Sprint(port.SentLimit + port.SentLimit/2 - 1); got[0].Path != want {
+	if want := fmt.Sprint(response.SentLimit + response.SentLimit/2 - 1); got[0].Path != want {
 		t.Fatalf("newest = %s, want %s", got[0].Path, want)
 	}
 	data, err := os.ReadFile(filepath.Join(dir, sentFile))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if lines := countLines(data); lines > 2*port.SentLimit {
+	if lines := countLines(data); lines > 2*response.SentLimit {
 		t.Fatalf("file grew to %d lines", lines)
 	}
 }
@@ -127,7 +127,7 @@ func countLines(data []byte) int {
 }
 
 func TestSentLogStoresThroughThePort(t *testing.T) {
-	var store port.SentStore = SentLog{Dir: t.TempDir()}
+	var store response.SentStore = SentLog{Dir: t.TempDir()}
 	if err := store.Append(sentAt(1, "A")); err != nil {
 		t.Fatal(err)
 	}

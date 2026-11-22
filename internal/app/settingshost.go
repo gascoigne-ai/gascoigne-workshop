@@ -2,7 +2,7 @@ package app
 
 import (
 	"errors"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/severity"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/viewer"
@@ -55,7 +55,7 @@ func (a *App) closeSettingsNow() {
 // pickSettingsFile asks for a file and calls done with its path.
 func (a *App) pickSettingsFile(title string, done func(path string)) {
 	a.cancelSettingsFilePick()
-	a.cancelSettingsPick = a.pickFile(title, port.OpenFile, "", done)
+	a.cancelSettingsPick = a.pickFile(title, workspace.OpenFile, "", done)
 }
 
 // cancelSettingsFilePick takes back the file question the settings dialog

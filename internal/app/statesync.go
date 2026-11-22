@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	rport "github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fileversion"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/state"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -315,7 +315,7 @@ func (a *App) historyDir() string {
 
 // historyStore is the history folder next to the state file, nil when
 // nothing is saved or no history adapter was given.
-func (a *App) historyStore() rport.History {
+func (a *App) historyStore() response.History {
 	dir := a.historyDir()
 	if dir == "" || a.histories == nil {
 		return nil
@@ -331,7 +331,7 @@ func (a *App) saveHistory(tab *reqTab) {
 	if store == nil || key == "" {
 		return
 	}
-	var entries []rport.Entry
+	var entries []response.Entry
 	if tab.Resp != nil && tab.Resp.Err == "" {
 		entries = append(entries, historyEntry(tab.Resp, a.now()))
 	}
@@ -372,8 +372,8 @@ func (a *App) loadHistory(req *model.Request) []tabs.PastResponse {
 	return entries
 }
 
-func historyEntry(resp *model.Response, at time.Time) rport.Entry {
-	return rport.Entry{At: at, Status: resp.Status, StatusText: resp.StatusText, Duration: resp.Duration, Headers: resp.Headers, Body: resp.Body}
+func historyEntry(resp *model.Response, at time.Time) response.Entry {
+	return response.Entry{At: at, Status: resp.Status, StatusText: resp.StatusText, Duration: resp.Duration, Headers: resp.Headers, Body: resp.Body}
 }
 
 // stateWritable reports whether the state is written to a file: it is kept
