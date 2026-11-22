@@ -15,9 +15,9 @@ are type-switched in `App.handle`. Give a connection its own type with typed mes
 `Update` (a controller package under `internal/feature/send`, as `tabs` and `viewer` are), so
 `reqTab` holds a value of it and `App` only routes messages. Behavior unchanged.
 
-OPEN QUESTION (ask the user before building): the state table of a connection (states, allowed
-transitions: idle, connecting, open, retrying, closing) and which of MCP and gRPC stream state move
-with it. Recommend the websocket connection only, MCP and gRPC in later tasks.
+User's answer: the websocket connection only. States: idle, connecting, open, retrying, closing, one
+enum with a transition table. MCP (`Tools`, `Resources`, `Prompts`) and gRPC stream state stay in
+`reqTab` for later tasks.
 
 ## Model
 The connection status as one enum with a transition table instead of the flags that change together;

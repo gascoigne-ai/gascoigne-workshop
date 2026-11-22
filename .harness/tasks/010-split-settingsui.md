@@ -20,8 +20,8 @@ Two test files import another feature's package (`theme/theme_test.go` and
 `ui/settingsui/rawcolor_test.go` import `respview`); give them a fake or a kernel type so the
 feature has no import of another feature, tests included.
 
-OPEN QUESTION (ask the user before building): the seam and where the form state lives; recommend a
-`form` controller package with a `Model` and typed messages.
+User's answer: the form state lives in a new controller package `internal/feature/settings/form`
+with a `Model`, typed messages and a pure `Update`; the form view and the dialog shell sit on top of it.
 
 ## Model
 Per the open question: the form-state type, its owner, the transitions; one source of truth for
