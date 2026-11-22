@@ -2,7 +2,7 @@
 // installed fonts and the settings file.
 package port
 
-import "github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fontfamily"
+import "github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fontfamily"
 
 // FontStore finds installed fonts and reads their files.
 type FontStore interface {

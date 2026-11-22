@@ -9,7 +9,7 @@ import (
 	"runtime"
 	"runtime/debug"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/sysinfo"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/sysinfo"
 )
 
 // Graphics is what the running window system and GPU tell.

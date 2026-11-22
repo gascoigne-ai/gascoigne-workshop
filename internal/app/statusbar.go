@@ -2,7 +2,7 @@ package app
 
 import (
 	"fmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/textfmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/textfmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	// The view DSL is dot-imported so views read like markup: Row(...), Text(...).

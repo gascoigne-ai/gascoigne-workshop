@@ -1,6 +1,6 @@
 package port
 
-import "github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/sysinfo"
+import "github.com/gascoigne-ai/gascoigne-workshop/internal/settings/sysinfo"
 
 // SystemInfo reports what the program runs on: the system, the display and
 // the GPU rendering.

@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/respview"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/severity"
 	"path/filepath"
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/textfmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/textfmt"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 

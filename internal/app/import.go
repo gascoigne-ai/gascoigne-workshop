@@ -2,12 +2,12 @@ package app
 
 import (
 	"fmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/openapi"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/postman"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/openapi"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/postman"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/tree"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/severity"
 	"path/filepath"
 )
 

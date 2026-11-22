@@ -3,10 +3,10 @@ package settingsui
 import (
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/prefs"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/severity"
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fontfamily"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fontfamily"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )

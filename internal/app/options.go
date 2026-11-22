@@ -8,7 +8,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	rport "github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fileversion"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fileversion"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	sport "github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/theme"

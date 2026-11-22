@@ -3,8 +3,8 @@ package app
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/jsonview"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/textfmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/jsonview"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/textfmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"

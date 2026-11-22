@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/sysinfo"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/sysinfo"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )

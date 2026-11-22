@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/userdir"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/userdir"
 )
 
 func write(t *testing.T, dir, name, content string) {

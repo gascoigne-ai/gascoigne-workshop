@@ -12,7 +12,7 @@ import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fileversion"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fileversion"
 )
 
 // The fixtures are a collection the program saved: testdata/v0 before files

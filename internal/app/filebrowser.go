@@ -2,7 +2,7 @@ package app
 
 import (
 	"context"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/severity"
 	"path/filepath"
 
 	"github.com/hajimehoshi/ebiten/v2"

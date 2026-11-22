@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"maps"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fileversion"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fileversion"
 )
 
 // Sections are the top-level objects of settings.json, in the order they are

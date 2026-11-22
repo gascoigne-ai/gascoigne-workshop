@@ -4,7 +4,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/fonts"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/prefs"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/severity"
 	"image/color"
 	"os"
 	"path/filepath"

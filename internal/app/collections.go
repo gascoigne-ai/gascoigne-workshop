@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/severity"
 	"path/filepath"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/collections"

@@ -16,15 +16,15 @@ test:
 # regression test: fix it, keep the file.
 FUZZTIME ?= 30s
 FUZZ_TARGETS = \
-	./internal/collection/model/miniyaml:FuzzParse \
-	./internal/collection/model/openapi:FuzzParse \
-	./internal/collection/model/postman:FuzzParse \
-	./internal/collection/model/clientconfig:FuzzParse \
+	./internal/collection/miniyaml:FuzzParse \
+	./internal/collection/openapi:FuzzParse \
+	./internal/collection/postman:FuzzParse \
+	./internal/collection/clientconfig:FuzzParse \
 	./internal/request/model:FuzzParseCurl \
 	./internal/request/model:FuzzDecodeJSONSchema \
 	./internal/request/model:FuzzURLParams \
-	./internal/request/model/assert:FuzzRun \
-	./internal/response/model/jsonview:FuzzCompact \
+	./internal/request/assert:FuzzRun \
+	./internal/response/jsonview:FuzzCompact \
 	./internal/request/adapter/proto/ws:FuzzReadFrame \
 	./internal/request/adapter/proto:FuzzMCPDeliver \
 	./uitoolkit/markup:FuzzParse \
@@ -41,7 +41,7 @@ FUZZ_TARGETS = \
 	./internal/collection/adapter/store:FuzzLoad \
 	./internal/workspace/adapter/statefile:FuzzLoad \
 	./internal/settings/model/settings:FuzzDecode \
-	./internal/settings/model/fileversion:FuzzRead \
+	./internal/settings/fileversion:FuzzRead \
 	./internal/response/adapter/history:FuzzLoad \
 	./internal/response/adapter/history:FuzzLoadSent \
 	./internal/response/ui/respview:FuzzDecode \
@@ -55,7 +55,7 @@ FUZZ_TARGETS = \
 	./internal/request/adapter/proto:FuzzSample \
 	./internal/request/model:FuzzToolFields \
 	./internal/request/model:FuzzArguments \
-	./internal/response/model/jsonview:FuzzLines \
+	./internal/response/jsonview:FuzzLines \
 	./internal/settings/adapter/displayscale:FuzzParseMonitors \
 	./internal/settings/adapter/keyrepeat:FuzzParseHyprland \
 	./internal/settings/adapter/keyrepeat:FuzzParseGSettings \
@@ -74,7 +74,7 @@ vet-release:
 	go vet -tags release ./...
 
 # Directories that hold a file with a release build tag.
-RELEASE_BASE = cmd/workshop internal/collection/model/collection internal/settings/model/userdir
+RELEASE_BASE = cmd/workshop internal/collection/model/collection internal/settings/userdir
 
 # The release test run covers RELEASE_BASE and every package whose build or
 # test binary links one of them: the rest compile the same under both tags.

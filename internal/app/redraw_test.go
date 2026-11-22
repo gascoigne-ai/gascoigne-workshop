@@ -2,7 +2,7 @@ package app
 
 import (
 	sport "github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"testing"
 	"time"

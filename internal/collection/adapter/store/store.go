@@ -25,7 +25,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/port"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/userdir"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/userdir"
 	"io/fs"
 	"os"
 	"path"
@@ -35,7 +35,7 @@ import (
 	"unicode"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fileversion"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fileversion"
 )
 
 const (

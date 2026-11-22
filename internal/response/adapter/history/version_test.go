@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fileversion"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fileversion"
 )
 
 // The fixtures are files the program wrote for the unsaved sample's

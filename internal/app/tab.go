@@ -2,10 +2,10 @@ package app
 
 import (
 	"context"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/assert"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/mcpexplorer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model/assert"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/ui/mcpform"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/viewer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/tabs"

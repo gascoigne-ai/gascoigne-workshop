@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/tree"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/serial"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/tabs"
 	"path/filepath"
 	"strings"
@@ -13,8 +13,8 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	rport "github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fileversion"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/state"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fileversion"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/state"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 

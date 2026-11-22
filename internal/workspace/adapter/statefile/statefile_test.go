@@ -1,8 +1,8 @@
 package statefile
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/userdir"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/state"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/userdir"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/state"
 	"os"
 	"path/filepath"
 	"reflect"

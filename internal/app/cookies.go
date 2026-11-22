@@ -2,7 +2,7 @@ package app
 
 import (
 	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/severity"
 	"net/http/cookiejar"
 	"net/url"
 	"strings"
