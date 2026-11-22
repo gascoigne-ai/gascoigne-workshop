@@ -153,7 +153,7 @@ An unknown token draws in `Text`, so a typo stays visible.
 
 **Buttons.** `Button`: `Sunken` fill, `ChipText` label, outlined, brightens on hover, label padded 10, ellipsized only when the row has no room. `PrimaryButton`: `Accent` fill, `AccentText` label, `AccentLine` outline. `SegmentChip`: a primary button when chosen, a button otherwise. `LinkButton`: `AccentLine` text on no fill, `Hover` under the pointer. Dialog buttons are `RowH` high and at least 80 wide.
 
-**Fields.** `Sunken`, `RowH` high (`CompactH` inline), `BorderStrong` outline, `AccentLine` when focused; variables in a field are green when resolved and red when not (`architecture/request.md`).
+**Fields.** `Sunken`, `RowH` high (`CompactH` inline), `BorderStrong` outline, `AccentLine` when focused; variables in a field are green when resolved and red when not (`internal/feature/send/FEATURE.md`).
 
 **Menus.** `Bg` panel, `menu` control, shadow, inset `MenuPad` (4), 120 to 420 wide; rows `MenuRowH` (24) padded 10, the hot row `Selected`, others `Hover` on hover; shortcut and hint lines small and muted; separators 9 high.
 

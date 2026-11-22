@@ -5,7 +5,7 @@ Adds to the shared `common/rules.md`, `common/commit-style.md` and `common/code-
 - Approved deps: `github.com/hajimehoshi/ebiten/v2` (GPU window, input, 2D drawing, `text/v2`) `golang.org/x/image` (embedded Go fonts, already an Ebitengine requirement) and Ebitengine's other transitive requirements, and `google.golang.org/grpc` with `google.golang.org/protobuf` and their transitive requirements, `github.com/BurntSushi/toml`, and `github.com/bufbuild/protocompile`, and the build tool `github.com/tc-hib/go-winres` (run by `release.yml` at `v0.3.3`; not a module requirement). REST uses `net/http`.
 - cgo is allowed here (Ebitengine needs it for windowing on Linux). Tests for non-UI packages must still run without a display.
 - The look follows `.harness/style.md`; its Rules section is part of these rules.
-- Layers: the toolkit knows nothing of the app (`uitoolkit/CLAUDE.md`), `internal/` is laid out by domain, with `ui/` and `adapter/` as the only zone directories (`internal/CLAUDE.md`). `internal/request` and `internal/request/adapter/proto` stay free of UI.
+- Layers: the toolkit knows nothing of the app (`uitoolkit/CLAUDE.md`), `internal/` is laid out as kernel, features, platform and app (`internal/CLAUDE.md`). `internal/kernel` and `internal/feature/send/proto` stay free of UI.
 - VML views put attributes before children, keep handlers as named closures or methods when they are longer than a call, and dot-import `view` (`core` is aliased `w`). UI is written as VML templates, inline in the Go file of the view (a `const` at its end, parsed once with `markup.Must`): no hand-rolled hit-testing or geometry in the app; a new component goes into `widget`, as a composition of `view` primitives or, when it needs its own layout, input or drawing, through `view.Custom`; a new primitive (color, geometry, drawing call) goes into `core`.
 - The name Postman is allowed where it names the import and export format (the user's answer): the format is a file the workshop reads and writes, and a generic name would hide which format a user can import. Elsewhere `common/rules.md` Hygiene applies.
 - Protocols are a table (`proto` registry keyed by name), widgets are values with `Update`/`Draw`; no switch on protocol or widget kind.
@@ -20,7 +20,7 @@ Adds to the shared `common/rules.md`, `common/commit-style.md` and `common/code-
 - Record the answer in the task file; when it will matter after the task, also as the why in the doc comment of the code it shapes, or in the matching `architecture/*.md` when no one package owns it.
 
 ## Layout of `internal/`
-- `internal/<domain>/<package>`, with `ui/` and `adapter/` zone directories; the rules are in `internal/CLAUDE.md`.
+- `internal/{kernel,feature,platform,app}`; the rules are in `internal/CLAUDE.md`.
 
 ## Untrusted input
 - Anything that comes from a file, a clipboard, an import or a server is untrusted: parsers return an error, never panic, hang or grow without a bound; a new parser or importer gets a fuzz target (`FUZZ_TARGETS` in the Makefile) and a limit written into `architecture/limits.md`.

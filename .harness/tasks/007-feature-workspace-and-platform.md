@@ -12,6 +12,10 @@ Goal: `workspace/{tabs,state,filebrowser,autosave,bus,overlay,serial,ui}` become
 `statefile` stays with the feature) go to `internal/platform`. After task 001 nothing else imports
 `workspace` for severity, so the edge into this feature comes only from `app`.
 
+Finding from task 006: `workspace/tabs` imports the `send` root for `MCPServer`. Once workspace is a
+feature this is a feature-to-feature import; move `MCPServer` (a type both use) to kernel in this
+task, or record why not.
+
 ## Model
 Model: unchanged (remembered-state file keeps format and version).
 
