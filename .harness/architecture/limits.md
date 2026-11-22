@@ -8,7 +8,7 @@ is cut, refused or shown plainly, never a panic.
 | Response body in the viewer | 2 MiB | first part as plain lines, with a note; Save body keeps all | `respview.ViewLimit` |
 | REST response body kept | 32 MiB | cut, `Response.Truncated` | `proto.maxBody` |
 | Image response | 64 Mi pixels | not decoded | `respview.maxImagePixels` |
-| JSON nesting in the viewer | 256 levels | plain text | `jsonview.maxDepth` |
+| JSON nesting in the viewer | 256 levels | plain text | `format.maxDepth` |
 | YAML nesting | 100 levels | error | `miniyaml.maxDepth` |
 | Variable expansion | 16 MiB | stops | `request.maxExpanded` |
 | Request timeout | 24 hours | capped | `settings.MaxTimeout` |

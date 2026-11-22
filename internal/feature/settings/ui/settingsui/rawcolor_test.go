@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/jsonview"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/format"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
@@ -38,7 +38,7 @@ func TestTheRawViewColorsKeysStringsNumbersAndLiterals(t *testing.T) {
 		}
 	}
 	// the response view takes its token for a key from the same kernel name
-	if keyStyle != core.Token(jsonview.Key.Style()) || keyStyle == stringStyle {
+	if keyStyle != core.Token(format.Key.Style()) || keyStyle == stringStyle {
 		t.Fatalf("key style %q, string style %q", keyStyle, stringStyle)
 	}
 }

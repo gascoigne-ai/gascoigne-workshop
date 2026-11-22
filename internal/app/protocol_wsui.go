@@ -10,7 +10,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/outbox"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/textfmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/format"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -441,7 +441,7 @@ func (a *App) promptMenu(tab *reqTab) []MenuItem {
 // indented message goes out as a single frame; text that is not JSON
 // stays as typed and a toast says where it breaks.
 func (a *App) formatMessage(tab *reqTab) {
-	compact, err := textfmt.CompactJSON(tab.msg.Text)
+	compact, err := format.CompactJSON(tab.msg.Text)
 	if err != nil {
 		a.toast(err.Error(), severity.Error)
 		return

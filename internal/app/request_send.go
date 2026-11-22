@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/textfmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/format"
 	"time"
 )
 
@@ -106,6 +106,6 @@ func (a *App) apply(result sendResult) {
 		a.runTests(t)
 		return
 	}
-	a.status = fmt.Sprintf("%s %s: %d %s in %s", t.Req.Method, t.Req.URL, result.resp.Status, result.resp.StatusText, textfmt.Duration(result.resp.Duration))
+	a.status = fmt.Sprintf("%s %s: %d %s in %s", t.Req.Method, t.Req.URL, result.resp.Status, result.resp.StatusText, format.Duration(result.resp.Duration))
 	a.runTests(t)
 }

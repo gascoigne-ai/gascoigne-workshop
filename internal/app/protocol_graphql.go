@@ -6,7 +6,7 @@ import (
 
 	request "github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/textfmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/format"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -20,7 +20,7 @@ var graphQLTemplate = markup.Must("graphql.vml", graphqlSource)
 func (a *App) graphQLBody(tab *reqTab) Node {
 	syncQuery := func() { editRequest(tab, editor.BodyTyped{Text: tab.body.Text}) }
 	syncVars := func() { editRequest(tab, editor.VarsTyped{Text: tab.gqlVars.Text}) }
-	status, valid := textfmt.JSONStatus(tab.gqlVars.Text)
+	status, valid := format.JSONStatus(tab.gqlVars.Text)
 	statusColor := w.Error
 	if valid {
 		statusColor = w.OK

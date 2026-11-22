@@ -2,7 +2,7 @@ package app
 
 import (
 	"fmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/textfmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/format"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	// The view DSL is dot-imported so views read like markup: Row(...), Text(...).
@@ -21,7 +21,7 @@ func (a *App) responseStatus(tab *reqTab) Node {
 		"pillFg": fg,
 		"pillBg": bg,
 		"status": fmt.Sprintf("%d %s", tab.Resp.Status, tab.Resp.StatusText),
-		"timing": fmt.Sprintf("%s  %s", textfmt.Duration(tab.Resp.Duration), textfmt.Size(tab.Resp.Size)),
+		"timing": fmt.Sprintf("%s  %s", format.Duration(tab.Resp.Duration), format.Size(tab.Resp.Size)),
 	}))
 }
 

@@ -24,7 +24,7 @@ FUZZ_TARGETS = \
 	./internal/feature/request:FuzzDecodeJSONSchema \
 	./internal/feature/request:FuzzURLParams \
 	./internal/feature/send/assert:FuzzRun \
-	./internal/kernel/jsonview:FuzzCompact \
+	./internal/ui/format:FuzzCompact \
 	./internal/feature/send/proto/ws:FuzzReadFrame \
 	./internal/feature/send/proto:FuzzMCPDeliver \
 	./uitoolkit/markup:FuzzParse \
@@ -55,7 +55,7 @@ FUZZ_TARGETS = \
 	./internal/feature/send/proto:FuzzSample \
 	./internal/feature/request:FuzzToolFields \
 	./internal/feature/request:FuzzArguments \
-	./internal/kernel/jsonview:FuzzLines \
+	./internal/ui/format:FuzzLines \
 	./uitoolkit/desktop/displayscale:FuzzParseMonitors \
 	./uitoolkit/desktop/keyrepeat:FuzzParseHyprland \
 	./uitoolkit/desktop/keyrepeat:FuzzParseGSettings \

@@ -6,7 +6,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/prefs"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/jsonview"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/format"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -133,11 +133,11 @@ func (d *SettingsDialog) rawStyler(line string) []Span {
 			bad[`"`+problem.Key+`"`] = true
 		}
 	}
-	tokens := jsonview.Tokenize(line)
+	tokens := format.Tokenize(line)
 	spans := make([]Span, len(tokens))
 	for i, token := range tokens {
 		style := w.Token(token.Kind.Style())
-		if token.Kind == jsonview.Key && bad[token.Text] {
+		if token.Kind == format.Key && bad[token.Text] {
 			style = w.Error
 		}
 		spans[i] = Span{Text: token.Text, Style: style}

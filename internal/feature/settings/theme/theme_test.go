@@ -7,17 +7,17 @@ import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/jsonview"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/format"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 // jsonKinds are the kinds of span a JSON view colors.
-var jsonKinds = []jsonview.Kind{jsonview.Plain, jsonview.Punct, jsonview.Key, jsonview.String, jsonview.Number, jsonview.Literal}
+var jsonKinds = []format.Kind{format.Plain, format.Punct, format.Key, format.String, format.Number, format.Literal}
 
 // jsonToken is the color token of a kind of JSON span: the name the kernel
 // gives its style. The response view takes its tokens from the same name, so
 // no feature is imported to check them.
-func jsonToken(kind jsonview.Kind) core.Token { return core.Token(kind.Style()) }
+func jsonToken(kind format.Kind) core.Token { return core.Token(kind.Style()) }
 
 func luminance(rgba color.RGBA) float64 {
 	lin := func(value uint8) float64 {
@@ -121,7 +121,7 @@ func TestThemeWithAppliesCornersAndTheFlatSwitch(t *testing.T) {
 func TestAppThemesCarryMethodAndJSONColorsOverTheToolkitStyles(t *testing.T) {
 	for _, id := range []string{"dark", "light"} {
 		th := ThemeFor(id, FontSizes{})
-		if th.Color(MethodToken("GET")) == th.Color(core.Text) || th.Color(jsonToken(jsonview.Key)) == (color.RGBA{}) {
+		if th.Color(MethodToken("GET")) == th.Color(core.Text) || th.Color(jsonToken(format.Key)) == (color.RGBA{}) {
 			t.Errorf("%s: app colors missing", id)
 		}
 		if th.Style("primary").Radius <= 0 {

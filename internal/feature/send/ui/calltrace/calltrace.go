@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/textfmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/format"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -82,7 +82,7 @@ func (l *Log) Answer(at time.Time, req *request.Request, resp *request.Response)
 		l.Error(at, fmt.Sprintf("✗ %s %s failed: %s", req.Method, req.URL, resp.Err))
 		return
 	}
-	l.Info(at, fmt.Sprintf("← %d %s in %s, %s", resp.Status, resp.StatusText, textfmt.Duration(resp.Duration), textfmt.Size(resp.Size)))
+	l.Info(at, fmt.Sprintf("← %d %s in %s, %s", resp.Status, resp.StatusText, format.Duration(resp.Duration), format.Size(resp.Size)))
 }
 
 // Entries are all the entries, oldest first.

@@ -3,14 +3,14 @@ package app
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/ui/respview"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/jsonview"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/format"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // plainStyler draws a line in the plain text color.
 func plainStyler(line string) []Span {
-	return []Span{{Text: line, Style: respview.Tokens[jsonview.Plain]}}
+	return []Span{{Text: line, Style: respview.Tokens[format.Plain]}}
 }
 
 // withVariables wraps a line styler so every {{variable}} is drawn in the

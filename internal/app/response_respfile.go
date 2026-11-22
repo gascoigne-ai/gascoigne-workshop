@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/textfmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/format"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
@@ -17,7 +17,7 @@ import (
 func (a *App) historyMenu(tab *reqTab) []MenuItem {
 	items := make([]MenuItem, 0, len(tab.Earlier))
 	for i, h := range tab.Earlier {
-		label := fmt.Sprintf("%d %s  %s  %s", h.Resp.Status, h.Resp.StatusText, textfmt.Duration(h.Resp.Duration), textfmt.Size(h.Resp.Size))
+		label := fmt.Sprintf("%d %s  %s  %s", h.Resp.Status, h.Resp.StatusText, format.Duration(h.Resp.Duration), format.Size(h.Resp.Size))
 		items = append(items, MenuItem{Label: label, Run: func() { a.showHistory(tab, i) }})
 	}
 	return items
@@ -59,7 +59,7 @@ func (a *App) writeBody(tab *reqTab, path string) {
 			a.toast("Saving failed: "+err.Error(), severity.Error)
 			return
 		}
-		a.toast(fmt.Sprintf("Saved %s to %s", textfmt.Size(len(body)), filepath.Base(path)), severity.Info)
+		a.toast(fmt.Sprintf("Saved %s to %s", format.Size(len(body)), filepath.Base(path)), severity.Info)
 	})
 }
 

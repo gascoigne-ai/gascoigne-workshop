@@ -1,7 +1,4 @@
-// Package jsonview turns a response body into display lines: pretty
-// printed JSON split into colorable spans, or plain text lines when the
-// body is not JSON.
-package jsonview
+package format
 
 import (
 	"bytes"

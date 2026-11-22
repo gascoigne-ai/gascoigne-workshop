@@ -5,7 +5,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/ui/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/viewer"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/textfmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/format"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -24,7 +24,7 @@ func responseEmpty(tab *reqTab) (string, bool) {
 		return "", false
 	}
 	if respview.LooksBinary(tab.Resp.Body) {
-		return fmt.Sprintf("Binary body, %s (not shown)", textfmt.Size(len(tab.Resp.Body))), false
+		return fmt.Sprintf("Binary body, %s (not shown)", format.Size(len(tab.Resp.Body))), false
 	}
 	return "", false
 }
@@ -104,7 +104,7 @@ func (a *App) refreshView(tab *reqTab) {
 	if tab.Resp != nil {
 		if p, ok := respview.Decode(tab.Resp.Body); ok {
 			tab.picture = ebiten.NewImageFromImage(p.Image)
-			tab.pictureInfo = fmt.Sprintf("%s %dx%d, %s", strings.ToUpper(p.Format), p.Width, p.Height, textfmt.Size(len(tab.Resp.Body)))
+			tab.pictureInfo = fmt.Sprintf("%s %dx%d, %s", strings.ToUpper(p.Format), p.Width, p.Height, format.Size(len(tab.Resp.Body)))
 			tab.view.SetLines(nil)
 			return
 		}

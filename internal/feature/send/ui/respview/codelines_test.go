@@ -3,7 +3,7 @@ package respview
 import (
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/jsonview"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/format"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
@@ -16,7 +16,7 @@ func TestCodeLinesKeepsStructureAndColors(t *testing.T) {
 	for _, s := range lines[1].Spans {
 		styles = append(styles, s.Style)
 	}
-	if styles[1] != Tokens[jsonview.Key] || styles[len(styles)-1] != Tokens[jsonview.Number] {
+	if styles[1] != Tokens[format.Key] || styles[len(styles)-1] != Tokens[format.Number] {
 		t.Fatalf("styles = %v", styles)
 	}
 }

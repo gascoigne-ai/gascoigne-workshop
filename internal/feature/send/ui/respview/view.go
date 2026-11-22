@@ -10,15 +10,14 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/jsonview"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/textfmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/format"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 // Tokens colors the spans of a JSON response.
-var Tokens = func() map[jsonview.Kind]core.Token {
-	tokens := map[jsonview.Kind]core.Token{}
-	for kind := jsonview.Plain; kind <= jsonview.Literal; kind++ {
+var Tokens = func() map[format.Kind]core.Token {
+	tokens := map[format.Kind]core.Token{}
+	for kind := format.Plain; kind <= format.Literal; kind++ {
 		tokens[kind] = core.Token(kind.Style())
 	}
 	return tokens
@@ -26,7 +25,7 @@ var Tokens = func() map[jsonview.Kind]core.Token {
 
 // CodeLines turns a response body into colored code-view lines.
 func CodeLines(body []byte) []widget.Line {
-	src := jsonview.Lines(body)
+	src := format.Lines(body)
 	lines := make([]widget.Line, len(src))
 	for i, l := range src {
 		spans := make([]widget.Span, len(l.Spans))
@@ -49,7 +48,7 @@ const CompactFoldDepth = 2
 // CompactLines is the response as compact JSON lines; the opening line of
 // every block carries its one-line preview for when it is folded.
 func CompactLines(body []byte) []widget.Line {
-	src := jsonview.Compact(body, CompactWidth)
+	src := format.Compact(body, CompactWidth)
 	lines := make([]widget.Line, len(src))
 	for i, l := range src {
 		lines[i] = widget.Line{Spans: toSpans(l.Spans), Foldable: l.Foldable, FoldedSpans: toSpans(l.Folded), Depth: l.Depth, Num: i + 1}
@@ -57,7 +56,7 @@ func CompactLines(body []byte) []widget.Line {
 	return lines
 }
 
-func toSpans(src []jsonview.Span) []widget.Span {
+func toSpans(src []format.Span) []widget.Span {
 	if src == nil {
 		return nil
 	}
@@ -107,7 +106,7 @@ func LimitedLines(body []byte) []widget.Line {
 		shown = shown[:len(shown)-1]
 	}
 	lines := RawLines(shown)
-	note := fmt.Sprintf("… showing the first %s of %s; Save body keeps all of it", textfmt.Size(len(shown)), textfmt.Size(len(body)))
+	note := fmt.Sprintf("… showing the first %s of %s; Save body keeps all of it", format.Size(len(shown)), format.Size(len(body)))
 	return append(lines, widget.Line{Spans: []widget.Span{{Text: note, Style: core.Muted}}})
 }
 
@@ -116,7 +115,7 @@ func RawLines(body []byte) []widget.Line {
 	texts := strings.Split(string(body), "\n")
 	lines := make([]widget.Line, len(texts))
 	for i, text := range texts {
-		lines[i] = widget.Line{Spans: []widget.Span{{Text: strings.TrimRight(text, "\r"), Style: Tokens[jsonview.Plain]}}}
+		lines[i] = widget.Line{Spans: []widget.Span{{Text: strings.TrimRight(text, "\r"), Style: Tokens[format.Plain]}}}
 	}
 	return lines
 }

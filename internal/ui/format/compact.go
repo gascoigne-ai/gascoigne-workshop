@@ -1,4 +1,4 @@
-package jsonview
+package format
 
 import (
 	"bytes"

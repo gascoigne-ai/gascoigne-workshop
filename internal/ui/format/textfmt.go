@@ -1,4 +1,4 @@
-package textfmt
+package format
 
 import (
 	"bytes"

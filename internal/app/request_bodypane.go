@@ -4,11 +4,11 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/ui/respview"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/jsonview"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/textfmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/format"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+
 	// The view DSL is dot-imported so views read like markup: Row(...), Text(...).
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
@@ -56,7 +56,7 @@ func (a *App) bodyPane(panel pane, tab *reqTab, scroll *ScrollState) Node {
 	kind := tab.Req.BodyType
 	isJSON := kind == request.BodyJSON
 	canWrap := isJSON || kind == request.BodyText // the editors that are a text area
-	status, valid := textfmt.JSONStatus(tab.body.Text)
+	status, valid := format.JSONStatus(tab.body.Text)
 	statusColor := w.Error
 	if valid {
 		statusColor = w.OK
@@ -119,7 +119,7 @@ func (a *App) setBodyType(tab *reqTab, id request.BodyType) {
 
 // formatBody re-indents a JSON body. Invalid JSON is left alone.
 func (a *App) formatBody(tab *reqTab) {
-	out, err := textfmt.IndentJSON(tab.body.Text)
+	out, err := format.IndentJSON(tab.body.Text)
 	if err != nil {
 		a.status = "Cannot format body: " + err.Error()
 		return
@@ -131,7 +131,7 @@ func (a *App) formatBody(tab *reqTab) {
 
 // jsonStyler colors one line of a JSON body.
 func jsonStyler(line string) []Span {
-	src := jsonview.Tokenize(line)
+	src := format.Tokenize(line)
 	spans := make([]Span, len(src))
 	for i, s := range src {
 		spans[i] = Span{Text: s.Text, Style: respview.Tokens[s.Kind]}

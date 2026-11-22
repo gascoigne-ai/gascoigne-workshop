@@ -46,7 +46,7 @@ domain directory under `internal/` (root, controllers, `ui/`, `adapter/`) or the
 | `internal/feature/history/FEATURE.md` | `internal/feature/history` | responses kept per request, sent log |
 | `internal/feature/settings/FEATURE.md` | `internal/feature/settings` | schema, prefs, theme, settings dialog and its pages |
 | `internal/feature/workspace/FEATURE.md` | `internal/feature/workspace` | tabs, remembered state, bus, file browser, autosave, overlays, app icon, user's files |
-| `internal/kernel` (see `internal/CLAUDE.md`) | `internal/kernel` | shared leaves: `textfmt`, `jsonview`; documented in their package docs and in the module files that use them |
+| `internal/ui/format` (see `internal/CLAUDE.md`) | `internal/ui/format` | display formatting (was `kernel/textfmt` and `kernel/jsonview`); documented in its package doc and in the module files that use it |
 | `architecture/app.md` | `internal/app` | composition root: the `App`, its handlers and window |
 | `architecture/toolkit.md` | `uitoolkit` | core, view, widgets, markup API and drawing |
 | `architecture/persistence.md` | shared | formats and versions of every persisted file |
@@ -58,10 +58,10 @@ domain directory under `internal/` (root, controllers, `ui/`, `adapter/`) or the
 flowchart LR
   app["app"] --> send & collections & environments & settings & workspace
   app --> toolkit["uitoolkit"]
-  collections & environments & send & settings & workspace --> kernel["kernel (request model, shared leaves)"]
+  collections & environments & send & settings & workspace --> base["base (request model, storage)"]
 ```
 
-Every edge between features is a kernel package (the request model included); `go list` shows no
+Every edge between features is a base package (the request model included); `go list` shows no
 other one, except the `exampleserver` dev tool. `e2e/layers_test.go` checks it in `make check`.
 
 ## Known layer gaps
