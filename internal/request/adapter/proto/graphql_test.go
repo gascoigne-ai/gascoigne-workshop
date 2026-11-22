@@ -9,20 +9,20 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 func TestGraphQLBodyCarriesQueryAndVariablesAsJSON(t *testing.T) {
 	var got map[string]any
 	var ct string
-	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		b, _ := io.ReadAll(request.Body)
-		ct = request.Header.Get("Content-Type")
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
+		b, _ := io.ReadAll(call.Body)
+		ct = call.Header.Get("Content-Type")
 		json.Unmarshal(b, &got)
 		writer.Write([]byte(`{"data":{}}`))
 	}))
 	defer srv.Close()
-	req := model.Request{Method: "POST", URL: srv.URL, BodyType: model.BodyGraphQL,
+	req := request.Request{Method: "POST", URL: srv.URL, BodyType: request.BodyGraphQL,
 		Body: "query($n: Int!) { repos(first: $n) { name } } # <tag>", GraphQLVars: `{"n": 3}`}
 	if resp, err := (REST{}).Send(context.Background(), req); err != nil || resp.Err != "" {
 		t.Fatalf("%+v %v", resp, err)
@@ -42,10 +42,10 @@ func TestGraphQLBodyCarriesQueryAndVariablesAsJSON(t *testing.T) {
 }
 
 func TestGraphQLBodyErrorsAreExplained(t *testing.T) {
-	if _, _, err := encodeBody(model.Request{BodyType: model.BodyGraphQL}); err == nil || !strings.Contains(err.Error(), "write a GraphQL query") {
+	if _, _, err := encodeBody(request.Request{BodyType: request.BodyGraphQL}); err == nil || !strings.Contains(err.Error(), "write a GraphQL query") {
 		t.Fatalf("err = %v", err)
 	}
-	_, _, err := encodeBody(model.Request{BodyType: model.BodyGraphQL, Body: "{ a }", GraphQLVars: "[1]"})
+	_, _, err := encodeBody(request.Request{BodyType: request.BodyGraphQL, Body: "{ a }", GraphQLVars: "[1]"})
 	if err == nil || !strings.Contains(err.Error(), "JSON object") {
 		t.Fatalf("err = %v", err)
 	}

@@ -11,8 +11,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/ui/destpicker"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/ui/calltrace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/bus"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/tabs"
@@ -37,12 +36,12 @@ type App struct {
 	ctx        *core.Ctx
 	retryDelay time.Duration // wait before a dropped connection reopens
 	baseScale  float64       // the platform's interface factor under the user's scale
-	reg        reqport.Registry
-	open       collections.Set         // the open collections, in tree order, each with its folder and environment
-	sample     func() model.Collection // the collection shown when nothing is saved or configured
-	list       tabs.List               // the open tabs, the active one and the one being dragged
-	widgets    map[*tabs.Tab]*reqTab   // the widget state of each open tab
-	bus        *bus.Bus                // what goroutines report back, drained once per frame
+	reg        request.Registry
+	open       collections.Set           // the open collections, in tree order, each with its folder and environment
+	sample     func() request.Collection // the collection shown when nothing is saved or configured
+	list       tabs.List                 // the open tabs, the active one and the one being dragged
+	widgets    map[*tabs.Tab]*reqTab     // the widget state of each open tab
+	bus        *bus.Bus                  // what goroutines report back, drained once per frame
 	status     string
 	driver     Driver             // what the end-to-end screenshots drive the window with
 	err        error              // a failure that ends the run, reported by Err

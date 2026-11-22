@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
@@ -17,7 +17,7 @@ func collectionsApp(t *testing.T) (*App, string) {
 	t.Helper()
 	base := t.TempDir()
 	home := filepath.Join(base, "workspace")
-	c := model.Collection{Folder: model.Folder{Name: "Home", Requests: []*model.Request{{Name: "One", Protocol: "rest", Method: "GET", URL: "u"}}}}
+	c := request.Collection{Folder: request.Folder{Name: "Home", Requests: []*request.Request{{Name: "One", Protocol: "rest", Method: "GET", URL: "u"}}}}
 	if err := storeDisk.Save(home, c); err != nil {
 		t.Fatal(err)
 	}
@@ -52,7 +52,7 @@ func TestNewCollectionMakesAFolderBesideTheWorkspaceAndOpensItBesideTheOpenOne(t
 	if len(a.open.Entries) != 2 || a.workspace() != home || a.open.Entries[1].Dir != want || a.open.Entries[1].Collection.Name != "Café API" {
 		t.Fatalf("open %+v; want Home then %q", a.open.Entries, want)
 	}
-	if owner, _ := a.open.Owner(model.Of(a.cur().Req)); owner.Dir != want || a.cur().Req.Name != "New Request" {
+	if owner, _ := a.open.Owner(request.Of(a.cur().Req)); owner.Dir != want || a.cur().Req.Name != "New Request" {
 		t.Fatalf("an empty collection opens one blank request, shown %q of %q", a.cur().Req.Name, owner.Dir)
 	}
 	if _, err := storeDisk.Load(want); err != nil {
@@ -81,11 +81,11 @@ func TestNewCollectionRefusesAnEmptyNameAndKeepsTheOpenOne(t *testing.T) {
 func TestRenameCollectionMovesTheProtoPathsWithTheFolder(t *testing.T) {
 	a, base := collectionsApp(t)
 	old := a.workspace()
-	request := a.col().Requests[0]
-	request.Proto = model.ProtoSource{Files: []string{filepath.Join(old, "protos", "health.proto")}}
+	call := a.col().Requests[0]
+	call.Proto = request.ProtoSource{Files: []string{filepath.Join(old, "protos", "health.proto")}}
 	a.renameCollection(a.col(), "Office")
 	want := filepath.Join(base, "office", "protos", "health.proto")
-	if got := request.Proto.Files; len(got) != 1 || got[0] != want {
+	if got := call.Proto.Files; len(got) != 1 || got[0] != want {
 		t.Fatalf("proto files %v, want [%s]", got, want)
 	}
 }

@@ -1,15 +1,15 @@
 package tree
 
-import "github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+import "github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 
 // PathSep joins folder and request names in a request's path.
 const PathSep = "/"
 
 // PathOf is the path of req below root, "" when it is not there. Of two
 // requests with one path, the first in tree order has it.
-func PathOf(root *model.Folder, req *model.Request) string {
+func PathOf(root *request.Folder, req *request.Request) string {
 	found := ""
-	WalkRequests(root, "", func(path string, candidate *model.Request) {
+	WalkRequests(root, "", func(path string, candidate *request.Request) {
 		if candidate == req && found == "" {
 			found = path
 		}
@@ -19,9 +19,9 @@ func PathOf(root *model.Folder, req *model.Request) string {
 
 // At is the request of root at path, nil when there is none. Of two
 // requests with one path, the first in tree order is returned.
-func At(root *model.Folder, path string) *model.Request {
-	var found *model.Request
-	WalkRequests(root, "", func(candidate string, req *model.Request) {
+func At(root *request.Folder, path string) *request.Request {
+	var found *request.Request
+	WalkRequests(root, "", func(candidate string, req *request.Request) {
 		if candidate == path && found == nil {
 			found = req
 		}
@@ -30,7 +30,7 @@ func At(root *model.Folder, path string) *model.Request {
 }
 
 // WalkFolders calls visit for every folder below folder, with its path.
-func WalkFolders(folder *model.Folder, prefix string, visit func(path string, folder *model.Folder)) {
+func WalkFolders(folder *request.Folder, prefix string, visit func(path string, folder *request.Folder)) {
 	for _, sub := range folder.Folders {
 		path := prefix + sub.Name
 		visit(path, sub)
@@ -40,7 +40,7 @@ func WalkFolders(folder *model.Folder, prefix string, visit func(path string, fo
 
 // WalkRequests calls visit for every request below folder, with its path:
 // the requests of a folder come before those of its subfolders.
-func WalkRequests(folder *model.Folder, prefix string, visit func(path string, request *model.Request)) {
+func WalkRequests(folder *request.Folder, prefix string, visit func(path string, call *request.Request)) {
 	for _, req := range folder.Requests {
 		visit(prefix+req.Name, req)
 	}

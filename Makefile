@@ -20,9 +20,9 @@ FUZZ_TARGETS = \
 	./internal/collection/openapi:FuzzParse \
 	./internal/collection/postman:FuzzParse \
 	./internal/collection/clientconfig:FuzzParse \
-	./internal/request/model:FuzzParseCurl \
-	./internal/request/model:FuzzDecodeJSONSchema \
-	./internal/request/model:FuzzURLParams \
+	./internal/request:FuzzParseCurl \
+	./internal/request:FuzzDecodeJSONSchema \
+	./internal/request:FuzzURLParams \
 	./internal/request/assert:FuzzRun \
 	./internal/response/jsonview:FuzzCompact \
 	./internal/request/adapter/proto/ws:FuzzReadFrame \
@@ -32,12 +32,12 @@ FUZZ_TARGETS = \
 	./uitoolkit/widget:FuzzFind \
 	./uitoolkit/widget:FuzzParseSVG \
 	./uitoolkit/widget:FuzzWrapRunes \
-	./internal/request/model:FuzzParseSchema \
-	./internal/request/model:FuzzParseMCPLists \
-	./internal/request/model:FuzzParseServerInfo \
-	./internal/request/model:FuzzParseProtocol \
-	./internal/request/model:FuzzParseBodyType \
-	./internal/request/model:FuzzParseAuthType \
+	./internal/request:FuzzParseSchema \
+	./internal/request:FuzzParseMCPLists \
+	./internal/request:FuzzParseServerInfo \
+	./internal/request:FuzzParseProtocol \
+	./internal/request:FuzzParseBodyType \
+	./internal/request:FuzzParseAuthType \
 	./internal/collection/adapter/store:FuzzLoad \
 	./internal/workspace/adapter/statefile:FuzzLoad \
 	./internal/settings:FuzzDecode \
@@ -48,13 +48,13 @@ FUZZ_TARGETS = \
 	./uitoolkit/theming:FuzzParseTheme \
 	./internal/request/adapter/proto:FuzzReadEvents \
 	./internal/settings:FuzzParse \
-	./internal/request/model:FuzzParseBulk \
+	./internal/request:FuzzParseBulk \
 	./internal/settings/ui/shortcutpage:FuzzParseBinding \
 	./internal/request/adapter/proto:FuzzDeliverJSON \
 	./internal/request/adapter/proto:FuzzAnswerServer \
 	./internal/request/adapter/proto:FuzzSample \
-	./internal/request/model:FuzzToolFields \
-	./internal/request/model:FuzzArguments \
+	./internal/request:FuzzToolFields \
+	./internal/request:FuzzArguments \
 	./internal/response/jsonview:FuzzLines \
 	./internal/settings/adapter/displayscale:FuzzParseMonitors \
 	./internal/settings/adapter/keyrepeat:FuzzParseHyprland \

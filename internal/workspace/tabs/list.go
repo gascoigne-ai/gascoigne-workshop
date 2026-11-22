@@ -3,7 +3,7 @@ package tabs
 import (
 	"slices"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // List is the open tabs in order, the active one and the one being dragged.
@@ -17,7 +17,7 @@ type List struct {
 type Msg interface{ listMsg() }
 
 // Open focuses the tab of Req, opening one when there is none.
-type Open struct{ Req *model.Request }
+type Open struct{ Req *request.Request }
 
 // Close closes tab Index; closing the last tab leaves a blank request.
 type Close struct{ Index int }
@@ -100,7 +100,7 @@ func Update(list List, msg Msg) List {
 
 func (list List) has(index int) bool { return index >= 0 && index < len(list.Tabs) }
 
-func open(list List, req *model.Request) List {
+func open(list List, req *request.Request) List {
 	for index, tab := range list.Tabs {
 		if tab.Req == req {
 			list.Active = index
@@ -118,7 +118,7 @@ func closeAt(list List, index int) List {
 	}
 	list.Tabs = slices.Delete(list.Tabs, index, index+1)
 	if len(list.Tabs) == 0 {
-		list.Tabs = append(list.Tabs, New(&model.Request{Name: "New Request", Protocol: model.ProtocolREST, Method: "GET"}))
+		list.Tabs = append(list.Tabs, New(&request.Request{Name: "New Request", Protocol: request.ProtocolREST, Method: "GET"}))
 	}
 	list.Active = AfterClose(list.Active, index, len(list.Tabs))
 	list.Drag = -1

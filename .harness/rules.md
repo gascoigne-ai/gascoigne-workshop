@@ -5,7 +5,7 @@ Adds to the shared `common/rules.md`, `common/commit-style.md` and `common/code-
 - Approved deps: `github.com/hajimehoshi/ebiten/v2` (GPU window, input, 2D drawing, `text/v2`) `golang.org/x/image` (embedded Go fonts, already an Ebitengine requirement) and Ebitengine's other transitive requirements, and `google.golang.org/grpc` with `google.golang.org/protobuf` and their transitive requirements, `github.com/BurntSushi/toml`, and `github.com/bufbuild/protocompile`, and the build tool `github.com/tc-hib/go-winres` (run by `release.yml` at `v0.3.3`; not a module requirement). REST uses `net/http`.
 - cgo is allowed here (Ebitengine needs it for windowing on Linux). Tests for non-UI packages must still run without a display.
 - The look follows `.harness/style.md`; its Rules section is part of these rules.
-- Layers: the toolkit knows nothing of the app (`uitoolkit/CLAUDE.md`), `internal/` is layered by domain and role (`internal/CLAUDE.md`). `internal/request/model` and `internal/request/adapter/proto` stay free of UI.
+- Layers: the toolkit knows nothing of the app (`uitoolkit/CLAUDE.md`), `internal/` is layered by domain and role (`internal/CLAUDE.md`). `internal/request` and `internal/request/adapter/proto` stay free of UI.
 - VML views put attributes before children, keep handlers as named closures or methods when they are longer than a call, and dot-import `view` (`core` is aliased `w`). UI is written as VML templates, inline in the Go file of the view (a `const` at its end, parsed once with `markup.Must`): no hand-rolled hit-testing or geometry in the app; a new component goes into `widget`, as a composition of `view` primitives or, when it needs its own layout, input or drawing, through `view.Custom`; a new primitive (color, geometry, drawing call) goes into `core`.
 - The name Postman is allowed where it names the import and export format (the user's answer): the format is a file the workshop reads and writes, and a generic name would hide which format a user can import. Elsewhere `common/rules.md` Hygiene applies.
 - Protocols are a table (`proto` registry keyed by name), widgets are values with `Update`/`Draw`; no switch on protocol or widget kind.
@@ -24,5 +24,5 @@ Adds to the shared `common/rules.md`, `common/commit-style.md` and `common/code-
 
 ## Untrusted input
 - Anything that comes from a file, a clipboard, an import or a server is untrusted: parsers return an error, never panic, hang or grow without a bound; a new parser or importer gets a fuzz target (`FUZZ_TARGETS` in the Makefile) and a limit written into `architecture/limits.md`.
-- A request that runs a command or reads a file outside its collection goes through `App.allowed` (its doc says why it asks rather than refuses); a new protocol that does either extends `model.Request.Accesses`.
-- Values from a server are never expanded as variables (`model.KV.Literal`).
+- A request that runs a command or reads a file outside its collection goes through `App.allowed` (its doc says why it asks rather than refuses); a new protocol that does either extends `request.Request.Accesses`.
+- Values from a server are never expanded as variables (`request.KV.Literal`).

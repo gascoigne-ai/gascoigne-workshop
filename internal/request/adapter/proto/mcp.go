@@ -8,8 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // MCP speaks the Model Context Protocol, JSON-RPC 2.0, to a server over
@@ -20,7 +19,7 @@ type MCP struct {
 	// Sampler, when set, answers the sampling requests a server sends
 	// (it asks the client to produce a model reply); without one the
 	// client does not offer sampling and refuses such requests.
-	Sampler port.Sampler
+	Sampler request.Sampler
 
 	// Network is the cookie jar, proxy and TLS setting of an HTTP server.
 	Network Network
@@ -44,7 +43,7 @@ type mcpTransport interface {
 // Connect implements Streamer: it opens the transport, runs the
 // initialize handshake and asks for the server's tools, resources and
 // prompts. Everything is logged as events.
-func (m MCP) Connect(ctx context.Context, req model.Request) (port.Session, error) {
+func (m MCP) Connect(ctx context.Context, req request.Request) (request.Session, error) {
 	s, err := m.connect(ctx, req)
 	if err != nil {
 		return nil, err
@@ -53,14 +52,14 @@ func (m MCP) Connect(ctx context.Context, req model.Request) (port.Session, erro
 }
 
 // connect is Connect with the concrete session, which Send needs.
-func (m MCP) connect(ctx context.Context, req model.Request) (*mcpSession, error) {
+func (m MCP) connect(ctx context.Context, req request.Request) (*mcpSession, error) {
 	s := &mcpSession{eventLog: newEventLog(), sampler: m.Sampler, waiters: map[int64]chan rpcAnswer{}}
 	tr, err := openTransport(req, m.Network, s)
 	if err != nil {
 		return nil, err
 	}
 	s.tr = tr
-	s.emit(port.Event{Dir: port.Info, Kind: port.KindOpen, Text: "Connecting to " + req.URL})
+	s.emit(request.Event{Dir: request.Info, Kind: request.KindOpen, Text: "Connecting to " + req.URL})
 	init, err := m.initialize(ctx, s)
 	if err != nil {
 		s.Close(context.WithoutCancel(ctx)) // the goodbye must not die with a timed-out connect
@@ -78,16 +77,16 @@ func (m MCP) connect(ctx context.Context, req model.Request) (*mcpSession, error
 	if name == "" {
 		name = req.URL
 	}
-	s.emit(port.Event{Dir: port.Info, Kind: port.KindOpen, Text: "Connected to " + name})
+	s.emit(request.Event{Dir: request.Info, Kind: request.KindOpen, Text: "Connected to " + name})
 	s.requestLists(init.Capabilities)
 	return s, nil
 }
 
 // openTransport builds the stdio transport for a "stdio:" URL and the
 // streamable HTTP one for any other.
-func openTransport(req model.Request, network Network, s *mcpSession) (mcpTransport, error) {
-	if strings.HasPrefix(req.URL, model.StdioPrefix) {
-		return newMCPStdio(strings.TrimSpace(strings.TrimPrefix(req.URL, model.StdioPrefix)), s.deliver, s.finish)
+func openTransport(req request.Request, network Network, s *mcpSession) (mcpTransport, error) {
+	if strings.HasPrefix(req.URL, request.StdioPrefix) {
+		return newMCPStdio(strings.TrimSpace(strings.TrimPrefix(req.URL, request.StdioPrefix)), s.deliver, s.finish)
 	}
 	return newMCPHTTP(req, network, s.deliver, s.finish, s.note)
 }
@@ -116,7 +115,7 @@ func (m MCP) initialize(ctx context.Context, s *mcpSession) (mcpInitResult, erro
 	if err := json.Unmarshal(result, &init); err != nil { // the session works without the server's description
 		s.note(fmt.Errorf("read the initialize result: %w", err))
 	}
-	s.emit(port.Event{Dir: port.Info, Kind: port.KindInitialize, Text: string(result)}) // the UI shows what the server said about itself
+	s.emit(request.Event{Dir: request.Info, Kind: request.KindInitialize, Text: string(result)}) // the UI shows what the server said about itself
 	return init, nil
 }
 
@@ -127,7 +126,7 @@ func (s *mcpSession) requestLists(capabilities map[string]json.RawMessage) {
 	} {
 		if _, ok := capabilities[list.capability]; ok {
 			if _, err := s.request(context.Background(), list.method, nil); err != nil {
-				s.emit(port.Event{Dir: port.Info, Kind: port.KindError, Text: err.Error()})
+				s.emit(request.Event{Dir: request.Info, Kind: request.KindError, Text: err.Error()})
 			}
 		}
 	}
@@ -135,16 +134,16 @@ func (s *mcpSession) requestLists(capabilities map[string]json.RawMessage) {
 
 // Send implements Protocol as the one-shot form: connect, list the
 // tools and return that answer as the body.
-func (m MCP) Send(ctx context.Context, req model.Request) (model.Response, error) {
+func (m MCP) Send(ctx context.Context, req request.Request) (request.Response, error) {
 	start := time.Now()
 	s, err := m.connect(ctx, req)
 	if err != nil {
-		return model.Response{Err: stopReason(ctx, err), Duration: time.Since(start)}, nil
+		return request.Response{Err: stopReason(ctx, err), Duration: time.Since(start)}, nil
 	}
 	defer s.Close(context.WithoutCancel(ctx))
 	result, err := s.call(ctx, "tools/list", nil)
 	if err != nil {
-		return model.Response{Err: stopReason(ctx, err), Duration: time.Since(start)}, nil
+		return request.Response{Err: stopReason(ctx, err), Duration: time.Since(start)}, nil
 	}
-	return model.Response{Status: http.StatusOK, StatusText: "OK", Duration: time.Since(start), Size: len(result), Body: result}, nil
+	return request.Response{Status: http.StatusOK, StatusText: "OK", Duration: time.Since(start), Size: len(result), Body: result}, nil
 }

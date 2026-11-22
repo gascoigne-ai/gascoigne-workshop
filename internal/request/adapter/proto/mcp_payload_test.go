@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 const toolsResult = `{"tools":[{"name":"echo","description":"Say it","inputSchema":{"type":"object","properties":{"text":{"type":"string"}}}}]}`
@@ -15,12 +15,12 @@ func newPayloadSession() *mcpSession {
 }
 
 // receivedEvent drains the sent events and returns the next received one.
-func receivedEvent(t *testing.T, s *mcpSession) port.Event {
+func receivedEvent(t *testing.T, s *mcpSession) request.Event {
 	t.Helper()
 	for {
 		select {
 		case event := <-s.events:
-			if event.Dir == port.Received || event.Kind == port.KindError {
+			if event.Dir == request.Received || event.Kind == request.KindError {
 				return event
 			}
 		default:
@@ -36,7 +36,7 @@ func TestAResponseToToolsListCarriesAToolsListPayload(t *testing.T) {
 	}
 	s.deliver([]byte(`{"jsonrpc":"2.0","id":1,"result":` + toolsResult + `}`))
 	event := receivedEvent(t, s)
-	list, ok := event.Payload.(port.ToolsList)
+	list, ok := event.Payload.(request.ToolsList)
 	if !ok || len(list.Tools) != 1 || list.Tools[0].Name != "echo" {
 		t.Fatalf("payload %#v", event.Payload)
 	}
@@ -45,14 +45,14 @@ func TestAResponseToToolsListCarriesAToolsListPayload(t *testing.T) {
 func TestResourcesAndPromptsListsCarryTheirPayloads(t *testing.T) {
 	cases := []struct {
 		method, result string
-		check          func(port.Payload) bool
+		check          func(request.Payload) bool
 	}{
-		{"resources/list", `{"resources":[{"uri":"file:///a.txt","name":"A"}]}`, func(payload port.Payload) bool {
-			list, ok := payload.(port.ResourcesList)
+		{"resources/list", `{"resources":[{"uri":"file:///a.txt","name":"A"}]}`, func(payload request.Payload) bool {
+			list, ok := payload.(request.ResourcesList)
 			return ok && len(list.Resources) == 1 && list.Resources[0].URI == "file:///a.txt"
 		}},
-		{"prompts/list", `{"prompts":[{"name":"review","arguments":[{"name":"code","required":true}]}]}`, func(payload port.Payload) bool {
-			list, ok := payload.(port.PromptsList)
+		{"prompts/list", `{"prompts":[{"name":"review","arguments":[{"name":"code","required":true}]}]}`, func(payload request.Payload) bool {
+			list, ok := payload.(request.PromptsList)
 			return ok && len(list.Prompts) == 1 && list.Prompts[0].Name == "review"
 		}},
 	}
@@ -102,7 +102,7 @@ func TestARawToolsListTypedInTheComposerStillFillsThePayload(t *testing.T) {
 		t.Fatal(err)
 	}
 	s.deliver([]byte(`{"jsonrpc":"2.0","id":41,"result":` + toolsResult + `}`))
-	if _, ok := receivedEvent(t, s).Payload.(port.ToolsList); !ok {
+	if _, ok := receivedEvent(t, s).Payload.(request.ToolsList); !ok {
 		t.Fatal("no ToolsList payload")
 	}
 }
@@ -119,7 +119,7 @@ func TestAMalformedListResultGivesAnErrorNoteAndNoPayload(t *testing.T) {
 		if event.Payload != nil {
 			t.Fatalf("payload %#v", event.Payload)
 		}
-		sawNote = sawNote || event.Dir == port.Info && event.Kind == port.KindError
+		sawNote = sawNote || event.Dir == request.Info && event.Kind == request.KindError
 	}
 	if !sawNote {
 		t.Fatal("no Info error event")
@@ -132,7 +132,7 @@ func TestAToolWithAMalformedInputSchemaDoesNotDropTheList(t *testing.T) {
 		t.Fatal(err)
 	}
 	s.deliver([]byte(`{"jsonrpc":"2.0","id":1,"result":{"tools":[{"name":"bad","inputSchema":true},{"name":"odd","inputSchema":"x"},{"name":"good"}]}}`))
-	list, ok := receivedEvent(t, s).Payload.(port.ToolsList)
+	list, ok := receivedEvent(t, s).Payload.(request.ToolsList)
 	if !ok || len(list.Tools) != 3 {
 		t.Fatalf("payload %#v", list)
 	}

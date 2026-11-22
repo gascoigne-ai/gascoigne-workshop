@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 const yamlConfig = `servers:
@@ -65,15 +65,15 @@ func wantConfig() Config {
 	return Config{
 		Servers: []Server{{
 			Name: "Local REST", Protocol: "rest", URL: "http://localhost:8081",
-			Auth: model.Auth{Type: model.AuthBearer, Token: "secret"},
+			Auth: request.Auth{Type: request.AuthBearer, Token: "secret"},
 		}},
-		Collections: []*model.Collection{{
-			Folder: model.Folder{Name: "Demo", Requests: []*model.Request{{
+		Collections: []*request.Collection{{
+			Folder: request.Folder{Name: "Demo", Requests: []*request.Request{{
 				Name: "Echo", Protocol: "rest", Method: "POST", URL: "{{baseUrl}}/echo",
-				Headers:  []model.KV{{Name: "X-Trace", Value: "1", Enabled: true}},
-				BodyType: model.BodyJSON, Body: `{"hello":"world"}`,
+				Headers:  []request.KV{{Name: "X-Trace", Value: "1", Enabled: true}},
+				BodyType: request.BodyJSON, Body: `{"hello":"world"}`,
 			}}},
-			Vars: []model.KV{{Name: "baseUrl", Value: "http://localhost:8081", Enabled: true}},
+			Vars: []request.KV{{Name: "baseUrl", Value: "http://localhost:8081", Enabled: true}},
 		}},
 	}
 }
@@ -125,7 +125,7 @@ func TestParseRejectsBadInput(t *testing.T) {
 // A protocol, body type or auth type the workshop does not know is an
 // error that names the server or request, not a request that fails later.
 func TestParseRejectsAnUnknownProtocolBodyTypeOrAuthType(t *testing.T) {
-	request := func(fields string) string {
+	call := func(fields string) string {
 		return "collections:\n  - name: c\n    requests:\n      - name: Ping\n" + fields
 	}
 	tests := []struct {
@@ -133,10 +133,10 @@ func TestParseRejectsAnUnknownProtocolBodyTypeOrAuthType(t *testing.T) {
 	}{
 		{"server protocol", "servers:\n  - name: Box\n    protocol: http\n    url: u\n", "Box"},
 		{"server auth type", "servers:\n  - name: Box\n    protocol: rest\n    url: u\n    auth:\n      type: oauth\n", "Box"},
-		{"request protocol", request("        protocol: REST\n        url: u\n"), "Ping"},
-		{"request without protocol", request("        url: u\n"), "Ping"},
-		{"request body type", request("        protocol: rest\n        url: u\n        body_type: xml\n"), "Ping"},
-		{"request auth type", request("        protocol: rest\n        url: u\n        auth:\n          type: oauth\n"), "Ping"},
+		{"request protocol", call("        protocol: REST\n        url: u\n"), "Ping"},
+		{"request without protocol", call("        url: u\n"), "Ping"},
+		{"request body type", call("        protocol: rest\n        url: u\n        body_type: xml\n"), "Ping"},
+		{"request auth type", call("        protocol: rest\n        url: u\n        auth:\n          type: oauth\n"), "Ping"},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -150,7 +150,7 @@ func TestParseRejectsAnUnknownProtocolBodyTypeOrAuthType(t *testing.T) {
 
 func TestCollectionBuildsOneTreeFromCollectionsAndServers(t *testing.T) {
 	config := wantConfig()
-	config.Collections[0].Envs = []model.Environment{{Name: "Dev", Vars: []model.KV{{Name: "token", Value: "x", Enabled: true}}}}
+	config.Collections[0].Envs = []request.Environment{{Name: "Dev", Vars: []request.KV{{Name: "token", Value: "x", Enabled: true}}}}
 	root := config.Collection()
 
 	if len(root.Folders) != 2 || root.Folders[0].Name != "Demo" || root.Folders[1].Name != ServersName {
@@ -160,9 +160,9 @@ func TestCollectionBuildsOneTreeFromCollectionsAndServers(t *testing.T) {
 	if len(demo.Vars) != 1 || demo.Vars[0].Name != "baseUrl" || len(demo.Requests) != 1 {
 		t.Fatalf("Demo = %+v, want its variables on the folder and its request kept", demo)
 	}
-	request := root.Folders[1].Requests[0]
-	if request.Name != "Local REST" || request.URL != "http://localhost:8081" || request.Auth.Token != "secret" {
-		t.Fatalf("server request = %+v", request)
+	call := root.Folders[1].Requests[0]
+	if call.Name != "Local REST" || call.URL != "http://localhost:8081" || call.Auth.Token != "secret" {
+		t.Fatalf("server request = %+v", call)
 	}
 	if len(root.Envs) != 1 || root.Envs[0].Name != "Dev" {
 		t.Fatalf("envs = %+v, want the collection's environments on the root", root.Envs)
@@ -178,13 +178,13 @@ func TestCollectionOfNothingIsEmpty(t *testing.T) {
 func TestMergeLetsTheOverrideReplaceEntriesOfTheSameName(t *testing.T) {
 	base := Config{
 		Servers: []Server{{Name: "A", URL: "http://base-a"}, {Name: "B", URL: "http://base-b"}},
-		Collections: []*model.Collection{
-			{Folder: model.Folder{Name: "One"}}, {Folder: model.Folder{Name: "Two"}},
+		Collections: []*request.Collection{
+			{Folder: request.Folder{Name: "One"}}, {Folder: request.Folder{Name: "Two"}},
 		},
 	}
 	override := Config{
 		Servers:     []Server{{Name: "B", URL: "http://over-b"}, {Name: "C", URL: "http://over-c"}},
-		Collections: []*model.Collection{{Folder: model.Folder{Name: "Two", Requests: []*model.Request{{Name: "r"}}}}},
+		Collections: []*request.Collection{{Folder: request.Folder{Name: "Two", Requests: []*request.Request{{Name: "r"}}}}},
 	}
 	got := Merge(base, override)
 	wantServers := []Server{{Name: "A", URL: "http://base-a"}, {Name: "B", URL: "http://over-b"}, {Name: "C", URL: "http://over-c"}}

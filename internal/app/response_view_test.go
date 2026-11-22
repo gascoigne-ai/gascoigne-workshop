@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/viewer"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -60,15 +60,15 @@ var responseStates = []responseState{
 		app.runFind(tab)
 	}},
 	{"history", func(t *testing.T, app *App, tab *reqTab) {
-		answer(app, tab, model.Response{Status: 201, StatusText: "Created", Body: []byte(responseBody)})
+		answer(app, tab, request.Response{Status: 201, StatusText: "Created", Body: []byte(responseBody)})
 	}},
 	{"picture", func(t *testing.T, app *App, tab *reqTab) {
-		answer(app, tab, model.Response{Status: 200, StatusText: "OK", Body: pngBody(t)})
+		answer(app, tab, request.Response{Status: 200, StatusText: "OK", Body: pngBody(t)})
 	}},
 }
 
 // answer gives tab a response as a finished send would.
-func answer(app *App, tab *reqTab, resp model.Response) {
+func answer(app *App, tab *reqTab, resp request.Response) {
 	tab.BeginSend()
 	app.apply(sendResult{tab: tab, seq: tab.Seq, resp: resp})
 }

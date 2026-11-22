@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -52,7 +52,7 @@ var tableViewStates = []tableViewState{
 		app.beginEdit(paramsPane, tab, 0, 1)
 	}},
 	{"headers-duplicate", headersPane, core.Gutter, func(t *testing.T, app *App, tab *reqTab) {
-		tab.Req.Headers = []model.KV{
+		tab.Req.Headers = []request.KV{
 			{Name: "X-Id", Value: "1", Enabled: true},
 			{Name: "x-id", Value: "2", Enabled: true},
 			{Name: "Accept", Value: "application/json", Enabled: true},
@@ -60,10 +60,10 @@ var tableViewStates = []tableViewState{
 	}},
 	{"vars", varsPane, core.Gutter, func(t *testing.T, app *App, tab *reqTab) {}},
 	{"form", formPane, 0, func(t *testing.T, app *App, tab *reqTab) {
-		tab.Req.Form = []model.KV{{Name: "name", Value: "gopher", Enabled: true}}
+		tab.Req.Form = []request.KV{{Name: "name", Value: "gopher", Enabled: true}}
 	}},
 	{"response-headers", responsePanes[1], core.Gutter, func(t *testing.T, app *App, tab *reqTab) {
-		tab.Resp = &model.Response{Headers: []model.KV{
+		tab.Resp = &request.Response{Headers: []request.KV{
 			{Name: "Content-Type", Value: "text/plain; charset=utf-8", Enabled: true},
 			{Name: "Content-Length", Value: "82", Enabled: true},
 		}}

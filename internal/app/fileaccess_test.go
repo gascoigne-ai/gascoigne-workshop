@@ -13,7 +13,7 @@ import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/postman"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/filebrowser"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -84,7 +84,7 @@ func TestASavedBodyIsWrittenThroughTheFileSystemWithTildeAsHome(t *testing.T) {
 	files := newFakeFolders()
 	a.folders = files
 	tab := a.cur()
-	tab.Resp = &model.Response{Status: 200, Body: []byte(`{"a":1}`)}
+	tab.Resp = &request.Response{Status: 200, Body: []byte(`{"a":1}`)}
 	a.writeBody(tab, "~/out.json")
 	until(t, a, "the saved toast", func() bool { return toastWith(a, "out.json", false) })
 	if data, ok := files.file("/home/user/out.json"); !ok || string(data) != `{"a":1}` {
@@ -101,7 +101,7 @@ func TestASavedBodyThatCannotBeWrittenIsReported(t *testing.T) {
 	files.writeErr = errors.New("disk full")
 	a.folders = files
 	tab := a.cur()
-	tab.Resp = &model.Response{Status: 200, Body: []byte("x")}
+	tab.Resp = &request.Response{Status: 200, Body: []byte("x")}
 	a.writeBody(tab, "/out/body.bin")
 	until(t, a, "the failure toast", func() bool { return toastWith(a, "Saving failed: disk full", true) })
 }
@@ -114,7 +114,7 @@ func TestSavingABodyDoesNotWaitForTheDisk(t *testing.T) {
 	files.release = make(chan struct{})
 	a.folders = files
 	tab := a.cur()
-	tab.Resp = &model.Response{Status: 200, Body: []byte("x")}
+	tab.Resp = &request.Response{Status: 200, Body: []byte("x")}
 	a.writeBody(tab, "/out/body.bin") // would block here if written on the UI goroutine
 	if toastWith(a, "Saved", false) {
 		t.Fatal("saved before the disk took the file")

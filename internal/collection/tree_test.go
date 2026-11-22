@@ -4,23 +4,23 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 func TestTreeRows(t *testing.T) {
-	user := &model.Folder{Name: "User", Requests: []*model.Request{{Name: "Me"}}}
-	repo := &model.Folder{Name: "Repo", Requests: []*model.Request{{Name: "Search"}, {Name: "Info"}}}
-	root := &model.Folder{Name: "API", Folders: []*model.Folder{user, repo}, Requests: []*model.Request{{Name: "Root call"}}}
+	user := &request.Folder{Name: "User", Requests: []*request.Request{{Name: "Me"}}}
+	repo := &request.Folder{Name: "Repo", Requests: []*request.Request{{Name: "Search"}, {Name: "Info"}}}
+	root := &request.Folder{Name: "API", Folders: []*request.Folder{user, repo}, Requests: []*request.Request{{Name: "Root call"}}}
 	tests := []struct {
 		name     string
-		expanded map[*model.Folder]bool
+		expanded map[*request.Folder]bool
 		want     []string
 	}{
 		{"collapsed root", nil, []string{"API"}},
-		{"root open", map[*model.Folder]bool{root: true}, []string{"API", " User", " Repo", " Root call"}},
-		{"one folder open", map[*model.Folder]bool{root: true, repo: true},
+		{"root open", map[*request.Folder]bool{root: true}, []string{"API", " User", " Repo", " Root call"}},
+		{"one folder open", map[*request.Folder]bool{root: true, repo: true},
 			[]string{"API", " User", " Repo", "  Search", "  Info", " Root call"}},
-		{"hidden child stays hidden", map[*model.Folder]bool{repo: true}, []string{"API"}},
+		{"hidden child stays hidden", map[*request.Folder]bool{repo: true}, []string{"API"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -40,11 +40,11 @@ func TestTreeRows(t *testing.T) {
 }
 
 func TestTreeRowsCarryTheNodes(t *testing.T) {
-	req := &model.Request{Name: "r"}
-	sub := &model.Folder{Name: "sub"}
-	root := &model.Folder{Name: "A", Folders: []*model.Folder{sub}, Requests: []*model.Request{req}}
-	rows := Rows(root, map[*model.Folder]bool{root: true})
-	if rows[0].Node() != model.Of(root) || rows[1].Node() != model.Of(sub) || rows[2].Node() != model.Of(req) {
+	req := &request.Request{Name: "r"}
+	sub := &request.Folder{Name: "sub"}
+	root := &request.Folder{Name: "A", Folders: []*request.Folder{sub}, Requests: []*request.Request{req}}
+	rows := Rows(root, map[*request.Folder]bool{root: true})
+	if rows[0].Node() != request.Of(root) || rows[1].Node() != request.Of(sub) || rows[2].Node() != request.Of(req) {
 		t.Fatal("each row must stand for its own folder or request, by pointer")
 	}
 	rows[2].Req.URL = "edited"
@@ -54,9 +54,9 @@ func TestTreeRowsCarryTheNodes(t *testing.T) {
 }
 
 func TestExpansionSurvivesRenamingAFolder(t *testing.T) {
-	sub := &model.Folder{Name: "old", Requests: []*model.Request{{Name: "r"}}}
-	root := &model.Folder{Name: "A", Folders: []*model.Folder{sub}}
-	open := map[*model.Folder]bool{root: true, sub: true}
+	sub := &request.Folder{Name: "old", Requests: []*request.Request{{Name: "r"}}}
+	root := &request.Folder{Name: "A", Folders: []*request.Folder{sub}}
+	open := map[*request.Folder]bool{root: true, sub: true}
 	sub.Name = "new"
 	if got := len(Rows(root, open)); got != 3 {
 		t.Fatalf("rows = %d: a renamed folder must stay expanded", got)

@@ -29,7 +29,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // Result is the outcome of one assertion.
@@ -40,7 +40,7 @@ type Result struct {
 }
 
 // Run checks every assertion of text against resp.
-func Run(text string, resp *model.Response) []Result {
+func Run(text string, resp *request.Response) []Result {
 	var out []Result
 	for _, raw := range strings.Split(text, "\n") {
 		line := strings.TrimSpace(raw)
@@ -72,7 +72,7 @@ type Capture struct{ Name, Value string }
 
 // Captures returns the values the set lines of text take from resp; lines
 // whose value is missing are left out.
-func Captures(text string, resp *model.Response) []Capture {
+func Captures(text string, resp *request.Response) []Capture {
 	var out []Capture
 	for _, raw := range strings.Split(text, "\n") {
 		line := strings.TrimSpace(raw)
@@ -85,7 +85,7 @@ func Captures(text string, resp *model.Response) []Capture {
 
 // capture evaluates a "set name = source" line: isSet says it is one,
 // ok that the value was found.
-func capture(line string, resp *model.Response) (c Capture, ok bool, detail string) {
+func capture(line string, resp *request.Response) (c Capture, ok bool, detail string) {
 	rest, isSet := strings.CutPrefix(line, "set ")
 	if !isSet {
 		return c, false, ""
@@ -138,7 +138,7 @@ func capture(line string, resp *model.Response) (c Capture, ok bool, detail stri
 	return Capture{Name: name, Value: value}, true, ""
 }
 
-func check(line string, resp *model.Response) (bool, string) {
+func check(line string, resp *request.Response) (bool, string) {
 	if strings.HasPrefix(line, "set ") {
 		c, ok, detail := capture(line, resp)
 		if ok {
@@ -290,7 +290,7 @@ func textOpNames() []string {
 const errNoHeader = "the header is not there"
 
 // header returns the values of every header called name, in order.
-func header(resp *model.Response, name string) []string {
+func header(resp *request.Response, name string) []string {
 	var values []string
 	for _, h := range resp.Headers {
 		if strings.EqualFold(h.Name, name) {
@@ -300,7 +300,7 @@ func header(resp *model.Response, name string) []string {
 	return values
 }
 
-func checkHeader(resp *model.Response, rest string) (bool, string) {
+func checkHeader(resp *request.Response, rest string) (bool, string) {
 	name, rest, _ := strings.Cut(rest, " ")
 	rest = strings.TrimSpace(rest)
 	values := header(resp, name)
@@ -313,7 +313,7 @@ func checkHeader(resp *model.Response, rest string) (bool, string) {
 	return compareText(strings.Join(values, ", "), rest)
 }
 
-func checkJSON(resp *model.Response, rest string) (bool, string) {
+func checkJSON(resp *request.Response, rest string) (bool, string) {
 	path, rest, _ := strings.Cut(rest, " ")
 	rest = strings.TrimSpace(rest)
 	var doc any

@@ -3,8 +3,8 @@ package app
 import (
 	"context"
 	"errors"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/editor"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/bus"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/severity"
 	"strings"
@@ -17,7 +17,7 @@ import (
 // opens a menu of them; the chosen one becomes the request's method.
 func (a *App) pickGRPCMethod(tab *reqTab) {
 	// Proto files are read without a server; reflection asks one.
-	if tab.Req.Proto.Kind() == model.SourceReflection && strings.TrimSpace(tab.Req.URL) == "" {
+	if tab.Req.Proto.Kind() == request.SourceReflection && strings.TrimSpace(tab.Req.URL) == "" {
 		a.toast("Enter the gRPC server first, for example grpc://localhost:50051", severity.Error)
 		return
 	}
@@ -64,7 +64,7 @@ func (a *App) toggleStream(tab *reqTab) {
 	tab.grpcStream = !tab.grpcStream
 }
 
-func (a *App) listGRPCMethods(ctx context.Context, req model.Request) ([]string, error) {
+func (a *App) listGRPCMethods(ctx context.Context, req request.Request) ([]string, error) {
 	if a.grpcMethods == nil {
 		return nil, errors.New("no gRPC client")
 	}

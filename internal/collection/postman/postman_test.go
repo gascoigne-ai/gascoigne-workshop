@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 func load(t *testing.T) Result {
@@ -21,7 +21,7 @@ func load(t *testing.T) Result {
 	return res
 }
 
-func find(folder *model.Folder, name string) *model.Request {
+func find(folder *request.Folder, name string) *request.Request {
 	for _, r := range folder.Requests {
 		if r.Name == name {
 			return r
@@ -51,11 +51,11 @@ func TestRequestsCarryMethodURLHeadersQueryAndAuth(t *testing.T) {
 	if len(get.Headers) != 2 || get.Headers[1].Enabled {
 		t.Fatalf("headers %+v", get.Headers)
 	}
-	if get.Auth.Type != model.AuthBearer || get.Auth.Token != "{{token}}" {
+	if get.Auth.Type != request.AuthBearer || get.Auth.Token != "{{token}}" {
 		t.Fatalf("auth %+v", get.Auth)
 	}
 	post := find(load(t).Folder.Folders[0], "POST json")
-	if post.BodyType != model.BodyJSON || !strings.Contains(post.Body, `"a": 1`) || post.URL != "{{baseUrl}}/post" {
+	if post.BodyType != request.BodyJSON || !strings.Contains(post.Body, `"a": 1`) || post.URL != "{{baseUrl}}/post" {
 		t.Fatalf("%+v", post)
 	}
 }
@@ -63,15 +63,15 @@ func TestRequestsCarryMethodURLHeadersQueryAndAuth(t *testing.T) {
 func TestBodyModesAndOtherAuthTypes(t *testing.T) {
 	root := load(t).Folder
 	form := find(root, "Form")
-	if form.BodyType != model.BodyForm || len(form.Form) != 2 || form.Form[0].Value != "ann" || form.Form[1].Enabled {
+	if form.BodyType != request.BodyForm || len(form.Form) != 2 || form.Form[0].Value != "ann" || form.Form[1].Enabled {
 		t.Fatalf("%+v", form)
 	}
 	up := find(root, "Upload")
-	if up.BodyType != model.BodyMultipart || up.Form[1].Value != "@a.txt" || up.Auth.Type != model.AuthBasic || up.Auth.User != "u" || up.Auth.Password != "p" {
+	if up.BodyType != request.BodyMultipart || up.Form[1].Value != "@a.txt" || up.Auth.Type != request.AuthBasic || up.Auth.User != "u" || up.Auth.Password != "p" {
 		t.Fatalf("%+v", up)
 	}
 	key := find(root, "Keyed")
-	if key.Auth.Type != model.AuthAPIKey || key.Auth.KeyName != "X-Api-Key" || key.Auth.KeyValue != "{{apiKey}}" || key.Auth.KeyIn != model.KeyInHeader {
+	if key.Auth.Type != request.AuthAPIKey || key.Auth.KeyName != "X-Api-Key" || key.Auth.KeyValue != "{{apiKey}}" || key.Auth.KeyIn != request.KeyInHeader {
 		t.Fatalf("%+v", key.Auth)
 	}
 }
@@ -90,7 +90,7 @@ func TestParseRejectsWhatIsNotAPostmanCollection(t *testing.T) {
 
 // withoutLiteralCredentials is auth as an export leaves it: a literal
 // token, password or key value is not written; a {{variable}} is.
-func withoutLiteralCredentials(auth model.Auth) model.Auth {
+func withoutLiteralCredentials(auth request.Auth) request.Auth {
 	auth.Token, auth.Password, auth.KeyValue = shareable(auth.Token), shareable(auth.Password), shareable(auth.KeyValue)
 	return auth
 }
@@ -98,7 +98,7 @@ func withoutLiteralCredentials(auth model.Auth) model.Auth {
 func TestExportThenParseKeepsWhatPostmanCanHold(t *testing.T) {
 	first := load(t)
 	root := first.Folder
-	root.AddRequest(model.Request{Name: "Socket", Protocol: "websocket", URL: "wss://x"})
+	root.AddRequest(request.Request{Name: "Socket", Protocol: "websocket", URL: "wss://x"})
 	data, err := Export(root, first.Vars)
 	if err != nil {
 		t.Fatal(err)
@@ -194,12 +194,12 @@ func FuzzParse(fuzz *testing.F) {
 // password and API key into a file made to be shared. They are now left
 // empty; the structure (names, user names, key names) stays.
 func TestExportLeavesSecretsOut(t *testing.T) {
-	root := &model.Folder{Name: "API", Requests: []*model.Request{
-		{Name: "Bearer", Protocol: "rest", Method: "GET", URL: "u", Auth: model.Auth{Type: model.AuthBearer, Token: "tok-secret"}},
-		{Name: "Basic", Protocol: "rest", Method: "GET", URL: "u", Auth: model.Auth{Type: model.AuthBasic, User: "alice", Password: "pw-secret"}},
-		{Name: "Key", Protocol: "rest", Method: "GET", URL: "u", Auth: model.Auth{Type: model.AuthAPIKey, KeyName: "X-Key", KeyValue: "key-secret", KeyIn: model.KeyInHeader}},
+	root := &request.Folder{Name: "API", Requests: []*request.Request{
+		{Name: "Bearer", Protocol: "rest", Method: "GET", URL: "u", Auth: request.Auth{Type: request.AuthBearer, Token: "tok-secret"}},
+		{Name: "Basic", Protocol: "rest", Method: "GET", URL: "u", Auth: request.Auth{Type: request.AuthBasic, User: "alice", Password: "pw-secret"}},
+		{Name: "Key", Protocol: "rest", Method: "GET", URL: "u", Auth: request.Auth{Type: request.AuthAPIKey, KeyName: "X-Key", KeyValue: "key-secret", KeyIn: request.KeyInHeader}},
 	}}
-	vars := []model.KV{{Name: "token", Value: "var-secret", Enabled: true, Secret: true}, {Name: "host", Value: "visible.test", Enabled: true}}
+	vars := []request.KV{{Name: "token", Value: "var-secret", Enabled: true, Secret: true}, {Name: "host", Value: "visible.test", Enabled: true}}
 	data, err := Export(root, vars)
 	if err != nil {
 		t.Fatal(err)
@@ -219,9 +219,9 @@ func TestExportLeavesSecretsOut(t *testing.T) {
 // Postman holds HTTP requests only: every other protocol is left out of
 // the export and counted as skipped.
 func TestPostmanExportSkipsEveryProtocolButREST(t *testing.T) {
-	root := &model.Folder{Name: "c"}
-	for _, protocol := range []model.Protocol{"rest", "websocket", "mcp", "sse", "grpc"} {
-		root.AddRequest(model.Request{Name: string(protocol), Protocol: protocol, Method: "GET", URL: "u"})
+	root := &request.Folder{Name: "c"}
+	for _, protocol := range []request.Protocol{"rest", "websocket", "mcp", "sse", "grpc"} {
+		root.AddRequest(request.Request{Name: string(protocol), Protocol: protocol, Method: "GET", URL: "u"})
 	}
 	if got := Skipped(root); got != 4 {
 		t.Errorf("Skipped = %d, want 4", got)

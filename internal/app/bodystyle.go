@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/jsonview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/respview"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -16,7 +16,7 @@ func plainStyler(line string) []Span {
 // withVariables wraps a line styler so every {{variable}} is drawn in the
 // success color when req resolves it and in the error color when it does
 // not, over whatever color the base styler gave the text.
-func (a *App) withVariables(base func(string) []Span, req *model.Request) func(string) []Span {
+func (a *App) withVariables(base func(string) []Span, req *request.Request) func(string) []Span {
 	vars := a.varsFor(req)
 	return func(line string) []Span {
 		spans := base(line)
@@ -29,16 +29,16 @@ func (a *App) withVariables(base func(string) []Span, req *model.Request) func(s
 }
 
 // splitSpanVars cuts a span at its {{variables}} and colors those.
-func splitSpanVars(sp Span, vars []model.KV) []Span {
+func splitSpanVars(sp Span, vars []request.KV) []Span {
 	if !containsVar(sp.Text) {
 		return []Span{sp}
 	}
 	var out []Span
-	for _, seg := range model.SplitVars(sp.Text) {
+	for _, seg := range request.SplitVars(sp.Text) {
 		style := sp.Style
 		if seg.IsVar {
 			style = w.OK
-			if !model.Defined(varName(seg.Text), vars) {
+			if !request.Defined(varName(seg.Text), vars) {
 				style = w.Error
 			}
 		}
@@ -67,18 +67,18 @@ func varName(text string) string {
 // cellStyler colors the {{variables}} in a table cell the way the URL
 // field does: green when req resolves them, red when not. Cells without a
 // variable are drawn as they are.
-func (a *App) cellStyler(req *model.Request) func(string) []Span {
+func (a *App) cellStyler(req *request.Request) func(string) []Span {
 	vars := a.varsFor(req)
 	return func(text string) []Span {
 		if !containsVar(text) {
 			return nil
 		}
 		var out []Span
-		for _, seg := range model.SplitVars(text) {
+		for _, seg := range request.SplitVars(text) {
 			sp := Span{Text: seg.Text}
 			if seg.IsVar {
 				sp.Style = w.OK
-				if !model.Defined(varName(seg.Text), vars) {
+				if !request.Defined(varName(seg.Text), vars) {
 					sp.Style = w.Error
 				}
 			}

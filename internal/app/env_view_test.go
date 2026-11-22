@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
@@ -167,7 +167,7 @@ func TestClickingTheEnvironmentChipOpensItsMenu(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			a := testApp(t)
 			t.Cleanup(a.waitWrites)
-			a.col().Envs = []model.Environment{{Name: "Dev"}}
+			a.col().Envs = []request.Environment{{Name: "Dev"}}
 			if tc.active {
 				a.selectEnv(0)
 			}
@@ -198,7 +198,7 @@ func TestClickingTheEnvironmentChipOpensItsMenu(t *testing.T) {
 func TestPickingAnEnvironmentInTheChipsMenuShowsItOnTheChip(t *testing.T) {
 	a := testApp(t)
 	t.Cleanup(a.waitWrites)
-	a.col().Envs = []model.Environment{{Name: "Dev"}, {Name: "Prod"}}
+	a.col().Envs = []request.Environment{{Name: "Dev"}, {Name: "Prod"}}
 	clickText(t, a, "No environment", 0)
 	clickText(t, a, "Prod", 0)
 	if a.envIndex() != 1 {
@@ -231,7 +231,7 @@ func TestTheChipsMenuRowsOpenTheirDialogs(t *testing.T) {
 		t.Run(tc.row, func(t *testing.T) {
 			a := testApp(t)
 			t.Cleanup(a.waitWrites)
-			a.col().Envs = []model.Environment{{Name: "Dev"}}
+			a.col().Envs = []request.Environment{{Name: "Dev"}}
 			a.selectEnv(0)
 			clickText(t, a, "Dev", 0)
 			clickText(t, a, tc.row, 0)

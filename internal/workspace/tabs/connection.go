@@ -1,8 +1,7 @@
 package tabs
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // Connection is the state of a tab that keeps a connection open (WebSocket,
@@ -12,22 +11,22 @@ import (
 // there exactly while the connection is open or closing.
 type Connection struct {
 	state       ConnState
-	session     port.Session // the open connection, nil unless open or closing
-	Gen         int          // numbers the connects, so a late answer of an old one is ignored
-	Reconnect   bool         // reopen a dropped connection; the user's policy, read when one drops
-	LastEventID string       // the last id an SSE stream sent, offered again when it reconnects
+	session     request.Session // the open connection, nil unless open or closing
+	Gen         int             // numbers the connects, so a late answer of an old one is ignored
+	Reconnect   bool            // reopen a dropped connection; the user's policy, read when one drops
+	LastEventID string          // the last id an SSE stream sent, offered again when it reconnects
 
-	Resources []model.MCPResource // the resources an MCP server announced
-	Prompts   []model.MCPPrompt   // the prompts an MCP server announced
-	Tools     []model.MCPTool     // the tools an MCP server announced
-	Server    *model.MCPServer    // what an MCP server said about itself, nil before it did
+	Resources []request.MCPResource // the resources an MCP server announced
+	Prompts   []request.MCPPrompt   // the prompts an MCP server announced
+	Tools     []request.MCPTool     // the tools an MCP server announced
+	Server    *request.MCPServer    // what an MCP server said about itself, nil before it did
 }
 
 // State is where the connection is in its life.
 func (conn *Connection) State() ConnState { return conn.state }
 
 // Session is the open connection, nil when there is none.
-func (conn *Connection) Session() port.Session { return conn.session }
+func (conn *Connection) Session() request.Session { return conn.session }
 
 // Active reports whether the connection is up, being made or due to be
 // retried, so the next click on its button disconnects instead of connecting.
@@ -70,7 +69,7 @@ func (conn *Connection) Current(gen int) bool { return gen == conn.Gen }
 
 // Opened records the session a connect produced. It reports false, and the
 // caller closes the session, when no connect was in progress.
-func (conn *Connection) Opened(session port.Session) bool {
+func (conn *Connection) Opened(session request.Session) bool {
 	if !conn.step(connOpened) {
 		return false
 	}
@@ -97,7 +96,7 @@ func (conn *Connection) Closed() bool {
 // Disconnect records that the user no longer wants the connection. It
 // returns the open session, which the caller closes, or reports that a
 // connect in progress was abandoned, whose answer is dropped from now on.
-func (conn *Connection) Disconnect() (session port.Session, abandoned bool) {
+func (conn *Connection) Disconnect() (session request.Session, abandoned bool) {
 	conn.LastEventID = "" // a deliberate disconnect starts the stream over next time
 	wasConnecting := conn.state == ConnConnecting
 	session = conn.session
@@ -112,25 +111,25 @@ func (conn *Connection) Disconnect() (session port.Session, abandoned bool) {
 
 // Received takes what a received event announces: the server's own
 // description, its tools, resources and prompts, and the id to resume an event stream from.
-func (conn *Connection) Received(event port.Event) {
-	if event.Dir == port.Info && event.Kind == port.KindInitialize {
-		if server, ok := model.ParseServerInfo(event.Text); ok {
+func (conn *Connection) Received(event request.Event) {
+	if event.Dir == request.Info && event.Kind == request.KindInitialize {
+		if server, ok := request.ParseServerInfo(event.Text); ok {
 			conn.Server = &server
 		}
 		return
 	}
-	if event.Dir != port.Received {
+	if event.Dir != request.Received {
 		return
 	}
 	if event.ID != "" {
 		conn.LastEventID = event.ID
 	}
 	switch payload := event.Payload.(type) {
-	case port.ToolsList:
+	case request.ToolsList:
 		conn.Tools = payload.Tools
-	case port.ResourcesList:
+	case request.ResourcesList:
 		conn.Resources = payload.Resources
-	case port.PromptsList:
+	case request.PromptsList:
 		conn.Prompts = payload.Prompts
 	}
 }

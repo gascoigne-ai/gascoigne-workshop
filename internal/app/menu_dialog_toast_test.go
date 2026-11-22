@@ -2,7 +2,7 @@ package app
 
 import (
 	"errors"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -485,7 +485,7 @@ func TestResponseHeaderMenuCopiesNameValueAndAll(t *testing.T) {
 
 func TestEditableTableMenuAlsoCopiesCells(t *testing.T) {
 	a := testApp(t)
-	a.cur().Req.Params = []model.KV{{Name: "q", Value: "giou", Enabled: true}}
+	a.cur().Req.Params = []request.KV{{Name: "q", Value: "giou", Enabled: true}}
 	clip := &fakeClip{}
 	a.ctx.Clipboard = clip
 	a.step(core.Input{})

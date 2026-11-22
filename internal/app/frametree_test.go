@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/prefs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -282,7 +282,7 @@ func TestTheDrawnTreeShowsATabMarkedSavedByTheAutosave(t *testing.T) {
 // the tree stale. In a real frame a handler usually fires with them (a drag
 // over a row runs OnDragOver), so the session above cannot tell these apart.
 func TestAStepThatChangesWhatTheViewShowsMarksTheTreeStale(t *testing.T) {
-	folder := &model.Folder{Name: "closed"}
+	folder := &request.Folder{Name: "closed"}
 	cases := map[string]func(a *App){
 		"a toast":            func(a *App) { a.toast("Saved", severity.Info) },
 		"a settings message": func(a *App) { a.Send(prefs.Toast{Text: "hi", Level: severity.Info}) },
@@ -291,8 +291,8 @@ func TestAStepThatChangesWhatTheViewShowsMarksTheTreeStale(t *testing.T) {
 			a.closeBulk()
 		},
 		"a drag resting over a folder": func(a *App) {
-			a.expanded = map[*model.Folder]bool{}
-			a.dragNode, a.dropTarget = model.Node{Req: &model.Request{}}, model.Node{Dir: folder}
+			a.expanded = map[*request.Folder]bool{}
+			a.dragNode, a.dropTarget = request.Node{Req: &request.Request{}}, request.Node{Dir: folder}
 			a.hoverFolder, a.hoverTicks = folder, dragExpandTicks-1
 			a.dragHover()
 		},

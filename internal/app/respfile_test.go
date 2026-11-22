@@ -21,7 +21,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 func TestHistoryKeepsEarlierResponsesNewestFirstAndSwapsOnPick(t *testing.T) {
@@ -29,7 +29,7 @@ func TestHistoryKeepsEarlierResponsesNewestFirstAndSwapsOnPick(t *testing.T) {
 	tab := a.cur()
 	send := func(status int) {
 		tab.BeginSend()
-		a.apply(sendResult{tab: tab, seq: tab.Seq, resp: model.Response{Status: status, StatusText: "S", Body: []byte("{}")}})
+		a.apply(sendResult{tab: tab, seq: tab.Seq, resp: request.Response{Status: status, StatusText: "S", Body: []byte("{}")}})
 	}
 	send(200)
 	if len(tab.Earlier) != 0 {
@@ -56,10 +56,10 @@ func TestHistoryKeepsEarlierResponsesNewestFirstAndSwapsOnPick(t *testing.T) {
 	}
 	tab.BeginSend()
 	n := len(tab.Earlier)
-	a.apply(sendResult{tab: tab, seq: tab.Seq, resp: model.Response{Err: "boom"}})
-	a.apply(sendResult{tab: tab, seq: tab.Seq + 1, resp: model.Response{Status: 200}}) // stale: ignored
+	a.apply(sendResult{tab: tab, seq: tab.Seq, resp: request.Response{Err: "boom"}})
+	a.apply(sendResult{tab: tab, seq: tab.Seq + 1, resp: request.Response{Status: 200}}) // stale: ignored
 	tab.BeginSend()
-	a.apply(sendResult{tab: tab, seq: tab.Seq, resp: model.Response{Status: 204}})
+	a.apply(sendResult{tab: tab, seq: tab.Seq, resp: request.Response{Status: 204}})
 	if len(tab.Earlier) != n {
 		t.Fatalf("a failed response must not enter the history: %d -> %d", n, len(tab.Earlier))
 	}
@@ -72,7 +72,7 @@ func TestSaveBodyWritesTheFileAndReportsFailures(t *testing.T) {
 	if a.browser != nil {
 		t.Fatal("no file browser without a response")
 	}
-	tab.Resp = &model.Response{Status: 200, Body: []byte(`{"a":1}`)}
+	tab.Resp = &request.Response{Status: 200, Body: []byte(`{"a":1}`)}
 	a.saveBody(tab)
 	if a.browser == nil || !strings.HasSuffix(a.browser.path.Text, "response.txt") {
 		t.Fatalf("the file browser did not open with a name: %+v", a.browser)
@@ -101,7 +101,7 @@ func TestAssertionsRunWhenAResponseArrivesAndAfterEdits(t *testing.T) {
 	tab := a.cur()
 	tab.Req.Tests = "status == 200\njson ok == true\nstatus == 404"
 	tab.BeginSend()
-	a.apply(sendResult{tab: tab, seq: tab.Seq, resp: model.Response{Status: 200, StatusText: "OK", Body: []byte(`{"ok":true}`)}})
+	a.apply(sendResult{tab: tab, seq: tab.Seq, resp: request.Response{Status: 200, StatusText: "OK", Body: []byte(`{"ok":true}`)}})
 	if len(tab.testResults) != 3 || !tab.testResults[0].OK || !tab.testResults[1].OK || tab.testResults[2].OK {
 		t.Fatalf("%+v", tab.testResults)
 	}
@@ -134,8 +134,8 @@ func TestAnImageResponseIsShownAsAPicture(t *testing.T) {
 	a := testApp(t)
 	tab := a.cur()
 	tab.BeginSend()
-	a.apply(sendResult{tab: tab, seq: tab.Seq, resp: model.Response{Status: 200, StatusText: "OK", Body: buf.Bytes(),
-		Headers: []model.KV{{Name: "Content-Type", Value: "text/plain", Enabled: true}}}}) // mislabeled on purpose
+	a.apply(sendResult{tab: tab, seq: tab.Seq, resp: request.Response{Status: 200, StatusText: "OK", Body: buf.Bytes(),
+		Headers: []request.KV{{Name: "Content-Type", Value: "text/plain", Enabled: true}}}}) // mislabeled on purpose
 	if tab.picture == nil || !strings.HasPrefix(tab.pictureInfo, "PNG 40x20") {
 		t.Fatalf("picture %v info %q", tab.picture, tab.pictureInfo)
 	}
@@ -146,7 +146,7 @@ func TestAnImageResponseIsShownAsAPicture(t *testing.T) {
 		t.Fatalf("pane:\n%s", d)
 	}
 	tab.BeginSend()
-	a.apply(sendResult{tab: tab, seq: tab.Seq, resp: model.Response{Status: 200, Body: []byte(`{"a":1}`)}})
+	a.apply(sendResult{tab: tab, seq: tab.Seq, resp: request.Response{Status: 200, Body: []byte(`{"a":1}`)}})
 	if tab.picture != nil {
 		t.Fatal("the next, non-image response must clear the picture")
 	}
@@ -181,13 +181,13 @@ func TestFileBodyTypeKeepsItsPathSeparateFromTheTextBody(t *testing.T) {
 	tab := a.cur()
 	tab.body = widget.NewTextArea("typed text")
 	tab.Req.Body = "typed text"
-	a.setBodyType(tab, model.BodyFile)
-	if tab.Req.BodyType != model.BodyFile || tab.Req.Body != "" {
+	a.setBodyType(tab, request.BodyFile)
+	if tab.Req.BodyType != request.BodyFile || tab.Req.Body != "" {
 		t.Fatalf("type %q body %q", tab.Req.BodyType, tab.Req.Body)
 	}
 	tab.file = widget.NewTextField("/tmp/x.bin")
 	tab.Req.Body = tab.file.Text
-	a.setBodyType(tab, model.BodyText)
+	a.setBodyType(tab, request.BodyText)
 	if tab.Req.Body != "typed text" {
 		t.Fatalf("the text body must come back: %q", tab.Req.Body)
 	}
@@ -202,11 +202,11 @@ func TestCapturedValuesBecomeVariablesInTheActiveScope(t *testing.T) {
 	tab.Req.Tests = "set token = json access_token"
 	send := func(body string) {
 		tab.BeginSend()
-		a.apply(sendResult{tab: tab, seq: tab.Seq, resp: model.Response{Status: 200, Body: []byte(body)}})
+		a.apply(sendResult{tab: tab, seq: tab.Seq, resp: request.Response{Status: 200, Body: []byte(body)}})
 	}
 	a.col().Vars = nil
 	send(`{"access_token":"t1"}`)
-	if got := model.Expand("{{token}}", a.varsFor(tab.Req)); got != "t1" {
+	if got := request.Expand("{{token}}", a.varsFor(tab.Req)); got != "t1" {
 		t.Fatalf("collection variable: %q", got)
 	}
 	send(`{"access_token":"t2"}`)
@@ -222,9 +222,9 @@ func TestCapturedValuesBecomeVariablesInTheActiveScope(t *testing.T) {
 
 func TestGraphQLBodyTypeSendsAQueryAndCanLoadTheSchema(t *testing.T) {
 	var queries []string
-	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
 		var p struct{ Query string }
-		b, _ := io.ReadAll(request.Body)
+		b, _ := io.ReadAll(call.Body)
 		json.Unmarshal(b, &p)
 		queries = append(queries, p.Query)
 		writer.Write([]byte(`{"data":{"__schema":{"types":[]}}}`))
@@ -234,7 +234,7 @@ func TestGraphQLBodyTypeSendsAQueryAndCanLoadTheSchema(t *testing.T) {
 	tab := a.cur()
 	tab.Req.URL, tab.Req.Method = srv.URL, "GET"
 	tab.body = widget.NewTextArea("{ repos { name } }")
-	a.setBodyType(tab, model.BodyGraphQL)
+	a.setBodyType(tab, request.BodyGraphQL)
 	if tab.Req.Method != "POST" || tab.Req.Body != "{ repos { name } }" {
 		t.Fatalf("method %q body %q", tab.Req.Method, tab.Req.Body)
 	}
@@ -259,7 +259,7 @@ func TestADragRestingOverAClosedFolderOpensIt(t *testing.T) {
 	closed := a.col().Folders[0]
 	a.expanded[closed] = false
 	req := a.col().Folders[1].Requests[0]
-	a.dragNode, a.dropTarget = model.Of(req), model.Of(closed)
+	a.dragNode, a.dropTarget = request.Of(req), request.Of(closed)
 	for i := 0; i < dragExpandTicks-1; i++ {
 		a.dragHover()
 	}
@@ -272,15 +272,15 @@ func TestADragRestingOverAClosedFolderOpensIt(t *testing.T) {
 	}
 	other := a.col().Folders[2]
 	a.expanded[other] = false
-	a.dropTarget = model.Of(other)
+	a.dropTarget = request.Of(other)
 	a.dragHover()
 	a.expanded[closed] = false
-	a.dropTarget = model.Of(closed) // moved away before the time was up
+	a.dropTarget = request.Of(closed) // moved away before the time was up
 	a.dragHover()
 	if a.hoverFolder != closed || a.hoverTicks != 1 {
 		t.Fatalf("the rest time must start over on a new folder: %v %d", a.hoverFolder, a.hoverTicks)
 	}
-	a.dragNode = model.Node{}
+	a.dragNode = request.Node{}
 	a.dragHover()
 	if a.hoverFolder != nil {
 		t.Fatal("without a drag nothing hovers")
@@ -290,8 +290,8 @@ func TestADragRestingOverAClosedFolderOpensIt(t *testing.T) {
 func TestFormFieldsCanBeEditedAsText(t *testing.T) {
 	a := testApp(t)
 	tab := a.cur()
-	tab.Req.BodyType = model.BodyForm
-	tab.Req.Form = []model.KV{{Name: "user", Value: "ann", Enabled: true}}
+	tab.Req.BodyType = request.BodyForm
+	tab.Req.Form = []request.KV{{Name: "user", Value: "ann", Enabled: true}}
 	for i, p := range requestPanes {
 		if p.kind == paneBody {
 			tab.paneTab = i

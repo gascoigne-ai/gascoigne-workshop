@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/tree"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
@@ -19,10 +19,10 @@ type gateStore struct {
 	noStore
 	release chan struct{}
 	mu      sync.Mutex
-	saved   []model.Collection
+	saved   []request.Collection
 }
 
-func (s *gateStore) Save(_ string, col model.Collection) error {
+func (s *gateStore) Save(_ string, col request.Collection) error {
 	<-s.release
 	s.mu.Lock()
 	s.saved = append(s.saved, col)
@@ -82,7 +82,7 @@ func TestSavingTheResponseHistoryDoesNotBlockTheFrame(t *testing.T) {
 	a.statePath = filepath.Join(t.TempDir(), "state.json")
 	a.histories = func(string) response.History { return gate }
 	tab := a.cur()
-	tab.Resp = &model.Response{Status: 200, Body: []byte("{}")}
+	tab.Resp = &request.Response{Status: 200, Body: []byte("{}")}
 
 	done := make(chan struct{})
 	go func() { a.saveHistory(tab); close(done) }()

@@ -14,24 +14,23 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
-// The registry and model.Protocols name the same protocols, and a protocol
+// The registry and request.Protocols name the same protocols, and a protocol
 // whose row keeps a connection can open one.
 func TestTheRegistryHasOneImplementationPerProtocolRow(t *testing.T) {
 	registry := NewRegistry()
-	if len(registry) != len(model.Protocols) {
-		t.Fatalf("%d implementations for %d protocols", len(registry), len(model.Protocols))
+	if len(registry) != len(request.Protocols) {
+		t.Fatalf("%d implementations for %d protocols", len(registry), len(request.Protocols))
 	}
-	for _, row := range model.Protocols {
+	for _, row := range request.Protocols {
 		implementation, ok := registry[row.Name]
 		if !ok {
 			t.Errorf("%s has no implementation", row.Name)
 			continue
 		}
-		if _, streams := implementation.(port.Streamer); streams != (row.Connection != model.OneShot) {
+		if _, streams := implementation.(request.Streamer); streams != (row.Connection != request.OneShot) {
 			t.Errorf("%s streams: %v, but its row connects %v", row.Name, streams, row.Connection)
 		}
 	}
@@ -45,15 +44,15 @@ func TestRegistrySend(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		req     model.Request
+		req     request.Request
 		wantErr bool
 		wantMsg string // substring of Response.Err
 		want    int    // Response.Status
 	}{
-		{"rest", model.Request{Protocol: "rest", URL: srv.URL}, false, "", 200},
-		{"websocket", model.Request{Protocol: "websocket"}, false, "URL scheme", 0},
-		{"mcp", model.Request{Protocol: "mcp"}, false, "not an http or https URL", 0},
-		{"unknown", model.Request{Protocol: "carrier-pigeon"}, true, "", 0},
+		{"rest", request.Request{Protocol: "rest", URL: srv.URL}, false, "", 200},
+		{"websocket", request.Request{Protocol: "websocket"}, false, "URL scheme", 0},
+		{"mcp", request.Request{Protocol: "mcp"}, false, "not an http or https URL", 0},
+		{"unknown", request.Request{Protocol: "carrier-pigeon"}, true, "", 0},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -69,21 +68,21 @@ func TestRegistrySend(t *testing.T) {
 }
 
 func TestRESTSend(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		body, _ := io.ReadAll(request.Body)
-		writer.Header().Set("X-Echo-Method", request.Method)
-		writer.Header().Set("X-Echo-Auth", request.Header.Get("Authorization"))
-		writer.Header().Set("X-Echo-Skipped", request.Header.Get("X-Off"))
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
+		body, _ := io.ReadAll(call.Body)
+		writer.Header().Set("X-Echo-Method", call.Method)
+		writer.Header().Set("X-Echo-Auth", call.Header.Get("Authorization"))
+		writer.Header().Set("X-Echo-Skipped", call.Header.Get("X-Off"))
 		writer.WriteHeader(http.StatusCreated)
 		writer.Write(body)
 	}))
 	defer srv.Close()
 
-	resp, err := REST{}.Send(context.Background(), model.Request{
+	resp, err := REST{}.Send(context.Background(), request.Request{
 		Method: "post",
 		URL:    srv.URL,
 		Body:   `{"a":1}`,
-		Headers: []model.KV{
+		Headers: []request.KV{
 			{Name: "Authorization", Value: "Bearer t", Enabled: true},
 			{Name: "X-Off", Value: "no", Enabled: false},
 		},
@@ -117,12 +116,12 @@ func TestRESTSendFailures(t *testing.T) {
 	closed.Close()
 
 	t.Run("bad method is an error", func(t *testing.T) {
-		if _, err := (REST{}).Send(context.Background(), model.Request{Method: "BAD METHOD", URL: "http://x"}); err == nil {
+		if _, err := (REST{}).Send(context.Background(), request.Request{Method: "BAD METHOD", URL: "http://x"}); err == nil {
 			t.Fatal("want error")
 		}
 	})
 	t.Run("connection refused lands in Err", func(t *testing.T) {
-		resp, err := REST{}.Send(context.Background(), model.Request{URL: closed.URL})
+		resp, err := REST{}.Send(context.Background(), request.Request{URL: closed.URL})
 		if err != nil || resp.Err == "" || resp.Status != 0 {
 			t.Fatalf("resp = %+v err = %v", resp, err)
 		}
@@ -130,7 +129,7 @@ func TestRESTSendFailures(t *testing.T) {
 	t.Run("cancelled context lands in Err", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
-		resp, err := REST{}.Send(ctx, model.Request{URL: closed.URL})
+		resp, err := REST{}.Send(ctx, request.Request{URL: closed.URL})
 		if err != nil || resp.Err == "" {
 			t.Fatalf("resp = %+v err = %v", resp, err)
 		}
@@ -146,16 +145,16 @@ type capture struct {
 func captureServer(t *testing.T) (*httptest.Server, *capture) {
 	t.Helper()
 	got := &capture{}
-	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		got.method, got.contentType = request.Method, request.Header.Get("Content-Type")
-		got.body, _ = io.ReadAll(request.Body)
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
+		got.method, got.contentType = call.Method, call.Header.Get("Content-Type")
+		got.body, _ = io.ReadAll(call.Body)
 	}))
 	t.Cleanup(srv.Close)
 	return srv, got
 }
 
 func TestRESTBodyTypes(t *testing.T) {
-	form := []model.KV{
+	form := []request.KV{
 		{Name: "q", Value: "a b&c", Enabled: true},
 		{Name: "off", Value: "x", Enabled: false},
 		{Name: "", Value: "unnamed", Enabled: true},
@@ -163,17 +162,17 @@ func TestRESTBodyTypes(t *testing.T) {
 	}
 	tests := []struct {
 		name            string
-		req             model.Request
+		req             request.Request
 		wantBody        string
 		wantContentType string
 	}{
-		{"none sends nothing", model.Request{BodyType: model.BodyNone, Body: "ignored"}, "", ""},
-		{"legacy raw body has no content type", model.Request{Body: `{"a":1}`}, `{"a":1}`, ""},
-		{"json", model.Request{BodyType: model.BodyJSON, Body: `{"a":1}`}, `{"a":1}`, "application/json"},
-		{"text", model.Request{BodyType: model.BodyText, Body: "hello"}, "hello", "text/plain; charset=utf-8"},
-		{"form skips disabled and unnamed rows and escapes", model.Request{BodyType: model.BodyForm, Form: form}, "q=a+b%26c&page=2", "application/x-www-form-urlencoded"},
-		{"form ignores the text body", model.Request{BodyType: model.BodyForm, Body: "text", Form: form[:1]}, "q=a+b%26c", "application/x-www-form-urlencoded"},
-		{"json body ignores form rows", model.Request{BodyType: model.BodyJSON, Body: "{}", Form: form}, "{}", "application/json"},
+		{"none sends nothing", request.Request{BodyType: request.BodyNone, Body: "ignored"}, "", ""},
+		{"legacy raw body has no content type", request.Request{Body: `{"a":1}`}, `{"a":1}`, ""},
+		{"json", request.Request{BodyType: request.BodyJSON, Body: `{"a":1}`}, `{"a":1}`, "application/json"},
+		{"text", request.Request{BodyType: request.BodyText, Body: "hello"}, "hello", "text/plain; charset=utf-8"},
+		{"form skips disabled and unnamed rows and escapes", request.Request{BodyType: request.BodyForm, Form: form}, "q=a+b%26c&page=2", "application/x-www-form-urlencoded"},
+		{"form ignores the text body", request.Request{BodyType: request.BodyForm, Body: "text", Form: form[:1]}, "q=a+b%26c", "application/x-www-form-urlencoded"},
+		{"json body ignores form rows", request.Request{BodyType: request.BodyJSON, Body: "{}", Form: form}, "{}", "application/json"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -191,9 +190,9 @@ func TestRESTBodyTypes(t *testing.T) {
 
 func TestRESTMultipartBody(t *testing.T) {
 	srv, got := captureServer(t)
-	_, err := REST{}.Send(context.Background(), model.Request{
-		Method: "POST", URL: srv.URL, BodyType: model.BodyMultipart,
-		Form: []model.KV{{Name: "a", Value: "1", Enabled: true}, {Name: "skip", Value: "x"}, {Name: "b", Value: "héllo", Enabled: true}},
+	_, err := REST{}.Send(context.Background(), request.Request{
+		Method: "POST", URL: srv.URL, BodyType: request.BodyMultipart,
+		Form: []request.KV{{Name: "a", Value: "1", Enabled: true}, {Name: "skip", Value: "x"}, {Name: "b", Value: "héllo", Enabled: true}},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -220,16 +219,16 @@ func TestRESTMultipartBody(t *testing.T) {
 func TestUserContentTypeHeaderWins(t *testing.T) {
 	tests := []struct {
 		name    string
-		headers []model.KV
+		headers []request.KV
 		want    string
 	}{
-		{"user header replaces the automatic one", []model.KV{{Name: "content-type", Value: "application/vnd.api+json", Enabled: true}}, "application/vnd.api+json"},
-		{"a disabled header does not", []model.KV{{Name: "Content-Type", Value: "x/y", Enabled: false}}, "application/json"},
+		{"user header replaces the automatic one", []request.KV{{Name: "content-type", Value: "application/vnd.api+json", Enabled: true}}, "application/vnd.api+json"},
+		{"a disabled header does not", []request.KV{{Name: "Content-Type", Value: "x/y", Enabled: false}}, "application/json"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			srv, got := captureServer(t)
-			REST{}.Send(context.Background(), model.Request{Method: "POST", URL: srv.URL, BodyType: model.BodyJSON, Body: "{}", Headers: tt.headers})
+			REST{}.Send(context.Background(), request.Request{Method: "POST", URL: srv.URL, BodyType: request.BodyJSON, Body: "{}", Headers: tt.headers})
 			if got.contentType != tt.want {
 				t.Fatalf("content type = %q, want %q", got.contentType, tt.want)
 			}
@@ -238,10 +237,10 @@ func TestUserContentTypeHeaderWins(t *testing.T) {
 }
 
 func TestRESTRedirects(t *testing.T) {
-	target := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) { io.WriteString(writer, "landed") }))
+	target := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) { io.WriteString(writer, "landed") }))
 	defer target.Close()
-	redirector := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		http.Redirect(writer, request, target.URL, http.StatusFound)
+	redirector := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
+		http.Redirect(writer, call, target.URL, http.StatusFound)
 	}))
 	defer redirector.Close()
 
@@ -256,7 +255,7 @@ func TestRESTRedirects(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resp, err := REST{}.Send(context.Background(), model.Request{URL: redirector.URL, NoRedirects: tt.noRedirects})
+			resp, err := REST{}.Send(context.Background(), request.Request{URL: redirector.URL, NoRedirects: tt.noRedirects})
 			if err != nil || resp.Status != tt.wantStatus || !strings.Contains(string(resp.Body), tt.wantBody) {
 				t.Fatalf("resp %+v err %v", resp, err)
 			}
@@ -277,52 +276,52 @@ func TestRESTRedirects(t *testing.T) {
 
 func TestRESTExplainsCancelAndTimeout(t *testing.T) {
 	block := make(chan struct{})
-	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) { <-block }))
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) { <-block }))
 	defer srv.Close()
 	defer close(block)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	resp, _ := REST{}.Send(ctx, model.Request{URL: srv.URL})
-	if resp.Err != model.ErrCancelled {
-		t.Errorf("cancelled: Err = %q, want %q", resp.Err, model.ErrCancelled)
+	resp, _ := REST{}.Send(ctx, request.Request{URL: srv.URL})
+	if resp.Err != request.ErrCancelled {
+		t.Errorf("cancelled: Err = %q, want %q", resp.Err, request.ErrCancelled)
 	}
 
 	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Millisecond)
 	defer cancel()
-	resp, _ = REST{}.Send(ctx, model.Request{URL: srv.URL})
-	if resp.Err != model.ErrTimedOut {
-		t.Errorf("timeout: Err = %q, want %q", resp.Err, model.ErrTimedOut)
+	resp, _ = REST{}.Send(ctx, request.Request{URL: srv.URL})
+	if resp.Err != request.ErrTimedOut {
+		t.Errorf("timeout: Err = %q, want %q", resp.Err, request.ErrTimedOut)
 	}
 }
 
 func TestRESTAuthTypes(t *testing.T) {
 	tests := []struct {
 		name       string
-		auth       model.Auth
+		auth       request.Auth
 		path       string
 		wantHeader [2]string // name, value that must arrive ("" name: none)
 		wantQuery  string    // raw query that must arrive
 	}{
-		{"none", model.Auth{}, "/p", [2]string{}, ""},
-		{"explicit none", model.Auth{Type: model.AuthNone, Token: "ignored"}, "/p", [2]string{}, ""},
-		{"bearer", model.Auth{Type: model.AuthBearer, Token: "abc"}, "/p", [2]string{"Authorization", "Bearer abc"}, ""},
-		{"basic", model.Auth{Type: model.AuthBasic, User: "ann", Password: "pw:x"}, "/p", [2]string{"Authorization", "Basic " + base64.StdEncoding.EncodeToString([]byte("ann:pw:x"))}, ""},
-		{"api key header", model.Auth{Type: model.AuthAPIKey, KeyName: "X-Api-Key", KeyValue: "k1"}, "/p", [2]string{"X-Api-Key", "k1"}, ""},
-		{"api key header is the default place", model.Auth{Type: model.AuthAPIKey, KeyIn: model.KeyInHeader, KeyName: "X-Api-Key", KeyValue: "k1"}, "/p", [2]string{"X-Api-Key", "k1"}, ""},
-		{"api key in the query", model.Auth{Type: model.AuthAPIKey, KeyIn: model.KeyInQuery, KeyName: "key", KeyValue: "a b"}, "/p", [2]string{}, "key=a+b"},
-		{"api key keeps the existing query", model.Auth{Type: model.AuthAPIKey, KeyIn: model.KeyInQuery, KeyName: "key", KeyValue: "k"}, "/p?x=1", [2]string{}, "key=k&x=1"},
-		{"api key without a name adds nothing", model.Auth{Type: model.AuthAPIKey, KeyValue: "k"}, "/p", [2]string{}, ""},
+		{"none", request.Auth{}, "/p", [2]string{}, ""},
+		{"explicit none", request.Auth{Type: request.AuthNone, Token: "ignored"}, "/p", [2]string{}, ""},
+		{"bearer", request.Auth{Type: request.AuthBearer, Token: "abc"}, "/p", [2]string{"Authorization", "Bearer abc"}, ""},
+		{"basic", request.Auth{Type: request.AuthBasic, User: "ann", Password: "pw:x"}, "/p", [2]string{"Authorization", "Basic " + base64.StdEncoding.EncodeToString([]byte("ann:pw:x"))}, ""},
+		{"api key header", request.Auth{Type: request.AuthAPIKey, KeyName: "X-Api-Key", KeyValue: "k1"}, "/p", [2]string{"X-Api-Key", "k1"}, ""},
+		{"api key header is the default place", request.Auth{Type: request.AuthAPIKey, KeyIn: request.KeyInHeader, KeyName: "X-Api-Key", KeyValue: "k1"}, "/p", [2]string{"X-Api-Key", "k1"}, ""},
+		{"api key in the query", request.Auth{Type: request.AuthAPIKey, KeyIn: request.KeyInQuery, KeyName: "key", KeyValue: "a b"}, "/p", [2]string{}, "key=a+b"},
+		{"api key keeps the existing query", request.Auth{Type: request.AuthAPIKey, KeyIn: request.KeyInQuery, KeyName: "key", KeyValue: "k"}, "/p?x=1", [2]string{}, "key=k&x=1"},
+		{"api key without a name adds nothing", request.Auth{Type: request.AuthAPIKey, KeyValue: "k"}, "/p", [2]string{}, ""},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var gotHeader http.Header
 			var gotQuery string
-			srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-				gotHeader, gotQuery = request.Header.Clone(), request.URL.RawQuery
+			srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
+				gotHeader, gotQuery = call.Header.Clone(), call.URL.RawQuery
 			}))
 			defer srv.Close()
-			_, err := REST{}.Send(context.Background(), model.Request{URL: srv.URL + tt.path, Auth: tt.auth})
+			_, err := REST{}.Send(context.Background(), request.Request{URL: srv.URL + tt.path, Auth: tt.auth})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -341,12 +340,12 @@ func TestRESTAuthTypes(t *testing.T) {
 
 func TestAuthOverridesAManualAuthorizationHeader(t *testing.T) {
 	var got string
-	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) { got = request.Header.Get("Authorization") }))
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) { got = call.Header.Get("Authorization") }))
 	defer srv.Close()
-	REST{}.Send(context.Background(), model.Request{
+	REST{}.Send(context.Background(), request.Request{
 		URL:     srv.URL,
-		Headers: []model.KV{{Name: "Authorization", Value: "manual", Enabled: true}},
-		Auth:    model.Auth{Type: model.AuthBearer, Token: "t"},
+		Headers: []request.KV{{Name: "Authorization", Value: "manual", Enabled: true}},
+		Auth:    request.Auth{Type: request.AuthBearer, Token: "t"},
 	})
 	if got != "Bearer t" {
 		t.Fatalf("Authorization = %q: the Auth pane wins over a header typed by hand", got)
@@ -354,17 +353,17 @@ func TestAuthOverridesAManualAuthorizationHeader(t *testing.T) {
 }
 
 func TestUnknownAuthTypeIsAnError(t *testing.T) {
-	if _, err := (REST{}).Send(context.Background(), model.Request{URL: "http://x", Auth: model.Auth{Type: "kerberos"}}); err == nil {
+	if _, err := (REST{}).Send(context.Background(), request.Request{URL: "http://x", Auth: request.Auth{Type: "kerberos"}}); err == nil {
 		t.Fatal("want an error for an unknown auth type")
 	}
 }
 
 func TestConfiguredPassesTheNetworkSettingsToRESTAndTheSamplerToMCP(t *testing.T) {
 	jar, _ := cookiejar.New(nil)
-	sampler := func(context.Context, port.SamplingRequest) (port.SamplingResult, bool) {
-		return port.SamplingResult{}, false
+	sampler := func(context.Context, request.SamplingRequest) (request.SamplingResult, bool) {
+		return request.SamplingResult{}, false
 	}
-	registry := Configured(port.ProtocolConfig{Jar: jar, Proxy: "http://p", CACert: "ca", ClientCert: "cert", ClientKey: "key", Sampler: sampler})
+	registry := Configured(request.ProtocolConfig{Jar: jar, Proxy: "http://p", CACert: "ca", ClientCert: "cert", ClientKey: "key", Sampler: sampler})
 	rest, ok := registry["rest"].(REST)
 	if !ok || rest.Jar != jar || rest.Proxy != "http://p" || rest.CAFile != "ca" || rest.CertFile != "cert" || rest.KeyFile != "key" {
 		t.Fatalf("rest = %+v", registry["rest"])
@@ -372,7 +371,7 @@ func TestConfiguredPassesTheNetworkSettingsToRESTAndTheSamplerToMCP(t *testing.T
 	if mcp, ok := registry["mcp"].(MCP); !ok || mcp.Sampler == nil {
 		t.Fatalf("mcp = %+v", registry["mcp"])
 	}
-	for _, name := range []model.Protocol{"websocket", "sse", "grpc"} {
+	for _, name := range []request.Protocol{"websocket", "sse", "grpc"} {
 		if registry[name] == nil {
 			t.Errorf("%s is missing", name)
 		}

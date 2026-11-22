@@ -4,26 +4,25 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // listEvent is the event the MCP session emits for a JSON-RPC response to
 // a list request: the text of the message and the typed payload.
-func listEvent(text string) reqport.Event {
+func listEvent(text string) request.Event {
 	var message struct{ Result json.RawMessage }
 	_ = json.Unmarshal([]byte(text), &message) // the callers pass fixed, valid messages
-	event := reqport.Event{Dir: reqport.Received, Kind: reqport.KindResponse, Text: text}
+	event := request.Event{Dir: request.Received, Kind: request.KindResponse, Text: text}
 	switch {
 	case strings.Contains(text, `"tools":`):
-		tools, _ := model.DecodeTools(message.Result)
-		event.Payload = reqport.ToolsList{Tools: tools}
+		tools, _ := request.DecodeTools(message.Result)
+		event.Payload = request.ToolsList{Tools: tools}
 	case strings.Contains(text, `"resources":`):
-		resources, _ := model.DecodeResources(message.Result)
-		event.Payload = reqport.ResourcesList{Resources: resources}
+		resources, _ := request.DecodeResources(message.Result)
+		event.Payload = request.ResourcesList{Resources: resources}
 	case strings.Contains(text, `"prompts":`):
-		prompts, _ := model.DecodePrompts(message.Result)
-		event.Payload = reqport.PromptsList{Prompts: prompts}
+		prompts, _ := request.DecodePrompts(message.Result)
+		event.Payload = request.PromptsList{Prompts: prompts}
 	}
 	return event
 }

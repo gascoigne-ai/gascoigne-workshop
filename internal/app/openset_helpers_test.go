@@ -2,14 +2,14 @@ package app
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/collections"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // Most tests open one collection; these reach it the way the App did when
 // it held a single collection.
 
 // col is the first open collection.
-func (a *App) col() *model.Collection { return a.open.Entries[0].Collection }
+func (a *App) col() *request.Collection { return a.open.Entries[0].Collection }
 
 // workspace is the folder of the first open collection, "" when not saved.
 func (a *App) workspace() string { return a.open.Entries[0].Dir }

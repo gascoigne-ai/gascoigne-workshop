@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
@@ -14,8 +14,8 @@ type fakeHost struct{ submitted int }
 
 func (host *fakeHost) Submit() { host.submitted++ }
 
-func searchTool() model.MCPTool {
-	return model.MCPTool{Name: "search", Description: "Find things", Schema: schemaOf(`{"type":"object","required":["query"],"properties":{
+func searchTool() request.MCPTool {
+	return request.MCPTool{Name: "search", Description: "Find things", Schema: schemaOf(`{"type":"object","required":["query"],"properties":{
 	"query":{"type":"string","description":"What to find"},
 	"limit":{"type":"integer","default":10},
 	"safe":{"type":"boolean"},
@@ -23,8 +23,8 @@ func searchTool() model.MCPTool {
 }
 
 // schemaOf decodes the JSON text of a tool's input schema.
-func schemaOf(text string) model.JSONSchema {
-	schema, err := model.DecodeJSONSchema([]byte(text))
+func schemaOf(text string) request.JSONSchema {
+	schema, err := request.DecodeJSONSchema([]byte(text))
 	if err != nil {
 		panic(err)
 	}
@@ -42,7 +42,7 @@ func TestNewFillsDefaultsAndLeavesOptionalChoicesUnset(t *testing.T) {
 }
 
 func TestAToolWithoutPropertiesIsEmpty(t *testing.T) {
-	if !New(model.MCPTool{Name: "ping"}).Empty() || New(searchTool()).Empty() {
+	if !New(request.MCPTool{Name: "ping"}).Empty() || New(searchTool()).Empty() {
 		t.Fatal("Empty is wrong")
 	}
 }
@@ -102,7 +102,7 @@ func TestArgumentsAreTheJSONObjectOfTheEntries(t *testing.T) {
 // A tool whose inputSchema is no object (true, a string) opens an empty
 // form instead of failing, and its sibling keeps its fields.
 func TestAToolWithAMalformedSchemaHasAnEmptyForm(t *testing.T) {
-	tools, err := model.DecodeTools([]byte(`{"tools":[{"name":"odd","inputSchema":true},{"name":"also","inputSchema":"text"},{"name":"ok","inputSchema":{"type":"object","properties":{"q":{"type":"string"}}}}]}`))
+	tools, err := request.DecodeTools([]byte(`{"tools":[{"name":"odd","inputSchema":true},{"name":"also","inputSchema":"text"},{"name":"ok","inputSchema":{"type":"object","properties":{"q":{"type":"string"}}}}]}`))
 	if err != nil || len(tools) != 3 {
 		t.Fatalf("%+v, %v", tools, err)
 	}

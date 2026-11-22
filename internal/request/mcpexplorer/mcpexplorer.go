@@ -5,7 +5,7 @@ package mcpexplorer
 import (
 	"encoding/json"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // Kind is the list the explorer shows.
@@ -90,7 +90,7 @@ func reportsError(result string) bool {
 }
 
 // Entries are the lines of the list of kind.
-func Entries(kind Kind, tools []model.MCPTool, resources []model.MCPResource, prompts []model.MCPPrompt) []Entry {
+func Entries(kind Kind, tools []request.MCPTool, resources []request.MCPResource, prompts []request.MCPPrompt) []Entry {
 	var out []Entry
 	switch kind {
 	case Tools:

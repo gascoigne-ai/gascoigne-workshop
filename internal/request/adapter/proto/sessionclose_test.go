@@ -3,7 +3,7 @@ package proto
 import (
 	"context"
 	"encoding/json"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"strings"
 	"testing"
 	"time"
@@ -40,20 +40,20 @@ func waitsForRoom(emit func()) {
 // events plus Close on the UI thread hung the app.
 func TestClosingAnSSESessionWithAFullEventChannelDoesNotBlock(t *testing.T) {
 	s := &sseSession{eventLog: newTestLog(1), cancel: func() {}}
-	waitsForRoom(func() { s.emit(port.Event{}) })
+	waitsForRoom(func() { s.emit(request.Event{}) })
 	closesWithinASecond(t, func() { s.Close(context.Background()) })
 }
 
 func TestClosingAGRPCSessionWithAFullEventChannelDoesNotBlock(t *testing.T) {
 	s := &grpcSession{eventLog: newTestLog(1), cancel: func() {}}
-	waitsForRoom(func() { s.emit(port.Event{}) })
+	waitsForRoom(func() { s.emit(request.Event{}) })
 	closesWithinASecond(t, func() { s.Close(context.Background()) })
 }
 
 // newTestLog is an event log with a queue of size events.
 func newTestLog(size int) *eventLog {
 	log := newEventLog()
-	log.events = make(chan port.Event, size)
+	log.events = make(chan request.Event, size)
 	return log
 }
 
@@ -67,7 +67,7 @@ func (closedTransport) close(context.Context) error        { return nil }
 // while nobody read the events, so Close waited on that once forever.
 func TestClosingAnMCPSessionWhileItsEndNoteWaitsForRoomDoesNotBlock(t *testing.T) {
 	s := &mcpSession{eventLog: newTestLog(1), tr: closedTransport{}, waiters: map[int64]chan rpcAnswer{}}
-	s.events <- port.Event{} // the channel is full
+	s.events <- request.Event{} // the channel is full
 	go s.finish(context.DeadlineExceeded)
 	time.Sleep(50 * time.Millisecond)
 	closesWithinASecond(t, func() { s.Close(context.Background()) })
@@ -112,10 +112,10 @@ func TestAFailedReplyToTheServerIsLogged(t *testing.T) {
 	id := json.RawMessage(`7`)
 	s.answerServer(rpcMessage{ID: &id, Method: "ping"})
 	close(s.events)
-	var kinds []port.EventKind
+	var kinds []request.EventKind
 	for e := range s.events {
 		kinds = append(kinds, e.Kind)
-		if e.Dir == port.Info && e.Kind == port.KindError && strings.Contains(e.Text, "ping") {
+		if e.Dir == request.Info && e.Kind == request.KindError && strings.Contains(e.Text, "ping") {
 			return
 		}
 	}

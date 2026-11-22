@@ -7,7 +7,7 @@ package envs
 import (
 	"strconv"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // DefaultName names an environment created without a name.
@@ -22,7 +22,7 @@ type Selection struct{ Index int }
 func None() Selection { return Selection{Index: -1} }
 
 // Active is the selected environment, or nil.
-func (sel Selection) Active(col *model.Collection) *model.Environment {
+func (sel Selection) Active(col *request.Collection) *request.Environment {
 	if sel.Index < 0 || sel.Index >= len(col.Envs) {
 		return nil
 	}
@@ -30,7 +30,7 @@ func (sel Selection) Active(col *model.Collection) *model.Environment {
 }
 
 // Name is the name of the selected environment, "" for none.
-func (sel Selection) Name(col *model.Collection) string {
+func (sel Selection) Name(col *request.Collection) string {
 	if env := sel.Active(col); env != nil {
 		return env.Name
 	}
@@ -39,7 +39,7 @@ func (sel Selection) Name(col *model.Collection) string {
 
 // Select makes environment i the active one, none when i is out of range,
 // and returns the name to remember.
-func (sel *Selection) Select(col *model.Collection, index int) string {
+func (sel *Selection) Select(col *request.Collection, index int) string {
 	if index < 0 || index >= len(col.Envs) {
 		index = -1
 	}
@@ -48,7 +48,7 @@ func (sel *Selection) Select(col *model.Collection, index int) string {
 }
 
 // Pick selects the environment called name, none when there is no such one.
-func (sel *Selection) Pick(col *model.Collection, name string) {
+func (sel *Selection) Pick(col *request.Collection, name string) {
 	sel.Index = -1
 	for i, env := range col.Envs {
 		if env.Name == name {
@@ -59,7 +59,7 @@ func (sel *Selection) Pick(col *model.Collection, name string) {
 
 // UniqueName is base, or base with " 2", " 3"... when another environment
 // than the one at except already has it.
-func UniqueName(envs []model.Environment, base string, except int) string {
+func UniqueName(envs []request.Environment, base string, except int) string {
 	name := base
 	for n := 2; taken(envs, name, except); n++ {
 		name = base + " " + strconv.Itoa(n)
@@ -67,7 +67,7 @@ func UniqueName(envs []model.Environment, base string, except int) string {
 	return name
 }
 
-func taken(envs []model.Environment, name string, except int) bool {
+func taken(envs []request.Environment, name string, except int) bool {
 	for i, env := range envs {
 		if i != except && env.Name == name {
 			return true
@@ -77,17 +77,17 @@ func taken(envs []model.Environment, name string, except int) bool {
 }
 
 // Add creates an environment, selects it and returns the name to remember.
-func (sel *Selection) Add(col *model.Collection, name string) string {
+func (sel *Selection) Add(col *request.Collection, name string) string {
 	if name == "" {
 		name = DefaultName
 	}
-	col.Envs = append(col.Envs, model.Environment{Name: UniqueName(col.Envs, name, -1)})
+	col.Envs = append(col.Envs, request.Environment{Name: UniqueName(col.Envs, name, -1)})
 	return sel.Select(col, len(col.Envs)-1)
 }
 
 // Rename gives environment i a unique name based on name and reports it;
 // changed is false for an empty name or an unknown environment.
-func (sel Selection) Rename(col *model.Collection, index int, name string) (renamed string, changed bool) {
+func (sel Selection) Rename(col *request.Collection, index int, name string) (renamed string, changed bool) {
 	if index < 0 || index >= len(col.Envs) || name == "" {
 		return "", false
 	}
@@ -98,7 +98,7 @@ func (sel Selection) Rename(col *model.Collection, index int, name string) (rena
 // Delete removes environment i and keeps the selection on the same
 // environment, or on none when it was the one removed. selectionMoved
 // reports that the remembered name has to be updated.
-func (sel *Selection) Delete(col *model.Collection, index int) (selectionMoved bool) {
+func (sel *Selection) Delete(col *request.Collection, index int) (selectionMoved bool) {
 	if index < 0 || index >= len(col.Envs) {
 		return false
 	}

@@ -54,7 +54,7 @@ collection is known by its folder. `App.open` is a `collections.Set`
 
 ### Import and export
 
-All importers are pure `collection/model` packages; the App only picks the file and adds the result.
+All importers are pure leaf packages of `collection`; the App only picks the file and adds the result.
 
 - **OpenAPI 3** (`openapi`, JSON or YAML): a subfolder per first tag, a request per operation,
   `{id}` becomes `{{id}}`, bodies from the example or a schema skeleton. What cannot be read is

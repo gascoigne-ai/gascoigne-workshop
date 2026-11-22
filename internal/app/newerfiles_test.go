@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/state"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -47,7 +47,7 @@ func TestNewerSettingsAreNotWrittenThisSession(t *testing.T) {
 	a.persistSettings()                                                      // the Save button
 	_ = a.SettingsStore().WriteText(path, []byte(`{"version": 1}`))          // the raw editor
 	other := t.TempDir()
-	if err := storeDisk.Save(other, model.Collection{Folder: model.Folder{Name: "Other"}}); err != nil {
+	if err := storeDisk.Save(other, request.Collection{Folder: request.Folder{Name: "Other"}}); err != nil {
 		t.Fatal(err)
 	}
 	a.openCollectionAt(other) // remembers the open collections in the settings
@@ -84,7 +84,7 @@ func TestNewerStateIsNotWrittenThisSession(t *testing.T) {
 
 func TestNewerCollectionIsNotOpened(t *testing.T) {
 	dir := t.TempDir()
-	if err := storeDisk.Save(dir, model.Collection{Folder: model.Folder{Name: "Newer", Requests: []*model.Request{{Name: "A", Protocol: model.ProtocolREST, URL: "http://x.test"}}}}); err != nil {
+	if err := storeDisk.Save(dir, request.Collection{Folder: request.Folder{Name: "Newer", Requests: []*request.Request{{Name: "A", Protocol: request.ProtocolREST, URL: "http://x.test"}}}}); err != nil {
 		t.Fatal(err)
 	}
 	folderFile := filepath.Join(dir, "folder.json")
@@ -110,7 +110,7 @@ func TestNewerCollectionIsNotOpened(t *testing.T) {
 // opened, a toast says why, and it stays remembered.
 func TestNewerRememberedCollectionIsToastedAtStart(t *testing.T) {
 	dir := t.TempDir()
-	if err := storeDisk.Save(dir, model.Collection{Folder: model.Folder{Name: "Newer"}}); err != nil {
+	if err := storeDisk.Save(dir, request.Collection{Folder: request.Folder{Name: "Newer"}}); err != nil {
 		t.Fatal(err)
 	}
 	newer := `{"version": 2, "name": "Newer"}`

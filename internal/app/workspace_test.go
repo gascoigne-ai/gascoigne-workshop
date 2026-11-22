@@ -10,14 +10,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 func TestStartsFromTheWorkspaceFolder(t *testing.T) {
 	dir := t.TempDir()
-	c := model.Collection{Folder: model.Folder{Name: "Mine", Requests: []*model.Request{{Name: "One", Protocol: "rest", Method: "GET", URL: "u"}}}}
+	c := request.Collection{Folder: request.Folder{Name: "Mine", Requests: []*request.Request{{Name: "One", Protocol: "rest", Method: "GET", URL: "u"}}}}
 	if err := storeDisk.Save(dir, c); err != nil {
 		t.Fatal(err)
 	}
@@ -116,7 +116,7 @@ func TestTheFirstSaveMakesTheCollectionAFolderAndRemembersIt(t *testing.T) {
 
 func TestRemembersTheLastWorkspace(t *testing.T) {
 	dir := t.TempDir()
-	if err := storeDisk.Save(dir, model.Collection{Folder: model.Folder{Name: "Last", Requests: []*model.Request{{Name: "R", Protocol: "rest", Method: "GET"}}}}); err != nil {
+	if err := storeDisk.Save(dir, request.Collection{Folder: request.Folder{Name: "Last", Requests: []*request.Request{{Name: "R", Protocol: "rest", Method: "GET"}}}}); err != nil {
 		t.Fatal(err)
 	}
 	sp := filepath.Join(t.TempDir(), "settings.json")
@@ -142,7 +142,7 @@ func TestImportCurlAddsARequestFromTheClipboard(t *testing.T) {
 	if r.Name != "POST /v1/users" || r.Method != "POST" || r.Body != `{"a":1}` {
 		t.Fatalf("%+v", r)
 	}
-	if _, ok := a.col().Folder.Parent(model.Of(r)); !ok {
+	if _, ok := a.col().Folder.Parent(request.Of(r)); !ok {
 		t.Fatal("request not in the collection")
 	}
 	n := len(a.list.Tabs)
@@ -171,7 +171,7 @@ func TestFlushWorkspaceSavesPendingEditsAtExit(t *testing.T) {
 
 func TestOpenWorkspaceAtSwitchesCollectionsAndSavesTheOldOne(t *testing.T) {
 	first, second := t.TempDir(), t.TempDir()
-	if err := storeDisk.Save(second, model.Collection{Folder: model.Folder{Name: "Second", Requests: []*model.Request{{Name: "Two", Protocol: "rest", Method: "GET", URL: "u2"}}}}); err != nil {
+	if err := storeDisk.Save(second, request.Collection{Folder: request.Folder{Name: "Second", Requests: []*request.Request{{Name: "Two", Protocol: "rest", Method: "GET", URL: "u2"}}}}); err != nil {
 		t.Fatal(err)
 	}
 	a := testApp(t, untouchedSettings(), inWorkspace(first), withOptions(Options{}))
@@ -212,7 +212,7 @@ func TestImportOpenAPIAddsAFolderOfRequestsAndTheBaseURL(t *testing.T) {
 	if len(a.col().Folders) != before+1 {
 		t.Fatalf("folders %d, want %d", len(a.col().Folders), before+1)
 	}
-	if !model.Defined("baseUrl", a.col().Vars) {
+	if !request.Defined("baseUrl", a.col().Vars) {
 		t.Fatal("baseUrl not defined")
 	}
 	if a.cur().Req.URL == "" || !strings.HasPrefix(a.cur().Req.URL, "{{baseUrl}}") {
@@ -232,7 +232,7 @@ func TestImportPostmanAddsAFolderAndItsVariables(t *testing.T) {
 		t.Fatal(err)
 	}
 	a := testApp(t)
-	a.col().Vars = []model.KV{{Name: "baseUrl", Value: "mine", Enabled: true}}
+	a.col().Vars = []request.KV{{Name: "baseUrl", Value: "mine", Enabled: true}}
 	a.ctx.Clipboard = &fakeClip{text: string(data)}
 	before := len(a.col().Folders)
 	a.importPostman(&a.col().Folder)
@@ -287,13 +287,13 @@ func TestExportPostmanWritesACollectionFileThatImportsBack(t *testing.T) {
 func TestStartOpensTheRememberedWorkspaceUnlessAFolderIsGiven(t *testing.T) {
 	remembered, flagged := t.TempDir(), t.TempDir()
 	for dir, name := range map[string]string{remembered: "Last", flagged: "Asked"} {
-		c := model.Collection{Folder: model.Folder{Name: name, Requests: []*model.Request{{Name: "R", Protocol: "rest", Method: "GET"}}}}
+		c := request.Collection{Folder: request.Folder{Name: name, Requests: []*request.Request{{Name: "R", Protocol: "rest", Method: "GET"}}}}
 		if err := storeDisk.Save(dir, c); err != nil {
 			t.Fatal(err)
 		}
 	}
-	sample := func() model.Collection {
-		return model.Collection{Folder: model.Folder{Name: "Sample", Requests: []*model.Request{{Name: "S", Protocol: "rest", Method: "GET"}}}}
+	sample := func() request.Collection {
+		return request.Collection{Folder: request.Folder{Name: "Sample", Requests: []*request.Request{{Name: "S", Protocol: "rest", Method: "GET"}}}}
 	}
 	sp := filepath.Join(t.TempDir(), "settings.json")
 	s := settings.Default()

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/collections"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/statefile"
@@ -22,14 +22,14 @@ import (
 func savedCollection(t *testing.T, name string) string {
 	t.Helper()
 	dir := t.TempDir()
-	col := model.Collection{
-		Folder: model.Folder{
+	col := request.Collection{
+		Folder: request.Folder{
 			Name:     name,
-			Requests: []*model.Request{{Name: name + " call", Protocol: "rest", Method: "GET", URL: "http://{{host}}/" + name}},
-			Folders:  []*model.Folder{{Name: "Nested", Requests: []*model.Request{{Name: "Inner", Protocol: "rest", Method: "GET"}}}},
+			Requests: []*request.Request{{Name: name + " call", Protocol: "rest", Method: "GET", URL: "http://{{host}}/" + name}},
+			Folders:  []*request.Folder{{Name: "Nested", Requests: []*request.Request{{Name: "Inner", Protocol: "rest", Method: "GET"}}}},
 		},
-		Vars: []model.KV{{Name: "only" + name, Value: name, Enabled: true}},
-		Envs: []model.Environment{{Name: "Dev", Vars: []model.KV{{Name: "host", Value: name + ".dev", Enabled: true}}}},
+		Vars: []request.KV{{Name: "only" + name, Value: name, Enabled: true}},
+		Envs: []request.Environment{{Name: "Dev", Vars: []request.KV{{Name: "host", Value: name + ".dev", Enabled: true}}}},
 	}
 	if err := storeDisk.Save(dir, col); err != nil {
 		t.Fatal(err)
@@ -132,7 +132,7 @@ func TestTreeEditsChangeTheCollectionThatHoldsTheNode(t *testing.T) {
 	if len(beta.Folders[0].Requests) != 2 || len(alpha.Folders[0].Requests) != 1 {
 		t.Fatalf("Beta's folder has %d requests, Alpha's %d", len(beta.Folders[0].Requests), len(alpha.Folders[0].Requests))
 	}
-	a.duplicateNode(model.Of(alpha.Requests[0]))
+	a.duplicateNode(request.Of(alpha.Requests[0]))
 	if len(alpha.Requests) != 2 || len(beta.Requests) != 1 {
 		t.Fatalf("Alpha has %d requests, Beta %d", len(alpha.Requests), len(beta.Requests))
 	}
@@ -151,10 +151,10 @@ func TestVariablesAndEnvironmentsStayInTheirCollection(t *testing.T) {
 	if env := entryNamed(t, a, "Alpha").Environment(); env != nil {
 		t.Fatalf("Alpha's environment changed to %+v", env)
 	}
-	if got := model.Expand(beta.Requests[0].URL+" {{onlyBeta}} {{onlyAlpha}}", a.varsFor(beta.Requests[0])); got != "http://Beta.dev/Beta Beta {{onlyAlpha}}" {
+	if got := request.Expand(beta.Requests[0].URL+" {{onlyBeta}} {{onlyAlpha}}", a.varsFor(beta.Requests[0])); got != "http://Beta.dev/Beta Beta {{onlyAlpha}}" {
 		t.Fatalf("Beta resolves to %q", got)
 	}
-	if got := model.Expand(alpha.Requests[0].URL+" {{onlyBeta}}", a.varsFor(alpha.Requests[0])); got != "http://{{host}}/Alpha {{onlyBeta}}" {
+	if got := request.Expand(alpha.Requests[0].URL+" {{onlyBeta}}", a.varsFor(alpha.Requests[0])); got != "http://{{host}}/Alpha {{onlyBeta}}" {
 		t.Fatalf("Alpha resolves to %q", got)
 	}
 }
@@ -163,7 +163,7 @@ func TestACapturedValueGoesToTheCollectionOfItsRequest(t *testing.T) {
 	a, _, _ := twoCollectionsApp(t)
 	alpha, beta := entryNamed(t, a, "Alpha").Collection, entryNamed(t, a, "Beta").Collection
 	a.setVariable(alpha.Requests[0], "token", "abc") // Beta's tab is the active one
-	if !model.Defined("token", alpha.Vars) || model.Defined("token", beta.Vars) {
+	if !request.Defined("token", alpha.Vars) || request.Defined("token", beta.Vars) {
 		t.Fatalf("Alpha %+v, Beta %+v", alpha.Vars, beta.Vars)
 	}
 }
@@ -191,7 +191,7 @@ func TestClosingACollectionClosesItsTabsAndTheLastLeavesAnEmptyTree(t *testing.T
 		t.Fatalf("open %+v", a.open.Entries)
 	}
 	for _, tab := range a.list.Tabs {
-		if beta.Folder.Contains(model.Of(tab.Req)) {
+		if beta.Folder.Contains(request.Of(tab.Req)) {
 			t.Fatalf("Beta's tab %q is still open", tab.Req.Name)
 		}
 	}
@@ -320,7 +320,7 @@ func TestTabsAndRootRowsShowTheColorOfTheirCollection(t *testing.T) {
 		if !a.isRoot(row.Dir) {
 			continue
 		}
-		owner, _ := a.open.Owner(model.Of(row.Dir))
+		owner, _ := a.open.Owner(request.Of(row.Dir))
 		if got := a.treeItemOf(row).Stripe; got == "" || (owner.Collection == beta.Collection) == (got == theme.CollectionToken(0)) {
 			t.Fatalf("root row of %s has stripe %q", owner.Collection.Name, got)
 		}
@@ -334,11 +334,11 @@ func TestSwitchingTabsSelectsAndRevealsTheRequestInTheTree(t *testing.T) {
 	alpha := entryNamed(t, a, "Alpha")
 	req := alpha.Collection.Folder.Requests[0]
 	a.openRequest(req)
-	a.selected = model.Node{}
+	a.selected = request.Node{}
 	a.expanded[&alpha.Collection.Folder] = false
 	a.updateTabs(tabs.Activate{Index: tabIndex(t, a, entryNamed(t, a, "Beta").Collection.Folder.Requests[0])})
 	a.updateTabs(tabs.Activate{Index: tabIndex(t, a, req)})
-	if a.selected != model.Of(req) {
+	if a.selected != request.Of(req) {
 		t.Fatalf("selected = %v, want the request of the active tab", a.selected)
 	}
 	if !a.expanded[&alpha.Collection.Folder] {

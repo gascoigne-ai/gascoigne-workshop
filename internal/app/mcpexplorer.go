@@ -9,9 +9,8 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	"time"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/mcpexplorer"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/ui/mcpform"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/bus"
@@ -40,7 +39,7 @@ func (a *App) exploreOpen(tab *reqTab, index int) {
 		tab.form = mcpform.New(tab.Tools[index])
 	case mcpexplorer.Prompts:
 		prompt := tab.Prompts[index]
-		tab.form = mcpform.New(model.MCPTool{Name: prompt.Name, Schema: prompt.Schema()})
+		tab.form = mcpform.New(request.MCPTool{Name: prompt.Name, Schema: prompt.Schema()})
 	}
 }
 
@@ -63,7 +62,7 @@ func exploreCommand(tab *reqTab) (string, error) {
 
 // exploreCall sends the open entry and shows the answer when it comes.
 func (a *App) exploreCall(tab *reqTab) {
-	requester, ok := tab.Session().(reqport.Requester)
+	requester, ok := tab.Session().(request.Requester)
 	if !ok || tab.explorer.Selected == mcpexplorer.None || tab.explorer.IsCalling() {
 		return
 	}

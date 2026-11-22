@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/collections"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
@@ -30,7 +30,7 @@ func (a *App) collectionMenu() []MenuItem { return a.collectionMenuOf(a.focusCol
 
 // collectionMenuOf is the collection menu acting on col; with nothing open
 // (col nil) only New and Open act.
-func (a *App) collectionMenuOf(col *model.Collection) []MenuItem {
+func (a *App) collectionMenuOf(col *request.Collection) []MenuItem {
 	none := col == nil
 	return []MenuItem{
 		{Label: "New collection...", Run: a.promptNewCollection},
@@ -70,14 +70,14 @@ func (a *App) createCollection(text string) {
 }
 
 // promptRenameCollection asks for the new name of col.
-func (a *App) promptRenameCollection(col *model.Collection) {
+func (a *App) promptRenameCollection(col *request.Collection) {
 	if !a.onDisk(col, "rename") {
 		return
 	}
 	a.prompt("Rename collection", col.Name, "Rename", func(text string) { a.renameCollection(col, text) })
 }
 
-func (a *App) renameCollection(col *model.Collection, text string) {
+func (a *App) renameCollection(col *request.Collection, text string) {
 	name, err := collections.CleanName(text)
 	if err != nil {
 		a.toast("Cannot rename: "+err.Error(), severity.Error)
@@ -105,7 +105,7 @@ func (a *App) renameCollection(col *model.Collection, text string) {
 }
 
 // confirmDeleteCollection asks, then deletes col.
-func (a *App) confirmDeleteCollection(col *model.Collection) {
+func (a *App) confirmDeleteCollection(col *request.Collection) {
 	if !a.onDisk(col, "delete") {
 		return
 	}
@@ -116,7 +116,7 @@ func (a *App) confirmDeleteCollection(col *model.Collection) {
 // deleteCollection removes col from the disk and from the window. When it
 // was the only one open, the next collection of the collections folder
 // opens, or a new empty one when none is left.
-func (a *App) deleteCollection(col *model.Collection) {
+func (a *App) deleteCollection(col *request.Collection) {
 	a.commitEdit()
 	a.waitWrites() // a write still in flight would make the folder again
 	entry, ok := a.open.ByCollection(col)
@@ -150,7 +150,7 @@ func (a *App) deleteCollection(col *model.Collection) {
 
 // onDisk is true when col has a folder; otherwise it tells the user to
 // save first, since there is nothing to rename or delete.
-func (a *App) onDisk(col *model.Collection, verb string) bool {
+func (a *App) onDisk(col *request.Collection, verb string) bool {
 	if entry, ok := a.open.ByCollection(col); ok && entry.Dir != "" {
 		return true
 	}

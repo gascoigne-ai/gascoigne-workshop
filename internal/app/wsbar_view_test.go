@@ -7,8 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
@@ -58,7 +57,7 @@ func TestTheToolbarPingSendsAPing(t *testing.T) {
 func TestTheToolbarClearEmptiesTheLog(t *testing.T) {
 	a, _ := openConnectedEcho(t)
 	tab := a.cur()
-	a.logEvent(tab, reqport.Event{Time: time.Date(2026, 11, 14, 10, 30, 0, 0, time.UTC), Dir: reqport.Received, Kind: reqport.KindText, Text: "hi"})
+	a.logEvent(tab, request.Event{Time: time.Date(2026, 11, 14, 10, 30, 0, 0, time.UTC), Dir: request.Received, Kind: request.KindText, Text: "hi"})
 	if len(tab.wsView.Lines) == 0 {
 		t.Fatal("the log is empty before Clear")
 	}
@@ -98,9 +97,9 @@ func TestTheToolbarPickersOpenTheServersMenus(t *testing.T) {
 			a, _ := openConnectedEcho(t)
 			tab := a.cur()
 			tab.Req.Protocol = "mcp"
-			tab.Tools = []model.MCPTool{{Name: "search"}, {Name: "fetch"}}
-			tab.Resources = []model.MCPResource{{URI: "file:///a.txt"}}
-			tab.Prompts = []model.MCPPrompt{{Name: "review"}}
+			tab.Tools = []request.MCPTool{{Name: "search"}, {Name: "fetch"}}
+			tab.Resources = []request.MCPResource{{URI: "file:///a.txt"}}
+			tab.Prompts = []request.MCPPrompt{{Name: "review"}}
 			a.step(core.Input{})
 			clickText(t, a, "JSON-RPC", 0)
 			clickText(t, a, tc.label, 0)

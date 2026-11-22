@@ -17,7 +17,7 @@ import (
 	"github.com/BurntSushi/toml"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/miniyaml"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // ServersName is the name of the folder that holds one request per
@@ -27,16 +27,16 @@ const ServersName = "Servers"
 // Config is what one config file, or a merge of several, defines.
 type Config struct {
 	Servers     []Server
-	Collections []*model.Collection
+	Collections []*request.Collection
 }
 
 // Server is a named connection: the request that reaches it needs only a
 // protocol, a URL and credentials.
 type Server struct {
 	Name     string
-	Protocol model.Protocol
+	Protocol request.Protocol
 	URL      string
-	Auth     model.Auth
+	Auth     request.Auth
 }
 
 // format is how one file extension is read into JSON, the one shape the
@@ -124,8 +124,8 @@ func (config Config) Empty() bool {
 // every configured collection becomes a folder (its variables on the
 // folder), followed by a "Servers" folder with a request per server. The
 // environments of all collections are gathered on the root.
-func (config Config) Collection() model.Collection {
-	root := model.Collection{Folder: model.Folder{Name: RootName}}
+func (config Config) Collection() request.Collection {
+	root := request.Collection{Folder: request.Folder{Name: RootName}}
 	for _, collection := range config.Collections {
 		folder := collection.Folder
 		folder.Vars = collection.Vars
@@ -135,9 +135,9 @@ func (config Config) Collection() model.Collection {
 	if len(config.Servers) == 0 {
 		return root
 	}
-	servers := &model.Folder{Name: ServersName}
+	servers := &request.Folder{Name: ServersName}
 	for _, server := range config.Servers {
-		servers.Requests = append(servers.Requests, &model.Request{
+		servers.Requests = append(servers.Requests, &request.Request{
 			Name: server.Name, Protocol: server.Protocol, URL: server.URL, Auth: server.Auth,
 		})
 	}
@@ -203,7 +203,7 @@ func (schema fileConfig) config() (Config, error) {
 		if server.Name == "" || server.Protocol == "" || server.URL == "" {
 			return Config{}, fmt.Errorf("server %q needs a name, a protocol and a url", server.Name)
 		}
-		protocol, err := model.ParseProtocol(server.Protocol)
+		protocol, err := request.ParseProtocol(server.Protocol)
 		if err != nil {
 			return Config{}, fmt.Errorf("server %q: %w", server.Name, err)
 		}
@@ -223,43 +223,43 @@ func (schema fileConfig) config() (Config, error) {
 	return config, nil
 }
 
-func (auth *fileAuth) model() (model.Auth, error) {
+func (auth *fileAuth) model() (request.Auth, error) {
 	if auth == nil {
-		return model.Auth{}, nil
+		return request.Auth{}, nil
 	}
-	authType, err := model.ParseAuthType(auth.Type)
+	authType, err := request.ParseAuthType(auth.Type)
 	if err != nil {
-		return model.Auth{}, err
+		return request.Auth{}, err
 	}
-	keyIn, err := model.ParseKeyIn(auth.KeyIn)
+	keyIn, err := request.ParseKeyIn(auth.KeyIn)
 	if err != nil {
-		return model.Auth{}, err
+		return request.Auth{}, err
 	}
-	return model.Auth{
+	return request.Auth{
 		Type: authType, Token: auth.Token, User: auth.User, Password: auth.Password,
 		KeyName: auth.KeyName, KeyValue: auth.KeyValue, KeyIn: keyIn,
 	}, nil
 }
 
-func (collection fileCollection) model() (*model.Collection, error) {
+func (collection fileCollection) model() (*request.Collection, error) {
 	folder, err := collection.fileFolder.model()
 	if err != nil {
 		return nil, err
 	}
-	built := &model.Collection{Vars: folder.Vars}
+	built := &request.Collection{Vars: folder.Vars}
 	folder.Vars = nil // a collection keeps its variables on itself, not on its root folder
 	built.Folder = *folder
 	for _, env := range collection.Envs {
-		built.Envs = append(built.Envs, model.Environment{Name: env.Name, Vars: rows(env.Vars)})
+		built.Envs = append(built.Envs, request.Environment{Name: env.Name, Vars: rows(env.Vars)})
 	}
 	return built, nil
 }
 
-func (folder fileFolder) model() (*model.Folder, error) {
+func (folder fileFolder) model() (*request.Folder, error) {
 	if folder.Name == "" {
 		return nil, fmt.Errorf("a collection or folder needs a name")
 	}
-	built := &model.Folder{Name: folder.Name, Vars: rows(folder.Vars)}
+	built := &request.Folder{Name: folder.Name, Vars: rows(folder.Vars)}
 	for _, child := range folder.Folders {
 		childBuilt, err := child.model()
 		if err != nil {
@@ -267,49 +267,49 @@ func (folder fileFolder) model() (*model.Folder, error) {
 		}
 		built.Folders = append(built.Folders, childBuilt)
 	}
-	for _, request := range folder.Requests {
-		if request.Name == "" {
+	for _, call := range folder.Requests {
+		if call.Name == "" {
 			return nil, fmt.Errorf("folder %q: a request needs a name", folder.Name)
 		}
-		builtRequest, err := request.model()
+		builtRequest, err := call.model()
 		if err != nil {
-			return nil, fmt.Errorf("folder %q: request %q: %w", folder.Name, request.Name, err)
+			return nil, fmt.Errorf("folder %q: request %q: %w", folder.Name, call.Name, err)
 		}
 		built.Requests = append(built.Requests, builtRequest)
 	}
 	return built, nil
 }
 
-func (request fileRequest) model() (*model.Request, error) {
-	protocol, err := model.ParseProtocol(request.Protocol)
+func (call fileRequest) model() (*request.Request, error) {
+	protocol, err := request.ParseProtocol(call.Protocol)
 	if err != nil {
 		return nil, err
 	}
-	bodyType, err := model.ParseBodyType(request.BodyType)
+	bodyType, err := request.ParseBodyType(call.BodyType)
 	if err != nil {
 		return nil, err
 	}
-	auth, err := request.Auth.model()
+	auth, err := call.Auth.model()
 	if err != nil {
 		return nil, err
 	}
-	return &model.Request{
-		Name: request.Name, Protocol: protocol, Method: request.Method, URL: request.URL,
-		Params: rows(request.Params), Headers: rows(request.Headers),
-		Body: request.Body, BodyType: bodyType, TimeoutSec: request.Timeout, Auth: auth,
+	return &request.Request{
+		Name: call.Name, Protocol: protocol, Method: call.Method, URL: call.URL,
+		Params: rows(call.Params), Headers: rows(call.Headers),
+		Body: call.Body, BodyType: bodyType, TimeoutSec: call.Timeout, Auth: auth,
 	}, nil
 }
 
 // rows turns a name-to-value map into enabled rows sorted by name, so the
 // result does not depend on map order.
-func rows(values map[string]string) []model.KV {
+func rows(values map[string]string) []request.KV {
 	if len(values) == 0 {
 		return nil
 	}
 	names := slices.Sorted(maps.Keys(values))
-	kvs := make([]model.KV, len(names))
+	kvs := make([]request.KV, len(names))
 	for i, name := range names {
-		kvs[i] = model.KV{Name: name, Value: values[name], Enabled: true}
+		kvs[i] = request.KV{Name: name, Value: values[name], Enabled: true}
 	}
 	return kvs
 }
@@ -319,7 +319,7 @@ func rows(values map[string]string) []model.KV {
 func Merge(base, override Config) Config {
 	return Config{
 		Servers:     mergeByName(base.Servers, override.Servers, func(server Server) string { return server.Name }),
-		Collections: mergeByName(base.Collections, override.Collections, func(collection *model.Collection) string { return collection.Name }),
+		Collections: mergeByName(base.Collections, override.Collections, func(collection *request.Collection) string { return collection.Name }),
 	}
 }
 

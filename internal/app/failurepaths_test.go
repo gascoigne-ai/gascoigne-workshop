@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/folders"
@@ -74,7 +74,7 @@ func TestEveryFailurePathIsShownToTheUser(t *testing.T) {
 		{"a response body cannot be written", func(t *testing.T, app *App) {
 			app.folders = folders.Disk{} // the real disk, so the blocked folder is what fails
 			tab := app.cur()
-			tab.Resp = &model.Response{Status: 200, Body: []byte("x")}
+			tab.Resp = &request.Response{Status: 200, Body: []byte("x")}
 			app.writeBody(tab, blockedDir(t))
 		}, "Saving failed", ""},
 		{"there is no response to save", func(t *testing.T, app *App) {

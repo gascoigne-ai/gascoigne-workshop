@@ -17,7 +17,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/tree"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // Mode is what happens to the node at its old place.
@@ -36,11 +36,11 @@ const (
 // environment of To, nil for none; it only decides which variables count as
 // missing.
 type Transfer struct {
-	Node, Before model.Node
-	From, To     *model.Collection
-	Into         *model.Folder
+	Node, Before request.Node
+	From, To     *request.Collection
+	Into         *request.Folder
 	Mode         Mode
-	ToEnv        *model.Environment
+	ToEnv        *request.Environment
 }
 
 // Outcome is what Apply did. Node is the node now in To: the moved one with
@@ -49,7 +49,7 @@ type Transfer struct {
 // are not defined at its new place, in first-use order; variables are never
 // rewritten. Err is set when the transfer was refused; nothing changed then.
 type Outcome struct {
-	Node    model.Node
+	Node    request.Node
 	Name    string
 	Renamed bool
 	Missing []string
@@ -79,30 +79,30 @@ func validate(transfer Transfer) error {
 	from, to, node := transfer.From, transfer.To, transfer.Node
 	switch {
 	case from == nil || to == nil || node.None() || transfer.Into == nil:
-		return model.ErrNotInTree
+		return request.ErrNotInTree
 	case node.Dir == &from.Folder:
-		return model.ErrRootMove
-	case !from.Contains(node) || !to.Contains(model.Node{Dir: transfer.Into}):
-		return model.ErrNotInTree
-	case node.Dir != nil && node.Dir.Contains(model.Node{Dir: transfer.Into}):
-		return model.ErrIntoItself
+		return request.ErrRootMove
+	case !from.Contains(node) || !to.Contains(request.Node{Dir: transfer.Into}):
+		return request.ErrNotInTree
+	case node.Dir != nil && node.Dir.Contains(request.Node{Dir: transfer.Into}):
+		return request.ErrIntoItself
 	}
 	return nil
 }
 
-func outcome(transfer Transfer, node model.Node, renamed bool) Outcome {
+func outcome(transfer Transfer, node request.Node, renamed bool) Outcome {
 	return Outcome{Node: node, Name: node.Name(), Renamed: renamed, Missing: missing(transfer, node)}
 }
 
 // missing is evaluated after the node sits in its new place, because the
 // variables a request sees depend on the folders above it.
-func missing(transfer Transfer, node model.Node) []string {
+func missing(transfer Transfer, node request.Node) []string {
 	var out []string
 	seen := map[string]bool{}
 	for _, req := range requestsOf(node) {
 		vars := transfer.To.VarsFor(req, transfer.ToEnv)
-		for _, name := range model.UsedVars(req) {
-			if !seen[name] && !model.Defined(name, vars) {
+		for _, name := range request.UsedVars(req) {
+			if !seen[name] && !request.Defined(name, vars) {
 				seen[name] = true
 				out = append(out, name)
 			}
@@ -113,13 +113,13 @@ func missing(transfer Transfer, node model.Node) []string {
 
 // requestsOf lists the requests of node in tree order: a folder's own
 // requests first, then those of its subfolders.
-func requestsOf(node model.Node) []*model.Request {
+func requestsOf(node request.Node) []*request.Request {
 	if node.Req != nil {
-		return []*model.Request{node.Req}
+		return []*request.Request{node.Req}
 	}
-	out := append([]*model.Request(nil), node.Dir.Requests...)
+	out := append([]*request.Request(nil), node.Dir.Requests...)
 	for _, sub := range node.Dir.Folders {
-		out = append(out, requestsOf(model.Node{Dir: sub})...)
+		out = append(out, requestsOf(request.Node{Dir: sub})...)
 	}
 	return out
 }
@@ -127,7 +127,7 @@ func requestsOf(node model.Node) []*model.Request {
 // Drop is the Transfer of dropping node, of from, on target, a node of to:
 // the place comes from the target's own collection. ToEnv is left for the
 // caller to set.
-func Drop(from, to *model.Collection, node, target model.Node, mode Mode) Transfer {
+func Drop(from, to *request.Collection, node, target request.Node, mode Mode) Transfer {
 	into, before := tree.DropPlace(&to.Folder, node, target)
 	return Transfer{Node: node, From: from, To: to, Into: into, Before: before, Mode: mode}
 }
@@ -146,8 +146,8 @@ const (
 // Destination is one row of the picker: a folder of an open collection (the
 // collection's root folder at Depth 0) and whether it may be chosen.
 type Destination struct {
-	Folder     *model.Folder
-	Collection *model.Collection
+	Folder     *request.Folder
+	Collection *request.Collection
 	Depth      int
 	Why        Why
 }
@@ -155,21 +155,21 @@ type Destination struct {
 // Destinations lists every folder of every open collection, collection by
 // collection in tree order (a folder before its subfolders), with the reason
 // node cannot go there for mode, if any.
-func Destinations(set collections.Set, node model.Node, mode Mode) []Destination {
-	var parent *model.Folder
+func Destinations(set collections.Set, node request.Node, mode Mode) []Destination {
+	var parent *request.Folder
 	if owner, ok := set.Owner(node); ok {
 		parent, _ = owner.Collection.Parent(node)
 	}
 	var out []Destination
 	for _, entry := range set.Entries {
-		out = appendFolders(out, entry.Collection, &entry.Collection.Folder, 0, func(folder *model.Folder) Why {
+		out = appendFolders(out, entry.Collection, &entry.Collection.Folder, 0, func(folder *request.Folder) Why {
 			return reason(folder, node, parent, mode)
 		})
 	}
 	return out
 }
 
-func appendFolders(out []Destination, col *model.Collection, folder *model.Folder, depth int, why func(*model.Folder) Why) []Destination {
+func appendFolders(out []Destination, col *request.Collection, folder *request.Folder, depth int, why func(*request.Folder) Why) []Destination {
 	out = append(out, Destination{Folder: folder, Collection: col, Depth: depth, Why: why(folder)})
 	for _, sub := range folder.Folders {
 		out = appendFolders(out, col, sub, depth+1, why)
@@ -177,11 +177,11 @@ func appendFolders(out []Destination, col *model.Collection, folder *model.Folde
 	return out
 }
 
-func reason(folder *model.Folder, node model.Node, parent *model.Folder, mode Mode) Why {
+func reason(folder *request.Folder, node request.Node, parent *request.Folder, mode Mode) Why {
 	switch {
 	case node.Dir == folder:
 		return WhyItself
-	case node.Dir != nil && node.Dir.Contains(model.Node{Dir: folder}):
+	case node.Dir != nil && node.Dir.Contains(request.Node{Dir: folder}):
 		return WhyInside
 	case mode == Move && parent == folder:
 		return WhySameParent

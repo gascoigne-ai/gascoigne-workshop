@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // answerServer replies to a request the server sent: it answers ping and
@@ -33,7 +33,7 @@ func (s *mcpSession) answerServer(message rpcMessage) {
 func (s *mcpSession) reply(method string, reply rpcReply) {
 	b, err := json.Marshal(reply)
 	if err == nil {
-		err = s.write(context.Background(), port.KindResponse, b)
+		err = s.write(context.Background(), request.KindResponse, b)
 	}
 	if err != nil {
 		s.note(fmt.Errorf("answer the server's %s: %w", method, err))

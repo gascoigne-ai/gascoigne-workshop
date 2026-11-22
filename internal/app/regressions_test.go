@@ -3,8 +3,7 @@ package app
 import (
 	"context"
 	"errors"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/bus"
@@ -130,11 +129,11 @@ func TestAFailedCommandIsShownInTheStatusLine(t *testing.T) {
 
 type panickingStreamer struct{}
 
-func (panickingStreamer) Send(context.Context, model.Request) (model.Response, error) {
-	return model.Response{}, nil
+func (panickingStreamer) Send(context.Context, request.Request) (request.Response, error) {
+	return request.Response{}, nil
 }
 
-func (panickingStreamer) Connect(context.Context, model.Request) (reqport.Session, error) {
+func (panickingStreamer) Connect(context.Context, request.Request) (request.Session, error) {
 	panic("connect boom")
 }
 
@@ -142,7 +141,7 @@ func (panickingStreamer) Connect(context.Context, model.Request) (reqport.Sessio
 // statement, so a panic in a protocol or a dialog program ended the app.
 func TestAPanicWhileConnectingIsShownNotFatal(t *testing.T) {
 	a := testApp(t)
-	a.reg = reqport.Registry{"websocket": panickingStreamer{}}
+	a.reg = request.Registry{"websocket": panickingStreamer{}}
 	tab := a.cur()
 	tab.Req.Protocol = "websocket"
 	tab.Req.URL = "ws://x.test"
@@ -162,7 +161,7 @@ func TestAPanicInTheDesktopDialogIsShownNotFatal(t *testing.T) {
 func TestTimeoutIsCappedInsteadOfOverflowing(t *testing.T) {
 	a := testApp(t)
 	for _, sec := range []int{1 << 40, math.MaxInt} {
-		got := a.timeoutFor(model.Request{TimeoutSec: sec})
+		got := a.timeoutFor(request.Request{TimeoutSec: sec})
 		if got <= 0 || got > settings.MaxTimeout {
 			t.Errorf("timeoutFor(%d s) = %v, want 1..%v", sec, got, settings.MaxTimeout)
 		}
@@ -190,7 +189,7 @@ type countingStreamer struct {
 	connects *atomic.Int32
 }
 
-func (streamer countingStreamer) Connect(context.Context, model.Request) (reqport.Session, error) {
+func (streamer countingStreamer) Connect(context.Context, request.Request) (request.Session, error) {
 	streamer.connects.Add(1)
 	return nil, errors.New("test server: no session")
 }
@@ -201,7 +200,7 @@ func (streamer countingStreamer) Connect(context.Context, model.Request) (reqpor
 func TestAStdioCommandAsksOnceBeforeItRuns(t *testing.T) {
 	a := testApp(t)
 	var connects atomic.Int32
-	a.reg = reqport.Registry{"mcp": countingStreamer{connects: &connects}}
+	a.reg = request.Registry{"mcp": countingStreamer{connects: &connects}}
 	tab := a.cur()
 	tab.Req.Protocol, tab.Req.URL = "mcp", "stdio:/bin/true --flag"
 
@@ -239,7 +238,7 @@ func TestAFileOutsideTheCollectionAsksBeforeItIsSent(t *testing.T) {
 	a := testApp(t)
 	tab := a.cur()
 	tab.Req.Method, tab.Req.URL = "POST", "http://127.0.0.1:1/x"
-	tab.Req.BodyType, tab.Req.Body = model.BodyFile, "/etc/hostname"
+	tab.Req.BodyType, tab.Req.Body = request.BodyFile, "/etc/hostname"
 	a.send(tab)
 	if a.dialog == nil || !strings.Contains(a.dialog.Body, "/etc/hostname") || tab.Sending() {
 		t.Fatalf("dialog %+v sending %v: want a question and no request", a.dialog, tab.Sending())

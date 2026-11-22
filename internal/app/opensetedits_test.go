@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/tree"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
@@ -18,7 +18,7 @@ import (
 // the dot on a tab and in the window title, so these tests check those.
 
 // tabIndex is the place in the strip of the tab showing req.
-func tabIndex(t *testing.T, app *App, req *model.Request) int {
+func tabIndex(t *testing.T, app *App, req *request.Request) int {
 	t.Helper()
 	for index, tab := range app.list.Tabs {
 		if tab.Req == req {
@@ -30,14 +30,14 @@ func tabIndex(t *testing.T, app *App, req *model.Request) int {
 }
 
 // shownTab is what the strip shows of the tab of req: its name and mark.
-func shownTab(t *testing.T, app *App, req *model.Request) requestTabItem {
+func shownTab(t *testing.T, app *App, req *request.Request) requestTabItem {
 	t.Helper()
 	index := tabIndex(t, app, req)
 	return app.requestTab(index, app.openTabs()[index])
 }
 
 // activate makes the tab of req the active one.
-func activate(t *testing.T, app *App, req *model.Request) {
+func activate(t *testing.T, app *App, req *request.Request) {
 	t.Helper()
 	app.updateTabs(tabs.Activate{Index: tabIndex(t, app, req)})
 }
@@ -116,7 +116,7 @@ func TestRenamingARequestInOneCollectionLeavesTheSamePathInTheOther(t *testing.T
 		t.Fatalf("%d tabs, want both Inners beside the two calls", len(a.list.Tabs))
 	}
 
-	a.renameNode(model.Of(betaInner))
+	a.renameNode(request.Of(betaInner))
 	a.typeText("Core")
 	a.step(core.Input{Enter: true})
 	if betaInner.Name != "Core" || alphaInner.Name != "Inner" {
@@ -151,7 +151,7 @@ func TestRenamingAFolderInOneCollectionLeavesTheSamePathInTheOther(t *testing.T)
 	a.openRequest(alphaInner)
 	a.openRequest(betaInner)
 
-	if err := a.applyTree(tree.Rename{Node: model.Of(beta.Folders[0]), Name: "Shared"}).Err; err != nil {
+	if err := a.applyTree(tree.Rename{Node: request.Of(beta.Folders[0]), Name: "Shared"}).Err; err != nil {
 		t.Fatal(err)
 	}
 	if beta.Folders[0].Name != "Shared" || alpha.Folders[0].Name != "Nested" {
@@ -232,11 +232,11 @@ func TestRenamingARequestWhileAnotherCollectionsTabIsActive(t *testing.T) {
 	a, alphaDir, betaDir := twoCollectionsApp(t)
 	alpha, beta := entryNamed(t, a, "Alpha").Collection, entryNamed(t, a, "Beta").Collection
 	alphaCall, betaCall := alpha.Requests[0], beta.Requests[0]
-	if a.cur().Req != betaCall || a.selected != model.Of(betaCall) {
+	if a.cur().Req != betaCall || a.selected != request.Of(betaCall) {
 		t.Fatalf("active %q, selected %v", a.cur().Req.Name, a.selected)
 	}
 
-	if err := a.applyTree(tree.Rename{Node: model.Of(alphaCall), Name: "Beta call"}).Err; err != nil {
+	if err := a.applyTree(tree.Rename{Node: request.Of(alphaCall), Name: "Beta call"}).Err; err != nil {
 		t.Fatalf("a name used only in Beta is refused in Alpha: %v", err)
 	}
 	if alphaCall.Name != "Beta call" || betaCall.Name != "Beta call" {

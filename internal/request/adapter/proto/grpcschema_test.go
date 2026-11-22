@@ -11,24 +11,24 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/known/structpb"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 func TestGRPCInputSchemaOfAProtoFileMethod(t *testing.T) {
-	request := fromHealthProto(t, grpcRequest("", "grpc.health.v1.Health/Check", ""))
-	schema, err := GRPCInputSchema(grpcContext(t), request)
+	call := fromHealthProto(t, grpcRequest("", "grpc.health.v1.Health/Check", ""))
+	schema, err := GRPCInputSchema(grpcContext(t), call)
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := model.MessageSchema{Name: healthCheckName, Fields: []model.SchemaField{{Name: "service", Type: "string"}}}
+	want := request.MessageSchema{Name: healthCheckName, Fields: []request.SchemaField{{Name: "service", Type: "string"}}}
 	if !reflect.DeepEqual(schema, want) {
 		t.Errorf("schema = %+v, want %+v", schema, want)
 	}
 }
 
 func TestGRPCInputSchemaNeedsAMethod(t *testing.T) {
-	request := fromHealthProto(t, grpcRequest("", "", ""))
-	if _, err := GRPCInputSchema(grpcContext(t), request); err == nil {
+	call := fromHealthProto(t, grpcRequest("", "", ""))
+	if _, err := GRPCInputSchema(grpcContext(t), call); err == nil {
 		t.Error("a request with no method has a schema")
 	}
 }
@@ -76,8 +76,8 @@ func TestMessageSchemaCutsARecursiveMessage(t *testing.T) {
 	}
 }
 
-func fieldsByName(schema model.MessageSchema) map[string]model.SchemaField {
-	fields := map[string]model.SchemaField{}
+func fieldsByName(schema request.MessageSchema) map[string]request.SchemaField {
+	fields := map[string]request.SchemaField{}
 	for _, field := range schema.Fields {
 		fields[field.Name] = field
 	}
@@ -115,7 +115,7 @@ func TestMessageSchemaOfAWideChainStaysBounded(t *testing.T) {
 }
 
 // countMessages counts the messages a schema expands, not the cut ones.
-func countMessages(schema model.MessageSchema) int {
+func countMessages(schema request.MessageSchema) int {
 	count := 1
 	if schema.Cut {
 		count = 0

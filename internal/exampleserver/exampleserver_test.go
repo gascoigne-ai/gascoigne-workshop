@@ -8,9 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 )
 
 // start serves every protocol on random ports and returns the endpoint
@@ -43,11 +42,11 @@ func within(t *testing.T) context.Context {
 	return ctx
 }
 
-func send(t *testing.T, request model.Request) model.Response {
+func send(t *testing.T, call request.Request) request.Response {
 	t.Helper()
-	response, err := proto.REST{}.Send(within(t), request)
+	response, err := proto.REST{}.Send(within(t), call)
 	if err != nil {
-		t.Fatalf("send %s: %v", request.URL, err)
+		t.Fatalf("send %s: %v", call.URL, err)
 	}
 	return response
 }
@@ -63,8 +62,8 @@ func TestListenOffersEveryProtocolOnItsOwnPort(t *testing.T) {
 
 func TestRESTEchoReturnsWhatItWasSent(t *testing.T) {
 	urls := start(t)
-	response := send(t, model.Request{Method: "POST", URL: urls["rest"] + "/echo?x=1", Body: `{"a":1}`, BodyType: model.BodyJSON,
-		Headers: []model.KV{{Name: "X-Demo", Value: "yes", Enabled: true}}})
+	response := send(t, request.Request{Method: "POST", URL: urls["rest"] + "/echo?x=1", Body: `{"a":1}`, BodyType: request.BodyJSON,
+		Headers: []request.KV{{Name: "X-Demo", Value: "yes", Enabled: true}}})
 	var echoed struct {
 		Method  string
 		Query   map[string][]string
@@ -91,7 +90,7 @@ func TestRESTStatusAnswersWithTheRequestedCode(t *testing.T) {
 		{"/status/teapot", 400},
 	}
 	for _, test := range tests {
-		if got := send(t, model.Request{Method: "GET", URL: urls["rest"] + test.path}).Status; got != test.want {
+		if got := send(t, request.Request{Method: "GET", URL: urls["rest"] + test.path}).Status; got != test.want {
 			t.Errorf("GET %s = %d, want %d", test.path, got, test.want)
 		}
 	}
@@ -100,7 +99,7 @@ func TestRESTStatusAnswersWithTheRequestedCode(t *testing.T) {
 func TestRESTDelayWaitsBeforeAnswering(t *testing.T) {
 	urls := start(t)
 	began := time.Now()
-	response := send(t, model.Request{Method: "GET", URL: urls["rest"] + "/delay/120"})
+	response := send(t, request.Request{Method: "GET", URL: urls["rest"] + "/delay/120"})
 	if response.Status != 200 || time.Since(began) < 100*time.Millisecond {
 		t.Fatalf("status %d after %v, want 200 after about 120ms", response.Status, time.Since(began))
 	}
@@ -108,17 +107,17 @@ func TestRESTDelayWaitsBeforeAnswering(t *testing.T) {
 
 func TestRESTAuthNeedsCredentials(t *testing.T) {
 	urls := start(t)
-	if got := send(t, model.Request{Method: "GET", URL: urls["rest"] + "/auth"}).Status; got != 401 {
+	if got := send(t, request.Request{Method: "GET", URL: urls["rest"] + "/auth"}).Status; got != 401 {
 		t.Fatalf("without credentials = %d, want 401", got)
 	}
-	response := send(t, model.Request{Method: "GET", URL: urls["rest"] + "/auth", Auth: model.Auth{Type: model.AuthBearer, Token: "tok"}})
+	response := send(t, request.Request{Method: "GET", URL: urls["rest"] + "/auth", Auth: request.Auth{Type: request.AuthBearer, Token: "tok"}})
 	if response.Status != 200 || !strings.Contains(string(response.Body), "tok") {
 		t.Fatalf("with a token = %d %q, want 200 naming the token", response.Status, response.Body)
 	}
 }
 
 // waitFor reads events until one's text contains want.
-func waitFor(t *testing.T, session interface{ Events() <-chan port.Event }, want string) port.Event {
+func waitFor(t *testing.T, session interface{ Events() <-chan request.Event }, want string) request.Event {
 	t.Helper()
 	timeout := time.After(5 * time.Second)
 	for {
@@ -138,7 +137,7 @@ func waitFor(t *testing.T, session interface{ Events() <-chan port.Event }, want
 
 func TestWebSocketEchoesEachMessage(t *testing.T) {
 	urls := start(t)
-	session, err := proto.WebSocket{}.Connect(within(t), model.Request{Protocol: "websocket", URL: urls["websocket"]})
+	session, err := proto.WebSocket{}.Connect(within(t), request.Request{Protocol: "websocket", URL: urls["websocket"]})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -146,17 +145,17 @@ func TestWebSocketEchoesEachMessage(t *testing.T) {
 	if err := session.Send(context.Background(), "hello"); err != nil {
 		t.Fatal(err)
 	}
-	if event := waitFor(t, session, "hello"); event.Dir != port.Sent {
+	if event := waitFor(t, session, "hello"); event.Dir != request.Sent {
 		t.Fatalf("first match is %+v, want the sent message", event)
 	}
-	if event := waitFor(t, session, "hello"); event.Dir != port.Received {
+	if event := waitFor(t, session, "hello"); event.Dir != request.Received {
 		t.Fatalf("second match is %+v, want the echo", event)
 	}
 }
 
 func TestSSEStreamsTheRequestedNumberOfEvents(t *testing.T) {
 	urls := start(t)
-	session, err := proto.SSE{}.Connect(within(t), model.Request{Protocol: "sse", URL: urls["sse"] + "?count=3&interval=1ms"})
+	session, err := proto.SSE{}.Connect(within(t), request.Request{Protocol: "sse", URL: urls["sse"] + "?count=3&interval=1ms"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -166,7 +165,7 @@ func TestSSEStreamsTheRequestedNumberOfEvents(t *testing.T) {
 
 func TestMCPListsAndCallsTools(t *testing.T) {
 	urls := start(t)
-	session, err := proto.MCP{}.Connect(within(t), model.Request{Protocol: "mcp", URL: urls["mcp"]})
+	session, err := proto.MCP{}.Connect(within(t), request.Request{Protocol: "mcp", URL: urls["mcp"]})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -176,7 +175,7 @@ func TestMCPListsAndCallsTools(t *testing.T) {
 	if err := session.Send(context.Background(), `call add {"a":2,"b":3}`); err != nil {
 		t.Fatal(err)
 	}
-	if event := waitFor(t, session, `"text":"5"`); event.Dir != port.Received {
+	if event := waitFor(t, session, `"text":"5"`); event.Dir != request.Received {
 		t.Fatalf("result %+v, want the received sum", event)
 	}
 	if err := session.Send(context.Background(), `call echo {"text":"hi"}`); err != nil {
@@ -187,15 +186,15 @@ func TestMCPListsAndCallsTools(t *testing.T) {
 
 func TestGRPCServesHealthAndReflection(t *testing.T) {
 	urls := start(t)
-	request := model.Request{Protocol: "grpc", URL: urls["grpc"], Method: "grpc.health.v1.Health/Check", Body: `{"service": ""}`}
-	methods, err := proto.ListGRPCMethods(within(t), request)
+	call := request.Request{Protocol: "grpc", URL: urls["grpc"], Method: "grpc.health.v1.Health/Check", Body: `{"service": ""}`}
+	methods, err := proto.ListGRPCMethods(within(t), call)
 	if err != nil {
 		t.Fatalf("reflection: %v", err)
 	}
 	if !strings.Contains(strings.Join(methods, " "), "grpc.health.v1.Health/Check") {
 		t.Fatalf("methods = %v, want the health check listed", methods)
 	}
-	response, err := proto.GRPC{}.Send(within(t), request)
+	response, err := proto.GRPC{}.Send(within(t), call)
 	if err != nil || response.Status != 200 || !strings.Contains(string(response.Body), "SERVING") {
 		t.Fatalf("check = %d %q, %v; want SERVING", response.Status, response.Body, err)
 	}
@@ -205,16 +204,16 @@ func TestGRPCServesHealthAndReflection(t *testing.T) {
 // service's .proto file: the example server's own copy of health.proto.
 func TestGRPCWithoutReflectionAnswersACallFromTheProtoFile(t *testing.T) {
 	urls := start(t)
-	request := model.Request{Protocol: "grpc", URL: urls["grpc-no-reflection"], Method: "grpc.health.v1.Health/Check", Body: `{"service": "example"}`}
-	if _, err := proto.ListGRPCMethods(within(t), request); err == nil {
+	call := request.Request{Protocol: "grpc", URL: urls["grpc-no-reflection"], Method: "grpc.health.v1.Health/Check", Body: `{"service": "example"}`}
+	if _, err := proto.ListGRPCMethods(within(t), call); err == nil {
 		t.Fatal("the methods were listed without a proto file: the port offers reflection")
 	}
 	healthProto, err := filepath.Abs(filepath.Join("protos", "grpc", "health", "v1", "health.proto"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	request.Proto = model.ProtoSource{Files: []string{healthProto}}
-	response, err := proto.GRPC{}.Send(within(t), request)
+	call.Proto = request.ProtoSource{Files: []string{healthProto}}
+	response, err := proto.GRPC{}.Send(within(t), call)
 	if err != nil || response.Status != 200 || !strings.Contains(string(response.Body), "SERVING") {
 		t.Fatalf("check = %d %q %q, %v; want SERVING", response.Status, response.Body, response.Err, err)
 	}

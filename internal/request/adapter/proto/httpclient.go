@@ -13,7 +13,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // Network is the connection setting every HTTP-based protocol shares. The
@@ -35,7 +35,7 @@ var proxySchemes = []string{"http", "https", "socks5", "socks5h"}
 
 // checkAuth reports an auth type no applier knows. It is its own step so a
 // protocol that connects before it builds a request (MCP) fails early too.
-func checkAuth(auth model.Auth) error {
+func checkAuth(auth request.Auth) error {
 	if _, ok := authAppliers[auth.Type]; !ok {
 		return fmt.Errorf("unknown auth type %q", auth.Type)
 	}
@@ -47,11 +47,11 @@ func checkAuth(auth model.Auth) error {
 // (same names are all sent; a typed Content-Type replaces the automatic
 // one), then the credentials of the Auth pane last, so they win over a
 // header typed by hand. Protocols set their own headers afterwards.
-func newHTTPRequest(ctx context.Context, method string, request model.Request, body []byte, contentType string) (*http.Request, error) {
-	if err := checkAuth(request.Auth); err != nil {
+func newHTTPRequest(ctx context.Context, method string, call request.Request, body []byte, contentType string) (*http.Request, error) {
+	if err := checkAuth(call.Auth); err != nil {
 		return nil, err
 	}
-	httpReq, err := http.NewRequestWithContext(ctx, method, request.URL, bytes.NewReader(body))
+	httpReq, err := http.NewRequestWithContext(ctx, method, call.URL, bytes.NewReader(body))
 	if err != nil {
 		return nil, fmt.Errorf("build request: %w", err)
 	}
@@ -59,7 +59,7 @@ func newHTTPRequest(ctx context.Context, method string, request model.Request, b
 		httpReq.Header.Set("Content-Type", contentType)
 	}
 	replaced := false
-	for _, header := range request.Headers {
+	for _, header := range call.Headers {
 		if !header.Enabled || header.Name == "" {
 			continue
 		}
@@ -69,14 +69,14 @@ func newHTTPRequest(ctx context.Context, method string, request model.Request, b
 		}
 		httpReq.Header.Add(header.Name, header.Value)
 	}
-	authAppliers[request.Auth.Type](request.Auth, httpReq)
+	authAppliers[call.Auth.Type](call.Auth, httpReq)
 	return httpReq, nil
 }
 
 // newHTTPClient is the http.Client for request: a copy of base (a plain
 // client when nil) with the cookie jar, the proxy, the certificate check
 // and the redirect rule applied. A custom round tripper is left alone.
-func newHTTPClient(base *http.Client, network Network, request model.Request) (*http.Client, error) {
+func newHTTPClient(base *http.Client, network Network, call request.Request) (*http.Client, error) {
 	client := &http.Client{}
 	if base != nil {
 		copied := *base
@@ -85,10 +85,10 @@ func newHTTPClient(base *http.Client, network Network, request model.Request) (*
 	if client.Jar == nil {
 		client.Jar = network.Jar
 	}
-	if request.NoRedirects {
+	if call.NoRedirects {
 		client.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
 	}
-	if network.Proxy == "" && !request.InsecureTLS && network.CAFile == "" && network.CertFile == "" {
+	if network.Proxy == "" && !call.InsecureTLS && network.CAFile == "" && network.CertFile == "" {
 		return client, nil
 	}
 	var transport *http.Transport
@@ -110,7 +110,7 @@ func newHTTPClient(base *http.Client, network Network, request model.Request) (*
 	if transport.TLSClientConfig == nil {
 		transport.TLSClientConfig = &tls.Config{}
 	}
-	if err := applyTLS(transport.TLSClientConfig, network, request); err != nil {
+	if err := applyTLS(transport.TLSClientConfig, network, call); err != nil {
 		return nil, err
 	}
 	client.Transport = transport
@@ -119,7 +119,7 @@ func newHTTPClient(base *http.Client, network Network, request model.Request) (*
 
 // applyTLS adds the configured authorities and client certificate to cfg,
 // and turns the certificate check off when the request asks for it.
-func applyTLS(cfg *tls.Config, network Network, request model.Request) error {
+func applyTLS(cfg *tls.Config, network Network, call request.Request) error {
 	if network.CAFile != "" {
 		pem, err := os.ReadFile(network.CAFile)
 		if err != nil {
@@ -143,7 +143,7 @@ func applyTLS(cfg *tls.Config, network Network, request model.Request) error {
 		}
 		cfg.Certificates = []tls.Certificate{cert}
 	}
-	if request.InsecureTLS {
+	if call.InsecureTLS {
 		cfg.InsecureSkipVerify = true //nolint: the request asked for it
 	}
 	return nil

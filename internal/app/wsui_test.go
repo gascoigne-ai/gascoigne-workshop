@@ -1,8 +1,7 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/bus"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -23,8 +22,8 @@ import (
 // echoServer is a WebSocket server that sends every message back.
 func echoServer(t *testing.T) string {
 	t.Helper()
-	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		c, err := ws.Upgrade(writer, request)
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
+		c, err := ws.Upgrade(writer, call)
 		if err != nil {
 			return
 		}
@@ -114,8 +113,8 @@ func TestClearEmptiesTheMessageLog(t *testing.T) {
 
 func TestWebSocketReconnectsAfterTheServerClosesWhenAsked(t *testing.T) {
 	var conns atomic.Int32
-	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		c, err := ws.Upgrade(writer, request)
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
+		c, err := ws.Upgrade(writer, call)
 		if err != nil {
 			return
 		}
@@ -156,7 +155,7 @@ func TestReconnectDelayBelongsToEachApp(t *testing.T) {
 		t.Run(delay.String(), func(t *testing.T) {
 			t.Parallel()
 			a := &App{retryDelay: delay, bus: bus.New()}
-			tab := newTab(&model.Request{})
+			tab := newTab(&request.Request{})
 			tab.Reconnect = true
 			tab.Begin()
 			tab.Failed()                      // a drop that is to be retried
@@ -171,8 +170,8 @@ func TestReconnectDelayBelongsToEachApp(t *testing.T) {
 
 func TestWebSocketWithoutReconnectStaysClosed(t *testing.T) {
 	var conns atomic.Int32
-	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		if c, err := ws.Upgrade(writer, request); err == nil {
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
+		if c, err := ws.Upgrade(writer, call); err == nil {
 			conns.Add(1)
 			c.Close(ws.CloseNormal, "")
 		}
@@ -285,9 +284,9 @@ func TestSSETabListensAndShowsNoComposer(t *testing.T) {
 func TestSSEReconnectResumesFromTheLastEventID(t *testing.T) {
 	var mu sync.Mutex
 	var seen []string
-	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
 		mu.Lock()
-		seen = append(seen, request.Header.Get("Last-Event-ID"))
+		seen = append(seen, call.Header.Get("Last-Event-ID"))
 		n := len(seen)
 		mu.Unlock()
 		writer.Header().Set("Content-Type", "text/event-stream")
@@ -297,7 +296,7 @@ func TestSSEReconnectResumesFromTheLastEventID(t *testing.T) {
 		}
 		io.WriteString(writer, "id: 42\ndata: second\n\n")
 		writer.(http.Flusher).Flush() // the client waits for the headers of a stream that stays open
-		<-request.Context().Done()
+		<-call.Context().Done()
 	}))
 	defer func() { srv.CloseClientConnections(); srv.Close() }()
 	a := testApp(t)
@@ -410,7 +409,7 @@ func TestSendingAndPingingDoNotBlockTheFrameAndKeepTheirOrder(t *testing.T) {
 func TestLogSkipsTheServerInfoEvent(t *testing.T) {
 	a := testApp(t)
 	tab := a.cur()
-	a.logEvent(tab, reqport.Event{Dir: reqport.Info, Kind: reqport.KindInitialize, Text: `{"protocolVersion":"2025-06-18"}`})
+	a.logEvent(tab, request.Event{Dir: request.Info, Kind: request.KindInitialize, Text: `{"protocolVersion":"2025-06-18"}`})
 	if len(tab.wsView.Lines) != 0 {
 		t.Fatalf("log has %d lines", len(tab.wsView.Lines))
 	}
@@ -421,7 +420,7 @@ func TestLogSkipsTheServerInfoEvent(t *testing.T) {
 func TestOnlyTheMCPComposerShowsTheCommandHint(t *testing.T) {
 	a := testApp(t)
 	tab := a.cur()
-	for _, protocol := range []model.Protocol{"websocket", "mcp", "sse", "grpc"} {
+	for _, protocol := range []request.Protocol{"websocket", "mcp", "sse", "grpc"} {
 		tab.Req.Protocol = protocol
 		hint := composerHint(tab, true)
 		if mcp := strings.HasPrefix(hint, "call TOOL"); mcp != (protocol == "mcp") {
@@ -436,7 +435,7 @@ func TestOnlyTheMCPComposerShowsTheCommandHint(t *testing.T) {
 func TestOnlyTheWebSocketComposerOffersFormat(t *testing.T) {
 	a := testApp(t)
 	tab := a.cur()
-	for _, protocol := range []model.Protocol{"websocket", "mcp", "grpc"} {
+	for _, protocol := range []request.Protocol{"websocket", "mcp", "grpc"} {
 		tab.Req.Protocol = protocol
 		dump := view.Dump(a.messagesPane(wsPanes[0], tab, nil))
 		if formats := strings.Contains(dump, "{ }"); formats != (protocol == "websocket") {
@@ -450,17 +449,17 @@ func TestOnlyTheWebSocketComposerOffersFormat(t *testing.T) {
 // as its text for copy.
 func TestLogLineDirectionMarksAreIcons(t *testing.T) {
 	cases := []struct {
-		dir        reqport.Direction
+		dir        request.Direction
 		icon, text string
 	}{
-		{reqport.Sent, "arrow-up", "↑"},
-		{reqport.Received, "arrow-down", "↓"},
-		{reqport.Info, "dot", "•"},
+		{request.Sent, "arrow-up", "↑"},
+		{request.Received, "arrow-down", "↓"},
+		{request.Info, "dot", "•"},
 	}
 	for _, tc := range cases {
 		a := testApp(t)
 		tab := a.cur()
-		a.logEvent(tab, reqport.Event{Dir: tc.dir, Kind: reqport.KindText, Text: "x"})
+		a.logEvent(tab, request.Event{Dir: tc.dir, Kind: request.KindText, Text: "x"})
 		lines := tab.wsView.Lines
 		mark := lines[len(lines)-1].Spans[1]
 		if mark.Icon != tc.icon || mark.Text != tc.text {

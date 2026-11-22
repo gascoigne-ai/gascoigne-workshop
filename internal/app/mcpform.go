@@ -2,8 +2,7 @@ package app
 
 import (
 	"context"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/ui/mcpform"
 	"strings"
 	"time"
@@ -15,22 +14,22 @@ import (
 // dialog it wants to show is free.
 const samplingRetry = 100 * time.Millisecond
 
-// sampleViaDialog is the app's reqport.Sampler: it shows the server's
+// sampleViaDialog is the app's request.Sampler: it shows the server's
 // request and the person types the reply, or declines. It runs on the
 // session's goroutine and blocks; the dialog itself is opened on the UI
 // goroutine. A request that arrives while another dialog is open waits
 // for it to close.
-func (a *App) sampleViaDialog(ctx context.Context, request reqport.SamplingRequest) (reqport.SamplingResult, bool) {
-	answer := make(chan reqport.SamplingResult, 1)
+func (a *App) sampleViaDialog(ctx context.Context, call request.SamplingRequest) (request.SamplingResult, bool) {
+	answer := make(chan request.SamplingResult, 1)
 	declined := make(chan struct{}, 1)
 	var shown *dialog
 	for shown == nil {
 		opened := make(chan *dialog, 1)
-		a.bus.Dispatch(func() { opened <- a.openSamplingDialog(request, answer, declined) })
+		a.bus.Dispatch(func() { opened <- a.openSamplingDialog(call, answer, declined) })
 		select {
 		case shown = <-opened:
 		case <-ctx.Done():
-			return reqport.SamplingResult{}, false
+			return request.SamplingResult{}, false
 		}
 		if shown != nil {
 			break
@@ -38,36 +37,36 @@ func (a *App) sampleViaDialog(ctx context.Context, request reqport.SamplingReque
 		select {
 		case <-time.After(samplingRetry):
 		case <-ctx.Done():
-			return reqport.SamplingResult{}, false
+			return request.SamplingResult{}, false
 		}
 	}
 	select {
 	case result := <-answer:
 		return result, true
 	case <-declined:
-		return reqport.SamplingResult{}, false
+		return request.SamplingResult{}, false
 	case <-ctx.Done():
 		a.bus.Dispatch(func() { // the session ended: take the question off the screen
 			if a.dialog == shown {
 				a.closeDialog()
 			}
 		})
-		return reqport.SamplingResult{}, false
+		return request.SamplingResult{}, false
 	}
 }
 
 // openSamplingDialog shows the request when no other dialog is open and
 // returns it, nil when the screen is busy.
-func (a *App) openSamplingDialog(request reqport.SamplingRequest, answer chan<- reqport.SamplingResult, declined chan<- struct{}) *dialog {
+func (a *App) openSamplingDialog(call request.SamplingRequest, answer chan<- request.SamplingResult, declined chan<- struct{}) *dialog {
 	if a.dialog != nil {
 		return nil
 	}
 	var body strings.Builder
 	body.WriteString("The MCP server asks for a model reply. Type one, or decline.")
-	if request.SystemPrompt != "" {
-		body.WriteString("\n\nSystem: " + request.SystemPrompt)
+	if call.SystemPrompt != "" {
+		body.WriteString("\n\nSystem: " + call.SystemPrompt)
 	}
-	for _, message := range request.Messages {
+	for _, message := range call.Messages {
 		body.WriteString("\n\n" + message.Role + ": " + message.Text)
 	}
 	input := NewTextField("")
@@ -80,7 +79,7 @@ func (a *App) openSamplingDialog(request reqport.SamplingRequest, answer chan<- 
 			{Label: "Decline", Run: func() { a.closeDialog(); declined <- struct{}{} }},
 			{Label: "Send reply", Primary: true, Run: func() {
 				a.closeDialog()
-				answer <- reqport.SamplingResult{Text: input.Text, Model: "user"}
+				answer <- request.SamplingResult{Text: input.Text, Model: "user"}
 			}},
 		},
 	}}
@@ -89,7 +88,7 @@ func (a *App) openSamplingDialog(request reqport.SamplingRequest, answer chan<- 
 
 // openToolForm shows the form of tool; a tool with no properties is
 // composed at once.
-func (a *App) openToolForm(tab *reqTab, tool model.MCPTool) {
+func (a *App) openToolForm(tab *reqTab, tool request.MCPTool) {
 	form := mcpform.New(tool)
 	if form.Empty() {
 		a.composeCall(tab, tool)

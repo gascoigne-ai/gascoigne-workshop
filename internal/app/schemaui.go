@@ -6,8 +6,8 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/editor"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/bus"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -30,23 +30,23 @@ const (
 type messageSchemaState struct {
 	asked   schemaKey
 	running bool
-	schema  *model.MessageSchema
+	schema  *request.MessageSchema
 	err     string
 }
 
 // schemaKey is what a schema depends on; another one asks again.
 type schemaKey struct {
 	URL, Method string
-	Proto       model.ProtoSource
+	Proto       request.ProtoSource
 }
 
-func schemaKeyOf(req *model.Request) schemaKey {
+func schemaKeyOf(req *request.Request) schemaKey {
 	return schemaKey{URL: req.URL, Method: req.Method, Proto: req.Proto}
 }
 
 // methodChosen says the request names a gRPC method, not the HTTP one a
 // fresh tab still carries.
-func methodChosen(req *model.Request) bool { return strings.Contains(req.Method, "/") }
+func methodChosen(req *request.Request) bool { return strings.Contains(req.Method, "/") }
 
 type schemaRow struct {
 	Depth int
@@ -61,13 +61,13 @@ type schemaRowView struct {
 
 // schemaRows lists the fields of schema one to a row, a nested message's
 // fields right below it one level deeper.
-func schemaRows(schema model.MessageSchema) []schemaRow {
+func schemaRows(schema request.MessageSchema) []schemaRow {
 	var rows []schemaRow
 	appendSchemaRows(&rows, schema, 0)
 	return rows
 }
 
-func appendSchemaRows(rows *[]schemaRow, schema model.MessageSchema, depth int) {
+func appendSchemaRows(rows *[]schemaRow, schema request.MessageSchema, depth int) {
 	for _, field := range schema.Fields {
 		*rows = append(*rows, schemaRow{Depth: depth, Text: fieldText(field)})
 		if field.Message != nil && !field.Message.Cut {
@@ -76,7 +76,7 @@ func appendSchemaRows(rows *[]schemaRow, schema model.MessageSchema, depth int) 
 	}
 }
 
-func fieldText(field model.SchemaField) string {
+func fieldText(field request.SchemaField) string {
 	text := field.Name + ": "
 	if field.Repeated {
 		text += "repeated "
@@ -160,16 +160,16 @@ func (a *App) loadMessageSchema(tab *reqTab) {
 	})
 }
 
-func (a *App) describeGRPCInput(ctx context.Context, req model.Request) (model.MessageSchema, error) {
+func (a *App) describeGRPCInput(ctx context.Context, req request.Request) (request.MessageSchema, error) {
 	if a.grpcSchema == nil {
-		return model.MessageSchema{}, errors.New("no gRPC client")
+		return request.MessageSchema{}, errors.New("no gRPC client")
 	}
 	return a.grpcSchema(ctx, req)
 }
 
 // fillBody replaces the body with the skeleton of schema, as typing it
 // would (so it can be undone), and shows the Body pane.
-func (a *App) fillBody(tab *reqTab, schema *model.MessageSchema) {
+func (a *App) fillBody(tab *reqTab, schema *request.MessageSchema) {
 	if schema == nil {
 		return
 	}

@@ -5,13 +5,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
-func resp() *model.Response {
-	return &model.Response{
+func resp() *request.Response {
+	return &request.Response{
 		Status: 200, Duration: 120 * time.Millisecond,
-		Headers: []model.KV{{Name: "Content-Type", Value: "application/json; charset=utf-8", Enabled: true}, {Name: "X-Id", Value: "7", Enabled: true}},
+		Headers: []request.KV{{Name: "Content-Type", Value: "application/json; charset=utf-8", Enabled: true}, {Name: "X-Id", Value: "7", Enabled: true}},
 		Body:    []byte(`{"total_count":116,"ok":true,"none":null,"name":"alpha","items":[{"name":"a","tags":["x","y"]},{"name":"b"}]}`),
 	}
 }
@@ -82,13 +82,13 @@ func TestRunSkipsCommentsAndBlankLinesAndSummarizes(t *testing.T) {
 }
 
 func TestNoResponseOrAFailedOneFailsEveryAssertion(t *testing.T) {
-	for _, r := range []*model.Response{nil, {Err: "boom"}} {
+	for _, r := range []*request.Response{nil, {Err: "boom"}} {
 		res := Run("status == 200", r)
 		if len(res) != 1 || res[0].OK || !strings.Contains(res[0].Detail, "no response") {
 			t.Fatalf("%+v", res)
 		}
 	}
-	if res := Run("json a == 1", &model.Response{Status: 200, Body: []byte("not json")}); res[0].OK || !strings.Contains(res[0].Detail, "not JSON") {
+	if res := Run("json a == 1", &request.Response{Status: 200, Body: []byte("not json")}); res[0].OK || !strings.Contains(res[0].Detail, "not JSON") {
 		t.Fatalf("%+v", res)
 	}
 }
@@ -123,7 +123,7 @@ func TestSetLinesCaptureValuesForLaterRequests(t *testing.T) {
 // of the earlier "=" split, so it captured an empty value instead of
 // failing.
 func TestCapturingAHeaderFromAResponseWithoutHeadersFails(t *testing.T) {
-	r := &model.Response{Status: 200}
+	r := &request.Response{Status: 200}
 	if caps := Captures("set ct = header content-type", r); len(caps) != 0 {
 		t.Fatalf("captured %+v from a response with no headers", caps)
 	}

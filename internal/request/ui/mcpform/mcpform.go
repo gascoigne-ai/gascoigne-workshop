@@ -3,7 +3,7 @@
 package mcpform
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -19,11 +19,11 @@ const fieldGap = w.StepHair
 
 // Form is the dialog content of a tool call: one input per property.
 type Form struct {
-	Tool    model.MCPTool
+	Tool    request.MCPTool
 	Inputs  map[string]*TextField // text, number and JSON fields
 	Choices map[string]string     // boolean and enum fields: the chosen value, "" for unset
 	Problem string                // why the last attempt was refused
-	fields  []model.ToolField
+	fields  []request.ToolField
 	scroll  ScrollState
 }
 
@@ -34,11 +34,11 @@ type Host interface {
 }
 
 // New is the form of tool, with each field at its default.
-func New(tool model.MCPTool) *Form {
-	form := &Form{Tool: tool, fields: model.ToolFields(tool.Schema), Inputs: map[string]*TextField{}, Choices: map[string]string{}}
+func New(tool request.MCPTool) *Form {
+	form := &Form{Tool: tool, fields: request.ToolFields(tool.Schema), Inputs: map[string]*TextField{}, Choices: map[string]string{}}
 	for _, field := range form.fields {
 		switch field.Kind {
-		case model.FieldBoolean, model.FieldEnum:
+		case request.FieldBoolean, request.FieldEnum:
 			form.Choices[field.Name] = initialChoice(field)
 		default:
 			input := NewTextField(field.Initial())
@@ -54,14 +54,14 @@ func (form *Form) Empty() bool { return len(form.fields) == 0 }
 // initialChoice is where a boolean or enum starts: its default, else the
 // first option when the argument is required, else unset (so it is left
 // out of the call).
-func initialChoice(field model.ToolField) string {
+func initialChoice(field request.ToolField) string {
 	switch {
 	case len(field.Default) > 0:
 		return field.Initial()
-	case field.Required && field.Kind == model.FieldBoolean:
+	case field.Required && field.Kind == request.FieldBoolean:
 		return "false"
 	case field.Required && len(field.Enum) > 0:
-		return model.ToolField{Kind: model.FieldEnum, Default: field.Enum[0]}.Initial()
+		return request.ToolField{Kind: request.FieldEnum, Default: field.Enum[0]}.Initial()
 	}
 	return ""
 }
@@ -79,7 +79,7 @@ func (form *Form) values() map[string]string {
 // Arguments is the JSON object of the entries, or the error saying which
 // value is wrong.
 func (form *Form) Arguments() (string, error) {
-	return model.Arguments(form.fields, form.values())
+	return request.Arguments(form.fields, form.values())
 }
 
 // Command is the composer text of the call the form describes, or the
@@ -144,17 +144,17 @@ func (form *Form) View(ctx *w.Ctx, host Host) Node {
 
 // fieldRow is one field: its name (starred when required), the
 // description, and the input of its kind.
-func (form *Form) fieldRow(field model.ToolField) fieldRow {
+func (form *Form) fieldRow(field request.ToolField) fieldRow {
 	row := fieldRow{Name: field.Name, Description: field.Description}
 	if field.Required {
 		row.Name += " *"
 	}
 	switch field.Kind {
-	case model.FieldBoolean:
+	case request.FieldBoolean:
 		on := form.Choices[field.Name] == "true"
 		row.IsBool, row.On, row.Hint = true, on, form.boolHint(field)
 		row.Toggle = func() { form.Choices[field.Name] = boolText(!on) }
-	case model.FieldEnum:
+	case request.FieldEnum:
 		row.IsEnum, row.Options = true, form.enumOptions(field)
 	default:
 		row.Input = form.Inputs[field.Name]
@@ -170,7 +170,7 @@ func boolText(on bool) string {
 }
 
 // boolHint says whether an untouched optional boolean is sent.
-func (form *Form) boolHint(field model.ToolField) string {
+func (form *Form) boolHint(field request.ToolField) string {
 	if form.Choices[field.Name] == "" {
 		return "not sent"
 	}
@@ -179,13 +179,13 @@ func (form *Form) boolHint(field model.ToolField) string {
 
 // enumOptions are the buttons of an enum, one per option; an optional
 // field also has a "none" one that leaves it out.
-func (form *Form) enumOptions(field model.ToolField) []optionRow {
+func (form *Form) enumOptions(field request.ToolField) []optionRow {
 	options := []string{}
 	if !field.Required {
 		options = append(options, "")
 	}
 	for _, option := range field.Enum {
-		options = append(options, model.ToolField{Kind: model.FieldEnum, Default: option}.Initial())
+		options = append(options, request.ToolField{Kind: request.FieldEnum, Default: option}.Initial())
 	}
 	rows := make([]optionRow, len(options))
 	for i, option := range options {

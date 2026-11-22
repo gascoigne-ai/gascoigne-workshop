@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -35,21 +35,21 @@ func (a *App) tableView(panel pane, tab *reqTab, scroll *ScrollState, pad int) N
 		spec.Weights = []float64{28, 40, 32}
 		spec.Rows = kvRows(*rows, true, panel.flagDuplicates)
 		spec.Placeholder = spec.Columns
-		spec.AllChecked = model.AllEnabled(*rows)
+		spec.AllChecked = request.AllEnabled(*rows)
 		spec.OnToggleAll = func() {
 			a.commitEdit()
-			a.applyRows(panel, tab, func(rows []model.KV) []model.KV { return model.SetAll(rows, !model.AllEnabled(rows)) })
+			a.applyRows(panel, tab, func(rows []request.KV) []request.KV { return request.SetAll(rows, !request.AllEnabled(rows)) })
 		}
 		spec.OnToggle = func(index int) {
 			a.commitEdit()
-			a.applyRows(panel, tab, func(rows []model.KV) []model.KV {
+			a.applyRows(panel, tab, func(rows []request.KV) []request.KV {
 				rows[index].Enabled = !rows[index].Enabled
 				return rows
 			})
 		}
 		spec.OnDelete = func(index int) {
 			a.commitEdit()
-			a.applyRows(panel, tab, func(rows []model.KV) []model.KV { return model.DeleteRow(rows, index) })
+			a.applyRows(panel, tab, func(rows []request.KV) []request.KV { return request.DeleteRow(rows, index) })
 		}
 		spec.OnGrabRow = func(row int) { a.grabRow(panel, tab, row) }
 		spec.OnDragOverRow = func(row int) { a.dragRowOver(row) }

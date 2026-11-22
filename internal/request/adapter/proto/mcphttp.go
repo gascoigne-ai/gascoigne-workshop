@@ -12,11 +12,11 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 type mcpHTTP struct {
-	req     model.Request
+	req     request.Request
 	client  *http.Client
 	deliver func([]byte)
 	finish  func(error) // ends the session when an answer stream breaks
@@ -30,9 +30,9 @@ type mcpHTTP struct {
 	ctx       context.Context
 }
 
-func newMCPHTTP(req model.Request, network Network, deliver func([]byte), finish, note func(error)) (*mcpHTTP, error) {
+func newMCPHTTP(req request.Request, network Network, deliver func([]byte), finish, note func(error)) (*mcpHTTP, error) {
 	if !strings.HasPrefix(req.URL, "http://") && !strings.HasPrefix(req.URL, "https://") {
-		return nil, fmt.Errorf("%q is not an http or https URL, or a %s command", req.URL, model.StdioPrefix)
+		return nil, fmt.Errorf("%q is not an http or https URL, or a %s command", req.URL, request.StdioPrefix)
 	}
 	if err := checkAuth(req.Auth); err != nil {
 		return nil, err

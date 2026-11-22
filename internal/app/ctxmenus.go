@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/tabs"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"strings"
@@ -43,7 +43,7 @@ func (a *App) duplicateTab(index int) {
 		a.openRequest(&clone)
 		return
 	}
-	cp := owner.Collection.Folder.Duplicate(model.Node{Req: req}).Req
+	cp := owner.Collection.Folder.Duplicate(request.Node{Req: req}).Req
 	if cp == nil {
 		cp = owner.Collection.Folder.AddRequest(copyOf(req))
 	}
@@ -51,7 +51,7 @@ func (a *App) duplicateTab(index int) {
 }
 
 // copyOf is a clone of req named as a copy.
-func copyOf(req *model.Request) model.Request {
+func copyOf(req *request.Request) request.Request {
 	clone := req.Clone()
 	clone.Name += " copy"
 	return clone
@@ -62,23 +62,23 @@ func copyOf(req *model.Request) model.Request {
 func (a *App) rowMenuItems(panel pane, tab *reqTab, row int) []MenuItem {
 	n := len(*panel.rows(a, tab))
 	a.rowSel = &rowSelection{pane: panel, tab: tab, row: row}
-	change := func(callback func(rows []model.KV) []model.KV) func() {
+	change := func(callback func(rows []request.KV) []request.KV) func() {
 		return func() {
 			a.commitEdit()
 			a.applyRows(panel, tab, callback)
 		}
 	}
 	items := append(a.copyRowItems(*panel.rows(a, tab), row, false), append([]MenuItem{menuSeparator}, []MenuItem{
-		{Label: "Insert row above", Run: change(func(rows []model.KV) []model.KV { return model.InsertRow(rows, row, model.KV{Enabled: true}) })},
-		{Label: "Insert row below", Run: change(func(rows []model.KV) []model.KV { return model.InsertRow(rows, row+1, model.KV{Enabled: true}) })},
-		{Label: "Duplicate", Run: change(func(rows []model.KV) []model.KV { return model.DuplicateRow(rows, row) })},
-		{Label: "Move up", Disabled: row == 0, Run: change(func(rows []model.KV) []model.KV { m, _ := model.MoveRow(rows, row, -1); return m })},
-		{Label: "Move down", Disabled: row >= n-1, Run: change(func(rows []model.KV) []model.KV { m, _ := model.MoveRow(rows, row, 1); return m })},
+		{Label: "Insert row above", Run: change(func(rows []request.KV) []request.KV { return request.InsertRow(rows, row, request.KV{Enabled: true}) })},
+		{Label: "Insert row below", Run: change(func(rows []request.KV) []request.KV { return request.InsertRow(rows, row+1, request.KV{Enabled: true}) })},
+		{Label: "Duplicate", Run: change(func(rows []request.KV) []request.KV { return request.DuplicateRow(rows, row) })},
+		{Label: "Move up", Disabled: row == 0, Run: change(func(rows []request.KV) []request.KV { m, _ := request.MoveRow(rows, row, -1); return m })},
+		{Label: "Move down", Disabled: row >= n-1, Run: change(func(rows []request.KV) []request.KV { m, _ := request.MoveRow(rows, row, 1); return m })},
 		menuSeparator,
-		{Label: "Enable all", Run: change(func(rows []model.KV) []model.KV { return model.SetAll(rows, true) })},
-		{Label: "Disable all", Run: change(func(rows []model.KV) []model.KV { return model.SetAll(rows, false) })},
+		{Label: "Enable all", Run: change(func(rows []request.KV) []request.KV { return request.SetAll(rows, true) })},
+		{Label: "Disable all", Run: change(func(rows []request.KV) []request.KV { return request.SetAll(rows, false) })},
 		menuSeparator,
-		{Label: "Delete", Run: change(func(rows []model.KV) []model.KV { return model.DeleteRow(rows, row) })},
+		{Label: "Delete", Run: change(func(rows []request.KV) []request.KV { return request.DeleteRow(rows, row) })},
 	}...)...)
 	return append(items, a.secretItems(panel, row)...)
 }
@@ -99,7 +99,7 @@ func (a *App) secretItems(panel pane, row int) []MenuItem {
 
 // copyRowItems copy parts of table row index to the clipboard. They are the
 // whole menu of a read-only table and lead the menu of an editable one.
-func (a *App) copyRowItems(rows []model.KV, index int, withAll bool) []MenuItem {
+func (a *App) copyRowItems(rows []request.KV, index int, withAll bool) []MenuItem {
 	if index < 0 || index >= len(rows) {
 		return nil
 	}

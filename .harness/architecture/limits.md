@@ -10,7 +10,7 @@ is cut, refused or shown plainly, never a panic.
 | Image response | 64 Mi pixels | not decoded | `respview.maxImagePixels` |
 | JSON nesting in the viewer | 256 levels | plain text | `jsonview.maxDepth` |
 | YAML nesting | 100 levels | error | `miniyaml.maxDepth` |
-| Variable expansion | 16 MiB | stops | `model.maxExpanded` |
+| Variable expansion | 16 MiB | stops | `request.maxExpanded` |
 | Request timeout | 24 hours | capped | `settings.MaxTimeout` |
 | Paste | 1 MiB | refused with a toast | `core.MaxPasteBytes` |
 | Text field undo | 100 steps, 8 MiB of snapshots | oldest dropped | `widget.historyLimit`, `historyBytes` |
@@ -23,13 +23,13 @@ is cut, refused or shown plainly, never a panic.
 | MCP server requests and list refreshes at once | 16 workers | request answered with -32000 `client busy`, refresh dropped; one note per second | `proto.maxServerWork` |
 | MCP busy replies queued | 1024 | reply dropped; the stream reader never waits | `proto.maxPending` |
 | MCP sampling prompts open | 1 | user-rejected error at once | `proto.maxSamplePrompts` |
-| JSON Schema | 32 levels, 1000 properties, 1000 enum entries | the rest left out, logged at debug | `model.maxSchemaDepth`, `maxSchemaProperties`, `maxSchemaEnum` |
+| JSON Schema | 32 levels, 1000 properties, 1000 enum entries | the rest left out, logged at debug | `request.maxSchemaDepth`, `maxSchemaProperties`, `maxSchemaEnum` |
 | OpenAPI `$ref` chain | 6 levels | deeper refs not resolved (ends cycles) | `openapi.maxRefDepth` |
 | gRPC reflection files per symbol | 512 | error | `proto.maxReflectedFiles` |
 | gRPC message schema | 500 messages | the rest not expanded | `proto.maxSchemaMessages` |
 | Key repeat output | 1,000,000 (ms, ticks or presses a second); an `xset` rate of 0 | unknown, so a timing never overflows `time.Duration` | `keyrepeat.maxSetting` |
 | Saved file version | 0 to the newest the build reads | error naming the file; higher is `fileversion.NewerError` (Persistence) | `fileversion.Read` |
-| Protocol, body type, auth type, key location names | exact match of a fixed list | error; the older auth `"none"` reads as none and is rewritten as absent | `model.Parse*` |
+| Protocol, body type, auth type, key location names | exact match of a fixed list | error; the older auth `"none"` reads as none and is rewritten as absent | `request.Parse*` |
 
 - The Postman, cURL, client config and SVG icon parsers set no size limit of their own: a huge
   input costs memory but parses without panic or hang. An SVG arc gives at most 4 segments.

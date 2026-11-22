@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
@@ -30,7 +30,7 @@ type Host interface {
 	// reports whether there is one.
 	OpenRequest(folder, path string) bool
 	// Badge is the small method label shown before a request's name.
-	Badge(protocol model.Protocol, method string) Node
+	Badge(protocol request.Protocol, method string) Node
 }
 
 // Log holds the sent requests, newest first, and the scroll state of their
@@ -43,7 +43,7 @@ type Log struct {
 // Record adds a finished send of the request at path of the collection
 // saved in folder ("" when not saved), writes it to the state
 // folder, and drops the oldest past response.SentLimit.
-func (l *Log) Record(host Host, at time.Time, folder, path string, req *model.Request, status int) {
+func (l *Log) Record(host Host, at time.Time, folder, path string, req *request.Request, status int) {
 	sent := response.Sent{At: at, Collection: folder, Path: path, Protocol: req.Protocol, Method: req.Method, URL: req.URL, Status: status}
 	l.rows = append([]response.Sent{sent}, l.rows...)
 	if len(l.rows) > response.SentLimit {

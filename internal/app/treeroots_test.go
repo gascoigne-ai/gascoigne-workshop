@@ -12,8 +12,8 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto/ws"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
@@ -74,7 +74,7 @@ func TestCtrlOOpensAnotherCollectionBesideTheOpenOne(t *testing.T) {
 	if got := openNames(a); len(got) != 3 {
 		t.Fatalf("open %v", got)
 	}
-	if owner, _ := a.open.Owner(model.Of(a.cur().Req)); owner.Dir != alphaDir {
+	if owner, _ := a.open.Owner(request.Of(a.cur().Req)); owner.Dir != alphaDir {
 		t.Fatalf("shown %q of %q, want Alpha's", a.cur().Req.Name, owner.Dir)
 	}
 }
@@ -235,8 +235,8 @@ func TestTheCollectionMenuIsDisabledForACollectionWithNothingOpen(t *testing.T) 
 // tab left to close it.
 func TestClosingACollectionDisconnectsItsSockets(t *testing.T) {
 	closed := make(chan struct{})
-	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		conn, err := ws.Upgrade(writer, request)
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
+		conn, err := ws.Upgrade(writer, call)
 		if err != nil {
 			return
 		}

@@ -2,7 +2,7 @@ package app
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"os"
 	"path/filepath"
 	"testing"
@@ -55,7 +55,7 @@ func TestStateRestoreRoundTripsThroughTheFile(t *testing.T) {
 	if len(b.list.Tabs) != 2 || b.list.Active != 1 || b.cur().paneTab != 3 {
 		t.Fatalf("tabs %d active %d pane %d", len(b.list.Tabs), b.list.Active, b.cur().paneTab)
 	}
-	if b.cur().Req != b.col().Folders[0].Requests[0] || b.selected != model.Of(b.cur().Req) {
+	if b.cur().Req != b.col().Folders[0].Requests[0] || b.selected != request.Of(b.cur().Req) {
 		t.Fatal("the restored tab must be the request in the new tree")
 	}
 	if b.sidebarSplit.Size != 300 || !b.expanded[b.col().Folders[2]] {
@@ -224,9 +224,9 @@ func TestStateRestoreFindsTheRequestPaneByItsLabel(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			a := testApp(t, memorySettings(), withOptions(Options{StatePath: ""}))
-			request := a.col().Folders[0].Requests[0]
-			request.Protocol = "grpc"
-			test.tab.Path = "User/" + request.Name
+			call := a.col().Folders[0].Requests[0]
+			call.Protocol = "grpc"
+			test.tab.Path = "User/" + call.Name
 			a.restore(state.State{Tabs: []state.Tab{test.tab}})
 			if got := requestPanesFor(a.cur())[a.cur().paneTab].label; got != test.want {
 				t.Errorf("restored pane = %q, want %q", got, test.want)

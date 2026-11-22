@@ -7,16 +7,16 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 func TestProtoPathsAreSavedRelativeInsideTheCollectionAndAbsoluteOutside(t *testing.T) {
 	dir, elsewhere := t.TempDir(), t.TempDir()
-	source := model.ProtoSource{
+	source := request.ProtoSource{
 		Files:       []string{filepath.Join(dir, "protos", "health.proto"), filepath.Join(elsewhere, "common.proto")},
 		ImportPaths: []string{filepath.Join(dir, "protos"), elsewhere},
 	}
-	collection := model.Collection{Folder: model.Folder{Name: "gRPC", Requests: []*model.Request{
+	collection := request.Collection{Folder: request.Folder{Name: "gRPC", Requests: []*request.Request{
 		{Name: "Check", Protocol: "grpc", Method: "grpc.health.v1.Health/Check", URL: "grpc://localhost:8085", Proto: source},
 	}}}
 	if err := disk.Save(dir, collection); err != nil {
@@ -55,8 +55,8 @@ func TestProtoPathsAreRelativeWhenTheCollectionFolderIsGivenRelative(t *testing.
 	parent := t.TempDir()
 	t.Chdir(parent)
 	inside := filepath.Join(parent, "api", "health.proto")
-	collection := model.Collection{Folder: model.Folder{Name: "gRPC", Requests: []*model.Request{
-		{Name: "Check", Protocol: "grpc", Proto: model.ProtoSource{Files: []string{inside}}},
+	collection := request.Collection{Folder: request.Folder{Name: "gRPC", Requests: []*request.Request{
+		{Name: "Check", Protocol: "grpc", Proto: request.ProtoSource{Files: []string{inside}}},
 	}}}
 	if err := disk.Save("api", collection); err != nil {
 		t.Fatal(err)
@@ -85,7 +85,7 @@ func TestProtoPathsAreRelativeWhenTheCollectionFolderIsGivenRelative(t *testing.
 
 func TestAReflectionRequestSavesNoProtoKeys(t *testing.T) {
 	dir := t.TempDir()
-	collection := model.Collection{Folder: model.Folder{Name: "gRPC", Requests: []*model.Request{
+	collection := request.Collection{Folder: request.Folder{Name: "gRPC", Requests: []*request.Request{
 		{Name: "Check", Protocol: "grpc", URL: "grpc://localhost:8085"},
 	}}}
 	if err := disk.Save(dir, collection); err != nil {

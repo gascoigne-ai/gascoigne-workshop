@@ -7,15 +7,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 func TestFailureWordsStoppedRequestsPlainly(t *testing.T) {
 	boom := errors.New("boom")
-	if got := failureText(fmt.Errorf("wrapped: %w", context.Canceled)); got != model.ErrCancelled {
+	if got := failureText(fmt.Errorf("wrapped: %w", context.Canceled)); got != request.ErrCancelled {
 		t.Errorf("cancelled: %q", got)
 	}
-	if got := failureText(fmt.Errorf("wrapped: %w", context.DeadlineExceeded)); got != model.ErrTimedOut {
+	if got := failureText(fmt.Errorf("wrapped: %w", context.DeadlineExceeded)); got != request.ErrTimedOut {
 		t.Errorf("timed out: %q", got)
 	}
 	if got := failureText(boom); got != "boom" {
@@ -31,8 +31,8 @@ func TestFailureWordsStoppedRequestsPlainly(t *testing.T) {
 		ctx  context.Context
 		want string
 	}{
-		"cancelled context hides the transport error": {cancelled, model.ErrCancelled},
-		"expired context hides the transport error":   {expired, model.ErrTimedOut},
+		"cancelled context hides the transport error": {cancelled, request.ErrCancelled},
+		"expired context hides the transport error":   {expired, request.ErrTimedOut},
 		"live context keeps the transport error":      {context.Background(), "boom"},
 	} {
 		if got := stopReason(tc.ctx, boom); got != tc.want {

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // Whatever bytes a server sends, deliver returns: it logs the message, never
@@ -64,8 +64,8 @@ func serverRequestSeeds(fuzz *testing.F) {
 
 func answeringSession(counting *countingTransport) *mcpSession {
 	session := &mcpSession{eventLog: newTestLog(64), tr: counting, waiters: map[int64]chan rpcAnswer{}}
-	session.sampler = func(context.Context, port.SamplingRequest) (port.SamplingResult, bool) {
-		return port.SamplingResult{}, false
+	session.sampler = func(context.Context, request.SamplingRequest) (request.SamplingResult, bool) {
+		return request.SamplingResult{}, false
 	}
 	return session
 }

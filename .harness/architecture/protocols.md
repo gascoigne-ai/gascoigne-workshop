@@ -1,7 +1,7 @@
 ## Protocols
 
 Each protocol is a client of its own in `request/adapter/proto` (its package doc says which are hand-written and why). A protocol that keeps a
-connection implements `port.Streamer`; `Registry.Connect` opens a `port.Session`, and its one-shot
+connection implements `request.Streamer`; `Registry.Connect` opens a `request.Session`, and its one-shot
 `Send` connects, sends and returns the first reply.
 
 ### Sessions and socket tabs
@@ -13,8 +13,8 @@ connection implements `port.Streamer`; `Registry.Connect` opens a `port.Session`
   streams (`isSocket`). Dialing runs off the UI goroutine; every answer, event and end comes back as
   a `ws*` message carrying the tab and its connection generation, and a stale generation is dropped
   (its session closed). Changing the protocol disconnects.
-- Every log line is a `port.Event`; code compares its `Kind`, never the peer's `Name` (see the
-  `port.Event` doc).
+- Every log line is a `request.Event`; code compares its `Kind`, never the peer's `Name` (see the
+  `request.Event` doc).
 - The connection is the machine `tabs.ConnState`; its table and the reason for it are in
   `workspace/tabs/connstate.go`. `Auto-reconnect` (per tab, not saved) turns a move into retrying
   into a move to idle when off. While retrying, a timer sends `wsRetry` after `retryDelay`; the timer
@@ -46,7 +46,7 @@ stateDiagram-v2
   `Response.Truncated`. Every send is traced (`net/http/httptrace`) into `Response.Timing`.
 - **WebSocket**: headers, Auth credentials and a `Sec-WebSocket-Protocol` header (split into
   subprotocols) go into the handshake. The one-shot reply has status 101. The composer sends
-  `hex: de ad be ef` as a binary message (`port.BinarySender`), and `{ }` compacts JSON keeping key
+  `hex: de ad be ef` as a binary message (`request.BinarySender`), and `{ }` compacts JSON keeping key
   order and number text.
 - **SSE**: a long GET read by `readEventStream` (`eventstream.go`), shared with the MCP HTTP
   transport. Events are `KindMessage` with the server's name in `Event.Name`; the session refuses
@@ -56,7 +56,7 @@ stateDiagram-v2
   and credentials. An introspection answer gives the `Schema (n)` menu of starters; the schema is
   not saved.
 - **gRPC**: `Send` makes one unary call and refuses streaming methods. Methods
-  come from a table of sources keyed by `model.SourceKind` (`grpcsource.go`):
+  come from a table of sources keyed by `request.SourceKind` (`grpcsource.go`):
   - reflection asks v1, then v1alpha on `Unimplemented`;
   - proto files are compiled with protocompile and list only the services those files declare. A
     missing or broken file is the send's error with its path and line; it never falls back to
@@ -65,7 +65,7 @@ stateDiagram-v2
     metadata. The answer is indented by `encoding/json`, because `protojson` randomizes its
     spacing. Header and trailer metadata are the response headers.
   - Requests hold absolute proto paths; the collection stores them relative to its folder when
-    inside (`model.StoredPath`, `LoadedPath`). The source is derived from the request, so choosing
+    inside (`request.StoredPath`, `LoadedPath`). The source is derived from the request, so choosing
     Proto files with no file yet changes only the tab.
   - The Schema pane drops an answer for an older URL, method or source.
   - Streaming: the `Stream` chip (not saved) makes the tab a socket tab. The Body is the first
@@ -91,8 +91,8 @@ stateDiagram-v2
   over the size limit ends either.
 - Sampling: with `MCP.Sampler` nil it is neither offered nor answered. The app shows one prompt at a
   time; a second gets the user-rejected error (-1) at once.
-- The explorer calls through `port.Requester` on the bus, so the answer matches its request; its
+- The explorer calls through `request.Requester` on the bus, so the answer matches its request; its
   UI-free state is `request/mcpexplorer`. A tool result with `isError` shows as an error.
-- `model.JSONSchema` is decoded once, at the MCP answer and at the OpenAPI import, and read typed
+- `request.JSONSchema` is decoded once, at the MCP answer and at the OpenAPI import, and read typed
   afterwards. Only the keywords it has fields for are read. Real captures of the example server are
-  under `internal/request/model/testdata/mcp`.
+  under `internal/request/testdata/mcp`.

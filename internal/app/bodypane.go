@@ -1,8 +1,8 @@
 package app
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/editor"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/jsonview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/textfmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/respview"
@@ -15,25 +15,25 @@ import (
 
 // bodyChoice is one choice of the body type row.
 type bodyChoice struct {
-	id    model.BodyType
+	id    request.BodyType
 	label string
 	width int
 }
 
 // bodyTypes are the choices of the body type row.
 var bodyTypes = []bodyChoice{
-	{model.BodyNone, "None", 64},
-	{model.BodyJSON, "JSON", 64},
-	{model.BodyText, "Text", 64},
-	{model.BodyForm, "Form", 64},
-	{model.BodyMultipart, "Multipart", 84},
-	{model.BodyGraphQL, "GraphQL", 80},
-	{model.BodyFile, "File", 64},
+	{request.BodyNone, "None", 64},
+	{request.BodyJSON, "JSON", 64},
+	{request.BodyText, "Text", 64},
+	{request.BodyForm, "Form", 64},
+	{request.BodyMultipart, "Multipart", 84},
+	{request.BodyGraphQL, "GraphQL", 80},
+	{request.BodyFile, "File", 64},
 }
 
 // formPane is the table of form and multipart fields.
 var formPane = pane{label: "Body", kind: paneTable, title: "Fields", editable: true,
-	rows: func(_ *App, tab *reqTab) *[]model.KV { return &tab.Req.Form }}
+	rows: func(_ *App, tab *reqTab) *[]request.KV { return &tab.Req.Form }}
 
 // The pane and its two simplest editors are templates; the editor is
 // picked in Go (bodyEditor) and enters the pane through a slot.
@@ -54,8 +54,8 @@ type bodyChip struct {
 // bodyPane is the body editor: a type chooser, then an editor that fits the type.
 func (a *App) bodyPane(panel pane, tab *reqTab, scroll *ScrollState) Node {
 	kind := tab.Req.BodyType
-	isJSON := kind == model.BodyJSON
-	canWrap := isJSON || kind == model.BodyText // the editors that are a text area
+	isJSON := kind == request.BodyJSON
+	canWrap := isJSON || kind == request.BodyText // the editors that are a text area
 	status, valid := textfmt.JSONStatus(tab.body.Text)
 	statusColor := w.Error
 	if valid {
@@ -85,9 +85,9 @@ func (a *App) bodyPane(panel pane, tab *reqTab, scroll *ScrollState) Node {
 // bodyEditor is the part of the body pane under the type chooser.
 func (a *App) bodyEditor(tab *reqTab, scroll *ScrollState) Node {
 	switch tab.Req.BodyType {
-	case model.BodyJSON, model.BodyText:
+	case request.BodyJSON, request.BodyText:
 		base := plainStyler
-		if tab.Req.BodyType == model.BodyJSON {
+		if tab.Req.BodyType == request.BodyJSON {
 			base = jsonStyler
 		}
 		tab.body.Styler = a.withVariables(base, tab.Req) // {{variables}} stand out, as in the URL
@@ -97,11 +97,11 @@ func (a *App) bodyEditor(tab *reqTab, scroll *ScrollState) Node {
 			"bodyText": &tab.body.TextField,
 			"sync":     func() { editRequest(tab, editor.BodyTyped{Text: tab.body.Text}) },
 		})
-	case model.BodyForm, model.BodyMultipart:
+	case request.BodyForm, request.BodyMultipart:
 		return a.tableView(formPane, tab, scroll, 0)
-	case model.BodyFile:
+	case request.BodyFile:
 		return a.fileBody(tab)
-	case model.BodyGraphQL:
+	case request.BodyGraphQL:
 		return a.graphQLBody(tab)
 	}
 	return bodyNoneTemplate.MustBuild(markup.Scope{})
@@ -112,7 +112,7 @@ func (a *App) bodyEditor(tab *reqTab, scroll *ScrollState) Node {
 // response's Wrap.
 func (a *App) toggleBodyWrap(tab *reqTab) { tab.body.Wrap = !tab.body.Wrap }
 
-func (a *App) setBodyType(tab *reqTab, id model.BodyType) {
+func (a *App) setBodyType(tab *reqTab, id request.BodyType) {
 	a.commitEdit()
 	editRequest(tab, editor.BodyTypeChosen{Type: id, Text: tab.body.Text, FilePath: tab.file.Text})
 }

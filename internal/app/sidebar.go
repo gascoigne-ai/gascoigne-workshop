@@ -2,7 +2,7 @@ package app
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -135,7 +135,7 @@ func (a *App) pressTreeRow(row collection.Row) {
 	a.treeFocus = true
 	a.dragNode = row.Node()
 	if a.isRoot(row.Dir) {
-		a.dragNode = model.Node{} // the collection itself cannot be moved
+		a.dragNode = request.Node{} // the collection itself cannot be moved
 	}
 	if row.Folder {
 		a.selectNode(row.Node())
@@ -146,8 +146,8 @@ func (a *App) pressTreeRow(row collection.Row) {
 }
 
 // requestBadge is the short label shown before a request name.
-func requestBadge(protocol model.Protocol, method string) string {
-	if info := protocol.Info(); info.Label != "" && info.Method != model.MethodHTTP {
+func requestBadge(protocol request.Protocol, method string) string {
+	if info := protocol.Info(); info.Label != "" && info.Method != request.MethodHTTP {
 		return info.Label
 	}
 	if method == "DELETE" {

@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fileversion"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/state"
@@ -24,8 +24,8 @@ const stateDebounce = time.Second
 
 // holderOf is the open collection that holds req and req's remembered path in
 // it; ok is false when it is in no open collection.
-func (a *App) holderOf(req *model.Request) (entry collections.Entry, path string, ok bool) {
-	entry, ok = a.open.Owner(model.Node{Req: req})
+func (a *App) holderOf(req *request.Request) (entry collections.Entry, path string, ok bool) {
+	entry, ok = a.open.Owner(request.Node{Req: req})
 	if !ok {
 		return collections.Entry{}, "", false
 	}
@@ -34,7 +34,7 @@ func (a *App) holderOf(req *model.Request) (entry collections.Entry, path string
 
 // requestPath is the remembered path of req in its collection, "" when it
 // is in no open collection.
-func (a *App) requestPath(req *model.Request) string {
+func (a *App) requestPath(req *request.Request) string {
 	_, path, _ := a.holderOf(req)
 	return path
 }
@@ -48,7 +48,7 @@ const historyKeySep = "#"
 // collection's folder and its path, since two collections can hold the
 // same path. A collection not saved yet has no folder, so its key is the
 // bare path. "" when req is in no open collection.
-func (a *App) historyKey(req *model.Request) string {
+func (a *App) historyKey(req *request.Request) string {
 	owner, path, ok := a.holderOf(req)
 	if path == "" || !ok || owner.Dir == "" {
 		return path
@@ -59,8 +59,8 @@ func (a *App) historyKey(req *model.Request) string {
 // legacyHistoryKey is the bare path req's responses were kept under while
 // one collection was open at a time, for a request of the first open
 // collection, which is where that one collection is now; "" otherwise.
-func (a *App) legacyHistoryKey(req *model.Request) string {
-	owner, ok := a.open.Owner(model.Node{Req: req})
+func (a *App) legacyHistoryKey(req *request.Request) string {
+	owner, ok := a.open.Owner(request.Node{Req: req})
 	if !ok || owner.Dir == "" || a.open.Entries[0].Collection != owner.Collection {
 		return ""
 	}
@@ -78,7 +78,7 @@ func (a *App) openDirs() []string {
 }
 
 // remembered is the open collection a state reference names, nil for none.
-func (a *App) remembered(ref string) *model.Collection {
+func (a *App) remembered(ref string) *request.Collection {
 	at := state.CollectionAt(ref, a.openDirs())
 	if at < 0 {
 		return nil
@@ -128,7 +128,7 @@ func (a *App) snapshot() state.State {
 // its folder, or, for the collection that is not saved, in Expanded.
 func (a *App) snapshotExpanded(saved *state.State, entry collections.Entry) {
 	var paths []string
-	tree.WalkFolders(&entry.Collection.Folder, "", func(name string, folder *model.Folder) {
+	tree.WalkFolders(&entry.Collection.Folder, "", func(name string, folder *request.Folder) {
 		if a.expanded[folder] {
 			paths = append(paths, name)
 		}
@@ -147,12 +147,12 @@ func (a *App) snapshotExpanded(saved *state.State, entry collections.Entry) {
 }
 
 // expandPaths opens the folders of col at the remembered paths.
-func (a *App) expandPaths(col *model.Collection, paths []string) {
+func (a *App) expandPaths(col *request.Collection, paths []string) {
 	if col == nil {
 		return
 	}
 	for _, p := range paths {
-		tree.WalkFolders(&col.Folder, "", func(path string, folder *model.Folder) {
+		tree.WalkFolders(&col.Folder, "", func(path string, folder *request.Folder) {
 			if path == p {
 				a.expanded[folder] = true
 			}
@@ -183,7 +183,7 @@ func rememberedPane(tab *reqTab, remembered state.Tab) int {
 // restore applies a remembered state to a freshly built app. Anything
 // that no longer exists is skipped, and values are kept in range.
 func (a *App) restore(stateValue state.State) {
-	a.trusted = model.AccessSetOf(stateValue.Trusted)
+	a.trusted = request.AccessSetOf(stateValue.Trusted)
 	a.prefs.Size.W, a.prefs.Size.H = max(stateValue.SettingsW, 0), max(stateValue.SettingsH, 0)
 	a.sidebarSplit.Size = max(stateValue.SidebarW, 0)
 	if stateValue.PaneSplit > 0 && stateValue.PaneSplit < 1 {
@@ -196,7 +196,7 @@ func (a *App) restore(stateValue state.State) {
 		}
 	}
 	var saved []state.Tab
-	var requests []*model.Request
+	var requests []*request.Request
 	active := 0
 	for i, rt := range stateValue.Tabs {
 		req := a.requestAt(a.remembered(rt.Collection), rt.Path)
@@ -220,7 +220,7 @@ func (a *App) restore(stateValue state.State) {
 			}
 		}
 		a.updateTabs(tabs.Activate{Index: active})
-		a.selected = model.Node{Req: a.cur().Req}
+		a.selected = request.Node{Req: a.cur().Req}
 	}
 	for name, ws := range stateValue.Columns {
 		if len(ws) == 0 {
@@ -234,7 +234,7 @@ func (a *App) restore(stateValue state.State) {
 }
 
 // requestAt is the request of col at path, nil when there is none.
-func (a *App) requestAt(col *model.Collection, path string) *model.Request {
+func (a *App) requestAt(col *request.Collection, path string) *request.Request {
 	if col == nil {
 		return nil
 	}
@@ -349,7 +349,7 @@ func (a *App) saveHistory(tab *reqTab) {
 }
 
 // loadHistory is the saved responses of req, newest first.
-func (a *App) loadHistory(req *model.Request) []tabs.PastResponse {
+func (a *App) loadHistory(req *request.Request) []tabs.PastResponse {
 	store, key := a.historyStore(), a.historyKey(req)
 	if store == nil || key == "" {
 		return nil
@@ -364,7 +364,7 @@ func (a *App) loadHistory(req *model.Request) []tabs.PastResponse {
 	}
 	entries := make([]tabs.PastResponse, 0, len(saved))
 	for _, entry := range saved {
-		entries = append(entries, tabs.PastResponse{Resp: &model.Response{
+		entries = append(entries, tabs.PastResponse{Resp: &request.Response{
 			Status: entry.Status, StatusText: entry.StatusText, Duration: entry.Duration,
 			Size: len(entry.Body), Headers: entry.Headers, Body: entry.Body,
 		}, At: entry.At})
@@ -372,7 +372,7 @@ func (a *App) loadHistory(req *model.Request) []tabs.PastResponse {
 	return entries
 }
 
-func historyEntry(resp *model.Response, at time.Time) response.Entry {
+func historyEntry(resp *request.Response, at time.Time) response.Entry {
 	return response.Entry{At: at, Status: resp.Status, StatusText: resp.StatusText, Duration: resp.Duration, Headers: resp.Headers, Body: resp.Body}
 }
 

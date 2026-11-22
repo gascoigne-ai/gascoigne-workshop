@@ -1,8 +1,8 @@
 package app
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/editor"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -10,7 +10,7 @@ import (
 
 // authChoice is one option of the key location chooser.
 type authChoice struct {
-	id    model.KeyIn
+	id    request.KeyIn
 	label string
 }
 
@@ -28,31 +28,31 @@ type authField struct {
 // authType is a way to authenticate and the fields it needs. The table
 // is the whole definition: the pane and the stored values follow it.
 type authType struct {
-	id     model.AuthType
+	id     request.AuthType
 	label  string
 	width  int
 	fields []authField
 }
 
 var authTypes = []authType{
-	{id: model.AuthNone, label: "None", width: 64},
-	{id: model.AuthBearer, label: "Bearer", width: 72, fields: []authField{
+	{id: request.AuthNone, label: "None", width: 64},
+	{id: request.AuthBearer, label: "Bearer", width: 72, fields: []authField{
 		{id: editor.AuthToken, label: "Token", secret: true},
 	}},
-	{id: model.AuthBasic, label: "Basic", width: 64, fields: []authField{
+	{id: request.AuthBasic, label: "Basic", width: 64, fields: []authField{
 		{id: editor.AuthUser, label: "User"},
 		{id: editor.AuthPassword, label: "Password", secret: true},
 	}},
-	{id: model.AuthAPIKey, label: "API key", width: 80, fields: []authField{
+	{id: request.AuthAPIKey, label: "API key", width: 80, fields: []authField{
 		{id: editor.AuthKeyName, label: "Name"},
 		{id: editor.AuthKeyValue, label: "Value", secret: true},
 		{label: "Add to",
-			choices: []authChoice{{model.KeyInHeader, "Header"}, {model.KeyInQuery, "Query"}}},
+			choices: []authChoice{{request.KeyInHeader, "Header"}, {request.KeyInQuery, "Query"}}},
 	}},
 }
 
 // authTypeOf is the table entry for an auth type id ("" is none).
-func authTypeOf(id model.AuthType) authType {
+func authTypeOf(id request.AuthType) authType {
 	for _, t := range authTypes {
 		if t.id == id {
 			return t
@@ -158,7 +158,7 @@ func authFieldRow(tab *reqTab, field authField) authRow {
 		chips := make([]authChip, 0, len(field.choices))
 		for _, c := range field.choices {
 			pick := func() { editRequest(tab, editor.AuthKeyInChosen{In: c.id}) }
-			lit := stored == c.id || (stored == "" && c.id == model.KeyInHeader)
+			lit := stored == c.id || (stored == "" && c.id == request.KeyInHeader)
 			chips = append(chips, authChip{Label: c.label, Width: authChoiceChipWidth, Chosen: lit, Pick: pick})
 		}
 		return authRow{Label: field.label, Chips: chips}

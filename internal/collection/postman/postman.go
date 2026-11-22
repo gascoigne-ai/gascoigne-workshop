@@ -9,13 +9,13 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // Result is what an import produces.
 type Result struct {
-	Folder  *model.Folder
-	Vars    []model.KV
+	Folder  *request.Folder
+	Vars    []request.KV
 	Skipped []string // what could not be carried over, as "request: what"
 }
 
@@ -95,43 +95,43 @@ type bodyOptions struct {
 // the import reports as not (fully) imported.
 type bodyMode struct {
 	mode  string
-	types []model.BodyType
+	types []request.BodyType
 	lost  bool
-	read  func(from *body, to *model.Request)
-	write func(from *model.Request) *body
+	read  func(from *body, to *request.Request)
+	write func(from *request.Request) *body
 }
 
 var bodyModes = []bodyMode{
-	{mode: "raw", types: []model.BodyType{model.BodyJSON, model.BodyText}, read: readRawBody, write: writeRawBody},
-	{mode: "urlencoded", types: []model.BodyType{model.BodyForm},
-		read: func(from *body, to *model.Request) {
-			to.BodyType, to.Form = model.BodyForm, rows(from.URLEncoded, false)
+	{mode: "raw", types: []request.BodyType{request.BodyJSON, request.BodyText}, read: readRawBody, write: writeRawBody},
+	{mode: "urlencoded", types: []request.BodyType{request.BodyForm},
+		read: func(from *body, to *request.Request) {
+			to.BodyType, to.Form = request.BodyForm, rows(from.URLEncoded, false)
 		},
-		write: func(from *model.Request) *body {
+		write: func(from *request.Request) *body {
 			return &body{Mode: "urlencoded", URLEncoded: outRows(from.Form, false)}
 		}},
-	{mode: "formdata", types: []model.BodyType{model.BodyMultipart},
-		read: func(from *body, to *model.Request) {
-			to.BodyType, to.Form = model.BodyMultipart, rows(from.FormData, true)
+	{mode: "formdata", types: []request.BodyType{request.BodyMultipart},
+		read: func(from *body, to *request.Request) {
+			to.BodyType, to.Form = request.BodyMultipart, rows(from.FormData, true)
 		},
-		write: func(from *model.Request) *body {
+		write: func(from *request.Request) *body {
 			return &body{Mode: "formdata", FormData: outRows(from.Form, true)}
 		}},
-	{mode: "graphql", lost: true, read: func(_ *body, to *model.Request) { to.BodyType = model.BodyGraphQL }},
+	{mode: "graphql", lost: true, read: func(_ *body, to *request.Request) { to.BodyType = request.BodyGraphQL }},
 	{mode: "file", lost: true},
 }
 
-func readRawBody(from *body, to *model.Request) {
+func readRawBody(from *body, to *request.Request) {
 	to.Body = from.Raw
-	to.BodyType = model.BodyText
+	to.BodyType = request.BodyText
 	if from.Options != nil && from.Options.Raw.Language == "json" || isValidJSONObjectOrArray(from.Raw) {
-		to.BodyType = model.BodyJSON
+		to.BodyType = request.BodyJSON
 	}
 }
 
-func writeRawBody(from *model.Request) *body {
+func writeRawBody(from *request.Request) *body {
 	out := &body{Mode: "raw", Raw: from.Body}
-	if from.BodyType == model.BodyJSON {
+	if from.BodyType == request.BodyJSON {
 		out.Options = &bodyOptions{}
 		out.Options.Raw.Language = "json"
 	}
@@ -147,7 +147,7 @@ func bodyModeNamed(mode string) *bodyMode {
 	return nil
 }
 
-func bodyModeFor(bodyType model.BodyType) *bodyMode {
+func bodyModeFor(bodyType request.BodyType) *bodyMode {
 	for i := range bodyModes {
 		for _, candidate := range bodyModes[i].types {
 			if candidate == bodyType {
@@ -169,38 +169,38 @@ type auth struct {
 // authKind ties a Postman auth type to a model one.
 type authKind struct {
 	name  string
-	model model.AuthType
-	read  func(from *auth) model.Auth
-	write func(from model.Auth) *auth
+	model request.AuthType
+	read  func(from *auth) request.Auth
+	write func(from request.Auth) *auth
 }
 
 var authKinds = []authKind{
-	{name: "bearer", model: model.AuthBearer,
-		read: func(from *auth) model.Auth {
-			return model.Auth{Type: model.AuthBearer, Token: get(from.Bearer, "token")}
+	{name: "bearer", model: request.AuthBearer,
+		read: func(from *auth) request.Auth {
+			return request.Auth{Type: request.AuthBearer, Token: get(from.Bearer, "token")}
 		},
-		write: func(from model.Auth) *auth {
+		write: func(from request.Auth) *auth {
 			return &auth{Type: "bearer", Bearer: []kv{{Key: "token", Value: text(shareable(from.Token))}}}
 		}},
-	{name: "basic", model: model.AuthBasic,
-		read: func(from *auth) model.Auth {
-			return model.Auth{Type: model.AuthBasic, User: get(from.Basic, "username"), Password: get(from.Basic, "password")}
+	{name: "basic", model: request.AuthBasic,
+		read: func(from *auth) request.Auth {
+			return request.Auth{Type: request.AuthBasic, User: get(from.Basic, "username"), Password: get(from.Basic, "password")}
 		},
-		write: func(from model.Auth) *auth {
+		write: func(from request.Auth) *auth {
 			return &auth{Type: "basic", Basic: []kv{{Key: "username", Value: text(from.User)}, {Key: "password", Value: text(shareable(from.Password))}}}
 		}},
-	{name: "apikey", model: model.AuthAPIKey,
-		read: func(from *auth) model.Auth {
-			in := model.KeyInHeader
-			if get(from.APIKey, "in") == string(model.KeyInQuery) { // lenient: anything else is a header
-				in = model.KeyInQuery
+	{name: "apikey", model: request.AuthAPIKey,
+		read: func(from *auth) request.Auth {
+			in := request.KeyInHeader
+			if get(from.APIKey, "in") == string(request.KeyInQuery) { // lenient: anything else is a header
+				in = request.KeyInQuery
 			}
-			return model.Auth{Type: model.AuthAPIKey, KeyName: get(from.APIKey, "key"), KeyValue: get(from.APIKey, "value"), KeyIn: in}
+			return request.Auth{Type: request.AuthAPIKey, KeyName: get(from.APIKey, "key"), KeyValue: get(from.APIKey, "value"), KeyIn: in}
 		},
-		write: func(from model.Auth) *auth {
+		write: func(from request.Auth) *auth {
 			in := from.KeyIn
 			if in == "" {
-				in = model.KeyInHeader
+				in = request.KeyInHeader
 			}
 			return &auth{Type: "apikey", APIKey: []kv{{Key: "key", Value: text(from.KeyName)}, {Key: "value", Value: text(shareable(from.KeyValue))}, {Key: "in", Value: text(string(in))}}}
 		}},
@@ -215,7 +215,7 @@ func authKindNamed(name string) *authKind {
 	return nil
 }
 
-func authKindFor(authType model.AuthType) *authKind {
+func authKindFor(authType request.AuthType) *authKind {
 	for i := range authKinds {
 		if authKinds[i].model == authType {
 			return &authKinds[i]
@@ -247,7 +247,7 @@ func Parse(data []byte) (Result, error) {
 	if name == "" {
 		name = "Postman collection"
 	}
-	root := &model.Folder{Name: name}
+	root := &request.Folder{Name: name}
 	var skipped []string
 	fill(root, c.Items, c.Auth, &skipped)
 	if len(root.Requests)+len(root.Folders) == 0 {
@@ -256,13 +256,13 @@ func Parse(data []byte) (Result, error) {
 	res := Result{Folder: root, Skipped: skipped}
 	for _, v := range c.Variable {
 		if v.Key != "" {
-			res.Vars = append(res.Vars, model.KV{Name: v.Key, Value: string(v.Value), Enabled: !v.Disabled})
+			res.Vars = append(res.Vars, request.KV{Name: v.Key, Value: string(v.Value), Enabled: !v.Disabled})
 		}
 	}
 	return res, nil
 }
 
-func fill(dir *model.Folder, items []item, inherited *auth, skipped *[]string) {
+func fill(dir *request.Folder, items []item, inherited *auth, skipped *[]string) {
 	for _, it := range items {
 		if it.Request == nil {
 			sub := dir.AddFolder(it.Name)
@@ -276,7 +276,7 @@ func fill(dir *model.Folder, items []item, inherited *auth, skipped *[]string) {
 		for _, what := range notCarriedOver(it, effective) {
 			*skipped = append(*skipped, it.Name+": "+what)
 		}
-		r, urlErr := request(it, effective)
+		r, urlErr := readRequest(it, effective)
 		if urlErr != nil {
 			*skipped = append(*skipped, it.Name+": url is not imported ("+urlErr.Error()+")")
 		}
@@ -302,11 +302,11 @@ func notCarriedOver(it item, effective *auth) []string {
 	return out
 }
 
-// request converts one item. A url that cannot be read leaves the request
+// readRequest converts one item. A url that cannot be read leaves the request
 // with an empty one and comes back as the error.
-func request(it item, effective *auth) (model.Request, error) {
+func readRequest(it item, effective *auth) (request.Request, error) {
 	pr := it.Request
-	req := model.Request{Name: it.Name, Protocol: model.ProtocolREST, Method: strings.ToUpper(pr.Method), BodyType: model.BodyNone}
+	req := request.Request{Name: it.Name, Protocol: request.ProtocolREST, Method: strings.ToUpper(pr.Method), BodyType: request.BodyNone}
 	if req.Method == "" {
 		req.Method = "GET"
 	}
@@ -316,7 +316,7 @@ func request(it item, effective *auth) (model.Request, error) {
 	var urlErr error
 	req.URL, req.Params, urlErr = parseURL(pr.URL)
 	for _, h := range pr.Header {
-		req.Headers = append(req.Headers, model.KV{Name: h.Key, Value: string(h.Value), Enabled: !h.Disabled})
+		req.Headers = append(req.Headers, request.KV{Name: h.Key, Value: string(h.Value), Enabled: !h.Disabled})
 	}
 	if pr.Body != nil {
 		if mode := bodyModeNamed(pr.Body.Mode); mode != nil && mode.read != nil {
@@ -336,13 +336,13 @@ func isValidJSONObjectOrArray(text string) bool {
 
 // parseURL reads a Postman url, a string or an object with raw and query.
 // A missing url is empty; one of another shape is an error.
-func parseURL(raw json.RawMessage) (string, []model.KV, error) {
+func parseURL(raw json.RawMessage) (string, []request.KV, error) {
 	if len(raw) == 0 {
 		return "", nil, nil
 	}
 	var s string
 	if json.Unmarshal(raw, &s) == nil {
-		return s, model.ParamsFromURL(s), nil
+		return s, request.ParamsFromURL(s), nil
 	}
 	var o struct {
 		Raw   string `json:"raw"`
@@ -352,20 +352,20 @@ func parseURL(raw json.RawMessage) (string, []model.KV, error) {
 		return "", nil, err
 	}
 	base := o.Raw
-	var params []model.KV
+	var params []request.KV
 	for _, q := range o.Query {
-		params = append(params, model.KV{Name: q.Key, Value: string(q.Value), Enabled: !q.Disabled})
+		params = append(params, request.KV{Name: q.Key, Value: string(q.Value), Enabled: !q.Disabled})
 	}
 	if len(params) > 0 {
-		base = model.WithParams(base, params)
+		base = request.WithParams(base, params)
 	} else {
-		params = model.ParamsFromURL(base)
+		params = request.ParamsFromURL(base)
 	}
 	return base, params, nil
 }
 
-func rows(in []kv, files bool) []model.KV {
-	var out []model.KV
+func rows(in []kv, files bool) []request.KV {
+	var out []request.KV
 	for _, f := range in {
 		v := string(f.Value)
 		if files && f.Type == "file" {
@@ -373,7 +373,7 @@ func rows(in []kv, files bool) []model.KV {
 				v = "@" + src
 			}
 		}
-		out = append(out, model.KV{Name: f.Key, Value: v, Enabled: !f.Disabled})
+		out = append(out, request.KV{Name: f.Key, Value: v, Enabled: !f.Disabled})
 	}
 	return out
 }
@@ -387,14 +387,14 @@ func get(list []kv, key string) string {
 	return ""
 }
 
-func convertAuth(block *auth) model.Auth {
+func convertAuth(block *auth) request.Auth {
 	if block == nil {
-		return model.Auth{}
+		return request.Auth{}
 	}
 	if kind := authKindNamed(block.Type); kind != nil {
 		return kind.read(block)
 	}
-	return model.Auth{}
+	return request.Auth{}
 }
 
 // ---- export ------------------------------------------------------------
@@ -421,7 +421,7 @@ type outURL struct {
 // Export writes the folder and the collection variables as a Postman v2.1
 // collection. Request kinds Postman has no place for (WebSocket, MCP, SSE)
 // are left out; the caller can count them with Skipped.
-func Export(root *model.Folder, vars []model.KV) ([]byte, error) {
+func Export(root *request.Folder, vars []request.KV) ([]byte, error) {
 	out := struct {
 		Info struct {
 			Name   string `json:"name"`
@@ -455,7 +455,7 @@ func shareable(value string) string {
 }
 
 // Skipped counts the requests of root that Export leaves out.
-func Skipped(root *model.Folder) int {
+func Skipped(root *request.Folder) int {
 	n := 0
 	for _, r := range root.Requests {
 		if !exportable(r) {
@@ -469,11 +469,11 @@ func Skipped(root *model.Folder) int {
 }
 
 // exportable reports whether Postman can hold r: an HTTP request.
-func exportable(request *model.Request) bool {
-	return request.Protocol.Info().Method == model.MethodHTTP
+func exportable(call *request.Request) bool {
+	return call.Protocol.Info().Method == request.MethodHTTP
 }
 
-func exportFolder(folder *model.Folder) []*outItem {
+func exportFolder(folder *request.Folder) []*outItem {
 	var items []*outItem
 	for _, sub := range folder.Folders {
 		items = append(items, &outItem{Name: sub.Name, Items: exportFolder(sub)})
@@ -487,13 +487,13 @@ func exportFolder(folder *model.Folder) []*outItem {
 	return items
 }
 
-func outRows(rows []model.KV, files bool) []kv {
+func outRows(rows []request.KV, files bool) []kv {
 	var out []kv
 	for _, r := range rows {
 		e := kv{Key: r.Name, Value: text(r.Value), Disabled: !r.Enabled}
 		if files {
 			e.Type = "text"
-			if path, ok := model.FormFile(r.Value); ok {
+			if path, ok := request.FormFile(r.Value); ok {
 				e.Type, e.Value, e.Src = "file", "", path
 			}
 		}
@@ -502,21 +502,21 @@ func outRows(rows []model.KV, files bool) []kv {
 	return out
 }
 
-func exportRequest(request *model.Request) *outReq {
-	o := &outReq{Method: request.Method, Header: outRows(request.Headers, false), URL: outURL{Raw: request.URL}}
+func exportRequest(call *request.Request) *outReq {
+	o := &outReq{Method: call.Method, Header: outRows(call.Headers, false), URL: outURL{Raw: call.URL}}
 	if o.Header == nil {
 		o.Header = []kv{}
 	}
-	for _, p := range request.Params {
-		if !model.IsPathParam(p.Name) {
+	for _, p := range call.Params {
+		if !request.IsPathParam(p.Name) {
 			o.URL.Query = append(o.URL.Query, kv{Key: p.Name, Value: text(p.Value), Disabled: !p.Enabled})
 		}
 	}
-	if mode := bodyModeFor(request.BodyType); mode != nil {
-		o.Body = mode.write(request)
+	if mode := bodyModeFor(call.BodyType); mode != nil {
+		o.Body = mode.write(call)
 	}
-	if kind := authKindFor(request.Auth.Type); kind != nil {
-		o.Auth = kind.write(request.Auth)
+	if kind := authKindFor(call.Auth.Type); kind != nil {
+		o.Auth = kind.write(call.Auth)
 	}
 	return o
 }

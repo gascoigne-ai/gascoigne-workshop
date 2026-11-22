@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
@@ -62,7 +62,7 @@ func (a *App) requestTab(index int, tab *reqTab) requestTabItem {
 		Name:        tab.Req.Name,
 		Dirty:       a.tabDirty(tab),
 		Active:      index == a.list.Active,
-		Stripe:      a.collectionToken(model.Node{Req: tab.Req}),
+		Stripe:      a.collectionToken(request.Node{Req: tab.Req}),
 		Press:       func() { a.pressTab(index) },
 		MiddlePress: func() { a.updateTabs(tabs.DragBegin{Index: index}) },
 		DragOver:    func() { a.updateTabs(tabs.DragOver{Index: index}) },

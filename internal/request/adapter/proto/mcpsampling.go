@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // sampleRejected is the answer to a sampling request that was declined.
@@ -36,13 +36,13 @@ func (s *mcpSession) sample(message rpcMessage) rpcReply {
 	if err := json.Unmarshal(message.Params, &params); err != nil {
 		return errorReply(*message.ID, rpcInvalidParams, "invalid sampling request: "+err.Error())
 	}
-	request := port.SamplingRequest{SystemPrompt: params.SystemPrompt, MaxTokens: params.MaxTokens}
+	call := request.SamplingRequest{SystemPrompt: params.SystemPrompt, MaxTokens: params.MaxTokens}
 	for _, message := range params.Messages {
 		text := message.Content.Text
 		if message.Content.Type != "text" {
 			text = "[" + message.Content.Type + " content]"
 		}
-		request.Messages = append(request.Messages, port.SamplingMessage{Role: message.Role, Text: text})
+		call.Messages = append(call.Messages, request.SamplingMessage{Role: message.Role, Text: text})
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -53,7 +53,7 @@ func (s *mcpSession) sample(message rpcMessage) rpcReply {
 		case <-ctx.Done():
 		}
 	}()
-	result, ok := s.sampler(ctx, request)
+	result, ok := s.sampler(ctx, call)
 	if !ok {
 		return errorReply(*message.ID, rpcRejected, sampleRejected)
 	}

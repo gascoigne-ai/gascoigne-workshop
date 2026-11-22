@@ -10,7 +10,7 @@ import (
 	"github.com/bufbuild/protocompile/linker"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // The fixtures are real files: health.proto and binarylog.proto from
@@ -130,7 +130,7 @@ func TestImportPathsAreSearchedInOrder(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, err = compileProtoFiles(grpcContext(t), "", []string{absolute(t, proto2ExtProto)}, []string{first, absolute(t, protoRoot)})
-	var protoErr model.ProtoError
+	var protoErr request.ProtoError
 	if !errors.As(err, &protoErr) || protoErr.Path != copied {
 		t.Errorf("err = %v, want one in %s", err, copied)
 	}
@@ -141,7 +141,7 @@ func TestAMissingImportIsAnErrorAtTheImportLine(t *testing.T) {
 	// which only the testdata root holds; without it the import fails.
 	path := absolute(t, proto2ExtProto)
 	_, err := compileProtoFiles(grpcContext(t), "", []string{path}, nil)
-	var protoErr model.ProtoError
+	var protoErr request.ProtoError
 	if !errors.As(err, &protoErr) {
 		t.Fatalf("err = %v, want a ProtoError", err)
 	}
@@ -166,7 +166,7 @@ func TestAParseErrorCarriesFileLineAndColumn(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, err = compileProtoFiles(grpcContext(t), "", []string{path}, nil)
-	var protoErr model.ProtoError
+	var protoErr request.ProtoError
 	if !errors.As(err, &protoErr) {
 		t.Fatalf("err = %v, want a ProtoError", err)
 	}

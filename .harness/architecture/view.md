@@ -49,9 +49,9 @@ App facts kept here for now; they belong with the app.
   it writes on the UI goroutine and runs the write as a Cmd. `serial.Queue` runs one write per file
   and keeps only the newest waiting one, so an older write never lands after a newer one; the
   outcome returns on the bus. Files the user names (saved body, Postman export, screenshot) go the
-  same way through `port.Folders.Write`. `FlushWorkspace`, `SaveState` and `openWorkspaceAt` call
+  same way through `workspace.Folders.Write`. `FlushWorkspace`, `SaveState` and `openWorkspaceAt` call
   `waitWrites`, then write synchronously. The App does no file I/O of its own
-  (`TestTheAppDoesNoFileAccessOfItsOwn`; why one port: the `port.Folders` doc).
+  (`TestTheAppDoesNoFileAccessOfItsOwn`; why one port: the `workspace.Folders` doc).
 - **Socket sends** (`wsui.go`): messages and pings go through `App.sendInOrder`, a per-tab outbox
   run by a Cmd, so a slow network never stops a frame and messages keep their order.
 - **Change keys** (`changekeys.go`): autosave and the window title compare JSON forms. `changeKeys`

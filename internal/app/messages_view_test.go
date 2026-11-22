@@ -8,8 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -40,8 +39,8 @@ var messagesPaneStates = []struct {
 		openSession(tab, &fakeSession{})
 		tab.Reconnect = true
 		sentAt := time.Date(2026, 11, 14, 10, 30, 0, 0, time.UTC)
-		app.logEvent(tab, reqport.Event{Time: sentAt, Dir: reqport.Sent, Kind: reqport.KindText, Text: `{"op":"ping"}`})
-		app.logEvent(tab, reqport.Event{Time: sentAt, Dir: reqport.Received, Kind: reqport.KindText, Text: `{"op":"ping"}`})
+		app.logEvent(tab, request.Event{Time: sentAt, Dir: request.Sent, Kind: request.KindText, Text: `{"op":"ping"}`})
+		app.logEvent(tab, request.Event{Time: sentAt, Dir: request.Received, Kind: request.KindText, Text: `{"op":"ping"}`})
 	}},
 	{"sse", "", func(app *App, tab *reqTab) {
 		tab.Req.Protocol = "sse"
@@ -49,9 +48,9 @@ var messagesPaneStates = []struct {
 	{"mcp-connected", "call TOOL {json}  ·  read URI  ·  prompt NAME {json}  ·  method {json}  ·  or raw JSON-RPC", func(app *App, tab *reqTab) {
 		tab.Req.Protocol = "mcp"
 		openSession(tab, &fakeSession{})
-		tab.Tools = []model.MCPTool{{Name: "search"}}
-		tab.Resources = []model.MCPResource{{URI: "file:///a.txt"}}
-		tab.Prompts = []model.MCPPrompt{{Name: "review"}}
+		tab.Tools = []request.MCPTool{{Name: "search"}}
+		tab.Resources = []request.MCPResource{{URI: "file:///a.txt"}}
+		tab.Prompts = []request.MCPPrompt{{Name: "review"}}
 	}},
 	{"grpc-stream", "Message", func(app *App, tab *reqTab) {
 		tab.Req.Protocol = "grpc"

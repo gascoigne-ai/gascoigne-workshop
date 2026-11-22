@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/mcpexplorer"
-	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
@@ -51,7 +51,7 @@ func announceLong(app *App, tab *reqTab) {
 // initialize delivers the server's answer to initialize, which the header
 // of the explorer shows.
 func initialize(app *App, tab *reqTab, result string) {
-	app.applyWS(wsReceived{wsTarget{tab: tab}, reqport.Event{Dir: reqport.Info, Kind: reqport.KindInitialize, Text: result}})
+	app.applyWS(wsReceived{wsTarget{tab: tab}, request.Event{Dir: request.Info, Kind: request.KindInitialize, Text: result}})
 }
 
 // The laid-out explorer is pinned as text (testdata/explorer-*.dump,

@@ -4,13 +4,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 type fakeSession struct{ closed bool }
 
-func (session *fakeSession) Events() <-chan port.Event          { return nil }
+func (session *fakeSession) Events() <-chan request.Event       { return nil }
 func (session *fakeSession) Send(context.Context, string) error { return nil }
 func (session *fakeSession) Ping(context.Context) error         { return nil }
 func (session *fakeSession) Close(context.Context) error        { session.closed = true; return nil }
@@ -49,7 +48,7 @@ func TestDisconnectHandsBackTheOpenSessionToClose(t *testing.T) {
 	open := &fakeSession{}
 	conn.Opened(open)
 	session, abandoned := conn.Disconnect()
-	if session != port.Session(open) || abandoned {
+	if session != request.Session(open) || abandoned {
 		t.Fatalf("session %v abandoned %v", session, abandoned)
 	}
 }
@@ -81,9 +80,9 @@ func TestClosedClearsTheSessionAndWhatTheServerAnnounced(t *testing.T) {
 	var conn Connection
 	conn.Begin()
 	conn.Opened(&fakeSession{})
-	conn.Tools = []model.MCPTool{{Name: "t"}}
-	conn.Resources = []model.MCPResource{{Name: "r"}}
-	conn.Prompts = []model.MCPPrompt{{Name: "p"}}
+	conn.Tools = []request.MCPTool{{Name: "t"}}
+	conn.Resources = []request.MCPResource{{Name: "r"}}
+	conn.Prompts = []request.MCPPrompt{{Name: "p"}}
 	conn.Closed()
 	if conn.Session() != nil || conn.State() == ConnConnecting || conn.Tools != nil || conn.Resources != nil || conn.Prompts != nil {
 		t.Fatalf("conn %+v", conn)
@@ -115,11 +114,11 @@ func TestClosedWithReconnectKeepsTheRetryPending(t *testing.T) {
 
 func TestReceivedRemembersTheEventIDOfAReceivedEventOnly(t *testing.T) {
 	var conn Connection
-	conn.Received(port.Event{Dir: port.Sent, ID: "1"})
+	conn.Received(request.Event{Dir: request.Sent, ID: "1"})
 	if conn.LastEventID != "" {
 		t.Fatal("a sent event has no id to resume from")
 	}
-	conn.Received(port.Event{Dir: port.Received, ID: "2"})
+	conn.Received(request.Event{Dir: request.Received, ID: "2"})
 	if conn.LastEventID != "2" {
 		t.Fatalf("LastEventID = %q", conn.LastEventID)
 	}
@@ -201,7 +200,7 @@ func TestARefusedEventChangesNothing(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			conn := connIn(t, test.state)
 			gen, session := conn.Gen, conn.Session()
-			conn.Tools = []model.MCPTool{{Name: "t"}}
+			conn.Tools = []request.MCPTool{{Name: "t"}}
 			if test.do(&conn) {
 				t.Fatal("the event was accepted")
 			}
@@ -263,7 +262,7 @@ func TestAClosedConnectionTheUserEndedDoesNotRetry(t *testing.T) {
 
 func TestReceivedKeepsTheServerInfoUntilTheSessionEnds(t *testing.T) {
 	var conn Connection
-	conn.Received(port.Event{Dir: port.Info, Kind: port.KindInitialize, Text: `{"protocolVersion":"2025-06-18","serverInfo":{"name":"mock","version":"1"}}`})
+	conn.Received(request.Event{Dir: request.Info, Kind: request.KindInitialize, Text: `{"protocolVersion":"2025-06-18","serverInfo":{"name":"mock","version":"1"}}`})
 	if conn.Server == nil || conn.Server.Name != "mock" {
 		t.Fatalf("Server = %+v", conn.Server)
 	}
@@ -280,11 +279,11 @@ func TestReceivedKeepsTheServerInfoUntilTheSessionEnds(t *testing.T) {
 func TestReceivedTakesServerInfoOnlyFromTheInitializeNote(t *testing.T) {
 	text := `{"protocolVersion":"2025-06-18","serverInfo":{"name":"mock","version":"1"}}`
 	var conn Connection
-	conn.Received(port.Event{Dir: port.Received, Kind: port.KindMessage, Name: "initialize", Text: text})
+	conn.Received(request.Event{Dir: request.Received, Kind: request.KindMessage, Name: "initialize", Text: text})
 	if conn.Server != nil {
 		t.Fatalf("an event named initialize set Server = %+v", conn.Server)
 	}
-	conn.Received(port.Event{Dir: port.Info, Kind: port.KindInitialize, Text: text})
+	conn.Received(request.Event{Dir: request.Info, Kind: request.KindInitialize, Text: text})
 	if conn.Server == nil {
 		t.Fatal("the initialize note did not set Server")
 	}
@@ -294,7 +293,7 @@ func TestReceivedTakesServerInfoOnlyFromTheInitializeNote(t *testing.T) {
 // Received parsed the text of every event of every protocol.
 func TestAWebSocketEchoShapedLikeAToolsListLeavesToolsAlone(t *testing.T) {
 	var conn Connection
-	conn.Received(port.Event{Dir: port.Received, Kind: port.KindText, Text: `{"result":{"tools":[{"name":"echo"}]}}`})
+	conn.Received(request.Event{Dir: request.Received, Kind: request.KindText, Text: `{"result":{"tools":[{"name":"echo"}]}}`})
 	if conn.Tools != nil {
 		t.Fatalf("Tools = %+v", conn.Tools)
 	}
@@ -302,17 +301,17 @@ func TestAWebSocketEchoShapedLikeAToolsListLeavesToolsAlone(t *testing.T) {
 
 func TestReceivedTakesTheListsOfThePayload(t *testing.T) {
 	var conn Connection
-	conn.Received(port.Event{Dir: port.Received, Payload: port.ToolsList{Tools: []model.MCPTool{{Name: "a"}}}})
-	conn.Received(port.Event{Dir: port.Received, Payload: port.ResourcesList{Resources: []model.MCPResource{{URI: "file:///a"}}}})
-	conn.Received(port.Event{Dir: port.Received, Payload: port.PromptsList{Prompts: []model.MCPPrompt{{Name: "p"}}}})
+	conn.Received(request.Event{Dir: request.Received, Payload: request.ToolsList{Tools: []request.MCPTool{{Name: "a"}}}})
+	conn.Received(request.Event{Dir: request.Received, Payload: request.ResourcesList{Resources: []request.MCPResource{{URI: "file:///a"}}}})
+	conn.Received(request.Event{Dir: request.Received, Payload: request.PromptsList{Prompts: []request.MCPPrompt{{Name: "p"}}}})
 	if len(conn.Tools) != 1 || len(conn.Resources) != 1 || len(conn.Prompts) != 1 {
 		t.Fatalf("conn %+v", conn)
 	}
 }
 
 func TestAnEmptyToolsListClearsTheTools(t *testing.T) {
-	conn := Connection{Tools: []model.MCPTool{{Name: "a"}}}
-	conn.Received(port.Event{Dir: port.Received, Payload: port.ToolsList{}})
+	conn := Connection{Tools: []request.MCPTool{{Name: "a"}}}
+	conn.Received(request.Event{Dir: request.Received, Payload: request.ToolsList{}})
 	if len(conn.Tools) != 0 {
 		t.Fatalf("Tools = %+v", conn.Tools)
 	}

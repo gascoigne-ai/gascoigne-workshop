@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/editor"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/textfmt"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
@@ -50,8 +50,8 @@ func (a *App) graphQLBody(tab *reqTab) Node {
 // headers and credentials, and shows the answer as the response.
 func (a *App) loadSchema(tab *reqTab) {
 	src := tab.Req.Clone()
-	src.Method, src.BodyType = "POST", model.BodyGraphQL
-	src.Body, src.GraphQLVars = model.IntrospectionQuery, ""
+	src.Method, src.BodyType = "POST", request.BodyGraphQL
+	src.Body, src.GraphQLVars = request.IntrospectionQuery, ""
 	a.dispatch(tab, &src)
 }
 
@@ -69,7 +69,7 @@ func (a *App) schemaMenu(tab *reqTab) []MenuItem {
 }
 
 // useOperation puts the starter query and variables of op into the tab.
-func (a *App) useOperation(tab *reqTab, op model.Operation) {
+func (a *App) useOperation(tab *reqTab, op request.Operation) {
 	tab.body = NewTextArea(op.Query)
 	tab.gqlVars = NewTextArea(op.Variables)
 	editRequest(tab, editor.OperationChosen{Query: op.Query, Variables: op.Variables})
@@ -77,11 +77,11 @@ func (a *App) useOperation(tab *reqTab, op model.Operation) {
 
 // rememberSchema keeps the schema when resp is an introspection answer;
 // any other answer leaves what the tab already knows.
-func (a *App) rememberSchema(tab *reqTab, resp *model.Response) {
-	if tab.Req.BodyType != model.BodyGraphQL {
+func (a *App) rememberSchema(tab *reqTab, resp *request.Response) {
+	if tab.Req.BodyType != request.BodyGraphQL {
 		return
 	}
-	if schema, err := model.ParseSchema(resp.Body); err == nil {
+	if schema, err := request.ParseSchema(resp.Body); err == nil {
 		tab.schema = schema
 	}
 }

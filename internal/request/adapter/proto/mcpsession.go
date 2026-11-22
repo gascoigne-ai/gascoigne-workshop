@@ -10,16 +10,15 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto/ws"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 )
 
 type mcpSession struct {
 	*eventLog
 	tr      mcpTransport
-	sampler port.Sampler // nil: sampling is not offered
-	once    sync.Once    // finish
+	sampler request.Sampler // nil: sampling is not offered
+	once    sync.Once       // finish
 
 	work     slotSet // the server messages being answered
 	sampling slotSet // the sampling prompts open
@@ -51,14 +50,14 @@ const maxSamplePrompts = 1
 
 // note logs a problem that leaves the session open.
 func (s *mcpSession) note(err error) {
-	s.emit(port.Event{Dir: port.Info, Kind: port.KindError, Text: err.Error()})
+	s.emit(request.Event{Dir: request.Info, Kind: request.KindError, Text: err.Error()})
 }
 
 // finish ends the event stream, once, with a note unless the user closed it.
 func (s *mcpSession) finish(err error) {
 	s.once.Do(func() {
 		if err != nil && !s.closing() {
-			s.emit(port.Event{Dir: port.Info, Kind: port.KindClose, Code: ws.CloseAbnormal, Text: "Connection lost: " + err.Error()})
+			s.emit(request.Event{Dir: request.Info, Kind: request.KindClose, Code: ws.CloseAbnormal, Text: "Connection lost: " + err.Error()})
 		}
 		s.stopWaiting()
 		s.mu.Lock()
@@ -99,24 +98,24 @@ var listChanged = map[string]string{
 func (s *mcpSession) deliver(msg []byte) {
 	var m rpcMessage
 	if err := json.Unmarshal(msg, &m); err != nil {
-		s.emit(port.Event{Dir: port.Received, Kind: port.KindInvalid, Text: string(msg), Size: len(msg)})
+		s.emit(request.Event{Dir: request.Received, Kind: request.KindInvalid, Text: string(msg), Size: len(msg)})
 		return
 	}
-	kind := port.KindNotification
+	kind := request.KindNotification
 	switch {
 	case m.Method == "" && m.Error != nil:
-		kind = port.KindError
+		kind = request.KindError
 	case m.Method == "":
-		kind = port.KindResponse
+		kind = request.KindResponse
 	case m.ID != nil:
-		kind = port.KindRequest
+		kind = request.KindRequest
 	}
-	event := port.Event{Dir: port.Received, Kind: kind, Text: compactJSON(msg), Size: len(msg)}
+	event := request.Event{Dir: request.Received, Kind: kind, Text: compactJSON(msg), Size: len(msg)}
 	if m.Method == "" && m.Error == nil && m.ID != nil {
 		event.Payload = s.listPayload(*m.ID, m.Result)
 	}
 	s.emit(event)
-	if kind == port.KindRequest {
+	if kind == request.KindRequest {
 		s.serve(m)
 		return
 	}
@@ -142,25 +141,25 @@ func (s *mcpSession) deliver(msg []byte) {
 }
 
 // listDecoders turn the result of a list request into its payload.
-var listDecoders = map[string]func(result []byte) (port.Payload, error){
-	"tools/list": func(result []byte) (port.Payload, error) {
-		tools, err := model.DecodeTools(result)
-		return port.ToolsList{Tools: tools}, err
+var listDecoders = map[string]func(result []byte) (request.Payload, error){
+	"tools/list": func(result []byte) (request.Payload, error) {
+		tools, err := request.DecodeTools(result)
+		return request.ToolsList{Tools: tools}, err
 	},
-	"resources/list": func(result []byte) (port.Payload, error) {
-		resources, err := model.DecodeResources(result)
-		return port.ResourcesList{Resources: resources}, err
+	"resources/list": func(result []byte) (request.Payload, error) {
+		resources, err := request.DecodeResources(result)
+		return request.ResourcesList{Resources: resources}, err
 	},
-	"prompts/list": func(result []byte) (port.Payload, error) {
-		prompts, err := model.DecodePrompts(result)
-		return port.PromptsList{Prompts: prompts}, err
+	"prompts/list": func(result []byte) (request.Payload, error) {
+		prompts, err := request.DecodePrompts(result)
+		return request.PromptsList{Prompts: prompts}, err
 	},
 }
 
 // listPayload takes the request that id answers off pending and, when it
 // was a list request, decodes the result once. A result that does not
 // decode is noted and carries no payload.
-func (s *mcpSession) listPayload(rawID json.RawMessage, result json.RawMessage) port.Payload {
+func (s *mcpSession) listPayload(rawID json.RawMessage, result json.RawMessage) request.Payload {
 	var id int64
 	if json.Unmarshal(rawID, &id) != nil {
 		return nil
@@ -222,7 +221,7 @@ func (s *mcpSession) build(method string, params any) (int64, []byte, error) {
 
 // write sends a message and logs it. A context that has ended sends
 // nothing: over HTTP it would also end the session.
-func (s *mcpSession) write(ctx context.Context, kind port.EventKind, data []byte) error {
+func (s *mcpSession) write(ctx context.Context, kind request.EventKind, data []byte) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -232,7 +231,7 @@ func (s *mcpSession) write(ctx context.Context, kind port.EventKind, data []byte
 	default:
 	}
 	s.remember(data)
-	s.emit(port.Event{Dir: port.Sent, Kind: kind, Text: compactJSON(data), Size: len(data)}) // before the send: an answer may arrive during it
+	s.emit(request.Event{Dir: request.Sent, Kind: kind, Text: compactJSON(data), Size: len(data)}) // before the send: an answer may arrive during it
 	return s.tr.send(ctx, data)
 }
 
@@ -243,7 +242,7 @@ func (s *mcpSession) request(ctx context.Context, method string, params any) (in
 	if err != nil {
 		return 0, err
 	}
-	return id, s.write(ctx, port.KindRequest, b)
+	return id, s.write(ctx, request.KindRequest, b)
 }
 
 func (s *mcpSession) notify(method string) error {
@@ -251,7 +250,7 @@ func (s *mcpSession) notify(method string) error {
 	if err != nil {
 		return err
 	}
-	return s.write(context.Background(), port.KindNotification, b)
+	return s.write(context.Background(), request.KindNotification, b)
 }
 
 // call sends a request and waits for its result.
@@ -269,7 +268,7 @@ func (s *mcpSession) call(ctx context.Context, method string, params any) (json.
 		delete(s.waiters, id)
 		s.mu.Unlock()
 	}
-	if err := s.write(ctx, port.KindRequest, b); err != nil {
+	if err := s.write(ctx, request.KindRequest, b); err != nil {
 		forget()
 		return nil, err
 	}
@@ -334,7 +333,7 @@ func (s *mcpSession) Send(ctx context.Context, text string) error {
 		if !json.Valid([]byte(text)) {
 			return errors.New("the message is not valid JSON")
 		}
-		return s.write(ctx, port.KindRequest, []byte(text))
+		return s.write(ctx, request.KindRequest, []byte(text))
 	}
 	method, params, err := parseCommand(text)
 	if err != nil {

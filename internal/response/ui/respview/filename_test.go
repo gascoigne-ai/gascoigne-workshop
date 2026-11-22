@@ -3,7 +3,7 @@ package respview
 import (
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 func TestSuggestedFileNameFollowsTheContentType(t *testing.T) {
@@ -14,9 +14,9 @@ func TestSuggestedFileNameFollowsTheContentType(t *testing.T) {
 		"image/png":                       "response.png",
 		"":                                "response.txt",
 	} {
-		r := &model.Response{}
+		r := &request.Response{}
 		if ct != "" {
-			r.Headers = []model.KV{{Name: "content-type", Value: ct, Enabled: true}}
+			r.Headers = []request.KV{{Name: "content-type", Value: ct, Enabled: true}}
 		}
 		if got := SuggestedFileName(r); got != want {
 			t.Errorf("%q: %q, want %q", ct, got, want)
@@ -27,14 +27,14 @@ func TestSuggestedFileNameFollowsTheContentType(t *testing.T) {
 func TestContentTypeIsTheHeaderValueAsReceived(t *testing.T) {
 	tests := []struct {
 		name    string
-		headers []model.KV
+		headers []request.KV
 		want    string
 	}{
-		{"with a charset", []model.KV{{Name: "content-type", Value: "text/html; charset=utf-8"}}, "text/html; charset=utf-8"},
-		{"no header", []model.KV{{Name: "X-A", Value: "b"}}, ""},
+		{"with a charset", []request.KV{{Name: "content-type", Value: "text/html; charset=utf-8"}}, "text/html; charset=utf-8"},
+		{"no header", []request.KV{{Name: "X-A", Value: "b"}}, ""},
 	}
 	for _, tt := range tests {
-		if got := ContentType(&model.Response{Headers: tt.headers}); got != tt.want {
+		if got := ContentType(&request.Response{Headers: tt.headers}); got != tt.want {
 			t.Errorf("%s: ContentType = %q, want %q", tt.name, got, tt.want)
 		}
 	}

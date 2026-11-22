@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
@@ -30,8 +30,8 @@ func newCtx(t *testing.T) *core.Ctx {
 }
 
 // everyKind is a tool with a field of every kind, required and optional.
-func everyKind() model.MCPTool {
-	return model.MCPTool{Name: "every", Description: "A field of every kind, required and optional", Schema: schemaOf(`{
+func everyKind() request.MCPTool {
+	return request.MCPTool{Name: "every", Description: "A field of every kind, required and optional", Schema: schemaOf(`{
 		"type": "object",
 		"required": ["query", "strict", "order"],
 		"properties": {
@@ -46,12 +46,12 @@ func everyKind() model.MCPTool {
 }
 
 // manyFields is a tool with more fields than the form shows unscrolled.
-func manyFields() model.MCPTool {
-	schema := model.JSONSchema{Type: model.SchemaObject}
+func manyFields() request.MCPTool {
+	schema := request.JSONSchema{Type: request.SchemaObject}
 	for i := range 12 {
-		schema.Properties = append(schema.Properties, model.SchemaProperty{Name: fmt.Sprintf("field%02d", i), Schema: model.JSONSchema{Type: model.SchemaString}})
+		schema.Properties = append(schema.Properties, request.SchemaProperty{Name: fmt.Sprintf("field%02d", i), Schema: request.JSONSchema{Type: request.SchemaString}})
 	}
-	return model.MCPTool{Name: "many", Schema: schema}
+	return request.MCPTool{Name: "many", Schema: schema}
 }
 
 // The laid-out form is pinned as text (testdata/*.dump, captured from the
@@ -60,7 +60,7 @@ func TestTheFormLaysOutAsPinned(t *testing.T) {
 	cases := []struct {
 		name    string
 		width   int
-		tool    model.MCPTool
+		tool    request.MCPTool
 		prepare func(form *Form)
 	}{
 		{"every-kind-wide", wideW, everyKind(), nil},
@@ -72,7 +72,7 @@ func TestTheFormLaysOutAsPinned(t *testing.T) {
 			form.Choices["sort"] = "date"
 		}},
 		{"problem-narrow", narrowW, searchTool(), func(form *Form) { form.Problem = "limit must be a number, not a word like lots" }},
-		{"no-description-wide", wideW, model.MCPTool{Name: "plain", Schema: schemaOf(`{"type":"object","properties":{"text":{"type":"string"}}}`)}, nil},
+		{"no-description-wide", wideW, request.MCPTool{Name: "plain", Schema: schemaOf(`{"type":"object","properties":{"text":{"type":"string"}}}`)}, nil},
 		{"many-wide", wideW, manyFields(), nil},
 	}
 	for _, tc := range cases {
@@ -123,7 +123,7 @@ type formDriver struct {
 	host *fakeHost
 }
 
-func newDriver(t *testing.T, tool model.MCPTool) *formDriver {
+func newDriver(t *testing.T, tool request.MCPTool) *formDriver {
 	return &formDriver{t: t, ctx: newCtx(t), form: New(tool), host: &fakeHost{}}
 }
 

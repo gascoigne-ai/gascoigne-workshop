@@ -2,7 +2,7 @@ package app
 
 import (
 	"fmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"testing"
 
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -18,9 +18,9 @@ func TestMessagesToolbarTemplateMatchesTheGoView(t *testing.T) {
 		tab := a.cur()
 		tab.Tools, tab.Resources, tab.Prompts = nil, nil, nil
 		if mcp {
-			tab.Tools = []model.MCPTool{{Name: "a"}, {Name: "b"}}
-			tab.Resources = []model.MCPResource{{URI: "file:///x"}}
-			tab.Prompts = []model.MCPPrompt{{Name: "p"}}
+			tab.Tools = []request.MCPTool{{Name: "a"}, {Name: "b"}}
+			tab.Resources = []request.MCPResource{{URI: "file:///x"}}
+			tab.Prompts = []request.MCPPrompt{{Name: "p"}}
 		}
 		goView := Row(H(w.RowH+8), PadX(w.Gutter), Gap(6), AlignItems(AlignCenter), BorderB(w.Border),
 			Text(connState(tab), Small(), Muted()),

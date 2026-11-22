@@ -2,11 +2,11 @@
 
 package collection
 
-import "github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+import "github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 
 // Sample is what a release build starts with when no workspace and no
 // client config exists: an empty collection. It ships no example
 // endpoints.
-func Sample() model.Collection {
-	return model.Collection{Folder: model.Folder{Name: "Workshop"}}
+func Sample() request.Collection {
+	return request.Collection{Folder: request.Folder{Name: "Workshop"}}
 }

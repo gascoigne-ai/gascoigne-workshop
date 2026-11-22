@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // listOf is a list of tabs named by the letters of names, the tab at active
@@ -13,7 +13,7 @@ import (
 func listOf(names string, active int) List {
 	list := List{Active: active, Drag: -1}
 	for _, name := range strings.Split(names, "") {
-		list.Tabs = append(list.Tabs, New(&model.Request{Name: name}))
+		list.Tabs = append(list.Tabs, New(&request.Request{Name: name}))
 	}
 	return list
 }
@@ -33,11 +33,11 @@ func activeName(list List) string { return list.Tabs[list.Active].Req.Name }
 func TestUpdateOpenFocusesAnOpenRequestOrAddsATab(t *testing.T) {
 	list := listOf("abc", 2)
 	existing := list.Tabs[0].Req
-	fresh := &model.Request{Name: "d"}
+	fresh := &request.Request{Name: "d"}
 
 	cases := []struct {
 		name       string
-		req        *model.Request
+		req        *request.Request
 		wantNames  string
 		wantActive string
 	}{

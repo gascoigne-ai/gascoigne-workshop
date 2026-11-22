@@ -2,7 +2,7 @@ package app
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"github.com/hajimehoshi/ebiten/v2"
@@ -212,7 +212,7 @@ func TestDraggingARequestOntoAFolderMovesIt(t *testing.T) {
 	a.step(core.Input{X: 100, Y: treeRowY(rowTags), Click: true, Held: true})
 	a.step(core.Input{X: 100, Y: treeRowY(rowUser), Held: true})
 	a.step(core.Input{X: 100, Y: treeRowY(rowUser)}) // release over the User folder
-	if got, ok := a.col().Folder.Parent(model.Of(tags)); !ok || got != user {
+	if got, ok := a.col().Folder.Parent(request.Of(tags)); !ok || got != user {
 		t.Fatalf("Tags is in %v", got)
 	}
 	if a.cur().Req != tags {
@@ -307,12 +307,12 @@ func TestTreeKeyboardNavigation(t *testing.T) {
 	a := testApp(t)
 	click(a, 100, treeRowY(rowInfo)) // focuses the tree and selects Repository Info
 	a.step(combo(ebiten.KeyArrowDown, false, false, false))
-	if a.selected != model.Of(findReq(a, "Repository Tags")) {
+	if a.selected != request.Of(findReq(a, "Repository Tags")) {
 		t.Fatalf("Down selects the next row, selected %v", a.selected)
 	}
 	a.step(combo(ebiten.KeyArrowUp, false, false, false))
 	a.step(combo(ebiten.KeyArrowUp, false, false, false))
-	if a.selected != model.Of(findReq(a, "Search Repos")) {
+	if a.selected != request.Of(findReq(a, "Search Repos")) {
 		t.Fatal("Up moves back")
 	}
 	a.step(combo(ebiten.KeyArrowDown, false, false, false))

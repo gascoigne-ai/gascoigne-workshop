@@ -2,7 +2,7 @@ package app
 
 import (
 	"fmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/textfmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/viewer"
@@ -220,7 +220,7 @@ func (a *App) closeFind(tab *reqTab) {
 }
 
 // curlOf is the cURL command of req, "" when the app has no formatter.
-func (a *App) curlOf(req model.Request) string {
+func (a *App) curlOf(req request.Request) string {
 	if a.curl == nil {
 		return ""
 	}

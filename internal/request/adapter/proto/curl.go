@@ -4,14 +4,14 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // Curl renders req as a curl command line that sends the same request.
 // Variables must already be expanded. It follows what REST.Send does:
 // the same automatic Content-Type, the user's Content-Type winning, and
 // credentials from the Auth settings.
-func Curl(req model.Request) string {
+func Curl(req request.Request) string {
 	args := []string{"curl"}
 	if !req.NoRedirects {
 		args = append(args, "-L")
@@ -26,9 +26,9 @@ func Curl(req model.Request) string {
 }
 
 // curlURL is the URL with an API key added to its query when needed.
-func curlURL(req model.Request) string {
+func curlURL(req request.Request) string {
 	a := req.Auth
-	if a.Type != model.AuthAPIKey || a.KeyIn != model.KeyInQuery || a.KeyName == "" {
+	if a.Type != request.AuthAPIKey || a.KeyIn != request.KeyInQuery || a.KeyName == "" {
 		return req.URL
 	}
 	u, err := url.Parse(req.URL)
@@ -41,7 +41,7 @@ func curlURL(req model.Request) string {
 	return u.String()
 }
 
-func curlHeaders(req model.Request) []string {
+func curlHeaders(req request.Request) []string {
 	var args []string
 	userContentType := false
 	for _, h := range req.Headers {
@@ -57,34 +57,34 @@ func curlHeaders(req model.Request) []string {
 }
 
 // isMultipartOrForm reports bodies curl labels itself (-F, --data-urlencode).
-func isMultipartOrForm(req model.Request) bool {
-	return req.BodyType == model.BodyForm || req.BodyType == model.BodyMultipart
+func isMultipartOrForm(req request.Request) bool {
+	return req.BodyType == request.BodyForm || req.BodyType == request.BodyMultipart
 }
 
-func curlAuthFlags(auth model.Auth) []string {
+func curlAuthFlags(auth request.Auth) []string {
 	switch auth.Type {
-	case model.AuthBearer:
+	case request.AuthBearer:
 		return []string{"-H", shellQuote("Authorization: Bearer " + auth.Token)}
-	case model.AuthBasic:
+	case request.AuthBasic:
 		return []string{"-u", shellQuote(auth.User + ":" + auth.Password)}
-	case model.AuthAPIKey:
-		if auth.KeyName != "" && auth.KeyIn != model.KeyInQuery {
+	case request.AuthAPIKey:
+		if auth.KeyName != "" && auth.KeyIn != request.KeyInQuery {
 			return []string{"-H", shellQuote(auth.KeyName + ": " + auth.KeyValue)}
 		}
 	}
 	return nil
 }
 
-func curlBody(req model.Request) []string {
+func curlBody(req request.Request) []string {
 	var args []string
 	switch req.BodyType {
-	case model.BodyJSON, model.BodyText:
+	case request.BodyJSON, request.BodyText:
 		args = append(args, "--data-raw", shellQuote(req.Body))
-	case model.BodyForm:
+	case request.BodyForm:
 		for _, f := range formFields(req) {
 			args = append(args, "--data-urlencode", shellQuote(f.Name+"="+f.Value))
 		}
-	case model.BodyMultipart:
+	case request.BodyMultipart:
 		for _, f := range formFields(req) {
 			args = append(args, "-F", shellQuote(f.Name+"="+f.Value))
 		}

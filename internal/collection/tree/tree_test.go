@@ -3,29 +3,29 @@ package tree
 import (
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
-func sample() (root *model.Folder, first, second *model.Request, sub *model.Folder) {
-	root = &model.Folder{Name: "root"}
-	first = root.AddRequest(model.Request{Name: "first"})
+func sample() (root *request.Folder, first, second *request.Request, sub *request.Folder) {
+	root = &request.Folder{Name: "root"}
+	first = root.AddRequest(request.Request{Name: "first"})
 	sub = root.AddFolder("sub")
-	second = sub.AddRequest(model.Request{Name: "second"})
+	second = sub.AddRequest(request.Request{Name: "second"})
 	return root, first, second, sub
 }
 
 func TestDropPlaceIsTheFolderForAFolderRow(t *testing.T) {
 	root, first, _, sub := sample()
-	dir, before := DropPlace(root, model.Node{Req: first}, model.Node{Dir: sub})
-	if dir != sub || before != (model.Node{}) {
+	dir, before := DropPlace(root, request.Node{Req: first}, request.Node{Dir: sub})
+	if dir != sub || before != (request.Node{}) {
 		t.Fatalf("dir %v before %v", dir, before)
 	}
 }
 
 func TestDropPlaceOnARequestLandsBeforeItInItsFolder(t *testing.T) {
 	root, first, second, sub := sample()
-	dir, before := DropPlace(root, model.Node{Req: first}, model.Node{Req: second})
-	if dir != sub || before != (model.Node{Req: second}) {
+	dir, before := DropPlace(root, request.Node{Req: first}, request.Node{Req: second})
+	if dir != sub || before != (request.Node{Req: second}) {
 		t.Fatalf("dir %v before %v", dir, before)
 	}
 }
@@ -33,8 +33,8 @@ func TestDropPlaceOnARequestLandsBeforeItInItsFolder(t *testing.T) {
 func TestAFolderIsNeverPlacedBeforeARequest(t *testing.T) {
 	root, _, second, sub := sample()
 	other := root.AddFolder("other")
-	dir, before := DropPlace(root, model.Node{Dir: other}, model.Node{Req: second})
-	if dir != sub || before != (model.Node{}) {
+	dir, before := DropPlace(root, request.Node{Dir: other}, request.Node{Req: second})
+	if dir != sub || before != (request.Node{}) {
 		t.Fatalf("dir %v before %v", dir, before)
 	}
 }
@@ -43,15 +43,15 @@ func TestInsideCoversTheRequestItselfAndAFoldersContents(t *testing.T) {
 	root, first, second, sub := sample()
 	tests := []struct {
 		name string
-		node model.Node
-		req  *model.Request
+		node request.Node
+		req  *request.Request
 		want bool
 	}{
-		{"the request itself", model.Node{Req: first}, first, true},
-		{"another request", model.Node{Req: first}, second, false},
-		{"a request in the folder", model.Node{Dir: sub}, second, true},
-		{"a request outside the folder", model.Node{Dir: sub}, first, false},
-		{"the root holds everything", model.Node{Dir: root}, second, true},
+		{"the request itself", request.Node{Req: first}, first, true},
+		{"another request", request.Node{Req: first}, second, false},
+		{"a request in the folder", request.Node{Dir: sub}, second, true},
+		{"a request outside the folder", request.Node{Dir: sub}, first, false},
+		{"the root holds everything", request.Node{Dir: root}, second, true},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -64,10 +64,10 @@ func TestInsideCoversTheRequestItselfAndAFoldersContents(t *testing.T) {
 
 func TestDeletePromptWarnsMoreForAFolder(t *testing.T) {
 	_, first, _, sub := sample()
-	if title, body := DeletePrompt(model.Node{Req: first}); title != "Delete first?" || body != "This cannot be undone." {
+	if title, body := DeletePrompt(request.Node{Req: first}); title != "Delete first?" || body != "This cannot be undone." {
 		t.Fatalf("request: %q %q", title, body)
 	}
-	if title, body := DeletePrompt(model.Node{Dir: sub}); title != "Delete sub?" || body != "The folder and everything in it will be removed." {
+	if title, body := DeletePrompt(request.Node{Dir: sub}); title != "Delete sub?" || body != "The folder and everything in it will be removed." {
 		t.Fatalf("folder: %q %q", title, body)
 	}
 }
@@ -80,10 +80,10 @@ func TestFirstRequestIsTheFirstInTreeOrder(t *testing.T) {
 	if FirstRequest(sub) != second {
 		t.Fatal("a subfolder's own first request")
 	}
-	if FirstRequest(&model.Folder{}) != nil {
+	if FirstRequest(&request.Folder{}) != nil {
 		t.Fatal("an empty folder has none")
 	}
-	nested := &model.Folder{Folders: []*model.Folder{{}, sub}}
+	nested := &request.Folder{Folders: []*request.Folder{{}, sub}}
 	if FirstRequest(nested) != second {
 		t.Fatal("empty subfolders are skipped")
 	}
@@ -91,7 +91,7 @@ func TestFirstRequestIsTheFirstInTreeOrder(t *testing.T) {
 
 func TestKeyChangesWithTheCollectionAndNotWithoutIt(t *testing.T) {
 	root, first, _, _ := sample()
-	collection := model.Collection{Folder: *root}
+	collection := request.Collection{Folder: *root}
 	before := Key(collection)
 	if Key(collection) != before {
 		t.Fatal("the key of the same collection is stable")

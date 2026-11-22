@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 func TestImportListsARequestWhoseURLCannotBeRead(t *testing.T) {
@@ -24,27 +24,27 @@ func TestImportListsARequestWhoseURLCannotBeRead(t *testing.T) {
 func TestExportWritesEveryBodyModeAndAuthType(t *testing.T) {
 	cases := []struct {
 		name    string
-		request model.Request
+		request request.Request
 		want    []string
 	}{
-		{"json body", model.Request{Protocol: model.ProtocolREST, Method: "POST", BodyType: model.BodyJSON, Body: "{}"},
+		{"json body", request.Request{Protocol: request.ProtocolREST, Method: "POST", BodyType: request.BodyJSON, Body: "{}"},
 			[]string{`"mode": "raw"`, `"language": "json"`}},
-		{"text body", model.Request{Protocol: model.ProtocolREST, Method: "POST", BodyType: model.BodyText, Body: "x"},
+		{"text body", request.Request{Protocol: request.ProtocolREST, Method: "POST", BodyType: request.BodyText, Body: "x"},
 			[]string{`"mode": "raw"`, `"raw": "x"`}},
-		{"form body", model.Request{Protocol: model.ProtocolREST, Method: "POST", BodyType: model.BodyForm, Form: []model.KV{{Name: "a", Value: "1", Enabled: true}}},
+		{"form body", request.Request{Protocol: request.ProtocolREST, Method: "POST", BodyType: request.BodyForm, Form: []request.KV{{Name: "a", Value: "1", Enabled: true}}},
 			[]string{`"mode": "urlencoded"`, `"key": "a"`}},
-		{"multipart body", model.Request{Protocol: model.ProtocolREST, Method: "POST", BodyType: model.BodyMultipart, Form: []model.KV{{Name: "f", Value: "@/tmp/x", Enabled: true}}},
+		{"multipart body", request.Request{Protocol: request.ProtocolREST, Method: "POST", BodyType: request.BodyMultipart, Form: []request.KV{{Name: "f", Value: "@/tmp/x", Enabled: true}}},
 			[]string{`"mode": "formdata"`, `"type": "file"`, `"src": "/tmp/x"`}},
-		{"bearer", model.Request{Protocol: model.ProtocolREST, Method: "GET", Auth: model.Auth{Type: model.AuthBearer, Token: "{{t}}"}},
+		{"bearer", request.Request{Protocol: request.ProtocolREST, Method: "GET", Auth: request.Auth{Type: request.AuthBearer, Token: "{{t}}"}},
 			[]string{`"type": "bearer"`, `"key": "token"`, `"value": "{{t}}"`}},
-		{"basic", model.Request{Protocol: model.ProtocolREST, Method: "GET", Auth: model.Auth{Type: model.AuthBasic, User: "u", Password: "plain"}},
+		{"basic", request.Request{Protocol: request.ProtocolREST, Method: "GET", Auth: request.Auth{Type: request.AuthBasic, User: "u", Password: "plain"}},
 			[]string{`"type": "basic"`, `"key": "username"`, `"value": "u"`, `"key": "password"`}},
-		{"api key defaults to header", model.Request{Protocol: model.ProtocolREST, Method: "GET", Auth: model.Auth{Type: model.AuthAPIKey, KeyName: "X-K", KeyValue: "{{k}}"}},
+		{"api key defaults to header", request.Request{Protocol: request.ProtocolREST, Method: "GET", Auth: request.Auth{Type: request.AuthAPIKey, KeyName: "X-K", KeyValue: "{{k}}"}},
 			[]string{`"type": "apikey"`, `"key": "in"`, `"value": "header"`}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			root := &model.Folder{Name: "C"}
+			root := &request.Folder{Name: "C"}
 			req := tc.request
 			req.Name = "R"
 			root.AddRequest(req)
@@ -62,9 +62,9 @@ func TestExportWritesEveryBodyModeAndAuthType(t *testing.T) {
 }
 
 func TestExportOmitsEmptyOptionalKeys(t *testing.T) {
-	root := &model.Folder{Name: "C"}
-	root.AddRequest(model.Request{Name: "R", Protocol: model.ProtocolREST, Method: "POST", BodyType: model.BodyText, Body: "x",
-		Auth: model.Auth{Type: model.AuthBearer, Token: "{{t}}"}})
+	root := &request.Folder{Name: "C"}
+	root.AddRequest(request.Request{Name: "R", Protocol: request.ProtocolREST, Method: "POST", BodyType: request.BodyText, Body: "x",
+		Auth: request.Auth{Type: request.AuthBearer, Token: "{{t}}"}})
 	data, _ := Export(root, nil)
 	for _, absent := range []string{`"options"`, `"urlencoded"`, `"formdata"`, `"basic"`, `"apikey"`, `"src"`} {
 		if strings.Contains(string(data), absent) {
@@ -83,7 +83,7 @@ func TestImportReadsAnInheritedAuthForEveryRequest(t *testing.T) {
 		t.Fatal(err)
 	}
 	a, b := find(res.Folder, "A"), find(res.Folder, "B")
-	if a.Auth.Type != model.AuthBearer || a.Auth.Token != "abc" || b.Auth.Type != model.AuthBasic || b.Auth.User != "u" {
+	if a.Auth.Type != request.AuthBearer || a.Auth.Token != "abc" || b.Auth.Type != request.AuthBasic || b.Auth.User != "u" {
 		t.Fatalf("A %+v B %+v", a.Auth, b.Auth)
 	}
 }

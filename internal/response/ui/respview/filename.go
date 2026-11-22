@@ -4,7 +4,7 @@ import (
 	"mime"
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // extensions are the file extensions of the content types people save;
@@ -18,7 +18,7 @@ var extensions = map[string]string{
 
 // SuggestedFileName is a name for saving the body: response.json, .html...
 // from the content type.
-func SuggestedFileName(response *model.Response) string {
+func SuggestedFileName(response *request.Response) string {
 	for _, h := range response.Headers {
 		if !strings.EqualFold(h.Name, "Content-Type") {
 			continue
@@ -42,7 +42,7 @@ func SuggestedFileName(response *model.Response) string {
 
 // ContentType is the Content-Type header of the response as received,
 // "" when it has none.
-func ContentType(response *model.Response) string {
+func ContentType(response *request.Response) string {
 	for _, h := range response.Headers {
 		if strings.EqualFold(h.Name, "Content-Type") {
 			return h.Value

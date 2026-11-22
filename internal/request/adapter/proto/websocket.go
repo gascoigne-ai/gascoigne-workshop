@@ -6,14 +6,13 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"net/http"
 	"strings"
 	"time"
 	"unicode/utf8"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto/ws"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 )
 
 // eventBuffer is how many events a session queues before the reader
@@ -30,7 +29,7 @@ type WebSocket struct {
 // enabled headers, the credentials of the Auth pane (an API key in the query
 // lands in the URL), the subprotocols and the TLS setting. Proxy is not
 // applied: ws.Dial has no proxy support.
-func (w WebSocket) handshake(ctx context.Context, req model.Request) (ws.Options, string, error) {
+func (w WebSocket) handshake(ctx context.Context, req request.Request) (ws.Options, string, error) {
 	built, err := newHTTPRequest(ctx, http.MethodGet, req, nil, "")
 	if err != nil {
 		return ws.Options{}, "", err
@@ -53,7 +52,7 @@ func (w WebSocket) handshake(ctx context.Context, req model.Request) (ws.Options
 }
 
 // Connect implements Streamer.
-func (w WebSocket) Connect(ctx context.Context, req model.Request) (port.Session, error) {
+func (w WebSocket) Connect(ctx context.Context, req request.Request) (request.Session, error) {
 	o, target, err := w.handshake(ctx, req)
 	if err != nil {
 		return nil, err
@@ -67,32 +66,32 @@ func (w WebSocket) Connect(ctx context.Context, req model.Request) (port.Session
 	if p := conn.Subprotocol(); p != "" {
 		open += " (" + p + ")"
 	}
-	s.emit(port.Event{Dir: port.Info, Kind: port.KindOpen, Text: open})
+	s.emit(request.Event{Dir: request.Info, Kind: request.KindOpen, Text: open})
 	go s.readLoop()
 	return s, nil
 }
 
 // Send implements Protocol as the one-shot form.
-func (w WebSocket) Send(ctx context.Context, req model.Request) (model.Response, error) {
+func (w WebSocket) Send(ctx context.Context, req request.Request) (request.Response, error) {
 	start := time.Now()
 	o, target, err := w.handshake(ctx, req)
 	if err != nil {
-		return model.Response{}, err
+		return request.Response{}, err
 	}
 	conn, err := ws.Dial(ctx, target, o)
 	if err != nil {
-		return model.Response{Err: stopReason(ctx, err), Duration: time.Since(start)}, nil
+		return request.Response{Err: stopReason(ctx, err), Duration: time.Since(start)}, nil
 	}
 	stop := context.AfterFunc(ctx, func() { conn.Close(ws.CloseGoingAway, "") })
 	defer stop()
 	defer conn.Close(ws.CloseNormal, "")
-	resp := model.Response{Status: http.StatusSwitchingProtocols, StatusText: "Switching Protocols"}
+	resp := request.Response{Status: http.StatusSwitchingProtocols, StatusText: "Switching Protocols"}
 	if p := conn.Subprotocol(); p != "" {
-		resp.Headers = []model.KV{{Name: "Sec-WebSocket-Protocol", Value: p, Enabled: true}}
+		resp.Headers = []request.KV{{Name: "Sec-WebSocket-Protocol", Value: p, Enabled: true}}
 	}
 	if req.Body != "" {
 		if err := conn.Write(ws.Text, []byte(req.Body)); err != nil {
-			return model.Response{Err: stopReason(ctx, err), Duration: time.Since(start)}, nil
+			return request.Response{Err: stopReason(ctx, err), Duration: time.Since(start)}, nil
 		}
 	}
 	for {
@@ -134,21 +133,21 @@ func (s *wsSession) readLoop() {
 		m, err := s.conn.Read()
 		if err != nil {
 			if !s.closing() { // closed by us: no loss
-				s.emit(port.Event{Dir: port.Info, Kind: port.KindClose, Code: ws.CloseAbnormal, Text: "Connection lost: " + err.Error()})
+				s.emit(request.Event{Dir: request.Info, Kind: request.KindClose, Code: ws.CloseAbnormal, Text: "Connection lost: " + err.Error()})
 			}
 			return
 		}
 		switch m.Type {
 		case ws.Text, ws.Binary:
-			s.emit(port.Event{Dir: port.Received, Kind: frameKinds[m.Type], Text: render(m), Size: len(m.Data)})
+			s.emit(request.Event{Dir: request.Received, Kind: frameKinds[m.Type], Text: render(m), Size: len(m.Data)})
 		case ws.Ping, ws.Pong:
-			s.emit(port.Event{Dir: port.Received, Kind: frameKinds[m.Type], Text: string(m.Data), Size: len(m.Data)})
+			s.emit(request.Event{Dir: request.Received, Kind: frameKinds[m.Type], Text: string(m.Data), Size: len(m.Data)})
 		case ws.Close:
 			text := fmt.Sprintf("Closed by server: %d", m.Code)
 			if len(m.Data) > 0 {
 				text += " " + string(m.Data)
 			}
-			s.emit(port.Event{Dir: port.Info, Kind: port.KindClose, Code: m.Code, Text: text})
+			s.emit(request.Event{Dir: request.Info, Kind: request.KindClose, Code: m.Code, Text: text})
 			return
 		}
 	}
@@ -156,8 +155,8 @@ func (s *wsSession) readLoop() {
 
 // frameKinds names the event kind of each data or control frame that is
 // logged; ws.Type.String has a fallback that must not become a kind.
-var frameKinds = map[ws.Type]port.EventKind{
-	ws.Text: port.KindText, ws.Binary: port.KindBinary, ws.Ping: port.KindPing, ws.Pong: port.KindPong,
+var frameKinds = map[ws.Type]request.EventKind{
+	ws.Text: request.KindText, ws.Binary: request.KindBinary, ws.Ping: request.KindPing, ws.Pong: request.KindPong,
 }
 
 // render shows a message as text; binary data as hex, cut at 64 bytes.
@@ -191,7 +190,7 @@ func (s *wsSession) Send(ctx context.Context, text string) error {
 	}
 	// Logged before the write: an echo can arrive as soon as the bytes are
 	// out, and the read loop would log it ahead of the message it answers.
-	s.emit(port.Event{Dir: port.Sent, Kind: port.KindText, Text: text, Size: len(text)})
+	s.emit(request.Event{Dir: request.Sent, Kind: request.KindText, Text: text, Size: len(text)})
 	return s.conn.Write(ws.Text, []byte(text))
 }
 
@@ -200,7 +199,7 @@ func (s *wsSession) SendBinary(ctx context.Context, data []byte) error {
 	if err := s.alive(ctx); err != nil {
 		return err
 	}
-	s.emit(port.Event{Dir: port.Sent, Kind: port.KindBinary, Text: hex.EncodeToString(data), Size: len(data)}) // before the write, as in Send
+	s.emit(request.Event{Dir: request.Sent, Kind: request.KindBinary, Text: hex.EncodeToString(data), Size: len(data)}) // before the write, as in Send
 	return s.conn.Write(ws.Binary, data)
 }
 
@@ -211,7 +210,7 @@ func (s *wsSession) Ping(ctx context.Context) error {
 	if err := s.conn.Write(ws.Ping, nil); err != nil {
 		return err
 	}
-	s.emit(port.Event{Dir: port.Sent, Kind: port.KindPing})
+	s.emit(request.Event{Dir: request.Sent, Kind: request.KindPing})
 	return nil
 }
 

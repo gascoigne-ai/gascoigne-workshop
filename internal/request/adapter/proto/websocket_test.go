@@ -2,7 +2,6 @@ package proto
 
 import (
 	"context"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -10,19 +9,19 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto/ws"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 )
 
-func wsServer(t *testing.T, handle func(conn *ws.Conn, request *http.Request)) string {
+func wsServer(t *testing.T, handle func(conn *ws.Conn, call *http.Request)) string {
 	t.Helper()
-	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		c, err := ws.Upgrade(writer, request)
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
+		c, err := ws.Upgrade(writer, call)
 		if err != nil {
 			return
 		}
 		defer c.Close(ws.CloseNormal, "")
-		handle(c, request)
+		handle(c, call)
 	}))
 	t.Cleanup(srv.Close)
 	return "ws" + strings.TrimPrefix(srv.URL, "http")
@@ -41,7 +40,7 @@ func echoHandler(conn *ws.Conn, _ *http.Request) {
 }
 
 // next waits for the next event.
-func next(t *testing.T, session port.Session) port.Event {
+func next(t *testing.T, session request.Session) request.Event {
 	t.Helper()
 	select {
 	case e, ok := <-session.Events():
@@ -52,26 +51,26 @@ func next(t *testing.T, session port.Session) port.Event {
 	case <-time.After(3 * time.Second):
 		t.Fatal("no event")
 	}
-	return port.Event{}
+	return request.Event{}
 }
 
 func TestWebSocketSessionLogsMessagesInBothDirections(t *testing.T) {
 	url := wsServer(t, echoHandler)
-	s, err := WebSocket{}.Connect(context.Background(), model.Request{Protocol: "websocket", URL: url})
+	s, err := WebSocket{}.Connect(context.Background(), request.Request{Protocol: "websocket", URL: url})
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer s.Close(context.Background())
-	if e := next(t, s); e.Dir != port.Info || !strings.Contains(e.Text, "Connected") {
+	if e := next(t, s); e.Dir != request.Info || !strings.Contains(e.Text, "Connected") {
 		t.Fatalf("first event %+v", e)
 	}
 	if err := s.Send(context.Background(), "hi there"); err != nil {
 		t.Fatal(err)
 	}
-	if e := next(t, s); e.Dir != port.Sent || e.Text != "hi there" || e.Size != 8 || e.Time.IsZero() {
+	if e := next(t, s); e.Dir != request.Sent || e.Text != "hi there" || e.Size != 8 || e.Time.IsZero() {
 		t.Fatalf("sent %+v", e)
 	}
-	if e := next(t, s); e.Dir != port.Received || e.Text != "hi there" || e.Kind != port.KindText {
+	if e := next(t, s); e.Dir != request.Received || e.Text != "hi there" || e.Kind != request.KindText {
 		t.Fatalf("received %+v", e)
 	}
 }
@@ -85,10 +84,10 @@ func TestWebSocketSessionLogsASendBeforeItsEcho(t *testing.T) {
 	cases := []struct {
 		name string
 		send func(session *wsSession) error
-		kind port.EventKind
+		kind request.EventKind
 	}{
-		{"text", func(session *wsSession) error { return session.Send(context.Background(), "hi there") }, port.KindText},
-		{"binary", func(session *wsSession) error { return session.SendBinary(context.Background(), []byte{0xde, 0xad}) }, port.KindBinary},
+		{"text", func(session *wsSession) error { return session.Send(context.Background(), "hi there") }, request.KindText},
+		{"binary", func(session *wsSession) error { return session.SendBinary(context.Background(), []byte{0xde, 0xad}) }, request.KindBinary},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -126,10 +125,10 @@ func TestWebSocketSessionLogsASendBeforeItsEcho(t *testing.T) {
 			if err := tc.send(session); err != nil {
 				t.Fatal(err)
 			}
-			if e := next(t, session); e.Dir != port.Sent || e.Kind != tc.kind {
+			if e := next(t, session); e.Dir != request.Sent || e.Kind != tc.kind {
 				t.Fatalf("first event %+v, want the %s send", e, tc.kind)
 			}
-			if e := next(t, session); e.Dir != port.Received || e.Kind != tc.kind {
+			if e := next(t, session); e.Dir != request.Received || e.Kind != tc.kind {
 				t.Fatalf("second event %+v, want the %s echo", e, tc.kind)
 			}
 		})
@@ -138,14 +137,14 @@ func TestWebSocketSessionLogsASendBeforeItsEcho(t *testing.T) {
 
 func TestWebSocketSessionReportsServerCloseAndThenEnds(t *testing.T) {
 	url := wsServer(t, func(conn *ws.Conn, _ *http.Request) { conn.Close(ws.CloseGoingAway, "restart") })
-	s, err := WebSocket{}.Connect(context.Background(), model.Request{URL: url})
+	s, err := WebSocket{}.Connect(context.Background(), request.Request{URL: url})
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer s.Close(context.Background())
 	next(t, s) // connected
 	e := next(t, s)
-	if e.Dir != port.Info || e.Code != ws.CloseGoingAway || !strings.Contains(e.Text, "restart") {
+	if e.Dir != request.Info || e.Code != ws.CloseGoingAway || !strings.Contains(e.Text, "restart") {
 		t.Fatalf("close event %+v", e)
 	}
 	select {
@@ -163,15 +162,15 @@ func TestWebSocketSessionReportsServerCloseAndThenEnds(t *testing.T) {
 
 func TestWebSocketSendsHeadersAuthAndSubprotocols(t *testing.T) {
 	got := make(chan http.Header, 1)
-	url := wsServer(t, func(conn *ws.Conn, request *http.Request) { got <- request.Header })
-	req := model.Request{
+	url := wsServer(t, func(conn *ws.Conn, call *http.Request) { got <- call.Header })
+	req := request.Request{
 		URL: url,
-		Headers: []model.KV{
+		Headers: []request.KV{
 			{Name: "X-Trace", Value: "1", Enabled: true},
 			{Name: "X-Off", Value: "2", Enabled: false},
 			{Name: "Sec-WebSocket-Protocol", Value: "chat, v2", Enabled: true},
 		},
-		Auth: model.Auth{Type: model.AuthBearer, Token: "tok"},
+		Auth: request.Auth{Type: request.AuthBearer, Token: "tok"},
 	}
 	s, err := WebSocket{}.Connect(context.Background(), req)
 	if err != nil {
@@ -185,10 +184,10 @@ func TestWebSocketSendsHeadersAuthAndSubprotocols(t *testing.T) {
 }
 
 func TestWebSocketConnectFailureIsAnError(t *testing.T) {
-	if _, err := (WebSocket{}).Connect(context.Background(), model.Request{URL: "ws://127.0.0.1:1"}); err == nil {
+	if _, err := (WebSocket{}).Connect(context.Background(), request.Request{URL: "ws://127.0.0.1:1"}); err == nil {
 		t.Fatal("want an error")
 	}
-	if _, err := (WebSocket{}).Connect(context.Background(), model.Request{URL: "http://x"}); err == nil {
+	if _, err := (WebSocket{}).Connect(context.Background(), request.Request{URL: "http://x"}); err == nil {
 		t.Fatal("want an error for a non-ws scheme")
 	}
 }
@@ -201,7 +200,7 @@ func TestWebSocketSlowConsumerBlocksTheReaderInsteadOfDroppingMessages(t *testin
 		}
 		conn.Read()
 	})
-	s, err := WebSocket{}.Connect(context.Background(), model.Request{URL: url})
+	s, err := WebSocket{}.Connect(context.Background(), request.Request{URL: url})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -209,7 +208,7 @@ func TestWebSocketSlowConsumerBlocksTheReaderInsteadOfDroppingMessages(t *testin
 	time.Sleep(100 * time.Millisecond) // let the buffer fill
 	got := 0
 	for got < n {
-		if e := next(t, s); e.Dir == port.Received {
+		if e := next(t, s); e.Dir == request.Received {
 			got++
 		}
 	}
@@ -217,7 +216,7 @@ func TestWebSocketSlowConsumerBlocksTheReaderInsteadOfDroppingMessages(t *testin
 
 func TestWebSocketSendOnceReturnsTheFirstReply(t *testing.T) {
 	url := wsServer(t, echoHandler)
-	resp, err := WebSocket{}.Send(context.Background(), model.Request{URL: url, Body: `{"a":1}`, BodyType: model.BodyJSON})
+	resp, err := WebSocket{}.Send(context.Background(), request.Request{URL: url, Body: `{"a":1}`, BodyType: request.BodyJSON})
 	if err != nil || resp.Err != "" || string(resp.Body) != `{"a":1}` || resp.Size != 7 {
 		t.Fatalf("got %+v, %v", resp, err)
 	}
@@ -227,7 +226,7 @@ func TestWebSocketSendOnceReturnsTheFirstReply(t *testing.T) {
 }
 
 func TestWebSocketSendOnceReportsConnectFailureInTheResponse(t *testing.T) {
-	resp, err := WebSocket{}.Send(context.Background(), model.Request{URL: "ws://127.0.0.1:1"})
+	resp, err := WebSocket{}.Send(context.Background(), request.Request{URL: "ws://127.0.0.1:1"})
 	if err != nil || resp.Err == "" {
 		t.Fatalf("got %+v, %v", resp, err)
 	}
@@ -236,15 +235,15 @@ func TestWebSocketSendOnceReportsConnectFailureInTheResponse(t *testing.T) {
 func TestRegistryConnectUsesTheStreamingProtocol(t *testing.T) {
 	url := wsServer(t, echoHandler)
 	r := NewRegistry()
-	s, err := r.Connect(context.Background(), model.Request{Protocol: "websocket", URL: url})
+	s, err := r.Connect(context.Background(), request.Request{Protocol: "websocket", URL: url})
 	if err != nil {
 		t.Fatal(err)
 	}
 	s.Close(context.Background())
-	if _, err := r.Connect(context.Background(), model.Request{Protocol: "rest"}); err == nil {
+	if _, err := r.Connect(context.Background(), request.Request{Protocol: "rest"}); err == nil {
 		t.Fatal("rest does not stream")
 	}
-	if _, err := r.Connect(context.Background(), model.Request{Protocol: "nope"}); err == nil {
+	if _, err := r.Connect(context.Background(), request.Request{Protocol: "nope"}); err == nil {
 		t.Fatal("unknown protocol")
 	}
 }

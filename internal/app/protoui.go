@@ -7,8 +7,8 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/editor"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/bus"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -43,7 +43,7 @@ type protoRowKey struct {
 // protoCheck is what reading a request's proto files in the background
 // found, and for which source.
 type protoCheck struct {
-	source   model.ProtoSource
+	source   request.ProtoSource
 	problems []string
 	running  bool
 }
@@ -96,7 +96,7 @@ func (t *reqTab) protoInput(list editor.ProtoList, index int) *TextField {
 	// A path changed by something other than typing (a removed row before
 	// it, a renamed collection) gets a fresh field showing it.
 	input := new(TextField)
-	*input = NewTextField(model.StoredPath(t.proto.dir, path))
+	*input = NewTextField(request.StoredPath(t.proto.dir, path))
 	if t.proto.inputs == nil {
 		t.proto.inputs = map[protoRowKey]*TextField{}
 	}
@@ -110,10 +110,10 @@ func pathFromText(dir, text string) string {
 	if strings.TrimSpace(text) == "" {
 		return ""
 	}
-	return model.LoadedPath(dir, text)
+	return request.LoadedPath(dir, text)
 }
 
-func protoPaths(source model.ProtoSource, list editor.ProtoList) []string {
+func protoPaths(source request.ProtoSource, list editor.ProtoList) []string {
 	if list == editor.ImportPaths {
 		return source.ImportPaths
 	}
@@ -131,7 +131,7 @@ func (a *App) protoPane(_ pane, tab *reqTab, scroll *ScrollState) Node {
 	}
 	chooseReflection := func() {
 		tab.proto.filesChosen = false
-		if !reflect.DeepEqual(tab.Req.Proto, model.ProtoSource{}) {
+		if !reflect.DeepEqual(tab.Req.Proto, request.ProtoSource{}) {
 			editRequest(tab, editor.ReflectionChosen{})
 		}
 	}
@@ -227,12 +227,12 @@ func protoProblems(err error, dir string) []string {
 	}
 	problems := make([]string, 0, len(parts))
 	for _, part := range parts {
-		var located model.ProtoError
+		var located request.ProtoError
 		if !errors.As(part, &located) {
 			problems = append(problems, part.Error())
 			continue
 		}
-		located.Path = model.StoredPath(dir, located.Path)
+		located.Path = request.StoredPath(dir, located.Path)
 		problems = append(problems, located.Error())
 	}
 	return problems

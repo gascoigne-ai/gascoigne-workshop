@@ -3,7 +3,7 @@ package app
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/transfer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/ui/destpicker"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/hajimehoshi/ebiten/v2"
@@ -15,8 +15,8 @@ import (
 // moves there, or is copied when Alt is held at the release.
 func (a *App) finishDrag() {
 	node, target, pressed := a.dragNode, a.dropTarget, a.pressedFolder
-	a.dragNode, a.dropTarget, a.pressedFolder = model.Node{}, model.Node{}, nil
-	if pressed != nil && target == (model.Node{Dir: pressed}) { // a click on a folder row
+	a.dragNode, a.dropTarget, a.pressedFolder = request.Node{}, request.Node{}, nil
+	if pressed != nil && target == (request.Node{Dir: pressed}) { // a click on a folder row
 		a.expanded[pressed] = !a.expanded[pressed]
 		return
 	}
@@ -35,7 +35,7 @@ func (a *App) finishDrag() {
 // goes and what closes it.
 type transferHost struct {
 	*App
-	node model.Node
+	node request.Node
 	mode transfer.Mode
 }
 
@@ -53,11 +53,11 @@ func (host transferHost) Dismiss() { host.picker = nil }
 
 // openTransferPicker asks where node goes. A collection's root and nothing
 // cannot be moved or copied, so no picker opens for them.
-func (a *App) openTransferPicker(node model.Node, mode transfer.Mode) {
+func (a *App) openTransferPicker(node request.Node, mode transfer.Mode) {
 	if node.None() || a.isRoot(node.Dir) || a.ownerOf(node) == nil {
 		return
 	}
-	stripe := func(col *model.Collection) core.Token { return a.collectionToken(model.Node{Dir: &col.Folder}) }
+	stripe := func(col *request.Collection) core.Token { return a.collectionToken(request.Node{Dir: &col.Folder}) }
 	a.picker = destpicker.New(node, mode, transfer.Destinations(a.open, node, mode), stripe)
 	a.pickerHost = transferHost{App: a, node: node, mode: mode}
 }
@@ -94,7 +94,7 @@ func (a *App) transferNode(t transfer.Transfer) {
 	a.selectNode(out.Node)
 	a.expanded[&t.To.Folder] = true
 	a.expanded[t.Into] = true
-	if t.Mode == transfer.Move && a.varsTarget.kind == varsFolder && !out.Node.None() && out.Node.Dir != nil && out.Node.Dir.Contains(model.Node{Dir: a.varsTarget.folder}) {
+	if t.Mode == transfer.Move && a.varsTarget.kind == varsFolder && !out.Node.None() && out.Node.Dir != nil && out.Node.Dir.Contains(request.Node{Dir: a.varsTarget.folder}) {
 		a.varsTarget = varsTarget{}
 	}
 	if out.Renamed {
@@ -112,7 +112,7 @@ func (a *App) transferNode(t transfer.Transfer) {
 // source; when the target cannot be written the source keeps the node on
 // disk and an error says so. A target that has no folder yet is not written,
 // and then the source is not either, so the node is never on disk nowhere.
-func (a *App) flushMoved(from, to *model.Collection) {
+func (a *App) flushMoved(from, to *request.Collection) {
 	target, okTarget := a.open.ByCollection(to)
 	source, okSource := a.open.ByCollection(from)
 	if !okTarget || !okSource || target.Dir == "" {

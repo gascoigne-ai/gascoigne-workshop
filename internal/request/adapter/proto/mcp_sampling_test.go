@@ -3,7 +3,6 @@ package proto
 import (
 	"context"
 	"encoding/json"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -11,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // samplingServer is an MCP server that asks the client for a sampling
@@ -29,8 +28,8 @@ const samplingParams = `{"messages":[{"role":"user","content":{"type":"text","te
 func newSamplingServer(t *testing.T) *samplingServer {
 	t.Helper()
 	server := &samplingServer{}
-	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		body, _ := io.ReadAll(request.Body)
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
+		body, _ := io.ReadAll(call.Body)
 		var m map[string]any
 		_ = json.Unmarshal(body, &m)
 		switch {
@@ -80,12 +79,12 @@ func (server *samplingServer) waitForAnswer(t *testing.T) map[string]any {
 
 func TestMCPSamplingPutsTheServersRequestToTheSamplerAndSendsItsText(t *testing.T) {
 	server := newSamplingServer(t)
-	var asked port.SamplingRequest
-	sampler := func(_ context.Context, request port.SamplingRequest) (port.SamplingResult, bool) {
-		asked = request
-		return port.SamplingResult{Text: "Hello!", Model: "the user"}, true
+	var asked request.SamplingRequest
+	sampler := func(_ context.Context, call request.SamplingRequest) (request.SamplingResult, bool) {
+		asked = call
+		return request.SamplingResult{Text: "Hello!", Model: "the user"}, true
 	}
-	session, err := MCP{Sampler: sampler}.Connect(context.Background(), model.Request{URL: server.url})
+	session, err := MCP{Sampler: sampler}.Connect(context.Background(), request.Request{URL: server.url})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -101,7 +100,7 @@ func TestMCPSamplingPutsTheServersRequestToTheSamplerAndSendsItsText(t *testing.
 		t.Errorf("stopReason = %v", result["stopReason"])
 	}
 	if asked.SystemPrompt != "Be brief" || asked.MaxTokens != 50 || len(asked.Messages) != 2 ||
-		asked.Messages[0] != (port.SamplingMessage{Role: "user", Text: "Say hi"}) || asked.Messages[1].Role != "assistant" {
+		asked.Messages[0] != (request.SamplingMessage{Role: "user", Text: "Say hi"}) || asked.Messages[1].Role != "assistant" {
 		t.Errorf("the sampler was given %+v", asked)
 	}
 	server.mu.Lock()
@@ -113,10 +112,10 @@ func TestMCPSamplingPutsTheServersRequestToTheSamplerAndSendsItsText(t *testing.
 
 func TestMCPDecliningASamplingRequestAnswersWithAnError(t *testing.T) {
 	server := newSamplingServer(t)
-	sampler := func(context.Context, port.SamplingRequest) (port.SamplingResult, bool) {
-		return port.SamplingResult{}, false
+	sampler := func(context.Context, request.SamplingRequest) (request.SamplingResult, bool) {
+		return request.SamplingResult{}, false
 	}
-	session, err := MCP{Sampler: sampler}.Connect(context.Background(), model.Request{URL: server.url})
+	session, err := MCP{Sampler: sampler}.Connect(context.Background(), request.Request{URL: server.url})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -130,7 +129,7 @@ func TestMCPDecliningASamplingRequestAnswersWithAnError(t *testing.T) {
 
 func TestMCPWithoutASamplerDoesNotOfferSampling(t *testing.T) {
 	server := newSamplingServer(t)
-	session, err := MCP{}.Connect(context.Background(), model.Request{URL: server.url})
+	session, err := MCP{}.Connect(context.Background(), request.Request{URL: server.url})
 	if err != nil {
 		t.Fatal(err)
 	}

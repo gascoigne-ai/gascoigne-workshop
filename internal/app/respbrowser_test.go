@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 func TestOpenInBrowserServesTheBodyAndOpensItsAddress(t *testing.T) {
@@ -16,8 +16,8 @@ func TestOpenInBrowserServesTheBodyAndOpensItsAddress(t *testing.T) {
 	var opened string
 	a.previews = preview.Browser{Lifetime: time.Minute, Open: func(_ context.Context, address string) error { opened = address; return nil }}
 	tab := a.cur()
-	tab.Resp = &model.Response{Status: 200, Body: []byte("<h1>hi</h1>"),
-		Headers: []model.KV{{Name: "Content-Type", Value: "text/html"}}}
+	tab.Resp = &request.Response{Status: 200, Body: []byte("<h1>hi</h1>"),
+		Headers: []request.KV{{Name: "Content-Type", Value: "text/html"}}}
 
 	a.openInBrowser(tab)
 
@@ -46,7 +46,7 @@ func TestOpenInBrowserFallsBackToTextPlainWithoutAContentType(t *testing.T) {
 	var opened string
 	a.previews = preview.Browser{Lifetime: time.Minute, Open: func(_ context.Context, address string) error { opened = address; return nil }}
 	tab := a.cur()
-	tab.Resp = &model.Response{Status: 200, Body: []byte("plain")}
+	tab.Resp = &request.Response{Status: 200, Body: []byte("plain")}
 	a.openInBrowser(tab)
 	response, err := http.Get(opened)
 	if err != nil {

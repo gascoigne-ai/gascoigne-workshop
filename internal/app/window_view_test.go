@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
@@ -26,7 +26,7 @@ var windowSizes = []struct {
 // response pane shows its status pill.
 func respondWith(status int, text string) func(app *App) {
 	return func(app *App) {
-		app.cur().Resp = &model.Response{Status: status, StatusText: text, Duration: 1400 * time.Millisecond, Size: 160434}
+		app.cur().Resp = &request.Response{Status: status, StatusText: text, Duration: 1400 * time.Millisecond, Size: 160434}
 	}
 }
 
@@ -44,7 +44,7 @@ var windowStates = []struct {
 	{"ok-stacked", true, respondWith(200, "OK")},
 	{"redirect", false, respondWith(301, "Moved Permanently")},
 	{"not-found", false, respondWith(404, "Not Found")},
-	{"failed", false, func(app *App) { app.cur().Resp = &model.Response{Err: "connection refused"} }},
+	{"failed", false, func(app *App) { app.cur().Resp = &request.Response{Err: "connection refused"} }},
 	{"menu", false, func(app *App) { app.toggleSettings() }},
 	{"popup", false, func(app *App) { widget.OpenMenu(app.ctx, 100, 100, []widget.MenuItem{{Label: "Copy"}}) }},
 	{"dialog", false, func(app *App) { app.confirm("Delete Search Repos?", "This cannot be undone.", "Delete", func() {}) }},

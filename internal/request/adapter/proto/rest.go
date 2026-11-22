@@ -17,7 +17,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // maxBody bounds how much of a response is kept in memory.
@@ -47,31 +47,31 @@ type REST struct {
 }
 
 // Send implements Protocol. Request params are not applied here: the
-// caller folds them into req.URL with model.WithParams.
-func (r REST) Send(ctx context.Context, req model.Request) (model.Response, error) {
+// caller folds them into req.URL with request.WithParams.
+func (r REST) Send(ctx context.Context, req request.Request) (request.Response, error) {
 	method := strings.ToUpper(req.Method)
 	if method == "" {
 		method = http.MethodGet
 	}
 	body, contentType, err := encodeBody(req)
 	if err != nil {
-		return model.Response{}, fmt.Errorf("encode body: %w", err)
+		return request.Response{}, fmt.Errorf("encode body: %w", err)
 	}
 	httpReq, err := newHTTPRequest(ctx, method, req, body, contentType)
 	if err != nil {
-		return model.Response{}, err
+		return request.Response{}, err
 	}
 
 	client, err := r.client(req)
 	if err != nil {
-		return model.Response{Err: err.Error()}, nil
+		return request.Response{Err: err.Error()}, nil
 	}
 	tr := &tracer{}
 	httpReq = httpReq.WithContext(httptrace.WithClientTrace(httpReq.Context(), tr.trace()))
 	start := time.Now()
 	resp, err := client.Do(httpReq)
 	if err != nil {
-		return model.Response{Err: failureText(err), Duration: time.Since(start)}, nil
+		return request.Response{Err: failureText(err), Duration: time.Since(start)}, nil
 	}
 	defer resp.Body.Close()
 	headersAt := time.Now()
@@ -82,13 +82,13 @@ func (r REST) Send(ctx context.Context, req model.Request) (model.Response, erro
 	}
 	respBody, err := io.ReadAll(io.LimitReader(resp.Body, limit+1))
 	if err != nil {
-		return model.Response{Err: failureText(err), Duration: time.Since(start)}, nil
+		return request.Response{Err: failureText(err), Duration: time.Since(start)}, nil
 	}
 	truncated := int64(len(respBody)) > limit
 	if truncated {
 		respBody = respBody[:limit]
 	}
-	return model.Response{
+	return request.Response{
 		Timing:     tr.timing(start, headersAt, time.Now()),
 		Truncated:  truncated,
 		Status:     resp.StatusCode,
@@ -100,11 +100,11 @@ func (r REST) Send(ctx context.Context, req model.Request) (model.Response, erro
 	}, nil
 }
 
-func headerRows(header http.Header) []model.KV {
-	var rows []model.KV
+func headerRows(header http.Header) []request.KV {
+	var rows []request.KV
 	for name, values := range header {
 		for _, v := range values {
-			rows = append(rows, model.KV{Name: name, Value: v, Enabled: true})
+			rows = append(rows, request.KV{Name: name, Value: v, Enabled: true})
 		}
 	}
 	sortKV(rows)
@@ -113,22 +113,22 @@ func headerRows(header http.Header) []model.KV {
 
 // bodyEncoders turn a request into body bytes and the Content-Type to
 // send with them. BodyRaw is the legacy raw body: sent as is, with no type.
-var bodyEncoders = map[model.BodyType]func(req model.Request) ([]byte, string, error){
-	model.BodyRaw:  func(request model.Request) ([]byte, string, error) { return []byte(request.Body), "", nil },
-	model.BodyNone: func(model.Request) ([]byte, string, error) { return nil, "", nil },
-	model.BodyJSON: func(request model.Request) ([]byte, string, error) {
-		return []byte(request.Body), "application/json", nil
+var bodyEncoders = map[request.BodyType]func(req request.Request) ([]byte, string, error){
+	request.BodyRaw:  func(call request.Request) ([]byte, string, error) { return []byte(call.Body), "", nil },
+	request.BodyNone: func(request.Request) ([]byte, string, error) { return nil, "", nil },
+	request.BodyJSON: func(call request.Request) ([]byte, string, error) {
+		return []byte(call.Body), "application/json", nil
 	},
-	model.BodyText: func(request model.Request) ([]byte, string, error) {
-		return []byte(request.Body), "text/plain; charset=utf-8", nil
+	request.BodyText: func(call request.Request) ([]byte, string, error) {
+		return []byte(call.Body), "text/plain; charset=utf-8", nil
 	},
-	model.BodyForm:      encodeForm,
-	model.BodyMultipart: encodeMultipart,
-	model.BodyFile:      encodeFile,
-	model.BodyGraphQL:   encodeGraphQL,
+	request.BodyForm:      encodeForm,
+	request.BodyMultipart: encodeMultipart,
+	request.BodyFile:      encodeFile,
+	request.BodyGraphQL:   encodeGraphQL,
 }
 
-func encodeBody(req model.Request) ([]byte, string, error) {
+func encodeBody(req request.Request) ([]byte, string, error) {
 	enc, ok := bodyEncoders[req.BodyType]
 	if !ok {
 		return nil, "", fmt.Errorf("unknown body type %q", req.BodyType)
@@ -137,8 +137,8 @@ func encodeBody(req model.Request) ([]byte, string, error) {
 }
 
 // formFields are the enabled, named rows of the form.
-func formFields(req model.Request) []model.KV {
-	var fields []model.KV
+func formFields(req request.Request) []request.KV {
+	var fields []request.KV
 	for _, f := range req.Form {
 		if f.Enabled && f.Name != "" {
 			fields = append(fields, f)
@@ -147,7 +147,7 @@ func formFields(req model.Request) []model.KV {
 	return fields
 }
 
-func encodeForm(req model.Request) ([]byte, string, error) {
+func encodeForm(req request.Request) ([]byte, string, error) {
 	var pairs []string
 	for _, f := range formFields(req) {
 		pairs = append(pairs, url.QueryEscape(f.Name)+"="+url.QueryEscape(f.Value))
@@ -155,11 +155,11 @@ func encodeForm(req model.Request) ([]byte, string, error) {
 	return []byte(strings.Join(pairs, "&")), "application/x-www-form-urlencoded", nil
 }
 
-func encodeMultipart(req model.Request) ([]byte, string, error) {
+func encodeMultipart(req request.Request) ([]byte, string, error) {
 	var buf bytes.Buffer
 	w := multipart.NewWriter(&buf)
 	for _, f := range formFields(req) {
-		if path, ok := model.FormFile(f.Value); ok {
+		if path, ok := request.FormFile(f.Value); ok {
 			if err := writeFilePart(w, f.Name, path); err != nil {
 				return nil, "", err
 			}
@@ -184,41 +184,41 @@ func encodeMultipart(req model.Request) ([]byte, string, error) {
 func failureText(err error) string {
 	switch {
 	case errors.Is(err, context.Canceled):
-		return model.ErrCancelled
+		return request.ErrCancelled
 	case errors.Is(err, context.DeadlineExceeded):
-		return model.ErrTimedOut
+		return request.ErrTimedOut
 	}
 	return err.Error()
 }
 
 // authAppliers add credentials to a request, by auth type. The zero
 // value of the type is no authentication.
-var authAppliers = map[model.AuthType]func(auth model.Auth, request *http.Request){
-	model.AuthNone: func(model.Auth, *http.Request) {},
-	model.AuthBearer: func(auth model.Auth, request *http.Request) {
-		request.Header.Set("Authorization", "Bearer "+auth.Token)
+var authAppliers = map[request.AuthType]func(auth request.Auth, call *http.Request){
+	request.AuthNone: func(request.Auth, *http.Request) {},
+	request.AuthBearer: func(auth request.Auth, call *http.Request) {
+		call.Header.Set("Authorization", "Bearer "+auth.Token)
 	},
-	model.AuthBasic: func(auth model.Auth, request *http.Request) {
-		request.SetBasicAuth(auth.User, auth.Password)
+	request.AuthBasic: func(auth request.Auth, call *http.Request) {
+		call.SetBasicAuth(auth.User, auth.Password)
 	},
-	model.AuthAPIKey: func(auth model.Auth, request *http.Request) {
+	request.AuthAPIKey: func(auth request.Auth, call *http.Request) {
 		if auth.KeyName == "" {
 			return
 		}
-		if auth.KeyIn == model.KeyInQuery {
-			q := request.URL.Query()
+		if auth.KeyIn == request.KeyInQuery {
+			q := call.URL.Query()
 			q.Set(auth.KeyName, auth.KeyValue)
-			request.URL.RawQuery = q.Encode()
+			call.URL.RawQuery = q.Encode()
 			return
 		}
-		request.Header.Set(auth.KeyName, auth.KeyValue)
+		call.Header.Set(auth.KeyName, auth.KeyValue)
 	},
 }
 
 // client is the http.Client for req, built by newHTTPClient from the
 // flat fields. REST keeps them flat (rather than a Network) because
 // callers and tests write them that way; the other protocols take a Network.
-func (r REST) client(req model.Request) (*http.Client, error) {
+func (r REST) client(req request.Request) (*http.Client, error) {
 	return newHTTPClient(r.Client, Network{Jar: r.Jar, Proxy: r.Proxy, CAFile: r.CAFile, CertFile: r.CertFile, KeyFile: r.KeyFile}, req)
 }
 
@@ -248,7 +248,7 @@ func writeFilePart(form *multipart.Writer, name, path string) error {
 }
 
 // encodeFile sends the file named by the body as it is.
-func encodeFile(req model.Request) ([]byte, string, error) {
+func encodeFile(req request.Request) ([]byte, string, error) {
 	path := strings.TrimSpace(req.Body)
 	if path == "" {
 		return nil, "", fmt.Errorf("choose the file to send")

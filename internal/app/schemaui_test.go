@@ -6,15 +6,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/editor"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 func TestSchemaRowsShowEveryFieldWithItsNesting(t *testing.T) {
-	address := &model.MessageSchema{Name: "Address", Fields: []model.SchemaField{{Name: "street", Type: "string"}}}
-	node := &model.MessageSchema{Name: "Node", Cut: true}
-	schema := model.MessageSchema{Name: "Person", Fields: []model.SchemaField{
+	address := &request.MessageSchema{Name: "Address", Fields: []request.SchemaField{{Name: "street", Type: "string"}}}
+	node := &request.MessageSchema{Name: "Node", Cut: true}
+	schema := request.MessageSchema{Name: "Person", Fields: []request.SchemaField{
 		{Name: "name", Type: "string"},
 		{Name: "tags", Type: "string", Repeated: true},
 		{Name: "status", Type: "enum Status", EnumValues: []string{"UNKNOWN", "SERVING"}},

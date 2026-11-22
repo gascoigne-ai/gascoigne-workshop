@@ -3,7 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/textfmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/bus"
 	"time"
@@ -12,7 +12,7 @@ import (
 type sendResult struct {
 	tab  *reqTab
 	seq  int // which send of the tab this answers
-	resp model.Response
+	resp request.Response
 }
 
 // send runs t's request off the UI goroutine; the result comes back
@@ -28,7 +28,7 @@ func (a *App) send(tab *reqTab) {
 // dispatch sends req on behalf of tab: the request of the tab, or a
 // helper one such as a GraphQL schema query that uses the tab's URL and
 // credentials.
-func (a *App) dispatch(tab *reqTab, source *model.Request) {
+func (a *App) dispatch(tab *reqTab, source *request.Request) {
 	if !a.allowed(tab, source, func() { a.dispatch(tab, source) }) {
 		return
 	}
@@ -46,7 +46,7 @@ func (a *App) dispatch(tab *reqTab, source *model.Request) {
 		defer cancel()
 		resp, err := reg.Send(ctx, req)
 		if err != nil {
-			resp = model.Response{Err: err.Error()}
+			resp = request.Response{Err: err.Error()}
 		}
 		return sendResult{tab: tab, seq: seq, resp: resp}
 	})
@@ -60,12 +60,12 @@ func (a *App) cancelSend(tab *reqTab) {
 	}
 	tab.cancel()
 	tab.view.SetLines(nil)
-	a.status = model.ErrCancelled
+	a.status = request.ErrCancelled
 }
 
 // timeoutFor is how long a request may run: its own setting, else the
 // default from the settings, else a minute.
-func (a *App) timeoutFor(req model.Request) time.Duration {
+func (a *App) timeoutFor(req request.Request) time.Duration {
 	return a.settings.TimeoutFor(req.TimeoutSec)
 }
 

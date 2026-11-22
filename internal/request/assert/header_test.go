@@ -4,13 +4,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // Pins how a header repeated in a response is read before the lookup is
 // shared: a check sees every value joined, a capture takes the first.
 func TestRepeatedHeaderIsJoinedForChecksAndFirstForCaptures(t *testing.T) {
-	r := &model.Response{Status: 200, Headers: []model.KV{{Name: "Set-Cookie", Value: "a=1"}, {Name: "set-cookie", Value: "b=2"}}}
+	r := &request.Response{Status: 200, Headers: []request.KV{{Name: "Set-Cookie", Value: "a=1"}, {Name: "set-cookie", Value: "b=2"}}}
 	if res := Run(`header Set-Cookie == "a=1, b=2"`, r); !res[0].OK {
 		t.Errorf("joined check: %+v", res[0])
 	}

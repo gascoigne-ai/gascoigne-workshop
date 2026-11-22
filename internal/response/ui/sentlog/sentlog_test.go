@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/history"
 	core "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -31,9 +31,9 @@ func (h *fakeHost) SentStore() response.SentStore {
 	}
 	return history.SentLog{Dir: h.dir}
 }
-func (h *fakeHost) Toast(text string, _ severity.Level)        { h.toasts = append(h.toasts, text) }
-func (h *fakeHost) SetStatus(text string)                      { h.status = text }
-func (h *fakeHost) Badge(_ model.Protocol, method string) Node { return Text(method) }
+func (h *fakeHost) Toast(text string, _ severity.Level)          { h.toasts = append(h.toasts, text) }
+func (h *fakeHost) SetStatus(text string)                        { h.status = text }
+func (h *fakeHost) Badge(_ request.Protocol, method string) Node { return Text(method) }
 func (h *fakeHost) OpenRequest(folder, path string) bool {
 	h.opened = append(h.opened, path)
 	h.openedIn = append(h.openedIn, folder)
@@ -43,7 +43,7 @@ func (h *fakeHost) OpenRequest(folder, path string) bool {
 var clock = time.Date(2026, 11, 7, 12, 0, 0, 0, time.UTC)
 
 func send(log *Log, host Host, path, url string) {
-	req := &model.Request{Protocol: "rest", Method: "GET", URL: url}
+	req := &request.Request{Protocol: "rest", Method: "GET", URL: url}
 	log.Record(host, clock, "", path, req, 200)
 }
 
@@ -52,7 +52,7 @@ func send(log *Log, host Host, path, url string) {
 func TestARowRemembersAndOpensItsCollection(t *testing.T) {
 	var log Log
 	host := &fakeHost{dir: t.TempDir(), present: map[string]bool{"Users/List": true}}
-	log.Record(host, clock, "/work/beta", "Users/List", &model.Request{Protocol: "rest", Method: "GET"}, 200)
+	log.Record(host, clock, "/work/beta", "Users/List", &request.Request{Protocol: "rest", Method: "GET"}, 200)
 	var reloaded Log
 	reloaded.Load(host)
 	rows := reloaded.Rows("")

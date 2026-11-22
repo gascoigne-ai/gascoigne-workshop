@@ -1,9 +1,9 @@
 package app
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/assert"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/editor"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
@@ -36,7 +36,7 @@ type pane struct {
 	label          string
 	kind           paneKind
 	title          string                                   // caption above a table
-	rows           func(app *App, t *reqTab) *[]model.KV    // paneTable
+	rows           func(app *App, t *reqTab) *[]request.KV  // paneTable
 	editable       bool                                     // table rows can be toggled and deleted
 	changed        func(t *reqTab)                          // runs after an edit
 	flagDuplicates bool                                     // mark rows that repeat a name
@@ -60,14 +60,14 @@ func paramsChanged(tab *reqTab) {
 
 var (
 	paramsPane = pane{label: "Params", kind: paneTable, title: "Query", editable: true, changed: paramsChanged,
-		rows: func(_ *App, tab *reqTab) *[]model.KV { return &tab.Req.Params }}
+		rows: func(_ *App, tab *reqTab) *[]request.KV { return &tab.Req.Params }}
 	bodyPane    = pane{label: "Body", kind: paneBody}
 	headersPane = pane{label: "Headers", kind: paneTable, title: "Headers", editable: true, flagDuplicates: true,
-		rows: func(_ *App, tab *reqTab) *[]model.KV { return &tab.Req.Headers }}
+		rows: func(_ *App, tab *reqTab) *[]request.KV { return &tab.Req.Headers }}
 	authPane = pane{label: "Auth", kind: paneAuth}
 	varsPane = pane{label: "Vars", kind: paneTable, title: "Collection variables", editable: true,
 		caption: (*App).varsCaption,
-		rows:    func(app *App, _ *reqTab) *[]model.KV { return app.varsRows() }}
+		rows:    func(app *App, _ *reqTab) *[]request.KV { return app.varsRows() }}
 	testsPane    = pane{label: "Tests", kind: paneAssertions}
 	settingsPane = pane{label: "Settings", kind: paneSettings}
 )
@@ -82,9 +82,9 @@ var requestPanes = []pane{paramsPane, bodyPane, headersPane, authPane, varsPane,
 var connectionRequestPanes = []pane{headersPane, authPane, varsPane, settingsPane}
 
 // protocolView is how the app shows one protocol: the UI half of its row,
-// next to the model.Protocols row that says what the protocol does.
+// next to the request.Protocols row that says what the protocol does.
 type protocolView struct {
-	protocol     model.Protocol
+	protocol     request.Protocol
 	requestPanes []pane
 	streamPanes  []pane                       // the response side while connected
 	composer     bool                         // the Messages pane has a field to send from
@@ -93,22 +93,22 @@ type protocolView struct {
 	offered      func(settings.Settings) bool // whether the chip cycles to it; nil is always
 }
 
-// protocolViews has one row per row of model.Protocols, in the same order.
+// protocolViews has one row per row of request.Protocols, in the same order.
 var protocolViews = []protocolView{
-	{protocol: model.ProtocolREST, requestPanes: requestPanes},
-	{protocol: model.ProtocolWebSocket, requestPanes: connectionRequestPanes, streamPanes: wsPanes,
+	{protocol: request.ProtocolREST, requestPanes: requestPanes},
+	{protocol: request.ProtocolWebSocket, requestPanes: connectionRequestPanes, streamPanes: wsPanes,
 		composer: true, formatsJSON: true},
-	{protocol: model.ProtocolMCP, requestPanes: connectionRequestPanes, streamPanes: mcpPanes, composer: true,
+	{protocol: request.ProtocolMCP, requestPanes: connectionRequestPanes, streamPanes: mcpPanes, composer: true,
 		composerHint: "call TOOL {json}  ·  read URI  ·  prompt NAME {json}  ·  method {json}  ·  or raw JSON-RPC"},
-	{protocol: model.ProtocolSSE, requestPanes: connectionRequestPanes, streamPanes: wsPanes,
+	{protocol: request.ProtocolSSE, requestPanes: connectionRequestPanes, streamPanes: wsPanes,
 		offered: func(current settings.Settings) bool { return current.SSE }},
-	{protocol: model.ProtocolGRPC, requestPanes: grpcRequestPanes, streamPanes: wsPanes, composer: true,
+	{protocol: request.ProtocolGRPC, requestPanes: grpcRequestPanes, streamPanes: wsPanes, composer: true,
 		offered: func(current settings.Settings) bool { return current.GRPC }},
 }
 
 // viewOf is the protocolView of protocol. A request with no known protocol
 // (only one built in code) is shown as the first row.
-func viewOf(protocol model.Protocol) protocolView {
+func viewOf(protocol request.Protocol) protocolView {
 	for _, view := range protocolViews {
 		if view.protocol == protocol {
 			return view
@@ -132,9 +132,9 @@ func noResponse(tab *reqTab) (string, bool) {
 var responsePanes = []pane{
 	{label: "Response", kind: paneResponse, empty: responseEmpty},
 	{label: "Headers", kind: paneTable, empty: noResponse,
-		rows: func(_ *App, tab *reqTab) *[]model.KV {
+		rows: func(_ *App, tab *reqTab) *[]request.KV {
 			if tab.Resp == nil {
-				return &[]model.KV{}
+				return &[]request.KV{}
 			}
 			return &tab.Resp.Headers
 		}},

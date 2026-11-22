@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc/health"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // grpcStubWithoutReflection serves the standard health service and no
@@ -34,18 +34,18 @@ func grpcStubWithoutReflection(t *testing.T) (target string, healthServer *healt
 	return "grpc://" + listener.Addr().String(), healthServer
 }
 
-func fromHealthProto(t *testing.T, request model.Request) model.Request {
+func fromHealthProto(t *testing.T, call request.Request) request.Request {
 	t.Helper()
-	request.Proto = model.ProtoSource{Files: []string{absolute(t, healthProto)}}
-	return request
+	call.Proto = request.ProtoSource{Files: []string{absolute(t, healthProto)}}
+	return call
 }
 
 func TestGRPCUnaryCallWorksFromAProtoFileWithoutReflection(t *testing.T) {
 	target, _ := grpcStubWithoutReflection(t)
-	request := grpcRequest(target, "grpc.health.v1.Health/Check", `{"service": "known"}`)
+	call := grpcRequest(target, "grpc.health.v1.Health/Check", `{"service": "known"}`)
 
 	// The same request without the file has nothing to learn the method from.
-	withoutFile, err := GRPC{}.Send(grpcContext(t), request)
+	withoutFile, err := GRPC{}.Send(grpcContext(t), call)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,7 +53,7 @@ func TestGRPCUnaryCallWorksFromAProtoFileWithoutReflection(t *testing.T) {
 		t.Fatalf("a server without reflection answered without a proto file: %+v", withoutFile)
 	}
 
-	response, err := GRPC{}.Send(grpcContext(t), fromHealthProto(t, request))
+	response, err := GRPC{}.Send(grpcContext(t), fromHealthProto(t, call))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -96,8 +96,8 @@ func TestListGRPCMethodsFromProtoFilesNeedsNoServer(t *testing.T) {
 
 func TestGRPCServerStreamWorksFromAProtoFile(t *testing.T) {
 	target, healthServer := grpcStubWithoutReflection(t)
-	request := fromHealthProto(t, grpcRequest(target, "grpc.health.v1.Health/Watch", `{"service": "known"}`))
-	session, err := GRPC{}.Connect(grpcContext(t), request)
+	call := fromHealthProto(t, grpcRequest(target, "grpc.health.v1.Health/Watch", `{"service": "known"}`))
+	session, err := GRPC{}.Connect(grpcContext(t), call)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -113,8 +113,8 @@ func TestGRPCServerStreamWorksFromAProtoFile(t *testing.T) {
 
 func TestGRPCAMethodTheProtoFilesLackIsAnErrorResponse(t *testing.T) {
 	target, _ := grpcStubWithoutReflection(t)
-	request := fromHealthProto(t, grpcRequest(target, "no.such.Service/Nothing", `{}`))
-	response, err := GRPC{}.Send(grpcContext(t), request)
+	call := fromHealthProto(t, grpcRequest(target, "no.such.Service/Nothing", `{}`))
+	response, err := GRPC{}.Send(grpcContext(t), call)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -128,9 +128,9 @@ func TestGRPCAProtoFileThatIsGoneAtSendIsAnErrorResponseNamingIt(t *testing.T) {
 	// file is missing instead of falling back to reflection.
 	target, _ := grpcStub(t)
 	gone := filepath.Join(t.TempDir(), "health.proto")
-	request := grpcRequest(target, "grpc.health.v1.Health/Check", `{}`)
-	request.Proto = model.ProtoSource{Files: []string{gone}}
-	response, err := GRPC{}.Send(grpcContext(t), request)
+	call := grpcRequest(target, "grpc.health.v1.Health/Check", `{}`)
+	call.Proto = request.ProtoSource{Files: []string{gone}}
+	response, err := GRPC{}.Send(grpcContext(t), call)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -150,14 +150,14 @@ func TestGRPCAParseErrorAtSendNamesTheFileAndLine(t *testing.T) {
 		t.Fatal(err)
 	}
 	target, _ := grpcStubWithoutReflection(t)
-	request := grpcRequest(target, "grpc.health.v1.Health/Check", `{}`)
-	request.Proto = model.ProtoSource{Files: []string{broken}}
-	_, err = openMethodSource(grpcContext(t), nil, request.Proto)
-	var protoErr model.ProtoError
+	call := grpcRequest(target, "grpc.health.v1.Health/Check", `{}`)
+	call.Proto = request.ProtoSource{Files: []string{broken}}
+	_, err = openMethodSource(grpcContext(t), nil, call.Proto)
+	var protoErr request.ProtoError
 	if !errors.As(err, &protoErr) || protoErr.Path != broken || protoErr.Line != 34 {
 		t.Fatalf("err = %v, want a ProtoError at %s:34", err, broken)
 	}
-	response, err := GRPC{}.Send(grpcContext(t), request)
+	response, err := GRPC{}.Send(grpcContext(t), call)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -4,19 +4,19 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
-func rows(names ...string) []model.KV {
-	var out []model.KV
+func rows(names ...string) []request.KV {
+	var out []request.KV
 	for _, name := range names {
-		out = append(out, model.KV{Name: name, Enabled: true})
+		out = append(out, request.KV{Name: name, Enabled: true})
 	}
 	return out
 }
 
-func add(name string) func([]model.KV) []model.KV {
-	return func(current []model.KV) []model.KV { return append(current, rows(name)...) }
+func add(name string) func([]request.KV) []request.KV {
+	return func(current []request.KV) []request.KV { return append(current, rows(name)...) }
 }
 
 func TestApplyChangesRowsAndUndoRedoWalkBack(t *testing.T) {
@@ -39,7 +39,7 @@ func TestApplyChangesRowsAndUndoRedoWalkBack(t *testing.T) {
 func TestAChangeThatChangesNothingIsNotRecorded(t *testing.T) {
 	var history RowHistory
 	table := rows("a")
-	if history.Apply(&table, func(current []model.KV) []model.KV { return current }) {
+	if history.Apply(&table, func(current []request.KV) []request.KV { return current }) {
 		t.Fatal("an identical result is not a change")
 	}
 	if history.Undo(&table) {
@@ -60,7 +60,7 @@ func TestANewChangeDropsTheRedoStack(t *testing.T) {
 
 func TestHistoryKeepsOnlyTheLastHundredChanges(t *testing.T) {
 	var history RowHistory
-	var table []model.KV
+	var table []request.KV
 	for range HistoryLimit + 20 {
 		history.Apply(&table, add("x"))
 	}

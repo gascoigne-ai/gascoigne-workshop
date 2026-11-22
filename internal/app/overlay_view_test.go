@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
@@ -37,7 +37,7 @@ var dialogKinds = []struct {
 	}},
 	{"toolform", func(app *App) { app.openToolForm(app.cur(), searchTool()) }},
 	{"sampling", func(app *App) {
-		app.openSamplingDialog(samplingAsked, make(chan reqport.SamplingResult, 1), make(chan struct{}, 1))
+		app.openSamplingDialog(samplingAsked, make(chan request.SamplingResult, 1), make(chan struct{}, 1))
 	}},
 }
 

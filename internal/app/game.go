@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/settingsui"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -86,7 +86,7 @@ func (a *App) beginFrame(in core.Input) bool {
 	}
 	a.lastIn = in
 	if in.Held {
-		a.dropTarget = model.Node{} // set again by the row under the pointer
+		a.dropTarget = request.Node{} // set again by the row under the pointer
 	} else {
 		a.finishDrag()
 	}

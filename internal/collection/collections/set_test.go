@@ -3,11 +3,11 @@ package collections
 import (
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
-func newCollection(name string) *model.Collection {
-	return &model.Collection{Folder: model.Folder{Name: name}}
+func newCollection(name string) *request.Collection {
+	return &request.Collection{Folder: request.Folder{Name: name}}
 }
 
 func names(set Set) []string {
@@ -31,7 +31,7 @@ func sameNames(got, want []string) bool {
 }
 
 // opened is a set holding a, b and c, in that order, each in its own folder.
-func opened() (Set, *model.Collection, *model.Collection, *model.Collection) {
+func opened() (Set, *request.Collection, *request.Collection, *request.Collection) {
 	first, second, third := newCollection("a"), newCollection("b"), newCollection("c")
 	var set Set
 	set = Update(set, Open{Collection: first, Dir: "/w/a"})
@@ -49,7 +49,7 @@ func TestOpenAppendsInTheOrderOpened(t *testing.T) {
 
 func TestOpenStartsWithNoEnvironment(t *testing.T) {
 	col := newCollection("a")
-	col.Envs = []model.Environment{{Name: "Dev"}}
+	col.Envs = []request.Environment{{Name: "Dev"}}
 	set := Update(Set{}, Open{Collection: col, Dir: "/w/a"})
 	if env := set.Entries[0].Environment(); env != nil {
 		t.Fatalf("a fresh collection has %q active, want none", env.Name)
@@ -101,7 +101,7 @@ func TestClose(t *testing.T) {
 	set, first, second, third := opened()
 	cases := []struct {
 		name   string
-		closed *model.Collection
+		closed *request.Collection
 		want   []string
 	}{
 		{"the first", first, []string{"b", "c"}},
@@ -129,7 +129,7 @@ func TestMove(t *testing.T) {
 	set, first, second, third := opened()
 	cases := []struct {
 		name         string
-		moved, place *model.Collection
+		moved, place *request.Collection
 		want         []string
 	}{
 		{"before the first", third, first, []string{"c", "a", "b"}},
@@ -151,7 +151,7 @@ func TestShift(t *testing.T) {
 	set, first, second, third := opened()
 	cases := []struct {
 		name  string
-		moved *model.Collection
+		moved *request.Collection
 		by    int
 		want  []string
 	}{
@@ -175,7 +175,7 @@ func TestMoveKeepsWhatAnEntryHolds(t *testing.T) {
 	set, first, _, _ := opened()
 	set = Update(set, ChooseEnv{Collection: first, Index: -1})
 	set = Update(set, Move{Collection: first})
-	entry, _ := set.Owner(model.Of(&first.Folder))
+	entry, _ := set.Owner(request.Of(&first.Folder))
 	if entry.Dir != "/w/a" || entry.Collection != first {
 		t.Fatalf("moved entry = %+v", entry)
 	}
@@ -214,7 +214,7 @@ func TestLocatedRefusesAFolderAnotherCollectionHolds(t *testing.T) {
 
 func TestChooseEnv(t *testing.T) {
 	col := newCollection("a")
-	col.Envs = []model.Environment{{Name: "Dev"}, {Name: "Prod"}}
+	col.Envs = []request.Environment{{Name: "Dev"}, {Name: "Prod"}}
 	set := Update(Set{}, Open{Collection: col})
 	cases := []struct {
 		name  string
@@ -240,15 +240,15 @@ func TestChooseEnv(t *testing.T) {
 func TestOwnerFindsTheCollectionOfANode(t *testing.T) {
 	set, first, second, _ := opened()
 	folder := second.AddFolder("nested")
-	req := folder.AddRequest(model.Request{Name: "deep"})
+	req := folder.AddRequest(request.Request{Name: "deep"})
 	cases := []struct {
 		name string
-		node model.Node
-		want *model.Collection
+		node request.Node
+		want *request.Collection
 	}{
-		{"its root folder", model.Of(&first.Folder), first},
-		{"a folder", model.Of(folder), second},
-		{"a request in a folder", model.Of(req), second},
+		{"its root folder", request.Of(&first.Folder), first},
+		{"a folder", request.Of(folder), second},
+		{"a request in a folder", request.Of(req), second},
 	}
 	for _, tc := range cases {
 		entry, ok := set.Owner(tc.node)
@@ -256,10 +256,10 @@ func TestOwnerFindsTheCollectionOfANode(t *testing.T) {
 			t.Errorf("%s: owner = %v, %v; want %q", tc.name, entry.Collection, ok, tc.want.Name)
 		}
 	}
-	if _, ok := set.Owner(model.Of(&model.Request{Name: "loose"})); ok {
+	if _, ok := set.Owner(request.Of(&request.Request{Name: "loose"})); ok {
 		t.Error("a request in no open collection has an owner")
 	}
-	if _, ok := set.Owner(model.Node{}); ok {
+	if _, ok := set.Owner(request.Node{}); ok {
 		t.Error("no node has an owner")
 	}
 }
@@ -269,12 +269,12 @@ func TestOwnerFindsTheCollectionOfANode(t *testing.T) {
 // request of no open collection gets none rather than the first one's.
 func TestVarsForUsesOnlyTheOwnersVariables(t *testing.T) {
 	alpha, beta := newCollection("alpha"), newCollection("beta")
-	alpha.Vars = []model.KV{{Name: "host", Value: "alpha.local", Enabled: true}}
-	alpha.Envs = []model.Environment{{Name: "Dev", Vars: []model.KV{{Name: "token", Value: "alpha-dev", Enabled: true}}}}
-	beta.Vars = []model.KV{{Name: "host", Value: "beta.local", Enabled: true}}
-	beta.Envs = []model.Environment{{Name: "Dev", Vars: []model.KV{{Name: "token", Value: "beta-dev", Enabled: true}}}}
-	alphaReq := alpha.AddRequest(model.Request{Name: "a"})
-	betaReq := beta.AddRequest(model.Request{Name: "b"})
+	alpha.Vars = []request.KV{{Name: "host", Value: "alpha.local", Enabled: true}}
+	alpha.Envs = []request.Environment{{Name: "Dev", Vars: []request.KV{{Name: "token", Value: "alpha-dev", Enabled: true}}}}
+	beta.Vars = []request.KV{{Name: "host", Value: "beta.local", Enabled: true}}
+	beta.Envs = []request.Environment{{Name: "Dev", Vars: []request.KV{{Name: "token", Value: "beta-dev", Enabled: true}}}}
+	alphaReq := alpha.AddRequest(request.Request{Name: "a"})
+	betaReq := beta.AddRequest(request.Request{Name: "b"})
 
 	set := Update(Set{}, Open{Collection: alpha, Dir: "/w/alpha"})
 	set = Update(set, Open{Collection: beta, Dir: "/w/beta"})
@@ -282,7 +282,7 @@ func TestVarsForUsesOnlyTheOwnersVariables(t *testing.T) {
 
 	cases := []struct {
 		name string
-		req  *model.Request
+		req  *request.Request
 		want map[string]string
 	}{
 		{"alpha with its environment", alphaReq, map[string]string{"host": "alpha.local", "token": "alpha-dev"}},
@@ -304,7 +304,7 @@ func TestVarsForUsesOnlyTheOwnersVariables(t *testing.T) {
 			}
 		}
 	}
-	if vars, ok := set.VarsFor(&model.Request{Name: "loose"}); ok || vars != nil {
+	if vars, ok := set.VarsFor(&request.Request{Name: "loose"}); ok || vars != nil {
 		t.Errorf("a request of no open collection got %v, %v", vars, ok)
 	}
 }

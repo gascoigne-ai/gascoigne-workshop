@@ -12,7 +12,6 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 
-	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -21,8 +20,8 @@ import (
 	"cmp"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/adapter/store"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/fonts"
@@ -344,7 +343,7 @@ type fakeSession struct {
 	closed  bool
 }
 
-func (session *fakeSession) Events() <-chan reqport.Event { return nil }
+func (session *fakeSession) Events() <-chan request.Event { return nil }
 
 func (session *fakeSession) Close(context.Context) error {
 	session.closed = true
@@ -416,7 +415,7 @@ func click(app *App, posX, posY int) {
 // jsonServer answers every request with a small JSON body.
 func jsonServer(t *testing.T) *httptest.Server {
 	t.Helper()
-	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
 		io.WriteString(writer, `{"ok":true}`)
 	}))
 	t.Cleanup(srv.Close)
@@ -501,16 +500,16 @@ func pathServer(t *testing.T) (srv *httptest.Server, release func()) {
 	t.Helper()
 	gate := make(chan struct{})
 	var once sync.Once
-	srv = httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		switch request.URL.Path {
+	srv = httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
+		switch call.URL.Path {
 		case "/slow":
 			select {
 			case <-gate:
 				io.WriteString(writer, "slow")
-			case <-request.Context().Done():
+			case <-call.Context().Done():
 			}
 		case "/redirect":
-			http.Redirect(writer, request, "/fast", http.StatusFound)
+			http.Redirect(writer, call, "/fast", http.StatusFound)
 		default:
 			io.WriteString(writer, "fast")
 		}
@@ -586,7 +585,7 @@ const (
 // jsonResponse points the current tab at a server returning body and sends.
 func jsonResponse(t *testing.T, body string) *App {
 	t.Helper()
-	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) { io.WriteString(writer, body) }))
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) { io.WriteString(writer, body) }))
 	t.Cleanup(srv.Close)
 	a := testApp(t)
 	sendAndWait(t, a, srv.URL)
@@ -643,7 +642,7 @@ func pickMenu(t *testing.T, app *App, label string) {
 	t.Fatalf("no menu item %q in %v", label, menuLabels(app))
 }
 
-func findReq(app *App, name string) *model.Request {
+func findReq(app *App, name string) *request.Request {
 	for _, r := range collection.Rows(&app.col().Folder, allOpen(app)) {
 		if r.Req != nil && r.Req.Name == name {
 			return r.Req
@@ -652,10 +651,10 @@ func findReq(app *App, name string) *model.Request {
 	return nil
 }
 
-func allOpen(app *App) map[*model.Folder]bool {
-	open := map[*model.Folder]bool{}
-	var walk func(*model.Folder)
-	walk = func(folder *model.Folder) {
+func allOpen(app *App) map[*request.Folder]bool {
+	open := map[*request.Folder]bool{}
+	var walk func(*request.Folder)
+	walk = func(folder *request.Folder) {
 		open[folder] = true
 		for _, s := range folder.Folders {
 			walk(s)
@@ -740,7 +739,7 @@ func (a *App) find(tab *reqTab, text string) {
 
 // openSession puts tab in the open state with session, as a finished
 // connect would; an open tab is closed first.
-func openSession(tab *reqTab, session reqport.Session) {
+func openSession(tab *reqTab, session request.Session) {
 	if tab.Session() != nil {
 		tab.Disconnect()
 		tab.Closed()

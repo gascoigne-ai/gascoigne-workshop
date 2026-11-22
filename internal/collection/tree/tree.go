@@ -6,13 +6,13 @@ package tree
 import (
 	"encoding/json"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // DropPlace is the folder a node dropped on target goes into and the node it
 // goes before (zero for the end). A request dropped on another request lands
 // before it; a folder is always added at the end.
-func DropPlace(root *model.Folder, node, target model.Node) (dir *model.Folder, before model.Node) {
+func DropPlace(root *request.Folder, node, target request.Node) (dir *request.Folder, before request.Node) {
 	switch {
 	case target.Dir != nil:
 		dir = target.Dir
@@ -21,22 +21,22 @@ func DropPlace(root *model.Folder, node, target model.Node) (dir *model.Folder, 
 		before = target
 	}
 	if node.Dir != nil {
-		before = model.Node{}
+		before = request.Node{}
 	}
 	return dir, before
 }
 
 // Inside reports whether req is node or lies inside the folder node.
-func Inside(node model.Node, req *model.Request) bool {
+func Inside(node request.Node, req *request.Request) bool {
 	if node.Dir != nil {
-		return node.Dir.Contains(model.Node{Req: req})
+		return node.Dir.Contains(request.Node{Req: req})
 	}
 	return node.Req == req
 }
 
 // DeletePrompt is the title and the warning of the question asked before
 // node is deleted.
-func DeletePrompt(node model.Node) (title, body string) {
+func DeletePrompt(node request.Node) (title, body string) {
 	body = "This cannot be undone."
 	if node.Dir != nil {
 		body = "The folder and everything in it will be removed."
@@ -45,7 +45,7 @@ func DeletePrompt(node model.Node) (title, body string) {
 }
 
 // FirstRequest is the first request in tree order, or nil.
-func FirstRequest(folder *model.Folder) *model.Request {
+func FirstRequest(folder *request.Folder) *request.Request {
 	if len(folder.Requests) > 0 {
 		return folder.Requests[0]
 	}
@@ -59,7 +59,7 @@ func FirstRequest(folder *model.Folder) *model.Request {
 
 // Key is a comparable form of the collection: it differs when the
 // collection does, which is how a change is noticed.
-func Key(collection model.Collection) string {
+func Key(collection request.Collection) string {
 	data, err := json.Marshal(collection)
 	if err != nil {
 		return err.Error()

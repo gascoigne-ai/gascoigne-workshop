@@ -2,22 +2,21 @@ package proto
 
 import (
 	"context"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto/ws"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 )
 
 // floodedSessions opens one session of every streaming protocol whose
 // event queue is full and unread, so an emit is waiting for room.
-func floodedSessions(t *testing.T) map[string]port.Session {
+func floodedSessions(t *testing.T) map[string]request.Session {
 	t.Helper()
 	const flood = 3 * eventBuffer
-	sessions := map[string]port.Session{}
+	sessions := map[string]request.Session{}
 
 	socketURL := wsServer(t, func(conn *ws.Conn, _ *http.Request) {
 		for range flood {
@@ -25,13 +24,13 @@ func floodedSessions(t *testing.T) map[string]port.Session {
 		}
 		conn.Read()
 	})
-	socket, err := WebSocket{}.Connect(context.Background(), model.Request{URL: socketURL})
+	socket, err := WebSocket{}.Connect(context.Background(), request.Request{URL: socketURL})
 	if err != nil {
 		t.Fatal(err)
 	}
 	sessions["websocket"] = socket
 
-	stream, err := SSE{}.Connect(context.Background(), model.Request{URL: sseServer(t, flood, true)})
+	stream, err := SSE{}.Connect(context.Background(), request.Request{URL: sseServer(t, flood, true)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -45,7 +44,7 @@ func floodedSessions(t *testing.T) map[string]port.Session {
 	sessions["grpc"] = call
 
 	mcpURL, _ := mcpHTTPServer(t)
-	rpc, err := MCP{}.Connect(context.Background(), model.Request{Protocol: "mcp", URL: mcpURL})
+	rpc, err := MCP{}.Connect(context.Background(), request.Request{Protocol: "mcp", URL: mcpURL})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -80,7 +79,7 @@ func TestClosingASessionWithAFullQueueEndsItsEventsWithoutALossNote(t *testing.T
 					if !ok {
 						return
 					}
-					if event.Kind == port.KindClose && strings.Contains(event.Text, "lost") {
+					if event.Kind == request.KindClose && strings.Contains(event.Text, "lost") {
 						t.Fatalf("a closed session reported a loss: %+v", event)
 					}
 				case <-deadline:

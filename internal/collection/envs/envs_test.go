@@ -3,13 +3,13 @@ package envs
 import (
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
-func collectionWith(names ...string) *model.Collection {
-	col := &model.Collection{}
+func collectionWith(names ...string) *request.Collection {
+	col := &request.Collection{}
 	for _, name := range names {
-		col.Envs = append(col.Envs, model.Environment{Name: name})
+		col.Envs = append(col.Envs, request.Environment{Name: name})
 	}
 	return col
 }

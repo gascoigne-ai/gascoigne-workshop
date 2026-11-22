@@ -7,31 +7,31 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
-func sample() model.Collection {
-	return model.Collection{
-		Folder: model.Folder{
+func sample() request.Collection {
+	return request.Collection{
+		Folder: request.Folder{
 			Name: "Café API ☕",
-			Requests: []*model.Request{
+			Requests: []*request.Request{
 				{Name: "Ping", Protocol: "rest", Method: "GET", URL: "https://x.test/ping",
-					Params:  []model.KV{{Name: "q", Value: "a b", Enabled: true}, {Name: "off", Value: "1", Description: "disabled"}},
-					Headers: []model.KV{{Name: "Accept", Value: "application/json", Enabled: true}}},
+					Params:  []request.KV{{Name: "q", Value: "a b", Enabled: true}, {Name: "off", Value: "1", Description: "disabled"}},
+					Headers: []request.KV{{Name: "Accept", Value: "application/json", Enabled: true}}},
 			},
-			Folders: []*model.Folder{
-				{Name: "Users", Requests: []*model.Request{
-					{Name: "Create", Protocol: "rest", Method: "POST", URL: "{{base}}/users", BodyType: model.BodyJSON, Body: "{\n  \"a\": 1\n}",
-						Auth: model.Auth{Type: model.AuthBearer, Token: "s3cret"}, TimeoutSec: 5, NoRedirects: true, InsecureTLS: true, Tests: "status == 201\njson id exists"},
+			Folders: []*request.Folder{
+				{Name: "Users", Requests: []*request.Request{
+					{Name: "Create", Protocol: "rest", Method: "POST", URL: "{{base}}/users", BodyType: request.BodyJSON, Body: "{\n  \"a\": 1\n}",
+						Auth: request.Auth{Type: request.AuthBearer, Token: "s3cret"}, TimeoutSec: 5, NoRedirects: true, InsecureTLS: true, Tests: "status == 201\njson id exists"},
 					{Name: "Create", Protocol: "rest", Method: "PUT", URL: "{{base}}/users/1"}, // same name twice
 				}},
-				{Name: "Empty", Vars: []model.KV{{Name: "folder-var", Value: "fv", Enabled: true}}},
-				{Name: "a/b: weird?*", Requests: []*model.Request{{Name: "Echo", Protocol: "websocket", URL: "wss://e.test"}}},
+				{Name: "Empty", Vars: []request.KV{{Name: "folder-var", Value: "fv", Enabled: true}}},
+				{Name: "a/b: weird?*", Requests: []*request.Request{{Name: "Echo", Protocol: "websocket", URL: "wss://e.test"}}},
 			},
 		},
-		Vars: []model.KV{{Name: "base", Value: "https://x.test", Enabled: true}},
-		Envs: []model.Environment{
-			{Name: "Dev", Vars: []model.KV{{Name: "base", Value: "http://localhost", Enabled: true}, {Name: "token", Value: "env-s3cret", Enabled: true, Secret: true}}},
+		Vars: []request.KV{{Name: "base", Value: "https://x.test", Enabled: true}},
+		Envs: []request.Environment{
+			{Name: "Dev", Vars: []request.KV{{Name: "base", Value: "http://localhost", Enabled: true}, {Name: "token", Value: "env-s3cret", Enabled: true, Secret: true}}},
 			{Name: "Prod"},
 		},
 	}
@@ -174,7 +174,7 @@ func TestLoadReadsTheOldNoneAuthTypeAsNoAuthentication(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := collection.Requests[0].Auth.Type; got != model.AuthNone {
+	if got := collection.Requests[0].Auth.Type; got != request.AuthNone {
 		t.Fatalf("auth type %q, want none", got)
 	}
 }
@@ -183,10 +183,10 @@ func TestLoadReadsTheOldNoneAuthTypeAsNoAuthentication(t *testing.T) {
 func TestLoadReadsTheKeyLocation(t *testing.T) {
 	tests := []struct {
 		name, auth string
-		want       model.KeyIn
+		want       request.KeyIn
 	}{
-		{"query", `"keyIn":"query"`, model.KeyInQuery},
-		{"header", `"keyIn":"header"`, model.KeyInHeader},
+		{"query", `"keyIn":"query"`, request.KeyInQuery},
+		{"header", `"keyIn":"header"`, request.KeyInHeader},
 		{"none stored", `"keyName":"k"`, ""},
 	}
 	for _, test := range tests {
@@ -250,16 +250,16 @@ func TestDeletedEnvironmentsLeaveNoFiles(t *testing.T) {
 // user's requests were deleted on every save.
 func TestAFolderNamedEnvironmentsSurvivesSavingEnvironments(t *testing.T) {
 	dir := t.TempDir()
-	want := model.Collection{
-		Folder: model.Folder{
+	want := request.Collection{
+		Folder: request.Folder{
 			Name: "API",
-			Folders: []*model.Folder{{
+			Folders: []*request.Folder{{
 				Name:     "Environments",
-				Requests: []*model.Request{{Name: "Top", Protocol: "rest", Method: "GET", URL: "https://x.test/top"}},
-				Folders:  []*model.Folder{{Name: "Inner", Requests: []*model.Request{{Name: "Deep", Protocol: "rest", Method: "GET", URL: "https://x.test/deep"}}}},
+				Requests: []*request.Request{{Name: "Top", Protocol: "rest", Method: "GET", URL: "https://x.test/top"}},
+				Folders:  []*request.Folder{{Name: "Inner", Requests: []*request.Request{{Name: "Deep", Protocol: "rest", Method: "GET", URL: "https://x.test/deep"}}}},
 			}},
 		},
-		Envs: []model.Environment{{Name: "Dev", Vars: []model.KV{{Name: "base", Value: "http://localhost", Enabled: true}}}},
+		Envs: []request.Environment{{Name: "Dev", Vars: []request.KV{{Name: "base", Value: "http://localhost", Enabled: true}}}},
 	}
 	for range 2 { // the second save is the one that pruned
 		if err := disk.Save(dir, want); err != nil {
@@ -319,15 +319,15 @@ func TestAnOldWorldReadableSecretsFileIsTightenedOnSave(t *testing.T) {
 // environments diverted secrets to .secrets.json.
 func TestSecretVariablesOfCollectionsAndFoldersStayOutOfFolderFiles(t *testing.T) {
 	dir := t.TempDir()
-	want := model.Collection{
-		Folder: model.Folder{
+	want := request.Collection{
+		Folder: request.Folder{
 			Name: "API",
-			Folders: []*model.Folder{{
-				Name: "Sub", Vars: []model.KV{{Name: "folderKey", Value: "folder-secret-value", Enabled: true, Secret: true}, {Name: "plain", Value: "visible", Enabled: true}},
-				Requests: []*model.Request{{Name: "R", Protocol: "rest", Method: "GET", URL: "u"}},
+			Folders: []*request.Folder{{
+				Name: "Sub", Vars: []request.KV{{Name: "folderKey", Value: "folder-secret-value", Enabled: true, Secret: true}, {Name: "plain", Value: "visible", Enabled: true}},
+				Requests: []*request.Request{{Name: "R", Protocol: "rest", Method: "GET", URL: "u"}},
 			}},
 		},
-		Vars: []model.KV{{Name: "apiKey", Value: "collection-secret-value", Enabled: true, Secret: true}},
+		Vars: []request.KV{{Name: "apiKey", Value: "collection-secret-value", Enabled: true, Secret: true}},
 	}
 	if err := disk.Save(dir, want); err != nil {
 		t.Fatal(err)
@@ -379,10 +379,10 @@ func TestAnOlderFolderFileWithASecretValueStillLoads(t *testing.T) {
 // has it and its .gitignore lists the file.
 func TestMovingACredentialRequestMovesItsSecret(t *testing.T) {
 	sourceDir, targetDir := t.TempDir(), t.TempDir()
-	source := model.Collection{Folder: model.Folder{Name: "Source"}}
-	moved := source.AddRequest(model.Request{Name: "Call", Protocol: "rest", Method: "GET", URL: "http://x.test",
-		Auth: model.Auth{Type: model.AuthBearer, Token: "moved-s3cret"}})
-	target := model.Collection{Folder: model.Folder{Name: "Target"}}
+	source := request.Collection{Folder: request.Folder{Name: "Source"}}
+	moved := source.AddRequest(request.Request{Name: "Call", Protocol: "rest", Method: "GET", URL: "http://x.test",
+		Auth: request.Auth{Type: request.AuthBearer, Token: "moved-s3cret"}})
+	target := request.Collection{Folder: request.Folder{Name: "Target"}}
 	if err := disk.Save(sourceDir, source); err != nil {
 		t.Fatal(err)
 	}
@@ -393,8 +393,8 @@ func TestMovingACredentialRequestMovesItsSecret(t *testing.T) {
 		t.Fatal("setup: the source has no secret to move")
 	}
 
-	source.Delete(model.Of(moved))
-	target.Attach(model.Of(moved), model.Node{})
+	source.Delete(request.Of(moved))
+	target.Attach(request.Of(moved), request.Node{})
 	if err := disk.Save(targetDir, target); err != nil {
 		t.Fatal(err)
 	}
@@ -423,7 +423,7 @@ func TestMovingACredentialRequestMovesItsSecret(t *testing.T) {
 func TestCapturedEnvironmentValuesStayLiteralAfterReload(t *testing.T) {
 	dir := t.TempDir()
 	c := sample()
-	c.Envs = []model.Environment{{Name: "Dev", Vars: []model.KV{
+	c.Envs = []request.Environment{{Name: "Dev", Vars: []request.KV{
 		{Name: "token", Value: "{{secret}}", Enabled: true, Literal: true},
 		{Name: "key", Value: "s3", Enabled: true, Secret: true, Literal: true},
 	}}}

@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // methodSource tells what services a gRPC server offers and describes
@@ -23,34 +23,34 @@ type methodSource interface {
 
 // sourceKind is one row of the table of method sources.
 type sourceKind struct {
-	open func(ctx context.Context, conn *grpc.ClientConn, source model.ProtoSource) (methodSource, error)
+	open func(ctx context.Context, conn *grpc.ClientConn, source request.ProtoSource) (methodSource, error)
 	// asksServer says the source reads the server, so listing methods
 	// needs a connection; files are read without one.
 	asksServer bool
 }
 
-// methodSources opens a request's source, by model.ProtoSource.Kind.
-var methodSources = map[model.SourceKind]sourceKind{
-	model.SourceReflection: {open: openReflection, asksServer: true},
-	model.SourceProtoFiles: {open: openProtoFiles},
+// methodSources opens a request's source, by request.ProtoSource.Kind.
+var methodSources = map[request.SourceKind]sourceKind{
+	request.SourceReflection: {open: openReflection, asksServer: true},
+	request.SourceProtoFiles: {open: openProtoFiles},
 }
 
 // sourceKindOf is the kind of a request's source; ProtoSource.Kind names
 // only kinds that methodSources holds.
-func sourceKindOf(source model.ProtoSource) sourceKind {
+func sourceKindOf(source request.ProtoSource) sourceKind {
 	return methodSources[source.Kind()]
 }
 
 // openMethodSource opens the source of a request's methods. conn is the
 // server's connection, which reflection asks and proto files ignore.
-func openMethodSource(ctx context.Context, conn *grpc.ClientConn, source model.ProtoSource) (methodSource, error) {
+func openMethodSource(ctx context.Context, conn *grpc.ClientConn, source request.ProtoSource) (methodSource, error) {
 	return sourceKindOf(source).open(ctx, conn, source)
 }
 
 // reflectionSource asks the server's reflection service.
 type reflectionSource struct{ conn *grpc.ClientConn }
 
-func openReflection(_ context.Context, conn *grpc.ClientConn, _ model.ProtoSource) (methodSource, error) {
+func openReflection(_ context.Context, conn *grpc.ClientConn, _ request.ProtoSource) (methodSource, error) {
 	return reflectionSource{conn: conn}, nil
 }
 
@@ -78,10 +78,10 @@ func (s reflectionSource) service(ctx context.Context, name string) (protoreflec
 }
 
 // protoFileSource reads the request's .proto files. Paths are absolute in
-// a request (model.ProtoSource), so no base directory is needed here.
+// a request (request.ProtoSource), so no base directory is needed here.
 type protoFileSource struct{ files linker.Files }
 
-func openProtoFiles(ctx context.Context, _ *grpc.ClientConn, source model.ProtoSource) (methodSource, error) {
+func openProtoFiles(ctx context.Context, _ *grpc.ClientConn, source request.ProtoSource) (methodSource, error) {
 	files, err := compileProtoFiles(ctx, "", source.Files, source.ImportPaths)
 	if err != nil {
 		return nil, err

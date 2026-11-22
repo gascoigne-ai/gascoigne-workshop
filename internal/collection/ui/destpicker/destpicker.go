@@ -7,7 +7,7 @@ package destpicker
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/transfer"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -82,7 +82,7 @@ type Picker struct {
 
 // New is the dialog for moving or copying node to one of destinations.
 // stripe gives the color of a collection, shown on its root row.
-func New(node model.Node, mode transfer.Mode, destinations []transfer.Destination, stripe func(*model.Collection) w.Token) *Picker {
+func New(node request.Node, mode transfer.Mode, destinations []transfer.Destination, stripe func(*request.Collection) w.Token) *Picker {
 	picker := &Picker{selected: -1, node: node.Name(), mode: modeTexts[mode]}
 	for _, destination := range destinations {
 		entry := Entry{Destination: destination, Name: destination.Folder.Name, Reason: reasons[destination.Why]}

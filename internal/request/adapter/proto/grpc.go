@@ -22,7 +22,7 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/dynamicpb"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // URL schemes of gRPC requests: the first talks without TLS, the second
@@ -64,7 +64,7 @@ var grpcHTTPStatus = map[codes.Code]int{
 
 // dial opens a client connection to the server of req. It connects
 // lazily: an unreachable server shows on the first call.
-func dial(req model.Request) (*grpc.ClientConn, error) {
+func dial(req request.Request) (*grpc.ClientConn, error) {
 	target, creds := req.URL, credentials.TransportCredentials(insecure.NewCredentials())
 	switch {
 	case strings.HasPrefix(target, grpcsScheme):
@@ -85,7 +85,7 @@ func dial(req model.Request) (*grpc.ClientConn, error) {
 
 // outgoing is the metadata of a call: the enabled headers and the
 // Authorization the Auth pane makes, lowercased as gRPC requires.
-func outgoing(ctx context.Context, req model.Request) (context.Context, error) {
+func outgoing(ctx context.Context, req request.Request) (context.Context, error) {
 	pairs := map[string]string{}
 	for _, header := range req.Headers {
 		if header.Enabled && header.Name != "" {
@@ -109,7 +109,7 @@ func outgoing(ctx context.Context, req model.Request) (context.Context, error) {
 // "package.Service/Method", from the request's source: the server's
 // reflection (without the reflection service itself) or its .proto files,
 // which are read without a server.
-func ListGRPCMethods(ctx context.Context, req model.Request) ([]string, error) {
+func ListGRPCMethods(ctx context.Context, req request.Request) ([]string, error) {
 	kind := sourceKindOf(req.Proto)
 	var conn *grpc.ClientConn
 	var err error
@@ -146,10 +146,10 @@ func ListGRPCMethods(ctx context.Context, req model.Request) ([]string, error) {
 }
 
 // Send makes the unary call; see GRPC.
-func (GRPC) Send(ctx context.Context, req model.Request) (model.Response, error) {
+func (GRPC) Send(ctx context.Context, req request.Request) (request.Response, error) {
 	start := time.Now()
-	fail := func(err error) (model.Response, error) {
-		return model.Response{Err: grpcErrText(ctx, err), Duration: time.Since(start)}, nil
+	fail := func(err error) (request.Response, error) {
+		return request.Response{Err: grpcErrText(ctx, err), Duration: time.Since(start)}, nil
 	}
 	conn, err := dial(req)
 	if err != nil {
@@ -182,8 +182,8 @@ func (GRPC) Send(ctx context.Context, req model.Request) (model.Response, error)
 }
 
 // grpcResponse turns the result of a call into a response.
-func grpcResponse(output *dynamicpb.Message, callErr error, header, trailer metadata.MD, took time.Duration) (model.Response, error) {
-	response := model.Response{Duration: took, Headers: metadataRows(header, trailer)}
+func grpcResponse(output *dynamicpb.Message, callErr error, header, trailer metadata.MD, took time.Duration) (request.Response, error) {
+	response := request.Response{Duration: took, Headers: metadataRows(header, trailer)}
 	code, text := codes.OK, []byte(nil)
 	if callErr != nil {
 		st, _ := status.FromError(callErr)
@@ -193,11 +193,11 @@ func grpcResponse(output *dynamicpb.Message, callErr error, header, trailer meta
 		// output ourselves gives the same text every time.
 		compact, err := protojson.MarshalOptions{EmitUnpopulated: true}.Marshal(output)
 		if err != nil {
-			return model.Response{Err: "the answer cannot be shown as JSON: " + err.Error(), Duration: took}, nil
+			return request.Response{Err: "the answer cannot be shown as JSON: " + err.Error(), Duration: took}, nil
 		}
 		var indented bytes.Buffer
 		if err := json.Indent(&indented, compact, "", "  "); err != nil {
-			return model.Response{Err: "the answer cannot be shown as JSON: " + err.Error(), Duration: took}, nil
+			return request.Response{Err: "the answer cannot be shown as JSON: " + err.Error(), Duration: took}, nil
 		}
 		text = indented.Bytes()
 	}
@@ -211,12 +211,12 @@ func grpcResponse(output *dynamicpb.Message, callErr error, header, trailer meta
 }
 
 // metadataRows lists header and trailer metadata as response headers.
-func metadataRows(header, trailer metadata.MD) []model.KV {
-	var rows []model.KV
+func metadataRows(header, trailer metadata.MD) []request.KV {
+	var rows []request.KV
 	for _, md := range []metadata.MD{header, trailer} {
 		for name, values := range md {
 			for _, value := range values {
-				rows = append(rows, model.KV{Name: name, Value: value, Enabled: true})
+				rows = append(rows, request.KV{Name: name, Value: value, Enabled: true})
 			}
 		}
 	}
@@ -229,16 +229,16 @@ func metadataRows(header, trailer metadata.MD) []model.KV {
 func grpcErrText(ctx context.Context, err error) string {
 	switch {
 	case errors.Is(ctx.Err(), context.DeadlineExceeded) || status.Code(err) == codes.DeadlineExceeded:
-		return model.ErrTimedOut
+		return request.ErrTimedOut
 	case errors.Is(ctx.Err(), context.Canceled) || status.Code(err) == codes.Canceled:
-		return model.ErrCancelled
+		return request.ErrCancelled
 	}
 	return err.Error()
 }
 
 // resolveMethod finds the descriptor of the request's
 // "package.Service/Method" in its source of methods.
-func resolveMethod(ctx context.Context, conn *grpc.ClientConn, req model.Request) (protoreflect.MethodDescriptor, error) {
+func resolveMethod(ctx context.Context, conn *grpc.ClientConn, req request.Request) (protoreflect.MethodDescriptor, error) {
 	serviceName, methodName, ok := strings.Cut(req.Method, "/")
 	if !ok || serviceName == "" || methodName == "" {
 		return nil, fmt.Errorf("the method %q is not package.Service/Method", req.Method)

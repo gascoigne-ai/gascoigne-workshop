@@ -20,13 +20,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 func TestCookiesSetByOneRequestAreSentWithTheNext(t *testing.T) {
 	var got string
-	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		if c, err := request.Cookie("session"); err == nil {
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
+		if c, err := call.Cookie("session"); err == nil {
 			got = c.Value
 		}
 		http.SetCookie(writer, &http.Cookie{Name: "session", Value: "abc", Path: "/"})
@@ -35,14 +35,14 @@ func TestCookiesSetByOneRequestAreSentWithTheNext(t *testing.T) {
 	jar, _ := cookiejar.New(nil)
 	rest := REST{Jar: jar}
 	for range 2 {
-		if resp, _ := rest.Send(context.Background(), model.Request{Method: "GET", URL: srv.URL}); resp.Err != "" {
+		if resp, _ := rest.Send(context.Background(), request.Request{Method: "GET", URL: srv.URL}); resp.Err != "" {
 			t.Fatal(resp.Err)
 		}
 	}
 	if got != "abc" {
 		t.Fatalf("the second request carried cookie %q", got)
 	}
-	if _, _ = (REST{}).Send(context.Background(), model.Request{Method: "GET", URL: srv.URL}); got != "abc" {
+	if _, _ = (REST{}).Send(context.Background(), request.Request{Method: "GET", URL: srv.URL}); got != "abc" {
 		t.Fatal("without a jar nothing is remembered, and nothing broke")
 	}
 }
@@ -51,11 +51,11 @@ func TestInsecureTLSAcceptsASelfSignedServerOnlyWhenAsked(t *testing.T) {
 	srv := httptest.NewTLSServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) { writer.Write([]byte("ok")) }))
 	defer srv.Close()
 	rest := REST{} // no trusted CA: the test server's certificate is unknown
-	resp, _ := rest.Send(context.Background(), model.Request{Method: "GET", URL: srv.URL})
+	resp, _ := rest.Send(context.Background(), request.Request{Method: "GET", URL: srv.URL})
 	if resp.Err == "" {
 		t.Fatal("an unknown certificate must be refused")
 	}
-	resp, _ = rest.Send(context.Background(), model.Request{Method: "GET", URL: srv.URL, InsecureTLS: true})
+	resp, _ = rest.Send(context.Background(), request.Request{Method: "GET", URL: srv.URL, InsecureTLS: true})
 	if resp.Err != "" || string(resp.Body) != "ok" {
 		t.Fatalf("with the switch on: %+v", resp)
 	}
@@ -63,16 +63,16 @@ func TestInsecureTLSAcceptsASelfSignedServerOnlyWhenAsked(t *testing.T) {
 
 func TestProxyIsUsedAndABadOneIsExplained(t *testing.T) {
 	var viaProxy atomic.Int32
-	proxy := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+	proxy := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
 		viaProxy.Add(1)
-		writer.Write([]byte("from proxy for " + request.URL.Host))
+		writer.Write([]byte("from proxy for " + call.URL.Host))
 	}))
 	defer proxy.Close()
-	resp, _ := REST{Proxy: proxy.URL}.Send(context.Background(), model.Request{Method: "GET", URL: "http://example.invalid/x"})
+	resp, _ := REST{Proxy: proxy.URL}.Send(context.Background(), request.Request{Method: "GET", URL: "http://example.invalid/x"})
 	if resp.Err != "" || viaProxy.Load() != 1 || !strings.Contains(string(resp.Body), "example.invalid") {
 		t.Fatalf("%+v via proxy %d", resp, viaProxy.Load())
 	}
-	resp, _ = REST{Proxy: "not a url"}.Send(context.Background(), model.Request{Method: "GET", URL: "http://x/"})
+	resp, _ = REST{Proxy: "not a url"}.Send(context.Background(), request.Request{Method: "GET", URL: "http://x/"})
 	if !strings.Contains(resp.Err, "not a URL like http://host:port or socks5://host:port") {
 		t.Fatalf("err %q", resp.Err)
 	}
@@ -90,16 +90,16 @@ func writePEM(t *testing.T, name string, cert []byte) string {
 func TestACustomCAMakesAnUnknownServerTrusted(t *testing.T) {
 	srv := httptest.NewTLSServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) { writer.Write([]byte("trusted")) }))
 	defer srv.Close()
-	if resp, _ := (REST{}).Send(context.Background(), model.Request{Method: "GET", URL: srv.URL}); resp.Err == "" {
+	if resp, _ := (REST{}).Send(context.Background(), request.Request{Method: "GET", URL: srv.URL}); resp.Err == "" {
 		t.Fatal("without the CA the certificate is unknown")
 	}
 	ca := writePEM(t, "ca.pem", srv.Certificate().Raw)
-	resp, _ := REST{CAFile: ca}.Send(context.Background(), model.Request{Method: "GET", URL: srv.URL})
+	resp, _ := REST{CAFile: ca}.Send(context.Background(), request.Request{Method: "GET", URL: srv.URL})
 	if resp.Err != "" || string(resp.Body) != "trusted" {
 		t.Fatalf("%+v", resp)
 	}
 	for file, want := range map[string]string{filepath.Join(t.TempDir(), "none.pem"): "CA file", writeFile(t, "junk.pem", "not pem"): "no PEM certificate"} {
-		resp, _ := REST{CAFile: file}.Send(context.Background(), model.Request{Method: "GET", URL: srv.URL})
+		resp, _ := REST{CAFile: file}.Send(context.Background(), request.Request{Method: "GET", URL: srv.URL})
 		if !strings.Contains(resp.Err, want) {
 			t.Errorf("CA %s: %q, want %q", file, resp.Err, want)
 		}
@@ -128,19 +128,19 @@ func TestClientCertificateIsPresentedToServersThatAskForOne(t *testing.T) {
 	os.WriteFile(keyFile, pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: keyDER}), 0o600)
 
 	var subject string
-	srv := httptest.NewUnstartedServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		if len(request.TLS.PeerCertificates) > 0 {
-			subject = request.TLS.PeerCertificates[0].Subject.CommonName
+	srv := httptest.NewUnstartedServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
+		if len(call.TLS.PeerCertificates) > 0 {
+			subject = call.TLS.PeerCertificates[0].Subject.CommonName
 		}
 	}))
 	srv.TLS = &tls.Config{ClientAuth: tls.RequireAnyClientCert}
 	srv.StartTLS()
 	defer srv.Close()
-	resp, _ := REST{CertFile: certFile, KeyFile: keyFile}.Send(context.Background(), model.Request{Method: "GET", URL: srv.URL, InsecureTLS: true})
+	resp, _ := REST{CertFile: certFile, KeyFile: keyFile}.Send(context.Background(), request.Request{Method: "GET", URL: srv.URL, InsecureTLS: true})
 	if resp.Err != "" || subject != "client" {
 		t.Fatalf("%+v subject %q", resp, subject)
 	}
-	resp, _ = REST{CertFile: certFile, KeyFile: filepath.Join(t.TempDir(), "none")}.Send(context.Background(), model.Request{Method: "GET", URL: srv.URL})
+	resp, _ = REST{CertFile: certFile, KeyFile: filepath.Join(t.TempDir(), "none")}.Send(context.Background(), request.Request{Method: "GET", URL: srv.URL})
 	if !strings.Contains(resp.Err, "client certificate") {
 		t.Fatalf("err %q", resp.Err)
 	}
@@ -148,7 +148,7 @@ func TestClientCertificateIsPresentedToServersThatAskForOne(t *testing.T) {
 
 func TestProxySchemesAreChecked(t *testing.T) {
 	for proxy, ok := range map[string]bool{"socks5://127.0.0.1:1080": true, "http://p:3128": true, "ftp://p:21": false, "p:3128": false} {
-		_, err := REST{Proxy: proxy}.client(model.Request{})
+		_, err := REST{Proxy: proxy}.client(request.Request{})
 		if (err == nil) != ok {
 			t.Errorf("proxy %q: err = %v, want ok=%v", proxy, err, ok)
 		}

@@ -29,9 +29,9 @@ flowchart LR
 - `workspace/adapter/filedialog` picks the program order per desktop from a table (`detect.go`);
   that choice is pure and tested per desktop without a display. Both choosers start in the user's
   home folder every time (user's decision 2026-11-15).
-- The in-app browser (rules in `workspace/filebrowser`, listing through `port.Folders`)
+- The in-app browser (rules in `workspace/filebrowser`, listing through `workspace.Folders`)
   is a fallback: its footer names the program to install for native dialogs
-  (`port.FileDialog.Suggested`).
+  (`workspace.FileDialog.Suggested`).
 - A `File` body sends a file as it is; whether the path exists is asked in the background and an
   answer for an older path is dropped. A multipart value `@path` sends a file part.
 

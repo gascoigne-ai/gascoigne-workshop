@@ -5,30 +5,30 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 func TestActiveEnvironmentOverridesCollectionVariables(t *testing.T) {
 	a := testApp(t)
-	a.col().Vars = []model.KV{{Name: "host", Value: "prod.test", Enabled: true}, {Name: "k", Value: "1", Enabled: true}}
-	a.col().Envs = []model.Environment{{Name: "Dev", Vars: []model.KV{{Name: "host", Value: "dev.test", Enabled: true}}}}
-	if got := model.Expand("{{host}} {{k}}", a.vars()); got != "prod.test 1" {
+	a.col().Vars = []request.KV{{Name: "host", Value: "prod.test", Enabled: true}, {Name: "k", Value: "1", Enabled: true}}
+	a.col().Envs = []request.Environment{{Name: "Dev", Vars: []request.KV{{Name: "host", Value: "dev.test", Enabled: true}}}}
+	if got := request.Expand("{{host}} {{k}}", a.vars()); got != "prod.test 1" {
 		t.Fatalf("no environment: %q", got)
 	}
 	a.selectEnv(0)
-	if got := model.Expand("{{host}} {{k}}", a.vars()); got != "dev.test 1" {
+	if got := request.Expand("{{host}} {{k}}", a.vars()); got != "dev.test 1" {
 		t.Fatalf("Dev: %q", got)
 	}
 	a.selectEnv(-1)
-	if got := model.Expand("{{host}}", a.vars()); got != "prod.test" {
+	if got := request.Expand("{{host}}", a.vars()); got != "prod.test" {
 		t.Fatalf("none again: %q", got)
 	}
 }
 
 func TestSelectedEnvironmentIsRemembered(t *testing.T) {
 	a := testApp(t)
-	a.col().Envs = []model.Environment{{Name: "Dev"}, {Name: "Prod"}}
+	a.col().Envs = []request.Environment{{Name: "Dev"}, {Name: "Prod"}}
 	a.selectEnv(1)
 	st, err := settingsDisk.Load(a.settingsPath)
 	if got := st.RememberedCollections(); err != nil || len(got) != 1 || got[0].Environment != "Prod" {
@@ -81,7 +81,7 @@ func TestVarsPaneEditsTheActiveEnvironment(t *testing.T) {
 
 func TestUnresolvedVariablesAreFlagged(t *testing.T) {
 	a := testApp(t)
-	a.col().Vars = []model.KV{{Name: "known", Value: "1", Enabled: true}}
+	a.col().Vars = []request.KV{{Name: "known", Value: "1", Enabled: true}}
 	segs := a.varSegments("{{known}}/{{missing}}/x")
 	want := []w.Token{w.OK, w.Text, w.Error, w.Text}
 	if len(segs) != 4 {
@@ -98,7 +98,7 @@ func TestUnresolvedVariablesAreFlagged(t *testing.T) {
 }
 
 func TestSecretValuesAreMaskedInTheTable(t *testing.T) {
-	rows := kvRows([]model.KV{{Name: "token", Value: "hunter2", Secret: true, Enabled: true}, {Name: "a", Value: "visible"}}, true, false)
+	rows := kvRows([]request.KV{{Name: "token", Value: "hunter2", Secret: true, Enabled: true}, {Name: "a", Value: "visible"}}, true, false)
 	if rows[0].Cells[1] == "hunter2" || rows[0].Cells[1] == "" {
 		t.Fatalf("secret shown as %q", rows[0].Cells[1])
 	}
@@ -110,7 +110,7 @@ func TestSecretValuesAreMaskedInTheTable(t *testing.T) {
 func TestToggleSecretOnAnEnvironmentRow(t *testing.T) {
 	a := testApp(t)
 	a.addEnv("Dev")
-	a.col().Envs[0].Vars = []model.KV{{Name: "token", Value: "x", Enabled: true}}
+	a.col().Envs[0].Vars = []request.KV{{Name: "token", Value: "x", Enabled: true}}
 	a.toggleSecret(0)
 	if !a.col().Envs[0].Vars[0].Secret {
 		t.Fatal("not marked")
@@ -128,7 +128,7 @@ func TestURLTooltipShowsTheResolvedURLAndWhatIsMissing(t *testing.T) {
 	if a.urlTip(tab) != "" {
 		t.Fatal("a URL without variables needs no tooltip")
 	}
-	a.col().Vars = []model.KV{{Name: "host", Value: "api.test", Enabled: true}}
+	a.col().Vars = []request.KV{{Name: "host", Value: "api.test", Enabled: true}}
 	tab.Req.URL = "https://{{host}}/{{path}}"
 	tip := a.urlTip(tab)
 	if !strings.Contains(tip, "Resolves to https://api.test/{{path}}") || !strings.Contains(tip, "Not defined: path") {
@@ -140,14 +140,14 @@ func TestFolderVariablesAreEditedInTheVarsPaneAndResolveForTheirRequests(t *test
 	a := testApp(t)
 	folder := a.col().Folders[1] // holds the open request
 	req := a.cur().Req
-	a.col().Vars = []model.KV{{Name: "host", Value: "collection.test", Enabled: true}}
+	a.col().Vars = []request.KV{{Name: "host", Value: "collection.test", Enabled: true}}
 	a.editVars(folder)
 	pane := requestPanes[a.cur().paneTab]
 	if pane.label != "Vars" || pane.rows(a, a.cur()) != &folder.Vars || pane.captionOf(a) != "Folder: "+folder.Name {
 		t.Fatalf("pane %q caption %q", pane.label, pane.captionOf(a))
 	}
-	folder.Vars = []model.KV{{Name: "host", Value: "folder.test", Enabled: true}}
-	if got := model.Expand("{{host}}", a.varsFor(req)); got != "folder.test" {
+	folder.Vars = []request.KV{{Name: "host", Value: "folder.test", Enabled: true}}
+	if got := request.Expand("{{host}}", a.varsFor(req)); got != "folder.test" {
 		t.Fatalf("folder variable not used: %q", got)
 	}
 	a.editVars(&a.col().Folder)
@@ -163,7 +163,7 @@ func TestFolderVariablesAreEditedInTheVarsPaneAndResolveForTheirRequests(t *test
 func TestCtrlSpaceCompletesVariablesInTheURLField(t *testing.T) {
 	a := testApp(t)
 	tab := a.cur()
-	a.col().Vars = []model.KV{
+	a.col().Vars = []request.KV{
 		{Name: "host", Value: "h", Enabled: true}, {Name: "hostname", Value: "n", Enabled: true},
 		{Name: "token", Value: "t", Enabled: true}, {Name: "off", Value: "x"},
 	}

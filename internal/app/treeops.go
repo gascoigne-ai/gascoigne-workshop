@@ -3,7 +3,7 @@ package app
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/tree"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -15,7 +15,7 @@ import (
 // visibleRows are the tree rows shown, after the filter.
 func (a *App) visibleRows() []collection.Row {
 	var rows []collection.Row
-	a.eachRoot(func(root *model.Folder) {
+	a.eachRoot(func(root *request.Folder) {
 		rows = append(rows, collection.FilteredRows(root, a.expanded, a.filter.Text)...)
 	})
 	return rows
@@ -24,11 +24,11 @@ func (a *App) visibleRows() []collection.Row {
 // ---- selection and the rows' menus --------------------------------------
 
 // selectNode marks a folder or request as the one the tree acts on.
-func (a *App) selectNode(node model.Node) { a.selected = node }
+func (a *App) selectNode(node request.Node) { a.selected = node }
 
 // collectionToken is the color of the open collection that holds node, ""
 // for a node of none.
-func (a *App) collectionToken(node model.Node) core.Token {
+func (a *App) collectionToken(node request.Node) core.Token {
 	for index, entry := range a.open.Entries {
 		if entry.Collection.Folder.Contains(node) {
 			return theme.CollectionToken(index)
@@ -38,15 +38,15 @@ func (a *App) collectionToken(node model.Node) core.Token {
 }
 
 // revealRequest selects req in the tree and opens the folders above it.
-func (a *App) revealRequest(req *model.Request) {
-	a.selectNode(model.Node{Req: req})
-	owner, ok := a.open.Owner(model.Node{Req: req})
+func (a *App) revealRequest(req *request.Request) {
+	a.selectNode(request.Node{Req: req})
+	owner, ok := a.open.Owner(request.Node{Req: req})
 	if !ok {
 		return
 	}
 	root := &owner.Collection.Folder
 	a.expanded[root] = true
-	for folder, found := root.Parent(model.Node{Req: req}); found && folder != root; folder, found = root.Parent(model.Node{Dir: folder}) {
+	for folder, found := root.Parent(request.Node{Req: req}); found && folder != root; folder, found = root.Parent(request.Node{Dir: folder}) {
 		a.expanded[folder] = true
 	}
 }
@@ -54,7 +54,7 @@ func (a *App) revealRequest(req *model.Request) {
 // selectedFolder is where a new request goes: the selected folder, the
 // folder of the selected request, or the root of the focused collection;
 // nil when nothing is open.
-func (a *App) selectedFolder() *model.Folder {
+func (a *App) selectedFolder() *request.Folder {
 	switch {
 	case a.selected.Dir != nil:
 		return a.selected.Dir
@@ -73,8 +73,8 @@ func (a *App) selectedFolder() *model.Folder {
 
 // treeOwner is the collection a tree message changes: the one holding its
 // node or folder; nil when no open collection holds it.
-func (a *App) treeOwner(msg tree.Msg) *model.Collection {
-	var subject model.Node
+func (a *App) treeOwner(msg tree.Msg) *request.Collection {
+	var subject request.Node
 	switch msg := msg.(type) {
 	case tree.Rename:
 		subject = msg.Node
@@ -83,15 +83,15 @@ func (a *App) treeOwner(msg tree.Msg) *model.Collection {
 	case tree.Delete:
 		subject = msg.Node
 	case tree.NewRequest:
-		subject = model.Node{Dir: msg.Dir} // none, not a nil *Folder, when there is no folder
+		subject = request.Node{Dir: msg.Dir} // none, not a nil *Folder, when there is no folder
 	case tree.NewFolder:
-		subject = model.Node{Dir: msg.Dir}
+		subject = request.Node{Dir: msg.Dir}
 	}
 	return a.ownerOf(subject)
 }
 
 // ownerOf is the open collection that holds node, nil for none.
-func (a *App) ownerOf(node model.Node) *model.Collection {
+func (a *App) ownerOf(node request.Node) *request.Collection {
 	if node.None() {
 		return nil
 	}
@@ -122,13 +122,13 @@ func (a *App) applyTree(msg tree.Msg) tree.Result {
 }
 
 // newRequestIn adds a blank request to dir and opens it.
-func (a *App) newRequestIn(dir *model.Folder) { a.applyTree(tree.NewRequest{Dir: dir}) }
+func (a *App) newRequestIn(dir *request.Folder) { a.applyTree(tree.NewRequest{Dir: dir}) }
 
-func (a *App) newFolderIn(dir *model.Folder) { a.applyTree(tree.NewFolder{Dir: dir}) }
+func (a *App) newFolderIn(dir *request.Folder) { a.applyTree(tree.NewFolder{Dir: dir}) }
 
 // renameNode asks for a new name and applies it; a refused name is
 // explained in a toast.
-func (a *App) renameNode(node model.Node) {
+func (a *App) renameNode(node request.Node) {
 	a.prompt("Rename", node.Name(), "Rename", func(text string) {
 		if err := a.applyTree(tree.Rename{Node: node, Name: text}).Err; err != nil {
 			a.toast("Cannot rename: "+err.Error(), severity.Error)
@@ -136,11 +136,11 @@ func (a *App) renameNode(node model.Node) {
 	})
 }
 
-func (a *App) duplicateNode(node model.Node) { a.applyTree(tree.Duplicate{Node: node}) }
+func (a *App) duplicateNode(node request.Node) { a.applyTree(tree.Duplicate{Node: node}) }
 
 // deleteNode asks, then removes the node and closes the tabs of
 // everything that was in it.
-func (a *App) deleteNode(node model.Node) {
+func (a *App) deleteNode(node request.Node) {
 	if node.None() || a.isRoot(node.Dir) {
 		return
 	}
@@ -149,7 +149,7 @@ func (a *App) deleteNode(node model.Node) {
 }
 
 // closeTabsIn closes the tabs whose request is node or inside it.
-func (a *App) closeTabsIn(node model.Node) {
+func (a *App) closeTabsIn(node request.Node) {
 	for i := len(a.list.Tabs) - 1; i >= 0; i-- {
 		if tree.Inside(node, a.list.Tabs[i].Req) {
 			a.closeTab(i)
@@ -157,8 +157,8 @@ func (a *App) closeTabsIn(node model.Node) {
 	}
 }
 
-func (a *App) copyRequestURL(req *model.Request) {
-	_ = a.ctx.Clipboard.Write(model.Expand(req.URL, a.varsFor(req)))
+func (a *App) copyRequestURL(req *request.Request) {
+	_ = a.ctx.Clipboard.Write(request.Expand(req.URL, a.varsFor(req)))
 }
 
 // treeKeys handles Up, Down, Enter, F2 and Delete while the tree has the

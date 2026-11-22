@@ -3,15 +3,15 @@ package tree
 import (
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 func TestPathOfJoinsFolderNamesAndEndsWithTheRequest(t *testing.T) {
 	root, first, second, _ := sample()
-	stranger := &model.Request{Name: "first"}
+	stranger := &request.Request{Name: "first"}
 	tests := []struct {
 		name string
-		req  *model.Request
+		req  *request.Request
 		want string
 	}{
 		{"request in the root", first, "first"},
@@ -28,9 +28,9 @@ func TestPathOfJoinsFolderNamesAndEndsWithTheRequest(t *testing.T) {
 }
 
 func TestAtReturnsTheFirstOfTwoRequestsWithOnePath(t *testing.T) {
-	root := &model.Folder{Name: "root"}
-	one := root.AddFolder("dir").AddRequest(model.Request{Name: "dup"})
-	root.Folders = append(root.Folders, &model.Folder{Name: "dir", Requests: []*model.Request{{Name: "dup"}}})
+	root := &request.Folder{Name: "root"}
+	one := root.AddFolder("dir").AddRequest(request.Request{Name: "dup"})
+	root.Folders = append(root.Folders, &request.Folder{Name: "dir", Requests: []*request.Request{{Name: "dup"}}})
 	two := root.Folders[1].Requests[0]
 	if PathOf(root, one) != "dir/dup" || PathOf(root, two) != "dir/dup" {
 		t.Fatal("both requests have the path of their names")
@@ -45,7 +45,7 @@ func TestAtFindsTheRequestAPathNames(t *testing.T) {
 	tests := []struct {
 		name string
 		path string
-		want *model.Request
+		want *request.Request
 	}{
 		{"root request", "first", first},
 		{"nested request", "sub/second", second},
@@ -65,7 +65,7 @@ func TestAtFindsTheRequestAPathNames(t *testing.T) {
 func TestWalkRequestsVisitsRootRequestsBeforeFolders(t *testing.T) {
 	root, _, _, _ := sample()
 	var paths []string
-	WalkRequests(root, "", func(path string, _ *model.Request) { paths = append(paths, path) })
+	WalkRequests(root, "", func(path string, _ *request.Request) { paths = append(paths, path) })
 	if len(paths) != 2 || paths[0] != "first" || paths[1] != "sub/second" {
 		t.Fatalf("paths %v", paths)
 	}
@@ -75,7 +75,7 @@ func TestWalkFoldersVisitsNestedFoldersWithTheirPath(t *testing.T) {
 	root, _, _, sub := sample()
 	sub.AddFolder("deep")
 	var paths []string
-	WalkFolders(root, "", func(path string, _ *model.Folder) { paths = append(paths, path) })
+	WalkFolders(root, "", func(path string, _ *request.Folder) { paths = append(paths, path) })
 	if len(paths) != 2 || paths[0] != "sub" || paths[1] != "sub/deep" {
 		t.Fatalf("paths %v", paths)
 	}

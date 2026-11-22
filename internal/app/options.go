@@ -4,8 +4,7 @@ import (
 	"cmp"
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fileversion"
@@ -29,10 +28,10 @@ type Options struct {
 	StatePath        string                                        // remembered UI state; "" keeps it in memory
 	ThemesDir        string                                        // folder of user theme files (*.json); "" for none
 	ScanFonts        bool                                          // look for installed fonts in the background, to apply the saved font families
-	Protocols        func(reqport.ProtocolConfig) reqport.Registry // builds the protocols; nil has none
-	GRPCMethods      reqport.GRPCMethods                           // lists gRPC methods by reflection; nil cannot
-	GRPCSchema       reqport.GRPCSchema                            // describes a gRPC method's request message; nil cannot
-	Curl             func(model.Request) string                    // the cURL command of a request; nil copies nothing
+	Protocols        func(request.ProtocolConfig) request.Registry // builds the protocols; nil has none
+	GRPCMethods      request.GRPCMethods                           // lists gRPC methods by reflection; nil cannot
+	GRPCSchema       request.GRPCSchema                            // describes a gRPC method's request message; nil cannot
+	Curl             func(request.Request) string                  // the cURL command of a request; nil copies nothing
 	Store            collection.Store                              // where the collection is saved; nil saves nothing
 	States           workspace.StateStore                          // where the UI state is kept; nil keeps none
 	Files            workspace.FileDialog                          // the desktop file chooser; nil uses the in-app file browser
@@ -49,14 +48,14 @@ type Options struct {
 	HostOS           string                                        // the OS shortcut text follows; "" is the running one
 	BaseScale        float64                                       // the platform's interface factor under the user's scale; 0 is 1
 	WorkspaceDir     string                                        // collection folder; "" uses the remembered one, else the client config, else the sample
-	Sample           func() model.Collection                       // the collection shown without a workspace or client config; nil uses collection.GitHubSample
+	Sample           func() request.Collection                     // the collection shown without a workspace or client config; nil uses collection.GitHubSample
 	Clients          collection.ClientConfigs                      // the client config a build offers without a workspace; nil has none
 	DefaultWorkspace string                                        // where saving goes when there is no workspace yet
 }
 
 // startCollection is the collection shown before a workspace or client
 // config replaces it.
-func startCollection(sample func() model.Collection) model.Collection {
+func startCollection(sample func() request.Collection) request.Collection {
 	if sample == nil {
 		return collection.GitHubSample()
 	}
@@ -122,9 +121,9 @@ func NewApp(opts Options) (*App, error) {
 			now: opts.now(), histories: opts.History, fonts: opts.Fonts, display: opts.Display, system: opts.System,
 			settingFiles: opts.SettingsFiles, previews: opts.Previews,
 		},
-		treeState:    treeState{expanded: map[*model.Folder]bool{}},
+		treeState:    treeState{expanded: map[*request.Folder]bool{}},
 		frameState:   frameState{dirty: true, drawEveryFrame: opts.DrawEveryFrame},
-		persistState: persistState{saves: map[*model.Collection]*autosave.Debounce{}, defaultWorkspace: opts.DefaultWorkspace, statePath: opts.StatePath},
+		persistState: persistState{saves: map[*request.Collection]*autosave.Debounce{}, defaultWorkspace: opts.DefaultWorkspace, statePath: opts.StatePath},
 		settingsState: settingsState{
 			settings: st, settingsPath: opts.SettingsPath, settingsAccess: fileversion.AccessAfter(loadErr),
 		},

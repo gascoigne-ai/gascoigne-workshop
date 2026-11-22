@@ -7,7 +7,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/state"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fontfamily"
@@ -54,10 +54,10 @@ func (noFonts) Load(fontfamily.Family) ([]byte, []byte, error) {
 // noStore is the collection store of an app started without one.
 type noStore struct{}
 
-func (noStore) Load(string) (model.Collection, error) {
-	return model.Collection{}, errors.New("no collection store")
+func (noStore) Load(string) (request.Collection, error) {
+	return request.Collection{}, errors.New("no collection store")
 }
-func (noStore) Save(string, model.Collection) error { return errors.New("no collection store") }
+func (noStore) Save(string, request.Collection) error { return errors.New("no collection store") }
 
 func (noStore) Create(string, string) (string, error) { return "", errors.New("no collection store") }
 func (noStore) Rename(string, string) (string, error) { return "", errors.New("no collection store") }

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 func TestRESTReportsWhereTheTimeWent(t *testing.T) {
@@ -17,7 +17,7 @@ func TestRESTReportsWhereTheTimeWent(t *testing.T) {
 		writer.Write([]byte("ok"))
 	}))
 	defer srv.Close()
-	resp, err := REST{Client: srv.Client()}.Send(context.Background(), model.Request{Method: "GET", URL: srv.URL})
+	resp, err := REST{Client: srv.Client()}.Send(context.Background(), request.Request{Method: "GET", URL: srv.URL})
 	if err != nil || resp.Err != "" {
 		t.Fatalf("%+v %v", resp, err)
 	}
@@ -38,11 +38,11 @@ func TestRESTCutsLongBodiesAndSaysSo(t *testing.T) {
 		writer.Write([]byte(strings.Repeat("x", 100)))
 	}))
 	defer srv.Close()
-	resp, _ := REST{MaxBody: 40}.Send(context.Background(), model.Request{Method: "GET", URL: srv.URL})
+	resp, _ := REST{MaxBody: 40}.Send(context.Background(), request.Request{Method: "GET", URL: srv.URL})
 	if !resp.Truncated || len(resp.Body) != 40 || resp.Size != 40 {
 		t.Fatalf("truncated %v, %d bytes", resp.Truncated, len(resp.Body))
 	}
-	resp, _ = REST{MaxBody: 100}.Send(context.Background(), model.Request{Method: "GET", URL: srv.URL})
+	resp, _ = REST{MaxBody: 100}.Send(context.Background(), request.Request{Method: "GET", URL: srv.URL})
 	if resp.Truncated || len(resp.Body) != 100 {
 		t.Fatalf("a body exactly at the limit is whole: truncated %v, %d bytes", resp.Truncated, len(resp.Body))
 	}

@@ -12,7 +12,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/serial"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/tabs"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fileversion"
 )
@@ -37,7 +37,7 @@ func (a *App) openWorkspace(dir string) {
 		a.setIsRemembered = true
 	}
 	var failed []error
-	var sample *model.Collection
+	var sample *request.Collection
 	a.unreadable = nil
 	for _, item := range wanted {
 		if item.Folder == "" {
@@ -82,7 +82,7 @@ func (a *App) toastNewer(folder string, err error) {
 // saved is open: the client config's, else the sample, which it returns
 // (nil for the config's). Only one is opened, however often a settings
 // file names it.
-func (a *App) includeStart(env string) (sample *model.Collection) {
+func (a *App) includeStart(env string) (sample *request.Collection) {
 	if _, open := a.open.At(""); open {
 		return nil
 	}
@@ -102,7 +102,7 @@ func (a *App) includeStart(env string) (sample *model.Collection) {
 
 // startCollection is the client config's tree, or the sample when there is
 // no config, it is empty, or it cannot be read (the status then says why).
-func (a *App) startCollection() (col *model.Collection, isSample bool) {
+func (a *App) startCollection() (col *request.Collection, isSample bool) {
 	if a.clients != nil {
 		config, err := a.clients.Load()
 		if err != nil {
@@ -116,7 +116,7 @@ func (a *App) startCollection() (col *model.Collection, isSample bool) {
 	return &sample, true
 }
 
-func (a *App) expandAll(folder *model.Folder) {
+func (a *App) expandAll(folder *request.Folder) {
 	a.expanded[folder] = true
 	for _, sub := range folder.Folders {
 		a.expandAll(sub)
@@ -129,7 +129,7 @@ func (a *App) saveWorkspace() { a.saveCollection(a.focusCol()) }
 // saveCollection writes col to its folder. A collection that has none yet
 // gets its own new folder in the collections folder, as a new collection
 // does, and the open set with it is remembered.
-func (a *App) saveCollection(col *model.Collection) {
+func (a *App) saveCollection(col *request.Collection) {
 	a.commitEdit()
 	entry, ok := a.open.ByCollection(col)
 	if !ok {
@@ -159,7 +159,7 @@ func (a *App) saveCollection(col *model.Collection) {
 
 // locate makes the folder of an unsaved collection, named after it, in the
 // collections folder, and records it; "" when there is none to make.
-func (a *App) locate(col *model.Collection) string {
+func (a *App) locate(col *request.Collection) string {
 	parent := a.collectionsDir()
 	if parent == "" {
 		a.toast("No folder to save to", severity.Error)
@@ -227,7 +227,7 @@ func (a *App) flushCollection(entry collections.Entry) error {
 
 // markTabsSaved makes the requests of col's open tabs, as they are now,
 // their saved copies, so their unsaved marks go.
-func (a *App) markTabsSaved(col *model.Collection) {
+func (a *App) markTabsSaved(col *request.Collection) {
 	for _, t := range a.openTabs() {
 		if owner, ok := a.entryFor(t.Req); ok && owner.Collection == col {
 			t.MarkSaved()
@@ -268,8 +268,8 @@ func (a *App) openWorkspaceAt(dir string) {
 		a.forget(entry.Collection)
 	}
 	a.updateTabs(tabs.Reset{})
-	a.selected = model.Node{}
-	a.expanded = map[*model.Folder]bool{}
+	a.selected = request.Node{}
+	a.expanded = map[*request.Folder]bool{}
 	a.showOpened(a.openLoaded(loaded, dir, env))
 	a.status = "Opened " + dir
 }

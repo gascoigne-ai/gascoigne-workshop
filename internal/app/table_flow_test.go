@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"github.com/hajimehoshi/ebiten/v2"
@@ -334,7 +334,7 @@ func TestHeaderCheckboxEnablesOrDisablesEveryRow(t *testing.T) {
 		t.Fatalf("no enabled params, no query: %q", req.URL)
 	}
 	click(a, checkAllX, paramsHeaderY)
-	if !model.AllEnabled(req.Params) || !strings.Contains(req.URL, "q=gioui") {
+	if !request.AllEnabled(req.Params) || !strings.Contains(req.URL, "q=gioui") {
 		t.Fatalf("all enabled again: %+v url %q", req.Params, req.URL)
 	}
 }
@@ -385,7 +385,7 @@ func TestDeletingRowsUnderAnOpenCellEditDropsTheEditAndRewritesTheURL(t *testing
 	if a.edit == nil || a.edit.row != 2 {
 		t.Fatal("test setup")
 	}
-	a.applyRows(requestPanes[0], a.cur(), func(rows []model.KV) []model.KV { return model.DeleteRow(model.DeleteRow(rows, 2), 1) })
+	a.applyRows(requestPanes[0], a.cur(), func(rows []request.KV) []request.KV { return request.DeleteRow(request.DeleteRow(rows, 2), 1) })
 	if a.edit != nil {
 		t.Fatalf("an edit pointing at a row that is gone must be dropped: %+v", a.edit)
 	}
@@ -408,7 +408,7 @@ func TestBulkEditShowsLinesAndAppliesThemBack(t *testing.T) {
 	if a.bulk != nil {
 		t.Fatal("the button leaves bulk mode")
 	}
-	want := []model.KV{
+	want := []request.KV{
 		{Name: "q", Value: "rust", Description: "repo name", Enabled: true},
 		{Name: "page", Value: "2", Enabled: true},
 		{Name: "off", Value: "1", Enabled: false},
@@ -435,7 +435,7 @@ func TestLeavingTheTabWhileBulkEditingAppliesTheText(t *testing.T) {
 }
 
 func TestDuplicateHeaderNamesAreFlagged(t *testing.T) {
-	rows := []model.KV{{Name: "X-Id", Enabled: true}, {Name: "x-id", Enabled: true}, {Name: "Other", Enabled: true}}
+	rows := []request.KV{{Name: "X-Id", Enabled: true}, {Name: "x-id", Enabled: true}, {Name: "Other", Enabled: true}}
 	flagged := kvRows(rows, true, true)
 	if !flagged[0].Flagged || !flagged[1].Flagged || flagged[2].Flagged {
 		t.Fatalf("flags = %v %v %v", flagged[0].Flagged, flagged[1].Flagged, flagged[2].Flagged)
@@ -474,7 +474,7 @@ func TestTableRowMenuActionsUseTheSameUndoableChanges(t *testing.T) {
 	pickMenu(t, a, "Move down")
 	rightClick(a, 400, paramsRow0Y)
 	pickMenu(t, a, "Disable all")
-	if model.AllEnabled(req.Params) || strings.Contains(req.URL, "?") {
+	if request.AllEnabled(req.Params) || strings.Contains(req.URL, "?") {
 		t.Fatalf("disable all: %+v url %q", req.Params, req.URL)
 	}
 	rightClick(a, 400, paramsRow0Y)

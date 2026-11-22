@@ -23,9 +23,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto/ws"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 )
 
 // seenRequest is what a test server noted about one request.
@@ -42,10 +41,10 @@ type seenLog struct {
 	requests []seenRequest
 }
 
-func (log *seenLog) note(request *http.Request) {
-	entry := seenRequest{Header: request.Header.Clone(), Host: request.Host, URL: request.URL.String(), RawQuery: request.URL.RawQuery}
-	if request.TLS != nil && len(request.TLS.PeerCertificates) > 0 {
-		entry.ClientCert = request.TLS.PeerCertificates[0].Subject.CommonName
+func (log *seenLog) note(call *http.Request) {
+	entry := seenRequest{Header: call.Header.Clone(), Host: call.Host, URL: call.URL.String(), RawQuery: call.URL.RawQuery}
+	if call.TLS != nil && len(call.TLS.PeerCertificates) > 0 {
+		entry.ClientCert = call.TLS.PeerCertificates[0].Subject.CommonName
 	}
 	log.mu.Lock()
 	log.requests = append(log.requests, entry)
@@ -72,33 +71,33 @@ func (log *seenLog) first(t *testing.T) seenRequest {
 // httpProtocol is one HTTP-based protocol with a server that speaks it.
 type httpProtocol struct {
 	name     string
-	protocol model.Protocol
+	protocol request.Protocol
 	handler  func(log *seenLog) http.Handler
 	wsScheme bool // the URL scheme is ws or wss
 }
 
 var (
-	restProtocol = httpProtocol{name: "rest", protocol: model.ProtocolREST, handler: func(log *seenLog) http.Handler {
-		return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-			log.note(request)
+	restProtocol = httpProtocol{name: "rest", protocol: request.ProtocolREST, handler: func(log *seenLog) http.Handler {
+		return http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
+			log.note(call)
 			writer.Write([]byte("ok"))
 		})
 	}}
-	sseProtocol = httpProtocol{name: "sse", protocol: model.ProtocolSSE, handler: func(log *seenLog) http.Handler {
-		return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-			log.note(request)
+	sseProtocol = httpProtocol{name: "sse", protocol: request.ProtocolSSE, handler: func(log *seenLog) http.Handler {
+		return http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
+			log.note(call)
 			writer.Header().Set("Content-Type", "text/event-stream")
 			io.WriteString(writer, "data: hi\n\n")
 		})
 	}}
-	mcpProtocol = httpProtocol{name: "mcp", protocol: model.ProtocolMCP, handler: func(log *seenLog) http.Handler {
-		return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-			log.note(request)
-			if request.Method != http.MethodPost {
+	mcpProtocol = httpProtocol{name: "mcp", protocol: request.ProtocolMCP, handler: func(log *seenLog) http.Handler {
+		return http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
+			log.note(call)
+			if call.Method != http.MethodPost {
 				writer.WriteHeader(http.StatusMethodNotAllowed)
 				return
 			}
-			body, _ := io.ReadAll(request.Body)
+			body, _ := io.ReadAll(call.Body)
 			var message map[string]any
 			json.Unmarshal(body, &message)
 			out := mcpReply(message)
@@ -111,10 +110,10 @@ var (
 			writer.Write(encoded)
 		})
 	}}
-	wsProtocol = httpProtocol{name: "websocket", protocol: model.ProtocolWebSocket, wsScheme: true, handler: func(log *seenLog) http.Handler {
-		return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-			log.note(request)
-			conn, err := ws.Upgrade(writer, request)
+	wsProtocol = httpProtocol{name: "websocket", protocol: request.ProtocolWebSocket, wsScheme: true, handler: func(log *seenLog) http.Handler {
+		return http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
+			log.note(call)
+			conn, err := ws.Upgrade(writer, call)
 			if err != nil {
 				return
 			}
@@ -153,13 +152,13 @@ func (p httpProtocol) url(srv *httptest.Server) string {
 
 // attempt connects (or sends) with a registry made from config and returns
 // the failure, if any.
-func (p httpProtocol) attempt(config port.ProtocolConfig, request model.Request) error {
-	request.Protocol = p.protocol
+func (p httpProtocol) attempt(config request.ProtocolConfig, call request.Request) error {
+	call.Protocol = p.protocol
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	registry := Configured(config)
-	if p.protocol == model.ProtocolREST {
-		response, err := registry.Send(ctx, request)
+	if p.protocol == request.ProtocolREST {
+		response, err := registry.Send(ctx, call)
 		if err != nil {
 			return err
 		}
@@ -168,7 +167,7 @@ func (p httpProtocol) attempt(config port.ProtocolConfig, request model.Request)
 		}
 		return nil
 	}
-	session, err := registry.Connect(ctx, request)
+	session, err := registry.Connect(ctx, call)
 	if err != nil {
 		return err
 	}
@@ -211,7 +210,7 @@ func TestHTTPProtocolsRejectUntrustedCertificate(t *testing.T) {
 	for _, p := range streamers {
 		t.Run(p.name, func(t *testing.T) {
 			srv, log := p.serve(t, true, false)
-			err := p.attempt(port.ProtocolConfig{}, model.Request{URL: p.url(srv)})
+			err := p.attempt(request.ProtocolConfig{}, request.Request{URL: p.url(srv)})
 			if err == nil || !strings.Contains(err.Error(), "certificate") {
 				t.Fatalf("an unknown certificate must be refused, got %v", err)
 			}
@@ -226,7 +225,7 @@ func TestHTTPProtocolsTrustConfiguredCAFile(t *testing.T) {
 	for _, p := range streamers {
 		t.Run(p.name, func(t *testing.T) {
 			srv, _ := p.serve(t, true, false)
-			err := p.attempt(port.ProtocolConfig{CACert: caFileOf(t, srv)}, model.Request{URL: p.url(srv)})
+			err := p.attempt(request.ProtocolConfig{CACert: caFileOf(t, srv)}, request.Request{URL: p.url(srv)})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -238,7 +237,7 @@ func TestHTTPProtocolsHonorInsecureTLS(t *testing.T) {
 	for _, p := range streamers {
 		t.Run(p.name, func(t *testing.T) {
 			srv, _ := p.serve(t, true, false)
-			err := p.attempt(port.ProtocolConfig{}, model.Request{URL: p.url(srv), InsecureTLS: true})
+			err := p.attempt(request.ProtocolConfig{}, request.Request{URL: p.url(srv), InsecureTLS: true})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -251,8 +250,8 @@ func TestHTTPProtocolsSendClientCertificate(t *testing.T) {
 	for _, p := range streamers {
 		t.Run(p.name, func(t *testing.T) {
 			srv, log := p.serve(t, true, true)
-			config := port.ProtocolConfig{ClientCert: certFile, ClientKey: keyFile}
-			if err := p.attempt(config, model.Request{URL: p.url(srv), InsecureTLS: true}); err != nil {
+			config := request.ProtocolConfig{ClientCert: certFile, ClientKey: keyFile}
+			if err := p.attempt(config, request.Request{URL: p.url(srv), InsecureTLS: true}); err != nil {
 				t.Fatal(err)
 			}
 			if got := log.first(t).ClientCert; got != "workshop-client" {
@@ -267,7 +266,7 @@ func TestHTTPProtocolsRejectUnreadableCAFile(t *testing.T) {
 	for _, p := range streamers {
 		t.Run(p.name, func(t *testing.T) {
 			srv, _ := p.serve(t, true, false)
-			err := p.attempt(port.ProtocolConfig{CACert: missing}, model.Request{URL: p.url(srv), InsecureTLS: true})
+			err := p.attempt(request.ProtocolConfig{CACert: missing}, request.Request{URL: p.url(srv), InsecureTLS: true})
 			if err == nil || !strings.Contains(err.Error(), "CA file") {
 				t.Fatalf("want an error naming the CA file, got %v", err)
 			}
@@ -279,7 +278,7 @@ func TestSSEAndMCPUseConfiguredProxy(t *testing.T) {
 	for _, p := range []httpProtocol{sseProtocol, mcpProtocol} {
 		t.Run(p.name, func(t *testing.T) {
 			proxy, log := p.serve(t, false, false)
-			err := p.attempt(port.ProtocolConfig{Proxy: proxy.URL}, model.Request{URL: "http://target.invalid/events"})
+			err := p.attempt(request.ProtocolConfig{Proxy: proxy.URL}, request.Request{URL: "http://target.invalid/events"})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -291,7 +290,7 @@ func TestSSEAndMCPUseConfiguredProxy(t *testing.T) {
 }
 
 func TestHTTPProtocolsSendEveryEnabledHeader(t *testing.T) {
-	headers := []model.KV{
+	headers := []request.KV{
 		{Name: "X-Multi", Value: "one", Enabled: true},
 		{Name: "X-Multi", Value: "two", Enabled: true},
 		{Name: "X-Off", Value: "no", Enabled: false},
@@ -300,7 +299,7 @@ func TestHTTPProtocolsSendEveryEnabledHeader(t *testing.T) {
 	for _, p := range []httpProtocol{restProtocol, sseProtocol, mcpProtocol} {
 		t.Run(p.name, func(t *testing.T) {
 			srv, log := p.serve(t, false, false)
-			if err := p.attempt(port.ProtocolConfig{}, model.Request{URL: p.url(srv), Headers: headers}); err != nil {
+			if err := p.attempt(request.ProtocolConfig{}, request.Request{URL: p.url(srv), Headers: headers}); err != nil {
 				t.Fatal(err)
 			}
 			header := log.first(t).Header
@@ -316,8 +315,8 @@ func TestHTTPProtocolsSendEveryEnabledHeader(t *testing.T) {
 
 func TestSSEUserAcceptHeaderOverridesDefault(t *testing.T) {
 	srv, log := sseProtocol.serve(t, false, false)
-	request := model.Request{URL: srv.URL, Headers: []model.KV{{Name: "Accept", Value: "text/plain", Enabled: true}}}
-	if err := sseProtocol.attempt(port.ProtocolConfig{}, request); err != nil {
+	call := request.Request{URL: srv.URL, Headers: []request.KV{{Name: "Accept", Value: "text/plain", Enabled: true}}}
+	if err := sseProtocol.attempt(request.ProtocolConfig{}, call); err != nil {
 		t.Fatal(err)
 	}
 	if got := log.first(t).Header.Values("Accept"); len(got) != 1 || got[0] != "text/plain" {
@@ -328,20 +327,20 @@ func TestSSEUserAcceptHeaderOverridesDefault(t *testing.T) {
 func TestAuthPaneWinsOverTypedHeader(t *testing.T) {
 	cases := []struct {
 		name    string
-		header  model.KV
-		auth    model.Auth
+		header  request.KV
+		auth    request.Auth
 		wantKey string
 		want    string
 	}{
-		{"bearer", model.KV{Name: "Authorization", Value: "Bearer typed", Enabled: true}, model.Auth{Type: model.AuthBearer, Token: "pane"}, "Authorization", "Bearer pane"},
-		{"api key header", model.KV{Name: "X-Key", Value: "typed", Enabled: true}, model.Auth{Type: model.AuthAPIKey, KeyName: "X-Key", KeyValue: "pane"}, "X-Key", "pane"},
+		{"bearer", request.KV{Name: "Authorization", Value: "Bearer typed", Enabled: true}, request.Auth{Type: request.AuthBearer, Token: "pane"}, "Authorization", "Bearer pane"},
+		{"api key header", request.KV{Name: "X-Key", Value: "typed", Enabled: true}, request.Auth{Type: request.AuthAPIKey, KeyName: "X-Key", KeyValue: "pane"}, "X-Key", "pane"},
 	}
 	for _, p := range allFour {
 		for _, c := range cases {
 			t.Run(p.name+" "+c.name, func(t *testing.T) {
 				srv, log := p.serve(t, false, false)
-				request := model.Request{URL: p.url(srv), Headers: []model.KV{c.header}, Auth: c.auth}
-				if err := p.attempt(port.ProtocolConfig{}, request); err != nil {
+				call := request.Request{URL: p.url(srv), Headers: []request.KV{c.header}, Auth: c.auth}
+				if err := p.attempt(request.ProtocolConfig{}, call); err != nil {
 					t.Fatal(err)
 				}
 				if got := log.first(t).Header.Values(c.wantKey); len(got) != 1 || got[0] != c.want {
@@ -356,7 +355,7 @@ func TestHTTPProtocolsRejectUnknownAuthType(t *testing.T) {
 	for _, p := range allFour {
 		t.Run(p.name, func(t *testing.T) {
 			srv, log := p.serve(t, false, false)
-			err := p.attempt(port.ProtocolConfig{}, model.Request{URL: p.url(srv), Auth: model.Auth{Type: "nope"}})
+			err := p.attempt(request.ProtocolConfig{}, request.Request{URL: p.url(srv), Auth: request.Auth{Type: "nope"}})
 			if err == nil || !strings.Contains(err.Error(), `unknown auth type "nope"`) {
 				t.Fatalf("got %v", err)
 			}
@@ -371,8 +370,8 @@ func TestHTTPProtocolsRejectUnknownAuthType(t *testing.T) {
 // on a probe request and dialed the URL as typed.
 func TestWebSocketSendsAPIKeyInQuery(t *testing.T) {
 	srv, log := wsProtocol.serve(t, false, false)
-	request := model.Request{URL: wsProtocol.url(srv) + "/chat?room=1", Auth: model.Auth{Type: model.AuthAPIKey, KeyName: "key", KeyValue: "secret", KeyIn: model.KeyInQuery}}
-	if err := wsProtocol.attempt(port.ProtocolConfig{}, request); err != nil {
+	call := request.Request{URL: wsProtocol.url(srv) + "/chat?room=1", Auth: request.Auth{Type: request.AuthAPIKey, KeyName: "key", KeyValue: "secret", KeyIn: request.KeyInQuery}}
+	if err := wsProtocol.attempt(request.ProtocolConfig{}, call); err != nil {
 		t.Fatal(err)
 	}
 	query, _ := url.ParseQuery(log.first(t).RawQuery)
@@ -388,7 +387,7 @@ func TestSSEAndMCPSendConfiguredCookies(t *testing.T) {
 			jar, _ := cookiejar.New(nil)
 			address, _ := url.Parse(srv.URL)
 			jar.SetCookies(address, []*http.Cookie{{Name: "session", Value: "abc", Path: "/"}})
-			if err := p.attempt(port.ProtocolConfig{Jar: jar}, model.Request{URL: srv.URL}); err != nil {
+			if err := p.attempt(request.ProtocolConfig{Jar: jar}, request.Request{URL: srv.URL}); err != nil {
 				t.Fatal(err)
 			}
 			if got := log.first(t).Header.Get("Cookie"); got != "session=abc" {
@@ -401,31 +400,31 @@ func TestSSEAndMCPSendConfiguredCookies(t *testing.T) {
 func TestNewHTTPRequestBuildsBodyHeadersAndAuthInOrder(t *testing.T) {
 	cases := []struct {
 		name        string
-		request     model.Request
+		request     request.Request
 		contentType string
 		check       func(t *testing.T, built *http.Request)
 	}{
-		{"automatic content type", model.Request{URL: "http://x/"}, "application/json", func(t *testing.T, built *http.Request) {
+		{"automatic content type", request.Request{URL: "http://x/"}, "application/json", func(t *testing.T, built *http.Request) {
 			if got := built.Header.Get("Content-Type"); got != "application/json" {
 				t.Errorf("Content-Type = %q", got)
 			}
 		}},
-		{"no content type when empty", model.Request{URL: "http://x/"}, "", func(t *testing.T, built *http.Request) {
+		{"no content type when empty", request.Request{URL: "http://x/"}, "", func(t *testing.T, built *http.Request) {
 			if _, ok := built.Header["Content-Type"]; ok {
 				t.Errorf("headers %v", built.Header)
 			}
 		}},
-		{"typed content type replaces the automatic one", model.Request{URL: "http://x/", Headers: []model.KV{{Name: "content-type", Value: "text/csv", Enabled: true}}}, "application/json", func(t *testing.T, built *http.Request) {
+		{"typed content type replaces the automatic one", request.Request{URL: "http://x/", Headers: []request.KV{{Name: "content-type", Value: "text/csv", Enabled: true}}}, "application/json", func(t *testing.T, built *http.Request) {
 			if got := built.Header.Values("Content-Type"); len(got) != 1 || got[0] != "text/csv" {
 				t.Errorf("Content-Type = %v", got)
 			}
 		}},
-		{"auth pane wins over a typed header", model.Request{URL: "http://x/", Headers: []model.KV{{Name: "Authorization", Value: "typed", Enabled: true}}, Auth: model.Auth{Type: model.AuthBearer, Token: "pane"}}, "", func(t *testing.T, built *http.Request) {
+		{"auth pane wins over a typed header", request.Request{URL: "http://x/", Headers: []request.KV{{Name: "Authorization", Value: "typed", Enabled: true}}, Auth: request.Auth{Type: request.AuthBearer, Token: "pane"}}, "", func(t *testing.T, built *http.Request) {
 			if got := built.Header.Values("Authorization"); len(got) != 1 || got[0] != "Bearer pane" {
 				t.Errorf("Authorization = %v", got)
 			}
 		}},
-		{"api key in the query", model.Request{URL: "http://x/?a=1", Auth: model.Auth{Type: model.AuthAPIKey, KeyName: "k", KeyValue: "v", KeyIn: model.KeyInQuery}}, "", func(t *testing.T, built *http.Request) {
+		{"api key in the query", request.Request{URL: "http://x/?a=1", Auth: request.Auth{Type: request.AuthAPIKey, KeyName: "k", KeyValue: "v", KeyIn: request.KeyInQuery}}, "", func(t *testing.T, built *http.Request) {
 			if got := built.URL.Query(); got.Get("k") != "v" || got.Get("a") != "1" {
 				t.Errorf("URL %s", built.URL)
 			}
@@ -443,43 +442,43 @@ func TestNewHTTPRequestBuildsBodyHeadersAndAuthInOrder(t *testing.T) {
 			c.check(t, built)
 		})
 	}
-	if _, err := newHTTPRequest(context.Background(), http.MethodGet, model.Request{URL: "http://x/", Auth: model.Auth{Type: "nope"}}, nil, ""); err == nil || err.Error() != `unknown auth type "nope"` {
+	if _, err := newHTTPRequest(context.Background(), http.MethodGet, request.Request{URL: "http://x/", Auth: request.Auth{Type: "nope"}}, nil, ""); err == nil || err.Error() != `unknown auth type "nope"` {
 		t.Errorf("unknown auth: %v", err)
 	}
 }
 
 type roundTripperFunc func(*http.Request) (*http.Response, error)
 
-func (f roundTripperFunc) RoundTrip(request *http.Request) (*http.Response, error) { return f(request) }
+func (f roundTripperFunc) RoundTrip(call *http.Request) (*http.Response, error) { return f(call) }
 
 func TestNewHTTPClientAppliesNetworkAndKeepsTheBase(t *testing.T) {
 	jar, _ := cookiejar.New(nil)
 	other, _ := cookiejar.New(nil)
 	custom := roundTripperFunc(func(*http.Request) (*http.Response, error) { return nil, nil })
 
-	client, err := newHTTPClient(nil, Network{Jar: jar}, model.Request{})
+	client, err := newHTTPClient(nil, Network{Jar: jar}, request.Request{})
 	if err != nil || client.Jar != jar || client.Transport != nil {
 		t.Errorf("plain client with a jar: %+v, %v", client, err)
 	}
 	base := &http.Client{Jar: other}
-	client, _ = newHTTPClient(base, Network{Jar: jar}, model.Request{})
+	client, _ = newHTTPClient(base, Network{Jar: jar}, request.Request{})
 	if client.Jar != other || client == base {
 		t.Error("the base client's own jar wins and the base is copied")
 	}
-	client, _ = newHTTPClient(nil, Network{}, model.Request{NoRedirects: true})
+	client, _ = newHTTPClient(nil, Network{}, request.Request{NoRedirects: true})
 	if client.CheckRedirect == nil {
 		t.Error("NoRedirects must stop redirects")
 	}
-	client, _ = newHTTPClient(&http.Client{Transport: custom}, Network{Proxy: "http://p:1"}, model.Request{InsecureTLS: true})
+	client, _ = newHTTPClient(&http.Client{Transport: custom}, Network{Proxy: "http://p:1"}, request.Request{InsecureTLS: true})
 	if _, ok := client.Transport.(roundTripperFunc); !ok {
 		t.Errorf("a custom round tripper is left alone, got %T", client.Transport)
 	}
-	client, err = newHTTPClient(nil, Network{Proxy: "http://p:1"}, model.Request{InsecureTLS: true})
+	client, err = newHTTPClient(nil, Network{Proxy: "http://p:1"}, request.Request{InsecureTLS: true})
 	transport, ok := client.Transport.(*http.Transport)
 	if err != nil || !ok || transport.Proxy == nil || !transport.TLSClientConfig.InsecureSkipVerify {
 		t.Errorf("proxy and insecure TLS: %+v, %v", client.Transport, err)
 	}
-	if _, err := newHTTPClient(nil, Network{Proxy: "ftp://p:21"}, model.Request{}); err == nil || !strings.Contains(err.Error(), "not a URL like http://host:port") {
+	if _, err := newHTTPClient(nil, Network{Proxy: "ftp://p:21"}, request.Request{}); err == nil || !strings.Contains(err.Error(), "not a URL like http://host:port") {
 		t.Errorf("bad proxy: %v", err)
 	}
 }

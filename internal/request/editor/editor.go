@@ -5,7 +5,7 @@ package editor
 import (
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // Msg is one edit of a request.
@@ -21,7 +21,7 @@ type ParamsChanged struct{}
 type MethodChosen struct{ Method string }
 
 // ProtocolChosen sets the protocol.
-type ProtocolChosen struct{ Protocol model.Protocol }
+type ProtocolChosen struct{ Protocol request.Protocol }
 
 // TimeoutSet sets the timeout in seconds; 0 is the default.
 type TimeoutSet struct{ Seconds int }
@@ -37,7 +37,7 @@ type VarsTyped struct{ Text string }
 // text editor and the file field hold, since each type keeps its own in the
 // one Body.
 type BodyTypeChosen struct {
-	Type           model.BodyType
+	Type           request.BodyType
 	Text, FilePath string
 }
 
@@ -45,9 +45,9 @@ type BodyTypeChosen struct {
 type OperationChosen struct{ Query, Variables string }
 
 // AuthTypeChosen sets the authentication type.
-type AuthTypeChosen struct{ Type model.AuthType }
+type AuthTypeChosen struct{ Type request.AuthType }
 
-// AuthField names one text credential field of model.Auth.
+// AuthField names one text credential field of request.Auth.
 type AuthField string
 
 // The credential fields AuthFieldSet sets.
@@ -66,7 +66,7 @@ type AuthFieldSet struct {
 }
 
 // AuthKeyInChosen sets where the API key goes.
-type AuthKeyInChosen struct{ In model.KeyIn }
+type AuthKeyInChosen struct{ In request.KeyIn }
 
 // TestsTyped is the assertions text changed.
 type TestsTyped struct{ Text string }
@@ -80,7 +80,7 @@ type InsecureTLSToggled struct{}
 // ProtoList names one list of paths of a gRPC request's proto source.
 type ProtoList string
 
-// The lists of model.ProtoSource.
+// The lists of request.ProtoSource.
 const (
 	ProtoFiles  ProtoList = "files"
 	ImportPaths ProtoList = "import paths"
@@ -130,17 +130,17 @@ func (NoRedirectsToggled) editMsg() {}
 func (InsecureTLSToggled) editMsg() {}
 
 // authFields is where each credential field named in AuthFieldSet lives.
-var authFields = map[AuthField]func(*model.Auth) *string{
-	AuthToken:    func(auth *model.Auth) *string { return &auth.Token },
-	AuthUser:     func(auth *model.Auth) *string { return &auth.User },
-	AuthPassword: func(auth *model.Auth) *string { return &auth.Password },
-	AuthKeyName:  func(auth *model.Auth) *string { return &auth.KeyName },
-	AuthKeyValue: func(auth *model.Auth) *string { return &auth.KeyValue },
+var authFields = map[AuthField]func(*request.Auth) *string{
+	AuthToken:    func(auth *request.Auth) *string { return &auth.Token },
+	AuthUser:     func(auth *request.Auth) *string { return &auth.User },
+	AuthPassword: func(auth *request.Auth) *string { return &auth.Password },
+	AuthKeyName:  func(auth *request.Auth) *string { return &auth.KeyName },
+	AuthKeyValue: func(auth *request.Auth) *string { return &auth.KeyValue },
 }
 
 // authField is the place of a credential field. An unknown field is a
 // mistake in the caller's table, not user input, so it panics.
-func authField(auth *model.Auth, field AuthField) *string {
+func authField(auth *request.Auth, field AuthField) *string {
 	place, ok := authFields[field]
 	if !ok {
 		panic("editor: unknown auth field " + string(field))
@@ -149,22 +149,22 @@ func authField(auth *model.Auth, field AuthField) *string {
 }
 
 // AuthValue is the credential field of auth.
-func AuthValue(auth model.Auth, field AuthField) string { return *authField(&auth, field) }
+func AuthValue(auth request.Auth, field AuthField) string { return *authField(&auth, field) }
 
 // Update returns req after msg. The request it is given is not changed: a
 // slice or map an edit changes is replaced, not written into.
-func Update(req model.Request, msg Msg) model.Request {
+func Update(req request.Request, msg Msg) request.Request {
 	switch msg := msg.(type) {
 	case URLTyped:
 		req.URL = msg.Text
-		req.Params = model.MergeParams(req.Params, req.URL)
+		req.Params = request.MergeParams(req.Params, req.URL)
 	case ParamsChanged:
-		req.URL = model.WithParams(req.URL, req.Params)
+		req.URL = request.WithParams(req.URL, req.Params)
 	case MethodChosen:
 		req.Method = msg.Method
 	case ProtocolChosen:
 		req.Protocol = msg.Protocol
-		if req.Protocol.Info().Method == model.MethodHTTP && (req.Method == "" || strings.Contains(req.Method, "/")) { // "" or a gRPC method
+		if req.Protocol.Info().Method == request.MethodHTTP && (req.Method == "" || strings.Contains(req.Method, "/")) { // "" or a gRPC method
 			req.Method = "GET"
 		}
 	case TimeoutSet:
@@ -204,20 +204,20 @@ func Update(req model.Request, msg Msg) model.Request {
 			*list = withoutIndex(*list, msg.Index)
 		}
 	case ReflectionChosen:
-		req.Proto = model.ProtoSource{}
+		req.Proto = request.ProtoSource{}
 	}
 	return req
 }
 
 // protoLists is where each list named in the proto messages lives.
-var protoLists = map[ProtoList]func(*model.ProtoSource) *[]string{
-	ProtoFiles:  func(source *model.ProtoSource) *[]string { return &source.Files },
-	ImportPaths: func(source *model.ProtoSource) *[]string { return &source.ImportPaths },
+var protoLists = map[ProtoList]func(*request.ProtoSource) *[]string{
+	ProtoFiles:  func(source *request.ProtoSource) *[]string { return &source.Files },
+	ImportPaths: func(source *request.ProtoSource) *[]string { return &source.ImportPaths },
 }
 
 // protoList is the list called name. An unknown name is a mistake in the
 // caller, not user input, so it panics.
-func protoList(source *model.ProtoSource, name ProtoList) *[]string {
+func protoList(source *request.ProtoSource, name ProtoList) *[]string {
 	place, ok := protoLists[name]
 	if !ok {
 		panic("editor: unknown proto list " + string(name))
@@ -237,16 +237,16 @@ func withoutIndex(paths []string, index int) []string {
 
 // chooseBodyType keeps one Body for all types: a file body holds the path,
 // every other the text, so leaving or entering a file body swaps them.
-func chooseBodyType(req model.Request, msg BodyTypeChosen) model.Request {
-	if req.BodyType == model.BodyFile && msg.Type != model.BodyFile { // the path is not text to keep
+func chooseBodyType(req request.Request, msg BodyTypeChosen) request.Request {
+	if req.BodyType == request.BodyFile && msg.Type != request.BodyFile { // the path is not text to keep
 		req.Body = msg.Text
 	}
 	switch msg.Type {
-	case model.BodyFile:
+	case request.BodyFile:
 		req.Body = msg.FilePath
-	case model.BodyGraphQL:
+	case request.BodyGraphQL:
 		req.Body = msg.Text
-		if req.Protocol.Info().Method == model.MethodHTTP && (req.Method == "" || req.Method == "GET") {
+		if req.Protocol.Info().Method == request.MethodHTTP && (req.Method == "" || req.Method == "GET") {
 			req.Method = "POST" // a query goes in the body
 		}
 	}

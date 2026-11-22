@@ -15,7 +15,7 @@ import (
 	"google.golang.org/grpc/reflection"
 	reflectionv1alpha "google.golang.org/grpc/reflection/grpc_reflection_v1alpha"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // grpcStub runs a real gRPC server with reflection and the standard
@@ -36,11 +36,11 @@ func grpcStubWithHealth(t *testing.T) (target string, seen chan metadata.MD, hea
 		t.Fatal(err)
 	}
 	seen = make(chan metadata.MD, 4)
-	server := grpc.NewServer(grpc.UnaryInterceptor(func(ctx context.Context, request any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+	server := grpc.NewServer(grpc.UnaryInterceptor(func(ctx context.Context, call any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		if incoming, ok := metadata.FromIncomingContext(ctx); ok {
 			seen <- incoming
 		}
-		return handler(ctx, request)
+		return handler(ctx, call)
 	}))
 	healthServer = health.NewServer()
 	healthServer.SetServingStatus("known", healthpb.HealthCheckResponse_SERVING)
@@ -58,8 +58,8 @@ func grpcContext(t *testing.T) context.Context {
 	return ctx
 }
 
-func grpcRequest(target, method, body string) model.Request {
-	return model.Request{Protocol: "grpc", URL: target, Method: method, Body: body}
+func grpcRequest(target, method, body string) request.Request {
+	return request.Request{Protocol: "grpc", URL: target, Method: method, Body: body}
 }
 
 func TestListGRPCMethodsReadsTheServersReflection(t *testing.T) {
@@ -132,9 +132,9 @@ func TestGRPCBadJSONInputIsAnErrorResponse(t *testing.T) {
 
 func TestGRPCSendsHeadersAsMetadata(t *testing.T) {
 	target, seen := grpcStub(t)
-	request := grpcRequest(target, "grpc.health.v1.Health/Check", `{}`)
-	request.Headers = []model.KV{{Name: "X-Trace", Value: "abc", Enabled: true}, {Name: "X-Off", Value: "no"}}
-	if _, err := (GRPC{}).Send(grpcContext(t), request); err != nil {
+	call := grpcRequest(target, "grpc.health.v1.Health/Check", `{}`)
+	call.Headers = []request.KV{{Name: "X-Trace", Value: "abc", Enabled: true}, {Name: "X-Off", Value: "no"}}
+	if _, err := (GRPC{}).Send(grpcContext(t), call); err != nil {
 		t.Fatal(err)
 	}
 	select {
@@ -157,8 +157,8 @@ func TestGRPCNothingListeningIsAnErrorResponse(t *testing.T) {
 	}
 	target := "grpc://" + listener.Addr().String()
 	_ = listener.Close()
-	request := grpcRequest(target, "grpc.health.v1.Health/Check", `{}`)
-	response, err := GRPC{}.Send(grpcContext(t), request)
+	call := grpcRequest(target, "grpc.health.v1.Health/Check", `{}`)
+	response, err := GRPC{}.Send(grpcContext(t), call)
 	if err != nil {
 		t.Fatal(err)
 	}

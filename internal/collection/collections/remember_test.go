@@ -4,14 +4,14 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 )
 
 // withEnvs is a collection with environments "dev" and "prod".
-func withEnvs(name string) *model.Collection {
+func withEnvs(name string) *request.Collection {
 	col := newCollection(name)
-	col.Envs = []model.Environment{{Name: "dev"}, {Name: "prod"}}
+	col.Envs = []request.Environment{{Name: "dev"}, {Name: "prod"}}
 	return col
 }
 

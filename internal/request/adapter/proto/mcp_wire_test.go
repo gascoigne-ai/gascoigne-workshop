@@ -11,8 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // wireServer is an MCP server over HTTP that records the raw bytes of
@@ -27,11 +26,11 @@ type wireServer struct {
 func newWireServer(t *testing.T) *wireServer {
 	t.Helper()
 	server := &wireServer{}
-	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		if request.Method != http.MethodPost {
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
+		if call.Method != http.MethodPost {
 			return
 		}
-		raw, _ := io.ReadAll(request.Body)
+		raw, _ := io.ReadAll(call.Body)
 		server.mu.Lock()
 		server.body = append(server.body, string(raw))
 		server.mu.Unlock()
@@ -75,15 +74,15 @@ func (server *wireServer) waitForBody(t *testing.T, want string) {
 // The messages the client writes are pinned byte for byte: servers and
 // recorded logs depend on them.
 func TestMCPWireBytesOfTheClientsMessages(t *testing.T) {
-	decline := func(context.Context, port.SamplingRequest) (port.SamplingResult, bool) {
-		return port.SamplingResult{}, false
+	decline := func(context.Context, request.SamplingRequest) (request.SamplingResult, bool) {
+		return request.SamplingResult{}, false
 	}
-	answer := func(context.Context, port.SamplingRequest) (port.SamplingResult, bool) {
-		return port.SamplingResult{Text: "Hello!", Model: "the user"}, true
+	answer := func(context.Context, request.SamplingRequest) (request.SamplingResult, bool) {
+		return request.SamplingResult{Text: "Hello!", Model: "the user"}, true
 	}
 	tests := []struct {
 		name    string
-		sampler port.Sampler
+		sampler request.Sampler
 		want    []string
 	}{
 		{"no sampler", nil, []string{
@@ -104,7 +103,7 @@ func TestMCPWireBytesOfTheClientsMessages(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			server := newWireServer(t)
-			session, err := MCP{Sampler: tt.sampler}.Connect(context.Background(), model.Request{URL: server.url})
+			session, err := MCP{Sampler: tt.sampler}.Connect(context.Background(), request.Request{URL: server.url})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -119,7 +118,7 @@ func TestMCPWireBytesOfTheClientsMessages(t *testing.T) {
 // Send is the one-shot form: it connects and returns the tools/list result.
 func TestMCPSendOneShotReturnsTheToolsListResult(t *testing.T) {
 	server := newWireServer(t)
-	response, err := MCP{}.Send(context.Background(), model.Request{URL: server.url})
+	response, err := MCP{}.Send(context.Background(), request.Request{URL: server.url})
 	if err != nil || response.Err != "" {
 		t.Fatalf("err = %v, response.Err = %q", err, response.Err)
 	}

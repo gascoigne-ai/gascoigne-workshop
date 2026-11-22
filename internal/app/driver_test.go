@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/folders"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/tabs"
@@ -65,7 +65,7 @@ func TestDriverActionsThatCannotApplyReturnTheirMessage(t *testing.T) {
 		// A body type without a text editor (none, file, form...) would not
 		// show the typed text.
 		{"typing a body without a text editor", func(driver *Driver) error {
-			if err := driver.ChooseBodyType(string(model.BodyFile)); err != nil {
+			if err := driver.ChooseBodyType(string(request.BodyFile)); err != nil {
 				return err
 			}
 			return driver.TypeBody("x")
@@ -143,8 +143,8 @@ func TestDriverActionsApply(t *testing.T) {
 				t.Errorf("response pane %q, want Tests", got)
 			}
 		}},
-		{"choose the file body type", Options{}, func(driver *Driver) error { return driver.ChooseBodyType(string(model.BodyFile)) }, bodyTypeIs(model.BodyFile)},
-		{"choose the graphql body type", Options{}, func(driver *Driver) error { return driver.ChooseBodyType(string(model.BodyGraphQL)) }, bodyTypeIs(model.BodyGraphQL)},
+		{"choose the file body type", Options{}, func(driver *Driver) error { return driver.ChooseBodyType(string(request.BodyFile)) }, bodyTypeIs(request.BodyFile)},
+		{"choose the graphql body type", Options{}, func(driver *Driver) error { return driver.ChooseBodyType(string(request.BodyGraphQL)) }, bodyTypeIs(request.BodyGraphQL)},
 		{"wrap the response and the body", Options{}, func(driver *Driver) error {
 			if err := driver.OpenRequest("Echo"); err != nil {
 				return err
@@ -199,7 +199,7 @@ func requestPaneIsSettings(t *testing.T, a *App) {
 
 // Choosing a body type comes from no input, so the tab must be marked as
 // changed through the stale mark.
-func bodyTypeIs(want model.BodyType) func(t *testing.T, a *App) {
+func bodyTypeIs(want request.BodyType) func(t *testing.T, a *App) {
 	return func(t *testing.T, a *App) {
 		if got := a.cur().Req.BodyType; got != want {
 			t.Errorf("body type %q, want %q", got, want)
@@ -268,7 +268,7 @@ func TestDriverOpensEveryRequestInATab(t *testing.T) {
 	a := driverApp(t, Options{})
 	a.Driver().OpenAllRequests()
 	var want []string
-	walkRequests(&a.col().Folder, "", func(_ string, request *model.Request) { want = append(want, request.Name) })
+	walkRequests(&a.col().Folder, "", func(_ string, call *request.Request) { want = append(want, call.Name) })
 	var got []string
 	for _, tab := range a.openTabs() {
 		got = append(got, tab.Req.Name)
@@ -300,7 +300,7 @@ func TestDriverTypesIntoTheURL(t *testing.T) {
 func TestDriverTypesTheBody(t *testing.T) {
 	const typed = "{\n  \"note\": \"typed\"\n}"
 	a := driverApp(t, Options{})
-	if err := a.Driver().ChooseBodyType(string(model.BodyJSON)); err != nil {
+	if err := a.Driver().ChooseBodyType(string(request.BodyJSON)); err != nil {
 		t.Fatal(err)
 	}
 	if err := a.Driver().TypeBody(typed); err != nil {
@@ -389,7 +389,7 @@ func TestDriverLeavesABareActionRecording(t *testing.T) {
 func TestAnAnsweredSendIsTheLatestSendOfATab(t *testing.T) {
 	a := driverApp(t, Options{})
 	tab := a.cur()
-	tab.Resp = &model.Response{Status: 200}
+	tab.Resp = &request.Response{Status: 200}
 	tab.BeginSend()
 	if answered(tab) {
 		t.Fatal("a tab still sending is not answered by the response of its earlier send")
@@ -453,9 +453,9 @@ func TestDriverSendOnASocketIsAnsweredByAFailedConnect(t *testing.T) {
 // back for its outcome.
 func TestDriverSendWithoutWaitingCapturesTheRequestInFlight(t *testing.T) {
 	release := make(chan struct{})
-	srv := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, request *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, call *http.Request) {
 		select { // never answers: the request must still be running
-		case <-request.Context().Done():
+		case <-call.Context().Done():
 		case <-release:
 		}
 	}))
@@ -532,7 +532,7 @@ func TestDriverOpensTheFormOfTheNamedTool(t *testing.T) {
 	if opened, err := a.Driver().OpenToolForm("search"); opened || err != nil || a.dialog != nil {
 		t.Fatalf("opened %v err %v dialog %+v before the server announced a tool", opened, err, a.dialog)
 	}
-	a.cur().Tools = []model.MCPTool{{Name: "ping"}, searchTool()}
+	a.cur().Tools = []request.MCPTool{{Name: "ping"}, searchTool()}
 	if opened, err := a.Driver().OpenToolForm("nope"); opened || err == nil {
 		t.Fatalf("opened %v err %v, want an error for a tool the server did not announce", opened, err)
 	}
@@ -551,7 +551,7 @@ func TestDriverIsNotSettledWhileTheProtoFilesAreRead(t *testing.T) {
 	a := driverApp(t, Options{})
 	tab := a.cur()
 	tab.Req.Protocol = "grpc"
-	tab.Req.Proto = model.ProtoSource{Files: []string{filepath.Join(t.TempDir(), "gone.proto")}}
+	tab.Req.Proto = request.ProtoSource{Files: []string{filepath.Join(t.TempDir(), "gone.proto")}}
 	tab.paneTab = paneIndex(t, requestPanesFor(tab), "Proto")
 	tab.proto.check = protoCheck{running: true}
 	if a.Driver().Settled() {

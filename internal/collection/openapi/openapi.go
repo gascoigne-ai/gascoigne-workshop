@@ -13,7 +13,7 @@ import (
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/miniyaml"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // BaseURLVar is the collection variable the imported URLs start with.
@@ -21,7 +21,7 @@ const BaseURLVar = "baseUrl"
 
 // Result is what an import produces.
 type Result struct {
-	Folder  *model.Folder
+	Folder  *request.Folder
 	BaseURL string // the first server of the document, "" when it names none
 	// Warnings name path items left out because they are not objects; an
 	// "x-" extension is not one. They never fail the import.
@@ -39,19 +39,19 @@ type doc struct {
 	} `json:"servers"`
 	Paths      map[string]json.RawMessage `json:"paths"`
 	Components struct {
-		Schemas    map[string]model.JSONSchema `json:"schemas"`
-		Parameters map[string]param            `json:"parameters"`
-		Bodies     map[string]requestBody      `json:"requestBodies"`
+		Schemas    map[string]request.JSONSchema `json:"schemas"`
+		Parameters map[string]param              `json:"parameters"`
+		Bodies     map[string]requestBody        `json:"requestBodies"`
 	} `json:"components"`
 }
 
 type param struct {
-	Ref      string           `json:"$ref"`
-	Name     string           `json:"name"`
-	In       string           `json:"in"`
-	Required bool             `json:"required"`
-	Schema   model.JSONSchema `json:"schema"`
-	Example  model.JSONValue  `json:"example"`
+	Ref      string             `json:"$ref"`
+	Name     string             `json:"name"`
+	In       string             `json:"in"`
+	Required bool               `json:"required"`
+	Schema   request.JSONSchema `json:"schema"`
+	Example  request.JSONValue  `json:"example"`
 }
 
 // requestBody is a body description; Ref points into
@@ -59,8 +59,8 @@ type param struct {
 type requestBody struct {
 	Ref     string `json:"$ref"`
 	Content map[string]struct {
-		Schema  model.JSONSchema `json:"schema"`
-		Example model.JSONValue  `json:"example"`
+		Schema  request.JSONSchema `json:"schema"`
+		Example request.JSONValue  `json:"example"`
 	} `json:"content"`
 }
 
@@ -94,8 +94,8 @@ func Parse(data []byte) (Result, error) {
 	if title == "" {
 		title = "API"
 	}
-	root := &model.Folder{Name: title}
-	byTag := map[string]*model.Folder{}
+	root := &request.Folder{Name: title}
+	byTag := map[string]*request.Folder{}
 	paths := slices.Sorted(maps.Keys(d.Paths))
 	var skipped, warnings []string
 	for _, path := range paths {
@@ -178,18 +178,18 @@ const maxRefDepth = 6
 // resolveRefs follows $ref into components.schemas, and the same inside
 // properties. A reference outside the document, or to a missing schema, is
 // the zero schema.
-func (d *doc) resolveRefs(schema model.JSONSchema, depth int) model.JSONSchema {
+func (d *doc) resolveRefs(schema request.JSONSchema, depth int) request.JSONSchema {
 	if depth > maxRefDepth {
 		return schema
 	}
 	if schema.Ref != "" {
 		name, local := strings.CutPrefix(schema.Ref, "#/components/schemas/")
 		if !local {
-			return model.JSONSchema{}
+			return request.JSONSchema{}
 		}
 		return d.resolveRefs(d.Components.Schemas[name], depth+1)
 	}
-	properties := make([]model.SchemaProperty, len(schema.Properties))
+	properties := make([]request.SchemaProperty, len(schema.Properties))
 	for i, property := range schema.Properties {
 		properties[i] = property
 		properties[i].Schema = d.resolveRefs(property.Schema, depth+1)
@@ -198,7 +198,7 @@ func (d *doc) resolveRefs(schema model.JSONSchema, depth int) model.JSONSchema {
 	return schema
 }
 
-func buildRequest(spec *doc, method, path string, op operation, shared []param) model.Request {
+func buildRequest(spec *doc, method, path string, op operation, shared []param) request.Request {
 	name := op.Summary
 	if name == "" {
 		name = op.OperationID
@@ -206,30 +206,30 @@ func buildRequest(spec *doc, method, path string, op operation, shared []param) 
 	if name == "" {
 		name = strings.ToUpper(method) + " " + path
 	}
-	req := model.Request{Name: name, Protocol: model.ProtocolREST, Method: strings.ToUpper(method), BodyType: model.BodyNone}
+	req := request.Request{Name: name, Protocol: request.ProtocolREST, Method: strings.ToUpper(method), BodyType: request.BodyNone}
 	url := "{{" + BaseURLVar + "}}" + pathVars(path)
-	var query []model.KV
+	var query []request.KV
 	for _, raw := range append(append([]param{}, shared...), op.Parameters...) {
 		p := spec.resolve(raw)
 		value := paramValue(p)
 		switch p.In {
 		case "query":
-			query = append(query, model.KV{Name: p.Name, Value: value, Enabled: p.Required || value != ""})
+			query = append(query, request.KV{Name: p.Name, Value: value, Enabled: p.Required || value != ""})
 		case "header":
-			req.Headers = append(req.Headers, model.KV{Name: p.Name, Value: value, Enabled: p.Required})
+			req.Headers = append(req.Headers, request.KV{Name: p.Name, Value: value, Enabled: p.Required})
 		}
 	}
 	req.Params = query
-	req.URL = model.WithParams(url, req.Params)
+	req.URL = request.WithParams(url, req.Params)
 	if op.RequestBody != nil {
 		body := spec.resolveBody(*op.RequestBody)
 		if mt, ok := body.Content["application/json"]; ok {
-			req.BodyType = model.BodyJSON
+			req.BodyType = request.BodyJSON
 			switch {
 			case hasValue(mt.Example):
 				req.Body = indent(string(mt.Example))
 			case mt.Schema.Type != "" || mt.Schema.Ref != "":
-				req.Body = indent(model.Skeleton(spec.resolveRefs(mt.Schema, 0)))
+				req.Body = indent(request.Skeleton(spec.resolveRefs(mt.Schema, 0)))
 			default:
 				req.Body = "{}"
 			}
@@ -269,7 +269,7 @@ func paramValue(parameter param) string {
 }
 
 // hasValue is false for an absent value and for null.
-func hasValue(value model.JSONValue) bool {
+func hasValue(value request.JSONValue) bool {
 	return len(value) > 0 && string(value) != "null"
 }
 

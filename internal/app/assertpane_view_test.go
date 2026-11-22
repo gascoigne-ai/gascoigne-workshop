@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/assert"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -108,7 +108,7 @@ func TestTheAssertionsHelpLeavesTheEditorMostOfTheNarrowPane(t *testing.T) {
 }
 
 // pinnedResponse is the response the pinned results are checked against.
-var pinnedResponse = &model.Response{Status: 200, StatusText: "OK", Body: []byte(`{"items":[{"name":"a"}]}`)}
+var pinnedResponse = &request.Response{Status: 200, StatusText: "OK", Body: []byte(`{"items":[{"name":"a"}]}`)}
 
 // resultsPaneStates are the looks of the response's Tests pane: no
 // assertions, all passed, and passes mixed with failures and a line that

@@ -11,7 +11,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/transfer"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
@@ -31,25 +31,25 @@ func (host *fakeHost) Dismiss()                       { host.dismissed++ }
 // world is two collections: src holds the request x and the folder dir with
 // the folder sub; dst holds the folder folder.
 type world struct {
-	src, dst    *model.Collection
-	x           *model.Request
-	dir, sub    *model.Folder
-	folder      *model.Folder
+	src, dst    *request.Collection
+	x           *request.Request
+	dir, sub    *request.Folder
+	folder      *request.Folder
 	destination []transfer.Destination
 }
 
-func newWorld(node func(fixture world) model.Node, mode transfer.Mode) (world, *Picker) {
-	src := &model.Collection{Folder: model.Folder{Name: "Source"}}
-	x := src.AddRequest(model.Request{Name: "x"})
+func newWorld(node func(fixture world) request.Node, mode transfer.Mode) (world, *Picker) {
+	src := &request.Collection{Folder: request.Folder{Name: "Source"}}
+	x := src.AddRequest(request.Request{Name: "x"})
 	dir := src.AddFolder("dir")
 	sub := dir.AddFolder("sub")
-	dst := &model.Collection{Folder: model.Folder{Name: "Target"}}
+	dst := &request.Collection{Folder: request.Folder{Name: "Target"}}
 	folder := dst.AddFolder("folder")
 	set := collections.Update(collections.Update(collections.Set{}, collections.Open{Collection: src}), collections.Open{Collection: dst})
 	fixture := world{src: src, dst: dst, x: x, dir: dir, sub: sub, folder: folder}
 	chosen := node(fixture)
 	fixture.destination = transfer.Destinations(set, chosen, mode)
-	stripe := func(col *model.Collection) core.Token {
+	stripe := func(col *request.Collection) core.Token {
 		if col == src {
 			return "collection.1"
 		}
@@ -58,8 +58,8 @@ func newWorld(node func(fixture world) model.Node, mode transfer.Mode) (world, *
 	return fixture, New(chosen, mode, fixture.destination, stripe)
 }
 
-func requestNode(fixture world) model.Node { return model.Of(fixture.x) }
-func folderNode(fixture world) model.Node  { return model.Of(fixture.dir) }
+func requestNode(fixture world) request.Node { return request.Of(fixture.x) }
+func folderNode(fixture world) request.Node  { return request.Of(fixture.dir) }
 
 func newCtx(t *testing.T) *core.Ctx {
 	t.Helper()
@@ -254,7 +254,7 @@ func TestTheTitleNamesTheModeAndTheNode(t *testing.T) {
 func TestThePickerLaysOutAsPinned(t *testing.T) {
 	cases := []struct {
 		name    string
-		node    func(world) model.Node
+		node    func(world) request.Node
 		mode    transfer.Mode
 		select_ int
 	}{

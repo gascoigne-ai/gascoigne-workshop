@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
@@ -28,7 +28,7 @@ func graphQLTab(t *testing.T, app *App, url string) *reqTab {
 	t.Helper()
 	tab := app.cur()
 	tab.Req.URL, tab.Req.Method = url, "POST"
-	app.setBodyType(tab, model.BodyGraphQL)
+	app.setBodyType(tab, request.BodyGraphQL)
 	return tab
 }
 

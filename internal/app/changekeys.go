@@ -2,7 +2,7 @@ package app
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/tree"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // changeKeys caches the comparable forms (JSON) of the collections and of
@@ -12,14 +12,14 @@ import (
 // a window change could have changed something. Code that saves, loads or
 // compares right after changing things builds a fresh one.
 type changeKeys struct {
-	collections  map[*model.Collection]string // by open collection
+	collections  map[*request.Collection]string // by open collection
 	state        string
 	stale        bool // a rebuild is due: something may have changed since the last one
 	built        bool
-	collectionOf func(model.Collection) string // tree.Key; a field so a test can count the builds
-	dirtyOf      func(*reqTab) bool            // dirty; a field so a test can count the comparisons
-	dirty        map[*reqTab]bool              // which open tabs differ from their saved copy
-	geometry     [4]int                        // window size and position at the last frame
+	collectionOf func(request.Collection) string // tree.Key; a field so a test can count the builds
+	dirtyOf      func(*reqTab) bool              // dirty; a field so a test can count the comparisons
+	dirty        map[*reqTab]bool                // which open tabs differ from their saved copy
+	geometry     [4]int                          // window size and position at the last frame
 }
 
 // markStale says this frame may have changed the collection or the state.
@@ -27,7 +27,7 @@ func (a *App) markStale() { a.keys.stale = true }
 
 // collectionKey is the comparable form of col, as of the last frame that
 // could have changed it.
-func (a *App) collectionKey(col *model.Collection) string {
+func (a *App) collectionKey(col *request.Collection) string {
 	if a.keys.stale || !a.keys.built {
 		a.freshKeys()
 	}
@@ -52,7 +52,7 @@ func (a *App) freshKeys() {
 	if build == nil {
 		build = tree.Key
 	}
-	a.keys.collections = map[*model.Collection]string{}
+	a.keys.collections = map[*request.Collection]string{}
 	for _, entry := range a.open.Entries {
 		a.keys.collections[entry.Collection] = build(*entry.Collection)
 	}
@@ -80,7 +80,7 @@ func (a *App) tabDirty(tab *reqTab) bool {
 
 // collectionKeyNow is a key of col built right now, for code that has
 // just changed it and compares or records it at once.
-func (a *App) collectionKeyNow(col *model.Collection) string {
+func (a *App) collectionKeyNow(col *request.Collection) string {
 	a.freshKeys()
 	if key, ok := a.keys.collections[col]; ok {
 		return key

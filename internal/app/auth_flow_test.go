@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -21,11 +21,11 @@ func recordServer(t *testing.T) (*httptest.Server, func() recorded) {
 	t.Helper()
 	var mu sync.Mutex
 	var last recorded
-	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
 		mu.Lock()
 		defer mu.Unlock()
-		last.header, last.query = request.Header.Clone(), request.URL.RawQuery
-		last.user, last.pass, last.hasAuth = request.BasicAuth()
+		last.header, last.query = call.Header.Clone(), call.URL.RawQuery
+		last.user, last.pass, last.hasAuth = call.BasicAuth()
 	}))
 	t.Cleanup(srv.Close)
 	return srv, func() recorded { mu.Lock(); defer mu.Unlock(); return last }
@@ -38,7 +38,7 @@ func TestBearerAuthSendsTheToken(t *testing.T) {
 	click(a, authFieldX, authRow1Y)
 	a.typeText("abc")
 	req := a.cur().Req
-	if req.Auth.Type != model.AuthBearer || req.Auth.Token != "abc" {
+	if req.Auth.Type != request.AuthBearer || req.Auth.Token != "abc" {
 		t.Fatalf("auth = %+v", req.Auth)
 	}
 	if len(req.Headers) != 0 {
@@ -82,7 +82,7 @@ func TestAPIKeyGoesInTheHeaderOrTheQuery(t *testing.T) {
 	}
 
 	click(a, 516, authRow3Y) // the Query choice
-	if a.cur().Req.Auth.KeyIn != model.KeyInQuery {
+	if a.cur().Req.Auth.KeyIn != request.KeyInQuery {
 		t.Fatalf("KeyIn = %q", a.cur().Req.Auth.KeyIn)
 	}
 	sendAndWait(t, a, srv.URL)
@@ -111,8 +111,8 @@ func TestSecretFieldsAreMaskedUntilShown(t *testing.T) {
 func TestVariablesInCredentialsAndHeadersAreExpandedAtSend(t *testing.T) {
 	srv, last := recordServer(t)
 	a := openAuthPane(t)
-	a.col().Vars = append(a.col().Vars, model.KV{Name: "tok", Value: "sekret", Enabled: true})
-	a.cur().Req.Headers = []model.KV{{Name: "X-Token", Value: "{{tok}}", Enabled: true}}
+	a.col().Vars = append(a.col().Vars, request.KV{Name: "tok", Value: "sekret", Enabled: true})
+	a.cur().Req.Headers = []request.KV{{Name: "X-Token", Value: "{{tok}}", Enabled: true}}
 	click(a, authBearerX, chipsY)
 	click(a, authFieldX, authRow1Y)
 	a.typeText("{{tok}}")

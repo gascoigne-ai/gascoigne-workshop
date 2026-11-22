@@ -11,14 +11,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 func TestMCPAnswersRequestsTheServerSends(t *testing.T) {
 	var mu sync.Mutex
 	replies := map[string]map[string]any{}
-	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		body, _ := io.ReadAll(request.Body)
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
+		body, _ := io.ReadAll(call.Body)
 		var m map[string]any
 		json.Unmarshal(body, &m)
 		if m["method"] == nil && m["id"] != nil { // an answer to one of the server's requests
@@ -44,7 +44,7 @@ func TestMCPAnswersRequestsTheServerSends(t *testing.T) {
 		}
 	}))
 	defer srv.Close()
-	s, err := MCP{}.Connect(context.Background(), model.Request{URL: srv.URL})
+	s, err := MCP{}.Connect(context.Background(), request.Request{URL: srv.URL})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -4,17 +4,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 var base = time.Date(2026, 11, 10, 9, 0, 0, 0, time.UTC)
 
-func response(status int) *model.Response { return &model.Response{Status: status} }
+func response(status int) *request.Response { return &request.Response{Status: status} }
 
 func TestRememberKeepsNewestFirstAndSkipsFailures(t *testing.T) {
 	tab := New(newRequest())
 	tab.Remember(nil, base)
-	tab.Remember(&model.Response{Err: "boom"}, base)
+	tab.Remember(&request.Response{Err: "boom"}, base)
 	if len(tab.Earlier) != 0 {
 		t.Fatalf("nothing to keep, got %d", len(tab.Earlier))
 	}
@@ -49,7 +49,7 @@ func TestRecallSwapsTheShownResponseIntoItsPlace(t *testing.T) {
 
 func TestRecallWithoutAGoodShownResponseDropsTheEntry(t *testing.T) {
 	tab := New(newRequest())
-	tab.Resp = &model.Response{Err: "boom"}
+	tab.Resp = &request.Response{Err: "boom"}
 	tab.Earlier = []PastResponse{{Resp: response(301)}, {Resp: response(302)}}
 	tab.Recall(0, base)
 	if tab.Resp.Status != 301 || len(tab.Earlier) != 1 || tab.Earlier[0].Resp.Status != 302 {

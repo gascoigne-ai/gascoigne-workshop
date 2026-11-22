@@ -5,12 +5,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 func TestTimelineListsOnlyThePhasesThatHappened(t *testing.T) {
-	r := &model.Response{Duration: 1200 * time.Millisecond, Size: 2048,
-		Timing: model.Timing{Connect: 30 * time.Millisecond, FirstByte: 900 * time.Millisecond, Transfer: 100 * time.Millisecond}}
+	r := &request.Response{Duration: 1200 * time.Millisecond, Size: 2048,
+		Timing: request.Timing{Connect: 30 * time.Millisecond, FirstByte: 900 * time.Millisecond, Transfer: 100 * time.Millisecond}}
 	got := Timeline(r)
 	for _, want := range []string{"Total      1.2s", "Connect    30ms", "First byte 900ms", "Transfer   100ms", "Size       2.00KB"} {
 		if !strings.Contains(got, want) {

@@ -5,7 +5,7 @@ package response
 import (
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // SentLimit is how many sent requests the workspace log keeps.
@@ -20,7 +20,7 @@ type Sent struct {
 	// which then name the first.
 	Collection string
 	Path       string // the request's path in the collection tree
-	Protocol   model.Protocol
+	Protocol   request.Protocol
 	Method     string
 	URL        string
 	Status     int // 0 when no response came

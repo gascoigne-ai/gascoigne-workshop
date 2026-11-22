@@ -3,7 +3,7 @@ package response
 import (
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // Entry is one remembered response.
@@ -12,7 +12,7 @@ type Entry struct {
 	Status     int
 	StatusText string
 	Duration   time.Duration
-	Headers    []model.KV
+	Headers    []request.KV
 	Body       []byte
 }
 

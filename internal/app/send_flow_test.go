@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -53,7 +53,7 @@ func TestSwitchingToRESTRestoresAMethod(t *testing.T) {
 // test failed when the machine was busy.
 func TestSendShowsTheResponse(t *testing.T) {
 	release := make(chan struct{})
-	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
 		<-release
 		io.WriteString(writer, `{"ok":true}`)
 	}))
@@ -99,7 +99,7 @@ func TestEnterInTheURLFieldSends(t *testing.T) {
 func TestSendingTwiceWhileRunningStartsOneRequest(t *testing.T) {
 	hits := make(chan struct{}, 4)
 	release := make(chan struct{})
-	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
 		hits <- struct{}{}
 		<-release
 	}))
@@ -226,11 +226,11 @@ func TestCtrlEnterSendsTheRequest(t *testing.T) {
 func TestBodyTypeChipsSwitchTheTypeAndKeepTheText(t *testing.T) {
 	a := openBodyPane(t)
 	req := a.cur().Req
-	if req.BodyType != model.BodyNone {
+	if req.BodyType != request.BodyNone {
 		t.Fatalf("a request without a body starts as none, got %q", req.BodyType)
 	}
 	click(a, textChipX, chipsY)
-	if req.BodyType != model.BodyText {
+	if req.BodyType != request.BodyText {
 		t.Fatalf("type = %q", req.BodyType)
 	}
 	click(a, editorX, editorY)
@@ -241,7 +241,7 @@ func TestBodyTypeChipsSwitchTheTypeAndKeepTheText(t *testing.T) {
 	if req.Body != "hello" {
 		t.Fatalf("the text must survive switching types, Body = %q", req.Body)
 	}
-	for chip, want := range map[int]model.BodyType{noneChipX: model.BodyNone, multiChipX: model.BodyMultipart, formChipX: model.BodyForm} {
+	for chip, want := range map[int]request.BodyType{noneChipX: request.BodyNone, multiChipX: request.BodyMultipart, formChipX: request.BodyForm} {
 		click(a, chip, chipsY)
 		if req.BodyType != want {
 			t.Errorf("chip at %d gave %q, want %q", chip, req.BodyType, want)
@@ -316,15 +316,15 @@ func TestFormBodyFieldsAreEditable(t *testing.T) {
 
 func TestSendingAFormBodyUsesTheRows(t *testing.T) {
 	got := make(chan string, 1)
-	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		b, _ := io.ReadAll(request.Body)
-		got <- request.Header.Get("Content-Type") + "|" + string(b)
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
+		b, _ := io.ReadAll(call.Body)
+		got <- call.Header.Get("Content-Type") + "|" + string(b)
 	}))
 	defer srv.Close()
 	a := testApp(t)
 	tab := a.cur()
-	tab.Req.Method, tab.Req.BodyType = "POST", model.BodyForm
-	tab.Req.Form = []model.KV{{Name: "q", Value: "go lang", Enabled: true}}
+	tab.Req.Method, tab.Req.BodyType = "POST", request.BodyForm
+	tab.Req.Form = []request.KV{{Name: "q", Value: "go lang", Enabled: true}}
 	pointTabAt(tab, srv.URL)
 	a.send(tab)
 	waitForResponse(t, a, tab)
@@ -451,7 +451,7 @@ func TestTimeoutFallsBackToTheSettingsDefault(t *testing.T) {
 	}
 	for _, tt := range tests {
 		a.settings.TimeoutSec = tt.setting
-		if got := a.timeoutFor(model.Request{TimeoutSec: tt.req}); got != tt.want {
+		if got := a.timeoutFor(request.Request{TimeoutSec: tt.req}); got != tt.want {
 			t.Errorf("%s: got %v, want %v", tt.name, got, tt.want)
 		}
 	}
@@ -516,7 +516,7 @@ func TestRawAndPrettyToggleTheResponseView(t *testing.T) {
 }
 
 func TestBinaryBodiesAreNotShownAsText(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
 		writer.Write([]byte{0x89, 'P', 'N', 'G', 0, 1, 2, 0xff})
 	}))
 	defer srv.Close()
@@ -548,7 +548,7 @@ func TestCopyBodyAndCopyAsCurl(t *testing.T) {
 
 func TestCurlCopyExpandsVariables(t *testing.T) {
 	a := testApp(t) // the sample request uses {{baseUrl}}
-	a.cur().Resp = &model.Response{Status: 200, Body: []byte("{}")}
+	a.cur().Resp = &request.Response{Status: 200, Body: []byte("{}")}
 	a.cur().view.SetLines(respview.CodeLines([]byte("{}")))
 	clip := &fakeClip{}
 	a.ctx.Clipboard = clip

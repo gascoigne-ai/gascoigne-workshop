@@ -3,21 +3,21 @@ package tabs
 import (
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
-func newRequest() *model.Request {
-	return &model.Request{Name: "R", Protocol: "rest", Method: "GET", URL: "http://x"}
+func newRequest() *request.Request {
+	return &request.Request{Name: "R", Protocol: "rest", Method: "GET", URL: "http://x"}
 }
 
 func TestNewTabInfersABodyTypeForOldRequests(t *testing.T) {
 	tests := []struct {
 		name string
 		body string
-		want model.BodyType
+		want request.BodyType
 	}{
-		{"no body", "", model.BodyNone},
-		{"a body from before body types is text", "hello", model.BodyText},
+		{"no body", "", request.BodyNone},
+		{"a body from before body types is text", "hello", request.BodyText},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -55,7 +55,7 @@ func TestOnlyTheLatestSendIsAccepted(t *testing.T) {
 		t.Fatal("a send while sending must not start another")
 	}
 	tab.Cancel()
-	if tab.Sending() || tab.Resp == nil || tab.Resp.Err != model.ErrCancelled {
+	if tab.Sending() || tab.Resp == nil || tab.Resp.Err != request.ErrCancelled {
 		t.Fatalf("cancel: sending %v resp %+v", tab.Sending(), tab.Resp)
 	}
 	if tab.Accept(first) {
@@ -139,7 +139,7 @@ func TestAfterMoveFollowsTheActiveTab(t *testing.T) {
 // A gRPC tab can have a unary call in flight and then switch Stream on, so
 // sending and connecting are two machines, not one.
 func TestASendInFlightDoesNotForbidAConnect(t *testing.T) {
-	tab := New(&model.Request{})
+	tab := New(&request.Request{})
 	if _, started := tab.BeginSend(); !started {
 		t.Fatal("send not started")
 	}

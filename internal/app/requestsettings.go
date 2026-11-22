@@ -2,8 +2,8 @@ package app
 
 import (
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/editor"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -29,7 +29,7 @@ func (a *App) settingsPane(_ pane, tab *reqTab, scroll *ScrollState) Node {
 	return settingsPaneTemplate.MustBuild(a.scope(markup.Scope{
 		"scroll":            scroll,
 		"timeout":           &tab.timeout,
-		"timeoutHint":       fmt.Sprintf("blank = default (%d s)", a.timeoutFor(model.Request{})/time.Second),
+		"timeoutHint":       fmt.Sprintf("blank = default (%d s)", a.timeoutFor(request.Request{})/time.Second),
 		"followRedirects":   !tab.Req.NoRedirects,
 		"verifyCertificate": !tab.Req.InsecureTLS,
 		"timeoutEdited":     func() { a.timeoutEdited(tab) },

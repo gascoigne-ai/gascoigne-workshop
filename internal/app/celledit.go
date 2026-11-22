@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
@@ -19,7 +19,7 @@ type cellEdit struct {
 }
 
 // cellText is the text of a cell of rows, "" for the placeholder row.
-func cellText(rows []model.KV, row, col int) string {
+func cellText(rows []request.KV, row, col int) string {
 	if row >= len(rows) {
 		return ""
 	}
@@ -27,7 +27,7 @@ func cellText(rows []model.KV, row, col int) string {
 }
 
 // kvField points at the name, value or description of a row.
-func kvField(kv *model.KV, col int) *string {
+func kvField(kv *request.KV, col int) *string {
 	return [editColumns]*string{&kv.Name, &kv.Value, &kv.Description}[col]
 }
 
@@ -56,13 +56,13 @@ func (a *App) commitEdit() {
 	a.edit = nil
 	a.treeStale = true
 	text := e.field.Text
-	a.applyRows(e.pane, e.tab, func(rows []model.KV) []model.KV {
+	a.applyRows(e.pane, e.tab, func(rows []request.KV) []request.KV {
 		row := e.row
 		if row >= len(rows) { // the placeholder row, or rows deleted since the edit began
 			if text == "" {
 				return rows
 			}
-			rows = append(rows, model.KV{Enabled: true})
+			rows = append(rows, request.KV{Enabled: true})
 			row = len(rows) - 1
 		}
 		*kvField(&rows[row], e.col) = text

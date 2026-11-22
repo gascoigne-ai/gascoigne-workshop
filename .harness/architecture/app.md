@@ -53,10 +53,10 @@ The window is VML views (`window.go`, `sidebar.go`, `requesttabs.go`, `urlbar.go
 
 - `requestPanes`, `connectionRequestPanes`, `grpcRequestPanes` and `responsePanes` list the tabs;
   `paneBuilders` maps a pane kind to its view. A new pane is a row.
-- `protocolViews` has one row per row of `model.Protocols`, in the same order (a test checks it):
+- `protocolViews` has one row per row of `request.Protocols`, in the same order (a test checks it):
   the UI half of a protocol (its panes, its composer, whether settings offer it). The protocol chip
   cycles the offered rows; SSE and gRPC are offered once their `experimental` setting is on.
-- Auth: `authTypes` drives the pane, the stored `model.Auth` and masking. `proto.REST` applies
+- Auth: `authTypes` drives the pane, the stored `request.Auth` and masking. `proto.REST` applies
   credentials after the headers, so they win over a typed `Authorization` header; they never show
   in the Headers table. Secret fields refuse copy and cut.
 - Body: the text and the form rows are kept apart, so switching body type loses nothing.
@@ -100,7 +100,7 @@ The drop outline is the row's `DropBorder` token, empty when not the target.
 - **Toasts** carry a `severity.Level` (`workspace/severity`), mapped once to the toolkit's
   kind; the settings, the sent log and the call trace use the same type. Info fades, errors stay.
 - The settings dialog's System page (`settings/ui/systempage`) reports
-  `port.SystemInfo`.
+  `settings.SystemInfo`.
 
 ### Drawing only when something changed
 

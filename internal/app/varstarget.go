@@ -2,7 +2,7 @@ package app
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/collections"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // varsKind is which variables the Vars pane edits.
@@ -19,22 +19,22 @@ const (
 // varsActive.
 type varsTarget struct {
 	kind       varsKind
-	folder     *model.Folder
-	collection *model.Collection
+	folder     *request.Folder
+	collection *request.Collection
 }
 
-func folderVars(folder *model.Folder) varsTarget {
+func folderVars(folder *request.Folder) varsTarget {
 	return varsTarget{kind: varsFolder, folder: folder}
 }
 
-func collectionVars(col *model.Collection) varsTarget {
+func collectionVars(col *request.Collection) varsTarget {
 	return varsTarget{kind: varsCollection, collection: col}
 }
 
 // rows are the variables to edit; entry is the focused collection, which only
 // an active target looks at. With nothing open they are a scratch list that
 // is kept nowhere.
-func (target varsTarget) rows(entry collections.Entry) *[]model.KV {
+func (target varsTarget) rows(entry collections.Entry) *[]request.KV {
 	switch target.kind {
 	case varsFolder:
 		return &target.folder.Vars
@@ -42,7 +42,7 @@ func (target varsTarget) rows(entry collections.Entry) *[]model.KV {
 		return &target.collection.Vars
 	}
 	if entry.Collection == nil {
-		return &[]model.KV{}
+		return &[]request.KV{}
 	}
 	if env := entry.Environment(); env != nil {
 		return &env.Vars
@@ -51,7 +51,7 @@ func (target varsTarget) rows(entry collections.Entry) *[]model.KV {
 }
 
 // caption names what is edited; env is the active environment, nil for none.
-func (target varsTarget) caption(env *model.Environment) string {
+func (target varsTarget) caption(env *request.Environment) string {
 	switch {
 	case target.kind == varsFolder:
 		return "Folder: " + target.folder.Name
@@ -63,10 +63,10 @@ func (target varsTarget) caption(env *model.Environment) string {
 
 // refersTo reports whether the variables are col's own or those of a folder
 // inside it, so closing col has to reset the target.
-func (target varsTarget) refersTo(col *model.Collection) bool {
+func (target varsTarget) refersTo(col *request.Collection) bool {
 	switch target.kind {
 	case varsFolder:
-		return col.Folder.Contains(model.Node{Dir: target.folder})
+		return col.Folder.Contains(request.Node{Dir: target.folder})
 	case varsCollection:
 		return target.collection == col
 	}

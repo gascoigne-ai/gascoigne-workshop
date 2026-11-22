@@ -4,8 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/textfmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/bus"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/severity"
@@ -41,7 +40,7 @@ type wsMessage interface{ target() wsTarget }
 type (
 	wsOpened struct {
 		wsTarget
-		session reqport.Session
+		session request.Session
 	}
 	wsFailed struct {
 		wsTarget
@@ -49,7 +48,7 @@ type (
 	}
 	wsReceived struct {
 		wsTarget
-		event reqport.Event
+		event request.Event
 	}
 	wsClosed struct{ wsTarget }
 	wsRetry  struct{ wsTarget }
@@ -61,7 +60,7 @@ const defaultRetryDelay = 2 * time.Second
 // isSocket reports whether the tab's protocol keeps a connection open.
 func isSocket(tab *reqTab) bool {
 	connection := tab.Req.Protocol.Info().Connection
-	return connection == model.Always || (connection == model.OnStream && tab.grpcStream)
+	return connection == request.Always || (connection == request.OnStream && tab.grpcStream)
 }
 
 // wsPanes are the panes of a socket's response side.
@@ -101,7 +100,7 @@ func (a *App) connect(tab *reqTab) {
 	a.status = "Connecting to " + tab.Req.URL
 	req := tab.Req.Expanded(a.varsFor(tab.Req))
 	if header := tab.Req.Protocol.Info().ResumeHeader; header != "" && tab.LastEventID != "" { // resume where the stream stopped
-		req.Headers = append(req.Headers, model.KV{Name: header, Value: tab.LastEventID, Enabled: true})
+		req.Headers = append(req.Headers, request.KV{Name: header, Value: tab.LastEventID, Enabled: true})
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), a.timeoutFor(req))
 	tab.wsCancel = cancel
@@ -144,7 +143,7 @@ func (a *App) disconnect(tab *reqTab) {
 	}
 	if abandoned {
 		tab.wsCancel()
-		a.status = model.ErrCancelled
+		a.status = request.ErrCancelled
 	}
 }
 
@@ -290,22 +289,22 @@ func (a *App) scheduleRetry(tab *reqTab) {
 }
 
 // logEvent appends an event to the log, one line per line of its text.
-func (a *App) logEvent(tab *reqTab, event reqport.Event) {
-	if event.Dir == reqport.Info && event.Kind == reqport.KindInitialize {
+func (a *App) logEvent(tab *reqTab, event request.Event) {
+	if event.Dir == request.Info && event.Kind == request.KindInitialize {
 		return
 	}
 	mark, tok := Span{Text: "•", Icon: "dot"}, w.Muted
 	switch event.Dir {
-	case reqport.Sent:
+	case request.Sent:
 		mark, tok = Span{Text: "↑", Icon: "arrow-up"}, w.Info
-	case reqport.Received:
+	case request.Received:
 		mark, tok = Span{Text: "↓", Icon: "arrow-down"}, w.OK
 	}
 	text := event.Text
 	if text == "" && !event.Kind.CarriesPayload() {
 		text = event.Label() // a ping has no payload
 	}
-	if event.Dir == reqport.Info && strings.HasPrefix(event.Text, "Connection lost") {
+	if event.Dir == request.Info && strings.HasPrefix(event.Text, "Connection lost") {
 		tok = w.Error
 	}
 	mark.Style = w.Muted // as the stamp, so the picture is the same as when the mark was a character
@@ -327,8 +326,8 @@ func (a *App) logEvent(tab *reqTab, event reqport.Event) {
 
 // textToken is the color of a log line's text: the direction's own for
 // problems and notes, plain for messages.
-func textToken(direction reqport.Direction, tok w.Token) w.Token {
-	if direction == reqport.Info {
+func textToken(direction request.Direction, tok w.Token) w.Token {
+	if direction == request.Info {
 		return tok
 	}
 	return w.Text
@@ -336,7 +335,7 @@ func textToken(direction reqport.Direction, tok w.Token) w.Token {
 
 // logInfo appends a note of the UI itself to the log.
 func (a *App) logInfo(tab *reqTab, text string, tok w.Token) {
-	a.logEvent(tab, reqport.Event{Time: time.Now(), Dir: reqport.Info, Kind: reqport.KindInfo, Text: text})
+	a.logEvent(tab, request.Event{Time: time.Now(), Dir: request.Info, Kind: request.KindInfo, Text: text})
 	if tok == w.Error { // recolor the line just added
 		last := &tab.wsView.Lines[len(tab.wsView.Lines)-1]
 		last.Spans[1].Style = w.Error
@@ -385,12 +384,12 @@ func composerHint(tab *reqTab, connected bool) string {
 
 // composed is the send of the composer's text, ready to run; a text that
 // cannot be sent (bad hex) is refused here, before anything is sent.
-func composed(session reqport.Session, text string) (queuedSend, error) {
-	binarySender, canBinary := session.(reqport.BinarySender)
+func composed(session request.Session, text string) (queuedSend, error) {
+	binarySender, canBinary := session.(request.BinarySender)
 	if !canBinary {
 		return func(ctx context.Context) error { return session.Send(ctx, text) }, nil
 	}
-	data, binary, err := model.BinaryMessage(text)
+	data, binary, err := request.BinaryMessage(text)
 	if err != nil {
 		return nil, err
 	}
@@ -412,10 +411,10 @@ func (a *App) toolMenu(tab *reqTab) []MenuItem {
 }
 
 // composeCall fills the composer with a call of tool.
-func (a *App) composeCall(tab *reqTab, tool model.MCPTool) {
+func (a *App) composeCall(tab *reqTab, tool request.MCPTool) {
 	args := "{}"
 	if tool.Schema.Type != "" {
-		args = model.Skeleton(tool.Schema)
+		args = request.Skeleton(tool.Schema)
 	}
 	tab.setComposer("call " + tool.Name + " " + args)
 }

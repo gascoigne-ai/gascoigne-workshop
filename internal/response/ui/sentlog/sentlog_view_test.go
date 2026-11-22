@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	core "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
@@ -33,7 +33,7 @@ func newCtx(t *testing.T) *core.Ctx {
 
 // record adds a send of path that ended with status (0 = failed).
 func record(log *Log, host Host, path, method, url string, status int) {
-	log.Record(host, clock, "", path, &model.Request{Protocol: "rest", Method: method, URL: url}, status)
+	log.Record(host, clock, "", path, &request.Request{Protocol: "rest", Method: method, URL: url}, status)
 }
 
 // threeSends is a log with a plain row, a failed one and a long one, oldest

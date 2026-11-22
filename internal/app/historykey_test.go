@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
@@ -33,7 +33,7 @@ func TestHistoryIsKeptPerCollectionAndOldHistoryStaysWithTheFirst(t *testing.T) 
 
 	a.openRequest(betaInner)
 	tab := a.cur()
-	tab.Resp = &model.Response{Status: 200, Body: []byte("beta")}
+	tab.Resp = &request.Response{Status: 200, Body: []byte("beta")}
 	a.saveHistory(tab)
 	a.waitWrites()
 	if got := a.loadHistory(betaInner); len(got) != 1 || got[0].Resp.Status != 200 {

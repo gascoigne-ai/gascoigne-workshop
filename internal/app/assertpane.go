@@ -1,9 +1,9 @@
 package app
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/assert"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/editor"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -89,17 +89,17 @@ func (a *App) resultsPane(_ pane, tab *reqTab, _ *ScrollState) Node {
 
 // setVariable stores a value captured from the response to req in the
 // active environment of req's collection, or in that collection's
-// variables when none is active (model.UpsertVar).
-func (a *App) setVariable(req *model.Request, name, value string) {
+// variables when none is active (request.UpsertVar).
+func (a *App) setVariable(req *request.Request, name, value string) {
 	entry, ok := a.entryFor(req)
 	if !ok {
 		return
 	}
 	if env := entry.Environment(); env != nil {
-		env.Vars = model.UpsertVar(env.Vars, name, value)
+		env.Vars = request.UpsertVar(env.Vars, name, value)
 		return
 	}
-	entry.Collection.Vars = model.UpsertVar(entry.Collection.Vars, name, value)
+	entry.Collection.Vars = request.UpsertVar(entry.Collection.Vars, name, value)
 }
 
 // Templates, parsed once above.

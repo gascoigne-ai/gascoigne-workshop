@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/folders"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -98,7 +98,7 @@ const (
 func openFileBody(t *testing.T) *App {
 	a := openBodyPane(t)
 	t.Cleanup(a.waitWrites)
-	a.setBodyType(a.cur(), model.BodyFile)
+	a.setBodyType(a.cur(), request.BodyFile)
 	a.step(core.Input{})
 	return a
 }

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 func petstore(t *testing.T) Result {
@@ -24,7 +24,7 @@ func petstore(t *testing.T) Result {
 	return res
 }
 
-func find(folder *model.Folder, name string) *model.Request {
+func find(folder *request.Folder, name string) *request.Request {
 	for _, r := range folder.Requests {
 		if r.Name == name {
 			return r
@@ -58,7 +58,7 @@ func TestOperationsKeepMethodURLParametersAndBody(t *testing.T) {
 	pet := petstore(t).Folder.Folders[0]
 
 	add := find(pet, "Add a new pet to the store")
-	if add == nil || add.Method != "POST" || add.URL != "{{baseUrl}}/pet" || add.BodyType != model.BodyJSON {
+	if add == nil || add.Method != "POST" || add.URL != "{{baseUrl}}/pet" || add.BodyType != request.BodyJSON {
 		t.Fatalf("%+v", add)
 	}
 	if want := "{\n  \"name\": \"\",\n  \"photoUrls\": []\n}"; add.Body != want {
@@ -126,10 +126,10 @@ func TestTheYAMLFormOfTheSameDescriptionGivesTheSameCollection(t *testing.T) {
 }
 
 // dump lists a folder as "path: METHOD URL body" lines, to compare two imports.
-func dump(folder *model.Folder) []string {
+func dump(folder *request.Folder) []string {
 	var out []string
-	var walk func(folder *model.Folder, prefix string)
-	walk = func(folder *model.Folder, prefix string) {
+	var walk func(folder *request.Folder, prefix string)
+	walk = func(folder *request.Folder, prefix string) {
 		for _, r := range folder.Requests {
 			out = append(out, prefix+r.Name+": "+r.Method+" "+r.URL+" "+r.Body)
 		}
@@ -188,7 +188,7 @@ func TestASelfReferencingSchemaStaysCheapToExpand(t *testing.T) {
 	}()
 	select {
 	case res := <-done:
-		if r := find(res.Folder, "POST /n"); r == nil || r.BodyType != model.BodyJSON {
+		if r := find(res.Folder, "POST /n"); r == nil || r.BodyType != request.BodyJSON {
 			t.Errorf("request %+v, want a JSON body", r)
 		}
 	case <-time.After(3 * time.Second):
@@ -211,7 +211,7 @@ func TestARequestBodyRefIsResolved(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := find(res.Folder, "Add")
-	if req == nil || req.BodyType != model.BodyJSON || !strings.Contains(req.Body, `"name"`) {
+	if req == nil || req.BodyType != request.BodyJSON || !strings.Contains(req.Body, `"name"`) {
 		t.Fatalf("request %+v, want a JSON body with the Pet skeleton", req)
 	}
 }

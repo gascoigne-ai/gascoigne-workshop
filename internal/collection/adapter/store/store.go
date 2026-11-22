@@ -34,7 +34,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fileversion"
 )
 
@@ -139,7 +139,7 @@ func (s secret) empty() bool {
 	return s.Token == "" && s.Password == "" && s.KeyValue == "" && len(s.Vars) == 0
 }
 
-func toKV(rows []model.KV) []kvFile {
+func toKV(rows []request.KV) []kvFile {
 	var out []kvFile
 	for _, r := range rows {
 		out = append(out, kvFile(r))
@@ -147,10 +147,10 @@ func toKV(rows []model.KV) []kvFile {
 	return out
 }
 
-func fromKV(rows []kvFile) []model.KV {
-	var out []model.KV
+func fromKV(rows []kvFile) []request.KV {
+	var out []request.KV
 	for _, r := range rows {
-		out = append(out, model.KV(r))
+		out = append(out, request.KV(r))
 	}
 	return out
 }
@@ -158,7 +158,7 @@ func fromKV(rows []kvFile) []model.KV {
 // varsToFile is the rows of a collection or folder as saved in its
 // folder.json: the value of a secret variable goes to secrets under
 // key (the file's path) instead.
-func varsToFile(rows []model.KV, key string, secrets map[string]secret) []kvFile {
+func varsToFile(rows []request.KV, key string, secrets map[string]secret) []kvFile {
 	out := toKV(rows)
 	for i, row := range rows {
 		if !row.Secret {
@@ -176,7 +176,7 @@ func varsToFile(rows []model.KV, key string, secrets map[string]secret) []kvFile
 }
 
 // varsFromFile reads rows saved by varsToFile, putting back secret values.
-func varsFromFile(rows []kvFile, sec secret) []model.KV {
+func varsFromFile(rows []kvFile, sec secret) []request.KV {
 	out := fromKV(rows)
 	for i, row := range rows {
 		if value, ok := sec.Vars[row.Name]; row.Secret && ok { // an older file still holds its own value
@@ -220,7 +220,7 @@ func unique(base string, taken map[string]bool) string {
 
 // Save writes c below dir, creating it, and removes the request and
 // folder files of items that no longer exist.
-func (Files) Save(dir string, collection model.Collection) error {
+func (Files) Save(dir string, collection request.Collection) error {
 	secrets := map[string]secret{}
 	meta := folderMeta{Version: folderVersion, Name: collection.Name, Vars: varsToFile(collection.Vars, folderFile, secrets)}
 	if err := saveFolder(absoluteDir(dir), dir, "", &collection.Folder, meta, secrets); err != nil {
@@ -236,7 +236,7 @@ func (Files) Save(dir string, collection model.Collection) error {
 }
 
 // saveFolder writes f into dir, which is rel below the collection's root.
-func saveFolder(root, dir, rel string, folder *model.Folder, meta folderMeta, secrets map[string]secret) error {
+func saveFolder(root, dir, rel string, folder *request.Folder, meta folderMeta, secrets map[string]secret) error {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
 	}
@@ -274,7 +274,7 @@ func saveFolder(root, dir, rel string, folder *model.Folder, meta folderMeta, se
 // saveEnvs writes one file per environment under environments/, keeping
 // the values of secret variables out of them. The order of the
 // environments is the order of their file names, so they are numbered.
-func saveEnvs(dir string, envs []model.Environment, secrets map[string]secret) error {
+func saveEnvs(dir string, envs []request.Environment, secrets map[string]secret) error {
 	ed := filepath.Join(dir, envDir)
 	if len(envs) == 0 {
 		return prune(ed, map[string]bool{}, envSuffix)
@@ -296,7 +296,7 @@ func saveEnvs(dir string, envs []model.Environment, secrets map[string]secret) e
 }
 
 // loadEnvs reads the environments in file name order.
-func loadEnvs(dir string, secrets map[string]secret) ([]model.Environment, error) {
+func loadEnvs(dir string, secrets map[string]secret) ([]request.Environment, error) {
 	ed := filepath.Join(dir, envDir)
 	entries, err := os.ReadDir(ed)
 	if errors.Is(err, fs.ErrNotExist) {
@@ -305,7 +305,7 @@ func loadEnvs(dir string, secrets map[string]secret) ([]model.Environment, error
 	if err != nil {
 		return nil, err
 	}
-	var envs []model.Environment
+	var envs []request.Environment
 	for _, e := range entries {
 		if e.IsDir() || !strings.HasSuffix(e.Name(), envSuffix) {
 			continue
@@ -314,7 +314,7 @@ func loadEnvs(dir string, secrets map[string]secret) ([]model.Environment, error
 		if err != nil {
 			return nil, err
 		}
-		env := model.Environment{Name: ef.Name, Vars: varsFromFile(ef.Vars, secrets[path.Join(envDir, e.Name())])}
+		env := request.Environment{Name: ef.Name, Vars: varsFromFile(ef.Vars, secrets[path.Join(envDir, e.Name())])}
 		envs = append(envs, env)
 	}
 	return envs, nil
@@ -366,46 +366,46 @@ func absoluteDir(dir string) string {
 
 // requestToFile is the file of r in a collection kept in root; proto paths
 // inside root are saved relative to it.
-func requestToFile(request *model.Request, root string) (requestFile, secret) {
-	proto := request.Proto.Stored(root)
+func requestToFile(call *request.Request, root string) (requestFile, secret) {
+	proto := call.Proto.Stored(root)
 	return requestFile{
-		Version: requestVersion, Name: request.Name, Protocol: string(request.Protocol), Method: request.Method, URL: request.URL,
-		Params: toKV(request.Params), Headers: toKV(request.Headers),
-		BodyType: string(request.BodyType), Body: request.Body, Form: toKV(request.Form),
-		Auth:       authFile{Type: string(request.Auth.Type), User: request.Auth.User, KeyName: request.Auth.KeyName, KeyIn: string(request.Auth.KeyIn)},
-		TimeoutSec: request.TimeoutSec, NoRedirects: request.NoRedirects, InsecureTLS: request.InsecureTLS, GraphQLVars: request.GraphQLVars, Tests: request.Tests,
+		Version: requestVersion, Name: call.Name, Protocol: string(call.Protocol), Method: call.Method, URL: call.URL,
+		Params: toKV(call.Params), Headers: toKV(call.Headers),
+		BodyType: string(call.BodyType), Body: call.Body, Form: toKV(call.Form),
+		Auth:       authFile{Type: string(call.Auth.Type), User: call.Auth.User, KeyName: call.Auth.KeyName, KeyIn: string(call.Auth.KeyIn)},
+		TimeoutSec: call.TimeoutSec, NoRedirects: call.NoRedirects, InsecureTLS: call.InsecureTLS, GraphQLVars: call.GraphQLVars, Tests: call.Tests,
 		ProtoFiles: proto.Files, ImportPaths: proto.ImportPaths,
-	}, secret{Token: request.Auth.Token, Password: request.Auth.Password, KeyValue: request.Auth.KeyValue}
+	}, secret{Token: call.Auth.Token, Password: call.Auth.Password, KeyValue: call.Auth.KeyValue}
 }
 
 // fileToRequest is the request of a file in a collection kept in root. A
 // protocol, body type, auth type or key location it does not know is an
 // error.
-func fileToRequest(file requestFile, secrets secret, root string) (*model.Request, error) {
-	protocol, err := model.ParseProtocol(file.Protocol)
+func fileToRequest(file requestFile, secrets secret, root string) (*request.Request, error) {
+	protocol, err := request.ParseProtocol(file.Protocol)
 	if err != nil {
 		return nil, err
 	}
-	bodyType, err := model.ParseBodyType(file.BodyType)
+	bodyType, err := request.ParseBodyType(file.BodyType)
 	if err != nil {
 		return nil, err
 	}
-	authType, err := model.ParseAuthType(file.Auth.Type)
+	authType, err := request.ParseAuthType(file.Auth.Type)
 	if err != nil {
 		return nil, err
 	}
-	keyIn, err := model.ParseKeyIn(file.Auth.KeyIn)
+	keyIn, err := request.ParseKeyIn(file.Auth.KeyIn)
 	if err != nil {
 		return nil, err
 	}
-	return &model.Request{
+	return &request.Request{
 		Name: file.Name, Protocol: protocol, Method: file.Method, URL: file.URL,
 		Params: fromKV(file.Params), Headers: fromKV(file.Headers),
 		BodyType: bodyType, Body: file.Body, Form: fromKV(file.Form),
-		Auth: model.Auth{Type: authType, User: file.Auth.User, KeyName: file.Auth.KeyName, KeyIn: keyIn,
+		Auth: request.Auth{Type: authType, User: file.Auth.User, KeyName: file.Auth.KeyName, KeyIn: keyIn,
 			Token: secrets.Token, Password: secrets.Password, KeyValue: secrets.KeyValue},
 		TimeoutSec: file.TimeoutSec, NoRedirects: file.NoRedirects, InsecureTLS: file.InsecureTLS, GraphQLVars: file.GraphQLVars, Tests: file.Tests,
-		Proto: model.ProtoSource{Files: file.ProtoFiles, ImportPaths: file.ImportPaths}.Loaded(root),
+		Proto: request.ProtoSource{Files: file.ProtoFiles, ImportPaths: file.ImportPaths}.Loaded(root),
 	}, nil
 }
 
@@ -458,25 +458,25 @@ func ensureIgnore(dir string) error {
 
 // Load reads the collection below dir. A directory with no files is an
 // empty collection.
-func (Files) Load(dir string) (model.Collection, error) {
+func (Files) Load(dir string) (request.Collection, error) {
 	secrets := map[string]secret{}
 	if _, err := os.Stat(filepath.Join(dir, secretsFile)); err == nil {
 		read, err := readJSON(filepath.Join(dir, secretsFile), secretsReaders)
 		if err != nil {
-			return model.Collection{}, err
+			return request.Collection{}, err
 		}
 		if read != nil {
 			secrets = read
 		}
 	}
-	var c model.Collection
+	var c request.Collection
 	meta, err := loadFolder(absoluteDir(dir), dir, "", &c.Folder, secrets)
 	if err != nil {
-		return model.Collection{}, err
+		return request.Collection{}, err
 	}
 	c.Vars = varsFromFile(meta.Vars, secrets[folderFile])
 	if c.Envs, err = loadEnvs(dir, secrets); err != nil {
-		return model.Collection{}, err
+		return request.Collection{}, err
 	}
 	return c, nil
 }
@@ -496,7 +496,7 @@ func readJSON[T any](name string, readers []func([]byte) (T, error)) (T, error) 
 }
 
 // loadFolder reads f from dir, which is rel below the collection's root.
-func loadFolder(root, dir, rel string, folder *model.Folder, secrets map[string]secret) (folderMeta, error) {
+func loadFolder(root, dir, rel string, folder *request.Folder, secrets map[string]secret) (folderMeta, error) {
 	meta, err := readJSON(filepath.Join(dir, folderFile), folderReaders)
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return meta, err
@@ -532,7 +532,7 @@ func loadFolder(root, dir, rel string, folder *model.Folder, secrets map[string]
 	slices.Sort(extra)
 	for _, n := range append(order, extra...) {
 		if strings.HasSuffix(n, "/") {
-			sub := &model.Folder{}
+			sub := &request.Folder{}
 			if _, err := loadFolder(root, filepath.Join(dir, n), path.Join(rel, strings.TrimSuffix(n, "/")), sub, secrets); err != nil {
 				return meta, err
 			}
@@ -544,11 +544,11 @@ func loadFolder(root, dir, rel string, folder *model.Folder, secrets map[string]
 		if err != nil {
 			return meta, err
 		}
-		request, err := fileToRequest(rf, secrets[path.Join(rel, n)], root)
+		call, err := fileToRequest(rf, secrets[path.Join(rel, n)], root)
 		if err != nil {
 			return meta, fmt.Errorf("%s: %w", name, err)
 		}
-		folder.Requests = append(folder.Requests, request)
+		folder.Requests = append(folder.Requests, call)
 	}
 	return meta, nil
 }

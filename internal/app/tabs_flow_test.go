@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -106,8 +106,8 @@ func TestTabWidthDoesNotChangeWhenTheRequestChanges(t *testing.T) {
 	a := twoTabs(t)
 	left, width := a.tabX(0)
 	req := a.openTabs()[0].Req
-	req.Method = "DELETE"                                                 // a longer badge
-	req.Headers = append(req.Headers, model.KV{Name: "X", Enabled: true}) // and an unsaved dot
+	req.Method = "DELETE"                                                   // a longer badge
+	req.Headers = append(req.Headers, request.KV{Name: "X", Enabled: true}) // and an unsaved dot
 	a.step(core.Input{})
 	if !dirty(a.openTabs()[0]) {
 		t.Fatal("test setup: the tab must be dirty")

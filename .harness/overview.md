@@ -32,13 +32,12 @@ flowchart TB
     app["internal/app: the App, its state, handlers and window"]
     ui["ui: views behind a Host (calltrace, sentlog, settingsui...)"]
     ctl["controller packages: rules with no widget and no I/O (tabs, tree, envs...)"]
-    port["port: interfaces to the outside and the types that cross them"]
-    model["model: plain data and rules"]
+    root["domain root: types, rules and the ports at its boundary"]
     adapter["adapter: network, files, system"]
   end
   app --> ui & ctl
-  ui --> ctl --> port --> model
-  adapter -. implements .-> port
+  ui --> ctl --> root
+  adapter -. implements .-> root
   ui & app --> toolkit["uitoolkit: core / view / widget / markup"]
 ```
 
@@ -47,7 +46,7 @@ Dependencies point inward: what each role may import is written once, in `rules.
 ## One request, end to end
 
 1. The user types a URL in the URL bar (`urlbar` template in `internal/app/urlbar.go`) and presses Send or Ctrl+Enter.
-2. `App.send` calls `dispatch`: `tabs.Tab.BeginSend` numbers the send, `model.Request.Expanded` fills `{{variables}}` from the collection and the active environment, the call log records it.
+2. `App.send` calls `dispatch`: `tabs.Tab.BeginSend` numbers the send, `request.Request.Expanded` fills `{{variables}}` from the collection and the active environment, the call log records it.
 3. A command runs off the UI goroutine: `reg.Send(ctx, req)` on the protocol registry, a name-to-`Protocol` table built in `request/adapter/proto` (`rest`, `websocket`, `sse`, `mcp`, `grpc`; its package doc says which are hand-written and why). Streaming protocols return a `Session` from `Connect` and report through the same bus.
 4. The result comes back as a message on the bus (`workspace/bus`), drained once per frame on the UI goroutine; a late result of a cancelled send is dropped by its number.
 5. The tab keeps the response; the response pane (`response/ui/respview`, and `response/viewer` for its mode and find state) draws it. The sent request and response are written to the history by an adapter behind a port, the collection by `collection/adapter/store`.
@@ -58,7 +57,7 @@ Every frame the whole window tree is rebuilt from the App state (why: the `marku
 
 | To add | Do |
 |---|---|
-| a protocol | implement `request/port.Protocol` (and `Streamer` if it stays connected) in `request/adapter/proto`, add a row to `NewRegistry`; add its panes to the tables in `internal/app/panes.go` |
+| a protocol | implement `request.Sender` (and `Streamer` if it stays connected) in `request/adapter/proto`, add a row to `NewRegistry`; add its panes to the tables in `internal/app/panes.go` |
 | a widget | `uitoolkit/widget`: a composition of `view` elements, or a `view.Custom` behavior when it needs its own layout, input or drawing; options, tests, the package doc index and the markup tables (`rules.md`, toolkit API rules) |
 | a view | a template string (a `const` at the end of the Go file) and a `Scope` in the file of the view; pinned with a `view.Dump` test; a state of the `App` that has no widget in it goes to a controller package first |
 | a setting | one row in `settings.Schema` (`settings/schema.go`); the form, raw view, validation and reset read it |

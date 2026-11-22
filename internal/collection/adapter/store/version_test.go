@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fileversion"
 )
 
@@ -64,22 +64,22 @@ func checkFixtureCollection(t *testing.T, dir string) {
 		t.Errorf("name = %q", got.Name)
 	}
 	var names []string
-	for _, request := range got.Requests {
-		names = append(names, request.Name)
+	for _, call := range got.Requests {
+		names = append(names, call.Name)
 	}
 	wantNames := []string{"Index", "Echo", "Status 418", "Delay 500ms", "Auth", "Auth without credentials", "WebSocket Echo", "SSE Ticks", "MCP Tools", "gRPC Health", "gRPC Health of example", "gRPC Health from .proto"}
 	if !reflect.DeepEqual(names, wantNames) {
 		t.Fatalf("requests = %q\nwant %q", names, wantNames)
 	}
-	if auth := got.Requests[4].Auth; auth.Type != model.AuthBearer || auth.Token != "example-token" {
+	if auth := got.Requests[4].Auth; auth.Type != request.AuthBearer || auth.Token != "example-token" {
 		t.Errorf("Auth = %+v, want the bearer token from .secrets.json", auth)
 	}
 	root, _ := filepath.Abs(dir)
 	if files := got.Requests[11].Proto.Files; !reflect.DeepEqual(files, []string{filepath.Join(root, "protos", "health.proto")}) {
 		t.Errorf("proto files = %q, want the collection-relative path made absolute", files)
 	}
-	wantEnvs := []model.Environment{
-		{Name: "Local", Vars: []model.KV{{Name: "host", Value: "127.0.0.1", Enabled: true}, {Name: "apiKey", Value: "example-token", Enabled: true, Secret: true}}},
+	wantEnvs := []request.Environment{
+		{Name: "Local", Vars: []request.KV{{Name: "host", Value: "127.0.0.1", Enabled: true}, {Name: "apiKey", Value: "example-token", Enabled: true, Secret: true}}},
 		{Name: "Staging"},
 	}
 	if !reflect.DeepEqual(got.Envs, wantEnvs) {

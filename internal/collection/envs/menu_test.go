@@ -3,11 +3,11 @@ package envs
 import (
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 func TestMenuTicksTheSelectionAndDisablesRenameAndDeleteWithoutOne(t *testing.T) {
-	col := &model.Collection{Envs: []model.Environment{{Name: "Dev"}, {Name: "Prod"}}}
+	col := &request.Collection{Envs: []request.Environment{{Name: "Dev"}, {Name: "Prod"}}}
 	rows := Menu(Selection{Index: 1}, col)
 	labels := []string{"No environment", "Dev", "Prod", "", "New environment...", "Rename...", "Delete"}
 	if len(rows) != len(labels) {

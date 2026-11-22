@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 func TestCreateMakesAnEmptyCollectionInAUniqueFolder(t *testing.T) {
@@ -63,7 +63,7 @@ func TestRenameChangesTheNameAndTheFolderAndKeepsTheContent(t *testing.T) {
 
 func TestRenameToTheSameSlugStaysInPlace(t *testing.T) {
 	dir := filepath.Join(t.TempDir(), "echo")
-	if err := disk.Save(dir, model.Collection{Folder: model.Folder{Name: "Echo"}}); err != nil {
+	if err := disk.Save(dir, request.Collection{Folder: request.Folder{Name: "Echo"}}); err != nil {
 		t.Fatal(err)
 	}
 	moved, err := disk.Rename(dir, "ECHO!")
@@ -125,7 +125,7 @@ func TestDeleteRemovesTheCollectionAndOnlyItsFiles(t *testing.T) {
 func TestListFindsCollectionFoldersByName(t *testing.T) {
 	parent := t.TempDir()
 	for _, name := range []string{"b", "a"} {
-		if err := disk.Save(filepath.Join(parent, name), model.Collection{}); err != nil {
+		if err := disk.Save(filepath.Join(parent, name), request.Collection{}); err != nil {
 			t.Fatal(err)
 		}
 	}

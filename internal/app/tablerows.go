@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
@@ -23,7 +23,7 @@ type rowSelection struct {
 // copy, and when the rows differ records the old ones for undo, stores
 // the new ones and runs the pane's changed hook (the URL rewrite for
 // Params). An edit or selection pointing past the new rows is dropped.
-func (a *App) applyRows(panel pane, tab *reqTab, change func(rows []model.KV) []model.KV) {
+func (a *App) applyRows(panel pane, tab *reqTab, change func(rows []request.KV) []request.KV) {
 	if tab.History(panel.label).Apply(panel.rows(a, tab), change) {
 		a.rowsAltered(panel, tab)
 	}
@@ -62,7 +62,7 @@ func (a *App) visibleTable() (pane, *reqTab, bool) {
 	switch {
 	case p.kind == paneTable && p.editable:
 		return p, t, true
-	case p.kind == paneBody && (t.Req.BodyType == model.BodyForm || t.Req.BodyType == model.BodyMultipart):
+	case p.kind == paneBody && (t.Req.BodyType == request.BodyForm || t.Req.BodyType == request.BodyMultipart):
 		return formPane, t, true
 	}
 	return pane{}, nil, false
@@ -100,7 +100,7 @@ func (a *App) insertRowBelow() {
 		return
 	}
 	a.commitEdit()
-	a.applyRows(p, t, func(rows []model.KV) []model.KV { return model.InsertRow(rows, row+1, model.KV{Enabled: true}) })
+	a.applyRows(p, t, func(rows []request.KV) []request.KV { return request.InsertRow(rows, row+1, request.KV{Enabled: true}) })
 	a.beginEdit(p, t, row+1, col) // a new row is for typing into
 	_ = editing
 }
@@ -112,7 +112,7 @@ func (a *App) duplicateRow() {
 		return
 	}
 	a.commitEdit()
-	a.applyRows(p, t, func(rows []model.KV) []model.KV { return model.DuplicateRow(rows, row) })
+	a.applyRows(p, t, func(rows []request.KV) []request.KV { return request.DuplicateRow(rows, row) })
 	a.afterRowOp(p, t, row+1, col, editing)
 }
 
@@ -124,8 +124,8 @@ func (a *App) moveRow(delta int) {
 	}
 	a.commitEdit()
 	to := row
-	a.applyRows(p, t, func(rows []model.KV) []model.KV {
-		moved, idx := model.MoveRow(rows, row, delta)
+	a.applyRows(p, t, func(rows []request.KV) []request.KV {
+		moved, idx := request.MoveRow(rows, row, delta)
 		to = idx
 		return moved
 	})
@@ -148,8 +148,8 @@ func (a *App) dragRowOver(over int) {
 	if drag == nil || drag.row == over {
 		return
 	}
-	a.applyRows(drag.pane, drag.tab, func(rows []model.KV) []model.KV {
-		moved, _ := model.MoveRow(rows, drag.row, over-drag.row)
+	a.applyRows(drag.pane, drag.tab, func(rows []request.KV) []request.KV {
+		moved, _ := request.MoveRow(rows, drag.row, over-drag.row)
 		return moved
 	})
 	drag.row = over
@@ -166,7 +166,7 @@ func (a *App) deleteRow() {
 	if !ok {
 		return
 	}
-	a.applyRows(p, t, func(rows []model.KV) []model.KV { return model.DeleteRow(rows, row) })
+	a.applyRows(p, t, func(rows []request.KV) []request.KV { return request.DeleteRow(rows, row) })
 	if n := len(*p.rows(a, t)); n > 0 {
 		a.rowSel = &rowSelection{pane: p, tab: t, row: min(row, n-1)}
 	}
@@ -180,7 +180,7 @@ func (a *App) toggleBulk(panel pane, tab *reqTab) {
 		return
 	}
 	a.commitEdit()
-	a.bulk = &bulkEdit{pane: panel, tab: tab, area: widget.NewTextArea(model.FormatBulk(*panel.rows(a, tab)))}
+	a.bulk = &bulkEdit{pane: panel, tab: tab, area: widget.NewTextArea(request.FormatBulk(*panel.rows(a, tab)))}
 }
 
 // closeBulk turns the text back into rows, as one change.
@@ -192,7 +192,7 @@ func (a *App) closeBulk() {
 	a.bulk = nil
 	a.treeStale = true
 	text := b.area.Text
-	a.applyRows(b.pane, b.tab, func(rows []model.KV) []model.KV { return model.ParseBulk(text, rows) })
+	a.applyRows(b.pane, b.tab, func(rows []request.KV) []request.KV { return request.ParseBulk(text, rows) })
 }
 
 // settleBulk ends bulk mode when its table is no longer showing, so

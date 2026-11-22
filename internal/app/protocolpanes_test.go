@@ -3,7 +3,7 @@ package app
 import (
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 func paneLabels(panes []pane) []string {
@@ -16,7 +16,7 @@ func paneLabels(panes []pane) []string {
 
 func TestRequestPanesFollowTheProtocol(t *testing.T) {
 	tests := []struct {
-		protocol model.Protocol
+		protocol request.Protocol
 		hidden   []string // REST-only tabs a socket has no use for
 		shown    []string
 	}{
@@ -68,17 +68,17 @@ func TestChoosingAProtocolShowsItsFirstRequestPane(t *testing.T) {
 
 // The app shows every protocol the model knows, in the chip's order.
 func TestProtocolViewsCoverEveryProtocolInOrder(t *testing.T) {
-	if len(protocolViews) != len(model.Protocols) {
-		t.Fatalf("%d protocol views for %d protocols", len(protocolViews), len(model.Protocols))
+	if len(protocolViews) != len(request.Protocols) {
+		t.Fatalf("%d protocol views for %d protocols", len(protocolViews), len(request.Protocols))
 	}
-	for i, row := range model.Protocols {
+	for i, row := range request.Protocols {
 		if got := protocolViews[i].protocol; got != row.Name {
 			t.Errorf("view %d is %s, want %s", i, got, row.Name)
 		}
 		if len(protocolViews[i].requestPanes) == 0 {
 			t.Errorf("%s has no request panes", row.Name)
 		}
-		if row.Connection != model.OneShot && len(protocolViews[i].streamPanes) == 0 {
+		if row.Connection != request.OneShot && len(protocolViews[i].streamPanes) == 0 {
 			t.Errorf("%s connects but has no panes to show the connection", row.Name)
 		}
 	}

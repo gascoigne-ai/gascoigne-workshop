@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -13,7 +12,7 @@ import (
 	"testing"
 	"testing/iotest"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // endlessEvent is a stream of data lines just over maxEventBytes with no
@@ -65,20 +64,20 @@ var errBrokenStream = errors.New("broken stream")
 // An SSE server that never ended its event kept the session reading,
 // and growing, until the user closed it.
 func TestSSESessionReportsAnEventOverTheLimit(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
 		writer.Header().Set("Content-Type", "text/event-stream")
 		io.WriteString(writer, endlessEvent())
 		writer.(http.Flusher).Flush()
-		<-request.Context().Done()
+		<-call.Context().Done()
 	}))
 	defer srv.Close()
-	session, err := SSE{}.Connect(context.Background(), model.Request{URL: srv.URL})
+	session, err := SSE{}.Connect(context.Background(), request.Request{URL: srv.URL})
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer session.Close(context.Background())
 	next(t, session) // connected
-	if event := next(t, session); event.Kind != port.KindClose || !strings.Contains(event.Text, "Connection lost") {
+	if event := next(t, session); event.Kind != request.KindClose || !strings.Contains(event.Text, "Connection lost") {
 		t.Fatalf("got %s %q, want the stream to end with the reason", event.Kind, event.Text[:min(len(event.Text), 80)])
 	}
 }
@@ -87,12 +86,12 @@ func TestSSESessionReportsAnEventOverTheLimit(t *testing.T) {
 // optional GET stream with stream.
 func mcpStreamServer(t *testing.T, stream http.HandlerFunc) string {
 	t.Helper()
-	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		if request.Method == http.MethodGet {
-			stream(writer, request)
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
+		if call.Method == http.MethodGet {
+			stream(writer, call)
 			return
 		}
-		body, _ := io.ReadAll(request.Body)
+		body, _ := io.ReadAll(call.Body)
 		var message map[string]any
 		_ = json.Unmarshal(body, &message)
 		out := mcpReply(message)
@@ -111,13 +110,13 @@ func mcpStreamServer(t *testing.T, stream http.HandlerFunc) string {
 // An MCP server stream that never ended its event grew memory without
 // end.
 func TestMCPSessionEndsWhenItsStreamSendsAnEventOverTheLimit(t *testing.T) {
-	url := mcpStreamServer(t, func(writer http.ResponseWriter, request *http.Request) {
+	url := mcpStreamServer(t, func(writer http.ResponseWriter, call *http.Request) {
 		writer.Header().Set("Content-Type", "text/event-stream")
 		io.WriteString(writer, endlessEvent())
 		writer.(http.Flusher).Flush()
-		<-request.Context().Done()
+		<-call.Context().Done()
 	})
-	session, err := MCP{}.Connect(context.Background(), model.Request{Protocol: "mcp", URL: url})
+	session, err := MCP{}.Connect(context.Background(), request.Request{Protocol: "mcp", URL: url})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -133,12 +132,12 @@ func TestMCPSessionGoesOnWhenItsNotificationStreamBreaks(t *testing.T) {
 		writer.Header().Set("Content-Length", "1000") // more than is sent, so the client reads an unexpected EOF
 		io.WriteString(writer, "data: {\"jsonrpc\":\"2.0\",\"method\":\"notifications/message\"}\n\n")
 	})
-	session, err := MCP{}.Connect(context.Background(), model.Request{Protocol: "mcp", URL: url})
+	session, err := MCP{}.Connect(context.Background(), request.Request{Protocol: "mcp", URL: url})
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer session.Close(context.Background())
-	if event := waitFor(t, session, "read the server's stream"); event.Dir != port.Info || event.Kind == port.KindClose {
+	if event := waitFor(t, session, "read the server's stream"); event.Dir != request.Info || event.Kind == request.KindClose {
 		t.Fatalf("a broken notification stream ended the session: %+v", event)
 	}
 	if err := session.Send(context.Background(), `call echo {"x":1}`); err != nil {

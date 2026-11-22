@@ -4,16 +4,16 @@ import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/collections"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // varsFixture is a collection with a variable of its own, an environment
 // with one and a folder with one.
-func varsFixture() (col, other *model.Collection, folder *model.Folder) {
-	folder = &model.Folder{Name: "Users", Vars: []model.KV{{Name: "folder"}}}
-	col = &model.Collection{Folder: model.Folder{Name: "Alpha", Folders: []*model.Folder{folder}}, Vars: []model.KV{{Name: "col"}},
-		Envs: []model.Environment{{Name: "Dev", Vars: []model.KV{{Name: "env"}}}}}
-	other = &model.Collection{Folder: model.Folder{Name: "Beta"}}
+func varsFixture() (col, other *request.Collection, folder *request.Folder) {
+	folder = &request.Folder{Name: "Users", Vars: []request.KV{{Name: "folder"}}}
+	col = &request.Collection{Folder: request.Folder{Name: "Alpha", Folders: []*request.Folder{folder}}, Vars: []request.KV{{Name: "col"}},
+		Envs: []request.Environment{{Name: "Dev", Vars: []request.KV{{Name: "env"}}}}}
+	other = &request.Collection{Folder: request.Folder{Name: "Beta"}}
 	return col, other, folder
 }
 
@@ -23,7 +23,7 @@ func TestAVarsTargetSaysWhatItEditsAndNamesIt(t *testing.T) {
 		name        string
 		target      varsTarget
 		env         int // the entry's active environment, -1 for none
-		wantRows    *[]model.KV
+		wantRows    *[]request.KV
 		wantCaption string
 	}{
 		{"active with an environment", varsTarget{}, 0, &col.Envs[0].Vars, "Environment: Dev"},
@@ -51,7 +51,7 @@ func TestAnActiveVarsTargetWithNothingOpenEditsAScratchList(t *testing.T) {
 	if rows == nil {
 		t.Fatal("no rows to edit")
 	}
-	*rows = append(*rows, model.KV{Name: "x"})
+	*rows = append(*rows, request.KV{Name: "x"})
 	if again := (varsTarget{}).rows(collections.Entry{}); len(*again) != 0 {
 		t.Error("the scratch list is kept")
 	}
@@ -62,7 +62,7 @@ func TestAVarsTargetRefersToTheCollectionItsVariablesBelongTo(t *testing.T) {
 	cases := []struct {
 		name   string
 		target varsTarget
-		col    *model.Collection
+		col    *request.Collection
 		want   bool
 	}{
 		{"active", varsTarget{}, col, false},

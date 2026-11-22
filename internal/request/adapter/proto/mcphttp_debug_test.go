@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // debugRecorder is a debugFunc that keeps what it is given.
@@ -65,7 +65,7 @@ func (rec *debugRecorder) waitLine(t *testing.T, part string) {
 
 func debugHTTP(t *testing.T, url string, rec *debugRecorder, notes chan error) *mcpHTTP {
 	t.Helper()
-	h, err := newMCPHTTP(model.Request{URL: url}, Network{}, func([]byte) {}, func(error) {}, func(err error) { notes <- err })
+	h, err := newMCPHTTP(request.Request{URL: url}, Network{}, func([]byte) {}, func(error) {}, func(err error) { notes <- err })
 	if err != nil {
 		t.Fatal(err)
 	}

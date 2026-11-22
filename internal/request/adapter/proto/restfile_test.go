@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 func TestFileBodyIsSentAsItIsWithItsTypeFromTheExtension(t *testing.T) {
@@ -20,22 +20,22 @@ func TestFileBodyIsSentAsItIsWithItsTypeFromTheExtension(t *testing.T) {
 	path := filepath.Join(dir, "data.json")
 	os.WriteFile(path, []byte(`{"a":1}`), 0o644)
 	var gotBody, gotType string
-	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		b, _ := io.ReadAll(request.Body)
-		gotBody, gotType = string(b), request.Header.Get("Content-Type")
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
+		b, _ := io.ReadAll(call.Body)
+		gotBody, gotType = string(b), call.Header.Get("Content-Type")
 	}))
 	defer srv.Close()
-	resp, _ := REST{}.Send(context.Background(), model.Request{Method: "POST", URL: srv.URL, BodyType: model.BodyFile, Body: path})
+	resp, _ := REST{}.Send(context.Background(), request.Request{Method: "POST", URL: srv.URL, BodyType: request.BodyFile, Body: path})
 	if resp.Err != "" || gotBody != `{"a":1}` || !strings.HasPrefix(gotType, "application/json") {
 		t.Fatalf("%+v body %q type %q", resp, gotBody, gotType)
 	}
 	for body, want := range map[string]string{"": "choose the file", filepath.Join(dir, "missing.bin"): "body file"} {
-		_, err := REST{}.Send(context.Background(), model.Request{Method: "POST", URL: srv.URL, BodyType: model.BodyFile, Body: body})
+		_, err := REST{}.Send(context.Background(), request.Request{Method: "POST", URL: srv.URL, BodyType: request.BodyFile, Body: body})
 		if err == nil || !strings.Contains(err.Error(), want) {
 			t.Errorf("body %q: err = %v, want %q", body, err, want)
 		}
 	}
-	if _, _, err := encodeBody(model.Request{BodyType: model.BodyFile}); err == nil {
+	if _, _, err := encodeBody(request.Request{BodyType: request.BodyFile}); err == nil {
 		t.Fatal("an empty path must be an error")
 	}
 }
@@ -43,7 +43,7 @@ func TestFileBodyIsSentAsItIsWithItsTypeFromTheExtension(t *testing.T) {
 func TestMultipartFieldWithAtSignSendsAFile(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "note.txt")
 	os.WriteFile(path, []byte("hello file"), 0o644)
-	req := model.Request{BodyType: model.BodyMultipart, Form: []model.KV{
+	req := request.Request{BodyType: request.BodyMultipart, Form: []request.KV{
 		{Name: "title", Value: "plain", Enabled: true},
 		{Name: "upload", Value: "@" + path, Enabled: true},
 		{Name: "literal", Value: "@@at", Enabled: true},

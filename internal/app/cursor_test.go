@@ -3,7 +3,7 @@ package app
 import (
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
@@ -49,12 +49,12 @@ func TestATreeRowIsGrabbedOnlyOnceItIsOverAnotherRow(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			a.dragNode, a.dropTarget = model.Node{}, model.Node{}
+			a.dragNode, a.dropTarget = request.Node{}, request.Node{}
 			if test.drag != nil {
-				a.dragNode = model.Of(test.drag)
+				a.dragNode = request.Of(test.drag)
 			}
 			if test.target != nil {
-				a.dropTarget = model.Of(test.target)
+				a.dropTarget = request.Of(test.target)
 			}
 			if got := a.treeDragging(); got != test.want {
 				t.Fatalf("treeDragging = %v, want %v", got, test.want)

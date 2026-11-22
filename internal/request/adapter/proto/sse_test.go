@@ -4,14 +4,13 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 func TestReadEventsFollowsTheStreamFormat(t *testing.T) {
@@ -31,8 +30,8 @@ func TestReadEventsFollowsTheStreamFormat(t *testing.T) {
 
 func sseServer(t *testing.T, events int, hold bool) string {
 	t.Helper()
-	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		if request.Header.Get("Accept") != "text/event-stream" {
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
+		if call.Header.Get("Accept") != "text/event-stream" {
 			http.Error(writer, "wrong Accept", http.StatusBadRequest)
 			return
 		}
@@ -42,7 +41,7 @@ func sseServer(t *testing.T, events int, hold bool) string {
 			writer.(http.Flusher).Flush()
 		}
 		if hold {
-			<-request.Context().Done()
+			<-call.Context().Done()
 		}
 	}))
 	t.Cleanup(srv.Close)
@@ -50,18 +49,18 @@ func sseServer(t *testing.T, events int, hold bool) string {
 }
 
 func TestSSESessionLogsEventsAndEndsWithTheStream(t *testing.T) {
-	s, err := SSE{}.Connect(context.Background(), model.Request{URL: sseServer(t, 2, false)})
+	s, err := SSE{}.Connect(context.Background(), request.Request{URL: sseServer(t, 2, false)})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if e := next(t, s); e.Dir != port.Info || !strings.Contains(e.Text, "Connected") {
+	if e := next(t, s); e.Dir != request.Info || !strings.Contains(e.Text, "Connected") {
 		t.Fatalf("%+v", e)
 	}
-	if e := next(t, s); e.Dir != port.Received || e.Kind != port.KindMessage || e.Name != "n" || e.Text != "[1] 1" {
+	if e := next(t, s); e.Dir != request.Received || e.Kind != request.KindMessage || e.Name != "n" || e.Text != "[1] 1" {
 		t.Fatalf("%+v", e)
 	}
 	next(t, s)
-	if e := next(t, s); e.Kind != port.KindClose || !strings.Contains(e.Text, "ended") {
+	if e := next(t, s); e.Kind != request.KindClose || !strings.Contains(e.Text, "ended") {
 		t.Fatalf("%+v", e)
 	}
 	select {
@@ -78,7 +77,7 @@ func TestSSESessionLogsEventsAndEndsWithTheStream(t *testing.T) {
 }
 
 func TestSSECloseStopsAHeldStreamWithoutALossNote(t *testing.T) {
-	s, err := SSE{}.Connect(context.Background(), model.Request{URL: sseServer(t, 1, true)})
+	s, err := SSE{}.Connect(context.Background(), request.Request{URL: sseServer(t, 1, true)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,23 +85,23 @@ func TestSSECloseStopsAHeldStreamWithoutALossNote(t *testing.T) {
 	next(t, s)
 	s.Close(context.Background())
 	for e := range s.Events() {
-		if e.Kind == port.KindClose {
+		if e.Kind == request.KindClose {
 			t.Fatalf("a deliberate close reported: %+v", e)
 		}
 	}
 }
 
 func TestSSEOneShotSendReturnsTheFirstEventAndErrorsAreExplained(t *testing.T) {
-	resp, _ := SSE{}.Send(context.Background(), model.Request{URL: sseServer(t, 3, true)})
+	resp, _ := SSE{}.Send(context.Background(), request.Request{URL: sseServer(t, 3, true)})
 	if resp.Err != "" || string(resp.Body) != "[1] 1" || resp.Status != 200 {
 		t.Fatalf("%+v", resp)
 	}
 	bad := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) { http.Error(writer, "no", http.StatusForbidden) }))
 	defer bad.Close()
-	if _, err := (SSE{}).Connect(context.Background(), model.Request{URL: bad.URL}); err == nil || !strings.Contains(err.Error(), "403") {
+	if _, err := (SSE{}).Connect(context.Background(), request.Request{URL: bad.URL}); err == nil || !strings.Contains(err.Error(), "403") {
 		t.Fatalf("err = %v", err)
 	}
-	if _, err := (SSE{}).Connect(context.Background(), model.Request{URL: "ftp://x"}); err == nil {
+	if _, err := (SSE{}).Connect(context.Background(), request.Request{URL: "ftp://x"}); err == nil {
 		t.Fatal("ftp accepted")
 	}
 }

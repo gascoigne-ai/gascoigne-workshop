@@ -6,28 +6,28 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // GRPCInputSchema describes the request message of the method of req, from
 // the server's reflection or the request's proto files.
-func GRPCInputSchema(ctx context.Context, req model.Request) (model.MessageSchema, error) {
+func GRPCInputSchema(ctx context.Context, req request.Request) (request.MessageSchema, error) {
 	kind := sourceKindOf(req.Proto)
 	var conn *grpc.ClientConn
 	var err error
 	if kind.asksServer {
 		if conn, err = dial(req); err != nil {
-			return model.MessageSchema{}, err
+			return request.MessageSchema{}, err
 		}
 		defer conn.Close()
 	}
 	ctx, err = outgoing(ctx, req)
 	if err != nil {
-		return model.MessageSchema{}, err
+		return request.MessageSchema{}, err
 	}
 	method, err := resolveMethod(ctx, conn, req)
 	if err != nil {
-		return model.MessageSchema{}, err
+		return request.MessageSchema{}, err
 	}
 	return messageSchema(method.Input()), nil
 }
@@ -47,7 +47,7 @@ var kindNames = map[protoreflect.Kind]string{
 	protoreflect.FloatKind: "float", protoreflect.DoubleKind: "double",
 }
 
-func messageSchema(message protoreflect.MessageDescriptor) model.MessageSchema {
+func messageSchema(message protoreflect.MessageDescriptor) request.MessageSchema {
 	describer := &schemaDescriber{open: map[protoreflect.FullName]bool{}, budget: maxSchemaMessages}
 	return describer.message(message)
 }
@@ -60,8 +60,8 @@ type schemaDescriber struct {
 	budget int
 }
 
-func (d *schemaDescriber) message(message protoreflect.MessageDescriptor) model.MessageSchema {
-	schema := model.MessageSchema{Name: string(message.FullName())}
+func (d *schemaDescriber) message(message protoreflect.MessageDescriptor) request.MessageSchema {
+	schema := request.MessageSchema{Name: string(message.FullName())}
 	if d.open[message.FullName()] || d.budget <= 0 {
 		schema.Cut = true
 		return schema
@@ -75,8 +75,8 @@ func (d *schemaDescriber) message(message protoreflect.MessageDescriptor) model.
 	return schema
 }
 
-func (d *schemaDescriber) field(field protoreflect.FieldDescriptor) model.SchemaField {
-	described := model.SchemaField{Name: string(field.Name()), Repeated: field.IsList()}
+func (d *schemaDescriber) field(field protoreflect.FieldDescriptor) request.SchemaField {
+	described := request.SchemaField{Name: string(field.Name()), Repeated: field.IsList()}
 	if oneof := field.ContainingOneof(); oneof != nil && !oneof.IsSynthetic() {
 		described.Oneof = string(oneof.Name())
 	}
@@ -94,7 +94,7 @@ func (d *schemaDescriber) field(field protoreflect.FieldDescriptor) model.Schema
 
 // fieldTarget is the message or the enum values a field of that kind
 // refers to; a scalar has neither.
-func (d *schemaDescriber) target(field protoreflect.FieldDescriptor) (*model.MessageSchema, []string) {
+func (d *schemaDescriber) target(field protoreflect.FieldDescriptor) (*request.MessageSchema, []string) {
 	if message := field.Message(); message != nil {
 		schema := d.message(message)
 		return &schema, nil

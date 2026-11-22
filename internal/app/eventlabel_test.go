@@ -3,7 +3,7 @@ package app
 import (
 	"testing"
 
-	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
@@ -23,14 +23,14 @@ func lastLine(t *testing.T, tab *reqTab) string {
 func TestAnSSEEventNamedInitializeIsLogged(t *testing.T) {
 	a := testApp(t)
 	tab := a.cur()
-	a.logEvent(tab, reqport.Event{Dir: reqport.Received, Kind: reqport.KindMessage, Name: "initialize", Text: "hello"})
+	a.logEvent(tab, request.Event{Dir: request.Received, Kind: request.KindMessage, Name: "initialize", Text: "hello"})
 	if got := lastLine(t, tab); got != "hello" {
 		t.Errorf("last line %q, want the event's data", got)
 	}
 
 	before := len(tab.wsView.Lines)
 	result := `{"protocolVersion":"2025-06-18","serverInfo":{"name":"mock","version":"1"}}`
-	a.applyWS(wsReceived{wsTarget{tab: tab}, reqport.Event{Dir: reqport.Info, Kind: reqport.KindInitialize, Text: result}})
+	a.applyWS(wsReceived{wsTarget{tab: tab}, request.Event{Dir: request.Info, Kind: request.KindInitialize, Text: result}})
 	if len(tab.wsView.Lines) != before {
 		t.Errorf("the MCP initialize note was logged")
 	}
@@ -42,14 +42,14 @@ func TestAnSSEEventNamedInitializeIsLogged(t *testing.T) {
 func TestAnEmptyEventShowsItsLabel(t *testing.T) {
 	cases := []struct {
 		name  string
-		event reqport.Event
+		event request.Event
 		want  string
 	}{
-		{"named event", reqport.Event{Dir: reqport.Received, Kind: reqport.KindMessage, Name: "tick"}, "tick"},
-		{"unnamed event", reqport.Event{Dir: reqport.Received, Kind: reqport.KindMessage}, "message"},
-		{"sent ping", reqport.Event{Dir: reqport.Sent, Kind: reqport.KindPing}, "ping"},
-		{"empty text frame", reqport.Event{Dir: reqport.Received, Kind: reqport.KindText}, ""},
-		{"empty binary frame", reqport.Event{Dir: reqport.Received, Kind: reqport.KindBinary}, ""},
+		{"named event", request.Event{Dir: request.Received, Kind: request.KindMessage, Name: "tick"}, "tick"},
+		{"unnamed event", request.Event{Dir: request.Received, Kind: request.KindMessage}, "message"},
+		{"sent ping", request.Event{Dir: request.Sent, Kind: request.KindPing}, "ping"},
+		{"empty text frame", request.Event{Dir: request.Received, Kind: request.KindText}, ""},
+		{"empty binary frame", request.Event{Dir: request.Received, Kind: request.KindBinary}, ""},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -68,7 +68,7 @@ func TestAnEmptyEventShowsItsLabel(t *testing.T) {
 func TestAnEventNamedErrorRendersAsNormalText(t *testing.T) {
 	a := testApp(t)
 	tab := a.cur()
-	a.logEvent(tab, reqport.Event{Dir: reqport.Received, Kind: reqport.KindMessage, Name: "error", Text: "boom"})
+	a.logEvent(tab, request.Event{Dir: request.Received, Kind: request.KindMessage, Name: "error", Text: "boom"})
 	lines := tab.wsView.Lines
 	spans := lines[len(lines)-1].Spans
 	if got := spans[len(spans)-1]; got.Text != "boom" || got.Style != w.Text {

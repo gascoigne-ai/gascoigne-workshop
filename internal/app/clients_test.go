@@ -7,7 +7,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/clientconfig"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 type fakeClients struct {
@@ -18,8 +18,8 @@ type fakeClients struct {
 func (clients fakeClients) Load() (clientconfig.Config, error) { return clients.config, clients.err }
 
 func demoConfig() clientconfig.Config {
-	return clientconfig.Config{Collections: []*model.Collection{{Folder: model.Folder{
-		Name: "Demo", Requests: []*model.Request{{Name: "Echo", Protocol: "rest", Method: "GET", URL: "http://x"}},
+	return clientconfig.Config{Collections: []*request.Collection{{Folder: request.Folder{
+		Name: "Demo", Requests: []*request.Request{{Name: "Echo", Protocol: "rest", Method: "GET", URL: "http://x"}},
 	}}}}
 }
 
@@ -57,7 +57,7 @@ func TestStartWithABrokenClientConfigSaysSoAndKeepsTheSample(t *testing.T) {
 }
 
 func TestStartWithAnEmptySampleOpensANewRequest(t *testing.T) {
-	empty := func() model.Collection { return model.Collection{Folder: model.Folder{Name: "Workshop"}} }
+	empty := func() request.Collection { return request.Collection{Folder: request.Folder{Name: "Workshop"}} }
 	app, err := NewApp(Options{Sample: empty})
 	if err != nil {
 		t.Fatal(err)

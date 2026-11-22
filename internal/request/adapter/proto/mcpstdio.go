@@ -14,7 +14,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // debugFunc is the debug log: slog.Debug in production, a recorder in tests.
@@ -84,7 +84,7 @@ type mcpStdio struct {
 }
 
 func newMCPStdio(command string, deliver func([]byte), finish func(error)) (*mcpStdio, error) {
-	args, err := model.ShellSplit(command)
+	args, err := request.ShellSplit(command)
 	if err != nil {
 		return nil, err
 	}

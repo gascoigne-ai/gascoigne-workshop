@@ -1,12 +1,12 @@
 package tabs
 
-import "github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+import "github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 
 // HistoryLimit is how many table changes can be undone per table.
 const HistoryLimit = 100
 
 // RowHistory is the undo and redo stack of one table of a tab.
-type RowHistory struct{ undo, redo [][]model.KV }
+type RowHistory struct{ undo, redo [][]request.KV }
 
 // History is the undo history of the table called label, made on first use.
 func (tab *Tab) History(label string) *RowHistory {
@@ -21,9 +21,9 @@ func (tab *Tab) History(label string) *RowHistory {
 	return history
 }
 
-func cloneRows(rows []model.KV) []model.KV { return append([]model.KV(nil), rows...) }
+func cloneRows(rows []request.KV) []request.KV { return append([]request.KV(nil), rows...) }
 
-func sameRows(first, second []model.KV) bool {
+func sameRows(first, second []request.KV) bool {
 	if len(first) != len(second) {
 		return false
 	}
@@ -38,7 +38,7 @@ func sameRows(first, second []model.KV) bool {
 // Apply runs change on a copy of the rows and, when the result differs,
 // stores it and records the old rows for undo. It reports whether the rows
 // changed.
-func (history *RowHistory) Apply(rows *[]model.KV, change func([]model.KV) []model.KV) bool {
+func (history *RowHistory) Apply(rows *[]request.KV, change func([]request.KV) []request.KV) bool {
 	before := cloneRows(*rows)
 	after := change(cloneRows(*rows))
 	if sameRows(before, after) {
@@ -55,16 +55,16 @@ func (history *RowHistory) Apply(rows *[]model.KV, change func([]model.KV) []mod
 
 // Undo takes back the last change; Redo reapplies it. Each reports whether
 // there was one.
-func (history *RowHistory) Undo(rows *[]model.KV) bool {
+func (history *RowHistory) Undo(rows *[]request.KV) bool {
 	return step(rows, &history.undo, &history.redo)
 }
 
 // Redo reapplies the change Undo took back.
-func (history *RowHistory) Redo(rows *[]model.KV) bool {
+func (history *RowHistory) Redo(rows *[]request.KV) bool {
 	return step(rows, &history.redo, &history.undo)
 }
 
-func step(rows *[]model.KV, from, to *[][]model.KV) bool {
+func step(rows *[]request.KV, from, to *[][]request.KV) bool {
 	if len(*from) == 0 {
 		return false
 	}

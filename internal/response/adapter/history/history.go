@@ -14,7 +14,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fileversion"
 )
@@ -41,7 +41,7 @@ type entryFile struct {
 	Status     int           `json:"Status"`
 	StatusText string        `json:"StatusText"`
 	Duration   time.Duration `json:"Duration"`
-	Headers    []model.KV    `json:"Headers"`
+	Headers    []request.KV  `json:"Headers"`
 	Body       []byte        `json:"Body"`
 }
 

@@ -6,17 +6,17 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response"
 )
 
 func TestSendingARequestListsItInTheSentLogNewestFirst(t *testing.T) {
 	a := testApp(t, memorySettings(), withOptions(Options{StatePath: filepath.Join(t.TempDir(), "state.json")}))
 	server := jsonServer(t)
-	var requests []*model.Request
-	walkRequests(&a.col().Folder, "", func(_ string, req *model.Request) { requests = append(requests, req) })
+	var requests []*request.Request
+	walkRequests(&a.col().Folder, "", func(_ string, req *request.Request) { requests = append(requests, req) })
 	first, second := requests[0], requests[1]
-	for _, target := range []*model.Request{first, second} {
+	for _, target := range []*request.Request{first, second} {
 		a.openRequest(target)
 		tab := a.cur()
 		pointTabAt(tab, server.URL)

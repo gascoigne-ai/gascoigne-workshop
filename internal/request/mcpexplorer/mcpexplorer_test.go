@@ -5,13 +5,13 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 func TestEntriesListWhatTheServerAnnounced(t *testing.T) {
-	tools := []model.MCPTool{{Name: "add", Description: "Add numbers"}, {Name: "echo"}}
-	resources := []model.MCPResource{{URI: "file:///a", Name: "A"}, {URI: "file:///b"}}
-	prompts := []model.MCPPrompt{{Name: "greet"}}
+	tools := []request.MCPTool{{Name: "add", Description: "Add numbers"}, {Name: "echo"}}
+	resources := []request.MCPResource{{URI: "file:///a", Name: "A"}, {URI: "file:///b"}}
+	prompts := []request.MCPPrompt{{Name: "greet"}}
 	tests := []struct {
 		kind Kind
 		want []Entry

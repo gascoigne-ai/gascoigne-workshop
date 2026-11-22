@@ -3,7 +3,7 @@ package collection
 import (
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // Row is one visible line of the collections tree. Exactly one of
@@ -13,22 +13,22 @@ type Row struct {
 	Name   string
 	Folder bool
 	Open   bool
-	Dir    *model.Folder  // set for folder rows, including the root
-	Req    *model.Request // set for request rows
+	Dir    *request.Folder  // set for folder rows, including the root
+	Req    *request.Request // set for request rows
 }
 
 // Node is what the row stands for: the folder or the request.
-func (r Row) Node() model.Node {
+func (r Row) Node() request.Node {
 	if r.Folder {
-		return model.Node{Dir: r.Dir}
+		return request.Node{Dir: r.Dir}
 	}
-	return model.Node{Req: r.Req}
+	return request.Node{Req: r.Req}
 }
 
 // Rows flattens root into the rows that are visible given which
 // folders are expanded. The root itself is row 0 at depth 0. Folders
 // are listed before the requests of their parent.
-func Rows(root *model.Folder, expanded map[*model.Folder]bool) []Row {
+func Rows(root *request.Folder, expanded map[*request.Folder]bool) []Row {
 	rows := []Row{{Name: root.Name, Folder: true, Open: expanded[root], Dir: root}}
 	if expanded[root] {
 		rows = appendFolder(rows, root, 1, expanded)
@@ -36,7 +36,7 @@ func Rows(root *model.Folder, expanded map[*model.Folder]bool) []Row {
 	return rows
 }
 
-func appendFolder(rows []Row, folder *model.Folder, depth int, expanded map[*model.Folder]bool) []Row {
+func appendFolder(rows []Row, folder *request.Folder, depth int, expanded map[*request.Folder]bool) []Row {
 	for _, sub := range folder.Folders {
 		rows = append(rows, Row{Depth: depth, Name: sub.Name, Folder: true, Open: expanded[sub], Dir: sub})
 		if expanded[sub] {
@@ -54,7 +54,7 @@ func appendFolder(rows []Row, folder *model.Folder, depth int, expanded map[*mod
 // hold one, and whole folders whose own name matches. Matching folders
 // are shown open. The root is always there; an empty filter shows the
 // tree as usual.
-func FilteredRows(root *model.Folder, expanded map[*model.Folder]bool, filter string) []Row {
+func FilteredRows(root *request.Folder, expanded map[*request.Folder]bool, filter string) []Row {
 	if strings.TrimSpace(filter) == "" {
 		return Rows(root, expanded)
 	}
@@ -63,7 +63,7 @@ func FilteredRows(root *model.Folder, expanded map[*model.Folder]bool, filter st
 	return appendMatching(rows, root, 1, needle, strings.Contains(strings.ToLower(root.Name), needle))
 }
 
-func appendMatching(rows []Row, folder *model.Folder, depth int, needle string, all bool) []Row {
+func appendMatching(rows []Row, folder *request.Folder, depth int, needle string, all bool) []Row {
 	for _, sub := range folder.Folders {
 		subAll := all || strings.Contains(strings.ToLower(sub.Name), needle)
 		if !subAll && !folderHasMatch(sub, needle) {
@@ -80,11 +80,11 @@ func appendMatching(rows []Row, folder *model.Folder, depth int, needle string, 
 	return rows
 }
 
-func requestMatches(request *model.Request, needle string) bool {
-	return strings.Contains(strings.ToLower(request.Name), needle) || strings.Contains(strings.ToLower(request.URL), needle)
+func requestMatches(call *request.Request, needle string) bool {
+	return strings.Contains(strings.ToLower(call.Name), needle) || strings.Contains(strings.ToLower(call.URL), needle)
 }
 
-func folderHasMatch(folder *model.Folder, needle string) bool {
+func folderHasMatch(folder *request.Folder, needle string) bool {
 	for _, r := range folder.Requests {
 		if requestMatches(r, needle) {
 			return true

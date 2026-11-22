@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"strings"
 	"testing"
 
@@ -9,8 +9,8 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
-func searchTool() model.MCPTool {
-	return model.MCPTool{Name: "search", Schema: schemaOf(`{"type":"object","required":["query"],"properties":{
+func searchTool() request.MCPTool {
+	return request.MCPTool{Name: "search", Schema: schemaOf(`{"type":"object","required":["query"],"properties":{
 	"query":{"type":"string","description":"What to find"},
 	"limit":{"type":"integer","default":10},
 	"safe":{"type":"boolean"},
@@ -18,8 +18,8 @@ func searchTool() model.MCPTool {
 }
 
 // schemaOf decodes the JSON text of a tool's input schema.
-func schemaOf(text string) model.JSONSchema {
-	schema, err := model.DecodeJSONSchema([]byte(text))
+func schemaOf(text string) request.JSONSchema {
+	schema, err := request.DecodeJSONSchema([]byte(text))
 	if err != nil {
 		panic(err)
 	}
@@ -93,7 +93,7 @@ func TestAFormWithAnInvalidValueStaysOpenAndSaysWhich(t *testing.T) {
 func TestPickingAToolWithoutPropertiesComposesItRightAway(t *testing.T) {
 	a := testApp(t)
 	tab := a.cur()
-	a.openToolForm(tab, model.MCPTool{Name: "ping"})
+	a.openToolForm(tab, request.MCPTool{Name: "ping"})
 	if a.dialog != nil {
 		t.Fatal("a tool with no arguments needs no form")
 	}

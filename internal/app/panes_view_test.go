@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -27,12 +27,12 @@ var paneSizes = []struct {
 // of its content: not sent yet, in flight, and a failed send in red.
 var messagePaneStates = []struct {
 	name string
-	resp *model.Response
+	resp *request.Response
 	send bool
 }{
 	{"not-sent", nil, false},
 	{"sending", nil, true},
-	{"failed", &model.Response{Err: `Get "http://127.0.0.1:1/": dial tcp 127.0.0.1:1: connect: connection refused`}, false},
+	{"failed", &request.Response{Err: `Get "http://127.0.0.1:1/": dial tcp 127.0.0.1:1: connect: connection refused`}, false},
 }
 
 // The message pane is pinned as text (element kinds, options, rects) for
@@ -60,10 +60,10 @@ var timelinePane = responsePanes[2]
 
 // pinnedTimeline is a response whose every phase took time, so the note
 // has all its lines; truncated adds the closing remark.
-func pinnedTimeline(truncated bool) *model.Response {
-	return &model.Response{
+func pinnedTimeline(truncated bool) *request.Response {
+	return &request.Response{
 		Status: 200, StatusText: "OK", Duration: 412 * time.Millisecond, Size: 160430, Truncated: truncated,
-		Timing: model.Timing{DNS: 3 * time.Millisecond, Connect: 11 * time.Millisecond, TLS: 48 * time.Millisecond,
+		Timing: request.Timing{DNS: 3 * time.Millisecond, Connect: 11 * time.Millisecond, TLS: 48 * time.Millisecond,
 			FirstByte: 290 * time.Millisecond, Transfer: 60 * time.Millisecond},
 	}
 }
@@ -116,20 +116,20 @@ func TestTheNotePaneScrollsWithTheGivenState(t *testing.T) {
 // scrolled to keep the chosen chip in view.
 var bodyPaneStates = []struct {
 	name     string
-	bodyType model.BodyType
+	bodyType request.BodyType
 	text     string
 }{
-	{"none", model.BodyNone, ""},
-	{"json-valid", model.BodyJSON, "{\n  \"hello\": \"world\"\n}"},
-	{"json-invalid", model.BodyJSON, `{"hello": "world", "list": [1, 2`},
-	{"json-empty", model.BodyJSON, ""},
-	{"text", model.BodyText, "hello"},
-	{"form", model.BodyForm, ""},
-	{"file", model.BodyFile, ""},
+	{"none", request.BodyNone, ""},
+	{"json-valid", request.BodyJSON, "{\n  \"hello\": \"world\"\n}"},
+	{"json-invalid", request.BodyJSON, `{"hello": "world", "list": [1, 2`},
+	{"json-empty", request.BodyJSON, ""},
+	{"text", request.BodyText, "hello"},
+	{"form", request.BodyForm, ""},
+	{"file", request.BodyFile, ""},
 }
 
 // openBodyType gives the open request a body of bodyType holding text.
-func openBodyType(t *testing.T, bodyType model.BodyType, text string) (*App, *reqTab) {
+func openBodyType(t *testing.T, bodyType request.BodyType, text string) (*App, *reqTab) {
 	a := testApp(t)
 	t.Cleanup(a.waitWrites)
 	tab := a.cur()
@@ -157,7 +157,7 @@ func TestTheBodyPaneLaysOutAsPinned(t *testing.T) {
 // What Dump does not show of the chip row: it scrolls sideways with the
 // tab's own state.
 func TestTheBodyTypeChipsScrollWithTheTabsState(t *testing.T) {
-	a, tab := openBodyType(t, model.BodyJSON, "")
+	a, tab := openBodyType(t, request.BodyJSON, "")
 	var scroll widget.ScrollState
 	chips := findWidget(a.paneBody(bodyPane, tab, &scroll), "*widget.hscrollB")
 	if chips == nil {
@@ -172,11 +172,11 @@ func TestTheBodyTypeChipsScrollWithTheTabsState(t *testing.T) {
 // kept in view, so choosing a type elsewhere scrolls to it.
 func TestOnlyTheChosenBodyTypeChipIsKeptInView(t *testing.T) {
 	choices := []struct {
-		bodyType model.BodyType
+		bodyType request.BodyType
 		chip     int // its place in the row: None, JSON, Text, Form, Multipart, GraphQL, File
 	}{
-		{model.BodyNone, 0},
-		{model.BodyFile, 6},
+		{request.BodyNone, 0},
+		{request.BodyFile, 6},
 	}
 	for _, chosen := range choices {
 		t.Run(string(chosen.bodyType), func(t *testing.T) {
@@ -221,7 +221,7 @@ func TestTheBodyWrapChipWrapsTheTabsBodyEditor(t *testing.T) {
 			root := a.paneBody(bodyPane, tab, &scroll)
 			Layout(a.ctx, root, 600, settingsPaneH)
 			chip := chipLabelled(root, "Wrap")
-			editable := state.bodyType == model.BodyJSON || state.bodyType == model.BodyText
+			editable := state.bodyType == request.BodyJSON || state.bodyType == request.BodyText
 			if (chip != nil) != editable {
 				t.Fatalf("Wrap chip shown %v, want %v", chip != nil, editable)
 			}
@@ -248,7 +248,7 @@ func TestTheBodyWrapChipWrapsTheTabsBodyEditor(t *testing.T) {
 // What Dump does not show of the text editors: JSON and Text edit the
 // tab's body area, colored by a styler of their own.
 func TestTheBodyAreaEditsTheTabsBody(t *testing.T) {
-	for _, bodyType := range []model.BodyType{model.BodyJSON, model.BodyText} {
+	for _, bodyType := range []request.BodyType{request.BodyJSON, request.BodyText} {
 		t.Run(string(bodyType), func(t *testing.T) {
 			a, tab := openBodyType(t, bodyType, "{}")
 			var scroll widget.ScrollState

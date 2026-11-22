@@ -2,10 +2,10 @@ package app
 
 import (
 	"context"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/assert"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/mcpexplorer"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/ui/mcpform"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/viewer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/tabs"
@@ -36,7 +36,7 @@ type reqTab struct {
 	cancel      context.CancelFunc                     // stops the running request
 	auth        map[editor.AuthField]*widget.TextField // Auth pane inputs by field id, created on first use
 	showSecrets bool                                   // show masked credential fields
-	schema      *model.Schema                          // what a GraphQL introspection answered
+	schema      *request.Schema                        // what a GraphQL introspection answered
 }
 
 // socketBlock holds the state of a WebSocket tab: the message log, the message being composed and the sends waiting their turn.
@@ -115,7 +115,7 @@ func (a *App) updateTabs(msg tabs.Msg) {
 }
 
 // activeRequest is the request of the active tab, nil when none is open.
-func (a *App) activeRequest() *model.Request {
+func (a *App) activeRequest() *request.Request {
 	if a.list.Active < 0 || a.list.Active >= len(a.list.Tabs) {
 		return nil
 	}
@@ -131,7 +131,7 @@ func (a *App) openTabs() []*reqTab {
 	return open
 }
 
-func newTab(req *model.Request) *reqTab { return newReqTab(tabs.New(req)) }
+func newTab(req *request.Request) *reqTab { return newReqTab(tabs.New(req)) }
 
 func newReqTab(tab *tabs.Tab) *reqTab {
 	req := tab.Req
@@ -151,8 +151,8 @@ func newReqTab(tab *tabs.Tab) *reqTab {
 func (a *App) cur() *reqTab { return a.widgets[a.list.Tabs[a.list.Active]] }
 
 // openRequest focuses the tab of req, opening one if needed.
-func (a *App) openRequest(req *model.Request) {
-	a.selected = model.Node{Req: req}
+func (a *App) openRequest(req *request.Request) {
+	a.selected = request.Node{Req: req}
 	a.updateTabs(tabs.Open{Req: req})
 }
 

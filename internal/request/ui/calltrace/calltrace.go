@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/textfmt"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
@@ -72,12 +72,12 @@ func (l *Log) add(entry Entry) {
 }
 
 // Sent notes that req is about to be sent.
-func (l *Log) Sent(at time.Time, req model.Request) {
+func (l *Log) Sent(at time.Time, req request.Request) {
 	l.Info(at, fmt.Sprintf("→ %s %s", req.Method, req.URL))
 }
 
 // Answer notes how a send ended.
-func (l *Log) Answer(at time.Time, req *model.Request, resp *model.Response) {
+func (l *Log) Answer(at time.Time, req *request.Request, resp *request.Response) {
 	if resp.Err != "" {
 		l.Error(at, fmt.Sprintf("✗ %s %s failed: %s", req.Method, req.URL, resp.Err))
 		return

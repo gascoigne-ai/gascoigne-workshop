@@ -10,8 +10,8 @@ import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/exampleserver"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/editor"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -56,9 +56,9 @@ func protoFileIn(t *testing.T, dir, name string, source []byte) string {
 }
 
 func TestOnlyAGRPCRequestHasAProtoPane(t *testing.T) {
-	for protocol, want := range map[model.Protocol]bool{"grpc": true, "rest": false, "websocket": false, "sse": false, "mcp": false} {
+	for protocol, want := range map[request.Protocol]bool{"grpc": true, "rest": false, "websocket": false, "sse": false, "mcp": false} {
 		got := false
-		for _, candidate := range requestPanesFor(newReqTab(tabs.New(&model.Request{Protocol: protocol}))) {
+		for _, candidate := range requestPanesFor(newReqTab(tabs.New(&request.Request{Protocol: protocol}))) {
 			got = got || candidate.label == "Proto"
 		}
 		if got != want {
@@ -163,7 +163,7 @@ func TestChoosingReflectionDropsTheFilesAndImportPaths(t *testing.T) {
 	editRequest(tab, editor.ProtoPathAdded{List: editor.ImportPaths, Path: filepath.Join(dir, "protos")})
 	tab.MarkSaved()
 	clickText(t, a, "Reflection", 0)
-	if !reflect.DeepEqual(tab.Req.Proto, model.ProtoSource{}) || !tab.Dirty() {
+	if !reflect.DeepEqual(tab.Req.Proto, request.ProtoSource{}) || !tab.Dirty() {
 		t.Fatalf("proto %+v dirty %v, want none and an edited tab", tab.Req.Proto, tab.Dirty())
 	}
 	if !strings.Contains(layoutDump(a), "Methods come from the server's reflection") {

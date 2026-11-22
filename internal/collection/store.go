@@ -5,15 +5,15 @@ package collection
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/clientconfig"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // Store reads and writes a collection in a folder.
 type Store interface {
 	// Load reads the collection in dir.
-	Load(dir string) (model.Collection, error)
+	Load(dir string) (request.Collection, error)
 	// Save writes the collection to dir.
-	Save(dir string, collection model.Collection) error
+	Save(dir string, collection request.Collection) error
 	// Create makes an empty collection called name in a new folder below
 	// parent and returns that folder.
 	Create(parent, name string) (dir string, err error)

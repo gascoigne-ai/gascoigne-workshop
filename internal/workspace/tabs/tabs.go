@@ -6,14 +6,14 @@ package tabs
 import (
 	"reflect"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // Tab is one open request.
 type Tab struct {
-	Req       *model.Request
-	Saved     model.Request // the request as it was when opened or last saved
-	Resp      *model.Response
+	Req       *request.Request
+	Saved     request.Request // the request as it was when opened or last saved
+	Resp      *request.Response
 	Earlier   []PastResponse         // earlier responses, newest first
 	histories map[string]*RowHistory // undo history of each table
 	Send
@@ -21,11 +21,11 @@ type Tab struct {
 }
 
 // New opens req. A request from before body types gets one inferred.
-func New(req *model.Request) *Tab {
+func New(req *request.Request) *Tab {
 	if req.BodyType == "" {
-		req.BodyType = model.BodyNone
+		req.BodyType = request.BodyNone
 		if req.Body != "" {
-			req.BodyType = model.BodyText
+			req.BodyType = request.BodyText
 		}
 	}
 	return &Tab{Req: req, Saved: req.Clone()}
@@ -44,7 +44,7 @@ func (tab *Tab) Cancel() bool {
 	if !tab.cancelSend() {
 		return false
 	}
-	tab.Resp = &model.Response{Err: model.ErrCancelled}
+	tab.Resp = &request.Response{Err: request.ErrCancelled}
 	return true
 }
 

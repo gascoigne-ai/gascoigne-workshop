@@ -4,13 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto/ws"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 )
 
 // SSE reads Server-Sent Events: a long GET whose answer is a stream of
@@ -29,7 +28,7 @@ type sseEvent struct {
 }
 
 // Connect implements Streamer.
-func (s SSE) Connect(ctx context.Context, req model.Request) (port.Session, error) {
+func (s SSE) Connect(ctx context.Context, req request.Request) (request.Session, error) {
 	if !strings.HasPrefix(req.URL, "http://") && !strings.HasPrefix(req.URL, "https://") {
 		return nil, fmt.Errorf("%q is not an http or https URL", req.URL)
 	}
@@ -62,7 +61,7 @@ func (s SSE) Connect(ctx context.Context, req model.Request) (port.Session, erro
 		return nil, fmt.Errorf("%s", resp.Status)
 	}
 	se := &sseSession{eventLog: newEventLog(), cancel: cancel}
-	se.emit(port.Event{Dir: port.Info, Kind: port.KindOpen, Text: "Connected to " + req.URL})
+	se.emit(request.Event{Dir: request.Info, Kind: request.KindOpen, Text: "Connected to " + req.URL})
 	go func() {
 		defer func() {
 			resp.Body.Close()
@@ -73,12 +72,12 @@ func (s SSE) Connect(ctx context.Context, req model.Request) (port.Session, erro
 			if ev.id != "" {
 				text = fmt.Sprintf("[%s] %s", ev.id, ev.data)
 			}
-			se.emit(port.Event{Dir: port.Received, Kind: port.KindMessage, Name: ev.name, Text: text, Size: len(ev.data), ID: ev.id})
+			se.emit(request.Event{Dir: request.Received, Kind: request.KindMessage, Name: ev.name, Text: text, Size: len(ev.data), ID: ev.id})
 		})
 		if err != nil && !se.closing() {
-			se.emit(port.Event{Dir: port.Info, Kind: port.KindClose, Code: ws.CloseAbnormal, Text: "Connection lost: " + err.Error()})
+			se.emit(request.Event{Dir: request.Info, Kind: request.KindClose, Code: ws.CloseAbnormal, Text: "Connection lost: " + err.Error()})
 		} else if !se.closing() {
-			se.emit(port.Event{Dir: port.Info, Kind: port.KindClose, Text: "The server ended the stream"})
+			se.emit(request.Event{Dir: request.Info, Kind: request.KindClose, Text: "The server ended the stream"})
 		}
 	}()
 	return se, nil
@@ -86,24 +85,24 @@ func (s SSE) Connect(ctx context.Context, req model.Request) (port.Session, erro
 
 // Send implements Protocol as the one-shot form: connect and return the
 // first event.
-func (s SSE) Send(ctx context.Context, req model.Request) (model.Response, error) {
+func (s SSE) Send(ctx context.Context, req request.Request) (request.Response, error) {
 	start := time.Now()
 	sess, err := s.Connect(ctx, req)
 	if err != nil {
-		return model.Response{Err: stopReason(ctx, err), Duration: time.Since(start)}, nil
+		return request.Response{Err: stopReason(ctx, err), Duration: time.Since(start)}, nil
 	}
 	defer sess.Close(context.WithoutCancel(ctx))
 	for {
 		select {
 		case e, ok := <-sess.Events():
 			if !ok {
-				return model.Response{Err: "the stream ended before an event", Duration: time.Since(start)}, nil
+				return request.Response{Err: "the stream ended before an event", Duration: time.Since(start)}, nil
 			}
-			if e.Dir == port.Received {
-				return model.Response{Status: http.StatusOK, StatusText: "OK", Duration: time.Since(start), Size: e.Size, Body: []byte(e.Text)}, nil
+			if e.Dir == request.Received {
+				return request.Response{Status: http.StatusOK, StatusText: "OK", Duration: time.Since(start), Size: e.Size, Body: []byte(e.Text)}, nil
 			}
 		case <-ctx.Done():
-			return model.Response{Err: stopReason(ctx, ctx.Err()), Duration: time.Since(start)}, nil
+			return request.Response{Err: stopReason(ctx, ctx.Err()), Duration: time.Since(start)}, nil
 		}
 	}
 }

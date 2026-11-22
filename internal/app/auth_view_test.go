@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/editor"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
@@ -23,19 +23,19 @@ var authPaneStates = []struct {
 }{
 	{"none", func(tab *reqTab) {}},
 	{"bearer", func(tab *reqTab) {
-		tab.Req.Auth = model.Auth{Type: model.AuthBearer, Token: "example-token"}
+		tab.Req.Auth = request.Auth{Type: request.AuthBearer, Token: "example-token"}
 	}},
 	{"basic", func(tab *reqTab) {
-		tab.Req.Auth = model.Auth{Type: model.AuthBasic, User: "ann", Password: "pw"}
+		tab.Req.Auth = request.Auth{Type: request.AuthBasic, User: "ann", Password: "pw"}
 	}},
 	{"apikey-header", func(tab *reqTab) {
-		tab.Req.Auth = model.Auth{Type: model.AuthAPIKey, KeyName: "X-Key", KeyValue: "v1"}
+		tab.Req.Auth = request.Auth{Type: request.AuthAPIKey, KeyName: "X-Key", KeyValue: "v1"}
 	}},
 	{"apikey-query", func(tab *reqTab) {
-		tab.Req.Auth = model.Auth{Type: model.AuthAPIKey, KeyName: "X-Key", KeyValue: "v1", KeyIn: model.KeyInQuery}
+		tab.Req.Auth = request.Auth{Type: request.AuthAPIKey, KeyName: "X-Key", KeyValue: "v1", KeyIn: request.KeyInQuery}
 	}},
 	{"bearer-shown", func(tab *reqTab) {
-		tab.Req.Auth = model.Auth{Type: model.AuthBearer, Token: "example-token"}
+		tab.Req.Auth = request.Auth{Type: request.AuthBearer, Token: "example-token"}
 		tab.showSecrets = true
 	}},
 }
@@ -78,16 +78,16 @@ func TestTheAuthPaneLaysOutAsPinned(t *testing.T) {
 func TestTheAuthFieldsEditTheTabsInputs(t *testing.T) {
 	cases := []struct {
 		name        string
-		auth        model.Auth
+		auth        request.Auth
 		showSecrets bool
 		ids         []editor.AuthField
 		masked      []bool
 	}{
-		{"bearer", model.Auth{Type: model.AuthBearer}, false, []editor.AuthField{"token"}, []bool{true}},
-		{"bearer shown", model.Auth{Type: model.AuthBearer}, true, []editor.AuthField{"token"}, []bool{false}},
-		{"basic", model.Auth{Type: model.AuthBasic}, false, []editor.AuthField{"user", "password"}, []bool{false, true}},
-		{"api key", model.Auth{Type: model.AuthAPIKey}, false, []editor.AuthField{"keyname", "keyvalue"}, []bool{false, true}},
-		{"api key shown", model.Auth{Type: model.AuthAPIKey}, true, []editor.AuthField{"keyname", "keyvalue"}, []bool{false, false}},
+		{"bearer", request.Auth{Type: request.AuthBearer}, false, []editor.AuthField{"token"}, []bool{true}},
+		{"bearer shown", request.Auth{Type: request.AuthBearer}, true, []editor.AuthField{"token"}, []bool{false}},
+		{"basic", request.Auth{Type: request.AuthBasic}, false, []editor.AuthField{"user", "password"}, []bool{false, true}},
+		{"api key", request.Auth{Type: request.AuthAPIKey}, false, []editor.AuthField{"keyname", "keyvalue"}, []bool{false, true}},
+		{"api key shown", request.Auth{Type: request.AuthAPIKey}, true, []editor.AuthField{"keyname", "keyvalue"}, []bool{false, false}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -119,13 +119,13 @@ func TestTheAuthFieldsEditTheTabsInputs(t *testing.T) {
 func TestTheShowSecretsCheckFollowsTheTab(t *testing.T) {
 	cases := []struct {
 		name        string
-		auth        model.AuthType
+		auth        request.AuthType
 		showSecrets bool
 		want        []string
 	}{
-		{"none", model.AuthNone, false, nil},
-		{"hidden", model.AuthBearer, false, []string{"{Base:{} on:false}"}},
-		{"shown", model.AuthBearer, true, []string{"{Base:{} on:true}"}},
+		{"none", request.AuthNone, false, nil},
+		{"hidden", request.AuthBearer, false, []string{"{Base:{} on:false}"}},
+		{"shown", request.AuthBearer, true, []string{"{Base:{} on:true}"}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -157,11 +157,11 @@ func TestTheAPIKeyPlaceChoiceStoresTheClickedPlace(t *testing.T) {
 	a := openAuthPane(t)
 	click(a, authKeyX, chipsY)
 	click(a, 516, authRow3Y) // the Query choice
-	if got := a.cur().Req.Auth.KeyIn; got != model.KeyInQuery {
+	if got := a.cur().Req.Auth.KeyIn; got != request.KeyInQuery {
 		t.Fatalf("KeyIn = %q, want query", got)
 	}
 	click(a, 440, authRow3Y) // the Header choice
-	if got := a.cur().Req.Auth.KeyIn; got != model.KeyInHeader {
+	if got := a.cur().Req.Auth.KeyIn; got != request.KeyInHeader {
 		t.Fatalf("KeyIn = %q, want header", got)
 	}
 }
@@ -171,12 +171,12 @@ func TestTheAuthTypeChipsChooseTheType(t *testing.T) {
 	cases := []struct {
 		name string
 		x    int
-		want model.AuthType
+		want request.AuthType
 	}{
-		{"bearer", authBearerX, model.AuthBearer},
-		{"basic", authBasicX, model.AuthBasic},
-		{"api key", authKeyX, model.AuthAPIKey},
-		{"none", authNoneX, model.AuthNone},
+		{"bearer", authBearerX, request.AuthBearer},
+		{"basic", authBasicX, request.AuthBasic},
+		{"api key", authKeyX, request.AuthAPIKey},
+		{"none", authNoneX, request.AuthNone},
 	}
 	a := openAuthPane(t)
 	for _, tc := range cases {

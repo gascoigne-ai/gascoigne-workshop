@@ -3,7 +3,7 @@ package app
 import (
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // allowed reports whether source may be sent or connected now. A request
@@ -18,12 +18,12 @@ import (
 // file. Not asked about: a .workshop.* config in the working directory (the
 // user's decision) and .proto imports, which cannot leave their import
 // paths.
-func (a *App) allowed(tab *reqTab, source *model.Request, again func()) bool {
+func (a *App) allowed(tab *reqTab, source *request.Request, again func()) bool {
 	folder := ""
 	if entry, ok := a.entryFor(tab.Req); ok {
 		folder = entry.Dir
 	}
-	var unknown []model.Access
+	var unknown []request.Access
 	for _, access := range source.Expanded(a.varsFor(tab.Req)).Accesses(folder) {
 		if !a.trusted.Has(access) {
 			unknown = append(unknown, access)

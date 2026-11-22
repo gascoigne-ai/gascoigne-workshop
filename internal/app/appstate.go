@@ -2,8 +2,7 @@ package app
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/sentlog"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
@@ -24,10 +23,10 @@ import (
 
 // ports holds the adapters the app talks to, each replaced by a null one or a fake when the build gives none.
 type ports struct {
-	protocols    func(reqport.ProtocolConfig) reqport.Registry // builds the registry; nil has no protocols
-	grpcMethods  reqport.GRPCMethods
-	grpcSchema   reqport.GRPCSchema
-	curl         func(model.Request) string
+	protocols    func(request.ProtocolConfig) request.Registry // builds the registry; nil has no protocols
+	grpcMethods  request.GRPCMethods
+	grpcSchema   request.GRPCSchema
+	curl         func(request.Request) string
 	store        collection.Store
 	clients      collection.ClientConfigs // the build's client config; nil has none
 	states       workspace.StateStore
@@ -44,17 +43,17 @@ type ports struct {
 
 // treeState holds the sidebar: selection, filter, drag, expanded folders and scroll.
 type treeState struct {
-	expanded      map[*model.Folder]bool
-	selected      model.Node       // the tree node last clicked or moved to
+	expanded      map[*request.Folder]bool
+	selected      request.Node     // the tree node last clicked or moved to
 	treeFocus     bool             // the tree has the keyboard
 	filter        widget.TextField // the sidebar filter
 	sent          sentlog.Log      // requests sent in this workspace, newest first
 	showSent      bool             // the sidebar lists sent requests instead of the tree
-	dragNode      model.Node       // the tree node being dragged, none when not dragging
-	pressedFolder *model.Folder    // the folder row the button went down on, toggled on release there
-	hoverFolder   *model.Folder    // the closed folder a drag has been over
+	dragNode      request.Node     // the tree node being dragged, none when not dragging
+	pressedFolder *request.Folder  // the folder row the button went down on, toggled on release there
+	hoverFolder   *request.Folder  // the closed folder a drag has been over
 	hoverTicks    int              // for how many frames
-	dropTarget    model.Node       // the node the pointer is over while dragging
+	dropTarget    request.Node     // the node the pointer is over while dragging
 	treeScroll    widget.ScrollState
 }
 
@@ -93,18 +92,18 @@ type frameState struct {
 
 // persistState holds what is remembered between runs and written in the background: the state file, the collections' autosave and the trust list.
 type persistState struct {
-	statePath        string                                   // where the UI state is remembered
-	stateAccess      fileversion.Access                       // read-only when a newer build wrote the file
-	saves            map[*model.Collection]*autosave.Debounce // when each open collection was last written
-	writes           serial.Queue                             // the background writes in flight and waiting, by file
-	keys             changeKeys                               // the comparable forms of the collection and the state, recomputed only on frames where something could have changed
-	stateSave        autosave.Debounce                        // when the remembered state was last written
-	welcomed         string                                   // the version whose welcome dialog was shown
-	initial          state.Window                             // window geometry of the last run
-	setIsRemembered  bool                                     // the open set is the remembered list (opened from it, or changed by the user since), so it is written whole
-	unreadable       []settings.OpenCollection                // remembered folders that failed to load; kept in the list so a mount or a fix brings them back
-	defaultWorkspace string                                   // beside it is the collections folder, where a first save goes
-	trusted          model.AccessSet                          // what the user allowed; remembered in the state file
+	statePath        string                                     // where the UI state is remembered
+	stateAccess      fileversion.Access                         // read-only when a newer build wrote the file
+	saves            map[*request.Collection]*autosave.Debounce // when each open collection was last written
+	writes           serial.Queue                               // the background writes in flight and waiting, by file
+	keys             changeKeys                                 // the comparable forms of the collection and the state, recomputed only on frames where something could have changed
+	stateSave        autosave.Debounce                          // when the remembered state was last written
+	welcomed         string                                     // the version whose welcome dialog was shown
+	initial          state.Window                               // window geometry of the last run
+	setIsRemembered  bool                                       // the open set is the remembered list (opened from it, or changed by the user since), so it is written whole
+	unreadable       []settings.OpenCollection                  // remembered folders that failed to load; kept in the list so a mount or a fix brings them back
+	defaultWorkspace string                                     // beside it is the collections folder, where a first save goes
+	trusted          request.AccessSet                          // what the user allowed; remembered in the state file
 }
 
 // settingsState holds the settings, their file and the settings dialog with its pages.

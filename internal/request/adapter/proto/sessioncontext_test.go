@@ -3,7 +3,7 @@ package proto
 import (
 	"context"
 	"errors"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"net/http"
 	"testing"
 	"time"
@@ -13,7 +13,7 @@ import (
 
 // openSessions are the sessions that write, each over a peer that takes
 // whatever it is sent.
-func openSessions(t *testing.T) map[string]port.Session {
+func openSessions(t *testing.T) map[string]request.Session {
 	t.Helper()
 	url := wsServer(t, func(conn *ws.Conn, _ *http.Request) {
 		for {
@@ -29,7 +29,7 @@ func openSessions(t *testing.T) map[string]port.Session {
 	socket := &wsSession{eventLog: newEventLog(), conn: conn}
 	go socket.readLoop()
 	mcp := &mcpSession{eventLog: newEventLog(), tr: closedTransport{}, waiters: map[int64]chan rpcAnswer{}}
-	sessions := map[string]port.Session{"websocket": socket, "mcp": mcp}
+	sessions := map[string]request.Session{"websocket": socket, "mcp": mcp}
 	t.Cleanup(func() {
 		for _, session := range sessions {
 			session.Close(context.Background())
@@ -39,9 +39,9 @@ func openSessions(t *testing.T) map[string]port.Session {
 }
 
 func TestAWriteWithAnEndedContextSendsNothing(t *testing.T) {
-	writes := map[string]func(ctx context.Context, session port.Session) error{
-		"send": func(ctx context.Context, session port.Session) error { return session.Send(ctx, "ping") },
-		"ping": func(ctx context.Context, session port.Session) error { return session.Ping(ctx) },
+	writes := map[string]func(ctx context.Context, session request.Session) error{
+		"send": func(ctx context.Context, session request.Session) error { return session.Send(ctx, "ping") },
+		"ping": func(ctx context.Context, session request.Session) error { return session.Ping(ctx) },
 	}
 	for sessionName, session := range openSessions(t) {
 		for writeName, write := range writes {

@@ -3,7 +3,7 @@ package tabs
 import (
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // PastLimit is how many earlier responses a tab keeps for its History menu.
@@ -11,13 +11,13 @@ const PastLimit = 10
 
 // PastResponse is an earlier response of a tab and when it was replaced.
 type PastResponse struct {
-	Resp *model.Response
+	Resp *request.Response
 	At   time.Time
 }
 
 // Remember puts the response a new one replaces into the history, newest
 // first. Failed requests are not kept: there is nothing to look at.
-func (tab *Tab) Remember(old *model.Response, at time.Time) {
+func (tab *Tab) Remember(old *request.Response, at time.Time) {
 	if old == nil || old.Err != "" {
 		return
 	}

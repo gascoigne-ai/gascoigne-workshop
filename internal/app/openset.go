@@ -8,7 +8,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/envs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/tree"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/autosave"
 )
@@ -25,7 +25,7 @@ import (
 // nothing is open.
 func (a *App) focus() (collections.Entry, bool) {
 	if len(a.list.Tabs) > 0 {
-		if entry, ok := a.open.Owner(model.Node{Req: a.cur().Req}); ok {
+		if entry, ok := a.open.Owner(request.Node{Req: a.cur().Req}); ok {
 			return entry, true
 		}
 	}
@@ -39,7 +39,7 @@ func (a *App) focus() (collections.Entry, bool) {
 }
 
 // focusCol is the focused collection, nil when nothing is open.
-func (a *App) focusCol() *model.Collection {
+func (a *App) focusCol() *request.Collection {
 	entry, _ := a.focus()
 	return entry.Collection
 }
@@ -55,8 +55,8 @@ func (a *App) headerTitle() string {
 // entryFor is the collection that holds req. A request of no collection,
 // such as the blank tab left after closing the last one, goes with the
 // focused collection, as it did when one collection was open at a time.
-func (a *App) entryFor(req *model.Request) (collections.Entry, bool) {
-	if entry, ok := a.open.Owner(model.Node{Req: req}); ok {
+func (a *App) entryFor(req *request.Request) (collections.Entry, bool) {
+	if entry, ok := a.open.Owner(request.Node{Req: req}); ok {
 		return entry, true
 	}
 	return a.focus()
@@ -64,7 +64,7 @@ func (a *App) entryFor(req *model.Request) (collections.Entry, bool) {
 
 // isRoot reports whether dir is the root folder of an open collection,
 // which is renamed and deleted as a collection, never moved.
-func (a *App) isRoot(dir *model.Folder) bool {
+func (a *App) isRoot(dir *request.Folder) bool {
 	for _, entry := range a.open.Entries {
 		if dir == &entry.Collection.Folder {
 			return true
@@ -75,14 +75,14 @@ func (a *App) isRoot(dir *model.Folder) bool {
 
 // eachRoot calls visit with the root folder of every open collection, in
 // tree order.
-func (a *App) eachRoot(visit func(root *model.Folder)) {
+func (a *App) eachRoot(visit func(root *request.Folder)) {
 	for _, entry := range a.open.Entries {
 		visit(&entry.Collection.Folder)
 	}
 }
 
 // saveOf is when col was last written.
-func (a *App) saveOf(col *model.Collection) *autosave.Debounce {
+func (a *App) saveOf(col *request.Collection) *autosave.Debounce {
 	debounce := a.saves[col]
 	if debounce == nil {
 		fresh := autosave.New(saveDebounce, "")
@@ -93,7 +93,7 @@ func (a *App) saveOf(col *model.Collection) *autosave.Debounce {
 }
 
 // markSaved records that col is on disk as it is now.
-func (a *App) markSaved(col *model.Collection) { a.saveOf(col).Saved(a.collectionKeyNow(col)) }
+func (a *App) markSaved(col *request.Collection) { a.saveOf(col).Saved(a.collectionKeyNow(col)) }
 
 // addCollection opens the collection saved in dir after the open ones. A
 // folder already open changes nothing and is focused; one that cannot be
@@ -116,7 +116,7 @@ func (a *App) addCollection(dir string) error {
 }
 
 // showOpened focuses a collection just opened and remembers the open set.
-func (a *App) showOpened(col *model.Collection) {
+func (a *App) showOpened(col *request.Collection) {
 	a.focusCollection(col)
 	a.markSaved(col) // a blank request added to an empty collection is not an edit
 	a.rememberCollections()
@@ -124,7 +124,7 @@ func (a *App) showOpened(col *model.Collection) {
 
 // loadCollection opens the collection in dir with the environment called
 // env active, or gives back the one already open there.
-func (a *App) loadCollection(dir, env string) (*model.Collection, error) {
+func (a *App) loadCollection(dir, env string) (*request.Collection, error) {
 	if entry, ok := a.open.ByDir(dir); ok {
 		return entry.Collection, nil
 	}
@@ -136,7 +136,7 @@ func (a *App) loadCollection(dir, env string) (*model.Collection, error) {
 }
 
 // openLoaded opens a collection read from dir, with its folders expanded.
-func (a *App) openLoaded(loaded model.Collection, dir, env string) *model.Collection {
+func (a *App) openLoaded(loaded request.Collection, dir, env string) *request.Collection {
 	col := &loaded
 	a.expandAll(&col.Folder)
 	a.include(col, dir, env)
@@ -145,7 +145,7 @@ func (a *App) openLoaded(loaded model.Collection, dir, env string) *model.Collec
 
 // include puts col, saved in dir ("" for not saved), into the open set
 // with the environment called env active, and counts it as saved.
-func (a *App) include(col *model.Collection, dir, env string) {
+func (a *App) include(col *request.Collection, dir, env string) {
 	a.open = collections.Update(a.open, collections.Open{Collection: col, Dir: dir})
 	selection := envs.None()
 	selection.Pick(col, env)
@@ -155,10 +155,10 @@ func (a *App) include(col *model.Collection, dir, env string) {
 
 // focusCollection shows col: its first request, or a new blank one in its
 // root when it has none.
-func (a *App) focusCollection(col *model.Collection) {
+func (a *App) focusCollection(col *request.Collection) {
 	first := tree.FirstRequest(&col.Folder)
 	if first == nil {
-		first = col.AddRequest(model.Request{Name: "New Request", Protocol: model.ProtocolREST, Method: "GET"})
+		first = col.AddRequest(request.Request{Name: "New Request", Protocol: request.ProtocolREST, Method: "GET"})
 	}
 	a.openRequest(first)
 }
@@ -183,7 +183,7 @@ func (a *App) openCollectionAt(dir string) {
 // edits: a collection with a folder is written as it closes, as a closed
 // tab keeps its edits in the collection, but one without a folder keeps
 // them nowhere, so it asks the way deleting does.
-func (a *App) requestCloseCollection(col *model.Collection) {
+func (a *App) requestCloseCollection(col *request.Collection) {
 	entry, ok := a.open.ByCollection(col)
 	if !ok {
 		return
@@ -205,7 +205,7 @@ func (a *App) closeFocusedCollection() {
 
 // moveCollection moves col one place up the tree (by -1) or down (by 1);
 // at an end it stays.
-func (a *App) moveCollection(col *model.Collection, by int) {
+func (a *App) moveCollection(col *request.Collection, by int) {
 	moved := collections.Update(a.open, collections.Shift{Collection: col, By: by})
 	if slices.Equal(moved.Entries, a.open.Entries) {
 		return
@@ -215,14 +215,14 @@ func (a *App) moveCollection(col *model.Collection, by int) {
 }
 
 // openIndex is the place of col in the tree, -1 when it is not open.
-func (a *App) openIndex(col *model.Collection) int {
+func (a *App) openIndex(col *request.Collection) int {
 	return slices.IndexFunc(a.open.Entries, func(entry collections.Entry) bool { return entry.Collection == col })
 }
 
 // closeCollection takes col out of the window: its edits are saved first,
 // its tabs close and the set left is remembered. Closing the last one
 // leaves an empty tree; nothing is made on disk.
-func (a *App) closeCollection(col *model.Collection) {
+func (a *App) closeCollection(col *request.Collection) {
 	entry, ok := a.open.ByCollection(col)
 	if !ok {
 		return
@@ -233,23 +233,23 @@ func (a *App) closeCollection(col *model.Collection) {
 		return
 	}
 	for _, open := range a.openTabs() {
-		if col.Folder.Contains(model.Node{Req: open.Req}) { // no tab is left to close its socket later
+		if col.Folder.Contains(request.Node{Req: open.Req}) { // no tab is left to close its socket later
 			a.disconnect(open)
 		}
 	}
-	a.closeTabsIn(model.Node{Dir: &col.Folder})
+	a.closeTabsIn(request.Node{Dir: &col.Folder})
 	a.forget(col)
 	a.rememberCollections()
 }
 
 // forget drops col from the open set and from everything that pointed
 // into it.
-func (a *App) forget(col *model.Collection) {
+func (a *App) forget(col *request.Collection) {
 	if a.varsTarget.refersTo(col) {
 		a.varsTarget = varsTarget{}
 	}
 	if col.Folder.Contains(a.selected) {
-		a.selected = model.Node{}
+		a.selected = request.Node{}
 	}
 	a.open = collections.Update(a.open, collections.Close{Collection: col})
 	delete(a.saves, col)

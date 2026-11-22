@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -15,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // mcpReply answers one JSON-RPC request the way a small server would.
@@ -50,14 +49,14 @@ func mcpHTTPServer(t *testing.T) (url string, log func() []string) {
 	t.Helper()
 	var mu sync.Mutex
 	var seen []string
-	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
 		mu.Lock()
-		seen = append(seen, request.Method+" "+request.Header.Get("Mcp-Session-Id")+" "+request.Header.Get("MCP-Protocol-Version")+" "+request.Header.Get("Authorization"))
+		seen = append(seen, call.Method+" "+call.Header.Get("Mcp-Session-Id")+" "+call.Header.Get("MCP-Protocol-Version")+" "+call.Header.Get("Authorization"))
 		mu.Unlock()
-		if request.Method == http.MethodDelete {
+		if call.Method == http.MethodDelete {
 			return
 		}
-		body, _ := io.ReadAll(request.Body)
+		body, _ := io.ReadAll(call.Body)
 		var m map[string]any
 		json.Unmarshal(body, &m)
 		out := mcpReply(m)
@@ -82,7 +81,7 @@ func mcpHTTPServer(t *testing.T) (url string, log func() []string) {
 }
 
 // waitFor reads events until one's text contains want.
-func waitFor(t *testing.T, session port.Session, want string) port.Event {
+func waitFor(t *testing.T, session request.Session, want string) request.Event {
 	t.Helper()
 	for {
 		select {
@@ -101,13 +100,13 @@ func waitFor(t *testing.T, session port.Session, want string) port.Event {
 
 func TestMCPHTTPSessionInitializesListsAndCalls(t *testing.T) {
 	url, seen := mcpHTTPServer(t)
-	s, err := MCP{}.Connect(context.Background(), model.Request{Protocol: "mcp", URL: url, Auth: model.Auth{Type: model.AuthBearer, Token: "tok"}})
+	s, err := MCP{}.Connect(context.Background(), request.Request{Protocol: "mcp", URL: url, Auth: request.Auth{Type: request.AuthBearer, Token: "tok"}})
 	if err != nil {
 		t.Fatal(err)
 	}
 	waitFor(t, s, "Connected to mock")
 	e := waitFor(t, s, `"tools":[`)
-	if e.Dir != port.Received || e.Kind != port.KindResponse {
+	if e.Dir != request.Received || e.Kind != request.KindResponse {
 		t.Fatalf("%+v", e)
 	}
 	waitFor(t, s, `"prompts":[]`)
@@ -116,15 +115,15 @@ func TestMCPHTTPSessionInitializesListsAndCalls(t *testing.T) {
 		t.Fatal(err)
 	}
 	sent := waitFor(t, s, `"tools/call"`)
-	if sent.Dir != port.Sent {
+	if sent.Dir != request.Sent {
 		t.Fatalf("sent event %+v", sent)
 	}
-	if got := waitFor(t, s, "echo {"); got.Dir != port.Received || !strings.Contains(got.Text, `{\"x\":1}`) {
+	if got := waitFor(t, s, "echo {"); got.Dir != request.Received || !strings.Contains(got.Text, `{\"x\":1}`) {
 		t.Fatalf("%+v", got)
 	}
 
 	s.Send(context.Background(), `call boom`)
-	if got := waitFor(t, s, "no such tool"); got.Kind != port.KindError {
+	if got := waitFor(t, s, "no such tool"); got.Kind != request.KindError {
 		t.Fatalf("error kind = %q", got.Kind)
 	}
 	if err := s.Ping(context.Background()); err != nil {
@@ -145,7 +144,7 @@ func TestMCPHTTPSessionInitializesListsAndCalls(t *testing.T) {
 
 func TestMCPSendShorthandsAndErrors(t *testing.T) {
 	url, _ := mcpHTTPServer(t)
-	s, err := MCP{}.Connect(context.Background(), model.Request{URL: url})
+	s, err := MCP{}.Connect(context.Background(), request.Request{URL: url})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -170,40 +169,40 @@ func TestMCPSendShorthandsAndErrors(t *testing.T) {
 
 func TestMCPSendIsAOneShotToolsList(t *testing.T) {
 	url, _ := mcpHTTPServer(t)
-	resp, err := MCP{}.Send(context.Background(), model.Request{URL: url})
+	resp, err := MCP{}.Send(context.Background(), request.Request{URL: url})
 	if err != nil || resp.Err != "" || resp.Status != 200 || !strings.Contains(string(resp.Body), `"echo"`) {
 		t.Fatalf("%+v %v", resp, err)
 	}
 }
 
 func TestMCPRejectsBadURLsAndFailedServers(t *testing.T) {
-	if _, err := (MCP{}).Connect(context.Background(), model.Request{URL: "ftp://x"}); err == nil {
+	if _, err := (MCP{}).Connect(context.Background(), request.Request{URL: "ftp://x"}); err == nil {
 		t.Fatal("ftp URL accepted")
 	}
 	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
 		http.Error(writer, "nope", http.StatusUnauthorized)
 	}))
 	defer srv.Close()
-	_, err := MCP{}.Connect(context.Background(), model.Request{URL: srv.URL})
+	_, err := MCP{}.Connect(context.Background(), request.Request{URL: srv.URL})
 	if err == nil || !strings.Contains(err.Error(), "401") {
 		t.Fatalf("err = %v", err)
 	}
-	resp, _ := MCP{}.Send(context.Background(), model.Request{URL: srv.URL})
+	resp, _ := MCP{}.Send(context.Background(), request.Request{URL: srv.URL})
 	if !strings.Contains(resp.Err, "401") {
 		t.Fatalf("one-shot error %q", resp.Err)
 	}
 }
 
 func TestMCPConnectCanBeCancelled(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		io.Copy(io.Discard, request.Body) // reading the body lets the server notice a disconnect
-		<-request.Context().Done()        // never answers
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
+		io.Copy(io.Discard, call.Body) // reading the body lets the server notice a disconnect
+		<-call.Context().Done()        // never answers
 	}))
 	defer srv.Close()
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
 	start := time.Now()
-	if _, err := (MCP{}).Connect(ctx, model.Request{URL: srv.URL}); err == nil {
+	if _, err := (MCP{}).Connect(ctx, request.Request{URL: srv.URL}); err == nil {
 		t.Fatal("connect to a silent server succeeded")
 	}
 	if time.Since(start) > 2*time.Second {
@@ -252,7 +251,7 @@ func TestMCPStdioSession(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Setenv("MCP_HELPER", "1")
-	s, err := MCP{}.Connect(context.Background(), model.Request{URL: model.StdioPrefix + shellQuote(exe)})
+	s, err := MCP{}.Connect(context.Background(), request.Request{URL: request.StdioPrefix + shellQuote(exe)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -269,29 +268,29 @@ func TestMCPStdioSession(t *testing.T) {
 }
 
 func TestMCPStdioMissingCommand(t *testing.T) {
-	if _, err := (MCP{}).Connect(context.Background(), model.Request{URL: "stdio:/no/such/binary"}); err == nil {
+	if _, err := (MCP{}).Connect(context.Background(), request.Request{URL: "stdio:/no/such/binary"}); err == nil {
 		t.Fatal("started a missing command")
 	}
-	if _, err := (MCP{}).Connect(context.Background(), model.Request{URL: "stdio:"}); err == nil {
+	if _, err := (MCP{}).Connect(context.Background(), request.Request{URL: "stdio:"}); err == nil {
 		t.Fatal("started an empty command")
 	}
 }
 
 func TestMCPConnectAnnouncesTheServerInfoAsAnEvent(t *testing.T) {
 	url, _ := mcpHTTPServer(t)
-	s, err := MCP{}.Connect(context.Background(), model.Request{Protocol: "mcp", URL: url})
+	s, err := MCP{}.Connect(context.Background(), request.Request{Protocol: "mcp", URL: url})
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer s.Close(context.Background())
-	var e port.Event
-	for e.Kind != port.KindInitialize {
+	var e request.Event
+	for e.Kind != request.KindInitialize {
 		e = waitFor(t, s, `"serverInfo"`) // the response is logged too, as traffic
 	}
-	if e.Dir != port.Info {
+	if e.Dir != request.Info {
 		t.Fatalf("%+v", e)
 	}
-	server, ok := model.ParseServerInfo(e.Text)
+	server, ok := request.ParseServerInfo(e.Text)
 	if !ok || server.Name != "mock" || server.Version != "1" {
 		t.Fatalf("%+v %v", server, ok)
 	}
@@ -299,12 +298,12 @@ func TestMCPConnectAnnouncesTheServerInfoAsAnEvent(t *testing.T) {
 
 func TestMCPRequestReturnsTheResultOrTheServersError(t *testing.T) {
 	url, _ := mcpHTTPServer(t)
-	s, err := MCP{}.Connect(context.Background(), model.Request{Protocol: "mcp", URL: url})
+	s, err := MCP{}.Connect(context.Background(), request.Request{Protocol: "mcp", URL: url})
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer s.Close(context.Background())
-	requester, ok := s.(port.Requester)
+	requester, ok := s.(request.Requester)
 	if !ok {
 		t.Fatal("an MCP session answers requests")
 	}
@@ -367,8 +366,8 @@ func TestMCPStdioEndsWhenAServerSendsAnOversizedLine(t *testing.T) {
 // An initialize result that was not an object was decoded with its error
 // ignored, so the session went on with no server info and no word why.
 func TestAnUnreadableInitializeResultIsLogged(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		body, _ := io.ReadAll(request.Body)
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
+		body, _ := io.ReadAll(call.Body)
 		var m map[string]any
 		json.Unmarshal(body, &m)
 		out := mcpReply(m)
@@ -383,20 +382,20 @@ func TestAnUnreadableInitializeResultIsLogged(t *testing.T) {
 		json.NewEncoder(writer).Encode(out)
 	}))
 	defer srv.Close()
-	s, err := MCP{}.Connect(context.Background(), model.Request{URL: srv.URL})
+	s, err := MCP{}.Connect(context.Background(), request.Request{URL: srv.URL})
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer s.Close(context.Background())
 	e := waitFor(t, s, "initialize result")
-	if e.Dir != port.Info || e.Kind != port.KindError {
+	if e.Dir != request.Info || e.Kind != request.KindError {
 		t.Fatalf("%+v", e)
 	}
 }
 
 func TestMCPCloseWithAnEndedContextSkipsTheGoodbye(t *testing.T) {
 	url, seen := mcpHTTPServer(t)
-	s, err := MCP{}.Connect(context.Background(), model.Request{Protocol: "mcp", URL: url})
+	s, err := MCP{}.Connect(context.Background(), request.Request{Protocol: "mcp", URL: url})
 	if err != nil {
 		t.Fatal(err)
 	}

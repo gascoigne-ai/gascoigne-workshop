@@ -3,7 +3,7 @@ package app
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/tree"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/severity"
@@ -67,6 +67,6 @@ func (a *App) sentCandidates(folder string) []collections.Entry {
 }
 
 // Badge is the method label shown before a request's name.
-func (a *App) Badge(protocol model.Protocol, method string) Node {
+func (a *App) Badge(protocol request.Protocol, method string) Node {
 	return Text(requestBadge(protocol, method), Small(), Color(theme.MethodToken(method)), W(badgeSlot(a.ctx, badgeW)))
 }

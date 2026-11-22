@@ -1,5 +1,5 @@
-// Package proto sends a model.Request over one protocol and reports the
-// outcome as a model.Response. Protocols are looked up by name in a
+// Package proto sends a request.Request over one protocol and reports the
+// outcome as a request.Response. Protocols are looked up by name in a
 // Registry; nothing here knows about the UI.
 //
 // WebSocket, SSE and MCP are written by hand on net/http: the part the
@@ -19,35 +19,34 @@ package proto
 import (
 	"sort"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // NewRegistry returns the built-in protocols, one per row of
-// model.Protocols.
-func NewRegistry() port.Registry {
-	return port.Registry{
-		model.ProtocolREST:      REST{},
-		model.ProtocolWebSocket: WebSocket{},
-		model.ProtocolMCP:       MCP{},
-		model.ProtocolSSE:       SSE{},
-		model.ProtocolGRPC:      GRPC{},
+// request.Protocols.
+func NewRegistry() request.Registry {
+	return request.Registry{
+		request.ProtocolREST:      REST{},
+		request.ProtocolWebSocket: WebSocket{},
+		request.ProtocolMCP:       MCP{},
+		request.ProtocolSSE:       SSE{},
+		request.ProtocolGRPC:      GRPC{},
 	}
 }
 
 // Configured is NewRegistry with the HTTP-based protocols made from config.
 // WebSocket takes the TLS part only: its dialer has no proxy or cookie jar.
-func Configured(config port.ProtocolConfig) port.Registry {
+func Configured(config request.ProtocolConfig) request.Registry {
 	registry := NewRegistry()
 	network := Network{Jar: config.Jar, Proxy: config.Proxy, CAFile: config.CACert, CertFile: config.ClientCert, KeyFile: config.ClientKey}
-	registry[model.ProtocolREST] = REST{Jar: network.Jar, Proxy: network.Proxy, CAFile: network.CAFile, CertFile: network.CertFile, KeyFile: network.KeyFile}
-	registry[model.ProtocolSSE] = SSE{Network: network}
-	registry[model.ProtocolMCP] = MCP{Sampler: config.Sampler, Network: network}
-	registry[model.ProtocolWebSocket] = WebSocket{Network: network}
+	registry[request.ProtocolREST] = REST{Jar: network.Jar, Proxy: network.Proxy, CAFile: network.CAFile, CertFile: network.CertFile, KeyFile: network.KeyFile}
+	registry[request.ProtocolSSE] = SSE{Network: network}
+	registry[request.ProtocolMCP] = MCP{Sampler: config.Sampler, Network: network}
+	registry[request.ProtocolWebSocket] = WebSocket{Network: network}
 	return registry
 }
 
-func sortKV(rows []model.KV) {
+func sortKV(rows []request.KV) {
 	sort.Slice(rows, func(index, other int) bool {
 		if rows[index].Name != rows[other].Name {
 			return rows[index].Name < rows[other].Name

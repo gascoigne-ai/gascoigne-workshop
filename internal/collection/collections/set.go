@@ -4,14 +4,14 @@ import (
 	"path/filepath"
 	"slices"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // Entry is one open collection: its tree, the folder it is saved in and
 // its active environment. The Collection pointer is its identity, since
 // open tabs and the tree point into it.
 type Entry struct {
-	Collection *model.Collection
+	Collection *request.Collection
 	// Dir is the folder the collection is saved in, "" until its first
 	// save. Two entries never share a folder.
 	Dir string
@@ -22,7 +22,7 @@ type Entry struct {
 }
 
 // Environment is the entry's active environment, nil for none.
-func (entry Entry) Environment() *model.Environment {
+func (entry Entry) Environment() *request.Environment {
 	if entry.Env < 0 || entry.Env >= len(entry.Collection.Envs) {
 		return nil
 	}
@@ -31,7 +31,7 @@ func (entry Entry) Environment() *model.Environment {
 
 // VarsFor are the variables req is sent with: the entry's own collection,
 // environment and folders, nothing of another collection.
-func (entry Entry) VarsFor(req *model.Request) []model.KV {
+func (entry Entry) VarsFor(req *request.Request) []request.KV {
 	return entry.Collection.VarsFor(req, entry.Environment())
 }
 
@@ -50,35 +50,35 @@ type Msg interface{ setMsg() }
 // folder another open collection is saved in, changes nothing: two copies
 // of one folder would overwrite each other's files.
 type Open struct {
-	Collection *model.Collection
+	Collection *request.Collection
 	Dir        string
 }
 
 // Close takes Collection out of the set. Closing the last one leaves none;
 // what opens then is the caller's choice.
-type Close struct{ Collection *model.Collection }
+type Close struct{ Collection *request.Collection }
 
 // Move puts Collection before Before, at the end when Before is nil.
-type Move struct{ Collection, Before *model.Collection }
+type Move struct{ Collection, Before *request.Collection }
 
 // Shift moves Collection By places up the set (negative) or down
 // (positive); at an end it stays.
 type Shift struct {
-	Collection *model.Collection
+	Collection *request.Collection
 	By         int
 }
 
 // Located records that Collection is now saved in Dir, after its first
 // save or a rename. A folder another open collection holds is refused.
 type Located struct {
-	Collection *model.Collection
+	Collection *request.Collection
 	Dir        string
 }
 
 // ChooseEnv makes environment Index of Collection the active one, none
 // when Index is out of range.
 type ChooseEnv struct {
-	Collection *model.Collection
+	Collection *request.Collection
 	Index      int
 }
 
@@ -118,7 +118,7 @@ func Update(set Set, msg Msg) Set {
 	return set
 }
 
-func open(set Set, col *model.Collection, dir string) Set {
+func open(set Set, col *request.Collection, dir string) Set {
 	if set.index(col) >= 0 || set.Taken(dir, nil) {
 		return set
 	}
@@ -126,7 +126,7 @@ func open(set Set, col *model.Collection, dir string) Set {
 	return set
 }
 
-func move(set Set, col, before *model.Collection) Set {
+func move(set Set, col, before *request.Collection) Set {
 	from := set.index(col)
 	if from < 0 || col == before || (before != nil && set.index(before) < 0) {
 		return set
@@ -141,13 +141,13 @@ func move(set Set, col, before *model.Collection) Set {
 	return set
 }
 
-func shift(set Set, col *model.Collection, by int) Set {
+func shift(set Set, col *request.Collection, by int) Set {
 	from := set.index(col)
 	to := from + by
 	if from < 0 || to < 0 || to >= len(set.Entries) {
 		return set
 	}
-	var before *model.Collection // nil puts it last
+	var before *request.Collection // nil puts it last
 	switch {
 	case by < 0:
 		before = set.Entries[to].Collection
@@ -157,7 +157,7 @@ func shift(set Set, col *model.Collection, by int) Set {
 	return move(set, col, before)
 }
 
-func envIndex(col *model.Collection, index int) int {
+func envIndex(col *request.Collection, index int) int {
 	if index < 0 || index >= len(col.Envs) {
 		return -1
 	}
@@ -173,7 +173,7 @@ func cleanDir(dir string) string {
 	return filepath.Clean(dir)
 }
 
-func (set Set) index(col *model.Collection) int {
+func (set Set) index(col *request.Collection) int {
 	return slices.IndexFunc(set.Entries, func(entry Entry) bool { return entry.Collection == col })
 }
 
@@ -190,14 +190,14 @@ func (set Set) ByDir(dir string) (Entry, bool) {
 
 // Taken reports whether an open collection other than except is saved in
 // dir, so that a save or rename into it has to be refused.
-func (set Set) Taken(dir string, except *model.Collection) bool {
+func (set Set) Taken(dir string, except *request.Collection) bool {
 	entry, ok := set.ByDir(dir)
 	return ok && entry.Collection != except
 }
 
 // Owner is the open collection that holds node: its root folder, or a
 // folder or request anywhere below it.
-func (set Set) Owner(node model.Node) (Entry, bool) {
+func (set Set) Owner(node request.Node) (Entry, bool) {
 	for _, entry := range set.Entries {
 		if entry.Collection.Folder.Contains(node) {
 			return entry, true
@@ -207,7 +207,7 @@ func (set Set) Owner(node model.Node) (Entry, bool) {
 }
 
 // ByCollection is the entry of the open collection col.
-func (set Set) ByCollection(col *model.Collection) (Entry, bool) {
+func (set Set) ByCollection(col *request.Collection) (Entry, bool) {
 	index := set.index(col)
 	if index < 0 {
 		return Entry{}, false
@@ -217,8 +217,8 @@ func (set Set) ByCollection(col *model.Collection) (Entry, bool) {
 
 // VarsFor are the variables req is sent with, from its own collection
 // only; a request of no open collection has none, never another's.
-func (set Set) VarsFor(req *model.Request) ([]model.KV, bool) {
-	entry, ok := set.Owner(model.Node{Req: req})
+func (set Set) VarsFor(req *request.Request) ([]request.KV, bool) {
+	entry, ok := set.Owner(request.Node{Req: req})
 	if !ok {
 		return nil, false
 	}

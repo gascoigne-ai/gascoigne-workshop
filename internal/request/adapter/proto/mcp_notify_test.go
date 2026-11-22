@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // notifyServer is an MCP server over HTTP with a push stream: a GET
@@ -39,9 +39,9 @@ func (server *notifyServer) streamHeaders(t *testing.T) http.Header {
 func newNotifyServer(t *testing.T, streamStatus int) *notifyServer {
 	t.Helper()
 	server := &notifyServer{streamHdr: make(chan http.Header, 1)}
-	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		if request.Method == http.MethodGet {
-			server.streamHdr <- request.Header.Clone()
+	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
+		if call.Method == http.MethodGet {
+			server.streamHdr <- call.Header.Clone()
 			if streamStatus != http.StatusOK {
 				writer.WriteHeader(streamStatus)
 				return
@@ -49,10 +49,10 @@ func newNotifyServer(t *testing.T, streamStatus int) *notifyServer {
 			writer.Header().Set("Content-Type", "text/event-stream")
 			fmt.Fprint(writer, "data: {\"jsonrpc\":\"2.0\",\"method\":\"notifications/tools/list_changed\"}\n\n")
 			writer.(http.Flusher).Flush()
-			<-request.Context().Done() // the stream stays open until the client leaves
+			<-call.Context().Done() // the stream stays open until the client leaves
 			return
 		}
-		body, _ := io.ReadAll(request.Body)
+		body, _ := io.ReadAll(call.Body)
 		var message map[string]any
 		_ = json.Unmarshal(body, &message)
 		if message["method"] == "tools/list" {
@@ -82,7 +82,7 @@ func newNotifyServer(t *testing.T, streamStatus int) *notifyServer {
 
 func TestMCPListensForServerNotificationsAndRefreshesAChangedList(t *testing.T) {
 	server := newNotifyServer(t, http.StatusOK)
-	session, err := MCP{}.Connect(context.Background(), model.Request{Protocol: "mcp", URL: server.url})
+	session, err := MCP{}.Connect(context.Background(), request.Request{Protocol: "mcp", URL: server.url})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -101,7 +101,7 @@ func TestMCPListensForServerNotificationsAndRefreshesAChangedList(t *testing.T) 
 
 func TestMCPWorksWhenTheServerHasNoNotificationStream(t *testing.T) {
 	server := newNotifyServer(t, http.StatusMethodNotAllowed)
-	session, err := MCP{}.Connect(context.Background(), model.Request{Protocol: "mcp", URL: server.url})
+	session, err := MCP{}.Connect(context.Background(), request.Request{Protocol: "mcp", URL: server.url})
 	if err != nil {
 		t.Fatal(err)
 	}

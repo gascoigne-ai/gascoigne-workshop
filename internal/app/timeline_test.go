@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 )
 
@@ -34,7 +34,7 @@ func TestTypingAColonSegmentAddsAPathParameterRowThatFillsTheSentURL(t *testing.
 	tab := a.cur()
 	tab.url = widget.NewTextField("https://api.test/users/:id")
 	a.urlEdited(tab)
-	var row *model.KV
+	var row *request.KV
 	for i := range tab.Req.Params {
 		if tab.Req.Params[i].Name == ":id" {
 			row = &tab.Req.Params[i]

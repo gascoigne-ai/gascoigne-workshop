@@ -3,7 +3,7 @@ package app
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/transfer"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
@@ -48,8 +48,8 @@ func (a *App) treeMenuItems(row collection.Row) []MenuItem {
 // itself is renamed, moved, closed and deleted as a collection, not as a
 // folder. Reordering is by menu rather than by drag, since a drag moves or
 // copies a node into a collection.
-func (a *App) rootMenuItems(root *model.Folder) []MenuItem {
-	owner, _ := a.open.Owner(model.Node{Dir: root})
+func (a *App) rootMenuItems(root *request.Folder) []MenuItem {
+	owner, _ := a.open.Owner(request.Node{Dir: root})
 	col := owner.Collection
 	at := a.openIndex(col)
 	return []MenuItem{

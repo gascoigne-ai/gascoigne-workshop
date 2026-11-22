@@ -16,14 +16,14 @@ import (
 	"github.com/bufbuild/protocompile/linker"
 	"github.com/bufbuild/protocompile/reporter"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // compileProtoFiles reads .proto files into linked descriptors. Relative
 // files and import paths are taken from baseDir (the collection's folder).
 // Imports are looked up on the import paths in order, then in the folders
 // of the given files, then among the standard google/protobuf files.
-// Errors in the sources come back as model.ProtoError values, joined, so
+// Errors in the sources come back as request.ProtoError values, joined, so
 // every problem found is shown with its file and line.
 func compileProtoFiles(ctx context.Context, baseDir string, files, importPaths []string) (linker.Files, error) {
 	files, importPaths = fromBase(baseDir, files), fromBase(baseDir, importPaths)
@@ -140,9 +140,9 @@ func (f *protoFinder) FindFileByPath(name string) (protocompile.SearchResult, er
 
 // protoError is a located problem of the compiler, with the path of the
 // file it is in.
-func (f *protoFinder) protoError(problem reporter.ErrorWithPos) model.ProtoError {
+func (f *protoFinder) protoError(problem reporter.ErrorWithPos) request.ProtoError {
 	position := problem.GetPosition()
-	return model.ProtoError{
+	return request.ProtoError{
 		Path:    f.pathOf(position.Filename),
 		Line:    position.Line,
 		Col:     position.Col,

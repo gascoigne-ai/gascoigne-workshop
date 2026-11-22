@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // siblings is the lower-case names taken in parent, but not skip's.
@@ -41,7 +41,7 @@ func (files Files) Create(parent, name string) (string, error) {
 		return "", err
 	}
 	dir := filepath.Join(parent, unique(slug(name), taken))
-	if err := files.Save(dir, model.Collection{Folder: model.Folder{Name: name}}); err != nil {
+	if err := files.Save(dir, request.Collection{Folder: request.Folder{Name: name}}); err != nil {
 		return "", err
 	}
 	return dir, nil

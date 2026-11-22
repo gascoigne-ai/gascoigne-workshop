@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // gateTransport is a transport whose sends block until release is closed or
@@ -137,7 +137,7 @@ func countNotes(session *mcpSession, prefix string) int {
 	for {
 		select {
 		case event := <-session.events:
-			if event.Kind == port.KindError && strings.HasPrefix(event.Text, prefix) {
+			if event.Kind == request.KindError && strings.HasPrefix(event.Text, prefix) {
 				count++
 			}
 		default:
@@ -190,10 +190,10 @@ func TestMCPSamplingAllowsOnePromptAtATime(t *testing.T) {
 	var calls atomic.Int32
 	unblock := make(chan struct{})
 	session := floodSession(gate)
-	session.sampler = func(ctx context.Context, request port.SamplingRequest) (port.SamplingResult, bool) {
+	session.sampler = func(ctx context.Context, call request.SamplingRequest) (request.SamplingResult, bool) {
 		calls.Add(1)
 		<-unblock
-		return port.SamplingResult{Text: "hi"}, true
+		return request.SamplingResult{Text: "hi"}, true
 	}
 	for id := 1; id <= 3; id++ {
 		session.deliver([]byte(fmt.Sprintf(`{"jsonrpc":"2.0","id":%d,"method":"sampling/createMessage","params":%s}`, id, samplingParams)))

@@ -2,7 +2,7 @@ package app
 
 import (
 	"context"
-	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"strings"
 	"testing"
 	"time"
@@ -11,13 +11,13 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
-var samplingAsked = reqport.SamplingRequest{
+var samplingAsked = request.SamplingRequest{
 	SystemPrompt: "Be brief",
-	Messages:     []reqport.SamplingMessage{{Role: "user", Text: "Say hi"}},
+	Messages:     []request.SamplingMessage{{Role: "user", Text: "Say hi"}},
 }
 
 type sampled struct {
-	result reqport.SamplingResult
+	result request.SamplingResult
 	ok     bool
 }
 

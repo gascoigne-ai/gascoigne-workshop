@@ -10,15 +10,15 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 )
 
 func TestNext(t *testing.T) {
-	chipOrder := []model.Protocol{"rest", "websocket", "mcp", "sse", "grpc"}
+	chipOrder := []request.Protocol{"rest", "websocket", "mcp", "sse", "grpc"}
 	tests := []struct {
 		name      string
-		cur, want model.Protocol
+		cur, want request.Protocol
 	}{
 		{"advances", "rest", "websocket"},
 		{"wraps", "grpc", "rest"},
@@ -58,7 +58,7 @@ func TestPaneTablesAreComplete(t *testing.T) {
 
 func TestResponsePanesNeverTouchNilResponse(t *testing.T) {
 	a := &App{}
-	tab := &reqTab{Tab: &tabs.Tab{Req: &model.Request{}}}
+	tab := &reqTab{Tab: &tabs.Tab{Req: &request.Request{}}}
 	for _, p := range responsePanes {
 		msg, _ := paneEmpty(p, tab)
 		if p.kind == paneNote && msg == "" && p.label != "Tests" {
@@ -71,9 +71,9 @@ func TestResponsePanesNeverTouchNilResponse(t *testing.T) {
 }
 
 func TestParamsChangedRewritesURL(t *testing.T) {
-	tab := newTab(&model.Request{
+	tab := newTab(&request.Request{
 		URL: "http://x/s?q=a&sort=stars",
-		Params: []model.KV{
+		Params: []request.KV{
 			{Name: "q", Value: "a", Enabled: true},
 			{Name: "sort", Value: "stars", Enabled: false},
 		},
@@ -86,7 +86,7 @@ func TestParamsChangedRewritesURL(t *testing.T) {
 
 func TestRequestBadge(t *testing.T) {
 	tests := []struct {
-		protocol     model.Protocol
+		protocol     request.Protocol
 		method, want string
 	}{
 		{"rest", "GET", "GET"}, {"", "POST", "POST"}, {"rest", "DELETE", "DEL"},
@@ -99,14 +99,14 @@ func TestRequestBadge(t *testing.T) {
 	}
 }
 
-func folderNames(folder *model.Folder) (out []string) {
+func folderNames(folder *request.Folder) (out []string) {
 	for _, s := range folder.Folders {
 		out = append(out, s.Name)
 	}
 	return
 }
 
-func requestNames(folder *model.Folder) (out []string) {
+func requestNames(folder *request.Folder) (out []string) {
 	for _, r := range folder.Requests {
 		out = append(out, r.Name)
 	}
@@ -114,7 +114,7 @@ func requestNames(folder *model.Folder) (out []string) {
 }
 
 func TestKVRows(t *testing.T) {
-	rows := []model.KV{
+	rows := []request.KV{
 		{Name: "q", Value: "x", Description: "d", Enabled: true},
 		{Name: "off", Value: "y"},
 	}
@@ -129,15 +129,15 @@ func TestKVRows(t *testing.T) {
 }
 
 var (
-	respErr = model.Response{Err: "boom"}
-	respOK  = model.Response{Status: 200, StatusText: "OK"}
+	respErr = request.Response{Err: "boom"}
+	respOK  = request.Response{Status: 200, StatusText: "OK"}
 )
 
 func TestSampleCollectionIsConsistent(t *testing.T) {
 	col := collection.GitHubSample()
 	reg := proto.NewRegistry()
-	var check func(folder *model.Folder, path string)
-	check = func(folder *model.Folder, path string) {
+	var check func(folder *request.Folder, path string)
+	check = func(folder *request.Folder, path string) {
 		seen := map[string]bool{}
 		for _, name := range append(folderNames(folder), requestNames(folder)...) {
 			if seen[name] {
@@ -167,14 +167,14 @@ func TestTheProtocolChipOffersGRPCAndSSEOnlyWhenTheyAreSwitchedOn(t *testing.T) 
 	tests := []struct {
 		name      string
 		grpc, sse bool
-		current   model.Protocol
-		want      []model.Protocol
+		current   request.Protocol
+		want      []request.Protocol
 	}{
-		{"both off", false, false, "rest", []model.Protocol{"rest", "websocket", "mcp"}},
-		{"sse on", false, true, "rest", []model.Protocol{"rest", "websocket", "mcp", "sse"}},
-		{"grpc on", true, false, "rest", []model.Protocol{"rest", "websocket", "mcp", "grpc"}},
-		{"both on", true, true, "rest", []model.Protocol{"rest", "websocket", "mcp", "sse", "grpc"}},
-		{"a request already on grpc keeps it", false, false, "grpc", []model.Protocol{"rest", "websocket", "mcp", "grpc"}},
+		{"both off", false, false, "rest", []request.Protocol{"rest", "websocket", "mcp"}},
+		{"sse on", false, true, "rest", []request.Protocol{"rest", "websocket", "mcp", "sse"}},
+		{"grpc on", true, false, "rest", []request.Protocol{"rest", "websocket", "mcp", "grpc"}},
+		{"both on", true, true, "rest", []request.Protocol{"rest", "websocket", "mcp", "sse", "grpc"}},
+		{"a request already on grpc keeps it", false, false, "grpc", []request.Protocol{"rest", "websocket", "mcp", "grpc"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

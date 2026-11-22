@@ -1,15 +1,15 @@
 # Architecture
 
 Start with `overview.md`; this file is the index of the detail. The layout follows the shared
-`common/architecture-style.md`: `model` and `port` are its core, `adapter` and `ui` its adapters,
+`common/architecture-style.md`: each domain's root package (types and ports) is its core, `adapter` and `ui` its adapters,
 the `App` its composition root. Known gaps are under Limits.
 
 ```mermaid
 flowchart LR
   cmd["cmd/workshop"] --> app["internal/app"]
   app --> ui["ui"] & ctl["controller"] & adp["adapter"]
-  ui --> ctl --> port["port"] --> mdl["model"]
-  adp -. implements .-> port
+  ui --> ctl --> root["domain root"]
+  adp -. implements .-> root
   subgraph toolkit["uitoolkit (knows nothing of the app)"]
     markup["markup"] --> widget["widget"]
     markup --> view["view"]

@@ -8,8 +8,8 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/transfer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/tree"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/editor"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/severity"
@@ -38,22 +38,22 @@ func (a *App) Driver() *Driver { return &a.driver }
 
 // dialogOpeners are the dialogs OpenDialog opens on the open request, by the
 // name a scene gives them.
-var dialogOpeners = map[string]func(app *App, node model.Node){
+var dialogOpeners = map[string]func(app *App, node request.Node){
 	"rename": (*App).renameNode,
 	"delete": (*App).deleteNode,
-	"move":   func(app *App, node model.Node) { app.openTransferPicker(node, transfer.Move) },
-	"copy":   func(app *App, node model.Node) { app.openTransferPicker(node, transfer.Copy) },
+	"move":   func(app *App, node request.Node) { app.openTransferPicker(node, transfer.Move) },
+	"copy":   func(app *App, node request.Node) { app.openTransferPicker(node, transfer.Copy) },
 }
 
 // OpenRequest opens the request with this name. A name that is not in the
 // collection is an error: showing the default tab instead would let a golden
 // pass for the wrong scene.
 func (d *Driver) OpenRequest(name string) error {
-	request := d.app.findRequestByName(name)
-	if request == nil {
+	call := d.app.findRequestByName(name)
+	if call == nil {
 		return fmt.Errorf("request %q is not in the collection", name)
 	}
-	d.app.openRequest(request)
+	d.app.openRequest(call)
 	return nil
 }
 
@@ -84,12 +84,12 @@ func (d *Driver) ShowResponsePane(label string) error {
 // ChooseBodyType chooses the body type id on the open request, as its chip does.
 func (d *Driver) ChooseBodyType(id string) error {
 	known := slices.ContainsFunc(bodyTypes, func(candidate bodyChoice) bool {
-		return candidate.id == model.BodyType(id)
+		return candidate.id == request.BodyType(id)
 	})
 	if !known {
 		return fmt.Errorf("body type %q is not one of the body chips", id)
 	}
-	d.app.setBodyType(d.app.cur(), model.BodyType(id))
+	d.app.setBodyType(d.app.cur(), request.BodyType(id))
 	d.app.markStale() // no input reports this edit, so the cached unsaved marks would not see it
 	return nil
 }
@@ -98,7 +98,7 @@ func (d *Driver) ChooseBodyType(id string) error {
 // typing would. It needs a JSON or Text body.
 func (d *Driver) TypeBody(text string) error {
 	tab := d.app.cur()
-	if tab.Req.BodyType != model.BodyJSON && tab.Req.BodyType != model.BodyText {
+	if tab.Req.BodyType != request.BodyJSON && tab.Req.BodyType != request.BodyText {
 		return fmt.Errorf("body text needs a JSON or Text body, the open request's is %q", tab.Req.BodyType)
 	}
 	tab.body.SelectAll()
@@ -129,7 +129,7 @@ func (d *Driver) OpenDialog(kind string) error {
 	if !ok {
 		return fmt.Errorf("dialog %q is not one of rename, delete, move, copy", kind)
 	}
-	open(d.app, model.Node{Req: d.app.cur().Req})
+	open(d.app, request.Node{Req: d.app.cur().Req})
 	return nil
 }
 
@@ -217,8 +217,8 @@ func (d *Driver) AddCollection(dir string) error {
 // OpenAllRequests opens every request of the collection in its own tab, so
 // the tab strip overflows.
 func (d *Driver) OpenAllRequests() {
-	d.app.eachRoot(func(root *model.Folder) {
-		tree.WalkRequests(root, "", func(_ string, request *model.Request) { d.app.openRequest(request) })
+	d.app.eachRoot(func(root *request.Folder) {
+		tree.WalkRequests(root, "", func(_ string, call *request.Request) { d.app.openRequest(call) })
 	})
 }
 
@@ -325,10 +325,10 @@ func answered(tab *reqTab) bool {
 	return !explores || tab.Server != nil // an explorer waits for the server to say who it is
 }
 
-func (a *App) findRequestByName(name string) *model.Request {
-	var found *model.Request
-	a.eachRoot(func(root *model.Folder) {
-		tree.WalkRequests(root, "", func(_ string, req *model.Request) {
+func (a *App) findRequestByName(name string) *request.Request {
+	var found *request.Request
+	a.eachRoot(func(root *request.Folder) {
+		tree.WalkRequests(root, "", func(_ string, req *request.Request) {
 			if found == nil && req.Name == name {
 				found = req
 			}

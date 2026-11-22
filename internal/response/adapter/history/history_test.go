@@ -9,13 +9,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 func entry(status int, body string) response.Entry {
 	return response.Entry{
 		At: time.Date(2026, 11, 6, 10, 0, 0, 0, time.UTC), Status: status, StatusText: "OK",
-		Duration: 1500 * time.Millisecond, Headers: []model.KV{{Name: "Content-Type", Value: "application/json", Enabled: true}},
+		Duration: 1500 * time.Millisecond, Headers: []request.KV{{Name: "Content-Type", Value: "application/json", Enabled: true}},
 		Body: []byte(body),
 	}
 }

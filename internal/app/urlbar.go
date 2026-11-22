@@ -1,8 +1,8 @@
 package app
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/editor"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -30,8 +30,8 @@ func next[T comparable](order []T, cur T) T {
 // protocolsFor are the protocols the chip cycles through for a request on
 // current: the experimental ones only when settings switch them on, except
 // the one the request already uses, so it never loses its protocol.
-func (a *App) protocolsFor(current model.Protocol) []model.Protocol {
-	var offered []model.Protocol
+func (a *App) protocolsFor(current request.Protocol) []request.Protocol {
+	var offered []request.Protocol
 	for _, view := range protocolViews {
 		if view.offered == nil || view.offered(a.settings) || view.protocol == current {
 			offered = append(offered, view.protocol)
@@ -60,7 +60,7 @@ var urlBarTemplate = markup.Must("urlbar.vml", urlbarSource)
 // while a request runs.
 func (a *App) urlBar(tab *reqTab) Node {
 	info, socket := tab.Req.Protocol.Info(), isSocket(tab)
-	httpMethod, rpcMethod := info.Method == model.MethodHTTP, info.Method == model.MethodRPC
+	httpMethod, rpcMethod := info.Method == request.MethodHTTP, info.Method == request.MethodRPC
 	sending := !socket && tab.Sending()
 	connectionLabel, connectionHint := "Connect", "Open the connection"
 	if tab.Active() {
@@ -79,7 +79,7 @@ func (a *App) urlBar(tab *reqTab) Node {
 		"method":           tab.Req.Method,
 		"methodColor":      theme.MethodToken(tab.Req.Method),
 		"rpcMethod":        rpcMethod,
-		"streamable":       info.Connection == model.OnStream,
+		"streamable":       info.Connection == request.OnStream,
 		"grpcMethodW":      grpcMethodW,
 		"grpcMethod":       grpcMethod,
 		"grpcMethodColor":  grpcMethodColor,
@@ -134,11 +134,11 @@ func (a *App) hint(text, shortcutID string) string {
 func (a *App) varSegments(raw string) []Span {
 	var segs []Span
 	vars := a.varsFor(a.cur().Req)
-	for _, seg := range model.SplitVars(raw) {
+	for _, seg := range request.SplitVars(raw) {
 		style := w.Text
 		if seg.IsVar {
 			style = w.OK
-			if !model.Defined(strings.TrimSuffix(strings.TrimPrefix(seg.Text, "{{"), "}}"), vars) {
+			if !request.Defined(strings.TrimSuffix(strings.TrimPrefix(seg.Text, "{{"), "}}"), vars) {
 				style = w.Error
 			}
 		}

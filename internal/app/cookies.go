@@ -1,7 +1,7 @@
 package app
 
 import (
-	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/severity"
 	"net/http/cookiejar"
 	"net/url"
@@ -23,12 +23,12 @@ func (a *App) clearCookies() {
 
 // newRegistry builds the protocols from the cookie jar, the network
 // settings (proxy, certificates) and the app's sampling dialog.
-func (a *App) newRegistry() reqport.Registry {
+func (a *App) newRegistry() request.Registry {
 	if a.protocols == nil {
-		return reqport.Registry{}
+		return request.Registry{}
 	}
 	s := a.settings
-	return a.protocols(reqport.ProtocolConfig{Jar: a.jar, Proxy: s.Proxy, CACert: s.CACert, ClientCert: s.ClientCert, ClientKey: s.ClientKey, Sampler: a.sampleViaDialog})
+	return a.protocols(request.ProtocolConfig{Jar: a.jar, Proxy: s.Proxy, CACert: s.CACert, ClientCert: s.ClientCert, ClientKey: s.ClientKey, Sampler: a.sampleViaDialog})
 }
 
 // showCookies lists the cookies the jar holds for the request's URL and

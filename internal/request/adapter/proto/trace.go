@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // tracer records when each phase of a request started and ended.
@@ -39,11 +39,11 @@ func span(from, to time.Time) time.Duration {
 // timing turns the recorded moments into phases: sent at start, headers
 // read at headers, body read at end. Connect excludes the TLS handshake,
 // which is reported on its own.
-func (t *tracer) timing(start, headers, end time.Time) model.Timing {
+func (t *tracer) timing(start, headers, end time.Time) request.Timing {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	connect := span(t.connStart, t.connDone)
-	return model.Timing{
+	return request.Timing{
 		DNS:       span(t.dnsStart, t.dnsDone),
 		Connect:   connect,
 		TLS:       span(t.tlsStart, t.tlsDone),

@@ -7,12 +7,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // encodeGraphQL is the usual GraphQL-over-HTTP body: a JSON object with
 // the query and, when there are any, the variables.
-func encodeGraphQL(req model.Request) ([]byte, string, error) {
+func encodeGraphQL(req request.Request) ([]byte, string, error) {
 	if strings.TrimSpace(req.Body) == "" {
 		return nil, "", errors.New("write a GraphQL query")
 	}

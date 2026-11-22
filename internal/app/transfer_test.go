@@ -9,19 +9,19 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/transfer"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 // release is a drag of node that ends on target with the pointer released,
 // holding Alt when alt is set.
-func release(app *App, node, target model.Node, alt bool) {
+func release(app *App, node, target request.Node, alt bool) {
 	app.dragNode, app.dropTarget = node, target
 	app.step(core.Input{Alt: alt})
 }
 
-func tabOf(app *App, req *model.Request) bool {
+func tabOf(app *App, req *request.Request) bool {
 	for _, tab := range app.list.Tabs {
 		if tab.Req == req {
 			return true
@@ -38,18 +38,18 @@ func TestDragOntoAnotherCollectionsFolderMovesTheRequest(t *testing.T) {
 	a.cur().Req.URL = "http://edited.test"
 	a.markStale()
 
-	release(a, model.Of(req), model.Of(beta.Folders[0]), false)
+	release(a, request.Of(req), request.Of(beta.Folders[0]), false)
 
-	if len(alpha.Requests) != 0 || !beta.Folders[0].Contains(model.Of(req)) {
-		t.Fatalf("Alpha %d requests; moved into Beta's folder: %v", len(alpha.Requests), beta.Folders[0].Contains(model.Of(req)))
+	if len(alpha.Requests) != 0 || !beta.Folders[0].Contains(request.Of(req)) {
+		t.Fatalf("Alpha %d requests; moved into Beta's folder: %v", len(alpha.Requests), beta.Folders[0].Contains(request.Of(req)))
 	}
 	if !tabOf(a, req) {
 		t.Fatal("the open tab was closed")
 	}
-	if got := a.collectionToken(model.Of(req)); got != theme.CollectionToken(1) {
+	if got := a.collectionToken(request.Of(req)); got != theme.CollectionToken(1) {
 		t.Fatalf("owner stripe %q, want Beta's", got)
 	}
-	if a.selected != model.Of(req) || !a.expanded[beta.Folders[0]] {
+	if a.selected != request.Of(req) || !a.expanded[beta.Folders[0]] {
 		t.Fatalf("selected %v, folder expanded %v", a.selected, a.expanded[beta.Folders[0]])
 	}
 	if got, err := storeDisk.Load(betaDir); err != nil || got.Folders[0].Requests[len(got.Folders[0].Requests)-1].URL != "http://edited.test" {
@@ -61,7 +61,7 @@ func TestDragOntoAnotherCollectionsRootMovesToItsEnd(t *testing.T) {
 	a, _, _ := twoCollectionsApp(t)
 	alpha, beta := entryNamed(t, a, "Alpha").Collection, entryNamed(t, a, "Beta").Collection
 	req := alpha.Requests[0]
-	release(a, model.Of(req), model.Of(&beta.Folder), false)
+	release(a, request.Of(req), request.Of(&beta.Folder), false)
 	if len(alpha.Requests) != 0 || beta.Requests[len(beta.Requests)-1] != req {
 		t.Fatalf("Alpha %d requests, Beta's last %v", len(alpha.Requests), beta.Requests[len(beta.Requests)-1])
 	}
@@ -72,13 +72,13 @@ func TestDragOntoARequestOfAnotherCollectionLandsBeforeIt(t *testing.T) {
 	alpha, beta := entryNamed(t, a, "Alpha").Collection, entryNamed(t, a, "Beta").Collection
 	req := alpha.Folders[0].Requests[0]
 	target := beta.Requests[0]
-	release(a, model.Of(req), model.Of(target), false)
+	release(a, request.Of(req), request.Of(target), false)
 	if len(beta.Requests) != 2 || beta.Requests[0] != req || beta.Requests[1] != target {
 		t.Fatalf("Beta's requests %v", names(beta.Requests))
 	}
 }
 
-func names(reqs []*model.Request) []string {
+func names(reqs []*request.Request) []string {
 	var out []string
 	for _, req := range reqs {
 		out = append(out, req.Name)
@@ -90,12 +90,12 @@ func TestAltAtReleaseCopies(t *testing.T) {
 	a, _, _ := twoCollectionsApp(t)
 	alpha, beta := entryNamed(t, a, "Alpha").Collection, entryNamed(t, a, "Beta").Collection
 	req := alpha.Requests[0]
-	release(a, model.Of(req), model.Of(beta.Folders[0]), true)
+	release(a, request.Of(req), request.Of(beta.Folders[0]), true)
 	if len(alpha.Requests) != 1 || alpha.Requests[0] != req {
 		t.Fatal("a copy must leave the source")
 	}
 	copied := beta.Folders[0].Requests[len(beta.Folders[0].Requests)-1]
-	if copied == req || copied.Name != req.Name || a.selected != model.Of(copied) {
+	if copied == req || copied.Name != req.Name || a.selected != request.Of(copied) {
 		t.Fatalf("copy %p of %p named %q, selected %v", copied, req, copied.Name, a.selected)
 	}
 }
@@ -104,9 +104,9 @@ func TestDropInTheSameCollectionRenamesOnAClashWithAnInfoToast(t *testing.T) {
 	a, _, _ := twoCollectionsApp(t)
 	alpha := entryNamed(t, a, "Alpha").Collection
 	req := alpha.Requests[0]
-	alpha.Folders[0].AddRequest(model.Request{Name: req.Name})
-	release(a, model.Of(req), model.Of(alpha.Folders[0]), false)
-	if req.Name != "Alpha call 2" || !alpha.Folders[0].Contains(model.Of(req)) {
+	alpha.Folders[0].AddRequest(request.Request{Name: req.Name})
+	release(a, request.Of(req), request.Of(alpha.Folders[0]), false)
+	if req.Name != "Alpha call 2" || !alpha.Folders[0].Contains(request.Of(req)) {
 		t.Fatalf("name %q", req.Name)
 	}
 	if text := toastTexts(a); !strings.Contains(text, "Alpha call 2") || a.toasts[len(a.toasts)-1].Kind == widget.ToastError {
@@ -117,7 +117,7 @@ func TestDropInTheSameCollectionRenamesOnAClashWithAnInfoToast(t *testing.T) {
 func TestMovingAFolderAwayFromItsVariablesToastsWhatIsMissing(t *testing.T) {
 	a, _, _ := twoCollectionsApp(t)
 	alpha, beta := entryNamed(t, a, "Alpha").Collection, entryNamed(t, a, "Beta").Collection
-	release(a, model.Of(alpha.Requests[0]), model.Of(&beta.Folder), false) // uses {{host}}, which only Alpha's env defines
+	release(a, request.Of(alpha.Requests[0]), request.Of(&beta.Folder), false) // uses {{host}}, which only Alpha's env defines
 	if text := toastTexts(a); !strings.Contains(text, "host") {
 		t.Fatalf("toasts %q", text)
 	}
@@ -126,12 +126,12 @@ func TestMovingAFolderAwayFromItsVariablesToastsWhatIsMissing(t *testing.T) {
 func TestMoveIntoAnUnsavedCollectionIsAllowed(t *testing.T) {
 	a, _, _ := twoCollectionsApp(t)
 	alpha := entryNamed(t, a, "Alpha").Collection
-	fresh := &model.Collection{Folder: model.Folder{Name: "Fresh"}}
+	fresh := &request.Collection{Folder: request.Folder{Name: "Fresh"}}
 	a.open = collections.Update(a.open, collections.Open{Collection: fresh})
 	req := alpha.Requests[0]
 	a.openRequest(req)
 	a.cur().Req.URL = "http://edited.test"
-	release(a, model.Of(req), model.Of(&fresh.Folder), false)
+	release(a, request.Of(req), request.Of(&fresh.Folder), false)
 	if len(fresh.Requests) != 1 || fresh.Requests[0] != req || len(alpha.Requests) != 0 {
 		t.Fatalf("Fresh %v, Alpha %v", names(fresh.Requests), names(alpha.Requests))
 	}
@@ -144,7 +144,7 @@ func TestACrossCollectionMoveWritesTheTargetBeforeTheSource(t *testing.T) {
 	a, alphaDir, betaDir := twoCollectionsApp(t)
 	alpha, beta := entryNamed(t, a, "Alpha").Collection, entryNamed(t, a, "Beta").Collection
 	req := alpha.Requests[0]
-	release(a, model.Of(req), model.Of(&beta.Folder), false)
+	release(a, request.Of(req), request.Of(&beta.Folder), false)
 	a.waitWrites()
 	gotBeta, err := storeDisk.Load(betaDir)
 	if err != nil || gotBeta.Requests[len(gotBeta.Requests)-1].Name != req.Name {
@@ -166,7 +166,7 @@ func TestAFailedTargetWriteKeepsTheSourceOnDiskAndSaysSo(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = os.Chmod(betaDir, 0o700) })
 	req := alpha.Requests[0]
-	release(a, model.Of(req), model.Of(&beta.Folder), false)
+	release(a, request.Of(req), request.Of(&beta.Folder), false)
 	gotAlpha, err := storeDisk.Load(alphaDir)
 	if err != nil || len(gotAlpha.Requests) != 1 {
 		t.Fatalf("Alpha on disk lost the request before the target had it: %v %v", names(gotAlpha.Requests), err)
@@ -180,7 +180,7 @@ func TestMovingAFolderResetsAVarsPaneThatEditedIt(t *testing.T) {
 	a, _, _ := twoCollectionsApp(t)
 	alpha, beta := entryNamed(t, a, "Alpha").Collection, entryNamed(t, a, "Beta").Collection
 	a.varsTarget = folderVars(alpha.Folders[0])
-	release(a, model.Of(alpha.Folders[0]), model.Of(&beta.Folder), false)
+	release(a, request.Of(alpha.Folders[0]), request.Of(&beta.Folder), false)
 	if a.varsTarget != (varsTarget{}) {
 		t.Fatalf("varsTarget %+v", a.varsTarget)
 	}
@@ -189,7 +189,7 @@ func TestMovingAFolderResetsAVarsPaneThatEditedIt(t *testing.T) {
 func TestTheDropRowShowsACopyCueWhileAltIsHeldDuringADrag(t *testing.T) {
 	a, _, _ := twoCollectionsApp(t)
 	alpha, beta := entryNamed(t, a, "Alpha").Collection, entryNamed(t, a, "Beta").Collection
-	a.dragNode, a.dropTarget = model.Of(alpha.Requests[0]), model.Of(beta.Folders[0])
+	a.dragNode, a.dropTarget = request.Of(alpha.Requests[0]), request.Of(beta.Folders[0])
 	row := collection.Row{Name: "Nested", Folder: true, Dir: beta.Folders[0]}
 	for _, test := range []struct {
 		alt  bool
@@ -206,7 +206,7 @@ func TestThePickerMovesTheNodeToTheRowPickedWithEnter(t *testing.T) {
 	a, _, _ := twoCollectionsApp(t)
 	alpha, beta := entryNamed(t, a, "Alpha").Collection, entryNamed(t, a, "Beta").Collection
 	req := alpha.Requests[0]
-	a.openTransferPicker(model.Of(req), transfer.Move)
+	a.openTransferPicker(request.Of(req), transfer.Move)
 	if a.picker == nil || !a.overlayOpen() {
 		t.Fatal("the picker did not open")
 	}
@@ -216,15 +216,15 @@ func TestThePickerMovesTheNodeToTheRowPickedWithEnter(t *testing.T) {
 		}
 	}
 	a.step(core.Input{Enter: true})
-	if a.picker != nil || len(alpha.Requests) != 0 || !beta.Folders[0].Contains(model.Of(req)) {
-		t.Fatalf("picker %v, Alpha %d requests, moved %v", a.picker != nil, len(alpha.Requests), beta.Folders[0].Contains(model.Of(req)))
+	if a.picker != nil || len(alpha.Requests) != 0 || !beta.Folders[0].Contains(request.Of(req)) {
+		t.Fatalf("picker %v, Alpha %d requests, moved %v", a.picker != nil, len(alpha.Requests), beta.Folders[0].Contains(request.Of(req)))
 	}
 }
 
 func TestThePickerCopiesWhenOpenedToCopy(t *testing.T) {
 	a, _, _ := twoCollectionsApp(t)
 	alpha, beta := entryNamed(t, a, "Alpha").Collection, entryNamed(t, a, "Beta").Collection
-	a.openTransferPicker(model.Of(alpha.Requests[0]), transfer.Copy)
+	a.openTransferPicker(request.Of(alpha.Requests[0]), transfer.Copy)
 	a.picker.Step(1) // Alpha's own root: a copy may go to the current folder
 	for index, row := range a.picker.Rows() {
 		if row.Folder == &beta.Folder {
@@ -240,7 +240,7 @@ func TestThePickerCopiesWhenOpenedToCopy(t *testing.T) {
 func TestEscapeClosesAQuestionOverThePickerBeforeThePicker(t *testing.T) {
 	a, _, _ := twoCollectionsApp(t)
 	alpha := entryNamed(t, a, "Alpha").Collection
-	a.openTransferPicker(model.Of(alpha.Requests[0]), transfer.Move)
+	a.openTransferPicker(request.Of(alpha.Requests[0]), transfer.Move)
 	a.confirm("Sure?", "", "Yes", func() {})
 	a.step(core.Input{Escape: true})
 	if a.dialog != nil || a.picker == nil {
@@ -255,8 +255,8 @@ func TestEscapeClosesAQuestionOverThePickerBeforeThePicker(t *testing.T) {
 func TestThePickerDoesNotOpenForACollectionRoot(t *testing.T) {
 	a, _, _ := twoCollectionsApp(t)
 	alpha := entryNamed(t, a, "Alpha").Collection
-	a.openTransferPicker(model.Of(&alpha.Folder), transfer.Move)
-	a.openTransferPicker(model.Node{}, transfer.Move)
+	a.openTransferPicker(request.Of(&alpha.Folder), transfer.Move)
+	a.openTransferPicker(request.Node{}, transfer.Move)
 	if a.picker != nil {
 		t.Fatal("a root or nothing cannot be moved")
 	}
@@ -267,12 +267,12 @@ func TestTheRowMenuHasMoveToAndCopyToForRequestsAndFoldersButNotRoots(t *testing
 	alpha := entryNamed(t, a, "Alpha").Collection
 	tests := []struct {
 		name string
-		node model.Node
+		node request.Node
 		want bool
 	}{
-		{"request", model.Of(alpha.Requests[0]), true},
-		{"folder", model.Of(alpha.Folders[0]), true},
-		{"root", model.Of(&alpha.Folder), false},
+		{"request", request.Of(alpha.Requests[0]), true},
+		{"folder", request.Of(alpha.Folders[0]), true},
+		{"root", request.Of(&alpha.Folder), false},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -316,8 +316,8 @@ func TestPickingMoveToFromTheMenuOpensTheMovePicker(t *testing.T) {
 			t.Fatalf("%s: moved %v", test.label, moved)
 		}
 		if test.move { // put it back for the next round
-			beta.Delete(model.Of(req))
-			alpha.Attach(model.Of(req), model.Node{})
+			beta.Delete(request.Of(req))
+			alpha.Attach(request.Of(req), request.Node{})
 		}
 	}
 }
@@ -326,11 +326,11 @@ func TestAPickForANodeDeletedWhileThePickerWasOpenSaysSo(t *testing.T) {
 	a, _, _ := twoCollectionsApp(t)
 	alpha, beta := entryNamed(t, a, "Alpha").Collection, entryNamed(t, a, "Beta").Collection
 	req := alpha.Requests[0]
-	a.openTransferPicker(model.Of(req), transfer.Move)
-	alpha.Delete(model.Of(req))
+	a.openTransferPicker(request.Of(req), transfer.Move)
+	alpha.Delete(request.Of(req))
 	a.picker.Select(len(a.picker.Rows()) - 1)
 	a.step(core.Input{Enter: true})
-	if len(a.toasts) == 0 || a.toasts[len(a.toasts)-1].Kind != widget.ToastError || beta.Contains(model.Of(req)) {
-		t.Fatalf("toasts %q, in Beta %v", toastTexts(a), beta.Contains(model.Of(req)))
+	if len(a.toasts) == 0 || a.toasts[len(a.toasts)-1].Kind != widget.ToastError || beta.Contains(request.Of(req)) {
+		t.Fatalf("toasts %q, in Beta %v", toastTexts(a), beta.Contains(request.Of(req)))
 	}
 }

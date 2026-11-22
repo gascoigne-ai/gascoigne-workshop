@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/tree"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
@@ -15,7 +15,7 @@ func TestIdleFramesDoNotRebuildTheChangeKeys(t *testing.T) {
 	a := testApp(t)
 	a.setWorkspace(t.TempDir())
 	var calls int
-	a.keys.collectionOf = func(col model.Collection) string { calls++; return tree.Key(col) }
+	a.keys.collectionOf = func(col request.Collection) string { calls++; return tree.Key(col) }
 	for range 30 {
 		a.step(core.Input{})
 	}

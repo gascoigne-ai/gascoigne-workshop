@@ -12,7 +12,7 @@ import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
 // The debug sample collection hard-codes the example server's default
@@ -20,15 +20,15 @@ import (
 // .proto files is for the port without reflection.
 func TestDebugSampleRequestsUseTheDefaultPorts(t *testing.T) {
 	defaults := DefaultConfig()
-	for _, request := range collection.Sample().Requests {
-		service := sampleService(*request)
-		parsed, err := url.Parse(request.URL)
+	for _, call := range collection.Sample().Requests {
+		service := sampleService(*call)
+		parsed, err := url.Parse(call.URL)
 		if err != nil {
-			t.Fatalf("%s: %v", request.Name, err)
+			t.Fatalf("%s: %v", call.Name, err)
 		}
 		_, port, err := net.SplitHostPort(parsed.Host)
 		if want := portOf(t, service, defaults); err != nil || port != strconv.Itoa(want) {
-			t.Errorf("%s (%s) uses %q, want port %d", request.Name, service, parsed.Host, want)
+			t.Errorf("%s (%s) uses %q, want port %d", call.Name, service, parsed.Host, want)
 		}
 	}
 }
@@ -37,8 +37,8 @@ func TestDebugSampleRequestsUseTheDefaultPorts(t *testing.T) {
 // so a person finds each one in the tree.
 func TestDebugSampleHasARequestForEveryService(t *testing.T) {
 	reached := map[string]bool{}
-	for _, request := range collection.Sample().Requests {
-		reached[sampleService(*request)] = true
+	for _, call := range collection.Sample().Requests {
+		reached[sampleService(*call)] = true
 	}
 	for _, service := range services {
 		if !reached[service.name] {
@@ -50,24 +50,24 @@ func TestDebugSampleHasARequestForEveryService(t *testing.T) {
 // The sample's proto file is a real one that the app can read, wherever
 // the program was started from.
 func TestDebugSampleProtoFilesExistAndAreAbsolute(t *testing.T) {
-	for _, request := range collection.Sample().Requests {
-		for _, file := range request.Proto.Files {
+	for _, call := range collection.Sample().Requests {
+		for _, file := range call.Proto.Files {
 			if !filepath.IsAbs(file) {
-				t.Errorf("%s names %q, which depends on the working folder", request.Name, file)
+				t.Errorf("%s names %q, which depends on the working folder", call.Name, file)
 			}
 			if _, err := os.Stat(file); err != nil {
-				t.Errorf("%s: %v", request.Name, err)
+				t.Errorf("%s: %v", call.Name, err)
 			}
 		}
 	}
 }
 
 // sampleService is the example server's service a sample request is for.
-func sampleService(request model.Request) string {
-	if request.Protocol == "grpc" && request.Proto.Kind() == model.SourceProtoFiles {
+func sampleService(call request.Request) string {
+	if call.Protocol == "grpc" && call.Proto.Kind() == request.SourceProtoFiles {
 		return "grpc-no-reflection"
 	}
-	return string(request.Protocol)
+	return string(call.Protocol)
 }
 
 func portOf(t *testing.T, name string, config Config) int {
@@ -105,9 +105,9 @@ func TestDebugSampleHasARequestForEveryRESTRoute(t *testing.T) {
 	sample := collection.Sample()
 	for _, route := range restRoutes() {
 		found := false
-		for _, request := range sample.Requests {
-			parsed, err := url.Parse(request.URL)
-			if err == nil && request.Protocol == "rest" && matchesPattern(route.pattern, parsed.Path) {
+		for _, call := range sample.Requests {
+			parsed, err := url.Parse(call.URL)
+			if err == nil && call.Protocol == "rest" && matchesPattern(route.pattern, parsed.Path) {
 				found = true
 			}
 		}
