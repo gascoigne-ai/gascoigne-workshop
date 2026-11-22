@@ -7,7 +7,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/tree"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/environment/controller/envs"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/envs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/autosave"

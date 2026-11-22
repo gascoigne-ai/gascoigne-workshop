@@ -16,7 +16,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/exampleserver"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/exampleserver"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 )
 

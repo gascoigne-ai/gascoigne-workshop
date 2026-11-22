@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/exampleserver"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/exampleserver"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
@@ -18,7 +18,7 @@ import (
 )
 
 // healthProtoSource is the example server's copy of the real health.proto.
-var healthProtoSource = filepath.Join("..", "request", "adapter", "exampleserver", "protos", "grpc", "health", "v1", "health.proto")
+var healthProtoSource = filepath.Join("..", "exampleserver", "protos", "grpc", "health", "v1", "health.proto")
 
 // grpcTabOnProtoPane is a test app whose open tab is a clean gRPC request
 // with its Proto pane shown, in a collection kept in dir.

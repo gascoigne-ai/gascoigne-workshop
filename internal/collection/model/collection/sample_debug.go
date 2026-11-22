@@ -53,7 +53,7 @@ func exampleServerFolder() *model.Folder {
 // file's place in it. A build with -trimpath records no such place and gets
 // the path from the repository's root.
 func exampleHealthProto() string {
-	relative := filepath.FromSlash("internal/request/adapter/exampleserver/protos/grpc/health/v1/health.proto")
+	relative := filepath.FromSlash("internal/exampleserver/protos/grpc/health/v1/health.proto")
 	_, source, _, ok := runtime.Caller(0)
 	if !ok || !filepath.IsAbs(source) {
 		return relative

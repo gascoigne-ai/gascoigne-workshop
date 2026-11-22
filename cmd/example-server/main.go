@@ -10,7 +10,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/exampleserver"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/exampleserver"
 )
 
 func main() {

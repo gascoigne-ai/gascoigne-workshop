@@ -2,7 +2,7 @@ package app
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/collections"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/environment/controller/envs"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/envs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	"strings"
