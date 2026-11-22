@@ -1,6 +1,6 @@
 package port
 
-import "github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/state"
+import "github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/state"
 
 // StateStore keeps what the app remembers between runs.
 type StateStore interface {

@@ -13,7 +13,7 @@ import (
 	"golang.org/x/image/font/gofont/goregular"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/fonts"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fontfamily"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fontfamily"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 

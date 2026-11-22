@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/clientconfig"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/userdir"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/clientconfig"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/userdir"
 )
 
 // Files reads client configs from two directories; an empty directory name

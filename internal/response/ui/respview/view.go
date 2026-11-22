@@ -10,8 +10,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/jsonview"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/textfmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/jsonview"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/textfmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 

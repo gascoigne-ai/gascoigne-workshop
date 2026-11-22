@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/userdir"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/userdir"
 )
 
 // A screenshot run that changes settings (-set, -record) and is given no

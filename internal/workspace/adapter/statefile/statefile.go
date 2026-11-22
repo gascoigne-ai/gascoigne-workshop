@@ -12,10 +12,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fileversion"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/userdir"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/state"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fileversion"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/userdir"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/state"
 )
 
 // stateFile is state.json: the state behind its version.

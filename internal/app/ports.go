@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/state"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/state"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fontfamily"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fontfamily"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 )
 

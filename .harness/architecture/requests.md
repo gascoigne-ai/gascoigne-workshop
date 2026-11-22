@@ -6,7 +6,7 @@
   keeps the keyboard; the pure part is `model.VarCompletion`.
 - **Path parameters**: a `:name` path segment has a `:name` row in Params, kept in step by
   `MergeParams`; `Request.Expanded` fills it (`ApplyPathParams`) and it never reaches the query.
-- **Assertions** (`request/model/assert`): `Request.Tests` holds one assertion per line, run after
+- **Assertions** (`request/assert`): `Request.Tests` holds one assertion per line, run after
   each response. A line that does not parse is a failure with the reason, so a typo never passes.
 - **Chaining**: a `set name = json PATH | header Name | status` line stores the value into the
   active environment, else the collection variables. The value is `Literal` (saved as `literal`):

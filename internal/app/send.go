@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/model/textfmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/textfmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/bus"
 	"time"
 )

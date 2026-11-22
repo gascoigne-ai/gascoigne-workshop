@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fileversion"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/state"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fileversion"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/state"
 )
 
 // The fixtures are state.json files written by the program: v0 before

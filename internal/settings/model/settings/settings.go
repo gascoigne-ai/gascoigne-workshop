@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fileversion"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fileversion"
 )
 
 // Settings are the user preferences.

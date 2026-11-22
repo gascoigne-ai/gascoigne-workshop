@@ -16,7 +16,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/miniyaml"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/miniyaml"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 )
 

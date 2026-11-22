@@ -12,7 +12,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fontfamily"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fontfamily"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
 	"golang.org/x/image/font/sfnt"
 )
