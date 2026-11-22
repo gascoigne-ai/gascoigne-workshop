@@ -3,7 +3,7 @@
 ### Remembered state
 
 `state.json` (model `workspace/model/state`, adapter `workspace/adapter/statefile`, sync in
-`workspace/ui/app/statesync.go`) sits next to the settings and is separate from them: settings are
+`internal/app/statesync.go`) sits next to the settings and is separate from them: settings are
 what users edit, state is bookkeeping (window geometry, splits, expanded folders, open tabs, table
 column weights, the settings dialog's size).
 

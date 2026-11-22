@@ -6,7 +6,7 @@ the `App` its composition root. Known gaps are under Limits.
 
 ```mermaid
 flowchart LR
-  cmd["cmd/workshop"] --> app["workspace/ui/app"]
+  cmd["cmd/workshop"] --> app["internal/app"]
   app --> ui["ui"] & ctl["controller"] & adp["adapter"]
   ui --> ctl --> port["port"] --> mdl["model"]
   adp -. implements .-> port
@@ -26,7 +26,7 @@ flowchart LR
 
 - Packages are `internal/<domain>/<role>/<package>` (the user's choice). The import rules
   are in `rules.md`, with no exceptions.
-- `workspace/ui/app` is one package: Go cannot declare a method in another package, and everything
+- `internal/app` is one package: Go cannot declare a method in another package, and everything
   that reads or writes the one `App` struct needs its methods. Adapters come in through `Options`.
 - A feature that needs little of the `App` is its own `ui` package behind a `Host` interface the
   `App` implements, tested with a fake host: `calltrace`, `mcpform`, `sentlog`, `settingsui`,
@@ -45,7 +45,7 @@ One file per area in `architecture/`; read the one you touch.
 | `architecture/json-view.md` | JSON view |
 | `architecture/core.md` | core: the toolkit |
 | `architecture/view.md` | view: the view DSL |
-| `architecture/app.md` | workspace/ui/app: the app |
+| `architecture/app.md` | internal/app: the app |
 | `architecture/toolkit-api.md` | Toolkit: API and templates |
 | `architecture/toolkit-widgets.md` | Toolkit: widgets and drawing |
 | `architecture/requests.md` | Requests |

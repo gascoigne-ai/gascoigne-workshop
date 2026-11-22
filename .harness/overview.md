@@ -29,7 +29,7 @@ packaging/           desktop entry, macOS bundle
 flowchart TB
   cmd["cmd/workshop: composition root, fills Options with adapters"] --> app
   subgraph internal["internal/ (domain / role)"]
-    app["workspace/ui/app: the App, its state, handlers and window"]
+    app["internal/app: the App, its state, handlers and window"]
     ui["ui: views behind a Host (calltrace, sentlog, settingsui...)"]
     ctl["controller: rules with no widget and no I/O (tabs, tree, envs...)"]
     port["port: interfaces to the outside and the types that cross them"]
@@ -46,7 +46,7 @@ Dependencies point inward: what each role may import is written once, in `rules.
 
 ## One request, end to end
 
-1. The user types a URL in the URL bar (`urlbar` template in `workspace/ui/app/urlbar.go`) and presses Send or Ctrl+Enter.
+1. The user types a URL in the URL bar (`urlbar` template in `internal/app/urlbar.go`) and presses Send or Ctrl+Enter.
 2. `App.send` calls `dispatch`: `tabs.Tab.BeginSend` numbers the send, `model.Request.Expanded` fills `{{variables}}` from the collection and the active environment, the call log records it.
 3. A command runs off the UI goroutine: `reg.Send(ctx, req)` on the protocol registry, a name-to-`Protocol` table built in `request/adapter/proto` (`rest`, `websocket`, `sse`, `mcp`, `grpc`; its package doc says which are hand-written and why). Streaming protocols return a `Session` from `Connect` and report through the same bus.
 4. The result comes back as a message on the bus (`workspace/controller/bus`), drained once per frame on the UI goroutine; a late result of a cancelled send is dropped by its number.
@@ -58,7 +58,7 @@ Every frame the whole window tree is rebuilt from the App state (why: the `marku
 
 | To add | Do |
 |---|---|
-| a protocol | implement `request/port.Protocol` (and `Streamer` if it stays connected) in `request/adapter/proto`, add a row to `NewRegistry`; add its panes to the tables in `workspace/ui/app/panes.go` |
+| a protocol | implement `request/port.Protocol` (and `Streamer` if it stays connected) in `request/adapter/proto`, add a row to `NewRegistry`; add its panes to the tables in `internal/app/panes.go` |
 | a widget | `uitoolkit/widget`: a composition of `view` elements, or a `view.Custom` behavior when it needs its own layout, input or drawing; options, tests, the package doc index and the markup tables (`rules.md`, toolkit API rules) |
 | a view | a template string (a `const` at the end of the Go file) and a `Scope` in the file of the view; pinned with a `view.Dump` test; a state of the `App` that has no widget in it goes to a `controller` first |
 | a setting | one row in `settings.Schema` (`settings/model/settings/schema.go`); the form, raw view, validation and reset read it |

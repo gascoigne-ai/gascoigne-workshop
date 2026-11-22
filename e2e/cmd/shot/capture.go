@@ -10,7 +10,7 @@ import (
 	"os"
 	"slices"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/ui/app"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/app"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )

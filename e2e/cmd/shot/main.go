@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/app"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/adapter/store"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto"
@@ -32,7 +33,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/folders"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/statefile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/systemclock"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/ui/app"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )

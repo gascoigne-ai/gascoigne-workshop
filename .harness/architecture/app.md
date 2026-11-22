@@ -1,4 +1,4 @@
-## workspace/ui/app: the app
+## internal/app: the app
 
 `app.App` implements `ebiten.Game`, owns the window state and is the composition root's runtime
 half: `cmd/workshop` builds the adapters, the `App` wires them to the controllers and views. Its

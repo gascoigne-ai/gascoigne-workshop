@@ -16,7 +16,7 @@
   pixels (`Ctx.snap`), so neighbours share an edge, and draw lines `Ctx.LineWidth()` thick. Rounded
   fills and outlines (`FillStyled`, `OutlineStyled`) snap the same way and draw from cached corner
   masks in one `DrawTriangles` (`core/cornermask.go`). `Ctx.Stats` counts mask builds and `Width`
-  calls; `BenchmarkDrawStats` in `internal/workspace/ui/app` reports them.
+  calls; `BenchmarkDrawStats` in `internal/app` reports them.
 - **Caret blink** follows the clock (`Ctx.CaretVisible`), not ticks, so its rate holds when the idle
   app drops from 60 to 30 updates. `engine.MinFPS` (10) draws at least every 100 ms, so a phase
   change shows.

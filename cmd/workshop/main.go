@@ -28,11 +28,11 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/app"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/settingsfile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/systeminfo"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/statefile"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/ui/app"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/ui/appicon"
 )
 
