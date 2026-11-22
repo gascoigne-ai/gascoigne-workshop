@@ -7,7 +7,7 @@ depends_on: 011-outbox-and-message-target
 
 # Websocket view behind a Host
 
-Goal: with the outbox and message targets out of `reqTab` (task 011), move `internal/app/protocol_wsui.go`
+Goal: with the send queue a pure outbox model (task 011; the message targets keep `*reqTab`, user's answer), move `internal/app/protocol_wsui.go`
 (477 lines) into `internal/feature/send/ui/<package>` behind a `Host` of at most about 5 methods,
 tested with a fake host. Measured needs of the view today: policy (`allowed`, `varsFor`,
 `timeoutFor`), the protocol registry, the bus, the status line, the call log and clock, retry delay,
