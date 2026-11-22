@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/collections"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 )
 
 // varsFixture is a collection with a variable of its own, an environment

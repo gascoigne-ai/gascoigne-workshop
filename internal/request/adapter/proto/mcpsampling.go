@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 )
 
 // sampleRejected is the answer to a sampling request that was declined.

@@ -6,7 +6,7 @@ Loaded when you work under `internal/`. Adds to `.harness/rules.md`. This file i
 
 Target layout (layout C, feature slices). Parts marked "not yet moved" still sit in the older domain layout; later tasks move them.
 
-- `internal/kernel/<name>`: shared leaves and the model that several features use. Moved: `severity` (message level), `fileversion`, `userdir`, `textfmt`, `jsonview`, `openset` (the `OpenCollection` record). The `request` model is not yet moved to the kernel and stays `internal/request`.
+- `internal/kernel/<name>`: shared leaves and the model that several features use. Moved: `severity` (message level), `fileversion`, `userdir`, `textfmt`, `jsonview`, `openset` (the `OpenCollection` record), `request` (the request model and its ports: `Request`, `Folder`, `Protocols`, `Sender`, the MCP and JSON schema types, `ProtoSource`, `MessageSchema`). `internal/request` keeps the feature logic until task 006 moves it: `curlparse`, `mcpserver`, `graphqlschema`, `binarymessage`.
 - Feature slices: each feature is a directory with its model (root package), `ui/`, `adapter/` and a `FEATURE.md` saying what it owns. Not yet moved: today the slices are the domains `request`, `collection`, `response`, `settings`, `workspace`, with controllers as sub-packages (`request/editor`, `collection/tree`, `workspace/tabs`) and no `FEATURE.md`.
 - Platform: the OS adapters (window, clipboard, file dialog, fonts, system info). Not yet moved: they sit in the `adapter/` of `settings` and `workspace`.
 - App: `internal/app` is the composition root: the `App`, its handlers and its window, in files prefixed by area (`request_`, `tree_`, `settings_`). It may import any package.
@@ -27,4 +27,4 @@ No test checks these rules. The import-layer check was removed in commit 7d856ab
 
 ## Names
 
-- Import a domain root without an alias: `request.Request`. A local that would shadow the package is renamed, never the import: a request value is `call`.
+- Import a domain root without an alias: `request.Request`. A file that needs both `kernel/request` and `internal/request` aliases the kernel one as `kernelrequest`. A local that would shadow the package is renamed, never the import: a request value is `call`.

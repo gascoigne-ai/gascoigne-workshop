@@ -139,4 +139,4 @@ stateDiagram-v2
   UI-free state is `request/mcpexplorer`. A tool result with `isError` shows as an error.
 - `request.JSONSchema` is decoded once, at the MCP answer and at the OpenAPI import, and read typed
   afterwards. Only the keywords it has fields for are read. Real captures of the example server are
-  under `internal/request/testdata/mcp`.
+  under `internal/kernel/request/testdata/mcp`.

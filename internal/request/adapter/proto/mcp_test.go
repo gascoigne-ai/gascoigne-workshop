@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	kernelrequest "github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 )
 
@@ -81,7 +82,7 @@ func mcpHTTPServer(t *testing.T) (url string, log func() []string) {
 }
 
 // waitFor reads events until one's text contains want.
-func waitFor(t *testing.T, session request.Session, want string) request.Event {
+func waitFor(t *testing.T, session kernelrequest.Session, want string) kernelrequest.Event {
 	t.Helper()
 	for {
 		select {
@@ -100,13 +101,13 @@ func waitFor(t *testing.T, session request.Session, want string) request.Event {
 
 func TestMCPHTTPSessionInitializesListsAndCalls(t *testing.T) {
 	url, seen := mcpHTTPServer(t)
-	s, err := MCP{}.Connect(context.Background(), request.Request{Protocol: "mcp", URL: url, Auth: request.Auth{Type: request.AuthBearer, Token: "tok"}})
+	s, err := MCP{}.Connect(context.Background(), kernelrequest.Request{Protocol: "mcp", URL: url, Auth: kernelrequest.Auth{Type: kernelrequest.AuthBearer, Token: "tok"}})
 	if err != nil {
 		t.Fatal(err)
 	}
 	waitFor(t, s, "Connected to mock")
 	e := waitFor(t, s, `"tools":[`)
-	if e.Dir != request.Received || e.Kind != request.KindResponse {
+	if e.Dir != kernelrequest.Received || e.Kind != kernelrequest.KindResponse {
 		t.Fatalf("%+v", e)
 	}
 	waitFor(t, s, `"prompts":[]`)
@@ -115,15 +116,15 @@ func TestMCPHTTPSessionInitializesListsAndCalls(t *testing.T) {
 		t.Fatal(err)
 	}
 	sent := waitFor(t, s, `"tools/call"`)
-	if sent.Dir != request.Sent {
+	if sent.Dir != kernelrequest.Sent {
 		t.Fatalf("sent event %+v", sent)
 	}
-	if got := waitFor(t, s, "echo {"); got.Dir != request.Received || !strings.Contains(got.Text, `{\"x\":1}`) {
+	if got := waitFor(t, s, "echo {"); got.Dir != kernelrequest.Received || !strings.Contains(got.Text, `{\"x\":1}`) {
 		t.Fatalf("%+v", got)
 	}
 
 	s.Send(context.Background(), `call boom`)
-	if got := waitFor(t, s, "no such tool"); got.Kind != request.KindError {
+	if got := waitFor(t, s, "no such tool"); got.Kind != kernelrequest.KindError {
 		t.Fatalf("error kind = %q", got.Kind)
 	}
 	if err := s.Ping(context.Background()); err != nil {
@@ -144,7 +145,7 @@ func TestMCPHTTPSessionInitializesListsAndCalls(t *testing.T) {
 
 func TestMCPSendShorthandsAndErrors(t *testing.T) {
 	url, _ := mcpHTTPServer(t)
-	s, err := MCP{}.Connect(context.Background(), request.Request{URL: url})
+	s, err := MCP{}.Connect(context.Background(), kernelrequest.Request{URL: url})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -169,25 +170,25 @@ func TestMCPSendShorthandsAndErrors(t *testing.T) {
 
 func TestMCPSendIsAOneShotToolsList(t *testing.T) {
 	url, _ := mcpHTTPServer(t)
-	resp, err := MCP{}.Send(context.Background(), request.Request{URL: url})
+	resp, err := MCP{}.Send(context.Background(), kernelrequest.Request{URL: url})
 	if err != nil || resp.Err != "" || resp.Status != 200 || !strings.Contains(string(resp.Body), `"echo"`) {
 		t.Fatalf("%+v %v", resp, err)
 	}
 }
 
 func TestMCPRejectsBadURLsAndFailedServers(t *testing.T) {
-	if _, err := (MCP{}).Connect(context.Background(), request.Request{URL: "ftp://x"}); err == nil {
+	if _, err := (MCP{}).Connect(context.Background(), kernelrequest.Request{URL: "ftp://x"}); err == nil {
 		t.Fatal("ftp URL accepted")
 	}
 	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
 		http.Error(writer, "nope", http.StatusUnauthorized)
 	}))
 	defer srv.Close()
-	_, err := MCP{}.Connect(context.Background(), request.Request{URL: srv.URL})
+	_, err := MCP{}.Connect(context.Background(), kernelrequest.Request{URL: srv.URL})
 	if err == nil || !strings.Contains(err.Error(), "401") {
 		t.Fatalf("err = %v", err)
 	}
-	resp, _ := MCP{}.Send(context.Background(), request.Request{URL: srv.URL})
+	resp, _ := MCP{}.Send(context.Background(), kernelrequest.Request{URL: srv.URL})
 	if !strings.Contains(resp.Err, "401") {
 		t.Fatalf("one-shot error %q", resp.Err)
 	}
@@ -202,7 +203,7 @@ func TestMCPConnectCanBeCancelled(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
 	start := time.Now()
-	if _, err := (MCP{}).Connect(ctx, request.Request{URL: srv.URL}); err == nil {
+	if _, err := (MCP{}).Connect(ctx, kernelrequest.Request{URL: srv.URL}); err == nil {
 		t.Fatal("connect to a silent server succeeded")
 	}
 	if time.Since(start) > 2*time.Second {
@@ -251,7 +252,7 @@ func TestMCPStdioSession(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Setenv("MCP_HELPER", "1")
-	s, err := MCP{}.Connect(context.Background(), request.Request{URL: request.StdioPrefix + shellQuote(exe)})
+	s, err := MCP{}.Connect(context.Background(), kernelrequest.Request{URL: kernelrequest.StdioPrefix + shellQuote(exe)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -268,26 +269,26 @@ func TestMCPStdioSession(t *testing.T) {
 }
 
 func TestMCPStdioMissingCommand(t *testing.T) {
-	if _, err := (MCP{}).Connect(context.Background(), request.Request{URL: "stdio:/no/such/binary"}); err == nil {
+	if _, err := (MCP{}).Connect(context.Background(), kernelrequest.Request{URL: "stdio:/no/such/binary"}); err == nil {
 		t.Fatal("started a missing command")
 	}
-	if _, err := (MCP{}).Connect(context.Background(), request.Request{URL: "stdio:"}); err == nil {
+	if _, err := (MCP{}).Connect(context.Background(), kernelrequest.Request{URL: "stdio:"}); err == nil {
 		t.Fatal("started an empty command")
 	}
 }
 
 func TestMCPConnectAnnouncesTheServerInfoAsAnEvent(t *testing.T) {
 	url, _ := mcpHTTPServer(t)
-	s, err := MCP{}.Connect(context.Background(), request.Request{Protocol: "mcp", URL: url})
+	s, err := MCP{}.Connect(context.Background(), kernelrequest.Request{Protocol: "mcp", URL: url})
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer s.Close(context.Background())
-	var e request.Event
-	for e.Kind != request.KindInitialize {
+	var e kernelrequest.Event
+	for e.Kind != kernelrequest.KindInitialize {
 		e = waitFor(t, s, `"serverInfo"`) // the response is logged too, as traffic
 	}
-	if e.Dir != request.Info {
+	if e.Dir != kernelrequest.Info {
 		t.Fatalf("%+v", e)
 	}
 	server, ok := request.ParseServerInfo(e.Text)
@@ -298,12 +299,12 @@ func TestMCPConnectAnnouncesTheServerInfoAsAnEvent(t *testing.T) {
 
 func TestMCPRequestReturnsTheResultOrTheServersError(t *testing.T) {
 	url, _ := mcpHTTPServer(t)
-	s, err := MCP{}.Connect(context.Background(), request.Request{Protocol: "mcp", URL: url})
+	s, err := MCP{}.Connect(context.Background(), kernelrequest.Request{Protocol: "mcp", URL: url})
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer s.Close(context.Background())
-	requester, ok := s.(request.Requester)
+	requester, ok := s.(kernelrequest.Requester)
 	if !ok {
 		t.Fatal("an MCP session answers requests")
 	}
@@ -382,20 +383,20 @@ func TestAnUnreadableInitializeResultIsLogged(t *testing.T) {
 		json.NewEncoder(writer).Encode(out)
 	}))
 	defer srv.Close()
-	s, err := MCP{}.Connect(context.Background(), request.Request{URL: srv.URL})
+	s, err := MCP{}.Connect(context.Background(), kernelrequest.Request{URL: srv.URL})
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer s.Close(context.Background())
 	e := waitFor(t, s, "initialize result")
-	if e.Dir != request.Info || e.Kind != request.KindError {
+	if e.Dir != kernelrequest.Info || e.Kind != kernelrequest.KindError {
 		t.Fatalf("%+v", e)
 	}
 }
 
 func TestMCPCloseWithAnEndedContextSkipsTheGoodbye(t *testing.T) {
 	url, seen := mcpHTTPServer(t)
-	s, err := MCP{}.Connect(context.Background(), request.Request{Protocol: "mcp", URL: url})
+	s, err := MCP{}.Connect(context.Background(), kernelrequest.Request{Protocol: "mcp", URL: url})
 	if err != nil {
 		t.Fatal(err)
 	}

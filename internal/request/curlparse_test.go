@@ -5,46 +5,48 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	kernelrequest "github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 )
 
 func TestParseCurl(t *testing.T) {
 	tests := []struct {
 		name string
 		cmd  string
-		want Request
+		want kernelrequest.Request
 	}{
 		{"plain get", `curl https://api.test/users`,
-			Request{Protocol: "rest", Method: "GET", URL: "https://api.test/users", BodyType: BodyNone}},
+			kernelrequest.Request{Protocol: "rest", Method: "GET", URL: "https://api.test/users", BodyType: kernelrequest.BodyNone}},
 		{"query becomes params", `curl 'https://api.test/s?q=go+lang&page=2'`,
-			Request{Protocol: "rest", Method: "GET", URL: "https://api.test/s?q=go+lang&page=2", BodyType: BodyNone,
-				Params: []KV{{Name: "q", Value: "go lang", Enabled: true}, {Name: "page", Value: "2", Enabled: true}}}},
+			kernelrequest.Request{Protocol: "rest", Method: "GET", URL: "https://api.test/s?q=go+lang&page=2", BodyType: kernelrequest.BodyNone,
+				Params: []kernelrequest.KV{{Name: "q", Value: "go lang", Enabled: true}, {Name: "page", Value: "2", Enabled: true}}}},
 		{"json post with headers", `curl -X POST 'https://api.test/u' -H 'Content-Type: application/json' -H "Accept: */*" --data-raw '{"a":1}'`,
-			Request{Protocol: "rest", Method: "POST", URL: "https://api.test/u", BodyType: BodyJSON, Body: `{"a":1}`,
-				Headers: []KV{{Name: "Content-Type", Value: "application/json", Enabled: true}, {Name: "Accept", Value: "*/*", Enabled: true}}}},
+			kernelrequest.Request{Protocol: "rest", Method: "POST", URL: "https://api.test/u", BodyType: kernelrequest.BodyJSON, Body: `{"a":1}`,
+				Headers: []kernelrequest.KV{{Name: "Content-Type", Value: "application/json", Enabled: true}, {Name: "Accept", Value: "*/*", Enabled: true}}}},
 		{"data implies post", `curl https://api.test/u -d 'x=1&y=a%20b'`,
-			Request{Protocol: "rest", Method: "POST", URL: "https://api.test/u", BodyType: BodyForm,
-				Form: []KV{{Name: "x", Value: "1", Enabled: true}, {Name: "y", Value: "a b", Enabled: true}}}},
+			kernelrequest.Request{Protocol: "rest", Method: "POST", URL: "https://api.test/u", BodyType: kernelrequest.BodyForm,
+				Form: []kernelrequest.KV{{Name: "x", Value: "1", Enabled: true}, {Name: "y", Value: "a b", Enabled: true}}}},
 		{"bearer token", `curl https://api.test -H 'Authorization: Bearer abc.def'`,
-			Request{Protocol: "rest", Method: "GET", URL: "https://api.test", BodyType: BodyNone,
-				Auth: Auth{Type: AuthBearer, Token: "abc.def"}}},
+			kernelrequest.Request{Protocol: "rest", Method: "GET", URL: "https://api.test", BodyType: kernelrequest.BodyNone,
+				Auth: kernelrequest.Auth{Type: kernelrequest.AuthBearer, Token: "abc.def"}}},
 		{"basic auth", `curl -u alice:pw https://api.test`,
-			Request{Protocol: "rest", Method: "GET", URL: "https://api.test", BodyType: BodyNone,
-				Auth: Auth{Type: AuthBasic, User: "alice", Password: "pw"}}},
+			kernelrequest.Request{Protocol: "rest", Method: "GET", URL: "https://api.test", BodyType: kernelrequest.BodyNone,
+				Auth: kernelrequest.Auth{Type: kernelrequest.AuthBasic, User: "alice", Password: "pw"}}},
 		{"line continuations", "curl \\\n  --url https://api.test \\\n  --request DELETE",
-			Request{Protocol: "rest", Method: "DELETE", URL: "https://api.test", BodyType: BodyNone}},
+			kernelrequest.Request{Protocol: "rest", Method: "DELETE", URL: "https://api.test", BodyType: kernelrequest.BodyNone}},
 		{"follow redirects flag", `curl -L -s --compressed -k https://api.test`,
-			Request{Protocol: "rest", Method: "GET", URL: "https://api.test", BodyType: BodyNone}},
+			kernelrequest.Request{Protocol: "rest", Method: "GET", URL: "https://api.test", BodyType: kernelrequest.BodyNone}},
 		{"multipart", `curl -F 'name=x' -F "file=@a.txt" https://api.test/up`,
-			Request{Protocol: "rest", Method: "POST", URL: "https://api.test/up", BodyType: BodyMultipart,
-				Form: []KV{{Name: "name", Value: "x", Enabled: true}, {Name: "file", Value: "@a.txt", Enabled: true}}}},
+			kernelrequest.Request{Protocol: "rest", Method: "POST", URL: "https://api.test/up", BodyType: kernelrequest.BodyMultipart,
+				Form: []kernelrequest.KV{{Name: "name", Value: "x", Enabled: true}, {Name: "file", Value: "@a.txt", Enabled: true}}}},
 		{"ansi-c quoting", `curl https://api.test -d $'{"a":"x\ny"}' -H 'Content-Type: application/json'`,
-			Request{Protocol: "rest", Method: "POST", URL: "https://api.test", BodyType: BodyJSON, Body: "{\"a\":\"x\ny\"}",
-				Headers: []KV{{Name: "Content-Type", Value: "application/json", Enabled: true}}}},
+			kernelrequest.Request{Protocol: "rest", Method: "POST", URL: "https://api.test", BodyType: kernelrequest.BodyJSON, Body: "{\"a\":\"x\ny\"}",
+				Headers: []kernelrequest.KV{{Name: "Content-Type", Value: "application/json", Enabled: true}}}},
 		{"head", `curl -I https://api.test`,
-			Request{Protocol: "rest", Method: "HEAD", URL: "https://api.test", BodyType: BodyNone}},
+			kernelrequest.Request{Protocol: "rest", Method: "HEAD", URL: "https://api.test", BodyType: kernelrequest.BodyNone}},
 		{"cookie and agent", `curl https://api.test -b 'a=1' -A 'me/1'`,
-			Request{Protocol: "rest", Method: "GET", URL: "https://api.test", BodyType: BodyNone,
-				Headers: []KV{{Name: "Cookie", Value: "a=1", Enabled: true}, {Name: "User-Agent", Value: "me/1", Enabled: true}}}},
+			kernelrequest.Request{Protocol: "rest", Method: "GET", URL: "https://api.test", BodyType: kernelrequest.BodyNone,
+				Headers: []kernelrequest.KV{{Name: "Cookie", Value: "a=1", Enabled: true}, {Name: "User-Agent", Value: "me/1", Enabled: true}}}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -89,17 +91,17 @@ func TestParseCurlErrors(t *testing.T) {
 func TestParseCurlReadsClusteredAndAttachedFlags(t *testing.T) {
 	tests := []struct {
 		name, cmd string
-		check     func(Request) string
+		check     func(kernelrequest.Request) string
 	}{
-		{"attached method", `curl -XPOST https://api.test`, func(request Request) string { return request.Method }},
-		{"cluster with follow", `curl -sSL https://api.test`, func(request Request) string { return fmt.Sprint(request.NoRedirects) }},
-		{"attached user", `curl -ualice:pw https://api.test`, func(request Request) string { return request.Auth.User + "/" + request.Auth.Password }},
-		{"attached data", `curl -d'a=1' https://api.test`, func(request Request) string {
+		{"attached method", `curl -XPOST https://api.test`, func(request kernelrequest.Request) string { return request.Method }},
+		{"cluster with follow", `curl -sSL https://api.test`, func(request kernelrequest.Request) string { return fmt.Sprint(request.NoRedirects) }},
+		{"attached user", `curl -ualice:pw https://api.test`, func(request kernelrequest.Request) string { return request.Auth.User + "/" + request.Auth.Password }},
+		{"attached data", `curl -d'a=1' https://api.test`, func(request kernelrequest.Request) string {
 			return request.Method + " " + request.Form[0].Name + "=" + request.Form[0].Value
 		}},
-		{"cluster then value flag", `curl -sXDELETE https://api.test`, func(request Request) string { return request.Method }},
-		{"unknown long flag with a value", `curl --some-flag=https://evil.test https://api.test`, func(request Request) string { return request.URL }},
-		{"known long flag with =", `curl --request=PUT https://api.test`, func(request Request) string { return request.Method }},
+		{"cluster then value flag", `curl -sXDELETE https://api.test`, func(request kernelrequest.Request) string { return request.Method }},
+		{"unknown long flag with a value", `curl --some-flag=https://evil.test https://api.test`, func(request kernelrequest.Request) string { return request.URL }},
+		{"known long flag with =", `curl --request=PUT https://api.test`, func(request kernelrequest.Request) string { return request.Method }},
 	}
 	want := map[string]string{
 		"attached method":                "POST",
@@ -161,7 +163,7 @@ func TestImportedNameIsMethodAndPath(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			if got := ImportedName(Request{Method: test.method, URL: test.url}); got != test.want {
+			if got := ImportedName(kernelrequest.Request{Method: test.method, URL: test.url}); got != test.want {
 				t.Fatalf("got %q, want %q", got, test.want)
 			}
 		})

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	kernelrequest "github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/textfmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
@@ -40,7 +41,7 @@ type wsMessage interface{ target() wsTarget }
 type (
 	wsOpened struct {
 		wsTarget
-		session request.Session
+		session kernelrequest.Session
 	}
 	wsFailed struct {
 		wsTarget
@@ -48,7 +49,7 @@ type (
 	}
 	wsReceived struct {
 		wsTarget
-		event request.Event
+		event kernelrequest.Event
 	}
 	wsClosed struct{ wsTarget }
 	wsRetry  struct{ wsTarget }
@@ -60,7 +61,7 @@ const defaultRetryDelay = 2 * time.Second
 // isSocket reports whether the tab's protocol keeps a connection open.
 func isSocket(tab *reqTab) bool {
 	connection := tab.Req.Protocol.Info().Connection
-	return connection == request.Always || (connection == request.OnStream && tab.grpcStream)
+	return connection == kernelrequest.Always || (connection == kernelrequest.OnStream && tab.grpcStream)
 }
 
 // wsPanes are the panes of a socket's response side.
@@ -100,7 +101,7 @@ func (a *App) connect(tab *reqTab) {
 	a.status = "Connecting to " + tab.Req.URL
 	req := tab.Req.Expanded(a.varsFor(tab.Req))
 	if header := tab.Req.Protocol.Info().ResumeHeader; header != "" && tab.LastEventID != "" { // resume where the stream stopped
-		req.Headers = append(req.Headers, request.KV{Name: header, Value: tab.LastEventID, Enabled: true})
+		req.Headers = append(req.Headers, kernelrequest.KV{Name: header, Value: tab.LastEventID, Enabled: true})
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), a.timeoutFor(req))
 	tab.wsCancel = cancel
@@ -143,7 +144,7 @@ func (a *App) disconnect(tab *reqTab) {
 	}
 	if abandoned {
 		tab.wsCancel()
-		a.status = request.ErrCancelled
+		a.status = kernelrequest.ErrCancelled
 	}
 }
 
@@ -289,22 +290,22 @@ func (a *App) scheduleRetry(tab *reqTab) {
 }
 
 // logEvent appends an event to the log, one line per line of its text.
-func (a *App) logEvent(tab *reqTab, event request.Event) {
-	if event.Dir == request.Info && event.Kind == request.KindInitialize {
+func (a *App) logEvent(tab *reqTab, event kernelrequest.Event) {
+	if event.Dir == kernelrequest.Info && event.Kind == kernelrequest.KindInitialize {
 		return
 	}
 	mark, tok := Span{Text: "•", Icon: "dot"}, w.Muted
 	switch event.Dir {
-	case request.Sent:
+	case kernelrequest.Sent:
 		mark, tok = Span{Text: "↑", Icon: "arrow-up"}, w.Info
-	case request.Received:
+	case kernelrequest.Received:
 		mark, tok = Span{Text: "↓", Icon: "arrow-down"}, w.OK
 	}
 	text := event.Text
 	if text == "" && !event.Kind.CarriesPayload() {
 		text = event.Label() // a ping has no payload
 	}
-	if event.Dir == request.Info && strings.HasPrefix(event.Text, "Connection lost") {
+	if event.Dir == kernelrequest.Info && strings.HasPrefix(event.Text, "Connection lost") {
 		tok = w.Error
 	}
 	mark.Style = w.Muted // as the stamp, so the picture is the same as when the mark was a character
@@ -326,8 +327,8 @@ func (a *App) logEvent(tab *reqTab, event request.Event) {
 
 // textToken is the color of a log line's text: the direction's own for
 // problems and notes, plain for messages.
-func textToken(direction request.Direction, tok w.Token) w.Token {
-	if direction == request.Info {
+func textToken(direction kernelrequest.Direction, tok w.Token) w.Token {
+	if direction == kernelrequest.Info {
 		return tok
 	}
 	return w.Text
@@ -335,7 +336,7 @@ func textToken(direction request.Direction, tok w.Token) w.Token {
 
 // logInfo appends a note of the UI itself to the log.
 func (a *App) logInfo(tab *reqTab, text string, tok w.Token) {
-	a.logEvent(tab, request.Event{Time: time.Now(), Dir: request.Info, Kind: request.KindInfo, Text: text})
+	a.logEvent(tab, kernelrequest.Event{Time: time.Now(), Dir: kernelrequest.Info, Kind: kernelrequest.KindInfo, Text: text})
 	if tok == w.Error { // recolor the line just added
 		last := &tab.wsView.Lines[len(tab.wsView.Lines)-1]
 		last.Spans[1].Style = w.Error
@@ -384,8 +385,8 @@ func composerHint(tab *reqTab, connected bool) string {
 
 // composed is the send of the composer's text, ready to run; a text that
 // cannot be sent (bad hex) is refused here, before anything is sent.
-func composed(session request.Session, text string) (queuedSend, error) {
-	binarySender, canBinary := session.(request.BinarySender)
+func composed(session kernelrequest.Session, text string) (queuedSend, error) {
+	binarySender, canBinary := session.(kernelrequest.BinarySender)
 	if !canBinary {
 		return func(ctx context.Context) error { return session.Send(ctx, text) }, nil
 	}
@@ -411,10 +412,10 @@ func (a *App) toolMenu(tab *reqTab) []MenuItem {
 }
 
 // composeCall fills the composer with a call of tool.
-func (a *App) composeCall(tab *reqTab, tool request.MCPTool) {
+func (a *App) composeCall(tab *reqTab, tool kernelrequest.MCPTool) {
 	args := "{}"
 	if tool.Schema.Type != "" {
-		args = request.Skeleton(tool.Schema)
+		args = kernelrequest.Skeleton(tool.Schema)
 	}
 	tab.setComposer("call " + tool.Name + " " + args)
 }

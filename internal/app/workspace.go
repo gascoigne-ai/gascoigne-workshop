@@ -14,7 +14,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/tabs"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/fileversion"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 )
 
 // saveDebounce is how long a collection must stay unchanged before it is

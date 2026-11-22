@@ -2,7 +2,7 @@
 
 package collection
 
-import "github.com/gascoigne-ai/gascoigne-workshop/internal/request"
+import "github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 
 // Sample is what a release build starts with when no workspace and no
 // client config exists: an empty collection. It ships no example

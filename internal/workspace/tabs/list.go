@@ -3,7 +3,7 @@ package tabs
 import (
 	"slices"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 )
 
 // List is the open tabs in order, the active one and the one being dragged.

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 )
 
 type fakeSession struct{ closed bool }

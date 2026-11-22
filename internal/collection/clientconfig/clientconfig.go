@@ -17,7 +17,7 @@ import (
 	"github.com/BurntSushi/toml"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/miniyaml"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 )
 
 // ServersName is the name of the folder that holds one request per

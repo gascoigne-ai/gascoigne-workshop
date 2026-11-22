@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 )
 
 func TestOpenInBrowserServesTheBodyAndOpensItsAddress(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 )
 
 func sampleCollection() (col *request.Collection, first, second *request.Request, sub *request.Folder) {

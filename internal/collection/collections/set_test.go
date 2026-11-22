@@ -3,7 +3,7 @@ package collections
 import (
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 )
 
 func newCollection(name string) *request.Collection {

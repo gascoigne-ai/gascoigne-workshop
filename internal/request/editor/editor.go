@@ -5,7 +5,7 @@ package editor
 import (
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 )
 
 // Msg is one edit of a request.

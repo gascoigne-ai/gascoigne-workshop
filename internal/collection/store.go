@@ -5,7 +5,7 @@ package collection
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/clientconfig"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 )
 
 // Store reads and writes a collection in a folder.

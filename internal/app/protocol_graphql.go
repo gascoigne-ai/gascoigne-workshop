@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/editor"
 
+	kernelrequest "github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/textfmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -50,7 +51,7 @@ func (a *App) graphQLBody(tab *reqTab) Node {
 // headers and credentials, and shows the answer as the response.
 func (a *App) loadSchema(tab *reqTab) {
 	src := tab.Req.Clone()
-	src.Method, src.BodyType = "POST", request.BodyGraphQL
+	src.Method, src.BodyType = "POST", kernelrequest.BodyGraphQL
 	src.Body, src.GraphQLVars = request.IntrospectionQuery, ""
 	a.dispatch(tab, &src)
 }
@@ -77,8 +78,8 @@ func (a *App) useOperation(tab *reqTab, op request.Operation) {
 
 // rememberSchema keeps the schema when resp is an introspection answer;
 // any other answer leaves what the tab already knows.
-func (a *App) rememberSchema(tab *reqTab, resp *request.Response) {
-	if tab.Req.BodyType != request.BodyGraphQL {
+func (a *App) rememberSchema(tab *reqTab, resp *kernelrequest.Response) {
+	if tab.Req.BodyType != kernelrequest.BodyGraphQL {
 		return
 	}
 	if schema, err := request.ParseSchema(resp.Body); err == nil {

@@ -1,6 +1,6 @@
 package tabs
 
-import "github.com/gascoigne-ai/gascoigne-workshop/internal/request"
+import "github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 
 // HistoryLimit is how many table changes can be undone per table.
 const HistoryLimit = 100

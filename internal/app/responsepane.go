@@ -2,8 +2,8 @@ package app
 
 import (
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/textfmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/viewer"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"

@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/assert"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/editor"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"

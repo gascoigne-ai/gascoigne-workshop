@@ -3,7 +3,7 @@ package tabs
 import (
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 )
 
 // PastLimit is how many earlier responses a tab keeps for its History menu.

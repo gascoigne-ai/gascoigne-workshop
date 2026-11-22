@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/collections"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 

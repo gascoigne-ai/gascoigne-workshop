@@ -6,25 +6,27 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+
+	kernelrequest "github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 )
 
 // ParseCurl turns a curl command line into a REST request, the way
 // "Copy as cURL" of a browser or an API doc writes it. Flags that do
 // not change the request (-s, -k, --compressed...) are skipped. As with
 // curl, redirects are followed only with -L.
-func ParseCurl(cmd string) (Request, error) {
+func ParseCurl(cmd string) (kernelrequest.Request, error) {
 	args, err := ShellSplit(cmd)
 	if err != nil {
-		return Request{}, err
+		return kernelrequest.Request{}, err
 	}
 	if len(args) == 0 {
-		return Request{}, errors.New("the command is empty")
+		return kernelrequest.Request{}, errors.New("the command is empty")
 	}
 	if args[0] != "curl" {
-		return Request{}, errors.New("not a curl command")
+		return kernelrequest.Request{}, errors.New("not a curl command")
 	}
 	args = splitCurlFlags(args)
-	parse := curlParse{req: Request{Protocol: ProtocolREST, NoRedirects: true}}
+	parse := curlParse{req: kernelrequest.Request{Protocol: kernelrequest.ProtocolREST, NoRedirects: true}}
 	for i := 1; i < len(args); i++ {
 		flag, known := curlFlags[args[i]]
 		if !known {
@@ -36,7 +38,7 @@ func ParseCurl(cmd string) (Request, error) {
 		value := ""
 		if flag.takesValue {
 			if i+1 >= len(args) {
-				return Request{}, fmt.Errorf("%s needs a value", args[i])
+				return kernelrequest.Request{}, fmt.Errorf("%s needs a value", args[i])
 			}
 			i++
 			value = args[i]
@@ -48,9 +50,9 @@ func ParseCurl(cmd string) (Request, error) {
 	req := parse.req
 	data, forms, user, method, head := parse.data, parse.forms, parse.user, parse.method, parse.head
 	if req.URL == "" {
-		return Request{}, errors.New("no URL in the command")
+		return kernelrequest.Request{}, errors.New("no URL in the command")
 	}
-	req.Params = ParamsFromURL(req.URL)
+	req.Params = kernelrequest.ParamsFromURL(req.URL)
 	if len(req.Params) == 0 {
 		req.Params = nil
 	}
@@ -60,10 +62,10 @@ func ParseCurl(cmd string) (Request, error) {
 }
 
 // curlAuth takes credentials out of a -u flag or a bearer header.
-func curlAuth(req *Request, user string) Auth {
+func curlAuth(req *kernelrequest.Request, user string) kernelrequest.Auth {
 	if user != "" {
 		name, pw, _ := strings.Cut(user, ":")
-		return Auth{Type: AuthBasic, User: name, Password: pw}
+		return kernelrequest.Auth{Type: kernelrequest.AuthBasic, User: name, Password: pw}
 	}
 	for i, h := range req.Headers {
 		if strings.EqualFold(h.Name, "Authorization") && strings.HasPrefix(h.Value, "Bearer ") {
@@ -71,14 +73,14 @@ func curlAuth(req *Request, user string) Auth {
 			if len(req.Headers) == 0 {
 				req.Headers = nil
 			}
-			return Auth{Type: AuthBearer, Token: strings.TrimPrefix(h.Value, "Bearer ")}
+			return kernelrequest.Auth{Type: kernelrequest.AuthBearer, Token: strings.TrimPrefix(h.Value, "Bearer ")}
 		}
 	}
-	return Auth{}
+	return kernelrequest.Auth{}
 }
 
 // curlBodyOf decides the method and the body kind from the data flags.
-func curlBodyOf(headers []KV, method string, head bool, data, forms []string) (m string, bodyType BodyType, body string, form []KV) {
+func curlBodyOf(headers []kernelrequest.KV, method string, head bool, data, forms []string) (m string, bodyType kernelrequest.BodyType, body string, form []kernelrequest.KV) {
 	contentType := ""
 	for _, h := range headers {
 		if strings.EqualFold(h.Name, "Content-Type") {
@@ -87,34 +89,34 @@ func curlBodyOf(headers []KV, method string, head bool, data, forms []string) (m
 	}
 	switch {
 	case len(forms) > 0:
-		bodyType = BodyMultipart
+		bodyType = kernelrequest.BodyMultipart
 		for _, f := range forms {
 			name, val, _ := strings.Cut(f, "=")
-			form = append(form, KV{Name: name, Value: val, Enabled: true})
+			form = append(form, kernelrequest.KV{Name: name, Value: val, Enabled: true})
 		}
 	case len(data) > 0:
 		joined := strings.Join(data, "&")
 		switch {
 		case strings.Contains(contentType, "json") || (contentType == "" && startsLikeJSON(joined)):
-			bodyType, body = BodyJSON, joined
+			bodyType, body = kernelrequest.BodyJSON, joined
 		case contentType == "" || strings.Contains(contentType, "x-www-form-urlencoded"):
-			bodyType = BodyForm
+			bodyType = kernelrequest.BodyForm
 			for _, pair := range strings.Split(joined, "&") {
 				name, val, _ := strings.Cut(pair, "=")
-				form = append(form, KV{Name: unescapeForm(name), Value: unescapeForm(val), Enabled: true})
+				form = append(form, kernelrequest.KV{Name: unescapeForm(name), Value: unescapeForm(val), Enabled: true})
 			}
 		default:
-			bodyType, body = BodyText, joined
+			bodyType, body = kernelrequest.BodyText, joined
 		}
 	default:
-		bodyType = BodyNone
+		bodyType = kernelrequest.BodyNone
 	}
 	switch {
 	case method != "":
 		m = method
 	case head:
 		m = "HEAD"
-	case bodyType != BodyNone:
+	case bodyType != kernelrequest.BodyNone:
 		m = "POST"
 	default:
 		m = "GET"
@@ -267,7 +269,7 @@ func indexRune(runes []rune, from int, char rune) int {
 
 // curlParse is what the flags of one command line add up to.
 type curlParse struct {
-	req          Request
+	req          kernelrequest.Request
 	data, forms  []string
 	user, method string
 	head         bool
@@ -325,7 +327,7 @@ func curlFlagTable(rows []curlFlagRow) map[string]curlFlag {
 }
 
 func (parse *curlParse) addHeader(name, value string) {
-	parse.req.Headers = append(parse.req.Headers, KV{Name: name, Value: value, Enabled: true})
+	parse.req.Headers = append(parse.req.Headers, kernelrequest.KV{Name: name, Value: value, Enabled: true})
 }
 
 // splitCurlFlags writes every flag as the parser reads it: "--flag=value"
@@ -383,7 +385,7 @@ func splitShortCluster(letters string) (flags []string, needsValue bool) {
 
 // ImportedName names a request imported from a command after its method and
 // the path of its URL: "GET /users".
-func ImportedName(request Request) string {
+func ImportedName(request kernelrequest.Request) string {
 	path := request.URL
 	if _, rest, ok := strings.Cut(path, "://"); ok {
 		path = rest

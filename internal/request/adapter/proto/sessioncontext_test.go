@@ -3,7 +3,7 @@ package proto
 import (
 	"context"
 	"errors"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 	"net/http"
 	"testing"
 	"time"

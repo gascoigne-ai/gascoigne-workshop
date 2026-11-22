@@ -21,8 +21,8 @@ FUZZ_TARGETS = \
 	./internal/collection/postman:FuzzParse \
 	./internal/collection/clientconfig:FuzzParse \
 	./internal/request:FuzzParseCurl \
-	./internal/request:FuzzDecodeJSONSchema \
-	./internal/request:FuzzURLParams \
+	./internal/kernel/request:FuzzDecodeJSONSchema \
+	./internal/kernel/request:FuzzURLParams \
 	./internal/request/assert:FuzzRun \
 	./internal/kernel/jsonview:FuzzCompact \
 	./internal/request/adapter/proto/ws:FuzzReadFrame \
@@ -33,11 +33,11 @@ FUZZ_TARGETS = \
 	./uitoolkit/widget:FuzzParseSVG \
 	./uitoolkit/widget:FuzzWrapRunes \
 	./internal/request:FuzzParseSchema \
-	./internal/request:FuzzParseMCPLists \
+	./internal/kernel/request:FuzzParseMCPLists \
 	./internal/request:FuzzParseServerInfo \
-	./internal/request:FuzzParseProtocol \
-	./internal/request:FuzzParseBodyType \
-	./internal/request:FuzzParseAuthType \
+	./internal/kernel/request:FuzzParseProtocol \
+	./internal/kernel/request:FuzzParseBodyType \
+	./internal/kernel/request:FuzzParseAuthType \
 	./internal/collection/adapter/store:FuzzLoad \
 	./internal/workspace/adapter/statefile:FuzzLoad \
 	./internal/settings:FuzzDecode \
@@ -48,13 +48,13 @@ FUZZ_TARGETS = \
 	./uitoolkit/theming:FuzzParseTheme \
 	./internal/request/adapter/proto:FuzzReadEvents \
 	./internal/settings:FuzzParse \
-	./internal/request:FuzzParseBulk \
+	./internal/kernel/request:FuzzParseBulk \
 	./internal/settings/ui/shortcutpage:FuzzParseBinding \
 	./internal/request/adapter/proto:FuzzDeliverJSON \
 	./internal/request/adapter/proto:FuzzAnswerServer \
 	./internal/request/adapter/proto:FuzzSample \
-	./internal/request:FuzzToolFields \
-	./internal/request:FuzzArguments \
+	./internal/kernel/request:FuzzToolFields \
+	./internal/kernel/request:FuzzArguments \
 	./internal/kernel/jsonview:FuzzLines \
 	./internal/settings/adapter/displayscale:FuzzParseMonitors \
 	./internal/settings/adapter/keyrepeat:FuzzParseHyprland \

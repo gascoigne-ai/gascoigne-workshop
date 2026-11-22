@@ -3,7 +3,7 @@ package app
 import (
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 )
 
 // allowed reports whether source may be sent or connected now. A request

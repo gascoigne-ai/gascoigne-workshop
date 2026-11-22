@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	kernelrequest "github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/assert"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/editor"
@@ -115,7 +116,7 @@ func (a *App) updateTabs(msg tabs.Msg) {
 }
 
 // activeRequest is the request of the active tab, nil when none is open.
-func (a *App) activeRequest() *request.Request {
+func (a *App) activeRequest() *kernelrequest.Request {
 	if a.list.Active < 0 || a.list.Active >= len(a.list.Tabs) {
 		return nil
 	}
@@ -131,7 +132,7 @@ func (a *App) openTabs() []*reqTab {
 	return open
 }
 
-func newTab(req *request.Request) *reqTab { return newReqTab(tabs.New(req)) }
+func newTab(req *kernelrequest.Request) *reqTab { return newReqTab(tabs.New(req)) }
 
 func newReqTab(tab *tabs.Tab) *reqTab {
 	req := tab.Req
@@ -151,8 +152,8 @@ func newReqTab(tab *tabs.Tab) *reqTab {
 func (a *App) cur() *reqTab { return a.widgets[a.list.Tabs[a.list.Active]] }
 
 // openRequest focuses the tab of req, opening one if needed.
-func (a *App) openRequest(req *request.Request) {
-	a.selected = request.Node{Req: req}
+func (a *App) openRequest(req *kernelrequest.Request) {
+	a.selected = kernelrequest.Node{Req: req}
 	a.updateTabs(tabs.Open{Req: req})
 }
 

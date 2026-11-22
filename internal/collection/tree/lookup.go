@@ -1,6 +1,6 @@
 package tree
 
-import "github.com/gascoigne-ai/gascoigne-workshop/internal/request"
+import "github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 
 // PathSep joins folder and request names in a request's path.
 const PathSep = "/"

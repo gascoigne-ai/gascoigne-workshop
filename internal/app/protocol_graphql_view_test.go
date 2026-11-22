@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	kernelrequest "github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -51,7 +52,7 @@ func TestTheGraphQLBodyLaysOutAsPinned(t *testing.T) {
 				a := testApp(t)
 				t.Cleanup(a.waitWrites)
 				tab := a.cur()
-				a.setBodyType(tab, request.BodyGraphQL)
+				a.setBodyType(tab, kernelrequest.BodyGraphQL)
 				state.setUp(tab)
 				root := a.graphQLBody(tab)
 				Layout(a.ctx, root, size.width, settingsPaneH)
@@ -107,7 +108,7 @@ func openGraphQLBody(t *testing.T, url string) *App {
 	a := openBodyPane(t)
 	t.Cleanup(a.waitWrites)
 	a.cur().Req.URL = url
-	a.setBodyType(a.cur(), request.BodyGraphQL)
+	a.setBodyType(a.cur(), kernelrequest.BodyGraphQL)
 	a.step(core.Input{})
 	return a
 }

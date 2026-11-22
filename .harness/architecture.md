@@ -40,7 +40,7 @@ domain directory under `internal/` (root, controllers, `ui/`, `adapter/`) or the
 
 | File | Module | Owns |
 |---|---|---|
-| `architecture/request.md` | `internal/request` | model, ports, protocols (rest, websocket, sse, mcp, grpc), assert, editor, calltrace, mcpform |
+| `architecture/request.md` | `internal/kernel/request`, `internal/request` | model, ports, protocols (rest, websocket, sse, mcp, grpc), assert, editor, calltrace, mcpform |
 | `architecture/collection.md` | `internal/collection` | tree, environments, importers, transfer, store, client config, example server |
 | `architecture/response.md` | `internal/response` | viewer, history, preview, sent log |
 | `architecture/settings.md` | `internal/settings` | schema, prefs, theme, system adapters, settings dialog |
