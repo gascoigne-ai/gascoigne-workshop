@@ -93,8 +93,7 @@ type layerRule struct {
 }
 
 var (
-	settingsPlatform  = []string{"internal/platform/fonts", "internal/platform/systeminfo"}
-	workspacePlatform = []string{"internal/platform/folders"}
+	settingsPlatform = []string{"internal/platform/fonts", "internal/platform/systeminfo"}
 )
 
 // layerRules is the data form of internal/CLAUDE.md, Imports. The rows after
@@ -109,7 +108,6 @@ var layerRules = []layerRule{
 	{"adapter -> kernel", selector{Zones: []zone{zoneAdapter}}, selector{Zones: []zone{zoneKernel}}, false, false, "a feature builds on the shared model"},
 	{"adapter -> own root, controllers, adapters", selector{Zones: []zone{zoneAdapter}}, selector{Zones: []zone{zoneFeatureRoot, zoneController, zoneAdapter}}, true, false, "adapters implement their feature's ports"},
 	{"platform -> settings root", selector{Paths: settingsPlatform}, selector{Paths: []string{"internal/feature/settings"}}, false, false, "the platform adapter implements a port settings owns, so it imports the port types"},
-	{"platform -> workspace root", selector{Paths: workspacePlatform}, selector{Paths: []string{"internal/feature/workspace"}}, false, false, "the platform adapter implements a port workspace owns, so it imports the port types"},
 	{"app -> everything", selector{Zones: []zone{zoneApp}}, selector{Zones: allZones()}, false, false, "the composition root knows both sides"},
 	{"toolkit -> toolkit", selector{Zones: []zone{zoneToolkit}}, selector{Zones: []zone{zoneToolkit}}, false, false, "the toolkit knows nothing of the app"},
 	{"exampleserver -> kernel", selector{Zones: []zone{zoneExampleServer}}, selector{Zones: []zone{zoneKernel}}, false, false, "a dev tool uses the shared model"},

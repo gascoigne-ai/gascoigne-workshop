@@ -6,7 +6,7 @@ Tabs, remembered state, the bus, the file browser, autosave, overlays, and the f
 - `internal/feature/workspace`: the model (root package `workspace`) with the ports `Folders` and `StateStore`.
 - Controllers as sub-packages: `tabs` (tab list, send and connection state), `state` (the remembered-state record), `filebrowser`, `autosave`, `bus`, `overlay`, `serial`.
 - `adapter/statefile`: the `state.json` store. `ui/appicon`: the application icon.
-- The OS adapters sit in `internal/platform`: `folders`. It imports `feature/workspace` for the port types it implements, a written exception for platform (as `internal/CLAUDE.md` says for `feature/settings`).
+- `adapter/folders` is the user's file system on the disk (`Folders`); `adapter/statefile` keeps the remembered state.
 - Imports: the kernel only (`kernel/request` for the MCP server info a connection keeps) plus the toolkit for the icon. The root imports its own `state` sub-package.
 
 ## Files, state and platforms

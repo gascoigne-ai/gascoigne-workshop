@@ -12,7 +12,7 @@ import (
 	historyadapter "github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history/adapter"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/adapter/preview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/proto"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/platform/folders"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/adapter/folders"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/platform/fonts"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/displayscale"

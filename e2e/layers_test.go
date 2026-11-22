@@ -226,7 +226,7 @@ func TestCheckLayersAllows(t *testing.T) {
 		{"standard library and ebiten are ignored", listedPackage{ImportPath: testModule + "/internal/kernel/request", Imports: []string{"fmt", "github.com/hajimehoshi/ebiten/v2"}}},
 		{"external test imports its own package and root", ownXtest},
 		{"workspace root imports its controller", synthetic("internal/feature/workspace", "internal/feature/workspace/state")},
-		{"platform imports its owner", synthetic("internal/platform/folders", "internal/feature/workspace")},
+		{"adapter imports its own root", synthetic("internal/feature/workspace/adapter/folders", "internal/feature/workspace")},
 		{"ui imports toolkit and own controller", synthetic("internal/feature/send/ui/respview", "uitoolkit/widget", "internal/feature/send/viewer", "internal/feature/send")},
 	}
 	for _, tc := range cases {
