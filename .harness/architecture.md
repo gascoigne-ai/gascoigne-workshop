@@ -44,7 +44,7 @@ domain directory under `internal/` (root, controllers, `ui/`, `adapter/`) or the
 | `architecture/collection.md` | `internal/collection` | tree, environments, importers, transfer, store, client config, example server |
 | `architecture/response.md` | `internal/response` | viewer, preview |
 | `internal/feature/history/FEATURE.md` | `internal/feature/history` | responses kept per request, sent log |
-| `architecture/settings.md` | `internal/settings` | schema, prefs, theme, system adapters, settings dialog |
+| `internal/feature/settings/FEATURE.md` | `internal/feature/settings`, `internal/platform` | schema, prefs, theme, settings dialog and its pages; the OS adapters for display scale, fonts, key repeat and system info |
 | `architecture/workspace.md` | `internal/workspace` | tabs, remembered state, bus, file browser, autosave, overlays, platform adapters |
 | `internal/kernel` (see `internal/CLAUDE.md`) | `internal/kernel` | shared leaves: `severity`, `fileversion`, `userdir`, `textfmt`, `jsonview`, `openset`; documented in their package docs and in the module files that use them |
 | `architecture/app.md` | `internal/app` | composition root: the `App`, its handlers and window |

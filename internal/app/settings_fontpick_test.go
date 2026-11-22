@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/settingsui"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/ui/settingsui"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"strings"
 
@@ -15,8 +15,8 @@ import (
 	"golang.org/x/image/font/gofont/gomonobold"
 	"golang.org/x/image/font/gofont/goregular"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/fonts"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/platform/fonts"
 )
 
 // testFamilies are real font files (the Go fonts) written to a folder

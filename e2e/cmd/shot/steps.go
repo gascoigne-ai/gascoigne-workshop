@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/app"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 )
 
 // Step is one thing a scene does to the window before the capture, through

@@ -4,9 +4,9 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/tree"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/severity"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/theme"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 

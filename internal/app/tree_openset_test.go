@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/collections"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/statefile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/state"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/tabs"

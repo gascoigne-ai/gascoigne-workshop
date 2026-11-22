@@ -1,8 +1,8 @@
 package app
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/ui/settingsui"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/settingsui"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"

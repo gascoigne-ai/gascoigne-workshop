@@ -3,7 +3,7 @@ package app
 import (
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/theme"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 

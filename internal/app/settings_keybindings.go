@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/shortcutpage"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/ui/shortcutpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
 )
 

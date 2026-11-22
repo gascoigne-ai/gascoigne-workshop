@@ -3,8 +3,8 @@ package app
 import (
 	"context"
 	"errors"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/bus"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"

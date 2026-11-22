@@ -12,7 +12,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -22,10 +22,10 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/adapter/store"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
 	historyadapter "github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history/adapter"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/adapter/settingsfile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/platform/fonts"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/fonts"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/settingsfile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/statefile"
 	"io"
 	"net/http"

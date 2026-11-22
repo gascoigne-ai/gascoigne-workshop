@@ -17,8 +17,10 @@ uitoolkit/           the GPU toolkit; knows nothing of requests (`uitoolkit/doc.
   widget             every component: buttons, menus, dialogs, tabs, fields, tables
   markup             templates (HTML-like) that build the same trees
   theming, engine    palettes and theme files; key bindings and frame pacing
+internal/feature/    moved feature slices: history, settings (model, ui/, adapter/, FEATURE.md)
+internal/platform/   OS adapters: displayscale, fonts, keyrepeat, systeminfo
 internal/kernel/     shared leaves: severity, fileversion, userdir, textfmt, jsonview, openset, request (the model and ports)
-internal/<domain>/   request, collection, response, settings, workspace (feature slices, not yet moved)
+internal/<domain>/   request, collection, response, workspace (feature slices, not yet moved)
   (root package)     types, rules and ports of the domain
   <controller>/      state and decisions, no widget, no I/O (tabs, tree, envs...)
   ui/<package>       views behind a Host
@@ -66,7 +68,7 @@ Every frame the whole window tree is rebuilt from the App state (why: the `marku
 | a protocol | implement `request.Sender` (and `Streamer` if it stays connected) in `request/adapter/proto`, add a row to `NewRegistry`; add its panes to the tables in `internal/app/window_panes.go` |
 | a widget | `uitoolkit/widget`: a composition of `view` elements, or a `view.Custom` behavior when it needs its own layout, input or drawing; options, tests, the package doc index and the markup tables (`rules.md`, toolkit API rules) |
 | a view | a template string (a `const` at the end of the Go file) and a `Scope` in the file of the view; pinned with a `view.Dump` test; a state of the `App` that has no widget in it goes to a controller package first |
-| a setting | one row in `settings.Schema` (`settings/schema.go`); the form, raw view, validation and reset read it |
+| a setting | one row in `settings.Schema` (`feature/settings/schema.go`); the form, raw view, validation and reset read it |
 | a rule or state with no widget | a controller package directly under its domain: a `Model`, typed messages, a pure `Update` (`architecture/app.md`, State changes) |
 | an outside dependency (files, network, system) | a port interface in the domain root, an implementation in the domain's `adapter/`, wired in `cmd/workshop` |
 

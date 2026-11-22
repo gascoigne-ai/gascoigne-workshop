@@ -9,7 +9,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 )
 
 // noFileDialog is the file chooser of an app started without one: callers

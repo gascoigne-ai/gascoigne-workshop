@@ -4,9 +4,9 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/severity"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/prefs"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/theme"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/prefs"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/theme"
 )
 
 func TestSendAppliesSettingsMessages(t *testing.T) {

@@ -8,8 +8,8 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/envs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/tree"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/autosave"
 )
 

@@ -10,8 +10,8 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
 	historyadapter "github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history/adapter"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 )
 
 // Alpha and Beta both hold Nested/Inner; the history of one must not show

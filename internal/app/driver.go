@@ -8,10 +8,10 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/transfer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/tree"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/editor"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"

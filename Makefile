@@ -40,28 +40,28 @@ FUZZ_TARGETS = \
 	./internal/kernel/request:FuzzParseAuthType \
 	./internal/collection/adapter/store:FuzzLoad \
 	./internal/workspace/adapter/statefile:FuzzLoad \
-	./internal/settings:FuzzDecode \
+	./internal/feature/settings:FuzzDecode \
 	./internal/kernel/fileversion:FuzzRead \
 	./internal/feature/history/adapter:FuzzLoad \
 	./internal/feature/history/adapter:FuzzLoadSent \
 	./internal/response/ui/respview:FuzzDecode \
 	./uitoolkit/theming:FuzzParseTheme \
 	./internal/request/adapter/proto:FuzzReadEvents \
-	./internal/settings:FuzzParse \
+	./internal/feature/settings:FuzzParse \
 	./internal/kernel/request:FuzzParseBulk \
-	./internal/settings/ui/shortcutpage:FuzzParseBinding \
+	./internal/feature/settings/ui/shortcutpage:FuzzParseBinding \
 	./internal/request/adapter/proto:FuzzDeliverJSON \
 	./internal/request/adapter/proto:FuzzAnswerServer \
 	./internal/request/adapter/proto:FuzzSample \
 	./internal/kernel/request:FuzzToolFields \
 	./internal/kernel/request:FuzzArguments \
 	./internal/kernel/jsonview:FuzzLines \
-	./internal/settings/adapter/displayscale:FuzzParseMonitors \
-	./internal/settings/adapter/keyrepeat:FuzzParseHyprland \
-	./internal/settings/adapter/keyrepeat:FuzzParseGSettings \
-	./internal/settings/adapter/keyrepeat:FuzzParseXset \
-	./internal/settings/adapter/keyrepeat:FuzzParseMac \
-	./internal/settings/adapter/keyrepeat:FuzzParseWindows
+	./internal/platform/displayscale:FuzzParseMonitors \
+	./internal/platform/keyrepeat:FuzzParseHyprland \
+	./internal/platform/keyrepeat:FuzzParseGSettings \
+	./internal/platform/keyrepeat:FuzzParseXset \
+	./internal/platform/keyrepeat:FuzzParseMac \
+	./internal/platform/keyrepeat:FuzzParseWindows
 fuzz:
 	@for target in $(FUZZ_TARGETS); do \
 		package=$${target%%:*}; name=$${target##*:}; \

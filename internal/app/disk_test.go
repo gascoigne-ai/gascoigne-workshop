@@ -2,7 +2,7 @@ package app
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/adapter/store"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/settingsfile"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/adapter/settingsfile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/statefile"
 )
 
