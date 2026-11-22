@@ -3,11 +3,20 @@ kind: feature
 commit: feat(widget): drop-down widget for the settings font list
 scope: uitoolkit/**, internal/**, cmd/**, e2e/**, .harness/architecture.md, .harness/architecture/**, .harness/overview.md, .harness/style.md, Makefile
 not_before: 2026-01-01
-depends_on:
+depends_on: 046-docs-final
 
-# Drop-down widget
+# Font drop-down (was: drop-down widget)
 
-Goal: `internal/feature/settings/ui/formpage` is 912 non-test lines because the font drop-down
+Reorg note: this task runs after the reorganization (tasks 015-046). The reason for a toolkit
+widget, "`ui` packages must not import each other", is gone: in the new tree a parent may import its
+child. Recommended answer to the open question below: the font drop-down becomes the child component
+`internal/ui/overlays/settingsdialog/formpage/fontlist` (own `logic/` and view, `Deps` for the font
+store), no toolkit change, which matches the rule that the reorganization leaves `uitoolkit/`
+alone. `formpage` then drops under about 800 lines. The loop asks the user before building:
+child component (recommended) or the toolkit widget below. If the user picks the widget, the
+scope keeps `uitoolkit/**` and the paths below are read through the new tree.
+
+Original goal: `internal/feature/settings/ui/formpage` is 912 non-test lines because the font drop-down
 (`fontlist.go`, `fonts.go`, about 304 lines) sits in it: the form row draws the font control from
 the drop-down's state, and `ui` packages must not import each other. A drop-down widget in
 `uitoolkit/widget` (a composition of `view` primitives, per `.harness/rules.md`) lets `formpage` use
