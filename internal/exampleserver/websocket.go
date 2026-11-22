@@ -3,7 +3,7 @@ package exampleserver
 import (
 	"net/http"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto/ws"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/proto/ws"
 )
 
 // echoWebSocket sends every text and binary message back until the client

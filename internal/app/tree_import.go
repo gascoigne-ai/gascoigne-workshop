@@ -5,9 +5,9 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/importers/openapi"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/importers/postman"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/tree"
-	kernelrequest "github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send"
+	request "github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/severity"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 	"path/filepath"
 )
@@ -15,9 +15,9 @@ import (
 // imported is what a clipboard importer read: a folder or a single request,
 // the collection variables it brings and the parts it left out.
 type imported struct {
-	folder  *kernelrequest.Folder
-	request *kernelrequest.Request
-	vars    []kernelrequest.KV
+	folder  *request.Folder
+	request *request.Request
+	vars    []request.KV
 	skipped []string
 }
 
@@ -31,11 +31,11 @@ type importKind struct {
 
 var (
 	curlKind = importKind{"Not a cURL command: ", "", func(text string) (imported, error) {
-		req, err := request.ParseCurl(text)
+		req, err := send.ParseCurl(text)
 		if err != nil {
 			return imported{}, err
 		}
-		req.Name = request.ImportedName(req)
+		req.Name = send.ImportedName(req)
 		return imported{request: &req}, nil
 	}}
 	openAPIKind = importKind{"Not an OpenAPI document: ", "parts could not be read", func(text string) (imported, error) {
@@ -43,8 +43,8 @@ var (
 		if err != nil {
 			return imported{}, err
 		}
-		baseURL := kernelrequest.KV{Name: openapi.BaseURLVar, Value: res.BaseURL, Enabled: true}
-		return imported{folder: res.Folder, vars: []kernelrequest.KV{baseURL}, skipped: append(res.Skipped, res.Warnings...)}, nil
+		baseURL := request.KV{Name: openapi.BaseURLVar, Value: res.BaseURL, Enabled: true}
+		return imported{folder: res.Folder, vars: []request.KV{baseURL}, skipped: append(res.Skipped, res.Warnings...)}, nil
 	}}
 	postmanKind = importKind{"Not a Postman collection: ", "things could not be imported", func(text string) (imported, error) {
 		res, err := postman.Parse([]byte(text))
@@ -57,7 +57,7 @@ var (
 
 // importFolder adds what the clipboard holds, read as kind, to dir and
 // opens it; a text of another kind is explained in a toast.
-func (a *App) importFolder(dir *kernelrequest.Folder, kind importKind) {
+func (a *App) importFolder(dir *request.Folder, kind importKind) {
 	text, err := a.ctx.Clipboard.Read()
 	if err != nil {
 		a.toast("Cannot read the clipboard: "+err.Error(), severity.Error)
@@ -76,7 +76,7 @@ func (a *App) importFolder(dir *kernelrequest.Folder, kind importKind) {
 }
 
 // attachImport puts got into dir under a name free there and returns it.
-func (a *App) attachImport(dir *kernelrequest.Folder, got imported) string {
+func (a *App) attachImport(dir *request.Folder, got imported) string {
 	a.expanded[dir] = true
 	if got.request != nil {
 		got.request.Name = dir.UniqueName(got.request.Name)
@@ -85,9 +85,9 @@ func (a *App) attachImport(dir *kernelrequest.Folder, got imported) string {
 	}
 	got.folder.Name = dir.UniqueName(got.folder.Name)
 	dir.Folders = append(dir.Folders, got.folder)
-	if col := a.ownerOf(kernelrequest.Node{Dir: dir}); col != nil {
+	if col := a.ownerOf(request.Node{Dir: dir}); col != nil {
 		for _, v := range got.vars {
-			if !kernelrequest.Defined(v.Name, col.Vars) {
+			if !request.Defined(v.Name, col.Vars) {
 				col.Vars = append(col.Vars, v)
 			}
 		}
@@ -102,10 +102,10 @@ func (a *App) attachImport(dir *kernelrequest.Folder, got imported) string {
 // exportPostman writes dir and everything below it as a Postman v2.1
 // collection to a file the user picks. Requests of kinds Postman has no
 // place for are left out and counted in the message.
-func (a *App) exportPostman(dir *kernelrequest.Folder) {
+func (a *App) exportPostman(dir *request.Folder) {
 	a.commitEdit()
-	var vars []kernelrequest.KV
-	if col := a.ownerOf(kernelrequest.Node{Dir: dir}); col != nil {
+	var vars []request.KV
+	if col := a.ownerOf(request.Node{Dir: dir}); col != nil {
 		vars = col.Vars
 	}
 	data, err := postman.Export(dir, vars)

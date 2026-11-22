@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/proto/ws"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto/ws"
 )
 
 func wsServer(t *testing.T, handle func(conn *ws.Conn, call *http.Request)) string {

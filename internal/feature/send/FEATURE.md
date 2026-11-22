@@ -1,3 +1,15 @@
+# Feature: send
+
+Sending a request and reading the answer: the protocol clients, the request editor, assertions, the MCP explorer, the response viewer and its views, the call trace and the browser preview. The request model and its ports (`Request`, `Protocols`, `Sender`, `Streamer`, `Session`) are in `internal/kernel/request`, because collections, environments, history and the workspace use them too.
+
+## Layout
+- `internal/feature/send`: package `send`: `ParseCurl` and `ShellSplit` (`curlparse.go`), `ParseServerInfo` (`mcpserver.go`), `ParseSchema` (`graphqlschema.go`), `BinaryMessage` (`binarymessage.go`, the composer's `hex:` syntax), `ImportedName` and the `BodyPreview` port (`model.go`).
+- `proto`: one client per protocol, keyed by name in `proto.Registry` (REST, WebSocket, SSE, MCP, gRPC, GraphQL as a body type); `proto/ws` is the WebSocket framing. `proto/testdata` holds the proto files and captures its tests read.
+- `assert`: the assertion language of `Request.Tests`. `editor`: the request edits of a tab. `mcpexplorer`: the UI-free state of the MCP explorer. `viewer`: the response viewer's model (mode, find state).
+- `adapter/preview`: serves a body on a loopback address for "Open in browser".
+- `ui/respview` (response views), `ui/calltrace` (the call trace), `ui/mcpform` (the form for an MCP tool's arguments); each behind a `Host` interface the `App` implements.
+- Imports: the kernel only (`kernel/request`, `kernel/jsonview`, `kernel/severity`, `kernel/textfmt`) plus the toolkit for the views. `go list` (tests included) shows no other feature. `internal/exampleserver` imports `proto/ws`: the one written exception (`internal/CLAUDE.md`); `workspace/tabs` imports this package's root for `MCPServer` parsing.
+
 ## Model and protocols
 
 - `request.Request` is protocol-neutral. What differs per protocol is a row of `request.Protocols`;
@@ -27,13 +39,13 @@
   keeps the keyboard; the pure part is `request.VarCompletion`.
 - **Path parameters**: a `:name` path segment has a `:name` row in Params, kept in step by
   `MergeParams`; `Request.Expanded` fills it (`ApplyPathParams`) and it never reaches the query.
-- **Assertions** (`request/assert`): `Request.Tests` holds one assertion per line, run after
+- **Assertions** (`send/assert`): `Request.Tests` holds one assertion per line, run after
   each response. A line that does not parse is a failure with the reason, so a typo never passes.
 - **Chaining**: a `set name = json PATH | header Name | status` line stores the value into the
   active environment, else the collection variables. The value is `Literal` (saved as `literal`):
   `{{...}}` inside it is never expanded, so a server reply cannot pull another variable, such as a
   secret, into the next request.
-- **cURL import** (`request.ParseCurl`, the reverse of `proto.Curl`): POSIX-shell splitting, the
+- **cURL import** (`send.ParseCurl`, the reverse of `proto.Curl`): POSIX-shell splitting, the
   common flags mapped to a REST request, others skipped. Redirects are followed only with `-L`, as
   in curl.
 - **Trust**: before a send or connect, `App.allowed` lists what the request does on
@@ -44,7 +56,7 @@
 
 ## Protocols
 
-Each protocol is a client of its own in `request/adapter/proto` (its package doc says which are hand-written and why). A protocol that keeps a
+Each protocol is a client of its own in `send/proto` (its package doc says which are hand-written and why). A protocol that keeps a
 connection implements `request.Streamer`; `Registry.Connect` opens a `request.Session`, and its one-shot
 `Send` connects, sends and returns the first reply.
 
@@ -136,7 +148,39 @@ stateDiagram-v2
 - Sampling: with `MCP.Sampler` nil it is neither offered nor answered. The app shows one prompt at a
   time; a second gets the user-rejected error (-1) at once.
 - The explorer calls through `request.Requester` on the bus, so the answer matches its request; its
-  UI-free state is `request/mcpexplorer`. A tool result with `isError` shows as an error.
+  UI-free state is `send/mcpexplorer`. A tool result with `isError` shows as an error.
 - `request.JSONSchema` is decoded once, at the MCP answer and at the OpenAPI import, and read typed
   afterwards. Only the keywords it has fields for are read. Real captures of the example server are
   under `internal/kernel/request/testdata/mcp`.
+
+## Responses
+
+- **Views**: Compact (the default, `settings.ResponseView`), Pretty and Raw. Compact keeps a block on
+  one line when it fits `respview.CompactWidth` columns and folds blocks from depth 2, so a long list
+  shows one preview per item. While the find bar has text, Compact shows the matching lines, the
+  inside of matching blocks and the openers and closers around them; clearing it restores the folds.
+- **Wrap**: a per-tab choice for the response and the body editor, off by default and not saved.
+  Rows come from the pure `layoutWrap` (`uitoolkit/widget/wraplayout.go`). Selection, search and
+  copy still work by original line and column, so a copy has no line breaks the text did not have.
+  A wrapped view never scrolls sideways.
+- **Images**: PNG, JPEG and GIF are sniffed from the body whatever the Content-Type says and shown
+  scaled down, never up.
+- **History** and the **sent log**: `internal/feature/history/FEATURE.md`.
+- **Call trace** (`send/ui/calltrace`): the last 500 sends, results and connection changes, in
+  memory only, shown by the status bar's `Log` button. Socket messages are not traced; the Messages
+  pane has them.
+- **Open in browser** (`send/adapter/preview`): the app draws no HTML, so it serves the body on
+  `127.0.0.1:0` at a random 128-bit path for 5 minutes, with the response's Content-Type. It
+  refuses another Host header (DNS rebinding) and sends a sandboxed `Content-Security-Policy` with
+  no scripts (`pageCSP`) and `nosniff`, because the body comes from a server the user does not control
+  and is shown on a local origin.
+
+## JSON view
+
+`kernel/jsonview` turns a body into colored, foldable display lines (`Lines`, `Compact`).
+Invalid JSON and other text come back as plain lines, so the response pane renders any body.
+
+## Known gaps
+- `proto` is one package for every protocol and the registry; only `proto/ws` is split out, so the protocols share the request builder, the event stream and the session helpers.
+- `theme/theme_test.go` and `ui/settingsui/rawcolor_test.go` of `feature/settings` import `ui/respview` (a test-only dependency from settings on this feature); see the settings `FEATURE.md`.
+- `ui/*` import the toolkit (`uitoolkit/...`), as every `ui` does.

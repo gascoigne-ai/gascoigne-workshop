@@ -20,21 +20,21 @@ FUZZ_TARGETS = \
 	./internal/feature/collections/importers/openapi:FuzzParse \
 	./internal/feature/collections/importers/postman:FuzzParse \
 	./internal/feature/collections/clientconfig:FuzzParse \
-	./internal/request:FuzzParseCurl \
+	./internal/feature/send:FuzzParseCurl \
 	./internal/kernel/request:FuzzDecodeJSONSchema \
 	./internal/kernel/request:FuzzURLParams \
-	./internal/request/assert:FuzzRun \
+	./internal/feature/send/assert:FuzzRun \
 	./internal/kernel/jsonview:FuzzCompact \
-	./internal/request/adapter/proto/ws:FuzzReadFrame \
-	./internal/request/adapter/proto:FuzzMCPDeliver \
+	./internal/feature/send/proto/ws:FuzzReadFrame \
+	./internal/feature/send/proto:FuzzMCPDeliver \
 	./uitoolkit/markup:FuzzParse \
 	./uitoolkit/widget:FuzzEdit \
 	./uitoolkit/widget:FuzzFind \
 	./uitoolkit/widget:FuzzParseSVG \
 	./uitoolkit/widget:FuzzWrapRunes \
-	./internal/request:FuzzParseSchema \
+	./internal/feature/send:FuzzParseSchema \
 	./internal/kernel/request:FuzzParseMCPLists \
-	./internal/request:FuzzParseServerInfo \
+	./internal/feature/send:FuzzParseServerInfo \
 	./internal/kernel/request:FuzzParseProtocol \
 	./internal/kernel/request:FuzzParseBodyType \
 	./internal/kernel/request:FuzzParseAuthType \
@@ -44,15 +44,15 @@ FUZZ_TARGETS = \
 	./internal/kernel/fileversion:FuzzRead \
 	./internal/feature/history/adapter:FuzzLoad \
 	./internal/feature/history/adapter:FuzzLoadSent \
-	./internal/response/ui/respview:FuzzDecode \
+	./internal/feature/send/ui/respview:FuzzDecode \
 	./uitoolkit/theming:FuzzParseTheme \
-	./internal/request/adapter/proto:FuzzReadEvents \
+	./internal/feature/send/proto:FuzzReadEvents \
 	./internal/feature/settings:FuzzParse \
 	./internal/kernel/request:FuzzParseBulk \
 	./internal/feature/settings/ui/shortcutpage:FuzzParseBinding \
-	./internal/request/adapter/proto:FuzzDeliverJSON \
-	./internal/request/adapter/proto:FuzzAnswerServer \
-	./internal/request/adapter/proto:FuzzSample \
+	./internal/feature/send/proto:FuzzDeliverJSON \
+	./internal/feature/send/proto:FuzzAnswerServer \
+	./internal/feature/send/proto:FuzzSample \
 	./internal/kernel/request:FuzzToolFields \
 	./internal/kernel/request:FuzzArguments \
 	./internal/kernel/jsonview:FuzzLines \

@@ -12,7 +12,7 @@ The settings the user can change: the schema, the settings file, the theme built
 
 ## Known gaps
 - `ui/settingsui` is one package of about 1600 lines: the generic form (`form.go`, `face.go`) is not yet split from the dialog shell, because both are methods of `SettingsDialog` and their tests reach each other's unexported names.
-- Two test files import another feature's package: `theme/theme_test.go` and `ui/settingsui/rawcolor_test.go` use `response/ui/respview` to check that every JSON token has a color. Non-test code imports no other feature.
+- Two test files import another feature's package: `theme/theme_test.go` and `ui/settingsui/rawcolor_test.go` use `feature/send/ui/respview` to check that every JSON token has a color. Non-test code imports no other feature.
 
 ```mermaid
 flowchart LR

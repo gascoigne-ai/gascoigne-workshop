@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/editor"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/bus"
 
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"

@@ -14,7 +14,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send"
 )
 
 // secretBytes is the length of the random path that guards a page.
@@ -124,7 +124,7 @@ type Browser struct {
 	Open     func(ctx context.Context, address string) error
 }
 
-// Show implements response.BodyPreview.
+// Show implements send.BodyPreview.
 func (browser Browser) Show(ctx context.Context, body []byte, contentType string) error {
 	page, err := Serve(body, contentType, browser.Lifetime)
 	if err != nil {
@@ -141,4 +141,4 @@ func (browser Browser) Show(ctx context.Context, body []byte, contentType string
 	return nil
 }
 
-var _ response.BodyPreview = Browser{}
+var _ send.BodyPreview = Browser{}

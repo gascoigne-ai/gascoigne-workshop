@@ -10,8 +10,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto"
 )
 
 func TestNext(t *testing.T) {

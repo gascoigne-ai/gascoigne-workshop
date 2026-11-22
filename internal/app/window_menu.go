@@ -1,9 +1,9 @@
 package app
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/viewer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/theme"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/viewer"
 )
 
 // changeSettings is saveSettings for the settings dialog's own controls: the

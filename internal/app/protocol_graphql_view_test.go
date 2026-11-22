@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	kernelrequest "github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send"
+	request "github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -17,7 +17,7 @@ import (
 
 // pinnedSchema is a loaded schema with two operations, so the Schema
 // button shows its count.
-var pinnedSchema = &request.Schema{Operations: []request.Operation{
+var pinnedSchema = &send.Schema{Operations: []send.Operation{
 	{Label: "query repo(name: String!): Repo", Query: "query($name: String!) { repo(name: $name) { name } }", Variables: `{"name": ""}`},
 	{Label: "query viewer: User", Query: "{ viewer { login } }"},
 }}
@@ -52,7 +52,7 @@ func TestTheGraphQLBodyLaysOutAsPinned(t *testing.T) {
 				a := testApp(t)
 				t.Cleanup(a.waitWrites)
 				tab := a.cur()
-				a.setBodyType(tab, kernelrequest.BodyGraphQL)
+				a.setBodyType(tab, request.BodyGraphQL)
 				state.setUp(tab)
 				root := a.graphQLBody(tab)
 				Layout(a.ctx, root, size.width, settingsPaneH)
@@ -108,7 +108,7 @@ func openGraphQLBody(t *testing.T, url string) *App {
 	a := openBodyPane(t)
 	t.Cleanup(a.waitWrites)
 	a.cur().Req.URL = url
-	a.setBodyType(a.cur(), kernelrequest.BodyGraphQL)
+	a.setBodyType(a.cur(), request.BodyGraphQL)
 	a.step(core.Input{})
 	return a
 }

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto/ws"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/proto/ws"
 )
 
 // openSessions are the sessions that write, each over a peer that takes

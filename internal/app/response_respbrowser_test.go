@@ -2,7 +2,7 @@ package app
 
 import (
 	"context"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/preview"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/adapter/preview"
 	"io"
 	"net/http"
 	"testing"

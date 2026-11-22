@@ -25,6 +25,6 @@ What the workshop remembers about sent requests: the responses of each request a
 Formats and versions are in `.harness/architecture/persistence.md` (`history/<hash>.json`, `history/sent.jsonl`); fixtures in `adapter/testdata`. Both are version 1 and unchanged.
 
 ## Known gaps
-- The model is the one root file `model.go`; it moved here from `internal/response` because only this feature used it.
+- The model is the one root file `model.go`; it moved here from the old `internal/response` because only this feature used it.
 - The tab's in-memory history list lives in `internal/app` (`statesync.go`), not in this feature.
 - `ui/sentlog` imports the toolkit (`uitoolkit/...`), as every `ui` does.

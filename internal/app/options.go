@@ -6,11 +6,11 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/clientconfig"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/fileversion"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/autosave"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/bus"
@@ -44,7 +44,7 @@ type Options struct {
 	Display          settings.DisplayScale                         // the desktop's display scale when the window system hides it; nil has none
 	Fonts            settings.FontStore                            // installed fonts; nil has none
 	SettingsFiles    settings.SettingsStore                        // the settings file; nil reads the defaults and cannot save
-	Previews         response.BodyPreview                          // shows a response body in the browser; nil has none
+	Previews         send.BodyPreview                              // shows a response body in the browser; nil has none
 	Clock            workspace.Clock                               // the time source; nil uses the wall clock
 	RetryDelay       time.Duration                                 // wait before a dropped connection reopens; 0 is two seconds
 	HostOS           string                                        // the OS shortcut text follows; "" is the running one
@@ -73,7 +73,7 @@ func (opts Options) withDefaults() Options {
 	opts.Fonts = cmp.Or[settings.FontStore](opts.Fonts, noFonts{})
 	opts.Files = cmp.Or[workspace.FileDialog](opts.Files, noFileDialog{})
 	opts.Folders = cmp.Or[workspace.Folders](opts.Folders, noFolders{})
-	opts.Previews = cmp.Or[response.BodyPreview](opts.Previews, noBrowser{})
+	opts.Previews = cmp.Or[send.BodyPreview](opts.Previews, noBrowser{})
 	opts.RetryDelay = cmp.Or(opts.RetryDelay, defaultRetryDelay)
 	opts.BaseScale = cmp.Or(opts.BaseScale, 1)
 	return opts

@@ -11,7 +11,7 @@ import (
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/viewer"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/viewer"
 	"io"
 	"net/http"
 	"net/http/httptest"

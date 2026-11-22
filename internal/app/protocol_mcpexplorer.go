@@ -9,10 +9,10 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	"time"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/mcpexplorer"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/ui/mcpform"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/ui/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/mcpexplorer"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/ui/mcpform"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/bus"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"

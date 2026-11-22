@@ -5,6 +5,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/clientconfig"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history/ui/sentlog"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/ui/colorpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/ui/settingsui"
@@ -12,7 +13,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/fileversion"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/openset"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/autosave"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/serial"
@@ -41,7 +41,7 @@ type ports struct {
 	display      settings.DisplayScale
 	system       settings.SystemInfo // what the System page of the settings shows; nil has no report
 	settingFiles settings.SettingsStore
-	previews     response.BodyPreview // shows a response body in the browser, replaced in tests
+	previews     send.BodyPreview // shows a response body in the browser, replaced in tests
 }
 
 // treeState holds the sidebar: selection, filter, drag, expanded folders and scroll.

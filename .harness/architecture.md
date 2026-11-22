@@ -29,7 +29,7 @@ flowchart LR
 - `internal/app` is one package: Go cannot declare a method in another package, and everything
   that reads or writes the one `App` struct needs its methods. Adapters come in through `Options`.
 - A feature that needs little of the `App` is its own `ui` package behind a `Host` interface the
-  `App` implements, tested with a fake host: `calltrace`, `mcpform`, `sentlog` (`feature/history/ui/sentlog`), `settingsui`,
+  `App` implements, tested with a fake host: `calltrace` (`feature/send/ui/calltrace`), `mcpform` (`feature/send/ui/mcpform`), `sentlog` (`feature/history/ui/sentlog`), `settingsui`,
   `colorpage`, `shortcutpage`, `systempage`, `destpicker`. Adapters reach those views through the
   host (`Host.SentStore`, `Host.FontStore`).
 
@@ -40,10 +40,9 @@ domain directory under `internal/` (root, controllers, `ui/`, `adapter/`) or the
 
 | File | Module | Owns |
 |---|---|---|
-| `architecture/request.md` | `internal/kernel/request`, `internal/request` | model, ports, protocols (rest, websocket, sse, mcp, grpc), assert, editor, calltrace, mcpform |
+| `internal/feature/send/FEATURE.md` | `internal/feature/send`, `internal/kernel/request` | the request model and ports (kernel), protocols (rest, websocket, sse, mcp, grpc), assert, editor, mcpexplorer, response viewer and views, calltrace, mcpform, browser preview |
 | `internal/feature/collections/FEATURE.md` | `internal/feature/collections` | open set, tree, importers, transfer, store, client config, sample and example server |
 | `internal/feature/environments/FEATURE.md` | `internal/feature/environments` | environments, variables resolution, the chip's menu |
-| `architecture/response.md` | `internal/response` | viewer, preview |
 | `internal/feature/history/FEATURE.md` | `internal/feature/history` | responses kept per request, sent log |
 | `internal/feature/settings/FEATURE.md` | `internal/feature/settings`, `internal/platform` | schema, prefs, theme, settings dialog and its pages; the OS adapters for display scale, fonts, key repeat and system info |
 | `architecture/workspace.md` | `internal/workspace` | tabs, remembered state, bus, file browser, autosave, overlays, platform adapters |
@@ -57,21 +56,18 @@ domain directory under `internal/` (root, controllers, `ui/`, `adapter/`) or the
 
 ```mermaid
 flowchart LR
-  app["app"] --> request & collections & environments & response & settings & workspace
+  app["app"] --> send & collections & environments & settings & workspace
   app --> toolkit["uitoolkit"]
-  collections & environments --> request
-  response --> request
-  workspace --> request
-  collections & environments & response & settings & workspace --> kernel["kernel (shared leaves)"]
-  request --> kernel
+  workspace --> send
+  collections & environments & send & settings & workspace --> kernel["kernel (request model, shared leaves)"]
 ```
 
-Every edge between the five domains is either the `request` model or a kernel leaf; `go list` shows no
-other one. Nothing checks it in `make check` yet.
+Every edge between features is a kernel package (the request model included); `go list` shows no
+other one, except `workspace` importing `send` for MCP server info parsing and the `exampleserver` dev tool. Nothing checks it in `make check` yet.
 
 ## Known layer gaps
 
 - A domain root imports a sub-package of its own domain: `workspace` imports `workspace/state`. 
-- `internal/exampleserver` imports `request/adapter/proto/ws`; no rule covers it.
+- `internal/exampleserver` imports `feature/send/proto/ws`; the one written exception in `internal/CLAUDE.md`.
 - No layer check runs in `make check`; `common/scripts/check-layers.sh` exists and is not wired
   (it needs a `.harness/layers.txt`).
