@@ -5,6 +5,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/clientconfig"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history/ui/sentlog"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/ui/colorpage"
@@ -16,8 +17,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/serial"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/state"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/fileversion"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/openset"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -105,7 +104,7 @@ type persistState struct {
 	welcomed         string                                     // the version whose welcome dialog was shown
 	initial          state.Window                               // window geometry of the last run
 	setIsRemembered  bool                                       // the open set is the remembered list (opened from it, or changed by the user since), so it is written whole
-	unreadable       []openset.OpenCollection                   // remembered folders that failed to load; kept in the list so a mount or a fix brings them back
+	unreadable       []request.OpenCollection                   // remembered folders that failed to load; kept in the list so a mount or a fix brings them back
 	defaultWorkspace string                                     // beside it is the collections folder, where a first save goes
 	trusted          request.AccessSet                          // what the user allowed; remembered in the state file
 }

@@ -10,7 +10,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
 	historyadapter "github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history/adapter"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	core "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )

@@ -1,16 +1,15 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/openset"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/state"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
@@ -119,7 +118,7 @@ func TestNewerRememberedCollectionIsToastedAtStart(t *testing.T) {
 		t.Fatal(err)
 	}
 	prefs := settings.Default()
-	prefs.RememberCollections([]openset.OpenCollection{{Folder: dir}})
+	prefs.RememberCollections([]request.OpenCollection{{Folder: dir}})
 	settingsPath := filepath.Join(t.TempDir(), "settings.json")
 	if err := settingsDisk.Save(settingsPath, prefs); err != nil {
 		t.Fatal(err)

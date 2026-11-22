@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 )
 
 // debugRecorder is a debugFunc that keeps what it is given.

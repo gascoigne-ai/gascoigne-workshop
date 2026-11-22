@@ -1,6 +1,6 @@
 package collection
 
-import "github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+import "github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 
 // GitHubSample is a few REST calls against a public API, plus one call per
 // other protocol so the registry is visible in the UI. The debug build's

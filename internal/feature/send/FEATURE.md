@@ -1,6 +1,6 @@
 # Feature: send
 
-Sending a request and reading the answer: the protocol clients, the request editor, assertions, the MCP explorer, the response viewer and its views, the call trace and the browser preview. The request model and its ports (`Request`, `Protocols`, `Sender`, `Streamer`, `Session`) are in `internal/kernel/request`, because collections, environments, history and the workspace use them too.
+Sending a request and reading the answer: the protocol clients, the request editor, assertions, the MCP explorer, the response viewer and its views, the call trace and the browser preview. The request model and its ports (`Request`, `Protocols`, `Sender`, `Streamer`, `Session`) are in `internal/feature/request`, because collections, environments, history and the workspace use them too.
 
 ## Layout
 - `internal/feature/send`: package `send`: `ParseCurl` and `ShellSplit` (`curlparse.go`), `ParseServerInfo` (`mcpserver.go`), `ParseSchema` (`graphqlschema.go`), `BinaryMessage` (`binarymessage.go`, the composer's `hex:` syntax), `ImportedName` and the `BodyPreview` port (`model.go`).
@@ -8,7 +8,7 @@ Sending a request and reading the answer: the protocol clients, the request edit
 - `assert`: the assertion language of `Request.Tests`. `editor`: the request edits of a tab. `mcpexplorer`: the UI-free state of the MCP explorer. `viewer`: the response viewer's model (mode, find state). `outbox`: the order of a connection's sends and pings, one in flight at a time.
 - `adapter/preview`: serves a body on a loopback address for "Open in browser".
 - `ui/respview` (response views), `ui/calltrace` (the call trace), `ui/mcpform` (the form for an MCP tool's arguments); each behind a `Host` interface the `App` implements.
-- Imports: the kernel only (`kernel/request`, `kernel/jsonview`, `kernel/severity`, `kernel/textfmt`) plus the toolkit for the views. `go list` (tests included) shows no other feature. `internal/exampleserver` imports `proto/ws`: the one written exception (`internal/CLAUDE.md`); `workspace/tabs` imports this package's root for `MCPServer` parsing.
+- Imports: the kernel and the base feature (`feature/request`; kernel: `kernel/jsonview`, `kernel/severity`, `kernel/textfmt`) plus the toolkit for the views. `go list` (tests included) shows no other feature. `internal/exampleserver` imports `proto/ws`: the one written exception (`internal/CLAUDE.md`); `workspace/tabs` imports this package's root for `MCPServer` parsing.
 
 ## Model and protocols
 
@@ -151,7 +151,7 @@ stateDiagram-v2
   UI-free state is `send/mcpexplorer`. A tool result with `isError` shows as an error.
 - `request.JSONSchema` is decoded once, at the MCP answer and at the OpenAPI import, and read typed
   afterwards. Only the keywords it has fields for are read. Real captures of the example server are
-  under `internal/kernel/request/testdata/mcp`.
+  under `internal/feature/request/testdata/mcp`.
 
 ## Responses
 

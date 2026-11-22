@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 )
 
 // listEvent is the event the MCP session emits for a JSON-RPC response to

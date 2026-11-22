@@ -7,7 +7,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/tree"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 )
 
 // world is two collections:

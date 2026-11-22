@@ -12,7 +12,7 @@ import (
 	"testing"
 	"testing/iotest"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 )
 
 // endlessEvent is a stream of data lines just over maxEventBytes with no

@@ -6,7 +6,7 @@ package tabs
 import (
 	"reflect"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 )
 
 // Tab is one open request.

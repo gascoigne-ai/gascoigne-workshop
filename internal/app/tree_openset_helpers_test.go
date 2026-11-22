@@ -2,7 +2,7 @@ package app
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/collections"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 )
 
 // Most tests open one collection; these reach it the way the App did when

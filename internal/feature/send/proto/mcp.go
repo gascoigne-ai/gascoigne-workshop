@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 )
 
 // MCP speaks the Model Context Protocol, JSON-RPC 2.0, to a server over

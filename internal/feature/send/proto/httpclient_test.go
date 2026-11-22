@@ -23,8 +23,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/proto/ws"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 )
 
 // seenRequest is what a test server noted about one request.

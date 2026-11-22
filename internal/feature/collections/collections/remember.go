@@ -1,7 +1,7 @@
 package collections
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/openset"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"path/filepath"
 )
 
@@ -31,10 +31,10 @@ func (set Set) At(folder string) (Entry, bool) {
 // Remembered is the list the settings keep of the open set, in tree order.
 // Unreadable are remembered folders that failed to load: they are not open
 // now, but they are not forgotten either.
-func Remembered(set Set, unreadable []openset.OpenCollection) []openset.OpenCollection {
-	remembered := make([]openset.OpenCollection, 0, len(set.Entries))
+func Remembered(set Set, unreadable []request.OpenCollection) []request.OpenCollection {
+	remembered := make([]request.OpenCollection, 0, len(set.Entries))
 	for _, entry := range set.Entries {
-		item := openset.OpenCollection{Folder: entry.Dir}
+		item := request.OpenCollection{Folder: entry.Dir}
 		if env := entry.Environment(); env != nil {
 			item.Environment = env.Name
 		}
@@ -52,8 +52,8 @@ func Remembered(set Set, unreadable []openset.OpenCollection) []openset.OpenColl
 // that names an open collection brought up to date; it reports whether any
 // changed. Entries and their order are kept, so a run that opened other
 // folders does not replace the list the next ordinary start opens.
-func WithEnvironments(set Set, remembered []openset.OpenCollection) ([]openset.OpenCollection, bool) {
-	updated := append([]openset.OpenCollection(nil), remembered...)
+func WithEnvironments(set Set, remembered []request.OpenCollection) ([]request.OpenCollection, bool) {
+	updated := append([]request.OpenCollection(nil), remembered...)
 	changed := false
 	for i, item := range updated {
 		entry, ok := set.At(item.Folder)

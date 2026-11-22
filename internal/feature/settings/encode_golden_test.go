@@ -2,7 +2,7 @@ package settings
 
 import (
 	"flag"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/openset"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -32,7 +32,7 @@ func goldenCases() []struct {
 	tables := Default()
 	tables.Colors = map[string]map[string]string{"light": {"accent": "#ff0000", "bg": "#ffffff"}, "dark": {"accent": "#00ff00"}}
 	tables.Shortcuts = map[string]string{"send": "Ctrl+Enter", "find": ""}
-	tables.Collections = []openset.OpenCollection{{Folder: "/work/a", Environment: "prod"}, {Environment: "dev"}}
+	tables.Collections = []request.OpenCollection{{Folder: "/work/a", Environment: "prod"}, {Environment: "dev"}}
 
 	fonts := Default()
 	fonts.UIFont, fonts.CodeFont = "Inter", "Fira Code"
@@ -91,7 +91,7 @@ func TestChangedTreatsEmptyAndNilAlike(t *testing.T) {
 	s := Default()
 	s.Shortcuts = map[string]string{}
 	s.Colors = map[string]map[string]string{}
-	s.Collections = []openset.OpenCollection{}
+	s.Collections = []request.OpenCollection{}
 	for _, key := range []string{"shortcuts", "colors", "collections"} {
 		if Changed(s, key) {
 			t.Errorf("an empty %s counts as changed", key)

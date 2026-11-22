@@ -17,7 +17,7 @@ import (
 	"github.com/BurntSushi/toml"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/importers/miniyaml"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 )
 
 // Source reads the client config: the collections and servers a build offers

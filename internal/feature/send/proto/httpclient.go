@@ -13,7 +13,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 )
 
 // Network is the connection setting every HTTP-based protocol shares. The

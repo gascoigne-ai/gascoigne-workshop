@@ -11,7 +11,7 @@ Collections on disk and in the window: the open set, the tree, move and copy, im
 - `importers/{postman,openapi,miniyaml}`: pure readers and writers; the App only picks the file and adds the result.
 - `adapter/store` (package `store`, the disk `Store`) and `adapter/clientfile` (the `Source` that reads `.workshop` files).
 - `ui/destpicker`: the Move to and Copy to dialog (look in `.harness/style.md`).
-- Imports: the kernel only (`kernel/request`, `kernel/openset`, `kernel/fileversion`, `kernel/userdir`) plus the toolkit for `ui`. Inside the feature the usual direction holds: adapters and controllers import the root and the sub-packages, `clientconfig` imports `importers/miniyaml`.
+- Imports: the kernel and the base feature (`feature/request`; kernel: `kernel/fileversion`, `kernel/userdir`) plus the toolkit for `ui`. Inside the feature the usual direction holds: adapters and controllers import the root and the sub-packages, `clientconfig` imports `importers/miniyaml`.
 
 ## Behavior
 
@@ -72,7 +72,7 @@ All importers are pure packages under `importers/`; the App only picks the file 
 - `request.Folder` holds pointers (`[]*Folder`, `[]*Request`), so a request keeps its identity (open
   tabs point at it) however its siblings change. The tree rows (`collection.Rows`, root package) key the
   expanded set by folder pointer, so a renamed or moved folder stays open.
-- The tree operations are pure functions in `internal/kernel/request/tree.go`; a move or copy is
+- The tree operations are pure functions in `internal/feature/request/tree.go`; a move or copy is
   `transfer`, which validates before it changes anything.
 
 ### Example server and client config

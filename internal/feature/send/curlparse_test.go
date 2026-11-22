@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	kernelrequest "github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+	kernelrequest "github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 )
 
 func TestParseCurl(t *testing.T) {

@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/severity"
 	"net/http/cookiejar"
 	"net/url"

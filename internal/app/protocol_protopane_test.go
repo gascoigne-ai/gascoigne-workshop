@@ -10,9 +10,9 @@ import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/exampleserver"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )

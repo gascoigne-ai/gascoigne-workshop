@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/proto/ws"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 )
 
 type kindAt struct {

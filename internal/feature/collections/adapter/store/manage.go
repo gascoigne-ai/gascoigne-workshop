@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 )
 
 // siblings is the lower-case names taken in parent, but not skip's.

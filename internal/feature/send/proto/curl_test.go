@@ -3,8 +3,8 @@ package proto
 import (
 	"testing"
 
+	request "github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send"
-	request "github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 )
 
 func TestCurl(t *testing.T) {

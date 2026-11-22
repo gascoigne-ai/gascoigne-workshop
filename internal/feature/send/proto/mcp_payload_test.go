@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 )
 
 const toolsResult = `{"tools":[{"name":"echo","description":"Say it","inputSchema":{"type":"object","properties":{"text":{"type":"string"}}}}]}`

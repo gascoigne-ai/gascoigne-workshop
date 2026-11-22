@@ -1,7 +1,7 @@
 package proto
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"sync"
 	"sync/atomic"
 	"time"

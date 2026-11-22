@@ -11,8 +11,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/fileversion"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 )
 
 // The fixtures are a collection the program saved: testdata/v0 before files

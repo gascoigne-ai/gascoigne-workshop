@@ -1,6 +1,6 @@
 package tree
 
-import "github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+import "github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 
 // Msg is something done to the tree. The window sends it from a menu, a
 // key or a drop; Update applies it.

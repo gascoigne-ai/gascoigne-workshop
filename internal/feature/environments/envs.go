@@ -7,7 +7,7 @@ package envs
 import (
 	"strconv"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 )
 
 // DefaultName names an environment created without a name.

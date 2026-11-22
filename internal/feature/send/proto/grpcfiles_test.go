@@ -10,7 +10,7 @@ import (
 	"github.com/bufbuild/protocompile/linker"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 )
 
 // The fixtures are real files: health.proto and binarylog.proto from

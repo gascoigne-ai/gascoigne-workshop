@@ -1,6 +1,6 @@
 package app
 
-import "github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+import "github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 
 // The tests call the three importers by their short names.
 func (a *App) importCurl(dir *request.Folder)    { a.importFolder(dir, curlKind) }

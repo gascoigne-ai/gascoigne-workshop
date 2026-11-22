@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	request "github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+	request "github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 )
 
 // mcpReply answers one JSON-RPC request the way a small server would.

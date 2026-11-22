@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	request "github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/assert"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/editor"
@@ -10,7 +11,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/ui/mcpform"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/viewer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
-	request "github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"github.com/hajimehoshi/ebiten/v2"
 	"slices"

@@ -1,11 +1,10 @@
 package collections
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/openset"
 	"reflect"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 )
 
 // withEnvs is a collection with environments "dev" and "prod".
@@ -20,11 +19,11 @@ func TestRememberedListsOpenEntriesThenUnreadableOnes(t *testing.T) {
 	set := Update(Set{}, Open{Collection: first, Dir: "/w/a"})
 	set = Update(set, Open{Collection: second, Dir: "/w/b"})
 	set = Update(set, ChooseEnv{Collection: first, Index: 1})
-	unreadable := []openset.OpenCollection{
+	unreadable := []request.OpenCollection{
 		{Folder: "/w/gone", Environment: "dev"},
 		{Folder: "/w/b", Environment: "stale"}, // open now, so not kept twice
 	}
-	want := []openset.OpenCollection{
+	want := []request.OpenCollection{
 		{Folder: "/w/a", Environment: "prod"},
 		{Folder: "/w/b"},
 		{Folder: "/w/gone", Environment: "dev"},
@@ -36,7 +35,7 @@ func TestRememberedListsOpenEntriesThenUnreadableOnes(t *testing.T) {
 
 func TestRememberedKeepsAnUnsavedCollectionAsAnEmptyFolder(t *testing.T) {
 	set := Update(Set{}, Open{Collection: newCollection("sample")})
-	want := []openset.OpenCollection{{}}
+	want := []request.OpenCollection{{}}
 	if got := Remembered(set, nil); !reflect.DeepEqual(got, want) {
 		t.Fatalf("got %+v, want %+v", got, want)
 	}
@@ -46,11 +45,11 @@ func TestWithEnvironmentsChangesOnlyEntriesNamingAnOpenCollection(t *testing.T) 
 	col := withEnvs("a")
 	set := Update(Set{}, Open{Collection: col, Dir: "/w/a"})
 	set = Update(set, ChooseEnv{Collection: col, Index: 0})
-	remembered := []openset.OpenCollection{
+	remembered := []request.OpenCollection{
 		{Folder: "/w/a", Environment: "prod"},
 		{Folder: "/w/elsewhere", Environment: "prod"},
 	}
-	want := []openset.OpenCollection{
+	want := []request.OpenCollection{
 		{Folder: "/w/a", Environment: "dev"},
 		{Folder: "/w/elsewhere", Environment: "prod"},
 	}

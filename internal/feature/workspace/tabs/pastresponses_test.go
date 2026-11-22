@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 )
 
 var base = time.Date(2026, 11, 10, 9, 0, 0, 0, time.UTC)

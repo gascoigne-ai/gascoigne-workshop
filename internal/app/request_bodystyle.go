@@ -1,9 +1,9 @@
 package app
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/ui/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/jsonview"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )

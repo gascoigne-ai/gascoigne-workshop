@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/proto"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 )
 
 // start serves every protocol on random ports and returns the endpoint

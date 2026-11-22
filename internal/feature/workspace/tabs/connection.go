@@ -1,7 +1,7 @@
 package tabs
 
 import (
-	request "github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+	request "github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 )
 
 // Connection is the state of a tab that keeps a connection open (WebSocket,

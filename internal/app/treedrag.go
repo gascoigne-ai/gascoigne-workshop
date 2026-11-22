@@ -3,7 +3,7 @@ package app
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/transfer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/ui/destpicker"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/hajimehoshi/ebiten/v2"

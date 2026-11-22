@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"slices"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 )
 
 // Entry is one open collection: its tree, the folder it is saved in and

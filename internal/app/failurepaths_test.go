@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/adapter/folders"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 )
 
 // The checklist of failures a user can meet. Each row triggers one and

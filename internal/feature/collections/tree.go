@@ -3,7 +3,7 @@ package collection
 import (
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 )
 
 // Row is one visible line of the collections tree. Exactly one of

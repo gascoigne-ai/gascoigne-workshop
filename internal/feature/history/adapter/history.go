@@ -15,8 +15,8 @@ import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/fileversion"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 )
 
 // Limit is how many responses are kept per request.

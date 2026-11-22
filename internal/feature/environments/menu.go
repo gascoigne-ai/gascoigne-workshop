@@ -1,6 +1,6 @@
 package envs
 
-import "github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+import "github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 
 // Action is what a row of the chip's menu does.
 type Action int

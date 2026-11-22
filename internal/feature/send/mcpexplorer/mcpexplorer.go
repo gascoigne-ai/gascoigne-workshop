@@ -5,7 +5,7 @@ package mcpexplorer
 import (
 	"encoding/json"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 )
 
 // Kind is the list the explorer shows.

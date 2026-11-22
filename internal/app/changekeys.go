@@ -2,7 +2,7 @@ package app
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/tree"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 )
 
 // changeKeys caches the comparable forms (JSON) of the collections and of

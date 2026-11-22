@@ -21,8 +21,8 @@ FUZZ_TARGETS = \
 	./internal/feature/collections/importers/postman:FuzzParse \
 	./internal/feature/collections/clientconfig:FuzzParse \
 	./internal/feature/send:FuzzParseCurl \
-	./internal/kernel/request:FuzzDecodeJSONSchema \
-	./internal/kernel/request:FuzzURLParams \
+	./internal/feature/request:FuzzDecodeJSONSchema \
+	./internal/feature/request:FuzzURLParams \
 	./internal/feature/send/assert:FuzzRun \
 	./internal/kernel/jsonview:FuzzCompact \
 	./internal/feature/send/proto/ws:FuzzReadFrame \
@@ -33,11 +33,11 @@ FUZZ_TARGETS = \
 	./uitoolkit/widget:FuzzParseSVG \
 	./uitoolkit/widget:FuzzWrapRunes \
 	./internal/feature/send:FuzzParseSchema \
-	./internal/kernel/request:FuzzParseMCPLists \
-	./internal/kernel/request:FuzzParseServerInfo \
-	./internal/kernel/request:FuzzParseProtocol \
-	./internal/kernel/request:FuzzParseBodyType \
-	./internal/kernel/request:FuzzParseAuthType \
+	./internal/feature/request:FuzzParseMCPLists \
+	./internal/feature/request:FuzzParseServerInfo \
+	./internal/feature/request:FuzzParseProtocol \
+	./internal/feature/request:FuzzParseBodyType \
+	./internal/feature/request:FuzzParseAuthType \
 	./internal/feature/collections/adapter/store:FuzzLoad \
 	./internal/feature/workspace/adapter/statefile:FuzzLoad \
 	./internal/feature/settings:FuzzDecode \
@@ -48,13 +48,13 @@ FUZZ_TARGETS = \
 	./uitoolkit/theming:FuzzParseTheme \
 	./internal/feature/send/proto:FuzzReadEvents \
 	./internal/feature/settings:FuzzParse \
-	./internal/kernel/request:FuzzParseBulk \
+	./internal/feature/request:FuzzParseBulk \
 	./internal/feature/settings/ui/shortcutpage:FuzzParseBinding \
 	./internal/feature/send/proto:FuzzDeliverJSON \
 	./internal/feature/send/proto:FuzzAnswerServer \
 	./internal/feature/send/proto:FuzzSample \
-	./internal/kernel/request:FuzzToolFields \
-	./internal/kernel/request:FuzzArguments \
+	./internal/feature/request:FuzzToolFields \
+	./internal/feature/request:FuzzArguments \
 	./internal/kernel/jsonview:FuzzLines \
 	./uitoolkit/desktop/displayscale:FuzzParseMonitors \
 	./uitoolkit/desktop/keyrepeat:FuzzParseHyprland \

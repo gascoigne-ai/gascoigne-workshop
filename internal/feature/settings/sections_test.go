@@ -2,7 +2,7 @@ package settings
 
 import (
 	"encoding/json"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/openset"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"reflect"
 	"strings"
 	"testing"
@@ -94,7 +94,7 @@ func TestEverySettingSurvivesAWriteAndARead(t *testing.T) {
 	s.Corners, s.Flat, s.Contrast, s.Layout, s.ResponseView = "round", true, "high", "side", "raw"
 	s.Proxy, s.CACert, s.ClientCert, s.ClientKey, s.TimeoutSec = "http://p", "/a", "/b", "/c", 9
 	s.AutoSave, s.Workspace, s.Environment = false, "/w", "Dev"
-	s.Collections = []openset.OpenCollection{{Folder: "/a", Environment: "Prod"}, {Folder: "/b"}}
+	s.Collections = []request.OpenCollection{{Folder: "/a", Environment: "Prod"}, {Folder: "/b"}}
 	s.Shortcuts = map[string]string{"send": "F5"}
 	s.Colors = map[string]map[string]string{"dark": {"accent": "#112233"}}
 	text, err := Minimal(s)

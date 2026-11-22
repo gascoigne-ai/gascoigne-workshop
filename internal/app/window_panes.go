@@ -1,11 +1,11 @@
 package app
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/assert"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/ui/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"

@@ -18,7 +18,8 @@ uitoolkit/           the GPU toolkit; knows nothing of requests (`uitoolkit/doc.
   markup             templates (HTML-like) that build the same trees
   theming, engine    palettes and theme files; key bindings and frame pacing
 internal/feature/    feature slices: collections, environments, history, send, settings, workspace (model, ui/, adapter/, FEATURE.md)
-internal/kernel/     shared leaves: severity, fileversion, userdir, textfmt, jsonview, openset, request (the model and ports)
+internal/kernel/     shared leaves: severity, fileversion, userdir, textfmt, jsonview
+internal/feature/request/  the request model and ports and OpenCollection, the base feature every other may import
   (root package)     types, rules and ports of the domain
   <controller>/      state and decisions, no widget, no I/O (tabs, tree, envs...)
   ui/<package>       views behind a Host

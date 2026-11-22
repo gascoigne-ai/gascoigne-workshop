@@ -190,14 +190,14 @@ func TestCheckLayersRejects(t *testing.T) {
 		name string
 		pkg  listedPackage
 	}{
-		{"kernel imports a feature", synthetic("internal/kernel/request", "internal/feature/send")},
+		{"kernel imports a feature", synthetic("internal/kernel/severity", "internal/feature/send")},
 		{"feature root imports another feature root", synthetic("internal/feature/send", "internal/feature/history")},
 		{"controller external test imports another feature", xtest},
 		{"ui imports an adapter", synthetic("internal/feature/send/ui/respview", "internal/feature/send/adapter/preview")},
 		{"ui imports another ui", synthetic("internal/feature/send/ui/respview", "internal/feature/send/ui/calltrace")},
 		{"controller imports a toolkit widget", synthetic("internal/feature/send/editor", "uitoolkit/widget")},
 		{"adapter imports a ui", synthetic("internal/feature/history/adapter", "internal/feature/history/ui/sentlog")},
-		{"toolkit imports internal", synthetic("uitoolkit/widget", "internal/kernel/request")},
+		{"toolkit imports internal", synthetic("uitoolkit/widget", "internal/feature/request")},
 		{"exampleserver imports the send root", synthetic("internal/exampleserver", "internal/feature/send")},
 		{"settings theme imports a toolkit widget", synthetic("internal/feature/settings/theme", "uitoolkit/widget")},
 		{"unclassified internal package", synthetic("internal/stuff")},
@@ -223,7 +223,7 @@ func TestCheckLayersAllows(t *testing.T) {
 		{"app imports anything", synthetic("internal/app", "internal/feature/send", "uitoolkit/widget", "internal/feature/send/ui/respview")},
 		{"cmd is not checked", synthetic("cmd/workshop", "internal/app", "internal/feature/send")},
 		{"e2e is not checked", synthetic("e2e", "internal/feature/send")},
-		{"standard library and ebiten are ignored", listedPackage{ImportPath: testModule + "/internal/kernel/request", Imports: []string{"fmt", "github.com/hajimehoshi/ebiten/v2"}}},
+		{"standard library and ebiten are ignored", listedPackage{ImportPath: testModule + "/internal/kernel/severity", Imports: []string{"fmt", "github.com/hajimehoshi/ebiten/v2"}}},
 		{"external test imports its own package and root", ownXtest},
 		{"workspace root imports its controller", synthetic("internal/feature/workspace", "internal/feature/workspace/state")},
 		{"adapter imports its own root", synthetic("internal/feature/workspace/adapter/folders", "internal/feature/workspace")},
@@ -297,7 +297,7 @@ func TestZoneOf(t *testing.T) {
 		wantZone    zone
 		wantFeature string
 	}{
-		{"internal/kernel/request", zoneKernel, ""},
+		{"internal/kernel/severity", zoneKernel, ""},
 		{"internal/feature/send", zoneFeatureRoot, "send"},
 		{"internal/feature/send/ui/respview", zoneFeatureUI, "send"},
 		{"internal/feature/send/adapter/preview", zoneAdapter, "send"},
@@ -360,6 +360,24 @@ func TestNoUnclassifiedPackage(t *testing.T) {
 	for _, pkg := range listPackages(t, "") {
 		if got, _ := zoneOf(relativeTo(module, pkg.ImportPath)); got == zoneUnclassified {
 			t.Errorf("%s is in no zone: put it in the kernel or a feature (internal/CLAUDE.md)", pkg.ImportPath)
+		}
+	}
+}
+
+// The request model and OpenCollection live in the one base feature; the
+// kernel no longer holds them.
+func TestRequestModelIsTheBaseFeature(t *testing.T) {
+	module := moduleName(t)
+	listed := map[string]bool{}
+	for _, pkg := range listPackages(t, "") {
+		listed[relativeTo(module, pkg.ImportPath)] = true
+	}
+	if !listed["internal/feature/request"] {
+		t.Error("internal/feature/request is not in the tree")
+	}
+	for _, gone := range []string{"internal/kernel/request", "internal/kernel/openset"} {
+		if listed[gone] {
+			t.Errorf("%s still exists: it moved to internal/feature/request", gone)
 		}
 	}
 }

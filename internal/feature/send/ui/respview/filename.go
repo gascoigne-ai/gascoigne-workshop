@@ -4,7 +4,7 @@ import (
 	"mime"
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 )
 
 // extensions are the file extensions of the content types people save;

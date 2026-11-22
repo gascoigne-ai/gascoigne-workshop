@@ -7,7 +7,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/clientconfig"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 )
 
 type fakeClients struct {

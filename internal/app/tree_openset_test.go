@@ -1,19 +1,18 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/openset"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/collections"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/adapter/statefile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/state"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
@@ -301,7 +300,7 @@ func TestTheSingleSavedCollectionOfAnOlderVersionStillOpens(t *testing.T) {
 	a.selectEnv(-1)
 	a.selectEnv(0)
 	st, err := settingsDisk.Load(settingsPath)
-	if err != nil || st.Workspace != "" || st.Environment != "" || len(st.Collections) != 1 || st.Collections[0] != (openset.OpenCollection{Folder: dir, Environment: "Dev"}) {
+	if err != nil || st.Workspace != "" || st.Environment != "" || len(st.Collections) != 1 || st.Collections[0] != (request.OpenCollection{Folder: dir, Environment: "Dev"}) {
 		t.Fatalf("written %+v %v", st, err)
 	}
 }

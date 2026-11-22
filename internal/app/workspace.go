@@ -3,7 +3,6 @@ package app
 import (
 	"errors"
 	"fmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/openset"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/severity"
 	"strings"
 	"time"
@@ -13,8 +12,8 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/serial"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/fileversion"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 )
 
 // saveDebounce is how long a collection must stay unchanged before it is
@@ -28,10 +27,10 @@ const saveDebounce = time.Second
 // left out and named in the status line, so a later save cannot
 // overwrite what is there.
 func (a *App) openWorkspace(dir string) {
-	var wanted []openset.OpenCollection
+	var wanted []request.OpenCollection
 	switch {
 	case dir != "":
-		wanted = []openset.OpenCollection{{Folder: dir, Environment: a.rememberedEnv(collections.AbsDir(dir))}}
+		wanted = []request.OpenCollection{{Folder: dir, Environment: a.rememberedEnv(collections.AbsDir(dir))}}
 	default:
 		wanted = a.settings.RememberedCollections()
 		a.setIsRemembered = true

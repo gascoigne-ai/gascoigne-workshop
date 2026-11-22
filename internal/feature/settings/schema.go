@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/openset"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/fileversion"
@@ -68,7 +68,7 @@ var rows = []row{
 	fileRow(Field{Key: "clientKey", Title: "Client key", Description: "Path of the private key of the client certificate.", Category: "Requests"}, func(prefs *Settings) *string { return &prefs.ClientKey }),
 	flagRow(Field{Key: "grpc", Title: "gRPC", Description: "Experimental: offer gRPC as a request protocol.", Category: "Experimental"}, func(prefs *Settings) *bool { return &prefs.GRPC }),
 	flagRow(Field{Key: "sse", Title: "Server-Sent Events", Description: "Experimental: offer SSE as a request protocol.", Category: "Experimental"}, func(prefs *Settings) *bool { return &prefs.SSE }),
-	collectionsRow(Field{Key: "collections", Title: "Open collections", Description: "The collections open in the window, in tree order: the folder of each and the name of its active environment; one without a folder is the built-in or configured collection.", Category: "General", Hidden: true}, func(prefs *Settings) *[]openset.OpenCollection { return &prefs.Collections }),
+	collectionsRow(Field{Key: "collections", Title: "Open collections", Description: "The collections open in the window, in tree order: the folder of each and the name of its active environment; one without a folder is the built-in or configured collection.", Category: "General", Hidden: true}, func(prefs *Settings) *[]request.OpenCollection { return &prefs.Collections }),
 	textRow(Field{Key: "workspace", Title: "Collection folder", Description: "The one open collection of an older settings file; read only when collections is absent.", Category: "General", Hidden: true}, func(prefs *Settings) *string { return &prefs.Workspace }),
 	textRow(Field{Key: "environment", Title: "Active environment", Description: "The active environment of an older settings file; read only when collections is absent.", Category: "General", Hidden: true}, func(prefs *Settings) *string { return &prefs.Environment }),
 }
@@ -267,7 +267,7 @@ func checkValue(field Field, raw json.RawMessage) string {
 			return "must be an object of themes, each an object of token to #rrggbb text"
 		}
 	case CollectionList:
-		if !decodesStrictly(raw, &[]openset.OpenCollection{}) {
+		if !decodesStrictly(raw, &[]request.OpenCollection{}) {
 			return "must be a list of objects with folder and environment text"
 		}
 	}

@@ -16,7 +16,7 @@ import (
 	"github.com/bufbuild/protocompile/linker"
 	"github.com/bufbuild/protocompile/reporter"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 )
 
 // compileProtoFiles reads .proto files into linked descriptors. Relative

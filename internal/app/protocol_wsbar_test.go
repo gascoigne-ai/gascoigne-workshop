@@ -2,7 +2,7 @@ package app
 
 import (
 	"fmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"testing"
 
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"

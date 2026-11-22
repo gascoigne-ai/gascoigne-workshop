@@ -6,7 +6,7 @@ package tree
 import (
 	"encoding/json"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 )
 
 // DropPlace is the folder a node dropped on target goes into and the node it

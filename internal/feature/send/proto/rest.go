@@ -17,7 +17,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 )
 
 // maxBody bounds how much of a response is kept in memory.

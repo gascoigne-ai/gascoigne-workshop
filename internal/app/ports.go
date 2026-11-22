@@ -11,7 +11,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/state"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 )

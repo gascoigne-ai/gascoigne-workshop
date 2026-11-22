@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/editor"
 
+	request "github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send"
-	request "github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/textfmt"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"

@@ -3,7 +3,7 @@ package proto
 import (
 	"context"
 	"encoding/json"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"strings"
 	"testing"
 	"time"

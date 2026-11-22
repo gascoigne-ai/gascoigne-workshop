@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	kernelrequest "github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+	kernelrequest "github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 )
 
 // ParseCurl turns a curl command line into a REST request, the way

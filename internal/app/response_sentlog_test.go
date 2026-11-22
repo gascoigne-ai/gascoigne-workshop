@@ -7,7 +7,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 )
 
 func TestSendingARequestListsItInTheSentLogNewestFirst(t *testing.T) {
