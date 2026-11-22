@@ -77,5 +77,4 @@ the written exceptions in `internal/CLAUDE.md`. Nothing checks them yet.
 - `settings/prefs` imports `workspace`, and `workspace` imports `settings` leaves: the two
   domains are cyclic at domain level.
 - `internal/exampleserver` imports `request/adapter/proto/ws`; no rule covers it.
-- No layer check runs in `make check`; `common/scripts/check-layers.sh` exists and is not wired
-  (it needs a `.harness/layers.txt`).
+- No layer check runs in `make check` (task `004-layer-check`).
