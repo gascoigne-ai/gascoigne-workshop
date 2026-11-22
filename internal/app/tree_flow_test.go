@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"

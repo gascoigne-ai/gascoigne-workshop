@@ -1,4 +1,4 @@
-package port
+package settings
 
 import "github.com/gascoigne-ai/gascoigne-workshop/internal/settings/sysinfo"
 

@@ -3,7 +3,7 @@ package collections
 import (
 	"path/filepath"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 )
 
 // AbsDir is the folder a collection is identified by: absolute, so one

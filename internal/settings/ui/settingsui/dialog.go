@@ -9,13 +9,12 @@
 package settingsui
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/prefs"
 	"path/filepath"
 	"strings"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fontfamily"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -65,9 +64,9 @@ type Host interface {
 	// SettingsPath is the settings file, "" when settings are not kept.
 	SettingsPath() string
 	// SettingsStore reads, stats and writes the settings file.
-	SettingsStore() port.SettingsStore
+	SettingsStore() settings.SettingsStore
 	// FontStore finds installed fonts and reads their files.
-	FontStore() port.FontStore
+	FontStore() settings.FontStore
 	// SetFonts switches the interface and code fonts; the error says why
 	// they were refused, which is why this is not a message.
 	SetFonts(ui, code w.FontData) error

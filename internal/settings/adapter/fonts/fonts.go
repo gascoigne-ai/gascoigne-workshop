@@ -12,8 +12,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fontfamily"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
 	"golang.org/x/image/font/sfnt"
 )
 
@@ -139,12 +139,12 @@ func hasLetters(font *sfnt.Font, buf *sfnt.Buffer) bool {
 // under Home.
 type System struct{ Home string }
 
-// Scan implements port.FontStore.
+// Scan implements settings.FontStore.
 func (system System) Scan() []fontfamily.Family {
 	return Scan(SystemDirs(runtime.GOOS, system.Home)...)
 }
 
-// Load implements port.FontStore.
+// Load implements settings.FontStore.
 func (System) Load(family fontfamily.Family) (regular, bold []byte, err error) { return Load(family) }
 
-var _ port.FontStore = System{}
+var _ settings.FontStore = System{}

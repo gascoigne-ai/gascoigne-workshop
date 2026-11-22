@@ -6,9 +6,8 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/severity"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/viewer"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fileversion"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
-	sport "github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/prefs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/sysinfo"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/theme"
@@ -189,7 +188,7 @@ func (a *App) askSaveSettings() {
 
 // SettingsStore is the settings file's store; it refuses to write a file a
 // newer build wrote, for the whole session.
-func (a *App) SettingsStore() sport.SettingsStore {
+func (a *App) SettingsStore() settings.SettingsStore {
 	if a.settingsAccess == fileversion.ReadOnly {
 		return readOnlySettings{a.settingFiles}
 	}
@@ -201,13 +200,13 @@ func (a *App) SettingsStore() sport.SettingsStore {
 var errNewerSettings = errors.New("settings.json was written by a newer version of the workshop; it is not changed this session")
 
 // readOnlySettings reads the settings file but writes nothing.
-type readOnlySettings struct{ sport.SettingsStore }
+type readOnlySettings struct{ settings.SettingsStore }
 
 func (readOnlySettings) Save(string, settings.Settings) error { return errNewerSettings }
 func (readOnlySettings) WriteText(string, []byte) error       { return errNewerSettings }
 
 // FontStore is the installed fonts of this machine.
-func (a *App) FontStore() sport.FontStore { return a.fonts }
+func (a *App) FontStore() settings.FontStore { return a.fonts }
 
 // Send applies a message of a settings page. The page's host is the App:
 // its other methods only read.

@@ -1,4 +1,4 @@
-package port
+package settings
 
 // DisplayScale tells the desktop's scale for the display when the window
 // system does not pass it on.

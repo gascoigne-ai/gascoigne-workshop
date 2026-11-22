@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"reflect"

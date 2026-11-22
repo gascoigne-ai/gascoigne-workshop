@@ -40,14 +40,14 @@ FUZZ_TARGETS = \
 	./internal/request/model:FuzzParseAuthType \
 	./internal/collection/adapter/store:FuzzLoad \
 	./internal/workspace/adapter/statefile:FuzzLoad \
-	./internal/settings/model/settings:FuzzDecode \
+	./internal/settings:FuzzDecode \
 	./internal/settings/fileversion:FuzzRead \
 	./internal/response/adapter/history:FuzzLoad \
 	./internal/response/adapter/history:FuzzLoadSent \
 	./internal/response/ui/respview:FuzzDecode \
 	./uitoolkit/theming:FuzzParseTheme \
 	./internal/request/adapter/proto:FuzzReadEvents \
-	./internal/settings/model/settings:FuzzParse \
+	./internal/settings:FuzzParse \
 	./internal/request/model:FuzzParseBulk \
 	./internal/settings/ui/shortcutpage:FuzzParseBinding \
 	./internal/request/adapter/proto:FuzzDeliverJSON \
@@ -74,7 +74,7 @@ vet-release:
 	go vet -tags release ./...
 
 # Directories that hold a file with a release build tag.
-RELEASE_BASE = cmd/workshop internal/collection/model/collection internal/settings/userdir
+RELEASE_BASE = cmd/workshop internal/collection internal/settings/userdir
 
 # The release test run covers RELEASE_BASE and every package whose build or
 # test binary links one of them: the rest compile the same under both tags.

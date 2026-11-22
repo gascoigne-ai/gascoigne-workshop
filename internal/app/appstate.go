@@ -1,14 +1,13 @@
 package app
 
 import (
-	cport "github.com/gascoigne-ai/gascoigne-workshop/internal/collection/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/sentlog"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fileversion"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
-	sport "github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/colorpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/settingsui"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/shortcutpage"
@@ -29,17 +28,17 @@ type ports struct {
 	grpcMethods  reqport.GRPCMethods
 	grpcSchema   reqport.GRPCSchema
 	curl         func(model.Request) string
-	store        cport.Store
-	clients      cport.ClientConfigs // the build's client config; nil has none
+	store        collection.Store
+	clients      collection.ClientConfigs // the build's client config; nil has none
 	states       workspace.StateStore
 	files        workspace.FileDialog              // the desktop file chooser, replaced in tests
 	folders      workspace.Folders                 // what the in-app file browser lists
 	now          func() time.Time                  // the clock, replaced in tests
 	histories    func(dir string) response.History // nil keeps no history
-	fonts        sport.FontStore
-	display      sport.DisplayScale
-	system       sport.SystemInfo // what the System page of the settings shows; nil has no report
-	settingFiles sport.SettingsStore
+	fonts        settings.FontStore
+	display      settings.DisplayScale
+	system       settings.SystemInfo // what the System page of the settings shows; nil has no report
+	settingFiles settings.SettingsStore
 	previews     response.BodyPreview // shows a response body in the browser, replaced in tests
 }
 

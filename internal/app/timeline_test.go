@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 )
 
 func TestRequestsShareACookieJarThatClearCookiesEmpties(t *testing.T) {

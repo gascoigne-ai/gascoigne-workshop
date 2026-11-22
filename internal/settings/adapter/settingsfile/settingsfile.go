@@ -9,8 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/userdir"
 )
 
@@ -84,10 +83,10 @@ func inConfigDir(name string) string {
 // Files is the settings store of the file system.
 type Files struct{}
 
-// ReadText implements port.SettingsStore.
+// ReadText implements settings.SettingsStore.
 func (Files) ReadText(path string) ([]byte, error) { return os.ReadFile(path) }
 
-// Stat implements port.SettingsStore.
+// Stat implements settings.SettingsStore.
 func (Files) Stat(path string) settings.FileStamp {
 	info, err := os.Stat(path)
 	if err != nil {
@@ -96,7 +95,7 @@ func (Files) Stat(path string) settings.FileStamp {
 	return settings.FileStamp{Modified: info.ModTime(), Size: info.Size(), Exists: true}
 }
 
-var _ port.SettingsStore = Files{}
+var _ settings.SettingsStore = Files{}
 
 func backUpBroken(path string) error {
 	old, err := os.ReadFile(path)

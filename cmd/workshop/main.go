@@ -6,8 +6,8 @@ import (
 	"bytes"
 	"errors"
 	"flag"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/adapter/store"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/adapter/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/history"
@@ -29,9 +29,9 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/app"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/settingsfile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/systeminfo"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/statefile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/ui/appicon"
 )

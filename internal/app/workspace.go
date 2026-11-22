@@ -7,14 +7,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/collections"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/serial"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/tabs"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fileversion"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 )
 
 // saveDebounce is how long a collection must stay unchanged before it is

@@ -2,7 +2,6 @@ package settingsui
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/fonts"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/prefs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/severity"
 	"image/color"
@@ -11,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/adapter/settingsfile"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -29,9 +28,9 @@ type fakeHost struct {
 	pickTitle string
 	pickDone  func(path string)
 	saved     int
-	fontsSet  int                // how many times the dialog applied the fonts
-	store     port.SettingsStore // replaces the real files when a test sets it
-	changes   int                // how many Change messages the dialog sent
+	fontsSet  int                    // how many times the dialog applied the fonts
+	store     settings.SettingsStore // replaces the real files when a test sets it
+	changes   int                    // how many Change messages the dialog sent
 }
 
 func newHost(t *testing.T) *fakeHost {
@@ -157,7 +156,7 @@ func TestCompletionOffersWhatSettingsCompleteGivesAtTheCaret(t *testing.T) {
 func (h *fakeHost) Pointer() (int, int) { return 400, 300 }
 func (h *fakeHost) Unsaved() bool       { return h.unsaved }
 func (h *fakeHost) Persist()            { _ = settingsDisk.Save(h.path, h.current); h.unsaved = false; h.saved++ }
-func (h *fakeHost) SettingsStore() port.SettingsStore {
+func (h *fakeHost) SettingsStore() settings.SettingsStore {
 	if h.store != nil {
 		return h.store
 	}
@@ -274,7 +273,7 @@ func assertSameDump(t *testing.T, tplView, goView Node, width, height int) {
 	}
 }
 
-func (h *fakeHost) FontStore() port.FontStore { return fonts.System{} }
+func (h *fakeHost) FontStore() settings.FontStore { return fonts.System{} }
 
 // Send routes a message to the fake's own recorder of it.
 func (h *fakeHost) Send(msg prefs.Msg) {

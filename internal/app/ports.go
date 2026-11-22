@@ -9,8 +9,8 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fontfamily"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 )
 
 // noFileDialog is the file chooser of an app started without one: callers

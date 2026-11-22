@@ -2,14 +2,14 @@
 
 ```mermaid
 flowchart LR
-  schema["settings.Schema rows (model/settings)"] --> form["settingsui: form, raw JSON, search"]
+  schema["settings.Schema rows (settings)"] --> form["settingsui: form, raw JSON, search"]
   form -- "prefs messages" --> app["App.Send (settingshost.go)"]
   app --> theme["theme.ThemeWith, Ctx.SetTheme"]
   app --> file["settingsfile: settings.json"]
   file -- "Poll every PollTicks frames" --> form
 ```
 
-- **One row per setting.** `settings.Schema` (`model/settings/schema.go`) is the form, the raw
+- **One row per setting.** `settings.Schema` (`settings/schema.go`) is the form, the raw
   view's validation and completion, the search, reset and the order of keys in the file. A row is
   built from the accessor of its `Settings` field, so its kind and its value type cannot disagree.
   A new setting is one row, plus an entry of `settingControls` when the plain control does not fit.

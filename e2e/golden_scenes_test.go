@@ -17,7 +17,7 @@ import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/exampleserver"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 )
 
 // goldenScene is one picture the program must keep drawing: the flags that

@@ -68,7 +68,7 @@ Window chrome (`internal/app/window.go`, fixed numbers with a role each): header
 
 - Widgets, layout and hit tests work in logical pixels; `Ctx` multiplies by `Scale` when it draws, so HiDPI stays sharp (`architecture/core.md`).
 - **Interface scale** (`settings.UIScalePct`, slider 50 to 200 % in steps of 5, `settings.ScaleSliderMin/Max/Step`) multiplies the display factor and the platform base (`settings.BaseScale`: 1.1 on Linux, 1 elsewhere), so 100 % is the platform's normal size. Screenshots skip it. The slider resizes live, saves on release and follows the pointer in device pixels from the press, so the resizing UI never feeds back into the value. Remembered window sizes are in window pixels.
-- **Display scale on Linux.** Ebitengine reports 1 for an Xwayland window on a scaled monitor, so the App asks the `settings/port.DisplayScale` port (adapter `settings/adapter/displayscale`); `frameSize` then lays the UI out in window pixels over the real scale, with no supersampling. `Factor` returns a cached value and refreshes it in the background, so a hung compositor command never stalls a frame. Windows and macOS use Ebitengine's factor.
+- **Display scale on Linux.** Ebitengine reports 1 for an Xwayland window on a scaled monitor, so the App asks the `settings.DisplayScale` port (adapter `settings/adapter/displayscale`); `frameSize` then lays the UI out in window pixels over the real scale, with no supersampling. `Factor` returns a cached value and refreshes it in the background, so a hung compositor command never stalls a frame. Windows and macOS use Ebitengine's factor.
 - Fractional scales round text metrics to whole pixels (`architecture/limits.md`).
 
 ### States

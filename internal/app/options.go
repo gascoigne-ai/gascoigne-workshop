@@ -3,14 +3,12 @@ package app
 import (
 	"cmp"
 	"fmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
-	cport "github.com/gascoigne-ai/gascoigne-workshop/internal/collection/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fileversion"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
-	sport "github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/autosave"
@@ -35,16 +33,16 @@ type Options struct {
 	GRPCMethods      reqport.GRPCMethods                           // lists gRPC methods by reflection; nil cannot
 	GRPCSchema       reqport.GRPCSchema                            // describes a gRPC method's request message; nil cannot
 	Curl             func(model.Request) string                    // the cURL command of a request; nil copies nothing
-	Store            cport.Store                                   // where the collection is saved; nil saves nothing
+	Store            collection.Store                              // where the collection is saved; nil saves nothing
 	States           workspace.StateStore                          // where the UI state is kept; nil keeps none
 	Files            workspace.FileDialog                          // the desktop file chooser; nil uses the in-app file browser
 	Folders          workspace.Folders                             // the folders the in-app file browser lists; nil lists none
 	History          func(dir string) response.History             // the history in a folder; nil keeps none
-	System           sport.SystemInfo                              // the system and GPU report of the settings; nil has none
-	KeyRepeat        sport.KeyRepeat                               // the desktop's key repeat timing; nil keeps the built-in one
-	Display          sport.DisplayScale                            // the desktop's display scale when the window system hides it; nil has none
-	Fonts            sport.FontStore                               // installed fonts; nil has none
-	SettingsFiles    sport.SettingsStore                           // the settings file; nil reads the defaults and cannot save
+	System           settings.SystemInfo                           // the system and GPU report of the settings; nil has none
+	KeyRepeat        settings.KeyRepeat                            // the desktop's key repeat timing; nil keeps the built-in one
+	Display          settings.DisplayScale                         // the desktop's display scale when the window system hides it; nil has none
+	Fonts            settings.FontStore                            // installed fonts; nil has none
+	SettingsFiles    settings.SettingsStore                        // the settings file; nil reads the defaults and cannot save
 	Previews         response.BodyPreview                          // shows a response body in the browser; nil has none
 	Clock            workspace.Clock                               // the time source; nil uses the wall clock
 	RetryDelay       time.Duration                                 // wait before a dropped connection reopens; 0 is two seconds
@@ -52,7 +50,7 @@ type Options struct {
 	BaseScale        float64                                       // the platform's interface factor under the user's scale; 0 is 1
 	WorkspaceDir     string                                        // collection folder; "" uses the remembered one, else the client config, else the sample
 	Sample           func() model.Collection                       // the collection shown without a workspace or client config; nil uses collection.GitHubSample
-	Clients          cport.ClientConfigs                           // the client config a build offers without a workspace; nil has none
+	Clients          collection.ClientConfigs                      // the client config a build offers without a workspace; nil has none
 	DefaultWorkspace string                                        // where saving goes when there is no workspace yet
 }
 
@@ -68,10 +66,10 @@ func startCollection(sample func() model.Collection) model.Collection {
 // withDefaults fills what a caller may leave out: null ports for the
 // adapters the app always calls, the retry delay and the base scale.
 func (opts Options) withDefaults() Options {
-	opts.SettingsFiles = cmp.Or[sport.SettingsStore](opts.SettingsFiles, noSettingFiles{})
+	opts.SettingsFiles = cmp.Or[settings.SettingsStore](opts.SettingsFiles, noSettingFiles{})
 	opts.States = cmp.Or[workspace.StateStore](opts.States, noStates{})
-	opts.Store = cmp.Or[cport.Store](opts.Store, noStore{})
-	opts.Fonts = cmp.Or[sport.FontStore](opts.Fonts, noFonts{})
+	opts.Store = cmp.Or[collection.Store](opts.Store, noStore{})
+	opts.Fonts = cmp.Or[settings.FontStore](opts.Fonts, noFonts{})
 	opts.Files = cmp.Or[workspace.FileDialog](opts.Files, noFileDialog{})
 	opts.Folders = cmp.Or[workspace.Folders](opts.Folders, noFolders{})
 	opts.Previews = cmp.Or[response.BodyPreview](opts.Previews, noBrowser{})

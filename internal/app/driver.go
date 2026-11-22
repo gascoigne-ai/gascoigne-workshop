@@ -10,7 +10,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/tree"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/tabs"

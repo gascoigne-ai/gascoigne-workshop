@@ -1,6 +1,7 @@
-// Package port holds what the collection domain needs from the outside:
-// where a collection is saved and where the client config is read from.
-package port
+// Package collection holds the collection domain's types and the ports at its
+// boundary: where a collection is saved and where the client config is read
+// from.
+package collection
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/clientconfig"

@@ -1,5 +1,7 @@
 // Package settings holds the user's preferences and the rules of their JSON
 // text. Unknown values are kept as written; the UI decides how to fall back.
+// It also holds the ports at the domain's boundary: the settings file, the
+// installed fonts, the key repeat, the display scale and the system info.
 // Reading and writing the file is the settingsfile adapter's job.
 package settings
 

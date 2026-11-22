@@ -21,11 +21,10 @@ func Path(name string) string {
 // WriteFileAtomic replaces path with data so a crash cannot leave half a
 // file behind: it writes a temp file in the same directory, then renames it
 // over path. The temp file is removed when any step fails. The helper lives
-// in this model package, not in an adapter, because the layer rules let
-// every domain import a model but keep adapters apart; it uses only the
-// standard library. The directory of path must exist. Five adapters had
-// copied it. Rejected (the user's choice): an adapter package shared across
-// domains, which needs a layer exception, and a copy per domain.
+// here, not in an adapter, so every domain can use it without importing
+// another domain's adapter; it uses only the standard library. The directory
+// of path must exist. Five adapters had copied it. Rejected (the user's
+// choice): an adapter package shared across domains, and a copy per domain.
 func WriteFileAtomic(path string, data []byte, perm os.FileMode) error {
 	temp, err := os.CreateTemp(filepath.Dir(path), ".tmp-*")
 	if err != nil {

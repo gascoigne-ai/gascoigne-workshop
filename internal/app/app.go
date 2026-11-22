@@ -8,8 +8,8 @@
 package app
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/collections"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/ui/destpicker"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
