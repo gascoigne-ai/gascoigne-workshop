@@ -6,10 +6,10 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/filebrowser"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/severity"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/bus"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/filebrowser"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"

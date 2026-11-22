@@ -13,12 +13,12 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/adapter/preview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/proto"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/platform/displayscale"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/platform/dockicon"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/platform/filedialog"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/platform/folders"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/platform/fonts"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/platform/keyrepeat"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/dockicon"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/filedialog"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/folders"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/systemclock"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/platform/systemclock"
 	"image"
 	"image/png"
 	"log"
@@ -31,9 +31,9 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/app"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/adapter/settingsfile"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/adapter/statefile"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/ui/appicon"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/platform/systeminfo"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/statefile"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/ui/appicon"
 )
 
 const (

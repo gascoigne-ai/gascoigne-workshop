@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/bus"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/serial"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/serial"
 )
 
 // writeWait bounds how long quitting waits for background writes.

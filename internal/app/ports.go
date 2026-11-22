@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/state"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/state"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 

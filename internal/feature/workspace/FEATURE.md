@@ -1,8 +1,19 @@
+# Feature: workspace
+
+Tabs, remembered state, the bus, the file browser, autosave, overlays, and the files, state and platform behavior around them.
+
+## Layout
+- `internal/feature/workspace`: the model (root package `workspace`) with the ports `Clock`, `FileDialog`, `Folders` and `StateStore`.
+- Controllers as sub-packages: `tabs` (tab list, send and connection state), `state` (the remembered-state record), `filebrowser`, `autosave`, `bus`, `overlay`, `serial`.
+- `adapter/statefile`: the `state.json` store. `ui/appicon`: the application icon.
+- The OS adapters sit in `internal/platform`: `dockicon`, `filedialog`, `folders`, `systemclock`. `filedialog` and `folders` import `feature/workspace` for the port types they implement, a written exception for platform (as `internal/CLAUDE.md` says for `feature/settings`).
+- Imports: the kernel only (`kernel/request` for the MCP server info a connection keeps) plus the toolkit for the icon. The root imports its own `state` sub-package.
+
 ## Files, state and platforms
 
 ### Remembered state
 
-`state.json` (model `workspace/state`, adapter `workspace/adapter/statefile`, sync in
+`state.json` (model `workspace/state`, adapter `workspace/adapter/statefile` (both under `internal/feature/`), sync in
 `internal/app/statesync.go`) sits next to the settings and is separate from them: settings are
 what users edit, state is bookkeeping (window geometry, splits, expanded folders, open tabs, table
 column weights, the settings dialog's size).
@@ -26,7 +37,7 @@ flowchart LR
 - `App.pickFile` takes the first usable row of `fileChoosers`: the desktop's dialog, else the in-app
   file browser (why not a D-Bus portal: the `filedialog` package doc). It returns a cancel function, which the settings dialog uses to take
   its question back when it closes.
-- `workspace/adapter/filedialog` picks the program order per desktop from a table (`detect.go`);
+- `platform/filedialog` picks the program order per desktop from a table (`detect.go`);
   that choice is pure and tested per desktop without a display. Both choosers start in the user's
   home folder every time (user's decision 2026-11-15).
 - The in-app browser (rules in `workspace/filebrowser`, listing through `workspace.Folders`)
@@ -52,8 +63,8 @@ flowchart LR
 
 ### Icon and packaging
 
-- `workspace/ui/appicon` rasterizes `appicon.svg` in software, so the icon exists before any window.
-  `main` sets it as the window icon, `workspace/adapter/dockicon` as the macOS Dock icon, and
+- `workspace/ui/appicon` (under `internal/feature/`) rasterizes `appicon.svg` in software, so the icon exists before any window.
+  `main` sets it as the window icon, `platform/dockicon` as the macOS Dock icon, and
   `-icon-png FILE` writes it for packaging.
 - `make install` installs the binary and, on Linux, `packaging/gascoigne-workshop.desktop` and the
   icon. `check.yml` runs `make check` under xvfb.

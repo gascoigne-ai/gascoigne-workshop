@@ -3,7 +3,7 @@ package app
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/adapter/store"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/adapter/settingsfile"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/statefile"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/adapter/statefile"
 )
 
 // The file stores the tests read and write real files through.

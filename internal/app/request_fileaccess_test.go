@@ -13,9 +13,9 @@ import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/importers/postman"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/filebrowser"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/filebrowser"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"

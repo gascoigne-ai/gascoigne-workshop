@@ -6,9 +6,9 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/importers/postman"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/tree"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace"
 	request "github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/severity"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 	"path/filepath"
 )
 

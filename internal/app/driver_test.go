@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/folders"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/tabs"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/platform/folders"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )

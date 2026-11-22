@@ -1,7 +1,6 @@
 package tabs
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send"
 	request "github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 )
 
@@ -20,7 +19,7 @@ type Connection struct {
 	Resources []request.MCPResource // the resources an MCP server announced
 	Prompts   []request.MCPPrompt   // the prompts an MCP server announced
 	Tools     []request.MCPTool     // the tools an MCP server announced
-	Server    *send.MCPServer       // what an MCP server said about itself, nil before it did
+	Server    *request.MCPServer    // what an MCP server said about itself, nil before it did
 }
 
 // State is where the connection is in its life.
@@ -114,7 +113,7 @@ func (conn *Connection) Disconnect() (session request.Session, abandoned bool) {
 // description, its tools, resources and prompts, and the id to resume an event stream from.
 func (conn *Connection) Received(event request.Event) {
 	if event.Dir == request.Info && event.Kind == request.KindInitialize {
-		if server, ok := send.ParseServerInfo(event.Text); ok {
+		if server, ok := request.ParseServerInfo(event.Text); ok {
 			conn.Server = &server
 		}
 		return

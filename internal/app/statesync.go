@@ -4,17 +4,17 @@ import (
 	"encoding/json"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/tree"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/serial"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/severity"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/serial"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/tabs"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/state"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/fileversion"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/state"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 

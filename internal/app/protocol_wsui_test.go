@@ -1,9 +1,9 @@
 package app
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/bus"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"io"

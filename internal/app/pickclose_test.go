@@ -2,7 +2,7 @@ package app
 
 import (
 	"context"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace"
 	"testing"
 	"time"
 )

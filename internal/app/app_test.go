@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/tabs"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"reflect"
 	"testing"

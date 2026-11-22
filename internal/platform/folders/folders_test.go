@@ -9,7 +9,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace"
 )
 
 func TestListTellsFoldersFromFilesAndFollowsLinks(t *testing.T) {

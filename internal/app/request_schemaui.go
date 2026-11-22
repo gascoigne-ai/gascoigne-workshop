@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/editor"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/bus"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"

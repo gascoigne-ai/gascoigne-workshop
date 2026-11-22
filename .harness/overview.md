@@ -17,10 +17,9 @@ uitoolkit/           the GPU toolkit; knows nothing of requests (`uitoolkit/doc.
   widget             every component: buttons, menus, dialogs, tabs, fields, tables
   markup             templates (HTML-like) that build the same trees
   theming, engine    palettes and theme files; key bindings and frame pacing
-internal/feature/    moved feature slices: history, settings (model, ui/, adapter/, FEATURE.md)
-internal/platform/   OS adapters: displayscale, fonts, keyrepeat, systeminfo
+internal/feature/    feature slices: collections, environments, history, send, settings, workspace (model, ui/, adapter/, FEATURE.md)
+internal/platform/   OS adapters: displayscale, dockicon, filedialog, folders, fonts, keyrepeat, systeminfo, systemclock
 internal/kernel/     shared leaves: severity, fileversion, userdir, textfmt, jsonview, openset, request (the model and ports)
-internal/<domain>/   request, collection, response, workspace (feature slices, not yet moved)
   (root package)     types, rules and ports of the domain
   <controller>/      state and decisions, no widget, no I/O (tabs, tree, envs...)
   ui/<package>       views behind a Host
@@ -56,7 +55,7 @@ Dependencies point inward: what each package may import is written once, in `int
 1. The user types a URL in the URL bar (`urlbar` template in `internal/app/request_urlbar.go`) and presses Send or Ctrl+Enter.
 2. `App.send` calls `dispatch`: `tabs.Tab.BeginSend` numbers the send, `request.Request.Expanded` fills `{{variables}}` from the collection and the active environment, the call log records it.
 3. A command runs off the UI goroutine: `reg.Send(ctx, req)` on the protocol registry, a name-to-`Protocol` table built in `feature/send/proto` (`rest`, `websocket`, `sse`, `mcp`, `grpc`; its package doc says which are hand-written and why). Streaming protocols return a `Session` from `Connect` and report through the same bus.
-4. The result comes back as a message on the bus (`workspace/bus`), drained once per frame on the UI goroutine; a late result of a cancelled send is dropped by its number.
+4. The result comes back as a message on the bus (`feature/workspace/bus`), drained once per frame on the UI goroutine; a late result of a cancelled send is dropped by its number.
 5. The tab keeps the response; the response pane (`feature/send/ui/respview`, and `feature/send/viewer` for its mode and find state) draws it. The sent request and response are written to the history (`feature/history`) by an adapter behind a port, the collection by `feature/collections/adapter/store`.
 
 Every frame the whole window tree is rebuilt from the App state (why: the `markup` package doc): no diffing, no reactive graph. Widgets that need identity across frames (a text field, a code view) take a pointer to state the App owns.

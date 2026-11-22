@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/statefile"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/state"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/adapter/statefile"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/state"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 

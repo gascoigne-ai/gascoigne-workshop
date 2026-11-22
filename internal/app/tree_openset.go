@@ -9,8 +9,8 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/tree"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/environments"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/autosave"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/autosave"
 )
 
 // The open collections: a.open holds them in tree order, each with the

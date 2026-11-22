@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/editor"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/severity"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/bus"
 	"strings"
 
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"

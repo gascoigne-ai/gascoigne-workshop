@@ -2,8 +2,8 @@ package app
 
 import (
 	"errors"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/severity"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/viewer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"

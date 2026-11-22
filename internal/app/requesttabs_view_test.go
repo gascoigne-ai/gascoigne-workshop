@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/tabs"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )

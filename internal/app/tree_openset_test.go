@@ -10,10 +10,10 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/theme"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/adapter/statefile"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/state"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/statefile"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/state"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 

@@ -5,7 +5,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/severity"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/ui/mcpform"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/overlay"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/overlay"
 
 	"github.com/hajimehoshi/ebiten/v2"
 

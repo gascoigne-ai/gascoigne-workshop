@@ -12,7 +12,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace"
 )
 
 // Mode is what the browser asks for.

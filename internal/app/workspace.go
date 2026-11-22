@@ -10,8 +10,8 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/collections"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/serial"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/tabs"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/serial"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/fileversion"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"

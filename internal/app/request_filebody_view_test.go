@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/folders"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/platform/folders"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"

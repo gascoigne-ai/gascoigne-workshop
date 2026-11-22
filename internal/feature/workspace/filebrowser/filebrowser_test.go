@@ -5,7 +5,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace"
 )
 
 // home is a folder listing like a real one: folders and files, hidden

@@ -23,7 +23,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace"
 )
 
 // ErrCancelled is returned when the user closed the dialog.

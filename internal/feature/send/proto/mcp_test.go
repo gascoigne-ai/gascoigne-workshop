@@ -14,7 +14,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send"
 	request "github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 )
 
@@ -291,7 +290,7 @@ func TestMCPConnectAnnouncesTheServerInfoAsAnEvent(t *testing.T) {
 	if e.Dir != request.Info {
 		t.Fatalf("%+v", e)
 	}
-	server, ok := send.ParseServerInfo(e.Text)
+	server, ok := request.ParseServerInfo(e.Text)
 	if !ok || server.Name != "mock" || server.Version != "1" {
 		t.Fatalf("%+v %v", server, ok)
 	}

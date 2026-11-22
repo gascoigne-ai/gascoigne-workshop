@@ -34,12 +34,12 @@ FUZZ_TARGETS = \
 	./uitoolkit/widget:FuzzWrapRunes \
 	./internal/feature/send:FuzzParseSchema \
 	./internal/kernel/request:FuzzParseMCPLists \
-	./internal/feature/send:FuzzParseServerInfo \
+	./internal/kernel/request:FuzzParseServerInfo \
 	./internal/kernel/request:FuzzParseProtocol \
 	./internal/kernel/request:FuzzParseBodyType \
 	./internal/kernel/request:FuzzParseAuthType \
 	./internal/feature/collections/adapter/store:FuzzLoad \
-	./internal/workspace/adapter/statefile:FuzzLoad \
+	./internal/feature/workspace/adapter/statefile:FuzzLoad \
 	./internal/feature/settings:FuzzDecode \
 	./internal/kernel/fileversion:FuzzRead \
 	./internal/feature/history/adapter:FuzzLoad \

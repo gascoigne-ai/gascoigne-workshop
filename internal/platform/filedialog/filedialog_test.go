@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace"
 )
 
 // fake puts a script called zenity first on the PATH.
