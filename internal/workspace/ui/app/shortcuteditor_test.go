@@ -2,6 +2,8 @@ package app
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/shortcutpage"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"strings"
 	"testing"
 
@@ -88,4 +90,62 @@ func mustLoad(t *testing.T, path string) settings.Settings {
 		t.Fatal(err)
 	}
 	return saved
+}
+
+// shortcutsPageOpen shows the Shortcuts page of the settings dialog.
+func shortcutsPageOpen(a *App) {
+	a.menu = true
+	a.prefs.Cat = "shortcuts"
+}
+
+func TestArrowKeysMoveTheShortcutSelectionOnTheShownPage(t *testing.T) {
+	a := testApp(t)
+	shortcutsPageOpen(a)
+	first, second := a.Actions()[0].ID, a.Actions()[1].ID
+	a.step(core.Input{Keys: []ebiten.Key{ebiten.KeyArrowDown}})
+	if got := a.shortcutKeys.Selected(); got != first {
+		t.Fatalf("selected %q after Down, want %q", got, first)
+	}
+	a.step(core.Input{Keys: []ebiten.Key{ebiten.KeyArrowDown}})
+	if got := a.shortcutKeys.Selected(); got != second {
+		t.Fatalf("selected %q after Down again, want %q", got, second)
+	}
+}
+
+// Enter on the selected row records it, and the recorded key reaches the
+// settings through Send, as a click on the row does.
+func TestEnterRecordsTheSelectedShortcutAndTheKeyIsSaved(t *testing.T) {
+	a := testApp(t)
+	shortcutsPageOpen(a)
+	first := a.Actions()[0].ID
+	a.step(core.Input{Keys: []ebiten.Key{ebiten.KeyArrowDown}})
+	a.step(core.Input{Enter: true})
+	if got := a.shortcutKeys.Recording(); got != first {
+		t.Fatalf("recording %q after Enter, want %q", got, first)
+	}
+	a.step(combo(ebiten.KeyF9, false, false, false))
+	if got := a.settings.Shortcuts[first]; got != "F9" {
+		t.Fatalf("saved shortcuts %v, want %s=F9", a.settings.Shortcuts, first)
+	}
+}
+
+// Other pages, the raw settings text and a settings search have no
+// shortcut rows on screen, so their keys leave the selection alone.
+func TestArrowKeysLeaveTheShortcutSelectionWhenThePageIsNotShown(t *testing.T) {
+	cases := map[string]func(a *App){
+		"dialog closed": func(a *App) { a.prefs.Cat = "shortcuts" },
+		"other page":    func(a *App) { a.menu, a.prefs.Cat = true, "general" },
+		"raw text":      func(a *App) { shortcutsPageOpen(a); a.prefs.Raw = true },
+		"searching":     func(a *App) { shortcutsPageOpen(a); a.prefs.Search = widget.NewTextField("font") },
+	}
+	for name, prepare := range cases {
+		t.Run(name, func(t *testing.T) {
+			a := testApp(t)
+			prepare(a)
+			a.step(core.Input{Keys: []ebiten.Key{ebiten.KeyArrowDown}})
+			if got := a.shortcutKeys.Selected(); got != "" {
+				t.Fatalf("selected %q, want none", got)
+			}
+		})
+	}
 }

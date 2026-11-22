@@ -93,7 +93,7 @@ The look follows the gascoigne CLI dashboard (`theming.Dark`/`Light` doc, `TestP
 | Role | Tokens |
 |---|---|
 | Surfaces, back to front | `Frame` (window chrome, status bar), `Bg` (raised panes, dialogs, menus, the open tab), `Panel` (table headers, toasts), `Sunken` (lists, code, fields, buttons' fill) |
-| Row states | `Hover`, `Selected`; `Alt` exists for zebra rows but nothing draws it |
+| Row states | `Hover`, `Selected`; `Alt` fills every second row of a table that opts into zebra stripes |
 | Lines | `Border` (bars, dividers, `HRule`/`VRule`), `BorderStrong` (control outlines), `BorderSoft` (hairlines between table rows, `Separator` lines, dialog toolbar and footer lines), `Rule` (an idle checkbox's outline, the slider's middle tick) |
 | Text | `Text`, `Muted`, `Faint` (the quietest), `ChipText` (on a button) |
 | Accent | `Accent` (primary fill, checkbox, slider), `AccentLine` (focus, open tab, links, outlines), `AccentText` (on the accent), `AccentSoft` |
@@ -157,7 +157,9 @@ An unknown token draws in `Text`, so a typo stays visible.
 
 **Menus.** `Bg` panel, `menu` control, shadow, inset `MenuPad` (4), 120 to 420 wide; rows `MenuRowH` (24) padded 10, the hot row `Selected`, others `Hover` on hover; shortcut and hint lines small and muted; separators 9 high.
 
-**Tables.** Rows on `Sunken`, a `BorderSoft` hairline between rows, the row under the pointer lit, no zebra stripes; the header is `RowH` on `Panel` with a `Border` line under it; cells padded `CellPad`; columns at least `MinColumnPx` (56).
+**Tables.** Rows on `Sunken`, a `BorderSoft` hairline between rows, the row under the pointer lit, no zebra stripes unless the table opts in (`TableSpec.Zebra`: every second row in `Alt`; the Shortcuts page does); the header is `RowH` on `Panel` with a `Border` line under it; cells padded `CellPad`; columns at least `MinColumnPx` (56). A table may also opt into a fixed lead column (`RowLead`, `tableActionW` wide, a header spacer over it) that shows the pencil icon on the selected row, a row click (`OnRowClick`, editable or not), a node in place of a cell's text (`CellNode`) and a detail node under a row (`RowDetail`); all are off when unset. The Shortcuts page is such a table (Action, Keystrokes, Source): the selected row is `Selected` with the pencil, and its Unbind and Reset buttons and its conflict, refusal or plain-key note sit in the detail under it.
+
+**Key chip.** `widget.KeyChips` shows key text as one small chip per key (`Chip` fill, the `button` control's corners, `ChipText`, padded `NearGap`, `CompactH` high), split on `+`; a key being recorded is one `Accent` chip, "Press keys...", and an action without a key says "Unbound" in muted small text.
 
 **Scrollbars.** An 8 px track with no fill; the thumb `Muted`, `Text` while hovered or dragged, at least 24 long, rounded by `scrollbar`; drawn only when the content overflows.
 
@@ -245,7 +247,7 @@ Still-true choices of the look. Where a reason is code-specific, the doc comment
 | Flat fills and one gradient, `hero`, behind the window title | follows the dashboard | | |
 | Square tab outline, open at the bottom | the open tab runs into its pane | | |
 
-**Not done.** From the dashboard, these need a renderer or layout change, or an approval: the outlined primary button and segmented pill groups, blurred shadows, 2 px focus rings, a medium font weight and letter-spacing, 36 px table rows, a selected-row accent bar and floating cards. Changing `border`, `selected` or the scrollbar thumb color would break `TestNonTextElementsAreVisible`. Toasts take no control, so they ignore the Corners setting. An icon before a dialog title needs a place for it in `DialogTitle` first, since the bar lays out title, items, room, close.
+**Not done.** A sticky table header that stays while the rows scroll (the keymap table scrolls with the page). From the dashboard, these need a renderer or layout change, or an approval: the outlined primary button and segmented pill groups, blurred shadows, 2 px focus rings, a medium font weight and letter-spacing, 36 px table rows, a selected-row accent bar and floating cards. Changing `border`, `selected` or the scrollbar thumb color would break `TestNonTextElementsAreVisible`. Toasts take no control, so they ignore the Corners setting. An icon before a dialog title needs a place for it in `DialogTitle` first, since the bar lays out title, items, room, close.
 
 ## 5. Verifying a UI change
 

@@ -62,7 +62,13 @@ flowchart LR
   applied on the UI goroutine. A saved family that is not installed stays saved, shows as
   `(not installed)` and draws in the built-in Go font. The font list builds only the rows in view,
   so only their files are read.
-- **Shortcut editor** (`settings/ui/shortcutpage`): records the next combination for an action. What
-  it refuses (`Refuse`) derives from the text widgets' own keys (`textKeys`) and Escape. A
-  combination another action has is not saved until the user picks Replace. Only overrides are
-  stored. The binding model itself is in Keyboard, focus and overlays (app.md).
+- **Shortcut editor** (`settings/ui/shortcutpage`): a filterable keymap table (Action, Keystrokes as
+  key chips, Source) over the text editing keys. Clicking a row, or Enter on the selected row
+  (`Page.Navigate`, which the app calls while this page is what the dialog shows; Up and Down move the
+  selection through the rows the filter leaves), selects it and records the next combination for the
+  action. The selection and the dragged column widths are view state, not saved. Source is derived:
+  User only when the settings hold an override for the action that parses (the test `Effective` uses),
+  else Default; Unbind, Reset, the conflict with Replace and the refusal or plain-key note are in the
+  detail under the selected row. What it refuses (`Refuse`) derives from the text widgets' own keys
+  (`textKeys`) and Escape. A combination another action has is not saved until the user picks Replace.
+  Only overrides are stored. The binding model itself is in Keyboard, focus and overlays (app.md).

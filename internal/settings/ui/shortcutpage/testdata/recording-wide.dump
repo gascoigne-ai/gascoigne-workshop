@@ -2,39 +2,60 @@ flow rect=0,0,600,500
   flow h=28 gap=6 rect=0,0,600,28
     fieldB grow=1 bg=sunken control=field onRightClick=true rect=0,0,600,28
   plain h=12 grow=1 rect=0,28,600,12
-  flow rect=0,40,600,48
-    flow rect=0,40,600,24
-      flow h=24 gap=6 rect=0,40,600,24
-        textB text="Close tab" grow=1 small=true ellipsis=true rect=0,40,398,24
-        flow h=24 padL=10 padR=10 minW=120 bg=sunken control=button tip=Click, then press the keys shrink=true lighten=true onClick=true rect=404,40,120,24
-          textB text="Ctrl+W" grow=1 fg=chip-text ellipsis=true center=true rect=414,40,100,24
-        flow w=32 h=24 bg=sunken control=icon-button tip=Leave the action without a key lighten=true onClick=true rect=530,40,32,24
-          iconB grow=1 icon=unlink rect=530,40,32,24
-        plain w=32 grow=1 rect=568,40,32,24
-    flow rect=0,64,600,24
-      flow h=24 gap=6 rect=0,64,600,24
-        textB text="Send request" grow=1 small=true ellipsis=true rect=0,64,398,24
-        flow h=24 padL=10 padR=10 minW=120 bg=accent control=primary tip=Click, then press the keys shrink=true lighten=true onClick=true rect=404,64,120,24
-          textB text="Press keys..." grow=1 fg=accent-text ellipsis=true center=true rect=414,64,100,24
-        flow w=32 h=24 bg=sunken control=icon-button tip=Leave the action without a key lighten=true onClick=true rect=530,64,32,24
-          iconB grow=1 icon=unlink rect=530,64,32,24
-        plain w=32 grow=1 rect=568,64,32,24
-  textB text="TEXT EDITING" h=22 fg=muted small=true rect=0,88,600,22
-  flow h=24 gap=6 rect=0,110,600,24
-    textB text="Select all" grow=1 small=true ellipsis=true rect=0,110,560,24
-    textB text="Ctrl+A" fg=muted small=true rect=566,110,34,24
-  flow h=24 gap=6 rect=0,134,600,24
-    textB text="Copy" grow=1 small=true ellipsis=true rect=0,134,559,24
-    textB text="Ctrl+C" fg=muted small=true rect=565,134,35,24
-  flow h=24 gap=6 rect=0,158,600,24
-    textB text="Cut" grow=1 small=true ellipsis=true rect=0,158,560,24
-    textB text="Ctrl+X" fg=muted small=true rect=566,158,34,24
-  flow h=24 gap=6 rect=0,182,600,24
-    textB text="Paste" grow=1 small=true ellipsis=true rect=0,182,560,24
-    textB text="Ctrl+V" fg=muted small=true rect=566,182,34,24
-  flow h=24 gap=6 rect=0,206,600,24
-    textB text="Undo" grow=1 small=true ellipsis=true rect=0,206,560,24
-    textB text="Ctrl+Z" fg=muted small=true rect=566,206,34,24
-  flow h=24 gap=6 rect=0,230,600,24
-    textB text="Redo" grow=1 small=true ellipsis=true rect=0,230,477,24
-    textB text="Ctrl+Y or Ctrl+Shift+Z" fg=muted small=true rect=483,230,117,24
+  flow bg=sunken control=table rect=0,40,600,114
+    stack h=28 rect=0,40,600,28
+      flow h=28 bg=panel borderB=border rect=0,40,600,28
+        flow w=36 rect=0,40,36,28
+        flow padL=8 padR=8 grow=4 rect=36,40,225,28
+          textB text="ACTION" grow=1 fg=muted small=true bold=true rect=44,40,209,28
+        flow padL=8 padR=8 borderInset=7 grow=4 borderL=border-soft rect=261,40,225,28
+          textB text="KEYSTROKES" grow=1 fg=muted small=true bold=true rect=269,40,209,28
+        flow padL=8 padR=8 borderInset=7 grow=2 borderL=border-soft rect=486,40,114,28
+          textB text="SOURCE" grow=1 fg=muted small=true bold=true rect=494,40,98,28
+      colHandlesB rect=0,40,600,28
+    flow h=28 borderB=border-soft hoverBg=hover onClick=true rect=0,68,600,28
+      flow w=36 justify=1 rect=0,68,36,28
+      flow padL=8 padR=8 grow=4 clip=true rect=36,68,225,28
+        textB text="Close tab" grow=1 fg=text ellipsis=true rect=44,68,209,28
+      flow padL=8 padR=8 grow=4 borderL=border-soft clip=true rect=261,68,225,28
+        flow gap=4 alignItems=2 alignSelf=2 rect=269,70,50,24
+          flow h=24 padL=4 padR=4 bg=chip control=button rect=269,70,27,24
+            textB text="Ctrl" fg=chip-text small=true rect=273,70,19,24
+          flow h=24 padL=4 padR=4 bg=chip control=button rect=300,70,19,24
+            textB text="W" fg=chip-text small=true rect=304,70,11,24
+      flow padL=8 padR=8 grow=2 borderL=border-soft clip=true rect=486,68,114,28
+        textB text="Default" grow=1 fg=muted small=true ellipsis=true rect=494,68,98,28
+    flow rect=0,96,600,58
+      flow h=28 bg=selected hoverBg=hover onClick=true rect=0,96,600,28
+        flow w=36 justify=1 rect=0,96,36,28
+          iconB icon=pencil rect=11,96,14,28
+        flow padL=8 padR=8 grow=4 clip=true rect=36,96,225,28
+          textB text="Send request" grow=1 fg=text ellipsis=true rect=44,96,209,28
+        flow padL=8 padR=8 grow=4 borderL=border-soft clip=true rect=261,96,225,28
+          flow h=24 padL=4 padR=4 bg=accent control=primary rect=269,98,78,24
+            textB text="Press keys..." fg=accent-text small=true rect=273,98,70,24
+        flow padL=8 padR=8 grow=2 borderL=border-soft clip=true rect=486,96,114,28
+          textB text="Default" grow=1 fg=muted small=true ellipsis=true rect=494,96,98,28
+      flow padL=8 padR=8 padB=6 gap=6 rect=0,124,600,30
+        flow h=24 gap=6 rect=8,124,584,24
+          flow h=24 padL=10 padR=10 minW=72 bg=sunken control=button tip=Leave the action without a key shrink=true lighten=true onClick=true rect=8,124,72,24
+            textB text="Unbind" grow=1 fg=chip-text ellipsis=true center=true rect=18,124,52,24
+  textB text="TEXT EDITING" h=22 fg=muted small=true rect=0,154,600,22
+  flow h=24 gap=6 rect=0,176,600,24
+    textB text="Select all" grow=1 small=true ellipsis=true rect=0,176,560,24
+    textB text="Ctrl+A" fg=muted small=true rect=566,176,34,24
+  flow h=24 gap=6 rect=0,200,600,24
+    textB text="Copy" grow=1 small=true ellipsis=true rect=0,200,559,24
+    textB text="Ctrl+C" fg=muted small=true rect=565,200,35,24
+  flow h=24 gap=6 rect=0,224,600,24
+    textB text="Cut" grow=1 small=true ellipsis=true rect=0,224,560,24
+    textB text="Ctrl+X" fg=muted small=true rect=566,224,34,24
+  flow h=24 gap=6 rect=0,248,600,24
+    textB text="Paste" grow=1 small=true ellipsis=true rect=0,248,560,24
+    textB text="Ctrl+V" fg=muted small=true rect=566,248,34,24
+  flow h=24 gap=6 rect=0,272,600,24
+    textB text="Undo" grow=1 small=true ellipsis=true rect=0,272,560,24
+    textB text="Ctrl+Z" fg=muted small=true rect=566,272,34,24
+  flow h=24 gap=6 rect=0,296,600,24
+    textB text="Redo" grow=1 small=true ellipsis=true rect=0,296,477,24
+    textB text="Ctrl+Y or Ctrl+Shift+Z" fg=muted small=true rect=483,296,117,24

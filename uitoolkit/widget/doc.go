@@ -20,7 +20,7 @@
 //	Icons      Icon RegisterIcons IconNames HasIcon   CrossIcon TriangleIcon GripIcon DotsIcon GearIcon TrashIcon PlusIcon CopyIcon FolderIcon SearchIcon PromptIcon ChevronUpIcon ChevronDownIcon
 //	Checkboxes Checkbox Switch DisabledSwitch
 //	Text       Paragraph
-//	Tables     Table   (state: TableSpec TableRow TableEdit TableState Styler)   MinColumnPx
+//	Tables     Table   (state: TableSpec TableRow TableEdit TableState Styler)   MinColumnPx   KeyChips (key text as one chip per key)
 //	Resizing   Resizable   (state: ResizeState)
 //	Scrolling  Scroll HScroll   (state: ScrollState)   (the KeepInView option is view's)
 //	Splitting  Split Vertical AsRatio MinFirst MinSecond   (state: SplitState)

@@ -7,11 +7,12 @@ package shortcutpage
 import (
 	"errors"
 	"fmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
+	"slices"
 	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
@@ -53,6 +54,8 @@ type Page struct {
 	recording string
 	notes     NotedFields[string] // why a recorded key was refused, by action id
 	pending   map[string]PendingKey
+	selected  string // the action id of the selected row, "" for none
+	table     TableState
 }
 
 // textKey is a text editing action and the combinations the text widgets
@@ -72,15 +75,41 @@ var textKeys = []textKey{
 	{"Redo", []string{"Ctrl+Y", "Ctrl+Shift+Z"}},
 }
 
+// override is the binding the user gave an action: stored in the settings
+// and parsable. A text that does not parse is ignored, so Effective, the
+// Source column and the Reset button all follow this one test.
+func override(current settings.Settings, action Action) (engine.Binding, bool) {
+	text, ok := current.Shortcuts[action.ID]
+	if !ok {
+		return engine.Binding{}, false
+	}
+	binding, err := engine.ParseBinding(text)
+	return binding, err == nil
+}
+
 // Effective is the binding of an action: the user's override when it is
 // valid, else the default.
 func Effective(current settings.Settings, action Action) engine.Binding {
-	if override, ok := current.Shortcuts[action.ID]; ok {
-		if binding, err := engine.ParseBinding(override); err == nil {
-			return binding
-		}
+	if binding, ok := override(current, action); ok {
+		return binding
 	}
 	return action.Default
+}
+
+// Where the binding of an action comes from, as the Source column says it.
+const (
+	SourceDefault = "Default"
+	SourceUser    = "User"
+)
+
+// Source says where the binding of an action comes from: the user's
+// override, or the built-in default. It is derived from the settings, so it
+// can never disagree with Effective.
+func Source(current settings.Settings, action Action) string {
+	if _, ok := override(current, action); ok {
+		return SourceUser
+	}
+	return SourceDefault
 }
 
 // Refuse says why a combination cannot be given to any action: the text
@@ -145,8 +174,12 @@ func (p *Page) Pending(id string) (PendingKey, bool) {
 // PendingCount is how many actions wait for a choice.
 func (p *Page) PendingCount() int { return len(p.pending) }
 
-// Start makes the next key combination the binding of action id.
+// Selected is the action id of the selected row, "" when none is.
+func (p *Page) Selected() string { return p.selected }
+
+// Start selects action id and makes the next key combination its binding.
 func (p *Page) Start(id string) {
+	p.selected = id
 	p.recording = id
 	p.notes.SetNote(id, "")
 	delete(p.pending, id)
@@ -265,22 +298,61 @@ func matches(action Action, keyText, query string) bool {
 	return needle == "" || strings.Contains(strings.ToLower(action.Name), needle) || strings.Contains(strings.ToLower(keyText), needle)
 }
 
-var pageTemplate = markup.Must("shortcutpage.vml", shortcutpageSource)
+// visible are the actions the filter leaves, in display order.
+func (p *Page) visible(host Host) []Action {
+	var shown []Action
+	for _, action := range host.Actions() {
+		if matches(action, KeyText(host, action.ID), p.search.Text) {
+			shown = append(shown, action)
+		}
+	}
+	return shown
+}
 
-// actionRow is what the template shows of one action. At most one of
-// Conflict, Refusal and Warning is set: the line under the row.
-type actionRow struct {
-	Name       string
-	Key        string // the key as users read it, or what recording asks for
-	Recording  bool
-	Bound      bool // shows Clear
-	Overridden bool // shows the replay button; otherwise only its room
+// selection is the index of the selected row among shown, -1 when none is
+// selected or the filter hides it: a hidden row shows no selection, and
+// arrow keys start again from the top.
+func (p *Page) selection(shown []Action) int {
+	return slices.IndexFunc(shown, func(action Action) bool { return action.ID == p.selected })
+}
+
+// Navigate moves the selection with the arrow keys through the rows the
+// filter leaves (Down with none selected picks the first; both stop at the
+// ends) and starts recording the selected row on Enter. While a key is
+// being recorded the keys belong to the recording (RecordKey), so Navigate
+// does nothing.
+func (p *Page) Navigate(input w.Input, host Host) {
+	if p.recording != "" {
+		return
+	}
+	shown := p.visible(host)
+	index := p.selection(shown)
+	switch {
+	case input.Pressed(ebiten.KeyArrowDown) && len(shown) > 0:
+		p.selected = shown[min(index+1, len(shown)-1)].ID
+	case input.Pressed(ebiten.KeyArrowUp) && index > 0:
+		p.selected = shown[index-1].ID
+	case input.Enter && index >= 0:
+		p.Start(p.selected)
+	}
+}
+
+var (
+	pageTemplate   = markup.Must("shortcutpage.vml", pageSource)
+	detailTemplate = markup.Must("shortcutdetail.vml", detailSource)
+)
+
+// detail is what the template shows under the selected row: its buttons and
+// at most one of Conflict, Refusal and Warning.
+type detail struct {
+	HasButtons bool // Bound or Overridden: shows the row of buttons
+	Bound      bool // shows Unbind
+	Overridden bool // shows Reset
 	Conflict   string
 	ReplaceTip string
 	Refusal    string
 	Warning    string
-	Record     func()
-	Clear      func()
+	Unbind     func()
 	Reset      func()
 	Replace    func()
 }
@@ -307,92 +379,142 @@ func scope(sizes w.Sizes, own markup.Scope) markup.Scope {
 	return merged
 }
 
-// Widths of the buttons of an action row, by role.
+// Widths of the buttons in the detail of a row, by role.
 const (
-	keyChipW    = 120 // the chip that shows and records the key
-	replaceBtnW = 64  // the Replace button of a conflict
+	unbindBtnW  = 72 // Unbind
+	resetBtnW   = 64 // Reset
+	replaceBtnW = 64 // Replace of a conflict
 )
 
-// View is the page: a search field and a table of actions.
+// The columns of the table: Action takes the room, the keys and the source
+// the least that shows the longest key text (Ctrl+Shift+Tab) and "Default"
+// at the narrowest the settings dialog gives the page.
+var (
+	tableColumns = []string{"Action", "Keystrokes", "Source"}
+	tableWeights = []float64{4, 4, 2}
+)
+
+// Columns of the table, by position.
+const (
+	keystrokesCol = 1
+	sourceCol     = 2
+)
+
+// View is the page: a filter field, the table of actions and the read-only
+// text editing keys.
 func (p *Page) View(ctx *w.Ctx, host Host) Node {
-	var actions []actionRow
-	for _, action := range host.Actions() {
-		if matches(action, KeyText(host, action.ID), p.search.Text) {
-			actions = append(actions, p.row(host, action))
-		}
-	}
+	shown := p.visible(host)
 	return pageTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
 		"search":   &p.search,
-		"actions":  actions,
-		"noMatch":  len(actions) == 0,
+		"table":    p.tableNode(ctx, host, shown),
+		"noMatch":  len(shown) == 0,
 		"textKeys": textKeyRows(host.HostOS()),
-		"keyChipW": keyChipW, "replaceBtnW": replaceBtnW,
 	}))
 }
 
-func (p *Page) row(host Host, action Action) actionRow {
-	_, overridden := host.Settings().Shortcuts[action.ID]
-	binding := Effective(host.Settings(), action)
-	row := actionRow{
-		Name:       action.Name,
-		Key:        KeyText(host, action.ID),
-		Recording:  p.recording == action.ID,
-		Bound:      binding.Bound,
-		Overridden: overridden,
-		Record:     func() { p.Start(action.ID) },
-		Clear:      func() { p.Clear(host, action.ID) },
-		Reset:      func() { p.Reset(host, action.ID) },
-		Replace:    func() { p.Replace(host, action.ID) },
+// tableNode is the table of the shown actions: one row each, the selected
+// one lit with a pencil and its detail under it.
+func (p *Page) tableNode(ctx *w.Ctx, host Host, shown []Action) Node {
+	selected := p.selection(shown)
+	rows := make([]TableRow, len(shown))
+	for index, action := range shown {
+		rows[index] = TableRow{Cells: []string{action.Name, KeyText(host, action.ID), Source(host.Settings(), action)}}
 	}
-	if row.Recording {
-		row.Key = "Press keys..."
+	return Table(TableSpec{
+		Columns: tableColumns, Weights: tableWeights, Rows: rows, Zebra: true, State: &p.table,
+		Selected:   &selected,
+		OnRowClick: func(row int) { p.Start(shown[row].ID) },
+		CellNode: func(row, col int) Node {
+			switch col {
+			case keystrokesCol:
+				return p.keystrokes(host, shown[row])
+			case sourceCol:
+				return Text(Source(host.Settings(), shown[row]), Small(), Muted(), Ellipsis(), Grow(1))
+			}
+			return nil
+		},
+		RowLead: func(row int) Node {
+			if row == selected {
+				return Icon("pencil")
+			}
+			return nil
+		},
+		RowDetail: func(row int) Node {
+			if row != selected {
+				return nil
+			}
+			return p.detailNode(ctx, host, shown[row])
+		},
+	})
+}
+
+// keystrokes is the Keystrokes cell of an action: its keys as chips, an
+// accent chip while recording, "Unbound" when it has no key.
+func (p *Page) keystrokes(host Host, action Action) Node {
+	switch {
+	case p.recording == action.ID:
+		return Row(Bg(w.Accent), Control("primary"), PadX(w.NearGap), HOf(w.CompactOf),
+			Text("Press keys...", Small(), Color(w.AccentText)))
+	case !Effective(host.Settings(), action).Bound:
+		return Text("Unbound", Small(), Muted())
 	}
-	if pending, ok := p.pending[action.ID]; ok {
-		row.Conflict = fmt.Sprintf("Used by %s (%s)", pending.OtherName, w.PlatformKeyText(host.HostOS(), pending.Binding.String()))
-		row.ReplaceTip = "Unbind " + pending.OtherName + " and use this key here"
-	} else if text := p.notes.Note(action.ID); text != "" {
-		row.Refusal = text
+	return KeyChips(KeyText(host, action.ID), AlignSelf(AlignCenter))
+}
+
+// detailNode is what the selected row shows under it.
+func (p *Page) detailNode(ctx *w.Ctx, host Host, action Action) Node {
+	id := action.ID
+	shown := detail{
+		Bound:      Effective(host.Settings(), action).Bound,
+		Overridden: Source(host.Settings(), action) == SourceUser,
+		Unbind:     func() { p.Clear(host, id) },
+		Reset:      func() { p.Reset(host, id) },
+		Replace:    func() { p.Replace(host, id) },
+	}
+	shown.HasButtons = shown.Bound || shown.Overridden
+	if pending, ok := p.pending[id]; ok {
+		shown.Conflict = fmt.Sprintf("Used by %s (%s)", pending.OtherName, w.PlatformKeyText(host.HostOS(), pending.Binding.String()))
+		shown.ReplaceTip = "Unbind " + pending.OtherName + " and use this key here"
+	} else if text := p.notes.Note(id); text != "" {
+		shown.Refusal = text
 	} else {
-		row.Warning = Warning(binding)
+		shown.Warning = Warning(Effective(host.Settings(), action))
 	}
-	return row
+	return detailTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
+		"detail": shown, "unbindBtnW": unbindBtnW, "resetBtnW": resetBtnW, "replaceBtnW": replaceBtnW,
+	}))
 }
 
 // Templates, parsed once above.
 const (
-	shortcutpageSource = `<col>
+	pageSource = `<col>
   <row h="{{rowH}}" gap="{{tightGap}}">
-    <field state="search" grow="1" bg="sunken" placeholder="Search by action or key" text-menu="search"/>
+    <field state="search" grow="1" bg="sunken" placeholder="Filter by action or key" text-menu="search"/>
   </row>
   <spacer h="{{gutter}}"/>
-  <col>
-    <col for="action in actions">
-      <row h="{{compactH}}" gap="{{tightGap}}">
-        <text small grow="1" ellipsis>{{action.Name}}</text>
-        <segment-chip selected="{{action.Recording}}" w="{{keyChipW}}" h="{{compactH}}" on-click="action.Record"
-                tooltip="Click, then press the keys">{{action.Key}}</segment-chip>
-        <icon-button if="action.Bound" icon="unlink" w="{{iconBtnW}}" h="{{compactH}}" on-click="action.Clear"
-                tooltip="Leave the action without a key"/>
-        <spacer if="!action.Bound" w="{{iconBtnW}}"/>
-        <icon-button if="action.Overridden" icon="replay" w="{{iconBtnW}}" h="{{compactH}}" on-click="action.Reset"
-                tooltip="Back to the default key"/>
-        <spacer if="!action.Overridden" w="{{iconBtnW}}"/>
-      </row>
-      <!-- at most one of the conflict, the refusal and the warning is set -->
-      <row if="action.Conflict" h="{{compactH}}" gap="{{tightGap}}">
-        <text small color="error" ellipsis grow="1">{{action.Conflict}}</text>
-        <button w="{{replaceBtnW}}" h="{{compactH}}" on-click="action.Replace" tooltip="{{action.ReplaceTip}}">Replace</button>
-      </row>
-      <note if="action.Refusal" tone="error">{{action.Refusal}}</note>
-      <note if="action.Warning" tone="muted">{{action.Warning}}</note>
-    </col>
-    <text if="noMatch" muted>No shortcut matches</text>
-  </col>
+  <slot name="table"/>
+  <text if="noMatch" muted>No shortcut matches</text>
   <caption h="{{labelH}}">Text editing</caption>
   <row for="keys in textKeys" h="{{compactH}}" gap="{{tightGap}}">
     <text small grow="1" ellipsis>{{keys.Action}}</text>
     <text small muted>{{keys.Keys}}</text>
   </row>
+</col>
+`
+	// at most one of the conflict, the refusal and the warning is set
+	detailSource = `<col pad-x="{{cellPad}}" pad-b="{{tightGap}}" gap="{{tightGap}}">
+  <row if="detail.HasButtons" h="{{compactH}}" gap="{{tightGap}}">
+    <button if="detail.Bound" w="{{unbindBtnW}}" h="{{compactH}}" on-click="detail.Unbind"
+            tooltip="Leave the action without a key">Unbind</button>
+    <button if="detail.Overridden" w="{{resetBtnW}}" h="{{compactH}}" on-click="detail.Reset"
+            tooltip="Back to the default key">Reset</button>
+  </row>
+  <row if="detail.Conflict" h="{{compactH}}" gap="{{tightGap}}">
+    <text small color="error" ellipsis grow="1">{{detail.Conflict}}</text>
+    <button w="{{replaceBtnW}}" h="{{compactH}}" on-click="detail.Replace" tooltip="{{detail.ReplaceTip}}">Replace</button>
+  </row>
+  <note if="detail.Refusal" tone="error">{{detail.Refusal}}</note>
+  <note if="detail.Warning" tone="muted">{{detail.Warning}}</note>
 </col>
 `
 )

@@ -57,6 +57,13 @@ func (a *App) step(in core.Input) {
 	a.endFrame(moved)
 }
 
+// shortcutsPageShown reports whether the Shortcuts page is what the settings
+// dialog draws: not another page, the raw text or a search. Only then do its
+// rows take the arrow keys and Enter.
+func (a *App) shortcutsPageShown() bool {
+	return a.menu && a.prefs.Cat == "shortcuts" && !a.prefs.Raw && !a.prefs.Searching()
+}
+
 // beginFrame takes in the input and what goroutines reported, and reports
 // whether anything moved: input, a finished send or an expired toast.
 func (a *App) beginFrame(in core.Input) bool {
@@ -101,6 +108,8 @@ func (a *App) routeKeys(in core.Input) {
 	}
 	if wasRecording {
 		a.shortcutKeys.RecordKey(a, in)
+	} else if a.shortcutsPageShown() {
+		a.shortcutKeys.Navigate(in, a)
 	} else if !a.overlayOpen() {
 		a.runShortcuts(in)
 	}

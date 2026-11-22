@@ -58,6 +58,19 @@ type TableSpec struct {
 	// by the app, so the sizes and a drag in progress survive the view
 	// being rebuilt every frame.
 	State *TableState
+
+	// Zebra fills every second row with Alt.
+	Zebra bool
+	// CellNode, when set, may give a cell a node in place of its text:
+	// it returns nil to keep the text.
+	CellNode func(row, col int) Node
+	// OnRowClick runs when a data row is clicked, editable or not.
+	OnRowClick func(row int)
+	// RowLead, when set, adds a column of tableActionW before the cells
+	// (a header spacer included); it returns the node of a row, nil for none.
+	RowLead func(row int) Node
+	// RowDetail returns a node shown under a row, nil for none.
+	RowDetail func(row int) Node
 }
 
 // TableState is the state of a resizable table: the column weights
@@ -137,6 +150,7 @@ func tableHeader(tableSpec TableSpec) Node {
 	header := Row(HOf(core.RowOf), Bg(core.Panel), BorderB(core.Border),
 		If(tableSpec.hasGrip(), Row(W(tableGripW))),
 		If(tableSpec.Editable, headerCheck(tableSpec)),
+		If(tableSpec.RowLead != nil, Row(W(tableActionW))),
 		For(tableSpec.Columns, func(index int, name string) Node {
 			return Row(Grow(tableSpec.weight(index)), PadX(core.CellPad), When(index > 0, SeparatorOf(headerSeparatorInset)),
 				Text(strings.ToUpper(name), Small(), Bold(), Muted(), Grow(1)))
@@ -172,6 +186,7 @@ func tableRow(spec TableSpec, index int, tableRow TableRow, placeholder, last bo
 		If(spec.hasGrip(), gripCell(spec, index, placeholder)),
 		If(actions, Row(W(tableActionW), JustifyContent(JustifyCenter), OnClick(func() { spec.OnToggle(index) }), Tooltip("Enable or disable this row"), Checkbox(tableRow.Checked))),
 		If(placeholder, Row(W(tableActionW))),
+		leadCell(spec, index),
 		For(tableRow.Cells, func(other int, text string) Node {
 			cellClr := clr
 			if other == 0 && tableRow.Flagged {
@@ -188,9 +203,14 @@ func tableRow(spec TableSpec, index int, tableRow TableRow, placeholder, last bo
 	if spec.OnRowMenu != nil && !placeholder {
 		row = append(row, OnRightClick(func(posX, posY int) { spec.OnRowMenu(index, posX, posY) }))
 	}
-	switch {
-	case spec.Selected != nil && *spec.Selected == index && !placeholder:
+	if spec.Zebra && index%2 == 1 {
+		row = append(row, Bg(core.Alt))
+	}
+	if spec.Selected != nil && *spec.Selected == index && !placeholder {
 		row = append(row, Bg(core.Selected))
+	}
+	if spec.OnRowClick != nil && !placeholder {
+		row = append(row, OnClick(func() { spec.OnRowClick(index) }))
 	}
 	if !last { // hairlines between rows, as the dashboard's tables draw them
 		row = append(row, BorderB(core.BorderSoft))
@@ -198,7 +218,29 @@ func tableRow(spec TableSpec, index int, tableRow TableRow, placeholder, last bo
 	if !placeholder {
 		row = append(row, HoverBg(core.Hover)) // the row under the pointer
 	}
-	return Row(row...)
+	line := Row(row...)
+	if spec.RowDetail == nil {
+		return line
+	}
+	detail := spec.RowDetail(index)
+	if detail == nil {
+		return line
+	}
+	return Col(line, detail)
+}
+
+// leadCell is the fixed column before the cells of row i, nothing without a
+// RowLead; it is empty when RowLead has nothing for the row, so the columns
+// line up.
+func leadCell(spec TableSpec, index int) Node {
+	if spec.RowLead == nil {
+		return nil
+	}
+	items := []Item{W(tableActionW), JustifyContent(JustifyCenter)}
+	if lead := spec.RowLead(index); lead != nil {
+		items = append(items, lead)
+	}
+	return Row(items...)
 }
 
 // gripCell is the drag handle of row i; the placeholder row keeps an
@@ -220,9 +262,15 @@ func tableCell(spec TableSpec, row, col int, text string, clr core.Token) Node {
 			Field(e.Field, Grow(1), Bg(core.Sunken), FieldPad(cellFieldPad), OnEnter(e.OnEnter), OnTab(e.OnTab), When(e.Options != nil, e.Options)),
 		)
 	}
-	var label *El = Text(text, Ellipsis(), Color(clr), Grow(1))
+	var label Node = Text(text, Ellipsis(), Color(clr), Grow(1))
+	custom := false
+	if spec.CellNode != nil {
+		if node := spec.CellNode(row, col); node != nil {
+			label, custom = node, true
+		}
+	}
 	if spec.Styler != nil {
-		if spans := spec.Styler(text); len(spans) > 0 {
+		if spans := spec.Styler(text); len(spans) > 0 && !custom {
 			parts := make([]Item, 0, len(spans)+1)
 			parts = append(parts, Grow(1))
 			for _, sp := range spans {
@@ -280,6 +328,9 @@ func (h colHandlesB) cells() []*El {
 	}
 	if h.spec.hasGrip() {
 		off++ // and the drag handle's before it
+	}
+	if h.spec.RowLead != nil {
+		off++ // the lead column is between them and the cells
 	}
 	return h.header.Children()[off : off+len(h.spec.Columns)]
 }

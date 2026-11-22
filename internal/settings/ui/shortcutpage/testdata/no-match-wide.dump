@@ -2,24 +2,34 @@ flow rect=0,0,600,500
   flow h=28 gap=6 rect=0,0,600,28
     fieldB grow=1 bg=sunken control=field onRightClick=true rect=0,0,600,28
   plain h=12 grow=1 rect=0,28,600,12
-  flow rect=0,40,600,16
-    textB text="No shortcut matches" fg=muted rect=0,40,600,16
-  textB text="TEXT EDITING" h=22 fg=muted small=true rect=0,56,600,22
-  flow h=24 gap=6 rect=0,78,600,24
-    textB text="Select all" grow=1 small=true ellipsis=true rect=0,78,560,24
-    textB text="Ctrl+A" fg=muted small=true rect=566,78,34,24
-  flow h=24 gap=6 rect=0,102,600,24
-    textB text="Copy" grow=1 small=true ellipsis=true rect=0,102,559,24
-    textB text="Ctrl+C" fg=muted small=true rect=565,102,35,24
-  flow h=24 gap=6 rect=0,126,600,24
-    textB text="Cut" grow=1 small=true ellipsis=true rect=0,126,560,24
-    textB text="Ctrl+X" fg=muted small=true rect=566,126,34,24
-  flow h=24 gap=6 rect=0,150,600,24
-    textB text="Paste" grow=1 small=true ellipsis=true rect=0,150,560,24
-    textB text="Ctrl+V" fg=muted small=true rect=566,150,34,24
-  flow h=24 gap=6 rect=0,174,600,24
-    textB text="Undo" grow=1 small=true ellipsis=true rect=0,174,560,24
-    textB text="Ctrl+Z" fg=muted small=true rect=566,174,34,24
-  flow h=24 gap=6 rect=0,198,600,24
-    textB text="Redo" grow=1 small=true ellipsis=true rect=0,198,477,24
-    textB text="Ctrl+Y or Ctrl+Shift+Z" fg=muted small=true rect=483,198,117,24
+  flow bg=sunken control=table rect=0,40,600,28
+    stack h=28 rect=0,40,600,28
+      flow h=28 bg=panel borderB=border rect=0,40,600,28
+        flow w=36 rect=0,40,36,28
+        flow padL=8 padR=8 grow=4 rect=36,40,225,28
+          textB text="ACTION" grow=1 fg=muted small=true bold=true rect=44,40,209,28
+        flow padL=8 padR=8 borderInset=7 grow=4 borderL=border-soft rect=261,40,225,28
+          textB text="KEYSTROKES" grow=1 fg=muted small=true bold=true rect=269,40,209,28
+        flow padL=8 padR=8 borderInset=7 grow=2 borderL=border-soft rect=486,40,114,28
+          textB text="SOURCE" grow=1 fg=muted small=true bold=true rect=494,40,98,28
+      colHandlesB rect=0,40,600,28
+  textB text="No shortcut matches" fg=muted rect=0,68,600,16
+  textB text="TEXT EDITING" h=22 fg=muted small=true rect=0,84,600,22
+  flow h=24 gap=6 rect=0,106,600,24
+    textB text="Select all" grow=1 small=true ellipsis=true rect=0,106,560,24
+    textB text="Ctrl+A" fg=muted small=true rect=566,106,34,24
+  flow h=24 gap=6 rect=0,130,600,24
+    textB text="Copy" grow=1 small=true ellipsis=true rect=0,130,559,24
+    textB text="Ctrl+C" fg=muted small=true rect=565,130,35,24
+  flow h=24 gap=6 rect=0,154,600,24
+    textB text="Cut" grow=1 small=true ellipsis=true rect=0,154,560,24
+    textB text="Ctrl+X" fg=muted small=true rect=566,154,34,24
+  flow h=24 gap=6 rect=0,178,600,24
+    textB text="Paste" grow=1 small=true ellipsis=true rect=0,178,560,24
+    textB text="Ctrl+V" fg=muted small=true rect=566,178,34,24
+  flow h=24 gap=6 rect=0,202,600,24
+    textB text="Undo" grow=1 small=true ellipsis=true rect=0,202,560,24
+    textB text="Ctrl+Z" fg=muted small=true rect=566,202,34,24
+  flow h=24 gap=6 rect=0,226,600,24
+    textB text="Redo" grow=1 small=true ellipsis=true rect=0,226,477,24
+    textB text="Ctrl+Y or Ctrl+Shift+Z" fg=muted small=true rect=483,226,117,24
