@@ -6,6 +6,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/assert"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/mcpexplorer"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/outbox"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/ui/mcpform"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/viewer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
@@ -42,11 +43,10 @@ type reqTab struct {
 
 // socketBlock holds the state of a WebSocket tab: the message log, the message being composed and the sends waiting their turn.
 type socketBlock struct {
-	wsCancel   context.CancelFunc // ends the timeout of the connect in progress
-	outbox     []queuedSend       // sends and pings waiting for the one in flight, in order
-	outboxBusy bool               // a send is in flight
-	wsView     widget.CodeView    // the message log
-	msg        widget.TextField   // the message being composed
+	wsCancel context.CancelFunc // ends the timeout of the connect in progress
+	outbox   outbox.Outbox      // the sends and pings in order, and whether one is in flight
+	wsView   widget.CodeView    // the message log
+	msg      widget.TextField   // the message being composed
 }
 
 // grpcBlock holds the state of a gRPC tab: streaming and the Proto and Schema panes.

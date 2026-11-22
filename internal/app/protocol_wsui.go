@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/outbox"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	request "github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
@@ -168,36 +169,25 @@ func (a *App) sendMessage(tab *reqTab) {
 	tab.setComposer("")
 }
 
-// queuedSend is a send or ping waiting in a tab's outbox; it writes with
-// the context it is run with.
-type queuedSend func(ctx context.Context) error
-
 // sendInOrder runs send off the UI goroutine, after the sends and pings
 // already asked for on this tab: messages go out in the order they were
 // written. A failure is logged in the message log.
-func (a *App) sendInOrder(tab *reqTab, send queuedSend) {
-	tab.outbox = append(tab.outbox, send)
-	if tab.outboxBusy {
-		return
+func (a *App) sendInOrder(tab *reqTab, send outbox.Send) {
+	if first, now := tab.outbox.Enqueue(send); now {
+		a.runOutbox(tab, first)
 	}
-	tab.outboxBusy = true
-	a.runOutbox(tab)
 }
 
-func (a *App) runOutbox(tab *reqTab) {
-	send := tab.outbox[0]
-	tab.outbox = tab.outbox[1:]
+func (a *App) runOutbox(tab *reqTab, send outbox.Send) {
 	a.bus.Run(context.Background(), func(ctx context.Context) bus.Msg {
 		err := send(ctx)
 		return func() { // on the UI goroutine
 			if err != nil {
 				a.logInfo(tab, err.Error(), w.Error)
 			}
-			if len(tab.outbox) > 0 {
-				a.runOutbox(tab)
-				return
+			if next, more := tab.outbox.Done(); more {
+				a.runOutbox(tab, next)
 			}
-			tab.outboxBusy = false
 		}
 	})
 }
@@ -385,7 +375,7 @@ func composerHint(tab *reqTab, connected bool) string {
 
 // composed is the send of the composer's text, ready to run; a text that
 // cannot be sent (bad hex) is refused here, before anything is sent.
-func composed(session request.Session, text string) (queuedSend, error) {
+func composed(session request.Session, text string) (outbox.Send, error) {
 	binarySender, canBinary := session.(request.BinarySender)
 	if !canBinary {
 		return func(ctx context.Context) error { return session.Send(ctx, text) }, nil
