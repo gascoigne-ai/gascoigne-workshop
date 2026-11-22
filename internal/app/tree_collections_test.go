@@ -104,8 +104,8 @@ func TestRenameCollectionRenamesTheFolderAndKeepsTheContent(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(base, "workspace")); !os.IsNotExist(err) {
 		t.Fatalf("the old folder is still there: %v", err)
 	}
-	a.step(core.Input{})
-	a.waitWrites()
+	a.Step(core.Input{})
+	a.WaitWrites()
 	if _, err := os.Stat(filepath.Join(base, "workspace")); !os.IsNotExist(err) {
 		t.Fatalf("a later write made the old folder again: %v", err)
 	}
@@ -115,7 +115,7 @@ func TestSaveCollectionWritesTheEditsNow(t *testing.T) {
 	a, _ := collectionsApp(t)
 	a.cur().Req.URL = "https://changed.test"
 	a.saveWorkspace()
-	a.waitWrites()
+	a.WaitWrites()
 	got, err := storeDisk.Load(a.workspace())
 	if err != nil || got.Requests[0].URL != "https://changed.test" {
 		t.Fatalf("loaded %+v, %v", got.Requests, err)
@@ -131,7 +131,7 @@ func TestDeleteCollectionOpensTheNextOne(t *testing.T) {
 		t.Fatalf("workspace %q", a.workspace())
 	}
 	a.deleteCollection(a.col())
-	a.waitWrites()
+	a.WaitWrites()
 	if _, err := os.Stat(filepath.Join(base, "workspace")); !os.IsNotExist(err) {
 		t.Fatalf("the deleted folder is still there: %v", err)
 	}
@@ -143,7 +143,7 @@ func TestDeleteCollectionOpensTheNextOne(t *testing.T) {
 func TestDeletingTheLastCollectionOpensANewEmptyOne(t *testing.T) {
 	a, base := collectionsApp(t)
 	a.deleteCollection(a.col())
-	a.waitWrites()
+	a.WaitWrites()
 	if a.workspace() == "" || !strings.HasPrefix(a.workspace(), filepath.Join(base, "collections")) || a.col().Name != "My collection" {
 		t.Fatalf("opened %q (%q)", a.workspace(), a.col().Name)
 	}

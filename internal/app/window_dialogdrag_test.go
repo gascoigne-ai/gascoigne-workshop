@@ -57,14 +57,14 @@ func TestResizingTheSettingsDialogKeepsItOpenAndVisible(t *testing.T) {
 		t.Run(g.name, func(t *testing.T) {
 			a := testApp(t)
 			a.menu = true
-			a.step(core.Input{X: 5000, Y: 5000})
+			a.Step(core.Input{X: 5000, Y: 5000})
 			r := settingsRect(t, a)
 			x, y := g.x(r), g.y(r)
-			a.step(core.Input{X: x, Y: y, Click: true, Held: true})
+			a.Step(core.Input{X: x, Y: y, Click: true, Held: true})
 			for i := 1; i <= 8; i++ {
-				a.step(core.Input{X: x + g.dx*i/8, Y: y + g.dy*i/8, Held: true})
+				a.Step(core.Input{X: x + g.dx*i/8, Y: y + g.dy*i/8, Held: true})
 			}
-			a.step(core.Input{X: x + g.dx, Y: y + g.dy})
+			a.Step(core.Input{X: x + g.dx, Y: y + g.dy})
 			if !a.menu {
 				t.Fatal("the settings dialog closed")
 			}

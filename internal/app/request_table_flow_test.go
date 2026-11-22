@@ -14,7 +14,7 @@ func TestTypingInTheURLFieldUpdatesParams(t *testing.T) {
 	a := testApp(t)
 	req := a.cur().Req
 	click(a, 1100, urlBarY) // inside the field, past the end of the text: cursor at the end
-	a.step(core.Input{Typed: []rune("&page=2")})
+	a.Step(core.Input{Typed: []rune("&page=2")})
 
 	if !strings.HasSuffix(req.URL, "&page=2") {
 		t.Fatalf("url = %q", req.URL)
@@ -76,7 +76,7 @@ func TestEditingAParamValueUpdatesTheURL(t *testing.T) {
 		t.Fatalf("edit = %+v", a.edit)
 	}
 	a.typeText("rust") // the old text is selected, so typing replaces it
-	a.step(core.Input{Enter: true})
+	a.Step(core.Input{Enter: true})
 
 	req := a.cur().Req
 	if a.edit != nil || req.Params[0].Value != "rust" || !strings.Contains(req.URL, "q=rust") {
@@ -91,10 +91,10 @@ func TestEditingAParamNameAndDescription(t *testing.T) {
 	a := testApp(t)
 	click(a, nameCellX, paramsRow0Y)
 	a.typeText("search")
-	a.step(core.Input{Enter: true})
+	a.Step(core.Input{Enter: true})
 	click(a, descCellX, paramsRow0Y)
 	a.typeText("what to find")
-	a.step(core.Input{Enter: true})
+	a.Step(core.Input{Enter: true})
 
 	p := a.cur().Req.Params[0]
 	if p.Name != "search" || p.Description != "what to find" || !strings.Contains(a.cur().Req.URL, "search=gioui") {
@@ -106,7 +106,7 @@ func TestEscapeCancelsACellEdit(t *testing.T) {
 	a := testApp(t)
 	click(a, valueCellX, paramsRow0Y)
 	a.typeText("zzz")
-	a.step(core.Input{Escape: true})
+	a.Step(core.Input{Escape: true})
 	if a.edit != nil || a.cur().Req.Params[0].Value != "gioui" {
 		t.Fatalf("edit %+v value %q", a.edit, a.cur().Req.Params[0].Value)
 	}
@@ -117,7 +117,7 @@ func TestClickingElsewhereCommitsACellEdit(t *testing.T) {
 	click(a, valueCellX, paramsRow0Y)
 	a.typeText("go")
 	click(a, farAwayX, farAwayY)
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	if a.edit != nil || a.cur().Req.Params[0].Value != "go" {
 		t.Fatalf("edit %+v value %q", a.edit, a.cur().Req.Params[0].Value)
 	}
@@ -137,16 +137,16 @@ func TestTabMovesToTheNextCellAndShiftTabBack(t *testing.T) {
 	a := testApp(t)
 	click(a, nameCellX, paramsRow0Y)
 	a.typeText("k")
-	a.step(core.Input{Tab: true})
+	a.Step(core.Input{Tab: true})
 	if a.edit == nil || a.edit.row != 0 || a.edit.col != 1 || a.cur().Req.Params[0].Name != "k" {
 		t.Fatalf("after Tab: edit %+v name %q", a.edit, a.cur().Req.Params[0].Name)
 	}
-	a.step(core.Input{Tab: true})
-	a.step(core.Input{Tab: true}) // description, then the next row's name
+	a.Step(core.Input{Tab: true})
+	a.Step(core.Input{Tab: true}) // description, then the next row's name
 	if a.edit == nil || a.edit.row != 1 || a.edit.col != 0 {
 		t.Fatalf("Tab past the last column must wrap to the next row, edit %+v", a.edit)
 	}
-	a.step(core.Input{Tab: true, Shift: true})
+	a.Step(core.Input{Tab: true, Shift: true})
 	if a.edit == nil || a.edit.row != 0 || a.edit.col != 2 {
 		t.Fatalf("Shift+Tab goes back, edit %+v", a.edit)
 	}
@@ -156,9 +156,9 @@ func TestTypingInThePlaceholderRowAddsARow(t *testing.T) {
 	a := testApp(t)
 	click(a, nameCellX, paramsRow3Y)
 	a.typeText("page")
-	a.step(core.Input{Tab: true})
+	a.Step(core.Input{Tab: true})
 	a.typeText("2")
-	a.step(core.Input{Enter: true})
+	a.Step(core.Input{Enter: true})
 
 	req := a.cur().Req
 	if len(req.Params) != 4 {
@@ -175,7 +175,7 @@ func TestTypingInThePlaceholderRowAddsARow(t *testing.T) {
 func TestLeavingThePlaceholderRowEmptyAddsNothing(t *testing.T) {
 	a := testApp(t)
 	click(a, nameCellX, paramsRow3Y)
-	a.step(core.Input{Enter: true})
+	a.Step(core.Input{Enter: true})
 	if len(a.cur().Req.Params) != 3 || a.edit != nil {
 		t.Fatalf("params %+v edit %+v", a.cur().Req.Params, a.edit)
 	}
@@ -184,12 +184,12 @@ func TestLeavingThePlaceholderRowEmptyAddsNothing(t *testing.T) {
 func TestHeadersTableIsEditableToo(t *testing.T) {
 	a := testApp(t)
 	a.cur().paneTab = headersTabIdx
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	click(a, nameCellX, paramsRow0Y) // headers have no rows: the placeholder is the first row
 	a.typeText("X-Test")
-	a.step(core.Input{Tab: true})
+	a.Step(core.Input{Tab: true})
 	a.typeText("1")
-	a.step(core.Input{Enter: true})
+	a.Step(core.Input{Enter: true})
 	h := a.cur().Req.Headers
 	if len(h) != 1 || h[0].Name != "X-Test" || h[0].Value != "1" || !h[0].Enabled {
 		t.Fatalf("headers = %+v", h)
@@ -204,7 +204,7 @@ func TestResponseHeadersAreNotEditable(t *testing.T) {
 	a.send(tab)
 	waitForResponse(t, a, tab)
 	tab.respTab = 1 // Headers
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	click(a, 1000, paramsRow0Y)
 	if a.edit != nil {
 		t.Fatalf("response headers must stay read-only, edit %+v", a.edit)
@@ -222,7 +222,7 @@ func paramNames(app *App) []string {
 func TestCtrlEnterWhileEditingInsertsARowBelowAndEditsIt(t *testing.T) {
 	a := testApp(t)
 	click(a, valueCellX, paramsRow0Y)
-	a.step(combo(ebiten.KeyEnter, true, false, false))
+	a.Step(combo(ebiten.KeyEnter, true, false, false))
 	req := a.cur().Req
 	if len(req.Params) != 4 || req.Params[1].Name != "" || !req.Params[1].Enabled || req.Params[0].Name != "q" {
 		t.Fatalf("params = %+v", req.Params)
@@ -238,7 +238,7 @@ func TestCtrlEnterWhileEditingInsertsARowBelowAndEditsIt(t *testing.T) {
 func TestCtrlDDuplicatesTheEditedRow(t *testing.T) {
 	a := testApp(t)
 	click(a, valueCellX, paramsRow0Y)
-	a.step(combo(ebiten.KeyD, true, false, false))
+	a.Step(combo(ebiten.KeyD, true, false, false))
 	p := a.cur().Req.Params
 	if len(p) != 4 || p[1] != p[0] || p[1].Name != "q" {
 		t.Fatalf("params = %+v", p)
@@ -252,7 +252,7 @@ func TestAltArrowsMoveTheRowAndTheEditFollows(t *testing.T) {
 	a := testApp(t)
 	click(a, valueCellX, paramsRow0Y)
 	a.typeText("rust") // an uncommitted edit travels with the row
-	a.step(combo(ebiten.KeyArrowDown, false, false, true))
+	a.Step(combo(ebiten.KeyArrowDown, false, false, true))
 	if got := paramNames(a); !reflect.DeepEqual(got, []string{"order", "q", "sort"}) {
 		t.Fatalf("params = %v", got)
 	}
@@ -262,8 +262,8 @@ func TestAltArrowsMoveTheRowAndTheEditFollows(t *testing.T) {
 	if !strings.Contains(a.cur().Req.URL, "order=desc&q=rust&sort=stars") {
 		t.Fatalf("the URL follows the order: %q", a.cur().Req.URL)
 	}
-	a.step(combo(ebiten.KeyArrowUp, false, false, true))
-	a.step(combo(ebiten.KeyArrowUp, false, false, true)) // already at the top: stays
+	a.Step(combo(ebiten.KeyArrowUp, false, false, true))
+	a.Step(combo(ebiten.KeyArrowUp, false, false, true)) // already at the top: stays
 	if got := paramNames(a); !reflect.DeepEqual(got, []string{"q", "order", "sort"}) {
 		t.Fatalf("params = %v", got)
 	}
@@ -275,20 +275,20 @@ const gripCellX = 282
 func TestDraggingARowByItsGripMovesItAndAFurtherDragKeepsMovingIt(t *testing.T) {
 	a := testApp(t)
 	rowY := func(row int) int { return paramsRow0Y + row*core.RowH }
-	a.step(core.Input{X: gripCellX, Y: rowY(0), Click: true, Held: true}) // press the first row's grip
-	a.step(core.Input{X: gripCellX, Y: rowY(1), Held: true})
+	a.Step(core.Input{X: gripCellX, Y: rowY(0), Click: true, Held: true}) // press the first row's grip
+	a.Step(core.Input{X: gripCellX, Y: rowY(1), Held: true})
 	if got := paramNames(a); !reflect.DeepEqual(got, []string{"order", "q", "sort"}) {
 		t.Fatalf("after one row down: %v", got)
 	}
-	a.step(core.Input{X: gripCellX, Y: rowY(2), Held: true})
+	a.Step(core.Input{X: gripCellX, Y: rowY(2), Held: true})
 	if got := paramNames(a); !reflect.DeepEqual(got, []string{"order", "sort", "q"}) {
 		t.Fatalf("after two rows down: %v", got)
 	}
 	if !strings.Contains(a.cur().Req.URL, "order=desc&sort=stars&q=gioui") {
 		t.Fatalf("the URL follows the order: %q", a.cur().Req.URL)
 	}
-	a.step(core.Input{X: gripCellX, Y: rowY(0)}) // release elsewhere
-	a.step(core.Input{X: gripCellX, Y: rowY(0), Held: true})
+	a.Step(core.Input{X: gripCellX, Y: rowY(0)}) // release elsewhere
+	a.Step(core.Input{X: gripCellX, Y: rowY(0), Held: true})
 	if got := paramNames(a); !reflect.DeepEqual(got, []string{"order", "sort", "q"}) {
 		t.Fatalf("a held button that did not start on a grip must not move rows: %v", got)
 	}
@@ -297,12 +297,12 @@ func TestDraggingARowByItsGripMovesItAndAFurtherDragKeepsMovingIt(t *testing.T) 
 func TestDeleteRemovesTheSelectedRowWhenNothingIsBeingTyped(t *testing.T) {
 	a := testApp(t)
 	click(a, valueCellX, paramsRow0Y)
-	a.step(core.Input{Enter: true}) // commit; the row stays selected
-	a.step(combo(ebiten.KeyDelete, false, false, false))
+	a.Step(core.Input{Enter: true}) // commit; the row stays selected
+	a.Step(combo(ebiten.KeyDelete, false, false, false))
 	if got := paramNames(a); !reflect.DeepEqual(got, []string{"order", "sort"}) || strings.Contains(a.cur().Req.URL, "q=") {
 		t.Fatalf("params %v url %q", got, a.cur().Req.URL)
 	}
-	a.step(combo(ebiten.KeyDelete, false, false, false)) // the selection moved on: a second Delete removes the next row
+	a.Step(combo(ebiten.KeyDelete, false, false, false)) // the selection moved on: a second Delete removes the next row
 	if len(a.cur().Req.Params) > 2 {
 		t.Fatal("unreachable")
 	}
@@ -310,12 +310,12 @@ func TestDeleteRemovesTheSelectedRowWhenNothingIsBeingTyped(t *testing.T) {
 
 func TestDeleteDoesNothingWithoutASelectedRowOrWhileTyping(t *testing.T) {
 	a := testApp(t)
-	a.step(combo(ebiten.KeyDelete, false, false, false))
+	a.Step(combo(ebiten.KeyDelete, false, false, false))
 	if len(a.cur().Req.Params) != 3 {
 		t.Fatal("no row is selected")
 	}
 	click(a, valueCellX, paramsRow0Y) // editing: Delete is a text key
-	a.step(combo(ebiten.KeyDelete, false, false, false))
+	a.Step(combo(ebiten.KeyDelete, false, false, false))
 	if len(a.cur().Req.Params) != 3 {
 		t.Fatal("while a cell is edited Delete belongs to the text")
 	}
@@ -346,23 +346,23 @@ func TestUndoAndRedoOfTableChanges(t *testing.T) {
 	if len(req.Params) != 2 {
 		t.Fatal("test setup")
 	}
-	a.step(core.Input{Ctrl: true, Undo: true})
+	a.Step(core.Input{Ctrl: true, Undo: true})
 	if len(req.Params) != 3 || req.Params[0].Name != "q" || !strings.Contains(req.URL, "q=gioui") {
 		t.Fatalf("undo: %+v url %q", req.Params, req.URL)
 	}
-	a.step(core.Input{Ctrl: true, Redo: true})
+	a.Step(core.Input{Ctrl: true, Redo: true})
 	if len(req.Params) != 2 || strings.Contains(req.URL, "q=") {
 		t.Fatalf("redo: %+v url %q", req.Params, req.URL)
 	}
-	a.step(core.Input{Ctrl: true, Undo: true})
+	a.Step(core.Input{Ctrl: true, Undo: true})
 	click(a, 310, row1Y) // a new change after an undo clears redo
-	a.step(core.Input{Ctrl: true, Redo: true})
+	a.Step(core.Input{Ctrl: true, Redo: true})
 	if req.Params[1].Enabled {
 		t.Fatalf("redo must be gone after a new change: %+v", req.Params)
 	}
-	a.step(core.Input{Ctrl: true, Undo: true})
-	a.step(core.Input{Ctrl: true, Undo: true})
-	a.step(core.Input{Ctrl: true, Undo: true}) // more undos than changes: stops at the start
+	a.Step(core.Input{Ctrl: true, Undo: true})
+	a.Step(core.Input{Ctrl: true, Undo: true})
+	a.Step(core.Input{Ctrl: true, Undo: true}) // more undos than changes: stops at the start
 	if len(req.Params) != 3 {
 		t.Fatalf("params = %+v", req.Params)
 	}
@@ -373,7 +373,7 @@ func TestUndoGoesToTheCellTextWhileACellIsEdited(t *testing.T) {
 	click(a, 739, paramsRow0Y) // a table change to undo
 	click(a, valueCellX, paramsRow0Y)
 	a.typeText("zz")
-	a.step(core.Input{Ctrl: true, Undo: true})
+	a.Step(core.Input{Ctrl: true, Undo: true})
 	if len(a.cur().Req.Params) != 2 {
 		t.Fatal("Ctrl+Z inside a cell undoes the typing, not the table")
 	}
@@ -416,7 +416,7 @@ func TestBulkEditShowsLinesAndAppliesThemBack(t *testing.T) {
 	if !reflect.DeepEqual(req.Params, want) || !strings.HasSuffix(req.URL, "?q=rust&page=2") {
 		t.Fatalf("params %+v url %q", req.Params, req.URL)
 	}
-	a.step(core.Input{Ctrl: true, Undo: true})
+	a.Step(core.Input{Ctrl: true, Undo: true})
 	if len(req.Params) != 3 || req.Params[0].Value != "gioui" {
 		t.Fatalf("a bulk edit is one undo step: %+v", req.Params)
 	}
@@ -428,7 +428,7 @@ func TestLeavingTheTabWhileBulkEditingAppliesTheText(t *testing.T) {
 	a.bulk.area.SelectAll()
 	a.bulk.area.Insert("only: one")
 	a.cur().paneTab = headersTabIdx // as clicking the Headers tab does
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	if a.bulk != nil || !reflect.DeepEqual(paramNames(a), []string{"only"}) {
 		t.Fatalf("bulk %v params %v: nothing typed may be lost", a.bulk != nil, paramNames(a))
 	}
@@ -483,7 +483,7 @@ func TestTableRowMenuActionsUseTheSameUndoableChanges(t *testing.T) {
 		t.Fatalf("delete: %v", paramNames(a))
 	}
 	for range 4 {
-		a.step(core.Input{Ctrl: true, Undo: true})
+		a.Step(core.Input{Ctrl: true, Undo: true})
 	}
 	if got := paramNames(a); !reflect.DeepEqual(got, []string{"q", "order", "sort"}) || !strings.Contains(req.URL, "q=gioui") {
 		t.Fatalf("undoing every menu action restores the table: %v url %q", got, req.URL)
@@ -541,8 +541,8 @@ func TestEachTableKeepsItsOwnColumnWidths(t *testing.T) {
 func TestDoubleClickOnAParamsDividerResetsIt(t *testing.T) {
 	a := testApp(t)
 	drag(a, nameValueDividerX, 480, paramsHeaderY)
-	a.step(core.Input{X: 480, Y: paramsHeaderY, Click: true, Held: true, Clicks: 2})
-	a.step(core.Input{})
+	a.Step(core.Input{X: 480, Y: paramsHeaderY, Click: true, Held: true, Clicks: 2})
+	a.Step(core.Input{})
 	if a.widthsFor(requestPanes[0]).Weights != nil {
 		t.Fatal("double click resets the widths")
 	}

@@ -13,7 +13,7 @@ import (
 // response panes than HTTP): building the view shows the last pane instead.
 func TestThePaneClampsItsActiveTabToItsPanes(t *testing.T) {
 	a := testApp(t)
-	t.Cleanup(a.waitWrites)
+	t.Cleanup(a.WaitWrites)
 	tab := a.cur()
 	tab.paneTab, tab.respTab = 99, 99
 	a.view()
@@ -51,7 +51,7 @@ func TestClickingAPaneTabShowsThatPane(t *testing.T) {
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
 			a := testApp(t)
-			t.Cleanup(a.waitWrites)
+			t.Cleanup(a.WaitWrites)
 			tab := a.cur()
 			respondWith(200, "OK")(a)
 			clickText(t, a, "Headers", test.nth)
@@ -85,7 +85,7 @@ func TestThePaneTabStripsSelectFromTheTopWithTheirOwnState(t *testing.T) {
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
 			a := testApp(t)
-			t.Cleanup(a.waitWrites)
+			t.Cleanup(a.WaitWrites)
 			tab := a.cur()
 			want := fmt.Sprintf("state:%p", test.strip(tab))
 			var strip Node

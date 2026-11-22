@@ -51,12 +51,12 @@ func rememberedFolders(app *App) []string {
 func TestCtrlOOpensAnotherCollectionBesideTheOpenOne(t *testing.T) {
 	a, alphaDir, _ := twoCollectionsApp(t)
 	gammaDir := savedCollection(t, "Gamma")
-	a.step(combo(ebiten.KeyO, true, false, false))
+	a.Step(combo(ebiten.KeyO, true, false, false))
 	if a.dialog == nil {
 		t.Fatal("no prompt for the folder")
 	}
 	a.typeText(gammaDir)
-	a.step(core.Input{Enter: true})
+	a.Step(core.Input{Enter: true})
 	if got := openNames(a); !reflect.DeepEqual(got, []string{"Alpha", "Beta", "Gamma"}) {
 		t.Fatalf("open %v", got)
 	}
@@ -68,9 +68,9 @@ func TestCtrlOOpensAnotherCollectionBesideTheOpenOne(t *testing.T) {
 	}
 
 	// an open folder is focused, not opened twice
-	a.step(combo(ebiten.KeyO, true, false, false))
+	a.Step(combo(ebiten.KeyO, true, false, false))
 	a.typeText(alphaDir)
-	a.step(core.Input{Enter: true})
+	a.Step(core.Input{Enter: true})
 	if got := openNames(a); len(got) != 3 {
 		t.Fatalf("open %v", got)
 	}
@@ -153,11 +153,11 @@ func TestCtrlShiftWClosesTheFocusedCollectionAndCtrlWOnlyTheTab(t *testing.T) {
 	a, _, _ := twoCollectionsApp(t)
 	a.openRequest(entryNamed(t, a, "Beta").Collection.Folders[0].Requests[0])
 	tabCount := len(a.list.Tabs)
-	a.step(combo(ebiten.KeyW, true, false, false))
+	a.Step(combo(ebiten.KeyW, true, false, false))
 	if got := openNames(a); len(got) != 2 || len(a.list.Tabs) != tabCount-1 {
 		t.Fatalf("Ctrl+W: open %v, %d tabs, want both open and %d tabs", got, len(a.list.Tabs), tabCount-1)
 	}
-	a.step(core.Input{Keys: []ebiten.Key{ebiten.KeyW}, Ctrl: true, Shift: true}) // Beta's tab is the active one
+	a.Step(core.Input{Keys: []ebiten.Key{ebiten.KeyW}, Ctrl: true, Shift: true}) // Beta's tab is the active one
 	if got := openNames(a); !reflect.DeepEqual(got, []string{"Alpha"}) {
 		t.Fatalf("Ctrl+Shift+W: open %v", got)
 	}
@@ -167,13 +167,13 @@ func TestCtrlShiftWClosesTheFocusedCollectionAndCtrlWOnlyTheTab(t *testing.T) {
 // it asks first, as deleting does; one with a folder is saved and closed.
 func TestClosingAnEditedUnsavedCollectionAsksFirst(t *testing.T) {
 	a := testApp(t)
-	t.Cleanup(a.waitWrites)
+	t.Cleanup(a.WaitWrites)
 	a.cur().Req.URL = "https://edited.test"
 	a.requestCloseCollection(a.col())
 	if a.dialog == nil || len(a.open.Entries) != 1 {
 		t.Fatalf("closed without asking: dialog %v, open %d", a.dialog != nil, len(a.open.Entries))
 	}
-	a.step(core.Input{Enter: true})
+	a.Step(core.Input{Enter: true})
 	if len(a.open.Entries) != 0 {
 		t.Fatalf("still open after confirming: %d", len(a.open.Entries))
 	}
@@ -185,7 +185,7 @@ func TestClosingAnEditedUnsavedCollectionAsksFirst(t *testing.T) {
 	if b.dialog != nil || len(b.open.Entries) != 1 {
 		t.Fatalf("a saved collection asked or stayed: dialog %v, open %d", b.dialog != nil, len(b.open.Entries))
 	}
-	b.waitWrites()
+	b.WaitWrites()
 	if data, err := os.ReadFile(filepath.Join(betaDir, "beta-call.req.json")); err != nil || !strings.Contains(string(data), "beta.edited") {
 		t.Fatalf("Beta's edit was not saved: %s %v", data, err)
 	}
@@ -196,10 +196,10 @@ func TestClosingAnEditedUnsavedCollectionAsksFirst(t *testing.T) {
 func TestTheEmptyTreeOffersOpenAndNew(t *testing.T) {
 	a, base := collectionsApp(t)
 	a.closeCollection(a.col())
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	textCenter(t, a, "No collection is open")
-	a.step(combo(ebiten.KeyS, true, false, false))
-	a.step(combo(ebiten.KeyT, true, false, false))
+	a.Step(combo(ebiten.KeyS, true, false, false))
+	a.Step(combo(ebiten.KeyT, true, false, false))
 	if _, err := os.Stat(filepath.Join(base, "collections")); !os.IsNotExist(err) {
 		t.Fatalf("something was written: %v", err)
 	}
@@ -208,13 +208,13 @@ func TestTheEmptyTreeOffersOpenAndNew(t *testing.T) {
 	if a.dialog == nil || a.dialog.Title != "Open collection folder" {
 		t.Fatalf("dialog %+v", a.dialog)
 	}
-	a.step(core.Input{Escape: true})
+	a.Step(core.Input{Escape: true})
 	clickText(t, a, "New collection...", 0)
 	if a.dialog == nil || a.dialog.Title != "New collection" {
 		t.Fatalf("dialog %+v", a.dialog)
 	}
 	a.typeText("Fresh")
-	a.step(core.Input{Enter: true})
+	a.Step(core.Input{Enter: true})
 	if got := openNames(a); !reflect.DeepEqual(got, []string{"Fresh"}) {
 		t.Fatalf("open %v", got)
 	}

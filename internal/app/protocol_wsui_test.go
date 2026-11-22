@@ -144,7 +144,7 @@ func TestWebSocketReconnectsAfterTheServerClosesWhenAsked(t *testing.T) {
 	a.send(tab) // a deliberate disconnect must not reconnect
 	until(t, a, "close", func() bool { return tab.Session() == nil })
 	time.Sleep(100 * time.Millisecond)
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	if tab.Session() != nil || tab.State() == tabs.ConnConnecting || conns.Load() != 2 {
 		t.Fatalf("reconnected after a disconnect: %d connections", conns.Load())
 	}
@@ -184,7 +184,7 @@ func TestWebSocketWithoutReconnectStaysClosed(t *testing.T) {
 	a.send(tab)
 	until(t, a, "close", func() bool { return strings.Contains(logText(tab), "Closed by server") && tab.Session() == nil })
 	time.Sleep(100 * time.Millisecond)
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	if conns.Load() != 1 {
 		t.Fatalf("%d connections, want 1", conns.Load())
 	}
@@ -366,7 +366,7 @@ func TestWebSocketConnectGivesUpWhenTheServerNeverAnswersTheHandshake(t *testing
 	a.send(tab)
 	deadline := time.Now().Add(4 * time.Second)
 	for tab.State() == tabs.ConnConnecting && time.Now().Before(deadline) {
-		a.step(core.Input{})
+		a.Step(core.Input{})
 		time.Sleep(5 * time.Millisecond)
 	}
 	if tab.State() == tabs.ConnConnecting {

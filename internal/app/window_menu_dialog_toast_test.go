@@ -16,7 +16,7 @@ import (
 func TestMenuClosesOnEscapeAndOnOutsideClick(t *testing.T) {
 	a := testApp(t)
 	click(a, menuBtnX, menuBtnY)
-	a.step(core.Input{Escape: true})
+	a.Step(core.Input{Escape: true})
 	if a.menu {
 		t.Fatal("Escape must close the menu")
 	}
@@ -46,7 +46,7 @@ func openTestMenu(t *testing.T) (*App, *ran) {
 	paste := r.item("Paste")
 	paste.Disabled = true
 	a.openMenu(500, 300, []widget.MenuItem{r.item("Copy"), {Separator: true}, paste, r.item("Delete")})
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	if widget.PopupMenu(a.ctx) == nil {
 		t.Fatal("test setup: the menu must be open")
 	}
@@ -89,8 +89,8 @@ func TestClickingOutsideClosesTheMenuWithoutReachingWhatIsBelow(t *testing.T) {
 
 func TestMenuKeyboardNavigationSkipsSeparatorsAndDisabledRows(t *testing.T) {
 	a, r := openTestMenu(t)
-	down := func() { a.step(combo(ebiten.KeyArrowDown, false, false, false)) }
-	up := func() { a.step(combo(ebiten.KeyArrowUp, false, false, false)) }
+	down := func() { a.Step(combo(ebiten.KeyArrowDown, false, false, false)) }
+	up := func() { a.Step(combo(ebiten.KeyArrowUp, false, false, false)) }
 	if widget.PopupMenu(a.ctx).Hot != 0 {
 		t.Fatalf("the first enabled row starts highlighted, hot = %d", widget.PopupMenu(a.ctx).Hot)
 	}
@@ -106,7 +106,7 @@ func TestMenuKeyboardNavigationSkipsSeparatorsAndDisabledRows(t *testing.T) {
 	if widget.PopupMenu(a.ctx).Hot != 3 {
 		t.Fatalf("Up wraps backwards: hot = %d", widget.PopupMenu(a.ctx).Hot)
 	}
-	a.step(combo(ebiten.KeyEnter, false, false, false))
+	a.Step(combo(ebiten.KeyEnter, false, false, false))
 	if len(r.log) != 1 || r.log[0] != "Delete" || widget.PopupMenu(a.ctx) != nil {
 		t.Fatalf("Enter runs the highlighted row: ran %v", r.log)
 	}
@@ -115,7 +115,7 @@ func TestMenuKeyboardNavigationSkipsSeparatorsAndDisabledRows(t *testing.T) {
 func TestEscapeClosesTheMenuFirst(t *testing.T) {
 	a, r := openTestMenu(t)
 	a.menu = true // the settings menu is open too
-	a.step(core.Input{Escape: true})
+	a.Step(core.Input{Escape: true})
 	if widget.PopupMenu(a.ctx) != nil || !a.menu || len(r.log) != 0 {
 		t.Fatalf("context menu open %v, settings menu open %v: Escape closes the top one only", widget.PopupMenu(a.ctx) != nil, a.menu)
 	}
@@ -125,7 +125,7 @@ func TestMenuNearTheWindowEdgeStaysOnScreen(t *testing.T) {
 	a := testApp(t)
 	r := &ran{}
 	a.openMenu(1270, 790, []widget.MenuItem{r.item("Copy"), {Separator: true}, r.item("Paste"), r.item("Delete")})
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	// the menu is as wide as its content now: moved left so its right edge is
 	// at the window's, and up to y=701 (89 high); the Copy row is 705..729
 	click(a, 1280-widget.MenuWidth(a.ctx, widget.PopupMenu(a.ctx).Items)/2-4, 717)
@@ -136,7 +136,7 @@ func TestMenuNearTheWindowEdgeStaysOnScreen(t *testing.T) {
 
 func TestShortcutsAreIgnoredWhileAMenuIsOpen(t *testing.T) {
 	a, _ := openTestMenu(t)
-	a.step(combo(ebiten.KeyT, true, false, false))
+	a.Step(combo(ebiten.KeyT, true, false, false))
 	if len(a.list.Tabs) != 1 {
 		t.Fatal("Ctrl+T must not open a tab behind a menu")
 	}
@@ -152,13 +152,13 @@ const (
 
 func TestConfirmRunsOnEnterAndOnTheButton(t *testing.T) {
 	for name, act := range map[string]func(app *App){
-		"Enter":  func(app *App) { app.step(core.Input{Enter: true}) },
+		"Enter":  func(app *App) { app.Step(core.Input{Enter: true}) },
 		"button": func(app *App) { click(app, dialogOKX, dialogButtonY) },
 	} {
 		a := testApp(t)
 		var ok int
 		a.confirm("Delete request?", "This cannot be undone.", "Delete", func() { ok++ })
-		a.step(core.Input{})
+		a.Step(core.Input{})
 		if a.dialog == nil {
 			t.Fatalf("%s: no dialog", name)
 		}
@@ -171,14 +171,14 @@ func TestConfirmRunsOnEnterAndOnTheButton(t *testing.T) {
 
 func TestConfirmCancelsOnEscapeCancelButtonAndOutsideClick(t *testing.T) {
 	for name, act := range map[string]func(app *App){
-		"Escape":  func(app *App) { app.step(core.Input{Escape: true}) },
+		"Escape":  func(app *App) { app.Step(core.Input{Escape: true}) },
 		"Cancel":  func(app *App) { click(app, dialogCancelX, dialogButtonY) },
 		"outside": func(app *App) { click(app, 100, 700) },
 	} {
 		a := testApp(t)
 		var ok int
 		a.confirm("Delete request?", "This cannot be undone.", "Delete", func() { ok++ })
-		a.step(core.Input{})
+		a.Step(core.Input{})
 		act(a)
 		if ok != 0 || a.dialog != nil {
 			t.Fatalf("%s: onOK ran %d times, dialog open %v", name, ok, a.dialog != nil)
@@ -190,12 +190,12 @@ func TestPromptReturnsTheTypedText(t *testing.T) {
 	a := testApp(t)
 	var got string
 	a.prompt("Rename", "Old name", "Rename", func(text string) { got = text })
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	if a.dialog == nil || !a.dialog.Input.Focused || a.dialog.Input.SelectedText() != "Old name" {
 		t.Fatalf("the field starts focused with its text selected: %+v", a.dialog)
 	}
 	a.typeText("New name")
-	a.step(core.Input{Enter: true})
+	a.Step(core.Input{Enter: true})
 	if got != "New name" || a.dialog != nil {
 		t.Fatalf("got %q, dialog open %v", got, a.dialog != nil)
 	}
@@ -204,12 +204,12 @@ func TestPromptReturnsTheTypedText(t *testing.T) {
 func TestDialogTrapsFocusAndBlocksShortcuts(t *testing.T) {
 	a := testApp(t)
 	a.prompt("Rename", "x", "Rename", func(string) {})
-	a.step(core.Input{})
-	a.step(core.Input{Tab: true})
+	a.Step(core.Input{})
+	a.Step(core.Input{Tab: true})
 	if !a.dialog.Input.Focused || a.cur().url.Focused {
 		t.Fatal("Tab must stay inside the dialog")
 	}
-	a.step(combo(ebiten.KeyT, true, false, false))
+	a.Step(combo(ebiten.KeyT, true, false, false))
 	if len(a.list.Tabs) != 1 {
 		t.Fatal("global shortcuts are off while a dialog is open")
 	}
@@ -228,23 +228,23 @@ func TestInfoToastsExpireAndErrorsStayUntilClicked(t *testing.T) {
 	a.now = func() time.Time { return clock }
 	a.toast("Saved", severity.Info)
 	a.toast("Disk full", severity.Error)
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	if len(a.toasts) != 2 {
 		t.Fatalf("toasts = %d", len(a.toasts))
 	}
 
 	clock = clock.Add(2 * time.Second)
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	if len(a.toasts) != 2 {
 		t.Fatal("an info toast stays for a few seconds")
 	}
 	clock = clock.Add(2 * time.Second)
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	if len(a.toasts) != 1 || a.toasts[0].Kind != widget.ToastError {
 		t.Fatalf("after 4s only the error is left: %+v", a.toasts)
 	}
 	clock = clock.Add(10 * time.Minute)
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	if len(a.toasts) != 1 {
 		t.Fatal("errors persist")
 	}
@@ -259,7 +259,7 @@ func TestClickingOneToastDismissesOnlyThatOne(t *testing.T) {
 	a := testApp(t)
 	a.toast("first", severity.Error)
 	a.toast("second", severity.Error)
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	x, y, w, h := toastRect(2, 0)
 	click(a, x+w/2, y+h/2)
 	if len(a.toasts) != 1 || a.toasts[0].Text != "second" {
@@ -424,7 +424,7 @@ func TestResponseMenu(t *testing.T) {
 func openResponseRowMenu(t *testing.T, app *App) {
 	t.Helper()
 	app.cur().respTab = 1 // Headers
-	app.step(core.Input{})
+	app.Step(core.Input{})
 	for y := 150; y < 500; y += 4 {
 		rightClick(app, 900, y)
 		if widget.PopupMenu(app.ctx) != nil {
@@ -488,7 +488,7 @@ func TestEditableTableMenuAlsoCopiesCells(t *testing.T) {
 	a.cur().Req.Params = []request.KV{{Name: "q", Value: "giou", Enabled: true}}
 	clip := &fakeClip{}
 	a.ctx.Clipboard = clip
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	items := a.rowMenuItems(requestPanes[0], a.cur(), 0)
 	var found bool
 	for _, it := range items {
@@ -533,13 +533,13 @@ func TestDeleteButtonIsATrashCanWithATooltip(t *testing.T) {
 
 func TestTooltipKeepsFramesComingWhileItWaits(t *testing.T) {
 	a := testApp(t)
-	a.step(core.Input{X: sendX, Y: urlBarY})
+	a.Step(core.Input{X: sendX, Y: urlBarY})
 	a.Draw(ebiten.NewImage(winW, winH))
 	if !a.tips.Waiting() {
 		t.Fatal("hovering a button with a tooltip must be waiting")
 	}
 	a.dirty = false
-	a.step(core.Input{X: sendX, Y: urlBarY}) // nothing else changed
+	a.Step(core.Input{X: sendX, Y: urlBarY}) // nothing else changed
 	if !a.dirty {
 		t.Fatal("frames must keep being drawn until the tooltip shows")
 	}

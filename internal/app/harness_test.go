@@ -118,9 +118,9 @@ func testApp(t *testing.T, options ...appOption) *App {
 	// A save is written in the background and the tabs read as saved at once,
 	// so a test can end while the file is still being written, and its
 	// temporary folder then cannot be removed ("directory not empty").
-	t.Cleanup(app.waitWrites)
+	t.Cleanup(app.WaitWrites)
 	app.w, app.h = winW, winH
-	app.step(core.Input{}) // first frame: lay everything out once
+	app.Step(core.Input{}) // first frame: lay everything out once
 	return app
 }
 
@@ -130,7 +130,7 @@ func testApp(t *testing.T, options ...appOption) *App {
 func until(t *testing.T, app *App, what string, cond func() bool) {
 	t.Helper()
 	for range 400 {
-		app.step(core.Input{})
+		app.Step(core.Input{})
 		if cond() {
 			return
 		}
@@ -243,7 +243,7 @@ func textCenter(t *testing.T, app *App, text string) (x, y int) {
 // clickDumped clicks the middle of the nth layout dump line that contains needle.
 func clickDumped(t *testing.T, app *App, needle string, nth int) {
 	t.Helper()
-	app.step(core.Input{X: 5000, Y: 5000})
+	app.Step(core.Input{X: 5000, Y: 5000})
 	lines := dumpedLines(app, needle)
 	if nth >= len(lines) {
 		t.Fatalf("no element with %s (#%d) in:\n%s", needle, nth, layoutDump(app))
@@ -408,8 +408,8 @@ func withAdapters(opts Options) Options {
 
 // click is a press followed by a release at the same place.
 func click(app *App, posX, posY int) {
-	app.step(core.Input{X: posX, Y: posY, Click: true, Held: true})
-	app.step(core.Input{X: posX, Y: posY})
+	app.Step(core.Input{X: posX, Y: posY, Click: true, Held: true})
+	app.Step(core.Input{X: posX, Y: posY})
 }
 
 // jsonServer answers every request with a small JSON body.
@@ -441,7 +441,7 @@ const (
 	headersTabIdx = 2
 )
 
-func (a *App) typeText(text string) { a.step(core.Input{Typed: []rune(text)}) }
+func (a *App) typeText(text string) { a.Step(core.Input{Typed: []rune(text)}) }
 
 // Body pane at 1280x800: type chips at y=206 (None, JSON, Text, Form,
 // Multipart from x=272), the Format button at the right end of that
@@ -463,7 +463,7 @@ const (
 func openBodyPane(t *testing.T) *App {
 	a := testApp(t)
 	a.cur().paneTab = bodyTabIdx
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	return a
 }
 
@@ -531,7 +531,7 @@ const (
 func openSettingsPane(t *testing.T) *App {
 	a := testApp(t)
 	a.cur().paneTab = settingsTabIdx
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	return a
 }
 
@@ -552,7 +552,7 @@ const (
 func openAuthPane(t *testing.T) *App {
 	a := testApp(t)
 	a.cur().paneTab = authTabIdx
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	return a
 }
 
@@ -593,9 +593,9 @@ func jsonResponse(t *testing.T, body string) *App {
 }
 
 func drag(app *App, fromX, toX, posY int) {
-	app.step(core.Input{X: fromX, Y: posY, Click: true, Held: true})
-	app.step(core.Input{X: toX, Y: posY, Held: true})
-	app.step(core.Input{X: toX, Y: posY}) // release
+	app.Step(core.Input{X: fromX, Y: posY, Click: true, Held: true})
+	app.Step(core.Input{X: toX, Y: posY, Held: true})
+	app.Step(core.Input{X: toX, Y: posY}) // release
 }
 
 type ran struct{ log []string }
@@ -604,7 +604,7 @@ func (r *ran) item(label string) widget.MenuItem {
 	return widget.MenuItem{Label: label, Run: func() { r.log = append(r.log, label) }}
 }
 
-func rightClick(app *App, posX, posY int) { app.step(core.Input{X: posX, Y: posY, RightClick: true}) }
+func rightClick(app *App, posX, posY int) { app.Step(core.Input{X: posX, Y: posY, RightClick: true}) }
 
 // Sample tree rows: 0 root, 1 User, 2 Repository, 3 Search Repos,
 // 4 Repository Info, 5 Repository Tags, 6 Realtime.
@@ -684,7 +684,7 @@ const ()
 func openSettingsPage(t *testing.T, id string) (*App, string) {
 	a, path := openSettingsMenu(t)
 	a.prefs.Cat = id
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	return a, path
 }
 
@@ -700,7 +700,7 @@ func openSettingsMenu(t *testing.T) (*App, string) {
 
 // tipAt hovers (x, y) long enough and draws; it returns the tooltip shown.
 func tipAt(app *App, posX, posY int) string {
-	app.step(core.Input{X: posX, Y: posY})
+	app.Step(core.Input{X: posX, Y: posY})
 	img := ebiten.NewImage(winW, winH)
 	app.Draw(img) // the pointer comes to rest on the element
 	app.ctx.Tick += 100

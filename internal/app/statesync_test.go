@@ -110,16 +110,16 @@ func TestStateIsSavedAfterAQuietSpell(t *testing.T) {
 	a := testApp(t, memorySettings(), withOptions(Options{StatePath: path}))
 	clock := time.Unix(1000, 0)
 	a.now = func() time.Time { return clock }
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	a.sidebarSplit.Size = 280
 	a.markStale()        // the test edits the model directly; in the app an edit comes with input, which marks the keys stale
-	a.step(core.Input{}) // change noticed, not yet written
+	a.Step(core.Input{}) // change noticed, not yet written
 	if s, _ := stateDisk.Load(path); s.SidebarW != 0 {
 		t.Fatal("written before the debounce")
 	}
 	clock = clock.Add(2 * time.Second)
-	a.step(core.Input{})
-	a.waitWrites()
+	a.Step(core.Input{})
+	a.WaitWrites()
 	if s, _ := stateDisk.Load(path); s.SidebarW != 280 {
 		t.Fatalf("not written after the debounce: %+v", s)
 	}
@@ -191,7 +191,7 @@ func TestHostileStateValuesStillGiveAWorkingWindow(t *testing.T) {
 	}
 	a := testApp(t, memorySettings(), withOptions(Options{StatePath: path}))
 	for range 5 {
-		a.step(core.Input{})
+		a.Step(core.Input{})
 	}
 	if len(a.list.Tabs) == 0 || a.list.Active < 0 || a.list.Active >= len(a.list.Tabs) {
 		t.Fatalf("tabs %d active %d", len(a.list.Tabs), a.list.Active)

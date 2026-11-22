@@ -45,19 +45,19 @@ func TestMiddleButtonDragReordersTabsAndDoesNotCloseThem(t *testing.T) {
 	first := a.openTabs()[0]
 	l0, _ := a.tabX(0)
 	l1, w1 := a.tabX(1)
-	a.step(core.Input{X: l0 + 20, Y: tabStripY, MiddleClick: true, MiddleHeld: true}) // press the first tab
+	a.Step(core.Input{X: l0 + 20, Y: tabStripY, MiddleClick: true, MiddleHeld: true}) // press the first tab
 	if len(a.list.Tabs) != 2 {
 		t.Fatal("a middle press must not close the tab any more")
 	}
-	a.step(core.Input{X: l1 + w1/2, Y: tabStripY, MiddleHeld: true}) // drag over the second
+	a.Step(core.Input{X: l1 + w1/2, Y: tabStripY, MiddleHeld: true}) // drag over the second
 	if a.openTabs()[1] != first {
 		t.Fatal("the dragged tab must move to the second place")
 	}
-	a.step(core.Input{X: l1 + w1/2, Y: tabStripY}) // release
+	a.Step(core.Input{X: l1 + w1/2, Y: tabStripY}) // release
 	if a.list.Drag != -1 {
 		t.Fatalf("dragTab = %d after the release", a.list.Drag)
 	}
-	a.step(core.Input{X: l0 + 20, Y: tabStripY, MiddleHeld: true}) // held again, but not pressed on a tab
+	a.Step(core.Input{X: l0 + 20, Y: tabStripY, MiddleHeld: true}) // held again, but not pressed on a tab
 	if a.openTabs()[1] != first {
 		t.Fatal("after the release, moving must not drag")
 	}
@@ -66,8 +66,8 @@ func TestMiddleButtonDragReordersTabsAndDoesNotCloseThem(t *testing.T) {
 func TestMiddleClickWithoutMovingLeavesTheTabsAlone(t *testing.T) {
 	a := twoTabs(t)
 	left, width := a.tabX(1)
-	a.step(core.Input{X: left + width/2, Y: tabStripY, MiddleClick: true, MiddleHeld: true})
-	a.step(core.Input{X: left + width/2, Y: tabStripY})
+	a.Step(core.Input{X: left + width/2, Y: tabStripY, MiddleClick: true, MiddleHeld: true})
+	a.Step(core.Input{X: left + width/2, Y: tabStripY})
 	if len(a.list.Tabs) != 2 || a.cur().Req.Name != "Repository Info" {
 		t.Fatalf("%d tabs, current %q", len(a.list.Tabs), a.cur().Req.Name)
 	}
@@ -92,7 +92,7 @@ func TestDirtyFollowsEditsAndUndoingThemByHand(t *testing.T) {
 	if !dirty(tab) {
 		t.Fatal("editing the URL makes the tab dirty")
 	}
-	a.step(core.Input{Edits: []core.Edit{core.EditBackspace}})
+	a.Step(core.Input{Edits: []core.Edit{core.EditBackspace}})
 	if dirty(tab) {
 		t.Fatal("restoring the original text makes it clean again")
 	}
@@ -108,7 +108,7 @@ func TestTabWidthDoesNotChangeWhenTheRequestChanges(t *testing.T) {
 	req := a.openTabs()[0].Req
 	req.Method = "DELETE"                                                   // a longer badge
 	req.Headers = append(req.Headers, request.KV{Name: "X", Enabled: true}) // and an unsaved dot
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	if !dirty(a.openTabs()[0]) {
 		t.Fatal("test setup: the tab must be dirty")
 	}
@@ -150,13 +150,13 @@ func TestDraggingATabReordersIt(t *testing.T) {
 	l0, w0 := a.tabX(0)
 	l1, w1 := a.tabX(1)
 
-	a.step(core.Input{X: l0 + 20, Y: tabStripY, Click: true, Held: true}) // press the first tab
-	a.step(core.Input{X: l1 + w1/2, Y: tabStripY, Held: true})            // drag over the second
+	a.Step(core.Input{X: l0 + 20, Y: tabStripY, Click: true, Held: true}) // press the first tab
+	a.Step(core.Input{X: l1 + w1/2, Y: tabStripY, Held: true})            // drag over the second
 	if a.openTabs()[1] != first {
 		t.Fatalf("the dragged tab must move to the second place")
 	}
-	a.step(core.Input{X: l1 + w1/2, Y: tabStripY}) // release
-	a.step(core.Input{X: l0 + w0/2, Y: tabStripY, Held: true})
+	a.Step(core.Input{X: l1 + w1/2, Y: tabStripY}) // release
+	a.Step(core.Input{X: l0 + w0/2, Y: tabStripY, Held: true})
 	if a.openTabs()[1] != first {
 		t.Fatal("after release, moving over another tab must not drag")
 	}
@@ -171,8 +171,8 @@ func TestDraggingKeepsTheActiveTabActive(t *testing.T) {
 	l0, _ := a.tabX(0)
 	_, w1 := a.tabX(1)
 	l1, _ := a.tabX(1)
-	a.step(core.Input{X: l0 + 20, Y: tabStripY, Click: true, Held: true})
-	a.step(core.Input{X: l1 + w1/2, Y: tabStripY, Held: true})
+	a.Step(core.Input{X: l0 + 20, Y: tabStripY, Click: true, Held: true})
+	a.Step(core.Input{X: l1 + w1/2, Y: tabStripY, Held: true})
 	if a.cur() == active {
 		t.Fatal("pressing the first tab activates it, so it is the active one")
 	}
@@ -241,17 +241,17 @@ func TestManyTabsScrollTheStripAndKeepTheActiveTabInView(t *testing.T) {
 	for range 14 {
 		a.newRequest()
 	}
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	if a.tabsScroll.X <= 0 {
 		t.Fatalf("the new, active tab is past the right edge: X = %d", a.tabsScroll.X)
 	}
 	x := a.tabsScroll.X
-	a.step(core.Input{X: 600, Y: tabStripY, WheelX: 1}) // two-finger swipe right: back toward the first tabs
+	a.Step(core.Input{X: 600, Y: tabStripY, WheelX: 1}) // two-finger swipe right: back toward the first tabs
 	if a.tabsScroll.X >= x {
 		t.Fatalf("a sideways swipe must scroll the strip back: %d -> %d", x, a.tabsScroll.X)
 	}
 	x = a.tabsScroll.X
-	a.step(core.Input{X: 600, Y: tabStripY, Wheel: -1}) // the mouse wheel scrolls it too
+	a.Step(core.Input{X: 600, Y: tabStripY, Wheel: -1}) // the mouse wheel scrolls it too
 	if a.tabsScroll.X <= x {
 		t.Fatalf("the wheel must scroll the strip forward: %d -> %d", x, a.tabsScroll.X)
 	}
@@ -270,12 +270,12 @@ func TestLeftDragOnAnOverflowingTabStripPansItInsteadOfReorderingTabs(t *testing
 	for range 14 {
 		a.newRequest()
 	}
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	order := append([]*reqTab(nil), a.openTabs()...)
 	x0 := a.tabsScroll.X // the active (last) tab was revealed: the strip is at its right end
-	a.step(core.Input{X: 600, Y: tabStripY, Click: true, Held: true})
-	a.step(core.Input{X: 700, Y: tabStripY, Held: true}) // drag right: earlier tabs come into view
-	a.step(core.Input{X: 800, Y: tabStripY, Held: true})
+	a.Step(core.Input{X: 600, Y: tabStripY, Click: true, Held: true})
+	a.Step(core.Input{X: 700, Y: tabStripY, Held: true}) // drag right: earlier tabs come into view
+	a.Step(core.Input{X: 800, Y: tabStripY, Held: true})
 	if want := x0 - 200; a.tabsScroll.X != want {
 		t.Fatalf("X = %d, want %d: the strip follows the pointer", a.tabsScroll.X, want)
 	}
@@ -284,7 +284,7 @@ func TestLeftDragOnAnOverflowingTabStripPansItInsteadOfReorderingTabs(t *testing
 			t.Fatalf("tab %d moved: a left drag on an overflowing strip must not reorder", i)
 		}
 	}
-	a.step(core.Input{X: 800, Y: tabStripY}) // release
+	a.Step(core.Input{X: 800, Y: tabStripY}) // release
 	if a.list.Drag != -1 {
 		t.Fatalf("dragTab = %d", a.list.Drag)
 	}

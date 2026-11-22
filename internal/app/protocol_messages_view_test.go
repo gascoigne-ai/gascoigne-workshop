@@ -75,7 +75,7 @@ func TestTheMessagesPaneLaysOutAsPinned(t *testing.T) {
 			name := "messagespane-" + state.name + "-" + size.name
 			t.Run(name, func(t *testing.T) {
 				a := testApp(t)
-				t.Cleanup(a.waitWrites)
+				t.Cleanup(a.WaitWrites)
 				tab := a.cur()
 				state.setUp(a, tab)
 				root := a.messagesPane(wsPanes[0], tab, nil)
@@ -99,7 +99,7 @@ func TestTheComposerEditsTheTabsMessage(t *testing.T) {
 	for _, state := range messagesPaneStates {
 		t.Run(state.name, func(t *testing.T) {
 			a := testApp(t)
-			t.Cleanup(a.waitWrites)
+			t.Cleanup(a.WaitWrites)
 			tab := a.cur()
 			state.setUp(a, tab)
 			field := findWidget(a.messagesPane(wsPanes[0], tab, nil), "*widget.fieldB")
@@ -128,7 +128,7 @@ func TestTheComposerEditsTheTabsMessage(t *testing.T) {
 // What Dump does not show of the log: it draws the tab's own message view.
 func TestTheMessageLogShowsTheTabsView(t *testing.T) {
 	a := testApp(t)
-	t.Cleanup(a.waitWrites)
+	t.Cleanup(a.WaitWrites)
 	tab := a.cur()
 	code := findWidget(a.messagesPane(wsPanes[0], tab, nil), "*widget.codeB")
 	if code == nil {
@@ -153,11 +153,11 @@ const (
 func openConnectedEcho(t *testing.T) (*App, *fakeSession) {
 	t.Helper()
 	a := testApp(t)
-	t.Cleanup(a.waitWrites)
+	t.Cleanup(a.WaitWrites)
 	openNamed(t, a, "Echo")
 	session := &fakeSession{}
 	openSession(a.cur(), session)
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	return a, session
 }
 
@@ -168,7 +168,7 @@ func TestTheComposerSendsOnEnterAndOnSend(t *testing.T) {
 		name string
 		send func(app *App)
 	}{
-		{"enter", func(app *App) { app.step(core.Input{Enter: true}) }},
+		{"enter", func(app *App) { app.Step(core.Input{Enter: true}) }},
 		{"send button", func(app *App) { click(app, sendButtonX, composerY) }},
 	}
 	for _, tc := range cases {

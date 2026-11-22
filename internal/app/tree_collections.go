@@ -118,7 +118,7 @@ func (a *App) confirmDeleteCollection(col *request.Collection) {
 // opens, or a new empty one when none is left.
 func (a *App) deleteCollection(col *request.Collection) {
 	a.commitEdit()
-	a.waitWrites() // a write still in flight would make the folder again
+	a.WaitWrites() // a write still in flight would make the folder again
 	entry, ok := a.open.ByCollection(col)
 	if !ok {
 		return

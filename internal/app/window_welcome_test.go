@@ -27,7 +27,7 @@ func TestWelcomeStaysClosedWhenNotAskedFor(t *testing.T) {
 func TestWelcomeIsRememberedOnceClosed(t *testing.T) {
 	statePath := filepath.Join(t.TempDir(), "state.json")
 	a := testApp(t, untouchedSettings(), withOptions(Options{StatePath: statePath, Welcome: true}))
-	a.step(core.Input{Escape: true})
+	a.Step(core.Input{Escape: true})
 	if a.dialog != nil {
 		t.Fatal("Escape left the welcome dialog open")
 	}

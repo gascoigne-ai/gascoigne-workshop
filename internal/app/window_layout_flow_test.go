@@ -32,8 +32,8 @@ func TestSidebarKeepsAMinimumWidthAndDoubleClickResets(t *testing.T) {
 		t.Fatal("x=200 is outside a minimum-width sidebar")
 	}
 
-	a.step(core.Input{X: 159, Y: dividerY, Click: true, Held: true, Clicks: 2})
-	a.step(core.Input{})
+	a.Step(core.Input{X: 159, Y: dividerY, Click: true, Held: true, Clicks: 2})
+	a.Step(core.Input{})
 	if a.sidebarSplit.Size != 0 {
 		t.Fatalf("double click must reset the width, Size = %v", a.sidebarSplit.Size)
 	}
@@ -62,7 +62,7 @@ func TestResizeCursorOverTheDividers(t *testing.T) {
 		{"pane divider", 769, dividerY, core.CursorResizeH},
 		{"elsewhere", 500, dividerY, core.CursorDefault},
 	} {
-		a.step(core.Input{X: tt.x, Y: tt.y})
+		a.Step(core.Input{X: tt.x, Y: tt.y})
 		if a.ctx.Cursor != tt.want {
 			t.Errorf("%s: cursor %v, want %v", tt.name, a.ctx.Cursor, tt.want)
 		}

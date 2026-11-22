@@ -67,7 +67,7 @@ func TestTheStatusBarLogButtonOpensTheTraceView(t *testing.T) {
 		t.Fatal("the trace view is shown while closed")
 	}
 	a.calls.Open()
-	a.step(core.Input{X: 5000, Y: 5000})
+	a.Step(core.Input{X: 5000, Y: 5000})
 	if dump := view.Dump(a.calls.View(a.ctx, a)); !strings.Contains(dump, "Log") {
 		t.Fatalf("trace view:\n%s", dump)
 	}
@@ -80,7 +80,7 @@ func TestTheStatusBarLogButtonOpensTheTraceView(t *testing.T) {
 func TestEscapeClosesTheTraceView(t *testing.T) {
 	a := testApp(t)
 	a.calls.Open()
-	a.step(core.Input{X: 5000, Y: 5000, Escape: true})
+	a.Step(core.Input{X: 5000, Y: 5000, Escape: true})
 	if a.calls.Shown() {
 		t.Fatal("Escape left the trace view open")
 	}

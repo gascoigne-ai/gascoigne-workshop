@@ -31,9 +31,9 @@ func TestTitleShowsTheCollectionAndAnUnsavedMark(t *testing.T) {
 	if !strings.HasPrefix(w.Title(), dirtyMark) {
 		t.Fatalf("a pending edit shows: %q", w.Title())
 	}
-	w.step(core.Input{})           // the autosave notices the change
+	w.Step(core.Input{})           // the autosave notices the change
 	now = now.Add(2 * time.Second) // and the pause passes
-	w.step(core.Input{})
+	w.Step(core.Input{})
 	if strings.HasPrefix(w.Title(), dirtyMark) {
 		t.Fatalf("after the autosave: %q", w.Title())
 	}

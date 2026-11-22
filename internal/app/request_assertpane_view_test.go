@@ -31,7 +31,7 @@ func TestTheAssertionsPaneLaysOutAsPinned(t *testing.T) {
 		name := "assertions-" + size.name
 		t.Run(name, func(t *testing.T) {
 			a := testApp(t)
-			t.Cleanup(a.waitWrites)
+			t.Cleanup(a.WaitWrites)
 			tab := a.cur()
 			assertDumpPinned(t, a, a.assertionsPane(testsPane, tab, &widget.ScrollState{}), name, size.width, settingsPaneH)
 		})
@@ -42,7 +42,7 @@ func TestTheAssertionsPaneLaysOutAsPinned(t *testing.T) {
 // tests area.
 func TestTheAssertionsAreaEditsTheTabsTests(t *testing.T) {
 	a := testApp(t)
-	t.Cleanup(a.waitWrites)
+	t.Cleanup(a.WaitWrites)
 	tab := a.cur()
 	areas := behaviorStates(a.assertionsPane(testsPane, tab, &widget.ScrollState{}), "*widget.areaB")
 	if len(areas) != 1 || !strings.Contains(areas[0], fmt.Sprintf("%p", &tab.tests)) {
@@ -57,7 +57,7 @@ var dumpedText = regexp.MustCompile(`text=("(?:[^"\\]|\\.)*")`)
 // edge; in the narrowest pane it now takes several lines that all fit.
 func TestTheAssertionsHelpWrapsInsideANarrowPane(t *testing.T) {
 	a := testApp(t)
-	t.Cleanup(a.waitWrites)
+	t.Cleanup(a.WaitWrites)
 	root := a.assertionsPane(testsPane, a.cur(), &widget.ScrollState{})
 	Layout(a.ctx, root, settingsNarrowW, settingsPaneH)
 	pane := root.Rect()
@@ -97,7 +97,7 @@ func TestTheAssertionsHelpWrapsInsideANarrowPane(t *testing.T) {
 func TestTheAssertionsHelpLeavesTheEditorMostOfTheNarrowPane(t *testing.T) {
 	const minEditorH = 190
 	a := testApp(t)
-	t.Cleanup(a.waitWrites)
+	t.Cleanup(a.WaitWrites)
 	root := a.assertionsPane(testsPane, a.cur(), &widget.ScrollState{})
 	Layout(a.ctx, root, settingsNarrowW, settingsPaneH)
 	children := root.Children()
@@ -130,7 +130,7 @@ func TestTheResultsPaneLaysOutAsPinned(t *testing.T) {
 			name := "results-" + state.name + "-" + size.name
 			t.Run(name, func(t *testing.T) {
 				a := testApp(t)
-				t.Cleanup(a.waitWrites)
+				t.Cleanup(a.WaitWrites)
 				tab := a.cur()
 				tab.testResults = assert.Run(state.tests, pinnedResponse)
 				assertDumpPinned(t, a, a.resultsPane(responsePanes[3], tab, nil), name, size.width, settingsPaneH)
@@ -143,7 +143,7 @@ func TestTheResultsPaneLaysOutAsPinned(t *testing.T) {
 // response scroll, not the one it is handed.
 func TestTheResultsListScrollsWithTheTabsResponseScroll(t *testing.T) {
 	a := testApp(t)
-	t.Cleanup(a.waitWrites)
+	t.Cleanup(a.WaitWrites)
 	tab := a.cur()
 	tab.testResults = assert.Run("status == 200", pinnedResponse)
 	root := a.resultsPane(responsePanes[3], tab, &widget.ScrollState{})
@@ -163,10 +163,10 @@ const (
 // a response to check the assertions against.
 func openTestsPane(t *testing.T) *App {
 	a := testApp(t)
-	t.Cleanup(a.waitWrites)
+	t.Cleanup(a.WaitWrites)
 	a.cur().paneTab = testsPaneTabIdx
 	a.cur().Resp = pinnedResponse
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	return a
 }
 

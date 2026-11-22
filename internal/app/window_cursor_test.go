@@ -22,9 +22,9 @@ func TestTheCursorIsAGrabWhileSomethingIsBeingDragged(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			a := testApp(t)
-			a.step(core.Input{X: 5000, Y: 5000, Held: test.held}) // settle the first frame
+			a.Step(core.Input{X: 5000, Y: 5000, Held: test.held}) // settle the first frame
 			test.setup(a)
-			a.step(core.Input{X: 5000, Y: 5000, Held: test.held})
+			a.Step(core.Input{X: 5000, Y: 5000, Held: test.held})
 			if a.ctx.Cursor != test.want {
 				t.Fatalf("cursor = %v, want %v", a.ctx.Cursor, test.want)
 			}

@@ -63,7 +63,7 @@ func TestTheWindowLaysOutAsPinned(t *testing.T) {
 					layout = "stacked"
 				}
 				a := testApp(t, withSettings(func(prefs *settings.Settings) { prefs.Layout = layout }))
-				t.Cleanup(a.waitWrites)
+				t.Cleanup(a.WaitWrites)
 				a.w, a.h = size.width, size.height
 				state.setUp(a)
 				assertDumpPinned(t, a, a.view(), name, size.width, size.height)
@@ -79,7 +79,7 @@ func TestTheWindowSplitsAreWiredToTheApp(t *testing.T) {
 	for _, layout := range []string{"side", "stacked"} {
 		t.Run(layout, func(t *testing.T) {
 			a := testApp(t, withSettings(func(prefs *settings.Settings) { prefs.Layout = layout }))
-			t.Cleanup(a.waitWrites)
+			t.Cleanup(a.WaitWrites)
 			splits := findWidgets(a.view(), "*widget.splitB")
 			if len(splits) != 2 {
 				t.Fatalf("the window has %d splits, want 2", len(splits))

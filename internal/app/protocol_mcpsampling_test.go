@@ -84,7 +84,7 @@ func TestASamplingRequestWaitsForTheDialogThatIsOpen(t *testing.T) {
 	a.prompt("Something else", "", "OK", func(string) {})
 	answer := ask(a, context.Background())
 	for range 20 {
-		a.step(core.Input{})
+		a.Step(core.Input{})
 		time.Sleep(5 * time.Millisecond)
 	}
 	if a.dialog.Title != "Something else" {

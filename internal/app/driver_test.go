@@ -491,7 +491,7 @@ func TestDriverSendsTheNextRequestAfterTheEarlierAnswers(t *testing.T) {
 	done := func() bool { return !driver.SendsPending() && driver.AllAnswered() }
 	for range 400 {
 		driver.ServeSends()
-		a.step(core.Input{})
+		a.Step(core.Input{})
 		if done() {
 			break
 		}

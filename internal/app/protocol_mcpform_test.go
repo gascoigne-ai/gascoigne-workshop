@@ -105,10 +105,10 @@ func TestPickingAToolWithoutPropertiesComposesItRightAway(t *testing.T) {
 func TestDialogsWithAndWithoutAFormDrawWithoutPanicking(t *testing.T) {
 	a := testApp(t)
 	a.prompt("Name", "x", "OK", func(string) {})
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	a.closeDialog()
 	a.openToolForm(a.cur(), searchTool())
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	if a.dialog == nil {
 		t.Fatal("the form closed by itself")
 	}

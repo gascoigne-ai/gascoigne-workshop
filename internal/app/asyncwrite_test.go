@@ -43,21 +43,21 @@ func TestTheAutosaveOfTheCollectionDoesNotBlockTheFrame(t *testing.T) {
 	a.setWorkspace(t.TempDir())
 	now := time.Now()
 	a.now = func() time.Time { return now }
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	a.cur().Req.Name = "Renamed"
 	a.markStale() // the test edits the model directly
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	now = now.Add(2 * time.Second)
 
 	done := make(chan struct{})
-	go func() { a.step(core.Input{}); close(done) }() // the write is due this frame
+	go func() { a.Step(core.Input{}); close(done) }() // the write is due this frame
 	select {
 	case <-done:
 	case <-time.After(2 * time.Second):
 		t.Fatal("the frame waited for the write")
 	}
 	close(gate.release)
-	a.waitWrites()
+	a.WaitWrites()
 	if gate.count() != 1 || !strings.Contains(tree.Key(gate.saved[0]), "Renamed") {
 		t.Fatalf("saved %d times: %+v", gate.count(), gate.saved)
 	}
@@ -92,7 +92,7 @@ func TestSavingTheResponseHistoryDoesNotBlockTheFrame(t *testing.T) {
 		t.Fatal("saving the history blocked the caller")
 	}
 	close(gate.release)
-	a.waitWrites()
+	a.WaitWrites()
 	select {
 	case <-gate.saves:
 	case <-time.After(2 * time.Second):

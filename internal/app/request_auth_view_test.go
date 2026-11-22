@@ -55,7 +55,7 @@ func TestTheAuthPaneLaysOutAsPinned(t *testing.T) {
 			name := "authpane-" + state.name + "-" + size.name
 			t.Run(name, func(t *testing.T) {
 				a := testApp(t)
-				t.Cleanup(a.waitWrites)
+				t.Cleanup(a.WaitWrites)
 				tab := a.cur()
 				state.setUp(tab)
 				root := a.authPane(authPane, tab, &widget.ScrollState{})
@@ -92,7 +92,7 @@ func TestTheAuthFieldsEditTheTabsInputs(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			a := testApp(t)
-			t.Cleanup(a.waitWrites)
+			t.Cleanup(a.WaitWrites)
 			tab := a.cur()
 			tab.Req.Auth, tab.showSecrets = tc.auth, tc.showSecrets
 			fields := behaviorStates(a.authPane(authPane, tab, &widget.ScrollState{}), "*widget.fieldB")
@@ -130,7 +130,7 @@ func TestTheShowSecretsCheckFollowsTheTab(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			a := testApp(t)
-			t.Cleanup(a.waitWrites)
+			t.Cleanup(a.WaitWrites)
 			tab := a.cur()
 			tab.Req.Auth.Type, tab.showSecrets = tc.auth, tc.showSecrets
 			got := behaviorStates(a.authPane(authPane, tab, &widget.ScrollState{}), "widget.checkB")

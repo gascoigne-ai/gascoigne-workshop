@@ -57,7 +57,7 @@ func grpcTabOnSchemaPane(t *testing.T) (*App, *reqTab) {
 	editRequest(tab, editor.MethodChosen{Method: "grpc.health.v1.Health/Check"})
 	clickText(t, a, "Schema", 0)
 	for range 400 {
-		a.step(core.Input{})
+		a.Step(core.Input{})
 		if strings.Contains(layoutDump(a), `text="service: string"`) {
 			break
 		}

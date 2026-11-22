@@ -58,7 +58,7 @@ func evalLinks(t *testing.T, path string) string {
 }
 
 func pressEdit(app *App, edit core.Edit, keyDown ebiten.Key, alt bool) {
-	app.step(core.Input{Edits: []core.Edit{edit}, Keys: []ebiten.Key{keyDown}, Alt: alt})
+	app.Step(core.Input{Edits: []core.Edit{edit}, Keys: []ebiten.Key{keyDown}, Alt: alt})
 }
 
 func TestWithoutADialogProgramTheFileBrowserOpensInTheHomeFolder(t *testing.T) {
@@ -67,7 +67,7 @@ func TestWithoutADialogProgramTheFileBrowserOpensInTheHomeFolder(t *testing.T) {
 	if got := browserDir(t, a); got != evalLinks(t, dir) {
 		t.Fatalf("dir %q, want %q", got, dir)
 	}
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	dump := view.Dump(a.fileBrowserView())
 	for _, want := range []string{`"Choose the file to send"`, `"3 items"`, `"Hidden files"`, `"sub"`, `"api.json"`, `"notes.txt"`, `"Cancel"`, `"Open"`} {
 		if !strings.Contains(dump, want) {
@@ -98,9 +98,9 @@ func TestTheBrowserIsDrivenByTheKeyboard(t *testing.T) {
 	a, dir := browsingApp(t)
 	var got string
 	a.pickFile("Pick", filedialog.OpenFile, "", func(path string) { got = path })
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	pressEdit(a, core.EditDown, ebiten.KeyArrowDown, false) // sub
-	a.step(core.Input{Enter: true, Keys: []ebiten.Key{ebiten.KeyEnter}})
+	a.Step(core.Input{Enter: true, Keys: []ebiten.Key{ebiten.KeyEnter}})
 	if browserDir(t, a) != filepath.Join(evalLinks(t, dir), "sub") {
 		t.Fatalf("Down and Enter open the folder: %q", a.browser.model.Dir)
 	}
@@ -128,7 +128,7 @@ func TestTheBrowserIsDrivenByTheKeyboard(t *testing.T) {
 		t.Fatalf("Alt+Up goes up: %q", a.browser.model.Dir)
 	}
 	typePath(a, filepath.Join(dir, "notes.txt"))
-	a.step(core.Input{Enter: true, Keys: []ebiten.Key{ebiten.KeyEnter}})
+	a.Step(core.Input{Enter: true, Keys: []ebiten.Key{ebiten.KeyEnter}})
 	if a.browser != nil || evalLinks(t, got) != filepath.Join(evalLinks(t, dir), "notes.txt") {
 		t.Fatalf("Enter on a typed path chooses it: got %q, browser %v", got, a.browser != nil)
 	}
@@ -138,7 +138,7 @@ func TestEscapeClosesTheBrowserWithoutAnAnswer(t *testing.T) {
 	a, _ := browsingApp(t)
 	called := false
 	a.pickFile("Pick", filedialog.OpenFile, "", func(string) { called = true })
-	a.step(core.Input{Escape: true})
+	a.Step(core.Input{Escape: true})
 	if a.browser != nil || called {
 		t.Fatalf("browser %v called %v", a.browser != nil, called)
 	}
@@ -151,15 +151,15 @@ func TestSavingOverAFileAsksFirst(t *testing.T) {
 	if !strings.HasSuffix(a.browser.path.Text, "api.json") {
 		t.Fatalf("the save name follows the folder: %q", a.browser.path.Text)
 	}
-	a.step(core.Input{Enter: true, Keys: []ebiten.Key{ebiten.KeyEnter}})
+	a.Step(core.Input{Enter: true, Keys: []ebiten.Key{ebiten.KeyEnter}})
 	if a.dialog == nil || a.dialog.Title != "Replace file" || got != "" {
 		t.Fatalf("dialog %+v got %q", a.dialog, got)
 	}
-	a.step(core.Input{Escape: true})
+	a.Step(core.Input{Escape: true})
 	if a.dialog != nil || a.browser == nil {
 		t.Fatal("Escape takes back the question first and leaves the browser open")
 	}
-	a.step(core.Input{Enter: true, Keys: []ebiten.Key{ebiten.KeyEnter}})
+	a.Step(core.Input{Enter: true, Keys: []ebiten.Key{ebiten.KeyEnter}})
 	a.dialogDefault()
 	if a.browser != nil || evalLinks(t, got) != filepath.Join(evalLinks(t, dir), "api.json") {
 		t.Fatalf("Replace takes the path: %q, browser %v", got, a.browser != nil)
@@ -171,12 +171,12 @@ func TestADoubleClickOpensARow(t *testing.T) {
 	var got string
 	a.pickFile("Pick", filedialog.OpenFile, "", func(path string) { got = path })
 	x, y := shownCenter(t, a, "api.json")
-	a.step(core.Input{X: x, Y: y, Click: true, Held: true, Clicks: 1})
-	a.step(core.Input{X: x, Y: y})
+	a.Step(core.Input{X: x, Y: y, Click: true, Held: true, Clicks: 1})
+	a.Step(core.Input{X: x, Y: y})
 	if got != "" || a.browser.model.Selected != 1 {
 		t.Fatalf("a click selects: got %q selected %d", got, a.browser.model.Selected)
 	}
-	a.step(core.Input{X: x, Y: y, Click: true, Held: true, Clicks: 2})
+	a.Step(core.Input{X: x, Y: y, Click: true, Held: true, Clicks: 2})
 	if evalLinks(t, got) != filepath.Join(evalLinks(t, dir), "api.json") {
 		t.Fatalf("a double click opens: %q", got)
 	}
@@ -236,7 +236,7 @@ func TestNoHintWhenNoProgramIsSuggested(t *testing.T) {
 // laid the browser out.
 func shownCenter(t *testing.T, app *App, text string) (int, int) {
 	t.Helper()
-	app.step(core.Input{X: 5000, Y: 5000})
+	app.Step(core.Input{X: 5000, Y: 5000})
 	return textCenter(t, app, text)
 }
 

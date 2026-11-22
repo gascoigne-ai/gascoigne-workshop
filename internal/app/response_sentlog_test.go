@@ -89,12 +89,12 @@ func TestPickingASentRowOfADeletedRequestSaysSo(t *testing.T) {
 func TestTheSidebarCanShowTheSentLogAndTheEmptyNote(t *testing.T) {
 	a := testApp(t, memorySettings(), withOptions(Options{StatePath: filepath.Join(t.TempDir(), "state.json")}))
 	a.showSent = true
-	a.step(core.Input{}) // empty log
+	a.Step(core.Input{}) // empty log
 	tab := a.cur()
 	pointTabAt(tab, jsonServer(t).URL)
 	a.send(tab)
 	waitForResponse(t, a, tab)
-	a.step(core.Input{}) // with a row
+	a.Step(core.Input{}) // with a row
 	if !a.showSent {
 		t.Fatal("the sidebar left the log by itself")
 	}

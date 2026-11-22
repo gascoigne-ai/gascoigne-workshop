@@ -36,7 +36,7 @@ func TestTabVisitsTheWindowInReadingOrderAndCycles(t *testing.T) {
 	waitForResponse(t, a, tab)
 	var order []string
 	for range 8 {
-		a.step(core.Input{X: 5000, Y: 5000, Tab: true})
+		a.Step(core.Input{X: 5000, Y: 5000, Tab: true})
 		order = append(order, focusName(a))
 	}
 	want := []string{"filter", "url", "response", "filter", "url", "response", "filter", "url"}
@@ -67,7 +67,7 @@ func iconOnlyWithoutHint(dump string) []string {
 
 func TestEveryIconOnlyControlHasATooltip(t *testing.T) {
 	a := testApp(t)
-	a.step(core.Input{X: 5000, Y: 5000})
+	a.Step(core.Input{X: 5000, Y: 5000})
 	root := a.view()
 	view.Layout(a.ctx, root, a.w, a.h)
 	if bad := iconOnlyWithoutHint(view.Dump(root)); len(bad) > 0 {

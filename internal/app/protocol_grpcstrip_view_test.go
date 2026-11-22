@@ -44,7 +44,7 @@ func TestTheGRPCStripSeparatesItsChips(t *testing.T) {
 	for _, state := range []string{"grpc-method", "grpc-stream", "grpc-no-method"} {
 		t.Run(state, func(t *testing.T) {
 			a := testApp(t)
-			t.Cleanup(a.waitWrites)
+			t.Cleanup(a.WaitWrites)
 			tab := a.cur()
 			stateNamed(t, state).setUp(t, a, tab)
 			root := a.urlBar(tab)
@@ -69,7 +69,7 @@ func TestTheGRPCStripSeparatesItsChips(t *testing.T) {
 // plain one otherwise.
 func TestTheStreamChipShowsItsState(t *testing.T) {
 	a := testApp(t)
-	t.Cleanup(a.waitWrites)
+	t.Cleanup(a.WaitWrites)
 	tab := a.cur()
 	stateNamed(t, "grpc-method").setUp(t, a, tab)
 	off := Dump(layoutBar(a, tab))

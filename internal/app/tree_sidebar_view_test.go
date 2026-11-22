@@ -61,7 +61,7 @@ func TestTheSidebarLaysOutAsPinned(t *testing.T) {
 			name := "sidebar-" + tc.name + "-" + size.name
 			t.Run(name, func(t *testing.T) {
 				a := testApp(t)
-				t.Cleanup(a.waitWrites)
+				t.Cleanup(a.WaitWrites)
 				tc.setup(a)
 				root := a.sidebar()
 				Layout(a.ctx, root, size.width, sidebarPinH)
@@ -81,7 +81,7 @@ func TestTheSidebarLaysOutAsPinned(t *testing.T) {
 // of sent requests, and its label names what is shown.
 func TestTheSidebarChipSwitchesBetweenTreeAndSentLog(t *testing.T) {
 	a := testApp(t)
-	t.Cleanup(a.waitWrites)
+	t.Cleanup(a.WaitWrites)
 	clickText(t, a, "Collections", 0)
 	if !a.showSent {
 		t.Fatal("clicking Collections did not show the sent log")
@@ -109,7 +109,7 @@ func TestTheFilterMatchInATreeRowIsDrawnInTheAccentLine(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			a := testApp(t)
-			t.Cleanup(a.waitWrites)
+			t.Cleanup(a.WaitWrites)
 			clickDumped(t, a, "control=field", 0) // the filter field, the first field of the window
 			a.typeText(tc.filter)
 			root := a.sidebar()
@@ -142,7 +142,7 @@ func TestARootRowNameIsBoldAndAFolderNameIsNot(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			a, _, _ := twoCollectionsApp(t)
-			t.Cleanup(a.waitWrites)
+			t.Cleanup(a.WaitWrites)
 			a.filter.Text = tc.filter
 			root := a.sidebar()
 			Layout(a.ctx, root, sidebarW-1, sidebarPinH)
@@ -182,9 +182,9 @@ func TestDraggingOverATreeRowMakesItTheDropTarget(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			a := testApp(t)
-			t.Cleanup(a.waitWrites)
-			a.step(core.Input{X: 100, Y: treeRowY(rowInfo), Click: true, Held: true})
-			a.step(core.Input{X: 100, Y: treeRowY(tc.row), Held: true})
+			t.Cleanup(a.WaitWrites)
+			a.Step(core.Input{X: 100, Y: treeRowY(rowInfo), Click: true, Held: true})
+			a.Step(core.Input{X: 100, Y: treeRowY(tc.row), Held: true})
 			if a.dragNode != request.Of(findReq(a, "Repository Info")) {
 				t.Fatalf("dragging %v, want Repository Info", a.dragNode)
 			}

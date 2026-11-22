@@ -89,7 +89,7 @@ func TestTheKeyValueTableLaysOutAsPinned(t *testing.T) {
 			name := "tableview-" + state.name + "-" + size.name
 			t.Run(name, func(t *testing.T) {
 				a := testApp(t)
-				t.Cleanup(a.waitWrites)
+				t.Cleanup(a.WaitWrites)
 				tab := a.cur()
 				state.setUp(t, a, tab)
 				root := Stack(a.tableView(state.pane, tab, &widget.ScrollState{}, state.pad))
@@ -110,7 +110,7 @@ func TestTheKeyValueTableLaysOutAsPinned(t *testing.T) {
 // other text area.
 func TestTheBulkTextHasTheTextMenu(t *testing.T) {
 	a := testApp(t)
-	t.Cleanup(a.waitWrites)
+	t.Cleanup(a.WaitWrites)
 	click(a, bulkBtnX, chipsY)
 	if a.bulk == nil {
 		t.Fatal("test setup: the Bulk edit link must open bulk mode")

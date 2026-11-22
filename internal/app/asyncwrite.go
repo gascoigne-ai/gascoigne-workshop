@@ -45,10 +45,11 @@ func (a *App) startWrite(name string, job serial.Job) {
 	})
 }
 
-// waitWrites blocks until the background writes are done (or writeWait
+// WaitWrites blocks until the background writes are done (or writeWait
 // passes), for the paths that must not lose data: quitting and opening
-// another collection. Their outcomes are handled as the frame would.
-func (a *App) waitWrites() {
+// another collection. Their outcomes are handled as the frame would. It is
+// exported for apptest, whose tests wait for saves before they read files.
+func (a *App) WaitWrites() {
 	deadline := time.Now().Add(writeWait)
 	for a.writes.Busy() && time.Now().Before(deadline) {
 		if !a.drain() {

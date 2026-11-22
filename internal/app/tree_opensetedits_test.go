@@ -52,10 +52,10 @@ func autosaveAfterPause(app *App) {
 	now := time.Now()
 	app.now = func() time.Time { return now }
 	app.markStale() // the tests edit the model directly, with no input to mark the keys stale
-	app.step(core.Input{})
+	app.Step(core.Input{})
 	now = now.Add(2 * saveDebounce)
-	app.step(core.Input{})
-	app.waitWrites()
+	app.Step(core.Input{})
+	app.WaitWrites()
 }
 
 // exists reports whether the file or folder at path is there.
@@ -88,7 +88,7 @@ func TestTheUnsavedMarksFollowTheCollectionOfEachTab(t *testing.T) {
 	betaCall.URL = "http://beta.edited"
 	a.markStale()
 	a.saveCollection(beta)
-	a.waitWrites()
+	a.WaitWrites()
 	if !shownTab(t, a, alphaCall).Dirty || shownTab(t, a, betaCall).Dirty {
 		t.Fatalf("after saving Beta: Alpha's tab %v, Beta's %v", shownTab(t, a, alphaCall).Dirty, shownTab(t, a, betaCall).Dirty)
 	}
@@ -118,7 +118,7 @@ func TestRenamingARequestInOneCollectionLeavesTheSamePathInTheOther(t *testing.T
 
 	a.renameNode(request.Of(betaInner))
 	a.typeText("Core")
-	a.step(core.Input{Enter: true})
+	a.Step(core.Input{Enter: true})
 	if betaInner.Name != "Core" || alphaInner.Name != "Inner" {
 		t.Fatalf("Beta's %q, Alpha's %q", betaInner.Name, alphaInner.Name)
 	}

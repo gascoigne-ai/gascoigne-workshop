@@ -115,19 +115,19 @@ func TestExplorerAndTrafficPanesDrawWithoutPanicking(t *testing.T) {
 	a := testApp(t)
 	tab := a.cur()
 	tab.Req.Protocol = "mcp"
-	a.step(core.Input{}) // no server yet
+	a.Step(core.Input{}) // no server yet
 	a.applyWS(wsReceived{wsTarget{tab: tab}, request.Event{Dir: request.Info, Kind: request.KindInitialize, Text: `{"protocolVersion":"2025-06-18","capabilities":{"tools":{}},"serverInfo":{"name":"mock","version":"1"},"instructions":"Use echo."}`}})
 	announce(a, tab)
 	openSession(tab, &fakeSession{result: `{"content":[]}`})
 	for _, kind := range []mcpexplorer.Kind{mcpexplorer.Tools, mcpexplorer.Resources, mcpexplorer.Prompts} {
 		a.exploreChoose(tab, kind)
-		a.step(core.Input{})
+		a.Step(core.Input{})
 		a.exploreOpen(tab, 0)
 		a.exploreCall(tab)
 		until(t, a, "the answer", func() bool { return !tab.explorer.IsCalling() })
 	}
 	tab.respTab = 1 // the JSON-RPC traffic
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	if tab.Server == nil || tab.Server.Name != "mock" {
 		t.Fatalf("server %+v", tab.Server)
 	}
@@ -144,7 +144,7 @@ func TestLeavingMCPShowsTheFirstResponsePane(t *testing.T) {
 	if tab.respTab != 0 {
 		t.Fatalf("respTab %d", tab.respTab)
 	}
-	a.step(core.Input{})
+	a.Step(core.Input{})
 }
 
 // The empty list's note sat flush against the edge of the list and the

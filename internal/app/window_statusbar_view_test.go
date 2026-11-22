@@ -29,7 +29,7 @@ func TestTheStatusBarLaysOutAsPinned(t *testing.T) {
 		name := "statusbar-long-" + size.name
 		t.Run(name, func(t *testing.T) {
 			a := testApp(t)
-			t.Cleanup(a.waitWrites)
+			t.Cleanup(a.WaitWrites)
 			a.status = "Sent 200 OK in 120ms to https://api.github.com/repos/golang/go/issues"
 			root := a.statusBar()
 			Layout(a.ctx, root, size.width, statusH)

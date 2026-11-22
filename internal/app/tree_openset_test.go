@@ -95,7 +95,7 @@ func TestSavingWritesTheCollectionOfTheActiveTabToItsFolder(t *testing.T) {
 	a.openRequest(entryNamed(t, a, "Beta").Collection.Requests[0])
 	a.cur().Req.URL = "http://beta.edited"
 	a.saveWorkspace()
-	a.waitWrites()
+	a.WaitWrites()
 	if got, err := storeDisk.Load(betaDir); err != nil || got.Requests[0].URL != "http://beta.edited" {
 		t.Fatalf("Beta on disk: %+v %v", got.Requests, err)
 	}
@@ -108,14 +108,14 @@ func TestEachCollectionIsSavedToItsOwnFolderAfterAPause(t *testing.T) {
 	a, alphaDir, betaDir := twoCollectionsApp(t)
 	now := time.Now()
 	a.now = func() time.Time { return now }
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	entryNamed(t, a, "Alpha").Collection.Requests[0].Name = "Alpha renamed"
 	entryNamed(t, a, "Beta").Collection.Folders[0].Name = "Beta folder"
 	a.markStale() // the test edits the model directly
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	now = now.Add(2 * time.Second)
-	a.step(core.Input{})
-	a.waitWrites()
+	a.Step(core.Input{})
+	a.WaitWrites()
 	alpha, err := storeDisk.Load(alphaDir)
 	if err != nil || alpha.Requests[0].Name != "Alpha renamed" || alpha.Folders[0].Name != "Nested" {
 		t.Fatalf("Alpha on disk: %+v %v", alpha, err)
@@ -203,7 +203,7 @@ func TestClosingACollectionClosesItsTabsAndTheLastLeavesAnEmptyTree(t *testing.T
 	if len(a.open.Entries) != 0 || len(a.visibleRows()) != 0 || a.Title() != appName {
 		t.Fatalf("open %d, rows %d, title %q", len(a.open.Entries), len(a.visibleRows()), a.Title())
 	}
-	a.step(core.Input{}) // the window still draws with nothing open
+	a.Step(core.Input{}) // the window still draws with nothing open
 	st, err := settingsDisk.Load(a.settingsPath)
 	if err != nil || len(st.Collections) != 0 || st.Workspace != "" {
 		t.Fatalf("remembered %+v %q %v", st.Collections, st.Workspace, err)
@@ -235,7 +235,7 @@ func TestARestartRestoresEveryOpenCollectionWithItsTabsAndEnvironment(t *testing
 			t.Fatal(err)
 		}
 		a.w, a.h = winW, winH
-		a.step(core.Input{})
+		a.Step(core.Input{})
 		return a
 	}
 	a, err := NewApp(withAdapters(Options{SettingsPath: settingsPath, StatePath: statePath, WorkspaceDir: alphaDir}))

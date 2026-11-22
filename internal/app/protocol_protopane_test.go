@@ -25,7 +25,7 @@ var healthProtoSource = filepath.Join("..", "exampleserver", "protos", "grpc", "
 func grpcTabOnProtoPane(t *testing.T) (a *App, tab *reqTab, dir string) {
 	t.Helper()
 	a = testApp(t)
-	t.Cleanup(a.waitWrites)
+	t.Cleanup(a.WaitWrites)
 	dir = t.TempDir()
 	a.setWorkspace(dir)
 	tab = a.cur()
@@ -135,7 +135,7 @@ func TestTypingAPathSetsItFromTheCollectionFolder(t *testing.T) {
 	}
 	// the new row is the last field of the window, after the URL bar's
 	clickDumped(t, a, "fieldB", strings.Count(layoutDump(a), "fieldB")-1)
-	a.step(core.Input{X: 5000, Y: 5000, Typed: []rune("protos")})
+	a.Step(core.Input{X: 5000, Y: 5000, Typed: []rune("protos")})
 	if want := []string{filepath.Join(dir, "protos")}; !reflect.DeepEqual(tab.Req.Proto.ImportPaths, want) {
 		t.Fatalf("import paths %q, want %q", tab.Req.Proto.ImportPaths, want)
 	}

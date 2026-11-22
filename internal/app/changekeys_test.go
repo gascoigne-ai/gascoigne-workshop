@@ -17,13 +17,13 @@ func TestIdleFramesDoNotRebuildTheChangeKeys(t *testing.T) {
 	var calls int
 	a.keys.collectionOf = func(col request.Collection) string { calls++; return tree.Key(col) }
 	for range 30 {
-		a.step(core.Input{})
+		a.Step(core.Input{})
 	}
 	if calls > 1 {
 		t.Fatalf("%d key builds over 30 idle frames, want at most one", calls)
 	}
 	before := calls
-	a.step(core.Input{X: 10, Y: 10, Click: true})
+	a.Step(core.Input{X: 10, Y: 10, Click: true})
 	if calls == before {
 		t.Fatal("a frame with input must check the collection")
 	}
@@ -35,15 +35,15 @@ func TestIdleFramesDoNotRecompareTheTabsWithTheirSavedCopies(t *testing.T) {
 	a := testApp(t)
 	var calls int
 	a.keys.dirtyOf = func(tab *reqTab) bool { calls++; return dirty(tab) }
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	before := calls
 	for range 30 {
-		a.step(core.Input{})
+		a.Step(core.Input{})
 	}
 	if calls != before {
 		t.Fatalf("%d comparisons over 30 idle frames", calls-before)
 	}
-	a.step(core.Input{X: 10, Y: 10, Click: true})
+	a.Step(core.Input{X: 10, Y: 10, Click: true})
 	if calls == before {
 		t.Fatal("a frame with input must compare again")
 	}

@@ -49,7 +49,7 @@ func TestTheDialogLaysOutAsPinned(t *testing.T) {
 			name := "dialog-" + kind.name + "-" + size.name
 			t.Run(name, func(t *testing.T) {
 				a := testApp(t)
-				t.Cleanup(a.waitWrites)
+				t.Cleanup(a.WaitWrites)
 				kind.open(a)
 				assertDumpPinned(t, a, Stack(a.dialogView()), name, size.width, size.height)
 			})
@@ -61,7 +61,7 @@ func TestTheDialogLaysOutAsPinned(t *testing.T) {
 // print.
 func TestThePromptFieldEditsTheDialogInput(t *testing.T) {
 	a := testApp(t)
-	t.Cleanup(a.waitWrites)
+	t.Cleanup(a.WaitWrites)
 	a.prompt("Rename", "Search Repos", "Rename", func(string) {})
 	root := a.dialogView()
 	Layout(a.ctx, Stack(root), winW, winH)
@@ -77,7 +77,7 @@ func TestThePromptFieldEditsTheDialogInput(t *testing.T) {
 // No dialog, no view.
 func TestNoDialogNoDialogView(t *testing.T) {
 	a := testApp(t)
-	t.Cleanup(a.waitWrites)
+	t.Cleanup(a.WaitWrites)
 	if root := a.dialogView(); root != nil {
 		t.Fatalf("dialog view %v with no dialog open", root)
 	}
@@ -90,7 +90,7 @@ func TestTheToastsLayOutAsPinned(t *testing.T) {
 		name := "toasts-" + size.name
 		t.Run(name, func(t *testing.T) {
 			a := testApp(t)
-			t.Cleanup(a.waitWrites)
+			t.Cleanup(a.WaitWrites)
 			a.w, a.h = size.width, size.height
 			a.toast("Cookies cleared", severity.Info)
 			a.toast("Enter the gRPC server first, for example grpc://localhost:50051", severity.Error)
@@ -102,7 +102,7 @@ func TestTheToastsLayOutAsPinned(t *testing.T) {
 // With nothing to show the toasts add nothing to the window.
 func TestNoToastsNoToastsView(t *testing.T) {
 	a := testApp(t)
-	t.Cleanup(a.waitWrites)
+	t.Cleanup(a.WaitWrites)
 	root := Stack(a.toastsView())
 	Layout(a.ctx, root, winW, winH)
 	if got := len(root.Children()); got != 0 {
@@ -114,16 +114,16 @@ func TestNoToastsNoToastsView(t *testing.T) {
 // its primary button, through the whole window.
 func TestToastsAndDialogAnswerInput(t *testing.T) {
 	a := testApp(t)
-	t.Cleanup(a.waitWrites)
+	t.Cleanup(a.WaitWrites)
 	a.toast("There is no response to save", severity.Error)
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	clickText(t, a, "There is no response to save", 0)
 	if len(a.toasts) != 0 {
 		t.Fatalf("toasts %+v after the click", a.toasts)
 	}
 	ran := 0
 	a.confirm("Delete Search Repos?", "This cannot be undone.", "Delete", func() { ran++ })
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	clickText(t, a, "Delete", 0)
 	if ran != 1 || a.dialog != nil {
 		t.Fatalf("Delete ran %d times, dialog open %v", ran, a.dialog != nil)

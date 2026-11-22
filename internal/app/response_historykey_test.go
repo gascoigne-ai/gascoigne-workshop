@@ -36,7 +36,7 @@ func TestHistoryIsKeptPerCollectionAndOldHistoryStaysWithTheFirst(t *testing.T) 
 	tab := a.cur()
 	tab.Resp = &request.Response{Status: 200, Body: []byte("beta")}
 	a.saveHistory(tab)
-	a.waitWrites()
+	a.WaitWrites()
 	if got := a.loadHistory(betaInner); len(got) != 1 || got[0].Resp.Status != 200 {
 		t.Fatalf("Beta's history %+v", got)
 	}

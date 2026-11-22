@@ -54,10 +54,10 @@ func TestTheFindBarLaysOutAsPinned(t *testing.T) {
 			t.Run(name, func(t *testing.T) {
 				a := jsonResponse(t, findBody)
 				tab := a.cur()
-				a.step(combo(ebiten.KeyF, true, false, false))
+				a.Step(combo(ebiten.KeyF, true, false, false))
 				a.typeText(tc.query)
 				for range tc.steps {
-					a.step(core.Input{Enter: true})
+					a.Step(core.Input{Enter: true})
 				}
 				root := a.findBar(tab)
 				Layout(a.ctx, root, size.width, core.RowH)
@@ -77,10 +77,10 @@ func TestTheFindBarLaysOutAsPinned(t *testing.T) {
 // empty query, the active hit of all hits, or that there is none.
 func TestTheFindCounterFollowsTheQuery(t *testing.T) {
 	a := jsonResponse(t, findBody)
-	a.step(combo(ebiten.KeyF, true, false, false))
+	a.Step(combo(ebiten.KeyF, true, false, false))
 	a.typeText("id")
 	textCenter(t, a, "1/2")
-	a.step(core.Input{Enter: true})
+	a.Step(core.Input{Enter: true})
 	textCenter(t, a, "2/2")
 	a.typeText("zzz")
 	textCenter(t, a, "No matches")
@@ -134,7 +134,7 @@ func TestTheFindFieldHasTheTextMenu(t *testing.T) {
 func TestCtrlFOpensFindAndTypingSearches(t *testing.T) {
 	a := jsonResponse(t, `{"id":1,"name":"x","ids":[1,2]}`)
 	tab := a.cur()
-	a.step(combo(ebiten.KeyF, true, false, false))
+	a.Step(combo(ebiten.KeyF, true, false, false))
 	if !tab.look.FindOpen || !tab.find.Focused {
 		t.Fatalf("findOpen %v focused %v", tab.look.FindOpen, tab.find.Focused)
 	}
@@ -142,15 +142,15 @@ func TestCtrlFOpensFindAndTypingSearches(t *testing.T) {
 	if tab.look.Match != 0 || len(tab.view.Find("id")) != 2 {
 		t.Fatalf("matchIdx %d, matches %d", tab.look.Match, len(tab.view.Find("id")))
 	}
-	a.step(core.Input{Enter: true})
+	a.Step(core.Input{Enter: true})
 	if tab.look.Match != 1 {
 		t.Fatalf("Enter goes to the next match, idx %d", tab.look.Match)
 	}
-	a.step(core.Input{Enter: true}) // wraps
+	a.Step(core.Input{Enter: true}) // wraps
 	if tab.look.Match != 0 {
 		t.Fatalf("wrap: idx %d", tab.look.Match)
 	}
-	a.step(core.Input{Enter: true, Shift: true})
+	a.Step(core.Input{Enter: true, Shift: true})
 	if tab.look.Match != 1 {
 		t.Fatalf("Shift+Enter goes back and wraps, idx %d", tab.look.Match)
 	}
@@ -182,9 +182,9 @@ func TestFindButtonsAndClose(t *testing.T) {
 func TestEscapeClosesFindBeforeAnythingElse(t *testing.T) {
 	a := jsonResponse(t, `{"id":1}`)
 	tab := a.cur()
-	a.step(combo(ebiten.KeyF, true, false, false))
+	a.Step(combo(ebiten.KeyF, true, false, false))
 	a.typeText("id")
-	a.step(core.Input{Escape: true})
+	a.Step(core.Input{Escape: true})
 	if tab.look.FindOpen || len(tab.view.Find("")) != 0 {
 		t.Fatal("Escape closes the find bar")
 	}
@@ -196,7 +196,7 @@ func TestEscapeClosesFindBeforeAnythingElse(t *testing.T) {
 func TestANewResponseRerunsAnOpenSearch(t *testing.T) {
 	a := jsonResponse(t, `{"id":1}`)
 	tab := a.cur()
-	a.step(combo(ebiten.KeyF, true, false, false))
+	a.Step(combo(ebiten.KeyF, true, false, false))
 	a.typeText("id")
 
 	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {

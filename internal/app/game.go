@@ -35,7 +35,7 @@ func (a *App) Layout(width, height int) (int, int) {
 // Update implements ebiten.Game: it samples input and runs one frame.
 func (a *App) Update() error {
 	a.winX, a.winY = ebiten.WindowPosition()
-	a.step(a.sampler.Read().Scaled(a.ctx.Scale))
+	a.Step(a.sampler.Read().Scaled(a.ctx.Scale))
 	if title := a.Title(); title != a.title {
 		a.title = title
 		ebiten.SetWindowTitle(title)
@@ -48,10 +48,12 @@ func (a *App) Update() error {
 	return nil
 }
 
-// step runs one frame with the given input: it applies finished sends,
+// Step runs one frame with the given input: it applies finished sends,
 // builds the view, lays it out and lets it react. Handlers in the view
-// change App state. Tests drive the app through step without a window.
-func (a *App) step(in core.Input) {
+// change App state. Tests drive the app through Step without a window; it
+// is exported only for apptest, the test-support package that lives outside
+// package app so whole-app tests can move to e2e.
+func (a *App) Step(in core.Input) {
 	moved := a.beginFrame(in)
 	a.routeKeys(in)
 	a.endFrame(moved)
@@ -191,6 +193,17 @@ func (a *App) frameTree() *view.El {
 	view.Layout(a.ctx, root, a.w, a.h)
 	return root
 }
+
+// Tree is the laid-out view tree the next Draw paints. It is exported
+// because apptest cannot build a dump or a widget query without it, and
+// dump formatting belongs to the tests, not to production code. It is
+// frameTree, so a stale tree is rebuilt and the builds counter moves.
+func (a *App) Tree() view.Node { return a.frameTree() }
+
+// SetSize sets the window size in logical pixels and nothing else. Unlike
+// the Layout path (setSize) it leaves the device scale alone, which is what
+// a test window of fixed size wants; apptest calls it before the first Step.
+func (a *App) SetSize(width, height int) { a.w, a.h = width, height }
 
 // textFocused reports whether a text widget has the keyboard.
 func (a *App) textFocused() bool {

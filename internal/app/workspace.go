@@ -194,7 +194,7 @@ func (a *App) workspaceTick() {
 // passed). Nothing is written for a collection without a folder.
 func (a *App) FlushWorkspace() error {
 	a.commitEdit()
-	a.waitWrites()
+	a.WaitWrites()
 	var failed []error
 	for _, entry := range a.open.Entries {
 		if err := a.flushCollection(entry); err != nil {
@@ -210,7 +210,7 @@ func (a *App) flushCollection(entry collections.Entry) error {
 	if entry.Dir == "" {
 		return nil
 	}
-	a.waitWrites()
+	a.WaitWrites()
 	col := entry.Collection
 	if !a.saveOf(col).Pending(a.collectionKeyNow(col)) {
 		return nil

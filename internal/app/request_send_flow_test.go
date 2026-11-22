@@ -87,7 +87,7 @@ func TestEnterInTheURLFieldSends(t *testing.T) {
 	pointTabAt(tab, srv.URL)
 
 	click(a, 1100, urlBarY) // focus the field
-	a.step(core.Input{Enter: true})
+	a.Step(core.Input{Enter: true})
 	waitForResponse(t, a, tab)
 	if tab.Resp.Status != 200 {
 		t.Fatalf("resp = %+v", tab.Resp)
@@ -109,8 +109,8 @@ func TestSendingTwiceWhileRunningStartsOneRequest(t *testing.T) {
 	pointTabAt(tab, srv.URL)
 
 	click(a, sendX, urlBarY)
-	a.step(combo(ebiten.KeyEnter, true, false, false))
-	a.step(combo(ebiten.KeyEnter, true, false, false))
+	a.Step(combo(ebiten.KeyEnter, true, false, false))
+	a.Step(combo(ebiten.KeyEnter, true, false, false))
 	<-hits
 	close(release)
 	waitForResponse(t, a, tab)
@@ -179,7 +179,7 @@ func TestEveryPaneBuildsInEveryResponseState(t *testing.T) {
 		for i := range requestPanes {
 			for j := range responsePanes {
 				tab.paneTab, tab.respTab = i, j
-				a.step(core.Input{}) // panics on a bad pane
+				a.Step(core.Input{}) // panics on a bad pane
 			}
 		}
 	}
@@ -216,7 +216,7 @@ func TestCtrlEnterSendsTheRequest(t *testing.T) {
 	a := testApp(t)
 	tab := a.cur()
 	pointTabAt(tab, srv.URL)
-	a.step(combo(ebiten.KeyEnter, true, false, false))
+	a.Step(combo(ebiten.KeyEnter, true, false, false))
 	waitForResponse(t, a, tab)
 	if tab.Resp.Status != 200 {
 		t.Fatalf("resp = %+v", tab.Resp)
@@ -254,7 +254,7 @@ func TestTypingInTheBodyEditor(t *testing.T) {
 	click(a, jsonChipX, chipsY)
 	click(a, editorX, editorY)
 	a.typeText(`{"a":1}`)
-	a.step(core.Input{Enter: true})
+	a.Step(core.Input{Enter: true})
 	a.typeText("x")
 	if got := a.cur().Req.Body; got != "{\"a\":1}\nx" {
 		t.Fatalf("Body = %q", got)
@@ -303,9 +303,9 @@ func TestFormBodyFieldsAreEditable(t *testing.T) {
 	click(a, formChipX, chipsY)
 	click(a, nameCellX, formRow0Y)
 	a.typeText("user")
-	a.step(core.Input{Tab: true})
+	a.Step(core.Input{Tab: true})
 	a.typeText("ann")
-	a.step(core.Input{Enter: true})
+	a.Step(core.Input{Enter: true})
 	if len(req.Form) != 1 || req.Form[0].Name != "user" || req.Form[0].Value != "ann" || !req.Form[0].Enabled {
 		t.Fatalf("Form = %+v", req.Form)
 	}
@@ -341,7 +341,7 @@ func TestEachTabKeepsItsOwnBodyEditor(t *testing.T) {
 	a.newRequest()
 	second := a.cur()
 	second.paneTab = bodyTabIdx
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	click(a, textChipX, chipsY)
 	click(a, editorX, editorY)
 	a.typeText("second")
@@ -378,11 +378,11 @@ func TestEscapeCancelsARunningRequestButClosesTheMenuFirst(t *testing.T) {
 	click(a, sendX, urlBarY)
 
 	a.menu = true
-	a.step(core.Input{Escape: true})
+	a.Step(core.Input{Escape: true})
 	if a.menu || !tab.Sending() {
 		t.Fatalf("the first Escape closes the menu only: menu %v sending %v", a.menu, tab.Sending())
 	}
-	a.step(core.Input{Escape: true})
+	a.Step(core.Input{Escape: true})
 	if tab.Sending() || tab.Resp == nil || tab.Resp.Err != "Cancelled" {
 		t.Fatalf("the second Escape cancels: sending %v resp %+v", tab.Sending(), tab.Resp)
 	}
@@ -390,7 +390,7 @@ func TestEscapeCancelsARunningRequestButClosesTheMenuFirst(t *testing.T) {
 
 func TestEscapeWithNothingRunningDoesNothing(t *testing.T) {
 	a := testApp(t)
-	a.step(core.Input{Escape: true})
+	a.Step(core.Input{Escape: true})
 	if a.cur().Resp != nil {
 		t.Fatal("Escape must not invent a response")
 	}
@@ -408,13 +408,13 @@ func TestALateResultFromACancelledRequestIsIgnored(t *testing.T) {
 	click(a, sendX, urlBarY)
 	waitForResponse(t, a, tab)
 	for tab.Resp.Err != "" || string(tab.Resp.Body) != "fast" { // the cancelled one may still be in flight
-		a.step(core.Input{})
+		a.Step(core.Input{})
 		time.Sleep(5 * time.Millisecond)
 	}
 
 	release()
 	for range 40 {
-		a.step(core.Input{})
+		a.Step(core.Input{})
 		time.Sleep(5 * time.Millisecond)
 	}
 	if tab.Resp.Err != "" || string(tab.Resp.Body) != "fast" {
@@ -469,7 +469,7 @@ func TestTimeoutFieldAcceptsWholeSecondsOnly(t *testing.T) {
 	if req.TimeoutSec != 7 {
 		t.Fatalf("a non-numeric edit must not change the timeout, got %d", req.TimeoutSec)
 	}
-	a.step(core.Input{Edits: []core.Edit{core.EditBackspace, core.EditBackspace}}) // clears the field
+	a.Step(core.Input{Edits: []core.Edit{core.EditBackspace, core.EditBackspace}}) // clears the field
 	if req.TimeoutSec != 0 {
 		t.Fatalf("an empty field means the default, got %d", req.TimeoutSec)
 	}
@@ -552,7 +552,7 @@ func TestCurlCopyExpandsVariables(t *testing.T) {
 	a.cur().view.SetLines(respview.CodeLines([]byte("{}")))
 	clip := &fakeClip{}
 	a.ctx.Clipboard = clip
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	click(a, curlBtnX, toolbarY)
 	if !strings.Contains(clip.text, "https://api.github.com/search/repositories?q=gioui") || strings.Contains(clip.text, "{{") {
 		t.Fatalf("cURL = %q", clip.text)

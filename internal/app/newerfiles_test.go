@@ -52,7 +52,7 @@ func TestNewerSettingsAreNotWrittenThisSession(t *testing.T) {
 		t.Fatal(err)
 	}
 	a.openCollectionAt(other) // remembers the open collections in the settings
-	a.waitWrites()
+	a.WaitWrites()
 	unchangedFile(t, path, newerSettings)
 }
 
@@ -73,10 +73,10 @@ func TestNewerStateIsNotWrittenThisSession(t *testing.T) {
 	clock := time.Unix(1000, 0)
 	a.now = func() time.Time { return clock }
 	a.sidebarSplit.Size = 280
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	clock = clock.Add(10 * time.Second) // past the quiet spell that writes the state
-	a.step(core.Input{})
-	a.waitWrites()
+	a.Step(core.Input{})
+	a.WaitWrites()
 	if err := a.SaveState(); err != nil { // on exit
 		t.Fatal(err)
 	}
@@ -96,7 +96,7 @@ func TestNewerCollectionIsNotOpened(t *testing.T) {
 	a := testApp(t)
 	before := len(a.open.Entries)
 	a.openCollectionAt(dir)
-	a.waitWrites()
+	a.WaitWrites()
 	if len(a.open.Entries) != before {
 		t.Fatalf("%d collections open, want %d: the newer one is not opened", len(a.open.Entries), before)
 	}

@@ -15,7 +15,7 @@ import (
 // settle runs idle frames and clears the dirty flag, as drawing does.
 func settle(app *App, frames int) {
 	for range frames {
-		app.step(core.Input{X: app.lastIn.X, Y: app.lastIn.Y})
+		app.Step(core.Input{X: app.lastIn.X, Y: app.lastIn.Y})
 		app.dirty = false
 	}
 }
@@ -29,7 +29,7 @@ func TestAFreshAppNeedsADrawAndAnIdleOneIsDrawnOnlyAtTheFloorRate(t *testing.T) 
 	const frames = 600
 	drawn, gap, longest := 0, 0, 0
 	for range frames {
-		a.step(core.Input{X: a.lastIn.X, Y: a.lastIn.Y})
+		a.Step(core.Input{X: a.lastIn.X, Y: a.lastIn.Y})
 		gap++
 		if a.dirty {
 			drawn++
@@ -52,9 +52,9 @@ func TestInputMakesTheNextFrameDirtyOnlyWhenItChangesSomething(t *testing.T) {
 	a := testApp(t)
 	settle(a, 3)
 	still := core.Input{X: 10, Y: 10}
-	a.step(still)
+	a.Step(still)
 	a.dirty = false
-	a.step(still)
+	a.Step(still)
 	if a.dirty && a.ctx.Tick%(a.pacer.TPS()/engine.MinFPS) != 0 { // only the floor may draw it
 		t.Fatal("a pointer that did not move is not activity")
 	}
@@ -74,10 +74,10 @@ func TestInputMakesTheNextFrameDirtyOnlyWhenItChangesSomething(t *testing.T) {
 	} {
 		// map order is random: put the pointer at a known place first, so only
 		// the case under test can be what makes the frame dirty
-		a.step(core.Input{X: 50, Y: 60})
+		a.Step(core.Input{X: 50, Y: 60})
 		settle(a, 2)
 		a.dirty = false
-		a.step(in)
+		a.Step(in)
 		if !a.dirty {
 			t.Errorf("%s must request a redraw", name)
 		}
@@ -87,9 +87,9 @@ func TestInputMakesTheNextFrameDirtyOnlyWhenItChangesSomething(t *testing.T) {
 
 func TestReleasingTheButtonIsActivity(t *testing.T) {
 	a := testApp(t)
-	a.step(core.Input{X: 5, Y: 5, Held: true})
+	a.Step(core.Input{X: 5, Y: 5, Held: true})
 	a.dirty = false
-	a.step(core.Input{X: 5, Y: 5}) // released, nothing else changed
+	a.Step(core.Input{X: 5, Y: 5}) // released, nothing else changed
 	if !a.dirty {
 		t.Fatal("the release ends a drag or a press: redraw")
 	}
@@ -103,7 +103,7 @@ func TestAnArrivingResponseRequestsARedraw(t *testing.T) {
 	a.send(tab)
 	for range 400 {
 		a.dirty = false
-		a.step(core.Input{X: a.lastIn.X, Y: a.lastIn.Y})
+		a.Step(core.Input{X: a.lastIn.X, Y: a.lastIn.Y})
 		if tab.Resp != nil {
 			if !a.dirty {
 				t.Fatal("the frame that applied the response must be drawn")
@@ -126,7 +126,7 @@ func TestToastsRequestRedrawsWhenShownAndWhenTheyExpire(t *testing.T) {
 	}
 	settle(a, 2)
 	clock = clock.Add(10 * time.Second)
-	a.step(core.Input{X: a.lastIn.X, Y: a.lastIn.Y})
+	a.Step(core.Input{X: a.lastIn.X, Y: a.lastIn.Y})
 	if !a.dirty || len(a.toasts) != 0 {
 		t.Fatalf("an expired toast must be removed and drawn away (dirty %v, toasts %d)", a.dirty, len(a.toasts))
 	}
@@ -140,7 +140,7 @@ func TestTheFloorRateKeepsRedrawingWithAndWithoutAFocusedField(t *testing.T) {
 	settle(a, 3)
 	draws := func(frames int) (n int) {
 		for range frames {
-			a.step(core.Input{X: a.lastIn.X, Y: a.lastIn.Y})
+			a.Step(core.Input{X: a.lastIn.X, Y: a.lastIn.Y})
 			if a.dirty {
 				n++
 			}
@@ -174,7 +174,7 @@ func TestResizingOrChangingScaleRequestsARedraw(t *testing.T) {
 func TestDrawEveryFrameOptionAlwaysDraws(t *testing.T) {
 	a := driverApp(t, Options{DrawEveryFrame: true})
 	settle(a, 2)
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	if !a.dirty && !a.alwaysDraw() {
 		t.Fatal("a capture needs every frame")
 	}
@@ -237,16 +237,16 @@ func TestInterfaceScaleSliderResizesLiveAndSavesOnRelease(t *testing.T) {
 	path := a.SettingsPath()
 	click(a, menuBtnX, menuBtnY)
 	a.prefs.Search = widget.NewTextField("interface scale")
-	a.step(core.Input{})
-	a.step(core.Input{X: scaleTrackX0 + (scaleTrackX1-scaleTrackX0)/3, Y: scaleRowY, Click: true, Held: true})
-	a.step(core.Input{X: scaleTrackX1 + 400, Y: scaleRowY, Held: true}) // far right: the maximum
+	a.Step(core.Input{})
+	a.Step(core.Input{X: scaleTrackX0 + (scaleTrackX1-scaleTrackX0)/3, Y: scaleRowY, Click: true, Held: true})
+	a.Step(core.Input{X: scaleTrackX1 + 400, Y: scaleRowY, Held: true}) // far right: the maximum
 	if a.settings.UIScalePct != 200 {
 		t.Fatalf("not applied while dragging: %d", a.settings.UIScalePct)
 	}
 	if got, _ := settingsDisk.Load(path); got.UIScalePct == 200 {
 		t.Fatal("saved before the release")
 	}
-	a.step(core.Input{X: scaleTrackX1 + 400, Y: scaleRowY})
+	a.Step(core.Input{X: scaleTrackX1 + 400, Y: scaleRowY})
 	if got, _ := settingsDisk.Load(path); got.UIScalePct != 200 {
 		t.Fatalf("not saved after the release: %+v", got)
 	}
@@ -274,7 +274,7 @@ func TestInputRestartsTheCaretBlinkOnTheAppClock(t *testing.T) {
 	a := testApp(t)
 	clock := time.Date(2026, 11, 7, 12, 0, 0, 0, time.UTC)
 	a.now = func() time.Time { return clock }
-	a.step(core.Input{X: 5000, Y: 5000, Typed: []rune("a")})
+	a.Step(core.Input{X: 5000, Y: 5000, Typed: []rune("a")})
 	if !a.ctx.CaretSince.Equal(clock) {
 		t.Fatalf("CaretSince = %v, want the time of the keystroke", a.ctx.CaretSince)
 	}
@@ -282,7 +282,7 @@ func TestInputRestartsTheCaretBlinkOnTheAppClock(t *testing.T) {
 	if a.ctx.CaretVisible() {
 		t.Fatal("the caret should be in its hidden phase 700 ms after typing")
 	}
-	a.step(core.Input{X: 5000, Y: 5000, Typed: []rune("b")})
+	a.Step(core.Input{X: 5000, Y: 5000, Typed: []rune("b")})
 	if !a.ctx.CaretVisible() {
 		t.Fatal("typing must show the caret again")
 	}
@@ -292,9 +292,9 @@ func TestAMovingPointerDoesNotRestartTheCaretBlink(t *testing.T) {
 	a := testApp(t)
 	clock := time.Date(2026, 11, 7, 12, 0, 0, 0, time.UTC)
 	a.now = func() time.Time { return clock }
-	a.step(core.Input{X: 5000, Y: 5000, Typed: []rune("a")})
+	a.Step(core.Input{X: 5000, Y: 5000, Typed: []rune("a")})
 	clock = clock.Add(700 * time.Millisecond)
-	a.step(core.Input{X: 10, Y: 10}) // only the pointer moved
+	a.Step(core.Input{X: 10, Y: 10}) // only the pointer moved
 	if a.ctx.CaretVisible() {
 		t.Fatal("moving the pointer showed the caret again")
 	}

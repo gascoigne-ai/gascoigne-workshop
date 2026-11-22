@@ -80,12 +80,12 @@ func TestSaveBodyWritesTheFileAndReportsFailures(t *testing.T) {
 	a.folders = folders.Disk{}
 	path := filepath.Join(t.TempDir(), "out.json")
 	a.writeBody(tab, path)
-	a.waitWrites() // written in the background
+	a.WaitWrites() // written in the background
 	if b, err := os.ReadFile(path); err != nil || string(b) != `{"a":1}` {
 		t.Fatalf("%q %v", b, err)
 	}
 	a.writeBody(tab, filepath.Join(t.TempDir(), "no", "such", "dir", "x"))
-	a.waitWrites()
+	a.WaitWrites()
 	found := false
 	for _, ts := range a.toasts {
 		found = found || (ts.Kind == widget.ToastError && strings.Contains(ts.Text, "Saving failed"))
@@ -296,7 +296,7 @@ func TestFormFieldsCanBeEditedAsText(t *testing.T) {
 			tab.paneTab = i
 		}
 	}
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	p, _, ok := a.visibleTable()
 	if !ok || p.label != formPane.label || p.captionOf(a) != "Fields" {
 		t.Fatalf("the form is a table with a caption: %v %q", ok, p.captionOf(a))

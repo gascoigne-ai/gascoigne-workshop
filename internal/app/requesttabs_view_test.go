@@ -80,7 +80,7 @@ func TestTheRequestTabsLayOutAsPinned(t *testing.T) {
 			name := "requesttabs-" + state.name + "-" + size.name
 			t.Run(name, func(t *testing.T) {
 				a := testApp(t)
-				t.Cleanup(a.waitWrites)
+				t.Cleanup(a.WaitWrites)
 				state.setUp(t, a)
 				root := a.requestTabs()
 				Layout(a.ctx, root, size.width, tabsH)
@@ -102,7 +102,7 @@ const newRequestX = winW - 20
 // The "+" and each tab's cross say what they do, with their shortcuts.
 func TestTheRequestTabsButtonsHaveTooltips(t *testing.T) {
 	a := twoTabs(t)
-	t.Cleanup(a.waitWrites)
+	t.Cleanup(a.WaitWrites)
 	left, width := a.tabX(0)
 	cases := []struct {
 		name string
@@ -122,7 +122,7 @@ func TestTheRequestTabsButtonsHaveTooltips(t *testing.T) {
 // Clicking the "+" opens a new request in a new, active tab.
 func TestClickingThePlusOpensANewRequestTab(t *testing.T) {
 	a := testApp(t)
-	t.Cleanup(a.waitWrites)
+	t.Cleanup(a.WaitWrites)
 	before := len(a.list.Tabs)
 	click(a, newRequestX, tabStripY)
 	if len(a.list.Tabs) != before+1 || a.list.Active != before {
@@ -133,7 +133,7 @@ func TestClickingThePlusOpensANewRequestTab(t *testing.T) {
 // Right-clicking a tab opens its menu where the pointer is.
 func TestRightClickingATabOpensItsMenuAtThePointer(t *testing.T) {
 	a := twoTabs(t)
-	t.Cleanup(a.waitWrites)
+	t.Cleanup(a.WaitWrites)
 	left, _ := a.tabX(1)
 	rightClick(a, left+20, tabStripY)
 	menu := widget.PopupMenu(a.ctx)

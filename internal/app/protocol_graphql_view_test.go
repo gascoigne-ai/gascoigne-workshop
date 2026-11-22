@@ -50,7 +50,7 @@ func TestTheGraphQLBodyLaysOutAsPinned(t *testing.T) {
 			name := "graphql-" + state.name + "-" + size.name
 			t.Run(name, func(t *testing.T) {
 				a := testApp(t)
-				t.Cleanup(a.waitWrites)
+				t.Cleanup(a.WaitWrites)
 				tab := a.cur()
 				a.setBodyType(tab, request.BodyGraphQL)
 				state.setUp(tab)
@@ -73,7 +73,7 @@ func TestTheGraphQLBodyLaysOutAsPinned(t *testing.T) {
 // JSON styler a JSON body leaves on the shared body area.
 func TestTheGraphQLAreasEditTheTabsTexts(t *testing.T) {
 	a := testApp(t)
-	t.Cleanup(a.waitWrites)
+	t.Cleanup(a.WaitWrites)
 	tab := a.cur()
 	tab.body.Styler = jsonStyler
 	areas := behaviorStates(a.graphQLBody(tab), "*widget.areaB")
@@ -106,10 +106,10 @@ const (
 // body pointed at url.
 func openGraphQLBody(t *testing.T, url string) *App {
 	a := openBodyPane(t)
-	t.Cleanup(a.waitWrites)
+	t.Cleanup(a.WaitWrites)
 	a.cur().Req.URL = url
 	a.setBodyType(a.cur(), request.BodyGraphQL)
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	return a
 }
 
@@ -138,7 +138,7 @@ func TestTypingGraphQLVariablesSetsThem(t *testing.T) {
 func TestTheSchemaButtonOffersTheOperations(t *testing.T) {
 	a := openGraphQLBody(t, "http://127.0.0.1:1/graphql")
 	a.cur().schema = pinnedSchema
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	click(a, gqlSchemaX, gqlButtonsY)
 	want := []string{pinnedSchema.Operations[0].Label, pinnedSchema.Operations[1].Label}
 	if widget.PopupMenu(a.ctx) == nil || !slices.Equal(menuLabels(a), want) {

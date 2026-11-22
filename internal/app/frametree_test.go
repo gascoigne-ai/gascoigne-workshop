@@ -50,7 +50,7 @@ func assertDrawnTreeIsFresh(t *testing.T, app *App, label string) {
 func TestDrawShowsTheSettingAClickChanged(t *testing.T) {
 	a := testApp(t)
 	a.menu = true
-	a.step(core.Input{X: 5000, Y: 5000})
+	a.Step(core.Input{X: 5000, Y: 5000})
 	before := view.Dump(a.frameTree())
 	x, y := textCenter(t, a, "Light")
 	click(a, x, y)
@@ -71,7 +71,7 @@ type scriptedFrames struct {
 
 func (s scriptedFrames) step(label string, in core.Input) {
 	s.t.Helper()
-	s.a.step(in)
+	s.a.Step(in)
 	assertDrawnTreeIsFresh(s.t, s.a, label)
 }
 
@@ -221,11 +221,11 @@ func TestTheDrawnTreeMatchesAFreshBuildAcrossASession(t *testing.T) {
 func TestDrawReusesTheTreeWhenNothingFired(t *testing.T) {
 	a := testApp(t)
 	a.menu = true
-	a.step(core.Input{X: 5000, Y: 5000})
+	a.Step(core.Input{X: 5000, Y: 5000})
 
 	builds := func(in core.Input) int {
 		before := a.builds
-		a.step(in)
+		a.Step(in)
 		a.frameTree()
 		return a.builds - before
 	}
@@ -245,7 +245,7 @@ func TestDrawReusesTheTreeWhenNothingFired(t *testing.T) {
 // was built for the old size.
 func TestResizeInvalidatesTheTree(t *testing.T) {
 	a := testApp(t)
-	a.step(core.Input{X: 5000, Y: 5000})
+	a.Step(core.Input{X: 5000, Y: 5000})
 	before := a.builds
 	a.setSize(900, 600, 1)
 	a.frameTree()
@@ -300,7 +300,7 @@ func TestAStepThatChangesWhatTheViewShowsMarksTheTreeStale(t *testing.T) {
 	for name, change := range cases {
 		t.Run(name, func(t *testing.T) {
 			a := testApp(t)
-			a.step(core.Input{X: 5000, Y: 5000})
+			a.Step(core.Input{X: 5000, Y: 5000})
 			a.treeStale = false
 			change(a)
 			if !a.treeStale {

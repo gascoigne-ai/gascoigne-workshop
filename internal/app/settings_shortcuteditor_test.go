@@ -16,7 +16,7 @@ import (
 func TestRecordingATakenKeyOffersReplaceAndSavesNothingYet(t *testing.T) {
 	a := testApp(t)
 	a.shortcutKeys.Start("close-tab")
-	a.step(combo(ebiten.KeyT, true, false, false)) // Ctrl+T is "New request"
+	a.Step(combo(ebiten.KeyT, true, false, false)) // Ctrl+T is "New request"
 	if a.shortcutKeys.Recording() != "" {
 		t.Fatal("recording should end: the user decides now")
 	}
@@ -36,7 +36,7 @@ func TestReplaceGivesTheKeyToThisActionAndUnbindsTheOther(t *testing.T) {
 	a := testApp(t)
 	path := a.SettingsPath()
 	a.shortcutKeys.Start("close-tab")
-	a.step(combo(ebiten.KeyT, true, false, false))
+	a.Step(combo(ebiten.KeyT, true, false, false))
 	a.shortcutKeys.Replace(a, "close-tab")
 	if shortcutpage.KeyText(a, "close-tab") != "Ctrl+T" || shortcutpage.KeyText(a, "new-request") != "Unbound" {
 		t.Fatalf("close-tab %q, new-request %q", shortcutpage.KeyText(a, "close-tab"), shortcutpage.KeyText(a, "new-request"))
@@ -52,7 +52,7 @@ func TestReplaceGivesTheKeyToThisActionAndUnbindsTheOther(t *testing.T) {
 func TestRecordingAgainDropsAPendingReplace(t *testing.T) {
 	a := testApp(t)
 	a.shortcutKeys.Start("close-tab")
-	a.step(combo(ebiten.KeyT, true, false, false))
+	a.Step(combo(ebiten.KeyT, true, false, false))
 	a.shortcutKeys.Start("close-tab")
 	if _, ok := a.shortcutKeys.Pending("close-tab"); ok {
 		t.Fatal("a new recording keeps the old pending choice")
@@ -74,7 +74,7 @@ func TestClearUnbindsAnActionAndResetBringsTheDefaultBack(t *testing.T) {
 func TestAKeyThatTypesTextIsAWarningNotARefusal(t *testing.T) {
 	a := testApp(t)
 	a.shortcutKeys.Start("close-tab")
-	a.step(combo(ebiten.KeyJ, false, false, false)) // a plain letter types text
+	a.Step(combo(ebiten.KeyJ, false, false, false)) // a plain letter types text
 	if a.settings.Shortcuts["close-tab"] != "J" {
 		t.Fatalf("shortcuts = %v", a.settings.Shortcuts)
 	}
@@ -102,11 +102,11 @@ func TestArrowKeysMoveTheShortcutSelectionOnTheShownPage(t *testing.T) {
 	a := testApp(t)
 	shortcutsPageOpen(a)
 	first, second := a.Actions()[0].ID, a.Actions()[1].ID
-	a.step(core.Input{Keys: []ebiten.Key{ebiten.KeyArrowDown}})
+	a.Step(core.Input{Keys: []ebiten.Key{ebiten.KeyArrowDown}})
 	if got := a.shortcutKeys.Selected(); got != first {
 		t.Fatalf("selected %q after Down, want %q", got, first)
 	}
-	a.step(core.Input{Keys: []ebiten.Key{ebiten.KeyArrowDown}})
+	a.Step(core.Input{Keys: []ebiten.Key{ebiten.KeyArrowDown}})
 	if got := a.shortcutKeys.Selected(); got != second {
 		t.Fatalf("selected %q after Down again, want %q", got, second)
 	}
@@ -118,12 +118,12 @@ func TestEnterRecordsTheSelectedShortcutAndTheKeyIsSaved(t *testing.T) {
 	a := testApp(t)
 	shortcutsPageOpen(a)
 	first := a.Actions()[0].ID
-	a.step(core.Input{Keys: []ebiten.Key{ebiten.KeyArrowDown}})
-	a.step(core.Input{Enter: true})
+	a.Step(core.Input{Keys: []ebiten.Key{ebiten.KeyArrowDown}})
+	a.Step(core.Input{Enter: true})
 	if got := a.shortcutKeys.Recording(); got != first {
 		t.Fatalf("recording %q after Enter, want %q", got, first)
 	}
-	a.step(combo(ebiten.KeyF9, false, false, false))
+	a.Step(combo(ebiten.KeyF9, false, false, false))
 	if got := a.settings.Shortcuts[first]; got != "F9" {
 		t.Fatalf("saved shortcuts %v, want %s=F9", a.settings.Shortcuts, first)
 	}
@@ -142,7 +142,7 @@ func TestArrowKeysLeaveTheShortcutSelectionWhenThePageIsNotShown(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			a := testApp(t)
 			prepare(a)
-			a.step(core.Input{Keys: []ebiten.Key{ebiten.KeyArrowDown}})
+			a.Step(core.Input{Keys: []ebiten.Key{ebiten.KeyArrowDown}})
 			if got := a.shortcutKeys.Selected(); got != "" {
 				t.Fatalf("selected %q, want none", got)
 			}

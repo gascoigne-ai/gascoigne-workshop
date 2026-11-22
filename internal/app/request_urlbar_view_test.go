@@ -99,7 +99,7 @@ func TestTheURLBarLaysOutAsPinned(t *testing.T) {
 			name := "urlbar-" + state.name + "-" + size.name
 			t.Run(name, func(t *testing.T) {
 				a := testApp(t)
-				t.Cleanup(a.waitWrites)
+				t.Cleanup(a.WaitWrites)
 				tab := a.cur()
 				state.setUp(t, a, tab)
 				root := a.urlBar(tab)
@@ -147,7 +147,7 @@ func TestTheURLBarsPartsHaveTooltips(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			a := testApp(t)
-			t.Cleanup(a.waitWrites)
+			t.Cleanup(a.WaitWrites)
 			stateNamed(t, tc.state).setUp(t, a, a.cur())
 			if got := tipAt(a, tc.x, urlBarY); got != tc.tip {
 				t.Fatalf("tooltip %q, want %q", got, tc.tip)
@@ -200,7 +200,7 @@ func TestClickingTheURLBarsChipsChangesTheRequest(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			a := testApp(t)
-			t.Cleanup(a.waitWrites)
+			t.Cleanup(a.WaitWrites)
 			tab := a.cur()
 			stateNamed(t, tc.state).setUp(t, a, tab)
 			click(a, tc.x, urlBarY)
@@ -226,7 +226,7 @@ func TestTheURLBarsButtonFollowsItsLabel(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			a := testApp(t)
-			t.Cleanup(a.waitWrites)
+			t.Cleanup(a.WaitWrites)
 			tab := a.cur()
 			stateNamed(t, tc.state).setUp(t, a, tab)
 			click(a, sendX, urlBarY)
@@ -243,7 +243,7 @@ func TestTheURLBarsButtonFollowsItsLabel(t *testing.T) {
 // and Enter sends it.
 func TestTypingAURLEditsTheRequestAndEnterSendsIt(t *testing.T) {
 	a := testApp(t)
-	t.Cleanup(a.waitWrites)
+	t.Cleanup(a.WaitWrites)
 	tab := a.cur()
 	stateNamed(t, "rest-get").setUp(t, a, tab)
 	click(a, urlFieldX, urlBarY)
@@ -251,7 +251,7 @@ func TestTypingAURLEditsTheRequestAndEnterSendsIt(t *testing.T) {
 	if tab.Req.URL != "https://api.example.test/users/1" {
 		t.Fatalf("URL %q", tab.Req.URL)
 	}
-	a.step(core.Input{Keys: []ebiten.Key{ebiten.KeyEnter}, Enter: true})
+	a.Step(core.Input{Keys: []ebiten.Key{ebiten.KeyEnter}, Enter: true})
 	if !tab.Sending() {
 		t.Fatal("Enter in the URL field should send the request")
 	}
@@ -263,7 +263,7 @@ func TestTypingAURLEditsTheRequestAndEnterSendsIt(t *testing.T) {
 // read from the field's own widget.
 func TestTheURLFieldIsWiredToTheTab(t *testing.T) {
 	a := testApp(t)
-	t.Cleanup(a.waitWrites)
+	t.Cleanup(a.WaitWrites)
 	tab := a.cur()
 	field := findWidget(a.urlBar(tab), "*widget.fieldB")
 	if field == nil {
@@ -285,7 +285,7 @@ func TestTheURLFieldIsWiredToTheTab(t *testing.T) {
 // Right-clicking the URL field opens the text menu.
 func TestTheURLFieldHasTheTextMenu(t *testing.T) {
 	a := testApp(t)
-	t.Cleanup(a.waitWrites)
+	t.Cleanup(a.WaitWrites)
 	rightClick(a, urlFieldX, urlBarY)
 	if widget.PopupMenu(a.ctx) == nil || menuLabels(a)[0] != "Undo" {
 		t.Fatalf("menu = %v", widget.PopupMenu(a.ctx))

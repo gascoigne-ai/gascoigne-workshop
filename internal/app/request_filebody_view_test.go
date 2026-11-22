@@ -47,7 +47,7 @@ func TestTheFileBodyLaysOutAsPinned(t *testing.T) {
 			name := "filebody-" + state.name + "-" + size.name
 			t.Run(name, func(t *testing.T) {
 				a := testApp(t)
-				t.Cleanup(a.waitWrites)
+				t.Cleanup(a.WaitWrites)
 				a.folders = folders.Disk{}
 				tab := a.cur()
 				tab.file = widget.NewTextField(state.path(t))
@@ -73,7 +73,7 @@ func TestTheFileBodyLaysOutAsPinned(t *testing.T) {
 // field, shows its placeholder and does nothing on Enter.
 func TestTheFileBodyFieldEditsTheTabsPath(t *testing.T) {
 	a := testApp(t)
-	t.Cleanup(a.waitWrites)
+	t.Cleanup(a.WaitWrites)
 	tab := a.cur()
 	fields := behaviorStates(a.fileBody(tab), "*widget.fieldB")
 	if len(fields) != 1 {
@@ -97,9 +97,9 @@ const (
 // openFileBody shows the Body pane of the open request with a File body.
 func openFileBody(t *testing.T) *App {
 	a := openBodyPane(t)
-	t.Cleanup(a.waitWrites)
+	t.Cleanup(a.WaitWrites)
 	a.setBodyType(a.cur(), request.BodyFile)
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	return a
 }
 
@@ -128,7 +128,7 @@ func TestChooseAsksForTheFileAndSetsThePath(t *testing.T) {
 		t.Fatalf("browser = %+v, want the file browser", a.browser)
 	}
 	typePath(a, picked)
-	a.step(core.Input{Enter: true})
+	a.Step(core.Input{Enter: true})
 	tab := a.cur()
 	if tab.file.Text != picked || tab.Req.Body != picked {
 		t.Fatalf("field %q body %q, want %q in both", tab.file.Text, tab.Req.Body, picked)

@@ -31,9 +31,9 @@ func newBenchApp(b *testing.B, dialog bool) *App {
 		b.Fatal(err)
 	}
 	a.w, a.h = winW, winH
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	a.menu = dialog
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	b.ReportAllocs()
 	b.ResetTimer()
 	return a
@@ -70,7 +70,7 @@ func BenchmarkDragFrame(b *testing.B) {
 	a := newBenchApp(b, true)
 	screen := ebiten.NewImage(winW, winH)
 	for i := 0; i < b.N; i++ {
-		a.step(core.Input{X: 600 + i%40, Y: 300 + i%20})
+		a.Step(core.Input{X: 600 + i%40, Y: 300 + i%20})
 		a.dirty = true
 		a.Draw(screen)
 	}
@@ -80,7 +80,7 @@ func BenchmarkDragFrameNoDialog(b *testing.B) {
 	a := newBenchApp(b, false)
 	screen := ebiten.NewImage(winW, winH)
 	for i := 0; i < b.N; i++ {
-		a.step(core.Input{X: 600 + i%40, Y: 300 + i%20})
+		a.Step(core.Input{X: 600 + i%40, Y: 300 + i%20})
 		a.dirty = true
 		a.Draw(screen)
 	}
@@ -93,7 +93,7 @@ func BenchmarkDrawStats(b *testing.B) {
 	screen := ebiten.NewImage(winW, winH)
 	a.ctx.Stats = &core.DrawStats{}
 	for i := 0; i < b.N; i++ {
-		a.step(core.Input{X: 600 + i%40, Y: 300 + i%20})
+		a.Step(core.Input{X: 600 + i%40, Y: 300 + i%20})
 		a.dirty = true
 		a.ctx.Stats = &core.DrawStats{}
 		a.Draw(screen)

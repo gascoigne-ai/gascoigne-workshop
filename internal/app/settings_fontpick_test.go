@@ -110,11 +110,11 @@ func TestEscapeClosesTheFontListBeforeTheDialog(t *testing.T) {
 	a, _ := openSettingsPage(t, "appearance")
 	a.form.Families = testFamilies(t)
 	a.form.OpenFontList(a.ctx, a, form.FontUI)
-	a.step(core.Input{X: 5000, Y: 5000, Escape: true})
+	a.Step(core.Input{X: 5000, Y: 5000, Escape: true})
 	if a.form.FontListOpen() || !a.menu {
 		t.Fatalf("after the first Escape: list open %v, dialog open %v; want the list closed and the dialog open", a.form.FontListOpen(), a.menu)
 	}
-	a.step(core.Input{X: 5000, Y: 5000, Escape: true})
+	a.Step(core.Input{X: 5000, Y: 5000, Escape: true})
 	if a.menu {
 		t.Fatal("the second Escape should close the dialog")
 	}
@@ -129,7 +129,7 @@ func TestReopeningTheSettingsStartsWithTheFontListClosedAndWorking(t *testing.T)
 		t.Fatal("the list stayed open behind a closed dialog")
 	}
 	a.menu = true
-	a.step(core.Input{X: 5000, Y: 5000})
+	a.Step(core.Input{X: 5000, Y: 5000})
 	if a.form.FontListOpen() {
 		t.Fatal("the reopened dialog shows the old list")
 	}

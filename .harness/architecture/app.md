@@ -115,6 +115,18 @@ skip-draw pattern, since `ScheduleFrame` and `SetFPSMode` are deprecated.
 `window_welcome.go` holds the release notes as a table; it opens once per version (`state.State.Welcomed`), or
 at every start in the dev build. The notes are kept in step with `CHANGELOG.md` by hand.
 
+### The apptest seam
+
+`internal/app/apptest` starts a whole `App` from outside package `app`, so whole-app tests can move
+to `e2e/`. `Start(t, ...Option)` sandboxes `HOME` and `XDG_*` (so it cannot run under
+`t.Parallel`), builds the App with the real adapters, runs one frame in a 1280x800 window and
+returns it; `Click`, `Type`, `Until`, `Dump` and the queries drive and read it. It reaches the App
+only through four exported methods: `Step` (one frame), `SetSize` (window size without the scale
+change of `Layout`), `WaitWrites` (background saves) and `Tree` (the laid-out view tree the next
+`Draw` paints). `Tree` exists because the dump and widget queries need the tree and production code
+must not get dump formatting; the dump format is the toolkit's `view.Dump`, unchanged. `app` never
+imports `apptest`. Helpers that need private state stay in `package app` tests.
+
 ### Screenshots and golden scenes
 
 - The shipped `workshop` has no screenshot code. `e2e/cmd/shot -screenshot out.png` renders,

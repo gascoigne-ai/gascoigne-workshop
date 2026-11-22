@@ -117,7 +117,7 @@ func TestEveryFailurePathIsShownToTheUser(t *testing.T) {
 			a := testApp(t)
 			before := a.status
 			test.trigger(t, a)
-			a.waitWrites() // saves run in the background
+			a.WaitWrites() // saves run in the background
 			if test.wantToast != "" {
 				found := false
 				for _, toast := range a.toasts {
@@ -148,7 +148,7 @@ func TestAHistoryThatCannotBeWrittenIsReportedByAToast(t *testing.T) {
 	pointTabAt(tab, jsonServer(t).URL)
 	a.send(tab)
 	waitForResponse(t, a, tab)
-	a.waitWrites() // the history is written in the background
+	a.WaitWrites() // the history is written in the background
 
 	found := false
 	for _, toast := range a.toasts {

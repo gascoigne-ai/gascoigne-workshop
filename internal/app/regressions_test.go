@@ -214,7 +214,7 @@ func TestAStdioCommandAsksOnceBeforeItRuns(t *testing.T) {
 	}
 	a.dialogDefault() // Allow
 	for i := 0; i < 200 && connects.Load() == 0; i++ {
-		a.step(core.Input{})
+		a.Step(core.Input{})
 		time.Sleep(5 * time.Millisecond)
 	}
 	if connects.Load() != 1 {

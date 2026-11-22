@@ -132,7 +132,7 @@ func TestTheDialogHasASaveButtonAndTheAutoSaveSetting(t *testing.T) {
 		t.Fatalf("no Save button in the title bar with auto-save off:\n%.800s", dump)
 	}
 	a.prefs.Cat = "general"
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	page := view.Dump(a.menuView())
 	for _, want := range []string{"Save changes automatically", "written to settings.json at once"} {
 		if !strings.Contains(page, want) {

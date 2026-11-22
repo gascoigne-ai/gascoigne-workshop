@@ -26,7 +26,7 @@ func TestTheMessagesToolbarWhileConnectingLaysOutAsPinned(t *testing.T) {
 		name := "messagestoolbar-connecting-" + size.name
 		t.Run(name, func(t *testing.T) {
 			a := testApp(t)
-			t.Cleanup(a.waitWrites)
+			t.Cleanup(a.WaitWrites)
 			tab := a.cur()
 			tab.Req.Protocol = "websocket"
 			tab.Begin()
@@ -100,7 +100,7 @@ func TestTheToolbarPickersOpenTheServersMenus(t *testing.T) {
 			tab.Tools = []request.MCPTool{{Name: "search"}, {Name: "fetch"}}
 			tab.Resources = []request.MCPResource{{URI: "file:///a.txt"}}
 			tab.Prompts = []request.MCPPrompt{{Name: "review"}}
-			a.step(core.Input{})
+			a.Step(core.Input{})
 			clickText(t, a, "JSON-RPC", 0)
 			clickText(t, a, tc.label, 0)
 			if got := menuLabels(a); !reflect.DeepEqual(got, tc.want) {

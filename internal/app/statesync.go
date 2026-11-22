@@ -250,7 +250,7 @@ func (a *App) SaveState() error {
 	if !a.stateWritable() {
 		return nil
 	}
-	a.waitWrites()
+	a.WaitWrites()
 	s := a.snapshot()
 	err := a.states.Save(a.statePath, s)
 	if err == nil {

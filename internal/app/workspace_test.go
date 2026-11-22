@@ -59,7 +59,7 @@ func TestSaveWritesTheWorkspaceAndClearsTheDirtyMark(t *testing.T) {
 		t.Fatal("edit not dirty")
 	}
 	a.saveWorkspace()
-	a.waitWrites()
+	a.WaitWrites()
 	if dirty(tab) {
 		t.Fatal("still dirty after saving")
 	}
@@ -74,16 +74,16 @@ func TestEditsAreSavedAfterAPause(t *testing.T) {
 	a := testApp(t, untouchedSettings(), inWorkspace(dir), withOptions(Options{}))
 	now := time.Now()
 	a.now = func() time.Time { return now }
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	a.cur().Req.Name = "Renamed"
 	a.markStale() // the test edits the model directly; in the app an edit comes with input, which marks the keys stale
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	if got, _ := storeDisk.Load(dir); len(got.Requests) > 0 && got.Requests[0].Name == "Renamed" {
 		t.Fatal("saved before the pause")
 	}
 	now = now.Add(2 * time.Second)
-	a.step(core.Input{})
-	a.waitWrites()
+	a.Step(core.Input{})
+	a.WaitWrites()
 	got, err := storeDisk.Load(dir)
 	if err != nil || got.Requests[0].Name != "Renamed" {
 		t.Fatalf("%+v %v", got, err)
@@ -99,7 +99,7 @@ func TestTheFirstSaveMakesTheCollectionAFolderAndRemembersIt(t *testing.T) {
 		t.Fatal("workspace without being asked")
 	}
 	a.saveWorkspace()
-	a.waitWrites()
+	a.WaitWrites()
 	want := filepath.Join(base, "collections", "github-rest-api")
 	if a.workspace() != want {
 		t.Fatalf("workspace %q, want %q", a.workspace(), want)
@@ -263,7 +263,7 @@ func TestExportPostmanWritesACollectionFileThatImportsBack(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "out.json")
 	typePath(a, path)
 	a.browse(filebrowser.Entered{})
-	a.waitWrites() // written in the background
+	a.WaitWrites() // written in the background
 	data, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)

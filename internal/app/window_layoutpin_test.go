@@ -30,9 +30,9 @@ func TestSettingsDialogLaysOutToTheSameRects(t *testing.T) {
 		t.Fatal(err)
 	}
 	a.w, a.h = 1280, 800
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	a.menu = true
-	a.step(core.Input{})
+	a.Step(core.Input{})
 	root := a.view()
 	view.Layout(a.ctx, root, a.w, a.h)
 	dump := strings.ReplaceAll(view.Dump(root), path, "/config/settings.json") // a temp dir differs every run

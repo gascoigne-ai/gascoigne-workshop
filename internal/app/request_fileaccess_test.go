@@ -173,7 +173,7 @@ func TestTheFileBodyAsksAboutEachPathOnce(t *testing.T) {
 			until(t, a, test.want, func() bool { return strings.Contains(view.Dump(a.fileBody(tab)), test.want) })
 			for range 5 {
 				view.Dump(a.fileBody(tab))
-				a.step(core.Input{})
+				a.Step(core.Input{})
 			}
 			if n := files.checks(test.path); n != 1 {
 				t.Fatalf("asked %d times about %s, want once", n, test.path)

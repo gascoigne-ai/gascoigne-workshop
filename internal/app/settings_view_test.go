@@ -49,7 +49,7 @@ func TestTheRequestSettingsPaneLaysOutAsPinned(t *testing.T) {
 			name := "settingspane-" + state.name + "-" + size.name
 			t.Run(name, func(t *testing.T) {
 				a := testApp(t)
-				t.Cleanup(a.waitWrites)
+				t.Cleanup(a.WaitWrites)
 				tab := a.cur()
 				state.setUp(a, tab)
 				root := a.settingsPane(settingsPane, tab, &widget.ScrollState{})
@@ -70,7 +70,7 @@ func TestTheRequestSettingsPaneLaysOutAsPinned(t *testing.T) {
 // has no placeholder and does nothing on Enter.
 func TestTheTimeoutFieldEditsTheTabsTimeout(t *testing.T) {
 	a := testApp(t)
-	t.Cleanup(a.waitWrites)
+	t.Cleanup(a.WaitWrites)
 	tab := a.cur()
 	root := a.settingsPane(settingsPane, tab, &widget.ScrollState{})
 	field := findWidget(root, "*widget.fieldB")
@@ -88,7 +88,7 @@ func TestTheTimeoutFieldEditsTheTabsTimeout(t *testing.T) {
 // Right-clicking the timeout field opens the text menu.
 func TestTheTimeoutFieldHasTheTextMenu(t *testing.T) {
 	a := openSettingsPane(t)
-	t.Cleanup(a.waitWrites)
+	t.Cleanup(a.WaitWrites)
 	rightClick(a, timeoutFieldX, chipsY)
 	if widget.PopupMenu(a.ctx) == nil || menuLabels(a)[0] != "Undo" {
 		t.Fatalf("menu = %v", widget.PopupMenu(a.ctx))
@@ -99,7 +99,7 @@ func TestTheTimeoutFieldHasTheTextMenu(t *testing.T) {
 // keeps the keyboard; Dump does not show the field's text.
 func TestAnInvalidTimeoutIsUndoneInTheField(t *testing.T) {
 	a := openSettingsPane(t)
-	t.Cleanup(a.waitWrites)
+	t.Cleanup(a.WaitWrites)
 	tab := a.cur()
 	click(a, timeoutFieldX, chipsY)
 	a.typeText("7")
@@ -124,7 +124,7 @@ func TestTheSettingsChecksFollowTheRequest(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			a := testApp(t)
-			t.Cleanup(a.waitWrites)
+			t.Cleanup(a.WaitWrites)
 			tab := a.cur()
 			tab.Req.NoRedirects, tab.Req.InsecureTLS = tc.noRedirects, tc.insecureTLS
 			got := behaviorStates(a.settingsPane(settingsPane, tab, &widget.ScrollState{}), "widget.checkB")
@@ -140,7 +140,7 @@ const verifyRowY = followRowY + 36
 
 func TestTheVerifyCertificateRowTogglesInsecureTLS(t *testing.T) {
 	a := openSettingsPane(t)
-	t.Cleanup(a.waitWrites)
+	t.Cleanup(a.WaitWrites)
 	tab := a.cur()
 	click(a, followRowX, verifyRowY)
 	if !tab.Req.InsecureTLS {

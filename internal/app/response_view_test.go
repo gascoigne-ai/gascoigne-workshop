@@ -95,7 +95,7 @@ func responseIn(t *testing.T, state string) (*App, *reqTab) {
 	for _, candidate := range responseStates {
 		if candidate.name == state {
 			candidate.setUp(t, a, tab)
-			a.step(core.Input{})
+			a.Step(core.Input{})
 			return a, tab
 		}
 	}
