@@ -3,12 +3,12 @@
 Every file the workshop writes has `"version": <int>` as the first key of its object
 (of every line in `sent.jsonl`); a file without one is version 0. The version belongs to the file,
 not the domain: each adapter has a wire type that embeds or mirrors the model type, so model types
-have no version field. `fileversion.Read` picks the reader of the version from a table (its doc says
+have no version field. `storage.Read` picks the reader of the version from a table (its doc says
 why a slice); the newest is what the writer writes. Versions 0 and 1 share their layout and decoder,
 except `.secrets.json`; the fallbacks for files from before several collections could be open stay in that decoder. The version is
 per file, not per collection, so a file read alone (a request file copied between collections, a
-history file) still says what it is. A whole-file write goes through `userdir.WriteFileAtomic`
-(temp file, then rename; its doc says why it is in `kernel/userdir`); the sent log appends.
+history file) still says what it is. A whole-file write goes through `storage.WriteFileAtomic`
+(temp file, then rename; its doc says why it is in `storage`); the sent log appends.
 Accepted (the user's answer): the first save after upgrading rewrites every collection file once, a
 one-time diff under version control; `CHANGELOG.md` says so.
 

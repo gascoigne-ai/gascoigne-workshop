@@ -41,7 +41,7 @@ FUZZ_TARGETS = \
 	./internal/feature/collections/adapter/store:FuzzLoad \
 	./internal/feature/workspace/adapter/statefile:FuzzLoad \
 	./internal/feature/settings:FuzzDecode \
-	./internal/kernel/fileversion:FuzzRead \
+	./internal/storage:FuzzRead \
 	./internal/feature/history/adapter:FuzzLoad \
 	./internal/feature/history/adapter:FuzzLoadSent \
 	./internal/feature/send/ui/respview:FuzzDecode \
@@ -74,7 +74,7 @@ vet-release:
 	go vet -tags release ./...
 
 # Directories that hold a file with a release build tag.
-RELEASE_BASE = cmd/workshop internal/feature/collections internal/kernel/userdir
+RELEASE_BASE = cmd/workshop internal/feature/collections internal/storage
 
 # The release test run covers RELEASE_BASE and every package whose build or
 # test binary links one of them: the rest compile the same under both tags.

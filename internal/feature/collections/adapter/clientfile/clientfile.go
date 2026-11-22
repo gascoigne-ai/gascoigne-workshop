@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/clientconfig"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/userdir"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/storage"
 )
 
 // Files reads client configs from two directories; an empty directory name
@@ -24,7 +24,7 @@ type Files struct {
 // DefaultGlobalDir is the settings directory in the user config directory,
 // or "" when the system has none.
 func DefaultGlobalDir() string {
-	return userdir.Path("")
+	return storage.Path("")
 }
 
 // Load returns the global config merged with the local one, which wins for

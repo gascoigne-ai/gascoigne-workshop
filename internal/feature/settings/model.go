@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/fileversion"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/storage"
 )
 
 // Settings are the user preferences.
@@ -157,14 +157,14 @@ func Default() Settings {
 // the text keep their defaults. Text that does not parse yields Default
 // and an error.
 func Decode(data []byte) (Settings, error) {
-	decoded, _, err := fileversion.Read(data, readers)
+	decoded, _, err := storage.Read(data, readers)
 	if err != nil {
 		return Default(), err
 	}
 	return decoded, nil
 }
 
-// readers read settings.json by version (the fileversion package doc). Each
+// readers read settings.json by version (the storage package doc). Each
 // is a chain of small steps over the flat key map, so a later version's
 // reader is the earlier one's plus one step:
 //   - versions 0 and 1 share a layout, sectioned, the older flat form or a

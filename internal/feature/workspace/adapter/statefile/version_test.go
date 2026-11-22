@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/state"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/fileversion"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/storage"
 )
 
 // The fixtures are state.json files written by the program: v0 before
@@ -113,7 +113,7 @@ func TestLoadRejectsBadVersions(t *testing.T) {
 			if err == nil || !reflect.DeepEqual(got, state.State{}) {
 				t.Fatalf("Load = %+v, %v; want the empty state and an error", got, err)
 			}
-			var newer *fileversion.NewerError
+			var newer *storage.NewerError
 			if errors.As(err, &newer) != test.wantNewer {
 				t.Fatalf("error %v: NewerError = %v, want %v", err, !test.wantNewer, test.wantNewer)
 			}

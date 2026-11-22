@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/fileversion"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/storage"
 )
 
 // The fixtures are files the program wrote for the unsaved sample's
@@ -141,7 +141,7 @@ func TestLoadRejectsBadVersions(t *testing.T) {
 			if err == nil || entries != nil {
 				t.Fatalf("Load = %d entries, %v; want none and an error", len(entries), err)
 			}
-			var newer *fileversion.NewerError
+			var newer *storage.NewerError
 			if errors.As(err, &newer) != test.wantNewer {
 				t.Fatalf("error %v: is NewerError = %v, want %v", err, !test.wantNewer, test.wantNewer)
 			}
@@ -180,7 +180,7 @@ func TestDecodeSentLineByVersion(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			sent, err := decodeSentLine(test.line)
 			if test.wantErr {
-				var newer *fileversion.NewerError
+				var newer *storage.NewerError
 				if err == nil || errors.As(err, &newer) != test.wantNewer {
 					t.Fatalf("decodeSentLine(%s) = %+v, %v; want an error, NewerError %v", test.line, sent, err, test.wantNewer)
 				}

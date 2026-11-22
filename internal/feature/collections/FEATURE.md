@@ -11,7 +11,7 @@ Collections on disk and in the window: the open set, the tree, move and copy, im
 - `importers/{postman,openapi,miniyaml}`: pure readers and writers; the App only picks the file and adds the result.
 - `adapter/store` (package `store`, the disk `Store`) and `adapter/clientfile` (the `Source` that reads `.workshop` files).
 - `ui/destpicker`: the Move to and Copy to dialog (look in `.harness/style.md`).
-- Imports: the kernel and the base feature (`feature/request`; kernel: `kernel/fileversion`, `kernel/userdir`) plus the toolkit for `ui`. Inside the feature the usual direction holds: adapters and controllers import the root and the sub-packages, `clientconfig` imports `importers/miniyaml`.
+- Imports: the base feature (`feature/request`) and `storage` plus the toolkit for `ui`. Inside the feature the usual direction holds: adapters and controllers import the root and the sub-packages, `clientconfig` imports `importers/miniyaml`.
 
 ## Behavior
 
@@ -93,7 +93,7 @@ Builds:
 
 - Default build: `collection.Sample()` is the `Example Server` collection, one request per endpoint
   (tests in `exampleserver` fail when one is missing). It reads no client config and keeps its data
-  in its own directory (`userdir`; why in its package doc), so a run from an IDE never touches the release
+  in its own directory (`storage`; why in its package doc), so a run from an IDE never touches the release
   build's data. Screenshot runs and golden scenes keep settings and state in memory.
 - Release build (`make release`, `-tags release`, installed by `make install`): no example server,
   `Sample()` is empty, and with no workspace the App opens the client config's tree. An unreadable

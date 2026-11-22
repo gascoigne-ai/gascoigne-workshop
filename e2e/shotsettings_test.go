@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/userdir"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/storage"
 )
 
 // A screenshot run that changes settings (-set, -record) and is given no
@@ -30,7 +30,7 @@ func TestAScreenshotWithoutSettingsFlagLeavesTheDefaultSettingsFileAlone(t *test
 			flags := append([]string{"-screenshot", filepath.Join(sandbox, "shot.png"), "-state", "", "-themes", ""}, tc.args...)
 			runProgram(t, sandbox, shotWidth, shotHeight, flags...)
 			// softwareEnv puts XDG_CONFIG_HOME at sandbox/config.
-			defaultSettings := filepath.Join(sandbox, "config", userdir.Name, "settings.json")
+			defaultSettings := filepath.Join(sandbox, "config", storage.Name, "settings.json")
 			if _, err := os.Stat(defaultSettings); !errors.Is(err, fs.ErrNotExist) {
 				t.Fatalf("the default settings file was touched (stat: %v)", err)
 			}

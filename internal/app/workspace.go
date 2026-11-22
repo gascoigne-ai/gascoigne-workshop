@@ -13,7 +13,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/fileversion"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/storage"
 )
 
 // saveDebounce is how long a collection must stay unchanged before it is
@@ -71,7 +71,7 @@ func (a *App) openWorkspace(dir string) {
 // toastNewer tells, beyond the status line, that the collection in folder
 // was not opened because a newer build saved it.
 func (a *App) toastNewer(folder string, err error) {
-	var newer *fileversion.NewerError
+	var newer *storage.NewerError
 	if errors.As(err, &newer) {
 		a.toast("Cannot open "+folder+": "+err.Error(), severity.Error)
 	}

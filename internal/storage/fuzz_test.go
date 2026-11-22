@@ -1,4 +1,4 @@
-package fileversion
+package storage
 
 import "testing"
 

@@ -1,11 +1,4 @@
-// Package fileversion reads the version of a saved JSON file and picks the
-// reader of that version from a table. Every file the workshop writes
-// carries "version" as its first key; a file without one is version 0, the
-// layout written before versions existed. The version is per file, not
-// per collection, and lives in each adapter's wire type, not the model;
-// architecture/persistence.md tables every file and what a newer version
-// does (the user's answers).
-package fileversion
+package storage
 
 import (
 	"bytes"

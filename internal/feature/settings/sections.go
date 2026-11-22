@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"maps"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/fileversion"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/storage"
 )
 
 // Sections are the top-level objects of settings.json, in the order they are
@@ -96,7 +96,7 @@ func unmarshalFlat(flat map[string]json.RawMessage) (Settings, error) {
 func sectionedText(flat map[string]Value) ([]byte, error) {
 	var compact bytes.Buffer
 	compact.WriteByte('{')
-	if err := writeMember(&compact, false, fileversion.Key, FileVersion); err != nil {
+	if err := writeMember(&compact, false, storage.Key, FileVersion); err != nil {
 		return nil, err
 	}
 	for _, section := range Sections {

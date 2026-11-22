@@ -14,8 +14,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/state"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/fileversion"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/userdir"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/storage"
 )
 
 // stateFile is state.json: the state behind its version.
@@ -26,8 +25,8 @@ type stateFile struct {
 
 // readers read state.json by version; versions 0 and 1 share a layout.
 var readers = []func([]byte) (stateFile, error){
-	fileversion.Plain[stateFile],
-	fileversion.Plain[stateFile],
+	storage.Plain[stateFile],
+	storage.Plain[stateFile],
 }
 
 // current is the version Save writes.
@@ -46,7 +45,7 @@ func (Files) Load(path string) (state.State, error) {
 	if err != nil {
 		return state.State{}, fmt.Errorf("read state: %w", err)
 	}
-	saved, _, err := fileversion.Read(data, readers)
+	saved, _, err := storage.Read(data, readers)
 	if err != nil {
 		return state.State{}, fmt.Errorf("parse state %s: %w", filepath.Base(path), err)
 	}
@@ -65,7 +64,7 @@ func (Files) Save(path string, saved state.State) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return fmt.Errorf("create state dir: %w", err)
 	}
-	if err := userdir.WriteFileAtomic(path, append(data, '\n'), 0o644); err != nil {
+	if err := storage.WriteFileAtomic(path, append(data, '\n'), 0o644); err != nil {
 		return fmt.Errorf("write state: %w", err)
 	}
 	return nil
@@ -74,7 +73,7 @@ func (Files) Save(path string, saved state.State) error {
 // DefaultPath is where state lives for this user, or "" when there is
 // no config directory.
 func DefaultPath() string {
-	return userdir.Path("state.json")
+	return storage.Path("state.json")
 }
 
 // Files is the state store of the file system.

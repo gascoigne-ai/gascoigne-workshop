@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/userdir"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/storage"
 )
 
 func TestLoad(t *testing.T) {
@@ -70,7 +70,7 @@ func TestDefaultPathFollowsTheUserConfigDir(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := filepath.Join(config, userdir.Name, "settings.json")
+	want := filepath.Join(config, storage.Name, "settings.json")
 	if got := DefaultPath(); got != want {
 		t.Fatalf("DefaultPath = %q, want %q", got, want)
 	}

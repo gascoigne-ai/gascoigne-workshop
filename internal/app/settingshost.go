@@ -13,7 +13,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/ui/shortcutpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/ui/systempage"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/fileversion"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/storage"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -201,7 +201,7 @@ func (a *App) askSaveSettings() {
 // SettingsStore is the settings file's store; it refuses to write a file a
 // newer build wrote, for the whole session.
 func (a *App) SettingsStore() settings.SettingsStore {
-	if a.settingsAccess == fileversion.ReadOnly {
+	if a.settingsAccess == storage.ReadOnly {
 		return readOnlySettings{a.settingFiles}
 	}
 	return a.settingFiles

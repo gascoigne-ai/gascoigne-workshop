@@ -12,7 +12,7 @@ import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/fileversion"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/storage"
 )
 
 // The fixtures are a collection the program saved: testdata/v0 before files
@@ -213,7 +213,7 @@ func TestLoadRejectsBadVersionNamingFile(t *testing.T) {
 				if !strings.Contains(err.Error(), filepath.Base(name)) {
 					t.Errorf("error %q does not name %s", err, name)
 				}
-				var newer *fileversion.NewerError
+				var newer *storage.NewerError
 				if errors.As(err, &newer) != version.wantNewer {
 					t.Errorf("error %q: is NewerError = %v, want %v", err, !version.wantNewer, version.wantNewer)
 				}

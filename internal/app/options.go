@@ -15,7 +15,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/autosave"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/fileversion"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/storage"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"net/http"
 	"net/http/cookiejar"
@@ -128,7 +128,7 @@ func NewApp(opts Options) (*App, error) {
 		frameState:   frameState{dirty: true, drawEveryFrame: opts.DrawEveryFrame},
 		persistState: persistState{saves: map[*request.Collection]*autosave.Debounce{}, defaultWorkspace: opts.DefaultWorkspace, statePath: opts.StatePath},
 		settingsState: settingsState{
-			settings: st, settingsPath: opts.SettingsPath, settingsAccess: fileversion.AccessAfter(loadErr),
+			settings: st, settingsPath: opts.SettingsPath, settingsAccess: storage.AccessAfter(loadErr),
 		},
 	}
 	a.driver.app = a
@@ -172,7 +172,7 @@ func NewApp(opts Options) (*App, error) {
 // the reason it could not be read, if any.
 func (a *App) loadState(path string) error {
 	stored, err := a.states.Load(path)
-	a.stateAccess = fileversion.AccessAfter(err)
+	a.stateAccess = storage.AccessAfter(err)
 	a.noteReadOnly(a.stateAccess, err)
 	a.initial = stored.Window
 	a.restore(stored)

@@ -25,7 +25,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/userdir"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/storage"
 	"io/fs"
 	"os"
 	"path"
@@ -35,7 +35,6 @@ import (
 	"unicode"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/fileversion"
 )
 
 const (
@@ -112,14 +111,14 @@ type secretsV1 struct {
 	Files   map[string]secret `json:"files"`
 }
 
-// The readers of each file by version (see the fileversion package doc and
+// The readers of each file by version (see the storage package doc and
 // architecture/persistence.md); versions 0 and 1 of
 // folder, request and environment files share a layout.
 var (
-	folderReaders  = []func([]byte) (folderMeta, error){fileversion.Plain[folderMeta], fileversion.Plain[folderMeta]}
-	requestReaders = []func([]byte) (requestFile, error){fileversion.Plain[requestFile], fileversion.Plain[requestFile]}
-	envReaders     = []func([]byte) (envFile, error){fileversion.Plain[envFile], fileversion.Plain[envFile]}
-	secretsReaders = []func([]byte) (map[string]secret, error){fileversion.Plain[map[string]secret], readSecretsV1}
+	folderReaders  = []func([]byte) (folderMeta, error){storage.Plain[folderMeta], storage.Plain[folderMeta]}
+	requestReaders = []func([]byte) (requestFile, error){storage.Plain[requestFile], storage.Plain[requestFile]}
+	envReaders     = []func([]byte) (envFile, error){storage.Plain[envFile], storage.Plain[envFile]}
+	secretsReaders = []func([]byte) (map[string]secret, error){storage.Plain[map[string]secret], readSecretsV1}
 )
 
 // The versions Save writes.
@@ -131,7 +130,7 @@ var (
 )
 
 func readSecretsV1(data []byte) (map[string]secret, error) {
-	wrapped, err := fileversion.Plain[secretsV1](data)
+	wrapped, err := storage.Plain[secretsV1](data)
 	return wrapped.Files, err
 }
 
@@ -435,7 +434,7 @@ func writeJSON(name string, value any, remove bool) error {
 		}
 		return nil
 	}
-	return userdir.WriteFileAtomic(name, buf.Bytes(), perm)
+	return storage.WriteFileAtomic(name, buf.Bytes(), perm)
 }
 
 // ensureIgnore makes sure .gitignore lists the secrets file.
@@ -488,7 +487,7 @@ func readJSON[T any](name string, readers []func([]byte) (T, error)) (T, error) 
 		var zero T
 		return zero, err
 	}
-	value, _, err := fileversion.Read(data, readers)
+	value, _, err := storage.Read(data, readers)
 	if err != nil {
 		return value, fmt.Errorf("%s: %w", name, err)
 	}

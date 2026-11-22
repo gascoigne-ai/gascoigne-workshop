@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/fileversion"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/storage"
 )
 
 // The fixtures are settings.json as the program wrote it after the theme
@@ -77,7 +77,7 @@ func TestValidateVersion(t *testing.T) {
 				}
 				return
 			}
-			if len(problems) != 1 || problems[0].Key != fileversion.Key || problems[0].Message != test.wantMessage {
+			if len(problems) != 1 || problems[0].Key != storage.Key || problems[0].Message != test.wantMessage {
 				t.Fatalf("Validate(%s) = %+v, want one problem %q on version", test.text, problems, test.wantMessage)
 			}
 			if at := test.text[problems[0].Start:problems[0].End]; at != `"version"` {
@@ -98,7 +98,7 @@ func TestParseKeepsLastOnNewerVersion(t *testing.T) {
 
 func TestDecodeRejectsNewerVersion(t *testing.T) {
 	got, err := Decode([]byte(`{"version": 4, "appearance": {"theme": "light"}}`))
-	var newer *fileversion.NewerError
+	var newer *storage.NewerError
 	if !errors.As(err, &newer) || !reflect.DeepEqual(got, Default()) {
 		t.Fatalf("Decode = %+v, %v; want the defaults and a NewerError", got, err)
 	}
@@ -107,14 +107,14 @@ func TestDecodeRejectsNewerVersion(t *testing.T) {
 // The version belongs to the file, not to the preferences: the form, reset
 // and completion never see it.
 func TestVersionIsNotASetting(t *testing.T) {
-	if _, known := FieldFor(fileversion.Key); known {
+	if _, known := FieldFor(storage.Key); known {
 		t.Fatal("version is in the schema")
 	}
-	if got, _ := With(Default(), fileversion.Key, Number(5)); !reflect.DeepEqual(got, Default()) {
+	if got, _ := With(Default(), storage.Key, Number(5)); !reflect.DeepEqual(got, Default()) {
 		t.Fatalf("With(version) changed the settings: %+v", got)
 	}
 	for _, completion := range Complete(`{"`, 2, nil) {
-		if strings.Contains(completion.Label, fileversion.Key) {
+		if strings.Contains(completion.Label, storage.Key) {
 			t.Fatalf("completion offers %q", completion.Label)
 		}
 	}

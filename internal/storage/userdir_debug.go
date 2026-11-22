@@ -1,6 +1,6 @@
 //go:build !release
 
-package userdir
+package storage
 
 // Name is the default (dev) build's directory: a run from an IDE behaves
 // like an install, remembering its own collections, without reading or

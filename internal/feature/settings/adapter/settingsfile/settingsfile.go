@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/userdir"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/storage"
 )
 
 // Load reads path. A missing file is not an error and yields the
@@ -58,7 +58,7 @@ func (Files) WriteText(path string, data []byte) error {
 	if err := backUpBroken(path); err != nil {
 		return err
 	}
-	if err := userdir.WriteFileAtomic(path, data, 0o644); err != nil {
+	if err := storage.WriteFileAtomic(path, data, 0o644); err != nil {
 		return fmt.Errorf("write settings: %w", err)
 	}
 	return nil
@@ -77,7 +77,7 @@ func DefaultWorkspace() string { return inConfigDir("workspace") }
 func DefaultPath() string { return inConfigDir("settings.json") }
 
 func inConfigDir(name string) string {
-	return userdir.Path(name)
+	return storage.Path(name)
 }
 
 // Files is the settings store of the file system.

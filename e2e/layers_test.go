@@ -397,6 +397,22 @@ func TestSeverityIsABaseFeatureLeaf(t *testing.T) {
 	}
 }
 
+func TestStorageIsABasePackage(t *testing.T) {
+	module := moduleName(t)
+	listed := map[string]bool{}
+	for _, pkg := range listPackages(t, "") {
+		listed[relativeTo(module, pkg.ImportPath)] = true
+	}
+	if !listed["internal/storage"] {
+		t.Error("internal/storage is not in the tree")
+	}
+	for _, gone := range []string{"internal/kernel/userdir", "internal/kernel/fileversion"} {
+		if listed[gone] {
+			t.Errorf("%s still exists: it merged into internal/storage", gone)
+		}
+	}
+}
+
 func TestRealTreeObeysLayers(t *testing.T) {
 	module := moduleName(t)
 	for _, tags := range layerTagSets {

@@ -14,7 +14,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/state"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/fileversion"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/storage"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
@@ -379,13 +379,13 @@ func historyEntry(resp *request.Response, at time.Time) history.Entry {
 // stateWritable reports whether the state is written to a file: it is kept
 // on disk, and no newer build wrote it.
 func (a *App) stateWritable() bool {
-	return a.statePath != "" && a.stateAccess == fileversion.Writable
+	return a.statePath != "" && a.stateAccess == storage.Writable
 }
 
 // noteReadOnly tells once, at the start, that a file a newer build wrote is
 // left as it is for this session.
-func (a *App) noteReadOnly(access fileversion.Access, loadErr error) {
-	if access == fileversion.ReadOnly {
+func (a *App) noteReadOnly(access storage.Access, loadErr error) {
+	if access == storage.ReadOnly {
 		a.toast(loadErr.Error()+"; it is not changed this session", severity.Error)
 	}
 }

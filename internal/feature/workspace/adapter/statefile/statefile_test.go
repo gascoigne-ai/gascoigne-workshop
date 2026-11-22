@@ -2,7 +2,7 @@ package statefile
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/state"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/userdir"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/storage"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -18,7 +18,7 @@ func TestDefaultPathIsInTheUserDirectoryOfTheBuild(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, want := DefaultPath(), filepath.Join(config, userdir.Name, "state.json"); got != want {
+	if got, want := DefaultPath(), filepath.Join(config, storage.Name, "state.json"); got != want {
 		t.Fatalf("DefaultPath = %q, want %q", got, want)
 	}
 }

@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/userdir"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/storage"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -16,7 +16,6 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/fileversion"
 )
 
 // Limit is how many responses are kept per request.
@@ -46,7 +45,7 @@ type entryFile struct {
 }
 
 // readers read a history file by version; versions 0 and 1 share a layout.
-var readers = []func([]byte) (file, error){fileversion.Plain[file], fileversion.Plain[file]}
+var readers = []func([]byte) (file, error){storage.Plain[file], storage.Plain[file]}
 
 // current is the version Save writes.
 var current = len(readers) - 1
@@ -71,7 +70,7 @@ func (dir Dir) Load(key string) ([]history.Entry, error) {
 	if err != nil {
 		return nil, fmt.Errorf("read history of %s: %w", key, err)
 	}
-	saved, _, err := fileversion.Read(data, readers)
+	saved, _, err := storage.Read(data, readers)
 	if err != nil {
 		return nil, fmt.Errorf("parse history of %s: %w", key, err)
 	}
@@ -109,7 +108,7 @@ func (dir Dir) Save(key string, entries []history.Entry) error {
 	if err := os.MkdirAll(string(dir), 0o700); err != nil {
 		return fmt.Errorf("create %s: %w", dir, err)
 	}
-	if err := userdir.WriteFileAtomic(target, data, 0o600); err != nil {
+	if err := storage.WriteFileAtomic(target, data, 0o600); err != nil {
 		return fmt.Errorf("write history of %s: %w", key, err)
 	}
 	return nil

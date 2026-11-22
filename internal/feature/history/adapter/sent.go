@@ -5,8 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/fileversion"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/userdir"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/storage"
 	"os"
 	"path/filepath"
 	"slices"
@@ -23,7 +22,7 @@ type sentLine struct {
 }
 
 // sentReaders read a line by version; versions 0 and 1 share a layout.
-var sentReaders = []func([]byte) (sentLine, error){fileversion.Plain[sentLine], fileversion.Plain[sentLine]}
+var sentReaders = []func([]byte) (sentLine, error){storage.Plain[sentLine], storage.Plain[sentLine]}
 
 // sentVersion is the version AppendSent writes.
 var sentVersion = len(sentReaders) - 1
@@ -69,7 +68,7 @@ func trimSent(target string) error {
 		return nil
 	}
 	kept := bytes.Join(lines[len(lines)-history.SentLimit:], []byte("\n"))
-	if err := userdir.WriteFileAtomic(target, append(kept, '\n'), 0o600); err != nil {
+	if err := storage.WriteFileAtomic(target, append(kept, '\n'), 0o600); err != nil {
 		return fmt.Errorf("write sent log: %w", err)
 	}
 	return nil
@@ -103,7 +102,7 @@ func (log SentLog) Load() ([]history.Sent, error) {
 
 // decodeSentLine reads one line of the log with the reader of its version.
 func decodeSentLine(line []byte) (history.Sent, error) {
-	read, _, err := fileversion.Read(line, sentReaders)
+	read, _, err := storage.Read(line, sentReaders)
 	return read.Sent, err
 }
 

@@ -1,6 +1,6 @@
 //go:build release
 
-package userdir
+package storage
 
 import "testing"
 

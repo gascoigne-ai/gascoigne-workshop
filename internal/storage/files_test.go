@@ -1,4 +1,4 @@
-package userdir
+package storage
 
 import (
 	"os"

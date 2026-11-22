@@ -8,7 +8,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/fileversion"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/storage"
 )
 
 // Kind is the type of a setting's value.
@@ -128,7 +128,7 @@ func Validate(data []byte) []Problem {
 	if _, ok := syntax.(map[string]any); !ok {
 		return []Problem{{Message: "settings must be a JSON object", End: len(data)}}
 	}
-	version, _ := fileversion.Of(data) // a bad version is reported by checkVersion
+	version, _ := storage.Of(data) // a bad version is reported by checkVersion
 	return validateObject(data, 0, "", version)
 }
 
@@ -174,7 +174,7 @@ func validateObject(data []byte, base int, section string, version int) []Proble
 			problems = append(problems, validateObject(raw, base+valueStart, key, version)...)
 			continue
 		}
-		if key == fileversion.Key {
+		if key == storage.Key {
 			if message := checkVersion(raw, section); message != "" {
 				problems = append(problems, at(message))
 			}
@@ -209,12 +209,12 @@ func checkVersion(raw json.RawMessage, section string) string {
 	if section != "" {
 		return "belongs at the top level"
 	}
-	version, err := fileversion.Parse(raw)
+	version, err := storage.Parse(raw)
 	if err != nil {
 		return fmt.Sprintf("must be a whole number from 0 to %d", FileVersion)
 	}
 	if version > FileVersion {
-		return (&fileversion.NewerError{Found: version, Newest: FileVersion}).Error()
+		return (&storage.NewerError{Found: version, Newest: FileVersion}).Error()
 	}
 	return ""
 }
@@ -297,7 +297,7 @@ func Parse(data []byte, last Settings) (Settings, []Problem) {
 	if problems := Validate(data); len(problems) > 0 {
 		return last, problems
 	}
-	parsed, _, err := fileversion.Read(data, readers)
+	parsed, _, err := storage.Read(data, readers)
 	if err != nil {
 		return last, []Problem{{Message: err.Error(), End: len(data)}}
 	}

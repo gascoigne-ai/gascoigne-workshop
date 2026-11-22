@@ -119,13 +119,11 @@ type layerRule struct {
 // layout the tree has today. The rows after the zone rules are the written
 // exceptions, each with its reason.
 var currentLayoutRules = []layerRule{
-	{"feature root -> kernel", selector{Zones: []zone{zoneFeatureRoot}}, selector{Zones: []zone{zoneKernel}}, false, false, "a feature builds on the shared model", false},
 	{"feature root -> own controllers", selector{Zones: []zone{zoneFeatureRoot}}, selector{Zones: []zone{zoneController}}, true, false, "a root may delegate to a sub-package of its own feature", false},
 	{"controller -> kernel", selector{Zones: []zone{zoneController}}, selector{Zones: []zone{zoneKernel}}, false, false, "a feature builds on the shared model", false},
 	{"controller -> own root, controllers", selector{Zones: []zone{zoneController}}, selector{Zones: []zone{zoneFeatureRoot, zoneController}}, true, false, "controllers share their feature's types", false},
 	{"ui -> kernel, base, toolkit", selector{Zones: []zone{zoneFeatureUI}}, selector{Zones: []zone{zoneKernel, zoneBase, zoneToolkit}}, false, false, "views draw with the toolkit", false},
 	{"ui -> own root, controllers", selector{Zones: []zone{zoneFeatureUI}}, selector{Zones: []zone{zoneFeatureRoot, zoneController}}, true, false, "views sit behind their feature's types", false},
-	{"adapter -> kernel", selector{Zones: []zone{zoneAdapter}}, selector{Zones: []zone{zoneKernel}}, false, false, "a feature builds on the shared model", false},
 	{"adapter -> own root, controllers, adapters", selector{Zones: []zone{zoneAdapter}}, selector{Zones: []zone{zoneFeatureRoot, zoneController, zoneAdapter}}, true, false, "adapters implement their feature's ports", false},
 	{"app -> everything", selector{Zones: []zone{zoneApp}}, selector{Zones: allZones()}, false, false, "the composition root knows both sides", false},
 	{"toolkit -> toolkit", selector{Zones: []zone{zoneToolkit}}, selector{Zones: []zone{zoneToolkit}}, false, false, "the toolkit knows nothing of the app", false},

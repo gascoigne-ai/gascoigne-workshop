@@ -1,6 +1,6 @@
 //go:build release
 
-package userdir
+package storage
 
 // Name is the release build's directory, the one installs already have.
 const Name = releaseName
