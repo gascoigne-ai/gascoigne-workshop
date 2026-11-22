@@ -12,15 +12,15 @@ method in another package, so one `App` stays). Add a `Features` table (name, co
 `Host` it needs) so a new feature is a table row, not a branch in `App`, and register the six
 features through it (history, settings, collections, environments, send, workspace).
 
-User's answer (one area per task): this task moves one area only, the websocket view
-(`protocol_wsui.go`, 476 lines), into `internal/feature/send` behind a `Host` of at most about 5
-methods, tested with a fake host. Further areas (`statesync.go` 391, `window_filebrowser.go` 362)
-are separate follow-up tasks, queued after this one, each re-measured first.
+User's answers: first, one area per task; then, after the implementer measured the websocket view
+(about 15 `App` methods, state in `reqTab` shared with `driver.go`, `game.go`, `request_send.go`,
+`statesync.go`), this task builds the table only. No logic moves out of `App` here. The state type
+is task 011 and the view move is task 012.
 
 ## Model
-The `Host` interface of the websocket view, who owns its state, what persists (unchanged).
+Model: unchanged. The table is static data: name, constructor, the `Host` it needs.
 
 ## Acceptance
-- Test first for each `Host` seam: a fake host test states the behavior.
-- Existing `app` tests for a moved area move with it and stay green.
+- Test first: a test of the table (every feature registered once, constructors build with a fake host).
+- Existing `app` tests stay green and none changes.
 - The repo check command passes; `architecture/app.md` lists the table.
