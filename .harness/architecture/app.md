@@ -135,3 +135,7 @@ at every start in the dev build. The notes are kept in step with `CHANGELOG.md` 
   example server's ports (`exampleserver.Config`). Testdata folders are copied to temp dirs first, so
   nothing the program writes lands in `testdata`. `go test ./e2e -update` rewrites the
   goldens; look at the PNG before committing.
+
+`TestAppPackageDoesNotGrow` (`e2e/appsize_test.go`) caps the number of non-test `.go` files directly in
+`internal/app` (`maxAppFiles`) while the package is dissolved (`.harness/reorg.md`). Each extraction task
+lowers the cap to the new count; it never goes up.
