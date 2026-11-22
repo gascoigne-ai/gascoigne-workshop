@@ -28,7 +28,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/adapter/statefile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/platform/folders"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/platform/fonts"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/platform/systemclock"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/platform/systeminfo"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/displayscale"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/filedialog"
@@ -145,7 +144,6 @@ func adapters(opts *app.Options) {
 	opts.Display = displayscale.New()
 	opts.KeyRepeat = keyrepeat.New()
 	opts.Previews = preview.Browser{Lifetime: previewLifetime}
-	opts.Clock = systemclock.Clock{}
 	opts.SettingsFiles = settingsfile.Files{}
 	opts.System = systeminfo.Info{Graphics: systeminfo.Ebiten}
 	opts.DefaultWorkspace = settingsfile.DefaultWorkspace()

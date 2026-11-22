@@ -1,20 +1,13 @@
 // Package workspace holds the workspace feature's types and the ports at its
-// boundary: what it needs from the desktop (user's files, clock)
+// boundary: what it needs from the desktop (the user's files)
 // and the remembered-state store.
 package workspace
 
 import (
 	"context"
-	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/state"
 )
-
-// Clock tells the current time, so toasts, debounces and the caret blink
-// can be driven by a fake one.
-type Clock interface {
-	Now() time.Time
-}
 
 // FolderEntry is one name in a folder.
 type FolderEntry struct {

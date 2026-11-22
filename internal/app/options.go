@@ -45,7 +45,7 @@ type Options struct {
 	Fonts            settings.FontStore                            // installed fonts; nil has none
 	SettingsFiles    settings.SettingsStore                        // the settings file; nil reads the defaults and cannot save
 	Previews         send.BodyPreview                              // shows a response body in the browser; nil has none
-	Clock            workspace.Clock                               // the time source; nil uses the wall clock
+	Clock            Clock                                         // the time source; nil uses the wall clock
 	RetryDelay       time.Duration                                 // wait before a dropped connection reopens; 0 is two seconds
 	HostOS           string                                        // the OS shortcut text follows; "" is the running one
 	BaseScale        float64                                       // the platform's interface factor under the user's scale; 0 is 1

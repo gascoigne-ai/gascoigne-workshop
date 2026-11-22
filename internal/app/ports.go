@@ -114,3 +114,9 @@ type FileDialog interface {
 	// new file named name; OpenFile ignores name.
 	Choose(ctx context.Context, title string, mode filedialog.Mode, name string) (string, error)
 }
+
+// Clock tells the current time, so toasts, debounces and the caret blink
+// can be driven by a fake one.
+type Clock interface {
+	Now() time.Time
+}
