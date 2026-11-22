@@ -7,22 +7,25 @@ depends_on:
 
 # Layer check in make check
 
-Goal: the rules in `internal/CLAUDE.md` are prose. After layout C they are few and checkable:
-kernel imports no other `internal` package; a feature imports kernel and platform, never another
-feature; platform imports kernel only; inside a feature `ui` imports no `adapter` and no other
-`ui`; the toolkit imports nothing of `internal`; `app` imports anything; `exampleserver` may import
-`feature/send/proto/ws`.
+Goal: the rules in `internal/CLAUDE.md` are prose. After the layout move (kernel, features, platform,
+app) they are few and checkable, so `make check` enforces them:
+- `internal/kernel/**` imports no other `internal` package;
+- a feature imports kernel and its own packages only, never another feature (tests included);
+- a platform adapter imports kernel and the feature that owns its port (the written exception);
+- inside a feature `ui` imports no `adapter` and no other `ui`; a controller imports no toolkit;
+- the toolkit (`uitoolkit/**`) imports nothing of `internal`;
+- `app` imports anything; `cmd` and `e2e` are not checked;
+- written exceptions: `internal/exampleserver` may import `feature/send/proto/ws`;
+  `feature/settings/theme` imports `uitoolkit/core` and `uitoolkit/theming`.
 
-OPEN QUESTION (ask the user before building): commit `7d856abc` deliberately deleted
-source-scanning tests, including the import-layer test. How should the check run? Options:
-(1) a Go test over `go list -deps` output with a rule table, recommended, because it reads the
-compiler's imports and not source text; (2) a small Go program under `e2e/` called from the
-Makefile; (3) leave the rules as prose. Record the answer here.
+User's answer: a Go test over `go list -deps -test` output with a rule table (it reads the
+compiler's imports, not source text), run by `make check`. The rule table lives in the test, one
+row per rule, exceptions as extra rows with the reason in a field. Not `common/scripts/check-layers.sh`.
 
 ## Model
-Model: unchanged (a rule table: zone pattern to allowed zones, the one written exception).
+Model: unchanged. The rule table is data: zone pattern, allowed imports, reason; no logic per rule.
 
 ## Acceptance
 - Test first: a table-driven test with one failing import per rule.
-- The check passes on the tree after task 008.
+- The check passes on the current tree; every written exception is a table row with its reason.
 - The repo check command passes; `overview.md` no longer says no check exists.
