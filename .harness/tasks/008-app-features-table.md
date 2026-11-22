@@ -3,7 +3,7 @@ kind: refactor
 commit: refactor(app): features register through a table
 scope: internal/**, cmd/**, e2e/**, .harness/architecture.md, .harness/architecture/**, .harness/overview.md, uitoolkit/CLAUDE.md, Makefile
 not_before: 2026-01-01
-depends_on: 003-feature-history, 004-feature-settings, 005-feature-collections, 006-feature-send, 007-feature-workspace-and-platform
+depends_on: 012-websocket-view-host
 
 # App: a Features table
 
@@ -12,10 +12,12 @@ method in another package, so one `App` stays). Add a `Features` table (name, co
 `Host` it needs) so a new feature is a table row, not a branch in `App`, and register the six
 features through it (history, settings, collections, environments, send, workspace).
 
-User's answers: first, one area per task; then, after the implementer measured the websocket view
-(about 15 `App` methods, state in `reqTab` shared with `driver.go`, `game.go`, `request_send.go`,
-`statesync.go`), this task builds the table only. No logic moves out of `App` here. The state type
-is task 011 and the view move is task 012.
+Findings and the user's answers: the implementer found the six features share no constructor or
+`Host` (they are `App` fields, and each `Host` is the `App` itself), so a table built now would only
+forward calls. The user chose to run this task after 011 (connection state model) and 012
+(websocket view), when each feature has its own state value and a `Load`/`Restore`/`Save` method
+set the table can loop over. Re-measure then; if the features still share no lifecycle, report
+blocked again. No logic moves out of `App` here.
 
 ## Model
 Model: unchanged. The table is static data: name, constructor, the `Host` it needs.

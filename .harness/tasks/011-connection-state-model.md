@@ -3,7 +3,7 @@ kind: refactor
 commit: refactor(app): connection state gets its own model outside reqTab
 scope: internal/**, cmd/**, e2e/**, .harness/architecture.md, .harness/architecture/**, .harness/overview.md, uitoolkit/CLAUDE.md, Makefile
 not_before: 2026-01-01
-depends_on: 008-app-features-table
+depends_on:
 
 # Connection state model
 
