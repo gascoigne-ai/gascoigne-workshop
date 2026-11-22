@@ -11,6 +11,9 @@ Adds to the shared `common/rules.md`, `common/commit-style.md` and `common/code-
 - Protocols are a table (`proto` registry keyed by name), widgets are values with `Update`/`Draw`; no switch on protocol or widget kind.
 - Drawing and layout stay separate: layout is pure (rects in, rects out) and unit-tested without a GPU. Draw code is thin.
 
+## Design
+- Every design or plan (a task design note, a layout change, a new package) is made by an Opus agent (`model: opus`), read-only, before any code is written. Do not design on a smaller model, and do not skip the Opus pass because the change looks small.
+
 ## Tasks
 - Finish a task completely before starting another. An item that cannot be done (blocked, needs a decision, not possible on this platform) is written into the task file with the reason and what would unblock it; the user decides whether the task closes.
 
