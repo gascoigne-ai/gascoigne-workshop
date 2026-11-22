@@ -1,8 +1,8 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/shortcutpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/theming"
@@ -194,7 +194,7 @@ func TestContrastChooserStrengthensTheColorsAndIsSaved(t *testing.T) {
 		t.Fatalf("Contrast = %q", a.settings.Contrast)
 	}
 	after := core.ContrastRatio(a.ctx.Th.Color(core.Selection), a.ctx.Th.Color(core.Text))
-	if after < appearance.HighRatio-0.01 || after <= before {
+	if after < theme.HighRatio-0.01 || after <= before {
 		t.Fatalf("selection contrast %.2f -> %.2f", before, after)
 	}
 	if saved, _ := settingsDisk.Load(path); saved.Contrast != "high" {
@@ -272,10 +272,10 @@ func TestSwitchingThemeShowsThatThemesColorsAndKeepsEachThemesOverrides(t *testi
 	a.prefs.Cat, a.prefs.Search = "appearance", widget.NewTextField("theme")
 	a.step(core.Input{})
 	clickText(t, a, "Light", 0)
-	if a.ctx.Th.Color(core.Selection) != appearance.ThemeFor("light", appearance.FontSizes{}).Color(core.Selection) {
+	if a.ctx.Th.Color(core.Selection) != theme.ThemeFor("light", theme.FontSizes{}).Color(core.Selection) {
 		t.Fatal("the dark override must not leak into the light theme")
 	}
-	if a.colors.Input(a, core.Selection).Text != core.FormatHex(appearance.ThemeFor("light", appearance.FontSizes{}).Color(core.Selection)) {
+	if a.colors.Input(a, core.Selection).Text != core.FormatHex(theme.ThemeFor("light", theme.FontSizes{}).Color(core.Selection)) {
 		t.Fatalf("the field must show the light theme's color, got %q", a.colors.Input(a, core.Selection).Text)
 	}
 	clickText(t, a, "Dark", 0) // back to Dark
@@ -299,7 +299,7 @@ func TestColorsAreRestoredAtStart(t *testing.T) {
 	if a.ctx.Th.Color(core.Accent) != core.RGB(0xaaccee) {
 		t.Fatalf("accent = %v", a.ctx.Th.Color(core.Accent))
 	}
-	if core.ContrastRatio(a.ctx.Th.Color(core.Selection), a.ctx.Th.Color(core.Text)) < appearance.HighRatio-0.01 {
+	if core.ContrastRatio(a.ctx.Th.Color(core.Selection), a.ctx.Th.Color(core.Text)) < theme.HighRatio-0.01 {
 		t.Fatal("high contrast is applied at start")
 	}
 }

@@ -4,7 +4,7 @@
 flowchart LR
   schema["settings.Schema rows (model/settings)"] --> form["settingsui: form, raw JSON, search"]
   form -- "prefs messages" --> app["App.Send (settingshost.go)"]
-  app --> theme["appearance.ThemeWith, Ctx.SetTheme"]
+  app --> theme["theme.ThemeWith, Ctx.SetTheme"]
   app --> file["settingsfile: settings.json"]
   file -- "Poll every PollTicks frames" --> form
 ```
@@ -57,7 +57,7 @@ flowchart LR
 - **Auto-save** (`autoSave`, on by default): a change applies at once either way; with auto-save off
   it is only marked unsaved until Save. Turning it off writes that choice once; turning it on
   writes what was pending. Closing with unsaved changes asks Cancel, Discard or Save.
-- **Theme**: how settings become a theme (`appearance.ThemeWith`) is in `style.md`, Theming pipeline.
+- **Theme**: how settings become a theme (`theme.ThemeWith`) is in `style.md`, Theming pipeline.
 - **Fonts** (`settings/adapter/fonts`): the scan runs in a goroutine at start and its result is
   applied on the UI goroutine. A saved family that is not installed stays saved, shows as
   `(not installed)` and draws in the built-in Go font. The font list builds only the rows in view,

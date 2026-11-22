@@ -60,7 +60,7 @@ The window is VML views (`window.go`, `sidebar.go`, `requesttabs.go`, `urlbar.go
   credentials after the headers, so they win over a typed `Authorization` header; they never show
   in the Headers table. Secret fields refuse copy and cut.
 - Body: the text and the form rows are kept apart, so switching body type loses nothing.
-- Each open collection has a color (`appearance.CollectionToken`, tokens `collection.0`-`.5`,
+- Each open collection has a color (`theme.CollectionToken`, tokens `collection.0`-`.5`,
   repeating): a stripe on its tabs and its root row.
 
 ### Collection tree in the UI

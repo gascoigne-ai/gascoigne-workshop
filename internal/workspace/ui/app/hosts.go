@@ -5,7 +5,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/tree"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
@@ -68,5 +68,5 @@ func (a *App) sentCandidates(folder string) []collections.Entry {
 
 // Badge is the method label shown before a request's name.
 func (a *App) Badge(protocol model.Protocol, method string) Node {
-	return Text(requestBadge(protocol, method), Small(), Color(appearance.MethodToken(method)), W(badgeSlot(a.ctx, badgeW)))
+	return Text(requestBadge(protocol, method), Small(), Color(theme.MethodToken(method)), W(badgeSlot(a.ctx, badgeW)))
 }

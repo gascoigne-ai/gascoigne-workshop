@@ -1,4 +1,4 @@
-package appearance
+package theme
 
 import (
 	"os"

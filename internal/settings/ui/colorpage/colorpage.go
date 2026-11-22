@@ -6,7 +6,7 @@ package colorpage
 import (
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/theme"
 	"image/color"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
@@ -47,21 +47,21 @@ func (p *Page) Input(host Host, tok w.Token) *TextField {
 // edited applies the hex a user typed for customColor, or says why not: a
 // color that does not parse, or whose text would be unreadable on it
 // (with the ratio), is refused and nothing changes.
-func (p *Page) edited(host Host, customColor appearance.CustomColor) {
+func (p *Page) edited(host Host, customColor theme.CustomColor) {
 	text := p.Input(host, customColor.Token).Text
 	col, err := w.ParseHex(text)
 	if err != nil {
 		p.fields.SetNote(customColor.Token, "Use #rrggbb")
 		return
 	}
-	need := appearance.RequiredRatio(host.Settings().Contrast)
+	need := theme.RequiredRatio(host.Settings().Contrast)
 	if ratio := w.ContrastRatio(col, host.Color(customColor.Text)); ratio < need {
 		p.fields.SetNote(customColor.Token, fmt.Sprintf("Contrast %.1f:1 is below %.1f:1", ratio, need))
 		return
 	}
 	p.fields.SetNote(customColor.Token, "")
 	host.Send(prefs.Edit{Edit: func(current *settings.Settings) {
-		id := appearance.ThemeIDOf(current.Theme)
+		id := theme.ThemeIDOf(current.Theme)
 		if current.Colors == nil {
 			current.Colors = map[string]map[string]string{}
 		}
@@ -75,7 +75,7 @@ func (p *Page) edited(host Host, customColor appearance.CustomColor) {
 // resetColor drops the override of one color in the current theme.
 func (p *Page) reset(host Host, tok w.Token) {
 	host.Send(prefs.Edit{Edit: func(current *settings.Settings) {
-		delete(current.Colors[appearance.ThemeIDOf(current.Theme)], string(tok))
+		delete(current.Colors[theme.ThemeIDOf(current.Theme)], string(tok))
 	}})
 	p.fields.DropInput(tok)
 	p.fields.SetNote(tok, "")
@@ -83,7 +83,7 @@ func (p *Page) reset(host Host, tok w.Token) {
 
 // resetColors drops every color override of the current theme.
 func (p *Page) resetAll(host Host) {
-	host.Send(prefs.Edit{Edit: func(current *settings.Settings) { delete(current.Colors, appearance.ThemeIDOf(current.Theme)) }})
+	host.Send(prefs.Edit{Edit: func(current *settings.Settings) { delete(current.Colors, theme.ThemeIDOf(current.Theme)) }})
 	p.Forget()
 }
 
@@ -122,8 +122,8 @@ func scope(sizes w.Sizes, own markup.Scope) markup.Scope {
 // View is the Colors section of the settings menu: one row per
 // customizable color with a swatch, its hex and a reset button.
 func (p *Page) View(ctx *w.Ctx, host Host) Node {
-	colors := make([]colorRow, 0, len(appearance.CustomColors))
-	for _, custom := range appearance.CustomColors {
+	colors := make([]colorRow, 0, len(theme.CustomColors))
+	for _, custom := range theme.CustomColors {
 		colors = append(colors, p.row(host, custom))
 	}
 	return pageTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
@@ -134,7 +134,7 @@ func (p *Page) View(ctx *w.Ctx, host Host) Node {
 	}))
 }
 
-func (p *Page) row(host Host, custom appearance.CustomColor) colorRow {
+func (p *Page) row(host Host, custom theme.CustomColor) colorRow {
 	note := p.fields.Note(custom.Token)
 	border := w.Border
 	if note != "" {

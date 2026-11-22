@@ -8,10 +8,10 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
 	reqport "github.com/gascoigne-ai/gascoigne-workshop/internal/request/port"
 	rport "github.com/gascoigne-ai/gascoigne-workshop/internal/response/port"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fileversion"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	sport "github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/autosave"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/bus"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
@@ -95,8 +95,8 @@ func loadSettings(opts Options) (settings.Settings, error, []string) {
 	if opts.SettingsPath != "" {
 		st, loadErr = opts.SettingsFiles.Load(opts.SettingsPath)
 	}
-	themes, themeProblems := appearance.LoadUserThemes(opts.ThemesDir)
-	appearance.SetUserThemes(themes)
+	themes, themeProblems := theme.LoadUserThemes(opts.ThemesDir)
+	theme.SetUserThemes(themes)
 	return st, loadErr, themeProblems
 }
 
@@ -104,7 +104,7 @@ func loadSettings(opts Options) (settings.Settings, error, []string) {
 func NewApp(opts Options) (*App, error) {
 	opts = opts.withDefaults()
 	st, loadErr, themeProblems := loadSettings(opts)
-	ctx, err := core.NewCtx(appearance.ThemeWith(st))
+	ctx, err := core.NewCtx(theme.ThemeWith(st))
 	if err != nil {
 		return nil, err
 	}

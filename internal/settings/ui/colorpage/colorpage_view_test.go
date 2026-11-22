@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/theme"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
@@ -32,7 +32,7 @@ func newCtx(t *testing.T) *w.Ctx {
 // it, so that row shows a note and a red border.
 func refuse(text string) func(page *Page, host *fakeHost) {
 	return func(page *Page, host *fakeHost) {
-		custom := appearance.CustomColors[1]
+		custom := theme.CustomColors[1]
 		page.Input(host, custom.Token).Text = text
 		page.edited(host, custom)
 	}
@@ -137,7 +137,7 @@ func (driver *pageDriver) retype(text string) {
 }
 
 func (driver *pageDriver) saved() map[string]string {
-	return driver.host.current.Colors[appearance.ThemeIDOf(driver.host.current.Theme)]
+	return driver.host.current.Colors[theme.ThemeIDOf(driver.host.current.Theme)]
 }
 
 // Typing a readable hex with enough contrast into the second row's field
@@ -146,7 +146,7 @@ func TestTypingAHexIntoARowSavesThatRowsColor(t *testing.T) {
 	driver := newDriver(t)
 	driver.clickOn(1, "fieldB")
 	driver.retype("#ffffff")
-	second := appearance.CustomColors[1].Token
+	second := theme.CustomColors[1].Token
 	if saved := driver.saved(); len(saved) != 1 || saved[string(second)] != "#ffffff" {
 		t.Fatalf("saved %+v, want only %s", saved, second)
 	}
@@ -165,7 +165,7 @@ func TestTypingARefusedHexShowsItsNoteUnderThatRow(t *testing.T) {
 			driver := newDriver(t)
 			driver.clickOn(1, "fieldB")
 			driver.retype(tc.typed)
-			second := appearance.CustomColors[1].Token
+			second := theme.CustomColors[1].Token
 			if note := driver.page.Note(second); !strings.HasPrefix(note, tc.note) {
 				t.Fatalf("note %q, want %q", note, tc.note)
 			}
@@ -184,9 +184,9 @@ func TestTypingARefusedHexShowsItsNoteUnderThatRow(t *testing.T) {
 // A row's Reset drops that row's override and keeps the others.
 func TestARowsResetDropsOnlyItsOverride(t *testing.T) {
 	driver := newDriver(t)
-	theme := appearance.ThemeIDOf(driver.host.current.Theme)
-	first, second := appearance.CustomColors[0].Token, appearance.CustomColors[1].Token
-	driver.host.current.Colors = map[string]map[string]string{theme: {string(first): "#111111", string(second): "#222222"}}
+	themeID := theme.ThemeIDOf(driver.host.current.Theme)
+	first, second := theme.CustomColors[0].Token, theme.CustomColors[1].Token
+	driver.host.current.Colors = map[string]map[string]string{themeID: {string(first): "#111111", string(second): "#222222"}}
 	driver.clickOn(1, `text="Reset"`)
 	if saved := driver.saved(); len(saved) != 1 || saved[string(first)] != "#111111" {
 		t.Fatalf("saved %+v, want only %s", saved, first)
@@ -195,12 +195,12 @@ func TestARowsResetDropsOnlyItsOverride(t *testing.T) {
 
 func TestResetColorsDropsEveryOverrideAndNote(t *testing.T) {
 	driver := newDriver(t)
-	theme := appearance.ThemeIDOf(driver.host.current.Theme)
-	first := appearance.CustomColors[0].Token
-	driver.host.current.Colors = map[string]map[string]string{theme: {string(first): "#111111"}}
+	themeID := theme.ThemeIDOf(driver.host.current.Theme)
+	first := theme.CustomColors[0].Token
+	driver.host.current.Colors = map[string]map[string]string{themeID: {string(first): "#111111"}}
 	refuse("teal")(&driver.page, driver.host)
 	driver.clickOn(0, `text="Reset colors"`)
-	if len(driver.host.current.Colors) != 0 || driver.page.Note(appearance.CustomColors[1].Token) != "" {
-		t.Fatalf("colors %+v note %q", driver.host.current.Colors, driver.page.Note(appearance.CustomColors[1].Token))
+	if len(driver.host.current.Colors) != 0 || driver.page.Note(theme.CustomColors[1].Token) != "" {
+		t.Fatalf("colors %+v note %q", driver.host.current.Colors, driver.page.Note(theme.CustomColors[1].Token))
 	}
 }

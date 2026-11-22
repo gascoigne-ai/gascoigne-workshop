@@ -7,11 +7,11 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/controller/viewer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fileversion"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/sysinfo"
 	sport "github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/shortcutpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/systempage"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -107,7 +107,7 @@ func (a *App) CopyText(text string) { _ = a.ctx.Clipboard.Write(text) } // the c
 // follows from them.
 func (a *App) applySettings(current settings.Settings) {
 	a.settings = current
-	if err := a.ctx.SetTheme(appearance.ThemeWith(current)); err != nil {
+	if err := a.ctx.SetTheme(theme.ThemeWith(current)); err != nil {
 		a.status = err.Error()
 	}
 	for _, t := range a.openTabs() {

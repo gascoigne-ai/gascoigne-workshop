@@ -2,8 +2,8 @@ package app
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/controller/viewer"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/theme"
 )
 
 // changeSettings is saveSettings for the settings dialog's own controls: the
@@ -29,7 +29,7 @@ func (a *App) saveSettings(edit func(*settings.Settings)) {
 	if a.networkSettings() != wasNetwork {
 		a.reg = a.newRegistry() // protocols hold the proxy and certificates they were built with
 	}
-	if err := a.ctx.SetTheme(appearance.ThemeWith(a.settings)); err != nil {
+	if err := a.ctx.SetTheme(theme.ThemeWith(a.settings)); err != nil {
 		a.status = err.Error()
 		return
 	}

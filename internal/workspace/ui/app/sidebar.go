@@ -3,7 +3,7 @@ package app
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	// The view DSL is dot-imported so views read like markup: Row(...), Text(...).
@@ -116,7 +116,7 @@ func (a *App) treeItemOf(row collection.Row) treeItem {
 	} else {
 		item.Indent += 6
 		item.Badge = requestBadge(row.Req.Protocol, row.Req.Method)
-		item.Color = appearance.MethodToken(row.Req.Method)
+		item.Color = theme.MethodToken(row.Req.Method)
 	}
 	if !a.dragNode.None() && a.dropTarget == node && node != a.dragNode {
 		item.DropBorder = w.AccentLine

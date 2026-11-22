@@ -4,7 +4,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/tree"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/hajimehoshi/ebiten/v2"
@@ -31,7 +31,7 @@ func (a *App) selectNode(node model.Node) { a.selected = node }
 func (a *App) collectionToken(node model.Node) core.Token {
 	for index, entry := range a.open.Entries {
 		if entry.Collection.Folder.Contains(node) {
-			return appearance.CollectionToken(index)
+			return theme.CollectionToken(index)
 		}
 	}
 	return ""

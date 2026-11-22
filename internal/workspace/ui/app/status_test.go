@@ -3,7 +3,7 @@ package app
 import (
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
@@ -17,7 +17,7 @@ func TestStatusPillsFollowTheDashboardBadges(t *testing.T) {
 		}
 	}
 	for _, id := range []string{"dark", "light"} {
-		th := appearance.ThemeFor(id, appearance.FontSizes{})
+		th := theme.ThemeFor(id, theme.FontSizes{})
 		for _, status := range []int{200, 301, 404} {
 			fg, bg := statusPill(status)
 			if r := core.ContrastRatio(th.Color(fg), th.Color(bg)); r < 3.5 {

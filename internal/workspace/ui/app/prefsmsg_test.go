@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/theme"
 )
 
 func TestSendAppliesSettingsMessages(t *testing.T) {
@@ -56,7 +56,7 @@ func TestSendChangeRebuildsColorsPageAndEditDoesNot(t *testing.T) {
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			a := testApp(t)
-			token := appearance.CustomColors[0].Token
+			token := theme.CustomColors[0].Token
 			before := a.colors.Input(a, token)
 			a.Send(test.msg(func(current *settings.Settings) { current.ResponseView = "compact" }))
 			if rebuilt := a.colors.Input(a, token) != before; rebuilt != test.rebuilt {

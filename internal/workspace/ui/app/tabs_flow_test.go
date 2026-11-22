@@ -2,8 +2,8 @@ package app
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"reflect"
 	"strings"
@@ -123,7 +123,7 @@ func TestTabWidthDoesNotChangeWhenTheRequestChanges(t *testing.T) {
 
 func TestTheTabSlotsFitTheirContentAtEveryTextSize(t *testing.T) {
 	for size := settings.MinFontSize; size <= settings.MaxFontSize; size++ {
-		ctx, err := core.NewCtx(appearance.ThemeFor("dark", appearance.FontSizes{UI: size, Small: max(size-2, 9), Code: size - 1}))
+		ctx, err := core.NewCtx(theme.ThemeFor("dark", theme.FontSizes{UI: size, Small: max(size-2, 9), Code: size - 1}))
 		if err != nil {
 			t.Fatal(err)
 		}

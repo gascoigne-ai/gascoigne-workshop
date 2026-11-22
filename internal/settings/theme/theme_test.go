@@ -1,4 +1,4 @@
-package appearance
+package theme
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/respview"

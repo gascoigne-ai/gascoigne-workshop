@@ -1,4 +1,15 @@
-package appearance
+// Package theme is the app's part of theming: its overlay themes
+// (HTTP-method, JSON and collection colors), the color tokens for them
+// and the mapping from settings to a toolkit theme.
+//
+// It sits directly under its domain and imports uitoolkit/core and
+// uitoolkit/theming by written exception to "model imports only model":
+// theme data is toolkit-bound (core.Theme, core.Token). The user chose
+// this over putting it in uitoolkit/theming (the toolkit would learn the
+// app's colors) and over a ui package (ui must not import ui, and
+// settingsui, colorpage and the app all need it). Revisit when the
+// toolkit-free data (tokens as strings) can be split from the build.
+package theme
 
 import (
 	"embed"
@@ -85,13 +96,6 @@ var ThemeChoices = []ThemeChoice{
 
 var catalog = theming.NewCatalog(ThemeChoices)
 
-// The interface scale slider's range and step, in percent.
-const (
-	ScaleMin  = 50
-	ScaleMax  = 200
-	ScaleStep = 5
-)
-
 // AllThemeChoices are the built-in themes followed by the user's, sorted.
 func AllThemeChoices() []ThemeChoice { return catalog.All() }
 
@@ -112,11 +116,3 @@ func LoadUserThemes(dir string) (map[string]ThemeChoice, []string) { return cata
 
 // SetUserThemes sets the user's themes, as LoadUserThemes returned them.
 func SetUserThemes(themes map[string]ThemeChoice) { catalog.SetUser(themes) }
-
-// LayoutChoice is an entry of the layout chooser in the settings menu.
-type LayoutChoice struct{ ID, Label string }
-
-var LayoutChoices = []LayoutChoice{
-	{"stacked", "Stacked"},
-	{"side", "Side by side"},
-}

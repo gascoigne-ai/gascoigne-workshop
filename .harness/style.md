@@ -6,7 +6,7 @@ The one document for how the UI looks: the rules a view follows, the visual lang
 
 These are hard rules (`rules.md` makes them part of the repo's rules).
 
-- **Tokens, never literals.** Colors, spacing, sizes and font sizes in a view or widget come from the color tokens and size constants of `uitoolkit/core/theme.go`; the app adds its own tokens (`method.*`, `json.*`, `collection.*`) in `internal/settings/model/appearance/themes/*.json`. Markup has no constants, so a template reads them from its scope (`{{rowH}}`, `{{gutter}}`).
+- **Tokens, never literals.** Colors, spacing, sizes and font sizes in a view or widget come from the color tokens and size constants of `uitoolkit/core/theme.go`; the app adds its own tokens (`method.*`, `json.*`, `collection.*`) in `internal/settings/theme/themes/*.json`. Markup has no constants, so a template reads them from its scope (`{{rowH}}`, `{{gutter}}`).
 - **Corners through the theme.** A component takes its radius from `view.Control(name)` or `Ctx.Radius(name)`, so the Corners setting reaches it. A square fill in a rounded panel is a bug. Tabs are square by choice (section 4); toasts do not follow this yet (Not done).
 - **Icon-only controls have a tooltip**, and buttons and tabs name their shortcut in it (`App.hint`; `focusorder_test.go` holds it).
 - **Contrast is tested.** The palettes hold their ratios in `theming/palette_test.go`; `TestNonTextElementsAreVisible` holds the floors for borders, rules, icons and row states. A color change that breaks them is a change of these rules, not of a test.
@@ -67,7 +67,7 @@ Window chrome (`workspace/ui/app/window.go`, fixed numbers with a role each): he
 ### Scale
 
 - Widgets, layout and hit tests work in logical pixels; `Ctx` multiplies by `Scale` when it draws, so HiDPI stays sharp (`architecture/core.md`).
-- **Interface scale** (`settings.UIScalePct`, slider 50 to 200 % in steps of 5, `appearance.ScaleMin/Max/Step`) multiplies the display factor and the platform base (`settings.BaseScale`: 1.1 on Linux, 1 elsewhere), so 100 % is the platform's normal size. Screenshots skip it. The slider resizes live, saves on release and follows the pointer in device pixels from the press, so the resizing UI never feeds back into the value. Remembered window sizes are in window pixels.
+- **Interface scale** (`settings.UIScalePct`, slider 50 to 200 % in steps of 5, `settings.ScaleSliderMin/Max/Step`) multiplies the display factor and the platform base (`settings.BaseScale`: 1.1 on Linux, 1 elsewhere), so 100 % is the platform's normal size. Screenshots skip it. The slider resizes live, saves on release and follows the pointer in device pixels from the press, so the resizing UI never feeds back into the value. Remembered window sizes are in window pixels.
 - **Display scale on Linux.** Ebitengine reports 1 for an Xwayland window on a scaled monitor, so the App asks the `settings/port.DisplayScale` port (adapter `settings/adapter/displayscale`); `frameSize` then lays the UI out in window pixels over the real scale, with no supersampling. `Factor` returns a cached value and refreshes it in the background, so a hung compositor command never stalls a frame. Windows and macOS use Ebitengine's factor.
 - Fractional scales round text metrics to whole pixels (`architecture/limits.md`).
 
@@ -212,19 +212,19 @@ Every dialog is a modal floating panel over a dimmed scrim (`widget.Dialog`, `Re
 ```mermaid
 flowchart LR
   builtin["theming/themes/*.json: dark, light"] --> base["toolkit theme"]
-  base --> appth["appearance/themes/*.json: method, json, collection colors"]
+  base --> appth["theme/themes/*.json: method, json, collection colors"]
   user["user themes folder: *.json, extends dark or light"] --> catalog["theming.Catalog"]
   appth --> catalog
-  settings["settings.json: theme, three font sizes, corners, contrast, flat, colors"] --> prefs["appearance.ThemeWith"]
+  settings["settings.json: theme, three font sizes, corners, contrast, flat, colors"] --> prefs["theme.ThemeWith"]
   catalog --> prefs
   prefs --> ctx["Ctx.SetTheme: fonts rebuilt, masks dropped"]
 ```
 
-- **Theme files** (format in `theming/themefile.go`): `name`, `extends`, `variables`, a flat `colors` table, `iconStroke` and per-control styles (`radius`, `gradient`, `border`). `ParseTheme` merges a file over a base and rejects unknown fields, variables and tokens. The toolkit's palettes are `theming/themes`; the app lays its HTTP-method, JSON and collection colors over them from `internal/settings/model/appearance/themes`.
+- **Theme files** (format in `theming/themefile.go`): `name`, `extends`, `variables`, a flat `colors` table, `iconStroke` and per-control styles (`radius`, `gradient`, `border`). `ParseTheme` merges a file over a base and rejects unknown fields, variables and tokens. The toolkit's palettes are `theming/themes`; the app lays its HTTP-method, JSON and collection colors over them from `internal/settings/theme/themes`.
 - **Controls draw from their style.** `view.Control(name)` takes fill gradient, radius and outline from `Theme.Style(name)`; a control a theme does not list is plain, so a theme restyles any control without code.
 - **Custom themes.** Every `*.json` in the themes folder (`-themes DIR`, default `settingsfile.ThemesDir()`) is a theme: the file name is its id, `name` its label, `extends` `dark` (default) or `light`. It may set any token, `method.*` and `json.*` included, and controls. It is listed beside the built-ins; color overrides are kept per theme id. A file that does not parse or extends an unknown theme is skipped and reported in the status bar; no folder is fine.
-- **From settings** (`appearance.ThemeWith`, `theming.Catalog.Theme`), in order: the chosen theme (unknown ids fall back to the first) and the three font sizes (`FontSizes.Resolved`: each out of range is clamped into its range, 0 is its default); the Corners factor and Flat; with High contrast, the customizable colors moved to 7:1 against their text and the `highBars` table (text, muted, error, ok, accent line, borders, rules, row states, chips) moved in their own hue until each reaches its ratio on every surface it is drawn on, surfaces unchanged; then the user's color overrides for that theme (Selection, Find match, Active match, Accent), each ignored when it does not parse or misses `theming.RequiredRatio` (4.5, or 7 with high contrast).
-- Packages: `core` owns `Theme`, `Token`, `ControlStyle`, color math and `Ctx`; `theming` the parser, palettes and preferences and imports `core`, never the reverse; `appearance` is only the app's part (its overlay themes, `MethodToken`, `CollectionToken`, the mapping from settings to `theming.Prefs`).
+- **From settings** (`theme.ThemeWith`, `theming.Catalog.Theme`), in order: the chosen theme (unknown ids fall back to the first) and the three font sizes (`FontSizes.Resolved`: each out of range is clamped into its range, 0 is its default); the Corners factor and Flat; with High contrast, the customizable colors moved to 7:1 against their text and the `highBars` table (text, muted, error, ok, accent line, borders, rules, row states, chips) moved in their own hue until each reaches its ratio on every surface it is drawn on, surfaces unchanged; then the user's color overrides for that theme (Selection, Find match, Active match, Accent), each ignored when it does not parse or misses `theming.RequiredRatio` (4.5, or 7 with high contrast).
+- Packages: `core` owns `Theme`, `Token`, `ControlStyle`, color math and `Ctx`; `theming` the parser, palettes and preferences and imports `core`, never the reverse; `internal/settings/theme` is only the app's part (its overlay themes, `MethodToken`, `CollectionToken`, the mapping from settings to `theming.Prefs`).
 
 ## 4. Decisions
 

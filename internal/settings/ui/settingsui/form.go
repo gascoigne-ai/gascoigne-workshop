@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/severity"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
@@ -67,13 +67,13 @@ var settingControls = map[string]settingControl{
 		return dialog.themeChips(ctx, host)
 	},
 	"corners": func(ctx *w.Ctx, dialog *SettingsDialog, host Host, field settings.Field) Node {
-		return dialog.enumChips(ctx, host, field, labelsOf(appearance.CornerChoices, cornerLabel))
+		return dialog.enumChips(ctx, host, field, labelsOf(theme.CornerChoices, cornerLabel))
 	},
 	"contrast": func(ctx *w.Ctx, dialog *SettingsDialog, host Host, field settings.Field) Node {
-		return dialog.enumChips(ctx, host, field, labelsOf(appearance.ContrastChoices, contrastLabel))
+		return dialog.enumChips(ctx, host, field, labelsOf(theme.ContrastChoices, contrastLabel))
 	},
 	"layout": func(ctx *w.Ctx, dialog *SettingsDialog, host Host, field settings.Field) Node {
-		return dialog.enumChips(ctx, host, field, labelsOf(appearance.LayoutChoices, layoutLabel))
+		return dialog.enumChips(ctx, host, field, labelsOf(settings.LayoutChoices, layoutLabel))
 	},
 	"responseView": func(ctx *w.Ctx, dialog *SettingsDialog, host Host, field settings.Field) Node {
 		return dialog.enumChips(ctx, host, field, nil)
@@ -88,13 +88,13 @@ func stepControlOf(ctx *w.Ctx, dialog *SettingsDialog, host Host, field settings
 	return dialog.stepControl(ctx, host, field)
 }
 
-func cornerLabel(cornerChoice appearance.CornerChoice) (string, string) {
+func cornerLabel(cornerChoice theme.CornerChoice) (string, string) {
 	return cornerChoice.ID, cornerChoice.Label
 }
-func contrastLabel(contrastChoice appearance.ContrastChoice) (string, string) {
+func contrastLabel(contrastChoice theme.ContrastChoice) (string, string) {
 	return contrastChoice.ID, contrastChoice.Label
 }
-func layoutLabel(layoutChoice appearance.LayoutChoice) (string, string) {
+func layoutLabel(layoutChoice settings.LayoutChoice) (string, string) {
 	return layoutChoice.ID, layoutChoice.Label
 }
 
@@ -184,7 +184,7 @@ func (d *SettingsDialog) enumChips(ctx *w.Ctx, host Host, field settings.Field, 
 	text, _ := value.(settings.Text)
 	current := string(text)
 	if field.Key == "corners" {
-		current = appearance.CornerIDOf(current)
+		current = theme.CornerIDOf(current)
 	}
 	chips := make([]chip, 0, len(field.Allowed))
 	for _, id := range field.Allowed {
@@ -200,7 +200,7 @@ func (d *SettingsDialog) enumChips(ctx *w.Ctx, host Host, field settings.Field, 
 
 func (d *SettingsDialog) themeChips(ctx *w.Ctx, host Host) Node {
 	current := host.Settings().Theme
-	themes := appearance.AllThemeChoices()
+	themes := theme.AllThemeChoices()
 	chips := make([]chip, 0, len(themes))
 	for _, theme := range themes {
 		edit := func(edited *settings.Settings) { edited.Theme = theme.ID }
@@ -213,9 +213,9 @@ func (d *SettingsDialog) scaleControl(ctx *w.Ctx, host Host) Node {
 	percent := int(host.Settings().UIScale()*100 + 0.5)
 	return scaleTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
 		"scale":    &d.scale,
-		"min":      appearance.ScaleMin,
-		"max":      appearance.ScaleMax,
-		"step":     appearance.ScaleStep,
+		"min":      settings.ScaleSliderMin,
+		"max":      settings.ScaleSliderMax,
+		"step":     settings.ScaleSliderStep,
 		"mid":      settings.DefaultUIScalePct,
 		"value":    percent,
 		"slide":    func(percent int) { host.Send(prefs.ScaleLive{Percent: percent}) }, // live: the UI resizes while dragging

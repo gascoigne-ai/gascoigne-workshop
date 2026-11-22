@@ -10,7 +10,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/transfer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/model/collection"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
@@ -46,7 +46,7 @@ func TestDragOntoAnotherCollectionsFolderMovesTheRequest(t *testing.T) {
 	if !tabOf(a, req) {
 		t.Fatal("the open tab was closed")
 	}
-	if got := a.collectionToken(model.Of(req)); got != appearance.CollectionToken(1) {
+	if got := a.collectionToken(model.Of(req)); got != theme.CollectionToken(1) {
 		t.Fatalf("owner stripe %q, want Beta's", got)
 	}
 	if a.selected != model.Of(req) || !a.expanded[beta.Folders[0]] {

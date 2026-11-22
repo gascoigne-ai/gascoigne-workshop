@@ -3,7 +3,7 @@ package app
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/controller/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -77,7 +77,7 @@ func (a *App) urlBar(tab *reqTab) Node {
 		"divided":          httpMethod || rpcMethod,
 		"httpMethod":       httpMethod,
 		"method":           tab.Req.Method,
-		"methodColor":      appearance.MethodToken(tab.Req.Method),
+		"methodColor":      theme.MethodToken(tab.Req.Method),
 		"rpcMethod":        rpcMethod,
 		"streamable":       info.Connection == model.OnStream,
 		"grpcMethodW":      grpcMethodW,

@@ -8,8 +8,8 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/controller/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/statefile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/model/state"
@@ -310,10 +310,10 @@ func TestTabsAndRootRowsShowTheColorOfTheirCollection(t *testing.T) {
 	alpha, beta := entryNamed(t, a, "Alpha"), entryNamed(t, a, "Beta")
 	alphaReq, betaReq := alpha.Collection.Folder.Requests[0], beta.Collection.Folder.Requests[0]
 	a.openRequest(alphaReq)
-	if got, want := shownTab(t, a, alphaReq).Stripe, appearance.CollectionToken(0); got != want {
+	if got, want := shownTab(t, a, alphaReq).Stripe, theme.CollectionToken(0); got != want {
 		t.Fatalf("tab of Alpha stripe = %q, want %q", got, want)
 	}
-	if got, want := shownTab(t, a, betaReq).Stripe, appearance.CollectionToken(1); got != want {
+	if got, want := shownTab(t, a, betaReq).Stripe, theme.CollectionToken(1); got != want {
 		t.Fatalf("tab of Beta stripe = %q, want %q", got, want)
 	}
 	for _, row := range a.visibleRows() {
@@ -321,7 +321,7 @@ func TestTabsAndRootRowsShowTheColorOfTheirCollection(t *testing.T) {
 			continue
 		}
 		owner, _ := a.open.Owner(model.Of(row.Dir))
-		if got := a.treeItemOf(row).Stripe; got == "" || (owner.Collection == beta.Collection) == (got == appearance.CollectionToken(0)) {
+		if got := a.treeItemOf(row).Stripe; got == "" || (owner.Collection == beta.Collection) == (got == theme.CollectionToken(0)) {
 			t.Fatalf("root row of %s has stripe %q", owner.Collection.Name, got)
 		}
 	}

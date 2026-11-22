@@ -5,8 +5,8 @@ import (
 	"image/color"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/theme"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
@@ -30,12 +30,12 @@ func newHost() *fakeHost {
 	return &fakeHost{current: settings.Default(), colors: map[w.Token]color.RGBA{}}
 }
 
-func firstColor(t *testing.T) appearance.CustomColor {
+func firstColor(t *testing.T) theme.CustomColor {
 	t.Helper()
-	if len(appearance.CustomColors) == 0 {
+	if len(theme.CustomColors) == 0 {
 		t.Fatal("no custom colors")
 	}
-	return appearance.CustomColors[0]
+	return theme.CustomColors[0]
 }
 
 func TestUnreadableHexIsRefusedWithANote(t *testing.T) {
@@ -56,7 +56,7 @@ func TestResetAllForgetsOverridesNotesAndFields(t *testing.T) {
 	var page Page
 	host := newHost()
 	custom := firstColor(t)
-	host.current.Colors = map[string]map[string]string{appearance.ThemeIDOf(host.current.Theme): {string(custom.Token): "#336699"}}
+	host.current.Colors = map[string]map[string]string{theme.ThemeIDOf(host.current.Theme): {string(custom.Token): "#336699"}}
 	page.Input(host, custom.Token).Text = "teal"
 	page.edited(host, custom)
 	page.resetAll(host)

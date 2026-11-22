@@ -2,7 +2,7 @@ package app
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/model"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/appearance"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/controller/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -58,7 +58,7 @@ func (a *App) requestTabs() Node {
 func (a *App) requestTab(index int, tab *reqTab) requestTabItem {
 	item := requestTabItem{
 		Badge:       requestBadge(tab.Req.Protocol, tab.Req.Method),
-		Color:       appearance.MethodToken(tab.Req.Method),
+		Color:       theme.MethodToken(tab.Req.Method),
 		Name:        tab.Req.Name,
 		Dirty:       a.tabDirty(tab),
 		Active:      index == a.list.Active,
