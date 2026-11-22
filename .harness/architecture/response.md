@@ -10,16 +10,7 @@
   A wrapped view never scrolls sideways.
 - **Images**: PNG, JPEG and GIF are sniffed from the body whatever the Content-Type says and shown
   scaled down, never up.
-- **History in a tab**: the last 10 successful responses a new one replaced, in the `History` menu.
-- **History across restarts** (`response/adapter/history`): the last 10 successful responses of a
-  request in `history/<hash of its key>.json` next to the state file, mode 0600 because responses
-  can hold tokens. The key is the collection folder and the request path; the file holds the key,
-  so a file of another request is never shown. Bodies over 256 KiB are not written. A request of the
-  first open collection with no file under its key reads the bare path's file, written when one
-  collection was open at a time.
-- **Sent log** (`history/sent.jsonl`): one line per finished send through `dispatch` of a request in
-  the tree (not WebSocket or MCP sessions). The newest 500 are kept; the file is cut back when it
-  holds twice that. The sidebar's `Sent` list opens a row's request in its collection.
+- **History** and the **sent log**: `internal/feature/history/FEATURE.md`.
 - **Call trace** (`request/ui/calltrace`): the last 500 sends, results and connection changes, in
   memory only, shown by the status bar's `Log` button. Socket messages are not traced; the Messages
   pane has them.
@@ -28,7 +19,6 @@
   refuses another Host header (DNS rebinding) and sends a sandboxed `Content-Security-Policy` with
   no scripts (`pageCSP`) and `nosniff`, because the body comes from a server the user does not control
   and is shown on a local origin.
-- With no state path (tests, `-state ""`) no history or sent log is written.
 
 ## JSON view
 

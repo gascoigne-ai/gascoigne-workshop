@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
+	historyadapter "github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history/adapter"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/adapter/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 )
 
@@ -21,8 +21,8 @@ func TestHistoryIsKeptPerCollectionAndOldHistoryStaysWithTheFirst(t *testing.T) 
 	a, _, _ := twoCollectionsAppWith(t, Options{StatePath: filepath.Join(t.TempDir(), "state.json")})
 	alphaInner := entryNamed(t, a, "Alpha").Collection.Folders[0].Requests[0]
 	betaInner := entryNamed(t, a, "Beta").Collection.Folders[0].Requests[0]
-	old := []response.Entry{{At: time.Now(), Status: 201, Body: []byte("old")}}
-	if err := history.Dir(a.historyDir()).Save("Nested/Inner", old); err != nil {
+	old := []history.Entry{{At: time.Now(), Status: 201, Body: []byte("old")}}
+	if err := historyadapter.Dir(a.historyDir()).Save("Nested/Inner", old); err != nil {
 		t.Fatal(err)
 	}
 	if got := a.loadHistory(alphaInner); len(got) != 1 || got[0].Resp.Status != 201 {
@@ -65,7 +65,7 @@ func TestASentRowOpensTheRequestOfItsOwnCollection(t *testing.T) {
 		t.Fatalf("opened %q of the wrong collection", a.cur().Req.Name)
 	}
 	// a row written before rows named their collection is the first one's
-	a.sent.Open(a, response.Sent{Path: "Nested/Inner"})
+	a.sent.Open(a, history.Sent{Path: "Nested/Inner"})
 	if a.cur().Req != alphaInner {
 		t.Fatal("an old row did not open the first collection's request")
 	}

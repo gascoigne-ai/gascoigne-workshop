@@ -3,9 +3,9 @@ package app
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/tree"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/severity"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/theme"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
@@ -16,7 +16,7 @@ func (a *App) Size() (width, height int) { return a.w, a.h }
 
 // SentStore, Toast (below), SetStatus, OpenRequest and Badge make the App
 // the host of the sent-request log.
-func (a *App) SentStore() response.SentStore {
+func (a *App) SentStore() history.SentStore {
 	store := a.historyStore()
 	if store == nil {
 		return nil

@@ -42,8 +42,8 @@ FUZZ_TARGETS = \
 	./internal/workspace/adapter/statefile:FuzzLoad \
 	./internal/settings:FuzzDecode \
 	./internal/kernel/fileversion:FuzzRead \
-	./internal/response/adapter/history:FuzzLoad \
-	./internal/response/adapter/history:FuzzLoadSent \
+	./internal/feature/history/adapter:FuzzLoad \
+	./internal/feature/history/adapter:FuzzLoadSent \
 	./internal/response/ui/respview:FuzzDecode \
 	./uitoolkit/theming:FuzzParseTheme \
 	./internal/request/adapter/proto:FuzzReadEvents \

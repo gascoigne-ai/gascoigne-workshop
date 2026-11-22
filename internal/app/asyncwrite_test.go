@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/tree"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
@@ -65,12 +65,12 @@ func TestTheAutosaveOfTheCollectionDoesNotBlockTheFrame(t *testing.T) {
 
 // gateHistory is a response history whose Save waits to be released.
 type gateHistory struct {
-	response.History
+	history.History
 	release chan struct{}
 	saves   chan string
 }
 
-func (h *gateHistory) Save(key string, _ []response.Entry) error {
+func (h *gateHistory) Save(key string, _ []history.Entry) error {
 	<-h.release
 	h.saves <- key
 	return nil
@@ -80,7 +80,7 @@ func TestSavingTheResponseHistoryDoesNotBlockTheFrame(t *testing.T) {
 	a := testApp(t)
 	gate := &gateHistory{release: make(chan struct{}), saves: make(chan string, 4)}
 	a.statePath = filepath.Join(t.TempDir(), "state.json")
-	a.histories = func(string) response.History { return gate }
+	a.histories = func(string) history.History { return gate }
 	tab := a.cur()
 	tab.Resp = &request.Response{Status: 200, Body: []byte("{}")}
 

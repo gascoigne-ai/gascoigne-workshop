@@ -2,11 +2,12 @@ package app
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history/ui/sentlog"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/fileversion"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/openset"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/sentlog"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/colorpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/settingsui"
@@ -31,10 +32,10 @@ type ports struct {
 	store        collection.Store
 	clients      collection.ClientConfigs // the build's client config; nil has none
 	states       workspace.StateStore
-	files        workspace.FileDialog              // the desktop file chooser, replaced in tests
-	folders      workspace.Folders                 // what the in-app file browser lists
-	now          func() time.Time                  // the clock, replaced in tests
-	histories    func(dir string) response.History // nil keeps no history
+	files        workspace.FileDialog             // the desktop file chooser, replaced in tests
+	folders      workspace.Folders                // what the in-app file browser lists
+	now          func() time.Time                 // the clock, replaced in tests
+	histories    func(dir string) history.History // nil keeps no history
 	fonts        settings.FontStore
 	display      settings.DisplayScale
 	system       settings.SystemInfo // what the System page of the settings shows; nil has no report

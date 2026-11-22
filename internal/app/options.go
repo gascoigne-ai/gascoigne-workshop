@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/fileversion"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response"
@@ -36,7 +37,7 @@ type Options struct {
 	States           workspace.StateStore                          // where the UI state is kept; nil keeps none
 	Files            workspace.FileDialog                          // the desktop file chooser; nil uses the in-app file browser
 	Folders          workspace.Folders                             // the folders the in-app file browser lists; nil lists none
-	History          func(dir string) response.History             // the history in a folder; nil keeps none
+	History          func(dir string) history.History              // the history in a folder; nil keeps none
 	System           settings.SystemInfo                           // the system and GPU report of the settings; nil has none
 	KeyRepeat        settings.KeyRepeat                            // the desktop's key repeat timing; nil keeps the built-in one
 	Display          settings.DisplayScale                         // the desktop's display scale when the window system hides it; nil has none

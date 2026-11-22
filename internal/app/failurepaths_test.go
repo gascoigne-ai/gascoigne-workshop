@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/adapter/folders"
 )
@@ -88,7 +88,7 @@ func TestEveryFailurePathIsShownToTheUser(t *testing.T) {
 		{"a history was written by a newer version", func(t *testing.T, app *App) {
 			app.statePath = filepath.Join(t.TempDir(), "state.json") // history lives beside it
 			req := app.cur().Req
-			if err := app.historyStore().Save(app.historyKey(req), []response.Entry{{Status: 200}}); err != nil {
+			if err := app.historyStore().Save(app.historyKey(req), []history.Entry{{Status: 200}}); err != nil {
 				t.Fatal(err)
 			}
 			files, _ := filepath.Glob(filepath.Join(app.historyDir(), "*.json"))

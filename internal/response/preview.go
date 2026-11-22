@@ -1,3 +1,5 @@
+// Package response holds the response domain's types and the ports at its
+// boundary: the port that shows a body in the browser.
 package response
 
 import "context"
