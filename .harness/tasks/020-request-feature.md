@@ -3,7 +3,7 @@ kind: refactor
 commit: refactor(request): the request model becomes a base feature
 scope: internal/**, cmd/**, e2e/**, Makefile, .harness/**
 not_before: 2026-01-01
-depends_on: 019-tree-test-to-e2e
+depends_on:
 
 # kernel/request and kernel/openset become feature/request
 
