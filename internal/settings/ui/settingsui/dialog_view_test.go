@@ -90,6 +90,7 @@ func TestTheSettingsDialogLaysOutAsPinned(t *testing.T) {
 			if tc.prepare != nil {
 				tc.prepare(t, &dialog, host)
 			}
+			host.path = "/config/settings.json" // the title row's tooltip shows it, so it is fixed after the case has written its files: a temp dir would change every run
 			ctx, err := core.NewCtx(testTheme())
 			if err != nil {
 				t.Fatal(err)
@@ -164,15 +165,15 @@ func (driver *frameDriver) key(input core.Input) {
 // the file.
 const minimalText = "{\n  \"version\": 3\n}\n"
 
-func TestTheJSONButtonShowsTheFileAndFormGoesBack(t *testing.T) {
+func TestEditInSettingsJSONShowsTheFileAndBackGoesToTheForm(t *testing.T) {
 	driver := newFrameDriver(t)
-	driver.clickOn(`text="JSON"`)
+	driver.clickOn(`text="Edit in settings.json"`)
 	if !driver.dialog.Raw || driver.dialog.RawText.Text != minimalText {
 		t.Fatalf("raw %v with %q, want the raw view of the minimal settings", driver.dialog.Raw, driver.dialog.RawText.Text)
 	}
-	driver.clickOn(`text="Form"`)
+	driver.clickOn(`text="Back to the form"`)
 	if driver.dialog.Raw {
-		t.Fatal("Form left the raw view open")
+		t.Fatal("Back to the form left the raw view open")
 	}
 }
 
@@ -219,7 +220,7 @@ func TestTypingASearchFiltersAndScrollsThePageToTheTop(t *testing.T) {
 
 func TestTypingGoodJSONInTheRawViewAppliesIt(t *testing.T) {
 	driver := newFrameDriver(t)
-	driver.clickOn(`text="JSON"`)
+	driver.clickOn(`text="Edit in settings.json"`)
 	driver.clickOn("areaB")
 	edits := []core.Edit{core.EditEnd}
 	for range len(minimalText) {

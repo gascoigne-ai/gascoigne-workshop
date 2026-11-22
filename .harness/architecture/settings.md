@@ -13,6 +13,13 @@ flowchart LR
   view's validation and completion, the search, reset and the order of keys in the file. A row is
   built from the accessor of its `Settings` field, so its kind and its value type cannot disagree.
   A new setting is one row, plus an entry of `settingControls` when the plain control does not fit.
+- **Rows and controls.** A row is the title block (title, reset icon while changed, description) and
+  one control. `placementOf` puts the control beside the block or under it from the setting's
+  `Kind` (a bool, a stepped number and an enum of at most three values go right) with a table
+  (`customPlacement`) for the custom controls; a bool is a `widget.Switch`. The reset icon, the
+  category heading (search results only), the page title row and the search field in the page list
+  follow `style.md` (Settings row). The Colors, Shortcuts and System pages stay tables and get only the
+  title row.
 - **Dialog and host** (`settings/ui/settingsui`): `settingsui.SettingsDialog` is `App.prefs` and
   the `App` is its `Host`. Host methods only read; everything a page asks for is a
   `settings/controller/prefs` message applied by `App.Send`. `SetFonts` stays a method because its

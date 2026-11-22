@@ -165,7 +165,10 @@ func assertDumpPinned(t *testing.T, app *App, root Node, name string, width, hei
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := Dump(root); got != string(want) {
+	// The settings page's tooltip names the settings file, in a temp dir that
+	// differs every run.
+	got := strings.ReplaceAll(Dump(root), app.SettingsPath(), "/config/settings.json")
+	if got != string(want) {
 		t.Fatalf("got:\n%s\nwant:\n%s", got, want)
 	}
 }

@@ -15,12 +15,52 @@ import (
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
-// descriptionCols is how many characters a setting's description may have
-// on one line before it is wrapped.
-const descriptionCols = 76
-
 // settingControl draws the control of one setting.
 type settingControl func(ctx *w.Ctx, dialog *SettingsDialog, host Host, field settings.Field) Node
+
+// placement is where a row puts its control: beside the title block, or
+// under it when the control needs the width of the row.
+type placement int
+
+const (
+	placeByKind placement = iota // from the Kind of the setting (see placementOf)
+	placeRight
+	placeBelow
+)
+
+// customPlacement is the placement of a setting whose control is in
+// settingControls and is not chosen by Kind alone: a stepper is short, the
+// rest of them need the width. A key that is not here goes by Kind.
+var customPlacement = map[string]placement{
+	"fontSize":      placeRight,
+	"smallFontSize": placeRight,
+	"codeFontSize":  placeRight,
+	"theme":         placeBelow, // one chip per installed theme
+	"uiScale":       placeBelow, // a slider wants a long track
+	"uiFont":        placeBelow, // a dropdown field with a family name
+	"codeFont":      placeBelow,
+}
+
+// shortChoices is how many values an enum may have for its chips to sit
+// beside the title; more of them go under it, as a long row of chips would
+// squeeze the description.
+const shortChoices = 3
+
+// placementOf is where the control of field goes. Why by Kind and not a
+// per-key table: a new boolean or short enum lands right without a row here
+// (revisit when a kind needs both places).
+func placementOf(field settings.Field) placement {
+	if place, ok := customPlacement[field.Key]; ok {
+		return place
+	}
+	switch {
+	case field.Kind == settings.Bool:
+		return placeRight
+	case field.Kind == settings.Enum && !field.Open && len(field.Allowed) <= shortChoices:
+		return placeRight
+	}
+	return placeBelow
+}
 
 // settingControls are the settings whose control is not the plain one for
 // their kind. Everything else is a row of chips (an enum), On / Off (a
@@ -108,7 +148,6 @@ var (
 // Widths of the controls of a setting row, by role.
 const (
 	scaleShownW = 40  // the percent beside the interface scale slider
-	resetBtnW   = 56  // the Reset button of a changed setting
 	openPageW   = 120 // the button from a search result to its page
 	chooseFileW = 150 // the Choose file button of an empty file setting
 	folderIconW = 16  // the folder icon in that button
@@ -198,14 +237,12 @@ func (d *SettingsDialog) scaleControl(ctx *w.Ctx, host Host) Node {
 	}))
 }
 
-// boolChips is Off and On for a true-or-false setting.
-func (d *SettingsDialog) boolChips(ctx *w.Ctx, host Host, field settings.Field) Node {
+// boolSwitch is the toggle of a true-or-false setting.
+func (d *SettingsDialog) boolSwitch(host Host, field settings.Field) Node {
 	value, _ := settings.Get(host.Settings(), field.Key)
 	on, _ := value.(settings.Flag)
-	return chipRow(ctx, []chip{
-		choice(host, "Off", !bool(on), setKey(host, field.Key, settings.Flag(false))),
-		choice(host, "On", bool(on), setKey(host, field.Key, settings.Flag(true))),
-	})
+	flip := func() { host.Send(prefs.Change{Edit: setKey(host, field.Key, settings.Flag(!on))}) }
+	return Switch(bool(on), OnChange(flip))
 }
 
 // Input is the text field of a text or number setting, filled from the
@@ -252,7 +289,6 @@ func (d *SettingsDialog) Note(key string) string { return d.fields.Note(key) }
 func (d *SettingsDialog) textControl(ctx *w.Ctx, host Host, field settings.Field) Node {
 	return textControlTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
 		"input":  d.Input(host, field.Key),
-		"note":   d.fields.Note(field.Key),
 		"edited": func() { d.Edited(host, field.Key) },
 	}))
 }
@@ -264,7 +300,6 @@ func (d *SettingsDialog) textControl(ctx *w.Ctx, host Host, field settings.Field
 func (d *SettingsDialog) stepControl(ctx *w.Ctx, host Host, field settings.Field) Node {
 	return stepTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
 		"input":  d.Input(host, field.Key),
-		"note":   d.fields.Note(field.Key),
 		"edited": func() { d.Edited(host, field.Key) },
 		"less":   func() { d.Step(host, field, -1) },
 		"more":   func() { d.Step(host, field, 1) },
@@ -294,27 +329,11 @@ func (d *SettingsDialog) Reset(host Host, key string) {
 	}
 }
 
-// wrapWords breaks text into lines of at most cols characters.
-func wrapWords(text string, cols int) string {
-	var lines []string
-	line := ""
-	for _, word := range strings.Fields(text) {
-		if line != "" && len(line)+1+len(word) > cols {
-			lines = append(lines, line)
-			line = ""
-		}
-		if line != "" {
-			line += " "
-		}
-		line += word
-	}
-	return strings.Join(append(lines, line), "\n")
-}
-
-// settingRow is one setting: its title with a mark and a Reset button when
-// it differs from the default, its description and its control.
+// settingRow is one setting: the title block (the title with a reset icon
+// when it differs from the default, the description under it) and its
+// control, beside the block or under it as placementOf says. A refused
+// value is explained under the whole row.
 func (d *SettingsDialog) settingRow(ctx *w.Ctx, host Host, field settings.Field) Node {
-	changed := settings.Changed(host.Settings(), field.Key)
 	var control Node
 	switch custom, ok := settingControls[field.Key]; {
 	case ok:
@@ -322,7 +341,7 @@ func (d *SettingsDialog) settingRow(ctx *w.Ctx, host Host, field settings.Field)
 	case field.Kind == settings.Enum:
 		control = d.enumChips(ctx, host, field, nil)
 	case field.Kind == settings.Bool:
-		control = d.boolChips(ctx, host, field)
+		control = d.boolSwitch(host, field)
 	case field.Kind == settings.Shortcuts || field.Kind == settings.Colors:
 		control = d.openPageButton(ctx, field)
 	case field.Kind == settings.File:
@@ -330,25 +349,30 @@ func (d *SettingsDialog) settingRow(ctx *w.Ctx, host Host, field settings.Field)
 	default:
 		control = d.textControl(ctx, host, field)
 	}
-	return settingRowTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
-		"resetBtnW": resetBtnW,
-		"setting": settingView{
-			Title:       field.Title,
-			Changed:     changed,
-			Reset:       func() { d.Reset(host, field.Key) },
-			Description: wrapWords(field.Description, descriptionCols),
-			Control:     control,
-		},
-	}))
+	view := settingView{
+		Title:       field.Title,
+		Changed:     settings.Changed(host.Settings(), field.Key),
+		Reset:       func() { d.Reset(host, field.Key) },
+		Description: Paragraph(field.Description),
+		Note:        d.fields.Note(field.Key),
+	}
+	if placementOf(field) == placeRight {
+		view.Side = control
+	} else {
+		view.Below = control
+	}
+	return settingRowTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{"setting": view}))
 }
 
 // settingView is what the row template shows of one setting.
 type settingView struct {
 	Title       string
-	Changed     bool // differs from the default: a mark and Reset
+	Changed     bool // differs from the default: the reset icon
 	Reset       func()
-	Description string // wrapped, one line per "\n"
-	Control     Node   // built by the kind's own template
+	Description Node   // wraps to the room the control leaves
+	Side        Node   // the control beside the title block, nil when it is below
+	Below       Node   // the control under the title block, nil when it is beside
+	Note        string // why the typed value was refused, "" when it was not
 }
 
 // openPageButton leads from a search result to the page that edits the
@@ -414,7 +438,6 @@ func (d *SettingsDialog) fileControl(ctx *w.Ctx, host Host, field settings.Field
 	}
 	return chosenFileTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
 		"input":  input,
-		"note":   d.fields.Note(field.Key),
 		"edited": func() { d.Edited(host, field.Key) },
 		"choose": choose,
 	}))
@@ -447,21 +470,14 @@ const (
 </row>
 `
 
-	stepSource = `<col>
-  <row h="{{rowH}}" gap="{{tightGap}}" align-items="center">
-    <button w="{{iconBtnW}}" h="{{compactH}}" on-click="less" tooltip="Smaller">-</button>
-    <field state="input" w="{{fieldW}}" h="{{rowH}}" bg="sunken" on-change="edited" text-menu="input"/>
-    <button w="{{iconBtnW}}" h="{{compactH}}" on-click="more" tooltip="Larger">+</button>
-    <spacer/>
-  </row>
-  <note if="note" tone="error">{{note}}</note>
-</col>
+	stepSource = `<row h="{{rowH}}" gap="{{tightGap}}" align-items="center">
+  <button w="{{iconBtnW}}" h="{{compactH}}" on-click="less" tooltip="Smaller">-</button>
+  <field state="input" w="{{fieldW}}" h="{{rowH}}" bg="sunken" on-change="edited" text-menu="input"/>
+  <button w="{{iconBtnW}}" h="{{compactH}}" on-click="more" tooltip="Larger">+</button>
+</row>
 `
 
-	textcontrolSource = `<col>
-  <field state="input" h="{{rowH}}" bg="sunken" placeholder="Default" on-change="edited" text-menu="input"/>
-  <note if="note" tone="error">{{note}}</note>
-</col>
+	textcontrolSource = `<field state="input" h="{{rowH}}" bg="sunken" placeholder="Default" on-change="edited" text-menu="input"/>
 `
 
 	openpageSource = `<row h="{{rowH}}">
@@ -479,25 +495,26 @@ const (
 </row>
 `
 
-	fileChosenSource = `<col>
-  <row h="{{rowH}}" bg="sunken" control="field" align-items="center">
-    <field state="input" h="{{rowH}}" grow="1" placeholder="No file" on-change="edited" text-menu="input"/>
-    <icon-button icon="folder" w="{{iconBtnW}}" h="{{compactH}}" on-click="choose" tooltip="Choose another file"/>
-  </row>
-  <note if="note" tone="error">{{note}}</note>
-</col>
+	fileChosenSource = `<row h="{{rowH}}" bg="sunken" control="field" align-items="center">
+  <field state="input" h="{{rowH}}" grow="1" placeholder="No file" on-change="edited" text-menu="input"/>
+  <icon-button icon="folder" w="{{iconBtnW}}" h="{{compactH}}" on-click="choose" tooltip="Choose another file"/>
+</row>
 `
 
-	settingrowSource = `<col pad-y="{{looseGap}}" border-b="border-soft">
-  <row h="{{rowH}}" gap="{{tightGap}}">
-    <text bold>{{setting.Title}}</text>
-    <icon if="setting.Changed" name="dot" color="accent-line" tooltip="Changed from the default"/>
-    <spacer/>
-    <button if="setting.Changed" w="{{resetBtnW}}" h="{{compactH}}" on-click="setting.Reset"
-            tooltip="Remove it from settings.json so the default applies">Reset</button>
+	settingrowSource = `<col pad-y="{{looseGap}}" gap="{{tightGap}}" border-b="border-soft">
+  <row gap="{{looseGap}}" align-items="center">
+    <col grow="1">
+      <row h="{{rowH}}" gap="{{tightGap}}" align-items="center">
+        <text bold>{{setting.Title}}</text>
+        <icon-button if="setting.Changed" icon="undo" w="{{iconBtnW}}" h="{{compactH}}" on-click="setting.Reset"
+                     tooltip="Changed from the default. Remove it from settings.json so the default applies"/>
+      </row>
+      <slot name="setting.Description"/>
+    </col>
+    <slot if="setting.Side" name="setting.Side"/>
   </row>
-  <lines color="muted">{{setting.Description}}</lines>
-  <slot name="setting.Control"/>
+  <slot if="setting.Below" name="setting.Below"/>
+  <note if="setting.Note" tone="error">{{setting.Note}}</note>
 </col>
 `
 
@@ -506,7 +523,11 @@ const (
 </col>
 `
 
-	formcaptionSource = `<caption h="{{labelH}}">{{category}}</caption>
+	formcaptionSource = `<col pad-t="{{looseGap}}">
+  <row h="{{labelH}}" border-b="border-soft" align-items="center">
+    <caption>{{category}}</caption>
+  </row>
+</col>
 `
 
 	formemptySource = `<text muted>No settings match</text>

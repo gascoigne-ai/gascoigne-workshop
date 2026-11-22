@@ -94,18 +94,18 @@ func TestAChangedSettingIsMarkedAndResetRemovesItFromTheFile(t *testing.T) {
 	if data, _ := os.ReadFile(path); !strings.Contains(string(data), `"layout": "side"`) {
 		t.Fatalf("file = %s", data)
 	}
-	if !strings.Contains(settingsText(a), "Reset") {
-		t.Fatal("a changed setting has no Reset button")
+	if !strings.Contains(settingsText(a), "icon=undo") {
+		t.Fatal("a changed setting has no reset icon")
 	}
-	clickText(t, a, "Reset", 0)
+	clickDumped(t, a, "icon=undo", 0)
 	if a.settings.Layout != "stacked" {
 		t.Fatalf("Layout = %q after reset", a.settings.Layout)
 	}
 	if data, _ := os.ReadFile(path); strings.Contains(string(data), "layout") {
 		t.Fatalf("the reset key is still in the file: %s", data)
 	}
-	if strings.Contains(settingsText(a), `text="Reset"`) {
-		t.Fatal("Reset is shown for a setting at its default")
+	if strings.Contains(settingsText(a), "icon=undo") {
+		t.Fatal("the reset icon is shown for a setting at its default")
 	}
 }
 

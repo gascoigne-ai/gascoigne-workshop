@@ -1,7 +1,8 @@
-// Package settingsui is the settings dialog: a title bar with a search
-// field, a list of pages, the pages generated from the settings schema
-// (title, description and a control per setting, a mark and Reset when it
-// differs from the default), the font pickers, and the text of
+// Package settingsui is the settings dialog: a title bar, a list of pages
+// with the search field on top, a title row over every page, the pages
+// generated from the settings schema (a row per setting: title, description
+// and a control beside or under them, a reset icon when it differs from the
+// default; a bool is a switch), the font pickers, and the text of
 // settings.json with live validation and completion. The application
 // supplies the pages that are tables (colors, shortcuts) and does what a
 // change of settings implies; the dialog reaches it through Host.
@@ -10,6 +11,7 @@ package settingsui
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/controller/prefs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/port"
+	"path/filepath"
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/fontfamily"
@@ -31,8 +33,12 @@ const (
 	DialogNavW   = 170
 )
 
-// toolbarBtnW is the width of Form, JSON and Save in the dialog's toolbar.
-const toolbarBtnW = 60
+// toolbarBtnW is the width of Save in the dialog's toolbar; editBtnW is that
+// of the button in the page title row that opens the text of the file.
+const (
+	toolbarBtnW = 60
+	editBtnW    = 150
+)
 
 // navGap is the gap between two pages in the list beside the form.
 const navGap = w.StepHair
@@ -175,6 +181,9 @@ func (d *SettingsDialog) View(ctx *w.Ctx, host Host) Node {
 		"close":    func() { host.Send(prefs.Close{}) },
 		"titleBar": d.titleBar(host),
 		"toolbar":  d.toolbar(ctx, host),
+		"titleRow": d.pageTitleRow(ctx, host, cur),
+		"search":   &d.Search,
+		"searched": d.ResetScroll,
 		"raw":      d.Raw,
 		"rawView":  raw,
 		"navW":     DialogNavW,
@@ -190,6 +199,7 @@ var (
 	dialogTemplate      = markup.Must("dialog.vml", dialogSource)
 	titleBarTemplate    = markup.Must("titlebar.vml", titlebarSource)
 	toolbarTemplate     = markup.Must("toolbar.vml", toolbarSource)
+	titleRowTemplate    = markup.Must("titlerow.vml", titlerowSource)
 	savePendingTemplate = markup.Must("save-pending.vml", savePendingSource)
 	saveIdleTemplate    = markup.Must("save-idle.vml", saveIdleSource)
 )
@@ -231,17 +241,42 @@ func (d *SettingsDialog) subtitle() string {
 	return ""
 }
 
-// toolbar is the row under the title bar: the search field (a spacer in the
-// raw view), Save and the switch between the form and the raw text.
+// toolbar is the row under the title bar: Save, when there is something to
+// save; nil when there is not, so no empty row is left.
 func (d *SettingsDialog) toolbar(ctx *w.Ctx, host Host) Node {
-	return toolbarTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
+	save := d.saveButton(ctx, host)
+	if save == nil {
+		return nil
+	}
+	return toolbarTemplate.MustBuild(markup.Scope{"save": save})
+}
+
+// settingsFile is the name of the file the settings live in, as the title
+// row shows it; the full path is its tooltip.
+const settingsFile = "settings.json"
+
+// pageTitleRow is the first row of the page: a pill with the page shown,
+// the file the settings live in, and the button that switches between the
+// form and the text of that file.
+func (d *SettingsDialog) pageTitleRow(ctx *w.Ctx, host Host, id string) Node {
+	label := ""
+	for _, entry := range pages {
+		if entry.id == id {
+			label = entry.label
+		}
+	}
+	file, path := settingsFile, host.SettingsPath()
+	if path != "" {
+		file = filepath.Base(path)
+	}
+	return titleRowTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
+		"label":    label,
+		"file":     file,
+		"path":     path,
 		"raw":      d.Raw,
-		"search":   &d.Search,
-		"searched": d.ResetScroll,
-		"save":     d.saveButton(ctx, host),
-		"closeRaw": d.CloseRaw,
 		"openRaw":  func() { d.OpenRaw(host) },
-		"btnW":     toolbarBtnW,
+		"closeRaw": d.CloseRaw,
+		"editW":    editBtnW,
 	}))
 }
 
@@ -311,17 +346,24 @@ const (
 <resizable-dialog state="size" min-width="{{minW}}" min-height="{{minH}}" max-width="{{maxW}}" max-height="{{maxH}}"
                   w="{{width}}" h="{{height}}" moved="move" on-dismiss="close">
   <slot name="titleBar"/>
-  <slot name="toolbar"/>
-  <col if="raw" grow="1" pad="{{dialogPad}}">
+  <slot if="toolbar" name="toolbar"/>
+  <col if="raw" grow="1" pad="{{dialogPad}}" gap="{{looseGap}}">
+    <slot name="titleRow"/>
     <slot name="rawView"/>
   </col>
   <row if="!raw" grow="1">
     <col w="{{navW}}" pad="{{looseGap}}" gap="{{navGap}}" bg="frame" round-bl="menu">
+      <field state="search" h="{{rowH}}" bg="sunken" placeholder="Search settings" on-change="searched" text-menu="search"/>
       <slot for="item in nav" name="item"/>
     </col>
-    <scroll state="scroll" grow="1" pad="{{dialogPad}}" border-l="border-soft">
-      <slot if="page" name="page"/>
-    </scroll>
+    <col grow="1" border-l="border-soft">
+      <col pad-x="{{dialogPad}}" pad-t="{{dialogPad}}">
+        <slot name="titleRow"/>
+      </col>
+      <scroll state="scroll" grow="1" pad="{{dialogPad}}">
+        <slot if="page" name="page"/>
+      </scroll>
+    </col>
   </row>
 </resizable-dialog>
 `
@@ -333,17 +375,24 @@ const (
 </dialog-title>
 `
 
-	toolbarSource = `<!-- The row under the title bar: the search field (a spacer in the raw view),
-     Save when there is something to save, and the switch between the form
-     and the text of settings.json. -->
+	toolbarSource = `<!-- The row under the title bar: Save, when there is something to save. -->
 <dialog-toolbar>
-  <field if="!raw" state="search" h="{{rowH}}" grow="1" bg="sunken" placeholder="Search settings"
-         on-change="searched" text-menu="search"/>
-  <spacer if="raw" grow="1"/>
-  <slot if="save" name="save"/>
-  <button if="raw" w="{{btnW}}" h="{{compactH}}" on-click="closeRaw" tooltip="Back to the settings form">Form</button>
-  <button if="!raw" w="{{btnW}}" h="{{compactH}}" on-click="openRaw" tooltip="Edit settings.json as text">JSON</button>
+  <spacer grow="1"/>
+  <slot name="save"/>
 </dialog-toolbar>
+`
+
+	titlerowSource = `<!-- The first row of every page: which page and which file, and the switch
+     between the form and the text of the file. -->
+<row gap="{{looseGap}}" align-items="center">
+  <row h="{{rowH}}" pad-x="{{gutter}}" align-items="center" bg="accent-soft">
+    <text bold color="accent-line">{{label}}</text>
+  </row>
+  <text muted tooltip="{{path}}">{{file}}</text>
+  <spacer/>
+  <button if="!raw" w="{{editW}}" h="{{compactH}}" on-click="openRaw" tooltip="Edit settings.json as text">Edit in settings.json</button>
+  <button if="raw" w="{{editW}}" h="{{compactH}}" on-click="closeRaw" tooltip="Back to the settings form">Back to the form</button>
+</row>
 `
 
 	savePendingSource = `<primary-button w="{{btnW}}" h="{{compactH}}" on-click="save" tooltip="Write the changes to settings.json">Save</primary-button>

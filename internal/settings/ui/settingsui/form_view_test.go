@@ -184,7 +184,6 @@ func TestClickingAChipAppliesItsValue(t *testing.T) {
 		{"corners", `text="Round"`, 0, func(current settings.Settings) any { return current.Corners }, "round"},
 		{"a value without a label is capitalized", `text="Pretty"`, 0, func(current settings.Settings) any { return current.ResponseView }, "pretty"},
 		{"layout", `text="Side by side"`, 0, func(current settings.Settings) any { return current.Layout }, "side"},
-		{"boolean on", `text="On"`, 0, func(current settings.Settings) any { return current.Flat }, true},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -194,14 +193,6 @@ func TestClickingAChipAppliesItsValue(t *testing.T) {
 				t.Fatalf("got %v, want %v", got, tc.want)
 			}
 		})
-	}
-}
-
-func TestClickingOffTurnsABooleanSettingOff(t *testing.T) {
-	driver := newFormDriver(t, "General")
-	driver.clickOn(0, `text="Off"`)
-	if driver.host.current.AutoSave {
-		t.Fatal("autoSave is still on")
 	}
 }
 
@@ -222,11 +213,11 @@ func TestTheChipOfTheCurrentValueIsLit(t *testing.T) {
 func TestResetPutsTheDefaultBack(t *testing.T) {
 	driver := newFormDriver(t, "Appearance")
 	driver.host.current.Corners = "round"
-	driver.clickOn(0, `text="Reset"`)
+	driver.clickOn(0, "icon=undo")
 	if driver.host.current.Corners != settings.Default().Corners {
 		t.Fatalf("corners %q after Reset", driver.host.current.Corners)
 	}
-	if strings.Contains(driver.view(), `text="Reset"`) {
+	if strings.Contains(driver.view(), "icon=undo") {
 		t.Fatal("Reset is still shown with every setting at its default")
 	}
 }
@@ -392,7 +383,7 @@ func TestChooseFileAsksForTheFileOfItsSetting(t *testing.T) {
 		{"empty", func(driver *formDriver) { driver.clickOn(1, `text="Choose file"`) }, "Choose Client certificate"},
 		{"chosen", func(driver *formDriver) {
 			driver.host.current.CACert = "/etc/ssl/ca.pem"
-			driver.clickOn(0, "control=icon-button")
+			driver.clickOn(1, "control=icon-button") // the first is the reset icon of the changed setting
 		}, "Choose CA certificates"},
 	}
 	for _, tc := range cases {
@@ -436,15 +427,5 @@ func TestTheFontControlReadsAnInstalledFamilyOnce(t *testing.T) {
 	driver.view()
 	if driver.dialog.loadedFaces() != 1 {
 		t.Fatalf("%d font files read, want the interface font's only", driver.dialog.loadedFaces())
-	}
-}
-
-// A changed setting is marked with the dot icon, not a bullet character.
-func TestAChangedSettingIsMarkedByTheDotIcon(t *testing.T) {
-	driver := newFormDriver(t, "Appearance")
-	driver.host.current.Theme = "light"
-	dump := driver.view()
-	if !strings.Contains(dump, "icon=dot") || strings.Contains(dump, `text="•"`) {
-		t.Fatal("a changed setting has no dot icon, or still has the bullet character")
 	}
 }

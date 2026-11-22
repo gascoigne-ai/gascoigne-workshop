@@ -224,24 +224,26 @@ func mustField(t *testing.T, key string) settings.Field {
 	return field
 }
 
-// The title bar names the dialog; the toolbar under it has the search field,
-// except in the raw view.
-func TestToolbarHasTheSearchFieldOnlyOutsideTheRawView(t *testing.T) {
-	for _, raw := range []bool{false, true} {
-		d := SettingsDialog{Raw: raw}
-		bar := d.toolbar(testCtx(t), newHost(t))
-		ctx, err := w.NewCtx(w.Theme{Colors: map[w.Token]color.RGBA{w.Text: w.RGB(0xffffff)}, FontSize: 14, SmallSize: 12, MonoSize: 13})
-		if err != nil {
-			t.Fatal(err)
-		}
-		Layout(ctx, bar, 900, w.DialogToolbarH)
-		dump := Dump(bar)
-		if title := Dump(d.titleBar(newHost(t))); !strings.Contains(title, "Settings") {
-			t.Errorf("raw %v: no title:\n%s", raw, title)
-		}
-		if has := strings.Contains(dump, "fieldB"); has == raw {
-			t.Errorf("raw %v: search field present = %v", raw, has)
-		}
+// The row under the title bar holds Save only: it is not there when changes
+// are written at once, and the search field is in the page list.
+func TestToolbarHoldsSaveOnlyWhenThereIsSomethingToSave(t *testing.T) {
+	var d SettingsDialog
+	host := newHost(t)
+	if bar := d.toolbar(testCtx(t), host); bar != nil {
+		t.Fatalf("auto-save is on but there is a toolbar:\n%s", Dump(bar))
+	}
+	host.current.AutoSave = false
+	bar := d.toolbar(testCtx(t), host)
+	if bar == nil {
+		t.Fatal("auto-save is off but there is no toolbar")
+	}
+	Layout(testCtx(t), bar, 900, w.DialogToolbarH)
+	dump := Dump(bar)
+	if !strings.Contains(dump, `text="Save"`) || strings.Contains(dump, "fieldB") {
+		t.Errorf("toolbar:\n%s", dump)
+	}
+	if title := Dump(d.titleBar(host)); !strings.Contains(title, "Settings") {
+		t.Errorf("no title:\n%s", title)
 	}
 }
 

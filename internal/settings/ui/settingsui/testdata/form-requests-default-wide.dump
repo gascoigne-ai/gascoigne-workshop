@@ -1,50 +1,48 @@
 flow rect=0,0,560,1400
-  flow padT=8 padB=8 borderB=border-soft rect=0,0,560,94
-    flow h=28 gap=6 rect=0,8,560,28
-      textB text="Request timeout" bold=true rect=0,8,110,28
-      plain grow=1 rect=116,8,444,28
-    flow rect=0,36,560,22
-      textB text="How long a request may run, in seconds." h=22 fg=muted rect=0,36,560,22
-    flow rect=0,58,560,28
-      fieldB h=28 bg=sunken control=field onRightClick=true onChange=true rect=0,58,560,28
-  flow padT=8 padB=8 borderB=border-soft rect=0,94,560,94
-    flow h=28 gap=6 rect=0,102,560,28
-      textB text="Proxy" bold=true rect=0,102,39,28
-      plain grow=1 rect=45,102,515,28
-    flow rect=0,130,560,22
-      textB text="URL of an HTTP proxy for every REST request; empty uses the environment's." h=22 fg=muted rect=0,130,560,22
-    flow rect=0,152,560,28
-      fieldB h=28 bg=sunken control=field onRightClick=true onChange=true rect=0,152,560,28
-  flow padT=8 padB=8 borderB=border-soft rect=0,188,560,94
-    flow h=28 gap=6 rect=0,196,560,28
-      textB text="CA certificates" bold=true rect=0,196,98,28
-      plain grow=1 rect=104,196,456,28
-    flow rect=0,224,560,22
-      textB text="Path of a PEM file of extra certificate authorities to trust." h=22 fg=muted rect=0,224,560,22
-    flow h=28 rect=0,246,560,28
-      flow w=150 h=28 padL=10 padR=10 gap=8 bg=sunken control=button tip=Choose the file alignItems=2 lighten=true onClick=true rect=0,246,150,28
-        iconB w=16 icon=folder rect=10,253,16,14
-        textB text="Choose file" grow=1 fg=chip-text rect=34,252,106,16
-      plain grow=1 rect=150,246,410,28
-  flow padT=8 padB=8 borderB=border-soft rect=0,282,560,94
-    flow h=28 gap=6 rect=0,290,560,28
-      textB text="Client certificate" bold=true rect=0,290,110,28
-      plain grow=1 rect=116,290,444,28
-    flow rect=0,318,560,22
-      textB text="Path of a client certificate for servers that ask for one." h=22 fg=muted rect=0,318,560,22
-    flow h=28 rect=0,340,560,28
-      flow w=150 h=28 padL=10 padR=10 gap=8 bg=sunken control=button tip=Choose the file alignItems=2 lighten=true onClick=true rect=0,340,150,28
-        iconB w=16 icon=folder rect=10,347,16,14
-        textB text="Choose file" grow=1 fg=chip-text rect=34,346,106,16
-      plain grow=1 rect=150,340,410,28
-  flow padT=8 padB=8 borderB=border-soft rect=0,376,560,94
-    flow h=28 gap=6 rect=0,384,560,28
-      textB text="Client key" bold=true rect=0,384,67,28
-      plain grow=1 rect=73,384,487,28
-    flow rect=0,412,560,22
-      textB text="Path of the private key of the client certificate." h=22 fg=muted rect=0,412,560,22
-    flow h=28 rect=0,434,560,28
-      flow w=150 h=28 padL=10 padR=10 gap=8 bg=sunken control=button tip=Choose the file alignItems=2 lighten=true onClick=true rect=0,434,150,28
-        iconB w=16 icon=folder rect=10,441,16,14
-        textB text="Choose file" grow=1 fg=chip-text rect=34,440,106,16
-      plain grow=1 rect=150,434,410,28
+  flow padT=8 padB=8 gap=6 borderB=border-soft rect=0,0,560,92
+    flow gap=8 alignItems=2 rect=0,8,560,42
+      flow grow=1 rect=0,8,560,42
+        flow h=28 gap=6 alignItems=2 rect=0,8,560,28
+          textB text="Request timeout" bold=true rect=0,14,110,16
+        paragraphB text="How long a request may run, in seconds." rect=0,36,560,14
+    fieldB h=28 bg=sunken control=field onRightClick=true onChange=true rect=0,56,560,28
+  flow padT=8 padB=8 gap=6 borderB=border-soft rect=0,92,560,92
+    flow gap=8 alignItems=2 rect=0,100,560,42
+      flow grow=1 rect=0,100,560,42
+        flow h=28 gap=6 alignItems=2 rect=0,100,560,28
+          textB text="Proxy" bold=true rect=0,106,39,16
+        paragraphB text="URL of an HTTP proxy for every REST request; empty uses the environment's." rect=0,128,560,14
+    fieldB h=28 bg=sunken control=field onRightClick=true onChange=true rect=0,148,560,28
+  flow padT=8 padB=8 gap=6 borderB=border-soft rect=0,184,560,92
+    flow gap=8 alignItems=2 rect=0,192,560,42
+      flow grow=1 rect=0,192,560,42
+        flow h=28 gap=6 alignItems=2 rect=0,192,560,28
+          textB text="CA certificates" bold=true rect=0,198,98,16
+        paragraphB text="Path of a PEM file of extra certificate authorities to trust." rect=0,220,560,14
+    flow h=28 rect=0,240,560,28
+      flow w=150 h=28 padL=10 padR=10 gap=8 bg=sunken control=button tip=Choose the file alignItems=2 lighten=true onClick=true rect=0,240,150,28
+        iconB w=16 icon=folder rect=10,247,16,14
+        textB text="Choose file" grow=1 fg=chip-text rect=34,246,106,16
+      plain grow=1 rect=150,240,410,28
+  flow padT=8 padB=8 gap=6 borderB=border-soft rect=0,276,560,92
+    flow gap=8 alignItems=2 rect=0,284,560,42
+      flow grow=1 rect=0,284,560,42
+        flow h=28 gap=6 alignItems=2 rect=0,284,560,28
+          textB text="Client certificate" bold=true rect=0,290,110,16
+        paragraphB text="Path of a client certificate for servers that ask for one." rect=0,312,560,14
+    flow h=28 rect=0,332,560,28
+      flow w=150 h=28 padL=10 padR=10 gap=8 bg=sunken control=button tip=Choose the file alignItems=2 lighten=true onClick=true rect=0,332,150,28
+        iconB w=16 icon=folder rect=10,339,16,14
+        textB text="Choose file" grow=1 fg=chip-text rect=34,338,106,16
+      plain grow=1 rect=150,332,410,28
+  flow padT=8 padB=8 gap=6 borderB=border-soft rect=0,368,560,92
+    flow gap=8 alignItems=2 rect=0,376,560,42
+      flow grow=1 rect=0,376,560,42
+        flow h=28 gap=6 alignItems=2 rect=0,376,560,28
+          textB text="Client key" bold=true rect=0,382,67,16
+        paragraphB text="Path of the private key of the client certificate." rect=0,404,560,14
+    flow h=28 rect=0,424,560,28
+      flow w=150 h=28 padL=10 padR=10 gap=8 bg=sunken control=button tip=Choose the file alignItems=2 lighten=true onClick=true rect=0,424,150,28
+        iconB w=16 icon=folder rect=10,431,16,14
+        textB text="Choose file" grow=1 fg=chip-text rect=34,430,106,16
+      plain grow=1 rect=150,424,410,28

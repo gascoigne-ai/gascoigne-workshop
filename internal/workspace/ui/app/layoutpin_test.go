@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/model/settings"
@@ -15,7 +16,7 @@ import (
 // every rect) of the settings dialog scene laid out at 1280x800. Layout
 // work such as measure caching must not move a rect; a deliberate change
 // of the scene updates the digest (the test prints the new one).
-const settingsDialogRects = "b6ef8aac5c15ef5be28ff2a698d8487ea013b2cf86d4b165ee270b7f4a45ae8e"
+const settingsDialogRects = "54736c9ecf0dc76a8fed7a838b33387a3102ab468bb6338d884cac0b3ebb455d"
 
 func TestSettingsDialogLaysOutToTheSameRects(t *testing.T) {
 	prefs := settings.Default()
@@ -34,7 +35,7 @@ func TestSettingsDialogLaysOutToTheSameRects(t *testing.T) {
 	a.step(core.Input{})
 	root := a.view()
 	view.Layout(a.ctx, root, a.w, a.h)
-	dump := view.Dump(root)
+	dump := strings.ReplaceAll(view.Dump(root), path, "/config/settings.json") // a temp dir differs every run
 	if got := fmt.Sprintf("%x", sha256.Sum256([]byte(dump))); got != settingsDialogRects {
 		t.Errorf("dialog scene digest = %s, want %s", got, settingsDialogRects)
 	}

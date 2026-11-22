@@ -18,7 +18,8 @@
 //	Inputs     Field Area Code   (state: TextField TextArea CodeView Line Match Span; NewTextField NewTextArea)   Placeholder FieldPad Styled Wrap OnEnter OnTab   (OnChange is view's)   NotedFields (the fields and refusal notes of a form)
 //	Tooltips   TooltipLayer   (state: TooltipState)   (the Tooltip option is view's)
 //	Icons      Icon RegisterIcons IconNames HasIcon   CrossIcon TriangleIcon GripIcon DotsIcon GearIcon TrashIcon PlusIcon CopyIcon FolderIcon SearchIcon PromptIcon ChevronUpIcon ChevronDownIcon
-//	Checkboxes Checkbox
+//	Checkboxes Checkbox Switch DisabledSwitch
+//	Text       Paragraph
 //	Tables     Table   (state: TableSpec TableRow TableEdit TableState Styler)   MinColumnPx
 //	Resizing   Resizable   (state: ResizeState)
 //	Scrolling  Scroll HScroll   (state: ScrollState)   (the KeepInView option is view's)

@@ -115,7 +115,7 @@ func TestResetPutsTheDefaultFaceSizeBackIntoTheField(t *testing.T) {
 			driver := newFormDriver(t, "Appearance")
 			*row.value(&driver.host.current) = row.max
 			driver.step(func(*El) core.Input { return core.Input{} })
-			driver.clickOn(0, `text="Reset"`) // the only changed row
+			driver.clickOn(0, "icon=undo") // the only changed row
 			driver.step(func(*El) core.Input { return core.Input{} })
 			if got := *row.value(&driver.host.current); got != row.defaultVal {
 				t.Fatalf("%s %d after Reset", row.key, got)

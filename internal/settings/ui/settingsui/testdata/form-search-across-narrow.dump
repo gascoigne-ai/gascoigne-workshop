@@ -1,25 +1,29 @@
 flow rect=0,0,300,1800
-  textB text="APPEARANCE" h=22 fg=muted small=true rect=0,0,300,22
-  flow padT=8 padB=8 borderB=border-soft rect=0,22,300,94
-    flow h=28 gap=6 rect=0,30,300,28
-      textB text="Theme" bold=true rect=0,30,45,28
-      plain grow=1 rect=51,30,249,28
-    flow rect=0,58,300,22
-      textB text="The color theme: dark, light or the id of a theme file in the themes folder." h=22 fg=muted rect=0,58,300,22
-    flow h=28 gap=6 rect=0,80,300,28
-      flow padL=10 padR=10 grow=1 bg=accent control=primary lighten=true onClick=true rect=0,80,147,28
-        textB text="Dark" grow=1 fg=accent-text ellipsis=true center=true rect=10,80,127,28
-      flow padL=10 padR=10 grow=1 bg=sunken control=button lighten=true onClick=true rect=153,80,147,28
-        textB text="Light" grow=1 fg=chip-text ellipsis=true center=true rect=163,80,127,28
-  textB text="REQUESTS" h=22 fg=muted small=true rect=0,116,300,22
-  flow padT=8 padB=8 borderB=border-soft rect=0,138,300,94
-    flow h=28 gap=6 rect=0,146,300,28
-      textB text="CA certificates" bold=true rect=0,146,98,28
-      plain grow=1 rect=104,146,196,28
-    flow rect=0,174,300,22
-      textB text="Path of a PEM file of extra certificate authorities to trust." h=22 fg=muted rect=0,174,300,22
-    flow h=28 rect=0,196,300,28
-      flow w=150 h=28 padL=10 padR=10 gap=8 bg=sunken control=button tip=Choose the file alignItems=2 lighten=true onClick=true rect=0,196,150,28
-        iconB w=16 icon=folder rect=10,203,16,14
-        textB text="Choose file" grow=1 fg=chip-text rect=34,202,106,16
-      plain grow=1 rect=150,196,150,28
+  flow padT=8 rect=0,0,300,30
+    flow h=22 borderB=border-soft alignItems=2 rect=0,8,300,22
+      textB text="APPEARANCE" fg=muted small=true rect=0,12,82,14
+  flow padT=8 padB=8 gap=6 borderB=border-soft rect=0,30,300,106
+    flow gap=8 alignItems=2 rect=0,38,300,56
+      flow grow=1 rect=0,38,300,56
+        flow h=28 gap=6 alignItems=2 rect=0,38,300,28
+          textB text="Theme" bold=true rect=0,44,45,16
+        paragraphB text="The color theme: dark, light or the id of a theme file in the themes folder." rect=0,66,300,28
+    flow h=28 gap=6 rect=0,100,300,28
+      flow padL=10 padR=10 grow=1 bg=accent control=primary lighten=true onClick=true rect=0,100,147,28
+        textB text="Dark" grow=1 fg=accent-text ellipsis=true center=true rect=10,100,127,28
+      flow padL=10 padR=10 grow=1 bg=sunken control=button lighten=true onClick=true rect=153,100,147,28
+        textB text="Light" grow=1 fg=chip-text ellipsis=true center=true rect=163,100,127,28
+  flow padT=8 rect=0,136,300,30
+    flow h=22 borderB=border-soft alignItems=2 rect=0,144,300,22
+      textB text="REQUESTS" fg=muted small=true rect=0,148,66,14
+  flow padT=8 padB=8 gap=6 borderB=border-soft rect=0,166,300,92
+    flow gap=8 alignItems=2 rect=0,174,300,42
+      flow grow=1 rect=0,174,300,42
+        flow h=28 gap=6 alignItems=2 rect=0,174,300,28
+          textB text="CA certificates" bold=true rect=0,180,98,16
+        paragraphB text="Path of a PEM file of extra certificate authorities to trust." rect=0,202,300,14
+    flow h=28 rect=0,222,300,28
+      flow w=150 h=28 padL=10 padR=10 gap=8 bg=sunken control=button tip=Choose the file alignItems=2 lighten=true onClick=true rect=0,222,150,28
+        iconB w=16 icon=folder rect=10,229,16,14
+        textB text="Choose file" grow=1 fg=chip-text rect=34,228,106,16
+      plain grow=1 rect=150,222,150,28

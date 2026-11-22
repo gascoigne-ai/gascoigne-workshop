@@ -179,173 +179,165 @@ stack rect=0,0,640,480
       plain grow=1 rect=192,62,352,0
       flow w=32 h=24 control=row tip=Close (Esc) hoverBg=shadow onClick=true rect=552,50,32,24
         iconB grow=1 fg=hero-muted icon=cross rect=552,50,32,24
-    flow h=40 padL=16 padR=16 gap=8 borderB=border-soft alignItems=2 rect=40,84,560,40
-      fieldB h=28 grow=1 bg=sunken control=field onRightClick=true onChange=true rect=56,90,460,28
-      flow h=24 padL=10 padR=10 minW=60 bg=sunken control=button tip=Edit settings.json as text shrink=true lighten=true onClick=true rect=524,92,60,24
-        textB text="JSON" grow=1 fg=chip-text ellipsis=true center=true rect=534,92,40,24
-    flow grow=1 rect=40,124,560,316
-      flow w=170 padL=8 padT=8 padR=8 padB=8 gap=2 bg=frame roundCtl=menu roundCorners=8 rect=40,124,170,316
-        flow h=28 padL=12 padR=12 bg=accent-soft control=button alignItems=2 onClick=true rect=48,132,154,28
-          textB text="Appearance" grow=1 fg=accent-line bold=true rect=60,138,130,16
-        flow h=28 padL=12 padR=12 control=button hoverBg=hover alignItems=2 onClick=true rect=48,162,154,28
-          textB text="Colors" grow=1 fg=muted rect=60,168,130,16
-        flow h=28 padL=12 padR=12 control=button hoverBg=hover alignItems=2 onClick=true rect=48,192,154,28
-          textB text="Shortcuts" grow=1 fg=muted rect=60,198,130,16
-        flow h=28 padL=12 padR=12 control=button hoverBg=hover alignItems=2 onClick=true rect=48,222,154,28
-          textB text="Requests" grow=1 fg=muted rect=60,228,130,16
-        flow h=28 padL=12 padR=12 control=button hoverBg=hover alignItems=2 onClick=true rect=48,252,154,28
-          textB text="General" grow=1 fg=muted rect=60,258,130,16
-        flow h=28 padL=12 padR=12 control=button hoverBg=hover alignItems=2 onClick=true rect=48,282,154,28
-          textB text="Experimental" grow=1 fg=muted rect=60,288,130,16
-        flow h=28 padL=12 padR=12 control=button hoverBg=hover alignItems=2 onClick=true rect=48,312,154,28
-          textB text="System" grow=1 fg=muted rect=60,318,130,16
-      scrollB padL=16 padT=16 padR=16 padB=16 grow=1 borderL=border-soft clip=true rect=210,124,390,316
-        flow rect=226,140,350,1172
-          flow padT=8 padB=8 borderB=border-soft rect=226,140,350,94
-            flow h=28 gap=6 rect=226,148,350,28
-              textB text="Theme" bold=true rect=226,148,45,28
-              plain grow=1 rect=277,148,299,28
-            flow rect=226,176,350,22
-              textB text="The color theme: dark, light or the id of a theme file in the themes folder." h=22 fg=muted rect=226,176,350,22
-            flow h=28 gap=6 rect=226,198,350,28
-              flow padL=10 padR=10 grow=1 bg=accent control=primary lighten=true onClick=true rect=226,198,172,28
-                textB text="Dark" grow=1 fg=accent-text ellipsis=true center=true rect=236,198,152,28
-              flow padL=10 padR=10 grow=1 bg=sunken control=button lighten=true onClick=true rect=404,198,172,28
-                textB text="Light" grow=1 fg=chip-text ellipsis=true center=true rect=414,198,152,28
-          flow padT=8 padB=8 borderB=border-soft rect=226,234,350,116
-            flow h=28 gap=6 rect=226,242,350,28
-              textB text="Interface font" bold=true rect=226,242,91,28
-              plain grow=1 rect=323,242,253,28
-            flow rect=226,270,350,44
-              textB text="Family name of an installed font for labels, buttons and fields; empty is" h=22 fg=muted rect=226,270,350,22
-              textB text="the built-in font." h=22 fg=muted rect=226,292,350,22
-            flow h=28 padL=8 padR=8 gap=6 bg=sunken control=field tip=Pick an installed font alignItems=2 onClick=true rect=226,314,350,28
-              textB text="Built-in" grow=1 fg=muted rect=234,320,316,16
-              iconB w=12 icon=chevron-down rect=556,324,12,8
-          flow padT=8 padB=8 borderB=border-soft rect=226,350,350,94
-            flow h=28 gap=6 rect=226,358,350,28
-              textB text="Interface font size" bold=true rect=226,358,122,28
-              plain grow=1 rect=354,358,222,28
-            flow rect=226,386,350,22
-              textB text="The size of the interface text in pixels, 10 to 24." h=22 fg=muted rect=226,386,350,22
-            flow rect=226,408,350,28
-              flow h=28 gap=6 alignItems=2 rect=226,408,350,28
-                flow h=24 padL=10 padR=10 minW=32 bg=sunken control=button tip=Smaller shrink=true lighten=true onClick=true rect=226,410,32,24
-                  textB text="-" grow=1 fg=chip-text ellipsis=true center=true rect=236,410,12,24
-                fieldB w=56 h=28 bg=sunken control=field onRightClick=true onChange=true rect=264,408,56,28
-                flow h=24 padL=10 padR=10 minW=32 bg=sunken control=button tip=Larger shrink=true lighten=true onClick=true rect=326,410,32,24
-                  textB text="+" grow=1 fg=chip-text ellipsis=true center=true rect=336,410,12,24
-                plain grow=1 rect=364,422,212,0
-          flow padT=8 padB=8 borderB=border-soft rect=226,444,350,94
-            flow h=28 gap=6 rect=226,452,350,28
-              textB text="Small text size" bold=true rect=226,452,97,28
-              plain grow=1 rect=329,452,247,28
-            flow rect=226,480,350,22
-              textB text="The size of captions, hints and table headers in pixels, 8 to 24." h=22 fg=muted rect=226,480,350,22
-            flow rect=226,502,350,28
-              flow h=28 gap=6 alignItems=2 rect=226,502,350,28
-                flow h=24 padL=10 padR=10 minW=32 bg=sunken control=button tip=Smaller shrink=true lighten=true onClick=true rect=226,504,32,24
-                  textB text="-" grow=1 fg=chip-text ellipsis=true center=true rect=236,504,12,24
-                fieldB w=56 h=28 bg=sunken control=field onRightClick=true onChange=true rect=264,502,56,28
-                flow h=24 padL=10 padR=10 minW=32 bg=sunken control=button tip=Larger shrink=true lighten=true onClick=true rect=326,504,32,24
-                  textB text="+" grow=1 fg=chip-text ellipsis=true center=true rect=336,504,12,24
-                plain grow=1 rect=364,516,212,0
-          flow padT=8 padB=8 borderB=border-soft rect=226,538,350,116
-            flow h=28 gap=6 rect=226,546,350,28
-              textB text="Code font" bold=true rect=226,546,65,28
-              plain grow=1 rect=297,546,279,28
-            flow rect=226,574,350,44
-              textB text="Family name of an installed font for bodies and the code views; empty is the" h=22 fg=muted rect=226,574,350,22
-              textB text="built-in font." h=22 fg=muted rect=226,596,350,22
-            flow h=28 padL=8 padR=8 gap=6 bg=sunken control=field tip=Pick an installed font alignItems=2 onClick=true rect=226,618,350,28
-              textB text="Built-in" grow=1 fg=muted rect=234,624,316,16
-              iconB w=12 icon=chevron-down rect=556,628,12,8
-          flow padT=8 padB=8 borderB=border-soft rect=226,654,350,94
-            flow h=28 gap=6 rect=226,662,350,28
-              textB text="Code font size" bold=true rect=226,662,96,28
-              plain grow=1 rect=328,662,248,28
-            flow rect=226,690,350,22
-              textB text="The size of bodies and code views in pixels, 8 to 32." h=22 fg=muted rect=226,690,350,22
-            flow rect=226,712,350,28
-              flow h=28 gap=6 alignItems=2 rect=226,712,350,28
-                flow h=24 padL=10 padR=10 minW=32 bg=sunken control=button tip=Smaller shrink=true lighten=true onClick=true rect=226,714,32,24
-                  textB text="-" grow=1 fg=chip-text ellipsis=true center=true rect=236,714,12,24
-                fieldB w=56 h=28 bg=sunken control=field onRightClick=true onChange=true rect=264,712,56,28
-                flow h=24 padL=10 padR=10 minW=32 bg=sunken control=button tip=Larger shrink=true lighten=true onClick=true rect=326,714,32,24
-                  textB text="+" grow=1 fg=chip-text ellipsis=true center=true rect=336,714,12,24
-                plain grow=1 rect=364,726,212,0
-          flow padT=8 padB=8 borderB=border-soft rect=226,748,350,94
-            flow h=28 gap=6 rect=226,756,350,28
-              textB text="Interface scale" bold=true rect=226,756,100,28
-              plain grow=1 rect=332,756,244,28
-            flow rect=226,784,350,22
-              textB text="Scale of the whole interface in percent, on top of the display's own scale." h=22 fg=muted rect=226,784,350,22
-            flow h=28 gap=8 rect=226,806,350,28
-              sliderB h=24 grow=1 rect=226,808,302,24
-              textB text="100%" w=40 fg=muted rect=536,806,40,28
-          flow padT=8 padB=8 borderB=border-soft rect=226,842,350,94
-            flow h=28 gap=6 rect=226,850,350,28
-              textB text="Corners" bold=true rect=226,850,54,28
-              plain grow=1 rect=286,850,290,28
-            flow rect=226,878,350,22
-              textB text="How round controls are." h=22 fg=muted rect=226,878,350,22
-            flow h=28 gap=6 rect=226,900,350,28
-              flow padL=10 padR=10 grow=1 bg=sunken control=button lighten=true onClick=true rect=226,900,112,28
-                textB text="Square" grow=1 fg=chip-text ellipsis=true center=true rect=236,900,92,28
-              flow padL=10 padR=10 grow=1 bg=accent control=primary lighten=true onClick=true rect=344,900,112,28
-                textB text="Soft" grow=1 fg=accent-text ellipsis=true center=true rect=354,900,92,28
-              flow padL=10 padR=10 grow=1 bg=sunken control=button lighten=true onClick=true rect=462,900,114,28
-                textB text="Round" grow=1 fg=chip-text ellipsis=true center=true rect=472,900,94,28
-          flow padT=8 padB=8 borderB=border-soft rect=226,936,350,94
-            flow h=28 gap=6 rect=226,944,350,28
-              textB text="Flat colors" bold=true rect=226,944,71,28
-              plain grow=1 rect=303,944,273,28
-            flow rect=226,972,350,22
-              textB text="Turn every gradient into a flat fill." h=22 fg=muted rect=226,972,350,22
-            flow h=28 gap=6 rect=226,994,350,28
-              flow padL=10 padR=10 grow=1 bg=accent control=primary lighten=true onClick=true rect=226,994,172,28
-                textB text="Off" grow=1 fg=accent-text ellipsis=true center=true rect=236,994,152,28
-              flow padL=10 padR=10 grow=1 bg=sunken control=button lighten=true onClick=true rect=404,994,172,28
-                textB text="On" grow=1 fg=chip-text ellipsis=true center=true rect=414,994,152,28
-          flow padT=8 padB=8 borderB=border-soft rect=226,1030,350,94
-            flow h=28 gap=6 rect=226,1038,350,28
-              textB text="Contrast" bold=true rect=226,1038,58,28
-              plain grow=1 rect=290,1038,286,28
-            flow rect=226,1066,350,22
-              textB text="High strengthens the selection, find and accent colors." h=22 fg=muted rect=226,1066,350,22
-            flow h=28 gap=6 rect=226,1088,350,28
-              flow padL=10 padR=10 grow=1 bg=accent control=primary lighten=true onClick=true rect=226,1088,172,28
-                textB text="Normal" grow=1 fg=accent-text ellipsis=true center=true rect=236,1088,152,28
-              flow padL=10 padR=10 grow=1 bg=sunken control=button lighten=true onClick=true rect=404,1088,172,28
-                textB text="High" grow=1 fg=chip-text ellipsis=true center=true rect=414,1088,152,28
-          flow padT=8 padB=8 borderB=border-soft rect=226,1124,350,94
-            flow h=28 gap=6 rect=226,1132,350,28
-              textB text="Request and response" bold=true rect=226,1132,150,28
-              iconB fg=accent-line tip=Changed from the default icon=dot rect=382,1132,6,28
-              plain grow=1 rect=394,1132,119,28
-              flow h=24 padL=10 padR=10 minW=56 bg=sunken control=button tip=Remove it from settings.json so the default applies shrink=true lighten=true onClick=true rect=519,1134,57,24
-                textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=529,1134,37,24
-            flow rect=226,1160,350,22
-              textB text="Place the request and response panes stacked or side by side." h=22 fg=muted rect=226,1160,350,22
-            flow h=28 gap=6 rect=226,1182,350,28
-              flow padL=10 padR=10 grow=1 bg=sunken control=button lighten=true onClick=true rect=226,1182,172,28
-                textB text="Stacked" grow=1 fg=chip-text ellipsis=true center=true rect=236,1182,152,28
-              flow padL=10 padR=10 grow=1 bg=accent control=primary lighten=true onClick=true rect=404,1182,172,28
-                textB text="Side by side" grow=1 fg=accent-text ellipsis=true center=true rect=414,1182,152,28
-          flow padT=8 padB=8 borderB=border-soft rect=226,1218,350,94
-            flow h=28 gap=6 rect=226,1226,350,28
-              textB text="Response view" bold=true rect=226,1226,101,28
-              iconB fg=accent-line tip=Changed from the default icon=dot rect=333,1226,6,28
-              plain grow=1 rect=345,1226,168,28
-              flow h=24 padL=10 padR=10 minW=56 bg=sunken control=button tip=Remove it from settings.json so the default applies shrink=true lighten=true onClick=true rect=519,1228,57,24
-                textB text="Reset" grow=1 fg=chip-text ellipsis=true center=true rect=529,1228,37,24
-            flow rect=226,1254,350,22
-              textB text="How a response body is shown when it arrives." h=22 fg=muted rect=226,1254,350,22
-            flow h=28 gap=6 rect=226,1276,350,28
-              flow padL=10 padR=10 grow=1 bg=sunken control=button lighten=true onClick=true rect=226,1276,112,28
-                textB text="Compact" grow=1 fg=chip-text ellipsis=true center=true rect=236,1276,92,28
-              flow padL=10 padR=10 grow=1 bg=accent control=primary lighten=true onClick=true rect=344,1276,112,28
-                textB text="Pretty" grow=1 fg=accent-text ellipsis=true center=true rect=354,1276,92,28
-              flow padL=10 padR=10 grow=1 bg=sunken control=button lighten=true onClick=true rect=462,1276,114,28
-                textB text="Raw" grow=1 fg=chip-text ellipsis=true center=true rect=472,1276,94,28
+    flow grow=1 rect=40,84,560,356
+      flow w=170 padL=8 padT=8 padR=8 padB=8 gap=2 bg=frame roundCtl=menu roundCorners=8 rect=40,84,170,356
+        fieldB h=28 bg=sunken control=field onRightClick=true onChange=true rect=48,92,154,28
+        flow h=28 padL=12 padR=12 bg=accent-soft control=button alignItems=2 onClick=true rect=48,122,154,28
+          textB text="Appearance" grow=1 fg=accent-line bold=true rect=60,128,130,16
+        flow h=28 padL=12 padR=12 control=button hoverBg=hover alignItems=2 onClick=true rect=48,152,154,28
+          textB text="Colors" grow=1 fg=muted rect=60,158,130,16
+        flow h=28 padL=12 padR=12 control=button hoverBg=hover alignItems=2 onClick=true rect=48,182,154,28
+          textB text="Shortcuts" grow=1 fg=muted rect=60,188,130,16
+        flow h=28 padL=12 padR=12 control=button hoverBg=hover alignItems=2 onClick=true rect=48,212,154,28
+          textB text="Requests" grow=1 fg=muted rect=60,218,130,16
+        flow h=28 padL=12 padR=12 control=button hoverBg=hover alignItems=2 onClick=true rect=48,242,154,28
+          textB text="General" grow=1 fg=muted rect=60,248,130,16
+        flow h=28 padL=12 padR=12 control=button hoverBg=hover alignItems=2 onClick=true rect=48,272,154,28
+          textB text="Experimental" grow=1 fg=muted rect=60,278,130,16
+        flow h=28 padL=12 padR=12 control=button hoverBg=hover alignItems=2 onClick=true rect=48,302,154,28
+          textB text="System" grow=1 fg=muted rect=60,308,130,16
+      flow grow=1 borderL=border-soft rect=210,84,390,356
+        flow padL=16 padT=16 padR=16 rect=210,84,390,44
+          flow gap=8 alignItems=2 rect=226,100,358,28
+            flow h=28 padL=12 padR=12 bg=accent-soft alignItems=2 rect=226,100,104,28
+              textB text="Appearance" fg=accent-line bold=true rect=238,106,80,16
+            textB text="settings.json" fg=muted tip=/config/settings.json rect=338,106,79,16
+            plain grow=1 rect=425,114,1,0
+            flow h=24 padL=10 padR=10 minW=150 bg=sunken control=button tip=Edit settings.json as text shrink=true lighten=true onClick=true rect=434,102,150,24
+              textB text="Edit in settings.json" grow=1 fg=chip-text ellipsis=true center=true rect=444,102,130,24
+        scrollB padL=16 padT=16 padR=16 padB=16 grow=1 clip=true rect=210,128,390,312
+          flow rect=226,144,350,888
+            flow padT=8 padB=8 gap=6 borderB=border-soft rect=226,144,350,106
+              flow gap=8 alignItems=2 rect=226,152,350,56
+                flow grow=1 rect=226,152,350,56
+                  flow h=28 gap=6 alignItems=2 rect=226,152,350,28
+                    textB text="Theme" bold=true rect=226,158,45,16
+                  paragraphB text="The color theme: dark, light or the id of a theme file in the themes folder." rect=226,180,350,28
+              flow h=28 gap=6 rect=226,214,350,28
+                flow padL=10 padR=10 grow=1 bg=accent control=primary lighten=true onClick=true rect=226,214,172,28
+                  textB text="Dark" grow=1 fg=accent-text ellipsis=true center=true rect=236,214,152,28
+                flow padL=10 padR=10 grow=1 bg=sunken control=button lighten=true onClick=true rect=404,214,172,28
+                  textB text="Light" grow=1 fg=chip-text ellipsis=true center=true rect=414,214,152,28
+            flow padT=8 padB=8 gap=6 borderB=border-soft rect=226,250,350,106
+              flow gap=8 alignItems=2 rect=226,258,350,56
+                flow grow=1 rect=226,258,350,56
+                  flow h=28 gap=6 alignItems=2 rect=226,258,350,28
+                    textB text="Interface font" bold=true rect=226,264,91,16
+                  paragraphB text="Family name of an installed font for labels, buttons and fields; empty is the built-in font." rect=226,286,350,28
+              flow h=28 padL=8 padR=8 gap=6 bg=sunken control=field tip=Pick an installed font alignItems=2 onClick=true rect=226,320,350,28
+                textB text="Built-in" grow=1 fg=muted rect=234,326,316,16
+                iconB w=12 icon=chevron-down rect=556,330,12,8
+            flow padT=8 padB=8 gap=6 borderB=border-soft rect=226,356,350,58
+              flow gap=8 alignItems=2 rect=226,364,350,42
+                flow grow=1 rect=226,364,210,42
+                  flow h=28 gap=6 alignItems=2 rect=226,364,210,28
+                    textB text="Interface font size" bold=true rect=226,370,122,16
+                  paragraphB text="The size of the interface text in pixels, 10 to 24." rect=226,392,210,28
+                flow h=28 gap=6 alignItems=2 rect=444,371,132,28
+                  flow h=24 padL=10 padR=10 minW=32 bg=sunken control=button tip=Smaller shrink=true lighten=true onClick=true rect=444,373,32,24
+                    textB text="-" grow=1 fg=chip-text ellipsis=true center=true rect=454,373,12,24
+                  fieldB w=56 h=28 bg=sunken control=field onRightClick=true onChange=true rect=482,371,56,28
+                  flow h=24 padL=10 padR=10 minW=32 bg=sunken control=button tip=Larger shrink=true lighten=true onClick=true rect=544,373,32,24
+                    textB text="+" grow=1 fg=chip-text ellipsis=true center=true rect=554,373,12,24
+            flow padT=8 padB=8 gap=6 borderB=border-soft rect=226,414,350,58
+              flow gap=8 alignItems=2 rect=226,422,350,42
+                flow grow=1 rect=226,422,210,42
+                  flow h=28 gap=6 alignItems=2 rect=226,422,210,28
+                    textB text="Small text size" bold=true rect=226,428,97,16
+                  paragraphB text="The size of captions, hints and table headers in pixels, 8 to 24." rect=226,450,210,28
+                flow h=28 gap=6 alignItems=2 rect=444,429,132,28
+                  flow h=24 padL=10 padR=10 minW=32 bg=sunken control=button tip=Smaller shrink=true lighten=true onClick=true rect=444,431,32,24
+                    textB text="-" grow=1 fg=chip-text ellipsis=true center=true rect=454,431,12,24
+                  fieldB w=56 h=28 bg=sunken control=field onRightClick=true onChange=true rect=482,429,56,28
+                  flow h=24 padL=10 padR=10 minW=32 bg=sunken control=button tip=Larger shrink=true lighten=true onClick=true rect=544,431,32,24
+                    textB text="+" grow=1 fg=chip-text ellipsis=true center=true rect=554,431,12,24
+            flow padT=8 padB=8 gap=6 borderB=border-soft rect=226,472,350,106
+              flow gap=8 alignItems=2 rect=226,480,350,56
+                flow grow=1 rect=226,480,350,56
+                  flow h=28 gap=6 alignItems=2 rect=226,480,350,28
+                    textB text="Code font" bold=true rect=226,486,65,16
+                  paragraphB text="Family name of an installed font for bodies and the code views; empty is the built-in font." rect=226,508,350,28
+              flow h=28 padL=8 padR=8 gap=6 bg=sunken control=field tip=Pick an installed font alignItems=2 onClick=true rect=226,542,350,28
+                textB text="Built-in" grow=1 fg=muted rect=234,548,316,16
+                iconB w=12 icon=chevron-down rect=556,552,12,8
+            flow padT=8 padB=8 gap=6 borderB=border-soft rect=226,578,350,58
+              flow gap=8 alignItems=2 rect=226,586,350,42
+                flow grow=1 rect=226,586,210,42
+                  flow h=28 gap=6 alignItems=2 rect=226,586,210,28
+                    textB text="Code font size" bold=true rect=226,592,96,16
+                  paragraphB text="The size of bodies and code views in pixels, 8 to 32." rect=226,614,210,28
+                flow h=28 gap=6 alignItems=2 rect=444,593,132,28
+                  flow h=24 padL=10 padR=10 minW=32 bg=sunken control=button tip=Smaller shrink=true lighten=true onClick=true rect=444,595,32,24
+                    textB text="-" grow=1 fg=chip-text ellipsis=true center=true rect=454,595,12,24
+                  fieldB w=56 h=28 bg=sunken control=field onRightClick=true onChange=true rect=482,593,56,28
+                  flow h=24 padL=10 padR=10 minW=32 bg=sunken control=button tip=Larger shrink=true lighten=true onClick=true rect=544,595,32,24
+                    textB text="+" grow=1 fg=chip-text ellipsis=true center=true rect=554,595,12,24
+            flow padT=8 padB=8 gap=6 borderB=border-soft rect=226,636,350,106
+              flow gap=8 alignItems=2 rect=226,644,350,56
+                flow grow=1 rect=226,644,350,56
+                  flow h=28 gap=6 alignItems=2 rect=226,644,350,28
+                    textB text="Interface scale" bold=true rect=226,650,100,16
+                  paragraphB text="Scale of the whole interface in percent, on top of the display's own scale." rect=226,672,350,28
+              flow h=28 gap=8 rect=226,706,350,28
+                sliderB h=24 grow=1 rect=226,708,302,24
+                textB text="100%" w=40 fg=muted rect=536,706,40,28
+            flow padT=8 padB=8 gap=6 borderB=border-soft rect=226,742,350,58
+              flow gap=8 alignItems=2 rect=226,750,350,42
+                flow grow=1 rect=226,750,159,42
+                  flow h=28 gap=6 alignItems=2 rect=226,750,159,28
+                    textB text="Corners" bold=true rect=226,756,54,16
+                  paragraphB text="How round controls are." rect=226,778,159,14
+                flow h=28 gap=6 rect=393,757,183,28
+                  flow padL=10 padR=10 grow=1 bg=sunken control=button lighten=true onClick=true rect=393,757,57,28
+                    textB text="Square" grow=1 fg=chip-text ellipsis=true center=true rect=403,757,37,28
+                  flow padL=10 padR=10 grow=1 bg=accent control=primary lighten=true onClick=true rect=456,757,57,28
+                    textB text="Soft" grow=1 fg=accent-text ellipsis=true center=true rect=466,757,37,28
+                  flow padL=10 padR=10 grow=1 bg=sunken control=button lighten=true onClick=true rect=519,757,57,28
+                    textB text="Round" grow=1 fg=chip-text ellipsis=true center=true rect=529,757,37,28
+            flow padT=8 padB=8 gap=6 borderB=border-soft rect=226,800,350,58
+              flow gap=8 alignItems=2 rect=226,808,350,42
+                flow grow=1 rect=226,808,310,42
+                  flow h=28 gap=6 alignItems=2 rect=226,808,310,28
+                    textB text="Flat colors" bold=true rect=226,814,71,16
+                  paragraphB text="Turn every gradient into a flat fill." rect=226,836,310,14
+                switchB onChange=true rect=544,820,32,18
+            flow padT=8 padB=8 gap=6 borderB=border-soft rect=226,858,350,58
+              flow gap=8 alignItems=2 rect=226,866,350,42
+                flow grow=1 rect=226,866,221,42
+                  flow h=28 gap=6 alignItems=2 rect=226,866,221,28
+                    textB text="Contrast" bold=true rect=226,872,58,16
+                  paragraphB text="High strengthens the selection, find and accent colors." rect=226,894,221,28
+                flow h=28 gap=6 rect=455,873,121,28
+                  flow padL=10 padR=10 grow=1 bg=accent control=primary lighten=true onClick=true rect=455,873,57,28
+                    textB text="Normal" grow=1 fg=accent-text ellipsis=true center=true rect=465,873,37,28
+                  flow padL=10 padR=10 grow=1 bg=sunken control=button lighten=true onClick=true rect=518,873,58,28
+                    textB text="High" grow=1 fg=chip-text ellipsis=true center=true rect=528,873,38,28
+            flow padT=8 padB=8 gap=6 borderB=border-soft rect=226,916,350,58
+              flow gap=8 alignItems=2 rect=226,924,350,42
+                flow grow=1 rect=226,924,168,42
+                  flow h=28 gap=6 alignItems=2 rect=226,924,168,28
+                    textB text="Request and response" bold=true rect=226,930,150,16
+                    flow w=32 h=24 bg=sunken control=icon-button tip=Changed from the default. Remove it from settings.json so the default applies lighten=true onClick=true rect=382,926,32,24
+                      iconB grow=1 icon=undo rect=382,926,32,24
+                  paragraphB text="Place the request and response panes stacked or side by side." rect=226,952,168,42
+                flow h=28 gap=6 rect=402,931,174,28
+                  flow padL=10 padR=10 grow=1 bg=sunken control=button lighten=true onClick=true rect=402,931,84,28
+                    textB text="Stacked" grow=1 fg=chip-text ellipsis=true center=true rect=412,931,64,28
+                  flow padL=10 padR=10 grow=1 bg=accent control=primary lighten=true onClick=true rect=492,931,84,28
+                    textB text="Side by side" grow=1 fg=accent-text ellipsis=true center=true rect=502,931,64,28
+            flow padT=8 padB=8 gap=6 borderB=border-soft rect=226,974,350,58
+              flow gap=8 alignItems=2 rect=226,982,350,42
+                flow grow=1 rect=226,982,149,42
+                  flow h=28 gap=6 alignItems=2 rect=226,982,149,28
+                    textB text="Response view" bold=true rect=226,988,101,16
+                    flow w=32 h=24 bg=sunken control=icon-button tip=Changed from the default. Remove it from settings.json so the default applies lighten=true onClick=true rect=333,984,32,24
+                      iconB grow=1 icon=undo rect=333,984,32,24
+                  paragraphB text="How a response body is shown when it arrives." rect=226,1010,149,28
+                flow h=28 gap=6 rect=383,989,193,28
+                  flow padL=10 padR=10 grow=1 bg=sunken control=button lighten=true onClick=true rect=383,989,60,28
+                    textB text="Compact" grow=1 fg=chip-text ellipsis=true center=true rect=393,989,40,28
+                  flow padL=10 padR=10 grow=1 bg=accent control=primary lighten=true onClick=true rect=449,989,60,28
+                    textB text="Pretty" grow=1 fg=accent-text ellipsis=true center=true rect=459,989,40,28
+                  flow padL=10 padR=10 grow=1 bg=sunken control=button lighten=true onClick=true rect=515,989,61,28
+                    textB text="Raw" grow=1 fg=chip-text ellipsis=true center=true rect=525,989,41,28
   tooltipB rect=0,0,640,480
