@@ -35,7 +35,7 @@ type ThemeChoice struct {
 	Build     func() core.Theme
 }
 
-// The size range of each face in pixels and its default. internal/settings
+// The size range of each face in pixels and its default. internal/feature/settings
 // states the same ranges (it may not import this package); appearance's
 // TestFontSizeRangeMatchesToolkit pins the two together.
 const (
