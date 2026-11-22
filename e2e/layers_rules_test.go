@@ -93,7 +93,7 @@ type layerRule struct {
 }
 
 var (
-	settingsPlatform = []string{"internal/platform/fonts", "internal/platform/systeminfo"}
+	settingsPlatform = []string{"internal/platform/fonts"}
 )
 
 // layerRules is the data form of internal/CLAUDE.md, Imports. The rows after

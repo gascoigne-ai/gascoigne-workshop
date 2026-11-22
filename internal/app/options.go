@@ -39,7 +39,7 @@ type Options struct {
 	Files            FileDialog                                    // the desktop file chooser; nil uses the in-app file browser
 	Folders          workspace.Folders                             // the folders the in-app file browser lists; nil lists none
 	History          func(dir string) history.History              // the history in a folder; nil keeps none
-	System           settings.SystemInfo                           // the system and GPU report of the settings; nil has none
+	System           SystemInfo                                    // the system and GPU report of the settings; nil has none
 	KeyRepeat        KeyRepeat                                     // the desktop's key repeat timing; nil keeps the built-in one
 	Display          DisplayScale                                  // the desktop's display scale when the window system hides it; nil has none
 	Fonts            settings.FontStore                            // installed fonts; nil has none

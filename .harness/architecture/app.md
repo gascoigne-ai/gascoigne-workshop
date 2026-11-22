@@ -100,7 +100,7 @@ The drop outline is the row's `DropBorder` token, empty when not the target.
 - **Toasts** carry a `severity.Level` (`internal/kernel/severity`), mapped once to the toolkit's
   kind; the settings, the sent log and the call trace use the same type. Info fades, errors stay.
 - The settings dialog's System page (`feature/settings/ui/systempage`) reports
-  `settings.SystemInfo`.
+  the app's `SystemInfo` port.
 
 ### Drawing only when something changed
 

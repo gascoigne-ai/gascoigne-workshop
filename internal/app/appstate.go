@@ -40,7 +40,7 @@ type ports struct {
 	histories    func(dir string) history.History // nil keeps no history
 	fonts        settings.FontStore
 	display      DisplayScale
-	system       settings.SystemInfo // what the System page of the settings shows; nil has no report
+	system       SystemInfo // what the System page of the settings shows; nil has no report
 	settingFiles settings.SettingsStore
 	previews     send.BodyPreview // shows a response body in the browser, replaced in tests
 }

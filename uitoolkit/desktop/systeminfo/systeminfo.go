@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"runtime"
 	"runtime/debug"
-
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 )
 
 // Graphics is what the running window system and GPU tell.
@@ -33,10 +31,10 @@ type Info struct {
 }
 
 // Read is the report as it is now.
-func (i Info) Read() settings.Report {
+func (i Info) Read() Report {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
-	system := settings.Section{Title: "System", Rows: []settings.Row{
+	system := Section{Title: "System", Rows: []Row{
 		{Label: "OS", Value: runtime.GOOS + "/" + runtime.GOARCH},
 		{Label: "CPUs", Value: fmt.Sprint(runtime.NumCPU())},
 		{Label: "Go", Value: runtime.Version()},
@@ -44,26 +42,26 @@ func (i Info) Read() settings.Report {
 		{Label: "Memory in use", Value: megabytes(int64(m.Alloc))},
 	}}
 	if i.Version != "" {
-		system.Rows = append([]settings.Row{{Label: "Program", Value: i.Version}}, system.Rows...)
+		system.Rows = append([]Row{{Label: "Program", Value: i.Version}}, system.Rows...)
 	}
 	if i.Graphics == nil {
-		return settings.Report{Sections: []settings.Section{system}}
+		return Report{Sections: []Section{system}}
 	}
 	g := i.Graphics()
-	rendering := settings.Section{Title: "Rendering", Rows: []settings.Row{
+	rendering := Section{Title: "Rendering", Rows: []Row{
 		{Label: "Graphics library", Value: orUnknown(g.Library)},
 		{Label: "GPU image memory", Value: megabytes(g.GPUImageBytes)},
 		{Label: "Vsync", Value: onOff(g.Vsync)},
 		{Label: "Frames per second", Value: fmt.Sprintf("%.0f", g.FPS)},
 		{Label: "Ticks per second", Value: fmt.Sprintf("%.0f", g.TPS)},
 	}}
-	display := settings.Section{Title: "Display", Rows: []settings.Row{
+	display := Section{Title: "Display", Rows: []Row{
 		{Label: "Monitor", Value: orUnknown(g.Monitor)},
 		{Label: "Monitor size", Value: fmt.Sprintf("%d x %d", g.MonitorW, g.MonitorH)},
 		{Label: "Device scale", Value: fmt.Sprintf("%.2f", g.DeviceScale)},
 		{Label: "Window size", Value: fmt.Sprintf("%d x %d", g.WindowW, g.WindowH)},
 	}}
-	return settings.Report{Sections: []settings.Section{rendering, display, system}}
+	return Report{Sections: []Section{rendering, display, system}}
 }
 
 // moduleVersion is the version of a module the program was built with.

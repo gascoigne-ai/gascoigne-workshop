@@ -1,4 +1,4 @@
-package settings
+package systeminfo
 
 import "strings"
 

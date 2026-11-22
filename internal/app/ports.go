@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/filedialog"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/systeminfo"
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace"
@@ -119,4 +120,12 @@ type FileDialog interface {
 // can be driven by a fake one.
 type Clock interface {
 	Now() time.Time
+}
+
+// SystemInfo reports what the program runs on: the system, the display and
+// the GPU rendering. The toolkit's desktop/systeminfo package implements it.
+type SystemInfo interface {
+	// Read is the report as it is now; the numbers that change (frame rate,
+	// memory) are read at each call.
+	Read() systeminfo.Report
 }

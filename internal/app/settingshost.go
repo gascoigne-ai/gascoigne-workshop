@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/filedialog"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/systeminfo"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/viewer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
@@ -102,9 +103,9 @@ func (a *App) ExtraPage(id string) Node {
 }
 
 // System is the report the System page shows: empty without a source.
-func (a *App) System() settings.Report {
+func (a *App) System() systeminfo.Report {
 	if a.system == nil {
-		return settings.Report{}
+		return systeminfo.Report{}
 	}
 	return a.system.Read()
 }

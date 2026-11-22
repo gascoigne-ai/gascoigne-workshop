@@ -2,13 +2,13 @@
 // program runs on, the display and the GPU rendering, read-only, with a
 // button that copies the report as text. The numbers are read when the page
 // is built, so they are as fresh as the last redraw. The page was the
-// user's request. The Ebitengine side comes in through port.SystemInfo, so
+// user's request. The Ebitengine side comes in through the host, so
 // tests need no display.
 package systempage
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/systeminfo"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
@@ -16,7 +16,7 @@ import (
 // Host is what the page needs of the application.
 type Host interface {
 	// System is the report as it is now.
-	System() settings.Report
+	System() systeminfo.Report
 	// CopyText puts text on the clipboard.
 	CopyText(text string)
 }

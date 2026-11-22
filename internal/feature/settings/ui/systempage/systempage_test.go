@@ -1,27 +1,27 @@
 package systempage
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/systeminfo"
 	"image/color"
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 type fakeHost struct {
-	report settings.Report
+	report systeminfo.Report
 	copied string
 }
 
-func (h *fakeHost) System() settings.Report { return h.report }
-func (h *fakeHost) CopyText(text string)    { h.copied = text }
+func (h *fakeHost) System() systeminfo.Report { return h.report }
+func (h *fakeHost) CopyText(text string)      { h.copied = text }
 
 func newHost() *fakeHost {
-	return &fakeHost{report: settings.Report{Sections: []settings.Section{
-		{Title: "Rendering", Rows: []settings.Row{{Label: "Graphics library", Value: "Metal"}, {Label: "Vsync", Value: "on"}}},
-		{Title: "System", Rows: []settings.Row{{Label: "OS", Value: "darwin/arm64"}}},
+	return &fakeHost{report: systeminfo.Report{Sections: []systeminfo.Section{
+		{Title: "Rendering", Rows: []systeminfo.Row{{Label: "Graphics library", Value: "Metal"}, {Label: "Vsync", Value: "on"}}},
+		{Title: "System", Rows: []systeminfo.Row{{Label: "OS", Value: "darwin/arm64"}}},
 	}}}
 }
 
