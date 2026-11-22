@@ -22,6 +22,13 @@ User's answer: a Go test over `go list -deps -test` output with a rule table (it
 compiler's imports, not source text), run by `make check`. The rule table lives in the test, one
 row per rule, exceptions as extra rows with the reason in a field. Not `common/scripts/check-layers.sh`.
 
+User's answer on the real-tree result: the checker found 6 violations, all in `_test.go` files
+(`exampleserver` tests import `feature/collections` and `feature/send/proto`; the `sentlog`,
+`formpage` and `settingsui` tests import their own feature's adapter; the `formpage` tests import
+`platform/fonts`). Each gets one explicit test-only rule row with a reason ("test fixture: real
+adapter"), valid for test imports only; the rule stays default-deny for new code. A follow-up task
+replaces those tests' real adapters with fakes and deletes the rows.
+
 ## Model
 Model: unchanged. The rule table is data: zone pattern, allowed imports, reason; no logic per rule.
 
