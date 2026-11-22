@@ -12,17 +12,10 @@ Goal: `kernel/severity` (27 lines; importers: app, sentlog, calltrace, prefs, fo
 
 OPEN QUESTION (ask the user before moving): `settings/prefs` would then import `workspace/notice`, which breaks
 "features never import each other". Recommend the fallback: put `severity` in `feature/request` (no new
-cross-feature edge). Record the answer under `## Decision`.
-
-## Model
-Model: unchanged. `Severity` and its values are unchanged.
-
-## Acceptance
-- Common acceptance of `.harness/reorg.md`.
-
-## Decision
-`severity` goes into `feature/request` (user answer, the recommended option), not `workspace/notice`: no new
-cross-feature import edge. Package `severity` stays its own small package? No: it becomes a file of package
-`request` (`severity.go`), so importers write `request.Severity` (check for a name clash with existing
-identifiers first; if one exists, stop and ask). `workspace/notice` (task 029) imports it from `request`.
-Title above is the original; the move target is `internal/feature/request`.
+cross-feature edge). Record the answer under `## Decision
+`severity` goes under the base feature (user answer, the recommended option), not `workspace/notice`: no new
+cross-feature import edge. Target: `internal/feature/request/severity` (own small package, so importers keep
+writing `severity.Level`, `severity.Info`; merging into package `request` would add the generic names `Level`,
+`Info`, `Error`, `All` to it). The `base` zone already covers sub-packages of `feature/request`; if the layer
+table does not, fix it test first. Update the doc comment ("lives in the kernel package") and docs. Task 029's
+`workspace/notice` imports it from there.
