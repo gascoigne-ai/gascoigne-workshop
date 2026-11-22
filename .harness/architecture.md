@@ -33,26 +33,49 @@ flowchart LR
   `colorpage`, `shortcutpage`, `systempage`, `destpicker`. Adapters reach those views through the
   host (`Host.SentStore`, `Host.FontStore`).
 
-## Index
+## Modules
 
-One file per area in `architecture/`; read the one you touch.
+One functional module per file in `architecture/`; read only the one you touch. A module is a
+domain directory under `internal/` (root, controllers, `ui/`, `adapter/`) or the toolkit.
 
-| File | Area |
-|---|---|
-| `architecture/model-and-protocols.md` | Model and protocols |
-| `architecture/example-server-and-client-config.md` | Example server and client config |
-| `architecture/collection-tree.md` | Collection tree |
-| `architecture/json-view.md` | JSON view |
-| `architecture/core.md` | core: the toolkit |
-| `architecture/view.md` | view: the view DSL |
-| `architecture/app.md` | internal/app: the app |
-| `architecture/toolkit-api.md` | Toolkit: API and templates |
-| `architecture/toolkit-widgets.md` | Toolkit: widgets and drawing |
-| `architecture/requests.md` | Requests |
-| `architecture/protocols.md` | Protocols |
-| `architecture/responses.md` | Responses |
-| `architecture/collections-and-environments.md` | Collections and environments |
-| `architecture/settings.md` | Settings |
-| `architecture/files-state-and-platforms.md` | Files, state and platforms |
-| `architecture/persistence.md` | Persistence |
-| `architecture/limits.md` | Limits |
+| File | Module | Owns |
+|---|---|---|
+| `architecture/request.md` | `internal/request` | model, ports, protocols (rest, websocket, sse, mcp, grpc), assert, editor, calltrace, mcpform |
+| `architecture/collection.md` | `internal/collection` | tree, environments, importers, transfer, store, client config, example server |
+| `architecture/response.md` | `internal/response` | viewer, json view, text formats, history, preview, sent log |
+| `architecture/settings.md` | `internal/settings` | schema, prefs, theme, user dir, file versions, system adapters, settings dialog |
+| `architecture/workspace.md` | `internal/workspace` | tabs, remembered state, bus, file browser, autosave, overlays, platform adapters |
+| `architecture/app.md` | `internal/app` | composition root: the `App`, its handlers and window |
+| `architecture/toolkit.md` | `uitoolkit` | core, view, widgets, markup API and drawing |
+| `architecture/persistence.md` | shared | formats and versions of every persisted file |
+| `architecture/limits.md` | shared | limits, fuzzing, known gaps |
+
+## Module dependencies
+
+```mermaid
+flowchart LR
+  app["app"] --> request & collection & response & settings & workspace
+  app --> toolkit["uitoolkit"]
+  collection --> request
+  response --> request
+  workspace --> request
+  request -. "textfmt, workspace" .-> response
+  settings -. "jsonview, workspace" .-> response
+  collection -. "collections" .-> settings
+  response -. "fileversion, userdir" .-> settings
+  workspace -. "fileversion, userdir" .-> settings
+  settings -. "prefs" .-> workspace
+```
+
+Solid edges are the normal direction (a domain root reached through its root). Dotted edges are
+the written exceptions in `internal/CLAUDE.md`. Nothing checks them yet.
+
+## Known layer gaps
+
+- A domain root imports a sub-package of its own domain: `collection` imports `collection/clientconfig`,
+  `workspace` imports `workspace/state`. Only `settings/fileversion` is a written exception.
+- `settings/prefs` imports `workspace`, and `workspace` imports `settings` leaves: the two
+  domains are cyclic at domain level.
+- `internal/exampleserver` imports `request/adapter/proto/ws`; no rule covers it.
+- No layer check runs in `make check`; `common/scripts/check-layers.sh` exists and is not wired
+  (it needs a `.harness/layers.txt`).

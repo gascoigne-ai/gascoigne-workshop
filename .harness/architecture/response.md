@@ -29,3 +29,8 @@
   no scripts (`pageCSP`) and `nosniff`, because the body comes from a server the user does not control
   and is shown on a local origin.
 - With no state path (tests, `-state ""`) no history or sent log is written.
+
+## JSON view
+
+`response/jsonview` turns a body into colored, foldable display lines (`Lines`, `Compact`).
+Invalid JSON and other text come back as plain lines, so the response pane renders any body.

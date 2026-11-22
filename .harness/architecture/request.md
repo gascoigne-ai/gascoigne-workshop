@@ -1,3 +1,47 @@
+## Model and protocols
+
+- `request.Request` is protocol-neutral. What differs per protocol is a row of `request.Protocols`;
+  A protocol name literal or a comparison with a `request.Protocol*` constant outside the rows and the
+  registry is a review failure.
+- Protocol, body type, auth type and API key location are parsed once, at the edge. An unknown one
+  fails the collection file (named), names the server or request of a client config, and skips a
+  sent-log line.
+- The URL bar and the Params table stay in sync through `request.WithParams`, `ParamsFromURL` and
+  `MergeParams`; the caller expands `{{variables}}` and folds the params in before sending.
+- `proto.Registry` maps each row of `request.Protocols` to a `request.Sender` (why the table is split: the `request.Protocols` doc); a test
+  checks both directions and that a connected row is a `Streamer`. `Send` errors only on misuse;
+  transport failures arrive in `Response.Err`, so the UI always has a value to render.
+- `rest`, `sse`, the HTTP transport of `mcp` and the `websocket` handshake share one request
+  builder and client factory (`proto/httpclient.go`). The Auth pane is applied last, so it wins over
+  a header typed by hand; a user `Content-Type` replaces the automatic one.
+- `Configured` gives the cookie jar, proxy, CA file and client certificate to `rest`, `sse` and
+  `mcp`, and only the TLS settings to `websocket` (Limits).
+- A multipart value `@path` sends a file; one rule, `request.FormFile`, serves the encoder, the access
+  check (`App.allowed`) and the Postman export.
+
+## Requests
+
+- **Variables**: `{{name}}` is colored green when the request resolves it and red when not, the same
+  in the URL field, the body editor and every table (`App.withVariables`, `App.cellStyler`).
+  Completion is a key (`Ctrl+Space`, `complete-variable`), not a popup while typing, so the field
+  keeps the keyboard; the pure part is `request.VarCompletion`.
+- **Path parameters**: a `:name` path segment has a `:name` row in Params, kept in step by
+  `MergeParams`; `Request.Expanded` fills it (`ApplyPathParams`) and it never reaches the query.
+- **Assertions** (`request/assert`): `Request.Tests` holds one assertion per line, run after
+  each response. A line that does not parse is a failure with the reason, so a typo never passes.
+- **Chaining**: a `set name = json PATH | header Name | status` line stores the value into the
+  active environment, else the collection variables. The value is `Literal` (saved as `literal`):
+  `{{...}}` inside it is never expanded, so a server reply cannot pull another variable, such as a
+  secret, into the next request.
+- **cURL import** (`request.ParseCurl`, the reverse of `proto.Curl`): POSIX-shell splitting, the
+  common flags mapped to a REST request, others skipped. Redirects are followed only with `-L`, as
+  in curl.
+- **Trust**: before a send or connect, `App.allowed` lists what the request does on
+  this machine (`request.Request.Accesses`: an MCP `stdio:` command, a file read outside the
+  collection folder). Anything not yet trusted opens a confirm dialog; Allow adds it to a
+  `request.AccessSet`, saved as `trusted` in `state.json`, and retries.
+- **Exit**: the window flushes pending collection edits on exit (`FlushWorkspace`).
+
 ## Protocols
 
 Each protocol is a client of its own in `request/adapter/proto` (its package doc says which are hand-written and why). A protocol that keeps a

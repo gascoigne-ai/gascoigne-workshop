@@ -61,7 +61,7 @@ const dragEdge = core.EdgeGrab
 // The Round family is not the per-side family of rule 1: it holds only the
 // corner masks some panel needed (top, bottom, bottom left), and a new mask
 // is added with the panel that needs it, not ahead (an accepted exception,
-// listed in .harness/architecture/toolkit-api.md).
+// listed in .harness/architecture/toolkit.md).
 func RoundT(control string) Option { return roundCorners(control, core.CornersTop) }
 
 // RoundB is RoundT for the bottom corners: a pane across the bottom of a

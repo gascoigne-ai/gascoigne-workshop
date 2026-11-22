@@ -6,7 +6,7 @@ Loaded when you work under `uitoolkit/`. Adds to `.harness/rules.md`.
 
 ## Toolkit API rules
 
-Apply when adding or changing anything exported. They exist so that a guess is usually right; a change that needs an exception says so in the doc comment of what breaks the rule and adds it to the exceptions in `.harness/architecture/toolkit-api.md`.
+Apply when adding or changing anything exported. They exist so that a guess is usually right; a change that needs an exception says so in the doc comment of what breaks the rule and adds it to the exceptions in `.harness/architecture/toolkit.md`.
 
 1. **Sides and axes.** One setting that can differ per side comes as the full family: all sides (`Pad`), an axis (`PadX`, `PadY`) and one side by letter suffix L, T, R, B (`PadL`...). This holds for padding, margin and border (`Border`, `BorderX`, `BorderY`, `BorderL`...). Never `Top`, `Bottom`, `Left` or `Right` words in option names, and never a half family.
 2. **Elements and options.** A constructor makes an element (`Row`, `Field`, `Button`); an option sets an attribute of it (`Gap`, `Bg`, `OnClick`). Constructors take their required data positionally and everything else as `opts ...Option`; containers take `items ...Item`. Options may stand anywhere and a later one wins; style puts them first.

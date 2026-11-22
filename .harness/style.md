@@ -66,7 +66,7 @@ Window chrome (`internal/app/window.go`, fixed numbers with a role each): header
 
 ### Scale
 
-- Widgets, layout and hit tests work in logical pixels; `Ctx` multiplies by `Scale` when it draws, so HiDPI stays sharp (`architecture/core.md`).
+- Widgets, layout and hit tests work in logical pixels; `Ctx` multiplies by `Scale` when it draws, so HiDPI stays sharp (`architecture/toolkit.md`).
 - **Interface scale** (`settings.UIScalePct`, slider 50 to 200 % in steps of 5, `settings.ScaleSliderMin/Max/Step`) multiplies the display factor and the platform base (`settings.BaseScale`: 1.1 on Linux, 1 elsewhere), so 100 % is the platform's normal size. Screenshots skip it. The slider resizes live, saves on release and follows the pointer in device pixels from the press, so the resizing UI never feeds back into the value. Remembered window sizes are in window pixels.
 - **Display scale on Linux.** Ebitengine reports 1 for an Xwayland window on a scaled monitor, so the App asks the `settings.DisplayScale` port (adapter `settings/adapter/displayscale`); `frameSize` then lays the UI out in window pixels over the real scale, with no supersampling. `Factor` returns a cached value and refreshes it in the background, so a hung compositor command never stalls a frame. Windows and macOS use Ebitengine's factor.
 - Fractional scales round text metrics to whole pixels (`architecture/limits.md`).
@@ -133,7 +133,7 @@ An unknown token draws in `Text`, so a typo stays visible.
 
 - The Corners setting scales every radius: square 0, soft 1 (the theme's own), round 1.5. Flat turns the one gradient into its flat `Hero` fill.
 - Tabs and toasts have no control, so they stay square under every Corners setting.
-- Borders are one-pixel hairlines in a token; edges snap to device pixels so neighbours share an edge (`architecture/toolkit-widgets.md`). The open tab's outline is the separate 2 px `Edge` family.
+- Borders are one-pixel hairlines in a token; edges snap to device pixels so neighbours share an edge (`architecture/toolkit.md`). The open tab's outline is the separate 2 px `Edge` family.
 - Bars are separated by `Border`, never `Rule`.
 - Something that fills a corner of a rounded panel rounds that corner to the panel's radius with `RoundT`, `RoundB` or `RoundBL` (`round-t`... in templates, argument `menu`), anti-aliased with alpha.
 - Floating panels (dialogs, menus, toasts) cast a `Shadow` shifted `ShadowOffset`, not blurred.
@@ -153,7 +153,7 @@ An unknown token draws in `Text`, so a typo stays visible.
 
 **Buttons.** `Button`: `Sunken` fill, `ChipText` label, outlined, brightens on hover, label padded 10, ellipsized only when the row has no room. `PrimaryButton`: `Accent` fill, `AccentText` label, `AccentLine` outline. `SegmentChip`: a primary button when chosen, a button otherwise. `LinkButton`: `AccentLine` text on no fill, `Hover` under the pointer. Dialog buttons are `RowH` high and at least 80 wide.
 
-**Fields.** `Sunken`, `RowH` high (`CompactH` inline), `BorderStrong` outline, `AccentLine` when focused; variables in a field are green when resolved and red when not (`architecture/requests.md`).
+**Fields.** `Sunken`, `RowH` high (`CompactH` inline), `BorderStrong` outline, `AccentLine` when focused; variables in a field are green when resolved and red when not (`architecture/request.md`).
 
 **Menus.** `Bg` panel, `menu` control, shadow, inset `MenuPad` (4), 120 to 420 wide; rows `MenuRowH` (24) padded 10, the hot row `Selected`, others `Hover` on hover; shortcut and hint lines small and muted; separators 9 high.
 
