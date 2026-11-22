@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fileversion"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/fileversion"
 )
 
 // The fixtures are settings.json as the program wrote it after the theme

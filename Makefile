@@ -24,7 +24,7 @@ FUZZ_TARGETS = \
 	./internal/request:FuzzDecodeJSONSchema \
 	./internal/request:FuzzURLParams \
 	./internal/request/assert:FuzzRun \
-	./internal/response/jsonview:FuzzCompact \
+	./internal/kernel/jsonview:FuzzCompact \
 	./internal/request/adapter/proto/ws:FuzzReadFrame \
 	./internal/request/adapter/proto:FuzzMCPDeliver \
 	./uitoolkit/markup:FuzzParse \
@@ -41,7 +41,7 @@ FUZZ_TARGETS = \
 	./internal/collection/adapter/store:FuzzLoad \
 	./internal/workspace/adapter/statefile:FuzzLoad \
 	./internal/settings:FuzzDecode \
-	./internal/settings/fileversion:FuzzRead \
+	./internal/kernel/fileversion:FuzzRead \
 	./internal/response/adapter/history:FuzzLoad \
 	./internal/response/adapter/history:FuzzLoadSent \
 	./internal/response/ui/respview:FuzzDecode \
@@ -55,7 +55,7 @@ FUZZ_TARGETS = \
 	./internal/request/adapter/proto:FuzzSample \
 	./internal/request:FuzzToolFields \
 	./internal/request:FuzzArguments \
-	./internal/response/jsonview:FuzzLines \
+	./internal/kernel/jsonview:FuzzLines \
 	./internal/settings/adapter/displayscale:FuzzParseMonitors \
 	./internal/settings/adapter/keyrepeat:FuzzParseHyprland \
 	./internal/settings/adapter/keyrepeat:FuzzParseGSettings \
@@ -74,7 +74,7 @@ vet-release:
 	go vet -tags release ./...
 
 # Directories that hold a file with a release build tag.
-RELEASE_BASE = cmd/workshop internal/collection internal/settings/userdir
+RELEASE_BASE = cmd/workshop internal/collection internal/kernel/userdir
 
 # The release test run covers RELEASE_BASE and every package whose build or
 # test binary links one of them: the rest compile the same under both tags.

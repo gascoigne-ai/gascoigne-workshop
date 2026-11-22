@@ -3,8 +3,8 @@ package app
 import (
 	"context"
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/textfmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/textfmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/bus"
 	"time"
 )

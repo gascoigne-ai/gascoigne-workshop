@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/openset"
 	"os"
 	"path/filepath"
 	"testing"
@@ -300,7 +301,7 @@ func TestTheSingleSavedCollectionOfAnOlderVersionStillOpens(t *testing.T) {
 	a.selectEnv(-1)
 	a.selectEnv(0)
 	st, err := settingsDisk.Load(settingsPath)
-	if err != nil || st.Workspace != "" || st.Environment != "" || len(st.Collections) != 1 || st.Collections[0] != (settings.OpenCollection{Folder: dir, Environment: "Dev"}) {
+	if err != nil || st.Workspace != "" || st.Environment != "" || len(st.Collections) != 1 || st.Collections[0] != (openset.OpenCollection{Folder: dir, Environment: "Dev"}) {
 		t.Fatalf("written %+v %v", st, err)
 	}
 }

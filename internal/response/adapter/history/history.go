@@ -8,15 +8,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/userdir"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/userdir"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"time"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/fileversion"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fileversion"
 )
 
 // Limit is how many responses are kept per request.

@@ -2,11 +2,12 @@ package app
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/fileversion"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/openset"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/ui/sentlog"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fileversion"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/colorpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/settingsui"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/shortcutpage"
@@ -101,7 +102,7 @@ type persistState struct {
 	welcomed         string                                     // the version whose welcome dialog was shown
 	initial          state.Window                               // window geometry of the last run
 	setIsRemembered  bool                                       // the open set is the remembered list (opened from it, or changed by the user since), so it is written whole
-	unreadable       []settings.OpenCollection                  // remembered folders that failed to load; kept in the list so a mount or a fix brings them back
+	unreadable       []openset.OpenCollection                   // remembered folders that failed to load; kept in the list so a mount or a fix brings them back
 	defaultWorkspace string                                     // beside it is the collections folder, where a first save goes
 	trusted          request.AccessSet                          // what the user allowed; remembered in the state file
 }

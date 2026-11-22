@@ -2,8 +2,8 @@ package settingsui
 
 import (
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/prefs"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
@@ -35,7 +35,7 @@ func (d *SettingsDialog) SetFont(host Host, role FontRole, name string) {
 	if name != "" {
 		family, ok := settings.Find(d.Families, name)
 		if !ok {
-			host.Send(prefs.Toast{Text: fmt.Sprintf("No installed font is called %q", name), Level: workspace.Error})
+			host.Send(prefs.Toast{Text: fmt.Sprintf("No installed font is called %q", name), Level: severity.Error})
 			return
 		}
 		name = family.Name

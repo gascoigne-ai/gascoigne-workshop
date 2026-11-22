@@ -5,6 +5,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/openapi"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/postman"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/tree"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 	"path/filepath"
@@ -58,18 +59,18 @@ var (
 func (a *App) importFolder(dir *request.Folder, kind importKind) {
 	text, err := a.ctx.Clipboard.Read()
 	if err != nil {
-		a.toast("Cannot read the clipboard: "+err.Error(), workspace.Error)
+		a.toast("Cannot read the clipboard: "+err.Error(), severity.Error)
 		return
 	}
 	got, err := kind.parse(text)
 	if err != nil {
-		a.toast(kind.refusal+err.Error(), workspace.Error)
+		a.toast(kind.refusal+err.Error(), severity.Error)
 		return
 	}
 	name := a.attachImport(dir, got)
 	a.status = "Imported " + name
 	if len(got.skipped) > 0 {
-		a.toast(fmt.Sprintf("%d %s, first: %s", len(got.skipped), kind.skippedWhat, got.skipped[0]), workspace.Error)
+		a.toast(fmt.Sprintf("%d %s, first: %s", len(got.skipped), kind.skippedWhat, got.skipped[0]), severity.Error)
 	}
 }
 
@@ -108,7 +109,7 @@ func (a *App) exportPostman(dir *request.Folder) {
 	}
 	data, err := postman.Export(dir, vars)
 	if err != nil {
-		a.toast("Export failed: "+err.Error(), workspace.Error)
+		a.toast("Export failed: "+err.Error(), severity.Error)
 		return
 	}
 	skipped := postman.Skipped(dir)
@@ -119,14 +120,14 @@ func (a *App) exportPostman(dir *request.Folder) {
 	a.pickFile("Export as Postman collection", workspace.SaveFile, name+".postman_collection.json", func(path string) {
 		a.writeFile(path, data, func(err error) {
 			if err != nil {
-				a.toast("Export failed: "+err.Error(), workspace.Error)
+				a.toast("Export failed: "+err.Error(), severity.Error)
 				return
 			}
 			msg := "Exported to " + filepath.Base(path)
 			if skipped > 0 {
 				msg += fmt.Sprintf(" (%d requests of other kinds left out)", skipped)
 			}
-			a.toast(msg, workspace.Info)
+			a.toast(msg, severity.Info)
 		})
 	})
 }

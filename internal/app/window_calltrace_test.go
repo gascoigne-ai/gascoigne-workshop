@@ -2,7 +2,7 @@ package app
 
 import (
 	"fmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/severity"
 	"strings"
 	"testing"
 
@@ -37,7 +37,7 @@ func TestAFailedSendIsTracedAsAnError(t *testing.T) {
 
 	var errors int
 	for _, entry := range a.calls.Entries() {
-		if entry.Level == workspace.Error {
+		if entry.Level == severity.Error {
 			errors++
 		}
 	}

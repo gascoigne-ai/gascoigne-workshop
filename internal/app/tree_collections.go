@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/severity"
 	"path/filepath"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/collection/collections"
@@ -53,17 +53,17 @@ func (a *App) promptNewCollection() {
 func (a *App) createCollection(text string) {
 	name, err := collections.CleanName(text)
 	if err != nil {
-		a.toast("Cannot create a collection: "+err.Error(), workspace.Error)
+		a.toast("Cannot create a collection: "+err.Error(), severity.Error)
 		return
 	}
 	parent := a.collectionsDir()
 	if parent == "" {
-		a.toast("There is no folder for new collections", workspace.Error)
+		a.toast("There is no folder for new collections", severity.Error)
 		return
 	}
 	dir, err := a.store.Create(parent, name)
 	if err != nil {
-		a.toast("Cannot create the collection: "+err.Error(), workspace.Error)
+		a.toast("Cannot create the collection: "+err.Error(), severity.Error)
 		return
 	}
 	a.openCollectionAt(dir)
@@ -80,11 +80,11 @@ func (a *App) promptRenameCollection(col *request.Collection) {
 func (a *App) renameCollection(col *request.Collection, text string) {
 	name, err := collections.CleanName(text)
 	if err != nil {
-		a.toast("Cannot rename: "+err.Error(), workspace.Error)
+		a.toast("Cannot rename: "+err.Error(), severity.Error)
 		return
 	}
 	if err := a.FlushWorkspace(); err != nil { // the writes in flight go to the old folder first
-		a.toast("Saving the collection failed: "+err.Error(), workspace.Error)
+		a.toast("Saving the collection failed: "+err.Error(), severity.Error)
 		return
 	}
 	entry, ok := a.open.ByCollection(col)
@@ -93,7 +93,7 @@ func (a *App) renameCollection(col *request.Collection, text string) {
 	}
 	dir, err := a.store.Rename(entry.Dir, name)
 	if err != nil {
-		a.toast("Cannot rename: "+err.Error(), workspace.Error)
+		a.toast("Cannot rename: "+err.Error(), severity.Error)
 		return
 	}
 	col.Name = name
@@ -125,14 +125,14 @@ func (a *App) deleteCollection(col *request.Collection) {
 	}
 	dir := entry.Dir
 	if err := a.store.Delete(dir); err != nil {
-		a.toast("Cannot delete the collection: "+err.Error(), workspace.Error)
+		a.toast("Cannot delete the collection: "+err.Error(), severity.Error)
 		return
 	}
 	// nothing is left to flush into the deleted folder
 	a.open = collections.Update(a.open, collections.Located{Collection: col, Dir: ""})
 	if len(a.open.Entries) > 1 {
 		a.closeCollection(col)
-		a.toast("Deleted "+filepath.Base(dir), workspace.Info)
+		a.toast("Deleted "+filepath.Base(dir), severity.Info)
 		return
 	}
 	listed, _ := a.store.List(a.collectionsDir())
@@ -140,12 +140,12 @@ func (a *App) deleteCollection(col *request.Collection) {
 	if next == "" {
 		var err error
 		if next, err = a.store.Create(a.collectionsDir(), "My collection"); err != nil {
-			a.toast("Deleted, but no collection could be opened: "+err.Error(), workspace.Error)
+			a.toast("Deleted, but no collection could be opened: "+err.Error(), severity.Error)
 			return
 		}
 	}
 	a.openWorkspaceAt(next)
-	a.toast("Deleted "+filepath.Base(dir), workspace.Info)
+	a.toast("Deleted "+filepath.Base(dir), severity.Info)
 }
 
 // onDisk is true when col has a folder; otherwise it tells the user to
@@ -154,6 +154,6 @@ func (a *App) onDisk(col *request.Collection, verb string) bool {
 	if entry, ok := a.open.ByCollection(col); ok && entry.Dir != "" {
 		return true
 	}
-	a.toast("The collection is not saved yet: save it first to "+verb+" it", workspace.Error)
+	a.toast("The collection is not saved yet: save it first to "+verb+" it", severity.Error)
 	return false
 }

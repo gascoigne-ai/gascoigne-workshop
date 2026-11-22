@@ -4,22 +4,24 @@ Loaded when you work under `internal/`. Adds to `.harness/rules.md`. This file i
 
 ## Layout
 
-- `internal/<domain>/`: domains are `request`, `collection`, `response`, `settings`, `workspace`.
-- The root package `internal/<domain>` is named after the domain. It holds the domain types, their rules and the ports at its boundary.
-- Sub-packages sit directly under the domain. A controller (state and decisions, no widget, no I/O) is such a package, for example `request/editor`, `collection/tree`, `workspace/tabs`.
-- Only two directories are zones: `ui/` (views and input) and `adapter/` (implementations of ports: network, files, system).
-- `internal/app` is the composition root: the `App`, its handlers and its window, in files prefixed by area (`request_`, `tree_`, `settings_`). It may import any package.
+Target layout (layout C, feature slices). Parts marked "not yet moved" still sit in the older domain layout; later tasks move them.
+
+- `internal/kernel/<name>`: shared leaves and the model that several features use. Moved: `severity` (message level), `fileversion`, `userdir`, `textfmt`, `jsonview`, `openset` (the `OpenCollection` record). The `request` model is not yet moved to the kernel and stays `internal/request`.
+- Feature slices: each feature is a directory with its model (root package), `ui/`, `adapter/` and a `FEATURE.md` saying what it owns. Not yet moved: today the slices are the domains `request`, `collection`, `response`, `settings`, `workspace`, with controllers as sub-packages (`request/editor`, `collection/tree`, `workspace/tabs`) and no `FEATURE.md`.
+- Platform: the OS adapters (window, clipboard, file dialog, fonts, system info). Not yet moved: they sit in the `adapter/` of `settings` and `workspace`.
+- App: `internal/app` is the composition root: the `App`, its handlers and its window, in files prefixed by area (`request_`, `tree_`, `settings_`). It may import any package.
 - `internal/exampleserver` is the local test server behind `cmd/example-server`.
+- Only `ui/` and `adapter/` are zone directories inside a domain. The root package `internal/<domain>` is named after the domain and holds its types, rules and ports.
 
 ## Imports
 
-- Dependencies point inward. The domain root imports no other package of its domain.
+- Dependencies point inward. The kernel imports no other `internal` package. The domain root imports no other package of its domain.
 - A controller imports its root and other controllers. It imports no toolkit, no Ebitengine and no `net/http`.
 - `ui` imports its root and controllers. It imports no adapter and no other `ui` package.
 - An adapter imports its root, controllers and adapters of its own domain. It never imports a `ui`.
-- Another domain is reached through its root package. The shared leaf packages `settings/fileversion`, `settings/userdir`, `response/textfmt` and `response/jsonview` are the written exceptions. `workspace` and `app` may also import the controllers and `ui` of other domains.
+- Another domain is reached through the kernel or through the `request` model. Nothing else crosses between `request`, `collection`, `response`, `settings` and `workspace`; `go list` shows it. `app` may import anything.
 - Written exception: `settings/theme` imports `uitoolkit/core` and `uitoolkit/theming`, because theme data is toolkit-bound. Its package doc says why.
-- A new package goes into a domain, or into its `ui` or `adapter` zone. No `utils`, `common` or `helpers`.
+- A new package goes into the kernel, a domain, or its `ui` or `adapter` zone. No `utils`, `common` or `helpers`.
 
 No test checks these rules. The import-layer check was removed in commit 7d856abc and is not restored (the user's choice), so a review keeps them.
 

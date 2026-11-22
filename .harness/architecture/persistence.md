@@ -8,7 +8,7 @@ why a slice); the newest is what the writer writes. Versions 0 and 1 share their
 except `.secrets.json`; the fallbacks for files from before several collections could be open stay in that decoder. The version is
 per file, not per collection, so a file read alone (a request file copied between collections, a
 history file) still says what it is. A whole-file write goes through `userdir.WriteFileAtomic`
-(temp file, then rename; its doc says why it is in `settings/userdir`); the sent log appends.
+(temp file, then rename; its doc says why it is in `kernel/userdir`); the sent log appends.
 Accepted (the user's answer): the first save after upgrading rewrites every collection file once, a
 one-time diff under version control; `CHANGELOG.md` says so.
 

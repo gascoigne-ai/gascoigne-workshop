@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/openset"
 	"os"
 	"path/filepath"
 	"strings"
@@ -118,7 +119,7 @@ func TestNewerRememberedCollectionIsToastedAtStart(t *testing.T) {
 		t.Fatal(err)
 	}
 	prefs := settings.Default()
-	prefs.RememberCollections([]settings.OpenCollection{{Folder: dir}})
+	prefs.RememberCollections([]openset.OpenCollection{{Folder: dir}})
 	settingsPath := filepath.Join(t.TempDir(), "settings.json")
 	if err := settingsDisk.Save(settingsPath, prefs); err != nil {
 		t.Fatal(err)

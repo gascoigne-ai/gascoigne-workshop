@@ -17,7 +17,8 @@ uitoolkit/           the GPU toolkit; knows nothing of requests (`uitoolkit/doc.
   widget             every component: buttons, menus, dialogs, tabs, fields, tables
   markup             templates (HTML-like) that build the same trees
   theming, engine    palettes and theme files; key bindings and frame pacing
-internal/<domain>/   request, collection, response, settings, workspace
+internal/kernel/     shared leaves: severity, fileversion, userdir, textfmt, jsonview, openset
+internal/<domain>/   request, collection, response, settings, workspace (feature slices, not yet moved)
   (root package)     types, rules and ports of the domain
   <controller>/      state and decisions, no widget, no I/O (tabs, tree, envs...)
   ui/<package>       views behind a Host

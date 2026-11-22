@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/severity"
 	"slices"
 	"strings"
 
@@ -173,7 +173,7 @@ func (a *App) openCollectionAt(dir string) {
 		return
 	}
 	if err := a.addCollection(dir); err != nil {
-		a.toast("Cannot open "+dir+": "+err.Error(), workspace.Error)
+		a.toast("Cannot open "+dir+": "+err.Error(), severity.Error)
 		return
 	}
 	a.status = "Opened " + collections.AbsDir(dir)
@@ -229,7 +229,7 @@ func (a *App) closeCollection(col *request.Collection) {
 	}
 	a.commitEdit()
 	if err := a.flushCollection(entry); err != nil {
-		a.toast("Saving "+col.Name+" failed: "+err.Error(), workspace.Error)
+		a.toast("Saving "+col.Name+" failed: "+err.Error(), severity.Error)
 		return
 	}
 	for _, open := range a.openTabs() {

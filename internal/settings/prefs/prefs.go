@@ -4,8 +4,8 @@
 package prefs
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 )
 
 // Msg is one thing a settings page asks for.
@@ -50,7 +50,7 @@ type FileMarked struct{ Saved bool }
 // Toast shows a message over the window.
 type Toast struct {
 	Text  string
-	Level workspace.Level
+	Level severity.Level
 }
 
 // SetStatus replaces the status line.

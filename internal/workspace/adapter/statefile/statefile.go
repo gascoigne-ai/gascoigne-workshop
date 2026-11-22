@@ -12,8 +12,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fileversion"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/userdir"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/fileversion"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/userdir"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/state"
 )

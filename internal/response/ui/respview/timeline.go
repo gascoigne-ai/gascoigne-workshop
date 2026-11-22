@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/textfmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/textfmt"
 )
 
 // Timeline is the Timeline pane: the total, the phases the connection

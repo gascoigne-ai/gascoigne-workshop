@@ -9,8 +9,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/userdir"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/userdir"
 )
 
 // Load reads path. A missing file is not an error and yields the

@@ -2,11 +2,12 @@ package app
 
 import (
 	"errors"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/fileversion"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/viewer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fileversion"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/prefs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/ui/shortcutpage"
@@ -145,7 +146,7 @@ func (a *App) persistSettings() {
 	}
 	if err := a.SettingsStore().Save(a.settingsPath, a.settings); err != nil {
 		a.status = "Could not save settings: " + err.Error()
-		a.toast(a.status, workspace.Error)
+		a.toast(a.status, severity.Error)
 		return
 	}
 	a.prefs.Stamp(a, a.settingsPath)
@@ -162,9 +163,9 @@ func (a *App) revertSettings() {
 	var clamped *settings.ClampedError
 	switch {
 	case errors.As(err, &clamped): // the values are usable: applied, with a note
-		a.toast(clamped.Error(), workspace.Error)
+		a.toast(clamped.Error(), severity.Error)
 	case err != nil:
-		a.toast("Could not read settings.json: "+err.Error(), workspace.Error)
+		a.toast("Could not read settings.json: "+err.Error(), severity.Error)
 		return
 	}
 	a.applySettings(loaded)

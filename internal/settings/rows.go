@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/openset"
 	"maps"
 	"slices"
 )
@@ -34,7 +35,7 @@ type ShortcutTable map[string]string
 type ColorTable map[string]map[string]string
 
 // Collections is the value of the CollectionList setting.
-type Collections []OpenCollection
+type Collections []openset.OpenCollection
 
 func (Text) sealed()          {}
 func (Flag) sealed()          {}
@@ -157,10 +158,10 @@ func colorsRow(field Field, access func(*Settings) *map[string]map[string]string
 		func(table ColorTable) map[string]map[string]string { return cloneColors(table) })
 }
 
-func collectionsRow(field Field, access func(*Settings) *[]OpenCollection) row {
+func collectionsRow(field Field, access func(*Settings) *[]openset.OpenCollection) row {
 	return typedRow(field, CollectionList, access,
-		func(list []OpenCollection) Collections { return slices.Clone(list) },
-		func(list Collections) []OpenCollection { return slices.Clone(list) })
+		func(list []openset.OpenCollection) Collections { return slices.Clone(list) },
+		func(list Collections) []openset.OpenCollection { return slices.Clone(list) })
 }
 
 func cloneColors(table map[string]map[string]string) map[string]map[string]string {

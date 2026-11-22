@@ -6,12 +6,12 @@ package calltrace
 
 import (
 	"fmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/severity"
 	"strings"
 	"time"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/textfmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/response/textfmt"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -42,7 +42,7 @@ type Host interface {
 type Entry struct {
 	At    time.Time
 	Text  string
-	Level workspace.Level
+	Level severity.Level
 }
 
 // Log is the call trace and the state of its dialog. The zero value is an
@@ -61,7 +61,7 @@ func (l *Log) Info(at time.Time, text string) { l.add(Entry{At: at, Text: text})
 
 // Error adds an entry that is shown as a failure.
 func (l *Log) Error(at time.Time, text string) {
-	l.add(Entry{At: at, Text: text, Level: workspace.Error})
+	l.add(Entry{At: at, Text: text, Level: severity.Error})
 }
 
 func (l *Log) add(entry Entry) {
@@ -141,7 +141,7 @@ func (l *Log) refresh() {
 	lines := make([]Line, len(entries))
 	for i, entry := range entries {
 		style := w.Text
-		if entry.Level == workspace.Error {
+		if entry.Level == severity.Error {
 			style = w.Error
 		}
 		lines[i] = Line{Spans: []Span{{Text: stamp(entry.At) + "  ", Style: w.Muted}, {Text: entry.Text, Style: style}}}

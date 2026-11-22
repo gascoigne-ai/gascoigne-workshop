@@ -3,9 +3,9 @@ package app
 import (
 	"context"
 	"errors"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request/editor"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace/bus"
 	"strings"
 
@@ -18,7 +18,7 @@ import (
 func (a *App) pickGRPCMethod(tab *reqTab) {
 	// Proto files are read without a server; reflection asks one.
 	if tab.Req.Proto.Kind() == request.SourceReflection && strings.TrimSpace(tab.Req.URL) == "" {
-		a.toast("Enter the gRPC server first, for example grpc://localhost:50051", workspace.Error)
+		a.toast("Enter the gRPC server first, for example grpc://localhost:50051", severity.Error)
 		return
 	}
 	req := tab.Req.Expanded(a.varsFor(tab.Req))
@@ -31,7 +31,7 @@ func (a *App) pickGRPCMethod(tab *reqTab) {
 		methods, err := a.listGRPCMethods(ctx, req)
 		return func() { // runs on the UI goroutine
 			if err != nil {
-				a.toast("Listing methods failed: "+err.Error(), workspace.Error)
+				a.toast("Listing methods failed: "+err.Error(), severity.Error)
 				return
 			}
 			items := make([]MenuItem, 0, len(methods))

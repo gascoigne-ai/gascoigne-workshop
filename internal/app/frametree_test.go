@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/prefs"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/workspace"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -166,7 +166,7 @@ func TestTheDrawnTreeMatchesAFreshBuildAcrossASession(t *testing.T) {
 	s.typeText("type in the cell", "ab")
 	s.click("click elsewhere ends the edit", 900, 600) // commitEdit runs after the view
 
-	a.toast("Saved", workspace.Info)
+	a.toast("Saved", severity.Info)
 	s.idle("toast shown", 2)
 	clock = clock.Add(10 * time.Second)
 	s.idle("toast expired", 2)
@@ -284,8 +284,8 @@ func TestTheDrawnTreeShowsATabMarkedSavedByTheAutosave(t *testing.T) {
 func TestAStepThatChangesWhatTheViewShowsMarksTheTreeStale(t *testing.T) {
 	folder := &request.Folder{Name: "closed"}
 	cases := map[string]func(a *App){
-		"a toast":            func(a *App) { a.toast("Saved", workspace.Info) },
-		"a settings message": func(a *App) { a.Send(prefs.Toast{Text: "hi", Level: workspace.Info}) },
+		"a toast":            func(a *App) { a.toast("Saved", severity.Info) },
+		"a settings message": func(a *App) { a.Send(prefs.Toast{Text: "hi", Level: severity.Info}) },
 		"bulk text turned to rows": func(a *App) {
 			a.bulk = &bulkEdit{pane: paramsPane, tab: a.cur(), area: widget.NewTextArea("a: b")}
 			a.closeBulk()

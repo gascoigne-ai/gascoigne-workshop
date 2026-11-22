@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/openset"
 	"os"
 	"path/filepath"
 	"strings"
@@ -77,18 +78,18 @@ func TestAnEnvironmentPickKeepsTheRememberedListItDidNotComeFrom(t *testing.T) {
 	alphaDir, otherDir := savedCollection(t, "Alpha"), savedCollection(t, "Other")
 	cases := []struct {
 		name       string
-		remembered []settings.OpenCollection
-		want       []settings.OpenCollection
+		remembered []openset.OpenCollection
+		want       []openset.OpenCollection
 	}{
 		{
 			name:       "listed",
-			remembered: []settings.OpenCollection{{Folder: otherDir, Environment: "Dev"}, {Folder: alphaDir}},
-			want:       []settings.OpenCollection{{Folder: otherDir, Environment: "Dev"}, {Folder: alphaDir, Environment: "Dev"}},
+			remembered: []openset.OpenCollection{{Folder: otherDir, Environment: "Dev"}, {Folder: alphaDir}},
+			want:       []openset.OpenCollection{{Folder: otherDir, Environment: "Dev"}, {Folder: alphaDir, Environment: "Dev"}},
 		},
 		{
 			name:       "not listed",
-			remembered: []settings.OpenCollection{{Folder: otherDir}},
-			want:       []settings.OpenCollection{{Folder: otherDir}},
+			remembered: []openset.OpenCollection{{Folder: otherDir}},
+			want:       []openset.OpenCollection{{Folder: otherDir}},
 		},
 	}
 	for _, tc := range cases {
@@ -130,7 +131,7 @@ func TestACollectionThatFailedToLoadStaysInTheRememberedList(t *testing.T) {
 	}
 	settingsPath := filepath.Join(t.TempDir(), "settings.json")
 	start := settings.Default()
-	start.Collections = []settings.OpenCollection{{Folder: alphaDir}, {Folder: brokenDir, Environment: "Dev"}}
+	start.Collections = []openset.OpenCollection{{Folder: alphaDir}, {Folder: brokenDir, Environment: "Dev"}}
 	if err := settingsDisk.Save(settingsPath, start); err != nil {
 		t.Fatal(err)
 	}
@@ -143,7 +144,7 @@ func TestACollectionThatFailedToLoadStaysInTheRememberedList(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(written.Collections) != 2 || written.Collections[1] != (settings.OpenCollection{Folder: brokenDir, Environment: "Dev"}) {
+	if len(written.Collections) != 2 || written.Collections[1] != (openset.OpenCollection{Folder: brokenDir, Environment: "Dev"}) {
 		t.Fatalf("remembered %+v, want the broken folder kept after %q", written.Collections, alphaDir)
 	}
 }

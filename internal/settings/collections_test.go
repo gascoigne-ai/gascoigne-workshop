@@ -2,6 +2,7 @@ package settings
 
 import (
 	"encoding/json"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/openset"
 	"reflect"
 	"testing"
 )
@@ -12,17 +13,17 @@ func TestRememberedCollections(t *testing.T) {
 	tests := []struct {
 		name     string
 		settings Settings
-		want     []OpenCollection
+		want     []openset.OpenCollection
 	}{
 		{"nothing remembered", Settings{}, nil},
-		{"the open set", Settings{Collections: []OpenCollection{{Folder: "/a", Environment: "Dev"}, {Folder: "/b"}}},
-			[]OpenCollection{{Folder: "/a", Environment: "Dev"}, {Folder: "/b"}}},
+		{"the open set", Settings{Collections: []openset.OpenCollection{{Folder: "/a", Environment: "Dev"}, {Folder: "/b"}}},
+			[]openset.OpenCollection{{Folder: "/a", Environment: "Dev"}, {Folder: "/b"}}},
 		{"an older file's workspace and environment", Settings{Workspace: "/w", Environment: "Dev"},
-			[]OpenCollection{{Folder: "/w", Environment: "Dev"}}},
+			[]openset.OpenCollection{{Folder: "/w", Environment: "Dev"}}},
 		{"an older file's environment of the built-in collection", Settings{Environment: "Dev"},
-			[]OpenCollection{{Environment: "Dev"}}},
-		{"the open set wins over the older keys", Settings{Collections: []OpenCollection{{Folder: "/a"}}, Workspace: "/w", Environment: "Dev"},
-			[]OpenCollection{{Folder: "/a"}}},
+			[]openset.OpenCollection{{Environment: "Dev"}}},
+		{"the open set wins over the older keys", Settings{Collections: []openset.OpenCollection{{Folder: "/a"}}, Workspace: "/w", Environment: "Dev"},
+			[]openset.OpenCollection{{Folder: "/a"}}},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -36,7 +37,7 @@ func TestRememberedCollections(t *testing.T) {
 func TestRememberCollectionsWritesOnlyTheNewKey(t *testing.T) {
 	s := Default()
 	s.Workspace, s.Environment = "/w", "Dev"
-	s.RememberCollections([]OpenCollection{{Folder: "/w", Environment: "Dev"}, {Folder: "/x"}})
+	s.RememberCollections([]openset.OpenCollection{{Folder: "/w", Environment: "Dev"}, {Folder: "/x"}})
 	text, err := Minimal(s)
 	if err != nil {
 		t.Fatal(err)
@@ -51,7 +52,7 @@ func TestRememberCollectionsWritesOnlyTheNewKey(t *testing.T) {
 		t.Fatalf("general section %s, want collections only", text)
 	}
 	back, err := Decode(text)
-	if err != nil || !reflect.DeepEqual(back.RememberedCollections(), []OpenCollection{{Folder: "/w", Environment: "Dev"}, {Folder: "/x"}}) {
+	if err != nil || !reflect.DeepEqual(back.RememberedCollections(), []openset.OpenCollection{{Folder: "/w", Environment: "Dev"}, {Folder: "/x"}}) {
 		t.Fatalf("read back %+v %v", back.Collections, err)
 	}
 }

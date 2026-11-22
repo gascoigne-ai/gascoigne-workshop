@@ -42,9 +42,10 @@ domain directory under `internal/` (root, controllers, `ui/`, `adapter/`) or the
 |---|---|---|
 | `architecture/request.md` | `internal/request` | model, ports, protocols (rest, websocket, sse, mcp, grpc), assert, editor, calltrace, mcpform |
 | `architecture/collection.md` | `internal/collection` | tree, environments, importers, transfer, store, client config, example server |
-| `architecture/response.md` | `internal/response` | viewer, json view, text formats, history, preview, sent log |
-| `architecture/settings.md` | `internal/settings` | schema, prefs, theme, user dir, file versions, system adapters, settings dialog |
+| `architecture/response.md` | `internal/response` | viewer, history, preview, sent log |
+| `architecture/settings.md` | `internal/settings` | schema, prefs, theme, system adapters, settings dialog |
 | `architecture/workspace.md` | `internal/workspace` | tabs, remembered state, bus, file browser, autosave, overlays, platform adapters |
+| `internal/kernel` (see `internal/CLAUDE.md`) | `internal/kernel` | shared leaves: `severity`, `fileversion`, `userdir`, `textfmt`, `jsonview`, `openset`; documented in their package docs and in the module files that use them |
 | `architecture/app.md` | `internal/app` | composition root: the `App`, its handlers and window |
 | `architecture/toolkit.md` | `uitoolkit` | core, view, widgets, markup API and drawing |
 | `architecture/persistence.md` | shared | formats and versions of every persisted file |
@@ -59,23 +60,17 @@ flowchart LR
   collection --> request
   response --> request
   workspace --> request
-  request -. "textfmt, workspace" .-> response
-  settings -. "jsonview, workspace" .-> response
-  collection -. "collections" .-> settings
-  response -. "fileversion, userdir" .-> settings
-  workspace -. "fileversion, userdir" .-> settings
-  settings -. "prefs" .-> workspace
+  collection & response & settings & workspace --> kernel["kernel (shared leaves)"]
+  request --> kernel
 ```
 
-Solid edges are the normal direction (a domain root reached through its root). Dotted edges are
-the written exceptions in `internal/CLAUDE.md`. Nothing checks them yet.
+Every edge between the five domains is either the `request` model or a kernel leaf; `go list` shows no
+other one. Nothing checks it in `make check` yet.
 
 ## Known layer gaps
 
 - A domain root imports a sub-package of its own domain: `collection` imports `collection/clientconfig`,
-  `workspace` imports `workspace/state`. Only `settings/fileversion` is a written exception.
-- `settings/prefs` imports `workspace`, and `workspace` imports `settings` leaves: the two
-  domains are cyclic at domain level.
+  `workspace` imports `workspace/state`. 
 - `internal/exampleserver` imports `request/adapter/proto/ws`; no rule covers it.
 - No layer check runs in `make check`; `common/scripts/check-layers.sh` exists and is not wired
   (it needs a `.harness/layers.txt`).

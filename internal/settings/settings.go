@@ -7,10 +7,11 @@ package settings
 
 import (
 	"encoding/json"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/openset"
 	"strconv"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/settings/fileversion"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/fileversion"
 )
 
 // Settings are the user preferences.
@@ -70,7 +71,7 @@ type Settings struct {
 	AutoSave bool `json:"autoSave"`
 
 	// Collections are the collections the window had open, in tree order.
-	Collections []OpenCollection `json:"collections,omitempty"`
+	Collections []openset.OpenCollection `json:"collections,omitempty"`
 
 	// Workspace and Environment are what a file written when one collection
 	// was open at a time remembers: its folder and the name of its active

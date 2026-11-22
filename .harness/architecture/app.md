@@ -97,7 +97,7 @@ The drop outline is the row's `DropBorder` token, empty when not the target.
   icon from the label (`menuIcons`). Every dialog has its own title bar and moves by it
   (`widget.Dialog` says why). The right-click handler of the innermost element wins, so a cell editor shows the
   text menu, not the row menu.
-- **Toasts** carry a `workspace.Level` (`internal/workspace`), mapped once to the toolkit's
+- **Toasts** carry a `severity.Level` (`internal/kernel/severity`), mapped once to the toolkit's
   kind; the settings, the sent log and the call trace use the same type. Info fades, errors stay.
 - The settings dialog's System page (`settings/ui/systempage`) reports
   `settings.SystemInfo`.
