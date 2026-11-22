@@ -2,6 +2,7 @@ package app
 
 import (
 	"errors"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/ui/formpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/filedialog"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/systeminfo"
@@ -217,7 +218,7 @@ func (readOnlySettings) Save(string, settings.Settings) error { return errNewerS
 func (readOnlySettings) WriteText(string, []byte) error       { return errNewerSettings }
 
 // FontStore is the installed fonts of this machine.
-func (a *App) FontStore() settings.FontStore { return a.fonts }
+func (a *App) FontStore() formpage.FontStore { return a.fonts }
 
 // Send applies a message of a settings page. The page's host is the App:
 // its other methods only read.

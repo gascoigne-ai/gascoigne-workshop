@@ -26,7 +26,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/adapter/settingsfile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/adapter/statefile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/platform/fonts"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/fonts"
 	"io"
 	"net/http"
 	"net/http/httptest"

@@ -3,11 +3,11 @@
 The settings the user can change: the schema, the settings file, the theme built from it, the dialog and its pages, and the system information it shows.
 
 ## Layout
-- `internal/feature/settings`: the model (`Settings`, `Schema`, the codec, `Minimal`, `Validate`, `Complete`) in `model.go` and its neighbours, and the ports it needs (`FontStore`).
+- `internal/feature/settings`: the model (`Settings`, `Schema`, the codec, `Minimal`, `Validate`, `Complete`) in `model.go` and its neighbours.
 - `prefs`: the messages a page sends; `theme`: how settings become a theme.
 - `form`: a controller, the state of the settings form and what a user's action on it means: a `Model` (the refusal note of each setting), typed messages (`Typed`, `Stepped`, `Reset`, `Choose`, `Picked`) and a pure `Update(model, settings, msg)` that returns the next model and the effects the view carries out (`Apply`, `Restore`, `Fill`, `ForgetTexts`, `ApplyFonts`, `AskFile`). It also holds the pure facts of the form: where a row puts its control (`PlaceOf`), the font and size pairs (`Faces`), the search match (`Matches`, `Lists`). It imports the settings root only, so it runs without a window. The typed text stays a `TextField` in the view (toolkit state); the values stay in `Settings`.- `adapter/settingsfile`: `settings.json` on disk.
 - `ui/settingsui`: the dialog shell (title bar, list of pages, search field, raw JSON view, Save) behind its `Host`. `ui/formpage`: the form view and the font drop-down, on top of `form`. `ui/colorpage`, `ui/shortcutpage`, `ui/systempage`: the three table pages. No `ui` package imports another, so the App draws the form through `Host.FormPage` and the tables through `Host.ExtraPage`, and composes the font list over the dialog (`menuView`).
-- OS adapters of the ports are in `internal/platform/fonts`. They import this package for the port types; this package never imports them (the app wires them).
+- Installed fonts come from the toolkit's `desktop/fonts` (`Family`, `Find`, `Matching`, the scan); this package keeps only the family names (`UIFont`, `CodeFont`).
 - Imports: the kernel only (`kernel/fileversion`, `kernel/openset`, `kernel/userdir`, `kernel/severity`, `kernel/jsonview`) plus the toolkit for the views and `theme`.
 
 ## Known gaps
@@ -72,7 +72,7 @@ flowchart LR
   it is only marked unsaved until Save. Turning it off writes that choice once; turning it on
   writes what was pending. Closing with unsaved changes asks Cancel, Discard or Save.
 - **Theme**: how settings become a theme (`theme.ThemeWith`) is in `style.md`, Theming pipeline.
-- **Fonts** (`internal/platform/fonts`): the scan runs in a goroutine at start and its result is
+- **Fonts** (`uitoolkit/desktop/fonts`): the scan runs in a goroutine at start and its result is
   applied on the UI goroutine. A saved family that is not installed stays saved, shows as
   `(not installed)` and draws in the built-in Go font. The font list builds only the rows in view,
   so only their files are read.

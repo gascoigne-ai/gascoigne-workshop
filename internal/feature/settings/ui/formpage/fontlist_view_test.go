@@ -3,12 +3,12 @@ package formpage
 import (
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/form"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/fonts"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	core "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -23,10 +23,10 @@ const (
 
 // manyFamilies are 300 families whose files cannot be read, so every row
 // shows its name in the interface font.
-func manyFamilies() []settings.Family {
-	var families []settings.Family
+func manyFamilies() []fonts.Family {
+	var families []fonts.Family
 	for i := range 300 {
-		families = append(families, settings.Family{Name: fmt.Sprintf("Family %03d", i), Regular: fmt.Sprintf("none#%d", i)})
+		families = append(families, fonts.Family{Name: fmt.Sprintf("Family %03d", i), Regular: fmt.Sprintf("none#%d", i)})
 	}
 	return families
 }
@@ -41,14 +41,14 @@ func TestTheFontListLaysOutAsPinned(t *testing.T) {
 		role          form.FontRole
 		current       string // the family in use for role
 		search        string
-		families      func(t *testing.T) []settings.Family
+		families      func(t *testing.T) []fonts.Family
 	}{
 		{"builtin-selected-wide", listWideW, listWideH, form.FontCode, "", "", testFamilies},
 		{"family-selected-narrow", listNarrowW, listNarrowH, form.FontUI, "Go Mono", "", testFamilies},
 		{"searched-wide", listWideW, listWideH, form.FontUI, "Go", "mono", testFamilies},
 		{"no-match-wide", listWideW, listWideH, form.FontUI, "", "nothing like it", testFamilies},
-		{"no-families-narrow", listNarrowW, listNarrowH, form.FontUI, "", "", func(*testing.T) []settings.Family { return nil }},
-		{"many-scrolled-wide", listWideW, listWideH, form.FontUI, "Family 150", "", func(*testing.T) []settings.Family { return manyFamilies() }},
+		{"no-families-narrow", listNarrowW, listNarrowH, form.FontUI, "", "", func(*testing.T) []fonts.Family { return nil }},
+		{"many-scrolled-wide", listWideW, listWideH, form.FontUI, "Family 150", "", func(*testing.T) []fonts.Family { return manyFamilies() }},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -92,7 +92,7 @@ type listDriver struct {
 	host *fakeHost
 }
 
-func newListDriver(t *testing.T, families []settings.Family) *listDriver {
+func newListDriver(t *testing.T, families []fonts.Family) *listDriver {
 	t.Helper()
 	ctx, err := core.NewCtx(testTheme())
 	if err != nil {

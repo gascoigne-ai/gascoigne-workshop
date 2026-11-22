@@ -2,11 +2,11 @@ package formpage
 
 import (
 	"bytes"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/fonts"
 	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/form"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
@@ -81,7 +81,7 @@ func (p *Page) loadedFaces() int { return len(p.list.faces) }
 
 // face is the font of family, read the first time it is asked for; nil
 // when the file cannot be read, which draws the name in the interface font.
-func (p *Page) face(host Host, family settings.Family) *text.GoTextFaceSource {
+func (p *Page) face(host Host, family fonts.Family) *text.GoTextFaceSource {
 	if source, seen := p.list.faces[family.Regular]; seen {
 		return source
 	}
@@ -89,7 +89,7 @@ func (p *Page) face(host Host, family settings.Family) *text.GoTextFaceSource {
 		p.list.faces = map[string]*text.GoTextFaceSource{}
 	}
 	var source *text.GoTextFaceSource
-	if regular, _, err := host.FontStore().Load(settings.Family{Name: family.Name, Regular: family.Regular}); err == nil {
+	if regular, _, err := host.FontStore().Load(fonts.Family{Name: family.Name, Regular: family.Regular}); err == nil {
 		source, _ = text.NewGoTextFaceSource(bytes.NewReader(regular))
 	}
 	p.list.faces[family.Regular] = source
@@ -100,7 +100,7 @@ func (p *Page) face(host Host, family settings.Family) *text.GoTextFaceSource {
 // in its font, and a chevron; clicking opens the dropdown.
 func (p *Page) fontControl(ctx *w.Ctx, host Host, role form.FontRole) Node {
 	name := form.SavedFont(host.Settings(), role)
-	family, found := settings.Find(p.Families, name)
+	family, found := fonts.Find(p.Families, name)
 	current := fontChoice{Name: builtIn, Muted: true}
 	switch {
 	case found:
@@ -116,8 +116,8 @@ func (p *Page) fontControl(ctx *w.Ctx, host Host, role form.FontRole) Node {
 }
 
 // matchingFamilies are the families whose name contains the search text.
-func (p *Page) matchingFamilies() []settings.Family {
-	return settings.Matching(p.Families, p.FontSearch.Text, len(p.Families))
+func (p *Page) matchingFamilies() []fonts.Family {
+	return fonts.Matching(p.Families, p.FontSearch.Text, len(p.Families))
 }
 
 // FontList is the dropdown while it is open: a search field and the

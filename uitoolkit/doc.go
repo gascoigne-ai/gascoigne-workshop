@@ -21,7 +21,7 @@
 //     small program with a window).
 //   - desktop: what the OS offers a window that Ebitengine does not: the
 //     Dock icon, the display scale, the key repeat timing, the system
-//     file chooser and the system report, per OS.
+//     file chooser, the system report and the installed fonts, per OS.
 //   - theming: everything that makes a core.Theme: the JSON theme files, the
 //     dark and light palettes, color math, and appearance preferences.
 //

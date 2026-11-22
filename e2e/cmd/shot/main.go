@@ -27,9 +27,9 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/adapter/settingsfile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/adapter/folders"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/adapter/statefile"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/platform/fonts"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/displayscale"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/filedialog"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/fonts"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/keyrepeat"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/systeminfo"
 

@@ -4,7 +4,7 @@
 // app bundle (go run, an editor's run button). On other systems SetDockIcon
 // does nothing. The sub-packages ask the desktop for its display scale
 // (displayscale), its key repeat timing (keyrepeat) a file name
-// (filedialog) and the system report (systeminfo); each differs per OS and needs an OS call or command that
+// (filedialog), the system report (systeminfo) and the installed fonts (fonts); each differs per OS and needs an OS call or command that
 // Ebitengine does not offer.
 //
 // It lives in the toolkit because every program with a window needs the same

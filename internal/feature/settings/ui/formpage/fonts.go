@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/prefs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/kernel/severity"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/fonts"
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
@@ -17,7 +18,7 @@ import (
 func (p *Page) SetFont(host Host, role form.FontRole, name string) {
 	name = strings.TrimSpace(name)
 	if name != "" {
-		family, ok := settings.Find(p.Families, name)
+		family, ok := fonts.Find(p.Families, name)
 		if !ok {
 			host.Send(prefs.Toast{Text: fmt.Sprintf("No installed font is called %q", name), Level: severity.Error})
 			return
@@ -36,7 +37,7 @@ func (p *Page) SetFont(host Host, role form.FontRole, name string) {
 
 // FontsScanned receives the installed families and applies the saved
 // choices, which could not be resolved before.
-func (p *Page) FontsScanned(host Host, families []settings.Family) {
+func (p *Page) FontsScanned(host Host, families []fonts.Family) {
 	p.Families = families
 	p.ApplyFonts(host)
 }
@@ -48,7 +49,7 @@ func (p *Page) ApplyFonts(host Host) {
 	current := host.Settings()
 	var chosen [2]w.FontData
 	for _, role := range []form.FontRole{form.FontUI, form.FontCode} {
-		family, ok := settings.Find(p.Families, form.SavedFont(current, role))
+		family, ok := fonts.Find(p.Families, form.SavedFont(current, role))
 		if !ok {
 			continue
 		}

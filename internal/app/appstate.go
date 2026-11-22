@@ -38,7 +38,7 @@ type ports struct {
 	folders      workspace.Folders                // what the in-app file browser lists
 	now          func() time.Time                 // the clock, replaced in tests
 	histories    func(dir string) history.History // nil keeps no history
-	fonts        settings.FontStore
+	fonts        formpage.FontStore
 	display      DisplayScale
 	system       SystemInfo // what the System page of the settings shows; nil has no report
 	settingFiles settings.SettingsStore

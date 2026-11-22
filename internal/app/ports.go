@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/filedialog"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/fonts"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/systeminfo"
 	"time"
 
@@ -48,8 +49,8 @@ func (noBrowser) Show(context.Context, []byte, string) error {
 // noFonts is the font store of an app started without one: no families.
 type noFonts struct{}
 
-func (noFonts) Scan() []settings.Family { return nil }
-func (noFonts) Load(settings.Family) ([]byte, []byte, error) {
+func (noFonts) Scan() []fonts.Family { return nil }
+func (noFonts) Load(fonts.Family) ([]byte, []byte, error) {
 	return nil, nil, errors.New("no font store")
 }
 

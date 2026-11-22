@@ -12,9 +12,19 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/form"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/prefs"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/fonts"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
+
+// FontStore finds installed fonts and reads their files. The toolkit's
+// desktop/fonts package implements it; the tests of this package use it too.
+type FontStore interface {
+	// Scan lists the installed families, sorted by name.
+	Scan() []fonts.Family
+	// Load reads the regular and bold files of family.
+	Load(family fonts.Family) (regular, bold []byte, err error)
+}
 
 // Host is what the form needs from the application: reads, and Send for
 // everything it asks to be done.
@@ -26,7 +36,7 @@ type Host interface {
 	// Send asks the application to do something (see package prefs).
 	Send(msg prefs.Msg)
 	// FontStore finds installed fonts and reads their files.
-	FontStore() settings.FontStore
+	FontStore() FontStore
 	// SetFonts switches the interface and code fonts; the error says why
 	// they could not be used.
 	SetFonts(ui, code w.FontData) error
@@ -45,8 +55,8 @@ type Page struct {
 	inputs map[string]*TextField // by key; the text of the fields of text and number settings
 	scale  SliderState
 
-	Families   []settings.Family // installed font families, once scanned
-	FontSearch TextField         // narrows the font dropdown
+	Families   []fonts.Family // installed font families, once scanned
+	FontSearch TextField      // narrows the font dropdown
 	list       fontList
 }
 

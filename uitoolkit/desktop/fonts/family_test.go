@@ -1,4 +1,4 @@
-package settings
+package fonts
 
 import "testing"
 

@@ -9,6 +9,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/theme"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/ui/formpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/autosave"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
@@ -42,7 +43,7 @@ type Options struct {
 	System           SystemInfo                                    // the system and GPU report of the settings; nil has none
 	KeyRepeat        KeyRepeat                                     // the desktop's key repeat timing; nil keeps the built-in one
 	Display          DisplayScale                                  // the desktop's display scale when the window system hides it; nil has none
-	Fonts            settings.FontStore                            // installed fonts; nil has none
+	Fonts            formpage.FontStore                            // installed fonts; nil has none
 	SettingsFiles    settings.SettingsStore                        // the settings file; nil reads the defaults and cannot save
 	Previews         send.BodyPreview                              // shows a response body in the browser; nil has none
 	Clock            Clock                                         // the time source; nil uses the wall clock
@@ -70,7 +71,7 @@ func (opts Options) withDefaults() Options {
 	opts.SettingsFiles = cmp.Or[settings.SettingsStore](opts.SettingsFiles, noSettingFiles{})
 	opts.States = cmp.Or[workspace.StateStore](opts.States, noStates{})
 	opts.Store = cmp.Or[collection.Store](opts.Store, noStore{})
-	opts.Fonts = cmp.Or[settings.FontStore](opts.Fonts, noFonts{})
+	opts.Fonts = cmp.Or[formpage.FontStore](opts.Fonts, noFonts{})
 	opts.Files = cmp.Or[FileDialog](opts.Files, noFileDialog{})
 	opts.Folders = cmp.Or[workspace.Folders](opts.Folders, noFolders{})
 	opts.Previews = cmp.Or[send.BodyPreview](opts.Previews, noBrowser{})

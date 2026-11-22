@@ -10,9 +10,9 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/adapter/settingsfile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/prefs"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/platform/fonts"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/fonts"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
@@ -41,7 +41,7 @@ func (h *fakeHost) Size() (int, int)                   { return 1280, 800 }
 func (h *fakeHost) Settings() settings.Settings        { return h.current }
 func (h *fakeHost) Pointer() (int, int)                { return 400, 300 }
 func (h *fakeHost) OpenPage(id string)                 { h.opened = id }
-func (h *fakeHost) FontStore() settings.FontStore      { return fonts.System{} }
+func (h *fakeHost) FontStore() FontStore               { return fonts.System{} }
 func (h *fakeHost) SetFonts(ui, code w.FontData) error { h.fontsSet++; return nil }
 
 // Send routes a message to the fake's own recorder of it.
