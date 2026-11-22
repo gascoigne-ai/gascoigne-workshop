@@ -28,11 +28,11 @@ type Line struct {
 // CodeView is a read-only, scrollable, foldable text viewer with line
 // numbers.
 type CodeView struct {
-	Lines    []Line
-	Folded   map[int]bool // by original line index
-	ScrollY  int          // pixels
-	ScrollX  int          // pixels
-	maxRunes int          // runes in the widest line, for the horizontal extent
+	Lines   []Line
+	Folded  map[int]bool // by original line index
+	ScrollY int          // pixels
+	ScrollX int          // pixels
+	maxCols int          // display columns of the widest line, for the horizontal extent
 
 	// Text selection. Focused views answer Ctrl+C, Ctrl+A and paging keys.
 	Focused    bool
@@ -80,7 +80,7 @@ func (v *CodeView) layoutAt(width float64, geometry codeGeometry) wrapLayout {
 	for i, line := range visible {
 		lines[i] = wrapLine{line: line, text: []rune(v.lineText(line)), whole: v.folded(line)}
 	}
-	return layoutWrap(lines, width, func(rune) float64 { return geometry.adv })
+	return layoutWrap(lines, width, monoColumns(geometry.adv))
 }
 
 // folded reports whether line i is shown folded, as one row of its preview.
@@ -118,14 +118,11 @@ func (v *CodeView) SetLines(lines []Line) {
 	v.Folded = map[int]bool{}
 	v.ScrollY = 0
 	v.HasSel, v.dragging, v.drag = false, false, barDrag{}
-	v.ScrollX, v.maxRunes = 0, 0
+	v.ScrollX, v.maxCols = 0, 0
 	v.matches, v.current, v.reveal = nil, -1, noReveal
 	for i := range lines {
-		n := 0
-		for _, sp := range lines[i].Spans {
-			n += len([]rune(sp.Text))
-		}
-		v.maxRunes = max(v.maxRunes, n)
+		runes := []rune(spanText(lines[i].Spans))
+		v.maxCols = max(v.maxCols, core.TextColumn(runes, len(runes)))
 	}
 }
 
@@ -469,7 +466,8 @@ func (v *CodeView) updateKeys(ctx *core.Ctx, geometry codeGeometry, sizes bars, 
 // Line numbers and fold arrows stay put while the text scrolls sideways.
 func (v *CodeView) Draw(ctx *core.Ctx, dst *ebiten.Image, rect core.Rect) {
 	g := v.geometry(ctx, rect)
-	rows := v.layout(g, rect).rows
+	layout := v.layout(g, rect)
+	rows := layout.rows
 	b := v.bars(ctx, rect, g, len(rows))
 	v.clampScroll(ctx, rect, g, b, len(rows))
 	muted := ctx.Color(core.Muted)
@@ -487,16 +485,16 @@ func (v *CodeView) Draw(ctx *core.Ctx, dst *ebiten.Image, rect core.Rect) {
 		idx := row.line
 		line := v.Lines[idx]
 		cell := core.Rect{X: rect.X, Y: y, W: b.viewW, H: g.lineH}
-		v.drawMatches(ctx, text, g, cell, row)
+		v.drawMatches(ctx, text, g, layout, cell, row)
 		if lo, hi, ok := v.selRange(); ok && idx >= lo.line && idx <= hi.line {
-			v.drawSelection(ctx, text, g, cell, row, lo, hi)
+			v.drawSelection(ctx, text, g, layout, cell, row, lo, hi)
 		}
 
 		spans := v.shownSpans(idx)
 		if row.from > 0 || row.to < v.lineLen(idx) {
 			spans = cutSpans(spans, row.from, row.to)
 		}
-		g.drawSpans(ctx, text, v.ScrollX, cell, spans)
+		g.drawSpans(ctx, text, v.ScrollX, cell, row, spans)
 
 		if row.from > 0 { // a continuation row has no number and no fold arrow
 			continue
@@ -521,7 +519,7 @@ func (v *CodeView) contentWidth(ctx *core.Ctx, rect core.Rect) int {
 		return 0 // wrapped text fits the width
 	}
 	g := v.geometry(ctx, rect)
-	return g.textX - rect.X + g.colX(v.maxRunes) + core.Gutter
+	return g.textX - rect.X + g.colX(v.maxCols) + core.Gutter
 }
 
 func (v *CodeView) bars(ctx *core.Ctx, rect core.Rect, geometry codeGeometry, visible int) bars {
@@ -533,7 +531,7 @@ func (v *CodeView) Selected() bool { _, _, ok := v.selRange(); return ok }
 
 // drawSelection fills the selected part of line idx; lines that continue
 // into the next selected line also fill one character for the newline.
-func (v *CodeView) drawSelection(ctx *core.Ctx, dst *ebiten.Image, geometry codeGeometry, cell core.Rect, row visualRow, lo, hi textPos) {
+func (v *CodeView) drawSelection(ctx *core.Ctx, dst *ebiten.Image, geometry codeGeometry, layout wrapLayout, cell core.Rect, row visualRow, lo, hi textPos) {
 	idx := row.line
 	from, to := row.from, row.to
 	if idx == lo.line {
@@ -548,7 +546,7 @@ func (v *CodeView) drawSelection(ctx *core.Ctx, dst *ebiten.Image, geometry code
 	if to < from {
 		return
 	}
-	ctx.Fill(dst, geometry.selectionRect(v.ScrollX, from-row.from, to-row.from, cell.Y, cell.H), ctx.Color(core.Selection))
+	ctx.Fill(dst, geometry.selectionRect(v.ScrollX, layout.colIn(row, from), layout.colIn(row, to), cell.Y, cell.H), ctx.Color(core.Selection))
 }
 
 // Match is one search hit: an original line, a rune column and a length.
@@ -626,10 +624,11 @@ func (v *CodeView) applyReveal(rect core.Rect, geometry codeGeometry, sizes bars
 
 // drawMatches fills the search hits on a row. A folded row shows a
 // preview, whose columns are not the line's, so it shows no hits.
-func (v *CodeView) drawMatches(ctx *core.Ctx, dst *ebiten.Image, geometry codeGeometry, cell core.Rect, row visualRow) {
+func (v *CodeView) drawMatches(ctx *core.Ctx, dst *ebiten.Image, geometry codeGeometry, layout wrapLayout, cell core.Rect, row visualRow) {
 	if v.folded(row.line) {
 		return
 	}
+	walker := layout.walk(row) // matches come sorted, so one pass counts all their columns
 	for i, m := range v.matches {
 		from, to := max(m.Col, row.from), min(m.Col+m.Len, row.to)
 		if m.Line != row.line || to <= from {
@@ -639,8 +638,7 @@ func (v *CodeView) drawMatches(ctx *core.Ctx, dst *ebiten.Image, geometry codeGe
 		if i == v.current {
 			tok = core.FindActive
 		}
-		x := geometry.textX - v.ScrollX + geometry.colX(from-row.from)
-		ctx.Fill(dst, core.Rect{X: x, Y: cell.Y, W: geometry.colX(to-row.from) - geometry.colX(from-row.from), H: cell.H}, ctx.Color(tok))
+		ctx.Fill(dst, geometry.selectionRect(v.ScrollX, walker.colIn(from), walker.colIn(to), cell.Y, cell.H), ctx.Color(tok))
 	}
 }
 

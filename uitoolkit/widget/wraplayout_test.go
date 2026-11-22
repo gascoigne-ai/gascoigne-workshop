@@ -3,19 +3,18 @@ package widget
 import (
 	"reflect"
 	"testing"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
-// fakeMeasure stands in for a font: one unit per rune, four for a tab and
-// two for the CJK runes that a real font draws double wide.
-func fakeMeasure(char rune) float64 {
-	switch {
-	case char == '\t':
-		return 4
-	case char >= 0x2E80:
-		return 2
+// fakeColumns stands in for a font: one column per rune, two for a wide
+// one (CJK and up), a tab to its stop as in the views; one pixel a column.
+var fakeColumns = columns{next: func(col int, char rune) int {
+	if char >= 0x2E80 {
+		return col + 2
 	}
-	return 1
-}
+	return core.ColumnAfter(col, char)
+}, adv: 1}
 
 func oneLine(text string) []wrapLine { return []wrapLine{{line: 0, text: []rune(text)}} }
 
@@ -40,8 +39,8 @@ func TestLayoutWrapBreaksLinesIntoVisualRows(t *testing.T) {
 			[]visualRow{{0, 0, 6, 0}}},
 		{"punctuation stays at the end of its row", oneLine(`{"key":"value"}`), 10,
 			[]visualRow{{0, 0, 8, 0}, {0, 8, 15, 8}}},
-		{"a tab is measured and hangs like a space", oneLine("a\tb"), 4,
-			[]visualRow{{0, 0, 2, 0}, {0, 2, 3, 5}}},
+		{"a tab advances to the next tab stop and hangs like a space", oneLine("a\tb"), 4,
+			[]visualRow{{0, 0, 2, 0}, {0, 2, 3, 4}}},
 		{"a tab ends the row before the word", oneLine("\tabcd"), 6,
 			[]visualRow{{0, 0, 1, 0}, {0, 1, 5, 4}}},
 		{"wide runes are measured by their width", oneLine("日本語テキスト"), 5,
@@ -62,7 +61,7 @@ func TestLayoutWrapBreaksLinesIntoVisualRows(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := layoutWrap(tt.lines, tt.width, fakeMeasure).rows
+			got := layoutWrap(tt.lines, tt.width, fakeColumns).rows
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Fatalf("got %v, want %v", got, tt.want)
 			}
@@ -78,7 +77,7 @@ func sample() wrapLayout {
 		{line: 0, text: []rune("hello world foo")},
 		{line: 2, text: nil},
 		{line: 3, text: []rune("a\tb")},
-	}, 8, fakeMeasure)
+	}, 8, fakeColumns)
 }
 
 func TestWrapLayoutRowOfAPositionTakesTheBreakToTheNextRow(t *testing.T) {
@@ -117,7 +116,7 @@ func TestWrapLayoutMapsPositionsToPixelsAndBack(t *testing.T) {
 		{"the start of the text", textPos{0, 0}, 0, 0},
 		{"inside a continuation row", textPos{0, 8}, 1, 2},
 		{"the end of the line", textPos{0, 15}, 2, 3},
-		{"after a tab", textPos{3, 2}, 4, 5},
+		{"after a tab", textPos{3, 2}, 4, 4},
 		{"before a tab", textPos{3, 1}, 4, 1},
 	}
 	layout := sample()
@@ -146,8 +145,8 @@ func TestWrapLayoutPosAtPicksTheNearestColumnInsideTheRow(t *testing.T) {
 		{"just after a rune's middle", 1, 2.6, textPos{0, 9}},
 		{"right of a continued row stays before its break", 1, 100, textPos{0, 11}},
 		{"right of the last row is the line's end", 2, 100, textPos{0, 15}},
-		{"a wide tab rounds by its own width", 4, 2.9, textPos{3, 1}},
-		{"past a tab's middle is after it", 4, 3.1, textPos{3, 2}},
+		{"a tab's gap rounds by its own width", 4, 2.4, textPos{3, 1}},
+		{"past a tab's middle is after it", 4, 2.6, textPos{3, 2}},
 		{"an empty line", 3, 5, textPos{2, 0}},
 		{"a row above the first clamps to it", -2, 0, textPos{0, 0}},
 		{"a row below the last clamps to it", 99, 100, textPos{3, 3}},
@@ -165,8 +164,8 @@ func TestWrapLayoutPosAtPicksTheNearestColumnInsideTheRow(t *testing.T) {
 func TestWrapLayoutPosAtStaysOnTheRowThatWasHit(t *testing.T) {
 	layouts := map[string]wrapLayout{
 		"word breaks": sample(),
-		"hard breaks": layoutWrap(oneLine("abcdefghijklmnop"), 5, fakeMeasure),
-		"wide runes":  layoutWrap(oneLine("日本語テキスト"), 5, fakeMeasure),
+		"hard breaks": layoutWrap(oneLine("abcdefghijklmnop"), 5, fakeColumns),
+		"wide runes":  layoutWrap(oneLine("日本語テキスト"), 5, fakeColumns),
 	}
 	for name, layout := range layouts {
 		for row := range layout.rows {
@@ -195,7 +194,7 @@ func TestWrapLayoutMapsScrollRowsToLinesAndBack(t *testing.T) {
 }
 
 func TestWrapLayoutOfNoLinesAnswersWithoutRows(t *testing.T) {
-	layout := layoutWrap(nil, 10, fakeMeasure)
+	layout := layoutWrap(nil, 10, fakeColumns)
 	if got := layout.rowOf(textPos{0, 0}); got != -1 {
 		t.Fatalf("rowOf = %d, want -1", got)
 	}
@@ -208,14 +207,14 @@ func TestWrapLayoutOfNoLinesAnswersWithoutRows(t *testing.T) {
 }
 
 // FuzzWrapRunes: any text at any width, including zero and negative, with
-// a measure that gives every rune a width; it must terminate and keep
+// any advance a column; it must terminate and keep
 // every rune in some row.
 func FuzzWrapRunes(fuzz *testing.F) {
 	fuzz.Add("hello world, wrapped", 40.0, 8.0)
 	fuzz.Add("żółw", 0.0, 8.0)
 	fuzz.Add("a b", -5.0, 0.0)
 	fuzz.Fuzz(func(t *testing.T, text string, width, advance float64) {
-		rows := wrapRunes(0, []rune(text), width, func(rune) float64 { return advance })
+		rows := wrapRunes(0, []rune(text), width, columns{next: core.ColumnAfter, adv: advance})
 		covered := 0
 		for _, row := range rows {
 			covered += row.to - row.from

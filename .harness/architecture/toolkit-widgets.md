@@ -21,4 +21,7 @@
   app drops from 60 to 30 updates. `engine.MinFPS` (10) draws at least every 100 ms, so a phase
   change shows.
 - **Monospace columns.** `CodeView` and `TextArea` share `monoGrid`, which places columns by the
-  exact advance so the caret, selection, matches and clicks stay on the text.
+  exact advance so the caret, selection, matches and clicks stay on the text. A tab advances to
+  the next stop of `core.TabStop` columns along its line (`core.ColumnAfter`); the wrap layout keeps
+  each row's start column, so drawing, the caret, selection, matches, clicks, wrapping and the
+  horizontal extent all count it the same way. The text keeps the real tab (display only).

@@ -3,6 +3,8 @@ package widget
 import (
 	"sort"
 	"unicode"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 // wrapLine is one logical line handed to the wrap layout.
@@ -13,66 +15,87 @@ type wrapLine struct {
 }
 
 // visualRow is one row of wrapped text: runes from..to (to exclusive) of an
-// original line. x is the width of the line's runes before from, which
-// turns a pixel offset on the row into one along the whole line.
+// original line. col is the display column of from in its line, so a row
+// that starts mid-line keeps the line's tab stops.
 type visualRow struct {
 	line, from, to int
-	x              float64
+	col            int
+}
+
+// columns is how a layout counts: next is the display column after a rune
+// at a column (core.ColumnAfter in the views, so a tab reaches its stop),
+// adv the width of one column in pixels.
+type columns struct {
+	next func(col int, char rune) int
+	adv  float64
+}
+
+// monoColumns are the columns of a monospace view: every rune one advance
+// wide, a tab to its stop.
+func monoColumns(adv float64) columns { return columns{next: core.ColumnAfter, adv: adv} }
+
+// span is the display column after text[from:to] drawn from column col.
+func (cols columns) span(text []rune, from, to, col int) int {
+	for _, char := range text[from:to] {
+		col = cols.next(col, char)
+	}
+	return col
 }
 
 // wrapLayout is the visual rows of a run of lines. It keeps the texts and
-// the measure that made the rows so that positions and pixels map back
+// the columns that made the rows so that positions and pixels map back
 // through the same widths the rows were cut by.
 type wrapLayout struct {
-	rows    []visualRow
-	texts   map[int][]rune // by original line
-	measure func(char rune) float64
+	rows  []visualRow
+	texts map[int][]rune // by original line
+	cols  columns
 }
 
-// layoutWrap breaks lines into visual rows no wider than width, as measured
-// rune by rune. A row ends before the word that would overflow it; a word
-// wider than the view is cut at the width; spaces at a break hang at the
-// end of their row, so the next row starts with text. Every row holds at
-// least one rune, so a width smaller than a glyph still shows the text.
+// layoutWrap breaks lines into visual rows no wider than width, as counted
+// rune by rune in cols. A row ends before the word that would overflow it;
+// a word wider than the view is cut at the width; spaces at a break hang at
+// the end of their row, so the next row starts with text. Every row holds
+// at least one rune, so a width smaller than a glyph still shows the text.
 // A width of 0 or less means no wrap: one row per line. Lines come in
 // increasing original order, each once, as Visible lists them: the
 // mappings search the rows by line.
-func layoutWrap(lines []wrapLine, width float64, measure func(char rune) float64) wrapLayout {
-	layout := wrapLayout{rows: make([]visualRow, 0, len(lines)), texts: make(map[int][]rune, len(lines)), measure: measure}
+func layoutWrap(lines []wrapLine, width float64, cols columns) wrapLayout {
+	layout := wrapLayout{rows: make([]visualRow, 0, len(lines)), texts: make(map[int][]rune, len(lines)), cols: cols}
 	for _, line := range lines {
 		layout.texts[line.line] = line.text
 		if line.whole || width <= 0 {
 			layout.rows = append(layout.rows, visualRow{line: line.line, to: len(line.text)})
 			continue
 		}
-		layout.rows = append(layout.rows, wrapRunes(line.line, line.text, width, measure)...)
+		layout.rows = append(layout.rows, wrapRunes(line.line, line.text, width, cols)...)
 	}
 	return layout
 }
 
 // wrapRunes is the rows of one line. An empty line still has its row.
-func wrapRunes(line int, text []rune, width float64, measure func(char rune) float64) []visualRow {
+func wrapRunes(line int, text []rune, width float64, cols columns) []visualRow {
 	rows := []visualRow{}
-	x := 0.0
+	col := 0
 	for from := 0; from < len(text) || len(rows) == 0; {
-		to := fitRunes(text, from, width, measure)
+		to := fitRunes(text, from, col, width, cols)
 		if to < len(text) {
 			to = lastBreak(text, from, to)
 		}
-		rows = append(rows, visualRow{line: line, from: from, to: to, x: x})
-		x += widthOf(text[from:to], measure)
+		rows = append(rows, visualRow{line: line, from: from, to: to, col: col})
+		col = cols.span(text, from, to, col)
 		from = to
 	}
 	return rows
 }
 
-// fitRunes is how far from from the text fits in width: at least one rune,
-// and spaces never overflow, they hang past the edge.
-func fitRunes(text []rune, from int, width float64, measure func(char rune) float64) int {
-	used := 0.0
+// fitRunes is how far from from (at display column col) the text fits in
+// width: at least one rune, and spaces past the width still fit since they
+// hang.
+func fitRunes(text []rune, from, col int, width float64, cols columns) int {
+	start := col
 	for i := from; i < len(text); i++ {
-		used += measure(text[i])
-		if used > width && i > from && !unicode.IsSpace(text[i]) {
+		col = cols.next(col, text[i])
+		if float64(col-start)*cols.adv > width && i > from && !unicode.IsSpace(text[i]) {
 			return i
 		}
 	}
@@ -102,14 +125,6 @@ func canBreak(text []rune, index int) bool {
 	return unicode.IsSpace(before) || (isWordRune(after) && !isWordRune(before))
 }
 
-func widthOf(text []rune, measure func(char rune) float64) float64 {
-	sum := 0.0
-	for _, char := range text {
-		sum += measure(char)
-	}
-	return sum
-}
-
 // rowOf is the row that shows pos, -1 when its line has no row (folded
 // away or not laid out). A column at a break belongs to the row it starts,
 // as a caret there is drawn at the start of the next row; a column past
@@ -136,16 +151,53 @@ func (layout wrapLayout) rowStart(row int) textPos {
 	return textPos{start.line, start.from}
 }
 
-// xOf is the row that shows pos and the pixel offset of pos from the start
-// of that row; the row is -1 when the line has none.
-func (layout wrapLayout) xOf(pos textPos) (row int, x float64) {
+// rowCol is the row that shows pos and the display column of pos from the
+// start of that row; the row is -1 when the line has none.
+func (layout wrapLayout) rowCol(pos textPos) (row, col int) {
 	row = layout.rowOf(pos)
 	if row < 0 {
 		return -1, 0
 	}
-	at := layout.rows[row]
-	end := min(max(pos.col, at.from), at.to)
-	return row, widthOf(layout.texts[at.line][at.from:end], layout.measure)
+	return row, layout.colIn(layout.rows[row], min(pos.col, layout.rows[row].to))
+}
+
+// colIn is the display column of rune index of row's line, counted from
+// the row's start (an index before it is its start). An index past the
+// row's end adds one column a rune: the line break a selection covers.
+func (layout wrapLayout) colIn(row visualRow, index int) int {
+	return layout.walk(row).colIn(index)
+}
+
+// rowWalker counts display columns along a row for rune indexes asked in
+// increasing order, so the many hits on one long row cost one pass.
+type rowWalker struct {
+	layout     wrapLayout
+	row        visualRow
+	index, col int // the rune index reached and its column along the line
+}
+
+func (layout wrapLayout) walk(row visualRow) *rowWalker {
+	return &rowWalker{layout: layout, row: row, index: row.from, col: row.col}
+}
+
+// colIn is wrapLayout.colIn; an index before the one asked last starts
+// over from the row's start.
+func (walker *rowWalker) colIn(index int) int {
+	if index < walker.index {
+		walker.index, walker.col = walker.row.from, walker.row.col
+	}
+	text := walker.layout.texts[walker.row.line]
+	for ; walker.index < min(index, walker.row.to); walker.index++ {
+		walker.col = walker.layout.cols.next(walker.col, text[walker.index])
+	}
+	return walker.col - walker.row.col + max(index-walker.row.to, 0)
+}
+
+// xOf is the row that shows pos and the pixel offset of pos from the start
+// of that row; the row is -1 when the line has none.
+func (layout wrapLayout) xOf(pos textPos) (row int, x float64) {
+	row, col := layout.rowCol(pos)
+	return row, float64(col) * layout.cols.adv
 }
 
 // posAt is the position nearest to pixel offset x on a row (both clamped:
@@ -164,13 +216,13 @@ func (layout wrapLayout) posAt(row int, posX float64) textPos {
 		end--
 	}
 	text := layout.texts[at.line]
-	left := 0.0
-	for col := at.from; col < end; col++ {
-		advance := layout.measure(text[col])
-		if posX < left+advance/2 {
-			return textPos{at.line, col}
+	col := at.col
+	for index := at.from; index < end; index++ {
+		next := layout.cols.next(col, text[index])
+		if posX < float64(col+next-2*at.col)*layout.cols.adv/2 {
+			return textPos{at.line, index}
 		}
-		left += advance
+		col = next
 	}
 	return textPos{at.line, end}
 }

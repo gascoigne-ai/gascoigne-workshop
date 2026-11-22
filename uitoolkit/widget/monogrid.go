@@ -71,17 +71,21 @@ func (g monoGrid) selectionRect(scrollX, from, to, posY, height int) core.Rect {
 	return core.Rect{X: x0, Y: posY, W: max(x1-x0, 0), H: height}
 }
 
-// drawSpans draws spans, icons included, along a CodeView row, placed by
-// column so rounding does not add up along the line.
-func (g monoGrid) drawSpans(ctx *core.Ctx, dst *ebiten.Image, scrollX int, cell core.Rect, spans []Span) {
-	col := 0
+// drawSpans draws spans, icons included, along a row of a CodeView or a
+// TextArea, placed by column so rounding does not add up along the line. A
+// tab is drawn as the spaces up to its stop, counted along the whole line
+// (row.col), so a continuation row keeps the line's stops.
+func (g monoGrid) drawSpans(ctx *core.Ctx, dst *ebiten.Image, scrollX int, cell core.Rect, row visualRow, spans []Span) {
+	col := row.col
 	for _, sp := range spans {
-		spanX, spanCols := g.textX-scrollX+g.colX(col), len([]rune(sp.Text))
+		runes := []rune(sp.Text)
+		next := monoColumns(g.adv).span(runes, 0, len(runes), col)
+		spanX := g.textX - scrollX + g.colX(col-row.col)
 		if sp.Icon != "" {
-			drawIconAt(ctx, dst, sp.Icon, core.Rect{X: spanX, Y: cell.Y, W: g.colX(col+spanCols) - g.colX(col), H: cell.H}, sp.Style)
+			drawIconAt(ctx, dst, sp.Icon, core.Rect{X: spanX, Y: cell.Y, W: g.colX(next-row.col) - g.colX(col-row.col), H: cell.H}, sp.Style)
 		} else {
-			ctx.TextMid(dst, ctx.F.Mono, sp.Text, spanX, cell, ctx.Color(sp.Style))
+			ctx.TextMid(dst, ctx.F.Mono, core.ExpandTabs(sp.Text, col), spanX, cell, ctx.Color(sp.Style))
 		}
-		col += spanCols
+		col = next
 	}
 }

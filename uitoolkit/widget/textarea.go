@@ -45,7 +45,7 @@ type areaGeometry struct {
 	monoGrid
 	lines   []string
 	starts  []int // rune offset of each line
-	longest int   // runes in the longest line
+	longest int   // display columns of the longest line
 	wrapped bool
 	layout  wrapLayout // the visual rows of the lines
 }
@@ -55,9 +55,10 @@ func (a *TextArea) geometry(ctx *core.Ctx, rect core.Rect) areaGeometry {
 	g.lines = strings.Split(a.Text, "\n")
 	off := 0
 	for _, l := range g.lines {
-		n := len([]rune(l))
+		runes := []rune(l)
+		n := len(runes)
 		g.starts = append(g.starts, off)
-		g.longest = max(g.longest, n)
+		g.longest = max(g.longest, core.TextColumn(runes, n))
 		off += n + 1
 	}
 	digits := len(strconv.Itoa(len(g.lines)))
@@ -68,8 +69,8 @@ func (a *TextArea) geometry(ctx *core.Ctx, rect core.Rect) areaGeometry {
 }
 
 // layout lays the lines out in visual rows, wrapped at the editor's width
-// when Wrap is on. Every rune is one advance wide, as drawing places text
-// by column.
+// when Wrap is on. Every rune is one advance wide and a tab reaches its
+// stop, as drawing places text by column.
 func (a *TextArea) layout(geometry areaGeometry, rect core.Rect) wrapLayout {
 	return areaLayout(a.Wrap, geometry, rect)
 }
@@ -79,7 +80,7 @@ func areaLayout(wrap bool, geometry areaGeometry, rect core.Rect) wrapLayout {
 	for i, text := range geometry.lines {
 		lines[i] = wrapLine{line: i, text: []rune(text)}
 	}
-	return layoutWrap(lines, geometry.wrapWidth(wrap, rect), func(rune) float64 { return geometry.adv })
+	return layoutWrap(lines, geometry.wrapWidth(wrap, rect), monoColumns(geometry.adv))
 }
 
 // contentW is the width of the widest line plus the gutter; wrapped text
@@ -96,12 +97,11 @@ func (g areaGeometry) colAt(posX int) int { return max(g.monoGrid.colAt(posX), 0
 
 func (g areaGeometry) contentH() int { return len(g.layout.rows) * g.lineH }
 
-// caretRow is the visual row of the cursor and its column offset from the
+// caretRow is the visual row of the cursor and its display column from the
 // row's start.
 func (a *TextArea) caretRow(geometry areaGeometry) (row, offset int) {
 	line, col := a.LineCol(a.Cursor)
-	row = geometry.layout.rowOf(textPos{line, col})
-	return row, col - geometry.layout.rows[row].from
+	return geometry.layout.rowCol(textPos{line, col})
 }
 
 // posAtPixel maps a pointer position to a rune position.
@@ -328,11 +328,7 @@ func (a *TextArea) drawRow(ctx *core.Ctx, dst *ebiten.Image, geometry areaGeomet
 	if row.from > 0 || row.to < len([]rune(geometry.lines[row.line])) {
 		spans = cutSpans(spans, row.from, row.to)
 	}
-	col := 0 // spans are placed by column, so rounding does not add up along the line
-	for _, sp := range spans {
-		ctx.TextMid(dst, ctx.F.Mono, sp.Text, geometry.textX-a.ScrollX+geometry.colX(col), cell, ctx.Color(sp.Style))
-		col += len([]rune(sp.Text))
-	}
+	geometry.drawSpans(ctx, dst, a.ScrollX, cell, row, spans)
 }
 
 // drawSelection highlights the part of a row inside the selection [lo, hi);
@@ -346,7 +342,8 @@ func (a *TextArea) drawSelection(ctx *core.Ctx, dst *ebiten.Image, geometry area
 	if hi <= start || lo >= end {
 		return
 	}
-	from, to := max(lo, start)-start, min(hi, end)-start
+	from := geometry.layout.colIn(row, row.from+max(lo, start)-start)
+	to := geometry.layout.colIn(row, row.from+min(hi, end)-start)
 	ctx.Fill(dst, geometry.selectionRect(a.ScrollX, from, to, posY, geometry.lineH), ctx.Color(core.Selection))
 }
 

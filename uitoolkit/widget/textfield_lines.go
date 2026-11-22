@@ -2,9 +2,12 @@ package widget
 
 import (
 	"strings"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
-// tabWidth is the number of spaces Tab inserts (to the next tab stop).
+// tabWidth is the indent step: the number of spaces Tab inserts, to the
+// next multiple of it. It is not the display tab stop (core.TabStop).
 const tabWidth = 2
 
 // newMultiline returns a multi-line field holding text.
@@ -61,10 +64,14 @@ func (f *TextField) PosAt(line, col int) int {
 	return min(pos+max(col, 0), lineEnd(r, pos))
 }
 
-// moveLines moves the cursor dy lines, keeping the goal column. Moving
+// moveLines moves the cursor dy lines, keeping the goal display column (a
+// tab counts to its stop, as the editor draws it). Moving
 // past the first or last line goes to the start or end of the text.
 func (f *TextField) moveLines(dy int, extend bool) {
-	line, col := f.LineCol(f.Cursor)
+	runes := []rune(f.Text)
+	line, _ := f.LineCol(f.Cursor)
+	start := lineStart(runes, f.Cursor)
+	col := core.TextColumn(runes[start:], f.Cursor-start) // a display column, so a tab counts to its stop
 	if f.goal > 0 {
 		col = f.goal - 1
 	}
@@ -74,9 +81,10 @@ func (f *TextField) moveLines(dy int, extend bool) {
 	case target < 0:
 		pos = 0
 	case target >= f.LineCount():
-		pos = len([]rune(f.Text))
+		pos = len(runes)
 	default:
-		pos = f.PosAt(target, col)
+		at := f.PosAt(target, 0)
+		pos = at + core.IndexAt(runes[at:lineEnd(runes, at)], col)
 	}
 	f.moveTo(pos, extend)
 	f.goal = col + 1

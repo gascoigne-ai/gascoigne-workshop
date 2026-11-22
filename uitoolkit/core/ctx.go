@@ -310,12 +310,13 @@ func (c *Ctx) Clip(dst *ebiten.Image, rect Rect) *ebiten.Image {
 	return dst.SubImage(image.Rect(x0, y0, max(x1, x0), max(y1, y0))).(*ebiten.Image)
 }
 
-// Width is the logical width of s in face.
+// Width is the logical width of s in face, a tab as a gap of TabStop
+// spaces (as Text draws it).
 func (c *Ctx) Width(face *text.GoTextFace, content string) int {
 	if c.Stats != nil {
 		c.Stats.Widths++
 	}
-	w, _ := text.Measure(content, face, 0)
+	w, _ := text.Measure(tabsAsGaps(content), face, 0)
 	return int(w/c.Scale + 0.5)
 }
 
@@ -362,6 +363,7 @@ func textPasses(strength float32) []float32 { return []float32{1, strength} }
 // changes only partial pixels, never the outline or the advances, so Width,
 // Advance and LineH measure exactly what is drawn (style.md, Typography).
 func (c *Ctx) Text(dst *ebiten.Image, face *text.GoTextFace, content string, posX, posY int, clr color.RGBA) {
+	content = tabsAsGaps(content)
 	for _, alpha := range textPasses(StemBoost) {
 		op := &text.DrawOptions{}
 		op.GeoM.Translate(float64(posX)*c.Scale, float64(posY)*c.Scale)
