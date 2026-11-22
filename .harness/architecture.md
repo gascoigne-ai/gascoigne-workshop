@@ -7,7 +7,7 @@ the `App` its composition root. Known gaps are under Limits.
 ```mermaid
 flowchart LR
   cmd["cmd/workshop"] --> app["internal/app"]
-  app --> ui["ui"] & ctl["controller"] & adp["adapter"]
+  app --> ui["domain ui"] & ctl["domain controllers"] & adp["domain adapter"]
   ui --> ctl --> root["domain root"]
   adp -. implements .-> root
   subgraph toolkit["uitoolkit (knows nothing of the app)"]
@@ -24,8 +24,8 @@ flowchart LR
 
 ## Package layout
 
-- Packages are `internal/<domain>/<role>/<package>` (the user's choice). The import rules
-  are in `rules.md`, with no exceptions.
+- Packages are `internal/<domain>/<package>`; only `ui/` and `adapter/` are zone directories. The import
+  rules and their written exceptions are in `internal/CLAUDE.md`; no test checks them.
 - `internal/app` is one package: Go cannot declare a method in another package, and everything
   that reads or writes the one `App` struct needs its methods. Adapters come in through `Options`.
 - A feature that needs little of the `App` is its own `ui` package behind a `Host` interface the

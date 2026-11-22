@@ -17,8 +17,13 @@ uitoolkit/           the GPU toolkit; knows nothing of requests (`uitoolkit/doc.
   widget             every component: buttons, menus, dialogs, tabs, fields, tables
   markup             templates (HTML-like) that build the same trees
   theming, engine    palettes and theme files; key bindings and frame pacing
-internal/<domain>/<role>/<package>
-                     the application
+internal/<domain>/   request, collection, response, settings, workspace
+  (root package)     types, rules and ports of the domain
+  <controller>/      state and decisions, no widget, no I/O (tabs, tree, envs...)
+  ui/<package>       views behind a Host
+  adapter/<package>  files, network, system: implement the ports
+internal/app         composition root: the App, its handlers and window
+internal/exampleserver  the local test server
 packaging/           desktop entry, macOS bundle
 .harness/            rules, architecture, style, tasks
 ```
@@ -27,21 +32,21 @@ packaging/           desktop entry, macOS bundle
 
 ```mermaid
 flowchart TB
-  cmd["cmd/workshop: composition root, fills Options with adapters"] --> app
-  subgraph internal["internal/ (domain / role)"]
-    app["internal/app: the App, its state, handlers and window"]
-    ui["ui: views behind a Host (calltrace, sentlog, settingsui...)"]
-    ctl["controller packages: rules with no widget and no I/O (tabs, tree, envs...)"]
-    root["domain root: types, rules and the ports at its boundary"]
-    adapter["adapter: network, files, system"]
+  cmd["cmd/workshop: fills Options with adapters"] --> app
+  subgraph internal["internal/"]
+    app["app: the App, its state, handlers, window"]
+    ui["domain/ui: views behind a Host"]
+    ctl["domain controllers: no widget, no I/O"]
+    root["domain root: types, rules, ports"]
+    adapter["domain/adapter: network, files, system"]
   end
-  app --> ui & ctl
+  app --> ui & ctl & root
   ui --> ctl --> root
   adapter -. implements .-> root
   ui & app --> toolkit["uitoolkit: core / view / widget / markup"]
 ```
 
-Dependencies point inward: what each role may import is written once, in `rules.md` (Layout of `internal/`). The adapters never reach the App directly: `cmd/workshop` builds them and hands them in through `Options`, and a nil port falls back to a null one, so tests and screenshots need no desktop.
+Dependencies point inward: what each package may import is written once, in `internal/CLAUDE.md`; no test checks it. The adapters never reach the App directly: `cmd/workshop` builds them and hands them in through `Options`, and a nil port falls back to a null one, so tests and screenshots need no desktop.
 
 ## One request, end to end
 
@@ -62,7 +67,7 @@ Every frame the whole window tree is rebuilt from the App state (why: the `marku
 | a view | a template string (a `const` at the end of the Go file) and a `Scope` in the file of the view; pinned with a `view.Dump` test; a state of the `App` that has no widget in it goes to a controller package first |
 | a setting | one row in `settings.Schema` (`settings/schema.go`); the form, raw view, validation and reset read it |
 | a rule or state with no widget | a controller package directly under its domain: a `Model`, typed messages, a pure `Update` (`architecture/app.md`, State changes) |
-| an outside dependency (files, network, system) | a `port` interface in the domain, an `adapter` implementing it, wired in `cmd/workshop` |
+| an outside dependency (files, network, system) | a port interface in the domain root, an implementation in the domain's `adapter/`, wired in `cmd/workshop` |
 
 ## How the project is run
 
