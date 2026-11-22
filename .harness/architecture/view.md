@@ -52,7 +52,7 @@ App facts kept here for now; they belong with the app.
   same way through `workspace.Folders.Write`. `FlushWorkspace`, `SaveState` and `openWorkspaceAt` call
   `waitWrites`, then write synchronously. The App does no file I/O of its own
   (`TestTheAppDoesNoFileAccessOfItsOwn`; why one port: the `workspace.Folders` doc).
-- **Socket sends** (`wsui.go`): messages and pings go through `App.sendInOrder`, a per-tab outbox
+- **Socket sends** (`protocol_wsui.go`): messages and pings go through `App.sendInOrder`, a per-tab outbox
   run by a Cmd, so a slow network never stops a frame and messages keep their order.
 - **Change keys** (`changekeys.go`): autosave and the window title compare JSON forms. `changeKeys`
   caches them and marks them stale only on input, a bus message, a toast change or a geometry

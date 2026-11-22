@@ -45,7 +45,7 @@ Dependencies point inward: what each role may import is written once, in `rules.
 
 ## One request, end to end
 
-1. The user types a URL in the URL bar (`urlbar` template in `internal/app/urlbar.go`) and presses Send or Ctrl+Enter.
+1. The user types a URL in the URL bar (`urlbar` template in `internal/app/request_urlbar.go`) and presses Send or Ctrl+Enter.
 2. `App.send` calls `dispatch`: `tabs.Tab.BeginSend` numbers the send, `request.Request.Expanded` fills `{{variables}}` from the collection and the active environment, the call log records it.
 3. A command runs off the UI goroutine: `reg.Send(ctx, req)` on the protocol registry, a name-to-`Protocol` table built in `request/adapter/proto` (`rest`, `websocket`, `sse`, `mcp`, `grpc`; its package doc says which are hand-written and why). Streaming protocols return a `Session` from `Connect` and report through the same bus.
 4. The result comes back as a message on the bus (`workspace/bus`), drained once per frame on the UI goroutine; a late result of a cancelled send is dropped by its number.
@@ -57,7 +57,7 @@ Every frame the whole window tree is rebuilt from the App state (why: the `marku
 
 | To add | Do |
 |---|---|
-| a protocol | implement `request.Sender` (and `Streamer` if it stays connected) in `request/adapter/proto`, add a row to `NewRegistry`; add its panes to the tables in `internal/app/panes.go` |
+| a protocol | implement `request.Sender` (and `Streamer` if it stays connected) in `request/adapter/proto`, add a row to `NewRegistry`; add its panes to the tables in `internal/app/window_panes.go` |
 | a widget | `uitoolkit/widget`: a composition of `view` elements, or a `view.Custom` behavior when it needs its own layout, input or drawing; options, tests, the package doc index and the markup tables (`rules.md`, toolkit API rules) |
 | a view | a template string (a `const` at the end of the Go file) and a `Scope` in the file of the view; pinned with a `view.Dump` test; a state of the `App` that has no widget in it goes to a controller package first |
 | a setting | one row in `settings.Schema` (`settings/schema.go`); the form, raw view, validation and reset read it |

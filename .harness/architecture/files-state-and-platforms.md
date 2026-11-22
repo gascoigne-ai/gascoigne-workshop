@@ -47,7 +47,7 @@ flowchart LR
   and emoji arrive whole. Ebitengine does not report the composition in progress, so no preedit is
   drawn and the candidate window may sit away from the caret. This is a toolkit limit.
 - **Accessibility**: contrast and tooltip rules are in `style.md`, Rules; Tab cycles through the
-  text widgets and code views (`focusorder_test.go`). Buttons are reached by pointer or shortcut, not Tab. No screen reader:
+  text widgets and code views (`window_focusorder_test.go`). Buttons are reached by pointer or shortcut, not Tab. No screen reader:
   Ebitengine has no accessibility tree to publish.
 
 ### Icon and packaging

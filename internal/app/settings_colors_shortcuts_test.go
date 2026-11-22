@@ -370,7 +370,7 @@ func TestEscapeCancelsRecordingAndBackspaceUnbinds(t *testing.T) {
 
 // A key a text widget answers is refused and recording goes on; a key
 // another action uses is not refused but offered with a Replace button (see
-// shortcuteditor_test.go).
+// settings_shortcuteditor_test.go).
 func TestRecordingRefusesKeysThatBelongToTextEditingAndKeepsListening(t *testing.T) {
 	a := testApp(t)
 	a.shortcutKeys.Start("close-tab")

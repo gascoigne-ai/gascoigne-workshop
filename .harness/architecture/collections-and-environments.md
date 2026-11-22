@@ -50,7 +50,7 @@ collection is known by its folder. `App.open` is a `collections.Set`
 - Each open collection has its own active environment, remembered by name in its
   `settings.collections` entry. The header chip and the Vars pane act on the focused collection.
 - The Vars pane edits the active environment, else the collection variables, unless a `varsTarget`
-  (`varstarget.go`) points it at a folder or at the collection's own variables.
+  (`env_varstarget.go`) points it at a folder or at the collection's own variables.
 
 ### Import and export
 

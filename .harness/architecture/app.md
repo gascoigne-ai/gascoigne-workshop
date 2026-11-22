@@ -48,8 +48,8 @@ flowchart LR
 
 ### Window
 
-The window is VML views (`window.go`, `sidebar.go`, `requesttabs.go`, `urlbar.go`,
-`statusbar.go`); handlers are closures that change the `App`. Panes are tables, not switches:
+The window is VML views (`window.go`, `tree_sidebar.go`, `requesttabs.go`, `request_urlbar.go`,
+`window_statusbar.go`); handlers are closures that change the `App`. Panes are tables, not switches:
 
 - `requestPanes`, `connectionRequestPanes`, `grpcRequestPanes` and `responsePanes` list the tabs;
   `paneBuilders` maps a pane kind to its view. A new pane is a row.
@@ -85,7 +85,7 @@ The drop outline is the row's `DropBorder` token, empty when not the target.
 - **Keys**: `routeKeys` (`game.go`) gives the frame's keys to the overlay, the tree, the shortcuts
   or the table undo, in that order of claim. Escape closes one layer per press, the topmost in
   `workspace/overlay`'s order, ending with cancelling a running request.
-- **Shortcuts**: the `shortcuts` table (`shortcuts.go`) holds each action with a stable `id` and its
+- **Shortcuts**: the `shortcuts` table (`settings_shortcuts.go`) holds each action with a stable `id` and its
   default. A user binding is `settings.Shortcuts[id]`, stored only when it differs from the default.
   `App.bindingOf` is the one place a binding is resolved; the shortcut runner, menus' shortcut
   text and the Shortcuts page read it. A binding fires only when its modifiers match exactly. A
@@ -112,7 +112,7 @@ skip-draw pattern, since `ScheduleFrame` and `SetFPSMode` are deprecated.
 
 ### Welcome dialog
 
-`welcome.go` holds the release notes as a table; it opens once per version (`state.State.Welcomed`), or
+`window_welcome.go` holds the release notes as a table; it opens once per version (`state.State.Welcomed`), or
 at every start in the dev build. The notes are kept in step with `CHANGELOG.md` by hand.
 
 ### Screenshots and golden scenes

@@ -10,7 +10,7 @@ import (
 )
 
 // Whole collections: new, open, rename, save, close, move and delete. A collection is a
-// folder on disk; the open ones are a.open (see openset.go). The rules are
+// folder on disk; the open ones are a.open (see tree_openset.go). The rules are
 // in collection/collections, the I/O behind the store port.
 
 // collectionsDir is the folder new collections are made in: beside the
