@@ -1,6 +1,6 @@
 status: todo
 kind: refactor
-commit: refactor(kernel): the request model moves to kernel and sheds feature logic
+commit: refactor(kernel): request model moves to kernel, sheds feature logic
 scope: internal/request/**, internal/kernel/**
 not_before: 2026-01-01
 depends_on: 001-kernel-shared-leaves
