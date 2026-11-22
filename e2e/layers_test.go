@@ -78,6 +78,9 @@ func (rule layerRule) allows(edge layerEdge) bool {
 	if !rule.From.matches(edge.From) || !rule.To.matches(edge.To) {
 		return false
 	}
+	if rule.Below && !strings.HasPrefix(edge.To, edge.From+"/") {
+		return false
+	}
 	if !rule.Own {
 		return true
 	}
@@ -235,6 +238,47 @@ func TestCheckLayersAllows(t *testing.T) {
 	}
 }
 
+func TestCheckLayersTargetLayout(t *testing.T) {
+	cases := []struct {
+		name    string
+		pkg     listedPackage
+		allowed bool
+	}{
+		{"feature root imports base", synthetic("internal/feature/send", "internal/feature/request", "internal/storage"), true},
+		{"controller imports base", synthetic("internal/feature/send/assert", "internal/feature/request"), true},
+		{"adapter imports base", synthetic("internal/feature/history/adapter/historyfile", "internal/storage", "internal/feature/request"), true},
+		{"base imports a feature", synthetic("internal/feature/request", "internal/feature/send"), false},
+		{"uilogic imports base, root, controller", synthetic("internal/ui/sidebar/logic", "internal/feature/request", "internal/feature/collections", "internal/feature/send/assert"), true},
+		{"uilogic imports toolkit", synthetic("internal/ui/sidebar/logic", "uitoolkit/core"), false},
+		{"uilogic imports ui", synthetic("internal/ui/sidebar/logic", "internal/ui/theme"), false},
+		{"ui imports base, root, controller, toolkit", synthetic("internal/ui/sidebar", "internal/feature/request", "internal/feature/collections", "internal/feature/send/assert", "uitoolkit/widget"), true},
+		{"ui imports format, theme, sizes", synthetic("internal/ui/sidebar", "internal/ui/format", "internal/ui/theme", "internal/ui/sizes"), true},
+		{"ui imports its own logic", synthetic("internal/ui/sidebar", "internal/ui/sidebar/logic"), true},
+		{"ui parent imports child", synthetic("internal/ui/editor", "internal/ui/editor/urlbar", "internal/ui/editor/mcp/mcpform"), true},
+		{"ui imports sibling", synthetic("internal/ui/sidebar", "internal/ui/header"), false},
+		{"ui child imports parent", synthetic("internal/ui/editor/urlbar", "internal/ui/editor"), false},
+		{"ui imports an adapter", synthetic("internal/ui/sidebar", "internal/feature/history/adapter/historyfile"), false},
+		{"ui imports a prefix lookalike", synthetic("internal/ui/side", "internal/ui/sidebar"), false},
+		{"adapter imports ui", synthetic("internal/feature/history/adapter/historyfile", "internal/ui/theme"), false},
+		{"feature root imports ui", synthetic("internal/feature/send", "internal/ui/theme"), false},
+		{"app imports base, ui, uilogic", synthetic("internal/app", "internal/feature/request", "internal/storage", "internal/ui/window", "internal/ui/sidebar/logic"), true},
+		{"exampleserver imports base", synthetic("internal/exampleserver", "internal/feature/request"), true},
+		{"exampleserver imports protocol ws", synthetic("internal/exampleserver", "internal/feature/send/adapter/protocol/ws"), true},
+		{"exampleserver imports another adapter", synthetic("internal/exampleserver", "internal/feature/send/adapter/preview"), false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := checkLayers(testModule, layerRules, []listedPackage{tc.pkg})
+			if tc.allowed && len(got) != 0 {
+				t.Fatalf("checkLayers = %v, want none", got)
+			}
+			if !tc.allowed && len(got) == 0 {
+				t.Fatal("checkLayers found no violation")
+			}
+		})
+	}
+}
+
 func TestCheckLayersTestOnlyRows(t *testing.T) {
 	production := synthetic("internal/feature/history/ui/sentlog", "internal/feature/history/adapter")
 	test := synthetic("internal/feature/history/ui/sentlog")
@@ -255,9 +299,18 @@ func TestZoneOf(t *testing.T) {
 	}{
 		{"internal/kernel/request", zoneKernel, ""},
 		{"internal/feature/send", zoneFeatureRoot, "send"},
-		{"internal/feature/send/ui/respview", zoneUI, "send"},
+		{"internal/feature/send/ui/respview", zoneFeatureUI, "send"},
 		{"internal/feature/send/adapter/preview", zoneAdapter, "send"},
 		{"internal/feature/send/proto/ws", zoneController, "send"},
+		{"internal/feature/request", zoneBase, ""},
+		{"internal/feature/request/sub", zoneBase, ""},
+		{"internal/storage", zoneBase, ""},
+		{"internal/ui/theme", zoneUI, ""},
+		{"internal/ui/editor/urlbar", zoneUI, ""},
+		{"internal/ui/sidebar/logic", zoneUILogic, ""},
+		{"internal/ui/editor/kvtable/logic", zoneUILogic, ""},
+		{"internal/ui/logicbox", zoneUI, ""},
+		{"internal/feature/send/adapter/protocol/ws", zoneAdapter, "send"},
 		{"internal/platform/fonts", zoneUnclassified, ""}, // the platform layer is gone: a new package goes into a feature or the toolkit
 		{"internal/app", zoneApp, ""},
 		{"internal/exampleserver", zoneExampleServer, ""},
@@ -295,7 +348,8 @@ func TestEveryRuleMatchesSomething(t *testing.T) {
 		}
 	}
 	for i, rule := range layerRules {
-		if !used[i] {
+		pendingMigration := i >= len(currentLayoutRules)
+		if !used[i] && !pendingMigration {
 			t.Errorf("rule %q matches no import in the tree: drop it or fix its selector", rule.Name)
 		}
 	}

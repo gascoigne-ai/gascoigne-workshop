@@ -27,6 +27,8 @@ Layout C, feature slices. Every domain has moved; `internal/workspace` is gone.
 
 `make check` enforces these rules: `e2e/layers_test.go` reads the compiler's direct imports (`go list`, both tag sets, test files included) and checks them against the default-deny rule table in `e2e/layers_rules_test.go`. Every written exception is a row there with its reason. Six test-only rows let a test file import a real adapter or package as a fixture (`exampleserver` tests, `history/ui/sentlog`, `settings/ui/formpage`, `settings/ui/settingsui`); a production import never matches them. A new exception is a new row, with the user's approval.
 
+During the reorganization (`.harness/reorg.md`) the table accepts both layouts: `currentLayoutRules` for the tree as it is, `targetLayoutRules` beside them for the target zones (`base`, `uilogic`, `ui`, the `Below` flag for a parent importing its children). A target row may match no import until its packages move. The last reorganization task drops the old rows and zones.
+
 ## Names
 
 - Import a domain root without an alias (`send.ParseCurl`) and the kernel request model as `request` (`request.Request`); an older file may still alias it `kernelrequest`. A local that would shadow the package is renamed, never the import: a request value is `call`.
