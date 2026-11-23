@@ -1,144 +1,68 @@
-// Package app is the window: the App that owns the state, wires the
-// adapters it is given to the controllers and builds the view from VML
-// templates every frame.
-//
-// Only the UI goroutine touches App state. A goroutine reads only fields
-// that never change after NewApp (the bus, the ports) and reports back
-// through the bus, which the frame drains in beginFrame.
+// Package app is the composition root: the App that builds the three shared
+// stores, hands the adapters the program was given to the window composite
+// (ui/window), and runs the frame loop around it as an ebiten.Game. It holds
+// no handler: what a click or a key does lives in the window and its screen
+// areas. What stays here is what only a running program knows: the window
+// system's scale, the desktop's key repeat, the window title and the cursor.
 package app
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/state"
-	"slices"
-
-	"github.com/hajimehoshi/ebiten/v2"
-
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/collections"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/sends"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/keymap"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/notice"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/header"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/shortcutpage"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/response"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sidebar"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/statusbar"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/tabstrip"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/window"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
-	"net/http"
-	"time"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
-const (
-	version = "v0.1.0-alpha"
-)
-
-// App is the whole window. It implements ebiten.Game.
+// App is the whole program's window. It implements ebiten.Game.
 type App struct {
-	ports
-	frameState
-	persistState
-	settingsState
-
-	ctx        *core.Ctx
-	editor     *editor.Component   // the request pane's components: URL bar, body, auth, tests, messages, GraphQL, gRPC, MCP and the tables
-	resp       *response.Component // the response panes: the body, its find bar, the headers, the timeline and the status pill
-	strip      *tabstrip.Component // the strip of open requests above the request pane
-	header     *header.Component   // the banner over the main column: the title, the environment chip and the settings button
-	retryDelay time.Duration       // wait before a dropped connection reopens
-	baseScale  float64             // the platform's interface factor under the user's scale
-	reg        request.Registry
-	cols       *collections.Library      // the open collections, in tree order, each with its folder and environment, and what is done to whole ones
-	sample     func() request.Collection // the collection shown when nothing is saved or configured
-	sends      *sends.Sends              // the requests in flight, by the request of their tab
-	tabs       *tabs.Set                 // the open tabs, the current one and the drag
-	widgets    map[*tabs.Tab]*reqTab     // the widget state of each open tab
-	bus        *bus.Bus                  // what goroutines report back, drained once per frame
-	notices    notice.Notices            // the status line under the window
-	bar        *statusbar.Component
-	side       *sidebar.Component
-	driver     Driver              // what the end-to-end screenshots drive the window with
-	err        error               // a failure that ends the run, reported by Err
-	over       *overlays.Component // everything that floats over the window: the dialog, menus, toasts, file browser, call trace and settings
-	varsTarget varsTarget          // what the Vars pane edits; the zero value is the active environment's or the collection's
-	jar        http.CookieJar      // cookies the server set, kept until the app closes
+	window    *window.Component
+	sampler   core.Sampler // the input of a frame, with the desktop's key repeat
+	tps       int          // the update rate last set
+	title     string       // the window title last set
+	baseScale float64      // the platform's interface factor under the user's scale
+	display   DisplayScale // the desktop's display scale when the window system hides it; nil has none
 }
 
-func (a *App) newRequest() { a.newRequestIn(a.selectedFolder()) }
-
-// commands are the shortcut actions in the order the Shortcuts page lists
-// them: each component offers its own, and the App offers the ones that
-// reach across components (they read a table cell edit, the text focus or the
-// focused collection). A command that moves to a component keeps its place.
-func (a *App) commands() []keymap.Command {
-	ctrl := func(key ebiten.Key) keymap.Chord { return keymap.Chord{Key: int(key), Ctrl: true} }
-	return slices.Concat(
-		[]keymap.Command{
-			{ID: "send", Name: "Send request", Default: ctrl(ebiten.KeyEnter), Run: a.sendCurrent},
-			{ID: "focus-url", Name: "Focus URL", Default: ctrl(ebiten.KeyL), Run: a.focusURL},
-		},
-		a.strip.Commands(),
-		a.editor.Commands(),
-		[]keymap.Command{
-			{ID: "delete-row", Name: "Delete row", Default: keymap.Chord{Key: int(ebiten.KeyDelete)}, Run: a.deleteRow},
-			{ID: "complete-variable", Name: "Complete variable", Default: ctrl(ebiten.KeySpace), Run: a.completeVariable},
-			{ID: "save", Name: "Save collection", Default: ctrl(ebiten.KeyS), Run: a.saveWorkspace},
-		},
-		a.side.Commands(),
-		a.resp.Commands(),
-		a.over.Settings.Commands(),
-	)
-}
-
-// keymap is the binding of every command under the settings in effect. It is
-// derived where it is read, never kept, so a changed setting needs no
-// invalidation.
-func (a *App) keymap() keymap.Keymap {
-	return keymap.Resolve(a.settings.Shortcuts, a.commands(), shortcutpage.ParseChord)
-}
-
-// runKeymap runs the commands whose chord went down this frame.
-func (a *App) runKeymap(in core.Input) {
-	keys := a.keymap()
-	for _, key := range in.Keys {
-		binding := engine.Binding{Key: key, Ctrl: in.Ctrl, Shift: in.Shift, Alt: in.Alt, Bound: true}
-		chord, _ := shortcutpage.ChordOf(binding)
-		keys.Run(keymap.Press{Chord: chord, TypesText: binding.TypesText()}, a.textFocused())
-	}
-}
-
-// sendCurrent sends the request; while a table cell is edited, Ctrl+Enter
-// adds a row below instead.
-func (a *App) sendCurrent() {
-	if a.editor.Tables.Editing() {
-		a.editor.Tables.InsertRowBelow()
-		return
-	}
-	a.editor.URLBar.Send()
-}
-
-// focusURL puts the keyboard in the URL field with its text selected.
-func (a *App) focusURL() {
-	a.commitEdit()
-	a.editor.URLBar.FocusURL()
-}
+// The forwards below are what the program, the end-to-end screenshots and
+// apptest reach the window through; none of them holds logic.
 
 // Err is the error that ended the run, if any.
-func (a *App) Err() error { return a.err }
+func (a *App) Err() error { return a.window.Err() }
+
+// FlushWorkspace writes every open collection and waits for the writes; main
+// calls it on exit.
+func (a *App) FlushWorkspace() error { return a.window.FlushWorkspace() }
 
 // WaitWrites blocks until the background writes are done, for the paths that
 // must not lose data. It is exported for apptest, whose tests wait for saves
 // before they read files.
-func (a *App) WaitWrites() { a.writes.Wait() }
+func (a *App) WaitWrites() { a.window.WaitWrites() }
 
 // RestoredWindow is the window geometry of the last run, clamped to a
 // monitor of mw by mh; the zero Window when nothing was remembered.
-func (a *App) RestoredWindow(mw, mh int) state.Window { return a.stateFile.Restored(mw, mh) }
+func (a *App) RestoredWindow(mw, mh int) state.Window { return a.window.RestoredWindow(mw, mh) }
 
 // SaveState writes the state now; main calls it on exit.
-func (a *App) SaveState() error { return a.stateFile.Save() }
+func (a *App) SaveState() error { return a.window.SaveState() }
+
+// Step runs one frame with the given input. Tests drive the app through Step
+// without a window; it is exported only for apptest, the test-support package
+// that lives outside package app so whole-app tests can move to e2e.
+func (a *App) Step(in core.Input) { a.window.Step(in) }
+
+// SetSize sets the window size in logical pixels and nothing else, which is
+// what a test window of fixed size wants; apptest calls it before the first
+// Step.
+func (a *App) SetSize(width, height int) { a.window.SetSize(width, height) }
+
+// Tree is the laid-out view tree the next Draw paints. It is exported
+// because apptest cannot build a dump or a widget query without it, and
+// dump formatting belongs to the tests, not to production code.
+func (a *App) Tree() view.Node { return a.window.Tree() }
+
+// SettingsPath is the settings file the window reads and writes; "" keeps
+// settings in memory.
+func (a *App) SettingsPath() string { return a.window.SettingsPath() }
+
+// Driver is the way the end-to-end screenshots put the window into a state.
+func (a *App) Driver() *window.Driver { return a.window.Driver() }

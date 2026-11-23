@@ -31,6 +31,9 @@ func (c *Component) Tree() *logic.Tree { return c.tree }
 // Filter is the sidebar's filter field.
 func (c *Component) Filter() *widget.TextField { return &c.filter }
 
+// Typing reports whether the filter has the keyboard.
+func (c *Component) Typing() bool { return c.filter.Focused }
+
 // Sent is the log of sent requests.
 func (c *Component) Sent() *sentlog.Log { return &c.sent }
 

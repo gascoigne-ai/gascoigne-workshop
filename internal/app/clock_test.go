@@ -15,7 +15,7 @@ func TestAppReadsTimeFromTheClockPort(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := app.now(); !got.Equal(want) {
+	if got := app.window.Now(); !got.Equal(want) {
 		t.Fatalf("now = %v, want %v", got, want)
 	}
 }

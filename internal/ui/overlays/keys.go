@@ -10,8 +10,14 @@ import (
 // Keys handles the keys of an open menu (Up, Down, Enter) or dialog (Enter,
 // for one without a text field, which has its own), of the destination
 // picker or of the file browser, when no question is asked over them. The
-// first that is open claims the frame's keys, in that order.
+// first that is open claims the frame's keys, in that order. A menu that was
+// open at the start of the frame also takes the keys it used out of the
+// frame's input, so the text field that still has the focus under it does not
+// act on them too.
 func (c *Component) Keys(ctx *w.Ctx, in w.Input) {
+	if menus.Shown(ctx) {
+		defer menus.Swallow(ctx)
+	}
 	enter := in.Enter || in.Pressed(ebiten.KeyEnter)
 	switch {
 	case menus.Shown(ctx):

@@ -42,7 +42,7 @@ internal/
     overlays                     composite
       settingsdialog  settingsdialog/{formpage,colorpage,shortcutpage,systempage}
       filebrowser  destpicker  welcome  toasts  menus  calltrace
-  app/  app/apptest  app/drive   (at most 6 files: options, ports, app, game, frame)
+  app/  app/apptest  app/drive   (at most 5 files: options, ports, app, game, frame)
   exampleserver/
 ```
 
@@ -96,6 +96,7 @@ Zones: `base` (`feature/request`, `storage`), feature root, controller, `adapter
 - `uilogic`: base, feature root, controller.
 - `ui`: base, feature root, controller, toolkit, `ui/format`, `ui/theme`, `ui/sizes`, and its own sub-tree
   (flag `Below`: the target path has the importer path as prefix).
+- `ui/window` (a written row): every `ui` and `uilogic` package, since the root composite wires the screen areas; test files also import the five adapters the whole-window tests run on.
 - `app`: base, feature root, controller, ui, toolkit.
 - `exampleserver`: base, and the written exception `send/adapter/protocol/ws`.
 

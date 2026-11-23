@@ -14,7 +14,7 @@ Tabs, remembered state, the bus, the file browser, autosave, overlays, and the f
 ### Remembered state
 
 `state.json` (model `workspace/state`, adapter `workspace/adapter/statefile` (both under `internal/feature/`), sync in
-`autosave.StateFile`, the window's part in `internal/app/window_hosts.go`) sits next to the settings and is separate from them: settings are
+`autosave.StateFile`, the window's part in `internal/ui/window/hosts.go`) sits next to the settings and is separate from them: settings are
 what users edit, state is bookkeeping (window geometry, splits, expanded folders, open tabs, table
 column weights, the settings dialog's size).
 

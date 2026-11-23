@@ -62,7 +62,7 @@ Logical pixels; the interface scale multiplies them at draw time. Every size is 
 
 **Adding a component**: pick a height class and a spacing step, never a number. A size no class or step fits is a new rule in `theme.go` and a row here, or a fixed number listed in this paragraph with the reason.
 
-Window chrome (`internal/app/window.go`, fixed numbers with a role each): header `headerH` 44, request tab row `tabsH` 42, URL bar `sizes.URLBarH` 56, status bar `statusH` 28, sidebar `sidebarW` 260 by default.
+Window chrome (`internal/ui/window/window.go`, fixed numbers with a role each): header `headerH` 44, request tab row `tabsH` 42, URL bar `sizes.URLBarH` 56, status bar `statusH` 28, sidebar `sidebarW` 260 by default.
 
 ### Scale
 

@@ -1,0 +1,144 @@
+package window
+
+import (
+	"context"
+	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request/severity"
+	"strings"
+	"testing"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+)
+
+// Window sizes the overlays are pinned at: the test window and a small
+// one, where the dialog is still centered and the toasts move with the
+// corner.
+var overlaySizes = []struct {
+	name          string
+	width, height int
+}{
+	{"wide", winW, winH},
+	{"narrow", 480, 360},
+}
+
+// dialogKinds open each kind of dialog the app shows: a confirm (body and
+// buttons), a prompt (an input), an MCP tool's typed form and an MCP
+// sampling request (a long body and an input).
+var dialogKinds = []struct {
+	name string
+	open func(t *testing.T, app *Component)
+}{
+	{"confirm", func(_ *testing.T, app *Component) {
+		app.confirm("Delete Search Repos?", "This cannot be undone.", "Delete", func() {})
+	}},
+	{"prompt", func(_ *testing.T, app *Component) {
+		app.prompt("Rename", "Search Repos", "Rename", func(string) {})
+	}},
+	{"toolform", func(_ *testing.T, app *Component) { app.editor.MCP.OpenToolForm(app.cur().Tab, searchTool()) }},
+	{"sampling", func(t *testing.T, app *Component) {
+		ctx, cancel := context.WithCancel(context.Background())
+		t.Cleanup(cancel)
+		go app.editor.MCP.Sample(ctx, samplingAsked)
+		until(t, app, "the sampling dialog", func() bool { return app.over.Dialog() != nil })
+	}},
+}
+
+// Each kind of dialog is pinned at both window sizes. The dialog floats,
+// so it is laid out inside a Stack the size of the window.
+func TestTheDialogLaysOutAsPinned(t *testing.T) {
+	for _, kind := range dialogKinds {
+		for _, size := range overlaySizes {
+			name := "dialog-" + kind.name + "-" + size.name
+			t.Run(name, func(t *testing.T) {
+				a := testApp(t)
+				t.Cleanup(a.WaitWrites)
+				kind.open(t, a)
+				assertDumpPinned(t, a, Stack(a.over.Views(a.ctx).Dialog), name, size.width, size.height)
+			})
+		}
+	}
+}
+
+// The prompt's field edits the dialog's own input, which the dump does not
+// print.
+func TestThePromptFieldEditsTheDialogInput(t *testing.T) {
+	a := testApp(t)
+	t.Cleanup(a.WaitWrites)
+	a.prompt("Rename", "Search Repos", "Rename", func(string) {})
+	root := a.over.Views(a.ctx).Dialog
+	Layout(a.ctx, Stack(root), winW, winH)
+	field := findWidget(root, "*widget.fieldB")
+	if field == nil {
+		t.Fatalf("no field in the prompt:\n%s", Dump(root))
+	}
+	if got, want := fmt.Sprintf("%+v", field.Behavior()), fmt.Sprintf("%p", a.over.Dialog().Input); !strings.Contains(got, want) {
+		t.Errorf("the field edits %s, want the dialog's input %s", got, want)
+	}
+}
+
+// dialogDump is the open dialog as text, "" when none is open: how a test
+// sees the form a dialog carries.
+func dialogDump(a *Component) string {
+	root := a.over.Views(a.ctx).Dialog
+	if root == nil {
+		return ""
+	}
+	return Dump(root)
+}
+
+// No dialog, no view.
+func TestNoDialogNoDialogView(t *testing.T) {
+	a := testApp(t)
+	t.Cleanup(a.WaitWrites)
+	if root := a.over.Views(a.ctx).Dialog; root != nil {
+		t.Fatalf("dialog view %v with no dialog open", root)
+	}
+}
+
+// The toasts are pinned at both window sizes, an info toast above an error
+// whose text runs out of room.
+func TestTheToastsLayOutAsPinned(t *testing.T) {
+	for _, size := range overlaySizes {
+		name := "toasts-" + size.name
+		t.Run(name, func(t *testing.T) {
+			a := testApp(t)
+			t.Cleanup(a.WaitWrites)
+			a.w, a.h = size.width, size.height
+			a.toast("Cookies cleared", severity.Info)
+			a.toast("Enter the gRPC server first, for example grpc://localhost:50051", severity.Error)
+			assertDumpPinned(t, a, Stack(a.over.Toasts.View()), name, size.width, size.height)
+		})
+	}
+}
+
+// With nothing to show the toasts add nothing to the window.
+func TestNoToastsNoToastsView(t *testing.T) {
+	a := testApp(t)
+	t.Cleanup(a.WaitWrites)
+	root := Stack(a.over.Toasts.View())
+	Layout(a.ctx, root, winW, winH)
+	if got := len(root.Children()); got != 0 {
+		t.Fatalf("the window gets %d toast views with no toasts:\n%s", got, Dump(root))
+	}
+}
+
+// Clicking a toast's text dismisses it, and Enter in an open confirm runs
+// its primary button, through the whole window.
+func TestToastsAndDialogAnswerInput(t *testing.T) {
+	a := testApp(t)
+	t.Cleanup(a.WaitWrites)
+	a.toast("There is no response to save", severity.Error)
+	a.Step(core.Input{})
+	clickText(t, a, "There is no response to save", 0)
+	if len(a.over.Toasts.Stack()) != 0 {
+		t.Fatalf("toasts %+v after the click", a.over.Toasts.Stack())
+	}
+	ran := 0
+	a.confirm("Delete Search Repos?", "This cannot be undone.", "Delete", func() { ran++ })
+	a.Step(core.Input{})
+	clickText(t, a, "Delete", 0)
+	if ran != 1 || a.over.Dialog() != nil {
+		t.Fatalf("Delete ran %d times, dialog open %v", ran, a.over.Dialog() != nil)
+	}
+}

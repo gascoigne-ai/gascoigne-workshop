@@ -26,4 +26,4 @@ Formats and versions are in `.harness/architecture/persistence.md` (`history/<ha
 
 ## Known gaps
 - The model is the one root file `model.go`; it moved here from the old `internal/response` because only this feature used it.
-- The tab's in-memory history list lives in `internal/app` (`request_tab.go`), not in this feature.
+- The tab's in-memory history list lives in `internal/ui/window` (`tabs.go`), not in this feature.

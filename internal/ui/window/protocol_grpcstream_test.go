@@ -1,0 +1,62 @@
+package window
+
+import (
+	"strings"
+	"testing"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+)
+
+func grpcTab(app *Component) *reqTab {
+	tab := app.cur()
+	tab.Req.Protocol, tab.Req.Method = "grpc", "grpc.health.v1.Health/Watch"
+	return tab
+}
+
+func TestAGRPCTabIsASocketOnlyWhileStreamIsOn(t *testing.T) {
+	a := testApp(t)
+	tab := grpcTab(a)
+	if a.editor.Socket(tab.Tab) || len(a.responsePanesFor(tab)) == 1 {
+		t.Fatal("a gRPC tab shows the Messages pane before Stream is turned on")
+	}
+	a.editor.GRPC.ToggleStream(tab.Tab)
+	if !a.editor.Socket(tab.Tab) || len(a.responsePanesFor(tab)) != 1 {
+		t.Fatal("Stream on should give the Messages pane and a Connect button")
+	}
+	a.editor.GRPC.ToggleStream(tab.Tab)
+	if a.editor.Socket(tab.Tab) {
+		t.Fatal("Stream off should go back to single calls")
+	}
+}
+
+func TestTheUnaryGRPCTabOffersAStreamChipThatTurnsConnectOn(t *testing.T) {
+	a := testApp(t)
+	tab := grpcTab(a)
+	if dump := view.Dump(a.editor.URLBar.View(a.ctx)); !strings.Contains(dump, "Stream") || !strings.Contains(dump, `"Send"`) {
+		t.Fatalf("url bar:\n%s", dump)
+	}
+	a.editor.GRPC.ToggleStream(tab.Tab)
+	if dump := view.Dump(a.editor.URLBar.View(a.ctx)); !strings.Contains(dump, `"Connect"`) {
+		t.Fatalf("url bar with Stream on:\n%s", dump)
+	}
+}
+
+func TestOtherProtocolsHaveNoStreamChip(t *testing.T) {
+	a := testApp(t)
+	if dump := view.Dump(a.editor.URLBar.View(a.ctx)); strings.Contains(dump, "Stream") {
+		t.Fatalf("a REST tab has a Stream chip:\n%s", dump)
+	}
+}
+
+// Stream is a choice of the tab, not of the protocol: a tab that goes to
+// another protocol and back still streams.
+func TestAStreamingTabKeepsStreamAcrossAProtocolChange(t *testing.T) {
+	a := testApp(t)
+	tab := grpcTab(a)
+	a.editor.GRPC.ToggleStream(tab.Tab)
+	a.editor.Choose(tab.Tab, "rest")
+	a.editor.Choose(tab.Tab, "grpc")
+	if !a.editor.Socket(tab.Tab) {
+		t.Fatal("the tab lost its stream across a protocol change")
+	}
+}

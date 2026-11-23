@@ -2,48 +2,21 @@ package app
 
 import (
 	"cmp"
-	"fmt"
+	"time"
+
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/clientconfig"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/sends"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/autosave"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/serial"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/storage"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/assertions"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/auth"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/body"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/graphql"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/grpc"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/mcp"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/urlbar"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/ws"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/header"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/header/envchip"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/formpage"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/response"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sidebar"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/statusbar"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/tabstrip"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/theme"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/window"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
-	"net/http"
-	"net/http/cookiejar"
-	"path/filepath"
-	"strings"
-	"time"
 )
 
 // Options are the startup switches of the command line.
@@ -80,188 +53,41 @@ type Options struct {
 	DefaultWorkspace string                                        // where saving goes when there is no workspace yet
 }
 
-// startCollection is the collection shown before a workspace or client
-// config replaces it.
-func startCollection(sample func() request.Collection) request.Collection {
-	if sample == nil {
-		return collection.GitHubSample()
+// stores is Options as the window takes it: the three shared stores the app
+// builds, the adapters, and the switches.
+func (opts Options) stores() window.Stores {
+	var now func() time.Time
+	if opts.Clock != nil {
+		now = opts.Clock.Now
 	}
-	return sample()
-}
-
-// withDefaults fills what a caller may leave out: null ports for the
-// adapters the app always calls, the retry delay and the base scale.
-func (opts Options) withDefaults() Options {
-	opts.SettingsFiles = cmp.Or[settings.SettingsStore](opts.SettingsFiles, noSettingFiles{})
-	opts.States = cmp.Or[workspace.StateStore](opts.States, noStates{})
-	opts.Store = cmp.Or[collection.Store](opts.Store, noStore{})
-	opts.Fonts = cmp.Or[formpage.FontStore](opts.Fonts, noFonts{})
-	opts.Files = cmp.Or[FileDialog](opts.Files, noFileDialog{})
-	opts.Folders = cmp.Or[workspace.Folders](opts.Folders, noFolders{})
-	opts.Previews = cmp.Or[send.BodyPreview](opts.Previews, noBrowser{})
-	opts.RetryDelay = cmp.Or(opts.RetryDelay, defaultRetryDelay)
-	opts.BaseScale = cmp.Or(opts.BaseScale, 1)
-	return opts
-}
-
-// wallClock is the time source when no Clock port is given.
-func (opts Options) now() func() time.Time {
-	if opts.Clock == nil {
-		return time.Now
+	return window.Stores{
+		Tabs: tabs.NewSet(), Sends: sends.New(), Bus: bus.New(),
+		Ports: window.Ports{
+			Protocols: opts.Protocols, GRPCMethods: opts.GRPCMethods, GRPCSchema: opts.GRPCSchema, Curl: opts.Curl,
+			Store: opts.Store, States: opts.States, Clients: opts.Clients, Files: opts.Files, Folders: opts.Folders,
+			Now: now, History: opts.History, Fonts: opts.Fonts, System: opts.System,
+			SettingsFiles: opts.SettingsFiles, Previews: opts.Previews,
+		},
+		Start: window.Start{
+			SettingsPath: opts.SettingsPath, StatePath: opts.StatePath, ThemesDir: opts.ThemesDir, WorkspaceDir: opts.WorkspaceDir, DefaultWorkspace: opts.DefaultWorkspace, HostOS: opts.HostOS,
+			Welcome: opts.Welcome, WelcomeEvery: opts.WelcomeEvery, ScanFonts: opts.ScanFonts, DrawEveryFrame: opts.DrawEveryFrame,
+			RetryDelay: opts.RetryDelay, Sample: opts.Sample,
+		},
 	}
-	return opts.Clock.Now
 }
 
-// loadSettings reads the settings file named by opts, the defaults when it
-// names none, and the user themes beside it.
-func loadSettings(opts Options) (settings.Settings, error, []string) {
-	st, loadErr := settings.Default(), error(nil)
-	if opts.SettingsPath != "" {
-		st, loadErr = opts.SettingsFiles.Load(opts.SettingsPath)
-	}
-	themes, themeProblems := theme.LoadUserThemes(opts.ThemesDir)
-	theme.SetUserThemes(themes)
-	return st, loadErr, themeProblems
-}
-
-// NewApp builds the window state from opts: settings, user themes and the start collection.
+// NewApp builds the window from opts and the app's own state around it: the
+// desktop's key repeat and display scale and the platform's base scale.
 func NewApp(opts Options) (*App, error) {
-	opts = opts.withDefaults()
-	st, loadErr, themeProblems := loadSettings(opts)
-	ctx, err := core.NewCtx(theme.ThemeWith(st))
+	win, err := window.New(opts.stores())
 	if err != nil {
 		return nil, err
 	}
-	a := &App{
-		ctx:        ctx,
-		baseScale:  opts.BaseScale,
-		retryDelay: opts.RetryDelay,
-		sample:     opts.Sample,
-		widgets:    map[*tabs.Tab]*reqTab{},
-		bus:        bus.New(),
-		jar:        newJar(),
-		tabs:       tabs.NewSet(),
-		sends:      sends.New(),
-		ports: ports{
-			protocols: opts.Protocols, grpcMethods: opts.GRPCMethods, grpcSchema: opts.GRPCSchema, curl: opts.Curl,
-			store: opts.Store, clients: opts.Clients, files: opts.Files, folders: opts.Folders,
-			now: opts.now(), histories: opts.History, fonts: opts.Fonts, display: opts.Display, system: opts.System,
-			settingFiles: opts.SettingsFiles, previews: opts.Previews,
-		},
-		frameState:    frameState{dirty: true, drawEveryFrame: opts.DrawEveryFrame},
-		persistState:  persistState{defaultWorkspace: opts.DefaultWorkspace},
-		settingsState: settingsState{settings: st},
-	}
-	a.writes = serial.NewWriter(a.bus, a.drain)
-	a.keys = autosave.NewKeys(keysHost{a})
-	a.saves = autosave.NewCollections(opts.Store, a.writes)
-	a.stateFile = autosave.NewStateFile(opts.States, opts.StatePath, stateHost{a}, stateHost{a}, a.writes)
-	a.cols = collections.NewLibrary(a.store, collectionsDir(opts.DefaultWorkspace), collections.Deps{Settings: librarySettings{a}, Saves: librarySaves{a}})
-	a.driver.app = a
-	a.notices.SetStatus("Ready")
-	settingsAccess := storage.AccessAfter(loadErr)
-	over := overlaysHost{a}
-	a.over = overlays.New(overlays.Deps{
-		Ctx: ctx, Window: over, Clock: over, Desktop: over, Folders: over, Bus: over,
-		Settings: settingsdialog.Deps{
-			Settings: settingsHost{a}, Window: settingsHost{a}, Files: settingsHost{a}, Dialogs: settingsHost{a},
-			Bus: settingsHost{a}, Looks: settingsHost{a}, Keys: settingsHost{a},
-			Path: opts.SettingsPath, Store: opts.SettingsFiles, Access: settingsAccess, Fonts: opts.Fonts, System: opts.System,
-		},
-	})
-	a.side = sidebar.New(sidebar.Deps{
-		Collections: sidebarHost{a}, Requests: sidebarHost{a}, Nodes: sidebarHost{a}, Drops: sidebarHost{a},
-		Folders: sidebarHost{a}, Extras: sidebarHost{a}, Collection: collectionHost{a}, Workspace: sidebarHost{a},
-		Menus: sidebarHost{a}, Sent: a,
-	})
-	host := editorHost{a}
-	a.editor = editor.New(editor.Deps{
-		Ctx: ctx, Tabs: host, Connections: host, Settings: host, VarsPane: host, Window: bodyHost{a},
-		URLBar:     urlbar.Deps{Tabs: urlbarHost{a}, Sends: urlbarHost{a}, Connections: urlbarHost{a}, GRPC: urlbarHost{a}, Styles: urlbarHost{a}, Hints: urlbarHost{a}},
-		Body:       body.Deps{Tabs: bodyHost{a}, Vars: bodyHost{a}, Files: bodyHost{a}, Schemas: bodyHost{a}},
-		GraphQL:    graphql.Deps{Tabs: graphqlHost{a}, Sends: graphqlHost{a}, Window: graphqlHost{a}},
-		Auth:       auth.Deps{Tabs: authHost{a}, Vars: authHost{a}, Trust: authHost{a}, Cookies: authHost{a}, Window: authHost{a}},
-		Assertions: assertions.Deps{Tabs: assertionsHost{a}, Vars: assertionsHost{a}, Status: assertionsHost{a}, Defaults: assertionsHost{a}},
-		GRPC:       grpc.Deps{Tabs: grpcHost{a}, Methods: grpcHost{a}, Vars: grpcHost{a}, Files: grpcHost{a}, Connections: grpcHost{a}, Window: grpcHost{a}},
-		MCP:        mcp.Deps{Tabs: mcpHost{a}, Bus: mcpHost{a}, Composer: mcpHost{a}, Dialogs: mcpHost{a}, Looks: mcpHost{a}},
-		WS:         ws.Deps{Tabs: wsHost{a}, Outbox: wsHost{a}, Tools: wsHost{a}, Window: wsHost{a}},
-		Tables:     kvtable.Deps{Menus: kvtableHost{a}, Secrets: kvtableHost{a}, Styles: kvtableHost{a}},
-	})
-	a.resp = response.New(response.Deps{Tabs: responseHost{a}, Slots: responseHost{a}, Headers: responseHost{a}, Files: responseHost{a}, Exports: responseHost{a}, Window: responseHost{a}, Hints: responseHost{a}, Defaults: responseHost{a}})
-	a.strip = tabstrip.New(tabstrip.Deps{Tabs: tabstripHost{a}, Marks: tabstripHost{a}, Menus: tabstripHost{a}, Requests: tabstripHost{a}, Hints: tabstripHost{a}})
-	a.header = header.New(header.Deps{Title: headerHost{a}, Settings: headerHost{a}, Hints: headerHost{a}, Env: envchip.Deps{Envs: envchipHost{a}, Menus: envchipHost{a}, Dialogs: envchipHost{a}}})
-	a.bar = statusbar.New(statusbar.Deps{Status: &a.notices, Log: a.over.Calls(), Welcome: a, Version: version})
-	if loadErr != nil {
-		a.notices.SetStatus(loadErr.Error())
-	}
-	a.reg = a.newRegistry()
-	ctx.Clipboard = core.ReportClipboard(ctx.Clipboard, a.clipboardNote)
-	if opts.HostOS != "" {
-		ctx.HostOS = opts.HostOS
-	}
-	a.sampler.HostOS = ctx.HostOS
-	ctx.Now = func() time.Time { return a.now() } // the caret blinks by the app clock
-	a.noteReadOnly(settingsAccess, loadErr)
+	app := &App{window: win, baseScale: cmp.Or(opts.BaseScale, 1), display: opts.Display}
+	app.sampler.HostOS = win.HostOS()
 	if opts.KeyRepeat != nil {
 		delay, interval := opts.KeyRepeat.Timing()
-		a.sampler.Repeat = core.KeyRepeat{Delay: delay, Interval: interval}
+		app.sampler.Repeat = core.KeyRepeat{Delay: delay, Interval: interval}
 	}
-	if opts.ScanFonts {
-		a.over.Settings.ScanFonts()
-	}
-	a.openWorkspace(opts.WorkspaceDir)
-	stateErr := a.stateFile.Load()
-	if opts.Welcome && (opts.WelcomeEvery || a.stateFile.Welcomed() != version) {
-		a.OpenWelcome()
-	}
-	a.side.Sent().Load(a)
-	a.notices.SetStatus(stateNote(a.notices.Status(), stateErr))
-	if len(themeProblems) > 0 {
-		a.notices.SetStatus(stateNote(a.notices.Status(), fmt.Errorf("%s", themeProblems[0])))
-	}
-	a.stateFile.Begin()
-	return a, nil
-}
-
-// collectionsDir is the folder new collections are made in: beside the
-// default workspace, never inside it, since a folder with a folder.json
-// below a collection is one of its folders. Empty when the program has no
-// config directory.
-func collectionsDir(defaultWorkspace string) string {
-	if defaultWorkspace == "" {
-		return ""
-	}
-	return filepath.Join(filepath.Dir(defaultWorkspace), "collections")
-}
-
-// stateNote joins a state load problem into the status line.
-func stateNote(status string, err error) string {
-	if err == nil {
-		return status
-	}
-	return strings.TrimSpace(status + " " + err.Error())
-}
-
-// noteReadOnly tells once, at the start, that a file a newer build wrote is
-// left as it is for this session.
-func (a *App) noteReadOnly(access storage.Access, loadErr error) {
-	if access == storage.ReadOnly {
-		a.toast(loadErr.Error()+"; it is not changed this session", severity.Error)
-	}
-}
-
-// newJar is the cookie jar of a session; with no options it cannot fail.
-func newJar() http.CookieJar {
-	jar, _ := cookiejar.New(nil)
-	return jar
-}
-
-// newRegistry builds the protocols from the cookie jar, the network
-// settings (proxy, certificates) and the app's sampling dialog.
-func (a *App) newRegistry() request.Registry {
-	if a.protocols == nil {
-		return request.Registry{}
-	}
-	s := a.settings
-	return a.protocols(request.ProtocolConfig{Jar: a.jar, Proxy: s.Proxy, CACert: s.CACert, ClientCert: s.ClientCert, ClientKey: s.ClientKey, Sampler: a.editor.MCP.Sample})
+	return app, nil
 }

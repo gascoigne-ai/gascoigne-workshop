@@ -1,13 +1,9 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/overlay"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/menus"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/hajimehoshi/ebiten/v2"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 // cursorShapes maps the cursor widgets ask for to the window system's.
@@ -26,193 +22,26 @@ var cursorShapes = map[core.Cursor]ebiten.CursorShapeType{
 func (a *App) Layout(width, height int) (int, int) {
 	reported := ebiten.Monitor().DeviceScaleFactor()
 	f := frameSize(width, height, reported, a.displayScale(reported), a.uiScale())
-	a.windowScale = f.WindowScale
-	a.setSize(f.LW, f.LH, f.Scale)
+	a.window.Resize(f.LW, f.LH, f.Scale, f.WindowScale)
 	return f.SW, f.SH
 }
 
 // Update implements ebiten.Game: it samples input and runs one frame.
 func (a *App) Update() error {
-	a.winX, a.winY = ebiten.WindowPosition()
-	a.Step(a.sampler.Read().Scaled(a.ctx.Scale))
-	if title := a.Title(); title != a.title {
+	a.window.SetPosition(ebiten.WindowPosition())
+	a.window.Step(a.sampler.Read().Scaled(a.window.Scale()))
+	if title := a.window.Title(); title != a.title {
 		a.title = title
 		ebiten.SetWindowTitle(title)
 	}
-	ebiten.SetCursorShape(cursorShapes[a.ctx.Cursor])
-	if tps := a.pacer.TPS(); tps != a.tps {
+	ebiten.SetCursorShape(cursorShapes[a.window.Cursor()])
+	if tps := a.window.TPS(); tps != a.tps {
 		ebiten.SetTPS(tps)
 		a.tps = tps
 	}
 	return nil
 }
 
-// Step runs one frame with the given input: it applies finished sends,
-// builds the view, lays it out and lets it react. Handlers in the view
-// change App state. Tests drive the app through Step without a window; it
-// is exported only for apptest, the test-support package that lives outside
-// package app so whole-app tests can move to e2e.
-func (a *App) Step(in core.Input) {
-	moved := a.beginFrame(in)
-	a.routeKeys(in)
-	a.endFrame(moved)
-}
-
-// beginFrame takes in the input and what goroutines reported, and reports
-// whether anything moved: input, a finished send or an expired toast.
-func (a *App) beginFrame(in core.Input) bool {
-	a.ctx.Tick++
-	a.ctx.In = in
-	a.ctx.Cursor = core.CursorDefault
-	a.strip.BeginFrame(in)
-	a.editor.Tables.BeginFrame(in)
-	drained := a.drain()
-	pruned := a.over.Toasts.Prune()
-	active := engine.InputActive(a.lastIn, in)
-	a.keys.NoteGeometry([4]int{a.w, a.h, a.winX, a.winY})
-	if active || drained || pruned {
-		a.keys.MarkStale()
-	}
-	if in.RestartsCaret() {
-		a.ctx.RestartCaret()
-	}
-	a.lastIn = in
-	a.side.BeginFrame(in)
-	return active || drained || pruned
-}
-
-// routeKeys hands the keys of the frame to the overlay, the tree, the
-// shortcuts or the table undo, in that order of claim.
-func (a *App) routeKeys(in core.Input) {
-	hadOverlay := a.over.HoldsKeyboard()
-	wasRecording := a.over.Settings.Recording()
-	menuWasOpen := menus.Shown(a.ctx)
-	a.over.Keys(a.ctx, in)
-	if menuWasOpen {
-		menus.Swallow(a.ctx)
-	}
-	if !hadOverlay && !a.over.HoldsKeyboard() && !wasRecording {
-		a.side.Keys(in, a.textFocused(), a.sidebarWidth())
-	}
-	textKeys := !a.over.HoldsKeyboard() && (a.editor.Keys(in) || a.resp.Keys(in))
-	if !a.over.Settings.Keys(in) && !a.over.HoldsKeyboard() && !typedInText(textKeys, in) {
-		a.runKeymap(in)
-	}
-	if in.Escape && !wasRecording { // one step per press: overlays, the settings menu, a cell edit, find, a running request
-		a.escape()
-	}
-	if !a.over.HoldsKeyboard() && !textKeys {
-		a.editor.TableKeys(in, a.textFocused())
-	}
-}
-
-// openLayers are the things Escape can close right now: the overlays' own
-// and the window's.
-func (a *App) openLayers() overlay.Open {
-	open := a.over.Layers()
-	open[overlay.CellEdit] = a.editor.Tables.Editing()
-	open[overlay.FindBar] = a.resp.Look(a.cur().Tab).FindOpen
-	open[overlay.Request] = true // the last resort: cancel what is being sent
-	return open
-}
-
-// escape does one step of Escape: it closes the topmost open layer. The
-// overlays close their own; the table, the find bar and the request are the
-// window's.
-func (a *App) escape() {
-	layer, ok := a.openLayers().Top()
-	if !ok || a.over.Close(layer) {
-		return
-	}
-	closers := map[overlay.Layer]func(){
-		overlay.CellEdit: a.editor.Tables.CancelEdit,
-		overlay.FindBar:  func() { a.resp.CloseFind(a.cur().Tab) },
-		overlay.Request:  func() { a.cancelSend(a.cur()) },
-	}
-	closers[layer]()
-}
-
-// typedInText reports whether the URL field or the body took the frame's keys
-// as typing, which no shortcut may take. A claim for Undo or Redo is not that:
-// it keeps the table's Undo from running, but a user binding on the same keys
-// still fires.
-func typedInText(claimed bool, in core.Input) bool { return claimed && !in.Undo && !in.Redo }
-
-// endFrame builds the view once, lets it react and runs the per-frame
-// upkeep; moved is what beginFrame reported. Draw paints the tree built here
-// unless treeStale says that a handler or a step below changed what it shows.
-func (a *App) endFrame(moved bool) {
-	root := a.buildTree()
-	view.Layout(a.ctx, root, a.w, a.h)
-	fired := a.ctx.Fired
-	view.Update(a.ctx, root)
-	a.drawTree, a.treeStale = root, a.ctx.Fired != fired
-	// The steps below run after the tree was built. Each one that changes
-	// what the view shows sets a.treeStale itself (commitEdit, the kv Tick,
-	// dragHover, saveCollection and the settings Poll do); the others only
-	// read state or touch the cursor, the clock or a write queue.
-	a.treeStale = a.editor.Tick() || a.treeStale // a click elsewhere ends a cell edit, leaving the table applies its text
-	a.treeStale = a.resp.Tick() || a.treeStale
-	if a.ctx.Tick%settingsdialog.PollTicks == 0 {
-		a.treeStale = true // an outside change of settings.json replaces settings and the raw text
-		a.over.Settings.Poll()
-	}
-	a.dragHover()
-	a.showGrab()
-	a.stateFile.Tick(a.keys.State(), a.now())
-	a.workspaceTick()
-	busy := moved || a.tips.Waiting()
-	a.markFrame(busy)
-	a.pacer.NoteIdle(busy)
-}
-
 // Draw implements ebiten.Game. It paints the tree of the last step, built
 // again only when something changed after that tree was built.
-func (a *App) Draw(screen *ebiten.Image) {
-	if !a.dirty && !a.alwaysDraw() {
-		return // nothing changed: the screen keeps what it has and the GPU stays idle
-	}
-	view.Draw(a.ctx, a.frameTree(), screen)
-	a.dirty = false
-}
-
-// ---- keyboard ---------------------------------------------------------------
-
-// buildTree builds the window's view; the count is for tests.
-func (a *App) buildTree() *view.El {
-	a.builds++
-	return a.view()
-}
-
-// frameTree is the laid out tree Draw paints: the one endFrame built when
-// nothing it shows changed since, else a fresh build. A capture
-// (Options.DrawEveryFrame) changes the scene after the step, so it always
-// builds fresh. A revision
-// counter bumped by every change was rejected: one missed bump loses an
-// edit on screen; a test that compares the reused tree with a fresh build
-// catches a missed treeStale instead
-// (TestTheDrawnTreeMatchesAFreshBuildAcrossASession).
-func (a *App) frameTree() *view.El {
-	root := a.drawTree
-	if root == nil || a.treeStale || a.drawEveryFrame {
-		root = a.buildTree()
-	}
-	view.Layout(a.ctx, root, a.w, a.h)
-	return root
-}
-
-// Tree is the laid-out view tree the next Draw paints. It is exported
-// because apptest cannot build a dump or a widget query without it, and
-// dump formatting belongs to the tests, not to production code. It is
-// frameTree, so a stale tree is rebuilt and the builds counter moves.
-func (a *App) Tree() view.Node { return a.frameTree() }
-
-// SetSize sets the window size in logical pixels and nothing else. Unlike
-// the Layout path (setSize) it leaves the device scale alone, which is what
-// a test window of fixed size wants; apptest calls it before the first Step.
-func (a *App) SetSize(width, height int) { a.w, a.h = width, height }
-
-// textFocused reports whether a text widget has the keyboard.
-func (a *App) textFocused() bool {
-	return a.side.Filter().Focused || a.editor.Typing() || a.resp.Typing()
-}
+func (a *App) Draw(screen *ebiten.Image) { a.window.Draw(screen) }

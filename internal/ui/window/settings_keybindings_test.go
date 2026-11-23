@@ -1,0 +1,159 @@
+package window
+
+import (
+	"strings"
+	"testing"
+
+	"github.com/hajimehoshi/ebiten/v2"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/keymap"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/shortcutpage"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
+)
+
+func TestEveryDefaultBindingRoundTripsAndHasAnID(t *testing.T) {
+	ids := map[keymap.ID]bool{}
+	bindings := map[string]keymap.ID{}
+	for _, command := range testApp(t).commands() {
+		if command.ID == "" || ids[command.ID] || command.Run == nil {
+			t.Errorf("command %q has a missing or duplicate id %q, or no Run", command.Name, command.ID)
+		}
+		ids[command.ID] = true
+		def := shortcutpage.BindingOf(command.Default)
+		back, err := engine.ParseBinding(def.String())
+		if err != nil || back != def {
+			t.Errorf("%s: %q does not round trip: %+v %v", command.ID, def.String(), back, err)
+		}
+		if other, dup := bindings[def.String()]; dup {
+			t.Errorf("%s and %s share %s", command.ID, other, def.String())
+		}
+		bindings[def.String()] = command.ID
+	}
+}
+
+func TestEffectiveBindingsLayerTheUsersOverToDefaults(t *testing.T) {
+	a := testApp(t)
+	bindingOf := func() engine.Binding {
+		chord, bound := a.keymap().Chord("close-tab")
+		if !bound {
+			return engine.Binding{}
+		}
+		return shortcutpage.BindingOf(chord)
+	}
+	def := bindingOf()
+	if def.String() != "Ctrl+W" {
+		t.Fatalf("default = %q", def)
+	}
+	for _, tt := range []struct {
+		name     string
+		override map[string]string
+		want     string
+	}{
+		{"a valid override replaces it", map[string]string{"close-tab": "Ctrl+Q"}, "Ctrl+Q"},
+		{"an empty string unbinds", map[string]string{"close-tab": ""}, ""},
+		{"an unparsable value falls back to the default", map[string]string{"close-tab": "Banana"}, "Ctrl+W"},
+		{"other actions' overrides do not matter", map[string]string{"new-request": "Ctrl+N"}, "Ctrl+W"},
+		{"unknown actions are ignored", map[string]string{"teleport": "Ctrl+J"}, "Ctrl+W"},
+	} {
+		a.settings.Shortcuts = tt.override
+		if got := bindingOf().String(); got != tt.want {
+			t.Errorf("%s: %q, want %q", tt.name, got, tt.want)
+		}
+	}
+	a.settings.Shortcuts = map[string]string{"close-tab": ""}
+	if bindingOf().Bound {
+		t.Error("an unbound action is not bound")
+	}
+}
+
+func TestCheckBinding(t *testing.T) {
+	a := testApp(t)
+	mk := func(text string) engine.Binding {
+		b, err := engine.ParseBinding(text)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return b
+	}
+	tests := []struct {
+		name    string
+		id      string
+		combo   string
+		wantErr string // substring; "" means allowed
+	}{
+		{"a free combination", "close-tab", "Ctrl+Q", ""},
+		{"an action's own binding", "close-tab", "Ctrl+W", ""},
+		{"taken by another action, named", "close-tab", "Ctrl+T", "New request"},
+		{"taken, with shift", "close-tab", "Ctrl+Shift+Tab", "Previous tab"},
+		{"the text widgets' clipboard keys", "close-tab", "Ctrl+C", "text"},
+		{"undo", "close-tab", "Ctrl+Z", "text"},
+		{"select all", "close-tab", "Ctrl+A", "text"},
+		{"a plain letter is allowed, with a warning", "close-tab", "Q", ""},
+		{"shift alone is allowed, with a warning", "close-tab", "Shift+Q", ""},
+		{"a plain function key is fine", "close-tab", "F6", ""},
+		{"Delete alone is fine", "close-tab", "Delete", "already"},
+		{"Escape is reserved", "close-tab", "Ctrl+Escape", ""},
+		{"Alt with a letter is fine", "close-tab", "Alt+Q", ""},
+	}
+	for _, tt := range tests {
+		err := shortcutpage.Check(a.over.Settings, tt.id, mk(tt.combo))
+		switch {
+		case tt.name == "Delete alone is fine":
+			// Delete is the default of "delete-row": taken, so it names that action
+			if err == nil || !strings.Contains(err.Error(), "Delete row") {
+				t.Errorf("%s: %v", tt.name, err)
+			}
+		case tt.name == "Escape is reserved":
+			// not an error for Ctrl+Escape; plain Escape is tested below
+		case tt.wantErr == "" && err != nil:
+			t.Errorf("%s: %q refused: %v", tt.name, tt.combo, err)
+		case tt.wantErr != "" && (err == nil || !strings.Contains(err.Error(), tt.wantErr)):
+			t.Errorf("%s: %q gave %v, want an error mentioning %q", tt.name, tt.combo, err, tt.wantErr)
+		}
+	}
+	if err := shortcutpage.Check(a.over.Settings, "close-tab", mk("Escape")); err == nil {
+		t.Error("plain Escape belongs to closing overlays")
+	}
+}
+
+func TestBindingWarningNamesPlainKeysOnly(t *testing.T) {
+	tests := []struct {
+		combo string
+		warn  bool
+	}{
+		{"Q", true},
+		{"Shift+Q", true},
+		{"Ctrl+Q", false},
+		{"Alt+Q", false},
+		{"F6", false},
+		{"Delete", false},
+	}
+	for _, tt := range tests {
+		b, err := engine.ParseBinding(tt.combo)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := shortcutpage.Warning(b)
+		if (got != "") != tt.warn || (tt.warn && !strings.Contains(got, "no text field")) {
+			t.Errorf("Warning(%s) = %q, want a warning: %v", tt.combo, got, tt.warn)
+		}
+	}
+}
+
+func TestAPlainKeyBindingFiresOnlyWhileNoTextFieldHasFocus(t *testing.T) {
+	a := testApp(t)
+	a.settings.Shortcuts = map[string]string{"close-tab": "Q"}
+	a.newRequest() // closing the only tab opens a fresh one, which would hide the effect
+	tabs := len(a.tabs.Tabs())
+	a.editor.URLBar.Field(a.cur().Tab).Focused = true
+	a.Step(core.Input{Keys: []ebiten.Key{ebiten.KeyQ}})
+	if len(a.tabs.Tabs()) != tabs {
+		t.Fatal("typing Q in the URL field must not close the tab")
+	}
+	a.editor.URLBar.Field(a.cur().Tab).Focused = false
+	a.Step(core.Input{Keys: []ebiten.Key{ebiten.KeyQ}})
+	if len(a.tabs.Tabs()) == tabs {
+		t.Fatal("Q with no text field focused closes the tab")
+	}
+}

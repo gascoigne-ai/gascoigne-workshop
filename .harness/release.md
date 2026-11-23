@@ -24,7 +24,7 @@ Run before a tag `vX.Y.Z`. Tick a line with the date and what was seen; a line t
 
 Goldens are drawn under software GL, so they are regenerated on Linux like CI, not on macOS: an `ubuntu:24.04` image with the apt packages of `.github/actions/ebitengine-deps/action.yml` (`xvfb` included) and Go from `go.mod`, run `--platform linux/amd64` with the repo mounted, then `xvfb-run -a go test ./e2e -run TestGoldenScenes -update`.
 Look at every changed PNG, then run the set three times without `-update`: all green.
-- [ ] `version` in `internal/app/app.go` is the tag.
+- [ ] `version` in `internal/ui/window/window.go` is the tag.
 - [ ] `CHANGELOG.md` and the README's feature list match what the program does.
 - [ ] The dry run shows the Explorer icon on the Windows `.exe` (embedded by go-winres in the workflow, not run locally).
 - [ ] The dry run of `release.yml` produced the Linux tarball, the macOS zip and the Windows zip.

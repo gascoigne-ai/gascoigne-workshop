@@ -254,6 +254,11 @@ func TestCheckLayersTargetLayout(t *testing.T) {
 		{"ui imports its own logic", synthetic("internal/ui/sidebar", "internal/ui/sidebar/logic"), true},
 		{"ui parent imports child", synthetic("internal/ui/editor", "internal/ui/editor/urlbar", "internal/ui/editor/mcp/mcpform"), true},
 		{"ui imports sibling", synthetic("internal/ui/sidebar", "internal/ui/header"), false},
+		{"window imports sidebar and response", synthetic("internal/ui/window", "internal/ui/sidebar", "internal/ui/response"), true},
+		{"window imports a grandchild", synthetic("internal/ui/window", "internal/ui/overlays/settingsdialog/shortcutpage", "internal/ui/response/respview", "internal/ui/sidebar/logic"), true},
+		{"sidebar imports window", synthetic("internal/ui/sidebar", "internal/ui/window"), false},
+		{"header imports window", synthetic("internal/ui/header", "internal/ui/window"), false},
+		{"window imports an adapter", synthetic("internal/ui/window", "internal/feature/send/adapter/protocol"), false},
 		{"ui child imports parent", synthetic("internal/ui/editor/urlbar", "internal/ui/editor"), false},
 		{"ui imports an adapter", synthetic("internal/ui/sidebar", "internal/feature/history/adapter/historyfile"), false},
 		{"ui imports a prefix lookalike", synthetic("internal/ui/side", "internal/ui/sidebar"), false},
@@ -286,6 +291,33 @@ func TestCheckLayersTestOnlyRows(t *testing.T) {
 	}
 	if got := checkLayers(testModule, layerRules, []listedPackage{test}); len(got) != 0 {
 		t.Errorf("a test import matching a test-only row must pass, got %v", got)
+	}
+}
+
+// The whole-window tests run on the real adapters, as apptest does; the rows
+// are for test files only.
+func TestCheckLayersWindowTestFixtures(t *testing.T) {
+	adapters := []string{
+		"internal/feature/collections/adapter/collectionstore", "internal/feature/history/adapter/historyfile",
+		"internal/feature/send/adapter/protocol", "internal/feature/settings/adapter/settingsfile",
+		"internal/feature/workspace/adapter/statefile", "internal/feature/workspace/adapter/folders",
+		"internal/feature/send/adapter/preview", "internal/feature/send/adapter/protocol/ws", "internal/exampleserver",
+	}
+	for _, adapter := range adapters {
+		production := synthetic("internal/ui/window", adapter)
+		if got := checkLayers(testModule, layerRules, []listedPackage{production}); len(got) == 0 {
+			t.Errorf("window production code imports %s: must be a violation", adapter)
+		}
+		test := synthetic("internal/ui/window")
+		test.TestImports = []string{testModule + "/" + adapter}
+		if got := checkLayers(testModule, layerRules, []listedPackage{test}); len(got) != 0 {
+			t.Errorf("window test imports %s: must pass, got %v", adapter, got)
+		}
+	}
+	other := synthetic("internal/ui/sidebar")
+	other.TestImports = []string{testModule + "/" + adapters[0]}
+	if got := checkLayers(testModule, layerRules, []listedPackage{other}); len(got) == 0 {
+		t.Error("the window's test rows must not open the adapters to another view")
 	}
 }
 

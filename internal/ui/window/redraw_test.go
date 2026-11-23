@@ -1,0 +1,287 @@
+package window
+
+import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request/severity"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"testing"
+	"time"
+
+	"github.com/hajimehoshi/ebiten/v2"
+
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
+)
+
+// settle runs idle frames and clears the dirty flag, as drawing does.
+func settle(app *Component, frames int) {
+	for range frames {
+		app.Step(core.Input{X: app.lastIn.X, Y: app.lastIn.Y})
+		app.dirty = false
+	}
+}
+
+func TestAFreshAppNeedsADrawAndAnIdleOneIsDrawnOnlyAtTheFloorRate(t *testing.T) {
+	a := testApp(t)
+	if !a.dirty {
+		t.Fatal("the first frame must be drawn")
+	}
+	settle(a, 3)
+	const frames = 600
+	drawn, gap, longest := 0, 0, 0
+	for range frames {
+		a.Step(core.Input{X: a.lastIn.X, Y: a.lastIn.Y})
+		gap++
+		if a.dirty {
+			drawn++
+			longest = max(longest, gap)
+			gap = 0
+		}
+		a.dirty = false
+	}
+	if drawn == frames {
+		t.Fatal("an idle app drew every frame")
+	}
+	// at 60 updates a second the floor is every 6th frame; the rate drops to
+	// 30 when idle, where it is every 3rd, so no gap is longer than 6 frames
+	if longest > engine.ActiveTPS/engine.MinFPS {
+		t.Fatalf("the longest wait between draws was %d frames, more than the %d FPS floor allows", longest, engine.MinFPS)
+	}
+}
+
+func TestInputMakesTheNextFrameDirtyOnlyWhenItChangesSomething(t *testing.T) {
+	a := testApp(t)
+	settle(a, 3)
+	still := core.Input{X: 10, Y: 10}
+	a.Step(still)
+	a.dirty = false
+	a.Step(still)
+	if a.dirty && a.ctx.Tick%(a.pacer.TPS()/engine.MinFPS) != 0 { // only the floor may draw it
+		t.Fatal("a pointer that did not move is not activity")
+	}
+	a.dirty = false
+
+	for name, in := range map[string]core.Input{
+		"a moved pointer": {X: 70, Y: 80},
+		"a click":         {X: 50, Y: 60, Click: true, Held: true},
+		"a held button":   {X: 50, Y: 60, Held: true},
+		"the wheel":       {X: 50, Y: 60, Wheel: -1},
+		"a right click":   {X: 50, Y: 60, RightClick: true},
+		"typed text":      {X: 50, Y: 60, Typed: []rune("a")},
+		"a key":           {X: 50, Y: 60, Keys: []ebiten.Key{ebiten.KeyF3}},
+		"an edit key":     {X: 50, Y: 60, Edits: []core.Edit{core.EditLeft}},
+		"Escape":          {X: 50, Y: 60, Escape: true},
+		"a clipboard key": {X: 50, Y: 60, Paste: true},
+	} {
+		// map order is random: put the pointer at a known place first, so only
+		// the case under test can be what makes the frame dirty
+		a.Step(core.Input{X: 50, Y: 60})
+		settle(a, 2)
+		a.dirty = false
+		a.Step(in)
+		if !a.dirty {
+			t.Errorf("%s must request a redraw", name)
+		}
+		a.dirty = false
+	}
+}
+
+func TestReleasingTheButtonIsActivity(t *testing.T) {
+	a := testApp(t)
+	a.Step(core.Input{X: 5, Y: 5, Held: true})
+	a.dirty = false
+	a.Step(core.Input{X: 5, Y: 5}) // released, nothing else changed
+	if !a.dirty {
+		t.Fatal("the release ends a drag or a press: redraw")
+	}
+}
+
+func TestAnArrivingResponseRequestsARedraw(t *testing.T) {
+	srv := jsonServer(t)
+	a := testApp(t)
+	tab := a.cur()
+	a.pointTabAt(tab, srv.URL)
+	a.send(tab)
+	for range 400 {
+		a.dirty = false
+		a.Step(core.Input{X: a.lastIn.X, Y: a.lastIn.Y})
+		if tab.Resp != nil {
+			if !a.dirty {
+				t.Fatal("the frame that applied the response must be drawn")
+			}
+			return
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	t.Fatal("no response")
+}
+
+func TestToastsRequestRedrawsWhenShownAndWhenTheyExpire(t *testing.T) {
+	a := testApp(t)
+	clock := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	a.now = func() time.Time { return clock }
+	settle(a, 2)
+	a.toast("hello", severity.Info)
+	if !a.dirty {
+		t.Fatal("showing a toast needs a draw")
+	}
+	settle(a, 2)
+	clock = clock.Add(10 * time.Second)
+	a.Step(core.Input{X: a.lastIn.X, Y: a.lastIn.Y})
+	if !a.dirty || len(a.over.Toasts.Stack()) != 0 {
+		t.Fatalf("an expired toast must be removed and drawn away (dirty %v, toasts %d)", a.dirty, len(a.over.Toasts.Stack()))
+	}
+}
+
+// The caret blinks on a clock of ticks and every frame at the floor is
+// drawn, so it keeps blinking with or without a focused field and needs no
+// special redraw of its own.
+func TestTheFloorRateKeepsRedrawingWithAndWithoutAFocusedField(t *testing.T) {
+	a := testApp(t)
+	settle(a, 3)
+	draws := func(frames int) (n int) {
+		for range frames {
+			a.Step(core.Input{X: a.lastIn.X, Y: a.lastIn.Y})
+			if a.dirty {
+				n++
+			}
+			a.dirty = false
+		}
+		return
+	}
+	unfocused := draws(120)
+	a.editor.URLBar.Field(a.cur().Tab).Focused = true
+	focused := draws(120)
+	if unfocused < 120*engine.MinFPS/engine.ActiveTPS || focused < 120*engine.MinFPS/engine.ActiveTPS {
+		t.Fatalf("draws in 120 frames: unfocused %d, focused %d, want at least %d each", unfocused, focused, 120*engine.MinFPS/engine.ActiveTPS)
+	}
+}
+
+func TestResizingOrChangingScaleRequestsARedraw(t *testing.T) {
+	a := testApp(t)
+	settle(a, 2)
+	if a.setSize(winW, winH, a.ctx.Scale) || a.dirty {
+		t.Fatal("the same size is not a change")
+	}
+	if !a.setSize(900, winH, a.ctx.Scale) || !a.dirty {
+		t.Fatal("a new width must request a redraw")
+	}
+	a.dirty = false
+	if !a.setSize(900, winH, 2) || !a.dirty {
+		t.Fatal("a new scale must request a redraw")
+	}
+}
+
+func TestDrawEveryFrameOptionAlwaysDraws(t *testing.T) {
+	a := driverApp(t, startOptions{DrawEveryFrame: true})
+	settle(a, 2)
+	a.Step(core.Input{})
+	if !a.dirty && !a.alwaysDraw() {
+		t.Fatal("a capture needs every frame")
+	}
+}
+
+func TestUpdateRateDropsAfterIdleAndReturnsWithActivity(t *testing.T) {
+	a := testApp(t)
+	if a.pacer.TPS() != engine.ActiveTPS {
+		t.Fatalf("start at %d", a.pacer.TPS())
+	}
+	for range engine.IdleAfterTicks + 5 {
+		a.pacer.NoteIdle(false)
+	}
+	if a.pacer.TPS() != engine.IdleTPS {
+		t.Fatalf("after a quiet spell: %d", a.pacer.TPS())
+	}
+	a.pacer.NoteIdle(true)
+	if a.pacer.TPS() != engine.ActiveTPS {
+		t.Fatalf("activity restores the rate: %d", a.pacer.TPS())
+	}
+}
+
+func TestDrawingClearsTheDirtyFlagAndAnIdleDrawDoesNothing(t *testing.T) {
+	a := testApp(t)
+	img := ebiten.NewImage(winW, winH)
+	a.dirty = true
+	a.Draw(img)
+	if a.dirty {
+		t.Fatal("a draw consumes the dirty flag")
+	}
+	a.Draw(img) // nothing changed: must return without drawing or panicking
+	if a.dirty {
+		t.Fatal("an idle Draw must not mark anything")
+	}
+}
+
+func TestInterfaceScaleSliderResizesLiveAndSavesOnRelease(t *testing.T) {
+	a := testApp(t)
+	path := a.SettingsPath()
+	click(a, menuBtnX, menuBtnY)
+	a.over.Settings.Shell.Search = widget.NewTextField("interface scale")
+	a.Step(core.Input{})
+	a.Step(core.Input{X: scaleTrackX0 + (scaleTrackX1-scaleTrackX0)/3, Y: scaleRowY, Click: true, Held: true})
+	a.Step(core.Input{X: scaleTrackX1 + 400, Y: scaleRowY, Held: true}) // far right: the maximum
+	if a.settings.UIScalePct != 200 {
+		t.Fatalf("not applied while dragging: %d", a.settings.UIScalePct)
+	}
+	if got, _ := settingsDisk.Load(path); got.UIScalePct == 200 {
+		t.Fatal("saved before the release")
+	}
+	a.Step(core.Input{X: scaleTrackX1 + 400, Y: scaleRowY})
+	if got, _ := settingsDisk.Load(path); got.UIScalePct != 200 {
+		t.Fatalf("not saved after the release: %+v", got)
+	}
+}
+
+func TestNewAppsStartAtTheDisplayScale(t *testing.T) {
+	a := testApp(t)
+	if a.settings.UIScale() != 1 {
+		t.Fatalf("default scale %v", a.settings.UIScale())
+	}
+}
+
+// The interface scale slider sits where the scale chooser was: its row at
+// y=250, and its track within x=1030..1190 of the settings menu.
+const (
+	scaleRowY    = 314 // with "interface scale" typed in the search field
+	scaleTrackX0 = 453
+	scaleTrackX1 = 949
+)
+
+// The caret blinks by the clock, not by ticks: the update rate drops to 30
+// when idle, which used to halve the blink rate. Input restarts the blink
+// so the caret is solid while typing.
+func TestInputRestartsTheCaretBlinkOnTheAppClock(t *testing.T) {
+	a := testApp(t)
+	clock := time.Date(2026, 11, 7, 12, 0, 0, 0, time.UTC)
+	a.now = func() time.Time { return clock }
+	a.Step(core.Input{X: 5000, Y: 5000, Typed: []rune("a")})
+	if !a.ctx.CaretSince.Equal(clock) {
+		t.Fatalf("CaretSince = %v, want the time of the keystroke", a.ctx.CaretSince)
+	}
+	clock = clock.Add(700 * time.Millisecond)
+	if a.ctx.CaretVisible() {
+		t.Fatal("the caret should be in its hidden phase 700 ms after typing")
+	}
+	a.Step(core.Input{X: 5000, Y: 5000, Typed: []rune("b")})
+	if !a.ctx.CaretVisible() {
+		t.Fatal("typing must show the caret again")
+	}
+}
+
+func TestAMovingPointerDoesNotRestartTheCaretBlink(t *testing.T) {
+	a := testApp(t)
+	clock := time.Date(2026, 11, 7, 12, 0, 0, 0, time.UTC)
+	a.now = func() time.Time { return clock }
+	a.Step(core.Input{X: 5000, Y: 5000, Typed: []rune("a")})
+	clock = clock.Add(700 * time.Millisecond)
+	a.Step(core.Input{X: 10, Y: 10}) // only the pointer moved
+	if a.ctx.CaretVisible() {
+		t.Fatal("moving the pointer showed the caret again")
+	}
+}
+
+func TestRememberedWindowSizeUsesTheWindowScaleOfTheLastLayout(t *testing.T) {
+	app := &Component{windowScale: 2.5}
+	if got := app.windowPx(800); got != 2000 {
+		t.Fatalf("got %d, want 2000", got)
+	}
+}

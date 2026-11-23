@@ -190,3 +190,32 @@ func TestAMenuHasTheKeysBeforeADialog(t *testing.T) {
 		t.Fatal("Enter reached the dialog under an open menu")
 	}
 }
+
+// The menu leaves the keys it used out of the frame's input, so the text
+// field that still has the focus under it does not act on them too. A frame
+// with no menu open keeps its keys.
+func TestKeysSwallowTheFrameOfAnOpenMenu(t *testing.T) {
+	cases := []struct {
+		name     string
+		menu     bool
+		in       core.Input
+		consumed func(core.Input) bool
+	}{
+		{"Tab with a menu open", true, core.Input{Tab: true}, func(in core.Input) bool { return !in.Tab }},
+		{"Escape with a menu open", true, core.Input{Escape: true}, func(in core.Input) bool { return !in.Escape }},
+		{"Enter with a menu open", true, core.Input{Enter: true}, func(in core.Input) bool { return !in.Enter }},
+		{"Tab with no menu", false, core.Input{Tab: true}, func(in core.Input) bool { return in.Tab }},
+	}
+	for _, test := range cases {
+		t.Run(test.name, func(t *testing.T) {
+			world := newWorld(t)
+			if test.menu {
+				openMenu(world)
+			}
+			world.frame(test.in)
+			if !test.consumed(world.ctx.In) {
+				t.Fatalf("input after the frame: %+v", world.ctx.In)
+			}
+		})
+	}
+}

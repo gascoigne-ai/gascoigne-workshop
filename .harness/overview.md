@@ -25,7 +25,8 @@ internal/feature/request/  the request model and ports and OpenCollection, the b
   (root package)     types, rules and ports of the domain
   <controller>/      state and decisions, no widget, no I/O (tabs, tree, envs...)
   adapter/<package>  files, network, system: implement the ports
-internal/app         composition root: the App, its handlers and window
+internal/app         composition root: the App (game loop, Options to Stores)
+internal/ui/window  the root composite of the screen: its handlers, keys and frame
 internal/exampleserver  the local test server
 packaging/           desktop entry, macOS bundle
 .harness/            rules, architecture, style, tasks
@@ -65,7 +66,7 @@ Every frame the whole window tree is rebuilt from the App state (why: the `marku
 
 | To add | Do |
 |---|---|
-| a protocol | implement `request.Sender` (and `Streamer` if it stays connected) in `feature/send/adapter/protocol`, add a row to `NewRegistry`; add its panes to the tables in `internal/ui/editor/panes.go` (the request side and the stream panes) and `internal/app/window_panes.go` (the response side) |
+| a protocol | implement `request.Sender` (and `Streamer` if it stays connected) in `feature/send/adapter/protocol`, add a row to `NewRegistry`; add its panes to the tables in `internal/ui/editor/panes.go` (the request side and the stream panes) and `internal/ui/window/panes.go` (the response side) |
 | a widget | `uitoolkit/widget`: a composition of `view` elements, or a `view.Custom` behavior when it needs its own layout, input or drawing; options, tests, the package doc index and the markup tables (`rules.md`, toolkit API rules) |
 | a view | a package under `internal/ui/<area>/` (anatomy in `internal/CLAUDE.md`): a template string (a `const` at the end of the Go file) and a `Scope` in the file of the view; pinned with a `view.Dump` test; a state of the `App` that has no widget in it goes to a controller package first |
 | a setting | one row in `settings.Schema` (`feature/settings/schema.go`); the form, raw view, validation and reset read it |

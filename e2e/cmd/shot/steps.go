@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/app"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/window"
 )
 
 // Step is one thing a scene does to the window before the capture, through
@@ -21,7 +21,7 @@ type Step interface {
 // scene is what a step works on: the driver of the window and whether the
 // run sends the first request at start.
 type scene struct {
-	driver      *app.Driver
+	driver      *window.Driver
 	sendOnStart bool
 }
 

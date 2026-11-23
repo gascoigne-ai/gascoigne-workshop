@@ -261,3 +261,16 @@ func TestAClickBesideTheSidebarTakesTheKeyboard(t *testing.T) {
 		t.Error("a click in the editor left the keyboard in the tree")
 	}
 }
+
+// The filter is the one text field the sidebar owns; the window asks
+// whether it has the keyboard before a shortcut may take a key.
+func TestTypingIsTheFilter(t *testing.T) {
+	_, side := newSidebar(t, &fake{})
+	if side.Typing() {
+		t.Fatal("typing with the filter unfocused")
+	}
+	side.Filter().Focused = true
+	if !side.Typing() {
+		t.Fatal("not typing with the filter focused")
+	}
+}
