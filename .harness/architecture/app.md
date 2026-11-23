@@ -205,8 +205,8 @@ at every start in the dev build. The notes are kept in step with `CHANGELOG.md` 
 `internal/app/apptest` starts a whole `App` from outside package `app`, so whole-app tests can move
 to `e2e/`. The tests that need the window's private state live in `ui/window` (`harness_test.go` starts a
 `window.Component` from `window.New(Stores{...})` on the real stores and protocols; the layer table has
-test-only rows for those adapters) and move to `e2e` with the components that own that state. `Start(t, ...Option)` sandboxes `HOME` and `XDG_*` (so it cannot run under
-`t.Parallel`), builds the App with the real adapters, runs one frame in a 1280x800 window and
+test-only rows for those adapters) and move to `e2e` with the components that own that state. `Start(t, adapters, ...Option)` sandboxes `HOME` and `XDG_*` (so it cannot run under
+`t.Parallel`), builds the App with the options the caller's `adapters` function fills (the e2e helper `realAdapters` gives the real stores, protocols and fonts, as `main` does; `apptest` is in the app zone and imports no adapter, and `apptest_test.go` lives in `e2e`), runs one frame in a 1280x800 window and
 returns it; `Click`, `Type`, `Until`, `Dump` and the queries drive and read it. It reaches the App
 only through five exported forwards of the window: `Step` (one frame), `SetSize` (window size without the scale
 change of `Layout`), `WaitWrites` (background saves), `SettingsPath` and `Tree` (the laid-out view tree the next

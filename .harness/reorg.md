@@ -42,7 +42,7 @@ internal/
     overlays                     composite
       settingsdialog  settingsdialog/{formpage,colorpage,shortcutpage,systempage}
       filebrowser  destpicker  welcome  toasts  menus  calltrace
-  app/  app/apptest  app/drive   (at most 5 files: options, ports, app, game, frame)
+  app/  app/apptest  app/drive   (at most 5 files: options, ports, app, game, frame; no adapter import)
   exampleserver/
 ```
 

@@ -116,7 +116,7 @@ var currentLayoutRules = []layerRule{
 	{"feature root -> own controllers", selector{Zones: []zone{zoneFeatureRoot}}, selector{Zones: []zone{zoneController}}, true, false, "a root may delegate to a sub-package of its own feature", false},
 	{"controller -> own root, controllers", selector{Zones: []zone{zoneController}}, selector{Zones: []zone{zoneFeatureRoot, zoneController}}, true, false, "controllers share their feature's types", false},
 	{"adapter -> own root, controllers, adapters", selector{Zones: []zone{zoneAdapter}}, selector{Zones: []zone{zoneFeatureRoot, zoneController, zoneAdapter}}, true, false, "adapters implement their feature's ports", false},
-	{"app -> everything", selector{Zones: []zone{zoneApp}}, selector{Zones: allZones()}, false, false, "the composition root knows both sides", false},
+	{"app -> core, ui, toolkit, app", selector{Zones: []zone{zoneApp}}, selector{Zones: []zone{zoneBase, zoneFeatureRoot, zoneController, zoneUI, zoneUILogic, zoneToolkit, zoneApp}}, false, false, "the app maps the program's options to the window's stores; the adapters are wired in cmd/workshop and in the e2e harness", false},
 	{"toolkit -> toolkit", selector{Zones: []zone{zoneToolkit}}, selector{Zones: []zone{zoneToolkit}}, false, false, "the toolkit knows nothing of the app", false},
 	{"test only: exampleserver -> collections", selector{Paths: []string{"internal/exampleserver"}}, selector{Paths: []string{"internal/feature/collections"}}, false, true, "test fixture: the dev server tests load the real sample collection", false},
 	{"test only: exampleserver -> protocol", selector{Paths: []string{"internal/exampleserver"}}, selector{Paths: []string{"internal/feature/send/adapter/protocol"}}, false, true, "test fixture: the dev server tests drive the real protocol registry", false},
@@ -155,7 +155,3 @@ var targetLayoutRules = []layerRule{
 // layerRules is what the layer check applies: the current rows, then the
 // target rows.
 var layerRules = append(append([]layerRule{}, currentLayoutRules...), targetLayoutRules...)
-
-func allZones() []zone {
-	return []zone{zoneUnclassified, zoneUnchecked, zoneFeatureRoot, zoneController, zoneAdapter, zoneBase, zoneUILogic, zoneUI, zoneApp, zoneExampleServer, zoneToolkit}
-}

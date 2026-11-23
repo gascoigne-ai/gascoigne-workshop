@@ -6,12 +6,11 @@
 //
 // Why a subfolder: internal/app is capped in size (e2e/appsize), and this
 // code is test support, not application. It sits in the app zone of the
-// layer table (app may import everything); it imports adapters to give the
-// App the real stores, as cmd/workshop does.
+// layer table, which lets the app zone import no adapter: the caller of
+// Start passes the adapters (e2e has the helper), as cmd/workshop does.
 package apptest
 
 import (
-	"cmp"
 	"context"
 	"fmt"
 	"io"
@@ -28,16 +27,9 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/app"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/adapter/collectionstore"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history/adapter/historyfile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/adapter/protocol"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/adapter/settingsfile"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/adapter/statefile"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/fonts"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
@@ -47,7 +39,6 @@ const (
 	WinW, WinH = 1280, 800
 	idleTries  = 400
 	idleWait   = 5 * time.Millisecond
-	retryDelay = 10 * time.Millisecond
 )
 
 // build is what Start starts an App from.
@@ -98,6 +89,11 @@ func MemorySettings() Option {
 	return func(started *build) { started.memory, started.written = true, false }
 }
 
+// Adapters gives the options of a test app the real stores, protocols and
+// fonts. The caller supplies it (e2e does) because this package is in the
+// app zone, which imports no adapter.
+type Adapters func(app.Options) app.Options
+
 // Start is a test app after its first frame, in a WinW by WinH window.
 // Unless an option says otherwise it has the sample collection, the
 // "pretty" response view and the side-by-side layout, and its settings are
@@ -106,7 +102,7 @@ func MemorySettings() Option {
 // Start redirects HOME and every XDG_* folder to the test's temporary
 // folder with t.Setenv, so nothing reads or writes the user's files. That
 // makes Start unusable in a test that calls t.Parallel (t.Setenv panics).
-func Start(t testing.TB, options ...Option) *app.App {
+func Start(t testing.TB, adapters Adapters, options ...Option) *app.App {
 	t.Helper()
 	sandbox(t)
 	started := build{prefs: settings.Default(), written: true}
@@ -118,16 +114,20 @@ func Start(t testing.TB, options ...Option) *app.App {
 	if started.path == "" && !started.memory {
 		started.path = filepath.Join(t.TempDir(), "settings.json")
 	}
-	if started.written {
-		if err := (settingsfile.Files{}).Save(started.path, started.prefs); err != nil {
-			t.Fatal(err)
-		}
-	}
 	started.opts.SettingsPath = started.path
 	if started.dir != "" {
 		started.opts.WorkspaceDir = started.dir
 	}
-	a, err := app.NewApp(WithAdapters(started.opts))
+	opts := adapters(started.opts)
+	if started.written {
+		if opts.SettingsFiles == nil {
+			t.Fatal("apptest.Start: the adapters give no SettingsFiles to write the test settings with")
+		}
+		if err := opts.SettingsFiles.Save(started.path, started.prefs); err != nil {
+			t.Fatal(err)
+		}
+	}
+	a, err := app.NewApp(opts)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -150,22 +150,6 @@ func sandbox(t testing.TB) {
 		}
 		t.Setenv(name, folder)
 	}
-}
-
-// WithAdapters gives opts the real history and font adapters, as main does.
-func WithAdapters(opts app.Options) app.Options {
-	opts.HostOS = cmp.Or(opts.HostOS, "linux") // the same shortcut text on every machine
-	opts.RetryDelay = cmp.Or(opts.RetryDelay, retryDelay)
-	opts.History = func(dir string) history.History { return historyfile.Dir(dir) }
-	opts.Fonts = fonts.System{}
-	opts.Protocols = protocol.Configured
-	opts.GRPCMethods = protocol.ListGRPCMethods
-	opts.GRPCSchema = protocol.GRPCInputSchema
-	opts.Curl = protocol.Curl
-	opts.Store = collectionstore.Files{}
-	opts.States = statefile.Files{}
-	opts.SettingsFiles = settingsfile.Files{}
-	return opts
 }
 
 // Step runs one frame with in.

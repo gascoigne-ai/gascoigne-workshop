@@ -218,7 +218,7 @@ func TestCheckLayersAllows(t *testing.T) {
 		pkg  listedPackage
 	}{
 		{"theme imports toolkit core and theming", synthetic("internal/ui/theme", "uitoolkit/core", "uitoolkit/theming")},
-		{"app imports anything", synthetic("internal/app", "internal/feature/send", "uitoolkit/widget", "internal/ui/response/respview")},
+		{"app imports features, toolkit and views", synthetic("internal/app", "internal/feature/send", "uitoolkit/widget", "internal/ui/response/respview")},
 		{"cmd is not checked", synthetic("cmd/workshop", "internal/app", "internal/feature/send")},
 		{"e2e is not checked", synthetic("e2e", "internal/feature/send")},
 		{"standard library and ebiten are ignored", listedPackage{ImportPath: testModule + "/internal/feature/request/severity", Imports: []string{"fmt", "github.com/hajimehoshi/ebiten/v2"}}},
@@ -264,6 +264,7 @@ func TestCheckLayersTargetLayout(t *testing.T) {
 		{"ui imports a prefix lookalike", synthetic("internal/ui/side", "internal/ui/sidebar"), false},
 		{"adapter imports ui", synthetic("internal/feature/history/adapter/historyfile", "internal/ui/theme"), false},
 		{"feature root imports ui", synthetic("internal/feature/send", "internal/ui/theme"), false},
+		{"app imports an adapter", synthetic("internal/app", "internal/feature/send/adapter/protocol"), false},
 		{"app imports base, ui, uilogic", synthetic("internal/app", "internal/feature/request", "internal/storage", "internal/ui/window", "internal/ui/sidebar/logic"), true},
 		{"exampleserver imports base", synthetic("internal/exampleserver", "internal/feature/request"), true},
 		{"exampleserver imports protocol ws", synthetic("internal/exampleserver", "internal/feature/send/adapter/protocol/ws"), true},
