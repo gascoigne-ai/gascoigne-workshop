@@ -140,7 +140,7 @@ func TestOtherProtocolsAnswerThroughTheSameUI(t *testing.T) {
 	click(a, 300, urlBarY)   // rest -> websocket
 	click(a, sendX, urlBarY) // connect: an https URL is no WebSocket address
 	until(t, a, "failed connect", func() bool {
-		return tab.State() != tabs.ConnConnecting && strings.Contains(logText(tab), "not ws or wss")
+		return tab.State() != tabs.ConnConnecting && strings.Contains(logText(a, tab), "not ws or wss")
 	})
 	if tab.Session() != nil {
 		t.Fatal("connected to an https URL")
@@ -152,7 +152,7 @@ func TestOtherProtocolsAnswerThroughTheSameUI(t *testing.T) {
 	tab.Req.URL = "ftp://nowhere.test" // no network in tests
 	click(a, sendX, urlBarY)
 	until(t, a, "failed connect", func() bool {
-		return tab.State() != tabs.ConnConnecting && strings.Contains(logText(tab), "not an http or https URL")
+		return tab.State() != tabs.ConnConnecting && strings.Contains(logText(a, tab), "not an http or https URL")
 	})
 }
 

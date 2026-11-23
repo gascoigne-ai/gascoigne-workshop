@@ -18,11 +18,13 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request/severity"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/outbox"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable"
 	kvlogic "github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable/logic"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/ws"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sidebar/logic"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sizes"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/theme"
@@ -714,3 +716,30 @@ func (host responseHost) ResponseView() string { return host.settings.ResponseVi
 
 // Now is the time of the frame.
 func (host responseHost) Now() time.Time { return host.now() }
+
+// wsHost is what the Messages pane asks of the App (ws.Deps).
+type wsHost struct{ *App }
+
+// Current is the tab shown.
+func (host wsHost) Current() *tabs.Tab { return host.tabs.Current() }
+
+// IsOpen reports whether tab is one of the open tabs.
+func (host wsHost) IsOpen(tab *tabs.Tab) bool { return slices.Contains(host.tabs.Tabs(), tab) }
+
+// Queue sends in order with the other sends of tab; a failure is noted in
+// its log.
+func (host wsHost) Queue(tab *tabs.Tab, send outbox.Send) { host.sendInOrder(host.widgets[tab], send) }
+
+// OpenToolForm shows the form of tool; its answer fills the composer of tab.
+func (host wsHost) OpenToolForm(tab *tabs.Tab, tool request.MCPTool) {
+	host.openToolForm(host.widgets[tab], tool)
+}
+
+// Open shows a menu at the pointer.
+func (host wsHost) Open(posX, posY int, items []widget.MenuItem) { host.openMenu(posX, posY, items) }
+
+// Toast shows a message over the window.
+func (host wsHost) Toast(text string, level severity.Level) { host.toast(text, level) }
+
+// Composer is how the protocol of tab composes, a row of the protocol table.
+func (host wsHost) Composer(tab *tabs.Tab) ws.Composer { return viewOf(tab.Req.Protocol).composer }

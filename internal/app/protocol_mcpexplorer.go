@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/ws"
 	"strings"
 
 	"context"
@@ -125,7 +126,7 @@ type explorerHeader struct {
 func newExplorerHeader(tab *reqTab) explorerHeader {
 	server := tab.Server
 	if server == nil {
-		return explorerHeader{State: connState(tab)}
+		return explorerHeader{State: ws.StateText(tab.State())}
 	}
 	return explorerHeader{
 		Known:        true,

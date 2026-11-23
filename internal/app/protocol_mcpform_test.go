@@ -68,15 +68,15 @@ func TestFillingTheFormComposesATypedCall(t *testing.T) {
 	if a.dialog != nil {
 		t.Fatal("the form closes once the call is composed")
 	}
-	if want := `call search {"query":"go","limit":5,"safe":true,"sort":"desc"}`; tab.msg.Text != want {
-		t.Fatalf("composer = %q, want %q", tab.msg.Text, want)
+	if want := `call search {"query":"go","limit":5,"safe":true,"sort":"desc"}`; a.ws.Composer(tab.Tab).Text != want {
+		t.Fatalf("composer = %q, want %q", a.ws.Composer(tab.Tab).Text, want)
 	}
 }
 
 func TestAFormWithAnInvalidValueStaysOpenAndSaysWhich(t *testing.T) {
 	a := testApp(t)
 	tab := a.cur()
-	tab.msg.Text = "unchanged"
+	a.ws.Composer(tab.Tab).Text = "unchanged"
 	a.openToolForm(tab, searchTool())
 	form := a.dialog.form
 	form.Inputs["query"].Text = "go"
@@ -85,8 +85,8 @@ func TestAFormWithAnInvalidValueStaysOpenAndSaysWhich(t *testing.T) {
 	if a.dialog == nil || !strings.Contains(form.Problem, "limit must be a number") {
 		t.Fatalf("dialog %v problem %q", a.dialog, form.Problem)
 	}
-	if tab.msg.Text != "unchanged" {
-		t.Fatalf("the composer changed to %q", tab.msg.Text)
+	if a.ws.Composer(tab.Tab).Text != "unchanged" {
+		t.Fatalf("the composer changed to %q", a.ws.Composer(tab.Tab).Text)
 	}
 }
 
@@ -97,8 +97,8 @@ func TestPickingAToolWithoutPropertiesComposesItRightAway(t *testing.T) {
 	if a.dialog != nil {
 		t.Fatal("a tool with no arguments needs no form")
 	}
-	if tab.msg.Text != "call ping {}" {
-		t.Fatalf("composer = %q", tab.msg.Text)
+	if a.ws.Composer(tab.Tab).Text != "call ping {}" {
+		t.Fatalf("composer = %q", a.ws.Composer(tab.Tab).Text)
 	}
 }
 

@@ -1,47 +1,13 @@
 package app
 
 import (
-	"os"
-	"path/filepath"
 	"reflect"
 	"testing"
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
-	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
-
-// The toolbar while a connection opens is the one look the Messages pane
-// pins do not show; it is pinned at both widths.
-func TestTheMessagesToolbarWhileConnectingLaysOutAsPinned(t *testing.T) {
-	sizes := []struct {
-		name  string
-		width int
-	}{
-		{"wide", messagesWideW},
-		{"narrow", messagesNarrowW},
-	}
-	for _, size := range sizes {
-		name := "messagestoolbar-connecting-" + size.name
-		t.Run(name, func(t *testing.T) {
-			a := testApp(t)
-			t.Cleanup(a.WaitWrites)
-			tab := a.cur()
-			tab.Req.Protocol = "websocket"
-			tab.Begin()
-			root := Col(a.messagesToolbar(tab))
-			Layout(a.ctx, root, size.width, messagesPaneH)
-			want, err := os.ReadFile(filepath.Join("testdata", name+".dump"))
-			if err != nil {
-				t.Fatal(err)
-			}
-			if got := Dump(root); got != string(want) {
-				t.Fatalf("got:\n%s\nwant:\n%s", got, want)
-			}
-		})
-	}
-}
 
 // Ping sends a ping frame on the open session.
 func TestTheToolbarPingSendsAPing(t *testing.T) {
@@ -57,12 +23,12 @@ func TestTheToolbarPingSendsAPing(t *testing.T) {
 func TestTheToolbarClearEmptiesTheLog(t *testing.T) {
 	a, _ := openConnectedEcho(t)
 	tab := a.cur()
-	a.logEvent(tab, request.Event{Time: time.Date(2026, 11, 14, 10, 30, 0, 0, time.UTC), Dir: request.Received, Kind: request.KindText, Text: "hi"})
-	if len(tab.wsView.Lines) == 0 {
+	a.ws.Log(tab.Tab, request.Event{Time: time.Date(2026, 11, 14, 10, 30, 0, 0, time.UTC), Dir: request.Received, Kind: request.KindText, Text: "hi"})
+	if len(a.ws.Lines(tab.Tab)) == 0 {
 		t.Fatal("the log is empty before Clear")
 	}
 	clickText(t, a, "Clear", 0)
-	if n := len(tab.wsView.Lines); n != 0 {
+	if n := len(a.ws.Lines(tab.Tab)); n != 0 {
 		t.Fatalf("the log keeps %d lines", n)
 	}
 }

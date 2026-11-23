@@ -31,12 +31,10 @@ type reqTab struct {
 	schema    *send.Schema       // what a GraphQL introspection answered
 }
 
-// socketBlock holds the state of a WebSocket tab: the message log, the message being composed and the sends waiting their turn.
+// socketBlock holds the state of a socket tab the connection lifecycle owns: the connect in progress and the sends waiting their turn. The message log and the composer are the ws component's.
 type socketBlock struct {
 	wsCancel context.CancelFunc // ends the timeout of the connect in progress
 	outbox   outbox.Outbox      // the sends and pings in order, and whether one is in flight
-	wsView   widget.CodeView    // the message log
-	msg      widget.TextField   // the message being composed
 }
 
 // grpcBlock holds the state of a gRPC tab: streaming and the Proto and Schema panes.
@@ -117,7 +115,6 @@ func newTab(req *request.Request) *reqTab { return newReqTab(tabs.New(req)) }
 func newReqTab(tab *tabs.Tab) *reqTab {
 	req := tab.Req
 	t := &reqTab{Tab: tab}
-	t.wsView.Follow = true
 	t.wsCancel = func() {}
 	t.explorer = mcpexplorer.New()
 	t.gqlVars = widget.NewTextArea(req.GraphQLVars)

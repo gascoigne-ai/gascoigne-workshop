@@ -443,7 +443,7 @@ func TestDriverSendOnASocketIsAnsweredByAFailedConnect(t *testing.T) {
 	tab.Req.URL = "ws://127.0.0.1:1/"
 	a.Driver().Send()
 	until(t, a, "the failure", func() bool {
-		return tab.State() != tabs.ConnConnecting && tab.Session() == nil && len(tab.wsView.Lines) > 0
+		return tab.State() != tabs.ConnConnecting && tab.Session() == nil && len(a.ws.Lines(tab.Tab)) > 0
 	})
 	if !a.Driver().AllAnswered() {
 		t.Fatal("the error is what the shot should show")

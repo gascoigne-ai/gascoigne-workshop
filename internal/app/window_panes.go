@@ -6,6 +6,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	kvlogic "github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable/logic"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/ws"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/response"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -93,9 +94,7 @@ type protocolView struct {
 	protocol     request.Protocol
 	requestPanes []pane
 	streamPanes  []pane                       // the response side while connected
-	composer     bool                         // the Messages pane has a field to send from
-	formatsJSON  bool                         // the composer offers { } to make the message one line of JSON
-	composerHint string                       // what the composer says while connected; "" is "Message"
+	composer     ws.Composer                  // how the Messages pane composes: whether it has a field, offers { } and hints
 	offered      func(settings.Settings) bool // whether the chip cycles to it; nil is always
 }
 
@@ -103,12 +102,12 @@ type protocolView struct {
 var protocolViews = []protocolView{
 	{protocol: request.ProtocolREST, requestPanes: requestPanes},
 	{protocol: request.ProtocolWebSocket, requestPanes: connectionRequestPanes, streamPanes: wsPanes,
-		composer: true, formatsJSON: true},
-	{protocol: request.ProtocolMCP, requestPanes: connectionRequestPanes, streamPanes: mcpPanes, composer: true,
-		composerHint: "call TOOL {json}  ·  read URI  ·  prompt NAME {json}  ·  method {json}  ·  or raw JSON-RPC"},
+		composer: ws.Composer{Shown: true, FormatsJSON: true}},
+	{protocol: request.ProtocolMCP, requestPanes: connectionRequestPanes, streamPanes: mcpPanes,
+		composer: ws.Composer{Shown: true, Hint: "call TOOL {json}  ·  read URI  ·  prompt NAME {json}  ·  method {json}  ·  or raw JSON-RPC"}},
 	{protocol: request.ProtocolSSE, requestPanes: connectionRequestPanes, streamPanes: wsPanes,
 		offered: func(current settings.Settings) bool { return current.SSE }},
-	{protocol: request.ProtocolGRPC, requestPanes: grpcRequestPanes, streamPanes: wsPanes, composer: true,
+	{protocol: request.ProtocolGRPC, requestPanes: grpcRequestPanes, streamPanes: wsPanes, composer: ws.Composer{Shown: true},
 		offered: func(current settings.Settings) bool { return current.GRPC }},
 }
 
@@ -221,6 +220,27 @@ var paneBuilders = map[paneKind]func(app *App, panel pane, t *reqTab, scroll *Sc
 	paneTable:      (*App).tablePane,
 	paneProto:      (*App).protoPane,
 	paneSchema:     (*App).schemaPaneView,
+}
+
+// wsPanes are the panes of a socket's response side.
+var wsPanes = []pane{{label: "Messages", kind: paneMessages}}
+
+// mcpPanes are the response side of an MCP server: what it offers, and
+// the JSON-RPC traffic with the composer for anything else.
+var mcpPanes = []pane{{label: "Explorer", kind: paneExplorer}, {label: "JSON-RPC", kind: paneMessages}}
+
+// responsePanesFor are the panes of the response side of tab.
+func responsePanesFor(tab *reqTab) []pane {
+	if isSocket(tab) {
+		return viewOf(tab.Req.Protocol).streamPanes
+	}
+	return responsePanes
+}
+
+// messagesPane is the Messages pane, drawn by the ws component. It ignores
+// the scroll it is handed: the log scrolls itself.
+func (a *App) messagesPane(_ pane, tab *reqTab, _ *ScrollState) Node {
+	return a.ws.View(a.ctx, tab.Tab)
 }
 
 // bodyPaneView is the Body pane, drawn by the body component.

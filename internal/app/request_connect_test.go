@@ -15,7 +15,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/adapter/protocol/ws"
+	wire "github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/adapter/protocol/ws"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/ws"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
@@ -23,17 +24,17 @@ import (
 func echoServer(t *testing.T) string {
 	t.Helper()
 	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
-		c, err := ws.Upgrade(writer, call)
+		c, err := wire.Upgrade(writer, call)
 		if err != nil {
 			return
 		}
-		defer c.Close(ws.CloseNormal, "")
+		defer c.Close(wire.CloseNormal, "")
 		for {
 			m, err := c.Read()
-			if err != nil || m.Type == ws.Close {
+			if err != nil || m.Type == wire.Close {
 				return
 			}
-			if m.Type == ws.Text {
+			if m.Type == wire.Text {
 				c.Write(m.Type, m.Data)
 			}
 		}
@@ -42,9 +43,9 @@ func echoServer(t *testing.T) string {
 	return "ws" + strings.TrimPrefix(srv.URL, "http")
 }
 
-func logText(tab *reqTab) string {
+func logText(a *App, tab *reqTab) string {
 	var b strings.Builder
-	for _, l := range tab.wsView.Lines {
+	for _, l := range a.ws.Lines(tab.Tab) {
 		for _, s := range l.Spans {
 			b.WriteString(s.Text)
 		}
@@ -61,19 +62,19 @@ func TestWebSocketTabConnectsSendsAndDisconnects(t *testing.T) {
 	*a.urlbar.Field(tab.Tab) = widget.NewTextField(tab.Req.URL)
 
 	a.send(tab) // the Send button of a socket connects
-	until(t, a, "connection", func() bool { return strings.Contains(logText(tab), "Connected") })
+	until(t, a, "connection", func() bool { return strings.Contains(logText(a, tab), "Connected") })
 	if tab.Session() == nil {
 		t.Fatal("no session after connecting")
 	}
 
-	tab.msg = widget.NewTextField("hello")
-	a.sendMessage(tab)
-	until(t, a, "echo", func() bool { return strings.Contains(logText(tab), "↓ hello") })
-	if !strings.Contains(logText(tab), "↑ hello") {
-		t.Fatalf("sent message missing:\n%s", logText(tab))
+	*a.ws.Composer(tab.Tab) = widget.NewTextField("hello")
+	a.ws.SendMessage(tab.Tab)
+	until(t, a, "echo", func() bool { return strings.Contains(logText(a, tab), "↓ hello") })
+	if !strings.Contains(logText(a, tab), "↑ hello") {
+		t.Fatalf("sent message missing:\n%s", logText(a, tab))
 	}
-	if tab.msg.Text != "" {
-		t.Fatalf("composer keeps %q after sending", tab.msg.Text)
+	if a.ws.Composer(tab.Tab).Text != "" {
+		t.Fatalf("composer keeps %q after sending", a.ws.Composer(tab.Tab).Text)
 	}
 
 	a.send(tab) // connected: the same button disconnects
@@ -87,7 +88,7 @@ func TestWebSocketConnectFailureShowsInTheLog(t *testing.T) {
 	tab.Req.URL = "ws://127.0.0.1:1/"
 	a.send(tab)
 	until(t, a, "failure", func() bool {
-		return tab.Session() == nil && tab.State() != tabs.ConnConnecting && len(tab.wsView.Lines) > 0
+		return tab.Session() == nil && tab.State() != tabs.ConnConnecting && len(a.ws.Lines(tab.Tab)) > 0
 	})
 	if tab.Session() != nil {
 		t.Fatal("session after a failed connect")
@@ -103,9 +104,9 @@ func TestClearEmptiesTheMessageLog(t *testing.T) {
 	tab.Req.Protocol = "websocket"
 	tab.Req.URL = echoServer(t)
 	a.send(tab)
-	until(t, a, "connection", func() bool { return tab.Session() != nil && len(tab.wsView.Lines) > 0 })
-	a.clearLog(tab)
-	if len(tab.wsView.Lines) != 0 {
+	until(t, a, "connection", func() bool { return tab.Session() != nil && len(a.ws.Lines(tab.Tab)) > 0 })
+	a.ws.Clear(tab.Tab)
+	if len(a.ws.Lines(tab.Tab)) != 0 {
 		t.Fatal("log not cleared")
 	}
 	a.disconnect(tab)
@@ -114,11 +115,11 @@ func TestClearEmptiesTheMessageLog(t *testing.T) {
 func TestWebSocketReconnectsAfterTheServerClosesWhenAsked(t *testing.T) {
 	var conns atomic.Int32
 	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
-		c, err := ws.Upgrade(writer, call)
+		c, err := wire.Upgrade(writer, call)
 		if err != nil {
 			return
 		}
-		defer c.Close(ws.CloseNormal, "")
+		defer c.Close(wire.CloseNormal, "")
 		if conns.Add(1) == 1 {
 			return // the first connection is dropped at once
 		}
@@ -137,8 +138,8 @@ func TestWebSocketReconnectsAfterTheServerClosesWhenAsked(t *testing.T) {
 	tab.Reconnect = true
 	a.send(tab)
 	until(t, a, "second connection", func() bool { return conns.Load() >= 2 && tab.Session() != nil })
-	if !strings.Contains(logText(tab), "Reconnecting") {
-		t.Fatalf("log does not mention the retry:\n%s", logText(tab))
+	if !strings.Contains(logText(a, tab), "Reconnecting") {
+		t.Fatalf("log does not mention the retry:\n%s", logText(a, tab))
 	}
 
 	a.send(tab) // a deliberate disconnect must not reconnect
@@ -154,15 +155,15 @@ func TestReconnectDelayBelongsToEachApp(t *testing.T) {
 	for _, delay := range []time.Duration{10 * time.Millisecond, 20 * time.Millisecond} {
 		t.Run(delay.String(), func(t *testing.T) {
 			t.Parallel()
-			a := &App{retryDelay: delay, bus: bus.New()}
+			a := &App{retryDelay: delay, bus: bus.New(), ws: ws.New(ws.Deps{})}
 			tab := newTab(&request.Request{})
 			tab.Reconnect = true
 			tab.Begin()
 			tab.Failed()                      // a drop that is to be retried
 			time.Sleep(20 * time.Millisecond) // let both cases overlap
 			a.scheduleRetry(tab)
-			if want := "Reconnecting in " + delay.String(); !strings.Contains(logText(tab), want) {
-				t.Fatalf("log lacks %q:\n%s", want, logText(tab))
+			if want := "Reconnecting in " + delay.String(); !strings.Contains(logText(a, tab), want) {
+				t.Fatalf("log lacks %q:\n%s", want, logText(a, tab))
 			}
 		})
 	}
@@ -171,9 +172,9 @@ func TestReconnectDelayBelongsToEachApp(t *testing.T) {
 func TestWebSocketWithoutReconnectStaysClosed(t *testing.T) {
 	var conns atomic.Int32
 	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, call *http.Request) {
-		if c, err := ws.Upgrade(writer, call); err == nil {
+		if c, err := wire.Upgrade(writer, call); err == nil {
 			conns.Add(1)
-			c.Close(ws.CloseNormal, "")
+			c.Close(wire.CloseNormal, "")
 		}
 	}))
 	t.Cleanup(srv.Close)
@@ -182,7 +183,7 @@ func TestWebSocketWithoutReconnectStaysClosed(t *testing.T) {
 	tab.Req.Protocol = "websocket"
 	tab.Req.URL = "ws" + strings.TrimPrefix(srv.URL, "http")
 	a.send(tab)
-	until(t, a, "close", func() bool { return strings.Contains(logText(tab), "Closed by server") && tab.Session() == nil })
+	until(t, a, "close", func() bool { return strings.Contains(logText(a, tab), "Closed by server") && tab.Session() == nil })
 	time.Sleep(100 * time.Millisecond)
 	a.Step(core.Input{})
 	if conns.Load() != 1 {
@@ -197,13 +198,13 @@ func TestComposerSendsHexAsABinaryMessage(t *testing.T) {
 	tab.Req.URL = echoServer(t)
 	a.send(tab)
 	until(t, a, "connection", func() bool { return tab.Session() != nil })
-	tab.msg = widget.NewTextField("hex: de ad BE ef")
-	a.sendMessage(tab)
-	until(t, a, "sent bytes", func() bool { return strings.Contains(logText(tab), "↑ deadbeef") })
-	tab.msg = widget.NewTextField("hex: xyz")
-	a.sendMessage(tab)
-	if !strings.Contains(logText(tab), "hex:") {
-		t.Fatalf("a bad hex message must be explained:\n%s", logText(tab))
+	*a.ws.Composer(tab.Tab) = widget.NewTextField("hex: de ad BE ef")
+	a.ws.SendMessage(tab.Tab)
+	until(t, a, "sent bytes", func() bool { return strings.Contains(logText(a, tab), "↑ deadbeef") })
+	*a.ws.Composer(tab.Tab) = widget.NewTextField("hex: xyz")
+	a.ws.SendMessage(tab.Tab)
+	if !strings.Contains(logText(a, tab), "hex:") {
+		t.Fatalf("a bad hex message must be explained:\n%s", logText(a, tab))
 	}
 	a.disconnect(tab)
 }
@@ -217,11 +218,7 @@ func TestMCPToolsFillTheComposerFromTheirSchemas(t *testing.T) {
 	if len(tab.Tools) != 2 {
 		t.Fatalf("tools %+v", tab.Tools)
 	}
-	items := a.toolMenu(tab)
-	if len(items) != 2 || items[0].Label != "search" {
-		t.Fatalf("menu %+v", items)
-	}
-	items[0].Run() // a tool with properties opens its form; its defaults make the call
+	a.openToolForm(tab, tab.Tools[0]) // a tool with properties opens its form; its defaults make the call
 	if a.dialog == nil || a.dialog.form == nil {
 		t.Fatal("picking a tool with arguments opens the form")
 	}
@@ -230,33 +227,17 @@ func TestMCPToolsFillTheComposerFromTheirSchemas(t *testing.T) {
 			button.Run()
 		}
 	}
-	if got := tab.msg.Text; got != `call search {"q":"","limit":5}` {
+	if got := a.ws.Composer(tab.Tab).Text; got != `call search {"q":"","limit":5}` {
 		t.Fatalf("composer %q", got)
 	}
-	items[1].Run()
-	if got := tab.msg.Text; got != "call ping {}" {
+	a.openToolForm(tab, tab.Tools[1])
+	if got := a.ws.Composer(tab.Tab).Text; got != "call ping {}" {
 		t.Fatalf("composer %q", got)
 	}
 	openSession(tab, &fakeSession{})
 	a.applyWS(wsClosed{wsTarget{tab: tab}})
 	if tab.Tools != nil {
 		t.Fatal("tools must go when the session ends")
-	}
-}
-
-func TestMCPResourcesAndPromptsFillTheComposer(t *testing.T) {
-	a := testApp(t)
-	tab := a.cur()
-	tab.Req.Protocol = "mcp"
-	a.applyWS(wsReceived{wsTarget{tab: tab}, listEvent(`{"result":{"resources":[{"uri":"file:///a.txt","name":"A"}]}}`)})
-	a.applyWS(wsReceived{wsTarget{tab: tab}, listEvent(`{"result":{"prompts":[{"name":"review","arguments":[{"name":"code","required":true}]}]}}`)})
-	a.resourceMenu(tab)[0].Run()
-	if tab.msg.Text != "read file:///a.txt" {
-		t.Fatalf("composer %q", tab.msg.Text)
-	}
-	a.promptMenu(tab)[0].Run()
-	if tab.msg.Text != `prompt review {"code":""}` {
-		t.Fatalf("composer %q", tab.msg.Text)
 	}
 }
 
@@ -271,7 +252,7 @@ func TestSSETabListensAndShowsNoComposer(t *testing.T) {
 	tab.Req.Protocol = "sse"
 	tab.Req.URL = srv.URL
 	a.send(tab)
-	until(t, a, "event", func() bool { return strings.Contains(logText(tab), "hello") })
+	until(t, a, "event", func() bool { return strings.Contains(logText(a, tab), "hello") })
 	until(t, a, "end of stream", func() bool { return tab.Session() == nil })
 	if !strings.Contains(view.Dump(a.messagesPane(wsPanes[0], tab, nil)), "Not connected") {
 		t.Fatal("the pane did not build")
@@ -304,13 +285,13 @@ func TestSSEReconnectResumesFromTheLastEventID(t *testing.T) {
 	tab.Req.Protocol, tab.Req.URL, tab.Reconnect = "sse", srv.URL, true
 	defer func() {
 		if t.Failed() {
-			t.Logf("log:\n%s\nstate=%d sess=%v gen=%d", logText(tab), tab.State(), tab.Session() != nil, tab.Gen)
+			t.Logf("log:\n%s\nstate=%d sess=%v gen=%d", logText(a, tab), tab.State(), tab.Session() != nil, tab.Gen)
 		}
 	}()
 	a.send(tab)
-	until(t, a, "the second stream's event", func() bool { return strings.Contains(logText(tab), "second") || t.Failed() })
-	if !strings.Contains(logText(tab), "second") {
-		t.Fatalf("log:\n%s", logText(tab))
+	until(t, a, "the second stream's event", func() bool { return strings.Contains(logText(a, tab), "second") || t.Failed() })
+	if !strings.Contains(logText(a, tab), "second") {
+		t.Fatalf("log:\n%s", logText(a, tab))
 	}
 	mu.Lock()
 	got := append([]string(nil), seen...)
@@ -321,30 +302,6 @@ func TestSSEReconnectResumesFromTheLastEventID(t *testing.T) {
 	a.send(tab) // disconnect
 	if tab.LastEventID != "" {
 		t.Fatal("a deliberate disconnect must forget the id")
-	}
-}
-
-func TestFormatMessageMakesTheComposerOneLineOfJSON(t *testing.T) {
-	a := testApp(t)
-	tab := a.cur()
-	tab.msg = widget.NewTextField("{\n  \"op\": \"ping\",\n  \"n\": 1\n}")
-	a.formatMessage(tab)
-	if tab.msg.Text != `{"op":"ping","n":1}` {
-		t.Fatalf("composer = %q", tab.msg.Text)
-	}
-}
-
-func TestFormatMessageLeavesBrokenTextAloneAndSaysWhy(t *testing.T) {
-	a := testApp(t)
-	tab := a.cur()
-	tab.msg = widget.NewTextField(`{"op": }`)
-	before := len(a.toasts)
-	a.formatMessage(tab)
-	if tab.msg.Text != `{"op": }` {
-		t.Fatalf("composer = %q, broken text must stay as typed", tab.msg.Text)
-	}
-	if len(a.toasts) != before+1 || !strings.Contains(a.toasts[len(a.toasts)-1].Text, "not JSON") {
-		t.Fatalf("toasts = %+v", a.toasts)
 	}
 }
 
@@ -372,8 +329,8 @@ func TestWebSocketConnectGivesUpWhenTheServerNeverAnswersTheHandshake(t *testing
 	if tab.State() == tabs.ConnConnecting {
 		t.Fatal("still connecting after the timeout")
 	}
-	if !strings.Contains(logText(tab), "deadline exceeded") {
-		t.Fatalf("the log does not say the connect timed out:\n%s", logText(tab))
+	if !strings.Contains(logText(a, tab), "deadline exceeded") {
+		t.Fatalf("the log does not say the connect timed out:\n%s", logText(a, tab))
 	}
 }
 
@@ -385,11 +342,11 @@ func TestSendingAndPingingDoNotBlockTheFrameAndKeepTheirOrder(t *testing.T) {
 
 	done := make(chan struct{})
 	go func() {
-		tab.msg = widget.NewTextField("one")
-		a.sendMessage(tab)
-		a.pingSocket(tab)
-		tab.msg = widget.NewTextField("two")
-		a.sendMessage(tab)
+		*a.ws.Composer(tab.Tab) = widget.NewTextField("one")
+		a.ws.SendMessage(tab.Tab)
+		a.ws.Ping(tab.Tab)
+		*a.ws.Composer(tab.Tab) = widget.NewTextField("two")
+		a.ws.SendMessage(tab.Tab)
 		close(done)
 	}()
 	select {
@@ -404,17 +361,6 @@ func TestSendingAndPingingDoNotBlockTheFrameAndKeepTheirOrder(t *testing.T) {
 	}
 }
 
-// The initialize result is already in the log as the response to the
-// initialize request; the copy that feeds the server info is not a line.
-func TestLogSkipsTheServerInfoEvent(t *testing.T) {
-	a := testApp(t)
-	tab := a.cur()
-	a.logEvent(tab, request.Event{Dir: request.Info, Kind: request.KindInitialize, Text: `{"protocolVersion":"2025-06-18"}`})
-	if len(tab.wsView.Lines) != 0 {
-		t.Fatalf("log has %d lines", len(tab.wsView.Lines))
-	}
-}
-
 // Pins what differs between the composers of the protocols that connect:
 // only MCP's hint lists its commands.
 func TestOnlyTheMCPComposerShowsTheCommandHint(t *testing.T) {
@@ -422,7 +368,7 @@ func TestOnlyTheMCPComposerShowsTheCommandHint(t *testing.T) {
 	tab := a.cur()
 	for _, protocol := range []request.Protocol{"websocket", "mcp", "sse", "grpc"} {
 		tab.Req.Protocol = protocol
-		hint := composerHint(tab, true)
+		hint := viewOf(protocol).composer.HintFor(true)
 		if mcp := strings.HasPrefix(hint, "call TOOL"); mcp != (protocol == "mcp") {
 			t.Errorf("%s composer hint %q", protocol, hint)
 		}
@@ -440,30 +386,6 @@ func TestOnlyTheWebSocketComposerOffersFormat(t *testing.T) {
 		dump := view.Dump(a.messagesPane(wsPanes[0], tab, nil))
 		if formats := strings.Contains(dump, "{ }"); formats != (protocol == "websocket") {
 			t.Errorf("%s offers { }: %v", protocol, formats)
-		}
-	}
-}
-
-// A log line's direction mark is an icon span: an arrow up for sent, an
-// arrow down for received and a dot for a note, with the character kept
-// as its text for copy.
-func TestLogLineDirectionMarksAreIcons(t *testing.T) {
-	cases := []struct {
-		dir        request.Direction
-		icon, text string
-	}{
-		{request.Sent, "arrow-up", "↑"},
-		{request.Received, "arrow-down", "↓"},
-		{request.Info, "dot", "•"},
-	}
-	for _, tc := range cases {
-		a := testApp(t)
-		tab := a.cur()
-		a.logEvent(tab, request.Event{Dir: tc.dir, Kind: request.KindText, Text: "x"})
-		lines := tab.wsView.Lines
-		mark := lines[len(lines)-1].Spans[1]
-		if mark.Icon != tc.icon || mark.Text != tc.text {
-			t.Errorf("%v: mark %+v, want icon %q and text %q", tc.dir, mark, tc.icon, tc.text)
 		}
 	}
 }

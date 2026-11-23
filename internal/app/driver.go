@@ -310,7 +310,7 @@ func (a *App) answered(tab *reqTab) bool {
 		return false
 	}
 	if tab.Session() == nil {
-		return len(tab.wsView.Lines) > 0 // the error is in the log
+		return len(a.ws.Lines(tab.Tab)) > 0 // the error is in the log
 	}
 	explores := slices.ContainsFunc(viewOf(tab.Req.Protocol).streamPanes, func(panel pane) bool { return panel.kind == paneExplorer })
 	return !explores || tab.Server != nil // an explorer waits for the server to say who it is

@@ -91,7 +91,7 @@ func (a *App) openSamplingDialog(call request.SamplingRequest, answer chan<- req
 func (a *App) openToolForm(tab *reqTab, tool request.MCPTool) {
 	form := mcpform.New(tool)
 	if form.Empty() {
-		a.composeCall(tab, tool)
+		a.ws.ComposeCall(tab.Tab, tool)
 		return
 	}
 	a.dialog = &dialog{
@@ -115,7 +115,7 @@ func (a *App) fillFromForm(tab *reqTab, form *mcpform.Form) {
 		return
 	}
 	a.closeDialog()
-	tab.setComposer(command)
+	a.ws.SetComposer(tab.Tab, command)
 }
 
 // Submit makes the App the host of the tool form: Enter in a field of the
