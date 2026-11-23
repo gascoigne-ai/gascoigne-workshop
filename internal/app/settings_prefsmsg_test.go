@@ -69,8 +69,8 @@ func TestSendChangeRebuildsColorsPageAndEditDoesNot(t *testing.T) {
 func TestSendRecordsFileStateAndStatus(t *testing.T) {
 	a := testApp(t)
 	a.Send(prefs.SetStatus{Text: "hello"})
-	if a.status != "hello" {
-		t.Fatalf("status %q", a.status)
+	if a.notices.Status() != "hello" {
+		t.Fatalf("status %q", a.notices.Status())
 	}
 	a.Send(prefs.Toast{Text: "oops", Level: severity.Error})
 	if len(a.toasts) != 1 || a.toasts[0].Text != "oops" {

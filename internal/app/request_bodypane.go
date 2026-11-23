@@ -121,7 +121,7 @@ func (a *App) setBodyType(tab *reqTab, id request.BodyType) {
 func (a *App) formatBody(tab *reqTab) {
 	out, err := format.IndentJSON(tab.body.Text)
 	if err != nil {
-		a.status = "Cannot format body: " + err.Error()
+		a.notices.SetStatus("Cannot format body: " + err.Error())
 		return
 	}
 	tab.body.SelectAll()

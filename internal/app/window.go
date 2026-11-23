@@ -1,9 +1,13 @@
 package app
 
 import (
+	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/format"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sizes"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+
 	// The view DSL is dot-imported so views read like markup: Row(...), Text(...).
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
@@ -14,7 +18,6 @@ const (
 	headerH  = 44  // the banner: title, environment chip, settings
 	tabsH    = 42  // the request tab row: a tab's height plus the room above it
 	urlH     = 56  // the URL bar: its controls plus padding above and below
-	statusH  = 28  // the status bar
 
 	// Smallest sizes the dividers allow.
 	minSidebarW = 160
@@ -171,3 +174,46 @@ const (
 </col>
 `
 )
+
+var responseStatusTemplate = markup.Must("responsestatus.vml", responsestatusSource)
+
+// scope is the scope of a template: the sizes of the faces the context draws
+// and the fixed widths, then own.
+func (a *App) scope(own markup.Scope) markup.Scope { return sizes.Scope(a.ctx, own) }
+
+// statusBar is the line under the window.
+func (a *App) statusBar() Node { return a.bar.View(a.ctx) }
+
+// responseStatus is "200 OK  1.4s  156.67KB", dropped when the tabs need the room.
+func (a *App) responseStatus(tab *reqTab) Node {
+	if tab.Resp == nil || tab.Resp.Err != "" {
+		return nil
+	}
+	fg, bg := statusPill(tab.Resp.Status)
+	return responseStatusTemplate.MustBuild(a.scope(markup.Scope{
+		"pillFg": fg,
+		"pillBg": bg,
+		"status": fmt.Sprintf("%d %s", tab.Resp.Status, tab.Resp.StatusText),
+		"timing": fmt.Sprintf("%s  %s", format.Duration(tab.Resp.Duration), format.Size(tab.Resp.Size)),
+	}))
+}
+
+// statusPill is the text and background colors of a response status:
+// success, redirect or failure, as the dashboard's badges.
+func statusPill(status int) (fg, bg w.Token) {
+	switch {
+	case status >= 400:
+		return w.Error, w.ErrorSoft
+	case status >= 300:
+		return w.Warn, w.WarnSoft
+	}
+	return w.OK, w.OKSoft
+}
+
+const responsestatusSource = `<row gap="{{gutter}}" pad-r="{{gutter}}" optional align-items="center">
+  <row pad-x="{{labelPad}}" h="{{slimH}}" bg="{{pillBg}}" control="pill" align-items="center">
+    <text small bold color="{{pillFg}}">{{status}}</text>
+  </row>
+  <text>{{timing}}</text>
+</row>
+`

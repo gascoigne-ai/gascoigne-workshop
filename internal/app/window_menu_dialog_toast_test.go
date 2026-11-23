@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request/severity"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sizes"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"github.com/hajimehoshi/ebiten/v2"
@@ -219,7 +220,7 @@ func TestDialogTrapsFocusAndBlocksShortcuts(t *testing.T) {
 // with 6px between them; the newest is lowest.
 func toastRect(count, index int) (x, y, w, h int) {
 	total := count*36 + (count-1)*6
-	return 1280 - 12 - 320, 800 - statusH - 8 - total + index*42, 320, 36
+	return 1280 - 12 - 320, 800 - sizes.StatusH - 8 - total + index*42, 320, 36
 }
 
 func TestInfoToastsExpireAndErrorsStayUntilClicked(t *testing.T) {
@@ -286,8 +287,8 @@ func TestClipboardFailureBecomesAnErrorToast(t *testing.T) {
 	}
 	a.ctx.Clipboard = core.ReportClipboard(&fakeClip{}, a.clipboardNote)
 	a.ctx.Clipboard.Write("hello")
-	if len(a.toasts) != 1 || a.status != "Copied 5 characters" {
-		t.Fatalf("a successful copy is a status line, not a toast: toasts %d status %q", len(a.toasts), a.status)
+	if len(a.toasts) != 1 || a.notices.Status() != "Copied 5 characters" {
+		t.Fatalf("a successful copy is a status line, not a toast: toasts %d status %q", len(a.toasts), a.notices.Status())
 	}
 }
 

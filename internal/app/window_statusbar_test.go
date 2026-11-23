@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sizes"
 	"testing"
 
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -11,17 +12,17 @@ import (
 // The inline status bar template renders exactly what the Go view it replaced did.
 func TestStatusBarTemplateMatchesTheGoView(t *testing.T) {
 	a := testApp(t)
-	a.status = "Sent 200 OK in 120ms"
-	goView := Row(H(statusH), PadX(w.Gutter), Gap(w.Gutter), Bg(w.Frame), Control("statusbar"), BorderT(w.Border),
-		Text(a.status, Small(), Muted(), Ellipsis(), Grow(1)),
+	a.notices.SetStatus("Sent 200 OK in 120ms")
+	goView := Row(H(sizes.StatusH), PadX(w.Gutter), Gap(w.Gutter), Bg(w.Frame), Control("statusbar"), BorderT(w.Border),
+		Text(a.notices.Status(), Small(), Muted(), Ellipsis(), Grow(1)),
 		Button("Log", W(44), H(20), OnClick(a.calls.Open), Tooltip("Show the log of calls")),
-		Row(OnClick(a.openWelcome), Tooltip("What is in this version"),
+		Row(OnClick(a.OpenWelcome), Tooltip("What is in this version"),
 			Text(version, Small(), Muted()),
 		),
 	)
 	tplView := a.statusBar()
-	Layout(a.ctx, goView, 900, statusH)
-	Layout(a.ctx, tplView, 900, statusH)
+	Layout(a.ctx, goView, 900, sizes.StatusH)
+	Layout(a.ctx, tplView, 900, sizes.StatusH)
 	if got, want := Dump(tplView), Dump(goView); got != want {
 		t.Fatalf("template:\n%s\nGo:\n%s", got, want)
 	}

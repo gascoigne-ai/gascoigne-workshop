@@ -48,8 +48,8 @@ func TestStartWithABrokenClientConfigSaysSoAndKeepsTheSample(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(app.status, "Client config not loaded") || !strings.Contains(app.status, ".workshop.yaml") {
-		t.Fatalf("status = %q, want the problem and the file", app.status)
+	if !strings.Contains(app.notices.Status(), "Client config not loaded") || !strings.Contains(app.notices.Status(), ".workshop.yaml") {
+		t.Fatalf("status = %q, want the problem and the file", app.notices.Status())
 	}
 	if app.col().Name != collection.GitHubSample().Name {
 		t.Fatalf("collection %q, want the sample kept", app.col().Name)

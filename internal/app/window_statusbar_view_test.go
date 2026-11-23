@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sizes"
 	"os"
 	"path/filepath"
 	"testing"
@@ -18,21 +19,21 @@ const (
 // The status bar with a status line too long for the narrow width is
 // pinned at both widths.
 func TestTheStatusBarLaysOutAsPinned(t *testing.T) {
-	sizes := []struct {
+	widths := []struct {
 		name  string
 		width int
 	}{
 		{"wide", statusWideW},
 		{"narrow", statusNarrowW},
 	}
-	for _, size := range sizes {
+	for _, size := range widths {
 		name := "statusbar-long-" + size.name
 		t.Run(name, func(t *testing.T) {
 			a := testApp(t)
 			t.Cleanup(a.WaitWrites)
-			a.status = "Sent 200 OK in 120ms to https://api.github.com/repos/golang/go/issues"
+			a.notices.SetStatus("Sent 200 OK in 120ms to https://api.github.com/repos/golang/go/issues")
 			root := a.statusBar()
-			Layout(a.ctx, root, size.width, statusH)
+			Layout(a.ctx, root, size.width, sizes.StatusH)
 			want, err := os.ReadFile(filepath.Join("testdata", name+".dump"))
 			if err != nil {
 				t.Fatal(err)

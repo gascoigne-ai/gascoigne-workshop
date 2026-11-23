@@ -81,7 +81,7 @@ func TestPickingASentRowOpensItsRequest(t *testing.T) {
 func TestPickingASentRowOfADeletedRequestSaysSo(t *testing.T) {
 	a := testApp(t, memorySettings(), withOptions(Options{StatePath: ""}))
 	a.sent.Open(a, history.Sent{Path: "Gone/Request"})
-	if a.status == "Ready" {
+	if a.notices.Status() == "Ready" {
 		t.Fatal("no note for a request that is gone")
 	}
 }

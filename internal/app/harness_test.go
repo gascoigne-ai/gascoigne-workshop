@@ -143,7 +143,7 @@ func until(t *testing.T, app *App, what string, cond func() bool) {
 func statusSoon(t *testing.T, app *App, want string) {
 	t.Helper()
 	until(t, app, fmt.Sprintf("a status holding %q", want), func() bool {
-		return strings.Contains(app.status, want)
+		return strings.Contains(app.notices.Status(), want)
 	})
 }
 

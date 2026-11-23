@@ -176,7 +176,7 @@ func (a *App) openCollectionAt(dir string) {
 		a.toast("Cannot open "+dir+": "+err.Error(), severity.Error)
 		return
 	}
-	a.status = "Opened " + collections.AbsDir(dir)
+	a.notices.SetStatus("Opened " + collections.AbsDir(dir))
 }
 
 // requestCloseCollection closes col, first asking when closing would lose

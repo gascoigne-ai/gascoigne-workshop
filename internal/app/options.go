@@ -15,6 +15,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/storage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/formpage"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/statusbar"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"net/http"
@@ -115,7 +116,6 @@ func NewApp(opts Options) (*App, error) {
 		sample:     opts.Sample,
 		widgets:    map[*tabs.Tab]*reqTab{},
 		bus:        bus.New(),
-		status:     "Ready",
 		jar:        newJar(),
 		list:       tabs.List{Drag: -1},
 		ports: ports{
@@ -132,8 +132,10 @@ func NewApp(opts Options) (*App, error) {
 		},
 	}
 	a.driver.app = a
+	a.notices.SetStatus("Ready")
+	a.bar = statusbar.New(statusbar.Deps{Status: &a.notices, Log: &a.calls, Welcome: a, Version: version})
 	if loadErr != nil {
-		a.status = loadErr.Error()
+		a.notices.SetStatus(loadErr.Error())
 	}
 	a.prefs.Stamp(a, a.settingsPath)
 	a.reg = a.newRegistry()
@@ -157,12 +159,12 @@ func NewApp(opts Options) (*App, error) {
 	a.openWorkspace(opts.WorkspaceDir)
 	stateErr := a.loadState(opts.StatePath)
 	if opts.Welcome && (opts.WelcomeEvery || a.welcomed != version) {
-		a.openWelcome()
+		a.OpenWelcome()
 	}
 	a.sent.Load(a)
-	a.status = stateNote(a.status, stateErr)
+	a.notices.SetStatus(stateNote(a.notices.Status(), stateErr))
 	if len(themeProblems) > 0 {
-		a.status = stateNote(a.status, fmt.Errorf("%s", themeProblems[0]))
+		a.notices.SetStatus(stateNote(a.notices.Status(), fmt.Errorf("%s", themeProblems[0])))
 	}
 	a.stateSave = autosave.New(stateDebounce, stateKey(a.snapshot()))
 	return a, nil

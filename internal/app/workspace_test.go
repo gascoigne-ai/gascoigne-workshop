@@ -41,8 +41,8 @@ func TestBrokenWorkspaceFallsBackWithoutOverwriting(t *testing.T) {
 		t.Fatal(err)
 	}
 	a := testApp(t, untouchedSettings(), inWorkspace(dir), withOptions(Options{}))
-	if a.workspace() != "" || a.status == "Ready" {
-		t.Fatalf("workspace %q status %q", a.workspace(), a.status)
+	if a.workspace() != "" || a.notices.Status() == "Ready" {
+		t.Fatalf("workspace %q status %q", a.workspace(), a.notices.Status())
 	}
 	a.saveWorkspace() // with no workspace and no default this must not write into dir
 	if b := fileText(t, bad); b != "{nope" {

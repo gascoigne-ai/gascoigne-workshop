@@ -28,7 +28,7 @@ func (a *App) SentStore() history.SentStore {
 func (a *App) Toast(text string, level severity.Level) { a.toast(text, level) }
 
 // SetStatus replaces the status line.
-func (a *App) SetStatus(text string) { a.status = text }
+func (a *App) SetStatus(text string) { a.notices.SetStatus(text) }
 
 // OpenRequest focuses the request at path of the collection saved in
 // folder and reports whether there is one. A row without a folder is of a

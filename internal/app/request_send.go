@@ -36,7 +36,7 @@ func (a *App) dispatch(tab *reqTab, source *request.Request) {
 	if !started {
 		return
 	}
-	a.status = "Sending " + source.URL
+	a.notices.SetStatus("Sending " + source.URL)
 	req := source.Expanded(a.varsFor(tab.Req))
 	a.calls.Sent(a.now(), req)
 	ctx, cancel := context.WithTimeout(context.Background(), a.timeoutFor(req))
@@ -60,7 +60,7 @@ func (a *App) cancelSend(tab *reqTab) {
 	}
 	tab.cancel()
 	tab.view.SetLines(nil)
-	a.status = request.ErrCancelled
+	a.notices.SetStatus(request.ErrCancelled)
 }
 
 // timeoutFor is how long a request may run: its own setting, else the
@@ -83,7 +83,7 @@ func (a *App) handle(msg bus.Msg) {
 	case func(): // something a goroutine wants done on the UI goroutine, such as a chosen file
 		msg()
 	case bus.Failed: // a background task panicked; the app lives on
-		a.status = msg.Err.Error()
+		a.notices.SetStatus(msg.Err.Error())
 	}
 }
 
@@ -102,10 +102,10 @@ func (a *App) apply(result sendResult) {
 	a.rememberSchema(t, &result.resp)
 	a.refreshView(t)
 	if result.resp.Err != "" {
-		a.status = "Request failed"
+		a.notices.SetStatus("Request failed")
 		a.runTests(t)
 		return
 	}
-	a.status = fmt.Sprintf("%s %s: %d %s in %s", t.Req.Method, t.Req.URL, result.resp.Status, result.resp.StatusText, format.Duration(result.resp.Duration))
+	a.notices.SetStatus(fmt.Sprintf("%s %s: %d %s in %s", t.Req.Method, t.Req.URL, result.resp.Status, result.resp.StatusText, format.Duration(result.resp.Duration)))
 	a.runTests(t)
 }

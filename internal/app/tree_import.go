@@ -69,7 +69,7 @@ func (a *App) importFolder(dir *request.Folder, kind importKind) {
 		return
 	}
 	name := a.attachImport(dir, got)
-	a.status = "Imported " + name
+	a.notices.SetStatus("Imported " + name)
 	if len(got.skipped) > 0 {
 		a.toast(fmt.Sprintf("%d %s, first: %s", len(got.skipped), kind.skippedWhat, got.skipped[0]), severity.Error)
 	}

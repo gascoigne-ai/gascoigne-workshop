@@ -20,7 +20,7 @@ func (a *App) runTests(tab *reqTab) {
 		return
 	}
 	if sum := assert.Summary(tab.testResults); sum != "" && tab.Resp != nil && tab.Resp.Err == "" {
-		a.status += "  Tests: " + sum
+		a.notices.SetStatus(a.notices.Status() + "  Tests: " + sum)
 	}
 }
 

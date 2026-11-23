@@ -157,8 +157,8 @@ func TestAnOutOfRangeSettingIsClampedAndNamedInTheStatusLine(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if a.settings.TimeoutSec != 3600 || !strings.Contains(a.status, "timeoutSec") {
-		t.Fatalf("timeout %d, status %q", a.settings.TimeoutSec, a.status)
+	if a.settings.TimeoutSec != 3600 || !strings.Contains(a.notices.Status(), "timeoutSec") {
+		t.Fatalf("timeout %d, status %q", a.settings.TimeoutSec, a.notices.Status())
 	}
 	a.settings.TimeoutSec = 10
 	a.revertSettings() // reading the file again applies the clamped value too

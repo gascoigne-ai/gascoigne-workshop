@@ -4,7 +4,7 @@ Tabs, remembered state, the bus, the file browser, autosave, overlays, and the f
 
 ## Layout
 - `internal/feature/workspace`: the model (root package `workspace`) with the ports `Folders` and `StateStore`.
-- Controllers as sub-packages: `tabs` (tab list, send and connection state), `state` (the remembered-state record), `filebrowser`, `autosave`, `bus`, `overlay`, `serial`.
+- Controllers as sub-packages: `tabs` (tab list, send and connection state), `state` (the remembered-state record), `filebrowser`, `autosave`, `bus`, `overlay`, `serial`, `notice` (the status line under the window; the toasts join it when their view leaves the app).
 - `adapter/statefile`: the `state.json` store.
 - `adapter/folders` is the user's file system on the disk (`Folders`); `adapter/statefile` keeps the remembered state.
 - Imports: the base feature (`feature/request` for the MCP server info a connection keeps) plus the toolkit for the icon. The root imports its own `state` sub-package.

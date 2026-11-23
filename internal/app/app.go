@@ -12,9 +12,11 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/notice"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/destpicker"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/response/calltrace"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/statusbar"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"net/http"
 	"time"
@@ -42,7 +44,8 @@ type App struct {
 	list       tabs.List                 // the open tabs, the active one and the one being dragged
 	widgets    map[*tabs.Tab]*reqTab     // the widget state of each open tab
 	bus        *bus.Bus                  // what goroutines report back, drained once per frame
-	status     string
+	notices    notice.Notices            // the status line under the window
+	bar        *statusbar.Component
 	driver     Driver             // what the end-to-end screenshots drive the window with
 	err        error              // a failure that ends the run, reported by Err
 	browser    *fileBrowser       // the in-app file browser while it is open

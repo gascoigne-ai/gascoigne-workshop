@@ -75,8 +75,8 @@ func TestSendShowsTheResponse(t *testing.T) {
 	if len(tab.view.Lines) != 3 { // pretty-printed {"ok":true}
 		t.Fatalf("response view has %d lines", len(tab.view.Lines))
 	}
-	if !strings.Contains(a.status, "200 OK") {
-		t.Fatalf("status = %q", a.status)
+	if !strings.Contains(a.notices.Status(), "200 OK") {
+		t.Fatalf("status = %q", a.notices.Status())
 	}
 }
 
@@ -129,8 +129,8 @@ func TestFailedSendShowsTheError(t *testing.T) {
 
 	click(a, sendX, urlBarY)
 	waitForResponse(t, a, tab)
-	if tab.Resp.Err == "" || a.status != "Request failed" {
-		t.Fatalf("err %q status %q", tab.Resp.Err, a.status)
+	if tab.Resp.Err == "" || a.notices.Status() != "Request failed" {
+		t.Fatalf("err %q status %q", tab.Resp.Err, a.notices.Status())
 	}
 }
 
@@ -279,8 +279,8 @@ func TestFormatButtonIndentsValidJSONOnly(t *testing.T) {
 	a.cur().body.SelectAll()
 	a.cur().body.Insert(req.Body)
 	click(a, formatX, chipsY)
-	if req.Body != `{"a":` || !strings.Contains(a.status, "Cannot format") {
-		t.Fatalf("Body %q status %q: invalid JSON must be left alone and reported", req.Body, a.status)
+	if req.Body != `{"a":` || !strings.Contains(a.notices.Status(), "Cannot format") {
+		t.Fatalf("Body %q status %q: invalid JSON must be left alone and reported", req.Body, a.notices.Status())
 	}
 }
 
@@ -365,8 +365,8 @@ func TestSendingTurnsIntoCancelAndStopsTheRequest(t *testing.T) {
 	if tab.Sending() || tab.Resp == nil || tab.Resp.Err != "Cancelled" {
 		t.Fatalf("sending %v resp %+v", tab.Sending(), tab.Resp)
 	}
-	if a.status != "Cancelled" {
-		t.Fatalf("status = %q", a.status)
+	if a.notices.Status() != "Cancelled" {
+		t.Fatalf("status = %q", a.notices.Status())
 	}
 }
 

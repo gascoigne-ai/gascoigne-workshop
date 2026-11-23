@@ -99,9 +99,9 @@ func wrap(text string, limit int) string {
 
 var welcomeTemplate = markup.Must("welcome.vml", welcomeSource)
 
-// openWelcome shows the release notes and remembers that this version was
+// OpenWelcome shows the release notes and remembers that this version was
 // welcomed, so the dialog opens by itself only once per version.
-func (a *App) openWelcome() {
+func (a *App) OpenWelcome() {
 	a.welcomed = version
 	d := &dialog{width: welcomeW, DialogState: DialogState{Title: welcomeTitle, Body: welcomeLead, Buttons: []DialogButton{
 		{Label: "Get started", Primary: true, Run: a.closeDialog},

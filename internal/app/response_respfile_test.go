@@ -104,8 +104,8 @@ func TestAssertionsRunWhenAResponseArrivesAndAfterEdits(t *testing.T) {
 	if len(tab.testResults) != 3 || !tab.testResults[0].OK || !tab.testResults[1].OK || tab.testResults[2].OK {
 		t.Fatalf("%+v", tab.testResults)
 	}
-	if !strings.Contains(a.status, "Tests: 2/3 passed") {
-		t.Fatalf("status %q", a.status)
+	if !strings.Contains(a.notices.Status(), "Tests: 2/3 passed") {
+		t.Fatalf("status %q", a.notices.Status())
 	}
 	if got := responsePanes[len(responsePanes)-1].badge(a, tab); got != 1 {
 		t.Fatalf("the response Tests tab counts failures: %d", got)

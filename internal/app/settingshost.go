@@ -119,7 +119,7 @@ func (a *App) CopyText(text string) { _ = a.ctx.Clipboard.Write(text) } // the c
 func (a *App) applySettings(current settings.Settings) {
 	a.settings = current
 	if err := a.ctx.SetTheme(theme.ThemeWith(current)); err != nil {
-		a.status = err.Error()
+		a.notices.SetStatus(err.Error())
 	}
 	for _, t := range a.openTabs() {
 		t.look.Mode = viewer.ModeOf(current.ResponseView)
@@ -158,8 +158,8 @@ func (a *App) persistSettings() {
 		return
 	}
 	if err := a.SettingsStore().Save(a.settingsPath, a.settings); err != nil {
-		a.status = "Could not save settings: " + err.Error()
-		a.toast(a.status, severity.Error)
+		a.notices.SetStatus("Could not save settings: " + err.Error())
+		a.toast(a.notices.Status(), severity.Error)
 		return
 	}
 	a.prefs.Stamp(a, a.settingsPath)
@@ -242,7 +242,7 @@ func (a *App) Send(msg prefs.Msg) {
 	case prefs.Toast:
 		a.toast(msg.Text, msg.Level)
 	case prefs.SetStatus:
-		a.status = msg.Text
+		a.notices.SetStatus(msg.Text)
 	case prefs.OpenMenu:
 		a.openMenuItems(msg.X, msg.Y, msg.Items)
 	case prefs.PickFile:

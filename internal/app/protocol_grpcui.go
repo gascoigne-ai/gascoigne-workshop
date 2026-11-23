@@ -23,7 +23,7 @@ func (a *App) pickGRPCMethod(tab *reqTab) {
 	}
 	req := tab.Req.Expanded(a.varsFor(tab.Req))
 	x, y := a.ctx.In.X, a.ctx.In.Y
-	a.status = "Listing methods of " + req.URL
+	a.notices.SetStatus("Listing methods of " + req.URL)
 	timeout := a.timeoutFor(req) // read here: the goroutine must not touch App fields
 	a.bus.Run(context.Background(), func(ctx context.Context) bus.Msg {
 		ctx, cancel := context.WithTimeout(ctx, timeout)

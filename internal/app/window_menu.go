@@ -30,7 +30,7 @@ func (a *App) saveSettings(edit func(*settings.Settings)) {
 		a.reg = a.newRegistry() // protocols hold the proxy and certificates they were built with
 	}
 	if err := a.ctx.SetTheme(theme.ThemeWith(a.settings)); err != nil {
-		a.status = err.Error()
+		a.notices.SetStatus(err.Error())
 		return
 	}
 	if a.settingsPath == "" {

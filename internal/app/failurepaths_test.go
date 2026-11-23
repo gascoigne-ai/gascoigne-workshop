@@ -115,7 +115,7 @@ func TestEveryFailurePathIsShownToTheUser(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			a := testApp(t)
-			before := a.status
+			before := a.notices.Status()
 			test.trigger(t, a)
 			a.WaitWrites() // saves run in the background
 			if test.wantToast != "" {
@@ -124,11 +124,11 @@ func TestEveryFailurePathIsShownToTheUser(t *testing.T) {
 					found = found || (toast.Kind == widget.ToastError && strings.Contains(toast.Text, test.wantToast))
 				}
 				if !found {
-					t.Fatalf("no error toast containing %q; toasts %+v, status %q", test.wantToast, a.toasts, a.status)
+					t.Fatalf("no error toast containing %q; toasts %+v, status %q", test.wantToast, a.toasts, a.notices.Status())
 				}
 			}
-			if test.wantState != "" && !strings.Contains(a.status, test.wantState) {
-				t.Fatalf("status %q (was %q), want it to contain %q", a.status, before, test.wantState)
+			if test.wantState != "" && !strings.Contains(a.notices.Status(), test.wantState) {
+				t.Fatalf("status %q (was %q), want it to contain %q", a.notices.Status(), before, test.wantState)
 			}
 		})
 	}
@@ -155,7 +155,7 @@ func TestAHistoryThatCannotBeWrittenIsReportedByAToast(t *testing.T) {
 		found = found || (toast.Kind == widget.ToastError && strings.Contains(toast.Text, "history"))
 	}
 	if !found {
-		t.Fatalf("no toast about the history; toasts %+v, status %q", a.toasts, a.status)
+		t.Fatalf("no toast about the history; toasts %+v, status %q", a.toasts, a.notices.Status())
 	}
 	if len(a.toasts) > 2 {
 		t.Fatalf("one failure made %d toasts: %+v", len(a.toasts), a.toasts)

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sizes"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -53,7 +54,7 @@ func TestWelcomeShowsAgainForANewVersion(t *testing.T) {
 
 func TestClickingTheVersionOpensWelcome(t *testing.T) {
 	a := testApp(t)
-	click(a, a.w-30, a.h-statusH/2)
+	click(a, a.w-30, a.h-sizes.StatusH/2)
 	if a.dialog == nil || !strings.Contains(a.dialog.Title, "0.1.0 alpha") {
 		t.Fatalf("dialog = %+v, want the welcome dialog", a.dialog)
 	}

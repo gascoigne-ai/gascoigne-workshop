@@ -48,8 +48,8 @@ flowchart LR
 
 ### Window
 
-The window is VML views (`window.go`, `tree_sidebar.go`, `requesttabs.go`, `request_urlbar.go`,
-`window_statusbar.go`); handlers are closures that change the `App`. Panes are tables, not switches:
+The window is VML views (`window.go`, `tree_sidebar.go`, `requesttabs.go`, `request_urlbar.go`);
+the status bar is the component `ui/statusbar` (`App.bar`, built in `NewApp`; it reads the status line and opens the log and the welcome dialog through its `Deps`), the fixed widths and `StatusH` are `ui/sizes`, and the status line is `workspace/notice` (`App.notices`; the toasts stay in `App` until the overlays move); `responseStatus` stays in `window.go` until the response pane moves; handlers are closures that change the `App`. Panes are tables, not switches:
 
 - `requestPanes`, `connectionRequestPanes`, `grpcRequestPanes` and `responsePanes` list the tabs;
   `paneBuilders` maps a pane kind to its view. A new pane is a row.

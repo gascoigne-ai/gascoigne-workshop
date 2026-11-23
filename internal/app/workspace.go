@@ -52,7 +52,7 @@ func (a *App) openWorkspace(dir string) {
 		}
 	}
 	if len(failed) > 0 {
-		a.status = "Workspace not loaded: " + errors.Join(failed...).Error()
+		a.notices.SetStatus("Workspace not loaded: " + errors.Join(failed...).Error())
 	}
 	if len(a.open.Entries) == 0 {
 		sample = a.includeStart(a.rememberedEnv(""))
@@ -105,7 +105,7 @@ func (a *App) startCollection() (col *request.Collection, isSample bool) {
 	if a.clients != nil {
 		config, err := a.clients.Load()
 		if err != nil {
-			a.status = "Client config not loaded: " + err.Error()
+			a.notices.SetStatus("Client config not loaded: " + err.Error())
 		} else if !config.Empty() {
 			configured := config.Collection()
 			return &configured, false
@@ -151,7 +151,7 @@ func (a *App) saveCollection(col *request.Collection) {
 				a.toast("Saving failed: "+err.Error(), severity.Error)
 				return
 			}
-			a.status = fmt.Sprintf("Saved %s", snapshot.Name)
+			a.notices.SetStatus(fmt.Sprintf("Saved %s", snapshot.Name))
 		},
 	})
 }
@@ -270,7 +270,7 @@ func (a *App) openWorkspaceAt(dir string) {
 	a.selected = request.Node{}
 	a.expanded = map[*request.Folder]bool{}
 	a.showOpened(a.openLoaded(loaded, dir, env))
-	a.status = "Opened " + dir
+	a.notices.SetStatus("Opened " + dir)
 }
 
 // promptWorkspace asks for the folder of a collection to open beside the

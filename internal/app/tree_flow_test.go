@@ -3,6 +3,7 @@ package app
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sizes"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"github.com/hajimehoshi/ebiten/v2"
@@ -48,7 +49,7 @@ func TestTreeScrollsWhenItDoesNotFit(t *testing.T) {
 	}
 	a.Step(core.Input{})
 	rowsN := len(collection.Rows(&a.col().Folder, a.expanded))
-	if rowsN*core.RowH <= a.h-headerH-statusH {
+	if rowsN*core.RowH <= a.h-headerH-sizes.StatusH {
 		t.Fatalf("test setup: %d rows fit, nothing to scroll", rowsN)
 	}
 
@@ -60,7 +61,7 @@ func TestTreeScrollsWhenItDoesNotFit(t *testing.T) {
 	// scroll to the end, then click the last row: it must open that request
 	a.Step(core.Input{X: 100, Y: 100, Wheel: -50})
 	last := collection.Rows(&a.col().Folder, a.expanded)[rowsN-1]
-	click(a, 100, a.h-statusH-core.RowH/2)
+	click(a, 100, a.h-sizes.StatusH-core.RowH/2)
 	if a.cur().Req != last.Req {
 		t.Fatalf("clicking the bottom row opened %q, want %q", a.cur().Req.Name, last.Name)
 	}

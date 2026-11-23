@@ -100,8 +100,8 @@ func TestStateCorruptFileStartsFreshWithAStatusNote(t *testing.T) {
 		t.Fatal(err)
 	}
 	a := testApp(t, memorySettings(), withOptions(Options{StatePath: path}))
-	if len(a.list.Tabs) != 1 || a.status == "Ready" {
-		t.Fatalf("tabs %d status %q", len(a.list.Tabs), a.status)
+	if len(a.list.Tabs) != 1 || a.notices.Status() == "Ready" {
+		t.Fatalf("tabs %d status %q", len(a.list.Tabs), a.notices.Status())
 	}
 }
 

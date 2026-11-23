@@ -101,7 +101,7 @@ func (a *App) renameCollection(col *request.Collection, text string) {
 	a.open = collections.Update(a.open, collections.Located{Collection: col, Dir: dir})
 	a.rememberCollections()
 	a.markSaved(col)
-	a.status = "Renamed to " + name
+	a.notices.SetStatus("Renamed to " + name)
 }
 
 // confirmDeleteCollection asks, then deletes col.

@@ -3,6 +3,7 @@ package app
 import (
 	"cmp"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request/severity"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sizes"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/overlay"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/mcp/mcpform"
@@ -129,7 +130,7 @@ func (a *App) clipboardNote(msg string, isErr bool) {
 		a.toast(msg, severity.Error)
 		return
 	}
-	a.status = msg
+	a.notices.SetStatus(msg)
 }
 
 // toastsView is the stack of toasts in the window's bottom-right corner,
@@ -139,7 +140,7 @@ func (a *App) toastsView() Node {
 		"stack":   &a.toasts,
 		"width":   a.w,
 		"height":  a.h,
-		"statusH": statusH,
+		"statusH": sizes.StatusH,
 	})
 }
 

@@ -99,7 +99,7 @@ func (a *App) connect(tab *reqTab) {
 	if !ok {
 		return
 	}
-	a.status = "Connecting to " + tab.Req.URL
+	a.notices.SetStatus("Connecting to " + tab.Req.URL)
 	req := tab.Req.Expanded(a.varsFor(tab.Req))
 	if header := tab.Req.Protocol.Info().ResumeHeader; header != "" && tab.LastEventID != "" { // resume where the stream stopped
 		req.Headers = append(req.Headers, request.KV{Name: header, Value: tab.LastEventID, Enabled: true})
@@ -145,7 +145,7 @@ func (a *App) disconnect(tab *reqTab) {
 	}
 	if abandoned {
 		tab.wsCancel()
-		a.status = request.ErrCancelled
+		a.notices.SetStatus(request.ErrCancelled)
 	}
 }
 
@@ -244,7 +244,7 @@ func (a *App) applyOpened(msg wsOpened) {
 		return
 	}
 	a.calls.Info(a.now(), "Connected to "+tab.Req.URL)
-	a.status = "Connected to " + tab.Req.URL
+	a.notices.SetStatus("Connected to " + tab.Req.URL)
 }
 
 func (a *App) applyFailed(msg wsFailed) {
@@ -254,7 +254,7 @@ func (a *App) applyFailed(msg wsFailed) {
 	}
 	a.calls.Error(a.now(), fmt.Sprintf("✗ %s: %s", tab.Req.URL, msg.err))
 	a.logInfo(tab, msg.err.Error(), w.Error)
-	a.status = "Connection failed"
+	a.notices.SetStatus("Connection failed")
 	a.scheduleRetry(tab)
 }
 
@@ -264,7 +264,7 @@ func (a *App) applyClosed(msg wsClosed) {
 		return
 	}
 	a.calls.Info(a.now(), "Disconnected from "+tab.Req.URL)
-	a.status = "Disconnected from " + tab.Req.URL
+	a.notices.SetStatus("Disconnected from " + tab.Req.URL)
 	a.scheduleRetry(tab)
 }
 

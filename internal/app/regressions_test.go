@@ -122,8 +122,8 @@ func TestClosingATabClosesItsSession(t *testing.T) {
 func TestAFailedCommandIsShownInTheStatusLine(t *testing.T) {
 	a := testApp(t)
 	a.handle(bus.Failed{Err: errors.New("a command panicked: boom")})
-	if !strings.Contains(a.status, "boom") {
-		t.Fatalf("status %q does not show the failure", a.status)
+	if !strings.Contains(a.notices.Status(), "boom") {
+		t.Fatalf("status %q does not show the failure", a.notices.Status())
 	}
 }
 

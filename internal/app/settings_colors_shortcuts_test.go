@@ -58,8 +58,8 @@ func TestSettingsSaveFailureIsReported(t *testing.T) {
 		t.Fatal(err)
 	}
 	a.changeSettings(func(prefs *settings.Settings) { prefs.Theme = "light" })
-	if !strings.HasPrefix(a.status, "Could not save settings:") {
-		t.Fatalf("status = %q", a.status)
+	if !strings.HasPrefix(a.notices.Status(), "Could not save settings:") {
+		t.Fatalf("status = %q", a.notices.Status())
 	}
 	if a.settings.Theme != "light" {
 		t.Fatal("the change must still apply in memory")
@@ -75,8 +75,8 @@ func TestBrokenSettingsFileFallsBackAndSaysSo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(a.settings, settings.Default()) || !strings.Contains(a.status, "parse settings") {
-		t.Fatalf("settings %+v status %q", a.settings, a.status)
+	if !reflect.DeepEqual(a.settings, settings.Default()) || !strings.Contains(a.notices.Status(), "parse settings") {
+		t.Fatalf("settings %+v status %q", a.settings, a.notices.Status())
 	}
 }
 
