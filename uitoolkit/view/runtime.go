@@ -272,8 +272,9 @@ func (e *El) update(ctx *core.Ctx) bool {
 	}
 	if e.modal {
 		// A modal overlay owns the pointer: nothing under it gets clicks,
-		// wheel or hover, and a click outside it dismisses it.
-		if (ctx.In.Click || ctx.In.RightClick) && !e.rect.Contains(ctx.In.X, ctx.In.Y) && !e.nearRect(ctx.In.X, ctx.In.Y) && e.onDismiss != nil {
+		// wheel or hover, and a click outside it dismisses it unless it keeps itself
+		// open (KeepOnOutsideClick).
+		if (ctx.In.Click || ctx.In.RightClick) && !e.rect.Contains(ctx.In.X, ctx.In.Y) && !e.nearRect(ctx.In.X, ctx.In.Y) && e.onDismiss != nil && !e.keepOnOutside {
 			ctx.Fired++
 			e.onDismiss()
 		}

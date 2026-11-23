@@ -156,15 +156,15 @@ func TestTypingIntoTheFilterNarrowsTheLines(t *testing.T) {
 }
 
 // A click outside the dialog closes the log.
-func TestAClickOutsideClosesTheLog(t *testing.T) {
+func TestAClickOutsideLeavesTheLogOpen(t *testing.T) {
 	ctx := newCtx(t)
 	log := withEntries()
 	log.Open()
 	root := layOut(t, ctx, log, tallHost)
 	ctx.In = core.Input{X: 10, Y: 10, Click: true}
 	Update(ctx, root)
-	if log.Shown() {
-		t.Fatal("a click outside left the log open")
+	if !log.Shown() {
+		t.Fatal("a click outside closed the log")
 	}
 }
 

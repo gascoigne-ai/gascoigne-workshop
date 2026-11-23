@@ -8,8 +8,8 @@ import (
 )
 
 // A dialog dims the window and floats a modal panel in the middle; a click
-// outside the panel dismisses it.
-func TestDialogDimsTheWindowAndDismissesOnAnOutsideClick(t *testing.T) {
+// outside the panel is swallowed and leaves it open, only Dismiss ends it.
+func TestDialogDimsTheWindowAndStaysOpenOnAnOutsideClick(t *testing.T) {
 	c := testCtx(t)
 	dismissed := 0
 	panel := Dialog(W(200), H(100), OnDismiss(func() { dismissed++ }), Text("hello"))
@@ -24,8 +24,12 @@ func TestDialogDimsTheWindowAndDismissesOnAnOutsideClick(t *testing.T) {
 	}
 	click(c, 5, 5)
 	Update(c, root)
+	if dismissed != 0 {
+		t.Fatalf("an outside click dismissed %d times, want 0", dismissed)
+	}
+	body.Dismiss()
 	if dismissed != 1 {
-		t.Fatalf("an outside click dismissed %d times, want 1", dismissed)
+		t.Fatalf("Dismiss ran the handler %d times, want 1", dismissed)
 	}
 }
 

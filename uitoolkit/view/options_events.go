@@ -41,6 +41,13 @@ func FloatTR(top, right int) Option {
 // runs the OnDismiss handler.
 func Modal() Option { return func(element *El) { element.modal = true } }
 
+// KeepOnOutsideClick makes a Modal element swallow a click outside it
+// without running its OnDismiss handler, so only a call to Dismiss (the
+// close button, Escape) ends it. A dialog is a task the user is in the middle
+// of: a stray click on the window behind it must not throw it away. Menus
+// and pick lists do not set it: a click elsewhere is how they close.
+func KeepOnOutsideClick() Option { return func(element *El) { element.keepOnOutside = true } }
+
 // OnDismiss runs when a click lands outside a Modal element.
 func OnDismiss(callback func()) Option { return func(element *El) { element.onDismiss = callback } }
 

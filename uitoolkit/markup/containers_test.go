@@ -337,7 +337,7 @@ func TestMessageDialogElementMatchesTheGoMessageDialog(t *testing.T) {
 	sameLayout(t, testCtx(t), template, goView, 600, 400)
 }
 
-func TestDialogElementOutsideClickRunsTheScopeDismiss(t *testing.T) {
+func TestDialogElementOutsideClickLeavesTheDialogOpen(t *testing.T) {
 	ctx := testCtx(t)
 	dismissed := 0
 	template := build(t, `<stack><row grow="1"/><dialog w="200" h="100" on-dismiss="close"><text>hi</text></dialog></stack>`,
@@ -345,8 +345,8 @@ func TestDialogElementOutsideClickRunsTheScopeDismiss(t *testing.T) {
 	view.Layout(ctx, template, 600, 400)
 	ctx.In = core.Input{X: 5, Y: 5, Click: true}
 	view.Update(ctx, template)
-	if dismissed != 1 {
-		t.Fatalf("an outside click dismissed %d times, want 1", dismissed)
+	if dismissed != 0 {
+		t.Fatalf("an outside click dismissed %d times, want 0", dismissed)
 	}
 }
 
@@ -381,7 +381,7 @@ func TestDismissMarginKeepsAClickJustOutsideFromDismissing(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := testCtx(t)
 			dismissed := 0
-			template := build(t, `<stack><row grow="1"/><dialog w="200" h="100" dismiss-margin="4" on-dismiss="close"><text>hi</text></dialog></stack>`,
+			template := build(t, `<stack><row grow="1"/><col w="200" h="100" float-center modal dismiss-margin="4" on-dismiss="close"><text>hi</text></col></stack>`,
 				Scope{"close": func() { dismissed++ }})
 			view.Layout(ctx, template, 600, 400)
 			ctx.In = core.Input{X: tc.x, Y: 200, Click: true}
@@ -390,6 +390,19 @@ func TestDismissMarginKeepsAClickJustOutsideFromDismissing(t *testing.T) {
 				t.Fatalf("a click at x=%d dismissed %d times, want %d", tc.x, dismissed, tc.dismissed)
 			}
 		})
+	}
+}
+
+func TestKeepOnOutsideClickAttributeKeepsAModalOpen(t *testing.T) {
+	ctx := testCtx(t)
+	dismissed := 0
+	template := build(t, `<stack><row grow="1"/><col w="200" h="100" float-center modal keep-on-outside-click on-dismiss="close"><text>hi</text></col></stack>`,
+		Scope{"close": func() { dismissed++ }})
+	view.Layout(ctx, template, 600, 400)
+	ctx.In = core.Input{X: 5, Y: 5, Click: true}
+	view.Update(ctx, template)
+	if dismissed != 0 {
+		t.Fatalf("an outside click dismissed %d times, want 0", dismissed)
 	}
 }
 

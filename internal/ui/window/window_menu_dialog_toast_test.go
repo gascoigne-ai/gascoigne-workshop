@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-func TestMenuClosesOnEscapeAndOnOutsideClick(t *testing.T) {
+func TestMenuClosesOnEscapeAndStaysOpenOnOutsideClick(t *testing.T) {
 	a := testApp(t)
 	click(a, menuBtnX, menuBtnY)
 	a.Step(core.Input{Escape: true})
@@ -24,17 +24,16 @@ func TestMenuClosesOnEscapeAndOnOutsideClick(t *testing.T) {
 
 	click(a, menuBtnX, menuBtnY)
 	click(a, 100, treeRowY(4)) // outside the menu, on a request row
-	if a.over.Settings.Open() {
-		t.Fatal("an outside click must close the menu")
+	if !a.over.Settings.Open() {
+		t.Fatal("an outside click must leave the settings dialog open")
 	}
 	if len(a.tabs.Tabs()) != 1 {
-		t.Fatal("the click that closes the menu must not reach the tree below")
+		t.Fatal("a click outside the dialog must not reach the tree below")
 	}
 
-	click(a, menuBtnX, menuBtnY)
-	click(a, menuBtnX, menuBtnY) // the button again toggles it shut
+	a.Step(core.Input{Escape: true})
 	if a.over.Settings.Open() {
-		t.Fatal("the button must toggle the menu")
+		t.Fatal("Escape must close the dialog")
 	}
 }
 
@@ -170,11 +169,10 @@ func TestConfirmRunsOnEnterAndOnTheButton(t *testing.T) {
 	}
 }
 
-func TestConfirmCancelsOnEscapeCancelButtonAndOutsideClick(t *testing.T) {
+func TestConfirmCancelsOnEscapeAndTheCancelButton(t *testing.T) {
 	for name, act := range map[string]func(app *Component){
-		"Escape":  func(app *Component) { app.Step(core.Input{Escape: true}) },
-		"Cancel":  func(app *Component) { click(app, dialogCancelX, dialogButtonY) },
-		"outside": func(app *Component) { click(app, 100, 700) },
+		"Escape": func(app *Component) { app.Step(core.Input{Escape: true}) },
+		"Cancel": func(app *Component) { click(app, dialogCancelX, dialogButtonY) },
 	} {
 		a := testApp(t)
 		var ok int
@@ -184,6 +182,18 @@ func TestConfirmCancelsOnEscapeCancelButtonAndOutsideClick(t *testing.T) {
 		if ok != 0 || a.over.Dialog() != nil {
 			t.Fatalf("%s: onOK ran %d times, dialog open %v", name, ok, a.over.Dialog() != nil)
 		}
+	}
+}
+
+// A click on the window behind a dialog used to close it; the dialog is
+// modal and stays until its own button or Escape.
+func TestConfirmStaysOpenOnAClickOutside(t *testing.T) {
+	a := testApp(t)
+	a.confirm("Delete request?", "This cannot be undone.", "Delete", func() {})
+	a.Step(core.Input{})
+	click(a, 100, 700)
+	if a.over.Dialog() == nil {
+		t.Fatal("a click outside closed the dialog")
 	}
 }
 

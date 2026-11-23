@@ -84,7 +84,7 @@ func TestLayoutSettingStacksThePanesAndIsSaved(t *testing.T) {
 	if saved, _ := settingsDisk.Load(path); saved.Layout != "stacked" {
 		t.Fatalf("saved %+v", saved)
 	}
-	click(a, 100, 700) // close the menu
+	a.Step(core.Input{Escape: true}) // close the dialog; a click outside leaves it open
 	clip := &fakeClip{}
 	a.ctx.Clipboard = clip
 	tab := a.cur()

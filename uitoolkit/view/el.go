@@ -33,7 +33,7 @@
 //	Events+    OnSelect SelectHandler DismissHandler ChangeHandler El.Select El.Dismiss El.Changed   Separator SeparatorOf   (Button, Tabs, Menu, Dialog and the rest of the ready-made widgets are in package widget)
 //	Flow       If When For Frag With
 //	Extend     Behavior Base Linear Custom Describer PreUpdater OverDrawer Scroller Focusable Focuser Linear.LayoutIn (El.Inner El.InFlow El.KeepsInView El.Behavior El.Place El.FixedSize El.ColorToken El.HoverColorToken)   a component outside this package is an element through these
-//	Overlay    FloatTR FloatAt FloatCenter Moved MoveState DragHandle DismissMargin RoundT RoundB RoundBL Modal OnDismiss FocusScope
+//	Overlay    FloatTR FloatAt FloatCenter Moved MoveState DragHandle DismissMargin RoundT RoundB RoundBL Modal KeepOnOutsideClick OnDismiss FocusScope
 //
 // A side is a letter suffix (PadL, PadT, PadR, PadB) and an axis is X or
 // Y (PadX is left and right). The same options are the attributes of a
@@ -109,6 +109,7 @@ type El struct {
 	focusScope    bool
 	modal         bool
 	onDismiss     func()
+	keepOnOutside bool // a modal that swallows an outside click without running onDismiss
 }
 
 // Item is anything that can go between the parentheses of a

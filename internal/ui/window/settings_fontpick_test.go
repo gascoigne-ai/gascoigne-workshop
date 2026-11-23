@@ -139,7 +139,7 @@ func TestReopeningTheSettingsStartsWithTheFontListClosedAndWorking(t *testing.T)
 }
 
 // The list is a modal overlay: a click outside it only closes it, and the
-// next click reaches the dialog.
+// dialog stays open however many clicks follow outside it.
 func TestAClickOutsideTheFontListClosesOnlyTheList(t *testing.T) {
 	a, _ := openSettingsPage(t, "appearance")
 	a.over.Settings.Form.Fonts.Open(a.ctx, a.over.Settings, form.FontUI)
@@ -148,7 +148,7 @@ func TestAClickOutsideTheFontListClosesOnlyTheList(t *testing.T) {
 		t.Fatalf("dialog open %v, list open %v; want the list closed and the dialog open", a.over.Settings.Open(), a.over.Settings.Form.Fonts.IsOpen())
 	}
 	click(a, menuBtnX, menuBtnY)
-	if a.over.Settings.Open() {
-		t.Fatal("the next click on the button should close the dialog")
+	if !a.over.Settings.Open() {
+		t.Fatal("a click outside the dialog must leave it open")
 	}
 }

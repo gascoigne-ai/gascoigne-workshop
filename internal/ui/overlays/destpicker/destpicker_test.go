@@ -222,15 +222,15 @@ func TestThePrimaryButtonWorksOnlyOnceARowIsPicked(t *testing.T) {
 	}
 }
 
-func TestCancelAndAnOutsideClickDismiss(t *testing.T) {
+func TestCancelDismissesButAnOutsideClickDoesNot(t *testing.T) {
 	_, picker := newWorld(requestNode, transfer.Move)
 	host, ctx := &fakeHost{}, newCtx(t)
 	click(t, ctx, picker, host, 1, `text="Cancel"`)
 	root := layOut(t, ctx, picker, host)
 	ctx.In = core.Input{X: 5, Y: 5, Click: true}
 	Update(ctx, root)
-	if host.dismissed != 2 {
-		t.Fatalf("dismissed %d times, want 2", host.dismissed)
+	if host.dismissed != 1 {
+		t.Fatalf("dismissed %d times, want 1 (the Cancel click only)", host.dismissed)
 	}
 }
 

@@ -1,6 +1,6 @@
 stack rect=0,0,1280,800
   flow bg=shadow rect=0,0,1280,800
-  resizableB w=760 h=560 floatMode=2 dismissMargin=4 bg=bg control=menu float=true modal=true focusScope=true shadow=true onDismiss=true moved=true rect=260,120,760,560
+  resizableB w=760 h=560 floatMode=2 dismissMargin=4 bg=bg control=menu float=true modal=true focusScope=true shadow=true moved=true rect=260,120,760,560
     flow h=44 padL=16 padR=16 gap=8 bg=hero borderB=border control=hero roundCtl=menu roundCorners=3 alignItems=2 onDismiss=true dragHandle=true rect=260,120,760,44
       textB text="Settings" fg=hero-text bold=true rect=276,134,55,16
       textB text="Colors" fg=hero-muted small=true ellipsis=true shrink=true rect=339,135,35,14

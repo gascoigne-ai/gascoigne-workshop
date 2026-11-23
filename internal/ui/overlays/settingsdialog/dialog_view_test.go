@@ -191,15 +191,22 @@ func TestTheLitSaveButtonWritesThePendingChanges(t *testing.T) {
 	}
 }
 
-func TestTheCloseButtonAndAClickOutsideCloseTheDialog(t *testing.T) {
+func TestTheCloseButtonClosesTheDialog(t *testing.T) {
 	driver := newFrameDriver(t)
 	driver.clickOn("icon=cross")
 	if driver.host.closed != 1 {
 		t.Fatalf("the close button sent %d closes, want 1", driver.host.closed)
 	}
+}
+
+// A click outside the dialog closed it, so the dialog vanished when the user
+// meant to leave it open; it keeps its place and only its own close button,
+// Escape or the unsaved-changes prompt end it.
+func TestAClickOutsideDoesNotCloseTheDialog(t *testing.T) {
+	driver := newFrameDriver(t)
 	driver.step(func(*El) core.Input { return core.Input{X: 5, Y: 5, Click: true} })
-	if driver.host.closed != 2 {
-		t.Fatalf("a click outside sent %d closes in all, want 2", driver.host.closed)
+	if driver.host.closed != 0 {
+		t.Fatalf("a click outside sent %d closes, want none", driver.host.closed)
 	}
 }
 

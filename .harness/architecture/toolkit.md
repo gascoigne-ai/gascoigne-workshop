@@ -65,7 +65,7 @@ state: no diffing and no reactive system. Elements and options are indexed in th
 - **Clipping hides the pointer.** While the pointer is outside a clipping element (`Clip`,
   `Scroll`), its children cannot be hit; the click flag still passes, so fields can blur.
 - **Modal owns the pointer.** While a `Modal` element is visible, nothing under it gets clicks,
-  wheel or hover (`Ctx.HoverOff`), and a click outside runs `OnDismiss`. Toasts are not modal.
+  wheel or hover (`Ctx.HoverOff`), and a click outside runs `OnDismiss`, except for a dialog (`KeepOnOutsideClick`, set by `widget.Dialog`): it swallows the click and stays until its close button or Escape runs `Dismiss`, so a stray click on the window behind cannot throw away what the user is doing. Menus and pick lists keep closing on a click elsewhere. Toasts are not modal.
 - **Layout writes no state** (`view.Layout` doc, `widget/layoutpure_test.go`); `Update` settles it.
 - **Drawing culls** off-image children (`view.Draw` doc, `BenchmarkLongList`), so a `Behavior`
   keeps no state that only its `Draw` writes.

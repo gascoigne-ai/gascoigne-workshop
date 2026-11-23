@@ -8,7 +8,7 @@ import (
 
 // dialogLook is what makes a panel a dialog: a floating, modal menu-style
 // panel in the middle of the window that owns the keyboard focus.
-var dialogLook = []Item{Bg(core.Bg), Control("menu"), Shadow(), FloatCenter(), FocusScope(), Modal()}
+var dialogLook = []Item{Bg(core.Bg), Control("menu"), Shadow(), FloatCenter(), FocusScope(), Modal(), KeepOnOutsideClick()}
 
 // Dialog is a modal panel centered in the window over a dimmed scrim. Give
 // it its size (W, H), layout options and content, and OnDismiss for what

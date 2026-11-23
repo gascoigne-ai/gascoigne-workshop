@@ -321,7 +321,7 @@ const (
 	dialogSource = `<!-- The settings dialog: the title bar, then the raw text or the list of
      pages beside the page shown. Go sizes it to the window. -->
 <resizable-dialog state="size" min-width="{{minW}}" min-height="{{minH}}" max-width="{{maxW}}" max-height="{{maxH}}"
-                  w="{{width}}" h="{{height}}" moved="move" on-dismiss="close">
+                  w="{{width}}" h="{{height}}" moved="move">
   <slot name="titleBar"/>
   <slot if="toolbar" name="toolbar"/>
   <col if="raw" grow="1" pad="{{dialogPad}}" gap="{{looseGap}}">

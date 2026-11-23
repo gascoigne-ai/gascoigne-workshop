@@ -419,6 +419,26 @@ func TestOnRightClickGetsThePointer(t *testing.T) {
 	}
 }
 
+// A dialog taking an outside click as a close threw away what the user was
+// doing; the click is still swallowed, and Dismiss (the close button) works.
+func TestKeepOnOutsideClickSwallowsTheClickWithoutDismissing(t *testing.T) {
+	var under, dismissed int
+	menu := box(W(40), H(40), FloatTR(0, 0), Modal(), KeepOnOutsideClick(), OnDismiss(func() { dismissed++ }))
+	root := Stack(box(OnClick(func() { under++ })), menu)
+	c := testCtx(t)
+	Layout(c, root, 200, 100)
+
+	click(c, 10, 90) // outside the modal
+	Update(c, root)
+	if dismissed != 0 || under != 0 {
+		t.Fatalf("dismissed %d, reached the element below %d; want 0, 0", dismissed, under)
+	}
+	menu.Dismiss()
+	if dismissed != 1 {
+		t.Fatalf("Dismiss ran the handler %d times, want 1", dismissed)
+	}
+}
+
 func TestModalAlsoSwallowsAndDismissesOnRightClickOutside(t *testing.T) {
 	var under, dismissed int
 	menu := box(W(40), H(40), FloatAt(0, 0), Modal(), OnDismiss(func() { dismissed++ }))
