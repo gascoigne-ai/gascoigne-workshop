@@ -7,9 +7,9 @@ import (
 	"errors"
 	"flag"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/adapter/store"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/adapter/collectionstore"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
-	historyadapter "github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history/adapter"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history/adapter/historyfile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/adapter/preview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/adapter/protocol"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/adapter/folders"
@@ -102,13 +102,13 @@ func adapters(opts *app.Options) {
 	opts.GRPCMethods = protocol.ListGRPCMethods
 	opts.GRPCSchema = protocol.GRPCInputSchema
 	opts.Curl = protocol.Curl
-	opts.Store = store.Files{}
+	opts.Store = collectionstore.Files{}
 	opts.Sample = collection.Sample // which sample is a build decision, see clients_*.go
 	opts.Clients = clientConfigs()
 	opts.States = statefile.Files{}
 	opts.Files = filedialog.System{}
 	opts.Folders = folders.Disk{}
-	opts.History = func(dir string) history.History { return historyadapter.Dir(dir) }
+	opts.History = func(dir string) history.History { return historyfile.Dir(dir) }
 	home, err := os.UserHomeDir()
 	if err != nil { // the user's own font folders are then left out of the scan
 		log.Printf("fonts: no home folder, scanning the system folders only: %v", err)

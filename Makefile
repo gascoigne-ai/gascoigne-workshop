@@ -38,12 +38,12 @@ FUZZ_TARGETS = \
 	./internal/feature/request:FuzzParseProtocol \
 	./internal/feature/request:FuzzParseBodyType \
 	./internal/feature/request:FuzzParseAuthType \
-	./internal/feature/collections/adapter/store:FuzzLoad \
+	./internal/feature/collections/adapter/collectionstore:FuzzLoad \
 	./internal/feature/workspace/adapter/statefile:FuzzLoad \
 	./internal/feature/settings:FuzzDecode \
 	./internal/storage:FuzzRead \
-	./internal/feature/history/adapter:FuzzLoad \
-	./internal/feature/history/adapter:FuzzLoadSent \
+	./internal/feature/history/adapter/historyfile:FuzzLoad \
+	./internal/feature/history/adapter/historyfile:FuzzLoadSent \
 	./internal/feature/send/ui/respview:FuzzDecode \
 	./uitoolkit/theming:FuzzParseTheme \
 	./internal/feature/send/adapter/protocol:FuzzReadEvents \

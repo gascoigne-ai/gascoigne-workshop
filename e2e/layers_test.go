@@ -196,7 +196,7 @@ func TestCheckLayersRejects(t *testing.T) {
 		{"ui imports an adapter", synthetic("internal/feature/send/ui/respview", "internal/feature/send/adapter/preview")},
 		{"ui imports another ui", synthetic("internal/feature/send/ui/respview", "internal/feature/send/ui/calltrace")},
 		{"controller imports a toolkit widget", synthetic("internal/feature/send/editor", "uitoolkit/widget")},
-		{"adapter imports a ui", synthetic("internal/feature/history/adapter", "internal/feature/history/ui/sentlog")},
+		{"adapter imports a ui", synthetic("internal/feature/history/adapter/historyfile", "internal/feature/history/ui/sentlog")},
 		{"toolkit imports internal", synthetic("uitoolkit/widget", "internal/feature/request")},
 		{"exampleserver imports the send root", synthetic("internal/exampleserver", "internal/feature/send")},
 		{"settings theme imports a toolkit widget", synthetic("internal/feature/settings/theme", "uitoolkit/widget")},
@@ -279,9 +279,9 @@ func TestCheckLayersTargetLayout(t *testing.T) {
 }
 
 func TestCheckLayersTestOnlyRows(t *testing.T) {
-	production := synthetic("internal/feature/history/ui/sentlog", "internal/feature/history/adapter")
+	production := synthetic("internal/feature/history/ui/sentlog", "internal/feature/history/adapter/historyfile")
 	test := synthetic("internal/feature/history/ui/sentlog")
-	test.TestImports = []string{testModule + "/internal/feature/history/adapter"}
+	test.TestImports = []string{testModule + "/internal/feature/history/adapter/historyfile"}
 	if got := checkLayers(testModule, layerRules, []listedPackage{production}); len(got) == 0 {
 		t.Error("a production import matching only a test-only row must be a violation")
 	}
@@ -443,6 +443,27 @@ func TestProtocolClientsAreASendAdapter(t *testing.T) {
 	}
 	if listed["internal/feature/send/proto"] {
 		t.Error("internal/feature/send/proto still exists: it moved to send/adapter/protocol")
+	}
+}
+
+// The adapters are named for what they hold: history/adapter was package
+// "history" (a clash with the feature root) and collections/adapter/store said
+// nothing at an import site.
+func TestHistoryAndCollectionAdaptersAreNamedForWhatTheyHold(t *testing.T) {
+	module := moduleName(t)
+	listed := map[string]bool{}
+	for _, pkg := range listPackages(t, "") {
+		listed[relativeTo(module, pkg.ImportPath)] = true
+	}
+	for _, want := range []string{"internal/feature/history/adapter/historyfile", "internal/feature/collections/adapter/collectionstore"} {
+		if !listed[want] {
+			t.Errorf("%s is not in the tree", want)
+		}
+	}
+	for _, gone := range []string{"internal/feature/collections/adapter/store", "internal/feature/history/adapter"} {
+		if listed[gone] {
+			t.Errorf("%s still holds a package: it moved into a named sub-directory", gone)
+		}
 	}
 }
 

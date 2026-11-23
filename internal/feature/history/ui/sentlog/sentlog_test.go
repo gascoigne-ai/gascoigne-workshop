@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
-	historyadapter "github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history/adapter"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history/adapter/historyfile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	core "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -29,7 +29,7 @@ func (h *fakeHost) SentStore() history.SentStore {
 	if h.dir == "" {
 		return nil
 	}
-	return historyadapter.SentLog{Dir: h.dir}
+	return historyfile.SentLog{Dir: h.dir}
 }
 func (h *fakeHost) Toast(text string, _ severity.Level)          { h.toasts = append(h.toasts, text) }
 func (h *fakeHost) SetStatus(text string)                        { h.status = text }

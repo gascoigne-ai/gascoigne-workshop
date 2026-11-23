@@ -4,7 +4,7 @@ What the workshop remembers about sent requests: the responses of each request a
 
 ## Layout
 - `internal/feature/history`: the model (`Entry`, `Sent`, `SentLimit`) and the ports (`History`, `SentStore`).
-- `adapter`: the disk store (`Dir`, `SentLog`), package `history`. Reached from the app as `historyadapter`.
+- `adapter/historyfile`: the disk store (`Dir`, `SentLog`), package `historyfile`.
 - `ui/sentlog`: the sidebar's `Sent` list, behind its `Host` seam (`Host.SentStore`); the `App` implements the host.
 - Imports: the base feature (`feature/request`, `feature/request/severity`) and `storage` plus the toolkit for the view.
 

@@ -1,4 +1,4 @@
-// Package store keeps a collection on disk as a tree of small JSON
+// Package collectionstore keeps a collection on disk as a tree of small JSON
 // files: one directory per folder, one file per request.
 //
 //	folder.json        {"name", "vars" (root only), "order": ["a.req.json", "sub/"]}
@@ -17,7 +17,7 @@
 // A tree of small files rather than one collection file keeps the diff of
 // an edit to the request it touched. Credentials stay out of the request
 // files so the tree can be committed.
-package store
+package collectionstore
 
 import (
 	"bytes"

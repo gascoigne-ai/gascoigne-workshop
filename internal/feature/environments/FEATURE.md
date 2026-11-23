@@ -16,7 +16,7 @@ Named sets of variables a collection offers, and which one is active. The variab
   (`env_varstarget.go`) points it at a folder or at the collection's own variables.
 
 ## Files
-`environments/*.env.json` in a collection folder (written by `feature/collections/adapter/store`); format and version in `.harness/architecture/persistence.md`.
+`environments/*.env.json` in a collection folder (written by `feature/collections/adapter/collectionstore`); format and version in `.harness/architecture/persistence.md`.
 
 ## Known gaps
 - The active environment is remembered by name inside the collections feature's `settings.collections` entry (`collections.Set`), and the store writes the environment files, so the two features meet only through `feature/request`; the App wires them.

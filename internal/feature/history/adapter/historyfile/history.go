@@ -1,6 +1,6 @@
-// Package history keeps the last responses of each request between runs,
+// Package historyfile keeps the last responses of each request between runs,
 // one small JSON file per request in a folder.
-package history
+package historyfile
 
 import (
 	"crypto/sha256"

@@ -69,6 +69,6 @@ other one, except the `exampleserver` dev tool. `e2e/layers_test.go` checks it i
 - A domain root imports a sub-package of its own domain: `feature/workspace` imports `feature/workspace/state`.
 - `internal/exampleserver` imports `feature/send/adapter/protocol/ws`; the one written exception in `internal/CLAUDE.md`.
 - Six test-only rows in `e2e/layers_rules_test.go` let tests import real adapters as fixtures:
-  `exampleserver` (`feature/collections`, `feature/send/adapter/protocol`), `history/ui/sentlog` (`history/adapter`),
+  `exampleserver` (`feature/collections`, `feature/send/adapter/protocol`), `history/ui/sentlog` (`history/adapter/historyfile`),
   `settings/ui/formpage` (`uitoolkit/desktop/fonts`, `settings/adapter/settingsfile`), `settings/ui/settingsui`
   (`settings/adapter/settingsfile`). Follow-up: replace the real adapters with fakes and delete the rows.

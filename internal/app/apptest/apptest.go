@@ -28,9 +28,9 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/app"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/adapter/store"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/adapter/collectionstore"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
-	historyadapter "github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history/adapter"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history/adapter/historyfile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/adapter/protocol"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
@@ -156,13 +156,13 @@ func sandbox(t testing.TB) {
 func WithAdapters(opts app.Options) app.Options {
 	opts.HostOS = cmp.Or(opts.HostOS, "linux") // the same shortcut text on every machine
 	opts.RetryDelay = cmp.Or(opts.RetryDelay, retryDelay)
-	opts.History = func(dir string) history.History { return historyadapter.Dir(dir) }
+	opts.History = func(dir string) history.History { return historyfile.Dir(dir) }
 	opts.Fonts = fonts.System{}
 	opts.Protocols = protocol.Configured
 	opts.GRPCMethods = protocol.ListGRPCMethods
 	opts.GRPCSchema = protocol.GRPCInputSchema
 	opts.Curl = protocol.Curl
-	opts.Store = store.Files{}
+	opts.Store = collectionstore.Files{}
 	opts.States = statefile.Files{}
 	opts.SettingsFiles = settingsfile.Files{}
 	return opts

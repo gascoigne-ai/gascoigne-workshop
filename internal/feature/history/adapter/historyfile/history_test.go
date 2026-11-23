@@ -1,4 +1,4 @@
-package history
+package historyfile
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"

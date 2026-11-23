@@ -9,14 +9,14 @@ Collections on disk and in the window: the open set, the tree, move and copy, im
 - `transfer`: move and copy of a node, validated before anything changes.
 - `clientconfig`: the client config parser and the `Source` port (`Load() (Config, error)`); it lives here so the root imports no sub-package.
 - `importers/{postman,openapi,miniyaml}`: pure readers and writers; the App only picks the file and adds the result.
-- `adapter/store` (package `store`, the disk `Store`) and `adapter/clientfile` (the `Source` that reads `.workshop` files).
+- `adapter/collectionstore` (package `collectionstore`, the disk `Store`) and `adapter/clientfile` (the `Source` that reads `.workshop` files).
 - `ui/destpicker`: the Move to and Copy to dialog (look in `.harness/style.md`).
 - Imports: the base feature (`feature/request`) and `storage` plus the toolkit for `ui`. Inside the feature the usual direction holds: adapters and controllers import the root and the sub-packages, `clientconfig` imports `importers/miniyaml`.
 
 ## Behavior
 
 ### On disk
-- `adapter/store` writes a collection as a folder of small JSON files (format and why: its package
+- `adapter/collectionstore` writes a collection as a folder of small JSON files (format and why: its package
   doc). Writes are atomic; unchanged files are not rewritten.
 - A gRPC request's proto paths are relative to the collection's folder when inside it, written with
   `/`, absolute otherwise (`ProtoSource.Stored`, `Loaded`), so the folder can move. Renaming a collection moves
@@ -147,4 +147,4 @@ Formats and versions of `folder.json`, `*.req.json`, `environments/*.env.json` a
 
 ## Known gaps
 - The root package is named `collection`, its directory `collections`.
-- Collections and environments do not import each other. The environment files are written by `adapter/store` (`environments/*.env.json`) from `request.Environment` in the kernel, so the store needs no import of `feature/environments`; the App wires `envs.Selection` to each open collection's entry.
+- Collections and environments do not import each other. The environment files are written by `adapter/collectionstore` (`environments/*.env.json`) from `request.Environment` in the kernel, so the store needs no import of `feature/environments`; the App wires `envs.Selection` to each open collection's entry.
