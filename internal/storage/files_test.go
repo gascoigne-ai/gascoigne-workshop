@@ -7,14 +7,21 @@ import (
 )
 
 // sandbox points every place a config directory could come from at a
-// temp dir, so no test touches real user state.
+// temp dir, so no test touches real user state, and returns the config
+// directory the platform then reports. It is asked rather than assumed:
+// on macOS it is $HOME/Library/Application Support, whatever
+// XDG_CONFIG_HOME says, and the test used to fail there.
 func sandbox(t *testing.T) string {
 	t.Helper()
 	root := t.TempDir()
 	t.Setenv("HOME", root)
 	t.Setenv("XDG_CONFIG_HOME", filepath.Join(root, "config"))
 	t.Setenv("AppData", filepath.Join(root, "config"))
-	return filepath.Join(root, "config")
+	config, err := os.UserConfigDir()
+	if err != nil {
+		t.Skipf("platform has no config directory: %v", err)
+	}
+	return config
 }
 
 func TestPathIsInsideTheProgramsConfigDirectory(t *testing.T) {
