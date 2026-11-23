@@ -6,44 +6,42 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/keymap"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/shortcutpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
 )
 
 func TestEveryDefaultBindingRoundTripsAndHasAnID(t *testing.T) {
-	ids := map[string]bool{}
-	bindings := map[string]string{}
-	for _, s := range shortcuts {
-		if s.id == "" || ids[s.id] {
-			t.Errorf("shortcut %q has a missing or duplicate id %q", s.name, s.id)
+	ids := map[keymap.ID]bool{}
+	bindings := map[string]keymap.ID{}
+	for _, command := range testApp(t).commands() {
+		if command.ID == "" || ids[command.ID] || command.Run == nil {
+			t.Errorf("command %q has a missing or duplicate id %q, or no Run", command.Name, command.ID)
 		}
-		ids[s.id] = true
-		def := s.def
+		ids[command.ID] = true
+		def := shortcutpage.BindingOf(command.Default)
 		back, err := engine.ParseBinding(def.String())
 		if err != nil || back != def {
-			t.Errorf("%s: %q does not round trip: %+v %v", s.id, def.String(), back, err)
+			t.Errorf("%s: %q does not round trip: %+v %v", command.ID, def.String(), back, err)
 		}
 		if other, dup := bindings[def.String()]; dup {
-			t.Errorf("%s and %s share %s", s.id, other, def.String())
+			t.Errorf("%s and %s share %s", command.ID, other, def.String())
 		}
-		bindings[def.String()] = s.id
+		bindings[def.String()] = command.ID
 	}
-}
-
-func byID(id string) shortcut {
-	for _, s := range shortcuts {
-		if s.id == id {
-			return s
-		}
-	}
-	panic("no shortcut " + id)
 }
 
 func TestEffectiveBindingsLayerTheUsersOverToDefaults(t *testing.T) {
 	a := testApp(t)
-	closeTab := byID("close-tab")
-	def := a.bindingOf(closeTab)
+	bindingOf := func() engine.Binding {
+		chord, bound := a.keymap().Chord("close-tab")
+		if !bound {
+			return engine.Binding{}
+		}
+		return shortcutpage.BindingOf(chord)
+	}
+	def := bindingOf()
 	if def.String() != "Ctrl+W" {
 		t.Fatalf("default = %q", def)
 	}
@@ -59,12 +57,12 @@ func TestEffectiveBindingsLayerTheUsersOverToDefaults(t *testing.T) {
 		{"unknown actions are ignored", map[string]string{"teleport": "Ctrl+J"}, "Ctrl+W"},
 	} {
 		a.settings.Shortcuts = tt.override
-		if got := a.bindingOf(closeTab).String(); got != tt.want {
+		if got := bindingOf().String(); got != tt.want {
 			t.Errorf("%s: %q, want %q", tt.name, got, tt.want)
 		}
 	}
 	a.settings.Shortcuts = map[string]string{"close-tab": ""}
-	if a.bindingOf(closeTab).Bound {
+	if bindingOf().Bound {
 		t.Error("an unbound action is not bound")
 	}
 }

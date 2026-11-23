@@ -182,9 +182,6 @@ func NewApp(opts Options) (*App, error) {
 		delay, interval := opts.KeyRepeat.Timing()
 		a.sampler.Repeat = core.KeyRepeat{Delay: delay, Interval: interval}
 	}
-	for _, s := range shortcuts {
-		a.actionIDs = append(a.actionIDs, s.id)
-	}
 	if opts.ScanFonts {
 		a.form.ScanFonts(a)
 	}

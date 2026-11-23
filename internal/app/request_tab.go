@@ -46,6 +46,9 @@ func (a *App) makeTab(tab *tabs.Tab) *reqTab {
 	return t
 }
 
+// closeTab closes tab index; closing the last one leaves a blank request.
+func (a *App) closeTab(index int) { a.updateTabs(tabs.Close{Index: index}) }
+
 // updateTabs applies msg to the tab list, then does what the change means
 // for the window: closed tabs lose their widgets and new ones get theirs.
 func (a *App) updateTabs(msg tabs.Msg) {

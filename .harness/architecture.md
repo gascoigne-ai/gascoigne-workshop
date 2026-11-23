@@ -44,7 +44,7 @@ feature directory under `internal/feature/` (root, controllers, `adapter/`; its 
 | `internal/feature/collections/FEATURE.md` | `internal/feature/collections` | open set, tree, importers, transfer, store, client config, sample and example server |
 | `internal/feature/environments/FEATURE.md` | `internal/feature/environments` | environments, variables resolution, the chip's menu |
 | `internal/feature/history/FEATURE.md` | `internal/feature/history` | responses kept per request, sent log |
-| `internal/feature/settings/FEATURE.md` | `internal/feature/settings` | schema, prefs, theme, settings dialog and its pages |
+| `internal/feature/settings/FEATURE.md` | `internal/feature/settings` | schema, prefs, theme, keymap, settings dialog and its pages |
 | `internal/feature/workspace/FEATURE.md` | `internal/feature/workspace` | tabs, remembered state, bus, file browser, autosave, overlays, app icon, user's files |
 | `internal/ui/format` (see `internal/CLAUDE.md`) | `internal/ui/format` | display formatting (was `kernel/textfmt` and `kernel/jsonview`); documented in its package doc and in the module files that use it |
 | `architecture/app.md` | `internal/app` | composition root: the `App`, its handlers and window |

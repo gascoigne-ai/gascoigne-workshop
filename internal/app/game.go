@@ -106,7 +106,7 @@ func (a *App) routeKeys(in core.Input) {
 	} else if a.shortcutsPageShown() {
 		a.shortcutKeys.Navigate(in, a)
 	} else if !a.overlayOpen() && !typedInText(textKeys, in) {
-		a.runShortcuts(in)
+		a.runKeymap(in)
 	}
 	if in.Escape && !wasRecording { // one step per press: overlays, the settings menu, a cell edit, find, a running request
 		a.escape()

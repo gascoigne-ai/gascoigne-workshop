@@ -5,7 +5,9 @@ The settings the user can change: the schema, the settings file, the theme built
 ## Layout
 - `internal/feature/settings`: the model (`Settings`, `Schema`, the codec, `Minimal`, `Validate`, `Complete`) in `model.go` and its neighbours.
 - `prefs`: the messages a page sends; `theme`: how settings become a theme.
-- `form`: a controller, the state of the settings form and what a user's action on it means: a `Model` (the refusal note of each setting), typed messages (`Typed`, `Stepped`, `Reset`, `Choose`, `Picked`) and a pure `Update(model, settings, msg)` that returns the next model and the effects the view carries out (`Apply`, `Restore`, `Fill`, `ForgetTexts`, `ApplyFonts`, `AskFile`). It also holds the pure facts of the form: where a row puts its control (`PlaceOf`), the font and size pairs (`Faces`), the search match (`Matches`, `Lists`). It imports the settings root only, so it runs without a window. The typed text stays a `TextField` in the view (toolkit state); the values stay in `Settings`.- `adapter/settingsfile`: `settings.json` on disk.
+- `form`: a controller, the state of the settings form and what a user's action on it means: a `Model` (the refusal note of each setting), typed messages (`Typed`, `Stepped`, `Reset`, `Choose`, `Picked`) and a pure `Update(model, settings, msg)` that returns the next model and the effects the view carries out (`Apply`, `Restore`, `Fill`, `ForgetTexts`, `ApplyFonts`, `AskFile`). It also holds the pure facts of the form: where a row puts its control (`PlaceOf`), the font and size pairs (`Faces`), the search match (`Matches`, `Lists`). It imports the settings root only, so it runs without a window. The typed text stays a `TextField` in the view (toolkit state); the values stay in `Settings`.
+- `keymap`: a controller, which key runs which command. A `Command` is an id, a name, a default `Chord` and what to do; the components offer theirs (`commands.go`) and the App the ones that span components. `Resolve(overrides, commands, parse)` layers the user's `settings.Shortcuts` over the defaults into a `Keymap`: a valid override wins, "" unbinds, text that does not parse falls back to the default, an unknown id is ignored. `Keymap.Conflict` names the first other command on a chord (the Shortcuts page offers to replace it) and `Keymap.Run` runs every command on a pressed chord in display order, none while a typing key meets a focused text field. The package knows no toolkit: the chord is plain data, the parse function is passed in and the caller tells whether a key is typed. The keymap is derived where it is read, never stored. The bindings stay persisted here (`Settings.Shortcuts`, ids to key text), so the file format did not change.
+- `adapter/settingsfile`: `settings.json` on disk.
 - The dialog is `internal/ui/overlays/settingsdialog` (the shell: title bar, list of pages, search field, raw JSON view, Save, behind its `Host`) with the pages `formpage`, `colorpage`, `shortcutpage` and `systempage` below it; this feature has no UI. A `ui` package never imports a sibling, so the App draws the form through `Host.FormPage` and the tables through `Host.ExtraPage`, and composes the font list over the dialog (`menuView`).
 - Installed fonts come from the toolkit's `desktop/fonts` (`Family`, `Find`, `Matching`, the scan); this package keeps only the family names (`UIFont`, `CodeFont`).
 - Imports: `storage` and the base feature leaf `feature/request/severity`.
@@ -21,6 +23,10 @@ flowchart LR
   app --> theme["theme.ThemeWith, Ctx.SetTheme"]
   app --> file["settingsfile: settings.json"]
   file -- "Poll every PollTicks frames" --> shell["settingsdialog: dialog, raw JSON, search"]
+  commands["components: Commands()"] --> keymap["keymap.Resolve"]
+  file --> keymap
+  keymap -- "Keymap()" --> shell
+  keymap -- "Run on a key press" --> app
 ```
 
 - **One row per setting.** `settings.Schema` (`schema.go`) is the form, the raw
@@ -81,8 +87,7 @@ flowchart LR
   (`Page.Navigate`, which the app calls while this page is what the dialog shows; Up and Down move the
   selection through the rows the filter leaves), selects it and records the next combination for the
   action. The selection and the dragged column widths are view state, not saved. Source is derived:
-  User only when the settings hold an override for the action that parses (the test `Effective` uses),
-  else Default; Unbind, Reset, the conflict with Replace and the refusal or plain-key note are in the
+  User only when the keymap says the binding is the user's (an override that parses), else Default; Unbind, Reset, the conflict with Replace and the refusal or plain-key note are in the
   detail under the selected row. What it refuses (`Refuse`) derives from the text widgets' own keys
   (`textKeys`) and Escape. A combination another action has is not saved until the user picks Replace.
   Only overrides are stored. The binding model itself is in Keyboard, focus and overlays (app.md).

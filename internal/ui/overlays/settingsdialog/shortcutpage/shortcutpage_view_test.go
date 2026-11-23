@@ -13,7 +13,6 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
@@ -210,10 +209,9 @@ func TestTheRecordingRowShowsAnAccentChip(t *testing.T) {
 }
 
 // Source is User only for an override that parses, the same test as
-// Effective: a stored text that does not parse is ignored, so the row shows
+// the chord that runs: a stored text that does not parse is ignored, so the row shows
 // the default and says so. A cleared binding is stored as "" and parses.
 func TestSourceIsUserOnlyForAParsableOverride(t *testing.T) {
-	action := Action{ID: "send", Name: "Send request", Default: engine.Binding{Key: ebiten.KeyEnter, Ctrl: true, Bound: true}}
 	cases := []struct {
 		name      string
 		shortcuts map[string]string
@@ -227,7 +225,7 @@ func TestSourceIsUserOnlyForAParsableOverride(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			if got := Source(settings.Settings{Shortcuts: tc.shortcuts}, action); got != tc.want {
+			if got := Source((&fakeHost{current: settings.Settings{Shortcuts: tc.shortcuts}}).Keymap(), "send"); got != tc.want {
 				t.Fatalf("Source = %q, want %q", got, tc.want)
 			}
 		})

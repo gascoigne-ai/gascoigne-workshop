@@ -14,6 +14,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/adapter/protocol/ws"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/shortcutpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
@@ -147,10 +148,11 @@ func TestTheRootRowMenuListsTheCollectionActions(t *testing.T) {
 // Close collection is Ctrl+Shift+W by default, next to Ctrl+W for the tab,
 // and acts on the focused collection; Ctrl+W alone still closes only the tab.
 func TestCtrlShiftWClosesTheFocusedCollectionAndCtrlWOnlyTheTab(t *testing.T) {
-	if got := byID("close-collection").def.String(); got != "Ctrl+Shift+W" {
+	a, _, _ := twoCollectionsApp(t)
+	closeCollection, _ := a.keymap().Chord("close-collection")
+	if got := shortcutpage.BindingOf(closeCollection).String(); got != "Ctrl+Shift+W" {
 		t.Fatalf("default %q, want Ctrl+Shift+W", got)
 	}
-	a, _, _ := twoCollectionsApp(t)
 	a.openRequest(entryNamed(t, a, "Beta").Collection.Folders[0].Requests[0])
 	tabCount := len(a.tabs.Tabs())
 	a.Step(combo(ebiten.KeyW, true, false, false))

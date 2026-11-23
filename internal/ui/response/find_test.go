@@ -4,8 +4,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hajimehoshi/ebiten/v2"
+
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/viewer"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/keymap"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
@@ -194,5 +197,20 @@ func TestClearViewEmptiesTheLinesOnly(t *testing.T) {
 	}
 	if !world.pane.Look(world.tab).FindOpen {
 		t.Fatal("the find bar stays as it was")
+	}
+}
+
+func TestTheResponseOffersFindWithItsDefaultKey(t *testing.T) {
+	world := withResponse(t, `{"id":1}`)
+	commands := world.pane.Commands()
+	if len(commands) != 1 || commands[0].ID != "find" || commands[0].Name == "" {
+		t.Fatalf("commands %+v, want just find", commands)
+	}
+	if want := (keymap.Chord{Key: int(ebiten.KeyF), Ctrl: true}); commands[0].Default != want {
+		t.Fatalf("default %+v, want %+v", commands[0].Default, want)
+	}
+	commands[0].Run()
+	if !world.pane.Look(world.tab).FindOpen {
+		t.Fatal("running find must open the find bar")
 	}
 }

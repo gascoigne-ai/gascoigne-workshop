@@ -101,7 +101,7 @@ func shortcutsPageOpen(a *App) {
 func TestArrowKeysMoveTheShortcutSelectionOnTheShownPage(t *testing.T) {
 	a := testApp(t)
 	shortcutsPageOpen(a)
-	first, second := a.Actions()[0].ID, a.Actions()[1].ID
+	first, second := string(a.keymap().Commands()[0].ID), string(a.keymap().Commands()[1].ID)
 	a.Step(core.Input{Keys: []ebiten.Key{ebiten.KeyArrowDown}})
 	if got := a.shortcutKeys.Selected(); got != first {
 		t.Fatalf("selected %q after Down, want %q", got, first)
@@ -117,7 +117,7 @@ func TestArrowKeysMoveTheShortcutSelectionOnTheShownPage(t *testing.T) {
 func TestEnterRecordsTheSelectedShortcutAndTheKeyIsSaved(t *testing.T) {
 	a := testApp(t)
 	shortcutsPageOpen(a)
-	first := a.Actions()[0].ID
+	first := string(a.keymap().Commands()[0].ID)
 	a.Step(core.Input{Keys: []ebiten.Key{ebiten.KeyArrowDown}})
 	a.Step(core.Input{Enter: true})
 	if got := a.shortcutKeys.Recording(); got != first {

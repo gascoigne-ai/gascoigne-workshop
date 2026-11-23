@@ -1,7 +1,11 @@
 // Package shortcutpage is the Shortcuts page of the settings dialog: a
-// table of actions with the key each has, recording of a new key, conflicts
-// with other actions and reset. The application lists its actions and
-// applies the changed settings through Host.
+// table of commands with the key each has, recording of a new key, conflicts
+// with other commands and reset. The application resolves the keymap of its
+// commands (feature/settings/keymap) and applies the changed settings through
+// Host; every question about a binding is a read of that keymap, so the page,
+// a tooltip and a key press cannot disagree. This package is also the one
+// place that turns the toolkit's engine.Binding into the keymap's Chord and
+// back.
 package shortcutpage
 
 import (
@@ -13,6 +17,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/keymap"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/prefs"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
@@ -21,11 +26,28 @@ import (
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
-// Action is something a key can do.
-type Action struct {
-	ID      string         // names the action in the settings file
-	Name    string         // as users read it
-	Default engine.Binding // the built-in key
+// ParseChord reads the text of a binding in the settings as a keymap.Parse:
+// "" is an unbound chord, text that is not a binding is an error.
+func ParseChord(text string) (keymap.Chord, bool, error) {
+	binding, err := engine.ParseBinding(text)
+	if err != nil {
+		return keymap.Chord{}, false, err
+	}
+	chord, bound := ChordOf(binding)
+	return chord, bound, nil
+}
+
+// ChordOf is the chord of a binding, false for an unbound one.
+func ChordOf(binding engine.Binding) (keymap.Chord, bool) {
+	if !binding.Bound {
+		return keymap.Chord{}, false
+	}
+	return keymap.Chord{Key: int(binding.Key), Ctrl: binding.Ctrl, Shift: binding.Shift, Alt: binding.Alt}, true
+}
+
+// BindingOf is the binding of a chord.
+func BindingOf(chord keymap.Chord) engine.Binding {
+	return engine.Binding{Key: ebiten.Key(chord.Key), Ctrl: chord.Ctrl, Shift: chord.Shift, Alt: chord.Alt, Bound: true}
 }
 
 // Host is what the page needs of the application.
@@ -34,8 +56,8 @@ type Host interface {
 	Settings() settings.Settings
 	// Send asks the application to change the settings (prefs.Edit).
 	Send(msg prefs.Msg)
-	// Actions are the actions that have keys, in display order.
-	Actions() []Action
+	// Keymap is the resolved binding of every command, in display order.
+	Keymap() keymap.Keymap
 	// HostOS is the operating system the key text follows.
 	HostOS() string
 }
@@ -75,38 +97,17 @@ var textKeys = []textKey{
 	{"Redo", []string{"Ctrl+Y", "Ctrl+Shift+Z"}},
 }
 
-// override is the binding the user gave an action: stored in the settings
-// and parsable. A text that does not parse is ignored, so Effective, the
-// Source column and the Reset button all follow this one test.
-func override(current settings.Settings, action Action) (engine.Binding, bool) {
-	text, ok := current.Shortcuts[action.ID]
-	if !ok {
-		return engine.Binding{}, false
-	}
-	binding, err := engine.ParseBinding(text)
-	return binding, err == nil
-}
-
-// Effective is the binding of an action: the user's override when it is
-// valid, else the default.
-func Effective(current settings.Settings, action Action) engine.Binding {
-	if binding, ok := override(current, action); ok {
-		return binding
-	}
-	return action.Default
-}
-
 // Where the binding of an action comes from, as the Source column says it.
 const (
 	SourceDefault = "Default"
 	SourceUser    = "User"
 )
 
-// Source says where the binding of an action comes from: the user's
-// override, or the built-in default. It is derived from the settings, so it
-// can never disagree with Effective.
-func Source(current settings.Settings, action Action) string {
-	if _, ok := override(current, action); ok {
+// Source says where the binding of a command comes from: the user's
+// override, or the built-in default. The keymap decides, so it can never
+// disagree with the chord that runs.
+func Source(keys keymap.Keymap, id keymap.ID) string {
+	if keys.Overridden(id) {
 		return SourceUser
 	}
 	return SourceDefault
@@ -137,16 +138,18 @@ func Warning(binding engine.Binding) string {
 	return ""
 }
 
-// KeyText is the binding of an action as shown to users.
-func KeyText(host Host, id string) string {
-	for _, action := range host.Actions() {
-		if action.ID != id {
-			continue
+// KeyText is the binding of an action as shown to users: "Unbound" for a
+// command without a key, "" for an id no command has.
+func KeyText(host Host, id string) string { return keyText(host.Keymap(), host.HostOS(), id) }
+
+func keyText(keys keymap.Keymap, hostOS, id string) string {
+	if chord, bound := keys.Chord(keymap.ID(id)); bound {
+		return w.PlatformKeyText(hostOS, BindingOf(chord).String())
+	}
+	for _, command := range keys.Commands() {
+		if string(command.ID) == id {
+			return "Unbound"
 		}
-		if binding := Effective(host.Settings(), action); binding.Bound {
-			return w.PlatformKeyText(host.HostOS(), binding.String())
-		}
-		return "Unbound"
 	}
 	return ""
 }
@@ -187,7 +190,7 @@ func (p *Page) Start(id string) {
 
 // Clear leaves the action without a key.
 func (p *Page) Clear(host Host, id string) {
-	p.set(host, id, engine.Binding{})
+	p.set(host, id, keymap.Chord{}, false)
 	p.notes.SetNote(id, "")
 	delete(p.pending, id)
 }
@@ -200,24 +203,15 @@ func (p *Page) Replace(host Host, id string) {
 		return
 	}
 	delete(p.pending, id)
-	p.set(host, pending.OtherID, engine.Binding{})
-	p.set(host, id, pending.Binding)
+	chord, _ := ChordOf(pending.Binding)
+	p.set(host, pending.OtherID, keymap.Chord{}, false)
+	p.set(host, id, chord, true)
 }
 
 // Reset gives the action its default key back.
 func (p *Page) Reset(host Host, id string) {
 	host.Send(prefs.Edit{Edit: func(current *settings.Settings) { delete(current.Shortcuts, id) }})
 	p.notes.SetNote(id, "")
-}
-
-// conflict is the other action that has combination binding, if any.
-func conflict(host Host, id string, binding engine.Binding) (Action, bool) {
-	for _, action := range host.Actions() {
-		if action.ID != id && Effective(host.Settings(), action) == binding {
-			return action, true
-		}
-	}
-	return Action{}, false
 }
 
 // Check says why combination binding cannot be given to action id as it
@@ -227,7 +221,8 @@ func Check(host Host, id string, binding engine.Binding) error {
 	if err := Refuse(binding); err != nil {
 		return err
 	}
-	if other, taken := conflict(host, id, binding); taken {
+	chord, _ := ChordOf(binding)
+	if other, taken := host.Keymap().Conflict(keymap.ID(id), chord); taken {
 		return fmt.Errorf("Already used by %s", other.Name)
 	}
 	return nil
@@ -254,32 +249,34 @@ func (p *Page) record(host Host, id string, binding engine.Binding) {
 		p.notes.SetNote(id, "")
 		return
 	case plain && binding.Key == ebiten.KeyBackspace:
-		p.set(host, id, engine.Binding{})
+		p.set(host, id, keymap.Chord{}, false)
 	default:
 		if err := Refuse(binding); err != nil {
 			p.notes.SetNote(id, err.Error())
 			return
 		}
-		if other, taken := conflict(host, id, binding); taken {
+		chord, _ := ChordOf(binding)
+		if other, taken := host.Keymap().Conflict(keymap.ID(id), chord); taken {
 			if p.pending == nil {
 				p.pending = map[string]PendingKey{}
 			}
-			p.pending[id] = PendingKey{Binding: binding, OtherID: other.ID, OtherName: other.Name}
+			p.pending[id] = PendingKey{Binding: binding, OtherID: string(other.ID), OtherName: other.Name}
 			p.recording = ""
 			p.notes.SetNote(id, "")
 			return
 		}
-		p.set(host, id, binding)
+		p.set(host, id, chord, true)
 	}
 	p.recording = ""
 	p.notes.SetNote(id, "")
 }
 
-// set stores a binding; one equal to the default is not stored.
-func (p *Page) set(host Host, id string, binding engine.Binding) {
+// set stores a binding, or "" for no key; one equal to the default is not
+// stored.
+func (p *Page) set(host Host, id string, chord keymap.Chord, bound bool) {
 	host.Send(prefs.Edit{Edit: func(current *settings.Settings) {
-		for _, action := range host.Actions() {
-			if action.ID == id && binding == action.Default {
+		for _, command := range host.Keymap().Commands() {
+			if string(command.ID) == id && bound && chord == command.Default {
 				delete(current.Shortcuts, id)
 				return
 			}
@@ -287,23 +284,27 @@ func (p *Page) set(host Host, id string, binding engine.Binding) {
 		if current.Shortcuts == nil {
 			current.Shortcuts = map[string]string{}
 		}
-		current.Shortcuts[id] = binding.String()
+		current.Shortcuts[id] = ""
+		if bound {
+			current.Shortcuts[id] = BindingOf(chord).String()
+		}
 	}})
 }
 
 // matches reports whether an action's name or its key text contains the
 // search text, ignoring case.
-func matches(action Action, keyText, query string) bool {
+func matches(command keymap.Command, keyText, query string) bool {
 	needle := strings.ToLower(strings.TrimSpace(query))
-	return needle == "" || strings.Contains(strings.ToLower(action.Name), needle) || strings.Contains(strings.ToLower(keyText), needle)
+	return needle == "" || strings.Contains(strings.ToLower(command.Name), needle) || strings.Contains(strings.ToLower(keyText), needle)
 }
 
-// visible are the actions the filter leaves, in display order.
-func (p *Page) visible(host Host) []Action {
-	var shown []Action
-	for _, action := range host.Actions() {
-		if matches(action, KeyText(host, action.ID), p.search.Text) {
-			shown = append(shown, action)
+// visible are the commands the filter leaves, in display order.
+func (p *Page) visible(host Host) []keymap.Command {
+	keys := host.Keymap()
+	var shown []keymap.Command
+	for _, command := range keys.Commands() {
+		if matches(command, keyText(keys, host.HostOS(), string(command.ID)), p.search.Text) {
+			shown = append(shown, command)
 		}
 	}
 	return shown
@@ -312,8 +313,8 @@ func (p *Page) visible(host Host) []Action {
 // selection is the index of the selected row among shown, -1 when none is
 // selected or the filter hides it: a hidden row shows no selection, and
 // arrow keys start again from the top.
-func (p *Page) selection(shown []Action) int {
-	return slices.IndexFunc(shown, func(action Action) bool { return action.ID == p.selected })
+func (p *Page) selection(shown []keymap.Command) int {
+	return slices.IndexFunc(shown, func(command keymap.Command) bool { return string(command.ID) == p.selected })
 }
 
 // Navigate moves the selection with the arrow keys through the rows the
@@ -329,9 +330,9 @@ func (p *Page) Navigate(input w.Input, host Host) {
 	index := p.selection(shown)
 	switch {
 	case input.Pressed(ebiten.KeyArrowDown) && len(shown) > 0:
-		p.selected = shown[min(index+1, len(shown)-1)].ID
+		p.selected = string(shown[min(index+1, len(shown)-1)].ID)
 	case input.Pressed(ebiten.KeyArrowUp) && index > 0:
-		p.selected = shown[index-1].ID
+		p.selected = string(shown[index-1].ID)
 	case input.Enter && index >= 0:
 		p.Start(p.selected)
 	}
@@ -404,9 +405,10 @@ const (
 // text editing keys.
 func (p *Page) View(ctx *w.Ctx, host Host) Node {
 	shown := p.visible(host)
+	keys := host.Keymap()
 	return pageTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
 		"search":   &p.search,
-		"table":    p.tableNode(ctx, host, shown),
+		"table":    p.tableNode(ctx, host, keys, shown),
 		"noMatch":  len(shown) == 0,
 		"textKeys": textKeyRows(host.HostOS()),
 	}))
@@ -414,22 +416,22 @@ func (p *Page) View(ctx *w.Ctx, host Host) Node {
 
 // tableNode is the table of the shown actions: one row each, the selected
 // one lit with a pencil and its detail under it.
-func (p *Page) tableNode(ctx *w.Ctx, host Host, shown []Action) Node {
+func (p *Page) tableNode(ctx *w.Ctx, host Host, keys keymap.Keymap, shown []keymap.Command) Node {
 	selected := p.selection(shown)
 	rows := make([]TableRow, len(shown))
-	for index, action := range shown {
-		rows[index] = TableRow{Cells: []string{action.Name, KeyText(host, action.ID), Source(host.Settings(), action)}}
+	for index, command := range shown {
+		rows[index] = TableRow{Cells: []string{command.Name, keyText(keys, host.HostOS(), string(command.ID)), Source(keys, command.ID)}}
 	}
 	return Table(TableSpec{
 		Columns: tableColumns, Weights: tableWeights, Rows: rows, Zebra: true, State: &p.table,
 		Selected:   &selected,
-		OnRowClick: func(row int) { p.Start(shown[row].ID) },
+		OnRowClick: func(row int) { p.Start(string(shown[row].ID)) },
 		CellNode: func(row, col int) Node {
 			switch col {
 			case keystrokesCol:
-				return p.keystrokes(host, shown[row])
+				return p.keystrokes(host, keys, shown[row])
 			case sourceCol:
-				return Text(Source(host.Settings(), shown[row]), Small(), Muted(), Ellipsis(), Grow(1))
+				return Text(Source(keys, shown[row].ID), Small(), Muted(), Ellipsis(), Grow(1))
 			}
 			return nil
 		},
@@ -443,30 +445,32 @@ func (p *Page) tableNode(ctx *w.Ctx, host Host, shown []Action) Node {
 			if row != selected {
 				return nil
 			}
-			return p.detailNode(ctx, host, shown[row])
+			return p.detailNode(ctx, host, keys, shown[row])
 		},
 	})
 }
 
 // keystrokes is the Keystrokes cell of an action: its keys as chips, an
 // accent chip while recording, "Unbound" when it has no key.
-func (p *Page) keystrokes(host Host, action Action) Node {
+func (p *Page) keystrokes(host Host, keys keymap.Keymap, command keymap.Command) Node {
+	_, bound := keys.Chord(command.ID)
 	switch {
-	case p.recording == action.ID:
+	case p.recording == string(command.ID):
 		return Row(Bg(w.Accent), Control("primary"), PadX(w.NearGap), HOf(w.CompactOf),
 			Text("Press keys...", Small(), Color(w.AccentText)))
-	case !Effective(host.Settings(), action).Bound:
+	case !bound:
 		return Text("Unbound", Small(), Muted())
 	}
-	return KeyChips(KeyText(host, action.ID), AlignSelf(AlignCenter))
+	return KeyChips(keyText(keys, host.HostOS(), string(command.ID)), AlignSelf(AlignCenter))
 }
 
 // detailNode is what the selected row shows under it.
-func (p *Page) detailNode(ctx *w.Ctx, host Host, action Action) Node {
-	id := action.ID
+func (p *Page) detailNode(ctx *w.Ctx, host Host, keys keymap.Keymap, command keymap.Command) Node {
+	id := string(command.ID)
+	chord, bound := keys.Chord(command.ID)
 	shown := detail{
-		Bound:      Effective(host.Settings(), action).Bound,
-		Overridden: Source(host.Settings(), action) == SourceUser,
+		Bound:      bound,
+		Overridden: Source(keys, command.ID) == SourceUser,
 		Unbind:     func() { p.Clear(host, id) },
 		Reset:      func() { p.Reset(host, id) },
 		Replace:    func() { p.Replace(host, id) },
@@ -477,8 +481,8 @@ func (p *Page) detailNode(ctx *w.Ctx, host Host, action Action) Node {
 		shown.ReplaceTip = "Unbind " + pending.OtherName + " and use this key here"
 	} else if text := p.notes.Note(id); text != "" {
 		shown.Refusal = text
-	} else {
-		shown.Warning = Warning(Effective(host.Settings(), action))
+	} else if bound {
+		shown.Warning = Warning(BindingOf(chord))
 	}
 	return detailTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
 		"detail": shown, "unbindBtnW": unbindBtnW, "resetBtnW": resetBtnW, "replaceBtnW": replaceBtnW,

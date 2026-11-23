@@ -9,9 +9,9 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/viewer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/keymap"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/prefs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/storage"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/shortcutpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/systempage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/theme"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -32,8 +32,14 @@ func (a *App) SettingsPath() string { return a.settingsPath }
 // SetFonts switches the interface and code fonts.
 func (a *App) SetFonts(ui, code w.FontData) error { return a.ctx.SetFonts(ui, code) }
 
-// ActionIDs are the ids of the shortcut actions.
-func (a *App) ActionIDs() []string { return a.actionIDs }
+// ActionIDs are the ids of the shortcut actions, in display order.
+func (a *App) ActionIDs() []string {
+	var ids []string
+	for _, command := range a.keymap().Commands() {
+		ids = append(ids, string(command.ID))
+	}
+	return ids
+}
 
 // closeSettings closes the dialog and what is open inside it, so the next
 // opening starts clean.
@@ -258,14 +264,8 @@ func (a *App) Send(msg prefs.Msg) {
 // Color is the color in effect for a token.
 func (a *App) Color(tok w.Token) color.RGBA { return a.ctx.Th.Color(tok) }
 
-// Actions are the shortcut actions that have keys, in display order.
 // HostOS is the operating system shortcut text follows.
 func (a *App) HostOS() string { return a.ctx.HostOS }
 
-func (a *App) Actions() []shortcutpage.Action {
-	actions := make([]shortcutpage.Action, len(shortcuts))
-	for i, s := range shortcuts {
-		actions[i] = s.action()
-	}
-	return actions
-}
+// Keymap is the binding of every shortcut action, in display order.
+func (a *App) Keymap() keymap.Keymap { return a.keymap() }

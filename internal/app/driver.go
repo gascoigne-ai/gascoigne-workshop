@@ -151,7 +151,7 @@ func (d *Driver) OpenRawSettings() {
 // press would.
 func (d *Driver) RecordShortcut(spec string) error {
 	id, keys, hasKeys := strings.Cut(spec, "=")
-	known := slices.ContainsFunc(shortcuts, func(candidate shortcut) bool { return candidate.id == id })
+	known := slices.Contains(d.app.ActionIDs(), id)
 	if !known {
 		return fmt.Errorf("record: %q is not a shortcut action", id)
 	}

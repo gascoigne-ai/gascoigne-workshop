@@ -86,7 +86,6 @@ type settingsState struct {
 	settingsPath       string                        // "" keeps settings in memory only
 	settingsAccess     storage.Access                // read-only when a newer build wrote the file
 	menu               bool                          // settings menu is open
-	actionIDs          []string                      // the ids of the shortcut actions, for completing settings.json
 	cancelSettingsPick func()                        // takes back a file question the settings dialog asked
 	settingsUnsaved    bool                          // settings were changed but not written (auto-save is off)
 	prefs              settingsdialog.SettingsDialog // the settings dialog

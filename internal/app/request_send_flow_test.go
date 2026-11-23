@@ -341,7 +341,7 @@ func TestEachTabKeepsItsOwnBodyEditor(t *testing.T) {
 	click(a, textChipX, chipsY)
 	click(a, editorX, editorY)
 	a.typeText("second")
-	a.switchTab(-1)
+	a.updateTabs(tabs.Step{By: -1})
 	if a.cur().Req.Body != "first" || second.Req.Body != "second" {
 		t.Fatalf("bodies %q and %q", a.cur().Req.Body, second.Req.Body)
 	}

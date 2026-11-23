@@ -8,9 +8,14 @@
 package app
 
 import (
+	"slices"
+
+	"github.com/hajimehoshi/ebiten/v2"
+
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/sends"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/keymap"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/notice"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
@@ -24,12 +29,14 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/urlbar"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/ws"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/destpicker"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/shortcutpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/response"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/response/calltrace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sidebar"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/statusbar"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/tabstrip"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
 	"net/http"
 	"time"
 )
@@ -81,6 +88,65 @@ type App struct {
 }
 
 func (a *App) newRequest() { a.newRequestIn(a.selectedFolder()) }
+
+// commands are the shortcut actions in the order the Shortcuts page lists
+// them: each component offers its own, and the App offers the ones that
+// reach across components (they read a table cell edit, the text focus or the
+// focused collection). A command that moves to a component keeps its place.
+func (a *App) commands() []keymap.Command {
+	ctrl := func(key ebiten.Key) keymap.Chord { return keymap.Chord{Key: int(key), Ctrl: true} }
+	return slices.Concat(
+		[]keymap.Command{
+			{ID: "send", Name: "Send request", Default: ctrl(ebiten.KeyEnter), Run: a.sendCurrent},
+			{ID: "focus-url", Name: "Focus URL", Default: ctrl(ebiten.KeyL), Run: a.focusURL},
+		},
+		a.strip.Commands(),
+		a.kv.Commands(),
+		[]keymap.Command{
+			{ID: "delete-row", Name: "Delete row", Default: keymap.Chord{Key: int(ebiten.KeyDelete)}, Run: a.deleteRow},
+			{ID: "complete-variable", Name: "Complete variable", Default: ctrl(ebiten.KeySpace), Run: a.completeVariable},
+			{ID: "save", Name: "Save collection", Default: ctrl(ebiten.KeyS), Run: a.saveWorkspace},
+		},
+		a.side.Commands(),
+		a.resp.Commands(),
+		[]keymap.Command{
+			{ID: "settings", Name: "Settings", Default: ctrl(ebiten.KeyComma), Run: func() { a.menu = true }},
+		},
+	)
+}
+
+// keymap is the binding of every command under the settings in effect. It is
+// derived where it is read, never kept, so a changed setting needs no
+// invalidation.
+func (a *App) keymap() keymap.Keymap {
+	return keymap.Resolve(a.settings.Shortcuts, a.commands(), shortcutpage.ParseChord)
+}
+
+// runKeymap runs the commands whose chord went down this frame.
+func (a *App) runKeymap(in core.Input) {
+	keys := a.keymap()
+	for _, key := range in.Keys {
+		binding := engine.Binding{Key: key, Ctrl: in.Ctrl, Shift: in.Shift, Alt: in.Alt, Bound: true}
+		chord, _ := shortcutpage.ChordOf(binding)
+		keys.Run(keymap.Press{Chord: chord, TypesText: binding.TypesText()}, a.textFocused())
+	}
+}
+
+// sendCurrent sends the request; while a table cell is edited, Ctrl+Enter
+// adds a row below instead.
+func (a *App) sendCurrent() {
+	if a.kv.Editing() {
+		a.kv.InsertRowBelow()
+		return
+	}
+	a.urlbar.Send()
+}
+
+// focusURL puts the keyboard in the URL field with its text selected.
+func (a *App) focusURL() {
+	a.commitEdit()
+	a.urlbar.FocusURL()
+}
 
 // Err is the error that ended the run, if any.
 func (a *App) Err() error { return a.err }

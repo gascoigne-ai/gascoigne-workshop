@@ -25,6 +25,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable"
 	kvlogic "github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable/logic"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/ws"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/shortcutpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/response/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sidebar/logic"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sizes"
@@ -255,6 +256,17 @@ func (a *App) onDisk(col *request.Collection, verb string) bool {
 	a.toast("The collection is not saved yet: save it first to "+verb+" it", severity.Error)
 	return false
 }
+
+// hint is a tooltip with the action's shortcut, when it has one.
+func (a *App) hint(text, shortcutID string) string {
+	if key := a.shortcutHint(shortcutID); key != "" {
+		return text + " (" + key + ")"
+	}
+	return text
+}
+
+// shortcutHint is the key of an action for a menu item: nothing when unbound.
+func (a *App) shortcutHint(id string) string { return shortcutpage.Hint(a, id) }
 
 // promptWorkspace asks for the folder of a collection to open beside the
 // open ones; an empty or new folder starts a new collection there.

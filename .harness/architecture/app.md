@@ -137,13 +137,17 @@ The drop outline is the row's `DropBorder` token, empty when not the target.
   still run in that frame), the URL field and the body (`urlbar.Keys`, `body.Keys`, `resp.Keys`, each of which claims only while the current tab's field or area has the
   keyboard: Undo and Redo, which keep the table's undo from running while a user binding on them still fires, and a
   frame of typing keys, `engine.Binding.TypesText`, which skips the shortcuts; Escape, Ctrl+Enter, Ctrl+L and
-  Ctrl+Space are never claimed), the shortcuts or the table undo (`kvtable.Keys`, offered last, claims Ctrl+Z and
-Ctrl+Y for the showing table unless text has the keyboard: `textFocused` asks `urlbar.Typing()`, `resp.Typing()`, `body.Typing()`, `graphql.Typing()`, `auth.Typing()`, `assertions.Typing()`, `ws.Typing()` and `kv.Typing()`), in that order. The `send` and `focus-url` rows of the shortcut table call `urlbar.Send` and `urlbar.FocusURL`; ids and defaults stay in the table. Escape closes one layer per press, the topmost in
+  Ctrl+Space are never claimed), the keymap (`runKeymap`) or the table undo (`kvtable.Keys`, offered last, claims Ctrl+Z and
+Ctrl+Y for the showing table unless text has the keyboard: `textFocused` asks `urlbar.Typing()`, `resp.Typing()`, `body.Typing()`, `graphql.Typing()`, `auth.Typing()`, `assertions.Typing()`, `ws.Typing()` and `kv.Typing()`), in that order. The `send` and `focus-url` rows (`App.commands`, `app.go`) call `urlbar.Send` and `urlbar.FocusURL`; their ids and defaults are declared there. Escape closes one layer per press, the topmost in
   `feature/workspace/overlay`'s order, ending with cancelling a running request.
-- **Shortcuts**: the `shortcuts` table (`settings_shortcuts.go`) holds each action with a stable `id` and its
-  default. A user binding is `settings.Shortcuts[id]`, stored only when it differs from the default.
-  `App.bindingOf` is the one place a binding is resolved; the shortcut runner, menus' shortcut
-  text and the Shortcuts page read it. A binding fires only when its modifiers match exactly. A
+- **Shortcuts**: every component declares the actions it offers in its `commands.go`
+  (`Commands() []keymap.Command`: a stable id, a name, a default chord, what to do): `tabstrip`, `kvtable`,
+  `sidebar` and `response`; the `App` offers the rows that reach across components (`send`, `focus-url`,
+  `delete-row`, `complete-variable`, `save`, `settings`) in `App.commands` (`app.go`), which also fixes the
+  display order. A user binding is `settings.Shortcuts[id]`, stored only when it differs from the default.
+  `keymap.Resolve` (`feature/settings/keymap`) is the one place a binding is resolved: `App.keymap()` derives it
+  from the settings and the commands where it is read (once per frame with keys, once per hint or page draw), and
+  the key runner (`runKeymap`), the tooltips' shortcut text and the Shortcuts page read that one answer. A binding fires only when its modifiers match exactly. A
   plain-key binding is allowed but held back while a text field has focus. The editor is
   `ui/overlays/settingsdialog/shortcutpage` (Settings).
 - **Overlays**, bottom to top: settings dialog, in-app file browser, context menu, dialog (with a
