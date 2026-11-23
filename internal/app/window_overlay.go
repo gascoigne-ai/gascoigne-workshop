@@ -203,7 +203,7 @@ func (a *App) openLayers() overlay.Open {
 	open[overlay.CallLog] = a.calls.Shown()
 	open[overlay.FontList] = a.form.FontListOpen()
 	open[overlay.Settings] = a.menu
-	open[overlay.CellEdit] = a.edit != nil
+	open[overlay.CellEdit] = a.kv.Editing()
 	open[overlay.FindBar] = a.cur().look.FindOpen
 	open[overlay.Request] = true // the last resort: cancel what is being sent
 	return open
@@ -219,7 +219,7 @@ func (a *App) escape() {
 		overlay.CallLog:     a.calls.Close,
 		overlay.FontList:    a.form.CloseFontList,
 		overlay.Settings:    a.closeSettings,
-		overlay.CellEdit:    a.cancelEdit,
+		overlay.CellEdit:    a.kv.CancelEdit,
 		overlay.FindBar:     func() { a.closeFind(a.cur()) },
 		overlay.Request:     func() { a.cancelSend(a.cur()) },
 	}

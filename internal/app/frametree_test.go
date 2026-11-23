@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	kvlogic "github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable/logic"
 	"strings"
 	"testing"
 	"time"
@@ -287,8 +288,10 @@ func TestAStepThatChangesWhatTheViewShowsMarksTheTreeStale(t *testing.T) {
 		"a toast":            func(a *App) { a.toast("Saved", severity.Info) },
 		"a settings message": func(a *App) { a.Send(prefs.Toast{Text: "hi", Level: severity.Info}) },
 		"bulk text turned to rows": func(a *App) {
-			a.bulk = &bulkEdit{pane: paramsPane, tab: a.cur(), area: widget.NewTextArea("a: b")}
-			a.closeBulk()
+			a.kv.ToggleBulk(kvlogic.Table{Tab: a.cur().Tab, Kind: kvlogic.Params})
+			*a.kv.BulkArea() = widget.NewTextArea("a: b")
+			a.cur().paneTab = headersTabIdx // another table shows: the next step applies the text
+			a.Step(core.Input{X: 5000, Y: 5000})
 		},
 		"a drag resting over a folder": func(a *App) {
 			a.side.Tree().Reset()

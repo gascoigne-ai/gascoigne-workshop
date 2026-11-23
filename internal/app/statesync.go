@@ -15,6 +15,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/state"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/storage"
+	kvlogic "github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable/logic"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
@@ -113,12 +114,12 @@ func (a *App) snapshot() state.State {
 	if a.tabs.Active() < len(kept) {
 		s.Active = max(kept[a.tabs.Active()], 0)
 	}
-	for name, w := range a.colWidths {
-		if len(w.Weights) > 0 {
+	for kind := kvlogic.Params; kind < kvlogic.KindCount; kind++ {
+		if weights := a.kv.Widths(kind).Weights; len(weights) > 0 {
 			if s.Columns == nil {
 				s.Columns = map[string][]float64{}
 			}
-			s.Columns[name] = append([]float64(nil), w.Weights...)
+			s.Columns[kind.Key()] = append([]float64(nil), weights...)
 		}
 	}
 	return s
@@ -226,10 +227,9 @@ func (a *App) restore(stateValue state.State) {
 		if len(ws) == 0 {
 			continue
 		}
-		if a.colWidths == nil {
-			a.colWidths = map[string]*widget.TableState{}
+		if kind, ok := kvlogic.KindOfKey(name); ok {
+			*a.kv.Widths(kind) = widget.TableState{Weights: append([]float64(nil), ws...)}
 		}
-		a.colWidths[name] = &widget.TableState{Weights: append([]float64(nil), ws...)}
 	}
 }
 

@@ -98,21 +98,6 @@ func requestNames(folder *request.Folder) (out []string) {
 	return
 }
 
-func TestKVRows(t *testing.T) {
-	rows := []request.KV{
-		{Name: "q", Value: "x", Description: "d", Enabled: true},
-		{Name: "off", Value: "y"},
-	}
-	two := kvRows(rows, false, false)
-	three := kvRows(rows, true, false)
-	if len(two[0].Cells) != 2 || len(three[0].Cells) != 3 || three[0].Cells[2] != "d" {
-		t.Fatalf("cells: %v / %v", two[0].Cells, three[0].Cells)
-	}
-	if !two[0].Checked || two[0].Muted || two[1].Checked || !two[1].Muted {
-		t.Fatalf("enabled rows are checked and bright, disabled ones muted: %+v", two)
-	}
-}
-
 var (
 	respErr = request.Response{Err: "boom"}
 	respOK  = request.Response{Status: 200, StatusText: "OK"}

@@ -2,6 +2,7 @@ package app
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
+	kvlogic "github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable/logic"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"github.com/hajimehoshi/ebiten/v2"
@@ -72,15 +73,15 @@ func TestTabItemsCountEnabledRowsAndHeaders(t *testing.T) {
 func TestEditingAParamValueUpdatesTheURL(t *testing.T) {
 	a := testApp(t)
 	click(a, valueCellX, paramsRow0Y)
-	if a.edit == nil || a.edit.row != 0 || a.edit.col != 1 {
-		t.Fatalf("edit = %+v", a.edit)
+	if !tableEditing(a) || editCell(a).Row != 0 || editCell(a).Col != 1 {
+		t.Fatalf("edit = %+v", editCell(a))
 	}
 	a.typeText("rust") // the old text is selected, so typing replaces it
 	a.Step(core.Input{Enter: true})
 
 	req := a.cur().Req
-	if a.edit != nil || req.Params[0].Value != "rust" || !strings.Contains(req.URL, "q=rust") {
-		t.Fatalf("edit %+v params %+v url %q", a.edit, req.Params, req.URL)
+	if tableEditing(a) || req.Params[0].Value != "rust" || !strings.Contains(req.URL, "q=rust") {
+		t.Fatalf("edit %+v params %+v url %q", editCell(a), req.Params, req.URL)
 	}
 	if a.cur().url.Text != req.URL {
 		t.Fatal("the URL field must show the rewritten URL")
@@ -107,8 +108,8 @@ func TestEscapeCancelsACellEdit(t *testing.T) {
 	click(a, valueCellX, paramsRow0Y)
 	a.typeText("zzz")
 	a.Step(core.Input{Escape: true})
-	if a.edit != nil || a.cur().Req.Params[0].Value != "gioui" {
-		t.Fatalf("edit %+v value %q", a.edit, a.cur().Req.Params[0].Value)
+	if tableEditing(a) || a.cur().Req.Params[0].Value != "gioui" {
+		t.Fatalf("edit %+v value %q", editCell(a), a.cur().Req.Params[0].Value)
 	}
 }
 
@@ -118,8 +119,8 @@ func TestClickingElsewhereCommitsACellEdit(t *testing.T) {
 	a.typeText("go")
 	click(a, farAwayX, farAwayY)
 	a.Step(core.Input{})
-	if a.edit != nil || a.cur().Req.Params[0].Value != "go" {
-		t.Fatalf("edit %+v value %q", a.edit, a.cur().Req.Params[0].Value)
+	if tableEditing(a) || a.cur().Req.Params[0].Value != "go" {
+		t.Fatalf("edit %+v value %q", editCell(a), a.cur().Req.Params[0].Value)
 	}
 }
 
@@ -128,8 +129,8 @@ func TestClickingAnotherCellCommitsAndMovesTheEdit(t *testing.T) {
 	click(a, valueCellX, paramsRow0Y)
 	a.typeText("go")
 	click(a, valueCellX, paramsRow0Y+core.RowH) // the order row
-	if a.cur().Req.Params[0].Value != "go" || a.edit == nil || a.edit.row != 1 {
-		t.Fatalf("value %q edit %+v", a.cur().Req.Params[0].Value, a.edit)
+	if a.cur().Req.Params[0].Value != "go" || !tableEditing(a) || editCell(a).Row != 1 {
+		t.Fatalf("value %q edit %+v", a.cur().Req.Params[0].Value, editCell(a))
 	}
 }
 
@@ -138,17 +139,17 @@ func TestTabMovesToTheNextCellAndShiftTabBack(t *testing.T) {
 	click(a, nameCellX, paramsRow0Y)
 	a.typeText("k")
 	a.Step(core.Input{Tab: true})
-	if a.edit == nil || a.edit.row != 0 || a.edit.col != 1 || a.cur().Req.Params[0].Name != "k" {
-		t.Fatalf("after Tab: edit %+v name %q", a.edit, a.cur().Req.Params[0].Name)
+	if !tableEditing(a) || editCell(a).Row != 0 || editCell(a).Col != 1 || a.cur().Req.Params[0].Name != "k" {
+		t.Fatalf("after Tab: edit %+v name %q", editCell(a), a.cur().Req.Params[0].Name)
 	}
 	a.Step(core.Input{Tab: true})
 	a.Step(core.Input{Tab: true}) // description, then the next row's name
-	if a.edit == nil || a.edit.row != 1 || a.edit.col != 0 {
-		t.Fatalf("Tab past the last column must wrap to the next row, edit %+v", a.edit)
+	if !tableEditing(a) || editCell(a).Row != 1 || editCell(a).Col != 0 {
+		t.Fatalf("Tab past the last column must wrap to the next row, edit %+v", editCell(a))
 	}
 	a.Step(core.Input{Tab: true, Shift: true})
-	if a.edit == nil || a.edit.row != 0 || a.edit.col != 2 {
-		t.Fatalf("Shift+Tab goes back, edit %+v", a.edit)
+	if !tableEditing(a) || editCell(a).Row != 0 || editCell(a).Col != 2 {
+		t.Fatalf("Shift+Tab goes back, edit %+v", editCell(a))
 	}
 }
 
@@ -176,8 +177,8 @@ func TestLeavingThePlaceholderRowEmptyAddsNothing(t *testing.T) {
 	a := testApp(t)
 	click(a, nameCellX, paramsRow3Y)
 	a.Step(core.Input{Enter: true})
-	if len(a.cur().Req.Params) != 3 || a.edit != nil {
-		t.Fatalf("params %+v edit %+v", a.cur().Req.Params, a.edit)
+	if len(a.cur().Req.Params) != 3 || tableEditing(a) {
+		t.Fatalf("params %+v edit %+v", a.cur().Req.Params, editCell(a))
 	}
 }
 
@@ -206,8 +207,8 @@ func TestResponseHeadersAreNotEditable(t *testing.T) {
 	tab.respTab = 1 // Headers
 	a.Step(core.Input{})
 	click(a, 1000, paramsRow0Y)
-	if a.edit != nil {
-		t.Fatalf("response headers must stay read-only, edit %+v", a.edit)
+	if tableEditing(a) {
+		t.Fatalf("response headers must stay read-only, edit %+v", editCell(a))
 	}
 }
 
@@ -227,8 +228,8 @@ func TestCtrlEnterWhileEditingInsertsARowBelowAndEditsIt(t *testing.T) {
 	if len(req.Params) != 4 || req.Params[1].Name != "" || !req.Params[1].Enabled || req.Params[0].Name != "q" {
 		t.Fatalf("params = %+v", req.Params)
 	}
-	if a.edit == nil || a.edit.row != 1 || a.edit.col != 1 {
-		t.Fatalf("edit = %+v: the new row is edited in the same column", a.edit)
+	if !tableEditing(a) || editCell(a).Row != 1 || editCell(a).Col != 1 {
+		t.Fatalf("edit = %+v: the new row is edited in the same column", editCell(a))
 	}
 	if strings.Contains(req.URL, "&=") || strings.Contains(req.URL, "?=") {
 		t.Fatalf("an empty name must stay out of the URL: %q", req.URL)
@@ -243,8 +244,8 @@ func TestCtrlDDuplicatesTheEditedRow(t *testing.T) {
 	if len(p) != 4 || p[1] != p[0] || p[1].Name != "q" {
 		t.Fatalf("params = %+v", p)
 	}
-	if a.edit == nil || a.edit.row != 1 {
-		t.Fatalf("the copy is the edited row, edit = %+v", a.edit)
+	if !tableEditing(a) || editCell(a).Row != 1 {
+		t.Fatalf("the copy is the edited row, edit = %+v", editCell(a))
 	}
 }
 
@@ -256,8 +257,8 @@ func TestAltArrowsMoveTheRowAndTheEditFollows(t *testing.T) {
 	if got := paramNames(a); !reflect.DeepEqual(got, []string{"order", "q", "sort"}) {
 		t.Fatalf("params = %v", got)
 	}
-	if a.edit == nil || a.edit.row != 1 || a.cur().Req.Params[1].Value != "rust" {
-		t.Fatalf("edit %+v value %q", a.edit, a.cur().Req.Params[1].Value)
+	if !tableEditing(a) || editCell(a).Row != 1 || a.cur().Req.Params[1].Value != "rust" {
+		t.Fatalf("edit %+v value %q", editCell(a), a.cur().Req.Params[1].Value)
 	}
 	if !strings.Contains(a.cur().Req.URL, "order=desc&q=rust&sort=stars") {
 		t.Fatalf("the URL follows the order: %q", a.cur().Req.URL)
@@ -379,33 +380,18 @@ func TestUndoGoesToTheCellTextWhileACellIsEdited(t *testing.T) {
 	}
 }
 
-func TestDeletingRowsUnderAnOpenCellEditDropsTheEditAndRewritesTheURL(t *testing.T) {
-	a := testApp(t)
-	click(a, valueCellX, paramsRow0Y+2*core.RowH) // edit row 2
-	if a.edit == nil || a.edit.row != 2 {
-		t.Fatal("test setup")
-	}
-	a.applyRows(requestPanes[0], a.cur(), func(rows []request.KV) []request.KV { return request.DeleteRow(request.DeleteRow(rows, 2), 1) })
-	if a.edit != nil {
-		t.Fatalf("an edit pointing at a row that is gone must be dropped: %+v", a.edit)
-	}
-	if got := paramNames(a); !reflect.DeepEqual(got, []string{"q"}) || strings.Contains(a.cur().Req.URL, "order") {
-		t.Fatalf("params %v url %q", got, a.cur().Req.URL)
-	}
-}
-
 func TestBulkEditShowsLinesAndAppliesThemBack(t *testing.T) {
 	a := testApp(t)
 	req := a.cur().Req
 	req.Params[1].Enabled = false
 	click(a, bulkBtnX, chipsY)
-	if a.bulk == nil || a.bulk.area.Text != "q: gioui\n# order: desc\nsort: stars" {
-		t.Fatalf("bulk = %+v", a.bulk)
+	if !tableBulk(a) || a.kv.BulkArea().Text != "q: gioui\n# order: desc\nsort: stars" {
+		t.Fatalf("bulk = %+v", a.kv.BulkArea())
 	}
-	a.bulk.area.SelectAll()
-	a.bulk.area.Insert("q: rust\npage: 2\n# off: 1")
+	a.kv.BulkArea().SelectAll()
+	a.kv.BulkArea().Insert("q: rust\npage: 2\n# off: 1")
 	click(a, bulkBtnX, chipsY) // back to the table
-	if a.bulk != nil {
+	if tableBulk(a) {
 		t.Fatal("the button leaves bulk mode")
 	}
 	want := []request.KV{
@@ -425,23 +411,12 @@ func TestBulkEditShowsLinesAndAppliesThemBack(t *testing.T) {
 func TestLeavingTheTabWhileBulkEditingAppliesTheText(t *testing.T) {
 	a := testApp(t)
 	click(a, bulkBtnX, chipsY)
-	a.bulk.area.SelectAll()
-	a.bulk.area.Insert("only: one")
+	a.kv.BulkArea().SelectAll()
+	a.kv.BulkArea().Insert("only: one")
 	a.cur().paneTab = headersTabIdx // as clicking the Headers tab does
 	a.Step(core.Input{})
-	if a.bulk != nil || !reflect.DeepEqual(paramNames(a), []string{"only"}) {
-		t.Fatalf("bulk %v params %v: nothing typed may be lost", a.bulk != nil, paramNames(a))
-	}
-}
-
-func TestDuplicateHeaderNamesAreFlagged(t *testing.T) {
-	rows := []request.KV{{Name: "X-Id", Enabled: true}, {Name: "x-id", Enabled: true}, {Name: "Other", Enabled: true}}
-	flagged := kvRows(rows, true, true)
-	if !flagged[0].Flagged || !flagged[1].Flagged || flagged[2].Flagged {
-		t.Fatalf("flags = %v %v %v", flagged[0].Flagged, flagged[1].Flagged, flagged[2].Flagged)
-	}
-	if kvRows(rows, true, false)[0].Flagged {
-		t.Fatal("params may repeat a key: no flag there")
+	if tableBulk(a) || !reflect.DeepEqual(paramNames(a), []string{"only"}) {
+		t.Fatalf("bulk %v params %v: nothing typed may be lost", tableBulk(a), paramNames(a))
 	}
 }
 
@@ -508,7 +483,7 @@ const (
 func TestDraggingAParamsDividerResizesItsColumns(t *testing.T) {
 	a := testApp(t)
 	drag(a, nameValueDividerX, 480, paramsHeaderY)
-	w := a.widthsFor(requestPanes[0])
+	w := a.kv.Widths(kvlogic.Params)
 	if w == nil || len(w.Weights) != 3 || w.Weights[0] <= 28 || w.Weights[1] >= 40 {
 		t.Fatalf("weights = %+v", w)
 	}
@@ -516,24 +491,24 @@ func TestDraggingAParamsDividerResizesItsColumns(t *testing.T) {
 		t.Fatalf("the total must stay 100, got %v", sum)
 	}
 	click(a, 450, paramsRow0Y) // was in the value column; now it is the wider name column
-	if a.edit == nil || a.edit.col != 0 {
-		t.Fatalf("a click at x=450 edits %+v: the name column must have grown over it", a.edit)
+	if !tableEditing(a) || editCell(a).Col != 0 {
+		t.Fatalf("a click at x=450 edits %+v: the name column must have grown over it", editCell(a))
 	}
 }
 
 func TestEachTableKeepsItsOwnColumnWidths(t *testing.T) {
 	a := testApp(t)
 	drag(a, nameValueDividerX, 480, paramsHeaderY)
-	if a.widthsFor(requestPanes[0]).Weights == nil {
+	if a.kv.Widths(kvlogic.Params).Weights == nil {
 		t.Fatal("test setup")
 	}
-	if a.widthsFor(requestPanes[headersPaneTabIdx]).Weights != nil {
+	if a.kv.Widths(kvlogic.Headers).Weights != nil {
 		t.Fatal("the Headers table must keep its default widths")
 	}
-	if a.widthsFor(responsePanes[1]) == a.widthsFor(requestPanes[headersPaneTabIdx]) {
+	if a.kv.Widths(kvlogic.ResponseHeaders) == a.kv.Widths(kvlogic.Headers) {
 		t.Fatal("the response Headers table is not the request Headers table")
 	}
-	if a.widthsFor(requestPanes[0]) != a.widthsFor(requestPanes[0]) {
+	if a.kv.Widths(kvlogic.Params) != a.kv.Widths(kvlogic.Params) {
 		t.Fatal("asking twice must give the same state")
 	}
 }
@@ -543,7 +518,7 @@ func TestDoubleClickOnAParamsDividerResetsIt(t *testing.T) {
 	drag(a, nameValueDividerX, 480, paramsHeaderY)
 	a.Step(core.Input{X: 480, Y: paramsHeaderY, Click: true, Held: true, Clicks: 2})
 	a.Step(core.Input{})
-	if a.widthsFor(requestPanes[0]).Weights != nil {
+	if a.kv.Widths(kvlogic.Params).Weights != nil {
 		t.Fatal("double click resets the widths")
 	}
 }
@@ -551,7 +526,7 @@ func TestDoubleClickOnAParamsDividerResetsIt(t *testing.T) {
 func TestNarrowColumnsKeepAMinimum(t *testing.T) {
 	a := testApp(t)
 	drag(a, nameValueDividerX, 300, paramsHeaderY) // far left
-	w := a.widthsFor(requestPanes[0])
+	w := a.kv.Widths(kvlogic.Params)
 	// the name column is at least MinColumnPx of the 393px of columns
 	if min := float64(widget.MinColumnPx) / 393 * 100; w.Weights[0] < min-0.5 {
 		t.Fatalf("name weight %v is below the minimum share %v", w.Weights[0], min)
@@ -565,7 +540,7 @@ func TestRequestAndResponsePanesShareTheirFirstRowBand(t *testing.T) {
 	clip := &fakeClip{}
 	a.ctx.Clipboard = clip
 	click(a, bulkBtnX, chipsY) // the request pane's first row
-	if a.bulk == nil {
+	if !tableBulk(a) {
 		t.Fatal("the Bulk edit link is in the first row of the request pane")
 	}
 	click(a, copyBtnX, chipsY+10) // the lower edge of the shared band, below the old toolbar

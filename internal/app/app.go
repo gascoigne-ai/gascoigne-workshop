@@ -13,6 +13,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/notice"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/destpicker"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/response/calltrace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sidebar"
@@ -29,14 +30,14 @@ const (
 // App is the whole window. It implements ebiten.Game.
 type App struct {
 	ports
-	tableState
 	frameState
 	persistState
 	settingsState
 
 	ctx        *core.Ctx
-	retryDelay time.Duration // wait before a dropped connection reopens
-	baseScale  float64       // the platform's interface factor under the user's scale
+	kv         *kvtable.Component // the key-value tables of the request pane
+	retryDelay time.Duration      // wait before a dropped connection reopens
+	baseScale  float64            // the platform's interface factor under the user's scale
 	reg        request.Registry
 	cols       *collections.Library      // the open collections, in tree order, each with its folder and environment, and what is done to whole ones
 	sample     func() request.Collection // the collection shown when nothing is saved or configured

@@ -1,6 +1,7 @@
 package app
 
 import (
+	kvlogic "github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable/logic"
 	"os"
 	"path/filepath"
 	"testing"
@@ -46,10 +47,10 @@ var tableViewStates = []tableViewState{
 		tab.Req.Params = nil
 	}},
 	{"params-selected", paramsPane, core.Gutter, func(t *testing.T, app *App, tab *reqTab) {
-		app.rowSel = &rowSelection{pane: paramsPane, tab: tab, row: 1}
+		app.kv.Select(kvlogic.Table{Tab: tab.Tab, Kind: paramsPane.table}, 1)
 	}},
 	{"params-editing", paramsPane, core.Gutter, func(t *testing.T, app *App, tab *reqTab) {
-		app.beginEdit(paramsPane, tab, 0, 1)
+		app.kv.BeginEdit(kvlogic.Table{Tab: tab.Tab, Kind: paramsPane.table}, 0, 1)
 	}},
 	{"headers-duplicate", headersPane, core.Gutter, func(t *testing.T, app *App, tab *reqTab) {
 		tab.Req.Headers = []request.KV{
@@ -69,7 +70,7 @@ var tableViewStates = []tableViewState{
 		}}
 	}},
 	{"bulk", paramsPane, core.Gutter, func(t *testing.T, app *App, tab *reqTab) {
-		app.toggleBulk(paramsPane, tab)
+		app.kv.ToggleBulk(kvlogic.Table{Tab: tab.Tab, Kind: paramsPane.table})
 	}},
 }
 
@@ -112,7 +113,7 @@ func TestTheBulkTextHasTheTextMenu(t *testing.T) {
 	a := testApp(t)
 	t.Cleanup(a.WaitWrites)
 	click(a, bulkBtnX, chipsY)
-	if a.bulk == nil {
+	if !tableBulk(a) {
 		t.Fatal("test setup: the Bulk edit link must open bulk mode")
 	}
 	rightClick(a, valueCellX, chipsY+3*core.RowH)

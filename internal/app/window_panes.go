@@ -5,6 +5,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/assert"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
+	kvlogic "github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable/logic"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/response/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -43,6 +44,7 @@ type pane struct {
 	note           func(t *reqTab) string                   // paneNote
 	empty          func(t *reqTab) (msg string, isErr bool) // shown instead of the content
 	caption        func(app *App) string                    // the caption when it depends on the app state
+	table          kvlogic.Kind                             // paneTable: which table of ui/editor/kvtable it shows
 }
 
 // captionOf is the caption above the pane's table.
@@ -59,13 +61,13 @@ func paramsChanged(tab *reqTab) {
 }
 
 var (
-	paramsPane = pane{label: "Params", kind: paneTable, title: "Query", editable: true, changed: paramsChanged,
+	paramsPane = pane{label: "Params", kind: paneTable, title: "Query", editable: true, changed: paramsChanged, table: kvlogic.Params,
 		rows: func(_ *App, tab *reqTab) *[]request.KV { return &tab.Req.Params }}
 	bodyPane    = pane{label: "Body", kind: paneBody}
-	headersPane = pane{label: "Headers", kind: paneTable, title: "Headers", editable: true, flagDuplicates: true,
+	headersPane = pane{label: "Headers", kind: paneTable, title: "Headers", editable: true, flagDuplicates: true, table: kvlogic.Headers,
 		rows: func(_ *App, tab *reqTab) *[]request.KV { return &tab.Req.Headers }}
 	authPane = pane{label: "Auth", kind: paneAuth}
-	varsPane = pane{label: "Vars", kind: paneTable, title: "Collection variables", editable: true,
+	varsPane = pane{label: "Vars", kind: paneTable, title: "Collection variables", editable: true, table: kvlogic.Vars,
 		caption: (*App).varsCaption,
 		rows:    func(app *App, _ *reqTab) *[]request.KV { return app.varsRows() }}
 	testsPane    = pane{label: "Tests", kind: paneAssertions}
@@ -131,7 +133,7 @@ func noResponse(tab *reqTab) (string, bool) {
 
 var responsePanes = []pane{
 	{label: "Response", kind: paneResponse, empty: responseEmpty},
-	{label: "Headers", kind: paneTable, empty: noResponse,
+	{label: "Headers", kind: paneTable, empty: noResponse, table: kvlogic.ResponseHeaders,
 		rows: func(_ *App, tab *reqTab) *[]request.KV {
 			if tab.Resp == nil {
 				return &[]request.KV{}

@@ -4,7 +4,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
-	"strings"
 )
 
 // Right-click menus for tabs, table rows, text widgets and the response.
@@ -55,71 +54,6 @@ func copyOf(req *request.Request) request.Request {
 	clone := req.Clone()
 	clone.Name += " copy"
 	return clone
-}
-
-// ---- table rows ---------------------------------------------------------------
-
-func (a *App) rowMenuItems(panel pane, tab *reqTab, row int) []MenuItem {
-	n := len(*panel.rows(a, tab))
-	a.rowSel = &rowSelection{pane: panel, tab: tab, row: row}
-	change := func(callback func(rows []request.KV) []request.KV) func() {
-		return func() {
-			a.commitEdit()
-			a.applyRows(panel, tab, callback)
-		}
-	}
-	items := append(a.copyRowItems(*panel.rows(a, tab), row, false), append([]MenuItem{menuSeparator}, []MenuItem{
-		{Label: "Insert row above", Run: change(func(rows []request.KV) []request.KV { return request.InsertRow(rows, row, request.KV{Enabled: true}) })},
-		{Label: "Insert row below", Run: change(func(rows []request.KV) []request.KV { return request.InsertRow(rows, row+1, request.KV{Enabled: true}) })},
-		{Label: "Duplicate", Run: change(func(rows []request.KV) []request.KV { return request.DuplicateRow(rows, row) })},
-		{Label: "Move up", Disabled: row == 0, Run: change(func(rows []request.KV) []request.KV { m, _ := request.MoveRow(rows, row, -1); return m })},
-		{Label: "Move down", Disabled: row >= n-1, Run: change(func(rows []request.KV) []request.KV { m, _ := request.MoveRow(rows, row, 1); return m })},
-		menuSeparator,
-		{Label: "Enable all", Run: change(func(rows []request.KV) []request.KV { return request.SetAll(rows, true) })},
-		{Label: "Disable all", Run: change(func(rows []request.KV) []request.KV { return request.SetAll(rows, false) })},
-		menuSeparator,
-		{Label: "Delete", Run: change(func(rows []request.KV) []request.KV { return request.DeleteRow(rows, row) })},
-	}...)...)
-	return append(items, a.secretItems(panel, row)...)
-}
-
-// secretItems is the menu entry that marks a variable of the active
-// environment as a secret; other tables have none.
-func (a *App) secretItems(panel pane, row int) []MenuItem {
-	e := a.activeEnv()
-	if panel.label != "Vars" || e == nil || row >= len(e.Vars) {
-		return nil
-	}
-	label := "Mark as secret"
-	if e.Vars[row].Secret {
-		label = "Not a secret"
-	}
-	return []MenuItem{menuSeparator, {Label: label, Run: func() { a.toggleSecret(row) }}}
-}
-
-// copyRowItems copy parts of table row index to the clipboard. They are the
-// whole menu of a read-only table and lead the menu of an editable one.
-func (a *App) copyRowItems(rows []request.KV, index int, withAll bool) []MenuItem {
-	if index < 0 || index >= len(rows) {
-		return nil
-	}
-	r := rows[index]
-	copyText := func(text string) func() {
-		return func() { _ = a.ctx.Clipboard.Write(text) } // the clipboard reports its own failures
-	}
-	var all strings.Builder
-	for _, h := range rows {
-		all.WriteString(h.Name + ": " + h.Value + "\n")
-	}
-	items := []MenuItem{
-		{Label: "Copy value", Run: copyText(r.Value)},
-		{Label: "Copy name", Run: copyText(r.Name)},
-		{Label: "Copy as Name: Value", Run: copyText(r.Name + ": " + r.Value)},
-	}
-	if withAll {
-		items = append(items, MenuItem{Label: "Copy all headers", Run: copyText(all.String())})
-	}
-	return items
 }
 
 // ---- the response ------------------------------------------------------------------

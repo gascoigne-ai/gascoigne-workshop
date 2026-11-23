@@ -42,9 +42,9 @@ flowchart LR
   (ending an inline edit, cancelling the send, closing the socket) and reveals the request. That sync
   is not a Set callback because the App must see which tabs left. Any tab change selects its
   request in the tree and opens the folders above it (`App.revealRequest`).
-- **Table rows**: every change goes through `App.applyRows`, which keeps the undo history
-  (`tabs.HistoryLimit` steps per table and tab) and runs the pane's `changed` hook (Params rewrite
-  the URL). Menus, keys, drag and bulk edit all use it.
+- **Table rows**: every change goes through the `ui/editor/kvtable` component's `applyRows`, which keeps
+  the undo history (`tabs.HistoryLimit` steps per table and tab, on `tabs.Tab`) and asks the App to run the
+  pane's `changed` hook (Params rewrite the URL). Menus, keys, drag and bulk edit all use it.
 - **Sending**: `App.dispatch` expands `{{vars}}` (`Request.Expanded`, the stored request stays as
   typed) and runs `protocol.Registry.Send` as a `Cmd`. Each tab numbers its sends; a result whose
   number is no longer current (cancelled or replaced) is dropped. Timeout: the request's, else
@@ -66,6 +66,20 @@ the status bar is the component `ui/statusbar` (`App.bar`, built in `NewApp`; it
 - Body: the text and the form rows are kept apart, so switching body type loses nothing.
 - Each open collection has a color (`theme.CollectionToken`, tokens `collection.0`-`.5`,
   repeating): a stripe on its tabs and its root row.
+
+### Key-value tables in the UI
+
+The Params, Headers, Vars and form-field tables, and the read-only response Headers table, are the component
+`ui/editor/kvtable` (`App.kv`, built in `NewApp`) with its decisions in `kvtable/logic` (`Kind`, `Table`, `Cell`,
+`NextCell`, `SetCell`, `Settle`, `Target`). It owns the cell edit, the bulk edit, the selected and the dragged
+row and the column widths; each of the first four is one slot that remembers its table and so its tab (not a map
+per tab: that would allow an edit open in two tabs), the widths are one record per `Kind`, shared by every tab
+(persisted under `Kind.Key()`). `kvtable.Deps` (`Tables`, `Tabs`, `Menus`, `Secrets`, `Styles`) is answered by
+`kvtableHost` in `window_hosts.go`, which finds the rows through `tablePanes`, runs the pane's `changed` hook
+and says which table `Visible` is. Per frame: `BeginFrame` ends a row drag on release; `Tick` (after the view
+is built) drops a closed tab's edit, commits an edit whose field lost focus, applies the bulk text of a table
+that is no longer showing, and returns whether it changed the view (the App then marks the tree stale).
+`commitEdit` in the App is a thin wrapper of `kv.Commit` that ~15 callers use before they change the tab or rows.
 
 ### Collection tree in the UI
 
@@ -101,7 +115,8 @@ The drop outline is the row's `DropBorder` token, empty when not the target.
   no code clears the old owner by hand.
 - **Keys**: `routeKeys` (`game.go`) gives the frame's keys to the overlay, the sidebar (`sidebar.Keys`:
   Up, Down, Enter, F2 and Delete while the tree has the keyboard; its result is not read yet, the shortcuts
-  still run in that frame), the shortcuts or the table undo, in that order. Escape closes one layer per press, the topmost in
+  still run in that frame), the shortcuts or the table undo (`kvtable.Keys`, offered last, claims Ctrl+Z and
+Ctrl+Y for the showing table unless text has the keyboard: `textFocused` asks `kv.Typing()`), in that order. Escape closes one layer per press, the topmost in
   `feature/workspace/overlay`'s order, ending with cancelling a running request.
 - **Shortcuts**: the `shortcuts` table (`settings_shortcuts.go`) holds each action with a stable `id` and its
   default. A user binding is `settings.Shortcuts[id]`, stored only when it differs from the default.

@@ -3,6 +3,7 @@ package app
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
+	kvlogic "github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable/logic"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/format"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/response/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
@@ -32,7 +33,7 @@ var bodyTypes = []bodyChoice{
 }
 
 // formPane is the table of form and multipart fields.
-var formPane = pane{label: "Body", kind: paneTable, title: "Fields", editable: true,
+var formPane = pane{label: "Body", kind: paneTable, title: "Fields", editable: true, table: kvlogic.Form,
 	rows: func(_ *App, tab *reqTab) *[]request.KV { return &tab.Req.Form }}
 
 // The pane and its two simplest editors are templates; the editor is

@@ -490,16 +490,10 @@ func TestEditableTableMenuAlsoCopiesCells(t *testing.T) {
 	clip := &fakeClip{}
 	a.ctx.Clipboard = clip
 	a.Step(core.Input{})
-	items := a.rowMenuItems(requestPanes[0], a.cur(), 0)
-	var found bool
-	for _, it := range items {
-		if it.Label == "Copy value" {
-			it.Run()
-			found = true
-		}
-	}
-	if !found || clip.text != "giou" {
-		t.Fatalf("found %v clipboard %q", found, clip.text)
+	rightClick(a, 400, paramsRow0Y)
+	pickMenu(t, a, "Copy value")
+	if clip.text != "giou" {
+		t.Fatalf("clipboard %q", clip.text)
 	}
 }
 

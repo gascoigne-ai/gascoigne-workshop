@@ -73,8 +73,8 @@ func (a *App) beginFrame(in core.Input) bool {
 	a.ctx.Cursor = core.CursorDefault
 	if !in.Held && !in.MiddleHeld {
 		a.updateTabs(tabs.DragEnd{})
-		a.dragRow = nil
 	}
+	a.kv.BeginFrame(in)
 	drained := a.drain()
 	pruned := a.pruneToasts()
 	active := engine.InputActive(a.lastIn, in)
@@ -113,14 +113,8 @@ func (a *App) routeKeys(in core.Input) {
 	if in.Escape && !wasRecording { // one step per press: overlays, the settings menu, a cell edit, find, a running request
 		a.escape()
 	}
-	if (in.Undo || in.Redo) && !a.overlayOpen() && !a.textFocused() {
-		if p, t, ok := a.visibleTable(); ok {
-			if in.Undo {
-				a.undoRows(p, t)
-			} else {
-				a.redoRows(p, t)
-			}
-		}
+	if !a.overlayOpen() {
+		a.kv.Keys(in, a.textFocused())
 	}
 }
 
@@ -134,19 +128,16 @@ func (a *App) endFrame(moved bool) {
 	view.Update(a.ctx, root)
 	a.drawTree, a.treeStale = root, a.ctx.Fired != fired
 	// The steps below run after the tree was built. Each one that changes
-	// what the view shows sets a.treeStale itself (commitEdit, closeBulk,
+	// what the view shows sets a.treeStale itself (commitEdit, the kv Tick,
 	// dragHover, saveCollection and the settings Poll do); the others only
 	// read state or touch the cursor, the clock or a write queue.
-	if a.edit != nil && !a.edit.field.Focused { // a click elsewhere ends the edit
-		a.commitEdit()
-	}
+	a.treeStale = a.kv.Tick() || a.treeStale // a click elsewhere ends a cell edit, leaving the table applies its text
 	if a.ctx.Tick%settingsdialog.PollTicks == 0 {
 		a.treeStale = true // an outside change of settings.json replaces settings and the raw text
 		a.prefs.Poll(a)
 	}
 	a.dragHover()
 	a.showGrab()
-	a.settleBulk()
 	a.stateTick()
 	a.workspaceTick()
 	busy := moved || a.tips.Waiting()
@@ -204,8 +195,7 @@ func (a *App) SetSize(width, height int) { a.w, a.h = width, height }
 func (a *App) textFocused() bool {
 	t := a.cur()
 	focused := a.side.Filter().Focused || t.url.Focused || t.find.Focused || t.timeout.Focused || t.body.Focused ||
-		t.tests.Focused || t.gqlVars.Focused || t.file.Focused || t.msg.Focused || a.edit != nil ||
-		(a.bulk != nil && a.bulk.area.Focused)
+		t.tests.Focused || t.gqlVars.Focused || t.file.Focused || t.msg.Focused || a.kv.Typing()
 	for _, in := range t.auth {
 		focused = focused || in.Focused
 	}

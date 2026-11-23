@@ -297,16 +297,18 @@ func TestFormFieldsCanBeEditedAsText(t *testing.T) {
 		}
 	}
 	a.Step(core.Input{})
-	p, _, ok := a.visibleTable()
+	shown, ok := kvtableHost{a}.Visible()
+	p := tablePanes[shown.Kind]
 	if !ok || p.label != formPane.label || p.captionOf(a) != "Fields" {
 		t.Fatalf("the form is a table with a caption: %v %q", ok, p.captionOf(a))
 	}
-	a.toggleBulk(p, tab)
-	if a.bulk == nil || a.bulk.area.Text != "user: ann" {
-		t.Fatalf("bulk text %q", a.bulk.area.Text)
+	table := shown
+	a.kv.ToggleBulk(table)
+	if a.kv.BulkArea() == nil || a.kv.BulkArea().Text != "user: ann" {
+		t.Fatalf("bulk text %v", a.kv.BulkArea())
 	}
-	a.bulk.area = widget.NewTextArea("user: bob\nrole: admin")
-	a.closeBulk()
+	*a.kv.BulkArea() = widget.NewTextArea("user: bob\nrole: admin")
+	a.kv.ToggleBulk(table)
 	if len(tab.Req.Form) != 2 || tab.Req.Form[0].Value != "bob" || tab.Req.Form[1].Name != "role" {
 		t.Fatalf("form %+v", tab.Req.Form)
 	}

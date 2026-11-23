@@ -25,9 +25,9 @@ var shortcuts = []shortcut{
 	{"close-tab", "Close tab", keys(ebiten.KeyW, true, false, false), func(app *App) { app.closeTab(app.tabs.Active()) }},
 	{"next-tab", "Next tab", keys(ebiten.KeyTab, true, false, false), func(app *App) { app.switchTab(1) }},
 	{"prev-tab", "Previous tab", keys(ebiten.KeyTab, true, true, false), func(app *App) { app.switchTab(-1) }},
-	{"duplicate-row", "Duplicate row", keys(ebiten.KeyD, true, false, false), (*App).duplicateRow},
-	{"move-row-up", "Move row up", keys(ebiten.KeyArrowUp, false, false, true), func(app *App) { app.moveRow(-1) }},
-	{"move-row-down", "Move row down", keys(ebiten.KeyArrowDown, false, false, true), func(app *App) { app.moveRow(1) }},
+	{"duplicate-row", "Duplicate row", keys(ebiten.KeyD, true, false, false), func(app *App) { app.kv.DuplicateRow() }},
+	{"move-row-up", "Move row up", keys(ebiten.KeyArrowUp, false, false, true), func(app *App) { app.kv.MoveRow(-1) }},
+	{"move-row-down", "Move row down", keys(ebiten.KeyArrowDown, false, false, true), func(app *App) { app.kv.MoveRow(1) }},
 	{"delete-row", "Delete row", keys(ebiten.KeyDelete, false, false, false), (*App).deleteRow},
 	{"complete-variable", "Complete variable", keys(ebiten.KeySpace, true, false, false), (*App).completeVariable},
 	{"save", "Save collection", keys(ebiten.KeyS, true, false, false), (*App).saveWorkspace},
@@ -60,8 +60,8 @@ func (a *App) runShortcuts(in core.Input) {
 // sendCurrent sends the request; while a table cell is edited, Ctrl+Enter
 // adds a row below instead.
 func (a *App) sendCurrent() {
-	if a.edit != nil {
-		a.insertRowBelow()
+	if a.kv.Editing() {
+		a.kv.InsertRowBelow()
 		return
 	}
 	a.send(a.cur())

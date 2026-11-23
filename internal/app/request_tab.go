@@ -88,8 +88,7 @@ func (a *App) makeTab(tab *tabs.Tab) *reqTab {
 }
 
 // updateTabs applies msg to the tab list, then does what the change means
-// for the window: an inline edit in a closed tab ends, closed tabs lose
-// their widgets and new ones get theirs.
+// for the window: closed tabs lose their widgets and new ones get theirs.
 func (a *App) updateTabs(msg tabs.Msg) {
 	was := a.activeRequest()
 	a.tabs.Apply(msg)
@@ -102,9 +101,6 @@ func (a *App) updateTabs(msg tabs.Msg) {
 	for tab, widgets := range a.widgets {
 		if slices.Contains(a.tabs.Tabs(), tab) {
 			continue
-		}
-		if a.edit != nil && a.edit.tab == widgets {
-			a.cancelEdit()
 		}
 		a.cancelSend(widgets) // a closed tab keeps neither a request nor a socket
 		a.disconnect(widgets)

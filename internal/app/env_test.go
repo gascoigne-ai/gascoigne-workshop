@@ -97,16 +97,6 @@ func TestUnresolvedVariablesAreFlagged(t *testing.T) {
 	}
 }
 
-func TestSecretValuesAreMaskedInTheTable(t *testing.T) {
-	rows := kvRows([]request.KV{{Name: "token", Value: "hunter2", Secret: true, Enabled: true}, {Name: "a", Value: "visible"}}, true, false)
-	if rows[0].Cells[1] == "hunter2" || rows[0].Cells[1] == "" {
-		t.Fatalf("secret shown as %q", rows[0].Cells[1])
-	}
-	if rows[1].Cells[1] != "visible" {
-		t.Fatalf("plain value %q", rows[1].Cells[1])
-	}
-}
-
 func TestToggleSecretOnAnEnvironmentRow(t *testing.T) {
 	a := testApp(t)
 	a.addEnv("Dev")

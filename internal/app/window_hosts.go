@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"slices"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/transfer"
@@ -11,9 +12,13 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request/severity"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable"
+	kvlogic "github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable/logic"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sidebar/logic"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sizes"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/theme"
+	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
@@ -265,4 +270,110 @@ func (a *App) closeFocusedCollection() {
 	if col := a.focusCol(); col != nil {
 		a.requestCloseCollection(col)
 	}
+}
+
+// The key-value tables are the kvtable component's; the App answers what it
+// asks (kvtable.Deps) and keeps the few rules that need the window.
+
+// tablePanes is the pane that shows each table, by kind: where its rows are
+// and what follows a change of them.
+var tablePanes = [kvlogic.KindCount]pane{
+	kvlogic.Params:          paramsPane,
+	kvlogic.Headers:         headersPane,
+	kvlogic.Vars:            varsPane,
+	kvlogic.Form:            formPane,
+	kvlogic.ResponseHeaders: responsePanes[1],
+}
+
+// tablePane is the pane's table in the request pane's padding.
+func (a *App) tablePane(panel pane, tab *reqTab, scroll *widget.ScrollState) Node {
+	return a.tableView(panel, tab, scroll, w.Gutter)
+}
+
+// tableView is the pane's table with the given padding around it.
+func (a *App) tableView(panel pane, tab *reqTab, scroll *widget.ScrollState, pad int) Node {
+	look := kvtable.Look{Caption: panel.captionOf(a), Editable: panel.editable, FlagDuplicates: panel.flagDuplicates}
+	return a.kv.View(a.ctx, kvlogic.Table{Tab: tab.Tab, Kind: panel.table}, look, scroll, pad)
+}
+
+// commitEdit writes a cell edit in progress into its row, before whatever
+// the caller does next could change the rows or the tab.
+func (a *App) commitEdit() {
+	if a.kv.Commit() {
+		a.treeStale = true
+	}
+}
+
+// deleteRow removes the selected table row, not while text has the keyboard
+// (Delete belongs to the text) or the tree does (Delete removes its node).
+func (a *App) deleteRow() {
+	if a.textFocused() || a.side.Tree().Focused() {
+		return
+	}
+	a.kv.DeleteRow()
+}
+
+// kvtableHost is what the key-value tables ask of the App (kvtable.Deps).
+type kvtableHost struct{ *App }
+
+// tabOf is the widget state of table's tab. A tab that closed since has none;
+// its table is still written (a bulk text typed before the close), through
+// a stand-in that only carries the request.
+func (host kvtableHost) tabOf(table kvlogic.Table) *reqTab {
+	if tab := host.widgets[table.Tab]; tab != nil {
+		return tab
+	}
+	return &reqTab{Tab: table.Tab}
+}
+
+// Rows are the rows of table.
+func (host kvtableHost) Rows(table kvlogic.Table) *[]request.KV {
+	return tablePanes[table.Kind].rows(host.App, host.tabOf(table))
+}
+
+// Changed runs the hook of the table's pane: the Params rewrite the URL.
+func (host kvtableHost) Changed(table kvlogic.Table) {
+	if changed := tablePanes[table.Kind].changed; changed != nil {
+		changed(host.tabOf(table))
+	}
+}
+
+// IsOpen reports whether tab is one of the open tabs.
+func (host kvtableHost) IsOpen(tab *tabs.Tab) bool { return slices.Contains(host.tabs.Tabs(), tab) }
+
+// Visible is the editable table the request pane shows, if any: Params,
+// Headers, Vars, or the form fields of the Body pane.
+func (host kvtableHost) Visible() (kvlogic.Table, bool) {
+	tab := host.cur()
+	shown := requestPanesFor(tab)[tab.paneTab]
+	switch {
+	case shown.kind == paneTable && shown.editable:
+		return kvlogic.Table{Tab: tab.Tab, Kind: shown.table}, true
+	case shown.kind == paneBody && (tab.Req.BodyType == request.BodyForm || tab.Req.BodyType == request.BodyMultipart):
+		return kvlogic.Table{Tab: tab.Tab, Kind: formPane.table}, true
+	}
+	return kvlogic.Table{}, false
+}
+
+// Open shows a context menu.
+func (host kvtableHost) Open(posX, posY int, items []widget.MenuItem) {
+	host.openMenu(posX, posY, items)
+}
+
+// Secret says whether row of table is a variable of the active environment
+// that can be marked as a secret, and whether it is.
+func (host kvtableHost) Secret(table kvlogic.Table, row int) (secret, ok bool) {
+	env := host.activeEnv()
+	if table.Kind != kvlogic.Vars || env == nil || row >= len(env.Vars) {
+		return false, false
+	}
+	return env.Vars[row].Secret, true
+}
+
+// ToggleSecret marks row of the active environment's variables as a secret, or clears it.
+func (host kvtableHost) ToggleSecret(row int) { host.toggleSecret(row) }
+
+// CellStyler marks the {{variables}} of a cell of req.
+func (host kvtableHost) CellStyler(req *request.Request) func(string) []widget.Span {
+	return host.cellStyler(req)
 }

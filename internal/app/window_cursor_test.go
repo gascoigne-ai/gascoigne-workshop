@@ -1,6 +1,7 @@
 package app
 
 import (
+	kvlogic "github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable/logic"
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
@@ -17,7 +18,7 @@ func TestTheCursorIsAGrabWhileSomethingIsBeingDragged(t *testing.T) {
 		want  core.Cursor
 	}{
 		{"nothing grabbed", func(*App) {}, true, core.CursorDefault},
-		{"a table row being dragged", func(app *App) { app.dragRow = &rowSelection{} }, true, core.CursorMove},
+		{"a table row being dragged", func(app *App) { app.kv.GrabRow(kvlogic.Table{Tab: app.cur().Tab, Kind: kvlogic.Params}, 0) }, true, core.CursorMove},
 		{"a tab being dragged", func(app *App) { app.tabs.Apply(tabs.DragBegin{Index: 0}) }, true, core.CursorMove},
 	}
 	for _, test := range tests {

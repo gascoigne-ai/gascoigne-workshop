@@ -8,7 +8,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/filedialog"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"io"
 	"math"
 	"net/http"
@@ -165,22 +164,6 @@ func TestTimeoutIsCappedInsteadOfOverflowing(t *testing.T) {
 		if got <= 0 || got > settings.MaxTimeout {
 			t.Errorf("timeoutFor(%d s) = %v, want 1..%v", sec, got, settings.MaxTimeout)
 		}
-	}
-}
-
-// An edit of a row past the end (the table shrank while the cell was
-// open) appended one row and then indexed the row it had meant, which
-// was out of range.
-func TestCommittingACellEditOfAVanishedRowAppendsOneRow(t *testing.T) {
-	a := testApp(t)
-	tab := a.cur()
-	before := len(tab.Req.Params)
-	a.beginEdit(paramsPane, tab, before, 0)
-	a.edit.row = before + 5 // the rows above were deleted meanwhile
-	a.edit.field = widget.NewTextField("late")
-	a.commitEdit()
-	if len(tab.Req.Params) != before+1 || tab.Req.Params[before].Name != "late" {
-		t.Fatalf("params %+v, want one new row named late", tab.Req.Params)
 	}
 }
 
