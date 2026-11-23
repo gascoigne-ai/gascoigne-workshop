@@ -53,6 +53,7 @@ feature directory under `internal/feature/` (root, controllers, `adapter/`; its 
 | `architecture/toolkit.md` | `uitoolkit` | core, view, widgets, markup API and drawing |
 | `architecture/persistence.md` | shared | formats and versions of every persisted file |
 | `architecture/limits.md` | shared | limits, fuzzing, known gaps |
+| `architecture/formal.md` | `formal/` | claims about the real code, the evidence behind each, the lock |
 
 ## Composition
 

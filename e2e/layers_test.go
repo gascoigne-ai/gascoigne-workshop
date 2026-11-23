@@ -145,7 +145,7 @@ func listPackages(t *testing.T, tags string) []listedPackage {
 	if tags != "" {
 		args = append(args, "-tags", tags)
 	}
-	args = append(args, "-json=ImportPath,Imports,TestImports,XTestImports,Error", "./internal/...", "./uitoolkit/...")
+	args = append(args, "-json=ImportPath,Imports,TestImports,XTestImports,Error", "./internal/...", "./uitoolkit/...", "./formal/...")
 	decoder := json.NewDecoder(bytes.NewReader(goList(t, args...)))
 	var packages []listedPackage
 	for {
@@ -191,6 +191,11 @@ func TestCheckLayersRejects(t *testing.T) {
 	}
 	xtest := synthetic("internal/feature/send/requestedit")
 	xtest.XTestImports = []string{testModule + "/internal/feature/history"}
+	formalTest := func(imported string) listedPackage {
+		pkg := synthetic("formal/escape")
+		pkg.TestImports = []string{testModule + "/" + imported}
+		return pkg
+	}
 	cases := []struct {
 		name string
 		pkg  listedPackage
@@ -207,6 +212,11 @@ func TestCheckLayersRejects(t *testing.T) {
 		{"toolkit imports internal", synthetic("uitoolkit/widget", "internal/feature/request")},
 		{"exampleserver imports the send root", synthetic("internal/exampleserver", "internal/feature/send")},
 		{"unclassified internal package", synthetic("internal/stuff")},
+		{"formal imports an adapter", formalTest("internal/feature/send/adapter/preview")},
+		{"formal imports a ui", formalTest("internal/ui/theme")},
+		{"formal imports app", formalTest("internal/app")},
+		{"formal imports the toolkit", formalTest("uitoolkit/widget")},
+		{"formal production code imports a controller", synthetic("formal/escape", "internal/feature/workspace/overlay")},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -215,6 +225,14 @@ func TestCheckLayersRejects(t *testing.T) {
 			}
 		})
 	}
+}
+
+func formalTestImports(imports ...string) listedPackage {
+	pkg := synthetic("formal/connection")
+	for _, imported := range imports {
+		pkg.TestImports = append(pkg.TestImports, testModule+"/"+imported)
+	}
+	return pkg
 }
 
 func TestCheckLayersAllows(t *testing.T) {
@@ -233,6 +251,7 @@ func TestCheckLayersAllows(t *testing.T) {
 		{"workspace root imports its controller", synthetic("internal/feature/workspace", "internal/feature/workspace/state")},
 		{"adapter imports its own root", synthetic("internal/feature/workspace/adapter/folders", "internal/feature/workspace")},
 		{"ui imports toolkit and own controller", synthetic("internal/ui/response/respview", "uitoolkit/widget", "internal/feature/send/viewer", "internal/feature/send")},
+		{"formal tests import base, roots and controllers", formalTestImports("internal/feature/request", "internal/feature/send", "internal/feature/send/sends", "internal/feature/workspace/tabs")},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -417,6 +436,8 @@ func TestZoneOf(t *testing.T) {
 		{"uitoolkit/core", zoneToolkit, ""},
 		{"cmd/workshop", zoneUnchecked, ""},
 		{"e2e", zoneUnchecked, ""},
+		{"formal/escape", zoneFormal, ""},
+		{"formal", zoneFormal, ""},
 		{"internal/stuff", zoneUnclassified, ""},
 	}
 	for _, tc := range cases {

@@ -20,6 +20,7 @@ const (
 	zoneApp
 	zoneExampleServer
 	zoneToolkit
+	zoneFormal
 )
 
 func (z zone) String() string {
@@ -28,7 +29,7 @@ func (z zone) String() string {
 		zoneFeatureRoot: "feature root", zoneController: "controller",
 		zoneBase: "base", zoneUILogic: "ui logic", zoneUI: "ui",
 		zoneAdapter: "adapter", zoneApp: "app",
-		zoneExampleServer: "exampleserver", zoneToolkit: "toolkit",
+		zoneExampleServer: "exampleserver", zoneToolkit: "toolkit", zoneFormal: "formal",
 	}
 	return names[z]
 }
@@ -46,6 +47,8 @@ func zoneOf(relPath string) (zone, string) {
 	switch {
 	case relPath == "uitoolkit" || strings.HasPrefix(relPath, "uitoolkit/"):
 		return zoneToolkit, ""
+	case relPath == "formal" || strings.HasPrefix(relPath, "formal/"):
+		return zoneFormal, ""
 	case relPath == "internal/app" || strings.HasPrefix(relPath, "internal/app/"):
 		return zoneApp, ""
 	case relPath == "internal/exampleserver" || strings.HasPrefix(relPath, "internal/exampleserver/"):
@@ -126,6 +129,7 @@ var currentLayoutRules = []layerRule{
 	{"test only: ui/window -> statefile", selector{Paths: []string{"internal/ui/window"}}, selector{Paths: []string{"internal/feature/workspace/adapter/statefile"}}, false, true, "test fixture: the whole-window flow tests run on the real stores, protocols and servers (withAdapters); they move to e2e/apptest as the components that own their state leave the window.", false},
 	{"test only: ui/window -> protocol ws", selector{Paths: []string{"internal/ui/window"}}, selector{Paths: []string{"internal/feature/send/adapter/protocol/ws"}}, false, true, "test fixture: the whole-window flow tests run on the real stores, protocols and servers (withAdapters); they move to e2e/apptest as the components that own their state leave the window.", false},
 	{"test only: ui/window -> exampleserver", selector{Paths: []string{"internal/ui/window"}}, selector{Paths: []string{"internal/exampleserver"}}, false, true, "test fixture: the whole-window flow tests run on the real stores, protocols and servers (withAdapters); they move to e2e/apptest as the components that own their state leave the window.", false},
+	{"test only: formal -> base, roots, controllers", selector{Zones: []zone{zoneFormal}}, selector{Zones: []zone{zoneBase, zoneFeatureRoot, zoneController}}, false, true, "formal claims drive the real feature code from test files; no adapter, ui, app or toolkit", false},
 }
 
 // targetLayoutRules are the rows of the layout in .harness/reorg.md. They sit

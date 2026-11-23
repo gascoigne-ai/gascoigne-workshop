@@ -1,6 +1,6 @@
-.PHONY: check bench fuzz fmt-check vet test vet-release release-packages check-release-scope test-release build release run example-server shot install
+.PHONY: check test-formal bench fuzz fmt-check vet test vet-release release-packages check-release-scope test-release build release run example-server shot install
 
-check: fmt-check vet test vet-release check-release-scope test-release
+check: fmt-check vet test test-formal vet-release check-release-scope test-release
 
 fmt-check:
 	@test -z "$$(gofmt -l .)" || { gofmt -l .; exit 1; }
@@ -10,6 +10,11 @@ vet:
 
 test:
 	go test -race ./...
+
+# The formal claims: every claim with the evidence kind behind it, and the lock that makes a
+# change of a claim a recorded decision (.harness/architecture/formal.md).
+test-formal:
+	FORMAL_VISUAL=off go run github.com/gascoigne-ai/gascoigne-formal/cmd/formal check ./formal/...
 
 # Frame-cost benchmarks (CPU side, no display needed beyond what the tests
 # use); not part of check. Compare two runs with benchstat when installed.

@@ -28,6 +28,7 @@ Four parts: `feature`, `storage`, `ui`, `app`. The composition, the layer table 
 - An adapter imports its root, controllers and adapters of its own feature. It never imports a `ui`.
 - Another feature is reached through the base feature, that is the `request` model. Nothing else crosses between features; `go list` shows it. `app` imports no adapter.
 - Written exception: `internal/exampleserver` (a dev tool, not a feature) imports `feature/send/adapter/protocol/ws`, the WebSocket framing it serves.
+- `formal/` (test files only) imports base, feature roots and controllers to state claims about the real code; never an adapter, `ui`, `app` or the toolkit.
 - A new package goes into the base feature, `storage`, a feature, `ui` or a feature's `adapter` zone. No `utils`, `common` or `helpers`.
 
 `make check` enforces rules: `e2e/layers_test.go` reads compiler's direct imports (`go list`, tag sets, test included) and checks against default-deny rule table in `e2e/layers_rules_test.go`. Every written exception row has a reason. Test-only rows let a test file import a real adapter or package as fixture (`exampleserver` tests (the debug sample collection; its client tests run from `e2e`)); a production import never matches them. `ui/window` has seven such rows (`collectionstore`, `historyfile`, `protocol`, `protocol/ws`, `settingsfile`, `statefile` and `exampleserver`). A new exception is a new row, with approval.
