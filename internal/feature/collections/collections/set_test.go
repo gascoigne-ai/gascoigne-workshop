@@ -319,3 +319,62 @@ func TestByCollectionFindsTheEntryOfAnOpenCollection(t *testing.T) {
 		t.Error("a collection that is not open has an entry")
 	}
 }
+
+// holding is a collection whose root holds one request called name.
+func holding(name string) (*request.Collection, *request.Request) {
+	col := newCollection(name)
+	req := col.AddRequest(request.Request{Name: name + " request"})
+	return col, req
+}
+
+func TestFocusPicksTheCollectionTheUserIsWorkingIn(t *testing.T) {
+	first, firstReq := holding("a")
+	second, secondReq := holding("b")
+	set := Update(Set{}, Open{Collection: first, Dir: "/w/a"})
+	set = Update(set, Open{Collection: second, Dir: "/w/b"})
+	stray := &request.Request{Name: "blank tab of no collection"}
+	tests := []struct {
+		name     string
+		set      Set
+		current  *request.Request
+		selected request.Node
+		want     *request.Collection
+	}{
+		{"the current tab's collection wins", set, secondReq, request.Node{Req: firstReq}, second},
+		{"no tab: the selection decides", set, nil, request.Node{Req: firstReq}, first},
+		{"a tab of no collection: the selection decides", set, stray, request.Node{Req: secondReq}, second},
+		{"nothing current or selected: the first", set, nil, request.Node{}, first},
+		{"empty set", Set{}, nil, request.Node{}, nil},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			entry, ok := test.set.Focus(test.current, test.selected)
+			if ok != (test.want != nil) || entry.Collection != test.want {
+				t.Errorf("Focus = %v, %v; want %v", entry.Collection, ok, test.want)
+			}
+		})
+	}
+}
+
+func TestIsRootIsTrueOnlyForTheRootFolderOfAnOpenCollection(t *testing.T) {
+	col, req := holding("a")
+	sub := &request.Folder{Name: "sub"}
+	col.Folder.Folders = append(col.Folder.Folders, sub)
+	set := Update(Set{}, Open{Collection: col, Dir: "/w/a"})
+	_ = req
+	if !set.IsRoot(&col.Folder) {
+		t.Error("the root folder is not reported as a root")
+	}
+	if set.IsRoot(sub) || set.IsRoot(&request.Folder{}) || set.IsRoot(nil) {
+		t.Error("a folder below the root, a stranger or nil is reported as a root")
+	}
+}
+
+func TestIndexIsThePlaceInTheTreeOrMinusOne(t *testing.T) {
+	set, first, second, third := opened()
+	for col, want := range map[*request.Collection]int{first: 0, second: 1, third: 2, newCollection("x"): -1} {
+		if got := set.Index(col); got != want {
+			t.Errorf("Index(%s) = %d, want %d", col.Name, got, want)
+		}
+	}
+}

@@ -138,7 +138,7 @@ func TestACollectionThatFailedToLoadStaysInTheRememberedList(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	a.rememberCollections()
+	a.cols.RememberEnvironments() // the set came from the remembered list, so it is written whole
 	written, err := settingsDisk.Load(settingsPath)
 	if err != nil {
 		t.Fatal(err)

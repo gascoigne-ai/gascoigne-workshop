@@ -71,7 +71,7 @@ func (a *App) varsCaption() string { return a.varsTarget.caption(a.activeEnv()) 
 // chooseEnv makes environment index the active one of col, without
 // remembering it.
 func (a *App) chooseEnv(col *request.Collection, index int) {
-	a.open = collections.Update(a.open, collections.ChooseEnv{Collection: col, Index: index})
+	a.cols.Apply(collections.ChooseEnv{Collection: col, Index: index})
 }
 
 // focusedSelection is the focused collection and its environment choice
@@ -92,7 +92,7 @@ func (a *App) selectEnv(index int) {
 	selection.Select(col, index)
 	a.chooseEnv(col, selection.Index)
 	a.varsTarget = varsTarget{}
-	a.rememberEnvironments()
+	a.cols.RememberEnvironments()
 }
 
 // addEnv creates an environment in the focused collection and makes it
@@ -106,7 +106,7 @@ func (a *App) addEnv(name string) {
 	selection.Add(col, name)
 	a.chooseEnv(col, selection.Index)
 	a.varsTarget = varsTarget{}
-	a.rememberEnvironments()
+	a.cols.RememberEnvironments()
 }
 
 func (a *App) renameEnv(index int, name string) {
@@ -217,8 +217,8 @@ func (a *App) urlTip(tab *reqTab) string {
 // for the root) and shows it.
 func (a *App) editVars(dir *request.Folder) {
 	a.commitEdit()
-	if a.isRoot(dir) {
-		owner, _ := a.open.Owner(request.Node{Dir: dir})
+	if a.cols.Set().IsRoot(dir) {
+		owner, _ := a.cols.Set().Owner(request.Node{Dir: dir})
 		a.varsTarget = collectionVars(owner.Collection)
 	} else {
 		a.varsTarget = folderVars(dir)

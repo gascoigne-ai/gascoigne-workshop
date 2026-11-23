@@ -4,6 +4,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/transfer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sidebar/logic"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sidebar/sentlog"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
@@ -49,21 +50,11 @@ type Nodes interface {
 // Drops moves or copies a node dropped on another row.
 type Drops interface{ Drop(move transfer.Transfer) }
 
-// ImportKind is the format of the clipboard text an import reads.
-type ImportKind int
-
-// The formats a folder can import.
-const (
-	ImportCurl ImportKind = iota
-	ImportOpenAPI
-	ImportPostman
-)
-
 // Folders is what a folder's menu does inside it.
 type Folders interface {
 	NewRequest(dir *request.Folder)
 	NewFolder(dir *request.Folder)
-	Import(dir *request.Folder, kind ImportKind)
+	Import(dir *request.Folder, kind logic.ImportKind)
 	Export(dir *request.Folder)
 }
 

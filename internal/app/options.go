@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/clientconfig"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send"
@@ -21,6 +22,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"net/http"
 	"net/http/cookiejar"
+	"path/filepath"
 	"time"
 )
 
@@ -131,6 +133,7 @@ func NewApp(opts Options) (*App, error) {
 			settings: st, settingsPath: opts.SettingsPath, settingsAccess: storage.AccessAfter(loadErr),
 		},
 	}
+	a.cols = collections.NewLibrary(a.store, collectionsDir(opts.DefaultWorkspace), collections.Deps{Settings: librarySettings{a}, Saves: librarySaves{a}})
 	a.driver.app = a
 	a.notices.SetStatus("Ready")
 	a.side = sidebar.New(sidebar.Deps{
@@ -173,6 +176,17 @@ func NewApp(opts Options) (*App, error) {
 	}
 	a.stateSave = autosave.New(stateDebounce, stateKey(a.snapshot()))
 	return a, nil
+}
+
+// collectionsDir is the folder new collections are made in: beside the
+// default workspace, never inside it, since a folder with a folder.json
+// below a collection is one of its folders. Empty when the program has no
+// config directory.
+func collectionsDir(defaultWorkspace string) string {
+	if defaultWorkspace == "" {
+		return ""
+	}
+	return filepath.Join(filepath.Dir(defaultWorkspace), "collections")
 }
 
 // loadState reads the remembered state at path and applies it; the error is

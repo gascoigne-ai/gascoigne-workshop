@@ -4,11 +4,11 @@ Collections on disk and in the window: the open set, the tree, move and copy, im
 
 ## Layout
 - `internal/feature/collections`: the root, package `collection` (not `collections`: the sub-package `collections` owns that name and callers read `collection.Sample()`). Holds `model.go` (the `Store` port), the tree rows (`tree.go`: `Row`, `Rows`) and the sample collections (`sample.go`, `sample_debug.go`, `sample_release.go`).
-- `collections`: the open set (`Set`), its remembered list and ownership rules.
+- `collections`: the open set (`Set`), its remembered list and ownership rules, and `Library`, which holds the `Store` port and the `Set` and runs the operations on whole collections (open, restore, create, rename, delete, locate, close, move).
 - `tree`: the pure tree operations (lookup, update).
 - `transfer`: move and copy of a node, validated before anything changes.
 - `clientconfig`: the client config parser and the `Source` port (`Load() (Config, error)`); it lives here so the root imports no sub-package.
-- `importers/{postman,openapi,miniyaml}`: pure readers and writers; the App only picks the file and adds the result.
+- `importers/{postman,openapi,miniyaml}`: pure readers and writers; the sidebar logic (`ui/sidebar/logic`) attaches the result to the tree.
 - `adapter/collectionstore` (package `collectionstore`, the disk `Store`) and `adapter/clientfile` (the `Source` that reads `.workshop` files).
 - The Move to and Copy to dialog is `internal/ui/overlays/destpicker` (this feature has no UI; the look is in `.harness/style.md`).
 - Imports: the base feature (`feature/request`) and `storage`. Inside the feature the usual direction holds: adapters and controllers import the root and the sub-packages, `clientconfig` imports `importers/miniyaml`.
@@ -28,12 +28,12 @@ Collections on disk and in the window: the open set, the tree, move and copy, im
 ### Open collections
 Several collections are open at once (the user's decisions), each a root of the tree with its own
 folder (`""` until the first save) and active environment, so nothing leaks between them; a
-collection is known by its folder. `App.open` is a `collections.Set`
-(`collections` sub-package).
+collection is known by its folder. `App.cols` is a `collections.Library` (`collections` sub-package) that owns the
+`collections.Set`.
 
 - **Ownership**: tabs, saving, rename, delete, find, sending and captured values go to the collection
   that owns the request (`Set.Owner`). A request of none, such as the blank tab, goes with the
-  focused collection: the active tab's, else the tree selection's, else the first (`App.focus`).
+  focused collection: the active tab's, else the tree selection's, else the first (`Set.Focus`).
 - History and the sent log key a request by its collection's folder and its path, so equal paths in
   two collections stay apart.
 - **Start**: `-workspace DIR` alone, else the remembered set, else (release build) the client
@@ -42,7 +42,7 @@ collection is known by its folder. `App.open` is a `collections.Set`
 - **Remembered set**: every change of the set rewrites `settings.collections` (`{folder,
   environment}`, hidden, General). A remembered folder that failed to load stays in the list, so an
   unmounted drive is not forgotten. A `-workspace` run does not replace the list; an environment
-  pick there only updates entries that name an open collection (`App.rememberEnvironments`). The
+  pick there only updates entries that name an open collection (`Library.RememberEnvironments`). The
   older `workspace` and `environment` keys are read only when `collections` is absent.
 - **Saving**: each collection saves itself after it stays unchanged for `saveDebounce`, with its
   own debounce. Everything changed is flushed at exit and before a rename. A first save of an
@@ -56,7 +56,7 @@ collection is known by its folder. `App.open` is a `collections.Set`
   drag.
 
 ### Import and export
-All importers are pure packages under `importers/`; the App only picks the file and adds the result.
+All importers are pure packages under `importers/`; the sidebar logic attaches the result to the tree.
 
 - **OpenAPI 3** (`openapi`, JSON or YAML): a subfolder per first tag, a request per operation,
   `{id}` becomes `{{id}}`, bodies from the example or a schema skeleton. What cannot be read is

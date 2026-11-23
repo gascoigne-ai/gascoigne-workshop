@@ -194,8 +194,8 @@ func (d *Driver) BrowseFiles(dir string) error {
 
 // CloseAllCollections closes every collection, so the tree shows its empty prompt.
 func (d *Driver) CloseAllCollections() {
-	for len(d.app.open.Entries) > 0 {
-		d.app.closeCollection(d.app.open.Entries[0].Collection)
+	for len(d.app.cols.Set().Entries) > 0 {
+		d.app.closeCollection(d.app.cols.Set().Entries[0].Collection)
 	}
 }
 

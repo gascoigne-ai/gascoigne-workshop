@@ -93,11 +93,11 @@ func TestNewerCollectionIsNotOpened(t *testing.T) {
 		t.Fatal(err)
 	}
 	a := testApp(t)
-	before := len(a.open.Entries)
+	before := len(a.cols.Set().Entries)
 	a.openCollectionAt(dir)
 	a.WaitWrites()
-	if len(a.open.Entries) != before {
-		t.Fatalf("%d collections open, want %d: the newer one is not opened", len(a.open.Entries), before)
+	if len(a.cols.Set().Entries) != before {
+		t.Fatalf("%d collections open, want %d: the newer one is not opened", len(a.cols.Set().Entries), before)
 	}
 	toasts := errorToasts(a, "folder.json")
 	if len(toasts) != 1 || !strings.Contains(toasts[0], "format 2, this build reads up to 1") {
@@ -128,8 +128,8 @@ func TestNewerRememberedCollectionIsToastedAtStart(t *testing.T) {
 	if len(toasts) != 1 || !strings.Contains(toasts[0], "format 2, this build reads up to 1") {
 		t.Fatalf("toasts %q, want one naming folder.json and both versions", toasts)
 	}
-	if _, open := a.open.At(dir); open || len(a.unreadable) != 1 {
-		t.Fatalf("open %v, unreadable %+v; want it closed and still remembered", open, a.unreadable)
+	if _, open := a.cols.Set().At(dir); open || len(a.cols.Unreadable()) != 1 {
+		t.Fatalf("open %v, unreadable %+v; want it closed and still remembered", open, a.cols.Unreadable())
 	}
 	unchangedFile(t, filepath.Join(dir, "folder.json"), newer)
 }

@@ -98,7 +98,7 @@ func (c *Component) treeItemOf(ctx *w.Ctx, row collection.Row) treeItem {
 	}
 	item.Before, item.Match, item.After = collection.SplitMatch(row.Name, c.filter.Text)
 	if row.Folder {
-		item.Root = c.isRoot(row.Dir)
+		item.Root = c.deps.Collections.Set().IsRoot(row.Dir)
 		if item.Root {
 			item.Stripe = c.stripe(node)
 		}
@@ -125,7 +125,7 @@ func (c *Component) treeItemOf(ctx *w.Ctx, row collection.Row) treeItem {
 // toggles when the button is released on the same row, so an open folder
 // can still be dragged.
 func (c *Component) press(row collection.Row) {
-	c.tree.Press(row, c.isRoot(row.Dir))
+	c.tree.Press(row, c.deps.Collections.Set().IsRoot(row.Dir))
 	if !row.Folder {
 		c.deps.Requests.Show(row.Req)
 	}

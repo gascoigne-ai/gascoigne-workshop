@@ -2,7 +2,11 @@
 // folder on disk: what a name may be, what the delete question says, which
 // collection opens when the open one is deleted, and the Set of open
 // collections (order, folder, active environment, which collection a request
-// belongs to). It has no I/O; the store port does the work.
+// belongs to). The rules and the Set do no I/O. Library holds the Set and
+// the Store port and runs the operations on whole collections (open,
+// restore, create, rename, delete, locate, close, move) and the remembered
+// list of the open set; it returns user-worded errors and raises no prompt
+// or toast, which stay in the window.
 package collections
 
 import (

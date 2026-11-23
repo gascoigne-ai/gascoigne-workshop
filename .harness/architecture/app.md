@@ -74,8 +74,14 @@ scroll and the tree state `ui/sidebar/logic.Tree`: the selected node, the open f
 pointer, read once per row per frame), who has the keyboard and the drag. `Drag.Phase` (idle, pressed, dragging)
 is computed from its fields, so no flag can disagree with them. Its menus and keys ask the App through the
 narrow interfaces of `sidebar.Deps`, which `sidebarHost` and `collectionHost` (`window_hosts.go`) answer;
-store work (`applyTree`, rename, delete, duplicate, `transferNode`, import, export, the destination picker)
-stays in `treeops.go`, `tree_import.go`, `tree_collections.go` and `tree_openset.go`. A drag is resolved in
+node work (`applyTree`, rename, delete, duplicate, `transferNode`, the destination picker) stays in `treeops.go`.
+The open set and the operations on whole collections are `collections.Library` (`App.cols`): it owns the `Set`,
+runs open, restore, create, rename, delete, locate, close and move through the `Store` port and writes the
+remembered list; it raises no prompt or toast, so the prompts and confirmations (`window_hosts.go`), the toasts
+(`App.toastError` shows a Library error with its first letter upper-cased) and tab teardown (`workspace.go`) stay
+in the App. The clipboard imports are `sidebarHost.Import`: `ui/sidebar/logic.Importers` (a table by kind)
+parses and `Imported.Attach` puts the result into the tree; export is next to `pickFile` in
+`window_filebrowser.go`. A drag is resolved in
 `beginFrame` (`side.BeginFrame`): a release over another row builds `transfer.Drop` and `App.transferNode`
 applies it, in one collection or across two; Alt
 copies (the user's choices and what was rejected: the `transfer` package doc). Across collections:

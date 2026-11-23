@@ -6,9 +6,13 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request/severity"
 	"strings"
 	"time"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/collections"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/autosave"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/serial"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 
@@ -27,43 +31,40 @@ const saveDebounce = time.Second
 // left out and named in the status line, so a later save cannot
 // overwrite what is there.
 func (a *App) openWorkspace(dir string) {
-	var wanted []request.OpenCollection
-	switch {
-	case dir != "":
-		wanted = []request.OpenCollection{{Folder: dir, Environment: a.rememberedEnv(collections.AbsDir(dir))}}
-	default:
-		wanted = a.settings.RememberedCollections()
-		a.setIsRemembered = true
+	wanted, origin := a.settings.RememberedCollections(), collections.OriginRemembered
+	if dir != "" {
+		wanted = []request.OpenCollection{{Folder: dir, Environment: a.cols.RememberedEnv(collections.AbsDir(dir))}}
+		origin = collections.OriginStartFolder
 	}
+	var started, sample *request.Collection
+	failures := a.cols.Restore(wanted, origin, func(string) *request.Collection {
+		var isSample bool
+		if started, isSample = a.startCollection(); isSample {
+			sample = started
+		}
+		a.expandStart(started, isSample)
+		return started
+	})
 	var failed []error
-	var sample *request.Collection
-	a.unreadable = nil
-	for _, item := range wanted {
-		if item.Folder == "" {
-			sample = a.includeStart(item.Environment)
-			continue
-		}
-		if _, err := a.loadCollection(collections.AbsDir(item.Folder), item.Environment); err != nil {
-			failed = append(failed, err)
-			a.toastNewer(item.Folder, err)
-			if dir == "" {
-				a.unreadable = append(a.unreadable, item)
-			}
-		}
+	for _, failure := range failures {
+		failed = append(failed, failure.Err)
+		a.toastNewer(failure.Folder, failure.Err)
 	}
 	if len(failed) > 0 {
 		a.notices.SetStatus("Workspace not loaded: " + errors.Join(failed...).Error())
 	}
-	if len(a.open.Entries) == 0 {
-		sample = a.includeStart(a.rememberedEnv(""))
+	for _, entry := range a.cols.Set().Entries {
+		if entry.Collection != started { // the start collection has its own expansion
+			a.side.Tree().ExpandAll(&entry.Collection.Folder)
+		}
 	}
-	first := a.open.Entries[0].Collection
+	first := a.cols.Set().Entries[0].Collection
 	if _, start, ok := collection.SampleStart(first); ok && first == sample { // the sample opens on its search call
 		a.openRequest(start)
 	} else {
-		a.focusCollection(first)
+		a.openRequest(collections.FirstOrBlank(first))
 	}
-	for _, entry := range a.open.Entries { // a blank request added to an empty collection is not an edit
+	for _, entry := range a.cols.Set().Entries { // a blank request added to an empty collection is not an edit
 		a.markSaved(entry.Collection)
 	}
 }
@@ -77,26 +78,16 @@ func (a *App) toastNewer(folder string, err error) {
 	}
 }
 
-// includeStart opens the collection the program starts with when nothing
-// saved is open: the client config's, else the sample, which it returns
-// (nil for the config's). Only one is opened, however often a settings
-// file names it.
-func (a *App) includeStart(env string) (sample *request.Collection) {
-	if _, open := a.open.At(""); open {
-		return nil
-	}
-	col, isSample := a.startCollection()
-	if folder, _, ok := collection.SampleStart(col); ok && isSample { // the sample opens on its search call
+// expandStart opens the folders of the collection the program starts with
+// when nothing saved is open: the client config's, else the sample. The
+// sample opens on its search call, the config with every folder open.
+func (a *App) expandStart(col *request.Collection, isSample bool) {
+	if folder, _, ok := collection.SampleStart(col); ok && isSample {
 		a.side.Tree().Expand(&col.Folder)
 		a.side.Tree().Expand(folder)
-	} else {
-		a.side.Tree().ExpandAll(&col.Folder)
+		return
 	}
-	a.include(col, "", env)
-	if isSample {
-		return col
-	}
-	return nil
+	a.side.Tree().ExpandAll(&col.Folder)
 }
 
 // startCollection is the client config's tree, or the sample when there is
@@ -123,13 +114,15 @@ func (a *App) saveWorkspace() { a.saveCollection(a.focusCol()) }
 // does, and the open set with it is remembered.
 func (a *App) saveCollection(col *request.Collection) {
 	a.commitEdit()
-	entry, ok := a.open.ByCollection(col)
+	entry, ok := a.cols.Set().ByCollection(col)
 	if !ok {
 		return
 	}
 	dir := entry.Dir
 	if dir == "" {
-		if dir = a.locate(col); dir == "" {
+		var err error
+		if dir, err = a.cols.Locate(col); err != nil {
+			a.toastError(err)
 			return
 		}
 	}
@@ -149,32 +142,10 @@ func (a *App) saveCollection(col *request.Collection) {
 	})
 }
 
-// locate makes the folder of an unsaved collection, named after it, in the
-// collections folder, and records it; "" when there is none to make.
-func (a *App) locate(col *request.Collection) string {
-	parent := a.collectionsDir()
-	if parent == "" {
-		a.toast("No folder to save to", severity.Error)
-		return ""
-	}
-	name, err := collections.CleanName(col.Name)
-	if err != nil {
-		name = "My collection" // the folder needs a name even when the collection's cannot be one
-	}
-	dir, err := a.store.Create(parent, name)
-	if err != nil {
-		a.toast("Saving failed: "+err.Error(), severity.Error)
-		return ""
-	}
-	a.open = collections.Update(a.open, collections.Located{Collection: col, Dir: dir})
-	a.rememberCollections()
-	return dir
-}
-
 // workspaceTick saves each saved collection once it has been unchanged for
 // saveDebounce. A collection without a folder is not saved by itself.
 func (a *App) workspaceTick() {
-	for _, entry := range a.open.Entries {
+	for _, entry := range a.cols.Set().Entries {
 		if entry.Dir != "" && a.saveOf(entry.Collection).Due(a.collectionKey(entry.Collection), a.now()) {
 			a.saveCollection(entry.Collection)
 		}
@@ -188,7 +159,7 @@ func (a *App) FlushWorkspace() error {
 	a.commitEdit()
 	a.WaitWrites()
 	var failed []error
-	for _, entry := range a.open.Entries {
+	for _, entry := range a.cols.Set().Entries {
 		if err := a.flushCollection(entry); err != nil {
 			failed = append(failed, err)
 		}
@@ -248,7 +219,7 @@ func (a *App) openWorkspaceAt(dir string) {
 		a.toast("Cannot open "+dir+": "+err.Error(), severity.Error)
 		return
 	}
-	env := a.rememberedEnv(dir)
+	env := a.cols.RememberedEnv(dir)
 	if env == "" {
 		env = a.envName()
 	}
@@ -256,18 +227,174 @@ func (a *App) openWorkspaceAt(dir string) {
 		a.disconnect(t)
 	}
 	a.commitEdit()
-	for _, entry := range a.open.Entries {
+	for _, entry := range a.cols.Set().Entries {
 		a.forget(entry.Collection)
+		a.cols.Apply(collections.Close{Collection: entry.Collection})
 	}
 	a.updateTabs(tabs.Reset{})
 	a.side.Tree().Reset()
-	a.showOpened(a.openLoaded(loaded, dir, env))
+	show := a.cols.Reopen(loaded, dir, env)
+	a.side.Tree().ExpandAll(&a.cols.Set().Entries[0].Collection.Folder)
+	a.openRequest(show)
+	a.markSaved(a.cols.Set().Entries[0].Collection) // as in addCollection
 	a.notices.SetStatus("Opened " + dir)
 }
 
-// promptWorkspace asks for the folder of a collection to open beside the
-// open ones; an empty or new folder starts a new collection there.
-func (a *App) promptWorkspace() {
+// openCollectionAt opens the collection in dir beside the open ones (an
+// empty or new folder starts a new collection there), or focuses it when
+// it is open already. A folder that cannot be read changes nothing and
+// says why.
+func (a *App) openCollectionAt(dir string) {
+	dir = strings.TrimSpace(dir)
+	if dir == "" {
+		return
+	}
+	if err := a.addCollection(dir); err != nil {
+		a.toast("Cannot open "+dir+": "+err.Error(), severity.Error)
+		return
+	}
+	a.notices.SetStatus("Opened " + collections.AbsDir(dir))
+}
+
+// addCollection opens the collection saved in dir after the open ones and
+// shows it; a folder already open is focused, one that cannot be read is
+// not opened.
+func (a *App) addCollection(dir string) error {
+	opening, err := a.cols.Open(dir)
+	if err != nil {
+		return err
+	}
+	if opening.Loaded {
+		a.side.Tree().ExpandAll(&opening.Collection.Folder)
+	}
+	a.openRequest(opening.Show)
+	if opening.Loaded {
+		a.markSaved(opening.Collection) // showing the request changes what the collection looks like, not what is on disk
+	}
+	return nil
+}
+
+// closeCollection takes col out of the window: its edits are saved first,
+// its tabs close and the set left is remembered. Closing the last one
+// leaves an empty tree; nothing is made on disk.
+func (a *App) closeCollection(col *request.Collection) {
+	entry, ok := a.cols.Set().ByCollection(col)
+	if !ok {
+		return
+	}
+	a.commitEdit()
+	if err := a.flushCollection(entry); err != nil {
+		a.toast("Saving "+col.Name+" failed: "+err.Error(), severity.Error)
+		return
+	}
+	for _, open := range a.openTabs() {
+		if col.Folder.Contains(request.Node{Req: open.Req}) { // no tab is left to close its socket later
+			a.disconnect(open)
+		}
+	}
+	a.closeTabsIn(request.Node{Dir: &col.Folder})
+	a.forget(col)
+	a.cols.Close(col)
+}
+
+// forget drops everything that pointed into col, which is leaving the open
+// set.
+func (a *App) forget(col *request.Collection) {
+	if a.varsTarget.refersTo(col) {
+		a.varsTarget = varsTarget{}
+	}
+	if col.Folder.Contains(a.side.Tree().Selected()) {
+		a.side.Tree().Select(request.Node{})
+	}
+	delete(a.saves, col)
+	a.markStale()
+}
+
+// The open collections: a.cols holds them in tree order, each with the
+// folder it is saved in and its own active environment. Whatever acts on a
+// request, a folder or a tab acts on the collection that holds it; what has
+// no node of its own (the header, the environment chip, Ctrl+S) acts on the
+// focused one.
+
+// focus is the collection the header, the environment chip and the
+// collection commands act on; ok is false when nothing is open.
+func (a *App) focus() (collections.Entry, bool) {
+	var current *request.Request
+	if len(a.tabs.Tabs()) > 0 {
+		current = a.cur().Req
+	}
+	return a.cols.Set().Focus(current, a.side.Tree().Selected())
+}
+
+// focusCol is the focused collection, nil when nothing is open.
+func (a *App) focusCol() *request.Collection {
 	entry, _ := a.focus()
-	a.prompt("Open collection folder", entry.Dir, "Open", a.openCollectionAt)
+	return entry.Collection
+}
+
+// headerTitle is the name of the focused collection, "" when none is open.
+func (a *App) headerTitle() string {
+	if col := a.focusCol(); col != nil {
+		return col.Name
+	}
+	return ""
+}
+
+// entryFor is the collection that holds req. A request of no collection,
+// such as the blank tab left after closing the last one, goes with the
+// focused collection, as it did when one collection was open at a time.
+func (a *App) entryFor(req *request.Request) (collections.Entry, bool) {
+	if entry, ok := a.cols.Set().Owner(request.Node{Req: req}); ok {
+		return entry, true
+	}
+	return a.focus()
+}
+
+// eachRoot calls visit with the root folder of every open collection, in
+// tree order.
+func (a *App) eachRoot(visit func(root *request.Folder)) {
+	for _, entry := range a.cols.Set().Entries {
+		visit(&entry.Collection.Folder)
+	}
+}
+
+// saveOf is when col was last written.
+func (a *App) saveOf(col *request.Collection) *autosave.Debounce {
+	debounce := a.saves[col]
+	if debounce == nil {
+		fresh := autosave.New(saveDebounce, "")
+		debounce = &fresh
+		a.saves[col] = debounce
+	}
+	return debounce
+}
+
+// markSaved records that col is on disk as it is now.
+func (a *App) markSaved(col *request.Collection) { a.saveOf(col).Saved(a.collectionKeyNow(col)) }
+
+// librarySettings is where the open set keeps its remembered list: the
+// settings (collections.Settings).
+type librarySettings struct{ *App }
+
+func (host librarySettings) Remembered() []request.OpenCollection {
+	return host.settings.RememberedCollections()
+}
+
+func (host librarySettings) Remember(list []request.OpenCollection) {
+	host.saveSettings(func(prefs *settings.Settings) { prefs.RememberCollections(list) })
+}
+
+// librarySaves is the autosave bookkeeping the open set asks of the App
+// (collections.Saves).
+type librarySaves struct{ *App }
+
+func (host librarySaves) Saved(col *request.Collection) { host.markSaved(col) }
+func (host librarySaves) FlushAll() error               { return host.FlushWorkspace() }
+
+// toastError shows err, which the collections package words in lower case,
+// as an error toast.
+func (a *App) toastError(err error) {
+	text := err.Error()
+	first, size := utf8.DecodeRuneInString(text)
+	a.toast(string(unicode.ToUpper(first))+text[size:], severity.Error)
 }

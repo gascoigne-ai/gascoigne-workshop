@@ -1,13 +1,17 @@
 package app
 
 import (
+	"errors"
+	"fmt"
+	"path/filepath"
+
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/transfer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/tree"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request/severity"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sidebar"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sidebar/logic"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sizes"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/theme"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -52,20 +56,20 @@ func (a *App) OpenRequest(folder, path string) bool {
 // in the order they are searched.
 func (a *App) sentCandidates(folder string) []collections.Entry {
 	if folder != "" {
-		entry, ok := a.open.ByDir(folder)
+		entry, ok := a.cols.Set().ByDir(folder)
 		if !ok {
 			return nil
 		}
 		return []collections.Entry{entry}
 	}
 	var candidates []collections.Entry
-	for _, entry := range a.open.Entries {
+	for _, entry := range a.cols.Set().Entries {
 		if entry.Dir == "" {
 			candidates = append(candidates, entry)
 		}
 	}
-	if len(a.open.Entries) > 0 {
-		candidates = append(candidates, a.open.Entries[0])
+	if len(a.cols.Set().Entries) > 0 {
+		candidates = append(candidates, a.cols.Set().Entries[0])
 	}
 	return candidates
 }
@@ -82,7 +86,7 @@ func (a *App) Badge(protocol request.Protocol, method string) Node {
 type sidebarHost struct{ *App }
 
 // Set is the open collections.
-func (host sidebarHost) Set() collections.Set { return host.open }
+func (host sidebarHost) Set() collections.Set { return host.cols.Set() }
 
 // Focused is the collection the chip menu acts on.
 func (host sidebarHost) Focused() *request.Collection { return host.focusCol() }
@@ -106,16 +110,30 @@ func (host sidebarHost) NewRequest(dir *request.Folder) { host.newRequestIn(dir)
 func (host sidebarHost) NewFolder(dir *request.Folder)  { host.newFolderIn(dir) }
 func (host sidebarHost) Export(dir *request.Folder)     { host.exportPostman(dir) }
 
-// importKinds maps what the sidebar names to the importer that reads it.
-var importKinds = map[sidebar.ImportKind]importKind{
-	sidebar.ImportCurl:    curlKind,
-	sidebar.ImportOpenAPI: openAPIKind,
-	sidebar.ImportPostman: postmanKind,
-}
-
-// Import adds what the clipboard holds, read as kind, to dir.
-func (host sidebarHost) Import(dir *request.Folder, kind sidebar.ImportKind) {
-	host.importFolder(dir, importKinds[kind])
+// Import adds what the clipboard holds, read as kind, to dir and opens it;
+// a text of another kind is explained in a toast. Reading the text is the
+// job of logic.Importers and putting it in the tree that of Imported.Attach;
+// only the clipboard, the toasts and the tab are the window's.
+func (host sidebarHost) Import(dir *request.Folder, kind logic.ImportKind) {
+	text, err := host.ctx.Clipboard.Read()
+	if err != nil {
+		host.toast("Cannot read the clipboard: "+err.Error(), severity.Error)
+		return
+	}
+	importer := logic.Importers[kind]
+	got, err := importer.Parse(text)
+	if err != nil {
+		host.toast(importer.Refusal+err.Error(), severity.Error)
+		return
+	}
+	name, show := got.Attach(host.side.Tree(), dir, host.ownerOf(request.Node{Dir: dir}))
+	if show != nil {
+		host.openRequest(show)
+	}
+	host.notices.SetStatus("Imported " + name)
+	if skipped := got.Skipped(); len(skipped) > 0 {
+		host.toast(fmt.Sprintf("%d %s, first: %s", len(skipped), importer.SkippedWhat, skipped[0]), severity.Error)
+	}
 }
 
 func (host sidebarHost) CopyURL(req *request.Request) { host.copyRequestURL(req) }
@@ -131,9 +149,120 @@ func (host sidebarHost) Open(posX, posY int, items []widget.MenuItem) {
 // collectionHost is the sidebar's CollectionOps.
 type collectionHost struct{ *App }
 
-func (host collectionHost) Rename(col *request.Collection) { host.promptRenameCollection(col) }
-func (host collectionHost) Move(col *request.Collection, by int) {
-	host.moveCollection(col, by)
+func (host collectionHost) Rename(col *request.Collection)       { host.promptRenameCollection(col) }
+func (host collectionHost) Move(col *request.Collection, by int) { host.cols.Shift(col, by) }
+func (host collectionHost) Close(col *request.Collection)        { host.requestCloseCollection(col) }
+func (host collectionHost) Delete(col *request.Collection)       { host.confirmDeleteCollection(col) }
+
+// The prompts and confirmations of whole collections: new, rename, open a
+// folder, delete and close. They stay here and not in collections.Library
+// because the dialogs are overlays of the window, not components yet; the
+// Library returns an error worded for the user and the window shows it.
+
+// promptNewCollection asks for a name, then makes the collection and opens
+// it beside the open ones.
+func (a *App) promptNewCollection() {
+	a.prompt("New collection", "", "Create", a.createCollection)
 }
-func (host collectionHost) Close(col *request.Collection)  { host.requestCloseCollection(col) }
-func (host collectionHost) Delete(col *request.Collection) { host.confirmDeleteCollection(col) }
+
+func (a *App) createCollection(text string) {
+	dir, err := a.cols.Create(text)
+	if err != nil {
+		a.toastError(err)
+		return
+	}
+	a.openCollectionAt(dir)
+}
+
+// promptRenameCollection asks for the new name of col.
+func (a *App) promptRenameCollection(col *request.Collection) {
+	if !a.onDisk(col, "rename") {
+		return
+	}
+	a.prompt("Rename collection", col.Name, "Rename", func(text string) { a.renameCollection(col, text) })
+}
+
+func (a *App) renameCollection(col *request.Collection, text string) {
+	name, err := a.cols.Rename(col, text)
+	if errors.Is(err, collections.ErrNotOpen) {
+		return
+	}
+	if err != nil {
+		a.toastError(err)
+		return
+	}
+	a.notices.SetStatus("Renamed to " + name)
+}
+
+// confirmDeleteCollection asks, then deletes col.
+func (a *App) confirmDeleteCollection(col *request.Collection) {
+	if !a.onDisk(col, "delete") {
+		return
+	}
+	title, body := collections.DeletePrompt(col.Name)
+	a.confirm(title, body, "Delete", func() { a.deleteCollection(col) })
+}
+
+// deleteCollection removes col from the disk and from the window. When it
+// was the only one open, the next collection of the collections folder
+// opens, or a new empty one when none is left.
+func (a *App) deleteCollection(col *request.Collection) {
+	a.commitEdit()
+	a.WaitWrites() // a write still in flight would make the folder again
+	entry, ok := a.cols.Set().ByCollection(col)
+	if !ok {
+		return
+	}
+	next, err := a.cols.Delete(col)
+	if errors.Is(err, collections.ErrNotOpen) {
+		return
+	}
+	if err != nil {
+		a.toastError(err)
+		return
+	}
+	if next == "" {
+		a.closeCollection(col)
+	} else {
+		a.openWorkspaceAt(next)
+	}
+	a.toast("Deleted "+filepath.Base(entry.Dir), severity.Info)
+}
+
+// onDisk is true when col has a folder; otherwise it tells the user to
+// save first, since there is nothing to rename or delete.
+func (a *App) onDisk(col *request.Collection, verb string) bool {
+	if entry, ok := a.cols.Set().ByCollection(col); ok && entry.Dir != "" {
+		return true
+	}
+	a.toast("The collection is not saved yet: save it first to "+verb+" it", severity.Error)
+	return false
+}
+
+// promptWorkspace asks for the folder of a collection to open beside the
+// open ones; an empty or new folder starts a new collection there.
+func (a *App) promptWorkspace() {
+	entry, _ := a.focus()
+	a.prompt("Open collection folder", entry.Dir, "Open", a.openCollectionAt)
+}
+
+// requestCloseCollection closes col, first asking when closing would lose
+// edits: a collection with a folder is written as it closes, as a closed
+// tab keeps its edits in the collection, but one without a folder keeps
+// them nowhere, so it asks the way deleting does.
+func (a *App) requestCloseCollection(col *request.Collection) {
+	pending := a.saveOf(col).Pending(a.collectionKeyNow(col))
+	if !a.cols.AsksToClose(col, pending) {
+		a.closeCollection(col)
+		return
+	}
+	title, body := collections.ClosePrompt(col.Name)
+	a.confirm(title, body, "Close", func() { a.closeCollection(col) })
+}
+
+// closeFocusedCollection closes the focused collection (the close command).
+func (a *App) closeFocusedCollection() {
+	if col := a.focusCol(); col != nil {
+		a.requestCloseCollection(col)
+	}
+}

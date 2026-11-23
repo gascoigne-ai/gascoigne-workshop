@@ -310,3 +310,22 @@ func TestDroppedPathItemsAreWarnedAbout(t *testing.T) {
 		t.Errorf("Skipped = %q, want none: a dropped path is a warning", res.Skipped)
 	}
 }
+
+func TestVarsHoldTheBaseURLOfTheFirstServer(t *testing.T) {
+	res := petstore(t)
+	want := []request.KV{{Name: BaseURLVar, Value: res.BaseURL, Enabled: true}}
+	if res.BaseURL == "" || !reflect.DeepEqual(res.Vars(), want) {
+		t.Errorf("Vars() = %+v, want %+v", res.Vars(), want)
+	}
+}
+
+func TestProblemsListWhatCouldNotBeReadThenTheWarnings(t *testing.T) {
+	res := Result{Skipped: []string{"GET /a: odd"}, Warnings: []string{"/b is not an object"}}
+	want := []string{"GET /a: odd", "/b is not an object"}
+	if got := res.Problems(); !reflect.DeepEqual(got, want) {
+		t.Errorf("Problems() = %q, want %q", got, want)
+	}
+	if len(res.Skipped) != 1 {
+		t.Error("Problems changed Skipped")
+	}
+}

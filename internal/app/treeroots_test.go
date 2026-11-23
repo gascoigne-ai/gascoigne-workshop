@@ -22,7 +22,7 @@ import (
 func rootRow(t *testing.T, app *App, name string) int {
 	t.Helper()
 	for i, row := range app.side.VisibleRows() {
-		if app.isRoot(row.Dir) && row.Name == name {
+		if app.cols.Set().IsRoot(row.Dir) && row.Name == name {
 			return i
 		}
 	}
@@ -33,7 +33,7 @@ func rootRow(t *testing.T, app *App, name string) int {
 // openNames are the names of the open collections in tree order.
 func openNames(app *App) []string {
 	var names []string
-	for _, entry := range app.open.Entries {
+	for _, entry := range app.cols.Set().Entries {
 		names = append(names, entry.Collection.Name)
 	}
 	return names
@@ -74,7 +74,7 @@ func TestCtrlOOpensAnotherCollectionBesideTheOpenOne(t *testing.T) {
 	if got := openNames(a); len(got) != 3 {
 		t.Fatalf("open %v", got)
 	}
-	if owner, _ := a.open.Owner(request.Of(a.cur().Req)); owner.Dir != alphaDir {
+	if owner, _ := a.cols.Set().Owner(request.Of(a.cur().Req)); owner.Dir != alphaDir {
 		t.Fatalf("shown %q of %q, want Alpha's", a.cur().Req.Name, owner.Dir)
 	}
 }
@@ -170,20 +170,20 @@ func TestClosingAnEditedUnsavedCollectionAsksFirst(t *testing.T) {
 	t.Cleanup(a.WaitWrites)
 	a.cur().Req.URL = "https://edited.test"
 	a.requestCloseCollection(a.col())
-	if a.dialog == nil || len(a.open.Entries) != 1 {
-		t.Fatalf("closed without asking: dialog %v, open %d", a.dialog != nil, len(a.open.Entries))
+	if a.dialog == nil || len(a.cols.Set().Entries) != 1 {
+		t.Fatalf("closed without asking: dialog %v, open %d", a.dialog != nil, len(a.cols.Set().Entries))
 	}
 	a.Step(core.Input{Enter: true})
-	if len(a.open.Entries) != 0 {
-		t.Fatalf("still open after confirming: %d", len(a.open.Entries))
+	if len(a.cols.Set().Entries) != 0 {
+		t.Fatalf("still open after confirming: %d", len(a.cols.Set().Entries))
 	}
 
 	b, _, betaDir := twoCollectionsApp(t)
 	beta := entryNamed(t, b, "Beta").Collection
 	b.cur().Req.URL = "https://beta.edited"
 	b.requestCloseCollection(beta)
-	if b.dialog != nil || len(b.open.Entries) != 1 {
-		t.Fatalf("a saved collection asked or stayed: dialog %v, open %d", b.dialog != nil, len(b.open.Entries))
+	if b.dialog != nil || len(b.cols.Set().Entries) != 1 {
+		t.Fatalf("a saved collection asked or stayed: dialog %v, open %d", b.dialog != nil, len(b.cols.Set().Entries))
 	}
 	b.WaitWrites()
 	if data, err := os.ReadFile(filepath.Join(betaDir, "beta-call.req.json")); err != nil || !strings.Contains(string(data), "beta.edited") {

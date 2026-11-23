@@ -61,14 +61,3 @@ func (c *Component) ownerOf(node request.Node) *request.Collection {
 	entry, _ := c.deps.Collections.Set().Owner(node)
 	return entry.Collection
 }
-
-// isRoot reports whether dir is the root folder of an open collection,
-// which is renamed and deleted as a collection, never moved.
-func (c *Component) isRoot(dir *request.Folder) bool {
-	for _, entry := range c.deps.Collections.Set().Entries {
-		if dir == &entry.Collection.Folder {
-			return true
-		}
-	}
-	return false
-}

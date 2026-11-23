@@ -98,7 +98,7 @@ func Update(set Set, msg Msg) Set {
 	case Open:
 		return open(set, msg.Collection, cleanDir(msg.Dir))
 	case Close:
-		if at := set.index(msg.Collection); at >= 0 {
+		if at := set.Index(msg.Collection); at >= 0 {
 			set.Entries = slices.Delete(set.Entries, at, at+1)
 		}
 	case Move:
@@ -107,11 +107,11 @@ func Update(set Set, msg Msg) Set {
 		return shift(set, msg.Collection, msg.By)
 	case Located:
 		dir := cleanDir(msg.Dir)
-		if at := set.index(msg.Collection); at >= 0 && !set.Taken(dir, msg.Collection) {
+		if at := set.Index(msg.Collection); at >= 0 && !set.Taken(dir, msg.Collection) {
 			set.Entries[at].Dir = dir
 		}
 	case ChooseEnv:
-		if at := set.index(msg.Collection); at >= 0 {
+		if at := set.Index(msg.Collection); at >= 0 {
 			set.Entries[at].Env = envIndex(msg.Collection, msg.Index)
 		}
 	}
@@ -119,7 +119,7 @@ func Update(set Set, msg Msg) Set {
 }
 
 func open(set Set, col *request.Collection, dir string) Set {
-	if set.index(col) >= 0 || set.Taken(dir, nil) {
+	if set.Index(col) >= 0 || set.Taken(dir, nil) {
 		return set
 	}
 	set.Entries = append(set.Entries, Entry{Collection: col, Dir: dir, Env: -1})
@@ -127,22 +127,22 @@ func open(set Set, col *request.Collection, dir string) Set {
 }
 
 func move(set Set, col, before *request.Collection) Set {
-	from := set.index(col)
-	if from < 0 || col == before || (before != nil && set.index(before) < 0) {
+	from := set.Index(col)
+	if from < 0 || col == before || (before != nil && set.Index(before) < 0) {
 		return set
 	}
 	entry := set.Entries[from]
 	set.Entries = slices.Delete(set.Entries, from, from+1)
 	to := len(set.Entries)
 	if before != nil {
-		to = set.index(before)
+		to = set.Index(before)
 	}
 	set.Entries = slices.Insert(set.Entries, to, entry)
 	return set
 }
 
 func shift(set Set, col *request.Collection, by int) Set {
-	from := set.index(col)
+	from := set.Index(col)
 	to := from + by
 	if from < 0 || to < 0 || to >= len(set.Entries) {
 		return set
@@ -173,7 +173,8 @@ func cleanDir(dir string) string {
 	return filepath.Clean(dir)
 }
 
-func (set Set) index(col *request.Collection) int {
+// Index is the place of col in the tree, -1 when it is not open.
+func (set Set) Index(col *request.Collection) int {
 	return slices.IndexFunc(set.Entries, func(entry Entry) bool { return entry.Collection == col })
 }
 
@@ -208,7 +209,7 @@ func (set Set) Owner(node request.Node) (Entry, bool) {
 
 // ByCollection is the entry of the open collection col.
 func (set Set) ByCollection(col *request.Collection) (Entry, bool) {
-	index := set.index(col)
+	index := set.Index(col)
 	if index < 0 {
 		return Entry{}, false
 	}
@@ -223,4 +224,34 @@ func (set Set) VarsFor(req *request.Request) ([]request.KV, bool) {
 		return nil, false
 	}
 	return entry.VarsFor(req), true
+}
+
+// Focus is the collection the header, the environment chip and the
+// collection commands act on: the one holding current, the request of the
+// active tab (nil when no tab is open), else the one holding the tree
+// selection, else the first open one. ok is false when nothing is open.
+func (set Set) Focus(current *request.Request, selected request.Node) (Entry, bool) {
+	if current != nil {
+		if entry, ok := set.Owner(request.Node{Req: current}); ok {
+			return entry, true
+		}
+	}
+	if entry, ok := set.Owner(selected); ok {
+		return entry, true
+	}
+	if len(set.Entries) == 0 {
+		return Entry{}, false
+	}
+	return set.Entries[0], true
+}
+
+// IsRoot reports whether dir is the root folder of an open collection,
+// which is renamed and deleted as a collection, never moved.
+func (set Set) IsRoot(dir *request.Folder) bool {
+	for _, entry := range set.Entries {
+		if dir == &entry.Collection.Folder {
+			return true
+		}
+	}
+	return false
 }

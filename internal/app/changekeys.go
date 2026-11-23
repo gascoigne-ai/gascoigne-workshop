@@ -53,7 +53,7 @@ func (a *App) freshKeys() {
 		build = tree.Key
 	}
 	a.keys.collections = map[*request.Collection]string{}
-	for _, entry := range a.open.Entries {
+	for _, entry := range a.cols.Set().Entries {
 		a.keys.collections[entry.Collection] = build(*entry.Collection)
 	}
 	a.keys.state = stateKey(a.snapshot())

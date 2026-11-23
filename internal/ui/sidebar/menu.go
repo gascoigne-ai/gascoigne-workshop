@@ -7,6 +7,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/transfer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sidebar/logic"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
@@ -32,15 +33,15 @@ func (c *Component) RowMenu(row collection.Row) []MenuItem {
 	create := []MenuItem{
 		{Label: "New request", Run: func() { c.deps.Folders.NewRequest(row.Dir) }},
 		{Label: "New folder", Run: func() { c.deps.Folders.NewFolder(row.Dir) }},
-		{Label: "Import cURL from clipboard", Run: func() { c.deps.Folders.Import(row.Dir, ImportCurl) }},
-		{Label: "Import OpenAPI from clipboard", Run: func() { c.deps.Folders.Import(row.Dir, ImportOpenAPI) }},
-		{Label: "Import Postman from clipboard", Run: func() { c.deps.Folders.Import(row.Dir, ImportPostman) }},
+		{Label: "Import cURL from clipboard", Run: func() { c.deps.Folders.Import(row.Dir, logic.ImportCurl) }},
+		{Label: "Import OpenAPI from clipboard", Run: func() { c.deps.Folders.Import(row.Dir, logic.ImportOpenAPI) }},
+		{Label: "Import Postman from clipboard", Run: func() { c.deps.Folders.Import(row.Dir, logic.ImportPostman) }},
 		{Label: "Export as Postman...", Run: func() { c.deps.Folders.Export(row.Dir) }},
 		{Label: "Variables", Run: func() { c.deps.Extras.EditVars(row.Dir) }},
 		separator,
 		rename,
 	}
-	if c.isRoot(row.Dir) {
+	if c.deps.Collections.Set().IsRoot(row.Dir) {
 		return append(create[:len(create)-1], c.rootMenu(row.Dir)...)
 	}
 	return append(create, duplicate, moveTo, copyTo, remove)

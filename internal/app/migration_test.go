@@ -52,8 +52,8 @@ func oldInstall(t *testing.T) (settingsPath, statePath, dir string) {
 // the version that wrote the file as in this one.
 func assertOldSessionRestored(t *testing.T, app *App, dir string) {
 	t.Helper()
-	if len(app.open.Entries) != 1 || app.workspace() != dir || app.envName() != "Dev" {
-		t.Fatalf("open %+v, environment %q", app.open.Entries, app.envName())
+	if len(app.cols.Set().Entries) != 1 || app.workspace() != dir || app.envName() != "Dev" {
+		t.Fatalf("open %+v, environment %q", app.cols.Set().Entries, app.envName())
 	}
 	var names []string
 	for _, tab := range app.openTabs() {

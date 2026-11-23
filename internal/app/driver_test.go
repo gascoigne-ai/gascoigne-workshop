@@ -115,8 +115,8 @@ func TestDriverActionsApply(t *testing.T) {
 		}},
 		// Closing the last collection leaves the empty tree.
 		{"close every collection", Options{}, func(driver *Driver) error { driver.CloseAllCollections(); return nil }, func(t *testing.T, a *App) {
-			if len(a.open.Entries) != 0 {
-				t.Errorf("%d collections still open", len(a.open.Entries))
+			if len(a.cols.Set().Entries) != 0 {
+				t.Errorf("%d collections still open", len(a.cols.Set().Entries))
 			}
 		}},
 		// The Log dialog opens as the status bar's Log button does.
@@ -259,8 +259,8 @@ func TestDriverAddsCollectionsBesideTheStartOne(t *testing.T) {
 // empty one and the scene would pass with the wrong picture.
 func TestDriverRefusesAFolderWithoutACollection(t *testing.T) {
 	a := driverApp(t, withAdapters(Options{}))
-	if err := a.Driver().AddCollection(t.TempDir()); err == nil || len(a.open.Entries) != 1 {
-		t.Fatalf("err = %v, open %d, want an error and the start collection alone", err, len(a.open.Entries))
+	if err := a.Driver().AddCollection(t.TempDir()); err == nil || len(a.cols.Set().Entries) != 1 {
+		t.Fatalf("err = %v, open %d, want an error and the start collection alone", err, len(a.cols.Set().Entries))
 	}
 }
 

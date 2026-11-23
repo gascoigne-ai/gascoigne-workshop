@@ -86,8 +86,6 @@ type persistState struct {
 	stateSave        autosave.Debounce                          // when the remembered state was last written
 	welcomed         string                                     // the version whose welcome dialog was shown
 	initial          state.Window                               // window geometry of the last run
-	setIsRemembered  bool                                       // the open set is the remembered list (opened from it, or changed by the user since), so it is written whole
-	unreadable       []request.OpenCollection                   // remembered folders that failed to load; kept in the list so a mount or a fix brings them back
 	defaultWorkspace string                                     // beside it is the collections folder, where a first save goes
 	trusted          request.AccessSet                          // what the user allowed; remembered in the state file
 }

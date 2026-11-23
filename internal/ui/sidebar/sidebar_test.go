@@ -10,6 +10,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request/severity"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sidebar/logic"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -70,17 +71,17 @@ func (fakeSent) Badge(request.Protocol, string) Node  { return Row() }
 // noop covers the interfaces no test here looks into.
 type noop struct{}
 
-func (noop) Drop(transfer.Transfer)             {}
-func (noop) NewRequest(*request.Folder)         {}
-func (noop) NewFolder(*request.Folder)          {}
-func (noop) Import(*request.Folder, ImportKind) {}
-func (noop) Export(*request.Folder)             {}
-func (noop) CopyURL(*request.Request)           {}
-func (noop) EditVars(*request.Folder)           {}
-func (noop) Rename(*request.Collection)         {}
-func (noop) Move(*request.Collection, int)      {}
-func (noop) Close(*request.Collection)          {}
-func (noop) Delete(*request.Collection)         {}
+func (noop) Drop(transfer.Transfer)                   {}
+func (noop) NewRequest(*request.Folder)               {}
+func (noop) NewFolder(*request.Folder)                {}
+func (noop) Import(*request.Folder, logic.ImportKind) {}
+func (noop) Export(*request.Folder)                   {}
+func (noop) CopyURL(*request.Request)                 {}
+func (noop) EditVars(*request.Folder)                 {}
+func (noop) Rename(*request.Collection)               {}
+func (noop) Move(*request.Collection, int)            {}
+func (noop) Close(*request.Collection)                {}
+func (noop) Delete(*request.Collection)               {}
 
 // sampleCollection is "Shop": a folder "orders" holding "list", and a request "home".
 func sampleCollection() *request.Collection {

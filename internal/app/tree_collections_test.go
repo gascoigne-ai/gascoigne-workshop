@@ -49,10 +49,10 @@ func TestNewCollectionMakesAFolderBesideTheWorkspaceAndOpensItBesideTheOpenOne(t
 	home := a.workspace()
 	a.createCollection("  Café API ")
 	want := filepath.Join(base, "collections", "café-api")
-	if len(a.open.Entries) != 2 || a.workspace() != home || a.open.Entries[1].Dir != want || a.open.Entries[1].Collection.Name != "Café API" {
-		t.Fatalf("open %+v; want Home then %q", a.open.Entries, want)
+	if len(a.cols.Set().Entries) != 2 || a.workspace() != home || a.cols.Set().Entries[1].Dir != want || a.cols.Set().Entries[1].Collection.Name != "Café API" {
+		t.Fatalf("open %+v; want Home then %q", a.cols.Set().Entries, want)
 	}
-	if owner, _ := a.open.Owner(request.Of(a.cur().Req)); owner.Dir != want || a.cur().Req.Name != "New Request" {
+	if owner, _ := a.cols.Set().Owner(request.Of(a.cur().Req)); owner.Dir != want || a.cur().Req.Name != "New Request" {
 		t.Fatalf("an empty collection opens one blank request, shown %q of %q", a.cur().Req.Name, owner.Dir)
 	}
 	if _, err := storeDisk.Load(want); err != nil {
@@ -125,7 +125,7 @@ func TestSaveCollectionWritesTheEditsNow(t *testing.T) {
 func TestDeleteCollectionOpensTheNextOne(t *testing.T) {
 	a, base := collectionsApp(t)
 	a.createCollection("Second")
-	second := a.open.Entries[1].Dir // made beside Home
+	second := a.cols.Set().Entries[1].Dir // made beside Home
 	a.openWorkspaceAt(filepath.Join(base, "workspace"))
 	if a.workspace() != filepath.Join(base, "workspace") {
 		t.Fatalf("workspace %q", a.workspace())

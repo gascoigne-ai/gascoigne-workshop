@@ -49,12 +49,7 @@ func (sel *Selection) Select(col *request.Collection, index int) string {
 
 // Pick selects the environment called name, none when there is no such one.
 func (sel *Selection) Pick(col *request.Collection, name string) {
-	sel.Index = -1
-	for i, env := range col.Envs {
-		if env.Name == name {
-			sel.Index = i
-		}
-	}
+	sel.Index = col.EnvIndex(name)
 }
 
 // UniqueName is base, or base with " 2", " 3"... when another environment

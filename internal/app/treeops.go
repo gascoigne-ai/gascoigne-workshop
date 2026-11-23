@@ -16,7 +16,7 @@ import (
 // collectionToken is the color of the open collection that holds node, ""
 // for a node of none.
 func (a *App) collectionToken(node request.Node) core.Token {
-	for index, entry := range a.open.Entries {
+	for index, entry := range a.cols.Set().Entries {
 		if entry.Collection.Folder.Contains(node) {
 			return theme.CollectionToken(index)
 		}
@@ -26,7 +26,7 @@ func (a *App) collectionToken(node request.Node) core.Token {
 
 // revealRequest selects req in the tree and opens the folders above it.
 func (a *App) revealRequest(req *request.Request) {
-	owner, ok := a.open.Owner(request.Node{Req: req})
+	owner, ok := a.cols.Set().Owner(request.Node{Req: req})
 	if !ok {
 		a.side.Tree().Reveal(nil, req)
 		return
@@ -43,7 +43,7 @@ func (a *App) selectedFolder() *request.Folder {
 	case selected.Dir != nil:
 		return selected.Dir
 	case selected.Req != nil:
-		if owner, ok := a.open.Owner(selected); ok {
+		if owner, ok := a.cols.Set().Owner(selected); ok {
 			if parent, ok := owner.Collection.Folder.Parent(selected); ok {
 				return parent
 			}
@@ -79,7 +79,7 @@ func (a *App) ownerOf(node request.Node) *request.Collection {
 	if node.None() {
 		return nil
 	}
-	entry, _ := a.open.Owner(node)
+	entry, _ := a.cols.Set().Owner(node)
 	return entry.Collection
 }
 
@@ -126,7 +126,7 @@ func (a *App) duplicateNode(node request.Node) { a.applyTree(tree.Duplicate{Node
 // deleteNode asks, then removes the node and closes the tabs of
 // everything that was in it.
 func (a *App) deleteNode(node request.Node) {
-	if node.None() || a.isRoot(node.Dir) {
+	if node.None() || a.cols.Set().IsRoot(node.Dir) {
 		return
 	}
 	title, body := tree.DeletePrompt(node)
@@ -171,11 +171,11 @@ func (host transferHost) Dismiss() { host.picker = nil }
 // openTransferPicker asks where node goes. A collection's root and nothing
 // cannot be moved or copied, so no picker opens for them.
 func (a *App) openTransferPicker(node request.Node, mode transfer.Mode) {
-	if node.None() || a.isRoot(node.Dir) || a.ownerOf(node) == nil {
+	if node.None() || a.cols.Set().IsRoot(node.Dir) || a.ownerOf(node) == nil {
 		return
 	}
 	stripe := func(col *request.Collection) core.Token { return a.collectionToken(request.Node{Dir: &col.Folder}) }
-	a.picker = destpicker.New(node, mode, transfer.Destinations(a.open, node, mode), stripe)
+	a.picker = destpicker.New(node, mode, transfer.Destinations(a.cols.Set(), node, mode), stripe)
 	a.pickerHost = transferHost{App: a, node: node, mode: mode}
 }
 
@@ -196,7 +196,7 @@ func (a *App) closePicker() { a.picker = nil }
 // node from disk.
 func (a *App) transferNode(t transfer.Transfer) {
 	a.commitEdit()
-	if entry, ok := a.open.ByCollection(t.To); ok {
+	if entry, ok := a.cols.Set().ByCollection(t.To); ok {
 		t.ToEnv = entry.Environment()
 	}
 	verb := "move"
@@ -230,8 +230,8 @@ func (a *App) transferNode(t transfer.Transfer) {
 // disk and an error says so. A target that has no folder yet is not written,
 // and then the source is not either, so the node is never on disk nowhere.
 func (a *App) flushMoved(from, to *request.Collection) {
-	target, okTarget := a.open.ByCollection(to)
-	source, okSource := a.open.ByCollection(from)
+	target, okTarget := a.cols.Set().ByCollection(to)
+	source, okSource := a.cols.Set().ByCollection(from)
 	if !okTarget || !okSource || target.Dir == "" {
 		return
 	}

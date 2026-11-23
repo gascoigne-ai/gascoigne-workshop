@@ -128,7 +128,7 @@ func TestMoveIntoAnUnsavedCollectionIsAllowed(t *testing.T) {
 	a, _, _ := twoCollectionsApp(t)
 	alpha := entryNamed(t, a, "Alpha").Collection
 	fresh := &request.Collection{Folder: request.Folder{Name: "Fresh"}}
-	a.open = collections.Update(a.open, collections.Open{Collection: fresh})
+	a.cols.Apply(collections.Open{Collection: fresh})
 	req := alpha.Requests[0]
 	a.openRequest(req)
 	a.cur().Req.URL = "http://edited.test"

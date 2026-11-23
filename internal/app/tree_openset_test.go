@@ -61,7 +61,7 @@ func twoCollectionsAppWith(t *testing.T, opts Options) (a *App, alphaDir, betaDi
 // entryNamed is the open collection called name.
 func entryNamed(t *testing.T, app *App, name string) collections.Entry {
 	t.Helper()
-	for _, entry := range app.open.Entries {
+	for _, entry := range app.cols.Set().Entries {
 		if entry.Collection.Name == name {
 			return entry
 		}
@@ -72,23 +72,23 @@ func entryNamed(t *testing.T, app *App, name string) collections.Entry {
 
 func TestASecondCollectionOpensBesideTheFirst(t *testing.T) {
 	a, alphaDir, betaDir := twoCollectionsApp(t)
-	if len(a.open.Entries) != 2 || a.open.Entries[0].Dir != alphaDir || a.open.Entries[1].Dir != betaDir {
-		t.Fatalf("open %+v", a.open.Entries)
+	if len(a.cols.Set().Entries) != 2 || a.cols.Set().Entries[0].Dir != alphaDir || a.cols.Set().Entries[1].Dir != betaDir {
+		t.Fatalf("open %+v", a.cols.Set().Entries)
 	}
 	if a.cur().Req.Name != "Beta call" {
 		t.Fatalf("the new collection's first request is shown, got %q", a.cur().Req.Name)
 	}
 	roots := 0
 	for _, row := range a.side.VisibleRows() {
-		if a.isRoot(row.Dir) {
+		if a.cols.Set().IsRoot(row.Dir) {
 			roots++
 		}
 	}
 	if roots != 2 {
 		t.Fatalf("%d collection roots in the tree, want 2", roots)
 	}
-	if err := a.addCollection(betaDir); err != nil || len(a.open.Entries) != 2 {
-		t.Fatalf("opening an open folder again: %v, %d open", err, len(a.open.Entries))
+	if err := a.addCollection(betaDir); err != nil || len(a.cols.Set().Entries) != 2 {
+		t.Fatalf("opening an open folder again: %v, %d open", err, len(a.cols.Set().Entries))
 	}
 }
 
@@ -190,8 +190,8 @@ func TestClosingACollectionClosesItsTabsAndTheLastLeavesAnEmptyTree(t *testing.T
 	a, alphaDir, betaDir := twoCollectionsApp(t)
 	beta := entryNamed(t, a, "Beta").Collection
 	a.closeCollection(beta)
-	if len(a.open.Entries) != 1 || a.open.Entries[0].Dir != alphaDir {
-		t.Fatalf("open %+v", a.open.Entries)
+	if len(a.cols.Set().Entries) != 1 || a.cols.Set().Entries[0].Dir != alphaDir {
+		t.Fatalf("open %+v", a.cols.Set().Entries)
 	}
 	for _, tab := range a.tabs.Tabs() {
 		if beta.Folder.Contains(request.Of(tab.Req)) {
@@ -202,8 +202,8 @@ func TestClosingACollectionClosesItsTabsAndTheLastLeavesAnEmptyTree(t *testing.T
 		t.Fatalf("closing must leave the folder on disk: %v", err)
 	}
 	a.closeCollection(a.col())
-	if len(a.open.Entries) != 0 || len(a.side.VisibleRows()) != 0 || a.Title() != appName {
-		t.Fatalf("open %d, rows %d, title %q", len(a.open.Entries), len(a.side.VisibleRows()), a.Title())
+	if len(a.cols.Set().Entries) != 0 || len(a.side.VisibleRows()) != 0 || a.Title() != appName {
+		t.Fatalf("open %d, rows %d, title %q", len(a.cols.Set().Entries), len(a.side.VisibleRows()), a.Title())
 	}
 	a.Step(core.Input{}) // the window still draws with nothing open
 	st, err := settingsDisk.Load(a.settingsPath)
@@ -215,8 +215,8 @@ func TestClosingACollectionClosesItsTabsAndTheLastLeavesAnEmptyTree(t *testing.T
 func TestDeletingOneOfTwoCollectionsKeepsTheOther(t *testing.T) {
 	a, alphaDir, betaDir := twoCollectionsApp(t)
 	a.deleteCollection(entryNamed(t, a, "Beta").Collection)
-	if len(a.open.Entries) != 1 || a.open.Entries[0].Dir != alphaDir {
-		t.Fatalf("open %+v", a.open.Entries)
+	if len(a.cols.Set().Entries) != 1 || a.cols.Set().Entries[0].Dir != alphaDir {
+		t.Fatalf("open %+v", a.cols.Set().Entries)
 	}
 	if _, err := os.Stat(filepath.Join(betaDir, "folder.json")); err == nil {
 		t.Fatal("Beta's files are still there")
@@ -256,8 +256,8 @@ func TestARestartRestoresEveryOpenCollectionWithItsTabsAndEnvironment(t *testing
 	}
 
 	b := start()
-	if len(b.open.Entries) != 2 || b.open.Entries[0].Dir != alphaDir || b.open.Entries[1].Dir != betaDir {
-		t.Fatalf("restored %+v", b.open.Entries)
+	if len(b.cols.Set().Entries) != 2 || b.cols.Set().Entries[0].Dir != alphaDir || b.cols.Set().Entries[1].Dir != betaDir {
+		t.Fatalf("restored %+v", b.cols.Set().Entries)
 	}
 	if env := entryNamed(t, b, "Beta").Environment(); env == nil || env.Name != "Dev" {
 		t.Fatalf("Beta's environment %+v", env)
@@ -294,8 +294,8 @@ func TestTheSingleSavedCollectionOfAnOlderVersionStillOpens(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(a.open.Entries) != 1 || a.workspace() != dir || a.envName() != "Dev" {
-		t.Fatalf("open %+v, environment %q", a.open.Entries, a.envName())
+	if len(a.cols.Set().Entries) != 1 || a.workspace() != dir || a.envName() != "Dev" {
+		t.Fatalf("open %+v, environment %q", a.cols.Set().Entries, a.envName())
 	}
 	if len(a.tabs.Tabs()) != 2 || a.cur().Req != a.col().Folders[0].Requests[0] || !a.side.Tree().Expanded()[a.col().Folders[0]] {
 		t.Fatalf("%d tabs, active %q", len(a.tabs.Tabs()), a.cur().Req.Name)

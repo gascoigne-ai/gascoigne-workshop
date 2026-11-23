@@ -284,3 +284,14 @@ func indent(text string) string {
 	}
 	return string(b)
 }
+
+// Vars are the collection variables the imported URLs need: the base URL.
+func (res Result) Vars() []request.KV {
+	return []request.KV{{Name: BaseURLVar, Value: res.BaseURL, Enabled: true}}
+}
+
+// Problems are the parts of the document left out, what could not be read
+// first, then the warnings.
+func (res Result) Problems() []string {
+	return append(slices.Clone(res.Skipped), res.Warnings...)
+}

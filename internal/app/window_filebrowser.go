@@ -2,11 +2,14 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/filedialog"
 	"path/filepath"
 
 	"github.com/hajimehoshi/ebiten/v2"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/importers/postman"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
@@ -362,3 +365,37 @@ const (
 </list-row>
 `
 )
+
+// exportPostman writes dir and everything below it as a Postman v2.1
+// collection to a file the user picks. Requests of kinds Postman has no
+// place for are left out and counted in the message.
+func (a *App) exportPostman(dir *request.Folder) {
+	a.commitEdit()
+	var vars []request.KV
+	if col := a.ownerOf(request.Node{Dir: dir}); col != nil {
+		vars = col.Vars
+	}
+	data, err := postman.Export(dir, vars)
+	if err != nil {
+		a.toast("Export failed: "+err.Error(), severity.Error)
+		return
+	}
+	skipped := postman.Skipped(dir)
+	name := dir.Name
+	if name == "" {
+		name = "collection"
+	}
+	a.pickFile("Export as Postman collection", filedialog.SaveFile, name+".postman_collection.json", func(path string) {
+		a.writeFile(path, data, func(err error) {
+			if err != nil {
+				a.toast("Export failed: "+err.Error(), severity.Error)
+				return
+			}
+			msg := "Exported to " + filepath.Base(path)
+			if skipped > 0 {
+				msg += fmt.Sprintf(" (%d requests of other kinds left out)", skipped)
+			}
+			a.toast(msg, severity.Info)
+		})
+	})
+}

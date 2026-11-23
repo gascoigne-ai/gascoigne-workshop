@@ -25,7 +25,7 @@ const stateDebounce = time.Second
 // holderOf is the open collection that holds req and req's remembered path in
 // it; ok is false when it is in no open collection.
 func (a *App) holderOf(req *request.Request) (entry collections.Entry, path string, ok bool) {
-	entry, ok = a.open.Owner(request.Node{Req: req})
+	entry, ok = a.cols.Set().Owner(request.Node{Req: req})
 	if !ok {
 		return collections.Entry{}, "", false
 	}
@@ -60,8 +60,8 @@ func (a *App) historyKey(req *request.Request) string {
 // one collection was open at a time, for a request of the first open
 // collection, which is where that one collection is now; "" otherwise.
 func (a *App) legacyHistoryKey(req *request.Request) string {
-	owner, ok := a.open.Owner(request.Node{Req: req})
-	if !ok || owner.Dir == "" || a.open.Entries[0].Collection != owner.Collection {
+	owner, ok := a.cols.Set().Owner(request.Node{Req: req})
+	if !ok || owner.Dir == "" || a.cols.Set().Entries[0].Collection != owner.Collection {
 		return ""
 	}
 	return a.requestPath(req)
@@ -70,8 +70,8 @@ func (a *App) legacyHistoryKey(req *request.Request) string {
 // openDirs are the folders of the open collections in tree order, "" for
 // one not saved, as state.CollectionAt takes them.
 func (a *App) openDirs() []string {
-	dirs := make([]string, len(a.open.Entries))
-	for i, entry := range a.open.Entries {
+	dirs := make([]string, len(a.cols.Set().Entries))
+	for i, entry := range a.cols.Set().Entries {
 		dirs[i] = entry.Dir
 	}
 	return dirs
@@ -83,7 +83,7 @@ func (a *App) remembered(ref string) *request.Collection {
 	if at < 0 {
 		return nil
 	}
-	return a.open.Entries[at].Collection
+	return a.cols.Set().Entries[at].Collection
 }
 
 // snapshot is the state to remember.
@@ -98,7 +98,7 @@ func (a *App) snapshot() state.State {
 		Trusted:   a.trusted.Keys(),
 		Welcomed:  a.welcomed,
 	}
-	for _, entry := range a.open.Entries {
+	for _, entry := range a.cols.Set().Entries {
 		a.snapshotExpanded(&s, entry)
 	}
 	var kept []int // tab index -> remembered index, -1 when not in the tree

@@ -200,3 +200,15 @@ func (c Collection) Clone() Collection {
 	}
 	return out
 }
+
+// EnvIndex is the place of the environment called name in Envs, the last one
+// when several share the name, -1 when there is none.
+func (c Collection) EnvIndex(name string) int {
+	index := -1
+	for i, env := range c.Envs {
+		if env.Name == name {
+			index = i
+		}
+	}
+	return index
+}

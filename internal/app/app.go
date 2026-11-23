@@ -38,7 +38,7 @@ type App struct {
 	retryDelay time.Duration // wait before a dropped connection reopens
 	baseScale  float64       // the platform's interface factor under the user's scale
 	reg        request.Registry
-	open       collections.Set           // the open collections, in tree order, each with its folder and environment
+	cols       *collections.Library      // the open collections, in tree order, each with its folder and environment, and what is done to whole ones
 	sample     func() request.Collection // the collection shown when nothing is saved or configured
 	tabs       *tabs.Set                 // the open tabs, the current one and the drag
 	widgets    map[*tabs.Tab]*reqTab     // the widget state of each open tab
