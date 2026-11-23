@@ -180,8 +180,8 @@ func (host collectionHost) Delete(col *request.Collection)       { host.confirmD
 
 // The prompts and confirmations of whole collections: new, rename, open a
 // folder, delete and close. They stay here and not in collections.Library
-// because the dialogs are overlays of the window, not components yet; the
-// Library returns an error worded for the user and the window shows it.
+// because the dialogs are the overlays' and the Library returns an
+// error worded for the user, which the window shows.
 
 // promptNewCollection asks for a name, then makes the collection and opens
 // it beside the open ones.
@@ -272,7 +272,7 @@ func (a *App) hint(text, shortcutID string) string {
 }
 
 // shortcutHint is the key of an action for a menu item: nothing when unbound.
-func (a *App) shortcutHint(id string) string { return shortcutpage.Hint(a.prefs, id) }
+func (a *App) shortcutHint(id string) string { return shortcutpage.Hint(a.over.Settings, id) }
 
 // promptWorkspace asks for the folder of a collection to open beside the
 // open ones; an empty or new folder starts a new collection there.
@@ -839,20 +839,11 @@ func (host mcpHost) ComposeCall(tab *tabs.Tab, tool request.MCPTool) {
 // Open shows state as the dialog of the window, with content as its own
 // body when it has one. The returned func closes that dialog and no other.
 func (host mcpHost) Open(state widget.DialogState, content func(ctx *w.Ctx) Node) func() {
-	open := &dialog{DialogState: state}
-	if content != nil {
-		open.content = func() Node { return content(host.ctx) }
-	}
-	host.dialog = open
-	return func() {
-		if host.dialog == open {
-			host.dialog = nil
-		}
-	}
+	return host.over.Open(state, content, 0)
 }
 
 // Busy reports whether a dialog is open.
-func (host mcpHost) Busy() bool { return host.dialog != nil }
+func (host mcpHost) Busy() bool { return host.over.Busy() }
 
 // StateText is what the explorer says of a connection in state, the words
 // of the connection bar.
@@ -965,13 +956,7 @@ func (host settingsHost) Pick(title string, done func(path string)) (cancel func
 // Open shows state as the dialog of the window. The returned func closes
 // that dialog and no other.
 func (host settingsHost) Open(state widget.DialogState) (close func()) {
-	open := &dialog{DialogState: state}
-	host.dialog = open
-	return func() {
-		if host.dialog == open {
-			host.dialog = nil
-		}
-	}
+	return host.over.Open(state, nil, 0)
 }
 
 // Dispatch runs run on the UI goroutine.
@@ -992,11 +977,24 @@ func (host settingsHost) CopyText(text string) { _ = host.ctx.Clipboard.Write(te
 // Keymap is the binding of every shortcut action, in display order.
 func (host settingsHost) Keymap() keymap.Keymap { return host.keymap() }
 
-// ---- the overlay components ----------------------------------------------------
+// ---- the overlays ------------------------------------------------------------------
 
 // toast shows a message: an info one fades after a few seconds, an error
 // stays until it is clicked.
-func (a *App) toast(text string, level severity.Level) { a.toasts.Show(text, level) }
+func (a *App) toast(text string, level severity.Level) { a.over.Toasts.Show(text, level) }
+
+// confirm asks a yes/no question; onOK runs only on the primary button or Enter.
+func (a *App) confirm(title, body, okLabel string, onOK func()) {
+	a.over.Confirm(title, body, okLabel, onOK)
+}
+
+// prompt asks for a line of text, starting with initial selected.
+func (a *App) prompt(title, initial, okLabel string, onOK func(text string)) {
+	a.over.Prompt(title, initial, okLabel, onOK)
+}
+
+// dialogDefault runs the primary button: what Enter does.
+func (a *App) dialogDefault() { a.over.Default() }
 
 // openMenu shows a context menu at the pointer position x, y.
 func (a *App) openMenu(posX, posY int, items []widget.MenuItem) {
@@ -1008,14 +1006,14 @@ func (a *App) closeMenu() { menus.Close(a.ctx) }
 // pickFile asks for a file, in the desktop's dialog or the in-app browser,
 // and calls done with the path. The returned func takes the question back.
 func (a *App) pickFile(title string, mode filedialog.Mode, name string, done func(path string)) (cancel func()) {
-	return a.browser.Pick(title, mode, name, done)
+	return a.over.Browser.Pick(title, mode, name, done)
 }
 
 // OpenWelcome shows the release notes and remembers that this version was
 // welcomed, so the dialog opens by itself only once per version.
 func (a *App) OpenWelcome() {
 	a.welcomed = version
-	a.welcome.Open()
+	a.over.Welcome.Open()
 }
 
 // clipboardNote reports what the clipboard did: failures are error
@@ -1028,77 +1026,63 @@ func (a *App) clipboardNote(msg string, isErr bool) {
 	a.notices.SetStatus(msg)
 }
 
-// toastsHost is what the toasts ask of the App (toasts.Deps).
-type toastsHost struct{ *App }
-
-// Now is the time of the frame.
-func (host toastsHost) Now() time.Time { return host.now() }
+// overlaysHost is what the overlays ask of the App (overlays.Deps). The
+// desktop dialog and the file system are read from the App on every call, so
+// a port replaced after the App was built is the one that answers.
+type overlaysHost struct{ *App }
 
 // Size is the window's size in logical pixels.
-func (host toastsHost) Size() (int, int) { return host.w, host.h }
+func (host overlaysHost) Size() (int, int) { return host.w, host.h }
 
 // Stale says the tree built this frame no longer shows what changed.
-func (host toastsHost) Stale() { host.treeStale = true }
+func (host overlaysHost) Stale() { host.treeStale = true }
 
 // Redraw says the screen must be drawn again.
-func (host toastsHost) Redraw() { host.dirty = true }
+func (host overlaysHost) Redraw() { host.dirty = true }
 
-// welcomeHost is what the welcome dialog asks of the App (welcome.Deps).
-type welcomeHost struct{ *App }
-
-// Size is the window's size in logical pixels.
-func (host welcomeHost) Size() (int, int) { return host.w, host.h }
-
-// Open shows state as the dialog of the window, with content as its own body
-// in a panel width wide. The returned func closes that dialog and no other.
-func (host welcomeHost) Open(state widget.DialogState, content func(ctx *w.Ctx) Node, width int) func() {
-	open := &dialog{DialogState: state, width: width}
-	open.content = func() Node { return content(host.ctx) }
-	host.dialog = open
-	return func() {
-		if host.dialog == open {
-			host.dialog = nil
-		}
-	}
-}
-
-// browserHost is what the file browser asks of the App (filebrowser.Deps).
-// The desktop dialog and the file system are read from the App on every
-// call, so a port replaced after the App was built is the one that answers.
-type browserHost struct{ *App }
+// Now is the time of the frame.
+func (host overlaysHost) Now() time.Time { return host.now() }
 
 // Available reports whether the desktop has a file dialog.
-func (host browserHost) Available() bool { return host.files.Available() }
+func (host overlaysHost) Available() bool { return host.files.Available() }
 
 // Suggested is the program to install for native dialogs.
-func (host browserHost) Suggested() string { return host.files.Suggested() }
+func (host overlaysHost) Suggested() string { return host.files.Suggested() }
 
 // Choose shows the desktop's file dialog.
-func (host browserHost) Choose(ctx context.Context, title string, mode filedialog.Mode, name string) (string, error) {
+func (host overlaysHost) Choose(ctx context.Context, title string, mode filedialog.Mode, name string) (string, error) {
 	return host.files.Choose(ctx, title, mode, name)
 }
 
 // Home is the user's home folder.
-func (host browserHost) Home() (string, error) { return host.folders.Home() }
+func (host overlaysHost) Home() (string, error) { return host.folders.Home() }
 
 // List is what dir holds.
-func (host browserHost) List(dir string) ([]workspace.FolderEntry, error) {
+func (host overlaysHost) List(dir string) ([]workspace.FolderEntry, error) {
 	return host.folders.List(dir)
 }
 
 // Run starts cmd on its own goroutine; its answer runs on the UI goroutine.
-func (host browserHost) Run(ctx context.Context, cmd bus.Cmd) { host.bus.Run(ctx, cmd) }
+func (host overlaysHost) Run(ctx context.Context, cmd bus.Cmd) { host.bus.Run(ctx, cmd) }
 
-// Size is the window's size in logical pixels.
-func (host browserHost) Size() (int, int) { return host.w, host.h }
+// The settings the dialog edits stay on the App (the theme, the open tabs and
+// the protocols follow from them): these are the App's views onto its dialog.
 
-// Toast shows a message over the window.
-func (host browserHost) Toast(text string, level severity.Level) { host.toast(text, level) }
+// changeSettings is saveSettings for the settings dialog's own controls (see
+// settingsdialog.Component.Change).
+func (a *App) changeSettings(edit func(*settings.Settings)) { a.over.Settings.Change(edit) }
 
-// Confirm asks a yes/no question.
-func (host browserHost) Confirm(title, body, okLabel string, run func()) {
-	host.confirm(title, body, okLabel, run)
+// saveSettings edits and applies the settings and, unless auto-save is off,
+// writes them (see settingsdialog.Component.Edit).
+func (a *App) saveSettings(edit func(*settings.Settings)) { a.over.Settings.Edit(edit) }
+
+// SettingsPath is the settings file, "" when settings are not kept.
+func (a *App) SettingsPath() string { return a.over.Settings.SettingsPath() }
+
+// networkSettings are the settings the protocols are built from.
+type networkSettings struct{ proxy, caCert, clientCert, clientKey string }
+
+func (a *App) networkSettings() networkSettings {
+	s := a.settings
+	return networkSettings{s.Proxy, s.CACert, s.ClientCert, s.ClientKey}
 }
-
-// Asking reports whether a dialog is open.
-func (host browserHost) Asking() bool { return host.dialog != nil }

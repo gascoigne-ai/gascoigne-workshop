@@ -12,7 +12,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/serial"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/state"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/storage"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/formpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
@@ -77,8 +76,7 @@ type persistState struct {
 	trusted          request.AccessSet                          // what the user allowed; remembered in the state file
 }
 
-// settingsState holds the settings in effect and the dialog that edits them; the dialog owns the file, its path and what is unsaved.
+// settingsState holds the settings in effect; the dialog that edits them (over.Settings) owns the file, its path and what is unsaved.
 type settingsState struct {
 	settings settings.Settings
-	prefs    *settingsdialog.Component // the settings dialog with its pages
 }

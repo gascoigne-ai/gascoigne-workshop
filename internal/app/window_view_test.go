@@ -45,10 +45,10 @@ var windowStates = []struct {
 	{"redirect", false, respondWith(301, "Moved Permanently")},
 	{"not-found", false, respondWith(404, "Not Found")},
 	{"failed", false, func(app *App) { app.cur().Resp = &request.Response{Err: "connection refused"} }},
-	{"menu", false, func(app *App) { app.prefs.Toggle() }},
+	{"menu", false, func(app *App) { app.over.Settings.Toggle() }},
 	{"popup", false, func(app *App) { widget.OpenMenu(app.ctx, 100, 100, []widget.MenuItem{{Label: "Copy"}}) }},
 	{"dialog", false, func(app *App) { app.confirm("Delete Search Repos?", "This cannot be undone.", "Delete", func() {}) }},
-	{"call-log", false, func(app *App) { app.calls.Open() }},
+	{"call-log", false, func(app *App) { app.over.Calls().Open() }},
 	{"toast", false, func(app *App) { app.toast("There is no response to save", severity.Error) }},
 }
 

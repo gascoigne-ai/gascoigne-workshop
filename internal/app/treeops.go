@@ -13,7 +13,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/filedialog"
-	"github.com/hajimehoshi/ebiten/v2"
 )
 
 // ---- selection and the rows' menus --------------------------------------
@@ -163,7 +162,7 @@ type transferHost struct {
 
 // Pick closes the picker and moves or copies the node to the destination.
 func (host transferHost) Pick(destination transfer.Destination) {
-	host.picker = nil
+	host.over.ClosePicker()
 	host.transferNode(transfer.Transfer{
 		Node: host.node, From: host.ownerOf(host.node),
 		To: destination.Collection, Into: destination.Folder, Mode: host.mode,
@@ -171,7 +170,7 @@ func (host transferHost) Pick(destination transfer.Destination) {
 }
 
 // Dismiss closes the picker.
-func (host transferHost) Dismiss() { host.picker = nil }
+func (host transferHost) Dismiss() { host.over.ClosePicker() }
 
 // openTransferPicker asks where node goes. A collection's root and nothing
 // cannot be moved or copied, so no picker opens for them.
@@ -180,19 +179,9 @@ func (a *App) openTransferPicker(node request.Node, mode transfer.Mode) {
 		return
 	}
 	stripe := func(col *request.Collection) core.Token { return a.collectionToken(request.Node{Dir: &col.Folder}) }
-	a.picker = destpicker.New(node, mode, transfer.Destinations(a.cols.Set(), node, mode), stripe)
-	a.pickerHost = transferHost{App: a, node: node, mode: mode}
+	picker := destpicker.New(node, mode, transfer.Destinations(a.cols.Set(), node, mode), stripe)
+	a.over.OpenPicker(picker, transferHost{App: a, node: node, mode: mode})
 }
-
-// pickerKeys hands the picker the frame's keys and takes them from the
-// input, so the field under it does not act on them too.
-func (a *App) pickerKeys(in core.Input) {
-	in.Enter = in.Enter || in.Pressed(ebiten.KeyEnter)
-	a.ctx.In.Consume(ebiten.KeyEnter, ebiten.KeyArrowUp, ebiten.KeyArrowDown)
-	a.picker.Keys(in, a.pickerHost)
-}
-
-func (a *App) closePicker() { a.picker = nil }
 
 // transferNode moves or copies a node to the place t names, in this or
 // another open collection, and tells what happened: a refusal, a rename and

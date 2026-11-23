@@ -31,7 +31,7 @@ func TestSettingsDialogLaysOutToTheSameRects(t *testing.T) {
 	}
 	a.w, a.h = 1280, 800
 	a.Step(core.Input{})
-	a.prefs.Show()
+	a.over.Settings.Show()
 	a.Step(core.Input{})
 	root := a.view()
 	view.Layout(a.ctx, root, a.w, a.h)

@@ -93,8 +93,8 @@ func TestRenameThroughTheMenuUpdatesTheTreeAndTheTab(t *testing.T) {
 	info := findReq(a, "Repository Info")
 	rightClick(a, 100, treeRowY(rowInfo))
 	pickMenu(t, a, "Rename")
-	if a.dialog == nil || a.dialog.Input.Text != "Repository Info" {
-		t.Fatalf("dialog = %+v", a.dialog)
+	if a.over.Dialog() == nil || a.over.Dialog().Input.Text != "Repository Info" {
+		t.Fatalf("dialog = %+v", a.over.Dialog())
 	}
 	a.typeText("Repo details")
 	a.Step(core.Input{Enter: true})
@@ -114,8 +114,8 @@ func TestRenameToATakenNameIsRefusedWithAToast(t *testing.T) {
 	pickMenu(t, a, "Rename")
 	a.typeText("Repository Tags")
 	a.Step(core.Input{Enter: true})
-	if info.Name != "Repository Info" || len(a.toasts.Stack()) != 1 || a.toasts.Stack()[0].Kind != widget.ToastError {
-		t.Fatalf("name %q toasts %+v", info.Name, a.toasts.Stack())
+	if info.Name != "Repository Info" || len(a.over.Toasts.Stack()) != 1 || a.over.Toasts.Stack()[0].Kind != widget.ToastError {
+		t.Fatalf("name %q toasts %+v", info.Name, a.over.Toasts.Stack())
 	}
 }
 
@@ -136,7 +136,7 @@ func TestDeleteAsksFirstAndClosesTheRequestsTab(t *testing.T) {
 	info := a.cur().Req
 	rightClick(a, 100, treeRowY(rowInfo))
 	pickMenu(t, a, "Delete")
-	if a.dialog == nil || findReq(a, "Repository Info") == nil {
+	if a.over.Dialog() == nil || findReq(a, "Repository Info") == nil {
 		t.Fatal("deleting must ask first and change nothing yet")
 	}
 	a.Step(core.Input{Escape: true})
@@ -243,8 +243,8 @@ func TestADropThatIsNotAllowedChangesNothingAndSaysWhy(t *testing.T) {
 	if len(a.col().Folders) != 3 || len(a.col().Folders[1].Requests) != 3 {
 		t.Fatal("a refused move changes nothing")
 	}
-	if len(a.toasts.Stack()) != 1 || a.toasts.Stack()[0].Kind != widget.ToastError {
-		t.Fatalf("toasts = %+v", a.toasts.Stack())
+	if len(a.over.Toasts.Stack()) != 1 || a.over.Toasts.Stack()[0].Kind != widget.ToastError {
+		t.Fatalf("toasts = %+v", a.over.Toasts.Stack())
 	}
 }
 
@@ -323,12 +323,12 @@ func TestTreeKeyboardNavigation(t *testing.T) {
 	}
 
 	a.Step(combo(ebiten.KeyF2, false, false, false))
-	if a.dialog == nil || a.dialog.Input.Text != "Repository Info" {
+	if a.over.Dialog() == nil || a.over.Dialog().Input.Text != "Repository Info" {
 		t.Fatal("F2 renames the selection")
 	}
 	a.Step(core.Input{Escape: true})
 	a.Step(combo(ebiten.KeyDelete, false, false, false))
-	if a.dialog == nil {
+	if a.over.Dialog() == nil {
 		t.Fatal("Delete asks before deleting the selection")
 	}
 }
@@ -339,7 +339,7 @@ func TestTreeKeysDoNothingWhileTyping(t *testing.T) {
 	click(a, 1100, urlBarY) // now the URL field has the keyboard
 	a.Step(combo(ebiten.KeyDelete, false, false, false))
 	a.Step(combo(ebiten.KeyF2, false, false, false))
-	if a.dialog != nil {
+	if a.over.Dialog() != nil {
 		t.Fatal("Delete and F2 belong to the text field, not the tree")
 	}
 }

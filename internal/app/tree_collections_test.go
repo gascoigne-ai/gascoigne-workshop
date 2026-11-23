@@ -155,10 +155,10 @@ func TestDeletingTheLastCollectionOpensANewEmptyOne(t *testing.T) {
 func TestDeleteAsksFirst(t *testing.T) {
 	a, base := collectionsApp(t)
 	a.confirmDeleteCollection(a.col())
-	if a.dialog == nil || !strings.Contains(a.dialog.Title, "Home") {
-		t.Fatalf("dialog %+v", a.dialog)
+	if a.over.Dialog() == nil || !strings.Contains(a.over.Dialog().Title, "Home") {
+		t.Fatalf("dialog %+v", a.over.Dialog())
 	}
-	a.closeDialog()
+	a.over.CloseDialog()
 	if _, err := os.Stat(filepath.Join(base, "workspace")); err != nil {
 		t.Fatalf("cancelling deleted it: %v", err)
 	}
@@ -169,7 +169,7 @@ func TestRenameAndDeleteNeedACollectionOnDisk(t *testing.T) {
 	a.setWorkspace("")
 	a.promptRenameCollection(a.col())
 	a.confirmDeleteCollection(a.col())
-	if a.dialog != nil {
+	if a.over.Dialog() != nil {
 		t.Fatal("a dialog opened for a collection that is not on disk")
 	}
 }

@@ -95,18 +95,18 @@ func TestDriverActionsApply(t *testing.T) {
 		check func(t *testing.T, a *App)
 	}{
 		{"open the named settings page", Options{}, func(driver *Driver) error { driver.OpenSettingsPage("colors"); return nil }, func(t *testing.T, a *App) {
-			if !a.prefs.Open() || a.prefs.Shell.Cat != "colors" {
-				t.Errorf("settings open = %v, page = %q, want the dialog on colors", a.prefs.Open(), a.prefs.Shell.Cat)
+			if !a.over.Settings.Open() || a.over.Settings.Shell.Cat != "colors" {
+				t.Errorf("settings open = %v, page = %q, want the dialog on colors", a.over.Settings.Open(), a.over.Settings.Shell.Cat)
 			}
 		}},
 		{"open the settings menu", Options{}, func(driver *Driver) error { driver.OpenSettingsMenu(); return nil }, func(t *testing.T, a *App) {
-			if !a.prefs.Open() {
+			if !a.over.Settings.Open() {
 				t.Error("the settings dialog should be open")
 			}
 		}},
 		{"open the settings as text", Options{}, func(driver *Driver) error { driver.OpenRawSettings(); return nil }, func(t *testing.T, a *App) {
-			if !a.prefs.Open() || !a.prefs.Shell.Raw {
-				t.Errorf("settings open = %v, raw = %v, want the dialog showing settings.json", a.prefs.Open(), a.prefs.Shell.Raw)
+			if !a.over.Settings.Open() || !a.over.Settings.Shell.Raw {
+				t.Errorf("settings open = %v, raw = %v, want the dialog showing settings.json", a.over.Settings.Open(), a.over.Settings.Shell.Raw)
 			}
 		}},
 		{"show the sent log", Options{}, func(driver *Driver) error { driver.ShowSentLog(); return nil }, func(t *testing.T, a *App) {
@@ -122,13 +122,13 @@ func TestDriverActionsApply(t *testing.T) {
 		}},
 		// The Log dialog opens as the status bar's Log button does.
 		{"open the call log", Options{}, func(driver *Driver) error { driver.OpenCallLog(); return nil }, func(t *testing.T, a *App) {
-			if !a.calls.Shown() {
+			if !a.over.Calls().Shown() {
 				t.Error("the Log dialog should be open")
 			}
 		}},
 		{"open the file browser on a folder", Options{Folders: folders.Disk{}}, func(driver *Driver) error { return driver.BrowseFiles(browseDir) }, func(t *testing.T, a *App) {
-			if !a.browser.Shown() || filepath.Clean(a.browser.Path()) != browseDir {
-				t.Fatalf("browser shown %v on %q, want it open on %s", a.browser.Shown(), a.browser.Path(), browseDir)
+			if !a.over.Browser.Shown() || filepath.Clean(a.over.Browser.Path()) != browseDir {
+				t.Fatalf("browser shown %v on %q, want it open on %s", a.over.Browser.Shown(), a.over.Browser.Path(), browseDir)
 			}
 		}},
 		{"show the named request pane of an http request", Options{}, func(driver *Driver) error { return driver.ShowRequestPane("Settings") }, requestPaneIsSettings},
@@ -170,8 +170,8 @@ func TestDriverActionsApply(t *testing.T) {
 		// Each text is an error toast, oldest first.
 		{"show the toasts", Options{}, func(driver *Driver) error { driver.ShowToast("First"); driver.ShowToast("Second"); return nil }, func(t *testing.T, a *App) {
 			want := widget.ToastStack{{Text: "First", Kind: widget.ToastError}, {Text: "Second", Kind: widget.ToastError}}
-			if !slices.Equal(a.toasts.Stack(), want) {
-				t.Fatalf("toasts %+v, want %+v", a.toasts.Stack(), want)
+			if !slices.Equal(a.over.Toasts.Stack(), want) {
+				t.Fatalf("toasts %+v, want %+v", a.over.Toasts.Stack(), want)
 			}
 		}},
 		{"filter the tree", Options{}, func(driver *Driver) error { driver.FilterTree("Echo"); return nil }, func(t *testing.T, a *App) {
@@ -336,19 +336,19 @@ func TestDriverOpensTheNamedDialog(t *testing.T) {
 				t.Fatal(err)
 			}
 			if tc.picker {
-				if a.picker == nil || a.dialog != nil {
-					t.Fatalf("picker %v dialog %v, want the picker alone", a.picker != nil, a.dialog != nil)
+				if a.over.Picker() == nil || a.over.Dialog() != nil {
+					t.Fatalf("picker %v dialog %v, want the picker alone", a.over.Picker() != nil, a.over.Dialog() != nil)
 				}
 				return
 			}
-			if a.dialog == nil || a.dialog.Title != tc.title {
-				t.Fatalf("dialog %+v, want the one titled %q", a.dialog, tc.title)
+			if a.over.Dialog() == nil || a.over.Dialog().Title != tc.title {
+				t.Fatalf("dialog %+v, want the one titled %q", a.over.Dialog(), tc.title)
 			}
-			if got := a.dialog.Input != nil; got != tc.withInput {
+			if got := a.over.Dialog().Input != nil; got != tc.withInput {
 				t.Fatalf("dialog has an input: %v, want %v", got, tc.withInput)
 			}
-			if tc.withInput && a.dialog.Input.Text != tc.input {
-				t.Errorf("input %q, want %q", a.dialog.Input.Text, tc.input)
+			if tc.withInput && a.over.Dialog().Input.Text != tc.input {
+				t.Errorf("input %q, want %q", a.over.Dialog().Input.Text, tc.input)
 			}
 		})
 	}
@@ -363,14 +363,14 @@ func TestDriverRecordsShortcutKeys(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if pending, ok := a.prefs.Shortcuts.Pending("close-tab"); !ok || pending.OtherName != "Focus URL" {
+	if pending, ok := a.over.Settings.Shortcuts.Pending("close-tab"); !ok || pending.OtherName != "Focus URL" {
 		t.Errorf("close-tab pending %+v, want a conflict with Focus URL", pending)
 	}
 	if got := a.settings.Shortcuts["new-request"]; got != "J" {
 		t.Errorf("new-request is %q, want J", got)
 	}
-	if a.prefs.Shortcuts.Recording() != "send" || !strings.Contains(a.prefs.Shortcuts.Note("send"), "text editing") {
-		t.Errorf("recording %q, note %q, want send still recording after its refused key", a.prefs.Shortcuts.Recording(), a.prefs.Shortcuts.Note("send"))
+	if a.over.Settings.Shortcuts.Recording() != "send" || !strings.Contains(a.over.Settings.Shortcuts.Note("send"), "text editing") {
+		t.Errorf("recording %q, note %q, want send still recording after its refused key", a.over.Settings.Shortcuts.Recording(), a.over.Settings.Shortcuts.Note("send"))
 	}
 }
 
@@ -380,8 +380,8 @@ func TestDriverLeavesABareActionRecording(t *testing.T) {
 	if err := a.Driver().RecordShortcut("close-tab"); err != nil {
 		t.Fatal(err)
 	}
-	if a.prefs.Shortcuts.Recording() != "close-tab" {
-		t.Fatalf("recording %q, want close-tab", a.prefs.Shortcuts.Recording())
+	if a.over.Settings.Shortcuts.Recording() != "close-tab" {
+		t.Fatalf("recording %q, want close-tab", a.over.Settings.Shortcuts.Recording())
 	}
 }
 
@@ -530,8 +530,8 @@ func TestDriverFindsTheQueryInTheResponse(t *testing.T) {
 // an error.
 func TestDriverOpensTheFormOfTheNamedTool(t *testing.T) {
 	a := driverApp(t, withAdapters(Options{}))
-	if opened, err := a.Driver().OpenToolForm("search"); opened || err != nil || a.dialog != nil {
-		t.Fatalf("opened %v err %v dialog %+v before the server announced a tool", opened, err, a.dialog)
+	if opened, err := a.Driver().OpenToolForm("search"); opened || err != nil || a.over.Dialog() != nil {
+		t.Fatalf("opened %v err %v dialog %+v before the server announced a tool", opened, err, a.over.Dialog())
 	}
 	a.cur().Tools = []request.MCPTool{{Name: "ping"}, searchTool()}
 	if opened, err := a.Driver().OpenToolForm("nope"); opened || err == nil {
@@ -541,8 +541,8 @@ func TestDriverOpensTheFormOfTheNamedTool(t *testing.T) {
 	if err != nil || !opened {
 		t.Fatalf("opened %v err %v, want the form open", opened, err)
 	}
-	if a.dialog == nil || a.dialog.content == nil || a.dialog.Title != "Call search" {
-		t.Fatalf("dialog %+v, want the form of search", a.dialog)
+	if a.over.Dialog() == nil || !strings.Contains(dialogDump(a), `text="query *"`) || a.over.Dialog().Title != "Call search" {
+		t.Fatalf("dialog %+v, want the form of search", a.over.Dialog())
 	}
 }
 

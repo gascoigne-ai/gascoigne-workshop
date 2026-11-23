@@ -37,11 +37,11 @@ internal/
     editor                       composite
       urlbar  kvtable(+logic)  body  auth  assertions  ws  grpc  graphql  mcp  mcp/mcpform
     response                     composite
-      respview  calltrace
+      respview
     statusbar
     overlays                     composite
       settingsdialog  settingsdialog/{formpage,colorpage,shortcutpage,systempage}
-      filebrowser  destpicker  welcome  toasts  menus
+      filebrowser  destpicker  welcome  toasts  menus  calltrace
   app/  app/apptest  app/drive   (at most 6 files: options, ports, app, game, frame)
   exampleserver/
 ```

@@ -50,7 +50,7 @@ func assertDrawnTreeIsFresh(t *testing.T, app *App, label string) {
 // A click that changes a setting shows in the tree Draw paints.
 func TestDrawShowsTheSettingAClickChanged(t *testing.T) {
 	a := testApp(t)
-	a.prefs.Show()
+	a.over.Settings.Show()
 	a.Step(core.Input{X: 5000, Y: 5000})
 	before := view.Dump(a.frameTree())
 	x, y := textCenter(t, a, "Light")
@@ -185,7 +185,7 @@ func TestTheDrawnTreeMatchesAFreshBuildAcrossASession(t *testing.T) {
 	}
 	s.idle("response shown", 2)
 
-	a.prefs.Show()
+	a.over.Settings.Show()
 	s.idle("settings dialog opens", 2)
 	dialog := settingsRect(t, a)
 	grabX, grabY := dialog.X+dialog.W/2, dialog.Y+20
@@ -221,7 +221,7 @@ func TestTheDrawnTreeMatchesAFreshBuildAcrossASession(t *testing.T) {
 // handler fired builds a second one for Draw.
 func TestDrawReusesTheTreeWhenNothingFired(t *testing.T) {
 	a := testApp(t)
-	a.prefs.Show()
+	a.over.Settings.Show()
 	a.Step(core.Input{X: 5000, Y: 5000})
 
 	builds := func(in core.Input) int {
@@ -286,7 +286,7 @@ func TestAStepThatChangesWhatTheViewShowsMarksTheTreeStale(t *testing.T) {
 	folder := &request.Folder{Name: "closed"}
 	cases := map[string]func(a *App){
 		"a toast":            func(a *App) { a.toast("Saved", severity.Info) },
-		"a settings message": func(a *App) { a.prefs.Send(prefs.Toast{Text: "hi", Level: severity.Info}) },
+		"a settings message": func(a *App) { a.over.Settings.Send(prefs.Toast{Text: "hi", Level: severity.Info}) },
 		"bulk text turned to rows": func(a *App) {
 			a.kv.ToggleBulk(kvlogic.Table{Tab: a.cur().Tab, Kind: kvlogic.Params})
 			*a.kv.BulkArea() = widget.NewTextArea("a: b")

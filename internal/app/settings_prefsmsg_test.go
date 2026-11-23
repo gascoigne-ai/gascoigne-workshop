@@ -11,19 +11,19 @@ import (
 
 func TestSendAppliesSettingsMessages(t *testing.T) {
 	a := testApp(t)
-	a.prefs.Send(prefs.Replace{Settings: settings.Settings{ResponseView: "raw", UIScalePct: 100}})
+	a.over.Settings.Send(prefs.Replace{Settings: settings.Settings{ResponseView: "raw", UIScalePct: 100}})
 	if a.settings.ResponseView != "raw" || !a.resp.Look(a.cur().Tab).Raw() {
 		t.Fatalf("Replace: setting %q raw %v", a.settings.ResponseView, a.resp.Look(a.cur().Tab).Raw())
 	}
-	a.prefs.Send(prefs.Change{Edit: func(current *settings.Settings) { current.ResponseView = "compact" }})
+	a.over.Settings.Send(prefs.Change{Edit: func(current *settings.Settings) { current.ResponseView = "compact" }})
 	if !a.resp.Look(a.cur().Tab).Compact() {
 		t.Fatal("Change edits the settings in effect")
 	}
-	a.prefs.Send(prefs.Edit{Edit: func(current *settings.Settings) { current.ResponseView = "pretty" }})
+	a.over.Settings.Send(prefs.Edit{Edit: func(current *settings.Settings) { current.ResponseView = "pretty" }})
 	if a.settings.ResponseView != "pretty" {
 		t.Fatalf("Edit: %q", a.settings.ResponseView)
 	}
-	a.prefs.Send(prefs.ScaleLive{Percent: 130})
+	a.over.Settings.Send(prefs.ScaleLive{Percent: 130})
 	if a.settings.UIScalePct != 130 {
 		t.Fatalf("ScaleLive: %d", a.settings.UIScalePct)
 	}
@@ -33,12 +33,12 @@ func TestSendAppliesSettingsMessages(t *testing.T) {
 // file as behind the edits, Saved true as written.
 func TestSendFileMarkedRecordsFileState(t *testing.T) {
 	a := testApp(t)
-	a.prefs.Send(prefs.FileMarked{Saved: false})
-	if !a.prefs.Unsaved() {
+	a.over.Settings.Send(prefs.FileMarked{Saved: false})
+	if !a.over.Settings.Unsaved() {
 		t.Fatal("FileMarked{Saved: false} must mark the file unsaved")
 	}
-	a.prefs.Send(prefs.FileMarked{Saved: true})
-	if a.prefs.Unsaved() {
+	a.over.Settings.Send(prefs.FileMarked{Saved: true})
+	if a.over.Settings.Unsaved() {
 		t.Fatal("FileMarked{Saved: true} must mark the file saved")
 	}
 }
@@ -57,9 +57,9 @@ func TestSendChangeRebuildsColorsPageAndEditDoesNot(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			a := testApp(t)
 			token := theme.CustomColors[0].Token
-			before := a.prefs.Colors.Input(a.prefs, token)
-			a.prefs.Send(test.msg(func(current *settings.Settings) { current.ResponseView = "compact" }))
-			if rebuilt := a.prefs.Colors.Input(a.prefs, token) != before; rebuilt != test.rebuilt {
+			before := a.over.Settings.Colors.Input(a.over.Settings, token)
+			a.over.Settings.Send(test.msg(func(current *settings.Settings) { current.ResponseView = "compact" }))
+			if rebuilt := a.over.Settings.Colors.Input(a.over.Settings, token) != before; rebuilt != test.rebuilt {
 				t.Fatalf("colors page rebuilt = %v, want %v", rebuilt, test.rebuilt)
 			}
 		})
@@ -68,12 +68,12 @@ func TestSendChangeRebuildsColorsPageAndEditDoesNot(t *testing.T) {
 
 func TestSendRecordsFileStateAndStatus(t *testing.T) {
 	a := testApp(t)
-	a.prefs.Send(prefs.SetStatus{Text: "hello"})
+	a.over.Settings.Send(prefs.SetStatus{Text: "hello"})
 	if a.notices.Status() != "hello" {
 		t.Fatalf("status %q", a.notices.Status())
 	}
-	a.prefs.Send(prefs.Toast{Text: "oops", Level: severity.Error})
-	if len(a.toasts.Stack()) != 1 || a.toasts.Stack()[0].Text != "oops" {
+	a.over.Settings.Send(prefs.Toast{Text: "oops", Level: severity.Error})
+	if len(a.over.Toasts.Stack()) != 1 || a.over.Toasts.Stack()[0].Text != "oops" {
 		t.Fatal("Toast")
 	}
 }

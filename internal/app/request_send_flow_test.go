@@ -373,10 +373,10 @@ func TestEscapeCancelsARunningRequestButClosesTheMenuFirst(t *testing.T) {
 	a.pointTabAt(tab, srv.URL+"/slow")
 	click(a, sendX, urlBarY)
 
-	a.prefs.Show()
+	a.over.Settings.Show()
 	a.Step(core.Input{Escape: true})
-	if a.prefs.Open() || !a.sends.Sending(tab.Req) {
-		t.Fatalf("the first Escape closes the menu only: menu %v sending %v", a.prefs.Open(), a.sends.Sending(tab.Req))
+	if a.over.Settings.Open() || !a.sends.Sending(tab.Req) {
+		t.Fatalf("the first Escape closes the menu only: menu %v sending %v", a.over.Settings.Open(), a.sends.Sending(tab.Req))
 	}
 	a.Step(core.Input{Escape: true})
 	if a.sends.Sending(tab.Req) || tab.Resp == nil || tab.Resp.Err != "Cancelled" {
@@ -617,7 +617,7 @@ func TestResponseViewChipsAreCompactPrettyRawInThatOrder(t *testing.T) {
 
 func TestResponseViewSettingAppliesToOpenTabsAndIsSaved(t *testing.T) {
 	a, path := openSettingsPage(t, "appearance")
-	a.prefs.Shell.Search = widget.NewTextField("response view")
+	a.over.Settings.Shell.Search = widget.NewTextField("response view")
 	clickText(t, a, "Compact", 0)
 	if !a.resp.Look(a.cur().Tab).Compact() || a.settings.ResponseView != "compact" {
 		t.Fatalf("compact %v setting %q", a.resp.Look(a.cur().Tab).Compact(), a.settings.ResponseView)

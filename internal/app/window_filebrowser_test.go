@@ -58,7 +58,7 @@ func pressEnter(a *App) { a.Step(core.Input{Enter: true, Keys: []ebiten.Key{ebit
 func TestTheBrowserHoldsTheKeyboardLikeADialog(t *testing.T) {
 	a, _ := browsingApp(t)
 	a.pickFile("Choose the file to send", filedialog.OpenFile, "", func(string) {})
-	if !a.overlayOpen() {
+	if !a.over.HoldsKeyboard() {
 		t.Fatal("the browser holds the keyboard like a dialog")
 	}
 }
@@ -68,8 +68,8 @@ func TestEscapeClosesTheBrowserWithoutAnAnswer(t *testing.T) {
 	called := false
 	a.pickFile("Pick", filedialog.OpenFile, "", func(string) { called = true })
 	a.Step(core.Input{Escape: true})
-	if a.browser.Shown() || called {
-		t.Fatalf("browser %v called %v", a.browser.Shown(), called)
+	if a.over.Browser.Shown() || called {
+		t.Fatalf("browser %v called %v", a.over.Browser.Shown(), called)
 	}
 }
 
@@ -77,20 +77,20 @@ func TestSavingOverAFileAsksFirst(t *testing.T) {
 	a, dir := browsingApp(t)
 	var got string
 	a.pickFile("Save response body", filedialog.SaveFile, "api.json", func(path string) { got = path })
-	if !strings.HasSuffix(a.browser.Path(), "api.json") {
-		t.Fatalf("the save name follows the folder: %q", a.browser.Path())
+	if !strings.HasSuffix(a.over.Browser.Path(), "api.json") {
+		t.Fatalf("the save name follows the folder: %q", a.over.Browser.Path())
 	}
 	a.Step(core.Input{Enter: true, Keys: []ebiten.Key{ebiten.KeyEnter}})
-	if a.dialog == nil || a.dialog.Title != "Replace file" || got != "" {
-		t.Fatalf("dialog %+v got %q", a.dialog, got)
+	if a.over.Dialog() == nil || a.over.Dialog().Title != "Replace file" || got != "" {
+		t.Fatalf("dialog %+v got %q", a.over.Dialog(), got)
 	}
 	a.Step(core.Input{Escape: true})
-	if a.dialog != nil || !a.browser.Shown() {
+	if a.over.Dialog() != nil || !a.over.Browser.Shown() {
 		t.Fatal("Escape takes back the question first and leaves the browser open")
 	}
 	a.Step(core.Input{Enter: true, Keys: []ebiten.Key{ebiten.KeyEnter}})
 	a.dialogDefault()
-	if a.browser.Shown() || evalLinks(t, got) != filepath.Join(evalLinks(t, dir), "api.json") {
-		t.Fatalf("Replace takes the path: %q, browser %v", got, a.browser.Shown())
+	if a.over.Browser.Shown() || evalLinks(t, got) != filepath.Join(evalLinks(t, dir), "api.json") {
+		t.Fatalf("Replace takes the path: %q, browser %v", got, a.over.Browser.Shown())
 	}
 }

@@ -40,7 +40,7 @@ var dialogKinds = []struct {
 		ctx, cancel := context.WithCancel(context.Background())
 		t.Cleanup(cancel)
 		go app.mcp.Sample(ctx, samplingAsked)
-		until(t, app, "the sampling dialog", func() bool { return app.dialog != nil })
+		until(t, app, "the sampling dialog", func() bool { return app.over.Dialog() != nil })
 	}},
 }
 
@@ -54,7 +54,7 @@ func TestTheDialogLaysOutAsPinned(t *testing.T) {
 				a := testApp(t)
 				t.Cleanup(a.WaitWrites)
 				kind.open(t, a)
-				assertDumpPinned(t, a, Stack(a.dialogView()), name, size.width, size.height)
+				assertDumpPinned(t, a, Stack(a.over.Views(a.ctx).Dialog), name, size.width, size.height)
 			})
 		}
 	}
@@ -66,22 +66,32 @@ func TestThePromptFieldEditsTheDialogInput(t *testing.T) {
 	a := testApp(t)
 	t.Cleanup(a.WaitWrites)
 	a.prompt("Rename", "Search Repos", "Rename", func(string) {})
-	root := a.dialogView()
+	root := a.over.Views(a.ctx).Dialog
 	Layout(a.ctx, Stack(root), winW, winH)
 	field := findWidget(root, "*widget.fieldB")
 	if field == nil {
 		t.Fatalf("no field in the prompt:\n%s", Dump(root))
 	}
-	if got, want := fmt.Sprintf("%+v", field.Behavior()), fmt.Sprintf("%p", a.dialog.Input); !strings.Contains(got, want) {
+	if got, want := fmt.Sprintf("%+v", field.Behavior()), fmt.Sprintf("%p", a.over.Dialog().Input); !strings.Contains(got, want) {
 		t.Errorf("the field edits %s, want the dialog's input %s", got, want)
 	}
+}
+
+// dialogDump is the open dialog as text, "" when none is open: how a test
+// sees the form a dialog carries.
+func dialogDump(a *App) string {
+	root := a.over.Views(a.ctx).Dialog
+	if root == nil {
+		return ""
+	}
+	return Dump(root)
 }
 
 // No dialog, no view.
 func TestNoDialogNoDialogView(t *testing.T) {
 	a := testApp(t)
 	t.Cleanup(a.WaitWrites)
-	if root := a.dialogView(); root != nil {
+	if root := a.over.Views(a.ctx).Dialog; root != nil {
 		t.Fatalf("dialog view %v with no dialog open", root)
 	}
 }
@@ -97,7 +107,7 @@ func TestTheToastsLayOutAsPinned(t *testing.T) {
 			a.w, a.h = size.width, size.height
 			a.toast("Cookies cleared", severity.Info)
 			a.toast("Enter the gRPC server first, for example grpc://localhost:50051", severity.Error)
-			assertDumpPinned(t, a, Stack(a.toasts.View()), name, size.width, size.height)
+			assertDumpPinned(t, a, Stack(a.over.Toasts.View()), name, size.width, size.height)
 		})
 	}
 }
@@ -106,7 +116,7 @@ func TestTheToastsLayOutAsPinned(t *testing.T) {
 func TestNoToastsNoToastsView(t *testing.T) {
 	a := testApp(t)
 	t.Cleanup(a.WaitWrites)
-	root := Stack(a.toasts.View())
+	root := Stack(a.over.Toasts.View())
 	Layout(a.ctx, root, winW, winH)
 	if got := len(root.Children()); got != 0 {
 		t.Fatalf("the window gets %d toast views with no toasts:\n%s", got, Dump(root))
@@ -121,14 +131,14 @@ func TestToastsAndDialogAnswerInput(t *testing.T) {
 	a.toast("There is no response to save", severity.Error)
 	a.Step(core.Input{})
 	clickText(t, a, "There is no response to save", 0)
-	if len(a.toasts.Stack()) != 0 {
-		t.Fatalf("toasts %+v after the click", a.toasts.Stack())
+	if len(a.over.Toasts.Stack()) != 0 {
+		t.Fatalf("toasts %+v after the click", a.over.Toasts.Stack())
 	}
 	ran := 0
 	a.confirm("Delete Search Repos?", "This cannot be undone.", "Delete", func() { ran++ })
 	a.Step(core.Input{})
 	clickText(t, a, "Delete", 0)
-	if ran != 1 || a.dialog != nil {
-		t.Fatalf("Delete ran %d times, dialog open %v", ran, a.dialog != nil)
+	if ran != 1 || a.over.Dialog() != nil {
+		t.Fatalf("Delete ran %d times, dialog open %v", ran, a.over.Dialog() != nil)
 	}
 }

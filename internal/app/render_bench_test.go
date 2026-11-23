@@ -33,7 +33,7 @@ func newBenchApp(b *testing.B, dialog bool) *App {
 	a.w, a.h = winW, winH
 	a.Step(core.Input{})
 	if dialog {
-		a.prefs.Show()
+		a.over.Settings.Show()
 	}
 	a.Step(core.Input{})
 	b.ReportAllocs()

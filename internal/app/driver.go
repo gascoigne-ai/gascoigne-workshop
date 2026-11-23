@@ -131,19 +131,19 @@ func (d *Driver) OpenDialog(kind string) error {
 func (d *Driver) ShowToast(text string) { d.app.toast(text, severity.Error) }
 
 // OpenSettingsMenu opens the settings dialog.
-func (d *Driver) OpenSettingsMenu() { d.app.prefs.Show() }
+func (d *Driver) OpenSettingsMenu() { d.app.over.Settings.Show() }
 
 // OpenSettingsPage opens the settings dialog on the page with this name.
 func (d *Driver) OpenSettingsPage(name string) {
-	d.app.prefs.Shell.Cat = name
-	d.app.prefs.Show()
+	d.app.over.Settings.Shell.Cat = name
+	d.app.over.Settings.Show()
 }
 
 // OpenRawSettings opens the settings dialog on the text of settings.json, as
 // its JSON button does.
 func (d *Driver) OpenRawSettings() {
-	d.app.prefs.OpenRaw()
-	d.app.prefs.Show()
+	d.app.over.Settings.OpenRaw()
+	d.app.over.Settings.Show()
 }
 
 // RecordShortcut starts recording on the shortcut action spec names
@@ -151,11 +151,11 @@ func (d *Driver) OpenRawSettings() {
 // press would.
 func (d *Driver) RecordShortcut(spec string) error {
 	id, keys, hasKeys := strings.Cut(spec, "=")
-	known := slices.Contains(d.app.prefs.ActionIDs(), id)
+	known := slices.Contains(d.app.over.Settings.ActionIDs(), id)
 	if !known {
 		return fmt.Errorf("record: %q is not a shortcut action", id)
 	}
-	d.app.prefs.Shortcuts.Start(id)
+	d.app.over.Settings.Shortcuts.Start(id)
 	if !hasKeys {
 		return nil
 	}
@@ -163,7 +163,7 @@ func (d *Driver) RecordShortcut(spec string) error {
 	if err != nil {
 		return fmt.Errorf("record %s: %w", id, err)
 	}
-	d.app.prefs.Shortcuts.RecordKey(d.app.prefs, core.Input{Keys: []ebiten.Key{binding.Key}, Ctrl: binding.Ctrl, Shift: binding.Shift, Alt: binding.Alt})
+	d.app.over.Settings.Shortcuts.RecordKey(d.app.over.Settings, core.Input{Keys: []ebiten.Key{binding.Key}, Ctrl: binding.Ctrl, Shift: binding.Shift, Alt: binding.Alt})
 	return nil
 }
 
@@ -171,7 +171,7 @@ func (d *Driver) RecordShortcut(spec string) error {
 func (d *Driver) ShowSentLog() { d.app.side.SetShowSent(true) }
 
 // OpenCallLog opens the Log dialog of calls, as the status bar's Log button does.
-func (d *Driver) OpenCallLog() { d.app.calls.Open() }
+func (d *Driver) OpenCallLog() { d.app.over.Calls().Open() }
 
 // BrowseFiles opens the in-app file browser on dir (made absolute) with the
 // title of the request body's file chooser, as choosing a file without a
@@ -181,7 +181,7 @@ func (d *Driver) BrowseFiles(dir string) error {
 	if err != nil {
 		return fmt.Errorf("file browser folder %q: %w", dir, err)
 	}
-	d.app.browser.Browse(absolute, "Choose the file to send", filedialog.OpenFile, "", func(string) {})
+	d.app.over.Browser.Browse(absolute, "Choose the file to send", filedialog.OpenFile, "", func(string) {})
 	return nil
 }
 

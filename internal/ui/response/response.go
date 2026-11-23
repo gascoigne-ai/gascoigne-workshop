@@ -11,7 +11,7 @@
 // name theirs, so a new pane is a row in both. The Tests pane is the
 // assertions component's, reached through Deps.Slots since siblings never
 // import each other. The sent log is not here: it belongs to the sidebar, and
-// the call trace waits for the overlays (task 043).
+// the call trace belongs to the overlays (`ui/overlays/calltrace`).
 //
 // The state of the tabs is a map of pointers made on first use, with the view
 // mode the settings name, and dropped by Tick when its tab closes. Lookup

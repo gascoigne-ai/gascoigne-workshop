@@ -41,7 +41,7 @@ flowchart LR
   category heading (search results only), the page title row and the search field in the page list
   follow `style.md` (Settings row). The Colors, Shortcuts and System pages stay tables and get only the
   title row.
-- **Dialog and host** (`ui/overlays/settingsdialog`, `.../formpage`): `settingsdialog.Component` is `App.prefs`; its
+- **Dialog and host** (`ui/overlays/settingsdialog`, `.../formpage`): `settingsdialog.Component` is `App.over.Settings`; its
   `Shell` (`SettingsDialog`) and `Form` (`formpage.Page`) are fields of it, and the component is the `Host` of both.
   Host methods only read; everything a page asks for is a `prefs` message applied by `Component.Send`.
   `SetFonts` stays a method because its error is the answer. The Colors, Shortcuts and System pages are

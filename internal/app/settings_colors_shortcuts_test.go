@@ -19,14 +19,14 @@ func TestSettingsMenuOpensChangesThemeAndSaves(t *testing.T) {
 	a := testApp(t)
 	path := a.SettingsPath()
 	click(a, menuBtnX, menuBtnY)
-	if !a.prefs.Open() {
+	if !a.over.Settings.Open() {
 		t.Fatal("the three-dot button must open the menu")
 	}
 
-	a.prefs.Shell.Search = widget.NewTextField("theme") // brings the Theme setting to the top
+	a.over.Settings.Shell.Search = widget.NewTextField("theme") // brings the Theme setting to the top
 	clickText(t, a, "Light", 0)
-	if a.settings.Theme != "light" || !a.prefs.Open() {
-		t.Fatalf("theme %q, menu open %v (choosing must keep it open)", a.settings.Theme, a.prefs.Open())
+	if a.settings.Theme != "light" || !a.over.Settings.Open() {
+		t.Fatalf("theme %q, menu open %v (choosing must keep it open)", a.settings.Theme, a.over.Settings.Open())
 	}
 	if a.ctx.Th.Color(core.Bg) != theming.Light().Color(core.Bg) {
 		t.Fatal("the live theme did not change")
@@ -36,7 +36,7 @@ func TestSettingsMenuOpensChangesThemeAndSaves(t *testing.T) {
 		t.Fatalf("saved %+v err %v", saved, err)
 	}
 
-	a.prefs.Shell.Search = widget.NewTextField("interface font size")
+	a.over.Settings.Shell.Search = widget.NewTextField("interface font size")
 	clickText(t, a, "+", 0)
 	clickText(t, a, "+", 0)
 	if a.ctx.Th.FontSize != 16 {
@@ -90,8 +90,8 @@ func TestSettingsStartFromTheSavedChoice(t *testing.T) {
 		t.Fatal(err)
 	}
 	a.Driver().OpenSettingsMenu()
-	if a.ctx.Th.Color(core.Bg) != theming.Light().Color(core.Bg) || a.ctx.Th.FontSize != 13 || !a.prefs.Open() {
-		t.Fatalf("theme/size/menu not restored: font %v menu %v", a.ctx.Th.FontSize, a.prefs.Open())
+	if a.ctx.Th.Color(core.Bg) != theming.Light().Color(core.Bg) || a.ctx.Th.FontSize != 13 || !a.over.Settings.Open() {
+		t.Fatalf("theme/size/menu not restored: font %v menu %v", a.ctx.Th.FontSize, a.over.Settings.Open())
 	}
 }
 
@@ -138,7 +138,7 @@ func TestCtrlTabSwitchesTabsAndWraps(t *testing.T) {
 func TestCtrlCommaOpensTheSettingsMenu(t *testing.T) {
 	a := testApp(t)
 	a.Step(combo(ebiten.KeyComma, true, false, false))
-	if !a.prefs.Open() {
+	if !a.over.Settings.Open() {
 		t.Fatal("Ctrl+, must open the settings menu")
 	}
 }
@@ -148,8 +148,8 @@ func TestShortcutsNeedTheirModifiers(t *testing.T) {
 	for _, k := range []ebiten.Key{ebiten.KeyT, ebiten.KeyW, ebiten.KeyL, ebiten.KeyEnter, ebiten.KeyComma, ebiten.KeyTab} {
 		a.Step(combo(k, false, false, false)) // plain letters must never trigger anything
 	}
-	if len(a.tabs.Tabs()) != 1 || a.prefs.Open() || a.sends.Sending(a.cur().Req) {
-		t.Fatalf("plain keys changed state: %d tabs, menu %v", len(a.tabs.Tabs()), a.prefs.Open())
+	if len(a.tabs.Tabs()) != 1 || a.over.Settings.Open() || a.sends.Sending(a.cur().Req) {
+		t.Fatalf("plain keys changed state: %d tabs, menu %v", len(a.tabs.Tabs()), a.over.Settings.Open())
 	}
 }
 
@@ -179,7 +179,7 @@ const (
 )
 
 func typeColor(app *App, tok core.Token, row int, text string) {
-	in := app.prefs.Colors.Input(app.prefs, tok)
+	in := app.over.Settings.Colors.Input(app.over.Settings, tok)
 	click(app, colorFieldX, colorRow0Y+row*core.RowH)
 	in.SelectAll()
 	app.typeText(text)
@@ -187,7 +187,7 @@ func typeColor(app *App, tok core.Token, row int, text string) {
 
 func TestContrastChooserStrengthensTheColorsAndIsSaved(t *testing.T) {
 	a, path := openSettingsMenu(t)
-	a.prefs.Shell.Search = widget.NewTextField("contrast")
+	a.over.Settings.Shell.Search = widget.NewTextField("contrast")
 	before := core.ContrastRatio(a.ctx.Th.Color(core.Selection), a.ctx.Th.Color(core.Text))
 	clickText(t, a, "High", 0)
 	if a.settings.Contrast != "high" {
@@ -216,8 +216,8 @@ func TestTypingAColorAppliesItLiveAndSavesIt(t *testing.T) {
 	if saved.Colors["dark"]["selection"] != "#223344" {
 		t.Fatalf("saved %+v", saved.Colors)
 	}
-	if a.prefs.Colors.Note(core.Selection) != "" {
-		t.Fatalf("note = %q", a.prefs.Colors.Note(core.Selection))
+	if a.over.Settings.Colors.Note(core.Selection) != "" {
+		t.Fatalf("note = %q", a.over.Settings.Colors.Note(core.Selection))
 	}
 }
 
@@ -225,7 +225,7 @@ func TestAnUnreadableColorIsRefusedWithItsRatio(t *testing.T) {
 	a, path := openSettingsPage(t, "colors")
 	def := a.ctx.Th.Color(core.FindMatch)
 	typeColor(a, core.FindMatch, 1, "#ffffff") // white under light text
-	note := a.prefs.Colors.Note(core.FindMatch)
+	note := a.over.Settings.Colors.Note(core.FindMatch)
 	if !strings.Contains(note, "below 4.5:1") || !strings.Contains(note, "1.") {
 		t.Fatalf("note = %q: it must say how far off the contrast is", note)
 	}
@@ -236,12 +236,12 @@ func TestAnUnreadableColorIsRefusedWithItsRatio(t *testing.T) {
 		t.Fatalf("a refused color must not be saved: %+v", saved.Colors)
 	}
 	typeColor(a, core.FindMatch, 1, "zzz")
-	if !strings.Contains(a.prefs.Colors.Note(core.FindMatch), "#rrggbb") {
-		t.Fatalf("note = %q", a.prefs.Colors.Note(core.FindMatch))
+	if !strings.Contains(a.over.Settings.Colors.Note(core.FindMatch), "#rrggbb") {
+		t.Fatalf("note = %q", a.over.Settings.Colors.Note(core.FindMatch))
 	}
 	typeColor(a, core.FindMatch, 1, "#334455")
-	if a.prefs.Colors.Note(core.FindMatch) != "" || a.ctx.Th.Color(core.FindMatch) != core.RGB(0x334455) {
-		t.Fatalf("a readable color clears the note and applies: %q %v", a.prefs.Colors.Note(core.FindMatch), a.ctx.Th.Color(core.FindMatch))
+	if a.over.Settings.Colors.Note(core.FindMatch) != "" || a.ctx.Th.Color(core.FindMatch) != core.RGB(0x334455) {
+		t.Fatalf("a readable color clears the note and applies: %q %v", a.over.Settings.Colors.Note(core.FindMatch), a.ctx.Th.Color(core.FindMatch))
 	}
 }
 
@@ -251,8 +251,8 @@ func TestResetButtonsRestoreTheDefaults(t *testing.T) {
 	typeColor(a, core.Selection, 0, "#223344")
 	typeColor(a, core.FindMatch, 1, "#334455")
 	click(a, colorResetX, colorRow0Y)
-	if a.ctx.Th.Color(core.Selection) != def || a.prefs.Colors.Input(a.prefs, core.Selection).Text != core.FormatHex(def) {
-		t.Fatalf("selection %v, field %q", a.ctx.Th.Color(core.Selection), a.prefs.Colors.Input(a.prefs, core.Selection).Text)
+	if a.ctx.Th.Color(core.Selection) != def || a.over.Settings.Colors.Input(a.over.Settings, core.Selection).Text != core.FormatHex(def) {
+		t.Fatalf("selection %v, field %q", a.ctx.Th.Color(core.Selection), a.over.Settings.Colors.Input(a.over.Settings, core.Selection).Text)
 	}
 	if a.ctx.Th.Color(core.FindMatch) != core.RGB(0x334455) {
 		t.Fatal("resetting one color must leave the others")
@@ -269,14 +269,14 @@ func TestResetButtonsRestoreTheDefaults(t *testing.T) {
 func TestSwitchingThemeShowsThatThemesColorsAndKeepsEachThemesOverrides(t *testing.T) {
 	a, _ := openSettingsPage(t, "colors")
 	typeColor(a, core.Selection, 0, "#223344")
-	a.prefs.Shell.Cat, a.prefs.Shell.Search = "appearance", widget.NewTextField("theme")
+	a.over.Settings.Shell.Cat, a.over.Settings.Shell.Search = "appearance", widget.NewTextField("theme")
 	a.Step(core.Input{})
 	clickText(t, a, "Light", 0)
 	if a.ctx.Th.Color(core.Selection) != theme.ThemeFor("light", theme.FontSizes{}).Color(core.Selection) {
 		t.Fatal("the dark override must not leak into the light theme")
 	}
-	if a.prefs.Colors.Input(a.prefs, core.Selection).Text != core.FormatHex(theme.ThemeFor("light", theme.FontSizes{}).Color(core.Selection)) {
-		t.Fatalf("the field must show the light theme's color, got %q", a.prefs.Colors.Input(a.prefs, core.Selection).Text)
+	if a.over.Settings.Colors.Input(a.over.Settings, core.Selection).Text != core.FormatHex(theme.ThemeFor("light", theme.FontSizes{}).Color(core.Selection)) {
+		t.Fatalf("the field must show the light theme's color, got %q", a.over.Settings.Colors.Input(a.over.Settings, core.Selection).Text)
 	}
 	clickText(t, a, "Dark", 0) // back to Dark
 	if a.ctx.Th.Color(core.Selection) != core.RGB(0x223344) {
@@ -321,13 +321,13 @@ func TestRecordingANewBindingRebindsTheAction(t *testing.T) {
 	a := testApp(t)
 	path := a.SettingsPath()
 	a.newRequest() // two tabs
-	a.prefs.Shortcuts.Start("close-tab")
-	if a.prefs.Shortcuts.Recording() != "close-tab" {
+	a.over.Settings.Shortcuts.Start("close-tab")
+	if a.over.Settings.Shortcuts.Recording() != "close-tab" {
 		t.Fatal("recording must start")
 	}
 	a.Step(combo(ebiten.KeyQ, true, false, false))
-	if a.prefs.Shortcuts.Recording() != "" || a.settings.Shortcuts["close-tab"] != "Ctrl+Q" {
-		t.Fatalf("recording %q shortcuts %v", a.prefs.Shortcuts.Recording(), a.settings.Shortcuts)
+	if a.over.Settings.Shortcuts.Recording() != "" || a.settings.Shortcuts["close-tab"] != "Ctrl+Q" {
+		t.Fatalf("recording %q shortcuts %v", a.over.Settings.Shortcuts.Recording(), a.settings.Shortcuts)
 	}
 	if saved, _ := settingsDisk.Load(path); saved.Shortcuts["close-tab"] != "Ctrl+Q" {
 		t.Fatalf("saved %+v", saved.Shortcuts)
@@ -340,21 +340,21 @@ func TestRecordingANewBindingRebindsTheAction(t *testing.T) {
 	if len(a.tabs.Tabs()) != 1 {
 		t.Fatal("Ctrl+Q closes a tab")
 	}
-	if shortcutpage.KeyText(a.prefs, "close-tab") != "Ctrl+Q" {
-		t.Fatalf("text = %q", shortcutpage.KeyText(a.prefs, "close-tab"))
+	if shortcutpage.KeyText(a.over.Settings, "close-tab") != "Ctrl+Q" {
+		t.Fatalf("text = %q", shortcutpage.KeyText(a.over.Settings, "close-tab"))
 	}
 }
 
 func TestEscapeCancelsRecordingAndBackspaceUnbinds(t *testing.T) {
 	a := testApp(t)
-	a.prefs.Shortcuts.Start("close-tab")
+	a.over.Settings.Shortcuts.Start("close-tab")
 	a.Step(core.Input{Escape: true})
-	if a.prefs.Shortcuts.Recording() != "" || len(a.settings.Shortcuts) != 0 || a.prefs.Open() {
-		t.Fatalf("recording %q shortcuts %v", a.prefs.Shortcuts.Recording(), a.settings.Shortcuts)
+	if a.over.Settings.Shortcuts.Recording() != "" || len(a.settings.Shortcuts) != 0 || a.over.Settings.Open() {
+		t.Fatalf("recording %q shortcuts %v", a.over.Settings.Shortcuts.Recording(), a.settings.Shortcuts)
 	}
 
 	a.newRequest()
-	a.prefs.Shortcuts.Start("close-tab")
+	a.over.Settings.Shortcuts.Start("close-tab")
 	a.Step(combo(ebiten.KeyBackspace, false, false, false))
 	if v, ok := a.settings.Shortcuts["close-tab"]; !ok || v != "" {
 		t.Fatalf("shortcuts = %v: Backspace stores an empty (unbound) binding", a.settings.Shortcuts)
@@ -363,8 +363,8 @@ func TestEscapeCancelsRecordingAndBackspaceUnbinds(t *testing.T) {
 	if len(a.tabs.Tabs()) != 2 {
 		t.Fatal("an unbound action fires nothing")
 	}
-	if shortcutpage.KeyText(a.prefs, "close-tab") != "Unbound" {
-		t.Fatalf("text = %q", shortcutpage.KeyText(a.prefs, "close-tab"))
+	if shortcutpage.KeyText(a.over.Settings, "close-tab") != "Unbound" {
+		t.Fatalf("text = %q", shortcutpage.KeyText(a.over.Settings, "close-tab"))
 	}
 }
 
@@ -373,38 +373,38 @@ func TestEscapeCancelsRecordingAndBackspaceUnbinds(t *testing.T) {
 // settings_shortcuteditor_test.go).
 func TestRecordingRefusesKeysThatBelongToTextEditingAndKeepsListening(t *testing.T) {
 	a := testApp(t)
-	a.prefs.Shortcuts.Start("close-tab")
+	a.over.Settings.Shortcuts.Start("close-tab")
 	a.Step(combo(ebiten.KeyC, true, false, false))
-	if !strings.Contains(a.prefs.Shortcuts.Note("close-tab"), "text") || a.prefs.Shortcuts.Recording() != "close-tab" {
-		t.Fatalf("note %q recording %q", a.prefs.Shortcuts.Note("close-tab"), a.prefs.Shortcuts.Recording())
+	if !strings.Contains(a.over.Settings.Shortcuts.Note("close-tab"), "text") || a.over.Settings.Shortcuts.Recording() != "close-tab" {
+		t.Fatalf("note %q recording %q", a.over.Settings.Shortcuts.Note("close-tab"), a.over.Settings.Shortcuts.Recording())
 	}
 	if len(a.settings.Shortcuts) != 0 {
 		t.Fatal("refused combinations must change nothing")
 	}
 	a.Step(combo(ebiten.KeyQ, true, false, false)) // a good one ends it and clears the note
-	if a.prefs.Shortcuts.Recording() != "" || a.prefs.Shortcuts.Note("close-tab") != "" || a.settings.Shortcuts["close-tab"] != "Ctrl+Q" {
-		t.Fatalf("recording %q note %q shortcuts %v", a.prefs.Shortcuts.Recording(), a.prefs.Shortcuts.Note("close-tab"), a.settings.Shortcuts)
+	if a.over.Settings.Shortcuts.Recording() != "" || a.over.Settings.Shortcuts.Note("close-tab") != "" || a.settings.Shortcuts["close-tab"] != "Ctrl+Q" {
+		t.Fatalf("recording %q note %q shortcuts %v", a.over.Settings.Shortcuts.Recording(), a.over.Settings.Shortcuts.Note("close-tab"), a.settings.Shortcuts)
 	}
 }
 
 func TestAModifierKeyAloneDoesNotEndRecording(t *testing.T) {
 	a := testApp(t)
-	a.prefs.Shortcuts.Start("close-tab")
+	a.over.Settings.Shortcuts.Start("close-tab")
 	a.Step(core.Input{Keys: []ebiten.Key{ebiten.KeyControlLeft}, Ctrl: true})
-	if a.prefs.Shortcuts.Recording() != "close-tab" || len(a.settings.Shortcuts) != 0 {
-		t.Fatalf("recording %q shortcuts %v", a.prefs.Shortcuts.Recording(), a.settings.Shortcuts)
+	if a.over.Settings.Shortcuts.Recording() != "close-tab" || len(a.settings.Shortcuts) != 0 {
+		t.Fatalf("recording %q shortcuts %v", a.over.Settings.Shortcuts.Recording(), a.settings.Shortcuts)
 	}
 }
 
 func TestRebindingToTheDefaultStoresNothingAndResetRestoresIt(t *testing.T) {
 	a := testApp(t)
-	a.prefs.Shortcuts.Start("close-tab")
+	a.over.Settings.Shortcuts.Start("close-tab")
 	a.Step(combo(ebiten.KeyQ, true, false, false))
-	a.prefs.Shortcuts.Reset(a.prefs, "close-tab")
-	if _, ok := a.settings.Shortcuts["close-tab"]; ok || shortcutpage.KeyText(a.prefs, "close-tab") != "Ctrl+W" {
-		t.Fatalf("shortcuts %v text %q", a.settings.Shortcuts, shortcutpage.KeyText(a.prefs, "close-tab"))
+	a.over.Settings.Shortcuts.Reset(a.over.Settings, "close-tab")
+	if _, ok := a.settings.Shortcuts["close-tab"]; ok || shortcutpage.KeyText(a.over.Settings, "close-tab") != "Ctrl+W" {
+		t.Fatalf("shortcuts %v text %q", a.settings.Shortcuts, shortcutpage.KeyText(a.over.Settings, "close-tab"))
 	}
-	a.prefs.Shortcuts.Start("close-tab")
+	a.over.Settings.Shortcuts.Start("close-tab")
 	a.Step(combo(ebiten.KeyW, true, false, false)) // its own default
 	if _, ok := a.settings.Shortcuts["close-tab"]; ok {
 		t.Fatalf("a binding equal to the default must not be stored: %v", a.settings.Shortcuts)
@@ -435,7 +435,7 @@ func TestSavedBindingsApplyFromTheStart(t *testing.T) {
 
 func TestMenusShowTheConfiguredKey(t *testing.T) {
 	a := jsonResponse(t, `{"ok":true}`)
-	a.prefs.Shortcuts.Start("find")
+	a.over.Settings.Shortcuts.Start("find")
 	a.Step(combo(ebiten.KeyG, true, false, false))
 	rightClick(a, 1000, 400)
 	if got := itemByLabel(t, a, "Find").Shortcut; got != "Ctrl+G" {
@@ -445,10 +445,10 @@ func TestMenusShowTheConfiguredKey(t *testing.T) {
 
 func TestShortcutSettingsRenderWhileRecording(t *testing.T) {
 	a, _ := openSettingsPage(t, "shortcuts")
-	a.prefs.Shortcuts.Start("close-tab")
+	a.over.Settings.Shortcuts.Start("close-tab")
 	a.Step(combo(ebiten.KeyC, true, false, false)) // refused: it belongs to text editing, so a note shows
 	a.Step(core.Input{})                           // the menu with a recording row and a note must lay out
-	if !a.prefs.Open() || a.prefs.Shortcuts.Recording() != "close-tab" {
+	if !a.over.Settings.Open() || a.over.Settings.Shortcuts.Recording() != "close-tab" {
 		t.Fatal("the menu stays open while recording")
 	}
 }

@@ -194,7 +194,7 @@ func TestCheckLayersRejects(t *testing.T) {
 		{"feature root imports another feature root", synthetic("internal/feature/send", "internal/feature/history")},
 		{"controller external test imports another feature", xtest},
 		{"ui imports an adapter", synthetic("internal/ui/response/respview", "internal/feature/send/adapter/preview")},
-		{"ui imports another ui", synthetic("internal/ui/response/respview", "internal/ui/response/calltrace")},
+		{"ui imports another ui", synthetic("internal/ui/response/respview", "internal/ui/overlays/calltrace")},
 		{"controller imports a toolkit widget", synthetic("internal/feature/send/requestedit", "uitoolkit/widget")},
 		{"adapter imports a ui", synthetic("internal/feature/history/adapter/historyfile", "internal/ui/sidebar/sentlog")},
 		{"toolkit imports internal", synthetic("uitoolkit/widget", "internal/feature/request")},
@@ -513,7 +513,7 @@ func TestFeatureUIPackagesJoinedTheScreenTree(t *testing.T) {
 		"internal/ui/overlays/settingsdialog", "internal/ui/overlays/settingsdialog/formpage",
 		"internal/ui/overlays/settingsdialog/colorpage", "internal/ui/overlays/settingsdialog/shortcutpage",
 		"internal/ui/overlays/settingsdialog/systempage", "internal/ui/response/respview",
-		"internal/ui/response/calltrace", "internal/ui/editor/mcp/mcpform", "internal/ui/appicon",
+		"internal/ui/overlays", "internal/ui/overlays/calltrace", "internal/ui/editor/mcp/mcpform", "internal/ui/appicon",
 	} {
 		if !listed[want] {
 			t.Errorf("%s is not in the tree", want)

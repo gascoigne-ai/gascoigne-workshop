@@ -38,7 +38,7 @@ func (a *App) dispatch(tab *reqTab, source *request.Request) {
 		return
 	}
 	a.notices.SetStatus("Sending " + source.URL)
-	a.calls.Sent(a.now(), req)
+	a.over.Calls().Sent(a.now(), req)
 	reg := a.reg // the command must not read App fields the UI goroutine replaces
 	a.bus.Run(ctx, func(ctx context.Context) bus.Msg {
 		defer cancel()
@@ -99,7 +99,7 @@ func (a *App) apply(result sends.Result) {
 	if owner, path, _ := a.holderOf(t.Req); path != "" {
 		a.side.Sent().Record(a, a.now(), owner.Dir, path, t.Req, result.Response.Status)
 	}
-	a.calls.Answer(a.now(), t.Req, &result.Response)
+	a.over.Calls().Answer(a.now(), t.Req, &result.Response)
 	a.graphql.Remember(t.Tab, &result.Response)
 	a.resp.Refresh(t.Tab)
 	if result.Response.Err != "" {
@@ -287,7 +287,7 @@ func (a *App) applyOpened(msg wsOpened) {
 		_ = msg.session.Close(context.Background())
 		return
 	}
-	a.calls.Info(a.now(), "Connected to "+tab.Req.URL)
+	a.over.Calls().Info(a.now(), "Connected to "+tab.Req.URL)
 	a.notices.SetStatus("Connected to " + tab.Req.URL)
 }
 
@@ -296,7 +296,7 @@ func (a *App) applyFailed(msg wsFailed) {
 	if !tab.Failed() {
 		return
 	}
-	a.calls.Error(a.now(), fmt.Sprintf("✗ %s: %s", tab.Req.URL, msg.err))
+	a.over.Calls().Error(a.now(), fmt.Sprintf("✗ %s: %s", tab.Req.URL, msg.err))
 	a.ws.Note(tab.Tab, msg.err.Error(), severity.Error)
 	a.notices.SetStatus("Connection failed")
 	a.scheduleRetry(tab)
@@ -307,7 +307,7 @@ func (a *App) applyClosed(msg wsClosed) {
 	if !tab.Closed() {
 		return
 	}
-	a.calls.Info(a.now(), "Disconnected from "+tab.Req.URL)
+	a.over.Calls().Info(a.now(), "Disconnected from "+tab.Req.URL)
 	a.notices.SetStatus("Disconnected from " + tab.Req.URL)
 	a.scheduleRetry(tab)
 }

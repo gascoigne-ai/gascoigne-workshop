@@ -48,11 +48,11 @@ func TestTheStatusBarLaysOutAsPinned(t *testing.T) {
 // Clicking Log in the status bar opens the log of calls.
 func TestClickingLogInTheStatusBarOpensTheCallLog(t *testing.T) {
 	a := testApp(t)
-	if a.calls.Shown() {
+	if a.over.Calls().Shown() {
 		t.Fatal("the call log is open before the click")
 	}
 	clickText(t, a, "Log", 0)
-	if !a.calls.Shown() {
+	if !a.over.Calls().Shown() {
 		t.Fatal("clicking Log left the call log closed")
 	}
 }

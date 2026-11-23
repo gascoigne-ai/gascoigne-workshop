@@ -111,7 +111,7 @@ func TestDropInTheSameCollectionRenamesOnAClashWithAnInfoToast(t *testing.T) {
 	if req.Name != "Alpha call 2" || !alpha.Folders[0].Contains(request.Of(req)) {
 		t.Fatalf("name %q", req.Name)
 	}
-	if text := toastTexts(a); !strings.Contains(text, "Alpha call 2") || a.toasts.Stack()[len(a.toasts.Stack())-1].Kind == widget.ToastError {
+	if text := toastTexts(a); !strings.Contains(text, "Alpha call 2") || a.over.Toasts.Stack()[len(a.over.Toasts.Stack())-1].Kind == widget.ToastError {
 		t.Fatalf("toasts %q", text)
 	}
 }
@@ -173,7 +173,7 @@ func TestAFailedTargetWriteKeepsTheSourceOnDiskAndSaysSo(t *testing.T) {
 	if err != nil || len(gotAlpha.Requests) != 1 {
 		t.Fatalf("Alpha on disk lost the request before the target had it: %v %v", names(gotAlpha.Requests), err)
 	}
-	if len(a.toasts.Stack()) == 0 || a.toasts.Stack()[len(a.toasts.Stack())-1].Kind != widget.ToastError {
+	if len(a.over.Toasts.Stack()) == 0 || a.over.Toasts.Stack()[len(a.over.Toasts.Stack())-1].Kind != widget.ToastError {
 		t.Fatalf("toasts %q, want an error", toastTexts(a))
 	}
 }
@@ -210,17 +210,17 @@ func TestThePickerMovesTheNodeToTheRowPickedWithEnter(t *testing.T) {
 	alpha, beta := entryNamed(t, a, "Alpha").Collection, entryNamed(t, a, "Beta").Collection
 	req := alpha.Requests[0]
 	a.openTransferPicker(request.Of(req), transfer.Move)
-	if a.picker == nil || !a.overlayOpen() {
+	if a.over.Picker() == nil || !a.over.HoldsKeyboard() {
 		t.Fatal("the picker did not open")
 	}
-	for index, row := range a.picker.Rows() { // Beta's folder "Nested"
+	for index, row := range a.over.Picker().Rows() { // Beta's folder "Nested"
 		if row.Folder == beta.Folders[0] {
-			a.picker.Select(index)
+			a.over.Picker().Select(index)
 		}
 	}
 	a.Step(core.Input{Enter: true})
-	if a.picker != nil || len(alpha.Requests) != 0 || !beta.Folders[0].Contains(request.Of(req)) {
-		t.Fatalf("picker %v, Alpha %d requests, moved %v", a.picker != nil, len(alpha.Requests), beta.Folders[0].Contains(request.Of(req)))
+	if a.over.Picker() != nil || len(alpha.Requests) != 0 || !beta.Folders[0].Contains(request.Of(req)) {
+		t.Fatalf("picker %v, Alpha %d requests, moved %v", a.over.Picker() != nil, len(alpha.Requests), beta.Folders[0].Contains(request.Of(req)))
 	}
 }
 
@@ -228,10 +228,10 @@ func TestThePickerCopiesWhenOpenedToCopy(t *testing.T) {
 	a, _, _ := twoCollectionsApp(t)
 	alpha, beta := entryNamed(t, a, "Alpha").Collection, entryNamed(t, a, "Beta").Collection
 	a.openTransferPicker(request.Of(alpha.Requests[0]), transfer.Copy)
-	a.picker.Step(1) // Alpha's own root: a copy may go to the current folder
-	for index, row := range a.picker.Rows() {
+	a.over.Picker().Step(1) // Alpha's own root: a copy may go to the current folder
+	for index, row := range a.over.Picker().Rows() {
 		if row.Folder == &beta.Folder {
-			a.picker.Select(index)
+			a.over.Picker().Select(index)
 		}
 	}
 	a.Step(core.Input{Enter: true})
@@ -246,11 +246,11 @@ func TestEscapeClosesAQuestionOverThePickerBeforeThePicker(t *testing.T) {
 	a.openTransferPicker(request.Of(alpha.Requests[0]), transfer.Move)
 	a.confirm("Sure?", "", "Yes", func() {})
 	a.Step(core.Input{Escape: true})
-	if a.dialog != nil || a.picker == nil {
-		t.Fatalf("dialog %v picker %v after the first Escape", a.dialog != nil, a.picker != nil)
+	if a.over.Dialog() != nil || a.over.Picker() == nil {
+		t.Fatalf("dialog %v picker %v after the first Escape", a.over.Dialog() != nil, a.over.Picker() != nil)
 	}
 	a.Step(core.Input{Escape: true})
-	if a.picker != nil {
+	if a.over.Picker() != nil {
 		t.Fatal("the second Escape left the picker open")
 	}
 }
@@ -260,7 +260,7 @@ func TestThePickerDoesNotOpenForACollectionRoot(t *testing.T) {
 	alpha := entryNamed(t, a, "Alpha").Collection
 	a.openTransferPicker(request.Of(&alpha.Folder), transfer.Move)
 	a.openTransferPicker(request.Node{}, transfer.Move)
-	if a.picker != nil {
+	if a.over.Picker() != nil {
 		t.Fatal("a root or nothing cannot be moved")
 	}
 }
@@ -306,12 +306,12 @@ func TestPickingMoveToFromTheMenuOpensTheMovePicker(t *testing.T) {
 				item.Run()
 			}
 		}
-		if a.picker == nil {
+		if a.over.Picker() == nil {
 			t.Fatalf("%s opened no picker", test.label)
 		}
-		for index, each := range a.picker.Rows() {
+		for index, each := range a.over.Picker().Rows() {
 			if each.Folder == &beta.Folder {
-				a.picker.Select(index)
+				a.over.Picker().Select(index)
 			}
 		}
 		a.Step(core.Input{Enter: true})
@@ -331,9 +331,9 @@ func TestAPickForANodeDeletedWhileThePickerWasOpenSaysSo(t *testing.T) {
 	req := alpha.Requests[0]
 	a.openTransferPicker(request.Of(req), transfer.Move)
 	alpha.Delete(request.Of(req))
-	a.picker.Select(len(a.picker.Rows()) - 1)
+	a.over.Picker().Select(len(a.over.Picker().Rows()) - 1)
 	a.Step(core.Input{Enter: true})
-	if len(a.toasts.Stack()) == 0 || a.toasts.Stack()[len(a.toasts.Stack())-1].Kind != widget.ToastError || beta.Contains(request.Of(req)) {
+	if len(a.over.Toasts.Stack()) == 0 || a.over.Toasts.Stack()[len(a.over.Toasts.Stack())-1].Kind != widget.ToastError || beta.Contains(request.Of(req)) {
 		t.Fatalf("toasts %q, in Beta %v", toastTexts(a), beta.Contains(request.Of(req)))
 	}
 }
@@ -346,7 +346,7 @@ func TestPickerKeysAreIgnoredWhileAPromptIsOpen(t *testing.T) {
 	a.openTransferPicker(request.Of(alpha.Requests[0]), transfer.Move)
 	a.prompt("Name", "x", "OK", func(string) {})
 	a.Step(core.Input{Enter: true, Keys: []ebiten.Key{ebiten.KeyEnter}})
-	if a.picker == nil {
+	if a.over.Picker() == nil {
 		t.Fatal("Enter under a prompt reached the picker")
 	}
 }

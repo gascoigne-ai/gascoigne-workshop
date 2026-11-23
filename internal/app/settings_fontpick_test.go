@@ -42,16 +42,16 @@ func monoCode(app *App) bool {
 
 func TestPickingAnInterfaceFontChangesTheFacesAndIsSaved(t *testing.T) {
 	a := testApp(t)
-	a.prefs.Form.Families = testFamilies(t)
+	a.over.Settings.Form.Families = testFamilies(t)
 
-	a.prefs.Form.SetFont(a.prefs, form.FontUI, "go mono")
+	a.over.Settings.Form.SetFont(a.over.Settings, form.FontUI, "go mono")
 	if !monoUI(a) || a.settings.UIFont != "Go Mono" {
 		t.Fatalf("mono ui = %v, setting %q", monoUI(a), a.settings.UIFont)
 	}
 	if !monoCode(a) {
 		t.Fatal("the code face changed with the interface font")
 	}
-	a.prefs.Form.SetFont(a.prefs, form.FontUI, "")
+	a.over.Settings.Form.SetFont(a.over.Settings, form.FontUI, "")
 	if monoUI(a) || a.settings.UIFont != "" {
 		t.Fatal("an empty name should restore the built-in font")
 	}
@@ -59,8 +59,8 @@ func TestPickingAnInterfaceFontChangesTheFacesAndIsSaved(t *testing.T) {
 
 func TestPickingACodeFontOnlyChangesTheCodeFace(t *testing.T) {
 	a := testApp(t)
-	a.prefs.Form.Families = testFamilies(t)
-	a.prefs.Form.SetFont(a.prefs, form.FontCode, "Go")
+	a.over.Settings.Form.Families = testFamilies(t)
+	a.over.Settings.Form.SetFont(a.over.Settings, form.FontCode, "Go")
 	if monoCode(a) || a.settings.CodeFont != "Go" {
 		t.Fatalf("code face mono = %v, setting %q", monoCode(a), a.settings.CodeFont)
 	}
@@ -72,7 +72,7 @@ func TestPickingACodeFontOnlyChangesTheCodeFace(t *testing.T) {
 func TestSavedFontsApplyOnceTheScanFinishes(t *testing.T) {
 	a := testApp(t)
 	a.settings.UIFont, a.settings.CodeFont = "Go Mono", "Go"
-	a.prefs.Form.FontsScanned(a.prefs, testFamilies(t))
+	a.over.Settings.Form.FontsScanned(a.over.Settings, testFamilies(t))
 	if !monoUI(a) || monoCode(a) {
 		t.Fatalf("mono ui %v mono code %v after the scan", monoUI(a), monoCode(a))
 	}
@@ -81,7 +81,7 @@ func TestSavedFontsApplyOnceTheScanFinishes(t *testing.T) {
 func TestASavedFontThatIsGoneFallsBackToTheBuiltInOne(t *testing.T) {
 	a := testApp(t)
 	a.settings.UIFont = "Removed Font"
-	a.prefs.Form.FontsScanned(a.prefs, testFamilies(t))
+	a.over.Settings.Form.FontsScanned(a.over.Settings, testFamilies(t))
 	if monoUI(a) {
 		t.Fatal("the interface font is not the built-in one")
 	}
@@ -92,9 +92,9 @@ func TestASavedFontThatIsGoneFallsBackToTheBuiltInOne(t *testing.T) {
 
 func TestTheAppearancePageHasFontControlsShowingTheCurrentFamily(t *testing.T) {
 	a := testApp(t)
-	a.prefs.Form.Families = testFamilies(t)
+	a.over.Settings.Form.Families = testFamilies(t)
 	a.settings.UIFont = "Go Mono"
-	dump := Dump(a.prefs.Form.View(a.ctx, a.prefs, "Appearance", ""))
+	dump := Dump(a.over.Settings.Form.View(a.ctx, a.over.Settings, "Appearance", ""))
 	for _, want := range []string{"Interface font", "Code font", `text="Go Mono"`} {
 		if !strings.Contains(dump, want) {
 			t.Errorf("appearance page lacks %q", want)
@@ -107,33 +107,33 @@ func TestTheAppearancePageHasFontControlsShowingTheCurrentFamily(t *testing.T) {
 // open state; Escape closes the list first, then the dialog.
 func TestEscapeClosesTheFontListBeforeTheDialog(t *testing.T) {
 	a, _ := openSettingsPage(t, "appearance")
-	a.prefs.Form.Families = testFamilies(t)
-	a.prefs.Form.OpenFontList(a.ctx, a.prefs, form.FontUI)
+	a.over.Settings.Form.Families = testFamilies(t)
+	a.over.Settings.Form.OpenFontList(a.ctx, a.over.Settings, form.FontUI)
 	a.Step(core.Input{X: 5000, Y: 5000, Escape: true})
-	if a.prefs.Form.FontListOpen() || !a.prefs.Open() {
-		t.Fatalf("after the first Escape: list open %v, dialog open %v; want the list closed and the dialog open", a.prefs.Form.FontListOpen(), a.prefs.Open())
+	if a.over.Settings.Form.FontListOpen() || !a.over.Settings.Open() {
+		t.Fatalf("after the first Escape: list open %v, dialog open %v; want the list closed and the dialog open", a.over.Settings.Form.FontListOpen(), a.over.Settings.Open())
 	}
 	a.Step(core.Input{X: 5000, Y: 5000, Escape: true})
-	if a.prefs.Open() {
+	if a.over.Settings.Open() {
 		t.Fatal("the second Escape should close the dialog")
 	}
 }
 
 func TestReopeningTheSettingsStartsWithTheFontListClosedAndWorking(t *testing.T) {
 	a, _ := openSettingsPage(t, "appearance")
-	a.prefs.Form.Families = testFamilies(t)
-	a.prefs.Form.OpenFontList(a.ctx, a.prefs, form.FontUI)
-	a.prefs.Close() // the dialog's own close button
-	if a.prefs.Form.FontListOpen() {
+	a.over.Settings.Form.Families = testFamilies(t)
+	a.over.Settings.Form.OpenFontList(a.ctx, a.over.Settings, form.FontUI)
+	a.over.Settings.Close() // the dialog's own close button
+	if a.over.Settings.Form.FontListOpen() {
 		t.Fatal("the list stayed open behind a closed dialog")
 	}
-	a.prefs.Show()
+	a.over.Settings.Show()
 	a.Step(core.Input{X: 5000, Y: 5000})
-	if a.prefs.Form.FontListOpen() {
+	if a.over.Settings.Form.FontListOpen() {
 		t.Fatal("the reopened dialog shows the old list")
 	}
-	a.prefs.Form.OpenFontList(a.ctx, a.prefs, form.FontUI)
-	if !a.prefs.Form.FontListOpen() {
+	a.over.Settings.Form.OpenFontList(a.ctx, a.over.Settings, form.FontUI)
+	if !a.over.Settings.Form.FontListOpen() {
 		t.Fatal("the list cannot be opened again")
 	}
 }
@@ -142,13 +142,13 @@ func TestReopeningTheSettingsStartsWithTheFontListClosedAndWorking(t *testing.T)
 // next click reaches the dialog.
 func TestAClickOutsideTheFontListClosesOnlyTheList(t *testing.T) {
 	a, _ := openSettingsPage(t, "appearance")
-	a.prefs.Form.OpenFontList(a.ctx, a.prefs, form.FontUI)
+	a.over.Settings.Form.OpenFontList(a.ctx, a.over.Settings, form.FontUI)
 	click(a, menuBtnX, menuBtnY)
-	if !a.prefs.Open() || a.prefs.Form.FontListOpen() {
-		t.Fatalf("dialog open %v, list open %v; want the list closed and the dialog open", a.prefs.Open(), a.prefs.Form.FontListOpen())
+	if !a.over.Settings.Open() || a.over.Settings.Form.FontListOpen() {
+		t.Fatalf("dialog open %v, list open %v; want the list closed and the dialog open", a.over.Settings.Open(), a.over.Settings.Form.FontListOpen())
 	}
 	click(a, menuBtnX, menuBtnY)
-	if a.prefs.Open() {
+	if a.over.Settings.Open() {
 		t.Fatal("the next click on the button should close the dialog")
 	}
 }

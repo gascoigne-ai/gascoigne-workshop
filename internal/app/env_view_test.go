@@ -235,20 +235,20 @@ func TestTheChipsMenuRowsOpenTheirDialogs(t *testing.T) {
 			a.selectEnv(0)
 			clickText(t, a, "Dev", 0)
 			clickText(t, a, tc.row, 0)
-			if a.dialog == nil {
+			if a.over.Dialog() == nil {
 				t.Fatalf("%s opened no dialog", tc.row)
 			}
-			if a.dialog.Title != tc.title {
-				t.Errorf("title %q, want %q", a.dialog.Title, tc.title)
+			if a.over.Dialog().Title != tc.title {
+				t.Errorf("title %q, want %q", a.over.Dialog().Title, tc.title)
 			}
-			if (a.dialog.Input != nil) != tc.hasInput {
-				t.Fatalf("input %v, want one: %v", a.dialog.Input, tc.hasInput)
+			if (a.over.Dialog().Input != nil) != tc.hasInput {
+				t.Fatalf("input %v, want one: %v", a.over.Dialog().Input, tc.hasInput)
 			}
-			if tc.hasInput && a.dialog.Input.Text != tc.input {
-				t.Errorf("input %q, want %q", a.dialog.Input.Text, tc.input)
+			if tc.hasInput && a.over.Dialog().Input.Text != tc.input {
+				t.Errorf("input %q, want %q", a.over.Dialog().Input.Text, tc.input)
 			}
-			if a.dialog.Body != tc.bodyNames {
-				t.Errorf("body %q, want %q", a.dialog.Body, tc.bodyNames)
+			if a.over.Dialog().Body != tc.bodyNames {
+				t.Errorf("body %q, want %q", a.over.Dialog().Body, tc.bodyNames)
 			}
 		})
 	}

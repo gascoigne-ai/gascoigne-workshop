@@ -18,13 +18,13 @@ func TestMenuClosesOnEscapeAndOnOutsideClick(t *testing.T) {
 	a := testApp(t)
 	click(a, menuBtnX, menuBtnY)
 	a.Step(core.Input{Escape: true})
-	if a.prefs.Open() {
+	if a.over.Settings.Open() {
 		t.Fatal("Escape must close the menu")
 	}
 
 	click(a, menuBtnX, menuBtnY)
 	click(a, 100, treeRowY(4)) // outside the menu, on a request row
-	if a.prefs.Open() {
+	if a.over.Settings.Open() {
 		t.Fatal("an outside click must close the menu")
 	}
 	if len(a.tabs.Tabs()) != 1 {
@@ -33,7 +33,7 @@ func TestMenuClosesOnEscapeAndOnOutsideClick(t *testing.T) {
 
 	click(a, menuBtnX, menuBtnY)
 	click(a, menuBtnX, menuBtnY) // the button again toggles it shut
-	if a.prefs.Open() {
+	if a.over.Settings.Open() {
 		t.Fatal("the button must toggle the menu")
 	}
 }
@@ -115,10 +115,10 @@ func TestMenuKeyboardNavigationSkipsSeparatorsAndDisabledRows(t *testing.T) {
 
 func TestEscapeClosesTheMenuFirst(t *testing.T) {
 	a, r := openTestMenu(t)
-	a.prefs.Show() // the settings menu is open too
+	a.over.Settings.Show() // the settings menu is open too
 	a.Step(core.Input{Escape: true})
-	if widget.PopupMenu(a.ctx) != nil || !a.prefs.Open() || len(r.log) != 0 {
-		t.Fatalf("context menu open %v, settings menu open %v: Escape closes the top one only", widget.PopupMenu(a.ctx) != nil, a.prefs.Open())
+	if widget.PopupMenu(a.ctx) != nil || !a.over.Settings.Open() || len(r.log) != 0 {
+		t.Fatalf("context menu open %v, settings menu open %v: Escape closes the top one only", widget.PopupMenu(a.ctx) != nil, a.over.Settings.Open())
 	}
 }
 
@@ -160,12 +160,12 @@ func TestConfirmRunsOnEnterAndOnTheButton(t *testing.T) {
 		var ok int
 		a.confirm("Delete request?", "This cannot be undone.", "Delete", func() { ok++ })
 		a.Step(core.Input{})
-		if a.dialog == nil {
+		if a.over.Dialog() == nil {
 			t.Fatalf("%s: no dialog", name)
 		}
 		act(a)
-		if ok != 1 || a.dialog != nil {
-			t.Fatalf("%s: onOK ran %d times, dialog open %v", name, ok, a.dialog != nil)
+		if ok != 1 || a.over.Dialog() != nil {
+			t.Fatalf("%s: onOK ran %d times, dialog open %v", name, ok, a.over.Dialog() != nil)
 		}
 	}
 }
@@ -181,8 +181,8 @@ func TestConfirmCancelsOnEscapeCancelButtonAndOutsideClick(t *testing.T) {
 		a.confirm("Delete request?", "This cannot be undone.", "Delete", func() { ok++ })
 		a.Step(core.Input{})
 		act(a)
-		if ok != 0 || a.dialog != nil {
-			t.Fatalf("%s: onOK ran %d times, dialog open %v", name, ok, a.dialog != nil)
+		if ok != 0 || a.over.Dialog() != nil {
+			t.Fatalf("%s: onOK ran %d times, dialog open %v", name, ok, a.over.Dialog() != nil)
 		}
 	}
 }
@@ -192,13 +192,13 @@ func TestPromptReturnsTheTypedText(t *testing.T) {
 	var got string
 	a.prompt("Rename", "Old name", "Rename", func(text string) { got = text })
 	a.Step(core.Input{})
-	if a.dialog == nil || !a.dialog.Input.Focused || a.dialog.Input.SelectedText() != "Old name" {
-		t.Fatalf("the field starts focused with its text selected: %+v", a.dialog)
+	if a.over.Dialog() == nil || !a.over.Dialog().Input.Focused || a.over.Dialog().Input.SelectedText() != "Old name" {
+		t.Fatalf("the field starts focused with its text selected: %+v", a.over.Dialog())
 	}
 	a.typeText("New name")
 	a.Step(core.Input{Enter: true})
-	if got != "New name" || a.dialog != nil {
-		t.Fatalf("got %q, dialog open %v", got, a.dialog != nil)
+	if got != "New name" || a.over.Dialog() != nil {
+		t.Fatalf("got %q, dialog open %v", got, a.over.Dialog() != nil)
 	}
 }
 
@@ -207,7 +207,7 @@ func TestDialogTrapsFocusAndBlocksShortcuts(t *testing.T) {
 	a.prompt("Rename", "x", "Rename", func(string) {})
 	a.Step(core.Input{})
 	a.Step(core.Input{Tab: true})
-	if !a.dialog.Input.Focused || a.urlbar.Field(a.cur().Tab).Focused {
+	if !a.over.Dialog().Input.Focused || a.urlbar.Field(a.cur().Tab).Focused {
 		t.Fatal("Tab must stay inside the dialog")
 	}
 	a.Step(combo(ebiten.KeyT, true, false, false))
@@ -230,28 +230,28 @@ func TestInfoToastsExpireAndErrorsStayUntilClicked(t *testing.T) {
 	a.toast("Saved", severity.Info)
 	a.toast("Disk full", severity.Error)
 	a.Step(core.Input{})
-	if len(a.toasts.Stack()) != 2 {
-		t.Fatalf("toasts = %d", len(a.toasts.Stack()))
+	if len(a.over.Toasts.Stack()) != 2 {
+		t.Fatalf("toasts = %d", len(a.over.Toasts.Stack()))
 	}
 
 	clock = clock.Add(2 * time.Second)
 	a.Step(core.Input{})
-	if len(a.toasts.Stack()) != 2 {
+	if len(a.over.Toasts.Stack()) != 2 {
 		t.Fatal("an info toast stays for a few seconds")
 	}
 	clock = clock.Add(2 * time.Second)
 	a.Step(core.Input{})
-	if len(a.toasts.Stack()) != 1 || a.toasts.Stack()[0].Kind != widget.ToastError {
-		t.Fatalf("after 4s only the error is left: %+v", a.toasts.Stack())
+	if len(a.over.Toasts.Stack()) != 1 || a.over.Toasts.Stack()[0].Kind != widget.ToastError {
+		t.Fatalf("after 4s only the error is left: %+v", a.over.Toasts.Stack())
 	}
 	clock = clock.Add(10 * time.Minute)
 	a.Step(core.Input{})
-	if len(a.toasts.Stack()) != 1 {
+	if len(a.over.Toasts.Stack()) != 1 {
 		t.Fatal("errors persist")
 	}
 	x, y, w, h := toastRect(1, 0)
 	click(a, x+w/2, y+h/2)
-	if len(a.toasts.Stack()) != 0 {
+	if len(a.over.Toasts.Stack()) != 0 {
 		t.Fatal("a click dismisses a toast")
 	}
 }
@@ -272,8 +272,8 @@ func TestClickingOneToastDismissesOnlyThatOne(t *testing.T) {
 	a.Step(core.Input{})
 	x, y, w, h := toastRect(2, 0)
 	click(a, x+w/2, y+h/2)
-	if len(a.toasts.Stack()) != 1 || a.toasts.Stack()[0].Text != "second" {
-		t.Fatalf("toasts = %+v", a.toasts.Stack())
+	if len(a.over.Toasts.Stack()) != 1 || a.over.Toasts.Stack()[0].Text != "second" {
+		t.Fatalf("toasts = %+v", a.over.Toasts.Stack())
 	}
 }
 
@@ -282,8 +282,8 @@ func TestOnlyTheNewestToastsAreKept(t *testing.T) {
 	for i := 0; i < 8; i++ {
 		a.toast(strings.Repeat("x", i+1), severity.Error)
 	}
-	if len(a.toasts.Stack()) != widget.ToastMax || len(a.toasts.Stack()[len(a.toasts.Stack())-1].Text) != 8 {
-		t.Fatalf("%d toasts, newest %q", len(a.toasts.Stack()), a.toasts.Stack()[len(a.toasts.Stack())-1].Text)
+	if len(a.over.Toasts.Stack()) != widget.ToastMax || len(a.over.Toasts.Stack()[len(a.over.Toasts.Stack())-1].Text) != 8 {
+		t.Fatalf("%d toasts, newest %q", len(a.over.Toasts.Stack()), a.over.Toasts.Stack()[len(a.over.Toasts.Stack())-1].Text)
 	}
 }
 
@@ -291,13 +291,13 @@ func TestClipboardFailureBecomesAnErrorToast(t *testing.T) {
 	a := testApp(t)
 	a.ctx.Clipboard = core.ReportClipboard(&fakeClip{err: errors.New("no clipboard tool found")}, a.clipboardNote)
 	a.ctx.Clipboard.Write("x")
-	if len(a.toasts.Stack()) != 1 || a.toasts.Stack()[0].Kind != widget.ToastError || !strings.Contains(a.toasts.Stack()[0].Text, "no clipboard tool") {
-		t.Fatalf("toasts = %+v", a.toasts.Stack())
+	if len(a.over.Toasts.Stack()) != 1 || a.over.Toasts.Stack()[0].Kind != widget.ToastError || !strings.Contains(a.over.Toasts.Stack()[0].Text, "no clipboard tool") {
+		t.Fatalf("toasts = %+v", a.over.Toasts.Stack())
 	}
 	a.ctx.Clipboard = core.ReportClipboard(&fakeClip{}, a.clipboardNote)
 	a.ctx.Clipboard.Write("hello")
-	if len(a.toasts.Stack()) != 1 || a.notices.Status() != "Copied 5 characters" {
-		t.Fatalf("a successful copy is a status line, not a toast: toasts %d status %q", len(a.toasts.Stack()), a.notices.Status())
+	if len(a.over.Toasts.Stack()) != 1 || a.notices.Status() != "Copied 5 characters" {
+		t.Fatalf("a successful copy is a status line, not a toast: toasts %d status %q", len(a.over.Toasts.Stack()), a.notices.Status())
 	}
 }
 

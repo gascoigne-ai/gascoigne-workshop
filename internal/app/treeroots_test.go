@@ -53,7 +53,7 @@ func TestCtrlOOpensAnotherCollectionBesideTheOpenOne(t *testing.T) {
 	a, alphaDir, _ := twoCollectionsApp(t)
 	gammaDir := savedCollection(t, "Gamma")
 	a.Step(combo(ebiten.KeyO, true, false, false))
-	if a.dialog == nil {
+	if a.over.Dialog() == nil {
 		t.Fatal("no prompt for the folder")
 	}
 	a.typeText(gammaDir)
@@ -172,8 +172,8 @@ func TestClosingAnEditedUnsavedCollectionAsksFirst(t *testing.T) {
 	t.Cleanup(a.WaitWrites)
 	a.cur().Req.URL = "https://edited.test"
 	a.requestCloseCollection(a.col())
-	if a.dialog == nil || len(a.cols.Set().Entries) != 1 {
-		t.Fatalf("closed without asking: dialog %v, open %d", a.dialog != nil, len(a.cols.Set().Entries))
+	if a.over.Dialog() == nil || len(a.cols.Set().Entries) != 1 {
+		t.Fatalf("closed without asking: dialog %v, open %d", a.over.Dialog() != nil, len(a.cols.Set().Entries))
 	}
 	a.Step(core.Input{Enter: true})
 	if len(a.cols.Set().Entries) != 0 {
@@ -184,8 +184,8 @@ func TestClosingAnEditedUnsavedCollectionAsksFirst(t *testing.T) {
 	beta := entryNamed(t, b, "Beta").Collection
 	b.cur().Req.URL = "https://beta.edited"
 	b.requestCloseCollection(beta)
-	if b.dialog != nil || len(b.cols.Set().Entries) != 1 {
-		t.Fatalf("a saved collection asked or stayed: dialog %v, open %d", b.dialog != nil, len(b.cols.Set().Entries))
+	if b.over.Dialog() != nil || len(b.cols.Set().Entries) != 1 {
+		t.Fatalf("a saved collection asked or stayed: dialog %v, open %d", b.over.Dialog() != nil, len(b.cols.Set().Entries))
 	}
 	b.WaitWrites()
 	if data, err := os.ReadFile(filepath.Join(betaDir, "beta-call.req.json")); err != nil || !strings.Contains(string(data), "beta.edited") {
@@ -207,13 +207,13 @@ func TestTheEmptyTreeOffersOpenAndNew(t *testing.T) {
 	}
 
 	clickText(t, a, "Open collection folder...", 0)
-	if a.dialog == nil || a.dialog.Title != "Open collection folder" {
-		t.Fatalf("dialog %+v", a.dialog)
+	if a.over.Dialog() == nil || a.over.Dialog().Title != "Open collection folder" {
+		t.Fatalf("dialog %+v", a.over.Dialog())
 	}
 	a.Step(core.Input{Escape: true})
 	clickText(t, a, "New collection...", 0)
-	if a.dialog == nil || a.dialog.Title != "New collection" {
-		t.Fatalf("dialog %+v", a.dialog)
+	if a.over.Dialog() == nil || a.over.Dialog().Title != "New collection" {
+		t.Fatalf("dialog %+v", a.over.Dialog())
 	}
 	a.typeText("Fresh")
 	a.Step(core.Input{Enter: true})

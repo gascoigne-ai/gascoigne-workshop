@@ -29,8 +29,8 @@ flowchart LR
 - `internal/app` is one package: Go cannot declare a method in another package, and everything
   that reads or writes the one `App` struct needs its methods. Adapters come in through `Options`.
 - A view that needs little of the `App` is its own `internal/ui` package behind a `Host` interface the
-  `App` implements, tested with a fake host: `response`, `response/calltrace`, `editor/kvtable`, `editor/urlbar`, `editor/ws`, `editor/graphql`, `editor/grpc`, `editor/mcp`, `editor/mcp/mcpform`, `sidebar/sentlog`, `overlays/settingsdialog` (a component with `New(Deps)`: the `App` answers its narrow `Deps`, the component is the `Host` of the shell and the pages)
-  with its pages `formpage`, `colorpage`, `shortcutpage`, `systempage`, and `overlays/destpicker`. `response/respview` and `appicon` are the other views moved so far. Adapters reach those views through the
+  `App` implements, tested with a fake host: `response`, `overlays/calltrace`, `editor/kvtable`, `editor/urlbar`, `editor/ws`, `editor/graphql`, `editor/grpc`, `editor/mcp`, `editor/mcp/mcpform`, `sidebar/sentlog`, `overlays/settingsdialog` (a component with `New(Deps)`: the `App` answers its narrow `Deps`, the component is the `Host` of the shell and the pages)
+  with its pages `formpage`, `colorpage`, `shortcutpage`, `systempage`, and `overlays/destpicker`; the `overlays` composite builds its children and is the host of `overlays/calltrace`. `response/respview` and `appicon` are the other views moved so far. Adapters reach those views through the
   host (`Host.SentStore`, `Host.FontStore`).
 
 ## Modules

@@ -90,7 +90,7 @@ func TestASavedBodyIsWrittenThroughTheFileSystemWithTildeAsHome(t *testing.T) {
 		t.Fatalf("written %q %v, want the body in the home folder", data, ok)
 	}
 	if !toastWith(a, "Saved 7B to out.json", false) {
-		t.Fatalf("toasts %+v", a.toasts.Stack())
+		t.Fatalf("toasts %+v", a.over.Toasts.Stack())
 	}
 }
 
@@ -135,7 +135,7 @@ func TestAPostmanExportIsWrittenThroughTheFileSystem(t *testing.T) {
 		t.Fatalf("%v %+v", err, res.Folder)
 	}
 	if !toastWith(a, "left out", false) { // the sample has WebSocket and MCP requests
-		t.Fatalf("toasts %+v", a.toasts.Stack())
+		t.Fatalf("toasts %+v", a.over.Toasts.Stack())
 	}
 }
 

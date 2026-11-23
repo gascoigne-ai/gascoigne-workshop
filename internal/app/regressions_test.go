@@ -187,8 +187,8 @@ func TestAStdioCommandAsksOnceBeforeItRuns(t *testing.T) {
 	tab.Req.Protocol, tab.Req.URL = "mcp", "stdio:/bin/true --flag"
 
 	a.connect(tab)
-	if a.dialog == nil || !strings.Contains(a.dialog.Body, "/bin/true --flag") {
-		t.Fatalf("no dialog naming the command: %+v", a.dialog)
+	if a.over.Dialog() == nil || !strings.Contains(a.over.Dialog().Body, "/bin/true --flag") {
+		t.Fatalf("no dialog naming the command: %+v", a.over.Dialog())
 	}
 	time.Sleep(50 * time.Millisecond)
 	if connects.Load() != 0 {
@@ -203,7 +203,7 @@ func TestAStdioCommandAsksOnceBeforeItRuns(t *testing.T) {
 		t.Fatalf("connects after Allow = %d, want 1", connects.Load())
 	}
 	a.connect(tab)
-	if a.dialog != nil {
+	if a.over.Dialog() != nil {
 		t.Fatal("an allowed command asked again")
 	}
 	if !slices.Contains(a.snapshot().Trusted, "command:/bin/true --flag") {
@@ -211,7 +211,7 @@ func TestAStdioCommandAsksOnceBeforeItRuns(t *testing.T) {
 	}
 	tab.Req.URL = "stdio:/bin/true --other"
 	a.connect(tab)
-	if a.dialog == nil {
+	if a.over.Dialog() == nil {
 		t.Fatal("a changed command must ask again")
 	}
 }
@@ -222,8 +222,8 @@ func TestAFileOutsideTheCollectionAsksBeforeItIsSent(t *testing.T) {
 	tab.Req.Method, tab.Req.URL = "POST", "http://127.0.0.1:1/x"
 	tab.Req.BodyType, tab.Req.Body = request.BodyFile, "/etc/hostname"
 	a.send(tab)
-	if a.dialog == nil || !strings.Contains(a.dialog.Body, "/etc/hostname") || a.sends.Sending(tab.Req) {
-		t.Fatalf("dialog %+v sending %v: want a question and no request", a.dialog, a.sends.Sending(tab.Req))
+	if a.over.Dialog() == nil || !strings.Contains(a.over.Dialog().Body, "/etc/hostname") || a.sends.Sending(tab.Req) {
+		t.Fatalf("dialog %+v sending %v: want a question and no request", a.over.Dialog(), a.sends.Sending(tab.Req))
 	}
 }
 

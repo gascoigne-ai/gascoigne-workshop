@@ -28,13 +28,9 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/mcp"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/urlbar"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/ws"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/destpicker"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/filebrowser"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/shortcutpage"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/toasts"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/welcome"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/response"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/response/calltrace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sidebar"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/statusbar"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/tabstrip"
@@ -79,17 +75,11 @@ type App struct {
 	notices    notice.Notices            // the status line under the window
 	bar        *statusbar.Component
 	side       *sidebar.Component
-	driver     Driver                 // what the end-to-end screenshots drive the window with
-	err        error                  // a failure that ends the run, reported by Err
-	browser    *filebrowser.Component // the way files are asked for: the desktop dialog or the in-app browser
-	toasts     *toasts.Component      // the messages in the window corner
-	welcome    *welcome.Component     // the release notes dialog
-	pickerHost destpicker.Host        // what the open picker asks of the App
-	picker     *destpicker.Picker     // the move or copy destination picker while it is open
-	calls      calltrace.Log          // the call trace behind the Log button
-	dialog     *dialog                // the open dialog, if any
-	varsTarget varsTarget             // what the Vars pane edits; the zero value is the active environment's or the collection's
-	jar        http.CookieJar         // cookies the server set, kept until the app closes
+	driver     Driver              // what the end-to-end screenshots drive the window with
+	err        error               // a failure that ends the run, reported by Err
+	over       *overlays.Component // everything that floats over the window: the dialog, menus, toasts, file browser, call trace and settings
+	varsTarget varsTarget          // what the Vars pane edits; the zero value is the active environment's or the collection's
+	jar        http.CookieJar      // cookies the server set, kept until the app closes
 }
 
 func (a *App) newRequest() { a.newRequestIn(a.selectedFolder()) }
@@ -114,7 +104,7 @@ func (a *App) commands() []keymap.Command {
 		},
 		a.side.Commands(),
 		a.resp.Commands(),
-		a.prefs.Commands(),
+		a.over.Settings.Commands(),
 	)
 }
 

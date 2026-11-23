@@ -50,8 +50,8 @@ func TestChooseAsksForTheFileAndSetsThePath(t *testing.T) {
 		t.Fatal(err)
 	}
 	click(a, fileChooseX, fileBodyRowY)
-	if !a.browser.Shown() || !strings.Contains(layoutDump(a), `"Choose the file to send"`) {
-		t.Fatalf("browser shown %v, want the file browser", a.browser.Shown())
+	if !a.over.Browser.Shown() || !strings.Contains(layoutDump(a), `"Choose the file to send"`) {
+		t.Fatalf("browser shown %v, want the file browser", a.over.Browser.Shown())
 	}
 	typePath(a, picked)
 	a.Step(core.Input{Enter: true})

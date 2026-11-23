@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/overlay"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/menus"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -66,7 +67,7 @@ func (a *App) beginFrame(in core.Input) bool {
 	a.strip.BeginFrame(in)
 	a.kv.BeginFrame(in)
 	drained := a.drain()
-	pruned := a.toasts.Prune()
+	pruned := a.over.Toasts.Prune()
 	active := engine.InputActive(a.lastIn, in)
 	a.noteGeometry()
 	if active || drained || pruned {
@@ -83,26 +84,52 @@ func (a *App) beginFrame(in core.Input) bool {
 // routeKeys hands the keys of the frame to the overlay, the tree, the
 // shortcuts or the table undo, in that order of claim.
 func (a *App) routeKeys(in core.Input) {
-	hadOverlay := a.overlayOpen()
-	wasRecording := a.prefs.Recording()
+	hadOverlay := a.over.HoldsKeyboard()
+	wasRecording := a.over.Settings.Recording()
 	menuWasOpen := menus.Shown(a.ctx)
-	a.overlayKeys(in)
+	a.over.Keys(a.ctx, in)
 	if menuWasOpen {
 		menus.Swallow(a.ctx)
 	}
-	if !hadOverlay && !a.overlayOpen() && !wasRecording {
+	if !hadOverlay && !a.over.HoldsKeyboard() && !wasRecording {
 		a.side.Keys(in, a.textFocused(), a.sidebarWidth())
 	}
-	textKeys := !a.overlayOpen() && (a.urlbar.Keys(in) || a.body.Keys(in) || a.resp.Keys(in))
-	if !a.prefs.Keys(in) && !a.overlayOpen() && !typedInText(textKeys, in) {
+	textKeys := !a.over.HoldsKeyboard() && (a.urlbar.Keys(in) || a.body.Keys(in) || a.resp.Keys(in))
+	if !a.over.Settings.Keys(in) && !a.over.HoldsKeyboard() && !typedInText(textKeys, in) {
 		a.runKeymap(in)
 	}
 	if in.Escape && !wasRecording { // one step per press: overlays, the settings menu, a cell edit, find, a running request
 		a.escape()
 	}
-	if !a.overlayOpen() && !textKeys {
+	if !a.over.HoldsKeyboard() && !textKeys {
 		a.kv.Keys(in, a.textFocused())
 	}
+}
+
+// openLayers are the things Escape can close right now: the overlays' own
+// and the window's.
+func (a *App) openLayers() overlay.Open {
+	open := a.over.Layers()
+	open[overlay.CellEdit] = a.kv.Editing()
+	open[overlay.FindBar] = a.resp.Look(a.cur().Tab).FindOpen
+	open[overlay.Request] = true // the last resort: cancel what is being sent
+	return open
+}
+
+// escape does one step of Escape: it closes the topmost open layer. The
+// overlays close their own; the table, the find bar and the request are the
+// window's.
+func (a *App) escape() {
+	layer, ok := a.openLayers().Top()
+	if !ok || a.over.Close(layer) {
+		return
+	}
+	closers := map[overlay.Layer]func(){
+		overlay.CellEdit: a.kv.CancelEdit,
+		overlay.FindBar:  func() { a.resp.CloseFind(a.cur().Tab) },
+		overlay.Request:  func() { a.cancelSend(a.cur()) },
+	}
+	closers[layer]()
 }
 
 // typedInText reports whether the URL field or the body took the frame's keys
@@ -136,7 +163,7 @@ func (a *App) endFrame(moved bool) {
 	a.treeStale = a.kv.Tick() || a.treeStale // a click elsewhere ends a cell edit, leaving the table applies its text
 	if a.ctx.Tick%settingsdialog.PollTicks == 0 {
 		a.treeStale = true // an outside change of settings.json replaces settings and the raw text
-		a.prefs.Poll()
+		a.over.Settings.Poll()
 	}
 	a.dragHover()
 	a.showGrab()

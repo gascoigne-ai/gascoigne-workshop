@@ -256,8 +256,8 @@ func TestExportPostmanWritesACollectionFileThatImportsBack(t *testing.T) {
 	a := testApp(t) // no dialog program: the in-app file browser asks
 	a.folders = folders.Disk{}
 	a.exportPostman(&a.col().Folder)
-	if !a.browser.Shown() || !strings.HasSuffix(a.browser.Path(), ".postman_collection.json") {
-		t.Fatalf("browser shown %v", a.browser.Shown())
+	if !a.over.Browser.Shown() || !strings.HasSuffix(a.over.Browser.Path(), ".postman_collection.json") {
+		t.Fatalf("browser shown %v", a.over.Browser.Shown())
 	}
 	path := filepath.Join(t.TempDir(), "out.json")
 	typePath(a, path)
@@ -272,7 +272,7 @@ func TestExportPostmanWritesACollectionFileThatImportsBack(t *testing.T) {
 		t.Fatalf("%v %+v", err, res.Folder)
 	}
 	found := false
-	for _, ts := range a.toasts.Stack() {
+	for _, ts := range a.over.Toasts.Stack() {
 		found = found || strings.Contains(ts.Text, "left out") // the sample has WebSocket and MCP requests
 	}
 	if !found {
@@ -325,10 +325,10 @@ func TestImportOpenAPIWarnsAboutDroppedPathItems(t *testing.T) {
 	a := testApp(t)
 	a.ctx.Clipboard = &fakeClip{text: `{"openapi":"3.0.0","info":{"title":"Odd"},"paths":{"/ok":{"get":{"summary":"List"}},"/bad":"nope"}}`}
 	a.importOpenAPI(&a.col().Folder)
-	for _, toast := range a.toasts.Stack() {
+	for _, toast := range a.over.Toasts.Stack() {
 		if strings.Contains(toast.Text, "/bad") {
 			return
 		}
 	}
-	t.Fatalf("no toast names the dropped path; toasts %+v", a.toasts.Stack())
+	t.Fatalf("no toast names the dropped path; toasts %+v", a.over.Toasts.Stack())
 }

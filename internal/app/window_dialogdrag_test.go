@@ -56,7 +56,7 @@ func TestResizingTheSettingsDialogKeepsItOpenAndVisible(t *testing.T) {
 	for _, g := range grabs {
 		t.Run(g.name, func(t *testing.T) {
 			a := testApp(t)
-			a.prefs.Show()
+			a.over.Settings.Show()
 			a.Step(core.Input{X: 5000, Y: 5000})
 			r := settingsRect(t, a)
 			x, y := g.x(r), g.y(r)
@@ -65,7 +65,7 @@ func TestResizingTheSettingsDialogKeepsItOpenAndVisible(t *testing.T) {
 				a.Step(core.Input{X: x + g.dx*i/8, Y: y + g.dy*i/8, Held: true})
 			}
 			a.Step(core.Input{X: x + g.dx, Y: y + g.dy})
-			if !a.prefs.Open() {
+			if !a.over.Settings.Open() {
 				t.Fatal("the settings dialog closed")
 			}
 			after := settingsRect(t, a)

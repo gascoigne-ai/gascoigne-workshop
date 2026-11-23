@@ -16,8 +16,8 @@ func TestTheResponseHostAsksForTheFileToSaveInTheFileBrowser(t *testing.T) {
 	a := testApp(t)
 	var answer string
 	responseHost{a}.PickSave("Save response body", "response.txt", func(path string) { answer = path })
-	if dump := layoutDump(a); !strings.HasSuffix(a.browser.Path(), "response.txt") || !strings.Contains(dump, `"Save response body"`) {
-		t.Fatalf("the file browser did not open with the name %q:\n%s", a.browser.Path(), dump)
+	if dump := layoutDump(a); !strings.HasSuffix(a.over.Browser.Path(), "response.txt") || !strings.Contains(dump, `"Save response body"`) {
+		t.Fatalf("the file browser did not open with the name %q:\n%s", a.over.Browser.Path(), dump)
 	}
 	a.folders = newFakeFolders()
 	typePath(a, "/out/x")

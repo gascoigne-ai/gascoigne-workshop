@@ -13,15 +13,15 @@ import (
 
 func TestWelcomeOpensTheFirstTimeAVersionRuns(t *testing.T) {
 	a := testApp(t, untouchedSettings(), withOptions(Options{StatePath: filepath.Join(t.TempDir(), "state.json"), Welcome: true}))
-	if a.dialog == nil || !strings.Contains(a.dialog.Title, "0.1.0 alpha") {
-		t.Fatalf("dialog = %+v, want the welcome dialog of 0.1.0 alpha", a.dialog)
+	if a.over.Dialog() == nil || !strings.Contains(a.over.Dialog().Title, "0.1.0 alpha") {
+		t.Fatalf("dialog = %+v, want the welcome dialog of 0.1.0 alpha", a.over.Dialog())
 	}
 }
 
 func TestWelcomeStaysClosedWhenNotAskedFor(t *testing.T) {
 	a := testApp(t)
-	if a.dialog != nil {
-		t.Fatalf("dialog = %+v, want none", a.dialog)
+	if a.over.Dialog() != nil {
+		t.Fatalf("dialog = %+v, want none", a.over.Dialog())
 	}
 }
 
@@ -29,15 +29,15 @@ func TestWelcomeIsRememberedOnceClosed(t *testing.T) {
 	statePath := filepath.Join(t.TempDir(), "state.json")
 	a := testApp(t, untouchedSettings(), withOptions(Options{StatePath: statePath, Welcome: true}))
 	a.Step(core.Input{Escape: true})
-	if a.dialog != nil {
+	if a.over.Dialog() != nil {
 		t.Fatal("Escape left the welcome dialog open")
 	}
 	if err := a.SaveState(); err != nil {
 		t.Fatal(err)
 	}
 	again := testApp(t, untouchedSettings(), withOptions(Options{StatePath: statePath, Welcome: true}))
-	if again.dialog != nil {
-		t.Fatalf("welcome shown again for the same version: %+v", again.dialog)
+	if again.over.Dialog() != nil {
+		t.Fatalf("welcome shown again for the same version: %+v", again.over.Dialog())
 	}
 }
 
@@ -47,7 +47,7 @@ func TestWelcomeShowsAgainForANewVersion(t *testing.T) {
 		t.Fatal(err)
 	}
 	a := testApp(t, untouchedSettings(), withOptions(Options{StatePath: statePath, Welcome: true}))
-	if a.dialog == nil {
+	if a.over.Dialog() == nil {
 		t.Fatal("welcome stayed closed for a version that was not welcomed yet")
 	}
 }
@@ -55,8 +55,8 @@ func TestWelcomeShowsAgainForANewVersion(t *testing.T) {
 func TestClickingTheVersionOpensWelcome(t *testing.T) {
 	a := testApp(t)
 	click(a, a.w-30, a.h-sizes.StatusH/2)
-	if a.dialog == nil || !strings.Contains(a.dialog.Title, "0.1.0 alpha") {
-		t.Fatalf("dialog = %+v, want the welcome dialog", a.dialog)
+	if a.over.Dialog() == nil || !strings.Contains(a.over.Dialog().Title, "0.1.0 alpha") {
+		t.Fatalf("dialog = %+v, want the welcome dialog", a.over.Dialog())
 	}
 }
 
@@ -67,10 +67,10 @@ func TestWelcomeEveryOpensEvenWhenSeen(t *testing.T) {
 	if err := (statefile.Files{}).Save(statePath, state.State{Welcomed: version}); err != nil {
 		t.Fatal(err)
 	}
-	if a := testApp(t, untouchedSettings(), withOptions(Options{StatePath: statePath, Welcome: true})); a.dialog != nil {
+	if a := testApp(t, untouchedSettings(), withOptions(Options{StatePath: statePath, Welcome: true})); a.over.Dialog() != nil {
 		t.Fatal("welcome opened for a version already seen")
 	}
-	if a := testApp(t, untouchedSettings(), withOptions(Options{StatePath: statePath, Welcome: true, WelcomeEvery: true})); a.dialog == nil {
+	if a := testApp(t, untouchedSettings(), withOptions(Options{StatePath: statePath, Welcome: true, WelcomeEvery: true})); a.over.Dialog() == nil {
 		t.Fatal("WelcomeEvery left the dialog closed")
 	}
 }

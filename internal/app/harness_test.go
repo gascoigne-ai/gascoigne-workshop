@@ -259,7 +259,7 @@ func clickDumped(t *testing.T, app *App, needle string, nth int) {
 // toastsWith are the toasts on the screen whose text contains part.
 func toastsWith(app *App, part string) []widget.Toast {
 	var found []widget.Toast
-	for _, toast := range app.toasts.Stack() {
+	for _, toast := range app.over.Toasts.Stack() {
 		if strings.Contains(toast.Text, part) {
 			found = append(found, toast)
 		}
@@ -294,7 +294,7 @@ func errorToasts(app *App, part string) []string {
 // toastTexts is the text of every toast on the screen, one per line.
 func toastTexts(app *App) string {
 	var texts []string
-	for _, toast := range app.toasts.Stack() {
+	for _, toast := range app.over.Toasts.Stack() {
 		texts = append(texts, toast.Text)
 	}
 	return strings.Join(texts, "\n")
@@ -685,7 +685,7 @@ const ()
 // openSettingsPage opens the settings dialog on the page with the given id.
 func openSettingsPage(t *testing.T, id string) (*App, string) {
 	a, path := openSettingsMenu(t)
-	a.prefs.Shell.Cat = id
+	a.over.Settings.Shell.Cat = id
 	a.Step(core.Input{})
 	return a, path
 }
@@ -694,7 +694,7 @@ func openSettingsMenu(t *testing.T) (*App, string) {
 	a := testApp(t, withSettings(defaultLayout))
 	path := a.SettingsPath()
 	click(a, menuBtnX, menuBtnY)
-	if !a.prefs.Open() {
+	if !a.over.Settings.Open() {
 		t.Fatal("test setup")
 	}
 	return a, path

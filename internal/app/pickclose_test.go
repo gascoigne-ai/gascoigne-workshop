@@ -15,12 +15,12 @@ func TestClosingTheSettingsClosesAFileBrowserOpenedFromThem(t *testing.T) {
 	a, _ := openSettingsMenu(t)
 	a.files = fakeDialog{} // unavailable: the in-app file browser is used
 	picked := ""
-	a.prefs.Send(prefs.PickFile{Title: "Choose CA certificates", Done: func(path string) { picked = path }})
-	if !a.browser.Shown() {
+	a.over.Settings.Send(prefs.PickFile{Title: "Choose CA certificates", Done: func(path string) { picked = path }})
+	if !a.over.Browser.Shown() {
 		t.Fatal("no file browser")
 	}
-	a.prefs.Close()
-	if a.browser.Shown() {
+	a.over.Settings.Close()
+	if a.over.Browser.Shown() {
 		t.Fatal("the file browser stayed open after the settings closed")
 	}
 	if picked != "" {
@@ -37,8 +37,8 @@ func TestClosingTheSettingsCancelsTheNativeFileDialogAndIgnoresItsAnswer(t *test
 		return "", ctx.Err()
 	}}
 	called := false
-	a.prefs.Send(prefs.PickFile{Title: "Choose", Done: func(string) { called = true }})
-	a.prefs.Close()
+	a.over.Settings.Send(prefs.PickFile{Title: "Choose", Done: func(string) { called = true }})
+	a.over.Settings.Close()
 	select {
 	case <-finished:
 	case <-time.After(2 * time.Second):
@@ -46,8 +46,8 @@ func TestClosingTheSettingsCancelsTheNativeFileDialogAndIgnoresItsAnswer(t *test
 	}
 	time.Sleep(20 * time.Millisecond)
 	a.drain()
-	if called || len(a.toasts.Stack()) != 0 {
-		t.Fatalf("a cancelled dialog applied a path (%v) or complained: %+v", called, a.toasts.Stack())
+	if called || len(a.over.Toasts.Stack()) != 0 {
+		t.Fatalf("a cancelled dialog applied a path (%v) or complained: %+v", called, a.over.Toasts.Stack())
 	}
 }
 
@@ -55,8 +55,8 @@ func TestAFileDialogOpenedElsewhereSurvivesTheSettingsClosing(t *testing.T) {
 	a, _ := openSettingsMenu(t)
 	a.files = fakeDialog{}
 	a.pickFile("Choose the file to send", filedialog.OpenFile, "", func(string) {}) // the request body's, not the settings'
-	a.prefs.Close()
-	if !a.browser.Shown() {
+	a.over.Settings.Close()
+	if !a.over.Browser.Shown() {
 		t.Fatal("closing the settings closed a file browser that is not theirs")
 	}
 }
@@ -67,10 +67,10 @@ func TestTakingBackAQuestionLeavesALaterBrowserOpen(t *testing.T) {
 	a, _ := openSettingsMenu(t)
 	a.files = fakeDialog{}
 	cancel := a.pickFile("First", filedialog.OpenFile, "", func(string) {})
-	a.browser.Close()
+	a.over.Browser.Close()
 	a.pickFile("Second", filedialog.OpenFile, "", func(string) {})
 	cancel()
-	if !a.browser.Shown() || !strings.Contains(layoutDump(a), `"Second"`) {
+	if !a.over.Browser.Shown() || !strings.Contains(layoutDump(a), `"Second"`) {
 		t.Fatal("taking back the first question closed the second browser")
 	}
 }

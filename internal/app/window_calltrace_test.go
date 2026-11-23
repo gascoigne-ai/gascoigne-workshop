@@ -10,7 +10,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
-func traceText(app *App) string { return strings.Join(app.calls.Lines(), "\n") }
+func traceText(app *App) string { return strings.Join(app.over.Calls().Lines(), "\n") }
 
 func TestASendIsTracedWithItsOutcome(t *testing.T) {
 	a := testApp(t)
@@ -36,7 +36,7 @@ func TestAFailedSendIsTracedAsAnError(t *testing.T) {
 	waitForResponse(t, a, tab)
 
 	var errors int
-	for _, entry := range a.calls.Entries() {
+	for _, entry := range a.over.Calls().Entries() {
 		if entry.Level == severity.Error {
 			errors++
 		}
@@ -59,29 +59,29 @@ func TestConnectionEventsAreTraced(t *testing.T) {
 
 func TestTheStatusBarLogButtonOpensTheTraceView(t *testing.T) {
 	a := testApp(t)
-	a.calls.Info(a.now(), "→ GET https://one.test")
+	a.over.Calls().Info(a.now(), "→ GET https://one.test")
 	if dump := view.Dump(a.statusBar()); !strings.Contains(dump, `"Log"`) {
 		t.Fatalf("no Log button in the status bar:\n%s", dump)
 	}
-	if a.calls.View(a.ctx, a) != nil {
+	if a.over.Calls().View(a.ctx, a) != nil {
 		t.Fatal("the trace view is shown while closed")
 	}
-	a.calls.Open()
+	a.over.Calls().Open()
 	a.Step(core.Input{X: 5000, Y: 5000})
-	if dump := view.Dump(a.calls.View(a.ctx, a)); !strings.Contains(dump, "Log") {
+	if dump := view.Dump(a.over.Calls().View(a.ctx, a)); !strings.Contains(dump, "Log") {
 		t.Fatalf("trace view:\n%s", dump)
 	}
-	a.calls.Close()
-	if a.calls.View(a.ctx, a) != nil {
+	a.over.Calls().Close()
+	if a.over.Calls().View(a.ctx, a) != nil {
 		t.Fatal("the trace view stayed after close")
 	}
 }
 
 func TestEscapeClosesTheTraceView(t *testing.T) {
 	a := testApp(t)
-	a.calls.Open()
+	a.over.Calls().Open()
 	a.Step(core.Input{X: 5000, Y: 5000, Escape: true})
-	if a.calls.Shown() {
+	if a.over.Calls().Shown() {
 		t.Fatal("Escape left the trace view open")
 	}
 }

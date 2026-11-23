@@ -27,7 +27,7 @@ func clickText(t *testing.T, app *App, text string, nth int) {
 	clickDumped(t, app, fmt.Sprintf("text=%q", text), nth)
 }
 
-func settingsText(app *App) string { return view.Dump(app.prefs.View(app.ctx)) }
+func settingsText(app *App) string { return view.Dump(app.over.Settings.View(app.ctx)) }
 
 func TestTheSettingsFormShowsATitleADescriptionAndAControlPerSetting(t *testing.T) {
 	a, _ := openSettingsPage(t, "appearance")
@@ -68,7 +68,7 @@ func TestSearchFiltersSettingsAcrossCategories(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.query, func(t *testing.T) {
 			a, _ := openSettingsPage(t, "appearance")
-			a.prefs.Shell.Search = widget.NewTextField(test.query)
+			a.over.Settings.Shell.Search = widget.NewTextField(test.query)
 			dump := settingsText(a)
 			for _, want := range test.want {
 				if !strings.Contains(dump, want) {
@@ -86,7 +86,7 @@ func TestSearchFiltersSettingsAcrossCategories(t *testing.T) {
 
 func TestAChangedSettingIsMarkedAndResetRemovesItFromTheFile(t *testing.T) {
 	a, path := openSettingsPage(t, "appearance")
-	a.prefs.Shell.Search = widget.NewTextField("request and response") // brings the setting to the top of the page
+	a.over.Settings.Shell.Search = widget.NewTextField("request and response") // brings the setting to the top of the page
 	clickText(t, a, "Side by side", 0)
 	if a.settings.Layout != "side" {
 		t.Fatalf("Layout = %q", a.settings.Layout)
@@ -111,9 +111,9 @@ func TestAChangedSettingIsMarkedAndResetRemovesItFromTheFile(t *testing.T) {
 
 func TestTextSettingsApplyAsTheyAreTyped(t *testing.T) {
 	a, path := openSettingsPage(t, "requests")
-	input := a.prefs.Form.Input(a.prefs, "proxy")
+	input := a.over.Settings.Form.Input(a.over.Settings, "proxy")
 	*input = widget.NewTextField("http://localhost:8080")
-	a.prefs.Form.Edited(a.prefs, "proxy")
+	a.over.Settings.Form.Edited(a.over.Settings, "proxy")
 	if a.settings.Proxy != "http://localhost:8080" {
 		t.Fatalf("Proxy = %q", a.settings.Proxy)
 	}
@@ -124,7 +124,7 @@ func TestTextSettingsApplyAsTheyAreTyped(t *testing.T) {
 
 func TestANumberSettingNeedsAWholeNumberInRange(t *testing.T) {
 	a, _ := openSettingsPage(t, "requests")
-	input := a.prefs.Form.Input(a.prefs, "timeoutSec")
+	input := a.over.Settings.Form.Input(a.over.Settings, "timeoutSec")
 	for _, test := range []struct {
 		text     string
 		want     int
@@ -137,27 +137,27 @@ func TestANumberSettingNeedsAWholeNumberInRange(t *testing.T) {
 		{"90", 90, false},
 	} {
 		*input = widget.NewTextField(test.text)
-		a.prefs.Form.Edited(a.prefs, "timeoutSec")
-		if a.settings.TimeoutSec != test.want || (a.prefs.Form.Note("timeoutSec") != "") != test.wantNote {
-			t.Errorf("%q: TimeoutSec = %d (want %d), note %q", test.text, a.settings.TimeoutSec, test.want, a.prefs.Form.Note("timeoutSec"))
+		a.over.Settings.Form.Edited(a.over.Settings, "timeoutSec")
+		if a.settings.TimeoutSec != test.want || (a.over.Settings.Form.Note("timeoutSec") != "") != test.wantNote {
+			t.Errorf("%q: TimeoutSec = %d (want %d), note %q", test.text, a.settings.TimeoutSec, test.want, a.over.Settings.Form.Note("timeoutSec"))
 		}
 	}
 }
 
 func TestClosingTheSettingsAlwaysOpensThemFresh(t *testing.T) {
 	a, _ := openSettingsPage(t, "requests")
-	a.prefs.Shell.Search = widget.NewTextField("proxy")
-	a.prefs.OpenRaw()
-	*a.prefs.Form.Input(a.prefs, "proxy") = widget.NewTextField("typed but not entered")
-	a.prefs.Close()
-	a.prefs.Show()
-	if a.prefs.Shell.Cat != "" || a.prefs.Shell.Search.Text != "" || a.prefs.Shell.Raw || a.prefs.Form.FontListOpen() {
-		t.Fatalf("page %q search %q raw %v: the reopened dialog is not fresh", a.prefs.Shell.Cat, a.prefs.Shell.Search.Text, a.prefs.Shell.Raw)
+	a.over.Settings.Shell.Search = widget.NewTextField("proxy")
+	a.over.Settings.OpenRaw()
+	*a.over.Settings.Form.Input(a.over.Settings, "proxy") = widget.NewTextField("typed but not entered")
+	a.over.Settings.Close()
+	a.over.Settings.Show()
+	if a.over.Settings.Shell.Cat != "" || a.over.Settings.Shell.Search.Text != "" || a.over.Settings.Shell.Raw || a.over.Settings.Form.FontListOpen() {
+		t.Fatalf("page %q search %q raw %v: the reopened dialog is not fresh", a.over.Settings.Shell.Cat, a.over.Settings.Shell.Search.Text, a.over.Settings.Shell.Raw)
 	}
-	if got := a.prefs.Form.Input(a.prefs, "proxy").Text; got != a.settings.Proxy {
+	if got := a.over.Settings.Form.Input(a.over.Settings, "proxy").Text; got != a.settings.Proxy {
 		t.Fatalf("a field kept text typed before the dialog was closed: %q", got)
 	}
-	if a.prefs.Shell.Searching() {
+	if a.over.Settings.Shell.Searching() {
 		t.Fatal("a search is still active")
 	}
 }

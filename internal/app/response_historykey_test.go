@@ -162,10 +162,10 @@ func TestAnOutOfRangeSettingIsClampedAndNamedInTheStatusLine(t *testing.T) {
 		t.Fatalf("timeout %d, status %q", a.settings.TimeoutSec, a.notices.Status())
 	}
 	a.settings.TimeoutSec = 10
-	a.prefs.Show() // discarding unsaved changes reads the file again, which applies the clamped value too
-	a.prefs.Send(prefs.FileMarked{Saved: false})
-	a.prefs.Close()
-	for _, button := range a.dialog.Buttons {
+	a.over.Settings.Show() // discarding unsaved changes reads the file again, which applies the clamped value too
+	a.over.Settings.Send(prefs.FileMarked{Saved: false})
+	a.over.Settings.Close()
+	for _, button := range a.over.Dialog().Buttons {
 		if button.Label == "Discard" {
 			button.Run()
 		}

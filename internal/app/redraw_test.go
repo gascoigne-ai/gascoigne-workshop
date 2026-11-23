@@ -127,8 +127,8 @@ func TestToastsRequestRedrawsWhenShownAndWhenTheyExpire(t *testing.T) {
 	settle(a, 2)
 	clock = clock.Add(10 * time.Second)
 	a.Step(core.Input{X: a.lastIn.X, Y: a.lastIn.Y})
-	if !a.dirty || len(a.toasts.Stack()) != 0 {
-		t.Fatalf("an expired toast must be removed and drawn away (dirty %v, toasts %d)", a.dirty, len(a.toasts.Stack()))
+	if !a.dirty || len(a.over.Toasts.Stack()) != 0 {
+		t.Fatalf("an expired toast must be removed and drawn away (dirty %v, toasts %d)", a.dirty, len(a.over.Toasts.Stack()))
 	}
 }
 
@@ -236,7 +236,7 @@ func TestInterfaceScaleSliderResizesLiveAndSavesOnRelease(t *testing.T) {
 	a := testApp(t)
 	path := a.SettingsPath()
 	click(a, menuBtnX, menuBtnY)
-	a.prefs.Shell.Search = widget.NewTextField("interface scale")
+	a.over.Settings.Shell.Search = widget.NewTextField("interface scale")
 	a.Step(core.Input{})
 	a.Step(core.Input{X: scaleTrackX0 + (scaleTrackX1-scaleTrackX0)/3, Y: scaleRowY, Click: true, Held: true})
 	a.Step(core.Input{X: scaleTrackX1 + 400, Y: scaleRowY, Held: true}) // far right: the maximum

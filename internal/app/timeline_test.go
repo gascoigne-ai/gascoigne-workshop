@@ -54,25 +54,25 @@ func TestCookiesDialogListsWhatTheJarHoldsForTheURL(t *testing.T) {
 	tab := a.cur()
 	tab.Req.URL = "https://api.test/x"
 	a.auth.ShowCookies(tab.Tab)
-	if a.dialog == nil || !strings.Contains(a.dialog.Body, "No cookies for api.test") {
-		t.Fatalf("dialog %+v", a.dialog)
+	if a.over.Dialog() == nil || !strings.Contains(a.over.Dialog().Body, "No cookies for api.test") {
+		t.Fatalf("dialog %+v", a.over.Dialog())
 	}
-	a.closeDialog()
+	a.over.CloseDialog()
 	u, _ := url.Parse("https://api.test/x")
 	a.jar.SetCookies(u, []*http.Cookie{{Name: "session", Value: "abc", Path: "/"}})
 	a.auth.ShowCookies(tab.Tab)
-	if !strings.Contains(a.dialog.Body, "session=abc") {
-		t.Fatalf("body %q", a.dialog.Body)
+	if !strings.Contains(a.over.Dialog().Body, "session=abc") {
+		t.Fatalf("body %q", a.over.Dialog().Body)
 	}
 	first := a.jar
-	a.dialog.Buttons[len(a.dialog.Buttons)-1].Run() // Clear all cookies
+	a.over.Dialog().Buttons[len(a.over.Dialog().Buttons)-1].Run() // Clear all cookies
 	if a.jar == first || len(a.jar.Cookies(u)) != 0 {
 		t.Fatal("the jar must be replaced and empty")
 	}
 	tab.Req.URL = "not a url"
-	a.closeDialog()
+	a.over.CloseDialog()
 	a.auth.ShowCookies(tab.Tab)
-	if a.dialog != nil {
+	if a.over.Dialog() != nil {
 		t.Fatal("no dialog for a URL without a host")
 	}
 }

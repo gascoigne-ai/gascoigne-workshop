@@ -1,7 +1,6 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/menus"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sizes"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -41,7 +40,7 @@ var windowTemplate = markup.Must("window.vml", windowSource)
 // element for, so they come in as slots like the views built here.
 func (a *App) view() Node {
 	t := a.cur()
-	return windowTemplate.MustBuild(markup.Scope{
+	scope := markup.Scope{
 		"sidebarSplit":   &a.sidebarSplit,
 		"sidebarDefault": sidebarW - 1,
 		"minSidebarW":    minSidebarW,
@@ -56,15 +55,14 @@ func (a *App) view() Node {
 		"requestPane":    a.pane(t, requestPanesFor(t), &t.paneTab, &t.reqScroll, &t.reqTabsX, nil),
 		"responsePane":   a.pane(t, a.responsePanesFor(t), &t.respTab, &t.respScroll, &t.respTabsX, a.resp.StatusView(a.ctx, t.Tab)),
 		"statusBar":      a.statusBar(),
-		"menu":           a.prefs.View(a.ctx),
-		"picker":         a.pickerView(),
-		"browser":        a.browser.View(a.ctx),
-		"popupMenu":      menus.View(a.ctx),
-		"dialog":         a.dialogView(),
-		"callLog":        a.calls.View(a.ctx, a),
-		"toasts":         a.toasts.View(),
-		"tooltips":       TooltipLayer(&a.tips),
-	})
+	}
+	// The overlays are built after the panes, as before, one node per slot of
+	// the template; the tooltip layer is last so it is on top.
+	over := a.over.Views(a.ctx)
+	scope["menu"], scope["picker"], scope["browser"], scope["popupMenu"] = over.Settings, over.Picker, over.Browser, over.Popup
+	scope["dialog"], scope["callLog"], scope["toasts"] = over.Dialog, over.CallLog, over.Toasts
+	scope["tooltips"] = TooltipLayer(&a.tips)
+	return windowTemplate.MustBuild(scope)
 }
 
 // ── Main column ────────────────────────────────────────────────────────
@@ -79,7 +77,7 @@ func (a *App) header() Node {
 		"gutter":      w.Gutter,
 		"title":       a.headerTitle(),
 		"env":         a.envChip(),
-		"toggleMenu":  a.prefs.Toggle,
+		"toggleMenu":  a.over.Settings.Toggle,
 		"settingsTip": a.hint("Settings", "settings"),
 	}))
 }

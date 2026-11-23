@@ -219,10 +219,10 @@ func TestMCPToolsFillTheComposerFromTheirSchemas(t *testing.T) {
 		t.Fatalf("tools %+v", tab.Tools)
 	}
 	a.mcp.OpenToolForm(tab.Tab, tab.Tools[0]) // a tool with properties opens its form; its defaults make the call
-	if a.dialog == nil || a.dialog.content == nil {
+	if a.over.Dialog() == nil || !strings.Contains(dialogDump(a), `text="limit"`) {
 		t.Fatal("picking a tool with arguments opens the form")
 	}
-	for _, button := range a.dialog.Buttons {
+	for _, button := range a.over.Dialog().Buttons {
 		if button.Label == "Fill composer" {
 			button.Run()
 		}

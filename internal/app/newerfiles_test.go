@@ -44,9 +44,9 @@ func TestNewerSettingsAreNotWrittenThisSession(t *testing.T) {
 		t.Fatalf("toasts %q, want one naming settings.json and the newer version", toasts)
 	}
 
-	a.saveSettings(func(prefs *settings.Settings) { prefs.Layout = "side" }) // the form, auto-save on
-	a.prefs.Send(prefs.Persist{})                                            // the Save button
-	_ = a.prefs.SettingsStore().WriteText(path, []byte(`{"version": 1}`))    // the raw editor
+	a.saveSettings(func(prefs *settings.Settings) { prefs.Layout = "side" })      // the form, auto-save on
+	a.over.Settings.Send(prefs.Persist{})                                         // the Save button
+	_ = a.over.Settings.SettingsStore().WriteText(path, []byte(`{"version": 1}`)) // the raw editor
 	other := t.TempDir()
 	if err := storeDisk.Save(other, request.Collection{Folder: request.Folder{Name: "Other"}}); err != nil {
 		t.Fatal(err)
